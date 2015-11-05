@@ -1,0 +1,397 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<!-- Mirrored from carmen.sourceforge.net/using_carmen.html by HTTrack Website Copier/3.x [XR&CO'2010], Thu, 13 Jan 2011 17:35:34 GMT -->
+<head><title>CARMEN</title>
+	<meta name="description" content="CARMEN">
+	<meta name="keywords" content="CARMEN robot navigation toolkit">
+	<meta name="page-topic" content="CARMEN">
+
+        <meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<meta name="robots" content="index">
+	<meta name="robots" content="follow">
+	<link rel="stylesheet" type="text/css" href="styles/styles.css">
+</head>
+<body bgcolor="#ffffff">
+<br>
+<div align="center">
+<table align="center" width="95%">
+<tbody>
+<tr>
+  <td align="left"><img src="images/carmen-logo-small.png" border=0 alt="[Carmen logo]"></td>
+</tr>
+<tr>
+<td  align="left" bgcolor="#ffffcc">&nbsp;</td></tr>
+</tbody>
+</table>
+
+<!-- NAVIGATOR -->
+
+<table align="center" width="95%">
+<tbody>
+<tr>
+<td><br></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+   <td class="menu" align="left" valign="top" width="210"><br>
+   <ul>
+   <li><a href="home.html">Home</a></li> 
+   <li><a href="intro.html">What's Carmen?</a></li>
+   <li><a href="core_functionality.html">Core Functionalities</a></li>
+   <br>
+   <li><a href="news.html">What's New?</a></li>
+   <li><a href="repository.html">Repository</a></li>
+   <li><a href="update.html">Chief Changes</a></li>
+   <br>
+   <li><a href="getting_carmen.html">Download & Installation</a></li>
+   <li><a href="hardware.html">Required Hardware</a></li>
+   <li><a href="using_carmen.html">Running Carmen</a></li>
+   <li><a href="config_param.html">Configuring Carmen</a></li>
+   <br>
+   <li><a href="doc/index.html">Carmen Online Docs</a></li>
+   <li><a href="program_carmen.html">Program with Carmen</a></li>
+   <li><a href="FAQ.html">FAQ</a></li>
+   <li><a href="papers.html">Papers</a></li>
+   <br>
+   <li><a href="mailing_lists.html">Mailing List</a></li>
+   <li><a href="contributers.html">People</a></li><br>
+   <li><a href="http://radish.sourceforge.net/">Data Sets (Radish)</a></li>
+   </ul><br><br><br>
+   <img src="images/line-200.png" border=0> 
+  </td>
+  <td width="20"></td>
+  <td align="left" valign="top">
+
+<!-- END OF HEADER -->
+
+
+<h3>Running Carmen</h3>
+<p>
+TODO: Fix names & description
+<p>
+<hr>
+
+
+This document is an aid to begin using the CARMEN robot sensing and navigation software, including (but not limited to) the following programs:
+<p>
+<ul>
+<li><a href="logger_playback.html">logger</a><br>
+This program stores sensor and odometry data with time stamps into a log file.
+
+<li><a href="logger_playback.html">playback</a><br>
+This program plays back a log file and send the stored messages to the other modules.
+
+<li><a href="map_editor.html">map_editor</a><br>
+This program allows for creating or editting maps for use by Carmen.
+
+<li><a href="navigatorgui.html">navigatorgui</a><br>
+This program provides a graphic interface which shows the robot's position and destiation on the pre-built map and allows setting of the current position and orientation, and selection of destinations.
+
+<li><a href="config_param.html#edit">param_edit</a><br>
+This program enables the user to change parameters as the robot is running. It also makes it easy to save the changes to a ".ini" file.
+
+<li><a href="config_param.html#server">param_deamon</a><br>
+This program provides other programs with information about the robot being used and the area around it. This can include a pre-built map, sensors on the robot, and typical sensor error.
+
+<li><a href="#robotgui">robotgui</a><br>
+This program provides a simple graphic interface for the robot, allowing direct motion control and a display of current sensor information.
+
+<li>processcontrol<br>
+This program controls the different processes, restarts them in case of a crash, etc.
+
+<li><a href="#Simulate">simulator</a><br>
+This program provides simulated data generation from a virtual robot. It requires a previously generated map.
+
+<li>base_services<br>
+This program controls the movement of the robot and accepts inputs from the sensors. This program MUST run on the computer attatched to the robot hardware.
+
+<li>localize<br>
+This program uses the sensor information from the baseServer to find the robot position in a map provided by param_deamon.
+
+<li>navigator<br>
+This program enables autonomous navigation.
+
+<li>vasco<br>
+This program creates a map from sensor and odometry data stored in a log file. 
+
+<li>vasco-tiny<br>
+A command line scan-matcher based on vasco. It reads log files and outputs a (locally) corrected log file. 
+
+</ul>
+The links above will go to other pages with more complete descriptions and instructions for using these programs.
+<p>
+The "central" program, IPC, enables communication between these other programs. Information on using and coding with IPC can be found at <a href="http://www-2.cs.cmu.edu/afs/cs/project/TCA/www/ipc/ipc.html">http://www-2.cs.cmu.edu/afs/cs/project/TCA/www/ipc/ipc.html</a>. A simplistic explanation of IPC: various programs "publish" generated information which is then "subscibed to" by other programs. IPC keeps track of what is published and delivers it to the subscribers.
+<p>
+
+<H3>Table Of Contents </H3>
+
+<li><A  href="#Simulate">Running a Simulated Robot</A>
+<li><A  href="#Movement">Teleoperation of a Robot</A> 
+<li><A  href="#Mapping">Building a Map</A> 
+<li><A  href="#Autonomy">Autonomous Navigation</A>
+<br> <br>
+<p>
+The use of CARMEN will described using four different scenaria: simulating a robot, tele-operating a robot, building a map, and way-point navigation of a robot in a known map.  Since CARMEN is modular software, each scenario will involve opening a bunch of different xterms and running different programs.
+<p>
+Parameters for all of the modules are read from the carmen.ini file. You will need to edit this file, adding your own robot and parameter values. The name of your robot in [] square brackets in the param file will be a command line parameter to the parameter server later in these instructions.
+<p>
+  
+<H3><A name=Simulate><BR>Running a Simulated Robot</A></H3>
+<p>
+1. In window 1, start the IPC central server<p>
+<pre>
+   cd carmen/bin ; ./central
+</pre>
+<p>
+If you are running programs on multiple machines, then you must specify on the other machines which machine is running central. This is done with the command:
+<pre>
+setenv CENTRALHOST [hostname]
+</pre>
+where [hostname] is the name of the machine on which central is running.
+<p>
+<font color=green>Note: When running displays on off-robot computers, running the display programs off-robot rather than on-robot uses less bandwidth than piping the X display across the network.</font>
+<p>
+2. In window 2, start the parameter server<p>
+<pre>
+   cd carmen/bin ; ./param_deamon --robot pearl ../data/thickwean.map
+</pre>
+
+The command above will start the param_deamon such that it serves parameters for the CMU robot "Pearl" from the parameter file "carmen.ini" and the map file "thickwean.map." Other command-line options are:<br>
+<ul>
+   <li>robot [robotname] directs the server to parameters specific to the robot which should exist in the specified parameter file.<br>
+   <li>[mapfile.map] directs the server to a map file specific to the location. If you do not specify a mapfile, then no map will be served.<br>
+   <li>[paramfile.ini] specifies a parameter file. If no file is specified, then parameters from carmen.ini will be used. The param_deamon will look first in the current directory, then the parent directory (../), and then ../src/ for carmen.ini.
+   <li>[-port portnum] specifies a port to be used for an ANT server<br>
+   <li>[-noant] says not open an ANT server<br>
+   <li>[-useant] says to use an ANT server<br>
+</ul>
+
+
+3. In window 3, start the robot simulator<p>
+<pre>
+   cd carmen/bin ; ./simulator
+</pre>
+<p>
+4. In window 4, start the navigatorgui program<p>
+<pre>
+   cd carmen/bin ; ./navigatorgui
+</pre>
+This will open a graphic display. Place the simulated robot in the map by left-clicking on the "Place Simulator" button, and then left-clicking once on the desired location on the map. Then move the cursor away from the blue dot that appears, in the direction you wish the robot to face. A blue line appears between the cursor (now two curved arrows) and the simulated robot, indicating the facing of the robot. Left-click again to fix the facing of the robot.
+<p>
+<center><img src=images/simpanel.gif></center>
+<p>
+
+5. In window 5, start the robotgui (before robotgraph) program<p>
+<pre>
+   cd carmen/bin ; ./robotgui
+</pre>
+See the instructions for using robotgui below to teleoperate the simulated robot. You can also build maps and autonomously navigate the robot as described further below. Maps should look the same as the original map unless there were differences in the parameters used (in either the paramfile or in the vasco program) when creating the original map and the new map. Remember that if you are running programs on multiple machines, you must set the CENTRALHOST environment variable to point to the machine on which you are running central.
+<p>
+
+<H3><A name=Movement><BR>Teleoperation of a Robot </A></H3>
+<p>
+1. In window 1, start the IPC central server<p>
+<pre>
+   cd carmen/bin ; ./central
+</pre>
+2. In window 2, start the parameter server<p>
+<pre>
+   cd carmen/bin ; ./param_deamon [paramfile.ini] --robot robotname
+</pre>
+3. In window 3, start the base server that corresponds to your robot<p>
+<pre>
+   cd carmen/bin ; ./scout
+</pre>
+4. In window 4, start the laser server<p>
+<pre>
+   cd carmen/bin ; ./laser
+</pre>
+5. In window 5, start the robot server<p>
+<pre>
+   cd carmen/bin ; ./robot
+</pre>
+6. In window 6, start the robotgui program<p>
+<pre>
+   cd carmen/bin ; ./robogui
+</pre>
+<font color=green>Note that if you have a pioneer or scout robot, you can run the base_services program instead of steps 3, 4, and 5. It is not yet working with other robot types.</font><p>
+<pre>
+   cd carmen/bin ; ./base_services
+</pre>
+<p>
+Here is a bit more detail on the programs to be run.
+<ul>
+<li>central<br>
+Run this anywhere, but other programs need an environment vairable set before you run them: "setenv CENTRALHOST [hostname]" if that program is being run on a different computer than central. This program must be started first. If stop this program (with cntl-c, typically), all the other Carmen programs will quit.
+
+<li>param_deamon --robot robotname [paramfile.ini]<br>
+The robotname option directs the server to parameters specific to the robot which should exist in the file "carmen.ini". If you wish to use a parameter file other than carmen.ini, then that would be specified in the paramfile.ini option.
+
+<li>base_services <br>
+Run this program after central and param_deamon have been started. This program connects to the robot and to the various sensors on the robot, so it MUST run on the machine connected to that hardware. <br>
+	<ul>Note: This program combines three modules. If the robot hardware is divided among multiple computers, then the modules can be used independently on different computers. this currently only works with the Scout robots from Nomadics Technologies and the Pioneer robots from ActivMedia.
+	  <li>scout - This module co-ordinates the motion of the Scout robot and monitors robot odometry.
+	  <li>pioneer - This module co-ordinates the motion of the Pioneer robot and monitors robot odometry. It is an alternative to scout.
+	  <li>laser - this monitors the SICK LMS and PLS laser sensors. 
+	  <li>robot - this module takes odometry and sensor readings and combines them for distribution to other programs.
+	</ul>
+
+<li>robotgui -add_control on<br>
+<a name="robotgui">
+This opens a display which shows the robot as a circle or rectangle in the center with a small line designating the front and also sensor information. Blue regions are obsticals or unknown, white is clear. Red edges in the laser display indicate indicate obsticals which are close enough to prevent forward motion. Red arcs indicate sonar-detected obsticals. 
+<p>
+To turn the robot, use the left mouse button. Clicking near the robot will turn it right or left. To move the robot, click on the robot and drag the mouse pointer in the direction (relative to the "forward" indicator on the screen) you wish the robot to go. The robot indicator will turn red when you click on it, indicating that it is ready to move. The further from the robot you drag the cursor, the faster the robot will go. 
+<p>
+Or, if you have properly installed your joystick under linux, you can drive the robot with the joystick.
+<p>
+Alternatively, you can use keyboard commands to move the robot. The following keys will move the robot:<p>
+<center>
+U I O<br>
+J K L<br>
+M , .<p>
+</center>
+with I moving the robot forward, U will move it forward and turning it left, O forward and right. J and L will turn the robot in place. Some robot param files are written so that the robot will not go backwards because some of our robots do not have rear sensing. M and . will move it backwards and turn, or just turn, depending on the parameter file. , will move it backwards or not at all. any other key, including K, will stop the robot. Speed cannot be controlled with this method.
+</ul>
+<p><center>
+<img src=images/robotgraph.gif><br>
+</center>
+In this image, the sensor data displayed is from a SICK PLS laser scanner. The robot is represented by the grey circle, facing the direction indicated by the black line. Dark blue edges are perceived objects, and lighter blue areas are unknown. The red edges are objects which are close enough that obstical avoidance routines will prevent forward motion. 
+<p>
+
+<H3><A name=Mapping><BR>Building a Map (using teleoperation)</A></H3>
+<p>
+To build a map, you can use either teleoperation or autonomous navigation. However, autonomous navigation requires that you start with a map, so this section describes how to do it with teleoperation. Another way to build a map is with the <a href="map_editor.html">map editor</a> program.
+<p>
+While the robot is moving, you will need to run the logger program.
+<p>
+Run steps 1 through 6 for <a href="#Movement">teleoperating</a> the robot, then:
+<p>
+7. In window 7, start the loggger
+<pre>
+   cd carmen/bin ; ./logger [filename].log
+</pre>
+<p>
+[filename] specifies a filename for the sensor log. If the file already exists, the program will ask to overwrite it. If an answer other than "Y" or "y" is given, then the logger will quit.
+<p>
+Drive the robot around, covering your environment, then stop the logger by typing a CONTROL-C in the logger xterm. Before quitting the other programs (or after restarting them at a later time), run vasco on the logfile you created
+<pre>
+    cd carmen/bin ; ./vasco file.log
+</pre>
+<p>
+This program opens an interface which displays sensor data compiled with raw odometry data, as in this image:
+<p>
+<center><img src=images/vasco1.gif></center>
+<p>
+To correct for odometry error, click the "scan match" button on the upper right. After some computation time (progress is indicated on the lower left), the display will change, as in this second image:
+<p>
+<center><img src=images/vasco2.gif></center>
+<p>
+This data was generated moving a robot from a lab (center right) into a corridor, up and down the corridor some distance, then back to the lab. The odd "fuzz" in the center of the corridor is actually the legs of people walking by as the data was gathered.
+<p>
+To create the final map to be used with param_deamon, now click the "Make Evidence Grid" button on the upper right. A new display will open allowing you to adjust parameters for creating the mapfile. At first, you should stick with the defaults.
+<p>
+<center><img src=images/vasco3.gif></center>
+<p>
+
+
+When you click "Okay," that display will disapear, a new one will open and the map will form as you watch.
+<p>
+<center><img src=images/egrid.gif></center>
+<p>
+Note that the data which showed the people walking through the image has not effected the final map. To save this as a map, klick on the "File" menu and save as a ".map" file.
+<p>
+This file can then be used through your param_deamon program to allow for localization and autonomous navigation through the area you mapped.
+</ul>
+<H3><A name=Autonomy><BR>Autonomous Navigation </A></H3>
+<p>
+This begins as if you were teleoperating the robot, but with a change in the param_deamon options to add the map file, and with other programs added. 
+<p>
+1. In window 1, start the IPC central server<p>
+<pre>
+   cd carmen/bin ; ./central
+</pre>
+2. In window 2, start the parameter server<p>
+<pre>
+   cd carmen/bin ; ./param_deamon [paramfile.ini] --robot robotname mapfile.map
+</pre>
+3. In window 3, start the base server that corresponds to your robot<p>
+<pre>
+   cd carmen/bin ; ./scout
+</pre>
+4. In window 4, start the laser server<p>
+<pre>
+   cd carmen/bin ; ./laser
+</pre>
+5. In window 5, start the robot server<p>
+<pre>
+   cd carmen/bin ; ./robot
+</pre>
+6. In window 6, start the robotgui program<p>
+<pre>
+   cd carmen/bin ; ./robotgui
+</pre>
+<p>
+7. In window 7, Run the localizer<p>
+<pre>
+   cd carmen/bin ; ./localize
+</pre>
+8. In window 8, Run the path planner<p>
+<pre>
+   cd carmen/bin ; ./navigator
+</pre>
+9. In window 9, Run the path planner graphics module<p>
+<pre>
+   cd carmen/bin ; ./navigatorgui
+</pre>
+Here is more detail on the new programs.<p>
+<ul>
+<li>localize <br>
+This program takes sensor data from base_services and compares it to the map to localize the robot on that map.
+
+<li>navigator <br>
+This program plans the path from the robot's current location to its destination and tells base_services how to move the robot.
+
+<li>navigatorgui <br>
+This program provides a user interface for telling the robot where it is and where to go. To set the robot position on the map display, simply left-click the "Place Robot" button, then left-click the desired location on the map. The cursor will change into a pair of curved arrows, and a red dot appears ti indicate the robot location. A line between the dot and the cursor indicates the direction the robot's orientation. Left-click again to fix the robot orientation. If you are using a simulated robot, this will also place and orient the simulated robot. To separate the simulated robot from it's perceived location, you must set the simulator location after setting the robot location.
+</ul>
+<p>
+You can now control the robot using the navigator. You can then left click on the map to give the robot a goal. Select the "Go" button to send the robot from its current location to the selected goal. Select the "Stop" button (the same location as the "Go" button) to make the robot stop at any time.
+<p><center>
+<img src=images/navpanel.gif><br>
+</center>
+In this image, the robot's current perceived position is represented by the red circle, and the simulated position is represented by the blue circle. The robot's goal is represented by the yellow circle. The planned path is represented by the blue line. The planned path will change as the robot moves toward the goal and encounters obsticles. The scale of the image can be changed by moving the lower slide-bar.
+<p>
+
+<!-- REST OF NAVIGATOR -->
+
+</td><td width="20"></td> </tr>
+<tr>
+<td><br></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table> 
+
+<!-- FOOTER -->
+
+
+<table align="center" width="95%"> 
+<tbody>
+<tr> 
+<td colspan="2" align="center" bgcolor="#ffffcc">
+Copyright ©  by the <a href="contributers.html">CARMEN-Team</a>
+</td> 
+</tr> 
+</tbody>
+</table>
+</div>
+</body>
+
+<!-- Mirrored from carmen.sourceforge.net/using_carmen.html by HTTrack Website Copier/3.x [XR&CO'2010], Thu, 13 Jan 2011 17:35:39 GMT -->
+</html>
+

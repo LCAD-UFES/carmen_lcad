@@ -1,0 +1,56 @@
+JOYROBOT
+
+The JoyRobot module allows you to control Pearl
+via a joystick. You can control both her base
+and her head. JoyRobot is part of CARMEN.
+
+
+==================================================
+USAGE
+
+Starting up the module:
+	1) Start the central module on a computer
+	2) If you want to be able to control the base along with the 
+	   head you need to start the other modules (otherwise
+	   you can skip this step).
+	   To start each of these make sure the central module is running.
+	   If you are running any of them on a different computer than central
+	   do step 4. Then execute the modules with the flag -<robotname>
+	   where robotname is the name of the robot you are controlling.  
+	   See the scout, robot, and laser modules' documentation
+	   for more information.
+	3) ssh or log on to a machine with a joystick
+	   (alder, peanut, and thyme)
+	4) Set the CENTRALHOST environment variable to
+	   the computer that you are running central on.
+	5) run joyrobot
+Using the joystick
+	If you find "Mike's Joystick" it will have a number
+	of labels on it.
+
+	The labels correspond to the head functions.
+	
+	eyes:	sets which way the eyes are pointing
+	blink:	toggles on and off background blinking and small eye motions
+	think:	toggles on and off Pearl's "thinkers"
+	neck:	this controls the position of the head.
+		pressing upward will lift her face,
+		downward lowers it.
+		pressing left will turn her head leftwards from
+		her own perspective, and right turns her
+		head towards her right.
+	smile:	changes her expression to a smile
+	frown:	changes her expression to a frown
+
+	The movement of the robot is controlled by this stick itself
+	
+	turning: to turn Pearl left (from her perspective) lean
+		 the stick leftwards, right--rightwards
+	moving:	 to move Pearl forwards press forwards on the stick
+	You can also do a combination of these to get an arc.
+
+=======================================
+ERRORS/PROBLEMS/QUIRKS
+
+1) Pearl will not back up because she has no sensors facing backwards.
+2) The head does not moves smoothly when controlled by the joystick.

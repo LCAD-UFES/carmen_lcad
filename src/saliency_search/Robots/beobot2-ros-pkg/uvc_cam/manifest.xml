@@ -1,0 +1,22 @@
+<package>
+  <description>A node and utilities for webcams supporting the uvcvideo driver (e.g. Logitech cameras and many others).
+
+  Package is GPL since some of its code is adapted from GPL programs such as guvcview</description>
+  <author>Morgan Quigley, Eric Perko</author>
+  <license>GPL</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="roscpp"/>
+  <depend package="sensor_msgs"/>
+  <depend package="image_transport"/>
+  <depend package="opencv2"/>
+  <depend package="cv_bridge"/>
+  <depend package="tf"/>
+  <depend package="camera_info_manager"/>
+  <depend package="dynamic_reconfigure" />
+  <depend package="driver_base" />
+  
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -luvc_cam"/>
+  </export>
+  <url></url>
+</package>

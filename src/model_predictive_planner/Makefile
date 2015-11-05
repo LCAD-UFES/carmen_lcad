@@ -1,0 +1,44 @@
+include ../Makefile.conf
+
+# Module name and description
+MODULE_NAME = Model-Predictive Motion Planner
+MODULE_COMMENT = Model-predictive motion planner
+
+LINK = g++
+#CFLAGS += -g -O0
+#CXXFLAGS += -std=c++0x -g -O0
+CFLAGS += -O3
+CXXFLAGS += -std=c++0x -O3
+
+# Application specific include directories.
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
+
+#SUBDIRS += model
+LFLAGS += 	-lgrid_mapping -lmap_io -lmap_util -lmap_interface -lparam_interface -lipc -lglobal -lmap_interface  -lprob_models -llocalize_ackerman_interface -lsimulator_ackerman_interface \
+		-lrobot_ackerman_interface -lbase_ackerman_interface \
+		-lnavigator_ackerman_interface -lobstacle_avoider_interface -lgrid_mapping_interface -lrrt_planner_interface \
+		-lmap_server_interface -lbehavior_selector_interface  -lrotation_geometry \
+		-L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper \
+		-lrddf_interface -lmotion_planner_interface -lnavigator_gui_interface -llocalize_ackerman_core \
+		-lcollision_detection -lgsl -lgslcblas -lm
+			
+			
+SOURCES = model_predictive_planner.cpp trajectory_lookup_table.cpp \
+		global_state.cpp publisher_util.cpp util.cpp pose.cpp command.cpp 
+
+PUBLIC_BINARIES = model_predictive_planner
+PUBLIC_LIBRARIES = 
+
+TARGETS = model_predictive_planner
+
+model_predictive_planner: model_predictive_planner.o trajectory_lookup_table.o \
+	global_state.o publisher_util.o util.o pose.o command.o
+trajectory_lookup_table: trajectory_lookup_table.o
+global_state: global_state.o
+publisher_util: publisher_util.o
+util: util.o
+pose: pose.o
+command: command.o
+
+include ../Makefile.rules

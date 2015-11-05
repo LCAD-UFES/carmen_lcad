@@ -1,0 +1,40 @@
+/* Counters */
+int i;
+int FACES2TESTING;	
+FACES2TESTING = 50;
+
+/* Network Status */
+int TESTING_FACE;
+TESTING_FACE = 2;
+
+/* Training Phase */
+/* Move to the photo */ 
+GetFace (0,1,1);
+
+/* Memorize the target features */
+Move2Nose (0);
+key 't';
+
+/* Testing phase */
+SetNetworkStatus (TESTING_FACE);
+i = 1;
+while (i <= FACES2TESTING)
+{
+	GetRandomFace (i);
+
+	/* Move to default point */
+	move in_pattern to 150, 100;
+
+	/* Saccade to until reach the target */
+	key 's';
+
+	/* Report the partial error */
+	key 'e';
+
+	i = i + 1;
+}
+
+/* Report the final error */
+key 'E';
+
+quit;

@@ -1,0 +1,121 @@
+It is a standard serial interface, 115200 bauds, 8 bit, no parity, 1 stopbit (8n1).
+
+*Note : []-Send  {}-Recieve
+Command Bytes are:
+  %00-Get new Data
+          [0x00]
+          Order of bytes when get variables is called is:
+          {accel_data[0]} - X Acceleration from On-Board Accelerometer
+          {accel_data[1]} - Y Acceleration from On-Board Accelerometer
+          {accel_data[2]} - Z Acceleration from On-Board Accelerometer
+          *note accel_data is in 2's complement
+          {adc_data[0]} - Lower Byte, ADC Value from port 1 (Gyro- But doesn't work)
+          {adc_data[0]} - Upper Byte
+          {adc_data[1]} - Lower Byte, ADC Value from port 2
+          {adc_data[1]} - Upper Byte
+          {adc_data[2]} - Lower Byte
+          {adc_data[2]} - Upper Byte
+          {adc_data[3]}
+          {adc_data[3]}
+          {adc_data[4]}
+          {adc_data[4]}
+          {adc_data[5]}
+          {adc_data[5]}
+          {adc_data[6]}
+          {adc_data[6]}
+          {adc_data[7]} - Lower Byte, ADC Value from port 8 (internal pressure sensor)
+          {adc_data[7]} - Upper Byte
+          {adc_data[8]}
+          {adc_data[8]}
+          {adc_data[9]}
+          {adc_data[9]}
+          {adc_data[10]}
+          {adc_data[10]}
+          {adc_data[11]}
+          {adc_data[11]}
+          {adc_data[12]}
+          {adc_data[12]}
+          {adc_data[13]}
+          {adc_data[13]}
+          {adc_data[14]}
+          {adc_data[14]}
+          {adc_data[15]} - Lower Byte
+          {adc_data[15]} - Upper Byte
+          *note adc_data is not in 2's complement
+          {desired_heading} - Lower Byte, desired heading (0-360)
+          {desired_heading} - Upper Byte
+          {desired_depth} - desired depth
+          {desired_speed} - desired speed
+          {marker_drop[0]} - marker drop 0 (not sure what is drop and not drop yet)
+          {marker_drop[1]} - markter drop 1
+          {comp_accel[0]} - lower byte for compass X acceleration
+          {comp_accel[0]} - upper byte for compass X acceleration
+          {comp_accel[1]} - lower byte for compass Y acceleration
+          {comp_accel[1]} - upper byte for compass Y acceleration
+          {comp_accel[2]} - lower byte for compass Z acceleration
+          {comp_accel[2]} - upper byte for compass Z acceleration
+          {comp_mag[0]} - lower byte for compass X magnetic field
+          {comp_mag[0]} - upper byte for compass X magnetic field
+          {comp_mag[1]} - lower byte for compass Y magnetic field
+          {comp_mag[1]} - upper byte for compass Y magnetic field
+          {comp_mag[2]} - lower byte for compass Z magnetic field
+          {comp_mag[2]} - upper byte for compass Z magnetic field
+          {comp_heading[0]} - lower byte for heading
+          {comp_heading[0]} - upper byte for heading
+          {comp_heading[1]} - lower byte for pitch
+          {comp_heading[1]} - upper byte for pitch
+          {comp_heading[2]} - lower byte for roll
+          {comp_heading[2]} - upper byte for roll
+          {comp_tilt[0]} - lower byte for pitch
+          {comp_tilt[0]} - upper byte for pitch
+          {comp_tilt[1]} - lower byte for roll
+          {comp_tilt[1]} - upper byte for roll
+          {comp_tilt[2]} - lower byte for temperature
+          {comp_tilt[2]} - upper byte for temperature
+          *note all comp_x values are in 2's complement except for comp_heading[0] (not sure about temperature...anyone got dry ice??)
+          {battery1} - battery variable
+          {battery2} - battery variable
+          {battery3} - battery variable
+          {battery4} - battery variable
+          
+  %0F-Set Heading,Depth,Speed,Marker Drop
+          Order of bytes when setting variable:
+          [0x0F]{upper byte for heading}{lower byte for heading}{depth}{speed}{marker drop 0}{marker drop 1}
+
+  'Change PID Variables
+  'KK + KP*e + KD*(e1-e) + KI*(sum_all(e)) = output
+  $20-Set KK_depth
+          [0x20]{KK_depth}
+  $21-Set KP_depth
+          [0x21]{KP_depth}
+  $22-Set KI_depth
+          [0x22]{KI_depth}
+  $23-Set KD_depth
+          [0x23]{KD_depth}
+  $24-Get Output_depth
+          [0x24]{Output_depth}
+  $30-Set KK_heading
+          [0x30]{KK_heading}
+  $31-Set KP_heading
+          [0x31]{KP_heading}
+  $32-Set KI_heading
+          [0x32]{KI_heading}
+  $33-Set KD_heading
+          [0x33]{KD_heading}
+  $34-Get Output_heading
+          [0x34]{Output_heading}
+
+  ''Debugging Commands
+  %F0-Print to Terminal (Debug purpose)
+            [0xF0]{"Lots of stuff"}
+  $FE-Set PWM frequency (Unit of 10Hz)
+          [0xFE]{"Select Freq"}[Freq]
+  %FF-Set Motor (Debug purpose)
+          {"Select Motor"}[Motor Num]{"Select Speed"}[Motor Speed]
+          Motor Num: 0-8
+          Notor Speed: 0-100
+
+
+
+
+

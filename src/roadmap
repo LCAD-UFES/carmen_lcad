@@ -1,0 +1,11 @@
+Planned for next release 
+========================================
+
+Finish conversion to GTK 2.0 (mapeditor) 
+Support for different laser platforms
+Better support for proccontrol automated start/stopping of processes
+pantilt support for AMTEC 
+Better integration of manipulators
+sound_server to be migrated from carmen-addons
+Full support for b21r support to be migrated from carmen-addons
+Carmen command shell

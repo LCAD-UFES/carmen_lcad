@@ -1,0 +1,8 @@
+A	train-images/A.01.png
+B	train-images/B.01.png
+C	train-images/C.01.png
+E	train-images/E.01.png
+F	train-images/F.01.png
+G	train-images/G.01.png
+I	train-images/I.01.png
+O	train-images/O.01.png

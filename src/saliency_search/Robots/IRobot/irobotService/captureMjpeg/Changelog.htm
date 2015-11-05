@@ -1,0 +1,61 @@
+Change log for luvcview
+=======================
+
+Version 0.2.4:
+- Smarter format picker. If the requested format is not available, luvcview
+  now falls back to MJPG or YUYV if available.
+- Made 640x480 at 30 fps the default format.
+- Some optical changes to the output (and the code).
+
+Version 0.2.3:
+- Moved the sources to a new repository on svn.quickcamteam.net.
+- Some changes to fix the control ID problems that affect mainly pan/tilt
+  functions:
+  - Remove uvc_compat.h and uvcvideo.h from the source archive. The latest
+    version needs to be copied from the UVC driver repository before
+	compilation.
+  - Use the new 'Pan reset' and 'Tilt reset' controls.
+  - Use dynctrl-logitech.h for the pan/tilt reset control.
+  - Fixed the auto white balance control property to use the one in V4L2.
+- The --help command line option now also shows the usage (like -h).
+- Some cleanup patches by Moritz Barsnick for better error reporting and nicer
+  source code.
+
+Version 0.2.2:
+- Add picture in YUYV mode
+- Picture name is now P-date-times
+
+Version 0.2.1:
+- Add from Joshua Phillips:
+  "That said, at the current time, the interface in luvcview (v4l2uvc.h and
+  v4l2uvc.c) does not have a function to set pan and tilt simultaneously.
+  Since I needed this functionality, I decided to implement it and I have
+  attached my patch for the two aforementioned files. Maybe they will be
+  of use to you or anyone else who wishes to use these tools in the future."
+
+Version 0.2.0:
+- Fix bugs no need to initialize the device when -L is asked.
+- Config file used key F1 and F2
+- Change the buttons picture (The Gimp)
+
+Version 0.1.9:
+- Uwe-Philipp Kaeppeler 30/11/2006 set fps using -i fps
+- Uwe-Philipp Kaeppeler 15/12/2006 save and load device control settings (keys
+  1 and 2, -r)
+
+Version 0.1.8:
+- Pan/Tilt correction Wolfgang S-Rupprecht	http://www.wsrcc.com/wolfgang
+
+Version 0.1.7:
+- Light frequency filters (50 60 noFlickers) Serge A Suchkov (works with gspca)
+
+Previous changes:
+- frmfmtenum implementation :)
+- avi record  from Denis McLauglin done 19/9/2006
+- patch mxhaard 18/06/2006 allow MJPEG without DHT
+- patch from Martin (Logitech) 18/06/2006 raw capture / empty buffer error recovery
+- pan/tilt done 7/02/2006 only works with resolution <= 640x480
+- button to set parameters with mouse done 30/12/2005
+- set the jpeg decoder to convert yuyv stream. that way we can used SDL Overlay
+  done 28/12/2005
+- mode yuyv not yet implemented done 27/12/2005

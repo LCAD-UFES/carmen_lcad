@@ -1,0 +1,143 @@
+TRACKER-README
+T. Nathan Mundhenk
+November 25, 2003
+nathan@mundhenk.com
+
+1. There are two tracker binaries you can use. One is designed to work
+   with one camera ,but multiple target types called:
+
+   test-colorSegment
+
+   the other is set to work with multiple cameras called
+
+   test-multiTrack
+
+   The current programs work by segmenting via HSV color and forming
+   discrete sperated blobs from color thresholds. Color adaptation is
+   applied by taking the mean color of blobs it likes and moving the
+   desired color in that direction. This will cause the tracker in
+   essesnce to lock onto a favorite color. Statistics and heuristics
+   are applied to weed out blobs that are the wrong size,shape and
+   spacial locality. Also, durring a track, the region where a blob
+   can be tracked is constrianed as being close to the last known
+   target location. 
+
+2. Important files are:
+   a. segmentImageMerge: This is the base class that handles the
+   multiple tracker instances. Most of the duties for discision making
+   from multiple tracking sources are done here
+   b. segmentImageTrack: This applies simple heurisics to blobs
+   irrespective of their relationships to other cameras and other
+   blobs. This cuts off based on size, shape and nearness to last
+   known track.
+   c. segmentImage: This is the blob creater. It does the color
+   thresholding and segmentation of individual blobs in each camera
+   based on color threshold. It does not care much about the form of
+   blobs or their relationships. It just finds them.
+
+3. Tracking blobs
+   a. Set up and grab images using the framegrabber class. You will
+   then set initial parameters for color tracking with method calls 
+
+   - setTrackColor
+
+   which sets the initial HSV values to look for a-priori from any
+   data plus the standard deviation for the thresholding
+
+   segmenter.setTrackColor(10,10,0.15,0.20,150,150,0,true,15);
+   
+   This says that H should be 10 with a standard deviation of 10, the
+   next four values are the same for S and V. 0 is the camera number
+   and true means to uses adaptive color thresholding. 15 does
+   something, I don't remember
+
+   - setAdaptBound 
+
+   This sets hard contsraints on color thresholding. Color adaptation
+   can never adapt above or below values set. 
+
+   segmenter.setAdaptBound(20,5,.30,.15,170,100,0);
+   
+   Thus, H can never go above 20 or below 5.
+
+   - getImageTrackXY2
+
+   This returns the blob centroid to move the camera to from the
+   tracker. This is the end product from the trackers perspective and
+   is used to move the cameras
+
+   - moveCamXYFrame
+
+   This will move the camera to a point corresponding with the input
+   image coordinates. It will return the time the camera will take to
+   travel to these coordinates. If the number is less than 0 then the
+   camera cannov move becuase it will either over travel or the
+   distance to travle is so small is shouldn't bother with it (this
+   returns a -5)
+
+   - setCameraPosition
+
+   This will till the segmenter where the camera has moved to. It is
+   important to call this after every move. It will also calculate the
+   gradiant of movement statistics. The gradiant statistics are used
+   to bias towards cameras that have smoother motions.
+
+   - moveCamTPFrame
+
+   This method when called will move the camera *BUT* it is based upon
+   known theta phi angles unlike moveCamXYFrame which is based upon
+   camera coordinates alone. Call this to move a LOTed camera in
+   test-multiTrack 
+
+4. Merge Methods
+
+   These are important methods in segmentImageMerge
+   
+   - trackImageMulti
+
+   Hand this a set of images to be tracked plus how many images you
+   have. It will call all the important individual methods mentioned
+   below
+
+   - segment
+
+   call the image segmented to create all the initial blobs and
+   return. We don't yet care if they are any good yet.
+
+   - calcMassCenter
+
+   Sort blobs and give us the centroid of each.
+
+   - track
+
+   Go through the blobs and weed out ones that fail initial heuristics
+   for size, shape and location in the image
+
+   - updateVergance
+
+   for the distance from the cameras of the current track estimate
+   what the cameras should converge to. Input a distance value that
+   the last track was from the cameras and the size of a gaussin
+   envelope the will describe the probability density. In essence if
+   you set the distance to 48 inches the cameras will expect that the
+   next object will be 48 inches away and adjust accordingly. The
+   second number is the standard deviation from this distance. Thus,
+   if this is three feet, anything within a radius of 3 feet to the
+   target at 4 feet (in this example) will have a high P 
+
+   - verganceSpring
+
+   apply statistics over vergance to try and bring cameras into
+   vergance with the target given its distance input at
+   updateVergance. If the last term is set to false, verganceSpring
+   will only apply to camera with a loss of track (LOT). Otherwise it
+   will apply to all cameras.
+
+   - colorProcessBlobs
+
+   This will apply adaptive thresholding to the blob color to which
+   the algorithm is tracking.
+
+
+
+   

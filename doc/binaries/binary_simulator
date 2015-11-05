@@ -1,0 +1,47 @@
+/** @page binary__simulator
+
+<h2>The CARMEN Simulator</h2>
+
+
+@section simulator The Simulator
+
+A moderately useful 2-D simulator, intended to replace the base module. It
+publishes odometry, laser messages and sonar messages. It accepts base velocity
+commands. The simulator always starts with the robot in the bottom right
+corner of the map (0,0), but subscribes to localize_initialize messages as
+well as simulator_set_truepose messages to initialize the robot position.
+
+The simulator can also run an instance of the robot module to provide
+collision prevention. This, however, needs to be activated in the ini
+file using the parameter "simulator_use_robot". From now on, this
+parameter is disabled by default, which means that you have to start
+robot separately.
+
+<h3>Usage: ./simulator</h3>
+
+@subsection dynamic_obstacles Dynamic obstacles
+
+In addition to simulating robot motion and perception, the simulator can
+simulate dynamic obstacles. The simulator supports two main kinds of objects:
+random wanderers and line followers. The objects persist forever, although the
+velocity term does slowly decay; all dynamic objects will eventually stop
+moving.
+
+@subsection multirobot_support Multirobot Support
+
+The simulator can be connected to other running instances of CARMEN, so that a
+simulator can "see" the robot in another running simulator. The simulator
+subscribes to the localize_globalpos message of the other CARMEN, and
+simulates perception of the other robot. Note, however, if collision avoidance
+is turned off, the simulator allows robots to pass through each
+other. However, this allows multi-robot experiments to run easily. 
+
+The connection happens programmatically -- a running controller must publish a
+simulator_connect_robot message containing the CENTRALHOST variable on which
+the other version of CARMEN is running. (Either a hostname, or this hostname
+and port.) Obviously, for consistency, both simulators should be told about
+the other. The nice thing is that you can also connect a simulator to a real
+running robot, although you would not expect the simulated robot to show up in
+the real robot's perception. 
+
+**/

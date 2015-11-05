@@ -1,0 +1,6 @@
+global_costmap:
+  global_frame: /map
+  robot_base_frame: /beobot2/base_link
+  update_frequency: 2.0
+  publish_frequency: 10.0
+  static_map: true

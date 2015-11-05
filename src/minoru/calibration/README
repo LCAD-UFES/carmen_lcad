@@ -1,0 +1,125 @@
+For the latest instructions see http://code.google.com/p/sentience/wiki/MinoruWebcam.  For anyone who cannot access this site a plain text copy is shown below.
+
+For details of the ELAS dense stereo algorithm see:
+
+    http://rainsoft.de/software/libelas.html
+
+    @INPROCEEDINGS{Geiger10,
+    author = {Andreas Geiger and Martin Roser and Raquel Urtasun},
+    title = {Efficient Large-Scale Stereo Matching},
+    booktitle = {Asian Conference on Computer Vision},
+    year = {2010},
+    month = {November},
+    address = {Queenstown, New Zealand}
+    }
+
+The Minoru is UVC compilant, and therefore very easy to use on a GNU/Linux operating system. Plug in the camera, then open a command shell and type:
+
+ls /dev/video*
+
+This should display two extra video devices. If you are using a kernel with a version earlier than 2.6.30, obtain the latest UVC driver from here then install it (possibly you might need to reboot for the new driver to take effect).
+
+You can test out the webcam using a program called v4l2stereo, which is part of a project called libv4l2cam which is related to the Sentience project, and is also under the General Public License. A deb package is available for easy installation on Debian based distros. Versions 1.043 and above use the OpenCV version 2 packages which are part of Ubuntu 10.04 (or later).
+
+v4l2stereo can be used in various ways, but to check that the Minoru is working you can use the following command.
+
+v4l2stereo -0 /dev/video1 -1 /dev/video0 --features
+
+This assumes that the left camera is video device number 1 and the right camera is video device number 0, and should display two images showing the edge features which are the basis for stereo matching, like this:
+
+So, once you have established that the cameras are working the first thing to do is calibrate them using the --calibrate option. This performs simple offset calibration, and not full camera calibration (which can be done using other programs). This type of calibration simply corrects for any small deviation of the two cameras from a perfectly parallel alignment. First quit v4l2stereo if it's still running by hitting the Escape key, then point the Minoru at some distant objects - preferably more than three metres away (i.e. beyond the effective stereo range) - then use the following command.
+
+v4l2stereo -0 /dev/video1 -1 /dev/video0 --calibrate
+
+This will take a couple of images from the cameras, calculate the offsets then display them. Take a note of the values which are returned. You may wish to go through this procedure several times in order to ensure that the values returned are reasonably consistent. Once you're satisfied that you have good offsets you can test stereo correspondence as follows:
+
+v4l2stereo -0 /dev/video1 -1 /dev/video0 -x 8 -y -4 --matches
+
+where x and y are the offset values obtained from calibration. An example result looks like this.
+
+The diameter of the green dots represents the amount of visual disparity observed between the left and right camera images. There are always a certain number of bad stereo matches, but hopefully there should be more signal than noise. You can also examine the disparities by using the --histogram option, which will display a number of disparity histograms (left hemifield, right hemifield and entire field of view). The disparity peaks observed within the left and right hemifields could be used as a simple way of having a robot visually avoid obstacles, and the correspondence algorithm is easily fast enough for real time performance on any reasonably modern PC hardware.
+
+A dense disparity map can also be obtained. This uses a fairly traditional patch matching method (sum of absolute differences) so always contains a certain amount of noise and bad matches.
+
+v4l2stereo -0 /dev/video1 -1 /dev/video0 -x 8 -y -4 --disparitymap
+
+It's also possible to alter the sub-sampling step size in pixels to get higher or lower resolution depth maps. The smaller the sampling step size, the slower the algorithm runs, so in practice there is a tradeoff between speed and accuracy. For example:
+
+v4l2stereo -0 /dev/video1 -1 /dev/video0 -x 8 -y -4 --disparitymap --disparitystep 4
+
+Even with small sampling step sizes, accuracy may not be greatly improved. Typical disparity step sizes are in the range between 2 and 10.
+
+Another option available with dense stereo is to adjust the cross checking threshold. If this value is smaller then pixels will be required to match more closely between left and right images. For example:
+
+v4l2stereo -0 /dev/video1 -1 /dev/video0 -x 8 -y -4 --disparitymap --crosscheck 30
+
+Typical cross checking values are in the range 20 to 70.
+
+The radius used to smooth the disparity map can also be changed, like this:
+
+v4l2stereo -0 /dev/video1 -1 /dev/video0 -x 8 -y -4 --disparitymap --smoothing 4
+
+Smoothing values are typically in the range 2 to 8. You can experiment with different dense stereo settings to get the best performance for your viewing conditions.
+
+A threshold can also be applied, so that only nearby objects are visible. This can be useful for detecting people at close range.
+
+v4l2stereo -0 /dev/video1 -1 /dev/video0 -x 8 -y -4 --disparitymap --disparitystep 4 --disparitythreshold 15
+
+The effective stereo range of the Minoru, using 320x240 images, is between 35cm and 2 metres. The range is limited mainly by the baseline distance between the cameras and the image resolution. For close up tasks such as manipulation or inspection of objects this might be quite a useful off-the-shelf sensor.
+Network streaming and headless operation
+
+It's possible to stream video over a network using gstreamer. This can be useful for remotely operated vehicles or surveillance systems.
+
+On the server:
+
+v4l2stereo -0 /dev/video1 -1 /dev/video0 -x 8 -y -4 --disparitymap --stream --headless
+
+then on the client:
+
+gst-launch tcpclientsrc host=[ip] port=5000 ! multipartdemux ! jpegdec ! autovideosink
+
+To do a local test you can use localhost as the IP address.
+Development
+
+Required OpenCV packages
+
+If you wish to do development on the v4l2stereo code you will need to ensure that opencv packages are installed. On Ubuntu 10.04 or later this is easily achieved as follows:
+
+    sudo apt-get install libcv4 libhighgui4 libcvaux4 libcv-dev libcvaux-dev libhighgui-dev libgstreamer-plugins-base0.10-dev libgst-dev
+
+Configuring for use with Eclipse
+
+To use with the Eclipse C++ IDE:
+
+    * Create a new C++ project 
+
+    * Import the source from the Import/File System option 
+
+    * Within the project properties select C++ Build/Settings 
+
+    * Under GCC C++ Compiler/Directories/Include paths (-l) enter 
+
+/usr/include/opencv
+/usr/include/gstreamer-0.10
+
+    * Under GCC C++ Compiler/Miscellaneous enter 
+
+-c -fopenmp -fmessage-length=0 -lcam -lcv -lcxcore -lcvaux -lhighgui `pkg-config --cflags --libs gstreamer-0.10` -L/usr/lib -lcv -lcxcore -lcvaux -lhighgui `pkg-config --cflags --libs glib-2.0` `pkg-config --cflags --libs gstreamer-plugins-base-0.10` -lgstapp-0.10
+
+    * Under GCC C++ Linker/Libraries/Libraries (-l) enter 
+
+cv
+cxcore
+gstapp-0.10
+highgui
+
+    * Under GCC C++ Linker/Libraries/Library search path (-L) enter 
+
+/usr/lib
+/usr/lib/gstreamer-0.10
+
+    * Under GCC C++ Linker/Miscellaneous/Linker flags enter 
+
+/usr/lib/libcxcore.so /usr/lib/libcvaux.so /usr/lib/libcv.so /usr/lib/libhighgui.so
+
+After applying those settings you should now be able to compile the project within Eclipse. 

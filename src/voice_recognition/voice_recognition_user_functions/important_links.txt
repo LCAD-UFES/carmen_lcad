@@ -1,0 +1,4 @@
+http://ffmpeg.org/documentation.html
+http://en.wikipedia.org/wiki/Spectrogram
+http://www.birds.cornell.edu/brp/software
+http://www.birds.cornell.edu/brp/the-science-of-sound-1/what-is-a-spectrogram

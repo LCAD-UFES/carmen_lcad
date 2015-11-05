@@ -1,0 +1,35 @@
+
+
+This directory contains two programs:
+simplegrab.cpp and
+simplegrab-profile.cpp
+
+NOTE: the location of the include and lib directories for the Triclops and 
+libdc1394 installation needs to be set in the Makefile for the ROOT_INCLUDE 
+and ROOT_LIB values.
+
+These programs were tested for Bumblebee and Bumblebee2 cameras against the
+libdc1394-2.0.2 release.
+
+The code requires certain general purpose helper functions that are located
+in ../pgrlibdcstereo - please build this library first.
+
+The idea behind these examples is to show in a simple a way as possible how
+to acquire stereo images from a Bumblebee or Bumblebee2 camera using
+libdc1394-2.
+
+simplegrab-profile.cpp is the same as simplegrab.cpp but allows you to
+measure how many frames per second you were able to grab and process.
+
+Stereo processing is not done in this example.  For that, please consult
+../simplestereo/simplestereo.cpp.
+
+Unfortunately, the color processing chain provided by libdc1394 for Bayer
+images is not very efficient for Bumblebee and Bumblebee2 cameras.  This is
+because the libdc1394 code is designed for single lens cameras, which is
+perfectly reasonable.
+
+
+If you have any questions please send them to support@ptgrey.com.
+
+

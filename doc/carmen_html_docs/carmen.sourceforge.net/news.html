@@ -1,0 +1,237 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<!-- Mirrored from carmen.sourceforge.net/news.html by HTTrack Website Copier/3.x [XR&CO'2010], Thu, 13 Jan 2011 17:35:34 GMT -->
+<head><title>CARMEN</title>
+	<meta name="description" content="CARMEN">
+	<meta name="keywords" content="CARMEN robot navigation toolkit">
+	<meta name="page-topic" content="CARMEN">
+
+        <meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<meta name="robots" content="index">
+	<meta name="robots" content="follow">
+	<link rel="stylesheet" type="text/css" href="styles/styles.css">
+</head>
+<body bgcolor="#ffffff">
+<br>
+<div align="center">
+<table align="center" width="95%">
+<tbody>
+<tr>
+  <td align="left"><img src="images/carmen-logo-small.png" border=0 alt="[Carmen logo]"></td>
+</tr>
+<tr>
+<td  align="left" bgcolor="#ffffcc">&nbsp;</td></tr>
+</tbody>
+</table>
+
+<!-- NAVIGATOR -->
+
+<table align="center" width="95%">
+<tbody>
+<tr>
+<td><br></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+   <td class="menu" align="left" valign="top" width="210"><br>
+   <ul>
+   <li><a href="home.html">Home</a></li> 
+   <li><a href="intro.html">What's Carmen?</a></li>
+   <li><a href="core_functionality.html">Core Functionalities</a></li>
+   <br>
+   <li><a href="news.html">What's New?</a></li>
+   <li><a href="repository.html">Repository</a></li>
+   <li><a href="update.html">Chief Changes</a></li>
+   <br>
+   <li><a href="getting_carmen.html">Download & Installation</a></li>
+   <li><a href="hardware.html">Required Hardware</a></li>
+   <li><a href="using_carmen.html">Running Carmen</a></li>
+   <li><a href="config_param.html">Configuring Carmen</a></li>
+   <br>
+   <li><a href="doc/index.html">Carmen Online Docs</a></li>
+   <li><a href="program_carmen.html">Program with Carmen</a></li>
+   <li><a href="FAQ.html">FAQ</a></li>
+   <li><a href="papers.html">Papers</a></li>
+   <br>
+   <li><a href="mailing_lists.html">Mailing List</a></li>
+   <li><a href="contributers.html">People</a></li><br>
+   <li><a href="http://radish.sourceforge.net/">Data Sets (Radish)</a></li>
+   </ul><br><br><br>
+   <img src="images/line-200.png" border=0> 
+  </td>
+  <td width="20"></td>
+  <td align="left" valign="top">
+
+<!-- END OF HEADER -->
+
+
+<h3>What's New?</h3>
+<p>
+
+<table>
+<tr>
+<td valign=top>10/2008<td>
+<td width=20>&nbsp;</td>
+<td>New carmen release <a href="http://sourceforge.net/project/showfiles.php?group_id=121727">0.7.4-beta</a> has been released.</td>
+</tr>
+<!-- ---- -->
+<tr>
+<td valign=top>11/2007<td>
+<td width=20>&nbsp;</td>
+<td>New carmen release <a href="http://sourceforge.net/project/showfiles.php?group_id=121727">0.7-beta</a> fixes several small problems (including a bug on the laser-odometry-sync).</td>
+</tr>
+<!-- ---- -->
+<tr>
+<td valign=top>02/2007<td>
+<td width=20>&nbsp;</td>
+<td>New carmen release <a href="http://sourceforge.net/project/showfiles.php?group_id=121727">0.6.5-beta</a> fixes a problem with the old laser driver.</td>
+</tr>
+<!-- ---- -->
+<tr>
+<td valign=top>11/2006<td>
+<td width=20>&nbsp;</td>
+<td>New carmen release <a href="http://sourceforge.net/project/showfiles.php?group_id=121727">0.6.4-beta</a> with support for SICK S300 laser.</td>
+</tr>
+<!-- ---- -->
+<tr>
+<td valign=top>11/2006<td>
+<td width=20>&nbsp;</td>
+<td>New carmen release <a href="http://sourceforge.net/project/showfiles.php?group_id=121727">0.6.2-beta</a>.</td>
+</tr>
+<!-- ---- -->
+<tr>
+<td valign=top>11/2006<td>
+<td width=20>&nbsp;</td>
+<td>New laser server for carmen with support for Hokuyo URG scanner.</td>
+</tr>
+<!-- ---- -->
+<tr>
+<td valign=top>02/2006<td>
+<td width=20>&nbsp;</td>
+<td>Fixed a problem in navigator when dealing with dynamic obstacles.</td>
+</tr>
+<!-- ---- -->
+<tr>
+<td valign=top>02/2006<td>
+<td width=20>&nbsp;</td>
+<td>Improved gps support (nmea-gga and nmea-rmc).</td>
+</tr>
+<!-- ---- -->
+<tr>
+<td valign=top>02/2006<td>
+<td width=20>&nbsp;</td>
+<td>From now on, Carmen uses gtk2.</td>
+</tr>
+<!-- ---- -->
+<tr>
+<td valign=top>01/2006<td>
+<td width=20>&nbsp;</td>
+<td><b>New Carmen website</b> at <a href="index.html">http://carmen.sourceforge.net</a>.</td>
+</tr>
+<!-- ---- -->
+<tr>
+<td valign=top>12/2005<td>
+<td width=20>&nbsp;</td>
+<td><b>New odometry model</b> for Carmen including a tool to estimate the model based on a recorded dataset</td>
+</tr>
+<!-- ---- -->
+<tr>
+<td valign=top>12/2005<td>
+<td width=20>&nbsp;</td>
+<td>The libraries libreadlog.a and libwritelog.a handle the <b>log file parsing/writing</b>. From now on, these libraries should be used by all other modules/programs! </td>
+</tr>
+<!-- ---- -->
+<tr>
+<td valign=top>12/2005<td>
+<td width=20>&nbsp;</td>
+<td>The log file format has changed. New messages are ROBOTLASER1 instead of FLASER, and  ROBOTLASER2 instead of RLASER. Furthermore all RAWLASER messages are logged as well as GPS data. </td>
+</tr>
+<!-- ---- -->
+<tr>
+<td valign=top>12/2005<td>
+<td width=20>&nbsp;</td>
+<td>Mike integrated the <b>process management control</b> techniques used for Stanley during DARPA Gran Challange.</td>
+</tr>
+<!-- ---- -->
+<tr>
+<td valign=top>12/2005<td>
+<td width=20>&nbsp;</td>
+<td><b>multi-central support</b></td>
+</tr>
+<!-- ---- -->
+<tr>
+<td valign=top>12/2005<td>
+<td width=20>&nbsp;</td>
+<td>New ipc connect/disconnect/initialize functions </td>
+</tr>
+<!-- ---- -->
+<tr>
+<td valign=top>12/2005<td>
+<td width=20>&nbsp;</td>
+<td><b>Carmen integration meeting</b> in Boston from 12.12.2005 - 18.12.2005  </td>
+</tr>
+<!-- ---- -->
+<tr>
+<td valign=top>12/2005<td>
+<td width=20>&nbsp;</td>
+<td>The carmen.ini file has been polished. Now carmen has expert parameters. </td>
+</tr>
+<!-- ---- -->
+<tr>
+<td valign=top>12/2005<td>
+<td width=20>&nbsp;</td>
+<td>The <b>carmen_robot_laser_message has changed</b>. It now  provides configuration data, remission values, and contains two structs laser_pose and robots_pose (instead of the individual variable fields)</td>
+</tr>
+<!-- ---- -->
+<tr>
+<td valign=top>11/2005<td>
+<td width=20>&nbsp;</td>
+<td>the function carmen_get_time_ms() has been replaced by carmen_get_time() </td>
+</tr>
+<!-- ---- -->
+<tr>
+<td valign=top>Summer&nbsp;2005<td>
+<td width=20>&nbsp;</td>
+<td><b>Java support</b></td>
+</tr>
+<!-- ---- -->
+<tr>
+<td valign=top>Summer&nbsp;2005<td>
+<td width=20>&nbsp;</td>
+<td>The internal ordering of the messages has changed. This was necessary for the Java support. Make sure, you do not mix modules compiled using different versions of Carmen!</td>
+</tr>
+
+</table>
+
+<!-- REST OF NAVIGATOR -->
+
+</td><td width="20"></td> </tr>
+<tr>
+<td><br></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table> 
+
+<!-- FOOTER -->
+
+
+<table align="center" width="95%"> 
+<tbody>
+<tr> 
+<td colspan="2" align="center" bgcolor="#ffffcc">
+Copyright ©  by the <a href="contributers.html">CARMEN-Team</a>
+</td> 
+</tr> 
+</tbody>
+</table>
+</div>
+</body>
+
+<!-- Mirrored from carmen.sourceforge.net/news.html by HTTrack Website Copier/3.x [XR&CO'2010], Thu, 13 Jan 2011 17:35:34 GMT -->
+</html>

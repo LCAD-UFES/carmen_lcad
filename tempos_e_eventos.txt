@@ -1,0 +1,18 @@
+Objetivo estrategico: Realizar a Ida a Guarapari ate 31/12/2015
+
+- Implementar novo path planner para 40-60 Km/h
+- Melhorar Fused Odometry com slip lateral
+- Comprar cabos para o novo laser da frente (SICK)
+- Fazer driver para o laser da frente
+- Fazer driver para os lasers Hokuyo
+- Instalar novos laser na IARA
+- Robustecer detector de objetos moveis, inclusive com dados dos novos lasers
+- Incorporar objetos moveis ao mapa
+- Incorporar dados dos novos lasers ao mapa
+- Fazer novo modulo Decision Maker proprio para a Ida a Guarapari
+- Fazer o mapa da Ida a Guarapari
+- Emplacar a IARA
+- Aprimorar o detector de estado de semaforos
+- Aprimorar modulo Follow the Lider
+- Fazer experimentos em trechos da Ida a Guarapari
+- Realizar a Ida a Guarapari

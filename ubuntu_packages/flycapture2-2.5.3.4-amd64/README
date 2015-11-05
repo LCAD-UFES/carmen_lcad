@@ -1,0 +1,83 @@
+//=============================================================================
+// Copyright © 2008 Point Grey Research, Inc. All Rights Reserved.
+//
+// README
+//
+//=============================================================================
+
+To install FlyCapture2 on linux you will need to have a few prerequisite
+libraries installed.  Below is a list of libs that flycapture2 depends on.
+
+DEPENDENCIES:
+
+1) libraw1394-8
+2) libgtkmm-2.4-dev
+3) libglademm-2.4-dev
+4) libgtkglextmm-x11-dev (libgtkglextmm-x11-1.2-dev in Ubuntu 8.10 and up)
+5) libusb-1.0 (Only in Ubuntu 9.04 and up)
+
+Ubuntu 10.04:
+user$:	sudo apt-get install libraw1394-11 libgtk2.0-0 libgtkmm-2.4-dev libglademm-2.4-dev libgtkglextmm-x11-1.2-dev libusb-1.0-0
+
+Ubuntu 9.04:
+user$:	sudo apt-get install libraw1394-8 libgtk2.0-0 libgtkmm-2.4-dev libglademm-2.4-dev libgtkglextmm-x11-dev libusb-1.0
+
+Ubuntu 8.10:
+user$:	sudo apt-get install libraw1394-8 libgtk2.0-0 libgtkmm-2.4-dev libglademm-2.4-dev libgtkglextmm-x11-1.2-dev
+
+Ubuntu 8.04:
+user$:	sudo apt-get install libraw1394-8 libgtk2.0-0 libgtkmm-2.4-dev libglademm-2.4-dev libgtkglextmm-x11-dev
+
+libusb-1.0 for distributions earlier than 9.04 can be obtained from the
+Point Grey downloads section. libusb-1.0 can be then be manually installed by 
+double clicking the extracted .deb package and following the instructions.
+
+After installing raw1394 you may need to add the raw1394 module to be loaded on start.  
+To do this just add "raw1394" to the /etc/modules file.
+
+FLYCAPTURE2 INSTALLATION:
+
+Once all the Dependencies are installed just install the flycapture deb files.  There are 
+ten different packages that need to be installed.
+
+The flycapture packagesa are:
+- libflycapture-<version>_<platorm>.deb
+- libflycapture-<version>_<platorm>-dev.deb
+- libflycapturegui-<version>_<platorm>.deb
+- libflycapturegui-<version>_<platorm>-dev.deb
+- libflycapture-c-<version>_<platorm>.deb
+- libflycapture-c-<version>_<platorm>-dev.deb
+- libflycapturegui-c-<version>_<platorm>.deb
+- libflycapturegui-c-<version>_<platorm>-dev.deb
+- flycap-<version>_<platorm>.deb
+- flycapture-doc-<version>_<platform>.deb
+
+The packages with a preceding 'lib' are all the shared objects and their
+respective dev packages.  The flycap package installs the capture application which
+can be launched by typing 'flycap' in a terminal or through the Applications menu.
+The flycapture-doc package contains our documentation in pdf format.
+
+To install these packages we provide an easy to use install script.  You can run the 
+script in the same directory that you have unpacked the software into.  The install script 
+is called 'install_flycapture.sh'
+
+code eg:
+user$ sudo sh install_flycapture.sh
+
+This script will install all the flycapture libraries, example code, example apps and 
+documentation.  The flycapture install script will also ask you to configure udev so that 
+a user will be able to use the 1394 and usb devices.  If you choose to configure the 1394 and 
+usb devices this script will change permissions on the nodes to give this particular user full
+read and write access to the device nodes.  It will overwrite the default ubuntu permissions.  
+After running this script everything should be installed and set up for use.
+
+Unfortunately restarting udev doesn't seem to set the permissions on the device nodes immediatly.
+You may need to restart the machine before the user can acces the device nodes.
+
+FLYCAPTURE2 REMOVAL
+
+To remove flycapture2 just run the uninstall script that we provide.  The removal script will also
+remove the udev rules therefore restoring the original ubuntu permissions on the device nodes.
+
+code eg:
+user$: sudo sh remove_flycapture

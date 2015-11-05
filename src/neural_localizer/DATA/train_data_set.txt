@@ -1,0 +1,19 @@
+# Dados de treino.
+#
+# Uma linha de dados contém uma sentença e o controle de atenção associado, separados por $.
+# - Uma sentença é uma sequencia de três strings separadas por |.
+# - Um controle de atenção é composto de três partes separadas por |. Cada uma pode conter zero, um ou dois caracteres d ou u.
+#   As três partes de um comando de atenção são a parte de cima, a do meio e a de baixo do alvo da 
+#   Camada Neural, sendo os alvos possíveis uma Camada Neural abaixo (d - down) ou acima (u - up) na hierarquia do NC.
+#   O caracter d significa que a Camada Neural abaixo (down) na hierarquia não prestará atenção na parte correspondente à posição
+#   onde está o caracter d. O caracter u significa que a Camada Neural acima (up) na hierarquia não prestará atenção na 
+#   parte correspondente à posição do caracter u. Partes que não devem receber atenção do tipo u aparecem em vermelho.
+#   Partes que não devem receber atenção do tipo d aparecem em azul.
+#
+#
+$place_input
+ | | $ | | 
+ |CASA| $ | | 
+ |CORREDOR| $ | | 
+ |COZINHA| $ | | 
+ |SALA| $ | | 

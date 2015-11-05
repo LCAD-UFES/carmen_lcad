@@ -1,0 +1,230 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0085)http://openjaus.com/products/openjaus33/70-tutorial-sending-a-recieving-jaus-messages -->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-gb" lang="en-gb"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		  <!--<base href="http://openjaus.com/products/openjaus33/70-tutorial-sending-a-recieving-jaus-messages">--><base href=".">
+  
+  <meta name="robots" content="index, follow">
+  <meta name="keywords" content="openjaus, jaus, robotics, as4, jsidl, robot, software, sdk, joint architecture for unmanned systems, unmanned, systems, vehicles, implementation, windows, linux, C++, UGV, UAV, USV, UUV, AGV, AUV, UAS, open, source, FAQ, SAE, AS-4, JSS, JSIDL, JTS">
+  <meta name="title" content="Tutorial: Sending &amp; Recieving JAUS Messages">
+  <meta name="author" content="Tom Galluzzo">
+  <meta name="description" content="OpenJAUS.com is the home of a low-cost state-of-the-art toolkit based on the Joint Architecture for Unmanned Systems (JAUS) which is a messaging architecture for robotics. Our software is used by organizations worldwide to help meet hard technical challenges. Everything you need to learn, use and support your JAUS software development needs can be found on this website.">
+  <meta name="generator" content="Joomla! 1.5 - Open Source Content Management">
+  <title>Tutorial: Sending &amp; Recieving JAUS Messages</title>
+  <link href="http://openjaus.com/templates/openjaus/favicon.ico" rel="shortcut icon" type="image/x-icon">
+  <link rel="stylesheet" href="./Tutorial  Sending & Recieving JAUS Messages_files/comments.css" type="text/css">
+  <link rel="stylesheet" href="./Tutorial  Sending & Recieving JAUS Messages_files/bbcode.css" type="text/css">
+  <link rel="stylesheet" href="./Tutorial  Sending & Recieving JAUS Messages_files/highlighter.css" type="text/css">
+  <style type="text/css">
+    <!--
+
+        a.flag {background-image:url('/modules/mod_gtranslate/tmpl/lang/16a.png');}
+        a.flag:hover {background-image:url('/modules/mod_gtranslate/tmpl/lang/16.png');}
+    
+    -->
+  </style>
+  <script type="text/javascript" async="" src="./Tutorial  Sending & Recieving JAUS Messages_files/ga.js"></script><script type="text/javascript" src="./Tutorial  Sending & Recieving JAUS Messages_files/mootools.js"></script>
+  <script type="text/javascript" src="./Tutorial  Sending & Recieving JAUS Messages_files/caption.js"></script>
+  <script type="text/javascript" src="./Tutorial  Sending & Recieving JAUS Messages_files/validate.js"></script>
+  <script type="text/javascript" src="./Tutorial  Sending & Recieving JAUS Messages_files/comments.js"></script>
+  <script type="text/javascript" src="./Tutorial  Sending & Recieving JAUS Messages_files/bbcode.js"></script>
+  <script type="text/javascript" src="./Tutorial  Sending & Recieving JAUS Messages_files/highlighter.js"></script>
+  <script type="text/javascript" src="./Tutorial  Sending & Recieving JAUS Messages_files/jquery-translate.js"></script>
+  <script type="text/javascript">
+	cOptions = {captcha:1};
+  </script>
+  <link type="text/css" rel="stylesheet" href="./Tutorial  Sending & Recieving JAUS Messages_files/shCore.css">
+<link type="text/css" rel="stylesheet" href="./Tutorial  Sending & Recieving JAUS Messages_files/shThemeDefault.css">
+<script type="text/javascript" src="./Tutorial  Sending & Recieving JAUS Messages_files/shCore.js"></script>
+  <script type="text/javascript" src="./Tutorial  Sending & Recieving JAUS Messages_files/shBrushOj.js"></script>
+
+		<meta name="verify-v1" content="dwFhApTviDugG0lDkfoKRvP6MoI9p+NLAywn0h8wWJI=">
+		<link rel="stylesheet" href="./Tutorial  Sending & Recieving JAUS Messages_files/system.css" type="text/css">
+		<link rel="stylesheet" href="./Tutorial  Sending & Recieving JAUS Messages_files/general.css" type="text/css">
+		<link rel="stylesheet" href="./Tutorial  Sending & Recieving JAUS Messages_files/html.css" type="text/css">
+		<link rel="stylesheet" href="./Tutorial  Sending & Recieving JAUS Messages_files/joomlaStyles.css" type="text/css">
+		<link rel="stylesheet" href="./Tutorial  Sending & Recieving JAUS Messages_files/modules.css" type="text/css">
+		<link rel="stylesheet" href="./Tutorial  Sending & Recieving JAUS Messages_files/style.css" type="text/css">
+		<link rel="stylesheet" href="./Tutorial  Sending & Recieving JAUS Messages_files/menu.css" type="text/css">
+
+		<script language="javascript" type="text/javascript" src="./Tutorial  Sending & Recieving JAUS Messages_files/suckerfish.js"></script>
+
+	<!--[if gte IE 7.0]>
+		<style type="text/css">
+			.clearfix {display: inline-block;}
+		</style>
+	<![endif]-->
+
+	</head>
+	
+	<body>
+
+		<div id="main">
+			<!-- BEGIN: HEADER SPACE-->
+			<div id="header">
+
+				<a href="http://openjaus.com/"> <img src="./Tutorial  Sending & Recieving JAUS Messages_files/openjausLogo.png" border="0"> </a>
+			</div>
+			<!-- END: HEADER SPACE-->
+
+			<!-- BEGIN: MENUBAR SPACE-->
+			<div id="menubar">
+				<div id="leftmenu">
+					
+    <script type="text/javascript">
+    //<![CDATA[
+    if(jQuery.cookie('glang') && jQuery.cookie('glang') != 'en') jQuery(function($){$('body').translate('en', $.cookie('glang'), {not:'script'});});
+    //]]>
+    </script>
+
+<script type="text/javascript">
+//<![CDATA[
+    function doTranslate(lang_pair) {if(lang_pair.value)lang_pair=lang_pair.value;var lang=lang_pair.split('|')[1];if(lang=='pt')lang='pt-PT';jQuery.cookie('glang', lang);jQuery(function($){$('body').translate('en', lang, {not:'script'})});}
+//]]>
+</script>
+
+
+<select onchange="doTranslate(this);"><option value="">Select Language</option><option value="en|en" style="font-weight:bold;background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -0px;padding-left:18px;">English</option><option value="en|bg" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -32px;padding-left:18px;">Bulgarian</option><option value="en|zh-CN" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -48px;padding-left:18px;">Chinese (Simplified)</option><option value="en|zh-TW" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -64px;padding-left:18px;">Chinese (Traditional)</option><option value="en|hr" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -80px;padding-left:18px;">Croatian</option><option value="en|cs" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -96px;padding-left:18px;">Czech</option><option value="en|da" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -112px;padding-left:18px;">Danish</option><option value="en|nl" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -128px;padding-left:18px;">Dutch</option><option value="en|fi" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -144px;padding-left:18px;">Finnish</option><option value="en|fr" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -160px;padding-left:18px;">French</option><option value="en|de" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -176px;padding-left:18px;">German</option><option value="en|el" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -192px;padding-left:18px;">Greek</option><option value="en|hi" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -208px;padding-left:18px;">Hindi</option><option value="en|it" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -224px;padding-left:18px;">Italian</option><option value="en|ja" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -240px;padding-left:18px;">Japanese</option><option value="en|ko" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -256px;padding-left:18px;">Korean</option><option value="en|no" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -272px;padding-left:18px;">Norwegian</option><option value="en|pl" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -288px;padding-left:18px;">Polish</option><option value="en|pt" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -304px;padding-left:18px;">Portuguese</option><option value="en|ro" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -320px;padding-left:18px;">Romanian</option><option value="en|ru" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -336px;padding-left:18px;">Russian</option><option value="en|es" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -352px;padding-left:18px;">Spanish</option><option value="en|sv" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -368px;padding-left:18px;">Swedish</option><option value="en|ca" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -384px;padding-left:18px;">Catalan</option><option value="en|tl" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -400px;padding-left:18px;">Filipino</option><option value="en|iw" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -416px;padding-left:18px;">Hebrew</option><option value="en|id" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -432px;padding-left:18px;">Indonesian</option><option value="en|lv" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -448px;padding-left:18px;">Latvian</option><option value="en|lt" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -464px;padding-left:18px;">Lithuanian</option><option value="en|sr" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -480px;padding-left:18px;">Serbian</option><option value="en|sk" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -496px;padding-left:18px;">Slovak</option><option value="en|sl" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -512px;padding-left:18px;">Slovenian</option><option value="en|uk" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -528px;padding-left:18px;">Ukrainian</option><option value="en|vi" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -544px;padding-left:18px;">Vietnamese</option><option value="en|sq" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -560px;padding-left:18px;">Albanian</option><option value="en|et" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -576px;padding-left:18px;">Estonian</option><option value="en|gl" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -592px;padding-left:18px;">Galician</option><option value="en|hu" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -608px;padding-left:18px;">Hungarian</option><option value="en|mt" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -624px;padding-left:18px;">Maltese</option><option value="en|th" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -640px;padding-left:18px;">Thai</option><option value="en|tr" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -656px;padding-left:18px;">Turkish</option><option value="en|fa" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -672px;padding-left:18px;">Persian</option><option value="en|af" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -688px;padding-left:18px;">Afrikaans</option><option value="en|ms" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -704px;padding-left:18px;">Malay</option><option value="en|sw" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -720px;padding-left:18px;">Swahili</option><option value="en|ga" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -736px;padding-left:18px;">Irish</option><option value="en|cy" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -752px;padding-left:18px;">Welsh</option><option value="en|be" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -768px;padding-left:18px;">Belarusian</option><option value="en|is" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -784px;padding-left:18px;">Icelandic</option><option value="en|mk" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -800px;padding-left:18px;">Macedonian</option><option value="en|yi" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -816px;padding-left:18px;">Yiddish</option></select> 
+				</div>
+				<div id="mainmenu" class="clearfix">
+					<ul class="menu"><li id="current" class="active item1"><a href="http://d7c.openjaus.com/"><span>Home</span></a></li><li class="item129"><a href="http://openjaus.com/news"><span>News</span></a></li><li class="parent item55"><a href="http://openjaus.com/support"><span>Support</span></a><ul><li class="item130"><a href="http://openjaus.com/support/training"><span>Training &amp; Consulting</span></a></li><li class="item84"><a href="http://openjaus.com/support/forums"><span>Forums</span></a></li><li class="item119"><a href="http://openjaus.com/support/getting-started-with-openjaus"><span>Tutorials</span></a></li><li class="item109"><a href="http://openjaus.com/support/understanding-sae-jaus"><span>Understanding JAUS</span></a></li><li class="item116"><a href="http://openjaus.com/doc/index.html"><span>SDK Documentation</span></a></li><li class="item118"><a href="http://code.google.com/p/openjaus/issues/list"><span>Bug Tracker</span></a></li></ul></li><li class="parent item110"><a href="http://openjaus.com/products/openjaus4"><span>Products</span></a><ul><li class="item111"><a href="http://openjaus.com/products/openjaus4"><span>OpenJAUS 4.0</span></a></li><li class="item113"><a href="http://openjaus.com/products/openjaus33"><span>OpenJAUS 3.3</span></a></li><li class="item112"><a href="http://openjaus.com/products/servicestudio"><span>Service Studio</span></a></li></ul></li><li class="parent item57"><a href="http://openjaus.com/about-us"><span>About Us</span></a><ul><li class="item89"><a href="http://openjaus.com/about-us/contact"><span>Contact</span></a></li><li class="item122"><a href="http://openjaus.com/newsletter-signup"><span>Newsletter</span></a></li></ul></li></ul>
+				</div>
+			</div>
+			<!-- BEGIN: MENUBAR SPACE-->
+			
+			<!-- BEGIN: TOP BANNER SPACE-->
+						<!-- END: TOP BANNER SPACE DK-->
+
+			<!-- BEGIN: BOXES SPACE-->
+						<!-- END: BOXES SPACE-->
+
+			
+			
+			 
+
+			<div id="componentWrapper">
+				<table class="contentpaneopen">
+<tbody><tr>
+		<td class="contentheading" width="100%">
+					Tutorial: Sending &amp; Recieving JAUS Messages			</td>
+				
+		
+					</tr>
+</tbody></table>
+
+<table class="contentpaneopen">
+
+
+
+<tbody><tr>
+<td valign="top">
+<p style="text-align: justify;"><span style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; -webkit-border-horizontal-spacing: 2px; -webkit-border-vertical-spacing: 2px; color: #000000; line-height: normal;"><!-- Xtypo - Extra Typografi For Joomla Template By http://www.templateplazza.com -->
+</span></p><p style="	background: url(http://openjaus.com/plugins/content/xtypo/icon/warning.gif) center no-repeat; 	background-color: #FBEEF1; background-position: 15px 50%; text-align: left;	padding: 5px 20px 5px 45px; color:#8E6A64; 	border-top: 2px solid #FEABB9 ; 	border-bottom: 2px solid #FEABB9;">
+This tutorial is for OpenJAUS 3.3. OpenJAUS 3.3 is no longer in development or maintainence by the OpenJAUS team. This tutorial is provided for reference and support of legacy systems only. For new development please use OpenJAUS 4.0</p><!-- End Xtypo --><p></p>
+<p style="text-align: justify;">JAUS messages are used to communicate information to and from a system component. The OpenJAUS library provides components with a set of functions to send and receive JAUS messages. All messages to and from an OpenJAUS component are in the form of the JausMessage data type. The OpenJAUS message library contains the functions that transform a generic JausMessage into a specific message form, i.e. QueryGlobalPose, ReportComponentStatus, etc. These functions must be used in order to explicitly access the data within a specific JAUS message type. The message library also defines specific data structures for each of the standard JAUS messages, and functions to create and destroy those data structures.<br> <br> Creating a JAUS message of a specific type is done by invoking its create function. This will allocate the memory required for the message and return the data structure containing the message fields. Each message data structure also contains all of the fields defined for the standard JAUS message header. Creating and setting up a message is done on a type by type basis. The fields for a particular message type can be found by looking at its cooresponding header file in libjaus. This is an example of how to create and setup a ReportGlobalPoseMessage.</p>
+<p class="example" style="text-align: justify;"><span style="font-family: Courier New;"><script type="text/javascript">
+	SyntaxHighlighter.config.clipboardSwf = "http://openjaus.com/plugins/content/codecitation/scripts/clipboard.swf";
+	SyntaxHighlighter.defaults["auto-links"] = true;
+	SyntaxHighlighter.defaults["collapse"] = false;
+	SyntaxHighlighter.defaults["gutter"] = true;
+	SyntaxHighlighter.defaults["smart-tabs"] = true;
+	SyntaxHighlighter.defaults["tab-size"] = 4;
+	SyntaxHighlighter.defaults["toolbar"] = true;
+	SyntaxHighlighter.defaults["wrap-lines"] = true;	
+	SyntaxHighlighter.all();
+</script></span></p><div style="overflow: hidden; display: block; height: auto; width: inherit;"><div id="highlighter_791254" class="syntaxhighlighter "><div class="bar             "><div class="toolbar"><a href="http://openjaus.com/products/openjaus33/70-tutorial-sending-a-recieving-jaus-messages#viewSource" title="view source" style="width: 16px; height: 16px; " class="item viewSource">view source</a><div class="item copyToClipboard"><embed width="16" height="16" id="highlighter_791254_clipboard" type="application/x-shockwave-flash" title="copy to clipboard" allowscriptaccess="always" wmode="transparent" flashvars="highlighterId=highlighter_791254" menu="false" src="http://openjaus.com/plugins/content/codecitation/scripts/clipboard.swf"></div><a href="http://openjaus.com/products/openjaus33/70-tutorial-sending-a-recieving-jaus-messages#printSource" title="print" style="width: 16px; height: 16px; " class="item printSource">print</a><a href="http://openjaus.com/products/openjaus33/70-tutorial-sending-a-recieving-jaus-messages#about" title="?" style="width: 16px; height: 16px; " class="item about">?</a></div></div><div class="lines"><div class="line alt1"><code class="number">01.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="comments">// Declare the message variable</code></span></span></div><div class="line alt2"><code class="number">02.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="color1 bold">ReportGlobalPoseMessage</code> <code class="plain">myReportGposMsg;</code></span></span></div><div class="line alt1"><code class="number">03.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="comments">// Create the message</code></span></span></div><div class="line alt2"><code class="number">04.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="plain">myReportGposMsg = </code><code class="functions bold">reportGlobalPoseMessageCreate</code><code class="plain">();</code></span></span></div><div class="line alt1"><code class="number">05.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="comments">// Clear all presence vector bits</code></span></span></div><div class="line alt2"><code class="number">06.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="plain">myReportGposMsg-&gt;presenceVector = 0;</code></span></span></div><div class="line alt1"><code class="number">07.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="comments">// Turn on only latitude and longitude bits</code></span></span></div><div class="line alt2"><code class="number">08.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="functions bold">jausUnsignedShortSetBit</code><code class="plain">(&amp;myReportGposMsg-&gt;presenceVector, </code><code class="preprocessor bold">JAUS_POSE_PV_LATITUDE_BIT</code><code class="plain">);</code></span></span></div><div class="line alt1"><code class="number">09.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="functions bold">jausUnsignedShortSetBit</code><code class="plain">(&amp;myReportGposMsg-&gt;presenceVector,&nbsp; </code><code class="preprocessor bold">JAUS_POSE_PV_LONGITUDE_BIT</code><code class="plain">);</code></span></span></div><div class="line alt2"><code class="number">10.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="plain">myReportGposMsg-&gt;latitudeDegrees = 29.646190;&nbsp;&nbsp;&nbsp; </code><code class="comments">// Set the latitude of the reported location</code></span></span></div><div class="line alt1"><code class="number">11.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="plain">myReportGposMsg-&gt;longitudeDegrees = -82.349187;&nbsp; </code><code class="comments">// Set the longitude of the reported location</code></span></span></div></div></div></div><p></p>
+<p style="text-align: justify;">When the component is finished with a message, it simply calls the corresponding destroy() function.</p>
+<p class="example" style="text-align: justify;"><span style="font-family: Courier New;"></span></p><div style="overflow: hidden; display: block; height: auto; width: inherit;"><div id="highlighter_214078" class="syntaxhighlighter "><div class="bar  "><div class="toolbar"><a href="http://openjaus.com/products/openjaus33/70-tutorial-sending-a-recieving-jaus-messages#viewSource" title="view source" style="width: 16px; height: 16px; " class="item viewSource">view source</a><div class="item copyToClipboard"><embed width="16" height="16" id="highlighter_214078_clipboard" type="application/x-shockwave-flash" title="copy to clipboard" allowscriptaccess="always" wmode="transparent" flashvars="highlighterId=highlighter_214078" menu="false" src="http://openjaus.com/plugins/content/codecitation/scripts/clipboard.swf"></div><a href="http://openjaus.com/products/openjaus33/70-tutorial-sending-a-recieving-jaus-messages#printSource" title="print" style="width: 16px; height: 16px; " class="item printSource">print</a><a href="http://openjaus.com/products/openjaus33/70-tutorial-sending-a-recieving-jaus-messages#about" title="?" style="width: 16px; height: 16px; " class="item about">?</a></div></div><div class="lines"><div class="line alt1"><code class="number">1.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="functions bold">reportGlobalPoseMessageDestroy</code><code class="plain">(myReportGposMsg);</code></span></span></div></div></div></div><p></p>
+<p style="text-align: justify;">Sending JAUS a message from a component is done by calling the function ojCmptSendMessage(). When this function is called the JAUS message source address is automatically set to that of the sending component's. However, the message destination address must be explicitly set before sending the message. Typically when a specific type of JAUS message needs to be sent, it first must be cast into the generic type form. The sudo-code block below shows the pattern usually implemented to send a specific message. Notice that the jausMessage must be destroyed after it is sent. This is because memory allocated for the jausMessage during the specificMessageToJausMessage() step must be freed after it is no longer needed.</p>
+<p style="text-align: justify;"><span style="font-family: Courier New;"></span></p><div style="overflow: hidden; display: block; height: auto; width: inherit;"><div id="highlighter_822732" class="syntaxhighlighter "><div class="bar                  "><div class="toolbar"><a href="http://openjaus.com/products/openjaus33/70-tutorial-sending-a-recieving-jaus-messages#viewSource" title="view source" style="width: 16px; height: 16px; " class="item viewSource">view source</a><div class="item copyToClipboard"><embed width="16" height="16" id="highlighter_822732_clipboard" type="application/x-shockwave-flash" title="copy to clipboard" allowscriptaccess="always" wmode="transparent" flashvars="highlighterId=highlighter_822732" menu="false" src="http://openjaus.com/plugins/content/codecitation/scripts/clipboard.swf"></div><a href="http://openjaus.com/products/openjaus33/70-tutorial-sending-a-recieving-jaus-messages#printSource" title="print" style="width: 16px; height: 16px; " class="item printSource">print</a><a href="http://openjaus.com/products/openjaus33/70-tutorial-sending-a-recieving-jaus-messages#about" title="?" style="width: 16px; height: 16px; " class="item about">?</a></div></div><div class="lines"><div class="line alt1"><code class="number">1.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="comments">// Copy destination address into message</code></span></span></div><div class="line alt2"><code class="number">2.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="functions bold">jausAddressCopy</code><code class="plain">(mySpecificMessage-&gt;destination, someAddress);</code></span></span></div><div class="line alt1"><code class="number">3.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="comments">// Convert specific message type into JausMessage type</code></span></span></div><div class="line alt2"><code class="number">4.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="plain">jausMessage = specificMessageToJausMessage(mySpecificMessage);</code></span></span></div><div class="line alt1"><code class="number">5.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="comments">// Send the message via the component and node manager</code></span></span></div><div class="line alt2"><code class="number">6.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="functions bold">ojCmptSendMessage</code><code class="plain">(myComponent, jausMessage);</code></span></span></div><div class="line alt1"><code class="number">7.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="comments">// Free allocated memory</code></span></span></div><div class="line alt2"><code class="number">8.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="functions bold">jausMessageDestroy</code><code class="plain">(jausMessage);</code></span></span></div></div></div></div><p></p>
+<p style="text-align: justify;">Receiving a JAUS message in a component is done by setting up a callback function for the specific message command code. After the OjCmpt is running, the callback function will be invoked upon receiving a message with that command code. If no callback function is registered for a command code, the message is automatically processed by the ojCmptDefaultMessageProcessor() function. This function handles most of the core functionality of a JAUS component. This includes processing incoming commands for authority, state, exclusive control, service connections and discovery (See defaultJausMessageProcessor.c in libopenJaus to identify the implemented command codes and their associated default behavior). If a message is not processed in the default message processor then it is simply ignored. It is possible to override the default message processor by explicitly registering a callback function for the desired command code. If the default behavior needs to be extended, then a registered callback can execute its behavior and also pass the message to ojCmptDefaultMessageProcessor().<br> <br> Message callback functions must follow the prototype form "void callbackname(OjCmpt, JausMessage);". Registration of the callback function with the component is usually done between the ojCmptCreate() step and the ojCmptRun() step (See  Creating an OpenJAUS component  for details on these steps). The function to register the message callback is ojCmptSetMessageCallback(). The following example shows how this would be done for a JAUS_QUERY_GLOBAL_POSE message.</p>
+<p class="example" style="text-align: justify;"><span style="font-family: Courier New;"></span></p><div style="overflow: hidden; display: block; height: auto; width: inherit;"><div id="highlighter_381706" class="syntaxhighlighter "><div class="bar                                                                 "><div class="toolbar"><a href="http://openjaus.com/products/openjaus33/70-tutorial-sending-a-recieving-jaus-messages#viewSource" title="view source" style="width: 16px; height: 16px; " class="item viewSource">view source</a><div class="item copyToClipboard"><embed width="16" height="16" id="highlighter_381706_clipboard" type="application/x-shockwave-flash" title="copy to clipboard" allowscriptaccess="always" wmode="transparent" flashvars="highlighterId=highlighter_381706" menu="false" src="http://openjaus.com/plugins/content/codecitation/scripts/clipboard.swf"></div><a href="http://openjaus.com/products/openjaus33/70-tutorial-sending-a-recieving-jaus-messages#printSource" title="print" style="width: 16px; height: 16px; " class="item printSource">print</a><a href="http://openjaus.com/products/openjaus33/70-tutorial-sending-a-recieving-jaus-messages#about" title="?" style="width: 16px; height: 16px; " class="item about">?</a></div></div><div class="lines"><div class="line alt1"><code class="number">1.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="comments">// Function prototype of message callback</code></span></span></div><div class="line alt2"><code class="number">2.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="keyword bold">void</code> <code class="plain">myQueryGlobalPoseCallback(</code><code class="color1 bold">OjCmpt</code> <code class="plain">myGpos, </code><code class="color1 bold">JausMessage</code> <code class="plain">queryMessage);</code></span></span></div><div class="line alt1"><code class="number">3.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="comments">// Register the callback function with the myGpos component</code></span></span></div><div class="line alt2"><code class="number">4.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="functions bold">ojCmptSetMessageCallback</code><code class="plain">(myGpos, </code><code class="preprocessor bold">JAUS_QUERY_GLOBAL_POSE</code><code class="plain">, myQueryGlobalPoseCallback);</code></span></span></div></div></div></div><p></p>
+<p style="text-align: justify;">The message callback function implementation is responsible for converting the JausMessage type into the type of the specific message. The following example shows how the response to a query GPOS message might be implemented.</p>
+<p style="text-align: justify;"><span style="font-family: Courier New;"></span></p><div style="overflow: hidden; display: block; height: auto; width: inherit;"><div id="highlighter_479952" class="syntaxhighlighter "><div class="bar                                                                                                     "><div class="toolbar"><a href="http://openjaus.com/products/openjaus33/70-tutorial-sending-a-recieving-jaus-messages#viewSource" title="view source" style="width: 16px; height: 16px; " class="item viewSource">view source</a><div class="item copyToClipboard"><embed width="16" height="16" id="highlighter_479952_clipboard" type="application/x-shockwave-flash" title="copy to clipboard" allowscriptaccess="always" wmode="transparent" flashvars="highlighterId=highlighter_479952" menu="false" src="http://openjaus.com/plugins/content/codecitation/scripts/clipboard.swf"></div><a href="http://openjaus.com/products/openjaus33/70-tutorial-sending-a-recieving-jaus-messages#printSource" title="print" style="width: 16px; height: 16px; " class="item printSource">print</a><a href="http://openjaus.com/products/openjaus33/70-tutorial-sending-a-recieving-jaus-messages#about" title="?" style="width: 16px; height: 16px; " class="item about">?</a></div></div><div class="lines"><div class="line alt1"><code class="number">01.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="comments">// Query global pose message callback function</code></span></span></div><div class="line alt2"><code class="number">02.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="keyword bold">void</code> <code class="plain">myQueryGlobalPoseCallback(</code><code class="color1 bold">OjCmpt</code> <code class="plain">myGpos, </code><code class="color1 bold">JausMessage</code> <code class="plain">message)</code></span></span></div><div class="line alt1"><code class="number">03.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="plain">{</code></span></span></div><div class="line alt2"><code class="number">04.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="color1 bold">JausMessage</code> <code class="plain">txMessage;</code></span></span></div><div class="line alt1"><code class="number">05.</code><span class="content"><code class="spaces">&nbsp;&nbsp;</code><span class="block" style="margin-left: 18px !important;"><code class="comments">// Parse the message into its queryGloablPose message form</code></span></span></div><div class="line alt2"><code class="number">06.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="color1 bold">QueryGlobalPoseMessage</code> <code class="plain">queryGlobalPose;</code></span></span></div><div class="line alt1"><code class="number">07.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="plain">queryGlobalPose = </code><code class="functions bold">queryGlobalPoseMessageFromJausMessage</code><code class="plain">(message);</code></span></span></div><div class="line alt2"><code class="number">08.</code><span class="content"><code class="spaces">&nbsp;&nbsp;</code><span class="block" style="margin-left: 18px !important;"><code class="comments">// Verify there are no errors in parsing</code></span></span></div><div class="line alt1"><code class="number">09.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="keyword bold">if</code><code class="plain">(queryGlobalPose)</code></span></span></div><div class="line alt2"><code class="number">10.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="plain">{</code></span></span></div><div class="line alt1"><code class="number">11.</code><span class="content"><code class="spaces">&nbsp;&nbsp;</code><span class="block" style="margin-left: 18px !important;"><code class="comments">// Copy the source to destination</code></span></span></div><div class="line alt2"><code class="number">12.</code><span class="content"><code class="spaces">&nbsp;&nbsp;</code><span class="block" style="margin-left: 18px !important;"><code class="functions bold">jausAddressCopy</code><code class="plain">(myReportGposMsg-&gt;destination, queryGlobalPose-&gt;source);</code></span></span></div><div class="line alt1"><code class="number">13.</code><span class="content"><code class="spaces">&nbsp;&nbsp;&nbsp;</code><span class="block" style="margin-left: 27px !important;"><code class="comments">// Serialize the report global pose message response</code></span></span></div><div class="line alt2"><code class="number">14.</code><span class="content"><code class="spaces">&nbsp;&nbsp;</code><span class="block" style="margin-left: 18px !important;"><code class="plain">txMessage = reportGlobalPoseMessageToJausMessage(myReportGposMsg);</code></span></span></div><div class="line alt1"><code class="number">15.</code><span class="content"><code class="spaces">&nbsp;&nbsp;&nbsp;</code><span class="block" style="margin-left: 27px !important;"><code class="comments">// Send the report response</code></span></span></div><div class="line alt2"><code class="number">16.</code><span class="content"><code class="spaces">&nbsp;&nbsp;</code><span class="block" style="margin-left: 18px !important;"><code class="functions bold">ojCmptSendMessage</code><code class="plain">(myGpos, txMessage);</code></span></span></div><div class="line alt1"><code class="number">17.</code><span class="content"><code class="spaces">&nbsp;&nbsp;&nbsp;</code><span class="block" style="margin-left: 27px !important;"><code class="comments">// Destroy the sent JausMessage</code></span></span></div><div class="line alt2"><code class="number">18.</code><span class="content"><code class="spaces">&nbsp;&nbsp;</code><span class="block" style="margin-left: 18px !important;"><code class="functions bold">jausMessageDestroy</code><code class="plain">(txMessage);</code></span></span></div><div class="line alt1"><code class="number">19.</code><span class="content"><code class="spaces">&nbsp;&nbsp;&nbsp;</code><span class="block" style="margin-left: 27px !important;"><code class="comments">// Destroy the query message</code></span></span></div><div class="line alt2"><code class="number">20.</code><span class="content"><code class="spaces">&nbsp;&nbsp;</code><span class="block" style="margin-left: 18px !important;"><code class="functions bold">queryGlobalPoseMessageDestroy</code><code class="plain">(queryGlobalPose);</code></span></span></div><div class="line alt1"><code class="number">21.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="plain">}</code></span></span></div><div class="line alt2"><code class="number">22.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="keyword bold">else</code></span></span></div><div class="line alt1"><code class="number">23.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="plain">{</code></span></span></div><div class="line alt2"><code class="number">24.</code><span class="content"><code class="spaces">&nbsp;&nbsp;</code><span class="block" style="margin-left: 18px !important;"><code class="functions bold">printf</code><code class="plain">(</code><code class="string">"Error unpacking JAUS_QUERY_GLOBAL_POSE\n"</code><code class="plain">);</code></span></span></div><div class="line alt1"><code class="number">25.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="plain">}</code></span></span></div><div class="line alt2"><code class="number">26.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="plain">}</code></span></span></div></div></div></div><p></p>
+
+</td>
+</tr>
+
+</tbody></table>
+<span class="article_separator">&nbsp;</span>
+<div class="sharing">
+
+	<ul class="sharelist">
+		<li>
+			<a href="http://del.icio.us/post?url=http%3A%2F%2Fopenjaus.com%2Fsending-a-recieving-jaus-messages&title=Tutorial%3A+Sending+%26+Recieving+JAUS+Messages" target="_blank" title="Share this page with del.icio.us">
+				<img src="./Tutorial  Sending & Recieving JAUS Messages_files/delicious.gif" alt="del.icio.us">
+</a>
+		</li>
+		<li>
+			<a href="http://www.google.com/bookmarks/mark?op=edit&bkmk=http%3A%2F%2Fopenjaus.com%2Fsending-a-recieving-jaus-messages&title=Tutorial%3A+Sending+%26+Recieving+JAUS+Messages" target="_blank" title="Share this page with Google Bookmarks">
+				<img src="./Tutorial  Sending & Recieving JAUS Messages_files/google_bmarks.gif" alt="Google Bookmarks">
+</a>
+		</li>
+		<li>
+			<a href="http://blinklist.com/index.php?Action=Blink/addblink.php&Url=http%3A%2F%2Fopenjaus.com%2Fsending-a-recieving-jaus-messages&Title=Tutorial%3A+Sending+%26+Recieving+JAUS+Messages" target="_blank" title="Share this page with BlinkList">
+				<img src="./Tutorial  Sending & Recieving JAUS Messages_files/blinklist.gif" alt="BlinkList">
+</a>
+		</li>
+		<li>
+			<a href="http://www.facebook.com/share.php?u=http%3A%2F%2Fopenjaus.com%2Fsending-a-recieving-jaus-messages" target="_blank" title="Share this page with Facebook">
+				<img src="./Tutorial  Sending & Recieving JAUS Messages_files/facebook.gif" alt="Facebook">
+</a>
+		</li>
+		<li>
+			<a href="http://digg.com/submit?phase=2&url=http%3A%2F%2Fopenjaus.com%2Fsending-a-recieving-jaus-messages&title=Tutorial%3A+Sending+%26+Recieving+JAUS+Messages" target="_blank" title="Share this page with Digg">
+				<img src="./Tutorial  Sending & Recieving JAUS Messages_files/digg.gif" alt="Digg">
+</a>
+		</li>
+		<li>
+			<a href="http://www.stumbleupon.com/submit?url=http%3A%2F%2Fopenjaus.com%2Fsending-a-recieving-jaus-messages&title=Tutorial%3A+Sending+%26+Recieving+JAUS+Messages" target="_blank" title="Share this page with Stumbleupon">
+				<img src="./Tutorial  Sending & Recieving JAUS Messages_files/stumbleupon.gif" alt="Stumbleupon">
+</a>
+		</li>
+		<li>
+			<a href="http://reddit.com/submit?url=http%3A%2F%2Fopenjaus.com%2Fsending-a-recieving-jaus-messages&title=Tutorial%3A+Sending+%26+Recieving+JAUS+Messages" target="_blank" title="Share this page with reddit">
+				<img src="./Tutorial  Sending & Recieving JAUS Messages_files/reddit.gif" alt="reddit">
+</a>
+		</li>
+	</ul>
+    <div class="email">
+	    <a href="http://openjaus.com/component/mailto/?tmpl=component&link=aHR0cDovL29wZW5qYXVzLmNvbS9wcm9kdWN0cy9vcGVuamF1czMzLzcwLXR1dG9yaWFsLXNlbmRpbmctYS1yZWNpZXZpbmctamF1cy1tZXNzYWdlcw%3D%3D" title="Email" onclick="window.open(this.href,&#39;win2&#39;,&#39;width=400,height=300,menubar=yes,resizable=yes&#39;); return false;" rel="nofollow">Email this page to a friend.</a>    </div>
+</div>
+
+	<div id="comments">
+		<h3 id="comments-num">
+<span class="numcomments">0</span> Comments		</h3>
+		<ol id="commentlist">
+					</ol>
+	</div>
+
+	<h3 id="leave-response">
+		<a href="http://openjaus.com/sending-a-recieving-jaus-messages?scf=1" rel="nofollow {&#39;base&#39;:&#39;http://openjaus.com/&#39;,&#39;thread_id&#39;:&#39;7&#39;}">Add Comment</a>
+	</h3>
+	<div id="respond-container"></div> 
+			</div>
+
+			<div id="footerWrapper">
+				<div>Copyright © 2012 OpenJAUS. All Rights Reserved.</div>
+<div><a href="http://www.joomla.org/">Joomla!</a> is Free Software released under the <a href="http://www.gnu.org/licenses/gpl-2.0.html">GNU/GPL License.</a></div> 
+			</div>
+
+		</div>
+
+		<!-- BEGIN: GOOGLE TRACKING -->
+
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-25105323-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+		<!-- END: GOOGLE TRACKING -->
+
+	
+</body></html>

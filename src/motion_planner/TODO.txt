@@ -1,0 +1,12 @@
+2013-03-31
+
+- Trocar decelaration por deceleration onde aparece errado
+
+- Ver como o Thrun calculou a velocidade na DARPA 2005
+- Interpolar o caminho e usa-lo para determinar phi
+
+- Arrumar a leitura de parametros: esta lendo os mesmos parametros (alguns) em duas funcoes diferentes
+- O mapper so deve trocar de mapa quando o map_server trocar
+- O map_sever nao deve trocar muito rapido de mapas: esperar pelo menos 0.5 segundos para trocar.
+
+- Tem que padronizar o codigo no que diz respeito a definicao de mensagens

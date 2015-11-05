@@ -1,0 +1,30 @@
+Para navegar no viewer 3D as teclas utilizadas são:
+
+W e S - movem a camera para frente a para tras
+A e D - giram a camera para os lados
+
+Q e E - anda com a camera para o lado
+
+Setas - giram a camera para frente e para tras e rolam as cameras para o lado
+
+O movimento com as teclas W,A,S,D,Q e E funcionam como nos jogos Counter Strike e outros
+jogos parecidos, se você não sabe como funcina recomendo jogar.
+
+As setas funcionam como em um simulador de vôo, então tente imaginar que esta em um avião para andar
+pelo viewer 3D.
+
+
+Para mudar as informações visíveis:
+
+SPACE:	camera segue / para de seguir o carro.
+R:	desenha os raios do laser
+P:	desenha as particulas do carro
+V:	desenha os pontos do velodyne	(varia entre não desenhar os pontos; desenhar usando uma forma lenta; desenhar de forma rapida mas disponivel apenas em algumas placas graficas)
+M:	desenha os pontos do sick		(varia entre não desenhar os pontos; desenhar usando uma forma lenta; desenhar de forma rapida mas disponivel apenas em algumas placas graficas)
+N:	desenha os pontos da visao estereo
+C:	desenha modelo do carro
+I:	desenha mapa
+T:	muda quais o peso das particulas será desenhado. (Muda entre IMU, GPS ou ambos).
+J:	desenha pontos GPS
+K:	desenha pontos fused odometry
+L:	desenha pontos GPS Xsens

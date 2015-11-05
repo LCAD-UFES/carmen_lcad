@@ -1,0 +1,191 @@
+/** @page faq
+
+<h1> CARMEN Frequently Asked Questions</h1>
+
+
+@section faq_a What are the units of each parameter?
+  
+  CARMEN uses SI units internally. All distances are in metres. All angles are
+  in radians. All velocities are in metres/second. All parameters described in
+  an .ini file should obey this constraint, and any that do not should be
+  considered a bug. 
+
+  The only notable exception is that \c carmen_map_point_t points are in
+  map grid cells, and should be multiplied by the map resolution (or converted
+  using \c carmen_map_to_world to get distances in metres. 
+
+@section faq_b How do I reduce the processor load of CARMEN?
+
+  The major CPU load from CARMEN comes from two sources: localize and
+  navigator. Bear in mind that reducing the CPU load of these two processes
+  will lead to worse performance, and that a preferable scenario would be to
+  move these processes off the robot to a more powerful CPU. 
+
+  The navigator CPU usage can be reduced by changing the number of lasers used
+  \\
+  (\c navigator_num_lasers), increasing the replanning frequency
+  (\c navigator_replan_frequency) or, for static worlds with very accurate
+  maps and very good localization, dynamic obstacle avoidance can be turned
+  off using \\ (\c navigator_update_map). This last change is only
+  recommended in carefully controlled environments.
+
+  Localize CPU usage can be reduced by making sure people tracking is off
+  (\c localize_people_tracking) and reducing the number of particles
+  (\c localize_robot_particles). 
+
+@section faq_c Do you support sonar sensors?
+
+  Nominally, yes. However, the sonar support has not been tested on most
+  platforms, and therefore should be considered in alpha development. Also,
+  localization, navigation and map building are not in any way supported using
+  sonars yet. This may change, but it is currently a low-priority item.
+
+@section faq_d I want to make the robot move backwards, but it won't go.  
+
+  There are two relevant parameters: \c robot_collision_avoidance and
+  \c robot_allow_rear_motion.  
+  
+  If \c robot_allow_rear_motion is off, then the robot will not move
+  backwards.
+
+  If you do not have backwards pointing sensors, such as a laser or sonar
+  sensors, then the robot will not move backwards while collision avoidance is
+  turned on. If you do have backwards pointing sensors, are they enabled? If
+  no rear sensor data shows up in robotgraph, then the robot will not move
+  backwards while collision avoidance is on.
+  
+  If you turn \c robot_allow_rear_motion on, and
+  \c robot_collision_avoidance off, then the robot will always move
+  backwards if you ask it to. But, there is no guarantee you won't hit
+  anything. We do {\bf not} in any way endorse ever turning off collision
+  avoidance. You {\bf will} hit things.
+
+@section faq_e How can I run multi-robot simulations?
+
+The way to run multi-robot simulations is to run multiple, parallel instances
+of CARMEN, and have the simulators communicate with each other. 
+
+You can allow a running simulator to ``see'' a second simulator using
+\c void carmen_simulator_connect_robots(char *other_central). For example,
+start a CARMEN simulation (central, param\_server, simulator, localize,
+navigator, navigator\_panel). Start a second CARMEN simulation on a different
+port, such as 1382. You can do this by starting central using
+@verbatim
+% central -p1382
+@endverbatim
+and then start all remaining programs (param\_server, simulator, localize,
+navigator, navigator\_panel) with the \c CENTRALHOST environment variable
+set to \c machine:1382. Make sure that you start both simulations using
+the same map. 
+
+In a third program, you need to connect the two simulations. For example, a
+program like this would do the trick to tell the first simulator about the
+second:
+
+@verbatim
+#include <carmen/carmen.h>
+
+int main(int argc, char *argv[]) 
+{
+  carmen_ipc_initialize(argc, argv);
+  carmen_param_check_version(argv[0]);
+
+  carmen_simulator_connect_robots("localhost:1382");
+
+  return 0;
+}
+@endverbatim
+
+Most people would want both simulators to see each other, in which case you
+would probably want a short program like this:
+
+@verbatim
+#include <carmen/carmen.h>
+
+int main(int argc, char *argv[]) 
+{
+  /* Connect to the first IPC context, assumed to be running on
+     localhost */
+
+  carmen_ipc_initialize(argc, argv);
+  carmen_param_check_version(argv[0]);
+
+  /* Tell the first simulator about the second */ 
+
+  carmen_simulator_connect_robots("localhost:1382");
+
+  /* Connect to the second IPC context, assumed to be running on
+     localhost:1382 */
+
+  IPC_connectModule(argv[0], "localhost:1382");
+
+  /* Tell the second simulator about the first. */ 
+
+  carmen_simulator_connect_robots("localhost");
+
+  return 0;
+}
+@endverbatim
+
+
+Position the first robot (using the first \c navigator_panel). Position
+the second robot (using the second \c navigator_panel) so that it is a
+little bit in front of where you put the first robot (which of course you
+can't see in the second \c navigator_panel) and pointing back at the first
+robot. If you start two instances of \c robotgraph, you should see the
+other robot in each robotgraph. As you drive the robots around, they should
+interfere with each other and see each other, just as if they were physically
+there. 
+
+@section faq_f How can I control multiple robots in a multi-robot simulation?
+
+The first thing is to get both simulations working, as described above.
+
+The next thing is to understand multiple IPC contexts, reading the IPC
+manual. 
+
+When you subscribe to (most) IPC messages, you set up a handler (and maybe
+message pointer) on a context-specific basis (although you only get one
+handler and message allocation per context). 
+
+So, if you wanted to navigation status messages from two simulations, you
+could use the following:
+@verbatim
+void connect_to_two_simulations(char *simulation1, char *simulation2,
+                                IPC_CONTEXT_PTR *context1,
+                                IPC_CONTEXT_PTR *context2) 
+{
+
+  *context1 = IPC_connectModule(module_name, simulation1);
+  carmen_navigator_subscribe_status(NULL, handler1, CARMEN_SUBSCRIBE_NOW);
+
+  *context2 = IPC_connectModule(module_name, simulation2);
+  carmen_navigator_subscribe_status(NULL, handler2, CARMEN_SUBSCRIBE_NOW);
+
+  IPC_setContext(*context1);
+  carmen_navigator_set_goal_place("lab door");
+  carmen_navigator_go();
+
+  while (1) {
+    IPC_setContext(*context1);
+    sleep_ipc(1);
+    IPC_setContext(*context2);
+    sleep_ipc(1);
+  } 
+}
+@endverbatim 
+
+What this does is establish a connection with a simulation running on the
+\c CENTRALHOST described by simulation1, and a simulation running on
+\c CENTRALHOST described by simulation2. (The simulations presumably were
+connected earlier.) The function subscribes to navigator status messages from
+each simulation, using different handlers for each message. You could
+certainly handle messages from both simulations using the same function, using
+the \c IPC_CONTEXT_PTR IPC_getContext(); function inside the handler to
+tell which simulation generated the callback. 
+
+After the callbacks are established, the function goes back to the IPC context
+of the first simulation, sets a goal and starts the robot moving. After that,
+the function indefinitely just handles messages.
+
+**/

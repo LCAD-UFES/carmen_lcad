@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>VisionGUI</class>
+ <widget class="QMainWindow" name="VisionGUI">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>BeoHawk Vision System</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="QLabel" name="imageLabel">
+      <property name="text">
+       <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>25</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionFreeze_Frame"/>
+    <addaction name="actionSave_Frame_as_Image"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="menuOverlay">
+    <property name="title">
+     <string>Overlay</string>
+    </property>
+    <addaction name="actionShapes_Recognized"/>
+    <addaction name="actionObjects_Recognized"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuOverlay"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionShapes_Recognized">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Shapes Recognized</string>
+   </property>
+  </action>
+  <action name="actionObjects_Recognized">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Objects Recognized</string>
+   </property>
+  </action>
+  <action name="actionFreeze_Frame">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Freeze Frame</string>
+   </property>
+  </action>
+  <action name="actionSave_Frame_as_Image">
+   <property name="text">
+    <string>Save Frame as Image</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -1,0 +1,5 @@
+QMAKE_PRL_BUILD_DIR = /home/lauro/Downloads/octomap/octovis/src/extern/QGLViewer
+QMAKE_PRO_INPUT = QGLViewer.pro
+QMAKE_PRL_TARGET = libQGLViewer.so.2.3.1
+QMAKE_PRL_CONFIG = include_source_dir lex yacc uic resources qt release incremental link_prl def_files_disabled exceptions no_mocdepend release stl qt_no_framework warn_off opengl shared thread create_prl rtti dll shared moc opengl
+QMAKE_PRL_VERSION = 2.3.1

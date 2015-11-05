@@ -1,0 +1,115 @@
+/* Internal Macro Definition */
+int 	TRUE ;
+TRUE = 1;
+int	FALSE ;
+FALSE = 0;
+int	NON_STARTED;
+NON_STARTED = 0;
+int	WAITING_FOR_TRAINNING;
+WAITING_FOR_TRAINNING = 1;
+int	TRAINNING_NETWORK;
+TRAINNING_NETWORK = 2;
+int	RUNNING_NETWORK;
+RUNNING_NETWORK = 4;
+int	IMAGE_WIDTH;
+int	IMAGE_HEIGHT;
+
+int	MAX_NUM_FRAMES;
+
+/* CML operation flags */
+float neuron_activity_threshold;
+float active_neuron_certainty;
+int CML_new_VS_test_message_value;
+int INITIAL_X_POS;
+int INITIAL_Y_POS;
+
+int camera_frame_counter;
+int frame_hit_counter;
+
+/* Translate Initial Position */
+/* 165,0; 96,0 */
+/* Total 945(+1) messages */
+
+/* Rotate Initial Position */
+/* 182.0; 90.0 */
+/* Total 630(+1) messages */
+
+/* Scale Initial Position */
+/* 167,0; 100,5 */
+/* Total 1466(+1) messages 	*/
+
+MAX_NUM_FRAMES = 945;
+camera_frame_counter = 0;
+frame_hit_counter = 0;
+
+IMAGE_WIDTH = 320;
+IMAGE_HEIGHT = 240;
+INITIAL_X_POS = 165;
+INITIAL_Y_POS = IMAGE_HEIGHT - 96;
+
+/* Creates the log file for output formatting */
+MAE_create_log_file(0);
+MAE_open_comparison_log_file(0);
+
+/* Loop Forever Waiting for IPC messages */
+while (1)
+{
+	/* executes the IPC listen command */
+	execute_IPC_listen(0);	
+	
+	set_visual_search_state(RUNNING_NETWORK);	/* network status must be set-up as running */
+	CML_new_VS_test_message_value	= get_new_VS_test_message_value(0);
+			
+	if(CML_new_VS_test_message_value == TRUE)
+	{
+		MAE_copy_current_test_message_into_input(0);
+		
+		if(camera_frame_counter == 0)
+		{
+			MAE_update_input_layer_neurons_and_image(0);
+			MAE_set_input_layer_xy_to_desired_position(INITIAL_X_POS,INITIAL_Y_POS);
+			MAE_perform_network_retraining(0);
+		}
+		else
+		{
+			MAE_perform_network_test(0);
+			active_neuron_certainty = MAE_calculate_network_certainty_percentage_of_active_neurons_versus_trained_bar_float(0);
+			/* if the retraining is used */
+			/*if( active_neuron_certainty < 0.95 && active_neuron_certainty > 0.9 )
+			{
+				MAE_perform_sparse_network_retraining(5.0);
+			}*/
+		}
+
+		MAE_print_frame_number_and_x_y_input_position(camera_frame_counter);
+		MAE_print_frame_number_and_x_y_input_position_to_output_file(camera_frame_counter);
+		camera_frame_counter = camera_frame_counter + 1;
+		
+		if(MAE_read_comparison_log_file_and_check_for_hit(""))
+		{
+			frame_hit_counter = frame_hit_counter + 1;
+		}
+		
+		MAE_print_network_certainty_correlate(0);
+		MAE_print_network_certainty_percentage_of_active_neurons_versus_trained_bar_float(0);
+
+		/* this is only a test */
+		/*neuron_activity_threshold = MAE_calculate_network_certainty_percentage_of_active_neurons_versus_trained_bar_float(0);
+		if( neuron_activity_threshold  > 0.4 && neuron_activity_threshold  < 0.9)
+		{
+			MAE_perform_sparse_network_retraining(5.0);
+		}*/
+		
+		MAE_calculate_global_hit_rate_from_comparison_log_file(camera_frame_counter,frame_hit_counter);
+				
+		reset_new_VS_test_message_value(0);	/* the message flag must be resseted */
+		
+		if(camera_frame_counter == MAX_NUM_FRAMES + 1)
+		{
+			MAE_terminate_log_file(0);
+			MAE_printf("Output File Fininshed");
+		}
+	}
+}
+
+quit;

@@ -1,0 +1,6 @@
+in_pattern 188 239
+in_pattern_trained 516 239
+nl_target_coordinates_out 580 83
+in_pattern_translated_scaled_gaussian_out 844 238
+out_v1_activation_map 188 67
+mae_control_window 190 507

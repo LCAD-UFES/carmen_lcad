@@ -1,0 +1,325 @@
+--------------------------------------------------------------------------------
+Point Grey Research FlyCapture2 SDK Release Notes
+--------------------------------------------------------------------------------
+
+We welcome your bug reports, questions, and comments: 
+www.ptgrey.com/support/contact/
+
+--------------------------------------------------------------------------------
+Errata
+--------------------------------------------------------------------------------
+The latest errata can be found online at http://www.ptgrey.com/support/downloads/releasenotes/fc2_errata.txt.
+
+--------------------------------------------------------------------------------
+Change Log
+--------------------------------------------------------------------------------
+
+PGR FlyCapture2 SDK - 2.02.1-05
+
+- CHANGE LIST (list of updates with this version):
+
+Enhancements:
+none 
+
+Resolved Issues:
+14964 - Add EnumerateCameras() call to DirectShow interface (2.2.0.0) 
+14844 - Add UpdatorGUI2 to Linux installer
+14798 - Add Simple C# GUI example to FlyCapture installer (2.1.3.0) 
+14594 - Add MJPG + h264 AVI saving interface to Managed library (2.1.3.0) 
+14593 - Add MJPG + h264 AVI saving interface to C library (2.1.3.0) 
+14218 - Create standalone GTKmm installers (2.1.3.0) 
+14094 - GetPropertyInfo() should return PGRERROR_OK if property is not present and set appropriate presence bit (2.1.3.5) 
+13377 - Merge high performance Mono8 OpenGL support in FlyCap2 (2.1.3.0) 
+13358 - Bus Manager destructor throws exception
+13223 - Camera Output Format issues across different DirectShow applications
+12807 - Camera Selection Dialog pops up when application loads
+
+- ERRATA LIST (list of known issues with this version):
+
+14958 - Custom driver install action fails on Windows Vista (2.2.0.0) 
+14935 - Camera Selection Dialog Auto Force IP needs a manual refresh (2.2.0.0) 
+14833 - FC 1.8 no longer working after FC 2.2 beta is installed. (2.2.0.0) 
+14642 - Segmentation fault if linking Boost before FlyCapture2 on Linux
+14641 - Segfault when using boost::thread with libflycapture
+14596 - Seg Fault in libflycapture on Ubuntu due to boost symbol clashes
+14503 - Triclops x64 causing issues with other frameworks using Boost
+13967 - Ubuntu 8.04 / 10.04 x86 - Segfault during camera arrival removal (2.1.3.0) 
+13966 - Ubuntu 8.04 / 10.04 x64 - Error 134 during camera arrival removal (2.1.3.0) 
+13672 - StartSyncCapture does not work with callback
+13658 - Deadlock in raw1394 during bus events
+12648 - Image event callback for USB 2.0 cameras on Linux occasionally fails (2.1.3.0) 
+10660 - AVI was recorded in 10FPS through DirectShow
+
+--------------------------------------------------------------------------------
+
+PGR FlyCapture2 SDK - 2.02.0-01
+
+- CHANGE LIST (list of updates with this version):
+
+Enhancements:
+11292 - Addition to Linux installation script to cause exit on error (2.1.1.0) 
+
+Resolved Issues:
+none 
+
+- ERRATA LIST (list of known issues with this version):
+
+13967 - Ubuntu 8.04 / 10.04 x86 - Segfault during camera arrival removal (2.1.3.0) 
+13966 - Ubuntu 8.04 / 10.04 x64 - Error 134 during camera arrival removal (2.1.3.0) 
+13672 - StartSyncCapture does not work with callback
+13658 - Deadlock in raw1394 during bus events
+13358 - Bus Manager destructor throws exception
+12648 - Image event callback for USB 2.0 cameras on Linux occasionally fails (2.1.3.0) 
+10660 - AVI was recorded in 10FPS through DirectShow
+
+--------------------------------------------------------------------------------
+
+PGR FlyCapture2 SDK - 2.01.3-05
+
+- CHANGE LIST (list of updates with this version):
+
+Enhancements:
+11292 - Addition to Linux installation script to cause exit on error (2.1.1.0) 
+
+Resolved Issues:
+none 
+
+- ERRATA LIST (list of known issues with this version):
+
+10660 - AVI was recorded in 10FPS through DirectShow
+
+--------------------------------------------------------------------------------
+
+PGR FlyCapture2 SDK - 2.01.3-04
+
+- CHANGE LIST (list of updates with this version):
+
+Enhancements:
+none 
+
+Resolved Issues:
+none 
+
+- ERRATA LIST (list of known issues with this version):
+
+10660 - AVI was recorded in 10FPS through DirectShow
+
+--------------------------------------------------------------------------------
+
+PGR FlyCapture2 SDK - 2.01.2-03
+
+- CHANGE LIST (list of updates with this version):
+
+Enhancements:
+none 
+
+Resolved Issues:
+none 
+
+- ERRATA LIST (list of known issues with this version):
+
+10660 - AVI was recorded in 10FPS through DirectShow
+
+--------------------------------------------------------------------------------
+
+PGR FlyCapture2 SDK - 2.01.1-02
+
+- CHANGE LIST (list of updates with this version):
+
+Enhancements:
+none 
+
+Resolved Issues:
+none 
+
+- ERRATA LIST (list of known issues with this version):
+
+10660 - AVI was recorded in 10FPS through DirectShow
+
+--------------------------------------------------------------------------------
+
+PGR FlyCapture2 SDK - 2.01.1-01
+
+- CHANGE LIST (list of updates with this version):
+
+Enhancements:
+11013 - Bus Enumeration pops up Windows Firewall Warning (2.1.0.0) 
+10363 - No CallBack functionality fc2StartSyncCapture() (C interface) (2.0.3.0) 
+10053 - FC2 Managed Documentation update (2.0.3.0) 
+10047 - DirectShow files not registered automatically during 64-bit install (2.0.3.0) 
+
+Resolved Issues:
+11597 - DirectShow does not enumerate Format 7 modes properly
+10404 - Bluescreen while running FFMV / Windows7 x64
+
+- ERRATA LIST (list of known issues with this version):
+
+10660 - AVI was recorded in 10FPS through DirectShow
+
+--------------------------------------------------------------------------------
+
+PGR FlyCapture2 SDK - 2.01.0-00
+
+- CHANGE LIST (list of updates with this version):
+
+Enhancements:
+10616 - Memory leak in C# ImageCallBack routine (2.0.3.0) 
+10489 - ImageEventNotifications fails for 2 events
+
+Resolved Issues:
+10144 - 32bit C# examples do not run on 64bit OS
+
+- ERRATA LIST (list of known issues with this version):
+
+11597 - DirectShow does not enumerate Format 7 modes properly
+11013 - Bus Enumeration pops up Windows Firewall Warning (2.1.0.0) 
+10660 - AVI was recorded in 10FPS through DirectShow
+10404 - Bluescreen while running FFMV / Windows7 x64
+10363 - No CallBack functionality fc2StartSyncCapture() (C interface) (2.0.3.0) 
+10053 - FC2 Managed Documentation update (2.0.3.0) 
+10047 - DirectShow files not registered automatically during 64-bit install (2.0.3.0) 
+
+--------------------------------------------------------------------------------
+
+PGR FlyCapture2 SDK - 2.00.3-19
+
+- CHANGE LIST (list of updates with this version):
+
+Enhancements:
+10055 - Return grab error when image is corrupted
+
+Resolved Issues:
+10399 - Translation layer can not start cameras
+
+- ERRATA LIST (list of known issues with this version):
+
+11597 - DirectShow does not enumerate Format 7 modes properly
+10660 - AVI was recorded in 10FPS through DirectShow
+10616 - Memory leak in C# ImageCallBack routine (2.0.3.0) 
+10489 - ImageEventNotifications fails for 2 events
+10404 - Bluescreen while running FFMV / Windows7 x64
+10363 - No CallBack functionality fc2StartSyncCapture() (C interface) (2.0.3.0) 
+10144 - 32bit C# examples do not run on 64bit OS
+10047 - DirectShow files not registered automatically during 64-bit install (2.0.3.0) 
+
+--------------------------------------------------------------------------------
+
+PGR FlyCapture2 SDK - 2.00.3-18
+
+- CHANGE LIST (list of updates with this version):
+
+Enhancements:
+none 
+
+Resolved Issues:
+10129 - Image corruption on systems with >=4G RAM
+
+- ERRATA LIST (list of known issues with this version):
+
+11597 - DirectShow does not enumerate Format 7 modes properly
+10489 - ImageEventNotifications fails for 2 events
+10404 - Bluescreen while running FFMV / Windows7 x64
+10363 - No CallBack functionality fc2StartSyncCapture() (C interface) (2.0.3.0) 
+10144 - 32bit C# examples do not run on 64bit OS
+10047 - DirectShow files not registered automatically during 64-bit install (2.0.3.0) 
+
+--------------------------------------------------------------------------------
+
+PGR FlyCapture2 SDK - 2.00.3-17
+
+- CHANGE LIST (list of updates with this version):
+
+Enhancements:
+10040 - Make improvements to histogram window (2.0.3.0) 
+
+Resolved Issues:
+10041 - 64-bit C# precompiled examples fail to run (2.0.3.0) 
+10037 - USB driver not pre-installing if camera not present during install (2.0.3.0) 
+
+- ERRATA LIST (list of known issues with this version):
+
+11597 - DirectShow does not enumerate Format 7 modes properly
+10489 - ImageEventNotifications fails for 2 events
+10404 - Bluescreen while running FFMV / Windows7 x64
+10144 - 32bit C# examples do not run on 64bit OS
+10047 - DirectShow files not registered automatically during 64-bit install (2.0.3.0) 
+
+--------------------------------------------------------------------------------
+
+PGR FlyCapture2 SDK - 2.00.3-16
+
+- CHANGE LIST (list of updates with this version):
+
+Enhancements:
+none 
+
+Resolved Issues:
+10129 - Image corruption on systems with >=4G RAM
+
+- ERRATA LIST (list of known issues with this version):
+
+11597 - DirectShow does not enumerate Format 7 modes properly
+10489 - ImageEventNotifications fails for 2 events
+10404 - Bluescreen while running FFMV / Windows7 x64
+10047 - DirectShow files not registered automatically during 64-bit install (2.0.3.0) 
+10037 - USB driver not pre-installing if camera not present during install (2.0.3.0) 
+
+--------------------------------------------------------------------------------
+
+PGR FlyCapture2 SDK - 2.00.3-15
+
+- CHANGE LIST (list of updates with this version):
+
+Enhancements:
+10040 - Make improvements to histogram window (2.0.3.0) 
+
+Resolved Issues:
+10041 - 64-bit C# precompiled examples fail to run (2.0.3.0) 
+
+- ERRATA LIST (list of known issues with this version):
+
+11597 - DirectShow does not enumerate Format 7 modes properly
+10489 - ImageEventNotifications fails for 2 events
+10404 - Bluescreen while running FFMV / Windows7 x64
+10047 - DirectShow files not registered automatically during 64-bit install (2.0.3.0) 
+10037 - USB driver not pre-installing if camera not present during install (2.0.3.0) 
+
+--------------------------------------------------------------------------------
+
+PGR FlyCapture2 SDK - 2.00.3-14
+
+- CHANGE LIST (list of updates with this version):
+
+Enhancements:
+9878 - Add Flea3 manual to installation (2.0.3.0) 
+
+Resolved Issues:
+none 
+
+- ERRATA LIST (list of known issues with this version):
+
+11597 - DirectShow does not enumerate Format 7 modes properly
+10404 - Bluescreen while running FFMV / Windows7 x64
+10047 - DirectShow files not registered automatically during 64-bit install (2.0.3.0) 
+10041 - 64-bit C# precompiled examples fail to run (2.0.3.0) 
+10040 - Make improvements to histogram window (2.0.3.0) 
+10037 - USB driver not pre-installing if camera not present during install (2.0.3.0) 
+
+--------------------------------------------------------------------------------
+
+PGR FlyCapture2 SDK - 2.00.3-12
+
+- CHANGE LIST (list of updates with this version):
+
+Enhancements:
+none 
+
+Resolved Issues:
+none 
+
+- ERRATA LIST (list of known issues with this version):
+
+11597 - DirectShow does not enumerate Format 7 modes properly
+10037 - USB driver not pre-installing if camera not present during install (2.0.3.0) 
+
+© 2010 Point Grey Research, Inc.

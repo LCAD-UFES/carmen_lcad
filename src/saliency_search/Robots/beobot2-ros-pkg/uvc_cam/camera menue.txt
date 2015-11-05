@@ -1,0 +1,144 @@
+opening /dev/video0
+capabilities 4000001
+pixfmt 0 = 'YUYV' desc = 'YUV 4:2:2 (YUYV)'
+  discrete: 640x480:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 160x120:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 176x144:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 320x240:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 352x288:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 640x360:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 640x400:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 768x480:   1/25 1/20 1/15 1/10 1/5 
+  discrete: 800x456:   1/25 1/20 1/15 1/10 1/5 
+  discrete: 800x504:   1/25 1/20 1/15 1/10 1/5 
+  discrete: 800x600:   1/25 1/20 1/15 1/10 1/5 
+  discrete: 864x480:   1/25 1/20 1/15 1/10 1/5 
+  discrete: 960x720:   1/15 1/10 1/5 
+  discrete: 1280x720:   2/15 1/5 
+  discrete: 1280x800:   2/15 1/5 
+  discrete: 1600x904:   1/5 
+  discrete: 1600x1000:   1/5 
+  discrete: 1600x1200:   1/5 
+pixfmt 1 = 'MJPG' desc = 'MJPEG'
+  discrete: 640x480:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 160x120:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 176x144:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 320x240:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 352x288:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 640x360:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 640x400:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 768x480:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 800x456:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 800x504:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 800x600:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 864x480:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 960x720:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 1280x720:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 1280x800:   1/25 1/20 1/15 1/10 1/5 
+  discrete: 1600x904:   1/10 1/5 
+  discrete: 1600x1000:   1/10 1/5 
+  discrete: 1600x1200:   1/10 1/5 
+camera formats supported
+format 0 = 'YUYV' desc = 'YUV 4:2:2 (YUYV)'
+  discrete: 640x480:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 160x120:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 176x144:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 320x240:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 352x288:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 640x360:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 640x400:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 768x480:   1/25 1/20 1/15 1/10 1/5 
+  discrete: 800x456:   1/25 1/20 1/15 1/10 1/5 
+  discrete: 800x504:   1/25 1/20 1/15 1/10 1/5 
+  discrete: 800x600:   1/25 1/20 1/15 1/10 1/5 
+  discrete: 864x480:   1/25 1/20 1/15 1/10 1/5 
+  discrete: 960x720:   1/15 1/10 1/5 
+  discrete: 1280x720:   2/15 1/5 
+  discrete: 1280x800:   2/15 1/5 
+  discrete: 1600x904:   1/5 
+  discrete: 1600x1000:   1/5 
+  discrete: 1600x1200:   1/5 
+format 1 = 'MJPG' desc = 'MJPEG'
+  discrete: 640x480:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 160x120:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 176x144:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 320x240:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 352x288:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 640x360:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 640x400:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 768x480:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 800x456:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 800x504:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 800x600:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 864x480:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 960x720:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 1280x720:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 1280x800:   1/25 1/20 1/15 1/10 1/5 
+  discrete: 1600x904:   1/10 1/5 
+  discrete: 1600x1000:   1/10 1/5 
+  discrete: 1600x1200:   1/10 1/5 
+
+  int (Brightness, 0, id = 980900): 0 to 255 (1)
+  int (Contrast, 0, id = 980901): 0 to 255 (1)
+  int (Saturation, 0, id = 980902): 0 to 255 (1)
+  bool (White Balance Temperature, Auto, 0, id = 98090c): 0 to 1 (1)
+  int (Gain, 0, id = 980913): 0 to 255 (1)
+  menu (Power Line Frequency, 0, id = 980918): 0 to 2 (1)
+    0: Disabled
+    1: 50 Hz
+    2: 60 Hz
+  int (White Balance Temperature, 0, id = 98091a): 0 to 10000 (10)
+  int (Sharpness, 0, id = 98091b): 0 to 255 (1)
+  int (Backlight Compensation, 0, id = 98091c): 0 to 1 (1)
+  menu (Exposure, Auto, 0, id = 9a0901): 0 to 3 (1)
+    0: Auto Mode
+    1: Manual Mode
+    2: Shutter Priority Mode
+    3: Aperture Priority Mode
+  int (Exposure (Absolute), 0, id = 9a0902): 1 to 10000 (1)
+  bool (Exposure, Auto Priority, 0, id = 9a0903): 0 to 1 (1)
+
+camera formats supported
+format 0 = 'YUYV' desc = 'YUV 4:2:2 (YUYV)'
+  discrete: 640x480:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 160x120:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 176x144:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 320x240:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 352x288:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 640x360:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 640x400:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 768x480:   1/25 1/20 1/15 1/10 1/5 
+  discrete: 800x456:   1/25 1/20 1/15 1/10 1/5 
+  discrete: 800x504:   1/25 1/20 1/15 1/10 1/5 
+  discrete: 800x600:   1/25 1/20 1/15 1/10 1/5 
+  discrete: 864x480:   1/25 1/20 1/15 1/10 1/5 
+  discrete: 960x720:   1/15 1/10 1/5 
+  discrete: 1280x720:   2/15 1/5 
+  discrete: 1280x800:   2/15 1/5 
+  discrete: 1600x904:   1/5 
+  discrete: 1600x1000:   1/5 
+  discrete: 1600x1200:   1/5 
+format 1 = 'MJPG' desc = 'MJPEG'
+  discrete: 640x480:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 160x120:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 176x144:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 320x240:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 352x288:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 640x360:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 640x400:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 768x480:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 800x456:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 800x504:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 800x600:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 864x480:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 960x720:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 1280x720:   1/30 1/25 1/20 1/15 1/10 1/5 
+  discrete: 1280x800:   1/25 1/20 1/15 1/10 1/5 
+  discrete: 1600x904:   1/10 1/5 
+  discrete: 1600x1000:   1/10 1/5 
+  discrete: 1600x1200:   1/10 1/5 
+
+  
+rosrun image_view image_view image:=/camera/image
+rosrun uvc_cam uvc_cam_node
+

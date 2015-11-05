@@ -1,0 +1,3 @@
+<launch>
+	<node pkg="map_server" type="map_server" name="map_server" args="/home/bx4/workspace/beobot2-ros-pkg/beobot2_launch/maps/map.yaml" >
+</launch>

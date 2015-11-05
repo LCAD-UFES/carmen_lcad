@@ -1,0 +1,13 @@
+1 - Analisar os parametros do ICP (Tunnagem)
+2 - Implementar filtro de particulas para fundir a poso do ICP com a pose do Visual Odometry
+	- isto não é viável
+3 - Usar reconhecimento de imagem para detectar fechamento de loop
+4 - Usar a ferramenta G2O (www.openslam.org) para otimizar o grafo de poses quando um loop for encontrado
+5 - Publicar a pose corrigida com a nuvem de ponto para o modulo mapper.
+6 - Usar o mapa gerado pelo mapper para navegar com os algoritmo a* e gradient.
+
+Melhorias:
+- Diminuir tamanho da nuvem de pontos que será passada ao GICP.
+- Aplicar rotação e translação na nuvem completa do retornada pelo stereo.
+- Melhorar a armazenagem de cada KeyFrame.
+- Gerar a Mesh.

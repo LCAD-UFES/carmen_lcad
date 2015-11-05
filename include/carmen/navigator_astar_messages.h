@@ -1,0 +1,1 @@
+/home/alberto/robotics/code/carmen/src/navigator_astar/navigator_astar_messages.h

@@ -1,0 +1,5348 @@
+<kml>
+  <Document>
+    <Style id="normal">
+      <IconStyle>
+        <color>ff00ff00</color>
+        <scale>1.1</scale>
+      </IconStyle>
+    </Style>
+    <StyleMap id="stylemap">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Style id="highlight">
+      <IconStyle>
+        <color>ff00ff00</color>
+        <scale>2.3</scale>
+      </IconStyle>
+    </Style>
+    <Placemark>
+      <LineString>
+        <extrude>1</extrude>
+        <tessellate>1</tessellate>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>
+          -40.3072072571128,-20.2772315127471,0
+          -40.3071986700418,-20.277264884009,0
+          -40.3071944793438,-20.2772624347472,0
+          -40.3071956208829,-20.2772578186357,0
+          -40.3071991432507,-20.2772544147421,0
+          -40.3072027179577,-20.277250962387,0
+          -40.3072051779415,-20.277246954898,0
+          -40.3072085048366,-20.277243488912,0
+          -40.3072124119428,-20.2772401272803,0
+          -40.3072151875744,-20.2772363005054,0
+          -40.3072182368546,-20.277232627484,0
+          -40.3072212208281,-20.2772284775465,0
+          -40.307225277218,-20.2772235534122,0
+          -40.3072287568819,-20.2772200987853,0
+          -40.3072317598881,-20.2772160687829,0
+          -40.3072346560377,-20.2772117770155,0
+          -40.3072372722662,-20.2772072935592,0
+          -40.3072400404639,-20.2772035897406,0
+          -40.3072436227757,-20.2771996242567,0
+          -40.3072469997067,-20.2771951979782,0
+          -40.3072497956232,-20.2771912641988,0
+          -40.3072524652782,-20.2771874246145,0
+          -40.3072549866294,-20.2771829958534,0
+          -40.3072577272806,-20.2771790661221,0
+          -40.3072608018043,-20.2771748544341,0
+          -40.3072631014785,-20.2771708549082,0
+          -40.3072653580907,-20.2771668067337,0
+          -40.3072680580866,-20.2771618877973,0
+          -40.3072702032502,-20.277157217281,0
+          -40.3072725641277,-20.2771529808429,0
+          -40.3072750185695,-20.2771487728555,0
+          -40.3072772905966,-20.2771442659644,0
+          -40.3072796653409,-20.2771403187055,0
+          -40.3072817313954,-20.2771361911654,0
+          -40.3072838804133,-20.27713151355,0
+          -40.3072857511974,-20.277126845588,0
+          -40.3072876024227,-20.2771221785324,0
+          -40.3072897895616,-20.2771174647738,0
+          -40.3072920076465,-20.2771132278296,0
+          -40.3072941209576,-20.2771086993989,0
+          -40.3072956638345,-20.2771043567955,0
+          -40.3072977447778,-20.2771001371083,0
+          -40.3072988365545,-20.2770954609538,0
+          -40.3073009796854,-20.2770908704089,0
+          -40.3073025595928,-20.2770860926646,0
+          -40.3073045452119,-20.2770813207101,0
+          -40.3073056191073,-20.2770768690892,0
+          -40.3073075134103,-20.2770726517248,0
+          -40.3073088601334,-20.277068219164,0
+          -40.3073109110801,-20.2770635362726,0
+          -40.3073119806352,-20.2770589110226,0
+          -40.3073131531469,-20.2770543290875,0
+          -40.3073144418197,-20.2770492099306,0
+          -40.3073159784711,-20.2770440555479,0
+          -40.3073174699644,-20.2770397152552,0
+          -40.3073191935288,-20.2770346188863,0
+          -40.3073194865285,-20.2770298442315,0
+          -40.3073207310474,-20.2770254405387,0
+          -40.3073218930045,-20.2770195040676,0
+          -40.3073228473213,-20.2770148054636,0
+          -40.3073228899384,-20.2770096736368,0
+          -40.3073235327485,-20.2770047523029,0
+          -40.3073234589936,-20.2769997523797,0
+          -40.3073242533866,-20.2769949929924,0
+          -40.3073249128208,-20.2769903944061,0
+          -40.3073253668849,-20.2769855810931,0
+          -40.3073250534703,-20.2769801911476,0
+          -40.3073249478495,-20.2769754642804,0
+          -40.3073255270927,-20.2769705849231,0
+          -40.3073257860549,-20.2769660043576,0
+          -40.3073253001898,-20.2769611477326,0
+          -40.3073252553303,-20.2769557699602,0
+          -40.3073251693176,-20.2769510195447,0
+          -40.3073248904374,-20.2769464698879,0
+          -40.3073249243198,-20.276941402263,0
+          -40.307323891373,-20.2769369558686,0
+          -40.3073238935874,-20.2769321155191,0
+          -40.3073237468944,-20.2769274022158,0
+          -40.3073238817267,-20.2769223831664,0
+          -40.3073228186807,-20.2769168451753,0
+          -40.3073218392433,-20.2769118012272,0
+          -40.3073211378445,-20.2769068503617,0
+          -40.3073199684158,-20.2769021157936,0
+          -40.3073191421661,-20.2768969559267,0
+          -40.3073186522913,-20.2768922790605,0
+          -40.3073174175786,-20.2768872690149,0
+          -40.3073159691628,-20.276882675545,0
+          -40.307315160873,-20.2768780181133,0
+          -40.3073138880326,-20.2768735585406,0
+          -40.3073126768477,-20.2768680304109,0
+          -40.3073110990717,-20.2768635701907,0
+          -40.307309410447,-20.2768593119103,0
+          -40.3073078192441,-20.2768539582438,0
+          -40.3073064497152,-20.2768489410212,0
+          -40.3073049350123,-20.2768438662886,0
+          -40.3073031921469,-20.2768392251042,0
+          -40.3073012894409,-20.2768343490524,0
+          -40.3072993691948,-20.2768301890019,0
+          -40.3072982526726,-20.2768256163985,0
+          -40.3072968527145,-20.2768211642426,0
+          -40.3072952907958,-20.2768167361724,0
+          -40.3072937298459,-20.2768123557262,0
+          -40.307292864133,-20.2768071210156,0
+          -40.307291925558,-20.2768025421421,0
+          -40.3072903976236,-20.2767970630591,0
+          -40.3072898593453,-20.2767920819229,0
+          -40.3072895095605,-20.276787175598,0
+          -40.3072894717292,-20.2767813956481,0
+          -40.3072899805254,-20.2767759960247,0
+          -40.3072909315584,-20.2767681766168,0
+          -40.3072925577468,-20.2767638139282,0
+          -40.3072943537472,-20.2767588964294,0
+          -40.30729686375,-20.2767545239662,0
+          -40.3072996212376,-20.2767506045464,0
+          -40.3073023888234,-20.276746682218,0
+          -40.3073063312094,-20.2767427966901,0
+          -40.3073105418375,-20.2767389558951,0
+          -40.3073148840202,-20.2767361356146,0
+          -40.3073190624689,-20.2767329264069,0
+          -40.3073236499284,-20.276730486948,0
+          -40.3073287515292,-20.2767281786312,0
+          -40.3073337219482,-20.2767269184975,0
+          -40.3073385171282,-20.276726168426,0
+          -40.3073433754563,-20.2767256880805,0
+          -40.3073485764782,-20.2767250799852,0
+          -40.3073534324173,-20.2767255470336,0
+          -40.3073581741742,-20.2767266350261,0
+          -40.3073633362773,-20.2767278595914,0
+          -40.3073683825743,-20.276729293617,0
+          -40.307372894164,-20.2767311237719,0
+          -40.3073776645128,-20.2767324686027,0
+          -40.3073825945807,-20.2767351025295,0
+          -40.3073864014555,-20.2767380534776,0
+          -40.3073902564079,-20.2767410722671,0
+          -40.3073939314443,-20.2767444527922,0
+          -40.3073976262842,-20.276747545336,0
+          -40.3074013511591,-20.2767510786803,0
+          -40.3074047616815,-20.2767544741807,0
+          -40.3074082343881,-20.2767581635764,0
+          -40.307412289416,-20.2767620698549,0
+          -40.3074157925525,-20.2767658855377,0
+          -40.3074191760828,-20.2767692752704,0
+          -40.3074228027386,-20.2767732459063,0
+          -40.3074256476118,-20.2767774592865,0
+          -40.3074289110528,-20.2767808722487,0
+          -40.3074342065512,-20.2767876082195,0
+          -40.3074364574145,-20.2767918166056,0
+          -40.307439075128,-20.2767958190038,0
+          -40.3074419635215,-20.2768001155298,0
+          -40.3074446257809,-20.2768043402897,0
+          -40.3074470963153,-20.2768088342144,0
+          -40.3074493831346,-20.2768137750112,0
+          -40.3074517089333,-20.2768193513863,0
+          -40.3074540418732,-20.2768247225128,0
+          -40.3074559035715,-20.2768295077265,0
+          -40.3074569538891,-20.2768340326114,0
+          -40.3074582034957,-20.276838582051,0
+          -40.3074591156822,-20.2768440017663,0
+          -40.3074604451479,-20.2768488253023,0
+          -40.3074611374162,-20.2768536931575,0
+          -40.3074617025722,-20.2768583030192,0
+          -40.3074625037078,-20.2768634054299,0
+          -40.3074629382618,-20.2768685684795,0
+          -40.3074628040871,-20.2768743778644,0
+          -40.3074631245848,-20.2768791736857,0
+          -40.3074626751037,-20.2768840103211,0
+          -40.3074626260708,-20.2768889705612,0
+          -40.3074622889422,-20.2768944864036,0
+          -40.3074618401644,-20.2768992291324,0
+          -40.3074616863363,-20.2769042466214,0
+          -40.3074610134186,-20.2769091292407,0
+          -40.3074600122189,-20.2769140671908,0
+          -40.3074589417667,-20.276918852322,0
+          -40.3074578111535,-20.2769237308893,0
+          -40.3074565715983,-20.2769281323611,0
+          -40.3074554894074,-20.2769331698131,0
+          -40.3074534968168,-20.2769381478671,0
+          -40.3074520404347,-20.2769426801001,0
+          -40.3074505541896,-20.2769476312876,0
+          -40.3074493588625,-20.2769520783354,0
+          -40.3074477623483,-20.2769566591377,0
+          -40.307445725438,-20.2769610519986,0
+          -40.3074440841501,-20.2769658886891,0
+          -40.307442248938,-20.2769703645984,0
+          -40.3074400098847,-20.2769744971597,0
+          -40.3074375696854,-20.2769784080381,0
+          -40.3074349794077,-20.2769829312362,0
+          -40.3074325361628,-20.2769870114922,0
+          -40.3074301814049,-20.2769917750673,0
+          -40.3074281273979,-20.2769964114327,0
+          -40.307425738378,-20.2770010168526,0
+          -40.3074235573711,-20.2770057773577,0
+          -40.3074211078883,-20.277010484211,0
+          -40.3074180819985,-20.2770146348184,0
+          -40.3074148961224,-20.2770192823661,0
+          -40.3074124978523,-20.2770235351341,0
+          -40.3074101086822,-20.277027514213,0
+          -40.3074077902438,-20.2770315835005,0
+          -40.3074048563118,-20.2770361021448,0
+          -40.3074022512078,-20.2770404321683,0
+          -40.307399418792,-20.2770447114747,0
+          -40.3073961273638,-20.2770489408935,0
+          -40.3073936107551,-20.2770533347267,0
+          -40.3073905817573,-20.2770576221857,0
+          -40.3073880368148,-20.2770616793749,0
+          -40.3073856726337,-20.2770660140896,0
+          -40.3073830307599,-20.2770708006185,0
+          -40.3073806647544,-20.2770750303191,0
+          -40.307378276366,-20.2770797424148,0
+          -40.3073753160477,-20.2770845399095,0
+          -40.3073724832805,-20.2770891600346,0
+          -40.3073698391553,-20.2770930777552,0
+          -40.3073670119075,-20.2770974741076,0
+          -40.3073646427179,-20.2771014253208,0
+          -40.3073621894675,-20.277105478005,0
+          -40.3073594026757,-20.2771101813001,0
+          -40.3073568649218,-20.2771147366573,0
+          -40.3073542576729,-20.2771192513957,0
+          -40.3073514957732,-20.2771240077718,0
+          -40.30734912897,-20.2771280683452,0
+          -40.3073466781731,-20.2771320176142,0
+          -40.3073444835468,-20.2771360425408,0
+          -40.3073418526865,-20.2771407823884,0
+          -40.3073399486167,-20.27714496145,0
+          -40.3073374094409,-20.2771492860705,0
+          -40.3073352641821,-20.2771534810269,0
+          -40.3073330135381,-20.2771581094373,0
+          -40.3073304901082,-20.2771623942513,0
+          -40.3073277372896,-20.2771671486182,0
+          -40.3073259245366,-20.2771713628592,0
+          -40.3073236799438,-20.2771762412787,0
+          -40.3073212720909,-20.2771807213158,0
+          -40.3073191109469,-20.2771852841591,0
+          -40.3073176460567,-20.2771896833169,0
+          -40.3073148247926,-20.2771942996657,0
+          -40.3073127334565,-20.2771985528478,0
+          -40.3073102719913,-20.2772028931993,0
+          -40.30730715155,-20.2772067920567,0
+          -40.3073043049351,-20.2772114344364,0
+          -40.3073016641678,-20.2772158519698,0
+          -40.3072991470382,-20.2772198588727,0
+          -40.3072960967532,-20.2772235411279,0
+          -40.3072928257317,-20.2772270339728,0
+          -40.3072908610622,-20.2772315759039,0
+          -40.3072880083799,-20.2772352266903,0
+          -40.3072846581557,-20.2772393619881,0
+          -40.3072817759788,-20.2772437931567,0
+          -40.3072786114808,-20.2772477903278,0
+          -40.3072750738711,-20.2772519924968,0
+          -40.3072718515707,-20.2772561441884,0
+          -40.3072687947175,-20.2772600794606,0
+          -40.3072662570541,-20.2772641428758,0
+          -40.3072632782503,-20.2772678541572,0
+        </coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.857518</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423203.794977</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>0.000000</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072072571128,-20.2772315127471,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.635925</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423204.724171</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>0.001023</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3071986700418,-20.277264884009,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.636220</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423205.697400</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>0.001023</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3071944793438,-20.2772624347472,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.650165</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423207.205858</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>0.668266</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3071956208829,-20.2772578186357,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.663359</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423207.716711</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>1.124694</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3071991432507,-20.2772544147421,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.665293</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423208.106031</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>1.441941</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072027179577,-20.277250962387,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.676154</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423208.446650</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>1.600565</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072051779415,-20.277246954898,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.674572</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423208.762904</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>1.853339</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072085048366,-20.277243488912,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.667516</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423209.030534</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>1.951584</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072124119428,-20.2772401272803,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.673685</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423209.273840</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.060062</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072151875744,-20.2772363005054,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.668129</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423209.517094</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.100997</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072182368546,-20.277232627484,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.672164</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423209.736153</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.238130</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072212208281,-20.2772284775465,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.667904</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423210.052401</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.227896</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.307225277218,-20.2772235534122,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.657621</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423210.320046</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.365029</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072287568819,-20.2772200987853,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.646813</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423210.563329</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.442806</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072317598881,-20.2772160687829,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.628811</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423210.782356</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.485788</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072346560377,-20.2772117770155,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.625628</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423211.001325</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.545144</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072372722662,-20.2772072935592,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.620977</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423211.220298</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.619850</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072400404639,-20.2772035897406,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.601576</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423211.463540</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.669996</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072436227757,-20.2771996242567,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.594275</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423211.706898</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.731399</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072469997067,-20.2771951979782,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.596634</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423211.877158</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.793825</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072497956232,-20.2771912641988,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.584930</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423212.023193</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.837830</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072524652782,-20.2771874246145,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.579288</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423212.242155</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.841923</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072549866294,-20.2771829958534,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.558323</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423212.388158</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.926864</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072577272806,-20.2771790661221,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.540580</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423212.582767</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.918677</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072608018043,-20.2771748544341,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.525767</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423212.777425</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.955519</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072631014785,-20.2771708549082,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.516920</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423212.947684</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.954495</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072653580907,-20.2771668067337,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.502085</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423213.142395</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.002594</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072680580866,-20.2771618877973,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.498837</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423213.337012</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.961659</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072702032502,-20.277157217281,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.484088</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423213.507326</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.012828</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072725641277,-20.2771529808429,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.472821</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423213.677620</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.990313</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072750185695,-20.2771487728555,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.461058</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423213.872272</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.975986</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072772905966,-20.2771442659644,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.461517</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423214.066901</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.929934</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072796653409,-20.2771403187055,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.448279</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423214.261540</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.880812</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072817313954,-20.2771361911654,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.435781</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423214.456194</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.879789</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072838804133,-20.27713151355,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.429939</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423214.650824</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.820433</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072857511974,-20.277126845588,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.430942</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423214.845463</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.786661</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072876024227,-20.2771221785324,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.422286</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423215.064393</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.806105</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072897895616,-20.2771174647738,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.414406</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423215.259088</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.732422</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072920076465,-20.2771132278296,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.402784</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423215.478029</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.727305</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072941209576,-20.2771086993989,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.403263</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423215.672685</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.673066</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072956638345,-20.2771043567955,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.403070</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423215.891672</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.647481</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072977447778,-20.2771001371083,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.391377</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423216.110586</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.567658</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072988365545,-20.2770954609538,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.383515</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423216.329624</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.569705</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073009796854,-20.2770908704089,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.368652</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423216.572846</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.512395</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073025595928,-20.2770860926646,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.361357</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423216.840541</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.509325</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073045452119,-20.2770813207101,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.357379</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423217.059513</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.480671</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073056191073,-20.2770768690892,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.343910</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423217.278430</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.425408</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073075134103,-20.2770726517248,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.333516</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423217.497400</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.390613</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073088601334,-20.277068219164,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.321927</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423217.764991</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.383450</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073109110801,-20.2770635362726,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.307294</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423217.984028</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.353772</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073119806352,-20.2770589110226,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.299721</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423218.227301</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.352748</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073131531469,-20.2770543290875,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.289283</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423218.470657</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.323070</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073144418197,-20.2770492099306,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.271267</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423218.762624</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.304650</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073159784711,-20.2770440555479,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.258329</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423219.005863</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.295439</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073174699644,-20.2770397152552,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.238593</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423219.322238</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.253481</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073191935288,-20.2770346188863,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.228520</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423219.516799</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.245294</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073194865285,-20.2770298442315,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.210743</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423219.735823</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.220732</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073207310474,-20.2770254405387,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.204002</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423220.003436</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.196171</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073218930045,-20.2770195040676,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.184525</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423220.271075</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.200265</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073228473213,-20.2770148054636,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.164930</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423220.538702</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.195148</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073228899384,-20.2770096736368,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.149875</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423220.757631</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.205382</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073235327485,-20.2770047523029,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.131196</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423220.976599</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.179797</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073234589936,-20.2769997523797,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.121569</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423221.244286</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.257574</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073242533866,-20.2769949929924,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.099977</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423221.463200</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.290322</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073249128208,-20.2769903944061,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.084923</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423221.706559</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.291346</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073253668849,-20.2769855810931,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.070270</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423221.974176</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.329211</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073250534703,-20.2769801911476,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.059203</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423222.193135</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.425408</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073249478495,-20.2769754642804,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.049706</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423222.412097</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.441782</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073255270927,-20.2769705849231,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.032099</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423222.631052</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.497045</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073257860549,-20.2769660043576,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.020677</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423222.850043</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.562541</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073253001898,-20.2769611477326,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.001797</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423223.069030</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.597336</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073252553303,-20.2769557699602,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.008876</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423223.263673</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.667949</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073251693176,-20.2769510195447,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.011340</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423223.433997</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.663856</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073248904374,-20.2769464698879,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.031752</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423223.652972</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.691487</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073249243198,-20.276941402263,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.047581</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423223.847609</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.745726</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.307323891373,-20.2769369558686,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.058382</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423224.066603</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.789731</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073238935874,-20.2769321155191,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.064567</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423224.236884</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.811222</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073237468944,-20.2769274022158,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.085755</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423224.431532</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.854204</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073238817267,-20.2769223831664,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.108505</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423224.650443</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.868531</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073228186807,-20.2769168451753,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.124788</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423224.845140</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.898209</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073218392433,-20.2769118012272,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.138832</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423225.039725</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.021015</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073211378445,-20.2769068503617,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.153820</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423225.234420</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.991337</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073199684158,-20.2769021157936,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.174261</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423225.429033</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.030225</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073191421661,-20.2768969559267,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.187520</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423225.599356</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.069114</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073186522913,-20.2768922790605,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.202242</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423225.793972</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.100838</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073174175786,-20.2768872690149,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.214411</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423225.964307</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.113119</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073159691628,-20.276882675545,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.234217</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423226.158977</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.079347</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.307315160873,-20.2768780181133,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.248416</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423226.329258</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.145867</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073138880326,-20.2768735585406,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.260637</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423226.523914</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.085488</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073126768477,-20.2768680304109,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.277694</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423226.694237</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.072184</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073110990717,-20.2768635701907,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.281164</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423226.864530</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.055810</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.307309410447,-20.2768593119103,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.288634</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423227.083454</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.971893</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073078192441,-20.2768539582438,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.290886</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423227.278149</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.004641</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073064497152,-20.2768489410212,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.293973</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423227.472773</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.939144</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073049350123,-20.2768438662886,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.290639</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423227.691755</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.951425</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073031921469,-20.2768392251042,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.295422</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423227.886388</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.943238</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073012894409,-20.2768343490524,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.286166</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423228.032363</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.917654</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072993691948,-20.2768301890019,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.278548</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423228.202697</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.955519</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072982526726,-20.2768256163985,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.263836</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423228.372956</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.929934</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072968527145,-20.2768211642426,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.250694</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423228.543294</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.899233</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072952907958,-20.2768167361724,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.225738</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423228.713618</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.861368</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072937298459,-20.2768123557262,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.189010</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423228.908258</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.908443</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.307292864133,-20.2768071210156,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.163646</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423229.078567</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.813269</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.307291925558,-20.2768025421421,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.125288</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423229.273154</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.834760</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072903976236,-20.2767970630591,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.079843</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423229.443469</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.790755</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072898593453,-20.2767920819229,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-0.017575</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423229.662483</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.741632</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072895095605,-20.276787175598,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.050768</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423229.905805</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.668972</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072894717292,-20.2767813956481,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.133739</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423230.124669</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.641341</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072899805254,-20.2767759960247,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.244001</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423230.465385</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.570728</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072909315584,-20.2767681766168,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.330169</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423230.635679</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.546167</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072925577468,-20.2767638139282,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.411534</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423230.854650</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.549237</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072943537472,-20.2767588964294,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.505704</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423231.097909</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.504208</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.30729686375,-20.2767545239662,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.580063</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423231.292617</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.493975</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072996212376,-20.2767506045464,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.659721</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423231.511577</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.479647</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073023888234,-20.276746682218,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.759857</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423231.754863</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.464297</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073063312094,-20.2767427966901,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.857741</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423231.998146</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.387543</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073105418375,-20.2767389558951,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>0.953663</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423232.241423</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.374239</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073148840202,-20.2767361356146,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>1.046115</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423232.484767</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.292369</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073190624689,-20.2767329264069,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>1.127329</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423232.703752</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.306696</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073236499284,-20.276730486948,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>1.227180</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423232.971412</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.284182</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073287515292,-20.2767281786312,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>1.317655</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423233.239010</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.267808</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073337219482,-20.2767269184975,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>1.426141</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423233.506586</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.282135</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073385171282,-20.276726168426,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>1.489210</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423233.701225</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.256551</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073433754563,-20.2767256880805,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>1.589116</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423233.993230</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.293392</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073485764782,-20.2767250799852,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>1.671531</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423234.212164</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.313860</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073534324173,-20.2767255470336,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>1.763809</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423234.455517</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.372193</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073581741742,-20.2767266350261,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>1.858885</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423234.723211</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.377309</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073633362773,-20.2767278595914,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>1.940816</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423234.942080</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.392660</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073683825743,-20.276729293617,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.001429</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423235.136755</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.441782</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.307372894164,-20.2767311237719,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.061480</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423235.331399</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.472484</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073776645128,-20.2767324686027,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.125306</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423235.574704</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.508302</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073825945807,-20.2767351025295,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.173840</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423235.769348</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.505232</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073864014555,-20.2767380534776,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.228401</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423236.036958</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.557424</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073902564079,-20.2767410722671,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.279487</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423236.255933</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.623944</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073939314443,-20.2767444527922,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.302681</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423236.450591</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.590172</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073976262842,-20.276747545336,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.331230</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423236.669539</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.665902</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074013511591,-20.2767510786803,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.358288</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423236.864214</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.649528</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074047616815,-20.2767544741807,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.382097</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423237.058856</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.640318</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074082343881,-20.2767581635764,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.403248</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423237.277747</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.739586</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.307412289416,-20.2767620698549,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.425596</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423237.472392</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.712978</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074157925525,-20.2767658855377,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.444621</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423237.667008</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.684323</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074191760828,-20.2767692752704,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.473013</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423237.886038</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.812245</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074228027386,-20.2767732459063,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.496597</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423238.080685</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.722188</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074256476118,-20.2767774592865,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.522330</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423238.299650</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.762100</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074289110528,-20.2767808722487,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.549993</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423238.615900</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.822479</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074342065512,-20.2767876082195,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.572867</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423238.786271</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.772334</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074364574145,-20.2767918166056,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.603726</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423238.980918</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.853181</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.307439075128,-20.2767958190038,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.629269</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423239.175541</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.824526</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074419635215,-20.2768001155298,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.660230</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423239.394505</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.850111</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074446257809,-20.2768043402897,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.699221</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423239.564830</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.935051</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074470963153,-20.2768088342144,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.728391</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423239.783787</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.957565</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074493831346,-20.2768137750112,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.787459</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423240.002763</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.026132</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074517089333,-20.2768193513863,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.833373</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423240.197401</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.061950</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074540418732,-20.2768247225128,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.853122</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423240.392045</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.131540</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074559035715,-20.2768295077265,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.884944</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423240.538036</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.163264</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074569538891,-20.2768340326114,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.915868</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423240.708330</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.171452</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074582034957,-20.276838582051,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.957737</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423240.927301</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.234901</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074591156822,-20.2768440017663,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>2.991994</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423241.097609</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.183732</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074604451479,-20.2768488253023,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>3.030469</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423241.243587</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.178615</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074611374162,-20.2768536931575,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>3.056691</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423241.389592</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.194989</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074617025722,-20.2768583030192,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>3.085354</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423241.584229</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.158148</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074625037078,-20.2768634054299,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>3.129895</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423241.754483</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.150984</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074629382618,-20.2768685684795,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-3.133658</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423241.949165</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.205223</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074628040871,-20.2768743778644,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-3.104573</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423242.143820</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.063997</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074631245848,-20.2768791736857,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-3.077599</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423242.314138</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.168381</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074626751037,-20.2768840103211,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-3.059434</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423242.484425</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.105955</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074626260708,-20.2768889705612,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-3.031482</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423242.654742</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.136657</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074622889422,-20.2768944864036,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-3.009937</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423242.825015</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.146890</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074618401644,-20.2768992291324,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.985723</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423242.995356</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.084464</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074616863363,-20.2769042466214,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.966496</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423243.165679</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.115166</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074610134186,-20.2769091292407,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.949824</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423243.335975</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.117212</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074600122189,-20.2769140671908,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.938865</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423243.530630</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.094698</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074589417667,-20.276918852322,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.909299</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423243.700890</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.156101</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074578111535,-20.2769237308893,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.899045</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423243.846840</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.117212</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074565715983,-20.2769281323611,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.874899</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423244.017176</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.117212</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074554894074,-20.2769331698131,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.853557</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423244.260484</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.168381</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074534968168,-20.2769381478671,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.841581</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423244.430832</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.142797</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074520404347,-20.2769426801001,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.823313</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423244.601154</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.167358</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074505541896,-20.2769476312876,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.800439</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423244.771468</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.102885</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074493588625,-20.2769520783354,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.787894</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423244.966058</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.149961</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074477623483,-20.2769566591377,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.766246</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423245.136477</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.127446</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.307445725438,-20.2769610519986,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.746818</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423245.330998</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.157124</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074440841501,-20.2769658886891,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.726360</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423245.501316</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.112096</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.307442248938,-20.2769703645984,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.709500</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423245.671670</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.164288</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074400098847,-20.2769744971597,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.693283</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423245.841933</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.185779</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074375696854,-20.2769784080381,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.677045</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423246.012239</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.166335</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074349794077,-20.2769829312362,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.664091</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423246.182560</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.172475</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074325361628,-20.2769870114922,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.654418</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423246.377252</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.136657</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074301814049,-20.2769917750673,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.643455</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423246.571838</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.183732</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074281273979,-20.2769964114327,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.635922</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423246.766520</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.207270</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.307425738378,-20.2770010168526,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.628013</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423246.961199</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.197036</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074235573711,-20.2770057773577,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.621589</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423247.131486</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.214433</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074211078883,-20.277010484211,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.619115</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423247.326085</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.199083</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074180819985,-20.2770146348184,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.620475</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423247.520748</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.250252</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074148961224,-20.2770192823661,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.616316</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423247.690998</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.231831</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074124978523,-20.2770235351341,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.615044</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423247.861395</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.242065</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074101086822,-20.277027514213,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.610885</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423248.007312</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.286070</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074077902438,-20.2770315835005,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.605667</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423248.177623</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.319841</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074048563118,-20.2770361021448,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.602159</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423248.347968</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.293234</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3074022512078,-20.2770404321683,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.598028</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423248.518286</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.301421</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.307399418792,-20.2770447114747,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.600708</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423248.688596</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.286070</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073961273638,-20.2770489408935,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.606262</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423248.858862</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.285047</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073936107551,-20.2770533347267,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.605986</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423249.029181</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.268673</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073905817573,-20.2770576221857,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.606891</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423249.199538</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.257415</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073880368148,-20.2770616793749,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.605822</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423249.394184</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.209317</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073856726337,-20.2770660140896,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.604578</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423249.564437</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.187826</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073830307599,-20.2770708006185,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.606754</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423249.759093</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.216480</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073806647544,-20.2770750303191,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.603118</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423249.953775</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.176568</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.307378276366,-20.2770797424148,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.603499</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423250.148433</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.242065</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073753160477,-20.2770845399095,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.606064</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423250.318725</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.206246</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073724832805,-20.2770891600346,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.604000</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423250.488990</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.216480</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073698391553,-20.2770930777552,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.608621</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423250.683672</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.193966</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073670119075,-20.2770974741076,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.612084</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423250.853931</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.164288</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073646427179,-20.2771014253208,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.612828</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423250.999917</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.213410</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073621894675,-20.277105478005,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.614286</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423251.170273</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.173498</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073594026757,-20.2771101813001,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.615675</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423251.340588</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.228761</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073568649218,-20.2771147366573,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.626733</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423251.535228</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.162241</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073542576729,-20.2771192513957,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.630282</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423251.729814</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.224667</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073514957732,-20.2771240077718,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.629873</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423251.900160</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.170428</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.30734912897,-20.2771280683452,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.632455</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423252.046177</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.197036</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073466781731,-20.2771320176142,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.632836</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423252.192049</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.183732</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073444835468,-20.2771360425408,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.635627</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423252.386724</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.124376</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073418526865,-20.2771407823884,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.641305</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423252.581369</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.118236</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073399486167,-20.27714496145,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.643165</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423252.776004</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.054786</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073374094409,-20.2771492860705,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.650122</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423252.970713</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.087534</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073352641821,-20.2771534810269,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.652402</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423253.165343</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.089581</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073330135381,-20.2771581094373,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.658884</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423253.335598</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.013851</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073304901082,-20.2771623942513,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.659269</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423253.530278</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.021015</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073277372896,-20.2771671486182,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.660660</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423253.724921</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>3.040459</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073259245366,-20.2771713628592,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.660692</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423253.919521</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.904350</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073236799438,-20.2771762412787,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.668033</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423254.114205</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.948355</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073212720909,-20.2771807213158,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.663648</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423254.308838</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.835783</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073191109469,-20.2771852841591,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.671692</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423254.503446</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.837830</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073176460567,-20.2771896833169,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.665170</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423254.698099</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.828620</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073148247926,-20.2771942996657,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.645131</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423254.892777</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.743679</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073127334565,-20.2771985528478,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.626038</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423255.111738</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.745726</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073102719913,-20.2772028931993,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.601694</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423255.306340</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.725258</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.30730715155,-20.2772067920567,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.585221</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423255.501026</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.679206</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073043049351,-20.2772114344364,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.566082</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423255.695653</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.657715</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3073016641678,-20.2772158519698,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.542962</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423255.914586</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.629061</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072991470382,-20.2772198588727,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.526882</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423256.133642</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.649528</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072960967532,-20.2772235411279,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.520313</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423256.328194</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.589149</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072928257317,-20.2772270339728,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.509314</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423256.547172</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.562541</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072908610622,-20.2772315759039,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.508256</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423256.766179</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.550260</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072880083799,-20.2772352266903,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.504273</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423257.009480</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.540027</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072846581557,-20.2772393619881,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.494299</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423257.228466</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.430525</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072817759788,-20.2772437931567,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.498527</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423257.447434</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.355818</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072786114808,-20.2772477903278,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.492716</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423257.739341</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.240177</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072750738711,-20.2772519924968,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.489927</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423257.982700</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>2.039594</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072718515707,-20.2772561441884,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.485207</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423258.250312</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>1.834919</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072687947175,-20.2772600794606,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.486119</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423258.566565</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>1.564746</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072662570541,-20.2772641428758,0
+        </coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>7</name>
+      <styleUrl>#stylemap</styleUrl>
+      <ExtendedData>
+        <Data name="theta">
+          <value>-2.488283</value>
+        </Data>
+        <Data name="timestamp">
+          <value>1441423258.955897</value>
+        </Data>
+        <Data name="driver_velocity">
+          <value>1.207587</value>
+        </Data>
+      </ExtendedData>
+      <Point>
+        <coordinates>
+          -40.3072632782503,-20.2772678541572,0
+        </coordinates>
+      </Point>
+    </Placemark>
+  </Document>
+</kml>

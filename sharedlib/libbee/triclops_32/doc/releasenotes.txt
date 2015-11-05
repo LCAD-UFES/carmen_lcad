@@ -1,0 +1,280 @@
+
+Triclops Stereo Vision SDK Release Notes
+----------------------------------------
+
+We welcome your questions and comments:  
+http://www.ptgrey.com/support/contact/
+
+===============================================================================
+Triclops SDK 3.3
+
+Triclops 3.3 Beta 3 (July 21 2010)
+- Fixed issues in 3D view with monochrome cameras.
+- Fixed issues in multi-threaded processing.
+- Fixed issues in makefiles.
+
+Triclops 3.3 Alpha 2 (June 25 2010)
+- Added support for native 64-bit architecture.
+- Increased stereo performance by utilizing multi-core processing.
+- Added support for Visual Studio 2005.
+- Removed support for Visual Studio 6.
+
+===============================================================================
+Triclops SDK 3.2
+
+Triclops 3.2 Beta 15 (June 22 2008):
+- Added support for XB3 for applications like Multiclops.
+- Fixed GUI bugs to improve interface.
+- User can now select Format 7 mode 3 RGB mode for an XB3 without crashing application; however, stereo is still done with only 2 of the 3 cameras.
+- When using a BB2, 2cam Wide radio button is no longer available.
+
+Triclops 3.2 Beta 14 (October 25 2007)
+ - Fixed issues related to the saved image formats (bug 5167).  Stereo inputs 
+   can now be saved as a side-by-side .pgm.  Side-by-side colour .ppm images may 
+   be loaded as stereo inputs but only the green channel will be used for 
+   processing (.pgm files are recommended).
+ - Fixed a bug where changing the stereo processing size would corrupt loaded
+   data.
+ - The baseline is now selectable when using a multi-baseline calibration file
+   (eg. XB3) and saved data.  Please make sure the processing baseline is 
+   consistent with the baseline the data was saved from.
+ - Fixed a minor issue where invalid file extensions would be displayed in some
+   dialogs.
+
+Triclops 3.2 Beta 13 (July 10 2007)
+ - Added and modified sln and vcproj files so that all examples build with VS2005.
+
+Triclops 3.2 Beta 12 (June 4 2007)
+ - Fixed minor bug related to starting hi-res Bumblebee2s in TriclopsDemo.
+
+Triclops 3.2 Beta 11 (June 1 2007)
+
+ - Added support for low-res Bumblebee2s.
+ - Fixed various bugs in examples.
+
+Triclops 3.2 Beta 10 (April 2 2007)
+
+ - Added triclopsDemo example which is used for stereo using Bumblebee2's and XB3's.
+ - Most triclops examples have been converted to use the Flycapture API and moved
+   to the win32 examples folder.
+ - We should no longer be using the Digiclops API.
+
+Triclops 3.2 Beta 9 (February 5 2007)
+
+ - Bug 4883 - Adding missing calibration and stereo input files into the bin 
+   directory for use by the stereospeed example. 
+
+Triclops 3.2 Beta 8
+
+ - Fixed a bug (2200) that causes 3 Camera stereo to sometimes give a poor result 
+   under subpixel interpolation.  This has reduced the speed of 3Cam stereo but
+   also improved the depth quality
+ - Fixed a bug (2028) with triclopsWriteDefaultContextToFile() - function now works
+   correctly
+ - Major reorganization and changes to the Triclops example programs
+	All previous examples have been replaced/modified and new examples added
+	to better demonstrate Triclops library functionality
+
+Triclops 3.2 Beta 7
+
+ - This release is identical to Triclops 3.2 Alpha 6.
+
+
+Triclops 3.2 Alpha 6  
+
+ - Major reorganization of the "triclops.h" file
+      The file now only has the essential functions declared in it and instead
+      includes a variety of specialized .h files such as "triclops3d.h",
+      "triclopsstereo.h", "triclopsrectify.h", etc
+ - triclopsPreprocess() has been replaced by triclopsRectify() and marked for
+   deprecation
+ - Widebaseline functionality has been marked for deprecation : 
+   triclopsCreateWidebaselineContext() and triclopsCreateWidebaselineInput()
+ - Skewing correction
+      In order to enforce vertical and horizontal epipoline alignement, some
+   degree of skewing may be present in the rectified image.  New version (4.0 or
+   later) of the calibration file will include a skewing and an unskewing matrices
+   to correct for this artifact. Earlier version calibration files will default
+   these correction matrices to an identify matrix indicating no correction to be
+   performed. 
+   The usage of these correction matrices are automatically done in triclopsRCDToXYZ
+   and triclopsXYZToRCD, so there is no need for user level code change to benefit 
+   from the skewing correction.
+ - Removed the deprecated 'ok' error code.  Please use TriclopsErrorOk.
+
+
+Triclops 3.2 Alpha 5
+
+ - Dramatic speedup in Enhanced rectification modes. 
+     Example 1:  On a 2.4 GHz PIV processor with 1GB RAM, with a lo-res B&W 
+		 bumblebee at 640x480 resolution, rectification using mode
+		 TriRectQlty_ENHANCED_2 requires 76 ms (about 13 Hz).
+     Example 2:  On a 2.4 GHz PIV processor with 1GB RAM, with a hi-res color 
+		 bumblebee at 1024x768 resolution, rectification using mode
+		 TriRectQlty_ENHANCED_2 requires 203 ms (about 5 Hz).
+
+ - Fixed bug in Enhanced Rectification modes (mostly affecting mode
+	TriRectQlty_ENHANCED_1).
+
+ - Added new Triclops API call triclopsWriteCurrentContextToFile(). This allows 
+	the user to save the current configuration to a file, which can then be
+	read in at a later time to reset all stereo parameters to the values 
+	which existed at the time the file was written.
+
+Triclops 3.2 Alpha 4
+
+ - Sped up 2-cam subpixel stereo by about 20% for processors supporting SSE2.
+ - Sped up 2-cam full-pixel stereo by about 10% for processors supporting SSE2.
+ - Sped up 3-cam stereo by about 10% for processors supporting SSE2.
+ - Fixed bug 1846
+
+
+Triclops 3.2 Alpha 3
+
+ - Fixed bug 1809, 1828
+
+
+Triclops 3.2 Alpha 1
+
+ - Added two stereo enhancements, one for rectification and one for basic stereo
+   algorithm. Both provide more accurate data at the subpixel level, and should
+   reduce artifacts in the disparity/depth data. API to Triclops library has 
+   been augmented. See triclopsSetRectImgQuality() and triclopsSetStereoQuality().
+ - Increased allowable maximum disparity value from 240 to 1024. (Disparity
+   range is still limited to 240.) Disparity offset is now part of the library. 
+   See triclopsGetDisparityOffset().
+ - New calls to read/write processed images from the triclops context to/from
+   PGM files. Useful information is now stored in the PGM header, and accessible
+   when the image is read back in. See e.g. triclopsSaveImageExtra().
+ - Fixed bug 1287 - all versions of stereo now handle the borders of the disparity
+   range in the same way.
+ - Fixed bug 1751 - to do with bogus results when using the disparity mapping 
+   option (non-subpixel stereo only).
+ - Other minor bug fixes.
+
+
+===============================================================================
+Triclops SDK 3.1
+
+
+Redhat Linux 9 Triclops 3.1 Beta 5 corresponds to Win32 Triclops 3.1 Release 6.
+
+Triclops 3.1 Release 6
+
+ - Fixed bug 1450 - Rectification has been improved.  Note that rectified 
+                    images and stereo data produced by this library will not 
+		    match previous data produced by previous versions.
+
+
+Triclops 3.1 Release 5
+
+ - Fixed bug 936 - Removed useless triclopsSetDebug() and triclopsGetDebug() 
+                   functions.             
+ - Fixed bug 984 - triclopsWriteDefaultContext() now works properly.
+ - Fixed bug 981 - Uniqueness validation increases disparity.
+
+
+Triclops 3.1 Release 4
+
+ - Fixed bug 927 - Bad subpixel disparity images with 2 cam horizonal mode in
+                   some cases.
+ - Fixed bug 980 - Problem with 2cam stereo when uniqueness validation is off
+                   and texture is on.
+
+
+Triclops 3.1 Release 3
+
+ - Fixed ROI bug detailed in support ticket 673.
+
+
+Triclops 3.1 Release 2
+
+ - Fixed bug 944 - triclopsRCD16toXYZ() giving incorrect values.
+
+   
+Triclops 3.1 Release 1
+
+ - Fixed a bug in triclopsRectifyPixel() involving rectification of raw 
+   images having a different size.
+
+
+Triclops 3.1 Beta 4
+
+ - Fixed bug 602 - Small error in Example 6.
+ - Fixed bug 928 - triclopsSetImage16Buffer() always fails.
+   
+
+Triclops 3.1 Beta 3
+
+ - Fixed the ROI Invalid ROI bug that occured when a ROI is too close to
+   the edge of the image
+
+
+Triclops 3.1 Beta 2
+
+ - Several small bug fixes.
+ - Implemented support for 2-camera vertical device.
+
+
+Triclops 3.1 Beta 1
+
+ - Upping release to "beta" status.
+
+
+Triclops 3.1 Alpha 1
+
+ - Minor bug fixes.
+
+
+Triclops 3.1 Alpha 1
+
+ - Major changes to internal handling of camera devices and configuration
+   file parsing.
+ - Detection of 2-cam stereo devices.  see triclopsGetDeviceConfiguration().
+ - TriclopsBool is now typedef int instead of typedef char.
+
+
+
+===============================================================================
+Triclops SDK 3.0
+
+
+Triclops 3.0 Beta 2
+
+ - Minor bug fixes in SDK examples.
+
+
+Triclops 3.0 Beta 1
+
+ - Added faster 2-cam stereo kernel.
+ - Fixed several minor bugs.
+
+
+Triclops 3.0 Alpha 4
+
+ - Fixed bug 471 - TriclopsImage3d modifications to example 3.
+ - Fixed bug 325 - GCC version bugs
+ - Fixed bug 226 - Use new GCC version.
+ - Fixed bug 458 - Bad assert in triclopsRectifyPackedColorImage().
+ - Fixed bug 251 & 468 - Memory leak in context creation.
+
+
+
+===============================================================================
+Triclops SDK 2.5
+
+Feature Enhancements
+    + triclopsDemo program has been removed.  It is replaced by a much 
+      improved digiclopsDemo that is shipped with the Digiclops distribution
+    + improvements to color rectification functions
+      triclopsRectifyColorImage() and triclopsRectifyPackedColorImage() have
+      been changed to accept a TriclopsCamera identifier.  This lets Color
+      Digiclops users rectify any of the three color images.
+    + multi-thread capability added
+      The Triclops library has been modified so that multiple TriclopsContexts
+      can exist in the same thread space.  The modifications should also allow
+      a single TriclopsContext to be used in multiple threads.  However!  This
+      functionality has not been rigorously tested.
+
+
+

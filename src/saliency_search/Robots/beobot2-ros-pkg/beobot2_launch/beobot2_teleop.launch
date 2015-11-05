@@ -1,0 +1,3 @@
+<launch>
+	<node pkg="beobot2_teleop" type="beobot2_teleop" name="beobot2_teleop" output="screen" />
+</launch>

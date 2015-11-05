@@ -1,0 +1,201 @@
+/** @defgroup base The Base Module (base) 
+\brief The CARMEN base driver provides an generic interface to the robot base hardware.
+@{
+
+ The module base provides an generic interface to the robot base hardware.
+@}
+ **/
+
+
+
+/** @defgroup camera The Camera Module (camera) 
+\brief The CARMEN camera driver for cameras.
+@{
+
+ The module camera provides an interface to camera hardware.
+@}
+ **/
+
+
+
+/** @defgroup global The Global Module (global) 
+\brief The CARMEN global module provides a set of important functions and libraries.
+@{
+
+ The module global provides a set of important functions and libraries.
+@}
+ **/
+
+
+/** @defgroup gps The GPS Module (gps) 
+\brief The CARMEN gps driver for consumer gps devices.
+@{
+
+ The module gps provides a driver for consumer gps devices like
+Garmin, Sirf. It provides two NMEA messages, gga and rmc.
+
+@} **/
+
+
+/** @defgroup ipc The IPC Module (ipc) 
+\brief The CARMEN ipc module provides the communication infrastructure.
+@{
+
+ The module ipc provides the communication infrastructure. It uses the
+Inter-Process-Communication to send message between modules.
+
+@} **/
+
+
+/** @defgroup joystick The Joystick Module (joystick) 
+\brief The CARMEN joystick module provides joystick support to control the robot. 
+@{
+
+ The module joystick provides joystick support to control the robot.
+@} **/
+
+
+
+/** @defgroup laser The Laser Module (laser) 
+\brief The CARMEN laser driver.
+@{
+
+ The module laser the the driver for the laser range
+ sensors. Currently supported are SICK LMS and PLS range finders only.
+ The support for the Hokuyo URG will be provided soon.
+
+@}
+ **/
+
+
+/** @defgroup localize The Localize Module (localize) 
+\brief The CARMEN localization module.
+@{
+
+ The module localize provides Monte-Carlo localization for CARMEN. It
+ furthermore provides the library localizecore which contains all
+ relevant MCL functionality.
+
+@}
+ **/
+
+
+/** @defgroup logger The Logger and Playback Module (logger) 
+\brief The CARMEN logger and playback module.
+@{
+
+ The module logger provides functionalities to log and playback sensor
+ data. Furthermore it provides a library to read and write log files.
+
+@}
+ **/
+
+/** @defgroup logtools The Logtools Module (logtools) 
+\brief The CARMEN logtools module.
+@{
+
+ A set of small tool for log files. 
+	
+@}
+ **/
+
+/** @defgroup maptools The Maptools Module (maptools) 
+\brief The CARMEN maptools module.
+@{
+
+ A set of small tool for maps.
+	
+@}
+ **/
+
+
+/** @defgroup navigator The Navigator Module (navigator) 
+\brief The CARMEN navigator module.
+
+@{ The CARMEN navigator module the provides path planning module to guide the
+  robot through the environment.
+
+  The navigator module consists of 4 main components: 
+  <ol> 
+
+  <li>A motion planning library, contained in libconventional.a. This library
+  computes the shortest path through the current map by computing a utility
+  function, and extracting from the utility function a sequence of grid cells
+  that arrives at the goal with the shortest path.  
+  <li>A planner abstraction that allows laser data to update the internal
+  map representation, recomputes any additional structures (e.g., the cost
+  map and utility functions as a result of the updated map), and returns
+  a path as a sequence of way points by greedy split-and-merge on the 
+  grid cell path sequence.
+  <li>A navigator abstraction that manages IPC, and uses a P-D loop to
+  servo the robot towards the next waypoint in the path.
+  <li>A navigator GUI that reports on the state of the robot, path, etc. 
+  </ol> @} **/
+
+
+/** @defgroup pantilt The Pantilt Module (pantilt) 
+\brief The CARMEN pantilt driver the provides support for pantilts .
+@{
+
+ The module pantilt provides support for pantilt hardware.
+
+@}
+ **/
+
+
+/** @defgroup param_daemon The ParamDaemon Module (param_daemon) 
+\brief The CARMEN param_daemon module provides access to the ini file.
+@{
+
+ The module param_daemon provides support to get and set ini file parameter.
+
+@}
+ **/
+
+
+/** @defgroup proccontrol The ProcessControl Module (proccontrol) 
+\brief The CARMEN proccontrol module.
+@{
+
+ The module proccontrol provides tools to control the modules in CARMEN.
+
+@}
+ **/
+
+
+/** @defgroup robot The Robot Module (robot) 
+\brief The CARMEN robot module the provides an abstract view to the hardware.
+@{
+
+ The module robot the provides an abstract view to the hardware. It
+ combines the odometry information with the laser data...
+
+@}
+ **/
+
+
+/** @defgroup simulator The Simulator Module (simulator) 
+\brief The CARMEN simulator module the provides a 2d robot simulator.
+@{
+
+ The module simulator provides a 2d robot simulator for the hardware
+ of the robot.
+
+@}
+ **/
+
+
+/** @defgroup vasco The Vasco Module (vasco) 
+\brief The CARMEN vasco module the provides the mapper for CARMEN.
+@{
+
+ The module vasco provides a mapper.
+
+@}
+ **/
+
+
+/*
+# gui
+
+*/

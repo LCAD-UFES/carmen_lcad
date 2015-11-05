@@ -1,0 +1,177 @@
+\documentclass{article}
+
+\title{CARMEN map file format definition}
+\author{Mike Montemerlo and Nicholas Roy and Sebastian Thrun}
+\date{Revised: October 3, 2001}
+
+\begin{document}
+
+\maketitle
+
+\begin{verbatim}
+Version: 1.0
+
+Map files in CARMEN store evidence grid representations of 2-D
+worlds as well as other information related to robot navigation and
+localization. The format of these data files is a tagged file format,
+similar in spirit to the TIFF standard for image files. This is the
+official description of the CARMEN map file format.
+
+Filenames:
+
+All CARMEN map files must end with the extension ".map". Map files
+may be compressed using gzip, but they must end with the extension
+".map.gz".
+
+Overall file format:
+
+The map file may start with a arbitrary number of lines beginning with
+a # (hash). These lines are comments and are disregarded by programs
+that read the maps. They should be used to make basic information
+about the map human-readable.
+
+The first line of the file that does not start with a # (hash)
+signifies the beginning of the binary map data. This data consists of
+an arbitrary number of tagged "chunks".
+
+A given CARMEN program may not know how to interpret every type of
+chunk in a map file. Programs should simply skip over any chunks that
+have types they cannot recognize. This will minimize problems with
+compatibility of different programs and maps.
+
+CHUNK DESCRIPTION:
+
+Byte 1 : Chunk type - unsigned byte
+
+This byte describes the type of the next chunk.  Here are the
+currently recognized chunk types:
+
+0 - file creation information
+1 - evidence grid map
+2 - off limits area description
+3 - named positions
+4 - expected distances
+5 - laser scans
+
+Byte 2-5 : Chunk size - unsigned int
+
+This is the number of bytes of the chunk, not including the chunk type
+and the chunk size variables.
+
+Byte 6-15: ASCII chunk description - 10 ASCII chars
+
+This is an ASCII description of the chunk type.  It was added to make
+the files easier to debug in an editor.
+
+The following ASCII descriptions correspond with the standard chunk
+types.
+
+0 - "CREATOR   "
+1 - "GRIDMAP   "
+2 - "OFFLIMITS "
+3 - "PLACES    "
+4 - "EXPECTED  "
+5 - "LASERSCANS"
+
+Bytes 16 - ??: (length specified by chunk size above)
+
+This is the binary data that makes up the individual chunk.
+
+The format of the binary data for each chunk type will be described in
+turn.
+
+CREATOR CHUNK DESCRIPTION:
+
+Bytes 1 - 10 : userid - ASCII chars
+
+This is the userid of the account which created the map file.
+
+Bytes 11 - 18 : creation date - long int
+
+This is time / date of creation stored as a number of seconds. This is
+easy to change into a real date using UNIX functions.
+
+Bytes 19 - 98 : map description - 80 ASCII chars
+
+General description of the map.
+
+GRIDMAP CHUNK DESCRIPTION:
+
+Bytes 1 - 4 : map columns - 1 unsigned byte
+
+Number of columns in the map
+
+Bytes 5 - 8 : map rows - 1 unsigned bytes
+
+Number of rows in the map
+
+Bytes 9 - 12 : map resolution - 1 float
+
+Number of meters per grid cell.  The resolution must be the same
+in x and y.
+
+Bytes 13 - ?? : map data - rows * columns floats
+
+The values of all evidence grid cells.  The cells vary between 0 for
+empty to 1 for occupied, and -1 for unknown.  The data is in row
+order. (i.e. the first row values followed by the second row values, etc)
+
+OFFLIMITS CHUNK DESCRIPTION:
+
+The off-limits areas can be either off-limits points, or off-limits
+rectangles.  The points are specified first, then the rectangles.
+
+Bytes 1 - 4 : number of off-limits points N - unsigned int
+Bytes 5 - ?? : off-limits points - N * 4 * 2 unsigned ints
+x1 y1 x2 y2 .... Each x and y are unsigned int representing the
+off-limits cell coordinates.
+
+4 more bytes : number of off-limits rectangles M - unsigned int
+Bytes ?? - ?? : off-limits rectangles - M * 4 * 4 unsigned ints
+r1x1 r1y1 r1x2 r1y2 r2x1 r2y1 r2x2 r2y2 ... Each x and y are unsigned
+ints representing the coordinates of the off-limits rectangle.
+
+PLACES CHUNK DESCRIPTION:
+
+Bytes 1 - 4: number of named points in the map - unsigned int
+
+Bytes 5 - ?? : description of each location
+
+location bytes 1 - 4 : position type - unsigned int
+
+Type 0 - named position (x and y)
+Type 1 - named pose (x, y, and theta)
+Type 2 - localization initialization position (x, y, theta,
+uncertainties)
+
+location bytes 5 - 8 : number of bytes for the position - unsigned int
+
+Type 0 - 8 bytes
+Type 1 - 12 bytes
+Type 2 - 24 bytes
+
+location bytes 9 - ?? : position data
+
+Type 0 - 8 bytes - float x, float y
+Type 1 - 12 bytes - float x, float y, float theta
+Type 2 - 24 bytes - float x, float y, float theta, float xstd, float
+ystd, float zstd
+
+EXPECTED CHUNK DESCRIPTION:
+
+This will be filled in later.
+
+LASERSCANS CHUNK DESCRIPTION:
+
+Bytes 1 - 4 : Number of laser scans in the chunk - unsigned int
+
+Laser scan
+
+Bytes 1 - 4 : x position of laser - float
+Bytes 5 - 8 : y position of laser - float
+Bytes 9 - 12 : theta position of laser - float
+Bytes 13 - 16 : number of laser readings
+Bytes 17 - ?? : laser readings - N floats    
+Laser readings are all in m.
+\end{verbatim}
+\end{document}

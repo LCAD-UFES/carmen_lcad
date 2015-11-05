@@ -1,0 +1,11 @@
+<launch>
+	<!-- left -->
+	<include file="$(find beobot2_launch)/camera3.launch" />
+	<param name="camera3/camera_info_url" type="string" value="file://$(find beobot2_launch)/cfg/camera3.yaml" />
+	<param name="camera3/frame_id" type="string" value="/sparse_stereo" />
+	
+	<!-- right -->
+	<include file="$(find beobot2_launch)/camera4.launch" />
+	<param name="camera4/camera_info_url" type="string" value="file://$(find beobot2_launch)/cfg/camera4.yaml" />
+	<param name="camera4/frame_id" type="string" value="/sparse_stereo" />
+</launch>

@@ -1,0 +1,1 @@
+Um arquivo de index feito com uma maquina de 64 bits nao funciona com uma de 32 bits

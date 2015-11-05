@@ -1,0 +1,54 @@
+/** @page binary__loggerplayback
+
+<h2>Logger and Playback</h2>
+
+@section logger_main Logger
+
+Logging module which dumps serverl carmen messages to a log file. This
+file typically contains the following messages
+
+RAWLASER messages, which correspond to the raw laser information obtained by the laser driver
+
+ODOM messages, which correspond to the odometry information provided by the base
+
+ROBOTLASER messages, which is the merges message of odometry and laser data.
+
+TRUEPOS message, which provides ground truth information (in case the simulator is used).
+
+NMEAGGA message, which provides the position estimate of the gps
+
+NMEARMC message, which provides the ground speed information of the gps
+
+PARAM message, contain the paramters of the ini file as well as updated parameters
+
+SYNC message
+
+
+
+Logger is also able to directly write gzipped file. Simply give provide an .gz extention
+to the logger and it will gzip the log file.
+
+<h3>Usage: ./logger \<output log file\> </h3>
+
+<h3>Example: ./logger mylog.clf  or   ./logger mylog.clf.gz</h3>
+
+@section playback_main Playback
+
+Tool to playback (in realtime, faster, or slower) a recorded log
+file. All messages are send as IPC messages to the other
+modules. Therefore, it is totally transparent if a logfile is replayed
+or a real robot is sending the data.
+
+
+<h3>Usage: ./playback \<carmen logfile\></h3>
+
+@section playbackcontrol_main Playback_control
+
+Playback_control is simple user interface used to control playback. It
+can be used to start, stop, pause, rewind, move forward inte logfile.
+Furthermore, it allows the user to play a logfile faster or more
+slowly than in reality.
+
+<h3>Usage: ./playback_control </h3>
+
+**/

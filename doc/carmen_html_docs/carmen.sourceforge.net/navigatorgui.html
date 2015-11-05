@@ -1,0 +1,160 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<!-- Mirrored from carmen.sourceforge.net/navigatorgui.html by HTTrack Website Copier/3.x [XR&CO'2010], Thu, 13 Jan 2011 17:35:45 GMT -->
+<head><title>CARMEN</title>
+	<meta name="description" content="CARMEN">
+	<meta name="keywords" content="CARMEN robot navigation toolkit">
+	<meta name="page-topic" content="CARMEN">
+
+        <meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<meta name="robots" content="index">
+	<meta name="robots" content="follow">
+	<link rel="stylesheet" type="text/css" href="styles/styles.css">
+</head>
+<body bgcolor="#ffffff">
+<br>
+<div align="center">
+<table align="center" width="95%">
+<tbody>
+<tr>
+  <td align="left"><img src="images/carmen-logo-small.png" border=0 alt="[Carmen logo]"></td>
+</tr>
+<tr>
+<td  align="left" bgcolor="#ffffcc">&nbsp;</td></tr>
+</tbody>
+</table>
+
+<!-- NAVIGATOR -->
+
+<table align="center" width="95%">
+<tbody>
+<tr>
+<td><br></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+   <td class="menu" align="left" valign="top" width="210"><br>
+   <ul>
+   <li><a href="home.html">Home</a></li> 
+   <li><a href="intro.html">What's Carmen?</a></li>
+   <li><a href="core_functionality.html">Core Functionalities</a></li>
+   <br>
+   <li><a href="news.html">What's New?</a></li>
+   <li><a href="repository.html">Repository</a></li>
+   <li><a href="update.html">Chief Changes</a></li>
+   <br>
+   <li><a href="getting_carmen.html">Download & Installation</a></li>
+   <li><a href="hardware.html">Required Hardware</a></li>
+   <li><a href="using_carmen.html">Running Carmen</a></li>
+   <li><a href="config_param.html">Configuring Carmen</a></li>
+   <br>
+   <li><a href="doc/index.html">Carmen Online Docs</a></li>
+   <li><a href="program_carmen.html">Program with Carmen</a></li>
+   <li><a href="FAQ.html">FAQ</a></li>
+   <li><a href="papers.html">Papers</a></li>
+   <br>
+   <li><a href="mailing_lists.html">Mailing List</a></li>
+   <li><a href="contributers.html">People</a></li><br>
+   <li><a href="http://radish.sourceforge.net/">Data Sets (Radish)</a></li>
+   </ul><br><br><br>
+   <img src="images/line-200.png" border=0> 
+  </td>
+  <td width="20"></td>
+  <td align="left" valign="top">
+
+<!-- END OF HEADER -->
+
+
+<h3>The Carmen Navigator GUI</h3>
+
+<p>
+The CARMEN Navigator GUI is a graphic user interface which allows a user to<ul>
+<li>set goal locations for the robot
+<li>monitor the location of the robot
+<li>monitor some of what the robot senses
+<li>monitor some of the program belief states.
+</ul>
+<p>
+Starting <tt>navigatorgui</tt> is described on the <a href="http://www-2.cs.cmu.edu/~carmen/using_carmen.html#Autonomy">Running Carmen</a> page. This page is presented to further explain the functions of the program.
+<p>
+Once started properly, the user interface appears as below.
+<p>
+<center><img src=images/navpanel1.gif></center>
+<p>
+In the status box, the robot position is indicated in meters from the lower left corner of the map, (horizontal, vertical) and then degrees from 3 O'Clock facing, counterclockwise being positive. (The standard, right-handed co-ordinate system.)
+<p> 
+The current robot goal is also indicated this way, but without facing component.
+<p>
+The computer cursor position (for the computer you are displaying on) is measured in grid cells from the lower left of the map.
+<p>
+Value indicates the likelihood that the grid cell under the cursor is occupied, according to the map file. A value of 1.00 indicates that cell is sure to be occupied. Negative values indicate unmapped regions (no data). 
+<p>
+Clicking the "Autonomous" bar will cause the robot to move toward its goal, or stop it if it is already moving. Clicking on the map display will set a new goal, overiding any old goal, only of "Autonomous" is inactive (the robot is not moving).
+<p>
+It is possible to gove the robot a goal it cannot reach. Should you do that, no indicated path will appear between the robot and the goal, as below.
+<p>
+<center><img src=images/navpanel_falsegoal.gif></center>
+<p>
+The "Zoom" slider at the bottom of the display allows users to zoom in or out on the map for more detail or more area. The slider bars to the right of and below the map allow users to shift the section of the map being displayed.
+<p>
+The menus "Start Location" and "Goals" allow you to select starting locations for the robot or robot goals that are built into map files. Adding or deleting locations is described in the <a href="http://www-2.cs.cmu.edu/~carmen/map_editor.html">Using the Map Editor</a> page. Another way to place the robot is to right-click on a position in the display. This will change the robot's perceived location; any paths planned by Navigator will be based on this position, not the actual position of the real or simulated robot. Another way to set a goal is to left-click a place on the map.
+<p>
+The "File" menu option allows you to save a display image to a .png file. this will only save what is between the slide bars, it will not save the whole map (unless the display is fully zoomed out), nore will it save the status box. The file will appear in the directory from which <tt>navigatorgui</tt> is running, with a filename <tt>[mapfile].map#.png</tt>, where [mapfile] is the name of the mapfile in use, and # is the number of times previously a screen has been saved.
+<p>
+The "Show" and "Robot Display" menus are described below. Note that under the "Show" menu, the options of "Map", "Utility" and "Cost" are mutually exclusive; the display can only show one of these options at a time.
+<p>
+<center><b>The "Show" Menu</b></center>
+<p>
+<table border=1>
+<tr><th>Option</th><th>Image</th><th>Function Description</th></tr>
+<tr><td>People</td><td><center><img src=images/navpanel_people.gif></center></td><td>Clicking "People" will indicate umapped objects which the people tracker thinks are people on the map as green dots.</td></tr>
+<tr><td>Map</td><td><spacer type=horizontal size=1></td><td>"Map" is the default starting display; it shows the robot location in red, goal location in yellow, planned path as a blue line with subgoals as x's along that line, open space as white regions, occupied space as black regions, and unmapped space as blue regions. Grey areas are uncertain regions, darker areas indicate regions that are more likely to be occupied than lighter regions.</td></tr>
+<tr><td>Utility</td><td><center><img src=images/navpanel_util.gif></center></td><td>Selecting "Utility" shows a grey level which gets whiter closer to the indicated goal. "Utility" is the value function of the dynamic program inversely proportional to the time the robot can expect to take to reach a goal from a given point. Dark areas indicate low utility, light areas indicate higher utility, and the robot should always attempt to move from dark to light. Utility does not update with a new goal, because sending the utility across the net can be a high bandwidth operation. To update the utility display, re-select "Utility" from the menu.</td></tr>
+<tr><td>Costs</td><td><center><img src=images/navpanel_cost.gif></center></td><td>Selecting "Costs" shows darker regions near occupied spaces and lighter regions in empty space. "Cost" is an arbitrary value relating to the maximum speed which the robot can use to safely transverse a region. Darker areas indicate high cost, indicating the robot must move slowly. The planner will move the robot through the lowest cumulative cost path to reach the goal.</td></tr>
+</table>
+<p>
+<center><b>The Robot Display Menu</b></center>
+<p>
+<table border=1>
+<tr><th>Option</th><th>Image</th><th>Function Description</th></tr>
+<tr><td>Track Robot</td><td><spacer type=horizontal size=1></td><td>If the display is zoomed in, the GUI will try and keep the robot centered in the display when track robot is checked. Otherwise, the robot may end up off the screen.</td></tr>
+<tr><td>Show Particles</td><td><center><img src=images/navpanel_parts.gif></center></td><td>Rather than monitor a single location for the robot (which may be wrong), <tt>localize</tt> maintains a probability distribution over the robot's position. Selecting "Show Particles" replaces the red robot indicator with dots (particles) drawn from that distribution. Dense areas (with many particles) are regions of high probability.</td></tr>
+<tr><td>Show Gaussians</td><td><center><img src=images/navpanel_gauss.gif></center></td><td>Selecting "Show Gaussians" indicates the same probability described above as a gaussian (normal probability distribution) in x and y.</td></tr>
+<tr><td>Show Laser Data</td><td><center><img src=images/navpanel_laser.gif></center></td><td>Selecting "Show Laser Data" plots laser data relative to the robots indicated (most probable) location. Blue data points indicate data that correlates with objects on the map, red data points indicate discrepancies: unmapped objects, erronious readings, or mismatch between likely and actual location.</td></tr>
+<tr><td>Show Simulator True Position</td><td><center><img src=images/navpanel_simtru.gif></center></td><td>Selecting "Show Simulator True Position" displays the simulated robot's "true" positon in blue, only if the simulator is in use.</td></tr>
+</table>
+
+<!-- REST OF NAVIGATOR -->
+
+</td><td width="20"></td> </tr>
+<tr>
+<td><br></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table> 
+
+<!-- FOOTER -->
+
+
+<table align="center" width="95%"> 
+<tbody>
+<tr> 
+<td colspan="2" align="center" bgcolor="#ffffcc">
+Copyright ©  by the <a href="contributers.html">CARMEN-Team</a>
+</td> 
+</tr> 
+</tbody>
+</table>
+</div>
+</body>
+
+<!-- Mirrored from carmen.sourceforge.net/navigatorgui.html by HTTrack Website Copier/3.x [XR&CO'2010], Thu, 13 Jan 2011 17:35:50 GMT -->
+</html>
+

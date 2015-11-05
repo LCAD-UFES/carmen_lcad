@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="application/icon">
+    <file>QOpenTLD.ico</file>
+  </qresource>
+</RCC>

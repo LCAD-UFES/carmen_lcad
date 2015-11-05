@@ -1,0 +1,9 @@
+To create makefile run:
+qmake-qt4
+
+To run QT_GUI use the following command:
+./$CARMEN_HOME/bin/QT_GUI 0 -> the program will run in the single thread mode
+or
+./$CARMEN_HOME/bin/QT_GUI 1 -> the program will use two threads, one for ipc and other for drawing
+
+

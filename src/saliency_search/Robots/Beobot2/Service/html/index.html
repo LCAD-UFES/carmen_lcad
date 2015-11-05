@@ -1,0 +1,58 @@
+<html>
+<head>
+<title>Beo Web Visualizer</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script>
+jQuery.fn.center = function () {
+	this.css("position","absolute");
+	this.css("top", (($(window).height() - this.outerHeight()) / 2) + 
+			$(window).scrollTop() + "px");
+	this.css("left", (($(window).width() - this.outerWidth()) / 2) + 
+			$(window).scrollLeft() + "px");
+	return this;
+}
+
+
+$(document).ready(function() {
+
+		function update()
+		{
+//		$.getJSON('/telemetry.json', function(data) {
+//			var degree = (180/Math.PI)*data['compass'];
+//			$("#compass").css('-webkit-transform', 'rotate('+degree+'deg)');
+//			map.panTo(new google.maps.LatLng(data['gps'][0], data['gps'][1]));
+//			});
+
+		//// also reload the image
+		var d = new Date();
+		$("#image").attr("src", "/image.jpg?" + d.getTime());
+		setTimeout(update, 100);
+		}
+		update();
+		});
+</script>
+
+<style type="text/css">
+html, body, #map_canvas {
+background: url('background.jpg') repeat;
+margin: 0;
+padding: 0;
+}
+
+
+#image {
+display: block;
+height: 100%;
+				margin-left: auto;
+				margin-right: auto;
+				box-shadow: 0px 0px 25px 5px #000;
+}
+</style>
+</head>
+<body>
+<img src="/image.jpg" id="image"/>
+<div id="map">
+<div id="map_canvas"></div>
+</div>
+</body>
+</html>

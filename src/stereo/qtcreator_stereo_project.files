@@ -1,0 +1,16 @@
+libstereo/qx_csbp.c
+libstereo/qx_csbp.h
+libstereo/qx_csbp_GPU.h
+libstereo/qx_csbp_OMP.c
+libstereovgram/vg_ram.c
+libstereovgram/vg_ram.h
+stereo_interface.c
+stereo_interface.h
+stereo_main.c
+stereo_main.cpp
+stereo_main_old.cpp
+stereo_main_old2.c
+stereo_messages.h
+stereo_util.c
+stereo_util.h
+stereo_view.c

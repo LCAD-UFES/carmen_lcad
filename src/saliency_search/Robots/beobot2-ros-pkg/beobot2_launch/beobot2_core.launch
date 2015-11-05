@@ -1,0 +1,6 @@
+<launch>
+	<include file="$(find beobot2_launch)/beopilot.launch" />
+	<include file="$(find beobot2_launch)/beobot2_teleop.launch" />
+	<include file="$(find beobot2_launch)/hokuyo.launch" />
+	<node pkg="tf" type="static_transform_publisher" name="base_link_to_later" args="0.1651 0 0.6858 0 0 0 beobot2/base_link laser 100" />
+</launch>

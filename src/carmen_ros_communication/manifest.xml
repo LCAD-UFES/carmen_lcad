@@ -1,0 +1,15 @@
+<package>
+  <description brief="carmen_ros_communication">
+
+     carmen_ros_communication
+
+  </description>
+  <author>lcad</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/carmen_ros_communication</url>
+  <depend package="sensor_msgs"/>
+
+</package>
+
+

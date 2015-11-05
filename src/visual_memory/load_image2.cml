@@ -1,0 +1,2 @@
+load visual_memory from figura2.ppm;
+forward network;

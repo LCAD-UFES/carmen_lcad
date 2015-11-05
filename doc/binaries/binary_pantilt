@@ -1,0 +1,15 @@
+/** @page binary__pantilt
+
+<h2>The Pantilt Unit Driver</h2>
+
+
+@section pantilt_main Pantilt
+
+This module provides a driver for the serial Directed Perception pan
+tilt unit typically provided by iRobot for the b21r robots. One can
+send pan tilt commands and subsribe to the status of the unit.
+
+<h3>Usage: ./pantily</h3>
+
+
+**/

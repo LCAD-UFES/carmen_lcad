@@ -1,0 +1,15 @@
+/** @page binary__camera
+
+<h2>Camera</h2>
+
+All binaries in this module do one basic thing: publish images. 
+
+The camera_quickcam loads images from /dev/video0 using the pwcx driver, and
+publishes them.
+
+The camera_fakecam publishes a static (fake) image of a gopher holding a
+bazooka (a.k.a. Canadian army). Useful for debugging.
+
+camera_view subscribes to the image messages and renders them in a window. 
+
+**/

@@ -1,0 +1,32 @@
+- Implementar um motion planner (MP) baseado em VG-RAM
+-- Este MP seria treinado com base nos seguintes dados, no caso de phi:
+--- O carro seria estimulado em phi com senoides de:
+---- 4 diferentes frequencias, cada uma com uma amplitude fixa
+---- em 4 diferentes velocidades (0m/s, 2.5, 5, e 10)
+---- com bias 0, máximo zero e mínimo negativo, e mínimo zero e máximo positivo
+---- com 4 diferentes aceleracoes de phi
+
+--- Os estimulos totalizam 4x4x3x4 = 192 casos. 
+--- Dividindo as senoides em 10 partes, temos 192x10 = 1920 casos.
+---- Um numero maior de casos pode ser necessario por conta das senoides
+     de menor frequencia.
+--- A rede seria treinada, entao, recebendo como entrada->saida: 
+---- v(t), phi(t-1), phi(t+1) -> phi'(t), phi(t)
+
+
+-- Este MP seria treinado com base nos seguintes dados, no caso de v:
+--- O carro seria estimulado em v com senoides de:
+---- 4 diferentes frequencias, cada uma com uma amplitude fixa
+---- com mínimo zero e máximo positivo
+---- com 4 diferentes aceleracoes de v
+
+--- Os estimulos totalizam 4x4 = 16 casos. 
+--- Dividindo as senoides em 10 partes, temos 16x10 = 160 casos.
+---- Um numero maior de casos pode ser necessario por conta das senoides
+     de menor frequencia.
+--- A rede seria treinada, entao, recebendo como entrada->saida: 
+---- v(t-1), v(t+1) -> v'(t), v(t)
+
+
+-- O mesmo padrao seria repetido para velocidades negativas e redes diferentes
+   seriam usadas para velocidades positivas e negativas.

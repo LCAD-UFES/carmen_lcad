@@ -1,0 +1,485 @@
+/* COMMON STYLE
+--------------------------------------------------------- */
+html, body, form, fieldset
+{
+	margin: 0;
+	padding: 0;
+}
+
+body
+{
+	background: #000 url(../images/body-background.gif) repeat-x;
+	color: #000000;
+	font-family: Arial, Helvetica, sans-serif;
+	line-height: 150%;
+}
+
+body.contentpane {
+	width: auto; /* Printable Page */
+	margin: 1em 2em;
+	background: #FFFFFF;
+	color: #000000;
+	font-size: 12pt;
+	font-family: serif;
+	line-height: 140%;
+}
+
+body.fs1 {
+	font-size: 10px;
+}
+
+body.fs2{
+	font-size: 11px;
+}
+
+body.fs3{
+	font-size: 12px;
+}
+
+body.fs4{
+	font-size: 13px;
+}
+
+body.fs5{
+	font-size: 14px;
+}
+
+body.fs6{
+	font-size: 15px;
+}
+
+img
+{
+	border-style: none;
+}
+
+/* Normal link */
+a {
+	color: #006699;
+	text-decoration: underline;
+}
+
+a:hover, a:active, a:focus {
+	color: #333333;
+	text-decoration: underline;
+}
+
+/* Title text */
+.contentheading, .componentheading, .blog_more strong, h1, h2, h3, h4 {
+	font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+}
+
+/* Small text */
+small, .small, .smalldark, .mosimage_caption, .createby, .createdate, .modifydate, a.readon, .img_caption {
+	color: #666666;
+	font-size: 92%;
+}
+
+/* Heading */
+h1 {
+	font-size: 180%;
+}
+
+h2 {
+	font-size: 150%;
+}
+
+h3 {
+	font-size: 125%;
+}
+
+h4 {
+	font-size: 100%;
+	text-transform: uppercase;
+}
+
+pre, blockquote, ul, ol, h1, h2, h3, h4, h5, h6 {
+	margin: 0.5em 0;
+	padding: 0;
+}
+
+p {
+        line-height: 120%;
+}
+
+ul {
+	list-style: none;
+}
+
+ul li {
+	padding-left: 30px;
+	background: url(../images/bullet.gif) no-repeat 18px 8px;
+	line-height: 180%;
+}
+
+ol li {
+	margin-left: 35px;
+	line-height: 180%;
+}
+
+th {
+	padding: 5px;
+	font-weight: bold;
+	text-align: left;
+}
+
+fieldset {
+	border: none;
+	padding: 10px 5px;
+	background: url(../images/hdot2.gif) repeat-x top;
+}
+
+fieldset a {
+	font-weight: bold;
+}
+
+hr {
+	border-top: 1px solid #CCCCCC;
+	border-right: 0;
+	border-left: 0;
+	border-bottom: 0;
+	height: 1px;
+}
+
+td, div {
+	font-size: 100%;
+}
+
+/* FORM
+--------------------------------------------------------- */
+form {
+	margin: 0;
+	padding: 0;
+}
+
+form label {
+	cursor: pointer;
+}
+
+input, select, textarea, .inputbox {
+	padding: 3px 0px;
+	font-family: Tahoma, Arial, Helvetica, sans-serif;
+	font-size: 100%;
+}
+
+.button {
+	padding: 3px 5px;
+	border: 1px solid #333333;
+	background: url(../images/menubar.png) repeat-x center #333333;
+	color: #CCCCCC;
+	font-size: 85%;
+	text-transform: uppercase;
+}
+
+.button:hover, .button:focus {
+	border: 1px solid #999999;
+	background: #0059B2;
+	color: #FFFFFF;
+}
+
+* html .button {
+	padding: 2px 0 !important; /*IE 6*/
+}
+
+*+html .button {
+	padding: 2px 0 !important; /*IE 7*/
+}
+
+.inputbox {
+	border: 1px solid #CCCCCC;
+	background: #FFFFFF;
+}
+
+.inputbox:hover, .inputbox:focus {
+	background: #FFFFCC;
+}
+
+/* BONUS TYPOGRAPHY STYLES
+--------------------------------------------------------- */
+pre, .code {
+	padding: 10px 15px;
+	margin: 5px 0 15px;
+	border-left: 5px solid #999999;
+	background: #FFFFFF;
+	font: 1em/1.5 "Courier News", monospace;
+}
+
+blockquote {
+	padding: 1em 40px 1em 15px;
+}
+
+blockquote span.open {
+	padding: 0 0 0 20px;
+	background: url(../images/so-q.gif) no-repeat left top;
+}
+
+blockquote span.close {
+	padding: 0 20px 0 0;
+	background: url(../images/sc-q.gif) no-repeat bottom right;
+}
+
+/* Quote hilight */
+.quote-hilite {
+	padding: 10px 15px;
+	margin: 0;
+	border: 1px solid #CACACC;
+	background: #FFFFFF;
+}
+
+/* Small quote */
+.small-quote {
+	margin: 0;
+	padding: 0;
+	background: none;
+}
+
+.small-quote span.open-quote {
+	margin: 0;
+	padding-left: 20px;
+	background: url(../images/so-q.gif) no-repeat center left;
+}
+
+.small-quote span.close-quote {
+	margin: 0;
+	padding-right: 20px;
+	background: url(../images/sc-q.gif) no-repeat center right;
+}
+
+.small-quote span.author {
+	padding: 2px 5px 2px 20px;
+	border-top: 1px solid #DCDDE0;
+	margin: 0.5em 0 0;
+	display: block;
+	background: url(../images/author.gif) no-repeat 5px 4px #EAEBEE;
+	font-size: 90%;
+	text-transform: uppercase;
+}
+
+/* Rropcap */
+.dropcap {
+	float: left;
+	padding: 4px 8px 0 0;
+	display: block;
+	color: #999999;
+	font: 50px/40px Georgia, Times, serif;
+}
+
+/* Tips, Error, Message, Hightlight*/
+p.error {
+	padding-left: 25px;
+	color: #BF0000;
+	background: url(../images/icon-error.gif) no-repeat top left;
+}
+
+p.message {
+	padding-left: 25px;
+	color: #006699;
+	background: url(../images/icon-info.gif) no-repeat top left;
+}
+
+p.tips {
+	padding-left: 25px;
+	color: #EE9600;
+	background: url(../images/icon-tips.gif) no-repeat top left;
+}
+
+.highlight {
+	padding: 1px 5px;
+	background: #FFFFCC;
+	font-weight: bold;
+}
+
+/* Note Style */
+p.stickynote {
+	padding: 10px 0px 10px 40px;
+	border: 1px solid #CACACC;
+	background: url(../images/sticky-bg.gif) no-repeat 5px center #FFFFFF;
+}
+
+p.download {
+	padding: 10px 0px 10px 40px;
+	border: 1px solid #CACACC;
+	background: url(../images/download-bg.gif) no-repeat 5px center #FFFFFF;
+}
+
+.blocknumber {
+	clear: both;
+	padding: 5px 15px 10px;
+	position: relative;
+}
+
+/* Check list */
+ul.checklist {
+	list-style: none;
+}
+
+ul.checklist li {
+	margin-left: 15px;
+	padding: 0 0 5px 20px;
+	background: url(../images/checklist-bg.gif) no-repeat 0 3px;
+}
+
+/* Small checklist */
+ul.small-checklist {
+	list-style: none;
+}
+
+ul.small-checklist li {
+	margin-left: 15px;
+	padding: 0 0 5px 20px;
+	background: url(../images/icon_list.gif) no-repeat 0 3px;
+}
+
+/* Check list */
+ul.stars {
+	list-style: none;
+}
+
+ul.stars li {
+	margin-left: 15px;
+	padding: 0px 0 5px 20px;
+	background: url(../images/star-bg.gif) no-repeat 0 3px;
+}
+
+/* Bignumber */
+.bignumber {
+	float: left;
+	margin-right: 8px;
+	padding: 6px 7px;
+	display: block;
+	background: url(../images/ol-bg.gif) no-repeat top left;
+	color: #7BA566;
+	font: bold 20px/normal Arial, sans-serif;
+}
+
+/* Talking box. Thinking box. */
+div.bubble1, div.bubble2, div.bubble3, div.bubble4 {
+	margin: 15px 0;
+}
+
+div.bubble1 span.author,
+div.bubble2 span.author,
+div.bubble3 span.author,
+div.bubble4 span.author {
+	padding-left: 15px;
+	margin-left: 15px;
+	background: url(../images/author.gif) no-repeat center left;
+	font-weight: bold;
+}
+
+div.bubble1 div {
+	margin: 0;
+	width: 100%;
+	background: url(../images/bub1-br.gif) no-repeat bottom right;
+}
+
+div.bubble1 div div {
+	background: url(../images/bub1-bl.gif) no-repeat bottom left;
+}
+
+div.bubble1 div div div {
+	background: url(../images/bub1-tr.gif) no-repeat top right;
+}
+
+div.bubble1 div div div div {
+	background: url(../images/bub1-tl.gif) no-repeat top left;
+}
+
+div.bubble1 div div div div div {
+	margin: 0;
+	padding: 15px 15px 30px 15px;
+	width: auto;
+}
+
+div.bubble2 div {
+	margin: 0;
+	width: 100%;
+	background: url(../images/bub2-br.gif) no-repeat bottom right;
+}
+
+div.bubble2 div div {
+	background: url(../images/bub2-bl.gif) no-repeat bottom left;
+}
+
+div.bubble2 div div div {
+	background: url(../images/bub2-tr.gif) no-repeat top right;
+}
+
+div.bubble2 div div div div {
+	background: url(../images/bub2-tl.gif) no-repeat top left;
+}
+
+div.bubble2 div div div div div {
+	margin: 0;
+	padding: 15px 15px 35px 15px;
+	width: auto;
+}
+
+div.bubble3 div {
+	margin: 0;
+	width: 100%;
+	background: url(../images/bub3-br.gif) no-repeat bottom right;
+}
+
+div.bubble3 div div {
+	background: url(../images/bub3-bl.gif) no-repeat bottom left;
+}
+
+div.bubble3 div div div {
+	background: url(../images/bub3-tr.gif) no-repeat top right;
+}
+
+div.bubble3 div div div div {
+	background: url(../images/bub3-tl.gif) no-repeat top left;
+}
+
+div.bubble3 div div div div div {
+	margin: 0;
+	padding: 15px 15px 50px 15px;
+	width: auto;
+}
+
+div.bubble4 div {
+	margin: 0;
+	width: 100%;
+	background: url(../images/bub4-br.gif) no-repeat bottom right;
+}
+
+div.bubble4 div div {
+	background: url(../images/bub4-bl.gif) no-repeat bottom left;
+}
+
+div.bubble4 div div div {
+	background: url(../images/bub4-tr.gif) no-repeat top right;
+}
+
+div.bubble4 div div div div {
+	background: url(../images/bub4-tl.gif) no-repeat top left;
+}
+
+div.bubble4 div div div div div {
+	margin: 0;
+	padding: 15px 15px 55px 15px;
+	width: auto;
+}
+
+/* Legend */
+.legend-title {
+	margin: 0;
+	padding: 0 3px;
+	float: left;
+	display: block;
+	background: #F6F6F6;
+	font-weight: bold;
+	position: absolute;
+	top: -10px;
+	left: 7px;
+}
+
+.legend {
+	margin: 20px 0;
+	padding: 0 10px;
+	border: 1px solid #CACACC;
+	background: #FFFFFF;
+	position: relative;
+}

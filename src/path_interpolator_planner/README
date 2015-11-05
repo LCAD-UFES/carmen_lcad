@@ -1,0 +1,12 @@
+Para usar o path_interpolator_planner siga os seguintes passos:
+
+1. Rode algum process navigate
+2. Desligue todos os navegadores
+3. Mantenha ligados os modulos behavior_selector, motion_planner e obstacle_avoider
+4. No navigator_gui selecione user_goal ao inves de rddf_goal
+5. Ainda no navigator_gui, selecione Gradient como algoritmo na select box Follow Lane
+6. Posicione o robot
+7. Clique em Place goal e coloque os pontos da trajetorio do robo. 
+8. APOS O TERCEIRO PONTO, ele ira comecar a interpolar a trajetoria e voce podera visualizar os comandos na interface.
+
+OBS: Para publicar mais ou menos pontos entre os pontos clicados mude o define NUM_POSES_BETWEEN_WAYPOINTS no arquivo path_interpolator_main.cpp

@@ -1,0 +1,6 @@
+in_pattern 31 32
+in_pattern_translated_scaled_filtered_inhibited_out 351 32
+hamming_distance_layer_out 671 208
+out_v1_activation_map_f 871 32
+out_v1_activation_map 671 32
+mae_control_window 699 491

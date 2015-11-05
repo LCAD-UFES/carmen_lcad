@@ -1,0 +1,117 @@
+/** @page binary__logtools
+
+<h2>Logtools</h2>
+
+
+@section logtools_log2pic_main Log2pic
+
+This module provides a set of tools for working with logfiles
+
+<h3>Usage: ./log2pic [options] \<log file\> \<output file\></h3>
+
+<h3>[options] are:</h3>
+
+  -anim-step \<STEP-SIZE\>:    min distance between scans 
+
+  -anim-skip \<NUM\>:          skip NUM animation dumps (0: no skip)
+
+  -animation:                write sep. pics for animation
+
+  -background \<FILE\>:        use background file
+
+  -bg-offset \<X\>\<Y\>:         shift by \<X\>/\<Y\> pixels
+
+  -bg-color \<COLOR\>:         background color
+
+  -bg-map \<FILE\>:            read carmen-map as background image
+
+  -border \<BORDER\>:          add a border 
+
+  -carmen-map:               save in carmen-map format
+
+  -convolve:                 convolve map with gaussian kerne;
+
+  -crop \<X\>\<Y\>\<X\>\<Y\>:        crop part of the map (min,max):
+
+  -darken \<FACTOR\>:          darken the occ. cells
+
+  -display-arrow:            display arrow in marking
+
+  -endpoints:                use endpoints instead of beams
+
+  -free-prob:                probability for free observation
+
+  -from \<NUM\>:               start animation with scan NUM
+
+  -gps-path:                 draw gps points
+
+  -id \<ID\>:                  set laser number
+
+  -kernel-size \<NUM\>:        size of the gaussian kernel (\>0 and odd)
+
+  -maxrange \<MAX-RANGE\>:     max range for building maps
+
+  -no-scans:                 don't integrate the scans
+
+  -odds-model:               use odds-model to compute probs
+
+  -pathcolor \<COLORNAME\>:    color of the robot path
+
+  -pathwidth \<WIDTH\>:        width of the robot path
+
+  -start-pose \<X\>\<Y\>\<O\>:     start pose of the robot
+
+  -plot2d:                   save as 2d data file
+
+  -plot3d:                   save map as 3d data file
+
+  -pos-start \<X\>\<Y\>:         pos of lower left bg-corner
+
+  -rear-laser:               use rear laser instead of front laser
+
+  -res   \<RES\> \<RES\>:        resolution of the map
+
+  -res-x \<RES\>:              resolution in x direction
+
+  -res-y \<RES\>:              resolution in y direction
+
+  -rotate \<ANGLE\>:           rotate the map by ANGLE degree
+
+  -showpath:                 show robot path
+
+  -size:                     set the size of the output image
+
+  -static-prob:              probability for static observation
+
+  -to \<NUM\>:                 end animation with scan NUM
+
+  -usablerange \<MAX-RANGE\>:  max range for detecting corrupted beams
+
+  -utm-correct:              corrects gps positions for UTM tiles
+
+  -zoom \<ZOOM\>:              scale factor for the map (must be \>=1.0)
+
+
+
+@section logtools_log2log_main Log2log
+
+
+Log2log is a tool to convert logfiles. In reads the old as well as the new
+carmen logfile format and write the new format. 
+
+<h3>Usage: ./log2pic \<carmen input logfile\>   \<carmen output logfile\>  </h3>
+
+
+@section logtools_clfgetoldlaser_main clf-get-oldlaser
+
+This tools is a converter that generates the old FLASER messages for
+the new ROBOTLASER messages. This may be needed for compatibility with
+old programs.
+
+<h3>Usage: ./clf-get-oldlaser \<carmen logfile\> \> \<old_format logfile\> </h3>
+
+
+
+
+
+**/

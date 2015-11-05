@@ -1,0 +1,41 @@
+Access control is a layer of network security that automatically denies
+connections from untrusted hosts, as described by hosts_access
+(5). Portscanners are denied connections on access-controlled open sockets,
+and therefore cannot exploit potential bugs in network-level code, either at
+the user level or the system level. Connections are allowed by consulting the
+/etc/hosts.allow and /etc/hosts.deny files, where clients listed in hosts.deny
+but not in hosts.allow are automatically denied.
+
+Access control can be enabled in IPC by compiling with the ACCESS_CONTROL
+flag:
+
+% gmake -DACCESS_CONTROL
+
+The affected source file is comServer.c, and the affected binary is central. 
+
+The access control language is specified fully in the man page hosts_access
+(5), but in brief, the two files contain lines of the form
+
+daemon : host name
+
+where the host name can be an IP address or a domain name.  The daemon name
+used by central is "central". A typical pair of control files might look like:
+
+/etc/hosts.deny:
+
+ALL : ALL
+
+and /etc/hosts.allow
+
+central  : localhost
+sshd     : .cs.cmu.edu
+sshd-x11 : .cs.cmu.edu
+
+This example denies access to all connections outside the .cs.cmu.edu domain,
+allows ssh connections inside .cs.cmu.edu, and allows IPC connections only on
+the localhost. For message passing between computers, a second,
+comma-separated, hostname could be added to the entry for central.
+
+Remember that the only affected program is central, and so access control only
+works when ipc connections are central mode, not in direct mode. (Direct
+connections are used by starting central with the -c option.)

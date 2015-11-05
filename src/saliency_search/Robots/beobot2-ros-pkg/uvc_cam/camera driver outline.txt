@@ -1,0 +1,45 @@
+camera driver outline
+
+getCapabilities, returns a uint32 for the capabilities of the device
+
+
+get resolution and framerate info
+
+pixel_format
+resolution and framerate info
+
+vector of resolution strcuts
+width height, vector of numerator and denominator frame rate list
+
+or 
+
+size info
+v4l2_frmsizeenum index  pixel_format type discrete.width discrete.height 
+fsize.stepwise.min_width,  fsize.stepwise.min_height,
+               fsize.stepwise.max_width,  fsize.stepwise.max_height,
+               fsize.stepwise.step_width, fsize.stepwise.step_height
+vector of framerate info for each size
+framerate info from size info
+determine v4l2_frmivalenum info, index pixel_format width height discrete.numerator discrete.denominator
+
+
+
+
+v4l2_format .fmt.pix.pixelformat  .fmt.pix.height   .fmt.pix.width .type  .fmt.pix.field
+
+
+v4l2_streamparm
+  streamparm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  streamparm.parm.capture.timeperframe.numerator = 1;
+  streamparm.parm.capture.timeperframe.denominator = fps;
+
+line 115
+v4l2_queryctrl .id  .type queryctrl.name, queryctrl.flags, queryctrl.id, 
+             queryctrl.minimum, queryctrl.maximum, queryctrl.step
+
+v4l2_querymenu
+querymenu.id = queryctrl.id
+querymenu.index = 0
+querymenu.name
+
+

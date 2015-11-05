@@ -1,0 +1,120 @@
+RELEASE NOTES CARMEN V 0.6 Beta
+
+General changes
+========================================
+Interface libraries moved to ipc_wrapper
+All messages, 10-character hostname changed to arbitrary length. 
+Most graphics moved GTK 2.0
+API and Binary documentation added (supported by Doxygen)
+
+
+base 
+======================================== 
+Moved all robot hardware bases into base directory
+Eliminated base_services. Now every base interface
+runs in a separate process
+Partial support for abstract arm/manipulator interface added
+
+camera
+========================================
+Added support for camera images
+Added support for Logitech Quickcam
+
+global
+========================================
+libserial changed to libcarmenserial
+Many bugs fixed 
+New collision avoidance calculations added to libgeometry
+libmulticentral added (support for multiple robots)
+libmovement relative motion calculation library added
+Many name-space issues fixed
+libipc_wrapper added -- generalized message subscription
+mechanisms (removed duplicate code from most interface libraries)
+
+gps
+========================================
+NMEA GPS unit support added
+Pose and ground-speed message support added
+
+hmap
+========================================
+Support for hierarchical maps (multi-room maps) added
+Also support added through-out carmen for dynamic
+map reloading to support hmaps
+
+ipc
+========================================
+Support for Powerpc added
+
+java
+========================================
+Partial support for java added
+
+laser
+========================================
+New message format (laser configuration,
+remission values integrated)
+
+localize
+========================================
+New motion model added
+Max range correctly considered
+Motion model parameter learner added
+
+logger
+========================================
+New logger format
+New libraries added for reading/writing log files
+
+logtools
+========================================
+New log2pic tool added for converting a log file to an image
+log2log conversion tool added for converting old carmen log
+files to new file format
+
+maptools
+========================================
+Most tools replaced by new maptool program
+Line-mapping library added
+
+navigator
+========================================
+Bug fixes
+If goal is not accessible, navigator moves to closest point
+navigator_panel replaced by navigatorgui
+
+pantilt
+========================================
+Support for Directed Perception pantilt added
+
+param_daemon
+========================================
+param_server renamed param_daemon
+param_set/install_params replaced by param_tool
+bug fixes
+expert parameter category added, so that in non-expert
+mode, expert parameters are hidden in param_edit
+
+proccontrol
+========================================
+process control/reporting module added
+
+python
+========================================
+Full support for python added
+
+robot
+========================================
+Bug fixes
+robot_laser message format changed
+
+robotgui
+========================================
+robot_graph renamed robotgui
+robotgui supports non-standard SICK configurations
+
+simulator
+========================================
+simulator supports for arbitrary laser configurations
+
+

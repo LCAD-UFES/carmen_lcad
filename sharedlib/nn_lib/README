@@ -1,0 +1,61 @@
+-- INTRODUCTION --
+
+
+The nn_lib is a neural networks lib. It provides biologically plausible implementations of cells, neurons and neural networks.
+At this point, the library is purelly composed of header files. These headers are located in the nn_lib directory.
+
+
+-- HOW TO START --
+
+
+To get introduced in the nn_lib, please take a look in the example directory.
+- To compile the examples run "make" in the examples directory.
+- To compile a specific example run "make" inside the example's directory.
+- Most of the examples can be run with "make run".
+
+
+-- DEPENDENCIES --
+
+
+- OpenCV (>= 2.1)
+
+
+-- RULES FOR DEVS --
+
+
+REGRA FUNDAMENTAL: Tenha em mente que o objetivo dessa lib eh criar um ambiente simplista para criacao rapida de prototipos. Alteracoes com quaisquer objetivos (principalmente otimizacoes)
+que compliquem o codigo devem ser evitadas. O codigo deve ser pequeno e simples de ser lido, entendido e modificado. Se precisar de super desempenho procure uma lib mais adequada as suas
+necessidades. A internet esta cheia de codigos complicados que sao otimos para fazer coisas especificas. O foco da nn_lib eh dar agilidade mais na prototipacao do que na execucao.
+
+
+-- TODO --
+
+
+OBS: RELEIA A REGRA FUNDAMENTAL ANTES DE LER OS PROXIMO TOPICOS
+
+1. Optimization
+
+	a. Analisar se o neuronio vg-ram so faz sentido de ser utilizado com valores binarios ou se eh interessante dar a possibilidade de usa-lo com vetores de float (como no exemplo
+		classification/simple_neuron_vgram_classification.cpp).
+
+	b. Uma forma de criar um neuronio vg-ram rapido eh criar um BinaryNeuron que extende de Neuron e criar um BinaryNeuronVGRAM extendendo esse neuronio. Neuronios do tipo BinaryNeuron
+		teriam aquela estrutura de armazenamento de valores utilizando os bits em ints. Eh interessante ter essa opcao para execucao de exemplos que demandam muita memoria. Nesse tipo
+		de neuronio nos poderiamos tambem usar o XOR de maquina para fazer a distancia de hamming mais rapida.
+	
+2. Refactoring
+
+	a. Estudar como organizar codigos de classes que usam template. Eles nao podem ser divididos em .h e .cpp porque aparentemente eles sao compilados em tempo de execucao e o compilador 
+		nao consegue linkar durante a compilacao. O resultado eh que o codigo do .h fica gigante e confuso.
+		
+	b, Estudar onde (biologicamente falando) o receptor log_polar deveria entrar. Hoje ele esta no util.h, mas obviamente aquele nao eh o seu lugar.
+	
+	c. Ver se a definicao da MinchintonCell esta biologicamente correta. Ver se faz sentido manter o conceito de Cell (existem outras celulas importantes? quais as caracteristicas em
+		comum que podem ser colocadas em uma classe mae?)
+		
+	d. Por causa do ponto (2.a) eu cai na comodidade de deixar todas as definicoes de classes nos .h. Eh interessante colocar todos as implementacoes de classes que nao usam templates em
+		arquivos .cpp separados.
+		
+	e. Analisar a possibilidade de manter os codigos principais em arquivos .c e criar wrappers orientados a objeto em arquivos .h e .cpp. Isso iria deixar os codigos das classes mais
+		simples e iria permitir que os codigos fossem usados fora do contexto orientado a objetos. A OpenCV eh mais ou menos assim.
+
+	

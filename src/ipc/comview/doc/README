@@ -1,0 +1,12 @@
+COMVIEW
+
+To build comview: 
+ 1) yum install tcl-devel tk-devel tetex tetex-latex
+ 2) cd to comview and type gmake install
+
+If anything goes wrong, cd to doc and gzip *.ps before trying again.
+
+Postscript documentation is doc/comview.pdf
+
+Command line: comview -f <log-filename>
+

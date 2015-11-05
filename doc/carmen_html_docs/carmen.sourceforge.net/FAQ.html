@@ -1,0 +1,244 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<!-- Mirrored from carmen.sourceforge.net/FAQ.html by HTTrack Website Copier/3.x [XR&CO'2010], Thu, 13 Jan 2011 17:35:41 GMT -->
+<head><title>CARMEN</title>
+	<meta name="description" content="CARMEN">
+	<meta name="keywords" content="CARMEN robot navigation toolkit">
+	<meta name="page-topic" content="CARMEN">
+
+        <meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<meta name="robots" content="index">
+	<meta name="robots" content="follow">
+	<link rel="stylesheet" type="text/css" href="styles/styles.css">
+</head>
+<body bgcolor="#ffffff">
+<br>
+<div align="center">
+<table align="center" width="95%">
+<tbody>
+<tr>
+  <td align="left"><img src="images/carmen-logo-small.png" border=0 alt="[Carmen logo]"></td>
+</tr>
+<tr>
+<td  align="left" bgcolor="#ffffcc">&nbsp;</td></tr>
+</tbody>
+</table>
+
+<!-- NAVIGATOR -->
+
+<table align="center" width="95%">
+<tbody>
+<tr>
+<td><br></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+   <td class="menu" align="left" valign="top" width="210"><br>
+   <ul>
+   <li><a href="home.html">Home</a></li> 
+   <li><a href="intro.html">What's Carmen?</a></li>
+   <li><a href="core_functionality.html">Core Functionalities</a></li>
+   <br>
+   <li><a href="news.html">What's New?</a></li>
+   <li><a href="repository.html">Repository</a></li>
+   <li><a href="update.html">Chief Changes</a></li>
+   <br>
+   <li><a href="getting_carmen.html">Download & Installation</a></li>
+   <li><a href="hardware.html">Required Hardware</a></li>
+   <li><a href="using_carmen.html">Running Carmen</a></li>
+   <li><a href="config_param.html">Configuring Carmen</a></li>
+   <br>
+   <li><a href="doc/index.html">Carmen Online Docs</a></li>
+   <li><a href="program_carmen.html">Program with Carmen</a></li>
+   <li><a href="FAQ.html">FAQ</a></li>
+   <li><a href="papers.html">Papers</a></li>
+   <br>
+   <li><a href="mailing_lists.html">Mailing List</a></li>
+   <li><a href="contributers.html">People</a></li><br>
+   <li><a href="http://radish.sourceforge.net/">Data Sets (Radish)</a></li>
+   </ul><br><br><br>
+   <img src="images/line-200.png" border=0> 
+  </td>
+  <td width="20"></td>
+  <td align="left" valign="top">
+
+<!-- END OF HEADER -->
+
+
+
+<h3>CARMEN Frequently Asked Questions<br></h3>
+
+
+<hr>
+
+<p>
+<a name=top>
+<b>Contents</b>
+<p><ul>
+<li><a href="#units">What are the units of each parameter?</a>
+<li><a href="#load">How do I reduce the processor load of CARMEN?</a>
+<li><a href="#sonar">Do you support sonar sensors?</a>
+<li><a href="#backwards">I want to make the robot move backwards, but it won't go.</a>
+<li><a href="#locnavwork">How do localize and navigator planner work?</a>
+<li><a href="#libscout.so">Where is libscout.so?</a>
+</ul>
+
+<ol type="1">
+<li><a name=units><b> What are the units of each parameter?</b>
+
+<p>
+  CARMEN uses SI units internally. All distances are in metres. All angles are
+  in radians. All velocities are in metres/second. All parameters described in
+  an .ini file should obey this constraint, and any that do not should be
+  considered a bug. 
+
+<p>
+  The only notable exception is that <tt>carmen_map_point_t</tt> points are in
+  map grid cells, and should be multiplied by the map resolution (or converted
+  using <tt>carmen_map_to_world</tt> to get distances in metres.<p></li>
+
+<p>Back to <a href="#top">Contents</a>.
+
+<li> <a name=load> <b>How do I reduce the processor load of CARMEN?</b>
+
+<p>
+  The major CPU load from CARMEN comes from two sources: localize and
+  navigator. Bear in mind that reducing the CPU load of these two processes
+  will lead to worse performance, and that a preferable scenario would be to
+  move these processes off the robot to a more powerful CPU. 
+
+<p>
+  The navigator CPU usage can be reduced by changing the number of lasers used
+  <br />
+  (<tt>navigator_num_lasers</tt>), increasing the replanning frequency
+  (<tt>navigator_replan_frequency</tt>) or, for static worlds with very accurate
+  maps and very good localization, dynamic obstacle avoidance can be turned
+  off using <br />(<tt>navigator_update_map</tt>). This last change is only
+  recommended in carefully controlled environments.
+
+<p>
+  Localize CPU usage can be reduced by making sure people tracking is off
+  (<tt>localize_people_tracking</tt>) and reducing the number of particles
+  (<tt>localize_robot_particles</tt>).<p></li>
+
+<p>Back to <a href="#top">Contents</a>.
+
+<li> <a name=sonar> <b>Do you support sonar sensors?</b>
+
+<p>
+  Nominally, yes. However, the sonar support has not been tested on most
+  platforms, and therefore should be considered in alpha development. Also,
+  localization, navigation and map building are not in any way supported using
+  sonars yet. This may change, but it is currently a low-priority item.<p></li>
+
+<p>Back to <a href="#top">Contents</a>.
+
+<li> <a name=backwards> <b>I want to make the robot move backwards, but it won't go.</b>
+
+<p>
+  There are two relevant parameters: <tt>robot_collision_avoidance</tt> and <tt>robot_allow_rear_motion</tt>.  
+<p>
+If <tt>robot_allow_rear_motion</tt> is off, then the robot will not move backwards.
+
+<p>
+  If you do not have backwards pointing sensors, such as a laser or sonar sensors, then the robot will not move backwards. The only robot that we support that could conceivably need to move backwards even without sensors is the ATRV. 
+
+<p>
+  If you do have backwards pointing sensors, are they enabled? If no rear sensor data shows up in robotgraph, then the robot will not move backwards.
+
+<p>
+If you turn <tt>robot_allow_rear_motion</tt> on, and <tt>robot_collision_avoidance</tt> off, then the robot will always move backwards if you ask it to. But, there is no guarantee you won't hit anything. We do <b>not</b> in any way endorse ever turning off collision avoidance. You <b>will</b> hit things.
+</li>
+
+<p>Back to <a href="#top">Contents</a>.
+
+<li> <a name=locnavwork> <b>How do localize and the navigator planner work?</b>
+
+<p>
+CARMEN uses a probabilistic approach to localization called Markov localization. The localizer estimates a probability distribution over all possible positions and orientations of the robot in the map given the laser readings and odometry measurements observed by the robot. This probability distribution is approximated using a particle filter (<a href="http://www-2.cs.cmu.edu/afs/cs.cmu.edu/user/thrun/public_html/index.html">Thrun</a> et. al. 2000). At start, CARMEN is given an initial position by the user, and the distribution of particles evolves to reflect the certainty of the localizer's position estimation.
+<p>
+As the robot moves, the probability distribution is updated according to <br>
+<center>
+<img src=images/equation1.html>
+</center><br>
+where s-sub-i is the pose at time i, a-sub-(i-1) the last action, and o-sub-i the last observation.
+<p>
+The planner consists of an implementation of a Markov decision process planner (<a href="http://www.informatik.uni-freiburg.de/~burgard/">Burgard</a> et. al. 1998, <a href="http://www.ai.sri.com/~konolige/">Konolige</a> 2000). The planner operates by assigning a positive reward to the goal location and a negative reward to poses close to obstacles. the planner uses value iteration to assign a value to each cell; this value corresponds to the future expected reward of each cell, as in the following equation:<br>
+<center>
+<img src=images/equation2.html>
+</center><br>
+where R(s-sub-i) is the immediate reward of robot pose s-sub-i, and V(s-sub-i) is the expected reward to be maximized. The planner extracts the maximum-likelihood path by choosing from the given start state (the current pose of the robot as given by the localizer) successive states that maximize the expected reward. The directional command passed to the low-level controller is just the direction of the neighboring state with the highest-expected reward.
+<p>
+For further explainations, see the <a href="papers.html">CARMEN Papers</a> website.
+
+<p>Back to <a href="#top">Contents</a>.
+
+
+<li><a name="libscout.so"><b>Where is libscout.so?</b>
+<p>
+<pre>
+>         I am new to the Carmen software. When I try to run the
+>         instructions under "Teleoperation of a Robot" at 
+>          http://www-2.cs.cmu.edu/~carmen/using_carmen.html I get an
+>         error on step #3.
+>         
+>         I run the following commands each in a separate window. 
+>         
+>         1) cd carmen/bin ; ./central
+>         2) cd carmen/bin ; ./param_server -robot scout
+>         3) cd carmen/bin ; ./scout
+>         
+>         Upon running the third command, I get the following error.
+>         
+>         bash: cd: carmen/bin: No such file or directory
+>         ./scout: error while loading shared libraries: libscout.so:
+>         cannot open shared object file: No such file or directory
+>         
+>         What is this "libscout.so" file and what am I doing wrong?
+</pre>
+<p>
+libscout.so is a dynamic lib file. Actually it exists in the directory of /usr/local/lib, as well as in carmen/src/scout.
+<p> 
+To prevent the error, use the following command before running ./scout:<br>
+under tcsh: <pre>setenv LD_LIBRARY_PATH .</pre><br>
+under bash: <pre>export LD_LIBRARY_PATH=.</pre>
+
+<p>Back to <a href="#top">Contents</a>.
+
+</ol>
+
+<p>
+
+
+<!-- REST OF NAVIGATOR -->
+
+</td><td width="20"></td> </tr>
+<tr>
+<td><br></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table> 
+
+<!-- FOOTER -->
+
+
+<table align="center" width="95%"> 
+<tbody>
+<tr> 
+<td colspan="2" align="center" bgcolor="#ffffcc">
+Copyright ©  by the <a href="contributers.html">CARMEN-Team</a>
+</td> 
+</tr> 
+</tbody>
+</table>
+</div>
+</body>
+
+<!-- Mirrored from carmen.sourceforge.net/FAQ.html by HTTrack Website Copier/3.x [XR&CO'2010], Thu, 13 Jan 2011 17:35:41 GMT -->
+</html>

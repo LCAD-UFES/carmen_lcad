@@ -1,0 +1,45 @@
+/** @page binary__base
+
+<h2>Base - Hardware Drivers for Different Robots</h2>
+
+The base modules provide the hardware access to the individual robots. Currently,
+CARMEN supports the following devices.
+
+@section pioneer_main pioneer
+
+Driver for ActivMedia Pioneer 1 and 2 robots. The Pioneer 3 series
+seem to have the same internals than Pioneer 2DX8+ robots, so they are
+supported by the Pioneer 2 code.
+
+<h3>Usage: ./pioneer</h3>
+
+@section rflex_main rflex
+
+Support for all  iRobot (former RWI) platforms.
+
+<h3>Usage: ./rflex</h3>
+
+@section b21r_main b21r
+
+Advanced support for the B21r including all bumpers, sonars, etc.
+
+
+<h3>Usage: ./b21r</h3>
+
+
+@section xr4000_main xr4000
+
+Driver for Nomad XR4000.
+
+
+<h3>Usage: ./xr4000</h3>
+
+
+@section orc_main orc
+
+Driver for Nicks ORC-board robots.
+
+
+
+
+**/

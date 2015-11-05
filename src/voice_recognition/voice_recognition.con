@@ -1,0 +1,63 @@
+################################################ Set Global Variables #################################################
+set TYPE_SHOW = SHOW_FRAME;
+set TYPE_MOVING_FRAME = STOP;
+
+set NEURON_MEMORY_SIZE = 10;
+
+######################################################## Constants ####################################################
+
+const INPUT_WIDTH 	= 256;
+const INPUT_HEIGHT	= 128;
+
+const SYNAPSES		= 512;
+
+const NL_WIDTH 		= 100;
+const NL_HEIGHT		= 100;
+
+const GAUSSIAN_RADIUS_DISTRIBUTION = 7.0;
+
+const GAUSSIAN_RADIUS_FILTER 	= 5;
+const GAUSSIAN_SIGMA_FILTER  	= 1.0;
+
+const DATA_PATH			= "DATA/";
+
+############################################### Neuron Layers #########################################################
+
+neuronlayer 	nl_spectogram_resized[NL_WIDTH][NL_HEIGHT]   		with greyscale outputs;
+neuronlayer 	nl_spectogram_gaussian[NL_WIDTH][NL_HEIGHT]	   	with greyscale outputs;
+neuronlayer 	nl_voice_command[NL_WIDTH][NL_HEIGHT / 2]    		of minchinton neurons greyscale sensitive with color outputs;
+
+############################################### Outputs #########################################################
+
+output      	out_nl_spectogram_resized[NL_WIDTH][NL_HEIGHT];
+output      	out_nl_spectogram_gaussian[NL_WIDTH][NL_HEIGHT];
+output		out_nl_voice_command[NL_WIDTH][NL_HEIGHT / 2] 		handled by output_handler();
+
+################################## Connect Neuron Layers to Outputs #############################################
+
+outputconnect	nl_spectogram_resized	to	out_nl_spectogram_resized;
+outputconnect	nl_spectogram_gaussian	to	out_nl_spectogram_gaussian;
+outputconnect	nl_voice_command	to	out_nl_voice_command;
+
+################################################## Inputs #############################################################
+
+input 		spectogram[INPUT_WIDTH][INPUT_HEIGHT]			with greyscale_float outputs produced by input_generator() controled by input_controler();
+input 		command_input[NL_WIDTH][NL_HEIGHT / 2]			with color outputs produced by input_generator1("%p", nl_voice_command) controled by input_controler1();
+
+############################################### Filters #########################################################
+
+filter      	spectogram 		with reshape_opencv_filter ("%d %f", GAUSSIAN_RADIUS_FILTER, GAUSSIAN_SIGMA_FILTER) producing nl_spectogram_resized;
+filter      	nl_spectogram_resized 	with gaussian_filter ("%d %f", GAUSSIAN_RADIUS_FILTER, GAUSSIAN_SIGMA_FILTER) producing nl_spectogram_gaussian;
+
+############################################### Associations ####################################################
+
+associate	nl_voice_command		with	nl_voice_command;
+
+################################################ Connections ####################################################
+
+#connect 	nl_spectogram_resized 		to nl_voice_command	with SYNAPSES random inputs per neuron and gaussian distribution with radius GAUSSIAN_RADIUS_DISTRIBUTION;
+connect 	nl_spectogram_resized 		to nl_voice_command	with SYNAPSES random inputs per neuron;
+
+################################################ User Functions #################################################
+
+int SetNetworkStatus ("%d");

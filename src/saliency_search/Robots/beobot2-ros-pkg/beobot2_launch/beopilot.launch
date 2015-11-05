@@ -1,0 +1,3 @@
+<launch>
+	<node pkg="beopilot" type="beopilot" name="beopilot" output="screen" />
+</launch>

@@ -1,0 +1,34 @@
+/** @page binary__navigator
+
+<h2>Navigator</h2>
+
+
+@section navigator_main The Navigator
+
+The navigator uses a shortest-path motion planner to find a path from the
+current robot pose to a goal pose. If no path exists, the navigator finds a
+path to the nearest (in Euclidean distance) point that the robot can
+reach. The path is assumed to be a set of joined line-segments defined by a
+set of way-points. Once a path has been computed, if the navigator is put into
+autonomous mode (by sending a navigator_go() message), then the navigator will
+use a P-D controller to drive from one waypoint to the next. 
+
+The navigator subscribes to global position messages from localize, odometry
+messages from the base and laser messages. The laser messages are used to make
+local changes to the map, allowing the navigator to replan around unmapped
+obstacles. The navigator does not require localize to be running, but
+navigation without accurate position estimates is likely to fail. 
+
+<h3>Usage: ./navigator</h3>
+
+
+@section navigator_gui The Navigator GUI
+
+The navigatorgui provides a view of the internal state of the navigator, as
+well as a way to set goals, start the robot moving, and initialize the robot
+position (assuming localize is running).
+
+<h3>Usage: ./navigatorgui</h3>
+
+
+**/

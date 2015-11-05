@@ -1,0 +1,38 @@
+/** @page binary__localize
+
+<h2>Localize</h2>
+
+
+@section localize_main Localize
+
+The localize module implements the classical Monte-Carlo localization
+using a particle filter. It can perform global localization and pose
+tracking.  Note that localize needs a map, otherwise, it will not
+work. The performance of localize mainly depends on the number of
+particles. The bigger that number, the slower runs the localization
+but is typically more robust.
+
+Localize uses a set of parameters that (strongly) influence the
+robustness and performance of localize. This is mainly the observation
+likelihood model and the noise in the motion model. You will find
+those parameters as expert parameters in the ini file. However, the
+standard configuration should work fine with robots equipped with SICK
+laser range finders.
+
+<h3>Usage: ./localize</h3>
+
+@section localize_initialize_main localize_initialize
+
+A tool to initilaize the localization. Global localization as well as
+a Gaussians initialization using a placename can be used.
+
+<h3>Usage: ./localize global</h3>
+
+for global localization or
+
+<h3>Usage: ./localize \<placename\></h3>
+
+for initilaizing the robot a certain place given by placename.
+
+
+**/

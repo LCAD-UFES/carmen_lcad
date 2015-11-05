@@ -1,0 +1,86 @@
+################################################ Set Global Variables #################################################
+
+set NEURON_MEMORY_SIZE = 128; #neuron layers size
+set TYPE_SHOW = SHOW_FRAME;
+set TYPE_MOVING_FRAME = STOP;
+set CALL_UPDATE_FUNCTIONS = FALSE;	#update functions should not be invoked
+
+######################################################## Constants ####################################################
+
+# General settings
+const TARGET_NEURON_LAYER_NAME = "nl_target_coordinates";
+
+# Architecture settings ( arbitrary size ) 
+#const IMAGE_WIDTH  = 1280;
+#const IMAGE_HEIGHT = 960;
+const IMAGE_WIDTH  = 320;
+const IMAGE_HEIGHT = 240;
+
+#Neuron layer activation bandwidth
+const BAND_WIDTH = 24;
+const NL_WIDTH  = 8*24;
+const NL_HEIGHT = 6*12;
+
+# Neuron layer parameters
+const INPUTS_PER_NEURON = 256;
+const GAUSSIAN_RADIUS = 5.0;
+const LOG_FACTOR = 10.0;
+const MAX_DISP_NUM = 64;
+
+#Saccadic movement stop condition
+const MAX_NUMBER_OF_SACCADE = 20;
+const MIN_THRESHOLD_OF_SACCADE = 0.1;
+
+# Translation filter deltaX & delataY
+float translation_filter_deltaX = 0.0;
+float translation_filter_deltaY = 0.0;
+
+#Activation Bandwidth output value ( highest output )
+float HIGHEST_OUTPUT = 1.0;
+
+############################################### Neuron Layers #########################################################
+
+neuronlayer    	nl_v1_activation_map[NL_WIDTH][NL_HEIGHT] of minchinton neurons color sensitive with greyscale outputs;
+
+neuronlayer    	nl_target_coordinates[1][1]	with greyscale_float outputs;
+
+neuronlayer    	nl_v1_pattern[NL_WIDTH][NL_HEIGHT] with greyscale outputs;
+
+neuronlayer		in_vergence_translated[IMAGE_WIDTH][IMAGE_HEIGHT] with color outputs;
+
+neuronlayer		in_vergence_translated_gaussian[IMAGE_WIDTH][IMAGE_HEIGHT] with color outputs, show;
+
+############################################### Outputs #########################################################
+
+output		out_vergence_v1_activation_map[NL_WIDTH][NL_HEIGHT] handled by output_handler_average_value ("%s %f", TARGET_NEURON_LAYER_NAME);
+
+################################################## Inputs #############################################################
+
+input 		in_vergence_current[IMAGE_WIDTH][IMAGE_HEIGHT]	with color outputs produced by input_generator() controled by input_controler();
+
+input		in_vergence_trained[IMAGE_WIDTH][IMAGE_HEIGHT] with color outputs produced by input_generator2() controled by input_controler2();
+
+############################################### Filters ###############################################################   
+
+#parameters:	translate_nl_filter ("%f %f",<Delta_X>, <Delta_Y>)
+filter		in_vergence_current	with translate_nl_filter ("%p %p",&translation_filter_deltaX,&translation_filter_deltaY) producing in_vergence_translated;
+
+#parameters: 	gaussian_filter ("%s %d", <kernel size>, <sigma>)
+filter		in_vergence_translated	with gaussian_filter ("%d %f", 9, 1.0) producing in_vergence_translated_gaussian;
+
+################################## Connect Neuron Layers to Outputs #############################################
+
+outputconnect	nl_v1_activation_map		to out_vergence_v1_activation_map;
+
+############################################### Associations ####################################################
+
+associate	nl_v1_activation_map		with	nl_v1_activation_map;
+
+################################################ Connections ####################################################
+
+connect in_vergence_translated_gaussian to nl_v1_activation_map with INPUTS_PER_NEURON random inputs per neuron and 
+log_polar distribution with radius GAUSSIAN_RADIUS and logfactor LOG_FACTOR;
+
+################################################# User Functions ################################################
+int run_train("%d");
+int run_test("%d");

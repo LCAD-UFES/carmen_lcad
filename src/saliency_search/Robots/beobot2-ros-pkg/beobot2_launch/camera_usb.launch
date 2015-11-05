@@ -1,0 +1,15 @@
+<launch>
+	<node name="uvc_cam" pkg="uvc_cam" type="uvc_cam_node" output="screen" >
+		<param name="device" value="/dev/video0" />
+		<param name="topic" value="/camera/image" />
+		<param name="width" value="640" />
+		<param name="height" value="480" />
+		<param name="fps" value="30" />
+		<remap from="camera/camera_info" to="~/camera_info" />
+		<remap from="camera/image_raw" to="~/image_raw" />
+		<remap from="camera/set_camera_info" to="~/set_camera_info" />
+	</node>
+	<group ns="camera_usb">
+		<node name="image_proc" pkg="image_proc" type="image_proc" />
+	</group>	
+</launch>

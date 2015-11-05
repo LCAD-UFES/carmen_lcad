@@ -1,0 +1,3 @@
+2014/07/26
+
+- Remover delta_difference_mean e delta_difference_stddev dos fontes e do carmen ini -> nao eh mais usado

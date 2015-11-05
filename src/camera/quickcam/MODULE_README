@@ -1,0 +1,2 @@
+cp pwc.o pwcx.o /lib/modules/2.4.27-2-686/kernel/drivers/usb/
+mknod /dev/video0 c 81 0

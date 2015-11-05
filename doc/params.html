@@ -1,0 +1,112 @@
+/** @page params
+
+<h2>Parameters and the carmen.ini File</h2>
+
+
+@section params_main The Paramdaemaon 
+
+
+CARMEN programs use the param_daemon, a repository or registry of
+values for parameters to be used during the operation of a robot. The
+intention of the parameter server is to ensure that all modules are
+using the same parameters definitions, such as maximum allowable
+velocity, robot size, etc. Many robot code suites require that each
+separate process reads the parameter values directly from a file. We
+have chosen the parameter server approach because different processes
+frequently reside on different computer, which would entail having
+copies of the same file on each such computer. This often leads to
+having copies of different files on each computer, with undesirable
+results. Secondly, the parameter server facilitates for dynamic
+updating of parameter values; for instance, the maximum speed of the
+robot can be changed during the operation of the robot, without
+restarting any processes. This necessitates some additional overhead
+on the part of each process, to ensure that each process is subscribed
+to changes in each variable. This document will describe how best to
+do this.
+
+The parameter server is intended to serve parameters that can vary
+across robots, or across execution runs. Parameters that cannot change
+should not be served by the parameter server. For example, the maximum
+preferred translational velocity for a particular deployment is served
+as robot_max_t_vel. However, each robot (such as the scout) has
+a practical maximum wheel velocity; this value should be hard-coded in
+the base module for that robot, instead of being served. Similarly,
+for rflex robots, the odometry conversion factor from wheel tics to
+metres is hard-coded, as this is a hardware dependent value and cannot
+change.
+
+Finally, the parameter server can also be used as a map server. This
+ensures that all processes are using the same map, with the same
+resolution, etc.  The does entail a performance penalty in terms of
+bandwidth loss at the start up of each process, but we believe that
+resultant the ease of use, in terms of needing only one copy of the
+map and ensuring consistency, is an acceptable bargain.
+
+
+@section The Structure of carmen.ini File
+
+
+The parameter server reads parameter definitions from the ini file,
+or, if no ini file name is provided on the command line, then attempts
+to load parameters from ./carmen.ini, ../carmen.ini, and finally
+../src/carmen.ini. If no parameter file can be found, then the process
+exits with an error.
+
+To make life easier, multiple robot definitions can be contained in a
+single ini file. Therefore, the parameter server requires a robot name
+to select a set of parameters, using the required argument -r <robot
+name>. At start up, the parameter server loads all the parameter
+definitions listed under the generic [*] parameter set, and also all
+the parameters listed under the matching robot name. There are also
+expert parameters in the section [expert]. These values, however, do
+not teed to be changed in general. See them as constants.
+
+The parameter server can also serve maps, subsuming the functionality
+of the map server.  Finally, the parameter server also performs sanity
+checks, to make sure that all running CARMEN processes are the same
+version, to ensure consistency among message formats, etc. All
+programs are expected to call carmen_param_check_version() immediately
+after initializing the IPC connection.
+
+The ini file format is ASCII, intended to be human readable and
+editable using emacs. Given the somewhat hierarchical nature of the
+file, a markup language such as XML may have been preferable, but this
+seems like overkill for a fairly simple IO task.
+
+The file consists of robot definition sections, delimited at the start by
+@verbatim
+[<section name>]
+@endverbatim
+
+and delimited at the end by the start of another section, or by the
+end-of-file. The section name should either be * (for all robots),
+expert (for expert parameters) or be the name of a robot to be
+specified on the command line when starting the parameter server.
+
+Each section consists of parameter definitions, given by:
+@verbatim
+<module name>_<parameter name> <value>
+@endverbatim
+
+The module name can contain any characters except white space and the
+underscore (`_') character. The parameter name can contain any
+characters except whitespace. The parameter value can contain any characters
+at all, but the value ends with the end of line. There is no mechanism for
+writing parameter values across multiple lines. Trailing whitespace is trimmed
+from parameter values. 
+
+Comment lines must have `#' at the first character of each line. 
+
+Parameter values can be no longer than 2048 characters, and the concatenation
+of module names and parameter names can also be no longer than 255
+characters. There is a limit of 128 unique module names.
+
+If a variable is specified twice, then only the last value is retained.
+
+
+@section params_explain The Parameters 
+
+TODO: Explain all the parameters here!
+
+
+**/

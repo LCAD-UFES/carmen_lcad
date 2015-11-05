@@ -1,0 +1,1 @@
+http://www.lcad.inf.ufes.br/wiki/index.php/Como_obter_GUID_das_c%C3%A2meras_PointGrey

@@ -1,0 +1,102 @@
+################################################ Set Global Variables #################################################
+
+set NEURON_MEMORY_SIZE = 8*6*6*6; #neuron layers size
+set TYPE_SHOW = SHOW_FRAME;
+set TYPE_MOVING_FRAME = STOP;
+set CALL_UPDATE_FUNCTIONS = FALSE;	#update functions should not be invoked
+
+######################################################## Constants ####################################################
+
+# General settings
+const TARGET_NEURON_LAYER_NAME = "nl_target_coordinates";
+
+# Architecture settings ( arbitrary size ) 
+const IMAGE_WIDTH  = 320;
+const IMAGE_HEIGHT = 182;
+
+#Neuron layer activation bandwidth
+const BAND_WIDTH = 8;
+const NL_WIDTH  = 8*6;
+const NL_HEIGHT = 6*6;
+
+# Neuron layer parameters
+const INPUTS_PER_NEURON = 64;
+const GAUSSIAN_RADIUS = 20.0;
+const LOG_FACTOR = 10.0;
+
+#Saccadic movement stop condition
+const MAX_NUMBER_OF_SACCADE = 4;
+const MIN_THRESHOLD_OF_SACCADE = 0.0;
+
+# Translation filter deltaX & delataY
+float translation_filter_deltaX = 0.0;
+float translation_filter_deltaY = 0.0;
+float dynamic_scale_factor = 1.0;
+
+#Activation Bandwidth output value ( highest output )
+float HIGHEST_OUTPUT = 1.0;
+
+############################################### Neuron Layers #########################################################
+
+#neuronlayer    nl_detection[NL_WIDTH/2][NL_HEIGHT/2] of minchinton_fat_fast_rand neurons color_selective sensitive with greyscale_float outputs;
+
+neuronlayer    	nl_v1_activation_map[NL_WIDTH][NL_HEIGHT] of minchinton_fat_fast_rand neurons color_selective sensitive with greyscale_float outputs using shared memory;
+
+neuronlayer    	nl_v1_activation_map_f[NL_WIDTH][NL_HEIGHT] with greyscale_float outputs;
+
+neuronlayer    	nl_target_coordinates[2][1]	with greyscale_float outputs;
+
+neuronlayer    	nl_v1_pattern[NL_WIDTH][NL_HEIGHT] with greyscale outputs;
+
+neuronlayer	in_saccade_translated[IMAGE_WIDTH*2][IMAGE_HEIGHT*2] with color outputs;
+
+neuronlayer	in_saccade_translated_gaussian[IMAGE_WIDTH*2][IMAGE_HEIGHT*2]	with color outputs;
+
+#neuronlayer	in_saccade_trained_log_polar[IMAGE_WIDTH][IMAGE_HEIGHT]	with color outputs;
+
+############################################### Outputs #########################################################
+
+output			out_saccade_v1_activation_map[NL_WIDTH][NL_HEIGHT] handled by output_handler_max_value_position ("%s %f", TARGET_NEURON_LAYER_NAME, LOG_FACTOR);
+
+#output 			in_saccade_trained_log_polar_out[IMAGE_WIDTH][IMAGE_HEIGHT];
+
+################################################## Inputs #############################################################
+
+input 			in_saccade_current[IMAGE_WIDTH][IMAGE_HEIGHT]	with color outputs produced by input_generator() controled by input_controler();
+
+input			in_saccade_trained[IMAGE_WIDTH][IMAGE_HEIGHT] with color outputs produced by input_generator2() controled by input_controler2();
+
+############################################### Filters ###############################################################   
+
+#parameters:	translate_nl_filter ("%f %f",<Delta_X>, <Delta_Y>)
+#filter		in_saccade_trained  with scaled_map_image_v1 ("%s %f %f", "in_saccade_trained", LOG_FACTOR, 1.0) producing in_saccade_trained_log_polar;
+
+filter		in_saccade_current  with translate_nl_filter ("%p %p",&translation_filter_deltaX,&translation_filter_deltaY) producing in_saccade_translated;
+
+#parameters: 	gaussian_filter ("%s %d", <kernel size>, <sigma>)
+#filter		in_saccade_translated	with gaussian_filter ("%d %f", 5, 1.0) producing in_saccade_translated_gaussian;
+
+#parameters: 	gaussian_filter ("%s %d", <kernel size>, <sigma>)
+filter		nl_v1_activation_map 	with gaussian_filter ("%d %f", 5, 1.0) producing nl_v1_activation_map_f;
+
+################################## Connect Neuron Layers to Outputs #############################################
+
+outputconnect	nl_v1_activation_map_f		to out_saccade_v1_activation_map;
+
+#outputconnect   in_saccade_trained_log_polar    to in_saccade_trained_log_polar_out;
+
+############################################### Associations ####################################################
+
+associate	nl_v1_activation_map_f		with	nl_v1_activation_map;
+
+################################################ Connections ####################################################
+
+connect in_saccade_translated to nl_v1_activation_map with INPUTS_PER_NEURON random inputs per neuron and 
+log_polar distribution with radius GAUSSIAN_RADIUS and logfactor LOG_FACTOR , same interconnection pattern;
+
+#connect in_saccade_translated_scaled_gaussian to nl_detection with INPUTS_PER_NEURON random inputs per neuron and 
+#log_polar distribution with radius GAUSSIAN_RADIUS and logfactor LOG_FACTOR , same interconnection pattern;
+
+################################################# User Functions ################################################
+int run_train("%d");
+int run_test("%d");

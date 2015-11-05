@@ -1,0 +1,8 @@
+
+This directory contains a simple set of helper functions for PGR Stereo
+cameras in use with libdc1394-2.  These files are included in the
+simplegrab and simplestereo examples.
+
+If you have any questions please send them to support@ptgrey.com.
+
+

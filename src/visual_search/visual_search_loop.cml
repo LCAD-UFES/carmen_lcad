@@ -1,0 +1,10 @@
+int return;
+
+/* Loop Forever Waiting for IPC messages */
+while (1)
+{
+	execute_IPC_listen(0);
+	MAE_printf("oi");
+	MAE_sleep(3);
+}
+quit;

@@ -1,0 +1,20 @@
+<package>
+  <description brief="seabee3_teleop">
+
+     seabee3_teleop
+
+  </description>
+  <author>Edward T. Kaszubski</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/seabee3_teleop</url>
+  <depend package="roscpp"/>
+  <depend package="geometry_msgs" />
+  <depend package="joy" />
+  <depend package="tf"/>
+  <export>
+    <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp"/>
+  </export>
+</package>
+
+

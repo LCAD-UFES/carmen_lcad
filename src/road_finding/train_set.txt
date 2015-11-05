@@ -1,0 +1,11 @@
+/home/vazevedo/roboticaprobabilistica/code/carmen/src/road_finding/imgs/right_img14.bmp
+#imgs/right_img09.bmp
+#imgs/road_image_640.bmp
+#imgs/right_img01.bmp
+#imgs/right_img02.bmp
+#imgs/right_img03.bmp
+#imgs/right_img04.bmp
+#imgs/right_img05.bmp
+#imgs/right_img06.bmp
+#imgs/right_img07.bmp
+#imgs/right_img08.bmp

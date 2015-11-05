@@ -1,0 +1,194 @@
+/* Son of Suckerfish Dropdowns
+---------------------------------------------------------
+Originally developed by Patrick Griffiths and Dan Webb
+http://www.htmldog.com/articles/suckerfish/dropdowns/
+---------------------------------------------------------
+NOTE: After a deep research, we decide to divide this
+CSS into 2 parts. The first part will define the layout.
+The second part will define the visual look for this menu.
+---------------------------------------------------------*/
+
+#leftmenu
+{
+	padding: 0;
+	float: left;
+}
+
+#mainmenu
+{
+	padding: 0;
+	float: right;
+}
+
+#mainmenu ul
+{
+	margin: 0; /* all lists */
+	padding: 0;
+	border-left: 1px solid #001259;
+	display:table;
+
+}
+
+#mainmenu li
+{
+	margin: 0; /* all list items */
+	padding: 0;
+	float: left;
+	display: block;
+	background: none;
+	cursor: pointer;
+	position: relative;
+
+}
+
+#mainmenu li ul 
+{
+	position: absolute; /* second-level lists */
+	height: auto;
+	width:8em;
+}
+
+#mainmenu li ul ul
+{
+	margin: -1.5em 0 0 14em; /* third-and-above-level lists */
+}
+
+#mainmenu li li
+{
+	padding: 0;
+	margin: 0;
+	width: 12em;
+	display:block;
+	
+}
+
+#mainmenu ul a
+{
+/*	width: 4.8em;
+	w\idth: 6.8em;*/
+}
+
+#mainmenu li ul
+{
+	left: -999em; /* using left instead of display to hide menus because display: none isn't read by screen readers */
+}
+
+#mainmenu li:hover ul ul, #mainmenu li:hover ul ul ul,
+#mainmenu li.sfhover ul ul, #mainmenu li.havechildsfhover ul ul, #mainmenu li.havechild-activesfhover ul ul, #mainmenu li.activesfhover ul ul,
+#mainmenu li.sfhover ul ul ul, #mainmenu li.havechildsfhover ul ul ul, #mainmenu li.havechild-activesfhover ul ul ul, #mainmenu li.activesfhover ul ul ul
+{
+	left: -999em;
+}
+
+/* This "unhides" the sub-menus (left: -999em is what hides them) */
+#mainmenu li:hover ul, #mainmenu li li:hover ul, #mainmenu li li li:hover ul,
+#mainmenu li.sfhover ul, #mainmenu li.havechildsfhover ul, #mainmenu li.havechild-activesfhover ul, #mainmenu li.activesfhover ul,
+#mainmenu li li.sfhover ul, #mainmenu li li.havesubchildsfhover ul, #mainmenu li li.havesubchild-activesfhover ul, #mainmenu li li.activesfhover ul,
+#mainmenu li li li.sfhover ul, #mainmenu li li li.havesubchildsfhover ul, #mainmenu li li li.havesubchild-activesfhover ul, #mainmenu li li li.activesfhover ul
+{
+	left: auto;
+	z-index: 999;
+}
+
+/* STYLING THE MENU
+-----------------------------------*/
+/* 1st level */
+#mainmenu li a
+{
+	margin: 0;
+	padding: 0.6em 20px;
+	border-left: 1px solid #0021A5;
+	border-right: 1px solid #001259;
+	border-top: 0px;
+	border-bottom: 0px;
+	display: block;
+
+	color: #FFF;	
+	font-weight: bold;
+	line-height: normal;
+	text-decoration: none;
+}
+
+#mainmenu li a:hover,
+#mainmenu li a:active,
+#mainmenu li a:focus
+{
+	background: url(../images/arrow2.png) no-repeat bottom center #0059B2;
+}
+
+#mainmenu li
+{
+	margin: 0;
+}
+
+#mainmenu li:hover,
+#mainmenu li.sfhover,
+#mainmenu li.havechildsfhover,
+#mainmenu li.havechild-activesfhover
+{
+	background: url(../images/arrow2.png) no-repeat bottom center #0059B2;
+}
+
+#mainmenu li a.active,
+#mainmenu li a.active:hover,
+#mainmenu li a.active:active,
+#mainmenu li a.active:focus
+{
+	background: url(../images/arrow2.png) no-repeat bottom center #0059B2;
+}
+
+/* 2nd level and above */
+#mainmenu li ul
+{
+	border: 1px solid #0059B2;
+	background: url(../images/translucent.png);
+}
+
+#mainmenu li ul li
+{
+	border-top: 1px solid #777777;
+	border-bottom: 1px solid #444444;
+	background: none;
+}
+
+#mainmenu li ul a
+{
+	border-right: none;
+	margin: 0;
+	padding: 0.3em 0.0em;
+	background: none;
+	font-weight: bold;
+	line-height: normal;
+	text-align: left;
+	text-transform: none;
+}
+
+#mainmenu li.havesubchild,
+#mainmenu li.havesubchild-active
+{
+	background: url(../images/bullet2.gif) no-repeat 94% 50%;
+}
+
+#mainmenu li ul a:hover,
+#mainmenu li ul a:active,
+#mainmenu li ul a:focus,
+#mainmenu ul li:hover,
+#mainmenu ul li.sfhover,
+#mainmenu ul li.havesubchildsfhover,
+#mainmenu ul li.havesubchild-activesfhover,
+#mainmenu ul ul li:hover,
+#mainmenu ul ul li.sfhover,
+#mainmenu ul ul li.havesubchildsfhover,
+#mainmenu ul ul li.havesubchild-activesfhover
+{
+	background: #0059B2;
+}
+
+#mainmenu ul li a.active,
+#mainmenu ul li a.active:hover,
+#mainmenu ul li a.active:active,
+#mainmenu ul li a.active:focus
+{
+	background: none !important;
+	font-weight: bold;
+}

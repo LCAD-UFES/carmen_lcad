@@ -1,0 +1,34 @@
+/** @page binary__proccontrol
+
+<h2>Process Control System</h2>
+
+
+@section proccontrol_main Proccontrol
+
+CARMEN provides a process controll system that observes the running
+modules and is able to restart module in case they die due to a
+failure.
+
+<h3>Usage: ./proccontrol</h3>
+
+@section proccontrol_setgroup_main Proccontrol_setgroup
+
+
+<h3>Usage: ./proccontrol_setgroup</h3>
+
+@section proccontrol_setmodule_main Proccontrol_setmodule
+
+
+<h3>Usage: ./proccontrol_setmodule</h3>
+
+@section proccontrol_viewoutput_main Proccontrol_viewoutput
+
+
+<h3>Usage: ./proccontrol_viewoutput</h3>
+
+@section proccontrol_watchdog_main Watchdog
+
+<h3>Usage: ./watchdog</h3>
+
+
+**/

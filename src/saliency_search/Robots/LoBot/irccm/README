@@ -1,0 +1,31 @@
+This directory contains Robolocust related code for an iRobot Create's
+Command Module. It is meant to be built with avr-gcc using avr-libc and
+uploaded to the Command Module with avrdude.
+
+NOTE: Unfortunately, Mandriva does not seem to provide the avr-gcc,
+avr-libc and avrdude packages. Thus, this code cannot be built on
+Mandriva (unless someone takes the time to provide the above-mentioned
+packages). However, it works fine on Debian, the One True operating
+system to which all other OSes aspire.
+
+Robolocust's control program for the iRobot Create Command Module acts
+as an intermediary between the higher (C++) layers of the system and the
+iRobot Create's sensorimotor system. The control programs runs an
+infinite loop waiting for commands from the higher layers. It converts
+these high-level commands to the appropriate sequence of Open Interface
+opcodes and operands and sends them off to the Create. If there any
+return values that need to be sent back to the higher layers, the
+control program assembles them into higher-level constructs (ints, etc.)
+and sends those back so that the higher layers don't have to worry about
+bit fiddling and other low-level data munging.
+
+Communication with the higher layers takes place over the Command
+Module's USB port. Unfortunately, the Command Module has only one UART
+that can, at any given time, talk to only one target: either the USB
+port (to which lobot's higher layers are connected) or the iRobot
+Create's serial port (to which the robot base's motors and low-level
+sensors are interfaced). The control program takes care of the messy
+details of switching the UART as required so that the higher layers have
+a clean API for issuing motor commands and retrieving motor states
+(without having to bother with the intricacies of talking directly to
+the robot via the Open Interface).

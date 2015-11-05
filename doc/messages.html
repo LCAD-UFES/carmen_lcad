@@ -1,0 +1,588 @@
+$/** @page messages
+
+<h2>CARMEN Messages</h2>
+
+
+@section messages_introduction Introduction
+
+In all messages, the distance units are in metres. Angle measurements in
+radians, in the range \f$-\pi\f$ to \f$\pi\f$. Velocity units are m/sec. The timestamp
+is given as the number of seconds since the unix epoch, and is a double, where
+the fractional part is computed from the \c tv_usec field of the
+\c timeval struct returned by \c gettimeofday. More information on
+units and co-ordinate frames can be found in the CARMEN Programming Style
+Guide. 
+
+@section messages_gettingdata Getting Data from CARMEN
+
+Sensor data currently comes from one of two sources: the base module (such as
+scout, pioneer, etc.) provides raw odometry data and may provide sonar data,
+bumper data and infra-red (IR) data. The laser module may provide laser data.
+
+@subsection messages_sub_sub Subscribing
+
+All of the following messages can be subscribed to by using helper functions
+in the appropriate \c xxx_interface library, e.g., \c base_interface.
+The helper functions are all of the form:
+
+@verbatim
+void carmen_robot_subscribe_xxxx_message(carmen_robot_xxx_message *msg,
+                                         carmen_handler_t handler, 
+                                         carmen_subscribe_t subscribe_how);
+@endverbatim
+
+where \c carmen_handler_t and \c carmen_subscribe_t are defined as
+
+@verbatim
+typedef enum {CARMEN_UNSUBSCRIBE, CARMEN_SUBSCRIBE_LATEST, 
+              CARMEN_SUBSCRIBE_ALL} carmen_subscribe_t;
+typedef void (*carmen_handler_t)(void *);
+@endverbatim
+
+If the \c msg field of the subscribe function is \c NULL, then a
+static message is automatically allocated and returned as the argument to
+\c handler, otherwise the message pointer passed to the subscribe function
+is always used. In all cases, the same memory is re-used for all handled
+messages of the same message name, and passed as an argument to the handler
+function. 
+
+If the \c handler field of the subscribe function is \c NULL, no
+handler is called, but the memory pointed to by \c msg is updated
+regularly. If both \c handler and \c msg are both \c NULL, your
+program will spend a fair chunk of time doing nothing useful for you. 
+
+The \c subscribe_how field allows the user to either unsubscribe, or to
+start a new subscription. Subscribing only to the latest message allows the
+module to fall behind in processing messages without serious consequences. It
+should be pointed out that subscribing to all messages
+(\c CARMEN_SUBSCRIBE_ALL) does not guarantee all messages. Currently, the
+upper limit for the queue size is 1000 messages. If an IPC process actually
+subscribes to \emph{all} messages and falls seriously behind (or wedges),
+central can run out of memory, or even worse, the TCP stack can
+overflow. Consequently, the CARMEN subscription functions limit the maximum
+message queue size to 1000. A resourceful programmer can increase this queue
+(or even remove the queue size), but it is not clear this would ever be
+necessary. 
+
+@subsection messages_requesting Requesting Data Explicitly
+
+Some of these messages can also be obtained using explicit queries. To date,
+the only robot data that can be obtained using queries are from localize and
+navigator. Specifically, \c carmen_localize_globalpos_message,
+\c carmen_localize_particle_message,
+\c carmen_navigator_status_message and
+\c carmen_navigator_plan_message can all be obtained using specific query
+interface functions, which return the appropriate messages directly.
+
+These functions create new memory every time they return successfully;
+consequently, they should be used with care.
+
+@subsubsection messages_base Sensor Data from the Base
+
+The \c timestamp field in all messages is defined to be the time when the
+data was first created or acquired (e.g, by \c scout or \c simulator).
+
+@subsubsection messages_odom Odometry
+
+@verbatim
+void carmen_base_subscribe_odometry_message(carmen_base_odometry_message *odometry,
+                                            carmen_handler_t handler,
+                                            carmen_subscribe_t subscribe_how);
+@endverbatim
+
+The \c x, y, theta fields are the raw odometry, from the time the robot
+was turned on. The tv and rv fields are the translational and rotational
+velocities of the robot. For robots that have differential drive (as opposed
+to synchrodrive), these velocities are computed from the left and right wheel
+velocities that base actual uses. 
+
+@subsubsection messages_sonar Sonar
+
+Sonar sensing is not properly supported by CARMEN right now, and so
+subscribing to \c carmen_base_sonar_message messages may sometimes not
+work properly. But, if you care, it looks like:
+
+@verbatim
+void carmen_base_subscribe_sonar_message(carmen_base_sonar_message *sonar,
+                                         carmen_handler_t handler,
+                                         carmen_subscribe_t subscribe_how);
+@endverbatim
+
+The sonar message reports a recent set of sonar range data from the
+base. There should be as many range points and offset points as described by
+\c num_sonars. The \c sonar_offsets describes the physical location
+and orientation of each transducer from the centre of the robot. 
+
+There is currently no way to query the firing rate or order of the sonar
+transducers, and the sonar\_conf message is not yet supported. (Or even defined
+by any module.)
+
+@\subsubsection lmessages_laser Laser data
+
+Laser data is defined as a set of ranges, of number given by the
+\c num_readings field, contained in \c range. The number of ranges is
+almost always 180, since we only support SICK lasers in \f$1^\circ\f$ increments
+at the moment. Each range measurement is the distance to the nearest obstacle
+along some heading. The first range is along the \f$-\pi/2\f$ direction (of
+course, in the robot's local frame of reference, where \f$0^\circ\f$ is directly
+ahead) and the last range is along the \f$+\pi/2-\frac{1}{180}\f$ heading. In
+degrees, that is from \f$-90^\circ\f$ to \f$+89^\circ\f$. The increment is currently
+\f$1^\circ\f$. The order is right-handed (counter-clockwise). Remember that this
+is all with reference to a laser that is mounted facing the front of the
+robot, with the laser right way up (the serial and power connectors are on
+top). For rear laser messages, the measurements go from \f$+\pi/2\f$ through \f$\pi\f$
+to \f$-\pi/2-\frac{1}{180}\f$. If you mount the laser upside down, the
+measurements go from \f$+\pi/2\f$ through \f$0\f$ to \f$-\pi/2-\frac{1}{180}\f$. For
+forward pointing lasers, you can pretty much assume the laser is mounted the
+right way up.
+
+The \c timestamp field in all messages is defined to be the time when the
+data was first created or acquired (e.g, by \c laser or \c simulator),
+not the timestamp of some intermediate process (such as the correction applied
+by \c robot when applying odometry interpolation and correction).
+Similarly, the \c hostfield is defined to be the hostname associated with
+the origin of the data, not the hostname of some intermediary converting the
+data from raw form to interpolated form. 
+
+@verbatim
+void carmen_laser_subscribe_frontlaser_message(carmen_laser_laser_message *laser,
+                                               carmen_handler_t handler,
+                                               carmen_subscribe_t subscribe_how);
+void carmen_laser_subscribe_rearlaser_message(carmen_laser_laser_message *laser,
+                                              carmen_handler_t handler,
+                                              carmen_subscribe_t subscribe_how);
+@endverbatim
+
+This message is defined by \c laser and by \c simulator, and the same
+message struct is used by both \c carmen_laser_frontlaser and
+\c carmen_laser_rearlaser messages. As a consequence, there is no way to
+tell from a message itself whether or not the message is a front laser message
+or a rear laser message. This hopefully will be fixed in a future release.
+
+@subsubsection messages_robot Robot messages
+
+These messages are defined and emitted by \c robot.
+
+<ul>
+
+\li \c carmen_robot_laser_message
+
+@verbatim
+void carmen_robot_subscribe_frontlaser_message(carmen_robot_laser_message *laser,
+                                               carmen_handler_t handler,
+                                               carmen_subscribe_t subscribe_how);
+
+void carmen_robot_subscribe_rearlaser_message(carmen_robot_laser_message *laser,               
+                                              carmen_handler_t handler,
+                                              carmen_subscribe_t subscribe_how);
+
+@endverbatim
+
+The \c carmen_robot_laser_message has raw odometry attached to it. The
+\c robot module attempts to adjust for clock skews and interpolate the
+true robot position of the data correctly based on time stamps. Consequently,
+after a \c carmen_laser_laser_message is received, the corresponding
+\c carmen_robot_laser_message will not be emitted until a
+\c carmen_base_odometry_message with a later timestamp is received. The
+odometry fields are \c x, \c y and \c theta. These fields are in
+fact the interpolated position of \emph{this laser}, based on the laser offset
+parameters for this laser. The interpolated odometry for the robot itself are
+the \c odom_x, \c odom_y and \c odom_theta  fields. Consequently,
+front and rear laser messages with the same timestamps should have different
+values for their \c x, \c y and \c theta  fields, but identical
+values for their \c odom_x, \c odom_y and \c odom_theta fields.
+
+The \c robot module is also used to perform collision avoidance, stopping
+the robot if the laser measurements indicate an obstacle inside safety
+margins. The \c tooclose array labels each range measurement as to whether
+or not it lies inside the robot safety margins. There are as many
+\c tooclose elements as there are \c range elements (as given by the
+\c num_readings field). If \c msg.tooclose[i] is 1, then the range
+\c msg.range[i] is inside the safety margin. 
+
+The same message struct is used by both the \c carmen_robot_frontlaser
+and \c carmen_robot_rearlaser  messages. Again, there is no way to tell
+from a message itself whether or not the message is a front laser message or a
+rear laser message. This hopefully will be fixed in a future release.
+
+</ul>
+
+@subsection messages_map Map-based Navigation Messages
+
+@subsubsection messages_localize Localize Messages
+
+<ul>
+
+\li \c carmen_localize_globalpos_message
+
+@verbatim
+void carmen_localize_subscribe_globalpos_message(carmen_localize_globalpos_message *globalpos,
+                                                 carmen_handler_t handler,
+                                                 carmen_subscribe_t subscribe_how);
+@endverbatim
+
+This message reports on the current robot pose estimate, given by localize.
+
+The \c globalpos field is mean robot position (computed from the particle
+filter), and is given in the global frame of reference. (See the CARMEN Style
+Guide.) The \c odometrypos is the odometry of the robot at the time the
+current estimate was computed. It is therefore possible to estimate the true
+position of the robot for a short duration after the last
+\c carmen_localize_globalpos_message by finding the relative displacement
+(translational and rotational) of the robot between the current odometry, and
+the odometry of the last \c carmen_localize_globalpos_message, and then
+adding this displacement to the \c globalpos field. There is a helper
+function in \c liblocalize_interface called
+\c carmen_localize_correct_odometry that does exactly this. 
+
+Notice that CARMEN localize no longer explicitly provides correction
+parameters, but instead provides a functional way to correct odometry. 
+
+The \c globalpos_std gives the variances of the position estimates,
+\f$\sigma_x^2, \sigma_y^2, \sigma_\theta^2\f$. The \c globalpos_xy_cov field
+gives the covariance \f$\sigma_{xy}\f$. 
+
+The \c converged field indicates whether localize is currently in global
+or tracking mode. If localize has converged (is in tracking mode) then the
+position estimate has high confidence. When localize believes it is lost, it
+switches back to global localization mode and the \c converged field
+switches to 1. 
+
+Additional messages about the state of localize are:
+
+\li \c carmen_localize_particle_message -- This message gives the full
+state of the pose particle filter (and people particle filters, if people
+tracking is running.)
+
+\li \c carmen_localize_sensor_message -- This message contains
+information about how localize has used each laser reading, such as whether a
+laser readings was integrated (or not), and which person filter the reading
+was assigned (if any).
+
+\li \c carmen_localize_people_message -- This message contains the
+current state of the person tracker, if it is running. 
+</ul>
+
+@subsubsection messages_autonav Autonomous Navigation
+
+<ul>
+
+\li \c carmen_navigator_plan_message
+
+@verbatim
+void carmen_navigator_subscribe_status_message(carmen_navigator_status_message *status,
+                                               carmen_handler_t handler,
+                                               carmen_subscribe_t subscribe_how);
+
+int carmen_navigator_query_status(carmen_navigator_status_message **status);
+
+@endverbatim
+
+The \c autonomous field is 1 if the robot is currently trying to
+autonomously navigate to the goal, perhaps because a user clicked the
+\c Autonomous button in the navigator\_panel display. When the robot
+changes to non-autonomous mode, a
+\c carmen_navigator_autonomous_stopped_message is emitted (see below), and
+contains the reason for changing to non-autonomous mode.
+
+The \c goal_set field is 1 if the navigator has received any goal at
+all. If no goal has been set, then it is not possible for the navigator go
+into autonomous mode. 
+
+The \c goal field reports on what the navigator's current goal. The
+navigator does not (and should not ever) support multiple goal destinations. 
+
+The \c robot field is the navigator's estimate of the current robot
+position in the global reference frame (see the CARMEN Style Guide). This is
+based on the latest estimate from localize, combined with any subsequent
+odometric updates the navigator has received. The \c robot position field
+reported by the navigator should never lag behind (in time) localize's
+estimate. 
+
+\li \c carmen_navigator_plan_message
+
+@verbatim
+void carmen_navigator_subscribe_plan_message(carmen_navigator_plan_message *plan,
+                                           carmen_handler_t handler,
+                                           carmen_subscribe_t subscribe_how);
+
+int carmen_navigator_query_plan(carmen_navigator_plan_message **plan);
+
+@endverbatim
+
+If the path length is 0, then there is no path from the current robot location
+to the goal. The first point in the path should always be the robot's current
+position as reported by the \c carmen_navigator_status_message, and the
+last point in the path should always be the goal as reported by
+\c carmen_navigator_status_message. 
+
+\li \c carmen_navigator_autonomous_stopped_message
+
+@verbatim
+void carmen_navigator_subscribe_autonomous_stopped_message
+                    (carmen_navigator_autonomous_stopped_message *autonomous_stopped,
+                     carmen_handler_t handler,
+                     carmen_subscribe_t subscribe_how);
+@endverbatim
+
+The \c reason field can take one of three values:
+<ul>
+\li \c CARMEN_NAVIGATOR_GOAL_REACHED_v -- This means that the robot has
+reached the goal destination (that is, is within the
+\c robot_approach_dist of the goal).
+\li \c CARMEN_NAVIGATOR_USER_STOPPED_v -- This means that some other
+process (such as the navigator\_panel) published a
+\c carmen_navigator_stop_message. 
+\li \c CARMEN_NAVIGATOR_UNKNOWN_v -- This means some (unknown) reason
+caused autonomous navigation to stop. The navigator does not currently ever
+emit this reason.
+</ul>
+
+</ul>
+
+@section messages_command Commanding the robot
+
+While it is (obviously) possible to send messages directly to the base module,
+this is not an exposed interface. Sending velocities directly to the base
+side-steps the last-mile collision avoidance module, and can also result in
+all kinds of pathologies as modules fight for control of the robot.
+
+@subsection messages_moving Moving the Robot
+
+<ul>
+
+\li \c carmen_robot_velocity_message
+
+@verbatim
+void carmen_robot_velocity_command(double tv, double rv);
+@endverbatim
+
+Publishing this message will tell the \c robot module to make the robot go
+at the specified translation velocity \c tv specified rotational velocity
+\c rv.
+
+The robot may not be able to go at these speeds, because either they exceed
+the maximum velocity, or because an obstacle is too close. There is no
+diagnostic for the first condition yet. The second condition can be detected
+by examining the \c tooclose field of the
+\c carmen_robot_laser_message.
+
+\li \c carmen_robot_vector_move_message
+
+@verbatim
+void carmen_robot_velocity_command(double distance, double theta);
+@endverbatim
+
+Publishing this message will take advantage of a PD loop in the robot module
+to make the robot go to specific target point. This control loop contains no
+planning, so if an obstacle intervenes between the robot and the target, the
+robot will stop. 
+
+The target point set by this message is given by the \c distance and
+\c theta fields, which are in metres and radians respectively, and are
+\emph{relative} to the robot's current pose. Consequently, a positive
+\c distance with a \c theta of 0 would drive the robot forward
+\c distance metres. Similarly, a \c distance of 0 and a \c theta 
+of \f$\pi\f$ would cause the robot to rotate \f$180^\circ\f$, regardless of current
+orientation. 
+
+</ul>
+
+@subsection messages_initloc Initializing Localize
+
+@subsubsection  messages_locinimsg carmen\_localize\_initialize\_message
+
+This message provides a way to initialize localization.
+
+@verbatim
+typedef struct {
+  int distribution;
+  carmen_point_t mean, std;
+  double timestamp;
+  char* host;
+} carmen_localize_initialize_message;
+@endverbatim
+
+The \c distribution specifies the kind of distribution to use for
+initialization. At the moment only one type of distribution is supported:
+\c CARMEN_INITIALIZE_GAUSSIAN. (The \c localize_messages.h file also
+lists a \c CARMEN_INITIALIZE_UNIFORM distribution type, but this is not
+currently supported by localize itself.) 
+
+The 3-dimensional point \c mean specifies the \f$x, y, \theta\f$ mean of the
+gaussian, and \c std specified the \f$\sigma_x, \sigma_y, \sigma_\theta\f$
+standard deviations of the gaussian. Reasonable values for the standard
+deviations are \f$(0.2m, 0.2m, 4.0^\circ)\f$. 
+
+It is also possible to initialize localize through the navigator by using the
+\c carmen_navigator_set_robot or \c carmen_navigator_set_robot_map 
+messages, but these messages are deprecated.
+
+@subsubsection messages_goal Setting A Goal
+
+This message provides a way to set the goal or destination for navigation. It
+is not possible (nor should it ever be possible) to set multiple goals inside
+the navigator.
+
+@verbatim
+typedef struct {
+  double x, y;
+  double timestamp;
+  char* host;
+} carmen_navigator_set_goal_message;
+
+int carmen_navigator_set_goal(double x, double y);
+
+typedef struct {
+  char *placename;
+  double timestamp;
+  char* host;
+} carmen_navigator_placename_message;
+
+int carmen_navigator_set_goal_place(char *name);
+
+@endverbatim
+
+The \f$(x, y)\f$ fields should be self-explanatory as the goal position, in the
+global reference frame (see the CARMEN Style Guide), as always in metres.
+
+If the map contains place names, then it is also possible to set the goal
+position using a \c carmen_navigator_placename_message, and the
+\c carmen_navigator_set_goal_place helper function. This has no effect if
+the map does not contain a place name that matches. 
+
+@subsection messages_automon Autonomous Motion
+
+These messages toggle the navigator in and out of autonomous motion. 
+
+@verbatim
+typedef struct {
+  double timestamp;
+  char* host;
+} carmen_navigator_go_message;
+
+typedef struct {
+  double timestamp;
+  char* host;
+} carmen_navigator_stop_message;
+
+int carmen_navigator_stop(void);
+
+int carmen_navigator_go(void);
+
+@endverbatim
+
+If the robot is already at the current goal position, then the
+\c carmen_navigator_go_command will cause the navigator to change
+momentarily into autonomous mode, and then switch back again, emitting a
+\c carmen_navigator_autonomous_stopped_message with
+\c CARMEN_NAVIGATOR_GOAL_REACHED_v as the reason.
+
+When the navigator receives a \c carmen_navigator_stop_message, then a
+\c carmen_navigator_autonomous_stopped_message is emitted with
+\c CARMEN_NAVIGATOR_USER_STOPPED_v as the reason.
+
+
+@section gettingparams Getting Parameters
+
+Parameters can be acquired from the parameter server using functions in
+\c libparam_interface, eg: 
+
+@verbatim
+int carmen_param_get_int(char *variable, int *return_value);
+int carmen_param_get_double(char *variable, double *return_value);
+int carmen_param_get_onoff(char *variable, int *return_value);
+int carmen_param_get_string(char *variable, char **return_value);
+@endverbatim
+
+The conversion of parameters to ints, doubles, etc. is done on demanded by the
+interface library. If you do not wish the library to convert the parameter to
+the appropriate type, simply request the parameter as a string.
+
+If there is no definition for the parameter requested, then the library will
+output a warning to the terminal, unless this warning has been turned off
+using \c carmen_param_allow_unfound_variables(1);. 
+
+Also, as a convience, variables can be requested either by specifying the
+fully qualified \c module_param-name name, or by first specifying a module
+using \c carmen_param_set_module(char *), and the specifying just the
+\c param-name form. 
+
+@subsection messages_subchange Subscribing to Changes
+
+Some processes may wish to subscribe to changes to parameters during their
+execution, for example changing the robot speed or acceleration profile, or
+changing the \c robotgraph display parameters. Of course, some processes
+should not suscribe to some parameter changes: changing the number of
+particles localize uses during execution would result in disaster.
+
+Parameter changes can be subscribed using the functions below:
+@verbatim
+void carmen_param_subscribe_int(char *module, char *variable, int *variable_address, 
+                                carmen_param_change_handler_t handler);
+void carmen_param_subscribe_double(char *module, char *variable, double *variable_address, 
+                                   carmen_param_change_handler_t handler);
+void carmen_param_subscribe_onoff(char *module, char *variable, int *variable_address, 
+                                  carmen_param_change_handler_t handler);
+void carmen_param_subscribe_string(char *module, char *variable, char **variable_address, 
+                                   carmen_param_change_handler_t handler);
+@endverbatim
+
+These functions take a module and variable name as parameters. The
+subscription mechanism can either silently change variable values as
+parameters change, or can invoke a callback when a parameter is changed. If
+the \c variable_address parameter is non-NULL, then the new parameter
+value is stored at this address (in the case of strings, this is a pointer to
+some newly-malloc'd memory containing the new string definition. If the
+variable address is non-NULL when the parameter changes, the old memory is
+freed.) If the \c handler parameter is non-NULL, then function pointed to
+by \c handler is invoked whenever the parameter changes. If both are
+non-NULL, then the variable changes and then the callback invoked. If both are
+NULL, then the subscription mechanism does not do much. 
+
+@subsection messages_fac The Parameter Factory
+
+Parameters can be loaded in a single step using the parameter factory methods,
+much like the gtk menu item factory methods. The set of parameters to be
+loaded should be described in an array of \c carmen_param_t, and passed to
+@verbatim
+void carmen_param_install_params(int argc, char *argv[], carmen_param_p param_list, 
+                                 int num_items);
+@endverbatim
+
+Each parameter in the array of type \c carmen_param_t has the form:
+@verbatim
+typedef struct {
+  char *module;
+  char *variable;
+  carmen_param_type_t type;
+  void *user_variable;
+  int subscribe;
+  carmen_param_change_handler_t handler;
+} carmen_param_t;
+@endverbatim
+where \c module is the module name, \c variable is the variable name,
+\c type is one of \c CARMEN_PARAM_INT, \c CARMEN_PARAM_DOUBLE,
+\c CARMEN_PARAM_ONOFF or \c CARMEN_PARAM_STRING. The parameter is
+loaded into \c user_variable, whose original type should match that
+specified in the \c type field.
+
+If \c subscribe is set to 1, then the process will subscribe to changes to
+the parameter, and set up a callback on the function specified in
+\c handler (if not NULL). The callback parameter is ignored if
+\c subscribe is set to 0, and the parameter is only loaded once. There is
+no way to use the parameter factory methods, subscribe to a variable and not
+have the variable's value updated automatically. 
+
+If \c carmen_param_allow_unfound_variables() is set to 0 (by default),
+then \c carmen_param_install_params will exit with an error on the first
+parameter absent from the parameter server, reporting what the problematic
+parameter is.
+
+If a process loads its parameter set using the parameter factory methods, then
+running the process with the \c -h or \c -help command line option
+will print out a list of parameters used by that process, their expected types
+and whether or not the process subscribes to changes.
+
+
+**/

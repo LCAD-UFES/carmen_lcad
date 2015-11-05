@@ -1,0 +1,84 @@
+Partlist
+
+Exported from RobotArm4.brd at  3/30/2007 20:55:29 
+
+EAGLE Version 4.16r1 Copyright (c) 1988-2006 CadSoft
+
+Part       Value          Package      Library                Position (inch)       Orientation
+
+C11        .1uf           1206         zz-cap-master          (0.85 2.3)            R0
+C12        .1uf           1206         zz-cap-master          (0.25 3.4)            R0
+C13        .1uf           1206         zz-cap-master          (0.75 3.4)            R0
+C14        1000uf         ENP-035-080  zz-cap-master          (0.45 2.95)           R180
+C21        .1uf           1206         zz-cap-master          (2 2.3)               R0
+C22        .1uf           1206         zz-cap-master          (1.25 3.4)            R0
+C23        .1uf           1206         zz-cap-master          (1.75 3.4)            R0
+C24        1000uf         ENP-035-080  zz-cap-master          (1.55 2.95)           R180
+C31        .1uf           1206         zz-cap-master          (3.1 2.3)             R0
+C32        .1uf           1206         zz-cap-master          (2.25 3.4)            R0
+C33        .1uf           1206         zz-cap-master          (2.75 3.4)            R0
+C34        1000uf         ENP-035-080  zz-cap-master          (2.65 2.95)           R180
+CU1        1uf            C1206        zz-rcl                 (3.65 2.05)           R90
+GND                       FE06         con-lsta               (4.9 3.1)             R0
+IC1        L298           MULTIWATT-15 zz-st-microelectronics (0.65 2.1)            R0
+IC2        L298           MULTIWATT-15 zz-st-microelectronics (1.75 2.05)           R0
+IC3        L298           MULTIWATT-15 zz-st-microelectronics (2.9 2.05)            R0
+IC4        AT24CP         DIL08        atmel                  (3.75 2.55)           R270
+LED1                      LED5MM       led                    (4.3 1.4)             R0
+MOTOR1                    W237-102     con-wago-500           (0.25 3.7)            R0
+MOTOR2                    W237-102     con-wago-500           (0.75 3.7)            R0
+MOTOR3                    W237-102     con-wago-500           (1.25 3.7)            R0
+MOTOR4                    W237-102     con-wago-500           (1.75 3.7)            R0
+MOTOR5                    W237-102     con-wago-500           (2.25 3.7)            R0
+MOTOR6                    W237-102     con-wago-500           (2.75 3.7)            R0
+MS                        FE06         con-lsta               (4.95 3.8)            R0
+P0                        FE06         con-lsta               (3.45 3.8)            R0
+P1                        FE06         con-lsta               (4.2 3.8)             R0
+P1_POWER   9090-4V        9090-4V      con-thomas-betts       (0.65 2.55)           R0
+P1_PWR_PIN                MA04-1       con-lstb               (0.7 3.2)             R0
+P2_POWER1  9090-4V        9090-4V      con-thomas-betts       (1.8 2.55)            R0
+P2_PWR_PIN                MA04-1       con-lstb               (1.7 3.25)            R0
+P3_POWER1  9090-4V        9090-4V      con-thomas-betts       (2.95 2.55)           R0
+P3_PWR_PIN                MA04-1       con-lstb               (2.75 3.25)           R0
+POWER_SW                  9070-1W      switch                 (4.9 2.75)            R180
+PROP_PLUG                 MA04-1       con-lstb               (5 2.1)               R90
+Q1                        HC49/S       crystal                (4.3 2.55)            R180
+R1         10K            RESC3115X70N zz-ipc-7351-resistor   (3.7 1.4)             R0
+R1LED      330ohm         RESC3115X70N zz-ipc-7351-resistor   (4.5 1.35)            R270
+R2         10K            RESC3115X70N zz-ipc-7351-resistor   (3.7 1.25)            R0
+R4         270ohm         SO16         resistor-bourns        (3.4 3.4)             R180
+R5         270ohm         SO16         resistor-bourns        (4.15 3.4)            R180
+R6         270ohm         SO16         resistor-bourns        (4.9 3.4)             R180
+RESET      FSMCD          FSMCD        zz-switch-misc         (4.9 1.55)            R0
+RN1        10K            SIL7         resistor-sil           (3.4 3.65)            R0
+RN2                       RN-7         resistor-net           (4.15 2.95)           R0
+RN3        10K            SIL7         resistor-sil           (4.15 3.65)           R0
+RN4        10K            SIL7         resistor-sil           (4.9 3.65)            R0
+SEN_EN                    FE06-2       con-lsta               (3.4 3)               R0
+U$1        P8X32A         LQFP-44      propeller              (4.3 2)               R0
+U11        SSA34          SMA          diode-20CJQ030         (0.2 1.15)            R270
+U12        SSA34          SMA          diode-20CJQ030         (0.45 1.15)           R270
+U13        SSA34          SMA          diode-20CJQ030         (0.7 1.15)            R270
+U14        SSA34          SMA          diode-20CJQ030         (0.95 1.15)           R270
+U15        SSA34          SMA          diode-20CJQ030         (0.2 0.9)             R270
+U16        SSA34          SMA          diode-20CJQ030         (0.45 0.9)            R270
+U17        SSA34          SMA          diode-20CJQ030         (0.7 0.9)             R270
+U18        SSA34          SMA          diode-20CJQ030         (0.95 0.9)            R270
+U21        SSA34          SMA          diode-20CJQ030         (1.3 1.15)            R270
+U22        SSA34          SMA          diode-20CJQ030         (1.55 1.15)           R270
+U23        SSA34          SMA          diode-20CJQ030         (1.85 1.15)           R270
+U24        SSA34          SMA          diode-20CJQ030         (2.1 1.15)            R270
+U25        SSA34          SMA          diode-20CJQ030         (1.3 0.9)             R270
+U26        SSA34          SMA          diode-20CJQ030         (1.55 0.9)            R270
+U27        SSA34          SMA          diode-20CJQ030         (1.85 0.9)            R270
+U28        SSA34          SMA          diode-20CJQ030         (2.1 0.9)             R270
+U31        SSA34          SMA          diode-20CJQ030         (2.45 1.15)           R270
+U32        SSA34          SMA          diode-20CJQ030         (2.7 1.15)            R270
+U33        SSA34          SMA          diode-20CJQ030         (2.95 1.15)           R270
+U34        SSA34          SMA          diode-20CJQ030         (3.2 1.15)            R270
+U35        SSA34          SMA          diode-20CJQ030         (2.45 0.9)            R270
+U36        SSA34          SMA          diode-20CJQ030         (2.7 0.9)             R270
+U37        SSA34          SMA          diode-20CJQ030         (2.95 0.9)            R270
+U38        SSA34          SMA          diode-20CJQ030         (3.2 0.9)             R270
+VLED                      FE06         con-lsta               (4.2 3.1)             R180
+X1         5566-20        5566-20      con-molex              (4.35 0.95)           R180

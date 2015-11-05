@@ -1,0 +1,6 @@
+<launch>
+	<include file="$(find beobot2_launch)/stereo_cameras.launch" />
+	<include file="$(find beobot2_launch)/image_sync.launch" />
+	<include file="$(find beobot2_launch)/stereo_image_proc.launch" />
+	<include file="$(find beobot2_launch)/stereo_view_base.launch" />
+</launch>

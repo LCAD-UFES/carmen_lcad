@@ -1,0 +1,58 @@
+/** \dir src/Component
+
+    \brief Base classes for the iNVT neural model building framework
+
+    This directory contains class definitions for the iNVT model
+    building framework. This framework streamlines the definition of
+    computational modules which are to be used as part of an
+    integrated simulated model and which may hold a number of tunable
+    parameters which can be set from config files and/or command-line
+    options.
+
+    Most of the simulated brain computation modules derive from the
+    ModelComponent class defined here. This provides a standardized
+    interface for how to assemble components, define ModelParam
+    parameters for the components which may be set via the
+    command-line, and other functionality. The ModelManager is a
+    special ModelComponent which should be the root of a graph of
+    components which define a model, and which handles command-line
+    parsing, model start/stop/reset, and other functionality.
+
+    for additional options, see doc/input/modelbuilding.dxy
+
+    for dependency graphs:
+    rankdir: TB
+*/
+
+// $HeadURL: svn://isvn.usc.edu/software/invt/trunk/saliency/src/Component/README.dxy $
+// $Id: README.dxy 5749 2005-10-19 08:15:48Z itti $
+
+// //////////////////////////////////////////////////////////////////// //
+// The iLab Neuromorphic Vision C++ Toolkit - Copyright (C) 2001 by the //
+// University of Southern California (USC) and the iLab at USC.         //
+// See http://iLab.usc.edu for information about this project.          //
+// //////////////////////////////////////////////////////////////////// //
+// Major portions of the iLab Neuromorphic Vision Toolkit are protected //
+// under the U.S. patent ``Computation of Intrinsic Perceptual Saliency //
+// in Visual Environments, and Applications'' by Christof Koch and      //
+// Laurent Itti, California Institute of Technology, 2001 (patent       //
+// pending; application number 09/912,225 filed July 23, 2001; see      //
+// http://pair.uspto.gov/cgi-bin/final/home.pl for current status).     //
+// //////////////////////////////////////////////////////////////////// //
+// This file is part of the iLab Neuromorphic Vision C++ Toolkit.       //
+//                                                                      //
+// The iLab Neuromorphic Vision C++ Toolkit is free software; you can   //
+// redistribute it and/or modify it under the terms of the GNU General  //
+// Public License as published by the Free Software Foundation; either  //
+// version 2 of the License, or (at your option) any later version.     //
+//                                                                      //
+// The iLab Neuromorphic Vision C++ Toolkit is distributed in the hope  //
+// that it will be useful, but WITHOUT ANY WARRANTY; without even the   //
+// implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR      //
+// PURPOSE.  See the GNU General Public License for more details.       //
+//                                                                      //
+// You should have received a copy of the GNU General Public License    //
+// along with the iLab Neuromorphic Vision C++ Toolkit; if not, write   //
+// to the Free Software Foundation, Inc., 59 Temple Place, Suite 330,   //
+// Boston, MA 02111-1307 USA.                                           //
+// //////////////////////////////////////////////////////////////////// //

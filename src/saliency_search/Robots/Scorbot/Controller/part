@@ -1,0 +1,33 @@
+Partlist
+
+Exported from RobotArm4.sch at  3/30/2007 19:54:10 
+
+EAGLE Version 4.16r1 Copyright (c) 1988-2006 CadSoft
+
+Part       Value          Device          Package      Library                Sheet
+
+C11        .1uf           CNP-1206        1206         zz-cap-master          9
+C14        1000uf         CBP-ENP-035-080 ENP-035-080  zz-cap-master          3
+CU1        1uf            C-USC1206       C1206        zz-rcl                 1
+
+IC1        L298           L298            MULTIWATT-15 zz-st-microelectronics 3
+IC4        AT24CP         AT24CP          DIL08        atmel                  1
+LED1                      LED5MM          LED5MM       led                    1
+MOTOR1                    W237-102        W237-102     con-wago-500           6
+
+P1_POWER   9090-4V        9090-4V         9090-4V      con-thomas-betts       3
+P1_PWR_PIN                MA04-1          MA04-1       con-lstb               4
+POWER_SW                  9070-1W         9070-1W      switch                 1
+Q1                        CRYSTALHC49S    HC49/S       crystal                1
+R1LED      330ohm         SMK             SMK          resistor-shunt         1
+R4         270ohm         2NBS16-8        SO16         resistor-bourns        3
+RESET      FSMCD          FSMCD           FSMCD        zz-switch-misc         1
+R3         10K            R-EU_M1206      M1206        rcl                    2
+RN1        10K            G06R            SIL7         resistor-sil           3
+RN2                       RNX6            RN-7         resistor-net           1
+
+MS                        FE06-1          FE06         con-lsta               5
+SEN_EN                    FE06-2          FE06-2       con-lsta               1
+U$1        P8X32A         P8X32A          LQFP-44      propeller              1
+U11        SSA34          SSA34           SMA          diode-20CJQ030         32
+X1         5566-20        5566-20         5566-20      con-molex              1

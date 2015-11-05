@@ -1,0 +1,27 @@
+86c86,89
+< 	address.sin_addr.s_addr = ipAddress->value;		// Set Internet Socket (sin), Address to: The ipAddressString argument
+---
+> 
+>     // if we specify the ipAddressString then we will not be able to receive broadcast messages sent to port.
+> 	//address.sin_addr.s_addr = ipAddress->value;		// Set Internet Socket (sin), Address to: The ipAddressString argument
+> 	address.sin_addr.s_addr = INADDR_ANY;       		// Set Internet Socket (sin) to ANY address so we can receive broadcast or unicast
+102a106,111
+>     int on = 1;
+> 	if(setsockopt(multicastSocket->unicastSocketDescriptor, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on) ) )
+>     {
+> 		multicastSocketDestroy(multicastSocket);
+> 		return NULL;
+>     }
+110a120
+> 
+173a184,190
+> 	//if(bind(multicastSocket->multicastSocketDescriptor, (struct sockaddr *)&multicastRequest.imr_interface.s_addr, sizeof(address)))
+>     int on = 1;
+> 	if(setsockopt(multicastSocket->multicastSocketDescriptor, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on) ) )
+>     {
+> 		multicastSocketDestroy(multicastSocket);
+> 		return NULL;
+>     }
+175a193,194
+>         perror("");
+> 		printf("Error: Cannot bind multicast socket to %s:%d\n", inet_ntoa(multicastRequest.imr_interface), ntohs(address.sin_port));

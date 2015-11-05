@@ -1,0 +1,256 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<!-- Mirrored from carmen.sourceforge.net/map_editor.html by HTTrack Website Copier/3.x [XR&CO'2010], Thu, 13 Jan 2011 17:35:43 GMT -->
+<head><title>CARMEN</title>
+	<meta name="description" content="CARMEN">
+	<meta name="keywords" content="CARMEN robot navigation toolkit">
+	<meta name="page-topic" content="CARMEN">
+
+        <meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<meta name="robots" content="index">
+	<meta name="robots" content="follow">
+	<link rel="stylesheet" type="text/css" href="styles/styles.css">
+</head>
+<body bgcolor="#ffffff">
+<br>
+<div align="center">
+<table align="center" width="95%">
+<tbody>
+<tr>
+  <td align="left"><img src="images/carmen-logo-small.png" border=0 alt="[Carmen logo]"></td>
+</tr>
+<tr>
+<td  align="left" bgcolor="#ffffcc">&nbsp;</td></tr>
+</tbody>
+</table>
+
+<!-- NAVIGATOR -->
+
+<table align="center" width="95%">
+<tbody>
+<tr>
+<td><br></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+   <td class="menu" align="left" valign="top" width="210"><br>
+   <ul>
+   <li><a href="home.html">Home</a></li> 
+   <li><a href="intro.html">What's Carmen?</a></li>
+   <li><a href="core_functionality.html">Core Functionalities</a></li>
+   <br>
+   <li><a href="news.html">What's New?</a></li>
+   <li><a href="repository.html">Repository</a></li>
+   <li><a href="update.html">Chief Changes</a></li>
+   <br>
+   <li><a href="getting_carmen.html">Download & Installation</a></li>
+   <li><a href="hardware.html">Required Hardware</a></li>
+   <li><a href="using_carmen.html">Running Carmen</a></li>
+   <li><a href="config_param.html">Configuring Carmen</a></li>
+   <br>
+   <li><a href="doc/index.html">Carmen Online Docs</a></li>
+   <li><a href="program_carmen.html">Program with Carmen</a></li>
+   <li><a href="FAQ.html">FAQ</a></li>
+   <li><a href="papers.html">Papers</a></li>
+   <br>
+   <li><a href="mailing_lists.html">Mailing List</a></li>
+   <li><a href="contributers.html">People</a></li><br>
+   <li><a href="http://radish.sourceforge.net/">Data Sets (Radish)</a></li>
+   </ul><br><br><br>
+   <img src="images/line-200.png" border=0> 
+  </td>
+  <td width="20"></td>
+  <td align="left" valign="top">
+
+<!-- END OF HEADER -->
+
+
+<h1>Carnegie Mellon Robot Navigation Toolkit<br></h1><p>
+<h2>Using the Map Editor</h2></td>
+
+
+<hr>
+<center>
+    <table>
+<tr><td><center><a href="index-2.html">Introduction</a></center></td>
+<td><center><a href="hardware.html">Hardware</a></center></td>
+<td><center><a href="getting_carmen.html">Download</a></center></td>
+<td><center><a href="using_carmen.html">Run</a></center></td>
+<td><center><a href="config_param.html">Configure</a></center></td></tr>
+<tr><td><center><a href="program_carmen.html">Program</a></center></td>
+<td><center><a href="FAQ.html">FAQ</a></center></td>
+<td><center><a href="papers.html">Papers</a></center></td>
+<td><center><a href="mailing_lists.html">Mailing Lists</a></center></td>
+<td><center><a href="http://radish.sourceforge.net/">Data Sets</a></center></td>
+</tr>
+</table>
+</center>
+<hr>
+<p>
+<h3>Contents</h3>
+<p><ul>
+<li>Introduction<br>
+<li><a href="#controls">Editor Controls</a><br>
+    <ul>
+    <li><a href="#menus">Menus</a><br>
+       <ul>
+       <li><a href="#file">File Menu</a><br>
+       <li><a href="#edit">Edit Menu</a><br>
+       <li><a href="#view">View Menu</a><br>
+       <li><a href="#help">Help Menu</a><br>
+       </ul>
+    <li><a href="#toolsetting">Tools and Settings</a>
+       <ul>
+       <li><a href="#tools">Tools</a><br>
+       <li><a href="#settings">Settings</a><br>
+       </ul>
+    </ul>
+<li><a href="#terms">Terms</a>
+</ul>
+<p>
+<h3>Introduction</h3>
+<p>
+The Carmen Map Editor allows for manually modifying the maps created with Vasco, or draw entirely new maps. It will enable you to add or remove place names or mark areas as off limits to the robot in addition to modifying the objects, walls, and free space within the map.
+<p>
+Using the map editor is similar to using many standard graphics and drawing programs, except that the colors represent probabilities that a particular point is occupied. White implies low probability of ocupation, as it shifts through grey to black, it implies greater probability of a grid cell being occupied. Blue areas are unknown; there is no data available to assign a probability. Red areas represent "off limits" areas, where the robot should not go, whether or not it *can* go there. (This can be very important for keeping the robot away from stairwells and other dangers it cannot detect.)
+
+
+<a name=controls><h2>Editor Controls</h2></a>
+On opening the map_editor program, you see a control panel like this:<p>
+<center>
+<img src=images/map_editor1.gif>
+</center>
+<a name=menus><h3>Menus</h3></a>
+<a name=file><b>File Menu</b></a><br>
+<ul>
+<li>New Map (also CNTL-N) allows you to create a new map. Choosing this will cause a dialog box to appear, asking for the map size and resolution.
+<p>
+<center>
+<img src=images/map_editor2.gif>
+</center>
+<p>
+Width and Height are in "grid cells," and Resolution is the size (in meters) of each cell. Since the brush and line size is in grid cells, resolution here can be very important.
+<p>
+<center>
+<img src=images/map_editor3.gif>
+</center>
+<p>
+<li>Open Map (also CNTL-O -or- as a command option when starting: "./map_editor mapname.map") will open a previously generated map.
+<p>
+<center>
+<img src=images/map_editor4.gif>
+</center>
+<p>
+<li>Save Map (also CNTL-S) will save a previously saved map under the same name.
+<p>
+<li>Save Map As (also CNTL-A) will save a map under a new name.
+<p>
+<li>Export is not implemented with this release.
+<p>
+<li>Quit (also CNTL-Q) will exit the program.
+</ul>
+
+<a name=edit><b>Edit Menu</b></a><br>
+<ul>
+<li>Undo (also CNTL-Z) will undo only the most recent action.
+<p>
+<li>Add Placename is not implemented in this version. To add a placename, run the map_add_place program as follows:
+   <ul>
+   <pre> ./map_add_place mapfilename placename [place params]</pre><br>
+      <ul>
+       2, 3, or 6 place parameters can be given.<br> 
+       2 parameters - named position (x, y)<br> 
+       3 parameters - named pose (x, y, theta)<br>
+       6 parameters - initialization position<br>
+          <ul>(x, y, theta, std_x, std_y, std_theta)<br>
+              The "std" parameters are for the standard deviation in 
+              a robot start position.
+           </ul>
+      </ul>
+   </ul><p> Remember: The x/y/std_x/std_y co-ordinates are in METRES,
+   not ingrid cells, and theta is in DEGREES. It will print out the
+   conversion to radians automatically for you. To get the x and y
+   coordinates you want, use map_editor: the coordinates of the mouse
+   pointer are displayed in the upper right, under the "Help" menu.
+<p>
+<li>Delete Placename will remove a placename from the map. Simply click on the placename dot after selecting Delete Placename from the menu.
+</ul>
+
+<a name=view><b>View Menu</b></a><br>
+<ul>
+<li>Show Placenames selects whether or not to show placenames on the display.
+<p>
+<li>Show Offlimits selects whether or not to show off limits areas on the display.
+</ul>
+
+<a name=help><b>Help Menu</b></a><br>
+<ul>
+<li>About will open a window which provides information about using the program.<br>
+<center><img src=images/me-help.gif></center>
+</ul>
+
+<a name=toolsetting><h3>Tools and Settings</h3></a>
+<a name=tools><b>Tools</b></a><br>
+<ul>
+<li>Brush draws squares (of width and height equal to "brush size" setting) of probability equal to the "ink" setting onto the map. The brush is activated by clicking the left mouse button and dragging the cursor across the screen.<br>
+<li>Rectangle draws a rectangle of probability "ink", filled or not, with edgesof width equal to the "line size" setting onto the map. The regtangle is activated by clicking the left mouse button, dragging the cursor across the screen, and releasing the button.<br> 
+<li>Line draws a line of probability "ink" onto the map with a thickness of approximately the "line size" setting. The line is activated by clicking the left mouse button, dragging the cursor across the screen, and releasing the button.<br>
+<li>Fill changes a contiguous area of the same probability to have the probability of the "ink" setting. The fill tool is activated by clicking the left mouse button on any location in the area you want to fill.<br>
+<li>Fuzzy Fill is just like fill, except that it allows for variations in the probabilities in the region to be filled. Instead of all filled cells having the same probability, they can vary by plus or minus the "fuzziness" setting.
+<li>Eye Dropper changes the current "ink" setting to the probability of the grid cell clicked upon with the left mouse button.<br>
+<li>Zoom allows you to zoom in or out on the map display. Zoom in by clicking the left mouse button on the center of the area you want to look at, or zoom out by clicking the right mouse button on the desired center point.<br>
+</ul>
+
+<a name=settings><b>Settings</b></a><br>
+<ul>
+<li>Ink (Probability) sets the likelyhood that a grid cell is occupied. It is represented by the darkness of the color.<br>
+<ul>
+<li>Unknown sets the ink to represent areas of no data, signified by blue color in the map.<br>
+<li>Off Limits sets the ink to represent areas that the robot should not travel to, represented by red color in the map if "show offlimits" is selected in the view memu.<br>
+</ul>
+<li>Fuzziness sets the half-range of the probabilities effected by the "fuzzy fill" tool.<br>
+<li>Brush Size sets the length of a side on a square brush. The units are equivalent to the resolution of the map.<br>
+<li>Line Size sets the width of lines and width of edges of unfilled rectangles. The units are equivalent to the resolution of the map.<br>
+<li>Shape Fill sets whether or not rectangles are filled.<br>
+</ul>
+
+<a name=terms><h3>Terms</h3></a>
+<ul>
+<li>Fuzziness: The half-range of points effected by "Fuzzy Fill." For example, if you have fuzziness set to 0.100 and you attempt to Fuzzy Fill a region by clicking on a point whose ocupation probability is 0.300, then all contiguous points whose porobability is between 0.200 and 0.400 will be changed to the value of "Ink."
+<li>Grid Cell: The smallest possible unit in the map. 
+<li>Probability: The likelihood that a grid cell is occupied. In the map editor, "ink" is often substituted for "probability."<br>
+</ul>
+
+<!-- REST OF NAVIGATOR -->
+
+</td><td width="20"></td> </tr>
+<tr>
+<td><br></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table> 
+
+<!-- FOOTER -->
+
+
+<table align="center" width="95%"> 
+<tbody>
+<tr> 
+<td colspan="2" align="center" bgcolor="#ffffcc">
+Copyright ©  by the <a href="contributers.html">CARMEN-Team</a>
+</td> 
+</tr> 
+</tbody>
+</table>
+</div>
+</body>
+
+<!-- Mirrored from carmen.sourceforge.net/map_editor.html by HTTrack Website Copier/3.x [XR&CO'2010], Thu, 13 Jan 2011 17:35:44 GMT -->
+</html>
+

@@ -1,0 +1,17 @@
+/** @page binary__gps
+
+<h2>GPS Device Driver</h2>
+
+@section gps_main Gps-nmea
+
+The gps-nmea module provides the hardware driver for typical consumer
+GPS devices (like, for example, Garmin devices). The device is supposed
+to provide the NMEA message as text format.
+
+Currently two NMEA messages are supported. The first one is the NMEA-GGA
+message which provides the position estimates and the NMEA-RMC message
+which provides the ground speed estimate.
+
+<h3>Usage: ./gps-nmea</h3>
+
+**/

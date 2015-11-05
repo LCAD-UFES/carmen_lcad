@@ -1,0 +1,609 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<!-- Mirrored from carmen.sourceforge.net/config_param.html by HTTrack Website Copier/3.x [XR&CO'2010], Thu, 13 Jan 2011 17:35:39 GMT -->
+<head><title>CARMEN</title>
+	<meta name="description" content="CARMEN">
+	<meta name="keywords" content="CARMEN robot navigation toolkit">
+	<meta name="page-topic" content="CARMEN">
+
+        <meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<meta name="robots" content="index">
+	<meta name="robots" content="follow">
+	<link rel="stylesheet" type="text/css" href="styles/styles.css">
+</head>
+<body bgcolor="#ffffff">
+<br>
+<div align="center">
+<table align="center" width="95%">
+<tbody>
+<tr>
+  <td align="left"><img src="images/carmen-logo-small.png" border=0 alt="[Carmen logo]"></td>
+</tr>
+<tr>
+<td  align="left" bgcolor="#ffffcc">&nbsp;</td></tr>
+</tbody>
+</table>
+
+<!-- NAVIGATOR -->
+
+<table align="center" width="95%">
+<tbody>
+<tr>
+<td><br></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+   <td class="menu" align="left" valign="top" width="210"><br>
+   <ul>
+   <li><a href="home.html">Home</a></li> 
+   <li><a href="intro.html">What's Carmen?</a></li>
+   <li><a href="core_functionality.html">Core Functionalities</a></li>
+   <br>
+   <li><a href="news.html">What's New?</a></li>
+   <li><a href="repository.html">Repository</a></li>
+   <li><a href="update.html">Chief Changes</a></li>
+   <br>
+   <li><a href="getting_carmen.html">Download & Installation</a></li>
+   <li><a href="hardware.html">Required Hardware</a></li>
+   <li><a href="using_carmen.html">Running Carmen</a></li>
+   <li><a href="config_param.html">Configuring Carmen</a></li>
+   <br>
+   <li><a href="doc/index.html">Carmen Online Docs</a></li>
+   <li><a href="program_carmen.html">Program with Carmen</a></li>
+   <li><a href="FAQ.html">FAQ</a></li>
+   <li><a href="papers.html">Papers</a></li>
+   <br>
+   <li><a href="mailing_lists.html">Mailing List</a></li>
+   <li><a href="contributers.html">People</a></li><br>
+   <li><a href="http://radish.sourceforge.net/">Data Sets (Radish)</a></li>
+   </ul><br><br><br>
+   <img src="images/line-200.png" border=0> 
+  </td>
+  <td width="20"></td>
+  <td align="left" valign="top">
+
+<!-- END OF HEADER -->
+
+
+<h3>Configuring Carmen</h3>
+<p>
+TODO: CHECK THIS DOCUMENT
+<hr>
+
+<p><ul>
+<li>Introduction
+<li><a href="#list">Parameter Descriptions</a>
+   <ul>
+   <li><a href="#type">Robot-Type</a>
+   <li><a href="#robot">Robot</a>
+   <li><a href="#local">Localize</a>
+   <li><a href="#nav">Navigator</a>
+   </ul>
+<li><a href="#server">The Parameter Server</a>
+<li><a href="#command">Changing Parameters from the Command Line</a>
+<li><a href="#edit">Changing Parameters on the Fly</a>
+<li><a href="#ini">The ini File Format</a>
+<li><a href="#map">The Map File Format</a>
+   <ul>
+   <li><a href="#file">Filenames</a>
+   <li><a href="#overall">Overall File Format</a>
+   <li><a href="#chunk">Chunk Descriptions</a>
+      <ul>
+      <li><a href="#creator">Creator Chunk Description</a>
+      <li><a href="#grid">Gridmap Chunk Description</a>
+      <li><a href="#off">Offlimits Chunk Description</a>
+      <li><a href="#place">Places Chunk Description</a>
+      <li><a href="#expect">Expected Chunk Description</a>
+      <li><a href="#scan">Laserscans Chunk Description</a>
+      </ul>
+   </ul>
+<li><a href="map_editor.html">The Map Editor program</a> (separate webpage)
+</ul>
+<p>
+<h3>1&nbsp;&nbsp;Introduction</h3>
+<p>
+The many programs of CARMEN work together to accomplish the tasks of
+navigating a robot from place place, mapping new environments, and
+others. Because much of the information required by one program to
+perform its task is required by another program to perform a different
+task. If the information is different between programs, it is possible
+for one program to prevent another from accomplishing its task, which
+brings about a situation which is potentially dangerous to the robot,
+it's environment, and even the people in it.
+<p>
+CARMEN programs use the <b>param_server</b>, a repository or registry
+of values for parameters to be used during the operation of a
+robot. The intention of the parameter server is to ensure that all
+modules are using the same parameters definitions, such as maximum
+allowable velocity, robot size, etc. Many robot code suites require
+that each separate process reads the parameter values directly from a
+file. We have chosen the parameter server approach because different
+processes frequently reside on different computer, which would entail
+having copies of the same file on each such computer. This often leads
+to having copies of <em>different</em> files on each computer, with
+undesirable results. Secondly, the parameter server facilitates
+dynamic updating of parameter values; for instance, the maximum speed
+of the robot can be changed during the operation of the robot, without
+restarting any processes. This necessitates some additional overhead
+on the part of each process, to ensure that each process is subscribed
+to changes in each variable. This document will describe how best to
+do this.
+<p>
+The parameter server is intended to serve parameters that can vary across
+robots, or across execution runs. Parameters that cannot change should not be
+served by the parameter server. For example, the maximum preferred
+translational velocity for a particular deployment is served as
+<tt>robot_max_t_vel</tt>. However, each robot (such as the scout) has a
+practical maximum wheel velocity; this value should be hard-coded in the base
+module for that robot, instead of being served. Similarly, for rflex robots,
+the odometry conversion factor from wheel tics to metres is hard-coded, as
+this is a hardware dependent value and cannot change. 
+
+<p>
+Finally, the parameter server can also be used as a map server. This ensures
+that all processes are using the same map, with the same resolution, etc..
+The does entail a performance penalty in terms of bandwidth loss at the start
+up of each process, but we believe that resultant the ease of use, in terms of
+needing only one copy of the map and ensuring consistency, is an acceptable
+bargain.
+<p>
+<h3><a name="list">2&nbsp;&nbsp;Parameter Descriptions</a></h3>
+<p>
+This is not necessarily a complete list of all of the parameters used in CARMEN.
+<p>
+<b><a name="type">2.1&nbsp;&nbsp;Robot-type Parameters</a></b> used in the pioneer, rflex, scout, and other programs based on the type of robot used.
+<p>
+Parameter Options:
+<ul>
+    <li><b>dev</b> sets the serial port used by the computer to communicate with the robot hardware.
+    <li><b>version</b> sets the type of Pioneer in the Pioneer program. This should be the integer 1 or 2.
+    <li><b>wheel_diameter</b> is the wheel diameter, used to calculate distance a robot moves.
+    <li><b>use_sonar</b> sets sonar to be on or off. Carmen has not fully integrated sonar at this time, so this should be set to zero for off.
+    <li><b>sensor_angle</b> The angle subtended by one sonar transducer, in radians. This is not used if use_sonar is off.
+    <li><b>sonar_offsets</b> sets the position of each sonar relative to the center of the robot, and its facing relative to forward. Each sonar has three numbers associated: distance forward of center in meters, distance right of center in meters, and facing in radians measuring clockwise from forward. This is not used of use_sonar is off.
+    <li><b>num_sonars</b> sets the number of sonar detectors on the robot. This is not used of use_sonar is off.
+</ul>
+
+<p>
+<b><a name="robot">2.2&nbsp;&nbsp;Robot</a></b>
+<p>
+Parameter Options are:
+<ul>
+    <li><b>max_t_vel</b> sets the maximum translational (forward-backward) speed of the robot in meters per second. If this is set higher than the maximum allowable speed the base can support, then the behaviour is undefined.
+    <li><b>max_r_vel</b> sets the maximum rotational (spinning) speed in radians per second. If this is set higher than the maximum allowable speed the base can support, or, if the base is differential drive and this is set higher than the translation speed can support, then the behaviour is undefined.
+    <li><b>min_approach_dist</b> sets the closest the robot should get to a stationary object toward which it is moving. Current speed and programmed accelerations are taken into account, so the actual distance between the robot and object should be the same if the robot is moving fast or slow. The value is in meters.
+    <li><b>min_side_dist</b> sets the closest the robot will approach a stationary object as it passes the object. The value is in meters.
+    <li><b>length</b> is the front-to-back measure of the robot in meters.
+    <li><b>width</b> is the side-to-side measure of the robot in meters. Even is the robot is round, this parameter should be set.
+    <li><b>acceleration</b> and <b>deceleration</b> sets how fast the robot should accelerate and decelerate, in m/s^2. If the base does not support different acceleration and deceleration parameters (e.g., nomadic technologies bases), then base_services tries to mimic this support by changing the acceleration value to the deceleration value once the robot is moving and no commands are pending.
+    <li><b>reaction_time</b> is how long it takes for the base to react to a command, in seconds. If you want to know how quickly the robot can stop, you have to know how far it will travel while it is reacting to the command.
+    <li><b>curvature</b> is how much the robot will veer to the right or left as it is travelling in a straight line. Nominally used by the conventional planner, but mostly ignored.
+    <li><b>theta_gain</b> is used to control the p-term of the bearing part of a pd control loop that can be used to drive the robot to an arbitrary point at range d and bearing theta. The correct value of this term is related to the dynamic characteristics of particular bases, and can be altered if the robot is oscillating widely, or not turning fast enough, etc. Determing the correct value is usually done experimentally.
+    <li><b>theta_d_gain</b> controls the d-term of bearing part of the control loop. Again, determined experimentally for each base.
+    <li><b>displacement_gain</b> controls the p-term of the range part of the control loop. Determined experimentally for each base. There is no parameters for the d-term of the range part -- the current value is set to 0.5. A displacement_d_gain parameter should probably be added.
+    <li><b>allow_rear_motion</b> sets whether or not to allow the robot to back up.
+    <li><b>converge</b> determines whether or not robot should start publishing robot_laser/robot_sonar messages immediately, or wait until enough messages have been received that the timestamp offset between the odometry and the laser_laser/base_sonar messages can be reliably estimated, for good timestamp-based interpolation of the laser odometry.
+    <li><b>use_laser</b> sets whether or not to use a laser device (Sick LMS or PLS). This affects robot only, in terms of whether it will subscribe to laser_laser messages, and then publish robot_laser messages.
+    <li><b>timeout</b> sets the maximum time the robot program will continue moving the physical robot without receiving a command. This value is in seconds.
+</ul>
+<p>
+<b><a name="local">2.3&nbsp;&nbsp;Localize</a></b>
+<p>
+Parameter Options are:
+<ul>
+    <li><b>frontlaser_offset</b> is the distance in meters forward of robot center the front laser scans.
+    <li><b>rearlaser_offset</b> is the distance in meters behind robot center the rear laser scans.
+    <li><b>robot_particles</b> is number of particles to be used for localization. More particles results in more robust localization, but more computation
+    <li><b>max_range</b> is maximum range to incorporate laser readings.
+    <li><b>min_wall_prob</b> Laser range values are either incorporated into every particle in the particle filter, or they are thrown out as outliers. If a laser reading receives a probability of less than min_wall_prob in at least outlier_fraction percent of the particles, the reading is called an outlier and disregarded by all particles.
+    <li><b>outlier_fraction</b> see min_wall_prob.
+    <li><b>update_distance</b> If the robot does not move, successively resampling the particle filter would result in only the single most-likely particle surviving. In order to insure that the observations incorporated into the filter are reasonably independent, resampling is only done if the robot translates by an amount update_distance, or rotates by an amount update_angle.
+    <li><b>update_angle</b> see update_distance.
+    <li><b>laser_skip</b> The localizer will only process every nth laser reading. This is to increase the likelihood of independent readings and to decrease the computational requirement of the localizer.
+    <li><b>use_rear_laser</b> sets whether data from the rear laser should be incorporated. The lasers must be relatively well aligned. Use at your own risk.
+    <p>
+The following four parameters describe the robot's motion model. Start with non-zero a1 and a3, and add some a2 and a4 if you have trouble localizing.
+    <p>
+    <li><b>odom_a1</b> controls the contribution of rotational motion to rotational error.
+    <li><b>odom_a2</b> controls the contribution of translational motion to rotational error.
+    <li><b>odom_a3</b> controls the contribution of translational motion to
+translational error.
+    <li><b>odom_a4</b> controls the contribution of rotational motion to
+translational error.
+    <li><b>occupied_prob</b> probability of a map cell to be considered occupied.
+    <li><b>lmap_std</b> standard deviation of map likelihood function.  This can be thought of as the "fuzziness" of the map.  The higher the value, the more tolerant the localizer will be to map errors, and the higher the pose variance will be.
+    <li><b>global_lmap_std</b> This is the same as lmap_std, but for when the robot is in global localization mode.  In general, this should be higher than lmap_std.
+    <li><b>global_evidence_weight</b> During global localization, evidence is counted less heavily than normal.  This weight specifies what the fraction of a normal reading that a global localization reading should be considered as.
+    <li><b>global_distance_threshold</b> The localizer uses the global localization parameters if there is a large spread of particles.  If any particle is
+farther than global_distance_threshold from the mean, than global
+localization is used.
+<p>
+The following parameters control integrated localization and people tracking. They are somewhat difficult to use. Email mmde+carmen@cs.cmu.edu if you need help tuning them.
+<p>
+    <li><b>people_tracking</b> turns people tracking on or off.
+    <li><b>person_particles</b>
+    <li><b>max_people_range</b>
+    <li><b>max_people_std</b>
+    <li><b>person_average_width</b> This parameter is not in any standard units.
+    <li><b>person_average_prob</b>
+    <li><b>person_distance_std</b>
+    <li><b>person_distance_std</b>
+</ul>
+
+<p>
+<b><a name="nav">2.4&nbsp;&nbsp;Navigator</a></b>
+<p>
+Parameter Options are:
+<ul>
+    <li><b>max_t_vel</b> sets maximum translational (forward or backward) velocity in meters per second.
+    <li><b>max_r_vel</b> sets maximum rotational (turning) velocity in radians per second
+    <li><b>min_approach_dist</b> sets how close to subgoals the robot much reach before proceding to the next subgoal or how close to the final goal before deciding it has been reached.  
+    <li><b>min_side_dist</b> sets the minimum distance the robot side will approach a stationary object.
+    <li><b>length</b> is the length of the robot in meters.
+    <li><b>width</b> is the width of the robot in meters.
+    <li><b>acceleration</b> sets the accelleration rate of the robot in meters per second squared.
+    <li><b>reaction_time</b> is how long it takes for the base to react to a command, in seconds. If you want to know how quickly the robot can stop, you have to know how far it will travel while it is reacting to the command.
+    <li><b>curvature</b> sets how much the robot will curve while moving forward during turns in radians per meter.
+    <li><b>planner</b> chooses one of two path planners available in Carmen.
+    <li><b>ant</b> chooses to use an ANT server.
+    <li><b>port</b> specifies a port for an ANT server.
+    <li><b>num_lasers</b> specifies how many lasers are being used.
+    <li><b>update_map</b> If this is on, laser data is integrated into the map (based on the current estimate of the position provided by localize and odometry), and the planner replans in the new map.
+    <li><b>max_laser_range</b> If update_map is on, then laser_data is integrated into the map only up to max_laser_range, in metres. Changes to the map further than max_laser_range are ignored. If update_map is off, this parameter has no effect.
+    <li><b>max_collision_range</b> specifies the distance an obstical should be before replanning a path to avoid it.
+    <li><b>replan_frequency</b> specifies how often the planner will replan the robot path based on its current position
+    <li><b>smooth_path</b> If this parameter is off, then the conventional planner generates plans that consist of sequences of adjacent grid cells that the robot should travel through. If this smooth_path is on, then the sequences of grid cells are smoothed into sequences of waypoints joined by straight lines. This parameter should almost always be on for the conventional planner.
+    <li><b>goal_theta_tolerance</b> controls how close the navigator will get the robot to a desired orientation. Suggested starting value is 0.08 (about 5 degrees).
+
+</ul>
+
+
+ <h2><a name=server>
+3</a>&nbsp;&nbsp;The Parameter Server</h2>
+
+<p>
+
+<pre>
+Usage: param_server -robot &lt;robot name&#62; [map file] [ini file]
+
+</pre>
+
+<p>
+The parameter server reads parameter definitions from the ini file, or, if no
+ini file name is provided on the command line, then attempts to load
+parameters from <tt>./carmen.ini</tt>, <tt>../carmen.ini</tt>, and finally
+<tt>../src/carmen.ini</tt>. If no parameter file can be found, then the process
+exits with an error. 
+
+<p>
+To make life easier, multiple robot definitions can be contained in a single
+ini file. Therefore, the parameter server requires a robot name to select a
+set of parameters, using the required argument <tt>-robot &lt;robot name&gt;</tt>. At
+start up, the parameter server loads all the parameter definitions listed
+under the generic [*] parameter set, and also all the parameters listed under
+the matching robot name. 
+
+<p>
+The parameter server can also serve maps, subsuming the functionality of the
+map server. 
+
+<p>
+Finally, the parameter server also performs sanity checks, to make sure that
+all running CARMEN processes are the same version, to ensure consistency among
+message formats, etc. All programs are expected to call
+<tt>carmen_param_check_version()</tt> immediately after initializing the IPC
+connection. 
+
+<p>     <h3><a name=command>
+4</a>&nbsp;&nbsp;Specifying Parameters from the Command Line</h3>
+
+<p>
+Parameter values can be temporarily over-ridden from the command line of a
+given process, <em>for that process only</em>. For example:
+
+<pre>
+% robot -max_t_vel 0.1
+
+</pre>
+will specify a <tt>max_t_vel</tt> of 0.1 m/s for the <tt>robot</tt> process only. 
+
+<p>
+This parameter specification method is not advised, is a convenience only, and
+may be removed from future versions of carmen. Command-line parameters are
+assumed to have no module name, and attempts are made to find a parameter with
+any module name and matching parameter name. If a process uses multiple
+parameters with different module names and the same parameter name, the
+behaviour of command-line specification is undefined.
+
+<p>
+
+<h3><A name=edit>5&nbsp;&nbsp;Change Parameters on the Fly</a></h3>
+<p>
+Using <tt>param_edit</tt>, you can change parameters served by <tt>param_server</tt> as you operate your robot, or within the simulator. You can save the new parameters to a file with the Save option of the File menu. Before opening <tt>param_edit</tt>, you must be running <tt>central</tt> and <tt>param_server</tt>. When you open the module, you will get a new window that looks like this:
+<p>
+<center><img src=images/param_edit.gif></center>
+<p>
+To change an On/Off parameter, simply click the button and <tt>param_server</tt> will immediately note the change. To change a text ot numerical parameter, click on the appropriate section on the left, then click on the white box of the parameter to change. Once you change the text, you must hit [enter] on your keyboard for the change to register in <tt>param_server</tt>.
+<p>
+Note that some parameters are related to others. For instance, if a rear laser is added to the robot simulator as decribed above, the use_rear_laser button on the "simulator" set would be switched to "on," and rear_laser_dev on the "laser" set would have to be entered. To see the input from the laser on the <tt>robot_graph</tt> display, then the rear_laser button on the "robotgraph" set needs to be set to "on."
+<p>
+
+ <h3><a name=ini>
+6</a>&nbsp;&nbsp;The ini File Format</h3>
+
+<p>
+The ini file format is ASCII, intended to be human readable and editable using
+emacs. Given the somewhat hierarchical nature of the file, a markup language
+such as XML may have been preferable, but this seems like overkill for a
+fairly simple IO task.
+
+<p>
+The file consists of robot definition sections, delimited at the start by
+
+<pre>
+[&lt;section name&#62;]
+
+</pre>
+and delimited at the end by the start of another section, or by the
+end-of-file. The section name should either be <tt>*</tt> (for all robots) or be
+the name of a robot to be specified on the command line when starting the
+parameter server.
+
+<p>
+Each section consists of parameter definitions, given by:
+
+<pre>
+&lt;module name&#62;_&lt;parameter name&#62; &lt;value&#62;
+
+</pre>
+
+<p>
+The module name can contain any characters except white space and the
+underscore (`<tt>_</tt>') character. The parameter name can contain any
+characters except whitespace. The parameter value can contain any characters
+at all, but the value ends with the end of line. There is no mechanism for
+writing parameter values across multiple lines. Trailing whitespace is trimmed
+from parameter values. 
+
+<p>
+Comment lines must have `<tt>#</tt>' at the first character of each line. 
+
+<p>
+Parameter values can be no longer than 2048 characters, and the concatenation
+of module names and parameter names can also be no longer than 255
+characters. There is a limit of 128 unique module names.
+
+<p>
+If a variable is specified twice, then only the last value is retained.
+
+<p>
+
+<b>6.1&nbsp;&nbsp;A Very Short Example ini File</b>
+
+<p>
+
+<pre>
+[*]
+navigator_update_map on
+
+[scout]
+base_type         scout
+scout_dev         /dev/ttyS0
+robot_width       0.39
+robot_rectangular 0
+
+[pioneer]
+base_type         pioneer
+pioneer_dev       /dev/ttyS0
+pioneer_vesion    1
+robot_rectangular 1
+robot_width       0.48
+robot_length      0.54
+
+</pre>
+
+<p>
+ <h3><a name=map>
+7</a>&nbsp;&nbsp;The Map File Format</h3>
+<p>
+A program for <a href="map_editor.html">editing and creating maps</a> is
+available with the CARMEN software.
+<p>
+Map files in CARMEN store evidence grid representations of 2-D
+worlds as well as other information related to robot navigation and
+localization. The format of these data files is a tagged file format,
+similar in spirit to the TIFF standard for image files. This is the
+official description of the CARMEN map file format.
+<p>
+<b><a name="file">7.1&nbsp;&nbsp;Filenames</a>:</b>
+<p>
+All CARMEN map files must end with the extension ".map". Map files
+may be compressed using gzip, but they must end with the extension
+".map.gz".
+<p>
+<b><a name="overall">7.2&nbsp;&nbsp;Overall file format</a>:</b>
+<p>
+The map file may start with a arbitrary number of lines beginning with
+a # (hash). These lines are comments and are disregarded by programs
+that read the maps. They should be used to make basic information
+about the map human-readable.
+<p>
+The first line of the file that does not start with a # (hash)
+signifies the beginning of the binary map data. This data consists of
+an arbitrary number of tagged "chunks".
+<p>
+A given CARMEN program may not know how to interpret every type of
+chunk in a map file. Programs should simply skip over any chunks that
+have types they cannot recognize. This will minimize problems with
+compatibility of different programs and maps.
+<p>
+<b><a name="chunk">7.3&nbsp;&nbsp;Chunk Description</a>:</b>
+<p>
+Byte 1 : Chunk type - unsigned byte
+<p>
+This byte describes the type of the next chunk.  Here are the
+currently recognized chunk types:
+<p><ul>
+0 - file creation information<br>
+1 - evidence grid map<br>
+2 - off limits area description<br>
+3 - named positions<br>
+4 - expected distances<br>
+5 - laser scans<br>
+</ul><p>
+Byte 2-5 : Chunk size - unsigned int
+<p>
+This is the number of bytes of the chunk, not including the chunk type
+and the chunk size variables.
+<p>
+Byte 6-15: ASCII chunk description - 10 ASCII chars
+<p>
+This is an ASCII description of the chunk type.  It was added to make
+the files easier to debug in an editor.
+<p>
+The following ASCII descriptions correspond with the standard chunk
+types.
+<p><ul>
+0 - "CREATOR   "<br>
+1 - "GRIDMAP   "<br>
+2 - "OFFLIMITS "<br>
+3 - "PLACES    "<br>
+4 - "EXPECTED  "<br>
+5 - "LASERSCANS"<br>
+</ul><p>
+Bytes 16 - ??: (length specified by chunk size above)
+<p>
+This is the binary data that makes up the individual chunk.
+<p>
+The format of the binary data for each chunk type will be described in
+turn.
+<p>
+<b><a name="creator">7.3.1&nbsp;&nbsp;Creator Chunk Description</a>:</b>
+<p>
+Bytes 1 - 10 : userid - ASCII chars
+<p>
+This is the userid of the account which created the map file.
+<p>
+Bytes 11 - 18 : creation date - long int
+<p>
+This is time / date of creation stored as a number of seconds. This is
+easy to change into a real date using UNIX functions.
+<p>
+Bytes 19 - 98 : map description - 80 ASCII chars
+<p>
+General description of the map.
+<p>
+<b><a name="grid">7.3.2&nbsp;&nbsp;Gridmap Chunk Description</a>:</b>
+<p>
+Bytes 1 - 4 : map columns - 1 unsigned byte
+<p>
+Number of columns in the map
+<p>
+Bytes 5 - 8 : map rows - 1 unsigned bytes
+<p>
+Number of rows in the map
+<p>
+Bytes 9 - 12 : map resolution - 1 float
+<p>
+Number of meters per grid cell.  The resolution must be the same
+in x and y.
+<p>
+Bytes 13 - ?? : map data - rows * columns floats
+<p>
+The values of all evidence grid cells.  The cells vary between 0 for
+empty to 1 for occupied, and -1 for unknown.  The data is in row
+order. (i.e. the first row values followed by the second row values, etc)
+<p>
+<b><a name="off">7.3.3&nbsp;&nbsp;Offlimits Chunk Description</a>:</b>
+<p>
+The off-limits areas can be either off-limits points, or off-limits
+rectangles.  The points are specified first, then the rectangles.
+<p>
+Bytes 1 - 4 : number of off-limits points N - unsigned int<br>
+Bytes 5 - ?? : off-limits points - N * 4 * 2 unsigned ints<br>
+x1 y1 x2 y2 .... Each x and y are unsigned int representing the
+off-limits cell coordinates.
+<p>
+4 more bytes : number of off-limits rectangles M - unsigned int<br>
+Bytes ?? - ?? : off-limits rectangles - M * 4 * 4 unsigned ints<br>
+r1x1 r1y1 r1x2 r1y2 r2x1 r2y1 r2x2 r2y2 ... Each x and y are unsigned
+ints representing the coordinates of the off-limits rectangle.
+<p>
+<b><a name="place">7.3.4&nbsp;&nbsp;Places Chunk Description</a>:</b>
+<p>
+Bytes 1 - 4: number of named points in the map - unsigned int
+<p>
+Bytes 5 - ?? : description of each location
+<p>
+location bytes 1 - 4 : position type - unsigned int
+<p><ul>
+Type 0 - named position (x and y)<br>
+Type 1 - named pose (x, y, and theta)<br>
+Type 2 - localization initialization position (x, y, theta,
+uncertainties)<br>
+</ul><p>
+location bytes 5 - 8 : number of bytes for the position - unsigned int
+<p><ul>
+Type 0 - 8 bytes<br>
+Type 1 - 12 bytes<br>
+Type 2 - 24 bytes
+</ul><p>
+location bytes 9 - ?? : position data
+<p><ul>
+Type 0 - 8 bytes - float x, float y<br>
+Type 1 - 12 bytes - float x, float y, float theta<br>
+Type 2 - 24 bytes - float x, float y, float theta, float xstd, float
+ystd, float zstd
+</ul><p>
+<b><a name="expect">7.3.5&nbsp;&nbsp;Expected Chunk Description</a>:</b>
+<p>
+This has not yet been implemented and will be filled in later.
+<p>
+<b><a name="scan">7.3.6&nbsp;&nbsp;Laserscans Chunk Desription</a>:</b>
+<p>
+Bytes 1 - 4 : Number of laser scans in the chunk - unsigned int
+<p>
+Laser scan
+<p><ul>
+Bytes 1 - 4 : x position of laser - float<br>
+Bytes 5 - 8 : y position of laser - float<br>
+Bytes 9 - 12 : theta position of laser - float<br>
+Bytes 13 - 16 : number of laser readings<br>
+Bytes 17 - ?? : laser readings - N floats <br>   
+Laser readings are all in m.<br>
+</ul><p>
+
+<!-- REST OF NAVIGATOR -->
+
+</td><td width="20"></td> </tr>
+<tr>
+<td><br></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table> 
+
+<!-- FOOTER -->
+
+
+<table align="center" width="95%"> 
+<tbody>
+<tr> 
+<td colspan="2" align="center" bgcolor="#ffffcc">
+Copyright ©  by the <a href="contributers.html">CARMEN-Team</a>
+</td> 
+</tr> 
+</tbody>
+</table>
+</div>
+</body>
+
+<!-- Mirrored from carmen.sourceforge.net/config_param.html by HTTrack Website Copier/3.x [XR&CO'2010], Thu, 13 Jan 2011 17:35:40 GMT -->
+</html>
+
+

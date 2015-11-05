@@ -1,0 +1,222 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0079)http://openjaus.com/products/openjaus33/76-tutorial-exclusive-component-control -->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-gb" lang="en-gb"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		  <!--<base href="http://openjaus.com/products/openjaus33/76-tutorial-exclusive-component-control">--><base href=".">
+  
+  <meta name="robots" content="index, follow">
+  <meta name="keywords" content="openjaus, jaus, robotics, as4, jsidl, robot, software, sdk, joint architecture for unmanned systems, unmanned, systems, vehicles, implementation, windows, linux, C++, UGV, UAV, USV, UUV, AGV, AUV, UAS, open, source, FAQ, SAE, AS-4, JSS, JSIDL, JTS">
+  <meta name="title" content="Tutorial: Exclusive Component Control">
+  <meta name="author" content="Tom Galluzzo">
+  <meta name="description" content="OpenJAUS.com is the home of a low-cost state-of-the-art toolkit based on the Joint Architecture for Unmanned Systems (JAUS) which is a messaging architecture for robotics. Our software is used by organizations worldwide to help meet hard technical challenges. Everything you need to learn, use and support your JAUS software development needs can be found on this website.">
+  <meta name="generator" content="Joomla! 1.5 - Open Source Content Management">
+  <title>Tutorial: Exclusive Component Control</title>
+  <link href="http://openjaus.com/templates/openjaus/favicon.ico" rel="shortcut icon" type="image/x-icon">
+  <link rel="stylesheet" href="./Tutorial  Exclusive Component Control_files/comments.css" type="text/css">
+  <link rel="stylesheet" href="./Tutorial  Exclusive Component Control_files/bbcode.css" type="text/css">
+  <link rel="stylesheet" href="./Tutorial  Exclusive Component Control_files/highlighter.css" type="text/css">
+  <style type="text/css">
+    <!--
+
+        a.flag {background-image:url('/modules/mod_gtranslate/tmpl/lang/16a.png');}
+        a.flag:hover {background-image:url('/modules/mod_gtranslate/tmpl/lang/16.png');}
+    
+    -->
+  </style>
+  <script type="text/javascript" async="" src="./Tutorial  Exclusive Component Control_files/ga.js"></script><script type="text/javascript" src="./Tutorial  Exclusive Component Control_files/mootools.js"></script>
+  <script type="text/javascript" src="./Tutorial  Exclusive Component Control_files/caption.js"></script>
+  <script type="text/javascript" src="./Tutorial  Exclusive Component Control_files/validate.js"></script>
+  <script type="text/javascript" src="./Tutorial  Exclusive Component Control_files/comments.js"></script>
+  <script type="text/javascript" src="./Tutorial  Exclusive Component Control_files/bbcode.js"></script>
+  <script type="text/javascript" src="./Tutorial  Exclusive Component Control_files/highlighter.js"></script>
+  <script type="text/javascript" src="./Tutorial  Exclusive Component Control_files/jquery-translate.js"></script>
+  <script type="text/javascript">
+	cOptions = {captcha:1};
+	JXLang={INVALID_NAME_TXT:"Please enter a name.",INVALID_EMAIL_TXT:"Please enter a valid e-mail address.",INVALID_BODY_TXT:"Please enter your comment text.",BOLD:"Bold",ITALIC:"Italic",UNDERLINE:"Underline",STRIKETHROUGH:"Strikethrough",QUOTE:"Quote",IMAGE:"Image",ENTER_IMAGE:"Enter Image URL.",ENTER_LINK:"Enter Link URL.",LINK:"Link",LINK_TEXT:"Link Text",ENTER_LANG:"Enter the code language.",CODE:"Code"};
+  </script>
+  <link type="text/css" rel="stylesheet" href="./Tutorial  Exclusive Component Control_files/shCore.css">
+<link type="text/css" rel="stylesheet" href="./Tutorial  Exclusive Component Control_files/shThemeDefault.css">
+<script type="text/javascript" src="./Tutorial  Exclusive Component Control_files/shCore.js"></script>
+  <script type="text/javascript" src="./Tutorial  Exclusive Component Control_files/shBrushOj.js"></script>
+
+		<meta name="verify-v1" content="dwFhApTviDugG0lDkfoKRvP6MoI9p+NLAywn0h8wWJI=">
+		<link rel="stylesheet" href="./Tutorial  Exclusive Component Control_files/system.css" type="text/css">
+		<link rel="stylesheet" href="./Tutorial  Exclusive Component Control_files/general.css" type="text/css">
+		<link rel="stylesheet" href="./Tutorial  Exclusive Component Control_files/html.css" type="text/css">
+		<link rel="stylesheet" href="./Tutorial  Exclusive Component Control_files/joomlaStyles.css" type="text/css">
+		<link rel="stylesheet" href="./Tutorial  Exclusive Component Control_files/modules.css" type="text/css">
+		<link rel="stylesheet" href="./Tutorial  Exclusive Component Control_files/style.css" type="text/css">
+		<link rel="stylesheet" href="./Tutorial  Exclusive Component Control_files/menu.css" type="text/css">
+
+		<script language="javascript" type="text/javascript" src="./Tutorial  Exclusive Component Control_files/suckerfish.js"></script>
+
+	<!--[if gte IE 7.0]>
+		<style type="text/css">
+			.clearfix {display: inline-block;}
+		</style>
+	<![endif]-->
+
+	</head>
+	
+	<body>
+
+		<div id="main">
+			<!-- BEGIN: HEADER SPACE-->
+			<div id="header">
+
+				<a href="http://openjaus.com/"> <img src="./Tutorial  Exclusive Component Control_files/openjausLogo.png" border="0"> </a>
+			</div>
+			<!-- END: HEADER SPACE-->
+
+			<!-- BEGIN: MENUBAR SPACE-->
+			<div id="menubar">
+				<div id="leftmenu">
+					
+    <script type="text/javascript">
+    //<![CDATA[
+    if(jQuery.cookie('glang') && jQuery.cookie('glang') != 'en') jQuery(function($){$('body').translate('en', $.cookie('glang'), {not:'script'});});
+    //]]>
+    </script>
+
+<script type="text/javascript">
+//<![CDATA[
+    function doTranslate(lang_pair) {if(lang_pair.value)lang_pair=lang_pair.value;var lang=lang_pair.split('|')[1];if(lang=='pt')lang='pt-PT';jQuery.cookie('glang', lang);jQuery(function($){$('body').translate('en', lang, {not:'script'})});}
+//]]>
+</script>
+
+
+<select onchange="doTranslate(this);"><option value="">Select Language</option><option value="en|en" style="font-weight:bold;background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -0px;padding-left:18px;">English</option><option value="en|bg" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -32px;padding-left:18px;">Bulgarian</option><option value="en|zh-CN" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -48px;padding-left:18px;">Chinese (Simplified)</option><option value="en|zh-TW" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -64px;padding-left:18px;">Chinese (Traditional)</option><option value="en|hr" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -80px;padding-left:18px;">Croatian</option><option value="en|cs" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -96px;padding-left:18px;">Czech</option><option value="en|da" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -112px;padding-left:18px;">Danish</option><option value="en|nl" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -128px;padding-left:18px;">Dutch</option><option value="en|fi" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -144px;padding-left:18px;">Finnish</option><option value="en|fr" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -160px;padding-left:18px;">French</option><option value="en|de" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -176px;padding-left:18px;">German</option><option value="en|el" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -192px;padding-left:18px;">Greek</option><option value="en|hi" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -208px;padding-left:18px;">Hindi</option><option value="en|it" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -224px;padding-left:18px;">Italian</option><option value="en|ja" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -240px;padding-left:18px;">Japanese</option><option value="en|ko" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -256px;padding-left:18px;">Korean</option><option value="en|no" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -272px;padding-left:18px;">Norwegian</option><option value="en|pl" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -288px;padding-left:18px;">Polish</option><option value="en|pt" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -304px;padding-left:18px;">Portuguese</option><option value="en|ro" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -320px;padding-left:18px;">Romanian</option><option value="en|ru" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -336px;padding-left:18px;">Russian</option><option value="en|es" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -352px;padding-left:18px;">Spanish</option><option value="en|sv" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -368px;padding-left:18px;">Swedish</option><option value="en|ca" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -384px;padding-left:18px;">Catalan</option><option value="en|tl" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -400px;padding-left:18px;">Filipino</option><option value="en|iw" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -416px;padding-left:18px;">Hebrew</option><option value="en|id" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -432px;padding-left:18px;">Indonesian</option><option value="en|lv" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -448px;padding-left:18px;">Latvian</option><option value="en|lt" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -464px;padding-left:18px;">Lithuanian</option><option value="en|sr" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -480px;padding-left:18px;">Serbian</option><option value="en|sk" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -496px;padding-left:18px;">Slovak</option><option value="en|sl" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -512px;padding-left:18px;">Slovenian</option><option value="en|uk" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -528px;padding-left:18px;">Ukrainian</option><option value="en|vi" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -544px;padding-left:18px;">Vietnamese</option><option value="en|sq" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -560px;padding-left:18px;">Albanian</option><option value="en|et" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -576px;padding-left:18px;">Estonian</option><option value="en|gl" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -592px;padding-left:18px;">Galician</option><option value="en|hu" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -608px;padding-left:18px;">Hungarian</option><option value="en|mt" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -624px;padding-left:18px;">Maltese</option><option value="en|th" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -640px;padding-left:18px;">Thai</option><option value="en|tr" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -656px;padding-left:18px;">Turkish</option><option value="en|fa" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -672px;padding-left:18px;">Persian</option><option value="en|af" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -688px;padding-left:18px;">Afrikaans</option><option value="en|ms" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -704px;padding-left:18px;">Malay</option><option value="en|sw" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -720px;padding-left:18px;">Swahili</option><option value="en|ga" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -736px;padding-left:18px;">Irish</option><option value="en|cy" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -752px;padding-left:18px;">Welsh</option><option value="en|be" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -768px;padding-left:18px;">Belarusian</option><option value="en|is" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -784px;padding-left:18px;">Icelandic</option><option value="en|mk" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -800px;padding-left:18px;">Macedonian</option><option value="en|yi" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -816px;padding-left:18px;">Yiddish</option></select> 
+				</div>
+				<div id="mainmenu" class="clearfix">
+					<ul class="menu"><li id="current" class="active item1"><a href="http://d7c.openjaus.com/"><span>Home</span></a></li><li class="item129"><a href="http://openjaus.com/news"><span>News</span></a></li><li class="parent item55"><a href="http://openjaus.com/support"><span>Support</span></a><ul><li class="item130"><a href="http://openjaus.com/support/training"><span>Training &amp; Consulting</span></a></li><li class="item84"><a href="http://openjaus.com/support/forums"><span>Forums</span></a></li><li class="item119"><a href="http://openjaus.com/support/getting-started-with-openjaus"><span>Tutorials</span></a></li><li class="item109"><a href="http://openjaus.com/support/understanding-sae-jaus"><span>Understanding JAUS</span></a></li><li class="item116"><a href="http://openjaus.com/doc/index.html"><span>SDK Documentation</span></a></li><li class="item118"><a href="http://code.google.com/p/openjaus/issues/list"><span>Bug Tracker</span></a></li></ul></li><li class="parent item110"><a href="http://openjaus.com/products/openjaus4"><span>Products</span></a><ul><li class="item111"><a href="http://openjaus.com/products/openjaus4"><span>OpenJAUS 4.0</span></a></li><li class="item113"><a href="http://openjaus.com/products/openjaus33"><span>OpenJAUS 3.3</span></a></li><li class="item112"><a href="http://openjaus.com/products/servicestudio"><span>Service Studio</span></a></li></ul></li><li class="parent item57"><a href="http://openjaus.com/about-us"><span>About Us</span></a><ul><li class="item89"><a href="http://openjaus.com/about-us/contact"><span>Contact</span></a></li><li class="item122"><a href="http://openjaus.com/newsletter-signup"><span>Newsletter</span></a></li></ul></li></ul>
+				</div>
+			</div>
+			<!-- BEGIN: MENUBAR SPACE-->
+			
+			<!-- BEGIN: TOP BANNER SPACE-->
+						<!-- END: TOP BANNER SPACE DK-->
+
+			<!-- BEGIN: BOXES SPACE-->
+						<!-- END: BOXES SPACE-->
+
+			
+			
+			 
+
+			<div id="componentWrapper">
+				<table class="contentpaneopen">
+<tbody><tr>
+		<td class="contentheading" width="100%">
+					Tutorial: Exclusive Component Control			</td>
+				
+		
+					</tr>
+</tbody></table>
+
+<table class="contentpaneopen">
+
+
+
+<tbody><tr>
+<td valign="top">
+<p style="text-align: justify;"><span style="font-family: Arial;">The JAUS reference architecture defines a method for a component to take exclusive control of another component. This mechanism resolves any ambiguity that might occur if a component were to recieve a commands from multiple sources. With exclusive control, one component requests that only commands from itself will be executed by the component under control. An example of this is when an Operator Control Unit (OCU) requests exclusive control of a vehicle's primitive driver. This prevents wrench commands from other OCUs from being accepted by that primitive driver. This resolves any ambiguity that might occur and ensures safe operation, because the vehicle only performs manuevers commanded to it by a single OCU.<br> <br> To obtain control of another component, the commanding component must first send a requestComponentControlMessage to the desired component. When that component recieves the message, the OpenJAUS default message processor will automatically accept control if the component is not already under control by another commander (this assumes that a callback function for the requestComponentControlMessage is not registered). After it accepts control it sends the confirmComponentControlMessage to the requesting source. The code below demonstrates how the commanding component would send the requestComponentControlMessage. Notice that the authorityCode field in the request message is set to the authority value of the commanding component. Exclusive component control is automatically given to the component witht the highest authority. This allows a component of higher authority to take control even if the desired component is already under control by one of lower authority.</span></p>
+<p><span style="font-family: Courier New;"><script type="text/javascript">
+	SyntaxHighlighter.config.clipboardSwf = "http://openjaus.com/plugins/content/codecitation/scripts/clipboard.swf";
+	SyntaxHighlighter.defaults["auto-links"] = true;
+	SyntaxHighlighter.defaults["collapse"] = false;
+	SyntaxHighlighter.defaults["gutter"] = true;
+	SyntaxHighlighter.defaults["smart-tabs"] = true;
+	SyntaxHighlighter.defaults["tab-size"] = 4;
+	SyntaxHighlighter.defaults["toolbar"] = true;
+	SyntaxHighlighter.defaults["wrap-lines"] = true;	
+	SyntaxHighlighter.all();
+</script></span></p><div style="overflow: hidden; display: block; height: auto; width: inherit;"><div id="highlighter_477659" class="syntaxhighlighter "><div class="bar"><div class="toolbar"><a href="http://openjaus.com/products/openjaus33/76-tutorial-exclusive-component-control#viewSource" title="view source" style="width: 16px; height: 16px; " class="item viewSource">view source</a><div class="item copyToClipboard"><embed width="16" height="16" id="highlighter_477659_clipboard" type="application/x-shockwave-flash" title="copy to clipboard" allowscriptaccess="always" wmode="transparent" flashvars="highlighterId=highlighter_477659" menu="false" src="http://openjaus.com/plugins/content/codecitation/scripts/clipboard.swf"></div><a href="http://openjaus.com/products/openjaus33/76-tutorial-exclusive-component-control#printSource" title="print" style="width: 16px; height: 16px; " class="item printSource">print</a><a href="http://openjaus.com/products/openjaus33/76-tutorial-exclusive-component-control#about" title="?" style="width: 16px; height: 16px; " class="item about">?</a></div></div><div class="lines"><div class="line alt1"><code class="number">01.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="comments">// Create the request control message structure</code></span></span></div><div class="line alt2"><code class="number">02.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="plain">requestControl = requestComponentControlMessageCreate();</code></span></span></div><div class="line alt1"><code class="number">03.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;">&nbsp;</span></span></div><div class="line alt2"><code class="number">04.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="comments">// Copy the address of the desired component into the destination</code></span></span></div><div class="line alt1"><code class="number">05.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="functions bold">jausAddressCopy</code><code class="plain">(requestControl-&gt;destination, pdAddress);</code></span></span></div><div class="line alt2"><code class="number">06.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;">&nbsp;</span></span></div><div class="line alt1"><code class="number">07.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="comments">// Set the authority to the component's authority</code></span></span></div><div class="line alt2"><code class="number">08.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="plain">requestControl-&gt;authorityCode = </code><code class="functions bold">ojCmptGetAuthority</code><code class="plain">(myCmpt);</code></span></span></div><div class="line alt1"><code class="number">09.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;">&nbsp;</span></span></div><div class="line alt2"><code class="number">10.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="comments">// Convert to a JausMessage type (this serializes the data to send)</code></span></span></div><div class="line alt1"><code class="number">11.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="plain">message = requestComponentControlMessageToJausMessage(requestControl);</code></span></span></div><div class="line alt2"><code class="number">12.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;">&nbsp;</span></span></div><div class="line alt1"><code class="number">13.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="comments">// Send the message via the node manager</code></span></span></div><div class="line alt2"><code class="number">14.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="functions bold">ojCmptSendMessage</code><code class="plain">(myCmpt, message);</code></span></span></div><div class="line alt1"><code class="number">15.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;">&nbsp;</span></span></div><div class="line alt2"><code class="number">16.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="comments">// Free the allocated JausMessage memory</code></span></span></div><div class="line alt1"><code class="number">17.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="functions bold">jausMessageDestroy</code><code class="plain">(message);</code></span></span></div><div class="line alt2"><code class="number">18.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;">&nbsp;</span></span></div><div class="line alt1"><code class="number">19.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="comments">// Free the allocated request control message memory</code></span></span></div><div class="line alt2"><code class="number">20.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="plain">requestComponentControlMessageDestroy(requestControl);</code></span></span></div></div></div></div><p></p>
+<p style="text-align: justify;">In order to determine if the control request was accepted, the commanding component usually implements a callback function for the confirm control message. An example of what this callback function might look like is given below:</p>
+<p></p><div style="overflow: hidden; display: block; height: auto; width: inherit;"><div id="highlighter_999623" class="syntaxhighlighter "><div class="bar"><div class="toolbar"><a href="http://openjaus.com/products/openjaus33/76-tutorial-exclusive-component-control#viewSource" title="view source" style="width: 16px; height: 16px; " class="item viewSource">view source</a><div class="item copyToClipboard"><embed width="16" height="16" id="highlighter_999623_clipboard" type="application/x-shockwave-flash" title="copy to clipboard" allowscriptaccess="always" wmode="transparent" flashvars="highlighterId=highlighter_999623" menu="false" src="http://openjaus.com/plugins/content/codecitation/scripts/clipboard.swf"></div><a href="http://openjaus.com/products/openjaus33/76-tutorial-exclusive-component-control#printSource" title="print" style="width: 16px; height: 16px; " class="item printSource">print</a><a href="http://openjaus.com/products/openjaus33/76-tutorial-exclusive-component-control#about" title="?" style="width: 16px; height: 16px; " class="item about">?</a></div></div><div class="lines"><div class="line alt1"><code class="number">01.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="comments">// Callback function for the confirm control message</code></span></span></div><div class="line alt2"><code class="number">02.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="keyword bold">void</code> <code class="plain">confirmControlCallback(</code><code class="color1 bold">OjCmpt</code> <code class="plain">myCmpt, </code><code class="color1 bold">JausMessage</code> <code class="plain">message)</code></span></span></div><div class="line alt1"><code class="number">03.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="plain">{</code></span></span></div><div class="line alt2"><code class="number">04.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="comments">// Declare the confirm control message variable</code></span></span></div><div class="line alt1"><code class="number">05.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="plain">ConfirmComponentControlMessage confirmComponentControl;</code></span></span></div><div class="line alt2"><code class="number">06.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;">&nbsp;</span></span></div><div class="line alt1"><code class="number">07.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="comments">// Create the message </code></span></span></div><div class="line alt2"><code class="number">08.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="plain">confirmComponentControl = confirmComponentControlMessageFromJausMessage(message);</code></span></span></div><div class="line alt1"><code class="number">09.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;">&nbsp;</span></span></div><div class="line alt2"><code class="number">10.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="comments">// Test to confirm desired message source</code></span></span></div><div class="line alt1"><code class="number">11.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="keyword bold">if</code><code class="plain">(</code><code class="functions bold">jausAddressEqual</code><code class="plain">(confirmComponentControl-&gt;source, pdAddress))</code></span></span></div><div class="line alt2"><code class="number">12.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="plain">{</code></span></span></div><div class="line alt1"><code class="number">13.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="comments">// ... Code to confirm control of PD ...</code></span></span></div><div class="line alt2"><code class="number">14.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="comments">// User code to verify the control has been confirmed</code></span></span></div><div class="line alt1"><code class="number">15.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="plain">}</code></span></span></div><div class="line alt2"><code class="number">16.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;">&nbsp;</span></span></div><div class="line alt1"><code class="number">17.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="comments">// Free allocated memory</code></span></span></div><div class="line alt2"><code class="number">18.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="plain">confirmComponentControlMessageDestroy(confirmComponentControl);</code></span></span></div><div class="line alt1"><code class="number">19.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="plain">}</code></span></span></div></div></div></div><p></p>
+
+</td>
+</tr>
+
+</tbody></table>
+<span class="article_separator">&nbsp;</span>
+<div class="sharing">
+
+	<ul class="sharelist">
+		<li>
+			<a href="http://del.icio.us/post?url=http%3A%2F%2Fopenjaus.com%2Ftake-control-of-another-component&title=Tutorial%3A+Exclusive+Component+Control" target="_blank" title="Share this page with del.icio.us">
+				<img src="./Tutorial  Exclusive Component Control_files/delicious.gif" alt="del.icio.us">
+</a>
+		</li>
+		<li>
+			<a href="http://www.google.com/bookmarks/mark?op=edit&bkmk=http%3A%2F%2Fopenjaus.com%2Ftake-control-of-another-component&title=Tutorial%3A+Exclusive+Component+Control" target="_blank" title="Share this page with Google Bookmarks">
+				<img src="./Tutorial  Exclusive Component Control_files/google_bmarks.gif" alt="Google Bookmarks">
+</a>
+		</li>
+		<li>
+			<a href="http://blinklist.com/index.php?Action=Blink/addblink.php&Url=http%3A%2F%2Fopenjaus.com%2Ftake-control-of-another-component&Title=Tutorial%3A+Exclusive+Component+Control" target="_blank" title="Share this page with BlinkList">
+				<img src="./Tutorial  Exclusive Component Control_files/blinklist.gif" alt="BlinkList">
+</a>
+		</li>
+		<li>
+			<a href="http://www.facebook.com/share.php?u=http%3A%2F%2Fopenjaus.com%2Ftake-control-of-another-component" target="_blank" title="Share this page with Facebook">
+				<img src="./Tutorial  Exclusive Component Control_files/facebook.gif" alt="Facebook">
+</a>
+		</li>
+		<li>
+			<a href="http://digg.com/submit?phase=2&url=http%3A%2F%2Fopenjaus.com%2Ftake-control-of-another-component&title=Tutorial%3A+Exclusive+Component+Control" target="_blank" title="Share this page with Digg">
+				<img src="./Tutorial  Exclusive Component Control_files/digg.gif" alt="Digg">
+</a>
+		</li>
+		<li>
+			<a href="http://www.stumbleupon.com/submit?url=http%3A%2F%2Fopenjaus.com%2Ftake-control-of-another-component&title=Tutorial%3A+Exclusive+Component+Control" target="_blank" title="Share this page with Stumbleupon">
+				<img src="./Tutorial  Exclusive Component Control_files/stumbleupon.gif" alt="Stumbleupon">
+</a>
+		</li>
+		<li>
+			<a href="http://reddit.com/submit?url=http%3A%2F%2Fopenjaus.com%2Ftake-control-of-another-component&title=Tutorial%3A+Exclusive+Component+Control" target="_blank" title="Share this page with reddit">
+				<img src="./Tutorial  Exclusive Component Control_files/reddit.gif" alt="reddit">
+</a>
+		</li>
+	</ul>
+    <div class="email">
+	    <a href="http://openjaus.com/component/mailto/?tmpl=component&link=aHR0cDovL29wZW5qYXVzLmNvbS9wcm9kdWN0cy9vcGVuamF1czMzLzc2LXR1dG9yaWFsLWV4Y2x1c2l2ZS1jb21wb25lbnQtY29udHJvbA%3D%3D" title="Email" onclick="window.open(this.href,&#39;win2&#39;,&#39;width=400,height=300,menubar=yes,resizable=yes&#39;); return false;" rel="nofollow">Email this page to a friend.</a>    </div>
+</div>
+
+	<div id="comments">
+		<h3 id="comments-num">
+<span class="numcomments">0</span> Comments		</h3>
+		<ol id="commentlist">
+					</ol>
+	</div>
+
+	<h3 id="leave-response">
+		<a href="http://openjaus.com/take-control-of-another-component?scf=1" rel="nofollow {&#39;base&#39;:&#39;http://openjaus.com/&#39;,&#39;thread_id&#39;:&#39;10&#39;}">Add Comment</a>
+	</h3>
+	<div id="respond-container"></div> 
+			</div>
+
+			<div id="footerWrapper">
+				<div>Copyright © 2012 OpenJAUS. All Rights Reserved.</div>
+<div><a href="http://www.joomla.org/">Joomla!</a> is Free Software released under the <a href="http://www.gnu.org/licenses/gpl-2.0.html">GNU/GPL License.</a></div> 
+			</div>
+
+		</div>
+
+		<!-- BEGIN: GOOGLE TRACKING -->
+
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-25105323-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+		<!-- END: GOOGLE TRACKING -->
+
+	
+</body></html>

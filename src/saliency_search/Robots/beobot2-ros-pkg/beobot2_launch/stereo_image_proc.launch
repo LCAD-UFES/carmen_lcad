@@ -1,0 +1,5 @@
+<launch>
+	<group ns="stereo" >
+	<node pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_proc" args="/stereo/left/image_raw:=/image_sync/image_l_sync /stereo/right/image_raw:=/image_sync/image_r_sync /stereo/left/camera_info:=/image_sync/info_l_sync /stereo/right/camera_info:=/image_sync/info_r_sync" />
+	</group>
+</launch>

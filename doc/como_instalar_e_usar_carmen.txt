@@ -1,0 +1,89 @@
+= PREPARACAO PARA INSTALAR CARMEN =
+Antes de seguir os passos para instalar Carmen (abaixo), tem que fazer:
+ yum install qt-devel
+ yum install gdk-pixbuf
+ yum install gdk-pixbuf-devel
+ yum install imlib
+ yum install imlib-devel
+ ln -s libgdk_imlib.so.1.9.15 libgdk_imlib.a
+ yum search ImageMagick
+ yum install ImageMagick-devel
+ yum install tcp_wrappers-devel
+ yum install java-1.6.0-openjdk-devel
+ yum install kernel-devel kernel-headers
+ yum install libdc1394 libdc1394-devel
+ yum install qt3
+ yum install qt3-devel
+ cd /usr/src
+ ln -s kernels/`uname -r` linux
+ ln -s kernels/`uname -r`/arch/x86/include/asm/linkage.h /usr/include/asm/linkage.h
+ mkdir /usr/local/Kvaser
+ mv linuxcan_beta.tar.gz /usr/local/Kvaser/
+ cd /usr/local/Kvaser/
+ tar xvzf linuxcan_beta.tar.gz
+ cd linuxcan_v4/
+ 
+### FEDORA 14 ####
+
+ edite os arquivos usbcanII/usbcanHWIf.c e leaf/leafHWIf.c incluindo as linhas abaixo apos os #defines presentes nos arquivos:
+// Codigo adicionado por Alberto
+#define usb_buffer_alloc usb_alloc_coherent
+#define usb_buffer_free usb_free_coherent
+// Fim codigo adicionado por Alberto
+
+### FIM FEDORA 14 ###
+
+ make
+ make install
+
+
+
+= INSTALACAO DE CARMEN =
+Depois dos passos acima, no diretorio src de Carmen:
+ export JAVA_HOME=/usr/lib/jvm/java
+ export PKG_CONFIG_PATH+=:/usr/local/lib/pkgconfig
+ export LD_LIBRARY_PATH+=:/usr/local/lib
+ ./configure --nocuda --nojava
+    Should the C++ tools be installed for CARMEN: [Y/n] Y
+    Should Python Bindings be installed: [y/N] y
+    Searching for Python2.4... Should the old laser server be used instead of the new one: [y/N] N
+    Install path [/usr/local/]: 
+    Robot numbers [*]: 1,2
+    
+### FEDORA 14 ####
+
+Altere o aquivo base/Makefile difinindo expelicitamente os robos de interesse na
+variavel SUBDIRS e deletando as linhas abaixo que aparecem no neste Makefile:
+++++++
+
+++++++
+
+Adicionar ao arquivo laser/Makefile, as libs -lX11 e -lXext à diretiva LFLAGS.
+Adicionar ao arquivo navigator/Makefile, a lib -lX11 à diretiva LFLAGS
+Retirar o opção -WError da diretiva CFLAGS do arquivo Makefile.conf
+Adiconar ao arquivo logtools/magick-utils.c o seguinte define:
+#define DestroyConstitute ConstituteComponentTerminus
+
+
+#### FIM FEDORA 14 ####
+
+Altere a linha abaixo do arquivo ipc/formatters.h
+ #elif #machine (sparc)
+para:
+ #elif 0
+ 
+Em seguida, digite:
+ make
+
+= COMO RODAR CARMEN =
+Criei dois scripts auto-explicativos:
+ run_all.bat
+ all_stop.bat
+
+Para gerar um log:
+ logger log.txt &
+ run_all.bat &
+
+Navegue o robo clicando dele, segurando o botao do mause, 
+e movendo o mouse para onde se deseja ir.
+

@@ -1,0 +1,66 @@
+/** @page binary__param__daemon
+
+<h2>Param Daemon</h2>
+
+@section param_daemon Param Daemon
+
+Usage: param_daemon [-ahr] [map_filename] [ini filename]
+
+This program read the ini file and provides parameter definitions. If the ini
+file is not specified, param_daemon looks in the current directory, the parent
+directory (../carmen.ini), and in a sibling src directory (../src/carmen.ini). 
+
+The ini file has a format defined elsewhere, but if multiple robots are
+defined in the ini file, then the param_daemon requires an argument to specify
+the robot (-r or --robot). 
+
+If the argument '-a' is given, then parameters are alphabetized when the
+param_daemon is queried, otherwise, the parameters are preserved in the order
+given in the ini file. 
+
+If a map file is specified as a command-line argument, then the param_daemon
+will act as a map server. 
+
+@section param_edit Param Edit
+
+This program can be used to interact with the param_daemon. When parameters
+are modified, on/off parameters have their new values propagated to the
+param_daemon instantly. Numerical and string parameters are propagated when
+\<return\> is pressed. If a parameter name is underlined, its value has not been
+propagated to the param_daemon. Note that only some modules subscribe to
+changed parameter values. In some cases, modules may need to be restarted to
+acquire the new parameter value. 
+
+@section param_tool Param Tool
+
+The param_tool allows the param_daemon to be controlled from the command line.
+
+Usage: ./param_tool \<action\> \<...\>
+
+<action> is one of: set, get, install, reread.
+Run ./param_tool help <action> to get help on using each action.
+
+<h3>Usage: ./param_tool set \<parameter name\> \<parameter value\></h3>
+
+Sets a parameter value. The parameter name should be specified as a full
+<tt>module_variable</tt> pair. 
+
+<h3>Usage: ./param_tool get \<module name | parameter name\></h3>
+
+If a full parameter name is specified as a <tt>module_variable</tt> name, then
+prints out the current value of the parameter.
+
+If a module name is specified, prints out all variables of that module.
+
+<h3>Usage: ./param_tool install [parameter set] \<parameter file\></h3>
+
+Loads all the parameters from <parameter file>. If the parameter file contains
+multiple parameter sets, delimited using [set name], then the optional
+argument can be used to specify a particular set of parameters. 
+
+<h3>Usage: ./param_tool reread</h3>
+
+Causes the param_daemon to reread the ini file, erasing all local changes.
+
+
+**/

@@ -1,0 +1,9 @@
+<launch>
+	<node name="uvc_cam" pkg="uvc_cam" type="uvc_cam_node" output="screen" >
+		<param name="device" value="/dev/video0" />
+		<param name="topic" value="/camera2/image" />
+		<param name="width" value="640" />
+		<param name="height" value="480" />
+		<param name="fps" value="30" />
+	</node>
+</launch>

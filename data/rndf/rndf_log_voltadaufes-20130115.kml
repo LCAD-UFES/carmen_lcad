@@ -1,0 +1,2543 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
+<Document>
+	<name>log_voltadaufes-20130115.txt.rndf.kml</name>
+	<open>1</open>
+	<Style id="normal">
+		<IconStyle>
+			<color>ff00ff00</color>
+			<scale>1.1</scale>
+		</IconStyle>
+	</Style>
+	<StyleMap id="stylemap">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#normal</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#highlight</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Style id="highlight">
+		<IconStyle>
+			<color>ff00ff00</color>
+			<scale>2.3</scale>
+		</IconStyle>
+	</Style>
+	<Placemark>
+		<LineString>
+			<extrude>1</extrude>
+			<tessellate>1</tessellate>
+			<coordinates>
+				-40.3063593072989,-20.2716007434094,0 -40.3063662816231,-20.2716078962453,0 -40.30637460448,-20.2716132414991,0 -40.306383698477,-20.2716191110643,0 -40.3063924022574,-20.2716247495574,0 -40.3064022592114,-20.2716311386936,0 -40.30641160235,-20.2716371880696,0 -40.3064201945945,-20.2716427154438,0 -40.3064281906922,-20.2716478246117,0 -40.3064373239459,-20.2716536436088,0 -40.3064475333279,-20.27166013963,0 -40.3064582340846,-20.2716669656917,0 -40.3064677823974,-20.2716731002499,0 -40.3064757773031,-20.2716782920961,0 -40.3064861430883,-20.271685049064,0 -40.3064940967013,-20.2716903617279,0 -40.3065021166669,-20.2716957771741,0 -40.3065139859824,-20.2717039053955,0 -40.3065221943269,-20.2717095780538,0 -40.3065301566071,-20.2717151847475,0 -40.3065381833995,-20.2717209569664,0 -40.306546354591,-20.2717268533543,0 -40.3065549286575,-20.2717331474618,0 -40.3065626412322,-20.2717388807266,0 -40.3065711014806,-20.2717452642791,0 -40.3065834979717,-20.2717546228716,0 -40.3065955512725,-20.2717638225556,0 -40.306603702832,-20.2717701101465,0 -40.3066147315939,-20.2717788728704,0 -40.3066236201849,-20.2717863924391,0 -40.3066310339535,-20.2717927245195,0 -40.306638646052,-20.2717993589752,0 -40.306650250022,-20.2718092012305,0 -40.3066608790325,-20.271818548322,0 -40.3066684674464,-20.2718254981551,0 -40.3066754999588,-20.271831895425,0 -40.3066828409171,-20.271838385955,0 -40.3066900548821,-20.2718449220032,0 -40.3066988699967,-20.2718529322437,0 -40.3067071706699,-20.2718606257609,0 -40.306717218781,-20.2718702539174,0 -40.3067239519981,-20.2718769322193,0 -40.3067334564004,-20.2718863404259,0 -40.3067432995457,-20.2718957968429,0 -40.3067519718813,-20.2719044531832,0 -40.3067592098724,-20.2719119815403,0 -40.3067676613352,-20.2719210625756,0 -40.3067746931505,-20.2719288012312,0 -40.306783064436,-20.271938494762,0 -40.3067909964327,-20.2719484106032,0 -40.3067988416952,-20.2719586936105,0 -40.3068050002796,-20.2719671771782,0 -40.30681083866,-20.2719756496225,0 -40.3068172218716,-20.2719857748409,0 -40.3068228435297,-20.2719956027299,0 -40.3068282953869,-20.2720061725316,0 -40.3068331436683,-20.2720164302882,0 -40.3068368979267,-20.2720251516833,0 -40.306840317663,-20.2720338138393,0 -40.3068437794344,-20.2720442830984,0 -40.3068464215827,-20.2720547573843,0 -40.3068482242013,-20.2720654704131,0 -40.3068489332965,-20.2720763622526,0 -40.3068482803463,-20.2720868585442,0 -40.3068461312476,-20.2720975722607,0 -40.3068426146155,-20.2721077492886,0 -40.3068381664382,-20.2721167560923,0 -40.3068326001511,-20.2721254294308,0 -40.3068267928966,-20.2721327437178,0 -40.3068192530794,-20.2721404956841,0 -40.3068119233184,-20.2721465181227,0 -40.3068036037141,-20.2721518542022,0 -40.3067949077021,-20.272155970168,0 -40.3067855702936,-20.2721588652821,0 -40.3067760035086,-20.2721603362737,0 -40.3067633041166,-20.2721601446958,0 -40.306751205837,-20.2721575180327,0 -40.3067398828293,-20.2721525220862,0 -40.3067312454244,-20.2721468635795,0 -40.3067217165791,-20.2721388335109,0 -40.3067138310441,-20.27213111444,0 -40.306706525603,-20.2721232882258,0 -40.3066994014677,-20.2721152019641,0 -40.3066927291492,-20.2721075802898,0 -40.3066848006815,-20.2720984472561,0 -40.3066766795769,-20.2720891136713,0 -40.3066689499969,-20.2720802932934,0 -40.3066624292785,-20.2720729663498,0 -40.3066545049837,-20.2720642940696,0 -40.306644793755,-20.2720540052228,0 -40.3066347605751,-20.2720435801375,0 -40.3066251574019,-20.2720339331921,0 -40.3066151641828,-20.2720238924686,0 -40.306604940653,-20.2720136550331,0 -40.3065981190275,-20.2720068281144,0 -40.3065903035874,-20.2719991285847,0 -40.3065829698606,-20.2719920732429,0 -40.3065755256966,-20.2719850393892,0 -40.3065651021195,-20.2719753141061,0 -40.306557594656,-20.2719685617289,0 -40.3065472186702,-20.2719594197203,0 -40.3065391558961,-20.2719526852864,0 -40.3065317976798,-20.271946472266,0 -40.30652422053,-20.271940468544,0 -40.306513965161,-20.2719318563872,0 -40.3065068163855,-20.2719255170395,0 -40.3064983285291,-20.2719180258673,0 -40.3064910099584,-20.2719116052053,0 -40.3064802444386,-20.271902056927,0 -40.3064729647477,-20.2718957728555,0 -40.3064632118183,-20.2718878109262,0 -40.3064555541303,-20.2718813862777,0 -40.3064450033969,-20.2718726588457,0 -40.3064343300085,-20.2718639821575,0 -40.3064264870916,-20.2718574400579,0 -40.3064160622867,-20.2718488750582,0 -40.3064088342709,-20.2718429264217,0 -40.3063980794323,-20.2718340228109,0 -40.3063906113681,-20.2718279415931,0 -40.3063831086653,-20.2718218663819,0 -40.3063748105172,-20.2718152710465,0 -40.3063672097337,-20.2718093928422,0 -40.3063587557831,-20.2718028800237,0 -40.3063510395106,-20.2717971007643,0 -40.3063432731136,-20.2717914008127,0 -40.306335502701,-20.2717857737971,0 -40.3063276305636,-20.2717800441922,0 -40.3063186011625,-20.2717735637707,0 -40.3063069656786,-20.2717653140857,0 -40.3062980241764,-20.2717590239072,0 -40.3062867210524,-20.2717511668968,0 -40.3062750190085,-20.2717431150532,0 -40.3062671462289,-20.2717377296926,0 -40.3062593711884,-20.2717323825341,0 -40.3062515727804,-20.2717270180464,0 -40.3062436265491,-20.2717214618094,0 -40.306232073426,-20.2717133058562,0 -40.3062219463631,-20.2717058734873,0 -40.3062135867462,-20.2716995203694,0 -40.3062033696636,-20.2716912708679,0 -40.3061944324154,-20.2716832175504,0 -40.306186337666,-20.2716748044484,0 -40.3061804325772,-20.2716675709237,0 -40.3061738793029,-20.2716577661386,0 -40.3061685607179,-20.2716470000139,0 -40.3061650403541,-20.2716359964119,0 -40.3061635073089,-20.2716241774298,0 -40.3061641377905,-20.271613369224,0 -40.3061670797836,-20.2716014041434,0 -40.3061722431567,-20.2715899648578,0 -40.3061788987567,-20.2715801760792,0 -40.3061860105554,-20.2715724346674,0 -40.3061937718394,-20.2715659502829,0 -40.3062018828059,-20.2715608793075,0 -40.3062111162685,-20.2715565687041,0 -40.3062218461664,-20.2715533764503,0 -40.3062353031936,-20.271551850013,0 -40.3062475484606,-20.2715527346544,0 -40.3062592700082,-20.271555626019,0 -40.3062697116402,-20.2715601596561,0 -40.3062792276257,-20.2715663401375,0 -40.3062879064941,-20.2715733541728,0 -40.3062956811632,-20.2715806154298,0 -40.306302986014,-20.2715880025251,0 -40.3063096728102,-20.2715951807498,0 -40.3063165279633,-20.2716027327341,0 -40.306324520533,-20.2716115332159,0 -40.3063323549395,-20.2716201446207,0 -40.3063401886189,-20.2716288206265,0 -40.306347613357,-20.271637006755,0 -40.3063552453652,-20.271645463323,0 -40.3063619185172,-20.2716528392395,0 -40.3063707379854,-20.2716625380242,0 -40.3063792983239,-20.2716718547555,0 -40.3063870681136,-20.2716802408552,0 -40.306395232014,-20.2716890193466,0 -40.3064026010929,-20.2716969892172,0 -40.3064089354014,-20.2717039960786,0 -40.3063593072989,-20.2716007434094,0 
+			</coordinates>
+		</LineString>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.355755</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280256.086500</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3063593072989,-20.2716007434094,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.174535</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280260.504503</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3063662816231,-20.2716078962453,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.177505</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280261.124504</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.30637460448,-20.2716132414991,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.179653</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280261.646503</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.306383698477,-20.2716191110643,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.180582</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280262.076504</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3063924022574,-20.2716247495574,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.180189</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280262.516510</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3064022592114,-20.2716311386936,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.179129</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280262.896504</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.30641160235,-20.2716371880696,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.174619</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280263.225504</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3064201945945,-20.2716427154438,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.172494</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280263.515503</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3064281906922,-20.2716478246117,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.170610</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280263.825504</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3064373239459,-20.2716536436088,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.169482</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280264.155504</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3064475333279,-20.27166013963,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.169108</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280264.485505</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3064582340846,-20.2716669656917,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.169253</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280264.766507</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3064677823974,-20.2716731002499,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.170071</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280264.996512</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3064757773031,-20.2716782920961,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.172581</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280265.286505</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3064861430883,-20.271685049064,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.176853</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280265.506505</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3064940967013,-20.2716903617279,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.181707</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280265.726504</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3065021166669,-20.2716957771741,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.189385</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280266.047504</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3065139859824,-20.2717039053955,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.195401</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280266.266505</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3065221943269,-20.2717095780538,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.202611</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280266.476506</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3065301566071,-20.2717151847475,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.209986</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280266.686505</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3065381833995,-20.2717209569664,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.217118</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280266.896507</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.306546354591,-20.2717268533543,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.225191</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280267.116515</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3065549286575,-20.2717331474618,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.230068</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280267.316506</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3065626412322,-20.2717388807266,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.234388</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280267.535505</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3065711014806,-20.2717452642791,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.238970</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280267.855507</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3065834979717,-20.2717546228716,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.243424</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280268.165506</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3065955512725,-20.2717638225556,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.246278</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280268.375505</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.306603702832,-20.2717701101465,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.254828</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280268.665507</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3066147315939,-20.2717788728704,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.267682</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280268.906511</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3066236201849,-20.2717863924391,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.275817</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280269.106505</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3066310339535,-20.2717927245195,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.283972</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280269.315506</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.306638646052,-20.2717993589752,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.289333</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280269.626507</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.306650250022,-20.2718092012305,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.297680</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280269.916508</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3066608790325,-20.271818548322,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.305811</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280270.126507</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3066684674464,-20.2718254981551,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.311823</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280270.326506</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3066754999588,-20.271831895425,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.315385</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280270.536508</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3066828409171,-20.271838385955,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.321503</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280270.746509</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3066900548821,-20.2718449220032,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.327471</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280271.006512</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3066988699967,-20.2718529322437,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.330600</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280271.256513</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3067071706699,-20.2718606257609,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.337588</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280271.566507</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.306717218781,-20.2718702539174,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.344719</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280271.775508</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3067239519981,-20.2718769322193,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.353675</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280272.075508</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3067334564004,-20.2718863404259,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.360397</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280272.385518</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3067432995457,-20.2718957968429,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.374335</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280272.665508</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3067519718813,-20.2719044531832,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.389286</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280272.906518</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3067592098724,-20.2719119815403,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.408340</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280273.196509</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3067676613352,-20.2719210625756,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.429123</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280273.446509</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3067746931505,-20.2719288012312,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.459257</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280273.756509</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.306783064436,-20.271938494762,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.487161</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280274.066508</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3067909964327,-20.2719484106032,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.515656</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280274.386510</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3067988416952,-20.2719586936105,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.543707</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280274.646515</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3068050002796,-20.2719671771782,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.578027</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280274.906509</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.30681083866,-20.2719756496225,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.624230</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280275.216511</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3068172218716,-20.2719857748409,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.665912</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280275.516511</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3068228435297,-20.2719956027299,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.702718</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280275.835516</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3068282953869,-20.2720061725316,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.732534</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280276.145510</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3068331436683,-20.2720164302882,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.759569</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280276.405510</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3068368979267,-20.2720251516833,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.797421</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280276.665516</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.306840317663,-20.2720338138393,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.856125</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280276.975510</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3068437794344,-20.2720442830984,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.928359</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280277.285512</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3068464215827,-20.2720547573843,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>3.020003</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280277.596512</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3068482242013,-20.2720654704131,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>3.135663</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280277.916511</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3068489332965,-20.2720763622526,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-3.019609</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280278.226510</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3068482803463,-20.2720868585442,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-2.887075</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280278.546511</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3068461312476,-20.2720975722607,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-2.759766</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280278.866516</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3068426146155,-20.2721077492886,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-2.644688</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280279.176512</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3068381664382,-20.2721167560923,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-2.536645</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280279.486511</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3068326001511,-20.2721254294308,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-2.441962</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280279.785512</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3068267928966,-20.2721327437178,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-2.326372</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280280.125512</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3068192530794,-20.2721404956841,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-2.210377</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280280.425513</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3068119233184,-20.2721465181227,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-2.078422</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280280.745512</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3068036037141,-20.2721518542022,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-1.939936</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280281.057512</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3067949077021,-20.272155970168,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-1.788105</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280281.375512</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3067855702936,-20.2721588652821,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-1.635270</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280281.696513</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3067760035086,-20.2721603362737,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-1.431902</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280282.126513</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3067633041166,-20.2721601446958,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-1.231355</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280282.546513</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.306751205837,-20.2721575180327,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-1.038657</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280282.956518</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3067398828293,-20.2721525220862,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.908079</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280283.286514</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3067312454244,-20.2721468635795,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.796685</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280283.686515</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3067217165791,-20.2721388335109,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.728590</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280284.025533</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3067138310441,-20.27213111444,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.686184</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280284.345513</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.306706525603,-20.2721232882258,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.669845</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280284.655513</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3066994014677,-20.2721152019641,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.672520</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280284.935514</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3066927291492,-20.2721075802898,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.673780</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280285.255520</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3066848006815,-20.2720984472561,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.675405</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280285.575518</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3066766795769,-20.2720891136713,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.677405</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280285.866514</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3066689499969,-20.2720802932934,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.681169</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280286.106514</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3066624292785,-20.2720729663498,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.690555</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280286.386519</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3066545049837,-20.2720642940696,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.700928</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280286.716062</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.306644793755,-20.2720540052228,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.709607</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280287.046520</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3066347605751,-20.2720435801375,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.718352</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280287.356521</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3066251574019,-20.2720339331921,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.725964</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280287.676516</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3066151641828,-20.2720238924686,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.730942</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280287.995516</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.306604940653,-20.2720136550331,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.732676</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280288.205516</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3065981190275,-20.2720068281144,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.735862</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280288.445516</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3065903035874,-20.2719991285847,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.738567</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280288.665516</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3065829698606,-20.2719920732429,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.742229</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280288.885516</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3065755256966,-20.2719850393892,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.747503</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280289.195515</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3065651021195,-20.2719753141061,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.753155</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280289.415518</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.306557594656,-20.2719685617289,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.762465</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280289.715517</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3065472186702,-20.2719594197203,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.772588</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280289.945517</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3065391558961,-20.2719526852864,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.779997</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280290.156518</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3065317976798,-20.271946472266,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.789379</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280290.366517</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.30652422053,-20.271940468544,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.795597</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280290.656517</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.306513965161,-20.2719318563872,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.795948</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280290.866517</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3065068163855,-20.2719255170395,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.796760</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280291.116517</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3064983285291,-20.2719180258673,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.797103</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280291.336527</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3064910099584,-20.2719116052053,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.795720</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280291.656518</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3064802444386,-20.271902056927,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.796624</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280291.875518</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3064729647477,-20.2718957728555,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.802618</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280292.165519</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3064632118183,-20.2718878109262,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.804542</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280292.385518</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3064555541303,-20.2718813862777,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.807594</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280292.705519</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3064450033969,-20.2718726588457,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.810993</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280293.015518</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3064343300085,-20.2718639821575,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.812235</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280293.245518</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3064264870916,-20.2718574400579,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.815887</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280293.555525</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3064160622867,-20.2718488750582,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.820689</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280293.765524</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3064088342709,-20.2718429264217,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.832083</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280294.076520</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3063980794323,-20.2718340228109,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.840526</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280294.286525</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3063906113681,-20.2718279415931,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.847619</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280294.496520</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3063831086653,-20.2718218663819,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.855163</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280294.726519</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3063748105172,-20.2718152710465,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.862463</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280294.936520</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3063672097337,-20.2718093928422,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.869906</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280295.166520</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3063587557831,-20.2718028800237,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.876667</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280295.376521</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3063510395106,-20.2717971007643,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.883728</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280295.586527</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3063432731136,-20.2717914008127,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.890745</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280295.796520</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.306335502701,-20.2717857737971,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.896678</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280296.005519</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3063276305636,-20.2717800441922,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.903239</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280296.245519</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3063186011625,-20.2717735637707,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.911776</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280296.555520</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3063069656786,-20.2717653140857,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.917795</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280296.795519</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3062980241764,-20.2717590239072,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.927130</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280297.095529</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3062867210524,-20.2717511668968,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.935618</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280297.405520</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3062750190085,-20.2717431150532,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.939172</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280297.615521</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3062671462289,-20.2717377296926,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.940173</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280297.825520</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3062593711884,-20.2717323825341,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.938710</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280298.035520</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3062515727804,-20.2717270180464,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.936072</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280298.255521</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3062436265491,-20.2717214618094,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.926692</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280298.576521</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.306232073426,-20.2717133058562,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.911286</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280298.866521</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3062219463631,-20.2717058734873,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.890553</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280299.116103</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3062135867462,-20.2716995203694,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.848896</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280299.436522</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3062033696636,-20.2716912708679,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.788209</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280299.746525</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3061944324154,-20.2716832175504,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.707120</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280300.055522</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.306186337666,-20.2716748044484,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.630825</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280300.305523</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3061804325772,-20.2716675709237,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.519527</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280300.625520</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3061738793029,-20.2716577661386,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.379191</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280300.955522</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3061685607179,-20.2716470000139,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.223147</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280301.275522</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3061650403541,-20.2716359964119,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>-0.041291</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280301.605523</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3061635073089,-20.2716241774298,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>0.122774</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280301.905523</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3061641377905,-20.271613369224,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>0.302683</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280302.245523</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3061670797836,-20.2716014041434,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>0.479128</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280302.586524</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3061722431567,-20.2715899648578,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>0.637188</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280302.906522</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3061788987567,-20.2715801760792,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>0.773006</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280303.186528</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3061860105554,-20.2715724346674,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>0.905900</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280303.456524</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3061937718394,-20.2715659502829,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>1.034391</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280303.706524</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3062018828059,-20.2715608793075,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>1.175267</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280303.975524</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3062111162685,-20.2715565687041,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>1.334428</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280304.265523</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3062218461664,-20.2715533764503,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>1.532035</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280304.615524</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3062353031936,-20.271551850013,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>1.718212</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280304.935525</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3062475484606,-20.2715527346544,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>1.900535</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280305.255523</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3062592700082,-20.271555626019,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.065857</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280305.565526</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3062697116402,-20.2715601596561,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.205414</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280305.875523</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3062792276257,-20.2715663401375,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.295968</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280306.195524</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3062879064941,-20.2715733541728,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.352249</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280306.506525</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3062956811632,-20.2715806154298,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.382872</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280306.826534</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.306302986014,-20.2715880025251,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.400247</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280307.136526</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3063096728102,-20.2715951807498,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.413435</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280307.466525</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3063165279633,-20.2716027327341,0</coordinates>
+		</Point>
+	</Placemark>
+	<Placemark>
+		<name>5</name>
+		<styleUrl>#stylemap</styleUrl>
+		<ExtendedData>
+			<Data name="theta">
+				<value>2.355755</value>
+			</Data>
+			<Data name="timestamp">
+				<value>1358280256.086500</value>
+			</Data>
+		</ExtendedData>
+		<Point>
+			<coordinates>-40.3063593072989,-20.2716007434094,0</coordinates>
+		</Point>
+	</Placemark>
+</Document>
+</kml>

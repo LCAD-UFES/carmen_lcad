@@ -1,0 +1,4 @@
+# modulo mogai #
+
+se voce quiser rodar esse modulo eh necessario instalar a pcl (point cloud library), consulte o site pointclouds.org para informacoes de compilacao e instalacao (instale a versao do repositorio)
+eh necessario altera o path dos includes e das libs para o path da sua maquina. esse problema serah corrigido em versoes posteriores

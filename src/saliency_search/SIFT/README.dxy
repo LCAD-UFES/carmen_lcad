@@ -1,0 +1,73 @@
+/** \dir src/SIFT
+
+    \brief Image matching and object recognition using SIFT keypoints
+
+    This directory contains a suite of classes that aim at being able
+    to match images and recognize objects in them. The general
+    inspiration comes from David Lowe's work at the University of
+    British Columbia, Canada. Most of the implementation was created
+    here by carefully reading his 2004 IJCV paper.
+
+    Some of the code here is also based on the Hugin panorama software
+    - see http://hugin.sourceforge.net - but substantial modifications
+    have been made, espacially by carefully going over David Lowe's
+    IJCV 2004 paper. Some of the code also comes from
+    http://autopano.kolor.com/ but substantial debugging has also been
+    made.
+
+    Given an image, a number of Scale-Invariant Feature Transform
+    (SIFT) keypoints can be extracted. These keypoints mark the
+    locations in the image which have pretty unique and distinctive
+    local appearance; for example, the corner of a textured object, a
+    letter, an eye, or a mouth. Many such keypoints exist in typical
+    images, usually in the range of hundreds to thousands.
+
+    Given two images we can extract two lists of keypoints (class
+    ScaleSpace, class Keypoint) and store them (class VisualObject,
+    VisualObjectDB). We can then look for keypoints that have similar
+    visual appearance between the two images (class KeypointMatch,
+    class KDTree, VisualObjectMatch). Given a matching set of
+    keypoints, we can try to recover the geometric transform that
+    relates the first image to the second (class VisualObjectMatch).
+
+    This can be used to stitch two or more images together to form a
+    mosaic or panorama. It can also be used to recognize attended
+    locations as matching some known objects stored in an object
+    database (see Neuro/Inferotemporal).
+
+    for dependency graphs:
+    rankdir: TB
+*/
+
+// $HeadURL: svn://isvn.usc.edu/software/invt/trunk/saliency/src/SIFT/README.dxy $
+// $Id: README.dxy 4918 2005-07-14 00:48:51Z itti $
+
+// //////////////////////////////////////////////////////////////////// //
+// The iLab Neuromorphic Vision C++ Toolkit - Copyright (C) 2001 by the //
+// University of Southern California (USC) and the iLab at USC.         //
+// See http://iLab.usc.edu for information about this project.          //
+// //////////////////////////////////////////////////////////////////// //
+// Major portions of the iLab Neuromorphic Vision Toolkit are protected //
+// under the U.S. patent ``Computation of Intrinsic Perceptual Saliency //
+// in Visual Environments, and Applications'' by Christof Koch and      //
+// Laurent Itti, California Institute of Technology, 2001 (patent       //
+// pending; application number 09/912,225 filed July 23, 2001; see      //
+// http://pair.uspto.gov/cgi-bin/final/home.pl for current status).     //
+// //////////////////////////////////////////////////////////////////// //
+// This file is part of the iLab Neuromorphic Vision C++ Toolkit.       //
+//                                                                      //
+// The iLab Neuromorphic Vision C++ Toolkit is free software; you can   //
+// redistribute it and/or modify it under the terms of the GNU General  //
+// Public License as published by the Free Software Foundation; either  //
+// version 2 of the License, or (at your option) any later version.     //
+//                                                                      //
+// The iLab Neuromorphic Vision C++ Toolkit is distributed in the hope  //
+// that it will be useful, but WITHOUT ANY WARRANTY; without even the   //
+// implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR      //
+// PURPOSE.  See the GNU General Public License for more details.       //
+//                                                                      //
+// You should have received a copy of the GNU General Public License    //
+// along with the iLab Neuromorphic Vision C++ Toolkit; if not, write   //
+// to the Free Software Foundation, Inc., 59 Temple Place, Suite 330,   //
+// Boston, MA 02111-1307 USA.                                           //
+// //////////////////////////////////////////////////////////////////// //

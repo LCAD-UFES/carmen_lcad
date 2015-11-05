@@ -1,0 +1,1500 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<!-- Mirrored from carmen.sourceforge.net/program_carmen.html by HTTrack Website Copier/3.x [XR&CO'2010], Thu, 13 Jan 2011 17:35:41 GMT -->
+<head><title>CARMEN</title>
+	<meta name="description" content="CARMEN">
+	<meta name="keywords" content="CARMEN robot navigation toolkit">
+	<meta name="page-topic" content="CARMEN">
+
+        <meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<meta name="robots" content="index">
+	<meta name="robots" content="follow">
+	<link rel="stylesheet" type="text/css" href="styles/styles.css">
+</head>
+<body bgcolor="#ffffff">
+<br>
+<div align="center">
+<table align="center" width="95%">
+<tbody>
+<tr>
+  <td align="left"><img src="images/carmen-logo-small.png" border=0 alt="[Carmen logo]"></td>
+</tr>
+<tr>
+<td  align="left" bgcolor="#ffffcc">&nbsp;</td></tr>
+</tbody>
+</table>
+
+<!-- NAVIGATOR -->
+
+<table align="center" width="95%">
+<tbody>
+<tr>
+<td><br></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+   <td class="menu" align="left" valign="top" width="210"><br>
+   <ul>
+   <li><a href="home.html">Home</a></li> 
+   <li><a href="intro.html">What's Carmen?</a></li>
+   <li><a href="core_functionality.html">Core Functionalities</a></li>
+   <br>
+   <li><a href="news.html">What's New?</a></li>
+   <li><a href="repository.html">Repository</a></li>
+   <li><a href="update.html">Chief Changes</a></li>
+   <br>
+   <li><a href="getting_carmen.html">Download & Installation</a></li>
+   <li><a href="hardware.html">Required Hardware</a></li>
+   <li><a href="using_carmen.html">Running Carmen</a></li>
+   <li><a href="config_param.html">Configuring Carmen</a></li>
+   <br>
+   <li><a href="doc/index.html">Carmen Online Docs</a></li>
+   <li><a href="program_carmen.html">Program with Carmen</a></li>
+   <li><a href="FAQ.html">FAQ</a></li>
+   <li><a href="papers.html">Papers</a></li>
+   <br>
+   <li><a href="mailing_lists.html">Mailing List</a></li>
+   <li><a href="contributers.html">People</a></li><br>
+   <li><a href="http://radish.sourceforge.net/">Data Sets (Radish)</a></li>
+   </ul><br><br><br>
+   <img src="images/line-200.png" border=0> 
+  </td>
+  <td width="20"></td>
+  <td align="left" valign="top">
+
+<!-- END OF HEADER -->
+
+
+
+<h3>Program with Carmen</h3>
+TODO: check types, function, etc 
+<hr>
+<p><ul>
+<li>Introduction
+<li><a href="#style">Carmen Style Guide</a>
+   <ul>
+   <li><a href="#prime">The Prime Directive</a>
+   <li><a href="#units">Units and Coordinates</a>
+   <li><a href="#names">Naming Conventions</a>
+   <li><a href="#memory">Memory Management, System Calls, & Functions with Side Effects</a>
+   <li><a href="#ipc">IPC</a>
+   <li><a href="#graphics">Graphics</a>
+   </ul>
+<li><a href="#data">Getting Data from Carmen</a>
+    <ul>
+    <li><a href="#base_sensor">Sensor Data from the Base</a>
+    <li><a href="#map_navigation">Map-based Navigation Messages</a>
+    </ul>
+<li><a href="#robot">Commanding the Robot</a>
+    <ul>
+    <li><a href="#moving">Moving the Robot</a>
+    <li><a href="#localize">Initializing Localize</a>
+    <li><a href="#auto_nav">Autonomous Motion</a>
+    </ul>
+<li><a href="#maps">Getting Maps</a>
+    <ul>
+    <li><a href="#grid">Grid Maps</a>
+    <li><a href="#place">Map Placelists</a>
+    <li><a href="#offlimits">Off Limits Regions</a>
+    <li><a href="#navmaps">Navigator Maps</a>
+    </ul>
+<li><a href="#getparam">Getting Parameters</a>
+    <ul>
+      <li><a href="#subscribe">Subscribing to Changes</a>
+      <li><a href="#factory">The Parameter Factory</a>
+      <li><a href="#command">Specifying Parameters from the Command Line</a>
+    </ul>
+</ul>
+<p>
+<h3>1&nbsp;&nbsp;Introduction</h3>
+<p>
+This document is designed to get CARMEN users started in writing new programs for integration into the program set. Because of the diverse skills and habits of programmers, the first section is a Style Guide to ensure compatability and clarity of new programs. The next secions describe the commands for getting information and issuing commands within CARMEN.
+<p>
+<h3><a name="style">2&nbsp;&nbsp;CARMEN Style Guide</a></h3>
+<p>
+ <b><a name="prime">
+2.1</a>&nbsp;&nbsp;The Prime Directive</b>
+
+<p>
+You are not the only person who will ever have to read, understand and modify
+your code.
+
+<p>
+ <b><a name="units">
+2.2</a>&nbsp;&nbsp;Units and Coordinates</b>
+
+<p>
+
+<ul>
+<li> Always represent all units in MKS. All distances are <em>always</em> in
+metres. All angles are <em>always, always</em> in radians.<p></li>
+
+<li> All floating point numbers should be doubles, not floats, and all fixed
+point numbers should be ints, not chars or shorts. The only known exceptions
+are large, low-precision data chunks, i.e. laser data and maps.<p></li>
+
+<li> All co-ordinate frames, internal and external, are right-handed. This
+means that <font face="symbol">q</font
+> <em>always</em> increases counter-clockwise, from positive x
+to positive y. This is the <em>opposite</em> of screen graphics.<p></li>
+
+<li> <font face="symbol">q</font
+> =  0 <em>always</em> points along the positive x axis.<p></li>
+
+<li> There are exactly three allowable co-ordinate frames. 
+
+<ol type="1">
+<li> The robot's frame of reference. Distances are in metres, and the robot
+  always faces along the positive x axis.<p></li>
+
+<li> The global frame of reference. Distances are in metres, and <font face="symbol">q</font
+> =  0
+  is with respect to a map. This is a meaningless frame of reference without a
+  map.<p></li>
+
+<li> The map frame of reference. Distances are in grid cells, and <font face="symbol">q</font
+> =  0 is with respect to a map. This is a meaningless frame of reference
+  without a map.<p></li>
+</ol><p></li>
+
+<li> Never convert between radians and degrees yourself. Always use <br />
+<tt>carmen_radians_to_degrees</tt> and <tt>carmen_degrees_to_radians</tt>.<p></li>
+
+<li> Angles are always between <font face="symbol">-</font
+><font face="symbol">p</font
+> and <font face="symbol">p</font
+>. Never normalize angles
+yourself. Always use <tt>carmen_normalize_theta</tt>.<p></li>
+
+<li> Never use <tt>asin</tt>, <tt>acos</tt> or <tt>atan</tt> to recover angles
+distances. Always use <tt>atan2 (3)</tt>.
+
+<pre>
+           theta = atan2(y, x);
+
+</pre>
+should always be used instead of 
+
+<pre>
+           theta = atan(y/x);
+
+</pre><p></li>
+
+<li> If you need the hypotenuse of something, use <tt>hypot (3)</tt> - do
+not take the sum of squares and find the square root. <tt> hypot (3)</tt> 
+should be used for code clarity.<p></li>
+
+<li> Try not to invent your own data structures. Use one of
+  
+<ul>
+<li> <tt>carmen_point_t</tt><p></li>
+
+<li> <tt>carmen_traj_point_t</tt><p></li>
+
+<li> <tt>carmen_map_point_t</tt><p></li>
+
+<li> <tt>carmen_world_point_t</tt><p></li>
+</ul>
+  making sure that you use the right data structure to store the right kind of
+  data.<p></li>
+
+<li> When converting between coordinate frames, use the helper functions in
+  <tt>map_interface.h</tt> and <tt>global.h</tt>.<p></li>
+
+<li> When drawing to the screen, do not maintain internal representations of
+  data in screen co-ordinates. Convert to screen co-ordinates only immediately
+  before calling extern graphics functions. Use the helper functions in
+  <tt>global_graphics.h</tt>.<p></li>
+</ul>
+
+<p>
+ <b><a name="names">
+2.3</a>&nbsp;&nbsp;Naming Conventions</b>
+
+<p>
+
+<ul>
+<li> The most important naming convention is to expect that your code could
+  be converted into a library one day. Therefore, it is important to think
+  about global name spaces.<p></li>
+
+<li> As many functions and global variables should be static as possible. In
+general, try to avoid global variables.<p></li>
+
+<li> Static global variables with accessor functions are preferable to
+non-static globals.<p></li>
+
+<li> Any non-static functions and global variables must have the prepend
+<tt>carmen_{module-name}</tt>. e.g., <tt>carmen_base_subscribe_odometry</tt>.<p></li>
+</ul>
+
+<p>
+ <b><a name="memory">
+2.4</a>&nbsp;&nbsp;Memory Management, System Calls, & Functions with Side Effects</b>
+
+<p>
+
+<ul>
+<li> Never use a system call without checking the return value. This includes
+any memory allocation. We have provided a function <br /><tt>carmen_test_alloc</tt>
+that facilitates memory checking. CVS will not allow code to be committed to
+core CARMEN that contains a call to malloc/calloc/realloc and does not have a
+call to <tt>carmen_test_alloc</tt> on the subsequent line.<p></li>
+
+<li> When using statically allocated arrays, especially strings, never make
+the array ``just big enough''. 
+
+<p>
+
+<ul>
+<li> Wrong: <tt>char buffer[11]</tt> for a string of length 10.<p></li>
+
+<li> Right: <tt>char buffer[1024]</tt> for a string of length 10.<p></li>
+</ul>
+
+<p>
+Why? You minimize the probability of off-by-one errors writing into memory you
+don't own. Memory is cheap. If you really need to create ``just-big-enough''
+memory arrays because you're running out of memory, you're solving the wrong
+problem.<p></li>
+
+<li> Never use fscanf, gets, etc to read into buffers without limit.<p></li>
+
+<li> Never make a system call, and check its side effect in one step. For
+example, 
+
+<pre>
+           fd = open(filename, O_RDONLY);
+           if (fd &lt; 0)
+             return -1;
+
+</pre>
+should always be used instead of 
+
+<pre>
+           if ((fd = open(filename, O_RDONLY)) &lt; 0)
+             return -1;
+
+</pre>
+This is for two reasons:
+  
+<ul>
+<li> Code clarity : it is easier to read the former than the latter.<p></li>
+
+<li> Debugging : it is easier to use a debugger with the former than the latter.<p></li>
+</ul><p></li>
+
+<li> Avoid macros. If you must have a macro, write an inline function
+instead. Macros can hurt you in the following manner:
+
+<pre>
+           #define MAX(X, Y) ((X) &#62; (Y) ? (X) : (Y))
+           ...
+                  max_x = MAX(X++, Y++);
+
+</pre>
+The larger of the two fields will be incremented <em>twice</em>.
+Instead, use:
+
+<pre>
+           inline int max_int(int x, int y) {
+             return (x &#62; y ? x : y);
+           }
+
+</pre>
+Under compiler flags <tt>-O</tt>, these two code fragments are compiled
+identically under gcc, but the macro has unexpected side-effects.<p></li>
+
+<li> Never generate random numbers yourself. You will do it wrong. Always use
+one of <tt>carmen_int_random</tt>, <tt>carmen_uniform_random</tt> or
+<tt>carmen_gaussian_random</tt>. Consult the documentation for these functions to
+find out which random algorithm they use.<p></li>
+
+<li> Never create random number seeds yourself. You will do it wrong. Always
+use <tt>carmen_randomize</tt>. This function randomizes by reading a seed from
+<tt>/dev/random</tt>.<p></li>
+</ul>
+
+<p>
+ <b><a name="ipc">
+2.5</a>&nbsp;&nbsp;IPC</b>
+
+<p>
+
+<ul>
+<li> Do not initialize IPC yourself. Use <tt>carmen_ipc_initialize</tt>.<p></li>
+
+<li> If you write a stand-alone module, there should be three separate files
+  with your module:
+  
+<ul>
+<li> <tt>{module}_messages.h</tt> - this contains the IPC message
+    definitions.<p></li>
+
+<li> <tt>{module}_interface.h</tt> - this contains the function prototypes
+  for communicating with your module.<p></li>
+
+<li> <tt>{module}_interface.c</tt> - this contains the actual functions
+  for communicating with your module. This file should be compiled into a
+  library.<p></li>
+</ul>
+
+<p>
+  We expect that all modules will have well-defined interface libraries that
+  relieve the user of having to worry about marshalling data.<p></li>
+
+<li> Every IPC message should have a timestamp and hostname field. The
+hostname should be 10 chars long, and should be a canonical representation of
+the machine on which the process is running that created the message. Use the
+helper function <tt>carmen_get_tenchar_host_name()</tt> to generate the
+hostname. 
+
+<p>
+The timestamp should also reflect the time of creation of the <em>data</em>, not
+the time the message was published. For instance, the laser message timestamp
+is the time the data was read from the serial port. Use the helper function
+<tt>carmen_get_time_ms()</tt> to generate the timestamp as a double.<p></li>
+</ul>
+
+<p>
+ <b><a name="graphics">
+2.6</a>&nbsp;&nbsp;Graphics</b>
+
+<p>
+
+<ul>
+<li> Keep graphics and robot functionality in separate processes. 
+
+<p>
+  Notice that none of the core robot functionality (<tt>base_services</tt>,
+  <tt>robot</tt>, <tt>navigator</tt>, <tt>localize</tt>) link against graphics
+  libraries. This is for multiple reasons:
+
+<p>
+  
+<ol type="1">
+<li> It increases the likelihood that your code will work on a standalone
+    robot in the absence of a network. If your process is displaying output to
+    a remote X window, and the network drops out, your process <em>will</em>
+    wedge until the network comes back. If, however, your process is sending
+    IPC messages to an external display process, then only the display process
+    will wedge, not your (presumably more important) robot process.<p></li>
+
+<li> You are removed from the temptation of displaying internal information
+    not accessible to external code. If you want to <em>see</em> the state of
+    your process, the odds are very high that eventually, someone else will
+    want to <em>use</em> the state of your process. By forcing you to write an
+    IPC message and interface handler for that information just to get it into
+    the display, you make life much easier for people who come after you.<p></li>
+
+<li> Allowing your code to compile without graphics makes it more portable,
+    and makes it more distributable, in the sense that it can run anywhere -
+    it is not constrained by the speed of network connections between
+    machines.<p></li>
+</ol>
+
+<p>
+  For obvious reasons, programs like map_editor and mapper have displays
+  compiled in - these programs are not intended for autonomous use on the
+  robot.<p></li>
+</ul>
+
+<p>
+ <h2><a name=data>
+3</a>&nbsp;&nbsp;Getting Data from Carmen</h2>
+
+<p>
+Sensor data currently comes from one of two sources: the base module (such as
+scout, pioneer, etc.) provides raw odometry data and may provide sonar data,
+bumper data and infra-red (IR) data. The laser module may provide laser data.
+
+<p>
+      <b>
+3.0.1&nbsp;&nbsp;Subscribing</b>
+
+<p>
+All of the following messages can be subscribed to by using helper functions
+in the appropriate <tt>xxx_interface</tt> library, e.g., <tt>base_interface</tt>.
+The helper functions are all of the form:
+
+<p>
+
+<pre>
+void 
+carmen_robot_subscribe_xxxx_message(carmen_robot_xxx_message *msg,
+	                            carmen_handler_t handler, 
+                                    carmen_subscribe_t subscribe_how);
+
+</pre>
+
+<p>
+where <tt>carmen_handler_t</tt> and <tt>carmen_subscribe_t</tt> are defined as
+
+<p>
+
+<pre>
+typedef enum {CARMEN_UNSUBSCRIBE, CARMEN_SUBSCRIBE_LATEST, 
+              CARMEN_SUBSCRIBE_ALL} carmen_subscribe_t;
+typedef void (*carmen_handler_t)(void *);
+
+</pre>
+
+<p>
+If the <tt>msg</tt> field of the subscribe function is <tt>NULL</tt>, then a
+static message is automatically allocated and returned as the argument to
+<tt>handler</tt>, otherwise the message pointer passed to the subscribe function
+is always used. In all cases, the same memory is re-used for all handled
+messages of the same message name, and passed as an argument to the handler
+function. 
+
+<p>
+If the <tt>handler</tt> field of the subscribe function is <tt>NULL</tt>, no
+handler is called, but the memory pointed to by <tt>msg</tt> is updated
+regularly. If both <tt>handler</tt> and <tt>msg</tt> are both <tt>NULL</tt>, your
+program will spend a fair chunk of time doing nothing useful for you. 
+
+<p>
+The <tt>subscribe_how</tt> field allows the user to either unsubscribe, or to
+start a new subscription. Subscribing only to the latest message allows the
+module to fall behind in processing messages without serious consequences. It
+should be pointed out that subscribing to all messages
+(<tt>CARMEN_SUBSCRIBE_ALL</tt>) does not guarantee all messages. Currently, the
+upper limit for the queue size is 1000 messages. If an IPC process actually
+subscribes to <em>all</em> messages and falls seriously behind (or wedges),
+central can run out of memory, or even worse, the TCP stack can
+overflow. Consequently, the Carmen subscription functions limit the maximum
+message queue size to 1000. A resourceful programmer can increase this queue
+(or even remove the queue size), but it is not clear this would ever be
+necessary. 
+
+<p>
+      <b>
+3.0.2&nbsp;&nbsp;Requesting Data Explicitly</b>
+
+<p>
+Some of these messages can also be obtained using explicit queries. To date,
+the only robot data that can be obtained using queries are from localize and
+navigator. Specifically, <tt>carmen_localize_globalpos_message</tt>,
+<tt>carmen_localize_particle_message</tt>,
+<tt>carmen_navigator_status_message</tt> and
+<tt>carmen_navigator_plan_message</tt> can all be obtained using specific query
+interface functions, which return the appropriate messages directly.
+
+<p>
+These functions create new memory every time they return successfully;
+consequently, they should be used with care.
+
+<p>
+     <b><a name=base_sensor>
+3.1</a>&nbsp;&nbsp;Sensor Data from the Base</b>
+
+<p>
+The <tt>timestamp</tt> field in all messages is defined to be the time when the
+data was first created or acquired (e.g, by <tt>scout</tt> or <tt>simulator</tt>).
+
+<p>
+      <b>
+3.1.1&nbsp;&nbsp;Odometry</b>
+
+<p>
+
+<pre>
+typedef struct {
+  double timestamp;
+  char *host;
+  double x, y, theta;
+  double tv, rv;
+  double acceleration;
+} carmen_base_odometry_message;
+
+void 
+carmen_base_subscribe_odometry_message(carmen_base_odometry_message *odometry,
+                                       carmen_handler_t handler,
+                                       carmen_subscribe_t subscribe_how);
+
+</pre>
+
+<p>
+The <tt>x, y, theta</tt> fields are the raw odometry, from the time the robot
+was turned on. The tv and rv fields are the translational and rotational
+velocities of the robot. For robots that have differential drive (as opposed
+to synchrodrive), these velocities are computed from the left and right wheel
+velocities that base actual uses. 
+
+<p>
+      <b>
+3.1.2</a>&nbsp;&nbsp;Sonar</b>
+
+<p>
+Sonar sensing is not properly supported by Carmen right now, and so
+subscribing to <tt>carmen_base_sonar_message</tt> messages may sometimes not
+work properly. But, if you care, it looks like:
+
+<p>
+
+<pre>
+
+
+typedef struct {
+  double timestamp;
+  char *host;
+  int num_sonars;
+  double sensor_angle; //width of sonar cone
+  double *range;
+  carmen_point_p positions;
+} carmen_base_sonar_message;
+
+
+typedef struct {
+  double timestamp;
+  char *host;
+  int rate;
+  int num_sonars;
+  int *order;
+  carmen_point_t *sonar_offsets;
+} carmen_base_sonar_conf_message;
+
+
+void carmen_base_subscribe_sonar_message(carmen_base_sonar_message *sonar,
+                                         carmen_handler_t handler,
+                                         carmen_subscribe_t subscribe_how);
+
+</pre>
+
+<p>
+The sonar message reports a recent set of sonar range data from the
+base. There should be as many range points and offset points as described by
+<tt>num_sonars</tt>. The <tt>sonar_offsets</tt> describes the physical location
+and orientation of each transducer from the centre of the robot. 
+
+<p>
+There is currently no way to query the firing rate or order of the sonar
+transducers, and the sonar_conf message is not yet supported. (Or even defined
+by any module.)
+
+<p>
+      <b>
+3.1.3&nbsp;&nbsp;Bumper and IR sensors</b>
+
+<p>
+
+<pre>
+
+typedef struct {
+  double timestamp;
+  char *host;
+  int num_bumpers;
+  unsigned char *state;
+} carmen_base_bumper_message;
+
+typedef struct {
+  double timestamp;
+  char *host;
+  int num_irs;
+  double *range;
+} carmen_base_ir_message;
+
+typedef struct {
+  double timestamp;
+  char *host;
+  int history;
+  int num_irs;
+  int order[32];
+} carmen_base_ir_conf_message;
+
+</pre>
+
+<p>
+These messages will probably change, and are not yet supported.
+
+<p>
+      <b>
+3.1.4&nbsp;&nbsp;Laser data</b>
+
+<p> Laser data is defined as a set of ranges, of number given by the
+<tt>num_readings</tt> field, contained in <tt>range</tt>. It
+furthermore provides remission values (if available) using
+<tt>num_remissions</tt> and the field <tt>remission</tt>.  The order
+of the values is right-handed (counter-clockwise).
+
+The configuration of the laser is privided by<p>
+
+<pre>
+typedef struct {
+
+  /* what kind of laser is this */
+  carmen_laser_laser_type_t  laser_type;  
+
+  /* angle of the first beam relative to to the center of the laser */
+  double start_angle;                     
+
+  /* field of view of the laser */
+  double fov;                             
+
+  /* angular resolution of the laser */
+  double angular_resolution;              
+
+  /* the maximum valid range of a measurement  */
+  double maximum_range;                   
+
+  /* error in the range measurements*/
+  double accuracy;                        
+
+  /* if and what kind of remission values are used */	
+  carmen_laser_remission_type_t remission_mode;  
+} carmen_laser_laser_config_t;
+
+</pre>
+<p>
+
+All these values are given relative to the heading of the laser.<p>
+
+<p>
+The <tt>timestamp</tt> field in all messages is defined to be the time when the
+data was first created or acquired (e.g, by <tt>laser</tt> or <tt>simulator</tt>),
+not the timestamp of some intermediate process (such as the correction applied
+by <tt>robot</tt> when applying odometry interpolation and correction).
+Similarly, the <tt>host</tt>field is defined to be the hostname associated with
+the origin of the data, not the hostname of some intermediary converting the
+data from raw form to interpolated form. 
+
+<p>
+
+<pre>
+typedef struct {
+  double timestamp;
+  char *host;
+  carmen_laser_laser_config_t config;
+  int num_readings;
+  float *range;
+  int num_remissions;
+  float *remission;
+} carmen_laser_laser_message;
+
+typedef enum {SICK_LMS, SICK_PLS, HOKUYO_URG, 
+             SIMULATED_LASER, UMKNOWN_PROXIMITY_SENSOR}   
+carmen_laser_laser_type_t;
+
+typedef enum {OFF, DIRECT, NORMALIZED}          
+carmen_laser_remission_type_t;
+
+
+</pre>
+
+Carmen currently supports up to 4 laser range finder. The subscribe
+message are given by:
+
+<pre>
+
+void
+carmen_laser_subscribe_laser1_message(carmen_laser_laser_message *laser,
+				      carmen_handler_t handler,
+				      carmen_subscribe_t subscribe_how);
+
+void
+carmen_laser_subscribe_laser2_message(carmen_laser_laser_message *laser,
+				      carmen_handler_t handler,
+				      carmen_subscribe_t subscribe_how);
+
+void
+carmen_laser_subscribe_laser3_message(carmen_laser_laser_message *laser,
+				      carmen_handler_t handler,
+				      carmen_subscribe_t subscribe_how);
+
+void
+carmen_laser_subscribe_laser4_message(carmen_laser_laser_message *laser,
+				      carmen_handler_t handler,
+				      carmen_subscribe_t subscribe_how);
+
+void
+carmen_laser_subscribe_alive_message(carmen_laser_alive_message *alive,
+				     carmen_handler_t handler,
+				     carmen_subscribe_t subscribe_how);
+
+
+</pre>
+
+<p>
+This message is defined by <tt>laser</tt> and by <tt>simulator</tt>, and the same
+message struct is used by both <tt>carmen_laser_frontlaser</tt> and
+<tt>carmen_laser_rearlaser</tt> messages. As a consequence, there is no way to
+tell from a message itself whether or not the message is a front laser message
+or a rear laser message. This might be fixed in a future release.
+
+<p>
+      <b>
+3.1.5&nbsp;&nbsp;Robot messages</b>
+
+<p>
+These messages are defined and emitted by <tt>robot</tt>.
+
+<p>
+
+<ul>
+<li> <tt>carmen_robot_laser_message</tt>
+
+<p>
+
+<pre>
+typedef struct {
+  double timestamp;
+  char *host;
+  carmen_laser_laser_config_t config;
+  int num_readings;
+  float *range;
+  char *tooclose;
+  int num_remissions;
+  float *remission;
+  carmen_point_t laser_pose; //position of the center of the laser
+  carmen_point_t robot_pose; //position of the center of the robot
+  double tv, rv;
+  double forward_safety_dist, side_safety_dist;
+  double turn_axis;
+} carmen_robot_laser_message;
+
+void carmen_robot_subscribe_frontlaser_message(carmen_robot_laser_message *laser,
+                                               carmen_handler_t handler,
+                                               carmen_subscribe_t subscribe_how);
+
+void carmen_robot_subscribe_rearlaser_message(carmen_robot_laser_message *laser,               
+                                              carmen_handler_t handler,
+                                              carmen_subscribe_t subscribe_how);
+
+
+</pre>
+
+<p>
+The <tt>carmen_robot_laser_message</tt> has raw odometry attached to it. The
+<tt>robot</tt> module attempts to adjust for clock skews and interpolate the
+true robot position of the data correctly based on time stamps. Consequently,
+after a <tt>carmen_laser_laser_message</tt> is received, the corresponding
+<tt>carmen_robot_laser_message</tt> will not be emitted until a
+<tt>carmen_base_odometry_message</tt> with a later timestamp is received. The
+odometry fields is <tt>laser_pose</tt>. This data is in
+fact the interpolated position of <em>this laser</em>, based on the laser offset
+parameters for this laser. The interpolated odometry for the robot itself is given in
+<tt>robot_pose</tt>. Consequently,
+front and rear laser messages with the same timestamps should have different
+values for <tt>laser_pose</tt> but not fot <tt>robot_pose</tt>.
+<p>
+The <tt>robot</tt> module is also used to perform collision avoidance, stopping
+the robot if the laser measurements indicate an obstacle inside safety
+margins. The <tt>tooclose</tt> array labels each range measurement as to whether
+or not it lies inside the robot safety margins. There are as many
+<tt>tooclose</tt> elements as there are <tt>range</tt> elements (as given by the
+<tt>num_readings</tt> field). If <tt>msg.tooclose[i]</tt> is 1, then the range
+<tt>msg.range[i]</tt> is inside the safety margin. 
+
+<p>
+Like  the <tt>carmen_laser_laser_message</tt>, the <tt>carmen_robot_laser_message</tt>
+provides also information about the configuration of the laser and remission values
+
+<p>
+The same message struct is used by both the <tt>carmen_robot_frontlaser</tt>
+and <tt>carmen_robot_rearlaser</tt>  messages. Again, there is no way to tell
+from a message itself whether or not the message is a front laser message or a
+rear laser message. This hopefully will be fixed in a future release.<p></li>
+
+<li> <tt>carmen_robot_sonar_message</tt>
+
+<p>
+
+<pre>
+typedef struct {
+  double timestamp;
+  char *host;
+  int num_sonars;
+  double sensor_angle;          //width of sonar cone
+  double *ranges;
+  carmen_point_t *positions;
+  carmen_point_t robot_pose;
+  double tv, rv;
+} carmen_robot_sonar_message;
+
+</pre>
+
+<p>
+The exact meaning of some these fields is a little bit of a mystery. This
+message is still in the experimental stage.<p></li>
+</ul>
+
+<p>
+     <b><a name=map_navigation>
+3.2</a>&nbsp;&nbsp;Map-based Navigation Messages</b>
+
+<p>
+      <b>
+3.2.1&nbsp;&nbsp;Localize Messages</b>
+
+<p>
+
+<ul>
+<li> <tt>carmen_localize_globalpos_message</tt>
+
+<p>
+
+<pre>
+typedef struct {
+  double timestamp;
+  char *host;
+  carmen_point_t globalpos, globalpos_std;
+  carmen_point_t odometrypos;
+  double globalpos_xy_cov;
+  int converged;
+} carmen_localize_globalpos_message;
+
+void 
+carmen_localize_subscribe_globalpos_message(
+			carmen_localize_globalpos_message *globalpos,
+                        carmen_handler_t handler,
+                        carmen_subscribe_t subscribe_how);
+
+</pre>
+
+<p>
+This message reports on the current robot pose estimate, given by localize.
+
+<p>
+The <tt>globalpos</tt> field is mean robot position (computed from the particle
+filter), and is given in the global frame of reference. (See the Carmen Style
+Guide.) The <tt>odometrypos</tt> is the odometry of the robot at the time the
+current estimate was computed. It is therefore possible to estimate the true
+position of the robot for a short duration after the last
+<tt>carmen_localize_globalpos_message</tt> by finding the relative displacement
+(translational and rotational) of the robot between the current odometry, and
+the odometry of the last <tt>carmen_localize_globalpos_message</tt>, and then
+adding this displacement to the <tt>globalpos</tt> field. There is a helper
+function in <tt>liblocalize_interface</tt> called
+<tt>carmen_localize_correct_odometry</tt> that does exactly this. 
+
+<p>
+Notice that Carmen localize no longer explicitly provides correction
+parameters, but instead provides a functional way to correct odometry. 
+
+<p>
+The <tt>globalpos_std</tt> gives the variances of the position estimates,
+<font face="symbol">s</font
+><sub>x</sub><sup>2</sup>, <font face="symbol">s</font
+><sub>y</sub><sup>2</sup>, <font face="symbol">s</font
+><sub><font face="symbol">q</font
+></sub><sup>2</sup>. The <tt>globalpos_xy_cov</tt> field
+gives the covariance <font face="symbol">s</font
+><sub>xy</sub>. 
+
+<p>
+The <tt>converged</tt> field indicates whether localize is currently in global
+or tracking mode. If localize has converged (is in tracking mode) then the
+position estimate has high confidence. When localize believes it is lost, it
+switches back to global localization mode and the <tt>converged</tt> field
+switches to 1. 
+
+<p>
+Additional messages about the state of localize are:<p></li>
+
+<li> <tt>carmen_localize_particle_message</tt> - This message gives the full
+state of the pose particle filter (and people particle filters, if people
+tracking is running.)<p></li>
+
+<li> <tt>carmen_localize_sensor_message</tt> - This message contains
+information about how localize has used each laser reading, such as whether a
+laser readings was integrated (or not), and which person filter the reading
+was assigned (if any).<p></li>
+
+<li> <tt>carmen_localize_people_message</tt> - This message contains the
+current state of the person tracker, if it is running.<p></li>
+</ul>
+
+<p>
+      <b>
+3.2.2&nbsp;&nbsp;Autonomous Navigation</b>
+
+<p>
+
+<ul>
+<li> <tt>carmen_navigator_plan_message</tt>
+
+<p>
+
+<pre>
+typedef struct {
+  double timestamp;
+  char *host;
+  int autonomous;
+  int goal_set;
+  carmen_point_t goal;
+  carmen_traj_point_t robot;
+} carmen_navigator_status_message;
+
+void 
+carmen_navigator_subscribe_status_message(carmen_navigator_status_message *status,
+                                          carmen_handler_t handler,
+                                          carmen_subscribe_t subscribe_how);
+
+int 
+carmen_navigator_query_status(carmen_navigator_status_message **status);
+
+
+</pre>
+
+<p>
+The <tt>autonomous</tt> field is 1 if the robot is currently trying to
+autonomously navigate to the goal, perhaps because a user clicked the
+<tt>Autonomous</tt> button in the navigatorgui display. When the robot
+changes to non-autonomous mode, a
+<tt>carmen_navigator_autonomous_stopped_message</tt> is emitted (see below), and
+contains the reason for changing to non-autonomous mode.
+
+<p>
+The <tt>goal_set</tt> field is 1 if the navigator has received any goal at
+all. If no goal has been set, then it is not possible for the navigator go
+into autonomous mode. 
+
+<p>
+The <tt>goal</tt> field reports on what the navigator's current goal. The
+navigator does not (and should not ever) support multiple goal destinations. 
+
+<p>
+The <tt>robot</tt> field is the navigator's estimate of the current robot
+position in the global reference frame (see the Carmen Style Guide). This is
+based on the latest estimate from localize, combined with any subsequent
+odometric updates the navigator has received. The <tt>robot</tt> position field
+reported by the navigator should never lag behind (in time) localize's
+estimate.<p></li>
+
+<li> <tt>carmen_navigator_plan_message</tt>
+
+<p>
+
+<pre>
+typedef struct {
+  double timestamp;
+  char *host;
+  carmen_traj_point_t *path;
+  int path_length;
+} carmen_navigator_plan_message;
+
+
+void 
+carmen_navigator_subscribe_plan_message(carmen_navigator_plan_message *plan,
+                                        carmen_handler_t handler,
+                                        carmen_subscribe_t subscribe_how);
+
+int 
+carmen_navigator_query_plan(carmen_navigator_plan_message **plan);
+
+
+</pre>
+
+<p>
+If the path length is 0, then there is no path from the current robot location
+to the goal. The first point in the path should always be the robot's current
+position as reported by the <tt>carmen_navigator_status_message</tt>, and the
+last point in the path should always be the goal as reported by
+<tt>carmen_navigator_status_message</tt>.<p></li>
+
+<li> <tt>carmen_navigator_autonomous_stopped_message</tt>
+
+<p>
+
+<pre>
+typedef struct {
+  double timestamp;
+  char *host;
+  carmen_navigator_reason_t reason;
+} carmen_navigator_autonomous_stopped_message;
+
+void 
+carmen_navigator_subscribe_autonomous_stopped_message
+        (carmen_navigator_autonomous_stopped_message *autonomous_stopped,
+         carmen_handler_t handler,
+         carmen_subscribe_t subscribe_how);
+
+</pre>
+
+<p>
+The <tt>reason</tt> field can take one of three values:
+
+<ul>
+<li> <tt>CARMEN_NAVIGATOR_GOAL_REACHED_v</tt> - This means that the robot has
+reached the goal destination (that is, is within the
+<tt>robot_approach_dist</tt> of the goal).<p></li>
+
+<li> <tt>CARMEN_NAVIGATOR_USER_STOPPED_v</tt> - This means that some other
+process (such as the navigatorgui) published a
+<tt>carmen_navigator_stop_message</tt>.<p></li>
+
+<li> <tt>CARMEN_NAVIGATOR_UNKNOWN_v</tt> - This means some (unknown) reason
+caused autonomous navigation to stop. The navigator does not currently ever
+emit this reason.<p></li>
+</ul><p></li>
+</ul>
+
+<p>
+ <h3><a name=robot>
+4</a>&nbsp;&nbsp;Commanding the Robot</h3>
+
+<p>
+While it is (obviously) possible to send messages directly to the base module,
+this is not an exposed interface. Sending velocities directly to the base
+side-steps the last-mile collision avoidance module, and can also result in
+all kinds of pathologies as modules fight for control of the robot.
+
+<p>
+     <b><a name=moving>
+4.1</a>&nbsp;&nbsp;Moving the Robot</b>
+
+<p>
+
+<ul>
+<li> <tt>carmen_robot_velocity_message</tt>
+
+<p>
+
+<pre>
+typedef struct {
+  double timestamp;
+  char *host;
+  double tv, rv;
+} carmen_robot_velocity_message;
+
+void carmen_robot_velocity_command(double tv, double rv);
+
+</pre>
+
+<p>
+Publishing this message will tell the <tt>robot</tt> module to make the robot go
+at the specified translation velocity <tt>tv</tt> specified rotational velocity
+<tt>rv</tt>.
+
+<p>
+The robot may not be able to go at these speeds, because either they exceed
+the maximum velocity, or because an obstacle is too close. There is no
+diagnostic for the first condition yet. The second condition can be detected
+by examining the <tt>tooclose</tt> field of the
+<tt>carmen_robot_laser_message</tt>.<p></li>
+
+<li> <tt>carmen_robot_vector_move_message</tt>
+
+<p>
+
+<pre>
+typedef struct {
+  double timestamp;
+  char *host;
+  double distance;
+  double theta;
+} carmen_robot_vector_move_message;
+
+void carmen_robot_move_along_vector(double distance, double theta);
+
+</pre>
+
+<p>
+Publishing this message will take advantage of a PD loop in the robot module
+to make the robot go to specific target point. This control loop contains no
+planning, so if an obstacle intervenes between the robot and the target, the
+robot will stop. 
+
+<p>
+The target point set by this message is given by the <tt>distance</tt> and
+<tt>theta</tt> fields, which are in metres and radians respectively, and are
+<em>relative</em> to the robot's current pose. Consequently, a positive
+<tt>distance</tt> with a <tt>theta</tt> of 0 would drive the robot forward
+<tt>distance</tt> metres. Similarly, a <tt>distance</tt> of 0 and a <tt>theta</tt> 
+of <font face="symbol">p</font
+> would cause the robot to rotate 180<sup><font face="symbol">°</font
+></sup>, regardless of current
+orientation.<p></li>
+</ul>
+
+<p>
+     <b><a name=localize>
+4.2</a>&nbsp;&nbsp;Initializing Localize</b>
+
+<p>
+
+<h4>carmen_localize_initialize_message</h4>
+
+<p>
+This message provides a way to initialize localization.
+
+<p>
+
+<pre>
+
+typedef struct {
+  double timestamp;
+  char *host;
+  int distribution;
+  int num_modes;
+  carmen_point_t *mean, *std;
+} carmen_localize_initialize_message;
+
+</pre>
+
+<p>
+The <tt>distribution</tt> specifies the kind of distribution to use for
+initialization. At the moment only one type of distribution is supported:
+<tt>CARMEN_INITIALIZE_GAUSSIAN</tt>. (The <tt>localize_messages.h</tt> file also
+lists a <tt>CARMEN_INITIALIZE_UNIFORM</tt> distribution type, but this is not
+currently supported by localize itself.) 
+
+<p>
+The 3-dimensional point <tt>mean</tt> specifies the x, y, <font face="symbol">q</font
+> mean of the
+gaussian, and <tt>std</tt> specified the <font face="symbol">s</font
+><sub>x</sub>, <font face="symbol">s</font
+><sub>y</sub>, <font face="symbol">s</font
+><sub><font face="symbol">q</font
+></sub>
+standard deviations of the gaussian. Reasonable values for the standard
+deviations are (0.2m, 0.2m, 4.0<sup><font face="symbol">°</font
+></sup>). 
+
+<p>
+It is also possible to initialize localize through the navigator by using the
+<tt>carmen_navigator_set_robot</tt> or <tt>carmen_navigator_set_robot_map</tt> 
+messages, but these messages are deprecated.
+
+<p>
+      <b>
+4.2.1&nbsp;&nbsp;Setting A Goal</b>
+
+<p>
+This message provides a way to set the goal or destination for navigation. It
+is not possible (nor should it ever be possible) to set multiple goals inside
+the navigator.
+
+<p>
+
+<pre>
+typedef struct {
+  double timestamp;
+  char *host;
+  double x, y;
+} carmen_navigator_set_goal_message;
+
+int carmen_navigator_set_goal(double x, double y);
+
+typedef struct {
+  double timestamp;
+  char *host;
+  char *placename;
+} carmen_navigator_placename_message;
+
+int carmen_navigator_set_goal_place(char *name);
+
+
+</pre>
+
+<p>
+The (x, y) fields should be self-explanatory as the goal position, in the
+global reference frame (see the Carmen Style Guide), as always in metres.
+
+<p>
+If the map contains place names, then it is also possible to set the goal
+position using a <tt>carmen_navigator_placename_message</tt>, and the
+<tt>carmen_navigator_set_goal_place</tt> helper function. This has no effect if
+the map does not contain a place name that matches. 
+
+<p>
+     <b><a name=auto_nav>
+4.3</a>&nbsp;&nbsp;Autonomous Motion</b>
+
+<p>
+These messages toggle the navigator in and out of autonomous motion. 
+
+<p>
+
+<pre>
+typedef carmen_default_message carmen_navigator_stop_message;
+typedef carmen_default_message carmen_navigator_go_message;
+
+int carmen_navigator_stop(void);
+
+int carmen_navigator_go(void);
+
+
+</pre>
+
+<p>
+If the robot is already at the current goal position, then the
+<tt>carmen_navigator_go_command</tt> will cause the navigator to change
+momentarily into autonomous mode, and then switch back again, emitting a
+<tt>carmen_navigator_autonomous_stopped_message</tt> with
+<tt>CARMEN_NAVIGATOR_GOAL_REACHED_v</tt> as the reason.
+
+<p>
+When the navigator receives a <tt>carmen_navigator_stop_message</tt>, then a
+<tt>carmen_navigator_autonomous_stopped_message</tt> is emitted with
+<tt>CARMEN_NAVIGATOR_USER_STOPPED_v</tt> as the reason.
+
+<p>
+ <h3><a name=maps>
+5</a>&nbsp;&nbsp;Getting Maps</h3>
+
+<p>
+      <b><a name="grid">
+5.1</a>&nbsp;&nbsp;Grid Maps</b>
+
+<p>
+
+<pre>
+typedef carmen_default_message carmen_gridmap_request_message;
+
+int carmen_map_get_gridmap(carmen_map_p map);
+
+</pre>
+
+<p>
+      <b><a name="place">
+5.2</a>&nbsp;&nbsp;Map Placelists</b>
+
+<p>
+
+<pre>
+typedef struct {  
+  double timestamp;
+  char *host;
+  carmen_place_p places;
+  int num_places;
+} carmen_map_placelist_message;
+
+int carmen_map_get_placelist(carmen_map_placelist_p placelist);
+
+</pre>
+
+<p>
+      <b><a name="offlimits">
+5.3</a>&nbsp;&nbsp;Off Limits Regions</b>
+
+<p>
+
+<pre>
+typedef struct {  
+  double timestamp;
+  char *host;
+  carmen_offlimits_p offlimits_list;
+  int list_length;
+} carmen_map_offlimits_message;
+
+int carmen_map_get_offlimits(carmen_offlimits_p *offlimits, int *list_length);
+
+</pre>
+
+<p>
+      <b><a name="navmaps">
+5.4</a>&nbsp;&nbsp;Navigator Maps</b>
+
+<p>
+
+<pre>
+typedef struct {
+  double timestamp;
+  char *host;
+  unsigned char *data;    
+  int size;
+  int compressed;
+  carmen_map_config_t config;
+  carmen_navigator_map_t map_type;
+} carmen_navigator_map_message;  
+
+int carmen_navigator_get_map(carmen_navigator_map_t map_type, 
+                           carmen_navigator_map_message **map_pointer);
+
+</pre>
+
+<p>
+ <h3><a name=getparam>
+6</a>&nbsp;&nbsp;Getting Parameters [THIS SECTION NEEDS AN UPDATE]</h3>
+
+<p>
+Parameters can be acquired from the parameter server using functions in
+<tt>libparam_interface</tt>, eg: 
+
+<p>
+
+<pre>
+int carmen_param_get_int(char *variable, int *return_value);
+int carmen_param_get_double(char *variable, double *return_value);
+int carmen_param_get_onoff(char *variable, int *return_value);
+int carmen_param_get_string(char *variable, char **return_value);
+
+</pre>
+
+<p>
+The conversion of parameters to ints, doubles, etc. is done on demanded by the
+interface library. If you do not wish the library to convert the parameter to
+the appropriate type, simply request the parameter as a string.
+
+<p>
+If there is no definition for the parameter requested, then the library will
+output a warning to the terminal, unless this warning has been turned off
+using <tt>carmen_param_allow_unfound_variables(1);</tt>. 
+
+<p>
+Also, as a convience, variables can be requested either by specifying the
+fully qualified <tt>module_param-name</tt> name, or by first specifying a module
+using <tt>carmen_param_set_module(char *)</tt>, and the specifying just the
+<tt>param-name</tt> form. 
+
+<p>
+     <b><a name=subscribe>
+6.1</a>&nbsp;&nbsp;Subscribing to Changes</b>
+
+<p>
+Some processes may wish to subscribe to changes to parameters during their
+execution, for example changing the robot speed or acceleration profile, or
+changing the <tt>robotgraph</tt> display parameters. Of course, some processes
+should not suscribe to some parameter changes: changing the number of
+particles localize uses during execution would result in disaster.
+
+<p>
+Parameter changes can be subscribed using the functions below:
+
+<pre>
+void carmen_param_subscribe_int(char *module, 
+				char *variable, 
+				int *variable_address, 
+                                carmen_param_change_handler_t handler);
+void carmen_param_subscribe_double(char *module, 
+				   char *variable, 
+                                   double *variable_address, 
+                                   carmen_param_change_handler_t handler);
+void carmen_param_subscribe_onoff(char *module, 
+				  char *variable, 
+				  int *variable_address, 
+                                  carmen_param_change_handler_t handler);
+void carmen_param_subscribe_string(char *module, 
+				   char *variable, 
+				   char **variable_address, 
+                                   carmen_param_change_handler_t handler);
+
+</pre>
+
+<p>
+These functions take a module and variable name as parameters. The
+subscription mechanism can either silently change variable values as
+parameters change, or can invoke a callback when a parameter is changed. If
+the <tt>variable_address</tt> parameter is non-NULL, then the new parameter
+value is stored at this address (in the case of strings, this is a pointer to
+some newly-malloc'd memory containing the new string definition. If the
+variable address is non-NULL when the parameter changes, the old memory is
+freed.) If the <tt>handler</tt> parameter is non-NULL, then function pointed to
+by <tt>handler</tt> is invoked whenever the parameter changes. If both are
+non-NULL, then the variable changes and then the callback invoked. If both are
+NULL, then the subscription mechanism does not do much. 
+
+<p>
+     <b><a name=factory>
+6.2</a>&nbsp;&nbsp;The Parameter Factory</b>
+
+<p>
+Parameters can be loaded in a single step using the parameter factory methods,
+much like the gtk menu item factory methods. The set of parameters to be
+loaded should be described in an array of <tt>carmen_param_t</tt>, and passed to
+
+<pre>
+void carmen_param_install_params(int argc, char *argv[], carmen_param_p param_list, 
+                                 int num_items);
+
+</pre>
+
+<p>
+Each parameter in the array of type <tt>carmen_param_t</tt> has the form:
+
+<pre>
+typedef struct {
+  char *module;
+  char *variable;
+  carmen_param_type_t type;
+  void *user_variable;
+  int subscribe;
+  carmen_param_change_handler_t handler;
+} carmen_param_t;
+
+</pre>
+where <tt>module</tt> is the module name, <tt>variable</tt> is the variable name,
+<tt>type</tt> is one of <tt>CARMEN_PARAM_INT</tt>, <tt>CARMEN_PARAM_DOUBLE</tt>,
+<tt>CARMEN_PARAM_ONOFF</tt> or <tt>CARMEN_PARAM_STRING</tt>. The parameter is
+loaded into <tt>user_variable</tt>, whose original type should match that
+specified in the <tt>type</tt> field.
+
+<p>
+If <tt>subscribe</tt> is set to 1, then the process will subscribe to changes to
+the parameter, and set up a callback on the function specified in
+<tt>handler</tt> (if not NULL). The callback parameter is ignored if
+<tt>subscribe</tt> is set to 0, and the parameter is only loaded once. There is
+no way to use the parameter factory methods, subscribe to a variable and not
+have the variable's value updated automatically. 
+
+<p>
+If <tt>carmen_param_allow_unfound_variables()</tt> is set to 0 (by default),
+then <tt>carmen_param_install_params</tt> will exit with an error on the first
+parameter absent from the parameter server, reporting what the problematic
+parameter is.
+
+<p>
+If a process loads its parameter set using the parameter factory methods, then
+running the process with the <tt>-h</tt> or <tt>-help</tt> command line option
+will print out a list of parameters used by that process, their expected types
+and whether or not the process subscribes to changes.
+
+<p>
+     <b><a name=command>
+6.3</a>&nbsp;&nbsp;Specifying Parameters from the Command Line</b>
+
+<p>
+Parameter values can be temporarily over-ridden from the command line of a
+given process, <em>for that process only</em>. For example:
+
+<pre>
+% robot -max_t_vel 0.1
+
+</pre>
+will specify a <tt>max_t_vel</tt> of 0.1 m/s for the <tt>robot</tt> process only. 
+
+<p>
+This parameter specification method is not advised, is a convenience only, and
+may be removed from future versions of carmen. Command-line parameters are
+assumed to have no module name, and attempts are made to find a parameter with
+any module name and matching parameter name. If a process uses multiple
+parameters with different module names and the same parameter name, the
+behaviour of command-line specification is undefined.
+
+
+<p>
+
+<!-- REST OF NAVIGATOR -->
+
+</td><td width="20"></td> </tr>
+<tr>
+<td><br></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table> 
+
+<!-- FOOTER -->
+
+
+<table align="center" width="95%"> 
+<tbody>
+<tr> 
+<td colspan="2" align="center" bgcolor="#ffffcc">
+Copyright ©  by the <a href="contributers.html">CARMEN-Team</a>
+</td> 
+</tr> 
+</tbody>
+</table>
+</div>
+</body>
+
+<!-- Mirrored from carmen.sourceforge.net/program_carmen.html by HTTrack Website Copier/3.x [XR&CO'2010], Thu, 13 Jan 2011 17:35:41 GMT -->
+</html>
+

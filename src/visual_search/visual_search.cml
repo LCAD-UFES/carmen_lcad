@@ -1,0 +1,90 @@
+/* Internal Macro Definition */
+int 	TRUE ;
+TRUE = 1;
+int	FALSE ;
+FALSE = 0;
+int	RUNNING_NETWORK;
+RUNNING_NETWORK = 4;
+int	WAITING_FOR_TRAINNING;
+WAITING_FOR_TRAINNING = 1;
+
+/* CML operation flags */
+int CML_new_VS_state_change_message;
+int CML_new_VS_training_message_value;
+int CML_new_VS_test_message_value;
+int CML_visual_search_state;
+int CML_visual_search_state_message;
+int CML_visual_search_converged;
+
+/* Loop Forever Waiting for IPC messages */
+while (1)
+{
+	/* executes the IPC listen command */
+	execute_IPC_listen(0);	
+	
+	CML_new_VS_state_change_message	= get_new_VS_state_change_message_value(0);
+	CML_new_VS_training_message_value = get_new_VS_training_message_value(0);
+	CML_new_VS_test_message_value	= get_new_VS_test_message_value(0);
+	CML_visual_search_state = get_visual_search_state(0);
+	CML_visual_search_state_message = get_visual_search_state_message(0);
+	
+	if(CML_new_VS_state_change_message == TRUE)
+	{
+		if(CML_visual_search_state == RUNNING_NETWORK && CML_visual_search_state_message == WAITING_FOR_TRAINNING)
+		{
+			MAE_perform_state_change(0);
+		}
+		
+		reset_new_VS_state_change_message_value(0);
+	}
+	if(CML_new_VS_training_message_value == TRUE)
+	{
+		if(CML_visual_search_state == WAITING_FOR_TRAINNING)
+		{
+			MAE_perform_network_training(0);
+			MAE_copy_data_from_input_to_last_frame(0);
+		}
+		
+		reset_new_VS_training_message_value(0);
+	}
+	if(CML_new_VS_test_message_value == TRUE)
+	{
+		if(CML_visual_search_state == RUNNING_NETWORK)
+		{
+			/* teste direto */
+			MAE_printf("teste direto");
+			MAE_copy_current_test_message_into_input(0);
+			MAE_perform_network_test(0);
+			
+			/* esquecimento e treino direto */
+			MAE_printf("esquecimento e treino direto");
+			MAE_perform_network_flush_and_retraining(0);
+			
+			/* teste reverso */
+			MAE_printf("teste reverso");
+			MAE_copy_data_from_last_frame_to_input(0);
+			MAE_perform_network_test(0);
+			
+			/* se convergiu para o mesmo ponto */
+			if(same_saccadic_point_as_last_frame(0))
+			{
+				MAE_printf("convergiu !");
+				/* MAE_copy_data_from_input_to_last_frame(0); *//* something is wrong here */
+				MAE_copy_current_test_message_to_last_frame(0);
+				MAE_publish_OK(0);
+			}
+			else
+			{
+				/* esquece o treino direto e faz o treino reverso */
+				MAE_printf("esqueceu o treino direto e fez o treino reverso");
+				MAE_copy_data_from_last_frame_to_input(1);
+				MAE_perform_network_flush_and_retraining(0);
+				MAE_publish_FAIL(0);
+			}
+		}
+		
+		reset_new_VS_test_message_value(0);
+	}
+}
+
+quit;

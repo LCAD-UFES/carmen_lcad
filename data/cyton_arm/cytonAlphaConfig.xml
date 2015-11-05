@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<!DOCTYPE boost_serialization>
+<boost_serialization signature="serialization::archive" version="5">
+<cytonConfig class_id="0" tracking_level="0" version="0">
+	<portName>/dev/ttyUSB0</portName>
+	<resetOnShutdown>1</resetOnShutdown>
+	<servoDataVector class_id="1" tracking_level="0" version="0">
+		<count>3</count>
+		<item_version>0</item_version>
+		<item class_id="2" tracking_level="0" version="0">
+			<servoCategory>1</servoCategory>
+			<servoName>HiTec HS-475HB</servoName>
+			<angleResolution>5</angleResolution>
+			<centerAngle>1500</centerAngle>
+			<clockwiseAngleLimit>2500</clockwiseAngleLimit>
+			<counterClockwiseAngleLimit>500</counterClockwiseAngleLimit>
+			<baseUnitToRadianConversionFactor>0.0017453292519943296</baseUnitToRadianConversionFactor>
+			<maximumCurrent>1.1000000000000001</maximumCurrent>
+			<maximumTorque>0.055</maximumTorque>
+			<maximumVelocity>5.8177641733144325</maximumVelocity>
+		</item>
+		<item>
+			<servoCategory>2</servoCategory>
+			<servoName>HiTec HS-805BB</servoName>
+			<angleResolution>8</angleResolution>
+			<centerAngle>1500</centerAngle>
+			<clockwiseAngleLimit>2500</clockwiseAngleLimit>
+			<counterClockwiseAngleLimit>500</counterClockwiseAngleLimit>
+			<baseUnitToRadianConversionFactor>0.0019392545305126716</baseUnitToRadianConversionFactor>
+			<maximumCurrent>1.1000000000000001</maximumCurrent>
+			<maximumTorque>0.247</maximumTorque>
+			<maximumVelocity>7.4799825085471268</maximumVelocity>
+		</item>
+		<item>
+			<servoCategory>3</servoCategory>
+			<servoName>HiTec HSR-5990TG</servoName>
+			<angleResolution>2</angleResolution>
+			<centerAngle>1500</centerAngle>
+			<clockwiseAngleLimit>2500</clockwiseAngleLimit>
+			<counterClockwiseAngleLimit>500</counterClockwiseAngleLimit>
+			<baseUnitToRadianConversionFactor>0.0019392545305126716</baseUnitToRadianConversionFactor>
+			<maximumCurrent>4.2000000000000002</maximumCurrent>
+			<maximumTorque>0.23999999999999999</maximumTorque>
+			<maximumVelocity>6.1599855952741045</maximumVelocity>
+		</item>
+	</servoDataVector>
+	<servoConfigVector class_id="3" tracking_level="0" version="0">
+		<count>8</count>
+		<item_version>0</item_version>
+		<item class_id="4" tracking_level="0" version="0">
+			<servoIndex>1</servoIndex>
+			<jointMapIndex>0</jointMapIndex>
+			<offsetPulse>1515</offsetPulse>
+			<minPulse>500</minPulse>
+			<maxPulse>2500</maxPulse>
+			<maxRate>2000</maxRate>
+			<initPulse>1109</initPulse>
+			<scale>-1</scale>
+		</item>
+		<item>
+			<servoIndex>2</servoIndex>
+			<jointMapIndex>1</jointMapIndex>
+			<offsetPulse>1425</offsetPulse>
+			<minPulse>500</minPulse>
+			<maxPulse>2500</maxPulse>
+			<maxRate>2000</maxRate>
+			<initPulse>1344</initPulse>
+			<scale>1</scale>
+		</item>
+		<item>
+			<servoIndex>1</servoIndex>
+			<jointMapIndex>2</jointMapIndex>
+			<offsetPulse>1545</offsetPulse>
+			<minPulse>500</minPulse>
+			<maxPulse>2500</maxPulse>
+			<maxRate>2000</maxRate>
+			<initPulse>1836</initPulse>
+			<scale>-1</scale>
+		</item>
+		<item>
+			<servoIndex>2</servoIndex>
+			<jointMapIndex>3</jointMapIndex>
+			<offsetPulse>1545</offsetPulse>
+			<minPulse>500</minPulse>
+			<maxPulse>2500</maxPulse>
+			<maxRate>2000</maxRate>
+			<initPulse>1335</initPulse>
+			<scale>1</scale>
+		</item>
+		<item>
+			<servoIndex>0</servoIndex>
+			<jointMapIndex>4</jointMapIndex>
+			<offsetPulse>1500</offsetPulse>
+			<minPulse>500</minPulse>
+			<maxPulse>2500</maxPulse>
+			<maxRate>2000</maxRate>
+			<initPulse>1555</initPulse>
+			<scale>1</scale>
+		</item>
+		<item>
+			<servoIndex>0</servoIndex>
+			<jointMapIndex>5</jointMapIndex>
+			<offsetPulse>1245</offsetPulse>
+			<minPulse>500</minPulse>
+			<maxPulse>2250</maxPulse>
+			<maxRate>2000</maxRate>
+			<initPulse>795</initPulse>
+			<scale>1</scale>
+		</item>
+		<item>
+			<servoIndex>0</servoIndex>
+			<jointMapIndex>6</jointMapIndex>
+			<offsetPulse>1500</offsetPulse>
+			<minPulse>500</minPulse>
+			<maxPulse>2500</maxPulse>
+			<maxRate>2000</maxRate>
+			<initPulse>1500</initPulse>
+			<scale>1</scale>
+		</item>
+		<item>
+			<servoIndex>0</servoIndex>
+			<jointMapIndex>7</jointMapIndex>
+			<offsetPulse>1400</offsetPulse>
+			<minPulse>600</minPulse>
+			<maxPulse>2200</maxPulse>
+			<maxRate>2000</maxRate>
+			<initPulse>1056</initPulse>
+			<scale>-172</scale>
+		</item>
+	</servoConfigVector>
+</cytonConfig>
+</boost_serialization>
+

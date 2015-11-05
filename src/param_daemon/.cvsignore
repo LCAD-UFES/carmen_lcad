@@ -1,0 +1,10 @@
+*.map
+*.planmap
+param_daemon
+param_test
+Makefile.depend
+wean.map
+param_edit
+param_tool
+*.so.1
+*.a

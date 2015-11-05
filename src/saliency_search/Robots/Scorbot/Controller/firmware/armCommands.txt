@@ -1,0 +1,6 @@
+Command
+10 motor value where 7 bit is direction
+11 all motors off
+12 motor 'get encoder value
+13 reset encode values to 0
+14  get microswitch

@@ -1,0 +1,29 @@
+1- Alterar a libviso para ela gerar uma matrix no padrao da tf 
+(http://www.bulletphysics.com/Bullet/BulletFull/btMatrix3x3_8h_source.html linha 177).
+Para isso, adicionar fucoes e chamar as antigas de _old.
+
+2- Alterar visual_odometry_package2 para que ele gere a mensagem de odometria 
+visual na orientacao do LCAD sem corrigir a inclinação do carro, 
+deixando o codigo do módulo mais geral para outras aplicações, i.e.:
+quem recebe os dados que deve corrigir a pose de acordo com seus 
+interesses. Mudar a mensagem de odometria visual para ela mandar um quaternion
+como orientação, ao invés dos ângulos. Todos os módulos devem ser alterados
+para usar quaternions (http://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation).
+2.1- Lembrar de tratar o impacto gerado por este ponto no trabalho do Vitor,
+i.e., (i) remover o visual_odometry_package antigo, (ii) mover o novo (visual_odometry_package2)
+para visual_odometry_package, (iii) alterar o código do Vitor e outros para
+usar a visual_odometry_package nova.
+2.2- Checar se outros módulos usam a visual_odometry (ver quem recebe suas
+mensagens)
+3- Alterar a fused_odometry para ela posicionar a camera no lugar certo (levar
+seus dados para o sistema de coordenadas do carro) usando a tf e quartenions
+3.1- Isso implicará transformar o código da fused_odomentry para C++
+4- Alterar os outros sensores para fazer o mesmo (posicionar seus dados no
+sistema de coordenadas do carro) no fused_odometry
+5- Fundir os sensores no filtro de particulas do fused_odometry
+6- Alterar o viewer_3D para usar a libtf, posicionando os raios laser de
+acordo com o carro
+7- Ajustar os parametros do sistema
+8- Fazer o viewer_3D exibir os dados do Velodyne (parâmetro de linha ou novo
+viewer_3D)
+8- Colocar o carro colorido

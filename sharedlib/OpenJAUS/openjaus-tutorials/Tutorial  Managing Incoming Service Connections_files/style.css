@@ -1,0 +1,174 @@
+#main
+{
+	background-color: #FFF;
+	width: 1000px;
+	margin-right: auto;
+	margin-left: auto;
+	padding:0;
+	border-left: 8px solid #000055;
+	border-right: 8px solid #000055;
+	font-size: 12px;
+}
+
+#header
+{
+	background: #FFF;
+	height: 128px;
+	width: 100%;
+}
+
+#user1
+{
+	color:#02274C;
+	font-weight: bold;
+	margin-top:5px;
+	margin-right:10px;
+	float:right;
+}
+
+#menubar
+{
+	background: #011D3A url(../images/menubar.png) center repeat-x;
+	width: 100%;
+	display: table;
+position:relative;
+z-index:99;
+}
+
+#banner
+{
+	height: 191px;
+	width: 100%;
+	display:table;
+}
+
+#banner ul
+{
+	margin:0;
+	padding:0;
+}
+
+#banner li
+{
+	margin: 0;
+	padding: 0;
+	width: 25%;
+	float: left;
+	text-align : center ;
+	display: block;
+	background: none;
+	position: relative;
+}
+
+#boxes
+{
+	height: 275px;
+	width: 100%;
+	display:table;
+}
+
+#boxes ul
+{
+	margin:0;
+	padding:0;
+}
+
+#boxes li
+{
+	margin: 0;
+	padding: 0;
+	width: 33%;
+	float: left;
+	text-align : center;
+	display: block;
+	background: none;
+	position: relative;
+}
+
+#leftWrapper
+{
+	margin:0;
+	background: #EEE url(../images/left-background.png) top repeat-x;
+	width:190px;
+	float:left;
+	padding-left:5px;
+	padding-right:5px;
+	padding-top:10px;
+}
+
+#rightWrapper
+{
+	margin:0;
+	color:#FFF;
+	width:420px;
+	float:right;
+	padding:0;
+}
+
+#componentWrapper,
+#componentWrapperLeft,
+#componentWrapperRight,
+#componentWrapperLeftRight
+{
+	margin:0;
+	background:#FFF;
+	padding-top:10px;
+	padding-left:10px;
+	padding-right:10px;
+}
+
+#componentWrapperLeft
+{
+	width:780px;
+	border-left:200px solid #EEE;
+}
+
+#componentWrapperRight
+{
+	width:560px;
+}
+
+#componentWrapperLeftRight
+{
+	width:480px;
+	border-right:300px solid #EEE;
+	border-left:200px solid #EEE;
+}
+
+.blog_frontpage
+{
+	background: #FFF url(../images/content.jpg) no-repeat;
+	height:350px;
+	margin:0;
+	padding-left:15px;
+	padding-right:25px;
+	font-size: 150%;
+	color:#FFF;
+	line-height:100%;
+}
+
+#footerWrapper
+{
+	border-top: 1px solid #CCC;
+	background:#FFF;
+	clear:both;
+	text-align:center;
+}
+
+/* Clearfix */
+.clearfix:after {
+	clear: both;
+	display: block;
+	content: ".";
+	height: 0;
+	visibility: hidden;
+}
+
+* html > body .clearfix {
+	width: 100%;
+	display: block;
+}
+
+* html .clearfix {
+	height: 1%;
+}

@@ -1,0 +1,4 @@
+- Faltou
+-- Filtrar cv e dv, e nao o filtro e testar
+-- Teste final com os melhores parametros encontrados
+-- Uso de filtro e ajuste de parametros do volante

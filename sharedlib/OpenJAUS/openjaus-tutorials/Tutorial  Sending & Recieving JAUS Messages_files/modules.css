@@ -1,0 +1,161 @@
+/* MODULE
+--------------------------------------------------------- */
+div.moduletable,
+div.moduletable_menu,
+div.moduletable_text {
+	padding: 0 0px 20px;
+	margin-bottom: 15px;
+	border-bottom: 1px solid #777;
+}
+
+div.moduletable p,
+div.moduletable_menu p,
+div.moduletable_text p
+{
+	margin: 0;
+}
+
+div.moduletable h3,
+div.moduletable_menu h3,
+div.moduletable_text h3
+{
+	margin: 0;
+	font-size: 125%;
+	font-weight: bold;
+	text-transform: uppercase;
+}
+
+/* Module rounded */
+div.module h3
+{
+	margin:0;
+	padding-left:15px;
+	padding-top:15px;
+	font-size: 200%;
+}
+
+div.module
+{
+	margin:0;
+	padding:0;
+	background: #FFF url(../images/module-rounded-top.png) top left no-repeat;
+	width: 100%;
+}
+
+div.module div
+{
+	margin:0;
+	padding:0;
+	background: url(../images/module-rounded-bottom.png) bottom left no-repeat;
+}
+
+div.module div div
+{
+}
+
+div.module div div div
+{
+	padding-bottom: 20px;
+}
+
+div.module div div div div
+{
+	margin: 0;
+	padding-bottom: 20px;
+	float: none;
+	width: 99%;
+	background: none;
+}
+
+div.module ul
+{
+	margin-top: 30px;
+	margin-bottom: 15px;
+
+}
+
+div.module ul li
+{
+	background: none;
+	padding-left: 30px;
+	line-height: 200%;
+}
+
+div.module_link ul
+{
+	margin:0;
+	padding:0;
+}
+
+div.module_link ul li
+{
+	margin:0;
+	padding:0;
+	background:none;
+}
+
+div.module_text h3
+{
+	margin: 0 0 10px;
+	width: 100%;
+	clear: both;
+	display: block;
+	overflow: hidden;
+}
+
+div.module_text span
+{
+	padding: 0 3px 0 0;
+	float: left;
+	clear: both;
+	display: block;
+	background: #F6F6F6;
+	font-weight: bold;
+}
+
+div.module_text
+{
+	margin-bottom: 20px;
+	padding: 0;
+	float: left;
+	clear: both;
+	width: 100%;
+	background: url(../images/bt-br.gif) no-repeat bottom right #F6F6F6;
+}
+
+div.module_text div
+{
+	background: url(../images/bt-bl.gif) no-repeat bottom left;
+}
+
+div.module_text div div
+{
+	background: url(../images/bt-tr.gif) no-repeat top right;
+}
+
+div.module_text div div div
+{
+	padding: 0 15px 10px;
+	display: block;
+	background: url(../images/bt-tl.gif) no-repeat top left;
+}
+
+div.banneritem_text
+{
+	padding: 5px 0 !important;
+}
+
+div.advs
+{
+	float: left;
+	width: 100%;
+	clear: both;
+	display: block;
+}
+
+div.moduletable ul li
+{
+	background: url(../images/bullet.gif) no-repeat 5px 50%;
+	margin:0;
+	padding-left:15px;
+}

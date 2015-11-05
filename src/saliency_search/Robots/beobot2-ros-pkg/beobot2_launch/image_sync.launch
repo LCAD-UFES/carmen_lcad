@@ -1,0 +1,3 @@
+<launch>
+	<node pkg="image_sync" type="image_sync" name="image_sync" args="~image_l:=/camera3/image_raw ~image_r:=/camera4/image_raw ~info_l:=/camera3/camera_info ~info_r:=/camera4/camera_info" />
+</launch>

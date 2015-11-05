@@ -1,0 +1,89 @@
+/* Internal Macro Definition */
+int 	TRUE ;
+TRUE = 1;
+int	FALSE ;
+FALSE = 0;
+
+int	NON_STARTED;
+NON_STARTED = 0;
+int	WAITING_FOR_TRAINNING;
+WAITING_FOR_TRAINNING = 1;
+int	TRAINNING_NETWORK;
+TRAINNING_NETWORK = 2;
+int	RUNNING_NETWORK;
+RUNNING_NETWORK = 4;
+
+#define         NON_STARTED 0
+#define         WAITING_FOR_TRAINNING 1
+#define         TRAINNING_NETWORK 2
+#define         RUNNING_NETWORK  4
+
+/* Neuron activity threshold */
+float neuron_activity_threshold;
+float neuron_certainty;
+
+/* CML operation flags */
+int CML_new_VS_state_change_message;
+int CML_new_VS_training_message_value;
+int CML_new_VS_test_message_value;
+int CML_visual_search_state;
+int CML_visual_search_state_message;
+int CML_visual_search_converged;
+
+/* Loop Forever Waiting for IPC messages */
+while (1)
+{
+	/* executes the IPC listen command */
+	execute_IPC_listen(0);
+	
+	CML_new_VS_state_change_message	= get_new_VS_state_change_message_value(0);
+	CML_new_VS_training_message_value = get_new_VS_training_message_value(0);
+	CML_new_VS_test_message_value	= get_new_VS_test_message_value(0);
+	CML_visual_search_state = get_visual_search_state(0);
+	CML_visual_search_state_message = get_visual_search_state_message(0);
+	
+	if(CML_new_VS_state_change_message == TRUE)
+	{
+		if(CML_visual_search_state == RUNNING_NETWORK && CML_visual_search_state_message == WAITING_FOR_TRAINNING)
+		{
+			MAE_perform_state_change(0);
+		}
+		
+		reset_new_VS_state_change_message_value(0);
+	}
+	if(CML_new_VS_training_message_value == TRUE)
+	{
+		if(CML_visual_search_state == WAITING_FOR_TRAINNING)
+		{
+			MAE_perform_network_training(0);
+			/* MAE_perform_network_training_inverted_height(0); */
+		}
+		
+		reset_new_VS_training_message_value(0);
+	}
+	if(CML_new_VS_test_message_value == TRUE)
+	{
+		if(CML_visual_search_state == RUNNING_NETWORK)
+		{
+			MAE_copy_current_test_message_into_input(0);
+			/* MAE_reset_input_layer_xy_to_central_position(0); */
+			MAE_perform_network_test(0);
+			
+			/* Certainty calculation */
+			/* MAE_print_network_certainty_correlate(0); */
+			/* MAE_print_network_angular_similarity(0); */
+			/* MAE_print_network_tanimoto_coefficient(0); */
+			/* MAE_print_network_certainty_percentage_of_active_neurons_versus_trained_bar(0); */
+			/* neuron_certainty = MAE_calculate_network_certainty_percentage_of_active_neurons_versus_trained_bar_float(0); */
+			MAE_print_network_certainty_percentage_of_active_neurons_versus_trained_bar_float(0);
+			/* MAE_obtain_saccade_resulting_scale_factor(0); */
+			
+			/* MAE_perform_sparse_network_retraining(neuron_certainty*100.0); */
+			MAE_publish_OK(0);
+		}
+		
+		reset_new_VS_test_message_value(0);
+	}
+}
+
+quit;

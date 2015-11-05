@@ -1,0 +1,6 @@
+<launch>
+    <node name="uvc_cam_node" pkg="uvc_cam" type="uvc_cam_node" output="screen">
+	<param name="frame_rate" value="15.0" />	
+	<param name="absolue_exposure" value="100"/>
+    </node>
+</launch>

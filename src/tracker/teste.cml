@@ -1,0 +1,21 @@
+#load in_saccade_current from 1340302832.6541790962219238281250000.r.ppm ;
+load in_saccade_current from lena.ppm ;
+#load in_saccade_current from 00001.jpg.pnm ;
+
+pause;
+
+run_train(0);
+
+pause;
+
+#load in_saccade_current from 1340302832.6541790962219238281250000.r.ppm ;
+load in_saccade_current from lena.ppm ;
+#load in_saccade_current from 00025.jpg.pnm ;
+
+pause;
+
+run_test(0);
+
+pause;
+
+quit;

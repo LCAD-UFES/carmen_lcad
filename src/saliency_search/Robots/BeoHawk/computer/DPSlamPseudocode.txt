@@ -1,0 +1,139 @@
+Here lies the pseudocode to Eliazar and Parr's DP-SLAM2. Quite alot of details still need to be filled
+in, but this is a good start.
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!                  DATA STRUCTURES                       !!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Image<GridCell> OccupancyGrid;
+ParticleNode* ParticleTree;
+Vector<ParticleNode*> CurrentStepParticles;
+Vector<ParticleNode*> LeafParticles;
+
+class GridCell
+{
+  Vector<ObservationNode*> observations;
+}
+
+class ObservationNode
+{
+  Opacity itsOpacity;
+
+  ObservationNode* itsParent; //A link to the parent observation from which
+                              //this is derived. That is, if a particle P makes
+                              //an observation about this cell with O_p, and
+                              //then spawns a child particle C who later
+                              //observes this cell with O_c, then O_c's
+                              //itsParent will point to O_p.
+
+  ParticleNode* itsANode;     //A link to the particle which made this observation
+}
+
+class Opacity {
+  double d_t; // A 'running odometer' of the total length of all parts of laser scans that have
+                actually passed through this cell - just add in the 'x' as calculated in the
+                'Update Particle Weights' section of the algorithm below
+  
+  int h;      // A running count of the number of laser scans that have stopped in this cell
+  
+  double getOpacity()
+  {
+    return d_t / h;
+  }
+}
+
+class ParticleNode
+{
+  ParticleNode* itsParent;
+  Vector<ParticleNode*> itsChildren;
+  Vector<ObservationNode*> itsObservations;
+}
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+######################################################################
+Recieve a Motion Measurement 
+
+  Update positions of all "current step" particles based on the stochastic
+  motion model
+
+  At this point, the DPSLAM2.0 paper says to "Insert new particles into
+  ancestry tree," though I'm not sure why. Can't we just move our existing
+  particles around and save ourselves the trouble of the copy? We should check
+  into their implementation to see if we're missing anything here.
+
+######################################################################
+Recieve a Laser Measurement 
+
+  ----------------------------------------------------------------------
+  Update Particle Weights
+    For Each Particle:
+    {
+      For Each Laser Cast:
+      {
+        * P_this_laser = 0
+
+        For Each Square Along Laser Direction:
+        {
+          * rho = The recorded 'opacity' of this square - just a scalar, see above for how to compute.
+
+          * x = The length of the laser beam that actually passes through this square. 
+                  We need to find an efficient way to calculate this..
+
+          * delta = distance from the laser endpoint to this square.
+
+          * P_L = Value at the point "delta" in a Normal distribution with some
+                  fixed sigma.
+
+          * P(stop=this_square) = ...
+              We are calculating the probability of the laser stopping in this
+              grid cell as: 
+              
+              (The probability that a laser ray of length 'x' will bounce back
+               from a square of opacity 'rho', given as (1-e^(-x/rho)) 
+              TIMES
+              (1 - the probability of the laser bouncing back from all of the squares
+                   between this one and the actual laser scanner)
+          
+          * P_this_laser += P_L * P(stop=this_square)
+              Notice that we're doing this for every grid cell along our
+              laser's scan path. This works, because we're weighting each
+              cell's probability by this gaussian that is centered at our
+              actual recorded sensor measurement.
+        }
+        * Particle_Weight *= max(P_this_laser, 0.005)
+            Multiply the particle's probability by the probability of the current laser cast. 
+            Note that we're allowing each laser cast to have a minumum probability of 0.5% to 
+            account for random junk in our robot/environment.
+      }
+    }
+
+
+  ----------------------------------------------------------------------
+  Normalize Particle Weights
+
+    Just make sure that all of the particle weights add up to 1.. This may not
+    actually be necessary, as long as our resampling algorithm can handle a
+    total probability != 1
+
+  ----------------------------------------------------------------------
+  Update Each Particle's Map
+
+    Trace each scan, and update the d_t for each cell that each scan passed
+    through. Also, update the h count for each cell with a scan endpoint.
+    
+  
+  ----------------------------------------------------------------------
+  Resample Particles 
+  
+    Choose P particles (with possible replication) from the set of "current
+    step" particles and add each particle as a child of it's ancestor.
+  
+    Update the "current step" status of all nodes
+  
+  ----------------------------------------------------------------------
+  Prune Ancestry Tree
+  
+    Recursively remove childless nodes that are not from the "current step"
+  
+    Recursively merge only children with parents 

@@ -1,0 +1,12 @@
+<launch>
+	<node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" args="/scan" output="screen" >
+		<param name="delta" type="double" value="0.05" />
+		<param name="temporalUpdate" type="double" value="2.5" />
+		<param name="xmin" type="double" value="-2" />
+		<param name="xmax" type="double" value="2" />
+		<param name="ymin" type="double" value="-2" />
+		<param name="ymax" type="double" value="2" />
+		<param name="base_frame" type="string" value="/beobot2/base_link" />
+		<param name="odom_frame" type="string" value="/beobot2/odom" />
+	</node>
+</launch>

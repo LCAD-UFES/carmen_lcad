@@ -1,0 +1,59 @@
+################################################ Set Global Variables #################################################
+set TYPE_SHOW = SHOW_FRAME;
+set TYPE_MOVING_FRAME = STOP;
+
+set NEURON_MEMORY_SIZE = 10;
+
+######################################################## Constants ####################################################
+
+const INPUT_WIDTH 	= 128;
+const INPUT_HEIGHT	= 128;
+
+const SYNAPSES		= 64;
+
+const NL_WIDTH 		= 128;
+const NL_HEIGHT		= 128;
+
+const GAUSSIAN_RADIUS_DISTRIBUTION = 7.0;
+
+const GAUSSIAN_RADIUS_FILTER 	= 5;
+const GAUSSIAN_SIGMA_FILTER  	= 1.0;
+
+const DATA_PATH			= "DATA/";
+
+############################################### Neuron Layers #########################################################
+
+neuronlayer 	nl_map_gaussian[NL_WIDTH][NL_HEIGHT]	   	with color outputs;
+neuronlayer 	nl_place_command[NL_WIDTH][NL_HEIGHT / 2]    	of minchinton neurons color sensitive with color outputs;
+
+############################################### Outputs #########################################################
+
+output      	out_nl_map_gaussian[NL_WIDTH][NL_HEIGHT];
+output		out_nl_place_command[NL_WIDTH][NL_HEIGHT / 2] 		handled by output_handler();
+
+################################## Connect Neuron Layers to Outputs #############################################
+
+outputconnect	nl_map_gaussian	to	out_nl_map_gaussian;
+outputconnect	nl_place_command	to	out_nl_place_command;
+
+################################################## Inputs #############################################################
+
+input 		neural_map[INPUT_WIDTH][INPUT_HEIGHT]			with color outputs produced by input_generator() controled by input_controler();
+input 		place_input[NL_WIDTH][NL_HEIGHT / 2]	with color outputs produced by input_generator1("%p", nl_place_command) controled by input_controler1();
+
+############################################### Filters #########################################################
+
+filter      	neural_map 	with gaussian_filter ("%d %f", GAUSSIAN_RADIUS_FILTER, GAUSSIAN_SIGMA_FILTER) producing nl_map_gaussian;
+
+############################################### Associations ####################################################
+
+associate	nl_place_command		with	nl_place_command;
+
+################################################ Connections ####################################################
+
+connect 	nl_map_gaussian 		to nl_place_command	with SYNAPSES random inputs per neuron and gaussian distribution with radius GAUSSIAN_RADIUS_DISTRIBUTION;
+#connect 	nl_map_gaussian 		to nl_place_command	with SYNAPSES random inputs per neuron;
+
+################################################ User Functions #################################################
+
+int SetNetworkStatus ("%d");

@@ -1,0 +1,239 @@
+/** @page style
+
+<h2>The CARMEN Style Guide</h2>
+
+
+@section style_prim The Prime directive
+
+You are not the only person who will ever have to read, understand and modify
+your code.
+
+@section style_units Units and Coordinates
+
+<ul>
+\li Always represent all units in MKS. All distances are \em always in
+metres. All angles are \em always, \em always in radians.
+
+\li All floating point numbers should be doubles, not floats, and all fixed
+point numbers should be ints, not chars or shorts. The only known exceptions
+are large, low-precision data chunks, i.e. laser data and maps.
+
+\li All co-ordinate frames, internal and external, are right-handed. This
+means that \f$\theta\f$ \em always increases counter-clockwise, from positive x
+to positive y. This is the \em opposite of screen graphics. 
+
+\li \f$\theta = 0\f$ \em always points along the positive x axis.
+
+\li There are exactly three allowable co-ordinate frames. 
+<ul>
+\li The robot's frame of reference. Distances are in metres, and the robot
+  always faces along the positive x axis.
+\li The global frame of reference. Distances are in metres, and \f$\theta = 0\f$
+  is with respect to a map. This is a meaningless frame of reference without a
+  map.
+\li The map frame of reference. Distances are in grid cells, and \f$\theta =
+  0\f$ is with respect to a map. This is a meaningless frame of reference
+  without a map.
+</li>
+
+\li Never convert between radians and degrees yourself. Always use \\
+\c carmen_radians_to_degrees and \c carmen_degrees_to_radians.
+
+\li Angles are always between \f$-\pi\f$ and \f$\pi\f$. Never normalize angles
+yourself. Always use \c carmen_normalize_theta.
+
+\li Never use \c asin, \c acos or \c atan to recover angles
+distances. Always use \c atan2 (3).
+@verbatim
+           theta = atan2(y, x);
+@endverbatim
+should always be used instead of 
+@verbatim
+           theta = atan(y/x);
+@endverbatim
+
+\li If you need the hypotenuse of something, use \c hypot (3) -- do
+not take the sum of squares and find the square root. \c  hypot (3) 
+should be used for code clarity.
+
+\li Try not to invent your own data structures. Use one of
+  <ul>
+  \li \c carmen_point_t
+  \li \c carmen_traj_point_t
+  \li \c carmen_map_point_t
+  \li \c carmen_world_point_t
+  </ul>
+  making sure that you use the right data structure to store the right kind of
+  data.
+  
+\li When converting between coordinate frames, use the helper functions in
+  \c map_interface.h and \c global.h.
+  
+\li When drawing to the screen, do not maintain internal representations of
+  data in screen co-ordinates. Convert to screen co-ordinates only immediately
+  before calling extern graphics functions. Use the helper functions in
+  \c global_graphics.h.
+
+</ul>
+
+@section style_naming Naming conventions
+
+<ul>
+  
+\li The most important naming convention is to expect that your code could
+  be converted into a library one day. Therefore, it is important to think
+  about global name spaces.
+
+\li As many functions and global variables should be static as possible. In
+general, try to avoid global variables. 
+
+\li Static global variables with accessor functions are preferable to
+non-static globals.
+
+\li Any non-static functions and global variables must have the prepend
+\c carmen_{module-name}. e.g., \c carmen_base_subscribe_odometry.
+
+</ul>
+
+@section style_memory Memory management, system calls, and functions with side effects
+
+<ul>
+
+\li Never use a system call without checking the return value. This includes
+any memory allocation. We have provided a function \\ \c carmen_test_alloc
+that facilitates memory checking. CVS will not allow code to be committed to
+core CARMEN that contains a call to malloc/calloc/realloc and does not have a
+call to \c carmen_test_alloc on the subsequent line.
+
+\li When using statically allocated arrays, especially strings, never make
+the array ``just big enough''. 
+
+<ul>
+\li Wrong: \c char buffer[11] for a string of length 10.  
+\li Right: \c char buffer[1024] for a string of length 10.
+</ul>
+
+Why? You minimize the probability of off-by-one errors writing into memory you
+don't own. Memory is cheap. If you really need to create ``just-big-enough''
+memory arrays because you're running out of memory, you're solving the wrong
+problem. 
+
+\li Never use fscanf, gets, etc to read into buffers without limit. 
+
+\li Never make a system call, and check its side effect in one step. For
+example, 
+@verbatim
+           fd = open(filename, O_RDONLY);
+           if (fd < 0)
+             return -1;
+@endverbatim
+should always be used instead of 
+@verbatim
+           if ((fd = open(filename, O_RDONLY)) < 0)
+             return -1;
+@endverbatim
+This is for two reasons:
+  <ul>
+  \li Code clarity : it is easier to read the former than the latter.
+  \li Debugging : it is easier to use a debugger with the former than the latter. 
+  </ul>
+  
+\li Avoid macros. If you must have a macro, write an inline function
+instead. Macros can hurt you in the following manner:
+@verbatim
+           #define MAX(X, Y) ((X) > (Y) ? (X) : (Y))
+           ...
+                  max_x = MAX(X++, Y++);
+@endverbatim
+The larger of the two fields will be incremented \em twice.
+Instead, use:
+@verbatim
+           inline int max_int(int x, int y) {
+             return (x > y ? x : y);
+           }
+@endverbatim
+Under compiler flags \c -O, these two code fragments are compiled
+identically under gcc, but the macro has unexpected side-effects.
+
+\li Never generate random numbers yourself. You will do it wrong. Always use
+one of \c carmen_int_random, \c carmen_uniform_random or
+\c carmen_gaussian_random. Consult the documentation for these functions to
+find out which random algorithm they use. 
+
+\li Never create random number seeds yourself. You will do it wrong. Always
+use \c carmen_randomize. This function randomizes by reading a seed from
+\c /dev/random.
+
+</ul>
+
+@section style_ipc IPC
+<ul>
+
+\li Do not initialize IPC yourself. Use \c carmen_initialize_ipc. 
+
+\li If you write a stand-alone module, there should be three separate files
+  with your module:
+  <ul>
+  \li \c {module}_messages.h -- this contains the IPC message
+    definitions.
+  \li \c {module}_interface.h -- this contains the function prototypes
+  for communicating with your module.
+  \li \c {module}_interface.c -- this contains the actual functions
+  for communicating with your module. This file should be compiled into a
+  library. 
+  </ul>
+
+  We expect that all modules will have well-defined interface libraries that
+  relieve the user of having to worry about marshalling data.
+
+\li Every IPC message should have a timestamp and hostname field. The
+hostname should be 10 chars long, and should be a canonical representation of
+the machine on which the process is running that created the message. Use the
+helper function \c carmen_get_tenchar_host_name() to generate the
+hostname. 
+
+The timestamp should also reflect the time of creation of the \em data, not
+the time the message was published. For instance, the laser message timestamp
+is the time the data was read from the serial port. Use the helper function
+\c carmen_get_time_ms() to generate the timestamp as a double.
+
+</ul>
+
+@section style_graphics Graphics
+
+<ul>
+
+\li Keep graphics and robot functionality in separate processes. 
+  
+  Notice that none of the core robot functionality (\c base_services,
+  \c robot, \c navigator, \c localize) link against graphics
+  libraries. This is for multiple reasons:
+  
+  <ul>
+  \li It increases the likelihood that your code will work on a standalone
+    robot in the absence of a network. If your process is displaying output to
+    a remote X window, and the network drops out, your process \em will
+    wedge until the network comes back. If, however, your process is sending
+    IPC messages to an external display process, then only the display process
+    will wedge, not your (presumably more important) robot process.
+    
+  \li You are removed from the temptation of displaying internal information
+    not accessible to external code. If you want to \em see the state of
+    your process, the odds are very high that eventually, someone else will
+    want to \em use the state of your process. By forcing you to write an
+    IPC message and interface handler for that information just to get it into
+    the display, you make life much easier for people who come after you.
+    
+  \li Allowing your code to compile without graphics makes it more portable,
+    and makes it more distributable, in the sense that it can run anywhere --
+    it is not constrained by the speed of network connections between
+    machines.
+  </li>
+  
+  For obvious reasons, programs like map\_editor and mapper have displays
+  compiled in -- these programs are not intended for autonomous use on the
+  robot.
+</ul>
+
+
+**/

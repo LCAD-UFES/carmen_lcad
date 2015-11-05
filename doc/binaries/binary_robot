@@ -1,0 +1,33 @@
+/** @page binary__robot
+
+<h2>The Robot Module and the Robotgui</h2>
+
+
+@section robot_main The Robot
+
+Robot is a module that provides an abstract view to the hardware of
+the robot. If furthermore provides a elementary collision detection
+that is able to stop the robot in front of obstacles (if activated in
+the ini file: "robot_collision_avoidance on").
+
+Robot has further functionalities: On the one hand, it combines the
+laser, sonar, and bumper data with the odometry information. On the
+other hand, robot should be used to send motion command to the robot.
+
+<h3>Usage: ./robot</h3>
+
+
+@section robotgui_main The Robot-GUI
+
+The robotgui provides a view of the internal state of the robot. You
+are able to see the front and the real laser data combined with
+the odometry information. Furthermore, it is possible to move and
+rotate the robot. To do so, use the mouse, click on the robot and move
+the mouse. The robot will then follow the vector to the mouse pointer.
+
+This robotgui requires that robot is running.
+
+<h3>Usage: ./robotgui</h3>
+
+
+**/

@@ -1,0 +1,183 @@
+Carnegie Mellon Robot Navigation Toolkit (CARMEN) Copyright (C) 2002
+Michael Montemerlo, Nicholas Roy, Sebastian Thrun, Dirk Haehnel,
+Cyrill Stachniss, and Jared Glover
+
+Introduction:
+
+Welcome to CARMEN, the Carnegie Mellon Robot Navigation
+Toolkit. CARMEN an open-source collection of software for mobile robot
+control. CARMEN is modular software designed to provide basic
+navigation primatives including: base and sensor control, obstacle
+avoidance, localization, path planning, people-tracking, and mapping.
+
+The software is currently in beta-release.  Expect to find bugs, and
+don't be surprised if the code changes significantly in the future.
+We welcome bug fixes, suggestions, and contributed code.
+
+Communications between modules is handled using a separate package
+called IPC, Copyright 1991 Christopher Fedor and Reid Simmons.  IPC is
+distributed along with CARMEN, however it is a separate software
+development.
+
+In addition, the xr4000 module was based on GPLed code by David Austin
+for controlling the Nomadic Technologies XR4000. More details can be
+found in the xr4000 directory.
+
+Any correspondence regarding CARMEN should be sent to
+mmde+carmen@cs.cmu.edu.
+
+CARMEN is licensed under the Gnu Public License (GPL).  See the file
+LICENSE.TXT for complete details on thte GPL.
+
+Contributors:
+
+CARMEN has been the colloborative effort of a number of people.
+
+The primary authors of CARMEN are:
+Michael Montemerlo
+Nicholas Roy
+Sebastian Thrun
+Dirk Haehnel
+Cyrill Stachniss
+Jared Glover
+
+IPC is the work of:
+Reid Simmons
+Christopher Fedor
+
+The motion model learner is the work ok:
+Austin Eliazar
+Ron Parr
+
+Several others have made substantial contributions to the software:
+Jeff Biseda
+Charlie Garrod
+Giorgio Grisetti
+Nell Hoffman
+Christian Martin
+Emilie Ann Phillips
+Rudi Triebel
+
+Some users are locating bugs and helping to remove them:
+Xinyu Ao
+Andy Rubin
+Greg Amstrong
+
+The CARMEN logo artwork created by:
+Christian Plagemann 
+
+
+
+Installation:
+
+1. Switch into the carmen/src directory
+   cd carmen/src
+2. Configure the Makefiles - Answer any questions
+   ./configure
+3. Make the software
+   make
+
+Brief Module Descriptions:
+
+Each directory in the src directory corresponds to a different CARMEN
+module or support library.
+
+base        - Common interface to all robot base modules.  
+camera      - Camera support
+global      - Librarys of functions used by all CARMEN modules 
+gps         - Driver for Consumer GPS devices (NMEA)
+hmap        - Support for hierarchical maps
+ipc         - Reid Simmon's inter process communication library.  For more 
+              information on IPC, see 
+              http://www.cs.cmu.edu/afs/cs/project/TCA/www/ipc/ipc.html
+java        - Java bindings for CARMEN
+joystick    - Joystick control library
+laser       - Interface module for SICK laser rangefinders
+localize    - Robot localization based on MCL
+logger      - Modules for logging and playing back sensor data
+logtools    - A collection of tools for handling logfiles
+mapeditor   - A simple map editor
+maptools    - A collection of tools for handling maps
+navigator   - Global path planning and obstacle avoidance module
+navigatorgui- A user interface to navigator and localize
+pantilt     - A pan tilt unit driver
+param_daemon- The Program that "serves" parameter values to all modules
+proccontrol - Proramm to observe and evtually restart CARMEN modules
+phython     - Python binding for CARMEN
+robot       - Module that fuses sensor readings and serves them to higher 
+	      level modules
+robotgui    - Graphical module for displaying the latest sensor readings from 
+	      the robot
+simulator   - CARMEN robot simulator
+vasco       - Laser mapping software
+
+Using the software:
+
+The use of CARMEN will described using three different scenaria:
+tele-operating a robot, building a map, and way-point navigation of a
+robot in a known map.  Since CARMEN is modular software, each scenario
+will involve opening a bunch of different xterms and running different
+programs.
+
+Parameters for all of the modules are read from the carmen.ini file.
+You will need to edit this file, adding your own robot and parameter
+values. The name of your robot in [] square brackets in the param file
+will be a command line parameter to the parameter server later in
+these instructions.
+
+Teleoperation:
+
+1. In window 1, start the IPC central server
+   cd carmen/bin ; ./central
+2. In window 2, start the parameter server
+   cd carmen/bin ; ./param_daemon -r scout
+3. In window 3, start the base server that corresponds to your robot
+   cd carmen/bin ; ./scout
+4. In window 4, start the laser server
+   cd carmen/bin ; ./laser
+5. In window 5, start the robot server
+   cd carmen/bin ; ./robot
+6. In window 6, start the robotgraph program
+   cd carmen/bin ; ./robotgraph
+
+Now you can control the robot using the robotgraph window.  If you
+have properly installed your joystick under linux, you can drive the
+robot with the joystick.  Otherwise you can control the robot using
+the keyboard (keys u,i,o,j,k,l,m,comma,period) or by graphically
+clicking and dragging on the robot in the window.
+
+Making a map (using teleoperation):
+
+Run steps 1 through 6 above:
+7. In window 7, start the logger
+   cd carmen/bin ; ./logger file.clf
+8. Drive the robot around, covering your environment
+9. Stop the logger by typing a CONTROL-C in the logger xterm.
+10. Run vasco on the logfile you created
+    cd carmen/bin ; ./vasco file.clf
+11. Follow the vasco instructions for creating a map from a logfile.
+
+Autonomous Navigation:
+
+1. First make a map, using the above process.
+2. Run steps 1 through 6 from the first scenario, with one change.
+   In the parameter server window, run
+   ./param_daemon -r robotname x.map
+   where x.map is the map you created.
+3. In window 7, Run the localizer
+   cd carmen/bin ; ./localize
+4. In window 8, Run the path planner graphics module
+   cd carmen/bin ; ./navigatorgui
+5. In window 9, Run the path planner
+   cd carmen/bin ; ./navigator
+6. Initialize the position of the robot
+   CONTROL - left click on the location of the robot in navigator_panel
+7. Initialize the orientation of the robot
+   CONTROL - middle button drag in the direction of the robot
+8. Set the goal position of the robot
+   left click where you want the robot to go in the map
+9. Let the robot go
+   Click Autonomous
+
+
+

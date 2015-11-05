@@ -1,0 +1,16 @@
+HTTrack3.43-12+htsswf+htsjava launched on Thu, 13 Jan 2011 15:35:27 at http://carmen.sourceforge.net/ +*.png +*.gif +*.jpg +*.css +*.js -ad.doubleclick.net/* -mime:application/foobar
+(winhttrack -qwC2%Ps2u1%s%uN0%I0p3DaK0H0%kf2A25000%f#f -F "Mozilla/4.5 (compatible; HTTrack 3.0x; Windows 98)" -%F "<!-- Mirrored from %s%s by HTTrack Website Copier/3.x [XR&CO'2010], %s -->" -%l "en, en, *" http://carmen.sourceforge.net/ -O1 "C:\Documents and Settings\PC\Meus documentos\Carmen Robot\Carmen Robot" +*.png +*.gif +*.jpg +*.css +*.js -ad.doubleclick.net/* -mime:application/foobar )
+
+Information, Warnings and Errors reported for this mirror:
+note:	the hts-log.txt file, and hts-cache folder, may contain sensitive information,
+	such as username/password authentication for websites mirrored in this project
+	do not share these files/folders if you want these information to remain private
+
+15:35:27	Warning: 	File not parsed, looks like binary: carmen.sourceforge.net/robots.txt
+15:35:52	Error: 	"Not Found" (404) at link carmen.sourceforge.net/images/equation1.gif (from carmen.sourceforge.net/FAQ.html)
+15:35:52	Error: 	"Not Found" (404) at link carmen.sourceforge.net/images/equation2.gif (from carmen.sourceforge.net/FAQ.html)
+15:35:52	Error: 	"Not Found" (404) at link carmen.sourceforge.net/papers/thrun.robust-mcl.pdf (from carmen.sourceforge.net/papers.html)
+15:35:52	Error: 	"Not Found" (404) at link carmen.sourceforge.net/papers/thrun.mapping-tr.pdf (from carmen.sourceforge.net/papers.html)
+
+HTTrack Website Copier/3.43-12 mirror complete in 3 minutes 46 seconds : 456 links scanned, 451 files written (3095853 bytes overall) [1117887 bytes received at 4946 bytes/sec], 2758674 bytes transfered using HTTP compression in 374 files, ratio 22%, 38.0 requests per connection
+(4 errors, 1 warnings, 0 messages)

@@ -1,0 +1,7 @@
+../../include
+libbee/include
+libbee/pgr-stereo-examples-libdc-2.0.2/pgrlibdcstereo
+libbee/triclops_32/include
+libbee/triclops_32/src/pnmutils
+libbee/triclops_64/include
+libbee/triclops_64/src/pnmutils

@@ -1,0 +1,65 @@
+/** @page main
+
+<br>
+<h1>Welcome to CARMEN</h1><br>
+
+This is a quite early version of the documentation of CARMEN. It is
+not complete but should be helpful when programming with CARMEN.
+
+
+@section mainpage_modules The Structure of CARMEN
+
+CARMEN is an open-source collection of software for mobile robot
+control. CARMEN is modular software designed to provide basic
+navigation primatives including: base and sensor control, logging,
+obstacle avoidance, localization, path planning, and mapping.  The
+modules are shown in the left navigator bar. Click of the different
+modules to browser their messages, libraries, functions, data
+structures, etc.
+
+The communication between CARMEN modules is handled using a separate
+package called IPC, Copyright 1991 Christopher Fedor and Reid
+Simmons. IPC is distributed along with CARMEN.
+
+@section mainpage_install Quick Installation Guide
+
+@verbatim
+$ tar xzf carmen.tgz ~/
+$ cd carmen/src
+$ ./configure
+$ make
+@endverbatim
+
+
+@section mainpage_run Quick Guide: Running the CARMEN Simulator
+
+For starting the carmen simulator, call
+@verbatim
+$ ./central
+$ ./param_daemon -r ROBOTNAME MAPFILE
+$ ./simulator
+$ ./robot
+$ ./localize
+$ ./navigator
+$ ./navigator_panel  (click place robot to initialize the simulator and the localization)
+$ ./robotgui
+@endverbatim
+ROBOTNAME might be pioneer, a MAPFILE might by ../data/freiburg.map
+
+
+@section mainpage_runreal Quick Guide: Running CARMEN on a Real Robot
+
+For starting CAMREN on a real robot, call
+@verbatim
+$ ./central
+$ ./param_daemon -r ROBOTNAME MAPFILE
+$ ./laser
+$ ./BASEDRIVER (e.g. pioneer)
+$ ./robot
+$ ./localize
+$ ./navigator
+$ ./navigator_panel (click place robot to initialize the localization)
+$ ./robotgui
+@endverbatim
+
+**/

@@ -1,0 +1,500 @@
+% latex comview.tex ; dvips comview.dvi -o comview.ps 
+% ghostview foo.ps
+
+\documentstyle[12pt,epsf]{article}
+\input{epsf.tex}
+
+\newcommand{\comview}{{\tt comview}}
+
+% For TCA
+% \newcommand{\system}{TCA}
+% For IPC
+\newcommand{\system}{IPC}
+
+\begin{document}
+
+\title{Comview User's Guide}
+\author{Version 1.0}
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+
+\comview{} is a tool designed for visualizing the message-passing communication
+that occurs between modules in \system{}-based systems. It can serve as a
+useful tool for debugging and monitoring a \system{} session (while the
+session is active, or for later analysis).
+
+\comview{} uses a log file generated from a session with \system{}'s central
+server. For each message, central logs the source and destination
+modules, the time, the name, and type of the message. This log file is
+parsed and processed by \comview{} to generate a graphical display
+showing the communication that occurs between modules over time. The contents of
+the log file are also shown within a section of the display.
+
+The graphical display consists of widgets that can be selected to see
+more information about the chosen activity. There is a link between
+each widget in the graphical display and the message it corresponds to
+in the log file. Selecting an object in the graphical display will
+highlight the corresponding line within the log file, and vice versa.
+
+\comview{} is designed to make it easy to search for particular types of
+message activity, through a number of different mechanisms. A list of all
+the names of messages sent is maintained, in addition to a list of all
+modules that have sent or received messages. These lists can be viewed
+and individual messages from them can be selected. Additionally, the log file
+itself can be searched using a simple text-search. Configuration files
+can also be used to suppress the display of particular messages or
+modules.
+
+\section{Starting Comview}
+
+Since \comview{} uses Tcl/Tk, the location of these libraries must be
+specified in the user's environment variables (TCL\_LIBRARY and
+TK\_LIBRARY). Currently, \comview{} uses Tcl version 7.4 and Tk version
+4.0.
+
+\subsection{Logging with central}
+
+To create a log file, the \system{} central server must be run with at least
+the following logging options: ``{\tt-Lmtirn -f<logfile>}'' (m=message
+traffic, t=time messages are handled, i=ignore logging registration
+and deregistration messages, r=log the reference id as well as the
+message name, and n=do not prompt the user for comments). You may use any other options except ``{\tt-Lx}'' (no
+logging). Type ``{\tt central -h}'' for more information on central's
+command line options.
+
+In order to be able to view the data associated with messages while
+using \comview{} you must additionally give the ``{\tt d}'' logging option to
+the central server (e.g. ``{\tt -Ldmtirn}'').
+
+\subsection{Command line options}
+
+\comview{} is run as follows: {\tt comview [-options] -f <logfile>}
+
+{\tt
+lung\% comview -h\newline
+-h : Print this message\newline
+-v : Print version information\newline
+-l : Do not display all log file information (only messages)\newline
+-f <logfile>: Use the logfile\newline
+-z <zoom>: initial zoom value}\newline
+
+The command line options ``{\tt -h}'' and ``{\tt -v}'' are self-explanatory.
+The ``{\tt -l}'' option refers to the part of the \comview{} display (the
+textual log-window) that
+displays lines directly read in from the \system{} log
+file. The ``{\tt -l}'' option indicates that the log-window should contain
+only lines that correspond to valid messages in the
+graphic display. Without this option, the log-window will contain all the
+information that \system{} logs, such as
+the data associated with individual messages.
+
+The ``{\tt -z}'' option is for specifying an initial zoom value (a
+floating point number). The default setting (specified in
+options.tcl) is 10.0, which results in an initial canvas width of 8 seconds.
+
+\section{Using Comview}
+
+\subsection{Stepping and Running}
+
+\begin{figure}[htp]
+\centerline{\epsfysize=6in \epsfbox{comview1.ps}}
+\caption{Comview Display}
+\label{fig:comview}
+\end{figure}
+
+\comview{} displays information in two
+places: in a textual log window at the bottom of the display and in the larger
+graphical trace window called the canvas display (named after the Tk
+object which is used to create it). Figure~\ref{fig:comview} shows a
+snapshot of the entire \comview{} screen.
+
+To visualize message traffic, one can either ``Step'' through
+or ``Run'' through the log file. Stepping will read in a single line
+from the log file, parse it, and display activity in the log window and canvas
+display.  Running through will continuously step through the log file
+until ``Run'' is hit again, or until the end of the log file is reached.
+
+\comview{} can use a log file that is being produced while it is
+running. If the end of the log file is reached then the ``Run'' button
+will change from green (running) to yellow (waiting). If more data is
+written to the log file, \comview{} will resume running.
+
+The canvas display expands and scrolls horizontally to follow incoming data.
+The automatic scrolling feature is toggled by clicking on the ``Scroll-Lock''
+button.  With ``Scroll-Lock'' on, the canvas display does not scroll, but the
+graphics are still updated as messages are read in.  The initial setting is for
+the display to scroll so that newly created activity is visible.
+
+The log window consists of the individual lines from the log
+file. Unless the ``{\tt -l}'' option is given to \comview{}, this
+consists of all lines from the log file, such as those that
+contain the data associated with a message, and lines which
+report on the internal performance of \system{} execution. If the ``{\tt
+-l}'' option is given to \comview{}, then the log window will display
+only lines from the log file that indicate message activity.
+
+When the log file indicates that a new module has connected with central,
+a label for that module 
+will appear on the left side of the screen. As the log file reports that a
+module sends or receives messages, the color of the module label changes
+to indicate 
+what kind of message the module is currently processing or what kind
+of message that module has just sent.
+
+As different messages are sent from or received by a module, a colored
+rectangle is added to the right side of the module's display line. The
+width of the rectangle is proportional to the time it takes for the message to
+be handled.
+
+The various colors in the display have the following meanings:
+
+\begin{center}
+\begin{tabular}{|l|l|r|} \hline
+{\em message type}	& {\em sender's color}	
+				& {\em recipient's color} \\ \hline
+Query		& Yellow		& Green \\
+Inform		& Green			& Dark Green \\
+Command		& Light Blue		& Blue \\
+Broadcast	& Light Purple		& Purple \\
+Goal		& Light Olive		& Olive \\ \hline
+\end{tabular}
+\end{center}
+
+These colors are specified (and can be changed) from the file
+``options.tcl''. The colorings allow you to look at a segment of activity
+for a particular module and be able to identify the state of the
+module at that time (e.g., waiting for a message, or processing a
+particular message type).
+
+\subsection{Selecting Objects}
+
+Any of the objects within the canvas can be selected by clicking in
+the canvas window with the left mouse button. This will result in
+arrows being drawn which show the communication pathways of the chosen
+activity. One can also double-click on a line in the log window and
+the appropriate activity (if any) within the canvas window will be
+highlighted.
+
+Blocking and non-blocking messages will result in different types
+of highlighting.
+For blocking messages (such as query messages) the module that sent
+the message is going to wait for a reply. In the log file there will
+be a reply message. Graphically, highlighting will draw an arrow from
+the source module to the destination module at the time at which the
+query was sent. At the time at which the reply was sent an arrow will
+be drawn from the destination module to the source module. This is
+shown in figure~\ref{fig:query}.
+
+\begin{figure}[htp]
+\centerline{\epsfysize=2in \epsfbox{query.ps}}
+\caption{Highlight of Query Message}
+\label{fig:query}
+\end{figure}
+
+In contrast, non-blocking messages (such as broadcast or inform messages) are
+sent and do not
+wait for a reply. Graphically, this is represented as a short segment
+of activity (of width 1/100th of a second) for the source module. The
+destination module becomes active and will remain active until it
+completes handling the given message (this is identified within the
+log file by a ``Done'' message). Figure~\ref{fig:broadcast} shows
+highlighting for an broadcast message.
+
+\begin{figure}[htp]
+\centerline{\epsfysize=2in \epsfbox{inform.ps}}
+\caption{Highlight of Broadcast Message}
+\label{fig:broadcast}
+\end{figure}
+
+If the central server receives a message for a module that is
+currently processing another message, it queues these messages until
+the module has completed handling its current activity before sending
+the next message. Graphically, this is represented by creating an
+orange ``pending bar'' above the other activity for the module (again,
+the color of the pending bar is reconfigurable). The pending bar will
+remain until all queued messages have been handled. Unfortunately,
+\comview{} currently has no way to identify when more than one message is
+pending for a given module.
+
+\begin{figure}[htp]
+\centerline{\epsfysize=2.0in \epsfbox{pend.ps}}
+\caption{Highlight of a Message That Pends}
+\label{fig:pend}
+\end{figure}
+
+Figure~\ref{fig:pend} shows the calling structure for a query message
+that pends. The first vertical arrow indicates when the message is
+sent, the horizontal arrow indicates when the message is forwarded to
+the module to be handled, and the downward pointing arrow corresponds
+to the reply message. A similar graphical display is created for
+non-blocking messages (but, without the reply arrow).
+
+\subsection{Rearranging Modules}
+
+The top-to-bottom order of the modules in the graphic display can be changed
+(by default, they appear in the order that they connect to central). This
+is done by pressing the left mouse button on a module name and then
+dragging it to the new position. This will shift the order of the
+other modules to fit the moved module to the new location.
+
+\subsection{Getting Around the Canvas}
+
+\comview{} has several mechanisms to obtain different views of the
+canvas. There is a scroll-bar at the bottom of the canvas for manually
+scrolling through the canvas. Clicking on a line in the log-window selects the
+corresponding object, and jumps the canvas window to make the selected object
+visible. 
+Zooming provides, as expected, a means of scaling the objects on the canvas.
+
+\subsubsection{Zoom}
+
+The ``Zoom In'' and ``Zoom Out'' buttons (Figure~\ref{fig:comview}) will zoom,
+centered around the currently
+selected object. If no object is selected, then the zoom will be about
+the center of the current view of the canvas. If an object is selected
+and you want to zoom about the center of the canvas, use the
+``Unselect'' button before any zoom.
+
+The zoom slider widget is another way of zooming about the
+canvas. When set to 1.0 the entire canvas is visible (maximum zoom
+out). Set to 0.0 the canvas is zoomed in to a fixed scale where 1
+pixel corresponds to 1/100th of a second (it is possible to zoom in
+more by using the ``Zoom In'' button).
+
+\subsection{Time Displays}
+
+There are three displays of time on the screen. The clock below the
+``Unselect'' button (Figure~\ref{fig:comview}) shows the time that
+corresponds to the mouse position when it is over the canvas. Above
+the canvas on the top-left and top-right are two more clocks that
+indicate the time that corresponds to the leftmost visible part of the
+canvas and the rightmost visible part of the canvas.
+
+These three clocks can be displayed in absolute units (the time-stamp
+that central logs with every message) or relative time units (such
+that the time at the leftmost point in the canvas will be
+00:00:00.00). The ``Time'' menu has commands for toggling between the
+units.
+
+\section{Menu Items}
+
+At the top of the \comview{} display is a menu bar with five items: ``File'',
+``Message'', ``Module'', ``Time'' and ``Jump''.  This section describes each
+of the menu choices, in turn.
+
+\subsection{File Menu}
+
+\subsubsection{Saving canvas to postscript}
+
+The canvas can be saved to postscript using the ``Print Current View''
+option under the ``File'' menu. This will open a window prompting for
+an output filename. The view saved is the currently visible portion of
+the canvas window. The view will be saved in landscape orientation.
+
+\subsection{Message Menu}
+
+Once a log file has been loaded, users will typically need to search through
+the log file to find particular messages or events. \comview{} provides a number
+of different features that make this possible.
+
+The ``Message'' menu consists of the names of all the different types of
+messages that have 
+been sent.  This menu item is updated as more of the log file is read in.
+Selecting a particular message from this menu will bring up
+a new window that lists all the occurrences of that 
+message type, as well as the number of occurrences of that message (this list
+is updated as more of the log file is processed). Any particular instance can
+be selected and the corresponding 
+activity within the graphic display will be highlighted.  
+
+For example, Figure~\ref{fig:msglist} shows the sixty-four ATME\_RST messages
+that were 
+sent (in a scrollable window). The highlighted message is line 2 of the log
+file, and indicates that the message was broadcast from module acs\_r1 to the
+console module at time 14:34:56.21.
+
+\begin{figure}[htp]
+\centerline{\epsfysize=2in \epsfbox{msglist.ps}}
+\caption{Message List Window}
+\label{fig:msglist}
+\end{figure}
+
+The ``Show All'' button on the bottom of the message list window highlights all
+the occurrences of that message name within the
+canvas. Figure~\ref{fig:showall} shows a view of the canvas after ``Show All''
+has been selected for the ATBE\_RST messages shown in
+figure~\ref{fig:msglist}.
+
+\begin{figure}[htp]
+\centerline{\epsfysize=3.5in \epsfbox{showall.ps}}
+\caption{Canvas View After ``Show All''}
+\label{fig:showall}
+\end{figure}
+
+\subsection{Module Menu}
+
+In a similar manner, the ``Module'' menu lists all the different modules that
+have connected to the central server. Selecting a particular module from this
+menu opens a new window that lists all the messages that have been sent to
+or received by the chosen module, as well as the number of message instances that
+involve the chosen module.  Again, this list is updated as more of the log
+file is processed.  As with the ``Message'' menu, these messages can be
+individually selected, or all of them highlighted at once using the ``Show
+All'' button. Figure~\ref{fig:showall} shows the window that is created
+when the ``console'' module is selected from the ``Module'' menu.
+
+\begin{figure}[htp]
+\centerline{\epsfysize=2in \epsfbox{modlist.ps}}
+\caption{Module List Window}
+\label{fig:modlist}
+\end{figure}
+
+\subsection{Time Menu}
+
+The first two options in the time menu, ``Absolute'' and ``Relative''
+toggle the units that are used for the three time displays. ``Absolute''
+selects the units that corresponds to the time-stamp that central logs
+with every message. Relative units are a measure of time since the
+first message was logged (such that the time at the leftmost point in
+the canvas will be 00:00:00.00).
+
+The ``Display Visible Time'' menu option toggles whether the
+time at the top-left and top-right positions above the canvas are
+visible (this may be useful on slower machines).
+
+\subsection{Jump Menu}
+
+The ``Jump'' menu is used to easily access particular messages in the
+log and canvas windows. The ``Jump'' menu has two features: A
+selection to jump to a given time, and a selection to jump to a
+specific message number.
+
+Selecting ``Time'' from this menu will bring up a new window that shows the
+time of 
+the first logged message and the time of the last logged message (see
+Figure~\ref{fig:gototime}).
+
+\begin{figure}[htp]
+\centerline{\epsfysize=1.3in \epsfbox{gotime.ps}}
+\caption{Go-To Time Window}
+\label{fig:gototime}
+\end{figure}
+
+Any time between those two times (inclusive) can be entered. When
+``Go'' is pressed the canvas will be shifted so that it is centered
+around the chosen time.
+
+The ``Message Number'' option opens a new window that shows the
+maximum message number and has an entry in which to type a message
+number to jump to (see Figure~\ref{fig:gotomsg}). The chosen message
+will be highlighted and centered in both the canvas window and the log
+window.
+
+\begin{figure}[htp]
+\centerline{\epsfysize=0.7in \epsfbox{gomsg.ps}}
+\caption{Go To Message Window}
+\label{fig:gotomsg}
+\end{figure}
+
+Both of these jump commands can be performed using keyboard-only
+commands (next section).
+
+\section{Keyboard Shortcuts}
+
+There are a number of keyboard shortcuts that allow you to step
+through the log file and execute several of the same commands that you
+can select via the menus. The following table describes them:
+
+Keyboard Control
+\begin{tabular}{|l|r|} \hline
+{\em function}			& {\em keypress} \\ \hline
+highlight next message 		& control-n \\
+highlight previous message  	& control-p \\
+highlight first message		& alt-p \\
+highlight last message 		& alt-n \\
+scroll forward one screen on canvas & spacebar \\
+scroll backward one screen on canvas & delete \\
+run 				& alt-r \\
+step	 			& alt-s \\
+zoom in 	 		& ctrl-i \\
+zoom out 			& ctrl-o \\
+goto message number 		& alt-g \\
+goto time	 		& alt-t \\
+search log window	  	& ctrl-s \\ 
+reverse search log window  	& ctrl-r \\ 
+mini-buffer quit	 	& ctrl-g \\ \hline
+\end{tabular}
+
+\section{Searching the Log Window}
+
+\comview{} includes a feature for textually searching through the processed
+log file.  This feature is accessible only via the keyboard (there
+is no menu option for it). One can search the log file from the
+current position to the end. This is invoked by pressing Control-S,
+and it operates in a manner similar to an emacs mini-buffer (see
+Figure~\ref{fig:search}).
+
+\begin{figure}[htp]
+\centerline{\epsfysize=2in \epsfbox{search.ps}}
+\caption{Searching the Log Window}
+\label{fig:search}
+\end{figure}
+
+If the search fails, the mini-buffer will blink. If the search is
+successful, the highlight-bar in the log file will move to the line
+that contains the text which matches the search string. Pressing
+Control-S again searches from the new position to the end of the log
+file. Control-G terminates the search.
+
+In a similar manner, Control-R will search the log window in the reverse
+direction.
+
+Alt-P moves the current log window selection line to the first message in
+the log window. This highlights the first message and
+shifts the canvas so that the appropriate graphic is visible in the
+canvas window.  Any search will now begin from the top of the log file. To
+jump to the end of the log file, press Alt-N.
+
+\section{Settings File}
+
+Certain features of \comview{} can be specified in a settings file.  This file
+must have the same filename as the log file, except with the extension
+``.set'' instead of ``.log'' (i.e. ``test.log'' would have a settings file
+``test.set'').  At present, the settings file can indicate to ignore
+displaying of certain messages and/or certain modules.
+
+\subsection{Filtering Out Specific Messages}
+
+\comview{} has support for filtering out specific message names for a
+given log file. The messages to filter out are listed in separate lines in the
+settings file.  The settings file should have lines of the form:\newline
+\newline
+ ignore\_message message\_name1\newline
+ ignore\_message message\_name2
+\newline
+\newline
+\comview{} will then ignore any messages with the name message\_name1,
+message\_name2, etc. These messages will neither appear in the log
+window nor will they result in the creation of any graphical activity
+in the canvas. Note that the settings file must exist at the time
+\comview{} is started, and any changes after \comview{} has been started
+will not be recognized.
+
+\subsection{Ignoring Modules}
+
+In a manner similar to the way messages can be ignored, messages that
+involve a specific module can also be filtered out. All messages that
+are sent to or from the selected module will be completely ignored
+(they will not result in any graphical activity, and will not appear
+in the log window).
+
+The settings file should contain lines of the form:\newline
+\newline
+ ignore\_module module\_name1\newline
+ ignore\_module module\_name2
+\newline
+
+\end{document}

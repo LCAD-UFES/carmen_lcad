@@ -1,0 +1,179 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<!-- Mirrored from carmen.sourceforge.net/logger_playback.html by HTTrack Website Copier/3.x [XR&CO'2010], Thu, 13 Jan 2011 17:35:43 GMT -->
+<head><title>CARMEN</title>
+	<meta name="description" content="CARMEN">
+	<meta name="keywords" content="CARMEN robot navigation toolkit">
+	<meta name="page-topic" content="CARMEN">
+
+        <meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<meta name="robots" content="index">
+	<meta name="robots" content="follow">
+	<link rel="stylesheet" type="text/css" href="styles/styles.css">
+</head>
+<body bgcolor="#ffffff">
+<br>
+<div align="center">
+<table align="center" width="95%">
+<tbody>
+<tr>
+  <td align="left"><img src="images/carmen-logo-small.png" border=0 alt="[Carmen logo]"></td>
+</tr>
+<tr>
+<td  align="left" bgcolor="#ffffcc">&nbsp;</td></tr>
+</tbody>
+</table>
+
+<!-- NAVIGATOR -->
+
+<table align="center" width="95%">
+<tbody>
+<tr>
+<td><br></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+   <td class="menu" align="left" valign="top" width="210"><br>
+   <ul>
+   <li><a href="home.html">Home</a></li> 
+   <li><a href="intro.html">What's Carmen?</a></li>
+   <li><a href="core_functionality.html">Core Functionalities</a></li>
+   <br>
+   <li><a href="news.html">What's New?</a></li>
+   <li><a href="repository.html">Repository</a></li>
+   <li><a href="update.html">Chief Changes</a></li>
+   <br>
+   <li><a href="getting_carmen.html">Download & Installation</a></li>
+   <li><a href="hardware.html">Required Hardware</a></li>
+   <li><a href="using_carmen.html">Running Carmen</a></li>
+   <li><a href="config_param.html">Configuring Carmen</a></li>
+   <br>
+   <li><a href="doc/index.html">Carmen Online Docs</a></li>
+   <li><a href="program_carmen.html">Program with Carmen</a></li>
+   <li><a href="FAQ.html">FAQ</a></li>
+   <li><a href="papers.html">Papers</a></li>
+   <br>
+   <li><a href="mailing_lists.html">Mailing List</a></li>
+   <li><a href="contributers.html">People</a></li><br>
+   <li><a href="http://radish.sourceforge.net/">Data Sets (Radish)</a></li>
+   </ul><br><br><br>
+   <img src="images/line-200.png" border=0> 
+  </td>
+  <td width="20"></td>
+  <td align="left" valign="top">
+
+<!-- END OF HEADER -->
+
+
+<h3><A name=logger>Logging Data and Playing It Back</a></h3>
+<p>
+Recording data in CARMEN is made simple with the <b>logger</b> program. When you are ready to start logging data, simply start the logger program with the following command. At the very least, <b>central</b> and <param_server</b> must be running.
+<p>
+<pre>
+  ./logger [filename].log[.gz]
+</pre>
+<p>
+[filename] specifies a filename for the sensor log. If the file already exists, the program will ask to overwrite it. If an answer other than "Y" or "y" is given, then the logger will quit. There is no way for this program to append new data to an old logfile.
+<p>
+The logfile will begin with the following message, which explains the format of the file. After that, the file is simply a list of CARMEN messages in the order they were received.
+<p>
+<pre>
+# CARMEN Logfile
+# file format is one message per line
+# message_name [message contents] ipc_timestamp ipc_hostname logger_timestamp
+# message formats defined    : PARAM SYNC ODOM RAWLASER1 RAWLASER2 RAWLASER3 RAWLASER4 
+#                              ROBOTLASER1 ROBOTLASER2
+# old message formats defined: FLASER RLASER LASER3 LASER4
+# PARAM param_name param_value
+# SYNC tagname
+# ODOM x y theta tv rv accel
+# TRUEPOS true_x true_y true_theta odom_x odom_y odom_theta
+# RAWLASER1 laser_type start_angle field_of_view angular_resolution 
+#   maximum_range accuracy remission_mode 
+#   num_readings [range_readings] num_remissions [remission values]
+# RAWLASER2 laser_type start_angle field_of_view angular_resolution 
+#   maximum_range accuracy remission_mode 
+#   num_readings [range_readings] num_remissions [remission values]
+# RAWLASER3 laser_type start_angle field_of_view angular_resolution 
+#   maximum_range accuracy remission_mode 
+#   num_readings [range_readings] num_remissions [remission values]
+# RAWLASER4 laser_type start_angle field_of_view angular_resolution 
+#   maximum_range accuracy remission_mode 
+#   num_readings [range_readings] num_remissions [remission values]
+# ROBOTLASER1 laser_type start_angle field_of_view angular_resolution
+#   maximum_range accuracy remission_mode 
+#   num_readings [range_readings] laser_pose_x laser_pose_y laser_pose_theta
+#   robot_pose_x robot_pose_y robot_pose_theta 
+#   laser_tv laser_rv forward_safety_dist side_safty_dist
+# ROBOTLASER2 laser_type start_angle field_of_view angular_resolution
+#   maximum_range accuracy remission_mode 
+#   num_readings [range_readings] laser_pose_x laser_pose_y laser_pose_theta
+#   robot_pose_x robot_pose_y robot_pose_theta 
+#   laser_tv laser_rv forward_safety_dist side_safty_dist
+# NMEAGGA gpsnr utc latitude lat_orient longitude long_orient gps_quality 
+#   num_satellites hdop sea_level alititude geo_sea_level geo_sep data_age
+# NMEARMC gpsnr validity utc latitude lat_orient longitude long_orient 
+#   speed course variation var_dir date
+# 
+# OLD LOG MESSAGES: 
+# (old) # FLASER num_readings [range_readings] x y theta odom_x odom_y odom_theta
+# (old) # RLASER num_readings [range_readings] x y theta odom_x odom_y odom_theta
+# (old) # LASER3 num_readings [range_readings]
+# (old) # LASER4 num_readings [range_readings]
+# (old) # REMISSIONFLASER num_readings [range_readings remission_value]
+# (old) # REMISSIONRLASER num_readings [range_readings remission_value]
+# (old) # REMISSIONLASER3 num_readings [range_readings remission_value]
+# (old) # REMISSIONLASER4 num_readings [range_readings remission_value]
+# robot: b21rmit
+</pre>
+<p>
+There is no way to pause recording; to stop simply type "ctrl-C" in the window in which <b>logger</b> is running.
+<p>
+To start a playback of the data, then start the main CARMEN programs normally, except replace <b>base_services</b> or <b>simulator</b> with the program <b>playback</b> as follows:
+<p>
+<pre>
+  ./playback [filename].log[.gz]
+</pre>
+<p>
+This program will immediately start sending messages from the logfile to <b>central</b>, to be passed to other programs.
+<p>
+To have more control over the playback, running <b>playback_control</b> to call up a graphic user interface, as below.
+<p>
+<img src=images/playback_control.gif>
+<p>
+The double arrows advance or rewind the playback by 100 front laser scan messages, the single arrows by a single laserscan. The square stops the playback, the arrow starts the playback. The "R" resets the playback to the begining of the file. Note that <b>playback</b> starts up playing the logfile, so it is a good idea to have playback control running first, to stop the playback until you are ready.
+
+
+<!-- REST OF NAVIGATOR -->
+
+</td><td width="20"></td> </tr>
+<tr>
+<td><br></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table> 
+
+<!-- FOOTER -->
+
+
+<table align="center" width="95%"> 
+<tbody>
+<tr> 
+<td colspan="2" align="center" bgcolor="#ffffcc">
+Copyright ©  by the <a href="contributers.html">CARMEN-Team</a>
+</td> 
+</tr> 
+</tbody>
+</table>
+</div>
+</body>
+
+<!-- Mirrored from carmen.sourceforge.net/logger_playback.html by HTTrack Website Copier/3.x [XR&CO'2010], Thu, 13 Jan 2011 17:35:43 GMT -->
+</html>
+

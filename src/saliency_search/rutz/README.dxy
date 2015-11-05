@@ -1,0 +1,66 @@
+/** \dir src/rutz
+
+   \brief basic utilities: strings, smart pointers, containers, debugging, tracing, profiling, i/o
+
+   src/rutz offers a range of low-level basic utilities, many of which
+   can be seen as extensions of, or alternatives to, components from
+   the c++ standard library. For example, rutz::fstring is similar to
+   std::string in encapsulating memory-management of c-style strings,
+   but whereas std::string is a template with everything inline
+   (causing slow compile times), rutz::fstring is a non-template, with
+   only efficiency-critical functions inlined. This makes
+   rutz::fstring much less of a compile-time drain than std::string,
+   although naturally it has fewer features than
+   std::string. Nevertheless, in a vast majority of use cases, only
+   basic string features are needed, and in these cases rutz::fstring
+   suffices; in the few cases where more sophisticated processing is
+   required, then std::string can be used and optionally translated
+   back to a rutz::fstring.
+
+   Similarly, there are a number of stl-style containers that provide
+   extremely lightweight alternatives to std::vector, yet still offer
+   exception-safe automatic memory management: rutz::static_stack,
+   rutz::static_block, rutz::fixed_block, rutz::shared_array,
+   rutz::dynamic_block.
+
+   There are a number of facilities for debugging, tracing, and
+   profiling; these are to be found in rutz/abort.h, rutz/backtrace.h,
+   rutz/debug.h, rutz/prof.h, and rutz/trace.h.
+
+   There a few extensions to c++ std library i/o, including
+   rutz::gzstreambuf which encapsulated gzip-encoded streams and
+   rutz::imemstream and rutz::icstrstream which read from in-memory
+   strings, like std::stringstream but much more lightweight both in
+   run time and in compile time.
+
+*/
+
+///////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 1998-2005
+// Rob Peters <rjpeters at usc dot edu>
+//
+// created: Wed Jul  6 14:08:39 PDT 2005
+// commit: $Id: README.dxy 4830 2005-07-06 21:50:21Z rjpeters $
+// $HeadURL: svn://isvn.usc.edu/software/invt/trunk/saliency/src/rutz/README.dxy $
+//
+// --------------------------------------------------------------------
+//
+// This file is part of GroovX.
+//   [http://ilab.usc.edu/rjpeters/groovx/]
+//
+// GroovX is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2 of the License, or
+// (at your option) any later version.
+//
+// GroovX is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with GroovX; if not, write to the Free Software Foundation,
+// Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+//
+///////////////////////////////////////////////////////////////////////

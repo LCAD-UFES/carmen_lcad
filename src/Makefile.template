@@ -1,0 +1,20 @@
+include ../Makefile.conf
+
+CFLAGS +=
+IFLAGS += 
+LFLAGS += 
+
+MODULE_NAME = 
+MODULE_COMMENT = 
+
+SOURCES = 
+PUBLIC_INCLUDES = 
+PUBLIC_LIBRARIES = 
+PUBLIC_BINARIES = 
+MAN_PAGES =
+
+TARGETS = 
+
+# rules
+
+include ../Makefile.rules

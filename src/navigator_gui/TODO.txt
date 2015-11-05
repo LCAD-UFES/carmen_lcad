@@ -1,0 +1,17 @@
+2013-04-02
+
+- Modificar as funcoes:
+  carmen_localize_subscribe_particle_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
+  carmen_explorer_subscribe_particle_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
+  carmen_obstacle_avoider_subscribe_path_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
+  carmen_robot_ackerman_subscribe_road_velocity_control_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
+  carmen_obstacle_avoider_subscribe_motion_planner_path_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
+  para que tratem a flag CARMEN_UNSUBSCRIBE corretamente.
+  
+- Verificar simulator_ackerman (new_true nao deveria ser new_odom? o angulo nao deveria ser atualizado antes de x e y? o mesmo vale para a new_true logo abaixo no arquivo):
+	new_odom.x +=  v * simulator_config->delta_t * cos(new_true.theta);
+	new_odom.y +=  v * simulator_config->delta_t * sin(new_true.theta);
+	new_odom.theta += v * simulator_config->delta_t * tan(phi) / simulator_config->distance_between_front_and_rear_axles;
+	new_odom.theta = carmen_normalize_theta(new_odom.theta);
+
+- Usar funcoes get_acceleration(), compute_new_velocity(), e compute_new_phi() em motion_planner (predict_new_robot_position()) para melhor o planejamento (ficar mais real).

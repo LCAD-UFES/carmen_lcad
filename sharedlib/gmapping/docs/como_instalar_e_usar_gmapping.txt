@@ -1,0 +1,35 @@
+= PREPARACAO PARA INSTALAR GMAPPING =
+Antes de seguir os passos para instalar gmapping (abaixo), tem que fazer:
+ instalar Carmen
+ yum install csh
+ yum install qt3
+ yum install qt3-devel
+ export CARMEN_HOME=/home/cnpq/robotics/code/carmen
+
+= INSTALACAO DE GMAPPING =
+Depois dos passos acima, no diretorio raiz de gmapping:
+ ./configure 
+ make
+ 
+= COMO RODAR GMAPPING =
+Tem que setar o LD_LIBRARY_PATH
+ export LD_LIBRARY_PATH=~/robotics/code/carmen/gmapping/lib
+ 
+Para usar o gmapping off-line crie um log de Carmen (ver arquivo como_instalar_e_usar_carmen.txt) e
+ ./gfs_simplegui -filename ~/robotics/code/carmen/bin/log.txt -outfilename teste.gfs \
+ 	-angularUpdate 0.1 -linearUpdate 0.05 -particles 25 -maxrange 6 -fovrange 56.9 -resrange 0.09
+ 
+Para gerar imagens do gmapping
+ ./gfs2img -filename teste.gfs -maxrange 6 -fovrange 56.9 -resrange 0.09
+
+Rode on-line com Carmen:
+Em um terminal, digite
+ $CARMEN_HOME/bin/run_all.bat&
+Em outro terminal
+ ./gfs-carmen
+ 
+
+
+Para se gerar um mapa no formato dos mapas de carmen a partir de um arquivo .gfs
+ ./gfs2log teste.gfs log_do_ctix_corrigido_por_gmapping.log
+ ../../bin/log2pic -usablerange 6 -carmen-map log_do_ctix_corrigido_por_gmapping.log ../../data/mapa_do_ctix.map

@@ -1,0 +1,59 @@
+################################################ Set Global Variables #################################################
+set TYPE_SHOW = SHOW_FRAME;
+set TYPE_MOVING_FRAME = STOP;
+
+set NEURON_MEMORY_SIZE = 10;
+
+######################################################## Constants ####################################################
+
+const INPUT_WIDTH 	= 256;
+const INPUT_HEIGHT	= 128;
+
+const SYNAPSES		= 512;
+
+const NL_WIDTH 		= 100;
+const NL_HEIGHT		= 100;
+
+const GAUSSIAN_RADIUS_DISTRIBUTION = 7.0;
+
+const GAUSSIAN_RADIUS_FILTER 	= 5;
+const GAUSSIAN_SIGMA_FILTER  	= 1.0;
+
+const DATA_PATH			= "DATA/";
+
+############################################### Neuron Layers #########################################################
+
+neuronlayer 	nl_visual_gaussian[INPUT_WIDTH][INPUT_HEIGHT]	    	with color outputs;
+neuronlayer 	nl_visual_command[NL_WIDTH][NL_HEIGHT / 2]    			of minchinton neurons color sensitive with color outputs;
+
+############################################### Outputs #########################################################
+
+output      	out_nl_visual_gaussian[INPUT_WIDTH][INPUT_HEIGHT];
+output			out_nl_visual_command[NL_WIDTH][NL_HEIGHT / 2];
+
+################################## Connect Neuron Layers to Outputs #############################################
+
+outputconnect	nl_visual_gaussian	to	out_nl_visual_gaussian;
+outputconnect	nl_visual_command	to	out_nl_visual_command;
+
+################################################## Inputs #############################################################
+
+input 		visual_memory[INPUT_WIDTH][INPUT_HEIGHT]			with color outputs produced by input_generator() controled by input_controler();
+input 		command_input[NL_WIDTH][NL_HEIGHT / 2]				with color outputs produced by input_generator1("%p", &nl_visual_command) controled by input_controler1();
+
+############################################### Filters #########################################################
+
+filter      	visual_memory 	with gaussian_filter ("%d %f", GAUSSIAN_RADIUS_FILTER, GAUSSIAN_SIGMA_FILTER) producing nl_visual_gaussian;
+
+############################################### Associations ####################################################
+
+associate	nl_visual_command		with	nl_visual_command;
+
+################################################ Connections ####################################################
+
+#connect 	nl_visual_gaussian 		to nl_visual_command	with SYNAPSES random inputs per neuron and gaussian distribution with radius GAUSSIAN_RADIUS_DISTRIBUTION;
+connect 	nl_visual_gaussian 		to nl_visual_command	with SYNAPSES random inputs per neuron;
+
+################################################ User Functions #################################################
+
+int SetNetworkStatus ("%d");

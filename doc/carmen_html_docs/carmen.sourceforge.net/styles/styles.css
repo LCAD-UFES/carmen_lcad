@@ -1,0 +1,25 @@
+body, li, ul, p, td, th { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; }
+p { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; }
+h3 { font-family: Arial, Helvetica, sans-serif; font-size: 12pt; }
+A:link    {  font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #0033CC; font-weight: bold; text-decoration: none;}
+A:visited {  font-family: Arial, Helvetica, sans-serif; font-size: 10pt; color: #0033CC; font-weight: bold; text-decoration: none;}
+A:hover   {  color: #0066FF; }
+table td {
+border-width: 0px 0px 0px 0px;
+border-style: solid;
+border-color: #0066FF;
+}
+body {
+margin-left : 0;
+margin-right : 0;
+margin-top : 0;
+}
+td.menu {
+font-family: Arial, Helvetica, sans-serif;
+font-size: 10pt;
+color: #0033CC;
+font-weight: bold;
+border-width: 1px 1px 1px 1px;
+border-style: solid;
+border-color: #0066FF;
+}

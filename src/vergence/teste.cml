@@ -1,0 +1,9 @@
+load in_vergence_current from vw.lcad.0.r.ppm ;
+
+run_train(0);
+
+load in_vergence_current from vw.lcad.0.l.ppm ;
+
+run_test(0);
+
+quit;

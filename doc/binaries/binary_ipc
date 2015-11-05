@@ -1,0 +1,25 @@
+/** @page binary__ipc
+
+<h2>IPC - Inter Process Communication</h2>
+
+@section ipc_main central
+
+Central is the central communication server inside CARMEN. Therefore,
+the first thing you need to do is to start central. Without this
+server, no CARMEN module will work! In order to tell your module which
+server it should connect to, you have to specify the CENTRALHOST
+environment variable <b>for each shell</b> you are starting a module
+in using
+
+<h3> setenv CENTRALHOST localhost </h3>  
+or
+<h3> export CENTRALHOST=localhost </h3>  
+depending on the shell you are using.
+
+
+
+<h3>Usage: ./central</h3>
+
+
+
+**/

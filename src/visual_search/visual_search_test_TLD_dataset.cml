@@ -1,0 +1,145 @@
+/* Internal Macro Definition */
+int 	TRUE ;
+TRUE = 1;
+int	FALSE ;
+FALSE = 0;
+int	NON_STARTED;
+NON_STARTED = 0;
+int	WAITING_FOR_TRAINNING;
+WAITING_FOR_TRAINNING = 1;
+int	TRAINNING_NETWORK;
+TRAINNING_NETWORK = 2;
+int	RUNNING_NETWORK;
+RUNNING_NETWORK = 4;
+
+/* Log Parameters - From TLD dataset info */
+int	IMAGE_WIDTH;
+int	IMAGE_HEIGHT;
+int	MAX_NUM_FRAMES;
+int	INITIAL_X_POS;
+int	INITIAL_Y_POS;
+
+int	INITIAL_X0;
+int	INITIAL_X1;
+int	INITIAL_Y0;
+int	INITIAL_Y1;
+
+/* CML operation flags */
+float neuron_activity_threshold;
+float active_neuron_certainty;
+int CML_new_VS_test_message_value;
+
+
+int camera_frame_counter;
+int frame_hit_counter;
+
+/* TLD Dataset Reference Log/Size/Frames/Initial_Pos 
+
+01 David	- 761 frames - 320x240 - (165,93,216,147)
+02 Jumping	- 313 frames - 352x288 - (147,110,180,142)
+03 Pedestrian1	- 140 frames - 320x240 - (48,46,64,111) 
+04 Pedestrian2	- 338 frames - 320x240 - (124,136,145,189)
+05 Pedestrian3	- 184 frames - 320x240 - (154,102,178,154)
+06 Car		- 945 frames - 320x240 - (142,125,232,164)
+07 Motocross	- 2665 frames - 470x310 - (293,36,310,52)
+08 Volkswagen	- 8576 frames - 640x240 - (273,96.452,293.64,114.49)
+09 Carchase	- 9928 frames - 290x217 - (145,84,199,121)
+10 Panda	- 3000 frames - 312x233 - (58,100,85,122)
+
+*/
+
+/* Network initial settings dependable upon used log */
+MAX_NUM_FRAMES = 3000;
+IMAGE_WIDTH = 312;
+IMAGE_HEIGHT = 233;
+
+INITIAL_X0 = 58;
+INITIAL_Y0 = 100;
+INITIAL_X1 = 85;
+INITIAL_Y1 = 122;
+
+INITIAL_X_POS = INITIAL_X0 + (INITIAL_X1 - INITIAL_X0)/2;
+INITIAL_Y_POS = IMAGE_HEIGHT - (INITIAL_Y0 + (INITIAL_Y1 - INITIAL_Y0)/2);
+
+/* Creates the log file for output formatting */
+MAE_create_log_file(0);
+/* Opens the comparison log file for */
+MAE_open_TLD_comparison_log_file(0);
+/* Prints the network setting to the output log file */
+MAE_print_network_settings_to_log_file(0);
+/* Starts the Timer */
+MAE_start_timer(0);
+/* Starts the camera frame counter */
+camera_frame_counter = 0;
+/* Starts the frame hit counter */
+frame_hit_counter = 0;
+/* Initial Neuron Layer Cerainty is High */
+active_neuron_certainty = 1.0;
+
+/* Loop Forever Waiting for IPC messages */
+while (1)
+{
+	/* executes the IPC listen command */
+	execute_IPC_listen(0);	
+	
+	set_visual_search_state(RUNNING_NETWORK);	/* network status must be set-up as running */
+	CML_new_VS_test_message_value	= get_new_VS_test_message_value(0);
+			
+	if(CML_new_VS_test_message_value == TRUE)
+	{
+		MAE_copy_current_test_message_into_input(0);
+		
+		if(camera_frame_counter == 0)
+		{
+			MAE_update_input_layer_neurons_and_image(0);
+			MAE_set_input_layer_xy_to_desired_position(INITIAL_X_POS,INITIAL_Y_POS);
+			MAE_perform_network_retraining(0);
+		}
+		else
+		{
+			MAE_perform_network_test(0);
+			/* The active neuron certainty is the basis for determining whether the trackable object is in the scene or not */
+			active_neuron_certainty = MAE_calculate_network_certainty_percentage_of_active_neurons_versus_trained_bar_float(0);
+			MAE_print_network_certainty_percentage_of_active_neurons_versus_trained_bar_float(0);
+			MAE_print_network_certainty_correlate(0);
+		}
+
+		MAE_calculate_global_hit_rate_from_comparison_log_file(camera_frame_counter,frame_hit_counter);
+
+		visual_search_print_saccade_moving_average("");						/* Prints the moving average value */
+		MAE_print_frame_number_and_x_y_input_position(camera_frame_counter);			/* Must be conditioned to the network certainty */
+		MAE_print_frame_number_and_x_y_input_position_to_output_file(camera_frame_counter);	/* Must be conditioned to the  network certainty */
+		/* MAE_print_x_y_input_position_to_output_file_based_on_network_certainty(active_neuron_certainty,0.20); */ /* 20% threshold */
+		
+		camera_frame_counter = camera_frame_counter + 1;
+		
+		if(MAE_read_comparison_log_file_and_check_for_hit_in_TLD_dataset(""))
+		{
+			frame_hit_counter = frame_hit_counter + 1;
+		}
+						
+		reset_new_VS_test_message_value(0);	/* the message flag must be resseted */
+		
+		/* If the retraining should be used (either complete or sparse ) */
+		if( active_neuron_certainty  > 0.8 && active_neuron_certainty  < 0.9 && (visual_search_get_last_count_number("") > 2) )
+		{
+			MAE_perform_network_retraining("");
+			MAE_printf("Retreino");
+		}
+			
+		if(camera_frame_counter == MAX_NUM_FRAMES + 1)
+		{
+			/* Stops up the timer */
+			MAE_stop_timer(0);
+			/* Prints the final statistics into the file*/
+			MAE_print_saccade_time_and_frame_statistics_to_output_file(MAX_NUM_FRAMES + 1);
+			/* Prints the global hit rate obtained by simple log comparion */
+			MAE_print_hit_rate_to_log_file(camera_frame_counter,frame_hit_counter);
+			/* Terminates the log */
+			MAE_terminate_log_file(0);
+			/* Quits the script */
+			quit;
+		}
+	}
+}
+

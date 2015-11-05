@@ -1,0 +1,66 @@
+/** @page binary__maptools
+
+<h2>Maptools</h2>
+
+@section maptool Maptool
+
+The maptool program allows maps to be modified on the command line. 
+
+<h3>Usage: ./maptool \<action\> \<...\></h3>
+
+\<action\> is one of: toppm, tomap, rotate, minimize,  info
+Run ./maptool \<action\> to get help on using each action.
+
+<h3>Usage: ./maptool info \<filename\></h3>
+
+Provides information on the map, including dimensions, resolution,
+any placenames stored in the map. 
+
+<h3>Usage: ./maptool toppm \<map filename\> \<ppm filename\></h3>
+
+Converts a map file to a ppm file.
+
+<h3>Usage: ./maptool tomap \<resolution\> \<ppm filename\> \<map filename\></h3>
+
+Converts an arbitrary image file (jpeg, png, gif, etc.) to a map file. 
+
+<h3>Usage: ./maptool rotate \<rotation in degrees\> \<in map filename\> \<out map filename\></h3>
+
+Rotates an image file by increments of 90 degrees.
+
+<h3>Usage: ./maptool minimize \<in map filename\> \<out map filename\></h3>
+
+Removes extraneous unknown space around the edge of a map. 
+
+<h3>Usage: ./maptool \<mapfilename\> \<placename\> \<place params\></h3>
+
+Adds a placename to a mapfile. Note that unlike rotate, minimize, etc.,
+addplace performs an in-place edit to the map, and creates a backup copy.
+
+       2, 3, or 6 place parameters can be given.
+       2 parameters - named position (x, y)
+       3 parameters - named pose (x, y, theta)
+       6 parameters - initialization position
+                      (x, y, theta, std_x, std_y, std_theta)
+
+Remember: The x/y/std_x/std_y co-ordinates are in METRES, not in
+grid cells.
+
+Also: theta is in DEGREES. maptool will print out the conversion to radians
+automatically for you.
+
+<h3>Usage: ./maptool strip <in map filename> <in map filename> <chunk type></h3>
+If the map file contains a data chunk of this type, it will
+be removed on output. All other chunks will be passed through untouched.
+<chunk type> can be one of "laserscans", "places", "gridmap", "offlimits", 
+"expected".
+
+@section clf2linemap clf2linemap
+
+Converts a CARMEN logfile into a line map.
+
+@section map Map
+
+Serves a map server, if param_daemon is not started with a map argument. 
+
+**/

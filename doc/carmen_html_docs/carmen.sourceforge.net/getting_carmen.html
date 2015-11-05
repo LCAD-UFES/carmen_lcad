@@ -1,0 +1,152 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<!-- Mirrored from carmen.sourceforge.net/getting_carmen.html by HTTrack Website Copier/3.x [XR&CO'2010], Thu, 13 Jan 2011 17:35:34 GMT -->
+<head><title>CARMEN</title>
+	<meta name="description" content="CARMEN">
+	<meta name="keywords" content="CARMEN robot navigation toolkit">
+	<meta name="page-topic" content="CARMEN">
+
+        <meta http-equiv="content-type" content="text/html;charset=ISO-8859-1">
+	<meta name="robots" content="index">
+	<meta name="robots" content="follow">
+	<link rel="stylesheet" type="text/css" href="styles/styles.css">
+</head>
+<body bgcolor="#ffffff">
+<br>
+<div align="center">
+<table align="center" width="95%">
+<tbody>
+<tr>
+  <td align="left"><img src="images/carmen-logo-small.png" border=0 alt="[Carmen logo]"></td>
+</tr>
+<tr>
+<td  align="left" bgcolor="#ffffcc">&nbsp;</td></tr>
+</tbody>
+</table>
+
+<!-- NAVIGATOR -->
+
+<table align="center" width="95%">
+<tbody>
+<tr>
+<td><br></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+   <td class="menu" align="left" valign="top" width="210"><br>
+   <ul>
+   <li><a href="home.html">Home</a></li> 
+   <li><a href="intro.html">What's Carmen?</a></li>
+   <li><a href="core_functionality.html">Core Functionalities</a></li>
+   <br>
+   <li><a href="news.html">What's New?</a></li>
+   <li><a href="repository.html">Repository</a></li>
+   <li><a href="update.html">Chief Changes</a></li>
+   <br>
+   <li><a href="getting_carmen.html">Download & Installation</a></li>
+   <li><a href="hardware.html">Required Hardware</a></li>
+   <li><a href="using_carmen.html">Running Carmen</a></li>
+   <li><a href="config_param.html">Configuring Carmen</a></li>
+   <br>
+   <li><a href="doc/index.html">Carmen Online Docs</a></li>
+   <li><a href="program_carmen.html">Program with Carmen</a></li>
+   <li><a href="FAQ.html">FAQ</a></li>
+   <li><a href="papers.html">Papers</a></li>
+   <br>
+   <li><a href="mailing_lists.html">Mailing List</a></li>
+   <li><a href="contributers.html">People</a></li><br>
+   <li><a href="http://radish.sourceforge.net/">Data Sets (Radish)</a></li>
+   </ul><br><br><br>
+   <img src="images/line-200.png" border=0> 
+  </td>
+  <td width="20"></td>
+  <td align="left" valign="top">
+
+<!-- END OF HEADER -->
+
+
+<h3>Download</h3>
+
+Carmen is available undar a General Public License. As of yet, the documentation is this website, README files, and comments in the code. <p>
+
+<h3><a href="http://sourceforge.net/project/showfiles.php?group_id=121727"><font color=#ff0000>Click here to download the software.</font></h3></a>
+<p>
+Along with Carmen, you will get IPC, information on IPC is available at <a href="http://www-2.cs.cmu.edu/~ipc">http://www-2.cs.cmu.edu/~ipc</a>. There is an IPC reference manual in postcript format available at that site.
+
+<h3>Installation</h3>
+<p>
+1. Switch into the carmen/src directory<p>
+<pre>
+   cd carmen/src
+</pre><p>
+2. Configure the Makefiles - Answer any questions<p>
+<pre>
+   ./configure
+</pre>
+3. Make the software<p>
+<pre>
+   make
+</pre>
+
+<p> At this point, you want to set parameters for your robot. The key
+parameters at first are the communications between the computer and
+the robot hardware. Our robots have all used RS-232 serial
+communications, so Carmen is set up for that, and we've used RS-232 or
+USB to communicate with the SICK LMS devices. (Note that the use of
+USB requires the use of a special converter for RS-422 (laser) and USB
+(computer)).  
+
+<p>
+
+Make a note of the identity of the serial connections the computer
+uses to communicate with the robot (we usually use /dev/ttyS0) and to
+the laser if you have one. Find the robot described in the carmen.ini
+file which most closely resembles your robot, and adjust the
+parameters using a text editor to match your system.  <p>
+
+With the robot on blocks so that it doesn't actually move, you can
+start the programs and see if you get a laser display on robotgraph
+(if you have a laser), and response from the wheels when you instruct
+the robot to move. You can then adjust other parameters using the
+program <tt>param_edit</tt>. After you get the maximum speed and
+accelerations to a safe setting for your environment, you can take the
+robot off blocks and try moving it around. Don't forget to adjust the
+robot size and laser offsets, too!
+
+<center><img src=images/bnc1.jpg></center><p>
+
+
+
+<!-- REST OF NAVIGATOR -->
+
+</td><td width="20"></td> </tr>
+<tr>
+<td><br></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table> 
+
+<!-- FOOTER -->
+
+
+<table align="center" width="95%"> 
+<tbody>
+<tr> 
+<td colspan="2" align="center" bgcolor="#ffffcc">
+Copyright ©  by the <a href="contributers.html">CARMEN-Team</a>
+</td> 
+</tr> 
+</tbody>
+</table>
+</div>
+</body>
+
+<!-- Mirrored from carmen.sourceforge.net/getting_carmen.html by HTTrack Website Copier/3.x [XR&CO'2010], Thu, 13 Jan 2011 17:35:34 GMT -->
+</html>
+

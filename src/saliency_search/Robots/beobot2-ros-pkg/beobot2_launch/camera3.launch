@@ -1,0 +1,13 @@
+<launch>
+	<node name="camera3" pkg="camera1394" type="camera1394_node">
+		<param name="guid" type="string" value="081443610263283d"/>
+		<param name="video_mode" value="640x480_yuv411" />
+		
+		<remap from="camera/camera_info" to="~/camera_info" />
+		<remap from="camera/image_raw" to="~/image_raw" />
+		<remap from="camera/set_camera_info" to="~/set_camera_info" />
+	</node>
+	<group ns="camera3">
+		<node name="image_proc" pkg="image_proc" type="image_proc" />
+	</group>	
+</launch>

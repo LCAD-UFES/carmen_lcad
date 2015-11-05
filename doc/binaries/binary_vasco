@@ -1,0 +1,29 @@
+/** @page binary__vasco
+
+<h2>Vasco - The Mapper</h2>
+
+@section vasco_main Vasco
+
+Vasco is the mapper of CARMEN which is based on scan-matching. The
+binary vasco actually provides a user interface that allows to load
+and correct log files recorded with a mobile robot.
+
+<h3>Usage: ./vasco</h3>
+
+@section vasco_tiny Vasco-tiny
+
+Vasco-tiny is a small command line tool to correct a logfile using
+scan-matching. It is easy to use but provides less functionality
+compared to Vasco itself.
+
+<h3>Usage: ./vasco-tiny \<carmen log file\> \> corrected.clf  </h3>
+
+
+@section vasco_core The Vascocore Library
+
+The core functionality of vasco is encapsualted into a library called
+vascocore (libvascocore.a). All scan-matching functions can therefore
+been used by external programs. Please see the source code
+documentation of @href vascocore.h or futher details.
+
+**/

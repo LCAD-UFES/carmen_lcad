@@ -1,0 +1,19 @@
+/** @page binary__laser
+
+<h2>The Laser Driver</h2>
+
+
+@section laser_main Laser
+
+The laser module provides the hardware driver for SICK LMS and PLS
+laser range finders. Currently, there is no support for other range
+finder devices, however, a Hokuyo urg driver will be provided soon.
+
+The module sends out the CARMEN_LASER_LASER_MESSAGEs which can be
+directly received by other modules. In most cases, however, one uses
+the CARMEN_ROBOT_LASER_MESSAGEs because they combined odometry and
+laser data (and are send by robot).
+
+<h3>Usage: ./laser</h3>
+
+**/

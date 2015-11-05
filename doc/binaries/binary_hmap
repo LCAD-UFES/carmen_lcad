@@ -1,0 +1,13 @@
+/** @page binary__hmap
+
+<h2>Support for Hierarchical Maps </h2>
+
+
+@section laser_main Hmap
+
+This module provides support for hierarchical maps and handles 
+them transparemtly for other modules by updating the map itself.
+
+<h3>Usage: ./hmap</h3>
+
+**/

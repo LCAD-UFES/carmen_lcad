@@ -1,0 +1,14 @@
+<package>
+  <description brief="beobot2_launch">
+
+     beobot2_launch
+
+  </description>
+  <author>bx4</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/beobot2_launch</url>
+
+</package>
+
+

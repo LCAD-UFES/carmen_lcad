@@ -1,0 +1,4 @@
+- Os dados de treino sao, na verdade, advindos dos arquivos obtidos como abaixo (isso foi feito para nao ter que mudar o nome dos arquivos no svn):
+	- Os dados de results_pid-steering-20140324-6.txt foram conformados, swapados e concatenados (com e sem swap: ver arquivos conform_input_signal.c e swap_input_signal.c)
+	- cat DadosPID_bak/results_pid-steering-20140324-6.txt DadosPID_bak/results_pid-steering-20140324-15-2.txt > DadosPID/results_pid-steering-20140324-6.txt
+	- cat DadosPID_bak/results_pid-steering-20140324-6.txt ~/PID_ANALISYS/results_pid-steering-20140324-7.txt > DadosPID/results_pid-steering-20140324-6.txt

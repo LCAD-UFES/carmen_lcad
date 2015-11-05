@@ -1,0 +1,60 @@
+##########################################################
+AR = ar
+ARFLAGS = -rc
+CC = gcc
+CCFLAGS = -g -Wall -D DEBUG
+#CCFLAGS = -O4 -fopenmp
+
+MAE_LIB_DIR = $(MAEHOME)/lib
+MAE_INC_DIR = $(MAEHOME)/include
+
+MAE_LIB = -L$(MAE_LIB_DIR)
+MAE_INC	= -I$(MAE_INC_DIR) -I.
+
+INC_PATH =$(MAE_INC) `pkg-config --cflags opencv`
+LIB_PATH =$(MAE_LIB) `pkg-config --libs opencv` -L/usr/local/lib -L/usr/X11R6/lib
+
+INC_PATH+=-I$(CARMEN_HOME)/include
+LIB_PATH+=-L$(CARMEN_HOME)/lib
+
+LIB_FILES= -lnet_conn -lforms -lGA -lX11 -lglut -lGLU -lGL -lm -lfl -lrt -lz -lparam_interface -lipc -lglobal -lvisual_search_interface -lbumblebee_basic_interface -fopenmp
+
+##########################################################
+EXECUTABLE = visual_search
+OBJECTS = visual_search.o \
+	  visual_search_user_functions/visual_search_user_functions.o \
+	  visual_search_user_functions/visual_search_filters.o
+
+##########################################################
+.c.o:
+	@echo OK
+	$(CC) $(CCFLAGS) -c $(INC_PATH) -o $@ $*.c
+
+##########################################################
+all: build copy
+
+build: $(EXECUTABLE)
+	@echo OK
+
+$(EXECUTABLE): $(OBJECTS)
+	$(CC) $(OBJECTS) -o $(EXECUTABLE) $(INC_PATH) $(LIB_PATH) $(LIB_FILES)
+
+##########################################################
+
+visual_search_user_functions.o : ../visual_search_detect.h
+
+##########################################################
+
+visual_search.o:
+	$(MAEHOME)/bin/netcomp -o $* < $*.con
+	$(CC) $(CCFLAGS) -c $(MAE_INC) -o $@ $*.c
+
+##########################################################
+clean:
+	rm -f *.o *.so *.a *.out 
+	rm -f visual_search visual_search.c visual_search.h
+	rm -f visual_search_user_functions/*.o
+	rm -f visual_search ../../bin/visual_search
+
+copy:
+	cp visual_search ../../bin

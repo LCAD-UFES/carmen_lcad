@@ -1,0 +1,23 @@
+<launch>
+	<master auto="start"/>
+	
+	<!-- Run the map server (you can run it here or in another terminal) -->
+	<!-- <node name="map_server" pkg="map_server" type="map_server" args="path_to_map.yaml"/> -->
+	<include file="$(find beobot2_launch)/map_server.launch" />
+
+	<!--- Run AMCL -->
+	<include file="$(find beobot2_launch)/amcl.launch" />
+	
+	<node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+	      <remap from="/cmd_vel" to="/beobot2/cmd_vel" />
+	      <remap from="/odom" to="/beobot2/odom" />
+		<rosparam file="$(find beobot2_launch)/costmap_common_params.yaml" command="load" ns="global_costmap" />
+		<rosparam file="$(find beobot2_launch)/costmap_common_params.yaml" command="load" ns="local_costmap" />
+		<rosparam file="$(find beobot2_launch)/local_costmap_params.yaml" command="load" />
+		<rosparam file="$(find beobot2_launch)/global_costmap_params.yaml" command="load" />
+		<rosparam file="$(find beobot2_launch)/base_local_planner_params.yaml" command="load" />
+		<param name="base_global_planner" type="string" value="NavfnROS" />
+		<param name="conservative_reset_dist" type="double" value="3.0" />
+		<param name="controller_frequency" type="double" value="15.0" />
+	</node>
+</launch>

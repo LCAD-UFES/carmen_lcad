@@ -1,0 +1,1 @@
+slice2cpp --header-ext ice.H --source-ext ice.C -I../../.. *.ice

@@ -1,0 +1,228 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0089)http://openjaus.com/products/openjaus33/73-tutorial-managing-incoming-service-connections -->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-gb" lang="en-gb"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		  <!--<base href="http://openjaus.com/products/openjaus33/73-tutorial-managing-incoming-service-connections">--><base href=".">
+  
+  <meta name="robots" content="index, follow">
+  <meta name="keywords" content="openjaus, jaus, robotics, as4, jsidl, robot, software, sdk, joint architecture for unmanned systems, unmanned, systems, vehicles, implementation, windows, linux, C++, UGV, UAV, USV, UUV, AGV, AUV, UAS, open, source, FAQ, SAE, AS-4, JSS, JSIDL, JTS">
+  <meta name="title" content="Tutorial: Managing Incoming Service Connections">
+  <meta name="author" content="Tom Galluzzo">
+  <meta name="description" content="OpenJAUS.com is the home of a low-cost state-of-the-art toolkit based on the Joint Architecture for Unmanned Systems (JAUS) which is a messaging architecture for robotics. Our software is used by organizations worldwide to help meet hard technical challenges. Everything you need to learn, use and support your JAUS software development needs can be found on this website.">
+  <meta name="generator" content="Joomla! 1.5 - Open Source Content Management">
+  <title>Tutorial: Managing Incoming Service Connections</title>
+  <link href="http://openjaus.com/templates/openjaus/favicon.ico" rel="shortcut icon" type="image/x-icon">
+  <link rel="stylesheet" href="./Tutorial  Managing Incoming Service Connections_files/comments.css" type="text/css">
+  <link rel="stylesheet" href="./Tutorial  Managing Incoming Service Connections_files/bbcode.css" type="text/css">
+  <link rel="stylesheet" href="./Tutorial  Managing Incoming Service Connections_files/highlighter.css" type="text/css">
+  <style type="text/css">
+    <!--
+
+        a.flag {background-image:url('/modules/mod_gtranslate/tmpl/lang/16a.png');}
+        a.flag:hover {background-image:url('/modules/mod_gtranslate/tmpl/lang/16.png');}
+    
+    -->
+  </style>
+  <script type="text/javascript" async="" src="./Tutorial  Managing Incoming Service Connections_files/ga.js"></script><script type="text/javascript" src="./Tutorial  Managing Incoming Service Connections_files/mootools.js"></script>
+  <script type="text/javascript" src="./Tutorial  Managing Incoming Service Connections_files/caption.js"></script>
+  <script type="text/javascript" src="./Tutorial  Managing Incoming Service Connections_files/validate.js"></script>
+  <script type="text/javascript" src="./Tutorial  Managing Incoming Service Connections_files/comments.js"></script>
+  <script type="text/javascript" src="./Tutorial  Managing Incoming Service Connections_files/bbcode.js"></script>
+  <script type="text/javascript" src="./Tutorial  Managing Incoming Service Connections_files/highlighter.js"></script>
+  <script type="text/javascript" src="./Tutorial  Managing Incoming Service Connections_files/jquery-translate.js"></script>
+  <script type="text/javascript">
+	cOptions = {captcha:1};
+  </script>
+  <link type="text/css" rel="stylesheet" href="./Tutorial  Managing Incoming Service Connections_files/shCore.css">
+<link type="text/css" rel="stylesheet" href="./Tutorial  Managing Incoming Service Connections_files/shThemeDefault.css">
+<script type="text/javascript" src="./Tutorial  Managing Incoming Service Connections_files/shCore.js"></script>
+  <script type="text/javascript" src="./Tutorial  Managing Incoming Service Connections_files/shBrushOj.js"></script>
+
+		<meta name="verify-v1" content="dwFhApTviDugG0lDkfoKRvP6MoI9p+NLAywn0h8wWJI=">
+		<link rel="stylesheet" href="./Tutorial  Managing Incoming Service Connections_files/system.css" type="text/css">
+		<link rel="stylesheet" href="./Tutorial  Managing Incoming Service Connections_files/general.css" type="text/css">
+		<link rel="stylesheet" href="./Tutorial  Managing Incoming Service Connections_files/html.css" type="text/css">
+		<link rel="stylesheet" href="./Tutorial  Managing Incoming Service Connections_files/joomlaStyles.css" type="text/css">
+		<link rel="stylesheet" href="./Tutorial  Managing Incoming Service Connections_files/modules.css" type="text/css">
+		<link rel="stylesheet" href="./Tutorial  Managing Incoming Service Connections_files/style.css" type="text/css">
+		<link rel="stylesheet" href="./Tutorial  Managing Incoming Service Connections_files/menu.css" type="text/css">
+
+		<script language="javascript" type="text/javascript" src="./Tutorial  Managing Incoming Service Connections_files/suckerfish.js"></script>
+
+	<!--[if gte IE 7.0]>
+		<style type="text/css">
+			.clearfix {display: inline-block;}
+		</style>
+	<![endif]-->
+
+	</head>
+	
+	<body>
+
+		<div id="main">
+			<!-- BEGIN: HEADER SPACE-->
+			<div id="header">
+
+				<a href="http://openjaus.com/"> <img src="./Tutorial  Managing Incoming Service Connections_files/openjausLogo.png" border="0"> </a>
+			</div>
+			<!-- END: HEADER SPACE-->
+
+			<!-- BEGIN: MENUBAR SPACE-->
+			<div id="menubar">
+				<div id="leftmenu">
+					
+    <script type="text/javascript">
+    //<![CDATA[
+    if(jQuery.cookie('glang') && jQuery.cookie('glang') != 'en') jQuery(function($){$('body').translate('en', $.cookie('glang'), {not:'script'});});
+    //]]>
+    </script>
+
+<script type="text/javascript">
+//<![CDATA[
+    function doTranslate(lang_pair) {if(lang_pair.value)lang_pair=lang_pair.value;var lang=lang_pair.split('|')[1];if(lang=='pt')lang='pt-PT';jQuery.cookie('glang', lang);jQuery(function($){$('body').translate('en', lang, {not:'script'})});}
+//]]>
+</script>
+
+
+<select onchange="doTranslate(this);"><option value="">Select Language</option><option value="en|en" style="font-weight:bold;background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -0px;padding-left:18px;">English</option><option value="en|bg" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -32px;padding-left:18px;">Bulgarian</option><option value="en|zh-CN" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -48px;padding-left:18px;">Chinese (Simplified)</option><option value="en|zh-TW" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -64px;padding-left:18px;">Chinese (Traditional)</option><option value="en|hr" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -80px;padding-left:18px;">Croatian</option><option value="en|cs" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -96px;padding-left:18px;">Czech</option><option value="en|da" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -112px;padding-left:18px;">Danish</option><option value="en|nl" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -128px;padding-left:18px;">Dutch</option><option value="en|fi" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -144px;padding-left:18px;">Finnish</option><option value="en|fr" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -160px;padding-left:18px;">French</option><option value="en|de" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -176px;padding-left:18px;">German</option><option value="en|el" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -192px;padding-left:18px;">Greek</option><option value="en|hi" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -208px;padding-left:18px;">Hindi</option><option value="en|it" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -224px;padding-left:18px;">Italian</option><option value="en|ja" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -240px;padding-left:18px;">Japanese</option><option value="en|ko" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -256px;padding-left:18px;">Korean</option><option value="en|no" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -272px;padding-left:18px;">Norwegian</option><option value="en|pl" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -288px;padding-left:18px;">Polish</option><option value="en|pt" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -304px;padding-left:18px;">Portuguese</option><option value="en|ro" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -320px;padding-left:18px;">Romanian</option><option value="en|ru" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -336px;padding-left:18px;">Russian</option><option value="en|es" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -352px;padding-left:18px;">Spanish</option><option value="en|sv" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -368px;padding-left:18px;">Swedish</option><option value="en|ca" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -384px;padding-left:18px;">Catalan</option><option value="en|tl" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -400px;padding-left:18px;">Filipino</option><option value="en|iw" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -416px;padding-left:18px;">Hebrew</option><option value="en|id" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -432px;padding-left:18px;">Indonesian</option><option value="en|lv" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -448px;padding-left:18px;">Latvian</option><option value="en|lt" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -464px;padding-left:18px;">Lithuanian</option><option value="en|sr" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -480px;padding-left:18px;">Serbian</option><option value="en|sk" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -496px;padding-left:18px;">Slovak</option><option value="en|sl" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -512px;padding-left:18px;">Slovenian</option><option value="en|uk" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -528px;padding-left:18px;">Ukrainian</option><option value="en|vi" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -544px;padding-left:18px;">Vietnamese</option><option value="en|sq" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -560px;padding-left:18px;">Albanian</option><option value="en|et" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -576px;padding-left:18px;">Estonian</option><option value="en|gl" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -592px;padding-left:18px;">Galician</option><option value="en|hu" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -608px;padding-left:18px;">Hungarian</option><option value="en|mt" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -624px;padding-left:18px;">Maltese</option><option value="en|th" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -640px;padding-left:18px;">Thai</option><option value="en|tr" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -656px;padding-left:18px;">Turkish</option><option value="en|fa" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -672px;padding-left:18px;">Persian</option><option value="en|af" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -688px;padding-left:18px;">Afrikaans</option><option value="en|ms" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -704px;padding-left:18px;">Malay</option><option value="en|sw" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -720px;padding-left:18px;">Swahili</option><option value="en|ga" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -736px;padding-left:18px;">Irish</option><option value="en|cy" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -752px;padding-left:18px;">Welsh</option><option value="en|be" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -768px;padding-left:18px;">Belarusian</option><option value="en|is" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -784px;padding-left:18px;">Icelandic</option><option value="en|mk" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -800px;padding-left:18px;">Macedonian</option><option value="en|yi" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -816px;padding-left:18px;">Yiddish</option></select> 
+				</div>
+				<div id="mainmenu" class="clearfix">
+					<ul class="menu"><li id="current" class="active item1"><a href="http://d7c.openjaus.com/"><span>Home</span></a></li><li class="item129"><a href="http://openjaus.com/news"><span>News</span></a></li><li class="parent item55"><a href="http://openjaus.com/support"><span>Support</span></a><ul><li class="item130"><a href="http://openjaus.com/support/training"><span>Training &amp; Consulting</span></a></li><li class="item84"><a href="http://openjaus.com/support/forums"><span>Forums</span></a></li><li class="item119"><a href="http://openjaus.com/support/getting-started-with-openjaus"><span>Tutorials</span></a></li><li class="item109"><a href="http://openjaus.com/support/understanding-sae-jaus"><span>Understanding JAUS</span></a></li><li class="item116"><a href="http://openjaus.com/doc/index.html"><span>SDK Documentation</span></a></li><li class="item118"><a href="http://code.google.com/p/openjaus/issues/list"><span>Bug Tracker</span></a></li></ul></li><li class="parent item110"><a href="http://openjaus.com/products/openjaus4"><span>Products</span></a><ul><li class="item111"><a href="http://openjaus.com/products/openjaus4"><span>OpenJAUS 4.0</span></a></li><li class="item113"><a href="http://openjaus.com/products/openjaus33"><span>OpenJAUS 3.3</span></a></li><li class="item112"><a href="http://openjaus.com/products/servicestudio"><span>Service Studio</span></a></li></ul></li><li class="parent item57"><a href="http://openjaus.com/about-us"><span>About Us</span></a><ul><li class="item89"><a href="http://openjaus.com/about-us/contact"><span>Contact</span></a></li><li class="item122"><a href="http://openjaus.com/newsletter-signup"><span>Newsletter</span></a></li></ul></li></ul>
+				</div>
+			</div>
+			<!-- BEGIN: MENUBAR SPACE-->
+			
+			<!-- BEGIN: TOP BANNER SPACE-->
+						<!-- END: TOP BANNER SPACE DK-->
+
+			<!-- BEGIN: BOXES SPACE-->
+						<!-- END: BOXES SPACE-->
+
+			
+			
+			 
+
+			<div id="componentWrapper">
+				<table class="contentpaneopen">
+<tbody><tr>
+		<td class="contentheading" width="100%">
+					Tutorial: Managing Incoming Service Connections			</td>
+				
+		
+					</tr>
+</tbody></table>
+
+<table class="contentpaneopen">
+
+
+
+<tbody><tr>
+<td valign="top">
+<div class="content2">
+<p><!-- Xtypo - Extra Typografi For Joomla Template By http://www.templateplazza.com -->
+</p><p style="	background: url(http://openjaus.com/plugins/content/xtypo/icon/warning.gif) center no-repeat; 	background-color: #FBEEF1; background-position: 15px 50%; text-align: left;	padding: 5px 20px 5px 45px; color:#8E6A64; 	border-top: 2px solid #FEABB9 ; 	border-bottom: 2px solid #FEABB9;">
+This tutorial is for OpenJAUS 3.3. OpenJAUS 3.3 is no longer in development or maintainence by the OpenJAUS team. This tutorial is provided for reference and support of legacy systems only. For new development please use OpenJAUS 4.0</p><!-- End Xtypo --><p></p>
+<p>Service connections in JAUS are a publish-subscribe mechanism for exchanging data between components (See the JAUS reference architecture for a full description of service connections). This tutorial describes how to create a service connection to receive data from another component. In OpenJAUS, these are referred to as incoming service connections, because the messages are flowing into the subscribing component.<br> <br> Incoming service connections are easy to manage because they only require the use of two functions. One function establishes the service connection and the other terminates it. Often the component requires the incoming connection in order to operate and usually never needs to explicitly terminate the connection. In this case only the establish function is needed. The component framework automatically terminates any incoming connections upon destruction of the OjCmpt data structure. <br> <br> The <span style="font-family: Courier New;">ojCmptEstablishSc()</span> function takes several inputs in order to configure the incoming service connection. After the function is called and the component is running, the component will automatically attempt to establish the service connection. Once the connection is made, the received messages can then be processed by the component via its registered callback functions. This process is the same for both service connection and non-service connection messages (See <a href="http://openjaus.com/sending-a-recieving-jaus-messages">Sending &amp; Recieving Messages</a> for details). The <span style="font-family: Courier New;">ojCmptEstablishSc()</span> function returns an int reference handle to the service connection. This value can then be sent to the terminate function in order to discontinue that specific service connection. The example below shows how the <span style="font-family: Courier New;">ojCmptEstablishSc()</span> function is used.</p>
+<p><span style="font-family: Courier New;"><script type="text/javascript">
+	SyntaxHighlighter.config.clipboardSwf = "http://openjaus.com/plugins/content/codecitation/scripts/clipboard.swf";
+	SyntaxHighlighter.defaults["auto-links"] = true;
+	SyntaxHighlighter.defaults["collapse"] = false;
+	SyntaxHighlighter.defaults["gutter"] = true;
+	SyntaxHighlighter.defaults["smart-tabs"] = true;
+	SyntaxHighlighter.defaults["tab-size"] = 4;
+	SyntaxHighlighter.defaults["toolbar"] = true;
+	SyntaxHighlighter.defaults["wrap-lines"] = true;	
+	SyntaxHighlighter.all();
+</script></span></p><div style="overflow: hidden; display: block; height: auto; width: inherit;"><div id="highlighter_165347" class="syntaxhighlighter "><div class="bar"><div class="toolbar"><a href="http://openjaus.com/products/openjaus33/73-tutorial-managing-incoming-service-connections#viewSource" title="view source" style="width: 16px; height: 16px; " class="item viewSource">view source</a><div class="item copyToClipboard"><embed width="16" height="16" id="highlighter_165347_clipboard" type="application/x-shockwave-flash" title="copy to clipboard" allowscriptaccess="always" wmode="transparent" flashvars="highlighterId=highlighter_165347" menu="false" src="http://openjaus.com/plugins/content/codecitation/scripts/clipboard.swf"></div><a href="http://openjaus.com/products/openjaus33/73-tutorial-managing-incoming-service-connections#printSource" title="print" style="width: 16px; height: 16px; " class="item printSource">print</a><a href="http://openjaus.com/products/openjaus33/73-tutorial-managing-incoming-service-connections#about" title="?" style="width: 16px; height: 16px; " class="item about">?</a></div></div><div class="lines"><div class="line alt1"><code class="number">1.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="plain">myIncSC = </code><code class="functions bold">ojCmptEstablishSc</code><code class="plain">( </code></span></span></div><div class="line alt2"><code class="number">2.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="plain">myCmpt,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </code><code class="comments">// Reference to the component's OjCmpt data structure</code></span></span></div><div class="line alt1"><code class="number">3.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="preprocessor bold">JAUS_REPORT_GLOBAL_POSE</code><code class="plain">,&nbsp; </code><code class="comments">// Command code of the message being requested</code></span></span></div><div class="line alt2"><code class="number">4.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="plain">0xFF,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </code><code class="comments">// Requested presence vector of the desired message</code></span></span></div><div class="line alt1"><code class="number">5.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="plain">sourceAddress,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </code><code class="comments">// JausAddress of the desired message source component</code></span></span></div><div class="line alt2"><code class="number">6.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="plain">5.0,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </code><code class="comments">// Repeat rate (Hz) at which the message is requested</code></span></span></div><div class="line alt1"><code class="number">7.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="plain">1.0,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </code><code class="comments">// Maximum allowed time (sec) between receiving these messages</code></span></span></div><div class="line alt2"><code class="number">8.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="plain">1);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </code><code class="comments">// Size of the FIFO queue to store the messages in</code></span></span></div></div></div></div><p></p>
+<p>If a non-zero subsystemId is specified in the source address field, then the component assumes the source address is complete and it attempts to request the service connection from that exact address. Otherwise, the component performs a system lookup for the component location based on componentId in the source address. The lookup assumes that the desired source is within the same subsystem as the requesting component. If an exact address of a component residing on another subsystem needs to be obtained then the <span style="font-family: Courier New;">ojCmptLookupAddress()</span> function can be used.</p>
+<p>The queue size specified in the establish function call can be a positive integer or zero. A negative value will cause an error. If the value is zero then the maximum queue size is not limited.</p>
+<p>In order to explicitly terminate an established service connection, the <span style="font-family: Courier New;">ojCmptTerminateSc()</span> function is used. This function simply takes the service connection descriptor value that was returned by the <span style="font-family: Courier New;">ojCmptEstablishSc() </span>function. The example below shows how it is called.</p>
+<p><span style="font-family: Courier New;"></span></p><div style="overflow: hidden; display: block; height: auto; width: inherit;"><div id="highlighter_734379" class="syntaxhighlighter "><div class="bar"><div class="toolbar"><a href="http://openjaus.com/products/openjaus33/73-tutorial-managing-incoming-service-connections#viewSource" title="view source" style="width: 16px; height: 16px; " class="item viewSource">view source</a><div class="item copyToClipboard"><embed width="16" height="16" id="highlighter_734379_clipboard" type="application/x-shockwave-flash" title="copy to clipboard" allowscriptaccess="always" wmode="transparent" flashvars="highlighterId=highlighter_734379" menu="false" src="http://openjaus.com/plugins/content/codecitation/scripts/clipboard.swf"></div><a href="http://openjaus.com/products/openjaus33/73-tutorial-managing-incoming-service-connections#printSource" title="print" style="width: 16px; height: 16px; " class="item printSource">print</a><a href="http://openjaus.com/products/openjaus33/73-tutorial-managing-incoming-service-connections#about" title="?" style="width: 16px; height: 16px; " class="item about">?</a></div></div><div class="lines"><div class="line alt1"><code class="number">1.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="comments">// Terminate the service connection</code></span></span></div><div class="line alt2"><code class="number">2.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="functions bold">ojCmptTerminateSc</code><code class="plain">(myCmpt, myIncSc);</code></span></span></div></div></div></div><p></p>
+</div>
+
+</td>
+</tr>
+
+</tbody></table>
+<span class="article_separator">&nbsp;</span>
+<div class="sharing">
+
+	<ul class="sharelist">
+		<li>
+			<a href="http://del.icio.us/post?url=http%3A%2F%2Fopenjaus.com%2Fcreate-a-service-connection&title=Tutorial%3A+Managing+Incoming+Service+Connections" target="_blank" title="Share this page with del.icio.us">
+				<img src="./Tutorial  Managing Incoming Service Connections_files/delicious.gif" alt="del.icio.us">
+</a>
+		</li>
+		<li>
+			<a href="http://www.google.com/bookmarks/mark?op=edit&bkmk=http%3A%2F%2Fopenjaus.com%2Fcreate-a-service-connection&title=Tutorial%3A+Managing+Incoming+Service+Connections" target="_blank" title="Share this page with Google Bookmarks">
+				<img src="./Tutorial  Managing Incoming Service Connections_files/google_bmarks.gif" alt="Google Bookmarks">
+</a>
+		</li>
+		<li>
+			<a href="http://blinklist.com/index.php?Action=Blink/addblink.php&Url=http%3A%2F%2Fopenjaus.com%2Fcreate-a-service-connection&Title=Tutorial%3A+Managing+Incoming+Service+Connections" target="_blank" title="Share this page with BlinkList">
+				<img src="./Tutorial  Managing Incoming Service Connections_files/blinklist.gif" alt="BlinkList">
+</a>
+		</li>
+		<li>
+			<a href="http://www.facebook.com/share.php?u=http%3A%2F%2Fopenjaus.com%2Fcreate-a-service-connection" target="_blank" title="Share this page with Facebook">
+				<img src="./Tutorial  Managing Incoming Service Connections_files/facebook.gif" alt="Facebook">
+</a>
+		</li>
+		<li>
+			<a href="http://digg.com/submit?phase=2&url=http%3A%2F%2Fopenjaus.com%2Fcreate-a-service-connection&title=Tutorial%3A+Managing+Incoming+Service+Connections" target="_blank" title="Share this page with Digg">
+				<img src="./Tutorial  Managing Incoming Service Connections_files/digg.gif" alt="Digg">
+</a>
+		</li>
+		<li>
+			<a href="http://www.stumbleupon.com/submit?url=http%3A%2F%2Fopenjaus.com%2Fcreate-a-service-connection&title=Tutorial%3A+Managing+Incoming+Service+Connections" target="_blank" title="Share this page with Stumbleupon">
+				<img src="./Tutorial  Managing Incoming Service Connections_files/stumbleupon.gif" alt="Stumbleupon">
+</a>
+		</li>
+		<li>
+			<a href="http://reddit.com/submit?url=http%3A%2F%2Fopenjaus.com%2Fcreate-a-service-connection&title=Tutorial%3A+Managing+Incoming+Service+Connections" target="_blank" title="Share this page with reddit">
+				<img src="./Tutorial  Managing Incoming Service Connections_files/reddit.gif" alt="reddit">
+</a>
+		</li>
+	</ul>
+    <div class="email">
+	    <a href="http://openjaus.com/component/mailto/?tmpl=component&link=aHR0cDovL29wZW5qYXVzLmNvbS9wcm9kdWN0cy9vcGVuamF1czMzLzczLXR1dG9yaWFsLW1hbmFnaW5nLWluY29taW5nLXNlcnZpY2UtY29ubmVjdGlvbnM%3D" title="Email" onclick="window.open(this.href,&#39;win2&#39;,&#39;width=400,height=300,menubar=yes,resizable=yes&#39;); return false;" rel="nofollow">Email this page to a friend.</a>    </div>
+</div>
+
+	<div id="comments">
+		<h3 id="comments-num">
+<span class="numcomments">0</span> Comments		</h3>
+		<ol id="commentlist">
+					</ol>
+	</div>
+
+	<h3 id="leave-response">
+		<a href="http://openjaus.com/create-a-service-connection?scf=1" rel="nofollow {&#39;base&#39;:&#39;http://openjaus.com/&#39;,&#39;thread_id&#39;:&#39;8&#39;}">Add Comment</a>
+	</h3>
+	<div id="respond-container"></div> 
+			</div>
+
+			<div id="footerWrapper">
+				<div>Copyright © 2012 OpenJAUS. All Rights Reserved.</div>
+<div><a href="http://www.joomla.org/">Joomla!</a> is Free Software released under the <a href="http://www.gnu.org/licenses/gpl-2.0.html">GNU/GPL License.</a></div> 
+			</div>
+
+		</div>
+
+		<!-- BEGIN: GOOGLE TRACKING -->
+
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-25105323-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+		<!-- END: GOOGLE TRACKING -->
+
+	
+</body></html>

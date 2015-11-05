@@ -1,0 +1,4 @@
+README for example1
+
+example1 loads three stereo images from a PPM file and performs stereo 
+processing to create a disparity image which is then output to depth.pgm.

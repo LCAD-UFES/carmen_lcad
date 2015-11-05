@@ -1,0 +1,27 @@
+/** @page binary__joystick
+
+<h2>Joystick</h2>
+
+@section wingman_main Wingman_control
+
+Controller for the cool Logitech Wireless Wingman joystick. It makes
+life much easier when navigating a robot manually, for example, to log
+data.
+
+Wingman_control has two modes:
+
+standard mode: uses the small joysticks to translational speed and
+rotational speed of the robot.
+
+throttle control mode: uses the throttle control to set the
+translational velocity. That mode is great for long datasets and if you
+which to have more or less constant translational speed. The
+rotational velocity is controlled by one of the small joysticks. 
+
+To change between normal mode and throttle control mode simply press
+one of the big four buttons.
+
+<h3>Usage: ./wingman_control</h3>
+
+
+**/

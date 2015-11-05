@@ -1,0 +1,597 @@
+05/06/2014
+
+- Tem que mudar os process ini para usarem o novo arquivo de anotacoes
+- O localizer piorou um pouco
+- A sinalizacao de quebra molas, cancelas, etc., quando tem dois deste objetos um perto um do outro, nao se comportam adequadamente.
+
+
+02/06/2014
+
+- O rrt_planner move o volante segundo sua velocidade maxima ate atingir o angulo alvo e depois para neste angulo.
+	- O rrt_path_follower deve fazer o mesmo, com mais intervalos discretos entre o angulo inicial e final.
+	- Alternativamente, deveriamos usar uma celeracao do volante, ao inves de velocidade, em ambos os modulos.
+
+
+01/06/2014
+
+- O obstacle_avoider tem que receber o cost_map e nao o grid map
+
+
+29/05/2014
+
+- Quando planeja para tras sai de posicoes estranhas: examinar em Ackerman::search_command_improved2() - OK
+- Quando anda de reh o path_follower e o obstacle avoider apontam para frente, mesmo o carro andando para tras. Verificar o grafico do pid
+- A funcao RRT_Lane::random_lane_pose(double radius) esta bugada (confusao de pose no mapa com pose no mundo) - OK
+- Eh o eixo da frente que deve servir de guia na lane - OK
+	- A lane deve ser construida usando o eixo da frente (ver problema no estacionamento) - OK
+	- Para nao confundir a lane da ida com a da volta, tem que checar o angulo do carro/goal/posicao no path contra o angulo do rddf - OK
+	  (ver RRT_Lane::create_sub_lane_points_vector() em rrt_lane.cpp) - OK
+	  Posso publicar uma mensagem de particles para ver onde estao estes pontos (de create_sub_lane_points_vector())...
+- Quando o mapa de lane possui resolucao maior, ele nao funciona bem com outro mapa superimposed ou vice-versa
+
+
+25/05/2014
+
+- Alterar o nome dos arquivos likelihood_ackerman_map.[ch] para localize_ackerman_likelihood_map.[ch] - OK (26/05/2014)
+	- Tratar o reflexo da mudancca em todo o codigo - OK
+	- Ver se eh necessario criar a biblioteca localize_ackerman_likelihood_map.a ou se podemos ficar com a localize_ackerman_core.a - OK
+- Seria importante o modulo ford_escape_hybrid detectar que o freio foi acionado pelo motorista de seguranca e, neste caso, desligar os integradores
+- Seria importante o modulo ford_escape_hybrid detectar que a IARA foi colocada em manual (botao amarelo) e, neste caso, desligar os integradores
+- O go e o stop por software nao estao sendo tratados pelo modulo ford_escape_hybrid (precisa?)
+- Incluir melhorias na predicao feitas no localize_ackerman (erros laterais) na fused_odometry
+
+
+23/05/2014
+
+- Aumentar o custo de virar o volante rapido com a velocidade (quanto mais rapido mais caro virar o volante rapido)
+- Diminuir o custo de manter o volante na posicao central
+
+
+20/05/2014
+
+- Incluir o atraso da velocidade e do phi (mais importante o do phi) no modelo do carro usado pelo rrt
+- Incluir o erro da pose no modelo do carro usado no rrt (rodar varias vezes com poses diferentes??)
+
+
+17/05/2014
+
+- Testar se a variavel g_XGV_component_status do module ford_escape_hybrid esta recebendo os valores corretos da IARA (nao esta ~20/05/2014)
+	- Mudar o PID para, quando o carro nao estiver em modo autonomo, desligar os integradores
+	- Quando o carro estiver em controle manual e qualquer porta estiver aberta, parar (nao tem geito segundo o manual da Torc ~20/05/2014)
+	- O estado da porta parece apenas estar disponivel na mensagem de erro
+	
+
+15/05/2014
+
+- Mudar o timestamp do localizer para ser igual ao do sensor (velodyne, laser, etc.)
+	- Isso alinhara a global_pos mais precisamente com o mundo
+- Mudar o timestamp do rrt_planner para ser igual aaquele do momento da predicao feita em cima da global_pos
+	- Isso alinhara o inicio do plano com um ponto do mundo
+- Mudar o timestamp do path_follower para ser igual ao do rrt_planner
+	- As poses da trajetoria gerada pelo rrt_planner devem estar contidas no movimento gerado pelo path_follower
+- Mudar o timestamp do obstacle avoider para ser igual ao do rrt_planner
+	- As poses da trajetoria gerada pelo rrt_planner devem estar contidas no movimento gerado pelo obstacle_avoider
+- Criar uma mensagem com o vetor de (v, phi, t) sendo obedecido pelo carro (simulado ou real) no instante, M[], com o timestamp do rrt_planner
+	- Esta mensagem sera recebida pelo rrt_planner e sera usada para determinar qual o v e phi do inicio de um novo plano
+- No rrt_planner, determinar o v e phi inicial de um novo plano como sendo igual a:
+	- M[carmen_get_time() - M[].timestamp].v e M[carmen_get_time() - M[].timestamp].phi
+		- Isso tornara o v e phi inicial de um novo plano aproximadamente igual ao v e phi que estarao sendo enviados
+		  para o carro quando este plano chegar ao carro
+		  
+
+06/05/2014
+
+- Gerar graficos para comparar a velocidade atual lida da IARA com a media das velocidades das rodas trazeiras - OK (09/05/2014)
+	- Pode ser que a media da velocidade das rodaas trazeiras tenha menos ruido e/ou nao mostre velocidades
+	  com sinal invertido quando de trasicoes de movimentos para frente-traz.
+- Verificar o timestamp da velocidade da IARA contra o do angulo do volante para ver qual chega antes - OK (09/05/2014)
+	- O que chega depois ee que deve chamar as funcoes de controle (a ideia ee reduzir as latencias: priorizar 
+	  o angulo do volante) - OK (09/05/2014)
+- Considerar o trecho de cada celula do mapa coberto pelo raio quando de ray tracing
+	- Celulas cortadas por mais de um raio devem receber apenas uma fracao de sua influencia
+	- Celulas distantes da origem do raio e vizinhas a celulas cortadas pelo raio devem receber sua
+	  influencia conforme e modelo de cone
+- Estudar value iteration no contexto do controle do carro (MDP, POMDP, etc)
+	- Uma acao de controle no instante t pode apontar para a direcao errada, mas ter um valor positivo  
+	  no longo prazo (fazer parte de uma trajetoria positiva de acoes de controle) - OK (09/05/2014)
+	- Usar redes neurais para aprender o valor das acoes, dado o estado atual, considerando as trajetorias
+	  de controle ideais
+- Incluir no grid_mapping facilidades de gravar o mapa e fazer merge com mapas offline
+
+
+24/04/2014
+
+- Identificar o meio da pista usando visão computacional - Thiago, Lauro (30/05/2014)
+- Pensar como não identificar o quebra-molas como obstáculo - Todos (02/05/2014) - pensado e resolvido (24/05/2014)
+- Implementar solução para evitar que quebra-molas sejam obstáculos - (24/05/2014)
+- Colocar no rddf associado ao mapa e log de trabalho a posição dos quebra-molas, cancelas e limites de velocidade - Filipe (02/05/2014)
+- Modificar o behaviour_selector para considerar as anotações de quebra molas e cancelas e mandar goals apropriados para os navegadores - Filipe (16/05/2014) - OK em (25/05/2014)
+- Modificar o path_follower e o rrt_planner para: - Romulo (16/05/2014)
+	- Considerar as velocidades enviadas pelo behaviour_selector - OK (16/05/2014)
+	- Monitorar continuamente a trajetória da IARA, mas mandar trajetórias compridas (15m) e intervir apenas se a IARA se afastar mais que um threshold (parâmetros: distancia, yaw e tempo) - solucacao melhor em (25/05/2014)
+	- As renovações de trajetória seriam enviadas na metade da trajetória (7,5m) ou quando ultrapassado o threshold - solucacao melhor em (25/05/2014)
+	- As renovações sempre começam do v,phi,t do momento da transição, podendo ser diferentes daí por diante (o path_follower lê a pose da IARA e o v e phi da trajetória enviada) - solucacao melhor em (25/05/2014)
+- Fazer um simulador da IARA - Alberto (09/05/2014) - OK (08/05/2014)
+- Documentar a rede da IARA - Tiago (ate 02/05/2014)
+- Atualizar a arquitetura de software da IARA no yEd - Alberto (09/05/2014)
+- Colocar o modelo do Ford Escape Hybrid no viewer_3D - Lauro (02/05/2014)
+- Fazer o merge do mapa atual com o do estacionamento - Filipe e Alberto (02/05/2014) - OK (29/04/2014)
+- A troca de mapas no navigator_gui2 esta estranha. Parece que a pose fica deslocada de 50m e depois passa a ficar certa.
+	- Verificar - Lauro (09/05/2014)
+- Verificar porque a IARA passou por cima do quebra-molas - Alberto (09/05/2014) - OK (19/05/2014 - a IARA apaga o quebra molas bem a frente e as vezes passa (se apagar o suficiente) as vezes nao)
+- Verificar se vale a pena dar uma polida e escrever um readme.txt para o editor de rddf do navigator_gui2 - Mariella (09/05/2014)
+- Resolver o problema de proccontrol morrer por causa de printfs - Mariella (16/05/2014)
+- Consertar a aceleracao do monitor de volante e freio - Avelino (02/05/2014)
+- Volta da UFES - iniciar e terminar em frente ao Teatro
+
+
+23/04/2014
+
+- Remover bug que causa nan no mapa de likelihood quando nao ha offline_map no local - Lucas (09/05/2014)
+- Resolver o problema de ausencia de robo na interface quando troca para o mapa de likelihood - Lauro (16/05/2014)
+- Examinar mais em profundidade porque o mapa de remission esta com pouca faixa dinâmica - Alberto (09/05/2014) - OK (05/2014)
+
+
+05/09/2013
+
+- Usar o GPS para estimar o yaw a partir de alguma velocidade e o xsens apenas abaixo dela. Tem que fazer a transferencia de forma suave, contudo... - OK
+
+- O viewer_3D nao esta tratando reinicio e avancco de log feitos via playback control corretamente.
+	- Consertar - Lucas C. OK
+	
+	
+04/09/2013
+
+- Fazer mapa de 10cm (e eventualmente 15cm) no estacionamento e na volta-da-ufes para testar - OK
+	- Examinar se nao vale a pena rodar o playback de vagar - NA
+	- Examinar a possibilidade de fazer um FastSLAM com o mapper e localizer - NA
+
+- Checar se o mapper esta marcando regioes de nao obstaculo corretamente (apagando obstaculos equivocadamente) - OK
+
+- Checar se nao ee melhor o localize_ackerman smooth o mapa antes da correção - OK
+
+- Pedir ao Cayo para:
+	- Consertar a aceleracao do monitor que ele fez
+	- Permitir a escolha de mais opccoes (globalpos) no navigator_gui2 - OK
+	- Verificar condicoes estranhas de estado e casos de travamento - OK
+	 
+- Verificar por que o carro fica se movendo (treme) logo que inicializa (enquanto nao anda). OK
+
+- O driver de gps esta acumulando mensagens. - OK
+	- Aparentemente ee a comunicacao com a ttyUSB que esta buferizando. 
+	- Tem que estudar o driver on-line...
+	- Estudei e modifiquei o driver -> testar.
+
+- Verificar se a odometria (velocity e phi) esta com muito ruido. Inserir filtro no codigo conforme necessario. - OK
+	- Estudar o feedback dos PIDs para ver se os bias e multipliers estao OK (v e phi)
+	- Ver se precisa de filtro no feedback
+
+- Revisar o codigo do localizer (a predicao esta esquisita; remover constantes ou coloca-las no carmen ini) - OK
+
+- Rever todo o codigo onde sao usados timers para clocar nos handlers os parametros corretos conforme o tipo da funcao handler de timers:
+	void (*TIMER_HANDLER_TYPE)(void *clientData, unsigned long currentTime, unsigned long scheduledTime);
+	Para evitar warnings devido a parametros nao usados colocar unused. Exemplo:
+	static void publish_velocity_message(void *clientData __attribute__ ((unused)), unsigned long currentTime __attribute__ ((unused)), unsigned long scheduledTime __attribute__ ((unused)))
+	{
+	}
+
+
+03/09/2013
+
+- Churrasco do LCAD - 08/09/2013 - OK
+
+- Data da Volta-da-UFES - 20/10/2013
+
+- Fazer filtros de odomentria - Alberto (13/09/2013) - OK
+
+- Modificar os navegadores para que eles respeitem os limites de velocidade do rddf (reduzir nos quebra molas e curvas e parar na cancela) - R?mulo e Michael (20/09/2013)
+
+- Verificar se o localize_ackerman est? ponderando as part?culas direito - Lucas (06/09/2013) - OK
+
+- Modificar o viewer_3D para permitir girar a roda do carro (?ngulo phi) - Lucas C. (13/09/2013)
+
+- Modificar o viewer_3D para permitir anota??es de pontos de redu??o de velocidade e parada - Lucas C. (13/09/2013)
+
+- Consertar o bug (segmentation fault) do navigator_gui2 - Lauro (06/09/2013) - OK
+
+- Fazer o mapa de log likelihood funcionar na interface nova - Lauro (06/09/2013) - OK
+
+- Colocar no carmen ini a escolha do tipo da correcao do localize - Lucas (06/09/2013) - OK
+
+- Volta da UFES - entrar e sair do anel via estacionamento da ambiental
+
+- Fazer mapa via GraphSLAM - Filipe, Lucas e Alberto (13/09/2013) - OK
+
+- Apagar a parte diferencial do nosso carmen - Avelino (at? 06/09/2013) - OK
+
+- Colocar para funcionar a estrutura nov?ssima - Avelino (at? 13/09/2013) - OK
+	- Mudar o nome do m?dulo car_ackerman para base_ackerman
+	- Mudar as mensagens do m?dulo ford_escape_hybrid para ficar de acordo com o nome do m?dulo
+	
+- Colocar para funcionar a estrutura nova - Alberto (at? 06/09/2013) - OK
+
+- Estrutura nov?ssima - OK
+	- ford_escape_hybrid -> base_ackerman -> fused_odometry -> localize_ackerman
+	
+- Estrutura nova - OK
+	- ford_escape_hybrid -> car_ackerman -> fused_odometry -> localize_ackerman
+	
+- Estrutura antiga - OK
+	- lib_pionneer -> base -> robot -> localize
+
+
+30/08/2013
+- Alterar fused_odometry para nao andar com o GPS quando o carro estiver parado - OK
+
+- Mudar os modulos do carro para que os bias do volante e da velocidade fiquem no carmen.ini e os dados de log sejam sem bias. - OK
+	- Para isso os bias tem que ser adicionados quando do uso do v e phi do carro. Isto ee, tem que fazer uma funcao de biblioteca ou algo paracido para ler o v e phi. - OK
+
+- Criar um mecanismo para anotar o bias do campo magnetico da Terra no rddf - Filipe (at? 06/09/2013)
+	- A fused_odometry tem que obter o bias do rddf na localizacao global 
+
+15/04/2013
+
+- Ida ao Projac
+	- Quem vai: Alberto, Lucas, Lauro, Romulo, Tiago, Filipe, Michael? - OK
+	- Vamos fazer mapa via GraphSLAM - Lucas, Lauro e Avelino
+	- Parada suave - Romulo - OK
+	- Obstacle avoidance - Alberto, Filipe - OK
+	- Motion Planning DARPA 2007+ - Alberto, Michael, Filipe
+	- Adaptar o modo on-line para inicializar sem gps (modo manual) - Romulo - OK
+	- Mapa de 10cm x 10cm de resolucao - OK
+		- Produzir o mapa da volta da UFES de alta resolucao - OK
+			- Fazer log hoje - OK
+		- Testar todos os modulos com o mapa de alta resolucao - OK
+		- Gerar mapa de likelihood no map_server - OK
+	
+- Quem criou a funcao create_stretched_likelihood_map()?
+- Colocar no carmen ini a escolha do tipo da correcao do localize
+- Mudar o nome do fator que restringe o alcance do velodyne para tras para algo mais intuitivo - OK
+- Testar o mapeamento com range_max de 20m - OK
+
+
+14/04/2013
+
+- A fused_odometry esta com erros sistematicos de yaw que mudam conforme o ponto da volta da ufes - OK
+	- Precisamos de ter uma variavel de bias para resolver este problema - OK
+		- Ela pode ser um movimento browniano que ajusta um delta theta somado ao yaw do xsens - OK
+		- Este delta theta pode ser corrigido pelo movimento do carro, que oferece um theta correto (de um ponto do gps para outro) - OK (mas nao diretamente)
+	- Alternativamente, podemos usar o theta correto (de um ponto do gps para outro) a partir de uma certa velocidade - (Alberto: nao foi usada esta ideia; parece boa)
+	- Uma destas duas alternativas pode ser implementada no gps_xyz - (Alberto: nao foi usada esta ideia; parece ruim...)
+	
+13/04/2013
+
+- Usar a velocidade do pitch para predizer o pitch - (Alberto: nao funcionou bem...)
+- O mapa de likelihood deve ser mais suave - OK
+- O map_server tem que calcular o mapa de likelihood e publica-lo - OK
+- A predicao do localize sera a fused_odometry - OK
+- A funcao de predicao do modelo ackerman do localize tem que ser a funcao de predicao do fused_odometry - (isso nao deve funcionar bem por causa de falhas de gps - foi testado e n?o ficou bom...)
+
+
+05/04/2013
+
+- Apagar o carmen do carro e baixar o branch da Gazeta e testar no carro - (amanha) Tiago - OK
+
+- Contra ataque na Internet - (Urgente) Michael, Cayo, Lauro - OK.
+
+- Ee urgente o curso do Lauro sobre os padroes de carmen - (2013-04-16) Lauro
+
+- Tem que padronizar o codigo no que diz respeito a definicao de mensagens - Lauro vai propor no curso
+
+- navigator_gui2 e navigator_gui
+	- Todos devem abandonar o navigator_gui e passar a usar o navigator_gui2 - (agora)
+	
+- slam para a volta da UFES
+	- Lauro, Lucas e Avelino vao implementar o GraphSLAM offline ou equivalente melhor - (2013-04-15)
+	
+- map_server, mapper e outros usuarios do offlinemap
+	- Nao deve trocar de mapa em menos de 0.5 segundos - (2013-04-11) Romulo OK
+	- So devem trocar de mapa quando o map_server mudar de mapa - (2013-04-11) Romulo OK
+	- Testar mapeamento com resolucao 10cm e 15cm - OK
+	- Fazer novo log e mapa da volta da ufes de 10cm; nos dois sentidos - (2013-04-11) Todos - OK
+	- Avanccar com a ediccao do RDDF - (2013-04-11) Filipe
+		- Fazer dois RDDFs e dois mapas bem documentados (com marcaccoes de velocidades e de intervenccao humana)
+		  para que seja possivel testar um contra o outro 
+	- Usar cameras laterais para reduzir pontos cegos - (2013-04-15) Lucas
+	- Passar a usar o map instantaneo - (2013-04-15) Lucas - OK
+	- Acabar com o tipo probabilistic map e com a alglib - (2013-04-15) Lucas, Avelino (no mapper esta OK)
+
+- globalpos
+	- Estudar como modifica-la para funcionar o que estamos usando e o legado
+
+- Novo navegador
+	- Precisamos implementar algo do nivel da DARPA 2007+
+	
+- Obstaculos moveis
+	- Precisamos implementar algo do nivel da DARPA 2007+
+	
+- motion-planner e obstacle_avoider
+	- Fazer biblioteca de simulaccao do carro - (2013-04-15) Alberto, Michael, Romulo
+	- Mudar o simulador do carro usado pelo obstacle_avoider e o motion_planner para o simulador da biblioteca - (2013-04-15) Alberto, Michael, Romulo
+	- Interpolar o caminho e usa-lo para determinar phi
+	- Ver como o Thrun calculou a velocidade na DARPA 2005
+	- Arrumar a leitura de parametros: esta lendo os mesmos parametros (alguns) em duas funcoes diferentes - (2013-04-11) Avelino
+
+- Parametros
+	- Trocar decelaration por deceleration onde aparece errado - (2013-04-11) Avelino - Feito (2013-04-12)
+	- Unificar os parametros: - (2013-04-11) Avelino
+		- robot_acceleration, robot_deceleration, robot_maximum_acceleration_forward... - Feito (2013-04-12)
+		- robot_maximum_steering_command_curvature, robot_maximum_capable_curvature, robot_max_steering_angle
+
+- car_ackerman
+	- Enviar comandos para o carro de ligar a seta e os far?is - (2013-04-11) Michael
+	- Quando o carro n?o receber novos comandos, mandar comandos de velocidade 0 - (2013-04-11) Romulo
+
+- Velodyne
+	- Providenciar a manutencao - (2013-10-10) Alberto - OK
+	
+- Carro
+	- Colocar mais duas maquinas, o switch e a camera lateral faltante - (2013-04-11) Lucas, Tiago
+	- Instalar e testar NTP entre as maquinas - (2013-04-11) Tiago
+	- Fazer e instalar o hack dos computadores
+	- Fazer e instalar novo hack do teto
+	- Instalar as demais cameras
+
+
+04/02/2013
+- fused_odometry e localize - OK
+	- Romulo e Alberto v?o mudar todo o c?digo para receber a global_pos ao inves da fused_odometry
+		- Os localize receberao agora a fused odometry e dados brutos de laser ou dados tratados pelo
+		  mapper se estes n?o estiverem contaminados pela fused_odometry
+		- Novas vers?es dos localize tem que ser feitas de modo que estes atendam ?s quest?es acima
+		
+- mapper
+	- Lucas vai modifica-lo para que ele funcione a partir da global_pos - OK
+	
+- slam para a volta da UFES
+	- Lauro vai implementar o GraphSLAM offline ou equivalente melhor. Alberto vai acompanhar
+	
+- parametros
+	- Avelino vai implementar as mudanccas nos carmen-inis e nos c?digos de acordo com o decidido em 14/01/2013 (abaixo)
+	
+- motion_planner
+	- Michael vai mudar o c?digo para que passe a contar com as velocidades recebidas e trate a r?.
+	
+
+22/01/2013
+- Navigator e Navigator_ackerman
+	- Os objetivos que s?o colocados no navigator_gui devem ser mantidos em uma lista dentro dos navigators e n?o no proprio navigator_gui. 
+	
+- localize (e localize_ackerman)
+	- No localize o filter ee destruido na funcao offline_map_update_handler(), mas nao no localize_ackerman. Examinar.
+	- Rodar o valgrind e resolver problema no ipc (ver sa?da do valgrind)
+
+- Varios modulos
+	- Nao usar mais a funcao carmen_map_subscribe_gridmap_update_message() e seu mapa associado.
+	- A funcao carmen_map_destroy(), que fica em map_interface.c, precisaria dar free em (*map)->config.map_name. Contudo, muitos usuarios de mapa
+	  estao enviando mapas sem preencher NULL ou colocar uma string valida neste ponteiro.
+	
+	
+14/01/2013
+- Implementar decisoes abaixo:
+
+1- Regras para criacao de parametros Carmen
+	- Os parametros nos arquivos carmen ini nao podem estar associados
+	  a bibliotecas
+	- Os parametros de um m?dulo poder?o ser p?blicos ou privados. Eles
+	  s?o privados por padr?o. Para indicar que um par?metro ? p?blico
+	  basta coloca-lo em uma linha do carmen ini que esteja entre os 
+	  coment?rios:
+	  # Public
+	  # End public
+	- Tem que haver um carmen ini para cada robo diferente
+	
+2- Acoes para remover duplicidades de parametros com o mesmo fim, 
+   ou que possam ser derivados de outros parametros
+	- Se voc? viu em um m?dulo um par?metro que n?o pertence ao mesmo, 
+	  indique que o par?metro ? p?blico no carmen ini.
+	- Os parametros com o prefixo ackerman serao modificados para
+	  robot - Feito (05/02/2013)
+	  
+3- Criacao (ou nao) de um branch do svn para a volta da UFES 
+   (neste branch nao nos preocupariamos em manter compatibilidade 
+   com modulos existentes e nao usados na volta da UFES)
+   	- Nao vamos criar um branch.
+	- Vamos criar um carmen-ford-escape.ini limpo a partir do carmen-car.ini - Parcialmente j? feito (15/01/2013)
+
+
+08/01/2013
+
+- Visual adometry
+	- Analisar se o modulo sempre deve publicar a odometria.
+
+- carmen-car.ini
+	- Analisar se deve ou nao ter uma para simulacao e um para on-line
+
+- fused_odometry
+	- Nao deve publicar a true_pos
+	- Deve manter um estado que diz se est? em modo de localizacao local ou global, ou se enviou mensagem de inicializacao
+	- M?quina de estados com os seguintes estados:
+	    - Acordado
+	    - Normal
+	    - Perdeu GPS
+	    
+- obstacle_avoider
+	- Verificar se a a mensagem robot_laser est? usando base_ackerman_odometry
+	
+- mapper
+	- N?o deve ler do arquivo - OK
+	- Colocar um parametro para gravar em disco ou n?o - OK
+
+- localize_traf
+	- checar se o offiline-map est? sendo usado corretamente
+	- deve fazer a localizacao global
+	
+- Navigator-GUI
+	-colocar op??o de ver o grid-map e o offiline-map - OK
+
+- Motion Planner e Obstacle avoider
+	- Melhorar simulador do carro usado pelo obstacle_avoider e o motion_planner
+	- fazer biblioteca de simulaccao do carro
+	
+
+	
+20/10/2012
+
+- Car Ackerman
+
+	- Mandar vetores de movimento para o carro ao inv?s de enviar somente uma informa??o. Esses vetores devem conter al?m de v, phi e t, as acelera??es de v e phi.
+	- Enviar comandos para o carro de ligar a seta e os far?is
+	- Quando o carro n?o receber novos comandos, mandar comandos de velocidade 0.
+	
+- Obstacle Avoider
+
+	- Revisar o m?dulo, retirar bugs e fazer testes intensivos. - OK
+	- Avaliar por que o m?dulo n?o est? desviando de obst?culos. - OK
+	- Testar um engordamento do carro. - OK (nao fazer)
+
+- Motion Planner
+
+	- As mensagens para o car_ackerman devem enviar (al?m dos dados atuais) as acelera??es dos componentes.
+	- O motion planner deve levar a acelera??o em considera??o e atualiz?-la.
+	- Implementar a r? do motion planner.
+	
+- Navigate
+
+	- O A* trava as vezes e n?o atualiza o caminho. Reza a lenda que ? por conta de ficar processando por muito tempo. Ele tem que respeitar um budget m?ximo de tempo.
+	- Pode ser uma op??o fazer uma busca com relaxamento sucessivo. Por exemplo, buscar um caminho at? 4 vezes maior que o melhor caminho e ir melhorando a medida que temos
+	tempo.
+	
+- Mapper
+
+	- Colocar a op??o de s? mapear no ini.
+	- Pensar em como fazer a troca de mapas mais smooth.
+	- Atualizar o mapa com mais frequencia para possibilitar enxergar pontos mais distantes.
+	- Come?ar a usar as c?meras laterais.
+	- Resolver as constantes de como a sensibilidade varia com o ?ngulo.
+	- Nao apagar coisas perto do carro (tratar o parametro de 1.5 metros no carmen ini e no prob_models) - OK
+	
+- Localiza??o
+
+	- Localiza??o global. - OK
+	- Dar uma volta com o carro com theta livre e ver se n?o tem bug no theta. Ver para onde ele est? apontando a medida que o carro anda. - OK
+	- Usar o nosso c?digo (prob models) ao inv?s do de carmen - OK
+	- Retirar o delay do mapa - OK
+	-- Para fazer as coisas acima sera necessario:
+	--- Reimplementar o localizer_traf para ele usar o mapa de carmen e considerar a origem do mapa - OK
+	    Todos os exemplos antigos tem que continuar funcionando (simulacao de localizacao, mapeamento e SLAM) - OK
+	--- Reimplementar o slam_mc de acordo com o localizer_traf para ficar tudo no mesmo padrao - OK
+	--- Reimplementar o grid_mapping para ficar de acordo com o localizer_traf - OK
+	--- Refazer os process ini de simulaccao para que funcionem com os novos localize_traf, slam_mc e grid_mapping - OK
+	--- Refazer os process ini de simulaccao ackerman para que funcionem com os novos localize_traf, slam_mc e grid_mapping - OK
+	---- Tem que colocar toda a hierarquia de controle (behavior_selector, navigator, motion_planner e obstacle_avoider) - OK
+	--- Finalmente, refazer o fused_odometry para que use a pose advinda localizer_traf como mais uma fonte de correcao - OK
+	---- Quando o gps entrar, tem que inicializar o localizer_traf (localizacao global): ee o equivalente a posicionar o carro a mao na simulaccao - OK
+	---- Ee importante prestar atencao nos timestamps para adiantar (predizer a frente) a pose do localizer_traf ou retrocede-la (isso daria certo?) -> @@@
+	---- O fused_odometry tem que saber se pode ou nao usar os dados do localizer_traf: -> @@@
+	       quando o localizer_traf se perder (variancia alta em x, y ou tehta?), o fused_odometry deve ignora-lo
+	----- Alem disso, quando a pose do gps (xsens) se afastar muito da do localizer_traf ee preciso tomar uma decisao sobre quem seguir -> @@@
+	------ Nos casos em que o gps sair do ar (perder o lock por causa de obstruccoes, por exemplo), tem que usar o localizer_traf ou parar -> @@@
+	------ Um nivel mais alto (behavior? navigator?) pode tomar a decisao de parar... -> @@@
+	
+
+26/09/2012
+
+- Fazer merge do mapa que vai salvar com o salvo previamente (manter
+dois mapas e salvar sempre dois mapas: o atual e o salvo anteriormente) - Lucas - OK
+
+- Consertar o mostrador de velocidade (o ponteiro esta mostrando velocidade errada) - Cayo - OK
+
+- Ler a literatura e implementar um motion planner que examine varios caminhos - Alberto/Romulo
+
+- Resolver a interface (ela tem que atender aas necessidades do Romulo/Michael) - Avelino - OK
+
+- Avanccar com o lateral offset - Avelino
+
+- Testar os path planners para ver se eles resolvem o estacionamento (quando sair do
+rddf via waypoint verde) - Romulo
+
+- Testar obstaculos na pista - Lauro/Ranick - OK
+
+- Avanccar com o modulo que fala com o carro - Alberto/Michael - OK
+
+- Medir latencias - Alberto - OK
+
+- Avanccar com a ediccao do RDDF - Filipe
+  Fazer dois RDDFs e dois mapas bem documentados (com marcaccoes de velocidades e de intervenccao humana)
+  para que seja possivel testar um contra o outro 
+  
+- Comeccar detecccao de objetos moveis - Lauro
+
+- Checar situaccoes em que para tudo - Filipe
+
+- Fazer modulo de analise e troca de path planner - Romulo - OK
+
+- Testar codigo na maquina do carro - Alberto/Lucas - OK
+
+- Testar multi-central - Tiago
+
+- Comprar cones - Alberto/Manoel - OK
+  Ver se tem na UFES
+  
+  
+
+27/08/2012
+
+- Fechar mapa - Lauro (7 dias)
+  (i) resolver arvores - OK; 
+  (ii) fazer merge com o estereo e com o mapa do Vitor (reduzir/acabar com pontos cegos); 
+  (iii) resolver o localizer simulado (observar velocidade de rotacao do velodyne e front e rear lasers) 
+	e com o velodyne on-line; 
+  (iv) resolver/checar eventual erro de posicionamento do velodyne na simulaccao e no caso real; 
+  (v) resolver o problema do morro - OK
+
+- Fechar um estereo e contribuir com a integraccao com o mapa - Lucas (5 dias)
+
+- Fechar multi-mapa: pose global usada por todos os modulos e 
+cada mapa com sua origem - Romulo (3 dias) - OK
+
+- RNDF: 
+(i) fechar as mensagens (debater com Michael e Romulo) (3 dias) OK; 
+(ii) incluir representacao grafica dos pontos a frente no navigator_gui (7 dias) OK; 
+(iii) fazer interface do RNDF que mostra na tela do navigator_gui
+todo o RNDF e permite escolher um ponto e trazer o mapa proximo ao ponto
+(11 dias); - OK
+(iv) colocar mapa de satelite do Google superposto no mapa real 
+e na visao global do RNDF; - OK
+(v) criar mecanismo de edicao do RNDF (mover pontos e editar velocidades 
+dos pontos) - Filipe - OK
+
+- GPSxyz: tentar descobrir a zona automaticamente a partir de latitude e
+longitude - Mariela (3 dias)
+
+- Navigator: 
+(i) tornar o codigo do navigator_ackerman ackerman - OK; 
+(ii) melhorar o mapa de custos para, como resultado, melhorar o mapa 
+de utilidade - OK; 
+(iii) fechar o resultado que os path planners mandam para o motion planner, 
+i.e., eles devem enviar uma lista de (x, y, theta, e v) - OK; 
+(iv) fazer integracao com o RNDF - OK; 
+(v) criar mecanismo (funcao) de troca de path planner; - OK
+(vi) usar os dados do RNDF para influenciar o mapa de utility, de modo
+a fazer com que o carro prefira ficar na rota proposta pelo RNDF.
+
+Itens (i), (ii), (iii) Michael (5 dias); itens (iii), (iv) e (v) Romulo 
+(10 dias).
+
+- Navigator 2: fazer um navigator que funcione em estacionamentos e trate
+ o caso de ree e curvas acentuadas - Michael (15 dias)
+
+- Obstacle Avoider: 
+(i) criar biblioteca com funcao que indica se o carro
+atingiu um obstaculo - OK; 
+(ii) implementar, no robot (que ?/sera o obstacle_avoider), 
+um obstacle avoider que checa se o carro vai bater 
+no horizonte da lista de (v, phi e time) e ajusta v de acordo - OK
+(iii) tem que funcionar para o caso de ree 
+(iv) tratar o caso do carro parado; - OK
+(v) criar mecanismo de visualizacao do planejamento
+associado aa lista de (v, phi e t) no navigator_gui - Ranik (10 dias) - OK
+
+- Localizer - Lucas (14 dias)
+(i) acertar o codigo para usar a TF apropriadamente; - OK
+(ii) preparar tudo para poder configurar o carmen_car.ini para receber todos os parametros
+do Explorer Hybrid, testar com o carro da Mariela; - OK
+(iii) aprender a calibrar o XSens como um todo e calibra-lo e testa-lo com o carro da Mariela - OK
+(iv) documentar como fazer a calibracao
+

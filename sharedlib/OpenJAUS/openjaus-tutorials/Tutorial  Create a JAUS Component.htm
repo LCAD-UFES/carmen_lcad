@@ -1,0 +1,251 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0075)http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component -->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-gb" lang="en-gb"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		  <!--<base href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component">--><base href=".">
+  
+  <meta name="robots" content="index, follow">
+  <meta name="keywords" content="openjaus, jaus, robotics, as4, jsidl, robot, software, sdk, joint architecture for unmanned systems, unmanned, systems, vehicles, implementation, windows, linux, C++, UGV, UAV, USV, UUV, AGV, AUV, UAS, open, source, FAQ, SAE, AS-4, JSS, JSIDL, JTS">
+  <meta name="title" content="Tutorial: Create a JAUS Component">
+  <meta name="author" content="Tom Galluzzo">
+  <meta name="description" content="OpenJAUS.com is the home of a low-cost state-of-the-art toolkit based on the Joint Architecture for Unmanned Systems (JAUS) which is a messaging architecture for robotics. Our software is used by organizations worldwide to help meet hard technical challenges. Everything you need to learn, use and support your JAUS software development needs can be found on this website.">
+  <meta name="generator" content="Joomla! 1.5 - Open Source Content Management">
+  <title>Tutorial: Create a JAUS Component</title>
+  <link href="http://openjaus.com/templates/openjaus/favicon.ico" rel="shortcut icon" type="image/x-icon">
+  <link rel="stylesheet" href="./Tutorial  Create a JAUS Component_files/comments.css" type="text/css">
+  <link rel="stylesheet" href="./Tutorial  Create a JAUS Component_files/bbcode.css" type="text/css">
+  <link rel="stylesheet" href="./Tutorial  Create a JAUS Component_files/highlighter.css" type="text/css">
+  <style type="text/css">
+    <!--
+
+        a.flag {background-image:url('/modules/mod_gtranslate/tmpl/lang/16a.png');}
+        a.flag:hover {background-image:url('/modules/mod_gtranslate/tmpl/lang/16.png');}
+    
+    -->
+  </style>
+  <script type="text/javascript" async="" src="./Tutorial  Create a JAUS Component_files/ga.js"></script><script type="text/javascript" src="./Tutorial  Create a JAUS Component_files/mootools.js"></script>
+  <script type="text/javascript" src="./Tutorial  Create a JAUS Component_files/caption.js"></script>
+  <script type="text/javascript" src="./Tutorial  Create a JAUS Component_files/validate.js"></script>
+  <script type="text/javascript" src="./Tutorial  Create a JAUS Component_files/comments.js"></script>
+  <script type="text/javascript" src="./Tutorial  Create a JAUS Component_files/bbcode.js"></script>
+  <script type="text/javascript" src="./Tutorial  Create a JAUS Component_files/highlighter.js"></script>
+  <script type="text/javascript" src="./Tutorial  Create a JAUS Component_files/jquery-translate.js"></script>
+  <script type="text/javascript">
+	cOptions = {captcha:1};
+  </script>
+  <link type="text/css" rel="stylesheet" href="./Tutorial  Create a JAUS Component_files/shCore.css">
+<link type="text/css" rel="stylesheet" href="./Tutorial  Create a JAUS Component_files/shThemeDefault.css">
+<script type="text/javascript" src="./Tutorial  Create a JAUS Component_files/shCore.js"></script>
+  <script type="text/javascript" src="./Tutorial  Create a JAUS Component_files/shBrushOj.js"></script>
+
+		<meta name="verify-v1" content="dwFhApTviDugG0lDkfoKRvP6MoI9p+NLAywn0h8wWJI=">
+		<link rel="stylesheet" href="./Tutorial  Create a JAUS Component_files/system.css" type="text/css">
+		<link rel="stylesheet" href="./Tutorial  Create a JAUS Component_files/general.css" type="text/css">
+		<link rel="stylesheet" href="./Tutorial  Create a JAUS Component_files/html.css" type="text/css">
+		<link rel="stylesheet" href="./Tutorial  Create a JAUS Component_files/joomlaStyles.css" type="text/css">
+		<link rel="stylesheet" href="./Tutorial  Create a JAUS Component_files/modules.css" type="text/css">
+		<link rel="stylesheet" href="./Tutorial  Create a JAUS Component_files/style.css" type="text/css">
+		<link rel="stylesheet" href="./Tutorial  Create a JAUS Component_files/menu.css" type="text/css">
+
+		<script language="javascript" type="text/javascript" src="./Tutorial  Create a JAUS Component_files/suckerfish.js"></script>
+
+	<!--[if gte IE 7.0]>
+		<style type="text/css">
+			.clearfix {display: inline-block;}
+		</style>
+	<![endif]-->
+
+	</head>
+	
+	<body>
+
+		<div id="main">
+			<!-- BEGIN: HEADER SPACE-->
+			<div id="header">
+
+				<a href="http://openjaus.com/"> <img src="./Tutorial  Create a JAUS Component_files/openjausLogo.png" border="0"> </a>
+			</div>
+			<!-- END: HEADER SPACE-->
+
+			<!-- BEGIN: MENUBAR SPACE-->
+			<div id="menubar">
+				<div id="leftmenu">
+					
+    <script type="text/javascript">
+    //<![CDATA[
+    if(jQuery.cookie('glang') && jQuery.cookie('glang') != 'en') jQuery(function($){$('body').translate('en', $.cookie('glang'), {not:'script'});});
+    //]]>
+    </script>
+
+<script type="text/javascript">
+//<![CDATA[
+    function doTranslate(lang_pair) {if(lang_pair.value)lang_pair=lang_pair.value;var lang=lang_pair.split('|')[1];if(lang=='pt')lang='pt-PT';jQuery.cookie('glang', lang);jQuery(function($){$('body').translate('en', lang, {not:'script'})});}
+//]]>
+</script>
+
+
+<select onchange="doTranslate(this);"><option value="">Select Language</option><option value="en|en" style="font-weight:bold;background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -0px;padding-left:18px;">English</option><option value="en|bg" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -32px;padding-left:18px;">Bulgarian</option><option value="en|zh-CN" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -48px;padding-left:18px;">Chinese (Simplified)</option><option value="en|zh-TW" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -64px;padding-left:18px;">Chinese (Traditional)</option><option value="en|hr" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -80px;padding-left:18px;">Croatian</option><option value="en|cs" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -96px;padding-left:18px;">Czech</option><option value="en|da" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -112px;padding-left:18px;">Danish</option><option value="en|nl" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -128px;padding-left:18px;">Dutch</option><option value="en|fi" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -144px;padding-left:18px;">Finnish</option><option value="en|fr" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -160px;padding-left:18px;">French</option><option value="en|de" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -176px;padding-left:18px;">German</option><option value="en|el" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -192px;padding-left:18px;">Greek</option><option value="en|hi" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -208px;padding-left:18px;">Hindi</option><option value="en|it" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -224px;padding-left:18px;">Italian</option><option value="en|ja" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -240px;padding-left:18px;">Japanese</option><option value="en|ko" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -256px;padding-left:18px;">Korean</option><option value="en|no" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -272px;padding-left:18px;">Norwegian</option><option value="en|pl" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -288px;padding-left:18px;">Polish</option><option value="en|pt" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -304px;padding-left:18px;">Portuguese</option><option value="en|ro" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -320px;padding-left:18px;">Romanian</option><option value="en|ru" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -336px;padding-left:18px;">Russian</option><option value="en|es" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -352px;padding-left:18px;">Spanish</option><option value="en|sv" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -368px;padding-left:18px;">Swedish</option><option value="en|ca" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -384px;padding-left:18px;">Catalan</option><option value="en|tl" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -400px;padding-left:18px;">Filipino</option><option value="en|iw" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -416px;padding-left:18px;">Hebrew</option><option value="en|id" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -432px;padding-left:18px;">Indonesian</option><option value="en|lv" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -448px;padding-left:18px;">Latvian</option><option value="en|lt" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -464px;padding-left:18px;">Lithuanian</option><option value="en|sr" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -480px;padding-left:18px;">Serbian</option><option value="en|sk" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -496px;padding-left:18px;">Slovak</option><option value="en|sl" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -512px;padding-left:18px;">Slovenian</option><option value="en|uk" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -528px;padding-left:18px;">Ukrainian</option><option value="en|vi" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -544px;padding-left:18px;">Vietnamese</option><option value="en|sq" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -560px;padding-left:18px;">Albanian</option><option value="en|et" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -576px;padding-left:18px;">Estonian</option><option value="en|gl" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -592px;padding-left:18px;">Galician</option><option value="en|hu" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -608px;padding-left:18px;">Hungarian</option><option value="en|mt" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -624px;padding-left:18px;">Maltese</option><option value="en|th" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -640px;padding-left:18px;">Thai</option><option value="en|tr" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -656px;padding-left:18px;">Turkish</option><option value="en|fa" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -672px;padding-left:18px;">Persian</option><option value="en|af" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -688px;padding-left:18px;">Afrikaans</option><option value="en|ms" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -704px;padding-left:18px;">Malay</option><option value="en|sw" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -720px;padding-left:18px;">Swahili</option><option value="en|ga" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -736px;padding-left:18px;">Irish</option><option value="en|cy" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -752px;padding-left:18px;">Welsh</option><option value="en|be" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -768px;padding-left:18px;">Belarusian</option><option value="en|is" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -784px;padding-left:18px;">Icelandic</option><option value="en|mk" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -800px;padding-left:18px;">Macedonian</option><option value="en|yi" style="background:url(&#39;/modules/mod_gtranslate/tmpl/lang/16l.png&#39;) no-repeat scroll 0 -816px;padding-left:18px;">Yiddish</option></select> 
+				</div>
+				<div id="mainmenu" class="clearfix">
+					<ul class="menu"><li id="current" class="active item1"><a href="http://d7c.openjaus.com/"><span>Home</span></a></li><li class="item129"><a href="http://openjaus.com/news"><span>News</span></a></li><li class="parent item55"><a href="http://openjaus.com/support"><span>Support</span></a><ul><li class="item130"><a href="http://openjaus.com/support/training"><span>Training &amp; Consulting</span></a></li><li class="item84"><a href="http://openjaus.com/support/forums"><span>Forums</span></a></li><li class="item119"><a href="http://openjaus.com/support/getting-started-with-openjaus"><span>Tutorials</span></a></li><li class="item109"><a href="http://openjaus.com/support/understanding-sae-jaus"><span>Understanding JAUS</span></a></li><li class="item116"><a href="http://openjaus.com/doc/index.html"><span>SDK Documentation</span></a></li><li class="item118"><a href="http://code.google.com/p/openjaus/issues/list"><span>Bug Tracker</span></a></li></ul></li><li class="parent item110"><a href="http://openjaus.com/products/openjaus4"><span>Products</span></a><ul><li class="item111"><a href="http://openjaus.com/products/openjaus4"><span>OpenJAUS 4.0</span></a></li><li class="item113"><a href="http://openjaus.com/products/openjaus33"><span>OpenJAUS 3.3</span></a></li><li class="item112"><a href="http://openjaus.com/products/servicestudio"><span>Service Studio</span></a></li></ul></li><li class="parent item57"><a href="http://openjaus.com/about-us"><span>About Us</span></a><ul><li class="item89"><a href="http://openjaus.com/about-us/contact"><span>Contact</span></a></li><li class="item122"><a href="http://openjaus.com/newsletter-signup"><span>Newsletter</span></a></li></ul></li></ul>
+				</div>
+			</div>
+			<!-- BEGIN: MENUBAR SPACE-->
+			
+			<!-- BEGIN: TOP BANNER SPACE-->
+						<!-- END: TOP BANNER SPACE DK-->
+
+			<!-- BEGIN: BOXES SPACE-->
+						<!-- END: BOXES SPACE-->
+
+			
+			
+			 
+
+			<div id="componentWrapper">
+				<table class="contentpaneopen">
+<tbody><tr>
+		<td class="contentheading" width="100%">
+					Tutorial: Create a JAUS Component			</td>
+				
+		
+					</tr>
+</tbody></table>
+
+<table class="contentpaneopen">
+
+
+
+<tbody><tr>
+<td valign="top">
+<p><!-- Xtypo - Extra Typografi For Joomla Template By http://www.templateplazza.com -->
+</p><p style="	background: url(http://openjaus.com/plugins/content/xtypo/icon/warning.gif) center no-repeat; 	background-color: #FBEEF1; background-position: 15px 50%; text-align: left;	padding: 5px 20px 5px 45px; color:#8E6A64; 	border-top: 2px solid #FEABB9 ; 	border-bottom: 2px solid #FEABB9;">
+This tutorial is for OpenJAUS 3.3. OpenJAUS 3.3 is no longer in development or maintainence by the OpenJAUS team. This tutorial is provided for reference and support of legacy systems only. For new development please use OpenJAUS 4.0</p><!-- End Xtypo --><p></p>
+<hr>
+<table border="0" cellspacing="1" cellpadding="1" width="275">
+<tbody>
+<tr>
+<td width="225">Download the code for this example:</td>
+<td width="50" align="center">
+<p><img src="./Tutorial  Create a JAUS Component_files/source-c-32x32.png" border="0" alt="myGpos.c" width="32" height="32"><a href="http://openjaus.com/media/myGpos.c">myGpos.c</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<p style="text-align: justify;">An essential part of implementing a JAUS system is to develop software components. JAUS components define a logical boundary that contains system services. Services are stand alone tasks designed to perform a specific function and they have a well defined message interface. In the JAUS RA 3.3 components provide at least one service, and a service is simply defined as a set of input and output  messages. In addition to the message service interface, JAUS components typically implement an internal state machine that is used to perform and manage its intended function.</p>
+<p style="text-align: justify;">An OpenJAUS component is implemented by calling the component framework library. The library contains a set of C functions used to create, setup, manage and destroy the component. The first step in  this process is to create a program that includes the standard OpenJAUS header files. The component library is included with openJaus.h, and jaus.h is needed to access JAUS message functions.</p>
+<p><span style="font-family: Courier New;"><script type="text/javascript">
+	SyntaxHighlighter.config.clipboardSwf = "http://openjaus.com/plugins/content/codecitation/scripts/clipboard.swf";
+	SyntaxHighlighter.defaults["auto-links"] = true;
+	SyntaxHighlighter.defaults["collapse"] = false;
+	SyntaxHighlighter.defaults["gutter"] = true;
+	SyntaxHighlighter.defaults["smart-tabs"] = true;
+	SyntaxHighlighter.defaults["tab-size"] = 4;
+	SyntaxHighlighter.defaults["toolbar"] = true;
+	SyntaxHighlighter.defaults["wrap-lines"] = true;	
+	SyntaxHighlighter.all();
+</script></span></p><div style="overflow: hidden; display: block; height: auto; width: inherit;"><div id="highlighter_867870" class="syntaxhighlighter "><div class="bar"><div class="toolbar"><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#viewSource" title="view source" style="width: 16px; height: 16px; " class="item viewSource">view source</a><div class="item copyToClipboard"><embed width="16" height="16" id="highlighter_867870_clipboard" type="application/x-shockwave-flash" title="copy to clipboard" allowscriptaccess="always" wmode="transparent" flashvars="highlighterId=highlighter_867870" menu="false" src="http://openjaus.com/plugins/content/codecitation/scripts/clipboard.swf"></div><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#printSource" title="print" style="width: 16px; height: 16px; " class="item printSource">print</a><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#about" title="?" style="width: 16px; height: 16px; " class="item about">?</a></div></div><div class="lines"><div class="line alt1"><code class="number">1.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="preprocessor">#include &lt;jaus.h&gt;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Header file for JAUS types, structs and messages</code></span></span></div><div class="line alt2"><code class="number">2.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="preprocessor">#include &lt;openJaus.h&gt;&nbsp; // Header file for the OpenJAUS specific C/C++ code base</code></span></span></div></div></div></div><p></p>
+<p style="text-align: justify;">All of the component library functions begin with the prefix ojCmpt and are designed to work with the OjCmpt data type, which stores a reference to the component. To obtain an OjCmpt type and generate the JAUS component, the <span style="font-family: Courier New;">ojCmptCreate()</span> function is called. The function has three arguments: first, a pointer to a character string containing the component's name identifier, then an integer numeric identifier for the component, and finally the  double value desired rate in Hz for which the component's state machine will execute. The function generates the component data structure and then checks into the OpenJAUS Node Manager, which must  be running at the time of the call, otherwise the component will fail and return NULL. This example shows how a JAUS Global Pose Sensor might be created.</p>
+<p class="example"><span style="font-family: Courier New;"></span></p><div style="overflow: hidden; display: block; height: auto; width: inherit;"><div id="highlighter_302448" class="syntaxhighlighter "><div class="bar"><div class="toolbar"><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#viewSource" title="view source" style="width: 16px; height: 16px; " class="item viewSource">view source</a><div class="item copyToClipboard"><embed width="16" height="16" id="highlighter_302448_clipboard" type="application/x-shockwave-flash" title="copy to clipboard" allowscriptaccess="always" wmode="transparent" flashvars="highlighterId=highlighter_302448" menu="false" src="http://openjaus.com/plugins/content/codecitation/scripts/clipboard.swf"></div><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#printSource" title="print" style="width: 16px; height: 16px; " class="item printSource">print</a><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#about" title="?" style="width: 16px; height: 16px; " class="item about">?</a></div></div><div class="lines"><div class="line alt1"><code class="number">01.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="comments">// Variable that will store the component reference</code></span></span></div><div class="line alt2"><code class="number">02.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="color1 bold">OjCmpt</code> <code class="plain">myGpos;</code></span></span></div><div class="line alt1"><code class="number">03.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;">&nbsp;</span></span></div><div class="line alt2"><code class="number">04.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="comments">// Create the component with name "My GPOS", id 38, and state machine runs at 1.0 Hz</code></span></span></div><div class="line alt1"><code class="number">05.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="plain">myGpos = ojCmptCreate(</code><code class="string">"My GPOS"</code><code class="plain">, </code><code class="preprocessor bold">JAUS_GLOBAL_POSE_SENSOR</code><code class="plain">, 1.0);</code></span></span></div><div class="line alt2"><code class="number">06.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;">&nbsp;</span></span></div><div class="line alt1"><code class="number">07.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="comments">// Test for failed Node Manager check-in of component</code></span></span></div><div class="line alt2"><code class="number">08.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="keyword bold">if</code><code class="plain">(myGpos == NULL)</code></span></span></div><div class="line alt1"><code class="number">09.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="plain">{</code></span></span></div><div class="line alt2"><code class="number">10.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="comments">// Exit program</code></span></span></div><div class="line alt1"><code class="number">11.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="functions bold">printf</code><code class="plain">(</code><code class="string">"Error Starting Component\n"</code><code class="plain">);</code></span></span></div><div class="line alt2"><code class="number">12.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="keyword bold">return</code> <code class="plain">1;</code></span></span></div><div class="line alt1"><code class="number">13.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="plain">}</code></span></span></div></div></div></div><p></p>
+<p>A this point the component is created and communicating with the node manager, but its state machine is not running yet. Before the state machine is started, the component services and callback functions  must first be setup. The message service interface for the component is defined by calling the <span style="font-family: Courier New;">ojCmptAddService()</span> methods. A service interface is generated by adding its int value to the  component. Then input and output messages are attached to that service by referencing the component and int service value. The messages are defined by their command code and presence vector value.  This example shows how a service is attached to the GPOS component created above:</p>
+<p class="example"><span style="font-family: Courier New;"></span></p><div style="overflow: hidden; display: block; height: auto; width: inherit;"><div id="highlighter_237070" class="syntaxhighlighter "><div class="bar"><div class="toolbar"><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#viewSource" title="view source" style="width: 16px; height: 16px; " class="item viewSource">view source</a><div class="item copyToClipboard"><embed width="16" height="16" id="highlighter_237070_clipboard" type="application/x-shockwave-flash" title="copy to clipboard" allowscriptaccess="always" wmode="transparent" flashvars="highlighterId=highlighter_237070" menu="false" src="http://openjaus.com/plugins/content/codecitation/scripts/clipboard.swf"></div><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#printSource" title="print" style="width: 16px; height: 16px; " class="item printSource">print</a><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#about" title="?" style="width: 16px; height: 16px; " class="item about">?</a></div></div><div class="lines"><div class="line alt1"><code class="number">1.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="comments">// Add a new service to the component, with one input and one output message</code></span></span></div><div class="line alt2"><code class="number">2.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="functions bold">ojCmptAddService</code><code class="plain">(myGpos, </code><code class="preprocessor bold">JAUS_GLOBAL_POSE_SENSOR</code><code class="plain">);</code></span></span></div><div class="line alt1"><code class="number">3.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="functions bold">ojCmptAddServiceInputMessage</code><code class="plain">(myGpos, </code><code class="preprocessor bold">JAUS_GLOBAL_POSE_SENSOR</code><code class="plain">, </code><code class="preprocessor bold">JAUS_QUERY_GLOBAL_POSE</code><code class="plain">, 0xFF);</code></span></span></div><div class="line alt2"><code class="number">4.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="functions bold">ojCmptAddServiceOutputMessage</code><code class="plain">(myGpos, </code><code class="preprocessor bold">JAUS_GLOBAL_POSE_SENSOR</code><code class="plain">, </code><code class="preprocessor bold">JAUS_REPORT_GLOBAL_POSE</code><code class="plain">, 0xFF);</code></span></span></div></div></div></div><p></p>
+<p>The next step is to setup the state machine, message callbacks, and supported service connections. For this tutorial, only the state machine setup is shown. See the tutorials on <a href="http://openjaus.com/sending-a-recieving-jaus-messages">Sending &amp; Recieving JAUS Messages</a> and <a href="http://openjaus.com/support-outgoing-service-connections">supporting service connections</a> for how to setup these capabilities.  <br> <br> The component's state machine works by calling a function callback method upon each interval of the timer frequency set at the create step. All component states are indexed with a int value, and  an OpenJAUS component is allowed to have up to 32 states (Note: Only six states, values 0 through 5, are defined by JAUS. See jausState.h for their enumeration. If your software uses state values greater than 5, the default message response to a <span style="font-family: Courier New;">JAUS_QUERY_COMPONENT_STATUS</span> message will report an invalid state. You must override this default behavior in order to report a meaningful JAUS state. See&nbsp;<a href="http://openjaus.com/sending-a-recieving-jaus-messages">Tutorial: Sending &amp; Recieving JAUS Messages</a> for how to do this.)  Usually only a few states are actually needed. Fewer states keeps the component functionality simple and much easier to manage its expected  behavior. A function pointer to each callback method must be registered with the component for the state machine to work correctly. The <span style="font-family: Courier New;">ojCmptSetStateCallback()</span> function is used to do this. Its  arguments are: the OjCmpt reference, and then the int numeric value for the state callback being registered, finally a function pointer to the state callback is given. State function pointers must  match the prototype: "<span style="font-family: Courier New;">void function(OjCmpt);</span>". For the myGpos example, the Ready state would be setup as follows:</p>
+<p><span style="font-family: Courier New;"></span></p><div style="overflow: hidden; display: block; height: auto; width: inherit;"><div id="highlighter_61973" class="syntaxhighlighter "><div class="bar"><div class="toolbar"><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#viewSource" title="view source" style="width: 16px; height: 16px; " class="item viewSource">view source</a><div class="item copyToClipboard"><embed width="16" height="16" id="highlighter_61973_clipboard" type="application/x-shockwave-flash" title="copy to clipboard" allowscriptaccess="always" wmode="transparent" flashvars="highlighterId=highlighter_61973" menu="false" src="http://openjaus.com/plugins/content/codecitation/scripts/clipboard.swf"></div><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#printSource" title="print" style="width: 16px; height: 16px; " class="item printSource">print</a><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#about" title="?" style="width: 16px; height: 16px; " class="item about">?</a></div></div><div class="lines"><div class="line alt1"><code class="number">1.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="comments">// Register function callback for the ready state</code></span></span></div><div class="line alt2"><code class="number">2.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="functions bold">ojCmptSetStateCallback</code><code class="plain">(myGpos, </code><code class="preprocessor bold">JAUS_READY_STATE</code><code class="plain">, gposReadyState);</code></span></span></div></div></div></div><p></p>
+<p>This statement would depend on either the <span style="font-family: Courier New;">gposReadyState()</span> function itself or its function prototype appearing prior to this function call in the code. This is how the above example's prototype would  have been defined somewhere above in the code:</p>
+<p class="example"><span style="font-family: Courier New;"></span></p><div style="overflow: hidden; display: block; height: auto; width: inherit;"><div id="highlighter_952655" class="syntaxhighlighter "><div class="bar"><div class="toolbar"><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#viewSource" title="view source" style="width: 16px; height: 16px; " class="item viewSource">view source</a><div class="item copyToClipboard"><embed width="16" height="16" id="highlighter_952655_clipboard" type="application/x-shockwave-flash" title="copy to clipboard" allowscriptaccess="always" wmode="transparent" flashvars="highlighterId=highlighter_952655" menu="false" src="http://openjaus.com/plugins/content/codecitation/scripts/clipboard.swf"></div><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#printSource" title="print" style="width: 16px; height: 16px; " class="item printSource">print</a><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#about" title="?" style="width: 16px; height: 16px; " class="item about">?</a></div></div><div class="lines"><div class="line alt1"><code class="number">1.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="comments">// Function prototype for My GPOS ready state callback routine</code></span></span></div><div class="line alt2"><code class="number">2.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="keyword bold">void</code> <code class="plain">gposReadyState(</code><code class="color1 bold">OjCmpt</code> <code class="plain">myGpos);</code></span></span></div></div></div></div><p></p>
+<p>Upon execution of the state machine, the current state value must be specified to the component. The state is set by calling the <span style="font-family: Courier New;">ojCmptSetState()</span> function, and passing it the numeric value of the  current desired state. If no value is ever specified, the component remains in an undefined state mode, and no callback functions are executed. In this example the myGpos state would be set as  follows:</p>
+<p class="example"><span style="font-family: Courier New;"></span></p><div style="overflow: hidden; display: block; height: auto; width: inherit;"><div id="highlighter_625915" class="syntaxhighlighter "><div class="bar"><div class="toolbar"><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#viewSource" title="view source" style="width: 16px; height: 16px; " class="item viewSource">view source</a><div class="item copyToClipboard"><embed width="16" height="16" id="highlighter_625915_clipboard" type="application/x-shockwave-flash" title="copy to clipboard" allowscriptaccess="always" wmode="transparent" flashvars="highlighterId=highlighter_625915" menu="false" src="http://openjaus.com/plugins/content/codecitation/scripts/clipboard.swf"></div><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#printSource" title="print" style="width: 16px; height: 16px; " class="item printSource">print</a><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#about" title="?" style="width: 16px; height: 16px; " class="item about">?</a></div></div><div class="lines"><div class="line alt1"><code class="number">1.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="comments">// Set the current component state to JAUS_READY_STATE</code></span></span></div><div class="line alt2"><code class="number">2.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="functions bold">ojCmptSetState</code><code class="plain">(myGpos, </code><code class="preprocessor bold">JAUS_READY_STATE</code><code class="plain">);</code></span></span></div></div></div></div><p></p>
+<p>The last step after setting up all of the initial component information is to begin running the state machine. This is done by calling <span style="font-family: Courier New;">ojCmptRun()</span>, which creates the main component thread that is  used to execute the state machine and message processing callbacks. This thread manages itself in the background.</p>
+<p class="example"><span style="font-family: Courier New;"></span></p><div style="overflow: hidden; display: block; height: auto; width: inherit;"><div id="highlighter_444425" class="syntaxhighlighter "><div class="bar"><div class="toolbar"><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#viewSource" title="view source" style="width: 16px; height: 16px; " class="item viewSource">view source</a><div class="item copyToClipboard"><embed width="16" height="16" id="highlighter_444425_clipboard" type="application/x-shockwave-flash" title="copy to clipboard" allowscriptaccess="always" wmode="transparent" flashvars="highlighterId=highlighter_444425" menu="false" src="http://openjaus.com/plugins/content/codecitation/scripts/clipboard.swf"></div><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#printSource" title="print" style="width: 16px; height: 16px; " class="item printSource">print</a><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#about" title="?" style="width: 16px; height: 16px; " class="item about">?</a></div></div><div class="lines"><div class="line alt1"><code class="number">1.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="comments">// Start the component state machine and message processing</code></span></span></div><div class="line alt2"><code class="number">2.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="functions bold">ojCmptRun</code><code class="plain">(myGpos); </code></span></span></div><div class="line alt1"><code class="number">3.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;">&nbsp;</span></span></div><div class="line alt2"><code class="number">4.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="comments">// Wait for user input</code></span></span></div><div class="line alt1"><code class="number">5.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="functions bold">getchar</code><code class="plain">();</code></span></span></div></div></div></div><p></p>
+<p>The component should now be running and sending heartbeats to the Node Manager in order to maintain its connection. Typically a main application would provide some user interface to the component  and wait for the user to instruct the software to shutdown. For this example, a simple wait is implemented by calling <span style="font-family: Courier New;">getchar()</span>. When the user hits enter the program continues and then proceeds to  the last step of destroying the component. Prior to termination the component is actively calling the <span style="font-family: Courier New;">gposReadyState()</span> callback. In order to demonstrate this, the callback performs a <span style="font-family: Courier New;">printf()</span> to  display a string to the user. The callback function implementation is shown below:</p>
+<p class="example"><span style="font-family: Courier New;"></span></p><div style="overflow: hidden; display: block; height: auto; width: inherit;"><div id="highlighter_828860" class="syntaxhighlighter "><div class="bar"><div class="toolbar"><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#viewSource" title="view source" style="width: 16px; height: 16px; " class="item viewSource">view source</a><div class="item copyToClipboard"><embed width="16" height="16" id="highlighter_828860_clipboard" type="application/x-shockwave-flash" title="copy to clipboard" allowscriptaccess="always" wmode="transparent" flashvars="highlighterId=highlighter_828860" menu="false" src="http://openjaus.com/plugins/content/codecitation/scripts/clipboard.swf"></div><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#printSource" title="print" style="width: 16px; height: 16px; " class="item printSource">print</a><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#about" title="?" style="width: 16px; height: 16px; " class="item about">?</a></div></div><div class="lines"><div class="line alt1"><code class="number">1.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="comments">// Ready state callback function</code></span></span></div><div class="line alt2"><code class="number">2.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="keyword bold">void</code> <code class="plain">gposReadyState(</code><code class="color1 bold">OjCmpt</code> <code class="plain">myGpos)</code></span></span></div><div class="line alt1"><code class="number">3.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="plain">{</code></span></span></div><div class="line alt2"><code class="number">4.</code><span class="content"><code class="spaces">&nbsp;</code><span class="block" style="margin-left: 9px !important;"><code class="functions bold">printf</code><code class="plain">(</code><code class="string">"My JAUS Component Hello World\n"</code><code class="plain">);</code></span></span></div><div class="line alt1"><code class="number">5.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="plain">}</code></span></span></div></div></div></div><p></p>
+<p>The <span style="font-family: Courier New;">ojCmptDestroy()</span> function is used to terminate the component threads, checkout of the Node Manager, and free any allocated memory. The only argument to this function is the OjCmpt being destroyed.</p>
+<p class="example"><span style="font-family: Courier New;"></span></p><div style="overflow: hidden; display: block; height: auto; width: inherit;"><div id="highlighter_280720" class="syntaxhighlighter "><div class="bar"><div class="toolbar"><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#viewSource" title="view source" style="width: 16px; height: 16px; " class="item viewSource">view source</a><div class="item copyToClipboard"><embed width="16" height="16" id="highlighter_280720_clipboard" type="application/x-shockwave-flash" title="copy to clipboard" allowscriptaccess="always" wmode="transparent" flashvars="highlighterId=highlighter_280720" menu="false" src="http://openjaus.com/plugins/content/codecitation/scripts/clipboard.swf"></div><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#printSource" title="print" style="width: 16px; height: 16px; " class="item printSource">print</a><a href="http://openjaus.com/products/openjaus33/69-tutorial-create-a-jaus-component#about" title="?" style="width: 16px; height: 16px; " class="item about">?</a></div></div><div class="lines"><div class="line alt1"><code class="number">1.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="comments">// Stop and destroy the component</code></span></span></div><div class="line alt2"><code class="number">2.</code><span class="content"><span class="block" style="margin-left: 0px !important;"><code class="functions bold">ojCmptDestroy</code><code class="plain">(myGpos); </code></span></span></div></div></div></div><p></p>
+
+</td>
+</tr>
+
+</tbody></table>
+<span class="article_separator">&nbsp;</span>
+<div class="sharing">
+
+	<ul class="sharelist">
+		<li>
+			<a href="http://del.icio.us/post?url=http%3A%2F%2Fopenjaus.com%2Fcreating-a-jaus-component&title=Tutorial%3A+Create+a+JAUS+Component" target="_blank" title="Share this page with del.icio.us">
+				<img src="./Tutorial  Create a JAUS Component_files/delicious.gif" alt="del.icio.us">
+</a>
+		</li>
+		<li>
+			<a href="http://www.google.com/bookmarks/mark?op=edit&bkmk=http%3A%2F%2Fopenjaus.com%2Fcreating-a-jaus-component&title=Tutorial%3A+Create+a+JAUS+Component" target="_blank" title="Share this page with Google Bookmarks">
+				<img src="./Tutorial  Create a JAUS Component_files/google_bmarks.gif" alt="Google Bookmarks">
+</a>
+		</li>
+		<li>
+			<a href="http://blinklist.com/index.php?Action=Blink/addblink.php&Url=http%3A%2F%2Fopenjaus.com%2Fcreating-a-jaus-component&Title=Tutorial%3A+Create+a+JAUS+Component" target="_blank" title="Share this page with BlinkList">
+				<img src="./Tutorial  Create a JAUS Component_files/blinklist.gif" alt="BlinkList">
+</a>
+		</li>
+		<li>
+			<a href="http://www.facebook.com/share.php?u=http%3A%2F%2Fopenjaus.com%2Fcreating-a-jaus-component" target="_blank" title="Share this page with Facebook">
+				<img src="./Tutorial  Create a JAUS Component_files/facebook.gif" alt="Facebook">
+</a>
+		</li>
+		<li>
+			<a href="http://digg.com/submit?phase=2&url=http%3A%2F%2Fopenjaus.com%2Fcreating-a-jaus-component&title=Tutorial%3A+Create+a+JAUS+Component" target="_blank" title="Share this page with Digg">
+				<img src="./Tutorial  Create a JAUS Component_files/digg.gif" alt="Digg">
+</a>
+		</li>
+		<li>
+			<a href="http://www.stumbleupon.com/submit?url=http%3A%2F%2Fopenjaus.com%2Fcreating-a-jaus-component&title=Tutorial%3A+Create+a+JAUS+Component" target="_blank" title="Share this page with Stumbleupon">
+				<img src="./Tutorial  Create a JAUS Component_files/stumbleupon.gif" alt="Stumbleupon">
+</a>
+		</li>
+		<li>
+			<a href="http://reddit.com/submit?url=http%3A%2F%2Fopenjaus.com%2Fcreating-a-jaus-component&title=Tutorial%3A+Create+a+JAUS+Component" target="_blank" title="Share this page with reddit">
+				<img src="./Tutorial  Create a JAUS Component_files/reddit.gif" alt="reddit">
+</a>
+		</li>
+	</ul>
+    <div class="email">
+	    <a href="http://openjaus.com/component/mailto/?tmpl=component&link=aHR0cDovL29wZW5qYXVzLmNvbS9wcm9kdWN0cy9vcGVuamF1czMzLzY5LXR1dG9yaWFsLWNyZWF0ZS1hLWphdXMtY29tcG9uZW50" title="Email" onclick="window.open(this.href,&#39;win2&#39;,&#39;width=400,height=300,menubar=yes,resizable=yes&#39;); return false;" rel="nofollow">Email this page to a friend.</a>    </div>
+</div>
+
+	<div id="comments">
+		<h3 id="comments-num">
+<span class="numcomments">0</span> Comments		</h3>
+		<ol id="commentlist">
+					</ol>
+	</div>
+
+	<h3 id="leave-response">
+		<a href="http://openjaus.com/creating-a-jaus-component?scf=1" rel="nofollow {&#39;base&#39;:&#39;http://openjaus.com/&#39;,&#39;thread_id&#39;:&#39;6&#39;}">Add Comment</a>
+	</h3>
+	<div id="respond-container"></div> 
+			</div>
+
+			<div id="footerWrapper">
+				<div>Copyright © 2012 OpenJAUS. All Rights Reserved.</div>
+<div><a href="http://www.joomla.org/">Joomla!</a> is Free Software released under the <a href="http://www.gnu.org/licenses/gpl-2.0.html">GNU/GPL License.</a></div> 
+			</div>
+
+		</div>
+
+		<!-- BEGIN: GOOGLE TRACKING -->
+
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-25105323-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+		<!-- END: GOOGLE TRACKING -->
+
+	
+</body></html>

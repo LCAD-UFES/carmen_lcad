@@ -1,0 +1,12 @@
+navbot_controller Protocol Info
+
+Start 255
+Msg
+Ok 128
+
+Msg can be 10 for motors or 20 for battery voltage, 21..23 for adc0:3
+
+If 10 for motor then a speed/direction is specified using bytes from 0-255.
+Forward is from 0-100 and reverse if from 128-228
+
+

@@ -1,0 +1,13 @@
+Makefile.depend
+logger
+playback
+laserint_to_carmen
+data
+playback_control
+tape*
+*log
+log_timestamp_repair
+log_corrected_laser
+test_logfileread
+*.so.1
+*.a

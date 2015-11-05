@@ -1,0 +1,17 @@
+!!!! Esse eh um modulo ROS !!!!!
+
+Para compilar adicione o modulo ao workspace do ros e de make.
+
+Para rodar faca:
+
+1. carmen
+
+./central
+./param_daemon ../src/carmen-drc.ini
+./bumblebee_basic_view 10
+
+2. ros
+
+roslaunch drc_robot_utils drc_robot_position_controllers.launch
+./bin/carmen_ros_communication
+

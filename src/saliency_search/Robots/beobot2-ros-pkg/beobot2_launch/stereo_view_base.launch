@@ -1,0 +1,3 @@
+<launch>
+	<node pkg="image_view" type="stereo_view" name="stereo_view" args="stereo:=/stereo image:=image_color" />
+</launch>

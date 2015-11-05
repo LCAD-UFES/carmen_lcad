@@ -1,0 +1,5 @@
+neural_map 783 45
+place_input 944 214
+out_nl_map_gaussian 921 44
+out_nl_place_command 1069 45
+mae_control_window 842 444
