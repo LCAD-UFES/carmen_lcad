@@ -1,1 +1,0 @@
-/home/alberto/robotics/code/carmen/src/xsens_MTi-G/xsens_mtig_interface.h

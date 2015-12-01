@@ -1,1 +1,0 @@
-/home/alberto/robotics/code/carmen/src/grid_mapping/grid_mapping_messages.h

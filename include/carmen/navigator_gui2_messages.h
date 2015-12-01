@@ -1,1 +1,0 @@
-/home/alberto/robotics/code/carmen/src/navigator_gui2/navigator_gui2_messages.h

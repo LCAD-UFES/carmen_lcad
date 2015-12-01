@@ -1,1 +1,0 @@
-/home/alberto/robotics/code/carmen/src/visual_odometry_package2/visual_odometry_interface.h

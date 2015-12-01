@@ -1,1 +1,0 @@
-/home/alberto/robotics/code/carmen/src/motion_planner/motion_planner_interface.h

@@ -1,1 +1,0 @@
-/home/alberto/robotics/code/carmen/src/navigator_ackerman/navigator_ackerman_interface.h
