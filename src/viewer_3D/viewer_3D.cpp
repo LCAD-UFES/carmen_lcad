@@ -696,9 +696,10 @@ generate_octomap_file(point_cloud current_reading, carmen_fused_odometry_message
 static void
 carmen_laser_laser_message_handler(carmen_laser_laser_message* laser_message)
 {
-    if (!odometry_initialized)
-        return;
-
+	//printf("carmen_laser_laser_message_handler 1\n");
+//    if (!odometry_initialized)
+//        return;
+	//printf("Odometry OK\n");
 //    if (!draw_points_flag)
 //        return;
 
@@ -711,7 +712,7 @@ carmen_laser_laser_message_handler(carmen_laser_laser_message* laser_message)
     }
 
     int num_points = laser_message->num_readings;
-
+	//printf("num_points %d\n", num_points);
     if (laser_points[last_laser_position].points == NULL || laser_points[last_laser_position].point_color == NULL)
     {
         laser_points[last_laser_position].points = (carmen_vector_3D_t*) malloc (num_points * sizeof (carmen_vector_3D_t));
@@ -1911,7 +1912,7 @@ subscribe_ipc_messages(void)
     carmen_fused_odometry_subscribe_fused_odometry_particle_message(NULL,
                                                                     (carmen_handler_t) carmen_fused_odometry_message_handler,
                                                                     CARMEN_SUBSCRIBE_LATEST);
-
+	//printf("carmen_laser_subscribe_frontlaser_message\n");
     carmen_laser_subscribe_frontlaser_message(NULL,
                                               (carmen_handler_t) carmen_laser_laser_message_handler,
                                               CARMEN_SUBSCRIBE_LATEST);

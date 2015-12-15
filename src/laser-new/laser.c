@@ -648,8 +648,13 @@ int main(int argc, char **argv)
     msg.timestamp = m.timestamp;
     msg.host = hostname;
     
-    if (msg.id>0)
+    if (msg.id>0) {
       carmen_laser_publish_laser_message(msg.id, &msg);
+      //printf("publish: id: %d\n", msg.id);
+    }
+    else {
+	printf("ERROR: NOT PUBLISHING: MSG ID <= 0\n");
+    }
     
     if (c>0 && !(c%10)){
       double time=carmen_get_time();
