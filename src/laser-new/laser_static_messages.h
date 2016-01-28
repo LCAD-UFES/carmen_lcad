@@ -51,7 +51,7 @@ typedef struct {
   int id;
   carmen_laser_laser_config_t config;
   int num_readings;
-  float range[CARMEN_LASER_LASER_STATIC_MESSAGE_MAXREADINGS];
+  double range[CARMEN_LASER_LASER_STATIC_MESSAGE_MAXREADINGS];
   int num_remissions;
   float remission[CARMEN_LASER_LASER_STATIC_MESSAGE_MAXREADINGS];
   double timestamp;
