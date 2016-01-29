@@ -96,6 +96,17 @@ static carmen_pose_3D_t car_pose;
 static carmen_pose_3D_t camera_pose;
 static carmen_pose_3D_t velodyne_pose;
 static carmen_pose_3D_t sensor_board_1_pose;
+static carmen_pose_3D_t front_bullbar_pose;
+static carmen_pose_3D_t front_bullbar_left_corner_pose;
+static carmen_pose_3D_t front_bullbar_right_corner_pose;
+static carmen_pose_3D_t rear_bullbar_pose;
+static carmen_pose_3D_t rear_bullbar_left_corner_pose;
+static carmen_pose_3D_t rear_bullbar_right_corner_pose;
+
+static int front_bullbar_left_corner_laser_id;
+static int front_bullbar_right_corner_laser_id;
+static int rear_bullbar_left_corner_laser_id;
+static int rear_bullbar_right_corner_laser_id;
 
 static carmen_pose_3D_t car_fused_pose;
 //static double car_v = 0.0;
@@ -1345,6 +1356,52 @@ init_stuff(int argc, char** argv)
             {(char*) "sensor_board_1", (char*) "roll", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.roll), 0, NULL},
             {(char*) "sensor_board_1", (char*) "pitch", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.pitch), 0, NULL},
             {(char*) "sensor_board_1", (char*) "yaw", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.yaw), 0, NULL},
+            
+            {(char*) "front_bullbar", (char*) "x", CARMEN_PARAM_DOUBLE, &(front_bullbar_pose.position.x), 0, NULL},
+            {(char*) "front_bullbar", (char*) "y", CARMEN_PARAM_DOUBLE, &(front_bullbar_pose.position.y), 10, NULL},
+            {(char*) "front_bullbar", (char*) "z", CARMEN_PARAM_DOUBLE, &(front_bullbar_pose.position.z), 0, NULL},
+            {(char*) "front_bullbar", (char*) "roll", CARMEN_PARAM_DOUBLE, &(front_bullbar_pose.orientation.roll), 0, NULL},
+            {(char*) "front_bullbar", (char*) "pitch", CARMEN_PARAM_DOUBLE, &(front_bullbar_pose.orientation.pitch), 0, NULL},
+            {(char*) "front_bullbar", (char*) "yaw", CARMEN_PARAM_DOUBLE, &(front_bullbar_pose.orientation.yaw), 0, NULL},
+            
+            {(char*) "front_bullbar_left_corner", (char*) "x", CARMEN_PARAM_DOUBLE, &(front_bullbar_left_corner_pose.position.x), -10, NULL},
+            {(char*) "front_bullbar_left_corner", (char*) "y", CARMEN_PARAM_DOUBLE, &(front_bullbar_left_corner_pose.position.y), 0, NULL},
+            {(char*) "front_bullbar_left_corner", (char*) "z", CARMEN_PARAM_DOUBLE, &(front_bullbar_left_corner_pose.position.z), 0, NULL},
+            {(char*) "front_bullbar_left_corner", (char*) "roll", CARMEN_PARAM_DOUBLE, &(front_bullbar_left_corner_pose.orientation.roll), 0, NULL},
+            {(char*) "front_bullbar_left_corner", (char*) "pitch", CARMEN_PARAM_DOUBLE, &(front_bullbar_left_corner_pose.orientation.pitch), 0, NULL},
+            {(char*) "front_bullbar_left_corner", (char*) "yaw", CARMEN_PARAM_DOUBLE, &(front_bullbar_left_corner_pose.orientation.yaw), 0, NULL},
+            {(char*) "front_bullbar_left_corner", (char*) "laser_id", CARMEN_PARAM_INT, &(front_bullbar_left_corner_laser_id), 0, NULL},
+            
+            {(char*) "front_bullbar_right_corner", (char*) "x", CARMEN_PARAM_DOUBLE, &(front_bullbar_right_corner_pose.position.x), 10, NULL},
+            {(char*) "front_bullbar_right_corner", (char*) "y", CARMEN_PARAM_DOUBLE, &(front_bullbar_right_corner_pose.position.y), 0, NULL},
+            {(char*) "front_bullbar_right_corner", (char*) "z", CARMEN_PARAM_DOUBLE, &(front_bullbar_right_corner_pose.position.z), 0, NULL},
+            {(char*) "front_bullbar_right_corner", (char*) "roll", CARMEN_PARAM_DOUBLE, &(front_bullbar_right_corner_pose.orientation.roll), 0, NULL},
+            {(char*) "front_bullbar_right_corner", (char*) "pitch", CARMEN_PARAM_DOUBLE, &(front_bullbar_right_corner_pose.orientation.pitch), 0, NULL},
+            {(char*) "front_bullbar_right_corner", (char*) "yaw", CARMEN_PARAM_DOUBLE, &(front_bullbar_right_corner_pose.orientation.yaw), 0, NULL},
+            {(char*) "front_bullbar_right_corner", (char*) "laser_id", CARMEN_PARAM_INT, &(front_bullbar_right_corner_laser_id), 0, NULL},
+            
+            {(char*) "rear_bullbar", (char*) "x", CARMEN_PARAM_DOUBLE, &(rear_bullbar_pose.position.x), 0, NULL},
+            {(char*) "rear_bullbar", (char*) "y", CARMEN_PARAM_DOUBLE, &(rear_bullbar_pose.position.y), -10, NULL},
+            {(char*) "rear_bullbar", (char*) "z", CARMEN_PARAM_DOUBLE, &(rear_bullbar_pose.position.z), 0, NULL},
+            {(char*) "rear_bullbar", (char*) "roll", CARMEN_PARAM_DOUBLE, &(rear_bullbar_pose.orientation.roll), 0, NULL},
+            {(char*) "rear_bullbar", (char*) "pitch", CARMEN_PARAM_DOUBLE, &(rear_bullbar_pose.orientation.pitch), 0, NULL},
+            {(char*) "rear_bullbar", (char*) "yaw", CARMEN_PARAM_DOUBLE, &(rear_bullbar_pose.orientation.yaw), 0, NULL},
+            
+            {(char*) "rear_bullbar_left_corner", (char*) "x", CARMEN_PARAM_DOUBLE, &(rear_bullbar_left_corner_pose.position.x), -10, NULL},
+            {(char*) "rear_bullbar_left_corner", (char*) "y", CARMEN_PARAM_DOUBLE, &(rear_bullbar_left_corner_pose.position.y), 0, NULL},
+            {(char*) "rear_bullbar_left_corner", (char*) "z", CARMEN_PARAM_DOUBLE, &(rear_bullbar_left_corner_pose.position.z), 0, NULL},
+            {(char*) "rear_bullbar_left_corner", (char*) "roll", CARMEN_PARAM_DOUBLE, &(rear_bullbar_left_corner_pose.orientation.roll), 0, NULL},
+            {(char*) "rear_bullbar_left_corner", (char*) "pitch", CARMEN_PARAM_DOUBLE, &(rear_bullbar_left_corner_pose.orientation.pitch), 0, NULL},
+            {(char*) "rear_bullbar_left_corner", (char*) "yaw", CARMEN_PARAM_DOUBLE, &(rear_bullbar_left_corner_pose.orientation.yaw), 0, NULL},
+            {(char*) "rear_bullbar_left_corner", (char*) "laser_id", CARMEN_PARAM_INT, &(rear_bullbar_left_corner_laser_id), 0, NULL},
+            
+            {(char*) "rear_bullbar_right_corner", (char*) "x", CARMEN_PARAM_DOUBLE, &(rear_bullbar_right_corner_pose.position.x), 10, NULL},
+            {(char*) "rear_bullbar_right_corner", (char*) "y", CARMEN_PARAM_DOUBLE, &(rear_bullbar_right_corner_pose.position.y), 0, NULL},
+            {(char*) "rear_bullbar_right_corner", (char*) "z", CARMEN_PARAM_DOUBLE, &(rear_bullbar_right_corner_pose.position.z), 0, NULL},
+            {(char*) "rear_bullbar_right_corner", (char*) "roll", CARMEN_PARAM_DOUBLE, &(rear_bullbar_right_corner_pose.orientation.roll), 0, NULL},
+            {(char*) "rear_bullbar_right_corner", (char*) "pitch", CARMEN_PARAM_DOUBLE, &(rear_bullbar_right_corner_pose.orientation.pitch), 0, NULL},
+            {(char*) "rear_bullbar_right_corner", (char*) "yaw", CARMEN_PARAM_DOUBLE, &(rear_bullbar_right_corner_pose.orientation.yaw), 0, NULL},
+            {(char*) "rear_bullbar_right_corner", (char*) "laser_id", CARMEN_PARAM_INT, &(rear_bullbar_right_corner_laser_id), 0, NULL},
 
             {(char*) "xsens", (char*) "x", CARMEN_PARAM_DOUBLE, &(xsens_pose.position.x), 0, NULL},
             {(char*) "xsens", (char*) "y", CARMEN_PARAM_DOUBLE, &(xsens_pose.position.y), 0, NULL},
@@ -1482,6 +1539,25 @@ init_stuff(int argc, char** argv)
 
     set_background_color(b_red, b_green, b_blue);
 
+	//////////////
+	// setup scene
+
+	// car children
+	sensor_board_1_pose.parent = &car_pose;
+	front_bullbar_pose.parent = &car_pose;
+	rear_bullbar_pose.parent = &car_pose;
+	
+	// board 1 children
+	velodyne_pose.parent = &sensor_board_1_pose;
+	laser_pose.parent = &sensor_board_1_pose;
+	
+	// front_bullbar children
+	front_bullbar_left_corner_pose.parent = &front_bullbar_pose;
+	front_bullbar_right_corner_pose.parent = &front_bullbar_pose;
+	
+	// rear_bullbar children
+	rear_bullbar_left_corner_pose.parent = &rear_bullbar_pose;
+	rear_bullbar_right_corner_pose.parent = &rear_bullbar_pose;
 }
 
 
