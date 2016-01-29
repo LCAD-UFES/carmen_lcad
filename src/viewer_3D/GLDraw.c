@@ -2,6 +2,7 @@
 #include <carmen/fused_odometry_interface.h>
 #include <carmen/gps_xyz_interface.h>
 #include <carmen/rotation_geometry.h>
+#include <carmen/moving_objects_interface.h>
 
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
@@ -559,64 +560,30 @@ draw_tracking_moving_objects(moving_objects_tracking_t  *moving_objects_tracking
 
 	for (i = 0; i < current_num_point_clouds; i++)
 	{
+		if (moving_objects_tracking[i].geometric_model == -1)
+			continue;
+
 		carmen_pose_3D_t pos;
 		pos = moving_objects_tracking[i].moving_objects_pose;
-//		rotation_matrix *rotate = compute_rotation_matrix(NULL, pos.orientation);
-		rotate = compute_rotation_matrix(NULL, pos.orientation);
 		carmen_vector_3D_t p1, p2, p3 , p4, p5, p6, p7, p8, t;
+		carmen_vector_3D_t s1, s2, s3, s4; /* moving object direction arrow */
 		double correction_wheel_height = 0.28;
 		double W, L, H;
 
 		pos.position.x = pos.position.x - offset.x;
 		pos.position.y = pos.position.y - offset.y;
 		pos.position.z = 0.0;
-	//	pos.position.z = pos.position.z - offset.z;
 
-//		draw_number_associated (pos.position.x, pos.position.y, moving_objects_tracking[i].num_associated);
+		W = moving_objects_tracking[i].model_features.geometry.width;
+		L = moving_objects_tracking[i].model_features.geometry.length;
+		H = moving_objects_tracking[i].model_features.geometry.height;
 
-		W = moving_objects_tracking[i].width;
-		L = moving_objects_tracking[i].length;
-		H = moving_objects_tracking[i].height;
+		rotate = compute_rotation_matrix(NULL, pos.orientation);
+		draw_number_associated(pos.position.x, pos.position.y, moving_objects_tracking[i].num_associated);
 
-		// geometric model of the object - pedestrian: 0; car: 1; truck: 2; motorcycle / bike: 3 .
-		if (moving_objects_tracking[i].geometric_model == 0)//pedestrian
-		{
-			W = 0.8;
-			L = 0.8;
-			H = 1.80;
-//			draw_number_associated (pos.position.x, pos.position.y, moving_objects_tracking[i].num_associated);
-			glColor3d (0, 1, 0);
-		}
-		else if (moving_objects_tracking[i].geometric_model == 1)// car
-		{
-			W = 1.8;
-			L = 4.0;
-			H = 1.7;
-			draw_number_associated (pos.position.x, pos.position.y, moving_objects_tracking[i].num_associated);
-			glColor3d (1, 0, 0.8);
-		}
-		else if (moving_objects_tracking[i].geometric_model == 2) // truck
-		{
-			W = 2.8;
-			L = 8.0;
-			H = 2.8;
-//			draw_number_associated (pos.position.x, pos.position.y, moving_objects_tracking[i].num_associated);
-			glColor3d (0, 0, 1);
-		}
-		else if (moving_objects_tracking[i].geometric_model == 3) // moto
-		{
-			W = 0.9;
-			L = 2.3;
-			H = 1.5;
-//			draw_number_associated (pos.position.x, pos.position.y, moving_objects_tracking[i].num_associated);
-			glColor3d (1, 1, 1);
-
-		}
-		else // without drawing
-		{
-			destroy_rotation_matrix(rotate);
-			continue;
-		}
+		glColor3d(moving_objects_tracking[i].model_features.red,
+				moving_objects_tracking[i].model_features.green,
+				moving_objects_tracking[i].model_features.blue);
 
 		p1.x = - L/2.0;
 		p1.y = - W/2.0;
@@ -674,48 +641,101 @@ draw_tracking_moving_objects(moving_objects_tracking_t  *moving_objects_tracking
 		t = multiply_matrix_vector(rotate, p8);
 		p8 = add_vectors(t, pos.position);
 
-	    glBegin (GL_LINES);
+		glBegin (GL_LINES);
 
-	    	glVertex3d (p1.x, p1.y, p1.z);
-	    	glVertex3d (p2.x, p2.y, p2.z);
+		glVertex3d (p1.x, p1.y, p1.z);
+		glVertex3d (p2.x, p2.y, p2.z);
 
-	    	glVertex3d (p2.x, p2.y, p2.z);
-	    	glVertex3d (p3.x, p3.y, p3.z);
+		glVertex3d (p2.x, p2.y, p2.z);
+		glVertex3d (p3.x, p3.y, p3.z);
 
-	    	glVertex3d (p3.x, p3.y, p3.z);
-	    	glVertex3d (p4.x, p4.y, p4.z);
+		glVertex3d (p3.x, p3.y, p3.z);
+		glVertex3d (p4.x, p4.y, p4.z);
 
-	    	glVertex3d (p4.x, p4.y, p4.z);
-	    	glVertex3d (p1.x, p1.y, p1.z);
-	    	//////////////////////////////
+		glVertex3d (p4.x, p4.y, p4.z);
+		glVertex3d (p1.x, p1.y, p1.z);
+		//////////////////////////////
 
-	    	glVertex3d (p5.x, p5.y, p5.z);
-	    	glVertex3d (p6.x, p6.y, p6.z);
+		glVertex3d (p5.x, p5.y, p5.z);
+		glVertex3d (p6.x, p6.y, p6.z);
 
-	    	glVertex3d (p6.x, p6.y, p6.z);
-	    	glVertex3d (p7.x, p7.y, p7.z);
+		glVertex3d (p6.x, p6.y, p6.z);
+		glVertex3d (p7.x, p7.y, p7.z);
 
-	    	glVertex3d (p7.x, p7.y, p7.z);
-	    	glVertex3d (p8.x, p8.y, p8.z);
+		glVertex3d (p7.x, p7.y, p7.z);
+		glVertex3d (p8.x, p8.y, p8.z);
 
-	    	glVertex3d (p8.x, p8.y, p8.z);
-	    	glVertex3d (p5.x, p5.y, p5.z);
-	    	//////////////////////////////
+		glVertex3d (p8.x, p8.y, p8.z);
+		glVertex3d (p5.x, p5.y, p5.z);
+		//////////////////////////////
 
-	    	glVertex3d (p1.x, p1.y, p1.z);
-	    	glVertex3d (p5.x, p5.y, p5.z);
+		glVertex3d (p1.x, p1.y, p1.z);
+		glVertex3d (p5.x, p5.y, p5.z);
 
-	    	glVertex3d (p2.x, p2.y, p2.z);
-	    	glVertex3d (p6.x, p6.y, p6.z);
+		glVertex3d (p2.x, p2.y, p2.z);
+		glVertex3d (p6.x, p6.y, p6.z);
 
-	    	glVertex3d (p3.x, p3.y, p3.z);
-	    	glVertex3d (p7.x, p7.y, p7.z);
+		glVertex3d (p3.x, p3.y, p3.z);
+		glVertex3d (p7.x, p7.y, p7.z);
 
-	    	glVertex3d (p4.x, p4.y, p4.z);
-	    	glVertex3d (p8.x, p8.y, p8.z);
+		glVertex3d (p4.x, p4.y, p4.z);
+		glVertex3d (p8.x, p8.y, p8.z);
 
-	    glEnd ();
-	    destroy_rotation_matrix(rotate);
+		glEnd ();
+
+		/* Moving Object direction arrow */
+		s1.x = 0.0;
+		s1.y = 0.0;
+		s1.z = H - correction_wheel_height;
+
+		s2.x = L/2.0;
+		s2.y = 0.0;
+		s2.z = H - correction_wheel_height;
+
+		s3.x = (L/2.0) - 0.3;
+		s3.y = 0.2;
+		s3.z = H - correction_wheel_height;
+
+		s4.x = (L/2.0) - 0.3;
+		s4.y = -0.2;
+		s4.z = H - correction_wheel_height;
+
+		t = multiply_matrix_vector(rotate, s1);
+		s1 = add_vectors(t, pos.position);
+
+		t = multiply_matrix_vector(rotate, s2);
+		s2 = add_vectors(t, pos.position);
+
+		t = multiply_matrix_vector(rotate, s3);
+		s3 = add_vectors(t, pos.position);
+
+		t = multiply_matrix_vector(rotate, s4);
+		s4 = add_vectors(t, pos.position);
+
+		glBegin(GL_LINES);
+		/* Part of arrow: | */
+		glVertex3d(s1.x, s1.y, s1.z);
+		glVertex3d(s2.x, s2.y, s2.z);
+
+		/* Part of arrow: / */
+		glVertex3d(s3.x, s3.y, s3.z);
+		glVertex3d(s2.x, s2.y, s2.z);
+
+		/* Part of arrow: \ */
+		glVertex3d(s4.x, s4.y, s4.z);
+		glVertex3d(s2.x, s2.y, s2.z);
+
+		glEnd();
+
+		//center of object
+		glPushAttrib(GL_POINT_BIT);
+		glPointSize(5);
+		glBegin(GL_POINTS);
+		glVertex3d(s1.x, s1.y, s1.z);
+		glEnd();
+		glPopAttrib();
+
+		destroy_rotation_matrix(rotate);
 	}
 }
 

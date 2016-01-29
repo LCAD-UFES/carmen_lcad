@@ -189,6 +189,31 @@ base_ackerman_message_handler(carmen_base_ackerman_odometry_message *message)
 }
 
 
+static void 
+define_fused_odometry_messages(void)
+{
+	IPC_RETURN_TYPE err;
+
+	err = IPC_defineMsg(CARMEN_FUSED_ODOMETRY_NAME, IPC_VARIABLE_LENGTH, CARMEN_FUSED_ODOMETRY_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_FUSED_ODOMETRY_NAME);
+
+	err = IPC_defineMsg(CARMEN_FUSED_ODOMETRY_PARTICLE_NAME, IPC_VARIABLE_LENGTH, CARMEN_FUSED_ODOMETRY_PARTICLE_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_FUSED_ODOMETRY_PARTICLE_NAME);
+
+	err = IPC_defineMsg(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME,	IPC_VARIABLE_LENGTH, CARMEN_BASE_ACKERMAN_ODOMETRY_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
+
+	err = IPC_defineMsg(CARMEN_ROBOT_ACKERMAN_FRONTLASER_NAME, IPC_VARIABLE_LENGTH, CARMEN_ROBOT_ACKERMAN_FRONTLASER_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_ROBOT_ACKERMAN_FRONTLASER_NAME);
+
+	err = IPC_defineMsg(CARMEN_LOCALIZE_ACKERMAN_PARTICLE_NAME, IPC_VARIABLE_LENGTH, CARMEN_LOCALIZE_ACKERMAN_PARTICLE_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_LOCALIZE_ACKERMAN_PARTICLE_NAME);
+
+	err = IPC_defineMsg(CARMEN_LOCALIZE_ACKERMAN_SENSOR_NAME, IPC_VARIABLE_LENGTH, CARMEN_LOCALIZE_ACKERMAN_SENSOR_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_LOCALIZE_ACKERMAN_SENSOR_NAME);
+}
+
+
 int 
 main(int argc, char **argv) 
 {
@@ -197,6 +222,8 @@ main(int argc, char **argv)
 
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
+	define_fused_odometry_messages();
+
 	signal(SIGINT, shutdown_module);
 	graphslam_load_corrected_poses(argv[1]);
 

@@ -2,11 +2,13 @@
 	---  Moving Objects Module ---
 **********************************************************/
 
+#include "moving_objects_messages.h"
+#include "moving_objects.h"
+
 #include <carmen/carmen.h>
 #include <prob_measurement_model.h>
 #include <prob_map.h>
 #include <carmen/moving_objects_interface.h>
-#include <carmen/moving_objects_messages.h>
 #include <carmen/localize_ackerman_core.h>
 #include <carmen/localize_ackerman_messages.h>
 #include <carmen/localize_ackerman_interface.h>
@@ -23,7 +25,6 @@
 #include <carmen/stereo_interface.h>
 #include <carmen/stereo_velodyne.h>
 
-#include "moving_objects.h"
 
 #include <pcl/PointIndices.h>
 #include <Eigen/Core>
@@ -61,11 +62,13 @@ static carmen_moving_objects_point_clouds_message moving_objects_point_clouds_me
 int last_num_points;
 double safe_range_above_sensors;
 double highest_sensor = 0.0;
-carmen_vector_3D_t *point_clouds;
+carmen_vector_3D_t *carmen_3d_point_clouds;
 int** indices_clusters = NULL;
 
-static int first_velodyne_message = 1;
-static int first_offline_map_message = 0;
+static int first_velodyne_message_flag = 1;
+static int first_offline_map_message_flag = 0;
+
+static carmen_map_p offline_grid_map = NULL;
 
 int frame = 1;
 
@@ -88,25 +91,29 @@ generates_ray_order(int size)
 }
 
 
-void
+moving_objects_input_data_t
 bundle_moving_objects_input_data()
 {
-	moving_objects_input.car_config = car_config;
-	moving_objects_input.car_fused_pose = car_fused_pose;
-	moving_objects_input.car_fused_time = car_fused_time;
-	moving_objects_input.car_fused_velocity = car_fused_velocity;
-	moving_objects_input.car_phi = car_phi;
-	moving_objects_input.highest_sensor = highest_sensor;
-	moving_objects_input.num_velodyne_point_clouds = num_velodyne_point_clouds;
-	moving_objects_input.number_of_sensors = number_of_sensors;
-	moving_objects_input.robot_wheel_radius = robot_wheel_radius;
-	moving_objects_input.safe_range_above_sensors = safe_range_above_sensors;
-	moving_objects_input.sensor_board_1_pose = sensor_board_1_pose;
-	moving_objects_input.sensor_board_1_to_car_matrix = sensor_board_1_to_car_matrix;
-	moving_objects_input.velodyne_pose = velodyne_pose;
-	moving_objects_input.car_global_pose = car_global_pose;
-	moving_objects_input.first_offline_map_message = first_offline_map_message;
-	moving_objects_input.indices_clusters = indices_clusters;
+	moving_objects_input_data_t l_moving_objects_input;
+
+	l_moving_objects_input.car_config                   = car_config;
+	l_moving_objects_input.car_fused_pose               = car_fused_pose;
+	l_moving_objects_input.car_fused_time               = car_fused_time;
+	l_moving_objects_input.car_fused_velocity           = car_fused_velocity;
+	l_moving_objects_input.car_phi                      = car_phi;
+	l_moving_objects_input.car_global_pose              = car_global_pose;
+	l_moving_objects_input.highest_sensor               = highest_sensor;
+	l_moving_objects_input.num_velodyne_point_clouds    = num_velodyne_point_clouds;
+	l_moving_objects_input.number_of_sensors            = number_of_sensors;
+	l_moving_objects_input.robot_wheel_radius           = robot_wheel_radius;
+	l_moving_objects_input.safe_range_above_sensors     = safe_range_above_sensors;
+	l_moving_objects_input.sensor_board_1_pose          = sensor_board_1_pose;
+	l_moving_objects_input.sensor_board_1_to_car_matrix = sensor_board_1_to_car_matrix;
+	l_moving_objects_input.velodyne_pose                = velodyne_pose;
+	l_moving_objects_input.first_offline_map_message    = first_offline_map_message_flag;
+	l_moving_objects_input.indices_clusters             = indices_clusters;
+
+	return l_moving_objects_input;
 }
 
 
@@ -124,11 +131,11 @@ get_position_offset(void)
 
 
 Eigen::Vector3f
-get_rgb_from_color_palette_and_association(int num_color, std::list<color_palette_and_association_data_t> color_palette_and_association)
+get_rgb_from_color_palette_and_association (int num_color, list<color_palette_and_association_data_t> color_palette_and_association)
 {
 	Eigen::Vector3f	color_palette;
 
-	for (std::list<color_palette_and_association_data_t>::iterator it = color_palette_and_association.begin();
+	for (list<color_palette_and_association_data_t>::iterator it = color_palette_and_association.begin();
 			it != color_palette_and_association.end(); it++)
 	{
 		if (num_color == it->num_color)
@@ -136,11 +143,48 @@ get_rgb_from_color_palette_and_association(int num_color, std::list<color_palett
 			color_palette[0] = it->color_palette[0];
 			color_palette[1] = it->color_palette[1];
 			color_palette[2] = it->color_palette[2];
-			continue;
+			break;
 		}
 	}
 
-	return(color_palette);
+	return color_palette;
+}
+
+
+void
+initialize_objects_maps()
+{
+	offline_grid_map = (carmen_map_t *) malloc (sizeof(carmen_map_t));
+	offline_grid_map->complete_map = NULL;
+}
+
+
+void
+initialize_map(carmen_map_t *map, int gridmap_size_x, int gridmap_size_y, double gridmap_resolution)
+{
+	int i, j;
+
+	map->config.resolution = gridmap_resolution;
+	map->config.x_size = gridmap_size_x;
+	map->config.y_size = gridmap_size_y;
+	map->config.map_name = NULL;
+
+	map->complete_map = (double*) malloc(sizeof(double) * gridmap_size_x * gridmap_size_y);
+	carmen_test_alloc(map->complete_map);
+	map->map = (double**) malloc(sizeof(double*) * gridmap_size_x);
+	carmen_test_alloc(map->map);
+
+	for (i = 0; i < gridmap_size_x; i++)
+	{
+		map->map[i] = &map->complete_map[i * gridmap_size_y];
+
+		//initializing map with unknown
+		for (j = 0; j < gridmap_size_y; j++)
+		{
+			map->map[i][j] = -1.0;
+		}
+	}
+	return;
 }
 
 
@@ -149,15 +193,35 @@ get_rgb_from_color_palette_and_association(int num_color, std::list<color_palett
 // Handlers                                                                                  //
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
-
-
 void
 carmen_map_server_offline_map_message_handler(carmen_map_server_offline_map_message *message)
 {
 	if (message != NULL)
 	{
-		if(first_offline_map_message == 0)
-			first_offline_map_message = 1;
+		if (first_offline_map_message_flag == 0)
+		{
+			first_offline_map_message_flag = 1;
+		}
+	}
+
+	if (offline_grid_map == NULL && localize_initialized)
+	{
+		initialize_objects_maps();
+		initialize_map(offline_grid_map, message->config.x_size, message->config.y_size, message->config.resolution);
+
+		offline_grid_map->config = message->config;
+
+		for (int i = 0; i < (message->config.x_size * message->config.y_size); i++)
+			offline_grid_map->complete_map[i] = message->complete_map[i];
+	}
+	else
+	{
+		offline_grid_map->config = message->config;
+
+		for (int i = 0; i < (message->config.x_size * message->config.y_size); i++)
+		{
+			offline_grid_map->complete_map[i] = message->complete_map[i];
+		}
 	}
 }
 
@@ -174,14 +238,14 @@ localize_ackerman_handler(carmen_localize_ackerman_globalpos_message *localize_a
 	car_fused_time = localize_ackerman_message->timestamp;
 	car_phi = localize_ackerman_message->phi;
 
-	car_fused_pose.position.z = 0.0;
+	car_fused_pose.position.z        = 0.0;
 	car_fused_pose.orientation.pitch = 0.0;
-	car_fused_pose.orientation.roll = 0.0;
+	car_fused_pose.orientation.roll  = 0.0;
 
-	if(first_offline_map_message)
+	if (first_offline_map_message_flag)
 	{
 		car_global_pose = car_fused_pose;
-		first_offline_map_message = -1;
+		first_offline_map_message_flag = -1;
 	}
 
 	localize_initialized = 1;
@@ -204,7 +268,8 @@ init_allocation_moving_objects_points_for_point_cloud_i(int index_point_cloud, i
 }
 
 
-void deallocation_moving_objects_point_clouds_message()
+void
+deallocation_moving_objects_point_clouds_message()
 {
 	int i;
 
@@ -223,52 +288,41 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	int num_points;
 	int num_point_clouds;
 	Eigen::Vector3f	color_palette;
-
-//	FILE * arq;
-//	arq = fopen("teste.txt", "a");
+	std::list<object_point_cloud_data_t> list_point_clouds;
+	std::list<color_palette_and_association_data_t> l_color_palette_and_association;
 
 	if (localize_initialized)
 	{
 		num_points = velodyne_message->number_of_32_laser_shots * spherical_sensor_params[0].vertical_resolution;
 
-		if(first_velodyne_message)
+		if (first_velodyne_message_flag)
 		{
-
-			point_clouds = (carmen_vector_3D_t *) malloc(velodyne_message->number_of_32_laser_shots * spherical_sensor_params[0].vertical_resolution * sizeof (carmen_vector_3D_t));
-			carmen_test_alloc(point_clouds);
-			first_velodyne_message = 0;
+			carmen_3d_point_clouds = (carmen_vector_3D_t *) malloc(velodyne_message->number_of_32_laser_shots*spherical_sensor_params[0].vertical_resolution*sizeof(carmen_vector_3D_t));
+			carmen_test_alloc(carmen_3d_point_clouds);
+			first_velodyne_message_flag = 0;
 		}
 
 		if (spherical_sensor_data[0].points == NULL)
-		{
 			return;
-		}
 
-		bundle_moving_objects_input_data();
+		moving_objects_input = bundle_moving_objects_input_data();
 
-		detect_and_follow_moving_objects(velodyne_message, &spherical_sensor_params[0], &spherical_sensor_data[0], &car_fused_velocity, car_phi, moving_objects_input, point_clouds);
-
-
-		std::list<object_point_cloud_data_t> list_point_clouds = get_list_point_clouds();
-		std::list<color_palette_and_association_data_t> color_palette_and_association = get_color_palette_and_association();
-
+		list_point_clouds = detect_and_follow_moving_objects(velodyne_message, &spherical_sensor_params[0],
+				&spherical_sensor_data[0], &car_fused_velocity, car_phi, moving_objects_input, carmen_3d_point_clouds,
+				offline_grid_map);
 
 		num_point_clouds = list_point_clouds.size();
-//		double v_car_x, v_car_y, v_car_z;
-//		v_car_x = moving_objects_input.car_fused_velocity.x;
-//		v_car_y = moving_objects_input.car_fused_velocity.y;
-//		v_car_z = moving_objects_input.car_fused_velocity.z;
-		printf("num_point_clouds: %d \n", num_point_clouds);
-		printf("frame: %d \n", frame);
-		frame++;
 
-//		printf("v_car_x: %lf v_car_y: %lf v_car_z: %lf\n", v_car_x, v_car_y, v_car_z);
-//		fprintf(arq, "num_point_clouds: %d\n", num_point_clouds);
-//		fprintf(arq, "frame: %d\n", frame);
-//		fclose(arq);
+		/*** PRINT NUMBER OF POINT CLOUDS SEGMENTED IN THE SCENE ***/
+//		printf("frame: %d \n", frame);
+//		printf("num_point_clouds: %d \n", num_point_clouds);
+//		printf("current timestamp: %.10f \n", velodyne_message->timestamp);
+		frame++;
 
 		if (num_point_clouds == 0)
 			return;
+
+		l_color_palette_and_association = get_color_palette_and_association();
 
 		init_allocation_moving_objects_point_clouds_message(num_point_clouds);
 
@@ -286,29 +340,29 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 		{
 			j = 0;
 
-			color_palette = get_rgb_from_color_palette_and_association (it->num_color_associate, color_palette_and_association);
+			color_palette = get_rgb_from_color_palette_and_association(it->num_color_associate, l_color_palette_and_association);
 
-			moving_objects_point_clouds_message.point_clouds[i].r = ((double) color_palette[0]) / 255.0;
-			moving_objects_point_clouds_message.point_clouds[i].g = ((double) color_palette[1]) / 255.0;
-			moving_objects_point_clouds_message.point_clouds[i].b = ((double) color_palette[2]) / 255.0;
-			moving_objects_point_clouds_message.point_clouds[i].point_size = it->point_cloud.size();
+			moving_objects_point_clouds_message.point_clouds[i].r = ((double)color_palette[0]) / 255.0;
+			moving_objects_point_clouds_message.point_clouds[i].g = ((double)color_palette[1]) / 255.0;
+			moving_objects_point_clouds_message.point_clouds[i].b = ((double)color_palette[2]) / 255.0;
+			moving_objects_point_clouds_message.point_clouds[i].point_size      = it->point_cloud.size();
 			moving_objects_point_clouds_message.point_clouds[i].linear_velocity = it->linear_velocity;
-			moving_objects_point_clouds_message.point_clouds[i].orientation = it->orientation;
-			moving_objects_point_clouds_message.point_clouds[i].object_pose.x = it->object_pose.position.x; //+ it->car_global_pose.position.x;//it->centroid[0] + it->car_global_pose.position.x;
-			moving_objects_point_clouds_message.point_clouds[i].object_pose.y = it->object_pose.position.y; //+ it->car_global_pose.position.y;//it->centroid[1] + it->car_global_pose.position.y;
-			moving_objects_point_clouds_message.point_clouds[i].object_pose.z = it->object_pose.position.z + it->car_global_pose.position.z;//it->centroid[2] + it->car_global_pose.position.z;
-			moving_objects_point_clouds_message.point_clouds[i].height = it->geometry.height;
-			moving_objects_point_clouds_message.point_clouds[i].length = it->geometry.length;
-			moving_objects_point_clouds_message.point_clouds[i].width = it->geometry.width;
+			moving_objects_point_clouds_message.point_clouds[i].orientation     = it->orientation;
+			moving_objects_point_clouds_message.point_clouds[i].object_pose.x   = it->object_pose.position.x;// + it->car_global_pose.position.x;//it->centroid[0] + it->car_global_pose.position.x;
+			moving_objects_point_clouds_message.point_clouds[i].object_pose.y   = it->object_pose.position.y;// + it->car_global_pose.position.y;//it->centroid[1] + it->car_global_pose.position.y;
+			moving_objects_point_clouds_message.point_clouds[i].object_pose.z   = it->object_pose.position.z + it->car_global_pose.position.z;//it->centroid[2] + it->car_global_pose.position.z;
+			moving_objects_point_clouds_message.point_clouds[i].height          = it->geometry.height;
+			moving_objects_point_clouds_message.point_clouds[i].length          = it->geometry.length;
+			moving_objects_point_clouds_message.point_clouds[i].width           = it->geometry.width;
 			moving_objects_point_clouds_message.point_clouds[i].geometric_model = it->geometric_model;
-			moving_objects_point_clouds_message.point_clouds[i].num_associated = it->num_color_associate;
+			moving_objects_point_clouds_message.point_clouds[i].model_features  = it->model_features;
+			moving_objects_point_clouds_message.point_clouds[i].num_associated  = it->num_color_associate;
 
-			for (pcl::PointCloud<pcl::PointXYZ>::const_iterator pit = it->point_cloud.begin (); pit != it->point_cloud.end (); pit++)
+			for (pcl::PointCloud<pcl::PointXYZ>::const_iterator pit = it->point_cloud.begin(); pit != it->point_cloud.end(); pit++)
 			{
 				moving_objects_point_clouds_message.point_clouds[i].points[j].x = pit->x + it->car_global_pose.position.x;
 				moving_objects_point_clouds_message.point_clouds[i].points[j].y = pit->y + it->car_global_pose.position.y;
 				moving_objects_point_clouds_message.point_clouds[i].points[j].z = pit->z + it->car_global_pose.position.z;
-
 				j++;
 			}
 
@@ -673,8 +727,8 @@ read_parameters(int argc, char **argv)
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-int 
-main(int argc, char **argv) 
+int
+main(int argc, char **argv)
 {
 	/* Connect to IPC Server */
 	carmen_ipc_initialize(argc, argv);
@@ -705,7 +759,6 @@ main(int argc, char **argv)
     carmen_localize_ackerman_subscribe_globalpos_message(NULL,
                                                          (carmen_handler_t) localize_ackerman_handler,
                                                          CARMEN_SUBSCRIBE_LATEST);
-
 
     carmen_map_server_subscribe_offline_map(NULL,
             								(carmen_handler_t) carmen_map_server_offline_map_message_handler,

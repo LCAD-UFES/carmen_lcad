@@ -1,1 +1,0 @@
-/home/alberto/robotics/code/carmen/src/moving_objects/moving_objects_messages.h

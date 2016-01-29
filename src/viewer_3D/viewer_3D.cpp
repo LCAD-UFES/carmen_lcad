@@ -867,6 +867,7 @@ carmen_moving_objects_point_clouds_message_handler (carmen_moving_objects_point_
 		moving_objects_tracking[i].height = moving_objects_point_clouds_message->point_clouds[i].height;
 		moving_objects_tracking[i].linear_velocity = moving_objects_point_clouds_message->point_clouds[i].linear_velocity;
 		moving_objects_tracking[i].geometric_model = moving_objects_point_clouds_message->point_clouds[i].geometric_model;
+		moving_objects_tracking[i].model_features = moving_objects_point_clouds_message->point_clouds[i].model_features;
 		moving_objects_tracking[i].num_associated = moving_objects_point_clouds_message->point_clouds[i].num_associated;
 
 		for (k = 0; k < moving_objects_point_clouds_message->point_clouds[i].point_size; k++, j++)

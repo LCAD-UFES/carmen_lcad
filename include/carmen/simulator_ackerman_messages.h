@@ -1,1 +1,0 @@
-/home/alberto/robotics/code/carmen/src/simulator_ackerman/simulator_ackerman_messages.h

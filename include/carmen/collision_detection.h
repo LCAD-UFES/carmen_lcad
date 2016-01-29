@@ -1,1 +1,0 @@
-/home/alberto/robotics/code/carmen/src/obstacle_avoider/collision_detection.h

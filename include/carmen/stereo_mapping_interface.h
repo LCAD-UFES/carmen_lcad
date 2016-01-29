@@ -1,1 +1,0 @@
-/home/alberto/robotics/code/carmen/src/stereo_mapping/stereo_mapping_interface.h

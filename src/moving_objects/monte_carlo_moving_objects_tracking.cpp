@@ -1,60 +1,51 @@
-#include <math.h>
-#include <vector>
-#include <list>
-
-#include "moving_objects.h"
 #include "monte_carlo_moving_objects_tracking.h"
-
-using std::vector;
-using namespace std;
-
-double alpha_1 = 1.0; // desvio padrão da velocidade padrão 0.2
-double alpha_2 = 0.1; // desvio padrão de theta padrão 0.01
-double v_min = 0.0; // velocidade mínima;
-double v_max = 25.0; // velocidade máxima
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-particle
-sample_motion_model(double delta_time, particle particle_t_1)
+particle_datmo
+sample_motion_model(double delta_time, particle_datmo particle_t_1)
 {
-
-	particle particle_t;
-	carmen_point_t pose_t;
-	carmen_point_t pose_t_1;
+	particle_datmo particle_t;
+	carmen_point_t pose_t, pose_t_1;
 	double v;
 
-	pose_t_1.x = particle_t_1.pose.x;
-	pose_t_1.y = particle_t_1.pose.y;
-	v = particle_t_1.velocity;
+	pose_t_1.x     = particle_t_1.pose.x;
+	pose_t_1.y     = particle_t_1.pose.y;
 	pose_t_1.theta = particle_t_1.pose.theta;
+	v              = particle_t_1.velocity;
 
 	v = v + carmen_gaussian_random(0.0, alpha_1);
-	if (v > v_max)
-		v = v_max;
-	if (v < v_min)
-		v = v_min;
+	if (v > v_max) v = v_max;
+	if (v < v_min) v = v_min;
 
 	pose_t_1.theta = pose_t_1.theta + carmen_gaussian_random(0.0, alpha_2);
 	pose_t_1.theta = carmen_normalize_theta(pose_t_1.theta);
 
-	pose_t.x = pose_t_1.x + delta_time * v * cos(pose_t_1.theta);
-	pose_t.y = pose_t_1.y + delta_time * v * sin(pose_t_1.theta);
+	pose_t.x = pose_t_1.x + delta_time*v*cos(pose_t_1.theta);
+	pose_t.y = pose_t_1.y + delta_time*v*sin(pose_t_1.theta);
 
 	particle_t.pose.theta = carmen_normalize_theta(pose_t_1.theta);
-	particle_t.pose.x = pose_t.x;
-	particle_t.pose.y = pose_t.y;
-	particle_t.velocity = v;
-	particle_t.weight = particle_t_1.weight;
+	particle_t.pose.x     = pose_t.x;
+	particle_t.pose.y     = pose_t.y;
+	particle_t.velocity   = v;
+	particle_t.weight     = particle_t_1.weight;
+
+	// Keep same class with 90% probability
+	if ((rand() % 100) <= 90)
+		particle_t.class_id = particle_t_1.class_id;
+	else
+		particle_t.class_id = get_random_model_id(num_of_models);
+
+	particle_t.model_features = get_obj_model_features(particle_t.class_id);
 
 	return particle_t;
 }
 
 
 double
-distance_to_the_nearest_neighbor(double x_z_t, double y_z_t, carmen_point_t pose_t)
+dist_nearest_neighbor(double x_z_t, double y_z_t, carmen_point_t pose_t)
 {
 	double distance;
 	double d_x, d_y;
@@ -62,109 +53,151 @@ distance_to_the_nearest_neighbor(double x_z_t, double y_z_t, carmen_point_t pose
 	d_x = x_z_t - pose_t.x;
 	d_y = y_z_t - pose_t.y;
 
-	distance = sqrt ((d_x) * (d_x)) + ((d_y) * (d_y));
+	distance = sqrt((d_x*d_x) + (d_y*d_y));
 
-	return(distance);
+	return distance;
 }
 
 
 double
-calculation_particle_weight_pose_reading_model(double dist)
+particle_weight_pose_reading_model(double dist)
 {
-	double particle_weight;
-
-	particle_weight = exp (-dist);
-
-	return particle_weight;
+	return exp(-dist);
 }
 
+
+/* 2D Transformations required for calculating bounding box distance */
+carmen_position_t
+transf2d_bounding_box(double x_trans, double y_trans, double theta)
+{
+	// Rotate
+	double x = x_trans*cos(theta) - y_trans*sin(theta);
+	double y = x_trans*sin(theta) + y_trans*cos(theta);
+
+	/* Since we're only interested in calculating the distances from points
+	 * to boxes' closest side, we can "place" all points on the 1st
+	 * quadrant of the new coordinate system. So: */
+	x = fabs(x);
+	y = fabs(y);
+
+	carmen_position_t pt = {x,y};
+	return pt;
+}
+
+
+double
+dist_btw_point_and_box(carmen_position_t pt, double box_width, double box_length)
+{
+	/* Normalizing is required to work with different sizes of boxes */
+	double W = norm_factor_y/2;
+	double L = norm_factor_x/2;
+	double x = (pt.x/box_length)*norm_factor_x;
+	double y = (pt.y/box_width)*norm_factor_y;
+	double dist;
+
+	if (y > W)
+		if (x > L) // region 1 - worst position
+			dist = x + y;
+		else // region 2 - intermediate position
+			dist = y + (L - x);
+	else
+		if (x <= L) // region 3 - best position
+			dist = (L - x) + (W - y);
+		else // region 4 - intermediate position
+			dist = x + (W - y);
+
+	return dist;
+}
+
+
+double
+dist_bounding_box(carmen_point_t particle_pose, pcl::PointCloud<pcl::PointXYZ> &point_cloud, object_geometry_t obj_model,
+		object_geometry_t obj_geometry, carmen_vector_3D_t car_global_position, double x_pose, double y_pose)
+{
+	double sum = 0.0;
+	long unsigned int pcl_size = point_cloud.size();
+	carmen_position_t new_pt; //(x,y)
+
+	for (pcl::PointCloud<pcl::PointXYZ>::iterator it = point_cloud.points.begin(); it != point_cloud.points.end(); ++it)
+	{
+		new_pt = transf2d_bounding_box(car_global_position.x + it->x - particle_pose.x, car_global_position.y + it->y - particle_pose.y, -particle_pose.theta);
+		sum += dist_btw_point_and_box(new_pt, obj_model.width, obj_model.length);
+	}
+
+	double penalty = 0.0;
+	// Centroid's coordinates already global
+	new_pt = transf2d_bounding_box(x_pose - particle_pose.x, y_pose - particle_pose.y, -particle_pose.theta);
+	if (new_pt.x > obj_model.length/2 || new_pt.y > obj_model.width/2)
+	{
+		new_pt.x *= norm_factor_x/obj_model.length;//4.5;
+		new_pt.y *= norm_factor_y/obj_model.width;//2.1;
+		penalty = sqrt(new_pt.x*new_pt.x + new_pt.y*new_pt.y);//new_pt.x + new_pt.y;//
+	}
+
+	// Penalize based on the differences between dimensions of point cloud and model box
+	double diff_length  = fabs(obj_model.length - obj_geometry.length)*(norm_factor_x/obj_geometry.length);
+	double diff_width   = fabs(obj_model.width - obj_geometry.width)*(norm_factor_y/obj_geometry.width);
+	double diff_height  = fabs(obj_model.height - obj_geometry.height)*(norm_factor_z/obj_geometry.height);
+	penalty += diff_length + diff_width + diff_height;
+
+	// Avoid division by zero
+	if (pcl_size != 0)
+		return sum/pcl_size + penalty; //return normalized distance with penalty
+	return 999999.0;
+}
+
+
+double
+measurement_model(particle_datmo &particle_t, double x, double y, pcl::PointCloud<pcl::PointXYZ> &pcl_cloud,
+		object_geometry_t obj_geometry, carmen_vector_3D_t car_global_position)
+{
+	double dist;
+
+	dist = dist_bounding_box(particle_t.pose, pcl_cloud, particle_t.model_features.geometry,
+			obj_geometry, car_global_position, x, y);
+
+	particle_t.dist = dist;
+
+	return dist;
+}
 
 
 void
-measurement_model(double x, double y, std::vector<particle> *temporary_particle_set_t)
+resample(std::vector<particle_datmo> &particle_set_t)
 {
-
-	int num_particles = temporary_particle_set_t->size();
-	double *distance = (double*)malloc(sizeof(double) * num_particles);
-	double sum1 = 0.0;
-
-	int i = 0;
-	for(std::vector<particle>::iterator it = temporary_particle_set_t->begin();
-			it != temporary_particle_set_t->end(); it++)
-	{
-		distance[i] = distance_to_the_nearest_neighbor(x, y, it->pose);
-		i++;
-	}
-
-	i = 0;
-	for(std::vector<particle>::iterator it = temporary_particle_set_t->begin();
-			it != temporary_particle_set_t->end(); it++)
-	{
-		it->weight = calculation_particle_weight_pose_reading_model(distance[i]);
-		sum1 += it->weight;
-		i++;
-	}
-
-	//normalização do peso
-	for(std::vector<particle>::iterator it = temporary_particle_set_t->begin();
-			it != temporary_particle_set_t->end(); it++)
-	{
-		it->weight = (it->weight / sum1);
-	}
-
-	free(distance);
-}
-
-
-/* resample particle filter */
-void resample(std::vector<particle> *particle_set_t)
-{
+	/*** LOW VARIANCE RESAMPLER ALGORITHM ***/
 	static double *cumulative_sum = NULL;
-	static particle *temp_particles = NULL;
-	static int num_particles = particle_set_t->size();
+	static int num_particles = particle_set_t.size();
 
-	particle *aux;
-	particle *copy_particle_set_t = NULL;
+	particle_datmo *copy_particle_set_t = NULL;
 	int i, which_particle;
-	double weight_sum;
+	double weight_sum = 0.0;
 	double position, step_size;
-//	double max_weight;
 
 	/* Allocate memory necessary for resampling */
 	cumulative_sum = (double *)calloc(num_particles, sizeof(double));
 	carmen_test_alloc(cumulative_sum);
-	temp_particles = (particle*)malloc(sizeof(particle) * num_particles);
-	carmen_test_alloc(temp_particles);
-	copy_particle_set_t = (particle*)malloc(sizeof(particle) * num_particles);
+	copy_particle_set_t = (particle_datmo*)malloc(sizeof(particle_datmo) * num_particles);
 	carmen_test_alloc(copy_particle_set_t);
 
 	int j = 0;
-	for (std::vector<particle>::iterator it = particle_set_t->begin();
-			it != particle_set_t->end(); it++)
+	for (std::vector<particle_datmo>::iterator it = particle_set_t.begin(); it != particle_set_t.end(); it++)
 	{
-		copy_particle_set_t[j].pose.x = it->pose.x;
-		copy_particle_set_t[j].pose.y = it->pose.y;
+		copy_particle_set_t[j].pose.x     = it->pose.x;
+		copy_particle_set_t[j].pose.y     = it->pose.y;
 		copy_particle_set_t[j].pose.theta = it->pose.theta;
-		copy_particle_set_t[j].velocity = it->velocity;
-		copy_particle_set_t[j].weight = it->weight;
-		j++;
-	}
+		copy_particle_set_t[j].velocity   = it->velocity;
+		copy_particle_set_t[j].weight     = it->weight;
+		copy_particle_set_t[j].class_id   = it->class_id;
+		copy_particle_set_t[j].model_features = it->model_features;
+		copy_particle_set_t[j].dist       = it->dist;
 
-	weight_sum = 0.0;
-//	max_weight = copy_particle_set_t[0].weight;
-	/* change log weights back into probabilities */
-//	for (i = 0; i < num_particles; i++)
-//	{
-//		if (copy_particle_set_t[i].weight > max_weight)
-//			max_weight = copy_particle_set_t[i].weight;
-//	}
-
-	for(i = 0; i < num_particles; i++)
-	{
-
+		/* change log weights back into probabilities */
 		/* Sum the weights of all of the particles */
-		weight_sum += copy_particle_set_t[i].weight;
-		cumulative_sum[i] = weight_sum;
+		weight_sum += it->weight;
+		cumulative_sum[j] = weight_sum;
+
+		j++;
 	}
 
 	/* choose random starting position for low-variance walk */
@@ -173,7 +206,7 @@ void resample(std::vector<particle> *particle_set_t)
 	which_particle = 0;
 
 	/* draw num_particles random samples */
-	for(i = 0; i < num_particles; i++)
+	for (i = 0; i < num_particles; i++)
 	{
 		position += step_size;
 
@@ -183,90 +216,61 @@ void resample(std::vector<particle> *particle_set_t)
 			which_particle = 0;
 		}
 
-		while(position > cumulative_sum[which_particle])
+		while (position > cumulative_sum[which_particle])
 			which_particle++;
 
-		temp_particles[i] = copy_particle_set_t[which_particle];
+		particle_set_t[i].pose.x     = copy_particle_set_t[which_particle].pose.x;
+		particle_set_t[i].pose.y     = copy_particle_set_t[which_particle].pose.y;
+		particle_set_t[i].pose.theta = copy_particle_set_t[which_particle].pose.theta;
+		particle_set_t[i].velocity   = copy_particle_set_t[which_particle].velocity;
+		particle_set_t[i].weight     = copy_particle_set_t[which_particle].weight;
+		particle_set_t[i].class_id   = copy_particle_set_t[which_particle].class_id;
+		particle_set_t[i].model_features = copy_particle_set_t[which_particle].model_features;
+		particle_set_t[i].dist       = copy_particle_set_t[which_particle].dist;
 	}
 
-	/* Switch particle pointers */
-	aux = copy_particle_set_t;
-	copy_particle_set_t = temp_particles;
-	temp_particles = aux;
-
-	int m = 0;
-	for (std::vector<particle>::iterator it = particle_set_t->begin();
-			it != particle_set_t->end(); it++)
-	{
-		it->pose.x = copy_particle_set_t[m].pose.x;
-		it->pose.y = copy_particle_set_t[m].pose.y;
-		it->pose.theta = copy_particle_set_t[m].pose.theta;
-		it->velocity = copy_particle_set_t[m].velocity;
-		it->weight = copy_particle_set_t[m].weight;
-		m++;
-	}
-
-	free(temp_particles);
 	free(cumulative_sum);
 	free(copy_particle_set_t);
 }
 
-double
-calculate_degeneration_of_the_particles(std::vector<particle> *particle_set_t)
+
+void
+normalize_weights(std::vector<particle_datmo> &particle_set, double total_weight)
 {
-	double effective_sample_size;
-	double sum_of_squared_weights = 0.0;
-
-	for (std::vector<particle>::iterator it = particle_set_t->begin();
-			it != particle_set_t->end(); it++)
-	{
-		sum_of_squared_weights += it->weight * it->weight;
-	}
-
-	effective_sample_size = 1 / sum_of_squared_weights;
-
-	return effective_sample_size;
+	for (std::vector<particle_datmo>::iterator it = particle_set.begin(); it != particle_set.end(); ++it)
+		it->weight = (it->weight/total_weight);
 }
 
-std::vector<particle>
-algorithm_monte_carlo(std::vector<particle> *particle_set_t_1, double x, double y,
-		double delta_time, pcl::PointCloud<pcl::PointXYZ> pcl_cloud)
+
+std::vector<particle_datmo>
+algorithm_monte_carlo(std::vector<particle_datmo> &particle_set_t_1, double x, double y, double delta_time,
+		pcl::PointCloud<pcl::PointXYZ> &pcl_cloud, object_geometry_t obj_geometry, carmen_vector_3D_t car_global_position)
 {
-	pcl::PointCloud<pcl::PointXYZ> aux_pcl_cloud = pcl_cloud;
+	std::vector<particle_datmo> particle_set_t;
+	particle_datmo particle_t;
+	double total_weight = 0.0, dist;
 
-	std::vector<particle> temporary_particle_set_t;
-	std::vector<particle> particle_set_t;
-//	double effective_sample_size;
-
-	//prediction
-	for(std::vector<particle>::iterator it = particle_set_t_1->begin();
-			it != particle_set_t_1->end(); it++)
+	// Prediction
+	for (std::vector<particle_datmo>::iterator it = particle_set_t_1.begin(); it != particle_set_t_1.end(); ++it)
 	{
-		particle particle_t;
-		particle particle_t_1;
-		particle_t_1.pose.x = it->pose.x;
-		particle_t_1.pose.y = it->pose.y;
-		particle_t_1.pose.theta = it->pose.theta;
-		particle_t_1.velocity = it->velocity;
-		particle_t_1.weight = it->weight;
+		// Motion Model
+		particle_t = sample_motion_model(delta_time, (*it));
 
-		particle_t = sample_motion_model(delta_time, particle_t_1);
-		temporary_particle_set_t.push_back(particle_t);
+		// Measurement Model
+		dist = measurement_model(particle_t, x, y, pcl_cloud, obj_geometry, car_global_position);
+
+		// Weighing particles
+		particle_t.weight = particle_weight_pose_reading_model(dist);
+		total_weight += particle_t.weight;
+
+		particle_set_t.push_back(particle_t);
 	}
 
-	//observation model
-	measurement_model(x, y, &temporary_particle_set_t);
+	// Normalize weights
+	normalize_weights(particle_set_t, total_weight);
 
-	//resampling
-//	resample(&temporary_particle_set_t);
-
-//	effective_sample_size = calculate_degeneration_of_the_particles(&temporary_particle_set_t);
-//
-//	if (effective_sample_size < 10.5)
-//		resample(&temporary_particle_set_t);
-
-	resample(&temporary_particle_set_t);
-	particle_set_t = temporary_particle_set_t;
+	// Resample
+	resample(particle_set_t);
 
 	return particle_set_t;
 }

@@ -1,1 +1,0 @@
-/home/alberto/robotics/code/carmen/src/carmenpp/cpp_global_macros.h
