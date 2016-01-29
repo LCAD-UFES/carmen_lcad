@@ -56,19 +56,31 @@ class AstarAckerman
 
 public:
 
+	AstarAckerman()
+	{
+		astar_call_cont = 0;
+		cont_nos_abertos_novos = 0;
+		cont_nos_abertos_alterados = 0;
+		cont_nos_podados = 0;
+		cont_nos_abertos_alterados_fechados = 0;
+		heap = NULL;
+	}
 
 	carmen_behavior_selector_state_t current_state;//TODO extern
 	carmen_map_t *carmen_planner_map;//TODO extern
 	carmen_navigator_ackerman_astar_t astar_config;//TODO extern
 
-	int astar_call_cont = 0;
-	int cont_nos_abertos_novos = 0, cont_nos_abertos_alterados = 0, cont_nos_podados = 0, cont_nos_abertos_alterados_fechados = 0;
+	int astar_call_cont;
+	int cont_nos_abertos_novos;
+	int cont_nos_abertos_alterados;
+	int cont_nos_podados;
+	int cont_nos_abertos_alterados_fechados;
 
 	carmen_robot_ackerman_config_t robot_conf_g;
 
 	carmen_astar_node_p ***astar_map;
 	double ***precomputed_cost_map;
-	struct fibheap*  heap = NULL;
+	struct fibheap* heap;
 
 	carmen_ackerman_traj_point_t GOAL;
 
