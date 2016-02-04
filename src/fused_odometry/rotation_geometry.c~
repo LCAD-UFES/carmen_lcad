@@ -358,24 +358,24 @@ carmen_pose_3D_t get_world_pose(carmen_pose_3D_t* local_pose) {
 	if (local_pose->parent == NULL) {
 		return *local_pose;
 	}
-	
+	fprintf(stderr,"WORLD_POSE 1\n");
 	carmen_pose_3D_t world_pose;
 	carmen_pose_3D_t parent_world_pose = get_world_pose(local_pose->parent);
-	
+	fprintf(stderr,"WORLD_POSE 2\n");
 	world_pose.position.x = parent_world_pose.position.x + local_pose->position.x;
 	world_pose.position.y = parent_world_pose.position.y + local_pose->position.y;
 	world_pose.position.z = parent_world_pose.position.z + local_pose->position.z;
-	
+	fprintf(stderr,"WORLD_POSE 3\n");
 	rotation_matrix* parent_world_rotation = create_rotation_matrix(parent_world_pose.orientation);
 	rotation_matrix* local_rotation = create_rotation_matrix(local_pose->orientation);
-	
-	rotation_matrix* world_rotation = multiply_matrix_matrix(parent_world_rotation, local_rotation);
-	
-	world_pose.orientation = get_angles_from_rotation_matrix(world_rotation);
-	
+	fprintf(stderr,"WORLD_POSE 4\n");
+	//rotation_matrix* world_rotation = multiply_matrix_matrix(parent_world_rotation, local_rotation);
+	fprintf(stderr,"WORLD_POSE 5\n");
+	//world_pose.orientation = get_angles_from_rotation_matrix(world_rotation);
+	fprintf(stderr,"WORLD_POSE 6\n");
 	destroy_rotation_matrix(parent_world_rotation);
 	destroy_rotation_matrix(local_rotation);
-	destroy_rotation_matrix(world_rotation);
+	//destroy_rotation_matrix(world_rotation);
 	
 	return world_pose;
 }
