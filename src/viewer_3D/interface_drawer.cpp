@@ -131,7 +131,7 @@ init_buttons(interface_drawer* i_drawer) {
     i_drawer->butt[20].text = "Obstacle Plan";
     i_drawer->butt[21].text = "Trajectory Plan";
     i_drawer->butt[22].text = "Moving Objects";
-    i_drawer->butt[23].text = "Empty";
+    i_drawer->butt[23].text = "GPS Axis";
     //Annotations
     i_drawer->butt[24].text = "Traffic Light";
     i_drawer->butt[25].text = "Traffic Signal";
@@ -351,11 +351,16 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y) {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
                     set_flag_viewer_3D(14, i_drawer->butt[i].state);
-                } else if (i_drawer->butt[i].code == 22) // Moving Obects
+                } else if (i_drawer->butt[i].code == 22) // Moving Objects
                 {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
                     set_flag_viewer_3D(28, i_drawer->butt[i].state);
+                } else if (i_drawer->butt[i].code == 23) // GPS Axis
+                {
+                    i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+                    set_flag_viewer_3D(29, i_drawer->butt[i].state);
                 }else if (i_drawer->butt[i].code == 24) // Traffic Light
                 {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);

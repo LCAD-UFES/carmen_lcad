@@ -368,6 +368,23 @@ draw_xsens_orientation (carmen_orientation_3D_t xsens_orientation, double xsens_
 }
 
 void
+draw_gps_orientation (double gps_orientation, carmen_orientation_3D_t xsens_orientation, carmen_pose_3D_t xsens_pose, carmen_pose_3D_t sensor_board_pose, carmen_pose_3D_t car_pose)
+{
+    carmen_vector_3D_t xsens_global_position = get_xsens_position_global_reference (xsens_pose, sensor_board_pose, car_pose);
+
+    glPushMatrix ();
+
+    glTranslatef (xsens_global_position.x, xsens_global_position.y, xsens_global_position.z);
+    glRotatef (carmen_radians_to_degrees (gps_orientation), 0.0f, 0.0f, 1.0f);
+    glRotatef (carmen_radians_to_degrees (xsens_orientation.pitch), 0.0f, 1.0f, 0.0f);
+    glRotatef (carmen_radians_to_degrees (xsens_orientation.roll), 1.0f, 0.0f, 0.0f);
+
+    draw_axis (1.0);
+
+    glPopMatrix ();
+}
+
+void
 draw_orientation_instruments (carmen_orientation_3D_t orientation, double r, double g, double b)
 {
     glPushMatrix ();
