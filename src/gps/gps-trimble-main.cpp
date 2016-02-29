@@ -29,7 +29,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <signal.h>
 #include <math.h>
 #include <unistd.h>
 #include <termios.h>
@@ -51,10 +50,14 @@
 #include "gps-ipc.h"
 #include "gps-io.h"
 
-#define TCP_IP_ADDRESS	"192.168.0.103"
-#define TCP_IP_PORT		"5017"
+#define TCP_IP_ADDRESS			"192.168.0.103"
+#define TCP_IP_PORT				"5017"
+//http://bd982.com/ -> site de teste do gps Trimble bd982
+//#define TCP_IP_ADDRESS			"155.63.160.20"
+//#define TCP_IP_PORT				"5018"
+#define INCOME_DATA_BUFFER_SIZE	1000
 
-char incomming_data_buffer[1000];
+int socketfd; // The socket descriptor
 
 
 void
@@ -65,12 +68,11 @@ print_usage( void )
 
 
 int
-get_data_from_socket(int socketfd)
+get_data_from_socket(char *incomming_data_buffer, int socketfd)
 {
     ssize_t bytes_received;
 
-    bytes_received = recv(socketfd, incomming_data_buffer, 999, 0);
-    // If no data arrives, the program will just wait here until some data arrives.
+    bytes_received = recv(socketfd, incomming_data_buffer, INCOME_DATA_BUFFER_SIZE - 1, 0);
     if (bytes_received == 0)
         std::cout << "host shut down?" << std::endl;
     if (bytes_received == -1)
@@ -82,6 +84,40 @@ get_data_from_socket(int socketfd)
 }
 
 
+char *
+parse_gga_info(char *incomming_data_buffer)
+{
+	// Find the end of the first NMEA string
+	char *first_nmea_string_end = strchr(incomming_data_buffer, '*');
+	if (first_nmea_string_end == NULL)
+		return (NULL);
+	first_nmea_string_end[0] = '\0';
+	if (carmen_gps_parse_data(incomming_data_buffer, strlen(incomming_data_buffer)))
+		return (first_nmea_string_end);
+	else
+		return (NULL);
+}
+
+
+int
+parse_hdt_info(char *first_nmea_string_end)
+{
+	if (first_nmea_string_end == NULL)
+		return (0);
+
+	// Find the end of the first NMEA string
+	char *second_nmea_string_begining = strchr(first_nmea_string_end, '$');
+	if (second_nmea_string_begining == NULL)
+		return (0);
+	char *second_nmea_string_end = strchr(second_nmea_string_begining, '*');
+	if (first_nmea_string_end == NULL)
+		return (0);
+	second_nmea_string_end[0] = '\0';
+
+	return (carmen_gps_parse_data(second_nmea_string_begining, strlen(second_nmea_string_begining)));
+}
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                              //
 // Publishers                                                                                   //
@@ -90,39 +126,60 @@ get_data_from_socket(int socketfd)
 
 
 void
-ipc_publish_position()
+publish_carmen_gps_gphdt_message()
+{
+	IPC_RETURN_TYPE err = IPC_OK;
+
+	if (carmen_extern_gphdt_ptr != NULL)
+	{
+		err = IPC_publishData (CARMEN_GPS_GPHDT_MESSAGE_NAME, carmen_extern_gphdt_ptr);
+		carmen_test_ipc(err, "Could not publish", CARMEN_GPS_GPHDT_MESSAGE_NAME);
+	}
+}
+
+
+int
+publish_carmen_gps_gpgga_message()
 {
 	static double previous_utc_gpgga = -1.0;
-	static double previous_utc_gprmc = -1.0;
 	IPC_RETURN_TYPE err = IPC_OK;
 
 	if (carmen_extern_gpgga_ptr != NULL)
 	{
 		if (carmen_extern_gpgga_ptr->utc == previous_utc_gpgga)
-			return;
+			return (0);
 		previous_utc_gpgga = carmen_extern_gpgga_ptr->utc;
 
 		err = IPC_publishData (CARMEN_GPS_GPGGA_MESSAGE_NAME,
 					   carmen_extern_gpgga_ptr );
 		carmen_test_ipc(err, "Could not publish", CARMEN_GPS_GPGGA_MESSAGE_NAME);
+		// fprintf( stderr, "(gga)" );
+		// printf("gga lt:% .20lf lg:% .20lf\t", carmen_extern_gpgga_ptr->latitude, carmen_extern_gpgga_ptr->longitude);
 
-//		fprintf( stderr, "(gga)" );
-//		printf("gga lt:% .20lf lg:% .20lf\t", carmen_extern_gpgga_ptr->latitude, carmen_extern_gpgga_ptr->longitude);
+		return (1);
 	}
+	else
+		return (0);
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
-	if (carmen_extern_gprmc_ptr != NULL)
-	{
-		if (carmen_extern_gprmc_ptr->utc == previous_utc_gprmc)
-			return;
-		previous_utc_gprmc = carmen_extern_gprmc_ptr->utc;
 
-		err = IPC_publishData (CARMEN_GPS_GPRMC_MESSAGE_NAME,
-				   carmen_extern_gprmc_ptr );
-		carmen_test_ipc(err, "Could not publish", CARMEN_GPS_GPRMC_MESSAGE_NAME);
 
-		//fprintf( stderr, "(rmc)" );
-		//printf("rmc lt:% .20lf lg:% .20lf", carmen_extern_gprmc_ptr->latitude, carmen_extern_gprmc_ptr->longitude);
-	}
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                              //
+// Handlers                                                                                     //
+//                                                                                              //
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void
+shutdown_module(int a __attribute__ ((unused)))
+{
+	close(socketfd);
+
+	printf("Disconnected from IPC.\n");
+
+	exit(0);
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -138,7 +195,6 @@ ipc_publish_position()
 int
 init_tcp_ip_socket()
 {
-
     int status;
     struct addrinfo host_info;       // The struct that getaddrinfo() fills up with data.
     struct addrinfo *host_info_list; // Pointer to the to the linked list of host_info's.
@@ -155,7 +211,6 @@ init_tcp_ip_socket()
         return (-1);
     }
 
-    int socketfd; // The socket descriptor
     socketfd = socket(host_info_list->ai_family, host_info_list->ai_socktype, host_info_list->ai_protocol);
     if (socketfd == -1)
     {
@@ -183,6 +238,25 @@ ipc_initialize_messages( void )
 	err = IPC_defineMsg(CARMEN_GPS_GPGGA_MESSAGE_NAME, IPC_VARIABLE_LENGTH,
 			      CARMEN_GPS_GPGGA_MESSAGE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_GPS_GPGGA_MESSAGE_NAME);
+
+	err = IPC_defineMsg(CARMEN_GPS_GPHDT_MESSAGE_NAME, IPC_VARIABLE_LENGTH,
+			      CARMEN_GPS_GPHDT_MESSAGE_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_GPS_GPHDT_MESSAGE_NAME);
+
+	int gps_nr = 1; // This says it is a Trimble GPS
+	static carmen_gps_gpgga_message gpgga;
+	static carmen_gps_gphdt_message gphdt;
+
+	carmen_erase_structure(&gpgga, sizeof(carmen_gps_gpgga_message));
+	carmen_erase_structure(&gphdt, sizeof(carmen_gps_gphdt_message));
+  
+	gpgga.host = carmen_get_host();
+	gphdt.host = carmen_get_host();
+
+	carmen_extern_gpgga_ptr = &gpgga;
+	carmen_extern_gpgga_ptr->nr = gps_nr;
+	carmen_extern_gphdt_ptr = &gphdt;
+	carmen_extern_gphdt_ptr->nr = gps_nr;
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -190,25 +264,15 @@ ipc_initialize_messages( void )
 int
 main(int argc, char *argv[])
 {
-	int gps_nr = 1; // This says it is a Trimble GPS
-	carmen_gps_gpgga_message gpgga;
-
-	carmen_erase_structure(&gpgga, sizeof(carmen_gps_gpgga_message));
-  
-	gpgga.host = carmen_get_host();
-
+	signal(SIGINT, shutdown_module);
 	carmen_ipc_initialize(argc, argv);
 	ipc_initialize_messages();
  
-	carmen_extern_gpgga_ptr = &gpgga;
-	carmen_extern_gpgga_ptr->nr = gps_nr;
-
 	fprintf( stderr, "INFO: ************************\n" );
 	fprintf( stderr, "INFO: ********* GPS   ********\n" );
 	fprintf( stderr, "INFO: ************************\n" );
 
 	fprintf( stderr, "INFO: open socket to tcp/ip ip and port: %s:%s\n", TCP_IP_ADDRESS, TCP_IP_PORT);
-	int socketfd;
 	if ((socketfd = init_tcp_ip_socket()) < 0)
 	{
 		fprintf(stderr, "ERROR: can't open tcp ip socket !!!\n\n");
@@ -221,19 +285,24 @@ main(int argc, char *argv[])
 
 	while (TRUE)
 	{
-		int bytes_received = get_data_from_socket(socketfd);
-		gpgga.timestamp = carmen_get_time();
-		// Find the end of the first NMEA string
-		char *first_nmea_tring_end = strchr(incomming_data_buffer, '*');
-		if (first_nmea_tring_end == NULL)
-			continue;
-		first_nmea_tring_end[0] = '\0';
+		char incomming_data_buffer[INCOME_DATA_BUFFER_SIZE];
+		char *first_nmea_string_end;
 
-		carmen_gps_parse_data(incomming_data_buffer, strlen(incomming_data_buffer));
-		ipc_publish_position();
+		get_data_from_socket(incomming_data_buffer, socketfd);
+
+		carmen_extern_gpgga_ptr->timestamp = carmen_get_time();
+		carmen_extern_gphdt_ptr->timestamp = carmen_extern_gpgga_ptr->timestamp;
+
+		if ((first_nmea_string_end = parse_gga_info(incomming_data_buffer)) != NULL)
+			publish_carmen_gps_gpgga_message();
+
+		if (first_nmea_string_end)
+		{
+			// strcpy(first_nmea_string_end, "$GPHDT,333.694,T*3D");
+			if (parse_hdt_info(first_nmea_string_end))
+				publish_carmen_gps_gphdt_message();
+		}
 	}
-
-	close(socketfd);
 
 	return (0);
 }

@@ -5,7 +5,6 @@ MODULE_COMMENT = "NMEA GPS Module"
 
 LINK=g++
 
-#CFLAGS += -DGPGGA_PARSE_DEBUG
 IFLAGS += 
 LFLAGS += -lparam_interface -lcarmenserial -lipc -lglobal -lstdc++
 

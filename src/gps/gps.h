@@ -60,6 +60,7 @@ typedef struct {
 } SerialDevice;
 
 extern carmen_gps_gpgga_message    * carmen_extern_gpgga_ptr;
+extern carmen_gps_gphdt_message    * carmen_extern_gphdt_ptr;
 extern carmen_gps_gprmc_message    * carmen_extern_gprmc_ptr;
 
 int    carmen_gps_parse_data( char * line, int num_chars );
