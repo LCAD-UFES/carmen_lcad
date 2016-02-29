@@ -93,7 +93,7 @@ parse_gga_info(char *incomming_data_buffer)
 		return (NULL);
 	first_nmea_string_end[0] = '\0';
 	if (carmen_gps_parse_data(incomming_data_buffer, strlen(incomming_data_buffer)))
-		return (first_nmea_string_end);
+		return (first_nmea_string_end + 1);
 	else
 		return (NULL);
 }

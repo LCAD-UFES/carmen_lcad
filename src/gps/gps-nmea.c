@@ -142,7 +142,7 @@ gps_parse_hdt(char *line, int num_chars)
     if (strlen(ptr) > 0)
     {
       double heading = atof(ptr);
-      heading = carmen_degrees_to_radians(heading);
+      heading = carmen_degrees_to_radians(-90.0 - heading);
       heading = carmen_normalize_theta(heading);
       carmen_extern_gphdt_ptr->heading = heading;
       carmen_extern_gphdt_ptr->valid = 1;
