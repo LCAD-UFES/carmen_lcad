@@ -20,8 +20,7 @@ LFLAGS += -lrobot_ackerman_interface -lobstacle_avoider_interface \
 		-lGLEW -lGL -lGLU -lglut -lX11 -lmap_interface -lbase_ackerman_interface \
 		-lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface -llocalize_ackerman_core -llocalize_ackerman_interface \
 		-llocalize_ackerman_motion -lmap_server_interface -lgps_xyz_interface -lvisual_odometry_interface -lxsens_mtig_interface \
-		-lxsens_interface
-
+		-lxsens_interface -lgps_nmea_interface
 LFLAGS += -L /usr/local/lib -lcholmod -lg2o_core -lg2o_stuff -lg2o_types_slam2d -lg2o_cli
 LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search \
 		-lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
@@ -34,7 +33,7 @@ SOURCES = grab_data.cpp velodyne_util.cpp graphslam.cpp run_icp_for_loop_closure
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES = 
 PUBLIC_BINARIES = grab_data run_icp_for_loop_closure graphslam graphslam_publish multimap_matching multimap_optimization
-TARGETS = grab_data run_icp graphslam run_icp_for_loop_closure graphslam_publish multimap_matching multimap_optimization gen_data_to_plot  
+TARGETS = grab_data graphslam run_icp_for_loop_closure graphslam_publish multimap_matching multimap_optimization gen_data_to_plot #run_icp   
 
 run_icp: run_icp.o
 graphslam: graphslam.o

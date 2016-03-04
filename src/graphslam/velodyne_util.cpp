@@ -306,7 +306,7 @@ save_pointcloud_to_file(char *filename, pcl::PointCloud<pcl::PointXYZRGB>::Ptr p
 }
 
 
-void
+int
 accumulate_clouds(carmen_velodyne_partial_scan_message *velodyne_message, char *velodyne_storage_dir)
 {
 	static char cloud_name[1024];
@@ -351,5 +351,8 @@ accumulate_clouds(carmen_velodyne_partial_scan_message *velodyne_message, char *
 //		pcl::io::savePLYFile(cloud_name, *source_pointcloud);
 
 		source_pointcloud->clear();
+		return 1;
 	}
+
+	return 0;
 }
