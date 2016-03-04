@@ -28,12 +28,12 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_p
 LFLAGS += `pkg-config --libs opencv`	  
 LFLAGS += -lgrid_mapping_interface -lgrid_mapping -lmap_io -lmap_interface
 
-SOURCES = grab_data.cpp # velodyne_util.cpp graphslam.cpp run_icp_for_loop_closure.cpp graphslam_publish_main.cpp graphslam_params.cpp multimap_optimization.cpp multimap_matching.cpp gen_data_to_plot.cpp
+SOURCES = grab_data.cpp velodyne_util.cpp graphslam.cpp run_icp_for_loop_closure.cpp graphslam_publish_main.cpp graphslam_params.cpp multimap_optimization.cpp multimap_matching.cpp gen_data_to_plot.cpp
 
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES = 
 PUBLIC_BINARIES = grab_data run_icp_for_loop_closure graphslam graphslam_publish multimap_matching multimap_optimization
-TARGETS = grab_data # run_icp graphslam run_icp_for_loop_closure graphslam_publish multimap_matching multimap_optimization gen_data_to_plot  
+TARGETS = grab_data run_icp graphslam run_icp_for_loop_closure graphslam_publish multimap_matching multimap_optimization gen_data_to_plot  
 
 run_icp: run_icp.o
 graphslam: graphslam.o

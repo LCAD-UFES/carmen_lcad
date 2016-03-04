@@ -34,6 +34,7 @@ class Line
 		SE2 odom;
 		SE2 icp;
 		double time;
+		double gps_std;
 };
 
 class LoopRestriction
@@ -71,6 +72,7 @@ read_data(char *filename)
 	double ix, iy, itheta;
 	double gx, gy, gtheta;
 	double time;
+	double gps_std;
 
 	if ((f = fopen(filename, "r")) == NULL)
 		exit(printf("Error: Unable to open file '%s'!\n", filename));
@@ -79,14 +81,14 @@ read_data(char *filename)
 
 	while(!feof(f))
 	{
-		n = fscanf(f, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
+		n = fscanf(f, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
 			&ox, &oy, &otheta,
 			&gx, &gy, &gtheta,
 			&ix, &iy, &itheta,
-			&time
+			&time, &gps_std
 		);
 
-		if (n == 10)
+		if (n == 11) // se o num de campos lidos do scanf foi correto
 		{
 			Line l;
 
@@ -99,6 +101,7 @@ read_data(char *filename)
 //			l.icp = last_icp.inverse() * SE2(ix, iy, itheta);
 			l.icp = SE2(ix, iy, itheta);
 			l.time = time;
+			l.gps_std = gps_std;
 
 			input_data.push_back(l);
 			last_icp = SE2(ix, iy, itheta);
@@ -146,16 +149,16 @@ r2d(double angle)
 
 
 void
-add_gps_edge(SparseOptimizer *optimizer, VertexSE2 *v, SE2 measure)
+add_gps_edge(SparseOptimizer *optimizer, VertexSE2 *v, SE2 measure, double gps_std)
 {
 	Matrix3d cov;
 	Matrix3d information;
 
-	cov.data()[0] = pow(10.0, 2);
+	cov.data()[0] = pow(gps_std, 2);
 	cov.data()[1] = 0;
 	cov.data()[2] = 0;
 	cov.data()[3] = 0;
-	cov.data()[4] = pow(10.0, 2);
+	cov.data()[4] = pow(gps_std, 2);
 	cov.data()[5] = 0;
 	cov.data()[6] = 0;
 	cov.data()[7] = 0;
@@ -321,6 +324,7 @@ add_gps_edges(SparseOptimizer *optimizer)
 
 	for (size_t i = 0; i < input_data.size(); i++)
 	{
+		double gps_std = input_data[i].gps_std;
 		SE2 gmeasure = input_data[i].gps;
 		SE2 measure(gmeasure[0] - input_data[0].gps[0], gmeasure[1] - input_data[0].gps[1], gmeasure[2]); // subtract the first gps
 
@@ -350,7 +354,7 @@ add_gps_edges(SparseOptimizer *optimizer)
 //			 ((fabs(diff[2]) < 0.35))) // && (sqrt(pow(diff[0], 2) + pow(diff[1], 2)) < 1.0)))
 		{
 			VertexSE2 *v = dynamic_cast<VertexSE2*>(optimizer->vertices()[i]);
-			add_gps_edge(optimizer, v, measure);
+			add_gps_edge(optimizer, v, measure, gps_std);
 		}
 //		else
 //			printf("Attention to GPS %d: %lf %lf %lf!!\n", (int) i, diff[0], diff[1], diff[2]);

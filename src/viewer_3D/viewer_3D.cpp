@@ -80,6 +80,9 @@ static carmen_vector_3D_t *gps_trail;
 static int last_gps_trail;
 static int gps_initialized;
 
+static double gps_heading = 0.0;
+static int gps_heading_valid = 0;
+
 static carmen_vector_3D_t xsens_xyz_initial_pos;
 static carmen_vector_3D_t *xsens_xyz_trail;
 static int next_xsens_xyz_trail;
@@ -138,6 +141,7 @@ static int draw_xsens_orientation_flag;
 static int draw_localize_ackerman_flag;
 static int draw_annotation_flag;
 static int draw_moving_objects_flag;
+static int draw_gps_axis_flag;
 
 static int follow_car_flag;
 static int zero_z_flag;
@@ -867,6 +871,7 @@ carmen_moving_objects_point_clouds_message_handler (carmen_moving_objects_point_
 		moving_objects_tracking[i].height = moving_objects_point_clouds_message->point_clouds[i].height;
 		moving_objects_tracking[i].linear_velocity = moving_objects_point_clouds_message->point_clouds[i].linear_velocity;
 		moving_objects_tracking[i].geometric_model = moving_objects_point_clouds_message->point_clouds[i].geometric_model;
+		moving_objects_tracking[i].model_features = moving_objects_point_clouds_message->point_clouds[i].model_features;
 		moving_objects_tracking[i].num_associated = moving_objects_point_clouds_message->point_clouds[i].num_associated;
 
 		for (k = 0; k < moving_objects_point_clouds_message->point_clouds[i].point_size; k++, j++)
@@ -924,6 +929,13 @@ stereo_point_cloud_message_handler(carmen_stereo_point_cloud_message* stereo_poi
     }
 
     destroy_rotation_matrix(r_matrix_car_to_global);
+}
+
+static void
+gps_nmea_hdt_message_handler(carmen_gps_gphdt_message *gps_nmea_hdt_raw_message)
+{
+	gps_heading = gps_nmea_hdt_raw_message->heading;
+	gps_heading_valid = gps_nmea_hdt_raw_message->valid;
 }
 
 static void
@@ -1022,7 +1034,7 @@ plan_tree_handler(carmen_navigator_ackerman_plan_tree_message *msg)
 	t_drawerTree.clear();
 	t_drawerTree.resize(msg->num_path);
 
-	for (unsigned int i = 0; i < msg->num_path; i++)
+	for (int i = 0; i < msg->num_path; i++)
 	{
 		carmen_navigator_ackerman_plan_message tempMessage;
 		tempMessage.path = msg->paths[i];
@@ -1258,10 +1270,11 @@ init_flags(void)
     draw_trajectory_flag1 = 1;
     draw_trajectory_flag2 = 1;
     draw_trajectory_flag3 = 1;
-    draw_xsens_orientation_flag = 1;
+    draw_xsens_orientation_flag = 0;
     draw_localize_ackerman_flag = 1;
     draw_annotation_flag = 0;
     draw_moving_objects_flag = 0;
+    draw_gps_axis_flag = 1;
 }
 
 void
@@ -1589,6 +1602,23 @@ draw_loop(window *w)
         //draw_orientation_instruments(car_fused_pose.orientation, 1.0, 1.0, 0.0);
         //draw_orientation_instruments(xsens_orientation, xsens_yaw_bias, 1.0, 0.5, 0.0);
 
+        if (draw_gps_axis_flag)
+        {
+        	if (gps_heading_valid)
+        	{
+        		if (gps_fix_flag == 4)
+        			glColor3f(0.0, 1.0, 0.0);
+        		else if (gps_fix_flag == 5)
+        			glColor3f(0.0, 0.0, 1.0);
+        		else
+        			glColor3f(1.0, 0.5, 0.0);
+        	}
+        	else
+        		glColor3f(1.0, 0.0, 0.0);
+
+            draw_gps_orientation(gps_heading, xsens_orientation, xsens_pose, sensor_board_1_pose, car_fused_pose);
+        }
+
         if (draw_car_flag)
         {
             draw_car_at_pose(car_drawer, car_fused_pose);
@@ -1646,13 +1676,13 @@ draw_loop(window *w)
         }
 
         if(draw_moving_objects_flag)
-	   {
+        {
 		   carmen_vector_3D_t offset = get_position_offset();
            offset.z += sensor_board_1_pose.position.z;
 
 //		   draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset);
 		   draw_tracking_moving_objects(moving_objects_tracking, current_num_point_clouds, offset);
-	   }
+        }
 
         if (draw_gps_flag)
         {
@@ -1925,6 +1955,10 @@ subscribe_ipc_messages(void)
 
     carmen_gps_xyz_subscribe_message(NULL,
                                      (carmen_handler_t) gps_xyz_message_handler,
+                                     CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_gps_subscribe_nmea_hdt_message(NULL,
+                                     (carmen_handler_t) gps_nmea_hdt_message_handler,
                                      CARMEN_SUBSCRIBE_LATEST);
 
     carmen_xsens_subscribe_xsens_global_matrix_message(NULL,
@@ -2212,6 +2246,9 @@ set_flag_viewer_3D(int flag_num, int value)
         break;
     case 28:
     	draw_moving_objects_flag = value;
+    	break;
+    case 29:
+    	draw_gps_axis_flag = value;
     	break;
     }
 }

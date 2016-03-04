@@ -16,19 +16,23 @@
 class MessageControl
 {
 private:
-	carmen_map_t *carmen_planner_map = NULL;
-	carmen_ackerman_traj_point_p requested_goal = NULL;
-	carmen_ackerman_traj_point_t robot = {0, 0, 0, 0, 0};
-	carmen_robot_ackerman_config_t *robot_conf_g = NULL;
-	carmen_planner_path_t path = {NULL, 0, 0};
+	carmen_map_t *carmen_planner_map;
+	carmen_ackerman_traj_point_p requested_goal;
+	carmen_ackerman_traj_point_t robot;
+	carmen_robot_ackerman_config_t *robot_conf_g;
+	carmen_planner_path_t path;
 	AstarAckerman astarAckeman;
 
 
 public:
 	MessageControl()
 	{
-
-	};
+		carmen_planner_map = NULL;
+		requested_goal = NULL;
+		robot = {0, 0, 0, 0, 0};
+		robot_conf_g = NULL;
+		path = {NULL, 0, 0};
+	}
 
 	void plan();
 	void carmen_planner_ackerman_regenerate_trajectory();

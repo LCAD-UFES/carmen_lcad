@@ -161,6 +161,16 @@ char *carmen_string_to_gps_gprmc_message(char *string,
 char *carmen_string_to_gps_gpgga_message(char *string,
 					 carmen_gps_gpgga_message *gps_msg);
 
+/** Converts the string to a gps-nmea-hdt message.
+ * @param string A string describing the message in the carmen logfile format.
+ * @param gps_msg A pointer to the (allocated) structure where the message should be written to.
+ * @returns A pointer to the character up to which the string has been parsed.
+ * In case there are no errors and the string is a line read from a carmen log
+ * file, this string points to the relative timestamp (written by logger).
+ **/
+char *carmen_string_to_gps_gphdt_message(char *string,
+					 carmen_gps_gphdt_message *gps_msg);
+
 char* carmen_string_to_bumblebee_basic_stereoimage_message(char* string, carmen_bumblebee_basic_stereoimage_message* msg);
 
 

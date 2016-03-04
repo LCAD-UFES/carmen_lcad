@@ -485,8 +485,6 @@ char *carmen_string_to_robot_ackerman_laser_message(char *string,
 	return current_pos;
 }
 
-
-
 char *carmen_string_to_gps_gpgga_message(char *string,
 		carmen_gps_gpgga_message *gps_msg)
 {
@@ -513,6 +511,23 @@ char *carmen_string_to_gps_gpgga_message(char *string,
 	gps_msg->geo_sea_level    = CLF_READ_DOUBLE(&current_pos);
 	gps_msg->geo_sep          = CLF_READ_DOUBLE(&current_pos);
 	gps_msg->data_age         = CLF_READ_INT(&current_pos);
+	gps_msg->timestamp        = CLF_READ_DOUBLE(&current_pos);
+	copy_host_string(&gps_msg->host, &current_pos);
+
+	return current_pos;
+}
+
+char *carmen_string_to_gps_gphdt_message(char *string,
+		carmen_gps_gphdt_message *gps_msg)
+{
+	char *current_pos = string;
+
+	if (strncmp(current_pos, "NMEAHDT ", 8) == 0)
+		current_pos = carmen_next_word(current_pos);
+
+	gps_msg->nr               = CLF_READ_INT(&current_pos);
+	gps_msg->heading          = CLF_READ_DOUBLE(&current_pos);
+	gps_msg->valid            = CLF_READ_INT(&current_pos);
 	gps_msg->timestamp        = CLF_READ_DOUBLE(&current_pos);
 	copy_host_string(&gps_msg->host, &current_pos);
 

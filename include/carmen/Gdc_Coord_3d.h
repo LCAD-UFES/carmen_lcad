@@ -1,1 +1,0 @@
-/home/alberto/robotics/code/carmen/src/global/Gdc_Coord_3d.h

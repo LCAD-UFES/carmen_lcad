@@ -1,1 +1,0 @@
-/home/alberto/robotics/code/carmen/src/gps/gps_nmea_messages.h

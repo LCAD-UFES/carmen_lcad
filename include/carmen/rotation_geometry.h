@@ -1,1 +1,0 @@
-/home/alberto/robotics/code/carmen/src/fused_odometry/rotation_geometry.h

@@ -1,1 +1,0 @@
-/home/alberto/robotics/code/carmen/src/rrt_planner/util/carmen_rrt_util.h

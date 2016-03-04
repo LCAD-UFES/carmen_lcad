@@ -37,6 +37,7 @@ FILE *output_file;
 vector<StampedOrientation> xsens_queue;
 vector<StampedOdometry> odometry_queue;
 vector<StampedPose> gps_queue;
+vector<float> gps_queue_stds;
 
 
 double
@@ -172,12 +173,12 @@ ackerman_prediction(carmen_pose_3D_t *pose, double v, double phi, double dt)
 
 
 void
-show_data(carmen_pose_3D_t dead_reckoning, carmen_pose_3D_t gps_pose, double time)
+show_data(carmen_pose_3D_t dead_reckoning, carmen_pose_3D_t gps_pose, double time, double gps_std)
 {
-	fprintf(output_file, "%lf %lf %lf %lf %lf %lf 0.0 0.0 0.0 %f\n",
+	fprintf(output_file, "%lf %lf %lf %lf %lf %lf 0.0 0.0 0.0 %f %lf\n",
 		dead_reckoning.position.x, dead_reckoning.position.y, dead_reckoning.orientation.yaw,
 		gps_pose.position.x, gps_pose.position.y, gps_pose.orientation.yaw,
-		time
+		time, gps_std
 	);
 
 	fflush(output_file);
@@ -211,12 +212,14 @@ velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 			dt_gps = fabs(velodyne_message->timestamp - gps_queue[gpsid].time);
 			gps_pose = gps_queue[gpsid].pose;
 
+			double gps_std = gps_queue_stds[gpsid];
+
 			if ((dt <= 0) || (dt_gps <= 0) || (odometry_queue[odomid].v < 0.1))
 				return;
 
 			ackerman_prediction(&dead_reckoning, odometry_queue[odomid].v, odometry_queue[odomid].phi, dt);
 			ackerman_prediction(&gps_pose, odometry_queue[odomid].v, odometry_queue[odomid].phi, dt_gps);
-			show_data(dead_reckoning, gps_pose, velodyne_message->timestamp);
+			show_data(dead_reckoning, gps_pose, velodyne_message->timestamp, gps_std);
 
 			accumulate_clouds(velodyne_message, velodyne_path);
 
@@ -278,6 +281,34 @@ gps_xyz_message_handler(carmen_gps_xyz_message *message)
 		pose.time = message->timestamp;
 
 		gps_queue.push_back(pose);
+
+		double gps_std;
+
+		// @Filipe: desvios padrao para cada modo do GPS Trimble. 
+		// @Filipe: OBS: Multipliquei os stds por 2 no switch abaixo para dar uma folga.
+		// 0: DBL_MAX
+		// 1: 4.0
+		// 2: 1.0
+		// 4: 0.1
+		// 5: 0.1
+
+		switch (message->gps_quality)
+		{
+			case 1:
+				gps_std = 8.0;
+				break;
+			case 2:
+				gps_std = 2.0;
+				break;
+			case 4:
+			case 5:
+				gps_std = 0.2;
+				break;
+			default:
+				gps_std = DBL_MAX;
+		}
+
+		gps_queue_stds.push_back(gps_std);
 	}
 }
 

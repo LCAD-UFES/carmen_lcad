@@ -43,8 +43,9 @@
 
 #include "gps.h"
 
-carmen_gps_gpgga_message *carmen_extern_gpgga_ptr =  NULL;
-carmen_gps_gprmc_message *carmen_extern_gprmc_ptr =  NULL;
+carmen_gps_gpgga_message *carmen_extern_gpgga_ptr = NULL;
+carmen_gps_gphdt_message *carmen_extern_gphdt_ptr = NULL;
+carmen_gps_gprmc_message *carmen_extern_gprmc_ptr = NULL;
 
 void
 ipc_publish_position( void )
@@ -53,28 +54,32 @@ ipc_publish_position( void )
 	static double previous_utc_gprmc = -1.0;
 	IPC_RETURN_TYPE err = IPC_OK;
 
-	if (carmen_extern_gpgga_ptr!=NULL)	
+	if (carmen_extern_gphdt_ptr != NULL)
+	{
+		err = IPC_publishData (CARMEN_GPS_GPHDT_MESSAGE_NAME, carmen_extern_gphdt_ptr);
+		carmen_test_ipc(err, "Could not publish", CARMEN_GPS_GPHDT_MESSAGE_NAME);
+	}
+
+	if (carmen_extern_gpgga_ptr != NULL)
 	{
 		if (carmen_extern_gpgga_ptr->utc == previous_utc_gpgga) 
 			return;
 		previous_utc_gpgga = carmen_extern_gpgga_ptr->utc;
 
-		err = IPC_publishData (CARMEN_GPS_GPGGA_MESSAGE_NAME,
-					   carmen_extern_gpgga_ptr );
+		err = IPC_publishData (CARMEN_GPS_GPGGA_MESSAGE_NAME, carmen_extern_gpgga_ptr );
 		carmen_test_ipc(err, "Could not publish", CARMEN_GPS_GPGGA_MESSAGE_NAME);
 
 		//fprintf( stderr, "(gga)" );
 		//printf("gga lt:% .20lf lg:% .20lf\t", carmen_extern_gpgga_ptr->latitude, carmen_extern_gpgga_ptr->longitude);
 	}
 
-	if (carmen_extern_gprmc_ptr!=NULL)
+	if (carmen_extern_gprmc_ptr != NULL)
 	{
 		if (carmen_extern_gprmc_ptr->utc == previous_utc_gprmc) 
 			return;
 		previous_utc_gprmc = carmen_extern_gprmc_ptr->utc;
 
-		err = IPC_publishData (CARMEN_GPS_GPRMC_MESSAGE_NAME,
-				   carmen_extern_gprmc_ptr );
+		err = IPC_publishData (CARMEN_GPS_GPRMC_MESSAGE_NAME, carmen_extern_gprmc_ptr );
 		carmen_test_ipc(err, "Could not publish", CARMEN_GPS_GPRMC_MESSAGE_NAME);
 
 		//fprintf( stderr, "(rmc)" );
@@ -86,7 +91,7 @@ ipc_publish_position( void )
 }
 
 void
-ipc_initialize_messages( void )
+ipc_initialize_messages(void)
 {
 	IPC_RETURN_TYPE err;
 

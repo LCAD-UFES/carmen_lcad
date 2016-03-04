@@ -1,1 +1,0 @@
-/home/alberto/robotics/code/carmen/src/imu/imu_messages.h

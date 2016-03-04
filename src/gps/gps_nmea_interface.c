@@ -42,6 +42,18 @@ carmen_gps_subscribe_nmea_message(carmen_gps_gpgga_message *nmea,
 
 
 void
+carmen_gps_subscribe_nmea_hdt_message(carmen_gps_gphdt_message *nmea,
+				  carmen_handler_t handler,
+				  carmen_subscribe_t subscribe_how)
+{
+  carmen_subscribe_message(CARMEN_GPS_GPHDT_MESSAGE_NAME,
+			   CARMEN_GPS_GPHDT_MESSAGE_FMT,
+			   nmea, sizeof(carmen_gps_gphdt_message), handler,
+			   subscribe_how);
+}
+
+
+void
 carmen_gps_subscribe_nmea_rmc_message(carmen_gps_gprmc_message *nmea,
 				  carmen_handler_t handler,
 				  carmen_subscribe_t subscribe_how)

@@ -11,8 +11,8 @@
 
 // Definitions
 #define TARGET_NEURON_LAYER_NAME ("nl_target_coordinates")
-#define IMAGE_WIDTH (640)
-#define IMAGE_HEIGHT (480)
+#define IMAGE_WIDTH (1280)
+#define IMAGE_HEIGHT (960)
 #define BAND_WIDTH (0.125)
 #define INPUTS_PER_NEURON (256)
 #define GAUSSIAN_RADIUS (8.0)

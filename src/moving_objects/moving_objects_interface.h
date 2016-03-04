@@ -1,4 +1,4 @@
-#include <carmen/moving_objects_messages.h>
+#include "moving_objects_messages.h"
 
 #ifdef __cplusplus
 extern "C" {

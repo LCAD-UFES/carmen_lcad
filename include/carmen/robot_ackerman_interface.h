@@ -1,1 +1,0 @@
-/home/alberto/robotics/code/carmen/src/robot_ackerman/robot_ackerman_interface.h
