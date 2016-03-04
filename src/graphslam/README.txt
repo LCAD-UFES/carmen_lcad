@@ -7,6 +7,7 @@ Como criar um mapa usando GraphSLAM [usando o process]:
 	***** NOTA: O ramdisk ira criar um diretorio na memoria com o tamanho especificado na variavel size da linha de comando. Fique atento
 		para que o espaco do ramdisk nao acabe. Voce pode verificar o espaco ocupado usando "du -sh tmp2". Se o tamanho estiver chegando
 		no limite, mova os arquivos .ply para o diretorio tmp usando "mv tmp2/*.ply tmp".
+	***** Crie os diretorios $CARMEN_HOME/data/mapper_teste e $CARMEN_HOME/bin/tmp
 
 3. Execute o central
 4. Modifique o process-volta_da_ufes_playback_viewer_3D_map_generation.ini para que ele faca playback de seu log:
