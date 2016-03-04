@@ -256,7 +256,7 @@ velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 	static int is_first = 1;
 	static carmen_pose_3D_t dead_reckoning = {{0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}};
 
-	printf("*** GPS Queue size: %ld Odom Queue size: %ld\n", gps_queue.size(), odometry_queue.size());
+	//printf("*** GPS Queue size: %ld Odom Queue size: %ld\n", gps_queue.size(), odometry_queue.size());
 
 	int gpsid = find_nearest_fused_gps(velodyne_message->timestamp);
 	int odomid = find_nearest_odometry(velodyne_message->timestamp);
