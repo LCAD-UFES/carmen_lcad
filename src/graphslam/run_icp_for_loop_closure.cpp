@@ -25,6 +25,9 @@ typedef struct
 	carmen_pose_3D_t odometry_pose;
 	carmen_pose_3D_t gps_pose;
 	carmen_pose_3D_t icp_pose;
+	double gps_std;
+	double gps_yaw;
+	double gps_orientation_valid;
 	double timestamp;
 }Line;
 
@@ -48,11 +51,11 @@ read_line(FILE *f)
 	memset(&l.gps_pose, 0, sizeof(l.gps_pose));
 	memset(&l.icp_pose, 0, sizeof(l.icp_pose));
 
-	fscanf(f, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
+	fscanf(f, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %d\n",
 		&(l.odometry_pose.position.x), &(l.odometry_pose.position.y), &(l.odometry_pose.orientation.yaw),
 		&(l.gps_pose.position.x), &(l.gps_pose.position.y), &(l.gps_pose.orientation.yaw),
 		&(l.icp_pose.position.x), &(l.icp_pose.position.y), &(l.icp_pose.orientation.yaw),
-		&l.timestamp
+		&l.timestamp, &l.gps_std, &l.gps_yaw, &l.gps_orientation_valid
 	);
 
 //	printf("%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
