@@ -178,9 +178,10 @@ base_ackerman_message_handler(carmen_base_ackerman_odometry_message *message)
 		if (dt < 0)
 			exit(printf("dt: %lf\n", dt));
 
+		dt = 0;
 		pose.x = pose.x + dt * message->v * cos(pose.theta);
 		pose.y = pose.y + dt * message->v * sin(pose.theta);
-		pose.theta = pose.theta + dt * (message->v / 2.65 /* L */) * tan(message->phi);
+		pose.theta = pose.theta + dt * (message->v / 2.625 /* L */) * tan(message->phi);
 		pose.theta = carmen_normalize_theta(pose.theta);
 
 		assembly_and_publish_fused_odometry_message(pose, message->timestamp, message->v, message->phi);

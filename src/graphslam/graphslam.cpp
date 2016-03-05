@@ -93,7 +93,7 @@ read_data(char *filename)
 			&gps_yaw, &gps_orientation_valid
 		);
 
-		if (n == 11) // se o num de campos lidos do scanf foi correto
+		if (n == 13) // se o num de campos lidos do scanf foi correto
 		{
 			Line l;
 
