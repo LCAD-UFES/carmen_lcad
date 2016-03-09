@@ -251,7 +251,7 @@ publish_velocity_message(void *clientData __attribute__ ((unused)), unsigned lon
 
 	robot_ackerman_velocity_message.v = g_XGV_velocity;
 	robot_ackerman_velocity_message.phi = get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config);
-	robot_ackerman_velocity_message.timestamp = ford_escape_hybrid_config->XGV_v_and_phi_timestamp;
+	robot_ackerman_velocity_message.timestamp = carmen_get_time(); // @@ Alberto: era igual a = ford_escape_hybrid_config->XGV_v_and_phi_timestamp;
 	robot_ackerman_velocity_message.host = carmen_get_host();
 
 	err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, &robot_ackerman_velocity_message);
