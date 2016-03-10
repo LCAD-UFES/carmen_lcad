@@ -914,17 +914,23 @@ draw_velodyne_points (point_cloud *velodyne_points, int cloud_size)
 }
 
 void
-draw_gps (carmen_vector_3D_t *gps_trail, int size)
+draw_gps (carmen_vector_3D_t *gps_trail, int *gps_nr, int size)
 {
     glPointSize (3.0);
 
     glBegin (GL_POINTS);
 
-    glColor3d (1.0, 0.5, 0.0);
-
     int i;
     for (i = 0; i < size; i++)
     {
+        if (gps_nr[i] == 0)
+	    glColor3d (1.0, 0.5, 0.0);
+        else
+        {
+//	    printf("%d", gps_nr[i]);
+	    glColor3d (0.3, 1.0, 0.3);
+        }
+
         glVertex3d (gps_trail[i].x, gps_trail[i].y, gps_trail[i].z);
     }
 

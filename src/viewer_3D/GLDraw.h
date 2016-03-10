@@ -29,7 +29,7 @@ void draw_laser_points_vbo(point_cloud *laser_points, int laser_size);
 void draw_laser_mesh(point_cloud *laser_readings, int laser_size);
 void draw_moving_objects_point_clouds (point_cloud *moving_objects_point_clouds, int cloud_size, carmen_vector_3D_t offset);
 void draw_velodyne_points(point_cloud *velodyne_points, int cloud_size);
-void draw_gps(carmen_vector_3D_t *gps_trail, int size);
+void draw_gps(carmen_vector_3D_t *gps_trail, int *gps_nr, int size);
 void draw_gps_xsens_xyz(carmen_vector_3D_t *gps_trail, int size);
 void draw_odometry(carmen_vector_3D_t *odometry_trail, int size);
 void draw_localize_ackerman(carmen_vector_3D_t* localize_ackerman_trail, int size);

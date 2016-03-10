@@ -77,6 +77,7 @@ static int last_localize_ackerman_trail;
 
 static carmen_vector_3D_t gps_initial_pos;
 static carmen_vector_3D_t *gps_trail;
+static int *gps_nr;
 static int last_gps_trail;
 static int gps_initialized;
 
@@ -966,6 +967,7 @@ gps_xyz_message_handler(carmen_gps_xyz_message *gps_xyz_raw_message)
     new_pos.z = gps_xyz_raw_message->z - offset.z;
 
     gps_trail[last_gps_trail] = new_pos;
+    gps_nr[last_gps_trail] = gps_xyz_raw_message->nr;
 
     last_gps_trail++;
 
@@ -974,7 +976,8 @@ gps_xyz_message_handler(carmen_gps_xyz_message *gps_xyz_raw_message)
         last_gps_trail -= gps_size;
     }
 
-    gps_fix_flag = gps_xyz_raw_message->gps_quality;
+    if (gps_xyz_raw_message->nr != 0)
+        gps_fix_flag = gps_xyz_raw_message->gps_quality;
 }
 
 static void
@@ -1130,6 +1133,7 @@ init_gps(void)
     gps_initialized = 0; // Only considered initialized when first message is received
 
     gps_trail = (carmen_vector_3D_t*) malloc(gps_size * sizeof (carmen_vector_3D_t));
+    gps_nr = (int *) malloc(gps_size * sizeof(int));
 
     carmen_vector_3D_t init_pos;
 
@@ -1141,6 +1145,7 @@ init_gps(void)
     for (i = 0; i < gps_size; i++)
     {
         gps_trail[i] = init_pos;
+        gps_nr[i] = 0;
     }
 
     last_gps_trail = 0;
@@ -1535,6 +1540,7 @@ destroy_stuff()
     free(odometry_trail);
     free(localize_ackerman_trail);
     free(gps_trail);
+    free(gps_nr);
     free(xsens_xyz_trail);
     free(particles_pos);
     free(particles_weight);
@@ -1685,7 +1691,7 @@ draw_loop(window *w)
 
         if (draw_gps_flag)
         {
-            draw_gps(gps_trail, gps_size);
+            draw_gps(gps_trail, gps_nr, gps_size);
         }
 
         if (draw_xsens_gps_flag)
@@ -1860,7 +1866,7 @@ draw_loop2(window *w)
 
         if (draw_gps_flag)
         {
-            draw_gps(gps_trail, gps_size);
+            draw_gps(gps_trail, gps_nr, gps_size);
         }
 
         if (draw_xsens_gps_flag)
