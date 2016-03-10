@@ -1609,19 +1609,14 @@ draw_loop(window *w)
 
         if (draw_gps_axis_flag)
         {
-        	if (gps_heading_valid)
-        	{
-        		if (gps_fix_flag == 4)
-        			glColor3f(0.0, 1.0, 0.0);
-        		else if (gps_fix_flag == 5)
-        			glColor3f(0.0, 0.0, 1.0);
-        		else
-        			glColor3f(1.0, 0.5, 0.0);
-        	}
-        	else
-        		glColor3f(1.0, 0.0, 0.0);
+			if (gps_fix_flag == 4)
+				glColor3f(0.0, 1.0, 0.0);
+			else if (gps_fix_flag == 5)
+				glColor3f(0.0, 0.0, 1.0);
+			else
+				glColor3f(1.0, 0.5, 0.0);
 
-            draw_gps_orientation(gps_heading, xsens_orientation, xsens_pose, sensor_board_1_pose, car_fused_pose);
+            draw_gps_orientation(gps_heading, gps_heading_valid, xsens_orientation, xsens_pose, sensor_board_1_pose, car_fused_pose);
         }
 
         if (draw_car_flag)

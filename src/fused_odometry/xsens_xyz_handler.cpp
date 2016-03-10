@@ -674,7 +674,7 @@ gps_xyz_message_handler()
 	if (!kalman_filter)
 	{
 		// prediction(sensor_vector->timestamp, fused_odometry_parameters);
-		if (gps_xyz.gps_quality)
+		if ((gps_xyz.nr == 1) && (gps_xyz.gps_quality))
 		{
 			correction(measure_weight_position, sensor_vector, fused_odometry_parameters);
 			// add_gps_samples_into_particle_pool(&gps_xyz);

@@ -2,7 +2,7 @@ como calibrar a odometria:
 
 1. compile o modulo odometry_calibration
 2. Execute o central
-3. Rode ./proccontrol process-volta_da_ufes_playback_viewer_3D.ini {não aperte play}
+3. Rode ./proccontrol process-volta_da_ufes_playback_viewer_3D.ini {atualize-o antes com o nome de seu log e NÃO aperte play}
 4. Execute o programa "./grab_data_for_calibration out.txt" 
 5. Faca playback de seu log ate o final {aperte play}
 6. Mate o programa "./grab_data_for_calibration out.txt" e o proccontrol

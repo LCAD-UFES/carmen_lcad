@@ -302,6 +302,9 @@ gps_xyz_message_handler(carmen_gps_xyz_message *message)
 	int xsid;
 	double yaw, pitch, roll;
 
+	if (message->nr != 1)
+		return;
+
 	xsid = find_nearest_xsens(message->timestamp);
 
 	if (xsid < 0)
@@ -357,8 +360,10 @@ gps_xyz_message_handler(carmen_gps_xyz_message *message)
 				gps_std = 2.0;
 				break;
 			case 4:
-			case 5:
 				gps_std = 0.2;
+				break;
+			case 5:
+				gps_std = 1.5;
 				break;
 			default:
 				gps_std = DBL_MAX;
