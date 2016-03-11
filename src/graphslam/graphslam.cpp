@@ -169,8 +169,8 @@ add_gps_edge(SparseOptimizer *optimizer, VertexSE2 *v, SE2 measure, double gps_s
 	cov.data()[5] = 0;
 	cov.data()[6] = 0;
 	cov.data()[7] = 0;
-	//cov.data()[8] = pow(3.14 * 1000, 2);
-	cov.data()[8] = pow(yaw_std, 2);
+	cov.data()[8] = pow(3.14 * 1000, 2);
+	//cov.data()[8] = pow(yaw_std, 2);
 
 	information = cov.inverse();
 
