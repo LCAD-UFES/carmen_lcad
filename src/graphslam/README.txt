@@ -49,6 +49,9 @@ Para limpar o mapa use os programas
 	bin/map_editor <path do diretorio do mapa>/complete_map.map
 	bin/complete_map_to_block_map -map_path <path do diretorio do mapa> -map_resolution 0.2 -block_size_in_meters 150.0
 
+17.O process já constroe o rndf(rddf) usando o ./rddf_build ../data/rndf/rndf.kml
+	Após criar o mapa, renomear o arquivo ../data/rndf/rndf.kml para ../data/rndf/rddf-log_voltadaufes-<data do log>.kml
+		mv ../data/rndf/rndf.kml ../data/rndf/rddf-log_voltadaufes-<data do log>.kml
 
 --------------------------------------------------------------------------------------------------------------------------------------
 
