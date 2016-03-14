@@ -210,15 +210,15 @@ static carmen_fused_odometry_state_vector
 randomize_state_vector(carmen_fused_odometry_state_vector initial_state, carmen_fused_odometry_parameters *fused_odometry_parameters)
 {
 	carmen_fused_odometry_state_vector new_sv;
+	carmen_point_t std = get_std_error(xsens_xyz_h, fused_odometry_parameters);
 
-	new_sv.pose.position.x = initial_state.pose.position.x + carmen_gaussian_random(0.0, fused_odometry_parameters->xsens_gps_x_std_error);
-	new_sv.pose.position.y = initial_state.pose.position.y + carmen_gaussian_random(0.0, fused_odometry_parameters->xsens_gps_y_std_error);
+	new_sv.pose.position.x = initial_state.pose.position.x + carmen_gaussian_random(0.0, std.x);
+	new_sv.pose.position.y = initial_state.pose.position.y + carmen_gaussian_random(0.0, std.y);
 	new_sv.pose.position.z = 0.0; // initial_state.pose.position.z + carmen_gaussian_random(0.0, fused_odometry_parameters->xsens_gps_z_std_error);
 
 	new_sv.pose.orientation.roll = 0.0; // initial_state.pose.orientation.roll + carmen_gaussian_random(0.0, fused_odometry_parameters->xsens_roll_std_error);
 	new_sv.pose.orientation.pitch =	0.0; // initial_state.pose.orientation.pitch + carmen_gaussian_random(0.0, fused_odometry_parameters->xsens_pitch_std_error);
-	// @@@ Alberto: Nao se deve usar xsens_yaw_std_error porque o erro real esta associado ao bias
-	new_sv.pose.orientation.yaw = initial_state.pose.orientation.yaw + carmen_gaussian_random(0.0, fused_odometry_parameters->xsens_maximum_yaw_bias / 4.0);
+	new_sv.pose.orientation.yaw = initial_state.pose.orientation.yaw + carmen_gaussian_random(0.0, std.theta);
 
 	new_sv.xsens_yaw_bias = 0.0; // initial_state.xsens_yaw_bias + carmen_gaussian_random(0.0, fused_odometry_parameters->xsens_yaw_bias_noise); 
 

@@ -73,7 +73,7 @@ void correction(double (*weight_func)(carmen_fused_odometry_state_vector, void *
 void publish_fused_odometry(void);
 
 void set_fused_odometry_control_vector(carmen_fused_odometry_control c);
-carmen_fused_odometry_control get_fused_odometry_control_vector();
+carmen_fused_odometry_control *get_fused_odometry_control_vector();
 
 void init_particles(carmen_fused_odometry_state_vector initial_state, carmen_fused_odometry_parameters *fused_odometry_parameters);
 void carmen_fused_odometry_initialize(carmen_fused_odometry_parameters *fused_odometry_parameters);

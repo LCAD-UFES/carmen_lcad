@@ -10,14 +10,12 @@ xsens_xyz_handler xsens_handler;
 	
 static tf::Transformer transformer(false);
 
-static char *car_tf_name = (char *)"/car";
-static char *xsens_tf_name = (char *)"/xsens";
-static char *board_tf_name = (char *)"/board";
-static char *gps_tf_name = (char *)"/gps";
+static char *car_tf_name = (char *) "/car";
+static char *xsens_tf_name = (char *) "/xsens";
+static char *board_tf_name = (char *) "/board";
+static char *gps_tf_name = (char *) "/gps";
 
 static carmen_fused_odometry_parameters *fused_odometry_parameters;
-
-static carmen_gps_xyz_message gps_xyz;
 
 sensor_vector_xsens_xyz **xsens_sensor_vector = NULL;
 int xsens_sensor_vector_index = 0;
@@ -340,19 +338,59 @@ create_state_vector_from_message(carmen_gps_xyz_message *gps_xyz_message)
 	return sv;
 }
 
-void 
+
+carmen_point_t
+get_std_error(xsens_xyz_handler *xsens_handler, carmen_fused_odometry_parameters *fused_odometry_parameters)
+{
+	carmen_point_t std;
+
+	if (xsens_handler->extra_gps == 2)
+	{
+		if (xsens_handler->gps_xyz.gps_quality == 4)
+		{
+			std.x = fused_odometry_parameters->xsens_gps_x_std_error / 5.0;
+			std.y = fused_odometry_parameters->xsens_gps_y_std_error / 5.0;
+			std.theta = fused_odometry_parameters->xsens_yaw_std_error / 5.0;
+		}
+		else if (xsens_handler->gps_xyz.gps_quality == 5)
+		{
+			std.x = fused_odometry_parameters->xsens_gps_x_std_error / 2.0;
+			std.y = fused_odometry_parameters->xsens_gps_y_std_error / 2.0;
+			std.theta = fused_odometry_parameters->xsens_yaw_std_error / 2.0;
+		}
+		else
+		{
+			std.x = fused_odometry_parameters->xsens_gps_x_std_error;
+			std.y = fused_odometry_parameters->xsens_gps_y_std_error;
+			std.theta = fused_odometry_parameters->xsens_yaw_std_error;
+		}
+	}
+	else
+	{
+		std.x = fused_odometry_parameters->xsens_gps_x_std_error;
+		std.y = fused_odometry_parameters->xsens_gps_y_std_error;
+		// @@@ Alberto: Nao se deve usar xsens_yaw_std_error porque o erro real esta associado ao bias
+		std.theta = fused_odometry_parameters->xsens_maximum_yaw_bias;
+	}
+
+	std.x *= 1.0 + xsens_handler->gps_performance_degradation;
+	std.y *= 1.0 + xsens_handler->gps_performance_degradation;
+	std.theta *= 1.0 + xsens_handler->gps_performance_degradation;
+
+	return (std);
+}
+
+
+void
 globalpos_ackerman_initialize_from_xsens(carmen_fused_odometry_state_vector initial_state, double timestamp)
 {
-	carmen_point_t mean, std;
+	carmen_point_t mean;
 
 	mean.x = initial_state.pose.position.x;
 	mean.y = initial_state.pose.position.y;
 	mean.theta = initial_state.pose.orientation.yaw;// - 0.35;
 
-	std.x = fused_odometry_parameters->xsens_gps_x_std_error;
-	std.y = fused_odometry_parameters->xsens_gps_y_std_error;
-	// @@@ Alberto: Nao se deve usar xsens_yaw_std_error porque o erro real esta associado ao bias
-	std.theta = fused_odometry_parameters->xsens_maximum_yaw_bias / 4.0;
+	carmen_point_t std = get_std_error(&xsens_handler, fused_odometry_parameters);
 
 	carmen_localize_ackerman_initialize_gaussian_time_command(mean, std, timestamp);
 
@@ -374,13 +412,19 @@ initialize_states(carmen_xsens_xyz_message *xsens_xyz)
 	
 	if (carmen_get_time() > (first_timestamp + 2.0))
 	{
-		if (xsens_handler.extra_gps_available)
+		if (xsens_handler.extra_gps)
 		{
-			if (gps_xyz.gps_quality)
+			if (xsens_handler.gps_xyz.gps_quality)
 			{
 				carmen_fused_odometry_state_vector initial_state;
-				initial_state = create_state_vector_from_message(&gps_xyz);
-				initial_state.pose.orientation = get_car_orientation_from_message(xsens_xyz);
+				initial_state = create_state_vector_from_message(&xsens_handler.gps_xyz);
+				if (xsens_handler.gps_hdt.valid && (xsens_handler.extra_gps == 2)) // Trimble
+				{
+					carmen_orientation_3D_t orientation = {0.0, 0.0, xsens_handler.gps_hdt.heading};
+					initial_state.pose.orientation = orientation;
+				}
+				else
+					initial_state.pose.orientation = get_car_orientation_from_message(xsens_xyz);
 
 				globalpos_ackerman_initialize_from_xsens(initial_state, xsens_xyz->timestamp);
 
@@ -416,10 +460,16 @@ initialize_states(carmen_xsens_global_quat_message *xsens_mti)
 	
 	if (carmen_get_time() > (first_timestamp + 2.0))
 	{
-		if (gps_xyz.gps_quality)
+		if (xsens_handler.gps_xyz.gps_quality)
 		{
-			carmen_fused_odometry_state_vector initial_state = create_state_vector_from_message(&gps_xyz);
-			initial_state.pose.orientation = get_car_orientation_from_message(xsens_mti);
+			carmen_fused_odometry_state_vector initial_state = create_state_vector_from_message(&xsens_handler.gps_xyz);
+			if (xsens_handler.gps_hdt.valid && (xsens_handler.extra_gps == 2)) // Trimble
+			{
+				carmen_orientation_3D_t orientation = {0.0, 0.0, xsens_handler.gps_hdt.heading};
+				initial_state.pose.orientation = orientation;
+			}
+			else
+				initial_state.pose.orientation = get_car_orientation_from_message(xsens_mti);
 
 			globalpos_ackerman_initialize_from_xsens(initial_state, xsens_mti->timestamp);
 
@@ -452,20 +502,17 @@ check_time_difference(double timestamp)
 
 static double 
 measure_weight_orientation(carmen_fused_odometry_state_vector xt, void *zt_v, carmen_fused_odometry_parameters *fused_odometry_parameters)
-{	
+{
+	if (xsens_handler.extra_gps == 2) // Trimble
+		return (1.0); // Ignore orientation from xsens
+
 	sensor_vector_xsens_xyz *zt = (sensor_vector_xsens_xyz *) zt_v;
+	carmen_point_t std = get_std_error(&xsens_handler, fused_odometry_parameters);
 
-	//double diff_roll = carmen_normalize_theta(xt.pose.orientation.roll - zt->orientation.roll);
-	//double diff_pitch = carmen_normalize_theta(xt.pose.orientation.pitch - zt->orientation.pitch);
 	double diff_yaw = carmen_normalize_theta(xt.pose.orientation.yaw - (zt->orientation.yaw - xt.xsens_yaw_bias));
+	double weight_yaw = exp(-(diff_yaw * diff_yaw / (2.0 * std.theta * std.theta)));
 
-	//double weight_roll = exp(-(diff_roll * diff_roll / (2.0 *fused_odometry_parameters->xsens_roll_std_error * fused_odometry_parameters->xsens_roll_std_error)));
-	//double weight_pitch = exp(-(diff_pitch * diff_pitch / (2.0 * fused_odometry_parameters->xsens_pitch_std_error * fused_odometry_parameters->xsens_pitch_std_error)));
-	double weight_yaw = exp(-(diff_yaw * diff_yaw / (2.0 * fused_odometry_parameters->xsens_yaw_std_error * fused_odometry_parameters->xsens_yaw_std_error)));
-
-	double weight = (weight_yaw); // * weight_pitch); // * weight_roll);
-
-	return weight;
+	return weight_yaw;
 }
 
 
@@ -473,10 +520,10 @@ static double
 measure_weight_orientation_hdt(carmen_fused_odometry_state_vector xt, void *zt_v, carmen_fused_odometry_parameters *fused_odometry_parameters)
 {
 	sensor_vector_xsens_xyz *zt = (sensor_vector_xsens_xyz *) zt_v;
+	carmen_point_t std = get_std_error(&xsens_handler, fused_odometry_parameters);
 
 	double diff_yaw = carmen_normalize_theta(xt.pose.orientation.yaw - zt->orientation.yaw);
-
-	double weight_yaw = exp(-(diff_yaw * diff_yaw / (2.0 * fused_odometry_parameters->xsens_yaw_std_error * fused_odometry_parameters->xsens_yaw_std_error)));
+	double weight_yaw = exp(-(diff_yaw * diff_yaw / (2.0 * std.theta * std.theta)));
 
 	return weight_yaw;
 }
@@ -491,8 +538,9 @@ measure_weight_position(carmen_fused_odometry_state_vector xt, void *zt_v, carme
 	double diff_y = xt.pose.position.y - zt->position.y;
 	//double diff_z = xt.pose.position.z - zt->position.z;
 	
-	double weight_x = exp(-((diff_x * diff_x) / (2.0 * fused_odometry_parameters->xsens_gps_x_std_error * fused_odometry_parameters->xsens_gps_x_std_error))); 
-	double weight_y = exp(-((diff_y * diff_y) / (2.0 * fused_odometry_parameters->xsens_gps_y_std_error * fused_odometry_parameters->xsens_gps_y_std_error))); 
+	carmen_point_t std = get_std_error(&xsens_handler, fused_odometry_parameters);
+	double weight_x = exp(-((diff_x * diff_x) / (2.0 * std.x * std.x)));
+	double weight_y = exp(-((diff_y * diff_y) / (2.0 * std.y * std.y)));
 	//double weight_z = exp(-((diff_z * diff_z) / (2.0 * fused_odometry_parameters->xsens_gps_z_std_error * fused_odometry_parameters->xsens_gps_z_std_error)));
 	
 	double weight = (weight_x * weight_y); // * weight_z);
@@ -523,11 +571,12 @@ xsens_xyz_message_handler(carmen_xsens_xyz_message *xsens_xyz)
 
 	xsens_sensor_vector_index = (xsens_sensor_vector_index + 1) % XSENS_SENSOR_VECTOR_SIZE;
 
-	if(xsens_sensor_vector[xsens_sensor_vector_index] != NULL)
+	if (xsens_sensor_vector[xsens_sensor_vector_index] != NULL)
 		destroy_sensor_vector_xsens_xyz(xsens_sensor_vector[xsens_sensor_vector_index]);
 
 	xsens_sensor_vector[xsens_sensor_vector_index] = sensor_vector;
 
+	// Must check if timestamp has changed due to log file jump on log playback
 	if (check_time_difference(xsens_xyz->timestamp))
 	{
 		carmen_fused_odometry_initialize(fused_odometry_parameters);
@@ -544,6 +593,7 @@ xsens_xyz_message_handler(carmen_xsens_xyz_message *xsens_xyz)
 
 	xsens_handler.orientation = sensor_vector->orientation; 	// Used by create_car_odometry_control()
 	xsens_handler.ang_velocity = sensor_vector->ang_velocity; 	// Used by create_car_odometry_control()
+
 	if (!kalman_filter)
 	{
 		prediction(sensor_vector->timestamp, fused_odometry_parameters);
@@ -551,8 +601,6 @@ xsens_xyz_message_handler(carmen_xsens_xyz_message *xsens_xyz)
 		publish_fused_odometry();
 	}
 	xsens_handler.last_xsens_message_timestamp = xsens_xyz->timestamp;
-	
-
 }
 
 
@@ -625,7 +673,7 @@ get_yaw_estimate_from_gps_poses(sensor_vector_xsens_xyz **xsens_sensor_vector, i
 void
 set_best_yaw_estimate(sensor_vector_xsens_xyz **xsens_sensor_vector, int xsens_sensor_vector_index)
 {
-	carmen_fused_odometry_control ut;
+	carmen_fused_odometry_control *ut;
 	double weight_factor;
 	double xsens_yaw, gps_yaw;
 	double x, y;
@@ -634,7 +682,7 @@ set_best_yaw_estimate(sensor_vector_xsens_xyz **xsens_sensor_vector, int xsens_s
 	gps_yaw = get_yaw_estimate_from_gps_poses(xsens_sensor_vector, xsens_sensor_vector_index);
 
 	ut = get_fused_odometry_control_vector();
-	weight_factor = 1.0 / (1.0 + exp(-((fabs(ut.v) - 1.0) * 1.0)));
+	weight_factor = 1.0 / (1.0 + exp(-((fabs(ut->v) - 1.0) * 1.0)));
 	// weight_factor = 0.0;
 	
 	if (gps_yaw != 10.0)
@@ -658,8 +706,8 @@ xsens_mti_message_handler(carmen_xsens_global_quat_message *xsens_mti)
 		return;
 	}
 
-	// Must check if gps pose has changed due to log file jump on log playback
-	if (check_time_difference(gps_xyz.timestamp))
+	// Must check if timestamp has changed due to log file jump on log playback
+	if (check_time_difference(xsens_mti->timestamp))
 	{
 		carmen_fused_odometry_initialize(fused_odometry_parameters);
 		initialize_states(xsens_mti);
@@ -671,7 +719,7 @@ xsens_mti_message_handler(carmen_xsens_global_quat_message *xsens_mti)
 	if (xsens_sensor_vector[xsens_sensor_vector_index] != NULL)
 		destroy_sensor_vector_xsens_xyz(xsens_sensor_vector[xsens_sensor_vector_index]);
 
-	sensor_vector_xsens_xyz *sensor_vector = create_sensor_vector_xsens_mti(xsens_mti, &gps_xyz);
+	sensor_vector_xsens_xyz *sensor_vector = create_sensor_vector_xsens_mti(xsens_mti, &xsens_handler.gps_xyz);
 	xsens_sensor_vector[xsens_sensor_vector_index] = sensor_vector;
 	
 	set_best_yaw_estimate(xsens_sensor_vector, xsens_sensor_vector_index);
@@ -681,29 +729,83 @@ xsens_mti_message_handler(carmen_xsens_global_quat_message *xsens_mti)
 
 	if (!kalman_filter)
 	{
+		if (xsens_handler.gps_performance_changed)
+		{
+			xsens_handler.gps_performance_degradation = 40.0;
+			xsens_handler.gps_performance_changed = 0;
+		}
 		prediction(sensor_vector->timestamp, fused_odometry_parameters);
 		correction(measure_weight_orientation, sensor_vector, fused_odometry_parameters);
 		publish_fused_odometry();
+		xsens_handler.gps_performance_degradation *= 0.98; // fator de decaimento
 	}
 	xsens_handler.last_xsens_message_timestamp = xsens_mti->timestamp;
-	
+}
 
+
+static void
+detect_gps_performance_change(carmen_gps_xyz_message *message)
+{
+	static carmen_point_t previous_position = {0.0, 0.0, 0.0};
+
+	if (!xsens_handler.initial_state_initialized)
+	{
+		previous_position.x = message->x;
+		previous_position.y = message->y;
+		return;
+	}
+
+	if (message->nr == 1)
+	{
+		if (xsens_handler.gps_xyz.gps_quality != message->gps_quality)
+			xsens_handler.gps_performance_changed = 1;
+		else
+		{
+			carmen_point_t current_position = {message->x, message->y, 0.0};
+			carmen_fused_odometry_control *ut = get_fused_odometry_control_vector();
+			if (carmen_distance(&previous_position, &current_position) > (0.25 + 2.0 * (ut->v * 1/20.0))) // andou 3 vezes mais que o esperado
+				xsens_handler.gps_performance_changed = 1;
+		}
+		previous_position.x = message->x;
+		previous_position.y = message->y;
+	}
+}
+
+
+static void
+detect_gps_performance_change(carmen_gps_gphdt_message *message)
+{
+	static double previous_heading = 0.0;
+
+	if (!xsens_handler.initial_state_initialized)
+	{
+		previous_heading = message->heading;
+		return;
+	}
+
+	if ((xsens_handler.gps_hdt.valid != message->valid) ||
+		(previous_heading - message->heading) > carmen_degrees_to_radians(15.0))
+		xsens_handler.gps_performance_changed = 1;
+
+	previous_heading = message->heading;
 }
 
 
 static void 
 gps_hdt_message_handler(carmen_gps_gphdt_message *message)
 {
+	detect_gps_performance_change(message);
+
+	xsens_handler.gps_hdt = *message;
+
 	if (!xsens_handler.initial_state_initialized)
-	{
 		return;
-	}
 
 	sensor_vector_xsens_xyz *sensor_vector = create_sensor_vector_gps_hdt(message);
 
 	if (!kalman_filter)
 	{
-		if ((gps_xyz.nr == 1) && (gps_xyz.gps_quality == 4))
+		if ((message->valid) && (xsens_handler.gps_xyz.gps_quality == 4))
 			correction(measure_weight_orientation_hdt, sensor_vector, fused_odometry_parameters);
 	}
 
@@ -711,30 +813,52 @@ gps_hdt_message_handler(carmen_gps_gphdt_message *message)
 }
 
 
-static void
-gps_xyz_message_handler(carmen_gps_xyz_message *message)
+static int
+message_from_best_gps(carmen_gps_xyz_message *message)
 {
-	xsens_handler.extra_gps_available = 1;
+	if ((xsens_handler.extra_gps == 0) || (xsens_handler.extra_gps == 1))
+	{
+		if (message->nr == 1) // GPS Trimble
+			xsens_handler.extra_gps = 2;
+		else
+			xsens_handler.extra_gps = 1;
+	}
 
-	if (message->nr == 1)
-		gps_xyz = *message;
+	if (xsens_handler.extra_gps == 2)
+	{
+		if (message->nr == 1)
+		{
+			xsens_handler.gps_xyz = *message;
+			return (1);
+		}
+		else
+			return (0);
+	}
+	else
+	{
+		xsens_handler.gps_xyz = *message;
+		return (1);
+	}
+}
+
+
+static void
+carmen_gps_xyz_message_handler(carmen_gps_xyz_message *message)
+{
+	detect_gps_performance_change(message);
+
+	if (!message_from_best_gps(message))
+		return;
 
 	if (!xsens_handler.initial_state_initialized)
-	{
 		return;
-	}
 
 	sensor_vector_xsens_xyz *sensor_vector = create_sensor_vector_gps_xyz(message);
 
 	if (!kalman_filter)
 	{
-		// prediction(sensor_vector->timestamp, fused_odometry_parameters);
-		if ((message->nr == 1) && (message->gps_quality))
-		{
+		if (message->gps_quality)
 			correction(measure_weight_position, sensor_vector, fused_odometry_parameters);
-			// add_gps_samples_into_particle_pool(&gps_xyz);
-		}
-		// publish_fused_odometry();
 	}
 	
 	destroy_sensor_vector_xsens_xyz(sensor_vector);
@@ -753,8 +877,8 @@ initialize_transformations(xsens_xyz_handler *xsens_handler)
 	transformer.setTransform(board_to_xsens_transform, "board_to_xsens_transform");
 
 	tf::Transform gps_position_on_board;	
-	gps_position_on_board.setOrigin(carmen_vector3_to_tf_vector3(xsens_handler->gps_pose.position));
-	gps_position_on_board.setRotation(carmen_rotation_to_tf_quaternion(xsens_handler->gps_pose.orientation));
+	gps_position_on_board.setOrigin(carmen_vector3_to_tf_vector3(xsens_handler->gps_pose_in_the_car.position));
+	gps_position_on_board.setRotation(carmen_rotation_to_tf_quaternion(xsens_handler->gps_pose_in_the_car.orientation));
 	tf::StampedTransform board_to_gps_transform(gps_position_on_board, tf::Time(0), board_tf_name, gps_tf_name);
 	transformer.setTransform(board_to_gps_transform, "board_to_gps_transform");
 
@@ -771,7 +895,7 @@ subscribe_messages(void)
 {
 	carmen_xsens_subscribe_xsens_global_quat_message(NULL, (carmen_handler_t) xsens_mti_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_xsens_xyz_subscribe_message(NULL, (carmen_handler_t) xsens_xyz_message_handler, CARMEN_SUBSCRIBE_LATEST);
-	carmen_gps_xyz_subscribe_message(NULL, (carmen_handler_t) gps_xyz_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_gps_xyz_subscribe_message(NULL, (carmen_handler_t) carmen_gps_xyz_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_gps_subscribe_nmea_hdt_message(NULL, (carmen_handler_t) gps_hdt_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
@@ -804,12 +928,12 @@ initialize_carmen_parameters(xsens_xyz_handler *xsens_handler, int argc, char **
 		{(char*)"xsens", (char*)"pitch",		CARMEN_PARAM_DOUBLE, &xsens_handler->xsens_pose.orientation.pitch,	0, NULL},
 		{(char*)"xsens", (char*)"yaw",			CARMEN_PARAM_DOUBLE, &xsens_handler->xsens_pose.orientation.yaw,	0, NULL},
 
-		{(char*)"gps_nmea", (char*)"x",			CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose.position.x,		0, NULL},
-		{(char*)"gps_nmea", (char*)"y",			CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose.position.y,		0, NULL},
-		{(char*)"gps_nmea", (char*)"z",			CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose.position.z,		0, NULL},
-		{(char*)"gps_nmea", (char*)"roll",		CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose.orientation.roll,		0, NULL},
-		{(char*)"gps_nmea", (char*)"pitch",		CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose.orientation.pitch,	0, NULL},
-		{(char*)"gps_nmea", (char*)"yaw",		CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose.orientation.yaw,		0, NULL},
+		{(char*)"gps_nmea", (char*)"x",			CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.position.x,		0, NULL},
+		{(char*)"gps_nmea", (char*)"y",			CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.position.y,		0, NULL},
+		{(char*)"gps_nmea", (char*)"z",			CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.position.z,		0, NULL},
+		{(char*)"gps_nmea", (char*)"roll",		CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.orientation.roll,		0, NULL},
+		{(char*)"gps_nmea", (char*)"pitch",		CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.orientation.pitch,	0, NULL},
+		{(char*)"gps_nmea", (char*)"yaw",		CARMEN_PARAM_DOUBLE, &xsens_handler->gps_pose_in_the_car.orientation.yaw,		0, NULL},
 
 	};
 	
@@ -826,10 +950,7 @@ create_xsens_xyz_handler(int argc, char **argv, carmen_fused_odometry_parameters
 	if (xsens_sensor_vector == NULL)
 		xsens_sensor_vector = (sensor_vector_xsens_xyz **) calloc(XSENS_SENSOR_VECTOR_SIZE, sizeof(sensor_vector_xsens_xyz *));
 
-	xsens_handler.initial_state_initialized = 0;
-	xsens_handler.extra_gps_available = 0;
-
-	xsens_handler.last_xsens_message_timestamp = 0.0;
+	memset(&xsens_handler, 0, sizeof(xsens_handler));
 
 	initialize_carmen_parameters(&xsens_handler, argc, argv);
 	initialize_transformations(&xsens_handler);

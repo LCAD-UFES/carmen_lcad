@@ -24,7 +24,7 @@ typedef struct
 	
 	int initial_state_initialized;
 	
-	int extra_gps_available;
+	int extra_gps;
 } xsens_xyz_handler;
 
 

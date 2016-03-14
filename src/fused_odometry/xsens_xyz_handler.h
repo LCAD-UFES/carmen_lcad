@@ -13,7 +13,7 @@ typedef struct
 	carmen_orientation_3D_t orientation;
 	carmen_orientation_3D_t ang_velocity;
 
-	carmen_pose_3D_t gps_pose;
+	carmen_pose_3D_t gps_pose_in_the_car;
 
 	carmen_pose_3D_t sensor_board_pose;
 	
@@ -21,7 +21,12 @@ typedef struct
 	
 	int initial_state_initialized;
 	
-	int extra_gps_available;
+	int extra_gps;
+	carmen_gps_xyz_message gps_xyz;
+	carmen_gps_gphdt_message gps_hdt;
+
+	int gps_performance_changed;
+	double gps_performance_degradation;
 } xsens_xyz_handler;
 
 
@@ -43,6 +48,8 @@ void reset_xsens_xyz_handler(xsens_xyz_handler *xsens_handler);
 void destroy_xsens_xyz_handler(xsens_xyz_handler *xsens_handler);
 int is_global_pos_initialized();
 void add_gps_samples_into_particle_pool(carmen_gps_xyz_message *gps_xyz);
+carmen_point_t get_std_error(xsens_xyz_handler *xsens_handler, carmen_fused_odometry_parameters *fused_odometry_parameters);
+
 
 #ifdef __cplusplus
 }

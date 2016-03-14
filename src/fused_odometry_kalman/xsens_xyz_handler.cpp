@@ -359,7 +359,7 @@ initialize_states(carmen_xsens_xyz_message *xsens_xyz)
 	
 	if (carmen_get_time() > (first_timestamp + 2.0))
 	{
-		if (xsens_handler.extra_gps_available)
+		if (xsens_handler.extra_gps)
 		{
 			if (gps_xyz.gps_quality)
 			{
@@ -401,7 +401,7 @@ initialize_states(carmen_xsens_global_quat_message *xsens_mti)
 	
 	if (carmen_get_time() > (first_timestamp + 2.0))
 	{
-		if (gps_xyz.gps_quality && xsens_handler.extra_gps_available)
+		if (gps_xyz.gps_quality && xsens_handler.extra_gps)
 		{
 			carmen_fused_odometry_state_vector initial_state = create_state_vector_from_message(&gps_xyz);
 			initial_state.pose.orientation = get_car_orientation_from_message(xsens_mti);
@@ -530,7 +530,7 @@ gps_xyz_message_handler()
 			if(gps_sensor_vector[i] == NULL)
 				return;
 		}
-		xsens_handler.extra_gps_available = 1;
+		xsens_handler.extra_gps = 1;
 	}
 
 	if (!xsens_handler.initial_state_initialized)
@@ -629,7 +629,7 @@ create_xsens_xyz_handler(int argc, char **argv, carmen_fused_odometry_parameters
 		xsens_mti_sensor_vector = (sensor_vector_xsens_xyz **) calloc(XSENS_MTI_SENSOR_VECTOR_SIZE, sizeof(sensor_vector_xsens_xyz*));
 
 	xsens_handler.initial_state_initialized = 0;
-	xsens_handler.extra_gps_available = 0;
+	xsens_handler.extra_gps = 0;
 
 	xsens_handler.last_xsens_message_timestamp = 0.0;
 
