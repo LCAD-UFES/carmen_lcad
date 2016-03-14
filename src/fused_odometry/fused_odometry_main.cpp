@@ -31,6 +31,7 @@ static int use_car_odometry;
 extern int num_particles;
 extern carmen_fused_odometry_particle *xt;
 extern carmen_fused_odometry_particle *_xt;
+extern carmen_fused_odometry_message fused_odometry_message;
 
 static carmen_vector_3D_t *particle_pos = NULL;
 static double *particle_weight = NULL;
@@ -150,7 +151,7 @@ publish_fused_odometry(void)
 		return;
 
 	carmen_fused_odometry_particle_message fused_odometry_particle_message = compute_new_average_state(xt);
-	carmen_fused_odometry_message fused_odometry_message = assemble_fused_odometry_message(fused_odometry_particle_message);
+	fused_odometry_message = assemble_fused_odometry_message(fused_odometry_particle_message);
 
 	err = IPC_publishData(CARMEN_FUSED_ODOMETRY_NAME, &fused_odometry_message); 	
 	carmen_test_ipc_exit(err, "Could not publish fused odometry", CARMEN_FUSED_ODOMETRY_NAME);

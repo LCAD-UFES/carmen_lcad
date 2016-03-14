@@ -596,9 +596,15 @@ xsens_xyz_message_handler(carmen_xsens_xyz_message *xsens_xyz)
 
 	if (!kalman_filter)
 	{
+		if (xsens_handler.gps_performance_changed)
+		{
+			xsens_handler.gps_performance_degradation = 40.0;
+			xsens_handler.gps_performance_changed = 0;
+		}
 		prediction(sensor_vector->timestamp, fused_odometry_parameters);
 		correction(measure_weight_particle, sensor_vector, fused_odometry_parameters);
 		publish_fused_odometry();
+		xsens_handler.gps_performance_degradation *= 0.98; // fator de decaimento
 	}
 	xsens_handler.last_xsens_message_timestamp = xsens_xyz->timestamp;
 }
@@ -625,6 +631,13 @@ double
 compute_yaw_from_two_poses(carmen_vector_3D_t pose1, carmen_vector_3D_t pose2)
 {
 	return (atan2((pose1.y - pose2.y), pose1.x - pose2.x));
+}
+
+
+double
+compute_yaw_from_two_poses(carmen_point_t *pose1, carmen_point_t *pose2)
+{
+	return (atan2((pose1->y - pose2->y), pose1->x - pose2->x));
 }
 
 
@@ -731,7 +744,7 @@ xsens_mti_message_handler(carmen_xsens_global_quat_message *xsens_mti)
 	{
 		if (xsens_handler.gps_performance_changed)
 		{
-			xsens_handler.gps_performance_degradation = 40.0;
+			xsens_handler.gps_performance_degradation = 50.0;
 			xsens_handler.gps_performance_changed = 0;
 		}
 		prediction(sensor_vector->timestamp, fused_odometry_parameters);
@@ -763,8 +776,17 @@ detect_gps_performance_change(carmen_gps_xyz_message *message)
 		{
 			carmen_point_t current_position = {message->x, message->y, 0.0};
 			carmen_fused_odometry_control *ut = get_fused_odometry_control_vector();
-			if (carmen_distance(&previous_position, &current_position) > (0.25 + 2.0 * (ut->v * 1/20.0))) // andou 3 vezes mais que o esperado
+			double distance = carmen_distance(&previous_position, &current_position);
+			if (distance > (0.25 + 2.0 * (ut->v * 1/20.0))) // andou 2 vezes mais que o esperado
 				xsens_handler.gps_performance_changed = 1;
+			else
+			{
+				double car_yaw = get_fused_odometry()->pose.orientation.yaw;
+				double gps_yaw = compute_yaw_from_two_poses(&previous_position, &current_position);
+				double orthogonal_distance = distance * sin(car_yaw - gps_yaw);
+				if (orthogonal_distance > 0.35)
+					xsens_handler.gps_performance_changed = 1;
+			}
 		}
 		previous_position.x = message->x;
 		previous_position.y = message->y;

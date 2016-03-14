@@ -20,6 +20,7 @@
 int num_particles;
 carmen_fused_odometry_particle *xt = NULL;
 carmen_fused_odometry_particle *_xt = NULL;
+carmen_fused_odometry_message fused_odometry_message;
 
 carmen_fused_odometry_control ut;
 
@@ -260,6 +261,13 @@ carmen_fused_odometry_control *
 get_fused_odometry_control_vector()
 {
 	return (&ut);
+}
+
+
+carmen_fused_odometry_message *
+get_fused_odometry()
+{
+	return (&fused_odometry_message);
 }
 
 

@@ -1,3 +1,4 @@
+- Checar com printf os pontos da volta da ufes onde sao detectadas degradacoes de GPS
 - A fused_odometry some por volta da mensagem 83000 da volta da ufes -> checar
 - Mudar o nome do parametro  xsens_gps_?_std_error para gps_?_std_error nos parametros da fused odometry
 - Checar porque com o log 20140418 a fused odometry nao comecca com o angulo do xsens
