@@ -6,19 +6,19 @@ newmtl Esc_Tire1
 Ka 0.000000 0.000000 0.000000
 Kd 0.196078 0.196078 0.203922
 Ks 0.330000 0.330000 0.330000
-#map_Kd ford_escape_model/Esc_Tire1.ppm
+map_Kd ford_escape_model/Esc_Tire1.ppm
 
 newmtl Esc_Badging1
 Ka 0.000000 0.000000 0.000000
 Kd 0.396078 0.411765 0.419608
 Ks 0.330000 0.330000 0.330000
-#map_Kd ford_escape_model/Esc_Badging1.ppm
+map_Kd ford_escape_model/Esc_Badging1.ppm
 
 newmtl Esc_BrakeLt1
 Ka 0.000000 0.000000 0.000000
 Kd 0.545098 0.184314 0.188235
 Ks 0.330000 0.330000 0.330000
-#map_Kd ford_escape_model/Esc_BrakeLt1.ppm
+map_Kd ford_escape_model/Esc_BrakeLt1.ppm
 
 newmtl FrontColor
 Ka 0.000000 0.000000 0.000000
@@ -29,30 +29,30 @@ newmtl Esc_Body1
 Ka 0.000000 0.000000 0.000000
 Kd 0.294118 0.294118 0.294118
 Ks 0.330000 0.330000 0.330000
-#map_Kd ford_escape_model/Esc_Body1.ppm
+map_Kd ford_escape_model/Esc_Body1.ppm
 
 newmtl Esc_HeadLt1
 Ka 0.000000 0.000000 0.000000
 Kd 0.537255 0.494118 0.458824
 Ks 0.330000 0.330000 0.330000
-#map_Kd ford_escape_model/Esc_HeadLt1.ppm
+map_Kd ford_escape_model/Esc_HeadLt1.ppm
 
 newmtl Esc_Logo1
 Ka 0.000000 0.000000 0.000000
 Kd 0.431373 0.427451 0.439216
 Ks 0.330000 0.330000 0.330000
-#map_Kd ford_escape_model/Esc_Logo1.ppm
+map_Kd ford_escape_model/Esc_Logo1.ppm
 
 newmtl Esc_Plate1
 Ka 0.000000 0.000000 0.000000
 Kd 0.752941 0.749020 0.745098
 Ks 0.330000 0.330000 0.330000
-#map_Kd ford_escape_model/Esc_Plate1.ppm
+map_Kd ford_escape_model/Esc_Plate1.ppm
 
 newmtl Esc_Glass1
 Ka 0.000000 0.000000 0.000000
 Kd 0.215686 0.184314 0.188235
 Ks 0.330000 0.330000 0.330000
 d 0.500000
-#map_Kd ford_escape_model/Esc_Glass1.ppm
+map_Kd ford_escape_model/Esc_Glass1.ppm
 
