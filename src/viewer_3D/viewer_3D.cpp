@@ -801,7 +801,7 @@ carmen_laser_laser_message_handler(carmen_laser_laser_message* laser_message)
 //        return;
 
     laser_initialized = 1;
-	printf("Laser message id: %d\n", laser_message->id);
+	//printf("Laser message id: %d\n", laser_message->id);
 	if (laser_message->id == front_bullbar_left_corner_laser_id) {
 		carmen_laser_draw_dispatcher(laser_message, &front_bullbar_left_corner_pose, front_bullbar_left_corner_laser_points, &front_bullbar_left_corner_laser_points_idx);
 	}
