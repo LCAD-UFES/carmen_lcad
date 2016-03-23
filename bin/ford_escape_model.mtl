@@ -1,58 +1,121 @@
-#
-## Alias OBJ Material File
-# Exported from SketchUp, (c) 2000-2012 Trimble Navigation Limited
-
-newmtl Esc_Tire1
-Ka 0.000000 0.000000 0.000000
-Kd 0.196078 0.196078 0.203922
-Ks 0.330000 0.330000 0.330000
-#map_Kd ford_escape_model/Esc_Tire1.ppm
+# Blender MTL File: 'Iara.blend'
+# Material Count: 12
 
 newmtl Esc_Badging1
+Ns 96.078431
 Ka 0.000000 0.000000 0.000000
-Kd 0.396078 0.411765 0.419608
-Ks 0.330000 0.330000 0.330000
-#map_Kd ford_escape_model/Esc_Badging1.ppm
-
-newmtl Esc_BrakeLt1
-Ka 0.000000 0.000000 0.000000
-Kd 0.545098 0.184314 0.188235
-Ks 0.330000 0.330000 0.330000
-#map_Kd ford_escape_model/Esc_BrakeLt1.ppm
-
-newmtl FrontColor
-Ka 0.000000 0.000000 0.000000
-Kd 1.000000 1.000000 1.000000
-Ks 0.330000 0.330000 0.330000
+Kd 0.316862 0.329412 0.335686
+Ks 0.165000 0.165000 0.165000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd ford_escape_model/Esc_Badging1.ppm
 
 newmtl Esc_Body1
+Ns 511.764706
 Ka 0.000000 0.000000 0.000000
-Kd 0.294118 0.294118 0.294118
-Ks 0.330000 0.330000 0.330000
-#map_Kd ford_escape_model/Esc_Body1.ppm
+Kd 0.841202 0.841202 0.841202
+Ks 0.210227 0.210227 0.210227
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd ford_escape_model/Esc_Body1.ppm
 
-newmtl Esc_HeadLt1
+newmtl Esc_Body1_NONE
+Ns 511.764706
 Ka 0.000000 0.000000 0.000000
-Kd 0.537255 0.494118 0.458824
-Ks 0.330000 0.330000 0.330000
-#map_Kd ford_escape_model/Esc_HeadLt1.ppm
+Kd 0.841202 0.841202 0.841202
+Ks 0.210227 0.210227 0.210227
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd ford_escape_model/Esc_Body1.ppm
 
-newmtl Esc_Logo1
+newmtl Esc_BrakeLt1
+Ns 96.078431
 Ka 0.000000 0.000000 0.000000
-Kd 0.431373 0.427451 0.439216
-Ks 0.330000 0.330000 0.330000
-#map_Kd ford_escape_model/Esc_Logo1.ppm
-
-newmtl Esc_Plate1
-Ka 0.000000 0.000000 0.000000
-Kd 0.752941 0.749020 0.745098
-Ks 0.330000 0.330000 0.330000
-#map_Kd ford_escape_model/Esc_Plate1.ppm
+Kd 0.436078 0.147451 0.150588
+Ks 0.165000 0.165000 0.165000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd ford_escape_model/Esc_BrakeLt1.ppm
 
 newmtl Esc_Glass1
+Ns 96.078431
 Ka 0.000000 0.000000 0.000000
-Kd 0.215686 0.184314 0.188235
-Ks 0.330000 0.330000 0.330000
+Kd 0.172549 0.147451 0.150588
+Ks 0.165000 0.165000 0.165000
+Ni 1.000000
 d 0.500000
-#map_Kd ford_escape_model/Esc_Glass1.ppm
+illum 2
+map_Kd ford_escape_model/Esc_Glass1.ppm
 
+newmtl Esc_HeadLt1
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.429804 0.395294 0.367059
+Ks 0.165000 0.165000 0.165000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd ford_escape_model/Esc_HeadLt1.ppm
+
+newmtl Esc_Logo1
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.345098 0.341961 0.351373
+Ks 0.165000 0.165000 0.165000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd ford_escape_model/Esc_Logo1.ppm
+
+newmtl Esc_Plate1
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.602353 0.599216 0.596078
+Ks 0.165000 0.165000 0.165000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd ford_escape_model/Esc_Plate1.ppm
+
+newmtl Esc_Tire1
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.156862 0.156862 0.163138
+Ks 0.165000 0.165000 0.165000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd ford_escape_model/Esc_Tire1.ppm
+
+newmtl FrontColor
+Ns 198.039216
+Ka 0.000000 0.000000 0.000000
+Kd 0.555350 0.148221 0.003237
+Ks 0.299217 0.299217 0.299217
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd ford_escape_model/Esc_orange1.ppm
+
+newmtl FrontColor_Esc_Body1.ppm
+Ns 198.039216
+Ka 0.000000 0.000000 0.000000
+Kd 0.555350 0.148221 0.003237
+Ks 0.299217 0.299217 0.299217
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd ford_escape_model/Esc_Body1.ppm
+
+newmtl FrontColor_NONE
+Ns 198.039216
+Ka 0.000000 0.000000 0.000000
+Kd 0.555350 0.148221 0.003237
+Ks 0.299217 0.299217 0.299217
+Ni 1.000000
+d 1.000000
+illum 2

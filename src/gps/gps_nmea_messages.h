@@ -57,7 +57,10 @@ typedef struct {
 	int gps_quality; /**< GPS Quality Indicator,
 		         0 - fix not available,
 		         1 - GPS fix,
-		         2 - Differential GPS fix **/
+		         2 - Differential GPS fix, OmniSTAR VBS
+				 3 - ? (it is not in the Trimble documentation in http://www.trimble.com/OEM_ReceiverHelp/V4.44/en/NMEA-0183messages_GGA.html
+				 4 - Real-Time Kinematic, fixed integers
+				 5 - Real-Time Kinematic, float integers, OmniSTAR XP/HP or Location RTK **/
 	int num_satellites; /**< Number of satellites in view, 00-12 **/
 	double hdop; /**< Horizontal Dilution of precision **/
 	double sea_level; /**< Antenna Altitude above/below 
@@ -73,12 +76,23 @@ typedef struct {
 			 9 update, null field when DGPS is not
 			 used **/
 	double timestamp;
-	char* host;
+	char *host;
 } carmen_gps_gpgga_message;
-
 
 #define CARMEN_GPS_GPGGA_MESSAGE_FMT "{int, double,double,double,char,double,double,char,int,int,double,double,double,double,double,int,double,string}"
 #define CARMEN_GPS_GPGGA_MESSAGE_NAME "carmen_gps_nmea_gpgga"
+
+
+typedef struct {
+	int nr; /**< number of the gps unit **/
+	double heading; /**< heading in radians >**/
+	int valid; /* 1 or 0 */
+	double timestamp;
+	char *host;
+} carmen_gps_gphdt_message;
+
+#define CARMEN_GPS_GPHDT_MESSAGE_FMT "{int, double,int,double,string}"
+#define CARMEN_GPS_GPHDT_MESSAGE_NAME "carmen_gps_nmea_gphdt"
 
 
 typedef struct {

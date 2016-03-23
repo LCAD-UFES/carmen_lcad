@@ -177,10 +177,10 @@ rectify_image(
 	TriclopsColorImage  img_right, img_left;
 
 	deinterlace_rgb_single(rgb_image, r_vector, g_vector, b_vector, 1280, 6 * 960);
-
-	//#pragma omp parallel sections private(input, aux) shared(img_right, img_left, triclops, r_vector, g_vector, b_vector)
+	omp_set_num_threads(2);
+	#pragma omp parallel sections private(input, aux) shared(img_right, img_left, triclops, r_vector, g_vector, b_vector)
 	{
-		//		#pragma omp section
+		#pragma omp section
 		{
 			input.inputType 	= TriInp_RGB;
 			input.nrows	= 960;
@@ -193,7 +193,7 @@ rectify_image(
 			triclopsRectifyColorImage( triclops, TriCam_RIGHT, &input, &img_right );
 		}
 
-		//		#pragma omp section
+		#pragma omp section
 		{
 			input.inputType 	= TriInp_RGB;
 			input.nrows	= 960;
@@ -246,7 +246,7 @@ image_grabber_handler(FlyCapture2::Image* pImage)
 	}
 	else
 	{
-		carmen_bumblebee_publish_stereoimage_message(rgb, rgb + 1280 * 960 * 3, timestamp, camera_id);
+		carmen_bumblebee_publish_stereoimage_message(rgb + 1280 * 960 * 3, rgb, timestamp, camera_id);
 	}
 }
 
@@ -269,6 +269,7 @@ set_buffer_size(int num_buffer)
 	FC2Config config;
 	config.numBuffers = num_buffer;
 	config.grabMode = DROP_FRAMES;
+	config.grabTimeout = 300;
 	config.highPerformanceRetrieveBuffer = true;
 
 	cam.SetConfiguration(&config);
@@ -366,11 +367,17 @@ capture_image()
 	while (true)
 	{
 		error = cam.RetrieveBuffer(&image);
+		if (error == PGRERROR_TIMEOUT)
+		{
+			printf("camera timeout!!!\n");
+			continue;
+		}
+
 		handle_error(error);
 
 		t1 = carmen_get_time();
 		image_grabber_handler(&image);
-
+		
 		update_count = (update_count + 1) % (int)fps;
 
 		if (use_configuration_gui && update_count == 0)
@@ -381,6 +388,7 @@ capture_image()
 
 		if (time_to_sleep >= 0)
 			usleep(time_to_sleep * 1000000);
+			
 	}
 }
 
@@ -810,6 +818,8 @@ int main(int argc, char **argv)
 	carmen_param_check_version(argv[0]);
 
 	read_parameters(argc, argv);
+
+	carmen_bumblebee_basic_define_messages(camera_id);
 
 	initialize_bumblebee_message(1280, 960, 3, 1);
 

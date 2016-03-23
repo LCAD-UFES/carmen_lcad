@@ -211,9 +211,9 @@ void draw_car(CarDrawer* carDrawer)
 		glRotatef(90.0, 1.0, 0.0, 0.0);
 		glRotatef(0.0, 0.0, 1.0, 0.0);
 
-		glColor3f(0.3,0.3,0.3);		
-		glmDraw(carDrawer->carModel, GLM_SMOOTH | GLM_COLOR );
-		//glmDraw(carDrawer->carModel, GLM_SMOOTH | GLM_COLOR | GLM_TEXTURE );
+		glColor3f(0.3,0.3,0.3);
+		//glmDraw(carDrawer->carModel, GLM_SMOOTH | GLM_COLOR);
+		glmDraw(carDrawer->carModel, GLM_SMOOTH | GLM_COLOR | GLM_TEXTURE);
 		
 		
 	glPopMatrix();

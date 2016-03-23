@@ -61,6 +61,7 @@ carmen_laser_laser_message rawlaser1, rawlaser2, rawlaser3, rawlaser4, rawlaser5
 
 carmen_imu_message imu;
 carmen_gps_gpgga_message gpsgga;
+carmen_gps_gphdt_message gpshdt;
 carmen_gps_gprmc_message gpsrmc;
 
 carmen_kinect_depth_message raw_depth_kinect_0, raw_depth_kinect_1;
@@ -312,6 +313,7 @@ logger_callback_t logger_callbacks[] =
 		{"TRUEPOS_ACK", CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_NAME, (converter_func)carmen_string_to_simulator_ackerman_truepos_message, &truepos_ackerman, 0},
 		{"IMU", CARMEN_IMU_MESSAGE_NAME, (converter_func) carmen_string_to_imu_message, &imu, 0},
 		{"NMEAGGA", CARMEN_GPS_GPGGA_MESSAGE_NAME, (converter_func)carmen_string_to_gps_gpgga_message, &gpsgga, 0},
+		{"NMEAHDT", CARMEN_GPS_GPHDT_MESSAGE_NAME, (converter_func)carmen_string_to_gps_gphdt_message, &gpshdt, 0},
 		{"NMEARMC", CARMEN_GPS_GPRMC_MESSAGE_NAME, (converter_func)carmen_string_to_gps_gprmc_message, &gpsrmc, 0},
 		{"RAW_KINECT_DEPTH0", CARMEN_KINECT_DEPTH_MSG_0_NAME, (converter_func)carmen_string_to_kinect_depth_message, &raw_depth_kinect_0, 0},
 		{"RAW_KINECT_DEPTH1", CARMEN_KINECT_DEPTH_MSG_1_NAME, (converter_func)carmen_string_to_kinect_depth_message, &raw_depth_kinect_1, 0},
@@ -618,6 +620,7 @@ int main(int argc, char **argv)
 	memset(&rawlaser4, 0, sizeof(rawlaser4));
 	memset(&rawlaser5, 0, sizeof(rawlaser5));
 	memset(&gpsgga, 0, sizeof(gpsgga));
+	memset(&gpshdt, 0, sizeof(gpshdt));
 	memset(&gpsrmc, 0, sizeof(gpsrmc));
 	memset(&raw_depth_kinect_0, 0, sizeof(raw_depth_kinect_0));
 	memset(&raw_depth_kinect_1, 0, sizeof(raw_depth_kinect_1));

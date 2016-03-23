@@ -239,7 +239,17 @@ void carmen_logger_write_gps_gpgga(carmen_gps_gpgga_message *gps_msg,
 			gps_msg->timestamp, gps_msg->host, timestamp);
 }
 
-
+void carmen_logger_write_gps_gphdt(carmen_gps_gphdt_message *gps_msg,
+		carmen_FILE *outfile, double timestamp)
+{
+	carmen_fprintf(outfile,"NMEAHDT %d %lf %d %lf %s %lf\n",
+			gps_msg->nr,
+			gps_msg->heading,
+			gps_msg->valid,
+			gps_msg->timestamp,
+			gps_msg->host,
+			timestamp);
+}
 
 void carmen_logger_write_gps_gprmc(carmen_gps_gprmc_message *gps_msg,
 		carmen_FILE *outfile, double timestamp)
@@ -248,7 +258,6 @@ void carmen_logger_write_gps_gprmc(carmen_gps_gprmc_message *gps_msg,
 	char long_o = gps_msg->long_orient;
 
 	char vardir  = gps_msg->var_dir;
-
 
 	if (lat_o == '\0')
 		lat_o = 'N';

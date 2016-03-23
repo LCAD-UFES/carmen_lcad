@@ -46,14 +46,23 @@
 
 int gpgga_update = FALSE;
 int gprmc_update = FALSE;
+int gphdt_update = FALSE;
 carmen_gps_gpgga_message gps_gpgga;
 carmen_gps_gprmc_message gps_gprmc;
+carmen_gps_gphdt_message gps_gphdt;
 
 
 void
 ipc_gps_gpgga_handler( carmen_gps_gpgga_message *data __attribute__ ((unused)))
 {
 	gpgga_update = TRUE;
+}
+
+
+void
+ipc_gps_gphdt_handler( carmen_gps_gphdt_message *data __attribute__ ((unused)))
+{
+	gphdt_update = TRUE;
 }
 
 
@@ -79,6 +88,9 @@ ipc_init( int argc, char * argv[] )
 	carmen_gps_subscribe_nmea_message( &gps_gpgga,
 				     (carmen_handler_t) ipc_gps_gpgga_handler,
 				     CARMEN_SUBSCRIBE_LATEST );
+	carmen_gps_subscribe_nmea_hdt_message( &gps_gphdt,
+				     (carmen_handler_t) ipc_gps_gphdt_handler,
+				     CARMEN_SUBSCRIBE_LATEST );
 	carmen_gps_subscribe_nmea_rmc_message( &gps_gprmc,
 				     (carmen_handler_t) ipc_gps_gprmc_handler,
 				     CARMEN_SUBSCRIBE_LATEST );
@@ -101,6 +113,7 @@ main( int argc, char *argv[] )
 			fprintf( stderr, "===================================\n" );
 			fprintf( stderr, "        gps gpgga message\n" );
 			fprintf( stderr, "===================================\n" );
+			fprintf( stderr, " gps number:     %d\n", gps_gpgga.nr);
 			fprintf( stderr, " utc:            %f\n", gps_gpgga.utc );
 			fprintf( stderr, " latitude:       %f\n", gps_gpgga.latitude );
 			fprintf( stderr, " latitude (DM):  %f\n", gps_gpgga.latitude_dm );
@@ -149,12 +162,27 @@ main( int argc, char *argv[] )
 
 */
 		}
- 
+
+		if (gphdt_update)
+		{
+			fprintf( stderr, "===================================\n" );
+			fprintf( stderr, "        gps gphdt message\n" );
+			fprintf( stderr, "===================================\n" );
+			fprintf( stderr, " gps number:        %d\n", gps_gphdt.nr);
+			fprintf( stderr, " valid:             %d\n", gps_gphdt.valid);
+			fprintf( stderr, " heading:           %f\n", gps_gphdt.heading );
+			fprintf( stderr, " timestamp:         %f\n", gps_gphdt.timestamp );
+			fprintf( stderr, "===================================\n" );
+			fprintf( stderr, "\n" );
+			gphdt_update = FALSE;
+		}
+
 		if (gprmc_update)
 		{
 			fprintf( stderr, "===================================\n" );
 			fprintf( stderr, "        gps gprmc message\n" );
 			fprintf( stderr, "===================================\n" );
+			fprintf( stderr, " gps number:        %d\n", gps_gprmc.nr);
 			fprintf( stderr, " validity:          %d\n", gps_gprmc.validity );
 			fprintf( stderr, " utc:               %f\n", gps_gprmc.utc );
 			fprintf( stderr, " latitude:          %f\n", gps_gprmc.latitude );
