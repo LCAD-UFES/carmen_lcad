@@ -166,6 +166,9 @@ gps_xyz_message_handler(carmen_gps_xyz_message *message)
 {
 	StampedPose pose;
 
+	if (message->nr != 1)
+		return;
+
 	// it fuses gps and xsens to get gps with orientation
 	if (!get_rotated_gps(message, pose))
 		return;

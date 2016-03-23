@@ -89,6 +89,7 @@ main( int argc, char *argv[] )
 			fprintf( stderr, "===================================\n" );
 			fprintf( stderr, "        gps xyz message\n" );
 			fprintf( stderr, "===================================\n" );
+			fprintf( stderr, " nr:               %d\n", gps_xyz.nr );
 			fprintf( stderr, " utc:              %f\n", gps_xyz.utc );
 			fprintf( stderr, " latitude:         %f\n", gps_xyz.latitude );
 			fprintf( stderr, " latitude (DM):    %f\n", gps_xyz.latitude_dm );

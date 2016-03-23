@@ -26,6 +26,14 @@
  *
  ********************************************************/
 
+#ifndef CARMEN_GPS_H
+#define CARMEN_GPS_H
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #define GPS_FREQUENCY			20
 
 #define MAX_NAME_LENGTH                256
@@ -52,8 +60,13 @@ typedef struct {
 } SerialDevice;
 
 extern carmen_gps_gpgga_message    * carmen_extern_gpgga_ptr;
+extern carmen_gps_gphdt_message    * carmen_extern_gphdt_ptr;
 extern carmen_gps_gprmc_message    * carmen_extern_gprmc_ptr;
 
 int    carmen_gps_parse_data( char * line, int num_chars );
 
+#ifdef __cplusplus
+}
+#endif
 
+#endif

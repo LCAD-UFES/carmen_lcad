@@ -54,7 +54,6 @@ car_odometry_message_handler(carmen_base_ackerman_odometry_message *car_odometry
 		fused_odometry_message.timestamp = car_odometry_message->timestamp;
 
 		IPC_publishData(CARMEN_FUSED_ODOMETRY_NAME, &fused_odometry_message);
-
 	}
 }
 

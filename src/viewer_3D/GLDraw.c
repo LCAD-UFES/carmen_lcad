@@ -368,6 +368,26 @@ draw_xsens_orientation (carmen_orientation_3D_t xsens_orientation, double xsens_
 }
 
 void
+draw_gps_orientation (double gps_orientation, int gps_heading_valid, carmen_orientation_3D_t xsens_orientation, carmen_pose_3D_t xsens_pose, carmen_pose_3D_t sensor_board_pose, carmen_pose_3D_t car_pose)
+{
+    carmen_vector_3D_t xsens_global_position = get_xsens_position_global_reference (xsens_pose, sensor_board_pose, car_pose);
+
+    glPushMatrix ();
+
+    glTranslatef (xsens_global_position.x, xsens_global_position.y, xsens_global_position.z);
+    glRotatef (carmen_radians_to_degrees (gps_orientation), 0.0f, 0.0f, 1.0f);
+    glRotatef (carmen_radians_to_degrees (xsens_orientation.pitch), 0.0f, 1.0f, 0.0f);
+    glRotatef (carmen_radians_to_degrees (xsens_orientation.roll), 1.0f, 0.0f, 0.0f);
+
+    if (gps_heading_valid)
+    	draw_axis (1.0);
+    else
+    	draw_axis (0.5);
+
+    glPopMatrix ();
+}
+
+void
 draw_orientation_instruments (carmen_orientation_3D_t orientation, double r, double g, double b)
 {
     glPushMatrix ();
@@ -897,17 +917,23 @@ draw_velodyne_points (point_cloud *velodyne_points, int cloud_size)
 }
 
 void
-draw_gps (carmen_vector_3D_t *gps_trail, int size)
+draw_gps (carmen_vector_3D_t *gps_trail, int *gps_nr, int size)
 {
     glPointSize (3.0);
 
     glBegin (GL_POINTS);
 
-    glColor3d (1.0, 0.5, 0.0);
-
     int i;
     for (i = 0; i < size; i++)
     {
+        if (gps_nr[i] == 0)
+	    glColor3d (1.0, 0.5, 0.0);
+        else
+        {
+//	    printf("%d", gps_nr[i]);
+	    glColor3d (0.3, 1.0, 0.3);
+        }
+
         glVertex3d (gps_trail[i].x, gps_trail[i].y, gps_trail[i].z);
     }
 

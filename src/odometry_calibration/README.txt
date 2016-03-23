@@ -2,7 +2,7 @@ como calibrar a odometria:
 
 1. compile o modulo odometry_calibration
 2. Execute o central
-3. Rode ./proccontrol process-volta_da_ufes_playback_viewer_3D.ini {não aperte play}
+3. Rode ./proccontrol process-volta_da_ufes_playback_viewer_3D.ini {atualize-o antes com o nome de seu log e NÃO aperte play}
 4. Execute o programa "./grab_data_for_calibration out.txt" 
 5. Faca playback de seu log ate o final {aperte play}
 6. Mate o programa "./grab_data_for_calibration out.txt" e o proccontrol
@@ -14,8 +14,11 @@ como calibrar a odometria:
 	> $> plot './debug.txt' using 1:2 title 'calibrated odometry' with lines
 	> $> replot './debug.txt' using 3:4 title 'GPS' with lines
 	> $> replot './debug.txt' using 5:6 title 'raw odometry' with lines
-9. Altere as variaveis abaixo no carmen_ford_escape.ini de acordo com os resultados mencionados acima:
+9. Altere as variaveis abaixo no carmen-ford-escape.ini de acordo com os resultados mencionados acima:
 robot_phi_multiplier				1.101828
 robot_phi_bias					-0.002788
 robot_v_multiplier				0.984300
 
+bias v: 1.025076 0.000000 bias phi: 1.090757 -0.003386 initial angle: 0.807028
+Fitness (MSE): -18.298923
+Fitness (SQRT(MSE)): 4.277724

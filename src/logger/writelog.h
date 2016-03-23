@@ -117,6 +117,15 @@ void carmen_logger_write_gps_gpgga(carmen_gps_gpgga_message *gps_msg,
  * @param outfile A carmen file pointer.
  * @param timestamp The relative timestamp (when was the message received). Note that this is not the timestamp within the message!
  **/
+void carmen_logger_write_gps_gphdt(carmen_gps_gphdt_message *gps_msg,
+				   carmen_FILE *outfile,
+				   double timestamp);
+
+/** Converts the corresponding message into a string in the carmen log format.
+ * @param gps_msg The message that should be written to the log file.
+ * @param outfile A carmen file pointer.
+ * @param timestamp The relative timestamp (when was the message received). Note that this is not the timestamp within the message!
+ **/
 void carmen_logger_write_gps_gprmc(carmen_gps_gprmc_message *gps_msg,
 				   carmen_FILE *outfile,
 				   double timestamp);

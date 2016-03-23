@@ -229,21 +229,18 @@ static void sync_handler(carmen_logger_sync_message *sync)
 
 void ipc_gps_gpgga_handler( carmen_gps_gpgga_message *gps_data)
 {
-  //if(gps_data->num_satellites ==0)
-    //fprintf(stderr, "(G)");
-  //else
-    //fprintf(stderr, "G");
-
   carmen_logger_write_gps_gpgga(gps_data, outfile, carmen_get_time() - logger_starttime);
 }
 
+void ipc_gps_gphdt_handler( carmen_gps_gphdt_message *gps_data)
+{
+  carmen_logger_write_gps_gphdt(gps_data, outfile, carmen_get_time() - logger_starttime);
+}
 
 void ipc_gps_gprmc_handler( carmen_gps_gprmc_message *gps_data)
 {
-  //fprintf(stderr, "g");
   carmen_logger_write_gps_gprmc(gps_data, outfile, carmen_get_time() - logger_starttime);
 }
-
 
 void imu_handler(carmen_imu_message *msg)
 {
@@ -251,19 +248,16 @@ void imu_handler(carmen_imu_message *msg)
   carmen_logwrite_write_imu(msg, outfile, carmen_get_time() - logger_starttime);
 }
 
-
 void xsens_quat_handler(carmen_xsens_global_quat_message *msg)
 {
   //fprintf(stderr, "xq");
   carmen_logwrite_write_xsens_quat(msg, outfile, carmen_get_time() - logger_starttime);
 }
 
-
 void xsens_euler_handler(carmen_xsens_global_euler_message *msg){
   //fprintf(stderr, "xe");
   carmen_logwrite_write_xsens_euler(msg, outfile, carmen_get_time() - logger_starttime);
 }
-
 
 void xsens_matrix_handler(carmen_xsens_global_matrix_message *msg){
   //fprintf(stderr, "xm");
@@ -559,6 +553,10 @@ int main(int argc, char **argv)
   if (log_gps) {
     carmen_gps_subscribe_nmea_message( NULL,
 				       (carmen_handler_t) ipc_gps_gpgga_handler,
+				       CARMEN_SUBSCRIBE_ALL );
+
+    carmen_gps_subscribe_nmea_hdt_message( NULL,
+				       (carmen_handler_t) ipc_gps_gphdt_handler,
 				       CARMEN_SUBSCRIBE_ALL );
 
     carmen_gps_subscribe_nmea_rmc_message( NULL,
