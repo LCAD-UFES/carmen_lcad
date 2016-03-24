@@ -2,6 +2,7 @@
 *.a
 Makefile.depend
 *.*~
+.settings/org.eclipse.cdt.codan.core.prefs
 bin/debug.txt
 bin/out.txt
 bin/calibrate_bias
