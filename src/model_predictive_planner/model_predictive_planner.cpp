@@ -48,18 +48,14 @@ publish_model_predictive_planner_motion_commands(vector<carmen_ackerman_path_poi
 	carmen_ackerman_motion_command_t* commands =
 			(carmen_ackerman_motion_command_t*) (malloc(path.size() * sizeof(carmen_ackerman_motion_command_t)));
 	int i = 0;
-	FILE *vel = fopen("vel.txt", "w");
-	for (std::vector<carmen_ackerman_path_point_t>::iterator it = path.begin();
-			it != path.end(); ++it)
+	for (std::vector<carmen_ackerman_path_point_t>::iterator it = path.begin();	it != path.end(); ++it)
 	{
 		commands[i].v = it->v;
 		commands[i].phi = it->phi;
 		commands[i].time = it->time;
 
-		fprintf(vel, "%f\n", it->v);
 		i++;
 	}
-	fclose(vel);
 
 	int num_commands = path.size();
 	if (GlobalState::use_obstacle_avoider)

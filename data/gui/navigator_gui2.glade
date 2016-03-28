@@ -543,7 +543,6 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Base Ackerman Motion</property>
                         <property name="use_underline">True</property>
-                        <property name="active">True</property>
                         <property name="group">menuCarPanel_robot_ackerman_message</property>
                         <signal name="toggled" handler="on_menuCarPanel_base_ackerman_motion_message" swapped="yes"/>
                       </object>
@@ -555,6 +554,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Base Ackerman Odometry</property>
                         <property name="use_underline">True</property>
+                        <property name="active">True</property>
                         <property name="group">menuCarPanel_robot_ackerman_message</property>
                         <signal name="toggled" handler="on_menuCarPanel_base_ackerman_odometry_message" swapped="yes"/>
                       </object>
