@@ -8,19 +8,19 @@
 #ifndef TRAJECTORY_LOOKUP_TABLE_H_
 #define TRAJECTORY_LOOKUP_TABLE_H_
 
-#define N_DIST			9				// Number of Distances traveled in polar coordinates
+#define N_DIST			11				// Number of Distances traveled in polar coordinates
 #define FIRST_DIST		10.0			// First Distance, or scale factor of its geometric progression (Wikipedia)
-#define RATIO_DIST		1.15			// Ratio (Wikipedia) of the Distance geometric progression
+#define RATIO_DIST		1.12			// Ratio (Wikipedia) of the Distance geometric progression
 #define ZERO_DIST_I		-1				// Index of zero Distance traveled
 
-#define N_THETA			15				// Number of Angles in polar coordinates
+#define N_THETA			19				// Number of Angles in polar coordinates
 #define COMMON_THETA	((8.0 * M_PI) / 180.0)	// Common difference in the arithmetic progression of Theta for each side
-#define ZERO_THETA_I	7				// Index of zero Angle
+#define ZERO_THETA_I	9				// Index of zero Angle
 
-#define N_D_YAW			15				// Number of Displacements in yaw
+#define N_D_YAW			19				// Number of Displacements in yaw
 #define FIRST_D_YAW		((10.0 * M_PI) / 180.0)	// First Displacement in yaw, or scale factor of its geometric progression
 #define RATIO_D_YAW		1.3				// Ratio (Wikipedia) of the Displacements in yaw geometric progression
-#define ZERO_D_YAW_I	7				// Index of zero yaw displacement
+#define ZERO_D_YAW_I	9				// Index of zero yaw displacement
 
 #define N_I_PHI			15				// Number of Initial steering wheel angles (phi)
 #define FIRST_I_PHI		((3.0 * M_PI) / 180.0)	// Scale factor of phi geometric progression

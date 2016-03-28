@@ -700,7 +700,7 @@ compute_path_via_simulation(Robot_State &robot_state, Command &command,
     int i = 0;
     double t, last_t;
     double distance_traveled = 0.0;
-    double delta_t = 0.1;
+    double delta_t = 0.15;
     int reduction_factor = 1 + (int)((tcp.tf / delta_t) / 90.0);
 
     robot_state.pose.x = 0.0;
@@ -929,8 +929,8 @@ my_f(const gsl_vector *x, void *params)
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(x, p);
 
 	TrajectoryLookupTable::TrajectoryDimensions td;
-	if (tcp.tf <= 0.5) // o tempo nao pode ser pequeno demais
-		tcp.tf = 0.5;
+	if (tcp.tf < 0.2) // o tempo nao pode ser pequeno demais
+		tcp.tf = 0.2;
 	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, tcp, p[1], false);
     p[12] = tcp.vf;
     p[13] = tcp.sf;
@@ -939,11 +939,9 @@ my_f(const gsl_vector *x, void *params)
 //    if (GlobalState::cost_map_initialized)
 //        obstacles_cost = compute_abstacles_cost(path);
 
-//    double result = obstacles_cost + sqrt((td.dist - p[2]) * (td.dist - p[2]) +
     double result = sqrt((td.dist - p[2]) * (td.dist - p[2]) / p[14] +
-			(carmen_normalize_theta(td.theta) - p[3]) * (carmen_normalize_theta(td.theta) - p[3]) / p[15] +
-            (carmen_normalize_theta(td.d_yaw) - p[4]) * (carmen_normalize_theta(td.d_yaw) - p[4]) / p[16]);// +
-//          (tcp.vf - p[10]) * (tcp.vf - p[10]));
+			(carmen_normalize_theta(td.theta) - p[3]) * (carmen_normalize_theta(td.theta) - p[3]) / (p[15] * 0.2) +
+            (carmen_normalize_theta(td.d_yaw) - p[4]) * (carmen_normalize_theta(td.d_yaw) - p[4]) / (p[16] * 0.2));// +
 
 	return (result);
 }
@@ -993,6 +991,36 @@ my_fdf(const gsl_vector *x, void *params, double *f, gsl_vector *df)
 }
 
 
+double
+compute_suitable_acceleration(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
+		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v)
+{
+	// (i) S = Vo*t + 1/2*a*t^2
+	// (ii) dS/dt = Vo + a*t
+	// dS/dt = 0 => máximo ou mínimo de S => 0 = Vo + a*t; a*t = -Vo; (iii) a = -Vo/t; (iv) t = -Vo/a
+	// Se "a" é negativa, dS/dt = 0 é um máximo de S
+	// Logo, como S = target_td.dist, "a" e "t" tem que ser tais em (iii) e (iv) que permitam que
+	// target_td.dist seja alcançada.
+	//
+	// O valor de maxS pode ser computado substituindo (iv) em (i):
+	// maxS = Vo*-Vo/a + 1/2*a*(-Vo/a)^2 = -Vo^2/a + 1/2*Vo^2/a = -1/2*Vo^2/a
+
+	double a = (target_v - target_td.v_i) / tcp_seed.tf;
+
+	if (a >= 0.0)
+		return (a);
+
+	if ((-0.5 * (target_td.v_i * target_td.v_i) / a) > target_td.dist * 1.1)
+		return (a);
+	else
+	{
+		while ((-0.5 * (target_td.v_i * target_td.v_i) / a) <= target_td.dist * 1.1)
+			a *= 0.95;
+		return (a);
+	}
+}
+
+
 TrajectoryLookupTable::TrajectoryControlParameters
 get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
 		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v)
@@ -1012,10 +1040,12 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 	const gsl_multimin_fdfminimizer_type *T;
 	gsl_multimin_fdfminimizer *s;
 
+	double suitable_acceleration = compute_suitable_acceleration(tcp_seed, target_td, target_v);
 	double par[17] = {target_td.v_i, target_td.phi_i, target_td.dist, target_td.theta, target_td.d_yaw,
-		(target_v - target_td.v_i) / tcp_seed.tf, tcp_seed.af, tcp_seed.t0, tcp_seed.tt, tcp_seed.vt, target_v,
+		suitable_acceleration, tcp_seed.af, tcp_seed.t0, tcp_seed.tt, tcp_seed.vt, target_v,
 		(double) ((int) tcp_seed.velocity_profile), tcp_seed.vf, tcp_seed.sf,
-		fabs(get_distance_by_index(N_DIST)), fabs(get_theta_by_index(N_THETA)), fabs(get_d_yaw_by_index(N_D_YAW))};
+		fabs(get_distance_by_index(N_DIST-1)),
+		fabs(get_theta_by_index(N_THETA-1)), fabs(get_d_yaw_by_index(N_D_YAW-1))};
 
 	gsl_vector *x;
 	gsl_multimin_function_fdf my_func;
@@ -1045,7 +1075,7 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 		iter++;
 		status = gsl_multimin_fdfminimizer_iterate(s);
 
-		if (status)
+		if (status == GSL_ENOPROG) // minimizer is unable to improve on its current estimate, either due to numerical difficulty or a genuine local minimum
 		{
 			//printf("@@@@@@@@@@@@@@ status = %d\n", status);
 			break;
@@ -1053,25 +1083,16 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 
 		// int gsl_multimin_test_gradient (const gsl_vector * g, double epsabs)
 		// |g| < epsabs
-		status = gsl_multimin_test_gradient(s->gradient, 0.16);
+		status = gsl_multimin_test_gradient(s->gradient, 0.16); // esta funcao retorna GSL_CONTINUE ou zero
 
-		if ((status == GSL_SUCCESS) || (s->f < 0.0005))
-		{
-//			printf("###### Minimum found at:\n");
-//			printf("%5d %.5f %.5f %.5f %10.5f  %f\n", (int) iter,
-//					gsl_vector_get(s->x, 0), gsl_vector_get(s->x, 1), gsl_vector_get(s->x, 2), s->f,
-//					target_v);
-		}
-	} while ((s->f > 0.0005) && (status == GSL_CONTINUE) && (iter < 300));
+	} while ((s->f > 0.005) && (status == GSL_CONTINUE) && (iter < 300));
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, par);
-	if ((tcp.tf <= 0.5) || (s->f > 0.05)) // too short plan or bad minimum (s->f should be close to zero)
-	{
-//	    std::cout << "iter = " << iter << "  status = " << status << "  tcp.tf = " << tcp.tf << "  s->f = " << s->f << std::endl;
+	if ((tcp.tf < 0.2) || (s->f > 0.05)) // too short plan or bad minimum (s->f should be close to zero)
 		tcp.valid = false;
-	}
-//	else
-//        std::cout << "OK - iter = " << iter << "  status = " << status << "  tcp.tf = " << tcp.tf << "  s->f = " << s->f << std::endl;
+
+	if (target_td.dist < 3.0 && tcp.valid == false) // para debugar
+		tcp.valid = false;
 
 	gsl_multimin_fdfminimizer_free(s);
 	gsl_vector_free(x);
@@ -1107,12 +1128,12 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 {
     TrajectoryLookupTable::TrajectoryDimensions target_td = convert_to_trajectory_dimensions(tdd, tcp_seed);
     TrajectoryLookupTable::TrajectoryControlParameters tcp = get_optimized_trajectory_control_parameters(tcp_seed, target_td, target_v);
-//    if (tcp.valid)
-//    {
-//		TrajectoryLookupTable::TrajectoryDimensions td;
-//		optimized_path = simulate_car_from_parameters(td, tcp, tdd.phi_i, false);
-//		tdd = get_discrete_dimensions(td);
-//    }
+    if (tcp.valid)
+    {
+		TrajectoryLookupTable::TrajectoryDimensions td;
+		optimized_path = simulate_car_from_parameters(td, tcp, tdd.phi_i, false);
+		tdd = get_discrete_dimensions(td);
+    }
 
     return (tcp);
 }
@@ -1320,6 +1341,15 @@ path_has_loop(vector<carmen_ackerman_path_point_t> path)
 }
 
 
+bool
+path_has_loop(double dist, double sf)
+{
+	if (sf > (M_PI * dist * 1.5)) // se sf for maior que meio arco com diametro dist mais um pouco (1.5) tem loop
+		return (true);
+	return (false);
+}
+
+
 void
 fill_in_trajectory_lookup_table_new_old()
 {
@@ -1362,7 +1392,7 @@ fill_in_trajectory_lookup_table_new_old()
 						if (has_valid_discretization(tdd))
 						{
 	                        TrajectoryLookupTable::TrajectoryControlParameters ntcp = get_optimized_trajectory_control_parameters(tcp, tdd, tcp.vf);
-	                        if (!path_has_loop(path))
+	                        if (!path_has_loop(get_distance_by_index(tdd.dist), ntcp.sf))
 	                        {
 	                            TrajectoryLookupTable::TrajectoryControlParameters ptcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
 	                            if (!ptcp.valid || (ntcp.valid && (ntcp.sf < ptcp.sf)))
@@ -1434,12 +1464,12 @@ fill_in_trajectory_lookup_table()
 //                        compare_td(td, ntd);
 						if (has_valid_discretization(tdd))
 						{
-							vector<carmen_ackerman_path_point_t> optimized_path;
-	                        TrajectoryLookupTable::TrajectoryControlParameters ntcp = get_optimized_trajectory_control_parameters(tcp, tdd, tcp.vf, optimized_path);
+							// vector<carmen_ackerman_path_point_t> optimized_path;
+	                        TrajectoryLookupTable::TrajectoryControlParameters ntcp = get_optimized_trajectory_control_parameters(tcp, tdd, tcp.vf);//, optimized_path);
 //	                        if (!ntcp.valid)
 //	                        	printf("dist = %lf, i_phi = %lf, k1 = %lf, k2 = %lf, i_v = %lf\n",
 //	                        			get_distance_by_index(dist), get_i_phi_by_index(i_phi), k1, k2, get_initial_velocity_by_index(i_v));
-	                        if (ntcp.valid && has_valid_discretization(tdd) && !path_has_loop(path))
+	                        if (ntcp.valid && has_valid_discretization(tdd) && !path_has_loop(get_distance_by_index(tdd.dist), ntcp.sf))
 	                        {
 	                            TrajectoryLookupTable::TrajectoryControlParameters ptcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
 	                            if (!ptcp.valid || (ntcp.sf < ptcp.sf))
@@ -1483,7 +1513,7 @@ get_trajectory_dimensions_from_robot_state(Pose *localize_pose, Command last_odo
 
 	td.dist = sqrt((goal_pose->x - localize_pose->x) * (goal_pose->x - localize_pose->x) +
 					(goal_pose->y - localize_pose->y) * (goal_pose->y - localize_pose->y));
-	td.theta = atan2(goal_pose->y - localize_pose->y, goal_pose->x - localize_pose->x) - localize_pose->theta;
+	td.theta = carmen_normalize_theta(atan2(goal_pose->y - localize_pose->y, goal_pose->x - localize_pose->x) - localize_pose->theta);
 	td.d_yaw = carmen_normalize_theta(goal_pose->theta - localize_pose->theta);
 	td.phi_i = last_odometry.phi;
 	td.v_i = last_odometry.v;
@@ -1752,6 +1782,48 @@ write_tdd_to_file(FILE *problems, TrajectoryLookupTable::TrajectoryDiscreteDimen
 	TrajectoryLookupTable::TrajectoryDimensions td = convert_to_trajectory_dimensions(tdd, tcp);
 	fprintf(problems, "td: %s dist: %lf, theta: %lf, phi_i: %lf, v_i: %lf, d_yaw: %lf\n", label.c_str(),
 			td.dist, td.theta, td.phi_i, td.v_i, td.d_yaw);
+
+	fflush(problems);
+}
+
+
+bool
+remove_path_with_collision(vector<vector<carmen_ackerman_path_point_t> >& path)
+{
+	carmen_point_t pose;
+	carmen_robot_ackerman_config_t car_config;
+
+	car_config.distance_between_rear_car_and_rear_wheels =
+			GlobalState::robot_config.distance_between_rear_car_and_rear_wheels;
+	car_config.length = GlobalState::robot_config.length * 1.1;
+	car_config.width = GlobalState::robot_config.width * 1.1;
+
+	for (unsigned int j = 0; j < path.back().size(); j++)
+	{
+		pose.x = path.back()[j].x;
+		pose.y = path.back()[j].y;
+		pose.theta = path.back()[j].theta;
+		if (pose_hit_obstacle(pose, &GlobalState::cost_map, &car_config))
+		{
+			//printf("---------- HIT OBSTACLE!!!!\n");
+			path.pop_back();
+			return (true);
+		}
+	}
+	return (false);
+}
+
+
+void
+put_shorter_path_in_front(vector<vector<carmen_ackerman_path_point_t> > &path, int shorter_path)
+{
+	if (path.size() > 1)
+	{
+		vector<carmen_ackerman_path_point_t> shoter_path;
+		shoter_path = path[shorter_path];
+		path.erase(path.begin() + shorter_path);
+		path.insert(path.begin(), shoter_path);
+	}
 }
 
 
@@ -1762,6 +1834,11 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	FILE *problems;
 	problems = fopen("problems.txt", "a");
 
+//	int path_order = 0;
+//	int shorter_path = -1;
+//	double shorter_path_size = 1000.0;
+
+	int errors = 0;
 	for (unsigned int i = 0; i < lastOdometryVector.size(); i++)
 	{
 		for (unsigned int j = 0; j < goalPoseVector.size(); j++)
@@ -1787,47 +1864,40 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 			if (otcp.valid)
 			{
 				path.push_back(simulate_car_from_parameters(td, otcp, td.phi_i));
-				if (path_has_loop(path.back()))
+				if (path_has_loop(td.dist, otcp.sf))
 				{
 					path.pop_back();
 					printf(KRED "+++++++++++++ Path had loop...\n" RESET);
 					write_tdd_to_file(problems, tdd, "Path had loop: ");
 					continue;
-					//return (path);
 				}
 
 				move_path_to_current_robot_pose(path.back(), localize_pose);
 				apply_system_delay(path.back());
 
-				carmen_robot_ackerman_config_t car_config;
-				car_config.distance_between_rear_car_and_rear_wheels = GlobalState::robot_config.distance_between_rear_car_and_rear_wheels;
-				car_config.length = GlobalState::robot_config.length * 1.1;
-				car_config.width = GlobalState::robot_config.width * 1.1;
-				carmen_point_t pose;
-				for (unsigned int j = 10; j < path.back().size(); j++)
-				{
-					pose.x = path.back()[j].x;
-					pose.y = path.back()[j].y;
-					pose.theta = path.back()[j].theta;
-					if (pose_hit_obstacle(pose, &GlobalState::cost_map,	&car_config))
-					{
-						//printf("---------- HIT OBSTACLE!!!!\n");
-						path.pop_back();
-						break;
-					}
-				}
+				remove_path_with_collision(path);
+//				if (!remove_path_with_collision(path) && (otcp.sf < shorter_path_size))
+//				{
+//					shorter_path_size = otcp.sf;
+//					shorter_path = path_order;
+//					path_order++;
+//				}
 			}
 			else
 			{
+//				// dist: 3, theta: 10, phi_i: 7, v_i: 3, d_yaw: 10
+				if (tdd.dist == 3 && tdd.theta == 10 && tdd.phi_i == 7 && tdd.v_i == 3 && tdd.d_yaw == 10)
+					errors++;
 				write_tdd_to_file(problems, tdd, "Could NOT optimize: ");
-				printf(KYEL "+++++++++++++ Could NOT optimize!!!!\n" RESET);
+				printf(KYEL "+++++++++++++ Could NOT optimize %d !!!!\n" RESET, errors);
 			}
 		}
-		if (path.size() > 0)
-		{
+
+		if (path.size() > 0) // If could not find a good path, try swerve
 			break;
-		}
 	}
+	// put_shorter_path_in_front(path, shorter_path);
+
 	fclose(problems);
 }
 
@@ -1845,15 +1915,15 @@ TrajectoryLookupTable::compute_path_to_goal(Pose *localize_pose, Pose *goal_pose
     for (int i = 0; i < 5; i++)
     {
     	Command newOdometry = last_odometry;
-    	newOdometry.phi +=  0.2 * magicSignals[i]; //(0.5 / (newOdometry.v + 1))
+    	newOdometry.phi +=  0.15 * magicSignals[i]; //(0.5 / (newOdometry.v + 1))
     	lastOdometryVector.push_back(newOdometry);
     }
 
     for (int i = 0; i < 5; i++)
     {
     	Pose newPose = *goal_pose;
-    	newPose.x += magicSignals[i] / 4.0 * cos((goal_pose->theta) - carmen_degrees_to_radians(90));
-    	newPose.y += magicSignals[i] / 4.0 * sin((goal_pose->theta) - carmen_degrees_to_radians(90));
+    	newPose.x += magicSignals[i] / 5.0 * cos((goal_pose->theta) - carmen_degrees_to_radians(90.0));
+    	newPose.y += magicSignals[i] / 5.0 * sin((goal_pose->theta) - carmen_degrees_to_radians(90.0));
     	goalPoseVector.push_back(newPose);
     }
 

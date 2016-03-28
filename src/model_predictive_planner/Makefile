@@ -5,10 +5,10 @@ MODULE_NAME = Model-Predictive Motion Planner
 MODULE_COMMENT = Model-predictive motion planner
 
 LINK = g++
-CFLAGS += -O0
-CXXFLAGS += -std=c++0x -O0
-#CFLAGS += -msse3 -O3 -fopenmp
-#CXXFLAGS += -std=c++0x -msse3 -O3 -fopenmp
+#CFLAGS += -O0
+#CXXFLAGS += -std=c++0x -O0
+CFLAGS += -msse3 -O3 -fopenmp
+CXXFLAGS += -std=c++0x -msse3 -O3 -fopenmp
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models

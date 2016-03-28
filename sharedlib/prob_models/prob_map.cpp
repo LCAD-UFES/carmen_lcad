@@ -409,7 +409,7 @@ carmen_prob_models_update_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sens
 			cell_hit_by_ray.x = (sensor_data->ray_position_in_the_floor[i].x / map->config.resolution);
 			cell_hit_by_ray.y = (sensor_data->ray_position_in_the_floor[i].y / map->config.resolution);
 
-			if (sensor_data->occupancy_log_odds_of_each_ray_target[i] > sensor_params->log_odds.log_odds_l0)
+			if (sensor_data->occupancy_log_odds_of_each_ray_target[i] != sensor_params->log_odds.log_odds_l0)
 			{
 				if (map_grid_is_valid(map, cell_hit_by_ray.x, cell_hit_by_ray.y))
 					carmen_prob_models_log_odds_occupancy_grid_mapping(map, cell_hit_by_ray.x, cell_hit_by_ray.y, sensor_data->occupancy_log_odds_of_each_ray_target[i]);
