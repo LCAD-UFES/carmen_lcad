@@ -536,14 +536,22 @@ generate_trajectory_control_parameters_sample(double k1, double k2, int i_v, int
 	double distance = get_distance_by_index(dist);
 	tcp.velocity_profile = LINEAR_PROFILE;
 
+	double time;
+	if (distance > 7.0)
+		time = PROFILE_TIME;
+	else if (distance > 3.5)
+		time = PROFILE_TIME / 2.0;
+	else
+		time = PROFILE_TIME / 2.5;
+//	double time = PROFILE_TIME;
     // s = s0 + v0.t + 1/2.a.t^2
 	// a = (s - s0 - v0.t) / (t^2.1/2)
-    // s = distance; s0 = 0; v0 = tcp.v0; t = PROFILE_TIME
-    tcp.a0 = (distance - tcp.v0 * PROFILE_TIME) / (PROFILE_TIME * PROFILE_TIME * 0.5);
+    // s = distance; s0 = 0; v0 = tcp.v0; t = time
+    tcp.a0 = (distance - tcp.v0 * time) / (time * time * 0.5);
     // v = v0 + a.t
-    tcp.vf = tcp.v0 + tcp.a0 * PROFILE_TIME;
+    tcp.vf = tcp.v0 + tcp.a0 * time;
     tcp.vt = tcp.vf;
-    tcp.tf = tcp.tt = tcp.t0 = PROFILE_TIME;
+    tcp.tf = tcp.tt = tcp.t0 = time;
     tcp.af = 0.0;
 
 	return (tcp);
@@ -1425,20 +1433,22 @@ fill_in_trajectory_lookup_table()
     for (int dist = N_DIST - 1; dist >= 0; dist--)
     {
         printf("dist = %d\n\n", dist);
+        fflush(stdout);
         for (int i_phi = 0; i_phi < N_I_PHI; i_phi++)
         {
+        	double entries = 0.0;
+        	double valids = 0.0;
+
         	//i_phi = N_I_PHI/2;
-            printf("dist = %d, i_phi = %d\n", dist, i_phi);
-            fflush(stdout);
 //			for (int k1 = 0; k1 < N_K1; k1++)
 //			{
 //				for (int k2 = 0; k2 < N_K2; k2++)
 //				{
-            double delta_k1 = (get_k1_by_index(N_K1) - get_k1_by_index(0)) / 100.0;
-            for (double k1 = get_k1_by_index(0); k1 < get_k1_by_index(N_K1); k1 += delta_k1)
+            double delta_k1 = (get_k1_by_index(N_K1-1) - get_k1_by_index(0)) / 60.0;
+            for (double k1 = get_k1_by_index(0); k1 < get_k1_by_index(N_K1-1); k1 += delta_k1)
             {
-                double delta_k2 = (get_k2_by_index(N_K2) - get_k2_by_index(0)) / 100.0;
-            	for (double k2 = get_k2_by_index(0); k2 < get_k2_by_index(N_K2); k2 += delta_k2)
+                double delta_k2 = (get_k2_by_index(N_K2-1) - get_k2_by_index(0)) / 60.0;
+            	for (double k2 = get_k2_by_index(0); k2 < get_k2_by_index(N_K2-1); k2 += delta_k2)
             	{
                     for (int i_v = 0; i_v < N_I_V; i_v++)
 					    // Checar se os limites do carro estao
@@ -1462,6 +1472,7 @@ fill_in_trajectory_lookup_table()
 //                        TrajectoryLookupTable::TrajectoryDimensions ntd = convert_to_trajectory_dimensions(tdd, tcp);
 //                        std::cout << "td.phi_i = " << td.phi_i << std::endl;
 //                        compare_td(td, ntd);
+		            	entries += 1.0;
 						if (has_valid_discretization(tdd))
 						{
 							// vector<carmen_ackerman_path_point_t> optimized_path;
@@ -1475,6 +1486,7 @@ fill_in_trajectory_lookup_table()
 	                            if (!ptcp.valid || (ntcp.sf < ptcp.sf))
 	                            {
 	                                trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i] = ntcp;
+	                                valids += 1.0;
 
 //	                                vector<carmen_ackerman_path_point_t> path;
 //	                                compute_trajectory_dimensions(trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i], i_phi, path, true);
@@ -1492,6 +1504,9 @@ fill_in_trajectory_lookup_table()
 					}
             	}
             }
+            printf("dist = %d, i_phi = %d, valids = %5.0lf, entries = %5.0lf, %%valids = %2.2lf\n",
+            		dist, i_phi, valids, entries, 100.0 * (valids / entries));
+            fflush(stdout);
         }
     }
 }
