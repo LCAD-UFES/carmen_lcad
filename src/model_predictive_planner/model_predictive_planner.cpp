@@ -30,6 +30,8 @@ carmen_rddf_annotation_message last_rddf_annotation_message;
 Tree tree; //tree rooted on robot
 TrajectoryLookupTable *g_trajectory_lookup_table;
 
+static int update_lookup_table = 0;
+
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -418,6 +420,12 @@ static void
 signal_handler(int sig)
 {
 	printf("Signal %d received, exiting program ...\n", sig);
+	if (update_lookup_table)
+	{
+		save_trajectory_lookup_table();
+		printf("New trajectory_lookup_table.bin saved.\n");
+	}
+
 	exit(1);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -547,6 +555,13 @@ read_parameters(int argc, char **argv)
 	carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
 
 	read_parameters_specific(argc, argv);
+
+	carmen_param_t param_optional_list[] =
+	{
+			{(char *)"commandline", (char*)"update_lookup_table", CARMEN_PARAM_ONOFF, &update_lookup_table, 0, NULL}
+	};
+
+	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 }
 
 
@@ -557,10 +572,10 @@ main(int argc, char **argv)
 	carmen_param_check_version(argv[0]);
 	read_parameters(argc, argv);
 
-	g_trajectory_lookup_table = new TrajectoryLookupTable();
-	memset((void *) &tree, 0, sizeof(Tree));
-
 	register_handlers();
+
+	g_trajectory_lookup_table = new TrajectoryLookupTable(update_lookup_table);
+	memset((void *) &tree, 0, sizeof(Tree));
 
 	carmen_ipc_dispatch();
 }

@@ -112,7 +112,7 @@ public:
 	};
 
 
-	TrajectoryLookupTable();
+	TrajectoryLookupTable(int update_lookup_table);
 
 	static Robot_State predict_next_pose(Robot_State &robot_state, const Command &requested_command,
 			double full_time_interval, double *distance_traveled, double delta_t);
@@ -121,6 +121,10 @@ public:
 	void evaluate_trajectory_lookup_table();
 	static vector<vector<carmen_ackerman_path_point_t>> compute_path_to_goal(Pose *localize_pose, Pose *goal_pose,
 			Command last_odometry, double max_v);
+	void update_lookup_table_entries();
+
 };
+
+void save_trajectory_lookup_table();
 
 #endif /* TRAJECTORY_LOOKUP_TABLE_H_ */
