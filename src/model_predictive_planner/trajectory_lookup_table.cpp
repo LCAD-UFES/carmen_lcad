@@ -36,10 +36,13 @@
 TrajectoryLookupTable::TrajectoryControlParameters trajectory_lookup_table[N_DIST][N_THETA][N_D_YAW][N_I_PHI][N_I_V];
 
 
-TrajectoryLookupTable::TrajectoryLookupTable()
+TrajectoryLookupTable::TrajectoryLookupTable(int update_lookup_table)
 {
 	if (!load_trajectory_lookup_table())
 		build_trajectory_lookup_table();
+
+	if (update_lookup_table)
+		update_lookup_table_entries();
 
 	evaluate_trajectory_lookup_table();
 	std::cout << "Finished loading/creating the trajectory lookup table!\n";
@@ -1509,6 +1512,52 @@ fill_in_trajectory_lookup_table()
             fflush(stdout);
         }
     }
+}
+
+
+void
+TrajectoryLookupTable::update_lookup_table_entries()
+{
+	int num_new_entries = 1;
+
+	while (num_new_entries != 0)
+	{
+		num_new_entries = 0;
+	#pragma omp parallel for
+	for (int i = 0; i < N_DIST; i++)
+	{
+		for (int j = 0; j < N_THETA; j++)
+		{
+			for (int k = 0; k < N_D_YAW; k++)
+			{
+                printf("num_new_entries = %d, dist = %d, theta = %d\n", num_new_entries, i, j);
+    			fflush(stdout);
+				for (int l = 0; l < N_I_PHI; l++)
+				{
+					for (int m = 0; m < N_I_V; m++)
+					{
+						if (!trajectory_lookup_table[i][j][k][l][m].valid)
+						{
+							TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd;
+							tdd.dist = i; tdd.theta = j; tdd.d_yaw = k; tdd.phi_i = l; tdd.v_i = m;
+							TrajectoryLookupTable::TrajectoryControlParameters tcp = search_lookup_table(tdd);
+							if (tcp.valid)
+							{
+		                        TrajectoryLookupTable::TrajectoryControlParameters ntcp = get_optimized_trajectory_control_parameters(tcp, tdd, tcp.vf);
+		                        if (ntcp.valid && !path_has_loop(get_distance_by_index(tdd.dist), ntcp.sf))
+		                        {
+	                                trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i] = ntcp;
+	                                num_new_entries++;
+		                        }
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	}
+	save_trajectory_lookup_table();
 }
 
 
