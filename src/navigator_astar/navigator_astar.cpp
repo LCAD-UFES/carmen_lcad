@@ -1,4 +1,5 @@
 #include "navigator_astar.hpp"
+#include <iostream>
 
 #include "navigator_ackerman_ipc.h"
 
@@ -21,6 +22,7 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
 //	if (current_algorithm != CARMEN_BEHAVIOR_SELECTOR_A_STAR)
 //		return;
+	IPC_RETURN_TYPE err = IPC_OK;
 	static int roundValue = 2;
 	static carmen_ackerman_traj_point_t robot_position;
 
@@ -37,7 +39,9 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	//publica caminho
 	carmen_planner_status_t status;
 	messageControl.carmen_planner_ackerman_get_status(&status);
-	if (status.path.points)
+
+	//Mensagem que faz andar
+	if (status.path.length > 0)
 	{
 		carmen_motion_planner_publish_path_message(status.path.points, status.path.length, current_algorithm);
 
@@ -58,9 +62,38 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 
 		err = IPC_publishData(CARMEN_ASTAR_GOAL_LIST_NAME, &goal_list_msg);//todo valgrind encontra problema de valor nao inicializado aqui
 		carmen_test_ipc(err, "Could not publish", CARMEN_ASTAR_GOAL_LIST_NAME);
-
-		free(status.path.points);
 	}
+
+
+
+	//Mensagem que exibe o caminho na tela
+	if (status.path.length > 0)
+	{
+		static carmen_navigator_ackerman_plan_tree_message plan_tree_msg;
+		static bool firstTime = true;
+
+		if (firstTime == true)
+		{
+			err = IPC_defineMsg(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME, IPC_VARIABLE_LENGTH,
+					CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_FMT);
+			carmen_test_ipc_exit(err, "Could not define", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME);
+
+			plan_tree_msg.host = carmen_get_host();
+			firstTime = false;
+		}
+		if (status.path.length > 100)
+		{	// Ver tipo carmen_navigator_ackerman_plan_tree_message
+			printf("Error: status.path.length > 100\n");
+			return;
+		}
+		plan_tree_msg.num_path = 1;
+		memcpy(plan_tree_msg.paths[0], status.path.points, sizeof(carmen_ackerman_traj_point_t) * status.path.length);
+		plan_tree_msg.path_size[0] = status.path.length;
+		err = IPC_publishData(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME, &plan_tree_msg);
+
+		carmen_test_ipc(err, "Could not publish", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME);
+	}
+
 }
 
 

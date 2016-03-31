@@ -1,4 +1,5 @@
 #include "MessageControl.hpp"
+#include "iostream"
 
 #include "conventional_astar_ackerman.hpp"
 
@@ -29,6 +30,7 @@ MessageControl::carmen_planner_ackerman_regenerate_trajectory()
 
 	this->astarAckeman.carmen_planner_map =carmen_planner_map;
 	this->astarAckeman.carmen_conventional_astar_ackerman_astar(robot, *requested_goal, &path, robot_conf_g);
+
 }
 
 
@@ -104,6 +106,7 @@ MessageControl::carmen_planner_ackerman_get_status(carmen_planner_status_p statu
 	status->robot = robot;
 	status->goal_set = (requested_goal == NULL);
 	status->path.length = path.length;
+
 	if (status->path.length > 0)
 	{
 		status->path.points = (carmen_ackerman_traj_point_p) calloc(status->path.length, sizeof(carmen_ackerman_traj_point_t));
@@ -113,7 +116,7 @@ MessageControl::carmen_planner_ackerman_get_status(carmen_planner_status_p statu
 	}
 	else
 	{
-		status->path.points = NULL;
+		status->path.length = 0;
 	}
 	return;
 }
