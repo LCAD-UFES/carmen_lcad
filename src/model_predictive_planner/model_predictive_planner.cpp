@@ -29,6 +29,7 @@
 carmen_rddf_annotation_message last_rddf_annotation_message;
 Tree tree; //tree rooted on robot
 TrajectoryLookupTable *g_trajectory_lookup_table;
+carmen_rddf_road_profile_message goal_list_message;
 
 static int update_lookup_table = 0;
 
@@ -196,7 +197,7 @@ compute_plan(Tree *tree)
 {
 	free_tree(tree);
 	vector<vector<carmen_ackerman_path_point_t>> path = TrajectoryLookupTable::compute_path_to_goal(GlobalState::localize_pose,
-			GlobalState::goal_pose, GlobalState::last_odometry, GlobalState::robot_config.max_vel);
+			GlobalState::goal_pose, GlobalState::last_odometry, GlobalState::robot_config.max_vel, &goal_list_message);
 
 	if (path.size() == 0)
 	{
@@ -457,10 +458,10 @@ register_handlers_specific()
 			NULL, (carmen_handler_t) map_server_compact_lane_map_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_behavior_selector_subscribe_goal_list_message(
-			NULL,
-			(carmen_handler_t) behaviour_selector_goal_list_message_handler,
-			CARMEN_SUBSCRIBE_LATEST);
+//	carmen_behavior_selector_subscribe_goal_list_message(
+//			NULL,
+//			(carmen_handler_t) behaviour_selector_goal_list_message_handler,
+//			CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_subscribe_message(
 			(char *)CARMEN_NAVIGATOR_ACKERMAN_SET_GOAL_NAME,
@@ -468,6 +469,19 @@ register_handlers_specific()
 			NULL, sizeof(carmen_navigator_ackerman_set_goal_message),
 			(carmen_handler_t)navigator_ackerman_set_goal_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
+}
+
+
+void
+rddf_message_handler(carmen_rddf_road_profile_message *message)
+{
+//	printf("%d \n", message->number_of_poses);
+//
+//	for (int i = 0; i < message->number_of_poses; i++)
+//	{
+//		printf("x  = %lf, y = %lf , theta = %lf ", message->poses[i].x, message->poses[i].y, message->poses[i].theta);
+//		getchar();
+//	}
 }
 
 
@@ -486,6 +500,8 @@ register_handlers()
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) behavior_selector_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) behaviour_selector_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_rddf_subscribe_road_profile_message(&goal_list_message, (carmen_handler_t) rddf_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	register_handlers_specific();
 }
