@@ -43,7 +43,7 @@ typedef struct
 	double d_yaw_by_index;
 	TrajectoryLookupTable::TrajectoryControlParameters *tcp_seed;
 	TrajectoryLookupTable::TrajectoryDimensions *target_td;
-	carmen_rddf_road_profile_message *goal_list;
+	vector<carmen_ackerman_traj_point_t> *detailed_goal_list;
 }ObjectiveFunctionParams;
 
 #define SYSTEM_DELAY 0.7
@@ -948,19 +948,35 @@ compute_abstacles_cost(vector<carmen_ackerman_path_point_t> path)
 }
 
 
+/*TODO
+ * Verificar: melhorar busca
+ * Seria necessario o primeiro ponto do path (x=0 e y=0) entrar no total_distance
+ * */
 double
-compute_distance_to_lane(carmen_rddf_road_profile_message *goal_list, vector<carmen_ackerman_path_point_t> *path)
+compute_distance_to_lane(vector<carmen_ackerman_traj_point_t> *detailed_goal_list, vector<carmen_ackerman_path_point_t> *path)
 {
-	// TODO:
-	// distancia total = 0
-	// para cada ponto do path
-		// criar uma var para armazenar a distancia minima do ponto do path a um ponto do goal list (inicie com DBL_MAX)
-		// para cada ponto do goal_list
-			// calcular distancia entre goal e ponto do path
-			// se distancia < distancia minima: atualizar distancia minima
-		// somar distancia minima a distancia total
-	// retornar a distancia total
-	return 0;
+	double total_distance = 0;
+	double min_distance;
+	double distance;
+	for (std::vector<carmen_ackerman_path_point_t>::iterator it_path = path->begin(); it_path != path->end(); ++it_path)
+	{
+		min_distance = DBL_MAX;
+		//printf ("tamanho: %lu path x: %lf path y: %lf \n",path->size(), it_path->x, it_path->y);
+		for (std::vector<carmen_ackerman_traj_point_t>::iterator it_goal = detailed_goal_list->begin(); it_goal != detailed_goal_list->end(); ++it_goal)
+		{
+			distance = sqrt(pow(it_goal->x - it_path->x, 2) + pow(it_goal->y - it_path->y, 2));
+			if(distance < min_distance)
+			{
+				min_distance = distance;
+			//	printf ("tamanho: %lu goal x: %lf goal y: %lf \n", detailed_goal_list->size(), it_goal->x, it_goal->y);
+			//	printf ("\tDist: %lf Min_dist: %lf \n", distance, min_distance);
+			}
+		}
+		//getchar();
+		total_distance += min_distance;
+	}
+
+	return total_distance;
 }
 
 
@@ -982,7 +998,8 @@ my_f(const gsl_vector *x, void *params)
 	my_params->tcp_seed->vf = tcp.vf;
 	my_params->tcp_seed->sf = tcp.sf;
 
-	double distance_to_lane = compute_distance_to_lane(my_params->goal_list, &path);
+	//TODO Funcao ainda muito lenta para a quantidade de chamadas
+	//double distance_to_lane = compute_distance_to_lane(my_params->detailed_goal_list, &path);
 
 //    double obstacles_cost = 0.0;
 //    if (GlobalState::cost_map_initialized)
@@ -1073,7 +1090,8 @@ compute_suitable_acceleration(TrajectoryLookupTable::TrajectoryControlParameters
 void
 add_points_to_goal_list_interval(carmen_ackerman_traj_point_t p1, carmen_ackerman_traj_point_t p2, vector<carmen_ackerman_traj_point_t> *detailed_goal_list)
 {
-	double theta, delta_x, delta_y;
+	//double theta;
+	double delta_x, delta_y;
 	int i, distance;
 
 	distance = sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
@@ -1106,7 +1124,7 @@ void
 build_detailed_goal_list(carmen_rddf_road_profile_message *message, vector<carmen_ackerman_traj_point_t> *detailed_goal_list)
 {
 	int i;
-	double dist_rddf_to_pose;
+	//double dist_rddf_to_pose;
 
 	for (i = 0; i < (message->number_of_poses - 1); i++)
 	{
@@ -1166,7 +1184,7 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 	params.target_td = &target_td;
 	params.tcp_seed = &tcp_seed;
 	params.target_v = target_v;
-	params.goal_list = goal_list_message; // TODO: trocar por detailed_goal_list
+	params.detailed_goal_list = &detailed_goal_list;
 
 	gsl_vector *x;
 	gsl_multimin_function_fdf my_func;
