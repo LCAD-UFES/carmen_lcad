@@ -294,7 +294,9 @@ localalize_using_map_velodyne_partial_scan(carmen_velodyne_partial_scan_message 
 	carmen_velodyne_partial_scan_update_points(velodyne_message, spherical_sensor_params[0].vertical_resolution,
 			&spherical_sensor_data[0].points[spherical_sensor_data[0].point_cloud_index], spherical_sensor_data[0].intensity[spherical_sensor_data[0].point_cloud_index],
 			spherical_sensor_params[0].ray_order,
-			spherical_sensor_params[0].vertical_correction, spherical_sensor_params[0].range_max);
+			spherical_sensor_params[0].vertical_correction,
+			spherical_sensor_params[0].range_max,
+			velodyne_message->timestamp);
 
 
 	spherical_sensor_data[0].robot_pose[spherical_sensor_data[0].point_cloud_index] = robot_pose;
@@ -394,7 +396,8 @@ localalize_using_map_velodyne_variable_scan(int sensor_number, carmen_velodyne_v
 			&spherical_sensor_data[sensor_number].points[spherical_sensor_data[sensor_number].point_cloud_index],
 			spherical_sensor_data[sensor_number].intensity[spherical_sensor_data[sensor_number].point_cloud_index],
 			spherical_sensor_params[sensor_number].ray_order, spherical_sensor_params[sensor_number].vertical_correction,
-			spherical_sensor_params[sensor_number].range_max);
+			spherical_sensor_params[sensor_number].range_max,
+			message->timestamp);
 
 	spherical_sensor_data[sensor_number].robot_pose[spherical_sensor_data[sensor_number].point_cloud_index] = robot_pose;
 	spherical_sensor_data[sensor_number].robot_velocity[spherical_sensor_data[sensor_number].point_cloud_index] = robot_velocity;

@@ -265,7 +265,8 @@ ultrasonic_sensor_message_handler(carmen_ultrasonic_sonar_sensor_message *messag
 
 	mapper_set_robot_pose_into_the_map(&globalpos_message);
 
-	if (parking_assistant_found_safe_space) {
+	if (parking_assistant_found_safe_space)
+	{
 		publish_map(message->timestamp);
 		return;
 	}

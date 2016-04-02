@@ -1,7 +1,7 @@
 include ../../src/Makefile.conf
 
 LINK=g++
-CFLAGS += -std=c99
+CFLAGS += -std=c99 -msse3 -O3
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src

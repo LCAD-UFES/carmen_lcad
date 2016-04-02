@@ -1254,7 +1254,8 @@ build_point_cloud_using_velodyne_message(carmen_velodyne_partial_scan_message *v
 			velodyne_data->intensity[velodyne_data->point_cloud_index],
 			velodyne_params->ray_order,
 			velodyne_params->vertical_correction,
-			velodyne_params->range_max);
+			velodyne_params->range_max,
+			velodyne_message->timestamp);
 
 	if (velodyne_message_id >= 0)
 	{

@@ -476,8 +476,6 @@ localize_ackerman_velodyne_partial_scan(carmen_velodyne_partial_scan_message *ve
 	static int velodyne_message_id;
 	int current_point_cloud_index;
 
-
-
 	int num_points = velodyne_message->number_of_32_laser_shots * velodyne_params->vertical_resolution;
 
 	if (velodyne_data->last_timestamp == 0.0)
@@ -487,8 +485,6 @@ localize_ackerman_velodyne_partial_scan(carmen_velodyne_partial_scan_message *ve
 		return (0);
 	}
 	
-
-
 	velodyne_data->current_timestamp = velodyne_message->timestamp;
 
 	build_sensor_point_cloud(&(velodyne_data->points), velodyne_data->intensity, &(velodyne_data->point_cloud_index), num_points, NUM_VELODYNE_POINT_CLOUDS);
@@ -499,7 +495,8 @@ localize_ackerman_velodyne_partial_scan(carmen_velodyne_partial_scan_message *ve
 			velodyne_data->intensity[velodyne_data->point_cloud_index],
 			velodyne_params->ray_order,
 			velodyne_params->vertical_correction,
-			velodyne_params->range_max);
+			velodyne_params->range_max,
+			velodyne_message->timestamp);
 
 	if (velodyne_viewer)
 		debug_remission_map_velodyne(velodyne_message, velodyne_params);
@@ -581,9 +578,8 @@ localize_ackerman_velodyne_variable_scan(carmen_velodyne_variable_scan_message *
 			velodyne_data->intensity[velodyne_data->point_cloud_index],
 			velodyne_params->ray_order,
 			velodyne_params->vertical_correction,
-			velodyne_params->range_max);
-
-	
+			velodyne_params->range_max,
+			message->timestamp);
 
 	if (message_id >= 0)
 	{
@@ -622,7 +618,6 @@ localize_ackerman_velodyne_variable_scan(carmen_velodyne_variable_scan_message *
 		carmen_prob_models_clear_carmen_map_using_compact_map(&local_sum_remission_map, &local_compacted_mean_remission_map, -1.0);
 		carmen_prob_models_clear_carmen_map_using_compact_map(&local_sum_sqr_remission_map, &local_compacted_variance_remission_map, -1.0);
 		carmen_prob_models_clear_carmen_map_using_compact_map(&local_count_remission_map, &local_compacted_mean_remission_map, -1.0);
-
 
 		carmen_prob_models_clear_carmen_map_using_compact_map(&local_map, &local_compacted_map, -1.0);
 
