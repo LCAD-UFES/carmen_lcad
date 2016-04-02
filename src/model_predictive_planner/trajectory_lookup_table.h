@@ -8,6 +8,8 @@
 #ifndef TRAJECTORY_LOOKUP_TABLE_H_
 #define TRAJECTORY_LOOKUP_TABLE_H_
 
+#include "carmen/rddf_interface.h"
+
 #define N_DIST			15				// Number of Distances traveled in polar coordinates
 #define FIRST_DIST		2.3				// First Distance, or scale factor of its geometric progression (Wikipedia)
 #define RATIO_DIST		1.18			// Ratio (Wikipedia) of the Distance geometric progression
@@ -120,7 +122,7 @@ public:
 	void build_trajectory_lookup_table();
 	void evaluate_trajectory_lookup_table();
 	static vector<vector<carmen_ackerman_path_point_t>> compute_path_to_goal(Pose *localize_pose, Pose *goal_pose,
-			Command last_odometry, double max_v);
+			Command last_odometry, double max_v, carmen_rddf_road_profile_message *goal_list_message);
 	void update_lookup_table_entries();
 
 };
