@@ -50,7 +50,6 @@ typedef struct
 
 TrajectoryLookupTable::TrajectoryControlParameters trajectory_lookup_table[N_DIST][N_THETA][N_D_YAW][N_I_PHI][N_I_V];
 
-
 TrajectoryLookupTable::TrajectoryLookupTable(int update_lookup_table)
 {
 	if (!load_trajectory_lookup_table())
@@ -958,24 +957,33 @@ compute_distance_to_lane(vector<carmen_ackerman_traj_point_t> *detailed_goal_lis
 	double total_distance = 0;
 	double min_distance;
 	double distance;
+//	int cont_test=0;
+	std::vector<carmen_ackerman_traj_point_t>::iterator it_goal_last = detailed_goal_list->begin();
+
 	for (std::vector<carmen_ackerman_path_point_t>::iterator it_path = path->begin(); it_path != path->end(); ++it_path)
 	{
 		min_distance = DBL_MAX;
-		//printf ("tamanho: %lu path x: %lf path y: %lf \n",path->size(), it_path->x, it_path->y);
-		for (std::vector<carmen_ackerman_traj_point_t>::iterator it_goal = detailed_goal_list->begin(); it_goal != detailed_goal_list->end(); ++it_goal)
+//		printf ("tamanho: %lu path x: %lf path y: %lf \n",path->size(), it_path->x, it_path->y);
+		for (std::vector<carmen_ackerman_traj_point_t>::iterator it_goal = it_goal_last; it_goal != detailed_goal_list->end(); ++it_goal)
 		{
 			distance = sqrt(pow(it_goal->x - it_path->x, 2) + pow(it_goal->y - it_path->y, 2));
 			if(distance < min_distance)
 			{
 				min_distance = distance;
-			//	printf ("tamanho: %lu goal x: %lf goal y: %lf \n", detailed_goal_list->size(), it_goal->x, it_goal->y);
-			//	printf ("\tDist: %lf Min_dist: %lf \n", distance, min_distance);
+//				printf ("tamanho: %d goal x: %lf goal y: %lf \n", detailed_goal_list->size(), it_goal->x, it_goal->y);
+//				printf ("\tDist: %lf Min_dist: %lf \n", distance, min_distance);
+//				cont_test ++;
+			}
+			else{
+				it_goal_last = it_goal - 1;
+				break;
 			}
 		}
-		//getchar();
+//		getchar();
 		total_distance += min_distance;
+//		printf ("\tInteracoes: %d \n", cont_test);
+//		cont_test =0;
 	}
-
 	return total_distance;
 }
 
@@ -999,7 +1007,7 @@ my_f(const gsl_vector *x, void *params)
 	my_params->tcp_seed->sf = tcp.sf;
 
 	//TODO Funcao ainda muito lenta para a quantidade de chamadas
-	//double distance_to_lane = compute_distance_to_lane(my_params->detailed_goal_list, &path);
+//	double distance_to_lane = compute_distance_to_lane(my_params->detailed_goal_list, &path);
 
 //    double obstacles_cost = 0.0;
 //    if (GlobalState::cost_map_initialized)
@@ -1124,16 +1132,12 @@ void
 build_detailed_goal_list(carmen_rddf_road_profile_message *message, vector<carmen_ackerman_traj_point_t> *detailed_goal_list)
 {
 	int i;
-	//double dist_rddf_to_pose;
-
-	for (i = 0; i < (message->number_of_poses - 1); i++)
-	{
-		//printf("p1: %lf %lf p2: %lf %lf\n", message->poses[i].x, message->poses[i].y, message->poses[i + 1].x, message->poses[i + 1].y);
-
-		add_points_to_goal_list_interval(message->poses[i], message->poses[i + 1], detailed_goal_list);
-
-		//getchar();
-	}
+		for (i = 0; i < (message->number_of_poses - 1); i++)
+		{
+			//printf("p1: %lf %lf p2: %lf %lf\n", message->poses[i].x, message->poses[i].y, message->poses[i + 1].x, message->poses[i + 1].y);
+			add_points_to_goal_list_interval(message->poses[i], message->poses[i + 1], detailed_goal_list);
+			//getchar();
+		}
 }
 
 
@@ -1158,14 +1162,13 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 
 	double suitable_acceleration = compute_suitable_acceleration(tcp_seed, target_td, target_v);
 
-//	printf("%d \n", goal_list_message->number_of_poses);
-//
-//	for (int i = 0; i < goal_list_message->number_of_poses; i++)
-//	{
-//		printf("x  = %lf, y = %lf , theta = %lf ", goal_list_message->poses[i].x, goal_list_message->poses[i].y, goal_list_message->poses[i].theta);
-//		getchar();
-//	}
-
+	//	printf("%d \n", goal_list_message->number_of_poses);
+	//
+	//	for (int i = 0; i < goal_list_message->number_of_poses; i++)
+	//	{
+	//		printf("x  = %lf, y = %lf , theta = %lf ", goal_list_message->poses[i].x, goal_list_message->poses[i].y, goal_list_message->poses[i].theta);
+	//		getchar();
+	//	}
 	vector<carmen_ackerman_traj_point_t> detailed_goal_list;
 	build_detailed_goal_list(goal_list_message, &detailed_goal_list);
 
@@ -1207,8 +1210,8 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 	// int gsl_multimin_fdfminimizer_set (gsl_multimin_fdfminimizer * s, gsl_multimin_function_fdf * fdf, const gsl_vector * x, double step_size, double tol)
 	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.0001, 0.001);
 
-    size_t iter = 0;
-    int status;
+	size_t iter = 0;
+	int status;
 	do
 	{
 		iter++;
