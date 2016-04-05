@@ -153,6 +153,46 @@ void carmen_logwrite_write_laser_laser(carmen_laser_laser_message *laser,
 			laser->host, timestamp);
 }
 
+void carmen_logwrite_write_laser_ldmrs(carmen_laser_ldmrs_message *laser,
+		int laser_num, carmen_FILE *outfile,
+		double timestamp)
+{
+	int i;
+	(void)laser_num;
+	carmen_fprintf(outfile, "LASER_LDMRS ");
+	carmen_fprintf(outfile, "%d %d %d %d %.3lf %.3lf %d %.3lf %.3lf %.3lf %.3lf %.3lf %.3lf %d ",
+			laser->scan_number,
+			laser->scanner_status,
+			laser->sync_phase_offset,
+//			laser->scan_start_time.tv_sec,
+//			laser->scan_start_time.tv_nsec,
+//			laser->scan_end_time.tv_sec,
+//			laser->scan_end_time.tv_nsec,
+			laser->angle_ticks_per_rotation,
+			laser->start_angle,
+			laser->end_angle,
+			laser->scan_points,
+			laser->mount_yaw,
+			laser->mount_pitch,
+			laser->mount_roll,
+			laser->mount_x,
+			laser->mount_y,
+			laser->mount_z,
+			laser->flags);
+
+	for(i = 0; i < laser->scan_points; i++)
+		carmen_fprintf(outfile, "%1d %1d %1d %.5f %.3f %.3f ",
+				    laser->points[i].layer,
+				    laser->points[i].echo,
+				    laser->points[i].flags,
+				    laser->points[i].horizontal_angle,
+				    laser->points[i].radial_distance,
+				    laser->points[i].pulse_width);
+
+	carmen_fprintf(outfile, "%f %s %f\n", laser->timestamp,
+			laser->host, timestamp);
+}
+
 void carmen_logwrite_write_robot_ackerman_laser(carmen_robot_ackerman_laser_message *laser,
 		int laser_num, carmen_FILE *outfile,
 		double timestamp)

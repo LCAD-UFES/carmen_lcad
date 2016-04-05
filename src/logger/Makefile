@@ -1,9 +1,9 @@
 include ../Makefile.conf
 
-ifdef FOR_XAVIER
+ifdef FOR_XAVIER 
 INTERFACE_LIBS = -lxavier_interface -lparam_interface
 else
-INTERFACE_LIBS = -llaser_interface \
+INTERFACE_LIBS = -llaser_interface -llaser_ldmrs_interface \
 		 -lobstacle_avoider_interface \
 		 -lsimulator_ackerman_interface -llocalize_ackerman_interface \
 	     -lgps_nmea_interface -lbase_ackerman_interface \

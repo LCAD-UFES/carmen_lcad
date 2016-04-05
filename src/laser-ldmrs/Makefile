@@ -1,16 +1,16 @@
 include ../Makefile.conf
 
 # Module name and description
-MODULE_NAME = Laser SICK LD-MRS
-MODULE_COMMENT = Skeleton Package Example
+MODULE_NAME = SICK LD-MRS Package
+MODULE_COMMENT = SICK LD-MRS Package
 
 LINK = g++
 
 # Application specific include directories.
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs/include
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs 
-LFLAGS += -lparam_interface -lipc -lglobal -llaser_ldmrs_interface
+LFLAGS += -lparam_interface -lipc -lglobal -llaser_ldmrs_interface -lsickldmrs -lpthread
 CFLAGS += -Wall
 # Source code files (.c, .cpp) 
 SOURCES = laser_ldmrs_main.c laser_ldmrs_interface.c
@@ -25,6 +25,7 @@ PUBLIC_LIBRARIES = liblaser_ldmrs_interface.a
 PUBLIC_BINARIES = laser_ldmrs
 
 TARGETS = libsickldmrs liblaser_ldmrs_interface.a laser_ldmrs
+
 PUBLIC_LIBRARIES_SO = liblaser_ldmrs_interface.so 
 
 liblaser_ldmrs_interface.a: laser_ldmrs_interface.o

@@ -1,56 +1,44 @@
- /*********************************************************
+/*********************************************************
 	---   Skeleton Module Application ---
-**********************************************************/
-
+ **********************************************************/
+#include <err.h>
+#include <sickldmrs.h>
 #include <carmen/carmen.h>
-#include <carmen/skeleton_module_sensor_interface.h>
+#include <carmen/laser_ldmrs_interface.h>
 
-static int skeleton_module_sensor_getkey = 0;
+volatile int done = 0;
+static int last_frame = -1;
+static char *laser_ldmrs_port = 0;
+static char *laser_ldmrs_address = 0;
 
 /*********************************************************
 		   --- Publishers ---
-**********************************************************/
-
-void publish_keymessage(char c)
-{
-   IPC_RETURN_TYPE err;
-
-   carmen_skeleton_module_sensor_keymessage_message message;
-
-   message.caracter = c;
-   message.timestamp = carmen_get_time();
-   message.host = carmen_get_host();
-
-   err = IPC_publishData(CARMEN_SKELETON_MODULE_SENSOR_KEYMESSAGE_NAME, &message);
-   carmen_test_ipc_exit(err, "Could not publish", CARMEN_SKELETON_MODULE_SENSOR_KEYMESSAGE_FMT);
-}
+ **********************************************************/
 
 void publish_heartbeats()
 {
-    carmen_publish_heartbeat("skeleton_sensor_daemon");
+	carmen_publish_heartbeat("laser_ldmrs");
 }
 
 /*********************************************************
 		   --- Handlers ---
-**********************************************************/
+ **********************************************************/
 
-void shutdown_module(int signo)
+static void shutdown_module(int signo)
 {
-  if(signo == SIGINT)
-  {
-     carmen_ipc_disconnect();
-     printf("skeleton_module_sensor: disconnected.\n");
-     exit(0);
-  }
+	(void) signo;
+	done = 1;
+	printf("laser_ldmrs: disconnected.\n");
 }
 
-static int read_parameters(int argc, char **argv)
+static int carmen_laser_ldmrs_read_parameters(int argc, char **argv)
 {
 	int num_items;
 
 	carmen_param_t param_list[] =
 	{
-	  {"skeleton_module_sensor", "getkey", CARMEN_PARAM_ONOFF, &skeleton_module_sensor_getkey, 0, NULL}
+			{"laser_ldmrs", "address", CARMEN_PARAM_STRING, &laser_ldmrs_address, 0, NULL},
+			{"laser_ldmrs", "port", CARMEN_PARAM_STRING, &laser_ldmrs_port, 0, NULL}
 	};
 
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
@@ -59,40 +47,100 @@ static int read_parameters(int argc, char **argv)
 	return 0;
 }
 
+static void carmen_laser_ldmrs_copy_message(struct sickldmrs_scan *scan, carmen_laser_ldmrs_message *message)
+{
+	int i;
+
+	message->scan_number = scan->scan_number;
+	message->scanner_status = scan->scanner_status;
+	message->sync_phase_offset = scan->sync_phase_offset;
+//	message->scan_start_time = scan->scan_start_time;
+//	message->scan_end_time = scan->scan_end_time;
+	message->angle_ticks_per_rotation = scan->angle_ticks_per_rotation;
+	message->start_angle = scan->start_angle;
+	message->end_angle = scan->end_angle;
+	message->mount_yaw = scan->mount_yaw;
+	message->mount_pitch = scan->mount_pitch;
+	message->mount_roll = scan->mount_roll;
+	message->mount_x = scan->mount_x;
+	message->mount_y = scan->mount_y;
+	message->mount_z = scan->mount_z;
+	message->flags = scan->flags;
+	if(message->scan_points != scan->scan_points)
+	{
+		message->scan_points = scan->scan_points;
+		message->points = (carmen_laser_ldmrs_point *)realloc(message->points, message->scan_points * sizeof(carmen_laser_ldmrs_point));
+		carmen_test_alloc(message->points);
+	}
+	for(i = 0; i < message->scan_points; i++)
+	{
+		message->points[i].layer = scan->points[i].layer;
+		message->points[i].echo = scan->points[i].echo;
+		message->points[i].flags = scan->points[i].flags;
+		message->points[i].horizontal_angle = scan->points[i].horizontal_angle;
+		message->points[i].radial_distance = scan->points[i].radial_distance;
+		message->points[i].pulse_width = scan->points[i].pulse_width;
+	}
+}
+
 int main(int argc, char **argv)
 {
-  /* Connect to IPC Server */
-  carmen_ipc_initialize(argc, argv);
+	static carmen_laser_ldmrs_message message;
+	struct sickldmrs_device *dev;
+	int rc;
 
-  /* Check the param server version */
-  carmen_param_check_version(argv[0]);
+	message.scan_points = 0;
 
-  /* Register shutdown cleaner handler */
-  signal(SIGINT, shutdown_module);
+	/* Connect to IPC Server */
+	carmen_ipc_initialize(argc, argv);
 
-  /* Read application specific parameters (Optional) */
-  read_parameters(argc, argv);
+	/* Check the param server version */
+	carmen_param_check_version(argv[0]);
 
-  /* Define published messages by your module */
-  carmen_skeleton_module_sensor_define_messages();
+	/* Register shutdown cleaner handler */
+	signal(SIGINT, shutdown_module);
+	signal(SIGTERM, shutdown_module);
 
-  carmen_ipc_addPeriodicTimer(10, publish_heartbeats, NULL);
+	/* Read application specific parameters (Optional) */
+	carmen_laser_ldmrs_read_parameters(argc, argv);
 
-  while(1)
-  {
-    if(skeleton_module_sensor_getkey)
-    {
-	    char c = getchar();
-            if(c == EOF)
-		break;
+	/* Define published messages by your module */
+	carmen_laser_define_ldmrs_messages();
 
-	    printf("%c", c);
-	    publish_keymessage(c);
-	    usleep(1000);
+	carmen_ipc_addPeriodicTimer(10, publish_heartbeats, NULL);
 
-    }
-  }
+	dev = sickldmrs_init(laser_ldmrs_address, laser_ldmrs_port, true);
+	if (dev != NULL)
+	{
+		//dev->debug = 1;
+		if ((rc = sickldmrs_get_status(dev, -1)) < 0)
+			errx(2, "sickldmrs_get_status: %s\n", strerror(-rc));
+		if ((rc = sickldmrs_config_output(dev, 0x00ee, -1)) < 0)
+			errx(2, "sickldmrs_config_output: %s\n", strerror(rc));
+		/* scan frequency -> 25 Hz */
+		if ((rc = sickldmrs_set_parameter(dev, SLDMRS_PARAM_SCAN_FREQUENCY, 6400, -1)) < 0)
+			errx(2, "sickldmrs_set_parameter: %s", strerror(rc));
+		if ((rc = sickldmrs_get_parameter(dev, SLDMRS_PARAM_SCAN_FREQUENCY, -1)) < 0)
+			errx(2, "sickldmrs_get_parameter: %s", strerror(rc));
 
-  carmen_ipc_disconnect();
-  return 0;
+		while (!done)
+		{
+			carmen_ipc_sleep(1./25.);	/* 25Hz */
+
+			sickldmrs_lock(dev);
+			if (dev->scan != NULL && dev->scan->scan_number != last_frame)
+			{
+				//sickldmrs_print_scan(dev->scan); //DEBUG
+				carmen_laser_ldmrs_copy_message(dev->scan, &message);
+				carmen_laser_publish_ldmrs(&message);
+				last_frame = dev->scan->scan_number;
+			}
+			sickldmrs_unlock(dev);
+		}
+		sickldmrs_end(dev);
+	}
+
+	carmen_ipc_disconnect();
+
+	return 0;
 }

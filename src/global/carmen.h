@@ -89,6 +89,8 @@ extern "C" {
 #ifndef COMPILE_WITHOUT_LASER_SUPPORT
 #include <carmen/laser_messages.h>
 #include <carmen/laser_interface.h>
+#include <carmen/laser_ldmrs_messages.h>
+#include <carmen/laser_ldmrs_interface.h>
 #endif
 
 #ifndef COMPILE_WITHOUT_CAMERA_SUPPORT

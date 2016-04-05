@@ -31,6 +31,7 @@ interrupt(int sig)
 {
 	done++;
 }
+
 int
 main(int argc, char *argv[])
 {
@@ -47,7 +48,7 @@ main(int argc, char *argv[])
 	dev = sickldmrs_init(address, port, true);
 	if (dev == NULL) 
 		exit(2);
-	// dev->debug = 1;
+	dev->debug = 1;
 	if ((rc = sickldmrs_get_status(dev, -1)) < 0)
 		errx(2, "sickldmrs_get_status: %s\n", strerror(-rc));
 	if ((rc = sickldmrs_config_output(dev, 0x00ee, -1)) < 0)

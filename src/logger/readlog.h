@@ -226,6 +226,8 @@ char* carmen_string_to_base_ackerman_motion_message(char* string, carmen_base_ac
 
 char* carmen_string_to_ultrasonic_message(char* string, carmen_ultrasonic_sonar_sensor_message* ultrasonic_msg);
 
+char* carmen_string_to_laser_ldmrs_message(char *string, carmen_laser_ldmrs_message *laser);
+
 #ifdef __cplusplus
 }
 #endif
