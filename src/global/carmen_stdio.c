@@ -81,7 +81,7 @@ int carmen_fgetc(carmen_FILE *fp)
   if(!fp->compressed)
     return fgetc(fp->fp);
   else
-    return gzgetc(fp->comp_fp);
+    return gzgetc((gzFile)fp->comp_fp);
 #else
   return fgetc(fp->fp);
 #endif
