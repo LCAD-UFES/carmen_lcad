@@ -2,7 +2,7 @@ include ../Makefile.conf
 
 LINK=g++
 CFLAGS += -std=c99
-IFLAGS += 
+IFLAGS += -I/usr/local/include/libfreenect 
 LFLAGS += -lglobal -lparam_interface -lipc -lfreenect -llaser_interface -lGL -lGLU -lglut
 
 MODULE_NAME = KINECT

@@ -10,7 +10,7 @@ LINK = g++
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs/include
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs 
-LFLAGS += -lparam_interface -lipc -lglobal -llaser_ldmrs_interface -lsickldmrs -lpthread
+LFLAGS += -lparam_interface -lipc -lglobal -llaser_ldmrs_interface -lsickldmrs -lpthread -lrt
 CFLAGS += -Wall
 # Source code files (.c, .cpp) 
 SOURCES = laser_ldmrs_main.c laser_ldmrs_interface.c
