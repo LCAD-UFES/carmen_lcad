@@ -121,24 +121,62 @@ build_front_laser_message_from_velodyne_point_cloud(sensor_parameters_t *sensor_
 
 //teste: fim
 
+int
+get_nearest_timestamp_index(double *robot_timestamp, spherical_point_cloud *points, int cindex)
+{
+	int index_nearest_timestamp = 0;
+	double timestamp_diff = 10.0;
+	int j = cindex;
+
+	for (int i = 0; i < NUM_VELODYNE_POINT_CLOUDS; i++)
+	{
+		double diff = fabs(robot_timestamp[j] - points[i].timestamp);
+		//printf("diff = %lf, rt = %lf, vt = %lf\n", robot_timestamp[j] - points[i].timestamp, robot_timestamp[j], points[i].timestamp);
+		if (diff < timestamp_diff)
+		{
+			timestamp_diff = diff;
+			index_nearest_timestamp = i;
+		}
+	}
+//
+//	if (timestamp_diff != 0.0)
+//	{
+//		j = ((cindex - 1) < 0)? NUM_VELODYNE_POINT_CLOUDS - 1: cindex - 1;
+//		for (int i = 0; i < NUM_VELODYNE_POINT_CLOUDS; i++)
+//		{
+//			double diff = fabs(robot_timestamp[j] - points[i].timestamp);
+//			//printf("diff = %lf, rt = %lf, vt = %lf\n", robot_timestamp[j] - points[i].timestamp, robot_timestamp[j], points[i].timestamp);
+//			if (diff < timestamp_diff)
+//			{
+//				timestamp_diff = diff;
+//				index_nearest_timestamp = i;
+//			}
+//		}
+//	}
+
+	//printf("time diff = %lf, index = %d, cindex = %d\n", timestamp_diff, index_nearest_timestamp, cindex);
+
+	return (index_nearest_timestamp);
+}
+
+
 static void
 update_cells_in_the_velodyne_perceptual_field(carmen_map_t *map, carmen_map_t *snapshot_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global,
 					      int point_cloud_index, int update_cells_crossed_by_rays, int build_snapshot_map)
 {
-	int i, j;
-	spherical_point_cloud v_zt = sensor_data->points[point_cloud_index];
-	int idx = ((point_cloud_index - 1) < 0) ? NUM_VELODYNE_POINT_CLOUDS - 1 : point_cloud_index - 1;
+	int nearest_timestamp_index = get_nearest_timestamp_index(sensor_data->robot_timestamp,
+			sensor_data->points, point_cloud_index);
+	spherical_point_cloud v_zt = sensor_data->points[nearest_timestamp_index];
 
-	double v = sensor_data->robot_velocity[idx].x;
-	double phi = sensor_data->robot_phi[idx];
+	double v = sensor_data->robot_velocity[point_cloud_index].x;
+	double phi = sensor_data->robot_phi[point_cloud_index];
 	int N = v_zt.num_points / sensor_params->vertical_resolution;
 
-	double dt = 0.0494 / (double)N;
-	carmen_pose_3D_t robot_interpolated_position = sensor_data->robot_pose[idx];
-
+	double dt = 0.0494 / (double) N; // @@@ Alberto: este dt depende da velocidade de rotação do Velodyne, que não é fixa. Tem que ser calculado do acordo com a velocidade de rotação do Velodyne.
+	carmen_pose_3D_t robot_interpolated_position = sensor_data->robot_pose[point_cloud_index];
 
 	// Ray-trace the grid
-	for (i = 0, j = 0; i < v_zt.num_points; i = i +  sensor_params->vertical_resolution, j++)
+	for (int i = 0, j = 0; i < v_zt.num_points; i = i +  sensor_params->vertical_resolution, j++)
 	{
 		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(robot_interpolated_position, dt, v, phi, car_config.distance_between_front_and_rear_axles);
 		r_matrix_robot_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
@@ -174,9 +212,10 @@ build_map_using_velodyne(sensor_parameters_t *sensor_params, sensor_data_t *sens
 	static carmen_map_t *snapshot_map = NULL;
 
 	snapshot_map = carmen_prob_models_check_if_new_snapshot_map_allocation_is_needed(snapshot_map, &map);
-	
-	update_cells_in_the_velodyne_perceptual_field(&map, snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
-	
+	// @@@ Alberto: Mapa padrao Lucas -> colocar DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS ao inves de UPDATE_CELLS_CROSSED_BY_RAYS
+	//update_cells_in_the_velodyne_perceptual_field(&map, snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
+	update_cells_in_the_velodyne_perceptual_field(&map, snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, robot_near_bump_or_barrier, update_and_merge_with_snapshot_map);
+
 	carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map);
 }
 
@@ -281,18 +320,18 @@ mapper_change_map_origin_to_another_map_block(carmen_position_t *map_origin)
 static int
 run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global)
 {
-	carmen_point_t world_pose;
+	//carmen_point_t world_pose;
 	//carmen_position_t map_origin;
 
 	if (!globalpos_initialized)
-		return 0;
+		return (0);
 
-	world_pose = globalpos_history[last_globalpos].globalpos;
+	//world_pose = globalpos_history[last_globalpos].globalpos;
 	//carmen_grid_mapping_get_map_origin(&world_pose, &map_origin.x, &map_origin.y);
 
 	build_map_using_velodyne(sensor_params, sensor_data, r_matrix_robot_to_global);
 	
-	return 1;
+	return (1);
 }
 
 
@@ -379,7 +418,7 @@ mapper_velodyne_partial_scan(carmen_velodyne_partial_scan_message *velodyne_mess
 	carmen_velodyne_partial_scan_update_points(velodyne_message, sensors_params[0].vertical_resolution,
 			&sensors_data[0].points[sensors_data[0].point_cloud_index], sensors_data[0].intensity[sensors_data[0].point_cloud_index],
 			sensors_params[0].ray_order,
-			sensors_params[0].vertical_correction, sensors_params[0].range_max);
+			sensors_params[0].vertical_correction, sensors_params[0].range_max, velodyne_message->timestamp);
 
 	sensors_data[0].robot_pose[sensors_data[0].point_cloud_index] = globalpos_history[last_globalpos].pose;
 	sensors_data[0].robot_velocity[sensors_data[0].point_cloud_index] = globalpos_history[last_globalpos].velocity;
@@ -432,7 +471,7 @@ mapper_velodyne_variable_scan(int sensor_number, carmen_velodyne_variable_scan_m
 			&sensors_data[sensor_number].points[sensors_data[sensor_number].point_cloud_index],
 			sensors_data[sensor_number].intensity[sensors_data[sensor_number].point_cloud_index],
 			sensors_params[sensor_number].ray_order, sensors_params[sensor_number].vertical_correction,
-			sensors_params[sensor_number].range_max);
+			sensors_params[sensor_number].range_max, message->timestamp);
 
 	sensors_data[sensor_number].robot_pose[sensors_data[sensor_number].point_cloud_index] = globalpos_history[last_globalpos].pose;
 	sensors_data[sensor_number].robot_velocity[sensors_data[sensor_number].point_cloud_index] = globalpos_history[last_globalpos].velocity;

@@ -8,9 +8,11 @@
 #ifndef TRAJECTORY_LOOKUP_TABLE_H_
 #define TRAJECTORY_LOOKUP_TABLE_H_
 
-#define N_DIST			9				// Number of Distances traveled in polar coordinates
-#define FIRST_DIST		10.0			// First Distance, or scale factor of its geometric progression (Wikipedia)
-#define RATIO_DIST		1.15			// Ratio (Wikipedia) of the Distance geometric progression
+#include "carmen/rddf_interface.h"
+
+#define N_DIST			15				// Number of Distances traveled in polar coordinates
+#define FIRST_DIST		2.3				// First Distance, or scale factor of its geometric progression (Wikipedia)
+#define RATIO_DIST		1.18			// Ratio (Wikipedia) of the Distance geometric progression
 #define ZERO_DIST_I		-1				// Index of zero Distance traveled
 
 #define N_THETA			15				// Number of Angles in polar coordinates
@@ -112,7 +114,7 @@ public:
 	};
 
 
-	TrajectoryLookupTable();
+	TrajectoryLookupTable(int update_lookup_table);
 
 	static Robot_State predict_next_pose(Robot_State &robot_state, const Command &requested_command,
 			double full_time_interval, double *distance_traveled, double delta_t);
@@ -120,7 +122,11 @@ public:
 	void build_trajectory_lookup_table();
 	void evaluate_trajectory_lookup_table();
 	static vector<vector<carmen_ackerman_path_point_t>> compute_path_to_goal(Pose *localize_pose, Pose *goal_pose,
-			Command last_odometry, double max_v);
+			Command last_odometry, double max_v, carmen_rddf_road_profile_message *goal_list_message);
+	void update_lookup_table_entries();
+
 };
+
+void save_trajectory_lookup_table();
 
 #endif /* TRAJECTORY_LOOKUP_TABLE_H_ */

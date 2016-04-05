@@ -409,7 +409,7 @@ carmen_prob_models_update_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sens
 			cell_hit_by_ray.x = (sensor_data->ray_position_in_the_floor[i].x / map->config.resolution);
 			cell_hit_by_ray.y = (sensor_data->ray_position_in_the_floor[i].y / map->config.resolution);
 
-			if (sensor_data->occupancy_log_odds_of_each_ray_target[i] > sensor_params->log_odds.log_odds_l0)
+			if (sensor_data->occupancy_log_odds_of_each_ray_target[i] != sensor_params->log_odds.log_odds_l0)
 			{
 				if (map_grid_is_valid(map, cell_hit_by_ray.x, cell_hit_by_ray.y))
 					carmen_prob_models_log_odds_occupancy_grid_mapping(map, cell_hit_by_ray.x, cell_hit_by_ray.y, sensor_data->occupancy_log_odds_of_each_ray_target[i]);
@@ -857,16 +857,21 @@ get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, senso
 	
 //	printf("%lf %lf %lf %lf\n", sensor_data->range[ray_index], expected_delta_ray, expected_delta_ray_old, obstacle_evidence);
 
-	if (delta_ray > expected_delta_ray) // @@@ Alberto: nao trata buraco?
-		return (sensor_params->log_odds.log_odds_l0);
-
 	// Testa se tem um obstaculo com um buraco em baixo
 	obstacle_evidence = (obstacle_evidence > 1.0)? 1.0: obstacle_evidence;
 	
 	if (reduce_sensitivity)
+	{
+		if (delta_ray > expected_delta_ray) // @@@ Alberto: nao trata buraco?
+			return (sensor_params->log_odds.log_odds_free);
 		two_times_sigma = (2.0 * (sensor_params->unexpeted_delta_range_sigma / 4.0) * (sensor_params->unexpeted_delta_range_sigma / 4.0));
+	}
 	else
+	{
+		if (delta_ray > expected_delta_ray) // @@@ Alberto: nao trata buraco?
+			return (sensor_params->log_odds.log_odds_l0);
 		two_times_sigma = (2.0 * sensor_params->unexpeted_delta_range_sigma * sensor_params->unexpeted_delta_range_sigma);
+	}
 	// valor da exponencial com evidencia zero
 	p_0 = exp(-1.0 / two_times_sigma);
 	p_obstacle = (exp(-((obstacle_evidence - 1.0) * (obstacle_evidence - 1.0)) / two_times_sigma) - p_0) / (1.0 - p_0);

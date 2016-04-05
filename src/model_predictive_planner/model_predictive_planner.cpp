@@ -29,6 +29,9 @@
 carmen_rddf_annotation_message last_rddf_annotation_message;
 Tree tree; //tree rooted on robot
 TrajectoryLookupTable *g_trajectory_lookup_table;
+carmen_rddf_road_profile_message goal_list_message;
+
+static int update_lookup_table = 0;
 
 
 
@@ -48,18 +51,14 @@ publish_model_predictive_planner_motion_commands(vector<carmen_ackerman_path_poi
 	carmen_ackerman_motion_command_t* commands =
 			(carmen_ackerman_motion_command_t*) (malloc(path.size() * sizeof(carmen_ackerman_motion_command_t)));
 	int i = 0;
-	FILE *vel = fopen("vel.txt", "w");
-	for (std::vector<carmen_ackerman_path_point_t>::iterator it = path.begin();
-			it != path.end(); ++it)
+	for (std::vector<carmen_ackerman_path_point_t>::iterator it = path.begin();	it != path.end(); ++it)
 	{
 		commands[i].v = it->v;
 		commands[i].phi = it->phi;
 		commands[i].time = it->time;
 
-		fprintf(vel, "%f\n", it->v);
 		i++;
 	}
-	fclose(vel);
 
 	int num_commands = path.size();
 	if (GlobalState::use_obstacle_avoider)
@@ -198,7 +197,7 @@ compute_plan(Tree *tree)
 {
 	free_tree(tree);
 	vector<vector<carmen_ackerman_path_point_t>> path = TrajectoryLookupTable::compute_path_to_goal(GlobalState::localize_pose,
-			GlobalState::goal_pose, GlobalState::last_odometry, GlobalState::robot_config.max_vel);
+			GlobalState::goal_pose, GlobalState::last_odometry, GlobalState::robot_config.max_vel, &goal_list_message);
 
 	if (path.size() == 0)
 	{
@@ -422,6 +421,12 @@ static void
 signal_handler(int sig)
 {
 	printf("Signal %d received, exiting program ...\n", sig);
+	if (update_lookup_table)
+	{
+		save_trajectory_lookup_table();
+		printf("New trajectory_lookup_table.bin saved.\n");
+	}
+
 	exit(1);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -453,10 +458,10 @@ register_handlers_specific()
 			NULL, (carmen_handler_t) map_server_compact_lane_map_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_behavior_selector_subscribe_goal_list_message(
-			NULL,
-			(carmen_handler_t) behaviour_selector_goal_list_message_handler,
-			CARMEN_SUBSCRIBE_LATEST);
+//	carmen_behavior_selector_subscribe_goal_list_message(
+//			NULL,
+//			(carmen_handler_t) behaviour_selector_goal_list_message_handler,
+//			CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_subscribe_message(
 			(char *)CARMEN_NAVIGATOR_ACKERMAN_SET_GOAL_NAME,
@@ -464,6 +469,19 @@ register_handlers_specific()
 			NULL, sizeof(carmen_navigator_ackerman_set_goal_message),
 			(carmen_handler_t)navigator_ackerman_set_goal_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
+}
+
+
+void
+rddf_message_handler(carmen_rddf_road_profile_message *message)
+{
+//	printf("%d \n", message->number_of_poses);
+//
+//	for (int i = 0; i < message->number_of_poses; i++)
+//	{
+//		printf("x  = %lf, y = %lf , theta = %lf ", message->poses[i].x, message->poses[i].y, message->poses[i].theta);
+//		getchar();
+//	}
 }
 
 
@@ -482,6 +500,8 @@ register_handlers()
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) behavior_selector_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) behaviour_selector_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_rddf_subscribe_road_profile_message(&goal_list_message, (carmen_handler_t) rddf_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	register_handlers_specific();
 }
@@ -551,6 +571,13 @@ read_parameters(int argc, char **argv)
 	carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
 
 	read_parameters_specific(argc, argv);
+
+	carmen_param_t param_optional_list[] =
+	{
+			{(char *)"commandline", (char*)"update_lookup_table", CARMEN_PARAM_ONOFF, &update_lookup_table, 0, NULL}
+	};
+
+	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 }
 
 
@@ -561,10 +588,10 @@ main(int argc, char **argv)
 	carmen_param_check_version(argv[0]);
 	read_parameters(argc, argv);
 
-	g_trajectory_lookup_table = new TrajectoryLookupTable();
-	memset((void *) &tree, 0, sizeof(Tree));
-
 	register_handlers();
+
+	g_trajectory_lookup_table = new TrajectoryLookupTable(update_lookup_table);
+	memset((void *) &tree, 0, sizeof(Tree));
 
 	carmen_ipc_dispatch();
 }

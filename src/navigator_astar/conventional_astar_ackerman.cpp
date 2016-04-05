@@ -34,6 +34,7 @@
 #include "navigator_astar.hpp"
 #include "trajectory_ackerman.h"
 #include "rs.h"
+#include "iostream"
 
 
 
@@ -447,6 +448,8 @@ AstarAckerman::carmen_conventional_astar_ackerman_astar(carmen_ackerman_traj_poi
 //		cont_nos_abertos_alterados,
 //		cont_nos_abertos_alterados_fechados,
 //		cont_nos_podados);
+
+
 	return;
 }
 

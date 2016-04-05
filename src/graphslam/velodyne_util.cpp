@@ -272,7 +272,8 @@ accumulate_partial_scan(carmen_velodyne_partial_scan_message *velodyne_message, 
 			(velodyne_data->intensity[velodyne_data->point_cloud_index]),
 			velodyne_params->ray_order,
 			velodyne_params->vertical_correction,
-			velodyne_params->range_max);
+			velodyne_params->range_max,
+			velodyne_message->timestamp);
 
 	velodyne_message_id++;
 	velodyne_data->last_timestamp = velodyne_message->timestamp;

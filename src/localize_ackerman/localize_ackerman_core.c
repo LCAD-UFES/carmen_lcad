@@ -74,7 +74,7 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 		filter->particles[i].x = robot_pose.position.x + carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
 		filter->particles[i].y = robot_pose.position.y + carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
 		filter->particles[i].theta = carmen_normalize_theta(
-		robot_pose.orientation.yaw + carmen_gaussian_random(0.0, filter->param->yaw_uncertainty_due_to_grid_resolution));
+				robot_pose.orientation.yaw + carmen_gaussian_random(0.0, filter->param->yaw_uncertainty_due_to_grid_resolution));
 	}
 }
 

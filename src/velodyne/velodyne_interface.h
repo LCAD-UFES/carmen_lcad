@@ -24,8 +24,8 @@ double* carmen_velodyne_get_delta_difference_stddev();
 
 void
 carmen_velodyne_subscribe_partial_scan_message(carmen_velodyne_partial_scan_message *message,
-			       	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 	 carmen_handler_t handler,
-																						 carmen_subscribe_t subscribe_how);
+										 carmen_handler_t handler,
+										 carmen_subscribe_t subscribe_how);
 
 void
 carmen_velodyne_unsubscribe_partial_scan_message(carmen_handler_t handler);
@@ -47,12 +47,12 @@ get_velodyne_pose_in_relation_to_car(int argc, char** argv);
 void
 carmen_velodyne_variable_scan_update_points(carmen_velodyne_variable_scan_message *message,
 		int vertical_resolution, spherical_point_cloud *points, unsigned char *intensity,
-		int *ray_order, double *vertical_correction, float range_max);
+		int *ray_order, double *vertical_correction, float range_max, double timestamp);
 
 void
 carmen_velodyne_partial_scan_update_points(carmen_velodyne_partial_scan_message *velodyne_message,
 		int vertical_resolution, spherical_point_cloud *points, unsigned char *intensity,
-		int *ray_order, double *vertical_correction, float range_max);
+		int *ray_order, double *vertical_correction, float range_max, double timestamp);
 
 
 double
