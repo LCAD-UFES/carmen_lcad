@@ -50,6 +50,7 @@ typedef struct
 
 TrajectoryLookupTable::TrajectoryControlParameters trajectory_lookup_table[N_DIST][N_THETA][N_D_YAW][N_I_PHI][N_I_V];
 
+
 TrajectoryLookupTable::TrajectoryLookupTable(int update_lookup_table)
 {
 	if (!load_trajectory_lookup_table())
@@ -1006,8 +1007,8 @@ my_f(const gsl_vector *x, void *params)
 	my_params->tcp_seed->vf = tcp.vf;
 	my_params->tcp_seed->sf = tcp.sf;
 
-	//TODO Funcao ainda muito lenta para a quantidade de chamadas
-//	double distance_to_lane = compute_distance_to_lane(my_params->detailed_goal_list, &path);
+	//TODO Melhorada, pode ser melhor ainda?
+	//double distance_to_lane = compute_distance_to_lane(my_params->detailed_goal_list, &path);
 
 //    double obstacles_cost = 0.0;
 //    if (GlobalState::cost_map_initialized)
@@ -1147,7 +1148,6 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 {
 	// A f(x) muntidimensional que queremos minimizar é:
 	//   f(x) = ||(car_simulator(x) - target_td, vf - target_v)||
-	// onde x = (v0, vt, vf, a0, af, t0, tt, tf, k1, k2, sf)
 	// e as dimensões de f(x) são (dist, theta, d_yaw, phi_i, v_i, v_f)
 	// O resultado ideal é zero, isto é, a saida de car_simulator deve ser igual a target_td e vf = target_v.
 	// As variáveis que serão modificadas pela minimização são:
@@ -2042,12 +2042,10 @@ put_shorter_path_in_front(vector<vector<carmen_ackerman_path_point_t> > &path, i
 void
 compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseVector, double target_v,
 		Pose *localize_pose, vector<vector<carmen_ackerman_path_point_t> > &path,
-		carmen_rddf_road_profile_message *goal_list_message)
+		carmen_rddf_road_profile_message local_goal_list)
 {
 	FILE *problems;
 	problems = fopen("problems.txt", "a");
-
-	move_goal_list_to_robot_reference_system(localize_pose, goal_list_message);
 
 //	int path_order = 0;
 //	int shorter_path = -1;
@@ -2075,7 +2073,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 			}
 
 			TrajectoryLookupTable::TrajectoryControlParameters otcp;
-			otcp = get_optimized_trajectory_control_parameters(tcp, td,	target_v, goal_list_message);
+			otcp = get_optimized_trajectory_control_parameters(tcp, td,	target_v, &local_goal_list);
 			if (otcp.valid)
 			{
 				path.push_back(simulate_car_from_parameters(td, otcp, td.phi_i));
@@ -2125,6 +2123,9 @@ TrajectoryLookupTable::compute_path_to_goal(Pose *localize_pose, Pose *goal_pose
     vector<Command> lastOdometryVector;
     vector<Pose> goalPoseVector;
     vector<int> magicSignals = {0, 1, -1, 2, -2, 3, -3,  4, -4,  5, -5};
+    carmen_rddf_road_profile_message local_goal_list = *goal_list_message;
+    move_goal_list_to_robot_reference_system(localize_pose, &local_goal_list);
+
 
     // @@@ Tranformar os dois loops abaixo em uma funcao -> compute_alternative_path_options()
     for (int i = 0; i < 5; i++)
@@ -2142,7 +2143,7 @@ TrajectoryLookupTable::compute_path_to_goal(Pose *localize_pose, Pose *goal_pose
     	goalPoseVector.push_back(newPose);
     }
 
-	compute_paths(lastOdometryVector, goalPoseVector, target_v, localize_pose, path, goal_list_message);
+	compute_paths(lastOdometryVector, goalPoseVector, target_v, localize_pose, path, local_goal_list);
 
 	return (path);
 }
