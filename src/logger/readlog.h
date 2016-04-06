@@ -47,6 +47,11 @@
 #include <carmen/visual_odometry_messages.h>
 #include <carmen/kinect_messages.h>
 #include <carmen/visual_odometry_messages.h>
+#include <carmen/simulator_ackerman_messages.h>
+#include <carmen/robot_ackerman_messages.h>
+#include <carmen/web_cam_messages.h>
+#include <carmen/base_ackerman_messages.h>
+#include <carmen/ultrasonic_filter_messages.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -207,6 +212,8 @@ char *carmen_string_to_kinect_depth_message(char *string, carmen_kinect_depth_me
 char *carmen_string_to_kinect_video_message(char *string, carmen_kinect_video_message *kinect);
 
 char* carmen_string_to_velodyne_partial_scan_message(char* string, carmen_velodyne_partial_scan_message* msg);
+
+char* carmen_string_to_variable_velodyne_scan_message(char* string, carmen_velodyne_variable_scan_message* msg);
 
 char* carmen_string_to_velodyne_gps_message(char* string, carmen_velodyne_gps_message* msg);
 

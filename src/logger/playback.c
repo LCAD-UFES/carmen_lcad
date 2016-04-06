@@ -68,6 +68,7 @@ carmen_gps_gprmc_message gpsrmc;
 carmen_kinect_depth_message raw_depth_kinect_0, raw_depth_kinect_1;
 carmen_kinect_video_message raw_video_kinect_0, raw_video_kinect_1;
 
+carmen_velodyne_variable_scan_message velodyne_variable_scan;
 carmen_velodyne_partial_scan_message velodyne_partial_scan;
 carmen_velodyne_gps_message velodyne_gps;
 
@@ -227,6 +228,9 @@ void register_ipc_messages(void)
 	err = IPC_defineMsg(CARMEN_VELODYNE_PARTIAL_SCAN_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_VELODYNE_PARTIAL_SCAN_MESSAGE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_VELODYNE_PARTIAL_SCAN_MESSAGE_NAME);
 
+	err = IPC_defineMsg("carmen_stereo_velodyne_scan_message8", IPC_VARIABLE_LENGTH, CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_FMT);
+	carmen_test_ipc_exit(err, "Could not define", "carmen_stereo_velodyne_scan_message8");
+
 	err = IPC_defineMsg(CARMEN_VELODYNE_GPS_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_VELODYNE_GPS_MESSAGE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_VELODYNE_GPS_MESSAGE_NAME);
 
@@ -322,6 +326,7 @@ logger_callback_t logger_callbacks[] =
 		{"RAW_KINECT_VIDEO0", CARMEN_KINECT_VIDEO_MSG_0_NAME, (converter_func)carmen_string_to_kinect_video_message, &raw_video_kinect_0, 0},
 		{"RAW_KINECT_VIDEO1", CARMEN_KINECT_VIDEO_MSG_1_NAME, (converter_func)carmen_string_to_kinect_video_message, &raw_video_kinect_1, 0},
 		{"VELODYNE_PARTIAL_SCAN", CARMEN_VELODYNE_PARTIAL_SCAN_MESSAGE_NAME, (converter_func)carmen_string_to_velodyne_partial_scan_message, &velodyne_partial_scan, 0},
+		{"VARIABLE_VELODYNE_SCAN", "carmen_stereo_velodyne_scan_message8", (converter_func)carmen_string_to_variable_velodyne_scan_message, &velodyne_variable_scan, 0},
 		{"VELODYNE_GPS", CARMEN_VELODYNE_GPS_MESSAGE_NAME, (converter_func)carmen_string_to_velodyne_gps_message, &velodyne_gps, 0},
 		{"XSENS_EULER", CARMEN_XSENS_GLOBAL_EULER_NAME, (converter_func)carmen_string_to_xsens_euler_message, &xsens_euler, 0},
 		{"XSENS_QUAT", CARMEN_XSENS_GLOBAL_QUAT_NAME, (converter_func)carmen_string_to_xsens_quat_message, &xsens_quat, 0},
@@ -630,6 +635,7 @@ int main(int argc, char **argv)
 	memset(&raw_video_kinect_0, 0, sizeof(raw_video_kinect_0));
 	memset(&raw_video_kinect_1, 0, sizeof(raw_video_kinect_1));
 	memset(&velodyne_partial_scan, 0, sizeof(velodyne_partial_scan));
+	memset(&velodyne_variable_scan, 0, sizeof(velodyne_variable_scan));
 	memset(&velodyne_gps, 0, sizeof(velodyne_gps));
 	memset(&xsens_euler, 0, sizeof(xsens_euler));
 	memset(&xsens_quat, 0, sizeof(xsens_quat));

@@ -136,8 +136,12 @@ get_point_position_global_reference(carmen_vector_3D_t car_position, carmen_vect
 void
 add_variable_velodyne_message(variable_velodyne_drawer *v_drawer, carmen_velodyne_variable_scan_message *velodyne_message, carmen_pose_3D_t car_pose, carmen_pose_3D_t sensor_board_1_pose)
 {
+	sensor_board_1_pose = {{0,0,0},{0,0,0}};
+	car_pose = {{0,0,0},{0,0,0}};
+	v_drawer->velodyne_pose = {{0,0,0},{0,0,0}};
+
 	int num_points = velodyne_message->number_of_shots * velodyne_message->partial_scan[0].shot_size;
-	int index = v_drawer->next_elem;
+	int index = 0; //v_drawer->next_elem;
 
 	if (v_drawer->num_points[index] != num_points)
 	{
@@ -151,6 +155,13 @@ add_variable_velodyne_message(variable_velodyne_drawer *v_drawer, carmen_velodyn
 	rotation_matrix* r_matrix_car_to_global = create_rotation_matrix(car_pose.orientation);
 	rotation_matrix* board_to_car_matrix = create_rotation_matrix(sensor_board_1_pose.orientation);
 
+	// angulo vertical minimo
+	double vmin = -0.45;
+	// angulo vertical maximo
+	double vmax = 0.1;
+	// intervalo angular vertical
+	double vstep = (vmax - vmin) / 64.0;
+
 	int i;
 	for(i = 0; i < velodyne_message->number_of_shots; i++)
 	{
@@ -160,7 +171,8 @@ add_variable_velodyne_message(variable_velodyne_drawer *v_drawer, carmen_velodyn
 		for(j = 0; j <  velodyne_message->partial_scan[i].shot_size; j++)
 		{
 
-			double vert_angle = carmen_degrees_to_radians(v_drawer->vertical_correction[j]);
+			// double vert_angle = carmen_degrees_to_radians(v_drawer->vertical_correction[j]);
+			double vert_angle = vmin + j * vstep;
 
 			carmen_vector_3D_t point_position = get_velodyne_point_car_reference( 	-rot_angle, vert_angle,
 																					velodyne_message->partial_scan[i].distance[j]/500.0,
