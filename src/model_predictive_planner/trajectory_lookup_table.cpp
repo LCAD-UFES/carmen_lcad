@@ -49,7 +49,7 @@ typedef struct
 #define SYSTEM_DELAY 0.7
 
 TrajectoryLookupTable::TrajectoryControlParameters trajectory_lookup_table[N_DIST][N_THETA][N_D_YAW][N_I_PHI][N_I_V];
-
+double g_last_lane_timestamp = 0.0;
 
 TrajectoryLookupTable::TrajectoryLookupTable(int update_lookup_table)
 {
@@ -977,7 +977,7 @@ compute_distance_to_lane(vector<carmen_ackerman_path_point_t> *detailed_goal_lis
 			}
 			else
 			{
-				it_goal_last = it_goal - 1;
+				it_goal_last = --it_goal;
 				break;
 			}
 		}
@@ -1009,7 +1009,7 @@ my_f(const gsl_vector *x, void *params)
 	my_params->tcp_seed->sf = tcp.sf;
 
 	//TODO Melhorada, pode ser melhor ainda?
-	//double distance_to_lane = compute_distance_to_lane(my_params->detailed_goal_list, &path);
+	double distance_to_lane = compute_distance_to_lane(my_params->detailed_goal_list, &path);
 
 //    double obstacles_cost = 0.0;
 //    if (GlobalState::cost_map_initialized)
@@ -1018,6 +1018,7 @@ my_f(const gsl_vector *x, void *params)
     double result = sqrt((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 			(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 0.2) +
             (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2));// +
+    //printf("Distance to Lane: %lf \n", distance_to_lane);
 
 	return (result);
 }
@@ -2051,12 +2052,19 @@ put_shorter_path_in_front(vector<vector<carmen_ackerman_path_point_t> > &path, i
 	}
 }
 
-
+//todo
 void
 compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseVector, double target_v,
 		Pose *localize_pose, vector<vector<carmen_ackerman_path_point_t> > &path,
-		carmen_rddf_road_profile_message local_goal_list)
+		carmen_rddf_road_profile_message *goal_list_message)
 {
+
+	if(g_last_lane_timestamp != goal_list_message->timestamp)
+	{
+		move_goal_list_to_robot_reference_system(localize_pose, goal_list_message);
+		g_last_lane_timestamp = goal_list_message->timestamp;
+	}
+
 	FILE *problems;
 	problems = fopen("problems.txt", "a");
 
@@ -2086,7 +2094,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 			}
 
 			TrajectoryLookupTable::TrajectoryControlParameters otcp;
-			otcp = get_optimized_trajectory_control_parameters(tcp, td,	target_v, &local_goal_list);
+			otcp = get_optimized_trajectory_control_parameters(tcp, td,	target_v, goal_list_message);
 			if (otcp.valid)
 			{
 				path.push_back(simulate_car_from_parameters(td, otcp, td.phi_i));
@@ -2136,9 +2144,6 @@ TrajectoryLookupTable::compute_path_to_goal(Pose *localize_pose, Pose *goal_pose
     vector<Command> lastOdometryVector;
     vector<Pose> goalPoseVector;
     vector<int> magicSignals = {0, 1, -1, 2, -2, 3, -3,  4, -4,  5, -5};
-    carmen_rddf_road_profile_message local_goal_list = *goal_list_message;
-    move_goal_list_to_robot_reference_system(localize_pose, &local_goal_list);
-
 
     // @@@ Tranformar os dois loops abaixo em uma funcao -> compute_alternative_path_options()
     for (int i = 0; i < 1; i++)
@@ -2156,7 +2161,7 @@ TrajectoryLookupTable::compute_path_to_goal(Pose *localize_pose, Pose *goal_pose
     	goalPoseVector.push_back(newPose);
     }
 
-	compute_paths(lastOdometryVector, goalPoseVector, target_v, localize_pose, path, local_goal_list);
+	compute_paths(lastOdometryVector, goalPoseVector, target_v, localize_pose, path, goal_list_message);
 
 	return (path);
 }
