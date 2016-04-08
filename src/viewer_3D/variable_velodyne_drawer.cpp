@@ -136,9 +136,9 @@ get_point_position_global_reference(carmen_vector_3D_t car_position, carmen_vect
 void
 add_variable_velodyne_message(variable_velodyne_drawer *v_drawer, carmen_velodyne_variable_scan_message *velodyne_message, carmen_pose_3D_t car_pose, carmen_pose_3D_t sensor_board_1_pose)
 {
-	sensor_board_1_pose = {{0,0,0},{0,0,0}};
-	car_pose = {{0,0,0},{0,0,0}};
-	v_drawer->velodyne_pose = {{0,0,0},{0,0,0}};
+	//sensor_board_1_pose = {{0.81,0,1.73},{0,0,0}};
+	//car_pose = {{0,0,0},{0,0,0}};
+	//v_drawer->velodyne_pose = {{0,0,0},{0,0,0}};
 
 	int num_points = velodyne_message->number_of_shots * velodyne_message->partial_scan[0].shot_size;
 	int index = 0; //v_drawer->next_elem;
@@ -158,7 +158,7 @@ add_variable_velodyne_message(variable_velodyne_drawer *v_drawer, carmen_velodyn
 	// angulo vertical minimo
 	double vmin = -0.45;
 	// angulo vertical maximo
-	double vmax = 0.1;
+	double vmax = 0.111;
 	// intervalo angular vertical
 	double vstep = (vmax - vmin) / 64.0;
 
