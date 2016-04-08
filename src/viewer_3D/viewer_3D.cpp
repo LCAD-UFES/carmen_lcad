@@ -616,10 +616,11 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message* velo
 static void
 velodyne_variable_scan_message_handler(carmen_velodyne_variable_scan_message* velodyne_message)
 {
-    if (draw_velodyne_flag == 4)
-    {
+//	printf("RECEBENDO\n");
+//    if (draw_velodyne_flag == 4)
+//    {
         add_variable_velodyne_message(var_v_drawer, velodyne_message, car_fused_pose, sensor_board_1_pose);
-    }
+//    }
 }
 
 carmen_vector_3D_t
@@ -1572,9 +1573,14 @@ draw_loop(window *w)
         carmen_ipc_sleep(sleepTime);
         lastDisplayTime = carmen_get_time();
 
+        draw_variable_velodyne(var_v_drawer);
+
         if (follow_car_flag)
         {
             set_camera_offset(car_fused_pose.position);
+
+//            set_camera_offset({0,0,0});
+//            set_camera ({{-5,0,3}, {0,0,0}});
         }
 
         reset_camera();
@@ -1985,7 +1991,7 @@ subscribe_ipc_messages(void)
                                           (carmen_handler_t) carmen_download_map_handler,
                                           CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_stereo_velodyne_subscribe_scan_message(camera, NULL,
+    carmen_stereo_velodyne_subscribe_scan_message(8, NULL,
                                                   (carmen_handler_t) velodyne_variable_scan_message_handler,
                                                   CARMEN_SUBSCRIBE_LATEST);
 
