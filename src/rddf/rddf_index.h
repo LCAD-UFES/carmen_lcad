@@ -22,8 +22,11 @@ using namespace std;
  * ****************************************
  * ATENCAO: Modulo precisa de refatoracao!
  *
- * Acho que os indices de pose nao sao usados
+ * - Acho que os indices de pose nao sao usados
  * mais.
+ * - Checar quais funcionalidades precisam ser
+ * feitas publicas e que podem ser uteis para
+ * modulos futuros.
  *****************************************
  */
 
@@ -132,6 +135,7 @@ int carmen_rddf_index_exists(char *rddf_filename);
 void carmen_rddf_index_add(const carmen_fused_odometry_message *fused_odometry_message, long data_offset, long data_length, int annotation);
 void carmen_rddf_index_save(char *rddf_filename);
 
+long find_timestamp_index_position_with_full_index_search(double x, double y, double yaw, int test_orientation);
 carmen_timestamp_index* get_timestamp_index();
 
 #ifdef __cplusplus

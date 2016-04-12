@@ -2,24 +2,47 @@
 #include <opencv/cv.h>
 #include <carmen/carmen.h>
 #include <opencv/highgui.h>
-#include <carmen/grid_mapping_interface.h>
 #include <carmen/localize_ackerman_interface.h>
 #include <carmen/robot_ackerman_interface.h>
+#include <carmen/grid_mapping_interface.h>
+#include <carmen/map_server_interface.h>
+#include <carmen/collision_detection.h>
 #include <carmen/rddf_interface.h>
+#include <carmen/grid_mapping.h>
 #include <carmen/rddf_index.h>
+#include <prob_map.h>
 
 using namespace cv;
-
 
 const double ROBOT_WIDTH = 1.6;
 const double ROBOT_LENGTH = 4.437;
 const double ROBOT_DISTANCE_BETWEEN_REAR_CAR_AND_REAR_WHEELS = 0.78;
-const int GOAL_LIST_STEP = 6; // draw one pose after each 'GOAL_LIST_STEP' number of poses
+
+/** INTERNAL PARAMETERS - BEGIN **/
 const int NUM_MOTION_COMMANDS = 10;
 const double MAX_SPEED = 10.0;
 const double MAX_PHI = carmen_degrees_to_radians(28);
 
+const int GOAL_LIST_STEP = 1; //6; // draw one pose after each 'GOAL_LIST_STEP' number of poses
+
+const double PARTIAL_GOAL_REWARD = 5;
+const double FINAL_GOAL_REWARD = 100;
+const double DISTANCE_PUNISHMENT_PER_METER = -0.1;
+const double TIME_PUNISHMENT_PER_SECOND = -0.1;
+const double COLLISION_PUNISHMENT = -100;
+
+int NUM_POSES_TO_SEARCH_AROUND_CLOSEST_GOAL = 10;
+double MIN_DIST_TO_CONSIDER_ACHIEVEMENT = 0.1;
+/** INTERNAL PARAMETERS - END **/
+
+double agent_reward = 0;
+long rddf_index_final_goal = 0;
+long rddf_index_last_pose = 0;
+int achieved_goal_in_this_experiment = 0;
 int car_already_accelerated_in_this_experiment = 0;
+int collision_detected = 0;
+
+carmen_robot_ackerman_config_t carmen_robot_ackerman_config;
 
 // The variable rddf_index_already_used_in_the_experiment
 // is used to mark the rddf positions that already generated
@@ -31,6 +54,33 @@ char *rddf_index_already_used_in_the_experiment;
 carmen_timestamp_index *rddf_index;
 carmen_rddf_road_profile_message rddf_message;
 carmen_localize_ackerman_globalpos_message localize_ackerman_message;
+carmen_map_server_compact_cost_map_message compact_cost_map_message;
+carmen_compact_map_t compact_cost_map;
+carmen_map_t cost_map;
+
+
+
+void
+publish_motion_command(double v, double phi)
+{
+	static int first = 1;
+	static carmen_ackerman_motion_command_t *motion_commands;
+
+	if (first)
+	{
+		motion_commands = (carmen_ackerman_motion_command_t *) calloc (NUM_MOTION_COMMANDS, sizeof(carmen_ackerman_motion_command_t));
+		first = 0;
+	}
+
+	for (int i = 0; i < NUM_MOTION_COMMANDS; i++)
+	{
+			motion_commands[i].time = 0.05 * i;
+			motion_commands[i].v = v;
+			motion_commands[i].phi = phi;
+	}
+
+	carmen_robot_ackerman_publish_motion_command(motion_commands, NUM_MOTION_COMMANDS);
+}
 
 
 void
@@ -38,6 +88,8 @@ shutdown_module(int signo)
 {
 	if (signo == SIGINT)
 	{
+		publish_motion_command(0, 0);
+
 		carmen_ipc_disconnect();
 		printf("dqn_emulator: disconnected.\n");
 
@@ -145,6 +197,44 @@ map_to_image(carmen_grid_mapping_message *message)
 }
 
 
+Mat
+cost_map_to_image(carmen_map_t *message)
+{
+	double map_probability;
+	Mat map_image = Mat(Size(message->config.x_size, message->config.y_size), CV_8UC3);
+
+	for (int i = 0; i < message->config.y_size; i++)
+	{
+		for (int j = 0; j < message->config.x_size; j++)
+		{
+			map_probability = message->complete_map[i * message->config.x_size + j];
+
+			if (map_probability < 0)
+			{
+				map_image.data[3 * (i * message->config.x_size + j) + 0] = 255;
+				map_image.data[3 * (i * message->config.x_size + j) + 1] = 0;
+				map_image.data[3 * (i * message->config.x_size + j) + 2] = 0;
+			}
+			else
+			{
+				if (map_probability > 1.0) map_probability = 1.0;
+
+				// probs close to 1 mean high probability of occupancy. I inverted it so that
+				// when multiplying for 255 to draw the image pixels, the obstacles are
+				// drawn dark, and the free areas bright.
+				map_probability = 1.0 - map_probability;
+
+				map_image.data[3 * (i * message->config.x_size + j) + 0] = 255 * map_probability;
+				map_image.data[3 * (i * message->config.x_size + j) + 1] = 255 * map_probability;
+				map_image.data[3 * (i * message->config.x_size + j) + 2] = 255 * map_probability;
+			}
+		}
+	}
+
+	return map_image;
+}
+
+
 void
 draw_rddf_in_the_map(Mat *map_image, carmen_rddf_road_profile_message *rddf, carmen_grid_mapping_message *map_message)
 {
@@ -190,25 +280,44 @@ draw_globalpose_in_the_map(Mat *map_image,
 
 
 void
-publish_test_motion_command()
+draw_final_goal_in_the_map(Mat *map_image, carmen_grid_mapping_message *map_message)
 {
-	static int first = 1;
-	static carmen_ackerman_motion_command_t *motion_commands;
+	draw_ackerman_shape(map_image, rddf_index->index[rddf_index_final_goal].x,
+				rddf_index->index[rddf_index_final_goal].y,
+				rddf_index->index[rddf_index_final_goal].yaw,
+				map_message, Scalar(255, 0, 0));
+}
 
-	if (first)
-	{
-		motion_commands = (carmen_ackerman_motion_command_t *) calloc (NUM_MOTION_COMMANDS, sizeof(carmen_ackerman_motion_command_t));
-		first = 0;
-	}
 
-	for (int i = 0; i < NUM_MOTION_COMMANDS; i++)
-	{
-		motion_commands[i].time = 0.05 * i;
-		motion_commands[i].v = MAX_SPEED;
-		motion_commands[i].phi = 0.0;
-	}
+long
+find_closest_pose_in_the_index(carmen_point_t *initial_pose)
+{
+	return find_timestamp_index_position_with_full_index_search(initial_pose->x, initial_pose->y, initial_pose->theta, 0);
+}
 
-	carmen_robot_ackerman_publish_motion_command(motion_commands, NUM_MOTION_COMMANDS);
+
+void
+reinitize_experiment_configuration(carmen_point_t *initial_pose)
+{
+	memset(rddf_index_already_used_in_the_experiment, 0, rddf_index->size() * sizeof(char));
+
+	// I did it to force the next iteration of the algorithm to wait for a new
+	// globalpos message after reinitialization
+	memset(&localize_ackerman_message, 0, sizeof(localize_ackerman_message));
+
+	agent_reward = 0;
+	collision_detected = 0;
+	achieved_goal_in_this_experiment = 0;
+	car_already_accelerated_in_this_experiment = 0;
+
+	rddf_index_last_pose = find_closest_pose_in_the_index(initial_pose);
+	rddf_index_final_goal = rddf_index_last_pose + 70;
+
+// @debug:
+//	printf("dx: %lf dy: %lf dist: %lf\n", initial_pose->x - rddf_index->index[rddf_index_last_pose].x,
+//			initial_pose->y - rddf_index->index[rddf_index_last_pose].y,
+//			sqrt(pow(initial_pose->x - rddf_index->index[rddf_index_last_pose].x, 2) + pow(initial_pose->y - rddf_index->index[rddf_index_last_pose].y, 2)));
+
 }
 
 
@@ -218,46 +327,192 @@ reset_experiment()
 	carmen_point_t pose;
 	carmen_point_t std;
 
-	pose.x = 7757865.0;
-	pose.y = -363543.0;
-	pose.theta = carmen_degrees_to_radians(120);
+	pose.x = 7757880.0;
+	pose.y = -363535.0;
+	pose.theta = carmen_degrees_to_radians(140);
 
-	std.x = 0.1;
-	std.y = 0.1;
-	std.theta = carmen_degrees_to_radians(1);
+	std.x = 0.0001;
+	std.y = 0.0001;
+	std.theta = carmen_degrees_to_radians(0.01);
 
 	carmen_localize_ackerman_initialize_gaussian_command(pose, std);
+	reinitize_experiment_configuration(&pose);
+}
 
-	/** Reinitialize experiment configuration parameters **/
-	car_already_accelerated_in_this_experiment = 0;
-	memset(rddf_index_already_used_in_the_experiment, 0, rddf_index->size() * sizeof(char));
+
+Mat
+compute_input_map(carmen_grid_mapping_message *message)
+{
+	//Mat map_image = map_to_image(message);
+	Mat map_image = cost_map_to_image(&cost_map);
+
+	draw_rddf_in_the_map(&map_image, &rddf_message, message);
+	draw_globalpose_in_the_map(&map_image, &localize_ackerman_message, message);
+	draw_final_goal_in_the_map(&map_image, message);
+
+	Mat final_map_image = map_image_post_processing(&map_image);
+
+	// ** for debug:
+	imshow("map", final_map_image);
+	waitKey(1);
+
+	return final_map_image;
+}
+
+
+int
+agent_achieved_partial_goal()
+{
+	int i = rddf_index_last_pose - NUM_POSES_TO_SEARCH_AROUND_CLOSEST_GOAL;
+
+	double dist;
+	double min_dist = DBL_MAX;
+	int min_dist_id = i;
+
+	while ((i < rddf_index_last_pose + NUM_POSES_TO_SEARCH_AROUND_CLOSEST_GOAL) && (i >= 0) && (i < rddf_index->size()))
+	{
+		dist = sqrt(pow(rddf_index->index[i].x - localize_ackerman_message.globalpos.x, 2) +
+				pow(rddf_index->index[i].y - localize_ackerman_message.globalpos.y, 2));
+
+		if (dist < min_dist)
+		{
+			min_dist = dist;
+			min_dist_id = i;
+		}
+
+		i++;
+	}
+
+	rddf_index_last_pose = min_dist_id;
+
+	// if the agent is close enough to the goal and the closest goal does not generated punctuation yet
+	if (min_dist < MIN_DIST_TO_CONSIDER_ACHIEVEMENT && !rddf_index_already_used_in_the_experiment[min_dist_id])
+	{
+		rddf_index_already_used_in_the_experiment[min_dist_id] = 1;
+		return 1;
+	}
+	else
+		return 0;
+}
+
+
+int
+agent_achieved_final_goal()
+{
+	if (rddf_index_last_pose == rddf_index_final_goal && !achieved_goal_in_this_experiment)
+	{
+		double dist = sqrt(pow(rddf_index->index[rddf_index_last_pose].x - localize_ackerman_message.globalpos.x, 2)
+				+ pow(rddf_index->index[rddf_index_last_pose].y - localize_ackerman_message.globalpos.y, 2));
+
+		if (dist < MIN_DIST_TO_CONSIDER_ACHIEVEMENT)
+		{
+			achieved_goal_in_this_experiment = 1;
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+
+int
+car_hit_obstacle()
+{
+	return obstacle_avoider_pose_hit_obstacle(localize_ackerman_message.globalpos, &cost_map, &carmen_robot_ackerman_config);
+}
+
+
+void
+update_agent_reward()
+{
+	static carmen_point_t last_pose = {0, 0, 0};
+	static double last_time = 0;
+
+	double distance_traveled;
+	double time_difference;
+
+	if (agent_achieved_partial_goal())
+		agent_reward += PARTIAL_GOAL_REWARD;
+
+	if (agent_achieved_final_goal())
+		agent_reward += FINAL_GOAL_REWARD;
+
+	if (last_pose.x != 0)
+	{
+		distance_traveled = sqrt(pow(localize_ackerman_message.globalpos.x - last_pose.x, 2) + pow(localize_ackerman_message.globalpos.y - last_pose.y, 2));
+		agent_reward += (distance_traveled * DISTANCE_PUNISHMENT_PER_METER);
+
+		time_difference = localize_ackerman_message.timestamp - last_time;
+		agent_reward += (time_difference * TIME_PUNISHMENT_PER_SECOND);
+	}
+
+	if (car_hit_obstacle())
+	{
+		publish_motion_command(0, 0);
+
+		agent_reward += (COLLISION_PUNISHMENT);
+		collision_detected = 1;
+	}
+
+	last_pose = localize_ackerman_message.globalpos;
+	last_time = localize_ackerman_message.timestamp;
+
+	printf("Reward: %lf\n", agent_reward);
+}
+
+
+void
+summarize_experiment()
+{
+}
+
+
+carmen_ackerman_motion_command_t
+run_dqn(Mat *map_image, double reward)
+{
+	carmen_ackerman_motion_command_t command = {0, 0, 0};
+
+	// TODO
+
+	return command;
 }
 
 
 void
 grid_mapping_handler(carmen_grid_mapping_message *message)
 {
-	// wait for rddf message
-	if (rddf_message.number_of_poses == 0) return;
+	static int first = 1;
+	carmen_ackerman_motion_command_t command;
 
-	Mat map_image = map_to_image(message);
+	if (first)
+	{
+		reset_experiment();
+		first = 0;
+	}
 
-	draw_rddf_in_the_map(&map_image, &rddf_message, message);
-	draw_globalpose_in_the_map(&map_image, &localize_ackerman_message, message);
+	// wait for the necessary messages and data
+	if (rddf_message.timestamp == 0 || localize_ackerman_message.timestamp == 0 ||
+			compact_cost_map_message.timestamp == 0 || cost_map.complete_map == NULL)
+		return;
 
-	Mat final_map_image = map_image_post_processing(&map_image);
+	Mat final_map_image = compute_input_map(message);
 
-	// ** for debug:
-	// imshow("map", final_map_image);
-	// waitKey(1);
+	update_agent_reward();
+	command = run_dqn(&final_map_image, agent_reward);
 
-	publish_test_motion_command();
+	if (!collision_detected)
+		publish_motion_command(MAX_SPEED, 0);
+	else
+		publish_motion_command(0, 0);
 
 	if (localize_ackerman_message.v > 0.5)
 		car_already_accelerated_in_this_experiment = 1;
-	else if (localize_ackerman_message.v == 0 && car_already_accelerated_in_this_experiment)
+
+	// If the car stopped after already accelerating, finish the experiment. Do the same
+	// if a collision is detected.
+	if ((localize_ackerman_message.v == 0 && car_already_accelerated_in_this_experiment) || collision_detected)
 	{
-		// summarize experiment and reward/punish network
+		summarize_experiment();
 		reset_experiment();
 	}
 }
@@ -276,9 +531,35 @@ localize_ackerman_handler(carmen_localize_ackerman_globalpos_message *message __
 
 
 void
+map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_message *message)
+{
+	if (compact_cost_map.coord_x == NULL || cost_map.complete_map == NULL)
+	{
+		carmen_grid_mapping_create_new_map(&cost_map, message->config.x_size, message->config.y_size, message->config.resolution);
+		memset(cost_map.complete_map, 0, cost_map.config.x_size * cost_map.config.y_size * sizeof(double));
+	}
+	else
+	{
+		carmen_prob_models_clear_carmen_map_using_compact_map(&cost_map, &compact_cost_map, 0.0);
+		carmen_prob_models_free_compact_map(&compact_cost_map);
+	}
+
+	carmen_cpy_compact_cost_message_to_compact_map(&compact_cost_map, message);
+	carmen_prob_models_uncompress_compact_map(&cost_map, &compact_cost_map);
+
+	cost_map.config = message->config;
+}
+
+
+void
 initialize_global_structures()
 {
 	memset(&rddf_message, 0, sizeof(rddf_message));
+	memset(&localize_ackerman_message, 0, sizeof(localize_ackerman_message));
+	memset(&compact_cost_map_message, 0, sizeof(compact_cost_map_message));
+	memset(&compact_cost_map, 0, sizeof(compact_cost_map));
+	memset(&cost_map, 0, sizeof(cost_map));
+
 	rddf_index_already_used_in_the_experiment = (char *) calloc (rddf_index->size(), sizeof(char));
 }
 
@@ -299,6 +580,37 @@ subscribe_messages()
 	carmen_grid_mapping_subscribe_message(NULL, (carmen_handler_t) grid_mapping_handler, CARMEN_SUBSCRIBE_LATEST);
     carmen_rddf_subscribe_road_profile_message(&rddf_message, (carmen_handler_t) rddf_handler, CARMEN_SUBSCRIBE_LATEST);
     carmen_localize_ackerman_subscribe_globalpos_message(&localize_ackerman_message, (carmen_handler_t) localize_ackerman_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_map_server_subscribe_compact_cost_map(&compact_cost_map_message, (carmen_handler_t) map_server_compact_cost_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+}
+
+
+int
+read_parameters(int argc, char **argv)
+{
+	int num_items;
+
+	carmen_param_t param_list[] =
+	{
+			{"robot", "max_velocity", CARMEN_PARAM_DOUBLE,	&carmen_robot_ackerman_config.max_v, 1, NULL},
+			{"robot", "max_steering_angle", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.max_phi, 1, NULL},
+			{"robot", "min_approach_dist", CARMEN_PARAM_DOUBLE,	&carmen_robot_ackerman_config.approach_dist, 1, NULL},
+			{"robot", "min_side_dist", CARMEN_PARAM_DOUBLE,	&carmen_robot_ackerman_config.side_dist, 1, NULL},
+			{"robot", "length", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.length, 0, NULL},
+			{"robot", "width", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.width, 0, NULL},
+			{"robot", "maximum_acceleration_forward", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.maximum_acceleration_forward, 1, NULL},
+			{"robot", "maximum_deceleration_forward", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.maximum_deceleration_forward, 1, NULL},
+			{"robot", "reaction_time", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.reaction_time, 0, NULL},
+			{"robot", "distance_between_rear_wheels", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.distance_between_rear_wheels, 1,NULL},
+			{"robot", "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.distance_between_front_and_rear_axles, 1, NULL},
+			{"robot", "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.distance_between_rear_car_and_rear_wheels, 1, NULL},
+			{"robot", "allow_rear_motion", CARMEN_PARAM_ONOFF, &carmen_robot_ackerman_config.allow_rear_motion, 1, NULL},
+			{"robot", "interpolate_odometry", CARMEN_PARAM_ONOFF, &carmen_robot_ackerman_config.interpolate_odometry, 1, NULL}
+	};
+
+	num_items = sizeof(param_list)/sizeof(param_list[0]);
+	carmen_param_install_params(argc, argv, param_list, num_items);
+
+	return 0;
 }
 
 
@@ -321,13 +633,17 @@ main(int argc, char **argv)
 	carmen_rddf_load_index(rddf_filename);
 	rddf_index = get_timestamp_index();
 
+	// to start the experiment the other modules
+	// must have initialized.
+	sleep(3);
+
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
+	read_parameters(argc, argv);
 
 	signal(SIGINT, shutdown_module);
 
 	initialize_global_structures();
-	reset_experiment();
 	define_messages();
 	subscribe_messages();
 	carmen_ipc_dispatch();

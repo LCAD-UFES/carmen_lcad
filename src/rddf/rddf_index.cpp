@@ -13,8 +13,11 @@
  * ****************************************
  * ATENCAO: Modulo precisa de refatoracao!
  *
- * Acho que os indices de pose nao sao usados
+ * - Acho que os indices de pose nao sao usados
  * mais.
+ * - Checar quais funcionalidades precisam ser
+ * feitas publicas e que podem ser uteis para
+ * modulos futuros.
  *****************************************
  */
 
