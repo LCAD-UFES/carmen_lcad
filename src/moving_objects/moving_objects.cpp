@@ -1279,6 +1279,61 @@ build_point_cloud_using_velodyne_message(carmen_velodyne_partial_scan_message *v
 	return last_num_points;
 }
 
+int
+build_point_cloud_using_variable_velodyne_message(carmen_velodyne_variable_scan_message *velodyne_message,
+		sensor_parameters_t *velodyne_params, sensor_data_t *velodyne_data, carmen_vector_3D_t *robot_velocity,
+		double phi, moving_objects_input_data_t moving_objects_input, carmen_vector_3D_t *point_clouds)
+{
+	static rotation_matrix *r_matrix_car_to_global = NULL;
+	static int velodyne_message_id;
+	int current_point_cloud_index;
+	int num_points = velodyne_message->number_of_shots * velodyne_params->vertical_resolution;
+	int last_num_points = 0;
+
+	printf("num points: %d\n",num_points);
+
+	if (velodyne_data->last_timestamp == 0.0)
+	{
+		velodyne_data->last_timestamp = velodyne_message->timestamp;
+	//	velodyne_message_id = -2; // correntemente sao necessarias pelo menos 2 mensagens para se ter uma volta completa de velodyne
+	}
+
+	velodyne_data->current_timestamp = velodyne_message->timestamp;
+
+	build_sensor_point_cloud(&(velodyne_data->points), velodyne_data->intensity, &(velodyne_data->point_cloud_index), num_points,
+			moving_objects_input.num_velodyne_point_clouds);
+
+	carmen_velodyne_variable_scan_update_points(velodyne_message,
+			velodyne_params->vertical_resolution,
+			&(velodyne_data->points[velodyne_data->point_cloud_index]),
+			velodyne_data->intensity[velodyne_data->point_cloud_index],
+			velodyne_params->ray_order,
+			velodyne_params->vertical_correction,
+			velodyne_params->range_max,
+			velodyne_message->timestamp);
+
+	if (velodyne_message_id >= 0)
+	{
+		carmen_pose_3D_t local_pose;
+
+		local_pose.position          = moving_objects_input.car_fused_pose.position;
+		local_pose.orientation.yaw   = moving_objects_input.car_fused_pose.orientation.yaw;
+		local_pose.orientation.pitch = local_pose.orientation.roll = 0.0;
+
+		r_matrix_car_to_global = compute_rotation_matrix(r_matrix_car_to_global, local_pose.orientation);
+		current_point_cloud_index = velodyne_data->point_cloud_index;
+		last_num_points = detect_points_above_ground(velodyne_params, velodyne_data, r_matrix_car_to_global, &local_pose,
+				robot_velocity, 0.0, 0.0, current_point_cloud_index, phi, moving_objects_input, point_clouds);
+
+		if (velodyne_message_id > 1000000)
+			velodyne_message_id = 0;
+	}
+	velodyne_message_id++;
+	velodyne_data->last_timestamp = velodyne_message->timestamp;
+
+	return last_num_points;
+}
+
 
 void
 set_model(object_model_features_t &obj_model, int model_id, double width, double length, double height, double red, double green, double blue)
@@ -1345,6 +1400,46 @@ detect_and_follow_moving_objects(carmen_velodyne_partial_scan_message *velodyne_
 
 	/*** GET POINTS FROM LASER SCAN ***/
 	size_of_point_cloud = build_point_cloud_using_velodyne_message(velodyne_message, velodyne_params, velodyne_data,
+			robot_velocity, phi, moving_objects_input, carmen_vector_3d_point_cloud);
+
+	/*** CONVERT TO PCL POINT CLOUD FORMAT SUBTRACTING GLOBAL POSE ***/
+	convert_carmen_vector_3d_to_pcl_point_subtracting_global_pose(carmen_vector_3d_point_cloud, size_of_point_cloud,
+			pcl_cloud_ptr, moving_objects_input);
+
+	/*** SEGMENT POINT CLOUDS - RETURNS CLUSTER INDICES ***/
+	cluster_indices = find_objects_in_point_clouds(pcl_cloud_ptr);
+
+	/*** ASSOCIATE AND CONFIGURE POINT CLOUDS ***/
+	list_point_clouds = association_list_point_clouds(pcl_cloud_ptr, moving_objects_input.car_global_pose, cluster_indices,
+			velodyne_message->timestamp, occupancy_grid_map, moving_objects_input);
+
+	/*** PARTICLE FILTER FOR DATMO ***/
+	particle_filter_moving_objects_tracking(list_point_clouds);
+
+	/* Set the global variable list_previous_point_clouds for next iteration */
+	set_association_list_point_clouds(list_point_clouds);
+
+	return list_point_clouds;
+}
+
+std::list<object_point_cloud_data_t>
+detect_and_follow_moving_objects_variable_scan(carmen_velodyne_variable_scan_message *velodyne_message, sensor_parameters_t *velodyne_params,
+		sensor_data_t *velodyne_data, carmen_vector_3D_t *robot_velocity, double phi,
+		moving_objects_input_data_t moving_objects_input, carmen_vector_3D_t *carmen_vector_3d_point_cloud,
+		carmen_map_p & occupancy_grid_map)
+{
+	int size_of_point_cloud = 0;
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
+	std::vector<pcl::PointIndices> cluster_indices;
+	std::list<object_point_cloud_data_t> list_point_clouds;
+
+	if (object_models.empty())
+	{
+		set_object_models(object_models);
+	}
+
+	/*** GET POINTS FROM LASER SCAN ***/
+	size_of_point_cloud = build_point_cloud_using_variable_velodyne_message(velodyne_message, velodyne_params, velodyne_data,
 			robot_velocity, phi, moving_objects_input, carmen_vector_3d_point_cloud);
 
 	/*** CONVERT TO PCL POINT CLOUD FORMAT SUBTRACTING GLOBAL POSE ***/

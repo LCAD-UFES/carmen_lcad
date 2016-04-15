@@ -284,6 +284,7 @@ deallocation_moving_objects_point_clouds_message()
 static void
 velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
+
 	int i, j;
 	int num_points;
 	int num_point_clouds;
@@ -309,6 +310,102 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 
 		list_point_clouds = detect_and_follow_moving_objects(velodyne_message, &spherical_sensor_params[0],
 				&spherical_sensor_data[0], &car_fused_velocity, car_phi, moving_objects_input, carmen_3d_point_clouds,
+				offline_grid_map);
+
+		num_point_clouds = list_point_clouds.size();
+
+		/*** PRINT NUMBER OF POINT CLOUDS SEGMENTED IN THE SCENE ***/
+//		printf("frame: %d \n", frame);
+//		printf("num_point_clouds: %d \n", num_point_clouds);
+//		printf("current timestamp: %.10f \n", velodyne_message->timestamp);
+		frame++;
+
+		if (num_point_clouds == 0)
+			return;
+
+		l_color_palette_and_association = get_color_palette_and_association();
+
+		init_allocation_moving_objects_point_clouds_message(num_point_clouds);
+
+		i = 0;
+		for (std::list<object_point_cloud_data_t>::const_iterator it = list_point_clouds.begin(); it != list_point_clouds.end(); it++, i++)
+		{
+			num_points = it->point_cloud.size();
+			init_allocation_moving_objects_points_for_point_cloud_i(i, num_points);
+		}
+
+		moving_objects_point_clouds_message.num_point_clouds = num_point_clouds;
+
+		i = 0;
+		for (std::list<object_point_cloud_data_t>::const_iterator it = list_point_clouds.begin(); it != list_point_clouds.end(); ++it)
+		{
+			j = 0;
+
+			color_palette = get_rgb_from_color_palette_and_association(it->num_color_associate, l_color_palette_and_association);
+
+			moving_objects_point_clouds_message.point_clouds[i].r = ((double)color_palette[0]) / 255.0;
+			moving_objects_point_clouds_message.point_clouds[i].g = ((double)color_palette[1]) / 255.0;
+			moving_objects_point_clouds_message.point_clouds[i].b = ((double)color_palette[2]) / 255.0;
+			moving_objects_point_clouds_message.point_clouds[i].point_size      = it->point_cloud.size();
+			moving_objects_point_clouds_message.point_clouds[i].linear_velocity = it->linear_velocity;
+			moving_objects_point_clouds_message.point_clouds[i].orientation     = it->orientation;
+			moving_objects_point_clouds_message.point_clouds[i].object_pose.x   = it->object_pose.position.x;// + it->car_global_pose.position.x;//it->centroid[0] + it->car_global_pose.position.x;
+			moving_objects_point_clouds_message.point_clouds[i].object_pose.y   = it->object_pose.position.y;// + it->car_global_pose.position.y;//it->centroid[1] + it->car_global_pose.position.y;
+			moving_objects_point_clouds_message.point_clouds[i].object_pose.z   = it->object_pose.position.z + it->car_global_pose.position.z;//it->centroid[2] + it->car_global_pose.position.z;
+			moving_objects_point_clouds_message.point_clouds[i].height          = it->geometry.height;
+			moving_objects_point_clouds_message.point_clouds[i].length          = it->geometry.length;
+			moving_objects_point_clouds_message.point_clouds[i].width           = it->geometry.width;
+			moving_objects_point_clouds_message.point_clouds[i].geometric_model = it->geometric_model;
+			moving_objects_point_clouds_message.point_clouds[i].model_features  = it->model_features;
+			moving_objects_point_clouds_message.point_clouds[i].num_associated  = it->num_color_associate;
+
+			for (pcl::PointCloud<pcl::PointXYZ>::const_iterator pit = it->point_cloud.begin(); pit != it->point_cloud.end(); pit++)
+			{
+				moving_objects_point_clouds_message.point_clouds[i].points[j].x = pit->x + it->car_global_pose.position.x;
+				moving_objects_point_clouds_message.point_clouds[i].points[j].y = pit->y + it->car_global_pose.position.y;
+				moving_objects_point_clouds_message.point_clouds[i].points[j].z = pit->z + it->car_global_pose.position.z;
+				j++;
+			}
+
+			i++;
+		}
+
+		moving_objects_point_clouds_message.timestamp = velodyne_message->timestamp;
+		carmen_moving_objects_point_clouds_publish_message(&moving_objects_point_clouds_message);
+		deallocation_moving_objects_point_clouds_message();
+	}
+
+}
+
+static void
+velodyne_variable_scan_message_handler(carmen_velodyne_variable_scan_message *velodyne_message)
+{
+
+	int i, j;
+	int num_points;
+	int num_point_clouds;
+	Eigen::Vector3f	color_palette;
+	std::list<object_point_cloud_data_t> list_point_clouds;
+	std::list<color_palette_and_association_data_t> l_color_palette_and_association;
+
+	if (localize_initialized)
+	{
+		num_points = velodyne_message->number_of_shots * spherical_sensor_params[8].vertical_resolution;
+
+		if (first_velodyne_message_flag)
+		{
+			carmen_3d_point_clouds = (carmen_vector_3D_t *) malloc(velodyne_message->number_of_shots*spherical_sensor_params[8].vertical_resolution*sizeof(carmen_vector_3D_t));
+			carmen_test_alloc(carmen_3d_point_clouds);
+			first_velodyne_message_flag = 0;
+		}
+
+		if (spherical_sensor_data[8].points == NULL)
+			return;
+
+		moving_objects_input = bundle_moving_objects_input_data();
+
+		list_point_clouds = detect_and_follow_moving_objects_variable_scan(velodyne_message, &spherical_sensor_params[8],
+				&spherical_sensor_data[8], &car_fused_velocity, car_phi, moving_objects_input, carmen_3d_point_clouds,
 				offline_grid_map);
 
 		num_point_clouds = list_point_clouds.size();
@@ -508,6 +605,7 @@ get_sensors_param(int argc, char **argv)
 					{spherical_sensor_params[i].name, (char*) "horizontal_roi_end", CARMEN_PARAM_INT, &stereo_velodyne_horizontal_roi_end, 0, NULL }
 
 			};
+
 
 			carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 
@@ -755,6 +853,10 @@ main(int argc, char **argv)
     carmen_velodyne_subscribe_partial_scan_message(NULL,
                                                    (carmen_handler_t) velodyne_partial_scan_message_handler,
                                                    CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_stereo_velodyne_subscribe_scan_message(8, NULL,
+    				(carmen_handler_t)velodyne_variable_scan_message_handler,
+    				CARMEN_SUBSCRIBE_LATEST);
 
     carmen_localize_ackerman_subscribe_globalpos_message(NULL,
                                                          (carmen_handler_t) localize_ackerman_handler,
