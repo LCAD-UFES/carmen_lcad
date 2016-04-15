@@ -985,46 +985,47 @@ compute_distance_to_lane(vector<carmen_ackerman_path_point_t> *detailed_goal_lis
 	return total_distance;
 }
 
+
 /*TODO
  * Seria necessario o primeiro ponto do path (x=0 e y=0) entrar no total_distance?
  * */
 double
-compute_interest_dist(vector<carmen_ackerman_path_point_t> *detailed_goal_list, vector<carmen_ackerman_path_point_t> *path){
-
+compute_interest_dist(vector<carmen_ackerman_path_point_t> *detailed_goal_list, vector<carmen_ackerman_path_point_t> *path)
+{
 	double total_distance = 0.0;
 	double fator = (detailed_goal_list->size()-1)/(double)(path->size()-1);
 	double distance = 0.0;
 	double min_distance;
 	int indice=0;
 	int i = 0;
-//	printf("Detail tamanho: %lu \t Tamanho path: %lu \t fator: %lf \n", detailed_goal_list->size(), path->size(), fator);
+	//	printf("Detail tamanho: %lu \t Tamanho path: %lu \t fator: %lf \n", detailed_goal_list->size(), path->size(), fator);
 	for(std::vector<carmen_ackerman_path_point_t>::iterator it_path = path->begin(); it_path != path->end(); ++it_path, i++)
 	{
 		if (i < 5) continue;
 
 		indice = fator * (std::distance(path->begin(), it_path));
-		 min_distance = DBL_MAX;
-//		printf("\n Indice: %d \n", indice);
+		min_distance = DBL_MAX;
+		//printf("\n Indice: %d \n", indice);
 		//verifica 1 antes do indice, o indice e 1 depois
 		std::vector<carmen_ackerman_path_point_t>::iterator it_detail = (detailed_goal_list->begin() + (indice-1));
 		for(int j = (indice-1); j < (indice+2); j++)
 		{
-//			printf("J: %d \n", j);
+			//printf("J: %d \n", j);
 			if(j >= 0 && j < detailed_goal_list->size())
 			{
-//				printf("Path x: %lf y: %lf \t Lane x: %lf y: %lf \n", it_path->x, it_path->y, it_detail->x, it_detail->y);
+				//				printf("Path x: %lf y: %lf \t Lane x: %lf y: %lf \n", it_path->x, it_path->y, it_detail->x, it_detail->y);
 				distance = sqrt(pow(it_detail->x - it_path->x, 2) + pow(it_detail->y - it_path->y, 2));
-//				printf("distance: %lf \n", distance);
+				//				printf("distance: %lf \n", distance);
 				if(distance < min_distance)
 				{
 					min_distance = distance;
-//					printf("min_distance: %lf \n", min_distance);
+					//					printf("min_distance: %lf \n", min_distance);
 				}
 			}
 			it_detail++;
 		}
 		total_distance += min_distance;
-//		printf ("Atual total_distance: %lf \n", total_distance);
+		//		printf ("Atual total_distance: %lf \n", total_distance);
 	}
 
 	return total_distance;
