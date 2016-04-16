@@ -156,14 +156,23 @@ read_camera(char *left_dir, char *right_dir, int file_id, double timestamp)
 	return camera_message;
 }
 
+double
+carmen_global_convert_double_to_degmin(double deg_carmen) 
+{
+	double dm_deg = floor(deg_carmen);
+	double dm_min = deg_carmen - dm_deg;
+
+	return dm_min * 60 + dm_deg * 100;
+}
+
 void
 read_gps(char *dir_gps, int file_id, double timestamp, carmen_gps_gpgga_message *gps_msg,
-		carmen_xsens_global_quat_message *xsens_msg)
+		carmen_xsens_global_quat_message *xsens_msg, carmen_robot_ackerman_velocity_message *velocity_msg)
 {
 	FILE *stream;
 	static char filename[1024];
 
-	double roll, pitch, yaw;
+	double roll, pitch, yaw, wz;
 	double ignore_double;
 	int ignore_int;
 
@@ -179,13 +188,11 @@ read_gps(char *dir_gps, int file_id, double timestamp, carmen_gps_gpgga_message 
 	gps_msg->hdop = 0;
 	gps_msg->host = (char*) "carmen";
 	gps_msg->lat_orient = 'N';
-	gps_msg->latitude_dm = 0;
 	gps_msg->long_orient = 'E';
-	gps_msg->longitude_dm = 0;
 	gps_msg->nr = 3;
 	gps_msg->sea_level = 0;
 	gps_msg->timestamp = timestamp;
-	gps_msg->utc = 0;
+	gps_msg->utc = timestamp;
 
 	// XSENS fields not present in kitti's log
 	xsens_msg->host = (char *) "carmen";
@@ -194,11 +201,18 @@ read_gps(char *dir_gps, int file_id, double timestamp, carmen_gps_gpgga_message 
 	xsens_msg->m_temp = 0;
 	xsens_msg->timestamp = timestamp;
 
+	// velocity message
+	velocity_msg->host = (char *) "carmen";
+	velocity_msg->timestamp = timestamp;
+
 	// gps
 	fscanf(stream, "%lf", &(gps_msg->latitude));
 	fscanf(stream, "%lf", &(gps_msg->longitude));
 	fscanf(stream, "%lf", &(gps_msg->altitude));
 
+	gps_msg->latitude_dm = carmen_global_convert_double_to_degmin(gps_msg->latitude);
+	gps_msg->longitude_dm = carmen_global_convert_double_to_degmin(gps_msg->longitude);
+	
 	// ler xsens
 	// roll, pitch, yaw
 	fscanf(stream, "%lf", &(roll));
@@ -215,7 +229,7 @@ read_gps(char *dir_gps, int file_id, double timestamp, carmen_gps_gpgga_message 
 	// velocidades
 	fscanf(stream, "%lf", &(ignore_double));
 	fscanf(stream, "%lf", &(ignore_double));
-	fscanf(stream, "%lf", &(ignore_double));
+	fscanf(stream, "%lf", &(velocity_msg->v));
 	fscanf(stream, "%lf", &(ignore_double));
 	fscanf(stream, "%lf", &(ignore_double));
 
@@ -225,11 +239,13 @@ read_gps(char *dir_gps, int file_id, double timestamp, carmen_gps_gpgga_message 
 	fscanf(stream, "%lf", &(xsens_msg->m_acc.z));
 	fscanf(stream, "%lf", &(ignore_double));
 	fscanf(stream, "%lf", &(ignore_double));
+	fscanf(stream, "%lf", &(ignore_double));
 
 	// velocidade angular
 	fscanf(stream, "%lf", &(xsens_msg->m_gyr.x));
 	fscanf(stream, "%lf", &(xsens_msg->m_gyr.y));
 	fscanf(stream, "%lf", &(xsens_msg->m_gyr.z));
+	fscanf(stream, "%lf", &(ignore_double));
 	fscanf(stream, "%lf", &(ignore_double));
 	fscanf(stream, "%lf", &(ignore_double));
 
@@ -244,8 +260,12 @@ read_gps(char *dir_gps, int file_id, double timestamp, carmen_gps_gpgga_message 
 	fscanf(stream, "%d", &(ignore_int));
 	fscanf(stream, "%d", &(ignore_int));
 
+	// velcity messages
+	velocity_msg->phi = atan2(xsens_msg->m_gyr.z * 2.71,velocity_msg->v);
+
 	printf("XSENS: %lf %lf %lf\n", roll, pitch, yaw);
 	printf("GPS: %lf %lf\n", gps_msg->latitude, gps_msg->longitude);
+	printf("Velocity: %lf phi: %lf", velocity_msg->v, velocity_msg->phi);
 
 	fclose(stream);
 }
