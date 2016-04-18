@@ -35,7 +35,7 @@ using namespace g2o;
 #define RESET "\033[0m"
 
 
-typedef struct
+struct ObjectiveFunctionParams
 {
 	double target_v, suitable_acceleration;
 	double distance_by_index;
@@ -43,8 +43,9 @@ typedef struct
 	double d_yaw_by_index;
 	TrajectoryLookupTable::TrajectoryControlParameters *tcp_seed;
 	TrajectoryLookupTable::TrajectoryDimensions *target_td;
-	vector<carmen_ackerman_path_point_t> *detailed_goal_list;
-}ObjectiveFunctionParams;
+	vector<carmen_ackerman_path_point_t> detailed_goal_list;
+	double lane_sf;
+};
 
 #define SYSTEM_DELAY 0.7
 
@@ -949,42 +950,10 @@ compute_abstacles_cost(vector<carmen_ackerman_path_point_t> path)
 
 
 double
-compute_distance_to_lane(vector<carmen_ackerman_path_point_t> *detailed_goal_list, vector<carmen_ackerman_path_point_t> *path)
+dist(carmen_ackerman_path_point_t v, carmen_ackerman_path_point_t w)
 {
-	double total_distance = 0;
-	double min_distance;
-	double distance;
-//	int cont_test=0;
-	std::vector<carmen_ackerman_path_point_t>::iterator it_goal_last = detailed_goal_list->begin();
-
-	for (std::vector<carmen_ackerman_path_point_t>::iterator it_path = path->begin(); it_path != path->end(); ++it_path)
-	{
-		min_distance = DBL_MAX;
-//		printf ("tamanho: %lu path x: %lf path y: %lf \n",path->size(), it_path->x, it_path->y);
-		for (std::vector<carmen_ackerman_path_point_t>::iterator it_goal = it_goal_last; it_goal != detailed_goal_list->end(); ++it_goal)
-		{
-			distance = sqrt(pow(it_goal->x - it_path->x, 2) + pow(it_goal->y - it_path->y, 2));
-			if (distance < min_distance)
-			{
-				min_distance = distance;
-//				printf ("tamanho: %d goal x: %lf goal y: %lf \n", detailed_goal_list->size(), it_goal->x, it_goal->y);
-//				printf ("\tDist: %lf Min_dist: %lf \n", distance, min_distance);
-//				cont_test ++;
-			}
-			else
-			{
-				it_goal_last = --it_goal;
-				break;
-			}
-		}
-//		getchar();
-		total_distance += min_distance;
-//		printf ("\tInteracoes: %d \n", cont_test);
-//		cont_test =0;
-	}
-	return total_distance;
+	return sqrt((carmen_square(v.x - w.x) + carmen_square(v.y - w.y)));
 }
-
 
 double
 dist2(carmen_ackerman_path_point_t v, carmen_ackerman_path_point_t w)
@@ -1062,53 +1031,118 @@ get_the_point_nearest_to_the_trajectory(int *point_in_trajectory_is,
  * Seria necessario o primeiro ponto do path (x=0 e y=0) entrar no total_distance?
  * */
 double
-compute_interest_dist(vector<carmen_ackerman_path_point_t> *detailed_goal_list, vector<carmen_ackerman_path_point_t> *path, double sf)
+compute_interest_dist(vector<carmen_ackerman_path_point_t> &detailed_goal_list, vector<carmen_ackerman_path_point_t> &path,
+						double td_sf, double lane_sf)
 {
-	#define lane 0.1
-//	double sl = distancia percorrida da lane
-	double total_distance = 0.0;
-	double fator = 0.0; //sl/sf;
+	/* Distancia total de interesse
+	 * distancia entre cada ponto da lane = tamanho da lane / distancia percorrida na lane (nao a distancia entre pontos, distancia completa do caminho)
+	 * fator = distancia percorridaa na lane / distancia percorrida no path
+	 * referencia do path na lane = fator * distancia percorrida atual (path[i-1] , path[i])
+	 * index na lane = referencia do path na lane / distancia entre cada ponto da lane
+	 * ponto exato do path em relacao a lane =  get_the_point_nearest_to_the_trajectory(...,index,index+1,path[i])
+	 * retorna distancia(path[i], ponto exato do path em relacao a lane)
+	 *
+	 * */
+
+	double fator = lane_sf/td_sf;
+	double lane_detail = (detailed_goal_list.size()-1) / lane_sf;
+	double distance_travelled = 0.0;
+
 	double distance = 0.0;
+	int index = 0;
+	double distance_path_factor = 0.0;
+	double total_distance = 0.0;
+	//carmen_ackerman_path_point_t ponto_na_reta;
 
-	double min_distance;
-	int indice=0;
-	int i = 0;
-		printf("Detail tamanho: %lu \t Tamanho path: %lu \t fator: %lf \n", detailed_goal_list->size(), path->size(), fator);
-	for(std::vector<carmen_ackerman_path_point_t>::iterator it_path = path->begin(); it_path != path->end(); ++it_path/*, i++*/)
+//	printf("Fator: %lf: \t Lane_sf: %lf \t path_sf: %lf \t Tamanho_Lane: %d \t Tamanho_Path: %d \n", fator, lane_sf, td_sf, detailed_goal_list.size(), path.size());
+	for(int i = 1; i < path.size(); i++)
 	{
-//		if (i < 5) continue;
+		distance_travelled = distance_travelled + dist(path[i-1], path[i]);
+		distance_path_factor = fator * distance_travelled; //dist(path_prev, *it_path));
+		index = (int) (distance_path_factor * lane_detail);
+		int info;
+		int index2 = index;
 
-		indice = fator * (std::distance(path->begin(), it_path));
-		min_distance = DBL_MAX;
-		printf("\n Indice: %d \n", indice);
-//		verifica 1 antes do indice, o indice e 1 depois
-		std::vector<carmen_ackerman_path_point_t>::iterator it_detail = (detailed_goal_list->begin() + (indice-1));
+		if(index < detailed_goal_list.size())
+			index2++;
 
-		for(int j = (indice-1); j < (indice+2); j++)
-		{
+		carmen_ackerman_path_point_t point_path_lane = get_the_point_nearest_to_the_trajectory(&info, detailed_goal_list[index], detailed_goal_list[index2], path[i]);
+		distance = dist(path[i], point_path_lane);
+		total_distance += distance;
 
-			if(j >= 0 && j < detailed_goal_list->size())
-			{
-				distance = sqrt(pow(it_detail->x - it_path->x, 2) + pow(it_detail->y - it_path->y, 2));
-				//				printf("distance: %lf \n", distance);
+		//printf("distance: %lf \n", distance);
+//		printf("\n Indice: %d \t Indice_Path: %d \n", index, i);
+//		printf("\n distancia_Xi: %lf \n", distance_travelled);
+//		printf("\n distancia_path_factor: %lf \n", distance_path_factor);
+//		getchar();
 
-				if(distance < min_distance)
-				{
-					min_distance = distance;
-					printf("J: %d \n", j);
-					printf("Path x: %lf y: %lf \t Lane x: %lf y: %lf \n", it_path->x, it_path->y, it_detail->x, it_detail->y);
-					printf("min_distance: %lf \n", min_distance);
-				}
-			}
-			it_detail++;
-		}
-
-		total_distance += min_distance;
-		printf ("Atual total_distance: %lf \n", total_distance);
 	}
 
+	distance = dist(detailed_goal_list[0],path[0]);
+	total_distance += distance;
 	return total_distance;
+
+/*
+
+	std::vector<carmen_ackerman_path_point_t>::iterator it_detail = (detailed_goal_list->begin() + indice);
+	std::vector<carmen_ackerman_path_point_t>::iterator it_path_prev = path->begin();
+	for(std::vector<carmen_ackerman_path_point_t>::iterator it_path = path->begin(); it_path != path->end(); ++it_path)
+	{
+		i_path =  std::distance(path->begin(), it_path);
+
+		if(it_path != path->begin())
+		{
+			//prev = path->begin()
+			//prev = it_path,
+			//TODO pegar o anterior
+			it_path_prev = (path->begin() + (--i_path));
+			double distancia_prev_pos = sqrt(pow(it_path_prev->x - it_path->x, 2) + pow(it_path_prev->y - it_path->y, 2));
+			printf("distance: %lf \n", distance);
+			printf("\n distancia_Xi: %lf \n", distancia_prev_pos);
+			double teste = distancia_prev_pos;
+			printf("\n distancia_sf_atual: %lf \n", teste);
+			distancia_path_factor = fator * distancia_prev_pos; //dist(path_prev, *it_path));
+			printf("\n distancia_path_factor: %lf \n", distancia_path_factor);
+			indice = (int) ((distancia_path_factor * lane_size) / lane_sf);
+
+			getchar();
+			//			if(indice >= detailed_goal_list->size()){
+			//				break;
+			//			}
+			it_detail = (detailed_goal_list->begin() + indice);
+			int point_trajectory_is; //just to information about the point on lane
+			//			ponto_na_reta = get_the_point_nearest_to_the_trajectory(&point_trajectory_is, *it_detail, *(it_detail+1), *it_path);
+			//			distance = dist(*it_path, ponto_na_reta);
+
+			double distance1 = sqrt((carmen_square(it_path->x - it_detail->x) + carmen_square(it_path->y - it_detail->y)));
+			if((indice+1) < detailed_goal_list->size())
+				++it_detail;
+			double distance2 = sqrt((carmen_square(it_path->x - it_detail->x) + carmen_square(it_path->y - it_detail->y)));
+
+			if(distance1 >= distance2){
+				distance = distance1;
+			}
+			else{
+				distance = distance2;
+			}
+			//path_prev = *it_path;
+
+		}
+		else
+		{
+			distance = sqrt((carmen_square(it_path->x - it_detail->x) + carmen_square(it_path->y - it_detail->x)));
+			//printf("passou aqui");
+			//path_prev = *it_path;
+		}
+
+		total_distance += distance;
+		printf("\n Total_distance: %lf \n", total_distance);
+		//getchar();
+	}
+		return total_distance;
+*/
 }
+
 
 
 double
@@ -1129,7 +1163,7 @@ my_f(const gsl_vector *x, void *params)
 	my_params->tcp_seed->vf = tcp.vf;
 	my_params->tcp_seed->sf = tcp.sf;
 
-//	double total_interest_dist = compute_interest_dist(my_params->detailed_goal_list, &path, tcp.sf);
+	double total_interest_dist = compute_interest_dist(my_params->detailed_goal_list, path, tcp.sf, my_params->lane_sf);
 	//TODO Modificar para a distancia de interesse
 	//double distance_to_lane = compute_distance_to_lane(my_params->detailed_goal_list, &path);
 
@@ -1226,7 +1260,7 @@ compute_suitable_acceleration(TrajectoryLookupTable::TrajectoryControlParameters
 
 
 void
-add_points_to_goal_list_interval(carmen_ackerman_traj_point_t p1, carmen_ackerman_traj_point_t p2, vector<carmen_ackerman_path_point_t> *detailed_goal_list)
+add_points_to_goal_list_interval(carmen_ackerman_traj_point_t p1, carmen_ackerman_traj_point_t p2, vector<carmen_ackerman_path_point_t> *detailed_goal_list, double *lane_sf)
 {
 
 		//double theta;
@@ -1255,19 +1289,25 @@ add_points_to_goal_list_interval(carmen_ackerman_traj_point_t p1, carmen_ackerma
 			new_point.y = p1.y + i * delta_y;
 			if(new_point.x >= 0.0)
 			{
-			detailed_goal_list->push_back(new_point);
+				if(!detailed_goal_list->empty())//storage the total traveled distance of lane
+							{
+								*lane_sf += dist(detailed_goal_list->back(), new_point);
+
+							}
+
+							detailed_goal_list->push_back(new_point);
 			}
 	}
 }
 
 
 void
-build_detailed_goal_list(carmen_rddf_road_profile_message *message, vector<carmen_ackerman_path_point_t> *detailed_goal_list)
+build_detailed_goal_list(carmen_rddf_road_profile_message *message, vector<carmen_ackerman_path_point_t> *detailed_goal_list, double *lane_sf)
 {
 	for (int i = 0; i < (message->number_of_poses - 1); i++)
 	{
 		//printf("p1: %lf %lf p2: %lf %lf\n", message->poses[i].x, message->poses[i].y, message->poses[i + 1].x, message->poses[i + 1].y);
-		add_points_to_goal_list_interval(message->poses[i], message->poses[i + 1], detailed_goal_list);
+		add_points_to_goal_list_interval(message->poses[i], message->poses[i + 1], detailed_goal_list, lane_sf);
 		//getchar();
 	}
 	carmen_ackerman_path_point_t last_point = {message->poses[message->number_of_poses-1].x, message->poses[message->number_of_poses-1].y,
@@ -1306,14 +1346,15 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 	//	}
 //	printf("Time Stamp: %lf\n",goal_list_message->timestamp);
 //	printf("pose: %lf\n",goal_list_message->poses[0].x);
+	double lane_sf = 0.0;
+	//vector<carmen_ackerman_path_point_t> detailed_goal_list;
 
-	vector<carmen_ackerman_path_point_t> detailed_goal_list;
-	build_detailed_goal_list(goal_list_message, &detailed_goal_list);
+	ObjectiveFunctionParams params;
+	build_detailed_goal_list(goal_list_message, &params.detailed_goal_list, &lane_sf);
 
 	//printf("detailed x: %lf y: %lf \n",detailed_goal_list[detailed_goal_list.size()-1].x, detailed_goal_list[detailed_goal_list.size()-1].y);
 //	getchar();
 
-	ObjectiveFunctionParams params;
 
 	//	double par[17] = {0 target_td.v_i, 1 target_td.phi_i, 2 - target_td.dist, 3 - target_td.theta, 4 - target_td.d_yaw,
 	//			5 - suitable_acceleration, 6 - tcp_seed.af, 7 - tcp_seed.t0, 8 - tcp_seed.tt, 9 - tcp_seed.vt, 10 - target_v,
@@ -1328,7 +1369,8 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 	params.target_td = &target_td;
 	params.tcp_seed = &tcp_seed;
 	params.target_v = target_v;
-	params.detailed_goal_list = &detailed_goal_list;
+	params.lane_sf = lane_sf;
+
 
 	gsl_vector *x;
 	gsl_multimin_function_fdf my_func;
