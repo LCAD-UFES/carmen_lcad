@@ -1,0 +1,669 @@
+==11702== Memcheck, a memory error detector
+==11702== Copyright (C) 2002-2011, and GNU GPL'd, by Julian Seward et al.
+==11702== Using Valgrind-3.7.0 and LibVEX; rerun with -h for copyright info
+==11702== Command: ./dqn_emulator ../../data/rndf/rndf_log_voltadaufes-20160315-estacionamento-ambiental-4.kml
+==11702== 
+==11702== Warning: noted but unhandled ioctl 0x30000001 with no size/direction hints
+==11702==    This could cause spurious value errors to appear.
+==11702==    See README_MISSING_SYSCALL_OR_IOCTL for guidance on writing a proper wrapper.
+==11702== Warning: noted but unhandled ioctl 0x27 with no size/direction hints
+==11702==    This could cause spurious value errors to appear.
+==11702==    See README_MISSING_SYSCALL_OR_IOCTL for guidance on writing a proper wrapper.
+==11702== Warning: noted but unhandled ioctl 0x7ff with no size/direction hints
+==11702==    This could cause spurious value errors to appear.
+==11702==    See README_MISSING_SYSCALL_OR_IOCTL for guidance on writing a proper wrapper.
+==11702== Warning: set address range perms: large range [0x800000000, 0xd00000000) (noaccess)
+==11702== Warning: set address range perms: large range [0x200000000, 0x400000000) (noaccess)
+==11702== Warning: set address range perms: large range [0x500000000, 0x700000000) (noaccess)
+I0419 14:41:59.367498 11702 solver.cpp:48] Initializing solver from parameters: 
+test_iter: 1
+test_interval: 1
+base_lr: 0.2
+display: 10000
+max_iter: 2000000
+lr_policy: "step"
+gamma: 0.1
+momentum: 0.95
+stepsize: 1000000
+snapshot: 10000
+snapshot_prefix: "snapshots/dqn"
+solver_mode: GPU
+net: "dqn.prototxt"
+solver_type: ADADELTA
+==11702== Conditional jump or move depends on uninitialised value(s)
+==11702==    at 0x6DDDD23: std::ostreambuf_iterator<char, std::char_traits<char> > std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::_M_insert_int<long>(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, long) const (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.16)
+==11702==    by 0x6DDE065: std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::do_put(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, long) const (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.16)
+==11702==    by 0x6DE94DC: std::ostream& std::ostream::_M_insert<long>(long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.16)
+==11702==    by 0x65C0D15: _ZN5caffe10format_intEii.constprop.411 (in /home/filipe/workspace/caffe/build/lib/libcaffe.so.1.0.0-rc3)
+==11702==    by 0x65C152E: caffe::Solver<float>::SnapshotFilename(std::string) (in /home/filipe/workspace/caffe/build/lib/libcaffe.so.1.0.0-rc3)
+==11702==    by 0x65C16B0: caffe::Solver<float>::CheckSnapshotWritePermissions() (in /home/filipe/workspace/caffe/build/lib/libcaffe.so.1.0.0-rc3)
+==11702==    by 0x65C4E8F: caffe::Solver<float>::Init(caffe::SolverParameter const&) (in /home/filipe/workspace/caffe/build/lib/libcaffe.so.1.0.0-rc3)
+==11702==    by 0x65C5387: caffe::Solver<float>::Solver(caffe::SolverParameter const&, caffe::Solver<float> const*) (in /home/filipe/workspace/caffe/build/lib/libcaffe.so.1.0.0-rc3)
+==11702==    by 0x6590592: caffe::Solver<float>* caffe::Creator_SGDSolver<float>(caffe::SolverParameter const&) (in /home/filipe/workspace/caffe/build/lib/libcaffe.so.1.0.0-rc3)
+==11702==    by 0x419C4E: caffe::SolverRegistry<float>::CreateSolver(caffe::SolverParameter const&) (solver_factory.hpp:78)
+==11702==    by 0x4167E7: DqnCaffe::Initialize() (dqn_caffe.cpp:137)
+==11702==    by 0x410A18: initialize_global_structures(char**) (dqn_emulator.cpp:718)
+==11702== 
+==11702== Use of uninitialised value of size 8
+==11702==    at 0x6DDD823: ??? (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.16)
+==11702==    by 0x6DDDD47: std::ostreambuf_iterator<char, std::char_traits<char> > std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::_M_insert_int<long>(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, long) const (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.16)
+==11702==    by 0x6DDE065: std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::do_put(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, long) const (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.16)
+==11702==    by 0x6DE94DC: std::ostream& std::ostream::_M_insert<long>(long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.16)
+==11702==    by 0x65C0D15: _ZN5caffe10format_intEii.constprop.411 (in /home/filipe/workspace/caffe/build/lib/libcaffe.so.1.0.0-rc3)
+==11702==    by 0x65C152E: caffe::Solver<float>::SnapshotFilename(std::string) (in /home/filipe/workspace/caffe/build/lib/libcaffe.so.1.0.0-rc3)
+==11702==    by 0x65C16B0: caffe::Solver<float>::CheckSnapshotWritePermissions() (in /home/filipe/workspace/caffe/build/lib/libcaffe.so.1.0.0-rc3)
+==11702==    by 0x65C4E8F: caffe::Solver<float>::Init(caffe::SolverParameter const&) (in /home/filipe/workspace/caffe/build/lib/libcaffe.so.1.0.0-rc3)
+==11702==    by 0x65C5387: caffe::Solver<float>::Solver(caffe::SolverParameter const&, caffe::Solver<float> const*) (in /home/filipe/workspace/caffe/build/lib/libcaffe.so.1.0.0-rc3)
+==11702==    by 0x6590592: caffe::Solver<float>* caffe::Creator_SGDSolver<float>(caffe::SolverParameter const&) (in /home/filipe/workspace/caffe/build/lib/libcaffe.so.1.0.0-rc3)
+==11702==    by 0x419C4E: caffe::SolverRegistry<float>::CreateSolver(caffe::SolverParameter const&) (solver_factory.hpp:78)
+==11702==    by 0x4167E7: DqnCaffe::Initialize() (dqn_caffe.cpp:137)
+==11702== 
+==11702== Conditional jump or move depends on uninitialised value(s)
+==11702==    at 0x6DDD82E: ??? (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.16)
+==11702==    by 0x6DDDD47: std::ostreambuf_iterator<char, std::char_traits<char> > std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::_M_insert_int<long>(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, long) const (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.16)
+==11702==    by 0x6DDE065: std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::do_put(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, long) const (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.16)
+==11702==    by 0x6DE94DC: std::ostream& std::ostream::_M_insert<long>(long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.16)
+==11702==    by 0x65C0D15: _ZN5caffe10format_intEii.constprop.411 (in /home/filipe/workspace/caffe/build/lib/libcaffe.so.1.0.0-rc3)
+==11702==    by 0x65C152E: caffe::Solver<float>::SnapshotFilename(std::string) (in /home/filipe/workspace/caffe/build/lib/libcaffe.so.1.0.0-rc3)
+==11702==    by 0x65C16B0: caffe::Solver<float>::CheckSnapshotWritePermissions() (in /home/filipe/workspace/caffe/build/lib/libcaffe.so.1.0.0-rc3)
+==11702==    by 0x65C4E8F: caffe::Solver<float>::Init(caffe::SolverParameter const&) (in /home/filipe/workspace/caffe/build/lib/libcaffe.so.1.0.0-rc3)
+==11702==    by 0x65C5387: caffe::Solver<float>::Solver(caffe::SolverParameter const&, caffe::Solver<float> const*) (in /home/filipe/workspace/caffe/build/lib/libcaffe.so.1.0.0-rc3)
+==11702==    by 0x6590592: caffe::Solver<float>* caffe::Creator_SGDSolver<float>(caffe::SolverParameter const&) (in /home/filipe/workspace/caffe/build/lib/libcaffe.so.1.0.0-rc3)
+==11702==    by 0x419C4E: caffe::SolverRegistry<float>::CreateSolver(caffe::SolverParameter const&) (solver_factory.hpp:78)
+==11702==    by 0x4167E7: DqnCaffe::Initialize() (dqn_caffe.cpp:137)
+==11702== 
+==11702== Conditional jump or move depends on uninitialised value(s)
+==11702==    at 0x6DDDD77: std::ostreambuf_iterator<char, std::char_traits<char> > std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::_M_insert_int<long>(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, long) const (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.16)
+==11702==    by 0x6DDE065: std::num_put<char, std::ostreambuf_iterator<char, std::char_traits<char> > >::do_put(std::ostreambuf_iterator<char, std::char_traits<char> >, std::ios_base&, char, long) const (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.16)
+==11702==    by 0x6DE94DC: std::ostream& std::ostream::_M_insert<long>(long) (in /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.16)
+==11702==    by 0x65C0D15: _ZN5caffe10format_intEii.constprop.411 (in /home/filipe/workspace/caffe/build/lib/libcaffe.so.1.0.0-rc3)
+==11702==    by 0x65C152E: caffe::Solver<float>::SnapshotFilename(std::string) (in /home/filipe/workspace/caffe/build/lib/libcaffe.so.1.0.0-rc3)
+==11702==    by 0x65C16B0: caffe::Solver<float>::CheckSnapshotWritePermissions() (in /home/filipe/workspace/caffe/build/lib/libcaffe.so.1.0.0-rc3)
+==11702==    by 0x65C4E8F: caffe::Solver<float>::Init(caffe::SolverParameter const&) (in /home/filipe/workspace/caffe/build/lib/libcaffe.so.1.0.0-rc3)
+==11702==    by 0x65C5387: caffe::Solver<float>::Solver(caffe::SolverParameter const&, caffe::Solver<float> const*) (in /home/filipe/workspace/caffe/build/lib/libcaffe.so.1.0.0-rc3)
+==11702==    by 0x6590592: caffe::Solver<float>* caffe::Creator_SGDSolver<float>(caffe::SolverParameter const&) (in /home/filipe/workspace/caffe/build/lib/libcaffe.so.1.0.0-rc3)
+==11702==    by 0x419C4E: caffe::SolverRegistry<float>::CreateSolver(caffe::SolverParameter const&) (solver_factory.hpp:78)
+==11702==    by 0x4167E7: DqnCaffe::Initialize() (dqn_caffe.cpp:137)
+==11702==    by 0x410A18: initialize_global_structures(char**) (dqn_emulator.cpp:718)
+==11702== 
+I0419 14:41:59.442206 11702 solver.cpp:91] Creating training net from net file: dqn.prototxt
+I0419 14:41:59.476557 11702 upgrade_proto.cpp:51] Attempting to upgrade input file specified using deprecated V1LayerParameter: dqn.prototxt
+I0419 14:41:59.507648 11702 upgrade_proto.cpp:59] Successfully upgraded file specified using deprecated V1LayerParameter
+I0419 14:41:59.545922 11702 net.cpp:49] Initializing net from parameters: 
+name: "Dqn"
+state {
+  phase: TRAIN
+}
+layer {
+  name: "frames_input_layer"
+  type: "MemoryData"
+  top: "frames"
+  top: "dummy1"
+  memory_data_param {
+    batch_size: 32
+    channels: 4
+    height: 84
+    width: 84
+  }
+}
+layer {
+  name: "target_input_layer"
+  type: "MemoryData"
+  top: "target"
+  top: "dummy2"
+  memory_data_param {
+    batch_size: 32
+    channels: 5
+    height: 1
+    width: 1
+  }
+}
+layer {
+  name: "filter_input_layer"
+  type: "MemoryData"
+  top: "filter"
+  top: "dummy3"
+  memory_data_param {
+    batch_size: 32
+    channels: 5
+    height: 1
+    width: 1
+  }
+}
+layer {
+  name: "silence_layer"
+  type: "Silence"
+  bottom: "dummy1"
+  bottom: "dummy2"
+  bottom: "dummy3"
+}
+layer {
+  name: "conv1_layer"
+  type: "Convolution"
+  bottom: "frames"
+  top: "conv1"
+  convolution_param {
+    num_output: 16
+    kernel_size: 8
+    stride: 4
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+  }
+}
+layer {
+  name: "conv1_relu_layer"
+  type: "ReLU"
+  bottom: "conv1"
+  top: "conv1"
+  relu_param {
+    negative_slope: 0.01
+  }
+}
+layer {
+  name: "conv2_layer"
+  type: "Convolution"
+  bottom: "conv1"
+  top: "conv2"
+  convolution_param {
+    num_output: 32
+    kernel_size: 4
+    stride: 2
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+  }
+}
+layer {
+  name: "conv2_relu_layer"
+  type: "ReLU"
+  bottom: "conv2"
+  top: "conv2"
+  relu_param {
+    negative_slope: 0.01
+  }
+}
+layer {
+  name: "ip1_layer"
+  type: "InnerProduct"
+  bottom: "conv2"
+  top: "ip1"
+  inner_product_param {
+    num_output: 256
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+  }
+}
+layer {
+  name: "ip1_relu_layer"
+  type: "ReLU"
+  bottom: "ip1"
+  top: "ip1"
+  relu_param {
+    negative_slope: 0.01
+  }
+}
+layer {
+  name: "ip2_layer"
+  type: "InnerProduct"
+  bottom: "ip1"
+  top: "q_values"
+  inner_product_param {
+    num_output: 5
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+  }
+}
+layer {
+  name: "flaten_filter"
+  type: "Flatten"
+  bottom: "filter"
+  top: "flaten_filter"
+}
+layer {
+  name: "eltwise_layer"
+  type: "Eltwise"
+  bottom: "q_values"
+  bottom: "flaten_filter"
+  top: "filtered_q_values"
+  eltwise_param {
+    operation: PROD
+  }
+}
+layer {
+  name: "loss"
+  type: "EuclideanLoss"
+  bottom: "filtered_q_values"
+  bottom: "target"
+  top: "loss"
+}
+I0419 14:41:59.580530 11702 layer_factory.hpp:77] Creating layer frames_input_layer
+I0419 14:41:59.593175 11702 net.cpp:106] Creating Layer frames_input_layer
+I0419 14:41:59.594710 11702 net.cpp:411] frames_input_layer -> frames
+I0419 14:41:59.606374 11702 net.cpp:411] frames_input_layer -> dummy1
+I0419 14:41:59.879520 11702 net.cpp:150] Setting up frames_input_layer
+I0419 14:41:59.885975 11702 net.cpp:157] Top shape: 32 4 84 84 (903168)
+I0419 14:41:59.887091 11702 net.cpp:157] Top shape: 32 (32)
+I0419 14:41:59.887365 11702 net.cpp:165] Memory required for data: 3612800
+I0419 14:41:59.888814 11702 layer_factory.hpp:77] Creating layer target_input_layer
+I0419 14:41:59.889598 11702 net.cpp:106] Creating Layer target_input_layer
+I0419 14:41:59.889781 11702 net.cpp:411] target_input_layer -> target
+I0419 14:41:59.890724 11702 net.cpp:411] target_input_layer -> dummy2
+I0419 14:41:59.892765 11702 net.cpp:150] Setting up target_input_layer
+I0419 14:41:59.892982 11702 net.cpp:157] Top shape: 32 5 1 1 (160)
+I0419 14:41:59.893677 11702 net.cpp:157] Top shape: 32 (32)
+I0419 14:41:59.893785 11702 net.cpp:165] Memory required for data: 3613568
+I0419 14:41:59.894220 11702 layer_factory.hpp:77] Creating layer filter_input_layer
+I0419 14:41:59.894476 11702 net.cpp:106] Creating Layer filter_input_layer
+I0419 14:41:59.894621 11702 net.cpp:411] filter_input_layer -> filter
+I0419 14:41:59.894829 11702 net.cpp:411] filter_input_layer -> dummy3
+I0419 14:41:59.896127 11702 net.cpp:150] Setting up filter_input_layer
+I0419 14:41:59.896302 11702 net.cpp:157] Top shape: 32 5 1 1 (160)
+I0419 14:41:59.896466 11702 net.cpp:157] Top shape: 32 (32)
+I0419 14:41:59.896579 11702 net.cpp:165] Memory required for data: 3614336
+I0419 14:41:59.896685 11702 layer_factory.hpp:77] Creating layer silence_layer
+I0419 14:41:59.897775 11702 net.cpp:106] Creating Layer silence_layer
+I0419 14:41:59.899081 11702 net.cpp:454] silence_layer <- dummy1
+I0419 14:41:59.903367 11702 net.cpp:454] silence_layer <- dummy2
+I0419 14:41:59.904057 11702 net.cpp:454] silence_layer <- dummy3
+I0419 14:41:59.905006 11702 net.cpp:150] Setting up silence_layer
+I0419 14:41:59.905130 11702 net.cpp:165] Memory required for data: 3614336
+I0419 14:41:59.905261 11702 layer_factory.hpp:77] Creating layer conv1_layer
+I0419 14:41:59.907166 11702 net.cpp:106] Creating Layer conv1_layer
+I0419 14:41:59.907327 11702 net.cpp:454] conv1_layer <- frames
+I0419 14:41:59.908244 11702 net.cpp:411] conv1_layer -> conv1
+I0419 14:41:59.960264 11702 net.cpp:150] Setting up conv1_layer
+I0419 14:41:59.960501 11702 net.cpp:157] Top shape: 32 16 20 20 (204800)
+I0419 14:41:59.960609 11702 net.cpp:165] Memory required for data: 4433536
+I0419 14:41:59.969596 11702 layer_factory.hpp:77] Creating layer conv1_relu_layer
+I0419 14:41:59.970911 11702 net.cpp:106] Creating Layer conv1_relu_layer
+I0419 14:41:59.971223 11702 net.cpp:454] conv1_relu_layer <- conv1
+I0419 14:41:59.972667 11702 net.cpp:397] conv1_relu_layer -> conv1 (in-place)
+I0419 14:41:59.974189 11702 net.cpp:150] Setting up conv1_relu_layer
+I0419 14:41:59.974757 11702 net.cpp:157] Top shape: 32 16 20 20 (204800)
+I0419 14:41:59.974918 11702 net.cpp:165] Memory required for data: 5252736
+I0419 14:41:59.975040 11702 layer_factory.hpp:77] Creating layer conv2_layer
+I0419 14:41:59.975230 11702 net.cpp:106] Creating Layer conv2_layer
+I0419 14:41:59.975347 11702 net.cpp:454] conv2_layer <- conv1
+I0419 14:41:59.975558 11702 net.cpp:411] conv2_layer -> conv2
+I0419 14:41:59.986847 11702 net.cpp:150] Setting up conv2_layer
+I0419 14:41:59.987115 11702 net.cpp:157] Top shape: 32 32 9 9 (82944)
+I0419 14:41:59.987239 11702 net.cpp:165] Memory required for data: 5584512
+I0419 14:41:59.988679 11702 layer_factory.hpp:77] Creating layer conv2_relu_layer
+I0419 14:41:59.988884 11702 net.cpp:106] Creating Layer conv2_relu_layer
+I0419 14:41:59.988997 11702 net.cpp:454] conv2_relu_layer <- conv2
+I0419 14:41:59.989176 11702 net.cpp:397] conv2_relu_layer -> conv2 (in-place)
+I0419 14:41:59.989372 11702 net.cpp:150] Setting up conv2_relu_layer
+I0419 14:41:59.989533 11702 net.cpp:157] Top shape: 32 32 9 9 (82944)
+I0419 14:41:59.989642 11702 net.cpp:165] Memory required for data: 5916288
+I0419 14:41:59.989774 11702 layer_factory.hpp:77] Creating layer ip1_layer
+I0419 14:41:59.990919 11702 net.cpp:106] Creating Layer ip1_layer
+I0419 14:41:59.991140 11702 net.cpp:454] ip1_layer <- conv2
+I0419 14:41:59.991389 11702 net.cpp:411] ip1_layer -> ip1
+I0419 14:42:00.539872 11702 net.cpp:150] Setting up ip1_layer
+I0419 14:42:00.540700 11702 net.cpp:157] Top shape: 32 256 (8192)
+I0419 14:42:00.541084 11702 net.cpp:165] Memory required for data: 5949056
+I0419 14:42:00.542721 11702 layer_factory.hpp:77] Creating layer ip1_relu_layer
+I0419 14:42:00.542961 11702 net.cpp:106] Creating Layer ip1_relu_layer
+I0419 14:42:00.543090 11702 net.cpp:454] ip1_relu_layer <- ip1
+I0419 14:42:00.543309 11702 net.cpp:397] ip1_relu_layer -> ip1 (in-place)
+I0419 14:42:00.543515 11702 net.cpp:150] Setting up ip1_relu_layer
+I0419 14:42:00.543700 11702 net.cpp:157] Top shape: 32 256 (8192)
+I0419 14:42:00.543820 11702 net.cpp:165] Memory required for data: 5981824
+I0419 14:42:00.543992 11702 layer_factory.hpp:77] Creating layer ip2_layer
+I0419 14:42:00.544189 11702 net.cpp:106] Creating Layer ip2_layer
+I0419 14:42:00.544355 11702 net.cpp:454] ip2_layer <- ip1
+I0419 14:42:00.544548 11702 net.cpp:411] ip2_layer -> q_values
+I0419 14:42:00.547366 11702 net.cpp:150] Setting up ip2_layer
+I0419 14:42:00.547600 11702 net.cpp:157] Top shape: 32 5 (160)
+I0419 14:42:00.547709 11702 net.cpp:165] Memory required for data: 5982464
+I0419 14:42:00.548007 11702 layer_factory.hpp:77] Creating layer flaten_filter
+I0419 14:42:00.548912 11702 net.cpp:106] Creating Layer flaten_filter
+I0419 14:42:00.549077 11702 net.cpp:454] flaten_filter <- filter
+I0419 14:42:00.549293 11702 net.cpp:411] flaten_filter -> flaten_filter
+I0419 14:42:00.553730 11702 net.cpp:150] Setting up flaten_filter
+I0419 14:42:00.553947 11702 net.cpp:157] Top shape: 32 5 (160)
+I0419 14:42:00.554059 11702 net.cpp:165] Memory required for data: 5983104
+I0419 14:42:00.554193 11702 layer_factory.hpp:77] Creating layer eltwise_layer
+I0419 14:42:00.555099 11702 net.cpp:106] Creating Layer eltwise_layer
+I0419 14:42:00.555222 11702 net.cpp:454] eltwise_layer <- q_values
+I0419 14:42:00.555390 11702 net.cpp:454] eltwise_layer <- flaten_filter
+I0419 14:42:00.555577 11702 net.cpp:411] eltwise_layer -> filtered_q_values
+I0419 14:42:00.558553 11702 net.cpp:150] Setting up eltwise_layer
+I0419 14:42:00.558732 11702 net.cpp:157] Top shape: 32 5 (160)
+I0419 14:42:00.558861 11702 net.cpp:165] Memory required for data: 5983744
+I0419 14:42:00.559046 11702 layer_factory.hpp:77] Creating layer loss
+I0419 14:42:00.559984 11702 net.cpp:106] Creating Layer loss
+I0419 14:42:00.560106 11702 net.cpp:454] loss <- filtered_q_values
+I0419 14:42:00.560293 11702 net.cpp:454] loss <- target
+I0419 14:42:00.561091 11702 net.cpp:411] loss -> loss
+I0419 14:42:00.565668 11702 net.cpp:150] Setting up loss
+I0419 14:42:00.566104 11702 net.cpp:157] Top shape: (1)
+I0419 14:42:00.566571 11702 net.cpp:160]     with loss weight 1
+I0419 14:42:00.571630 11702 net.cpp:165] Memory required for data: 5983748
+I0419 14:42:00.573015 11702 net.cpp:226] loss needs backward computation.
+I0419 14:42:00.574887 11702 net.cpp:226] eltwise_layer needs backward computation.
+I0419 14:42:00.575296 11702 net.cpp:228] flaten_filter does not need backward computation.
+I0419 14:42:00.575741 11702 net.cpp:226] ip2_layer needs backward computation.
+I0419 14:42:00.575901 11702 net.cpp:226] ip1_relu_layer needs backward computation.
+I0419 14:42:00.576164 11702 net.cpp:226] ip1_layer needs backward computation.
+I0419 14:42:00.576313 11702 net.cpp:226] conv2_relu_layer needs backward computation.
+I0419 14:42:00.576483 11702 net.cpp:226] conv2_layer needs backward computation.
+I0419 14:42:00.576617 11702 net.cpp:226] conv1_relu_layer needs backward computation.
+I0419 14:42:00.576728 11702 net.cpp:226] conv1_layer needs backward computation.
+I0419 14:42:00.577044 11702 net.cpp:228] silence_layer does not need backward computation.
+I0419 14:42:00.577441 11702 net.cpp:228] filter_input_layer does not need backward computation.
+I0419 14:42:00.577715 11702 net.cpp:228] target_input_layer does not need backward computation.
+I0419 14:42:00.577831 11702 net.cpp:228] frames_input_layer does not need backward computation.
+I0419 14:42:00.578173 11702 net.cpp:270] This network produces output loss
+I0419 14:42:00.582075 11702 net.cpp:283] Network initialization done.
+I0419 14:42:00.596269 11702 upgrade_proto.cpp:51] Attempting to upgrade input file specified using deprecated V1LayerParameter: dqn.prototxt
+I0419 14:42:00.597344 11702 upgrade_proto.cpp:59] Successfully upgraded file specified using deprecated V1LayerParameter
+I0419 14:42:00.599241 11702 solver.cpp:181] Creating test net (#0) specified by net file: dqn.prototxt
+I0419 14:42:00.602634 11702 net.cpp:49] Initializing net from parameters: 
+name: "Dqn"
+state {
+  phase: TEST
+}
+layer {
+  name: "frames_input_layer"
+  type: "MemoryData"
+  top: "frames"
+  top: "dummy1"
+  memory_data_param {
+    batch_size: 32
+    channels: 4
+    height: 84
+    width: 84
+  }
+}
+layer {
+  name: "target_input_layer"
+  type: "MemoryData"
+  top: "target"
+  top: "dummy2"
+  memory_data_param {
+    batch_size: 32
+    channels: 5
+    height: 1
+    width: 1
+  }
+}
+layer {
+  name: "filter_input_layer"
+  type: "MemoryData"
+  top: "filter"
+  top: "dummy3"
+  memory_data_param {
+    batch_size: 32
+    channels: 5
+    height: 1
+    width: 1
+  }
+}
+layer {
+  name: "silence_layer"
+  type: "Silence"
+  bottom: "dummy1"
+  bottom: "dummy2"
+  bottom: "dummy3"
+}
+layer {
+  name: "conv1_layer"
+  type: "Convolution"
+  bottom: "frames"
+  top: "conv1"
+  convolution_param {
+    num_output: 16
+    kernel_size: 8
+    stride: 4
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+  }
+}
+layer {
+  name: "conv1_relu_layer"
+  type: "ReLU"
+  bottom: "conv1"
+  top: "conv1"
+  relu_param {
+    negative_slope: 0.01
+  }
+}
+layer {
+  name: "conv2_layer"
+  type: "Convolution"
+  bottom: "conv1"
+  top: "conv2"
+  convolution_param {
+    num_output: 32
+    kernel_size: 4
+    stride: 2
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+  }
+}
+layer {
+  name: "conv2_relu_layer"
+  type: "ReLU"
+  bottom: "conv2"
+  top: "conv2"
+  relu_param {
+    negative_slope: 0.01
+  }
+}
+layer {
+  name: "ip1_layer"
+  type: "InnerProduct"
+  bottom: "conv2"
+  top: "ip1"
+  inner_product_param {
+    num_output: 256
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+  }
+}
+layer {
+  name: "ip1_relu_layer"
+  type: "ReLU"
+  bottom: "ip1"
+  top: "ip1"
+  relu_param {
+    negative_slope: 0.01
+  }
+}
+layer {
+  name: "ip2_layer"
+  type: "InnerProduct"
+  bottom: "ip1"
+  top: "q_values"
+  inner_product_param {
+    num_output: 5
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+  }
+}
+layer {
+  name: "flaten_filter"
+  type: "Flatten"
+  bottom: "filter"
+  top: "flaten_filter"
+}
+layer {
+  name: "eltwise_layer"
+  type: "Eltwise"
+  bottom: "q_values"
+  bottom: "flaten_filter"
+  top: "filtered_q_values"
+  eltwise_param {
+    operation: PROD
+  }
+}
+layer {
+  name: "loss"
+  type: "EuclideanLoss"
+  bottom: "filtered_q_values"
+  bottom: "target"
+  top: "loss"
+}
+I0419 14:42:00.603747 11702 layer_factory.hpp:77] Creating layer frames_input_layer
+I0419 14:42:00.603965 11702 net.cpp:106] Creating Layer frames_input_layer
+I0419 14:42:00.604115 11702 net.cpp:411] frames_input_layer -> frames
+I0419 14:42:00.604344 11702 net.cpp:411] frames_input_layer -> dummy1
+I0419 14:42:00.617049 11702 net.cpp:150] Setting up frames_input_layer
+I0419 14:42:00.617319 11702 net.cpp:157] Top shape: 32 4 84 84 (903168)
+I0419 14:42:00.617558 11702 net.cpp:157] Top shape: 32 (32)
+I0419 14:42:00.618031 11702 net.cpp:165] Memory required for data: 3612800
+I0419 14:42:00.618171 11702 layer_factory.hpp:77] Creating layer target_input_layer
+I0419 14:42:00.618376 11702 net.cpp:106] Creating Layer target_input_layer
+I0419 14:42:00.618506 11702 net.cpp:411] target_input_layer -> target
+I0419 14:42:00.618728 11702 net.cpp:411] target_input_layer -> dummy2
+I0419 14:42:00.619936 11702 net.cpp:150] Setting up target_input_layer
+I0419 14:42:00.620137 11702 net.cpp:157] Top shape: 32 5 1 1 (160)
+I0419 14:42:00.620306 11702 net.cpp:157] Top shape: 32 (32)
+I0419 14:42:00.620410 11702 net.cpp:165] Memory required for data: 3613568
+I0419 14:42:00.620532 11702 layer_factory.hpp:77] Creating layer filter_input_layer
+I0419 14:42:00.620687 11702 net.cpp:106] Creating Layer filter_input_layer
+I0419 14:42:00.620813 11702 net.cpp:411] filter_input_layer -> filter
+I0419 14:42:00.621012 11702 net.cpp:411] filter_input_layer -> dummy3
+I0419 14:42:00.622217 11702 net.cpp:150] Setting up filter_input_layer
+I0419 14:42:00.622411 11702 net.cpp:157] Top shape: 32 5 1 1 (160)
+I0419 14:42:00.622562 11702 net.cpp:157] Top shape: 32 (32)
+I0419 14:42:00.622665 11702 net.cpp:165] Memory required for data: 3614336
+I0419 14:42:00.622789 11702 layer_factory.hpp:77] Creating layer silence_layer
+I0419 14:42:00.622938 11702 net.cpp:106] Creating Layer silence_layer
+I0419 14:42:00.623050 11702 net.cpp:454] silence_layer <- dummy1
+I0419 14:42:00.623206 11702 net.cpp:454] silence_layer <- dummy2
+I0419 14:42:00.623361 11702 net.cpp:454] silence_layer <- dummy3
+I0419 14:42:00.623519 11702 net.cpp:150] Setting up silence_layer
+I0419 14:42:00.623622 11702 net.cpp:165] Memory required for data: 3614336
+I0419 14:42:00.623729 11702 layer_factory.hpp:77] Creating layer conv1_layer
+I0419 14:42:00.623937 11702 net.cpp:106] Creating Layer conv1_layer
+I0419 14:42:00.624063 11702 net.cpp:454] conv1_layer <- frames
+I0419 14:42:00.624234 11702 net.cpp:411] conv1_layer -> conv1
+I0419 14:42:00.631777 11702 net.cpp:150] Setting up conv1_layer
+I0419 14:42:00.632125 11702 net.cpp:157] Top shape: 32 16 20 20 (204800)
+I0419 14:42:00.632284 11702 net.cpp:165] Memory required for data: 4433536
+I0419 14:42:00.632833 11702 layer_factory.hpp:77] Creating layer conv1_relu_layer
+I0419 14:42:00.633052 11702 net.cpp:106] Creating Layer conv1_relu_layer
+I0419 14:42:00.633267 11702 net.cpp:454] conv1_relu_layer <- conv1
+I0419 14:42:00.633541 11702 net.cpp:397] conv1_relu_layer -> conv1 (in-place)
+I0419 14:42:00.634138 11702 net.cpp:150] Setting up conv1_relu_layer
+I0419 14:42:00.634407 11702 net.cpp:157] Top shape: 32 16 20 20 (204800)
+I0419 14:42:00.634531 11702 net.cpp:165] Memory required for data: 5252736
+I0419 14:42:00.634677 11702 layer_factory.hpp:77] Creating layer conv2_layer
+I0419 14:42:00.634948 11702 net.cpp:106] Creating Layer conv2_layer
+I0419 14:42:00.635105 11702 net.cpp:454] conv2_layer <- conv1
+I0419 14:42:00.635344 11702 net.cpp:411] conv2_layer -> conv2
+I0419 14:42:00.645747 11702 net.cpp:150] Setting up conv2_layer
+I0419 14:42:00.646178 11702 net.cpp:157] Top shape: 32 32 9 9 (82944)
+I0419 14:42:00.646322 11702 net.cpp:165] Memory required for data: 5584512
+I0419 14:42:00.646698 11702 layer_factory.hpp:77] Creating layer conv2_relu_layer
+I0419 14:42:00.646863 11702 net.cpp:106] Creating Layer conv2_relu_layer
+I0419 14:42:00.646999 11702 net.cpp:454] conv2_relu_layer <- conv2
+I0419 14:42:00.647212 11702 net.cpp:397] conv2_relu_layer -> conv2 (in-place)
+I0419 14:42:00.647421 11702 net.cpp:150] Setting up conv2_relu_layer
+I0419 14:42:00.647624 11702 net.cpp:157] Top shape: 32 32 9 9 (82944)
+I0419 14:42:00.647778 11702 net.cpp:165] Memory required for data: 5916288
+I0419 14:42:00.647907 11702 layer_factory.hpp:77] Creating layer ip1_layer
+I0419 14:42:00.648098 11702 net.cpp:106] Creating Layer ip1_layer
+I0419 14:42:00.648221 11702 net.cpp:454] ip1_layer <- conv2
+I0419 14:42:00.648393 11702 net.cpp:411] ip1_layer -> ip1
+I0419 14:42:01.175671 11702 net.cpp:150] Setting up ip1_layer
+I0419 14:42:01.176089 11702 net.cpp:157] Top shape: 32 256 (8192)
+I0419 14:42:01.176249 11702 net.cpp:165] Memory required for data: 5949056
+I0419 14:42:01.176584 11702 layer_factory.hpp:77] Creating layer ip1_relu_layer
+I0419 14:42:01.176733 11702 net.cpp:106] Creating Layer ip1_relu_layer
+I0419 14:42:01.176854 11702 net.cpp:454] ip1_relu_layer <- ip1
+I0419 14:42:01.177042 11702 net.cpp:397] ip1_relu_layer -> ip1 (in-place)
+I0419 14:42:01.177345 11702 net.cpp:150] Setting up ip1_relu_layer
+I0419 14:42:01.177592 11702 net.cpp:157] Top shape: 32 256 (8192)
+I0419 14:42:01.177750 11702 net.cpp:165] Memory required for data: 5981824
+I0419 14:42:01.177940 11702 layer_factory.hpp:77] Creating layer ip2_layer
+I0419 14:42:01.178139 11702 net.cpp:106] Creating Layer ip2_layer
+I0419 14:42:01.178251 11702 net.cpp:454] ip2_layer <- ip1
+I0419 14:42:01.178449 11702 net.cpp:411] ip2_layer -> q_values
+I0419 14:42:01.180809 11702 net.cpp:150] Setting up ip2_layer
+I0419 14:42:01.180994 11702 net.cpp:157] Top shape: 32 5 (160)
+I0419 14:42:01.181148 11702 net.cpp:165] Memory required for data: 5982464
+I0419 14:42:01.181390 11702 layer_factory.hpp:77] Creating layer flaten_filter
+I0419 14:42:01.181596 11702 net.cpp:106] Creating Layer flaten_filter
+I0419 14:42:01.181710 11702 net.cpp:454] flaten_filter <- filter
+I0419 14:42:01.181887 11702 net.cpp:411] flaten_filter -> flaten_filter
+I0419 14:42:01.182265 11702 net.cpp:150] Setting up flaten_filter
+I0419 14:42:01.182452 11702 net.cpp:157] Top shape: 32 5 (160)
+I0419 14:42:01.182576 11702 net.cpp:165] Memory required for data: 5983104
+I0419 14:42:01.182687 11702 layer_factory.hpp:77] Creating layer eltwise_layer
+I0419 14:42:01.182859 11702 net.cpp:106] Creating Layer eltwise_layer
+I0419 14:42:01.182991 11702 net.cpp:454] eltwise_layer <- q_values
+I0419 14:42:01.183272 11702 net.cpp:454] eltwise_layer <- flaten_filter
+I0419 14:42:01.183444 11702 net.cpp:411] eltwise_layer -> filtered_q_values
+I0419 14:42:01.183810 11702 net.cpp:150] Setting up eltwise_layer
+I0419 14:42:01.183995 11702 net.cpp:157] Top shape: 32 5 (160)
+I0419 14:42:01.184118 11702 net.cpp:165] Memory required for data: 5983744
+I0419 14:42:01.184262 11702 layer_factory.hpp:77] Creating layer loss
+I0419 14:42:01.184425 11702 net.cpp:106] Creating Layer loss
+I0419 14:42:01.184536 11702 net.cpp:454] loss <- filtered_q_values
+I0419 14:42:01.184731 11702 net.cpp:454] loss <- target
+I0419 14:42:01.184885 11702 net.cpp:411] loss -> loss
+I0419 14:42:01.185448 11702 net.cpp:150] Setting up loss
+I0419 14:42:01.185626 11702 net.cpp:157] Top shape: (1)
+I0419 14:42:01.185750 11702 net.cpp:160]     with loss weight 1
+I0419 14:42:01.185922 11702 net.cpp:165] Memory required for data: 5983748
+I0419 14:42:01.186059 11702 net.cpp:226] loss needs backward computation.
+I0419 14:42:01.186236 11702 net.cpp:226] eltwise_layer needs backward computation.
+I0419 14:42:01.186360 11702 net.cpp:228] flaten_filter does not need backward computation.
+I0419 14:42:01.186480 11702 net.cpp:226] ip2_layer needs backward computation.
+I0419 14:42:01.186636 11702 net.cpp:226] ip1_relu_layer needs backward computation.
+I0419 14:42:01.186745 11702 net.cpp:226] ip1_layer needs backward computation.
+I0419 14:42:01.186890 11702 net.cpp:226] conv2_relu_layer needs backward computation.
+I0419 14:42:01.187021 11702 net.cpp:226] conv2_layer needs backward computation.
+I0419 14:42:01.187177 11702 net.cpp:226] conv1_relu_layer needs backward computation.
+I0419 14:42:01.187289 11702 net.cpp:226] conv1_layer needs backward computation.
+I0419 14:42:01.187438 11702 net.cpp:228] silence_layer does not need backward computation.
+I0419 14:42:01.187611 11702 net.cpp:228] filter_input_layer does not need backward computation.
+I0419 14:42:01.187772 11702 net.cpp:228] target_input_layer does not need backward computation.
+I0419 14:42:01.187894 11702 net.cpp:228] frames_input_layer does not need backward computation.
+I0419 14:42:01.187997 11702 net.cpp:270] This network produces output loss
+I0419 14:42:01.188233 11702 net.cpp:283] Network initialization done.
+I0419 14:42:01.189856 11702 solver.cpp:60] Solver scaffolding done.
+CARMEN - Carnegie Mellon Robot Navigation Toolkit - Version 0.7.0
+
+*** Aborted at 1461087788 (unix time) try "date -d @1461087788" if you are using GNU date ***
+PC: @          0xb51224b (unknown)
+*** SIGSEGV (@0x0) received by PID 11702 (TID 0x1a236700) from PID 0; stack trace: ***
+    @          0x4e41cb0 (unknown)
+    @          0xb51224b (unknown)
+    @          0x6580609 boost::thread_specific_ptr<>::~thread_specific_ptr()
+    @          0x74b49cd (unknown)
+    @          0x654ff66 (unknown)
+==11702== 
+==11702== HEAP SUMMARY:
+==11702==     in use at exit: 88,744,239 bytes in 116,464 blocks
+==11702==   total heap usage: 191,092 allocs, 74,628 frees, 2,390,821,686 bytes allocated
+==11702== 
+==11702== LEAK SUMMARY:
+==11702==    definitely lost: 430 bytes in 11 blocks
+==11702==    indirectly lost: 0 bytes in 0 blocks
+==11702==      possibly lost: 24,792,584 bytes in 13,795 blocks
+==11702==    still reachable: 63,951,225 bytes in 102,658 blocks
+==11702==         suppressed: 0 bytes in 0 blocks
+==11702== Rerun with --leak-check=full to see details of leaked memory
+==11702== 
+==11702== For counts of detected and suppressed errors, rerun with: -v
+==11702== Use --track-origins=yes to see where uninitialised values come from
+==11702== ERROR SUMMARY: 4 errors from 4 contexts (suppressed: 2 from 2)
