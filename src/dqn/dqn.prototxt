@@ -1,3 +1,5 @@
+name: "Dqn"
+
 layers {
   name: "frames_input_layer"
   type: MEMORY_DATA

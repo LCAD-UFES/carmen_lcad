@@ -60,6 +60,7 @@ double highest_sensor = 0.0;
 
 int merge_with_offline_map;
 int build_snapshot_map;
+int update_cells_below_car;
 int update_and_merge_with_mapper_saved_maps;
 int update_and_merge_with_snapshot_map;
 
@@ -194,7 +195,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 	if (visual_odometry_is_global_pos)
 		interpolator.AddMessageToInterpolationList(globalpos_message);
 	else
-		mapper_set_robot_pose_into_the_map(globalpos_message);
+		mapper_set_robot_pose_into_the_map(globalpos_message, update_cells_below_car);
 
 	// Map annotations handling
 	distance_to_annotation = DIST2D(last_rddf_annotation_message.annotation_point, globalpos_history[last_globalpos].pose.position);
@@ -263,7 +264,7 @@ ultrasonic_sensor_message_handler(carmen_ultrasonic_sonar_sensor_message *messag
 	carmen_localize_ackerman_globalpos_message globalpos_message;
 	globalpos_message = interpolator.InterpolateMessages(message);
 
-	mapper_set_robot_pose_into_the_map(&globalpos_message);
+	mapper_set_robot_pose_into_the_map(&globalpos_message, update_cells_below_car);
 
 	if (parking_assistant_found_safe_space)
 	{
@@ -713,6 +714,7 @@ read_parameters(int argc, char **argv,
 			{(char*)"mapper",  (char*)"build_snapshot_map", CARMEN_PARAM_ONOFF, &build_snapshot_map, 0, NULL},
 			{(char*)"mapper",  (char*)"merge_with_offline_map", CARMEN_PARAM_ONOFF, &merge_with_offline_map, 0, NULL},
 			{(char*)"mapper",  (char*)"update_and_merge_with_mapper_saved_maps", CARMEN_PARAM_ONOFF, &update_and_merge_with_mapper_saved_maps, 0, NULL},
+			{(char*)"mapper",  (char*)"update_cells_below_car", CARMEN_PARAM_ONOFF, &update_cells_below_car, 0, NULL},
 
 			{(char*)"mapper",  (char*)"update_and_merge_with_snapshot_map", CARMEN_PARAM_ONOFF, &update_and_merge_with_snapshot_map, 0, NULL},
 

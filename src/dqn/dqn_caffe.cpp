@@ -94,7 +94,10 @@ DqnCaffe::DqnCaffe(DqnParams params, char *program_name)
 	_params = params;
 
 	if (params.USE_GPU)
+	{
+		caffe::Caffe::SetDevice(0);
 		caffe::Caffe::set_mode(caffe::Caffe::GPU);
+	}
 	else
 		caffe::Caffe::set_mode(caffe::Caffe::CPU);
 
@@ -113,8 +116,6 @@ DqnCaffe::DqnCaffe(DqnParams params, char *program_name)
 	gamma_ = params.GAMMA;
 	current_iter_ = 0;
 
-	srand(time(NULL));
-
 // *********************************************
 // CORRIGIRRRRR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 // *********************************************
@@ -132,7 +133,9 @@ void DqnCaffe::Initialize()
 {
 	  caffe::SolverParameter solver_param;
 	  caffe::ReadProtoFromTextFileOrDie(_params.SOLVER_FILE, &solver_param);
-	  solver_ = boost::shared_ptr<caffe::AdaDeltaSolver<float> >(new caffe::AdaDeltaSolver<float>(solver_param));
+	  //solver_ = boost::shared_ptr<caffe::AdaDeltaSolver<float> >(new caffe::AdaDeltaSolver<float>(solver_param));
+	  solver_.reset(caffe::SolverRegistry<float>::CreateSolver(solver_param)); // = boost::shared_ptr<caffe::AdaDeltaSolver<float> >(new caffe::AdaDeltaSolver<float>(solver_param));
+	  //solver_.reset(caffe::GetSolver<float>(solver_param)); // = boost::shared_ptr<caffe::AdaDeltaSolver<float> >(new caffe::AdaDeltaSolver<float>(solver_param));
 
 	  net_ = solver_->net();
 
@@ -154,21 +157,15 @@ void DqnCaffe::Initialize()
 		  DqnParams::kCroppedFrameSize,
 		  DqnParams::kCroppedFrameSize));
 
-	  target_input_layer_ =
-		  boost::dynamic_pointer_cast<caffe::MemoryDataLayer<float> >(
-			  net_->layer_by_name("target_input_layer"));
+	  target_input_layer_ = boost::dynamic_pointer_cast<caffe::MemoryDataLayer<float> >(net_->layer_by_name("target_input_layer"));
 
 	  assert(target_input_layer_);
-	  assert(HasBlobSize(
-		  *net_->blob_by_name("target"), DqnParams::kMinibatchSize, DqnParams::kOutputCount, 1, 1));
+	  assert(HasBlobSize(*net_->blob_by_name("target"), DqnParams::kMinibatchSize, DqnParams::kOutputCount, 1, 1));
 
-	  filter_input_layer_ =
-		  boost::dynamic_pointer_cast<caffe::MemoryDataLayer<float> >(
-			  net_->layer_by_name("filter_input_layer"));
+	  filter_input_layer_ = boost::dynamic_pointer_cast<caffe::MemoryDataLayer<float> >(net_->layer_by_name("filter_input_layer"));
 
 	  assert(filter_input_layer_);
-	  assert(HasBlobSize(
-		  *net_->blob_by_name("filter"), DqnParams::kMinibatchSize, DqnParams::kOutputCount, 1, 1));
+	  assert(HasBlobSize(*net_->blob_by_name("filter"), DqnParams::kMinibatchSize, DqnParams::kOutputCount, 1, 1));
 }
 
 
@@ -183,14 +180,9 @@ void DqnCaffe::InputDataIntoLayers(const FramesLayerInputData& frames_input,
 		const TargetLayerInputData& target_input,
 		const FilterLayerInputData& filter_input)
 {
-	frames_input_layer_->Reset(const_cast<float*>(frames_input.data()),
-		dummy_input_data_.data(), DqnParams::kMinibatchSize);
-
-	target_input_layer_->Reset(const_cast<float*>(target_input.data()),
-		dummy_input_data_.data(), DqnParams::kMinibatchSize);
-
-	filter_input_layer_->Reset(const_cast<float*>(filter_input.data()),
-		dummy_input_data_.data(), DqnParams::kMinibatchSize);
+	frames_input_layer_->Reset(const_cast<float*>(frames_input.data()), dummy_input_data_.data(), DqnParams::kMinibatchSize);
+	target_input_layer_->Reset(const_cast<float*>(target_input.data()), dummy_input_data_.data(), DqnParams::kMinibatchSize);
+	filter_input_layer_->Reset(const_cast<float*>(filter_input.data()), dummy_input_data_.data(), DqnParams::kMinibatchSize);
 }
 
 
@@ -227,7 +219,7 @@ std::vector<std::pair<DqnAction, float> > DqnCaffe::SelectActionGreedily(
 	}
 
 	InputDataIntoLayers(frames_input, dummy_input_data_, dummy_input_data_);
-	net_->Forward(NULL);
+	net_->ForwardPrefilled(NULL);
 
 	std::vector<std::pair<DqnAction, float> > results;
 	results.reserve(last_frames_batch.size());
@@ -243,7 +235,8 @@ std::vector<std::pair<DqnAction, float> > DqnCaffe::SelectActionGreedily(
 		for (size_t action_id = 0; action_id < legal_actions_.size(); action_id++)
 		{
 			float q = q_values_blob_->data_at(i, static_cast<int>(legal_actions_[action_id]), 0, 0);
-			assert(!isnan(q));
+			//assert(!isnan(q));
+			if (isnan(q)) q = 0;
 			q_values[action_id] = q;
 		}
 
@@ -302,6 +295,8 @@ DqnCaffe::AddTransition(const Transition& transition)
 void
 DqnCaffe::Update()
 {
+//	printf("\n\n**** UPDATE START\n");
+
 	int i, j, random_transition_id;
 
 	std::cout << "iteration: " << current_iter_++ << std::endl;
@@ -334,21 +329,38 @@ DqnCaffe::Update()
 		// Compute target value
 		InputFrames target_last_frames;
 
-		for (j = 0; j < DqnParams::kInputFrameCount - 1; ++j)
-			target_last_frames[j] = transition.input_frames[j + 1]; // std::get < 0 > (transition)[i + 1];
+		for (j = 0; j < DqnParams::kInputFrameCount; ++j)
+			target_last_frames.push_back(transition.input_frames[j]);
 
-		target_last_frames[DqnParams::kInputFrameCount - 1] = transition.frame_data; //  std::get < 3 > (transition).get();
+//		target_last_frames[DqnParams::kInputFrameCount - 1] = transition.frame_data; //  std::get < 3 > (transition).get();
+
 		target_last_frames_batch.push_back(target_last_frames);
 	}
 
 	std::vector<std::pair<DqnAction, float> > actions_and_values = SelectActionGreedily(target_last_frames_batch);
 
-	FramesLayerInputData frames_input;
-	TargetLayerInputData target_input;
-	FilterLayerInputData filter_input;
+	static FramesLayerInputData frames_input;
+	static TargetLayerInputData target_input;
+	static FilterLayerInputData filter_input;
+	static int first = 1;
 
-	std::fill(target_input.begin(), target_input.end(), 0.0f);
-	std::fill(filter_input.begin(), filter_input.end(), 0.0f);
+	if (first)
+	{
+		for (i = 0 ; i < frames_input.capacity(); i++)
+			frames_input.push_back(0);
+
+		for (i = 0 ; i < filter_input.capacity(); i++)
+			filter_input.push_back(0);
+
+		for (i = 0 ; i < target_input.capacity(); i++)
+			target_input.push_back(0);
+
+		first = 0;
+
+//		std::fill(target_input.begin(), target_input.end(), 0.0f);
+//		std::fill(filter_input.begin(), filter_input.end(), 0.0f);
+//		std::fill(frames_input.begin(), frames_input.end(), 0.0f);
+	}
 
 	size_t target_value_id = 0;
 
@@ -382,7 +394,7 @@ DqnCaffe::Update()
 
 		for (j = 0; j < DqnParams::kInputFrameCount; ++j)
 		{
-			FrameDataSp& frame_data = transition.input_frames[i]; //std::get < 0 > (transition)[j];
+			FrameDataSp& frame_data = transition.input_frames[j]; //std::get < 0 > (transition)[j];
 
 			std::copy(frame_data->begin(), frame_data->end(),
 				frames_input.begin() + i * DqnParams::kInputDataSize + j * DqnParams::kCroppedFrameDataSize);
@@ -397,6 +409,8 @@ DqnCaffe::Update()
 	VLOG(1) << "conv2:" << net_->layer_by_name("conv2_layer")->blobs().front()->data_at(1, 0, 0, 0);
 	VLOG(1) << "ip1:" << net_->layer_by_name("ip1_layer")->blobs().front()->data_at(1, 0, 0, 0);
 	VLOG(1)	<< "ip2:" << net_->layer_by_name("ip2_layer")->blobs().front()->data_at(1, 0, 0, 0);
+
+//	printf("**** UPDATE END\n\n");
 }
 
 
