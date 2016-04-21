@@ -380,3 +380,7 @@ src/velodyne/libvelodyne_interface.so.1
 src/visual_odometry_package2/libvisual_odometry_interface.so.1
 src/xsens/libxsens_interface.so.1
 src/xsens_MTi-G/libxsens_mtig_interface.so.1
+src/model_predictive_planner/gnuplot_path.txt
+src/model_predictive_planner/problems.txt
+sharedlib/libsickldmrs/libsickldmrs.so.1
+
