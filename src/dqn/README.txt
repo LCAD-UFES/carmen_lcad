@@ -18,4 +18,6 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CAFFE_HOME/build/install/lib
 
 5) Rode separadamente o programa ./dqn_emulator <caminho para o rddf a ser seguido>
 
+6) IMPORTANTE!!!!!!!!! AJUSTE O MAKEFILE PARA RODAR EM CUDA OU NA CPU!!!!!!!!!!!!!!
+
 

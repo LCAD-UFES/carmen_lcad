@@ -52,7 +52,7 @@ public:
 
 	DqnParams()
 	{
-		USE_GPU = false;
+		USE_GPU = true;
 		SOLVER_FILE = "dqn_solver.prototxt";
 		REPLAY_MEMORY_SIZE = 500000;
 		NUM_ITERATIONS = 1000000;
