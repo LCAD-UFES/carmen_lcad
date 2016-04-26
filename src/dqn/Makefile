@@ -25,8 +25,8 @@ LFLAGS += -L/usr/local/cuda/lib64
 LFLAGS += -lparam_interface -lipc -lglobal `pkg-config --libs opencv` -lgrid_mapping_interface -lrddf_interface \
 	-llocalize_ackerman_interface -lrobot_ackerman_interface -lrddf_index -lprob_models -lmap_server_interface \
 	-lcollision_detection -lmap_interface -lrotation_geometry -lgrid_mapping -lmap_io -lboost_system -lglog -lcaffe
-CFLAGS += -Wall -Wno-write-strings -fopenmp #-pg
-CXXFLAGS += -Wall -Wno-write-strings -fopenmp #-pg
+CFLAGS += -Wall -Wno-write-strings -Wno-sign-compare -fopenmp -pg
+CXXFLAGS += -Wall -Wno-write-strings -Wno-sign-compare -fopenmp -pg
 
 # Source code files (.c, .cpp) 
 SOURCES = dqn_emulator.cpp dqn_caffe.cpp

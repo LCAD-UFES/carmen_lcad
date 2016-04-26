@@ -131,41 +131,46 @@ DqnCaffe::DqnCaffe(DqnParams params, char *program_name)
 
 void DqnCaffe::Initialize()
 {
-	  caffe::SolverParameter solver_param;
-	  caffe::ReadProtoFromTextFileOrDie(_params.SOLVER_FILE, &solver_param);
-	  //solver_ = boost::shared_ptr<caffe::AdaDeltaSolver<float> >(new caffe::AdaDeltaSolver<float>(solver_param));
-	  solver_.reset(caffe::SolverRegistry<float>::CreateSolver(solver_param)); // = boost::shared_ptr<caffe::AdaDeltaSolver<float> >(new caffe::AdaDeltaSolver<float>(solver_param));
-	  //solver_.reset(caffe::GetSolver<float>(solver_param)); // = boost::shared_ptr<caffe::AdaDeltaSolver<float> >(new caffe::AdaDeltaSolver<float>(solver_param));
+	caffe::SolverParameter solver_param;
+	caffe::ReadProtoFromTextFileOrDie(_params.SOLVER_FILE, &solver_param);
+	//solver_ = boost::shared_ptr<caffe::AdaDeltaSolver<float> >(new caffe::AdaDeltaSolver<float>(solver_param));
+	solver_.reset(caffe::SolverRegistry<float>::CreateSolver(solver_param)); // = boost::shared_ptr<caffe::AdaDeltaSolver<float> >(new caffe::AdaDeltaSolver<float>(solver_param));
+	//solver_.reset(caffe::GetSolver<float>(solver_param)); // = boost::shared_ptr<caffe::AdaDeltaSolver<float> >(new caffe::AdaDeltaSolver<float>(solver_param));
 
-	  net_ = solver_->net();
+	net_ = solver_->net();
 
-	  // Cache pointers to blobs that hold Q values
-	  q_values_blob_ = net_->blob_by_name("q_values");
+	// Cache pointers to blobs that hold Q values
+	q_values_blob_ = net_->blob_by_name("q_values");
 
-	  // Initialize dummy input data with 0
-	  std::fill(dummy_input_data_.begin(), dummy_input_data_.end(), 0.0);
+	// Initialize dummy input data with 0
+	std::fill(dummy_input_data_.begin(), dummy_input_data_.end(), 0.0);
 
-	  // Cache pointers to input layers
-	  frames_input_layer_ = boost::dynamic_pointer_cast<caffe::MemoryDataLayer<float> >(
-			  net_->layer_by_name("frames_input_layer"));
+	// Cache pointers to input layers
+	frames_input_layer_ = boost::dynamic_pointer_cast<caffe::MemoryDataLayer<float> >(
+		  net_->layer_by_name("frames_input_layer"));
 
-	  assert(frames_input_layer_);
-	  assert(HasBlobSize(
-		  *net_->blob_by_name("frames"),
-		  DqnParams::kMinibatchSize,
-		  DqnParams::kInputFrameCount,
-		  DqnParams::kCroppedFrameSize,
-		  DqnParams::kCroppedFrameSize));
+	assert(frames_input_layer_);
+	assert(HasBlobSize(
+	  *net_->blob_by_name("frames"),
+	  DqnParams::kMinibatchSize,
+	  DqnParams::kInputFrameCount,
+	  DqnParams::kCroppedFrameSize,
+	  DqnParams::kCroppedFrameSize));
 
-	  target_input_layer_ = boost::dynamic_pointer_cast<caffe::MemoryDataLayer<float> >(net_->layer_by_name("target_input_layer"));
+	target_input_layer_ = boost::dynamic_pointer_cast<caffe::MemoryDataLayer<float> >(net_->layer_by_name("target_input_layer"));
 
-	  assert(target_input_layer_);
-	  assert(HasBlobSize(*net_->blob_by_name("target"), DqnParams::kMinibatchSize, DqnParams::kOutputCount, 1, 1));
+	assert(target_input_layer_);
+	assert(HasBlobSize(*net_->blob_by_name("target"), DqnParams::kMinibatchSize, DqnParams::kOutputCount, 1, 1));
 
-	  filter_input_layer_ = boost::dynamic_pointer_cast<caffe::MemoryDataLayer<float> >(net_->layer_by_name("filter_input_layer"));
+	filter_input_layer_ = boost::dynamic_pointer_cast<caffe::MemoryDataLayer<float> >(net_->layer_by_name("filter_input_layer"));
 
-	  assert(filter_input_layer_);
-	  assert(HasBlobSize(*net_->blob_by_name("filter"), DqnParams::kMinibatchSize, DqnParams::kOutputCount, 1, 1));
+	assert(filter_input_layer_);
+	assert(HasBlobSize(*net_->blob_by_name("filter"), DqnParams::kMinibatchSize, DqnParams::kOutputCount, 1, 1));
+
+	odometry_input_layer_ = boost::dynamic_pointer_cast<caffe::MemoryDataLayer<float> >(net_->layer_by_name("odometry_input_layer"));
+
+	assert(odometry_input_layer_);
+	assert(HasBlobSize(*net_->blob_by_name("odometry"), DqnParams::kMinibatchSize, 2, 1, 1));
 }
 
 
@@ -176,49 +181,78 @@ DqnCaffe::LoadTrainedModel(const std::string& model_file)
 }
 
 
-void DqnCaffe::InputDataIntoLayers(const FramesLayerInputData& frames_input,
-		const TargetLayerInputData& target_input,
-		const FilterLayerInputData& filter_input)
+void DqnCaffe::InputDataIntoLayers(const FramesLayerInputData &frames_input,
+		const TargetLayerInputData &target_input,
+		const FilterLayerInputData &filter_input,
+		const OdometryLayerInputData &odometry_input)
 {
 	frames_input_layer_->Reset(const_cast<float*>(frames_input.data()), dummy_input_data_.data(), DqnParams::kMinibatchSize);
 	target_input_layer_->Reset(const_cast<float*>(target_input.data()), dummy_input_data_.data(), DqnParams::kMinibatchSize);
 	filter_input_layer_->Reset(const_cast<float*>(filter_input.data()), dummy_input_data_.data(), DqnParams::kMinibatchSize);
+	odometry_input_layer_->Reset(const_cast<float*>(odometry_input.data()), dummy_input_data_.data(), DqnParams::kMinibatchSize);
 }
 
 
-std::pair<DqnAction, float> DqnCaffe::SelectActionGreedily(const InputFrames& last_frames)
+std::pair<DqnAction, float> DqnCaffe::SelectActionGreedily(const InputFrames& last_frames, double v, double phi)
 {
 	std::vector<InputFrames> frames_vector;
+	std::vector<float> v_vector, phi_vector;
+
 	frames_vector.push_back(last_frames);
 
+	v_vector.push_back(v);
+	phi_vector.push_back(phi);
+
 	// *****************************
-	// CHECAR SE AS DUAS INSTRUCOES ABAIXO SAO EQUIVALENTES!!
+	// CHECAR SE AS DUAS INSTRUCOES "std::vector<InputFrames>{{last_frames}}" e "frames_vector.push_back(last_frames);" SAO DE FATO EQUIVALENTES!!
 	// *****************************
-	// return SelectActionGreedily(std::vector<InputFrames>{{last_frames}}).front();
-	return SelectActionGreedily(frames_vector /*std::vector<InputFrames>{{last_frames}}*/).front();
+	return SelectActionGreedily(frames_vector, v_vector, phi_vector).front();
 }
 
 
 std::vector<std::pair<DqnAction, float> > DqnCaffe::SelectActionGreedily(
-		const std::vector<InputFrames>& last_frames_batch)
+		const std::vector<InputFrames>& last_frames_batch, const std::vector<float>& v_batch, const std::vector<float>& phi_batch)
 {
 	assert(last_frames_batch.size() <= DqnParams::kMinibatchSize);
 
 	MyArray<float, DqnParams::kMinibatchDataSize> frames_input;
+	OdometryLayerInputData odometry;
 
-	for (size_t i = 0; i < last_frames_batch.size(); ++i)
+	for (size_t i = 0; i < DqnParams::kMinibatchSize; ++i)
 	{
 		// Input frames to the net and compute Q values for each legal actions
 		for (int j = 0; j < DqnParams::kInputFrameCount; ++j)
 		{
-			const FrameDataSp& frame_data = last_frames_batch[i][j];
+			if (i < last_frames_batch.size())
+			{
+				const FrameDataSp& frame_data = last_frames_batch[i][j];
 
-			std::copy(frame_data->begin(), frame_data->end(),
-				frames_input.begin() + i * DqnParams::kInputDataSize + j * DqnParams::kCroppedFrameDataSize);
+				std::copy(frame_data->begin(), frame_data->end(),
+					frames_input.begin() + i * DqnParams::kInputDataSize + j * DqnParams::kCroppedFrameDataSize);
+			}
+			else
+			{
+				for (int k = 0; k < DqnParams::kCroppedFrameDataSize; k++)
+					frames_input[i * DqnParams::kInputDataSize + j * DqnParams::kCroppedFrameDataSize + k] = 0;
+			}
 		}
 	}
 
-	InputDataIntoLayers(frames_input, dummy_input_data_, dummy_input_data_);
+	for (size_t i = 0; i < DqnParams::kMinibatchDataSize; ++i)
+	{
+		if (i < v_batch.size())
+		{
+			odometry.push_back(v_batch[i]);
+			odometry.push_back(phi_batch[i]);
+		}
+		else
+		{
+			odometry.push_back(0);
+			odometry.push_back(0);
+		}
+	}
+
+	InputDataIntoLayers(frames_input, dummy_input_data_, dummy_input_data_, odometry);
 	net_->ForwardPrefilled(NULL);
 
 	std::vector<std::pair<DqnAction, float> > results;
@@ -255,12 +289,12 @@ std::vector<std::pair<DqnAction, float> > DqnCaffe::SelectActionGreedily(
 
 
 DqnAction
-DqnCaffe::SelectAction(const InputFrames& last_frames, double epsilon)
+DqnCaffe::SelectAction(const InputFrames& last_frames, double epsilon, double v, double phi)
 {
 	double probability;
 	assert(epsilon >= 0.0 && epsilon <= 1.0);
 
-	DqnAction action = SelectActionGreedily(last_frames).first;
+	DqnAction action;
 
 	probability = (double) rand() / (double) RAND_MAX;
 
@@ -268,12 +302,18 @@ DqnCaffe::SelectAction(const InputFrames& last_frames, double epsilon)
 	{
 		// Select randomly
 		int random_idx = rand() % legal_actions_.size();
-
 		action = legal_actions_[random_idx];
+
+		// Create dummy output data just to make the terminal output uniform.
+		std::vector<float> q_values;
+		for (int i = 0; i < legal_actions_.size(); i++, q_values.push_back(-1.0));
+		std::cout << PrintQValues(q_values, legal_actions_);
+
 		std::cout << action_to_string(action) << " (random)";
 	}
 	else
 	{
+		action = SelectActionGreedily(last_frames, v, phi).first;
 		std::cout << action_to_string(action) << " (greedy)";
 	}
 
@@ -295,11 +335,11 @@ DqnCaffe::AddTransition(const Transition& transition)
 void
 DqnCaffe::Update()
 {
-//	printf("\n\n**** UPDATE START\n");
+	current_iter_++;
 
 	int i, j, random_transition_id;
 
-	std::cout << "iteration: " << current_iter_++ << std::endl;
+	std::cout << "iteration: " << current_iter_ << std::endl;
 
 	// Sample transitions from replay memory
 	std::vector<int> transitions;
@@ -313,6 +353,8 @@ DqnCaffe::Update()
 
 	// Compute target values: max_a Q(s',a)
 	std::vector<InputFrames> target_last_frames_batch;
+	std::vector<float> phi_batch;
+	std::vector<float> v_batch;
 
 	for (i = 0; i < (int) transitions.size(); i++)
 	// for (const auto idx : transitions)
@@ -335,13 +377,20 @@ DqnCaffe::Update()
 //		target_last_frames[DqnParams::kInputFrameCount - 1] = transition.frame_data; //  std::get < 3 > (transition).get();
 
 		target_last_frames_batch.push_back(target_last_frames);
+		v_batch.push_back(transition.v);
+		phi_batch.push_back(transition.phi);
 	}
 
-	std::vector<std::pair<DqnAction, float> > actions_and_values = SelectActionGreedily(target_last_frames_batch);
+	std::vector<std::pair<DqnAction, float> > actions_and_values = SelectActionGreedily(target_last_frames_batch, v_batch, phi_batch);
 
+	// frames_input: 4 frames
 	static FramesLayerInputData frames_input;
+	// target_input: expected rewards for each action -> this value is compared to the q-value predicted by the network and the difference is used to update the weights
 	static TargetLayerInputData target_input;
+	// filter_input: 0 for all actions except the performed for which the value is 1
 	static FilterLayerInputData filter_input;
+	static OdometryLayerInputData odometry_input;
+
 	static int first = 1;
 
 	if (first)
@@ -355,11 +404,27 @@ DqnCaffe::Update()
 		for (i = 0 ; i < target_input.capacity(); i++)
 			target_input.push_back(0);
 
-		first = 0;
+		for (i = 0 ; i < odometry_input.capacity(); i++)
+			odometry_input.push_back(0);
 
-//		std::fill(target_input.begin(), target_input.end(), 0.0f);
-//		std::fill(filter_input.begin(), filter_input.end(), 0.0f);
-//		std::fill(frames_input.begin(), frames_input.end(), 0.0f);
+		first = 0;
+	}
+	else
+	{
+		// Set all filters and target to 0 every iteration. In the
+		// loop below, only the performed action in a transition and
+		// the expected reward of this action will be turned on.
+		for (i = 0 ; i < filter_input.size(); i++)
+			filter_input[i] = 0;
+
+		for (i = 0 ; i < target_input.size(); i++)
+			target_input[i] = 0;
+
+		for (i = 0 ; i < frames_input.capacity(); i++)
+			frames_input.push_back(0);
+
+		for (i = 0 ; i < odometry_input.capacity(); i++)
+			odometry_input.push_back(0);
 	}
 
 	size_t target_value_id = 0;
@@ -390,6 +455,9 @@ DqnCaffe::Update()
 		target_input[i * DqnParams::kOutputCount + static_cast<int>(action)] = target;
 		filter_input[i * DqnParams::kOutputCount + static_cast<int>(action)] = 1;
 
+		odometry_input[2 * i + 0] = (float) transition.v;
+		odometry_input[2 * i + 1] = (float) transition.phi;
+
 		VLOG(1) << "filter:" << action_to_string(action) << " target:" << target;
 
 		for (j = 0; j < DqnParams::kInputFrameCount; ++j)
@@ -401,7 +469,7 @@ DqnCaffe::Update()
 		}
 	}
 
-	InputDataIntoLayers(frames_input, target_input, filter_input);
+	InputDataIntoLayers(frames_input, target_input, filter_input, odometry_input);
 	solver_->Step(1);
 
 	// Log the first parameter of each hidden layer
@@ -409,8 +477,6 @@ DqnCaffe::Update()
 	VLOG(1) << "conv2:" << net_->layer_by_name("conv2_layer")->blobs().front()->data_at(1, 0, 0, 0);
 	VLOG(1) << "ip1:" << net_->layer_by_name("ip1_layer")->blobs().front()->data_at(1, 0, 0, 0);
 	VLOG(1)	<< "ip2:" << net_->layer_by_name("ip2_layer")->blobs().front()->data_at(1, 0, 0, 0);
-
-//	printf("**** UPDATE END\n\n");
 }
 
 
