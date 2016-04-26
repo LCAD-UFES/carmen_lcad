@@ -34,6 +34,8 @@ using namespace g2o;
 #define KWHT  "\x1B[37m"
 #define RESET "\033[0m"
 
+//TODO
+//#define DEBUG_LANE
 
 struct ObjectiveFunctionParams
 {
@@ -50,7 +52,10 @@ struct ObjectiveFunctionParams
 #define SYSTEM_DELAY 0.7
 
 TrajectoryLookupTable::TrajectoryControlParameters trajectory_lookup_table[N_DIST][N_THETA][N_D_YAW][N_I_PHI][N_I_V];
+
 double g_last_lane_timestamp = 0.0;
+vector<carmen_ackerman_path_point_t> g_lane_list;
+
 
 TrajectoryLookupTable::TrajectoryLookupTable(int update_lookup_table)
 {
@@ -1047,13 +1052,18 @@ compute_interest_dist(vector<carmen_ackerman_path_point_t> &detailed_goal_list, 
 	 * o tcp_sf esta vindo com um valor superior ao do calculado pelo intervalo de cada ponto no path
 	 * apenas testando antes de verificar o problema real
 	 * */
+
+	//Lane esta vindo com apenas 1 ponto ou zerada, neste caso nao sera considerada a lane ate uma nova chegar
+//	if(detailed_goal_list.size() < 2){
+//		return 0.0;
+//	}
+
 	double path_sf2 = 0.0;
 	for(int k = 1; k < path.size(); k++)
 	{
 		path_sf2 += dist(path[k-1], path[k]);
 	}
 
-//	double lane_sf_full = lane_sf + dist(detailed_goal_list[(detailed_goal_list.size()-2)], detailed_goal_list[(detailed_goal_list.size()-1)]);
 	double fator = lane_sf/path_sf2;
 	double lane_detail = (detailed_goal_list.size()-1) / lane_sf;
 	double distance_travelled = 0.0;
@@ -1063,35 +1073,43 @@ compute_interest_dist(vector<carmen_ackerman_path_point_t> &detailed_goal_list, 
 	double distance_path_factor = 0.0;
 	double total_distance = 0.0;
 
-
-//	printf("Fator: %lf: \t Lane_sf: %lf \t path_sf: %lf \t Tamanho_Lane: %d \t Tamanho_Path: %d \n", fator, lane_sf, path_sf2, detailed_goal_list.size(), path.size());
-	distance = dist(detailed_goal_list[0],path[0]);
+#ifdef DEBUG_LANE
+	printf("----------------Inicio do for-----------------------\n");
+	printf("Fator: %lf: \t Lane_sf: %lf \t path_sf: %lf \t Tamanho_Lane: %d \t Tamanho_Path: %d \n", fator, lane_sf, path_sf2, detailed_goal_list.size(), path.size());
+#endif
+	distance = dist(detailed_goal_list.at(0),path[0]);
 	total_distance += distance;
 	for(int i = 1; i < path.size(); i++)
 	{
 		distance_travelled += dist(path[i-1], path[i]);
-		distance_path_factor = fator * distance_travelled; //dist(path_prev, *it_path));
+		distance_path_factor = fator * distance_travelled;
 		index = (int) (distance_path_factor * lane_detail);
 		int info;
 		int index2 = index;
-
 		if(index < (detailed_goal_list.size()-1))
 			index2++;
-//		printf("Entre: x_prev: %lf y_prev: %lf x_atual: %lf  y_atual: %lf  \n", detailed_goal_list[index].x, detailed_goal_list[index].y, detailed_goal_list[index2].x, detailed_goal_list[index2].y);
-//		printf("Ponto: x_atual: %lf  y_atual: %lf  \n", path[i].x, path[i].y);
-		carmen_ackerman_path_point_t point_path_lane = get_the_point_nearest_to_the_trajectory(&info, detailed_goal_list[index], detailed_goal_list[index2], path[i]);
+
+#ifdef DEBUG_LANE
+		printf("lane size no for do dist: %lu \n", detailed_goal_list.size());
+		printf("\n Indice: %d \t Indice_Path: %d \n", index, i);
+		printf("\n distance_travelled: %lf \n", distance_travelled);
+		printf("\n distancia_path_factor: %lf \n", distance_path_factor);
+		printf("Entre: x_prev: %lf y_prev: %lf x_atual: %lf  y_atual: %lf  \n", detailed_goal_list[index].x, detailed_goal_list[index].y, detailed_goal_list[index2].x, detailed_goal_list[index2].y);
+		printf("Ponto: x_atual: %lf  y_atual: %lf  \n", path[i].x, path[i].y);
+#endif
+
+		carmen_ackerman_path_point_t point_path_lane = get_the_point_nearest_to_the_trajectory(&info, detailed_goal_list.at(index), detailed_goal_list.at(index2), path[i]);
 //		printf("Ponto na reta: x: %lf y: %lf \n", point_path_lane.x, point_path_lane.y);
 		distance = dist(path[i], point_path_lane);
 		total_distance += distance;
 
 //		printf("distance: %lf \n", distance);
-//		printf("\n Indice: %d \t Indice_Path: %d \n", index, i);
-//		printf("\n distance_travelled: %lf \n", distance_travelled);
-//		printf("\n distancia_path_factor: %lf \n", distance_path_factor);
-//		getchar();
 
 	}
-//	printf("\n distancia total: %lf \n", total_distance);
+#ifdef DEBUG_LANE
+	printf("\n distancia total: %lf \n", total_distance);
+	//getchar();
+#endif
 	return total_distance;
 }
 
@@ -1116,7 +1134,6 @@ my_f(const gsl_vector *x, void *params)
 	my_params->tcp_seed->sf = tcp.sf;
 
 	double total_interest_dist = compute_interest_dist(my_params->detailed_goal_list, path, tcp.sf, my_params->lane_sf);
-	//TODO Modificar para a distancia de interesse
 
 //    double obstacles_cost = 0.0;
 //    if (GlobalState::cost_map_initialized)
@@ -1124,12 +1141,15 @@ my_f(const gsl_vector *x, void *params)
 
     double result = sqrt((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 			(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 0.2) +
-            (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2));//  / 500000.0
+            (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2) +
+            (total_interest_dist / 500000.0));//  /
 
-//      printf("TD.Dist: %lf \t TD.YAW: %lf \t TD.THETA: %lf \n",(td.dist - my_params->target_td->dist), (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw), (carmen_normalize_theta(td.theta) - my_params->target_td->theta));
-//      printf("Distance to Lane: %lf \n", total_interest_dist);
-//      printf("Result: %lf \n", result);
-//      getchar();
+#ifdef DEBUG_LANE
+      printf("TD.Dist: %lf \t TD.YAW: %lf \t TD.THETA: %lf \n",(td.dist - my_params->target_td->dist), (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw), (carmen_normalize_theta(td.theta) - my_params->target_td->theta));
+      printf("Distance to Lane: %lf \n", total_interest_dist);
+      printf("Result: %lf \n", result);
+      getchar();
+#endif
 
 	return (result);
 }
@@ -1210,7 +1230,7 @@ compute_suitable_acceleration(TrajectoryLookupTable::TrajectoryControlParameters
 
 
 void
-add_points_to_goal_list_interval(carmen_ackerman_traj_point_t p1, carmen_ackerman_traj_point_t p2, vector<carmen_ackerman_path_point_t> &detailed_goal_list, double *lane_sf)
+add_points_to_goal_list_interval(carmen_ackerman_path_point_t p1, carmen_ackerman_path_point_t p2, vector<carmen_ackerman_path_point_t> &detailed_goal_list, double *lane_sf, bool end_of_list)
 {
 
 		//double theta;
@@ -1241,6 +1261,10 @@ add_points_to_goal_list_interval(carmen_ackerman_traj_point_t p1, carmen_ackerma
 			{
 				detailed_goal_list.push_back(new_point);
 				*lane_sf += sqrt((((delta_x) * (delta_x))) + ((delta_y) * (delta_y)));
+				if(end_of_list){
+					detailed_goal_list.push_back(p2);
+					*lane_sf += dist(new_point, p2);
+				}
 			}
 	}
 }
@@ -1249,21 +1273,23 @@ add_points_to_goal_list_interval(carmen_ackerman_traj_point_t p1, carmen_ackerma
 void
 build_detailed_goal_list(carmen_rddf_road_profile_message *message, vector<carmen_ackerman_path_point_t> &detailed_goal_list, double *lane_sf)
 {
-	if (message->number_of_poses > 0)
+	bool end_of_list = false;
+	//printf("lane size dentro do build: %d \n", message->number_of_poses);
+	if (g_lane_list.size() > 1)
 	{
-		for (int i = 0; i < (message->number_of_poses - 1); i++)
+		for (int i = 0; i < (g_lane_list.size() - 1); i++)
 		{
+			if(i == (g_lane_list.size() - 2))
+				end_of_list = true;
 			//printf("p1: %lf %lf p2: %lf %lf\n", message->poses[i].x, message->poses[i].y, message->poses[i + 1].x, message->poses[i + 1].y);
-			add_points_to_goal_list_interval(message->poses[i], message->poses[i + 1], detailed_goal_list, lane_sf);
+			add_points_to_goal_list_interval(g_lane_list.at(i), g_lane_list.at(i+1), detailed_goal_list, lane_sf, end_of_list);
 			//getchar();
 		}
-		carmen_ackerman_path_point_t last_point = {message->poses[message->number_of_poses-1].x, message->poses[message->number_of_poses-1].y,
-				message->poses[message->number_of_poses-1].theta, message->poses[message->number_of_poses-1].v, message->poses[message->number_of_poses-1].phi, 0.0};
-		//printf("Posicoes: %d: ", detailed_goal_list.size());
-		detailed_goal_list.push_back(last_point);
+
+	//printf("lane size dentro do build: %lu \n", detailed_goal_list.size());
 	}
 	else
-		printf(KYEL "+++++++++++++ ERRO MENSAGEM DA LANE = %d POSES !!!!\n" RESET, message->number_of_poses);
+		printf(KGRN "+++++++++++++ ERRO MENSAGEM DA LANE = %d POSES !!!!\n" RESET , g_lane_list.size());
 }
 
 
@@ -1298,9 +1324,9 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 //	printf("pose: %lf\n",goal_list_message->poses[0].x);
 	double lane_sf = 0.0;
 	//vector<carmen_ackerman_path_point_t> detailed_goal_list;
-
 	ObjectiveFunctionParams params;
 	build_detailed_goal_list(goal_list_message, params.detailed_goal_list, &lane_sf);
+	//printf("lane size depois Build: %lu \n", params.detailed_goal_list.size());
 
 	//printf("detailed x: %lf y: %lf \n",detailed_goal_list[detailed_goal_list.size()-1].x, detailed_goal_list[detailed_goal_list.size()-1].y);
 //	getchar();
@@ -1877,6 +1903,7 @@ move_goal_list_to_robot_reference_system(Pose *localize_pose, carmen_rddf_road_p
 	double goal_y = goal_in_car_reference[1];
 	double distance = 0.0;
 	double last_distance = DBL_MAX;
+	//printf("lane size dentro do Move: %d \n", goal_list_message->number_of_poses);
 
 	//printf("ANTES Move quantidade de poses: %d \n",goal_list_message->number_of_poses);
 	for (int i = 0; i < goal_list_message->number_of_poses; i++)
@@ -1885,24 +1912,30 @@ move_goal_list_to_robot_reference_system(Pose *localize_pose, carmen_rddf_road_p
 		SE2 goal_in_world_reference(goal_list_message->poses[i].x, goal_list_message->poses[i].y, goal_list_message->poses[i].theta);
 		SE2 goal_in_car_reference = robot_pose.inverse() * goal_in_world_reference;
 
-		goal_list_message->poses[i].x = goal_in_car_reference[0];
-		goal_list_message->poses[i].y = goal_in_car_reference[1];
-		goal_list_message->poses[i].theta = goal_in_car_reference[2];
+		carmen_ackerman_path_point_t p;
+		p.x = goal_in_car_reference[0];
+		p.y = goal_in_car_reference[1];
+		p.theta = goal_in_car_reference[2];
+		p.phi = goal_list_message->poses[i].phi;
+		p.v = goal_list_message->poses[i].v;
+		p.time = 0.0;
 
-		distance = sqrt(pow(goal_list_message->poses[i].x - goal_x, 2) + pow(goal_list_message->poses[i].y - goal_y, 2));
+		g_lane_list.push_back(p);
+
+		distance = sqrt(pow(p.x - goal_x, 2) + pow(p.y - goal_y, 2));
 		//printf("Distance: x: %lf \n", distance);
 		if((distance == 0.0) || (distance > last_distance))
 		{
 		//	printf("Lane: x: %lf y: %lf \t Goal x: %lf y:%lf \n",goal_list_message->poses[i].x, goal_list_message->poses[i].y, goal_x, goal_y);
-			goal_list_message->number_of_poses = i+1;
 		//	printf("Move quantidade de poses depois: %d \n",goal_list_message->number_of_poses);
 			break;
 		}
 		last_distance = distance;
-		//printf("Move quantidade de poses: %d \n",goal_list_message->number_of_poses);
+		//printf("Move quantidade de poses depois do corte: %d \n",goal_list_message->number_of_poses);
 	}
+	//printf("Move quantidade de poses depois do corte: %d \n",g_lane_list.size());
 	//getchar();
-	//printf("Ultima Lane: x: %lf y: %lf \t Ultimo Goal x: %lf y:%lf \n",goal_list_message->poses[99].x, goal_list_message->poses[99].y, local_goal.x, local_goal.y);
+	//printf("Ultima Lane: x: %lf y: %lf \t Ultimo Goal x: %lf y:%lf \n",goal_list_message->poses[goal_list_message->number_of_poses-1].x, goal_list_message->poses[goal_list_message->number_of_poses-1].y, goal_x, goal_y);
 }
 
 
@@ -2217,7 +2250,8 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		carmen_rddf_road_profile_message *goal_list_message)
 {
 	//verifica se chegou uma lane nova
-	if(g_last_lane_timestamp != goal_list_message->timestamp)
+//	printf("lane size assim que chegou: %d \n", goal_list_message->number_of_poses);
+	if(g_last_lane_timestamp != goal_list_message->timestamp && goal_list_message->number_of_poses > 10)
 	{
 		move_goal_list_to_robot_reference_system(localize_pose, goal_list_message, &goalPoseVector[0]);
 		g_last_lane_timestamp = goal_list_message->timestamp;
