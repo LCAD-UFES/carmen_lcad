@@ -41,8 +41,11 @@ const double COLLISION_PUNISHMENT = -1;
 const int NUM_POSES_TO_SEARCH_AROUND_CLOSEST_GOAL = 10;
 const double MIN_DIST_TO_CONSIDER_ACHIEVEMENT = 0.5;
 
-const int RDDF_LIMIT_INITIAL_POSE = 135;
-const int RDDF_LIMIT_FINAL_POSE  = RDDF_LIMIT_INITIAL_POSE + 60;
+const int RDDF_LIMIT_INITIAL_POSE = 138;
+const int RDDF_LIMIT_FINAL_POSE  = RDDF_LIMIT_INITIAL_POSE + 20;
+
+const double EPSILON_INITIAL = 0.9;
+const double EPSILON_FINAL = 0.01;
 
 /*********************************/
 /** INTERNAL PARAMETERS - END ***/
@@ -57,7 +60,7 @@ int car_already_accelerated_in_this_experiment = 0;
 int collision_detected = 0;
 carmen_ackerman_motion_command_t current_command = {0, 0, 0};
 DqnAction current_action = DQN_ACTION_NONE;
-double epsilon = 0;
+double epsilon = EPSILON_INITIAL;
 InputFrames input_frames;
 
 carmen_robot_ackerman_config_t carmen_robot_ackerman_config;
@@ -70,7 +73,6 @@ carmen_robot_ackerman_config_t carmen_robot_ackerman_config;
 char *rddf_index_already_used_in_the_experiment;
 carmen_timestamp_index *rddf_index;
 
-carmen_rddf_road_profile_message rddf_message;
 carmen_localize_ackerman_globalpos_message localize_ackerman_message;
 carmen_map_server_compact_cost_map_message compact_cost_map_message;
 carmen_compact_map_t compact_cost_map;
@@ -253,7 +255,7 @@ cost_map_to_image(carmen_map_t *message)
 
 
 void
-draw_rddf_in_the_map(Mat *map_image, carmen_rddf_road_profile_message *rddf, carmen_grid_mapping_message *map_message)
+draw_rddf_in_the_map(Mat *map_image, carmen_grid_mapping_message *map_message)
 {
 //	for (int i = 0; i < rddf->number_of_poses; i++)
 //	{
@@ -312,7 +314,7 @@ find_closest_pose_in_the_index(carmen_point_t *initial_pose)
 
 
 void
-reinitize_experiment_configuration(carmen_point_t *initial_pose)
+reinitize_experiment_configuration(carmen_point_t *initial_pose __attribute__((unused)) /* sera usada no futuro */)
 {
 	// set all fields of the structure to 0. note: I use this in some function to check if some action is necessary.
 	// do not erase without checking the other functions.
@@ -330,7 +332,6 @@ reinitize_experiment_configuration(carmen_point_t *initial_pose)
 	// set all fields of the structure to 0
 	memset(&current_command, 0, sizeof(current_command));
 	input_frames.clear();
-	epsilon = 1.0;
 
 	rddf_index_last_pose = RDDF_LIMIT_INITIAL_POSE; //find_closest_pose_in_the_index(initial_pose);
 	rddf_index_final_goal = RDDF_LIMIT_FINAL_POSE; //rddf_index_last_pose + 70;
@@ -368,7 +369,7 @@ draw_map_car_and_rddf(carmen_grid_mapping_message *message)
 	//Mat map_image = map_to_image(message);
 	Mat *map_image = cost_map_to_image(&cost_map);
 
-	draw_rddf_in_the_map(map_image, &rddf_message, message);
+	draw_rddf_in_the_map(map_image, message);
 	draw_globalpose_in_the_map(map_image, &localize_ackerman_message, message);
 	draw_final_goal_in_the_map(map_image, message);
 
@@ -489,10 +490,12 @@ summarize_experiment(/*FrameDataSp frame, double reward, DqnAction action*/)
 	if (max_reward_so_far < agent_reward)
 		max_reward_so_far = agent_reward;
 
+	static const double delta_epsilon = (EPSILON_FINAL - EPSILON_INITIAL) / (double) dqn_caffe->params()->NUM_ITERATIONS;
+
 	if (dqn_caffe->current_iteration() < dqn_caffe->params()->NUM_ITERATIONS)
-		epsilon = 1.0 - 0.9 * ((double) dqn_caffe->current_iteration() / (double) dqn_caffe->params()->NUM_ITERATIONS);
+		epsilon = EPSILON_INITIAL + delta_epsilon * dqn_caffe->current_iteration();
 	else
-		epsilon = 0.1;
+		epsilon = EPSILON_FINAL;
 }
 
 
@@ -528,7 +531,7 @@ PreprocessScreen(Mat *raw_screen, carmen_grid_mapping_message *message)
 	if (left < 0) { left = 0; }
 	if (left + width >= raw_screen->cols) { left -= (left + width - raw_screen->cols); left -= 1; }
 
-	printf("%d %d -> %d %d %d %d -> %d %d\n", robot_x, robot_y, top, height, left, width, raw_screen->rows, raw_screen->cols);
+//	printf("%d %d -> %d %d %d %d -> %d %d\n", robot_x, robot_y, top, height, left, width, raw_screen->rows, raw_screen->cols);
 
 	Rect roi(top, left, width, height);
 	cvtColor((*raw_screen)(roi), gray, CV_BGR2GRAY);
@@ -537,6 +540,7 @@ PreprocessScreen(Mat *raw_screen, carmen_grid_mapping_message *message)
 	rotate(resized, 90, resized); // to make it look like in navigator_gui2
 
 	Mat net_input_view(Size(200, 200), CV_8UC1);
+	//cv::rectangle(resized, cv::Point(0, 0), cv::Point(20, 20), Scalar(0,0,0), 1);
 	resize(resized, net_input_view, net_input_view.size());
 	imshow("netinput", net_input_view);
 	waitKey(1);
@@ -598,7 +602,7 @@ update_current_command_with_dqn_action(DqnAction action)
 
 
 void
-update_command_using_dqn(FrameDataSp frame)
+update_command_using_dqn(FrameDataSp frame, double v, double phi)
 {
 	input_frames.push_back(frame);
 
@@ -613,7 +617,7 @@ update_command_using_dqn(FrameDataSp frame)
 			input_frames.pop_back();
 		}
 
-		current_action = dqn_caffe->SelectAction(input_frames, epsilon);
+		current_action = dqn_caffe->SelectAction(input_frames, epsilon, v, phi);
 		update_current_command_with_dqn_action(current_action);
 	}
 	else
@@ -623,7 +627,7 @@ update_command_using_dqn(FrameDataSp frame)
 
 
 void
-train_dqn(FrameDataSp frame, double reward, DqnAction action, int collision_detected)
+train_dqn(FrameDataSp frame, double reward, DqnAction action, int collision_detected, double v, double phi)
 {
 	// **************************************************
 	// O ULTIMO PARAMETRO DA TRANSITION DEVE SER O PROXIMO FRAME DEPOIS DE EXECUTAR A ACAO!!!!!!
@@ -634,9 +638,12 @@ train_dqn(FrameDataSp frame, double reward, DqnAction action, int collision_dete
 
 	// Add the current transition to replay memory
 	if (!collision_detected)
-		transition = Transition(input_frames, action, reward - last_reward, frame);
+		transition = Transition(input_frames, action, reward - last_reward, frame, v, phi);
 	else
-		transition = Transition(input_frames, action, reward - last_reward, FrameDataSp());
+	{
+		transition = Transition(input_frames, action, reward - last_reward, FrameDataSp(), v, phi);
+		last_reward = 0;
+	}
 
 	dqn_caffe->AddTransition(transition);
 
@@ -660,13 +667,12 @@ grid_mapping_handler(carmen_grid_mapping_message *message)
 	}
 
 	// wait for the necessary messages and data
-	if (rddf_message.timestamp == 0 || localize_ackerman_message.timestamp == 0 ||
-			compact_cost_map_message.timestamp == 0 || cost_map.complete_map == NULL)
+	if (localize_ackerman_message.timestamp == 0 || compact_cost_map_message.timestamp == 0 || cost_map.complete_map == NULL)
 		return;
 
 	Mat *final_map_image = draw_map_car_and_rddf(message);
 	FrameDataSp frame = PreprocessScreen(final_map_image, message);
-	update_command_using_dqn(frame);
+	update_command_using_dqn(frame, localize_ackerman_message.v, localize_ackerman_message.phi);
 
 	// ******************************************************************
 	// @filipe: checar handlers da mesma mensagem podem ser chamados em paralelo. Se sim,
@@ -677,8 +683,8 @@ grid_mapping_handler(carmen_grid_mapping_message *message)
 	update_agent_reward();
 
 	printf("***********************************\n");
-	printf("****** COLLISION DETECTED: %d\n", collision_detected);
-	printf("****** COMMAND: %.2lf %.2lf\n", current_command.v, current_command.phi);
+	printf("****** COLLISION DETECTED: %d EPSILON: %.10lf ITERATION: %d MEM_SIZE: %d\n", collision_detected, epsilon, dqn_caffe->current_iteration(), dqn_caffe->memory_size());
+	printf("****** COMMAND: %.2lf %.2lf ODOMETRY: %.2lf %.2lf\n", current_command.v, current_command.phi, localize_ackerman_message.v, localize_ackerman_message.phi);
 	printf("****** REWARD: %lf\n", agent_reward);
 	if (max_reward_so_far == -DBL_MAX) printf("****** MAX REWARD ACHIEVED: <not finished an experiment yet>\n");
 	else printf("****** MAX REWARD ACHIEVED: %lf\n", max_reward_so_far);
@@ -688,7 +694,8 @@ grid_mapping_handler(carmen_grid_mapping_message *message)
 		publish_motion_command(0, 0);
 
 	if ((int) input_frames.size() >= DqnParams::kInputFrameCount)
-		train_dqn(frame, agent_reward, current_action, collision_detected);
+		train_dqn(frame, agent_reward, current_action, collision_detected,
+				localize_ackerman_message.v, localize_ackerman_message.phi);
 
 	if (localize_ackerman_message.v > 0.5)
 		car_already_accelerated_in_this_experiment = 1;
@@ -700,12 +707,6 @@ grid_mapping_handler(carmen_grid_mapping_message *message)
 		summarize_experiment();
 		reset_experiment();
 	}
-}
-
-
-void
-rddf_handler(carmen_rddf_road_profile_message *message __attribute__ ((unused)))
-{
 }
 
 
@@ -740,7 +741,6 @@ void
 initialize_global_structures(char **argv)
 {
 	// set all fields of all structures to 0
-	memset(&rddf_message, 0, sizeof(rddf_message));
 	memset(&localize_ackerman_message, 0, sizeof(localize_ackerman_message));
 	memset(&compact_cost_map_message, 0, sizeof(compact_cost_map_message));
 	memset(&compact_cost_map, 0, sizeof(compact_cost_map));
@@ -773,7 +773,6 @@ void
 subscribe_messages()
 {
 	carmen_grid_mapping_subscribe_message(NULL, (carmen_handler_t) grid_mapping_handler, CARMEN_SUBSCRIBE_LATEST);
-    carmen_rddf_subscribe_road_profile_message(&rddf_message, (carmen_handler_t) rddf_handler, CARMEN_SUBSCRIBE_LATEST);
     carmen_localize_ackerman_subscribe_globalpos_message(&localize_ackerman_message, (carmen_handler_t) localize_ackerman_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_map_server_subscribe_compact_cost_map(&compact_cost_map_message, (carmen_handler_t) map_server_compact_cost_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }

@@ -57,7 +57,7 @@ public:
 		REPLAY_MEMORY_SIZE = 500000;
 		NUM_ITERATIONS = 1000000;
 		GAMMA = 0.95;
-		NUM_WARMUP_TRANSITIONS = 100;
+		NUM_WARMUP_TRANSITIONS = 500;
 		SKIP_FRAME = 0;
 		MODEL_FILE = "";
 		EVALUATION_MODE = false;
@@ -73,16 +73,8 @@ class MyArray : public std::vector<T>
 public:
 	MyArray<T, array_size>() : std::vector<T>(/*array_size*/)
 	{
-//		for (int i = 0; i < array_size; i++)
-//			this->push_back(T());
-
 		this->reserve(array_size);
 	}
-
-//	size_t size() const
-//	{
-//		return array_size;
-//	}
 };
 
 
@@ -94,6 +86,7 @@ typedef MyArray<FrameDataSp, DqnParams::kInputFrameCount> InputFrames;
 typedef MyArray<float, DqnParams::kMinibatchDataSize> FramesLayerInputData;
 typedef MyArray<float, DqnParams::kMinibatchSize * DqnParams::kOutputCount> TargetLayerInputData;
 typedef MyArray<float, DqnParams::kMinibatchSize * DqnParams::kOutputCount> FilterLayerInputData;
+typedef MyArray<float, DqnParams::kMinibatchSize * 2> OdometryLayerInputData;
 
 
 //typedef std::tuple<InputFrames, DqnAction, float, boost::optional<FrameDataSp> > Transition;
@@ -104,18 +97,22 @@ public:
 	DqnAction action;
 	boost::shared_ptr<FrameData> frame_data;
 	double reward;
+	double v, phi;
 
-	Transition() { reward = 0; action = DQN_ACTION_NONE; }
+	Transition() { reward = 0; action = DQN_ACTION_NONE; v = phi = 0; }
 
 	Transition(InputFrames input_frames_param,
 			DqnAction action_param,
 			double reward_param,
-			boost::shared_ptr<FrameData> frame_data_param)
+			boost::shared_ptr<FrameData> frame_data_param,
+			double v_param, double phi_param)
 	{
 		input_frames = input_frames_param;
 		action = action_param;
 		frame_data = frame_data_param;
 		reward = reward_param;
+		phi = phi_param;
+		v = v_param;
 	}
 };
 
@@ -141,15 +138,17 @@ class DqnCaffe
 	boost::shared_ptr<caffe::MemoryDataLayer<float> > frames_input_layer_;
 	boost::shared_ptr<caffe::MemoryDataLayer<float> > target_input_layer_;
 	boost::shared_ptr<caffe::MemoryDataLayer<float> > filter_input_layer_;
+	boost::shared_ptr<caffe::MemoryDataLayer<float> > odometry_input_layer_;
 
 	TargetLayerInputData dummy_input_data_;
 
 	void InputDataIntoLayers(const FramesLayerInputData& frames_data,
 			const TargetLayerInputData& target_data,
-			const FilterLayerInputData& filter_data);
+			const FilterLayerInputData& filter_data,
+			const OdometryLayerInputData &odometry_input);
 
-	std::pair<DqnAction, float> SelectActionGreedily(const InputFrames& last_frames);
-	std::vector<std::pair<DqnAction, float> > SelectActionGreedily(const std::vector<InputFrames>& last_frames);
+	std::pair<DqnAction, float> SelectActionGreedily(const InputFrames& last_frames, double v, double phi);
+	std::vector<std::pair<DqnAction, float> > SelectActionGreedily(const std::vector<InputFrames>& last_frames, const std::vector<float>& v_batch, const std::vector<float>& phi_batch);
 
 public:
 
@@ -168,7 +167,7 @@ public:
 	/**
 	 * Select an action by epsilon-greedy.
 	 */
-	DqnAction SelectAction(const InputFrames& last_frames, double epsilon);
+	DqnAction SelectAction(const InputFrames& last_frames, double epsilon, double v, double phi);
 
 	/**
 	 * Add a transition to replay memory
