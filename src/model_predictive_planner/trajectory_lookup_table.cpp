@@ -1054,9 +1054,9 @@ compute_interest_dist(vector<carmen_ackerman_path_point_t> &detailed_goal_list, 
 	 * */
 
 	//Lane esta vindo com apenas 1 ponto ou zerada, neste caso nao sera considerada a lane ate uma nova chegar
-//	if(detailed_goal_list.size() < 2){
-//		return 0.0;
-//	}
+	if(detailed_goal_list.size() < 2){
+		return 0.0;
+	}
 
 	double path_sf2 = 0.0;
 	for(int k = 1; k < path.size(); k++)
@@ -1079,6 +1079,7 @@ compute_interest_dist(vector<carmen_ackerman_path_point_t> &detailed_goal_list, 
 #endif
 	distance = dist(detailed_goal_list.at(0),path[0]);
 	total_distance += distance;
+	int num_points = 0;
 	for(int i = 1; i < path.size(); i++)
 	{
 		distance_travelled += dist(path[i-1], path[i]);
@@ -1101,7 +1102,11 @@ compute_interest_dist(vector<carmen_ackerman_path_point_t> &detailed_goal_list, 
 		carmen_ackerman_path_point_t point_path_lane = get_the_point_nearest_to_the_trajectory(&info, detailed_goal_list.at(index), detailed_goal_list.at(index2), path[i]);
 //		printf("Ponto na reta: x: %lf y: %lf \n", point_path_lane.x, point_path_lane.y);
 		distance = dist(path[i], point_path_lane);
-		total_distance += distance;
+		//if (distance < 0.8)
+		//{
+			total_distance += distance;
+			num_points++;
+		//}
 
 //		printf("distance: %lf \n", distance);
 
@@ -1110,7 +1115,10 @@ compute_interest_dist(vector<carmen_ackerman_path_point_t> &detailed_goal_list, 
 	printf("\n distancia total: %lf \n", total_distance);
 	//getchar();
 #endif
-	return total_distance;
+	if (num_points > 0)
+		return (total_distance / (double) num_points);
+	else
+		return (0.0);
 }
 
 
@@ -1142,7 +1150,7 @@ my_f(const gsl_vector *x, void *params)
     double result = sqrt((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 			(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 0.2) +
             (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2) +
-            (total_interest_dist / 500000.0));//  /
+            (total_interest_dist / (5000.0)));//  /
 
 #ifdef DEBUG_LANE
       printf("TD.Dist: %lf \t TD.YAW: %lf \t TD.THETA: %lf \n",(td.dist - my_params->target_td->dist), (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw), (carmen_normalize_theta(td.theta) - my_params->target_td->theta));
@@ -1388,7 +1396,7 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 		// |g| < epsabs
 		status = gsl_multimin_test_gradient(s->gradient, 0.16); // esta funcao retorna GSL_CONTINUE ou zero
 
-	} while ((s->f > 0.005) && (status == GSL_CONTINUE) && (iter < 300)); //alterado de 0.005 para 12 por causa da lane
+	} while ((s->f > 0.005) && (status == GSL_CONTINUE) && (iter < 300)); //alterado de 0.005
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
