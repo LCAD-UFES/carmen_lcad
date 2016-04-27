@@ -595,7 +595,7 @@ mapper_publish_map(double timestamp)
 }
 
 void
-mapper_set_robot_pose_into_the_map(carmen_localize_ackerman_globalpos_message *globalpos_message)
+mapper_set_robot_pose_into_the_map(carmen_localize_ackerman_globalpos_message *globalpos_message, int UPDATE_CELLS_BELOW_CAR)
 {
 	static double initial_time = 0.0;
 
@@ -615,7 +615,9 @@ mapper_set_robot_pose_into_the_map(carmen_localize_ackerman_globalpos_message *g
 
 	map.config.x_origin = x_origin;
 	map.config.y_origin = y_origin;
-	carmen_prob_models_updade_cells_bellow_robot(globalpos_message->globalpos, &map, 0.0, &car_config);
+
+	if (UPDATE_CELLS_BELOW_CAR)
+		carmen_prob_models_updade_cells_bellow_robot(globalpos_message->globalpos, &map, 0.0, &car_config);
 }
 
 
