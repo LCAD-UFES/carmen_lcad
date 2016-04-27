@@ -598,6 +598,9 @@ carmen_prob_models_update_cells_crossed_by_ray(carmen_map_t *map, sensor_paramet
 	int nx, ny, bx, by;
 	int ray_start_occupied = 0;
 	
+	if (sensor_data->maxed[sensor_data->ray_that_hit_the_nearest_target])
+		return;
+
 	a.x = (sensor_data->ray_origin_in_the_floor[sensor_data->ray_that_hit_the_nearest_target].x / map->config.resolution);
 	a.y = (sensor_data->ray_origin_in_the_floor[sensor_data->ray_that_hit_the_nearest_target].y / map->config.resolution);
 	b.x = (sensor_data->ray_position_in_the_floor[sensor_data->ray_that_hit_the_nearest_target].x / map->config.resolution);
@@ -1002,7 +1005,7 @@ carmen_prob_models_ray_hit_the_robot(double distance_between_rear_robot_and_rear
 	car_corners[1].x = robot_length - distance_between_rear_robot_and_rear_wheels;
 
 
-	if ((x < car_corners[0].x || y < car_corners[0].y)||(x > car_corners[1].x || y > car_corners[1].y))
+	if ((x < car_corners[0].x || y < car_corners[0].y) || (x > car_corners[1].x || y > car_corners[1].y))
 		return 0;
 
 	return 1;
