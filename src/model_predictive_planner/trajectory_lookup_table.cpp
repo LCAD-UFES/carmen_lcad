@@ -1149,8 +1149,8 @@ my_f(const gsl_vector *x, void *params)
 
     double result = sqrt((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 			(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 0.2) +
-            (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2) +
-            (total_interest_dist / (5000.0)));//  /
+            (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2)/* +
+            (total_interest_dist / (5000.0))*/);//  /
 
 #ifdef DEBUG_LANE
       printf("TD.Dist: %lf \t TD.YAW: %lf \t TD.THETA: %lf \n",(td.dist - my_params->target_td->dist), (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw), (carmen_normalize_theta(td.theta) - my_params->target_td->theta));
@@ -1296,8 +1296,7 @@ build_detailed_goal_list(vector<carmen_ackerman_path_point_t> &detailed_goal_lis
 
 	//printf("lane size dentro do build: %lu \n", detailed_goal_list.size());
 	}
-	else
-		printf(KGRN "+++++++++++++ ERRO MENSAGEM DA LANE = %lu POSES !!!!\n" RESET , g_lane_list.size());
+		//printf(KGRN "+++++++++++++ ERRO MENSAGEM DA LANE = %lu POSES !!!!\n" RESET , g_lane_list.size());
 }
 
 
@@ -1900,7 +1899,60 @@ get_trajectory_dimensions_from_robot_state(Pose *localize_pose, Command last_odo
 	return (td);
 }
 
-//TODO verificar conversão (localize_pose muda a pose do goal, normal?)
+/*
+ * Apenas para poder trabalhar enquanto nao resolve problema da lane
+ * */
+bool
+update_lane_local_pose(Pose *localize_pose, Pose *goal_pose, vector<carmen_ackerman_path_point_t> *local_lane)
+{
+	local_lane->clear();
+	SE2 robot_pose(localize_pose->x, localize_pose->y, localize_pose->theta);
+	SE2 goal_in_world_reference(goal_pose->x, goal_pose->y, goal_pose->theta);
+	SE2 goal_in_car_reference = robot_pose.inverse() * goal_in_world_reference;
+	double goal_x = goal_in_car_reference[0];
+	double goal_y = goal_in_car_reference[1];
+
+	for (int i = 0; i < g_lane_list.size(); i++)
+		{
+			SE2 goal_in_world_reference(g_lane_list.at(i).x, g_lane_list.at(i).y, g_lane_list.at(i).theta);
+			SE2 goal_in_car_reference = robot_pose.inverse() * goal_in_world_reference;
+
+
+			carmen_ackerman_path_point_t p;
+			p.x = goal_in_car_reference[0];
+			p.y = goal_in_car_reference[1];
+			p.theta = goal_in_car_reference[2];
+			p.phi = g_lane_list.at(i).phi;
+			p.v = g_lane_list.at(i).v;
+			p.time = 0.0;
+
+			local_lane->push_back(p);
+
+			if((p.x == goal_x && p.y == goal_y))
+			{
+				return true;
+			}
+		}
+	return false;
+}
+
+bool
+find_goal_in_lane(carmen_rddf_road_profile_message *goal_list_message, Pose *goal_pose)
+{
+	for(int i = 0; i < goal_list_message->number_of_poses; i++)
+	{
+		if(goal_list_message->poses[i].x == goal_pose->x && goal_list_message->poses[i].y == goal_pose->y)
+		{
+			return true;
+		}
+		if(goal_list_message->poses[i].x > goal_pose->x && goal_list_message->poses[i].y > goal_pose->y)
+			return false;
+	}
+	return false;
+
+}
+
+//TODO verificar conversão
 void
 move_goal_list_to_robot_reference_system(Pose *localize_pose, carmen_rddf_road_profile_message *goal_list_message, Pose *goal_pose)
 {
@@ -1911,14 +1963,20 @@ move_goal_list_to_robot_reference_system(Pose *localize_pose, carmen_rddf_road_p
 	double goal_y = goal_in_car_reference[1];
 	double distance = 0.0;
 	double last_distance = DBL_MAX;
-	//printf("lane size dentro do Move: %d \n", goal_list_message->number_of_poses);
+	bool found = false;
 
-	//printf("ANTES Move quantidade de poses: %d \n",goal_list_message->number_of_poses);
+	printf("inicio move_goal:\n \t goal_list size: %d \t g_list size: %lu \n",goal_list_message->number_of_poses, g_lane_list.size());
+
+	vector<carmen_ackerman_path_point_t> temp_lane_list;
+
+	printf("\t temp size: %lu \t g_list size: %lu \n",temp_lane_list.size(), g_lane_list.size());
+
 	for (int i = 0; i < goal_list_message->number_of_poses; i++)
 	{
-		//printf("Global Lane: x: %lf y: %lf \t Goal x: %lf y:%lf \n",goal_list_message->poses[i].x, goal_list_message->poses[i].y, goal_pose->x, goal_pose->y);
+		printf("Global Lane: x: %lf y: %lf \t Goal x: %lf y:%lf \n",goal_list_message->poses[i].x, goal_list_message->poses[i].y, goal_pose->x, goal_pose->y);
 		SE2 goal_in_world_reference(goal_list_message->poses[i].x, goal_list_message->poses[i].y, goal_list_message->poses[i].theta);
 		SE2 goal_in_car_reference = robot_pose.inverse() * goal_in_world_reference;
+
 
 		carmen_ackerman_path_point_t p;
 		p.x = goal_in_car_reference[0];
@@ -1928,18 +1986,37 @@ move_goal_list_to_robot_reference_system(Pose *localize_pose, carmen_rddf_road_p
 		p.v = goal_list_message->poses[i].v;
 		p.time = 0.0;
 
-		g_lane_list.push_back(p);
+		temp_lane_list.push_back(p);
+
+		printf("Lane vs Goal: x: %lf x_goal: %lf \t y: %lf y_goal:%lf \n",p.x, goal_x, p.y, goal_y);
 
 		distance = sqrt(pow(p.x - goal_x, 2) + pow(p.y - goal_y, 2));
 		//printf("Distance: x: %lf \n", distance);
-		if((distance == 0.0) || (distance > last_distance))
+		if((p.x == goal_x && p.y == goal_y))
 		{
-		//	printf("Lane: x: %lf y: %lf \t Goal x: %lf y:%lf \n",goal_list_message->poses[i].x, goal_list_message->poses[i].y, goal_x, goal_y);
-		//	printf("Move quantidade de poses depois: %d \n",goal_list_message->number_of_poses);
+			g_lane_list.clear();
+			g_lane_list = temp_lane_list;
+			found = true;
+
+			printf("Move quantidade de poses carregadas: %d \n", i);
+			printf("g_lane: x: %lf y: %lf \t Goal x: %lf y:%lf \n",g_lane_list.at(i).x, g_lane_list.at(i).y, goal_x, goal_y);
 			break;
 		}
 		last_distance = distance;
 		//printf("Move quantidade de poses depois do corte: %d \n",goal_list_message->number_of_poses);
+	}
+
+	if(!found){
+		printf("Fim do move_goal:\n \t goal_list size: %d \t g_list size: %lu \n",goal_list_message->number_of_poses, g_lane_list.size());
+		if(g_lane_list.size() > 0){
+			printf("Ultimo ponto no g_lane_list: x: %lf y: %lf \n", g_lane_list.back().x, g_lane_list.back().y);
+			if(g_lane_list.back().x != goal_x && g_lane_list.back().y != goal_y){
+				g_lane_list.clear();
+			}
+			printf("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ \n");
+		}
+		printf("distance do goal para o ultimo ponto na lane: %lf \n ", distance);
+//		getchar();
 	}
 	//printf("Move quantidade de poses depois do corte: %d \n",g_lane_list.size());
 	//getchar();
@@ -2259,11 +2336,24 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 {
 	//verifica se chegou uma lane nova
 //	printf("lane size assim que chegou: %d \n", goal_list_message->number_of_poses);
-	if(g_last_lane_timestamp != goal_list_message->timestamp && goal_list_message->number_of_poses > 10)
+
+	if(g_last_lane_timestamp != goal_list_message->timestamp)
 	{
-		move_goal_list_to_robot_reference_system(localize_pose, goal_list_message, &goalPoseVector[0]);
+		bool goal_in_lane = find_goal_in_lane(goal_list_message, &goalPoseVector.at(0));
+		if(goal_in_lane)
+		{
+		move_goal_list_to_robot_reference_system(localize_pose, goal_list_message, &goalPoseVector.at(0));
+		}
 		g_last_lane_timestamp = goal_list_message->timestamp;
 	}
+	vector<carmen_ackerman_path_point_t> lane_local_pose;
+	if(!update_lane_local_pose(localize_pose, &goalPoseVector.at(0), &lane_local_pose))
+	{
+		lane_local_pose.clear();
+		printf(KGRN "+++++++++++++ Lane antiga, ainda nao chegou uma boa lane !!!!\n" RESET);
+
+	}
+
 
 	FILE *problems;
 	problems = fopen("problems.txt", "a");
