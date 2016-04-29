@@ -1,4 +1,7 @@
 
+#include <cstdio>
+#include <cstdlib>
+#include <math.h>
 #include <opencv/cv.h>
 #include <carmen/carmen.h>
 #include <opencv/highgui.h>
@@ -13,12 +16,33 @@
 #include <prob_map.h>
 
 #include <caffe/caffe.hpp>
-#include <glog/logging.h>
-#include <gflags/gflags.h>
 #include <boost/smart_ptr.hpp>
 #include "dqn_caffe.h"
 
 using namespace cv;
+
+class Event
+{
+public:
+	FrameDataSp frame;
+	DqnAction action;
+	double v, phi, imediate_reward;
+	double q_value_of_selected_action;
+	double current_episode_reward;
+
+	Event() { frame = FrameDataSp(); action = DQN_ACTION_NONE; v = phi = 0; imediate_reward = 0; q_value_of_selected_action = 0; }
+
+	Event(FrameDataSp frame_param, DqnAction action_param, double v_param, double phi_param, double imediate_reward_param, double estimated_reward_param, double current_episode_reward_param)
+	{
+		current_episode_reward = current_episode_reward_param;
+		q_value_of_selected_action = estimated_reward_param;
+		imediate_reward = imediate_reward_param;
+		action = action_param;
+		frame = frame_param;
+		phi = phi_param;
+		v = v_param;
+	}
+};
 
 /*********************************/
 /** INTERNAL PARAMETERS - BEGIN **/
@@ -26,17 +50,19 @@ using namespace cv;
 
 const int NUM_MOTION_COMMANDS = 10;
 const double MAX_SPEED = 10.0;
+const double MIN_SPEED = 0.0;
 const double MAX_PHI = carmen_degrees_to_radians(28);
+const double MIN_PHI = carmen_degrees_to_radians(-28);
 double SPEED_UPDATE = 0.5;
-double STEERING_UPDATE = carmen_degrees_to_radians(1); //carmen_degrees_to_radians(0.5);
+double STEERING_UPDATE = carmen_degrees_to_radians(2); //carmen_degrees_to_radians(0.5);
 
 const int GOAL_LIST_STEP = 1; //6; // draw one pose after each 'GOAL_LIST_STEP' number of poses
 
-const double PARTIAL_GOAL_REWARD = 0.1;
-const double FINAL_GOAL_REWARD = 1;
-const double DISTANCE_PUNISHMENT_PER_METER = -0.001;
-const double TIME_PUNISHMENT_PER_SECOND = -0.001;
-const double COLLISION_PUNISHMENT = -1;
+const double PARTIAL_GOAL_REWARD = 0.2;
+const double FINAL_GOAL_REWARD = 2;
+const double DISTANCE_PUNISHMENT_PER_METER = 0; // -0.001;
+const double TIME_PUNISHMENT_PER_SECOND = 0; // -0.001;
+const double COLLISION_PUNISHMENT = -2;
 
 const int NUM_POSES_TO_SEARCH_AROUND_CLOSEST_GOAL = 10;
 const double MIN_DIST_TO_CONSIDER_ACHIEVEMENT = 0.5;
@@ -51,15 +77,19 @@ const double EPSILON_FINAL = 0.01;
 /** INTERNAL PARAMETERS - END ***/
 /*********************************/
 
+double min_delayed_reward = DBL_MAX;
+double max_delayed_reward = -DBL_MAX;
 double max_reward_so_far = -DBL_MAX;
-double agent_reward = 0;
+double episode_total_reward = 0;
 long rddf_index_final_goal = 0;
 long rddf_index_last_pose = 0;
 int achieved_goal_in_this_experiment = 0;
 int car_already_accelerated_in_this_experiment = 0;
 int collision_detected = 0;
+int reposed_requested = 1;
 carmen_ackerman_motion_command_t current_command = {0, 0, 0};
 DqnAction current_action = DQN_ACTION_NONE;
+float current_q = 0;
 double epsilon = EPSILON_INITIAL;
 InputFrames input_frames;
 
@@ -79,6 +109,7 @@ carmen_compact_map_t compact_cost_map;
 carmen_map_t cost_map;
 
 DqnCaffe *dqn_caffe;
+vector<Event*> episode;
 
 
 
@@ -110,7 +141,13 @@ shutdown_module(int signo)
 {
 	if (signo == SIGINT)
 	{
-		publish_motion_command(0, 0);
+		static bool stoped = false;
+
+		if (!stoped)
+		{
+			publish_motion_command(0, 0);
+			stoped = true;
+		}
 
 		carmen_ipc_disconnect();
 		printf("dqn_emulator: disconnected.\n");
@@ -257,19 +294,6 @@ cost_map_to_image(carmen_map_t *message)
 void
 draw_rddf_in_the_map(Mat *map_image, carmen_grid_mapping_message *map_message)
 {
-//	for (int i = 0; i < rddf->number_of_poses; i++)
-//	{
-//		// ignore the first GOAL_LIST_STEP poses to avoid drawing
-//		// goals too close to the robot.
-//		if (i < GOAL_LIST_STEP) continue;
-//
-//		if (i % GOAL_LIST_STEP == 0)
-//		{
-//			draw_ackerman_shape(map_image, rddf->poses[i].x, rddf->poses[i].y, rddf->poses[i].theta,
-//				map_message, Scalar(0, 255, 0));
-//		}
-//	}
-
 	for (int i = RDDF_LIMIT_INITIAL_POSE; i < RDDF_LIMIT_FINAL_POSE; i++)
 	{
 		if (i % GOAL_LIST_STEP == 0)
@@ -324,11 +348,13 @@ reinitize_experiment_configuration(carmen_point_t *initial_pose __attribute__((u
 	// globalpos message after reinitialization
 	memset(&localize_ackerman_message, 0, sizeof(localize_ackerman_message));
 
-	agent_reward = 0;
+	episode_total_reward = 0;
 	collision_detected = 0;
+	reposed_requested = 1;
 	achieved_goal_in_this_experiment = 0;
 	car_already_accelerated_in_this_experiment = 0;
 	current_action = DQN_ACTION_NONE;
+	current_q = 0;
 	// set all fields of the structure to 0
 	memset(&current_command, 0, sizeof(current_command));
 	input_frames.clear();
@@ -360,6 +386,12 @@ reset_experiment()
 
 	carmen_localize_ackerman_initialize_gaussian_command(pose, std);
 	reinitize_experiment_configuration(&pose);
+
+	// clear the episode
+	for (int i = 0; i < episode.size(); i++)
+		delete(episode[i]);
+
+	episode.clear();
 }
 
 
@@ -426,10 +458,10 @@ agent_achieved_partial_goal()
 int
 agent_achieved_final_goal()
 {
-	if (rddf_index_last_pose == rddf_index_final_goal && !achieved_goal_in_this_experiment)
+	if (!achieved_goal_in_this_experiment)
 	{
-		double dist = sqrt(pow(rddf_index->index[rddf_index_last_pose].x - localize_ackerman_message.globalpos.x, 2)
-				+ pow(rddf_index->index[rddf_index_last_pose].y - localize_ackerman_message.globalpos.y, 2));
+		double dist = sqrt(pow(rddf_index->index[rddf_index_final_goal].x - localize_ackerman_message.globalpos.x, 2)
+				+ pow(rddf_index->index[rddf_index_final_goal].y - localize_ackerman_message.globalpos.y, 2));
 
 		if (dist < MIN_DIST_TO_CONSIDER_ACHIEVEMENT)
 		{
@@ -449,53 +481,138 @@ car_hit_obstacle()
 }
 
 
-void
+double
 update_agent_reward()
 {
+	double imediate_reward;
 	static carmen_point_t last_pose = {0, 0, 0};
 	static double last_time = 0;
 
 	double distance_traveled;
 	double time_difference;
 
+	imediate_reward = 0.0;
+
 	if (agent_achieved_partial_goal())
-		agent_reward += PARTIAL_GOAL_REWARD;
+		imediate_reward += PARTIAL_GOAL_REWARD;
 
 	if (agent_achieved_final_goal())
-		agent_reward += FINAL_GOAL_REWARD;
+		imediate_reward += FINAL_GOAL_REWARD;
 
 	if (last_pose.x != 0)
 	{
 		distance_traveled = sqrt(pow(localize_ackerman_message.globalpos.x - last_pose.x, 2) + pow(localize_ackerman_message.globalpos.y - last_pose.y, 2));
-		agent_reward += (distance_traveled * DISTANCE_PUNISHMENT_PER_METER);
-
 		time_difference = localize_ackerman_message.timestamp - last_time;
-		agent_reward += (time_difference * TIME_PUNISHMENT_PER_SECOND);
+
+		imediate_reward += (distance_traveled * DISTANCE_PUNISHMENT_PER_METER) + (time_difference * TIME_PUNISHMENT_PER_SECOND);
 	}
 
 	if (car_hit_obstacle())
 	{
-		agent_reward += (COLLISION_PUNISHMENT);
+		imediate_reward += (COLLISION_PUNISHMENT);
 		collision_detected = 1;
 	}
 
+	episode_total_reward += imediate_reward;
+
 	last_pose = localize_ackerman_message.globalpos;
 	last_time = localize_ackerman_message.timestamp;
+
+	return imediate_reward;
 }
 
 
 void
-summarize_experiment(/*FrameDataSp frame, double reward, DqnAction action*/)
+add_frame_to_list(InputFrames *frames, FrameDataSp frame)
 {
-	if (max_reward_so_far < agent_reward)
-		max_reward_so_far = agent_reward;
+	frames->push_back(frame);
 
+	if ((int) frames->size() > DqnParams::kInputFrameCount)
+	{
+		for (int i = 0; i < (int) (frames->size() - 1); i++)
+			frames->at(i) = frames->at(i + 1);
+
+		frames->pop_back();
+	}
+}
+
+
+double
+calculate_delayed_reward(vector<Event*> *episode, int t)
+{
+	double delayed_reward = 0;
+
+	for (int i = t; i < episode->size(); i++)
+		delayed_reward += (episode->at(i)->imediate_reward * pow(dqn_caffe->params()->GAMMA, i - t));
+
+	if (delayed_reward < min_delayed_reward) min_delayed_reward = delayed_reward;
+	if (delayed_reward > max_delayed_reward) max_delayed_reward = delayed_reward;
+
+	return delayed_reward;
+}
+
+
+void
+add_transitions_to_replay_memory()
+{
+	int i;
+	InputFrames frames;
+	double total_reward = episode_total_reward;
+	double reward;
+
+	if (episode.size() < DqnParams::kInputFrameCount + 1)
+		return;
+
+	for (i = 0; i < DqnParams::kInputFrameCount; i++)
+		frames.push_back(episode[i]->frame);
+
+	for (i = DqnParams::kInputFrameCount; i < (episode.size() - 1); i++)
+	{
+		FrameDataSp current_frame = episode[i]->frame;
+		FrameDataSp frame_after_action = episode[i + 1]->frame;
+
+		if (DqnParams::TrainingModel == DQN_Q_LEARNING) reward = episode[i]->imediate_reward;
+		// @filipe: o modelo de recompensa com desconto nao eh bem assim nao...
+		else if (DqnParams::TrainingModel == DQN_DISCOUNTED_TOTAL_REWARD) reward = total_reward * pow(dqn_caffe->params()->GAMMA, (double) episode.size() - i);
+		else if (DqnParams::TrainingModel == DQN_INFINITY_HORIZON_DISCOUNTED_MODEL) reward = calculate_delayed_reward(&episode, i);
+		else exit(printf("ERROR: Unknown training model!\n"));
+
+		add_frame_to_list(&frames, current_frame);
+		dqn_caffe->AddTransition(Transition(frames, episode[i]->action, reward, frame_after_action, episode[i]->v, episode[i]->phi, false, episode[i]->q_value_of_selected_action));
+	}
+
+	if (DqnParams::TrainingModel == DQN_Q_LEARNING || DqnParams::TrainingModel == DQN_INFINITY_HORIZON_DISCOUNTED_MODEL) reward = episode[i]->imediate_reward;
+	// @filipe: o modelo de recompensa com desconto nao eh bem assim nao...
+	else if (DqnParams::TrainingModel == DQN_DISCOUNTED_TOTAL_REWARD) reward = total_reward * pow(dqn_caffe->params()->GAMMA, (double) episode.size() - i);
+	else if (DqnParams::TrainingModel == DQN_INFINITY_HORIZON_DISCOUNTED_MODEL)
+	{
+		reward = episode[i]->imediate_reward;
+
+		if (reward < min_delayed_reward) min_delayed_reward = reward;
+		if (reward > max_delayed_reward) max_delayed_reward = reward;
+	}
+	else exit(printf("ERROR: Unknown training model!\n"));
+
+	// the last transition is a special case
+	dqn_caffe->AddTransition(Transition(frames, episode[i]->action, reward, FrameDataSp(), episode[i]->v, episode[i]->phi, true, episode[i]->q_value_of_selected_action));
+}
+
+
+void
+summarize_experiment()
+{
 	static const double delta_epsilon = (EPSILON_FINAL - EPSILON_INITIAL) / (double) dqn_caffe->params()->NUM_ITERATIONS;
+
+	// update the max reward
+	if (episode_total_reward > max_reward_so_far)
+		max_reward_so_far = episode_total_reward;
 
 	if (dqn_caffe->current_iteration() < dqn_caffe->params()->NUM_ITERATIONS)
 		epsilon = EPSILON_INITIAL + delta_epsilon * dqn_caffe->current_iteration();
 	else
 		epsilon = EPSILON_FINAL;
+
+	add_transitions_to_replay_memory();
 }
 
 
@@ -548,7 +665,7 @@ PreprocessScreen(Mat *raw_screen, carmen_grid_mapping_message *message)
 	FrameDataSp screen = boost::shared_ptr<FrameData>(new FrameData());
 
 	for (int i = 0; i < (resized.rows * resized.cols); i++)
-		screen->push_back(gray.data[i]);
+		screen->push_back(resized.data[i]);
 
 	return screen;
 }
@@ -594,64 +711,38 @@ update_current_command_with_dqn_action(DqnAction action)
 	}
 
 	if (current_command.v > MAX_SPEED) current_command.v = MAX_SPEED;
-	if (current_command.v < -MAX_SPEED) current_command.v = -MAX_SPEED;
+	if (current_command.v < MIN_SPEED) current_command.v = MIN_SPEED;
 
 	if (current_command.phi > MAX_PHI) current_command.phi = MAX_PHI;
-	if (current_command.phi < -MAX_PHI) current_command.phi = -MAX_PHI;
+	if (current_command.phi < MIN_PHI) current_command.phi = MIN_PHI;
 }
 
 
 void
-update_command_using_dqn(FrameDataSp frame, double v, double phi)
+update_command_using_dqn(double v, double phi)
 {
-	input_frames.push_back(frame);
+	// DEBUG: faz o carro acelerar para frente apenas
+//	current_action = DQN_ACTION_SPEED_UP;
+//	update_current_command_with_dqn_action(current_action);
+//	return;
 
 	if ((int) input_frames.size() >= DqnParams::kInputFrameCount)
 	{
-		// remove the oldest frame if we have more than necessary
-		if ((int) input_frames.size() > DqnParams::kInputFrameCount)
-		{
-			for (int i = 0; i < (int) (input_frames.size() - 1); i++)
-				input_frames[i] = input_frames[i + 1];
+		std::pair<DqnAction, float> action_and_q = dqn_caffe->SelectAction(input_frames, epsilon, v, phi);
 
-			input_frames.pop_back();
-		}
+		current_q = action_and_q.second;
+		current_action = action_and_q.first;
 
-		current_action = dqn_caffe->SelectAction(input_frames, epsilon, v, phi);
 		update_current_command_with_dqn_action(current_action);
 	}
 	else
+	{
+		current_q = 0;
+		current_action = DQN_ACTION_NONE;
+
 		// set all fields of the structure to 0
 		memset(&current_command, 0, sizeof(current_command));
-}
-
-
-void
-train_dqn(FrameDataSp frame, double reward, DqnAction action, int collision_detected, double v, double phi)
-{
-	// **************************************************
-	// O ULTIMO PARAMETRO DA TRANSITION DEVE SER O PROXIMO FRAME DEPOIS DE EXECUTAR A ACAO!!!!!!
-	// **************************************************
-
-	static double last_reward = 0;
-	Transition transition;
-
-	// Add the current transition to replay memory
-	if (!collision_detected)
-		transition = Transition(input_frames, action, reward - last_reward, frame, v, phi);
-	else
-	{
-		transition = Transition(input_frames, action, reward - last_reward, FrameDataSp(), v, phi);
-		last_reward = 0;
 	}
-
-	dqn_caffe->AddTransition(transition);
-
-	// If the size of replay memory is enough, update DQN
-	if (dqn_caffe->memory_size() > dqn_caffe->params()->NUM_WARMUP_TRANSITIONS)
-		dqn_caffe->Update();
-
-	last_reward = reward;
 }
 
 
@@ -668,42 +759,71 @@ grid_mapping_handler(carmen_grid_mapping_message *message)
 
 	// wait for the necessary messages and data
 	if (localize_ackerman_message.timestamp == 0 || compact_cost_map_message.timestamp == 0 || cost_map.complete_map == NULL)
+	{
+//		printf("Waiting necessary messages for the new episode\n");
 		return;
+	}
+
+	if (reposed_requested && sqrt(pow(localize_ackerman_message.globalpos.x - 7757880.0, 2) + pow(localize_ackerman_message.globalpos.y - (-363535.0), 2)) > 0.5)
+	{
+//		printf("Waiting reposition...\n");
+		return;
+	}
+	else
+	{
+//		printf("Reposition succeded...\n");
+		reposed_requested = 0;
+	}
+
+	if (fabs(carmen_get_time() - localize_ackerman_message.timestamp) > 5.0)
+		exit(printf("Error: long time without localizer...\n"));
+
+	double imediate_reward;
 
 	Mat *final_map_image = draw_map_car_and_rddf(message);
 	FrameDataSp frame = PreprocessScreen(final_map_image, message);
-	update_command_using_dqn(frame, localize_ackerman_message.v, localize_ackerman_message.phi);
+	add_frame_to_list(&input_frames, frame);
+
+	update_command_using_dqn(localize_ackerman_message.v, localize_ackerman_message.phi);
 
 	// ******************************************************************
 	// @filipe: checar handlers da mesma mensagem podem ser chamados em paralelo. Se sim,
 	// colocar um watchdog aqui para mandar comandos 0 se colisoes estiverem sido detectadas.
 	// ******************************************************************
 	publish_motion_command(current_command.v, current_command.phi);
-
-	update_agent_reward();
-
-	printf("***********************************\n");
-	printf("****** COLLISION DETECTED: %d EPSILON: %.10lf ITERATION: %d MEM_SIZE: %d\n", collision_detected, epsilon, dqn_caffe->current_iteration(), dqn_caffe->memory_size());
-	printf("****** COMMAND: %.2lf %.2lf ODOMETRY: %.2lf %.2lf\n", current_command.v, current_command.phi, localize_ackerman_message.v, localize_ackerman_message.phi);
-	printf("****** REWARD: %lf\n", agent_reward);
-	if (max_reward_so_far == -DBL_MAX) printf("****** MAX REWARD ACHIEVED: <not finished an experiment yet>\n");
-	else printf("****** MAX REWARD ACHIEVED: %lf\n", max_reward_so_far);
-	printf("***********************************\n\n");
+	imediate_reward = update_agent_reward();
 
 	if (collision_detected)
 		publish_motion_command(0, 0);
 
-	if ((int) input_frames.size() >= DqnParams::kInputFrameCount)
-		train_dqn(frame, agent_reward, current_action, collision_detected,
-				localize_ackerman_message.v, localize_ackerman_message.phi);
+	// pula de tantos em tantos frames
+	episode.push_back(new Event(frame, current_action, localize_ackerman_message.v, localize_ackerman_message.phi, imediate_reward, current_q, episode_total_reward));
 
-	if (localize_ackerman_message.v > 0.5)
+	printf("***********************************\n");
+	printf("****** COLLISION DETECTED: %d EPSILON: %.10lf ITERATION: %d MEM_SIZE: %d\n", collision_detected, epsilon, dqn_caffe->current_iteration(), dqn_caffe->memory_size());
+	printf("****** COMMAND: %.2lf %.2lf ODOMETRY: %.2lf %.2lf\n", current_command.v, current_command.phi, localize_ackerman_message.v, localize_ackerman_message.phi);
+	printf("****** REWARD: %lf\n", episode_total_reward);
+	if (DqnParams::TrainingModel == DQN_INFINITY_HORIZON_DISCOUNTED_MODEL)
+	{
+		if (max_delayed_reward == -DBL_MAX) printf("****** MAX DELAYED REWARD: <not finished an experiment yet> MIN DELAYED REWARD: <not finished an experiment yet>\n");
+		else printf("****** MAX DELAYED REWARD: %lf MIN DELAYED REWARD: %lf\n", max_delayed_reward, min_delayed_reward);
+	}
+	if (max_reward_so_far == -DBL_MAX) printf("****** MAX REWARD ACHIEVED: <not finished an experiment yet>\n");
+	else printf("****** MAX REWARD ACHIEVED: %lf\n", max_reward_so_far);
+	printf("***********************************\n\n");
+
+	// If the size of replay memory is enough, update DQN
+	if (dqn_caffe->memory_size() > dqn_caffe->params()->NUM_WARMUP_TRANSITIONS)
+		dqn_caffe->Update();
+
+	if (fabs(localize_ackerman_message.v) > 0.01)
 		car_already_accelerated_in_this_experiment = 1;
 
 	// If the car stopped after already accelerating, finish the experiment. Do the same
 	// if a collision is detected.
-	if ((localize_ackerman_message.v == 0 && car_already_accelerated_in_this_experiment) || collision_detected)
+	if ((fabs(localize_ackerman_message.v) < 0.01 && car_already_accelerated_in_this_experiment) || (collision_detected && car_already_accelerated_in_this_experiment))
 	{
+		publish_motion_command(0, 0);
 		summarize_experiment();
 		reset_experiment();
 	}

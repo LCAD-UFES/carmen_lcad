@@ -7,8 +7,9 @@
 #include <string>
 #include <caffe/caffe.hpp>
 #include <caffe/solver.hpp>
-#include <caffe/layer.hpp>
 #include <caffe/layers/memory_data_layer.hpp>
+
+
 
 /** @filipe: deveriam ter 2 redes e 2 conjuntos de acoes, um para velocidade e outro para steering **/
 enum DqnAction
@@ -18,6 +19,13 @@ enum DqnAction
 	DQN_ACTION_SPEED_DOWN,
 	DQN_ACTION_STEER_LEFT,
 	DQN_ACTION_STEER_RIGHT
+};
+
+enum DqnTrainingModel
+{
+	DQN_Q_LEARNING = 0,
+	DQN_DISCOUNTED_TOTAL_REWARD,
+	DQN_INFINITY_HORIZON_DISCOUNTED_MODEL
 };
 
 
@@ -47,8 +55,8 @@ public:
 	static const int kInputDataSize = kCroppedFrameDataSize * kInputFrameCount;
 	static const int kMinibatchSize = 32;
 	static const int kMinibatchDataSize = kInputDataSize * kMinibatchSize;
-	static const float kGamma = 0.95f;
 	static const int kOutputCount = 5;
+	static const DqnTrainingModel TrainingModel = DQN_Q_LEARNING;
 
 	DqnParams()
 	{
@@ -56,7 +64,8 @@ public:
 		SOLVER_FILE = "dqn_solver.prototxt";
 		REPLAY_MEMORY_SIZE = 500000;
 		NUM_ITERATIONS = 1000000;
-		GAMMA = 0.95;
+//		NUM_ITERATIONS = 100000;
+		GAMMA = 0.9;
 		NUM_WARMUP_TRANSITIONS = 500;
 		SKIP_FRAME = 0;
 		MODEL_FILE = "";
@@ -75,6 +84,11 @@ public:
 	{
 		this->reserve(array_size);
 	}
+
+//	size_t size()
+//	{
+//		return array_size;
+//	}
 };
 
 
@@ -95,21 +109,27 @@ class Transition
 public:
 	InputFrames input_frames;
 	DqnAction action;
-	boost::shared_ptr<FrameData> frame_data;
+	boost::shared_ptr<FrameData> frame_after_action;
 	double reward;
+	double estimated_reward;
 	double v, phi;
+	bool is_final_state;
 
-	Transition() { reward = 0; action = DQN_ACTION_NONE; v = phi = 0; }
+	Transition() { reward = 0; action = DQN_ACTION_NONE; v = phi = 0; is_final_state = true; estimated_reward = 0; }
 
 	Transition(InputFrames input_frames_param,
 			DqnAction action_param,
 			double reward_param,
-			boost::shared_ptr<FrameData> frame_data_param,
-			double v_param, double phi_param)
+			boost::shared_ptr<FrameData> frame_after_action_param,
+			double v_param, double phi_param,
+			bool is_final_state_param,
+			double estimated_reward_param)
 	{
+		frame_after_action = frame_after_action_param;
+		estimated_reward = estimated_reward_param;
+		is_final_state = is_final_state_param;
 		input_frames = input_frames_param;
 		action = action_param;
-		frame_data = frame_data_param;
 		reward = reward_param;
 		phi = phi_param;
 		v = v_param;
@@ -147,8 +167,8 @@ class DqnCaffe
 			const FilterLayerInputData& filter_data,
 			const OdometryLayerInputData &odometry_input);
 
-	std::pair<DqnAction, float> SelectActionGreedily(const InputFrames& last_frames, double v, double phi);
-	std::vector<std::pair<DqnAction, float> > SelectActionGreedily(const std::vector<InputFrames>& last_frames, const std::vector<float>& v_batch, const std::vector<float>& phi_batch);
+	std::pair<DqnAction, float> SelectActionGreedily(const InputFrames& last_frames, double v, double phi, std::vector<std::vector<float> > *qs = NULL);
+	std::vector<std::pair<DqnAction, float> > SelectActionGreedily(const std::vector<InputFrames>& last_frames, const std::vector<float>& v_batch, const std::vector<float>& phi_batch, std::vector<std::vector<float> > *qs = NULL);
 
 public:
 
@@ -167,7 +187,7 @@ public:
 	/**
 	 * Select an action by epsilon-greedy.
 	 */
-	DqnAction SelectAction(const InputFrames& last_frames, double epsilon, double v, double phi);
+	std::pair<DqnAction, float> SelectAction(const InputFrames& last_frames, double epsilon, double v, double phi);
 
 	/**
 	 * Add a transition to replay memory
