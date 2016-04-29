@@ -131,60 +131,40 @@ dist_btw_point_and_box(object_geometry_t model_geometry, carmen_position_t point
 	double dist2 = fabs(-model_geometry.length * 0.5 - point.x);
 	double dist3 = fabs(model_geometry.width * 0.5 - point.y);
 	double dist4 = fabs(-model_geometry.width * 0.5 - point.y);
-	double penalt = 1.0;
-	double penalt1 = 1.0;
-	double penalt2 = 1.0;
-	double penalt3 = 1.0;
-	double penalt4 = 1.0;
+	double penalty = 0.1;
 
 	if (point.x  > model_geometry.length * 0.5 || point.y > model_geometry.width * 0.5 ||
 			point.x < -model_geometry.length * 0.5 || point.y < -model_geometry.width * 0.5)
-		penalt = 4.0;
+		penalty = 4.0;
 
-//	if (point.x >= 0.0 && point.y >= 0.0)
-//	{
-//		penalt1 = 0.5;
-//		penalt3 = 0.5;
-//	}else
-//	{
-//		penalt2 = 2.5;
-//		penalt4 = 2.5;
-//	}
-//
-//	if (point.x >= 0.0 && point.y < 0.0)
-//	{
-//		penalt2 = 0.5;
-//		penalt3 = 0.5;
-//	}else
-//	{
-//		penalt1 = 2.5;
-//		penalt4 = 2.5;
-//	}
-//
-//
-//	if (point.x < 0.0 && point.y < 0.0)
-//	{
-//		penalt2 = 0.5;
-//		penalt4 = 0.5;
-//	}else
-//	{
-//		penalt1 = 2.5;
-//		penalt2 = 2.5;
-//	}
-//
-//	if (point.x < 0.0 && point.y >= 0.0)
-//	{
-//		penalt1 = 0.5;
-//		penalt4 = 0.5;
-//	}else
-//	{
-//		penalt2 = 2.5;
-//		penalt3 = 2.5;
-//	}
-		//return  penalt * (dist1 + dist4);
 
-	return  penalt * (penalt1 * dist1 + penalt2 * dist2 + penalt3 * dist3 + penalt4 * dist4);
+
+	return  penalty*(min(dist1, dist2) + min(dist3, dist4));
 }
+
+double
+hausdorffAB_dist_btw_point_and_box(object_geometry_t model_geometry, carmen_position_t point)
+{
+	double dist1 = (model_geometry.length * 0.5 - point.x);
+	double dist2 = (-model_geometry.length * 0.5 - point.x);
+	double dist3 = (model_geometry.width * 0.5 - point.y);
+	double dist4 = (-model_geometry.width * 0.5 - point.y);
+
+	double dist = min(dist1, dist2);
+	dist = min(dist, dist3);
+
+	return  min(dist, dist4);
+}
+
+void
+hausdorffBA_dist_btw_point_and_box(object_geometry_t model_geometry, carmen_position_t point, double *dist)
+{
+	dist[0] = point.x - model_geometry.length * 0.5;
+	dist[1] = point.x - (-model_geometry.length * 0.5);
+	dist[2] = point.y - model_geometry.width * 0.5;
+	dist[3] = point.y - (-model_geometry.width * 0.5);
+}
+
 
 
 double
@@ -269,23 +249,62 @@ dist_bounding_box(carmen_point_t particle_pose, pcl::PointCloud<pcl::PointXYZ> &
 	double width_normalizer = norm_factor_y/model_geometry.width;
 	double length_normalizer = norm_factor_x/model_geometry.length;
 	double height_normalizer = norm_factor_x/model_geometry.height;
+	cell_coords_t new_pt2; //(x,y)
+	vector<double> width;
+	vector<double> length;
+	width.resize(model_geometry.width / 0.2);
+	length.resize(model_geometry.length / 0.2);
+	std::fill(width.begin(), width.end(), 0);
+	std::fill(length.begin(), length.end(), 0);
+	int num_points = 0;
 
 	/*** BOX POSITIONING ***/
 	for (pcl::PointCloud<pcl::PointXYZ>::iterator it = point_cloud.points.begin(); it != point_cloud.points.end(); ++it)
 	{
-		if (it->z > 0.9)
-			continue;
+//		if (it->z > 0.9)
+//			continue;
 		//TODO
 		new_pt = transf2d_2_bounding_box_reference(car_global_position.x + it->x - particle_pose.x, car_global_position.y + it->y - particle_pose.y, particle_pose.theta);
 		sum += dist_btw_point_and_box(model_geometry, new_pt);
-		//new_pt = transf2d_bounding_box(car_global_position.x + it->x - particle_pose.x, car_global_position.y + it->y - particle_pose.y, -particle_pose.theta);
-		//sum += dist_btw_point_and_box(new_pt, width_normalizer, length_normalizer);
-	}
+		new_pt2.x = (int)((new_pt.x + 0.5 * model_geometry.length) / 0.2);
+		new_pt2.y = (int)((new_pt.y + 0.5 * model_geometry.width) / 0.2);
 
-//	double penalty = 0.0;
+		if (new_pt2.x >=0 && new_pt2.y >= 0 && new_pt2.x < (int)(model_geometry.length/0.2) && (int)new_pt2.y < (int)(model_geometry.width/0.2))
+		{
+			width[new_pt2.y]++;
+			length[new_pt2.x]++;
+			num_points++;
+		}
+
+
+//		new_pt = transf2d_bounding_box(car_global_position.x + it->x - particle_pose.x, car_global_position.y + it->y - particle_pose.y, -particle_pose.theta);
+//		sum += dist_btw_point_and_box(new_pt, width_normalizer, length_normalizer);
+	}
+    std::vector<double>::iterator max_width;
+    std::vector<double>::iterator max_length;
+
+    max_width = std::max_element(width.begin(), width.end());
+    max_length = std::max_element(length.begin(), length.end());
+
+    int max_width_index = std::distance(width.begin(), max_width);
+    int max_length_index = std::distance(length.begin(), max_length);
+
+    int max_width_value = width[max_width_index];
+    int max_length_value = length[max_length_index];
+
+    new_pt.y = (double)((max_width_index * 0.2 - 0.5 * model_geometry.width));
+    new_pt.x = (double)((max_length_index * 0.2 - 0.5 * model_geometry.length));
 //	// Centroid's coordinates already global
-//	new_pt = transf2d_bounding_box(x_pose - particle_pose.x, y_pose - particle_pose.y, -particle_pose.theta);
-//	if (new_pt.x > 0.5*model_geometry.length || new_pt.y > 0.5*model_geometry.width)
+////	new_pt = transf2d_bounding_box(x_pose - particle_pose.x, y_pose - particle_pose.y, -particle_pose.theta);
+////	if (new_pt.x > 0.5*model_geometry.length || new_pt.y > 0.5*model_geometry.width)
+////	{
+////		new_pt.x *= length_normalizer;//4.5;
+////		new_pt.y *= width_normalizer;//2.1;
+////		penalty = sqrt(new_pt.x*new_pt.x + new_pt.y*new_pt.y);//new_pt.x + new_pt.y;//
+////	}
+//
+//	new_pt = transf2d_2_bounding_box_reference(x_pose - particle_pose.x, y_pose - particle_pose.y, -particle_pose.theta);
+//	if (new_pt.x > 0.0 || new_pt.y > 0.0)
 //	{
 //		new_pt.x *= length_normalizer;//4.5;
 //		new_pt.y *= width_normalizer;//2.1;
@@ -308,7 +327,7 @@ dist_bounding_box(carmen_point_t particle_pose, pcl::PointCloud<pcl::PointXYZ> &
 //
 //	/* Else return very big distance */
 //	return 999999.0;
-	return sum;
+	return (sum / (max_width_index +  max_length_value));
 }
 
 
