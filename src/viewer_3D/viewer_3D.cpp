@@ -832,7 +832,7 @@ int account_number_of_points_point_clouds(int num_points,
 }
 
 static void
-carmen_moving_objects_point_clouds_message_handler (carmen_moving_objects_point_clouds_message *moving_objects_point_clouds_message)
+carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_clouds_message *moving_objects_point_clouds_message)
 {
 	int i, j;
 	int num_points;
@@ -1674,11 +1674,11 @@ draw_loop(window *w)
 
         if (draw_rays_flag)
         {
-//            carmen_vector_3D_t offset = get_position_offset();
-//            offset.z += sensor_board_1_pose.position.z;
-//
-//        	draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset);
-        	draw_laser_rays(laser_points[last_laser_position], get_laser_position(car_fused_pose.position));
+            carmen_vector_3D_t offset = get_position_offset();
+            offset.z += sensor_board_1_pose.position.z;
+
+        	//draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset);
+        	//draw_laser_rays(laser_points[last_laser_position], get_laser_position(car_fused_pose.position));
         }
 
         if(draw_moving_objects_flag)
@@ -1686,7 +1686,7 @@ draw_loop(window *w)
 		   carmen_vector_3D_t offset = get_position_offset();
            offset.z += sensor_board_1_pose.position.z;
 
-//		   draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset);
+		   draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset);
 		   draw_tracking_moving_objects(moving_objects_tracking, current_num_point_clouds, offset);
         }
 
@@ -1861,7 +1861,7 @@ draw_loop2(window *w)
            carmen_vector_3D_t offset = get_position_offset();
            offset.z += sensor_board_1_pose.position.z;
 
-//           draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset);
+           draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset);
            draw_tracking_moving_objects(moving_objects_tracking, current_num_point_clouds, offset);
         }
 

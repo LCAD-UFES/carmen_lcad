@@ -77,15 +77,16 @@ typedef struct {
  ***************************/
 struct _object_geometry
 {
-	double	length;
-	double	width;
-	double	height;
+	double length;
+	double width;
+	double height;
 };
 
 typedef struct _object_geometry object_geometry_t;
 
 struct _object_model_features {
 	int model_id;
+	char *model_name; //short description of the type of model
 	object_geometry_t geometry;
 	double red, green, blue;
 };
@@ -118,7 +119,8 @@ typedef struct {
 #define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_NAME "carmen_moving_objects_point_clouds_message_name"
 
 /* The message's format, will be used for message data marshalling (serialization) for network socket transport. */
-#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_FMT       "{int, <{int, double, double, double, double, double, double, double, double, int, {int, {double, double, double}, double, double, double}, int, {double, double, double}, <{double, double, double}:1>}:1>, double, string}"
+/*                                                                                                                                               model_features...............................................*/
+#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_FMT       "{int, <{int, double, double, double, double, double, double, double, double, int, {int, string, {double, double, double}, double, double, double}, int, {double, double, double}, <{double, double, double}:1>}:1>, double, string}"
 
 
 struct _moving_objects_tracking
@@ -135,7 +137,6 @@ struct _moving_objects_tracking
 };
 
 typedef struct _moving_objects_tracking moving_objects_tracking_t;
-
 
 #ifdef __cplusplus
 }

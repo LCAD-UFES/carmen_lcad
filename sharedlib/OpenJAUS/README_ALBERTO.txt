@@ -2,7 +2,7 @@ To run the XGV Carmen Control Unit (XGV_CCU - ojTorc/bin/ojTorc):
 
 0- Include in your .bashrc lines equivalent to those below
  # OpenJAUS
-# export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/alberto/robotics/code/carmen/OpenJAUS/libopenJaus/lib:/home/alberto/robotics/code/carmen/OpenJAUS/libjaus/lib:/home/alberto/robotics/code/carmen/OpenJAUS/ojTorc/lib
+# export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/alberto/robotics/code/carmen_lcad/sharedlib/OpenJAUS/libopenJaus/lib:/home/alberto/robotics/code/carmen_lcad/sharedlib/OpenJAUS/libjaus/lib:/home/alberto/robotics/code/carmen_lcad/sharedlib/OpenJAUS/ojTorc/lib
 
 
 1- Compile the code by typing in this directory:

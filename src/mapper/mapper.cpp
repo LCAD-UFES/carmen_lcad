@@ -218,13 +218,36 @@ set_map_equal_offline_map(carmen_map_t *current_map)
 
 
 void
-clear_map(carmen_map_t *current_map)
+add_offline_map_over_unknown(carmen_map_t *current_map)
 {
 	int xi, yi;
 
 	for (xi = 0; xi < current_map->config.x_size; xi++)
 		for (yi = 0; yi < current_map->config.y_size; yi++)
-			current_map->map[xi][yi] = -1.0;
+			if (current_map->map[xi][yi] < 0.0)
+				current_map->map[xi][yi] = offline_map.map[xi][yi];
+}
+
+
+void
+map_decay_to_offline_map(carmen_map_t *current_map)
+{
+	int xi, yi;
+
+	for (xi = 0; xi < current_map->config.x_size; xi++)
+	{
+		for (yi = 0; yi < current_map->config.y_size; yi++)
+		{
+			if (current_map->map[xi][yi] >= 0.0)
+			{
+				current_map->map[xi][yi] = (3.0 * current_map->map[xi][yi] + offline_map.map[xi][yi]) / 4.0;
+				//if (fabs(current_map->map[xi][yi] - 0.5) < 0.1)
+				//	current_map->map[xi][yi] = -1.0;
+			}
+			else
+				current_map->map[xi][yi] = offline_map.map[xi][yi];
+		}
+	}
 }
 
 
@@ -235,7 +258,8 @@ build_map_using_velodyne(sensor_parameters_t *sensor_params, sensor_data_t *sens
 
 	snapshot_map = carmen_prob_models_check_if_new_snapshot_map_allocation_is_needed(snapshot_map, &map);
 	//set_map_equal_offline_map(&map);
-	//clear_map(&map);
+	//add_offline_map_over_unknown(&map);
+	map_decay_to_offline_map(&map);
 
 	// @@@ Alberto: Mapa padrao Lucas -> colocar DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS ao inves de UPDATE_CELLS_CROSSED_BY_RAYS
 	//update_cells_in_the_velodyne_perceptual_field(&map, snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
@@ -243,6 +267,8 @@ build_map_using_velodyne(sensor_parameters_t *sensor_params, sensor_data_t *sens
 
 	if (build_snapshot_map)
 		carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map);
+
+	//add_offline_map_over_unknown(&map);
 }
 
 
