@@ -42,9 +42,9 @@ LFLAGS += -std=c++11
 IFLAGS += `pkg-config --cflags opencv`
 LFLAGS += `pkg-config --libs opencv`
 
-IFLAGS += -I/usr/include/eigen3 -I/usr/include/pcl-1.7/  #-I/usr/include/vtk-5.8/
+IFLAGS += -I/usr/include/eigen3 -I/usr/include/pcl-1.7/  -I/usr/include/vtk-5.8/
 #LFLAGS += -lpcl_common -lpcl_kdtree -lpcl_search -lpcl_segmentation
-#LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_registration -lpcl_surface -lpcl_io -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization \
+#LFLAGS += -lvtkRendering -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_registration -lpcl_surface -lpcl_io -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization \
 #			-lpcl_segmentation
 LFLAGS += -lpcl_common -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_registration -lpcl_surface -lpcl_io -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization \
 			-lpcl_segmentation

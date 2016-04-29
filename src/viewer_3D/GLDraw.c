@@ -543,27 +543,30 @@ draw_laser_rays (point_cloud current_reading, carmen_vector_3D_t laser_position)
 
 
 void
-draw_number_associated(double x, double y, int associated)
+draw_number_associated(double x, double y, int associated, char *model_type)
 {
-	int len;       // String length
-	int i;         //  Iterator
-	char *text;    // Text
+	/*** MOVING OBJECTS MODULE ***/
+	size_t len;    // String length
+	int i;      // Iterator
+	char *text; // Text
 
-	len = 10;
+	len = 15;
     //  Allocate memory for a string of the specified size
     text = malloc(len * sizeof(char));
 
-    snprintf(text, 10, "%d", associated);
+    snprintf(text, len, "%d %s", associated, model_type);
 
 	glPushAttrib(GL_ENABLE_BIT);
 	glDisable(GL_LIGHTING);
+	glDisable(GL_DEPTH_TEST);
 
-	glColor3f(1.0,1.0,1.0);
+	glColor3f(1.0, 1.0, 1.0);
 	glRasterPos3f(x, y, 2.5);
 
 	glPushMatrix();
 	for (i = 0; text[i] != '\0'; i++)
 		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, text[i]);
+	glEnable(GL_DEPTH_TEST);
 	glPopMatrix();
 	glPopAttrib();
 
@@ -572,9 +575,42 @@ draw_number_associated(double x, double y, int associated)
 }
 
 void
-draw_tracking_moving_objects(moving_objects_tracking_t  *moving_objects_tracking,
-		int current_num_point_clouds, carmen_vector_3D_t offset)
+draw_linear_velocity(double x, double y, double linear_velocity, double height)
 {
+	/*** MOVING OBJECTS MODULE ***/
+	int len;       // String length
+	int i;         //  Iterator
+	char *text;    // Text
+
+	len = 10;
+    //  Allocate memory for a string of the specified size
+    text = malloc(len * sizeof(char));
+
+    snprintf(text, 10, "%.2f", linear_velocity);
+
+	glPushAttrib(GL_ENABLE_BIT);
+	glDisable(GL_LIGHTING);
+	glDisable(GL_DEPTH_TEST);
+
+	glColor3f(0.0,1.0,0.0);
+	glRasterPos3f(x+0.5, y+0.5, height);
+
+	glPushMatrix();
+	for (i = 0; text[i] != '\0'; i++)
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, text[i]);
+	glEnable(GL_DEPTH_TEST);
+	glPopMatrix();
+	glPopAttrib();
+
+    //  Free the allocated memory for the string
+    free(text);
+}
+
+void
+draw_tracking_moving_objects(moving_objects_tracking_t *moving_objects_tracking, int current_num_point_clouds,
+		carmen_vector_3D_t offset)
+{
+	/*** MOVING OBJECTS MODULE ***/
 	int i;
 	rotation_matrix *rotate = NULL;
 
@@ -582,7 +618,6 @@ draw_tracking_moving_objects(moving_objects_tracking_t  *moving_objects_tracking
 	{
 		if (moving_objects_tracking[i].geometric_model == -1)
 			continue;
-
 		carmen_pose_3D_t pos;
 		pos = moving_objects_tracking[i].moving_objects_pose;
 		carmen_vector_3D_t p1, p2, p3 , p4, p5, p6, p7, p8, t;
@@ -598,8 +633,11 @@ draw_tracking_moving_objects(moving_objects_tracking_t  *moving_objects_tracking
 		L = moving_objects_tracking[i].model_features.geometry.length;
 		H = moving_objects_tracking[i].model_features.geometry.height;
 
+//		W = moving_objects_tracking[i].width;
+//		L = moving_objects_tracking[i].length;
+//		H = moving_objects_tracking[i].height;
+
 		rotate = compute_rotation_matrix(NULL, pos.orientation);
-		draw_number_associated(pos.position.x, pos.position.y, moving_objects_tracking[i].num_associated);
 
 		glColor3d(moving_objects_tracking[i].model_features.red,
 				moving_objects_tracking[i].model_features.green,
@@ -754,6 +792,12 @@ draw_tracking_moving_objects(moving_objects_tracking_t  *moving_objects_tracking
 		glVertex3d(s1.x, s1.y, s1.z);
 		glEnd();
 		glPopAttrib();
+
+		/* has to drawn after stuff above, so that it appears on top */
+		draw_number_associated(pos.position.x, pos.position.y, moving_objects_tracking[i].num_associated,
+				moving_objects_tracking[i].model_features.model_name);
+		draw_linear_velocity(pos.position.x, pos.position.y, moving_objects_tracking[i].linear_velocity,
+				moving_objects_tracking[i].model_features.geometry.height);
 
 		destroy_rotation_matrix(rotate);
 	}

@@ -12,5 +12,3 @@ Detecção e rastreamento de objetos móveis utilizando laser.
 Após execução, ativar o botão "Options" e, em seguida "Moving Objects" no Viewer 3D.
 
 
-
-OBS.: RODAR EM BAIXA VELOCIDADES (DE 0.15 A 0.2) PARA OBTER RESULTADOS VISUAIS MAIS APURADOS.
