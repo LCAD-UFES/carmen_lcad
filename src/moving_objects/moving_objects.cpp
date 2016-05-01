@@ -841,7 +841,7 @@ init_particle_set(object_point_cloud_data_t &object_pcloud, int num_particles, d
 		particle_t_1.pose.x = x + carmen_gaussian_random(0.0, 0.2 * 0.2);
 		particle_t_1.pose.y = y + carmen_gaussian_random(0.0, 0.2 * 0.2);;
 //		particle_t_1.pose.theta = carmen_normalize_theta(theta + carmen_uniform_random(-M_PI/6, M_PI/6));//object_pcloud.orientation;//carmen_normalize_theta(it->orientation + carmen_gaussian_random(0.0, M_PI));//
-		particle_t_1.pose.theta = carmen_normalize_theta(object_pcloud.orientation + carmen_uniform_random(-M_PI/8, M_PI/8));
+		particle_t_1.pose.theta = carmen_normalize_theta(object_pcloud.orientation + carmen_uniform_random(-M_PI/2, M_PI/2));
 		particle_t_1.velocity = 0.0;//carmen_uniform_random(0.0, 25.0);//object_pcloud.linear_velocity;//
 //		particle_t_1.weight = (1.0 / double(num_of_particles)); //not necessary
 		particle_t_1.class_id = get_random_model_id(num_models);
