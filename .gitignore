@@ -46,6 +46,7 @@ bin/kinect
 bin/kinect_laser
 bin/kinect_mrds
 bin/kinect_view
+bin/lane_analysis
 bin/laser
 bin/laserview
 bin/local.map
@@ -307,6 +308,7 @@ src/xsens/xsens_listener
 src/xsens_MTi-G/example
 src/xsens_MTi-G/subscribe_xsens_mtig
 src/xsens_MTi-G/xsens_mtig
+src/lane_analysis/lane_analysis
 .cproject
 .project
 bin/gnuplot_path
