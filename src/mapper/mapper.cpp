@@ -240,7 +240,7 @@ map_decay_to_offline_map(carmen_map_t *current_map)
 		{
 			if (current_map->map[xi][yi] >= 0.0)
 			{
-				current_map->map[xi][yi] = (3.0 * current_map->map[xi][yi] + offline_map.map[xi][yi]) / 4.0;
+				current_map->map[xi][yi] = (9.0 * current_map->map[xi][yi] + offline_map.map[xi][yi]) / 10.0;
 				//if (fabs(current_map->map[xi][yi] - 0.5) < 0.1)
 				//	current_map->map[xi][yi] = -1.0;
 			}
