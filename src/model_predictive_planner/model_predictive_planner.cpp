@@ -195,6 +195,12 @@ copy_path_to_traj(carmen_ackerman_traj_point_t *traj, vector<carmen_ackerman_pat
 vector<carmen_ackerman_path_point_t>
 compute_plan(Tree *tree)
 {
+	if (goal_list_message.number_of_poses == 0)
+	{
+		printf("Error: trying to compute plan without rddf\n");
+		return vector<carmen_ackerman_path_point_t>();
+	}
+
 	free_tree(tree);
 	vector<vector<carmen_ackerman_path_point_t>> path = TrajectoryLookupTable::compute_path_to_goal(GlobalState::localize_pose,
 			GlobalState::goal_pose, GlobalState::last_odometry, GlobalState::robot_config.max_vel, &goal_list_message);
@@ -267,6 +273,8 @@ build_and_follow_path()
 static void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
+	printf("tempo da localizacao: %lf\n", msg->timestamp);
+
 	Pose pose = Util::convert_to_pose(msg->globalpos);
 	GlobalState::set_robot_pose(pose, msg->timestamp);
 
@@ -277,6 +285,8 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 static void
 simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_message *msg)
 {
+	printf("tempo da localizacao: %lf\n", msg->timestamp);
+
 	Pose pose = Util::convert_to_pose(msg->truepose);
 	GlobalState::set_robot_pose(pose, msg->timestamp);
 
@@ -318,7 +328,10 @@ behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_
 	Pose goal_pose;
 
 	if ((msg->size <= 0) || !msg->goal_list || !GlobalState::localize_pose)
+	{
+		printf("Empty goal list or localize not received\n");
 		return;
+	}
 
 	GlobalState::last_goal = (msg->size == 1)? true: false;
 
@@ -475,12 +488,12 @@ register_handlers_specific()
 void
 rddf_message_handler(carmen_rddf_road_profile_message *message)
 {
-//	printf("%d \n", message->number_of_poses);
+//	printf("RDDF NUM POSES: %d \n", message->number_of_poses);
 //
 //	for (int i = 0; i < message->number_of_poses; i++)
 //	{
-//		printf("x  = %lf, y = %lf , theta = %lf ", message->poses[i].x, message->poses[i].y, message->poses[i].theta);
-//		getchar();
+//		printf("RDDF %d: x  = %lf, y = %lf , theta = %lf\n", i, message->poses[i].x, message->poses[i].y, message->poses[i].theta);
+//		//getchar();
 //	}
 }
 
@@ -587,6 +600,8 @@ main(int argc, char **argv)
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 	read_parameters(argc, argv);
+
+	memset(&goal_list_message, 0, sizeof(goal_list_message));
 
 	register_handlers();
 

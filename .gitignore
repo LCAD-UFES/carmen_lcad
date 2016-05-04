@@ -128,6 +128,7 @@ bin/xsens
 bin/xsens_listener
 bin/xsens_mtig
 bin/xsens_viewer
+bin/laser_ldmrs
 data/rndf/rddf-log_voltadaufes-20140806-2.kml.timestamp.index
 data/rndf/rddf-log_voltadaufes-20140806-2.kml.x.index
 data/rndf/rddf-log_voltadaufes-20140806-2.kml.y.index
@@ -307,6 +308,7 @@ src/xsens/xsens_listener
 src/xsens_MTi-G/example
 src/xsens_MTi-G/subscribe_xsens_mtig
 src/xsens_MTi-G/xsens_mtig
+src/laser-ldmrs/laser_ldmrs
 .cproject
 .project
 bin/gnuplot_path
@@ -380,3 +382,6 @@ src/velodyne/libvelodyne_interface.so.1
 src/visual_odometry_package2/libvisual_odometry_interface.so.1
 src/xsens/libxsens_interface.so.1
 src/xsens_MTi-G/libxsens_mtig_interface.so.1
+src/model_predictive_planner/gnuplot_path.txt
+src/model_predictive_planner/problems.txt
+sharedlib/libsickldmrs/libsickldmrs.so.1

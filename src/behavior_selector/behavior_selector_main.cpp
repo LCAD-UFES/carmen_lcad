@@ -86,10 +86,11 @@ publish_goal_list()
 	carmen_ackerman_traj_point_t *goal_list;
 	int goal_list_size;
 	int goal_list_index;
+	double goal_list_time;
 
-	behavior_selector_get_goal_list(&goal_list, &goal_list_size, &goal_list_index);
+	behavior_selector_get_goal_list(&goal_list, &goal_list_size, &goal_list_index, &goal_list_time);
 
-	goal_list_msg.timestamp = carmen_get_time();
+	goal_list_msg.timestamp = goal_list_time;
 	goal_list_msg.host = carmen_get_host();
 	goal_list_msg.goal_list = goal_list;
 	goal_list_msg.size = goal_list_size;
@@ -111,8 +112,11 @@ publish_goal_list()
 	else if (obstacle_avoider_active_recently)
 		goal_list_msg.goal_list->v = 2.5;
 
-	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME, &goal_list_msg);
-	carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME);
+	if (goal_list_msg.size > 0)
+	{
+		err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME, &goal_list_msg);
+		carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME);
+	}
 }
 
 

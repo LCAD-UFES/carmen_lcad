@@ -16,6 +16,6 @@ read_camera(char *dir_left, char *dir_right, int file_id, double timestamp);
 
 void
 read_gps(char *dir_gps, int file_id, double timestamp, carmen_gps_gpgga_message *gps_msg,
-		carmen_xsens_global_quat_message *xsens_msg);
+		carmen_xsens_global_quat_message *xsens_msg, carmen_robot_ackerman_velocity_message *velocity_msg);
 
 #endif
