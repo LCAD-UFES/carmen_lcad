@@ -42,7 +42,7 @@ carmen_behavior_selector_algorithm_t get_current_algorithm();
 void behavior_selector_get_state(carmen_behavior_selector_state_t *current_state_out, carmen_behavior_selector_algorithm_t *following_lane_planner_out,
 		carmen_behavior_selector_algorithm_t *parking_planner_out, carmen_behavior_selector_goal_source_t *current_goal_source_out);
 
-void behavior_selector_get_goal_list(carmen_ackerman_traj_point_t **goal_list_out, int *goal_list_size_out, int *goal_list_index_out);
+void behavior_selector_get_goal_list(carmen_ackerman_traj_point_t **goal_list_out, int *goal_list_size_out, int *goal_list_index_out, double *goal_list_time_out);
 
 carmen_ackerman_traj_point_t get_robot_pose();
 
