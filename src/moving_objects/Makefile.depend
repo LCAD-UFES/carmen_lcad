@@ -1,7 +1,7 @@
 moving_objects_main.o: moving_objects_main.cpp moving_objects_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/grid_mapping_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/grid_mapping_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/carmen.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/grid_mapping_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/grid_mapping_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/carmen.h \
  /usr/include/stdio.h /usr/include/features.h \
  /usr/include/x86_64-linux-gnu/bits/predefs.h \
  /usr/include/x86_64-linux-gnu/sys/cdefs.h \
@@ -59,118 +59,118 @@ moving_objects_main.o: moving_objects_main.cpp moving_objects_messages.h \
  /usr/include/x86_64-linux-gnu/bits/posix2_lim.h \
  /usr/include/x86_64-linux-gnu/bits/xopen_lim.h \
  /usr/lib/gcc/x86_64-linux-gnu/4.6/include/float.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/ipc.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/global.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/ipc.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/global.h \
  /usr/include/fcntl.h /usr/include/x86_64-linux-gnu/bits/fcntl.h \
  /usr/include/x86_64-linux-gnu/bits/uio.h /usr/include/termios.h \
  /usr/include/x86_64-linux-gnu/bits/termios.h \
  /usr/include/x86_64-linux-gnu/sys/ttydefaults.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/ipc_wrapper.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/carmenserial.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/pswrap.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/param_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/param_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/laser_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/laser_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/laser_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/laser_ldmrs_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/ipc_wrapper.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/carmenserial.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/pswrap.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/param_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/param_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/laser_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/laser_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/laser_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/laser_ldmrs_messages.h \
  /usr/lib/gcc/x86_64-linux-gnu/4.6/include/stdint.h /usr/include/stdint.h \
  /usr/include/x86_64-linux-gnu/bits/wchar.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/laser_ldmrs_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/camera_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/camera_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/keyctrl.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map_io.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/carmen_stdio.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/laser_ldmrs_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/camera_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/camera_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/keyctrl.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map_io.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/carmen_stdio.h \
  /usr/include/zlib.h /usr/include/zconf.h /usr/include/zlibdefs.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map_util.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/geometry.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/movement.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/gps_nmea_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/gps_nmea_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/gps_xyz_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/gps_xyz_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/pantilt_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/pantilt_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/imu_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/imu_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/imu_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/velodyne_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/velodyne_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/rotation_geometry.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/bumblebee_basic_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/bumblebee_basic_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/stereo_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/stereo_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/kinect_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/kinect_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/kinect_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/kinect_util.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/xsens_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/xsens_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/xsens_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/xsens_mtig_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/xsens_mtig_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/logger_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/logger.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/logger_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/logger_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/writelog.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/web_cam_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/web_cam_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/ultrasonic_filter_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/robot_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/simulator_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/visual_odometry_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/base_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/readlog.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/playback_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/playback_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/robot_ackerman_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/robot_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/simulator_ackerman_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/simulator_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_motion.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/navigator_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/navigator_ackerman_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/navigator_ackerman.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/behavior_selector_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/behavior_selector_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/navigator_gui_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/navigator_gui_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/navigator_gui_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map_server_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/grid_mapping_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map_server_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_core.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map_util.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/geometry.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/movement.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/gps_nmea_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/gps_nmea_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/gps_xyz_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/gps_xyz_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/pantilt_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/pantilt_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/imu_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/imu_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/imu_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/velodyne_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/velodyne_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/rotation_geometry.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/bumblebee_basic_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/bumblebee_basic_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/stereo_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/stereo_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/kinect_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/kinect_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/kinect_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/kinect_util.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/xsens_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/xsens_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/xsens_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/xsens_mtig_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/xsens_mtig_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/logger_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/logger.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/logger_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/logger_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/writelog.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/web_cam_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/web_cam_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/ultrasonic_filter_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/robot_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/simulator_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/visual_odometry_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/base_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/readlog.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/playback_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/playback_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/robot_ackerman_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/robot_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/simulator_ackerman_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/simulator_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_motion.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/navigator_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/navigator_ackerman_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/navigator_ackerman.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/behavior_selector_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/behavior_selector_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/navigator_gui_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/navigator_gui_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/navigator_gui_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map_server_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/grid_mapping_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map_server_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_core.h \
  /usr/lib/gcc/x86_64-linux-gnu/4.6/include/omp.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/fused_odometry_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_motion.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_likelihood_map.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_core.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_likelihood_map.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/base_ackerman_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/base_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/ford_escape_hybrid_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/ford_escape_hybrid_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/ford_escape_hybrid_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/grid_mapping.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/prob_models/prob_measurement_model.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/prob_models/prob_map.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/prob_models/prob_measurement_model.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_velodyne.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/moving_objects_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/moving_objects_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/stereo_util.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/stereo_velodyne.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/stereo_velodyne_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/stereo_velodyne_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/fused_odometry_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_motion.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_likelihood_map.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_core.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_likelihood_map.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/base_ackerman_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/base_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/ford_escape_hybrid_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/ford_escape_hybrid_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/ford_escape_hybrid_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/grid_mapping.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/prob_models/prob_measurement_model.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/prob_models/prob_map.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/prob_models/prob_measurement_model.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_velodyne.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/moving_objects_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/moving_objects_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/stereo_util.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/stereo_velodyne.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/stereo_velodyne_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/stereo_velodyne_interface.h \
  /usr/include/eigen3/Eigen/Core \
  /usr/include/eigen3/Eigen/src/Core/util/DisableStupidWarnings.h \
  /usr/include/eigen3/Eigen/src/Core/util/Macros.h \
@@ -336,7 +336,7 @@ moving_objects_main.o: moving_objects_main.cpp moving_objects_messages.h \
  /usr/include/eigen3/Eigen/src/Core/ArrayWrapper.h \
  /usr/include/eigen3/Eigen/src/Core/GlobalFunctions.h \
  /usr/include/eigen3/Eigen/src/Core/util/ReenableStupidWarnings.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/tf.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/tf.h \
  /usr/include/c++/4.6/iostream /usr/include/c++/4.6/iomanip \
  /usr/include/c++/4.6/vector \
  /usr/include/c++/4.6/bits/stl_uninitialized.h \
@@ -345,7 +345,7 @@ moving_objects_main.o: moving_objects_main.cpp moving_objects_messages.h \
  /usr/include/c++/4.6/bits/vector.tcc /usr/include/c++/4.6/map \
  /usr/include/c++/4.6/bits/stl_tree.h /usr/include/c++/4.6/bits/stl_map.h \
  /usr/include/c++/4.6/bits/stl_multimap.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/signalslib.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/signalslib.h \
  /usr/include/boost/signal.hpp /usr/include/boost/config.hpp \
  /usr/include/boost/config/user.hpp \
  /usr/include/boost/config/select_compiler_config.hpp \
@@ -740,8 +740,8 @@ moving_objects_main.o: moving_objects_main.cpp moving_objects_messages.h \
  /usr/include/boost/function.hpp \
  /usr/include/boost/preprocessor/iterate.hpp \
  /usr/include/boost/function/detail/function_iterate.hpp \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/exceptions.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/time_cache.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/exceptions.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/time_cache.h \
  /usr/include/boost/thread/mutex.hpp \
  /usr/include/boost/thread/detail/platform.hpp \
  /usr/include/boost/config/requires_threads.hpp \
@@ -808,10 +808,10 @@ moving_objects_main.o: moving_objects_main.cpp moving_objects_messages.h \
  /usr/include/boost/date_time/gregorian/conversion.hpp \
  /usr/include/boost/thread/pthread/timespec.hpp \
  /usr/include/boost/thread/pthread/pthread_mutex_scoped_lock.hpp \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/transform_datatypes.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/tf_time.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/tf_time_exception.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/tf_duration.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/transform_datatypes.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/tf_time.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/tf_time_exception.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/tf_duration.h \
  /usr/include/boost/math/special_functions/round.hpp \
  /usr/include/boost/math/tools/config.hpp \
  /usr/include/boost/math/tools/user.hpp \
@@ -992,18 +992,18 @@ moving_objects_main.o: moving_objects_main.cpp moving_objects_messages.h \
  /usr/include/boost/config/no_tr1/complex.hpp \
  /usr/include/boost/math/special_functions/detail/fp_traits.hpp \
  /usr/include/boost/detail/endian.hpp \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/linear_math/Transform.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/linear_math/Matrix3x3.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/linear_math/Vector3.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/linear_math/Scalar.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/linear_math/Transform.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/linear_math/Matrix3x3.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/linear_math/Vector3.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/linear_math/Scalar.h \
  /usr/include/c++/4.6/cfloat \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/linear_math/MinMax.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/linear_math/MinMax.h \
  /usr/local/include/bullet/LinearMath/btVector3.h \
  /usr/local/include/bullet/LinearMath/btScalar.h \
  /usr/local/include/bullet/LinearMath/btMinMax.h \
  /usr/local/include/bullet/LinearMath/btScalar.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/linear_math/Quaternion.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/linear_math/QuadWord.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/linear_math/Quaternion.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/linear_math/QuadWord.h \
  /usr/local/include/bullet/LinearMath/btQuaternion.h \
  /usr/local/include/bullet/LinearMath/btVector3.h \
  /usr/local/include/bullet/LinearMath/btQuadWord.h \
@@ -1104,7 +1104,7 @@ moving_objects_main.o: moving_objects_main.cpp moving_objects_messages.h \
  /usr/include/pcl-1.7/pcl/common/point_tests.h moving_objects.h \
  monte_carlo_moving_objects_tracking.h
 moving_objects_interface.o: moving_objects_interface.c \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/carmen.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/carmen.h \
  /usr/include/stdio.h /usr/include/features.h \
  /usr/include/x86_64-linux-gnu/bits/predefs.h \
  /usr/include/x86_64-linux-gnu/sys/cdefs.h \
@@ -1160,110 +1160,110 @@ moving_objects_interface.o: moving_objects_interface.c \
  /usr/include/linux/limits.h \
  /usr/include/x86_64-linux-gnu/bits/posix2_lim.h \
  /usr/lib/gcc/x86_64-linux-gnu/4.6/include/float.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/ipc.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/global.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/ipc.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/global.h \
  /usr/include/fcntl.h /usr/include/x86_64-linux-gnu/bits/fcntl.h \
  /usr/include/termios.h /usr/include/x86_64-linux-gnu/bits/termios.h \
  /usr/include/x86_64-linux-gnu/sys/ttydefaults.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/ipc_wrapper.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/carmenserial.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/pswrap.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/param_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/param_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/laser_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/laser_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/laser_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/laser_ldmrs_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/ipc_wrapper.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/carmenserial.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/pswrap.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/param_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/param_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/laser_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/laser_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/laser_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/laser_ldmrs_messages.h \
  /usr/lib/gcc/x86_64-linux-gnu/4.6/include/stdint.h /usr/include/stdint.h \
  /usr/include/x86_64-linux-gnu/bits/wchar.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/laser_ldmrs_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/camera_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/camera_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/keyctrl.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map_io.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/carmen_stdio.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/laser_ldmrs_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/camera_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/camera_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/keyctrl.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map_io.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/carmen_stdio.h \
  /usr/include/zlib.h /usr/include/zconf.h /usr/include/zlibdefs.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map_util.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/geometry.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/movement.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/gps_nmea_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/gps_nmea_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/gps_xyz_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/gps_xyz_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/pantilt_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/pantilt_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/imu_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/imu_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/imu_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/velodyne_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/velodyne_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/rotation_geometry.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/bumblebee_basic_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/bumblebee_basic_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/stereo_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/stereo_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/kinect_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/kinect_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/kinect_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/kinect_util.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/xsens_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/xsens_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/xsens_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/xsens_mtig_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/xsens_mtig_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/logger_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/logger.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/logger_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/logger_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/writelog.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/web_cam_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/web_cam_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/ultrasonic_filter_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/robot_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/simulator_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/visual_odometry_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/base_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/readlog.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/playback_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/playback_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/robot_ackerman_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/robot_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/simulator_ackerman_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/simulator_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_motion.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/navigator_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/navigator_ackerman_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/navigator_ackerman.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/behavior_selector_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/behavior_selector_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/navigator_gui_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/navigator_gui_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/navigator_gui_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map_server_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/grid_mapping_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map_server_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_core.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map_util.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/geometry.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/movement.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/gps_nmea_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/gps_nmea_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/gps_xyz_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/gps_xyz_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/pantilt_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/pantilt_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/imu_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/imu_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/imu_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/velodyne_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/velodyne_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/rotation_geometry.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/bumblebee_basic_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/bumblebee_basic_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/stereo_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/stereo_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/kinect_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/kinect_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/kinect_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/kinect_util.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/xsens_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/xsens_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/xsens_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/xsens_mtig_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/xsens_mtig_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/logger_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/logger.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/logger_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/logger_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/writelog.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/web_cam_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/web_cam_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/ultrasonic_filter_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/robot_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/simulator_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/visual_odometry_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/base_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/readlog.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/playback_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/playback_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/robot_ackerman_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/robot_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/simulator_ackerman_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/simulator_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_motion.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/navigator_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/navigator_ackerman_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/navigator_ackerman.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/behavior_selector_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/behavior_selector_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/navigator_gui_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/navigator_gui_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/navigator_gui_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map_server_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/grid_mapping_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map_server_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_core.h \
  /usr/lib/gcc/x86_64-linux-gnu/4.6/include/omp.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/fused_odometry_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_motion.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_likelihood_map.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_core.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_likelihood_map.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/base_ackerman_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/base_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/ford_escape_hybrid_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/ford_escape_hybrid_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/ford_escape_hybrid_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/moving_objects_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/grid_mapping_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/grid_mapping_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/grid_mapping.h
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/fused_odometry_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_motion.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_likelihood_map.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_core.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_likelihood_map.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/base_ackerman_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/base_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/ford_escape_hybrid_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/ford_escape_hybrid_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/ford_escape_hybrid_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/moving_objects_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/grid_mapping_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/grid_mapping_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/grid_mapping.h
 moving_objects.o: moving_objects.cpp moving_objects.h \
  monte_carlo_moving_objects_tracking.h \
  /usr/include/pcl-1.7/pcl/point_cloud.h \
@@ -1919,7 +1919,7 @@ moving_objects.o: moving_objects.cpp moving_objects.h \
  /usr/include/pcl-1.7/pcl/impl/point_types.hpp \
  /usr/include/eigen3/Eigen/Core \
  /usr/include/pcl-1.7/pcl/common/point_tests.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/carmen.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/carmen.h \
  /usr/include/signal.h /usr/include/x86_64-linux-gnu/bits/signum.h \
  /usr/include/x86_64-linux-gnu/bits/siginfo.h \
  /usr/include/x86_64-linux-gnu/bits/sigaction.h \
@@ -1931,121 +1931,121 @@ moving_objects.o: moving_objects.cpp moving_objects.h \
  /usr/include/x86_64-linux-gnu/sys/stat.h \
  /usr/include/x86_64-linux-gnu/bits/stat.h \
  /usr/lib/gcc/x86_64-linux-gnu/4.6/include/float.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/ipc.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/global.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/ipc.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/global.h \
  /usr/include/fcntl.h /usr/include/x86_64-linux-gnu/bits/fcntl.h \
  /usr/include/x86_64-linux-gnu/bits/uio.h /usr/include/termios.h \
  /usr/include/x86_64-linux-gnu/bits/termios.h \
  /usr/include/x86_64-linux-gnu/sys/ttydefaults.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/ipc_wrapper.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/carmenserial.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/pswrap.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/param_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/param_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/laser_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/laser_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/laser_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/laser_ldmrs_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/laser_ldmrs_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/camera_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/camera_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/keyctrl.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map_io.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/carmen_stdio.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/ipc_wrapper.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/carmenserial.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/pswrap.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/param_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/param_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/laser_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/laser_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/laser_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/laser_ldmrs_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/laser_ldmrs_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/camera_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/camera_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/keyctrl.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map_io.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/carmen_stdio.h \
  /usr/include/zlib.h /usr/include/zconf.h /usr/include/zlibdefs.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map_util.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/geometry.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/movement.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/gps_nmea_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/gps_nmea_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/gps_xyz_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/gps_xyz_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/pantilt_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/pantilt_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/imu_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/imu_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/imu_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/velodyne_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/velodyne_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/rotation_geometry.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/bumblebee_basic_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/bumblebee_basic_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/stereo_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/stereo_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/kinect_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/kinect_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/kinect_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/kinect_util.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/xsens_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/xsens_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/xsens_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/xsens_mtig_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/xsens_mtig_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/logger_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/logger.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/logger_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/logger_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/writelog.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/web_cam_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/web_cam_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/ultrasonic_filter_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/robot_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/simulator_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/visual_odometry_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/base_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/readlog.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/playback_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/playback_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/robot_ackerman_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/robot_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/simulator_ackerman_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/simulator_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_motion.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/navigator_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/navigator_ackerman_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/navigator_ackerman.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/behavior_selector_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/behavior_selector_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/navigator_gui_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/navigator_gui_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/navigator_gui_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map_server_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/grid_mapping_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map_server_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_core.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map_util.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/geometry.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/movement.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/gps_nmea_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/gps_nmea_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/gps_xyz_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/gps_xyz_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/pantilt_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/pantilt_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/imu_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/imu_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/imu_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/velodyne_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/velodyne_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/rotation_geometry.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/bumblebee_basic_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/bumblebee_basic_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/stereo_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/stereo_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/kinect_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/kinect_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/kinect_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/kinect_util.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/xsens_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/xsens_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/xsens_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/xsens_mtig_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/xsens_mtig_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/logger_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/logger.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/logger_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/logger_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/writelog.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/web_cam_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/web_cam_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/ultrasonic_filter_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/robot_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/simulator_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/visual_odometry_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/base_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/readlog.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/playback_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/playback_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/robot_ackerman_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/robot_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/simulator_ackerman_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/simulator_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_motion.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/navigator_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/navigator_ackerman_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/navigator_ackerman.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/behavior_selector_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/behavior_selector_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/navigator_gui_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/navigator_gui_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/navigator_gui_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map_server_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/grid_mapping_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map_server_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_core.h \
  /usr/lib/gcc/x86_64-linux-gnu/4.6/include/omp.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/fused_odometry_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_motion.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_likelihood_map.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_core.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_likelihood_map.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/base_ackerman_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/base_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/ford_escape_hybrid_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/ford_escape_hybrid_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/ford_escape_hybrid_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/fused_odometry_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_motion.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_likelihood_map.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_core.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_likelihood_map.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/base_ackerman_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/base_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/ford_escape_hybrid_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/ford_escape_hybrid_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/ford_escape_hybrid_messages.h \
  /usr/include/c++/4.6/list /usr/include/c++/4.6/bits/stl_list.h \
  /usr/include/c++/4.6/bits/list.tcc moving_objects_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/grid_mapping_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/grid_mapping_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/grid_mapping.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/prob_models/prob_map.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/prob_models/prob_measurement_model.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/prob_models/prob_measurement_model.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/stereo_util.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/stereo_velodyne.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/stereo_velodyne_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/tf.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/grid_mapping_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/grid_mapping_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/grid_mapping.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/prob_models/prob_map.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/prob_models/prob_measurement_model.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/prob_models/prob_measurement_model.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/stereo_util.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/stereo_velodyne.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/stereo_velodyne_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/tf.h \
  /usr/include/c++/4.6/iomanip /usr/include/c++/4.6/map \
  /usr/include/c++/4.6/bits/stl_tree.h /usr/include/c++/4.6/bits/stl_map.h \
  /usr/include/c++/4.6/bits/stl_multimap.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/signalslib.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/signalslib.h \
  /usr/include/boost/signal.hpp /usr/include/boost/signals/signal0.hpp \
  /usr/include/boost/signals/signal_template.hpp \
  /usr/include/boost/signals/connection.hpp \
@@ -2143,8 +2143,8 @@ moving_objects.o: moving_objects.cpp moving_objects.h \
  /usr/include/boost/function.hpp \
  /usr/include/boost/preprocessor/iterate.hpp \
  /usr/include/boost/function/detail/function_iterate.hpp \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/exceptions.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/time_cache.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/exceptions.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/time_cache.h \
  /usr/include/boost/thread/mutex.hpp \
  /usr/include/boost/thread/detail/platform.hpp \
  /usr/include/boost/config/requires_threads.hpp \
@@ -2211,10 +2211,10 @@ moving_objects.o: moving_objects.cpp moving_objects.h \
  /usr/include/boost/date_time/gregorian/conversion.hpp \
  /usr/include/boost/thread/pthread/timespec.hpp \
  /usr/include/boost/thread/pthread/pthread_mutex_scoped_lock.hpp \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/transform_datatypes.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/tf_time.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/tf_time_exception.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/tf_duration.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/transform_datatypes.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/tf_time.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/tf_time_exception.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/tf_duration.h \
  /usr/include/boost/math/special_functions/round.hpp \
  /usr/include/boost/math/tools/config.hpp \
  /usr/include/boost/math/tools/user.hpp \
@@ -2316,18 +2316,18 @@ moving_objects.o: moving_objects.cpp moving_objects.h \
  /usr/include/boost/config/no_tr1/complex.hpp \
  /usr/include/boost/math/special_functions/detail/fp_traits.hpp \
  /usr/include/boost/detail/endian.hpp \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/linear_math/Transform.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/linear_math/Matrix3x3.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/linear_math/Vector3.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/linear_math/Scalar.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/linear_math/Transform.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/linear_math/Matrix3x3.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/linear_math/Vector3.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/linear_math/Scalar.h \
  /usr/include/c++/4.6/cfloat \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/linear_math/MinMax.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/linear_math/MinMax.h \
  /usr/local/include/bullet/LinearMath/btVector3.h \
  /usr/local/include/bullet/LinearMath/btScalar.h \
  /usr/local/include/bullet/LinearMath/btMinMax.h \
  /usr/local/include/bullet/LinearMath/btScalar.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/linear_math/Quaternion.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/linear_math/QuadWord.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/linear_math/Quaternion.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/linear_math/QuadWord.h \
  /usr/local/include/bullet/LinearMath/btQuaternion.h \
  /usr/local/include/bullet/LinearMath/btVector3.h \
  /usr/local/include/bullet/LinearMath/btQuadWord.h \
@@ -2904,43 +2904,6 @@ moving_objects.o: moving_objects.cpp moving_objects.h \
  /usr/include/boost/interprocess/streams/bufferstream.hpp \
  /usr/include/boost/interprocess/detail/posix_time_types_wrk.hpp \
  /usr/include/boost/interprocess/detail/move.hpp \
- /usr/include/boost/iostreams/device/mapped_file.hpp \
- /usr/include/boost/iostreams/close.hpp \
- /usr/include/boost/iostreams/categories.hpp \
- /usr/include/boost/iostreams/flush.hpp \
- /usr/include/boost/iostreams/detail/dispatch.hpp \
- /usr/include/boost/iostreams/detail/select.hpp \
- /usr/include/boost/iostreams/traits.hpp \
- /usr/include/boost/iostreams/detail/bool_trait_def.hpp \
- /usr/include/boost/iostreams/detail/template_params.hpp \
- /usr/include/boost/preprocessor/control/expr_if.hpp \
- /usr/include/boost/iostreams/detail/config/wide_streams.hpp \
- /usr/include/boost/iostreams/detail/is_iterator_range.hpp \
- /usr/include/boost/iostreams/detail/config/disable_warnings.hpp \
- /usr/include/boost/iostreams/detail/config/enable_warnings.hpp \
- /usr/include/boost/iostreams/detail/select_by_size.hpp \
- /usr/include/boost/preprocessor/iteration/local.hpp \
- /usr/include/boost/preprocessor/iteration/detail/local.hpp \
- /usr/include/boost/iostreams/detail/wrap_unwrap.hpp \
- /usr/include/boost/iostreams/detail/enable_if_stream.hpp \
- /usr/include/boost/iostreams/traits_fwd.hpp \
- /usr/include/boost/iostreams/detail/streambuf.hpp \
- /usr/include/boost/iostreams/operations_fwd.hpp \
- /usr/include/boost/iostreams/detail/adapter/non_blocking_adapter.hpp \
- /usr/include/boost/iostreams/detail/ios.hpp \
- /usr/include/boost/iostreams/read.hpp \
- /usr/include/boost/iostreams/char_traits.hpp \
- /usr/include/boost/iostreams/detail/char_traits.hpp \
- /usr/include/boost/iostreams/seek.hpp \
- /usr/include/boost/iostreams/positioning.hpp \
- /usr/include/boost/iostreams/detail/config/codecvt.hpp \
- /usr/include/boost/iostreams/detail/config/fpos.hpp \
- /usr/include/boost/iostreams/write.hpp \
- /usr/include/boost/iostreams/concepts.hpp \
- /usr/include/boost/iostreams/detail/default_arg.hpp \
- /usr/include/boost/iostreams/detail/config/auto_link.hpp \
- /usr/include/boost/iostreams/detail/config/dyn_link.hpp \
- /usr/include/boost/iostreams/detail/path.hpp \
  /usr/include/boost/signals2.hpp \
  /usr/include/boost/signals2/deconstruct.hpp \
  /usr/include/boost/signals2/deconstruct_ptr.hpp \
@@ -3018,6 +2981,7 @@ moving_objects.o: moving_objects.cpp moving_objects.h \
  /usr/include/boost/preprocessor/arithmetic/div.hpp \
  /usr/include/boost/preprocessor/arithmetic/mul.hpp \
  /usr/include/boost/preprocessor/iteration.hpp \
+ /usr/include/boost/preprocessor/iteration/local.hpp \
  /usr/include/boost/preprocessor/iteration/self.hpp \
  /usr/include/boost/signals2/detail/signal_template.hpp \
  /usr/include/boost/signals2/signal_type.hpp \
@@ -3065,6 +3029,7 @@ moving_objects.o: moving_objects.cpp moving_objects.h \
  /usr/include/boost/parameter/binding.hpp \
  /usr/include/boost/parameter/value_type.hpp \
  /usr/include/boost/parameter/macros.hpp \
+ /usr/include/boost/preprocessor/control/expr_if.hpp \
  /usr/include/boost/parameter/match.hpp \
  /usr/include/boost/parameter/name.hpp \
  /usr/include/boost/parameter/preprocessor.hpp \
@@ -3082,9 +3047,6 @@ moving_objects.o: moving_objects.cpp moving_objects.h \
  /usr/include/boost/preprocessor/seq/push_back.hpp \
  /usr/include/boost/preprocessor/detail/is_nullary.hpp \
  /usr/include/boost/signals2/shared_connection_block.hpp \
- /usr/include/pcl-1.7/pcl/PolygonMesh.h \
- /usr/include/pcl-1.7/pcl/Vertices.h \
- /usr/include/pcl-1.7/pcl/TextureMesh.h \
  /usr/include/pcl-1.7/pcl/io/impl/pcd_io.hpp /usr/include/c++/4.6/fstream \
  /usr/include/c++/4.6/x86_64-linux-gnu/./bits/basic_file.h \
  /usr/include/c++/4.6/x86_64-linux-gnu/./bits/c++io.h \
@@ -3748,7 +3710,7 @@ monte_carlo_moving_objects_tracking.o: \
  /usr/include/pcl-1.7/pcl/impl/point_types.hpp \
  /usr/include/eigen3/Eigen/Core \
  /usr/include/pcl-1.7/pcl/common/point_tests.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/carmen.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/carmen.h \
  /usr/include/signal.h /usr/include/x86_64-linux-gnu/bits/signum.h \
  /usr/include/x86_64-linux-gnu/bits/siginfo.h \
  /usr/include/x86_64-linux-gnu/bits/sigaction.h \
@@ -3760,122 +3722,122 @@ monte_carlo_moving_objects_tracking.o: \
  /usr/include/x86_64-linux-gnu/sys/stat.h \
  /usr/include/x86_64-linux-gnu/bits/stat.h \
  /usr/lib/gcc/x86_64-linux-gnu/4.6/include/float.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/ipc.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/global.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/ipc.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/global.h \
  /usr/include/fcntl.h /usr/include/x86_64-linux-gnu/bits/fcntl.h \
  /usr/include/x86_64-linux-gnu/bits/uio.h /usr/include/termios.h \
  /usr/include/x86_64-linux-gnu/bits/termios.h \
  /usr/include/x86_64-linux-gnu/sys/ttydefaults.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/ipc_wrapper.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/carmenserial.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/pswrap.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/param_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/param_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/laser_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/laser_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/laser_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/laser_ldmrs_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/laser_ldmrs_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/camera_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/camera_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/keyctrl.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map_io.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/carmen_stdio.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/ipc_wrapper.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/carmenserial.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/pswrap.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/param_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/param_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/laser_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/laser_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/laser_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/laser_ldmrs_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/laser_ldmrs_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/camera_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/camera_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/keyctrl.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map_io.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/carmen_stdio.h \
  /usr/include/zlib.h /usr/include/zconf.h /usr/include/zlibdefs.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map_util.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/geometry.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/movement.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/gps_nmea_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/gps_nmea_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/gps_xyz_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/gps_xyz_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/pantilt_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/pantilt_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/imu_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/imu_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/imu_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/velodyne_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/velodyne_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/rotation_geometry.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/bumblebee_basic_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/bumblebee_basic_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/stereo_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/stereo_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/kinect_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/kinect_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/kinect_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/kinect_util.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/xsens_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/xsens_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/xsens_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/xsens_mtig_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/xsens_mtig_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/logger_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/logger.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/logger_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/logger_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/writelog.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/web_cam_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/web_cam_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/ultrasonic_filter_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/robot_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/simulator_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/visual_odometry_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/base_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/readlog.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/playback_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/playback_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/robot_ackerman_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/robot_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/simulator_ackerman_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/simulator_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_motion.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/navigator_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/navigator_ackerman_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/navigator_ackerman.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/behavior_selector_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/behavior_selector_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/navigator_gui_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/navigator_gui_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/navigator_gui_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map_server_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/grid_mapping_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/map_server_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_core.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map_util.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/geometry.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/movement.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/gps_nmea_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/gps_nmea_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/gps_xyz_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/gps_xyz_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/pantilt_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/pantilt_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/imu_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/imu_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/imu_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/velodyne_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/velodyne_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/rotation_geometry.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/bumblebee_basic_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/bumblebee_basic_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/stereo_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/stereo_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/kinect_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/kinect_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/kinect_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/kinect_util.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/xsens_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/xsens_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/xsens_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/xsens_mtig_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/xsens_mtig_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/logger_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/logger.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/logger_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/logger_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/writelog.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/web_cam_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/web_cam_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/ultrasonic_filter_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/robot_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/simulator_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/visual_odometry_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/base_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/readlog.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/playback_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/playback_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/robot_ackerman_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/robot_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/simulator_ackerman_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/simulator_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_motion.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/navigator_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/navigator_ackerman_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/navigator_ackerman.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/behavior_selector_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/behavior_selector_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/navigator_gui_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/navigator_gui_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/navigator_gui_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map_server_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/grid_mapping_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/map_server_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_core.h \
  /usr/lib/gcc/x86_64-linux-gnu/4.6/include/omp.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/fused_odometry_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_motion.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_likelihood_map.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_core.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/localize_ackerman_likelihood_map.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/base_ackerman_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/base_ackerman_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/ford_escape_hybrid_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/ford_escape_hybrid_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/ford_escape_hybrid_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/fused_odometry_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_motion.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_likelihood_map.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_core.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/localize_ackerman_likelihood_map.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/base_ackerman_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/base_ackerman_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/ford_escape_hybrid_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/ford_escape_hybrid_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/ford_escape_hybrid_messages.h \
  /usr/include/c++/4.6/list /usr/include/c++/4.6/bits/stl_list.h \
  /usr/include/c++/4.6/bits/list.tcc moving_objects.h \
  moving_objects_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/grid_mapping_interface.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/grid_mapping_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/grid_mapping.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/prob_models/prob_map.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/prob_models/prob_measurement_model.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/prob_models/prob_measurement_model.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/stereo_util.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/stereo_velodyne.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/include/carmen/stereo_velodyne_messages.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/tf.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/grid_mapping_interface.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/grid_mapping_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/grid_mapping.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/prob_models/prob_map.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/prob_models/prob_measurement_model.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/prob_models/prob_measurement_model.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/stereo_util.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/stereo_velodyne.h \
+ /home/alberto/robotics/code/carmen_lcad/include/carmen/stereo_velodyne_messages.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/tf.h \
  /usr/include/c++/4.6/iomanip /usr/include/c++/4.6/map \
  /usr/include/c++/4.6/bits/stl_tree.h /usr/include/c++/4.6/bits/stl_map.h \
  /usr/include/c++/4.6/bits/stl_multimap.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/signalslib.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/signalslib.h \
  /usr/include/boost/signal.hpp /usr/include/boost/signals/signal0.hpp \
  /usr/include/boost/signals/signal_template.hpp \
  /usr/include/boost/signals/connection.hpp \
@@ -3973,8 +3935,8 @@ monte_carlo_moving_objects_tracking.o: \
  /usr/include/boost/function.hpp \
  /usr/include/boost/preprocessor/iterate.hpp \
  /usr/include/boost/function/detail/function_iterate.hpp \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/exceptions.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/time_cache.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/exceptions.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/time_cache.h \
  /usr/include/boost/thread/mutex.hpp \
  /usr/include/boost/thread/detail/platform.hpp \
  /usr/include/boost/config/requires_threads.hpp \
@@ -4041,10 +4003,10 @@ monte_carlo_moving_objects_tracking.o: \
  /usr/include/boost/date_time/gregorian/conversion.hpp \
  /usr/include/boost/thread/pthread/timespec.hpp \
  /usr/include/boost/thread/pthread/pthread_mutex_scoped_lock.hpp \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/transform_datatypes.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/tf_time.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/tf_time_exception.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/tf_duration.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/transform_datatypes.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/tf_time.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/tf_time_exception.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/tf_duration.h \
  /usr/include/boost/math/special_functions/round.hpp \
  /usr/include/boost/math/tools/config.hpp \
  /usr/include/boost/math/tools/user.hpp \
@@ -4146,18 +4108,18 @@ monte_carlo_moving_objects_tracking.o: \
  /usr/include/boost/config/no_tr1/complex.hpp \
  /usr/include/boost/math/special_functions/detail/fp_traits.hpp \
  /usr/include/boost/detail/endian.hpp \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/linear_math/Transform.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/linear_math/Matrix3x3.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/linear_math/Vector3.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/linear_math/Scalar.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/linear_math/Transform.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/linear_math/Matrix3x3.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/linear_math/Vector3.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/linear_math/Scalar.h \
  /usr/include/c++/4.6/cfloat \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/linear_math/MinMax.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/linear_math/MinMax.h \
  /usr/local/include/bullet/LinearMath/btVector3.h \
  /usr/local/include/bullet/LinearMath/btScalar.h \
  /usr/local/include/bullet/LinearMath/btMinMax.h \
  /usr/local/include/bullet/LinearMath/btScalar.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/linear_math/Quaternion.h \
- /home/luan/roboticaprobabilistica/code/carmen_lcad/sharedlib/libtf/src/linear_math/QuadWord.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/linear_math/Quaternion.h \
+ /home/alberto/robotics/code/carmen_lcad/sharedlib/libtf/src/linear_math/QuadWord.h \
  /usr/local/include/bullet/LinearMath/btQuaternion.h \
  /usr/local/include/bullet/LinearMath/btVector3.h \
  /usr/local/include/bullet/LinearMath/btQuadWord.h \
