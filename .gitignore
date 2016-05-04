@@ -385,3 +385,13 @@ src/xsens_MTi-G/libxsens_mtig_interface.so.1
 src/model_predictive_planner/gnuplot_path.txt
 src/model_predictive_planner/problems.txt
 sharedlib/libsickldmrs/libsickldmrs.so.1
+bin/laser_ldmrs
+sharedlib/libsickldmrs/sickldmrstest
+src/laser-ldmrs/laser_ldmrs
+src/moving_objects/Makefile.depend
+src/moving_objects/libmoving_objects_interface.a
+src/moving_objects/monte_carlo_moving_objects_tracking.a
+src/moving_objects/moving_objects.a
+src/moving_objects/moving_objects_interface.o
+src/moving_objects/moving_objects_main.o
+
