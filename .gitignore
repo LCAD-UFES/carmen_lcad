@@ -308,7 +308,6 @@ src/xsens/xsens_listener
 src/xsens_MTi-G/example
 src/xsens_MTi-G/subscribe_xsens_mtig
 src/xsens_MTi-G/xsens_mtig
-src/lane_analysis/lane_analysis
 .cproject
 .project
 bin/gnuplot_path
