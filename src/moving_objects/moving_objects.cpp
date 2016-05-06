@@ -207,7 +207,7 @@ pcl_euclidean_cluster_extraction(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
 	tree->setInputCloud(cloud);
 
 	pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-	ec.setClusterTolerance(0.80); //Set the spatial cluster tolerance as a measure in the L2 Euclidean space.
+	ec.setClusterTolerance(0.8); //Set the spatial cluster tolerance as a measure in the L2 Euclidean space.
 	ec.setMinClusterSize(15);     //Set the minimum number of points that a cluster needs to contain in order to be considered valid.
 	//ec.setMaxClusterSize(20000);  //Set the maximum number of points that a cluster needs to contain in order to be considered valid.
 	ec.setSearchMethod(tree);
@@ -842,7 +842,7 @@ init_particle_set(object_point_cloud_data_t &object_pcloud, int num_particles, d
 		particle_t_1.pose.x = x + carmen_gaussian_random(0.0, 0.2 * 0.2);
 		particle_t_1.pose.y = y + carmen_gaussian_random(0.0, 0.2 * 0.2);;
 //		particle_t_1.pose.theta = carmen_normalize_theta(theta + carmen_uniform_random(-M_PI/6, M_PI/6));//object_pcloud.orientation;//carmen_normalize_theta(it->orientation + carmen_gaussian_random(0.0, M_PI));//
-		particle_t_1.pose.theta = carmen_normalize_theta(object_pcloud.orientation + carmen_uniform_random(-M_PI/2, M_PI/2));
+		particle_t_1.pose.theta =  carmen_normalize_theta(object_pcloud.orientation + carmen_uniform_random(-M_PI/4.0, M_PI/4.0));
 		particle_t_1.velocity = velocity;//carmen_uniform_random(0.0, 25.0);//object_pcloud.linear_velocity;//
 //		particle_t_1.weight = (1.0 / double(num_of_particles)); //not necessary
 		particle_t_1.class_id = get_random_model_id(num_models);
@@ -931,7 +931,7 @@ associate_point_clouds_by_centroids_distance(std::list<object_point_cloud_data_t
 	/* verify who's idle... */
 	for (std::list<object_point_cloud_data_t>::iterator it = list_point_clouds.begin(); it != list_point_clouds.end(); it++)
 	{
-		if (it->label_associate == 0 || it->linear_velocity < threshold_min_velocity)
+		if (it->label_associate == 0) // || it->linear_velocity < threshold_min_velocity)
 		{
 			it->count_idle++;
 		}
@@ -1414,10 +1414,10 @@ is_moving_object(object_point_cloud_data_t obj_point_cloud)
 
 	/*** MOVING OBJECT CONDITIONS/THRESHOLDS ***/
 	// Minimum velocity
-	if (obj_point_cloud.linear_velocity < threshold_min_velocity)
-	{
-		return false;
-	}
+//	if (obj_point_cloud.linear_velocity < threshold_min_velocity)
+//	{
+//		return false;
+//	}
 
 	// PointCloud density
 //	double density = get_object_density_by_area(obj_point_cloud);
@@ -1434,16 +1434,16 @@ is_moving_object(object_point_cloud_data_t obj_point_cloud)
 	}
 
 	// Count points below 0.9m
-//	int count_down_points = 0;
-//	for (pcl::PointCloud<pcl::PointXYZ>::const_iterator pit = obj_point_cloud.point_cloud.begin();
-//			pit != obj_point_cloud.point_cloud.end(); pit++)
-//		if (pit->z < 0.90)
-//			count_down_points += 1;
-//
-//	if (count_down_points < 35)
-//	{
-//		return false;
-//	}
+	int count_down_points = 0;
+	for (pcl::PointCloud<pcl::PointXYZ>::const_iterator pit = obj_point_cloud.point_cloud.begin();
+			pit != obj_point_cloud.point_cloud.end(); pit++)
+		if (pit->z < 0.90)
+			count_down_points += 1;
+
+	if (count_down_points < 35)
+	{
+		return false;
+	}
 
 	return true;
 }
@@ -1576,11 +1576,21 @@ detect_points_above_ground_in_vertical_beam(int i, const moving_objects_input_da
 {
 	carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(velodyne_data, velodyne_params, i,
 			moving_objects_input.highest_sensor, moving_objects_input.safe_range_above_sensors, 1);
-
+	//int k = velodyne_data->ray_that_hit_the_nearest_target;
 	for (int k = 0; k < velodyne_params->vertical_resolution; k++)
 	{
-		if (/*velodyne_data->occupancy_log_odds_of_each_ray_target[k] > velodyne_params->log_odds.log_odds_l0 &&*/ velodyne_data->obstacle_height[k] >= 0.3	 && velodyne_data->obstacle_height[k] <= MAXIMUM_HEIGHT_OF_OBSTACLE
+		if (/*velodyne_data->occupancy_log_odds_of_each_ray_target[k] > velodyne_params->log_odds.log_odds_l0 &&*/
+				velodyne_data->obstacle_height[k] >= 0.50
+				&& velodyne_data->obstacle_height[k] <= MAXIMUM_HEIGHT_OF_OBSTACLE
 				&& !velodyne_data->ray_hit_the_robot[k])
+		{
+			point_clouds[last_num_points].x = velodyne_data->ray_position_in_the_floor[k].x;
+			point_clouds[last_num_points].y = velodyne_data->ray_position_in_the_floor[k].y;
+			point_clouds[last_num_points].z = velodyne_data->obstacle_height[k];
+			last_num_points++;
+		}
+		else if (velodyne_data->occupancy_log_odds_of_each_ray_target[k] > velodyne_params->log_odds.log_odds_l0
+				&& velodyne_data->obstacle_height[k] <= MAXIMUM_HEIGHT_OF_OBSTACLE && !velodyne_data->ray_hit_the_robot[k])
 		{
 			point_clouds[last_num_points].x = velodyne_data->ray_position_in_the_floor[k].x;
 			point_clouds[last_num_points].y = velodyne_data->ray_position_in_the_floor[k].y;
