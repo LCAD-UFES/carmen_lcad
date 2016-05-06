@@ -273,7 +273,7 @@ build_and_follow_path()
 static void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
-	printf("tempo da localizacao: %lf\n", msg->timestamp);
+	//printf("tempo da localizacao: %lf\n", msg->timestamp);
 
 	Pose pose = Util::convert_to_pose(msg->globalpos);
 	GlobalState::set_robot_pose(pose, msg->timestamp);

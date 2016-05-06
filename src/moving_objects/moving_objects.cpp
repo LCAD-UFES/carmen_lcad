@@ -344,6 +344,7 @@ distance_between_3d_point_and_car_global_pose(Eigen::Vector4f point_3D, carmen_p
 }
 
 
+//todo verificar exclusão de objetos
 void
 exclude_unecessary_objects_from_point_clouds(std::list<object_point_cloud_data_t> &list_point_clouds,
 		carmen_pose_3D_t car_global_pose)
@@ -833,7 +834,7 @@ orientation_by_displacement_between_two_points(Eigen::Vector4f current_point,
 
 
 void
-init_particle_set(object_point_cloud_data_t &object_pcloud, int num_particles, double x, double y, double theta, int num_models)
+init_particle_set(object_point_cloud_data_t &object_pcloud, int num_particles, double x, double y, double theta, double velocity, int num_models)
 {
 	for (int i = 0; i < num_particles; i++)
 	{
@@ -842,7 +843,7 @@ init_particle_set(object_point_cloud_data_t &object_pcloud, int num_particles, d
 		particle_t_1.pose.y = y + carmen_gaussian_random(0.0, 0.2 * 0.2);;
 //		particle_t_1.pose.theta = carmen_normalize_theta(theta + carmen_uniform_random(-M_PI/6, M_PI/6));//object_pcloud.orientation;//carmen_normalize_theta(it->orientation + carmen_gaussian_random(0.0, M_PI));//
 		particle_t_1.pose.theta = carmen_normalize_theta(object_pcloud.orientation + carmen_uniform_random(-M_PI/2, M_PI/2));
-		particle_t_1.velocity = 0.0;//carmen_uniform_random(0.0, 25.0);//object_pcloud.linear_velocity;//
+		particle_t_1.velocity = velocity;//carmen_uniform_random(0.0, 25.0);//object_pcloud.linear_velocity;//
 //		particle_t_1.weight = (1.0 / double(num_of_particles)); //not necessary
 		particle_t_1.class_id = get_random_model_id(num_models);
 		particle_t_1.model_features = get_obj_model_features(particle_t_1.class_id);
@@ -917,7 +918,7 @@ associate_point_clouds_by_centroids_distance(std::list<object_point_cloud_data_t
 						init_particle_set(*pit, num_of_particles,
 								pit->object_pose.position.x + pit->car_global_pose.position.x,
 								pit->object_pose.position.y + pit->car_global_pose.position.y,
-								it->car_global_pose.orientation.yaw,
+								it->car_global_pose.orientation.yaw, pit->linear_velocity,
 								num_of_models);
 					}
 				}
@@ -1413,10 +1414,10 @@ is_moving_object(object_point_cloud_data_t obj_point_cloud)
 
 	/*** MOVING OBJECT CONDITIONS/THRESHOLDS ***/
 	// Minimum velocity
-//	if (obj_point_cloud.linear_velocity < threshold_min_velocity)
-//	{
-//		return false;
-//	}
+	if (obj_point_cloud.linear_velocity < threshold_min_velocity)
+	{
+		return false;
+	}
 
 	// PointCloud density
 //	double density = get_object_density_by_area(obj_point_cloud);
@@ -1429,7 +1430,7 @@ is_moving_object(object_point_cloud_data_t obj_point_cloud)
 	double diagonal_measurement = get_object_3d_diagonal_measurement(obj_point_cloud);
 	if (diagonal_measurement < 1.0 || diagonal_measurement > 18.0)
 	{
-		//return false;
+		return false;
 	}
 
 	// Count points below 0.9m
@@ -1476,7 +1477,7 @@ particle_filter_moving_objects_tracking(std::list<object_point_cloud_data_t> &li
 
 			/* KNOWN ISSUE: Car global position included due to lost of precision problem with PCL point types */
 			particle_set_t = algorithm_monte_carlo(particle_set_t_1, x, y, delta_time, it->point_cloud,
-					it->geometry, it->car_global_pose.position);
+					it->geometry, it->car_global_pose.position, motion_model);
 
 			particle_reference = compute_average_state_and_update_timestamp(particle_set_t, it->timestamp);
 
@@ -1578,7 +1579,7 @@ detect_points_above_ground_in_vertical_beam(int i, const moving_objects_input_da
 
 	for (int k = 0; k < velodyne_params->vertical_resolution; k++)
 	{
-		if (velodyne_data->occupancy_log_odds_of_each_ray_target[k] > velodyne_params->log_odds.log_odds_l0 /*velodyne_data->obstacle_height[k] >= 0.5*/ && velodyne_data->obstacle_height[k] <= MAXIMUM_HEIGHT_OF_OBSTACLE
+		if (/*velodyne_data->occupancy_log_odds_of_each_ray_target[k] > velodyne_params->log_odds.log_odds_l0 &&*/ velodyne_data->obstacle_height[k] >= 0.3	 && velodyne_data->obstacle_height[k] <= MAXIMUM_HEIGHT_OF_OBSTACLE
 				&& !velodyne_data->ray_hit_the_robot[k])
 		{
 			point_clouds[last_num_points].x = velodyne_data->ray_position_in_the_floor[k].x;

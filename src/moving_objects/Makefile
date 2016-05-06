@@ -34,7 +34,7 @@ CXXFLAGS += -g -O0
 LFLAGS += -lgrid_mapping -lparam_interface -lipc -lglobal -lgrid_mapping_interface -lmoving_objects_interface -lmap_server_interface -lfused_odometry_interface -llocalize_ackerman_interface -llaser_interface -lrotation_geometry -lmap_io -lmap_util \
 -lmap_interface -llocalize_ackerman_core -lvelodyne_interface -lstereo_velodyne_interface -lstereo_velodyne -lstereo_interface \
 -ltf -lBulletDynamics -lBulletCollision -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system \
--llocalize_ackerman_motion -lprob_models -lgl_plotter -lmap_interface
+-llocalize_ackerman_motion -lprob_models -lgl_plotter -lmap_interface -lbase_ackerman_interface
 
 # C++11 flag
 LFLAGS += -std=c++11

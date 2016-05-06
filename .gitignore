@@ -396,4 +396,3 @@ src/moving_objects/monte_carlo_moving_objects_tracking.a
 src/moving_objects/moving_objects.a
 src/moving_objects/moving_objects_interface.o
 src/moving_objects/moving_objects_main.o
-

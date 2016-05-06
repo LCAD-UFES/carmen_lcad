@@ -31,7 +31,8 @@ const double v_max   = 25.0; // velocidade máxima
 
 std::vector<particle_datmo_t>
 algorithm_monte_carlo(std::vector<particle_datmo_t> particle_set_t_1, double x, double y, double delta_time,
-		pcl::PointCloud<pcl::PointXYZ> &pcl_cloud, object_geometry_t, carmen_vector_3D_t car_global_position);
+		pcl::PointCloud<pcl::PointXYZ> &pcl_cloud, object_geometry_t, carmen_vector_3D_t car_global_position,
+		carmen_localize_ackerman_motion_model_t *motion_model);
 
 double
 measurement_model(particle_datmo_t &particle_t, double x, double y, pcl::PointCloud<pcl::PointXYZ> &pcl_cloud,

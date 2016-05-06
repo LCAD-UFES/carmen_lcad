@@ -21,7 +21,7 @@ static double timer_period = 0.1;
 
 //static int aux = 100;
 
-static double t1 = 3, t2 = 4, t3 = 3;
+//static double t1 = 3, t2 = 4, t3 = 3;
 
 /*static MotionControlFunction v_function;
 static MotionControlFunction phi_function;*/
@@ -224,37 +224,15 @@ build_trajectory_stop_smooth_trajectory()
 void
 build_trajectory_stop_smooth_trajectory_phi() //This function allows to create a trapezium shaped motion command
 {
-
-	double delta_t, t;
-	int i;
-
-	delta_t = (t1 + t2 + t3) / (double) (NUM_MOTION_COMMANDS_PER_VECTOR - 180);
-
-	for (i = 0, t = 0.0; t < t1; t += delta_t, i++)							//Increase smoothly the velocity until 1/3 t
+	for (int i = 0; i < 50; i++)
 	{
-		motion_commands_vector[i].v = 10.0;
+		motion_commands_vector[i].v = 4.0;
 		motion_commands_vector[i].phi = 0.0;//t * (max_phi / t1);
-		motion_commands_vector[i].time = delta_t;
-	}
-
-	for (t = 0.0; t < t2; t += delta_t, i++)								//Keeps the velocity constant for 1/3 t
-	{
-		motion_commands_vector[i].v = 10.0;
-		motion_commands_vector[i].phi = 0.0;//max_phi;
-		motion_commands_vector[i].time = delta_t;
-	}
-
-	for (t = 0.0; t <= (t3 + delta_t); t += delta_t, i++)					//Decrease smoothly the velocity for 1/3 t
-	{
-		//3 * exp(-((10 - x) * (10 - x)) / (4 * 4))
-		motion_commands_vector[i].v = 10.0;
-		motion_commands_vector[i].phi = 0.0;//max_phi - t * (max_phi / t3);
-		motion_commands_vector[i].time = delta_t;
+		motion_commands_vector[i].time = 0.1;//delta_t;
 	}
 	//printf("i = %d, NUM_MOTION_COMMANDS_PER_VECTOR = %d\n", i, NUM_MOTION_COMMANDS_PER_VECTOR);
 	for (int i = 0; i < 999; i++)
 	{
-
 		send_trajectory_to_robot();
 	}
 }
@@ -263,13 +241,14 @@ build_trajectory_stop_smooth_trajectory_phi() //This function allows to create a
 static void
 timer_handler()
 {
-	static int first_time = 1; //Sends only one motion command to the obstacle avoider
+	//static int first_time = 1; //Sends only one motion command to the obstacle avoider
 
-	if (first_time)
-	{
-		build_trajectory_stop_smooth_trajectory_phi();
-		first_time = 0;
-	}
+	//if (first_time)
+	//{
+	printf("AAAAAA\n\n\n");
+	build_trajectory_stop_smooth_trajectory_phi();
+		//first_time = 0;
+	//}
 }
 
 /*
