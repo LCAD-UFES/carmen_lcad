@@ -236,6 +236,7 @@ src/maptools/map_test
 src/maptools/maptool
 src/model_predictive_planner/model_predictive_planner
 src/model_predictive_planner/vel.txt
+src/moving_objects/libmoving_objects_interface.a
 src/motion_planner/motion_planner
 src/moving_objects/moving_objects
 src/mvog_package/mvog

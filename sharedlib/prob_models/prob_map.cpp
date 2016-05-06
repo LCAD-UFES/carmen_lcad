@@ -951,7 +951,7 @@ carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data
 	double min_ray_size = 10000.0;
 	int min_ray_size_index = sensor_params->vertical_resolution - 1;
 
-	for (i = 0; i < sensor_params->vertical_resolution; i++)
+	for (i = sensor_params->vertical_resolution-2; i >= 0; i--)
 	{
 		if (carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[i], highest_sensor, safe_range_above_sensors))
 			sensor_data->occupancy_log_odds_of_each_ray_target[i] = sensor_params->log_odds.log_odds_l0;
