@@ -54,7 +54,6 @@ struct ObjectiveFunctionParams
 TrajectoryLookupTable::TrajectoryControlParameters trajectory_lookup_table[N_DIST][N_THETA][N_D_YAW][N_I_PHI][N_I_V];
 
 double g_last_lane_timestamp = 0.0;
-vector<carmen_ackerman_path_point_t> g_lane_list_global_pose;
 
 
 TrajectoryLookupTable::TrajectoryLookupTable(int update_lookup_table)
@@ -1085,10 +1084,16 @@ compute_interest_dist(vector<carmen_ackerman_path_point_t> &detailed_goal_list, 
 		distance_travelled += dist(path[i-1], path[i]);
 		distance_path_factor = fator * distance_travelled;
 		index = (int) (distance_path_factor * lane_detail);
-		int info;
-		int index2 = index;
-		if(index < (detailed_goal_list.size()-1))
-			index2++;
+
+//		int info;
+//		int index2 = index;
+//		if(index < (detailed_goal_list.size()-1))
+//			index2++;
+//		carmen_ackerman_path_point_t point_path_lane = get_the_point_nearest_to_the_trajectory(&info, detailed_goal_list.at(index), detailed_goal_list.at(index2), path[i]);
+//		printf("Ponto na reta: x: %lf y: %lf \n", point_path_lane.x, point_path_lane.y);
+
+		distance = dist(path[i], detailed_goal_list.at(index));
+		total_distance += distance;
 
 #ifdef DEBUG_LANE
 		printf("lane size no for do dist: %lu \n", detailed_goal_list.size());
@@ -1097,15 +1102,12 @@ compute_interest_dist(vector<carmen_ackerman_path_point_t> &detailed_goal_list, 
 		printf("\n distancia_path_factor: %lf \n", distance_path_factor);
 		printf("Entre: x_prev: %lf y_prev: %lf x_atual: %lf  y_atual: %lf  \n", detailed_goal_list[index].x, detailed_goal_list[index].y, detailed_goal_list[index2].x, detailed_goal_list[index2].y);
 		printf("Ponto: x_atual: %lf  y_atual: %lf  \n", path[i].x, path[i].y);
+		printf("distance: %lf \n", distance);
+		printf("Total: %lf \n", distance);
 #endif
 
-//		carmen_ackerman_path_point_t point_path_lane = get_the_point_nearest_to_the_trajectory(&info, detailed_goal_list.at(index), detailed_goal_list.at(index2), path[i]);
-		//printf("Ponto na reta: x: %lf y: %lf \n", point_path_lane.x, point_path_lane.y);
-		distance = dist(path[i], detailed_goal_list.at(index));
-		total_distance += distance;
-		//printf("distance: %lf \n", distance);
-		//printf("Total: %lf \n", distance);
 	}
+
 	return (total_distance / path.size());
 }
 
@@ -1128,32 +1130,13 @@ my_f(const gsl_vector *x, void *params)
 	my_params->tcp_seed->vf = tcp.vf;
 	my_params->tcp_seed->sf = tcp.sf;
 
-	//TODO Passar tcp.sf (quando estiver correto)
-	double total_interest_dist = compute_interest_dist(my_params->detailed_goal_list, path, my_params->lane_sf);
-	double dist_objectve = total_interest_dist - 0.3;
-	if(dist_objectve < 0.0 )
-		dist_objectve = 0.0;
-//    double obstacles_cost = 0.0;
-//    if (GlobalState::cost_map_initialized)
-//        obstacles_cost = compute_abstacles_cost(path);
-
-	//double lane_w = (first_plan) ? 0.0001 : 0.00001;
-
 	double result = sqrt((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 			(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 0.2) +
-			(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2) +
-			(dist_objectve * 0.001));
-
-//#ifdef DEBUG_LANE
-//      printf("TD.Dist: %lf \t TD.YAW: %lf \t TD.THETA: %lf \n",(td.dist - my_params->target_td->dist), (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw), (carmen_normalize_theta(td.theta) - my_params->target_td->theta));
-//      printf("Distance to Lane: %lf \n", total_interest_dist);
-//      printf("Dist_object: %lf \n", dist_objectve);
-//      printf("Result: %lf \n", result);
-//      getchar();
-//#endif
+			(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2));
 
 	return (result);
 }
+
 
 /* The gradient of f, df = (df/dx, df/dy). */
 void
@@ -1199,6 +1182,51 @@ my_fdf(const gsl_vector *x, void *params, double *f, gsl_vector *df)
 	my_df(x, params, df);
 }
 
+//Compute cost function to optmize lane
+double
+my_g(const gsl_vector *x, void *params)
+{
+	ObjectiveFunctionParams *my_params = (ObjectiveFunctionParams *) params;
+
+		TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(x, my_params);
+		TrajectoryLookupTable::TrajectoryDimensions td;
+
+		if (tcp.tf < 0.2) // o tempo nao pode ser pequeno demais
+			tcp.tf = 0.2;
+
+		vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->phi_i, false);
+
+		my_params->tcp_seed->vf = tcp.vf;
+		my_params->tcp_seed->sf = tcp.sf;
+
+		//TODO Passar tcp.sf (quando estiver correto)
+		double total_interest_dist = compute_interest_dist(my_params->detailed_goal_list, path, my_params->lane_sf);
+		double dist_objectve = total_interest_dist - 0.2;
+		if(dist_objectve < 0.0 )
+			dist_objectve = 0.0;
+
+		//double lane_w = (first_plan) ? 0.0001 : 0.00001;
+
+		double result = sqrt((dist_objectve));
+
+	//#ifdef DEBUG_LANE
+	//      printf("TD.Dist: %lf \t TD.YAW: %lf \t TD.THETA: %lf \n",(td.dist - my_params->target_td->dist), (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw), (carmen_normalize_theta(td.theta) - my_params->target_td->theta));
+	//      printf("Distance to Lane: %lf \n", total_interest_dist);
+	//      printf("Dist_object: %lf \n", dist_objectve);
+	//      printf("Result: %lf \n", result);
+	//      getchar();
+	//#endif
+	return result;
+
+}
+
+/* Compute both g and df together. for while df equal to dg */
+void
+my_gdf(const gsl_vector *x, void *params, double *f, gsl_vector *df)
+{
+	*f = my_g(x, params);
+	my_df(x, params, df);
+}
 
 double
 compute_suitable_acceleration(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
@@ -1294,15 +1322,16 @@ build_detailed_goal_list(vector<carmen_ackerman_path_point_t> *lane_in_local_pos
 		printf(KGRN "+++++++++++++ ERRO MENSAGEM DA LANE POSES !!!!\n" RESET);
 }
 
-// TODO optimizer
-TrajectoryLookupTable::TrajectoryControlParameters
-get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
+
+void
+optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed,
 		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, vector<carmen_ackerman_path_point_t> *lane_in_local_pose)
 {
+
 	// A f(x) muntidimensional que queremos minimizar é:
-	//   f(x) = ||(car_simulator(x) - target_td, vf - target_v)||
+	//   f(x) = ||(car_simulator(x) - lane(x) < max_dist_lane)||
 	// e as dimensões de f(x) são (dist, theta, d_yaw, phi_i, v_i, v_f)
-	// O resultado ideal é zero, isto é, a saida de car_simulator deve ser igual a target_td e vf = target_v.
+	// O resultado ideal é zero, isto é, a saida de car_simulator deve ser igual a distancia max da lane.
 	// As variáveis que serão modificadas pela minimização são:
 	//   k1, k2 e tf
 	// E, durante a minimização:
@@ -1321,7 +1350,7 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 
 	//printf("lane size depois Build: %lu \n", params.detailed_goal_list.size());
 	//printf("detailed x: %lf y: %lf \n",detailed_goal_list[detailed_goal_list.size()-1].x, detailed_goal_list[detailed_goal_list.size()-1].y);
-//	getchar();
+	//	getchar();
 
 
 	//	double par[17] = {0 target_td.v_i, 1 target_td.phi_i, 2 - target_td.dist, 3 - target_td.theta, 4 - target_td.d_yaw,
@@ -1338,6 +1367,100 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 	params.tcp_seed = &tcp_seed;
 	params.target_v = target_v;
 	params.lane_sf = lane_sf;
+
+
+	gsl_vector *x;
+	gsl_multimin_function_fdf my_func;
+
+	my_func.n = 3;
+	my_func.f = my_g;
+	my_func.df = my_df;
+	my_func.fdf = my_gdf;
+	my_func.params = &params;
+
+	/* Starting point, x */
+	x = gsl_vector_alloc(3);
+	gsl_vector_set(x, 0, tcp_seed.k1);
+	gsl_vector_set(x, 1, tcp_seed.k2);
+	gsl_vector_set(x, 2, tcp_seed.tf);
+
+	T = gsl_multimin_fdfminimizer_conjugate_fr;
+	s = gsl_multimin_fdfminimizer_alloc(T, 3);
+
+	// int gsl_multimin_fdfminimizer_set (gsl_multimin_fdfminimizer * s, gsl_multimin_function_fdf * fdf, const gsl_vector * x, double step_size, double tol)
+	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.0001, 0.001);
+
+	size_t iter = 0;
+	int status;
+	double MAX_LANE_DIST = 0.3;
+	do
+	{
+		iter++;
+
+		status = gsl_multimin_fdfminimizer_iterate(s);
+
+
+		if (status == GSL_ENOPROG) // minimizer is unable to improve on its current estimate, either due to numerical difficulty or a genuine local minimum
+		{
+			//printf("@@@@@@@@@@@@@@ status = %d\n", status);
+			break;
+		}
+
+		// int gsl_multimin_test_gradient (const gsl_vector * g, double epsabs)
+		// |g| < epsabs
+		status = gsl_multimin_test_gradient(s->gradient, 0.16); // esta funcao retorna GSL_CONTINUE ou zero
+
+	} while ((s->f > MAX_LANE_DIST) && (status == GSL_CONTINUE) && (iter < 300)); //alterado de 0.005
+
+	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
+
+	//TODO Verificar esse teste para a lane
+	if ((tcp.tf < 0.2) || (s->f > 0.05)) // too short plan or bad minimum (s->f should be close to zero) mudei de 0.05 para outro
+		tcp.valid = false;
+
+	gsl_multimin_fdfminimizer_free(s);
+	gsl_vector_free(x);
+
+}
+
+
+// TODO optimizer
+TrajectoryLookupTable::TrajectoryControlParameters
+get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
+		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v)
+{
+	// A f(x) muntidimensional que queremos minimizar é:
+	//   f(x) = ||(car_simulator(x) - target_td, vf - target_v)||
+	// e as dimensões de f(x) são (dist, theta, d_yaw, phi_i, v_i, v_f)
+	// O resultado ideal é zero, isto é, a saida de car_simulator deve ser igual a target_td e vf = target_v.
+	// As variáveis que serão modificadas pela minimização são:
+	//   k1, k2 e tf
+	// E, durante a minimização:
+	//   v_0, v_i e phi_i são constantes
+	//   v_0 = v_i
+	//   vt, a0, af, t0, tt e sf sao dependentes das demais segundo o TrajectoryVelocityProfile
+
+	const gsl_multimin_fdfminimizer_type *T;
+	gsl_multimin_fdfminimizer *s;
+
+	double suitable_acceleration = compute_suitable_acceleration(tcp_seed, target_td, target_v);
+
+	ObjectiveFunctionParams params;
+
+	//	double par[17] = {0 target_td.v_i, 1 target_td.phi_i, 2 - target_td.dist, 3 - target_td.theta, 4 - target_td.d_yaw,
+	//			5 - suitable_acceleration, 6 - tcp_seed.af, 7 - tcp_seed.t0, 8 - tcp_seed.tt, 9 - tcp_seed.vt, 10 - target_v,
+	//			11 - (double) ((int) tcp_seed.velocity_profile), 12 - tcp_seed.vf, 13 - tcp_seed.sf,
+	//			14 - fabs(get_distance_by_index(N_DIST-1)),
+	//			15 - fabs(get_theta_by_index(N_THETA-1)), 16 - fabs(get_d_yaw_by_index(N_D_YAW-1))}
+
+	params.distance_by_index = fabs(get_distance_by_index(N_DIST-1));
+	params.theta_by_index = fabs(get_theta_by_index(N_THETA-1));
+	params.d_yaw_by_index = fabs(get_d_yaw_by_index(N_D_YAW-1));
+	params.suitable_acceleration = suitable_acceleration;
+	params.target_td = &target_td;
+	params.tcp_seed = &tcp_seed;
+	params.target_v = target_v;
+	params.lane_sf = 0.0;
 
 
 	gsl_vector *x;
@@ -1410,6 +1533,18 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 	return (tcp);
 }
 
+TrajectoryLookupTable::TrajectoryControlParameters
+get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
+		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, vector<carmen_ackerman_path_point_t> *lane_in_local_pose)
+{
+	TrajectoryLookupTable::TrajectoryControlParameters tcp_complete;
+	tcp_complete = get_optimized_trajectory_control_parameters(tcp_seed, target_td, target_v);
+	//optimized_lane_trajectory_control_parameters(tcp_complete, target_td, target_v, lane_in_local_pose);
+
+	return (tcp_complete);
+
+}
+
 
 //TrajectoryLookupTable::TrajectoryControlParameters
 //get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd,
@@ -1426,10 +1561,11 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
         TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd, double target_v)
 {
     TrajectoryLookupTable::TrajectoryDimensions target_td = convert_to_trajectory_dimensions(tdd, tcp_seed);
-    TrajectoryLookupTable::TrajectoryControlParameters tcp = get_optimized_trajectory_control_parameters(tcp_seed, target_td, target_v, NULL);
+    TrajectoryLookupTable::TrajectoryControlParameters tcp = get_optimized_trajectory_control_parameters(tcp_seed, target_td, target_v);
 
     return (tcp);
 }
+
 
 
 TrajectoryLookupTable::TrajectoryControlParameters
@@ -1437,7 +1573,7 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
         TrajectoryLookupTable::TrajectoryDiscreteDimensions &tdd, double target_v, vector<carmen_ackerman_path_point_t> optimized_path)
 {
     TrajectoryLookupTable::TrajectoryDimensions target_td = convert_to_trajectory_dimensions(tdd, tcp_seed);
-    TrajectoryLookupTable::TrajectoryControlParameters tcp = get_optimized_trajectory_control_parameters(tcp_seed, target_td, target_v, NULL);
+    TrajectoryLookupTable::TrajectoryControlParameters tcp = get_optimized_trajectory_control_parameters(tcp_seed, target_td, target_v);
     if (tcp.valid)
     {
 		TrajectoryLookupTable::TrajectoryDimensions td;
@@ -1899,12 +2035,11 @@ move_lane_robot_reference_system(Pose *localize_pose, carmen_rddf_road_profile_m
 	double goal_x = goal_in_car_reference[0];
 	double goal_y = goal_in_car_reference[1];
 
-//	printf("inicio move_goal:\n \t goal_list size: %d \t g_list size: %lu \n",goal_list_message->number_of_poses, g_lane_list_global_pose.size());
-//	printf("\t temp size: %lu \t g_list size: %lu \n",lane_in_local_pose->size(), g_lane_list_global_pose.size());
-//	if(goal_list_message->number_of_poses < 2)
-//		return false;
+	if (goal_list_message->number_of_poses < 2)
+		return false;
+
 	int indice = 0;
-	if(goal_list_message->poses[0].x == goal_list_message->poses[1].x && goal_list_message->poses[0].y == goal_list_message->poses[1].y)
+	if (goal_list_message->poses[0].x == goal_list_message->poses[1].x && goal_list_message->poses[0].y == goal_list_message->poses[1].y)
 		indice = 1;
 
 	for (int i = 0; indice < goal_list_message->number_of_poses; i++ , indice++)
@@ -2238,34 +2373,6 @@ put_shorter_path_in_front(vector<vector<carmen_ackerman_path_point_t> > &path, i
 	}
 }
 
-/*bool
-find_goal_in_lane(Pose *localize_pose, Pose *goal_pose, carmen_rddf_road_profile_message *goal_list_message)
-{
-		SE2 robot_pose(localize_pose->x, localize_pose->y, localize_pose->theta);
-		SE2 goal_in_world_reference(goal_pose->x, goal_pose->y, goal_pose->theta);
-		SE2 goal_in_car_reference = robot_pose.inverse() * goal_in_world_reference;
-		double goal_x = goal_in_car_reference[0];
-		double goal_y = goal_in_car_reference[1];
-
-		lane_in_local_pose->clear();
-		for (int i = 0; i < g_lane_list_global_pose.size(); i++)
-			{
-				SE2 lane_in_world_reference(g_lane_list.at(i).x, g_lane_list.at(i).y, g_lane_list.at(i).theta);
-				SE2 lane_in_car_reference = robot_pose.inverse() * lane_in_world_reference;
-
-				carmen_ackerman_path_point_t local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2],
-						g_lane_list.at(i).v, g_lane_list.at(i).phi, 0.0};
-
-				lane_in_local_pose->push_back(local_reference_lane_point);
-
-				if((local_reference_lane_point.x == goal_x) && (local_reference_lane_point.y == goal_y))
-				{
-					return true;
-				}
-			}
-		g_lane_list_global_pose.erase(g_lane_list_global_pose.begin());
-		return false;
-}*/
 
 //todo
 void
@@ -2281,7 +2388,6 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	if(!goal_in_lane)
 	{
 		lane_in_local_pose.clear();
-		printf("neh possivel nao!");
 	}
 
 	FILE *problems;
@@ -2311,9 +2417,10 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 				write_tdd_to_file(problems, tdd, "Could not find: ");
 				continue;
 			}
-
+//TODO concluir otimizadores
 			TrajectoryLookupTable::TrajectoryControlParameters otcp;
-			otcp = get_optimized_trajectory_control_parameters(tcp, td,	target_v, &lane_in_local_pose);
+			otcp = get_complete_optimized_trajectory_control_parameters(tcp, td, target_v, &lane_in_local_pose);
+			//otcp = get_optimized_trajectory_control_parameters(tcp, td, target_v, &lane_in_local_pose);
 			//Lane optmized
 
 			if (otcp.valid)
