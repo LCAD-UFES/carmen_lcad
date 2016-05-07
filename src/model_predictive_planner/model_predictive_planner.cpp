@@ -486,7 +486,7 @@ register_handlers_specific()
 
 
 void
-rddf_message_handler(carmen_rddf_road_profile_message *message)
+rddf_message_handler(/*carmen_rddf_road_profile_message *message*/)
 {
 //	printf("RDDF NUM POSES: %d \n", message->number_of_poses);
 //
