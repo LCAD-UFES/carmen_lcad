@@ -1120,9 +1120,11 @@ compute_interest_dist(vector<carmen_ackerman_path_point_t> &detailed_goal_list, 
 //			index2++;
 //		carmen_ackerman_path_point_t point_path_lane = get_the_point_nearest_to_the_trajectory(&info, detailed_goal_list.at(index), detailed_goal_list.at(index2), path[i]);
 //		printf("Ponto na reta: x: %lf y: %lf \n", point_path_lane.x, point_path_lane.y);
-
-		distance = dist(path[i], detailed_goal_list.at(index));
-		total_distance += distance;
+//		if(index > 1)
+//		{
+			distance = dist(path[i], detailed_goal_list.at(index));
+			total_distance += distance;
+//		}
 
 #ifdef DEBUG_LANE
 		printf("lane size no for do dist: %lu \n", detailed_goal_list.size());
@@ -1215,38 +1217,37 @@ my_fdf(const gsl_vector *x, void *params, double *f, gsl_vector *df)
 double
 my_g(const gsl_vector *x, void *params)
 {
-	
-	
+
+
 	ObjectiveFunctionParams *my_params = (ObjectiveFunctionParams *) params;
 
-		TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(x, my_params);
-		TrajectoryLookupTable::TrajectoryDimensions td;
+	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(x, my_params);
+	TrajectoryLookupTable::TrajectoryDimensions td;
 
-		if (tcp.tf < 0.2) // o tempo nao pode ser pequeno demais
-			tcp.tf = 0.2;
+	if (tcp.tf < 0.2) // o tempo nao pode ser pequeno demais
+		tcp.tf = 0.2;
 
-		vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->phi_i, false);
+	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->phi_i, false);
 
-		my_params->tcp_seed->vf = tcp.vf;
-		my_params->tcp_seed->sf = tcp.sf;
+	my_params->tcp_seed->vf = tcp.vf;
+	my_params->tcp_seed->sf = tcp.sf;
 
-		//TODO Passar tcp.sf (quando estiver correto)
-		double total_interest_dist = compute_interest_dist(my_params->detailed_goal_list, path, my_params->lane_sf);
-		//double lane_w = (first_plan) ? 0.0001 : 0.00001;
-//		double dist_ponto_final  = dist(path.back(), my_params->detailed_goal_list.back());
-//		double phi_final = path.back().phi - my_params->detailed_goal_list.back().phi;
+	//TODO Passar tcp.sf (quando estiver correto)
+	double total_interest_dist = compute_interest_dist(my_params->detailed_goal_list, path, my_params->lane_sf);
+	//double lane_w = (first_plan) ? 0.0001 : 0.00001;
+	//		double dist_ponto_final  = dist(path.back(), my_params->detailed_goal_list.back());
+	//		double phi_final = path.back().phi - my_params->detailed_goal_list.back().phi;
 
-//		double result = (total_interest_dist + dist_ponto_final + (phi_final * 0.2));
+	//		double result = (total_interest_dist + dist_ponto_final + (phi_final * 0.2));
+	double result = total_interest_dist;
 
-		double result = total_interest_dist;
-
-	      printf("Distance to Lane: %lf \n", total_interest_dist);
-	#ifdef DEBUG_LANE
-	      printf("TD.Dist: %lf \t TD.YAW: %lf \t TD.THETA: %lf \n",(td.dist - my_params->target_td->dist), (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw), (carmen_normalize_theta(td.theta) - my_params->target_td->theta));
-//	      printf("Dist_object: %lf \n", dist_objectve);
-	      printf("Result: %lf \n", result);
-	      getchar();
-	#endif
+#ifdef DEBUG_LANE
+     printf("Distance to Lane: %lf \n", total_interest_dist);
+	printf("TD.Dist: %lf \t TD.YAW: %lf \t TD.THETA: %lf \n",(td.dist - my_params->target_td->dist), (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw), (carmen_normalize_theta(td.theta) - my_params->target_td->theta));
+	//	      printf("Dist_object: %lf \n", dist_objectve);
+	printf("Result: %lf \n", result);
+	getchar();
+#endif
 	return (result);
 
 }
@@ -1479,11 +1480,16 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 
 	size_t iter = 0;
 	int status;
-	double MAX_LANE_DIST = 0.3;
+	double MAX_LANE_DIST = 0.5;
 
 	FILE *lane_file = fopen("gnuplot_lane.txt", "w");
 	print_lane(params.detailed_goal_list, lane_file);
 	fclose(lane_file);
+	char path_name[20];
+	sprintf(path_name, "path/%d.txt", 0);
+	FILE *path_file = fopen(path_name, "w");
+	print_lane(simulate_car_from_parameters(target_td, tcp_seed, target_td.phi_i, true),path_file);
+	fclose(path_file);
 
 	do
 	{
@@ -1499,7 +1505,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 
 		// int gsl_multimin_test_gradient (const gsl_vector * g, double epsabs)
 		// |g| < epsabs
-		status = gsl_multimin_test_gradient(s->gradient, 0.16); // esta funcao retorna GSL_CONTINUE ou zero
+		status = gsl_multimin_test_gradient(s->gradient, 0.005); // esta funcao retorna GSL_CONTINUE ou zero
 
 		//	--Debug with GNUPLOT
 
@@ -1512,12 +1518,12 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 		//	--
 
 	} while ((s->f > MAX_LANE_DIST) && (status == GSL_CONTINUE) && (iter < 300)); //alterado de 0.005
-
-		getchar();
+	printf("Parei em: %lu iteracoes, sf: %lf  \n", iter, s->f);
+	getchar();
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
 //	//TODO Verificar esse teste para a lane
-	if ((tcp.tf < 0.2) || (s->f > 2.0)) // too short plan or bad minimum (s->f should be close to zero)
+	if ((tcp.tf < 0.2) || (s->f > 0.6)) // too short plan or bad minimum (s->f should be close to zero)
 		tcp.valid = false;
 
 	gsl_multimin_fdfminimizer_free(s);
@@ -1642,7 +1648,7 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 {
 	TrajectoryLookupTable::TrajectoryControlParameters tcp_complete;
 	tcp_complete = get_optimized_trajectory_control_parameters(tcp_seed, target_td, target_v);
-//	tcp_complete = optimized_lane_trajectory_control_parameters(tcp_complete, target_td, target_v, lane_in_local_pose);
+	tcp_complete = optimized_lane_trajectory_control_parameters(tcp_complete, target_td, target_v, lane_in_local_pose);
 
 	return (tcp_complete);
 
