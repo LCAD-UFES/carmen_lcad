@@ -74,7 +74,7 @@ namespace velodyne_driver
   /** @brief Get one velodyne packet. */
   int InputSocket::getScanPacket(velodyne_packet_t *pkt)
   {
-	if(port_number == VELODYNE_UDP_PORT)
+	if (port_number == VELODYNE_UDP_PORT)
 	{
 
 		struct pollfd fds[1];

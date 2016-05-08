@@ -26,7 +26,7 @@
 
 namespace velodyne_driver
 {
-
+const double VELODYNE_PACKAGE_RATE = 1808.0;
 const double DIST_LSB = 0.2; // Nearest Distance Strip
 const float ROTATION_RESOLUTION = 0.01f; // Degrees 
 const unsigned short ROTATION_MAX_UNITS = 36000; // Hundredths of degrees 
@@ -49,6 +49,9 @@ const double TEMP_SCALE_FACTOR = 0.1453;
 const int TEMP_BASE_FACTOR = 25;
 const double ACCEL_SCALE_FACTOR = 0.001221;
 
+const double VELODYNE_MIN_FREQUENCY = 1.0;
+const int VELODYNE_MAX_32_LASER_SHOTS_PER_REVOLUTION = (int) ((double) (VELODYNE_PACKAGE_RATE * VELODYNE_NUM_SHOTS) * VELODYNE_MIN_FREQUENCY + 0.5);
+
 // Velodyne datastructures
 typedef struct vel_laser {
 	unsigned short int distance; // 2mm increments
@@ -57,7 +60,7 @@ typedef struct vel_laser {
 
 typedef struct velodyne_fire {
 	unsigned short int start_id;
-	unsigned short int rotational_pos; // 0-35999  divide by 	100 for degrees
+	unsigned short int rotational_pos; // 0-35999  divide by 100 for degrees
 	vel_laser_t lasers[VELODYNE_NUM_LASERS];
 } __attribute__((packed)) velodyne_fire_t ;
 
