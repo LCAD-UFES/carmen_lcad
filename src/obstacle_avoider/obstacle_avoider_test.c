@@ -226,7 +226,7 @@ build_trajectory_stop_smooth_trajectory_phi() //This function allows to create a
 {
 	for (int i = 0; i < 50; i++)
 	{
-		motion_commands_vector[i].v = 4.0;
+		motion_commands_vector[i].v = 2.5;
 		motion_commands_vector[i].phi = 0.0;//t * (max_phi / t1);
 		motion_commands_vector[i].time = 0.1;//delta_t;
 	}
