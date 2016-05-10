@@ -1084,8 +1084,14 @@ char* carmen_string_to_velodyne_partial_scan_message(char* string, carmen_velody
 
 	msg->number_of_32_laser_shots = CLF_READ_INT(&current_pos);
 
-	if(msg->partial_scan == NULL) {
+	if (msg->partial_scan == NULL)
+	{
 		msg->partial_scan = (carmen_velodyne_32_laser_shot*) malloc (msg->number_of_32_laser_shots * sizeof(carmen_velodyne_32_laser_shot));
+		carmen_test_alloc(msg->partial_scan);
+	}
+	else
+	{
+		msg->partial_scan = (carmen_velodyne_32_laser_shot*) realloc ((void *) msg->partial_scan, msg->number_of_32_laser_shots * sizeof(carmen_velodyne_32_laser_shot));
 		carmen_test_alloc(msg->partial_scan);
 	}
 

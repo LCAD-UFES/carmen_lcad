@@ -121,8 +121,8 @@ bool VelodyneDriver::pollScan(carmen_velodyne_partial_scan_message &scan)
 			}
 			scan.number_of_32_laser_shots = l;
 			scan.timestamp = last_package_timestamp -
-					(1.0 / (double) (velodyne_driver::VELODYNE_PACKAGE_RATE * velodyne_driver::VELODYNE_NUM_SHOTS)) *
-					(double) (velodyne_driver::VELODYNE_NUM_SHOTS - 1 - fraction_of_VELODYNE_NUM_SHOTS);
+					((double) (velodyne_driver::VELODYNE_NUM_SHOTS - 1 - fraction_of_VELODYNE_NUM_SHOTS) /
+					 (double) (velodyne_driver::VELODYNE_PACKAGE_RATE * velodyne_driver::VELODYNE_NUM_SHOTS));
 
 			begin_previous_scan_i = m;
 			scan_buffer_complete = false;

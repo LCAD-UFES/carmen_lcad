@@ -54,7 +54,7 @@ struct ObjectiveFunctionParams
 TrajectoryLookupTable::TrajectoryControlParameters trajectory_lookup_table[N_DIST][N_THETA][N_D_YAW][N_I_PHI][N_I_V];
 
 double g_last_lane_timestamp = 0.0;
-
+vector<double> step_sf;
 
 TrajectoryLookupTable::TrajectoryLookupTable(int update_lookup_table)
 {
@@ -703,6 +703,9 @@ TrajectoryLookupTable::predict_next_pose(Robot_State &robot_state, const Command
 
 		if (distance_traveled)
 			*distance_traveled += dist_walked;
+
+		if(!step_sf.empty())
+			step_sf.push_back(*distance_traveled);
 	}
 
 	if (remaining_time > 0.0)
@@ -712,6 +715,9 @@ TrajectoryLookupTable::predict_next_pose(Robot_State &robot_state, const Command
 
 		if (distance_traveled)
 			*distance_traveled += dist_walked;
+
+		if(!step_sf.empty())
+					step_sf.push_back(*distance_traveled);
 	}
 
 	achieved_robot_state.pose.theta = carmen_normalize_theta(achieved_robot_state.pose.theta);
@@ -1062,7 +1068,7 @@ get_the_point_nearest_to_the_trajectory(int *point_in_trajectory_is,
  * Seria necessario o primeiro ponto do path (x=0 e y=0) entrar no total_distance?
  * */
 double
-compute_interest_dist(vector<carmen_ackerman_path_point_t> &detailed_goal_list, vector<carmen_ackerman_path_point_t> &path, double lane_sf, vector<carmen_ackerman_path_point_t> &teste)
+compute_interest_dist(vector<carmen_ackerman_path_point_t> &detailed_goal_list, vector<carmen_ackerman_path_point_t> &path, double lane_sf, vector<double> &step_sf, vector<carmen_ackerman_path_point_t> &teste)
 {
 	/* Distancia total de interesse
 	 * distancia entre cada ponto da lane = tamanho da lane / distancia percorrida na lane (nao a distancia entre pontos, distancia completa do caminho)
@@ -1082,39 +1088,23 @@ compute_interest_dist(vector<carmen_ackerman_path_point_t> &detailed_goal_list, 
 	if(detailed_goal_list.empty())
 		return 0.0;
 
-	double path_sf2 = 0.0;
-	for(unsigned int k = 1; k < path.size(); k++)
-	{
-		path_sf2 += dist(path[k-1], path[k]);
-	}
-
-	double fator = lane_sf / path_sf2;
+	double fator = lane_sf / step_sf.back();
 	double lane_detail = (detailed_goal_list.size()-1) / lane_sf;
-	double distance_travelled = 0.0;
 
 	double distance = 0.0;
 	int index = 0;
-	double distance_path_factor = 0.0;
 	double total_distance = 0.0;
 	int num_points = 0.0;
+	double d_dmax = 0.3;
 
-#ifdef DEBUG_LANE
-	printf("----------------Inicio do for-----------------------\n");
-	printf("Fator: %lf: \t Lane_sf: %lf \t path_sf: %lf \t Tamanho_Lane: %d \t Tamanho_Path: %d \n", fator, lane_sf, path_sf2, detailed_goal_list.size(), path.size());
-#endif
+//#ifdef DEBUG_LANE
+//	printf("----------------Inicio do for-----------------------\n");
+//	printf("Fator: %lf: \t Lane_sf: %lf \t path_sf: %lf \t Tamanho_Lane: %d \t Tamanho_Path: %d \n", fator, lane_sf, path_sf2, detailed_goal_list.size(), path.size());
+//#endif
 
-	//	Distancia do primeiro ponto do path(0.0, 0.0) eh necessaria?
-		double first_distance = dist(detailed_goal_list.at(0), path[0]);
-		if(first_distance < 0.3)
-			first_distance = 0;
-	//	total_distance += distance;
-
-
-	for(unsigned int i = 1; i < path.size(); i++)
+	for(unsigned int i = path.size()/3; i < path.size(); i++)
 	{
-		distance_travelled += dist(path[i-1], path[i]);
-		distance_path_factor = fator * distance_travelled;
-		index = (int) (distance_path_factor * lane_detail);
+		index = (fator * step_sf.at(i) * lane_detail);
 
 //		int info;
 //		int index2 = index;
@@ -1128,29 +1118,30 @@ compute_interest_dist(vector<carmen_ackerman_path_point_t> &detailed_goal_list, 
 			printf("Erro no indice, %d \n ", index);
 			break;
 		}
-		distance = dist(path[i], detailed_goal_list.at(index));
-		if(index > 5){
-			total_distance += distance;
-			num_points++;
-			teste.push_back(detailed_goal_list.at(index));
 
-		}
+		distance = dist(path[i], detailed_goal_list.at(index));
+//		if(index > 5){
+		total_distance += distance;
+//		num_points++;
+		teste.push_back(detailed_goal_list.at(index));
+
+//		}
 //		}
 
-#ifdef DEBUG_LANE
-		printf("lane size no for do dist: %lu \n", detailed_goal_list.size());
-		printf("\n Indice: %d \t Indice_Path: %d \n", index, i);
-		printf("\n distance_travelled: %lf \n", distance_travelled);
-		printf("\n distancia_path_factor: %lf \n", distance_path_factor);
-		printf("Entre: x_prev: %lf y_prev: %lf x_atual: %lf  y_atual: %lf  \n", detailed_goal_list[index].x, detailed_goal_list[index].y, detailed_goal_list[index2].x, detailed_goal_list[index2].y);
-		printf("Ponto: x_atual: %lf  y_atual: %lf  \n", path[i].x, path[i].y);
-		printf("distance: %lf \n", distance);
-		printf("Total: %lf \n", distance);
-#endif
+//#ifdef DEBUG_LANE
+//		printf("lane size no for do dist: %lu \n", detailed_goal_list.size());
+//		printf("\n Indice: %d \t Indice_Path: %d \n", index, i);
+//		printf("\n distance_travelled: %lf \n", distance_travelled);
+//		printf("\n distancia_path_factor: %lf \n", distance_path_factor);
+//		printf("Entre: x_prev: %lf y_prev: %lf x_atual: %lf  y_atual: %lf  \n", detailed_goal_list[index].x, detailed_goal_list[index].y, detailed_goal_list[index2].x, detailed_goal_list[index2].y);
+//		printf("Ponto: x_atual: %lf  y_atual: %lf  \n", path[i].x, path[i].y);
+//		printf("distance: %lf \n", distance);
+//		printf("Total: %lf \n", distance);
+//#endif
 
 	}
 
-	return (total_distance / num_points);
+	return (total_distance / (step_sf.back() * d_dmax));
 }
 
 
@@ -1224,6 +1215,8 @@ my_fdf(const gsl_vector *x, void *params, double *f, gsl_vector *df)
 	my_df(x, params, df);
 }
 
+
+
 //Compute cost function to optimize lane
 double
 my_g(const gsl_vector *x, void *params)
@@ -1237,7 +1230,8 @@ my_g(const gsl_vector *x, void *params)
 
 	if (tcp.tf < 0.2) // o tempo nao pode ser pequeno demais
 		tcp.tf = 0.2;
-
+	step_sf.clear();
+	step_sf.push_back(0.0);
 	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->phi_i, false);
 
 	my_params->tcp_seed->vf = tcp.vf;
@@ -1250,27 +1244,20 @@ my_g(const gsl_vector *x, void *params)
 	print_lane(path,path_file_dist);
 	fclose(path_file_dist);
 
-	double total_interest_dist = compute_interest_dist(my_params->detailed_goal_list, path, my_params->lane_sf, teste);
+	double total_interest_dist = compute_interest_dist(my_params->detailed_goal_list, path, my_params->lane_sf, step_sf, teste);
+
 
 	FILE *index_file = fopen("gnu_tests/gnuplot_indices.txt", "w");
 	print_lane(teste,index_file);
 	fclose(index_file);
 
-	double first_distance = dist(my_params->detailed_goal_list.at(0), path[0]);
-		if(first_distance > 0.1)
-			first_distance = 0;
-	double lane_w = (first_distance > 0.1) ? 1 : 0.01;
-	double sf_w = (first_distance > 0.1) ? 0.5 : 1;
-	//		double dist_ponto_final  = dist(path.back(), my_params->detailed_goal_list.back());
-	//		double phi_final = path.back().phi - my_params->detailed_goal_list.back().phi;
-
-	//		double result = (total_interest_dist + dist_ponto_final + (phi_final * 0.2));
-
-	double distancia_percorrida = fabs((tcp.sf - (my_params->lane_sf)));
-	double result = (total_interest_dist * lane_w) + (distancia_percorrida * sf_w);
+	double result = sqrt((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
+				(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 0.2) +
+				(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2)) +
+				total_interest_dist*0.1;
 
     printf("Distance to Lane: %lf \n", total_interest_dist);
-    printf("Distance to sf: %lf \n", distancia_percorrida);
+//    printf("Distance to sf: %lf \n", distancia_percorrida);
 	printf("Result: %lf \n", result);
 	getchar();
 
@@ -1358,81 +1345,83 @@ compute_suitable_acceleration(TrajectoryLookupTable::TrajectoryControlParameters
 
 
 void
-add_points_to_goal_list_interval(carmen_ackerman_path_point_t p1, carmen_ackerman_path_point_t p2, vector<carmen_ackerman_path_point_t> &detailed_goal_list, double *lane_sf, bool end_of_list)
+add_points_to_goal_list_interval(carmen_ackerman_path_point_t p1, carmen_ackerman_path_point_t p2, vector<carmen_ackerman_path_point_t> &detailed_goal_list)
 {
 
-		//double theta;
-		double delta_x, delta_y, delta_theta, distance;
-		int i;
+	//double theta;
+	double delta_x, delta_y, delta_theta, distance;
+	int i;
 
-		distance = sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
+	distance = sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
 
-		double distance_between_goals = 0.1;
-		int num_points = distance / distance_between_goals;
+	double distance_between_goals = 0.1;
+	int num_points = distance / distance_between_goals;
 
-		//  NOTA IMPORTANTISSIMA: ESTUDAR POR QUE O CODIGO COMENTADO NAO DA O MESMO
-		//  RESULTADO QUE O CODIGO ABAIXO!!!!
-		//	theta = atan2(p2.y - p1.y, p2.x - p1.x);
-		//	delta_x = (distance * cos(theta)) / (double) num_points;
-		//	delta_y = (distance * sin(theta)) / (double) num_points;
+	//  NOTA IMPORTANTISSIMA: ESTUDAR POR QUE O CODIGO COMENTADO NAO DA O MESMO
+	//  RESULTADO QUE O CODIGO ABAIXO!!!!
+	//	theta = atan2(p2.y - p1.y, p2.x - p1.x);
+	//	delta_x = (distance * cos(theta)) / (double) num_points;
+	//	delta_y = (distance * sin(theta)) / (double) num_points;
 
-		delta_x = (p2.x - p1.x) / num_points;
-		delta_y = (p2.y - p1.y) / num_points;
-		delta_theta = carmen_normalize_theta((p2.theta - p1.theta)) / num_points;
-		for(i = 0; i < num_points; i++)
-		{
-			carmen_ackerman_path_point_t new_point = {p1.x, p1.y, p1.theta, p1.v, p1.phi, 0.0};
+	delta_x = (p2.x - p1.x) / num_points;
+	delta_y = (p2.y - p1.y) / num_points;
+	delta_theta = carmen_normalize_theta((p2.theta - p1.theta)) / num_points;
 
-			new_point.x = p1.x + i * delta_x;
-			new_point.y = p1.y + i * delta_y;
-			new_point.theta = p1.theta + i * delta_theta;
-//			if(new_point.x >= 0.0)
-//			{
-				if(!detailed_goal_list.empty())
-				{
-					detailed_goal_list.push_back(new_point);
-					*lane_sf += sqrt((((delta_x) * (delta_x))) + ((delta_y) * (delta_y)));
-				}
-				detailed_goal_list.push_back(new_point);
-//			}
-		}
-		if(end_of_list && !detailed_goal_list.empty()){
-			*lane_sf += dist(detailed_goal_list.back(), p2);
-			detailed_goal_list.push_back(p2);
-		}
+	carmen_ackerman_path_point_t new_point = {p1.x, p1.y, p1.theta, p1.v, p1.phi, 0.0};
+
+	for(i = 0; i < num_points; i++)
+	{
+		new_point.x = p1.x + i * delta_x;
+		new_point.y = p1.y + i * delta_y;
+		new_point.theta = p1.theta + i * delta_theta;
+
+		detailed_goal_list.push_back(new_point);
+	}
 }
 
 
 void
 build_detailed_goal_list(vector<carmen_ackerman_path_point_t> *lane_in_local_pose, vector<carmen_ackerman_path_point_t> &detailed_goal_list, double *lane_sf)
 {
-	bool end_of_list = false;
 	//printf("lane size dentro do build: %d \n", message->number_of_poses);
 	if (lane_in_local_pose->size() > 2)
 	{
+		vector<carmen_ackerman_path_point_t> temp_detail;
 		for (int i = 0; i < (lane_in_local_pose->size() - 1); i++)
 		{
-			if(i == (lane_in_local_pose->size() - 2))
-				end_of_list = true;
 			//printf("p1: %lf %lf p2: %lf %lf\n", message->poses[i].x, message->poses[i].y, message->poses[i + 1].x, message->poses[i + 1].y);
-			add_points_to_goal_list_interval(lane_in_local_pose->at(i), lane_in_local_pose->at(i+1), detailed_goal_list, lane_sf, end_of_list);
+			add_points_to_goal_list_interval(lane_in_local_pose->at(i), lane_in_local_pose->at(i+1), temp_detail);
 			//getchar();
 		}
+		//add last point
+		temp_detail.push_back(lane_in_local_pose->back());
+
+		// clear the detailed_goal_list
+		detailed_goal_list.clear();
 
 		//mantendo primeiro ponto mais proximo de 0
 		double test_first_p = 0.0;
-		double last_test = sqrt((carmen_square(detailed_goal_list.at(0).x - 0.0) + carmen_square(detailed_goal_list.at(0).y - 0.0)));
-		 while(detailed_goal_list.at(0).x <= 0.0)
-		{
-			test_first_p = sqrt((carmen_square(detailed_goal_list.at(1).x - 0.0) + carmen_square(detailed_goal_list.at(1).y - 0.0)));
 
-			if (test_first_p < last_test)
-			{
-				detailed_goal_list.at(0);
-				last_test = test_first_p;
+		for(int i = 1; i < temp_detail.size(); i++) {
+
+			if (temp_detail.at(i).x > 0.0) {
+
+				// slice
+				for(int j = i - 1; j < temp_detail.size(); j++) {
+
+					detailed_goal_list.push_back(temp_detail.at(j));
+
+					if (1 < detailed_goal_list.size()) {
+						*lane_sf += dist(detailed_goal_list.at(j-1), detailed_goal_list.at(j));
+					}
+
+				}
+
+				// return
+				return;
+
 			}
-			else
-				break;
+
 		}
 
 	//printf("lane size dentro do build: %lu \n", detailed_goal_list.size());
@@ -1512,17 +1501,17 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 
 	size_t iter = 0;
 	int status;
-	double MAX_LANE_DIST = 0.2;
+	double MAX_LANE_DIST = 0.01;
 
 	FILE *lane_file = fopen("gnu_tests/gnuplot_lane.txt", "w");
 	print_lane(params.detailed_goal_list, lane_file);
 	fclose(lane_file);
-	char path_name[20];
-	sprintf(path_name, "path/%d.txt", 0);
-	FILE *path_file = fopen("gnu_tests/gnuplot_traj.txt", "w");
-	print_lane(simulate_car_from_parameters(target_td, tcp_seed, target_td.phi_i, true),path_file);
-	fclose(path_file);
-	getchar();
+//	char path_name[20];
+//	sprintf(path_name, "path/%d.txt", 0);
+//	FILE *path_file = fopen("gnu_tests/gnuplot_traj.txt", "w");
+//	print_lane(simulate_car_from_parameters(target_td, tcp_seed, target_td.phi_i, true),path_file);
+//	fclose(path_file);
+//	getchar();
 
 	do
 	{
@@ -1553,8 +1542,10 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 		//	--
 
 	} while ((s->f > MAX_LANE_DIST) && (status == GSL_CONTINUE) && (iter < 300)); //alterado de 0.005
-//	printf("Parei em: %lu iteracoes, sf: %lf  \n", iter, s->f);
-//	getchar();
+
+	printf("Parei em: %lu iteracoes, sf: %lf  \n", iter, s->f);
+	getchar();
+
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
 //	//TODO Verificar esse teste para a lane
@@ -2182,18 +2173,43 @@ move_lane_robot_reference_system(Pose *localize_pose, carmen_rddf_road_profile_m
 	if (goal_list_message->number_of_poses < 2)
 		return false;
 
+	vector<carmen_ackerman_path_point_t> poses_back;
+	carmen_ackerman_path_point_t local_reference_lane_point;
+
+	//Get the back poses
+	int i;
+	for (i = (goal_list_message->number_of_poses_back - 1); i >= 0; i--)
+	{
+		SE2 lane_back_in_world_reference(goal_list_message->poses[i].x, goal_list_message->poses[i].y, goal_list_message->poses[i].theta);
+		SE2 lane_back_in_car_reference = robot_pose.inverse() * lane_back_in_world_reference;
+
+		local_reference_lane_point = {lane_back_in_car_reference[0], lane_back_in_car_reference[1], lane_back_in_car_reference[2],
+				goal_list_message->poses[i].v, goal_list_message->poses[i].phi, 0.0};
+
+		poses_back.push_back(local_reference_lane_point);
+
+		if (local_reference_lane_point.x <= 0)
+		{
+			for (int j = poses_back.size() - 1; i >= 0; i--)
+			{
+				lane_in_local_pose->push_back(poses_back.at(i));
+			}
+			break;
+		}
+	}
+
 	int indice = 0;
 	if (goal_list_message->poses[0].x == goal_list_message->poses[1].x && goal_list_message->poses[0].y == goal_list_message->poses[1].y)
 		indice = 1;
 
-	for (int i = 0; indice < goal_list_message->number_of_poses; i++ , indice++)
+	for (int j = 0; indice < goal_list_message->number_of_poses; j++ , indice++)
 	{
 
 		SE2 lane_in_world_reference(goal_list_message->poses[indice].x, goal_list_message->poses[indice].y, goal_list_message->poses[indice].theta);
 		SE2 lane_in_car_reference = robot_pose.inverse() * lane_in_world_reference;
 
 
-		carmen_ackerman_path_point_t local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2],
+		local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2],
 				goal_list_message->poses[indice].v, goal_list_message->poses[indice].phi, 0.0};
 
 		lane_in_local_pose->push_back(local_reference_lane_point);
@@ -2204,7 +2220,8 @@ move_lane_robot_reference_system(Pose *localize_pose, carmen_rddf_road_profile_m
 		{
 			return true;
 		}
-		dist = sqrt((carmen_square(lane_in_local_pose->at(i).x - goal_x) + carmen_square(lane_in_local_pose->at(i).y - goal_y)));
+
+		dist = sqrt((carmen_square(lane_in_local_pose->at(j).x - goal_x) + carmen_square(lane_in_local_pose->at(j).y - goal_y)));
 		if (last_dist < dist)
 			return false;
 		last_dist = dist;
