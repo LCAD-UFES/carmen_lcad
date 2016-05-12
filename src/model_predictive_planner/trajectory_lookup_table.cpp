@@ -1375,11 +1375,11 @@ add_points_to_goal_list_interval(carmen_ackerman_path_point_t p1, carmen_ackerma
 }
 
 
-void
+bool
 build_detailed_goal_list(vector<carmen_ackerman_path_point_t> *lane_in_local_pose, vector<carmen_ackerman_path_point_t> &detailed_goal_list, double *lane_sf)
 {
 	//printf("lane size dentro do build: %d \n", message->number_of_poses);
-	if (lane_in_local_pose->size() > 2)
+	if (lane_in_local_pose->size() > 7)
 	{
 		vector<carmen_ackerman_path_point_t> temp_detail;
 		for (int i = 0; i < (lane_in_local_pose->size() - 1); i++)
@@ -1396,10 +1396,10 @@ build_detailed_goal_list(vector<carmen_ackerman_path_point_t> *lane_in_local_pos
 
 		//mantendo primeiro ponto mais proximo de 0
 
-		for(unsigned int i = 1; i < temp_detail.size(); i++) {
-
-			if (temp_detail.at(i).x > 0.0) {
-
+		for (unsigned int i = 1; i < temp_detail.size(); i++)
+		{
+			if (temp_detail.at(i).x > 0.0)
+			{
 				// slice
 				int k = 0;
 				for(unsigned int j = (i - 1); j < temp_detail.size(); j++ , k++) {
@@ -1411,14 +1411,17 @@ build_detailed_goal_list(vector<carmen_ackerman_path_point_t> *lane_in_local_pos
 					}
 				}
 				// return
-				return;
+				return (true);
 			}
 		}
-
 	//printf("lane size dentro do build: %lu \n", detailed_goal_list.size());
 	}
 	else
+	{
 		printf(KGRN "+++++++++++++ ERRO MENSAGEM DA LANE POSES !!!!\n" RESET);
+		return (false);
+	}
+	return (false);
 }
 
 
@@ -1446,7 +1449,8 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 
 	double lane_sf = 0.0;
 	ObjectiveFunctionParams params;
-	build_detailed_goal_list(lane_in_local_pose, params.detailed_goal_list, &lane_sf);
+	if (!build_detailed_goal_list(lane_in_local_pose, params.detailed_goal_list, &lane_sf))
+		return (tcp_seed);
 
 	//printf("lane size depois Build: %lu \n", params.detailed_goal_list.size());
 	//printf("detailed x: %lf y: %lf \n",detailed_goal_list[detailed_goal_list.size()-1].x, detailed_goal_list[detailed_goal_list.size()-1].y);
