@@ -1407,9 +1407,7 @@ build_detailed_goal_list(vector<carmen_ackerman_path_point_t> *lane_in_local_pos
 					detailed_goal_list.push_back(temp_detail.at(j));
 
 					if (1 < detailed_goal_list.size())
-					{
 						*lane_sf += dist(detailed_goal_list.at(k-1), detailed_goal_list.at(k));
-					}
 				}
 				// return
 				return (true);
@@ -2187,9 +2185,7 @@ move_lane_to_robot_reference_system(Pose *localize_pose, carmen_rddf_road_profil
 		if (local_reference_lane_point.x <= 0)
 		{
 			for (int j = 0 ; j < poses_back.size(); j++)
-			{
 				lane_in_local_pose->push_back(poses_back.at(j));
-			}
 			break;
 		}
 	}
@@ -2543,9 +2539,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	bool goal_in_lane = false;
 	goal_in_lane = move_lane_to_robot_reference_system(localize_pose, goal_list_message, &goalPoseVector[0], &lane_in_local_pose);
 	if (!goal_in_lane)
-	{
 		lane_in_local_pose.clear();
-	}
 
 	FILE *problems;
 	problems = fopen("problems.txt", "a");
