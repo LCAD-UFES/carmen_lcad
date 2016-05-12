@@ -1102,7 +1102,7 @@ compute_interest_dist(vector<carmen_ackerman_path_point_t> &detailed_goal_list, 
 //	printf("Fator: %lf: \t Lane_sf: %lf \t path_sf: %lf \t Tamanho_Lane: %d \t Tamanho_Path: %d \n", fator, lane_sf, path_sf2, detailed_goal_list.size(), path.size());
 //#endif
 
-	for(unsigned int i = path.size()/3; i < path.size(); i++)
+	for (unsigned int i = path.size()/3; i < path.size(); i++)
 	{
 		index = (fator * step_sf.at(i) * lane_detail);
 
@@ -1114,7 +1114,7 @@ compute_interest_dist(vector<carmen_ackerman_path_point_t> &detailed_goal_list, 
 //		printf("Ponto na reta: x: %lf y: %lf \n", point_path_lane.x, point_path_lane.y);
 //		if(index > 1)
 //		{
-		if(index > (detailed_goal_list.size())){
+		if (index > (detailed_goal_list.size() - 1)){
 			printf("Erro no indice, %d \n ", index);
 			break;
 		}
@@ -1124,7 +1124,8 @@ compute_interest_dist(vector<carmen_ackerman_path_point_t> &detailed_goal_list, 
 		total_distance += distance;
 //		num_points++;
 		teste.push_back(detailed_goal_list.at(index));
-
+//		printf("indexs: %d \n", index);
+//		getchar();
 //		}
 //		}
 
@@ -1140,7 +1141,6 @@ compute_interest_dist(vector<carmen_ackerman_path_point_t> &detailed_goal_list, 
 //#endif
 
 	}
-
 	return (total_distance / (step_sf.back() * d_dmax));
 }
 
@@ -1405,11 +1405,9 @@ build_detailed_goal_list(vector<carmen_ackerman_path_point_t> *lane_in_local_pos
 				for (unsigned int j = (i - 1); j < temp_detail.size(); j++ , k++)
 				{
 					detailed_goal_list.push_back(temp_detail.at(j));
-
 					if (1 < detailed_goal_list.size())
 						*lane_sf += dist(detailed_goal_list.at(k-1), detailed_goal_list.at(k));
 				}
-				// return
 				return (true);
 			}
 		}
@@ -1440,16 +1438,16 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	//   v_0 = v_i
 	//   vt, a0, af, t0, tt e sf sao dependentes das demais segundo o TrajectoryVelocityProfile
 
+	double lane_sf = 0.0;
+	ObjectiveFunctionParams params;
+	if (!build_detailed_goal_list(lane_in_local_pose, params.detailed_goal_list, &lane_sf))
+		return (tcp_seed);
 
 	const gsl_multimin_fdfminimizer_type *T;
 	gsl_multimin_fdfminimizer *s;
 
 	double suitable_acceleration = compute_suitable_acceleration(tcp_seed, target_td, target_v);
 
-	double lane_sf = 0.0;
-	ObjectiveFunctionParams params;
-	if (!build_detailed_goal_list(lane_in_local_pose, params.detailed_goal_list, &lane_sf))
-		return (tcp_seed);
 
 	//printf("lane size depois Build: %lu \n", params.detailed_goal_list.size());
 	//printf("detailed x: %lf y: %lf \n",detailed_goal_list[detailed_goal_list.size()-1].x, detailed_goal_list[detailed_goal_list.size()-1].y);
@@ -1495,7 +1493,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 
 	size_t iter = 0;
 	int status;
-	double MAX_LANE_DIST = 0.01;
+	double MAX_LANE_DIST = 0.1;
 
 //	FILE *lane_file = fopen("gnu_tests/gnuplot_lane.txt", "w");
 //	print_lane(params.detailed_goal_list, lane_file);
@@ -1543,7 +1541,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
 //	//TODO Verificar esse teste para a lane
-	if ((tcp.tf < 0.2) || (s->f > 0.4)) // too short plan or bad minimum (s->f should be close to zero)
+	if ((tcp.tf < 0.2) || (s->f > 0.6)) // too short plan or bad minimum (s->f should be close to zero)
 		tcp.valid = false;
 
 	gsl_multimin_fdfminimizer_free(s);
@@ -2172,8 +2170,8 @@ move_lane_to_robot_reference_system(Pose *localize_pose, carmen_rddf_road_profil
 	carmen_ackerman_path_point_t local_reference_lane_point;
 
 	//Get the back poses
-	int i;
-	for (i = 0; i < goal_list_message->number_of_poses_back; i++)
+
+	for (int i = 0; i < goal_list_message->number_of_poses_back; i++)
 	{
 		SE2 lane_back_in_world_reference(goal_list_message->poses_back[i].x, goal_list_message->poses_back[i].y, goal_list_message->poses_back[i].theta);
 		SE2 lane_back_in_car_reference = robot_pose.inverse() * lane_back_in_world_reference;
@@ -2185,36 +2183,35 @@ move_lane_to_robot_reference_system(Pose *localize_pose, carmen_rddf_road_profil
 
 		if (local_reference_lane_point.x <= 0)
 		{
-			for (int j = 0 ; j < poses_back.size(); j++)
+			for (int j = (poses_back.size() - 1); j >= 0 ; j--)
 				lane_in_local_pose->push_back(poses_back.at(j));
 			break;
 		}
 	}
 
-	int indice = 0;
+	int index = 0;
 	if (goal_list_message->poses[0].x == goal_list_message->poses[1].x && goal_list_message->poses[0].y == goal_list_message->poses[1].y)
-		indice = 1;
+		index = 1;
 
-	for (int j = 0; indice < goal_list_message->number_of_poses; j++ , indice++)
+	for (int k = index; k < goal_list_message->number_of_poses; k++)
 	{
 
-		SE2 lane_in_world_reference(goal_list_message->poses[indice].x, goal_list_message->poses[indice].y, goal_list_message->poses[indice].theta);
+		SE2 lane_in_world_reference(goal_list_message->poses[k].x, goal_list_message->poses[k].y, goal_list_message->poses[k].theta);
 		SE2 lane_in_car_reference = robot_pose.inverse() * lane_in_world_reference;
 
 
 		local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2],
-				goal_list_message->poses[indice].v, goal_list_message->poses[indice].phi, 0.0};
+				goal_list_message->poses[k].v, goal_list_message->poses[k].phi, 0.0};
 
 		lane_in_local_pose->push_back(local_reference_lane_point);
 
-//		if(i < 4)
-//			printf("%d: Global Lane: x: %lf y: %lf \t Goal x: %lf y:%lf \n", i,lane_in_local_pose->at(i).x, lane_in_local_pose->at(i).y, goal_pose->x, goal_pose->y);
-		if (local_reference_lane_point.x == goal_x && local_reference_lane_point.y == goal_y)
-		{
-			return true;
-		}
+//		printf("%d: Global Lane: x: %lf y: %lf \t Goal x: %lf y:%lf \n", (k-1),lane_in_local_pose->at(k-1).x, lane_in_local_pose->at(k-1).y, goal_x, goal_y);
+//		printf("AQUI: Global Lane: x: %lf y: %lf \t Goal x: %lf y:%lf \n",local_reference_lane_point.x, local_reference_lane_point.y, goal_x, goal_y);
 
-		dist = sqrt((carmen_square(lane_in_local_pose->at(j).x - goal_x) + carmen_square(lane_in_local_pose->at(j).y - goal_y)));
+		if (local_reference_lane_point.x == goal_x && local_reference_lane_point.y == goal_y)
+			return true;
+
+		dist = sqrt((carmen_square(local_reference_lane_point.x - goal_x) + carmen_square(local_reference_lane_point.y - goal_y)));
 		if (last_dist < dist)
 			return false;
 		last_dist = dist;
