@@ -897,7 +897,7 @@ void
 print_lane(vector<carmen_ackerman_path_point_t> path, FILE *path_file)
 {
 
-	int i = 0;
+//	int i = 0;
 	for (std::vector<carmen_ackerman_path_point_t>::iterator it = path.begin(); it != path.end(); ++it)
 	{
 //		if ((i % 2) == 0)
@@ -1094,7 +1094,7 @@ compute_interest_dist(vector<carmen_ackerman_path_point_t> &detailed_goal_list, 
 	double distance = 0.0;
 	int index = 0;
 	double total_distance = 0.0;
-	int num_points = 0.0;
+//	int num_points = 0.0;
 	double d_dmax = 0.3;
 
 //#ifdef DEBUG_LANE
@@ -1239,33 +1239,28 @@ my_g(const gsl_vector *x, void *params)
 
 	//TODO Passar tcp.sf (quando estiver correto)
 	vector<carmen_ackerman_path_point_t> teste;
-
-	FILE *path_file_dist = fopen("gnu_tests/gnuplot_path_dist.txt", "w");
-	print_lane(path,path_file_dist);
-	fclose(path_file_dist);
+//
+//	FILE *path_file_dist = fopen("gnu_tests/gnuplot_path_dist.txt", "w");
+//	print_lane(path,path_file_dist);
+//	fclose(path_file_dist);
 
 	double total_interest_dist = compute_interest_dist(my_params->detailed_goal_list, path, my_params->lane_sf, step_sf, teste);
 
-
-	FILE *index_file = fopen("gnu_tests/gnuplot_indices.txt", "w");
-	print_lane(teste,index_file);
-	fclose(index_file);
+//
+//	FILE *index_file = fopen("gnu_tests/gnuplot_indices.txt", "w");
+//	print_lane(teste,index_file);
+//	fclose(index_file);
 
 	double result = sqrt((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 				(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 0.2) +
 				(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2)) +
 				total_interest_dist*0.1;
 
-    printf("Distance to Lane: %lf \n", total_interest_dist);
-//    printf("Distance to sf: %lf \n", distancia_percorrida);
-	printf("Result: %lf \n", result);
-	getchar();
+//    printf("Distance to Lane: %lf \n", total_interest_dist);
+////    printf("Distance to sf: %lf \n", distancia_percorrida);
+//	printf("Result: %lf \n", result);
+//	getchar();
 
-#ifdef DEBUG_LANE
-	printf("TD.Dist: %lf \t TD.YAW: %lf \t TD.THETA: %lf \n",(td.dist - my_params->target_td->dist), (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw), (carmen_normalize_theta(td.theta) - my_params->target_td->theta));
-	//	      printf("Dist_object: %lf \n", dist_objectve);
-	getchar();
-#endif
 	return (result);
 
 }
@@ -1400,14 +1395,13 @@ build_detailed_goal_list(vector<carmen_ackerman_path_point_t> *lane_in_local_pos
 		detailed_goal_list.clear();
 
 		//mantendo primeiro ponto mais proximo de 0
-		double test_first_p = 0.0;
 
-		for(int i = 1; i < temp_detail.size(); i++) {
+		for(unsigned int i = 1; i < temp_detail.size(); i++) {
 
 			if (temp_detail.at(i).x > 0.0) {
 
 				// slice
-				for(int j = i - 1; j < temp_detail.size(); j++) {
+				for(unsigned int j = i - 1; j < temp_detail.size(); j++) {
 
 					detailed_goal_list.push_back(temp_detail.at(j));
 
@@ -1503,9 +1497,9 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	int status;
 	double MAX_LANE_DIST = 0.01;
 
-	FILE *lane_file = fopen("gnu_tests/gnuplot_lane.txt", "w");
-	print_lane(params.detailed_goal_list, lane_file);
-	fclose(lane_file);
+//	FILE *lane_file = fopen("gnu_tests/gnuplot_lane.txt", "w");
+//	print_lane(params.detailed_goal_list, lane_file);
+//	fclose(lane_file);
 //	char path_name[20];
 //	sprintf(path_name, "path/%d.txt", 0);
 //	FILE *path_file = fopen("gnu_tests/gnuplot_traj.txt", "w");
@@ -1531,20 +1525,20 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 
 		//	--Debug with GNUPLOT
 
-		TrajectoryLookupTable::TrajectoryControlParameters tcp_temp = fill_in_tcp(s->x, &params);
-		char path_name[20];
-		sprintf(path_name, "path/%lu.txt", iter);
-		FILE *path_file = fopen("gnu_tests/gnuplot_traj.txt", "w");
-		print_lane(simulate_car_from_parameters(target_td, tcp_temp, target_td.phi_i, true),path_file);
-		fclose(path_file);
-		printf("Estou na: %lu iteracao, sf: %lf  \n", iter, s->f);
-		getchar();
+//		TrajectoryLookupTable::TrajectoryControlParameters tcp_temp = fill_in_tcp(s->x, &params);
+//		char path_name[20];
+//		sprintf(path_name, "path/%lu.txt", iter);
+//		FILE *path_file = fopen("gnu_tests/gnuplot_traj.txt", "w");
+//		print_lane(simulate_car_from_parameters(target_td, tcp_temp, target_td.phi_i, true),path_file);
+//		fclose(path_file);
+//		printf("Estou na: %lu iteracao, sf: %lf  \n", iter, s->f);
+//		getchar();
 		//	--
 
 	} while ((s->f > MAX_LANE_DIST) && (status == GSL_CONTINUE) && (iter < 300)); //alterado de 0.005
-
-	printf("Parei em: %lu iteracoes, sf: %lf  \n", iter, s->f);
-	getchar();
+//
+//	printf("Parei em: %lu iteracoes, sf: %lf  \n", iter, s->f);
+//	getchar();
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
@@ -2170,7 +2164,7 @@ move_lane_robot_reference_system(Pose *localize_pose, carmen_rddf_road_profile_m
 	double goal_x = goal_in_car_reference[0];
 	double goal_y = goal_in_car_reference[1];
 
-	if (goal_list_message->number_of_poses < 2)
+	if (goal_list_message->number_of_poses < 2 && goal_list_message->number_of_poses < 2)
 		return false;
 
 	vector<carmen_ackerman_path_point_t> poses_back;
@@ -2178,21 +2172,21 @@ move_lane_robot_reference_system(Pose *localize_pose, carmen_rddf_road_profile_m
 
 	//Get the back poses
 	int i;
-	for (i = (goal_list_message->number_of_poses_back - 1); i >= 0; i--)
+	for (i = 0; i < goal_list_message->number_of_poses_back; i++)
 	{
-		SE2 lane_back_in_world_reference(goal_list_message->poses[i].x, goal_list_message->poses[i].y, goal_list_message->poses[i].theta);
+		SE2 lane_back_in_world_reference(goal_list_message->poses_back[i].x, goal_list_message->poses_back[i].y, goal_list_message->poses_back[i].theta);
 		SE2 lane_back_in_car_reference = robot_pose.inverse() * lane_back_in_world_reference;
 
 		local_reference_lane_point = {lane_back_in_car_reference[0], lane_back_in_car_reference[1], lane_back_in_car_reference[2],
-				goal_list_message->poses[i].v, goal_list_message->poses[i].phi, 0.0};
+				goal_list_message->poses_back[i].v, goal_list_message->poses_back[i].phi, 0.0};
 
 		poses_back.push_back(local_reference_lane_point);
 
 		if (local_reference_lane_point.x <= 0)
 		{
-			for (int j = poses_back.size() - 1; i >= 0; i--)
+			for (int j = 0 ; j < poses_back.size(); j++)
 			{
-				lane_in_local_pose->push_back(poses_back.at(i));
+				lane_in_local_pose->push_back(poses_back.at(j));
 			}
 			break;
 		}
