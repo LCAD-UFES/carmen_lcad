@@ -378,7 +378,7 @@ init_velodyne_points(spherical_point_cloud **velodyne_points_out, unsigned char 
 
 	carmen_pose_3D_t *robot_pose = (carmen_pose_3D_t *)calloc(NUM_VELODYNE_POINT_CLOUDS, sizeof(carmen_pose_3D_t));
 	carmen_vector_3D_t *robot_velocity = (carmen_vector_3D_t *)calloc(NUM_VELODYNE_POINT_CLOUDS, sizeof(carmen_vector_3D_t));
-	spherical_point_cloud *velodyne_points = (spherical_point_cloud *)malloc(NUM_VELODYNE_POINT_CLOUDS * sizeof(spherical_point_cloud));
+	spherical_point_cloud *velodyne_points = (spherical_point_cloud *)calloc(NUM_VELODYNE_POINT_CLOUDS, sizeof(spherical_point_cloud));
 	double *robot_timestamp = (double *)calloc(NUM_VELODYNE_POINT_CLOUDS, sizeof(double));
 	*intencity = (unsigned char **)calloc(NUM_VELODYNE_POINT_CLOUDS, sizeof(unsigned char*));
 	*robot_phi_out = (double *)calloc(NUM_VELODYNE_POINT_CLOUDS, sizeof(double));
@@ -534,7 +534,7 @@ generates_ray_order(int size)
 {
 	int i;
 
-	int *ray_order = (int *)malloc(size * sizeof(int));
+	int *ray_order = (int *) calloc(size, sizeof(int));
 	carmen_test_alloc(ray_order);
 
 	for (i = 0; i < size; i++)

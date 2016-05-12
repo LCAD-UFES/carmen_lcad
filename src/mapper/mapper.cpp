@@ -170,7 +170,10 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *map, carmen_map_t *s
 
 	double v = sensor_data->robot_velocity[point_cloud_index].x;
 	double phi = sensor_data->robot_phi[point_cloud_index];
-	int N = v_zt.num_points / sensor_params->vertical_resolution;
+	int N = v_zt.num_points / sensor_params->vertical_resolution; // @@@ Alberto: Este num_points pode nao estar
+	// propagando certo, conforme point_cloud_index, já que antes era constante e agora pode mudar de uma point
+	// cloud para outra. Erro em carmen_prob_models_compute_relevant_map_coordinates (prob_map.cpp:1073), entre
+	// outros pontos possivelmente por causa do indice i do loop abaixo.
 
 	double dt = 0.0494 / (double) N; // @@@ Alberto: este dt depende da velocidade de rotação do Velodyne, que não é fixa. Tem que ser calculado do acordo com a velocidade de rotação do Velodyne.
 	carmen_pose_3D_t robot_interpolated_position = sensor_data->robot_pose[point_cloud_index];
@@ -437,7 +440,7 @@ build_sensor_point_cloud(spherical_point_cloud **points, unsigned char **intensi
 	if ((*point_cloud_index) >= max_point_buffer)
 		*point_cloud_index = 0;
 
-	if ((*points)[*point_cloud_index].num_points != num_points)
+	if ((*points)[*point_cloud_index].num_points != num_points) // (*points)[*point_cloud_index].num_points is altered in the function below, carmen_alloc_spherical_point_cloud()
 		intensity[*point_cloud_index] = (unsigned char *)realloc((void *)intensity[*point_cloud_index], num_points * sizeof(unsigned char));
 
 	carmen_alloc_spherical_point_cloud(*points, num_points, *point_cloud_index);
@@ -477,7 +480,6 @@ mapper_velodyne_partial_scan(carmen_velodyne_partial_scan_message *velodyne_mess
 	sensors_data[0].robot_velocity[sensors_data[0].point_cloud_index] = globalpos_history[last_globalpos].velocity;
 	sensors_data[0].robot_timestamp[sensors_data[0].point_cloud_index] = globalpos_history[last_globalpos].timestamp;
 	sensors_data[0].robot_phi[sensors_data[0].point_cloud_index] = globalpos_history[last_globalpos].phi;
-
 
 	if (velodyne_message_id >= 0)
 	{

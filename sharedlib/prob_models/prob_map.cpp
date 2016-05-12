@@ -699,28 +699,28 @@ carmen_prob_models_alloc_sensor_data(sensor_data_t *sensor_data, int vertical_re
 
 	sensor_data->vectors_size = vertical_resolution;
 
-	sensor_data->ray_position_in_the_floor = (carmen_vector_2D_t *) malloc(vertical_resolution * sizeof(carmen_vector_2D_t));
+	sensor_data->ray_position_in_the_floor = (carmen_vector_2D_t *) calloc(vertical_resolution, sizeof(carmen_vector_2D_t));
 	carmen_test_alloc((sensor_data->ray_position_in_the_floor));
 
-	sensor_data->ray_origin_in_the_floor = (carmen_vector_2D_t *) malloc(vertical_resolution * sizeof(carmen_vector_2D_t));
+	sensor_data->ray_origin_in_the_floor = (carmen_vector_2D_t *) calloc(vertical_resolution, sizeof(carmen_vector_2D_t));
 	carmen_test_alloc((sensor_data->ray_origin_in_the_floor));
 
-	sensor_data->ray_size_in_the_floor = (double *) malloc(vertical_resolution * sizeof(double));
+	sensor_data->ray_size_in_the_floor = (double *) calloc(vertical_resolution, sizeof(double));
 	carmen_test_alloc((sensor_data->ray_size_in_the_floor));
 
-	sensor_data->obstacle_height = (double *) malloc(vertical_resolution * sizeof(double));
+	sensor_data->obstacle_height = (double *) calloc(vertical_resolution, sizeof(double));
 	carmen_test_alloc((sensor_data->obstacle_height));
 
-	sensor_data->maxed = (int *) malloc(vertical_resolution * sizeof(int));
+	sensor_data->maxed = (int *) calloc(vertical_resolution, sizeof(int));
 	carmen_test_alloc((sensor_data->maxed));
 
-	sensor_data->processed_intensity = (double *) malloc(vertical_resolution * sizeof(double));
+	sensor_data->processed_intensity = (double *) calloc(vertical_resolution, sizeof(double));
 	carmen_test_alloc((sensor_data->processed_intensity));
 
-	sensor_data->occupancy_log_odds_of_each_ray_target = (double *) malloc(vertical_resolution * sizeof(double));
+	sensor_data->occupancy_log_odds_of_each_ray_target = (double *) calloc(vertical_resolution, sizeof(double));
 	carmen_test_alloc((sensor_data->occupancy_log_odds_of_each_ray_target));
 
-	sensor_data->ray_hit_the_robot = (int *) malloc(vertical_resolution * sizeof(int));
+	sensor_data->ray_hit_the_robot = (int *) calloc(vertical_resolution, sizeof(int));
 	carmen_test_alloc((sensor_data->ray_hit_the_robot));
 
 }
@@ -951,7 +951,8 @@ carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data
 	double min_ray_size = 10000.0;
 	int min_ray_size_index = sensor_params->vertical_resolution - 1;
 
-	for (i = sensor_params->vertical_resolution-2; i >= 0; i--)
+	//for (i = sensor_params->vertical_resolution-2; i >= 0; i--)
+	for (i = 0; i < sensor_params->vertical_resolution; i++)
 	{
 		if (carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[i], highest_sensor, safe_range_above_sensors))
 			sensor_data->occupancy_log_odds_of_each_ray_target[i] = sensor_params->log_odds.log_odds_l0;
@@ -1116,12 +1117,12 @@ init_carmen_map(const ProbabilisticMapParams *params, carmen_map_t *carmen_map)
 	carmen_map->config.y_size = params->grid_sy;
 	carmen_map->config.resolution = params->grid_res;
 	strcpy(carmen_map->config.origin, "from_mapping");
-	carmen_map->config.map_name = (char *) malloc((strlen("occupancy grid") + 1) * sizeof(char));
+	carmen_map->config.map_name = (char *) calloc((strlen("occupancy grid") + 1), sizeof(char));
 	strcpy(carmen_map->config.map_name, "occupancy grid");
 	carmen_map->config.x_origin = 0.0;
 	carmen_map->config.y_origin = 0.0;
 
-	carmen_map->complete_map = (double *) malloc(carmen_map->config.x_size * carmen_map->config.y_size * sizeof(double));
+	carmen_map->complete_map = (double *) calloc(carmen_map->config.x_size, carmen_map->config.y_size * sizeof(double));
 	carmen_test_alloc(carmen_map->complete_map);
 	for (i = 0; i < carmen_map->config.x_size * carmen_map->config.y_size; i++)
 		carmen_map->complete_map[i] = -1.0; // unknown
