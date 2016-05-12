@@ -1402,13 +1402,12 @@ build_detailed_goal_list(vector<carmen_ackerman_path_point_t> *lane_in_local_pos
 			{
 				// slice
 				int k = 0;
-				for(unsigned int j = (i - 1); j < temp_detail.size(); j++ , k++) {
-
+				for (unsigned int j = (i - 1); j < temp_detail.size(); j++ , k++)
+				{
 					detailed_goal_list.push_back(temp_detail.at(j));
 
-					if (1 < detailed_goal_list.size()) {
+					if (1 < detailed_goal_list.size())
 						*lane_sf += dist(detailed_goal_list.at(k-1), detailed_goal_list.at(k));
-					}
 				}
 				// return
 				return (true);
@@ -2153,7 +2152,7 @@ get_trajectory_dimensions_from_robot_state(Pose *localize_pose, Command last_odo
 
 //TODO verificar conversão
 bool
-move_lane_robot_reference_system(Pose *localize_pose, carmen_rddf_road_profile_message *goal_list_message,
+move_lane_to_robot_reference_system(Pose *localize_pose, carmen_rddf_road_profile_message *goal_list_message,
 								Pose *goal_pose, vector<carmen_ackerman_path_point_t> *lane_in_local_pose)
 {
 	double last_dist = DBL_MAX;
@@ -2186,9 +2185,7 @@ move_lane_robot_reference_system(Pose *localize_pose, carmen_rddf_road_profile_m
 		if (local_reference_lane_point.x <= 0)
 		{
 			for (int j = 0 ; j < poses_back.size(); j++)
-			{
 				lane_in_local_pose->push_back(poses_back.at(j));
-			}
 			break;
 		}
 	}
@@ -2540,11 +2537,9 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 //	printf("lane size assim que chegou: %d \n", goal_list_message->number_of_poses);
 	vector<carmen_ackerman_path_point_t> lane_in_local_pose;
 	bool goal_in_lane = false;
-	goal_in_lane = move_lane_robot_reference_system(localize_pose, goal_list_message, &goalPoseVector[0], &lane_in_local_pose);
-	if(!goal_in_lane)
-	{
+	goal_in_lane = move_lane_to_robot_reference_system(localize_pose, goal_list_message, &goalPoseVector[0], &lane_in_local_pose);
+	if (!goal_in_lane)
 		lane_in_local_pose.clear();
-	}
 
 	FILE *problems;
 	problems = fopen("problems.txt", "a");
