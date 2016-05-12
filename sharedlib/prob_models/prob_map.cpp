@@ -598,8 +598,8 @@ carmen_prob_models_update_cells_crossed_by_ray(carmen_map_t *map, sensor_paramet
 	int nx, ny, bx, by;
 	int ray_start_occupied = 0;
 	
-	if (sensor_data->maxed[sensor_data->ray_that_hit_the_nearest_target])
-		return;
+//	if (sensor_data->maxed[sensor_data->ray_that_hit_the_nearest_target])
+//		return;
 
 	a.x = (sensor_data->ray_origin_in_the_floor[sensor_data->ray_that_hit_the_nearest_target].x / map->config.resolution);
 	a.y = (sensor_data->ray_origin_in_the_floor[sensor_data->ray_that_hit_the_nearest_target].y / map->config.resolution);
@@ -951,7 +951,8 @@ carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data
 	double min_ray_size = 10000.0;
 	int min_ray_size_index = sensor_params->vertical_resolution - 1;
 
-	for (i = sensor_params->vertical_resolution-2; i >= 0; i--)
+//	for (i = sensor_params->vertical_resolution-2; i >= 0; i--)
+	for (i = 0; i < sensor_params->vertical_resolution; i++)
 	{
 		if (carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[i], highest_sensor, safe_range_above_sensors))
 			sensor_data->occupancy_log_odds_of_each_ray_target[i] = sensor_params->log_odds.log_odds_l0;
