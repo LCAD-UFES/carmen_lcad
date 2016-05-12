@@ -2165,7 +2165,7 @@ move_lane_robot_reference_system(Pose *localize_pose, carmen_rddf_road_profile_m
 	double goal_x = goal_in_car_reference[0];
 	double goal_y = goal_in_car_reference[1];
 
-	if (goal_list_message->number_of_poses < 2 && goal_list_message->number_of_poses < 2)
+	if ((goal_list_message->number_of_poses < 2) && (goal_list_message->number_of_poses_back < 2))
 		return false;
 
 	vector<carmen_ackerman_path_point_t> poses_back;
