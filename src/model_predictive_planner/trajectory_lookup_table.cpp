@@ -1668,7 +1668,8 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 {
 	TrajectoryLookupTable::TrajectoryControlParameters tcp_complete;
 	tcp_complete = get_optimized_trajectory_control_parameters(tcp_seed, target_td, target_v);
-	tcp_complete = optimized_lane_trajectory_control_parameters(tcp_complete, target_td, target_v, lane_in_local_pose);
+	if (tcp_complete.valid)
+		tcp_complete = optimized_lane_trajectory_control_parameters(tcp_complete, target_td, target_v, lane_in_local_pose);
 
 	return (tcp_complete);
 
