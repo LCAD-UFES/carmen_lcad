@@ -1401,21 +1401,18 @@ build_detailed_goal_list(vector<carmen_ackerman_path_point_t> *lane_in_local_pos
 			if (temp_detail.at(i).x > 0.0) {
 
 				// slice
-				for(unsigned int j = i - 1; j < temp_detail.size(); j++) {
+				int k = 0;
+				for(unsigned int j = (i - 1); j < temp_detail.size(); j++ , k++) {
 
 					detailed_goal_list.push_back(temp_detail.at(j));
 
 					if (1 < detailed_goal_list.size()) {
-						*lane_sf += dist(detailed_goal_list.at(j-1), detailed_goal_list.at(j));
+						*lane_sf += dist(detailed_goal_list.at(k-1), detailed_goal_list.at(k));
 					}
-
 				}
-
 				// return
 				return;
-
 			}
-
 		}
 
 	//printf("lane size dentro do build: %lu \n", detailed_goal_list.size());
