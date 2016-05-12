@@ -13,7 +13,6 @@
 #include <carmen/localize_ackerman_messages.h>
 #include <carmen/localize_ackerman_motion.h>
 #include <carmen/localize_ackerman_velodyne.h>
-#include <carmen/base_ackerman_interface.h>
 #include <carmen/moving_objects_interface.h>
 #include <carmen/rotation_geometry.h>
 #include <carmen/stereo_interface.h>
@@ -68,12 +67,6 @@ static int first_velodyne_message_flag = 1;
 static int first_offline_map_message_flag = 0;
 
 static carmen_map_p offline_grid_map = NULL;
-
-carmen_localize_ackerman_motion_model_t *motion_model;
-
-#define BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE 50
-static int base_ackerman_odometry_index = -1;
-static carmen_base_ackerman_odometry_message base_ackerman_odometry_vector[BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE];
 
 int frame = 1;
 
@@ -198,15 +191,6 @@ initialize_map(carmen_map_t *map, int gridmap_size_x, int gridmap_size_y, double
 // Handlers                                                                                  //
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
-static void
-base_ackerman_odometry_handler(carmen_base_ackerman_odometry_message *msg)
-{
-	base_ackerman_odometry_index = (base_ackerman_odometry_index + 1) % BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE;
-	base_ackerman_odometry_vector[base_ackerman_odometry_index] = *msg;
-
-	//localalize_using_map_set_robot_pose_into_the_map(msg->v, msg->phi, msg->timestamp);
-}
-
 void
 carmen_map_server_offline_map_message_handler(carmen_map_server_offline_map_message *message)
 {
@@ -232,7 +216,6 @@ carmen_map_server_offline_map_message_handler(carmen_map_server_offline_map_mess
 
 		memcpy(offline_grid_map->complete_map, message->complete_map, message->config.x_size * message->config.y_size * sizeof(double));
 	}
-
 }
 
 
@@ -324,9 +307,9 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 		num_point_clouds = list_point_clouds.size();
 
 		/*** PRINT FRAME ID, TIMESTAMP AND NUMBER OF POINT CLOUDS SEGMENTED IN THE SCENE ***/
-//		printf("%d ", frame);
-//		printf("%.10f\n", velodyne_message->timestamp);
-//		printf("clouds: %d\n\n", num_point_clouds);
+		printf("%d ", frame);
+		printf("%.10f\n", velodyne_message->timestamp);
+		printf("clouds: %d\n\n", num_point_clouds);
 		frame++;
 
 		if (num_point_clouds == 0)
@@ -741,9 +724,6 @@ read_parameters(int argc, char **argv)
 int
 main(int argc, char **argv)
 {
-
-
-
 	/* Connect to IPC Server */
 	carmen_ipc_initialize(argc, argv);
 
@@ -754,9 +734,6 @@ main(int argc, char **argv)
 
 
 	/* Initialize vector of static points */
-
-	/* Intialize motion model */
-	motion_model = carmen_localize_ackerman_motion_initialize(argc, argv);
 
 
 	/* Initialize all the relevant parameters */
@@ -770,16 +747,16 @@ main(int argc, char **argv)
 
 	/* Subscribe to sensor and filter messages */
     carmen_velodyne_subscribe_partial_scan_message(NULL,
-    		(carmen_handler_t) velodyne_partial_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
+                                                   (carmen_handler_t) velodyne_partial_scan_message_handler,
+                                                   CARMEN_SUBSCRIBE_LATEST);
 
     carmen_localize_ackerman_subscribe_globalpos_message(NULL,
-    		(carmen_handler_t) localize_ackerman_handler, CARMEN_SUBSCRIBE_LATEST);
+                                                         (carmen_handler_t) localize_ackerman_handler,
+                                                         CARMEN_SUBSCRIBE_LATEST);
 
     carmen_map_server_subscribe_offline_map(NULL,
-			(carmen_handler_t) carmen_map_server_offline_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
-
-    carmen_base_ackerman_subscribe_odometry_message(NULL,
-    		(carmen_handler_t) base_ackerman_odometry_handler, CARMEN_SUBSCRIBE_LATEST);
+            								(carmen_handler_t) carmen_map_server_offline_map_message_handler,
+            								CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_ipc_dispatch();
 
