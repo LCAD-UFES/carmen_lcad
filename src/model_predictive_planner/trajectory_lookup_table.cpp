@@ -1081,7 +1081,7 @@ compute_reference_path(vector<int> &nearest_path_point, vector<carmen_ackerman_p
 		// consider the first point as the nearest one
 		min_dist = dist(detailed_goal_list.at(i), path.at(0));
 
-		for (unsigned int j = 1; j < path.size(); j++)
+		for (unsigned int j = index; j < path.size(); j++)
 		{
 			distance = dist(detailed_goal_list.at(i), path.at(j));
 
@@ -1093,7 +1093,6 @@ compute_reference_path(vector<int> &nearest_path_point, vector<carmen_ackerman_p
 		}
 		total_distance += min_dist;
 		nearest_path_point.push_back(index);
-
 	}
 	return total_distance;
 
@@ -1213,7 +1212,10 @@ my_g(const gsl_vector *x, void *params)
 	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->phi_i, false);
 
 	if (path.size() != my_params->path_size)
+	{
 		compute_reference_path(my_params->nearest_path_point, my_params->detailed_goal_list, path);
+		my_params->path_size = path.size();
+	}
 
 	my_params->tcp_seed->vf = tcp.vf;
 	my_params->tcp_seed->sf = tcp.sf;
