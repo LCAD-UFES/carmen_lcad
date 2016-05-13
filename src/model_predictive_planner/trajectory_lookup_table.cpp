@@ -1111,7 +1111,10 @@ compute_interest_dist(vector<carmen_ackerman_path_point_t> &detailed_goal_list, 
 
 	for (unsigned int i = 0; i < detailed_goal_list.size(); i++)
 	{
-		distance = dist(path.at(nearest_path_point.at(i)), detailed_goal_list.at(i));
+		if (nearest_path_point.at(i) < path.size())
+			distance = dist(path.at(nearest_path_point.at(i)), detailed_goal_list.at(i));
+		else
+			distance = 0.0;
 		total_distance += distance;
 	}
 
@@ -1226,7 +1229,7 @@ my_g(const gsl_vector *x, void *params)
 	double result = sqrt((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 				(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 0.2) +
 				(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2)) +
-				total_interest_dist*0.1;
+				total_interest_dist * 0.005;
 
 	return (result);
 
