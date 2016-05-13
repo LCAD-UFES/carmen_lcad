@@ -28,13 +28,13 @@ extern "C" {
 //particle filter fixed parameters
 ////////////////////////////
 #define MAXIMUM_HEIGHT_OF_OBSTACLE 2.5
-const int num_of_particles = 500;
+const int num_of_particles = 400;
 
 /* Thresholds for association */
 const double threshold_association_dist = 2.5; //maximum distance between point clouds centroid used for association
 const double threshold_max_dist_from_car = 25.0;
 const double threshold_min_dist_from_car = 1.3;
-const double threshold_min_velocity = 1.0;
+const double threshold_min_velocity = 3.0;
 const int threshold_idle_count = 4; //threshold for eliminating idle objects in association list
 
 /* Thresholds for static objects analysis */
@@ -44,8 +44,6 @@ const double threshold_points_in_occupied_grid_rate = 0.1;
 extern int frame;
 extern int num_of_models;
 extern std::vector<object_model_features_t> object_models;
-
-extern carmen_localize_ackerman_motion_model_t *motion_model;
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -202,7 +200,7 @@ void
 print_object_details(object_point_cloud_data_t obj_point_cloud);
 
 void
-init_particle_set(object_point_cloud_data_t &object_pcloud, int num_particles, double x, double y, double theta, double num_models);
+init_particle_set(object_point_cloud_data_t &object_pcloud, int num_particles, double x, double y, double num_models);
 
 #ifdef __cplusplus
 }

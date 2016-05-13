@@ -6,70 +6,38 @@
 
 
 particle_datmo_t
-sample_motion_model(double delta_time, particle_datmo_t particle_t_1, carmen_localize_ackerman_motion_model_t *motion_model)
+sample_motion_model(double delta_time, particle_datmo_t particle_t_1)
 {
 	particle_datmo_t particle_t;
 	carmen_point_t pose_t, pose_t_1;
 	double v;
-	double downrange, crossrange, turn;
-
-	double delta_t, delta_theta;
-	delta_t = particle_t_1.velocity * delta_time;
-	delta_theta = carmen_gaussian_random(0.0, alpha_2);
-	bool backwards = delta_t < 0;
-
-	delta_t = delta_t < 0 ? -delta_t : delta_t;
 
 	pose_t_1.x     = particle_t_1.pose.x;
 	pose_t_1.y     = particle_t_1.pose.y;
 	pose_t_1.theta = particle_t_1.pose.theta;
 	v              = particle_t_1.velocity;
 
-	downrange = carmen_localize_ackerman_sample_noisy_downrange(delta_t, delta_theta, motion_model);
-	crossrange = carmen_localize_ackerman_sample_noisy_crossrange(delta_t, delta_theta, motion_model);
-	turn = carmen_localize_ackerman_sample_noisy_turn(delta_t, delta_theta, motion_model);
-
-	if (backwards)
-	{
-		pose_t_1.x -= downrange * cos(particle_t_1.pose.theta + turn/4.0) +
-				crossrange * cos(particle_t_1.pose.theta + turn/2.0 + M_PI/2.0);
-		pose_t_1.y -= downrange * sin(particle_t_1.pose.theta + turn/2.0) +
-				crossrange * sin(particle_t_1.pose.theta + turn/2.0 + M_PI/2.0);
-	}
-	else
-	{
-		pose_t_1.x += downrange * cos(particle_t_1.pose.theta + turn/2.0) +
-				crossrange * cos(particle_t_1.pose.theta+ turn/2.0 + M_PI/2.0);
-		pose_t_1.y += downrange * sin(particle_t_1.pose.theta + turn/2.0) +
-				crossrange * sin(particle_t_1.pose.theta + turn/2.0 + M_PI/2.0);
-	}
-
-	//pose_t_1.theta = carmen_normalize_theta(particle_t_1.pose.theta+turn);
-
-
-//	v = v + carmen_gaussian_random(0.0, alpha_1);
-//	if (v > v_max) v = v_max;
-//	if (v < v_min) v = v_min;
+	v = v + carmen_gaussian_random(0.0, alpha_1);
+	if (v > v_max) v = v_max;
+	if (v < v_min) v = v_min;
 
 	pose_t_1.theta = pose_t_1.theta + carmen_gaussian_random(0.0, alpha_2);
 	pose_t_1.theta = carmen_normalize_theta(pose_t_1.theta);
 
-
-//	pose_t.x = pose_t_1.x + delta_time*v*cos(pose_t_1.theta);
-//	pose_t.y = pose_t_1.y + delta_time*v*sin(pose_t_1.theta);
+	pose_t.x = pose_t_1.x + delta_time*v*cos(pose_t_1.theta);
+	pose_t.y = pose_t_1.y + delta_time*v*sin(pose_t_1.theta);
 
 	particle_t.pose.theta = carmen_normalize_theta(pose_t_1.theta);
-	particle_t.pose.x     = pose_t_1.x;
-	particle_t.pose.y     = pose_t_1.y;
+	particle_t.pose.x     = pose_t.x;
+	particle_t.pose.y     = pose_t.y;
 	particle_t.velocity   = v;
 	particle_t.weight     = particle_t_1.weight;
 
 	// Keep same class with 90% probability
-	if (((double)rand()/RAND_MAX) <= 0.9)
+	if ((rand() % 100) <= 90)
 		particle_t.class_id = particle_t_1.class_id;
 	else
 		particle_t.class_id = get_random_model_id(num_of_models);
-//	particle_t.class_id = 0;
 
 	particle_t.model_features = get_obj_model_features(particle_t.class_id);
 //	particle_t.model_features_3d = get_obj_model_features_3d(particle_t.class_id, object_models_3d);
@@ -96,7 +64,6 @@ dist_nearest_neighbor(double x_z_t, double y_z_t, carmen_point_t pose_t)
 double
 particle_weight_pose_reading_model(double dist)
 {
-
 	return exp(-dist);
 }
 
@@ -127,19 +94,6 @@ particle_weight_by_normal_distribution(double dist, double mean, double inv_vari
 
 /* 2D Transformations required for calculating bounding box distance */
 carmen_position_t
-transf2d_2_bounding_box_reference(double x, double y, double theta)
-{
-	// Rotate
-	double x_ = x*cos(theta) + y*sin(theta);
-	double y_ = -x*sin(theta) + y*cos(theta);
-
-	carmen_position_t pt = {x_, y_};
-	return pt;
-}
-
-
-/* 2D Transformations required for calculating bounding box distance */
-carmen_position_t
 transf2d_bounding_box(double x_trans, double y_trans, double theta)
 {
 	// Rotate
@@ -155,45 +109,6 @@ transf2d_bounding_box(double x_trans, double y_trans, double theta)
 	carmen_position_t pt = {x,y};
 	return pt;
 }
-double
-dist_btw_point_and_box(object_geometry_t model_geometry, carmen_position_t point)
-{
-	double dist1 = fabs(model_geometry.length * 0.5 - point.x);
-	double dist2 = fabs(-model_geometry.length * 0.5 - point.x);
-	double dist3 = fabs(model_geometry.width * 0.5 - point.y);
-	double dist4 = fabs(-model_geometry.width * 0.5 - point.y);
-	double penalty = 1.0;
-
-	if (point.x  > model_geometry.length * 0.5 || point.y > model_geometry.width * 0.5 ||
-			point.x < -model_geometry.length * 0.5 || point.y < -model_geometry.width * 0.5)
-		penalty = 40.0;
-
-	return  penalty*(dist1 + dist2 + dist3 + dist4);
-}
-
-double
-hausdorffAB_dist_btw_point_and_box(object_geometry_t model_geometry, carmen_position_t point)
-{
-	double dist1 = (model_geometry.length * 0.5 - point.x);
-	double dist2 = (-model_geometry.length * 0.5 - point.x);
-	double dist3 = (model_geometry.width * 0.5 - point.y);
-	double dist4 = (-model_geometry.width * 0.5 - point.y);
-
-	double dist = min(dist1, dist2);
-	dist = min(dist, dist3);
-
-	return  min(dist, dist4);
-}
-
-void
-hausdorffBA_dist_btw_point_and_box(object_geometry_t model_geometry, carmen_position_t point, double *dist)
-{
-	dist[0] = point.x - model_geometry.length * 0.5;
-	dist[1] = point.x - (-model_geometry.length * 0.5);
-	dist[2] = point.y - model_geometry.width * 0.5;
-	dist[3] = point.y - (-model_geometry.width * 0.5);
-}
-
 
 
 double
@@ -208,14 +123,14 @@ dist_btw_point_and_box(carmen_position_t pt, double width_normalizer, double len
 
 	if (y > W)
 		if (x > L) // region 1 - worst position
-			dist = (x + y) * 1.0;
+			dist = x + y;
 		else // region 2 - intermediate position
-			dist = (y + (L - x)) * 1.0;
+			dist = y + (L - x);
 	else
 		if (x <= L) // region 3 - best position
 			dist = (L - x) + (W - y);
 		else // region 4 - intermediate position
-			dist = (x + (W - y)) * 1.0;
+			dist = x + (W - y);
 
 	return dist;
 }
@@ -278,105 +193,6 @@ dist_bounding_box(carmen_point_t particle_pose, pcl::PointCloud<pcl::PointXYZ> &
 	double width_normalizer = norm_factor_y/model_geometry.width;
 	double length_normalizer = norm_factor_x/model_geometry.length;
 	double height_normalizer = norm_factor_x/model_geometry.height;
-	cell_coords_t new_pt2; //(x,y)
-	vector<double> width;
-	vector<double> length;
-
-	double res = 0.20;
-
-	width.resize(model_geometry.width / res);
-	length.resize(model_geometry.length / res);
-	std::fill(width.begin(), width.end(), 0);
-	std::fill(length.begin(), length.end(), 0);
-	int num_points = 0;
-
-	/*** BOX POSITIONING ***/
-	for (pcl::PointCloud<pcl::PointXYZ>::iterator it = point_cloud.points.begin(); it != point_cloud.points.end(); ++it)
-	{
-//		if (it->z > 0.9)
-//			continue;
-		//TODO
-		new_pt = transf2d_2_bounding_box_reference(car_global_position.x + it->x - particle_pose.x, car_global_position.y + it->y - particle_pose.y, particle_pose.theta);
-		sum += dist_btw_point_and_box(model_geometry, new_pt);
-		new_pt2.x = (int)((new_pt.x + 0.5 * model_geometry.length) / res);
-		new_pt2.y = (int)((new_pt.y + 0.5 * model_geometry.width) / res);
-
-		if (new_pt2.x >=0 && new_pt2.y >= 0 && new_pt2.x < (int)(model_geometry.length/res) && (int)new_pt2.y < (int)(model_geometry.width/res))
-		{
-			width[new_pt2.y]++;
-			length[new_pt2.x]++;
-			num_points++;
-		}
-
-
-//		new_pt = transf2d_bounding_box(car_global_position.x + it->x - particle_pose.x, car_global_position.y + it->y - particle_pose.y, -particle_pose.theta);
-//		sum += dist_btw_point_and_box(new_pt, width_normalizer, length_normalizer);
-	}
-    std::vector<double>::iterator max_width;
-    std::vector<double>::iterator max_length;
-
-    max_width = std::max_element(width.begin(), width.end());
-    max_length = std::max_element(length.begin(), length.end());
-
-    int max_width_index = std::distance(width.begin(), max_width);
-    int max_length_index = std::distance(length.begin(), max_length);
-
-    int max_width_value = width[max_width_index];
-    int max_length_value = length[max_length_index];
-
-    new_pt.y = (double)((max_width_index * res - 0.5 * model_geometry.width));
-    new_pt.x = (double)((max_length_index * res - 0.5 * model_geometry.length));
-
-//	// Centroid's coordinates already global
-////	new_pt = transf2d_bounding_box(x_pose - particle_pose.x, y_pose - particle_pose.y, -particle_pose.theta);
-////	if (new_pt.x > 0.5*model_geometry.length || new_pt.y > 0.5*model_geometry.width)
-////	{
-////		new_pt.x *= length_normalizer;//4.5;
-////		new_pt.y *= width_normalizer;//2.1;
-////		penalty = sqrt(new_pt.x*new_pt.x + new_pt.y*new_pt.y);//new_pt.x + new_pt.y;//
-////	}
-//
-//	new_pt = transf2d_2_bounding_box_reference(x_pose - particle_pose.x, y_pose - particle_pose.y, -particle_pose.theta);
-//	if (new_pt.x > 0.0 || new_pt.y > 0.0)
-//	{
-//		new_pt.x *= length_normalizer;//4.5;
-//		new_pt.y *= width_normalizer;//2.1;
-//		penalty = sqrt(new_pt.x*new_pt.x + new_pt.y*new_pt.y);//new_pt.x + new_pt.y;//
-//	}
-//
-//	/*** BOX DIMENSIONING ***/
-//	// Penalize based on the differences between dimensions of point cloud and model box
-
-    double penalty = 0.0;
-	double diff_length = (model_geometry.length - obj_geometry.length);
-	double diff_width = (model_geometry.width - obj_geometry.width);
-	double diff_height = (model_geometry.height - obj_geometry.height);
-	double object_diagonal_xy = sqrt(pow(obj_geometry.length,2) + pow(obj_geometry.width,2));
-	double model_diagonal_xy = sqrt(pow(model_geometry.length, 2) + pow(model_geometry.width,2));
-	double diff_diagonal = (model_diagonal_xy - object_diagonal_xy);
-//	penalty += 2*diff_diagonal + diff_height;
-	penalty += diff_length*diff_length + diff_width*diff_width + diff_height*diff_height + diff_diagonal*diff_diagonal;
-	// Avoid division by zero
-//	if (pcl_size != 0)
-//		return sum/pcl_size + 0.2*penalty; //return normalized distance with penalty
-//
-//	/* Else return very big distance */
-//	return 999999.0;
-	return (sum / (max_width_index + max_length_value));
-}
-
-
-double
-dist_bounding_box2(carmen_point_t particle_pose, pcl::PointCloud<pcl::PointXYZ> &point_cloud, object_geometry_t model_geometry,
-		object_geometry_t obj_geometry, carmen_vector_3D_t car_global_position, double x_pose, double y_pose)
-{
-	double sum = 0.0;
-	long unsigned int pcl_size = point_cloud.size();
-	carmen_position_t new_pt; //(x,y)
-	double width_normalizer = norm_factor_y/model_geometry.width;
-	double length_normalizer = norm_factor_x/model_geometry.length;
-	double height_normalizer = norm_factor_x/model_geometry.height;
-	double penalty = 0.0;
 
 	/*** BOX POSITIONING ***/
 	for (pcl::PointCloud<pcl::PointXYZ>::iterator it = point_cloud.points.begin(); it != point_cloud.points.end(); ++it)
@@ -385,7 +201,8 @@ dist_bounding_box2(carmen_point_t particle_pose, pcl::PointCloud<pcl::PointXYZ> 
 		sum += dist_btw_point_and_box(new_pt, width_normalizer, length_normalizer);
 	}
 
-	//Centroid's coordinates already global
+	double penalty = 0.0;
+	// Centroid's coordinates already global
 	new_pt = transf2d_bounding_box(x_pose - particle_pose.x, y_pose - particle_pose.y, -particle_pose.theta);
 	if (new_pt.x > 0.5*model_geometry.length || new_pt.y > 0.5*model_geometry.width)
 	{
@@ -406,11 +223,10 @@ dist_bounding_box2(carmen_point_t particle_pose, pcl::PointCloud<pcl::PointXYZ> 
 	penalty += diff_length*diff_length + diff_width*diff_width + diff_height*diff_height + diff_diagonal*diff_diagonal;
 	// Avoid division by zero
 	if (pcl_size != 0)
-		return sum + 0.2*penalty; //return normalized distance with penalty
+		return sum/pcl_size + 0.2*penalty; //return normalized distance with penalty
 
 	/* Else return very big distance */
 	return 999999.0;
-
 }
 
 
@@ -457,10 +273,10 @@ measurement_model(particle_datmo_t &particle_t, double x, double y, pcl::PointCl
 	double dist;
 
 	/*** NEAREST NEIGHBOUR - VERSÃO DO EDUARDO: ***/
-//	dist = dist_nearest_neighbor(x, y, particle_t.pose);
+	//dist = dist_nearest_neighbor(x, y, particle_t.pose);
 
 	/*** 2D BOUNDING BOX ***/
-	dist = dist_bounding_box2(particle_t.pose, pcl_cloud, particle_t.model_features.geometry,
+	dist = dist_bounding_box(particle_t.pose, pcl_cloud, particle_t.model_features.geometry,
 			obj_geometry, car_global_position, x, y);
 
 	/*** 3D MODEL POINT CLOUD ***/
@@ -638,15 +454,24 @@ void
 normalize_weights(std::vector<particle_datmo_t> &particle_set, double total_weight)
 {
 	/* normalize weights */
-	double max_weight = -DBL_MAX;
+// FIXME - Se mudar a normalização não funciona
+
+//	double max_weight = -DBL_MAX;
+//	for (std::vector<particle_datmo_t>::iterator it = particle_set.begin(); it != particle_set.end(); ++it)
+//	{
+//		max_weight = it->weight > max_weight ? it->weight : max_weight;
+//	}
+//	for (std::vector<particle_datmo_t>::iterator it = particle_set.begin(); it != particle_set.end(); ++it)
+//	{
+//		it->weight = exp(it->weight - max_weight);
+//		//printf("weight=%.15f  dist=%.6f  norm_dist=%.15f\n", it->weight, it->dist, it->norm_dist);
+//	}
+
+	double inv_total_weight = 1/total_weight;
 	for (std::vector<particle_datmo_t>::iterator it = particle_set.begin(); it != particle_set.end(); ++it)
 	{
-		max_weight = it->weight > max_weight ? it->weight : max_weight;
-	}
-	for (std::vector<particle_datmo_t>::iterator it = particle_set.begin(); it != particle_set.end(); ++it)
-	{
-		it->weight = exp(it->weight - max_weight);
-		//printf("weight=%.15f  dist=%.6f  norm_dist=%.15f\n", it->weight, it->dist, it->norm_dist);
+		it->weight *= inv_total_weight;
+//		printf("weight=%.15f  dist=%.6f  norm_dist=%.15f\n", it->weight, it->dist, it->norm_dist);
 	}
 }
 
@@ -682,8 +507,7 @@ compute_weights(std::vector<particle_datmo_t> &particle_set, double total_dist)
 
 std::vector<particle_datmo_t>
 algorithm_monte_carlo(std::vector<particle_datmo_t> particle_set_t_1, double x, double y, double delta_time,
-		pcl::PointCloud<pcl::PointXYZ> &pcl_cloud, object_geometry_t obj_geometry, carmen_vector_3D_t car_global_position,
-		carmen_localize_ackerman_motion_model_t *motion_model)
+		pcl::PointCloud<pcl::PointXYZ> &pcl_cloud, object_geometry_t obj_geometry, carmen_vector_3D_t car_global_position)
 {
 	std::vector<particle_datmo_t> particle_set_t;
 	particle_datmo_t particle_t;
@@ -694,18 +518,20 @@ algorithm_monte_carlo(std::vector<particle_datmo_t> particle_set_t_1, double x, 
 	for (std::vector<particle_datmo_t>::iterator it = particle_set_t_1.begin(); it != particle_set_t_1.end(); ++it)
 	{
 		// Motion Model
-		particle_t = sample_motion_model(delta_time, (*it), motion_model);
+		particle_t = sample_motion_model(delta_time, (*it));
 
 		// Measurement Model
 		particle_t.dist = measurement_model(particle_t, x, y, pcl_cloud, obj_geometry, car_global_position);
 
 		// Weighing particles (still not normalized)
 //		total_dist += particle_t.dist;
-		particle_t.weight = -particle_t.dist * particle_t.dist * 100.0; //particle_weight_pose_reading_model(particle_t.dist);
+// FIXME - Se usar a gaussiana não funciona
+//		particle_t.weight = -particle_t.dist * particle_t.dist * 100.0;
+		particle_t.weight = particle_weight_pose_reading_model(particle_t.dist);
 		total_weight += particle_t.weight;
 //		particle_t.weight = particle_weight_by_normal_distribution(particle_t.dist, 1.0, 0.0);
 //		particle_t.weight = exp(-0.5 * (particle_t.dist) * (particle_t.dist));
-//		total_weight += particle_t.weight;
+
 		particle_set_t.push_back(particle_t);
 	}
 

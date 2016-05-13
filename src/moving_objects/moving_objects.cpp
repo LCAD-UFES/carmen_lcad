@@ -12,8 +12,6 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/features/moment_of_inertia_estimation.h>
-#include <pcl/filters/filter.h>
-#include <pcl/filters/voxel_grid.h>
 //#include <pcl/visualization/cloud_viewer.h>
 #include <pcl/io/pcd_io.h>
 #include <boost/thread/thread.hpp>
@@ -207,9 +205,9 @@ pcl_euclidean_cluster_extraction(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud)
 	tree->setInputCloud(cloud);
 
 	pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
-	ec.setClusterTolerance(0.8); //Set the spatial cluster tolerance as a measure in the L2 Euclidean space.
+	ec.setClusterTolerance(0.80); //Set the spatial cluster tolerance as a measure in the L2 Euclidean space.
 	ec.setMinClusterSize(15);     //Set the minimum number of points that a cluster needs to contain in order to be considered valid.
-	//ec.setMaxClusterSize(20000);  //Set the maximum number of points that a cluster needs to contain in order to be considered valid.
+	ec.setMaxClusterSize(20000);  //Set the maximum number of points that a cluster needs to contain in order to be considered valid.
 	ec.setSearchMethod(tree);
 	ec.setInputCloud(cloud);
 	ec.extract(cluster_indices);
@@ -344,7 +342,6 @@ distance_between_3d_point_and_car_global_pose(Eigen::Vector4f point_3D, carmen_p
 }
 
 
-//todo verificar exclusão de objetos
 void
 exclude_unecessary_objects_from_point_clouds(std::list<object_point_cloud_data_t> &list_point_clouds,
 		carmen_pose_3D_t car_global_pose)
@@ -629,7 +626,7 @@ get_current_list_point_clouds(pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_point_clou
 		//centroid[1] = 0.5f * (max_point[1] + min_point[1]);
 		//centroid[2] = 0.5f * (max_point[2] + min_point[2]);
 		aux_objects_data.point_cloud = *aux_pcl_cloud;
-//		get_geometry_and_center_point_cloud(aux_pcl_cloud, point_cloud_geometry, centroid);
+		//get_geometry_and_center_point_cloud(aux_pcl_cloud, point_cloud_geometry, centroid);
 		get_geom_and_center_by_moie(aux_pcl_cloud, point_cloud_geometry, centroid);
 		point_cloud_geometry.height = fabs(d_z);
 //		centroid2[0] = 0.5f * (max_point[0] + min_point[0]);
@@ -834,16 +831,15 @@ orientation_by_displacement_between_two_points(Eigen::Vector4f current_point,
 
 
 void
-init_particle_set(object_point_cloud_data_t &object_pcloud, int num_particles, double x, double y, double theta, double velocity, int num_models)
+init_particle_set(object_point_cloud_data_t &object_pcloud, int num_particles, double x, double y, int num_models)
 {
 	for (int i = 0; i < num_particles; i++)
 	{
 		particle_datmo_t particle_t_1;
-		particle_t_1.pose.x = x + carmen_gaussian_random(0.0, 0.2 * 0.2);
-		particle_t_1.pose.y = y + carmen_gaussian_random(0.0, 0.2 * 0.2);;
-//		particle_t_1.pose.theta = carmen_normalize_theta(theta + carmen_uniform_random(-M_PI/6, M_PI/6));//object_pcloud.orientation;//carmen_normalize_theta(it->orientation + carmen_gaussian_random(0.0, M_PI));//
-		particle_t_1.pose.theta =  carmen_normalize_theta(object_pcloud.orientation + carmen_uniform_random(-M_PI/4.0, M_PI/4.0));
-		particle_t_1.velocity = velocity;//carmen_uniform_random(0.0, 25.0);//object_pcloud.linear_velocity;//
+		particle_t_1.pose.x = x;
+		particle_t_1.pose.y = y;
+		particle_t_1.pose.theta = carmen_uniform_random(-M_PI, M_PI);//object_pcloud.orientation;//carmen_normalize_theta(it->orientation + carmen_gaussian_random(0.0, M_PI));//
+		particle_t_1.velocity = carmen_uniform_random(0.0, 25.0);//object_pcloud.linear_velocity;//
 //		particle_t_1.weight = (1.0 / double(num_of_particles)); //not necessary
 		particle_t_1.class_id = get_random_model_id(num_models);
 		particle_t_1.model_features = get_obj_model_features(particle_t_1.class_id);
@@ -876,8 +872,8 @@ associate_point_clouds_by_centroids_distance(std::list<object_point_cloud_data_t
 		{
 			if  (pit->label_associate == 0)
 			{
-//				distance_3d = distance_between_3d_points(it->centroid, it->car_global_pose, pit->centroid, pit->car_global_pose);
-				distance_3d = distance_between_2d_points(it->centroid, it->car_global_pose, pit->centroid, pit->car_global_pose);
+				distance_3d = distance_between_3d_points(it->centroid, it->car_global_pose, pit->centroid, pit->car_global_pose);
+//				distance_3d = distance_between_2d_points(it->centroid, it->car_global_pose, pit->centroid, pit->car_global_pose);
 				if (distance_3d < min_dist)
 				{
 					pit->delta_time_t_and_t_1 = -1.0;
@@ -918,7 +914,6 @@ associate_point_clouds_by_centroids_distance(std::list<object_point_cloud_data_t
 						init_particle_set(*pit, num_of_particles,
 								pit->object_pose.position.x + pit->car_global_pose.position.x,
 								pit->object_pose.position.y + pit->car_global_pose.position.y,
-								it->car_global_pose.orientation.yaw, pit->linear_velocity,
 								num_of_models);
 					}
 				}
@@ -931,7 +926,7 @@ associate_point_clouds_by_centroids_distance(std::list<object_point_cloud_data_t
 	/* verify who's idle... */
 	for (std::list<object_point_cloud_data_t>::iterator it = list_point_clouds.begin(); it != list_point_clouds.end(); it++)
 	{
-		if (it->label_associate == 0) // || it->linear_velocity < threshold_min_velocity)
+		if (it->label_associate == 0 || it->linear_velocity < threshold_min_velocity)
 		{
 			it->count_idle++;
 		}
@@ -1005,7 +1000,7 @@ filter_static_objects(std::list<object_point_cloud_data_t> &list_current_point_c
 			int y = carmen_round((pit->y + it->car_global_pose.position.y - map_y_origin)/map_resolution);
 
 			/* Check point cloud off limits of gridmap */
-			if (x < 0 || y < 0 || x >= map_x_size || y >= map_y_size)
+			if (x < 0 || y < 0 || x > map_x_size || y > map_y_size)
 			{
 				off_limits = true;
 				break;
@@ -1410,21 +1405,19 @@ print_object_details(object_point_cloud_data_t obj_point_cloud)
 bool
 is_moving_object(object_point_cloud_data_t obj_point_cloud)
 {
-	//TODO modificar os threshholds para objetos móveis.
-
 	/*** MOVING OBJECT CONDITIONS/THRESHOLDS ***/
 	// Minimum velocity
-//	if (obj_point_cloud.linear_velocity < threshold_min_velocity)
-//	{
-//		return false;
-//	}
+	if (obj_point_cloud.linear_velocity < threshold_min_velocity)
+	{
+		return false;
+	}
 
 	// PointCloud density
-//	double density = get_object_density_by_area(obj_point_cloud);
-//	if (density < 10.0)
-//	{
-//		return false;
-//	}
+	double density = get_object_density_by_area(obj_point_cloud);
+	if (density < 10.0)
+	{
+		return false;
+	}
 
 	// Object's minimum bounding box diagonal measurement
 	double diagonal_measurement = get_object_3d_diagonal_measurement(obj_point_cloud);
@@ -1477,7 +1470,7 @@ particle_filter_moving_objects_tracking(std::list<object_point_cloud_data_t> &li
 
 			/* KNOWN ISSUE: Car global position included due to lost of precision problem with PCL point types */
 			particle_set_t = algorithm_monte_carlo(particle_set_t_1, x, y, delta_time, it->point_cloud,
-					it->geometry, it->car_global_pose.position, motion_model);
+					it->geometry, it->car_global_pose.position);
 
 			particle_reference = compute_average_state_and_update_timestamp(particle_set_t, it->timestamp);
 
@@ -1576,13 +1569,10 @@ detect_points_above_ground_in_vertical_beam(int i, const moving_objects_input_da
 {
 	carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(velodyne_data, velodyne_params, i,
 			moving_objects_input.highest_sensor, moving_objects_input.safe_range_above_sensors, 1);
-	//int k = velodyne_data->ray_that_hit_the_nearest_target;
+
 	for (int k = 0; k < velodyne_params->vertical_resolution; k++)
 	{
-		if (/*velodyne_data->occupancy_log_odds_of_each_ray_target[k] > velodyne_params->log_odds.log_odds_l0 &&*/
-				velodyne_data->obstacle_height[k] >= 0.50
-				&& velodyne_data->obstacle_height[k] <= MAXIMUM_HEIGHT_OF_OBSTACLE
-				&& !velodyne_data->ray_hit_the_robot[k])
+		if (velodyne_data->obstacle_height[k] >= 0.5 && velodyne_data->obstacle_height[k] <= MAXIMUM_HEIGHT_OF_OBSTACLE)
 		{
 			point_clouds[last_num_points].x = velodyne_data->ray_position_in_the_floor[k].x;
 			point_clouds[last_num_points].y = velodyne_data->ray_position_in_the_floor[k].y;
@@ -1590,14 +1580,14 @@ detect_points_above_ground_in_vertical_beam(int i, const moving_objects_input_da
 			last_num_points++;
 		}
 		else if (velodyne_data->occupancy_log_odds_of_each_ray_target[k] > velodyne_params->log_odds.log_odds_l0
-				&& velodyne_data->obstacle_height[k] <= MAXIMUM_HEIGHT_OF_OBSTACLE && !velodyne_data->ray_hit_the_robot[k])
+//						&& velodyne_data->obstacle_height[k] <= MAXIMUM_HEIGHT_OF_OBSTACLE)
+				&& (velodyne_data->obstacle_height[k] >= 0.3 && velodyne_data->obstacle_height[k] <= MAXIMUM_HEIGHT_OF_OBSTACLE))
 		{
 			point_clouds[last_num_points].x = velodyne_data->ray_position_in_the_floor[k].x;
 			point_clouds[last_num_points].y = velodyne_data->ray_position_in_the_floor[k].y;
 			point_clouds[last_num_points].z = velodyne_data->obstacle_height[k];
 			last_num_points++;
 		}
-
 
 	}
 	return last_num_points;
@@ -1948,17 +1938,6 @@ set_object_models(std::vector<object_features_3d_t> &obj_models)
 	num_of_models = int(obj_models.size());
 }
 
-static pcl::PointCloud<pcl::PointXYZ>::Ptr
-LeafSize(pcl::PointCloud<pcl::PointXYZ>::Ptr inputPointCloud, double size)
-{
-       pcl::VoxelGrid<pcl::PointXYZ> grid;
-       pcl::PointCloud<pcl::PointXYZ>::Ptr outputPointCloud  (new pcl::PointCloud<pcl::PointXYZ>);
-       grid.setLeafSize(size, size, size);
-       grid.setInputCloud(inputPointCloud);
-       grid.filter(*outputPointCloud);
-       return outputPointCloud;
-}
-
 
 std::list<object_point_cloud_data_t>
 detect_and_follow_moving_objects(carmen_velodyne_partial_scan_message *velodyne_message, sensor_parameters_t *velodyne_params,
@@ -1989,8 +1968,6 @@ detect_and_follow_moving_objects(carmen_velodyne_partial_scan_message *velodyne_
 	/*** CONVERT TO PCL POINT CLOUD FORMAT SUBTRACTING GLOBAL POSE ***/
 	convert_carmen_vector_3d_to_pcl_point_subtracting_global_pose(carmen_vector_3d_point_cloud, size_of_point_cloud,
 			pcl_cloud_ptr, moving_objects_input);
-
-	//pcl_cloud_ptr = LeafSize(pcl_cloud_ptr, 0.05);
 
 	/*** SEGMENT POINT CLOUDS - RETURNS CLUSTER INDICES ***/
 	cluster_indices = find_objects_in_point_clouds(pcl_cloud_ptr);
