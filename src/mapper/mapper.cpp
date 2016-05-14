@@ -241,7 +241,8 @@ map_decay_to_offline_map(carmen_map_t *current_map)
 		{
 			if (current_map->map[xi][yi] >= 0.0)
 			{
-				current_map->map[xi][yi] = (50.0 * current_map->map[xi][yi] + offline_map.map[xi][yi]) / 51.0;
+				//current_map->map[xi][yi] = (50.0 * current_map->map[xi][yi] + offline_map.map[xi][yi]) / 51.0;
+				current_map->map[xi][yi] = (10.0 * current_map->map[xi][yi] + offline_map.map[xi][yi]) / 11.0;
 				//current_map->map[xi][yi] = carmen_prob_models_log_odds_to_probabilistic((get_log_odds(current_map->map[xi][yi]) + get_log_odds(offline_map.map[xi][yi])) / 2.0);
 				//if (fabs(current_map->map[xi][yi] - 0.5) < 0.1)
 				//	current_map->map[xi][yi] = -1.0;
