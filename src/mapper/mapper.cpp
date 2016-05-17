@@ -170,9 +170,10 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *map, carmen_map_t *s
 
 	double v = sensor_data->robot_velocity[point_cloud_index].x;
 	double phi = sensor_data->robot_phi[point_cloud_index];
-	int N = v_zt.num_points / sensor_params->vertical_resolution;
+	//int N = v_zt.num_points / sensor_params->vertical_resolution;
 
-	double dt = 0.0494 / (double) N; // @@@ Alberto: este dt depende da velocidade de rotação do Velodyne, que não é fixa. Tem que ser calculado do acordo com a velocidade de rotação do Velodyne.
+	//double dt = 0.0494 / (double) N; // @@@ Alberto: este dt depende da velocidade de rotação do Velodyne, que não é fixa. Tem que ser calculado do acordo com a velocidade de rotação do Velodyne.
+	double dt = 1.0 / (1808.0 * 12.0);
 	carmen_pose_3D_t robot_interpolated_position = sensor_data->robot_pose[point_cloud_index];
 
 	// Ray-trace the grid
@@ -240,7 +241,8 @@ map_decay_to_offline_map(carmen_map_t *current_map)
 		{
 			if (current_map->map[xi][yi] >= 0.0)
 			{
-				current_map->map[xi][yi] = (50.0 * current_map->map[xi][yi] + offline_map.map[xi][yi]) / 51.0;
+				//current_map->map[xi][yi] = (50.0 * current_map->map[xi][yi] + offline_map.map[xi][yi]) / 51.0;
+				current_map->map[xi][yi] = (10.0 * current_map->map[xi][yi] + offline_map.map[xi][yi]) / 11.0;
 				//current_map->map[xi][yi] = carmen_prob_models_log_odds_to_probabilistic((get_log_odds(current_map->map[xi][yi]) + get_log_odds(offline_map.map[xi][yi])) / 2.0);
 				//if (fabs(current_map->map[xi][yi] - 0.5) < 0.1)
 				//	current_map->map[xi][yi] = -1.0;

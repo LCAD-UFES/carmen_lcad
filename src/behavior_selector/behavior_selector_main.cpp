@@ -117,6 +117,8 @@ publish_goal_list()
 		err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME, &goal_list_msg);
 		carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME);
 	}
+
+	//printf("Goal List: %d\n", goal_list_msg.size);
 }
 
 
