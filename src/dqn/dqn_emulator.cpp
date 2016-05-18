@@ -58,20 +58,24 @@ double STEERING_UPDATE = carmen_degrees_to_radians(2); //carmen_degrees_to_radia
 
 const int GOAL_LIST_STEP = 1; //6; // draw one pose after each 'GOAL_LIST_STEP' number of poses
 
-const double PARTIAL_GOAL_REWARD = 0.2;
-const double FINAL_GOAL_REWARD = 2;
+const double PARTIAL_GOAL_REWARD = 0.1;
+const double FINAL_GOAL_REWARD = 1;
 const double DISTANCE_PUNISHMENT_PER_METER = 0; // -0.001;
-const double TIME_PUNISHMENT_PER_SECOND = 0; // -0.001;
-const double COLLISION_PUNISHMENT = -2;
+const double TIME_PUNISHMENT_PER_SECOND = -0.0001;
+const double COLLISION_PUNISHMENT = -1;
 
 const int NUM_POSES_TO_SEARCH_AROUND_CLOSEST_GOAL = 10;
-const double MIN_DIST_TO_CONSIDER_ACHIEVEMENT = 0.5;
+const double MIN_DIST_TO_CONSIDER_ACHIEVEMENT = 2.0; //0.5;
 
 const int RDDF_LIMIT_INITIAL_POSE = 138;
 const int RDDF_LIMIT_FINAL_POSE  = RDDF_LIMIT_INITIAL_POSE + 20;
 
 const double EPSILON_INITIAL = 0.9;
 const double EPSILON_FINAL = 0.01;
+
+const double EXPERIMENT_STARTING_POSE_X = 7757880.0;
+const double EXPERIMENT_STARTING_POSE_Y = -363536.0; //-363535.0;
+const double EXPERIMENT_STARTING_POSE_THETA = carmen_degrees_to_radians(140);
 
 /*********************************/
 /** INTERNAL PARAMETERS - END ***/
@@ -376,9 +380,9 @@ reset_experiment()
 	carmen_point_t pose;
 	carmen_point_t std;
 
-	pose.x = 7757880.0;
-	pose.y = -363535.0;
-	pose.theta = carmen_degrees_to_radians(140);
+	pose.x = EXPERIMENT_STARTING_POSE_X;
+	pose.y = EXPERIMENT_STARTING_POSE_Y;
+	pose.theta = EXPERIMENT_STARTING_POSE_THETA;
 
 	std.x = 0.0001;
 	std.y = 0.0001;
@@ -419,39 +423,22 @@ draw_map_car_and_rddf(carmen_grid_mapping_message *message)
 int
 agent_achieved_partial_goal()
 {
-	int i = rddf_index_last_pose - NUM_POSES_TO_SEARCH_AROUND_CLOSEST_GOAL;
-
+	int i;
 	double dist;
-	double min_dist = DBL_MAX;
-	int min_dist_id = i;
 
-	while ((i < rddf_index_last_pose + NUM_POSES_TO_SEARCH_AROUND_CLOSEST_GOAL) && (i >= 0) && (i < rddf_index->size()))
+	for (i = RDDF_LIMIT_INITIAL_POSE; i < RDDF_LIMIT_FINAL_POSE; i++)
 	{
-		if (i >= RDDF_LIMIT_INITIAL_POSE && i <= RDDF_LIMIT_INITIAL_POSE)
+		dist = sqrt(pow(rddf_index->index[i].x - localize_ackerman_message.globalpos.x, 2) +
+				pow(rddf_index->index[i].y - localize_ackerman_message.globalpos.y, 2));
+
+		if (dist < MIN_DIST_TO_CONSIDER_ACHIEVEMENT && !rddf_index_already_used_in_the_experiment[i])
 		{
-			dist = sqrt(pow(rddf_index->index[i].x - localize_ackerman_message.globalpos.x, 2) +
-					pow(rddf_index->index[i].y - localize_ackerman_message.globalpos.y, 2));
-
-			if (dist < min_dist)
-			{
-				min_dist = dist;
-				min_dist_id = i;
-			}
+			rddf_index_already_used_in_the_experiment[i] = 1;
+			return 1;
 		}
-
-		i++;
 	}
 
-	rddf_index_last_pose = min_dist_id;
-
-	// if the agent is close enough to the goal and the closest goal does not generated punctuation yet
-	if (min_dist < MIN_DIST_TO_CONSIDER_ACHIEVEMENT && !rddf_index_already_used_in_the_experiment[min_dist_id])
-	{
-		rddf_index_already_used_in_the_experiment[min_dist_id] = 1;
-		return 1;
-	}
-	else
-		return 0;
+	return 0;
 }
 
 
@@ -498,6 +485,8 @@ update_agent_reward()
 
 	if (agent_achieved_final_goal())
 		imediate_reward += FINAL_GOAL_REWARD;
+
+	printf("achieved_goal_in_this_experiment: %d\n", achieved_goal_in_this_experiment);
 
 	if (last_pose.x != 0)
 	{
@@ -573,7 +562,7 @@ add_transitions_to_replay_memory()
 
 		if (DqnParams::TrainingModel == DQN_Q_LEARNING) reward = episode[i]->imediate_reward;
 		// @filipe: o modelo de recompensa com desconto nao eh bem assim nao...
-		else if (DqnParams::TrainingModel == DQN_DISCOUNTED_TOTAL_REWARD) reward = total_reward * pow(dqn_caffe->params()->GAMMA, (double) episode.size() - i);
+		else if (DqnParams::TrainingModel == DQN_DISCOUNTED_TOTAL_REWARD) reward = total_reward; // * pow(dqn_caffe->params()->GAMMA, (double) episode.size() - i);
 		else if (DqnParams::TrainingModel == DQN_INFINITY_HORIZON_DISCOUNTED_MODEL) reward = calculate_delayed_reward(&episode, i);
 		else exit(printf("ERROR: Unknown training model!\n"));
 
@@ -583,7 +572,7 @@ add_transitions_to_replay_memory()
 
 	if (DqnParams::TrainingModel == DQN_Q_LEARNING || DqnParams::TrainingModel == DQN_INFINITY_HORIZON_DISCOUNTED_MODEL) reward = episode[i]->imediate_reward;
 	// @filipe: o modelo de recompensa com desconto nao eh bem assim nao...
-	else if (DqnParams::TrainingModel == DQN_DISCOUNTED_TOTAL_REWARD) reward = total_reward * pow(dqn_caffe->params()->GAMMA, (double) episode.size() - i);
+	else if (DqnParams::TrainingModel == DQN_DISCOUNTED_TOTAL_REWARD) reward = total_reward; // * pow(dqn_caffe->params()->GAMMA, (double) episode.size() - i);
 	else if (DqnParams::TrainingModel == DQN_INFINITY_HORIZON_DISCOUNTED_MODEL)
 	{
 		reward = episode[i]->imediate_reward;
@@ -733,13 +722,58 @@ update_command_using_dqn(double v, double phi)
 		current_q = action_and_q.second;
 		current_action = action_and_q.first;
 
-		update_current_command_with_dqn_action(current_action);
+		switch (current_action)
+		{
+			case DQN_ACTION_SPEED_UP:
+			{
+				current_command.v = 2;
+				break;
+			}
+			case DQN_ACTION_SPEED_DOWN:
+			{
+				current_command.v = -2;
+				break;
+			}
+			case DQN_ACTION_NONE:
+			{
+				current_command.v = 0;
+				break;
+			}
+			case DQN_ACTION_STEER_LEFT:
+			{
+				current_command.phi = carmen_degrees_to_radians(45);
+				break;
+			}
+			case DQN_ACTION_STEER_RIGHT:
+			{
+				current_command.phi = carmen_degrees_to_radians(-45);
+				break;
+			}
+			case DQN_ACTION_STEER_NONE:
+			{
+				current_command.phi = carmen_degrees_to_radians(0);
+				break;
+			}
+		}
+
+//		if (current_action == DQN_ACTION_SPEED_UP)
+//		{
+//			current_command.v = 5;
+//			current_command.phi = 0;
+//		}
+//		else
+//		{
+//			current_command.v = 0;
+//			current_command.phi = 0;
+//		}
+
+		//update_current_command_with_dqn_action(current_action);
 	}
 	else
 	{
-		current_q = 0;
-		current_action = DQN_ACTION_NONE;
+		current_q = TIME_PUNISHMENT_PER_SECOND; // 0;
 
+		current_action = DQN_ACTION_NONE;
 		// set all fields of the structure to 0
 		memset(&current_command, 0, sizeof(current_command));
 	}
@@ -764,7 +798,7 @@ grid_mapping_handler(carmen_grid_mapping_message *message)
 		return;
 	}
 
-	if (reposed_requested && sqrt(pow(localize_ackerman_message.globalpos.x - 7757880.0, 2) + pow(localize_ackerman_message.globalpos.y - (-363535.0), 2)) > 0.5)
+	if (reposed_requested && sqrt(pow(localize_ackerman_message.globalpos.x - EXPERIMENT_STARTING_POSE_X, 2) + pow(localize_ackerman_message.globalpos.y - EXPERIMENT_STARTING_POSE_Y, 2)) > 0.5)
 	{
 //		printf("Waiting reposition...\n");
 		return;
@@ -784,7 +818,10 @@ grid_mapping_handler(carmen_grid_mapping_message *message)
 	FrameDataSp frame = PreprocessScreen(final_map_image, message);
 	add_frame_to_list(&input_frames, frame);
 
-	update_command_using_dqn(localize_ackerman_message.v, localize_ackerman_message.phi);
+	static int bla = 0;
+
+	//if (bla++ % 10 == 0)
+		update_command_using_dqn(localize_ackerman_message.v, localize_ackerman_message.phi);
 
 	// ******************************************************************
 	// @filipe: checar handlers da mesma mensagem podem ser chamados em paralelo. Se sim,
@@ -799,29 +836,35 @@ grid_mapping_handler(carmen_grid_mapping_message *message)
 	// pula de tantos em tantos frames
 	episode.push_back(new Event(frame, current_action, localize_ackerman_message.v, localize_ackerman_message.phi, imediate_reward, current_q, episode_total_reward));
 
-	printf("***********************************\n");
-	printf("****** COLLISION DETECTED: %d EPSILON: %.10lf ITERATION: %d MEM_SIZE: %d\n", collision_detected, epsilon, dqn_caffe->current_iteration(), dqn_caffe->memory_size());
-	printf("****** COMMAND: %.2lf %.2lf ODOMETRY: %.2lf %.2lf\n", current_command.v, current_command.phi, localize_ackerman_message.v, localize_ackerman_message.phi);
-	printf("****** REWARD: %lf\n", episode_total_reward);
-	if (DqnParams::TrainingModel == DQN_INFINITY_HORIZON_DISCOUNTED_MODEL)
+	static int n = 0;
+
+	if (1) //n++ % 10 == 0)
 	{
-		if (max_delayed_reward == -DBL_MAX) printf("****** MAX DELAYED REWARD: <not finished an experiment yet> MIN DELAYED REWARD: <not finished an experiment yet>\n");
-		else printf("****** MAX DELAYED REWARD: %lf MIN DELAYED REWARD: %lf\n", max_delayed_reward, min_delayed_reward);
+//		printf("***********************************\n");
+		printf("****** COLLISION DETECTED: %d EPSILON: %.10lf ITERATION: %d MEM_SIZE: %d\n", collision_detected, epsilon, dqn_caffe->current_iteration(), dqn_caffe->memory_size());
+		printf("****** COMMAND: %.2lf %.2lf ODOMETRY: %.2lf %.2lf\n", current_command.v, current_command.phi, localize_ackerman_message.v, localize_ackerman_message.phi);
+		printf("****** REWARD: %lf\n", episode_total_reward);
+		if (DqnParams::TrainingModel == DQN_INFINITY_HORIZON_DISCOUNTED_MODEL)
+		{
+			if (max_delayed_reward == -DBL_MAX) printf("****** MAX DELAYED REWARD: <not finished an experiment yet> MIN DELAYED REWARD: <not finished an experiment yet>\n");
+			else printf("****** MAX DELAYED REWARD: %lf MIN DELAYED REWARD: %lf\n", max_delayed_reward, min_delayed_reward);
+		}
+		if (max_reward_so_far == -DBL_MAX) printf("****** MAX REWARD ACHIEVED: <not finished an experiment yet>\n");
+		else printf("****** MAX REWARD ACHIEVED: %lf\n", max_reward_so_far);
+//		printf("***********************************\n\n");
 	}
-	if (max_reward_so_far == -DBL_MAX) printf("****** MAX REWARD ACHIEVED: <not finished an experiment yet>\n");
-	else printf("****** MAX REWARD ACHIEVED: %lf\n", max_reward_so_far);
-	printf("***********************************\n\n");
 
 	// If the size of replay memory is enough, update DQN
 	if (dqn_caffe->memory_size() > dqn_caffe->params()->NUM_WARMUP_TRANSITIONS)
 		dqn_caffe->Update();
 
-	if (fabs(localize_ackerman_message.v) > 0.01)
+	if (fabs(localize_ackerman_message.v) > 0.5) //01)
 		car_already_accelerated_in_this_experiment = 1;
 
 	// If the car stopped after already accelerating, finish the experiment. Do the same
 	// if a collision is detected.
-	if ((fabs(localize_ackerman_message.v) < 0.01 && car_already_accelerated_in_this_experiment) || (collision_detected && car_already_accelerated_in_this_experiment))
+	if ((fabs(localize_ackerman_message.v) < 0.01 && car_already_accelerated_in_this_experiment) || (collision_detected /*&& car_already_accelerated_in_this_experiment*/)
+			/*|| (achieved_goal_in_this_experiment)*/)
 	{
 		publish_motion_command(0, 0);
 		summarize_experiment();

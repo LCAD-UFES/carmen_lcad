@@ -18,7 +18,8 @@ enum DqnAction
 	DQN_ACTION_SPEED_UP,
 	DQN_ACTION_SPEED_DOWN,
 	DQN_ACTION_STEER_LEFT,
-	DQN_ACTION_STEER_RIGHT
+	DQN_ACTION_STEER_RIGHT,
+	DQN_ACTION_STEER_NONE,
 };
 
 enum DqnTrainingModel
@@ -55,8 +56,8 @@ public:
 	static const int kInputDataSize = kCroppedFrameDataSize * kInputFrameCount;
 	static const int kMinibatchSize = 32;
 	static const int kMinibatchDataSize = kInputDataSize * kMinibatchSize;
-	static const int kOutputCount = 5;
-	static const DqnTrainingModel TrainingModel = DQN_Q_LEARNING;
+	static const int kOutputCount = 6;
+	static const DqnTrainingModel TrainingModel = DQN_DISCOUNTED_TOTAL_REWARD; //DQN_Q_LEARNING;
 
 	DqnParams()
 	{
