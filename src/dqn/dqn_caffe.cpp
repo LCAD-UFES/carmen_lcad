@@ -21,14 +21,9 @@ std::string action_to_string(DqnAction a)
 			return std::string("DQN_ACTION_NONE");
 			break;
 		}
-		case DQN_ACTION_SPEED_DOWN:
+		case DQN_ACTION_STEER_NONE:
 		{
-			return std::string("DQN_ACTION_SPEED_DOWN");
-			break;
-		}
-		case DQN_ACTION_SPEED_UP:
-		{
-			return std::string("DQN_ACTION_SPEED_UP");
+			return std::string("DQN_ACTION_STEER_NONE");
 			break;
 		}
 		case DQN_ACTION_STEER_LEFT:
@@ -39,6 +34,16 @@ std::string action_to_string(DqnAction a)
 		case DQN_ACTION_STEER_RIGHT:
 		{
 			return std::string("DQN_ACTION_STEER_RIGHT");
+			break;
+		}
+		case DQN_ACTION_SPEED_DOWN:
+		{
+			return std::string("DQN_ACTION_SPEED_DOWN");
+			break;
+		}
+		case DQN_ACTION_SPEED_UP:
+		{
+			return std::string("DQN_ACTION_SPEED_UP");
 			break;
 		}
 		default:
@@ -103,10 +108,11 @@ DqnCaffe::DqnCaffe(DqnParams params, char *program_name)
 		caffe::Caffe::set_mode(caffe::Caffe::CPU);
 
 	legal_actions_.push_back(DQN_ACTION_NONE);
-	legal_actions_.push_back(DQN_ACTION_SPEED_DOWN);
 	legal_actions_.push_back(DQN_ACTION_SPEED_UP);
+	legal_actions_.push_back(DQN_ACTION_SPEED_DOWN);
 	legal_actions_.push_back(DQN_ACTION_STEER_LEFT);
 	legal_actions_.push_back(DQN_ACTION_STEER_RIGHT);
+	legal_actions_.push_back(DQN_ACTION_STEER_NONE);
 
 	replay_memory_capacity_ = params.REPLAY_MEMORY_SIZE;
 	solver_param_ = params.SOLVER_FILE;
@@ -294,6 +300,8 @@ std::vector<std::pair<DqnAction, float> > DqnCaffe::SelectActionGreedily(
 std::pair<DqnAction, float>
 DqnCaffe::SelectAction(const InputFrames& last_frames, double epsilon, double v, double phi)
 {
+	static int n = 0;
+
 	double probability;
 	std::pair<DqnAction, float> output;
 
@@ -302,7 +310,9 @@ DqnCaffe::SelectAction(const InputFrames& last_frames, double epsilon, double v,
 
 	std::vector<std::vector<float> > qs;
 	output = SelectActionGreedily(last_frames, v, phi, &qs);
-	std::cout << PrintQValues(qs.front(), legal_actions_);
+
+	//if (n % 100 == 0)
+		std::cout << PrintQValues(qs.front(), legal_actions_);
 
 	if (probability < epsilon) // Select randomly
 	{
@@ -311,12 +321,16 @@ DqnCaffe::SelectAction(const InputFrames& last_frames, double epsilon, double v,
 		output.first = legal_actions_[random_idx];
 		output.second = qs.front().at(random_idx); // value predicted by the network for this action
 
-		std::cout << action_to_string(output.first) << " (random)" << std::endl;
+		//if (n++ % 100 == 0)
+			std::cout << action_to_string(output.first) << " (random)" << std::endl;
+
 		return output;
 	}
 	else
 	{
-		std::cout << action_to_string(output.first) << " (greedy)" << std::endl;
+		//if (n++ % 100 == 0)
+			std::cout << action_to_string(output.first) << " (greedy)" << std::endl;
+
 		return output;
 	}
 }
@@ -620,28 +634,66 @@ DqnCaffe::Update()
 //
 
 	static std::vector<float> max_diff;
+	std::vector<float> current_max_diff;
+	std::vector<float> current_pred;
+	std::vector<float> current_expected;
+
 
 	if (max_diff.size() == 0)
 		for (int i = 0; i < legal_actions_.size(); i++, max_diff.push_back(0));
 
+	for (int i = 0; i < legal_actions_.size(); i++, current_max_diff.push_back(0));
+	for (int i = 0; i < legal_actions_.size(); i++, current_pred.push_back(0));
+	for (int i = 0; i < legal_actions_.size(); i++, current_expected.push_back(0));
+
 	for (i = 0; i < DqnParams::kMinibatchSize; i++)
 	{
-		for (j = 0; j < legal_actions_.size(); j++)
-		{
-			if (fabs(net_->blob_by_name("target")->data_at(i, j, 0, 0) - net_->blob_by_name("filtered_q_values")->data_at(i, j, 0, 0)) > max_diff[j])
-				max_diff[j] = fabs(net_->blob_by_name("target")->data_at(i, j, 0, 0) - net_->blob_by_name("filtered_q_values")->data_at(i, j, 0, 0));
+		Transition& transition = replay_memory_[transitions[i]];
+		DqnAction action = transition.action; //std::get < 1 > (transition);
 
-//			std::cout << "batch " << i << " command " << j << " net q values: " << net_->blob_by_name("filtered_q_values")->data_at(i, j, 0, 0) << " target: " <<
-//					net_->blob_by_name("target")->data_at(i, j, 0, 0) << " reward: " << replay_memory_[transitions[i]].reward << " Qt-1 " << actions_and_values[i].second <<
-//					" estimated_reward " << replay_memory_[transitions[i]].estimated_reward << std::endl;
+		assert(static_cast<int>(action) < DqnParams::kOutputCount);
+
+		int action_id = static_cast<int>(action);
+
+		if (fabs(net_->blob_by_name("target")->data_at(i, action_id, 0, 0) - net_->blob_by_name("filtered_q_values")->data_at(i, action_id, 0, 0)) > max_diff[action_id])
+			max_diff[action_id] = fabs(net_->blob_by_name("target")->data_at(i, action_id, 0, 0) - net_->blob_by_name("filtered_q_values")->data_at(i, action_id, 0, 0));
+
+		if (fabs(net_->blob_by_name("target")->data_at(i, action_id, 0, 0) - net_->blob_by_name("filtered_q_values")->data_at(i, action_id, 0, 0)) > current_max_diff[action_id])
+		{
+			current_max_diff[action_id] = fabs(net_->blob_by_name("target")->data_at(i, action_id, 0, 0) - net_->blob_by_name("filtered_q_values")->data_at(i, action_id, 0, 0));
+			current_pred[action_id] = net_->blob_by_name("filtered_q_values")->data_at(i, action_id, 0, 0);
+			current_expected[action_id] = net_->blob_by_name("target")->data_at(i, action_id, 0, 0);
 		}
+
+
+//			std::cout << "batch " << i << " command " << action_id << " net q values: " << net_->blob_by_name("filtered_q_values")->data_at(i, action_id, 0, 0) << " target: " <<
+//					net_->blob_by_name("target")->data_at(i, action_id, 0, 0) << " reward: " << replay_memory_[transitions[i]].reward << " Qt-1 " << actions_and_values[i].second <<
+//					" estimated_reward " << replay_memory_[transitions[i]].estimated_reward << std::endl;
 
 //		std::cout << std::endl;
 	}
 
-	std::cout << "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t" << "Max Diff: " << std::endl;
-	for (j = 0; j < legal_actions_.size(); j++)
-		std::cout << "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t" << action_to_string(legal_actions_[j]) << ": " << max_diff[j] << std::endl;
+	static int n = 0;
+
+	if (1)//n++ % 100 == 0)
+	{
+		std::cout << std::endl;
+
+		std::cout << "\t\t\t\t\t\t\t\t\t\t\t\t\t" << "Curr Diff: " << "\t\t\t\t\t\t" << "Max Diff: " << std::endl;
+		//std::cout << "Curr Diff: " << std::endl;
+		for (j = 0; j < legal_actions_.size(); j++)
+			std::cout << "\t\t\t\t\t\t\t\t\t\t\t\t\t" <<  action_to_string(legal_actions_[j]) << ": " << current_max_diff[j] << "\t\t\t" << action_to_string(legal_actions_[j]) << ": " << max_diff[j] << std::endl;
+			//std::cout << action_to_string(legal_actions_[j]) << ": " << current_max_diff[j] << " Pred: " << current_pred[j] << " Expected: " << current_expected[j] << std::endl;
+
+		std::cout << std::endl;
+
+		//std::cout << "Max Diff: " << std::endl;
+		for (j = 0; j < legal_actions_.size(); j++)
+			std::cout << "\t\t\t\t\t\t\t\t\t\t\t\t\t" <<  action_to_string(legal_actions_[j]) << ": " << current_max_diff[j] << "\t\t\t" << action_to_string(legal_actions_[j]) << ": " << max_diff[j] << std::endl;
+			//std::cout << action_to_string(legal_actions_[j]) << ": " << max_diff[j] << std::endl;
+
+		std::cout << std::endl;
+	}
 
 }
 

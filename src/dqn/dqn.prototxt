@@ -21,7 +21,7 @@ layers {
   top: "dummy2"
   memory_data_param {
     batch_size: 32
-    channels: 5
+    channels: 6
     height: 1
     width: 1
   }
@@ -35,7 +35,7 @@ layers {
   top: "dummy3"
   memory_data_param {
     batch_size: 32
-    channels: 5
+    channels: 6
     height: 1
     width: 1
   }
@@ -156,7 +156,7 @@ layers {
   bottom: "ip1"
   top: "q_values"
   inner_product_param {
-    num_output: 5
+    num_output: 6
     weight_filler {
       type: "gaussian"
       std: 0.001
