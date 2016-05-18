@@ -1120,7 +1120,7 @@ get_points(vector<carmen_ackerman_path_point_t> &detailed_goal_list, carmen_acke
 double inline
 sigmoid(double x, double z)
 {
-	return (1/(1+exp(-x*0.9+z)));
+	return (1/(1+exp(-x * 0.9 + z)));
 }
 
 
@@ -1168,7 +1168,6 @@ compute_interest_dist(vector<carmen_ackerman_path_point_t> &detailed_goal_list, 
 
 //	printf("Path x: %lf y: %lf \n", path.at(i).x, path.back().y);
 	}
-
 
 	return (total_distance);
 }
@@ -1298,25 +1297,29 @@ my_g(const gsl_vector *x, void *params)
 	if (path.size() != my_params->path_size)
 		total_interest_dist = compute_reference_path(my_params, path);
 	else
-	total_interest_dist = compute_interest_dist(my_params->detailed_goal_list, path, my_params->nearest_path_point);
+		total_interest_dist = compute_interest_dist(my_params->detailed_goal_list, path, my_params->nearest_path_point);
 
 	my_params->tcp_seed->vf = tcp.vf;
 	my_params->tcp_seed->sf = tcp.sf;
 
-//	FILE *path_file_dist = fopen("gnu_tests/gnuplot_path_dist.txt", "w");
-//	print_lane(path,path_file_dist);
-//	fclose(path_file_dist);
+	FILE *path_file_dist = fopen("gnu_tests/gnuplot_path_dist.txt", "w");
+	print_lane(path,path_file_dist);
+	fclose(path_file_dist);
 
 //	printf("Distancia: %lf \n" , total_interest_dist);
 	double goal_dist = dist(path.back(), my_params->detailed_goal_list.back());
 //	goal_dist *= goal_dist;
-	double d_yaw = path.back().phi - my_params->detailed_goal_list.back().phi;
+	double d_yaw = fabs(path.back().phi - my_params->detailed_goal_list.back().phi);
 	double dist_2 = total_interest_dist * total_interest_dist;
 
-//	double result = (goal_dist*0.1) + (total_interest_dist * 0.05); //goal_dist nao tava ao quadrado
+//	double result = (goal_dist*0.8) + (total_interest_dist * 0.1); //goal_dist nao tava ao quadrado
 //	double result = (sqrt(((goal_dist*0.08) + (d_yaw*0.2))*1) + (total_interest_dist * 0.05));
 //	double result = (goal_dist*0.1) + (d_yaw*0.001) + (total_interest_dist*0.01);
-	double result = (goal_dist*0.1) + (total_interest_dist * 0.08) + (d_yaw * 0.002);
+	double result = (goal_dist * 0.01) + (total_interest_dist * 0.05) + (d_yaw * 0.02);
+
+//	printf("Goal dist: %lf \t sem peso: %lf \n", (goal_dist*0.1),  (goal_dist));
+//	printf("total_interest: %lf \t sem peso %lf \n", (total_interest_dist * 0.1), (total_interest_dist));
+
 	return (result);
 
 }
@@ -1484,7 +1487,7 @@ build_detailed_goal_list(vector<carmen_ackerman_path_point_t> *lane_in_local_pos
 		printf(KGRN "+++++++++++++ ERRO MENSAGEM DA LANE POSES !!!!\n" RESET);
 		return (false);
 	}
-	return (false);
+	return (true);
 }
 
 //TODO Calcular valor de fator para quando o carro estiver muito distante da lane
@@ -1533,7 +1536,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	FILE *path_file = fopen("gnu_tests/gnuplot_traj.txt", "w");
 	print_lane(path,path_file);
 	fclose(path_file);
-	getchar();
+//	getchar();
 
 
 	const gsl_multimin_fdfminimizer_type *T;
@@ -1578,7 +1581,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	int status;
 	double actual_car_to_lane_distance = dist(params.detailed_goal_list[0], path[0]);
 	double MAX_LANE_DIST = 0.3 + car_lane_distance_factor(actual_car_to_lane_distance, (lane_sf/2));
-
+//	printf("Max_lane_dist: %lf \n", MAX_LANE_DIST);
 	do
 	{
 		iter++;
@@ -1598,19 +1601,19 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 
 		//	--Debug with GNUPLOT
 
-		TrajectoryLookupTable::TrajectoryControlParameters tcp_temp = fill_in_tcp(s->x, &params);
-		char path_name[20];
-		sprintf(path_name, "path/%lu.txt", iter);
-		FILE *path_file = fopen("gnu_tests/gnuplot_traj.txt", "w");
-		print_lane(simulate_car_from_parameters(target_td, tcp_temp, target_td.phi_i, true),path_file);
-		fclose(path_file);
-		printf("Estou na: %lu iteracao, sf: %lf  \n", iter, s->f);
+//		TrajectoryLookupTable::TrajectoryControlParameters tcp_temp = fill_in_tcp(s->x, &params);
+//		char path_name[20];
+//		sprintf(path_name, "path/%lu.txt", iter);
+//		FILE *path_file = fopen("gnu_tests/gnuplot_traj.txt", "w");
+//		print_lane(simulate_car_from_parameters(target_td, tcp_temp, target_td.phi_i, true),path_file);
+//		fclose(path_file);
+//		printf("Estou na: %lu iteracao, sf: %lf  \n", iter, s->f);
 //		getchar();
 		//	--
 
 	} while ((s->f > MAX_LANE_DIST) && (status == GSL_CONTINUE) && (iter < 300)); //alterado de 0.005
 
-	printf("Parei em: %lu iteracoes, sf: %lf  \n", iter, s->f);
+//	printf("Parei em: %lu iteracoes, sf: %lf  \n", iter, s->f);
 //	getchar();
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
