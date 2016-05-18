@@ -1124,6 +1124,13 @@ sigmoid(double x, double z)
 }
 
 
+double inline
+gaussiana(double x, double z)
+{
+	return exp((-0.3/2)*((x - z) * (x - z)));
+}
+
+
 double
 compute_interest_dist_new(vector<carmen_ackerman_path_point_t> &detailed_goal_list, vector<carmen_ackerman_path_point_t> &path, vector<int> &nearest_path_point)
 {
@@ -1138,7 +1145,7 @@ compute_interest_dist_new(vector<carmen_ackerman_path_point_t> &detailed_goal_li
 	{
 		get_points(detailed_goal_list, path.at(i), p1, p2);
 		distance = get_distance_between_point_to_line(detailed_goal_list.at(p1), detailed_goal_list.at(p2), path.at(i));
-		distance = distance * sigmoid(lane_step_sf[i], middle_of_lane);
+		distance = distance * sigmoid(lane_step_sf[i], (middle_of_lane+1));
 		total_distance += (distance*distance);
 	}
 
@@ -1160,7 +1167,7 @@ compute_interest_dist(vector<carmen_ackerman_path_point_t> &detailed_goal_list, 
 		if (nearest_path_point.at(i) < path.size())
 		{
 			distance = dist(path.at(nearest_path_point.at(i)), detailed_goal_list.at(i));
-			distance = distance * sigmoid(lane_step_sf[i], middle_of_lane);
+			distance = distance * gaussiana(lane_step_sf[i], middle_of_lane);
 		}
 		else
 			distance = 0.0;
@@ -1315,7 +1322,7 @@ my_g(const gsl_vector *x, void *params)
 //	double result = (goal_dist*0.8) + (total_interest_dist * 0.1); //goal_dist nao tava ao quadrado
 //	double result = (sqrt(((goal_dist*0.08) + (d_yaw*0.2))*1) + (total_interest_dist * 0.05));
 //	double result = (goal_dist*0.1) + (d_yaw*0.001) + (total_interest_dist*0.01);
-	double result = (goal_dist * 0.01) + (total_interest_dist * 0.05) + (d_yaw * 0.02);
+	double result = (goal_dist * 0.1) + (total_interest_dist * 0.05) + (d_yaw * 0.02);
 
 //	printf("Goal dist: %lf \t sem peso: %lf \n", (goal_dist*0.1),  (goal_dist));
 //	printf("total_interest: %lf \t sem peso %lf \n", (total_interest_dist * 0.1), (total_interest_dist));
@@ -1580,7 +1587,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	size_t iter = 0;
 	int status;
 	double actual_car_to_lane_distance = dist(params.detailed_goal_list[0], path[0]);
-	double MAX_LANE_DIST = 0.3 + car_lane_distance_factor(actual_car_to_lane_distance, (lane_sf/2));
+	double MAX_LANE_DIST = 0.2 + car_lane_distance_factor(actual_car_to_lane_distance, (lane_sf/2));
 //	printf("Max_lane_dist: %lf \n", MAX_LANE_DIST);
 	do
 	{
@@ -1619,7 +1626,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
 //	//TODO Verificar esse teste para a lane
-	if ((tcp.tf < 0.2) || (s->f > 0.7)) // too short plan or bad minimum (s->f should be close to zero)
+	if ((tcp.tf < 0.2) || (s->f > 0.4)) // too short plan or bad minimum (s->f should be close to zero)
 		tcp.valid = false;
 
 	gsl_multimin_fdfminimizer_free(s);
