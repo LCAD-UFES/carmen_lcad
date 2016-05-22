@@ -707,7 +707,7 @@ TrajectoryLookupTable::predict_next_pose(Robot_State &robot_state, const Command
 		if (distance_traveled)
 			*distance_traveled += dist_walked;
 
-		if(!step_sf.empty())
+		if (!step_sf.empty())
 			step_sf.push_back(*distance_traveled);
 	}
 
@@ -719,7 +719,7 @@ TrajectoryLookupTable::predict_next_pose(Robot_State &robot_state, const Command
 		if (distance_traveled)
 			*distance_traveled += dist_walked;
 
-		if(!step_sf.empty())
+		if (!step_sf.empty())
 					step_sf.push_back(*distance_traveled);
 	}
 
@@ -755,8 +755,8 @@ compute_path_via_simulation_by_distance(Robot_State &robot_state, Command &comma
 		
 	int k = 0;
 	// iterate over the entire path
-	 while (t <= tcp.tf && k++ < 65)
-	 {
+	while (t <= tcp.tf && k++ < 65)
+	{
 		command.phi = gsl_spline_eval(phi_spline, t, acc);
 
 		if (tcp.velocity_profile == LINEAR_PROFILE)
@@ -805,9 +805,7 @@ compute_path_via_simulation_by_distance(Robot_State &robot_state, Command &comma
 		robot_state.v_and_phi = command;
 		path.push_back(Util::convert_to_carmen_ackerman_path_point_t(robot_state, delta_t));
 		TrajectoryLookupTable::predict_next_pose(robot_state, command, delta_t,	&distance_traveled, delta_t);
-
 	}
-
 
 	return (distance_traveled);
 }
@@ -1357,6 +1355,7 @@ my_df(const gsl_vector *v, void *params, gsl_vector *df)
 	gsl_vector_free(x_h);
 }
 
+
 /* Compute both f and df together. */
 void
 my_fdf(const gsl_vector *x, void *params, double *f, gsl_vector *df)
@@ -1419,6 +1418,7 @@ my_g(const gsl_vector *x, void *params)
 
 }
 
+
 /* The gradient of f, df = (df/dx, df/dy). */
 void
 my_dg(const gsl_vector *v, void *params, gsl_vector *df)
@@ -1455,6 +1455,7 @@ my_dg(const gsl_vector *v, void *params, gsl_vector *df)
 	gsl_vector_free(x_h);
 }
 
+
 /* Compute both g and df together. for while df equal to dg */
 void
 my_gdf(const gsl_vector *x, void *params, double *g, gsl_vector *dg)
@@ -1462,6 +1463,7 @@ my_gdf(const gsl_vector *x, void *params, double *g, gsl_vector *dg)
 	*g = my_g(x, params);
 	my_dg(x, params, dg);
 }
+
 
 double
 compute_suitable_acceleration(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
@@ -1528,6 +1530,7 @@ add_points_to_goal_list_interval(carmen_ackerman_path_point_t p1, carmen_ackerma
 	}
 }
 
+
 void
 copy_starting_nearest_point_of_zero(vector<carmen_ackerman_path_point_t> &detailed_goal_list, vector<carmen_ackerman_path_point_t> &temp_detail, double *lane_sf)
 {
@@ -1562,6 +1565,7 @@ copy_starting_nearest_point_of_zero(vector<carmen_ackerman_path_point_t> &detail
 	}
 }
 
+
 bool
 build_detailed_goal_list(vector<carmen_ackerman_path_point_t> *lane_in_local_pose, vector<carmen_ackerman_path_point_t> &detailed_goal_list, double *lane_sf)
 {
@@ -1585,12 +1589,14 @@ build_detailed_goal_list(vector<carmen_ackerman_path_point_t> *lane_in_local_pos
 	return (true);
 }
 
+
 //TODO Calcular valor de fator para quando o carro estiver muito distante da lane
 double
 car_lane_distance_factor(double car_lane_distance, double lane_sf_2)
 {
     return (2*car_lane_distance)/(1 + exp(-car_lane_distance*0.9 + lane_sf_2));
 }
+
 
 TrajectoryLookupTable::TrajectoryControlParameters
 optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed,
@@ -2429,202 +2435,6 @@ compute_delay(vector<carmen_ackerman_path_point_t> path, int path_index,
 
 	return (delay);
 }
-
-
-Pose
-predicted_current_pose(Pose *localize_pose, double localize_pose_timestamp, Command last_odometry,
-		vector<carmen_ackerman_path_point_t> path, double path_timestamp)
-{
-	double time_displacement;
-	int path_index = find_pose_in_path(time_displacement, localize_pose, path);
-	double delay = compute_delay(path, path_index, localize_pose_timestamp, path_timestamp, time_displacement);
-
-	unsigned int i = path_index;
-	double delta_t = path[i].time - time_displacement;
-	double total_t = 0.0;
-	double distance_traveled = 0.0;
-
-	Robot_State robot_state;
-	robot_state.pose = *localize_pose;
-	robot_state.v_and_phi = last_odometry;
-	Command requested_command;
-	do
-	{
-		requested_command.v = path[i].v;
-		requested_command.phi = path[i].phi;
-		TrajectoryLookupTable::predict_next_pose(robot_state, requested_command,
-				delta_t, &distance_traveled, delta_t);
-		total_t += delta_t;
-		i++;
-		if (path.size() < (i + 1))
-		{
-			std::cout << "Error in predicted_current_pose()! path.size() = " << path.size()
-					<< "  i = " << i
-					<< "  path_index = " << path_index
-					<< "  delay = " << delay
-					<< "  total_t = " << total_t
-					<< std::endl;
-			exit(1);
-		}
-		delta_t = path[i].time;
-	} while ((total_t + delta_t) < delay);
-
-	requested_command.v = path[i].v;
-	requested_command.phi = path[i].phi;
-	TrajectoryLookupTable::predict_next_pose(robot_state, requested_command,
-			delay - total_t, &distance_traveled, delay - total_t);
-	std::cout << "#### delay = " << delay << std::endl;
-
-	return (robot_state.pose);
-}
-
-
-Pose
-predict_plan_initial_pose(vector<TrajectoryLookupTable::Plan> &previous_plans,
-		Pose *localize_pose, double localize_pose_timestamp, Command last_odometry)
-{
-	vector<TrajectoryLookupTable::Plan>::iterator it = previous_plans.begin();
-	std::cout << "previous_plans.size() = " << previous_plans.size() << std::endl;
-	while (it != previous_plans.end())
-	{
-        if (it->path.size() > 2)
-        {
-            if (Util::between(localize_pose, it->path[1], it->path[2])) // good!
-            {
-                std::cout << "@@@@@@@@@@@@@@@@@@@@@@@@@@ break!!!" << std::endl;
-                break;
-            }
-        }
-//		if (it->path.size() > 2)
-//            for (int i = 0; i < (it->path.size() - 1); i++)
-//                if (Util::between(localize_pose, it->path[i], it->path[i + 1]))
-//                    std::cout << "$$$$$$$$$$$$$$ between = " << i << std::endl;
-		//std::cout << "it->path.size() = " << it->path.size() << std::endl;
-		if ((localize_pose_timestamp - it->timestamp) > 2.0) // too old
-		{
-			it = previous_plans.erase(it);
-			std::cout << "erase 1 " << std::endl;
-
-			continue;
-		}
-		if (it->path.size() > 3)
-		{
-			if (Util::distance(localize_pose, &(it->path[2])) > Util::distance(localize_pose, &(it->path[3]))) // too old
-			{
-				it = previous_plans.erase(it);
-				std::cout << "erase 2 " << std::endl;
-				continue;
-			}
-		}
-		it++;
-	}
-	std::cout << "num plans = " << previous_plans.size() << std::endl;
-	if (it == previous_plans.end())
-		return (*localize_pose);
-	else
-		return (predicted_current_pose(localize_pose, localize_pose_timestamp, last_odometry, it->path, it->timestamp));
-}
-
-
-//double
-//compute_system_delay(vector<TrajectoryLookupTable::Plan> &previous_plans,
-//        Pose *localize_pose, double localize_pose_timestamp, Command last_odometry, double plan_delay)
-//{
-//    vector<TrajectoryLookupTable::Plan>::iterator it, it_found;
-//    it = previous_plans.begin();
-//    std::cout << "previous_plans.size() = " << previous_plans.size() << std::endl;
-//    int i;
-//    while (it != previous_plans.end())
-//    {
-//        if ((localize_pose_timestamp - it->timestamp) > 2.0) // too old
-//        {
-//            it = previous_plans.erase(it);
-//            continue;
-//        }
-//        if (it->path.size() > 2)
-//        {
-//            bool found = false;
-//            for (i = 0; i < (it->path.size() - 1); i++)
-//            {
-//                if (Util::between(localize_pose, it->path[i], it->path[i + 1]))
-//                {
-//                    found = true;
-//                    it_found = it;
-//                    break;
-//                }
-//            }
-//            if (found)
-//                break;
-//        }
-//        it++;
-//    }
-//    if (it == previous_plans.end())
-//    {
-//        std::cout << "delay short" << std::endl;
-//        return (plan_delay);
-//    }
-//    else
-//    {
-//        double time_displacement;
-//        int path_index = find_pose_in_path(time_displacement, localize_pose, it_found->path);
-//        double delay = compute_delay(it_found->path, i, localize_pose_timestamp, it_found->timestamp, 0);
-//        std::cout << "long delay" << std::endl;
-//        return (plan_delay + delay);
-//    }
-//}
-//
-//
-//vector<carmen_ackerman_path_point_t>
-//TrajectoryLookupTable::compute_path_to_goal(Pose *localize_pose, Pose *goal_pose, Command last_odometry,
-//		double target_v, double localize_pose_timestamp)
-//{
-//	static vector<TrajectoryLookupTable::Plan> previous_plans;
-//	double planner_initial_time = carmen_get_time();
-//
-//	//Pose predicted_pose = predict_plan_initial_pose(previous_plans, localize_pose, localize_pose_timestamp, last_odometry);
-//	TrajectoryLookupTable::TrajectoryDimensions td = get_trajectory_dimensions_from_robot_state(localize_pose, last_odometry, goal_pose);
-//	TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd = get_discrete_dimensions(td);
-//	vector<carmen_ackerman_path_point_t> path;
-//	if (has_valid_discretization(tdd))
-//	{
-//		TrajectoryLookupTable::TrajectoryControlParameters tcp = search_lookup_table(tdd);
-//		if (tcp.valid)
-//		{
-//			tcp = get_optimized_trajectory_control_parameters(tcp, td, target_v);
-//			path = simulate_car_from_parameters(td, tcp, td.phi_i);
-//		}
-//		else
-//		{
-//			// printf("@@@@@@@@@@@ Could not find a valid entry in the table!!!!\n");
-//			return (path); // empty path
-//		}
-//
-//		move_path_to_current_robot_pose(path, localize_pose);
-//		double system_delay = compute_system_delay(previous_plans, localize_pose,
-//		        localize_pose_timestamp, last_odometry, carmen_get_time() - planner_initial_time);
-//		std::cout << "$$$$$$$$$$$$$$ system_delay = " << system_delay << std::endl;
-//		TrajectoryLookupTable::Plan plan;
-//		plan.path = path;
-//		plan.timestamp = localize_pose_timestamp;
-//		previous_plans.push_back(plan);
-//		double delay = 0.0;
-//		int index;
-//        for (index = 0; (delay < 0.7) && (index < path.size()); index++)
-//            delay += path[index].time;
-//        std::cout << "$$$$$$$$$$$$$$ index = " << index << std::endl;
-//        for (int j = 0; j < index; j++)
-//            path.erase(path.begin());
-////        for (int i = 0; (i < 12) && (path.size() > 1); i++)
-////            path.erase(path.begin());
-//
-//		return (path);
-//	}
-//	else
-//	{
-//		printf("Invalid discretization!!!!\n");
-//		return (path);
-//	}
-//}
 
 
 void
