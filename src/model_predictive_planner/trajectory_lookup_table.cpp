@@ -752,16 +752,11 @@ compute_path_via_simulation_by_distance(Robot_State &robot_state, Command &comma
 
 	if (tcp.a0 != 0 && tcp.velocity_profile == LINEAR_PROFILE)
 		delta_d = 0.04*(tcp.tf*tcp.v0 + 0.5*tcp.a0*(tcp.tf*tcp.tf));
-	else
-	{
-		 printf("\nDeu ruim! aceleracao %lf", tcp.a0);
-		 getchar();
-	}
-
+		
 	int k = 0;
 	// iterate over the entire path
-	 while(t <= tcp.tf && k++ < 65) {
-
+	 while (t <= tcp.tf && k++ < 65)
+	 {
 		command.phi = gsl_spline_eval(phi_spline, t, acc);
 
 		if (tcp.velocity_profile == LINEAR_PROFILE)
@@ -779,9 +774,6 @@ compute_path_via_simulation_by_distance(Robot_State &robot_state, Command &comma
 			command.v = tcp.v0;
 
 			delta_t = delta_d/command.v;
-
-			printf("\nConstante delta_t: %lf \t v : %lf", delta_t, command.v);
-
 		}
 		else if (tcp.velocity_profile == LINEAR_RAMP_PROFILE)
 		{
