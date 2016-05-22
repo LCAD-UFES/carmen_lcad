@@ -634,7 +634,7 @@ colision_detection_is_valid_position(int x, int y, carmen_map_t *map)
 
 
 int 
-pose_hit_obstacle(carmen_point_t pose, carmen_map_t *map, carmen_robot_ackerman_config_t *car_config) 
+pose_hit_obstacle(carmen_point_t pose, carmen_map_t *map, carmen_robot_ackerman_config_t *car_config)
 {
 	int vertical_size, horizontal_size;
 	carmen_point_t vertical_pose, horizontal_pose[2];

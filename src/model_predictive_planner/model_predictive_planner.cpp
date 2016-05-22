@@ -42,6 +42,66 @@ static int update_lookup_table = 0;
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
+
+void
+publish_model_predictive_rrt_path_message(list<RRT_Path_Edge> path)
+{
+	int i = 0;
+	rrt_path_message msg;
+	list<RRT_Path_Edge>::iterator it;
+
+	msg.host  = carmen_get_host();
+	msg.timestamp = GlobalState::rrt_planner_timestamp;
+	msg.last_goal = GlobalState::last_goal ? 1 : 0;
+
+	if (GlobalState::goal_pose)
+	{
+		msg.goal.x = GlobalState::goal_pose->x;
+		msg.goal.y = GlobalState::goal_pose->y;
+		msg.goal.theta = GlobalState::goal_pose->theta;
+	}
+	else
+	{
+		msg.goal.x = msg.goal.y = msg.goal.theta = 0.0;
+	}
+
+	if (path.empty())
+	{
+		// return;
+		msg.size = 0;
+		msg.path = NULL;
+	}
+	else
+	{
+		msg.size = path.size();
+		msg.path = (Edge_Struct *) malloc(sizeof(Edge_Struct) * msg.size);
+	}
+
+	for (it = path.begin(); it != path.end(); it++, i++)
+	{
+		msg.path[i].p1.x = it->p1.pose.x;
+		msg.path[i].p1.y = it->p1.pose.y;
+		msg.path[i].p1.theta = it->p1.pose.theta;
+		msg.path[i].p1.v = it->p1.v_and_phi.v;
+		msg.path[i].p1.phi = it->p1.v_and_phi.phi;
+
+		msg.path[i].p2.x = it->p2.pose.x;
+		msg.path[i].p2.y = it->p2.pose.y;
+		msg.path[i].p2.theta = it->p2.pose.theta;
+		msg.path[i].p2.v = it->p2.v_and_phi.v;
+		msg.path[i].p2.phi = it->p2.v_and_phi.phi;
+
+		msg.path[i].v = it->command.v;
+		msg.path[i].phi = it->command.phi;
+		msg.path[i].time = it->time;
+	}
+
+	Publisher_Util::publish_rrt_path_message(&msg);
+
+	free(msg.path);
+}
+
+
 void
 publish_model_predictive_planner_motion_commands(vector<carmen_ackerman_path_point_t> path)
 {
@@ -246,8 +306,8 @@ stop()
 }
 
 
-static void
-build_and_follow_path()
+void
+build_and_follow_path_old()
 {
 	if (GlobalState::goal_pose && (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT))
 	{
@@ -255,6 +315,60 @@ build_and_follow_path()
 		if (tree.num_paths > 0 && path.size() > 0)
 		{
 			publish_model_predictive_planner_motion_commands(path);
+			publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
+		}
+		publish_status_message(tree);
+		publish_navigator_ackerman_status_message();
+	}
+}
+
+
+list<RRT_Path_Edge>
+build_path_follower_path(vector<carmen_ackerman_path_point_t> path)
+{
+	list<RRT_Path_Edge> path_follower_path;
+	RRT_Path_Edge path_edge;
+
+	if (path.size() < 2)
+		return (path_follower_path);
+
+	for (unsigned int i = 0; i < path.size() - 1; i++)
+	{
+		path_edge.p1.pose.x = path[i].x;
+		path_edge.p1.pose.y = path[i].y;
+		path_edge.p1.pose.theta = path[i].theta;
+		path_edge.p1.v_and_phi.v = path[i].v;
+		path_edge.p1.v_and_phi.phi = path[i].phi;
+
+		path_edge.p2.pose.x = path[i + 1].x;
+		path_edge.p2.pose.y = path[i + 1].y;
+		path_edge.p2.pose.theta = path[i + 1].theta;
+		path_edge.p1.v_and_phi.v = path[i + 1].v;
+		path_edge.p1.v_and_phi.phi = path[i + 1].phi;
+
+		path_edge.command.v = path[i + 1].v;
+		path_edge.command.phi = path[i + 1].phi;
+		path_edge.time = path[i].time;
+
+		path_follower_path.push_back(path_edge);
+	}
+
+	return (path_follower_path);
+}
+
+
+static void
+build_and_follow_path()
+{
+	list<RRT_Path_Edge> path_follower_path;
+
+	if (GlobalState::goal_pose && (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT))
+	{
+		vector<carmen_ackerman_path_point_t> path = compute_plan(&tree);
+		if (tree.num_paths > 0 && path.size() > 0)
+		{
+			path_follower_path = build_path_follower_path(path);
+			publish_model_predictive_rrt_path_message(path_follower_path);
 			publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
 		}
 		publish_status_message(tree);

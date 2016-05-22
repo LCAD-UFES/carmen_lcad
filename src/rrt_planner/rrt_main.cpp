@@ -110,6 +110,17 @@ publish_rrt_path_message(list<RRT_Path_Edge> &path)
 		msg.path[i].phi = it->command.phi;
 		msg.path[i].time = it->time;
 
+//		printf("p1.x = %.2lf, p1.y = %.2lf, p1.theta = %.2lf\n"
+//			   "p2.x = %.2lf, p2.y = %.2lf, p2.theta = %.2lf\n"
+//			   "p1.v = %.2lf, p1.phi = %.2lf\n"
+//			   "p2.v = %.2lf, p2.phi = %.2lf\n"
+//			   "command.v = %.2lf, command.phi = %.2lf\n",
+//			   it->p1.pose.x, it->p1.pose.y, it->p1.pose.theta,
+//			   it->p2.pose.x, it->p2.pose.y, it->p2.pose.theta,
+//			   it->p1.v_and_phi.v, it->p1.v_and_phi.phi,
+//			   it->p2.v_and_phi.v, it->p2.v_and_phi.phi,
+//			   it->command.v, it->command.phi);
+
 		if (GlobalState::show_debug_info)
 			printf("v = %2.2lf, phi = %2.2lf, t = %2.3lf, p1.v = %2.2lf, p1.phi = %2.2lf, p2.v = %2.2lf, p2.phi = %2.2lf\n",
 					it->command.v, carmen_radians_to_degrees(it->command.phi), it->time,
