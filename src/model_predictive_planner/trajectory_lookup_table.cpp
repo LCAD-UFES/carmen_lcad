@@ -731,87 +731,6 @@ TrajectoryLookupTable::predict_next_pose(Robot_State &robot_state, const Command
 
 
 double
-compute_path_via_simulation_by_distance(Robot_State &robot_state, Command &command,
-		vector<carmen_ackerman_path_point_t> &path,
-		TrajectoryLookupTable::TrajectoryControlParameters tcp,
-		gsl_spline *phi_spline, gsl_interp_accel *acc)
-{
-	double t = 0.0;
-	double distance_traveled = 0.0;
-	double delta_t;
-	double v0 = tcp.v0;
-	double delta_d =  0.04*(tcp.tf*tcp.v0);
-
-	robot_state.pose.x = 0.0;
-	robot_state.pose.y = 0.0;
-	robot_state.pose.theta = 0.0;
-	command.v = tcp.v0;
-	command.phi = gsl_spline_eval(phi_spline, 0.0, acc);
-	robot_state.v_and_phi = command;
-
-
-	if (tcp.a0 != 0 && tcp.velocity_profile == LINEAR_PROFILE)
-		delta_d = 0.04*(tcp.tf*tcp.v0 + 0.5*tcp.a0*(tcp.tf*tcp.tf));
-		
-	int k = 0;
-	// iterate over the entire path
-	while (t <= tcp.tf && k++ < 65)
-	{
-		command.phi = gsl_spline_eval(phi_spline, t, acc);
-
-		if (tcp.velocity_profile == LINEAR_PROFILE)
-		{
-			// get the desired time step
-			command.v = sqrt(v0*v0 + 2*tcp.a0*delta_d);
-
-			delta_t = (command.v - v0)/tcp.a0;
-
-			v0 = command.v;
-
-		}
-		else if (tcp.velocity_profile == CONSTANT_PROFILE)
-		{
-			command.v = tcp.v0;
-
-			delta_t = delta_d/command.v;
-		}
-		else if (tcp.velocity_profile == LINEAR_RAMP_PROFILE)
-		{
-			if (t < tcp.t0)
-			{
-				command.v = sqrt(v0*v0 + 2*tcp.a0*delta_d);
-
-				delta_t = (command.v - v0)/tcp.a0;
-
-				v0 = command.v;
-			}
-
-		}
-
-		t += delta_t;
-//		printf("\n t: %lf", t);
-		if (t > tcp.tf)
-		{
-			delta_t = delta_t - (t - tcp.tf);
-
-			if (tcp.velocity_profile == LINEAR_PROFILE)
-			{
-				// get the desired time step
-				command.v -= tcp.a0 * (t - tcp.tf);
-			}
-
-		}
-
-		robot_state.v_and_phi = command;
-		path.push_back(Util::convert_to_carmen_ackerman_path_point_t(robot_state, delta_t));
-		TrajectoryLookupTable::predict_next_pose(robot_state, command, delta_t,	&distance_traveled, delta_t);
-	}
-
-	return (distance_traveled);
-}
-
-
-double
 compute_path_via_simulation(Robot_State &robot_state, Command &command,
         vector<carmen_ackerman_path_point_t> &path,
 		TrajectoryLookupTable::TrajectoryControlParameters tcp,
@@ -826,10 +745,10 @@ compute_path_via_simulation(Robot_State &robot_state, Command &command,
     robot_state.pose.x = 0.0;
     robot_state.pose.y = 0.0;
     robot_state.pose.theta = 0.0;
-    robot_state.v_and_phi.v = tcp.v0; //Desnecessario
-    robot_state.v_and_phi.phi = i_phi; //Desnecessario
+    robot_state.v_and_phi.v = tcp.v0;
+    robot_state.v_and_phi.phi = i_phi;
     command.v = tcp.v0;
-	command.phi = gsl_spline_eval(phi_spline, 0.0, acc); //Desnecessario
+	command.phi = gsl_spline_eval(phi_spline, 0.0, acc);
 	robot_state.v_and_phi = command;
 	Robot_State last_robot_state = robot_state;
 	for (last_t = t = 0.0; t < tcp.tf; t += delta_t)
@@ -946,8 +865,8 @@ simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 
 	Command command;
     Robot_State robot_state;
-//    double distance_traveled = compute_path_via_simulation_by_distance(robot_state, command, path, tcp, phi_spline, acc);
-	double distance_traveled = compute_path_via_simulation(robot_state, command, path, tcp, phi_spline, acc, i_phi);
+
+    double distance_traveled = compute_path_via_simulation(robot_state, command, path, tcp, phi_spline, acc, i_phi);
 
 	gsl_spline_free(phi_spline);
 	gsl_interp_accel_free(acc);
@@ -1209,7 +1128,7 @@ sigmoid(double x, double z)
 double inline
 gaussian(double x, double z)
 {
-	return exp((-0.15/2)*((x - z) * (x - z)));
+	return exp((-0.3/2)*((x - z) * (x - z)));
 }
 
 
@@ -1250,7 +1169,7 @@ compute_interest_dist(vector<carmen_ackerman_path_point_t> &detailed_goal_list, 
 		if (nearest_path_point.at(i) < path.size())
 		{
 			distance = dist(path.at(nearest_path_point.at(i)), detailed_goal_list.at(i));
-			//distance = distance * gaussian(lane_step_sf[i], middle_of_lane-2);
+//			distance = distance * gaussian(lane_step_sf[i], middle_of_lane-2);
 		}
 		else
 			distance = 0.0;
@@ -1392,6 +1311,8 @@ my_g(const gsl_vector *x, void *params)
 
 	my_params->tcp_seed->vf = tcp.vf;
 	my_params->tcp_seed->sf = tcp.sf;
+	my_params->lane_sf = total_interest_dist;
+
 //
 //	FILE *path_file_dist = fopen("gnu_tests/gnuplot_path_dist.txt", "w");
 //	print_lane(path,path_file_dist);
@@ -1618,7 +1539,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	double lane_sf = 0.0;
 	if (!build_detailed_goal_list(lane_in_local_pose, params.detailed_goal_list, &lane_sf))
 	{
-		cost_results.push_back(100000.0);
+		cost_results.push_back(1.5);
 		return (tcp_seed);
 	}
 //	printf("Lane x: %lf y: %lf \n", params.detailed_goal_list.back().x, params.detailed_goal_list.back().y);
@@ -1658,7 +1579,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	params.target_td = &target_td;
 	params.tcp_seed = &tcp_seed;
 	params.target_v = target_v;
-	params.lane_sf = lane_sf;
+	params.lane_sf = 0.0;
 
 	gsl_vector *x;
 	gsl_multimin_function_fdf my_func;
@@ -1726,7 +1647,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	if ((tcp.tf < 0.2)/* || (s->f > 0.75)*/) // too short plan or bad minimum (s->f should be close to zero)
 		tcp.valid = false;
 
-	cost_results.push_back(s->f);
+	cost_results.push_back(params.lane_sf);
 	gsl_multimin_fdfminimizer_free(s);
 	gsl_vector_free(x);
 
@@ -2593,7 +2514,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 				{
 					shorter_path_size = otcp.sf;
 					shorter_path = path_order;
-					path_order++;
+					path_order++; //possivel erro aqui?
 				}
 			}
 			else
