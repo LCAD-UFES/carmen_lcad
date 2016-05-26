@@ -131,6 +131,34 @@ publish_model_predictive_planner_motion_commands(vector<carmen_ackerman_path_poi
 
 
 void
+publish_path_follower_motion_commands(carmen_ackerman_motion_command_t *commands, int num_commands)
+{
+//	system("clear");
+//	for (int i = 0; (i < num_commands) && (i < 20); i++)
+//		printf("v = %2.2lf, phi = %2.2lf, t = %2.3lf\n", commands[i].v, carmen_radians_to_degrees(commands[i].phi), commands[i].time);
+//	fflush(stdout);
+
+	if (GlobalState::use_obstacle_avoider)
+		carmen_robot_ackerman_publish_motion_command(commands, num_commands);
+	else
+		carmen_base_ackerman_publish_motion_command(commands, num_commands);
+}
+
+
+void
+publish_path_follower_single_motion_command(double v, double phi)
+{
+	carmen_ackerman_motion_command_t commands[2];
+
+	commands[0].v = v;
+	commands[0].phi = phi;
+	commands[0].time = 0.5;
+	commands[1] = commands[0];
+	publish_path_follower_motion_commands(commands, 2);
+}
+
+
+void
 publish_model_predictive_planner_single_motion_command(double v, double phi)
 {
 	vector<carmen_ackerman_path_point_t> path;
@@ -142,6 +170,8 @@ publish_model_predictive_planner_single_motion_command(double v, double phi)
 	path.push_back(traj);
 	path.push_back(traj);
 	publish_model_predictive_planner_motion_commands(path);
+
+	publish_path_follower_single_motion_command(0, 0);
 }
 
 
@@ -307,7 +337,7 @@ stop()
 
 
 void
-build_and_follow_path_old()
+build_and_follow_path()
 {
 	if (GlobalState::goal_pose && (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT))
 	{
@@ -358,7 +388,7 @@ build_path_follower_path(vector<carmen_ackerman_path_point_t> path)
 
 
 static void
-build_and_follow_path()
+build_and_follow_path_new()
 {
 	list<RRT_Path_Edge> path_follower_path;
 

@@ -50,6 +50,17 @@
 #define ZERO_D_V_I		4				// Index of zero Velocity displacement
 
 #define NUM_VELOCITY_PROFILES	4
+
+#define V_LATENCY				0.0
+#define PHI_LATENCY				0.0
+#define LATENCY_CICLE_TIME		0.01
+#define MAX_PLANNING_TIME		1.0
+const int V_LATENCY_BUFFER_SIZE = (V_LATENCY / LATENCY_CICLE_TIME);
+const int V_LATENCY_BUFFER_TOTAL_SIZE = (V_LATENCY_BUFFER_SIZE + MAX_PLANNING_TIME / LATENCY_CICLE_TIME);
+const int PHI_LATENCY_BUFFER_SIZE = (PHI_LATENCY / LATENCY_CICLE_TIME);
+const int PHI_LATENCY_BUFFER_TOTAL_SIZE = (PHI_LATENCY_BUFFER_SIZE + MAX_PLANNING_TIME / LATENCY_CICLE_TIME);
+
+
 typedef enum
 {
 	CONSTANT_PROFILE = 0,
@@ -78,6 +89,8 @@ public:
 		double tf;
 		double k1;
 		double k2;
+		double k3;
+		bool has_k3;
 		double sf;
 	};
 
@@ -111,6 +124,26 @@ public:
 	{
 		vector<carmen_ackerman_path_point_t> path;
 		double timestamp;
+	};
+
+
+	class CarLatencyBuffer
+	{
+	public:
+		double previous_v[V_LATENCY_BUFFER_TOTAL_SIZE];
+		double previous_phi[PHI_LATENCY_BUFFER_TOTAL_SIZE];
+		double timestamp;
+
+		CarLatencyBuffer()
+		{
+			for (int i = 0; i < V_LATENCY_BUFFER_TOTAL_SIZE; i++)
+				previous_v[i] = 0.0;
+
+			for (int i = 0; i < PHI_LATENCY_BUFFER_TOTAL_SIZE; i++)
+				previous_phi[i] = 0.0;
+
+			timestamp = 0.0;
+		}
 	};
 
 

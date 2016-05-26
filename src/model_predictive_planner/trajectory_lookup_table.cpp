@@ -54,6 +54,7 @@ struct ObjectiveFunctionParams
 #define SYSTEM_DELAY 0.7
 
 TrajectoryLookupTable::TrajectoryControlParameters trajectory_lookup_table[N_DIST][N_THETA][N_D_YAW][N_I_PHI][N_I_V];
+TrajectoryLookupTable::CarLatencyBuffer g_car_latency_buffer;
 
 double g_last_lane_timestamp = 0.0;
 vector<double> step_sf;
@@ -310,6 +311,8 @@ init_trajectory_lookup_table()
 	tcp.tf = 0.0;
 	tcp.k1 = 0.0;
 	tcp.k2 = 0.0;
+	tcp.k3 = 0.0;
+	tcp.has_k3 = false;
 	tcp.sf = 0.0;
 
 	for (int i = 0; i < N_DIST; i++)
@@ -530,6 +533,8 @@ generate_trajectory_control_parameters_sample(int k1, int k2, int i_v, int dist)
 
 	tcp.k1 = get_k1_by_index(k1);
 	tcp.k2 = get_k2_by_index(k2);
+	tcp.k3 = 0.0;
+	tcp.has_k3 = false;
 
 	tcp.v0 = get_initial_velocity_by_index(i_v);
 	double distance = get_distance_by_index(dist);
@@ -734,13 +739,14 @@ double
 compute_path_via_simulation(Robot_State &robot_state, Command &command,
         vector<carmen_ackerman_path_point_t> &path,
 		TrajectoryLookupTable::TrajectoryControlParameters tcp,
-		gsl_spline *phi_spline, gsl_interp_accel *acc, double i_phi)
+		gsl_spline *phi_spline, gsl_interp_accel *acc, double i_phi,
+		TrajectoryLookupTable::CarLatencyBuffer car_latency_buffer)
 {
     int i = 0;
     double t, last_t;
     double distance_traveled = 0.0;
     double delta_t = 0.15;
-    int reduction_factor = 1 + (int)((tcp.tf / delta_t) / 90.0);
+    int reduction_factor = 1;// + (int)((tcp.tf / delta_t) / 90.0);
 
     robot_state.pose.x = 0.0;
     robot_state.pose.y = 0.0;
@@ -751,23 +757,51 @@ compute_path_via_simulation(Robot_State &robot_state, Command &command,
 	command.phi = gsl_spline_eval(phi_spline, 0.0, acc);
 	robot_state.v_and_phi = command;
 	Robot_State last_robot_state = robot_state;
+//	bool is_first_phi = true;
+//	bool is_first_v = true;
 	for (last_t = t = 0.0; t < tcp.tf; t += delta_t)
 	{
-		command.phi = gsl_spline_eval(phi_spline, t, acc);
-		if (tcp.velocity_profile == LINEAR_PROFILE)
-            command.v += tcp.a0 * delta_t;
-        else if (tcp.velocity_profile == LINEAR_RAMP_PROFILE)
-        {
-            if (t < tcp.t0)
-                command.v += tcp.a0 * delta_t;
-        }
-        else if (tcp.velocity_profile == TRAPEZOIDAL_PROFILE)
-        {
-            if (t < tcp.t0)
-                command.v += tcp.a0 * delta_t;
-            if (t > tcp.tt)
-                command.v += tcp.af * delta_t;
-        }
+		if (t < PHI_LATENCY)
+			command.phi = car_latency_buffer.previous_phi[(int) (t / LATENCY_CICLE_TIME)];
+		else
+			command.phi = gsl_spline_eval(phi_spline, t - PHI_LATENCY, acc);
+
+//		if ((t >= PHI_LATENCY) && is_first_phi)
+//		{
+//			if (fabs(command.phi - car_latency_buffer.previous_phi[PHI_LATENCY_BUFFER_SIZE - 1]) > carmen_degrees_to_radians(2.0))
+//				printf("phi after latency does not match planned phi!!!!!\n");
+//
+//			is_first_phi = false;
+//		}
+
+		if (t < V_LATENCY)
+			command.v = car_latency_buffer.previous_v[(int) (t / LATENCY_CICLE_TIME)];
+		else
+		{
+			if (tcp.velocity_profile == LINEAR_PROFILE)
+	            command.v += tcp.a0 * delta_t;
+	        else if (tcp.velocity_profile == LINEAR_RAMP_PROFILE)
+	        {
+	            if (t < tcp.t0)
+	                command.v += tcp.a0 * delta_t;
+	        }
+	        else if (tcp.velocity_profile == TRAPEZOIDAL_PROFILE)
+	        {
+	            if (t < tcp.t0)
+	                command.v += tcp.a0 * delta_t;
+	            if (t > tcp.tt)
+	                command.v += tcp.af * delta_t;
+	        }
+		}
+
+//		if ((t >= V_LATENCY) && is_first_v)
+//		{
+//			if (fabs(command.v - car_latency_buffer.previous_v[V_LATENCY_BUFFER_SIZE - 1]) > 0.2)
+//				printf("v after latency does not match planned v!!!!!\n");
+//
+//			is_first_v = false;
+//		}
+
 		TrajectoryLookupTable::predict_next_pose(robot_state, command, delta_t,	&distance_traveled, delta_t);
 		if ((i % reduction_factor) == 0)
 		{
@@ -843,7 +877,7 @@ print_phi_profile_temp(gsl_spline *phi_spline, gsl_interp_accel *acc, double tot
 vector<carmen_ackerman_path_point_t>
 simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double i_phi,
-		bool display_phi_profile)
+		TrajectoryLookupTable::CarLatencyBuffer car_latency_buffer,	bool display_phi_profile)
 {
 	vector<carmen_ackerman_path_point_t> path;
 	if (!tcp.valid)
@@ -854,19 +888,32 @@ simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 
 	// Create phi profile
 
-	double knots_x[3] = {0.0, tcp.tf / 2.0, tcp.tf};
-	double knots_y[3] = {i_phi, tcp.k1, tcp.k2};
-	gsl_interp_accel *acc = gsl_interp_accel_alloc();
-	const gsl_interp_type *type = gsl_interp_cspline;
-	gsl_spline *phi_spline = gsl_spline_alloc(type, 3);
-	gsl_spline_init(phi_spline, knots_x, knots_y, 3);
-
+	gsl_interp_accel *acc;
+	gsl_spline *phi_spline;
+	if (tcp.has_k3)
+	{
+		double knots_x[4] = {0.0, tcp.tf / 3.0, 2.0 * (tcp.tf / 3.0), tcp.tf};
+		double knots_y[4] = {i_phi, tcp.k1, tcp.k2, tcp.k3};
+		acc = gsl_interp_accel_alloc();
+		const gsl_interp_type *type = gsl_interp_cspline;
+		phi_spline = gsl_spline_alloc(type, 4);
+		gsl_spline_init(phi_spline, knots_x, knots_y, 4);
+	}
+	else
+	{
+		double knots_x[3] = {0.0, tcp.tf / 2.0, tcp.tf};
+		double knots_y[3] = {i_phi, tcp.k1, tcp.k2};
+		acc = gsl_interp_accel_alloc();
+		const gsl_interp_type *type = gsl_interp_cspline;
+		phi_spline = gsl_spline_alloc(type, 3);
+		gsl_spline_init(phi_spline, knots_x, knots_y, 3);
+	}
 	print_phi_profile_temp(phi_spline, acc, tcp.tf, display_phi_profile);
 
 	Command command;
     Robot_State robot_state;
 
-    double distance_traveled = compute_path_via_simulation(robot_state, command, path, tcp, phi_spline, acc, i_phi);
+    double distance_traveled = compute_path_via_simulation(robot_state, command, path, tcp, phi_spline, acc, i_phi, car_latency_buffer);
 
 	gsl_spline_free(phi_spline);
 	gsl_interp_accel_free(acc);
@@ -916,7 +963,7 @@ compute_trajectory_dimensions(TrajectoryLookupTable::TrajectoryControlParameters
 {
 	double d_i_phi = get_i_phi_by_index(i_phi);
     TrajectoryLookupTable::TrajectoryDimensions td;
-    path = simulate_car_from_parameters(td, tcp, d_i_phi, print);
+    path = simulate_car_from_parameters(td, tcp, d_i_phi, g_car_latency_buffer, print);
     if (tcp.valid && print)
         print_path(path);
 
@@ -933,10 +980,24 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 //		tcp_seed.a0, tcp_seed.af, tcp_seed.t0, tcp_seed.tt, tcp_seed.vt, target_v,
 //		(int) tcp_seed.velocity_profile};
 
-	tcp.k1 = gsl_vector_get(x, 0);
-	tcp.k2 = gsl_vector_get(x, 1);
-	tcp.tf = gsl_vector_get(x, 2);
+	if (x->size == 4)
+	{
+		tcp.has_k3 = true;
 
+		tcp.k1 = gsl_vector_get(x, 0);
+		tcp.k2 = gsl_vector_get(x, 1);
+		tcp.k3 = gsl_vector_get(x, 2);
+		tcp.tf = gsl_vector_get(x, 3);
+	}
+	else
+	{
+		tcp.k1 = gsl_vector_get(x, 0);
+		tcp.k2 = gsl_vector_get(x, 1);
+		tcp.tf = gsl_vector_get(x, 2);
+
+		tcp.k3 = 0.0;
+		tcp.has_k3 = true;
+	}
 	tcp.v0 = params->target_td->v_i;
 	tcp.a0 = params->suitable_acceleration;
 	tcp.af = params->tcp_seed->af;
@@ -1164,7 +1225,7 @@ compute_interest_dist(vector<carmen_ackerman_path_point_t> &detailed_goal_list, 
 	double total_distance = 0.0;
 //	double middle_of_lane = lane_step_sf[(lane_step_sf.size()/2)];
 	double total_points = 0.0;
-	for (unsigned int i = 0; i < detailed_goal_list.size(); i += 5)
+	for (unsigned int i = 0; i < detailed_goal_list.size(); i += 3)
 	{
 		if (nearest_path_point.at(i) < path.size())
 		{
@@ -1225,7 +1286,7 @@ my_f(const gsl_vector *x, void *params)
 	if (tcp.tf < 0.2) // o tempo nao pode ser pequeno demais
 		tcp.tf = 0.2;
 
-	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->phi_i, false);
+	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->phi_i, g_car_latency_buffer, false);
 	//TCP_SEED nao eh modificado pelo CG?
 	my_params->tcp_seed->vf = tcp.vf;
 	my_params->tcp_seed->sf = tcp.sf;
@@ -1301,7 +1362,7 @@ my_g(const gsl_vector *x, void *params)
 	step_sf.clear();
 	step_sf.push_back(0.0);
 
-	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->phi_i, false);
+	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->phi_i, g_car_latency_buffer, false);
 
 	double total_interest_dist;
 	if (path.size() != my_params->path_size)
@@ -1328,10 +1389,11 @@ my_g(const gsl_vector *x, void *params)
 //	double result = (sqrt(((goal_dist*0.08) + (d_yaw*0.2))*1) + (total_interest_dist * 0.05));
 //	double result = (goal_dist*0.1) + (d_yaw*0.001) + (total_interest_dist*0.01);
 //	double result = (goal_dist * 0.5) + (total_interest_dist * 0.05) + (d_yaw);
-	double result = sqrt((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
-				(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 0.2) +
-				(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.02) +
-				(total_interest_dist * total_interest_dist) * 10.0);
+	double result = sqrt(
+				1.0 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
+				5.0 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
+				5.0 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
+				1.0 * (total_interest_dist * total_interest_dist));
 //	printf("Goal dist: %lf \t sem peso: %lf \n", (goal_dist*0.1),  (goal_dist));
 //	printf("total_interest: %lf \t sem peso %lf \n", (total_interest_dist * 0.1), (total_interest_dist));
 
@@ -1349,29 +1411,40 @@ my_dg(const gsl_vector *v, void *params, gsl_vector *df)
 	double h = 0.00001;//<<< 0.00001
 
 	gsl_vector *x_h;
-	x_h = gsl_vector_alloc(3);
+	x_h = gsl_vector_alloc(4);
 
 	gsl_vector_set(x_h, 0, gsl_vector_get(v, 0) + h);
 	gsl_vector_set(x_h, 1, gsl_vector_get(v, 1));
 	gsl_vector_set(x_h, 2, gsl_vector_get(v, 2));
+	gsl_vector_set(x_h, 3, gsl_vector_get(v, 3));
 	double g_x_h = my_g(x_h, params);
 	double d_g_x_h = (g_x_h - g_x) / h;
 
 	gsl_vector_set(x_h, 0, gsl_vector_get(v, 0));
 	gsl_vector_set(x_h, 1, gsl_vector_get(v, 1) + h);
 	gsl_vector_set(x_h, 2, gsl_vector_get(v, 2));
+	gsl_vector_set(x_h, 3, gsl_vector_get(v, 3));
 	double g_y_h = my_g(x_h, params);
 	double d_g_y_h = (g_y_h - g_x) / h;
 
 	gsl_vector_set(x_h, 0, gsl_vector_get(v, 0));
 	gsl_vector_set(x_h, 1, gsl_vector_get(v, 1));
 	gsl_vector_set(x_h, 2, gsl_vector_get(v, 2) + h);
+	gsl_vector_set(x_h, 3, gsl_vector_get(v, 3));
 	double g_z_h = my_g(x_h, params);
 	double d_g_z_h = (g_z_h - g_x) / h;
+
+	gsl_vector_set(x_h, 0, gsl_vector_get(v, 0));
+	gsl_vector_set(x_h, 1, gsl_vector_get(v, 1));
+	gsl_vector_set(x_h, 2, gsl_vector_get(v, 2));
+	gsl_vector_set(x_h, 3, gsl_vector_get(v, 3) + h);
+	double g_w_h = my_g(x_h, params);
+	double d_g_w_h = (g_w_h - g_x) / h;
 
 	gsl_vector_set(df, 0, d_g_x_h);
 	gsl_vector_set(df, 1, d_g_y_h);
 	gsl_vector_set(df, 2, d_g_z_h);
+	gsl_vector_set(df, 3, d_g_w_h);
 
 	gsl_vector_free(x_h);
 }
@@ -1544,7 +1617,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	}
 //	printf("Lane x: %lf y: %lf \n", params.detailed_goal_list.back().x, params.detailed_goal_list.back().y);
 
-	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(target_td, tcp_seed,target_td.phi_i, false);
+	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(target_td, tcp_seed,target_td.phi_i, g_car_latency_buffer, false);
 //	double total_distance = compute_reference_path(&params, path);
 
 	//TODO jah posso testar aqui se o path ja esta otimizado para a lane
@@ -1584,23 +1657,36 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	gsl_vector *x;
 	gsl_multimin_function_fdf my_func;
 
-	my_func.n = 3;
+	my_func.n = 4;
 	my_func.f = my_g;
 	my_func.df = my_dg;
 	my_func.fdf = my_gdf;
 	my_func.params = &params;
 
+	double knots_x[3] = {0.0, tcp_seed.tf / 2.0, tcp_seed.tf};
+	double knots_y[3] = {target_td.phi_i, tcp_seed.k1, tcp_seed.k2};
+	gsl_interp_accel *acc = gsl_interp_accel_alloc();
+	const gsl_interp_type *type = gsl_interp_cspline;
+	gsl_spline *phi_spline = gsl_spline_alloc(type, 3);
+	gsl_spline_init(phi_spline, knots_x, knots_y, 3);
+
+//	print_phi_profile_temp(phi_spline, acc, tcp.tf, display_phi_profile);
+
 	/* Starting point, x */
-	x = gsl_vector_alloc(3);
-	gsl_vector_set(x, 0, tcp_seed.k1);
-	gsl_vector_set(x, 1, tcp_seed.k2);
-	gsl_vector_set(x, 2, tcp_seed.tf);
+	x = gsl_vector_alloc(4);
+	gsl_vector_set(x, 0, gsl_spline_eval(phi_spline, tcp_seed.tf / 3.0, acc));
+	gsl_vector_set(x, 1, gsl_spline_eval(phi_spline, 2.0 * (tcp_seed.tf / 3.0), acc));
+	gsl_vector_set(x, 2, gsl_spline_eval(phi_spline, tcp_seed.tf, acc));
+	gsl_vector_set(x, 3, tcp_seed.tf);
+
+	gsl_spline_free(phi_spline);
+	gsl_interp_accel_free(acc);
 
 	T = gsl_multimin_fdfminimizer_conjugate_fr;
-	s = gsl_multimin_fdfminimizer_alloc(T, 3);
+	s = gsl_multimin_fdfminimizer_alloc(T, 4);
 
 	// int gsl_multimin_fdfminimizer_set (gsl_multimin_fdfminimizer * s, gsl_multimin_function_fdf * fdf, const gsl_vector * x, double step_size, double tol)
-	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.0001, 0.001);
+	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.01, 0.001);
 
 	size_t iter = 0;
 	int status;
@@ -1630,7 +1716,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 //		char path_name[20];
 //		sprintf(path_name, "path/%lu.txt", iter);
 //		FILE *path_file = fopen("gnu_tests/gnuplot_traj.txt", "w");
-//		print_lane(simulate_car_from_parameters(target_td, tcp_temp, target_td.phi_i, true),path_file);
+//		print_lane(simulate_car_from_parameters(target_td, tcp_temp, target_td.phi_i, g_car_latency_buffer, true), path_file);
 //		fclose(path_file);
 //		printf("Estou na: %lu iteracao, sf: %lf  \n", iter, s->f);
 //		getchar();
@@ -1748,7 +1834,7 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 
 //	if (tcp.valid)
 //	{
-//		print_path(simulate_car_from_parameters(target_td, tcp, target_td.phi_i));
+//		print_path(simulate_car_from_parameters(target_td, tcp, target_td.phi_i, g_car_latency_buffer, false));
 //		print_path(params.detailed_goal_list);
 //		FILE *gnuplot_pipe = popen("gnuplot -persist", "w");
 //		fprintf(gnuplot_pipe, "set xrange [-15:45]\nset yrange [-15:15]\n"
@@ -1813,7 +1899,7 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
     if (tcp.valid)
     {
 		TrajectoryLookupTable::TrajectoryDimensions td;
-		optimized_path = simulate_car_from_parameters(td, tcp, tdd.phi_i, false);
+		optimized_path = simulate_car_from_parameters(td, tcp, tdd.phi_i, g_car_latency_buffer, false);
 		tdd = get_discrete_dimensions(td);
     }
 
@@ -2035,7 +2121,7 @@ path_has_loop(double dist, double sf)
 void
 fill_in_trajectory_lookup_table_new_old()
 {
-//	#pragma omp parallel for
+	#pragma omp parallel for
     for (int dist = N_DIST - 1; dist >= 0; dist--)
     {
         printf("dist = %d\n\n", dist);
@@ -2103,7 +2189,7 @@ fill_in_trajectory_lookup_table_new_old()
 void
 fill_in_trajectory_lookup_table()
 {
-//	#pragma omp parallel for
+	#pragma omp parallel for
     for (int dist = N_DIST - 1; dist >= 0; dist--)
     {
         printf("dist = %d\n\n", dist);
@@ -2194,7 +2280,7 @@ TrajectoryLookupTable::update_lookup_table_entries()
 	while (num_new_entries != 0)
 	{
 		num_new_entries = 0;
-//		#pragma omp parallel for
+		#pragma omp parallel for
 		for (int i = 0; i < N_DIST; i++)
 		{
 			for (int j = 0; j < N_THETA; j++)
@@ -2255,7 +2341,6 @@ get_trajectory_dimensions_from_robot_state(Pose *localize_pose, Command last_odo
 
 	return (td);
 }
-
 
 
 bool
@@ -2381,6 +2466,41 @@ apply_system_delay(vector<carmen_ackerman_path_point_t> &path)
 
 
 void
+apply_system_latencies(vector<carmen_ackerman_path_point_t> &path)
+{
+	unsigned int i, j;
+
+    for (i = 0; i < path.size(); i++)
+    {
+    	j = i;
+    	for (double lat = 0.0; lat < 0.5; j++)
+    	{
+    		if (j >= path.size())
+    			break;
+    		lat += path[j].time;
+    	}
+        path[i].phi = path[j].phi;
+    }
+    while (i < path.size() - 1)
+    	path.pop_back();
+
+    for (i = 0; i < path.size(); i++)
+    {
+    	j = i;
+    	for (double lat = 0.0; lat < 1.0; j++)
+    	{
+    		if (j >= path.size())
+    			break;
+    		lat += path[j].time;
+    	}
+        path[i].v = path[j].v;
+    }
+    while (i < path.size() - 1)
+    	path.pop_back();
+}
+
+
+void
 write_tdd_to_file(FILE *problems, TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd, string label)
 {
 	fprintf(problems, "tdd: %s dist: %d, theta: %d, phi_i: %d, v_i: %d, d_yaw: %d\n", label.c_str(),
@@ -2435,6 +2555,48 @@ put_shorter_path_in_front(vector<vector<carmen_ackerman_path_point_t> > &path, i
 }
 
 
+void
+add_plan_segment_to_car_latency_buffer(vector<carmen_ackerman_path_point_t> path)
+{
+	double t = 0.0;
+
+	unsigned int j;
+	for (int i = j = 0; i < (int) (MAX_PLANNING_TIME / LATENCY_CICLE_TIME); i++)
+	{
+		g_car_latency_buffer.previous_v[i + V_LATENCY_BUFFER_SIZE] = path[j].v;
+		g_car_latency_buffer.previous_phi[i + PHI_LATENCY_BUFFER_SIZE] = path[j].phi;
+		if ((double) i * LATENCY_CICLE_TIME > t)
+		{
+			t += path[j].time;
+			j++;
+			if (j >= path.size())
+				break;
+		}
+	}
+}
+
+
+void
+add_odometry_to_car_latency_buffer(Command c)
+{
+	if (g_car_latency_buffer.timestamp != 0.0)
+	{
+		int last_delay = (GlobalState::localize_pose_timestamp - g_car_latency_buffer.timestamp) / LATENCY_CICLE_TIME;
+		for (int i = 0; i < V_LATENCY_BUFFER_TOTAL_SIZE - last_delay; i++)
+			g_car_latency_buffer.previous_v[i + last_delay] = g_car_latency_buffer.previous_v[i];
+		for (int i = 0; i < last_delay; i++)
+			g_car_latency_buffer.previous_v[i] = c.v;
+
+		for (int i = 0; i < PHI_LATENCY_BUFFER_TOTAL_SIZE - last_delay; i++)
+			g_car_latency_buffer.previous_phi[i + last_delay] = g_car_latency_buffer.previous_phi[i];
+		for (int i = 0; i < last_delay; i++)
+			g_car_latency_buffer.previous_phi[i] = c.phi;
+	}
+
+	g_car_latency_buffer.timestamp = GlobalState::localize_pose_timestamp;
+}
+
+
 //todo
 void
 compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseVector, double target_v,
@@ -2463,6 +2625,10 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	{
 		for (unsigned int j = 0; j < goalPoseVector.size(); j++)
 		{
+//			add_odometry_to_car_latency_buffer(lastOdometryVector[i]);
+//			Command c;
+//			c.v = g_car_latency_buffer.previous_v[V_LATENCY_BUFFER_SIZE - 1];
+//			c.phi = g_car_latency_buffer.previous_phi[PHI_LATENCY_BUFFER_SIZE - 1];
 			TrajectoryLookupTable::TrajectoryDimensions td = get_trajectory_dimensions_from_robot_state(localize_pose, lastOdometryVector[i], &goalPoseVector[j]);
 			TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd = get_discrete_dimensions(td);
 			if (!has_valid_discretization(tdd))
@@ -2486,7 +2652,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 
 			if (otcp.valid)
 			{
-				path.push_back(simulate_car_from_parameters(td, otcp, td.phi_i, false));
+				path.push_back(simulate_car_from_parameters(td, otcp, td.phi_i, g_car_latency_buffer, false));
 				if (path_has_loop(td.dist, otcp.sf))
 				{
 					path.pop_back();
@@ -2496,7 +2662,8 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 				}
 
 				move_path_to_current_robot_pose(path.back(), localize_pose);
-				apply_system_delay(path.back());
+//				apply_system_delay(path.back());
+				apply_system_latencies(path.back());
 
 //				remove_path_with_collision(path);
 
@@ -2532,6 +2699,8 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	}
 	if (shorter_path > 0)
 		put_shorter_path_in_front(path, shorter_path);
+
+//		add_plan_segment_to_car_latency_buffer(path[0]);
 
 	fclose(problems);
 }
