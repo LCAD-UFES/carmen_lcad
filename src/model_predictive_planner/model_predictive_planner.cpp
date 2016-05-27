@@ -525,6 +525,11 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 		carmen_cpy_compact_cost_message_to_compact_map(compact_cost_map, message);
 		carmen_prob_models_uncompress_compact_map(&GlobalState::cost_map, compact_cost_map);
 	}
+//	int size = 0;
+//	for (int i = 0; i < message->size; i++)
+//		if (message->value[i] > 0.5)
+//			size++;
+//	printf("map size = %d\n", size);
 
 	GlobalState::cost_map.config = message->config;
 
