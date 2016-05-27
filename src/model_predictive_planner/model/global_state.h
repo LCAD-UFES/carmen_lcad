@@ -16,6 +16,13 @@
 #include <carmen/carmen.h>
 #include <carmen/behavior_selector_messages.h>
 #include <list>
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/point.hpp>
+#include <boost/geometry/index/rtree.hpp>
+
+namespace bg = boost::geometry;
+namespace bgi = boost::geometry::index;
+typedef bg::model::point<double, 2, bg::cs::cartesian> occupied_cell;
 
 using namespace std;
 
@@ -31,9 +38,9 @@ public:
 
 	static double time_to_change_gears;
 
-	static Pose *localize_pose;
+	static Pose *localizer_pose;
 	static Pose *last_plan_pose;
-	static double localize_pose_timestamp;
+	static double localizer_pose_timestamp;
 	static double rrt_planner_timestamp;
 	static double last_rrt_path_message_timestamp;
 
@@ -50,17 +57,10 @@ public:
 	static vector<Pose> lane_points_on_map;
 	static carmen_map_t lane_map;
 	static carmen_map_t cost_map;
-	static Gradient_Cost_Map utility_map;
+	static bgi::rtree< occupied_cell, bgi::quadratic<16> > obstacles_rtree;
 	static bool cost_map_initialized;
-	static bool gradient_cost_map_old;
 
 	static bool	  following_path; // true if the path is being followed
-
-	static double distance_interval; // max distance between waypoints
-	static double param_distance_interval; // max distance between waypoints
-
-	static double timeout; // timeout in seconds
-	static double plan_time; // time in seconds that the planner will respond if a path was found
 
 	static int	  cheat; // if true the algorithm will use the true pose, otherwise will use the localize pose
 
@@ -70,8 +70,6 @@ public:
 	static int behavior_selector_state;
 
 	static bool use_obstacle_avoider;
-
-	static char *rddf_path;
 
 	static int publish_tree;
 	static int show_debug_info;

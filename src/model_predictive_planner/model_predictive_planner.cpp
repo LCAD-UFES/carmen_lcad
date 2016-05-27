@@ -192,7 +192,7 @@ publish_navigator_ackerman_plan_message(carmen_ackerman_traj_point_t *path, int 
 void
 publish_navigator_ackerman_status_message()
 {
-	if (!GlobalState::localize_pose)
+	if (!GlobalState::localizer_pose)
 	{
 		return;
 	}
@@ -228,9 +228,9 @@ publish_navigator_ackerman_status_message()
 	}
 
 	msg.host		= carmen_get_host();
-	msg.robot.x		= GlobalState::localize_pose->x;
-	msg.robot.y		= GlobalState::localize_pose->y;
-	msg.robot.theta = GlobalState::localize_pose->theta;
+	msg.robot.x		= GlobalState::localizer_pose->x;
+	msg.robot.y		= GlobalState::localizer_pose->y;
+	msg.robot.theta = GlobalState::localizer_pose->theta;
 	msg.robot.v		= GlobalState::last_odometry.v;
 	msg.robot.phi	= GlobalState::last_odometry.phi;
 	msg.timestamp	= carmen_get_time();
@@ -292,7 +292,7 @@ compute_plan(Tree *tree)
 	}
 
 	free_tree(tree);
-	vector<vector<carmen_ackerman_path_point_t>> path = TrajectoryLookupTable::compute_path_to_goal(GlobalState::localize_pose,
+	vector<vector<carmen_ackerman_path_point_t>> path = TrajectoryLookupTable::compute_path_to_goal(GlobalState::localizer_pose,
 			GlobalState::goal_pose, GlobalState::last_odometry, GlobalState::robot_config.max_vel, &goal_list_message);
 
 	if (path.size() == 0)
@@ -316,7 +316,7 @@ compute_plan(Tree *tree)
 
 	if (!GlobalState::last_plan_pose)
 		GlobalState::last_plan_pose = new Pose();
-	*GlobalState::last_plan_pose = *GlobalState::localize_pose;
+	*GlobalState::last_plan_pose = *GlobalState::localizer_pose;
 
 	return (path[0]);
 }
@@ -337,18 +337,18 @@ stop()
 
 
 void
-build_and_follow_path()
+compute_obstacles_rtree(carmen_map_server_compact_cost_map_message *map)
 {
-	if (GlobalState::goal_pose && (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT))
+	GlobalState::obstacles_rtree.clear();
+	for (int i = 0; i < map->size; i += 4)
 	{
-		vector<carmen_ackerman_path_point_t> path = compute_plan(&tree);
-		if (tree.num_paths > 0 && path.size() > 0)
+		if (map->value[i] > 0.5)
 		{
-			publish_model_predictive_planner_motion_commands(path);
-			publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
+			occupied_cell map_cell = occupied_cell(
+					(double) map->coord_x[i] * GlobalState::cost_map.config.resolution,
+					(double) map->coord_y[i] * GlobalState::cost_map.config.resolution);
+			GlobalState::obstacles_rtree.insert(map_cell);
 		}
-		publish_status_message(tree);
-		publish_navigator_ackerman_status_message();
 	}
 }
 
@@ -387,7 +387,7 @@ build_path_follower_path(vector<carmen_ackerman_path_point_t> path)
 }
 
 
-static void
+void
 build_and_follow_path_new()
 {
 	list<RRT_Path_Edge> path_follower_path;
@@ -399,6 +399,23 @@ build_and_follow_path_new()
 		{
 			path_follower_path = build_path_follower_path(path);
 			publish_model_predictive_rrt_path_message(path_follower_path);
+			publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
+		}
+		publish_status_message(tree);
+		publish_navigator_ackerman_status_message();
+	}
+}
+
+
+void
+build_and_follow_path()
+{
+	if (GlobalState::goal_pose && (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT))
+	{
+		vector<carmen_ackerman_path_point_t> path = compute_plan(&tree);
+		if (tree.num_paths > 0 && path.size() > 0)
+		{
+			publish_model_predictive_planner_motion_commands(path);
 			publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
 		}
 		publish_status_message(tree);
@@ -471,7 +488,7 @@ behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_
 {
 	Pose goal_pose;
 
-	if ((msg->size <= 0) || !msg->goal_list || !GlobalState::localize_pose)
+	if ((msg->size <= 0) || !msg->goal_list || !GlobalState::localizer_pose)
 	{
 		printf("Empty goal list or localize not received\n");
 		return;
@@ -484,7 +501,7 @@ behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_
 	goal_pose.theta = carmen_normalize_theta(msg->goal_list->theta);
 
 	// Map annotations handling
-	double distance_to_annotation = DIST2D(last_rddf_annotation_message.annotation_point, *GlobalState::localize_pose);
+	double distance_to_annotation = DIST2D(last_rddf_annotation_message.annotation_point, *GlobalState::localizer_pose);
 	if (((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
 		 (last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)) &&
 		(distance_to_annotation < 30.0))
@@ -525,11 +542,8 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 		carmen_cpy_compact_cost_message_to_compact_map(compact_cost_map, message);
 		carmen_prob_models_uncompress_compact_map(&GlobalState::cost_map, compact_cost_map);
 	}
-//	int size = 0;
-//	for (int i = 0; i < message->size; i++)
-//		if (message->value[i] > 0.5)
-//			size++;
-//	printf("map size = %d\n", size);
+
+	compute_obstacles_rtree(message);
 
 	GlobalState::cost_map.config = message->config;
 
@@ -675,10 +689,6 @@ read_parameters_specific(int argc, char **argv)
 	carmen_param_t optional_param_list[] = {
 			{(char *)"rrt",	(char *)"use_obstacle_avoider", 	CARMEN_PARAM_ONOFF,		&GlobalState::use_obstacle_avoider, 	1, NULL},
 
-			{(char *)"rrt",	(char *)"rddf",						CARMEN_PARAM_STRING,	&GlobalState::rddf_path,				1, NULL},
-			{(char *)"rrt",	(char *)"timeout",					CARMEN_PARAM_DOUBLE,	&GlobalState::timeout,					1, NULL},
-			{(char *)"rrt",	(char *)"plan_time",				CARMEN_PARAM_DOUBLE,	&GlobalState::plan_time,				1, NULL},
-			{(char *)"rrt",	(char *)"distance_interval",		CARMEN_PARAM_DOUBLE,	&GlobalState::distance_interval,		1, NULL},
 			{(char *)"rrt",	(char *)"publish_lane_map",			CARMEN_PARAM_ONOFF,		&GlobalState::publish_lane_map,			1, NULL},
 			{(char *)"rrt",	(char *)"publish_tree",				CARMEN_PARAM_ONOFF,		&GlobalState::publish_tree,				1, NULL},
 			{(char *)"rrt",	(char *)"reuse_last_path",			CARMEN_PARAM_ONOFF,		&GlobalState::reuse_last_path,			1, NULL},
@@ -719,10 +729,6 @@ read_parameters(int argc, char **argv)
 
 	//initialize default parameters values
 	GlobalState::cheat = 0;
-
-	GlobalState::timeout = 0.8;
-	GlobalState::distance_interval = 1.5;
-	GlobalState::plan_time = 0.08;
 
 	carmen_param_t optional_param_list[] = {
 			{(char *)"rrt",	(char *)"cheat",				CARMEN_PARAM_ONOFF,		&GlobalState::cheat,				1, NULL},

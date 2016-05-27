@@ -9,9 +9,9 @@
 #include "util.h"
 #include "trajectory_lookup_table.h"
 
-Pose *GlobalState::localize_pose = 0;
+Pose *GlobalState::localizer_pose = 0;
 Pose *GlobalState::last_plan_pose = 0;
-double GlobalState::localize_pose_timestamp = 0;
+double GlobalState::localizer_pose_timestamp = 0;
 double GlobalState::rrt_planner_timestamp = 0;
 double GlobalState::last_rrt_path_message_timestamp = 0;
 
@@ -35,26 +35,18 @@ double GlobalState::max_phi_acceleration = 0.48 / (0.2 * 0.2); // Alcanca a velo
 double GlobalState::time_to_change_gears = 1.0;
 
 carmen_map_t GlobalState::cost_map;
-Gradient_Cost_Map GlobalState::utility_map;
+bgi::rtree< occupied_cell, bgi::quadratic<16> > GlobalState::obstacles_rtree;
+
 carmen_map_t GlobalState::lane_map = {{0, 0, 0, "", NULL, 0, 0}, NULL, NULL};
-char *GlobalState::rddf_path = (char *)"../data/rndf/rddf-log_voltadaufes-20121003-01-novo-from-log.kml";
 vector<carmen_point_t> GlobalState::lane_points;
 vector<Pose> GlobalState::lane_points_on_map;
 
 bool GlobalState::cost_map_initialized 	= false;
 
-bool GlobalState::gradient_cost_map_old = false;
-
 bool GlobalState::use_obstacle_avoider = true;
 
 int    GlobalState::cheat 				= 0;
 bool   GlobalState::following_path		= false;
-
-double GlobalState::distance_interval	= 3.5;
-double GlobalState::param_distance_interval	= 3.5;
-
-double GlobalState::plan_time 			= 0.5;
-double GlobalState::timeout				= 5.0;
 
 double GlobalState::obstacle_threshold	= 0.5;
 
@@ -81,13 +73,13 @@ void GlobalState::set_goal_pose(Pose goal_pose)
 
 void GlobalState::set_robot_pose(Pose robot_pose, double timestamp)
 {
-	if (!GlobalState::localize_pose)
+	if (!GlobalState::localizer_pose)
 	{
-		GlobalState::localize_pose = new Pose();
+		GlobalState::localizer_pose = new Pose();
 	}
 
-	*GlobalState::localize_pose = robot_pose;
-	localize_pose_timestamp = timestamp;
+	*GlobalState::localizer_pose = robot_pose;
+	localizer_pose_timestamp = timestamp;
 }
 
 
@@ -96,15 +88,15 @@ GlobalState::estimate_initial_robot_state()
 {
 	GlobalState::rrt_planner_timestamp = carmen_get_time();
 	// Para testar tocando log
-	// time_elapsed_since_last_localize_pose = 0.1;
-	double time_elapsed_since_last_localize_pose = GlobalState::rrt_planner_timestamp - GlobalState::localize_pose_timestamp;
+	// time_elapsed_since_last_localizer_pose = 0.1;
+	double time_elapsed_since_last_localizer_pose = GlobalState::rrt_planner_timestamp - GlobalState::localizer_pose_timestamp;
 
 	Robot_State initial_robot_pose;
-	initial_robot_pose.pose = *GlobalState::localize_pose;
+	initial_robot_pose.pose = *GlobalState::localizer_pose;
 	initial_robot_pose.v_and_phi = GlobalState::last_odometry;
 
 	initial_robot_pose = TrajectoryLookupTable::predict_next_pose(initial_robot_pose,
-			initial_robot_pose.v_and_phi, time_elapsed_since_last_localize_pose, NULL, 0.01);
+			initial_robot_pose.v_and_phi, time_elapsed_since_last_localizer_pose, NULL, 0.01);
 
 	return initial_robot_pose;
 }
