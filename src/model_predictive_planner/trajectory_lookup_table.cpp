@@ -1275,7 +1275,7 @@ compute_average_distance_to_obstacles(vector<carmen_ackerman_path_point_t> path)
 	double average_distance_to_obstacles = 0.0;
 	double min_dist = 2.1 / 2.0; // metade da largura do carro
     int k = 1;
-    for (unsigned int i = 0; i < path.size(); i += 3)
+    for (unsigned int i = 0; i < path.size(); i += 4)
     {
     	// Move path point to map coordinates
     	carmen_ackerman_path_point_t path_point_in_map_coords;
