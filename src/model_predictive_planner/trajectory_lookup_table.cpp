@@ -746,7 +746,7 @@ compute_path_via_simulation(Robot_State &robot_state, Command &command,
     double t, last_t;
     double distance_traveled = 0.0;
     double delta_t = 0.15;
-    int reduction_factor = 1;// + (int)((tcp.tf / delta_t) / 90.0);
+    int reduction_factor = 1 + (int)((tcp.tf / delta_t) / 90.0);
 
     robot_state.pose.x = 0.0;
     robot_state.pose.y = 0.0;
@@ -892,7 +892,8 @@ simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 	gsl_spline *phi_spline;
 	if (tcp.has_k3)
 	{
-		double knots_x[4] = {0.0, tcp.tf / 3.0, 2.0 * (tcp.tf / 3.0), tcp.tf};
+		//double knots_x[4] = {0.0, tcp.tf / 3.0, 2.0 * (tcp.tf / 3.0), tcp.tf};
+		double knots_x[4] = {0.0, tcp.tf / 4.0, tcp.tf / 2.0, tcp.tf};
 		double knots_y[4] = {i_phi, tcp.k1, tcp.k2, tcp.k3};
 		acc = gsl_interp_accel_alloc();
 		const gsl_interp_type *type = gsl_interp_cspline;
@@ -1270,12 +1271,12 @@ compute_reference_path(ObjectiveFunctionParams *param, vector<carmen_ackerman_pa
 
 
 double
-compute_average_distance_to_obstacles(vector<carmen_ackerman_path_point_t> path)
+compute_proximity_to_obstacles(vector<carmen_ackerman_path_point_t> path)
 {
-	double average_distance_to_obstacles = 0.0;
+	double proximity_to_obstacles = 0.0;
 	double min_dist = 2.1 / 2.0; // metade da largura do carro
     int k = 1;
-    for (unsigned int i = 0; i < path.size(); i += 4)
+    for (unsigned int i = 0; i < path.size(); i += 2)
     {
     	// Move path point to map coordinates
     	carmen_ackerman_path_point_t path_point_in_map_coords;
@@ -1297,9 +1298,9 @@ compute_average_distance_to_obstacles(vector<carmen_ackerman_path_point_t> path)
 	    double distance = dist(path_point_in_map_coords, nearest_obstacle);
 	    double delta = distance - min_dist;
 	    if (delta < 0.0)
-	    	average_distance_to_obstacles += delta * delta;
+	    	proximity_to_obstacles += delta * delta;
     }
-    return (average_distance_to_obstacles);
+    return (proximity_to_obstacles);
 }
 
 
@@ -1398,7 +1399,9 @@ my_g(const gsl_vector *x, void *params)
 	else
 		total_interest_dist = compute_interest_dist(my_params->detailed_goal_list, path, my_params->nearest_path_point);
 
-	double average_distance_to_obstacles = compute_average_distance_to_obstacles(path);
+	double proximity_to_obstacles = 0.0;
+	if (!GlobalState::obstacles_rtree.empty())
+		proximity_to_obstacles = compute_proximity_to_obstacles(path);
 
 	my_params->tcp_seed->vf = tcp.vf;
 	my_params->tcp_seed->sf = tcp.sf;
@@ -1424,7 +1427,7 @@ my_g(const gsl_vector *x, void *params)
 				5.0 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
 				5.0 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
 				1.0 * (total_interest_dist * total_interest_dist) +
-				0.2 * average_distance_to_obstacles); // já é quandrática
+				0.2 * proximity_to_obstacles); // já é quandrática
 //	printf("Goal dist: %lf \t sem peso: %lf \n", (goal_dist*0.1),  (goal_dist));
 //	printf("total_interest: %lf \t sem peso %lf \n", (total_interest_dist * 0.1), (total_interest_dist));
 
@@ -1705,8 +1708,10 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 
 	/* Starting point, x */
 	x = gsl_vector_alloc(4);
-	gsl_vector_set(x, 0, gsl_spline_eval(phi_spline, tcp_seed.tf / 3.0, acc));
-	gsl_vector_set(x, 1, gsl_spline_eval(phi_spline, 2.0 * (tcp_seed.tf / 3.0), acc));
+//	gsl_vector_set(x, 0, gsl_spline_eval(phi_spline, tcp_seed.tf / 3.0, acc));
+//	gsl_vector_set(x, 1, gsl_spline_eval(phi_spline, 2.0 * (tcp_seed.tf / 3.0), acc));
+	gsl_vector_set(x, 0, gsl_spline_eval(phi_spline, tcp_seed.tf / 4.0, acc));
+	gsl_vector_set(x, 1, gsl_spline_eval(phi_spline, tcp_seed.tf / 2.0, acc));
 	gsl_vector_set(x, 2, gsl_spline_eval(phi_spline, tcp_seed.tf, acc));
 	gsl_vector_set(x, 3, tcp_seed.tf);
 
@@ -2497,6 +2502,28 @@ apply_system_delay(vector<carmen_ackerman_path_point_t> &path)
 
 
 void
+filter_path(vector<carmen_ackerman_path_point_t> &path)
+{
+    unsigned int i;
+
+    if (path.size() < 1)
+        return;
+
+    for (i = 0; i < path.size(); i += 2)
+    	if ((i + 1) < path.size())
+    		path[i].time += path[i + 1].time;
+    for (i = 1; i < path.size(); i += 2)
+        path.erase(path.begin() + i);
+
+    for (i = 0; i < path.size(); i += 2)
+    	if ((i + 1) < path.size())
+    		path[i].time += path[i + 1].time;
+    for (i = 1; i < path.size(); i += 2)
+        path.erase(path.begin() + i);
+}
+
+
+void
 apply_system_latencies(vector<carmen_ackerman_path_point_t> &path)
 {
 	unsigned int i, j;
@@ -2693,8 +2720,9 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 				}
 
 				move_path_to_current_robot_pose(path.back(), localizer_pose);
+				filter_path(path.back());
 //				apply_system_delay(path.back());
-				apply_system_latencies(path.back());
+//				apply_system_latencies(path.back());
 
 //				remove_path_with_collision(path);
 

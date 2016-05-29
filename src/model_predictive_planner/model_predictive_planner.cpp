@@ -42,7 +42,6 @@ static int update_lookup_table = 0;
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-
 void
 publish_model_predictive_rrt_path_message(list<RRT_Path_Edge> path)
 {
@@ -321,6 +320,7 @@ compute_plan(Tree *tree)
 	return (path[0]);
 }
 
+
 void
 go()
 {
@@ -339,16 +339,44 @@ stop()
 void
 compute_obstacles_rtree(carmen_map_server_compact_cost_map_message *map)
 {
-	GlobalState::obstacles_rtree.clear();
-	for (int i = 0; i < map->size; i += 4)
+#define DIST_SQR(x1,y1,x2,y2) ((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2))
+	static double p_x_o = 0.0;
+	static double p_y_o = 0.0;
+
+	if (GlobalState::localizer_pose && GlobalState::goal_pose &&
+		p_x_o != GlobalState::cost_map.config.x_origin &&
+		p_y_o != GlobalState::cost_map.config.y_origin)
 	{
-		if (map->value[i] > 0.5)
+		GlobalState::obstacles_rtree.clear();
+
+		int px = (GlobalState::localizer_pose->x - GlobalState::cost_map.config.x_origin) / GlobalState::cost_map.config.resolution;
+		int py = (GlobalState::localizer_pose->y - GlobalState::cost_map.config.y_origin) / GlobalState::cost_map.config.resolution;
+		int gx = (GlobalState::goal_pose->x - GlobalState::cost_map.config.x_origin) / GlobalState::cost_map.config.resolution;
+		int gy = (GlobalState::goal_pose->y - GlobalState::cost_map.config.y_origin) / GlobalState::cost_map.config.resolution;
+		int margin = 3.0 / GlobalState::cost_map.config.resolution;
+		int sqr_d = DIST_SQR(px,py,gx,gy) + margin * margin;
+		int count = 0;
+		int total = 0;
+		for (int i = 0; i < map->size; i += 1)
 		{
-			occupied_cell map_cell = occupied_cell(
-					(double) map->coord_x[i] * GlobalState::cost_map.config.resolution,
-					(double) map->coord_y[i] * GlobalState::cost_map.config.resolution);
-			GlobalState::obstacles_rtree.insert(map_cell);
+			if (map->value[i] > 0.5)
+			{
+				if ((DIST_SQR(px,py,map->coord_x[i],map->coord_y[i]) < sqr_d) &&
+					(DIST_SQR(gx,gy,map->coord_x[i],map->coord_y[i]) < sqr_d))
+				{
+					occupied_cell map_cell = occupied_cell(
+							(double) map->coord_x[i] * GlobalState::cost_map.config.resolution,
+							(double) map->coord_y[i] * GlobalState::cost_map.config.resolution);
+					GlobalState::obstacles_rtree.insert(map_cell);
+					count++;
+				}
+				total++;
+			}
 		}
+		p_x_o = GlobalState::cost_map.config.x_origin;
+		p_y_o = GlobalState::cost_map.config.y_origin;
+		printf("fraction = %lf\n", (double) count / (double) total);
+		fflush(stdout);
 	}
 }
 
@@ -388,7 +416,7 @@ build_path_follower_path(vector<carmen_ackerman_path_point_t> path)
 
 
 void
-build_and_follow_path_new()
+build_and_follow_path()
 {
 	list<RRT_Path_Edge> path_follower_path;
 
@@ -408,7 +436,7 @@ build_and_follow_path_new()
 
 
 void
-build_and_follow_path()
+build_and_follow_path_old()
 {
 	if (GlobalState::goal_pose && (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT))
 	{
@@ -418,6 +446,9 @@ build_and_follow_path()
 			publish_model_predictive_planner_motion_commands(path);
 			publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
 		}
+		else
+			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi);
+
 		publish_status_message(tree);
 		publish_navigator_ackerman_status_message();
 	}
@@ -446,7 +477,7 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 static void
 simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_message *msg)
 {
-	printf("tempo da localizacao: %lf\n", msg->timestamp);
+//	printf("tempo da localizacao: %lf\n", msg->timestamp);
 
 	Pose pose = Util::convert_to_pose(msg->truepose);
 	GlobalState::set_robot_pose(pose, msg->timestamp);
