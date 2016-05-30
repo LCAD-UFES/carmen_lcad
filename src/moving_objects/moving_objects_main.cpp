@@ -307,9 +307,9 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 		num_point_clouds = list_point_clouds.size();
 
 		/*** PRINT FRAME ID, TIMESTAMP AND NUMBER OF POINT CLOUDS SEGMENTED IN THE SCENE ***/
-		printf("%d ", frame);
-		printf("%.10f\n", velodyne_message->timestamp);
-		printf("clouds: %d\n\n", num_point_clouds);
+//		printf("%d ", frame);
+//		printf("%.10f\n", velodyne_message->timestamp);
+//		printf("clouds: %d\n\n", num_point_clouds);
 		frame++;
 
 		if (num_point_clouds == 0)

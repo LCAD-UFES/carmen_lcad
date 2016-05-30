@@ -619,8 +619,8 @@ get_current_list_point_clouds(pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_point_clou
 //		pcl::compute3DCentroid(*aux_pcl_cloud, centroid2);
 		pcl::getMinMax3D(*aux_pcl_cloud, min_point, max_point);
 
-		double d_x = max_point[0] - min_point[0];
-		double d_y = max_point[1] - min_point[1];
+//		double d_x = max_point[0] - min_point[0];
+//		double d_y = max_point[1] - min_point[1];
 		double d_z = max_point[2] - min_point[2];
 		//centroid[0] = 0.5f * (max_point[0] + min_point[0]);
 		//centroid[1] = 0.5f * (max_point[1] + min_point[1]);
@@ -690,7 +690,7 @@ get_current_list_point_clouds2(pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_point_clo
 	object_point_cloud_data_t aux_objects_data;
 	Eigen::Vector4f min_point;
 	Eigen::Vector4f max_point;
-	object_geometry_t point_cloud_geometry;
+//	object_geometry_t point_cloud_geometry;
 
 	for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin(); it != cluster_indices.end(); ++it)
 	{
@@ -926,7 +926,7 @@ associate_point_clouds_by_centroids_distance(std::list<object_point_cloud_data_t
 	/* verify who's idle... */
 	for (std::list<object_point_cloud_data_t>::iterator it = list_point_clouds.begin(); it != list_point_clouds.end(); it++)
 	{
-		if (it->label_associate == 0 || it->linear_velocity < threshold_min_velocity)
+		if (it->label_associate == 0 /*|| it->linear_velocity < threshold_min_velocity*/)
 		{
 			it->count_idle++;
 		}
@@ -1412,31 +1412,33 @@ is_moving_object(object_point_cloud_data_t obj_point_cloud)
 		return false;
 	}
 
+	// FIXME Alguns carros não são trackeados (baixa densidade)
 	// PointCloud density
-	double density = get_object_density_by_area(obj_point_cloud);
-	if (density < 10.0)
-	{
-		return false;
-	}
+//	double density = get_object_density_by_area(obj_point_cloud);
+//	if (density < 10.0)
+//	{
+//		return false;
+//	}
 
 	// Object's minimum bounding box diagonal measurement
 	double diagonal_measurement = get_object_3d_diagonal_measurement(obj_point_cloud);
-	if (diagonal_measurement < 1.0 || diagonal_measurement > 18.0)
+	if (diagonal_measurement < 1.0 || diagonal_measurement > 13.5)
 	{
 		return false;
 	}
 
-	// Count points below 0.9m
-	int count_down_points = 0;
-	for (pcl::PointCloud<pcl::PointXYZ>::const_iterator pit = obj_point_cloud.point_cloud.begin();
-			pit != obj_point_cloud.point_cloud.end(); pit++)
-		if (pit->z < 0.90)
-			count_down_points += 1;
-
-	if (count_down_points < 35)
-	{
-		return false;
-	}
+	// FIXME Objetos não são trackeados caso isso esteja habilitado.
+	// Count points below 0.9m remove árvores baixas
+//	int count_down_points = 0;
+//	for (pcl::PointCloud<pcl::PointXYZ>::const_iterator pit = obj_point_cloud.point_cloud.begin();
+//			pit != obj_point_cloud.point_cloud.end(); pit++)
+//		if (pit->z < 0.90)
+//			count_down_points += 1;
+//
+//	if (count_down_points < 35)
+//	{
+//		return false;
+//	}
 
 	return true;
 }
@@ -1470,7 +1472,7 @@ particle_filter_moving_objects_tracking(std::list<object_point_cloud_data_t> &li
 
 			/* KNOWN ISSUE: Car global position included due to lost of precision problem with PCL point types */
 			particle_set_t = algorithm_monte_carlo(particle_set_t_1, x, y, delta_time, it->point_cloud,
-					it->geometry, it->car_global_pose.position);
+				it->geometry, it->car_global_pose.position, it->num_color_associate);
 
 			particle_reference = compute_average_state_and_update_timestamp(particle_set_t, it->timestamp);
 
@@ -1572,7 +1574,8 @@ detect_points_above_ground_in_vertical_beam(int i, const moving_objects_input_da
 
 	for (int k = 0; k < velodyne_params->vertical_resolution; k++)
 	{
-		if (velodyne_data->obstacle_height[k] >= 0.5 && velodyne_data->obstacle_height[k] <= MAXIMUM_HEIGHT_OF_OBSTACLE)
+		if (velodyne_data->obstacle_height[k] >= 0.5 && velodyne_data->obstacle_height[k] <= MAXIMUM_HEIGHT_OF_OBSTACLE
+				&& !velodyne_data->ray_hit_the_robot[k])
 		{
 			point_clouds[last_num_points].x = velodyne_data->ray_position_in_the_floor[k].x;
 			point_clouds[last_num_points].y = velodyne_data->ray_position_in_the_floor[k].y;
@@ -1580,8 +1583,9 @@ detect_points_above_ground_in_vertical_beam(int i, const moving_objects_input_da
 			last_num_points++;
 		}
 		else if (velodyne_data->occupancy_log_odds_of_each_ray_target[k] > velodyne_params->log_odds.log_odds_l0
-//						&& velodyne_data->obstacle_height[k] <= MAXIMUM_HEIGHT_OF_OBSTACLE)
-				&& (velodyne_data->obstacle_height[k] >= 0.3 && velodyne_data->obstacle_height[k] <= MAXIMUM_HEIGHT_OF_OBSTACLE))
+				//&& velodyne_data->obstacle_height[k] <= MAXIMUM_HEIGHT_OF_OBSTACLE
+				&& (velodyne_data->obstacle_height[k] >= 0.3 && velodyne_data->obstacle_height[k] <= MAXIMUM_HEIGHT_OF_OBSTACLE)
+				&& !velodyne_data->ray_hit_the_robot[k])
 		{
 			point_clouds[last_num_points].x = velodyne_data->ray_position_in_the_floor[k].x;
 			point_clouds[last_num_points].y = velodyne_data->ray_position_in_the_floor[k].y;
@@ -1600,18 +1604,19 @@ detect_points_above_ground(sensor_parameters_t *velodyne_params, sensor_data_t *
 		double x_origin, double y_origin, int point_cloud_index, double phi, moving_objects_input_data_t moving_objects_input,
 		carmen_vector_3D_t *point_clouds)
 {
-	int i, j;
+	int i;
 	spherical_point_cloud v_zt = velodyne_data->points[point_cloud_index];
-	double dt = 0.0;
-	carmen_pose_3D_t robot_interpolated_position;
 
 	// Ray-trace the grid
 	int last_num_points = 0;
+	int N = v_zt.num_points / velodyne_params->vertical_resolution;
+	double dt = 0.0494 / (double)N;
+	carmen_pose_3D_t robot_interpolated_position = *robot_pose;
 
-	for (i = 0, j = 0; i < v_zt.num_points; i = i + velodyne_params->vertical_resolution, j++)
+
+	for (i = 0; i < v_zt.num_points; i = i + velodyne_params->vertical_resolution)
 	{
-		dt = j * velodyne_params->time_spent_by_each_scan;
-		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(*robot_pose, dt, robot_velocity->x,
+		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(robot_interpolated_position, dt, robot_velocity->x,
 				phi, moving_objects_input.car_config.distance_between_front_and_rear_axles);
 
 		r_matrix_car_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
