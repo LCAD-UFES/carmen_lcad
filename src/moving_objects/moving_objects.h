@@ -34,7 +34,7 @@ const int num_of_particles = 400;
 const double threshold_association_dist = 2.5; //maximum distance between point clouds centroid used for association
 const double threshold_max_dist_from_car = 25.0;
 const double threshold_min_dist_from_car = 1.3;
-const double threshold_min_velocity = 3.0;
+const double threshold_min_velocity = 0.5;
 const int threshold_idle_count = 4; //threshold for eliminating idle objects in association list
 
 /* Thresholds for static objects analysis */

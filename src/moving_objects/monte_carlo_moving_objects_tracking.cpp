@@ -6,7 +6,7 @@
 
 
 particle_datmo_t
-sample_motion_model(double delta_time, particle_datmo_t particle_t_1)
+sample_motion_model(double delta_time, particle_datmo_t particle_t_1, double mean)
 {
 	particle_datmo_t particle_t;
 	carmen_point_t pose_t, pose_t_1;
@@ -17,7 +17,8 @@ sample_motion_model(double delta_time, particle_datmo_t particle_t_1)
 	pose_t_1.theta = particle_t_1.pose.theta;
 	v              = particle_t_1.velocity;
 
-	v = v + carmen_gaussian_random(0.0, alpha_1);
+//	v = v + carmen_gaussian_random(0.0, alpha_1);
+	v = v + carmen_gaussian_random(0.0, mean*0.1);
 	if (v > v_max) v = v_max;
 	if (v < v_min) v = v_min;
 
@@ -121,16 +122,18 @@ dist_btw_point_and_box(carmen_position_t pt, double width_normalizer, double len
 	double y = pt.y*width_normalizer;
 	double dist;
 
+	int c = 1.0;
+
 	if (y > W)
 		if (x > L) // region 1 - worst position
-			dist = x + y;
+			dist = (x + y) * c;
 		else // region 2 - intermediate position
-			dist = y + (L - x);
+			dist = (y + (L - x)) * c;
 	else
 		if (x <= L) // region 3 - best position
 			dist = (L - x) + (W - y);
 		else // region 4 - intermediate position
-			dist = x + (W - y);
+			dist = (x + (W - y)) * c;
 
 	return dist;
 }
@@ -180,6 +183,8 @@ calculate_width_multiplier(double angle)
 	{
 		return (100.0/(M_PI/2))*angle - 100;
 	}
+
+	return 0;
 }
 
 
@@ -454,7 +459,7 @@ void
 normalize_weights(std::vector<particle_datmo_t> &particle_set, double total_weight)
 {
 	/* normalize weights */
-// FIXME - Se mudar a normalização não funciona
+// FIXME - Verificar a normalização
 
 //	double max_weight = -DBL_MAX;
 //	for (std::vector<particle_datmo_t>::iterator it = particle_set.begin(); it != particle_set.end(); ++it)
@@ -484,7 +489,7 @@ compute_weights(std::vector<particle_datmo_t> &particle_set, double total_dist)
 	double inv_total_dist = 1.0/total_dist; //multiplication >=20 times faster than division
 
 	/* pre calculated parts of normal distribution PDF for better performance */
-	double std_dev = 0.1;
+//	double std_dev = 0.1;
 //	double inv_variance = 1.0/std_dev*std_dev;
 //	double const_part = inv_variance*(1.0/sqrt(2*M_PI));
 
@@ -507,34 +512,65 @@ compute_weights(std::vector<particle_datmo_t> &particle_set, double total_dist)
 
 std::vector<particle_datmo_t>
 algorithm_monte_carlo(std::vector<particle_datmo_t> particle_set_t_1, double x, double y, double delta_time,
-		pcl::PointCloud<pcl::PointXYZ> &pcl_cloud, object_geometry_t obj_geometry, carmen_vector_3D_t car_global_position)
+		pcl::PointCloud<pcl::PointXYZ> &pcl_cloud, object_geometry_t obj_geometry, carmen_vector_3D_t car_global_position, int num_association)
 {
 	std::vector<particle_datmo_t> particle_set_t;
 	particle_datmo_t particle_t;
 	double total_weight = 0.0;
-//	double total_dist = 0.0;
+	double sigma = 3.0;
+	double total_dist = 0.0;
+
+	sigma = obj_geometry.length + obj_geometry.width;
+
+	double sum_dist = 0;
+	double mean_dist = 0;
+	double sum_var = 0;
+	double var, tmp;
+	// obtenção da media
+	for (std::vector<particle_datmo_t>::iterator it = particle_set_t_1.begin(); it != particle_set_t_1.end(); ++it)
+	{
+		it->dist = measurement_model(*it, x, y, pcl_cloud, obj_geometry, car_global_position);
+		sum_dist += it->dist;
+	}
+	mean_dist = sum_dist / num_of_particles;
+
+
+	// obtencao da variancia
+	for (std::vector<particle_datmo_t>::iterator it = particle_set_t_1.begin(); it != particle_set_t_1.end(); ++it)
+	{
+		tmp = mean_dist - it->dist;
+		sum_var += (tmp * tmp);
+	}
+	var = sum_var/num_of_particles;
+//
+//	sigma = sqrt(mean_dist);
 
 	/* Prediction */
 	for (std::vector<particle_datmo_t>::iterator it = particle_set_t_1.begin(); it != particle_set_t_1.end(); ++it)
 	{
 		// Motion Model
-		particle_t = sample_motion_model(delta_time, (*it));
+		particle_t = sample_motion_model(delta_time, (*it), mean_dist);
 
 		// Measurement Model
 		particle_t.dist = measurement_model(particle_t, x, y, pcl_cloud, obj_geometry, car_global_position);
 
 		// Weighing particles (still not normalized)
 //		total_dist += particle_t.dist;
-// FIXME - Se usar a gaussiana não funciona
+// FIXME - Verificar a gaussiana
 //		particle_t.weight = -particle_t.dist * particle_t.dist * 100.0;
-		particle_t.weight = particle_weight_pose_reading_model(particle_t.dist);
+		//particle_t.weight = particle_weight_pose_reading_model(particle_t.dist);
+		particle_t.weight = particle_weight_by_normal_distribution(particle_t.dist, sigma, 0.0);
 		total_weight += particle_t.weight;
 //		particle_t.weight = particle_weight_by_normal_distribution(particle_t.dist, 1.0, 0.0);
 //		particle_t.weight = exp(-0.5 * (particle_t.dist) * (particle_t.dist));
 
 		particle_set_t.push_back(particle_t);
-	}
 
+//		if(num_association == 1) {
+//			printf("%f %d\n", particle_t.dist, particle_t.class_id);
+//		}
+
+	}
 	/* Weighing particles */
 	normalize_weights(particle_set_t, total_weight);
 //	compute_weights(particle_set_t, total_dist);
