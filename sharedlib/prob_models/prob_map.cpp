@@ -598,8 +598,8 @@ carmen_prob_models_update_cells_crossed_by_ray(carmen_map_t *map, sensor_paramet
 	int nx, ny, bx, by;
 	int ray_start_occupied = 0;
 	
-//	if (sensor_data->maxed[sensor_data->ray_that_hit_the_nearest_target])
-//		return;
+	if (sensor_data->maxed[sensor_data->ray_that_hit_the_nearest_target])
+		return;
 
 	a.x = (sensor_data->ray_origin_in_the_floor[sensor_data->ray_that_hit_the_nearest_target].x / map->config.resolution);
 	a.y = (sensor_data->ray_origin_in_the_floor[sensor_data->ray_that_hit_the_nearest_target].y / map->config.resolution);

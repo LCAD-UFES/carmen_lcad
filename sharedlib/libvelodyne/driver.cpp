@@ -119,7 +119,7 @@ bool VelodyneDriver::pollScan(carmen_velodyne_partial_scan_message &scan)
 				if ((scan_buffer_.partial_scan[m].angle >= 180.0) && (scan_buffer_.partial_scan[previous_m].angle < 180.0))
 					break;
 			}
-			scan.number_of_32_laser_shots = l < velodyne_driver::VELODYNE_MAX_32_LASER_SHOTS_PER_REVOLUTION ?  l + 1 : l;
+			scan.number_of_32_laser_shots = l < velodyne_driver::VELODYNE_MAX_32_LASER_SHOTS_PER_REVOLUTION ?  l + 1 : l; // quando liga o velodyne ele pode estar muito lento
 			scan.timestamp = last_package_timestamp -
 					((double) (velodyne_driver::VELODYNE_NUM_SHOTS - 1 - fraction_of_VELODYNE_NUM_SHOTS) /
 					 (double) (velodyne_driver::VELODYNE_PACKAGE_RATE * velodyne_driver::VELODYNE_NUM_SHOTS));
