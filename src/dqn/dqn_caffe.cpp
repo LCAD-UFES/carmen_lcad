@@ -11,6 +11,7 @@
 #include <caffe/layers/memory_data_layer.hpp>
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
+#include <carmen/carmen.h> // carmen_radians_to_degrees
 
 std::string action_to_string(DqnAction a)
 {
@@ -21,11 +22,11 @@ std::string action_to_string(DqnAction a)
 			return std::string("DQN_ACTION_NONE");
 			break;
 		}
-		case DQN_ACTION_STEER_NONE:
-		{
-			return std::string("DQN_ACTION_STEER_NONE");
-			break;
-		}
+//		case DQN_ACTION_STEER_NONE:
+//		{
+//			return std::string("DQN_ACTION_STEER_NONE");
+//			break;
+//		}
 		case DQN_ACTION_STEER_LEFT:
 		{
 			return std::string("DQN_ACTION_STEER_LEFT");
@@ -112,7 +113,7 @@ DqnCaffe::DqnCaffe(DqnParams params, char *program_name)
 	legal_actions_.push_back(DQN_ACTION_SPEED_DOWN);
 	legal_actions_.push_back(DQN_ACTION_STEER_LEFT);
 	legal_actions_.push_back(DQN_ACTION_STEER_RIGHT);
-	legal_actions_.push_back(DQN_ACTION_STEER_NONE);
+	//legal_actions_.push_back(DQN_ACTION_STEER_NONE);
 
 	replay_memory_capacity_ = params.REPLAY_MEMORY_SIZE;
 	solver_param_ = params.SOLVER_FILE;
@@ -173,7 +174,7 @@ void DqnCaffe::Initialize()
 	odometry_input_layer_ = boost::dynamic_pointer_cast<caffe::MemoryDataLayer<float> >(net_->layer_by_name("odometry_input_layer"));
 
 	assert(odometry_input_layer_);
-	assert(HasBlobSize(*net_->blob_by_name("odometry"), DqnParams::kMinibatchSize, 2, 1, 1));
+	assert(HasBlobSize(*net_->blob_by_name("odometry"), DqnParams::kMinibatchSize, 240, 1, 1));
 }
 
 
@@ -247,13 +248,15 @@ std::vector<std::pair<DqnAction, float> > DqnCaffe::SelectActionGreedily(
 	{
 		if (i < v_batch.size())
 		{
-			odometry.push_back(v_batch[i]);
-			odometry.push_back(phi_batch[i]);
+			for (int j = 0; j < 120; j++)
+				odometry.push_back(v_batch[i] / 30.0); // 50.0 = MAX_SPEED <- Colocar como parametro do sistema
+			for (int j = 120; j < 240; j++)
+				odometry.push_back(carmen_radians_to_degrees(phi_batch[i]) / 60.0); // 60.0 = MAX_PHI <- Colocar como parametro do sistema
 		}
 		else
 		{
-			odometry.push_back(0);
-			odometry.push_back(0);
+			for (int j = 0; j < 240; j++)
+				odometry.push_back(0);
 		}
 	}
 
@@ -560,9 +563,9 @@ DqnCaffe::Update()
 
 		if (DqnParams::TrainingModel == DQN_Q_LEARNING)
 		{
-		// Q-value re-estimation (from Q-learning)
-		if (!transition.is_final_state)
-		{
+			// Q-value re-estimation (from Q-learning)
+			if (!transition.is_final_state)
+			{
 				// @filipe: ATENCAO!! NAO APAGUE ESSE COMENTARIO!! A variavel "actions_and_values" eh menor que o numero de transicoes porque o Q-value do
 				// proximo estado NAO eh calculado para estados finais. Por isso o indice "transition_id_in_the_action_value_vector" eh usado para acessa-la
 				// ao inves do "i". NUNCA TROQUE O "transition_id_in_the_action_value_vector" ABAIXO PARA i!!! ISSO FARA O CODIGO ACESSAR POSICOES INVALIDAS
@@ -593,8 +596,10 @@ DqnCaffe::Update()
 		target_input[i * DqnParams::kOutputCount + static_cast<int>(action)] = target;
 		filter_input[i * DqnParams::kOutputCount + static_cast<int>(action)] = 1;
 
-		odometry_input[2 * i + 0] = (float) transition.v;
-		odometry_input[2 * i + 1] = (float) transition.phi;
+		for (j = 0; j < 120; j++)
+			odometry_input[240 * i + j] = (float) transition.v / 30.0; // 50.0 = MAX_SPEED <- Colocar como parametro do sistema
+		for (j = 120; j < 240; j++)
+			odometry_input[240 * i + j] = (float) carmen_radians_to_degrees(transition.phi) / 60.0; // 60.0 = MAX_PHI <- Colocar como parametro do sistema
 
 		// DEBUG:
 		///*std::cout*/ std::cout << "filter:" << action_to_string(action) << " reward: " << reward << " net estimation: " << actions_and_values[i].second << " target: " << target << std::endl;
@@ -694,7 +699,6 @@ DqnCaffe::Update()
 
 		std::cout << std::endl;
 	}
-
 }
 
 

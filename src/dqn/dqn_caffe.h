@@ -19,7 +19,7 @@ enum DqnAction
 	DQN_ACTION_SPEED_DOWN,
 	DQN_ACTION_STEER_LEFT,
 	DQN_ACTION_STEER_RIGHT,
-	DQN_ACTION_STEER_NONE,
+//	DQN_ACTION_STEER_NONE,
 };
 
 enum DqnTrainingModel
@@ -56,7 +56,7 @@ public:
 	static const int kInputDataSize = kCroppedFrameDataSize * kInputFrameCount;
 	static const int kMinibatchSize = 32;
 	static const int kMinibatchDataSize = kInputDataSize * kMinibatchSize;
-	static const int kOutputCount = 6;
+	static const int kOutputCount = 5; //6;
 	static const DqnTrainingModel TrainingModel = DQN_DISCOUNTED_TOTAL_REWARD; //DQN_Q_LEARNING;
 
 	DqnParams()
@@ -101,7 +101,7 @@ typedef MyArray<FrameDataSp, DqnParams::kInputFrameCount> InputFrames;
 typedef MyArray<float, DqnParams::kMinibatchDataSize> FramesLayerInputData;
 typedef MyArray<float, DqnParams::kMinibatchSize * DqnParams::kOutputCount> TargetLayerInputData;
 typedef MyArray<float, DqnParams::kMinibatchSize * DqnParams::kOutputCount> FilterLayerInputData;
-typedef MyArray<float, DqnParams::kMinibatchSize * 2> OdometryLayerInputData;
+typedef MyArray<float, DqnParams::kMinibatchSize * 240> OdometryLayerInputData;
 
 
 //typedef std::tuple<InputFrames, DqnAction, float, boost::optional<FrameDataSp> > Transition;
@@ -203,6 +203,8 @@ public:
 	int memory_size() const { return replay_memory_.size(); }
 	int current_iteration() const { return current_iter_; }
 	DqnParams* params() { return &_params; }
+
+	boost::shared_ptr<caffe::Solver<float> > GetSolver() { return solver_; }
 };
 
 

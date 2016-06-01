@@ -21,7 +21,7 @@ layers {
   top: "dummy2"
   memory_data_param {
     batch_size: 32
-    channels: 6
+    channels: 5
     height: 1
     width: 1
   }
@@ -35,7 +35,7 @@ layers {
   top: "dummy3"
   memory_data_param {
     batch_size: 32
-    channels: 6
+    channels: 5
     height: 1
     width: 1
   }
@@ -47,7 +47,8 @@ layers {
   top: "dummy4"
   memory_data_param {
     batch_size: 32
-    channels: 2
+    #channels: 2
+    channels: 240 # 120 copias da velocidade e 120 copias do angulo do volante
     height: 1
     width: 1
   }
@@ -156,7 +157,7 @@ layers {
   bottom: "ip1"
   top: "q_values"
   inner_product_param {
-    num_output: 6
+    num_output: 5
     weight_filler {
       type: "gaussian"
       std: 0.001

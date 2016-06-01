@@ -50,7 +50,7 @@ public:
 
 const int NUM_MOTION_COMMANDS = 10;
 const double MAX_SPEED = 10.0;
-const double MIN_SPEED = 0.0;
+const double MIN_SPEED = -10.0;
 const double MAX_PHI = carmen_degrees_to_radians(28);
 const double MIN_PHI = carmen_degrees_to_radians(-28);
 double SPEED_UPDATE = 0.5;
@@ -149,6 +149,7 @@ shutdown_module(int signo)
 
 		if (!stoped)
 		{
+			dqn_caffe->GetSolver()->Snapshot();
 			publish_motion_command(0, 0);
 			stoped = true;
 		}
@@ -573,13 +574,13 @@ add_transitions_to_replay_memory()
 	if (DqnParams::TrainingModel == DQN_Q_LEARNING || DqnParams::TrainingModel == DQN_INFINITY_HORIZON_DISCOUNTED_MODEL) reward = episode[i]->imediate_reward;
 	// @filipe: o modelo de recompensa com desconto nao eh bem assim nao...
 	else if (DqnParams::TrainingModel == DQN_DISCOUNTED_TOTAL_REWARD) reward = total_reward; // * pow(dqn_caffe->params()->GAMMA, (double) episode.size() - i);
-	else if (DqnParams::TrainingModel == DQN_INFINITY_HORIZON_DISCOUNTED_MODEL)
-	{
-		reward = episode[i]->imediate_reward;
-
-		if (reward < min_delayed_reward) min_delayed_reward = reward;
-		if (reward > max_delayed_reward) max_delayed_reward = reward;
-	}
+//	else if (DqnParams::TrainingModel == DQN_INFINITY_HORIZON_DISCOUNTED_MODEL)
+//	{
+//		reward = episode[i]->imediate_reward;
+//
+//		if (reward < min_delayed_reward) min_delayed_reward = reward;
+//		if (reward > max_delayed_reward) max_delayed_reward = reward;
+//	}
 	else exit(printf("ERROR: Unknown training model!\n"));
 
 	// the last transition is a special case
@@ -721,7 +722,10 @@ update_command_using_dqn(double v, double phi)
 
 		current_q = action_and_q.second;
 		current_action = action_and_q.first;
+		update_current_command_with_dqn_action(current_action);
 
+
+/*
 		switch (current_action)
 		{
 			case DQN_ACTION_SPEED_UP:
@@ -755,7 +759,7 @@ update_command_using_dqn(double v, double phi)
 				break;
 			}
 		}
-
+*/
 //		if (current_action == DQN_ACTION_SPEED_UP)
 //		{
 //			current_command.v = 5;
