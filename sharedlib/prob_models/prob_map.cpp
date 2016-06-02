@@ -1059,7 +1059,7 @@ carmen_prob_models_compute_relevant_map_coordinates(sensor_data_t *sensor_data, 
 	double ax, ay, bx, by;
 	float obstacle_z;
 	double closest_ray = 10000.0;
-	carmen_vector_2D_t ray_origin;
+	carmen_vector_2D_t ray_origin = {0.0, 0.0};
 	bool first = true;
 
 	for (i = 0; i < sensor_params->vertical_resolution; i++)
