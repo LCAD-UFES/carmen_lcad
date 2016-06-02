@@ -595,7 +595,7 @@ carmen_prob_models_update_cells_crossed_by_ray(carmen_map_t *map, sensor_paramet
 	cell_coords_t a, b;
 	double dx, dy, dr;
 	int step_count;
-	int nx, ny, bx, by;
+	int nx, ny;
 	int ray_start_occupied = 0;
 	
 	if (sensor_data->maxed[sensor_data->ray_that_hit_the_nearest_target])
@@ -605,8 +605,6 @@ carmen_prob_models_update_cells_crossed_by_ray(carmen_map_t *map, sensor_paramet
 	a.y = (sensor_data->ray_origin_in_the_floor[sensor_data->ray_that_hit_the_nearest_target].y / map->config.resolution);
 	b.x = (sensor_data->ray_position_in_the_floor[sensor_data->ray_that_hit_the_nearest_target].x / map->config.resolution);
 	b.y = (sensor_data->ray_position_in_the_floor[sensor_data->ray_that_hit_the_nearest_target].y / map->config.resolution);
-	bx = (int) (b.x + 0.5);
-	by = (int) (b.y + 0.5);
 
 	// Compute line parameters
 	dx = (double) (b.x - a.x);
@@ -623,7 +621,7 @@ carmen_prob_models_update_cells_crossed_by_ray(carmen_map_t *map, sensor_paramet
 		nx = (int) (a.x + dx * (double) j + 0.5);
 		ny = (int) (a.y + dy * (double) j + 0.5);
 
-		if (map_grid_is_valid(map, nx, ny) && !((nx == bx) && (ny == by)))
+		if (map_grid_is_valid(map, nx, ny) && !((nx == b.x) && (ny == b.y)))
 		{
 			if ((j < 8) && (map->map[nx][ny] > 0.85)) // Alberto: estes numeros sao bem ad hoc...
 				ray_start_occupied = 1;
@@ -1021,7 +1019,7 @@ get_ray_origin_a_target_b_and_target_height(double *ax, double *ay, double *bx, 
 {
 	int maxed;
 
-	if (sphere_point.length >= range_max || sphere_point.length == 0.0)
+	if (sphere_point.length >= range_max || sphere_point.length <= 0.0)
 	{
 		sphere_point.length = range_max;
 		maxed = 1;
@@ -1060,11 +1058,9 @@ carmen_prob_models_compute_relevant_map_coordinates(sensor_data_t *sensor_data, 
 	int i;
 	double ax, ay, bx, by;
 	float obstacle_z;
-	double closest_ray = 10000;
+	double closest_ray = 10000.0;
 	carmen_vector_2D_t ray_origin;
-
-	ray_origin.x = 0.0;
-	ray_origin.y = 0.0;
+	bool first = true;
 
 	for (i = 0; i < sensor_params->vertical_resolution; i++)
 	{
@@ -1078,8 +1074,12 @@ carmen_prob_models_compute_relevant_map_coordinates(sensor_data_t *sensor_data, 
 		sensor_data->obstacle_height[i] = obstacle_z;
 		sensor_data->processed_intensity[i] = (double) (sensor_data->intensity[sensor_data->point_cloud_index][scan_index + i]) / 255.0;
 
-//		if (sensor_params->remission_calibration != NULL)
-//			sensor_data->processed_intensity[i] = sensor_params->remission_calibration[i * 256 + sensor_data->intensity[sensor_data->point_cloud_index][scan_index + i]];
+		if (first)
+		{
+			ray_origin.x = ax;
+			ray_origin.y = ay;
+			first = false;
+		}
 
 		if (!sensor_data->ray_hit_the_robot[i])
 		{
