@@ -2544,16 +2544,18 @@ apply_system_latencies(vector<carmen_ackerman_path_point_t> &path)
     for (i = 0; i < path.size(); i++)
     {
     	j = i;
-    	for (double lat = 0.0; lat < 0.5; j++)
+    	for (double lat = 0.0; lat < 0.4; j++)
     	{
     		if (j >= path.size())
     			break;
     		lat += path[j].time;
     	}
+		if (j >= path.size())
+			break;
         path[i].phi = path[j].phi;
     }
-    while (i < path.size() - 1)
-    	path.pop_back();
+//    while (i < path.size())
+//    	path.pop_back();
 
     for (i = 0; i < path.size(); i++)
     {
@@ -2564,9 +2566,11 @@ apply_system_latencies(vector<carmen_ackerman_path_point_t> &path)
     			break;
     		lat += path[j].time;
     	}
+		if (j >= path.size())
+			break;
         path[i].v = path[j].v;
     }
-    while (i < path.size() - 1)
+    while (i < path.size())
     	path.pop_back();
 }
 
@@ -2750,7 +2754,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 
 				move_path_to_current_robot_pose(path, localizer_pose);
 //				apply_system_delay(path);
-//				apply_system_latencies(path);
+				apply_system_latencies(path);
 
 				if (path_has_collision(path))
 					continue;
@@ -2762,7 +2766,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 					best_otcp = otcp;
 					path_order++;
 				}
-				filter_path(path);
+//				filter_path(path);
 
 				paths.push_back(path);
 //				if (i == 0 && j == 0)
