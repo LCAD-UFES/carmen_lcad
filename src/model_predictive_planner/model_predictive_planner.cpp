@@ -581,7 +581,7 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 		carmen_prob_models_uncompress_compact_map(&GlobalState::cost_map, compact_cost_map);
 	}
 
-	//compute_obstacles_rtree(message);
+	compute_obstacles_rtree(message);
 
 	GlobalState::cost_map.config = message->config;
 

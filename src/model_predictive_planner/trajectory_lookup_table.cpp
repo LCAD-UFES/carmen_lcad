@@ -45,7 +45,7 @@ struct ObjectiveFunctionParams
 	double d_yaw_by_index;
 	TrajectoryLookupTable::TrajectoryControlParameters *tcp_seed;
 	TrajectoryLookupTable::TrajectoryDimensions *target_td;
-	vector<carmen_ackerman_path_point_t> *detailed_goal_list;
+	vector<carmen_ackerman_path_point_t> detailed_goal_list;
 	vector<unsigned int> nearest_path_point;
 	unsigned int path_size;
 	bool use_lane;
@@ -1190,17 +1190,24 @@ gaussian(double x, double z)
  * Seria necessario o primeiro ponto do path (x=0 e y=0) entrar no total_distance?
  * */
 double
-compute_interest_dist(vector<carmen_ackerman_path_point_t> *detailed_goal_list, vector<carmen_ackerman_path_point_t> &path, vector<unsigned int> &nearest_path_point)
+compute_interest_dist(ObjectiveFunctionParams *my_params, vector<carmen_ackerman_path_point_t> &path)
 {
 	double distance = 0.0;
 	double total_distance = 0.0;
 	double total_points = 0.0;
-	for (unsigned int i = 0; i < detailed_goal_list->size(); i += 3)
+
+	for (unsigned int i = 0; i < my_params->detailed_goal_list.size(); i += 3)
 	{
-		if (nearest_path_point.at(i) < path.size())
-			distance = dist(path.at(nearest_path_point.at(i)), detailed_goal_list->at(i));
+//		printf("i: %u n point size: %ld\n", i, nearest_path_point.size());
+
+		if (my_params->nearest_path_point.at(i) < path.size())
+		{
+//			printf("i: %u vector size: %ld\n", i, detailed_goal_list.size());
+			distance = dist(path.at(my_params->nearest_path_point.at(i)), my_params->detailed_goal_list.at(i));
+		}
 		else
 			distance = 0.0;
+
 		total_distance += distance;//(distance*distance);
 		total_points += 1.0;
 
@@ -1218,14 +1225,14 @@ compute_reference_path(ObjectiveFunctionParams *param, vector<carmen_ackerman_pa
 	int index = 0;
 	param->nearest_path_point.clear();
 	param->path_size = path.size();
-	for (unsigned int i = 0; i < param->detailed_goal_list->size(); i++)
+	for (unsigned int i = 0; i < param->detailed_goal_list.size(); i++)
 	{
 		// consider the first point as the nearest one
-		min_dist = dist(param->detailed_goal_list->at(i), path.at(0));
+		min_dist = dist(param->detailed_goal_list.at(i), path.at(0));
 
 		for (unsigned int j = index; j < path.size(); j++)
 		{
-			distance = dist(param->detailed_goal_list->at(i), path.at(j));
+			distance = dist(param->detailed_goal_list.at(i), path.at(j));
 
 			if (distance < min_dist)
 			{
@@ -1235,7 +1242,7 @@ compute_reference_path(ObjectiveFunctionParams *param, vector<carmen_ackerman_pa
 		}
 		param->nearest_path_point.push_back(index);
 	}
-	return (compute_interest_dist(param->detailed_goal_list, path, param->nearest_path_point));
+	return (compute_interest_dist(param, path));
 
 }
 
@@ -1363,9 +1370,15 @@ my_g(const gsl_vector *x, void *params)
 	if (my_params->use_lane)
 	{
 		if (path.size() != my_params->path_size)
+		{
+//			printf("01\n");
 			total_interest_dist = compute_reference_path(my_params, path);
+		}
 		else
-			total_interest_dist = compute_interest_dist(my_params->detailed_goal_list, path, my_params->nearest_path_point);
+		{
+//			printf("02\n");
+			total_interest_dist = compute_interest_dist(my_params, path);
+		}
 	}
 
 	double proximity_to_obstacles = 0.0;
@@ -1578,9 +1591,7 @@ build_detailed_goal_list(vector<carmen_ackerman_path_point_t> *lane_in_local_pos
 
 TrajectoryLookupTable::TrajectoryControlParameters
 optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed,
-		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v,
-		vector<carmen_ackerman_path_point_t> *detailed_goal_list,
-		bool use_lane, ObjectiveFunctionParams params)
+		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, ObjectiveFunctionParams params)
 {
 	// A f(x) muntidimensional que queremos minimizar é:
 	//   f(x) = ||(car_simulator(x) + lane(x) < max_dist_lane)||
@@ -1608,19 +1619,20 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 
 	const gsl_multimin_fdfminimizer_type *T;
 	gsl_multimin_fdfminimizer *s;
+//Testava se tinha na lane, fiz o teste antes
+//	if (params.detailed_goal_list->size() > 0)
+//		params.detailed_goal_list = detail_goal_list;
+//	else
+//		return (tcp_seed);
+//	params.use_lane = use_lane; //Jah passei para a funcao antes
 
-	if (detailed_goal_list->size() > 0)
-		params.detailed_goal_list = detailed_goal_list;
-	else
-		return (tcp_seed);
-	params.use_lane = use_lane;
 	params.distance_by_index = fabs(get_distance_by_index(N_DIST-1));
 	params.theta_by_index = fabs(get_theta_by_index(N_THETA-1));
 	params.d_yaw_by_index = fabs(get_d_yaw_by_index(N_D_YAW-1));
 	params.target_td = &target_td;
 	params.tcp_seed = &tcp_seed;
 	params.target_v = target_v;
-	params.path_size = path.size();
+	params.path_size = 0;
 
 	gsl_vector *x;
 	gsl_multimin_function_fdf my_func;
@@ -1815,16 +1827,18 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 
 TrajectoryLookupTable::TrajectoryControlParameters
 get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
-		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, vector<carmen_ackerman_path_point_t> *detailed_goal_list,
+		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, vector<carmen_ackerman_path_point_t> detailed_goal_list,
 		bool use_lane)
 {
 	TrajectoryLookupTable::TrajectoryControlParameters tcp_complete;
 	ObjectiveFunctionParams params;
+	params.detailed_goal_list = detailed_goal_list;
+	params.use_lane = use_lane;
 
 	tcp_complete = get_optimized_trajectory_control_parameters(tcp_seed, target_td, target_v, params);
-	if (tcp_complete.valid)
-		tcp_complete = optimized_lane_trajectory_control_parameters(tcp_complete, target_td, target_v,
-				detailed_goal_list, use_lane, params);
+
+	if (tcp_complete.valid && params.detailed_goal_list.size() > 0)
+		tcp_complete = optimized_lane_trajectory_control_parameters(tcp_complete, target_td, target_v, params);
 
 	return (tcp_complete);
 }
@@ -2633,6 +2647,8 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 
 	build_detailed_goal_list(&lane_in_local_pose, detailed_goal_list);
 
+//	printf("vector size: %ld\n", detailed_goal_list.size());
+
 //	FILE *problems;
 //	problems = fopen("problems.txt", "a");
 
@@ -2640,9 +2656,9 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 
 //	int errors = 0;
 	otcps.resize(paths.size());
-//	#pragma omp parallel num_threads(5)
+	#pragma omp parallel num_threads(1)
 	{
-//	#pragma omp for
+	#pragma omp for
 	for (unsigned int i = 0; i < lastOdometryVector.size(); i++)
 	{
 		for (unsigned int j = 0; j < goalPoseVector.size(); j++)
@@ -2677,7 +2693,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 				tcp = previous_good_tcp;
 			TrajectoryLookupTable::TrajectoryControlParameters otcp;
 
-			otcp = get_complete_optimized_trajectory_control_parameters(tcp, td, target_v, &detailed_goal_list, use_lane);
+			otcp = get_complete_optimized_trajectory_control_parameters(tcp, td, target_v, detailed_goal_list, use_lane);
 			//otcp = get_optimized_trajectory_control_parameters(tcp, td, target_v, &lane_in_local_pose);
 
 			if (otcp.valid)
