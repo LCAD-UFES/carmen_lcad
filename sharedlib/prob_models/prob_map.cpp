@@ -629,8 +629,8 @@ carmen_prob_models_update_cells_crossed_by_ray(carmen_map_t *map, sensor_paramet
 //				ray_start_occupied = 0;
 //			if (ray_start_occupied == 0)
 				carmen_prob_models_log_odds_occupancy_grid_mapping(map, nx, ny, sensor_params->log_odds.log_odds_free);
-//			if (map->map[nx][ny] >= 0.5)
-//				break;	// do not cross obstacles until they are cleared
+			if (map->map[nx][ny] >= 0.5)
+				break;	// do not cross obstacles until they are cleared
 		}
 	}
 }
@@ -880,6 +880,56 @@ get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, senso
 	log_odds = log(p_obstacle / (1.0 - p_obstacle));
 
 	return (log_odds);
+}
+
+double
+get_log_odds_via_unexpeted_delta_range_jose(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int ray_index, int scan_index,
+		bool reduce_sensitivity)
+{
+	int previous_ray_index;
+	double ray_size1, ray_size2, delta_ray, line_angle; //, expected_delta_ray_old;
+	double log_odds;
+
+
+	previous_ray_index = ray_index - 1;
+#if (DISCOUNT_RAY_19 == 1)
+	// Tratamento do raio que falta/apagado
+	if (previous_ray_index == 19)
+		previous_ray_index = 18;
+#endif
+	if (previous_ray_index < 0)
+		return (sensor_params->log_odds.log_odds_l0);
+
+	if (sensor_data->maxed[previous_ray_index] || sensor_data->maxed[ray_index])
+		return (sensor_params->log_odds.log_odds_l0);
+
+	if (sensor_data->ray_hit_the_robot[previous_ray_index] || sensor_data->ray_hit_the_robot[ray_index])
+		return (sensor_params->log_odds.log_odds_l0);
+
+	if ((sensor_data->obstacle_height[previous_ray_index] < -2.0) || (sensor_data->obstacle_height[ray_index] < -2.0))
+		return (sensor_params->log_odds.log_odds_l0);
+
+	ray_size1 = sensor_data->ray_size_in_the_floor[previous_ray_index];
+	ray_size2 = sensor_data->ray_size_in_the_floor[ray_index];
+
+	delta_ray = ray_size2 - ray_size1;
+	line_angle = atan2((sensor_data->obstacle_height[ray_index] - sensor_data->obstacle_height[previous_ray_index]), delta_ray);
+	if (abs(line_angle) > M_PI / 2)
+		if (line_angle > 0)
+			line_angle = M_PI - line_angle;
+		else
+			line_angle = -M_PI - line_angle;
+
+	double obstacle_probability = 1.0 - exp(-pow(line_angle / (M_PI/16.0),2));
+	if (line_angle < 0.000001)
+		return sensor_params->log_odds.log_odds_free;
+
+//	if (expected_delta_ray > M_PI/32)
+//		log_odds = sensor_params->log_odds.log_odds_occ;
+//	else
+//		log_odds = sensor_params->log_odds.log_odds_free;
+
+	return log(obstacle_probability / (1.0 - obstacle_probability));
 }
 
 

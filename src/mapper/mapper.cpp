@@ -161,7 +161,7 @@ get_nearest_timestamp_index(double *robot_timestamp, spherical_point_cloud *poin
 
 
 static void
-update_cells_in_the_velodyne_perceptual_field(carmen_map_t *map, carmen_map_t *snapshot_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global,
+update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global,
 					      int point_cloud_index, int update_cells_crossed_by_rays, int build_snapshot_map)
 {
 	int nearest_timestamp_index = get_nearest_timestamp_index(sensor_data->robot_timestamp,
@@ -191,13 +191,10 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *map, carmen_map_t *s
 				robot_near_bump_or_barrier);
 
 		if (update_cells_crossed_by_rays == UPDATE_CELLS_CROSSED_BY_RAYS)
-			carmen_prob_models_update_cells_crossed_by_ray(map, sensor_params, sensor_data);
+			carmen_prob_models_update_cells_crossed_by_ray(snapshot_map, sensor_params, sensor_data);
 
-		if (build_snapshot_map)
-			carmen_prob_models_update_log_odds_of_cells_hit_by_rays(snapshot_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors);
-
-		// carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(map, sensor_params, sensor_data);
-		carmen_prob_models_update_log_odds_of_cells_hit_by_rays(map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors);
+			// carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(map, sensor_params, sensor_data);
+		carmen_prob_models_update_log_odds_of_cells_hit_by_rays(snapshot_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors);
 		carmen_prob_models_update_intensity_of_cells_hit_by_rays(&sum_remission_map, &sum_sqr_remission_map, &count_remission_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, NULL);
 
 		//Lucas: Mapa para deteccao de objetos moveis
@@ -262,14 +259,16 @@ build_map_using_velodyne(sensor_parameters_t *sensor_params, sensor_data_t *sens
 	snapshot_map = carmen_prob_models_check_if_new_snapshot_map_allocation_is_needed(snapshot_map, &map);
 	//set_map_equal_offline_map(&map);
 	//add_offline_map_over_unknown(&map);
+
+
 	map_decay_to_offline_map(&map);
 
 	// @@@ Alberto: Mapa padrao Lucas -> colocar DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS ao inves de UPDATE_CELLS_CROSSED_BY_RAYS
 	//update_cells_in_the_velodyne_perceptual_field(&map, snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
-	update_cells_in_the_velodyne_perceptual_field(&map, snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
+	update_cells_in_the_velodyne_perceptual_field(snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
+	carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map);
+	//if (build_snapshot_map)
 
-	if (build_snapshot_map)
-		carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map);
 
 	//add_offline_map_over_unknown(&map);
 }
@@ -413,7 +412,7 @@ run_snapshot_mapper()
 //		carmen_prob_models_overwrite_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map);
 
 		r_matrix_robot_to_global = compute_rotation_matrix(r_matrix_robot_to_global, sensors_data[0].robot_pose[current_point_cloud_index].orientation);
-		update_cells_in_the_velodyne_perceptual_field(snapshot_map, snapshot_map, &sensors_params[0], &sensors_data[0], r_matrix_robot_to_global, current_point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, 0);
+		update_cells_in_the_velodyne_perceptual_field( snapshot_map, &sensors_params[0], &sensors_data[0], r_matrix_robot_to_global, current_point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, 0);
 		carmen_prob_models_overwrite_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map);
 	}
 
@@ -423,7 +422,7 @@ run_snapshot_mapper()
 		{
 			current_point_cloud_index =  sensors_data[i].point_cloud_index;
 			r_matrix_robot_to_global = compute_rotation_matrix(r_matrix_robot_to_global, sensors_data[i].robot_pose[current_point_cloud_index].orientation);
-			update_cells_in_the_velodyne_perceptual_field(snapshot_map, snapshot_map, &sensors_params[i], &sensors_data[i], r_matrix_robot_to_global, current_point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, 0);
+			update_cells_in_the_velodyne_perceptual_field(snapshot_map, &sensors_params[i], &sensors_data[i], r_matrix_robot_to_global, current_point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, 0);
 			carmen_prob_models_overwrite_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map);
 		}
 	}
