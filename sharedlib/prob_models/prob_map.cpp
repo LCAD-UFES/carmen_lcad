@@ -598,8 +598,8 @@ carmen_prob_models_update_cells_crossed_by_ray(carmen_map_t *map, sensor_paramet
 	int nx, ny;
 	int ray_start_occupied = 0;
 	
-	if (sensor_data->maxed[sensor_data->ray_that_hit_the_nearest_target])
-		return;
+//	if (sensor_data->maxed[sensor_data->ray_that_hit_the_nearest_target])
+//		return;
 
 	a.x = (sensor_data->ray_origin_in_the_floor[sensor_data->ray_that_hit_the_nearest_target].x / map->config.resolution);
 	a.y = (sensor_data->ray_origin_in_the_floor[sensor_data->ray_that_hit_the_nearest_target].y / map->config.resolution);
@@ -623,14 +623,14 @@ carmen_prob_models_update_cells_crossed_by_ray(carmen_map_t *map, sensor_paramet
 
 		if (map_grid_is_valid(map, nx, ny) && !((nx == b.x) && (ny == b.y)))
 		{
-			if ((j < 8) && (map->map[nx][ny] > 0.85)) // Alberto: estes numeros sao bem ad hoc...
-				ray_start_occupied = 1;
-			if (ray_start_occupied && (map->map[nx][ny] <= 0.85))
-				ray_start_occupied = 0;
-			if (ray_start_occupied == 0)
+//			if ((j < 8) && (map->map[nx][ny] > 0.85)) // Alberto: estes numeros sao bem ad hoc...
+//				ray_start_occupied = 1;
+//			if (ray_start_occupied && (map->map[nx][ny] <= 0.85))
+//				ray_start_occupied = 0;
+//			if (ray_start_occupied == 0)
 				carmen_prob_models_log_odds_occupancy_grid_mapping(map, nx, ny, sensor_params->log_odds.log_odds_free);
-			if (map->map[nx][ny] >= 0.5)
-				break;	// do not cross obstacles until they are cleared
+//			if (map->map[nx][ny] >= 0.5)
+//				break;	// do not cross obstacles until they are cleared
 		}
 	}
 }

@@ -340,12 +340,12 @@ void
 compute_obstacles_rtree(carmen_map_server_compact_cost_map_message *map)
 {
 #define DIST_SQR(x1,y1,x2,y2) ((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2))
-	static double p_x_o = 0.0;
-	static double p_y_o = 0.0;
+//	static double p_x_o = 0.0;
+//	static double p_y_o = 0.0;
 
-	if (GlobalState::localizer_pose && GlobalState::goal_pose &&
-		p_x_o != GlobalState::cost_map.config.x_origin &&
-		p_y_o != GlobalState::cost_map.config.y_origin)
+	if (GlobalState::localizer_pose && GlobalState::goal_pose)// &&
+//		p_x_o != GlobalState::cost_map.config.x_origin &&
+//		p_y_o != GlobalState::cost_map.config.y_origin)
 	{
 		GlobalState::obstacles_rtree.clear();
 
@@ -373,9 +373,9 @@ compute_obstacles_rtree(carmen_map_server_compact_cost_map_message *map)
 				total++;
 			}
 		}
-		p_x_o = GlobalState::cost_map.config.x_origin;
-		p_y_o = GlobalState::cost_map.config.y_origin;
-		printf("fraction = %lf\n", (double) count / (double) total);
+//		p_x_o = GlobalState::cost_map.config.x_origin;
+//		p_y_o = GlobalState::cost_map.config.y_origin;
+//		printf("fraction = %lf\n", (double) count / (double) total);
 		fflush(stdout);
 	}
 }
@@ -416,7 +416,7 @@ build_path_follower_path(vector<carmen_ackerman_path_point_t> path)
 
 
 void
-build_and_follow_path_new()
+build_and_follow_path()
 {
 	list<RRT_Path_Edge> path_follower_path;
 
@@ -443,7 +443,7 @@ build_and_follow_path_new()
 
 
 void
-build_and_follow_path()
+build_and_follow_path_old()
 {
 	if (GlobalState::goal_pose && (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT))
 	{
