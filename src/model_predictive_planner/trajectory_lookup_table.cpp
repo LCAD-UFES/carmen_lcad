@@ -749,7 +749,7 @@ compute_path_via_simulation(Robot_State &robot_state, Command &command,
     int i = 0;
     double t, last_t;
     double distance_traveled = 0.0;
-    double delta_t = 0.15;
+    double delta_t = 0.1;
     int reduction_factor = 1 + (int)((tcp.tf / delta_t) / 90.0);
 
     robot_state.pose.x = 0.0;
@@ -2811,7 +2811,7 @@ TrajectoryLookupTable::compute_path_to_goal(Pose *localizer_pose, Pose *goal_pos
     vector<Command> lastOdometryVector;
     vector<Pose> goalPoseVector;
 
-    double i_time = carmen_get_time();
+    static double i_time = 0.0;
 
 	vector<int> magicSignals = {0, 1, -1, 2, -2, 3, -3,  4, -4,  5, -5};
 	// @@@ Tranformar os dois loops abaixo em uma funcao -> compute_alternative_path_options()
@@ -2832,8 +2832,9 @@ TrajectoryLookupTable::compute_path_to_goal(Pose *localizer_pose, Pose *goal_pos
 	}
 
 	compute_paths(lastOdometryVector, goalPoseVector, target_v, localizer_pose, path, goal_list_message);
-	printf("%ld plano(s), tempo de planejamento = %lf\n", path.size(), carmen_get_time() - i_time);
+	printf("%ld plano(s), tp = %lf\n", path.size(), carmen_get_time() - i_time);
 	fflush(stdout);
+	i_time = carmen_get_time();
 
 	return (path);
 }
