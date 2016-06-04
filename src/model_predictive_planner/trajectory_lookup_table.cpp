@@ -51,7 +51,7 @@ struct ObjectiveFunctionParams
 	bool use_lane;
 };
 
-#define SYSTEM_DELAY 0.7
+#define SYSTEM_DELAY 0.3
 
 TrajectoryLookupTable::TrajectoryControlParameters trajectory_lookup_table[N_DIST][N_THETA][N_D_YAW][N_I_PHI][N_I_V];
 TrajectoryLookupTable::CarLatencyBuffer g_car_latency_buffer;
@@ -740,7 +740,7 @@ compute_path_via_simulation(Robot_State &robot_state, Command &command,
     int i = 0;
     double t, last_t;
     double distance_traveled = 0.0;
-    double delta_t = 0.1;
+    double delta_t = 0.2;
     int reduction_factor = 1 + (int)((tcp.tf / delta_t) / 90.0);
 
     robot_state.pose.x = 0.0;
@@ -2481,7 +2481,7 @@ apply_system_latencies(vector<carmen_ackerman_path_point_t> &path)
     for (i = 0; i < path.size(); i++)
     {
     	j = i;
-    	for (double lat = 0.0; lat < 0.6; j++)
+    	for (double lat = 0.0; lat < 0.3; j++)
     	{
     		if (j >= path.size())
     			break;
@@ -2497,7 +2497,7 @@ apply_system_latencies(vector<carmen_ackerman_path_point_t> &path)
     for (i = 0; i < path.size(); i++)
     {
     	j = i;
-    	for (double lat = 0.0; lat < 0.8; j++)
+    	for (double lat = 0.0; lat < 0.2; j++)
     	{
     		if (j >= path.size())
     			break;
@@ -2787,7 +2787,7 @@ TrajectoryLookupTable::compute_path_to_goal(Pose *localizer_pose, Pose *goal_pos
 		lastOdometryVector.push_back(newOdometry);
 	}
 
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < 1; i++)
 	{
 		//printf("Goal x: %lf Goal y: %lf \n",goal_pose->x, goal_pose->y);
 		Pose newPose = *goal_pose;
