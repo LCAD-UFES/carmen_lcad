@@ -478,11 +478,13 @@ simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
 	carmen_simulator_ackerman_update_objects(simulator_config);
 	publish_objects(timestamp);
 
-	if (publish_laser_flag)
+	static unsigned int counter = 0;
+	if (publish_laser_flag && ((counter % 2) == 0))
 	{
 		publish_frontlaser(timestamp);
 		publish_rearlaser(timestamp);
 	}
+	counter++;
 
 	carmen_publish_heartbeat("simulator");
 

@@ -740,7 +740,7 @@ compute_path_via_simulation(Robot_State &robot_state, Command &command,
     int i = 0;
     double t, last_t;
     double distance_traveled = 0.0;
-    double delta_t = 0.2;
+    double delta_t = 0.15;
     int reduction_factor = 1 + (int)((tcp.tf / delta_t) / 90.0);
 
     robot_state.pose.x = 0.0;
@@ -1217,6 +1217,21 @@ compute_interest_dist(ObjectiveFunctionParams *my_params, vector<carmen_ackerman
 }
 
 
+carmen_ackerman_path_point_t
+front_axis_coordinates(carmen_ackerman_path_point_t rear_axis_coords)
+{
+	carmen_ackerman_path_point_t front_axis_coords;
+
+	double L_2 = GlobalState::robot_config.distance_between_front_and_rear_axles;
+
+	front_axis_coords = rear_axis_coords;
+	front_axis_coords.x += L_2 * cos(rear_axis_coords.theta);
+	front_axis_coords.y += L_2 * sin(rear_axis_coords.theta);
+
+	return (front_axis_coords);
+}
+
+
 double
 compute_reference_path(ObjectiveFunctionParams *param, vector<carmen_ackerman_path_point_t> &path)
 {
@@ -1251,16 +1266,19 @@ double
 compute_proximity_to_obstacles(vector<carmen_ackerman_path_point_t> path)
 {
 	double proximity_to_obstacles = 0.0;
-	double min_dist = 2.5 / 2.0; // metade da largura do carro
+	double min_dist = 2.2 / 2.0; // metade da largura do carro
     int k = 1;
-    for (unsigned int i = 0; i < path.size(); i += 4)
+    for (unsigned int i = 0; i < path.size(); i += 2)
     {
     	// Move path point to map coordinates
     	carmen_ackerman_path_point_t path_point_in_map_coords;
     	double x_gpos = GlobalState::localizer_pose->x - GlobalState::cost_map.config.x_origin;
     	double y_gpos = GlobalState::localizer_pose->y - GlobalState::cost_map.config.y_origin;
-    	path_point_in_map_coords.x = x_gpos + path[i].x * cos(GlobalState::localizer_pose->theta) - path[i].y * sin(GlobalState::localizer_pose->theta);
-    	path_point_in_map_coords.y = y_gpos + path[i].x * sin(GlobalState::localizer_pose->theta) + path[i].y * cos(GlobalState::localizer_pose->theta);
+    	double coss = cos(GlobalState::localizer_pose->theta);
+    	double sine = sin(GlobalState::localizer_pose->theta);
+    	double L_2 = GlobalState::robot_config.distance_between_front_and_rear_axles / 2.0;
+    	path_point_in_map_coords.x = x_gpos + path[i].x * coss - path[i].y * sine + L_2 * coss; // no meio do carro
+    	path_point_in_map_coords.y = y_gpos + path[i].x * sine + path[i].y * coss + L_2 * sine; // no meio do carro
 
 	    // Search for nearest neighbors in the map
 	    vector<occupied_cell> returned_occupied_cells;
@@ -2465,11 +2483,11 @@ filter_path(vector<carmen_ackerman_path_point_t> &path)
     for (i = 1; i < path.size(); i += 2)
         path.erase(path.begin() + i);
 
-    for (i = 0; i < path.size(); i += 2)
-    	if ((i + 1) < path.size())
-    		path[i].time += path[i + 1].time;
-    for (i = 1; i < path.size(); i += 2)
-        path.erase(path.begin() + i);
+//    for (i = 0; i < path.size(); i += 2)
+//    	if ((i + 1) < path.size())
+//    		path[i].time += path[i + 1].time;
+//    for (i = 1; i < path.size(); i += 2)
+//        path.erase(path.begin() + i);
 }
 
 
@@ -2656,9 +2674,10 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 
 //	int errors = 0;
 	otcps.resize(paths.size());
-	#pragma omp parallel num_threads(1)
+	bool has_valid_path = false;
+//	#pragma omp parallel num_threads(1)
 	{
-	#pragma omp for
+//	#pragma omp for
 	for (unsigned int i = 0; i < lastOdometryVector.size(); i++)
 	{
 		for (unsigned int j = 0; j < goalPoseVector.size(); j++)
@@ -2717,7 +2736,8 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 				paths[j + i * lastOdometryVector.size()] = path;
 				otcps[j + i * lastOdometryVector.size()] = otcp;
 
-				// break;
+				has_valid_path = true;
+				break;
 			}
 			else
 			{
@@ -2731,8 +2751,8 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 			}
 		}
 
-//		if (paths.size() > 0) // If could find a good path, break. Otherwise, try swerve
-//			break;
+		if (has_valid_path) // If could find a good path, break. Otherwise, try swerve
+			break;
 	}
 	}
 
@@ -2755,7 +2775,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	else
 		paths.clear();
 
-	if (paths.size() > 0)
+	if (has_valid_path)
 	{
 		previous_good_tcp = best_otcp;
 		last_timestamp = carmen_get_time();
@@ -2780,14 +2800,14 @@ TrajectoryLookupTable::compute_path_to_goal(Pose *localizer_pose, Pose *goal_pos
 
 	vector<int> magicSignals = {0, 1, -1, 2, -2, 3, -3,  4, -4,  5, -5};
 	// @@@ Tranformar os dois loops abaixo em uma funcao -> compute_alternative_path_options()
-	for (int i = 0; i < 1; i++)
+	for (int i = 0; i < 5; i++)
 	{
 		Command newOdometry = last_odometry;
 		newOdometry.phi +=  0.15 * (double) magicSignals[i]; //(0.5 / (newOdometry.v + 1))
 		lastOdometryVector.push_back(newOdometry);
 	}
 
-	for (int i = 0; i < 1; i++)
+	for (int i = 0; i < 5; i++)
 	{
 		//printf("Goal x: %lf Goal y: %lf \n",goal_pose->x, goal_pose->y);
 		Pose newPose = *goal_pose;
@@ -2797,7 +2817,7 @@ TrajectoryLookupTable::compute_path_to_goal(Pose *localizer_pose, Pose *goal_pos
 	}
 
 	vector<vector<carmen_ackerman_path_point_t>> paths;
-	paths.resize(5);
+	paths.resize(5 * 5);
 	compute_paths(lastOdometryVector, goalPoseVector, target_v, localizer_pose, paths, goal_list_message);
 
 	printf("%ld plano(s), tp = %lf\n", paths.size(), carmen_get_time() - i_time);
