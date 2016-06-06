@@ -150,7 +150,7 @@ public:
 
 	TrajectoryLookupTable(int update_lookup_table);
 
-	static Robot_State predict_next_pose(Robot_State &robot_state, const Command &requested_command,
+	static Robot_State predict_next_pose(Robot_State &robot_state, Command &requested_command,
 			double full_time_interval, double *distance_traveled, double delta_t);
 	bool load_trajectory_lookup_table();
 	void build_trajectory_lookup_table();
