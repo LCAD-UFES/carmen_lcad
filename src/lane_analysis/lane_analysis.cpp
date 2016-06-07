@@ -9,7 +9,8 @@
 
 #include "ELAS/ELAS.h"
 
-#define TEST_OFFLINE_DATASET
+// #define TEST_OFFLINE_DATASET
+// #define DATASET_GOPRO // GoPro or UFES
 // #define TEST_MESSAGES_PUBLISH
 
 using namespace cv;
@@ -22,13 +23,21 @@ static int image_height;
 
 // lane analysis
 static string config_fname = "/dados/berriel/elas-carmen.config";
-static string config_xml_fname = "/dados/berriel/elas-carmen-config.xml";
+#ifdef DATASET_GOPRO
+	static string config_xml_fname = "/dados/berriel/elas-carmen-config.xml";
+#else
+	static string config_xml_fname = "/dados/berriel/elas-carmen-config-log-rodrigo.xml";
+#endif
 static ELAS::raw_elas_message _raw_elas_message;
 
 // messages
 static carmen_elas_lane_estimation_message lane_estimation_message;
 static carmen_elas_lane_markings_type_message lmt_message;
 static carmen_elas_adjacent_lanes_message adj_lanes_message;
+
+// TODO: incorporate into ELAS
+static double scale_x = 0.076; // default: 1px -> 1m (1px -> x meters)
+static double scale_y = 0.025; // default: 1px -> 1m (1px -> y meters)
 
 // stamps the messages in a more readable way
 template<typename T>
@@ -67,15 +76,30 @@ lane_analysis_publish_messages(double _timestamp)
     vector<carmen_vector_2D_t> pos_left, pos_right;
 	for(Point2d p : _raw_elas_message.lane_position.left) pos_left.push_back(toVector2D(p));
 	for(Point2d p : _raw_elas_message.lane_position.right) pos_right.push_back(toVector2D(p));
+	reverse(pos_left.begin(), pos_left.end());
+	reverse(pos_right.begin(), pos_right.end());
 	lane_estimation_message.left = pos_left.data();
 	lane_estimation_message.right = pos_right.data();
 
+	ConfigXML * _cfg = ELAS::getConfigXML();
+	vector<carmen_vector_2D_t> pos_left_ipm, pos_right_ipm;
+	Point2d _tl = Point2d(_cfg->roi.tl().x, _cfg->roi.tl().y);
+	for(Point2d p : _raw_elas_message.lane_position.left) pos_left_ipm.push_back(toVector2D(_cfg->ipm->applyHomography(p - _tl)));
+	for(Point2d p : _raw_elas_message.lane_position.right) pos_right_ipm.push_back(toVector2D(_cfg->ipm->applyHomography(p -_tl)));
+	reverse(pos_left_ipm.begin(), pos_left_ipm.end());
+	reverse(pos_right_ipm.begin(), pos_right_ipm.end());
+	lane_estimation_message.left_ipm = pos_left_ipm.data();
+	lane_estimation_message.right_ipm = pos_right_ipm.data();
+
 	// lane estimation - others
+	lane_estimation_message.lane_deviation = _raw_elas_message.lane_deviation;
 	lane_estimation_message.lane_width = _raw_elas_message.lane_base.width;
 	lane_estimation_message.direction = toVector2D(_raw_elas_message.lane_base.direction);
 	lane_estimation_message.point_bottom = toVector2D(_raw_elas_message.lane_base.point_bottom);
 	lane_estimation_message.point_top = toVector2D(_raw_elas_message.lane_base.point_top);
 	lane_estimation_message.trustworthy_height = _raw_elas_message.trustworthy_height;
+	lane_estimation_message.scale_x = scale_x;
+	lane_estimation_message.scale_y = scale_y;
 
 	// lane markings type
 	lmt_message.left = _raw_elas_message.lmt.left;
@@ -85,12 +109,16 @@ lane_analysis_publish_messages(double _timestamp)
 	adj_lanes_message.left = _raw_elas_message.adjacent_lanes.left;
 	adj_lanes_message.right = _raw_elas_message.adjacent_lanes.right;
 
+	// MESSAGES DEBUG
+	printf("\tlane_width: %.2f meters\n", lane_estimation_message.lane_width * scale_x);
+	printf("\tLMT: left(%d), right(%d)\n", lmt_message.left, lmt_message.right);
+	printf("\tadj: left(%d), right(%d)\n", adj_lanes_message.left, adj_lanes_message.right);
+
 /*
     lane_analysis_message.car_position_x = _raw_elas_message.car_position_x;
     lane_analysis_message.execution_time = _raw_elas_message.execution_time;
     lane_analysis_message.isKalmanNull = _raw_elas_message.isKalmanNull;
     lane_analysis_message.lane_change = _raw_elas_message.lane_change;
-    lane_analysis_message.lane_deviation = _raw_elas_message.lane_deviation;
 */
 
 	printf("publishing messages:\n");
@@ -110,57 +138,50 @@ lane_analysis_publish_messages(double _timestamp)
     printf("messages published!\n");
 }
 
-// test with offline dataset
+static int fnumber = 0;
+static const int publish_after_frame = 100; // global_pos is incorrect in the beginning
+void
+lane_analysis_handler(carmen_bumblebee_basic_stereoimage_message * stereo_image)
+{
 
 #ifdef TEST_OFFLINE_DATASET
-
-static int fnumber = 0;
-void
-lane_analysis_handler(carmen_bumblebee_basic_stereoimage_message * stereo_image)
-{
-    // read the frame
-    Mat3b image = imread("/dados/berriel/MEGA/datasets/VIX_S05/images/lane_" + to_string(fnumber) + ".png");
-
-    // run ELAS
-    ELAS::run(image);
-    printf("CARMEN::ELAS... done!\n");
-    
-    lane_analysis_publish_messages(stereo_image->timestamp);
-
-    // viz here? to debug?
-    imshow("ELAS - CARMEN", image);
-    waitKey(1);
-
-    fnumber++; // goes to the next image
-}
-
+	// read the frame
+#ifdef DATASET_GOPRO
+	Mat3b image = imread("/dados/berriel/MEGA/datasets/VIX_S05/images/lane_" + to_string(fnumber) + ".png");
 #else
-
-void
-lane_analysis_handler(carmen_bumblebee_basic_stereoimage_message * stereo_image)
-{
-    // convert image from camera to OpenCV format
-    Mat3b image(image_height, image_width);
-    image.data = (uchar *) stereo_image->raw_right;
-    cvtColor(image, image, CV_RGB2BGR);
-    
-    // at this point, we have the image (var: image) ready to be passed to process
-    ELAS::run(image);
-    ELAS::raw_elas_message _raw_elas_message = ELAS::get_raw_message();
-
-    // viz here? to debug?
-    imshow("ELAS - CARMEN", image);
-    waitKey(1);
-
-    // loop back
-}
-
+	Mat3b image = imread("/dados/berriel/datasets/log-rodrigo-ufes/images/lane_" + to_string(fnumber) + ".png");
 #endif
+#else
+	// get the image from the bumblebee
+	Mat3b image(960, 1280);
+	image.data = (uchar *) stereo_image->raw_left;
+	cvtColor(image, image, CV_RGB2BGR);
+	cv::resize(image, image, Size(640,480));
+	// imwrite("/dados/log-rodrigo/lane_" + to_string(fnumber) + ".png", image);
+#endif
+	fnumber++;
+	if (!image.empty()) {
+		// run ELAS
+		ELAS::run(image);
+		printf("CARMEN::ELAS... done!\n");
+
+		// publish messages
+		if (fnumber > publish_after_frame)
+			lane_analysis_publish_messages(stereo_image->timestamp);
+
+		// viz here? to debug?
+		imshow("ELAS - CARMEN", image);
+		waitKey(1);
+	} else {
+		printf("End of dataset!\n");
+	}
+}
 
 #ifdef TEST_MESSAGES_PUBLISH
 void
 self_elas_estimation_handler(carmen_elas_lane_estimation_message * message) {
-	printf("\tself elas estimation: %f\n", message->left[0].x);
+	printf("car center deviation: %.2f\n", message->lane_deviation);
+	printf("lane width: %.2f\n", message->lane_width);
 }
 #endif
 
@@ -185,6 +206,23 @@ void
 lane_analysis_init()
 {
     ELAS::init(config_fname, config_xml_fname);
+
+#ifdef TEST_OFFLINE_DATASET_AVOID
+    // read calibration params from file
+    FileStorage fs("data/elas_calibration.xml", FileStorage::READ);
+	Size origSize, dstSize;
+	vector<Point2f> origPts, dstPts;
+	fs["origSize"] >> origSize;
+	fs["dstSize"] >> dstSize;
+	fs["calibration_points"] >> origPts;
+	fs["dst_points"] >> dstPts;
+	fs["scale_x"] >> scale_x;
+	fs["scale_y"] >> scale_y;
+
+	// overwrite IPM config
+	ELAS::setIPM(origSize, dstSize, origPts, dstPts);
+#endif
+
 }
 
 // subscribes: what does this module need?

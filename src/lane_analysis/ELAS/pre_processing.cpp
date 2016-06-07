@@ -53,6 +53,17 @@ vector<Point> ELAS::get_vertices_ipm(const ConfigXML * _cfg) {
 // when the IPM is applied, the result has some black areas
 // the goal of this method is to get a mask that ignores the edges of these areas
 Mat1b ELAS::get_mask_ipm(int erode_size, const ConfigXML * _cfg) {
+
+	/* TODO: PROBLEM WITH NEW APPROACH! --> REMOVE WHEN DONE!
+	Mat1b maskIPM = Mat1b(Size(400,400), uchar(0));
+	vector<Point> verticesIPM = {
+			Point(0,298),
+			Point(0,0), // extra
+			Point(400,0), // extra
+			Point(400,355),
+			Point(373,400),
+			Point(65,400)
+	}; /**/
 	Mat1b maskIPM = Mat1b(_cfg->roi.size(), uchar(0));
 	vector<Point> verticesIPM = get_vertices_ipm(_cfg);
 

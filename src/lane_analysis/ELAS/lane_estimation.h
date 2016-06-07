@@ -19,8 +19,8 @@
 #define HOUGH_ONLY false
 #define BUFFER_HOUGHS_SIZE 10
 #define BUFFER_MIN_LENGTH 50
-#define NUM_PARTICLES 400
-#define USE_TRUSTWORTHY_HEIGHT true
+#define NUM_PARTICLES 500
+#define USE_TRUSTWORTHY_HEIGHT false
 
 
 namespace ELAS {

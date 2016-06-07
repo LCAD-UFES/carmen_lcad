@@ -24,6 +24,9 @@ void ELAS::lane_estimation_init(ConfigXML * _cfg) {
 	// select which points are to be outputted
 	y_output = {
 			_cfg->roi.y,
+			_cfg->roi.y + (int)ceil((float)_cfg->roi.height / 32.0),
+			_cfg->roi.y + (int)ceil((float)_cfg->roi.height / 16.0),
+			_cfg->roi.y + (int)ceil((float)_cfg->roi.height / 8.0),
 			_cfg->roi.y + (int)ceil((float)_cfg->roi.height / 4.0),
 			_cfg->roi.y + (int)ceil((float)_cfg->roi.height / 2.0),
 			_cfg->roi.y + _cfg->roi.height - 1
@@ -52,8 +55,13 @@ void ELAS::lane_position_estimation(const pre_processed * _pre_processed, const 
 	Mat1b map_srf_skel = Helper::skeleton(_feature_maps->map_srf); // approx +1.5ms
 	_out_raw_houghs->ego_lane = Houghs::getHoughs(map_srf_skel, _cfg->roi, _out_raw_houghs->adjacent_lanes);
 
+	Mat3b im = _pre_processed->colorFrame.clone();
+	for (auto h : _out_raw_houghs->ego_lane) h.draw(im, Scalar(0,0,255));
+	imshow("houghs", im);
+
 	// generation of the combined map
-	Mat1d map_cmb = _feature_maps->map_srf_ipm & _feature_maps->map_inb_ipm; // old mapaIPM
+	// Mat1d map_cmb = _feature_maps->map_srf_ipm & _feature_maps->map_inb_ipm; // old mapaIPM
+	Mat1d map_cmb = _feature_maps->map_srf_ipm & _feature_maps->map_hdog_ipm; // old mapaIPM
 
 	// TODO: separate into a different function call (maybe lane_measurement_generation)
 	// lane measurement generation
@@ -98,7 +106,7 @@ void ELAS::lane_position_estimation(const pre_processed * _pre_processed, const 
 	if (kalmanState->hough != NULL && !HOUGH_ONLY) {
 
 		// estimate the trustworthy height based on the last virtual best or the hough
-		trustworthy_height = PF->atualizaAlturaConfiavel(best_particle, kalmanState->_hough, _feature_maps->map_vad_ipm, _road_signs->road_signs_blobs);
+		// trustworthy_height = PF->atualizaAlturaConfiavel(best_particle, kalmanState->_hough, _feature_maps->map_vad_ipm, _road_signs->road_signs_blobs);
 
 		// if the trustworthy area changes abruptly, particle filter might need to be reseted
 		int m_rows = _feature_maps->map_vad_ipm.rows;
@@ -109,8 +117,8 @@ void ELAS::lane_position_estimation(const pre_processed * _pre_processed, const 
 		}
 
 		// update the trustworthy height of the particle filter
-		PF->alturaConfiavel = trustworthy_height;
-		_out_lane_position->trustworthy_height = PF->alturaConfiavel;
+		// PF->alturaConfiavel = trustworthy_height;
+		// _out_lane_position->trustworthy_height = PF->alturaConfiavel;
 
 		// runs the particle filter
 		*best_particle = PF->executar(kalmanState->_hough, map_cmb);

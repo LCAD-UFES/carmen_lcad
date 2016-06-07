@@ -17,16 +17,19 @@ LFLAGS += `pkg-config --libs opencv`
 
 SOURCES			= $(wildcard *.cpp)
 
-PUBLIC_INCLUDES = $(wildcard *.h)
-
+PUBLIC_INCLUDES = lane_analysis_interface.h lane_analysis_messages.h
+PUBLIC_LIBRARIES = liblane_analysis_interface.a
 PUBLIC_BINARIES = lane_analysis
 
-TARGETS 		= lane_analysis
+TARGETS 		= lane_analysis lane_analysis_viz
 
 build-elas:
 	cd ELAS && cd build && cmake -D BUILD_CARMEN:BOOL=TRUE -D OpenCV_DIR=/usr/local/opencv-2.4.12.3/build .. && make && cd ../..
 
-lane_analysis: build-elas $(patsubst %.cpp, %.o, $(SOURCES))
+liblane_analysis_interface.a: lane_analysis_interface.o
+
+lane_analysis: build-elas liblane_analysis_interface.a lane_analysis.o
+lane_analysis_viz: lane_analysis_viz_main.o
 
 # rules
 include ../Makefile.rules

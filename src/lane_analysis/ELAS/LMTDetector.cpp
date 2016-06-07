@@ -19,7 +19,7 @@ vector<LMT> LMTDetector::executar(const Mat1b &mapa, const Mat3b &colorFrame, co
 	// 1. pegar uma regiao (perpendicular?) em volta de cada pixel do kalman (ate a metade da IPM == altura fixa do kalman)
 	if (laneBase != NULL) {
 
-		const int tamanhoBusca = 3;
+		const int tamanhoBusca = 6;
 		const int alturaRoi = config->roi.height;
 		const Mat1b *mapaFaixas = &mapa;
 		
@@ -71,7 +71,8 @@ LMT_COLOR LMTDetector::getCor(const Mat1b &histogramaEvidencias, const Mat3b &co
 	Mat3b hsv;
 	Mat1b amarelado;
 	cvtColor(colorFrame, hsv, CV_BGR2HSV);
-	inRange(hsv, Scalar(15, 80, 80), Scalar(25, 200, 200), amarelado);
+	//inRange(hsv, Scalar(15, 80, 80), Scalar(25, 200, 200), amarelado);
+	inRange(hsv, Scalar(10, 0, 0), Scalar(25, 255, 255), amarelado);
 	Mat1b mascaraAmareloIPM = Helper::toIPM(Helper::getROI(amarelado, config->roi), config->ipm, INTER_CUBIC);
 
 	// histograma de amarelos
@@ -98,6 +99,7 @@ double LMTDetector::getPercentualAmarelo(const Mat1b &histogramaEvidencias, cons
 		}
 	}
 
+	if (nEvidencias == 0) return 0;
 	return (double)nAmareloEEvidencias / (double)nEvidencias;
 }
 

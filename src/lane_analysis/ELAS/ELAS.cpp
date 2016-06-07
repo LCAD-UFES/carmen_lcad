@@ -39,7 +39,6 @@ void ELAS::init(string & config_fname, string & config_xml_fname) {
 	cfg->carPosition = Point2d(cfg->dataset.FrameSize.width / 2.0, cfg->dataset.FrameSize.height);
 	cfg->carPositionIPM = cfg->ipm->applyHomography(Point2d(cfg->dataset.FrameSize.width / 2.0, (double)cfg->roi.height));
 
-
 	printf("Config:\n\tDATASETS_DIR\t%s\n\tDATA_DIR\t%s\n", cfg->DATASETS_DIR.c_str(), cfg->DATA_DIR.c_str());
 
 	// init lane estimation
@@ -74,7 +73,9 @@ void ELAS::run(const Mat3b & original_frame) {
 	// pre-processing
 	pre_processing(original_frame, cfg, out_pre_process);
 	if (DISPLAY_PRE_PROCESSING) {
+		imshow("pre-processing ROI", out_pre_process->grayFrameRoi);
 		imshow("pre-processing", out_pre_process->grayFrameRoiIPM);
+		imshow("mask IPM", out_pre_process->maskIPM);
 		waitKey();
 	}
 
@@ -99,12 +100,12 @@ void ELAS::run(const Mat3b & original_frame) {
 	// road signs detection and classification
 	road_signs_classification(out_pre_process, out_feature_maps, NULL, cfg, out_road_signs);
 	if (DISPLAY_ROAD_SIGNS) {
-		printf("%d road signs found!", out_road_signs->n);
+		printf("%d road signs found!\n", out_road_signs->n);
 	}
 
 	// road signs and crosswalk removal
 	if (DISPLAY_MARKINGS_REMOVAL) imshow("map_srf before", out_feature_maps->map_srf);
-	pavement_markings_removal(out_feature_maps, out_crosswalks, out_road_signs, cfg);
+	// pavement_markings_removal(out_feature_maps, out_crosswalks, out_road_signs, cfg);
 	if (DISPLAY_MARKINGS_REMOVAL) {
 		imshow("map_srf after", out_feature_maps->map_srf);
 	}
@@ -130,7 +131,7 @@ void ELAS::run(const Mat3b & original_frame) {
 		Mat3b lane_deviation_img = out_pre_process->colorFrame.clone();
 
 		// lane center deviation
-		printf("Lane Center Deviation: %.2f", out_lane_position->center_deviation);
+		printf("Lane Center Deviation: %.2f\n", out_lane_position->center_deviation);
 		string lane_center_text = "Lane Center Deviation: " + to_string(out_lane_position->center_deviation);
 		putText(lane_deviation_img, lane_center_text, Point(15,15), FONT_HERSHEY_COMPLEX_SMALL, 0.5, Scalar(0,0,255), 1, 8);
 
@@ -158,7 +159,7 @@ void ELAS::run(const Mat3b & original_frame) {
 	}
 
 	// adjacent lanes detection
-	adjacent_lanes_detection(out_feature_maps, out_lane_position, out_raw_houghs, out_lmt, cfg, out_adjacent_lanes);
+	//adjacent_lanes_detection(out_feature_maps, out_lane_position, out_raw_houghs, out_lmt, cfg, out_adjacent_lanes);
 	if (DISPLAY_ADJACENT_LANES) {
 		printf("adjacent lanes: left(%d), right(%d)\n", out_adjacent_lanes->left, out_adjacent_lanes->right);
 	}
@@ -192,6 +193,34 @@ void ELAS::run(const Mat3b & original_frame) {
 
 	// free memory
 	finishRun();
+}
+
+void ELAS::setIPM(Size& _origSize, Size& _dstSize, vector<Point2f>& _origPoints, vector<Point2f>& _dstPoints) {
+
+	// if image size used to generate the stored IPM is different than the image we are trying to read, a scaling must be performed
+	if (!(_origSize.width == cfg->dataset.FrameSize.width && _origSize.height == cfg->dataset.FrameSize.height)) {
+
+		// calculates the required scaling
+		const double w_scale = cfg->dataset.FrameSize.width / (double)_origSize.width;
+		const double h_scale = cfg->dataset.FrameSize.height / (double)_origSize.height;
+
+		// change the original size
+		_origSize = Size(cfg->dataset.FrameSize.width, cfg->dataset.FrameSize.height);
+
+		// apply scaling to the original points
+		for (unsigned int i = 0; i < _origPoints.size(); i++) {
+			_origPoints[i] = Point2f(_origPoints[i].x * w_scale, _origPoints[i].y * h_scale);
+		}
+	} else {
+		printf("Images used to generate stored IPM and the ones we are using have the same size! That's good, right?\n");
+	}
+
+	cfg->ipm = new IPM(_origSize, _dstSize, _origPoints, _dstPoints);
+	cfg->roi = Rect(0,0,cfg->dataset.FrameSize.width, cfg->dataset.FrameSize.height);
+}
+
+ConfigXML * ELAS::getConfigXML() {
+	return cfg;
 }
 
 // TODO: call this when module is terminated

@@ -21,7 +21,7 @@
 #define DISPLAY_CROSSWALK 				false
 #define DISPLAY_ROAD_SIGNS 				false
 #define DISPLAY_MARKINGS_REMOVAL 		false
-#define DISPLAY_LANE_POSITION			false
+#define DISPLAY_LANE_POSITION			true
 #define DISPLAY_LANE_CENTER_DEVIATION	false
 #define DISPLAY_LANE_MARKINGS_TYPE		false
 #define DISPLAY_ADJACENT_LANES			false
@@ -49,6 +49,8 @@ struct raw_elas_message {
 // methods
 void run(const cv::Mat3b & original_frame);
 void init(std::string &config_fname, string & config_xml_fname);
+void setIPM(cv::Size& _origSize, cv::Size& _dstSize, std::vector<cv::Point2f>& _origPoints, std::vector<cv::Point2f>& _dstPoints);
+ConfigXML * getConfigXML();
 void finishProgram();
 void finishRun();
 raw_elas_message& get_raw_message();
