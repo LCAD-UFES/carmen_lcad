@@ -16,6 +16,7 @@
 #include <carmen/motion_planner_interface.h>
 #include <carmen/gps_xyz_interface.h>
 #include <carmen/rddf_interface.h>
+#include <carmen/lane_analysis_interface.h>
 #include <GL/glew.h>
 #include <iostream>
 #include <vector>
@@ -33,6 +34,7 @@
 #include "trajectory_drawer.h"
 #include "velodyne_intensity_drawer.h"
 #include "annotation_drawer.h"
+#include "lane_analysis_drawer.h"
 
 static int moving_objects_point_clouds_size = 1;
 static int stereo_point_cloud_size;
@@ -143,6 +145,7 @@ static int draw_localize_ackerman_flag;
 static int draw_annotation_flag;
 static int draw_moving_objects_flag;
 static int draw_gps_axis_flag;
+static int draw_lane_analysis_flag;
 
 static int follow_car_flag;
 static int zero_z_flag;
@@ -160,6 +163,7 @@ static trajectory_drawer* t_drawer3;
 static std::vector<trajectory_drawer*> t_drawerTree;
 static velodyne_intensity_drawer* v_int_drawer;
 static AnnotationDrawer *annotation_drawer;
+static lane_analysis_drawer *lane_drawer;
 
 window *w = NULL;
 
@@ -1065,6 +1069,10 @@ carmen_download_map_handler(carmen_download_map_message *message)
     new_map_has_been_received = 1;
 }
 
+static void lane_analysis_handler(carmen_elas_lane_estimation_message * message) {
+	add_to_trail(message, car_fused_pose, lane_drawer);
+}
+
 static void
 init_moving_objects_point_clouds(void)
 {
@@ -1280,6 +1288,7 @@ init_flags(void)
     draw_annotation_flag = 0;
     draw_moving_objects_flag = 0;
     draw_gps_axis_flag = 1;
+    draw_lane_analysis_flag = 1;
 }
 
 void
@@ -1304,6 +1313,7 @@ init_drawers(int argc, char** argv, int bumblebee_basic_width, int bumblebee_bas
     t_drawer3 = create_trajectory_drawer(0.0, 1.0, 0.0);
     v_int_drawer = create_velodyne_intensity_drawer(velodyne_pose, sensor_board_1_pose);
     annotation_drawer = createAnnotationDrawer(argc, argv);
+    lane_drawer = create_lane_analysis_drawer();
 }
 
 void
@@ -1321,6 +1331,7 @@ destroy_drawers()
     destroy_trajectory_drawer(t_drawer3);
     destroy_velodyne_intensity_drawer(v_int_drawer);
     destroyAnnotationDrawer(annotation_drawer);
+    destroy_lane_analysis_drawer(lane_drawer);
 }
 
 void
@@ -1766,6 +1777,8 @@ draw_loop(window *w)
             draw_gps_fault_signal();
         }
 
+        if (draw_lane_analysis_flag) draw_lane_analysis(lane_drawer);
+
         draw_interface(i_drawer);
 
     }
@@ -2026,6 +2039,8 @@ subscribe_ipc_messages(void)
 			NULL,
 			(carmen_handler_t)plan_tree_handler,
 			CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_elas_lane_estimation_subscribe(NULL, (carmen_handler_t) lane_analysis_handler, CARMEN_SUBSCRIBE_LATEST);
 
 }
 
