@@ -240,9 +240,9 @@ compute_laser_rays_from_velodyne_and_create_a_local_map(sensor_parameters_t *vel
 	int i, j;
 	spherical_point_cloud v_zt = velodyne_data->points[point_cloud_index];
 	int laser_ray_angle_index;
-	int N = v_zt.num_points / velodyne_params->vertical_resolution;
+	//int N = v_zt.num_points / velodyne_params->vertical_resolution;
 
-	double dt = 0.0494 / (double)N;
+	double dt = 1.0 / (1808.0 * 12.0);
 	carmen_pose_3D_t robot_interpolated_position = *robot_pose;
 
 	// Ray-trace the grid

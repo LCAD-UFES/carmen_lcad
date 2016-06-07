@@ -13,6 +13,7 @@
 #define GOAL_LIST_SIZE 1000
 #define MAX_ANNOTATIONS 50
 
+static double goal_list_time = 0;
 static carmen_robot_ackerman_config_t robot_config;
 static double distance_between_waypoints = 5;
 static carmen_ackerman_traj_point_t robot_pose;
@@ -85,6 +86,8 @@ copy_rddf_message(carmen_rddf_road_profile_message *rddf_msg)
 		last_rddf_message->poses = (carmen_ackerman_traj_point_t*) malloc(sizeof(carmen_ackerman_traj_point_t) * last_rddf_message->number_of_poses);
 		last_rddf_message->annotations = (int*) malloc(sizeof(int) * last_rddf_message->number_of_poses);
 	}
+
+	last_rddf_message->timestamp = rddf_msg->timestamp;
 
 	memcpy(last_rddf_message->poses, rddf_msg->poses, sizeof(carmen_ackerman_traj_point_t) * last_rddf_message->number_of_poses);
 	memcpy(last_rddf_message->annotations, rddf_msg->annotations, sizeof(int) * last_rddf_message->number_of_poses);
@@ -172,6 +175,7 @@ fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_poin
 	}
 
 	goal_list_size = j;
+	goal_list_time = rddf->timestamp;
 
 	if (goal_list_index < goal_list_size)
 		change_state(annotations[goal_list_index]);
@@ -260,11 +264,16 @@ behavior_selector_get_state(carmen_behavior_selector_state_t *current_state_out,
 
 
 void
-behavior_selector_get_goal_list(carmen_ackerman_traj_point_t **goal_list_out, int *goal_list_size_out, int *goal_list_index_out)
+behavior_selector_get_goal_list(carmen_ackerman_traj_point_t **goal_list_out, int *goal_list_size_out, int *goal_list_index_out, double *goal_list_time_out)
 {
 	*goal_list_out = goal_list;
 	*goal_list_size_out = goal_list_size;
 	*goal_list_index_out = goal_list_index;
+
+	if (goal_list_time == 0)
+		*goal_list_time_out = carmen_get_time();
+	else
+		*goal_list_time_out = goal_list_time;
 }
 
 

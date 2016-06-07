@@ -647,7 +647,8 @@ Ackerman::predict_next_pose_during_main_rrt_planning(const Robot_State &robot_st
 bool
 Ackerman::remove_front_node_of_the_path(Pose &robot_pose, list<RRT_Path_Edge> &path,
 		double &path_distance, double &theta_diff,
-		Robot_State *path_pose, double *time_to_reach_path_pose, double *distance_traveled_rtr, double *total_distance_rtr)
+		Robot_State *path_pose, double *time_to_reach_path_pose, double *distance_traveled_rtr,
+		double *total_distance_rtr)
 {
 	//todo not good enough
 
@@ -705,7 +706,7 @@ Ackerman::remove_front_node_of_the_path(Pose &robot_pose, list<RRT_Path_Edge> &p
 			return true;
 		}
 	}
-	else if(followed_porcentage > porcentage_threshold ||
+	else if (followed_porcentage > porcentage_threshold ||
 			delta_distance < distance_threshold ||
 //			delta_distance > (total_dist - traveled_dist + distance_threshold * 4) ||
 			(command_of_the_first_node_of_the_path.v == 0 && v_diff < v_threshold))
@@ -763,7 +764,8 @@ get_stop_command(Robot_State &robot_state, Command &command, double &time_spend)
 
 
 double 
-Ackerman::distance_from_robot_pose_to_curve_between_p1_and_p2(Pose robot_pose, Robot_State p1, Robot_State p2, Command command, double *traveled_dist, double *total_dist, Robot_State *closest_path_pose, double *time_spend)
+Ackerman::distance_from_robot_pose_to_curve_between_p1_and_p2(Pose robot_pose, Robot_State p1, Robot_State p2,
+		Command command, double *traveled_dist, double *total_dist, Robot_State *closest_path_pose, double *time_spend)
 {
 	double interval_time = 0.01;
 	double total_time = 0;
@@ -809,8 +811,7 @@ Ackerman::distance_from_robot_pose_to_curve_between_p1_and_p2(Pose robot_pose, R
 			if (time_spend)
 				*time_spend = total_time;
 
-
-			if(closest_path_pose)
+			if (closest_path_pose)
 				*closest_path_pose = rs;
 		}
 

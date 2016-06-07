@@ -115,7 +115,10 @@ Path_Follower_Ackerman::build_and_send_refined_path()
 
 	if (path.empty())
 	{
-		publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi);
+		if (GlobalState::last_odometry.v == 0.0)
+			publish_path_follower_single_motion_command(0.0, 0.0);
+		else
+			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi);
 		return;
 	}
 

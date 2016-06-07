@@ -1,0 +1,11 @@
+net: "dqn.prototxt"
+#momentum: 0.95
+base_lr: 0.0001
+lr_policy: "fixed"
+max_iter: 2000000
+display: 10000
+solver_type: RMSPROP
+solver_mode: GPU
+# snapshot intermediate results
+snapshot: 10000
+snapshot_prefix: "snapshots/dqn"

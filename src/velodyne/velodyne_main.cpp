@@ -1,7 +1,3 @@
- /*********************************************************
-	---   Skeleton Module Application ---
-**********************************************************/
-
 #include <carmen/carmen.h>
 #include <carmen/velodyne_interface.h>
 
@@ -13,7 +9,6 @@
 
 using namespace std;
 
-velodyne_driver::velodyne_partial_scan_t scan;
 velodyne_driver::velodyne_gps_t gps;
 velodyne_driver::velodyne_config_t config;
 velodyne_driver::VelodyneDriver* velodyne = NULL;
@@ -23,32 +18,7 @@ static carmen_velodyne_gps_message velodyne_gps;
 static int velodyne_scan_port;
 static int velodyne_gps_port;
 static int velodyne_gps_enabled;
-static int velodyne_number_of_32_laser_shots_per_revolution;
-static int velodyne_size_of_32_laser_shot_grouping;
 
-
-/*********************************************************
- * 		--- Calibration ---
- ********************************************************/
-
-void assembly_velodyne_partial_scan_message_from_scan(velodyne_driver::velodyne_partial_scan_t scan)
-{
-	velodyne_partial_scan.number_of_32_laser_shots = scan.number_of_32_laser_shots;
-
-	for(int i = 0; i < velodyne_partial_scan.number_of_32_laser_shots; i++)
-	{
-		velodyne_partial_scan.partial_scan[i].angle = scan.laser_shots[i].angle;
-
-		for (int j = 0; j < velodyne_driver::VELODYNE_NUM_LASERS; j++)
-		{
-				velodyne_partial_scan.partial_scan[i].distance[j] = scan.laser_shots[i].distance[j];
-				velodyne_partial_scan.partial_scan[i].intensity[j] = scan.laser_shots[i].intensity[j];
-		}
-	}
-
-	velodyne_partial_scan.timestamp = scan.timestamp;
-	velodyne_partial_scan.host = carmen_get_host();
-}
 
 void assembly_velodyne_gps_message_from_gps(velodyne_driver::velodyne_gps_t gps)
 {
@@ -98,11 +68,9 @@ void assembly_velodyne_gps_message_from_gps(velodyne_driver::velodyne_gps_t gps)
 		   --- Publishers ---
 **********************************************************/
 
-void publish_velodyne_partial_scan(velodyne_driver::velodyne_partial_scan_t scan)
+void publish_velodyne_partial_scan()
 {
 	IPC_RETURN_TYPE err;
-
-	assembly_velodyne_partial_scan_message_from_scan(scan);
 
 	err = IPC_publishData(CARMEN_VELODYNE_PARTIAL_SCAN_MESSAGE_NAME, &velodyne_partial_scan);
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_VELODYNE_PARTIAL_SCAN_MESSAGE_FMT);
@@ -124,12 +92,12 @@ void publish_velodyne_gps(velodyne_driver::velodyne_gps_t gps)
 
 void shutdown_module(int signo)
 {
-  if(signo == SIGINT)
-  {
-     carmen_ipc_disconnect();
-     printf("velodyne sensor: disconnected.\n");
-     exit(0);
-  }
+	if (signo == SIGINT)
+	{
+		carmen_ipc_disconnect();
+		printf("velodyne sensor: disconnected.\n");
+		exit(0);
+	}
 }
 
 int read_parameters(int argc, char **argv)
@@ -139,9 +107,7 @@ int read_parameters(int argc, char **argv)
 	carmen_param_t param_list[] = {
 			{(char*)"velodyne", (char*)"scan_port", CARMEN_PARAM_INT, &velodyne_scan_port, 0, NULL},
 			{(char*)"velodyne", (char*)"gps_enable", CARMEN_PARAM_ONOFF, &velodyne_gps_enabled, 0, NULL},
-			{(char*)"velodyne", (char*)"gps_port", CARMEN_PARAM_INT, &velodyne_gps_port, 0, NULL},
-			{(char*)"velodyne", (char*)"number_of_32_laser_shots_per_revolution", CARMEN_PARAM_INT, &velodyne_number_of_32_laser_shots_per_revolution, 0, NULL},
-			{(char*)"velodyne", (char*)"size_of_32_laser_shot_grouping", CARMEN_PARAM_INT, &velodyne_size_of_32_laser_shot_grouping, 0, NULL},
+			{(char*)"velodyne", (char*)"gps_port", CARMEN_PARAM_INT, &velodyne_gps_port, 0, NULL}
 	};
 
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
@@ -152,38 +118,28 @@ int read_parameters(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-  /* Connect to IPC Server */
-  carmen_ipc_initialize(argc, argv);
+	carmen_ipc_initialize(argc, argv);
+	carmen_param_check_version(argv[0]);
+	signal(SIGINT, shutdown_module);
+	read_parameters(argc, argv);
+	carmen_velodyne_define_messages();
 
-  /* Check the param server version */
-  carmen_param_check_version(argv[0]);
+	velodyne_partial_scan.host = carmen_get_host();
 
-  /* Register shutdown cleaner handler */
-  signal(SIGINT, shutdown_module);
-
-  /* Read application specific parameters (Optional) */
-  read_parameters(argc, argv);
-
-  /* Define published messages by your module */
-  carmen_velodyne_define_messages();
-
-	while(true)
+	while (true)
 	{
-		if(velodyne == NULL)
+		if (velodyne == NULL)
 		{
-			velodyne = new velodyne_driver::VelodyneDriver(velodyne_scan_port, velodyne_gps_port, velodyne_number_of_32_laser_shots_per_revolution, velodyne_size_of_32_laser_shot_grouping);
+			velodyne = new velodyne_driver::VelodyneDriver(velodyne_scan_port, velodyne_gps_port, velodyne_partial_scan);
 			config = velodyne->getVelodyneConfig();
-
-			velodyne_partial_scan.partial_scan = (carmen_velodyne_32_laser_shot*) malloc (config.size_of_32_laser_shot_grouping * sizeof(carmen_velodyne_32_laser_shot));
-			}
-			else
+		}
+		else
+		{
+			if (velodyne->pollScan(velodyne_partial_scan))
 			{
-			if(velodyne->pollScan())
-			{
-				scan  = velodyne->getVelodyneScan();
-				publish_velodyne_partial_scan(scan);
+				publish_velodyne_partial_scan();
 
-				if(velodyne_gps_enabled && velodyne->pollGps())
+				if (velodyne_gps_enabled && velodyne->pollGps())
 				{
 					gps = velodyne->getVelodyneGps();
 					publish_velodyne_gps(gps);
@@ -193,10 +149,12 @@ int main(int argc, char **argv)
 			{
 				printf("velodyne disconect\n");
 				velodyne->~VelodyneDriver();
+				free(velodyne_partial_scan.partial_scan);
 				velodyne = NULL;
+				usleep(1e6 / 2);
 			}
 		}
 	}
 
-  return 0;
+	return 0;
 }

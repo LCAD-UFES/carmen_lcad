@@ -18,67 +18,118 @@
 
 #include "driver.h"
 
+
 namespace velodyne_driver
 {
 
-VelodyneDriver::VelodyneDriver(int laser_udp_port, int gps_upd_port,
-			       int number_of_32_laser_shots_per_revolution, int size_of_32_laser_shot_grouping)
+VelodyneDriver::VelodyneDriver(int laser_udp_port, int gps_upd_port, carmen_velodyne_partial_scan_message &scan)
 {
-	config_.angular_distance_between_two_32_laser_shots = 360.0 / (double) number_of_32_laser_shots_per_revolution;
-	config_.size_of_32_laser_shot_grouping = size_of_32_laser_shot_grouping;
-
-	scan_.number_of_32_laser_shots = config_.size_of_32_laser_shot_grouping;
-	scan_.laser_shots = (carmen_velodyne_32_laser_shot* ) malloc (config_.size_of_32_laser_shot_grouping * sizeof(carmen_velodyne_32_laser_shot));
+	scan.partial_scan = (carmen_velodyne_32_laser_shot *) malloc (velodyne_driver::VELODYNE_MAX_32_LASER_SHOTS_PER_REVOLUTION * sizeof(carmen_velodyne_32_laser_shot));
+	scan_buffer_.partial_scan = (carmen_velodyne_32_laser_shot *) malloc (velodyne_driver::VELODYNE_MAX_32_LASER_SHOTS_PER_REVOLUTION * sizeof(carmen_velodyne_32_laser_shot));
 
 	laser_input_ = new velodyne_driver::InputSocket(laser_udp_port);
 	gps_input_ = new velodyne_driver::InputSocket(gps_upd_port);
+}
+
+
+
+void VelodyneDriver::copy_packet_to_scan_buffer(int i, int j, const velodyne_packet_t& packet)
+{
+	for (int k = 0; k < velodyne_driver::VELODYNE_NUM_LASERS; k++)
+	{
+		scan_buffer_.partial_scan[i].distance[k] = packet.shots[j].lasers[k].distance;
+		scan_buffer_.partial_scan[i].intensity[k] = packet.shots[j].lasers[k].intensity;
+	}
+	scan_buffer_.partial_scan[i].angle = packet.shots[j].rotational_pos / 100.0;
+}
+
+
+void VelodyneDriver::copy_scan_buffer_to_scan(carmen_velodyne_partial_scan_message &scan, int l, int m)
+{
+	for (int k = 0; k < velodyne_driver::VELODYNE_NUM_LASERS; k++)
+	{
+		scan.partial_scan[l].distance[k] = scan_buffer_.partial_scan[m].distance[k];
+		scan.partial_scan[l].intensity[k] = scan_buffer_.partial_scan[m].intensity[k];
+	}
+	scan.partial_scan[l].angle = scan_buffer_.partial_scan[m].angle;
 }
 
 /** poll the device
  *
  *  @returns true unless end of file reached
  */
-bool VelodyneDriver::pollScan(void)
+bool VelodyneDriver::pollScan(carmen_velodyne_partial_scan_message &scan)
 {
-	int i = 0;
-	double initial_angular_value = 0.0;
-	// Since the velodyne delivers data at a very high rate, keep
-	// reading and publishing scans as fast as possible.
-	while(true)
+	static int i = -1;
+	static int begin_previous_scan_i;
+	static bool scan_buffer_complete = false;
+	static bool first_time = true;
+	int fraction_of_VELODYNE_NUM_SHOTS = 0;
+	double last_package_timestamp;
+
+	while (true)
 	{
-		// keep reading until full packet received
+		// Fill in the scan_buffer
 		velodyne_packet_t packet;
 		int rc = laser_input_->getScanPacket(&packet);
+		last_package_timestamp = carmen_get_time();
 
-		if (rc < 0) return false; // end of file reached?
+		if (rc < 0)
+			return false; // end of file reached?
 
 		for (int j = 0; j < velodyne_driver::VELODYNE_NUM_SHOTS; j++)
 		{
-			double current_angular_value = packet.shots[j].rotational_pos / 100.0;
+			// Compute previous_i. It is equal -1 only once.
+			int previous_i = i;
+			i++;
+			if (i >= velodyne_driver::VELODYNE_MAX_32_LASER_SHOTS_PER_REVOLUTION)
+				i = 0;
 
-			if(fabs(current_angular_value - initial_angular_value) >= config_.angular_distance_between_two_32_laser_shots)
+			copy_packet_to_scan_buffer(i, j, packet);
+
+			if ((previous_i != -1) &&
+				(scan_buffer_.partial_scan[i].angle >= 180.0) && (scan_buffer_.partial_scan[previous_i].angle < 180.0))
 			{
-				for(int k=0; k < velodyne_driver::VELODYNE_NUM_LASERS; k++)
+				if (!first_time)
 				{
-					scan_.laser_shots[i].distance[k]  =  packet.shots[j].lasers[k].distance;
-					scan_.laser_shots[i].intensity[k] =  packet.shots[j].lasers[k].intensity;
+					scan_buffer_complete = true;
 				}
-
-				scan_.laser_shots[i].angle = current_angular_value;
-				initial_angular_value = current_angular_value;
-
-				if(i >= (config_.size_of_32_laser_shot_grouping - 1))
+				else  // During the first scan just after Velodyne initialization, wait until complete a full scan
 				{
-					scan_.timestamp = carmen_get_time();
-					return true;
+					// This "else" happen only once
+					begin_previous_scan_i = i;
+					first_time = false;
 				}
-
-				i++;
+				fraction_of_VELODYNE_NUM_SHOTS = j;
 			}
 		}
-	}
 
-	printf("time: %f\n", scan_.timestamp);
+		// When scan_buffer is complete, copy it to scan
+		int l;
+		if (scan_buffer_complete)
+		{
+			int m = begin_previous_scan_i;
+			for (l = 0; l < velodyne_driver::VELODYNE_MAX_32_LASER_SHOTS_PER_REVOLUTION; l++)
+			{
+				copy_scan_buffer_to_scan(scan, l, m);
+				int previous_m = m;
+				m++;
+				if (m >= velodyne_driver::VELODYNE_MAX_32_LASER_SHOTS_PER_REVOLUTION)
+					m = 0;
+				if ((scan_buffer_.partial_scan[m].angle >= 180.0) && (scan_buffer_.partial_scan[previous_m].angle < 180.0))
+					break;
+			}
+			scan.number_of_32_laser_shots = l < velodyne_driver::VELODYNE_MAX_32_LASER_SHOTS_PER_REVOLUTION ?  l + 1 : l; // quando liga o velodyne ele pode estar muito lento
+			scan.timestamp = last_package_timestamp -
+					((double) (velodyne_driver::VELODYNE_NUM_SHOTS - 1 - fraction_of_VELODYNE_NUM_SHOTS) /
+					 (double) (velodyne_driver::VELODYNE_PACKAGE_RATE * velodyne_driver::VELODYNE_NUM_SHOTS));
+
+			begin_previous_scan_i = m;
+			scan_buffer_complete = false;
+
+			return true;
+		}
+	}
 
 	return true;
 }
@@ -103,11 +154,11 @@ void VelodyneDriver::printVelodyneGps()
 	gps_input_->printGpsPacket(gps_.packet);
 }
 
-void VelodyneDriver::printVelodyneScan()
+void VelodyneDriver::printVelodyneScan(carmen_velodyne_partial_scan_message scan)
 {
-	for(int i=0; i < scan_.number_of_32_laser_shots; i++)
+	for(int i=0; i < scan.number_of_32_laser_shots; i++)
 	{
-		printf("angle (%d): %6.2f\n", i, scan_.laser_shots[i].angle);
+		printf("angle (%d): %6.2f\n", i, scan.partial_scan[i].angle);
 
 		//printf("data :");
 		//for(int j=0; j < 32; j++)
@@ -118,9 +169,9 @@ void VelodyneDriver::printVelodyneScan()
 
 VelodyneDriver::~VelodyneDriver()
 {
-	free(scan_.laser_shots);
+	free(scan_buffer_.partial_scan);
 
-	if(laser_input_ != NULL)
+	if (laser_input_ != NULL)
 		laser_input_->~InputSocket();
 }
 

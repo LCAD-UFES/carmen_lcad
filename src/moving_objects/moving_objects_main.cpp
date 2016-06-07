@@ -3,34 +3,32 @@
 **********************************************************/
 
 #include "moving_objects_messages.h"
-#include "moving_objects.h"
-
-#include <carmen/carmen.h>
 #include <prob_measurement_model.h>
 #include <prob_map.h>
-#include <carmen/moving_objects_interface.h>
-#include <carmen/localize_ackerman_core.h>
-#include <carmen/localize_ackerman_messages.h>
-#include <carmen/localize_ackerman_interface.h>
-#include <carmen/localize_ackerman_velodyne.h>
-#include <carmen/localize_ackerman_motion.h>
-#include <carmen/laser_messages.h>
+#include <carmen/carmen.h>
 #include <carmen/laser_interface.h>
+#include <carmen/laser_messages.h>
+#include <carmen/localize_ackerman_core.h>
+#include <carmen/localize_ackerman_interface.h>
+#include <carmen/localize_ackerman_messages.h>
+#include <carmen/localize_ackerman_motion.h>
+#include <carmen/localize_ackerman_velodyne.h>
+#include <carmen/moving_objects_interface.h>
 #include <carmen/rotation_geometry.h>
+#include <carmen/stereo_interface.h>
+#include <carmen/stereo_messages.h>
+#include <carmen/stereo_util.h>
+#include <carmen/stereo_velodyne.h>
+#include <carmen/stereo_velodyne_interface.h>
 #include <carmen/velodyne_interface.h>
 #include <carmen/velodyne_messages.h>
-#include <carmen/stereo_velodyne_interface.h>
-#include <carmen/stereo_util.h>
-#include <carmen/stereo_messages.h>
-#include <carmen/stereo_interface.h>
-#include <carmen/stereo_velodyne.h>
 
-
-#include <pcl/PointIndices.h>
 #include <Eigen/Core>
 #include <tf.h>
+#include <pcl/PointIndices.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include "moving_objects.h"
 
 
 #define NUM_VELODYNE_POINT_CLOUDS	5
@@ -204,24 +202,19 @@ carmen_map_server_offline_map_message_handler(carmen_map_server_offline_map_mess
 		}
 	}
 
-	if (offline_grid_map == NULL && localize_initialized)
+	if (offline_grid_map == NULL)
 	{
 		initialize_objects_maps();
 		initialize_map(offline_grid_map, message->config.x_size, message->config.y_size, message->config.resolution);
 
 		offline_grid_map->config = message->config;
-
-		for (int i = 0; i < (message->config.x_size * message->config.y_size); i++)
-			offline_grid_map->complete_map[i] = message->complete_map[i];
+		memcpy(offline_grid_map->complete_map, message->complete_map, message->config.x_size * message->config.y_size * sizeof(double));
 	}
 	else
 	{
 		offline_grid_map->config = message->config;
 
-		for (int i = 0; i < (message->config.x_size * message->config.y_size); i++)
-		{
-			offline_grid_map->complete_map[i] = message->complete_map[i];
-		}
+		memcpy(offline_grid_map->complete_map, message->complete_map, message->config.x_size * message->config.y_size * sizeof(double));
 	}
 }
 
@@ -313,10 +306,10 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 
 		num_point_clouds = list_point_clouds.size();
 
-		/*** PRINT NUMBER OF POINT CLOUDS SEGMENTED IN THE SCENE ***/
-//		printf("frame: %d \n", frame);
-//		printf("num_point_clouds: %d \n", num_point_clouds);
-//		printf("current timestamp: %.10f \n", velodyne_message->timestamp);
+		/*** PRINT FRAME ID, TIMESTAMP AND NUMBER OF POINT CLOUDS SEGMENTED IN THE SCENE ***/
+//		printf("%d ", frame);
+//		printf("%.10f\n", velodyne_message->timestamp);
+//		printf("clouds: %d\n\n", num_point_clouds);
 		frame++;
 
 		if (num_point_clouds == 0)
@@ -345,18 +338,18 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 			moving_objects_point_clouds_message.point_clouds[i].r = ((double)color_palette[0]) / 255.0;
 			moving_objects_point_clouds_message.point_clouds[i].g = ((double)color_palette[1]) / 255.0;
 			moving_objects_point_clouds_message.point_clouds[i].b = ((double)color_palette[2]) / 255.0;
-			moving_objects_point_clouds_message.point_clouds[i].point_size      = it->point_cloud.size();
+			moving_objects_point_clouds_message.point_clouds[i].point_size = it->point_cloud.size();
 			moving_objects_point_clouds_message.point_clouds[i].linear_velocity = it->linear_velocity;
-			moving_objects_point_clouds_message.point_clouds[i].orientation     = it->orientation;
-			moving_objects_point_clouds_message.point_clouds[i].object_pose.x   = it->object_pose.position.x;// + it->car_global_pose.position.x;//it->centroid[0] + it->car_global_pose.position.x;
-			moving_objects_point_clouds_message.point_clouds[i].object_pose.y   = it->object_pose.position.y;// + it->car_global_pose.position.y;//it->centroid[1] + it->car_global_pose.position.y;
-			moving_objects_point_clouds_message.point_clouds[i].object_pose.z   = it->object_pose.position.z + it->car_global_pose.position.z;//it->centroid[2] + it->car_global_pose.position.z;
-			moving_objects_point_clouds_message.point_clouds[i].height          = it->geometry.height;
-			moving_objects_point_clouds_message.point_clouds[i].length          = it->geometry.length;
-			moving_objects_point_clouds_message.point_clouds[i].width           = it->geometry.width;
+			moving_objects_point_clouds_message.point_clouds[i].orientation = it->orientation;
+			moving_objects_point_clouds_message.point_clouds[i].object_pose.x = it->object_pose.position.x;// + it->car_global_pose.position.x;//it->centroid[0] + it->car_global_pose.position.x;
+			moving_objects_point_clouds_message.point_clouds[i].object_pose.y = it->object_pose.position.y;// + it->car_global_pose.position.y;//it->centroid[1] + it->car_global_pose.position.y;
+			moving_objects_point_clouds_message.point_clouds[i].object_pose.z = it->object_pose.position.z + it->car_global_pose.position.z;//it->centroid[2] + it->car_global_pose.position.z;
+			moving_objects_point_clouds_message.point_clouds[i].height = it->geometry.height;
+			moving_objects_point_clouds_message.point_clouds[i].length = it->geometry.length;
+			moving_objects_point_clouds_message.point_clouds[i].width= it->geometry.width;
 			moving_objects_point_clouds_message.point_clouds[i].geometric_model = it->geometric_model;
-			moving_objects_point_clouds_message.point_clouds[i].model_features  = it->model_features;
-			moving_objects_point_clouds_message.point_clouds[i].num_associated  = it->num_color_associate;
+			moving_objects_point_clouds_message.point_clouds[i].model_features = it->model_features;
+			moving_objects_point_clouds_message.point_clouds[i].num_associated = it->num_color_associate;
 
 			for (pcl::PointCloud<pcl::PointXYZ>::const_iterator pit = it->point_cloud.begin(); pit != it->point_cloud.end(); pit++)
 			{
@@ -370,6 +363,7 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 		}
 
 		moving_objects_point_clouds_message.timestamp = velodyne_message->timestamp;
+		/*** PUBLISH MESSAGE ***/
 		carmen_moving_objects_point_clouds_publish_message(&moving_objects_point_clouds_message);
 		deallocation_moving_objects_point_clouds_message();
 	}

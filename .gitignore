@@ -2,6 +2,7 @@
 *.a
 Makefile.depend
 *.*~
+*~
 .settings/org.eclipse.cdt.codan.core.prefs
 bin/debug.txt
 bin/out.txt
@@ -129,6 +130,7 @@ bin/xsens
 bin/xsens_listener
 bin/xsens_mtig
 bin/xsens_viewer
+bin/laser_ldmrs
 data/rndf/rddf-log_voltadaufes-20140806-2.kml.timestamp.index
 data/rndf/rddf-log_voltadaufes-20140806-2.kml.x.index
 data/rndf/rddf-log_voltadaufes-20140806-2.kml.y.index
@@ -235,6 +237,7 @@ src/maptools/map_test
 src/maptools/maptool
 src/model_predictive_planner/model_predictive_planner
 src/model_predictive_planner/vel.txt
+src/moving_objects/libmoving_objects_interface.a
 src/motion_planner/motion_planner
 src/moving_objects/moving_objects
 src/mvog_package/mvog
@@ -308,6 +311,7 @@ src/xsens/xsens_listener
 src/xsens_MTi-G/example
 src/xsens_MTi-G/subscribe_xsens_mtig
 src/xsens_MTi-G/xsens_mtig
+src/laser-ldmrs/laser_ldmrs
 .cproject
 .project
 bin/gnuplot_path
@@ -381,3 +385,15 @@ src/velodyne/libvelodyne_interface.so.1
 src/visual_odometry_package2/libvisual_odometry_interface.so.1
 src/xsens/libxsens_interface.so.1
 src/xsens_MTi-G/libxsens_mtig_interface.so.1
+src/model_predictive_planner/gnuplot_path.txt
+src/model_predictive_planner/problems.txt
+sharedlib/libsickldmrs/libsickldmrs.so.1
+bin/laser_ldmrs
+sharedlib/libsickldmrs/sickldmrstest
+src/laser-ldmrs/laser_ldmrs
+src/moving_objects/Makefile.depend
+src/moving_objects/libmoving_objects_interface.a
+src/moving_objects/monte_carlo_moving_objects_tracking.a
+src/moving_objects/moving_objects.a
+src/moving_objects/moving_objects_interface.o
+src/moving_objects/moving_objects_main.o

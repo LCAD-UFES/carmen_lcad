@@ -595,15 +595,16 @@ carmen_prob_models_update_cells_crossed_by_ray(carmen_map_t *map, sensor_paramet
 	cell_coords_t a, b;
 	double dx, dy, dr;
 	int step_count;
-	int nx, ny, bx, by;
+	int nx, ny;
 	int ray_start_occupied = 0;
 	
+//	if (sensor_data->maxed[sensor_data->ray_that_hit_the_nearest_target])
+//		return;
+
 	a.x = (sensor_data->ray_origin_in_the_floor[sensor_data->ray_that_hit_the_nearest_target].x / map->config.resolution);
 	a.y = (sensor_data->ray_origin_in_the_floor[sensor_data->ray_that_hit_the_nearest_target].y / map->config.resolution);
 	b.x = (sensor_data->ray_position_in_the_floor[sensor_data->ray_that_hit_the_nearest_target].x / map->config.resolution);
 	b.y = (sensor_data->ray_position_in_the_floor[sensor_data->ray_that_hit_the_nearest_target].y / map->config.resolution);
-	bx = (int) (b.x + 0.5);
-	by = (int) (b.y + 0.5);
 
 	// Compute line parameters
 	dx = (double) (b.x - a.x);
@@ -620,13 +621,13 @@ carmen_prob_models_update_cells_crossed_by_ray(carmen_map_t *map, sensor_paramet
 		nx = (int) (a.x + dx * (double) j + 0.5);
 		ny = (int) (a.y + dy * (double) j + 0.5);
 
-		if (map_grid_is_valid(map, nx, ny) && !((nx == bx) && (ny == by)))
+		if (map_grid_is_valid(map, nx, ny) && !((nx == b.x) && (ny == b.y)))
 		{
-			if ((j < 8) && (map->map[nx][ny] > 0.85)) // Alberto: estes numeros sao bem ad hoc...
-				ray_start_occupied = 1;
-			if (ray_start_occupied && (map->map[nx][ny] <= 0.85))
-				ray_start_occupied = 0;
-			if (ray_start_occupied == 0)
+//			if ((j < 8) && (map->map[nx][ny] > 0.85)) // Alberto: estes numeros sao bem ad hoc...
+//				ray_start_occupied = 1;
+//			if (ray_start_occupied && (map->map[nx][ny] <= 0.85))
+//				ray_start_occupied = 0;
+//			if (ray_start_occupied == 0)
 				carmen_prob_models_log_odds_occupancy_grid_mapping(map, nx, ny, sensor_params->log_odds.log_odds_free);
 			if (map->map[nx][ny] >= 0.5)
 				break;	// do not cross obstacles until they are cleared
@@ -881,6 +882,56 @@ get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, senso
 	return (log_odds);
 }
 
+double
+get_log_odds_via_unexpeted_delta_range_jose(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int ray_index, int scan_index,
+		bool reduce_sensitivity)
+{
+	int previous_ray_index;
+	double ray_size1, ray_size2, delta_ray, line_angle; //, expected_delta_ray_old;
+	double log_odds;
+
+
+	previous_ray_index = ray_index - 1;
+#if (DISCOUNT_RAY_19 == 1)
+	// Tratamento do raio que falta/apagado
+	if (previous_ray_index == 19)
+		previous_ray_index = 18;
+#endif
+	if (previous_ray_index < 0)
+		return (sensor_params->log_odds.log_odds_l0);
+
+	if (sensor_data->maxed[previous_ray_index] || sensor_data->maxed[ray_index])
+		return (sensor_params->log_odds.log_odds_l0);
+
+	if (sensor_data->ray_hit_the_robot[previous_ray_index] || sensor_data->ray_hit_the_robot[ray_index])
+		return (sensor_params->log_odds.log_odds_l0);
+
+	if ((sensor_data->obstacle_height[previous_ray_index] < -2.0) || (sensor_data->obstacle_height[ray_index] < -2.0))
+		return (sensor_params->log_odds.log_odds_l0);
+
+	ray_size1 = sensor_data->ray_size_in_the_floor[previous_ray_index];
+	ray_size2 = sensor_data->ray_size_in_the_floor[ray_index];
+
+	delta_ray = ray_size2 - ray_size1;
+	line_angle = atan2((sensor_data->obstacle_height[ray_index] - sensor_data->obstacle_height[previous_ray_index]), delta_ray);
+	if (abs(line_angle) > M_PI / 2)
+		if (line_angle > 0)
+			line_angle = M_PI - line_angle;
+		else
+			line_angle = -M_PI - line_angle;
+
+	double obstacle_probability = 1.0 - exp(-pow(line_angle / (M_PI/16.0),2));
+	if (line_angle < 0.000001)
+		return sensor_params->log_odds.log_odds_free;
+
+//	if (expected_delta_ray > M_PI/32)
+//		log_odds = sensor_params->log_odds.log_odds_occ;
+//	else
+//		log_odds = sensor_params->log_odds.log_odds_free;
+
+	return log(obstacle_probability / (1.0 - obstacle_probability));
+}
+
 
 double
 get_log_odds_via_unexpeted_delta_range_reverse(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int ray_index, int scan_index,
@@ -948,6 +999,7 @@ carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data
 	double min_ray_size = 10000.0;
 	int min_ray_size_index = sensor_params->vertical_resolution - 1;
 
+//	for (i = sensor_params->vertical_resolution-2; i >= 0; i--)
 	for (i = 0; i < sensor_params->vertical_resolution; i++)
 	{
 		if (carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[i], highest_sensor, safe_range_above_sensors))
@@ -1002,7 +1054,7 @@ carmen_prob_models_ray_hit_the_robot(double distance_between_rear_robot_and_rear
 	car_corners[1].x = robot_length - distance_between_rear_robot_and_rear_wheels;
 
 
-	if ((x < car_corners[0].x || y < car_corners[0].y)||(x > car_corners[1].x || y > car_corners[1].y))
+	if ((x < car_corners[0].x || y < car_corners[0].y) || (x > car_corners[1].x || y > car_corners[1].y))
 		return 0;
 
 	return 1;
@@ -1017,7 +1069,7 @@ get_ray_origin_a_target_b_and_target_height(double *ax, double *ay, double *bx, 
 {
 	int maxed;
 
-	if (sphere_point.length >= range_max || sphere_point.length == 0.0)
+	if (sphere_point.length >= range_max || sphere_point.length <= 0.0)
 	{
 		sphere_point.length = range_max;
 		maxed = 1;
@@ -1056,11 +1108,9 @@ carmen_prob_models_compute_relevant_map_coordinates(sensor_data_t *sensor_data, 
 	int i;
 	double ax, ay, bx, by;
 	float obstacle_z;
-	double closest_ray = 10000;
-	carmen_vector_2D_t ray_origin;
-
-	ray_origin.x = 0.0;
-	ray_origin.y = 0.0;
+	double closest_ray = 10000.0;
+	carmen_vector_2D_t ray_origin = {0.0, 0.0};
+	bool first = true;
 
 	for (i = 0; i < sensor_params->vertical_resolution; i++)
 	{
@@ -1074,8 +1124,12 @@ carmen_prob_models_compute_relevant_map_coordinates(sensor_data_t *sensor_data, 
 		sensor_data->obstacle_height[i] = obstacle_z;
 		sensor_data->processed_intensity[i] = (double) (sensor_data->intensity[sensor_data->point_cloud_index][scan_index + i]) / 255.0;
 
-//		if (sensor_params->remission_calibration != NULL)
-//			sensor_data->processed_intensity[i] = sensor_params->remission_calibration[i * 256 + sensor_data->intensity[sensor_data->point_cloud_index][scan_index + i]];
+		if (first)
+		{
+			ray_origin.x = ax;
+			ray_origin.y = ay;
+			first = false;
+		}
 
 		if (!sensor_data->ray_hit_the_robot[i])
 		{

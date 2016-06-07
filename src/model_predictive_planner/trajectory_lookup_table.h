@@ -10,6 +10,7 @@
 
 #include "carmen/rddf_interface.h"
 
+
 #define N_DIST			15				// Number of Distances traveled in polar coordinates
 #define FIRST_DIST		2.3				// First Distance, or scale factor of its geometric progression (Wikipedia)
 #define RATIO_DIST		1.18			// Ratio (Wikipedia) of the Distance geometric progression
@@ -50,6 +51,17 @@
 #define ZERO_D_V_I		4				// Index of zero Velocity displacement
 
 #define NUM_VELOCITY_PROFILES	4
+
+#define V_LATENCY				0.0
+#define PHI_LATENCY				0.0
+#define LATENCY_CICLE_TIME		0.01
+#define MAX_PLANNING_TIME		1.0
+const int V_LATENCY_BUFFER_SIZE = (V_LATENCY / LATENCY_CICLE_TIME);
+const int V_LATENCY_BUFFER_TOTAL_SIZE = (V_LATENCY_BUFFER_SIZE + MAX_PLANNING_TIME / LATENCY_CICLE_TIME);
+const int PHI_LATENCY_BUFFER_SIZE = (PHI_LATENCY / LATENCY_CICLE_TIME);
+const int PHI_LATENCY_BUFFER_TOTAL_SIZE = (PHI_LATENCY_BUFFER_SIZE + MAX_PLANNING_TIME / LATENCY_CICLE_TIME);
+
+
 typedef enum
 {
 	CONSTANT_PROFILE = 0,
@@ -78,6 +90,8 @@ public:
 		double tf;
 		double k1;
 		double k2;
+		double k3;
+		bool has_k3;
 		double sf;
 	};
 
@@ -114,9 +128,29 @@ public:
 	};
 
 
+	class CarLatencyBuffer
+	{
+	public:
+		double previous_v[V_LATENCY_BUFFER_TOTAL_SIZE];
+		double previous_phi[PHI_LATENCY_BUFFER_TOTAL_SIZE];
+		double timestamp;
+
+		CarLatencyBuffer()
+		{
+			for (int i = 0; i < V_LATENCY_BUFFER_TOTAL_SIZE; i++)
+				previous_v[i] = 0.0;
+
+			for (int i = 0; i < PHI_LATENCY_BUFFER_TOTAL_SIZE; i++)
+				previous_phi[i] = 0.0;
+
+			timestamp = 0.0;
+		}
+	};
+
+
 	TrajectoryLookupTable(int update_lookup_table);
 
-	static Robot_State predict_next_pose(Robot_State &robot_state, const Command &requested_command,
+	static Robot_State predict_next_pose(Robot_State &robot_state, Command &requested_command,
 			double full_time_interval, double *distance_traveled, double delta_t);
 	bool load_trajectory_lookup_table();
 	void build_trajectory_lookup_table();

@@ -210,90 +210,6 @@ carmen_check_for_annotations(double x, double y, double theta __attribute__((unu
 }
 
 
-static void
-localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
-{
-	robot_pose = msg->globalpos;
-	carmen_rddf_pose_initialized = 1;
-
-	carmen_rddf_num_poses_ahead = carmen_rddf_play_find_nearest_poses_ahead(
-			robot_pose.x,
-			robot_pose.y,
-			robot_pose.theta,
-			msg->timestamp,
-			carmen_rddf_poses_ahead,
-			carmen_rddf_poses_back,
-			&carmen_rddf_num_poses_back,
-			carmen_rddf_num_poses_ahead_max,
-			annotations
-	);
-
-	annotations_to_publish.clear();
-	carmen_check_for_annotations(robot_pose.x, robot_pose.y, robot_pose.theta);
-}
-
-
-static void
-carmen_rddf_play_nearest_waypoint_message_handler(carmen_rddf_nearest_waypoint_message *rddf_nearest_waypoint_message)
-{
-	carmen_rddf_nearest_waypoint_to_end_point = rddf_nearest_waypoint_message->point;
-	carmen_rddf_nearest_waypoint_is_set = 1;
-
-	carmen_rddf_publish_nearest_waypoint_confirmation_message(rddf_nearest_waypoint_message->point);
-	already_reached_nearest_waypoint_to_end_point = 0;
-}
-
-
-void
-carmen_rddf_play_find_and_publish_poses_around_end_point(double x, double y, double yaw, int num_poses_desired, double timestamp)
-{
-	int num_poses_acquired = 0;
-	carmen_ackerman_traj_point_t *poses_around_end_point;
-
-	poses_around_end_point = (carmen_ackerman_traj_point_t *) calloc (num_poses_desired, sizeof(carmen_ackerman_traj_point_t));
-	carmen_test_alloc(poses_around_end_point);
-
-	num_poses_acquired = carmen_find_poses_around(x, y, yaw, timestamp, poses_around_end_point, num_poses_desired);
-	carmen_rddf_publish_road_profile_around_end_point_message(poses_around_end_point, num_poses_acquired);
-
-	free(poses_around_end_point);
-}
-
-
-void
-carmen_rddf_play_end_point_message_handler(carmen_rddf_end_point_message *rddf_end_point_message)
-{
-	if (rddf_end_point_message->number_of_poses > 1)
-	{
-		carmen_rddf_play_find_and_publish_poses_around_end_point(
-				rddf_end_point_message->point.x,
-				rddf_end_point_message->point.y,
-				rddf_end_point_message->point.theta,
-				rddf_end_point_message->number_of_poses,
-				rddf_end_point_message->timestamp
-		);
-
-		carmen_rddf_end_point = rddf_end_point_message->point;
-		carmen_rddf_end_point_is_set = 1;
-	}
-	else
-	{
-		carmen_rddf_play_find_and_publish_poses_around_end_point(
-				rddf_end_point_message->point.x,
-				rddf_end_point_message->point.y,
-				rddf_end_point_message->point.theta,
-				rddf_end_point_message->number_of_poses,
-				rddf_end_point_message->timestamp
-		);
-
-		carmen_rddf_nearest_waypoint_to_end_point = rddf_end_point_message->point;
-		carmen_rddf_nearest_waypoint_is_set = 1;
-
-		already_reached_nearest_waypoint_to_end_point = 0;
-	}
-}
-
-
 void
 find_nearest_pose_and_dist(int annotation_id, int *nearest_pose_out, double *nearest_pose_dist_out)
 {
@@ -384,6 +300,92 @@ carmen_rddf_play_publish_rddf()
 			err = IPC_publishData(CARMEN_RDDF_ANNOTATION_MESSAGE_NAME, &annotation_queue[annotations_to_publish[i]]);
 			carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_ANNOTATION_MESSAGE_FMT);
 		}
+	}
+}
+
+
+static void
+localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
+{
+	robot_pose = msg->globalpos;
+	carmen_rddf_pose_initialized = 1;
+
+	carmen_rddf_num_poses_ahead = carmen_rddf_play_find_nearest_poses_ahead(
+			robot_pose.x,
+			robot_pose.y,
+			robot_pose.theta,
+			msg->timestamp,
+			carmen_rddf_poses_ahead,
+			carmen_rddf_poses_back,
+			&carmen_rddf_num_poses_back,
+			carmen_rddf_num_poses_ahead_max,
+			annotations
+	);
+
+	annotations_to_publish.clear();
+	carmen_check_for_annotations(robot_pose.x, robot_pose.y, robot_pose.theta);
+
+	carmen_rddf_play_publish_rddf();
+}
+
+
+static void
+carmen_rddf_play_nearest_waypoint_message_handler(carmen_rddf_nearest_waypoint_message *rddf_nearest_waypoint_message)
+{
+	carmen_rddf_nearest_waypoint_to_end_point = rddf_nearest_waypoint_message->point;
+	carmen_rddf_nearest_waypoint_is_set = 1;
+
+	carmen_rddf_publish_nearest_waypoint_confirmation_message(rddf_nearest_waypoint_message->point);
+	already_reached_nearest_waypoint_to_end_point = 0;
+}
+
+
+void
+carmen_rddf_play_find_and_publish_poses_around_end_point(double x, double y, double yaw, int num_poses_desired, double timestamp)
+{
+	int num_poses_acquired = 0;
+	carmen_ackerman_traj_point_t *poses_around_end_point;
+
+	poses_around_end_point = (carmen_ackerman_traj_point_t *) calloc (num_poses_desired, sizeof(carmen_ackerman_traj_point_t));
+	carmen_test_alloc(poses_around_end_point);
+
+	num_poses_acquired = carmen_find_poses_around(x, y, yaw, timestamp, poses_around_end_point, num_poses_desired);
+	carmen_rddf_publish_road_profile_around_end_point_message(poses_around_end_point, num_poses_acquired);
+
+	free(poses_around_end_point);
+}
+
+
+void
+carmen_rddf_play_end_point_message_handler(carmen_rddf_end_point_message *rddf_end_point_message)
+{
+	if (rddf_end_point_message->number_of_poses > 1)
+	{
+		carmen_rddf_play_find_and_publish_poses_around_end_point(
+				rddf_end_point_message->point.x,
+				rddf_end_point_message->point.y,
+				rddf_end_point_message->point.theta,
+				rddf_end_point_message->number_of_poses,
+				rddf_end_point_message->timestamp
+		);
+
+		carmen_rddf_end_point = rddf_end_point_message->point;
+		carmen_rddf_end_point_is_set = 1;
+	}
+	else
+	{
+		carmen_rddf_play_find_and_publish_poses_around_end_point(
+				rddf_end_point_message->point.x,
+				rddf_end_point_message->point.y,
+				rddf_end_point_message->point.theta,
+				rddf_end_point_message->number_of_poses,
+				rddf_end_point_message->timestamp
+		);
+
+		carmen_rddf_nearest_waypoint_to_end_point = rddf_end_point_message->point;
+		carmen_rddf_nearest_waypoint_is_set = 1;
+
+		already_reached_nearest_waypoint_to_end_point = 0;
 	}
 }
 
@@ -485,7 +487,7 @@ carmen_rddf_play_initialize(void)
 	carmen_test_alloc(annotations);
 
 	// publish rddf at a rate of 10Hz
-	carmen_ipc_addPeriodicTimer(1.0 / 10.0, (TIMER_HANDLER_TYPE) carmen_rddf_play_publish_rddf, NULL);
+	// carmen_ipc_addPeriodicTimer(1.0 / 10.0, (TIMER_HANDLER_TYPE) carmen_rddf_play_publish_rddf, NULL);
 }
 
 

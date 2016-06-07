@@ -1,0 +1,189 @@
+name: "Dqn"
+
+#batch of 32 input samples. each input sample contains 4 frames.
+layers {
+  name: "frames_input_layer"
+  type: MEMORY_DATA
+  top: "frames"
+  top: "dummy1"
+  memory_data_param {
+    batch_size: 32
+    channels: 4
+    height: 84
+    width: 84
+  }
+}
+#target_input: expected rewards for each action. This value is compared to the q-value predicted by the network and the difference (euclidean loss) is used to update the weights.
+layers {
+  name: "target_input_layer"
+  type: MEMORY_DATA
+  top: "target"
+  top: "dummy2"
+  memory_data_param {
+    batch_size: 32
+    channels: 5
+    height: 1
+    width: 1
+  }
+}
+#auxiliar layer used during training. the values of this layer are multiplied by the q-values calculated by the network. The q-values of all actions, except the one performed
+#by the agent are multiplied by 0. The action performed by the agent is multiplied by 1.
+layers {
+  name: "filter_input_layer"
+  type: MEMORY_DATA
+  top: "filter"
+  top: "dummy3"
+  memory_data_param {
+    batch_size: 32
+    channels: 5
+    height: 1
+    width: 1
+  }
+}
+layers {
+  name: "odometry_input_layer"
+  type: MEMORY_DATA
+  top: "odometry"
+  top: "dummy4"
+  memory_data_param {
+    batch_size: 32
+    #channels: 2
+    channels: 240 # 120 copias da velocidade e 120 copias do angulo do volante
+    height: 1
+    width: 1
+  }
+}
+layers {
+  name: "silence_layer"
+  type: SILENCE
+  bottom: "dummy1"
+  bottom: "dummy2"
+  bottom: "dummy3"
+  bottom: "dummy4"
+}
+layers {
+  name: "conv1_layer"
+  type: CONVOLUTION
+  bottom: "frames"
+  top: "conv1"
+  convolution_param {
+    num_output: 16
+    kernel_size: 21
+    stride: 7
+    weight_filler {
+      type: "gaussian"
+      std: 0.001
+    }
+  }
+}
+layers {
+  name: "conv1_relu_layer"
+  type: RELU
+  bottom: "conv1"
+  top: "conv1"
+  relu_param {
+    negative_slope: 0.01
+  }
+}
+layers {
+  name: "conv2_layer"
+  type: CONVOLUTION
+  bottom: "conv1"
+  top: "conv2"
+  convolution_param {
+    num_output: 32
+    kernel_size: 3
+    stride: 3
+    weight_filler {
+      type: "gaussian"
+      std: 0.001
+    }
+  }
+}
+layers {
+  name: "conv2_relu_layer"
+  type: RELU
+  bottom: "conv2"
+  top: "conv2"
+  relu_param {
+    negative_slope: 0.01
+  }
+}
+layers {
+    name: "flaten_conv2"
+    type: FLATTEN
+    bottom: "conv2"
+    top: "flaten_conv2"
+}
+
+layers {
+    name: "flaten_odometry"
+    type: FLATTEN
+    bottom: "odometry"
+    top: "flaten_odometry"
+}
+layers {
+  name: "concat_odometry_and_conv2"
+  type: CONCAT
+  bottom: "flaten_conv2"
+  bottom: "flaten_odometry"
+  top: "odometry_and_conv2"
+  concat_param {
+    axis: 1
+  }
+}
+layers {
+  name: "ip1_layer"
+  type: INNER_PRODUCT
+  bottom: "odometry_and_conv2"
+  top: "ip1"
+  inner_product_param {
+    num_output: 256
+    weight_filler {
+      type: "gaussian"
+      std: 0.001
+    }
+  }
+}
+layers {
+  name: "ip1_tanh_layer"
+  type: TANH
+  bottom: "ip1"
+  top: "ip1"
+}
+layers {
+  name: "ip2_layer"
+  type: INNER_PRODUCT
+  bottom: "ip1"
+  top: "q_values"
+  inner_product_param {
+    num_output: 5
+    weight_filler {
+      type: "gaussian"
+      std: 0.001
+    }
+  }
+}
+layers {
+    name: "flaten_filter"
+    type: FLATTEN
+    bottom: "filter"
+    top: "flaten_filter"
+}
+layers {
+  name: "eltwise_layer"
+  type: ELTWISE
+  bottom: "q_values"
+  bottom: "flaten_filter"
+  top: "filtered_q_values"
+  eltwise_param {
+    operation: PROD
+  }
+}
+layers {
+  name: "loss"
+  type: EUCLIDEAN_LOSS
+  bottom: "filtered_q_values"
+  bottom: "target"
+  top: "loss"
+}

@@ -149,6 +149,7 @@ void carmen_update_cells_below_robot(carmen_map_t *map, carmen_point_t xt);
 void occupancy_grid_mapping(int xi, int yi, const ProbabilisticMap *map, int inverse_sensor_model_value);
 double get_log_odds_map_cell(const carmen_map_t *map, int x, int y);
 void set_log_odds_map_cell(carmen_map_t *map, int x, int y, double lt_i);
+double get_log_odds(double p_mi);
 double carmen_prob_models_log_odds_to_probabilistic(double lt_i);
 void set_image_map_cell(const ProbabilisticMap *map, int x, int y, int value);
 double grid_to_map_x(int x);

@@ -32,7 +32,7 @@ static carmen_map_t *current_mean_remission_map;
 static carmen_map_t *current_variance_remission_map;
 static carmen_map_t *current_sum_sqr_remission_map;
 static carmen_map_t *current_count_remission_map;
-static double distance_to_update_lane_map = 5.0;
+static double distance_to_update_lane_map = 1.0;
 //static carmen_map_t *current_google_map;
 
 static char *map_path;
@@ -408,6 +408,7 @@ publish_a_new_offline_map_if_robot_moved_to_another_block(carmen_point_t *pose, 
 		strcpy(current_map->config.origin, "from_param_daemon");
 		carmen_map_server_publish_offline_map_message(current_map, timestamp);
 		offline_map_published = 1;
+		construct_compressed_lane_map();
 		publish_compressed_map();
 		carmen_map_server_publish_localize_map_message(&localize_map);
 	}
@@ -489,6 +490,8 @@ copy_local_rddf_to_global_rddf(carmen_rddf_road_profile_message *message)
 static void
 rddf_message_handler(carmen_rddf_road_profile_message *message)
 {
+	static carmen_point_t pose_in_last_publish = {0.0, 0.0, 0.0};
+
 	if (message->number_of_poses <= 0 || message->number_of_poses_back <= 0)
 		return;
 
@@ -505,7 +508,6 @@ rddf_message_handler(carmen_rddf_road_profile_message *message)
 		copy_local_rddf_to_global_rddf(message);
 
 		double distance_without_lane_map;
-		static carmen_point_t pose_in_last_publish = {0.0, 0.0, 0.0};
 
 		distance_without_lane_map =
 			sqrt(pow(pose_g.x - pose_in_last_publish.x, 2) +
@@ -522,8 +524,7 @@ rddf_message_handler(carmen_rddf_road_profile_message *message)
 }
 
 
-
-static void
+void
 astar_goal_list_message_handler(carmen_navigator_ackerman_astar_goal_list_message *msg)
 {
 	distance_to_update_lane_map = 1.0;

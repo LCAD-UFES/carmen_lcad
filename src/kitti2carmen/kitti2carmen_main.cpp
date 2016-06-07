@@ -42,7 +42,7 @@ publish_camera(carmen_bumblebee_basic_stereoimage_message cam)
 
 
 void
-publish_gps_and_xsens(carmen_gps_gpgga_message gps_msg, carmen_xsens_global_quat_message xsens_msg)
+publish_gps_xsens_and_velocity(carmen_gps_gpgga_message gps_msg, carmen_xsens_global_quat_message xsens_msg, carmen_robot_ackerman_velocity_message velocity_msg)
 {
 	IPC_RETURN_TYPE err;
 
@@ -51,6 +51,9 @@ publish_gps_and_xsens(carmen_gps_gpgga_message gps_msg, carmen_xsens_global_quat
 
 	err = IPC_publishData(CARMEN_XSENS_GLOBAL_QUAT_NAME, &xsens_msg);
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_XSENS_GLOBAL_QUAT_FMT);
+
+	err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, &velocity_msg);
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_ROBOT_ACKERMAN_VELOCITY_FMT);
 }
 
 
@@ -158,6 +161,7 @@ read_gps_imu_and_save_to_log(double carmen_initial_time, carmen_FILE *g, char *g
 
 	carmen_gps_gpgga_message gps_msg;
 	carmen_xsens_global_quat_message xsens_msg;
+	carmen_robot_ackerman_velocity_message velocity_msg;
 
 	while (!feof(f))
 	{
@@ -177,12 +181,13 @@ read_gps_imu_and_save_to_log(double carmen_initial_time, carmen_FILE *g, char *g
 
 		timestamp = (timestamp - first_kitti_timestamp) + carmen_initial_time;
 
-		read_gps(dir_gps, line, timestamp, &gps_msg, &xsens_msg);
+		read_gps(dir_gps, line, timestamp, &gps_msg, &xsens_msg, &velocity_msg);
 
-		publish_gps_and_xsens(gps_msg, xsens_msg);
+		publish_gps_xsens_and_velocity(gps_msg, xsens_msg, velocity_msg);
 
 		carmen_logwrite_write_xsens_quat(&xsens_msg, g, timestamp);
 		carmen_logger_write_gps_gpgga(&gps_msg, g, timestamp);
+		carmen_logwrite_write_robot_ackerman_velocity(&velocity_msg, g, timestamp);
 
 		line++;
 	}

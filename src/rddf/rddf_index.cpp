@@ -899,14 +899,14 @@ fill_in_waypoints_array(long timestamp_index_position, carmen_ackerman_traj_poin
 
 		dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
 
-		if (dist > 1.0) // get waypoints 1 meter apart // @@@ Alberto: este parametro devia estar no carmen ini
-		{
+		//if (dist > 1.0) // get waypoints 1 meter apart // @@@ Alberto: este parametro devia estar no carmen ini
+		//{
 			last_pose = current_pose;
 			poses_ahead[num_poses_aquired] = current_pose;
 			annotations[num_poses_aquired] = index_element.anottation;
 
 			num_poses_aquired++;
-		}
+		//}
 
 		i++;
 	}
