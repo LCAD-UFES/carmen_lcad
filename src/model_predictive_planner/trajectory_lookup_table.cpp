@@ -1757,6 +1757,7 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 	//   v_0 = v_i
 	//   vt, a0, af, t0, tt e sf sao dependentes das demais segundo o TrajectoryVelocityProfile
 
+
 	const gsl_multimin_fdfminimizer_type *T;
 	gsl_multimin_fdfminimizer *s;
 
@@ -1859,7 +1860,7 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 	params.detailed_goal_list = detailed_goal_list;
 	params.use_lane = use_lane;
 
-	tcp_complete = get_optimized_trajectory_control_parameters(tcp_seed, target_td, target_v, params, false);//has_previous_good_tcp);
+	tcp_complete = get_optimized_trajectory_control_parameters(tcp_seed, target_td, target_v, params, has_previous_good_tcp);
 
 	if (tcp_complete.valid && params.detailed_goal_list.size() > 0)
 		tcp_complete = optimized_lane_trajectory_control_parameters(tcp_complete, target_td, target_v, params);
@@ -2650,9 +2651,12 @@ get_shorter_path(int &shorter_path, int num_paths, vector<vector<carmen_ackerman
 {
 	double shorter_path_size = 1000.0;
 	TrajectoryLookupTable::TrajectoryControlParameters best_otcp;
+
 	for (int i = 0; i < num_paths; i++)
 	{
-		if ((paths[i].size() > 0) && (otcps[i].sf < shorter_path_size))
+		// que garantia temos que otcps[i] é valido?????
+		// paths[i] contém vários paths provienientes do lixo da memória
+		if ((paths[i].size() > 0) && (otcps[i].sf < shorter_path_size) && otcps[i].valid)
 		{
 			shorter_path_size = otcps[i].sf;
 			shorter_path = i;
@@ -2746,7 +2750,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	otcps.resize(paths.size());
 	bool has_valid_path = false;
 //	#pragma omp parallel num_threads(5)
-	{
+//	{
 	for (unsigned int i = 0; i < lastOdometryVector.size(); i++)
 	{
 //		#pragma omp for
@@ -2790,7 +2794,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		if (has_valid_path) // If could find a good path, break. Otherwise, try swerve
 			break;
 	}
-	}
+//	}
 
 	int shorter_path = -1;
 	TrajectoryLookupTable::TrajectoryControlParameters best_otcp;
@@ -2841,7 +2845,8 @@ TrajectoryLookupTable::compute_path_to_goal(Pose *localizer_pose, Pose *goal_pos
 	}
 
 	vector<vector<carmen_ackerman_path_point_t>> paths;
-	paths.resize(5 * 5);
+	paths.resize(lastOdometryVector.size() * goalPoseVector.size());
+
 	compute_paths(lastOdometryVector, goalPoseVector, target_v, localizer_pose, paths, goal_list_message);
 
 	printf("%ld plano(s), tp = %lf\n", paths.size(), carmen_get_time() - i_time);
