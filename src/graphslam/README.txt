@@ -1,5 +1,7 @@
 Como criar um mapa usando GraphSLAM [usando o process]:
 
+#  Antes de executar os passos abaixo, leia o ../src/odometry_calibration/README.txt e execute os passos de lá
+
 1. Compile o modulo graphslam (requer a biblioteca pcl e o framework g2o)
 2. Crie um ramdisk no diretorio tmp2:
 	> sudo mount -t ramfs -o nosuid,noexec,nodev,mode=0777,size=4096M ramdisk $CARMEN_HOME/bin/tmp2
@@ -7,17 +9,21 @@ Como criar um mapa usando GraphSLAM [usando o process]:
 	***** NOTA: O ramdisk ira criar um diretorio na memoria com o tamanho especificado na variavel size da linha de comando. Fique atento
 		para que o espaco do ramdisk nao acabe. Voce pode verificar o espaco ocupado usando "du -sh tmp2". Se o tamanho estiver chegando
 		no limite, mova os arquivos .ply para o diretorio tmp usando "mv tmp2/*.ply tmp".
+	***** Crie os diretorios $CARMEN_HOME/data/mapper_teste e $CARMEN_HOME/bin/tmp
 
 3. Execute o central
 4. Modifique o process-volta_da_ufes_playback_viewer_3D_map_generation.ini para que ele faca playback de seu log:
 		./playback [seu log]
 
 5. Modifique o carmen-ford-escape.ini para ativar a criacao de mapas:
-		mapper_update_and_merge_with_snapshot_map	off
-		mapper_global_map 				off
-		mapper_merge_with_offline_map 			off
-		mapper_update_and_merge_with_mapper_saved_maps	on
-		mapper_build_snapshot_map			off
+
+mapper_update_and_merge_with_snapshot_map	off
+mapper_global_map 				off
+mapper_merge_with_offline_map 			off
+mapper_update_and_merge_with_mapper_saved_maps	on
+mapper_build_snapshot_map			off
+mapper_velodyne_range_max		 	30.0
+mapper_velodyne_range_max_factor 		4.0
 
 6. Execute o programa "Step_1" na interface.
 7. Faca playback do seu log ate o final a uma velocidade menor (0.5 ou menos), mas, a cada 2 minutos, (i) pare (stop), (ii) execute "mv tmp2/*.ply tmp" (ver a NOTA em 2., acima), e (iii) play.
@@ -30,25 +36,22 @@ Como criar um mapa usando GraphSLAM [usando o process]:
 		gnuplot> plot 'tmp/sync.txt' using 4:5 with lines
 		gnuplot> replot 'tmp/poses_opt.txt' using 1:2 with lines
 
-12. [leia a nota abaixo] Execute o programa "CleanMap" para apagar o mapa da interface.
-
-	***** NOTA: Por algum razao desconhecida, mesmo apagando os mapas no disco, alguns programas mantem o estado dos mapas antigos. Dessa forma, 
-		para garantir que o mapa que voce esta construindo de fato esta correto, mate e rode novamente os programas abaixo antes de rodar o 
-		programa "CleanMap" e construir o mapa:
-			- map_server
-			- mapper
-			- localize
-			- navigator_gui
-		Uma alternativa eh matar o process e rodar novamente antes de apagar o mapa.
+12. Mate o procccontrol e apague os arquivos no ../data/mapper_teste2
+	rm -rf ../data/mapper_teste2/*
 		
-13. Desligue o programa "fused_odometry".
+13. Reinicie o proccontrol e desligue o programa "fused_odometry".
 14. Execute o programa "Step_4" na interface.
-15. Faca o playback de seu log novamente para criar o mapa.
+15. Faca o playback com velocidade 0.5 de seu log novamente para criar o mapa.
+16. Seu mapa está pronto em ../data/mapper_teste2/ !!!! Pode matar o proccontrol e copiar seu novo mapa para seu lugar definitivo.
 
 Para limpar o mapa use os programas
 	bin/build_complete_map -map_path <path do diretorio do mapa> -map_resolution 0.2 -map_type m
+	bin/map_editor <path do diretorio do mapa>/complete_map.map
 	bin/complete_map_to_block_map -map_path <path do diretorio do mapa> -map_resolution 0.2 -block_size_in_meters 150.0
 
+17.O process já constroe o rndf(rddf) usando o ./rddf_build ../data/rndf/rndf.kml
+	Após criar o mapa, renomear o arquivo ../data/rndf/rndf.kml para ../data/rndf/rddf-log_voltadaufes-<data do log>.kml
+		mv ../data/rndf/rndf.kml ../data/rndf/rddf-log_voltadaufes-<data do log>.kml
 
 --------------------------------------------------------------------------------------------------------------------------------------
 

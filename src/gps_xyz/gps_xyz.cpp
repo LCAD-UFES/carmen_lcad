@@ -63,6 +63,7 @@ carmen_gps_xyz_publish_message(carmen_gps_gpgga_message *gps_gpgga)
 		return;
 
 	previous_utc = gps_gpgga->utc;
+	msg.nr = gps_gpgga->nr;
 	msg.utc = gps_gpgga->utc;
 	msg.latitude = gps_gpgga->latitude;
 	msg.latitude_dm = gps_gpgga->latitude_dm;

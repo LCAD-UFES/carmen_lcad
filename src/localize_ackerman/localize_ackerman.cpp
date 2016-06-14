@@ -299,7 +299,7 @@ publish_sensor(carmen_localize_ackerman_particle_filter_p filter,
 }
 
 
-static void
+void
 publish_first_globalpos(carmen_localize_ackerman_initialize_message *initialize_msg)
 {
 	carmen_localize_ackerman_globalpos_message globalpos_ackerman_message;
@@ -343,7 +343,7 @@ carmen_localize_ackerman_initialize_handler(carmen_localize_ackerman_initialize_
 //			first = 0;
 //		}
 
-		publish_first_globalpos(initialize_msg);
+//		publish_first_globalpos(initialize_msg); // Alberto: se publicar pode sujar o mapa devido a inicializacao.
 	}
 	else if (initialize_msg->distribution == CARMEN_INITIALIZE_UNIFORM) 
 	{

@@ -86,7 +86,7 @@ typedef struct {
 typedef struct {
 	int nr; /**< number of the gps unit **/
 	double heading; /**< heading in radians >**/
-	int valid;
+	int valid; /* 1 or 0 */
 	double timestamp;
 	char *host;
 } carmen_gps_gphdt_message;

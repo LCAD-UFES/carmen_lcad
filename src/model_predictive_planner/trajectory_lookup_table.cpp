@@ -160,30 +160,32 @@ search_lookup_table(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd)
 TrajectoryLookupTable::TrajectoryControlParameters
 search_lookup_table_loop(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd)
 {
+	// @@@ Alberto: Esta função é muito lenta... Voltei para a search_lookup_table().
     // TODO: pegar a media de todas as leituras ponderada pela distancia para o td.
     // Tem que passar o td ao inves do tdd.
 	TrajectoryLookupTable::TrajectoryControlParameters tcp;
-	vector<int> signalSum = {0 ,-1, 2, -2, 4, -3, 6};
+	tcp.valid = false;
+	vector<int> signalSum = {0 ,-1, 2, -2, 4};
 
 	for (unsigned int i = 0; i < signalSum.size(); i++)
-	for (unsigned int j = 0; j < signalSum.size(); j++)
-	for (unsigned int k = 0; k < signalSum.size(); k++)
-	for (unsigned int l = 0; l < signalSum.size(); l++)
-	for (unsigned int m = 0; m < signalSum.size(); m++)
-	{
-		tdd.dist += signalSum[i];
-		tdd.theta += signalSum[j];
-		tdd.d_yaw += signalSum[k];
-		tdd.phi_i += signalSum[l];
-		tdd.v_i += signalSum[m];
+		for (unsigned int j = 0; j < signalSum.size(); j++)
+			for (unsigned int k = 0; k < signalSum.size(); k++)
+				for (unsigned int l = 0; l < signalSum.size(); l++)
+					for (unsigned int m = 0; m < signalSum.size(); m++)
+					{
+						tdd.dist += signalSum[i];
+						tdd.theta += signalSum[j];
+						tdd.d_yaw += signalSum[k];
+						tdd.phi_i += signalSum[l];
+						tdd.v_i += signalSum[m];
 
-		if (has_valid_discretization(tdd))
-		{
-			tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
-			if (tcp.valid)
-				return (tcp);
-		}
-	}
+						if (has_valid_discretization(tdd))
+						{
+							tcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+							if (tcp.valid)
+								return (tcp);
+						}
+					}
 	return (tcp);
 }
 
@@ -383,7 +385,7 @@ get_delta_velocity_by_index(int index)
 
 
 float
-get_phi_by_index(int index)
+get_i_phi_by_index(int index)
 {
 	return (geometric_progression(index, FIRST_I_PHI, RATIO_I_PHI, ZERO_I_PHI_I));
 }
@@ -432,7 +434,7 @@ convert_to_trajectory_dimensions(TrajectoryLookupTable::TrajectoryDiscreteDimens
 
     td.d_yaw = get_d_yaw_by_index(tdd.d_yaw);
     td.dist = get_distance_by_index(tdd.dist);
-    td.phi_i = get_phi_by_index(tdd.phi_i);
+    td.phi_i = get_i_phi_by_index(tdd.phi_i);
     td.theta = get_theta_by_index(tdd.theta);
     td.v_i = get_initial_velocity_by_index(tdd.v_i);
     td.control_parameters = tcp;
@@ -521,6 +523,34 @@ generate_trajectory_control_parameters_sample(int k1, int k2, int i_v, int dist)
 
 
 TrajectoryLookupTable::TrajectoryControlParameters
+generate_trajectory_control_parameters_sample(double k1, double k2, int i_v, int dist)
+{
+	TrajectoryLookupTable::TrajectoryControlParameters tcp;
+
+	tcp.valid = true;
+
+	tcp.k1 = k1;
+	tcp.k2 = k2;
+
+	tcp.v0 = get_initial_velocity_by_index(i_v);
+	double distance = get_distance_by_index(dist);
+	tcp.velocity_profile = LINEAR_PROFILE;
+
+    // s = s0 + v0.t + 1/2.a.t^2
+	// a = (s - s0 - v0.t) / (t^2.1/2)
+    // s = distance; s0 = 0; v0 = tcp.v0; t = PROFILE_TIME
+    tcp.a0 = (distance - tcp.v0 * PROFILE_TIME) / (PROFILE_TIME * PROFILE_TIME * 0.5);
+    // v = v0 + a.t
+    tcp.vf = tcp.v0 + tcp.a0 * PROFILE_TIME;
+    tcp.vt = tcp.vf;
+    tcp.tf = tcp.tt = tcp.t0 = PROFILE_TIME;
+    tcp.af = 0.0;
+
+	return (tcp);
+}
+
+
+TrajectoryLookupTable::TrajectoryControlParameters
 generate_random_trajectory_control_parameters_sample(int i_v, int dist)
 {
 	TrajectoryLookupTable::TrajectoryControlParameters tcp;
@@ -575,8 +605,8 @@ generate_random_trajectory_control_parameters_sample(int i_v, int dist)
 //	float d2 = ((tcp.vt + tcp.vf) / 2.0) * (tcp.tf - tcp.tt);
 //	float d = d0 + d1 + d2;
 
-	tcp.k1 = get_k1_by_index(get_random_integer(N_I_PHI));
-	tcp.k2 = get_k2_by_index(get_random_integer(N_I_PHI));
+	tcp.k1 = get_k1_by_index(get_random_integer(N_K1));
+	tcp.k2 = get_k2_by_index(get_random_integer(N_K2));
 
 	tcp.valid = true;
 
@@ -816,7 +846,7 @@ TrajectoryLookupTable::TrajectoryDimensions
 compute_trajectory_dimensions(TrajectoryLookupTable::TrajectoryControlParameters &tcp, int i_phi,
         vector<carmen_ackerman_path_point_t> &path, bool print)
 {
-	double d_i_phi = get_phi_by_index(i_phi);
+	double d_i_phi = get_i_phi_by_index(i_phi);
     TrajectoryLookupTable::TrajectoryDimensions td;
     path = simulate_car_from_parameters(td, tcp, d_i_phi, print);
     if (tcp.valid && print)
@@ -910,9 +940,9 @@ my_f(const gsl_vector *x, void *params)
 //        obstacles_cost = compute_abstacles_cost(path);
 
 //    double result = obstacles_cost + sqrt((td.dist - p[2]) * (td.dist - p[2]) +
-    double result = sqrt((td.dist - p[2]) * (td.dist - p[2]) +
-			(carmen_normalize_theta(td.theta) - p[3]) * (carmen_normalize_theta(td.theta) - p[3]) +
-            (carmen_normalize_theta(td.d_yaw) - p[4]) * (carmen_normalize_theta(td.d_yaw) - p[4]));// +
+    double result = sqrt((td.dist - p[2]) * (td.dist - p[2]) / p[14] +
+			(carmen_normalize_theta(td.theta) - p[3]) * (carmen_normalize_theta(td.theta) - p[3]) / p[15] +
+            (carmen_normalize_theta(td.d_yaw) - p[4]) * (carmen_normalize_theta(td.d_yaw) - p[4]) / p[16]);// +
 //          (tcp.vf - p[10]) * (tcp.vf - p[10]));
 
 	return (result);
@@ -924,7 +954,7 @@ my_df(const gsl_vector *v, void *params, gsl_vector *df)
 {
 	double f_x = my_f(v, params);
 
-	double h = 0.000001;
+	double h = 0.00001;
 
 	gsl_vector *x_h;
 	x_h = gsl_vector_alloc(3);
@@ -982,9 +1012,10 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 	const gsl_multimin_fdfminimizer_type *T;
 	gsl_multimin_fdfminimizer *s;
 
-	double par[14] = {target_td.v_i, target_td.phi_i, target_td.dist, target_td.theta, target_td.d_yaw,
+	double par[17] = {target_td.v_i, target_td.phi_i, target_td.dist, target_td.theta, target_td.d_yaw,
 		(target_v - target_td.v_i) / tcp_seed.tf, tcp_seed.af, tcp_seed.t0, tcp_seed.tt, tcp_seed.vt, target_v,
-		(double) ((int) tcp_seed.velocity_profile), tcp_seed.vf, tcp_seed.sf};
+		(double) ((int) tcp_seed.velocity_profile), tcp_seed.vf, tcp_seed.sf,
+		fabs(get_distance_by_index(N_DIST)), fabs(get_theta_by_index(N_THETA)), fabs(get_d_yaw_by_index(N_D_YAW))};
 
 	gsl_vector *x;
 	gsl_multimin_function_fdf my_func;
@@ -1005,7 +1036,7 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 	s = gsl_multimin_fdfminimizer_alloc(T, 3);
 
 	// int gsl_multimin_fdfminimizer_set (gsl_multimin_fdfminimizer * s, gsl_multimin_function_fdf * fdf, const gsl_vector * x, double step_size, double tol)
-	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.0001, 1e-3);
+	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.0001, 0.001);
 
     size_t iter = 0;
     int status;
@@ -1024,14 +1055,14 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 		// |g| < epsabs
 		status = gsl_multimin_test_gradient(s->gradient, 0.16);
 
-		if (status == GSL_SUCCESS)
+		if ((status == GSL_SUCCESS) || (s->f < 0.0005))
 		{
 //			printf("###### Minimum found at:\n");
 //			printf("%5d %.5f %.5f %.5f %10.5f  %f\n", (int) iter,
 //					gsl_vector_get(s->x, 0), gsl_vector_get(s->x, 1), gsl_vector_get(s->x, 2), s->f,
 //					target_v);
 		}
-	} while (status == GSL_CONTINUE && iter < 300);
+	} while ((s->f > 0.0005) && (status == GSL_CONTINUE) && (iter < 300));
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, par);
 	if ((tcp.tf <= 0.5) || (s->f > 0.05)) // too short plan or bad minimum (s->f should be close to zero)
@@ -1065,6 +1096,23 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 {
     TrajectoryLookupTable::TrajectoryDimensions target_td = convert_to_trajectory_dimensions(tdd, tcp_seed);
     TrajectoryLookupTable::TrajectoryControlParameters tcp = get_optimized_trajectory_control_parameters(tcp_seed, target_td, target_v);
+
+    return (tcp);
+}
+
+
+TrajectoryLookupTable::TrajectoryControlParameters
+get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
+        TrajectoryLookupTable::TrajectoryDiscreteDimensions &tdd, double target_v, vector<carmen_ackerman_path_point_t> optimized_path)
+{
+    TrajectoryLookupTable::TrajectoryDimensions target_td = convert_to_trajectory_dimensions(tdd, tcp_seed);
+    TrajectoryLookupTable::TrajectoryControlParameters tcp = get_optimized_trajectory_control_parameters(tcp_seed, target_td, target_v);
+//    if (tcp.valid)
+//    {
+//		TrajectoryLookupTable::TrajectoryDimensions td;
+//		optimized_path = simulate_car_from_parameters(td, tcp, tdd.phi_i, false);
+//		tdd = get_discrete_dimensions(td);
+//    }
 
     return (tcp);
 }
@@ -1178,75 +1226,75 @@ compare_td(TrajectoryLookupTable::TrajectoryDimensions td1, TrajectoryLookupTabl
 }
 
 
-void
-fill_in_trajectory_lookup_table_old()
-{
-	TrajectoryLookupTable::TrajectoryControlParameters tcp;
-	TrajectoryLookupTable::TrajectoryDimensions td;
-	TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd;
-
-//	for (int i = 0; i < 10; i++)
-	for (int dist = N_DIST - 1; dist >= 0; dist--)
-//	for (int dist = 14; dist < 15; dist++)
-	{
-		printf("dist = %d\n\n\n", dist);
-		for (int theta = 0; theta < N_THETA; theta++)
-//		for (int theta = 17; theta < 18; theta++)
-		{
-			printf("theta = %d\n", theta);
-			for (int d_yaw = 0; d_yaw < N_D_YAW; d_yaw++)
-//			for (int d_yaw = 7; d_yaw < 8; d_yaw++)
-				for (int i_phi = 0; i_phi < N_I_PHI; i_phi++)
-				{
-					//printf("i_phi = %d\n", i_phi);
-
-					for (int i_v = 0; i_v < N_I_V; i_v++)
-//					for (int i_v = 5; i_v < 6; i_v++)
-					{
-						tcp = generate_random_trajectory_control_parameters_sample(i_v, dist);
-						vector<carmen_ackerman_path_point_t> path;
-                        td = compute_trajectory_dimensions(tcp, i_phi, path, false);
-//                        td = compute_trajectory_dimensions(tcp, i_phi, path, true);
-//						FILE *gnuplot_pipe = popen("gnuplot -persist", "w");
-//						fprintf(gnuplot_pipe, "plot './gnuplot_path' using 1:2:3:4 w vec size  0.3, 10 filled\n");
-//						fflush(gnuplot_pipe);
-//						pclose(gnuplot_pipe);
-//						getchar();
-//						system("pkill gnuplot");
-
-						tdd = get_discrete_dimensions(td);
-						TrajectoryLookupTable::TrajectoryDimensions ntd = convert_to_trajectory_dimensions(tdd, tcp);
-						std::cout << "td.phi_i = " << td.phi_i << std::endl;
-						compare_td(td, ntd);
-//						getchar();
-						if (has_valid_discretization(tdd) && !trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i].valid)
-						{
-							trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i] =
-                                    get_optimized_trajectory_control_parameters(tcp, tdd, tcp.vf);
-                                    //get_optimized_trajectory_control_parameters(tdd, td);
-							//printf("[tdd.dist] %02d, [tdd.theta] %02d, [tdd.d_yaw] %02d, [tdd.phi_i] %02d, [tdd.v_i] %02d\n", tdd.dist, tdd.theta, tdd.d_yaw, tdd.phi_i, tdd.v_i);
-	                        vector<carmen_ackerman_path_point_t> path;
-	                        compute_trajectory_dimensions(trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i], i_phi, path, true);
-
-	                        if (trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i].valid)
-	                        {
-                                FILE *gnuplot_pipe = popen("gnuplot -persist", "w");
-                                fprintf(gnuplot_pipe, "plot './gnuplot_path' using 1:2:3:4 w vec size  0.3, 10 filled\n");
-                                fflush(gnuplot_pipe);
-                                pclose(gnuplot_pipe);
-                                getchar();
-                                system("pkill gnuplot");
-	                        }
-                            if (!same_tcp(trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i], tcp))
-                                std::cout << "tcp differents!!!!!!!!!!!!!!!!!!" << std::endl;
-						}
-						//else
-							//printf("[tdd.dist] %02d, [tdd.theta] %02d, [tdd.d_yaw] %02d, [tdd.phi_i] %02d, [tdd.v_i] %02d, @@@@@@@@@@@@@@@@\n", tdd.dist, tdd.theta, tdd.d_yaw, tdd.phi_i, tdd.v_i);
-					}
-				}
-		}
-	}
-}
+//void
+//fill_in_trajectory_lookup_table_old()
+//{
+//	TrajectoryLookupTable::TrajectoryControlParameters tcp;
+//	TrajectoryLookupTable::TrajectoryDimensions td;
+//	TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd;
+//
+////	for (int i = 0; i < 10; i++)
+//	for (int dist = N_DIST - 1; dist >= 0; dist--)
+////	for (int dist = 14; dist < 15; dist++)
+//	{
+//		printf("dist = %d\n\n\n", dist);
+//		for (int theta = 0; theta < N_THETA; theta++)
+////		for (int theta = 17; theta < 18; theta++)
+//		{
+//			printf("theta = %d\n", theta);
+//			for (int d_yaw = 0; d_yaw < N_D_YAW; d_yaw++)
+////			for (int d_yaw = 7; d_yaw < 8; d_yaw++)
+//				for (int i_phi = 0; i_phi < N_I_PHI; i_phi++)
+//				{
+//					//printf("i_phi = %d\n", i_phi);
+//
+//					for (int i_v = 0; i_v < N_I_V; i_v++)
+////					for (int i_v = 5; i_v < 6; i_v++)
+//					{
+//						tcp = generate_random_trajectory_control_parameters_sample(i_v, dist);
+//						vector<carmen_ackerman_path_point_t> path;
+//                        td = compute_trajectory_dimensions(tcp, i_phi, path, false);
+////                        td = compute_trajectory_dimensions(tcp, i_phi, path, true);
+////						FILE *gnuplot_pipe = popen("gnuplot -persist", "w");
+////						fprintf(gnuplot_pipe, "plot './gnuplot_path' using 1:2:3:4 w vec size  0.3, 10 filled\n");
+////						fflush(gnuplot_pipe);
+////						pclose(gnuplot_pipe);
+////						getchar();
+////						system("pkill gnuplot");
+//
+//						tdd = get_discrete_dimensions(td);
+//						TrajectoryLookupTable::TrajectoryDimensions ntd = convert_to_trajectory_dimensions(tdd, tcp);
+//						std::cout << "td.phi_i = " << td.phi_i << std::endl;
+//						compare_td(td, ntd);
+////						getchar();
+//						if (has_valid_discretization(tdd) && !trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i].valid)
+//						{
+//							trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i] =
+//                                    get_optimized_trajectory_control_parameters(tcp, tdd, tcp.vf);
+//                                    //get_optimized_trajectory_control_parameters(tdd, td);
+//							//printf("[tdd.dist] %02d, [tdd.theta] %02d, [tdd.d_yaw] %02d, [tdd.phi_i] %02d, [tdd.v_i] %02d\n", tdd.dist, tdd.theta, tdd.d_yaw, tdd.phi_i, tdd.v_i);
+//	                        vector<carmen_ackerman_path_point_t> path;
+//	                        compute_trajectory_dimensions(trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i], i_phi, path, true);
+//
+//	                        if (trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i].valid)
+//	                        {
+//                                FILE *gnuplot_pipe = popen("gnuplot -persist", "w");
+//                                fprintf(gnuplot_pipe, "plot './gnuplot_path' using 1:2:3:4 w vec size  0.3, 10 filled\n");
+//                                fflush(gnuplot_pipe);
+//                                pclose(gnuplot_pipe);
+//                                getchar();
+//                                system("pkill gnuplot");
+//	                        }
+//                            if (!same_tcp(trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i], tcp))
+//                                std::cout << "tcp differents!!!!!!!!!!!!!!!!!!" << std::endl;
+//						}
+//						//else
+//							//printf("[tdd.dist] %02d, [tdd.theta] %02d, [tdd.d_yaw] %02d, [tdd.phi_i] %02d, [tdd.v_i] %02d, @@@@@@@@@@@@@@@@\n", tdd.dist, tdd.theta, tdd.d_yaw, tdd.phi_i, tdd.v_i);
+//					}
+//				}
+//		}
+//	}
+//}
 
 
 bool
@@ -1273,12 +1321,9 @@ path_has_loop(vector<carmen_ackerman_path_point_t> path)
 
 
 void
-fill_in_trajectory_lookup_table()
+fill_in_trajectory_lookup_table_new_old()
 {
-	TrajectoryLookupTable::TrajectoryControlParameters tcp;
-	TrajectoryLookupTable::TrajectoryDimensions td;
-	TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd;
-
+	#pragma omp parallel for
     for (int dist = N_DIST - 1; dist >= 0; dist--)
     {
         printf("dist = %d\n\n", dist);
@@ -1286,22 +1331,22 @@ fill_in_trajectory_lookup_table()
         //for (int i_phi = ZERO_I_PHI_I; i_phi < N_I_PHI; i_phi++)
         for (int i_phi = 0; i_phi < N_I_PHI; i_phi++)
         {
-            printf("i_phi = %d\n", i_phi);
+            printf("dist = %d, i_phi = %d\n", dist, i_phi);
             //for (int k1 = ZERO_K1_I; k1 < N_K1; k1++)
             for (int k1 = 0; k1 < N_K1; k1++)
                 //for (int k2 = ZERO_K2_I; k2 < N_K2; k2++)
                 for (int k2 = 0; k2 < N_K2; k2++)
                     for (int i_v = 0; i_v < N_I_V; i_v++)
-					    // Trocar d_v acima por dist e modar generate_trajectory_control_parameters_sample()
+					    // Trocar d_v acima por dist e mudar generate_trajectory_control_parameters_sample()
 					    // abaixo para tratar de acordo usando o CONSTANT e LINEAR velocity profiles.
 					    // Tratar apenas deslocamentos para frente. Checar se os limites do carro estao
 					    // sendo obedecidos (ate o phi dentro dos splines?)
 					    // Otimizar e checar se eh valida a trajetoria usando as facilidades de
 					    // visualizacao ja implementadas.
 					{
-						tcp = generate_trajectory_control_parameters_sample(k1, k2, i_v, dist);
+                    	TrajectoryLookupTable::TrajectoryControlParameters tcp = generate_trajectory_control_parameters_sample(k1, k2, i_v, dist);
 						vector<carmen_ackerman_path_point_t> path;
-						td = compute_trajectory_dimensions(tcp, i_phi, path, false);
+						TrajectoryLookupTable::TrajectoryDimensions td = compute_trajectory_dimensions(tcp, i_phi, path, false);
 //                        td = compute_trajectory_dimensions(tcp, i_phi, path, true);
 //                        FILE *gnuplot_pipe = popen("gnuplot -persist", "w");
 //                        fprintf(gnuplot_pipe, "plot './gnuplot_path' using 1:2:3:4 w vec size  0.3, 10 filled\n");
@@ -1310,7 +1355,7 @@ fill_in_trajectory_lookup_table()
 //                        getchar();
 //                        system("pkill gnuplot");
 
-						tdd = get_discrete_dimensions(td);
+						TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd = get_discrete_dimensions(td);
 //                        TrajectoryLookupTable::TrajectoryDimensions ntd = convert_to_trajectory_dimensions(tdd, tcp);
 //                        std::cout << "td.phi_i = " << td.phi_i << std::endl;
 //                        compare_td(td, ntd);
@@ -1338,6 +1383,85 @@ fill_in_trajectory_lookup_table()
 	                        }
 						}
 					}
+        }
+    }
+}
+
+
+void
+fill_in_trajectory_lookup_table()
+{
+	#pragma omp parallel for
+    for (int dist = N_DIST - 1; dist >= 0; dist--)
+    {
+        printf("dist = %d\n\n", dist);
+        for (int i_phi = 0; i_phi < N_I_PHI; i_phi++)
+        {
+        	//i_phi = N_I_PHI/2;
+            printf("dist = %d, i_phi = %d\n", dist, i_phi);
+            fflush(stdout);
+//			for (int k1 = 0; k1 < N_K1; k1++)
+//			{
+//				for (int k2 = 0; k2 < N_K2; k2++)
+//				{
+            double delta_k1 = (get_k1_by_index(N_K1) - get_k1_by_index(0)) / 100.0;
+            for (double k1 = get_k1_by_index(0); k1 < get_k1_by_index(N_K1); k1 += delta_k1)
+            {
+                double delta_k2 = (get_k2_by_index(N_K2) - get_k2_by_index(0)) / 100.0;
+            	for (double k2 = get_k2_by_index(0); k2 < get_k2_by_index(N_K2); k2 += delta_k2)
+            	{
+                    for (int i_v = 0; i_v < N_I_V; i_v++)
+					    // Checar se os limites do carro estao
+					    // sendo obedecidos (ate o phi dentro dos splines?)
+					    // Otimizar e checar se eh valida a trajetoria usando as facilidades de
+					    // visualizacao ja implementadas.
+					{
+                    	//i_v = 7;
+                    	TrajectoryLookupTable::TrajectoryControlParameters tcp = generate_trajectory_control_parameters_sample(k1, k2, i_v, dist);
+						vector<carmen_ackerman_path_point_t> path;
+						TrajectoryLookupTable::TrajectoryDimensions td = compute_trajectory_dimensions(tcp, i_phi, path, false);
+//                        td = compute_trajectory_dimensions(tcp, i_phi, path, true);
+//                        FILE *gnuplot_pipe = popen("gnuplot -persist", "w");
+//                        fprintf(gnuplot_pipe, "plot './gnuplot_path' using 1:2:3:4 w vec size  0.3, 10 filled\n");
+//                        fflush(gnuplot_pipe);
+//                        pclose(gnuplot_pipe);
+//                        getchar();
+//                        system("pkill gnuplot");
+
+						TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd = get_discrete_dimensions(td);
+//                        TrajectoryLookupTable::TrajectoryDimensions ntd = convert_to_trajectory_dimensions(tdd, tcp);
+//                        std::cout << "td.phi_i = " << td.phi_i << std::endl;
+//                        compare_td(td, ntd);
+						if (has_valid_discretization(tdd))
+						{
+							vector<carmen_ackerman_path_point_t> optimized_path;
+	                        TrajectoryLookupTable::TrajectoryControlParameters ntcp = get_optimized_trajectory_control_parameters(tcp, tdd, tcp.vf, optimized_path);
+//	                        if (!ntcp.valid)
+//	                        	printf("dist = %lf, i_phi = %lf, k1 = %lf, k2 = %lf, i_v = %lf\n",
+//	                        			get_distance_by_index(dist), get_i_phi_by_index(i_phi), k1, k2, get_initial_velocity_by_index(i_v));
+	                        if (ntcp.valid && has_valid_discretization(tdd) && !path_has_loop(path))
+	                        {
+	                            TrajectoryLookupTable::TrajectoryControlParameters ptcp = trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i];
+	                            if (!ptcp.valid || (ntcp.sf < ptcp.sf))
+	                            {
+	                                trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i] = ntcp;
+
+//	                                vector<carmen_ackerman_path_point_t> path;
+//	                                compute_trajectory_dimensions(trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i], i_phi, path, true);
+//                                    FILE *gnuplot_pipe = popen("gnuplot -persist", "w");
+//                                    fprintf(gnuplot_pipe, "plot './gnuplot_path' using 1:2:3:4 w vec size  0.3, 10 filled\n");
+//                                    fflush(gnuplot_pipe);
+//                                    pclose(gnuplot_pipe);
+//                                    getchar();
+//                                    system("pkill gnuplot");
+//                                    if (!same_tcp(trajectory_lookup_table[tdd.dist][tdd.theta][tdd.d_yaw][tdd.phi_i][tdd.v_i], tcp))
+//                                        std::cout << "tcp differents!!!!!!!!!!!!!!!!!!" << std::endl;
+	                            }
+	                        }
+						}
+					}
+            	}
+            }
         }
     }
 }
@@ -1618,20 +1742,111 @@ apply_system_delay(vector<carmen_ackerman_path_point_t> &path)
 }
 
 
+void
+write_tdd_to_file(FILE *problems, TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd, string label)
+{
+	fprintf(problems, "tdd: %s dist: %d, theta: %d, phi_i: %d, v_i: %d, d_yaw: %d\n", label.c_str(),
+			tdd.dist, tdd.theta, tdd.phi_i, tdd.v_i, tdd.d_yaw);
+
+	TrajectoryLookupTable::TrajectoryControlParameters tcp;
+	TrajectoryLookupTable::TrajectoryDimensions td = convert_to_trajectory_dimensions(tdd, tcp);
+	fprintf(problems, "td: %s dist: %lf, theta: %lf, phi_i: %lf, v_i: %lf, d_yaw: %lf\n", label.c_str(),
+			td.dist, td.theta, td.phi_i, td.v_i, td.d_yaw);
+}
+
+
+void
+compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseVector, double target_v,
+		Pose *localize_pose, vector<vector<carmen_ackerman_path_point_t> > &path)
+{
+	FILE *problems;
+	problems = fopen("problems.txt", "a");
+
+	for (unsigned int i = 0; i < lastOdometryVector.size(); i++)
+	{
+		for (unsigned int j = 0; j < goalPoseVector.size(); j++)
+		{
+			TrajectoryLookupTable::TrajectoryDimensions td = get_trajectory_dimensions_from_robot_state(localize_pose, lastOdometryVector[i], &goalPoseVector[j]);
+			TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd = get_discrete_dimensions(td);
+			if (!has_valid_discretization(tdd))
+			{
+				printf("Invalid discretization!!!!\n");
+				write_tdd_to_file(problems, tdd, "Invalid discretization: ");
+				continue;
+			}
+			TrajectoryLookupTable::TrajectoryControlParameters tcp = search_lookup_table(tdd);
+			if (!tcp.valid)
+			{
+				printf(KMAG "@@@@@@@@@@@ Could not find a valid entry in the table!!!!\n\033[0m");
+				write_tdd_to_file(problems, tdd, "Could not find: ");
+				continue;
+			}
+
+			TrajectoryLookupTable::TrajectoryControlParameters otcp;
+			otcp = get_optimized_trajectory_control_parameters(tcp, td,	target_v);
+			if (otcp.valid)
+			{
+				path.push_back(simulate_car_from_parameters(td, otcp, td.phi_i));
+				if (path_has_loop(path.back()))
+				{
+					path.pop_back();
+					printf(KRED "+++++++++++++ Path had loop...\n" RESET);
+					write_tdd_to_file(problems, tdd, "Path had loop: ");
+					continue;
+					//return (path);
+				}
+
+				move_path_to_current_robot_pose(path.back(), localize_pose);
+				apply_system_delay(path.back());
+
+				carmen_robot_ackerman_config_t car_config;
+				car_config.distance_between_rear_car_and_rear_wheels = GlobalState::robot_config.distance_between_rear_car_and_rear_wheels;
+				car_config.length = GlobalState::robot_config.length * 1.1;
+				car_config.width = GlobalState::robot_config.width * 1.1;
+				carmen_point_t pose;
+				for (unsigned int j = 10; j < path.back().size(); j++)
+				{
+					pose.x = path.back()[j].x;
+					pose.y = path.back()[j].y;
+					pose.theta = path.back()[j].theta;
+					if (pose_hit_obstacle(pose, &GlobalState::cost_map,	&car_config))
+					{
+						//printf("---------- HIT OBSTACLE!!!!\n");
+						path.pop_back();
+						break;
+					}
+				}
+			}
+			else
+			{
+				write_tdd_to_file(problems, tdd, "Could NOT optimize: ");
+				printf(KYEL "+++++++++++++ Could NOT optimize!!!!\n" RESET);
+			}
+		}
+		if (path.size() > 0)
+		{
+			break;
+		}
+	}
+	fclose(problems);
+}
+
+
 vector<vector<carmen_ackerman_path_point_t>>
 TrajectoryLookupTable::compute_path_to_goal(Pose *localize_pose, Pose *goal_pose, Command last_odometry,
         double target_v)
 {
 	vector<vector<carmen_ackerman_path_point_t>> path;
-    vector<Command> lasOdometryVector;
+    vector<Command> lastOdometryVector;
     vector<Pose> goalPoseVector;
     vector<int> magicSignals = {0, 1, -1, 2, -2, 3, -3,  4, -4,  5, -5};
 
+    // @@@ Tranformar os dois loops abaixo em uma funcao -> compute_alternative_path_options()
     for (int i = 0; i < 5; i++)
     {
     	Command newOdometry = last_odometry;
     	newOdometry.phi +=  0.2 * magicSignals[i]; //(0.5 / (newOdometry.v + 1))
-    	lasOdometryVector.push_back(newOdometry);
+    	lastOdometryVector.push_back(newOdometry);
     }
 
     for (int i = 0; i < 5; i++)
@@ -1642,85 +1857,7 @@ TrajectoryLookupTable::compute_path_to_goal(Pose *localize_pose, Pose *goal_pose
     	goalPoseVector.push_back(newPose);
     }
 
-    for (unsigned int i = 0; i < lasOdometryVector.size(); i++)
-    {
-    	 for (unsigned int j = 0; j < goalPoseVector.size(); j++)
-    	    {
-    	    	TrajectoryLookupTable::TrajectoryDimensions td = get_trajectory_dimensions_from_robot_state(localize_pose, lasOdometryVector[i], &goalPoseVector[j]);
-    	        TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd = get_discrete_dimensions(td);
-    	        if (!has_valid_discretization(tdd))
-    	        {
-    	            printf("Invalid discretization!!!!\n");
-    	            continue;
-    	        }
+	compute_paths(lastOdometryVector, goalPoseVector, target_v, localize_pose, path);
 
-    			TrajectoryLookupTable::TrajectoryControlParameters tcp = search_lookup_table_loop(tdd);
-    			if (!tcp.valid)
-    			{
-    				printf(KMAG "@@@@@@@@@@@ Could not find a valid entry in the table!!!!\n" RESET);
-    				continue;
-    			}
-    			TrajectoryLookupTable::TrajectoryControlParameters otcp;
-    			int i = 0;
-    			double target_v_temp = target_v;
-
-    			do
-    			{
-        			otcp = get_optimized_trajectory_control_parameters(tcp, td, target_v_temp);
-        			target_v_temp += (lasOdometryVector[i].v / fabs(lasOdometryVector[i].v)) * 0.1;
-        			i++;
-    			}
-    			while (!otcp.valid && i < 1);
-
-    			if (!otcp.valid)
-    			{
-    				printf(KYEL "+++++++++++++ Could NOT optimize!!!!\n" RESET);
-    				same_tcp(tcp, otcp);//todo porque aqui nao precisa de verificar loop?
-    			}
-    			else
-    			{
-    				//printf("@@@@@@@@@@@ Could optimize!!!!\n");
-    				same_tcp(tcp, otcp);
-    				path.push_back(simulate_car_from_parameters(td, otcp, td.phi_i));
-    				if (path_has_loop(path.back()))
-    				{
-						path.pop_back();
-    					printf(KRED "red\n" RESET);
-    					printf(KRED "+++++++++++++ Path had loop...\n" RESET);
-    					continue;
-    					//return (path);
-    				}
-    				move_path_to_current_robot_pose(path.back(), localize_pose);
-    				apply_system_delay(path.back());
-
-
-    				carmen_robot_ackerman_config_t car_config;
-    				car_config.distance_between_rear_car_and_rear_wheels = GlobalState::robot_config.distance_between_rear_car_and_rear_wheels;
-    				car_config.length = GlobalState::robot_config.length * 1.1;
-    				car_config.width = GlobalState::robot_config.width * 1.1;
-
-    				carmen_point_t pose;
-
-    				for (int j = 10; j < path.back().size(); j ++)
-    				{
-    					pose.x = path.back()[j].x;
-    					pose.y = path.back()[j].y;
-    					pose.theta = path.back()[j].theta;
-
-    					if(pose_hit_obstacle(pose, &GlobalState::cost_map, &car_config))
-    					{
-    	    				//printf("---------- HIT OBSTACLE!!!!\n");
-    						path.pop_back();
-    						break;
-    					}
-
-    				}
-    			}
-    	    }
-			if(path.size() > 0)
-			{
-				break;
-			}
-    }
 	return (path);
 }

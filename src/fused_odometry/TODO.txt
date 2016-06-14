@@ -1,0 +1,17 @@
+- Checar com printf os pontos da volta da ufes onde sao detectadas degradacoes de GPS
+- A fused_odometry some por volta da mensagem 83000 da volta da ufes -> checar
+- Mudar o nome do parametro  xsens_gps_?_std_error para gps_?_std_error nos parametros da fused odometry
+- Checar porque durante o log a fused odometry aparece na frente
+  - Parece que o localizer nao esta tratando corretamente a origem do Velodyne com relacao aa posicao da origem da IARA
+  - Pode ser que o mapper tambem nao esteja
+- Checar quem usa a fused odometry  
+- Ver se o localizer funciona corretamente sem correcao (se segue bem a odometria - pode estar usando robo_ackerman ao inves de base_ackerman)
+
+OK- Checar porque com o log 20140418 a fused odometry nao comecca com o angulo do xsens. 
+OK  - R: O angulo inicia correto. O problema é a pose que o sistema busca alcançar, que está muito fora no início. Basta começar o log da mensagem 2000.
+OK- Na mensagem 76900 esta com um problema de deteccao de mudanca de estado
+OK- Colocar um mecanismo de transicao quando o gps Trimble mudar de estado
+OK  - Como detectar a mudancca de estado?
+OK  - Parar a correcao ate estar seguro do novo estado
+OK  - Quando estiver seguro, voltar a correcao mas fazer uma exponecial da variancia da correcao para as correcoes serem suaves
+

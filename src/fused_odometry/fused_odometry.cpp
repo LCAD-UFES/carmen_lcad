@@ -20,11 +20,12 @@
 int num_particles;
 carmen_fused_odometry_particle *xt = NULL;
 carmen_fused_odometry_particle *_xt = NULL;
+carmen_fused_odometry_message fused_odometry_message;
 
 carmen_fused_odometry_control ut;
 
 
-static carmen_fused_odometry_particle 
+static carmen_fused_odometry_particle
 sample_motion_model(carmen_fused_odometry_particle x_t_1, carmen_fused_odometry_control ut, double dt, carmen_fused_odometry_parameters *fused_odometry_parameters)
 {
 	double L = fused_odometry_parameters->axis_distance;
@@ -96,9 +97,60 @@ sample_motion_model(carmen_fused_odometry_particle x_t_1, carmen_fused_odometry_
 	tf::Vector3 x_t_global_position(x_t_1.state.pose.position.x, x_t_1.state.pose.position.y, x_t_1.state.pose.position.z);
 	x_t_global_position = x_t_global_position + displacement_global_reference;
 
-	x_t.state.pose.position.x = x_t_global_position.getX();
-	x_t.state.pose.position.y = x_t_global_position.getY();
+	double xy_uncertainty_due_to_grid_resolution = (0.2 / 2.0) * (0.2 / 2.0);
+	double yaw_uncertainty_due_to_grid_resolution = asin((0.2 / 2.0) / 50.0) * asin((0.2 / 2.0) / 50.0);
+	x_t.state.pose.position.x = x_t_global_position.getX() + carmen_gaussian_random(0.0, xy_uncertainty_due_to_grid_resolution);
+	x_t.state.pose.position.y = x_t_global_position.getY() + carmen_gaussian_random(0.0, xy_uncertainty_due_to_grid_resolution);
 	x_t.state.pose.position.z = 0.0; //x_t_global_position.getZ();
+
+	x_t.state.pose.orientation.yaw = carmen_normalize_theta(x_t.state.pose.orientation.yaw + carmen_gaussian_random(0.0, yaw_uncertainty_due_to_grid_resolution));
+
+	x_t.weight = x_t_1.weight;
+
+	return (x_t);
+}
+
+
+carmen_fused_odometry_particle
+sample_motion_model_simple(carmen_fused_odometry_particle x_t_1, carmen_fused_odometry_control ut, double dt, carmen_fused_odometry_parameters *fused_odometry_parameters)
+{
+	double L = fused_odometry_parameters->axis_distance;
+	carmen_fused_odometry_particle x_t = x_t_1;
+
+	x_t.state.velocity.x = ut.v +
+			carmen_gaussian_random(0.0,
+					fused_odometry_parameters->velocity_noise_velocity * ut.v * ut.v +
+					fused_odometry_parameters->velocity_noise_phi * ut.phi * ut.phi);
+	x_t.state.velocity.y = 0.0;
+	x_t.state.velocity.z = 0.0;
+
+	x_t.state.phi = ut.phi + carmen_gaussian_random(0.0,
+					fused_odometry_parameters->phi_noise_phi * ut.phi * ut.phi +
+					fused_odometry_parameters->phi_noise_velocity * ut.v * ut.v);
+
+	x_t.state.ang_velocity.roll = 0.0;
+	x_t.state.ang_velocity.yaw = 0.0;
+
+	// This will limit the wheel position to the maximum angle the car can turn
+	if (x_t.state.phi > fused_odometry_parameters->maximum_phi)
+	{
+		x_t.state.phi = fused_odometry_parameters->maximum_phi;
+	}
+	else if (x_t.state.phi < -fused_odometry_parameters->maximum_phi)
+	{
+		x_t.state.phi = -fused_odometry_parameters->maximum_phi;
+	}
+
+	x_t.state.pose.orientation.roll = ut.roll;
+	x_t.state.pose.orientation.pitch = ut.pitch;
+
+	x_t.state.xsens_yaw_bias = 0.0;
+
+	x_t.state.pose.position.x += dt * ut.v * cos(x_t_1.state.pose.orientation.yaw);
+	x_t.state.pose.position.y += dt * ut.v * sin(x_t_1.state.pose.orientation.yaw);
+	x_t.state.pose.position.z = 0.0;
+	x_t.state.pose.orientation.yaw = x_t_1.state.pose.orientation.yaw + (x_t.state.velocity.x * tan(x_t.state.phi) / L) * dt;
+	x_t.state.pose.orientation.yaw = carmen_normalize_theta(x_t.state.pose.orientation.yaw);
 
 	x_t.weight = x_t_1.weight;
 
@@ -173,8 +225,9 @@ prediction(double timestamp, carmen_fused_odometry_parameters *fused_odometry_pa
 	{	
 		double dt = timestamp - xt[i].state.timestamp;
 
-		xt[i] = sample_motion_model(xt[i], ut, dt / 2.0, fused_odometry_parameters);
-		xt[i] = sample_motion_model(xt[i], ut, dt / 2.0, fused_odometry_parameters);
+//		xt[i] = sample_motion_model(xt[i], ut, dt / 2.0, fused_odometry_parameters);
+//		xt[i] = sample_motion_model(xt[i], ut, dt / 2.0, fused_odometry_parameters);
+		xt[i] = sample_motion_model(xt[i], ut, dt, fused_odometry_parameters);
 
 		xt[i].state.timestamp = timestamp;
 	}
@@ -204,10 +257,17 @@ set_fused_odometry_control_vector(carmen_fused_odometry_control c)
 }
 
 
-carmen_fused_odometry_control 
+carmen_fused_odometry_control *
 get_fused_odometry_control_vector()
 {
-	return (ut);
+	return (&ut);
+}
+
+
+carmen_fused_odometry_message *
+get_fused_odometry()
+{
+	return (&fused_odometry_message);
 }
 
 
