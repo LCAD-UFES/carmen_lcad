@@ -7,6 +7,7 @@
 // utils
 #include "utils/common.h"
 #include "utils/HelperXML.h"
+#include "utils/Viz.h"
 
 // modules
 #include "pre_processing.h"
@@ -21,7 +22,7 @@
 #define DISPLAY_CROSSWALK 				false
 #define DISPLAY_ROAD_SIGNS 				false
 #define DISPLAY_MARKINGS_REMOVAL 		false
-#define DISPLAY_LANE_POSITION			true
+#define DISPLAY_LANE_POSITION			false
 #define DISPLAY_LANE_CENTER_DEVIATION	false
 #define DISPLAY_LANE_MARKINGS_TYPE		false
 #define DISPLAY_ADJACENT_LANES			false
@@ -53,7 +54,10 @@ void setIPM(cv::Size& _origSize, cv::Size& _dstSize, std::vector<cv::Point2f>& _
 ConfigXML * getConfigXML();
 void finishProgram();
 void finishRun();
+
 raw_elas_message& get_raw_message();
+frame_viz get_viz_data(raw_elas_message * message);
+void display(const Mat3b& frame, raw_elas_message * message);
 
 } // end namespace ELAS
 

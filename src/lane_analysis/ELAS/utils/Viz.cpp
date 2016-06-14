@@ -55,7 +55,7 @@ void render(frame_viz &data, const Mat3b &color_frame, ConfigXML *config) {
 		cout << "- Lane Change: " << data.lane_change << endl;
 		cout << "- LMT: left(" << data.lmt.left << "), right(" << data.lmt.right << ")" << endl;
 		cout << "- Adjacent Lanes: left(" << data.adjacent_lanes.left << "), right(" << data.adjacent_lanes.right << ")" << endl;
-		cout << "- Execution Time: " << data.execution_time << "(" << (1000.0 / data.execution_time) << " fps)" << endl;
+		cout << "- Execution Time: " << data.execution_time << " (" << (1000.0 / data.execution_time) << " fps)" << endl;
 		cout << "- Symbols:" << endl;
 		for (auto s : data.symbols) cout << "  - " << s.id << ": " << s.region << endl;
 		cout << "--------------------------------------------------" << endl;
@@ -207,9 +207,11 @@ void render(frame_viz &data, const Mat3b &color_frame, ConfigXML *config) {
 	Point direction_middle = (data.lane_base.point_bottom + data.lane_base.point_top) * 0.5;
 	Point base_center = (base_right + base_left) * 0.5;
 
-	int idx_mid_right = (int)(data.lane_position.right.size() - (data.lane_position.right.size() / 8));
-	int idx_mid_left = (int)(data.lane_position.left.size() - (data.lane_position.left.size() / 8));
-	Point mid_right = config->ipm->applyHomographyInv(data.lane_position.right[idx_mid_left]) + Point2d(0, config->roi.y);
+	// int idx_mid_right = (int)(data.lane_position.right.size() - (data.lane_position.right.size() / 8));
+	// int idx_mid_left = (int)(data.lane_position.left.size() - (data.lane_position.left.size() / 8));
+	int idx_mid_right = (int)(data.lane_position.right.size() - (data.lane_position.right.size() / 2));
+	int idx_mid_left = (int)(data.lane_position.left.size() - (data.lane_position.left.size() / 2));
+	Point mid_right = config->ipm->applyHomographyInv(data.lane_position.right[idx_mid_right]) + Point2d(0, config->roi.y);
 	Point mid_left = config->ipm->applyHomographyInv(data.lane_position.left[idx_mid_left]) + Point2d(0, config->roi.y);
 
 	arrowedLine(img, base_center, direction_middle, colorLaneBase, 2);

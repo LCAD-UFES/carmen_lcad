@@ -38,10 +38,15 @@ vector<HoughLine> Houghs::getHoughs(const Mat1b &mapa1, const Rect &roi, vector<
 		aux.push_back(pt1);
 		aux.push_back(pt2);
 
+		Point2f h = pt2 - pt1;
+		h *= 1/cv::norm(h);
+		double angleDegrees = cv::fastAtan2(h.y, h.x);
+
 		// remove houghs em determinada inclina��o
-		int dx = abs(pt2.x - pt1.x);
-		int dy = abs(pt2.y - pt1.y);
-		if (1.0*dx / 3.0 > dy) {
+		// threshold: if (1.0*dx / 3.0 > dy) {
+		// int dx = abs(pt2.x - pt1.x);
+		// int dy = abs(pt2.y - pt1.y);
+		if (angleDegrees > 330 || angleDegrees < 30) {
 			lineSegmentsForAdjacent.push_back(aux);
 			continue;
 		}

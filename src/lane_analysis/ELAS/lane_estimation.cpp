@@ -13,7 +13,7 @@ static AnaliseDasHoughs * _houghs;
 static KalmanState * kalmanState;
 static KalmanFilter * KF;
 static deque<HoughLine> esqBuffer, dirBuffer, esqBufferRejeitados, dirBufferRejeitados;
-static bool first_pass = false;
+static bool first_pass = true;
 static ParticleFilterHough * PF;
 static ParticleHough * best_particle;
 
@@ -55,9 +55,10 @@ void ELAS::lane_position_estimation(const pre_processed * _pre_processed, const 
 	Mat1b map_srf_skel = Helper::skeleton(_feature_maps->map_srf); // approx +1.5ms
 	_out_raw_houghs->ego_lane = Houghs::getHoughs(map_srf_skel, _cfg->roi, _out_raw_houghs->adjacent_lanes);
 
+	/* Display the selected houghs*/
 	Mat3b im = _pre_processed->colorFrame.clone();
 	for (auto h : _out_raw_houghs->ego_lane) h.draw(im, Scalar(0,0,255));
-	imshow("houghs", im);
+	imshow("houghs", im); /**/
 
 	// generation of the combined map
 	// Mat1d map_cmb = _feature_maps->map_srf_ipm & _feature_maps->map_inb_ipm; // old mapaIPM
@@ -83,7 +84,10 @@ void ELAS::lane_position_estimation(const pre_processed * _pre_processed, const 
 	if (abs(bottom_distance) > kalmanState->_hough.largura * 0.7) if (!kalmanState->estaDesativado) _out_lane_change->status = true;
 
 	// we would like to init kalman based on the raw measurement, instead of a random position
-	if (first_pass) Kalman::resetaKalman(KF, 6, 3, rawMeasurement.toKalman());
+	if (first_pass) {
+		Kalman::resetaKalman(KF, 6, 3, rawMeasurement.toKalman());
+		first_pass = false;
+	}
 
 	// count the number of evidences under the houghs to see if there is a lane
 	// TODO: i think it should be moved to inside Kalman estimation process

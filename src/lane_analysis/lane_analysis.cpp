@@ -9,15 +9,25 @@
 
 #include "ELAS/ELAS.h"
 
-// #define TEST_OFFLINE_DATASET
-// #define DATASET_GOPRO // GoPro or UFES
+#define SHOW_DISPLAY
+
 // #define TEST_MESSAGES_PUBLISH
+#define TEST_OFFLINE_DATASET
+#define DATASET_RETA_DA_PENHA_OFFLINE
+// #define DATASET_GOPRO // GoPro or UFES
+
 
 using namespace cv;
 using namespace std;
 
+enum CameraSide {
+	LEFT = 0,
+	RIGHT = 1
+};
+
 // camera
 static int camera = 8;
+static int camera_side = CameraSide::RIGHT;
 static int image_width;
 static int image_height;
 
@@ -26,7 +36,7 @@ static string config_fname = "/dados/berriel/elas-carmen.config";
 #ifdef DATASET_GOPRO
 	static string config_xml_fname = "/dados/berriel/elas-carmen-config.xml";
 #else
-	static string config_xml_fname = "/dados/berriel/elas-carmen-config-log-rodrigo.xml";
+	static string config_xml_fname = "/dados/berriel/elas-iara-retadapenha.xml"; // -> elas-iara-config
 #endif
 static ELAS::raw_elas_message _raw_elas_message;
 
@@ -59,12 +69,7 @@ carmen_vector_2D_t toVector2D(const Point2d &p) {
 void
 lane_analysis_publish_messages(double _timestamp)
 {
-    // get the raw message
-    printf("\nget_raw_message()... ");
-    _raw_elas_message = ELAS::get_raw_message();
-    printf("done!\n");
-
-    // stamps the messages
+	// stamps the messages
     char * _host = carmen_get_host();
     stamps_message(lane_estimation_message, _host, _timestamp);
     stamps_message(lmt_message, _host, _timestamp);
@@ -139,25 +144,34 @@ lane_analysis_publish_messages(double _timestamp)
 }
 
 static int fnumber = 0;
-static const int publish_after_frame = 100; // global_pos is incorrect in the beginning
 void
 lane_analysis_handler(carmen_bumblebee_basic_stereoimage_message * stereo_image)
 {
 
 #ifdef TEST_OFFLINE_DATASET
+
 	// read the frame
-#ifdef DATASET_GOPRO
-	Mat3b image = imread("/dados/berriel/MEGA/datasets/VIX_S05/images/lane_" + to_string(fnumber) + ".png");
-#else
-	Mat3b image = imread("/dados/berriel/datasets/log-rodrigo-ufes/images/lane_" + to_string(fnumber) + ".png");
-#endif
+	#ifdef DATASET_GOPRO
+		Mat3b image = imread("/dados/berriel/MEGA/datasets/VIX_S05/images/lane_" + to_string(fnumber) + ".png");
+	// #else
+	//	Mat3b image = imread("/dados/berriel/datasets/log-rodrigo-ufes/images/lane_" + to_string(fnumber) + ".png");
+	#endif
+
+	#ifdef DATASET_RETA_DA_PENHA_OFFLINE
+		Mat3b image = imread("/dados/berriel/datasets/carmen/reta-da-penha-01/lane_" + to_string(fnumber) + ".png");
+	#endif
+
 #else
 	// get the image from the bumblebee
 	Mat3b image(960, 1280);
-	image.data = (uchar *) stereo_image->raw_left;
+
+	if (camera_side == CameraSide::LEFT) image.data = (uchar *) stereo_image->raw_left;
+	else if(camera_side == CameraSide::RIGHT) image.data = (uchar *) stereo_image->raw_right;
+	else image.data = (uchar *) stereo_image->raw_right;
+
 	cvtColor(image, image, CV_RGB2BGR);
 	cv::resize(image, image, Size(640,480));
-	// imwrite("/dados/log-rodrigo/lane_" + to_string(fnumber) + ".png", image);
+	// cv::imwrite("/dados/berriel/datasets/carmen/reta-da-penha-01/lane_" + to_string(fnumber - 80) + ".png", image);
 #endif
 	fnumber++;
 	if (!image.empty()) {
@@ -165,13 +179,20 @@ lane_analysis_handler(carmen_bumblebee_basic_stereoimage_message * stereo_image)
 		ELAS::run(image);
 		printf("CARMEN::ELAS... done!\n");
 
-		// publish messages
-		if (fnumber > publish_after_frame)
-			lane_analysis_publish_messages(stereo_image->timestamp);
+		// get the raw message
+		printf("\nget_raw_message()... ");
+		_raw_elas_message = ELAS::get_raw_message();
+		printf("done!\n");
 
-		// viz here? to debug?
-		imshow("ELAS - CARMEN", image);
-		waitKey(1);
+		// publish messages
+#ifndef TEST_OFFLINE_DATASET
+		lane_analysis_publish_messages(stereo_image->timestamp);
+#endif
+
+#ifdef SHOW_DISPLAY
+		// display viz
+		ELAS::display(image, &_raw_elas_message);
+#endif
 	} else {
 		printf("End of dataset!\n");
 	}

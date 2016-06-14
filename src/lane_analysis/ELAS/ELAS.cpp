@@ -195,6 +195,12 @@ void ELAS::run(const Mat3b & original_frame) {
 	finishRun();
 }
 
+void ELAS::display(const Mat3b& frame, raw_elas_message * message) {
+	frame_viz viz_data = get_viz_data(message);
+	render(viz_data, frame, cfg);
+	waitKey(1);
+}
+
 void ELAS::setIPM(Size& _origSize, Size& _dstSize, vector<Point2f>& _origPoints, vector<Point2f>& _dstPoints) {
 
 	// if image size used to generate the stored IPM is different than the image we are trying to read, a scaling must be performed
@@ -217,6 +223,38 @@ void ELAS::setIPM(Size& _origSize, Size& _dstSize, vector<Point2f>& _origPoints,
 
 	cfg->ipm = new IPM(_origSize, _dstSize, _origPoints, _dstPoints);
 	cfg->roi = Rect(0,0,cfg->dataset.FrameSize.width, cfg->dataset.FrameSize.height);
+}
+
+frame_viz ELAS::get_viz_data(raw_elas_message * message) {
+	frame_viz viz_data;
+
+	Point2d _tl = Point2d(cfg->roi.tl().x, cfg->roi.tl().y);
+
+	for(Point2d p : message->lane_position.left) viz_data.lane_position.left.push_back(cfg->ipm->applyHomography(p - _tl));
+	for(Point2d p : message->lane_position.right) viz_data.lane_position.right.push_back(cfg->ipm->applyHomography(p -_tl));
+
+	viz_data.lmt.left = message->lmt.left;
+	viz_data.lmt.right = message->lmt.right;
+	viz_data.adjacent_lanes.left = message->adjacent_lanes.left;
+	viz_data.adjacent_lanes.right = message->adjacent_lanes.right;
+
+	viz_data.lane_base.direction = message->lane_base.direction;
+	viz_data.lane_base.point_bottom = cfg->ipm->applyHomographyInv(Point2d(message->lane_base.point_bottom.x, cfg->roi.height)) + Point2d(0, cfg->roi.y);
+	viz_data.lane_base.point_top = cfg->ipm->applyHomographyInv(Point2d(message->lane_base.point_top.x, 0)) + Point2d(0, cfg->roi.y);
+	viz_data.lane_base.width = message->lane_base.width;
+
+	viz_data.lane_deviation = message->lane_deviation;
+	viz_data.execution_time = 33; // not set: message->execution_time;
+	viz_data.x_carro = message->car_position_x;
+	viz_data.isKalmanNull = message->isKalmanNull;
+	viz_data.trustworthy_height = message->trustworthy_height;
+	viz_data.lane_change = (int)message->lane_change;
+
+	viz_data.idx_frame = 0; // unused
+	viz_data.frame_number = 0; // unused
+	// empty: viz_data.symbols
+
+	return viz_data;
 }
 
 ConfigXML * ELAS::getConfigXML() {
