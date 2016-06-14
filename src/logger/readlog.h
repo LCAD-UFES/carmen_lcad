@@ -47,6 +47,11 @@
 #include <carmen/visual_odometry_messages.h>
 #include <carmen/kinect_messages.h>
 #include <carmen/visual_odometry_messages.h>
+#include <carmen/simulator_ackerman_messages.h>
+#include <carmen/robot_ackerman_messages.h>
+#include <carmen/web_cam_messages.h>
+#include <carmen/base_ackerman_messages.h>
+#include <carmen/ultrasonic_filter_messages.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -208,6 +213,8 @@ char *carmen_string_to_kinect_video_message(char *string, carmen_kinect_video_me
 
 char* carmen_string_to_velodyne_partial_scan_message(char* string, carmen_velodyne_partial_scan_message* msg);
 
+char* carmen_string_to_variable_velodyne_scan_message(char* string, carmen_velodyne_variable_scan_message* msg);
+
 char* carmen_string_to_velodyne_gps_message(char* string, carmen_velodyne_gps_message* msg);
 
 char* carmen_string_to_xsens_euler_message(char* string, carmen_xsens_global_euler_message* msg);
@@ -225,6 +232,8 @@ char* carmen_string_to_base_ackerman_odometry_message(char* string, carmen_base_
 char* carmen_string_to_base_ackerman_motion_message(char* string, carmen_base_ackerman_motion_command_message* msg);
 
 char* carmen_string_to_ultrasonic_message(char* string, carmen_ultrasonic_sonar_sensor_message* ultrasonic_msg);
+
+char* carmen_string_to_laser_ldmrs_message(char *string, carmen_laser_ldmrs_message *laser);
 
 #ifdef __cplusplus
 }

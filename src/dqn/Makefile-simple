@@ -1,0 +1,2 @@
+all:
+	g++ -o simple simple.cpp dqn_caffe.cpp -Wall -g -L $(CAFFE_HOME)/build/lib -lcaffe -I$(CAFFE_HOME)/include -L/usr/local/cuda/lib64 -I /usr/local/cuda/include -I$(CAFFE_HOME)/build/include/ -lboost_system -lglog

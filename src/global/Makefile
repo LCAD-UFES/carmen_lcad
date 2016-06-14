@@ -8,7 +8,7 @@ ifndef NO_GRAPHICS
 IFLAGS += `$(GTK_CONFIG) --cflags`
 LFLAGS += `$(GTK_CONFIG) --libs`
 IFLAGS += -I/usr/lib64/qt4/mkspecs/linux-g++ -I. -I/usr/include/qt4/QtCore/ -I/usr/include/qt4/QtGui -I/usr/include -I/usr/include/qt4/ -I$CARMEN_HOME/include
-IFLAGS += -I/usr/lib64/qt4/mkspecs/linux-g++ -I. -I/usr/include/QtCore -I/usr/include/QtGui -I/usr/include -I/home/lauro/robotics/code/carmen/include
+IFLAGS += -I/usr/lib64/qt4/mkspecs/linux-g++ -I. -I/usr/include/QtCore -I/usr/include/QtGui -I/usr/include 
 LFLAGS += -lQtGui -lQtCore -lpthread
 else
 CFLAGS += -DNO_GRAPHICS

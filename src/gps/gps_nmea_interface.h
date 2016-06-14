@@ -40,6 +40,8 @@
 #ifndef GPS_NMEA_INTERFACE_H
 #define GPS_NMEA_INTERFACE_H
 
+#include <carmen/carmen.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

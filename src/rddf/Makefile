@@ -18,16 +18,17 @@ IFLAGS += -I/usr/include/eigen3
 IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ -I/usr/local/include/g2o/
 
 SOURCES = rddf_interface.c rddf_play_main.cpp rddf_index.cpp rddf_build_main.cpp rddf_util.cpp
-PUBLIC_INCLUDES = rddf_interface.h rddf_messages.h rddf_util.h
-PUBLIC_LIBRARIES = librddf_interface.a librddf_util.a
+PUBLIC_INCLUDES = rddf_interface.h rddf_messages.h rddf_util.h rddf_index.h
+PUBLIC_LIBRARIES = librddf_interface.a librddf_util.a librddf_index.a
 PUBLIC_BINARIES = rddf_build rddf_play rddf_annotation_manager
-TARGETS = librddf_interface.a rddf_build rddf_play rddf_annotation_manager librddf_util.a 
+TARGETS = librddf_interface.a rddf_build rddf_play rddf_annotation_manager librddf_util.a librddf_index.a 
 
 PUBLIC_LIBRARIES_SO = librddf_interface.so
 ifndef NO_PYTHON
 TARGETS += librddf_interface.so.1
 endif
 
+librddf_index.a: rddf_index.o
 librddf_util.a: rddf_util.o
 librddf_interface.a: rddf_interface.o
 librddf_interface.so.1: rddf_interface.o

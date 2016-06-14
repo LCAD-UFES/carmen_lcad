@@ -15,10 +15,10 @@ como calibrar a odometria:
 	> $> replot './debug.txt' using 3:4 title 'GPS' with lines
 	> $> replot './debug.txt' using 5:6 title 'raw odometry' with lines
 9. Altere as variaveis abaixo no carmen-ford-escape.ini de acordo com os resultados mencionados acima:
-robot_phi_multiplier				1.101828
-robot_phi_bias					-0.002788
-robot_v_multiplier				0.984300
+robot_phi_multiplier				1.109900
+robot_phi_bias					-0.003390
+robot_v_multiplier				1.021018
 
-bias v: 1.025076 0.000000 bias phi: 1.090757 -0.003386 initial angle: 0.807028
-Fitness (MSE): -18.298923
-Fitness (SQRT(MSE)): 4.277724
+bias v: 1.021018 -0.000000 bias phi: 1.109900 -0.003390 initial angle: 0.797249
+Fitness (MSE): -12.613491
+Fitness (SQRT(MSE)): 3.551548

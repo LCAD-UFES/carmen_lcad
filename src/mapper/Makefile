@@ -4,6 +4,7 @@ include ../Makefile.conf
 MODULE_NAME = MAPPER_PACKAGE
 MODULE_COMMENT = Mapper Maps using Velodyne!
 
+CFLAGS += -Wall -std=c99 -msse3 -O3
 LINK = g++
 
 # Application specific include directories.
@@ -30,8 +31,6 @@ IFLAGS += -I/usr/include/eigen3 -I/usr/local/include/pcl-1.7/  -I/usr/include/vt
 LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_registration -lpcl_kdtree -lpcl_features -lpcl_search -lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
 	
-CFLAGS += -Wall -std=c99
-
 # Source code files (.c, .cpp) 
 SOURCES = mapper.cpp mapper_main.cpp message_interpolation.cpp convert_maps_from_float_to_double.cpp
 

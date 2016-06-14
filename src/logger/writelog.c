@@ -153,6 +153,46 @@ void carmen_logwrite_write_laser_laser(carmen_laser_laser_message *laser,
 			laser->host, timestamp);
 }
 
+void carmen_logwrite_write_laser_ldmrs(carmen_laser_ldmrs_message *laser,
+		int laser_num, carmen_FILE *outfile,
+		double timestamp)
+{
+	int i;
+	(void)laser_num;
+	carmen_fprintf(outfile, "LASER_LDMRS ");
+	carmen_fprintf(outfile, "%d %d %d %d %.3lf %.3lf %d %.3lf %.3lf %.3lf %.3lf %.3lf %.3lf %d ",
+			laser->scan_number,
+			laser->scanner_status,
+			laser->sync_phase_offset,
+//			laser->scan_start_time.tv_sec,
+//			laser->scan_start_time.tv_nsec,
+//			laser->scan_end_time.tv_sec,
+//			laser->scan_end_time.tv_nsec,
+			laser->angle_ticks_per_rotation,
+			laser->start_angle,
+			laser->end_angle,
+			laser->scan_points,
+			laser->mount_yaw,
+			laser->mount_pitch,
+			laser->mount_roll,
+			laser->mount_x,
+			laser->mount_y,
+			laser->mount_z,
+			laser->flags);
+
+	for(i = 0; i < laser->scan_points; i++)
+		carmen_fprintf(outfile, "%1d %1d %1d %.5f %.3f %.3f ",
+				    laser->points[i].layer,
+				    laser->points[i].echo,
+				    laser->points[i].flags,
+				    laser->points[i].horizontal_angle,
+				    laser->points[i].radial_distance,
+				    laser->points[i].pulse_width);
+
+	carmen_fprintf(outfile, "%f %s %f\n", laser->timestamp,
+			laser->host, timestamp);
+}
+
 void carmen_logwrite_write_robot_ackerman_laser(carmen_robot_ackerman_laser_message *laser,
 		int laser_num, carmen_FILE *outfile,
 		double timestamp)
@@ -659,6 +699,56 @@ void carmen_logwrite_write_velodyne_partial_scan(carmen_velodyne_partial_scan_me
 		hex_char_distance_and_intensity[k] = ' ';
 
 		carmen_fwrite(hex_char_distance_and_intensity,  (64 + 128 + 1), 1, outfile);
+	}
+
+	carmen_fprintf(outfile, "%f %s %f\n", msg->timestamp, msg->host, timestamp);
+}
+
+char *hex_char_distance_and_intensity_variable;
+
+void
+carmen_logwrite_write_variable_velodyne_scan(carmen_velodyne_variable_scan_message* msg, carmen_FILE* outfile, double timestamp)
+{
+	int i, j, k, angle;
+
+	carmen_fprintf(outfile, "VARIABLE_VELODYNE_SCAN ");
+	carmen_fprintf(outfile, "%d ", msg->number_of_shots);
+	carmen_fprintf(outfile, "%d ", msg->partial_scan[0].shot_size);
+
+	int vector_size = (2 * msg->partial_scan[0].shot_size + 4 * msg->partial_scan[0].shot_size + 1);
+
+	if (hex_char_distance_and_intensity_variable == NULL)
+	{
+		hex_char_distance_and_intensity_variable = (char *) malloc(vector_size * sizeof(char)); // 2 * 32 laser intensities and 4 * 32 laser distances
+
+		for (i = 0; i < 16; i++)
+		{
+			if (i <= 9)
+				int_to_nibble_hex[i] = '0' + i;
+			else
+				int_to_nibble_hex[i] = 'a' + i - 10;
+		}
+	}
+
+	for(i = 0; i < msg->number_of_shots; i++)
+	{
+		angle = (int)(msg->partial_scan[i].angle * 100);
+		carmen_fprintf(outfile, "%d ", angle);
+
+		for(j = k = 0; j < msg->partial_scan[0].shot_size; j += 1, k += 6)
+		{
+			hex_char_distance_and_intensity_variable[k]     = GET_SHORT_FIRST_NIBBLE(msg->partial_scan[i].distance[j]);
+			hex_char_distance_and_intensity_variable[k + 1] = GET_SHORT_SECOND_NIBBLE(msg->partial_scan[i].distance[j]);
+			hex_char_distance_and_intensity_variable[k + 2] = GET_SHORT_THIRD_NIBBLE(msg->partial_scan[i].distance[j]);
+			hex_char_distance_and_intensity_variable[k + 3] = GET_SHORT_FOURTH_NIBBLE(msg->partial_scan[i].distance[j]);
+
+			hex_char_distance_and_intensity_variable[k + 4] = GET_LOW_ORDER_NIBBLE(msg->partial_scan[i].intensity[j]);
+			hex_char_distance_and_intensity_variable[k + 5] = GET_HIGH_ORDER_NIBBLE(msg->partial_scan[i].intensity[j]);
+		}
+
+		hex_char_distance_and_intensity_variable[k] = ' ';
+
+		carmen_fwrite(hex_char_distance_and_intensity_variable,  vector_size, 1, outfile);
 	}
 
 	carmen_fprintf(outfile, "%f %s %f\n", msg->timestamp, msg->host, timestamp);

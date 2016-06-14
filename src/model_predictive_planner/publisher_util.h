@@ -16,10 +16,13 @@ using namespace std;
 //#include "../rrt.h"
 //#include "util.h"
 #include "model/cost_map.h"
+#include "model/rrt_node.h"
 
 class Publisher_Util
 {
 public:
+	static void publish_rrt_path_message(rrt_path_message *msg);
+
 	static void publish_plan_tree_message(Tree tree);
 
 	static void publish_navigator_ackerman_plan_message(carmen_navigator_ackerman_plan_message msg);

@@ -5,14 +5,18 @@ MODULE_NAME = Model-Predictive Motion Planner
 MODULE_COMMENT = Model-predictive motion planner
 
 LINK = g++
-CFLAGS += -O0
-CXXFLAGS += -std=c++0x -O0
-#CFLAGS += -msse3 -O3 -fopenmp
-#CXXFLAGS += -std=c++0x -msse3 -O3 -fopenmp
+#CFLAGS += -O0
+#CXXFLAGS += -std=c++0x -O0
+CFLAGS += -msse3 -O3 -fopenmp
+CXXFLAGS += -std=c++0x -msse3 -O3 -fopenmp
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
+
+#G2O
+IFLAGS += -I/usr/include/eigen3 
+IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ -I/usr/local/include/g2o/
 
 #SUBDIRS += model
 LFLAGS += 	-lgrid_mapping -lmap_io -lmap_util -lmap_interface -lparam_interface -lipc -lglobal -lmap_interface  -lprob_models -llocalize_ackerman_interface -lsimulator_ackerman_interface \

@@ -1,6 +1,7 @@
 #ifndef CARMEN_XSENS_INTERFACE_H
 #define CARMEN_XSENS_INTERFACE_H
 
+#include <carmen/carmen.h>
 #include "xsens_messages.h"
 
 #ifdef __cplusplus

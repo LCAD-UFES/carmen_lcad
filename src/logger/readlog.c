@@ -416,6 +416,57 @@ char *carmen_string_to_laser_laser_message(char *string,
 	return current_pos;
 }
 
+char *carmen_string_to_laser_ldmrs_message(char *string,
+		carmen_laser_ldmrs_message *laser)
+{
+	char *current_pos = string;
+	int i, num_readings;
+
+	if (strncmp(current_pos, "LASER_LDMRS", 11) == 0)
+		current_pos += 11;
+
+	laser->scan_number = CLF_READ_INT(&current_pos);
+	laser->scanner_status = CLF_READ_INT(&current_pos);
+	laser->sync_phase_offset = CLF_READ_INT(&current_pos);
+//	laser->scan_start_time.tv_sec = CLF_READ_INT(&current_pos);
+//	laser->scan_start_time.tv_nsec = CLF_READ_INT(&current_pos);
+//	laser->scan_end_time.tv_sec = CLF_READ_INT(&current_pos);
+//	laser->scan_end_time.tv_nsec = CLF_READ_INT(&current_pos);
+	laser->angle_ticks_per_rotation = CLF_READ_INT(&current_pos);
+	laser->start_angle = CLF_READ_DOUBLE(&current_pos);
+	laser->end_angle = CLF_READ_DOUBLE(&current_pos);
+	num_readings = CLF_READ_INT(&current_pos);
+	laser->mount_yaw = CLF_READ_DOUBLE(&current_pos);
+	laser->mount_pitch = CLF_READ_DOUBLE(&current_pos);
+	laser->mount_roll = CLF_READ_DOUBLE(&current_pos);
+	laser->mount_x = CLF_READ_DOUBLE(&current_pos);
+	laser->mount_y = CLF_READ_DOUBLE(&current_pos);
+	laser->mount_z = CLF_READ_DOUBLE(&current_pos);
+	laser->flags = CLF_READ_INT(&current_pos);
+
+	if(laser->scan_points != num_readings)
+	{
+		laser->scan_points = num_readings;
+		laser->points = (carmen_laser_ldmrs_point *)realloc(laser->points, laser->scan_points * sizeof(carmen_laser_ldmrs_point));
+		carmen_test_alloc(laser->points);
+	}
+
+	for(i = 0; i < laser->scan_points; i++)
+	{
+	    laser->points[i].layer = CLF_READ_INT(&current_pos);
+	    laser->points[i].echo = CLF_READ_INT(&current_pos);
+	    laser->points[i].flags = CLF_READ_INT(&current_pos);
+	    laser->points[i].horizontal_angle = CLF_READ_DOUBLE(&current_pos);
+	    laser->points[i].radial_distance = CLF_READ_DOUBLE(&current_pos);
+	    laser->points[i].pulse_width = CLF_READ_DOUBLE(&current_pos);
+	}
+
+	laser->timestamp = CLF_READ_DOUBLE(&current_pos);
+	copy_host_string(&laser->host, &current_pos);
+
+	return current_pos;
+}
+
 char *carmen_string_to_robot_ackerman_laser_message(char *string,
 		carmen_robot_ackerman_laser_message *laser)
 {
@@ -1033,8 +1084,14 @@ char* carmen_string_to_velodyne_partial_scan_message(char* string, carmen_velody
 
 	msg->number_of_32_laser_shots = CLF_READ_INT(&current_pos);
 
-	if(msg->partial_scan == NULL) {
+	if (msg->partial_scan == NULL)
+	{
 		msg->partial_scan = (carmen_velodyne_32_laser_shot*) malloc (msg->number_of_32_laser_shots * sizeof(carmen_velodyne_32_laser_shot));
+		carmen_test_alloc(msg->partial_scan);
+	}
+	else
+	{
+		msg->partial_scan = (carmen_velodyne_32_laser_shot*) realloc ((void *) msg->partial_scan, msg->number_of_32_laser_shots * sizeof(carmen_velodyne_32_laser_shot));
 		carmen_test_alloc(msg->partial_scan);
 	}
 
@@ -1070,6 +1127,83 @@ char* carmen_string_to_velodyne_partial_scan_message(char* string, carmen_velody
 
 	return current_pos;
 }
+
+
+char* carmen_string_to_variable_velodyne_scan_message(char* string, carmen_velodyne_variable_scan_message* msg)
+{
+	char *current_pos = string;
+	int i, j, r;
+	int shot_size;
+	int number_of_shots;
+	unsigned char hi, lo, first, second, third, fourth;
+
+	if (strncmp(current_pos, "VARIABLE_VELODYNE_SCAN", 23) == 0)
+		current_pos += 23;
+
+	number_of_shots = CLF_READ_INT(&current_pos);
+	shot_size = CLF_READ_INT(&current_pos);
+
+	if(msg->partial_scan == NULL)
+	{
+		msg->partial_scan = (carmen_velodyne_shot *) calloc (number_of_shots, sizeof(carmen_velodyne_shot));
+		carmen_test_alloc(msg->partial_scan);
+		msg->number_of_shots = number_of_shots;
+	}
+
+	if (msg->number_of_shots != number_of_shots)
+	{
+		for(i = 0; i < msg->number_of_shots; i++)
+		{
+			free(msg->partial_scan[i].distance);
+			free(msg->partial_scan[i].intensity);
+		}
+
+		msg->partial_scan = (carmen_velodyne_shot *) realloc (msg->partial_scan, number_of_shots * sizeof(carmen_velodyne_shot));
+		memset(msg->partial_scan, 0, number_of_shots * sizeof(carmen_velodyne_shot));
+		msg->number_of_shots = number_of_shots;
+	}
+
+	for (i = 0; i < msg->number_of_shots; i++)
+	{
+		msg->partial_scan[i].angle = CLF_READ_INT(&current_pos) / 100.0;
+		msg->partial_scan[i].shot_size = shot_size;
+
+		current_pos++;
+
+		if (msg->partial_scan[i].distance == NULL)
+		{
+			msg->partial_scan[i].distance = (unsigned short *) calloc (shot_size, sizeof(unsigned short));
+			msg->partial_scan[i].intensity = (unsigned char *) calloc (shot_size, sizeof(unsigned char));
+		}
+
+		for(j = 0; j < shot_size; j++)
+		{
+			r = *current_pos; current_pos++;
+			first = GETINDEX(r);
+			r = *current_pos; current_pos++;
+			second = GETINDEX(r);
+			r = *current_pos; current_pos++;
+			third = GETINDEX(r);
+			r = *current_pos; current_pos++;
+			fourth = GETINDEX(r);
+
+			msg->partial_scan[i].distance[j] = HEX_TO_SHORT(fourth, third, second, first);
+
+			r = *current_pos; current_pos++;
+			lo = GETINDEX(r);
+			r = *current_pos; current_pos++;
+			hi = GETINDEX(r);
+
+			msg->partial_scan[i].intensity[j] = HEX_TO_RGB_BYTE(hi, lo);
+		}
+	}
+
+	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
+	copy_host_string(&msg->host, &current_pos);
+
+	return current_pos;
+}
+
 
 char* carmen_string_to_velodyne_gps_message(char* string, carmen_velodyne_gps_message* msg)
 {

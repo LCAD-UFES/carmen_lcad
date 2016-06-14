@@ -588,7 +588,7 @@ public:
 
 carmen_pose_index carmen_pose_index_ordered_by_x;
 carmen_pose_index carmen_pose_index_ordered_by_y;
-carmen_timestamp_index carmen_timestamp_index;
+carmen_timestamp_index carmen_index_ordered_by_timestamp;
 
 void carmen_write_index (char *rddf_filename)
 {
@@ -608,7 +608,7 @@ void carmen_write_index (char *rddf_filename)
 	/** index are sorted in the create function, so here we need just save them to file **/
 	carmen_pose_index_ordered_by_x.save_to_file(rddf_index_x_filename);
 	carmen_pose_index_ordered_by_y.save_to_file(rddf_index_y_filename);
-	carmen_timestamp_index.save_to_file(rddf_index_timestamp_filename);
+	carmen_index_ordered_by_timestamp.save_to_file(rddf_index_timestamp_filename);
 }
 
 
@@ -679,14 +679,14 @@ carmen_create_pose_index_from_timestamp_index()
 
 	double x, y, z, roll, pitch, yaw;
 
-	for(int i = 0; i < carmen_timestamp_index.size(); i++)
+	for(int i = 0; i < carmen_index_ordered_by_timestamp.size(); i++)
 	{
-		x = carmen_timestamp_index[i].x;
-		y = carmen_timestamp_index[i].y;
-		z = carmen_timestamp_index[i].z;
-		roll = carmen_timestamp_index[i].roll;
-		pitch = carmen_timestamp_index[i].pitch;
-		yaw = carmen_timestamp_index[i].yaw;
+		x = carmen_index_ordered_by_timestamp[i].x;
+		y = carmen_index_ordered_by_timestamp[i].y;
+		z = carmen_index_ordered_by_timestamp[i].z;
+		roll = carmen_index_ordered_by_timestamp[i].roll;
+		pitch = carmen_index_ordered_by_timestamp[i].pitch;
+		yaw = carmen_index_ordered_by_timestamp[i].yaw;
 
 		carmen_pose_index_ordered_by_x.add (x, y, z, roll, pitch, yaw, i);
 		carmen_pose_index_ordered_by_y.add (x, y, z, roll, pitch, yaw, i);
@@ -867,15 +867,15 @@ find_timestamp_index_position_with_full_index_search(double x, double y, double 
 	int i, min_dist_pos = 0;
 	double dist, min_dist = -1;
 
-	for(i = 0; i < carmen_timestamp_index.size(); i++)
+	for(i = 0; i < carmen_index_ordered_by_timestamp.size(); i++)
 	{
-		dist = sqrt(pow(x - carmen_timestamp_index[i].x, 2) + pow(y - carmen_timestamp_index[i].y, 2));
+		dist = sqrt(pow(x - carmen_index_ordered_by_timestamp[i].x, 2) + pow(y - carmen_index_ordered_by_timestamp[i].y, 2));
 
 		if ((dist < min_dist) || (min_dist == -1))
 		{
 			// ignore points with incorrect orientation
 			if (test_orientation)
-				if (fabs(carmen_normalize_theta(carmen_timestamp_index[i].yaw - yaw)) > (M_PI / 2.0))
+				if (fabs(carmen_normalize_theta(carmen_index_ordered_by_timestamp[i].yaw - yaw)) > (M_PI / 2.0))
 					continue;
 
 			min_dist = dist;
@@ -911,14 +911,14 @@ fill_in_waypoints_array(long timestamp_index_position, carmen_ackerman_traj_poin
 	carmen_timestamp_index_element index_element;
 
 	num_poses_aquired = 0;
-	index_element = carmen_timestamp_index[timestamp_index_position];
+	index_element = carmen_index_ordered_by_timestamp[timestamp_index_position];
 	poses_ahead[num_poses_aquired] = last_pose = create_ackerman_traj_point_struct(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.yaw);
 	annotations[num_poses_aquired] = index_element.anottation;
 	num_poses_aquired++;
 	i = 0;
-	while ((num_poses_aquired < num_poses_desired) && ((timestamp_index_position + i) < carmen_timestamp_index.size()))
+	while ((num_poses_aquired < num_poses_desired) && ((timestamp_index_position + i) < carmen_index_ordered_by_timestamp.size()))
 	{
-		index_element = carmen_timestamp_index[timestamp_index_position + i];
+		index_element = carmen_index_ordered_by_timestamp[timestamp_index_position + i];
 		current_pose = create_ackerman_traj_point_struct (index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.yaw);
 
 		dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
@@ -953,8 +953,8 @@ carmen_driving_playback_has_closed_loop()
 	double dist = 0;
 	carmen_timestamp_index_element first, last;
 
-	first = carmen_timestamp_index[0];
-	last = carmen_timestamp_index[carmen_timestamp_index.size() - 1];
+	first = carmen_index_ordered_by_timestamp[0];
+	last = carmen_index_ordered_by_timestamp[carmen_index_ordered_by_timestamp.size() - 1];
 
 	dist = sqrt(pow(first.x - last.x, 2) + pow(first.y - last.y, 2));
 
@@ -977,9 +977,9 @@ get_more_more_poses_from_begining(int num_poses_desired, carmen_ackerman_traj_po
 	i = 0;
 	last_pose = last_pose_acquired_at_end_of_index;
 
-	while ((num_poses_aquired < num_poses_desired) && (i < carmen_timestamp_index.size()))
+	while ((num_poses_aquired < num_poses_desired) && (i < carmen_index_ordered_by_timestamp.size()))
 	{
-		index_element = carmen_timestamp_index[i];
+		index_element = carmen_index_ordered_by_timestamp[i];
 		current_pose = create_ackerman_traj_point_struct (index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.yaw);
 
 		dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
@@ -1041,7 +1041,7 @@ carmen_driving_playback_load_index (char *rddf_filename)
 	strcat (rddf_index_y_filename, ".y.index");
 	strcat (rddf_index_timestamp_filename, ".timestamp.index");
 
-	carmen_timestamp_index.load_from_file(rddf_index_timestamp_filename);
+	carmen_index_ordered_by_timestamp.load_from_file(rddf_index_timestamp_filename);
 	carmen_pose_index_ordered_by_x.load_from_file(rddf_index_x_filename);
 	carmen_pose_index_ordered_by_y.load_from_file(rddf_index_y_filename);
 
@@ -1110,7 +1110,7 @@ carmen_driving_playback_index_exists (char *rddf_filename)
 void
 carmen_driving_playback_index_add(const carmen_fused_odometry_message *fused_odometry_message, long data_offset, long data_length, int annotation)
 {
-	carmen_timestamp_index.add(
+	carmen_index_ordered_by_timestamp.add(
 		fused_odometry_message->pose.position.x, fused_odometry_message->pose.position.y, fused_odometry_message->pose.position.z,
 		fused_odometry_message->pose.orientation.roll, fused_odometry_message->pose.orientation.pitch, fused_odometry_message->pose.orientation.yaw,
 		fused_odometry_message->gps_position_at_turn_on.x, fused_odometry_message->gps_position_at_turn_on.y, fused_odometry_message->gps_position_at_turn_on.z,
@@ -1124,7 +1124,7 @@ carmen_driving_playback_index_add(const carmen_fused_odometry_message *fused_odo
 void
 carmen_driving_playback_index_save(char *rddf_filename)
 {
-	carmen_timestamp_index.sort();
+	carmen_index_ordered_by_timestamp.sort();
 	carmen_create_pose_index_from_timestamp_index();
 	carmen_write_index (rddf_filename);
 }

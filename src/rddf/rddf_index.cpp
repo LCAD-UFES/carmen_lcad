@@ -1,9 +1,3 @@
-/*
- * rddf_index.cpp
- *
- *  Created on: 17/07/2012
- *      Author: filipe
- */
 
 #include <cmath>
 #include <vector>
@@ -15,9 +9,30 @@
 #include <carmen/rddf_messages.h>
 #include "rddf_index.h"
 
+/*
+ * ****************************************
+ * ATENCAO: Modulo precisa de refatoracao!
+ *
+ * - Acho que os indices de pose nao sao usados
+ * mais.
+ * - Checar quais funcionalidades precisam ser
+ * feitas publicas e que podem ser uteis para
+ * modulos futuros.
+ *****************************************
+ */
+
 using namespace std;
 
 int global_dim_to_sort_and_search = -1;
+
+carmen_pose_index carmen_pose_index_ordered_by_x;
+carmen_pose_index carmen_pose_index_ordered_by_y;
+carmen_timestamp_index carmen_index_ordered_by_timestamp;
+
+// @filipe: ao descomentar as linhas abaixo, o programa comeca a dar seg fault. investigar por que.
+// se encontrar a resposta, me conte. nao consegui entender.
+//bool index_is_sorted;
+//vector<carmen_timestamp_index_element> index;
 
 template<class T>
 long get_min_dist_index (vector<T> vect, long upper, long lower, long middle, T &key, double dist(T, T))
@@ -76,86 +91,48 @@ long binary_search_nearest (vector<T> vect, T key, int cmp_function(T, T), doubl
 }
 
 
-class carmen_pose_index_element
+double& carmen_pose_index_element::operator[](int position)
 {
-public:
+	if (position < 0 || position > 6)
+		exit(printf("Error: trying to access an invalid area!\n"));
 
-	double x;
-	double y;
-	double z;
-	double roll;
-	double pitch;
-	double yaw;
-	double timestamp_index_position;
-
-	double& operator [](int position)
+	switch (position)
 	{
-		if (position < 0 || position > 6)
-			exit(printf("Error: trying to access an invalid area!\n"));
-
-		switch (position)
-		{
-		case 0:
-			return x;
-			break;
-		case 1:
-			return y;
-			break;
-		case 2:
-			return z;
-			break;
-		case 3:
-			return roll;
-			break;
-		case 4:
-			return pitch;
-			break;
-		case 5:
-			return yaw;
-			break;
-		case 6:
-			return timestamp_index_position;
-		default:
-			break;
-		}
-
-		exit(printf("Error: Unexpected exception\n"));
+	case 0:
+		return x;
+		break;
+	case 1:
+		return y;
+		break;
+	case 2:
+		return z;
+		break;
+	case 3:
+		return roll;
+		break;
+	case 4:
+		return pitch;
+		break;
+	case 5:
+		return yaw;
+		break;
+	case 6:
+		return timestamp_index_position;
+	default:
+		break;
 	}
-};
+
+	exit(printf("Error: carmen_pose_index_element::operator[]: Trying to access invalid position\n"));
+}
 
 
-class carmen_timestamp_index_element
+double& carmen_timestamp_index_element::operator[](int position)
 {
-public:
+	if (position < 0 || position > 6)
+		exit(printf("Error: trying to access an invalid area!\n"));
 
-	double x;
-	double y;
-	double z;
-	double roll;
-	double pitch;
-	double yaw;
-	double origin_x;
-	double origin_y;
-	double origin_z;
-	double velocity_x;
-	double velocity_y;
-	double velocity_z;
-	double angular_velocity_roll;
-	double angular_velocity_pitch;
-	double angular_velocity_yaw;
-	double phi;
-	double timestamp;
-	long rddf_offset;
-	long rddf_data_length;
-	int anottation;
-
-	double& operator [](int position)
+	switch (position)
 	{
-		if (position < 0 || position > 6)
-			exit(printf("Error: trying to access an invalid area!\n"));
-
-		switch (position)
-		{
 		case 0:
 			return x;
 			break;
@@ -178,9 +155,11 @@ public:
 			return timestamp;
 		default:
 			break;
-		}
 	}
-};
+
+	exit(printf("Error: carmen_timestamp_index_element::operator[]: Trying to access invalid position\n"));
+	return x;
+}
 
 
 static int
@@ -208,7 +187,7 @@ dist_between_timestamps(carmen_timestamp_index_element a, carmen_timestamp_index
 
 
 static double
-euclidean_dist (carmen_pose_index_element a, carmen_pose_index_element b)
+euclidean_dist(carmen_pose_index_element a, carmen_pose_index_element b)
 {
 	double dist =
 		sqrt (
@@ -221,7 +200,7 @@ euclidean_dist (carmen_pose_index_element a, carmen_pose_index_element b)
 
 
 static int
-cmp_pose (carmen_pose_index_element a, carmen_pose_index_element b)
+cmp_pose(carmen_pose_index_element a, carmen_pose_index_element b)
 {
 	if (global_dim_to_sort_and_search == -1)
 		exit(printf("Error: please set the dim to sort and search\n"));
@@ -243,359 +222,348 @@ cmp_pose_bool(carmen_pose_index_element a, carmen_pose_index_element b)
 }
 
 
-class carmen_pose_index
+carmen_pose_index::carmen_pose_index()
 {
-public:
+	dim_to_sort_and_search = -1;
+	index_is_sorted = false;
+}
 
-	bool index_is_sorted;
-	int dim_to_sort_and_search;
-	vector<carmen_pose_index_element> index;
 
-	carmen_pose_index()
+carmen_pose_index::carmen_pose_index(int dim)
+{
+	if (dim < 0 || dim > 5)
+		exit(printf("Error: trying sort and search invalid data!\n"));
+
+	dim_to_sort_and_search = dim;
+	index_is_sorted = false;
+}
+
+
+carmen_pose_index_element carmen_pose_index::operator[](uint position)
+{
+	if (position >= index.size())
+		exit(printf("Error: trying to access invalid position in the pose index\n"));
+	else
+		return index[position];
+}
+
+
+void carmen_pose_index::set_dim_to_sort_and_search (int dim)
+{
+	dim_to_sort_and_search = dim;
+}
+
+
+void carmen_pose_index::add(double x, double y, double z, double roll, double pitch, double yaw, long carmen_timestamp_index_position)
+{
+	carmen_pose_index_element elem;
+
+	elem.x = x;
+	elem.y = y;
+	elem.z = z;
+	elem.roll = roll;
+	elem.pitch = pitch;
+	elem.yaw = yaw;
+	elem.timestamp_index_position = carmen_timestamp_index_position;
+
+	index.push_back(elem);
+	index_is_sorted = false;
+}
+
+
+long carmen_pose_index::size()
+{
+	return index.size();
+}
+
+
+void carmen_pose_index::sort()
+{
+	global_dim_to_sort_and_search = dim_to_sort_and_search;
+
+	std::sort(index.begin(), index.end(), cmp_pose_bool);
+	index_is_sorted = true;
+}
+
+
+long carmen_pose_index::search(double x, double y)
+{
+	if (!index_is_sorted)
 	{
-		dim_to_sort_and_search = -1;
-		index_is_sorted = false;
+		exit(printf("Trying to search an unordered index!\n"));
+		return -1;
+	}
+	else
+	{
+		carmen_pose_index_element key;
+
+		key.x = x;
+		key.y = y;
+
+		global_dim_to_sort_and_search = dim_to_sort_and_search;
+		long p = binary_search_nearest<carmen_pose_index_element>(index, key, cmp_pose, euclidean_dist);
+
+		return p;
+	}
+}
+
+
+void carmen_pose_index::save_to_file(char *filename)
+{
+	if (!index_is_sorted)
+		exit(printf("Error: trying save an unsorted index!\n"));
+
+	if (dim_to_sort_and_search == -1)
+		exit(printf("Error: trying to save index with invalid search dim!\n"));
+
+	unsigned int i;
+
+	FILE *fileptr = fopen(filename, "w");
+
+	if (fileptr == NULL)
+		exit(printf("Error: pose index file couldn't be created!\n"));
+
+	fprintf(fileptr, "%d %d\n", (int) index.size(), dim_to_sort_and_search);
+
+	for (i = 0; i < index.size(); i++)
+	{
+		fprintf(fileptr,
+				"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",
+				index[i].x,
+				index[i].y,
+				index[i].z,
+				index[i].roll,
+				index[i].pitch,
+				index[i].yaw,
+				index[i].timestamp_index_position
+		);
 	}
 
-	carmen_pose_index(int dim)
-	{
-		if (dim < 0 || dim > 5)
-			exit(printf("Error: trying sort and search invalid data!\n"));
+	fclose(fileptr);
+}
 
-		dim_to_sort_and_search = dim;
-		index_is_sorted = false;
-	}
 
-	carmen_pose_index_element operator [](uint position)
-	{
-		if (position >= index.size())
-			exit(printf("Error: trying to access invalid position in the pose index\n"));
-		else
-			return index[position];
-	}
+void carmen_pose_index::load_from_file(char *filename)
+{
+	unsigned int i, n;
 
-	void set_dim_to_sort_and_search (int dim)
-	{
-		dim_to_sort_and_search = dim;
-	}
+	FILE *fileptr = fopen(filename, "r");
 
-	void add (double x, double y, double z, double roll, double pitch, double yaw, long carmen_timestamp_index_position)
+	if (fileptr == NULL)
+		exit(printf("Error: pose index file couldn't be open to read!\n"));
+
+	fscanf(fileptr, "%d %d\n", &n, &dim_to_sort_and_search);
+
+	for (i = 0; i < n; i++)
 	{
 		carmen_pose_index_element elem;
 
-		elem.x = x;
-		elem.y = y;
-		elem.z = z;
-		elem.roll = roll;
-		elem.pitch = pitch;
-		elem.yaw = yaw;
-		elem.timestamp_index_position = carmen_timestamp_index_position;
+		fscanf(fileptr,
+				"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",
+				&(elem.x),
+				&(elem.y),
+				&(elem.z),
+				&(elem.roll),
+				&(elem.pitch),
+				&(elem.yaw),
+				&(elem.timestamp_index_position)
+		);
 
 		index.push_back(elem);
-		index_is_sorted = false;
 	}
 
-	long size ()
-	{
-		return index.size();
-	}
-
-	void sort ()
-	{
-		global_dim_to_sort_and_search = dim_to_sort_and_search;
-
-		std::sort(index.begin(), index.end(), cmp_pose_bool);
-		index_is_sorted = true;
-	}
-
-	long search (double x, double y)
-	{
-		if (!index_is_sorted)
-		{
-			exit(printf("Trying to search an unordered index!\n"));
-			return -1;
-		}
-		else
-		{
-			carmen_pose_index_element key;
-
-			key.x = x;
-			key.y = y;
-
-			global_dim_to_sort_and_search = dim_to_sort_and_search;
-			long p = binary_search_nearest<carmen_pose_index_element>(index, key, cmp_pose, euclidean_dist);
-
-			return p;
-		}
-	}
-
-	void save_to_file (char *filename)
-	{
-		if (!index_is_sorted)
-			exit(printf("Error: trying save an unsorted index!\n"));
-
-		if (dim_to_sort_and_search == -1)
-			exit(printf("Error: trying to save index with invalid search dim!\n"));
-
-		unsigned int i;
-
-		FILE *fileptr = fopen(filename, "w");
-
-		if (fileptr == NULL)
-			exit(printf("Error: pose index file couldn't be created!\n"));
-
-		fprintf(fileptr, "%d %d\n", (int) index.size(), dim_to_sort_and_search);
-
-		for (i = 0; i < index.size(); i++)
-		{
-			fprintf(fileptr,
-					"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",
-					index[i].x,
-					index[i].y,
-					index[i].z,
-					index[i].roll,
-					index[i].pitch,
-					index[i].yaw,
-					index[i].timestamp_index_position
-			);
-		}
-
-		fclose(fileptr);
-	}
-
-	void load_from_file (char *filename)
-	{
-		unsigned int i, n;
-
-		FILE *fileptr = fopen(filename, "r");
-
-		if (fileptr == NULL)
-			exit(printf("Error: pose index file couldn't be open to read!\n"));
-
-		fscanf(fileptr, "%d %d\n", &n, &dim_to_sort_and_search);
-
-		for (i = 0; i < n; i++)
-		{
-			carmen_pose_index_element elem;
-
-			fscanf(fileptr,
-					"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n",
-					&(elem.x),
-					&(elem.y),
-					&(elem.z),
-					&(elem.roll),
-					&(elem.pitch),
-					&(elem.yaw),
-					&(elem.timestamp_index_position)
-			);
-
-			index.push_back(elem);
-		}
-
-		fclose(fileptr);
-		index_is_sorted = true;
-	}
-};
+	fclose(fileptr);
+	index_is_sorted = true;
+}
 
 
-class carmen_timestamp_index
+carmen_timestamp_index::carmen_timestamp_index()
 {
-public:
+	index_is_sorted = false;
+}
 
-	bool index_is_sorted;
-	vector<carmen_timestamp_index_element> index;
+carmen_timestamp_index_element carmen_timestamp_index::operator[](uint position)
+{
+	if (position >= index.size())
+		exit(printf("Error: trying to access invalid position in the timestamp index\n"));
+	else
+		return index[position];
+}
 
-	carmen_timestamp_index()
+void carmen_timestamp_index::add(
+	double x, double y, double z,
+	double roll, double pitch, double yaw,
+	double origin_x, double origin_y, double origin_z,
+	double velocity_x, double velocity_y, double velocity_z,
+	double angular_velocity_roll, double angular_velocity_pitch, double angular_velocity_yaw, double phi,
+	double timestamp, long rddf_file_offset, long rddf_data_length, int annotation)
+{
+	carmen_timestamp_index_element elem;
+
+	elem.x = x;
+	elem.y = y;
+	elem.z = z;
+
+	elem.roll = roll;
+	elem.pitch = pitch;
+	elem.yaw = yaw;
+
+	elem.origin_x = origin_x;
+	elem.origin_y = origin_y;
+	elem.origin_z = origin_z;
+
+	elem.velocity_x = velocity_x;
+	elem.velocity_y = velocity_y;
+	elem.velocity_z = velocity_z;
+
+	elem.angular_velocity_roll = angular_velocity_roll;
+	elem.angular_velocity_pitch = angular_velocity_pitch;
+	elem.angular_velocity_yaw = angular_velocity_yaw;
+
+	elem.phi = phi;
+
+	elem.timestamp = timestamp;
+	elem.rddf_offset = rddf_file_offset;
+	elem.rddf_data_length = rddf_data_length;
+	elem.anottation = annotation;
+
+	index.push_back(elem);
+	index_is_sorted = false;
+}
+
+long carmen_timestamp_index::size()
+{
+	return index.size();
+}
+
+void carmen_timestamp_index::sort()
+{
+	std::sort(index.begin(), index.end(), cmp_timestamp_bool);
+	index_is_sorted = true;
+}
+
+long carmen_timestamp_index::search(double timestamp)
+{
+	if (!index_is_sorted)
 	{
-		index_is_sorted = false;
+		exit(printf("Trying to search an unordered index!\n"));
+		return -1;
+	}
+	else
+	{
+		carmen_timestamp_index_element key;
+
+		key.timestamp = timestamp;
+
+		return binary_search_nearest(index, key, cmp_timestamp, dist_between_timestamps);
+	}
+}
+
+void carmen_timestamp_index::print()
+{
+	for(uint i = 0; i < index.size(); i++)
+	{
+		printf("\t%lf %lf %lf %lf %lf %lf\n",
+				index[i].x,
+				index[i].y,
+				index[i].z,
+				index[i].roll,
+				index[i].pitch,
+				index[i].yaw
+		);
+	}
+}
+
+void carmen_timestamp_index::save_to_file(char *filename)
+{
+	if (!index_is_sorted)
+		exit(printf("Error: trying save an unsorted index!\n"));
+
+	unsigned int i;
+
+	FILE *fileptr = fopen(filename, "w");
+
+	if (fileptr == NULL)
+		exit(printf("Error: pose index file couldn't be created!\n"));
+
+	fprintf(fileptr, "%d\n", (int) index.size());
+
+	for (i = 0; i < index.size(); i++)
+	{
+		fprintf(fileptr,
+				"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%ld\t%ld\t%d\n",
+				index[i].x,
+				index[i].y,
+				index[i].z,
+				index[i].roll,
+				index[i].pitch,
+				index[i].yaw,
+				index[i].origin_x,
+				index[i].origin_y,
+				index[i].origin_z,
+				index[i].velocity_x,
+				index[i].velocity_y,
+				index[i].velocity_z,
+				index[i].angular_velocity_roll,
+				index[i].angular_velocity_pitch,
+				index[i].angular_velocity_yaw,
+				index[i].phi,
+				index[i].timestamp,
+				index[i].rddf_offset,
+				index[i].rddf_data_length,
+				index[i].anottation
+		);
 	}
 
-	carmen_timestamp_index_element operator [](uint position)
-	{
-		if (position >= index.size())
-			exit(printf("Error: trying to access invalid position in the timestamp index\n"));
-		else
-			return index[position];
-	}
+	fclose(fileptr);
+}
 
-	void add (
-		double x, double y, double z,
-		double roll, double pitch, double yaw,
-		double origin_x, double origin_y, double origin_z,
-		double velocity_x, double velocity_y, double velocity_z,
-		double angular_velocity_roll, double angular_velocity_pitch, double angular_velocity_yaw, double phi,
-		double timestamp, long rddf_file_offset, long rddf_data_length, int annotation)
+void carmen_timestamp_index::load_from_file(char *filename)
+{
+	unsigned int i, n;
+
+	FILE *fileptr = fopen(filename, "r");
+
+	if (fileptr == NULL)
+		exit(printf("Error: pose index file couldn't be open to read!\n"));
+
+	fscanf(fileptr, "%d\n", &n);
+
+	for (i = 0; i < n; i++)
 	{
 		carmen_timestamp_index_element elem;
 
-		elem.x = x;
-		elem.y = y;
-		elem.z = z;
-
-		elem.roll = roll;
-		elem.pitch = pitch;
-		elem.yaw = yaw;
-
-		elem.origin_x = origin_x;
-		elem.origin_y = origin_y;
-		elem.origin_z = origin_z;
-
-		elem.velocity_x = velocity_x;
-		elem.velocity_y = velocity_y;
-		elem.velocity_z = velocity_z;
-
-		elem.angular_velocity_roll = angular_velocity_roll;
-		elem.angular_velocity_pitch = angular_velocity_pitch;
-		elem.angular_velocity_yaw = angular_velocity_yaw;
-
-		elem.phi = phi;
-
-		elem.timestamp = timestamp;
-		elem.rddf_offset = rddf_file_offset;
-		elem.rddf_data_length = rddf_data_length;
-		elem.anottation = annotation;
+		fscanf(fileptr,
+				"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%ld\t%ld\t%d\n",
+				&(elem.x),
+				&(elem.y),
+				&(elem.z),
+				&(elem.roll),
+				&(elem.pitch),
+				&(elem.yaw),
+				&(elem.origin_x),
+				&(elem.origin_y),
+				&(elem.origin_z),
+				&(elem.velocity_x),
+				&(elem.velocity_y),
+				&(elem.velocity_z),
+				&(elem.angular_velocity_roll),
+				&(elem.angular_velocity_pitch),
+				&(elem.angular_velocity_yaw),
+				&(elem.phi),
+				&(elem.timestamp),
+				&(elem.rddf_offset),
+				&(elem.rddf_data_length),
+				&(elem.anottation)
+		);
 
 		index.push_back(elem);
-		index_is_sorted = false;
 	}
 
-	long size ()
-	{
-		return index.size();
-	}
+	fclose(fileptr);
+	index_is_sorted = true;
+}
 
-	void sort ()
-	{
-		std::sort(index.begin(), index.end(), cmp_timestamp_bool);
-		index_is_sorted = true;
-	}
-
-	long search (double timestamp)
-	{
-		if (!index_is_sorted)
-		{
-			exit(printf("Trying to search an unordered index!\n"));
-			return -1;
-		}
-		else
-		{
-			carmen_timestamp_index_element key;
-
-			key.timestamp = timestamp;
-
-			return binary_search_nearest(index, key, cmp_timestamp, dist_between_timestamps);
-		}
-	}
-
-	void print()
-	{
-		for(uint i = 0; i < index.size(); i++)
-		{
-			printf("\t%lf %lf %lf %lf %lf %lf\n",
-					index[i].x,
-					index[i].y,
-					index[i].z,
-					index[i].roll,
-					index[i].pitch,
-					index[i].yaw
-			);
-		}
-	}
-
-	void save_to_file (char *filename)
-	{
-		if (!index_is_sorted)
-			exit(printf("Error: trying save an unsorted index!\n"));
-
-		unsigned int i;
-
-		FILE *fileptr = fopen(filename, "w");
-
-		if (fileptr == NULL)
-			exit(printf("Error: pose index file couldn't be created!\n"));
-
-		fprintf(fileptr, "%d\n", (int) index.size());
-
-		for (i = 0; i < index.size(); i++)
-		{
-			fprintf(fileptr,
-					"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%ld\t%ld\t%d\n",
-					index[i].x,
-					index[i].y,
-					index[i].z,
-					index[i].roll,
-					index[i].pitch,
-					index[i].yaw,
-					index[i].origin_x,
-					index[i].origin_y,
-					index[i].origin_z,
-					index[i].velocity_x,
-					index[i].velocity_y,
-					index[i].velocity_z,
-					index[i].angular_velocity_roll,
-					index[i].angular_velocity_pitch,
-					index[i].angular_velocity_yaw,
-					index[i].phi,
-					index[i].timestamp,
-					index[i].rddf_offset,
-					index[i].rddf_data_length,
-					index[i].anottation
-			);
-		}
-
-		fclose(fileptr);
-	}
-
-	void load_from_file (char *filename)
-	{
-		unsigned int i, n;
-
-		FILE *fileptr = fopen(filename, "r");
-
-		if (fileptr == NULL)
-			exit(printf("Error: pose index file couldn't be open to read!\n"));
-
-		fscanf(fileptr, "%d\n", &n);
-
-		for (i = 0; i < n; i++)
-		{
-			carmen_timestamp_index_element elem;
-
-			fscanf(fileptr,
-					"%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%ld\t%ld\t%d\n",
-					&(elem.x),
-					&(elem.y),
-					&(elem.z),
-					&(elem.roll),
-					&(elem.pitch),
-					&(elem.yaw),
-					&(elem.origin_x),
-					&(elem.origin_y),
-					&(elem.origin_z),
-					&(elem.velocity_x),
-					&(elem.velocity_y),
-					&(elem.velocity_z),
-					&(elem.angular_velocity_roll),
-					&(elem.angular_velocity_pitch),
-					&(elem.angular_velocity_yaw),
-					&(elem.phi),
-					&(elem.timestamp),
-					&(elem.rddf_offset),
-					&(elem.rddf_data_length),
-					&(elem.anottation)
-			);
-
-			index.push_back(elem);
-		}
-
-		fclose(fileptr);
-		index_is_sorted = true;
-	}
-};
-
-carmen_pose_index carmen_pose_index_ordered_by_x;
-carmen_pose_index carmen_pose_index_ordered_by_y;
-carmen_timestamp_index carmen_timestamp_index;
 
 void carmen_write_index (char *rddf_filename)
 {
@@ -615,7 +583,7 @@ void carmen_write_index (char *rddf_filename)
 	/** index are sorted in the create function, so here we need just save them to file **/
 	carmen_pose_index_ordered_by_x.save_to_file(rddf_index_x_filename);
 	carmen_pose_index_ordered_by_y.save_to_file(rddf_index_y_filename);
-	carmen_timestamp_index.save_to_file(rddf_index_timestamp_filename);
+	carmen_index_ordered_by_timestamp.save_to_file(rddf_index_timestamp_filename);
 }
 
 
@@ -686,14 +654,14 @@ carmen_create_pose_index_from_timestamp_index()
 
 	double x, y, z, roll, pitch, yaw;
 
-	for(int i = 0; i < carmen_timestamp_index.size(); i++)
+	for(int i = 0; i < carmen_index_ordered_by_timestamp.size(); i++)
 	{
-		x = carmen_timestamp_index[i].x;
-		y = carmen_timestamp_index[i].y;
-		z = carmen_timestamp_index[i].z;
-		roll = carmen_timestamp_index[i].roll;
-		pitch = carmen_timestamp_index[i].pitch;
-		yaw = carmen_timestamp_index[i].yaw;
+		x = carmen_index_ordered_by_timestamp[i].x;
+		y = carmen_index_ordered_by_timestamp[i].y;
+		z = carmen_index_ordered_by_timestamp[i].z;
+		roll = carmen_index_ordered_by_timestamp[i].roll;
+		pitch = carmen_index_ordered_by_timestamp[i].pitch;
+		yaw = carmen_index_ordered_by_timestamp[i].yaw;
 
 		carmen_pose_index_ordered_by_x.add (x, y, z, roll, pitch, yaw, i);
 		carmen_pose_index_ordered_by_y.add (x, y, z, roll, pitch, yaw, i);
@@ -791,7 +759,7 @@ find_index_pos_with_correct_yaw(carmen_pose_index _carmen_pose_index, long index
 
 
 long
-find_nearest_point_around_point_found (carmen_pose_index index, long position, double x, double y)
+find_nearest_point_around_point_found(carmen_pose_index index, long position, double x, double y)
 {
 	int radius = 1;
 	carmen_pose_index_element key;
@@ -875,15 +843,15 @@ find_timestamp_index_position_with_full_index_search(double x, double y, double 
 	int i, min_dist_pos = 0;
 	double dist, min_dist = -1;
 
-	for(i = 0; i < carmen_timestamp_index.size(); i++)
+	for(i = 0; i < carmen_index_ordered_by_timestamp.size(); i++)
 	{
-		dist = sqrt(pow(x - carmen_timestamp_index[i].x, 2) + pow(y - carmen_timestamp_index[i].y, 2));
+		dist = sqrt(pow(x - carmen_index_ordered_by_timestamp[i].x, 2) + pow(y - carmen_index_ordered_by_timestamp[i].y, 2));
 
 		if ((dist < min_dist) || (min_dist == -1))
 		{
 			// ignore points with incorrect orientation
 			if (test_orientation)
-				if (fabs(carmen_normalize_theta(carmen_timestamp_index[i].yaw - yaw)) > (M_PI / 2.0))
+				if (fabs(carmen_normalize_theta(carmen_index_ordered_by_timestamp[i].yaw - yaw)) > (M_PI / 2.0))
 					continue;
 
 			min_dist = dist;
@@ -919,26 +887,26 @@ fill_in_waypoints_array(long timestamp_index_position, carmen_ackerman_traj_poin
 	carmen_timestamp_index_element index_element;
 
 	num_poses_aquired = 0;
-	index_element = carmen_timestamp_index[timestamp_index_position];
+	index_element = carmen_index_ordered_by_timestamp[timestamp_index_position];
 	poses_ahead[num_poses_aquired] = last_pose = create_ackerman_traj_point_struct(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.yaw);
 	annotations[num_poses_aquired] = index_element.anottation;
 	num_poses_aquired++;
 	i = 0;
-	while ((num_poses_aquired < num_poses_desired) && ((timestamp_index_position + i) < carmen_timestamp_index.size()))
+	while ((num_poses_aquired < num_poses_desired) && ((timestamp_index_position + i) < carmen_index_ordered_by_timestamp.size()))
 	{
-		index_element = carmen_timestamp_index[timestamp_index_position + i];
+		index_element = carmen_index_ordered_by_timestamp[timestamp_index_position + i];
 		current_pose = create_ackerman_traj_point_struct (index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.yaw);
 
 		dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
 
-		if (dist > 1.0) // get waypoints 1 meter apart // @@@ Alberto: este parametro devia estar no carmen ini
-		{
+		//if (dist > 1.0) // get waypoints 1 meter apart // @@@ Alberto: este parametro devia estar no carmen ini
+		//{
 			last_pose = current_pose;
 			poses_ahead[num_poses_aquired] = current_pose;
 			annotations[num_poses_aquired] = index_element.anottation;
 
 			num_poses_aquired++;
-		}
+		//}
 
 		i++;
 	}
@@ -957,14 +925,14 @@ fill_in_backward_waypoints_array(long timestamp_index_position, carmen_ackerman_
 	carmen_timestamp_index_element index_element;
 
 	num_poses_aquired = 0;
-	index_element = carmen_timestamp_index[timestamp_index_position];
+	index_element = carmen_index_ordered_by_timestamp[timestamp_index_position];
 	poses_back[num_poses_aquired] = last_pose = create_ackerman_traj_point_struct(index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.yaw);
 	num_poses_aquired++;
 	i = 0;
 
 	while ((num_poses_aquired < num_poses_desired) && ((timestamp_index_position - i) >= 0))
 	{
-		index_element = carmen_timestamp_index[timestamp_index_position - i];
+		index_element = carmen_index_ordered_by_timestamp[timestamp_index_position - i];
 		current_pose = create_ackerman_traj_point_struct (index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.yaw);
 
 		dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
@@ -990,8 +958,8 @@ carmen_rddf_has_closed_loop()
 	double dist = 0;
 	carmen_timestamp_index_element first, last;
 
-	first = carmen_timestamp_index[0];
-	last = carmen_timestamp_index[carmen_timestamp_index.size() - 1];
+	first = carmen_index_ordered_by_timestamp[0];
+	last = carmen_index_ordered_by_timestamp[carmen_index_ordered_by_timestamp.size() - 1];
 
 	dist = sqrt(pow(first.x - last.x, 2) + pow(first.y - last.y, 2));
 
@@ -1014,9 +982,9 @@ get_more_more_poses_from_begining(int num_poses_desired, carmen_ackerman_traj_po
 	i = 0;
 	last_pose = last_pose_acquired_at_end_of_index;
 
-	while ((num_poses_aquired < num_poses_desired) && (i < carmen_timestamp_index.size()))
+	while ((num_poses_aquired < num_poses_desired) && (i < carmen_index_ordered_by_timestamp.size()))
 	{
-		index_element = carmen_timestamp_index[i];
+		index_element = carmen_index_ordered_by_timestamp[i];
 		current_pose = create_ackerman_traj_point_struct (index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.yaw);
 
 		dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
@@ -1046,7 +1014,7 @@ carmen_search_next_poses_index(double x, double y, double yaw, double timestamp 
 	(void) timestamp; // to not warning. I use it sometimes to debug.
 
 	//timestamp_index_position = find_timestamp_index_position(x, y, yaw, 1);
-	timestamp_index_position = find_timestamp_index_position_with_full_index_search (x, y, yaw, 1);
+	timestamp_index_position = find_timestamp_index_position_with_full_index_search(x, y, yaw, 1);
 	num_poses_aquired = fill_in_waypoints_array(timestamp_index_position, poses_ahead, num_poses_desired, &last_pose_acquired, annotations);
 	(*num_poses_back) = fill_in_backward_waypoints_array(timestamp_index_position, poses_back, num_poses_desired);
 
@@ -1068,13 +1036,13 @@ fill_in_waypoints_around_point(long timestamp_index_position, carmen_ackerman_tr
 
 	i = timestamp_index_position;
 
-	last_pose.x = carmen_timestamp_index[i].x;
-	last_pose.y = carmen_timestamp_index[i].y;
+	last_pose.x = carmen_index_ordered_by_timestamp[i].x;
+	last_pose.y = carmen_index_ordered_by_timestamp[i].y;
 
 	// add points backward to the current position
 	while ((num_poses_aquired < (num_poses_desired / 2)) && (i > 0))
 	{
-		index_element = carmen_timestamp_index[i];
+		index_element = carmen_index_ordered_by_timestamp[i];
 		current_pose = create_ackerman_traj_point_struct (index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.yaw);
 
 		dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
@@ -1093,9 +1061,9 @@ fill_in_waypoints_around_point(long timestamp_index_position, carmen_ackerman_tr
 	i = timestamp_index_position;
 
 	// add points forward to the current pose
-	while ((num_poses_aquired < num_poses_desired) && (i < carmen_timestamp_index.size()))
+	while ((num_poses_aquired < num_poses_desired) && (i < carmen_index_ordered_by_timestamp.size()))
 	{
-		index_element = carmen_timestamp_index[i];
+		index_element = carmen_index_ordered_by_timestamp[i];
 		current_pose = create_ackerman_traj_point_struct (index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.yaw);
 
 		dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
@@ -1132,11 +1100,11 @@ carmen_find_poses_around(double x, double y, double yaw, double timestamp /* onl
 
 
 void
-carmen_rddf_load_index (char *rddf_filename)
+carmen_rddf_load_index(char *rddf_filename)
 {
-	char rddf_index_x_filename [2048];
-	char rddf_index_y_filename [2048];
-	char rddf_index_timestamp_filename [2048];
+	char rddf_index_x_filename[2048];
+	char rddf_index_y_filename[2048];
+	char rddf_index_timestamp_filename[2048];
 
 	strcpy (rddf_index_x_filename, rddf_filename);
 	strcpy (rddf_index_y_filename, rddf_filename);
@@ -1146,7 +1114,7 @@ carmen_rddf_load_index (char *rddf_filename)
 	strcat (rddf_index_y_filename, ".y.index");
 	strcat (rddf_index_timestamp_filename, ".timestamp.index");
 
-	carmen_timestamp_index.load_from_file(rddf_index_timestamp_filename);
+	carmen_index_ordered_by_timestamp.load_from_file(rddf_index_timestamp_filename);
 	carmen_pose_index_ordered_by_x.load_from_file(rddf_index_x_filename);
 	carmen_pose_index_ordered_by_y.load_from_file(rddf_index_y_filename);
 
@@ -1158,7 +1126,7 @@ carmen_rddf_load_index (char *rddf_filename)
 
 
 int
-carmen_rddf_index_exists (char *rddf_filename)
+carmen_rddf_index_exists(char *rddf_filename)
 {
 	char index_timestamp_filename [2048];
 	char index_x_filename [2048];
@@ -1215,7 +1183,7 @@ carmen_rddf_index_exists (char *rddf_filename)
 void
 carmen_rddf_index_add(const carmen_fused_odometry_message *fused_odometry_message, long data_offset, long data_length, int annotation)
 {
-	carmen_timestamp_index.add(
+	carmen_index_ordered_by_timestamp.add(
 		fused_odometry_message->pose.position.x, fused_odometry_message->pose.position.y, fused_odometry_message->pose.position.z,
 		fused_odometry_message->pose.orientation.roll, fused_odometry_message->pose.orientation.pitch, fused_odometry_message->pose.orientation.yaw,
 		fused_odometry_message->gps_position_at_turn_on.x, fused_odometry_message->gps_position_at_turn_on.y, fused_odometry_message->gps_position_at_turn_on.z,
@@ -1229,7 +1197,13 @@ carmen_rddf_index_add(const carmen_fused_odometry_message *fused_odometry_messag
 void
 carmen_rddf_index_save(char *rddf_filename)
 {
-	carmen_timestamp_index.sort();
+	carmen_index_ordered_by_timestamp.sort();
 	carmen_create_pose_index_from_timestamp_index();
 	carmen_write_index(rddf_filename);
+}
+
+carmen_timestamp_index*
+get_timestamp_index()
+{
+	return &carmen_index_ordered_by_timestamp;
 }

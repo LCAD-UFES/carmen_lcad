@@ -104,3 +104,31 @@ Publisher_Util::publish_plan_message(carmen_navigator_ackerman_plan_message msg)
 	carmen_test_ipc(err, "Could not publish",
 			CARMEN_RRT_PLANNER_PLAN_NAME);
 }
+
+
+static void
+define_path_message()
+{
+	IPC_RETURN_TYPE err;
+	err = IPC_defineMsg(RRT_PATH_NAME, IPC_VARIABLE_LENGTH,
+			RRT_PATH_FMT);
+	carmen_test_ipc_exit(err, "Could not define", RRT_PATH_NAME);
+}
+
+
+void
+Publisher_Util::publish_rrt_path_message(rrt_path_message *msg)
+{
+	static int firsttime = 1;
+	IPC_RETURN_TYPE err;
+
+	if (firsttime)
+	{
+		define_path_message();
+		firsttime = 0;
+	}
+
+	err = IPC_publishData(RRT_PATH_NAME, msg);
+	carmen_test_ipc(err, "Could not publish",
+			RRT_PATH_NAME);
+}

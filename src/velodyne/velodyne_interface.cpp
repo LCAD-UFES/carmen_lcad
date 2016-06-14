@@ -121,6 +121,9 @@ carmen_velodyne_define_messages()
 	err = IPC_defineMsg(CARMEN_VELODYNE_GPS_MESSAGE_NAME, IPC_VARIABLE_LENGTH,
 			CARMEN_VELODYNE_GPS_MESSAGE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_VELODYNE_GPS_MESSAGE_NAME);
+
+	err = IPC_defineMsg(CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_NAME);
 }
 
 
@@ -141,10 +144,11 @@ carmen_velodyne_estimate_shot_time(double sensor_last_timestamp, double sensor_t
 void
 carmen_velodyne_partial_scan_update_points(carmen_velodyne_partial_scan_message *velodyne_message,
 		int vertical_resolution, spherical_point_cloud *points, unsigned char *intensity,
-		int *ray_order, double *vertical_correction, float range_max)
+		int *ray_order, double *vertical_correction, float range_max, double timestamp)
 {
 	int i, j;
 
+	points->timestamp = timestamp;
 	for (i = 0; i < velodyne_message->number_of_32_laser_shots; i++)
 	{
 		for (j = 0; j < vertical_resolution; j++)
@@ -166,10 +170,11 @@ carmen_velodyne_partial_scan_update_points(carmen_velodyne_partial_scan_message 
 void
 carmen_velodyne_variable_scan_update_points(carmen_velodyne_variable_scan_message *message,
 		int vertical_resolution, spherical_point_cloud *points, unsigned char *intensity,
-		int *ray_order, double *vertical_correction, float range_max)
+		int *ray_order, double *vertical_correction, float range_max, double timestamp)
 {
 	int i, j;
 
+	points->timestamp = timestamp;
 	for (i = 0; i < message->number_of_shots; i++)
 	{
 		for (j = 0; j < vertical_resolution; j++)

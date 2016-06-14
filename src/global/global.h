@@ -266,6 +266,7 @@ struct _spherical_point_cloud
 {
 	int num_points;
 	carmen_sphere_coord_t *sphere_points;
+	double timestamp;
 };
 
 typedef struct _spherical_point_cloud spherical_point_cloud;

@@ -1,3 +1,4 @@
+#include <carmen/carmen.h>
 #include <carmen/bumblebee_basic_messages.h>
 
 #ifdef __cplusplus
