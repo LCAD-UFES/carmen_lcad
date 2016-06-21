@@ -30,8 +30,6 @@
 
 namespace ELAS {
 
-// struct road_symbol { struct { std::vector<cv::Point> region; int id; }; }
-
 struct raw_elas_message {
 	struct { vector<Point2d> left, right; } lane_position;
 	struct { int left, right; } lmt;
@@ -44,7 +42,8 @@ struct raw_elas_message {
 	bool isKalmanNull;
 	double execution_time;
 	double car_position_x;
-	// vector<road_symbol> symbols;
+	vector<road_sign> pavement_signs;
+	int idx_frame;
 };
 
 // methods
