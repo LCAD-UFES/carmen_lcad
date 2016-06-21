@@ -56,8 +56,13 @@ void render(frame_viz &data, const Mat3b &color_frame, ConfigXML *config) {
 		cout << "- LMT: left(" << data.lmt.left << "), right(" << data.lmt.right << ")" << endl;
 		cout << "- Adjacent Lanes: left(" << data.adjacent_lanes.left << "), right(" << data.adjacent_lanes.right << ")" << endl;
 		cout << "- Execution Time: " << data.execution_time << " (" << (1000.0 / data.execution_time) << " fps)" << endl;
-		cout << "- Symbols:" << endl;
-		for (auto s : data.symbols) cout << "  - " << s.id << ": " << s.region << endl;
+		cout << "- Symbols: " << data.symbols.size();
+		if (data.symbols.size() > 0) {
+			cout << " -> [ ";
+			for (auto s : data.symbols) cout << SinalizacaoHorizontal::toText(s.id) << " ";
+			cout << "]";
+		}
+		cout << endl;
 		cout << "--------------------------------------------------" << endl;
 	} else {
 		img = Mat3b(color_frame.size(), Vec3b(0, 0, 0)); // fundo preto
@@ -234,5 +239,9 @@ void render(frame_viz &data, const Mat3b &color_frame, ConfigXML *config) {
 	if (data.frame_number % 16 == 0) {
 		string fname = "C:/Users/berriel/Desktop/video/frames/aaaaa/VIZ/lane_viz_" + to_string(data.frame_number / 16) + ".png";
 		//imwrite(fname, img);
-	}/**/
+	}
+
+	string fname = "/dados/berriel/datasets/carmen/reta-out/" + to_string(data.idx_frame) + ".png";
+	imwrite(fname, img);
+	/**/
 }
