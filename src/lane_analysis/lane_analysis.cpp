@@ -182,6 +182,7 @@ lane_analysis_handler(carmen_bumblebee_basic_stereoimage_message * stereo_image)
 		// get the raw message
 		printf("\nget_raw_message()... ");
 		_raw_elas_message = ELAS::get_raw_message();
+		_raw_elas_message.idx_frame = fnumber;
 		printf("done!\n");
 
 		// publish messages
