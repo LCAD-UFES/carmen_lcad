@@ -55,7 +55,7 @@ void ELAS::lane_position_estimation(const pre_processed * _pre_processed, const 
 	Mat1b map_srf_skel = Helper::skeleton(_feature_maps->map_srf); // approx +1.5ms
 	_out_raw_houghs->ego_lane = Houghs::getHoughs(map_srf_skel, _cfg->roi, _out_raw_houghs->adjacent_lanes);
 
-	/* Display the selected houghs*/
+	/* Display the selected houghs
 	Mat3b im = _pre_processed->colorFrame.clone();
 	for (auto h : _out_raw_houghs->ego_lane) h.draw(im, Scalar(0,0,255));
 	imshow("houghs", im); /**/
@@ -81,7 +81,12 @@ void ELAS::lane_position_estimation(const pre_processed * _pre_processed, const 
 
 	// detect lane changes
 	double bottom_distance = kalmanState->_hough.xBase - rawMeasurement.xBase;
-	if (abs(bottom_distance) > kalmanState->_hough.largura * 0.7) if (!kalmanState->estaDesativado) _out_lane_change->status = true;
+	if (abs(bottom_distance) > kalmanState->_hough.largura * 0.7) {
+		if (!kalmanState->estaDesativado) {
+			_out_lane_change->status = true;
+			Kalman::resetaKalman(KF, 6, 3, rawMeasurement.toKalman());
+		}
+	}
 
 	// we would like to init kalman based on the raw measurement, instead of a random position
 	if (first_pass) {
