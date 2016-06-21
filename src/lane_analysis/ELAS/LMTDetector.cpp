@@ -19,7 +19,7 @@ vector<LMT> LMTDetector::executar(const Mat1b &mapa, const Mat3b &colorFrame, co
 	// 1. pegar uma regiao (perpendicular?) em volta de cada pixel do kalman (ate a metade da IPM == altura fixa do kalman)
 	if (laneBase != NULL) {
 
-		const int tamanhoBusca = 6;
+		const int tamanhoBusca = 4;
 		const int alturaRoi = config->roi.height;
 		const Mat1b *mapaFaixas = &mapa;
 		
@@ -180,9 +180,10 @@ LMT LMTDetector::getLMT(const Mat1b &mapa, const Mat1b &grayFrameRoiIPM, const v
 
 	const int tamanhoBuscaAmbas = tamanhoBusca * 2;
 	vector<Point2d> spline = lanePoints;
-	int inicioAmbas = -3 * tamanhoBuscaAmbas;
-	int fimAmbas = 3 * tamanhoBuscaAmbas;
-	Size imgSize = Size(6 * tamanhoBuscaAmbas, (int)spline.size());
+	const int factor = 1; // 3
+	int inicioAmbas = -1 * factor * tamanhoBuscaAmbas;
+	int fimAmbas = factor * tamanhoBuscaAmbas;
+	Size imgSize = Size(2 * factor * tamanhoBuscaAmbas, (int)spline.size());
 
 	Mat1b imgAmbas = Mat1b(imgSize, uchar(0));
 	Mat1b evidencias = Mat1b(imgSize, uchar(0));
@@ -207,7 +208,7 @@ LMT LMTDetector::getLMT(const Mat1b &mapa, const Mat1b &grayFrameRoiIPM, const v
 	// monta o histograma de evidencias dos pontos
 	for (int p = 0; p < spline.size(); p++) { // para cada ponto da spline
 		for (int i = inicioAmbas; i < fimAmbas; i++) { // para cada pixel do espa�o de busca
-			imgAmbas.at<uchar>(Point(i + 3 * tamanhoBuscaAmbas, p)) = grayFrameRoiIPM.at<uchar>((int)spline[p].y, (int)spline[p].x + i);
+			imgAmbas.at<uchar>(Point(i + factor * tamanhoBuscaAmbas, p)) = grayFrameRoiIPM.at<uchar>((int)spline[p].y, (int)spline[p].x + i);
 		}
 		normalize(imgAmbas, imgAmbas, 0.0, 255.0, NORM_MINMAX);
 		// calcula a media e o desvio padrao da linha e aplica um threshold
@@ -296,7 +297,6 @@ LMT LMTDetector::getLMT(const Mat1b &mapa, const Mat1b &grayFrameRoiIPM, const v
 		double all = histBPB.cols;
 		double percentualBPB = (nonZeros / all);
 		const double thresPercentualBPB = 0.20;
-
 		if (percentualBPB > 1 - thresPercentualBPB) {
 			return LMT::DCA;
 		} else if (percentualBPB < thresPercentualBPB) {
