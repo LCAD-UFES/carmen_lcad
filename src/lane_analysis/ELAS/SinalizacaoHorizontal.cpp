@@ -3,7 +3,7 @@
 using namespace std;
 using namespace cv;
 
-void SinalizacaoHorizontal::loadTemplates() {
+int SinalizacaoHorizontal::loadTemplates() {
 	string templateDirectory = "/dados/berriel/MEGA/projects/lane-research/data/images/templates/";
 
 	templates.push_back(TemplateSinalizacao(ROAD_SIGN::FRENTE, imread(templateDirectory + "seta-01-bin.png", IMREAD_GRAYSCALE)));
@@ -14,6 +14,8 @@ void SinalizacaoHorizontal::loadTemplates() {
 	templates.push_back(TemplateSinalizacao(ROAD_SIGN::ESQUERDA, imread(templateDirectory + "seta-06-bin.png", IMREAD_GRAYSCALE)));
 	templates.push_back(TemplateSinalizacao(ROAD_SIGN::VOLTA_ESQUERDA, imread(templateDirectory + "seta-07-bin.png", IMREAD_GRAYSCALE)));
 	templates.push_back(TemplateSinalizacao(ROAD_SIGN::VOLTA_DIREITA, imread(templateDirectory + "seta-08-bin.png", IMREAD_GRAYSCALE)));
+
+	return (int)SinalizacaoHorizontal::templates.size();
 }
 
 Mat3b SinalizacaoHorizontal::toIMG(int _id) {
@@ -30,6 +32,22 @@ Mat3b SinalizacaoHorizontal::toIMG(int _id) {
 		case ROAD_SIGN::BARRA_CONTENCAO: return imread(templateDirectory + "stop-line.png");
 		case ROAD_SIGN::FAIXA_PEDESTRE: return imread(templateDirectory + "crosswalk.png");
 		default: return imread(templateDirectory + "unknown.png");
+	}
+}
+
+string SinalizacaoHorizontal::toText(int _id) {
+	switch (_id) {
+		case ROAD_SIGN::FRENTE: return "Arrow :: Ahead Only";
+		case ROAD_SIGN::FRENTE_CURTA: return "Arrow :: Ahead Only (Small)";
+		case ROAD_SIGN::FRENTE_DIREITA: return "Arrow :: Ahead + Turn Right";
+		case ROAD_SIGN::FRENTE_ESQUERDA: return "Arrow :: Ahead + Turn Left";
+		case ROAD_SIGN::DIREITA: return "Arrow :: Turn Right";
+		case ROAD_SIGN::ESQUERDA: return "Arrow :: Turn Left";
+		case ROAD_SIGN::VOLTA_ESQUERDA: return "Arrow :: Turn Left (Back)";
+		case ROAD_SIGN::VOLTA_DIREITA: return "Arrow :: Turn Right (Back)";
+		case ROAD_SIGN::BARRA_CONTENCAO: return "Stop Line";
+		case ROAD_SIGN::FAIXA_PEDESTRE: return "Crosswalk :: Pedestrian Crossing";
+		default: return "Unknown";
 	}
 }
 
@@ -150,6 +168,8 @@ void SinalizacaoHorizontal::fastMatchTemplate(Mat &srca, Mat &srcb, Mat &dst, in
 vector<int> SinalizacaoHorizontal::executar(const Mat1b &inGrayRoiIPM, const Mat1b &mapa2ipm, const Mat1b &mapa4ipm, const Mat3b &framePerspectiva, const HoughDoMeio * kalman_hough,
 	ConfigXML *config, vector<Blob> &outBlobs, vector<viz_symbols> &symbols) {
 	
+	const double threshold_proporcao = 1.0; // 2.3
+
 	vector<int> roadSigns;
 	Mat displaySinalizacao = framePerspectiva.clone();
 	if (kalman_hough != NULL) {
@@ -188,19 +208,26 @@ vector<int> SinalizacaoHorizontal::executar(const Mat1b &inGrayRoiIPM, const Mat
 		inversoRegiaoBusca(Rect(0, 0, inversoRegiaoBusca.cols, inversoRegiaoBusca.rows / 2)).setTo(0);
 		Scalar mediaAsfalto, desvioPadraoAsfalto;
 		meanStdDev(regiaoBuscaGray, mediaAsfalto, desvioPadraoAsfalto, inversoRegiaoBusca);
-		
+
 		vector<Blob> blobs = scan(regiaoBuscaBin, regiaoBuscaGray, mediaAsfalto[0] + desvioPadraoAsfalto[0], 0.8);
 		vector<Blob> trimBlobs = trim(blobs);
 
 		// salvar blobs
 		for (unsigned int i = 0; i < trimBlobs.size(); i++) {
+
+			/* Uncomment to viz the blobs
+			const int scaleFactor = 5;
+			Mat1b bigImg = Mat1b(trimBlobs[i].binario.cols * scaleFactor, trimBlobs[i].binario.cols * scaleFactor, uchar(0));
+			cv::resize(trimBlobs[i].binario, bigImg, bigImg.size());
+			imshow("blob" + to_string(i), bigImg); /**/
+
 			Scalar cor = BGR_RED;
 			// s� faz reconhecimento do que � sinaliza��o
 			if (trimBlobs[i].tipo == BlobTipo::NAO_SINALIZACAO) continue;
 
 			// n�o quero reconhecer faixa de conten��o pr�ximo ao limite da imagem
 			double proporcao = (trimBlobs[i].regiao.width / (double)trimBlobs[i].regiao.height);
-			if (proporcao > 2.3 && abs(trimBlobs[i].regiao.y + trimBlobs[i].regiao.height - config->roi.height) > 5) {
+			if (proporcao > threshold_proporcao && abs(trimBlobs[i].regiao.y + trimBlobs[i].regiao.height - config->roi.height) > 5) {
 				roadSigns.push_back(ROAD_SIGN::BARRA_CONTENCAO);
 				cor = BGR_BLUE;
 				trimBlobs[i].templateId = ROAD_SIGN::BARRA_CONTENCAO;
@@ -219,18 +246,19 @@ vector<int> SinalizacaoHorizontal::executar(const Mat1b &inGrayRoiIPM, const Mat
 				}
 			}
 			
+			// guarda os pontos tanto na IPM quanto da perspectiva
+			setPoints(trimBlobs[i], esqHough, dirHough, config);
+			outBlobs.push_back(trimBlobs[i]);
+
+			// visualiza��o
+			viz_symbols symbol;
+			symbol.id = trimBlobs[i].templateId;
+			symbol.region = trimBlobs[i].pointsPerspectiva;
+			symbols.push_back(symbol);
+
 			if (config->display) {
 				imshow("template", trimBlobs[i].binario);
-				// guarda os pontos tanto na IPM quanto da perspectiva
-				setPoints(trimBlobs[i], esqHough, dirHough, config);
-				outBlobs.push_back(trimBlobs[i]);
 				fillConvexPoly(displaySinalizacao, trimBlobs[i].pointsPerspectiva, cor);
-
-				// visualiza��o
-				viz_symbols symbol;
-				symbol.id = trimBlobs[i].templateId;
-				symbol.region = trimBlobs[i].pointsPerspectiva;
-				symbols.push_back(symbol);
 			}
 		}
 	}
@@ -787,13 +815,11 @@ Mat1b SinalizacaoHorizontal::detectarFaixaDePedestre2(const Mat1b &mapa, const R
 	// PASSO 6
 	Mat1b MAPA_ERODE_MASKED = MAPA_ERODE & MASK_ROI_FAIXA;
 	vector<HoughLine> houghs = getHoughs(MAPA_ERODE_MASKED);
-	// cout << "n houghs: " << houghs.size() << endl;
 	if (houghs.size() > 0) {
 
 		// PASSO 7
 		Mat1d histograma2D = montarHistograma2D(houghs, MAPA_ERODE, false);
 		int ANGULO_DOMINANTE = getAnguloDominante(histograma2D, 9);
-		// cout << "AnguloDominante: " << ANGULO_DOMINANTE << endl;
 		if (ANGULO_DOMINANTE != -1) {
 
 			// PASSO 8

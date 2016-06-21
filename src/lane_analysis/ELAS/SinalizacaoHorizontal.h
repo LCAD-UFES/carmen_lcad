@@ -36,13 +36,14 @@ namespace SinalizacaoHorizontal {
 
 	static vector<TemplateSinalizacao> templates;
 	Mat3b toIMG(int _id);
+	string toText(int _id);
 
 	void templateMatching(const Mat1b &inGrayRoiIPM, const Mat1b &mapaBinario, const KalmanState &kalman);
 	void fastMatchTemplate(Mat &srca, Mat &srcb, Mat &dst, int maxlevel);
 	vector<int> executar(const Mat1b &inGrayRoiIPM, const Mat1b &mapa2ipm, const Mat1b &mapa4ipm, const Mat3b &framePerspectiva, const HoughDoMeio * kalman_hough, ConfigXML *config, vector<Blob> &outBlobs, vector<viz_symbols> &symbols);
 	vector<Blob> scan(const Mat1b &mapaBin, const Mat1b &mapaGray, const double thresholdAsfalto, const double tamanhoPercentual = 0.5);
 	vector<Blob> trim(const vector<Blob> &blobs);
-	void loadTemplates();
+	int loadTemplates();
 	TemplateSinalizacao matchTemplates(Mat1b &sample, const double threshold = 0.65, int flag = CV_TM_CCORR_NORMED);
 	bool eFaixaDePedestre(const Blob &_blob);
 	void setPoints(Blob &_blob, const vector<Point2d> &esqHough, const vector<Point2d> &dirHough, ConfigXML *config);
