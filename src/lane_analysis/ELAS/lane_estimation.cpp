@@ -84,6 +84,7 @@ void ELAS::lane_position_estimation(const pre_processed * _pre_processed, const 
 	if (abs(bottom_distance) > kalmanState->_hough.largura * 0.7) {
 		if (!kalmanState->estaDesativado) {
 			_out_lane_change->status = true;
+			clear_buffers();
 			Kalman::resetaKalman(KF, 6, 3, rawMeasurement.toKalman());
 		}
 	}
@@ -191,6 +192,13 @@ void ELAS::lane_center_deviation(lane_position * _lane_position, ConfigXML * _cf
 	if (lane_deviation >  1)	lane_deviation = 1;
 
 	_lane_position->center_deviation = lane_deviation;
+}
+
+void ELAS::clear_buffers() {
+	esqBuffer.clear();
+	esqBufferRejeitados.clear();
+	dirBuffer.clear();
+	dirBufferRejeitados.clear();
 }
 
 bool ELAS::buffer_mechanism(vector<HoughLine> & houghs_X, ConfigXML * _cfg) {
