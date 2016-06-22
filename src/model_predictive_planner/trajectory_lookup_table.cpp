@@ -1428,11 +1428,10 @@ my_g(const gsl_vector *x, void *params)
 				1.0 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 				5.0 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
 				5.0 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
-				1.5 * (total_interest_dist * total_interest_dist) +
+				1.8 * (total_interest_dist * total_interest_dist) +
 				0.2 * proximity_to_obstacles); // já é quandrática
 //	printf("Goal dist: %lf \t sem peso: %lf \n", (goal_dist*0.1),  (goal_dist));
 //	printf("total_interest: %lf \t sem peso %lf \n", (total_interest_dist * 0.1), (total_interest_dist));
-
 	return (result);
 
 }
@@ -1512,16 +1511,31 @@ compute_suitable_acceleration(TrajectoryLookupTable::TrajectoryControlParameters
 	double a = (target_v - target_td.v_i) / tcp_seed.tf;
 
 	if (a >= 0.0)
+	{
+		if (a >= 1.2)
+			a = 1.2;
+
 		return (a);
+	}
 
 	if ((-0.5 * (target_td.v_i * target_td.v_i) / a) > target_td.dist * 1.1)
+	{
+		if (a >= 1.2)
+			a = 1.2;
+
 		return (a);
+	}
 	else
 	{
 		while ((-0.5 * (target_td.v_i * target_td.v_i) / a) <= target_td.dist * 1.1)
 			a *= 0.95;
+
+		if (a >= 1.2)
+			a = 1.2;
+
 		return (a);
 	}
+
 }
 
 
@@ -2489,11 +2503,11 @@ filter_path(vector<carmen_ackerman_path_point_t> &path)
     for (i = 1; i < path.size(); i += 2)
         path.erase(path.begin() + i);
 
-//    for (i = 0; i < path.size(); i += 2)
-//    	if ((i + 1) < path.size())
-//    		path[i].time += path[i + 1].time;
-//    for (i = 1; i < path.size(); i += 2)
-//        path.erase(path.begin() + i);
+    for (i = 0; i < path.size(); i += 2)
+    	if ((i + 1) < path.size())
+    		path[i].time += path[i + 1].time;
+    for (i = 1; i < path.size(); i += 2)
+        path.erase(path.begin() + i);
 }
 
 
@@ -2742,6 +2756,19 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		lane_in_local_pose.clear();
 
 	build_detailed_goal_list(&lane_in_local_pose, detailed_goal_list);
+//
+//	//Metric evaluation
+//	if(detailed_goal_list.size() > 0){
+//
+//		double distance_metric = sqrt(pow(detailed_goal_list.at(0).x, 2) + pow(detailed_goal_list.at(0).y, 2));
+//		double x_rddf = localizer_pose->x + detailed_goal_list.at(0).x * cos(localizer_pose->theta) - detailed_goal_list.at(0).y * sin(localizer_pose->theta);
+//		double y_rddf = localizer_pose->y + detailed_goal_list.at(0).x * sin(localizer_pose->theta) + detailed_goal_list.at(0).y * cos(localizer_pose->theta);
+//		double theta_rddf = detailed_goal_list.at(0).theta + localizer_pose->theta;
+//
+//		fprintf(stderr, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf \n", localizer_pose->x, localizer_pose->y, localizer_pose->theta, lastOdometryVector[0].v, lastOdometryVector[0].phi,
+//				x_rddf, y_rddf, theta_rddf, detailed_goal_list.at(0).v, detailed_goal_list.at(0).phi, distance_metric, goal_list_message->timestamp);
+//	}
+	//	fprintf(stderr, "%lf \n", distance_metric);
 
 	otcps.resize(paths.size());
 	bool has_valid_path = false;
