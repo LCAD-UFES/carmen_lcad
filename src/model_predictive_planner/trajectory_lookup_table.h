@@ -79,19 +79,13 @@ public:
 	struct TrajectoryControlParameters
 	{
 		bool valid;
-		TrajectoryVelocityProfile velocity_profile;
-		double v0;
-		double vt;
-		double vf;
-		double a0;
-		double af;
-		double t0;
 		double tt;
-		double tf;
 		double k1;
 		double k2;
 		double k3;
 		bool has_k3;
+		double a;
+		double vf;
 		double sf;
 	};
 
