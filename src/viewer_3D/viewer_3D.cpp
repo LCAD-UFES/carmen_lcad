@@ -855,7 +855,7 @@ carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_c
 	init_moving_objects_tracking(current_num_point_clouds, previous_num_point_clouds);
 	previous_num_point_clouds = current_num_point_clouds;
 
-	int k;
+	int k,l;
 
 	j = 0;
 
@@ -874,6 +874,12 @@ carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_c
 		moving_objects_tracking[i].geometric_model = moving_objects_point_clouds_message->point_clouds[i].geometric_model;
 		moving_objects_tracking[i].model_features = moving_objects_point_clouds_message->point_clouds[i].model_features;
 		moving_objects_tracking[i].num_associated = moving_objects_point_clouds_message->point_clouds[i].num_associated;
+
+		//fixme para a visualização das particulas
+		moving_objects_tracking[i].particulas = (particle_print_t*) malloc(400 * sizeof(particle_print_t));
+		for(int k = 0; k < 400; k++){
+			moving_objects_tracking[i].particulas[k] = moving_objects_point_clouds_message->point_clouds[i].particulas[k];
+		}
 
 		for (k = 0; k < moving_objects_point_clouds_message->point_clouds[i].point_size; k++, j++)
 		{
@@ -1687,7 +1693,7 @@ draw_loop(window *w)
            offset.z += sensor_board_1_pose.position.z;
 
 		   draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset);
-		   draw_tracking_moving_objects(moving_objects_tracking, current_num_point_clouds, offset);
+		   draw_tracking_moving_objects(moving_objects_tracking, current_num_point_clouds, offset, draw_particles_flag);
         }
 
         if (draw_gps_flag)
@@ -1862,7 +1868,7 @@ draw_loop2(window *w)
            offset.z += sensor_board_1_pose.position.z;
 
            draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset);
-           draw_tracking_moving_objects(moving_objects_tracking, current_num_point_clouds, offset);
+           draw_tracking_moving_objects(moving_objects_tracking, current_num_point_clouds, offset, draw_particles_flag);
         }
 
         if (draw_gps_flag)

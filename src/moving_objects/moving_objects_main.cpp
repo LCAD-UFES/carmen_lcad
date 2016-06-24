@@ -269,6 +269,7 @@ deallocation_moving_objects_point_clouds_message()
 	for (i = 0; i < moving_objects_point_clouds_message.num_point_clouds; i++)
 	{
 		free(moving_objects_point_clouds_message.point_clouds[i].points);
+		free(moving_objects_point_clouds_message.point_clouds[i].particulas);
 	}
 	free(moving_objects_point_clouds_message.point_clouds);
 }
@@ -358,6 +359,18 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 				moving_objects_point_clouds_message.point_clouds[i].points[j].z = pit->z + it->car_global_pose.position.z;
 				j++;
 			}
+
+			//fixme para a visualização das partículas
+			moving_objects_point_clouds_message.point_clouds[i].particulas = (particle_print_t*) malloc(400 * sizeof(particle_print_t));
+			if(it->particle_set.size() > 0) {
+				for(int k = 0; k < 400; k++){
+					moving_objects_point_clouds_message.point_clouds[i].particulas[k].class_id = it->particle_set[k].class_id;
+					moving_objects_point_clouds_message.point_clouds[i].particulas[k].geometry = it->particle_set[k].model_features.geometry;
+					moving_objects_point_clouds_message.point_clouds[i].particulas[k].pose = it->particle_set[k].pose;
+					moving_objects_point_clouds_message.point_clouds[i].particulas[k].velocity = it->particle_set[k].velocity;
+				}
+			}
+
 
 			i++;
 		}
@@ -855,10 +868,17 @@ read_parameters(int argc, char **argv)
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+void sigint(int)
+{
+ 	exit(0);
+}
 
 int
 main(int argc, char **argv)
 {
+
+	signal(SIGINT, sigint);
+
 	/* Connect to IPC Server */
 	carmen_ipc_initialize(argc, argv);
 
@@ -881,17 +901,22 @@ main(int argc, char **argv)
 	carmen_moving_objects_point_clouds_define_messages();
 
 	/* Subscribe to sensor and filter messages */
+	carmen_localize_ackerman_subscribe_globalpos_message(NULL,
+				(carmen_handler_t) localize_ackerman_handler, CARMEN_SUBSCRIBE_LATEST);
+
     carmen_velodyne_subscribe_partial_scan_message(NULL,
     		(carmen_handler_t) velodyne_partial_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
     carmen_stereo_velodyne_subscribe_scan_message(8, NULL,
     		(carmen_handler_t)velodyne_variable_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_localize_ackerman_subscribe_globalpos_message(NULL,
-			(carmen_handler_t) localize_ackerman_handler, CARMEN_SUBSCRIBE_LATEST);
+//    carmen_localize_ackerman_subscribe_globalpos_message(NULL,
+//			(carmen_handler_t) localize_ackerman_handler, CARMEN_SUBSCRIBE_LATEST);
 
     carmen_map_server_subscribe_offline_map(NULL,
     		(carmen_handler_t) carmen_map_server_offline_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+
 
 	carmen_ipc_dispatch();
 
