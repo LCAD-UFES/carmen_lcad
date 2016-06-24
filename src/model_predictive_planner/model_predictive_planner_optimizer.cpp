@@ -38,6 +38,7 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 		tcp.k2 = gsl_vector_get(x, 1);
 		tcp.k3 = gsl_vector_get(x, 2);
 		tcp.tt = gsl_vector_get(x, 3);
+//		printf("FILL: k1: %lf k2: %lf k3: %lf \n", tcp.k1, tcp.k2, tcp.k3);
 	}
 	else
 	{
@@ -645,7 +646,24 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	my_func.params = &params;
 
 	double knots_x[3] = {0.0, tcp_seed.tt / 2.0, tcp_seed.tt};
-	double knots_y[3] = {target_td.phi_i, tcp_seed.k1, tcp_seed.k2};
+	double knots_y[3];
+
+	if (tcp_seed.has_k3)
+	{
+		knots_y[0] = target_td.phi_i;
+		knots_y[1] = tcp_seed.k2;
+		knots_y[2] = tcp_seed.k3;
+
+//		printf("-----------------\n k1: %lf k2: %lf k3: %lf \n", tcp_seed.k1, tcp_seed.k2, tcp_seed.k3);
+	}
+
+	else
+	{
+		knots_y[0] = target_td.phi_i;
+		knots_y[1] = tcp_seed.k1;
+		knots_y[2] = tcp_seed.k2;
+	}
+
 	gsl_interp_accel *acc = gsl_interp_accel_alloc();
 	const gsl_interp_type *type = gsl_interp_cspline;
 	gsl_spline *phi_spline = gsl_spline_alloc(type, 3);
@@ -653,10 +671,10 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 
 	//	print_phi_profile_temp(phi_spline, acc, tcp.tt, display_phi_profile);
 
-	/* Starting point, x */
+		/* Starting point, x */
 	x = gsl_vector_alloc(4);
-	//	gsl_vector_set(x, 0, gsl_spline_eval(phi_spline, tcp_seed.tt / 3.0, acc));
-	//	gsl_vector_set(x, 1, gsl_spline_eval(phi_spline, 2.0 * (tcp_seed.tt / 3.0), acc));
+		//	gsl_vector_set(x, 0, gsl_spline_eval(phi_spline, tcp_seed.tt / 3.0, acc));
+		//	gsl_vector_set(x, 1, gsl_spline_eval(phi_spline, 2.0 * (tcp_seed.tt / 3.0), acc));
 	gsl_vector_set(x, 0, gsl_spline_eval(phi_spline, tcp_seed.tt / 4.0, acc));
 	gsl_vector_set(x, 1, gsl_spline_eval(phi_spline, tcp_seed.tt / 2.0, acc));
 	gsl_vector_set(x, 2, gsl_spline_eval(phi_spline, tcp_seed.tt, acc));
@@ -704,7 +722,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 
 	} while (/*(s->f > MAX_LANE_DIST) &&*/ (status == GSL_CONTINUE) && (iter < 300)); //alterado de 0.005
 
-	//	printf("Parei em: %lu iteracoes, sf: %lf  \n", iter, s->f);
+//	printf("Parei em: %lu iteracoes, sf: %lf  \n", iter, s->f);
 	//	getchar();
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
