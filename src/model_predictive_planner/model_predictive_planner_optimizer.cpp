@@ -335,7 +335,7 @@ my_g(const gsl_vector *x, void *params)
 			1.0 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 			5.0 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
 			5.0 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
-			2.0 * path_to_lane_distance + // já é quandrática
+			1.5 * path_to_lane_distance + // já é quandrática
 			0.2 * proximity_to_obstacles); // já é quandrática
 	return (result);
 }
@@ -412,6 +412,9 @@ compute_suitable_acceleration(TrajectoryLookupTable::TrajectoryControlParameters
 	// O valor de maxS pode ser computado substituindo (iv) em (i):
 	// maxS = Vo*-Vo/a + 1/2*a*(-Vo/a)^2 = -Vo^2/a + 1/2*Vo^2/a = -1/2*Vo^2/a
 
+	if (target_v < 0.0)
+		target_v = 0.0;
+
 	double a = (target_v - target_td.v_i) / tcp_seed.tt;
 
 	if (a >= 0.0)
@@ -442,6 +445,44 @@ compute_suitable_acceleration(TrajectoryLookupTable::TrajectoryControlParameters
 }
 
 
+void
+get_optimization_params(double target_v,
+		TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed,
+		TrajectoryLookupTable::TrajectoryDimensions &target_td,
+		ObjectiveFunctionParams &params)
+{
+	double suitable_acceleration = compute_suitable_acceleration(tcp_seed, target_td, target_v);
+	params.distance_by_index = fabs(get_distance_by_index(N_DIST - 1));
+	params.theta_by_index = fabs(get_theta_by_index(N_THETA - 1));
+	params.d_yaw_by_index = fabs(get_d_yaw_by_index(N_D_YAW - 1));
+	params.suitable_acceleration = suitable_acceleration;
+	params.target_td = &target_td;
+	params.tcp_seed = &tcp_seed;
+	params.target_v = target_v;
+	params.path_size = 0;
+}
+
+
+void
+get_missing_k1(const TrajectoryLookupTable::TrajectoryDimensions& target_td,
+		TrajectoryLookupTable::TrajectoryControlParameters& tcp_seed)
+{
+	double knots_x[3] = { 0.0, tcp_seed.tt / 2.0, tcp_seed.tt };
+	double knots_y[3];
+	knots_y[0] = target_td.phi_i;
+	knots_y[1] = tcp_seed.k2;
+	knots_y[2] = tcp_seed.k3;
+	gsl_interp_accel* acc = gsl_interp_accel_alloc();
+	const gsl_interp_type* type = gsl_interp_cspline;
+	gsl_spline* phi_spline = gsl_spline_alloc(type, 3);
+	gsl_spline_init(phi_spline, knots_x, knots_y, 3);
+	tcp_seed.k1 = gsl_spline_eval(phi_spline, tcp_seed.tt / 4.0, acc);
+	tcp_seed.has_k1 = true;
+	gsl_spline_free(phi_spline);
+	gsl_interp_accel_free(acc);
+}
+
+
 TrajectoryLookupTable::TrajectoryControlParameters
 optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed,
 		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, ObjectiveFunctionParams params)
@@ -458,18 +499,8 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	//	fclose(path_file);
 	//	getchar();
 
-	const gsl_multimin_fdfminimizer_type *T;
-	gsl_multimin_fdfminimizer *s;
+	get_optimization_params(target_v, tcp_seed, target_td, params);
 
-	params.distance_by_index = fabs(get_distance_by_index(N_DIST-1));
-	params.theta_by_index = fabs(get_theta_by_index(N_THETA-1));
-	params.d_yaw_by_index = fabs(get_d_yaw_by_index(N_D_YAW-1));
-	params.target_td = &target_td;
-	params.tcp_seed = &tcp_seed;
-	params.target_v = target_v;
-	params.path_size = 0;
-
-	gsl_vector *x;
 	gsl_multimin_function_fdf my_func;
 
 	my_func.n = 4;
@@ -479,36 +510,20 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	my_func.params = &params;
 
 	if (!tcp_seed.has_k1)
-	{
-		double knots_x[3] = {0.0, tcp_seed.tt / 2.0, tcp_seed.tt};
-		double knots_y[3];
-		knots_y[0] = target_td.phi_i;
-		knots_y[1] = tcp_seed.k2;
-		knots_y[2] = tcp_seed.k3;
-		gsl_interp_accel *acc = gsl_interp_accel_alloc();
-		const gsl_interp_type *type = gsl_interp_cspline;
-		gsl_spline *phi_spline = gsl_spline_alloc(type, 3);
-		gsl_spline_init(phi_spline, knots_x, knots_y, 3);
-
-		tcp_seed.k1 = gsl_spline_eval(phi_spline, tcp_seed.tt / 4.0, acc);
-		tcp_seed.has_k1 = true;
-
-		gsl_spline_free(phi_spline);
-		gsl_interp_accel_free(acc);
-	}
+		get_missing_k1(target_td, tcp_seed);
 
 	/* Starting point, x */
-	x = gsl_vector_alloc(4);
+	gsl_vector *x = gsl_vector_alloc(4);
 	gsl_vector_set(x, 0, tcp_seed.k1);
 	gsl_vector_set(x, 1, tcp_seed.k2);
 	gsl_vector_set(x, 2, tcp_seed.k3);
 	gsl_vector_set(x, 3, tcp_seed.tt);
 
-	T = gsl_multimin_fdfminimizer_vector_bfgs2;
-	s = gsl_multimin_fdfminimizer_alloc(T, 4);
+	const gsl_multimin_fdfminimizer_type *T = gsl_multimin_fdfminimizer_vector_bfgs2;
+	gsl_multimin_fdfminimizer *s = gsl_multimin_fdfminimizer_alloc(T, 4);
 
 	// int gsl_multimin_fdfminimizer_set (gsl_multimin_fdfminimizer * s, gsl_multimin_function_fdf * fdf, const gsl_vector * x, double step_size, double tol)
-	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.0001, 0.001);
+	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.0001, 0.01);
 
 	size_t iter = 0;
 	int status;
@@ -551,31 +566,18 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 }
 
 
-// TODO optimizer
 TrajectoryLookupTable::TrajectoryControlParameters
 get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
 		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, ObjectiveFunctionParams &params,
 		bool has_previous_good_tcp)
 {
-	const gsl_multimin_fdfminimizer_type *T;
-	gsl_multimin_fdfminimizer *s;
-
-	double suitable_acceleration = compute_suitable_acceleration(tcp_seed, target_td, target_v);
-
-	params.distance_by_index = fabs(get_distance_by_index(N_DIST-1));
-	params.theta_by_index = fabs(get_theta_by_index(N_THETA-1));
-	params.d_yaw_by_index = fabs(get_d_yaw_by_index(N_D_YAW-1));
-	params.suitable_acceleration = suitable_acceleration;
-	params.target_td = &target_td;
-	params.tcp_seed = &tcp_seed;
-	params.target_v = target_v;
+	get_optimization_params(target_v, tcp_seed, target_td, params);
 
 	if (has_previous_good_tcp)
 		return (tcp_seed);
 
-	printf("no previous_good_tcp\n");
+//	printf("no previous_good_tcp\n");
 
-	gsl_vector *x;
 	gsl_multimin_function_fdf my_func;
 
 	my_func.n = 3;
@@ -585,15 +587,15 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 	my_func.params = &params;
 
 	/* Starting point, x */
-	x = gsl_vector_alloc(3);
+	gsl_vector *x = gsl_vector_alloc(3);
 	gsl_vector_set(x, 0, tcp_seed.k2);
 	gsl_vector_set(x, 1, tcp_seed.k3);
 	gsl_vector_set(x, 2, tcp_seed.tt);
 
-	T = gsl_multimin_fdfminimizer_vector_bfgs2;
-	s = gsl_multimin_fdfminimizer_alloc(T, 3);
+	const gsl_multimin_fdfminimizer_type *T = gsl_multimin_fdfminimizer_vector_bfgs2;
+	gsl_multimin_fdfminimizer *s = gsl_multimin_fdfminimizer_alloc(T, 3);
 
-	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.0001, 0.001);
+	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.0001, 0.01);
 
 	size_t iter = 0;
 	int status;
@@ -607,7 +609,7 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 
 		status = gsl_multimin_test_gradient(s->gradient, 0.16); // esta funcao retorna GSL_CONTINUE ou zero
 
-	} while ((s->f > 0.005) && (status == GSL_CONTINUE) && (iter < 300)); //alterado de 0.005
+	} while ((s->f > 0.005) && (status == GSL_CONTINUE) && (iter < 100)); //alterado de 0.005
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
