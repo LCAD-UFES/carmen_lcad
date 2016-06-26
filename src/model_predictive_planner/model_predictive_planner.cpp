@@ -115,7 +115,7 @@ move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_rddf_road_profi
 
 
 void
-add_points_to_goal_list_interval(carmen_ackerman_path_point_t p1, carmen_ackerman_path_point_t p2, vector<carmen_ackerman_path_point_t> &detailed_goal_list)
+add_points_to_goal_list_interval(carmen_ackerman_path_point_t p1, carmen_ackerman_path_point_t p2, vector<carmen_ackerman_path_point_t> &detailed_lane)
 {
 
 	//double theta;
@@ -145,15 +145,15 @@ add_points_to_goal_list_interval(carmen_ackerman_path_point_t p1, carmen_ackerma
 		new_point.y = p1.y + i * delta_y;
 		new_point.theta = p1.theta + i * delta_theta;
 
-		detailed_goal_list.push_back(new_point);
+		detailed_lane.push_back(new_point);
 	}
 }
 
 
 void
-copy_starting_nearest_point_of_zero(vector<carmen_ackerman_path_point_t> &detailed_goal_list, vector<carmen_ackerman_path_point_t> &temp_detail)
+copy_starting_nearest_point_of_zero(vector<carmen_ackerman_path_point_t> &detailed_lane, vector<carmen_ackerman_path_point_t> &temp_detail)
 {
-	detailed_goal_list.clear();
+	detailed_lane.clear();
 
 	//mantendo primeiro ponto mais proximo de 0
 	for (unsigned int i = 1; i < temp_detail.size(); i++)
@@ -168,7 +168,7 @@ copy_starting_nearest_point_of_zero(vector<carmen_ackerman_path_point_t> &detail
 			// slice
 			int k = 0;
 			for (unsigned int j = i; j < temp_detail.size(); j++ , k++)
-				detailed_goal_list.push_back(temp_detail.at(j));
+				detailed_lane.push_back(temp_detail.at(j));
 			break;
 		}
 	}
@@ -176,7 +176,7 @@ copy_starting_nearest_point_of_zero(vector<carmen_ackerman_path_point_t> &detail
 
 
 bool
-build_detailed_goal_list(vector<carmen_ackerman_path_point_t> *lane_in_local_pose, vector<carmen_ackerman_path_point_t> &detailed_goal_list)
+build_detailed_lane(vector<carmen_ackerman_path_point_t> *lane_in_local_pose, vector<carmen_ackerman_path_point_t> &detailed_lane)
 {
 	if (lane_in_local_pose->size() > 7)
 	{
@@ -188,7 +188,7 @@ build_detailed_goal_list(vector<carmen_ackerman_path_point_t> *lane_in_local_pos
 		//add last point
 		temp_detail.push_back(lane_in_local_pose->back());
 		//mantendo primeiro ponto mais proximo de 0
-		copy_starting_nearest_point_of_zero(detailed_goal_list, temp_detail);
+		copy_starting_nearest_point_of_zero(detailed_lane, temp_detail);
 	}
 	else
 	{
@@ -273,11 +273,11 @@ filter_path(vector<carmen_ackerman_path_point_t> &path)
 	for (i = 1; i < path.size(); i += 2)
 		path.erase(path.begin() + i);
 
-	for (i = 0; i < path.size(); i += 2)
-		if ((i + 1) < path.size())
-			path[i].time += path[i + 1].time;
-	for (i = 1; i < path.size(); i += 2)
-		path.erase(path.begin() + i);
+//	for (i = 0; i < path.size(); i += 2)
+//		if ((i + 1) < path.size())
+//			path[i].time += path[i + 1].time;
+//	for (i = 1; i < path.size(); i += 2)
+//		path.erase(path.begin() + i);
 }
 
 
@@ -344,7 +344,7 @@ path_has_collision(vector<carmen_ackerman_path_point_t> path)
 	car_config.distance_between_rear_car_and_rear_wheels =
 			GlobalState::robot_config.distance_between_rear_car_and_rear_wheels;
 	car_config.length = GlobalState::robot_config.length;
-	car_config.width = GlobalState::robot_config.width + 0.2;
+	car_config.width = GlobalState::robot_config.width;
 
 	for (unsigned int j = 0; j < path.size(); j++)
 	{
@@ -509,7 +509,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		Pose *localizer_pose, vector<vector<carmen_ackerman_path_point_t> > &paths,
 		carmen_rddf_road_profile_message *goal_list_message)
 {
-	vector<carmen_ackerman_path_point_t> lane_in_local_pose, detailed_goal_list;
+	vector<carmen_ackerman_path_point_t> lane_in_local_pose, detailed_lane;
 	static TrajectoryLookupTable::TrajectoryControlParameters previous_good_tcp;
 	vector<TrajectoryLookupTable::TrajectoryControlParameters> otcps;
 	static bool first_time = true;
@@ -528,18 +528,18 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	if (!goal_in_lane)
 		lane_in_local_pose.clear();
 
-	build_detailed_goal_list(&lane_in_local_pose, detailed_goal_list);
+	build_detailed_lane(&lane_in_local_pose, detailed_lane);
 	//
 	//	//Metric evaluation
-	//	if(detailed_goal_list.size() > 0){
+	//	if(detailed_lane.size() > 0){
 	//
-	//		double distance_metric = sqrt(pow(detailed_goal_list.at(0).x, 2) + pow(detailed_goal_list.at(0).y, 2));
-	//		double x_rddf = localizer_pose->x + detailed_goal_list.at(0).x * cos(localizer_pose->theta) - detailed_goal_list.at(0).y * sin(localizer_pose->theta);
-	//		double y_rddf = localizer_pose->y + detailed_goal_list.at(0).x * sin(localizer_pose->theta) + detailed_goal_list.at(0).y * cos(localizer_pose->theta);
-	//		double theta_rddf = detailed_goal_list.at(0).theta + localizer_pose->theta;
+	//		double distance_metric = sqrt(pow(detailed_lane.at(0).x, 2) + pow(detailed_lane.at(0).y, 2));
+	//		double x_rddf = localizer_pose->x + detailed_lane.at(0).x * cos(localizer_pose->theta) - detailed_lane.at(0).y * sin(localizer_pose->theta);
+	//		double y_rddf = localizer_pose->y + detailed_lane.at(0).x * sin(localizer_pose->theta) + detailed_lane.at(0).y * cos(localizer_pose->theta);
+	//		double theta_rddf = detailed_lane.at(0).theta + localizer_pose->theta;
 	//
 	//		fprintf(stderr, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf \n", localizer_pose->x, localizer_pose->y, localizer_pose->theta, lastOdometryVector[0].v, lastOdometryVector[0].phi,
-	//				x_rddf, y_rddf, theta_rddf, detailed_goal_list.at(0).v, detailed_goal_list.at(0).phi, distance_metric, goal_list_message->timestamp);
+	//				x_rddf, y_rddf, theta_rddf, detailed_lane.at(0).v, detailed_lane.at(0).phi, distance_metric, goal_list_message->timestamp);
 	//	}
 	//	fprintf(stderr, "%lf \n", distance_metric);
 
@@ -564,7 +564,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 				continue;
 
 			TrajectoryLookupTable::TrajectoryControlParameters otcp;
-			otcp = get_complete_optimized_trajectory_control_parameters(tcp, td, target_v, detailed_goal_list,
+			otcp = get_complete_optimized_trajectory_control_parameters(tcp, td, target_v, detailed_lane,
 					use_lane, previous_good_tcp.valid);
 			//otcp = get_optimized_trajectory_control_parameters(tcp, td, target_v, &lane_in_local_pose);
 
@@ -624,7 +624,7 @@ ModelPredictive::compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Com
 
 	vector<int> magicSignals = {0, 1, -1, 2, -2, 3, -3,  4, -4,  5, -5};
 	// @@@ Tranformar os dois loops abaixo em uma funcao -> compute_alternative_path_options()
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < 3; i++)
 	{
 		Command newOdometry = last_odometry;
 		newOdometry.phi +=  0.15 * (double) magicSignals[i]; //(0.5 / (newOdometry.v + 1))

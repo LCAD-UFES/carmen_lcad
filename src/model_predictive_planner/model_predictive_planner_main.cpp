@@ -170,7 +170,7 @@ publish_model_predictive_planner_single_motion_command(double v, double phi)
 	path.push_back(traj);
 	publish_model_predictive_planner_motion_commands(path);
 
-	publish_path_follower_single_motion_command(0, 0);
+	publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi);
 }
 
 
@@ -332,7 +332,7 @@ void
 stop()
 {
 	GlobalState::following_path = false;
-	publish_model_predictive_planner_single_motion_command(0, 0);
+	publish_model_predictive_planner_single_motion_command(0.0, GlobalState::last_odometry.phi);
 }
 
 
@@ -430,12 +430,13 @@ build_and_follow_path()
 			publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
 		}
 		else
-		{
-			if (GlobalState::last_odometry.v == 0.0)
-				publish_path_follower_single_motion_command(0.0, 0.0);
-			else
-				publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi);
-		}
+			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi);
+//		{
+//			if (GlobalState::last_odometry.v == 0.0)
+//				publish_path_follower_single_motion_command(0.0, 0.0);
+//			else
+//				publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi);
+//		}
 		publish_status_message(tree);
 		publish_navigator_ackerman_status_message();
 	}

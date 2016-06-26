@@ -20,8 +20,8 @@ struct ObjectiveFunctionParams
 	double d_yaw_by_index;
 	TrajectoryLookupTable::TrajectoryControlParameters *tcp_seed;
 	TrajectoryLookupTable::TrajectoryDimensions *target_td;
-	vector<carmen_ackerman_path_point_t> detailed_goal_list;
-	vector<unsigned int> nearest_path_point;
+	vector<carmen_ackerman_path_point_t> detailed_lane;
+	vector<unsigned int> path_point_nearest_to_lane;
 	unsigned int path_size;
 	bool use_lane;
 };
@@ -33,7 +33,7 @@ TrajectoryLookupTable::TrajectoryControlParameters get_optimized_trajectory_cont
 		TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd, double target_v);
 
 TrajectoryLookupTable::TrajectoryControlParameters get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
-		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, vector<carmen_ackerman_path_point_t> detailed_goal_list,
+		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, vector<carmen_ackerman_path_point_t> detailed_lane,
 		bool use_lane, bool has_previous_good_tcp);
 
 #endif /* MODEL_PREDICTIVE_PLANNER_OPTIMIZER_H_ */

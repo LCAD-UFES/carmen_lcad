@@ -33,15 +33,15 @@
 #define RATIO_I_PHI		1.394			// Ratio (Wikipedia) of phi geometric progression
 #define ZERO_I_PHI_I	7				// Index of zero initial phi
 
-#define N_K1			15				// Number of k1 wheel angles
-#define FIRST_K1		((3.0 * M_PI) / 180.0)	// Scale factor of k1 geometric progression
-#define RATIO_K1		1.394			// Ratio (Wikipedia) of k1 geometric progression
-#define ZERO_K1_I		7				// Index of zero k1
-
 #define N_K2			15				// Number of k2 wheel angles
 #define FIRST_K2		((3.0 * M_PI) / 180.0)	// Scale factor of k2 geometric progression
 #define RATIO_K2		1.394			// Ratio (Wikipedia) of k2 geometric progression
 #define ZERO_K2_I		7				// Index of zero k2
+
+#define N_K3			15				// Number of k3 wheel angles
+#define FIRST_K3		((3.0 * M_PI) / 180.0)	// Scale factor of k3 geometric progression
+#define RATIO_K3		1.394			// Ratio (Wikipedia) of k3 geometric progression
+#define ZERO_K3_I		7				// Index of zero k3
 
 #define N_I_V			8				// Number of Initial velocities
 #define FIRST_I_V		1.3				// First Initial velocity, or scale factor of its geometric progression
@@ -95,10 +95,10 @@ public:
 	{
 		bool valid;
 		double tt;
-		double k1;
 		double k2;
 		double k3;
-		bool has_k3;
+		double k1;
+		bool has_k1;
 		double a;
 		double vf;
 		double sf;
@@ -182,7 +182,7 @@ vector<carmen_ackerman_path_point_t> simulate_car_from_parameters(TrajectoryLook
 bool path_has_loop(double dist, double sf);
 void move_path_to_current_robot_pose(vector<carmen_ackerman_path_point_t> &path, Pose *localizer_pose);
 TrajectoryLookupTable::TrajectoryControlParameters get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
-		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, vector<carmen_ackerman_path_point_t> detailed_goal_list,
+		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, vector<carmen_ackerman_path_point_t> detailed_lane,
 		bool use_lane, bool has_previous_good_tcp);
 
 float get_d_yaw_by_index(int index);
