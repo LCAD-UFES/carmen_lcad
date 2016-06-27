@@ -121,12 +121,12 @@ print_result(double *particle)
 
 		x = x + dt * v * cos(yaw);
 		y = y + dt * v * sin(yaw);
-		yaw = yaw + dt * (v / 2.61874 /* L */) * tan(phi);
+		yaw = yaw + dt * (v / 2.625 /* L */) * tan(phi);
 		yaw = carmen_normalize_theta(yaw);
 
 		x_withoutbias = x_withoutbias + dt * pso_data->lines[i].v * cos(yaw_withoutbias);
 		y_withoutbias = y_withoutbias + dt * pso_data->lines[i].v * sin(yaw_withoutbias);
-		yaw_withoutbias = yaw_withoutbias + dt * (pso_data->lines[i].v / 2.61874 /* L */) * tan(pso_data->lines[i].phi);
+		yaw_withoutbias = yaw_withoutbias + dt * (pso_data->lines[i].v / 2.625 /* L */) * tan(pso_data->lines[i].phi);
 		yaw_withoutbias = carmen_normalize_theta(yaw_withoutbias);
 
 		gps_x = pso_data->lines[i].gps_x - pso_data->lines[0].gps_x;
@@ -172,7 +172,7 @@ fitness(double *particle, void *data)
 		// ackermann prediction
 		x = x + dt * v * cos(yaw);
 		y = y + dt * v * sin(yaw);
-		yaw = yaw + dt * (v / 2.61874 /* L */) * tan(phi);
+		yaw = yaw + dt * (v / 2.625 /* L */) * tan(phi);
 		yaw = carmen_normalize_theta(yaw);
 
 		// translate the starting pose of gps to zero to avoid floating point numerical instability
@@ -215,20 +215,20 @@ set_limits(int dim)
 	limits[0][1] = 1.5;
 
 	// v additive bias
-	limits[1][0] = -0.00000001; // -10 cm
-	limits[1][1] = 0.00000001;  // +10 cm
+	limits[1][0] = -0.00000001;
+	limits[1][1] = 0.00000001;
 
 	// phi multiplicative bias
 	limits[2][0] = 0.5;
 	limits[2][1] = 1.5;
 
 	// phi additive bias
-	limits[3][0] = -0.3; // 0.17; // -10 degrees
-	limits[3][1] = 0.3; // 0.17;  // +10 degrees
+	limits[3][0] = -0.3;
+	limits[3][1] = 0.3;
 
 	// initial angle
-	limits[4][0] = -3.14; // -10 degrees
-	limits[4][1] = 3.14;  // +10 degrees
+	limits[4][0] = -3.14;
+	limits[4][1] = 3.14;
 
 	return limits;
 }
@@ -249,7 +249,7 @@ main(int argc, char **argv)
 	srand(rand());
 
 	ParticleSwarmOptimization optimizer(
-		fitness, limits, 5, &DataReadFromFile, 70, 200);
+		fitness, limits, 5, &DataReadFromFile, 70, 500);
 
 	optimizer.Optimize();
 

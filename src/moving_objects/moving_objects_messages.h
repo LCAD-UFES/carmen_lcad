@@ -93,6 +93,15 @@ struct _object_model_features {
 
 typedef struct _object_model_features object_model_features_t;
 
+struct _particle_print {
+	carmen_point_t pose;
+	double velocity;
+	int class_id;
+	object_geometry_t geometry;
+};
+
+typedef struct _particle_print particle_print_t;
+
 typedef struct {
 	int point_size;
 	double r, g, b;
@@ -106,6 +115,7 @@ typedef struct {
 	int	num_associated;
 	carmen_vector_3D_t object_pose;
 	carmen_vector_3D_t *points;
+	particle_print_t *particulas; // para a visualização das partículas
 } t_point_cloud_struct;
 
 typedef struct {
@@ -116,11 +126,11 @@ typedef struct {
 } carmen_moving_objects_point_clouds_message;
 
 /* The message's name, will be used for message registration in IPC Central module */
-#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_NAME "carmen_moving_objects_point_clouds_message_name"
+#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_NAME 	"carmen_moving_objects_point_clouds_message_name"
 
 /* The message's format, will be used for message data marshalling (serialization) for network socket transport. */
-/*                                                                                                                                               model_features...............................................*/
-#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_FMT       "{int, <{int, double, double, double, double, double, double, double, double, int, {int, string, {double, double, double}, double, double, double}, int, {double, double, double}, <{double, double, double}:1>}:1>, double, string}"
+/* fixme                                                                                                                                            model features...............................................*/
+#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_FMT		"{int, <{int, double, double, double, double, double, double, double, double, int, {int, string, {double, double, double}, double, double, double}, int, {double, double, double}, <{double, double, double}:1>,<{{double, double, double}, double, int, {double, double, double} }:1>}:1>, double, string}"
 
 
 struct _moving_objects_tracking
@@ -134,6 +144,7 @@ struct _moving_objects_tracking
 	object_model_features_t model_features;
 	int	num_associated;
 	double timestamp;
+	particle_print_t *particulas; // para a visualização das partículas
 };
 
 typedef struct _moving_objects_tracking moving_objects_tracking_t;
