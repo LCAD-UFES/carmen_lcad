@@ -113,13 +113,13 @@ publish_rrt_path_message(list<RRT_Path_Edge> &path)
 
 //		printf ("-%f %f\n", msg.path[i].p1.x, msg.path[i].p1.y);
 //		printf ("-%f %f\n", msg.path[i].p2.x, msg.path[i].p2.y);
-		printf( "p1.x = %lf, p1.y = %lf, p1.theta = %lf, p1.v = %lf, p1.phi = %lf\n"
+/*		printf( "p1.x = %lf, p1.y = %lf, p1.theta = %lf, p1.v = %lf, p1.phi = %lf\n"
 				"p2.x = %lf, p2.y = %lf, p2.theta = %lf, p2.v = %lf, p2.phi = %lf\n"
 				"command.v = %lf, command.phi = %lf, command.time = %lf\n",
 				msg.path[i].p1.x, msg.path[i].p1.y, msg.path[i].p1.theta, msg.path[i].p1.v, msg.path[i].p1.phi,
 				msg.path[i].p2.x, msg.path[i].p2.y, msg.path[i].p2.theta, msg.path[i].p2.v, msg.path[i].p2.phi,
 				msg.path[i].v,  msg.path[i].phi,  msg.path[i].time);
-
+*/
 		if (GlobalState::show_debug_info)
 			printf("v = %2.2lf, phi = %2.2lf, t = %2.3lf, p1.v = %2.2lf, p1.phi = %2.2lf, p2.v = %2.2lf, p2.phi = %2.2lf\n",
 					it->command.v, carmen_radians_to_degrees(it->command.phi), it->time,
