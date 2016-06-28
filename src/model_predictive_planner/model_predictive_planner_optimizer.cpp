@@ -451,11 +451,9 @@ get_optimization_params(double target_v,
 		TrajectoryLookupTable::TrajectoryDimensions &target_td,
 		ObjectiveFunctionParams &params)
 {
-	double suitable_acceleration = compute_suitable_acceleration(tcp_seed, target_td, target_v);
 	params.distance_by_index = fabs(get_distance_by_index(N_DIST - 1));
 	params.theta_by_index = fabs(get_theta_by_index(N_THETA - 1));
 	params.d_yaw_by_index = fabs(get_d_yaw_by_index(N_D_YAW - 1));
-	params.suitable_acceleration = suitable_acceleration;
 	params.target_td = &target_td;
 	params.tcp_seed = &tcp_seed;
 	params.target_v = target_v;
@@ -572,6 +570,8 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 		bool has_previous_good_tcp)
 {
 	get_optimization_params(target_v, tcp_seed, target_td, params);
+	double suitable_acceleration = compute_suitable_acceleration(tcp_seed, target_td, target_v);
+	params.suitable_acceleration = suitable_acceleration;
 
 	if (has_previous_good_tcp)
 		return (tcp_seed);
@@ -664,6 +664,7 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 
 	tcp_complete = get_optimized_trajectory_control_parameters(tcp_seed, target_td, target_v, params, has_previous_good_tcp);
 
+	// Atencao: params.suitable_acceleration deve ser preenchido na funcao acima para que nao seja alterado no inicio da otimizacao abaixo
 	if (tcp_complete.valid && params.detailed_lane.size() > 0)
 		tcp_complete = optimized_lane_trajectory_control_parameters(tcp_complete, target_td, target_v, params);
 

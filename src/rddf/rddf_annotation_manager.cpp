@@ -112,7 +112,7 @@ carmen_annotation_manager_timer_handler(char *annotation_filename)
 	if (f == NULL)
 		exit(printf("Unable to open the file '%s'\n", annotation_filename));
 
-	//printf("annotation_queue.size(): %ld\n", annotation_queue.size());
+	printf("annotation_queue.size(): %ld\n", annotation_queue.size());
 
 	for (i = 0; i < annotation_queue.size(); i++)
 	{
