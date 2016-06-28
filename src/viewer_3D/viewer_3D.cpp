@@ -1770,9 +1770,9 @@ draw_loop(window *w)
 
 			glPushMatrix();
 			
-			carmen_pose_3D_t world_front_bullbar_left_corner_pose = get_world_pose(&front_bullbar_left_corner_pose);
+			carmen_vector_3D_t position = get_world_position(FRONT_BULLBAR_LEFT_CORNER_HIERARCHY_SIZE, front_bullbar_left_corner_hierarchy);
 			
-			glTranslatef(world_front_bullbar_left_corner_pose.position.x, world_front_bullbar_left_corner_pose.position.y, world_front_bullbar_left_corner_pose.position.z);
+			glTranslatef(position.x, position.y, position.z);
 			glutSolidSphere(0.1, 8, 8);
 			glPopMatrix();
 			glPointSize(point_size);
@@ -1781,8 +1781,8 @@ draw_loop(window *w)
 			glColor3f(0.0f, 1.0f, 0.0f);
 
 			glPushMatrix();
-			carmen_pose_3D_t world_front_bullbar_right_corner_pose = get_world_pose(&front_bullbar_right_corner_pose);
-			glTranslatef(world_front_bullbar_right_corner_pose.position.x, world_front_bullbar_right_corner_pose.position.y, world_front_bullbar_right_corner_pose.position.z);
+			position = get_world_position(FRONT_BULLBAR_RIGHT_CORNER_HIERARCHY_SIZE, front_bullbar_right_corner_hierarchy);
+			glTranslatef(position.x, position.y, position.z);
 			glutSolidSphere(0.1, 8, 8);
 			glPopMatrix();
 			glPointSize(point_size);
@@ -1791,8 +1791,8 @@ draw_loop(window *w)
 			glColor3f(0.0f, 0.0f, 1.0f);
 			rear_bullbar_pose.orientation.yaw += 0.2;
 			glPushMatrix();
-			carmen_pose_3D_t world_rear_bullbar_left_corner_pose = get_world_pose(&rear_bullbar_left_corner_pose);
-			glTranslatef(world_rear_bullbar_left_corner_pose.position.x, world_rear_bullbar_left_corner_pose.position.y, world_rear_bullbar_left_corner_pose.position.z);
+			position = get_world_position(REAR_BULLBAR_LEFT_CORNER_HIERARCHY_SIZE, rear_bullbar_left_corner_hierarchy);
+			glTranslatef(position.x, position.y, position.z);
 			glutSolidSphere(0.1, 8, 8);
 			glPopMatrix();
 			glPointSize(point_size);
@@ -1801,8 +1801,8 @@ draw_loop(window *w)
 			glColor3f(1.0f, 1.0f, 1.0f);
 
 			glPushMatrix();
-			carmen_pose_3D_t world_rear_bullbar_right_corner_pose = get_world_pose(&rear_bullbar_right_corner_pose);
-			glTranslatef(world_rear_bullbar_right_corner_pose.position.x, world_rear_bullbar_right_corner_pose.position.y, world_rear_bullbar_right_corner_pose.position.z);
+			position = get_world_position(REAR_BULLBAR_RIGHT_CORNER_HIERARCHY_SIZE, rear_bullbar_right_corner_hierarchy);
+			glTranslatef(position.x, position.y, position.z);
 			glutSolidSphere(0.1, 8, 8);
 			glPopMatrix();
 			glPointSize(point_size);
