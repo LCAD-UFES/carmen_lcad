@@ -86,7 +86,7 @@ public:
 	 */
 	void prune_nodes();
 
-
+	void smooth_path_using_conjugate_gradient (rrt_path_message *msg);
 
 
 public:

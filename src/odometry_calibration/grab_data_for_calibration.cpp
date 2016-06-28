@@ -113,7 +113,7 @@ ackerman_prediction(carmen_pose_3D_t *pose, double v, double phi, double dt)
 {
 	pose->position.x = pose->position.x + dt * v * cos(pose->orientation.yaw);
 	pose->position.y = pose->position.y + dt * v * sin(pose->orientation.yaw);
-	pose->orientation.yaw = pose->orientation.yaw + dt * (v / 2.61874 /* L */) * tan(phi);
+	pose->orientation.yaw = pose->orientation.yaw + dt * (v / 2.625 /* L */) * tan(phi);
 	pose->orientation.yaw = carmen_normalize_theta(pose->orientation.yaw);
 }
 
@@ -166,7 +166,7 @@ gps_xyz_message_handler(carmen_gps_xyz_message *message)
 {
 	StampedPose pose;
 
-	if (message->nr != 1)
+	if (message->nr != 1) // GPS Trimble
 		return;
 
 	// it fuses gps and xsens to get gps with orientation

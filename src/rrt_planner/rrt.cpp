@@ -18,6 +18,14 @@ double	  t1;
 #include "util/util.h"
 #include <carmen/navigator_gui_interface.h>
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_spline.h>
+#include <gsl/gsl_multimin.h>
+#include <gsl/gsl_math.h>
+
 #include <queue>
 #include <list>
 
@@ -592,3 +600,354 @@ bool RRT::is_valid_path()
 	return true;
 }
 
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Smooth Path Using Conjugate Gradient                                                      //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+// get the desired heading given tree points in forward drive mode
+double
+get_desired_heading(carmen_ackerman_traj_point_t &left, carmen_ackerman_traj_point_t &current, carmen_ackerman_traj_point_t &right)
+{
+    // get the displacement vector
+    double x1 = 0.25*(right.x - left.x) + 0.75*(right.x - current.x);
+    double y1 = 0.25*(right.y - left.y) + 0.75*(right.y - current.y);
+
+    return atan2(y1, x1);
+}
+
+// the max allowed speed
+double
+get_max_speed(carmen_ackerman_traj_point_t &left, carmen_ackerman_traj_point_t &current, carmen_ackerman_traj_point_t &right)
+{
+    double x1, x2, y1, y2;
+
+    // the max lateral acceleration, 0.5 m/s^2
+    double max_lateral_acceleration = 0.5;
+
+    // the max speed at the current curvature
+    double curvature_constraint;
+
+    // the current vector
+    x1 = current.x - left.x;
+    y1 = current.y - left.y;
+
+    // the next vector
+    x2 = right.x - current.x;
+    y2 = right.y - current.y;
+
+    // get the angle between the two vectors
+    double angle = fabs(carmen_normalize_theta(atan2(y2, x2) - atan2(y1, x1)));
+
+    // get the turn radius
+	double radius = sqrt(x1*x1 + y1*y1) / angle;
+
+    // get the curvature constraint
+    curvature_constraint = sqrt(radius*max_lateral_acceleration);
+
+
+    // max_forward_speed = sqrt(left.v * left.v + 2*maximum_acceleration_forward*displacement);
+
+    // assign the max forward speed
+    return min(GlobalState::robot_config.max_vel, curvature_constraint);
+}
+
+// get the max forward acceleration speed
+double
+get_accelerated_speed(carmen_ackerman_traj_point_t &left, carmen_ackerman_traj_point_t &right, double acceleration)
+{
+    // get the displacement between the currrent and the next point
+    double displacement = sqrt(pow(right.y - left.y, 2) + pow(right.x - left.x, 2));
+
+    // get the forward speed constrained by the max acceleration
+    // Torricelli
+    return sqrt(left.v*left.v + 2.0*acceleration*displacement);
+}
+
+double
+get_turning_radius(carmen_ackerman_traj_point_t &a, carmen_ackerman_traj_point_t &b)
+{
+    // move the second position to the first position reference
+    double dx = b.x - a.x;
+    double dy = b.y - a.y;
+    //double radius;
+
+    double angle = -a.theta;
+
+    // rotate the goal point around the z axis
+    double gx = dx*cos(angle) - dy*sin(angle);
+    double gy = dx*sin(angle) + dy*cos(angle);
+
+    // get the desired wheel angle
+    return (gx*gx + gy*gy)/(2.0*gy);
+
+
+
+}
+
+// consolidate the entire path
+// what we need:
+// the car curvature along the path
+// the car speed
+// the car phi
+// each command time
+void
+consolidate_path(rrt_path_message *msg)
+{
+    int i, last = msg->size;
+    double radius;
+
+    for (i = 1; i < last; i++)
+    {
+        // get the desired heading
+    	msg->path[i-1].p2.theta = msg->path[i].p1.theta = get_desired_heading(msg->path[i-1].p1, msg->path[i].p1, msg->path[i].p2);
+
+        // get the max speed
+    	//msg->path[i-1].p2.v = msg->path[i].p1.v = get_max_speed(msg->path[i-1].p1, msg->path[i].p1, msg->path[i].p2);
+        //printf ("-----%f\n", msg->path[i].p1.theta);
+
+        radius = get_turning_radius(msg->path[i].p1, msg->path[i].p2);
+        msg->path[i-1].p2.phi = msg->path[i].p1.phi = msg->path[i-1].phi = atan(GlobalState::robot_config.distance_between_front_and_rear_axles/(radius));
+
+
+        //msg->path[i].time = msg->path[i].v radius;
+
+    }
+
+    // update the acceleration around the start and the end point
+    /*double current_v;
+
+    // from the start to the goal, update the forward acceleration
+    for (i = 1; i < last; i++)
+    {
+        current_v = get_accelerated_speed(msg->path[i-1].p1, msg->path[i].p1, GlobalState::robot_config.desired_acceleration);
+
+        if (current_v < msg->path[i].v)
+            msg->path[i].v = current_v;
+        else
+            break;
+    }
+
+    // from the goal to the start, update the forward deceleration
+    for (i = last-1; i > 0; i--)
+    {
+        current_v = get_accelerated_speed(msg->path[i].p2, msg->path[i].p1, GlobalState::robot_config.desired_decelaration_forward);
+
+        if (current_v < msg->path[i].v)
+        	msg->path[i].v = current_v;
+        else
+            break;
+    }
+	*/
+}
+
+
+//Function to be minimized
+//summation[x(i+1)-2x(i)+x(i-1)]
+double
+my_f(const gsl_vector *v, void *params)
+{
+	rrt_path_message *p = (rrt_path_message *)params;
+	int i, j, size =(p->size-1);                                  //(p->size-1)Instead of -2 because the message size is 4 but the message has 5 points
+	double a=0, b=0, sum=0;                                       //and we have to discount the first and last point that wont be optimized
+
+	//printf("%d\n", size+1);
+	double x_prev = p->path[0].p1.x;			//x(i-1)
+	double x      = gsl_vector_get(v, 0);		//x(i)
+	double x_next = gsl_vector_get(v, 1);		//x(i+1)
+
+	double y_prev = p->path[0].p1.y;
+	double y      = gsl_vector_get(v, size);
+	double y_next = gsl_vector_get(v, size+1);
+	//printf("---%f %f\n", x_prev, y_prev);
+	for (i = 2, j = (size+2); i < size; i++, j++)
+	{
+		a = x_next - (2*x) + x_prev;
+		b = y_next - (2*y) + y_prev;
+		sum += (a*a + b*b);
+
+		x_prev = x;
+		x      = x_next;
+		x_next = gsl_vector_get(v, i);
+
+		y_prev = y;
+		y      = y_next;
+		y_next = gsl_vector_get(v, j);
+	}
+
+	x_prev = x;
+	x      = x_next;
+	x_next = p->path[size].p2.x;
+
+	y_prev = y;
+	y      = y_next;
+	y_next = p->path[size].p2.y;
+
+	//printf("---%f %f\n", x_next, y_next);
+	a = x_next - (2*x) + x_prev;
+	b = y_next - (2*y) + y_prev;
+	sum += (a*a + b*b);
+
+	return (sum);
+}
+
+
+// The gradient of f, df = (df/dx, df/dy)
+//derivative in each point [2x(i-2)-8x(i-1)+12x(i)-8x(i+1)+2x(i+2)]
+void
+my_df (const gsl_vector *v, void *params, gsl_vector *df)
+{
+	rrt_path_message *p = (rrt_path_message *)params;
+	int i, j, size =(p->size-1);
+
+	double x_prev2= 0;
+	double x_prev = p->path[0].p1.x;
+	double x      = gsl_vector_get(v, 0);
+	double x_next = gsl_vector_get(v, 1);
+	double x_next2= gsl_vector_get(v, 2);
+	double sum_x  =  (10*x) - (8*x_next) + (2*x_next2) - (4*x_prev);
+	gsl_vector_set(df, 0, sum_x);
+	//printf ("%f\n", sum_x);
+
+	double y_prev2= 0;
+	double y_prev = p->path[0].p1.y;
+	double y      = gsl_vector_get(v, size);
+	double y_next = gsl_vector_get(v, size+1);
+	double y_next2= gsl_vector_get(v, size+2);
+	double sum_y  = (10*y) - (8*y_next) + (2*y_next2) - (4*y_prev);
+	gsl_vector_set(df, size, sum_y);
+
+	for (i = 3, j = (size+3); i < size; i++, j++)
+	{
+		x_prev2= x_prev;
+		x_prev = x;
+		x      = x_next;
+		x_next = x_next2;
+		x_next2= gsl_vector_get(v, i);
+		sum_x = (2*x_prev2) - (8*x_prev) + (12*x) - (8*x_next) + (2*x_next2);
+		gsl_vector_set(df, (i-2), sum_x);
+
+		y_prev2= y_prev;
+		y_prev = y;
+		y      = y_next;
+		y_next = y_next2;
+		y_next2= gsl_vector_get(v, j);
+		sum_y = (2*y_prev2) - (8*y_prev) + (12*y) - (8*y_next) + (2*y_next2);
+		gsl_vector_set(df, (j-2), sum_y);
+	}
+
+	x_prev2= x_prev;
+	x_prev = x;
+	x      = x_next;
+	x_next = x_next2;
+	x_next2= p->path[size].p2.x;
+	sum_x  = (2*x_prev2) - (8*x_prev) + (12*x) - (8*x_next) + (2*x_next2);
+	gsl_vector_set(df, size-2, sum_x);
+
+	y_prev2= y_prev;
+	y_prev = y;
+	y      = y_next;
+	y_next = y_next2;
+	y_next2= p->path[size].p2.y;
+	sum_y  = (2*y_prev2) - (8*y_prev) + (12*y) - (8*y_next) + (2*y_next2);
+	gsl_vector_set(df, (2*size)-2, sum_y);
+
+	x_prev2= x_prev;
+	x_prev = x;
+	x      = x_next;
+	x_next = x_next2;
+	sum_x  = (2*x_prev2) - (8*x_prev) + (10*x) - (4*x_next);
+	gsl_vector_set(df, size-1, sum_x);
+
+	y_prev2= y_prev;
+	y_prev = y;
+	y      = y_next;
+	y_next = y_next2;
+	sum_y  = (2*y_prev2) - (8*y_prev) + (10*y) - (4*y_next);
+	gsl_vector_set(df, (2*size)-1, sum_y);
+}
+
+
+// Compute both f and df together
+void
+my_fdf (const gsl_vector *x, void *params, double *f, gsl_vector *df)
+{
+	*f = my_f(x, params);
+	my_df(x, params, df);
+}
+
+
+void RRT::smooth_path_using_conjugate_gradient (rrt_path_message *msg)
+{
+		size_t iter = 0;
+		int status, i, j, size =(msg->size+1);
+
+		//printf("size %d\n", size);
+		//printf ("%aaaaaaaaaaaaaalf\n", msg->path[0].p1.x);
+
+		const gsl_multimin_fdfminimizer_type *T;
+		gsl_multimin_fdfminimizer *s;
+
+		gsl_vector *v;
+		gsl_multimin_function_fdf my_func;
+
+		my_func.n = (2*size)-4;
+		my_func.f = my_f;
+		my_func.df = my_df;
+		my_func.fdf = my_fdf;
+		my_func.params = msg;
+
+		v = gsl_vector_alloc ((2*size)-4);
+
+		for (i=0, j=(size-2); i < (size-2); i++, j++)
+		{
+			//printf ("%f %f\n", msg->path[i].p2.x, msg->path[i].p2.y);
+			gsl_vector_set (v, i, msg->path[i].p2.x);
+			gsl_vector_set (v, j, msg->path[i].p2.y);
+		}
+
+		T = gsl_multimin_fdfminimizer_conjugate_fr;
+		s = gsl_multimin_fdfminimizer_alloc (T, (2*size)-4);
+		//printf("FOOIIIIIIII\n");
+		gsl_multimin_fdfminimizer_set (s, &my_func, v, 0.1, 0.01);  //(function_fdf, gsl_vector, step_size, tol)
+		//printf("-----------\n");
+		do
+		{
+			iter++;
+			status = gsl_multimin_fdfminimizer_iterate (s);
+
+			if (status){
+				//printf("%%Saiu STATUS %d\n", status);
+				break;
+			}
+
+			status = gsl_multimin_test_gradient (s->gradient, 0.01);        //(gsl_vector, epsabs) and  |g| < epsabs
+
+			if (status == GSL_SUCCESS)
+			{
+				//printf ("%%Minimum found!!!\n");
+			}
+		}
+		while (status == GSL_CONTINUE && iter < 999);
+
+		for (i=0, j=(size-2); i < (size-2); i++, j++)
+		{
+			msg->path[i].p2.x = msg->path[i+1].p1.x = gsl_vector_get (s->x, i);
+			msg->path[i].p2.y = msg->path[i+1].p1.y = gsl_vector_get (s->x, j);
+		}
+
+		consolidate_path(msg);
+		/*printf ("%d  -------------------------------\n%f %f\n", (int)iter, msg->path[0].p1.x, msg->path[0].p1.y);
+		for (i=0, j=(size-2); i < (size-2); i++, j++)
+		{
+			printf ("%f %f\n", gsl_vector_get (s->x, i), gsl_vector_get (s->x, j));
+		}
+		printf ("%f %f\n", msg->path[size-2].p2.x, msg->path[size-2].p2.y);
+		*/
+
+		gsl_multimin_fdfminimizer_free (s);
+		gsl_vector_free (v);
+}

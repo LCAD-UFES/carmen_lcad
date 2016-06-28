@@ -10,6 +10,9 @@
 
 #include "carmen/rddf_interface.h"
 
+#include "model/robot_state.h"
+#include "model/global_state.h"
+#include "util.h"
 
 #define N_DIST			15				// Number of Distances traveled in polar coordinates
 #define FIRST_DIST		2.3				// First Distance, or scale factor of its geometric progression (Wikipedia)
@@ -30,15 +33,15 @@
 #define RATIO_I_PHI		1.394			// Ratio (Wikipedia) of phi geometric progression
 #define ZERO_I_PHI_I	7				// Index of zero initial phi
 
-#define N_K1			15				// Number of k1 wheel angles
-#define FIRST_K1		((3.0 * M_PI) / 180.0)	// Scale factor of k1 geometric progression
-#define RATIO_K1		1.394			// Ratio (Wikipedia) of k1 geometric progression
-#define ZERO_K1_I		7				// Index of zero k1
-
 #define N_K2			15				// Number of k2 wheel angles
 #define FIRST_K2		((3.0 * M_PI) / 180.0)	// Scale factor of k2 geometric progression
 #define RATIO_K2		1.394			// Ratio (Wikipedia) of k2 geometric progression
 #define ZERO_K2_I		7				// Index of zero k2
+
+#define N_K3			15				// Number of k3 wheel angles
+#define FIRST_K3		((3.0 * M_PI) / 180.0)	// Scale factor of k3 geometric progression
+#define RATIO_K3		1.394			// Ratio (Wikipedia) of k3 geometric progression
+#define ZERO_K3_I		7				// Index of zero k3
 
 #define N_I_V			8				// Number of Initial velocities
 #define FIRST_I_V		1.3				// First Initial velocity, or scale factor of its geometric progression
@@ -62,6 +65,18 @@ const int PHI_LATENCY_BUFFER_SIZE = (PHI_LATENCY / LATENCY_CICLE_TIME);
 const int PHI_LATENCY_BUFFER_TOTAL_SIZE = (PHI_LATENCY_BUFFER_SIZE + MAX_PLANNING_TIME / LATENCY_CICLE_TIME);
 
 
+//To error layout
+#define KNRM  "\x1B[0m"
+#define KRED  "\x1B[31m"
+#define KGRN  "\x1B[32m"
+#define KYEL  "\x1B[33m"
+#define KBLU  "\x1B[34m"
+#define KMAG  "\x1B[35m"
+#define KCYN  "\x1B[36m"
+#define KWHT  "\x1B[37m"
+#define RESET "\033[0m"
+
+
 typedef enum
 {
 	CONSTANT_PROFILE = 0,
@@ -79,19 +94,13 @@ public:
 	struct TrajectoryControlParameters
 	{
 		bool valid;
-		TrajectoryVelocityProfile velocity_profile;
-		double v0;
-		double vt;
-		double vf;
-		double a0;
-		double af;
-		double t0;
 		double tt;
-		double tf;
-		double k1;
 		double k2;
 		double k3;
-		bool has_k3;
+		double k1;
+		bool has_k1;
+		double a;
+		double vf;
 		double sf;
 	};
 
@@ -127,6 +136,15 @@ public:
 		double timestamp;
 	};
 
+	TrajectoryLookupTable(int update_lookup_table);
+
+	static Robot_State predict_next_pose(Robot_State &robot_state, Command &requested_command,
+			double full_time_interval, double *distance_traveled, double delta_t);
+	bool load_trajectory_lookup_table();
+	void build_trajectory_lookup_table();
+	void evaluate_trajectory_lookup_table();
+	void update_lookup_table_entries();
+
 
 	class CarLatencyBuffer
 	{
@@ -147,20 +165,29 @@ public:
 		}
 	};
 
-
-	TrajectoryLookupTable(int update_lookup_table);
-
-	static Robot_State predict_next_pose(Robot_State &robot_state, Command &requested_command,
-			double full_time_interval, double *distance_traveled, double delta_t);
-	bool load_trajectory_lookup_table();
-	void build_trajectory_lookup_table();
-	void evaluate_trajectory_lookup_table();
-	static vector<vector<carmen_ackerman_path_point_t>> compute_path_to_goal(Pose *localize_pose, Pose *goal_pose,
-			Command last_odometry, double max_v, carmen_rddf_road_profile_message *goal_list_message);
-	void update_lookup_table_entries();
-
 };
 
+
 void save_trajectory_lookup_table();
+TrajectoryLookupTable::TrajectoryDimensions convert_to_trajectory_dimensions(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd,
+		TrajectoryLookupTable::TrajectoryControlParameters tcp);
+TrajectoryLookupTable::TrajectoryDiscreteDimensions get_discrete_dimensions(TrajectoryLookupTable::TrajectoryDimensions td);
+bool has_valid_discretization(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd);
+TrajectoryLookupTable::TrajectoryControlParameters search_lookup_table(TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd);
+
+vector<carmen_ackerman_path_point_t> simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
+		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_phi,
+		TrajectoryLookupTable::CarLatencyBuffer car_latency_buffer,	bool display_phi_profile);
+
+bool path_has_loop(double dist, double sf);
+void move_path_to_current_robot_pose(vector<carmen_ackerman_path_point_t> &path, Pose *localizer_pose);
+TrajectoryLookupTable::TrajectoryControlParameters get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
+		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, vector<carmen_ackerman_path_point_t> detailed_lane,
+		bool use_lane, bool has_previous_good_tcp);
+
+float get_d_yaw_by_index(int index);
+float get_theta_by_index(int index);
+float get_distance_by_index(int index);
+
 
 #endif /* TRAJECTORY_LOOKUP_TABLE_H_ */

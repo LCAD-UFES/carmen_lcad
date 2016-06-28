@@ -982,6 +982,7 @@ odometry_handler(carmen_base_ackerman_odometry_message *msg)
 {
 	last_phi = msg->phi;
 	last_v = msg->v;
+
 }
 
 

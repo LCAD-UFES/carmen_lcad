@@ -258,7 +258,7 @@ build_map_using_velodyne(sensor_parameters_t *sensor_params, sensor_data_t *sens
 
 	snapshot_map = carmen_prob_models_check_if_new_snapshot_map_allocation_is_needed(snapshot_map, &map);
 	//set_map_equal_offline_map(&map);
-	//add_offline_map_over_unknown(&map);
+//	add_offline_map_over_unknown(&map);
 
 
 	map_decay_to_offline_map(&map);
@@ -270,7 +270,7 @@ build_map_using_velodyne(sensor_parameters_t *sensor_params, sensor_data_t *sens
 	//if (build_snapshot_map)
 
 
-	//add_offline_map_over_unknown(&map);
+//	add_offline_map_over_unknown(&map);
 }
 
 

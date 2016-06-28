@@ -12,7 +12,8 @@ Terminal 2:
 
 	./proccontrol process-volta_da_ufes_playback_viewer_3D_moving_objects.ini
 
-Após execução, ativar o botão "Options" e, em seguida "Moving Objects" no Viewer 3D.
+Após execução, ativar o botão "Options" e, em seguida "Moving Objects" no Viewer 3D. 
+Para visualizar as representação das partículas ativar a opção "Particles", também no "Options", do Viewer 3D.
 
 
 
