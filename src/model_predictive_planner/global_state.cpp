@@ -37,6 +37,9 @@ double GlobalState::time_to_change_gears = 1.0;
 carmen_map_t GlobalState::cost_map;
 bgi::rtree< occupied_cell, bgi::quadratic<16> > GlobalState::obstacles_rtree;
 
+KDTree2D GlobalState::obstacles_kdtree;
+vector<vector<cell_coords_t>> GlobalState::cell_mask;
+
 carmen_map_t GlobalState::lane_map = {{0, 0, 0, "", NULL, 0, 0}, NULL, NULL};
 vector<carmen_point_t> GlobalState::lane_points;
 vector<Pose> GlobalState::lane_points_on_map;
