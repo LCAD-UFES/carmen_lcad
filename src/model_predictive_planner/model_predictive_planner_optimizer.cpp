@@ -338,8 +338,8 @@ compute_proximity_to_obstacles_using_localize_map(vector<carmen_ackerman_path_po
 
 	double proximity_to_obstacles = 0.0;
 	double min_dist = 3.2 / 2.0; // metade da largura do carro
-	double x_gpos = GlobalState::localizer_pose->x - GlobalState::localize_map->config.x_origin;
-	double y_gpos = GlobalState::localizer_pose->y - GlobalState::localize_map->config.y_origin;
+	double x_gpos = GlobalState::localizer_pose->x - GlobalState::cost_map.config.x_origin;
+	double y_gpos = GlobalState::localizer_pose->y - GlobalState::cost_map.config.y_origin;
 	double coss = cos(GlobalState::localizer_pose->theta);
 	double sine = sin(GlobalState::localizer_pose->theta);
 	double L_2 = 0;//GlobalState::robot_config.distance_between_front_and_rear_axles / 2.0;
@@ -349,8 +349,8 @@ compute_proximity_to_obstacles_using_localize_map(vector<carmen_ackerman_path_po
 		carmen_ackerman_path_point_t path_point_in_map_coords;
 		double x = path[i].x;
 		double y = path[i].y;
-		path_point_in_map_coords.x = (x_gpos + x * coss - y * sine + L_2 * coss) / GlobalState::localize_map->config.resolution; // no meio do carro
-		path_point_in_map_coords.y = (y_gpos + x * sine + y * coss + L_2 * sine) / GlobalState::localize_map->config.resolution; // no meio do carro
+		path_point_in_map_coords.x = (x_gpos + x * coss - y * sine + L_2 * coss) / GlobalState::cost_map.config.resolution; // no meio do carro
+		path_point_in_map_coords.y = (y_gpos + x * sine + y * coss + L_2 * sine) / GlobalState::cost_map.config.resolution; // no meio do carro
 
 		carmen_ackerman_path_point_t nearest_obstacle;
 		int index = (int) round(path_point_in_map_coords.y) + GlobalState::localize_map->config.y_size * (int) round(path_point_in_map_coords.x);
@@ -361,7 +361,7 @@ compute_proximity_to_obstacles_using_localize_map(vector<carmen_ackerman_path_po
 //		fprintf(plot, "%lf %lf green\n", nearest_obstacle.x, nearest_obstacle.y);
 
 		double distance_in_map_coordinates = dist(path_point_in_map_coords, nearest_obstacle);
-		double distance = distance_in_map_coordinates * GlobalState::localize_map->config.resolution;
+		double distance = distance_in_map_coordinates * GlobalState::cost_map.config.resolution;
 		double delta = distance - min_dist;
 		if (delta < 0.0)
 			proximity_to_obstacles += delta * delta;

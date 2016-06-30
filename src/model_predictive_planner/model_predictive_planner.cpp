@@ -354,7 +354,7 @@ path_has_collision(vector<carmen_ackerman_path_point_t> path)
 		if (obstacle_avoider_pose_hit_obstacle(pose, &GlobalState::cost_map, &car_config))
 		{
 			printf("---------- HIT OBSTACLE!!!!\n");
-//			return (true);
+			return (true);
 		}
 	}
 	return (false);
@@ -564,7 +564,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 
 			TrajectoryLookupTable::TrajectoryDimensions td = get_trajectory_dimensions_from_robot_state(localizer_pose, lastOdometryVector[i], &goalPoseVector[j]);
 			TrajectoryLookupTable::TrajectoryControlParameters tcp;
-			previous_good_tcp.valid = false;
+//			previous_good_tcp.valid = false;
 			if (!get_tcp_from_td(tcp, previous_good_tcp, td))
 				continue;
 
