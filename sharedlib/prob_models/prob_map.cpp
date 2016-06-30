@@ -596,7 +596,7 @@ carmen_prob_models_update_cells_crossed_by_ray(carmen_map_t *map, sensor_paramet
 	double dx, dy, dr;
 	int step_count;
 	int nx, ny;
-	int ray_start_occupied = 0;
+//	int ray_start_occupied = 0;
 	
 //	if (sensor_data->maxed[sensor_data->ray_that_hit_the_nearest_target])
 //		return;
@@ -883,12 +883,13 @@ get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, senso
 }
 
 double
-get_log_odds_via_unexpeted_delta_range_jose(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int ray_index, int scan_index,
-		bool reduce_sensitivity)
+get_log_odds_via_unexpeted_delta_range_jose(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data,
+		int ray_index __attribute__ ((unused)), int scan_index __attribute__ ((unused)),
+		bool reduce_sensitivity __attribute__ ((unused)))
 {
 	int previous_ray_index;
 	double ray_size1, ray_size2, delta_ray, line_angle; //, expected_delta_ray_old;
-	double log_odds;
+//	double log_odds;
 
 
 	previous_ray_index = ray_index - 1;
@@ -915,10 +916,12 @@ get_log_odds_via_unexpeted_delta_range_jose(sensor_parameters_t *sensor_params, 
 	delta_ray = ray_size2 - ray_size1;
 	line_angle = atan2((sensor_data->obstacle_height[ray_index] - sensor_data->obstacle_height[previous_ray_index]), delta_ray);
 	if (abs(line_angle) > M_PI / 2)
+	{
 		if (line_angle > 0)
 			line_angle = M_PI - line_angle;
 		else
 			line_angle = -M_PI - line_angle;
+	}
 
 	double obstacle_probability = 1.0 - exp(-pow(line_angle / (M_PI/16.0),2));
 	if (line_angle < 0.000001)

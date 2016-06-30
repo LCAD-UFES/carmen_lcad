@@ -353,7 +353,7 @@ compute_obstacles_rtree(carmen_map_server_compact_cost_map_message *map)
 		int py = (GlobalState::localizer_pose->y - GlobalState::cost_map.config.y_origin) / GlobalState::cost_map.config.resolution;
 		int gx = (GlobalState::goal_pose->x - GlobalState::cost_map.config.x_origin) / GlobalState::cost_map.config.resolution;
 		int gy = (GlobalState::goal_pose->y - GlobalState::cost_map.config.y_origin) / GlobalState::cost_map.config.resolution;
-		int margin = 3.0 / GlobalState::cost_map.config.resolution;
+		int margin = 0.0 / GlobalState::cost_map.config.resolution;
 		int sqr_d = DIST_SQR(px,py,gx,gy) + margin * margin;
 		int count = 0;
 		int total = 0;
@@ -584,37 +584,16 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 
 	GlobalState::cost_map.config = message->config;
 
-	compute_obstacles_rtree(message);
+//	compute_obstacles_rtree(message);
 
 	GlobalState::cost_map_initialized = true;
 }
 
 
 static void
-map_server_compact_lane_map_message_handler(carmen_map_server_compact_lane_map_message *message)
+carmen_grid_mapping_distance_map_message_handler(carmen_grid_mapping_distance_map_message *message)
 {
-	static carmen_compact_map_t *compact_lane_map = NULL;
-
-	if (compact_lane_map == NULL)
-	{
-		carmen_grid_mapping_create_new_map(&GlobalState::lane_map, message->config.x_size, message->config.y_size, message->config.resolution);
-
-		for (int i = 0; i < GlobalState::lane_map.config.x_size * GlobalState::lane_map.config.y_size; ++i)
-			GlobalState::lane_map.complete_map[i] = 1.0;
-
-		compact_lane_map = (carmen_compact_map_t *) (calloc(1, sizeof(carmen_compact_map_t)));
-		carmen_cpy_compact_lane_message_to_compact_map(compact_lane_map, message);
-		carmen_prob_models_uncompress_compact_map(&GlobalState::lane_map, compact_lane_map);
-	}
-	else
-	{
-		carmen_prob_models_clear_carmen_map_using_compact_map(&GlobalState::lane_map, compact_lane_map, 1.0);
-		carmen_prob_models_free_compact_map(compact_lane_map);
-		carmen_cpy_compact_lane_message_to_compact_map(compact_lane_map, message);
-		carmen_prob_models_uncompress_compact_map(&GlobalState::lane_map, compact_lane_map);
-	}
-
-	GlobalState::lane_map.config = message->config;
+	GlobalState::localize_map = message;
 }
 
 
@@ -669,10 +648,6 @@ register_handlers_specific()
 			(carmen_handler_t) map_server_compact_cost_map_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_map_server_subscribe_compact_lane_map(
-			NULL, (carmen_handler_t) map_server_compact_lane_map_message_handler,
-			CARMEN_SUBSCRIBE_LATEST);
-
 //	carmen_behavior_selector_subscribe_goal_list_message(
 //			NULL,
 //			(carmen_handler_t) behaviour_selector_goal_list_message_handler,
@@ -684,6 +659,9 @@ register_handlers_specific()
 			NULL, sizeof(carmen_navigator_ackerman_set_goal_message),
 			(carmen_handler_t)navigator_ackerman_set_goal_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_grid_mapping_distance_map_subscribe_message(NULL,
+			(carmen_handler_t) carmen_grid_mapping_distance_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -728,7 +706,6 @@ read_parameters_specific(int argc, char **argv)
 	carmen_param_t optional_param_list[] = {
 			{(char *)"rrt",	(char *)"use_obstacle_avoider", 	CARMEN_PARAM_ONOFF,		&GlobalState::use_obstacle_avoider, 	1, NULL},
 
-			{(char *)"rrt",	(char *)"publish_lane_map",			CARMEN_PARAM_ONOFF,		&GlobalState::publish_lane_map,			1, NULL},
 			{(char *)"rrt",	(char *)"publish_tree",				CARMEN_PARAM_ONOFF,		&GlobalState::publish_tree,				1, NULL},
 			{(char *)"rrt",	(char *)"reuse_last_path",			CARMEN_PARAM_ONOFF,		&GlobalState::reuse_last_path,			1, NULL},
 			{(char *)"rrt",	(char *)"obstacle_cost_distance",	CARMEN_PARAM_DOUBLE,	&GlobalState::obstacle_cost_distance,	1, NULL}

@@ -53,10 +53,8 @@ public:
 
 	static bool last_path_received_is_empty;
 
-	static vector<carmen_point_t> lane_points;
-	static vector<Pose> lane_points_on_map;
-	static carmen_map_t lane_map;
 	static carmen_map_t cost_map;
+	static carmen_grid_mapping_distance_map_message *localize_map;
 	static bgi::rtree< occupied_cell, bgi::quadratic<16> > obstacles_rtree;
 	static bool cost_map_initialized;
 

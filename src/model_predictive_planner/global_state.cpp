@@ -37,9 +37,7 @@ double GlobalState::time_to_change_gears = 1.0;
 carmen_map_t GlobalState::cost_map;
 bgi::rtree< occupied_cell, bgi::quadratic<16> > GlobalState::obstacles_rtree;
 
-carmen_map_t GlobalState::lane_map = {{0, 0, 0, "", NULL, 0, 0}, NULL, NULL};
-vector<carmen_point_t> GlobalState::lane_points;
-vector<Pose> GlobalState::lane_points_on_map;
+carmen_grid_mapping_distance_map_message *GlobalState::localize_map = NULL;
 
 bool GlobalState::cost_map_initialized 	= false;
 
@@ -54,7 +52,6 @@ int GlobalState::current_algorithm = CARMEN_BEHAVIOR_SELECTOR_RRT;
 int GlobalState::behavior_selector_state = BEHAVIOR_SELECTOR_FOLLOWING_LANE;
 
 int GlobalState::publish_tree = 1;
-int GlobalState::publish_lane_map = 0;
 int GlobalState::reuse_last_path = 0;
 
 double GlobalState::obstacle_cost_distance = 1.5; // distancia para zero custo (os custos sao lineares com a distancia para obstaculos)

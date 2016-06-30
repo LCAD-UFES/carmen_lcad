@@ -353,8 +353,8 @@ path_has_collision(vector<carmen_ackerman_path_point_t> path)
 		pose.theta = path[j].theta;
 		if (obstacle_avoider_pose_hit_obstacle(pose, &GlobalState::cost_map, &car_config))
 		{
-			//printf("---------- HIT OBSTACLE!!!!\n");
-			return (true);
+			printf("---------- HIT OBSTACLE!!!!\n");
+//			return (true);
 		}
 	}
 	return (false);
@@ -545,6 +545,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 
 	otcps.resize(paths.size());
 	bool has_valid_path = false;
+	double target_v_orig = target_v;
 	//	#pragma omp parallel num_threads(5)
 	//	{
 	for (unsigned int i = 0; i < lastOdometryVector.size(); i++)
@@ -556,10 +557,14 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 			if (j == 0)
 				use_lane = true;
 			else
+			{
 				use_lane = false;
+				target_v = target_v_orig / 2.0;
+			}
 
 			TrajectoryLookupTable::TrajectoryDimensions td = get_trajectory_dimensions_from_robot_state(localizer_pose, lastOdometryVector[i], &goalPoseVector[j]);
 			TrajectoryLookupTable::TrajectoryControlParameters tcp;
+			previous_good_tcp.valid = false;
 			if (!get_tcp_from_td(tcp, previous_good_tcp, td))
 				continue;
 
@@ -624,7 +629,7 @@ ModelPredictive::compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Com
 
 	vector<int> magicSignals = {0, 1, -1, 2, -2, 3, -3,  4, -4,  5, -5};
 	// @@@ Tranformar os dois loops abaixo em uma funcao -> compute_alternative_path_options()
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 1; i++)
 	{
 		Command newOdometry = last_odometry;
 		newOdometry.phi +=  0.15 * (double) magicSignals[i]; //(0.5 / (newOdometry.v + 1))

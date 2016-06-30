@@ -228,6 +228,48 @@ compute_proximity_to_obstacles(vector<carmen_ackerman_path_point_t> path)
 
 
 double
+compute_proximity_to_obstacles_using_localize_map(vector<carmen_ackerman_path_point_t> path)
+{
+//	FILE *plot;
+//
+//	plot = fopen("Data.csv", "w");
+
+	double proximity_to_obstacles = 0.0;
+	double min_dist = 3.2 / 2.0; // metade da largura do carro
+	double x_gpos = GlobalState::localizer_pose->x - GlobalState::localize_map->config.x_origin;
+	double y_gpos = GlobalState::localizer_pose->y - GlobalState::localize_map->config.y_origin;
+	double coss = cos(GlobalState::localizer_pose->theta);
+	double sine = sin(GlobalState::localizer_pose->theta);
+	double L_2 = 0;//GlobalState::robot_config.distance_between_front_and_rear_axles / 2.0;
+	for (unsigned int i = 0; i < path.size(); i += 1)
+	{
+		// Move path point to map coordinates
+		carmen_ackerman_path_point_t path_point_in_map_coords;
+		double x = path[i].x;
+		double y = path[i].y;
+		path_point_in_map_coords.x = (x_gpos + x * coss - y * sine + L_2 * coss) / GlobalState::localize_map->config.resolution; // no meio do carro
+		path_point_in_map_coords.y = (y_gpos + x * sine + y * coss + L_2 * sine) / GlobalState::localize_map->config.resolution; // no meio do carro
+
+		carmen_ackerman_path_point_t nearest_obstacle;
+		int index = (int) round(path_point_in_map_coords.y) + GlobalState::localize_map->config.y_size * (int) round(path_point_in_map_coords.x);
+		nearest_obstacle.x = (double) GlobalState::localize_map->complete_x_offset[index] + path_point_in_map_coords.x;
+		nearest_obstacle.y = (double) GlobalState::localize_map->complete_y_offset[index] + path_point_in_map_coords.y;
+
+//		fprintf(plot, "%lf %lf red\n", path_point_in_map_coords.x, path_point_in_map_coords.y);
+//		fprintf(plot, "%lf %lf green\n", nearest_obstacle.x, nearest_obstacle.y);
+
+		double distance_in_map_coordinates = dist(path_point_in_map_coords, nearest_obstacle);
+		double distance = distance_in_map_coordinates * GlobalState::localize_map->config.resolution;
+		double delta = distance - min_dist;
+		if (delta < 0.0)
+			proximity_to_obstacles += delta * delta;
+	}
+//	fclose(plot);
+	return (proximity_to_obstacles);
+}
+
+
+double
 my_f(const gsl_vector *x, void *params)
 {
 	ObjectiveFunctionParams *my_params = (ObjectiveFunctionParams *) params;
@@ -327,16 +369,19 @@ my_g(const gsl_vector *x, void *params)
 	double proximity_to_obstacles = 0.0;
 //	if (use_obstacles && !GlobalState::obstacles_rtree.empty())
 //		proximity_to_obstacles = compute_proximity_to_obstacles(path);
+	if (use_obstacles && GlobalState::localize_map != NULL)
+		proximity_to_obstacles = compute_proximity_to_obstacles_using_localize_map(path);
 
+//	printf("p = %lf\n", proximity_to_obstacles);
 	my_params->tcp_seed->vf = tcp.vf;
 	my_params->tcp_seed->sf = tcp.sf;
 
 	double result = sqrt(
 			1.0 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
-			5.0 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
-			5.0 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
+			15.0 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
+			15.0 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
 			1.5 * path_to_lane_distance + // já é quandrática
-			0.2 * proximity_to_obstacles); // já é quandrática
+			0.5 * proximity_to_obstacles); // já é quandrática
 	return (result);
 }
 
