@@ -242,7 +242,7 @@ publish_navigator_ackerman_status_message()
 
 
 void
-publish_status_message(Tree tree)
+publish_plan_tree_for_navigator_gui(Tree tree)
 {
 	if (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT)
 		if (GlobalState::publish_tree)
@@ -481,9 +481,14 @@ build_and_follow_path()
 //			else
 //				publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi);
 //		}
-		publish_status_message(tree);
+		publish_plan_tree_for_navigator_gui(tree);
 		publish_navigator_ackerman_status_message();
 	}
+//	else
+//	{
+//		if (!GlobalState::goal_pose)
+//			printf("NO GOAL!!!\n");
+//	}
 }
 
 
@@ -501,7 +506,7 @@ build_and_follow_path_old()
 		else
 			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi);
 
-		publish_status_message(tree);
+		publish_plan_tree_for_navigator_gui(tree);
 		publish_navigator_ackerman_status_message();
 	}
 }
@@ -628,6 +633,8 @@ behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_
 		GlobalState::robot_config.max_vel = 1.0;
 	else
 		GlobalState::robot_config.max_vel = fmin(msg->goal_list->v, GlobalState::param_max_vel);
+
+//	printf("vgoal = %lf\n", GlobalState::robot_config.max_vel);
 
 	GlobalState::set_goal_pose(goal_pose);
 }

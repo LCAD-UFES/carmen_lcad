@@ -710,7 +710,7 @@ mapper_publish_distance_map(double timestamp)
 
 
 void
-mapper_publish_cost_map(double timestamp)
+mapper_publish_cost_and_distance_maps(double timestamp)
 {
 	carmen_compact_map_t compacted_cost_map;
 
@@ -719,6 +719,7 @@ mapper_publish_cost_map(double timestamp)
 
 	if (compacted_cost_map.number_of_known_points_on_the_map > 0)
 	{
+		mapper_publish_distance_map(timestamp);
 		carmen_map_server_publish_compact_cost_map_message(&compacted_cost_map,	timestamp);
 		carmen_prob_models_clear_carmen_map_using_compact_map(&cost_map, &compacted_cost_map, 0.0);
 		carmen_prob_models_free_compact_map(&compacted_cost_map);
@@ -744,8 +745,7 @@ mapper_publish_map(double timestamp)
 
 	carmen_grid_mapping_publish_message(&map, timestamp);
 
-	mapper_publish_cost_map(timestamp);
-	mapper_publish_distance_map(timestamp);
+	mapper_publish_cost_and_distance_maps(timestamp);
 }
 
 void
