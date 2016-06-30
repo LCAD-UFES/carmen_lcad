@@ -105,12 +105,39 @@ publish_goal_list()
 	double distance_to_act_on_annotation = (fabs(current_robot_pose_v_and_phi.v) < 2.0)? 10.0: fabs(current_robot_pose_v_and_phi.v) * 6.5;
 	// Map annotations handling
 	double distance_to_annotation = DIST2D(last_rddf_annotation_message.annotation_point, get_robot_pose());
-	if (((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
-		 (last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)) &&
-		(distance_to_annotation < distance_to_act_on_annotation) && annotation_is_forward(get_robot_pose(), last_rddf_annotation_message.annotation_point))
-		goal_list_msg.goal_list->v = 2.0;
+	if ((distance_to_annotation < distance_to_act_on_annotation) &&
+		annotation_is_forward(get_robot_pose(), last_rddf_annotation_message.annotation_point))
+	{
+		if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_0))
+			goal_list_msg.goal_list->v = 0.0;
+		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
+			(last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BARRIER))
+			goal_list_msg.goal_list->v = carmen_fmin(2.0, goal_list_msg.goal_list->v);
+		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_5))
+			goal_list_msg.goal_list->v = carmen_fmin(5.0 / 3.6, goal_list_msg.goal_list->v);
+		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_10))
+			goal_list_msg.goal_list->v = carmen_fmin(10.0 / 3.6, goal_list_msg.goal_list->v);
+		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_15))
+			goal_list_msg.goal_list->v = carmen_fmin(15.0 / 3.6, goal_list_msg.goal_list->v);
+		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_20))
+			goal_list_msg.goal_list->v = carmen_fmin(20.0 / 3.6, goal_list_msg.goal_list->v);
+		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_30))
+			goal_list_msg.goal_list->v = carmen_fmin(30.0 / 3.6, goal_list_msg.goal_list->v);
+		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_40))
+			goal_list_msg.goal_list->v = carmen_fmin(40.0 / 3.6, goal_list_msg.goal_list->v);
+		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_60))
+			goal_list_msg.goal_list->v = carmen_fmin(60.0 / 3.6, goal_list_msg.goal_list->v);
+	}
 	else if (obstacle_avoider_active_recently)
-		goal_list_msg.goal_list->v = 2.5;
+		goal_list_msg.goal_list->v = carmen_fmin(2.5, goal_list_msg.goal_list->v);
 
 	if (goal_list_msg.size > 0)
 	{
@@ -429,7 +456,7 @@ read_parameters(int argc, char **argv)
 	carmen_param_allow_unfound_variables(1);
 	carmen_param_t optional_param_list[] =
 	{
-			{"commandline", "activate_tracking", CARMEN_PARAM_ONOFF, &activate_tracking, 0, NULL}
+			{(char *) "commandline", (char *) "activate_tracking", CARMEN_PARAM_ONOFF, &activate_tracking, 0, NULL}
 	};
 	carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
 

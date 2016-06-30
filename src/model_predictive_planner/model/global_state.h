@@ -20,6 +20,8 @@
 #include <boost/geometry/geometries/point.hpp>
 #include <boost/geometry/index/rtree.hpp>
 
+#include "../kdtree/KDTree2D.hpp"
+
 namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
 typedef bg::model::point<double, 2, bg::cs::cartesian> occupied_cell;
@@ -53,12 +55,12 @@ public:
 
 	static bool last_path_received_is_empty;
 
-	static vector<carmen_point_t> lane_points;
-	static vector<Pose> lane_points_on_map;
-	static carmen_map_t lane_map;
 	static carmen_map_t cost_map;
+	static carmen_grid_mapping_distance_map_message *localize_map;
 	static bgi::rtree< occupied_cell, bgi::quadratic<16> > obstacles_rtree;
 	static bool cost_map_initialized;
+	static KDTree2D obstacles_kdtree;
+	static vector<vector<cell_coords_t>> cell_mask;
 
 	static bool	  following_path; // true if the path is being followed
 

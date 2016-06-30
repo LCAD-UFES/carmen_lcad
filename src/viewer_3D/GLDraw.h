@@ -40,7 +40,7 @@ void draw_gps_orientation (double gps_orientation, int gps_heading_valid, carmen
 void draw_orientation_instruments(carmen_orientation_3D_t orientation, double r, double g, double b);
 void draw_gps_fault_signal(void);
 void draw_map_image(carmen_vector_3D_t gps_position_at_turn_on, carmen_vector_3D_t map_center, double square_size, IplImage *img);
-void draw_tracking_moving_objects(moving_objects_tracking_t  *moving_objects_tracking, int current_num_point_clouds, carmen_vector_3D_t offset);
+void draw_tracking_moving_objects(moving_objects_tracking_t  *moving_objects_tracking, int current_num_point_clouds, carmen_vector_3D_t offset, int draw_particles_flag);
 
 #ifdef __cplusplus
 }

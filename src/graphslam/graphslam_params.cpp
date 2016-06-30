@@ -415,7 +415,7 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 	p_map_params->grid_sy = p_map_params->height /  p_map_params->grid_res;
 	p_map_params->grid_size = p_map_params->grid_sx * p_map_params->grid_sy;
 
-	localize_ackerman_velodyne_laser_read_parameters(argc, argv);
+	//localize_ackerman_velodyne_laser_read_parameters(argc, argv);
 
 	carmen_param_allow_unfound_variables(1);
 
@@ -521,7 +521,7 @@ read_parameters_without_mapper(int argc, char **argv, carmen_localize_ackerman_p
 	sensor_board_1_to_car_matrix = create_rotation_matrix(sensor_board_1_pose.orientation);
 	get_alive_sensors(argc, argv);
 	get_sensors_param(argc, argv);
-	localize_ackerman_velodyne_laser_read_parameters(argc, argv);
+	//localize_ackerman_velodyne_laser_read_parameters(argc, argv);
 	carmen_param_allow_unfound_variables(1);
 
 	carmen_param_t param_optional_list[] =

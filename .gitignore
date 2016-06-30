@@ -77,6 +77,7 @@ bin/navigator_gui
 bin/navigator_gui2
 bin/navigator_spline
 bin/obstacle_avoider
+bin/obstacle_avoider_test
 bin/pantilt
 bin/pantilt-test
 bin/param_daemon
@@ -184,6 +185,7 @@ src/graphslam/multimap_matching
 src/graphslam/multimap_optimization
 src/graphslam/run_icp
 src/graphslam/run_icp_for_loop_closure
+src/obstacle_avoider/obstacle_avoider_test
 src/odometry_calibration/calibrate_bias
 src/odometry_calibration/debug.txt
 src/odometry_calibration/grab_data_for_calibration

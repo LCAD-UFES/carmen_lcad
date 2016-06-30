@@ -8,10 +8,11 @@
 #ifndef _GRAPHSLAM_PARAMS_H_
 #define _GRAPHSLAM_PARAMS_H_
 
+	#define NUM_VELODYNE_POINT_CLOUDS 5
 	#include <carmen/carmen.h>
 	#include <prob_map.h>
 	#include <carmen/stereo_velodyne.h>
-	#include <carmen/localize_ackerman_velodyne.h>
+	//#include <carmen/localize_ackerman_velodyne.h>
 
 	void init_velodyne_points(spherical_point_cloud **velodyne_points_out, unsigned char ***intesity);
 	void get_alive_sensors(int argc, char **argv);
