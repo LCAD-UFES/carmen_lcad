@@ -838,13 +838,19 @@ find_nearest_point_around_point_found(carmen_pose_index index, long position, do
 
 
 long
-find_timestamp_index_position_with_full_index_search(double x, double y, double yaw, int test_orientation)
+find_timestamp_index_position_with_full_index_search(double x, double y, double yaw, int test_orientation, double timestamp_ignore_neighborhood = 0)
 {
 	int i, min_dist_pos = 0;
 	double dist, min_dist = -1;
 
 	for(i = 0; i < carmen_index_ordered_by_timestamp.size(); i++)
 	{
+		// esse if eh para tratar os fechamentos de loop. se estamos no fim do rddf, buscamos a pose mais proxima 
+		// com uma diferenca temporal maior que 3 minutos para evitar que poses proximas a posicao atual sejam retornados.
+		if (timestamp_ignore_neighborhood > 0)
+			if (fabs(timestamp_ignore_neighborhood - carmen_index_ordered_by_timestamp[i].timestamp) < 3 * 60)
+				continue;
+			
 		dist = sqrt(pow(x - carmen_index_ordered_by_timestamp[i].x, 2) + pow(y - carmen_index_ordered_by_timestamp[i].y, 2));
 
 		if ((dist < min_dist) || (min_dist == -1))
@@ -937,13 +943,13 @@ fill_in_backward_waypoints_array(long timestamp_index_position, carmen_ackerman_
 
 		dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
 
-		if (dist > 1.0) // get waypoints 1 meter apart // @@@ Alberto: este parametro devia estar no carmen ini
-		{
+		//if (dist > 1.0) // get waypoints 1 meter apart // @@@ Alberto: este parametro devia estar no carmen ini
+		//{
 			last_pose = current_pose;
 			poses_back[num_poses_aquired] = current_pose;
 
 			num_poses_aquired++;
-		}
+		//}
 
 		i++;
 	}
@@ -979,24 +985,36 @@ get_more_more_poses_from_begining(int num_poses_desired, carmen_ackerman_traj_po
 	carmen_timestamp_index_element index_element;
 
 	num_poses_aquired = 0;
-	i = 0;
+	//i = 0;
+	i = find_timestamp_index_position_with_full_index_search(
+		carmen_index_ordered_by_timestamp[carmen_index_ordered_by_timestamp.size() - 1].x, 
+		carmen_index_ordered_by_timestamp[carmen_index_ordered_by_timestamp.size() - 1].y, 
+		carmen_index_ordered_by_timestamp[carmen_index_ordered_by_timestamp.size() - 1].yaw, 
+		1, 
+		carmen_index_ordered_by_timestamp[carmen_index_ordered_by_timestamp.size() - 1].timestamp);
+		
 	last_pose = last_pose_acquired_at_end_of_index;
 
+	dist = sqrt(pow(carmen_index_ordered_by_timestamp[i].x - last_pose.x, 2.0) + pow(carmen_index_ordered_by_timestamp[i].y - last_pose.y, 2.0));
+
+	if (dist >= 7.0) // @Filipe: Colocar no carmen.ini 
+		return 0;
+	
 	while ((num_poses_aquired < num_poses_desired) && (i < carmen_index_ordered_by_timestamp.size()))
 	{
 		index_element = carmen_index_ordered_by_timestamp[i];
 		current_pose = create_ackerman_traj_point_struct (index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.yaw);
 
-		dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
+		//dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
 
-		if (dist > 1.0) // get waypoints 1 meter apart // @@@ Alberto: este parametro devia estar no carmen ini
-		{
+		//if (dist > 1.0) // get waypoints 1 meter apart // @@@ Alberto: este parametro devia estar no carmen ini
+		//{
 			last_pose = current_pose;
 			poses_ahead[num_poses_acquired_before_end_of_index + num_poses_aquired] = current_pose;
 			annotations[num_poses_acquired_before_end_of_index + num_poses_aquired] = index_element.anottation;
 
 			num_poses_aquired++;
-		}
+		//}
 
 		i++;
 	}
@@ -1019,7 +1037,7 @@ carmen_search_next_poses_index(double x, double y, double yaw, double timestamp 
 	(*num_poses_back) = fill_in_backward_waypoints_array(timestamp_index_position, poses_back, num_poses_desired);
 
 	if (perform_loop)
-		if (carmen_rddf_has_closed_loop() && (num_poses_aquired < num_poses_desired))
+		if (/*carmen_rddf_has_closed_loop() && */ (num_poses_aquired < num_poses_desired))
 			num_poses_aquired += get_more_more_poses_from_begining(num_poses_desired - num_poses_aquired, poses_ahead, last_pose_acquired, num_poses_aquired, annotations);
 
 	return num_poses_aquired;
@@ -1047,13 +1065,13 @@ fill_in_waypoints_around_point(long timestamp_index_position, carmen_ackerman_tr
 
 		dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
 
-		if (dist > 1.0)
-		{
+		//if (dist > 1.0)
+		//{
 			last_pose = current_pose;
 			poses_ahead[num_poses_aquired] = current_pose;
 
 			num_poses_aquired++;
-		}
+		//}
 
 		i--;
 	}
@@ -1068,13 +1086,13 @@ fill_in_waypoints_around_point(long timestamp_index_position, carmen_ackerman_tr
 
 		dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
 
-		if (dist > 1.0)
-		{
+		//if (dist > 1.0)
+		//{
 			last_pose = current_pose;
 			poses_ahead[num_poses_aquired] = current_pose;
 
 			num_poses_aquired++;
-		}
+		//}
 
 		i++;
 	}
