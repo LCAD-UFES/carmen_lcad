@@ -25,6 +25,7 @@
 #include "publisher_util.h"
 #include "model_predictive_planner.h"
 
+#define DIST_SQR(x1,y1,x2,y2) ((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2))
 
 carmen_rddf_annotation_message last_rddf_annotation_message;
 Tree tree; //tree rooted on robot
@@ -332,14 +333,14 @@ void
 stop()
 {
 	GlobalState::following_path = false;
-	publish_model_predictive_planner_single_motion_command(0.0, GlobalState::last_odometry.phi);
+	publish_model_predictive_planner_single_motion_command(0.0, 0.0);
 }
 
 
 void
 compute_obstacles_rtree(carmen_map_server_compact_cost_map_message *map)
 {
-#define DIST_SQR(x1,y1,x2,y2) ((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2))
+
 //	static double p_x_o = 0.0;
 //	static double p_y_o = 0.0;
 
@@ -380,6 +381,49 @@ compute_obstacles_rtree(carmen_map_server_compact_cost_map_message *map)
 	}
 }
 
+void
+compute_obstacles_kdtree(carmen_map_server_compact_cost_map_message *map)
+{
+
+	//	static double p_x_o = 0.0;
+	//	static double p_y_o = 0.0;
+
+	std::vector<Point2D> obstacles;
+	Point2D point;
+
+	if (GlobalState::localizer_pose && GlobalState::goal_pose)// &&
+		//		p_x_o != GlobalState::cost_map.config.x_origin &&
+		//		p_y_o != GlobalState::cost_map.config.y_origin)
+	{
+		int px = (GlobalState::localizer_pose->x - GlobalState::cost_map.config.x_origin) / GlobalState::cost_map.config.resolution;
+		int py = (GlobalState::localizer_pose->y - GlobalState::cost_map.config.y_origin) / GlobalState::cost_map.config.resolution;
+		int gx = (GlobalState::goal_pose->x - GlobalState::cost_map.config.x_origin) / GlobalState::cost_map.config.resolution;
+		int gy = (GlobalState::goal_pose->y - GlobalState::cost_map.config.y_origin) / GlobalState::cost_map.config.resolution;
+		int margin = 3.0 / GlobalState::cost_map.config.resolution;
+		int sqr_d = DIST_SQR(px,py,gx,gy) + margin * margin;
+		int count = 0;
+		int total = 0;
+		for (int i = 0; i < map->size; i += 1)
+		{
+			if (map->value[i] > 0.5)
+			{
+				if ((DIST_SQR(px,py,map->coord_x[i],map->coord_y[i]) < sqr_d) &&
+						(DIST_SQR(gx,gy,map->coord_x[i],map->coord_y[i]) < sqr_d))
+				{
+					point.position[0] = (double) map->coord_x[i] * GlobalState::cost_map.config.resolution;
+					point.position[1] = (double) map->coord_y[i] * GlobalState::cost_map.config.resolution;
+
+					obstacles.push_back(point);
+					count++;
+				}
+				total++;
+			}
+
+		}
+			// insert the obstacles points, quick-select approach
+		GlobalState::obstacles_kdtree.rebuild(obstacles);
+	}
+}
 
 list<RRT_Path_Edge>
 build_path_follower_path(vector<carmen_ackerman_path_point_t> path)
@@ -459,6 +503,43 @@ build_and_follow_path_old()
 
 		publish_status_message(tree);
 		publish_navigator_ackerman_status_message();
+	}
+}
+
+
+void
+create_map_obstacle_mask()
+{
+	//limites de x = comprimento/celula e y = lagura / tamanho_celula
+	// rotacao xnew = R*cos
+	//  newPoint.x = Math.cos(convertDegreesToRadians(angle))* lenght;
+	//newPoint.y = Math.sin(convertDegreesToRadians(angle))* lenght;
+
+	int topLimit = ceil(((GlobalState::robot_config.distance_between_rear_wheels) / 2) / GlobalState::cost_map.config.resolution);
+	int bottomLimit = -1 * topLimit;
+	int rigthLimit = ceil((GlobalState::robot_config.distance_between_front_and_rear_axles + GlobalState::robot_config.distance_between_front_car_and_front_wheels) / GlobalState::cost_map.config.resolution);
+	int leftLimit = -1 * GlobalState::robot_config.distance_between_rear_car_and_rear_wheels / GlobalState::cost_map.config.resolution;
+
+	int angle_max = 1;
+	for (int angulo = 0 ; angulo < angle_max; angulo++)
+	{
+		vector<cell_coords_t> points;
+//		max_x = calculo do angulo;
+//		max_y = calculo do angulo;
+	    for (int j = bottomLimit; j <= topLimit; j++)
+	    {
+	        for (int i = leftLimit; i <= rigthLimit; i++)
+	        {
+	        	cell_coords_t point;
+	        	point.x = (i * cos(angulo)) - (sin(angulo) * j);
+	        	point.y = j;
+	        	points.push_back(point);
+//	        	printf("%d,%d ", i,j);
+			}
+//	    	printf("\n");
+		}
+
+	    GlobalState::cell_mask.push_back(points);
 	}
 }
 
@@ -585,7 +666,10 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 	GlobalState::cost_map.config = message->config;
 
 //	compute_obstacles_rtree(message);
+//	compute_obstacles_kdtree(message);
 
+//	if(!GlobalState::cost_map_initialized)
+//		create_map_obstacle_mask();
 	GlobalState::cost_map_initialized = true;
 }
 

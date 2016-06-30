@@ -561,10 +561,10 @@ carmen_prob_models_update_intensity_of_cells_hit_by_rays_for_calibration(carmen_
 
 
 void
-carmen_prob_models_calc_mean_and_variance_remission_map(carmen_map_t *mean_remission_map, carmen_map_t *variance_remission_map, carmen_map_t *sum_remission_map, carmen_map_t *sum_sqr_remission_map, carmen_map_t *count_remission_map)
+carmen_prob_models_calc_mean_and_variance_remission_map(carmen_map_t *mean_remission_map, carmen_map_t *variance_remission_map __attribute__ ((unused)), carmen_map_t *sum_remission_map, carmen_map_t *sum_sqr_remission_map __attribute__ ((unused)), carmen_map_t *count_remission_map)
 {
 	int i = 0;
-	double mean = 0.0, variance = 0.0;
+	double mean = 0.0;// variance = 0.0;
 
 	mean_remission_map->config = sum_remission_map->config;
 	variance_remission_map->config = sum_remission_map->config;
@@ -576,13 +576,13 @@ carmen_prob_models_calc_mean_and_variance_remission_map(carmen_map_t *mean_remis
 			mean = sum_remission_map->complete_map[i] / count_remission_map->complete_map[i];
 			mean_remission_map->complete_map[i] = mean;
 
-			variance = (sum_sqr_remission_map->complete_map[i] / count_remission_map->complete_map[i]) - (mean * mean);
-			variance_remission_map->complete_map[i] = variance;
+		//	variance = (sum_sqr_remission_map->complete_map[i] / count_remission_map->complete_map[i]) - (mean * mean);
+			//variance_remission_map->complete_map[i] = variance;
 		}
 		else
 		{
 			mean_remission_map->complete_map[i] = -1.0;
-			variance_remission_map->complete_map[i] = -1.0;
+			//variance_remission_map->complete_map[i] = -1.0;
 		}
 	}
 }
@@ -890,7 +890,6 @@ get_log_odds_via_unexpeted_delta_range_jose(sensor_parameters_t *sensor_params, 
 	int previous_ray_index;
 	double ray_size1, ray_size2, delta_ray, line_angle; //, expected_delta_ray_old;
 //	double log_odds;
-
 
 	previous_ray_index = ray_index - 1;
 #if (DISCOUNT_RAY_19 == 1)

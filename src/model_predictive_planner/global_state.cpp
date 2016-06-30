@@ -38,6 +38,8 @@ carmen_map_t GlobalState::cost_map;
 bgi::rtree< occupied_cell, bgi::quadratic<16> > GlobalState::obstacles_rtree;
 
 carmen_grid_mapping_distance_map_message *GlobalState::localize_map = NULL;
+KDTree2D GlobalState::obstacles_kdtree;
+vector<vector<cell_coords_t>> GlobalState::cell_mask;
 
 bool GlobalState::cost_map_initialized 	= false;
 

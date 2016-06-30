@@ -72,6 +72,66 @@ move_path_to_current_robot_pose(vector<carmen_ackerman_path_point_t> &path, Pose
 
 
 double
+compute_distance_by_mask(carmen_ackerman_path_point_t path_point_in_map_coords, int theta)
+{
+	double min_distance = DBL_MAX;
+	double distance;
+
+	for(unsigned int i = 0; i < GlobalState::cell_mask.at(theta).size(); i++)
+	{
+		double mask_to_map_x = path_point_in_map_coords.x + GlobalState::cell_mask[theta].at(i).x;
+		double mask_to_map_y = path_point_in_map_coords.y + GlobalState::cell_mask[theta].at(i).y;
+
+		if ((round(mask_to_map_x) >= 0.0 && round(mask_to_map_y) < GlobalState::cost_map.config.x_size &&
+				round(mask_to_map_y) >= 0.0 && round(mask_to_map_y) < GlobalState::cost_map.config.y_size))
+		{
+			double value = GlobalState::cost_map.map[(int) round(mask_to_map_x)][(int) round(mask_to_map_y)];
+
+			if(value > 0.5)
+			{
+				distance = sqrt(pow(path_point_in_map_coords.x - mask_to_map_x, 2) + (pow(path_point_in_map_coords.y - mask_to_map_y, 2)));
+
+				if(min_distance > distance)
+					min_distance = distance;
+			}
+
+		}
+	}
+
+//	int x = carmen_grid_mapping_save_map("map.map", &GlobalState::cost_map);
+//	if(x)
+//		printf("Mapa criado");
+	return min_distance;
+}
+
+
+double
+compute_proximity_to_obstacles_mask(vector<carmen_ackerman_path_point_t> path)
+{
+	double proximity_to_obstacles = 0.0;
+	double min_dist = 2.5 / 2.0; // metade da largura do carro
+//    int k = 1;
+    for (unsigned int i = 0; i < path.size(); i += 4)
+    {
+    	// Move path point to map coordinates
+    	carmen_ackerman_path_point_t path_point_in_map_coords;
+    	double x_gpos = GlobalState::localizer_pose->x - GlobalState::cost_map.config.x_origin;
+    	double y_gpos = GlobalState::localizer_pose->y - GlobalState::cost_map.config.y_origin;
+    	path_point_in_map_coords.x = x_gpos + path[i].x * cos(GlobalState::localizer_pose->theta) - path[i].y * sin(GlobalState::localizer_pose->theta);
+    	path_point_in_map_coords.y = y_gpos + path[i].x * sin(GlobalState::localizer_pose->theta) + path[i].y * cos(GlobalState::localizer_pose->theta);
+
+    	double distance = compute_distance_by_mask(path_point_in_map_coords, 0);
+	    double delta = distance - min_dist;
+	    if (delta < 0.0)
+	    	proximity_to_obstacles += delta*delta;
+    }
+//    printf("FOI!");
+//    getchar();
+    return (proximity_to_obstacles);
+}
+
+
+double
 compute_abstacles_cost(vector<carmen_ackerman_path_point_t> path)
 {
 	double max_obstacles_cost = 0.0;
@@ -217,13 +277,55 @@ compute_proximity_to_obstacles(vector<carmen_ackerman_path_point_t> path)
 		carmen_ackerman_path_point_t nearest_obstacle;
 		nearest_obstacle.x = returned_occupied_cells[0].get<0>();
 		nearest_obstacle.y = returned_occupied_cells[0].get<1>();
-
+//		printf("Coordenada no do robô x: %lf y: %lf \n", path_point_in_map_coords.x, path_point_in_map_coords.y);
+//		getchar();
 		double distance = dist(path_point_in_map_coords, nearest_obstacle);
 		double delta = distance - min_dist;
 		if (delta < 0.0)
 			proximity_to_obstacles += delta * delta;
 	}
 	return (proximity_to_obstacles);
+}
+
+
+//KD-TREE
+double
+compute_proximity_to_obstacles_kdtree(vector<carmen_ackerman_path_point_t> path)
+{
+	double proximity_to_obstacles = 0.0;
+	double min_dist = 2.2 / 2.0; // metade da largura do carro
+	unsigned int i;
+
+	for (i = 0; i < path.size(); i += 2)
+	{
+//		double x = GlobalState::localizer_pose->x + path[i].x * cos(GlobalState::localizer_pose->theta) - path[i].y * sin(GlobalState::localizer_pose->theta);
+//		double y = GlobalState::localizer_pose->y + path[i].x * sin(GlobalState::localizer_pose->theta) + path[i].y * cos(GlobalState::localizer_pose->theta);
+//		Point2D path_point;
+//		path_point.position[0] = x - GlobalState::cost_map.config.x_origin;
+//		path_point.position[1] = y - GlobalState::cost_map.config.y_origin;
+
+		// Move path point to map coordinates
+		Point2D path_point_in_map_coords;
+		double x_gpos = GlobalState::localizer_pose->x - GlobalState::cost_map.config.x_origin;
+		double y_gpos = GlobalState::localizer_pose->y - GlobalState::cost_map.config.y_origin;
+		double coss = cos(GlobalState::localizer_pose->theta);
+		double sine = sin(GlobalState::localizer_pose->theta);
+		double L_2 = GlobalState::robot_config.distance_between_front_and_rear_axles / 2.0;
+		path_point_in_map_coords.position[0] = x_gpos + path[i].x * coss - path[i].y * sine + L_2 * coss; // no meio do carro
+		path_point_in_map_coords.position[1] = y_gpos + path[i].x * sine + path[i].y * coss + L_2 * sine; // no meio do carro
+
+		//Get the nearest point
+		Point2D nearest_obstacle = GlobalState::obstacles_kdtree.nearest(path_point_in_map_coords);
+
+		double distance = std::sqrt(pow(nearest_obstacle.position[0] - path_point_in_map_coords.position[0], 2) + pow(nearest_obstacle.position[1] - path_point_in_map_coords.position[1], 2));
+
+		double delta = distance - min_dist;
+
+		if (delta < 0.0)
+			proximity_to_obstacles += delta * delta;
+	}
+	return (proximity_to_obstacles);
+
 }
 
 
@@ -367,12 +469,14 @@ my_g(const gsl_vector *x, void *params)
 	}
 
 	double proximity_to_obstacles = 0.0;
+
 //	if (use_obstacles && !GlobalState::obstacles_rtree.empty())
 //		proximity_to_obstacles = compute_proximity_to_obstacles(path);
 	if (use_obstacles && GlobalState::localize_map != NULL)
 		proximity_to_obstacles = compute_proximity_to_obstacles_using_localize_map(path);
+//	if (use_obstacles && !GlobalState::obstacles_kdtree.empty())
+//		proximity_to_obstacles = compute_proximity_to_obstacles_kdtree(path);
 
-//	printf("p = %lf\n", proximity_to_obstacles);
 	my_params->tcp_seed->vf = tcp.vf;
 	my_params->tcp_seed->sf = tcp.sf;
 

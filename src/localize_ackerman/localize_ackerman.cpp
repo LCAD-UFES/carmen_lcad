@@ -523,8 +523,8 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 
 	//localalize_using_map_velodyne_partial_scan(velodyne_message);
 
-	if (binary_map.map_size == 0)
-		return;
+	//if (binary_map.map_size == 0)
+		//return;
 
 	carmen_localize_ackerman_run_with_velodyne_prediction(filter, &base_ackerman_odometry_vector[odometry_index],
 				&fused_odometry_vector[fused_odometry_index], use_velocity_prediction,
@@ -1284,6 +1284,7 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 			{(char *)"localize_ackerman", (char*)"de_mutation_rate", CARMEN_PARAM_DOUBLE, &param->de_mutation_rate, 0, NULL},
 			{(char *)"localize_ackerman", (char*)"de_num_iteration", CARMEN_PARAM_INT, &param->de_num_iteration, 0, NULL},
 			{(char *)"localize_ackerman", (char*)"swarm_num_iteration", CARMEN_PARAM_INT, &param->swarm_num_iteration, 0, NULL},
+			{(char *)"localize_ackerman", (char*)"jump_size", CARMEN_PARAM_INT, &param->jump_size, 0, NULL},
 
 			{(char *)"mapper", (char*)"map_log_odds_max", CARMEN_PARAM_INT, &p_map_params->log_odds_max, 0, NULL},
 			{(char *)"mapper", (char*)"map_log_odds_min", CARMEN_PARAM_INT, &p_map_params->log_odds_min, 0, NULL},
