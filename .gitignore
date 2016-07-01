@@ -3,6 +3,7 @@
 Makefile.depend
 *.*~
 *~
+*complete_map.map
 .settings/org.eclipse.cdt.codan.core.prefs
 bin/debug.txt
 bin/out.txt
