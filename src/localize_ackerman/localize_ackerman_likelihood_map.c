@@ -38,7 +38,7 @@ void
 carmen_localize_ackerman_create_distance_map(carmen_localize_ackerman_map_p lmap, carmen_map_p cmap,
 		double minimum_occupied_prob)
 {
-	int x, y, i, j;
+	int x, y, i, j, border;
 	double v;
 
 	for (x = 0; x < lmap->config.x_size; x++)
@@ -53,17 +53,41 @@ carmen_localize_ackerman_create_distance_map(carmen_localize_ackerman_map_p lmap
 
 	/* Initialize the distance measurements before dynamic programming */
 	for (x = 0; x < lmap->config.x_size; x++)
-	{
 		for (y = 0; y < lmap->config.y_size; y++)
-		{
 			if (cmap->map[x][y] > minimum_occupied_prob)
 			{
-				lmap->distance[x][y] = 0.0;
-				lmap->x_offset[x][y] = 0.0;
-				lmap->y_offset[x][y] = 0.0;
+				border = 0;
+				for (i = -1; i <= 1; i++)
+					for (j = -1; j <= 1; j++)
+						if (!border && x + i >= 0 && y + j >= 0
+								&& x + i < lmap->config.x_size
+								&& y + j < lmap->config.y_size
+								&& (i != 0 || j != 0))
+						{
+							if (cmap->map[x + i][y + j] < minimum_occupied_prob
+									&& cmap->map[x + i][y + j] != -1)
+								border = 1;
+						}
+				if (border)
+				{
+					lmap->distance[x][y] = 0;
+					lmap->x_offset[x][y] = 0;
+					lmap->y_offset[x][y] = 0;
+				}
 			}
-		}
-	}
+//	/* Initialize the distance measurements before dynamic programming */
+//	for (x = 0; x < lmap->config.x_size; x++)
+//	{
+//		for (y = 0; y < lmap->config.y_size; y++)
+//		{
+//			if (cmap->map[x][y] > minimum_occupied_prob)
+//			{
+//				lmap->distance[x][y] = 0.0;
+//				lmap->x_offset[x][y] = 0.0;
+//				lmap->y_offset[x][y] = 0.0;
+//			}
+//		}
+//	}
 
 	/* Use dynamic programming to estimate the minimum distance from
      every map cell to an occupied map cell */

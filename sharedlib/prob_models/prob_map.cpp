@@ -596,7 +596,7 @@ carmen_prob_models_update_cells_crossed_by_ray(carmen_map_t *map, sensor_paramet
 	double dx, dy, dr;
 	int step_count;
 	int nx, ny;
-//l	int ray_start_occupied = 0;
+//	int ray_start_occupied = 0;
 	
 //	if (sensor_data->maxed[sensor_data->ray_that_hit_the_nearest_target])
 //		return;
@@ -883,13 +883,13 @@ get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, senso
 }
 
 double
-get_log_odds_via_unexpeted_delta_range_jose(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int ray_index, int scan_index __attribute__ ((unused)),
+get_log_odds_via_unexpeted_delta_range_jose(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data,
+		int ray_index __attribute__ ((unused)), int scan_index __attribute__ ((unused)),
 		bool reduce_sensitivity __attribute__ ((unused)))
 {
 	int previous_ray_index;
 	double ray_size1, ray_size2, delta_ray, line_angle; //, expected_delta_ray_old;
-	//double log_odds;
-
+//	double log_odds;
 
 	previous_ray_index = ray_index - 1;
 #if (DISCOUNT_RAY_19 == 1)
