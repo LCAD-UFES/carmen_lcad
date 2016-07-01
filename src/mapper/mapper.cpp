@@ -33,6 +33,7 @@ extern int publish_moving_objects_raw_map;
 
 extern int robot_near_bump_or_barrier;
 extern double obstacle_cost_distance, obstacle_probability_threshold;
+extern int ok_to_publish;
 
 
 /**
@@ -449,7 +450,7 @@ int
 mapper_velodyne_partial_scan(carmen_velodyne_partial_scan_message *velodyne_message)
 {
 	static int velodyne_message_id;
-	int ok_to_publish;
+	//int ok_to_publish;
 
 	int num_points = velodyne_message->number_of_32_laser_shots * sensors_params[0].vertical_resolution;
 
@@ -501,7 +502,7 @@ int
 mapper_velodyne_variable_scan(int sensor_number, carmen_velodyne_variable_scan_message *message)
 {
 	static int message_id;
-	int ok_to_publish;
+
 
 	int num_points = message->number_of_shots * sensors_params[sensor_number].vertical_resolution;
 

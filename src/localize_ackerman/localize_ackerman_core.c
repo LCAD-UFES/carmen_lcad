@@ -216,7 +216,7 @@ compute_weight_of_each_laser_reading_using_global_map(carmen_localize_ackerman_p
 				filter->param->occupied_prob))
 					filter->particles[i].weight += global_log_small_prob;
 				else
-					filter->particles[i].weight += map->gprob[x][y];
+					filter->particles[i].weight += map->prob[x][y];
 				/* 	  *  filter->param->global_evidence_weight; */
 			}
 		}
@@ -957,9 +957,9 @@ map_particle_correction(carmen_localize_ackerman_particle_filter_p filter, carme
 
 		if (global.x >= 0 && global.y >= 0 && global.x < global_map->config.x_size && global.y < global_map->config.y_size)
 		{
-			if (filter->global_mode)
-				particle_weight += global_map->gprob[global.x][global.y];
-			else
+//			if (filter->global_mode)
+//				particle_weight += global_map->gprob[global.x][global.y];
+//			else
 				particle_weight += global_map->prob[global.x][global.y];
 		}
 	}
