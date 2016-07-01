@@ -81,6 +81,7 @@ carmen_rddf_annotation_message last_rddf_annotation_message;
 int robot_near_bump_or_barrier = 0;
 
 bool offline_map_available = false;
+int ok_to_publish = 0;
 
 
 
@@ -110,80 +111,80 @@ publish_map(double timestamp)
 static void
 velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
-	if (mapper_velodyne_partial_scan(velodyne_message))
-		publish_map(velodyne_message->timestamp);
+	/*if*/ (mapper_velodyne_partial_scan(velodyne_message));
+		//publish_map(velodyne_message->timestamp);
 }
 
 
 static void
 velodyne_variable_scan_message_handler1(carmen_velodyne_variable_scan_message *message)
 {
-	if (mapper_velodyne_variable_scan(1, message))
-		publish_map(message->timestamp);
+	/*if*/ (mapper_velodyne_variable_scan(1, message));
+		//publish_map(message->timestamp);
 }
 
 
 static void
 velodyne_variable_scan_message_handler2(carmen_velodyne_variable_scan_message *message)
 {
-	if (mapper_velodyne_variable_scan(2, message))
-		publish_map(message->timestamp);
+	/*if*/ (mapper_velodyne_variable_scan(2, message));
+		//publish_map(message->timestamp);
 }
 
 
 static void
 velodyne_variable_scan_message_handler3(carmen_velodyne_variable_scan_message *message)
 {
-	if (mapper_velodyne_variable_scan(3, message))
-		publish_map(message->timestamp);
+	/*if*/ (mapper_velodyne_variable_scan(3, message));
+		//publish_map(message->timestamp);
 }
 
 
 static void
 velodyne_variable_scan_message_handler4(carmen_velodyne_variable_scan_message *message)
 {
-	if (mapper_velodyne_variable_scan(4, message))
-		publish_map(message->timestamp);
+	/*if*/ (mapper_velodyne_variable_scan(4, message));
+		//publish_map(message->timestamp);
 }
 
 
 static void
 velodyne_variable_scan_message_handler5(carmen_velodyne_variable_scan_message *message)
 {
-	if (mapper_velodyne_variable_scan(5, message))
-		publish_map(message->timestamp);
+	/*if*/ (mapper_velodyne_variable_scan(5, message));
+		//publish_map(message->timestamp);
 }
 
 
 static void
 velodyne_variable_scan_message_handler6(carmen_velodyne_variable_scan_message *message)
 {
-	if (mapper_velodyne_variable_scan(6, message))
-		publish_map(message->timestamp);
+	/*if*/ (mapper_velodyne_variable_scan(6, message));
+		//publish_map(message->timestamp);
 }
 
 
 static void
 velodyne_variable_scan_message_handler7(carmen_velodyne_variable_scan_message *message)
 {
-	if (mapper_velodyne_variable_scan(7, message))
-		publish_map(message->timestamp);
+	/*if*/ (mapper_velodyne_variable_scan(7, message));
+		//publish_map(message->timestamp);
 }
 
 
 static void
 velodyne_variable_scan_message_handler8(carmen_velodyne_variable_scan_message *message)
 {
-	if (mapper_velodyne_variable_scan(8, message))
-		publish_map(message->timestamp);
+	/*if*/ (mapper_velodyne_variable_scan(8, message));
+		//publish_map(message->timestamp);
 }
 
 
 static void
 velodyne_variable_scan_message_handler9(carmen_velodyne_variable_scan_message *message)
 {
-	if (mapper_velodyne_variable_scan(9, message))
-		publish_map(message->timestamp);
+	/*if*/ (mapper_velodyne_variable_scan(9, message));
+		//publish_map(message->timestamp);
 }
 
 
@@ -205,6 +206,9 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		robot_near_bump_or_barrier = 1;
 	else
 		robot_near_bump_or_barrier = 0;
+
+	if (ok_to_publish)
+		publish_map(globalpos_message->timestamp);
 }
 
 

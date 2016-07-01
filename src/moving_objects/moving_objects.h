@@ -175,6 +175,17 @@ detect_and_follow_moving_objects(carmen_velodyne_partial_scan_message *velodyne_
 		sensor_data_t *velodyne_data, carmen_vector_3D_t *robot_velocity, double phi, moving_objects_input_data_t moving_objects_input,
 		carmen_vector_3D_t *point_clouds, carmen_map_p & occupancy_grid_map);
 
+int
+build_point_cloud_using_variable_velodyne_message(carmen_velodyne_variable_scan_message *velodyne_message,
+		sensor_parameters_t *velodyne_params, sensor_data_t *velodyne_data, carmen_vector_3D_t *robot_velocity,
+		double phi, moving_objects_input_data_t moving_objects_input, carmen_vector_3D_t *point_clouds);
+
+std::list<object_point_cloud_data_t>
+detect_and_follow_moving_objects_variable_scan(carmen_velodyne_variable_scan_message *velodyne_message, sensor_parameters_t *velodyne_params,
+		sensor_data_t *velodyne_data, carmen_vector_3D_t *robot_velocity, double phi,
+		moving_objects_input_data_t moving_objects_input, carmen_vector_3D_t *carmen_vector_3d_point_cloud,
+		carmen_map_p & occupancy_grid_map);
+
 object_geometry_t
 get_geom_based_on_class(int particle_class);
 

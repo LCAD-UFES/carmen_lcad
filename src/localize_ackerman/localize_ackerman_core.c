@@ -216,7 +216,7 @@ compute_weight_of_each_laser_reading_using_global_map(carmen_localize_ackerman_p
 				filter->param->occupied_prob))
 					filter->particles[i].weight += global_log_small_prob;
 				else
-					filter->particles[i].weight += map->gprob[x][y];
+					filter->particles[i].weight += map->prob[x][y];
 				/* 	  *  filter->param->global_evidence_weight; */
 			}
 		}
@@ -914,7 +914,7 @@ hausdoff_distance(carmen_map_t *global_map, carmen_compact_map_t *local_map, car
 
 
 
-static void
+void
 hausdoff_distance_correction(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_map)
 {
 	double w;
@@ -957,9 +957,9 @@ map_particle_correction(carmen_localize_ackerman_particle_filter_p filter, carme
 
 		if (global.x >= 0 && global.y >= 0 && global.x < global_map->config.x_size && global.y < global_map->config.y_size)
 		{
-			if (filter->global_mode)
-				particle_weight += global_map->gprob[global.x][global.y];
-			else
+//			if (filter->global_mode)
+//				particle_weight += global_map->gprob[global.x][global.y];
+//			else
 				particle_weight += global_map->prob[global.x][global.y];
 		}
 	}
@@ -1197,7 +1197,7 @@ normalized_mutual_information(carmen_map_t *global_map, carmen_compact_map_t *lo
 
 
 
-static void
+void
 mutual_information_correction(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_mean_remission_map)
 {
 
@@ -1215,7 +1215,7 @@ mutual_information_correction(carmen_localize_ackerman_particle_filter_p filter,
 	convert_particles_log_weights_to_prob(filter);
 }
 
-static double
+double
 hamming_distance(carmen_map_t *global_map, carmen_compact_map_t *local_map, carmen_localize_ackerman_binary_map_t *binary_map, carmen_localize_ackerman_particle_t *particle)
 {
 	int i;
@@ -1281,7 +1281,7 @@ hamming_distance(carmen_map_t *global_map, carmen_compact_map_t *local_map, carm
 	return (double)hamming_dist / local_map->number_of_known_points_on_the_map;
 }
 
-static void
+void
 hamming_distance_between_remission_maps(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_map, carmen_localize_ackerman_binary_map_t *binary_map)
 {
 	int i;
@@ -1455,7 +1455,7 @@ carmen_localize_ackerman_run_with_velodyne_correction(
 		carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_p map,
 		carmen_compact_map_t *local_map, carmen_compact_map_t *local_mean_remission_map,
 		carmen_compact_map_t *local_variance_remission_map  __attribute__ ((unused)),
-		carmen_localize_ackerman_binary_map_t *binary_map)
+		carmen_localize_ackerman_binary_map_t *binary_map __attribute__ ((unused)))
 {
 	if (!filter->initialized)
 		return;
@@ -1489,17 +1489,6 @@ carmen_localize_ackerman_run_with_velodyne_correction(
 		case 6:
 			cosine_correction_with_remission_map_and_log_likelihood(filter, map, local_mean_remission_map, local_map);
 			break;
-
-		case 7:
-			hamming_distance_between_remission_maps(filter, map, local_mean_remission_map, binary_map);
-			break;
-
-		case 8:
-			mutual_information_correction(filter, map, local_mean_remission_map);
-			break;
-
-		case 9:
-			hausdoff_distance_correction(filter, map, local_map);
 	}
 }
 

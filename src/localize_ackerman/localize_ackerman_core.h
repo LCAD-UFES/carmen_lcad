@@ -87,6 +87,7 @@ typedef struct {
   double de_mutation_rate;
   int de_num_iteration;
   int swarm_num_iteration;
+  int jump_size;
 
   double velocity_noise_velocity;
   double velocity_noise_phi;
