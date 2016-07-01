@@ -838,7 +838,7 @@ find_nearest_point_around_point_found(carmen_pose_index index, long position, do
 
 
 long
-find_timestamp_index_position_with_full_index_search(double x, double y, double yaw, int test_orientation, double timestamp_ignore_neighborhood = 0)
+find_timestamp_index_position_with_full_index_search(double x, double y, double yaw, int test_orientation, double timestamp_ignore_neighborhood)
 {
 	int i, min_dist_pos = 0;
 	double dist, min_dist = -1;
@@ -848,7 +848,7 @@ find_timestamp_index_position_with_full_index_search(double x, double y, double 
 		// esse if eh para tratar os fechamentos de loop. se estamos no fim do rddf, buscamos a pose mais proxima 
 		// com uma diferenca temporal maior que 3 minutos para evitar que poses proximas a posicao atual sejam retornados.
 		if (timestamp_ignore_neighborhood > 0)
-			if (fabs(timestamp_ignore_neighborhood - carmen_index_ordered_by_timestamp[i].timestamp) < 3 * 60)
+			if (fabs(timestamp_ignore_neighborhood - carmen_index_ordered_by_timestamp[i].timestamp) < 10 * 60)
 				continue;
 			
 		dist = sqrt(pow(x - carmen_index_ordered_by_timestamp[i].x, 2) + pow(y - carmen_index_ordered_by_timestamp[i].y, 2));
@@ -868,6 +868,33 @@ find_timestamp_index_position_with_full_index_search(double x, double y, double 
 	return min_dist_pos;
 }
 
+long
+find_timestamp_index_position_with_full_index_search_near_timestamp(double x, double y, double yaw, int test_orientation, double timestamp_near)
+{
+	int i, min_dist_pos = 0;
+	double dist, min_dist = -1;
+
+	for(i = 0; i < carmen_index_ordered_by_timestamp.size(); i++)
+	{
+		if (fabs(timestamp_near - carmen_index_ordered_by_timestamp[i].timestamp) > 30.0)
+			continue;
+
+		dist = sqrt(pow(x - carmen_index_ordered_by_timestamp[i].x, 2) + pow(y - carmen_index_ordered_by_timestamp[i].y, 2));
+
+		if ((dist < min_dist) || (min_dist == -1))
+		{
+			// ignore points with incorrect orientation
+			if (test_orientation)
+				if (fabs(carmen_normalize_theta(carmen_index_ordered_by_timestamp[i].yaw - yaw)) > (M_PI / 2.0))
+					continue;
+
+			min_dist = dist;
+			min_dist_pos = i;
+		}
+	}
+
+	return min_dist_pos;
+}
 
 carmen_ackerman_traj_point_t
 create_ackerman_traj_point_struct(double x, double y, double velocity_x, double phi, double yaw)
@@ -887,7 +914,7 @@ create_ackerman_traj_point_struct(double x, double y, double velocity_x, double 
 int
 fill_in_waypoints_array(long timestamp_index_position, carmen_ackerman_traj_point_t *poses_ahead, int num_poses_desired, carmen_ackerman_traj_point_t *last_pose_acquired, int *annotations)
 {
-	double dist;
+	//double dist;
 	int i, num_poses_aquired;
 	carmen_ackerman_traj_point_t last_pose, current_pose;
 	carmen_timestamp_index_element index_element;
@@ -903,7 +930,7 @@ fill_in_waypoints_array(long timestamp_index_position, carmen_ackerman_traj_poin
 		index_element = carmen_index_ordered_by_timestamp[timestamp_index_position + i];
 		current_pose = create_ackerman_traj_point_struct (index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.yaw);
 
-		dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
+		//dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
 
 		//if (dist > 1.0) // get waypoints 1 meter apart // @@@ Alberto: este parametro devia estar no carmen ini
 		//{
@@ -925,7 +952,7 @@ fill_in_waypoints_array(long timestamp_index_position, carmen_ackerman_traj_poin
 int
 fill_in_backward_waypoints_array(long timestamp_index_position, carmen_ackerman_traj_point_t *poses_back, int num_poses_desired)
 {
-	double dist;
+	//double dist;
 	int i, num_poses_aquired;
 	carmen_ackerman_traj_point_t last_pose, current_pose;
 	carmen_timestamp_index_element index_element;
@@ -941,7 +968,7 @@ fill_in_backward_waypoints_array(long timestamp_index_position, carmen_ackerman_
 		index_element = carmen_index_ordered_by_timestamp[timestamp_index_position - i];
 		current_pose = create_ackerman_traj_point_struct (index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.yaw);
 
-		dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
+		//dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
 
 		//if (dist > 1.0) // get waypoints 1 meter apart // @@@ Alberto: este parametro devia estar no carmen ini
 		//{
@@ -1026,19 +1053,43 @@ get_more_more_poses_from_begining(int num_poses_desired, carmen_ackerman_traj_po
 int
 carmen_search_next_poses_index(double x, double y, double yaw, double timestamp /* only for debugging */, carmen_ackerman_traj_point_t* poses_ahead, carmen_ackerman_traj_point_t *poses_back, int *num_poses_back, int num_poses_desired, int *annotations, int perform_loop = 0)
 {
+//	static int closed_loop = 0;
+//	//static double time_when_closed_loop = 0;
+//	static double timestamp_last_pose = 0;
+//	static double timestamp_after_closure = 0;
+//
 	long timestamp_index_position;
 	int num_poses_aquired = 0;
 	carmen_ackerman_traj_point_t last_pose_acquired;
 	(void) timestamp; // to not warning. I use it sometimes to debug.
 
-	//timestamp_index_position = find_timestamp_index_position(x, y, yaw, 1);
+//	//timestamp_index_position = find_timestamp_index_position(x, y, yaw, 1);
+//	if (closed_loop)
+//		timestamp_index_position = find_timestamp_index_position_with_full_index_search_near_timestamp(x, y, yaw, 1, timestamp_after_closure);
+//	else
 	timestamp_index_position = find_timestamp_index_position_with_full_index_search(x, y, yaw, 1);
+
 	num_poses_aquired = fill_in_waypoints_array(timestamp_index_position, poses_ahead, num_poses_desired, &last_pose_acquired, annotations);
 	(*num_poses_back) = fill_in_backward_waypoints_array(timestamp_index_position, poses_back, num_poses_desired);
 
 	if (perform_loop)
 		if (/*carmen_rddf_has_closed_loop() && */ (num_poses_aquired < num_poses_desired))
 			num_poses_aquired += get_more_more_poses_from_begining(num_poses_desired - num_poses_aquired, poses_ahead, last_pose_acquired, num_poses_aquired, annotations);
+
+//	if ((timestamp_last_pose != 0) && fabs(carmen_index_ordered_by_timestamp[timestamp_index_position].timestamp - timestamp_last_pose) > 30.0 && (!closed_loop))
+//	{
+//		closed_loop = 1;
+//		//time_when_closed_loop = carmen_get_time();
+//		timestamp_after_closure = carmen_index_ordered_by_timestamp[timestamp_index_position].timestamp;
+//	}
+//
+//	timestamp_last_pose = carmen_index_ordered_by_timestamp[timestamp_index_position].timestamp;
+//
+//	if (closed_loop && fabs(carmen_index_ordered_by_timestamp[timestamp_index_position].timestamp - timestamp_after_closure) > 3.0 * 60.0)
+//	{
+//		closed_loop = 0;
+//		timestamp_last_pose = 0;
+//	}
 
 	return num_poses_aquired;
 }
@@ -1047,7 +1098,7 @@ carmen_search_next_poses_index(double x, double y, double yaw, double timestamp 
 int
 fill_in_waypoints_around_point(long timestamp_index_position, carmen_ackerman_traj_point_t* poses_ahead, int num_poses_desired)
 {
-	double dist;
+	//double dist;
 	int i, num_poses_aquired = 0;
 	carmen_ackerman_traj_point_t last_pose, current_pose;
 	carmen_timestamp_index_element index_element;
@@ -1063,7 +1114,7 @@ fill_in_waypoints_around_point(long timestamp_index_position, carmen_ackerman_tr
 		index_element = carmen_index_ordered_by_timestamp[i];
 		current_pose = create_ackerman_traj_point_struct (index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.yaw);
 
-		dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
+		//dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
 
 		//if (dist > 1.0)
 		//{
@@ -1084,7 +1135,7 @@ fill_in_waypoints_around_point(long timestamp_index_position, carmen_ackerman_tr
 		index_element = carmen_index_ordered_by_timestamp[i];
 		current_pose = create_ackerman_traj_point_struct (index_element.x, index_element.y, index_element.velocity_x, index_element.phi, index_element.yaw);
 
-		dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
+		//dist = sqrt(pow(current_pose.x - last_pose.x, 2.0) + pow(current_pose.y - last_pose.y, 2.0));
 
 		//if (dist > 1.0)
 		//{

@@ -394,7 +394,7 @@ compute_proximity_to_obstacles_using_localize_map(vector<carmen_ackerman_path_po
 		if (delta < 0.0)
 			proximity_to_obstacles += delta * delta;
 
-		displacement = GlobalState::robot_config.distance_between_front_and_rear_axles + GlobalState::robot_config.distance_between_front_car_and_front_wheels;
+		displacement = GlobalState::robot_config.distance_between_front_and_rear_axles;// + GlobalState::robot_config.distance_between_front_car_and_front_wheels;
 //		distance = distance_from_traj_point_to_obstacle(path[i], x_gpos, y_gpos, displacement, plot);
 		distance = distance_from_traj_point_to_obstacle(path[i], x_gpos, y_gpos, displacement);
 		delta = distance - min_dist;
@@ -585,8 +585,7 @@ my_gdf(const gsl_vector *x, void *params, double *g, gsl_vector *dg)
 
 
 double
-compute_suitable_acceleration(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
-		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v)
+compute_suitable_acceleration(double tt, TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v)
 {
 	// (i) S = Vo*t + 1/2*a*t^2
 	// (ii) dS/dt = Vo + a*t
@@ -601,18 +600,19 @@ compute_suitable_acceleration(TrajectoryLookupTable::TrajectoryControlParameters
 	if (target_v < 0.0)
 		target_v = 0.0;
 
-	double a = (target_v - target_td.v_i) / tcp_seed.tt;
+	double a = (target_v - target_td.v_i) / tt;
 
-	if (a >= 0.0)
+	if (a > 0.0)
 	{
 		if (a >= 1.2)
 			a = 1.2;
 
 		return (a);
 	}
-
-	if ((-0.5 * (target_td.v_i * target_td.v_i) / a) > target_td.dist * 1.1)
+	else if ((target_td.v_i * PROFILE_TIME) < 2.0 * target_td.dist)
 	{
+		a = (2.0 * (target_td.dist - target_td.v_i * PROFILE_TIME)) / (PROFILE_TIME * PROFILE_TIME);
+
 		if (a >= 1.2)
 			a = 1.2;
 
@@ -620,14 +620,21 @@ compute_suitable_acceleration(TrajectoryLookupTable::TrajectoryControlParameters
 	}
 	else
 	{
-		while ((-0.5 * (target_td.v_i * target_td.v_i) / a) <= target_td.dist * 1.1)
-			a *= 0.95;
-
-		if (a >= 1.2)
-			a = 1.2;
-
+		a = -target_td.v_i / PROFILE_TIME;
 		return (a);
 	}
+
+//	if ((-0.5 * (target_td.v_i * target_td.v_i) / a) > target_td.dist * 1.1)
+//	{
+//		return (a);
+//	}
+//	else
+//	{
+//		while ((-0.5 * (target_td.v_i * target_td.v_i) / a) <= target_td.dist * 1.1)
+//			a *= 0.95;
+//
+//		return (a);
+//	}
 }
 
 
@@ -733,6 +740,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 		//		printf("Estou na: %lu iteracao, sf: %lf  \n", iter, s->f);
 		//		getchar();
 		//	--
+//		params.suitable_acceleration = compute_suitable_acceleration(gsl_vector_get(x, 3), target_td, target_v);
 
 	} while (/*(s->f > MAX_LANE_DIST) &&*/ (status == GSL_CONTINUE) && (iter < 20)); //alterado de 0.005
 
@@ -756,8 +764,7 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 		bool has_previous_good_tcp)
 {
 	get_optimization_params(target_v, tcp_seed, target_td, params);
-	double suitable_acceleration = compute_suitable_acceleration(tcp_seed, target_td, target_v);
-	params.suitable_acceleration = suitable_acceleration;
+	params.suitable_acceleration = compute_suitable_acceleration(tcp_seed.tt, target_td, target_v);
 
 	if (has_previous_good_tcp)
 		return (tcp_seed);
@@ -794,6 +801,7 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 			break;
 
 		status = gsl_multimin_test_gradient(s->gradient, 0.16); // esta funcao retorna GSL_CONTINUE ou zero
+//		params.suitable_acceleration = compute_suitable_acceleration(gsl_vector_get(x, 2), target_td, target_v);
 
 	} while ((s->f > 0.005) && (status == GSL_CONTINUE) && (iter < 30)); //alterado de 0.005
 
