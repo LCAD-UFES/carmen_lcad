@@ -604,37 +604,39 @@ compute_suitable_acceleration(double tt, TrajectoryLookupTable::TrajectoryDimens
 
 	if (a > 0.0)
 	{
-		if (a >= 1.2)
-			a = 1.2;
+		if (a >= GlobalState::robot_config.maximum_acceleration_forward)
+			a = GlobalState::robot_config.maximum_acceleration_forward;
 
 		return (a);
 	}
-	else if ((target_td.v_i * PROFILE_TIME) < 2.0 * target_td.dist)
-	{
-		a = (2.0 * (target_td.dist - target_td.v_i * PROFILE_TIME)) / (PROFILE_TIME * PROFILE_TIME);
-
-		if (a >= 1.2)
-			a = 1.2;
-
-		return (a);
-	}
-	else
-	{
-		a = -target_td.v_i / PROFILE_TIME;
-		return (a);
-	}
-
-//	if ((-0.5 * (target_td.v_i * target_td.v_i) / a) > target_td.dist * 1.1)
+//	else if ((target_td.v_i * PROFILE_TIME) < 2.0 * target_td.dist)
 //	{
+//		a = (2.0 * (target_td.dist - target_td.v_i * PROFILE_TIME)) / (PROFILE_TIME * PROFILE_TIME);
+//
+//		if (a >= GlobalState::robot_config.maximum_acceleration_forward)
+//			a = GlobalState::robot_config.maximum_acceleration_forward;
+//
 //		return (a);
 //	}
 //	else
 //	{
-//		while ((-0.5 * (target_td.v_i * target_td.v_i) / a) <= target_td.dist * 1.1)
-//			a *= 0.95;
-//
+//		a = -target_td.v_i / PROFILE_TIME;
+//		if (a < -2.7)
+//			a = -2.7;
 //		return (a);
 //	}
+
+	if ((-0.5 * (target_td.v_i * target_td.v_i) / a) > target_td.dist * 1.1)
+	{
+		return (a);
+	}
+	else
+	{
+		while ((-0.5 * (target_td.v_i * target_td.v_i) / a) <= target_td.dist * 1.1)
+			a *= 0.95;
+
+		return (a);
+	}
 }
 
 
