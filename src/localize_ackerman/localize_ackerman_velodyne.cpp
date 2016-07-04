@@ -61,6 +61,7 @@ static carmen_laser_laser_message flaser_message;
 IplImage *map_image = NULL;
 
 extern cell_coords_t **map_cells_hit_by_each_rays;
+extern int number_of_threads;
 
 static void
 localize_ackerman_velodyne_laser_initialize()
@@ -218,7 +219,7 @@ get_the_laser_ray_angle_index_from_angle(double angle)
 }
 
 
-static void
+void
 save_local_map()
 {
 	carmen_FILE *fp;
@@ -237,44 +238,46 @@ compute_laser_rays_from_velodyne_and_create_a_local_map(sensor_parameters_t *vel
 				 carmen_pose_3D_t *robot_pose, carmen_vector_3D_t *robot_velocity,
 				 double x_origin, double y_origin, int point_cloud_index, double phi)
 {
-	int i, j;
+	//int i, j;
 	spherical_point_cloud v_zt = velodyne_data->points[point_cloud_index];
-	int laser_ray_angle_index;
-	//int N = v_zt.num_points / velodyne_params->vertical_resolution;
+//	int laser_ray_angle_index;
+	int N = v_zt.num_points / velodyne_params->vertical_resolution;
 
 	double dt = 1.0 / (1808.0 * 12.0);
 	carmen_pose_3D_t robot_interpolated_position = *robot_pose;
 
 	// Ray-trace the grid
-	for (i = 0, j = 0; i < v_zt.num_points; i = i + velodyne_params->vertical_resolution, j++)
+	int jump = filter->param->jump_size;
+	N /= jump;
+	//#pragma omp parallel for
+	for (int k = 0; k < N; k++)
 	{
-		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(robot_interpolated_position, dt, robot_velocity->x, phi, car_config.distance_between_front_and_rear_axles);
+		int tid = 0;//omp_get_thread_num();
+		int j = k * jump;
+		int i = j * velodyne_params->vertical_resolution;
+		double dt2 = j * dt;
+		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(*robot_pose, dt2, robot_velocity->x, phi, car_config.distance_between_front_and_rear_axles);
 		r_matrix_car_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
 
 		carmen_prob_models_compute_relevant_map_coordinates(velodyne_data, velodyne_params, i, robot_interpolated_position.position, sensor_board_1_pose,
-				r_matrix_car_to_global, sensor_board_1_to_car_matrix, robot_wheel_radius, x_origin, y_origin, &car_config, 0);
+				r_matrix_car_to_global, sensor_board_1_to_car_matrix, robot_wheel_radius, x_origin, y_origin, &car_config, 0, tid);
 
-		carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(velodyne_data, velodyne_params, i, highest_sensor, safe_range_above_sensors, 0);
+		carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(velodyne_data, velodyne_params, i, highest_sensor, safe_range_above_sensors, 0, tid);
 
-		carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(&local_map, velodyne_params, velodyne_data);
-		if (map_cells_hit_by_each_rays != NULL)
-			carmen_prob_models_update_intensity_of_cells_hit_by_rays(&local_sum_remission_map, &local_sum_sqr_remission_map, &local_count_remission_map, velodyne_params, velodyne_data, highest_sensor, safe_range_above_sensors, map_cells_hit_by_each_rays[j]);
-		else
-			carmen_prob_models_update_intensity_of_cells_hit_by_rays(&local_sum_remission_map, &local_sum_sqr_remission_map, &local_count_remission_map, velodyne_params, velodyne_data, highest_sensor, safe_range_above_sensors, NULL);
+		carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(&local_map, velodyne_params, velodyne_data, tid);
 
-		laser_ray_angle_index = get_the_laser_ray_angle_index_from_angle(v_zt.sphere_points[i].horizontal_angle);
-
-		if (carmen_prob_models_log_odds_to_probabilistic(velodyne_data->occupancy_log_odds_of_each_ray_target[velodyne_data->ray_that_hit_the_nearest_target]) > 0.95)
-			laser_ranges[laser_ray_angle_index] = velodyne_data->ray_size_in_the_floor[velodyne_data->ray_that_hit_the_nearest_target];
-
-		if (velodyne_data->maxed[velodyne_data->ray_that_hit_the_nearest_target])
-			laser_ranges[laser_ray_angle_index] = velodyne_params->current_range_max;
-	}
-	static int first_time = 1;
-	if (first_time)
-	{
-		save_local_map();
-		first_time = 0;
+		//if (map_cells_hit_by_each_rays != NULL)
+		//	carmen_prob_models_update_intensity_of_cells_hit_by_rays(&local_sum_remission_map, &local_sum_sqr_remission_map, &local_count_remission_map, velodyne_params, velodyne_data, highest_sensor, safe_range_above_sensors, map_cells_hit_by_each_rays[j], tid);
+	//	else
+			carmen_prob_models_update_intensity_of_cells_hit_by_rays(&local_sum_remission_map, &local_sum_sqr_remission_map, &local_count_remission_map, velodyne_params, velodyne_data, highest_sensor, safe_range_above_sensors, NULL, tid);
+//
+//		laser_ray_angle_index = get_the_laser_ray_angle_index_from_angle(v_zt.sphere_points[i].horizontal_angle);
+//
+//		if (carmen_prob_models_log_odds_to_probabilistic(velodyne_data->occupancy_log_odds_of_each_ray_target[velodyne_data->ray_that_hit_the_nearest_target]) > 0.95)
+//			laser_ranges[laser_ray_angle_index] = velodyne_data->ray_size_in_the_floor[velodyne_data->ray_that_hit_the_nearest_target];
+//
+//		if (velodyne_data->maxed[velodyne_data->ray_that_hit_the_nearest_target])
+//			laser_ranges[laser_ray_angle_index] = velodyne_params->current_range_max;
 	}
 }
 
@@ -498,8 +501,8 @@ localize_ackerman_velodyne_partial_scan(carmen_velodyne_partial_scan_message *ve
 			velodyne_params->range_max,
 			velodyne_message->timestamp);
 
-	if (velodyne_viewer)
-		debug_remission_map_velodyne(velodyne_message, velodyne_params);
+	//if (velodyne_viewer)
+		//debug_remission_map_velodyne(velodyne_message, velodyne_params);
 	
 	if (velodyne_message_id >= 0)
 	{
@@ -520,20 +523,20 @@ localize_ackerman_velodyne_partial_scan(carmen_velodyne_partial_scan_message *ve
 							&local_sum_remission_map, &local_sum_sqr_remission_map, &local_count_remission_map);
 
 		carmen_prob_models_free_compact_map(&local_compacted_map);
-		carmen_prob_models_free_compact_map(&local_compacted_mean_remission_map);
-		carmen_prob_models_free_compact_map(&local_compacted_variance_remission_map);
+//		carmen_prob_models_free_compact_map(&local_compacted_mean_remission_map);
+//		carmen_prob_models_free_compact_map(&local_compacted_variance_remission_map);
 
 		carmen_prob_models_create_compact_map(&local_compacted_map, &local_map, -1.0);
 		carmen_prob_models_create_compact_map(&local_compacted_mean_remission_map, &local_mean_remission_map, -1.0);
-		carmen_prob_models_create_compact_map(&local_compacted_variance_remission_map, &local_variance_remission_map, -1.0);
+//		carmen_prob_models_create_compact_map(&local_compacted_variance_remission_map, &local_variance_remission_map, -1.0);
 
-		create_binary_map(&binary_map, local_compacted_mean_remission_map);
+//		create_binary_map(&binary_map, local_compacted_mean_remission_map);
 
-		carmen_prob_models_clear_carmen_map_using_compact_map(&local_map, &local_compacted_mean_remission_map, -1.0);
+		carmen_prob_models_clear_carmen_map_using_compact_map(&local_map, &local_compacted_map, -1.0);
 		carmen_prob_models_clear_carmen_map_using_compact_map(&local_mean_remission_map, &local_compacted_mean_remission_map, -1.0);
-		carmen_prob_models_clear_carmen_map_using_compact_map(&local_variance_remission_map, &local_compacted_variance_remission_map, -1.0);
+//		carmen_prob_models_clear_carmen_map_using_compact_map(&local_variance_remission_map, &local_compacted_variance_remission_map, -1.0);
 		carmen_prob_models_clear_carmen_map_using_compact_map(&local_sum_remission_map, &local_compacted_mean_remission_map, -1.0);
-		carmen_prob_models_clear_carmen_map_using_compact_map(&local_sum_sqr_remission_map, &local_compacted_variance_remission_map, -1.0);
+//		carmen_prob_models_clear_carmen_map_using_compact_map(&local_sum_sqr_remission_map, &local_compacted_variance_remission_map, -1.0);
 		carmen_prob_models_clear_carmen_map_using_compact_map(&local_count_remission_map, &local_compacted_mean_remission_map, -1.0);
 
 

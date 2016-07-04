@@ -4,12 +4,12 @@ include ../Makefile.conf
 MODULE_NAME = MAPPER_PACKAGE
 MODULE_COMMENT = Mapper Maps using Velodyne!
 
-CFLAGS += -Wall -std=c99 -msse3 -O3
+CFLAGS += -Wall -std=c99 -msse3 -O3 -fopenmp
 LINK = g++
 
 # Application specific include directories.
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
@@ -22,7 +22,7 @@ LFLAGS += -lgrid_mapping -lmap_io -lmap_util -lmap_interface -lipc -lprob_models
 	-lultrasonic_filter_interface -lstereo_mapping_interface -lrotation_geometry -lvelodyne_interface	\
 	-lfused_odometry_interface  -lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface		\
 	`pkg-config --libs opencv` -lgeometry -lmap_server_interface -lsimulator_ackerman_interface -lrddf_interface \
-	-lparking_assistant_interface  -llocalize_ackerman_core
+	-lparking_assistant_interface  -llocalize_ackerman_core 
 
 LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 

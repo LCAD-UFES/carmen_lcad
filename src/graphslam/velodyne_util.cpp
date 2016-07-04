@@ -45,6 +45,8 @@ extern rotation_matrix *sensor_board_1_to_car_matrix;
 extern double distance_between_rear_car_and_rear_wheels;
 extern double distance_between_front_and_rear_axles;
 extern double highest_point;
+extern carmen_localize_ackerman_particle_filter_p filter;
+
 
 carmen_map_t local_map;
 carmen_robot_ackerman_config_t car_config;

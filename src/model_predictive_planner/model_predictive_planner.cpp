@@ -178,13 +178,12 @@ copy_starting_nearest_point_of_zero(vector<carmen_ackerman_path_point_t> &detail
 bool
 build_detailed_lane(vector<carmen_ackerman_path_point_t> *lane_in_local_pose, vector<carmen_ackerman_path_point_t> &detailed_lane)
 {
-	if (lane_in_local_pose->size() > 7)
+	if (lane_in_local_pose->size() > 2)
 	{
 		vector<carmen_ackerman_path_point_t> temp_detail;
 		for (int i = 0; i < (lane_in_local_pose->size() - 1); i++)
-		{
 			add_points_to_goal_list_interval(lane_in_local_pose->at(i), lane_in_local_pose->at(i+1), temp_detail);
-		}
+
 		//add last point
 		temp_detail.push_back(lane_in_local_pose->back());
 		//mantendo primeiro ponto mais proximo de 0
@@ -193,6 +192,7 @@ build_detailed_lane(vector<carmen_ackerman_path_point_t> *lane_in_local_pose, ve
 	else
 	{
 		printf(KGRN "+++++++++++++ ERRO MENSAGEM DA LANE POSES !!!!\n" RESET);
+		detailed_lane.clear();
 		return (false);
 	}
 	return (true);
@@ -273,11 +273,11 @@ filter_path(vector<carmen_ackerman_path_point_t> &path)
 	for (i = 1; i < path.size(); i += 2)
 		path.erase(path.begin() + i);
 
-//	for (i = 0; i < path.size(); i += 2)
-//		if ((i + 1) < path.size())
-//			path[i].time += path[i + 1].time;
-//	for (i = 1; i < path.size(); i += 2)
-//		path.erase(path.begin() + i);
+	for (i = 0; i < path.size(); i += 2)
+		if ((i + 1) < path.size())
+			path[i].time += path[i + 1].time;
+	for (i = 1; i < path.size(); i += 2)
+		path.erase(path.begin() + i);
 }
 
 
@@ -353,7 +353,7 @@ path_has_collision(vector<carmen_ackerman_path_point_t> path)
 		pose.theta = path[j].theta;
 		if (obstacle_avoider_pose_hit_obstacle(pose, &GlobalState::cost_map, &car_config))
 		{
-			//printf("---------- HIT OBSTACLE!!!!\n");
+			printf("---------- HIT OBSTACLE!!!!\n");
 			return (true);
 		}
 	}
@@ -545,6 +545,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 
 	otcps.resize(paths.size());
 	bool has_valid_path = false;
+	double target_v_orig = target_v;
 	//	#pragma omp parallel num_threads(5)
 	//	{
 	for (unsigned int i = 0; i < lastOdometryVector.size(); i++)
@@ -556,10 +557,14 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 			if (j == 0)
 				use_lane = true;
 			else
+			{
 				use_lane = false;
+				target_v = target_v_orig / 2.0;
+			}
 
 			TrajectoryLookupTable::TrajectoryDimensions td = get_trajectory_dimensions_from_robot_state(localizer_pose, lastOdometryVector[i], &goalPoseVector[j]);
 			TrajectoryLookupTable::TrajectoryControlParameters tcp;
+//			previous_good_tcp.valid = false;
 			if (!get_tcp_from_td(tcp, previous_good_tcp, td))
 				continue;
 
@@ -620,18 +625,18 @@ ModelPredictive::compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Com
 	vector<Command> lastOdometryVector;
 	vector<Pose> goalPoseVector;
 
-	double i_time = carmen_get_time();
+//	double i_time = carmen_get_time();
 
 	vector<int> magicSignals = {0, 1, -1, 2, -2, 3, -3,  4, -4,  5, -5};
 	// @@@ Tranformar os dois loops abaixo em uma funcao -> compute_alternative_path_options()
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 1; i++)
 	{
 		Command newOdometry = last_odometry;
 		newOdometry.phi +=  0.15 * (double) magicSignals[i]; //(0.5 / (newOdometry.v + 1))
 		lastOdometryVector.push_back(newOdometry);
 	}
 
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < 1; i++)
 	{
 		//printf("Goal x: %lf Goal y: %lf \n",goal_pose->x, goal_pose->y);
 		Pose newPose = *goal_pose;
@@ -645,8 +650,8 @@ ModelPredictive::compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Com
 
 	compute_paths(lastOdometryVector, goalPoseVector, target_v, localizer_pose, paths, goal_list_message);
 
-	printf("%ld plano(s), tp = %lf\n", paths.size(), carmen_get_time() - i_time);
-	fflush(stdout);
+//	printf("%ld plano(s), tp = %lf\n", paths.size(), carmen_get_time() - i_time);
+//	fflush(stdout);
 
 	return (paths);
 }

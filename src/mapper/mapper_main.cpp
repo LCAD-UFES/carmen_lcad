@@ -19,6 +19,7 @@
 #include <carmen/rddf_interface.h>
 #include <carmen/ultrasonic_filter_interface.h>
 #include <carmen/parking_assistant_interface.h>
+#include <omp.h>
 #include "mapper.h"
 
 #include "message_interpolation.cpp"
@@ -81,7 +82,8 @@ carmen_rddf_annotation_message last_rddf_annotation_message;
 int robot_near_bump_or_barrier = 0;
 
 bool offline_map_available = false;
-
+int ok_to_publish = 0;
+int number_of_threads = 1;
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -110,80 +112,80 @@ publish_map(double timestamp)
 static void
 velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
-	if (mapper_velodyne_partial_scan(velodyne_message))
-		publish_map(velodyne_message->timestamp);
+	/*if*/ (mapper_velodyne_partial_scan(velodyne_message));
+		//publish_map(velodyne_message->timestamp);
 }
 
 
 static void
 velodyne_variable_scan_message_handler1(carmen_velodyne_variable_scan_message *message)
 {
-	if (mapper_velodyne_variable_scan(1, message))
-		publish_map(message->timestamp);
+	/*if*/ (mapper_velodyne_variable_scan(1, message));
+		//publish_map(message->timestamp);
 }
 
 
 static void
 velodyne_variable_scan_message_handler2(carmen_velodyne_variable_scan_message *message)
 {
-	if (mapper_velodyne_variable_scan(2, message))
-		publish_map(message->timestamp);
+	/*if*/ (mapper_velodyne_variable_scan(2, message));
+		//publish_map(message->timestamp);
 }
 
 
 static void
 velodyne_variable_scan_message_handler3(carmen_velodyne_variable_scan_message *message)
 {
-	if (mapper_velodyne_variable_scan(3, message))
-		publish_map(message->timestamp);
+	/*if*/ (mapper_velodyne_variable_scan(3, message));
+		//publish_map(message->timestamp);
 }
 
 
 static void
 velodyne_variable_scan_message_handler4(carmen_velodyne_variable_scan_message *message)
 {
-	if (mapper_velodyne_variable_scan(4, message))
-		publish_map(message->timestamp);
+	/*if*/ (mapper_velodyne_variable_scan(4, message));
+		//publish_map(message->timestamp);
 }
 
 
 static void
 velodyne_variable_scan_message_handler5(carmen_velodyne_variable_scan_message *message)
 {
-	if (mapper_velodyne_variable_scan(5, message))
-		publish_map(message->timestamp);
+	/*if*/ (mapper_velodyne_variable_scan(5, message));
+		//publish_map(message->timestamp);
 }
 
 
 static void
 velodyne_variable_scan_message_handler6(carmen_velodyne_variable_scan_message *message)
 {
-	if (mapper_velodyne_variable_scan(6, message))
-		publish_map(message->timestamp);
+	/*if*/ (mapper_velodyne_variable_scan(6, message));
+		//publish_map(message->timestamp);
 }
 
 
 static void
 velodyne_variable_scan_message_handler7(carmen_velodyne_variable_scan_message *message)
 {
-	if (mapper_velodyne_variable_scan(7, message))
-		publish_map(message->timestamp);
+	/*if*/ (mapper_velodyne_variable_scan(7, message));
+		//publish_map(message->timestamp);
 }
 
 
 static void
 velodyne_variable_scan_message_handler8(carmen_velodyne_variable_scan_message *message)
 {
-	if (mapper_velodyne_variable_scan(8, message))
-		publish_map(message->timestamp);
+	/*if*/ (mapper_velodyne_variable_scan(8, message));
+		//publish_map(message->timestamp);
 }
 
 
 static void
 velodyne_variable_scan_message_handler9(carmen_velodyne_variable_scan_message *message)
 {
-	if (mapper_velodyne_variable_scan(9, message))
-		publish_map(message->timestamp);
+	/*if*/ (mapper_velodyne_variable_scan(9, message));
+		//publish_map(message->timestamp);
 }
 
 
@@ -205,6 +207,9 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		robot_near_bump_or_barrier = 1;
 	else
 		robot_near_bump_or_barrier = 0;
+
+	if (ok_to_publish)
+		publish_map(globalpos_message->timestamp);
 }
 
 
@@ -504,14 +509,18 @@ get_alive_sensors(int argc, char **argv)
 		if (i == STEREO_MAPPING_SENSOR_INDEX)
 			continue;
 
-		sensors_data[i].ray_position_in_the_floor = NULL;
-		sensors_data[i].maxed = NULL;
-		sensors_data[i].obstacle_height = NULL;
-		sensors_data[i].occupancy_log_odds_of_each_ray_target = NULL;
+
+		sensors_data[i].ray_position_in_the_floor = (carmen_vector_2D_t**)calloc(number_of_threads ,sizeof(carmen_vector_2D_t*));
+		sensors_data[i].maxed = (int**)calloc(number_of_threads ,sizeof(int*));
+		sensors_data[i].obstacle_height = (double**)calloc(number_of_threads ,sizeof(double*));
+		sensors_data[i].occupancy_log_odds_of_each_ray_target = (double**)calloc(number_of_threads ,sizeof(double*));
 		sensors_data[i].point_cloud_index = 0;
 		sensors_data[i].points = NULL;
-		sensors_data[i].ray_origin_in_the_floor = NULL;
-		sensors_data[i].ray_size_in_the_floor = NULL;
+		sensors_data[i].ray_origin_in_the_floor = (carmen_vector_2D_t**)calloc(number_of_threads ,sizeof(carmen_vector_2D_t*));;
+		sensors_data[i].ray_size_in_the_floor = (double**)calloc(number_of_threads ,sizeof(double*));
+		sensors_data[i].processed_intensity = (double**)calloc(number_of_threads ,sizeof(double*));
+		sensors_data[i].ray_hit_the_robot = (int**)calloc(number_of_threads ,sizeof(int*));
+		sensors_data[i].ray_that_hit_the_nearest_target = (int*)calloc(number_of_threads ,sizeof(int));
 
 		sensors_params[i].name = NULL;
 		sensors_params[i].ray_order = NULL;
@@ -519,6 +528,17 @@ get_alive_sensors(int argc, char **argv)
 		sensors_params[i].vertical_correction = NULL;
 		sensors_params[i].vertical_resolution = 0;
 
+		for (int j = 0; j < number_of_threads; j++)
+		{
+			sensors_data[i].ray_position_in_the_floor[j] = NULL;
+			sensors_data[i].maxed[j] = NULL;
+			sensors_data[i].obstacle_height[j] = NULL;
+			sensors_data[i].occupancy_log_odds_of_each_ray_target[j] = NULL;
+			sensors_data[i].ray_origin_in_the_floor[j] = NULL;
+			sensors_data[i].ray_size_in_the_floor[j] = NULL;
+			sensors_data[i].processed_intensity[i] = NULL;
+			sensors_data[i].ray_hit_the_robot[j] = NULL;
+		}
 
 		if (sensors_params[i].alive)
 		{
@@ -587,7 +607,7 @@ get_sensors_param(int argc, char **argv)
 		init_velodyne_points(&sensors_data[0].points, &sensors_data[0].intensity, &sensors_data[0].robot_pose, &sensors_data[0].robot_velocity, &sensors_data[0].robot_timestamp, &sensors_data[0].robot_phi);
 		sensors_params[0].sensor_to_board_matrix = create_rotation_matrix(sensors_params[0].pose.orientation);
 		sensors_data[0].point_cloud_index = 0;
-		carmen_prob_models_alloc_sensor_data(&sensors_data[0], sensors_params[0].vertical_resolution);
+		carmen_prob_models_alloc_sensor_data(&sensors_data[0], sensors_params[0].vertical_resolution, number_of_threads);
 
 		sensors_params[0].remission_calibration = NULL;//(double *) calloc(256 * sensors_params[0].vertical_resolution, sizeof(double));
 //		FILE *f = fopen("../data/remission_calibration.txt", "r");
@@ -655,7 +675,7 @@ get_sensors_param(int argc, char **argv)
 			init_velodyne_points(&sensors_data[i].points, &sensors_data[i].intensity, &sensors_data[i].robot_pose, &sensors_data[i].robot_velocity,  &sensors_data[i].robot_timestamp, &sensors_data[i].robot_phi);
 			sensors_params[i].sensor_to_board_matrix = create_rotation_matrix(sensors_params[i].pose.orientation);
 			sensors_data[i].point_cloud_index = 0;
-			carmen_prob_models_alloc_sensor_data(&sensors_data[i], sensors_params[i].vertical_resolution);
+			carmen_prob_models_alloc_sensor_data(&sensors_data[i], sensors_params[i].vertical_resolution, number_of_threads);
 
 			//TODO : tem que fazer esta medida para as cameras igual foi feito para o velodyne
 			sensors_params[i].delta_difference_mean = (double *)calloc(50, sizeof(double));

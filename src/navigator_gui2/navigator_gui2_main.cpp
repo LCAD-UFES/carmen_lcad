@@ -171,11 +171,11 @@ navigator_get_localize_map(carmen_navigator_map_t type, int is_superimposed)
 		memcpy(localize_map->complete_map, localize_all_maps.complete_prob, localize_all_maps.config.x_size * localize_all_maps.config.y_size * sizeof(double));
 		//carmen_localize_ackerman_get_map(0, localize_map);
 	}
-	else
-	{
-		memcpy(localize_map->complete_map, localize_all_maps.complete_gprob, localize_all_maps.config.x_size * localize_all_maps.config.y_size * sizeof(double));
-		//carmen_localize_ackerman_get_map(1, localize_map);
-	}
+//	else
+//	{
+//		memcpy(localize_map->complete_map, localize_all_maps.complete_gprob, localize_all_maps.config.x_size * localize_all_maps.config.y_size * sizeof(double));
+//		//carmen_localize_ackerman_get_map(1, localize_map);
+//	}
 
 	if (localize_map->complete_map == NULL)
 	{
@@ -740,7 +740,7 @@ localize_map_update_handler(carmen_map_server_localize_map_message* message)
 	for (i = 0; i < message->size; i++)
 	{
 		localize_all_maps.complete_prob[i] = exp(localize_all_maps.complete_prob[i]);
-		localize_all_maps.complete_gprob[i] = exp(localize_all_maps.complete_gprob[i]);
+		//localize_all_maps.complete_gprob[i] = exp(localize_all_maps.complete_gprob[i]);
 	}
 
 	if (localize_map == NULL)
@@ -758,11 +758,11 @@ localize_map_update_handler(carmen_map_server_localize_map_message* message)
 		memcpy(localize_map->complete_map, localize_all_maps.complete_prob, localize_all_maps.config.x_size * localize_all_maps.config.y_size * sizeof(double));
 		//carmen_localize_ackerman_get_map(0, localize_map);
 	}
-	else
-	{
-		memcpy(localize_map->complete_map, localize_all_maps.complete_gprob, localize_all_maps.config.x_size * localize_all_maps.config.y_size * sizeof(double));
-		//carmen_localize_ackerman_get_map(1, localize_map);
-	}
+//	else
+//	{
+//		memcpy(localize_map->complete_map, localize_all_maps.complete_gprob, localize_all_maps.config.x_size * localize_all_maps.config.y_size * sizeof(double));
+//		//carmen_localize_ackerman_get_map(1, localize_map);
+//	}
 
 	if (gui->navigator_graphics_update_map() &&
 		is_graphics_up && map_type == CARMEN_LOCALIZE_LMAP_v)

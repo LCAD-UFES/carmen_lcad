@@ -3,8 +3,8 @@ include ../../src/Makefile.conf
 LINK=g++
 CFLAGS += -std=c99 -msse3 -O3
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet -fopenmp
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -fopenmp
 
 LFLAGS += -lz -lmap_io -lmap_interface -lmap_util -lglobal -lipc -llocalize_ackerman_core  \
 	  -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt \
