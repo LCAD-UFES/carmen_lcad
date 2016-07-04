@@ -8,49 +8,47 @@
 #include <signal.h>
 #include <string.h>
 #include <stdio.h>
-#include "util/dijkstra.h"
+
+#include <carmen/carmen.h>
 #include <carmen/behavior_selector_interface.h>
 #include <carmen/fused_odometry_interface.h>
 #include <carmen/grid_mapping_interface.h>
+#include <carmen/grid_mapping.h>
 #include <carmen/map_server_interface.h>
-#include <carmen/carmen.h>
+#include <carmen/motion_planner_interface.h>
+#include <carmen/navigator_gui_interface.h>
+#include <carmen/rddf_interface.h>
 
 #include <prob_measurement_model.h>
 #include <prob_map.h>
 #include <prob_interface.h>
 #include <prob_measurement_model.h>
 #include <prob_transforms.h>
-#include <carmen/grid_mapping.h>
-
-#include "rrt.h"
 
 #include "model/robot_config.h"
 #include "model/global_state.h"
-
 #include "message/rrt_planner_interface.h"
-
 #include "util/util.h"
 #include "util/ackerman.h"
+#include "util/dijkstra.h"
 #include "util/publisher_util.h"
 #include "util/obstacle_detection.h"
 #include "path_follower/follower.h"
 #include "path_follower/path_follower_ackerman.h"
 #include "util/lane.h"
-#include "rs.h"
-#include <carmen/motion_planner_interface.h>
-
-#include <carmen/navigator_gui_interface.h>
-
-#include <carmen/rddf_interface.h>
 
 #include "rrt_parking.h"
 #include "rrt_lane.h"
+#include "rrt.h"
+#include "rs.h"
 
 
 RRT_Parking *rrt_parking;
 RRT_Lane *rrt_lane;
 RRT *selected_rrt = 0;
 
+FILE *plot = fopen("p.m", "w");
+int cont=0;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
@@ -92,6 +90,7 @@ publish_rrt_path_message(list<RRT_Path_Edge> &path)
 		msg.path = (Edge_Struct *) malloc(sizeof(Edge_Struct) * msg.size);
 	}
 
+//	if (msg.size > 3) fprintf(plot, "a%d = [\n", cont);
 	for (it = path.begin(); it != path.end(); it++, i++)
 	{
 		msg.path[i].p1.x = it->p1.pose.x;
@@ -110,7 +109,7 @@ publish_rrt_path_message(list<RRT_Path_Edge> &path)
 		msg.path[i].phi = it->command.phi;
 		msg.path[i].time = it->time;
 
-
+//		fprintf(plot, "%f %f\n", msg.path[i].p1.x, msg.path[i].p1.y);
 //		printf ("-%f %f\n", msg.path[i].p1.x, msg.path[i].p1.y);
 //		printf ("-%f %f\n", msg.path[i].p2.x, msg.path[i].p2.y);
 /*		printf( "p1.x = %lf, p1.y = %lf, p1.theta = %lf, p1.v = %lf, p1.phi = %lf\n"
@@ -120,6 +119,7 @@ publish_rrt_path_message(list<RRT_Path_Edge> &path)
 				msg.path[i].p2.x, msg.path[i].p2.y, msg.path[i].p2.theta, msg.path[i].p2.v, msg.path[i].p2.phi,
 				msg.path[i].v,  msg.path[i].phi,  msg.path[i].time);
 */
+
 		if (GlobalState::show_debug_info)
 			printf("v = %2.2lf, phi = %2.2lf, t = %2.3lf, p1.v = %2.2lf, p1.phi = %2.2lf, p2.v = %2.2lf, p2.phi = %2.2lf\n",
 					it->command.v, carmen_radians_to_degrees(it->command.phi), it->time,
@@ -132,43 +132,39 @@ publish_rrt_path_message(list<RRT_Path_Edge> &path)
 		fflush(stdout);
 	}
 
-	Publisher_Util::publish_rrt_path_message(&msg);
-/*
-	if (msg.size > 3){
-		selected_rrt->smooth_path_using_conjugate_gradient (&msg);
-	}
-
-	printf ("\n\n");
-	for (i=0; i < msg.size; i++)
+	if (msg.size > 3)
 	{
-		printf(	"p1.x = %lf, p1.y = %lf, p1.theta = %lf, p1.v = %lf, p1.phi = %lf\n"
-				"p2.x = %lf, p2.y = %lf, p2.theta = %lf, p2.v = %lf, p2.phi = %lf\n"
-				"command.v = %lf, command.phi = %lf, command.time = %lf\n",
-				msg.path[i].p1.x, msg.path[i].p1.y, msg.path[i].p1.theta, msg.path[i].p1.v, msg.path[i].p1.phi,
-				msg.path[i].p2.x, msg.path[i].p2.y, msg.path[i].p2.theta, msg.path[i].p2.v, msg.path[i].p2.phi,
-				msg.path[i].v,  msg.path[i].phi,  msg.path[i].time);
-	}
-	printf ("------------------------------------------------------------------------------\n\n");
+//		printf ("-%f %f\n\n", msg.path[i-1].p2.x, msg.path[i-1].p2.y);
+//		fprintf(plot, "%f %f   \n];\n\n", msg.path[i-1].p2.x, msg.path[i-1].p2.y);
 
-	FILE *gnuplot;
-		gnuplot= popen("gnuplot", "w");
+//		selected_rrt->smooth_path_using_conjugate_gradient (&msg);
 
-	for (j; j<999; j++)
-	{
-		fprintf(gnuplot, "set yrange [0:500] '-'\n");
-		fprintf(gnuplot, "set xrange [0:500] '-'\n");
-		fprintf(gnuplot, "plot '-'\n");
-		for (i = 0; i < 500; i++)
+//    printf ("\n\n");							//Imprime trajetorias no terminal
+/*		for (i=0; i < msg.size; i++)
 		{
-			fprintf(gnuplot, "%d\n", j);
-
+			printf(	"p1.x = %lf, p1.y = %lf, p1.theta = %lf, p1.v = %lf, p1.phi = %lf\n"
+					"p2.x = %lf, p2.y = %lf, p2.theta = %lf, p2.v = %lf, p2.phi = %lf\n"
+					"command.v = %lf, command.phi = %lf, command.time = %lf\n",
+					msg.path[i].p1.x, msg.path[i].p1.y, msg.path[i].p1.theta, msg.path[i].p1.v, msg.path[i].p1.phi,
+					msg.path[i].p2.x, msg.path[i].p2.y, msg.path[i].p2.theta, msg.path[i].p2.v, msg.path[i].p2.phi,
+					msg.path[i].v,  msg.path[i].phi,  msg.path[i].time);
 		}
-		fprintf(gnuplot, "e\n");
-		fflush(gnuplot);
-		getchar();
+*/
+//		printf ("Size %d------------------------------------------------------------------------------\n\n", msg.size);
+
+/*		fprintf(plot, "b%d = [   \n%f %f\n", cont, msg.path[0].p1.x, msg.path[0].p1.y);    //Imprime trajetoria normal e otimizada em arquivo
+		for (i=0; i < msg.size; i++)
+			fprintf(plot, "%f %f\n", msg.path[i].p2.x, msg.path[i].p2.y);
+		fprintf (plot, "];\n\n");
+		fprintf(plot, "\nplot (a%d(:,1), a%d(:,2), b%d(:,1), b%d(:,2)); \nstr = input (\"a   :\");\n\n", cont, cont, cont, cont);
+		cont++;
+*/
 	}
-	getchar();
-	*/
+
+	Publisher_Util::publish_rrt_path_message(&msg);
+
+	//if (msg.size > 3) printf ("%f\n------------------------------------------------------------------------------\n\n", msg.path[0].p1.x);
+
 	free(msg.path);
 }
 
