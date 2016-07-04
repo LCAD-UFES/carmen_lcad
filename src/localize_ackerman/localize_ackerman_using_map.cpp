@@ -77,12 +77,12 @@ update_cells_in_the_velodyne_perceptual_field(sensor_parameters_t *sensor_params
 		change_sensor_rear_range_max(sensor_params, v_zt.sphere_points[i].horizontal_angle);
 
 		carmen_prob_models_compute_relevant_map_coordinates(sensor_data, sensor_params, i, robot_interpolated_position.position, sensor_board_1_pose,
-				r_matrix_robot_to_global, sensor_board_1_to_car_matrix, robot_wheel_radius, g_map_origin.x, g_map_origin.y, &car_config, 0);
+				r_matrix_robot_to_global, sensor_board_1_to_car_matrix, robot_wheel_radius, g_map_origin.x, g_map_origin.y, &car_config, 0, 0);
 
 		carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data, sensor_params, i,
-				highest_sensor, safe_range_above_sensors, 0);
+				highest_sensor, safe_range_above_sensors, 0, 0);
 
-		carmen_prob_models_update_intensity_of_cells_hit_by_rays(&sum_remission_map, &sum_sqr_remission_map, &count_remission_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, NULL);
+		carmen_prob_models_update_intensity_of_cells_hit_by_rays(&sum_remission_map, &sum_sqr_remission_map, &count_remission_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, NULL, 0);
 	}
 }
 

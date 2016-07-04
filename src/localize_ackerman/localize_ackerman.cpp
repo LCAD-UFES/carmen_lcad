@@ -113,7 +113,7 @@ cell_coords_t **map_cells_hit_by_each_rays = NULL;
 
 carmen_point_t g_std;
 int g_reinitiaze_particles = 10;
-
+int number_of_threads = 10;
 
 static int
 get_fused_odometry_index_by_timestamp(double timestamp)
@@ -1033,14 +1033,21 @@ get_alive_sensors(int argc, char **argv)
 
 	for (i = 0; i < number_of_sensors; i++)
 	{
-		spherical_sensor_data[i].ray_position_in_the_floor = NULL;
-		spherical_sensor_data[i].maxed = NULL;
-		spherical_sensor_data[i].obstacle_height = NULL;
-		spherical_sensor_data[i].occupancy_log_odds_of_each_ray_target = NULL;
+		if (i == STEREO_MAPPING_SENSOR_INDEX)
+			continue;
+
+
+		spherical_sensor_data[i].ray_position_in_the_floor = (carmen_vector_2D_t**)calloc(number_of_threads ,sizeof(carmen_vector_2D_t*));
+		spherical_sensor_data[i].maxed = (int**)calloc(number_of_threads ,sizeof(int*));
+		spherical_sensor_data[i].obstacle_height = (double**)calloc(number_of_threads ,sizeof(double*));
+		spherical_sensor_data[i].occupancy_log_odds_of_each_ray_target = (double**)calloc(number_of_threads ,sizeof(double*));
 		spherical_sensor_data[i].point_cloud_index = 0;
 		spherical_sensor_data[i].points = NULL;
-		spherical_sensor_data[i].ray_origin_in_the_floor = NULL;
-		spherical_sensor_data[i].ray_size_in_the_floor = NULL;
+		spherical_sensor_data[i].ray_origin_in_the_floor = (carmen_vector_2D_t**)calloc(number_of_threads ,sizeof(carmen_vector_2D_t*));;
+		spherical_sensor_data[i].ray_size_in_the_floor = (double**)calloc(number_of_threads ,sizeof(double*));
+		spherical_sensor_data[i].processed_intensity = (double**)calloc(number_of_threads ,sizeof(double*));
+		spherical_sensor_data[i].ray_hit_the_robot = (int**)calloc(number_of_threads ,sizeof(int*));
+		spherical_sensor_data[i].ray_that_hit_the_nearest_target = (int*)calloc(number_of_threads ,sizeof(int));
 
 		spherical_sensor_params[i].name = NULL;
 		spherical_sensor_params[i].ray_order = NULL;
@@ -1048,6 +1055,17 @@ get_alive_sensors(int argc, char **argv)
 		spherical_sensor_params[i].vertical_correction = NULL;
 		spherical_sensor_params[i].vertical_resolution = 0;
 
+		for (int j = 0; j < number_of_threads; j++)
+		{
+			spherical_sensor_data[i].ray_position_in_the_floor[j] = NULL;
+			spherical_sensor_data[i].maxed[j] = NULL;
+			spherical_sensor_data[i].obstacle_height[j] = NULL;
+			spherical_sensor_data[i].occupancy_log_odds_of_each_ray_target[j] = NULL;
+			spherical_sensor_data[i].ray_origin_in_the_floor[j] = NULL;
+			spherical_sensor_data[i].ray_size_in_the_floor[j] = NULL;
+			spherical_sensor_data[i].processed_intensity[i] = NULL;
+			spherical_sensor_data[i].ray_hit_the_robot[j] = NULL;
+		}
 
 		if (spherical_sensor_params[i].alive)
 		{
@@ -1118,7 +1136,7 @@ get_sensors_param(int argc, char **argv)
 				&spherical_sensor_data[0].robot_velocity, &spherical_sensor_data[0].robot_timestamp, &spherical_sensor_data[0].robot_phi);
 		spherical_sensor_params[0].sensor_to_board_matrix = create_rotation_matrix(spherical_sensor_params[0].pose.orientation);
 		spherical_sensor_data[0].point_cloud_index = 0;
-		carmen_prob_models_alloc_sensor_data(&spherical_sensor_data[0], spherical_sensor_params[0].vertical_resolution);
+		carmen_prob_models_alloc_sensor_data(&spherical_sensor_data[0], spherical_sensor_params[0].vertical_resolution, number_of_threads);
 
 //		spherical_sensor_params[0].remission_calibration = (double *) calloc(256 * spherical_sensor_params[0].vertical_resolution, sizeof(double));
 //		FILE *f = fopen("../data/remission_calibration.txt", "r");
@@ -1196,7 +1214,7 @@ get_sensors_param(int argc, char **argv)
 					&spherical_sensor_data[i].robot_velocity, &spherical_sensor_data[i].robot_timestamp, &spherical_sensor_data[i].robot_phi);
 			spherical_sensor_params[i].sensor_to_board_matrix = create_rotation_matrix(spherical_sensor_params[i].pose.orientation);
 			spherical_sensor_data[i].point_cloud_index = 0;
-			carmen_prob_models_alloc_sensor_data(&spherical_sensor_data[i], spherical_sensor_params[i].vertical_resolution);
+			carmen_prob_models_alloc_sensor_data(&spherical_sensor_data[i], spherical_sensor_params[i].vertical_resolution, number_of_threads);
 
 			//TODO : tem que fazer esta medida para as cameras igual foi feito para o velodyne
 			spherical_sensor_params[i].delta_difference_mean = (double *)calloc(50, sizeof(double));

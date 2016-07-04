@@ -61,6 +61,7 @@ static carmen_laser_laser_message flaser_message;
 IplImage *map_image = NULL;
 
 extern cell_coords_t **map_cells_hit_by_each_rays;
+extern int number_of_threads;
 
 static void
 localize_ackerman_velodyne_laser_initialize()
@@ -237,32 +238,38 @@ compute_laser_rays_from_velodyne_and_create_a_local_map(sensor_parameters_t *vel
 				 carmen_pose_3D_t *robot_pose, carmen_vector_3D_t *robot_velocity,
 				 double x_origin, double y_origin, int point_cloud_index, double phi)
 {
-	int i, j;
+	//int i, j;
 	spherical_point_cloud v_zt = velodyne_data->points[point_cloud_index];
 //	int laser_ray_angle_index;
-	//int N = v_zt.num_points / velodyne_params->vertical_resolution;
+	int N = v_zt.num_points / velodyne_params->vertical_resolution;
 
 	double dt = 1.0 / (1808.0 * 12.0);
 	carmen_pose_3D_t robot_interpolated_position = *robot_pose;
 
 	// Ray-trace the grid
 	int jump = filter->param->jump_size;
-	for (i = 0, j = 0; i < v_zt.num_points; i = i + jump * velodyne_params->vertical_resolution, j+=jump)
+	N /= jump;
+	//#pragma omp parallel for
+	for (int k = 0; k < N; k++)
 	{
-		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(robot_interpolated_position, jump * dt, robot_velocity->x, phi, car_config.distance_between_front_and_rear_axles);
+		int tid = 0;//omp_get_thread_num();
+		int j = k * jump;
+		int i = j * velodyne_params->vertical_resolution;
+		double dt2 = j * dt;
+		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(*robot_pose, dt2, robot_velocity->x, phi, car_config.distance_between_front_and_rear_axles);
 		r_matrix_car_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
 
 		carmen_prob_models_compute_relevant_map_coordinates(velodyne_data, velodyne_params, i, robot_interpolated_position.position, sensor_board_1_pose,
-				r_matrix_car_to_global, sensor_board_1_to_car_matrix, robot_wheel_radius, x_origin, y_origin, &car_config, 0);
+				r_matrix_car_to_global, sensor_board_1_to_car_matrix, robot_wheel_radius, x_origin, y_origin, &car_config, 0, tid);
 
-		carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(velodyne_data, velodyne_params, i, highest_sensor, safe_range_above_sensors, 0);
+		carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(velodyne_data, velodyne_params, i, highest_sensor, safe_range_above_sensors, 0, tid);
 
-		carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(&local_map, velodyne_params, velodyne_data);
+		carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(&local_map, velodyne_params, velodyne_data, tid);
 
-		if (map_cells_hit_by_each_rays != NULL)
-			carmen_prob_models_update_intensity_of_cells_hit_by_rays(&local_sum_remission_map, &local_sum_sqr_remission_map, &local_count_remission_map, velodyne_params, velodyne_data, highest_sensor, safe_range_above_sensors, map_cells_hit_by_each_rays[j]);
-		else
-			carmen_prob_models_update_intensity_of_cells_hit_by_rays(&local_sum_remission_map, &local_sum_sqr_remission_map, &local_count_remission_map, velodyne_params, velodyne_data, highest_sensor, safe_range_above_sensors, NULL);
+		//if (map_cells_hit_by_each_rays != NULL)
+		//	carmen_prob_models_update_intensity_of_cells_hit_by_rays(&local_sum_remission_map, &local_sum_sqr_remission_map, &local_count_remission_map, velodyne_params, velodyne_data, highest_sensor, safe_range_above_sensors, map_cells_hit_by_each_rays[j], tid);
+	//	else
+			carmen_prob_models_update_intensity_of_cells_hit_by_rays(&local_sum_remission_map, &local_sum_sqr_remission_map, &local_count_remission_map, velodyne_params, velodyne_data, highest_sensor, safe_range_above_sensors, NULL, tid);
 //
 //		laser_ray_angle_index = get_the_laser_ray_angle_index_from_angle(v_zt.sphere_points[i].horizontal_angle);
 //

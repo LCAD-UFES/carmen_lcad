@@ -1002,7 +1002,7 @@ cosine_correction_with_remission_map_and_grid_map(carmen_localize_ackerman_parti
 	double inner_product = 0.0, norm_local_map = 0.0, norm_global_map = 0.0;
 
 	int i;
-
+#pragma omp parallel for
 	for (i = 0; i < filter->param->num_particles; i++)
 	{
 		inner_product_between_maps(&inner_product_remission, &norm_local_remission_map, &norm_global_remission_map, &global_map->carmen_mean_remission_map, local_mean_remission_map, &(filter->particles[i]));
@@ -1080,6 +1080,7 @@ cosine_correction_with_remission_map(carmen_localize_ackerman_particle_filter_p 
 	double min_weight = 0.000001, w;
 	double inner_product, norm_local_map, norm_global_map;
 	int i;
+//#pragma omp parallel for
 	for (i = 0; i < filter->param->num_particles; i++)
 	{
 		inner_product_between_maps(&inner_product, &norm_local_map, &norm_global_map, &global_map->carmen_mean_remission_map, local_mean_remission_map, &(filter->particles[i]));
