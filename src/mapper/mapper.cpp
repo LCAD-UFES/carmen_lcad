@@ -294,7 +294,16 @@ build_map_using_velodyne(sensor_parameters_t *sensor_params, sensor_data_t *sens
 		carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map, number_of_threads);
 	}
 
+<<<<<<< HEAD
 
+=======
+//	map_decay_to_offline_map(&map);
+
+	// @@@ Alberto: Mapa padrao Lucas -> colocar DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS ao inves de UPDATE_CELLS_CROSSED_BY_RAYS
+	//update_cells_in_the_velodyne_perceptual_field(&map, snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
+	update_cells_in_the_velodyne_perceptual_field(&map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
+	//carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map);
+>>>>>>> 66fda1f0db5b6f4ebed8b0a4746d00a9cca40af7
 	//if (build_snapshot_map)
 
 
