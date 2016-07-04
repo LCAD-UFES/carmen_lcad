@@ -226,7 +226,7 @@ carmen_prob_models_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t 
 {
 	cost_map->config.resolution = resolution;
 	carmen_prob_models_initialize_cost_map(cost_map, map, resolution);
-	carmen_prob_models_convert_to_linear_distance_to_obstacles_map(cost_map, map, obstacle_probability_threshold, obstacle_cost_distance, 0);
+//	carmen_prob_models_convert_to_linear_distance_to_obstacles_map(cost_map, map, obstacle_probability_threshold, obstacle_cost_distance, 0);
 }
 
 

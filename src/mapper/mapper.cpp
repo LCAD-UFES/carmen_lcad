@@ -186,7 +186,7 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 	int i = 0;
 	// Ray-trace the grid
 	#pragma omp for
-	for (int j = 0; j < N; j+=4)
+	for (int j = 0; j < N; j += 1)
 	{
 		i = j * sensor_params->vertical_resolution;
 		double dt2 = j * dt;
@@ -290,20 +290,10 @@ build_map_using_velodyne(sensor_parameters_t *sensor_params, sensor_data_t *sens
 
 		// @@@ Alberto: Mapa padrao Lucas -> colocar DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS ao inves de UPDATE_CELLS_CROSSED_BY_RAYS
 		//update_cells_in_the_velodyne_perceptual_field(&map, snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
-		update_cells_in_the_velodyne_perceptual_field(snapshot_map[tid], sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
-		carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map, number_of_threads);
+		update_cells_in_the_velodyne_perceptual_field(&map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
+		//carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map, number_of_threads);
 	}
 
-<<<<<<< HEAD
-
-=======
-//	map_decay_to_offline_map(&map);
-
-	// @@@ Alberto: Mapa padrao Lucas -> colocar DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS ao inves de UPDATE_CELLS_CROSSED_BY_RAYS
-	//update_cells_in_the_velodyne_perceptual_field(&map, snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
-	update_cells_in_the_velodyne_perceptual_field(&map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
-	//carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map);
->>>>>>> 66fda1f0db5b6f4ebed8b0a4746d00a9cca40af7
 	//if (build_snapshot_map)
 
 
@@ -751,9 +741,9 @@ mapper_publish_cost_and_distance_maps(double timestamp)
 	carmen_prob_models_build_obstacle_cost_map(&cost_map, &map,	map.config.resolution, obstacle_cost_distance, obstacle_probability_threshold);
 	carmen_prob_models_create_compact_map(&compacted_cost_map, &cost_map, 0.0);
 
+	mapper_publish_distance_map(timestamp);
 	if (compacted_cost_map.number_of_known_points_on_the_map > 0)
 	{
-		mapper_publish_distance_map(timestamp);
 		carmen_map_server_publish_compact_cost_map_message(&compacted_cost_map,	timestamp);
 		carmen_prob_models_clear_carmen_map_using_compact_map(&cost_map, &compacted_cost_map, 0.0);
 		carmen_prob_models_free_compact_map(&compacted_cost_map);

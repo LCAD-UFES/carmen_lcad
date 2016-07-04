@@ -4,7 +4,8 @@ include ../Makefile.conf
 MODULE_NAME = MAPPER_PACKAGE
 MODULE_COMMENT = Mapper Maps using Velodyne!
 
-CFLAGS += -Wall -std=c99 -msse3 -O3 -fopenmp
+CFLAGS += -Wall -std=c99 -msse3 -O4 -fopenmp -funroll-all-loops
+#CFLAGS += -g -pg
 LINK = g++
 
 # Application specific include directories.
