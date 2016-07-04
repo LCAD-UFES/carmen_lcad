@@ -283,20 +283,15 @@ build_map_using_velodyne(sensor_parameters_t *sensor_params, sensor_data_t *sens
 		int tid = omp_get_thread_num();
 		snapshot_map[tid] = carmen_prob_models_check_if_new_snapshot_map_allocation_is_needed(snapshot_map[tid], &map);
 		//set_map_equal_offline_map(&map);
-		//	add_offline_map_over_unknown(&map);
+		//add_offline_map_over_unknown(&map);
 
-	map_decay_to_offline_map(&map);
+		map_decay_to_offline_map(&map);
 
 		// @@@ Alberto: Mapa padrao Lucas -> colocar DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS ao inves de UPDATE_CELLS_CROSSED_BY_RAYS
 		//update_cells_in_the_velodyne_perceptual_field(&map, snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
-		update_cells_in_the_velodyne_perceptual_field(&map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
-		//carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map, number_of_threads);
+		update_cells_in_the_velodyne_perceptual_field(snapshot_map[tid], sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
+		carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map, number_of_threads);
 	}
-
-	//if (build_snapshot_map)
-
-
-//	add_offline_map_over_unknown(&map);
 }
 
 
@@ -722,13 +717,30 @@ carmen_mapper_initialize_distance_map(carmen_grid_mapping_distance_map *lmap, ca
 
 
 void
-mapper_publish_distance_map(double timestamp)
+mapper_publish_distance_map(double timestamp, double obstacle_probability_threshold)
 {
 	if (distance_map.complete_distance == NULL)
-		carmen_mapper_initialize_distance_map(&distance_map, &cost_map);
+		carmen_mapper_initialize_distance_map(&distance_map, &map);
 
-	carmen_mapper_create_distance_map(&distance_map, &cost_map, 0.5);
+	carmen_mapper_create_distance_map(&distance_map, &map, obstacle_probability_threshold);
 	carmen_grid_mapping_publish_distance_map_message(&distance_map, timestamp);
+}
+
+
+void
+carmen_prob_models_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t *map, carmen_grid_mapping_distance_map *distance_map, double distance_for_zero_cost_in_pixels)
+{
+	carmen_prob_models_initialize_cost_map(cost_map, map, map->config.resolution);
+
+	double resolution = distance_map->config.resolution;
+	for (int x = 0; x < distance_map->config.x_size; x++)
+	{
+		for (int y = 0; y < distance_map->config.y_size; y++)
+		{
+			double distance = distance_map->distance[x][y] * resolution;
+			cost_map->map[x][y] = (distance > distance_for_zero_cost_in_pixels)? 0.0: 1.0 - (distance / distance_for_zero_cost_in_pixels);
+		}
+	}
 }
 
 
@@ -737,10 +749,12 @@ mapper_publish_cost_and_distance_maps(double timestamp)
 {
 	carmen_compact_map_t compacted_cost_map;
 
-	carmen_prob_models_build_obstacle_cost_map(&cost_map, &map,	map.config.resolution, obstacle_cost_distance, obstacle_probability_threshold);
+	mapper_publish_distance_map(timestamp, obstacle_probability_threshold);
+	carmen_prob_models_build_obstacle_cost_map(&cost_map, &map, &distance_map, obstacle_cost_distance);
+	// Old carmen_prob_models_build_obstacle_cost_map below
+	// carmen_prob_models_build_obstacle_cost_map(&cost_map, &map,	map.config.resolution, obstacle_cost_distance, obstacle_probability_threshold);
 	carmen_prob_models_create_compact_map(&compacted_cost_map, &cost_map, 0.0);
 
-	mapper_publish_distance_map(timestamp);
 	if (compacted_cost_map.number_of_known_points_on_the_map > 0)
 	{
 		carmen_map_server_publish_compact_cost_map_message(&compacted_cost_map,	timestamp);
