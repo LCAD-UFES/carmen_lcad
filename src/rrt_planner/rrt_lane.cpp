@@ -194,7 +194,7 @@ RRT_Lane::build_rrt_path()
 
 	if (GlobalState::goal_node)
 	{
-		//RRT::smooth_principal_path_from_tree_using_conjugate_gradient(GlobalState::goal_node);
+		RRT::smooth_principal_path_from_tree_using_conjugate_gradient(GlobalState::goal_node);
 		path = Dijkstra::build_path(GlobalState::goal_node);
 		path_timestamp = GlobalState::localizer_pose_timestamp;
 	}
