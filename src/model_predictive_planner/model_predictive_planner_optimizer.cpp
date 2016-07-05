@@ -387,6 +387,13 @@ compute_proximity_to_obstacles_using_localize_map(vector<carmen_ackerman_path_po
 		if (delta < 0.0)
 			proximity_to_obstacles += delta * delta;
 
+		displacement = 0.0;//-GlobalState::robot_config.distance_between_rear_car_and_rear_wheels;
+//		double distance = distance_from_traj_point_to_obstacle(path[i], x_gpos, y_gpos, displacement, plot);
+		distance = distance_from_traj_point_to_obstacle(path[i], x_gpos, y_gpos, displacement);
+		delta = distance - min_dist;
+		if (delta < 0.0)
+			proximity_to_obstacles += delta * delta;
+
 		displacement = GlobalState::robot_config.distance_between_front_and_rear_axles / 2.0;
 //		distance = distance_from_traj_point_to_obstacle(path[i], x_gpos, y_gpos, displacement, plot);
 		distance = distance_from_traj_point_to_obstacle(path[i], x_gpos, y_gpos, displacement);
@@ -395,6 +402,13 @@ compute_proximity_to_obstacles_using_localize_map(vector<carmen_ackerman_path_po
 			proximity_to_obstacles += delta * delta;
 
 		displacement = GlobalState::robot_config.distance_between_front_and_rear_axles;// + GlobalState::robot_config.distance_between_front_car_and_front_wheels;
+//		distance = distance_from_traj_point_to_obstacle(path[i], x_gpos, y_gpos, displacement, plot);
+		distance = distance_from_traj_point_to_obstacle(path[i], x_gpos, y_gpos, displacement);
+		delta = distance - min_dist;
+		if (delta < 0.0)
+			proximity_to_obstacles += delta * delta;
+
+		displacement = GlobalState::robot_config.distance_between_front_and_rear_axles + GlobalState::robot_config.distance_between_front_car_and_front_wheels;
 //		distance = distance_from_traj_point_to_obstacle(path[i], x_gpos, y_gpos, displacement, plot);
 		distance = distance_from_traj_point_to_obstacle(path[i], x_gpos, y_gpos, displacement);
 		delta = distance - min_dist;

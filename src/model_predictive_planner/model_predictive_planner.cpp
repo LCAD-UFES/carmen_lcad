@@ -273,11 +273,11 @@ filter_path(vector<carmen_ackerman_path_point_t> &path)
 	for (i = 1; i < path.size(); i += 2)
 		path.erase(path.begin() + i);
 
-	for (i = 0; i < path.size(); i += 2)
-		if ((i + 1) < path.size())
-			path[i].time += path[i + 1].time;
-	for (i = 1; i < path.size(); i += 2)
-		path.erase(path.begin() + i);
+//	for (i = 0; i < path.size(); i += 2)
+//		if ((i + 1) < path.size())
+//			path[i].time += path[i + 1].time;
+//	for (i = 1; i < path.size(); i += 2)
+//		path.erase(path.begin() + i);
 }
 
 

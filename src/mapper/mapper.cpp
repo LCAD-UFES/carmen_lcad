@@ -579,82 +579,154 @@ mapper_merge_online_map_with_offline_map(carmen_map_t *offline_map)
 }
 
 
+inline void
+compute_intermediate_pixel_distance(int x, int y,
+		double **distance, short int **x_offset, short int **y_offset)
+{
+	for (int i = -1; i <= 1; i++)
+		for (int j = -1; j <= 1; j++)
+		{
+			double v = distance[x + i][y + j] + ((i * j != 0) ? 1.414213562 : 1.0);
+			if (v < distance[x][y])
+			{
+				distance[x][y] = v;
+				x_offset[x][y] = x_offset[x + i][y + j] + i;
+				y_offset[x][y] = y_offset[x + i][y + j] + j;
+			}
+		}
+}
+
+
+inline void
+compute_intermediate_pixel_distance_new(int x, int y,
+		double **distance, short int **x_offset, short int **y_offset)
+{
+	double v;
+
+	v = distance[x - 1][y - 1] + 1.414213562;
+	if (v < distance[x][y])
+	{
+		distance[x][y] = v;
+		x_offset[x][y] = x_offset[x - 1][y - 1] - 1;
+		y_offset[x][y] = y_offset[x - 1][y - 1] - 1;
+	}
+
+	v = distance[x][y - 1] + 1.0;
+	if (v < distance[x][y])
+	{
+		distance[x][y] = v;
+		x_offset[x][y] = x_offset[x][y - 1];
+		y_offset[x][y] = y_offset[x][y - 1] - 1;
+	}
+
+	v = distance[x + 1][y - 1] + 1.414213562;
+	if (v < distance[x][y])
+	{
+		distance[x][y] = v;
+		x_offset[x][y] = x_offset[x + 1][y - 1] + 1;
+		y_offset[x][y] = y_offset[x + 1][y - 1] - 1;
+	}
+
+
+	v = distance[x - 1][y] + 1.0;
+	if (v < distance[x][y])
+	{
+		distance[x][y] = v;
+		x_offset[x][y] = x_offset[x - 1][y] - 1;
+		y_offset[x][y] = y_offset[x - 1][y];
+	}
+
+	v = distance[x + 1][y] + 1.0;
+	if (v < distance[x][y])
+	{
+		distance[x][y] = v;
+		x_offset[x][y] = x_offset[x + 1][y] + 1;
+		y_offset[x][y] = y_offset[x + 1][y];
+	}
+
+
+	v = distance[x - 1][y + 1] + 1.414213562;
+	if (v < distance[x][y])
+	{
+		distance[x][y] = v;
+		x_offset[x][y] = x_offset[x - 1][y + 1] - 1;
+		y_offset[x][y] = y_offset[x - 1][y + 1] + 1;
+	}
+
+	v = distance[x][y + 1] + 1.0;
+	if (v < distance[x][y])
+	{
+		distance[x][y] = v;
+		x_offset[x][y] = x_offset[x][y + 1];
+		y_offset[x][y] = y_offset[x][y + 1] + 1;
+	}
+
+	v = distance[x + 1][y + 1] + 1.414213562;
+	if (v < distance[x][y])
+	{
+		distance[x][y] = v;
+		x_offset[x][y] = x_offset[x + 1][y + 1] + 1;
+		y_offset[x][y] = y_offset[x + 1][y + 1] + 1;
+	}
+}
+
+
 /* compute minimum distance to all occupied cells */
 void
 carmen_mapper_create_distance_map(carmen_grid_mapping_distance_map *lmap, carmen_map_p cmap,
 		double minimum_occupied_prob)
 {
-	int x, y, i, j, border;
-	double v;
+	int x, y;
 
-	for (x = 0; x < lmap->config.x_size; x++)
-	{
-		for (y = 0; y < lmap->config.y_size; y++)
-		{
-			lmap->distance[x][y] = HUGE_DISTANCE;
-			lmap->x_offset[x][y] = HUGE_DISTANCE;
-			lmap->y_offset[x][y] = HUGE_DISTANCE;
-		}
-	}
+	double **cmap_map = cmap->map;
+	double **distance = lmap->distance;
+	short int **x_offset = lmap->x_offset;
+	short int **y_offset = lmap->y_offset;
+
+	int x_size = lmap->config.x_size;
+	int y_size = lmap->config.y_size;
+
+	int total_size = x_size * y_size;
+	std::fill_n(lmap->complete_distance, total_size, HUGE_DISTANCE);
+	std::fill_n(lmap->complete_x_offset, total_size, HUGE_DISTANCE);
+	std::fill_n(lmap->complete_y_offset, total_size, HUGE_DISTANCE);
 
 	/* Initialize the distance measurements before dynamic programming */
-	for (x = 0; x < lmap->config.x_size; x++)
-		for (y = 0; y < lmap->config.y_size; y++)
-			if (cmap->map[x][y] > minimum_occupied_prob)
+	for (x = 0; x < x_size; x++)
+	{
+		for (y = 0; y < y_size; y++)
+		{
+			if (cmap_map[x][y] > minimum_occupied_prob)
 			{
-				border = 0;
-				for (i = -1; i <= 1; i++)
-					for (j = -1; j <= 1; j++)
-						if (!border && x + i >= 0 && y + j >= 0
-								&& x + i < lmap->config.x_size
-								&& y + j < lmap->config.y_size
-								&& (i != 0 || j != 0))
-						{
-							if (cmap->map[x + i][y + j] < minimum_occupied_prob
-									&& cmap->map[x + i][y + j] != -1)
-								border = 1;
-						}
-				if (border)
-				{
-					lmap->distance[x][y] = 0;
-					lmap->x_offset[x][y] = 0;
-					lmap->y_offset[x][y] = 0;
-				}
+				distance[x][y] = 0.0;
+				x_offset[x][y] = 0.0;
+				y_offset[x][y] = 0.0;
 			}
+		}
+	}
 
 	/* Use dynamic programming to estimate the minimum distance from
      every map cell to an occupied map cell */
 
 	/* pass 1 */
-	for(x = 0; x < lmap->config.x_size; x++)
-		for(y = 0; y < lmap->config.y_size; y++)
-			for(i = -1; i <= 1; i++)
-				for(j = -1; j <= 1; j++)
-					if(x + i >= 0 && y + j >= 0 && x + i < lmap->config.x_size &&
-							y + j < lmap->config.y_size && (i != 0 || j != 0)) {
-						v = lmap->distance[x + i][y + j] + ((i * j != 0) ? 1.414 : 1);
-						if(v < lmap->distance[x][y]) {
-							lmap->distance[x][y] = v;
-							lmap->x_offset[x][y] = lmap->x_offset[x + i][y + j] + i;
-							lmap->y_offset[x][y] = lmap->y_offset[x + i][y + j] + j;
-						}
-					}
+	for (x = 1; x < x_size - 1; x++)
+		for (y = 1; y < y_size - 1; y++)
+			compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
 
 	/* pass 2 */
-	for(x = lmap->config.x_size - 1; x >= 0; x--)
-		for(y = lmap->config.y_size - 1; y >= 0; y--)
-			for(i = -1; i <= 1; i++)
-				for(j = -1; j <= 1; j++)
-					if(x + i >= 0 && y + j >= 0 && x + i < lmap->config.x_size &&
-							y + j < lmap->config.y_size && (i != 0 || j != 0)) {
-						v = lmap->distance[x + i][y + j] + ((i * j != 0) ? 1.414 : 1);
-						if(v < lmap->distance[x][y]) {
-							lmap->distance[x][y] = v;
-							lmap->x_offset[x][y] = lmap->x_offset[x + i][y + j] + i;
-							lmap->y_offset[x][y] = lmap->y_offset[x + i][y + j] + j;
-						}
-					}
+	for (x = x_size - 2; x >= 1; x--)
+		for (y = y_size - 2; y >= 1; y--)
+			compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
 }
+
+
+///* compute minimum distance to all occupied cells */
+//void
+//carmen_mapper_create_distance_map_new(carmen_grid_mapping_distance_map *lmap, carmen_map_p cmap,
+//		double minimum_occupied_prob)
+//{
+//
+//}
 
 
 void
