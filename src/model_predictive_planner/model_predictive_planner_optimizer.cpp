@@ -375,7 +375,7 @@ compute_proximity_to_obstacles_using_localize_map(vector<carmen_ackerman_path_po
 //	plot = fopen("Data.csv", "w");
 
 	double proximity_to_obstacles = 0.0;
-	double min_dist = (GlobalState::robot_config.width + 1.2) / 2.0; // metade da largura do carro + um espacco de guarda
+	double min_dist = (GlobalState::robot_config.width + 1.6) / 2.0; // metade da largura do carro + um espacco de guarda
 	double x_gpos = GlobalState::localizer_pose->x - GlobalState::cost_map.config.x_origin;
 	double y_gpos = GlobalState::localizer_pose->y - GlobalState::cost_map.config.y_origin;
 	for (unsigned int i = 0; i < path.size(); i += 1)
