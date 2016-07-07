@@ -85,6 +85,8 @@ bool offline_map_available = false;
 int ok_to_publish = 0;
 int number_of_threads = 1;
 
+rotation_matrix *r_matrix_car_to_global = NULL;
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
@@ -193,7 +195,6 @@ static void
 carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *globalpos_message)
 {
 	double distance_to_annotation;
-//	static double previous_timestamp = 0.0;
 
 	if (visual_odometry_is_global_pos)
 		interpolator.AddMessageToInterpolationList(globalpos_message);
@@ -210,10 +211,25 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		robot_near_bump_or_barrier = 0;
 
 	if (ok_to_publish)
-		publish_map(globalpos_message->timestamp);
+	{
+		int aux = -1;
+		for (int i = 0; i < NUM_VELODYNE_POINT_CLOUDS; i++)
+		{
+			if (sensors_data[0].points_timestamp[i] == globalpos_message->timestamp)
+			{
+				aux = sensors_data[0].point_cloud_index;
+				sensors_data[0].point_cloud_index = i;
+				run_mapper(&sensors_params[0], &sensors_data[0], r_matrix_car_to_global);
+				publish_map(globalpos_message->timestamp);
+				sensors_data[0].point_cloud_index = aux;
+				break;
+			}
+		}
+	}
+
+//	static double previous_timestamp = 0.0;
 //	double t = carmen_get_time();
 //	printf("%lf\n", t - previous_timestamp);
-//
 //	previous_timestamp = t;
 }
 
@@ -382,7 +398,8 @@ shutdown_module(int signo)
 
 
 static void
-init_velodyne_points(spherical_point_cloud **velodyne_points_out, unsigned char ***intencity, carmen_pose_3D_t **robot_pose_out, carmen_vector_3D_t **robot_velocity_out, double **robot_timestamp_out, double **robot_phi_out)
+init_velodyne_points(spherical_point_cloud **velodyne_points_out, unsigned char ***intencity, carmen_pose_3D_t **robot_pose_out,
+		carmen_vector_3D_t **robot_velocity_out, double **robot_timestamp_out, double **robot_phi_out, double **points_timestamp_out)
 {
 	int i;
 
@@ -392,6 +409,7 @@ init_velodyne_points(spherical_point_cloud **velodyne_points_out, unsigned char 
 	double *robot_timestamp = (double *)calloc(NUM_VELODYNE_POINT_CLOUDS, sizeof(double));
 	*intencity = (unsigned char **)calloc(NUM_VELODYNE_POINT_CLOUDS, sizeof(unsigned char*));
 	*robot_phi_out = (double *)calloc(NUM_VELODYNE_POINT_CLOUDS, sizeof(double));
+	*points_timestamp_out = (double *)calloc(NUM_VELODYNE_POINT_CLOUDS, sizeof(double));
 
 
 	carmen_test_alloc(velodyne_points);
@@ -609,7 +627,7 @@ get_sensors_param(int argc, char **argv)
 		};
 
 		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
-		init_velodyne_points(&sensors_data[0].points, &sensors_data[0].intensity, &sensors_data[0].robot_pose, &sensors_data[0].robot_velocity, &sensors_data[0].robot_timestamp, &sensors_data[0].robot_phi);
+		init_velodyne_points(&sensors_data[0].points, &sensors_data[0].intensity, &sensors_data[0].robot_pose, &sensors_data[0].robot_velocity, &sensors_data[0].robot_timestamp, &sensors_data[0].robot_phi, &sensors_data[0].points_timestamp);
 		sensors_params[0].sensor_to_board_matrix = create_rotation_matrix(sensors_params[0].pose.orientation);
 		sensors_data[0].point_cloud_index = 0;
 		carmen_prob_models_alloc_sensor_data(&sensors_data[0], sensors_params[0].vertical_resolution, number_of_threads);
@@ -677,7 +695,7 @@ get_sensors_param(int argc, char **argv)
 			sensors_params[i].range_max_factor = 1.0;
 			sensors_params[i].ray_order = generates_ray_order(sensors_params[i].vertical_resolution);
 			sensors_params[i].vertical_correction = get_stereo_velodyne_correction(flipped, i, sensors_params[i].vertical_resolution, roi_ini, roi_end, 0, 0);
-			init_velodyne_points(&sensors_data[i].points, &sensors_data[i].intensity, &sensors_data[i].robot_pose, &sensors_data[i].robot_velocity,  &sensors_data[i].robot_timestamp, &sensors_data[i].robot_phi);
+			init_velodyne_points(&sensors_data[i].points, &sensors_data[i].intensity, &sensors_data[i].robot_pose, &sensors_data[i].robot_velocity,  &sensors_data[i].robot_timestamp, &sensors_data[i].robot_phi, &sensors_data[i].points_timestamp);
 			sensors_params[i].sensor_to_board_matrix = create_rotation_matrix(sensors_params[i].pose.orientation);
 			sensors_data[i].point_cloud_index = 0;
 			carmen_prob_models_alloc_sensor_data(&sensors_data[i], sensors_params[i].vertical_resolution, number_of_threads);
