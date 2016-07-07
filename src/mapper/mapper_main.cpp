@@ -193,7 +193,7 @@ static void
 carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *globalpos_message)
 {
 	double distance_to_annotation;
-	static double previous_timestamp = 0.0;
+//	static double previous_timestamp = 0.0;
 
 	if (visual_odometry_is_global_pos)
 		interpolator.AddMessageToInterpolationList(globalpos_message);
@@ -211,10 +211,10 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 
 	if (ok_to_publish)
 		publish_map(globalpos_message->timestamp);
-	double t = carmen_get_time();
-	printf("%lf\n", t - previous_timestamp);
-
-	previous_timestamp = t;
+//	double t = carmen_get_time();
+//	printf("%lf\n", t - previous_timestamp);
+//
+//	previous_timestamp = t;
 }
 
 
