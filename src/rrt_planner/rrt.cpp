@@ -29,6 +29,11 @@ double	  t1;
 #include <queue>
 #include <list>
 
+//FILE *plot = fopen("p.m", "w");
+//FILE *normal = fopen("normal.m", "a");
+//FILE *smooth = fopen("smooth.m", "a");
+//int cont=0;
+
 
 RRT::RRT()
 {
@@ -850,6 +855,10 @@ void RRT::smooth_principal_path_from_tree_using_conjugate_gradient (RRT_Node *go
 	list<RRT_Path_Edge>::iterator it;
 	list<RRT_Path_Edge> path;
 	path = Dijkstra::build_path(goal);
+
+	if (path.size() < 4)
+		return;
+
 	size = path.size()+1;
 
 	my_func.n = (2*size)-4;
@@ -859,17 +868,23 @@ void RRT::smooth_principal_path_from_tree_using_conjugate_gradient (RRT_Node *go
 	my_func.params = &path;
 
 	v = gsl_vector_alloc ((2*size)-4);
-
-	printf ("size %d\n\n", size);
-	//j = size-2;
 	it = path.begin();
+
+//	fprintf(plot, "a%d = [\n", cont);
+//	printf ("size %d\n\n", size);
+//	fprintf(plot, "%f %f\n", it->p1.pose.x, it->p1.pose.y);
+//	fprintf(normal, "%f %f\n", it->p1.pose.x, it->p1.pose.y);
 //	printf ("a%f %f\n", it->p1.pose.x, it->p1.pose.y);
 	for (i=0, j=(size-2); i < (size-2); i++, j++, it++)
 	{
+//		fprintf(plot, "%f %f\n", it->p2.pose.x, it->p2.pose.y);
+//		fprintf(normal, "%f %f\n", it->p2.pose.x, it->p2.pose.y);
 //		printf ("a%f %f\n", it->p2.pose.x, it->p2.pose.y);
 		gsl_vector_set (v, i, it->p2.pose.x);
 		gsl_vector_set (v, j, it->p2.pose.y);
 	}
+//	fprintf(plot, "%f %f]\n\n", it->p2.pose.x, it->p2.pose.y);
+//	fprintf(normal, "%f %f\n", it->p2.pose.x, it->p2.pose.y);
 //	printf ("a%f %f\n", it->p2.pose.x, it->p2.pose.y);
 
 	T = gsl_multimin_fdfminimizer_conjugate_fr;
@@ -897,20 +912,29 @@ void RRT::smooth_principal_path_from_tree_using_conjugate_gradient (RRT_Node *go
 	while (status == GSL_CONTINUE && iter < 999);
 
 	it = path.begin();
+
+//	fprintf(plot, "b%d = [   \n%f %f\n", cont, it->p1.pose.x, it->p1.pose.y);
+//	fprintf(smooth, "%f %f\n", it->p1.pose.x, it->p1.pose.y);
 //	printf ("z%f %f\n", it->p1.pose.x, it->p1.pose.y);
 	for (i=0, j=(size-2); i < (size-2); i++, j++)
 	{
 		it->p2.pose.x = gsl_vector_get (s->x, i);
 		it->p2.pose.y = gsl_vector_get (s->x, j);
+//		fprintf(plot, "%f %f\n", it->p2.pose.x, it->p2.pose.y);
+//		fprintf(smooth, "%f %f\n", it->p2.pose.x, it->p2.pose.y);
 //		printf ("z%f %f\n", it->p2.pose.x, it->p2.pose.y);
 		if (it != path.end())
 		{
 			it++;
 			it->p1.pose.x = gsl_vector_get (s->x, i);
 			it->p1.pose.y = gsl_vector_get (s->x, j);
+			//fprintf(plot, "%f %f\n", it->p1.pose.x, it->p1.pose.y);
 //			printf ("z%f %f\n", it->p1.pose.x, it->p1.pose.y);
 		}
 	}
+//	fprintf(plot, "%f %f]\n\n", it->p2.pose.x, it->p2.pose.y);
+//	fprintf(smooth, "%f %f\n", it->p2.pose.x, it->p2.pose.y);
+//	fprintf(plot, "\nplot (a%d(:,1), a%d(:,2), b%d(:,1), b%d(:,2)); \nstr = input (\"a   :\");\n\n", cont, cont, cont, cont);
 //	printf ("z%f %f\n", it->p2.pose.x, it->p2.pose.y);
 //	printf ("\n");
 
@@ -918,14 +942,6 @@ void RRT::smooth_principal_path_from_tree_using_conjugate_gradient (RRT_Node *go
 
 	save_smoothed_path_back_to_tree (goal, path);
 
-
-//	printf ("Iter %d  ------------------------------- Size %d \n%f %f\n", (int)iter, size, msg->path[0].p1.x, msg->path[0].p1.y);
-/*	for (i=0, j=(size-2); i < (size-2); i++, j++)
-	{
-		printf ("%f %f\n", gsl_vector_get (s->x, i), gsl_vector_get (s->x, j));
-	}
-	printf ("%f %f\n", msg->path[size-2].p2.x, msg->path[size-2].p2.y);
-	 */
 	gsl_multimin_fdfminimizer_free (s);
 	gsl_vector_free (v);
 }
