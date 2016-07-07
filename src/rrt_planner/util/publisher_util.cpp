@@ -46,8 +46,8 @@ Publisher_Util::publish_plan_tree_message(Tree &t, const vector<RRT_Node *> &rea
 		plan_tree_msg.num_edges += t.nodes[i]->adjacency_nodes.size();
 	}
 
-	plan_tree_msg.p1 = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * plan_tree_msg.num_edges);
-	plan_tree_msg.p2 = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * plan_tree_msg.num_edges);
+	plan_tree_msg.p1 = (carmen_ackerman_traj_point_t *) malloc (sizeof(carmen_ackerman_traj_point_t) * plan_tree_msg.num_edges);
+	plan_tree_msg.p2 = (carmen_ackerman_traj_point_t *) malloc (sizeof(carmen_ackerman_traj_point_t) * plan_tree_msg.num_edges);
 	plan_tree_msg.mask = (int *) malloc(sizeof(int) * plan_tree_msg.num_edges);
 
 	int aux = 0;
@@ -104,6 +104,52 @@ Publisher_Util::publish_plan_tree_message(Tree &t, const vector<RRT_Node *> &rea
 		free(msg.path);
 		plan_tree_msg.path_size[i] = msg.path_length;
 	}
+
+	err = IPC_publishData(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME, &plan_tree_msg);
+
+	carmen_test_ipc(err, "Could not publish", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME);
+
+	free(plan_tree_msg.p1);
+	free(plan_tree_msg.p2);
+	free(plan_tree_msg.mask);
+}
+
+void
+Publisher_Util::publish_principal_path_message(list<RRT_Path_Edge> &path)
+{
+	static carmen_navigator_ackerman_plan_tree_message plan_tree_msg;
+	IPC_RETURN_TYPE err = IPC_OK;
+	static bool		first_time = true;
+
+	if (first_time)
+	{
+		define_plan_tree_message();
+		plan_tree_msg.host = carmen_get_host();
+		first_time = false;
+	}
+
+	plan_tree_msg.timestamp = carmen_get_time();
+	plan_tree_msg.num_edges = 0;
+
+	plan_tree_msg.p1 = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * plan_tree_msg.num_edges);
+	plan_tree_msg.p2 = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * plan_tree_msg.num_edges);
+	plan_tree_msg.mask = (int *) malloc(sizeof(int) * plan_tree_msg.num_edges);
+
+	carmen_navigator_ackerman_plan_message msg;
+
+	plan_tree_msg.num_path = 1;
+
+	msg = get_path(path);
+
+	if (msg.path_length > 100)
+	{	// Ver tipo carmen_navigator_ackerman_plan_tree_message
+		printf("Error: msg.path_length > 100 in Publisher_Util::publish_plan_tree_message()\n");
+		exit(1);
+	}
+
+	memcpy(plan_tree_msg.paths[0], msg.path, sizeof(carmen_ackerman_traj_point_t) * msg.path_length);
+	free(msg.path);
+	plan_tree_msg.path_size[0] = msg.path_length;
 
 	err = IPC_publishData(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME, &plan_tree_msg);
 
