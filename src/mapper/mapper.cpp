@@ -51,7 +51,7 @@ carmen_grid_mapping_distance_map distance_map;
 
 extern carmen_map_t offline_map;
 
-rotation_matrix *r_matrix_car_to_global = NULL;
+extern rotation_matrix *r_matrix_car_to_global;
 
 int globalpos_initialized = 0;
 extern carmen_localize_ackerman_globalpos_message *globalpos_history;
@@ -392,7 +392,7 @@ mapper_change_map_origin_to_another_map_block(carmen_position_t *map_origin)
 }
 
 
-static int
+int
 run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global)
 {
 	//carmen_point_t world_pose;
@@ -499,14 +499,13 @@ mapper_velodyne_partial_scan(carmen_velodyne_partial_scan_message *velodyne_mess
 	sensors_data[0].robot_velocity[sensors_data[0].point_cloud_index] = globalpos_history[last_globalpos].velocity;
 	sensors_data[0].robot_timestamp[sensors_data[0].point_cloud_index] = globalpos_history[last_globalpos].timestamp;
 	sensors_data[0].robot_phi[sensors_data[0].point_cloud_index] = globalpos_history[last_globalpos].phi;
-
+	sensors_data[0].points_timestamp[sensors_data[0].point_cloud_index] = velodyne_message->timestamp;
 
 	if (velodyne_message_id >= 0)
 	{
-		if (build_snapshot_map)
-			ok_to_publish = 1;
-		else
-			ok_to_publish = run_mapper(&sensors_params[0], &sensors_data[0], r_matrix_car_to_global);
+		//if (build_snapshot_map)
+		ok_to_publish = 1;
+		//else
 
 		if (velodyne_message_id > 1000000)
 			velodyne_message_id = 0;
@@ -583,15 +582,17 @@ inline void
 compute_intermediate_pixel_distance(int x, int y,
 		double **distance, short int **x_offset, short int **y_offset)
 {
-	for (int i = -1; i <= 1; i++)
-		for (int j = -1; j <= 1; j++)
+	for (int i = -1; i < 2; i++)
+		for (int j = -1; j < 2; j++)
 		{
 			double v = distance[x + i][y + j] + ((i * j != 0) ? 1.414213562 : 1.0);
 			if (v < distance[x][y])
 			{
+				int xpi = x + i;
+				int ypj = y + j;
 				distance[x][y] = v;
-				x_offset[x][y] = x_offset[x + i][y + j] + i;
-				y_offset[x][y] = y_offset[x + i][y + j] + j;
+				x_offset[x][y] = x_offset[xpi][ypj] + i;
+				y_offset[x][y] = y_offset[xpi][ypj] + j;
 			}
 		}
 }
