@@ -37,7 +37,16 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 		tcp.k1 = gsl_vector_get(x, 0);
 		tcp.k2 = gsl_vector_get(x, 1);
 		tcp.k3 = gsl_vector_get(x, 2);
-		tcp.tt = gsl_vector_get(x, 3);
+		if (params->optimize_time)
+		{
+			tcp.tt = gsl_vector_get(x, 3);
+			tcp.a = params->suitable_acceleration;
+		}
+		else
+		{
+			tcp.a = gsl_vector_get(x, 3);
+			tcp.tt = params->suitable_tt;
+		}
 	}
 	else
 	{
@@ -45,9 +54,17 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 
 		tcp.k2 = gsl_vector_get(x, 0);
 		tcp.k3 = gsl_vector_get(x, 1);
-		tcp.tt = gsl_vector_get(x, 2);
+		if (params->optimize_time)
+		{
+			tcp.tt = gsl_vector_get(x, 2);
+			tcp.a = params->suitable_acceleration;
+		}
+		else
+		{
+			tcp.a = gsl_vector_get(x, 2);
+			tcp.tt = params->suitable_tt;
+		}
 	}
-	tcp.a = params->suitable_acceleration;
 	tcp.vf = params->tcp_seed->vf;
 	tcp.sf = params->tcp_seed->sf;
 
@@ -618,11 +635,12 @@ compute_suitable_acceleration(double tt, TrajectoryLookupTable::TrajectoryDimens
 
 	if (a > 0.0)
 	{
-		if (a >= GlobalState::robot_config.maximum_acceleration_forward)
+		if (a > GlobalState::robot_config.maximum_acceleration_forward)
 			a = GlobalState::robot_config.maximum_acceleration_forward;
 
 		return (a);
 	}
+
 //	else if ((target_td.v_i * PROFILE_TIME) < 2.0 * target_td.dist)
 //	{
 //		a = (2.0 * (target_td.dist - target_td.v_i * PROFILE_TIME)) / (PROFILE_TIME * PROFILE_TIME);
@@ -651,6 +669,47 @@ compute_suitable_acceleration(double tt, TrajectoryLookupTable::TrajectoryDimens
 
 		return (a);
 	}
+}
+
+
+void
+compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
+		TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed,
+		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v)
+{
+	// (i) S = Vo*t + 1/2*a*t^2
+	// (ii) dS/dt = Vo + a*t
+	// dS/dt = 0 => máximo ou mínimo de S => 0 = Vo + a*t; a*t = -Vo; (iii) a = -Vo/t; (iv) t = -Vo/a
+	// Se "a" é negativa, dS/dt = 0 é um máximo de S
+	// Logo, como S = target_td.dist, "a" e "t" tem que ser tais em (iii) e (iv) que permitam que
+	// target_td.dist seja alcançada.
+	//
+	// O valor de maxS pode ser computado substituindo (iv) em (i):
+	// maxS = Vo*-Vo/a + 1/2*a*(-Vo/a)^2 = -Vo^2/a + 1/2*Vo^2/a = -1/2*Vo^2/a
+
+	if (target_v < 0.0)
+		target_v = 0.0;
+
+	double a = (target_v - target_td.v_i) / tcp_seed.tt;
+
+	if (a >= 0.0)
+	{
+		if (a > GlobalState::robot_config.maximum_acceleration_forward)
+			a = GlobalState::robot_config.maximum_acceleration_forward;
+		params.optimize_time = true;
+	}
+
+	if (a < 0.0)
+	{
+		if (a < -2.0)
+			a = -2.0;
+		params.optimize_time = false;
+		if (a == -2.0)
+			tcp_seed.tt = tcp_seed.tt * 2.0;
+	}
+
+	params.suitable_tt = tcp_seed.tt;
+	params.suitable_acceleration = tcp_seed.a = a;
 }
 
 
@@ -724,7 +783,10 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	gsl_vector_set(x, 0, tcp_seed.k1);
 	gsl_vector_set(x, 1, tcp_seed.k2);
 	gsl_vector_set(x, 2, tcp_seed.k3);
-	gsl_vector_set(x, 3, tcp_seed.tt);
+	if (params.optimize_time)
+		gsl_vector_set(x, 3, tcp_seed.tt);
+	else
+		gsl_vector_set(x, 3, tcp_seed.a);
 
 	const gsl_multimin_fdfminimizer_type *T = gsl_multimin_fdfminimizer_vector_bfgs2;
 	gsl_multimin_fdfminimizer *s = gsl_multimin_fdfminimizer_alloc(T, 4);
@@ -780,7 +842,9 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 		bool has_previous_good_tcp)
 {
 	get_optimization_params(target_v, tcp_seed, target_td, params);
-	params.suitable_acceleration = compute_suitable_acceleration(tcp_seed.tt, target_td, target_v);
+//	params.suitable_acceleration = compute_suitable_acceleration(tcp_seed.tt, target_td, target_v);
+//	params.optimize_time = true;
+	compute_suitable_acceleration_and_tt(params, tcp_seed, target_td, target_v);
 
 	if (has_previous_good_tcp)
 		return (tcp_seed);
@@ -799,7 +863,10 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 	gsl_vector *x = gsl_vector_alloc(3);
 	gsl_vector_set(x, 0, tcp_seed.k2);
 	gsl_vector_set(x, 1, tcp_seed.k3);
-	gsl_vector_set(x, 2, tcp_seed.tt);
+	if (params.optimize_time)
+		gsl_vector_set(x, 2, tcp_seed.tt);
+	else
+		gsl_vector_set(x, 2, tcp_seed.a);
 
 	const gsl_multimin_fdfminimizer_type *T = gsl_multimin_fdfminimizer_vector_bfgs2;
 	gsl_multimin_fdfminimizer *s = gsl_multimin_fdfminimizer_alloc(T, 3);
