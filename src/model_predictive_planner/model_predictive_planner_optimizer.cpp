@@ -224,7 +224,7 @@ compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<carmen_
 		{
 //			distance = ortho_dist(move_to_front_axle(path.at(my_params->path_point_nearest_to_lane.at(i))),
 //										 my_params->detailed_lane.at(i));
-			distance = ortho_dist(path.at(my_params->path_point_nearest_to_lane.at(i)),
+			distance = dist(path.at(my_params->path_point_nearest_to_lane.at(i)),
 										 my_params->detailed_lane.at(i));
 			total_points += 1.0;
 		}
@@ -559,7 +559,7 @@ my_g(const gsl_vector *x, void *params)
 			5.0 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 			15.0 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
 			15.0 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
-			3.5 * path_to_lane_distance + // já é quandrática
+			1.5 * path_to_lane_distance + // já é quandrática
 			10.0 * proximity_to_obstacles); // já é quandrática
 	return (result);
 }
@@ -789,9 +789,9 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	//	getchar();
 
 	get_optimization_params(target_v, tcp_seed, target_td, params);
-	print_tcp(tcp_seed);
+	//print_tcp(tcp_seed);
 	//print_td(target_td);
-	printf("tv = %lf\n", target_v);
+	//printf("tv = %lf\n", target_v);
 
 	gsl_multimin_function_fdf my_func;
 
@@ -858,8 +858,8 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	gsl_multimin_fdfminimizer_free(s);
 	gsl_vector_free(x);
 
-	print_tcp(tcp);
-	printf("f %2.4lf\n", s->f);
+	//print_tcp(tcp);
+	//printf("f %2.4lf\n", s->f);
 	return (tcp);
 }
 
