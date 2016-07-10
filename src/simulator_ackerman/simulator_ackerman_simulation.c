@@ -308,14 +308,14 @@ compute_new_velocity_with_ann(carmen_simulator_ackerman_config_t *simulator_conf
 		build_velocity_ann_input(velocity_ann_input, throttle_command, brakes_command, -simulator_config->v);
 		velocity_ann_output = fann_run(velocity_ann, velocity_ann_input);
 
-		simulator_config->v = -velocity_ann_output[0];
+		simulator_config->v = -1.55 * velocity_ann_output[0];
 	}
 	else
 	{
 		build_velocity_ann_input(velocity_ann_input, throttle_command, brakes_command, simulator_config->v);
 		velocity_ann_output = fann_run(velocity_ann, velocity_ann_input);
 
-		simulator_config->v = velocity_ann_output[0];
+		simulator_config->v = 1.55 * velocity_ann_output[0];
 	}
 	simulator_config->v = simulator_config->v + simulator_config->v * carmen_gaussian_random(0.0, 0.007); // add some noise
 
@@ -645,10 +645,10 @@ carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulat
 	double v, phi;
 
 	update_target_v_and_target_phi(simulator_config);
-	// v   = compute_new_velocity_with_ann(simulator_config);
+//	v   = compute_new_velocity_with_ann(simulator_config);
 	phi = compute_new_phi_with_ann(simulator_config);
 	v   = compute_new_velocity(simulator_config);
-	// phi = compute_new_phi(simulator_config);// + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.1));
+//	phi = compute_new_phi(simulator_config);// + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.1));
 		
 	new_odom = simulator_config->odom_pose;
 	new_true = simulator_config->true_pose;

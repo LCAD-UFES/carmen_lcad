@@ -143,7 +143,7 @@ add_points_to_goal_list_interval(carmen_ackerman_path_point_t p1, carmen_ackerma
 	{
 		new_point.x = p1.x + i * delta_x;
 		new_point.y = p1.y + i * delta_y;
-		new_point.theta = p1.theta + i * delta_theta;
+		new_point.theta = carmen_normalize_theta(p1.theta + i * delta_theta);
 
 		detailed_lane.push_back(new_point);
 	}
@@ -564,7 +564,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 
 			TrajectoryLookupTable::TrajectoryDimensions td = get_trajectory_dimensions_from_robot_state(localizer_pose, lastOdometryVector[i], &goalPoseVector[j]);
 			TrajectoryLookupTable::TrajectoryControlParameters tcp;
-//			previous_good_tcp.valid = false;
+			// previous_good_tcp.valid = false;
 			if (!get_tcp_from_td(tcp, previous_good_tcp, td))
 				continue;
 
@@ -610,6 +610,12 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	{
 		previous_good_tcp = best_otcp;
 		last_timestamp = carmen_get_time();
+
+		// Mostra a detailed_lane como um plano nas interfaces
+//		move_path_to_current_robot_pose(detailed_lane, localizer_pose);
+//		filter_path(detailed_lane);
+//		filter_path(detailed_lane);
+//		paths.push_back(detailed_lane);
 	}
 	else if ((carmen_get_time() - last_timestamp) > 0.5)
 		previous_good_tcp.valid = false;
@@ -625,7 +631,7 @@ ModelPredictive::compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Com
 	vector<Command> lastOdometryVector;
 	vector<Pose> goalPoseVector;
 
-//	double i_time = carmen_get_time();
+	double i_time = carmen_get_time();
 
 	vector<int> magicSignals = {0, 1, -1, 2, -2, 3, -3,  4, -4,  5, -5};
 	// @@@ Tranformar os dois loops abaixo em uma funcao -> compute_alternative_path_options()
@@ -650,8 +656,8 @@ ModelPredictive::compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Com
 
 	compute_paths(lastOdometryVector, goalPoseVector, target_v, localizer_pose, paths, goal_list_message);
 
-//	printf("%ld plano(s), tp = %lf\n", paths.size(), carmen_get_time() - i_time);
-//	fflush(stdout);
+	printf("%ld plano(s), tp = %lf\n", paths.size(), carmen_get_time() - i_time);
+	fflush(stdout);
 
 	return (paths);
 }
