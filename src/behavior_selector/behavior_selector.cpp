@@ -156,7 +156,9 @@ fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_poin
 		if (((distance >= distance_between_waypoints) &&
 			 (distance_to_last_obstacle >= 15.0) &&
 			 !hit_obstacle) ||
-			(((rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BUMP) || (rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BARRIER)) && (distance_to_annotation > 1.5) && (!hit_obstacle)))
+			(((rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BUMP) ||
+			  (rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BARRIER)) &&
+			 (distance_to_annotation > 2.0) && (!hit_obstacle)))
 		{
 			goal_list[j] = rddf->poses[i];
 			annotations[j] = rddf->annotations[i];

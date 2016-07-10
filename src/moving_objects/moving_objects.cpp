@@ -1596,26 +1596,26 @@ detect_points_above_ground_in_vertical_beam(int i, const moving_objects_input_da
 		sensor_data_t *velodyne_data, sensor_parameters_t *velodyne_params, carmen_vector_3D_t *point_clouds, int last_num_points)
 {
 	carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(velodyne_data, velodyne_params, i,
-			moving_objects_input.highest_sensor, moving_objects_input.safe_range_above_sensors, 1);
+			moving_objects_input.highest_sensor, moving_objects_input.safe_range_above_sensors, 1, 0);
 
 	for (int k = 0; k < velodyne_params->vertical_resolution; k++)
 	{
-		if (velodyne_data->obstacle_height[k] >= 0.5 && velodyne_data->obstacle_height[k] <= MAXIMUM_HEIGHT_OF_OBSTACLE
+		if (velodyne_data->obstacle_height[0][k] >= 0.5 && velodyne_data->obstacle_height[0][k] <= MAXIMUM_HEIGHT_OF_OBSTACLE
 				&& !velodyne_data->ray_hit_the_robot[k])
 		{
-			point_clouds[last_num_points].x = velodyne_data->ray_position_in_the_floor[k].x;
-			point_clouds[last_num_points].y = velodyne_data->ray_position_in_the_floor[k].y;
-			point_clouds[last_num_points].z = velodyne_data->obstacle_height[k];
+			point_clouds[last_num_points].x = velodyne_data->ray_position_in_the_floor[0][k].x;
+			point_clouds[last_num_points].y = velodyne_data->ray_position_in_the_floor[0][k].y;
+			point_clouds[last_num_points].z = velodyne_data->obstacle_height[0][k];
 			last_num_points++;
 		}
-		else if (velodyne_data->occupancy_log_odds_of_each_ray_target[k] > velodyne_params->log_odds.log_odds_l0
-				//&& velodyne_data->obstacle_height[k] <= MAXIMUM_HEIGHT_OF_OBSTACLE
-				&& (velodyne_data->obstacle_height[k] >= 0.3 && velodyne_data->obstacle_height[k] <= MAXIMUM_HEIGHT_OF_OBSTACLE)
-				&& !velodyne_data->ray_hit_the_robot[k])
+		else if (velodyne_data->occupancy_log_odds_of_each_ray_target[0][k] > velodyne_params->log_odds.log_odds_l0
+				//&& velodyne_data->obstacle_height[0][k] <= MAXIMUM_HEIGHT_OF_OBSTACLE
+				&& (velodyne_data->obstacle_height[0][k] >= 0.3 && velodyne_data->obstacle_height[0][k] <= MAXIMUM_HEIGHT_OF_OBSTACLE)
+				&& !velodyne_data->ray_hit_the_robot[0][k])
 		{
-			point_clouds[last_num_points].x = velodyne_data->ray_position_in_the_floor[k].x;
-			point_clouds[last_num_points].y = velodyne_data->ray_position_in_the_floor[k].y;
-			point_clouds[last_num_points].z = velodyne_data->obstacle_height[k];
+			point_clouds[last_num_points].x = velodyne_data->ray_position_in_the_floor[0][k].x;
+			point_clouds[last_num_points].y = velodyne_data->ray_position_in_the_floor[0][k].y;
+			point_clouds[last_num_points].z = velodyne_data->obstacle_height[0][k];
 			last_num_points++;
 		}
 
@@ -1649,7 +1649,7 @@ detect_points_above_ground(sensor_parameters_t *velodyne_params, sensor_data_t *
 
 		carmen_prob_models_compute_relevant_map_coordinates(velodyne_data, velodyne_params, i, robot_interpolated_position.position,
 				moving_objects_input.sensor_board_1_pose, r_matrix_car_to_global, moving_objects_input.sensor_board_1_to_car_matrix,
-				moving_objects_input.robot_wheel_radius, x_origin, y_origin, &moving_objects_input.car_config, 0);
+				moving_objects_input.robot_wheel_radius, x_origin, y_origin, &moving_objects_input.car_config, 0, 0);
 
 		last_num_points = detect_points_above_ground_in_vertical_beam(i, moving_objects_input, velodyne_data, velodyne_params,
 				point_clouds, last_num_points);

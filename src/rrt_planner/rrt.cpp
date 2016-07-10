@@ -29,6 +29,11 @@ double	  t1;
 #include <queue>
 #include <list>
 
+//FILE *plot = fopen("p.m", "w");
+//FILE *normal = fopen("normal.m", "a");
+//FILE *smooth = fopen("smooth.m", "a");
+//int cont=0;
+
 
 RRT::RRT()
 {
@@ -608,161 +613,107 @@ bool RRT::is_valid_path()
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-// get the desired heading given tree points in forward drive mode
 double
-get_desired_heading(carmen_ackerman_traj_point_t &left, carmen_ackerman_traj_point_t &current, carmen_ackerman_traj_point_t &right)
+recalculate_theta (Pose &left, Pose &current, Pose &right)					//Recalculate cars orientantio
 {
-    // get the displacement vector
     double x1 = 0.25*(right.x - left.x) + 0.75*(right.x - current.x);
     double y1 = 0.25*(right.y - left.y) + 0.75*(right.y - current.y);
 
     return atan2(y1, x1);
 }
 
-// the max allowed speed
-double
-get_max_speed(carmen_ackerman_traj_point_t &left, carmen_ackerman_traj_point_t &current, carmen_ackerman_traj_point_t &right)
-{
-    double x1, x2, y1, y2;
-
-    // the max lateral acceleration, 0.5 m/s^2
-    double max_lateral_acceleration = 0.5;
-
-    // the max speed at the current curvature
-    double curvature_constraint;
-
-    // the current vector
-    x1 = current.x - left.x;
-    y1 = current.y - left.y;
-
-    // the next vector
-    x2 = right.x - current.x;
-    y2 = right.y - current.y;
-
-    // get the angle between the two vectors
-    double angle = fabs(carmen_normalize_theta(atan2(y2, x2) - atan2(y1, x1)));
-
-    // get the turn radius
-	double radius = sqrt(x1*x1 + y1*y1) / angle;
-
-    // get the curvature constraint
-    curvature_constraint = sqrt(radius*max_lateral_acceleration);
-
-
-    // max_forward_speed = sqrt(left.v * left.v + 2*maximum_acceleration_forward*displacement);
-
-    // assign the max forward speed
-    return min(GlobalState::robot_config.max_vel, curvature_constraint);
-}
-
-// get the max forward acceleration speed
-double
-get_accelerated_speed(carmen_ackerman_traj_point_t &left, carmen_ackerman_traj_point_t &right, double acceleration)
-{
-    // get the displacement between the currrent and the next point
-    double displacement = sqrt(pow(right.y - left.y, 2) + pow(right.x - left.x, 2));
-
-    // get the forward speed constrained by the max acceleration
-    // Torricelli
-    return sqrt(left.v*left.v + 2.0*acceleration*displacement);
-}
 
 double
-get_turning_radius(carmen_ackerman_traj_point_t &a, carmen_ackerman_traj_point_t &b)
-{
-    // move the second position to the first position reference
-    double dx = b.x - a.x;
-    double dy = b.y - a.y;
-    //double radius;
-
-    double angle = -a.theta;
-
-    // rotate the goal point around the z axis
-    double gx = dx*cos(angle) - dy*sin(angle);
-    double gy = dx*sin(angle) + dy*cos(angle);
-
-    // get the desired wheel angle
-    return (gx*gx + gy*gy)/(2.0*gy);
-
-
-
+recalculate_delta_time (double x1, double x2, double v, double theta)      //Recalculate time duration of command
+{                                                                          //Using first equation of ackerman model of movement
+	return ((x2 - x1) / (v * cos(theta)));
 }
 
-// consolidate the entire path
-// what we need:
-// the car curvature along the path
-// the car speed
-// the car phi
-// each command time
+
+double
+recalculate_phi (double theta1, double theta2, double v, double time, double L)    //Recalculate wheel angle
+{                                                                                  //Using last equation of ackerman model of movement
+	return atan (((theta2 - theta1)* L) / (time * v));
+}
+
+
 void
-consolidate_path(rrt_path_message *msg)
+recalculate_theta_time_phi(list<RRT_Path_Edge> &path)
 {
-    int i, last = msg->size;
-    double radius;
+//    int i, size = path.size();
+    list<RRT_Path_Edge>::iterator it_ant = path.begin();
+    list<RRT_Path_Edge>::iterator it = path.begin();
 
-    for (i = 1; i < last; i++)
+    it->time = recalculate_delta_time(it->p1.pose.x, it->p2.pose.x, it->command.v, it->p1.pose.theta);
+    //it->command.phi
+    for (it++; it != path.end(); it_ant++, it++)
     {
-        // get the desired heading
-    	msg->path[i-1].p2.theta = msg->path[i].p1.theta = get_desired_heading(msg->path[i-1].p1, msg->path[i].p1, msg->path[i].p2);
+//    	msg->path[i-1].p2.theta = msg->path[i].p1.theta = get_desired_heading(msg->path[i-1].p1, msg->path[i].p1, msg->path[i].p2);
+    	it_ant->p2.pose.theta = it->p1.pose.theta = recalculate_theta(it_ant->p1.pose, it->p1.pose, it->p2.pose);
 
-        // get the max speed
-    	//msg->path[i-1].p2.v = msg->path[i].p1.v = get_max_speed(msg->path[i-1].p1, msg->path[i].p1, msg->path[i].p2);
-        //printf ("-----%f\n", msg->path[i].p1.theta);
+//      msg->path[i].time = recalculate_delta_time(msg->path[i]);
+    	it->time = recalculate_delta_time(it->p1.pose.x, it->p2.pose.x, it->command.v, it->p1.pose.theta);
 
-        radius = get_turning_radius(msg->path[i].p1, msg->path[i].p2);
-        msg->path[i-1].p2.phi = msg->path[i].p1.phi = msg->path[i-1].phi = atan(GlobalState::robot_config.distance_between_front_and_rear_axles/(radius));
-
-
-        //msg->path[i].time = msg->path[i].v radius;
-
+//      msg->path[i-1].p2.phi = msg->path[i].p1.phi = msg->path[i-1].phi = get_desired_wheel_angle (msg->path[i], GlobalState::robot_config.distance_between_front_and_rear_axles);
+    	it_ant->p2.v_and_phi.phi = it->p1.v_and_phi.phi = it->command.phi =
+    			recalculate_phi (it->p1.pose.theta, it->p2.pose.theta, it->command.v, it->time, GlobalState::robot_config.distance_between_front_and_rear_axles);
     }
-
-    // update the acceleration around the start and the end point
-    /*double current_v;
-
-    // from the start to the goal, update the forward acceleration
-    for (i = 1; i < last; i++)
-    {
-        current_v = get_accelerated_speed(msg->path[i-1].p1, msg->path[i].p1, GlobalState::robot_config.desired_acceleration);
-
-        if (current_v < msg->path[i].v)
-            msg->path[i].v = current_v;
-        else
-            break;
-    }
-
-    // from the goal to the start, update the forward deceleration
-    for (i = last-1; i > 0; i--)
-    {
-        current_v = get_accelerated_speed(msg->path[i].p2, msg->path[i].p1, GlobalState::robot_config.desired_decelaration_forward);
-
-        if (current_v < msg->path[i].v)
-        	msg->path[i].v = current_v;
-        else
-            break;
-    }
-	*/
 }
 
 
-//Function to be minimized
-//summation[x(i+1)-2x(i)+x(i-1)]
+void
+save_smoothed_path_back_to_tree (RRT_Node *goal, list<RRT_Path_Edge> path)
+{
+	list<RRT_Edge>::iterator it_tree;
+	list<RRT_Path_Edge>::iterator it_path = path.end();
+	RRT_Node *parent;
+
+	it_path--;
+
+	do
+	{
+		parent = goal->parent;
+		it_tree = goal->prev_nodes.begin();
+
+		for (; it_tree != goal->prev_nodes.end(); it_tree++)
+		{
+			if (it_tree->n1 == parent)
+			{
+				//printf ("a%f %f  %f %f\n", it_path->p1.pose.x, it_path->p1.pose.y, it_path->p2.pose.x, it_path->p2.pose.y);
+				it_tree->n1->robot_state = it_path->p1;
+				it_tree->n2->robot_state = it_path->p2;
+				it_tree->command = it_path->command;
+				it_tree->time = it_path->time;
+				it_path--;
+				//printf ("b%f %f  %f %f\n", it_tree->n1->robot_state.pose.x, it_tree->n1->robot_state.pose.y, it_tree->n2->robot_state.pose.x, it_tree->n2->robot_state.pose.y);
+				break;
+			}
+		}
+		goal = goal->parent;
+	}
+	while (goal);
+}
+
+
+//Function to be minimized summation[x(i+1)-2x(i)+x(i-1)]
 double
 my_f(const gsl_vector *v, void *params)
 {
-	rrt_path_message *p = (rrt_path_message *)params;
-	int i, j, size =(p->size-1);                                  //(p->size-1)Instead of -2 because the message size is 4 but the message has 5 points
+	list<RRT_Path_Edge> *p = (list<RRT_Path_Edge> *)params;
+	int i, j, size =(p->size()-1);                                  //(p->size-1)Instead of -2 because the message size is 4 but the message has 5 points
 	double a=0, b=0, sum=0;                                       //and we have to discount the first and last point that wont be optimized
 
 	//printf("%d\n", size+1);
-	double x_prev = p->path[0].p1.x;			//x(i-1)
+	double x_prev = p->front().p1.pose.x;			//x(i-1)
 	double x      = gsl_vector_get(v, 0);		//x(i)
 	double x_next = gsl_vector_get(v, 1);		//x(i+1)
 
-	double y_prev = p->path[0].p1.y;
+	double y_prev = p->front().p1.pose.y;
 	double y      = gsl_vector_get(v, size);
 	double y_next = gsl_vector_get(v, size+1);
 	//printf("---%f %f\n", x_prev, y_prev);
+	//printf("---%f %f\n", x, y);
+	///printf("---%f %f\n", x_next, y_next);
 	for (i = 2, j = (size+2); i < size; i++, j++)
 	{
 		a = x_next - (2*x) + x_prev;
@@ -776,20 +727,23 @@ my_f(const gsl_vector *v, void *params)
 		y_prev = y;
 		y      = y_next;
 		y_next = gsl_vector_get(v, j);
+		//printf("---%f %f\n", x_next, y_next);
 	}
 
 	x_prev = x;
 	x      = x_next;
-	x_next = p->path[size].p2.x;
+	x_next = p->back().p2.pose.x;
 
 	y_prev = y;
 	y      = y_next;
-	y_next = p->path[size].p2.y;
+	y_next = p->back().p2.pose.y;
 
 	//printf("---%f %f\n", x_next, y_next);
 	a = x_next - (2*x) + x_prev;
 	b = y_next - (2*y) + y_prev;
 	sum += (a*a + b*b);
+
+	//getchar();
 
 	return (sum);
 }
@@ -800,25 +754,28 @@ my_f(const gsl_vector *v, void *params)
 void
 my_df (const gsl_vector *v, void *params, gsl_vector *df)
 {
-	rrt_path_message *p = (rrt_path_message *)params;
-	int i, j, size =(p->size-1);
+	list<RRT_Path_Edge> *p = (list<RRT_Path_Edge> *)params;
+	int i, j, size =(p->size()-1);
 
 	double x_prev2= 0;
-	double x_prev = p->path[0].p1.x;
+	double x_prev = p->front().p1.pose.x;
 	double x      = gsl_vector_get(v, 0);
 	double x_next = gsl_vector_get(v, 1);
 	double x_next2= gsl_vector_get(v, 2);
 	double sum_x  =  (10*x) - (8*x_next) + (2*x_next2) - (4*x_prev);
 	gsl_vector_set(df, 0, sum_x);
-	//printf ("%f\n", sum_x);
 
 	double y_prev2= 0;
-	double y_prev = p->path[0].p1.y;
+	double y_prev = p->front().p1.pose.y;
 	double y      = gsl_vector_get(v, size);
 	double y_next = gsl_vector_get(v, size+1);
 	double y_next2= gsl_vector_get(v, size+2);
 	double sum_y  = (10*y) - (8*y_next) + (2*y_next2) - (4*y_prev);
 	gsl_vector_set(df, size, sum_y);
+//	printf("---%f %f\n", x_prev, y_prev);
+//	printf("---%f %f\n", x, y);
+//	printf("---%f %f\n", x_next, y_next);
+//	printf("---%f %f\n", x_next2, y_next2);
 
 	for (i = 3, j = (size+3); i < size; i++, j++)
 	{
@@ -837,13 +794,14 @@ my_df (const gsl_vector *v, void *params, gsl_vector *df)
 		y_next2= gsl_vector_get(v, j);
 		sum_y = (2*y_prev2) - (8*y_prev) + (12*y) - (8*y_next) + (2*y_next2);
 		gsl_vector_set(df, (j-2), sum_y);
+//		printf("---%f %f\n", x_next2, y_next2);
 	}
 
 	x_prev2= x_prev;
 	x_prev = x;
 	x      = x_next;
 	x_next = x_next2;
-	x_next2= p->path[size].p2.x;
+	x_next2= p->back().p2.pose.x;
 	sum_x  = (2*x_prev2) - (8*x_prev) + (12*x) - (8*x_next) + (2*x_next2);
 	gsl_vector_set(df, size-2, sum_x);
 
@@ -851,9 +809,10 @@ my_df (const gsl_vector *v, void *params, gsl_vector *df)
 	y_prev = y;
 	y      = y_next;
 	y_next = y_next2;
-	y_next2= p->path[size].p2.y;
+	y_next2= p->back().p2.pose.y;
 	sum_y  = (2*y_prev2) - (8*y_prev) + (12*y) - (8*y_next) + (2*y_next2);
 	gsl_vector_set(df, (2*size)-2, sum_y);
+//	printf("---%f %f\n", x_next2, y_next2);
 
 	x_prev2= x_prev;
 	x_prev = x;
@@ -868,6 +827,8 @@ my_df (const gsl_vector *v, void *params, gsl_vector *df)
 	y_next = y_next2;
 	sum_y  = (2*y_prev2) - (8*y_prev) + (10*y) - (4*y_next);
 	gsl_vector_set(df, (2*size)-1, sum_y);
+
+//	getchar();
 }
 
 
@@ -880,74 +841,107 @@ my_fdf (const gsl_vector *x, void *params, double *f, gsl_vector *df)
 }
 
 
-void RRT::smooth_path_using_conjugate_gradient (rrt_path_message *msg)
+void RRT::smooth_principal_path_from_tree_using_conjugate_gradient (RRT_Node *goal)
 {
-		size_t iter = 0;
-		int status, i, j, size =(msg->size+1);
+	size_t iter = 0;
+	int status, i=0, j=0, size;
 
-		//printf("size %d\n", size);
-		//printf ("%aaaaaaaaaaaaaalf\n", msg->path[0].p1.x);
+	const gsl_multimin_fdfminimizer_type *T;
+	gsl_multimin_fdfminimizer *s;
 
-		const gsl_multimin_fdfminimizer_type *T;
-		gsl_multimin_fdfminimizer *s;
+	gsl_vector *v;
+	gsl_multimin_function_fdf my_func;
 
-		gsl_vector *v;
-		gsl_multimin_function_fdf my_func;
+	list<RRT_Path_Edge>::iterator it;
+	list<RRT_Path_Edge> path;
+	path = Dijkstra::build_path(goal);
 
-		my_func.n = (2*size)-4;
-		my_func.f = my_f;
-		my_func.df = my_df;
-		my_func.fdf = my_fdf;
-		my_func.params = msg;
+	if (path.size() < 4)
+		return;
 
-		v = gsl_vector_alloc ((2*size)-4);
+	size = path.size()+1;
 
-		for (i=0, j=(size-2); i < (size-2); i++, j++)
-		{
-			//printf ("%f %f\n", msg->path[i].p2.x, msg->path[i].p2.y);
-			gsl_vector_set (v, i, msg->path[i].p2.x);
-			gsl_vector_set (v, j, msg->path[i].p2.y);
+	my_func.n = (2*size)-4;
+	my_func.f = my_f;
+	my_func.df = my_df;
+	my_func.fdf = my_fdf;
+	my_func.params = &path;
+
+	v = gsl_vector_alloc ((2*size)-4);
+	it = path.begin();
+
+//	fprintf(plot, "a%d = [\n", cont);
+//	printf ("size %d\n\n", size);
+//	fprintf(plot, "%f %f\n", it->p1.pose.x, it->p1.pose.y);
+//	fprintf(normal, "%f %f\n", it->p1.pose.x, it->p1.pose.y);
+//	printf ("a%f %f\n", it->p1.pose.x, it->p1.pose.y);
+	for (i=0, j=(size-2); i < (size-2); i++, j++, it++)
+	{
+//		fprintf(plot, "%f %f\n", it->p2.pose.x, it->p2.pose.y);
+//		fprintf(normal, "%f %f\n", it->p2.pose.x, it->p2.pose.y);
+//		printf ("a%f %f\n", it->p2.pose.x, it->p2.pose.y);
+		gsl_vector_set (v, i, it->p2.pose.x);
+		gsl_vector_set (v, j, it->p2.pose.y);
+	}
+//	fprintf(plot, "%f %f]\n\n", it->p2.pose.x, it->p2.pose.y);
+//	fprintf(normal, "%f %f\n", it->p2.pose.x, it->p2.pose.y);
+//	printf ("a%f %f\n", it->p2.pose.x, it->p2.pose.y);
+
+	T = gsl_multimin_fdfminimizer_conjugate_fr;
+	s = gsl_multimin_fdfminimizer_alloc (T, (2*size)-4);
+
+	gsl_multimin_fdfminimizer_set (s, &my_func, v, 0.1, 0.01);  //(function_fdf, gsl_vector, step_size, tol)
+
+	do
+	{
+		iter++;
+		status = gsl_multimin_fdfminimizer_iterate (s);
+
+		if (status){
+			//printf("%%Saiu STATUS %d\n", status);
+			break;
 		}
 
-		T = gsl_multimin_fdfminimizer_conjugate_fr;
-		s = gsl_multimin_fdfminimizer_alloc (T, (2*size)-4);
-		//printf("FOOIIIIIIII\n");
-		gsl_multimin_fdfminimizer_set (s, &my_func, v, 0.1, 0.01);  //(function_fdf, gsl_vector, step_size, tol)
-		//printf("-----------\n");
-		do
+		status = gsl_multimin_test_gradient (s->gradient, 0.01);        //(gsl_vector, epsabs) and  |g| < epsabs
+
+		if (status == GSL_SUCCESS)
 		{
-			iter++;
-			status = gsl_multimin_fdfminimizer_iterate (s);
-
-			if (status){
-				//printf("%%Saiu STATUS %d\n", status);
-				break;
-			}
-
-			status = gsl_multimin_test_gradient (s->gradient, 0.01);        //(gsl_vector, epsabs) and  |g| < epsabs
-
-			if (status == GSL_SUCCESS)
-			{
-				//printf ("%%Minimum found!!!\n");
-			}
+			//printf ("%%Minimum found!!!\n");
 		}
-		while (status == GSL_CONTINUE && iter < 999);
+	}
+	while (status == GSL_CONTINUE && iter < 999);
 
-		for (i=0, j=(size-2); i < (size-2); i++, j++)
+	it = path.begin();
+
+//	fprintf(plot, "b%d = [   \n%f %f\n", cont, it->p1.pose.x, it->p1.pose.y);
+//	fprintf(smooth, "%f %f\n", it->p1.pose.x, it->p1.pose.y);
+//	printf ("z%f %f\n", it->p1.pose.x, it->p1.pose.y);
+	for (i=0, j=(size-2); i < (size-2); i++, j++)
+	{
+		it->p2.pose.x = gsl_vector_get (s->x, i);
+		it->p2.pose.y = gsl_vector_get (s->x, j);
+//		fprintf(plot, "%f %f\n", it->p2.pose.x, it->p2.pose.y);
+//		fprintf(smooth, "%f %f\n", it->p2.pose.x, it->p2.pose.y);
+//		printf ("z%f %f\n", it->p2.pose.x, it->p2.pose.y);
+		if (it != path.end())
 		{
-			msg->path[i].p2.x = msg->path[i+1].p1.x = gsl_vector_get (s->x, i);
-			msg->path[i].p2.y = msg->path[i+1].p1.y = gsl_vector_get (s->x, j);
+			it++;
+			it->p1.pose.x = gsl_vector_get (s->x, i);
+			it->p1.pose.y = gsl_vector_get (s->x, j);
+			//fprintf(plot, "%f %f\n", it->p1.pose.x, it->p1.pose.y);
+//			printf ("z%f %f\n", it->p1.pose.x, it->p1.pose.y);
 		}
+	}
+//	fprintf(plot, "%f %f]\n\n", it->p2.pose.x, it->p2.pose.y);
+//	fprintf(smooth, "%f %f\n", it->p2.pose.x, it->p2.pose.y);
+//	fprintf(plot, "\nplot (a%d(:,1), a%d(:,2), b%d(:,1), b%d(:,2)); \nstr = input (\"a   :\");\n\n", cont, cont, cont, cont);
+//	printf ("z%f %f\n", it->p2.pose.x, it->p2.pose.y);
+//	printf ("\n");
 
-		consolidate_path(msg);
-		/*printf ("%d  -------------------------------\n%f %f\n", (int)iter, msg->path[0].p1.x, msg->path[0].p1.y);
-		for (i=0, j=(size-2); i < (size-2); i++, j++)
-		{
-			printf ("%f %f\n", gsl_vector_get (s->x, i), gsl_vector_get (s->x, j));
-		}
-		printf ("%f %f\n", msg->path[size-2].p2.x, msg->path[size-2].p2.y);
-		*/
+	recalculate_theta_time_phi (path);
 
-		gsl_multimin_fdfminimizer_free (s);
-		gsl_vector_free (v);
+	save_smoothed_path_back_to_tree (goal, path);
+
+	gsl_multimin_fdfminimizer_free (s);
+	gsl_vector_free (v);
 }

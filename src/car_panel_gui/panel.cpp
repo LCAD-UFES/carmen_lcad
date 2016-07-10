@@ -202,12 +202,12 @@ subscribe_messages(int msg_type, double interval)
 			break;
 		case 1:
 			handler_message = robot_ackerman_motion_command_t;
-			accelerator = new withTime(interval);
+			accelerator = new withoutTime(interval);
 			carmen_robot_ackerman_subscribe_motion_command(NULL, (carmen_handler_t)robot_ackerman_motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
 			break;
 		case 2:
 			handler_message = base_ackerman_motion_command_t;
-			accelerator = new withTime(interval);
+			accelerator = new withoutTime(interval);
 			carmen_base_ackerman_subscribe_motion_command(NULL, (carmen_handler_t)base_ackerman_motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
 			break;
 		case 3:
