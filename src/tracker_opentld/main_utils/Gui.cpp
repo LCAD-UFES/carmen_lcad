@@ -35,7 +35,7 @@ namespace tld
 {
 
 Gui::Gui() :
-    m_window_name("tld")
+    m_window_name("Tracker_OpenTLD")
 {
 }
 

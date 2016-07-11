@@ -6,6 +6,8 @@ The OpenTLD implementation used in this module was develop by https://github.com
 
 More about the OpenTLD by gnebehay, the documentation of the internals as well as other possibly helpful information is contained in this [master thesis](https://github.com/downloads/gnebehay/OpenTLD/gnebehay_thesis_msc.pdf).
 
+[Video Experimento - Volta da UFES](https://youtu.be/fThYL5N-aAw)
+
 # Building
 ## Dependencies
 * OpenCV
