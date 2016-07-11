@@ -76,20 +76,5 @@ cd $CARMEN_HOME/src/tracker_opentld/
 ```
 To test and see the published messages on terminal
 ```bash
-./tracker_opentld_test
+./tracker_test
 ```
-
-###############################
-# Visual Tracker OpenTLD parameters
-###############################
-
-tracker_opentld_view_width				640
-tracker_opentld_view_height				480
-tracker_opentld_confidence_threshold	0.5 #Confidence detection threshold
-tracker_opentld_detector_minScale		-10 #number of scales smaller than initial object size
-tracker_opentld_detector_maxScale		10 #number of scales larger than initial object size
-tracker_opentld_detector_numFeatures	15 #number of features
-tracker_opentld_detector_numTrees		10 #number of trees
-tracker_opentld_detector_minSize		25 #minimum size of scanWindows
-tracker_opentld_detector_thetaP			0.65
-tracker_opentld_detector_thetaN			0.5
