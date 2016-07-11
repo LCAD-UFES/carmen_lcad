@@ -304,6 +304,7 @@ src/ultrasonic/ultrasonic
 src/ultrasonic/ultrasonic_viewer
 src/v_disparity/v_disparity_view
 src/velodyne/velodyne
+../sharedlib/libvisual_tracker_interface.so
 src/viewer_3D/viewer_3D
 src/viewer_3D/xsens_viewer
 src/visual_odometry_package2/visual_odometry2
