@@ -1,6 +1,7 @@
 # Introduction
 
 This is a C++ implementation of a tracker on CARMEN (Carnegie Mellon Robot Navigation Toolkit) with OpenTLD that was originally published in MATLAB by Zdenek Kalal. 
+
 The OpenTLD implementation used in this module was develop by https://github.com/gnebehay/OpenTLD. What makes this algorithm outstanding is that it does not make use of any training data. This implementation is based solely on open source libraries, meaning that you do not need any commercial products to compile or run it.
 
 To know more about the OpenTLD by gnebehay the documentation of the internals as well as other possibly helpful information is contained in this [master thesis](https://github.com/downloads/gnebehay/OpenTLD/gnebehay_thesis_msc.pdf).
@@ -10,13 +11,13 @@ To know more about the OpenTLD by gnebehay the documentation of the internals as
 * OpenCV
 * libconfig++ (optional)
 * Visual_Tracker module
-* bumblebee_basic module (this module subscribes to carmen_bumblebee_basic_stereoimage_message with retified image)
+* bumblebee_basic module (this module subscribes to `carmen_bumblebee_basic_stereoimage_message` with retified image)
 
 ## Compiling
 
 After compile carmen
 
-This module publish the same messages of visual_tracker module (carmen_visual_tracker_output_message) because of that, it needs to be compiled as well.
+This module publish the same messages of visual_tracker module (`carmen_visual_tracker_output_message`) because of that, it needs to be compiled as well.
 
 Navigate with the terminal to the directory of Visual_Tracker Module.
 ```bash
