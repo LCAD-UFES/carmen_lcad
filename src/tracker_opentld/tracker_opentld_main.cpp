@@ -7,19 +7,11 @@
 #include <string>
 
 #include <carmen/carmen.h>
-#include <carmen/localize_ackerman_interface.h>
-#include <carmen/localize_ackerman_messages.h>
-#include <carmen/rddf_interface.h>
-#include <carmen/rddf_messages.h>
 #include <carmen/bumblebee_basic_interface.h>
 #include <carmen/bumblebee_basic_messages.h>
 
 #include <carmen/visual_tracker_interface.h>
 #include <carmen/visual_tracker_messages.h>
-
-#include <carmen/rotation_geometry.h>
-#include <carmen/fused_odometry_messages.h>
-#include <carmen/fused_odometry_interface.h>
 
 // OpenCV
 #include <opencv2/core/core.hpp>
@@ -136,7 +128,7 @@ build_and_publish_message(char *host, double timestamp)
 		message_output.timestamp = timestamp;
 	}
 
-	fprintf(stderr, "%lf %lf\n", message_output.timestamp, message_output.confidence);
+	//fprintf(stderr, "%lf %lf\n", message_output.timestamp, message_output.confidence);
 
 	publish_visual_tracker_output_message();
 }
