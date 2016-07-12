@@ -10,11 +10,13 @@
 #include "ELAS/ELAS.h"
 
 #define SHOW_DISPLAY
+// #define SAVE_TO_DISK // requires SHOW_DISPLAY
+
+#define TEST_OFFLINE_DATASET
+#define DATASET_RETA_DA_PENHA
+// #define DATASET_GOPRO // GoPro or UFES
 
 // #define TEST_MESSAGES_PUBLISH
-#define TEST_OFFLINE_DATASET
-#define DATASET_RETA_DA_PENHA_OFFLINE
-// #define DATASET_GOPRO // GoPro or UFES
 
 
 using namespace cv;
@@ -116,14 +118,11 @@ lane_analysis_publish_messages(double _timestamp)
 
 	// MESSAGES DEBUG
 	printf("\tlane_width: %.2f meters\n", lane_estimation_message.lane_width * scale_x);
-	printf("\tLMT: left(%d), right(%d)\n", lmt_message.left, lmt_message.right);
-	printf("\tadj: left(%d), right(%d)\n", adj_lanes_message.left, adj_lanes_message.right);
 
 /*
     lane_analysis_message.car_position_x = _raw_elas_message.car_position_x;
     lane_analysis_message.execution_time = _raw_elas_message.execution_time;
     lane_analysis_message.isKalmanNull = _raw_elas_message.isKalmanNull;
-    lane_analysis_message.lane_change = _raw_elas_message.lane_change;
 */
 
 	printf("publishing messages:\n");
@@ -150,15 +149,12 @@ lane_analysis_handler(carmen_bumblebee_basic_stereoimage_message * stereo_image)
 
 #ifdef TEST_OFFLINE_DATASET
 
-	// read the frame
 	#ifdef DATASET_GOPRO
-		Mat3b image = imread("/dados/berriel/MEGA/datasets/VIX_S05/images/lane_" + to_string(fnumber) + ".png");
-	// #else
-	//	Mat3b image = imread("/dados/berriel/datasets/log-rodrigo-ufes/images/lane_" + to_string(fnumber) + ".png");
+		Mat3b image = imread("/dados/berriel/MEGA/datasets/VIX_S01/images/lane_" + to_string(fnumber) + ".png");
 	#endif
 
-	#ifdef DATASET_RETA_DA_PENHA_OFFLINE
-		Mat3b image = imread("/dados/berriel/datasets/carmen/reta-da-penha-01/lane_" + to_string(fnumber) + ".png");
+	#ifdef DATASET_RETA_DA_PENHA
+		Mat3b image = imread("/dados/berriel/datasets/carmen/reta-da-penha-04/images/lane_" + to_string(fnumber) + ".png");
 	#endif
 
 #else
@@ -171,10 +167,20 @@ lane_analysis_handler(carmen_bumblebee_basic_stereoimage_message * stereo_image)
 
 	cvtColor(image, image, CV_RGB2BGR);
 	cv::resize(image, image, Size(640,480));
-	// cv::imwrite("/dados/berriel/datasets/carmen/reta-da-penha-01/lane_" + to_string(fnumber - 80) + ".png", image);
+
+	/* SAVE TO DISK
+	string img_fname = "/dados/berriel/datasets/carmen/reta-da-penha-04/all/lane_" + to_string(fnumber) + ".png";
+	cv::imwrite(img_fname, image);
+	printf("Save to disk #%04d to disk!\n", fnumber);
+	std::ofstream outfile;
+	outfile.open("/dados/berriel/datasets/carmen/reta-da-penha-04/all_imgs_timestamp.txt", std::ios_base::app);
+	outfile << to_string(stereo_image->timestamp) << "\t" << img_fname << endl;
+	fnumber++;
+	/***/
 #endif
 	fnumber++;
 	if (!image.empty()) {
+		cout << "frame: " << fnumber << endl;
 		// run ELAS
 		ELAS::run(image);
 		printf("CARMEN::ELAS... done!\n");
@@ -190,9 +196,21 @@ lane_analysis_handler(carmen_bumblebee_basic_stereoimage_message * stereo_image)
 		lane_analysis_publish_messages(stereo_image->timestamp);
 #endif
 
+		/************************************
+		 * Display the output image
+		 * and save the image to the disk
+		 ************************************/
 #ifdef SHOW_DISPLAY
+#ifdef SAVE_TO_DISK
+		Mat3b img_tosave;
+		string img_fname = "/dados/berriel/datasets/carmen/reta-da-penha-04/result-20160711/lane_" + to_string(fnumber) + ".png";
+		ELAS::display(image, &_raw_elas_message, &img_tosave);
+		imwrite(img_fname, img_tosave);
+#else
 		// display viz
 		ELAS::display(image, &_raw_elas_message);
+#endif
+
 #endif
 	} else {
 		printf("End of dataset!\n");
