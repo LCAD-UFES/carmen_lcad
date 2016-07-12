@@ -53,8 +53,7 @@ Check the carmen-ford-escape.ini if you want to modify some of the parameters
   tracker_opentld_detector_minScale		-10 --number of scales smaller than initial object size
   tracker_opentld_detector_maxScale		10 --number of scales larger than initial object size
   tracker_opentld_detector_numFeatures	15 --number of features
-  tracker_opentld_detector_numTrees		10 --number of trees
-  tracker_opentld_detector_minSize		25 --minimum size of scanWindows
+    tracker_opentld_detector_minSize		25 --minimum size of scanWindows
   tracker_opentld_detector_thetaP			0.65 --detector parameters
   tracker_opentld_detector_thetaN			0.5 --detector parameters
 ```
