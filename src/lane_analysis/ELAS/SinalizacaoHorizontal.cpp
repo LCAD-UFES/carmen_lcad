@@ -797,13 +797,11 @@ Mat1b SinalizacaoHorizontal::detectarFaixaDePedestre2(const Mat1b &mapa, const R
 
 	// PASSO 2
 	Mat1b MAPA_ERODE = MAPA_CLOSE.clone();
-	MAPA_ERODE = Helper::morphErode(MAPA_ERODE, 3);
-	MAPA_ERODE = Helper::morphErode(MAPA_ERODE, 3);
-	MAPA_ERODE = Helper::morphErode(MAPA_ERODE, 3);
+	MAPA_ERODE = Helper::morphErode(MAPA_ERODE, 2);
 
 	// PASSO 3
 	// obs: tive que pegar a posi��o do carro, pois o centro da imagem na IPM nem sempre est� alinhado ao centro do carro
-	int ROI_FAIXA_LARGURA = 100, ROI_FAIXA_ALTURA = MAPA_ERODE.rows / 2;
+	int ROI_FAIXA_LARGURA = 30, ROI_FAIXA_ALTURA = MAPA_ERODE.rows / 2;
 	Rect ROI_FAIXA = Rect(posicaoCarroIPM.x - (ROI_FAIXA_LARGURA / 2), MAPA_CLOSE.rows / 2, ROI_FAIXA_LARGURA, ROI_FAIXA_ALTURA);
 	Mat1b MASK_ROI_FAIXA = Mat1b::zeros(MAPA_ERODE.size());
 	MASK_ROI_FAIXA(ROI_FAIXA).setTo(255);
@@ -825,7 +823,7 @@ Mat1b SinalizacaoHorizontal::detectarFaixaDePedestre2(const Mat1b &mapa, const R
 			// PASSO 8
 			Mat H_ROTACAO_HOUGH = getRotationMatrix2D(CENTRO_ROI_FAIXA, ANGULO_DOMINANTE - 90, 1.0);
 			Mat1b MAPA_CLOSE_ROTACIONADO;
-			warpAffine(Helper::morphDilate(MAPA_ERODE_MASKED, 6), MAPA_CLOSE_ROTACIONADO, H_ROTACAO_HOUGH, MAPA_CLOSE.size(), INTER_NEAREST);
+			warpAffine(Helper::morphDilate(MAPA_ERODE_MASKED, 3), MAPA_CLOSE_ROTACIONADO, H_ROTACAO_HOUGH, MAPA_CLOSE.size(), INTER_NEAREST);
 			Mat1b REGIAO_FINAL = MAPA_CLOSE_ROTACIONADO(ROI_FAIXA).clone();
 
 			// PASSO 9
@@ -844,7 +842,6 @@ Mat1b SinalizacaoHorizontal::detectarFaixaDePedestre2(const Mat1b &mapa, const R
 			Mat1b RESULTADO_DIR, RESULTADO_ESQ;
 			RESULTADO_ESQ = RESULTADO_CONVOLUCAO(Rect(0, 0, RESULTADO_CONVOLUCAO.cols / 2, RESULTADO_CONVOLUCAO.rows));
 			RESULTADO_DIR = RESULTADO_CONVOLUCAO(Rect(RESULTADO_CONVOLUCAO.cols / 2, 0, RESULTADO_CONVOLUCAO.cols / 2, RESULTADO_CONVOLUCAO.rows));
-
 			double esqMax, esqMin, dirMax, dirMin;
 			minMaxIdx(RESULTADO_ESQ, &esqMin, &esqMax);
 			minMaxIdx(RESULTADO_DIR, &dirMin, &dirMax);

@@ -28,6 +28,6 @@ struct frame_viz {
 	void set_lane_deviation(double x_carro, double x_base, double lane_width);
 	void set_lane_base(double x_bottom, double x_top, double lane_width, const Rect &roi, IPM *ipm);
 };
-void render(frame_viz &data, const Mat3b &color_frame, ConfigXML *config);
+void render(frame_viz &data, const Mat3b &color_frame, ConfigXML *config, bool verbose = false, Mat3b * out = NULL);
 
 #endif // __ELAS_VIZ_H

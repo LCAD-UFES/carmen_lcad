@@ -56,7 +56,7 @@ void finishRun();
 
 raw_elas_message& get_raw_message();
 frame_viz get_viz_data(raw_elas_message * message);
-void display(const Mat3b& frame, raw_elas_message * message);
+void display(const Mat3b& frame, raw_elas_message * message, Mat3b * out = NULL);
 
 } // end namespace ELAS
 

@@ -15,6 +15,8 @@ void crosswalk_detection(const feature_maps * _feature_maps, ConfigXML * _cfg, c
 	if (out->mask.empty()) {
 		out->mask = Mat1b(_feature_maps->map_hdog_ipm.size(), uchar(0));
 		out->status = false;
+	} else {
+		out->status = true;
 	}
 }
 

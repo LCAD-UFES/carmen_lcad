@@ -347,8 +347,6 @@ AnaliseDasHoughs::AnaliseDasHoughs(ConfigXML *_config) {
 	posicaoCarro = Point2d(config->dataset.FrameSize.width / 2.0, config->dataset.FrameSize.height);
 	posicaoCarroIPM = config->ipm->applyHomography(Point2d(config->dataset.FrameSize.width / 2.0, (double)config->roi.height));
 	larguraPista = (config->dataset._IPM.tr - config->dataset._IPM.tl);
-
-	printf("posicao carro IPM: %d\n", posicaoCarroIPM.x);
 }
 
 void AnaliseDasHoughs::setColorFrame(const Mat3b &_colorFrame) {
@@ -478,7 +476,7 @@ void AnaliseDasHoughs::executar2D(const Mat1b &mapa1ipm, const vector<HoughLine>
 		if (dir.isEmpty()) cout << "  - direita: sem hough" << endl;
 	}
 
-	if (true) {
+	if (config->display) {
 		// histograma da metade de baixo em 1d
 		Mat1d histograma1D = Mat1d(Size(esqHistograma1D.cols, esqHistograma1D.rows), double(0));
 		Rect esqArea1D = Rect(0, 0, posicaoCarroIPM.x, esqHistograma1D.rows);
@@ -507,7 +505,7 @@ void AnaliseDasHoughs::executar2D(const Mat1b &mapa1ipm, const vector<HoughLine>
 		imgHistograma1D.copyTo(this->colorFrame(Rect(0, 0, imgHistograma1D.cols, imgHistograma1D.rows)));
 
 		imshow("Analise das Houghs", this->colorFrame);
-		imshow("Histograma2D", histograma2D);
+		// imshow("Histograma2D", histograma2D);
 	}
 }
 

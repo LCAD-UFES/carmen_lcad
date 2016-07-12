@@ -15,7 +15,7 @@ void frame_viz::set_lane_base(double x_bottom, double x_top, double lane_width, 
 	lane_base.direction = (lane_base.point_top - lane_base.point_bottom) * (1 / cv::norm(lane_base.point_top - lane_base.point_bottom));
 }
 
-void render(frame_viz &data, const Mat3b &color_frame, ConfigXML *config) {
+void render(frame_viz &data, const Mat3b &color_frame, ConfigXML *config, bool verbose, Mat3b * out) {
 
 	Mat3b img = color_frame.clone();
 	const Size symbol_size = Size(32, 32);
@@ -35,35 +35,33 @@ void render(frame_viz &data, const Mat3b &color_frame, ConfigXML *config) {
 			break;
 		}
 
-		if (data.frame_number % 16 == 0) {
-			string fname = "C:/Users/berriel/Desktop/video/frames/aaaaa/VIZ/lane_viz_" + to_string(data.frame_number / 16) + ".png";
-			//imwrite(fname, img);
-		}
-
 		imshow("ELAS - Ego-Lane Analysis System", img);
+		if (out != NULL) (*out) = img.clone();
 		return;
 	}
 
 #pragma region Text Output
 
 	if (!color_frame.empty()) {
-		cout << "--------------------------------------------------" << endl;
-		cout << "Dados de saida (Frame #" << data.frame_number << "): " << endl;
-		cout << "- Lane Position: left(" << data.lane_position.left.size() << "), right(" << data.lane_position.right.size() << ")" << endl;
-		cout << "- Lane Base: position(" << data.lane_base.point_bottom << "), direction(" << data.lane_base.direction << "), width(" << data.lane_base.width << ")" << endl;
-		cout << "- Lane Deviation: " << data.lane_deviation * 100 << "%" << endl;
-		cout << "- Lane Change: " << data.lane_change << endl;
-		cout << "- LMT: left(" << data.lmt.left << "), right(" << data.lmt.right << ")" << endl;
-		cout << "- Adjacent Lanes: left(" << data.adjacent_lanes.left << "), right(" << data.adjacent_lanes.right << ")" << endl;
-		cout << "- Execution Time: " << data.execution_time << " (" << (1000.0 / data.execution_time) << " fps)" << endl;
-		cout << "- Symbols: " << data.symbols.size();
-		if (data.symbols.size() > 0) {
-			cout << " -> [ ";
-			for (auto s : data.symbols) cout << SinalizacaoHorizontal::toText(s.id) << " ";
-			cout << "]";
+		if (verbose) {
+			cout << "--------------------------------------------------" << endl;
+			cout << "Dados de saida (Frame #" << data.frame_number << "): " << endl;
+			cout << "- Lane Position: left(" << data.lane_position.left.size() << "), right(" << data.lane_position.right.size() << ")" << endl;
+			cout << "- Lane Base: position(" << data.lane_base.point_bottom << "), direction(" << data.lane_base.direction << "), width(" << data.lane_base.width << ")" << endl;
+			cout << "- Lane Deviation: " << data.lane_deviation * 100 << "%" << endl;
+			cout << "- Lane Change: " << data.lane_change << endl;
+			cout << "- LMT: left(" << data.lmt.left << "), right(" << data.lmt.right << ")" << endl;
+			cout << "- Adjacent Lanes: left(" << data.adjacent_lanes.left << "), right(" << data.adjacent_lanes.right << ")" << endl;
+			cout << "- Execution Time: " << data.execution_time << " (" << (1000.0 / data.execution_time) << " fps)" << endl;
+			cout << "- Symbols: " << data.symbols.size();
+			if (data.symbols.size() > 0) {
+				cout << " -> [ ";
+				for (auto s : data.symbols) cout << SinalizacaoHorizontal::toText(s.id) << " ";
+				cout << "]";
+			}
+			cout << endl;
+			cout << "--------------------------------------------------" << endl;
 		}
-		cout << endl;
-		cout << "--------------------------------------------------" << endl;
 	} else {
 		img = Mat3b(color_frame.size(), Vec3b(0, 0, 0)); // fundo preto
 	}
@@ -198,6 +196,7 @@ void render(frame_viz &data, const Mat3b &color_frame, ConfigXML *config) {
 			symbol_destination = Rect(img.cols / 2 - symbol_size.width / 2, (2 + i) * padding + box_height + i*symbol_size.height, symbol_size.width, symbol_size.height);
 		else
 			symbol_destination = Rect(data.symbols[i].region[0].x, data.symbols[i].region[0].y - img_symbol.rows, img_symbol.cols, img_symbol.rows);
+
 		img_symbol.copyTo(img(symbol_destination));
 	}
 
@@ -228,20 +227,5 @@ void render(frame_viz &data, const Mat3b &color_frame, ConfigXML *config) {
 #pragma endregion
 
 	imshow("ELAS - Ego-Lane Analysis System", img);
-
-	/*
-	int rec_start = 0, rec_end = 3600;
-	if (data.frame_number > rec_start && data.frame_number < rec_end + 1) {
-		string fname = "C:/Users/berriel/Desktop/video/frames/aaa/VIZ/lane_viz_" + to_string(data.idx_frame) + ".png";
-		//imwrite(fname, img);
-	}
-
-	if (data.frame_number % 16 == 0) {
-		string fname = "C:/Users/berriel/Desktop/video/frames/aaaaa/VIZ/lane_viz_" + to_string(data.frame_number / 16) + ".png";
-		//imwrite(fname, img);
-	}
-
-	string fname = "/dados/berriel/datasets/carmen/reta-out/" + to_string(data.idx_frame) + ".png";
-	imwrite(fname, img);
-	/**/
+	if (out != NULL) (*out) = img.clone();
 }

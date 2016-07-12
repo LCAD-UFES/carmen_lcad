@@ -33,6 +33,7 @@ namespace ELAS {
 		double center_deviation;
 		int trustworthy_height;
 		bool is_kalman_disabled;
+		inline bool is_valid() { return lane_base != NULL; }
 	};
 	struct raw_houghs { std::vector<HoughLine> ego_lane, adjacent_lanes; };
 	struct lane_change { bool status; };
@@ -41,6 +42,7 @@ namespace ELAS {
 	void lane_position_estimation(const pre_processed * _pre_processed, const feature_maps * _feature_maps, const road_signs * _road_signs, ConfigXML * _cfg, lane_position * _out_lane_position, lane_change * _out_lane_change, raw_houghs * _out_raw_houghs);
 	void lane_estimation_init(ConfigXML * _cfg);
 	bool buffer_mechanism(vector<HoughLine> & houghs_X, ConfigXML * _cfg);
+	void clear_buffers();
 	// void lane_measurement_generation(); // lane measurement generation
 	void lane_center_deviation(lane_position * _lane_position, ConfigXML * _cfg);
 

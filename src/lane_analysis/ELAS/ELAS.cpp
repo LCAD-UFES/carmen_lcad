@@ -17,6 +17,9 @@ static ELAS::lane_marking_type * out_lmt;
 static ELAS::adjacent_lanes * out_adjacent_lanes;
 static ELAS::raw_elas_message * out_raw_elas_message;
 
+// to keep track of the most recent hough
+static HoughDoMeio * latest_hough = NULL;
+
 ELAS::raw_elas_message& ELAS::get_raw_message() { return *out_raw_elas_message; };
 
 // run init procedures, if any
@@ -51,6 +54,10 @@ void ELAS::init(string & config_fname, string & config_xml_fname) {
 	lmt_classification_init(cfg);
 	printf("DONE!\n");
 
+	// load road markings templates
+	printf("Loading road markings templates... ");
+	printf("%d loaded!\n", SinalizacaoHorizontal::loadTemplates());
+
 	printf("init() - DONE!\n******************************************\n");
 
 }
@@ -70,13 +77,14 @@ void ELAS::run(const Mat3b & original_frame) {
 
 	printf("\nELAS::run()\n");
 
+	double timeMeasurement = (double)getTickCount();
+
 	// pre-processing
 	pre_processing(original_frame, cfg, out_pre_process);
 	if (DISPLAY_PRE_PROCESSING) {
 		imshow("pre-processing ROI", out_pre_process->grayFrameRoi);
 		imshow("pre-processing", out_pre_process->grayFrameRoiIPM);
 		imshow("mask IPM", out_pre_process->maskIPM);
-		waitKey();
 	}
 
 	// feature map generation
@@ -86,26 +94,26 @@ void ELAS::run(const Mat3b & original_frame) {
 		imshow("hdog ipm", out_feature_maps->map_hdog_ipm);
 		imshow("vad ipm", out_feature_maps->map_vad_ipm);
 		imshow("inb ipm", out_feature_maps->map_inb_ipm);
-		waitKey();
 	}
 
 	// crosswalk detection
+	printf("\n\nTODO: crosswalk detection\n\n");
 	crosswalk_detection(out_feature_maps, cfg, out_crosswalks);
 	if (DISPLAY_CROSSWALK) {
 		imshow("crosswalk map", out_crosswalks->mask);
 		putText(out_crosswalks->mask, (out_crosswalks->status) ? "true" : "false", Point(10,10), FONT_HERSHEY_COMPLEX, 1, Scalar(255));
-		if (out_crosswalks->status) printf("CROSSWALK FOUND! **************************** ");
+		if (out_crosswalks->status) printf("CROSSWALK FOUND! ****************************\n");
 	}
 
 	// road signs detection and classification
-	road_signs_classification(out_pre_process, out_feature_maps, NULL, cfg, out_road_signs);
+	road_signs_classification(out_pre_process, out_feature_maps, latest_hough, cfg, out_road_signs);
 	if (DISPLAY_ROAD_SIGNS) {
 		printf("%d road signs found!\n", out_road_signs->n);
 	}
 
 	// road signs and crosswalk removal
 	if (DISPLAY_MARKINGS_REMOVAL) imshow("map_srf before", out_feature_maps->map_srf);
-	// pavement_markings_removal(out_feature_maps, out_crosswalks, out_road_signs, cfg);
+	pavement_markings_removal(out_feature_maps, out_crosswalks, out_road_signs, cfg);
 	if (DISPLAY_MARKINGS_REMOVAL) {
 		imshow("map_srf after", out_feature_maps->map_srf);
 	}
@@ -116,52 +124,57 @@ void ELAS::run(const Mat3b & original_frame) {
 		if (out_lane_position->is_hough_only) printf("\tLane Estimation using Hough Only!\n");
 		else printf("\tLane Estimation using Particle Filter!\n");
 
-		Mat3b lane_position_img = out_pre_process->colorFrame.clone();
+		if (out_lane_position->is_valid()) {
+			Mat3b lane_position_img = out_pre_process->colorFrame.clone();
 
-		// lane position
-		for (Point p : out_lane_position->left) if (!(isnan(p.x) || isnan(p.y))) circle(lane_position_img, p, 2, BGR_RED, CV_FILLED);
-		for (Point p : out_lane_position->right) if (!(isnan(p.x) || isnan(p.y))) circle(lane_position_img, p, 2, BGR_RED, CV_FILLED);
+			// lane position
+			for (Point p : out_lane_position->left) if (!(isnan(p.x) || isnan(p.y))) circle(lane_position_img, p, 2, BGR_RED, CV_FILLED);
+			for (Point p : out_lane_position->right) if (!(isnan(p.x) || isnan(p.y))) circle(lane_position_img, p, 2, BGR_RED, CV_FILLED);
 
-		imshow("DISPLAY_LANE_POSITION", lane_position_img);
+			imshow("DISPLAY_LANE_POSITION", lane_position_img);
+		}
 	}
 
-	// lane center deviation
-	lane_center_deviation(out_lane_position, cfg);
-	if (DISPLAY_LANE_CENTER_DEVIATION) {
-		Mat3b lane_deviation_img = out_pre_process->colorFrame.clone();
-
+	// these tasks only execute if there is a valid lane estimate
+	if (out_lane_position->is_valid()) {
 		// lane center deviation
-		printf("Lane Center Deviation: %.2f\n", out_lane_position->center_deviation);
-		string lane_center_text = "Lane Center Deviation: " + to_string(out_lane_position->center_deviation);
-		putText(lane_deviation_img, lane_center_text, Point(15,15), FONT_HERSHEY_COMPLEX_SMALL, 0.5, Scalar(0,0,255), 1, 8);
+		lane_center_deviation(out_lane_position, cfg);
+		if (DISPLAY_LANE_CENTER_DEVIATION) {
+			Mat3b lane_deviation_img = out_pre_process->colorFrame.clone();
 
-		imshow("DISPLAY_LANE_CENTER_DEVIATION", lane_deviation_img);
-	}
+			// lane center deviation
+			printf("Lane Center Deviation: %.2f\n", out_lane_position->center_deviation);
+			string lane_center_text = "Lane Center Deviation: " + to_string(out_lane_position->center_deviation);
+			putText(lane_deviation_img, lane_center_text, Point(15,15), FONT_HERSHEY_COMPLEX_SMALL, 0.5, Scalar(0,0,255), 1, 8);
 
-	// lane markings type classification
-	lmt_classification(out_pre_process, out_feature_maps, out_lane_position, out_lmt);
-	if (DISPLAY_LANE_MARKINGS_TYPE) {
-		printf("LMT: left(%d), right(%d)\n", out_lmt->left, out_lmt->right);
-
-		const int padding = 15;
-		Mat3b lmt_img = out_pre_process->colorFrame.clone();
-		if (out_lmt->left != LMT::NONE && !std::isnan(out_lmt->left)) {
-			Mat3b lmtLeftImg = LMTDetector::LMTtoIMG((LMT)out_lmt->left, cfg);
-			Rect leftRoi = Rect(padding, padding, lmtLeftImg.cols, lmtLeftImg.rows);
-			lmtLeftImg.copyTo(lmt_img(leftRoi));
+			imshow("DISPLAY_LANE_CENTER_DEVIATION", lane_deviation_img);
 		}
-		if (out_lmt->right != LMT::NONE && !std::isnan(out_lmt->right)) {
-			Mat3b lmtRightImg = LMTDetector::LMTtoIMG((LMT)out_lmt->right, cfg);
-			Rect rightRoi = Rect(lmt_img.cols - padding - lmtRightImg.cols, padding, lmtRightImg.cols, lmtRightImg.rows);
-			lmtRightImg.copyTo(lmt_img(rightRoi));
-		}
-		imshow("DISPLAY_LANE_MARKINGS_TYPE", lmt_img);
-	}
 
-	// adjacent lanes detection
-	//adjacent_lanes_detection(out_feature_maps, out_lane_position, out_raw_houghs, out_lmt, cfg, out_adjacent_lanes);
-	if (DISPLAY_ADJACENT_LANES) {
-		printf("adjacent lanes: left(%d), right(%d)\n", out_adjacent_lanes->left, out_adjacent_lanes->right);
+		// lane markings type classification
+		lmt_classification(out_pre_process, out_feature_maps, out_lane_position, out_lmt);
+		if (DISPLAY_LANE_MARKINGS_TYPE) {
+			printf("LMT: left(%d), right(%d)\n", out_lmt->left, out_lmt->right);
+
+			const int padding = 15;
+			Mat3b lmt_img = out_pre_process->colorFrame.clone();
+			if (out_lmt->left != LMT::NONE && !std::isnan(out_lmt->left)) {
+				Mat3b lmtLeftImg = LMTDetector::LMTtoIMG((LMT)out_lmt->left, cfg);
+				Rect leftRoi = Rect(padding, padding, lmtLeftImg.cols, lmtLeftImg.rows);
+				lmtLeftImg.copyTo(lmt_img(leftRoi));
+			}
+			if (out_lmt->right != LMT::NONE && !std::isnan(out_lmt->right)) {
+				Mat3b lmtRightImg = LMTDetector::LMTtoIMG((LMT)out_lmt->right, cfg);
+				Rect rightRoi = Rect(lmt_img.cols - padding - lmtRightImg.cols, padding, lmtRightImg.cols, lmtRightImg.rows);
+				lmtRightImg.copyTo(lmt_img(rightRoi));
+			}
+			imshow("DISPLAY_LANE_MARKINGS_TYPE", lmt_img);
+		}
+
+		// adjacent lanes detection
+		// adjacent_lanes_detection(out_feature_maps, out_lane_position, out_raw_houghs, out_lmt, cfg, out_adjacent_lanes);
+		if (DISPLAY_ADJACENT_LANES) {
+			printf("adjacent lanes: left(%d), right(%d)\n", out_adjacent_lanes->left, out_adjacent_lanes->right);
+		}
 	}
 
 	// construct raw message
@@ -191,13 +204,33 @@ void ELAS::run(const Mat3b & original_frame) {
 	out_raw_elas_message->car_position_x = cfg->carPositionIPM.x;
 	out_raw_elas_message->isKalmanNull = out_lane_position->lane_base == NULL;
 
+	out_raw_elas_message->pavement_signs.clear();
+	if (out_crosswalks->status) {
+		road_sign r;
+		r.id = ROAD_SIGN::FAIXA_PEDESTRE;
+		out_raw_elas_message->pavement_signs.push_back(r);
+	}
+	for (auto s : out_road_signs->signs) {
+		road_sign r;
+		r.id = s.id;
+		r.region = s.region;
+		out_raw_elas_message->pavement_signs.push_back(r);
+	}
+
+	// store the hough to reuse in the next iteration
+	latest_hough = out_lane_position->lane_base;
+
+	// measure execution time
+	timeMeasurement = ((double)getTickCount() - timeMeasurement)/getTickFrequency();
+	out_raw_elas_message->execution_time = timeMeasurement * 1000;
+
 	// free memory
 	finishRun();
 }
 
-void ELAS::display(const Mat3b& frame, raw_elas_message * message) {
+void ELAS::display(const Mat3b& frame, raw_elas_message * message, Mat3b * out) {
 	frame_viz viz_data = get_viz_data(message);
-	render(viz_data, frame, cfg);
+	render(viz_data, frame, cfg, false, out);
 	waitKey(1);
 }
 
@@ -244,15 +277,21 @@ frame_viz ELAS::get_viz_data(raw_elas_message * message) {
 	viz_data.lane_base.width = message->lane_base.width;
 
 	viz_data.lane_deviation = message->lane_deviation;
-	viz_data.execution_time = 33; // not set: message->execution_time;
+	viz_data.execution_time = message->execution_time;
 	viz_data.x_carro = message->car_position_x;
 	viz_data.isKalmanNull = message->isKalmanNull;
 	viz_data.trustworthy_height = message->trustworthy_height;
 	viz_data.lane_change = (int)message->lane_change;
 
-	viz_data.idx_frame = 0; // unused
-	viz_data.frame_number = 0; // unused
-	// empty: viz_data.symbols
+	viz_data.idx_frame = message->idx_frame;
+	viz_data.frame_number = message->idx_frame;
+
+	for (road_sign a : message->pavement_signs) {
+		viz_symbols s;
+		s.id = a.id;
+		s.region = a.region;
+		viz_data.symbols.push_back(s);
+	}
 
 	return viz_data;
 }
