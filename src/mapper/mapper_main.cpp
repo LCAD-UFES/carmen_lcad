@@ -114,80 +114,70 @@ publish_map(double timestamp)
 static void
 velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
-	/*if*/ (mapper_velodyne_partial_scan(velodyne_message));
-		//publish_map(velodyne_message->timestamp);
+	mapper_velodyne_partial_scan(velodyne_message);
 }
 
 
 static void
 velodyne_variable_scan_message_handler1(carmen_velodyne_variable_scan_message *message)
 {
-	/*if*/ (mapper_velodyne_variable_scan(1, message));
-		//publish_map(message->timestamp);
+	mapper_velodyne_variable_scan(1, message);
 }
 
 
 static void
 velodyne_variable_scan_message_handler2(carmen_velodyne_variable_scan_message *message)
 {
-	/*if*/ (mapper_velodyne_variable_scan(2, message));
-		//publish_map(message->timestamp);
+	mapper_velodyne_variable_scan(2, message);
 }
 
 
 static void
 velodyne_variable_scan_message_handler3(carmen_velodyne_variable_scan_message *message)
 {
-	/*if*/ (mapper_velodyne_variable_scan(3, message));
-		//publish_map(message->timestamp);
+	mapper_velodyne_variable_scan(3, message);
 }
 
 
 static void
 velodyne_variable_scan_message_handler4(carmen_velodyne_variable_scan_message *message)
 {
-	/*if*/ (mapper_velodyne_variable_scan(4, message));
-		//publish_map(message->timestamp);
+	mapper_velodyne_variable_scan(4, message);
 }
 
 
 static void
 velodyne_variable_scan_message_handler5(carmen_velodyne_variable_scan_message *message)
 {
-	/*if*/ (mapper_velodyne_variable_scan(5, message));
-		//publish_map(message->timestamp);
+	mapper_velodyne_variable_scan(5, message);
 }
 
 
 static void
 velodyne_variable_scan_message_handler6(carmen_velodyne_variable_scan_message *message)
 {
-	/*if*/ (mapper_velodyne_variable_scan(6, message));
-		//publish_map(message->timestamp);
+	mapper_velodyne_variable_scan(6, message);
 }
 
 
 static void
 velodyne_variable_scan_message_handler7(carmen_velodyne_variable_scan_message *message)
 {
-	/*if*/ (mapper_velodyne_variable_scan(7, message));
-		//publish_map(message->timestamp);
+	mapper_velodyne_variable_scan(7, message);
 }
 
 
 static void
 velodyne_variable_scan_message_handler8(carmen_velodyne_variable_scan_message *message)
 {
-	/*if*/ (mapper_velodyne_variable_scan(8, message));
-		//publish_map(message->timestamp);
+	mapper_velodyne_variable_scan(8, message);
 }
 
 
 static void
 velodyne_variable_scan_message_handler9(carmen_velodyne_variable_scan_message *message)
 {
-	/*if*/ (mapper_velodyne_variable_scan(9, message));
-		//publish_map(message->timestamp);
+	mapper_velodyne_variable_scan(9, message);
 }
 
 
@@ -760,6 +750,8 @@ read_parameters(int argc, char **argv,
 			{(char*)"mapper",  (char*)"update_cells_below_car", CARMEN_PARAM_ONOFF, &update_cells_below_car, 0, NULL},
 
 			{(char*)"mapper",  (char*)"update_and_merge_with_snapshot_map", CARMEN_PARAM_ONOFF, &update_and_merge_with_snapshot_map, 0, NULL},
+			{(char*)"mapper",  (char*)"number_of_threads", CARMEN_PARAM_INT, &number_of_threads, 0, NULL},
+
 
 			{(char*)"commandline",  (char*)"map_path", CARMEN_PARAM_STRING, &map_path, 0, NULL},
 
