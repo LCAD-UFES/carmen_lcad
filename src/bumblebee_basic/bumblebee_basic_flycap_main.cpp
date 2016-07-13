@@ -810,7 +810,6 @@ create_gui(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-
 	Error error;
 	BusManager busMgr;
 	unsigned int numCameras;
@@ -823,9 +822,7 @@ int main(int argc, char **argv)
 	read_parameters(argc, argv);
 
 	carmen_bumblebee_basic_define_messages(camera_id);
-
 	initialize_bumblebee_message(bumblebee_image_width, bumblebee_image_height, 3, 1);
-
 	get_triclops_context_from_camera( &triclops );
 
 	error = busMgr.GetNumOfCameras(&numCameras);
