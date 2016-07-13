@@ -38,6 +38,20 @@
 #define HEX_TO_RGB_BYTE(hi, lo) (hi << 4 | lo)
 #define GETINDEX(a) isalpha(a) ? a - 'a' + 10 : a - '0'
 
+void CLF_READ_STRING(char *dst, char **string)
+{
+	int l;
+
+	/* advance past spaces */
+	while(*string[0] == ' ')
+		*string += 1;
+
+	l = first_wordlength(*string);
+	strncpy(dst, *string, l);
+	dst[l] = '\0';
+	*string += l;
+}
+
 off_t carmen_logfile_uncompressed_length(carmen_FILE *infile)
 {
 	//  unsigned char buffer[10000];
@@ -1310,6 +1324,56 @@ char* carmen_string_to_bumblebee_basic_stereoimage_message(char* string, carmen_
 
 	return current_pos;
 }
+
+
+char* carmen_string_and_file_to_bumblebee_basic_stereoimage_message(char* string, carmen_bumblebee_basic_stereoimage_message* msg)
+{
+	//char r;
+	//unsigned char hi, lo;
+	char *current_pos = string - 29;
+	int camera; //, i;
+
+	if (strncmp(current_pos, "BUMBLEBEE_BASIC_STEREOIMAGE", 27) == 0) {
+		current_pos += 27;
+		camera = CLF_READ_INT(&current_pos);
+	} else {
+		camera = -1;
+		if(camera) {}
+		return NULL;
+	}
+
+	static char path[1024];
+
+	CLF_READ_STRING(path, &current_pos);
+
+	FILE *image_file = fopen(path, "r");
+
+    fscanf(image_file, "BUMBLEBEE_BASIC_STEREOIMAGE%d ", &camera);
+    fscanf(image_file, "%d ", &(msg->width));
+    fscanf(image_file, "%d ", &(msg->height));
+    fscanf(image_file, "%d ", &(msg->image_size));
+    fscanf(image_file, "%d ", &(msg->isRectified));
+
+	if(msg->raw_left == NULL)
+		msg->raw_left = (unsigned char*) malloc (msg->image_size * sizeof(unsigned char));
+
+	if(msg->raw_right == NULL)
+		msg->raw_right = (unsigned char*) malloc (msg->image_size * sizeof(unsigned char));
+
+
+    fread(msg->raw_left, msg->image_size, sizeof(unsigned char), image_file);
+    fread(msg->raw_right, msg->image_size, sizeof(unsigned char), image_file);
+
+    fclose(image_file);
+
+	//current_pos++;
+
+	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
+	copy_host_string(&msg->host, &current_pos);
+
+	return current_pos;
+}
+
 
 char* carmen_string_to_web_cam_message(char *string, carmen_web_cam_message *msg)
 {

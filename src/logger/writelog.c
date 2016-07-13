@@ -858,6 +858,77 @@ void carmen_logwrite_write_bumblebee_basic_steroimage(carmen_bumblebee_basic_ste
         frame_number++;
 }
 
+void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(carmen_bumblebee_basic_stereoimage_message* msg, int bumblebee_num, carmen_FILE *outfile,
+		double timestamp, int frequency, char *directory)
+{
+
+	//int i, j;
+
+		//static double
+
+		static char path[1024];
+
+        if ((frame_number % frequency ) == 0)
+        {
+        	sprintf(path, "%s/%lf.image", directory, msg->timestamp);
+
+        	FILE *image_file = fopen(path, "w");
+
+            fprintf(image_file, "BUMBLEBEE_BASIC_STEREOIMAGE%d ", bumblebee_num);
+            fprintf(image_file, "%d ", msg->width);
+            fprintf(image_file, "%d ", msg->height);
+            fprintf(image_file, "%d ", msg->image_size);
+            fprintf(image_file, "%d ", msg->isRectified);
+            fwrite(msg->raw_left, msg->image_size, sizeof(unsigned char), image_file);
+            fwrite(msg->raw_right, msg->image_size, sizeof(unsigned char), image_file);
+
+            fclose(image_file);
+
+            /*
+		if (hex_char_image == NULL)
+                {
+                        hex_char_image = (char *) malloc((2 * msg->image_size + 1) * sizeof(char)); // Twice the number of bytes plus 1 for a space at the end
+                        for (i=0; i < 16; i++)
+                        {
+                                if (i <= 9)
+                                        int_to_nibble_hex[i] = '0' + i;
+                                else
+                                        int_to_nibble_hex[i] = 'a' + i - 10;
+                        }
+                }
+
+                carmen_fprintf(outfile, "BUMBLEBEE_BASIC_STEREOIMAGE%d ", bumblebee_num);
+                carmen_fprintf(outfile, "%d ", msg->width);
+                carmen_fprintf(outfile, "%d ", msg->height);
+                carmen_fprintf(outfile, "%d ", msg->image_size);
+                carmen_fprintf(outfile, "%d ", msg->isRectified);
+
+        	for(i=j=0; i<(msg->image_size); i++, j+=2)
+                {
+                        hex_char_image[j]   = GET_HIGH_ORDER_NIBBLE(msg->raw_right[i]);
+                        hex_char_image[j+1] = GET_LOW_ORDER_NIBBLE(msg->raw_right[i]);
+                }
+                hex_char_image[j] = ' ';
+                carmen_fwrite(hex_char_image,  2 * msg->image_size + 1 , 1, outfile);
+
+                for(i=j=0; i<(msg->image_size); i++, j+=2)
+                {
+                        hex_char_image[j]   = GET_HIGH_ORDER_NIBBLE(msg->raw_left[i]);
+                        hex_char_image[j+1] = GET_LOW_ORDER_NIBBLE(msg->raw_left[i]);
+                }
+                hex_char_image[j] = ' ';
+                carmen_fwrite(hex_char_image,  2 * msg->image_size + 1, 1, outfile);
+
+                */
+
+            	carmen_fprintf(outfile, "BUMBLEBEE_BASIC_STEREOIMAGE%d %s ", bumblebee_num, path);
+        		carmen_fprintf(outfile, "%f %s %f\n", msg->timestamp, msg->host, timestamp);
+                frame_number = 0;
+
+        }
+        frame_number++;
+}
+
 void
 carmen_logwrite_write_web_cam_message (carmen_web_cam_message* msg, carmen_FILE *outfile,
 		double timestamp)

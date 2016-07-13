@@ -187,6 +187,9 @@ void carmen_logwrite_write_velodyne_gps(carmen_velodyne_gps_message* msg, carmen
 void carmen_logwrite_write_bumblebee_basic_steroimage(carmen_bumblebee_basic_stereoimage_message* msg, int bumblebee_num, carmen_FILE *outfile,
 		double timestamp, int frequency);
 
+void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(carmen_bumblebee_basic_stereoimage_message* msg, int bumblebee_num, carmen_FILE *outfile,
+		double timestamp, int frequency, char *directory);
+
 void carmen_logwrite_write_xsens_euler(carmen_xsens_global_euler_message* msg,
 			       carmen_FILE *outfile,
 			       double timestamp);

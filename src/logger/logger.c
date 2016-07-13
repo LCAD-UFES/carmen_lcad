@@ -369,7 +369,8 @@ void bumblebee7_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_mes
 void bumblebee8_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_message* message)
 {
 	//fprintf(stderr, "b8s");
-	carmen_logwrite_write_bumblebee_basic_steroimage(message, 8, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save);
+	//carmen_logwrite_write_bumblebee_basic_steroimage(message, 8, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save);
+	carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 8, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, "/tmp/teste-bumb/");
 }
 
 void bumblebee9_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_message* message)
