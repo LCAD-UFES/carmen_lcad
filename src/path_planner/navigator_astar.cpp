@@ -9,6 +9,7 @@
 #include <prob_map.h>
 #include <carmen/motion_planner_interface.h>
 #include <carmen/grid_mapping_interface.h>
+#include <carmen/rddf_interface.h>
 static carmen_robot_ackerman_config_t robot_config;
 static carmen_navigator_config_t nav_config;
 
@@ -41,6 +42,7 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	messageControl.carmen_planner_ackerman_get_status(&status);
 
 	//Mensagem que faz andar
+	//if(false)//TODO comentado para nao entrar
 	if (status.path.length > 0)
 	{
 		carmen_motion_planner_publish_path_message(status.path.points, status.path.length, current_algorithm);
@@ -65,8 +67,8 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	}
 
 
-
 	//Mensagem que exibe o caminho na tela
+	if(false)	//TODO comapracao feita para nunca entrar
 	if (status.path.length > 0)
 	{
 		static carmen_navigator_ackerman_plan_tree_message plan_tree_msg;
@@ -93,6 +95,18 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 
 		carmen_test_ipc(err, "Could not publish", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME);
 	}
+
+	//Pose RDDF
+	int anotation[1000];
+	carmen_ackerman_traj_point_t *poses_ahead;
+	carmen_rddf_publish_road_profile_message(
+		status.path.points,
+		status.path.points,
+		status.path.length,
+		0,
+		anotation);
+
+
 
 }
 

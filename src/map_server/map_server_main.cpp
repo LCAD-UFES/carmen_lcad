@@ -700,8 +700,8 @@ register_handlers()
 
 	if(lanemap_incoming_message_type == 0)
 		carmen_rddf_subscribe_road_profile_message(NULL, (carmen_handler_t) rddf_message_handler, CARMEN_SUBSCRIBE_LATEST);
-//	else if (lanemap_incoming_message_type == 1)
-//		carmen_navigator_ackerman_subscribe_astar_goal_list_message(NULL, (carmen_handler_t) astar_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	else if (lanemap_incoming_message_type == 1)
+		carmen_navigator_ackerman_subscribe_astar_goal_list_message(NULL, (carmen_handler_t) astar_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	else if (lanemap_incoming_message_type == 2)
 		carmen_navigator_spline_subscribe_path_message(NULL , (carmen_handler_t) navigator_spline_path_handler, CARMEN_SUBSCRIBE_LATEST);
 
