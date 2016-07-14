@@ -217,6 +217,8 @@ char *carmen_string_to_kinect_video_message(char *string, carmen_kinect_video_me
 
 char* carmen_string_to_velodyne_partial_scan_message(char* string, carmen_velodyne_partial_scan_message* msg);
 
+char* carmen_string_and_file_to_velodyne_partial_scan_message(char* string, carmen_velodyne_partial_scan_message* msg);
+
 char* carmen_string_to_variable_velodyne_scan_message(char* string, carmen_velodyne_variable_scan_message* msg);
 
 char* carmen_string_to_velodyne_gps_message(char* string, carmen_velodyne_gps_message* msg);
