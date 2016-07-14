@@ -70,7 +70,6 @@ bool skipProcessingOnce = false;
 static int detector_minScale;
 static int detector_maxScale;
 static int detector_numFeatures;
-static int detector_numTrees;
 static int detector_minSize;
 static double detector_thetaP;
 static double detector_thetaN;
@@ -159,7 +158,7 @@ void inicialize_TLD_parameters()
 	detectorCascade->minScale = detector_minScale; //number of scales smaller than initial object size
 	detectorCascade->maxScale = detector_maxScale;//number of scales larger than initial object size
 	detectorCascade->minSize = detector_minSize;//minimum size of scanWindows
-	detectorCascade->numTrees = detector_numTrees;//
+	detectorCascade->numTrees = 10;//
 	detectorCascade->numFeatures = detector_numFeatures;//
 	detectorCascade->nnClassifier->thetaTP = detector_thetaP;//
 	detectorCascade->nnClassifier->thetaFP = detector_thetaN;//
@@ -183,7 +182,7 @@ process_TLD_detection(IplImage * img, double time_stamp)
 	g_tld_track->detectorCascade->imgHeight = grey.rows;
 	g_tld_track->detectorCascade->imgWidthStep = grey.step;
 
-	if(!skipProcessingOnce)
+	if (!skipProcessingOnce)
 	{
 		g_tld_track->processImage(cvarrToMat(img));
 	}
@@ -193,13 +192,13 @@ process_TLD_detection(IplImage * img, double time_stamp)
 	}
 	int confident = (g_tld_track->currConf >= threshold_tld) ? 1 : 0;
 
-	if(showOutput)
+	if (showOutput)
 	{
 		char string1[128];
 
 		char learningString[10] = "";
 
-		if(g_tld_track->learning)
+		if (g_tld_track->learning)
 		{
 			strcpy(learningString, "Learning");
 		}
@@ -212,7 +211,7 @@ process_TLD_detection(IplImage * img, double time_stamp)
 		CvScalar black = CV_RGB(0, 0, 0);
 		CvScalar white = CV_RGB(255, 255, 255);
 
-		if(g_tld_track->currBB != NULL)
+		if (g_tld_track->currBB != NULL)
 		{
 			CvScalar rectangleColor = (confident) ? blue : yellow;
 			cvRectangle(img, g_tld_track->currBB->tl(), g_tld_track->currBB->br(), rectangleColor, 8, 8, 0);
@@ -230,7 +229,7 @@ process_TLD_detection(IplImage * img, double time_stamp)
 			trajectory.addPoint(cvPoint(-1, -1), cvScalar(-1, -1, -1));
 		}
 
-		if(showTrajectory)
+		if (showTrajectory)
 		{
 			trajectory.drawTrajectory(img);
 		}
@@ -240,7 +239,7 @@ process_TLD_detection(IplImage * img, double time_stamp)
 		cvRectangle(img, cvPoint(0, 0), cvPoint(img->width, 50), black, CV_FILLED, 8, 0);
 		cvPutText(img, string1, cvPoint(25, 25), &font, white);
 
-		if(showForeground)
+		if (showForeground)
 		{
 			for(size_t i = 0; i < g_tld_track->detectorCascade->detectionResult->fgList->size(); i++)
 			{
@@ -263,7 +262,7 @@ process_TLD_detection(IplImage * img, double time_stamp)
 
 				tld::ForegroundDetector *fg = g_tld_track->detectorCascade->foregroundDetector;
 
-				if(fg->bgImg.empty())
+				if (fg->bgImg.empty())
 				{
 					fg->bgImg = grey.clone();
 				}
@@ -273,31 +272,30 @@ process_TLD_detection(IplImage * img, double time_stamp)
 				}
 			}
 
-			if(key == 'c')
+			if (key == 'c')
 			{
 				//clear everything
 				g_tld_track->release();
 			}
 
-			if(key == 'l')
+			if (key == 'l')
 			{
 				g_tld_track->learningEnabled = !g_tld_track->learningEnabled;
 				printf("LearningEnabled: %d\n", g_tld_track->learningEnabled);
 			}
 
-			if(key == 'a')
+			if (key == 'a')
 			{
 				g_tld_track->alternating = !g_tld_track->alternating;
 				printf("alternating: %d\n", g_tld_track->alternating);
 			}
 
-			if(key == 'r')
+			if (key == 'r')
 			{
 				CvRect box;
 
-				if(getBBFromUser(img, box, g_gui) == PROGRAM_EXIT)
+				if (getBBFromUser(img, box, g_gui) == PROGRAM_EXIT)
 				{
-					printf("apertou q");
 					return;
 				}
 
@@ -419,8 +417,7 @@ read_parameters(int argc, char **argv)
 			{(char*) "tracker_opentld", (char*) "confidence_threshold", CARMEN_PARAM_DOUBLE, &threshold_tld, 0, NULL},
 			{(char*) "tracker_opentld", (char*) "detector_minScale", CARMEN_PARAM_INT, &detector_minScale, 0, NULL},
 			{(char*) "tracker_opentld", (char*) "detector_maxScale", CARMEN_PARAM_INT, &detector_maxScale, 0, NULL},
-			{(char*) "tracker_opentld", (char*) "detector_numFeatures", CARMEN_PARAM_INT, &detector_numFeatures, 0.7, NULL},
-			{(char*) "tracker_opentld", (char*) "detector_numTrees", CARMEN_PARAM_INT, &detector_numTrees, 0, NULL},
+			{(char*) "tracker_opentld", (char*) "detector_numFeatures", CARMEN_PARAM_INT, &detector_numFeatures, 0, NULL},
 			{(char*) "tracker_opentld", (char*) "detector_minSize", CARMEN_PARAM_INT, &detector_minSize, 0, NULL},
 			{(char*) "tracker_opentld", (char*) "detector_thetaP", CARMEN_PARAM_DOUBLE, &detector_thetaP, 0, NULL},
 			{(char*) "tracker_opentld", (char*) "detector_thetaN", CARMEN_PARAM_DOUBLE, &detector_thetaN, 0, NULL}

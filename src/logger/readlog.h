@@ -60,6 +60,7 @@ extern "C" {
 #define CLF_READ_DOUBLE(str) strtod(*(str), (str))
 #define CLF_READ_INT(str) (int)strtol(*(str), (str), 10)
 #define CLF_READ_CHAR(str) (char) ( ( (*str)++)[0] )
+void CLF_READ_STRING(char *dst, char **string);
 
 /** Index structure used to process a logfile. **/
 typedef struct {
@@ -107,6 +108,8 @@ int carmen_logfile_read_line(carmen_logfile_index_p index, carmen_FILE *infile,
  **/
 int carmen_logfile_read_next_line(carmen_logfile_index_p index, carmen_FILE *infile,
 				  int max_line_length, char *line);
+
+int first_wordlength(char *str);
 
 char *carmen_string_to_visual_odometry_message(char *string,
 						carmen_visual_odometry_pose6d_message *odometry);
@@ -178,6 +181,7 @@ char *carmen_string_to_gps_gphdt_message(char *string,
 
 char* carmen_string_to_bumblebee_basic_stereoimage_message(char* string, carmen_bumblebee_basic_stereoimage_message* msg);
 
+char* carmen_string_and_file_to_bumblebee_basic_stereoimage_message(char* string, carmen_bumblebee_basic_stereoimage_message* msg);
 
 /** Converts the string to a robot-ackerman-velocity message.
  * @param string A string describing the message in the carmen logfile format.
