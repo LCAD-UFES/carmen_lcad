@@ -1142,6 +1142,44 @@ char* carmen_string_to_velodyne_partial_scan_message(char* string, carmen_velody
 	return current_pos;
 }
 
+char* carmen_string_and_file_to_velodyne_partial_scan_message(char* string, carmen_velodyne_partial_scan_message* msg)
+{
+	int i;
+	char *current_pos = string;
+
+	if (strncmp(current_pos, "VELODYNE_PARTIAL_SCAN", 21) == 0)
+		current_pos += 21;
+
+	static char path[1024];
+
+	CLF_READ_STRING(path, &current_pos);
+
+	FILE *image_file = fopen(path, "r");
+
+    fscanf(image_file, "VELODYNE_PARTIAL_SCAN ");
+    fscanf(image_file, "%d ", &(msg->number_of_32_laser_shots));
+
+    printf("%s %d\n", path, msg->number_of_32_laser_shots);
+
+	if(msg->partial_scan == NULL)
+		msg->partial_scan = (carmen_velodyne_32_laser_shot*) malloc (msg->number_of_32_laser_shots * sizeof(carmen_velodyne_32_laser_shot));
+
+	for(i = 0; i < msg->number_of_32_laser_shots; i++)
+	{
+		fscanf(image_file, "%lf ", &(msg->partial_scan[i].angle));
+
+	    fread(msg->partial_scan[i].distance, 32, sizeof(short), image_file);
+	    fread(msg->partial_scan[i].intensity, 32, sizeof(char), image_file);
+	}
+
+    fclose(image_file);
+
+	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
+	copy_host_string(&msg->host, &current_pos);
+
+	return current_pos;
+}
+
 
 char* carmen_string_to_variable_velodyne_scan_message(char* string, carmen_velodyne_variable_scan_message* msg)
 {

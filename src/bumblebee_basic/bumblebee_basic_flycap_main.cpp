@@ -812,8 +812,8 @@ int main(int argc, char **argv)
 {
 	Error error;
 	BusManager busMgr;
-	unsigned int numCameras;
 
+	unsigned int numCameras;
 	signal(SIGINT, shutdown_module);
 
 	carmen_ipc_initialize(argc, argv);
@@ -858,6 +858,14 @@ int main(int argc, char **argv)
 				guid.value[3] = 3416170437;
 				break;
 			}
+			case 2:
+			{
+				guid.value[0] = 974707561;
+				guid.value[1] = 985729633;
+				guid.value[2] = 775922204;
+				guid.value[3] = 290697668;
+				break;
+			}
 			case 8:
 			{
 				guid.value[0] = 601418508;
@@ -879,7 +887,7 @@ int main(int argc, char **argv)
 				// busMgr.GetCameraFromIndex(0, &guid);
 				// printf("0: %u %u %u %u\n", guid.value[0], guid.value[1], guid.value[2], guid.value[3]);
 
-				printf("ERROR: Camera id not supported. Please, contact Alberto Ferreira De Souza for more information\n");
+				printf("ERROR: Camera id not supported. Please, contact Alberto Ferreira De Souza (alberto@lcad.inf.ufes.br) for more information\n");
 				printf("See comment in bumblebee_basic_flycap_main.cpp line 875\n");
 				exit(-1);
 			}
@@ -892,17 +900,8 @@ int main(int argc, char **argv)
 //		{
 //			PGRGuid guid;
 //			error = busMgr.GetCameraFromIndex(i, &guid);
-//
-//			error = busMgr.GetCameraFromIndex(0, &guid);
-//			printf("0: %u %u %u %u\n", guid.value[0], guid.value[1], guid.value[2], guid.value[3]);
-//
-//			error = busMgr.GetCameraFromIndex(1, &guid);
-//			printf("1: %u %u %u %u\n", guid.value[0], guid.value[1], guid.value[2], guid.value[3]);
-//
-//			error = busMgr.GetCameraFromIndex(2, &guid);
-//			printf("2: %u %u %u %u\n", guid.value[0], guid.value[1], guid.value[2], guid.value[3]);
-//
 //			handle_error(error);
+//			RunSingleCamera(guid);
 //		}
 
 } // omp section

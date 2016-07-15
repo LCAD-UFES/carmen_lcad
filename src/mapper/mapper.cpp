@@ -201,13 +201,11 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 		carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data, sensor_params, i, highest_sensor, safe_range_above_sensors,
 				robot_near_bump_or_barrier, tid);
 
-
-			// carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(map, sensor_params, sensor_data);
-		carmen_prob_models_update_log_odds_of_cells_hit_by_rays(snapshot_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid);
-
 		if (update_cells_crossed_by_rays == UPDATE_CELLS_CROSSED_BY_RAYS)
 			carmen_prob_models_update_cells_crossed_by_ray(snapshot_map, sensor_params, sensor_data, tid);
 
+		// carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(map, sensor_params, sensor_data);
+		carmen_prob_models_update_log_odds_of_cells_hit_by_rays(snapshot_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid);
 
 		if (update_and_merge_with_mapper_saved_maps)
 			carmen_prob_models_update_intensity_of_cells_hit_by_rays(&sum_remission_map, &sum_sqr_remission_map, &count_remission_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, NULL, tid);
@@ -287,7 +285,7 @@ build_map_using_velodyne(sensor_parameters_t *sensor_params, sensor_data_t *sens
 		//set_map_equal_offline_map(&map);
 		//add_offline_map_over_unknown(&map);
 
-		//map_decay_to_offline_map(&map);
+		map_decay_to_offline_map(&map);
 
 		// @@@ Alberto: Mapa padrao Lucas -> colocar DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS ao inves de UPDATE_CELLS_CROSSED_BY_RAYS
 		//update_cells_in_the_velodyne_perceptual_field(&map, snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);

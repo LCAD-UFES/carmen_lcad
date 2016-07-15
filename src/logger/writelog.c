@@ -704,6 +704,54 @@ void carmen_logwrite_write_velodyne_partial_scan(carmen_velodyne_partial_scan_me
 	carmen_fprintf(outfile, "%f %s %f\n", msg->timestamp, msg->host, timestamp);
 }
 
+void carmen_logwrite_write_to_file_velodyne(carmen_velodyne_partial_scan_message* msg, carmen_FILE *outfile,
+		double timestamp, char *log_filename)
+{
+	const double HIGH_LEVEL_SUBDIR_TIME = 10.0; // new each 100 x 100 seconds
+	const double LOW_LEVEL_SUBDIR_TIME = 1.0; // new each 100 seconds
+
+	int high_level_subdir = ((int) (msg->timestamp / HIGH_LEVEL_SUBDIR_TIME)) * HIGH_LEVEL_SUBDIR_TIME;
+	int low_level_subdir = ((int) (msg->timestamp / LOW_LEVEL_SUBDIR_TIME)) * LOW_LEVEL_SUBDIR_TIME;
+
+	int i;
+	static char directory[1024];
+	static char subdir[1024];
+	static char path[1024];
+
+	/**
+	 * TODO: @Filipe: Check if the mkdir call is time consuming.
+	 */
+	sprintf(directory, "%s_velodyne", log_filename);
+	mkdir(directory, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
+
+	sprintf(subdir, "%s/%d", directory, high_level_subdir);
+	mkdir(subdir, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
+
+	sprintf(subdir, "%s/%d/%d", directory, high_level_subdir, low_level_subdir);
+	mkdir(subdir, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
+
+	sprintf(path, "%s/%lf.pointcloud", subdir, msg->timestamp);
+
+	FILE *image_file = fopen(path, "w");
+
+	fprintf(image_file, "VELODYNE_PARTIAL_SCAN ");
+	fprintf(image_file, "%d ", msg->number_of_32_laser_shots);
+
+	for(i = 0; i < msg->number_of_32_laser_shots; i++)
+	{
+		fprintf(image_file, "%lf ", msg->partial_scan[i].angle);
+
+		fwrite(msg->partial_scan[i].distance, sizeof(short), 32, image_file);
+		fwrite(msg->partial_scan[i].intensity, sizeof(char), 32, image_file);
+	}
+
+	fclose(image_file);
+
+	carmen_fprintf(outfile, "VELODYNE_PARTIAL_SCAN %s ", path);
+	carmen_fprintf(outfile, "%f %s %f\n", msg->timestamp, msg->host, timestamp);
+}
+
+
 char *hex_char_distance_and_intensity_variable;
 
 void
@@ -859,74 +907,55 @@ void carmen_logwrite_write_bumblebee_basic_steroimage(carmen_bumblebee_basic_ste
 }
 
 void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(carmen_bumblebee_basic_stereoimage_message* msg, int bumblebee_num, carmen_FILE *outfile,
-		double timestamp, int frequency, char *directory)
+		double timestamp, int frequency, char *log_filename)
 {
+	const double HIGH_LEVEL_SUBDIR_TIME = 10.0; // new each 100 x 100 seconds
+	const double LOW_LEVEL_SUBDIR_TIME = 1.0; // new each 100 seconds
 
-	//int i, j;
+	int high_level_subdir = ((int) (msg->timestamp / HIGH_LEVEL_SUBDIR_TIME)) * HIGH_LEVEL_SUBDIR_TIME;
+	int low_level_subdir = ((int) (msg->timestamp / LOW_LEVEL_SUBDIR_TIME)) * LOW_LEVEL_SUBDIR_TIME;
 
-		//static double
+	static char directory[1024];
+	static char subdir[1024];
+	static char path[1024];
 
-		static char path[1024];
+	/**
+	 * TODO: @Filipe: Check if the mkdir call is time consuming.
+	 */
+	sprintf(directory, "%s_bumblebee", log_filename);
+	mkdir(directory, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
 
-        if ((frame_number % frequency ) == 0)
-        {
-        	sprintf(path, "%s/%lf.image", directory, msg->timestamp);
+	sprintf(subdir, "%s/%d", directory, high_level_subdir);
+	mkdir(subdir, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
 
-        	FILE *image_file = fopen(path, "w");
+	sprintf(subdir, "%s/%d/%d", directory, high_level_subdir, low_level_subdir);
+	mkdir(subdir, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
 
-            fprintf(image_file, "BUMBLEBEE_BASIC_STEREOIMAGE%d ", bumblebee_num);
-            fprintf(image_file, "%d ", msg->width);
-            fprintf(image_file, "%d ", msg->height);
-            fprintf(image_file, "%d ", msg->image_size);
-            fprintf(image_file, "%d ", msg->isRectified);
-            fwrite(msg->raw_left, msg->image_size, sizeof(unsigned char), image_file);
-            fwrite(msg->raw_right, msg->image_size, sizeof(unsigned char), image_file);
+	// DEBUG:
+	//printf("%lf %d %d %s\n", msg->timestamp, high_level_subdir, low_level_subdir, subdir);
 
-            fclose(image_file);
+	if ((frame_number % frequency ) == 0)
+	{
+		sprintf(path, "%s/%lf.image", subdir, msg->timestamp);
 
-            /*
-		if (hex_char_image == NULL)
-                {
-                        hex_char_image = (char *) malloc((2 * msg->image_size + 1) * sizeof(char)); // Twice the number of bytes plus 1 for a space at the end
-                        for (i=0; i < 16; i++)
-                        {
-                                if (i <= 9)
-                                        int_to_nibble_hex[i] = '0' + i;
-                                else
-                                        int_to_nibble_hex[i] = 'a' + i - 10;
-                        }
-                }
+		FILE *image_file = fopen(path, "w");
 
-                carmen_fprintf(outfile, "BUMBLEBEE_BASIC_STEREOIMAGE%d ", bumblebee_num);
-                carmen_fprintf(outfile, "%d ", msg->width);
-                carmen_fprintf(outfile, "%d ", msg->height);
-                carmen_fprintf(outfile, "%d ", msg->image_size);
-                carmen_fprintf(outfile, "%d ", msg->isRectified);
+		fprintf(image_file, "BUMBLEBEE_BASIC_STEREOIMAGE%d ", bumblebee_num);
+		fprintf(image_file, "%d ", msg->width);
+		fprintf(image_file, "%d ", msg->height);
+		fprintf(image_file, "%d ", msg->image_size);
+		fprintf(image_file, "%d ", msg->isRectified);
+		fwrite(msg->raw_left, msg->image_size, sizeof(unsigned char), image_file);
+		fwrite(msg->raw_right, msg->image_size, sizeof(unsigned char), image_file);
 
-        	for(i=j=0; i<(msg->image_size); i++, j+=2)
-                {
-                        hex_char_image[j]   = GET_HIGH_ORDER_NIBBLE(msg->raw_right[i]);
-                        hex_char_image[j+1] = GET_LOW_ORDER_NIBBLE(msg->raw_right[i]);
-                }
-                hex_char_image[j] = ' ';
-                carmen_fwrite(hex_char_image,  2 * msg->image_size + 1 , 1, outfile);
+		fclose(image_file);
 
-                for(i=j=0; i<(msg->image_size); i++, j+=2)
-                {
-                        hex_char_image[j]   = GET_HIGH_ORDER_NIBBLE(msg->raw_left[i]);
-                        hex_char_image[j+1] = GET_LOW_ORDER_NIBBLE(msg->raw_left[i]);
-                }
-                hex_char_image[j] = ' ';
-                carmen_fwrite(hex_char_image,  2 * msg->image_size + 1, 1, outfile);
+		carmen_fprintf(outfile, "BUMBLEBEE_BASIC_STEREOIMAGE%d %s ", bumblebee_num, path);
+		carmen_fprintf(outfile, "%f %s %f\n", msg->timestamp, msg->host, timestamp);
+		frame_number = 0;
 
-                */
-
-            	carmen_fprintf(outfile, "BUMBLEBEE_BASIC_STEREOIMAGE%d %s ", bumblebee_num, path);
-        		carmen_fprintf(outfile, "%f %s %f\n", msg->timestamp, msg->host, timestamp);
-                frame_number = 0;
-
-        }
-        frame_number++;
+	}
+	frame_number++;
 }
 
 void
