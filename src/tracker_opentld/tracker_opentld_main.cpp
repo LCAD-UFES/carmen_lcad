@@ -139,7 +139,7 @@ void inicialize_TLD_parameters()
 	detectorCascade = g_tld_track->detectorCascade;
 	g_tld_track->trackerEnabled = true;
 	showOutput = true;
-	showTrajectory = false;
+	showTrajectory = true;
 	trajectoryLength = 10;
 	showForeground = false;
 	showNotConfident = true;
@@ -166,6 +166,7 @@ void inicialize_TLD_parameters()
 	if (showTrajectory)
 	{
 		trajectory.init(trajectoryLength);
+		showTrajectory = false;
 	}
 	//Initialize the Graphic Interface
 	g_gui->init();
