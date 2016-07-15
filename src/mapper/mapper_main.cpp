@@ -511,6 +511,8 @@ get_alive_sensors(int argc, char **argv)
 			{(char*)"mapper", (char*)"stereo_velodyne8_lambda_short_max", CARMEN_PARAM_DOUBLE, &sensors_params[8].lambda_short_max, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_velodyne9_lambda_short_max", CARMEN_PARAM_DOUBLE, &sensors_params[9].lambda_short_max, 0, NULL},
 
+			{(char*)"mapper", (char*)"unsafe_height_above_ground", CARMEN_PARAM_DOUBLE, &sensors_params[0].unsafe_height_above_ground, 0, NULL},
+
 			{(char*)"mapper",  (char*)"velodyne_range_max_factor", CARMEN_PARAM_DOUBLE, &sensors_params[0].range_max_factor, 0, NULL}
 
 
@@ -522,6 +524,7 @@ get_alive_sensors(int argc, char **argv)
 		if (i == STEREO_MAPPING_SENSOR_INDEX)
 			continue;
 
+		sensors_params[i].unsafe_height_above_ground = sensors_params[0].unsafe_height_above_ground;
 
 		sensors_data[i].ray_position_in_the_floor = (carmen_vector_2D_t**)calloc(number_of_threads ,sizeof(carmen_vector_2D_t*));
 		sensors_data[i].maxed = (int**)calloc(number_of_threads ,sizeof(int*));

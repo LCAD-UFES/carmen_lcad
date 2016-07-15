@@ -84,6 +84,8 @@ typedef struct _sensor_parameters
 	double *delta_difference_mean, *delta_difference_stddev;
 	int vertical_resolution;
 	int *ray_order;
+	double unsafe_height_above_ground;
+	double safe_range_above_sensors;
 
 	double sigma_zhit, zhit, zshort, zmax, zrand;
 	double lambda_short;
@@ -176,7 +178,7 @@ double carmen_prob_models_compute_expected_delta_ray(double ray_size, int ray_in
 
 void
 carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data_t *sensor_data, sensor_parameters_t *sensor_params, int scan_index,
-		double highest_sensor, double safe_range_above_sensors, int reduce_sensitivity, int thread_id);
+		double highest_sensor, int reduce_sensitivity, int thread_id);
 
 void
 carmen_prob_models_compute_relevant_map_coordinates(sensor_data_t *sensor_data, sensor_parameters_t *sensor_params, int scan_index,
