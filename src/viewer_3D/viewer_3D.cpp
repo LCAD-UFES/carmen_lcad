@@ -247,6 +247,7 @@ carmen_fused_odometry_message_handler(carmen_fused_odometry_particle_message* od
     //car_fused_time = odometry_message->timestamp;
     gps_position_at_turn_on = odometry_message->gps_position_at_turn_on;
     odometry_initialized = 1;
+
     //	car_fused_pose.position = sub_vectors(car_fused_pose.position, get_position_offset());
     //
     //	if(zero_z_flag)
