@@ -326,6 +326,7 @@ logger_callback_t logger_callbacks[] =
 		{"RAW_KINECT_VIDEO0", CARMEN_KINECT_VIDEO_MSG_0_NAME, (converter_func) carmen_string_to_kinect_video_message, &raw_video_kinect_0, 0},
 		{"RAW_KINECT_VIDEO1", CARMEN_KINECT_VIDEO_MSG_1_NAME, (converter_func) carmen_string_to_kinect_video_message, &raw_video_kinect_1, 0},
 		{"VELODYNE_PARTIAL_SCAN", CARMEN_VELODYNE_PARTIAL_SCAN_MESSAGE_NAME, (converter_func) carmen_string_to_velodyne_partial_scan_message, &velodyne_partial_scan, 0},
+		//{"VELODYNE_PARTIAL_SCAN", CARMEN_VELODYNE_PARTIAL_SCAN_MESSAGE_NAME, (converter_func) carmen_string_and_file_to_velodyne_partial_scan_message, &velodyne_partial_scan, 0},
 		{"VARIABLE_VELODYNE_SCAN", "carmen_stereo_velodyne_scan_message8", (converter_func) carmen_string_to_variable_velodyne_scan_message, &velodyne_variable_scan, 0},
 		{"VELODYNE_GPS", CARMEN_VELODYNE_GPS_MESSAGE_NAME, (converter_func) carmen_string_to_velodyne_gps_message, &velodyne_gps, 0},
 		{"XSENS_EULER", CARMEN_XSENS_GLOBAL_EULER_NAME, (converter_func) carmen_string_to_xsens_euler_message, &xsens_euler, 0},

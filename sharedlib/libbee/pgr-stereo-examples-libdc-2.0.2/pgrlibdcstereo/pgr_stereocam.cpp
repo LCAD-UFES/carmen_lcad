@@ -387,7 +387,7 @@ setStereoVideoCapture( PGRStereoCamera_t* stereoCamera, bool is_legacy_firewire 
 				DC1394_VIDEO_MODE_FORMAT7_3,
 				coding,
 				// bytes per packet - sets frame rate
-				DC1394_USE_MAX_AVAIL,
+				DC1394_USE_RECOMMENDED,
 				0,
 				0,
 				stereoCamera->nCols,
@@ -398,7 +398,7 @@ setStereoVideoCapture( PGRStereoCamera_t* stereoCamera, bool is_legacy_firewire 
 			return err;
 		}
 
-		err = dc1394_capture_setup( stereoCamera->camera, 1, DC1394_CAPTURE_FLAGS_DEFAULT );
+		err = dc1394_capture_setup( stereoCamera->camera, 4, DC1394_CAPTURE_FLAGS_DEFAULT );
 		if ( err != DC1394_SUCCESS )
 		{
 			fprintf( stderr, "Can't setup Bumblebee capture\n" );
