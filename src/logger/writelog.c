@@ -707,8 +707,8 @@ void carmen_logwrite_write_velodyne_partial_scan(carmen_velodyne_partial_scan_me
 void carmen_logwrite_write_to_file_velodyne(carmen_velodyne_partial_scan_message* msg, carmen_FILE *outfile,
 		double timestamp, char *log_filename)
 {
-	const double HIGH_LEVEL_SUBDIR_TIME = 10.0; // new each 100 x 100 seconds
-	const double LOW_LEVEL_SUBDIR_TIME = 1.0; // new each 100 seconds
+	const double HIGH_LEVEL_SUBDIR_TIME = 100.0 * 100.0; // new each 100 x 100 seconds
+	const double LOW_LEVEL_SUBDIR_TIME = 100.0; // new each 100 seconds
 
 	int high_level_subdir = ((int) (msg->timestamp / HIGH_LEVEL_SUBDIR_TIME)) * HIGH_LEVEL_SUBDIR_TIME;
 	int low_level_subdir = ((int) (msg->timestamp / LOW_LEVEL_SUBDIR_TIME)) * LOW_LEVEL_SUBDIR_TIME;
@@ -734,7 +734,7 @@ void carmen_logwrite_write_to_file_velodyne(carmen_velodyne_partial_scan_message
 
 	FILE *image_file = fopen(path, "w");
 
-	fprintf(image_file, "VELODYNE_PARTIAL_SCAN ");
+	fprintf(image_file, "VELODYNE_PARTIAL_SCAN_IN_FILE ");
 	fprintf(image_file, "%d ", msg->number_of_32_laser_shots);
 
 	for(i = 0; i < msg->number_of_32_laser_shots; i++)
@@ -747,7 +747,7 @@ void carmen_logwrite_write_to_file_velodyne(carmen_velodyne_partial_scan_message
 
 	fclose(image_file);
 
-	carmen_fprintf(outfile, "VELODYNE_PARTIAL_SCAN %s ", path);
+	carmen_fprintf(outfile, "VELODYNE_PARTIAL_SCAN_IN_FILE %s ", path);
 	carmen_fprintf(outfile, "%f %s %f\n", msg->timestamp, msg->host, timestamp);
 }
 
@@ -909,8 +909,8 @@ void carmen_logwrite_write_bumblebee_basic_steroimage(carmen_bumblebee_basic_ste
 void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(carmen_bumblebee_basic_stereoimage_message* msg, int bumblebee_num, carmen_FILE *outfile,
 		double timestamp, int frequency, char *log_filename)
 {
-	const double HIGH_LEVEL_SUBDIR_TIME = 10.0; // new each 100 x 100 seconds
-	const double LOW_LEVEL_SUBDIR_TIME = 1.0; // new each 100 seconds
+	const double HIGH_LEVEL_SUBDIR_TIME = 100.0 * 100.0; // new each 100 x 100 seconds
+	const double LOW_LEVEL_SUBDIR_TIME = 100.0; // new each 100 seconds
 
 	int high_level_subdir = ((int) (msg->timestamp / HIGH_LEVEL_SUBDIR_TIME)) * HIGH_LEVEL_SUBDIR_TIME;
 	int low_level_subdir = ((int) (msg->timestamp / LOW_LEVEL_SUBDIR_TIME)) * LOW_LEVEL_SUBDIR_TIME;
@@ -934,13 +934,13 @@ void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(carmen_bumblebee_b
 	// DEBUG:
 	//printf("%lf %d %d %s\n", msg->timestamp, high_level_subdir, low_level_subdir, subdir);
 
-	if ((frame_number % frequency ) == 0)
+	if ((frame_number % frequency) == 0)
 	{
-		sprintf(path, "%s/%lf.image", subdir, msg->timestamp);
+		sprintf(path, "%s/%lf.bb%d.image", subdir, msg->timestamp, bumblebee_num);
 
 		FILE *image_file = fopen(path, "w");
 
-		fprintf(image_file, "BUMBLEBEE_BASIC_STEREOIMAGE%d ", bumblebee_num);
+		fprintf(image_file, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE%d ", bumblebee_num);
 		fprintf(image_file, "%d ", msg->width);
 		fprintf(image_file, "%d ", msg->height);
 		fprintf(image_file, "%d ", msg->image_size);
@@ -950,11 +950,11 @@ void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(carmen_bumblebee_b
 
 		fclose(image_file);
 
-		carmen_fprintf(outfile, "BUMBLEBEE_BASIC_STEREOIMAGE%d %s ", bumblebee_num, path);
+		carmen_fprintf(outfile, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE%d %s ", bumblebee_num, path);
 		carmen_fprintf(outfile, "%f %s %f\n", msg->timestamp, msg->host, timestamp);
 		frame_number = 0;
-
 	}
+
 	frame_number++;
 }
 

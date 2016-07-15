@@ -1096,17 +1096,22 @@ char* carmen_string_to_velodyne_partial_scan_message(char* string, carmen_velody
 	if (strncmp(current_pos, "VELODYNE_PARTIAL_SCAN", 21) == 0)
 		current_pos += 21;
 
+    // store the number of 32 laser shots allocated to avoid unecessary reallocs
+    static int num_laser_shots_allocated = 0;
+
 	msg->number_of_32_laser_shots = CLF_READ_INT(&current_pos);
 
 	if (msg->partial_scan == NULL)
 	{
 		msg->partial_scan = (carmen_velodyne_32_laser_shot*) malloc (msg->number_of_32_laser_shots * sizeof(carmen_velodyne_32_laser_shot));
 		carmen_test_alloc(msg->partial_scan);
+		num_laser_shots_allocated = msg->number_of_32_laser_shots;
 	}
-	else
+	else if (num_laser_shots_allocated != msg->number_of_32_laser_shots)
 	{
 		msg->partial_scan = (carmen_velodyne_32_laser_shot*) realloc ((void *) msg->partial_scan, msg->number_of_32_laser_shots * sizeof(carmen_velodyne_32_laser_shot));
 		carmen_test_alloc(msg->partial_scan);
+		num_laser_shots_allocated = msg->number_of_32_laser_shots;
 	}
 
 	for(i = 0; i < msg->number_of_32_laser_shots; i++)
@@ -1147,8 +1152,8 @@ char* carmen_string_and_file_to_velodyne_partial_scan_message(char* string, carm
 	int i;
 	char *current_pos = string;
 
-	if (strncmp(current_pos, "VELODYNE_PARTIAL_SCAN", 21) == 0)
-		current_pos += 21;
+	if (strncmp(current_pos, "VELODYNE_PARTIAL_SCAN_IN_FILE", 30) == 0)
+		current_pos += 30;
 
 	static char path[1024];
 
@@ -1156,13 +1161,21 @@ char* carmen_string_and_file_to_velodyne_partial_scan_message(char* string, carm
 
 	FILE *image_file = fopen(path, "r");
 
-    fscanf(image_file, "VELODYNE_PARTIAL_SCAN ");
-    fscanf(image_file, "%d ", &(msg->number_of_32_laser_shots));
+    fscanf(image_file, "VELODYNE_PARTIAL_SCAN_IN_FILE %d ", &(msg->number_of_32_laser_shots));
 
-    printf("%s %d\n", path, msg->number_of_32_laser_shots);
+    // store the number of 32 laser shots allocated to avoid unecessary reallocs
+    static int num_laser_shots_allocated = 0;
 
 	if(msg->partial_scan == NULL)
+	{
 		msg->partial_scan = (carmen_velodyne_32_laser_shot*) malloc (msg->number_of_32_laser_shots * sizeof(carmen_velodyne_32_laser_shot));
+		num_laser_shots_allocated = msg->number_of_32_laser_shots;
+	}
+	else if (num_laser_shots_allocated != msg->number_of_32_laser_shots)
+	{
+		msg->partial_scan = (carmen_velodyne_32_laser_shot*) realloc (msg->partial_scan, msg->number_of_32_laser_shots * sizeof(carmen_velodyne_32_laser_shot));
+		num_laser_shots_allocated = msg->number_of_32_laser_shots;
+	}
 
 	for(i = 0; i < msg->number_of_32_laser_shots; i++)
 	{
@@ -1366,15 +1379,17 @@ char* carmen_string_to_bumblebee_basic_stereoimage_message(char* string, carmen_
 
 char* carmen_string_and_file_to_bumblebee_basic_stereoimage_message(char* string, carmen_bumblebee_basic_stereoimage_message* msg)
 {
-	//char r;
-	//unsigned char hi, lo;
-	char *current_pos = string - 29;
-	int camera; //, i;
+	int tam = strlen("BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILEX ");
+	char *current_pos = string - tam;
+	int camera;
 
-	if (strncmp(current_pos, "BUMBLEBEE_BASIC_STEREOIMAGE", 27) == 0) {
-		current_pos += 27;
+	if (strncmp(current_pos, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE", tam - 2 /*ignore the cam number and the space*/) == 0)
+	{
+		current_pos += tam;
 		camera = CLF_READ_INT(&current_pos);
-	} else {
+	}
+	else
+	{
 		camera = -1;
 		if(camera) {}
 		return NULL;
@@ -1386,7 +1401,7 @@ char* carmen_string_and_file_to_bumblebee_basic_stereoimage_message(char* string
 
 	FILE *image_file = fopen(path, "r");
 
-    fscanf(image_file, "BUMBLEBEE_BASIC_STEREOIMAGE%d ", &camera);
+    fscanf(image_file, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE%d ", &camera);
     fscanf(image_file, "%d ", &(msg->width));
     fscanf(image_file, "%d ", &(msg->height));
     fscanf(image_file, "%d ", &(msg->image_size));
@@ -1398,13 +1413,10 @@ char* carmen_string_and_file_to_bumblebee_basic_stereoimage_message(char* string
 	if(msg->raw_right == NULL)
 		msg->raw_right = (unsigned char*) malloc (msg->image_size * sizeof(unsigned char));
 
-
     fread(msg->raw_left, msg->image_size, sizeof(unsigned char), image_file);
     fread(msg->raw_right, msg->image_size, sizeof(unsigned char), image_file);
 
     fclose(image_file);
-
-	//current_pos++;
 
 	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
 	copy_host_string(&msg->host, &current_pos);

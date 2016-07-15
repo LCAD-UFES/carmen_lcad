@@ -40,15 +40,14 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src \
 	
 
 SOURCES = bumblebee_basic_main.cpp bumblebee_basic_interface.c \
- bumblebee_basic_simulator.c bumblebee_basic_flycap_main.cpp bumblebee_basic_view.cpp \
- bumblebee_list_camera_ids.cpp
+ bumblebee_basic_simulator.c bumblebee_basic_flycap_main.cpp bumblebee_basic_view.cpp 
 PUBLIC_INCLUDES = bumblebee_basic_messages.h bumblebee_basic_interface.h
 PUBLIC_LIBRARIES = libbumblebee_basic_interface.a 
 PUBLIC_BINARIES = bumblebee_basic bumblebee_basic_simulator bumblebee_basic_flycap
 TARGETS = libbee libbumblebee_basic_interface.a bumblebee_basic bumblebee_basic_simulator bumblebee_basic_flycap
 PUBLIC_LIBRARIES_SO = libbumblebee_basic_interface.so
-PUBLIC_BINARIES += bumblebee_basic_view bumblebee_list_camera_ids
-TARGETS += bumblebee_basic_view bumblebee_list_camera_ids
+PUBLIC_BINARIES += bumblebee_basic_view 
+TARGETS += bumblebee_basic_view 
 
 libbee:
 	$(MAKE) build -C $(CARMEN_HOME)/sharedlib/libbee
@@ -69,8 +68,5 @@ clean: clean_libbee
 
 clean_libbee:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libbee
-# rules
-
-bumblebee_list_camera_ids: bumblebee_list_camera_ids.o
 
 include ../Makefile.rules
