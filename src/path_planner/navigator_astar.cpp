@@ -114,11 +114,27 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 static void
 goal_list_handler(carmen_behavior_selector_goal_list_message *msg)
 {
+	printf("goal_list_handler\n");
 
 	if ((msg->size <= 0) || !msg->goal_list)
 		return;
 
 	messageControl.carmen_planner_ackerman_update_goal(msg->goal_list);
+}
+
+static void
+navigator_ackerman_set_goal_message_handler(carmen_navigator_ackerman_set_goal_message *msg)
+{
+	carmen_ackerman_traj_point_t goal_list;
+	goal_list.x = msg->x;
+	goal_list.y = msg->y;
+	goal_list.theta = msg->theta;
+	goal_list.v = 0;
+	goal_list.theta = 0;
+
+	printf("goal_list_handler\n");
+
+	messageControl.carmen_planner_ackerman_update_goal(&goal_list);
 }
 
 
@@ -253,6 +269,13 @@ main(int argc, char **argv)
 	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) goal_list_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) state_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t)localize_globalpos_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_subscribe_message(
+			(char *)CARMEN_NAVIGATOR_ACKERMAN_SET_GOAL_NAME,
+			(char *)CARMEN_NAVIGATOR_ACKERMAN_SET_GOAL_FMT,
+			NULL, sizeof(carmen_navigator_ackerman_set_goal_message),
+			(carmen_handler_t)navigator_ackerman_set_goal_message_handler,
+			CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_ipc_dispatch();
 

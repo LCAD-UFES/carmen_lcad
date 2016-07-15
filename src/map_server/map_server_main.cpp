@@ -527,7 +527,7 @@ rddf_message_handler(carmen_rddf_road_profile_message *message)
 void
 astar_goal_list_message_handler(carmen_navigator_ackerman_astar_goal_list_message *msg)
 {
-	distance_to_update_lane_map = 1.0;
+	distance_to_update_lane_map = 0.0;
 	carmen_rddf_road_profile_message message;
 	message.number_of_poses = msg->size;
 	message.poses = msg->goal_list;
