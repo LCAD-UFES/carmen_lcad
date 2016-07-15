@@ -504,6 +504,37 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 }
 
 
+bool
+goal_pose_vector_too_different(Pose goal_pose, Pose localizer_pose)
+{
+	static Pose g_last_goal_pose;
+	bool too_different = false;
+
+	if (g_last_goal_pose.x == 0.0 && g_last_goal_pose.y == 0.0)
+	{
+		g_last_goal_pose = goal_pose;
+		return (true);
+	}
+
+	double distance_between_goals = g_last_goal_pose.distance(goal_pose);
+	double distance_to_goal = localizer_pose.distance(goal_pose);
+	if ((distance_between_goals / distance_to_goal) > 0.2) // 20%
+		too_different = true;
+
+	double angle_diff = g_last_goal_pose.get_theta_diff(goal_pose);
+	angle_diff = rad2deg(angle_diff);
+	if (angle_diff > 10.0)
+		too_different = true;
+
+	g_last_goal_pose = goal_pose;
+	if (too_different)
+		printf("TOO DIFFERENT!!!\n");
+
+	return (too_different);
+}
+
+
+
 void
 compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseVector, double target_v,
 		Pose *localizer_pose, vector<vector<carmen_ackerman_path_point_t> > &paths,
@@ -529,19 +560,6 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		lane_in_local_pose.clear();
 
 	build_detailed_lane(&lane_in_local_pose, detailed_lane);
-	//
-	//	//Metric evaluation
-	//	if(detailed_lane.size() > 0){
-	//
-	//		double distance_metric = sqrt(pow(detailed_lane.at(0).x, 2) + pow(detailed_lane.at(0).y, 2));
-	//		double x_rddf = localizer_pose->x + detailed_lane.at(0).x * cos(localizer_pose->theta) - detailed_lane.at(0).y * sin(localizer_pose->theta);
-	//		double y_rddf = localizer_pose->y + detailed_lane.at(0).x * sin(localizer_pose->theta) + detailed_lane.at(0).y * cos(localizer_pose->theta);
-	//		double theta_rddf = detailed_lane.at(0).theta + localizer_pose->theta;
-	//
-	//		fprintf(stderr, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf \n", localizer_pose->x, localizer_pose->y, localizer_pose->theta, lastOdometryVector[0].v, lastOdometryVector[0].phi,
-	//				x_rddf, y_rddf, theta_rddf, detailed_lane.at(0).v, detailed_lane.at(0).phi, distance_metric, goal_list_message->timestamp);
-	//	}
-	//	fprintf(stderr, "%lf \n", distance_metric);
 
 	otcps.resize(paths.size());
 	bool has_valid_path = false;
@@ -555,7 +573,13 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		{
 			bool use_lane;
 			if (j == 0)
+			{
 				use_lane = true;
+				if (goal_pose_vector_too_different(goalPoseVector.at(0), *localizer_pose))
+				{
+					previous_good_tcp.valid = false;
+				}
+			}
 			else
 			{
 				use_lane = false;
