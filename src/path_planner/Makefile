@@ -11,7 +11,7 @@ LFLAGS += $(INTERFACE_LIBS) -lglobal -lipc \
 	-lparam_interface -lX11 \
 	-llocalize_ackerman_interface  -lmap_io -lprob_models \
 	-lsimulator_ackerman_interface -lobstacle_avoider_interface -lrddf_interface -lrobot_ackerman_interface \
-	-lmotion_planner_interface -lcollision_detection -lmap_server_interface -lbehavior_selector_interface -lrotation_geometry 
+	-lmotion_planner_interface -lcollision_detection -lmap_server_interface -lbehavior_selector_interface -lrotation_geometry  -lrddf_interface
 CFLAGS += #-pg 
 CXXFLAGS += -std=c++0x #-pg 
 
@@ -24,9 +24,9 @@ SOURCES = navigator_astar.cpp conventional_ackerman.c conventional_astar_ackerma
 PUBLIC_INCLUDES = navigator_astar_messages.h navigator_astar_interface.h navigator_astar.hpp MessageControl.hpp
 PUBLIC_LIBRARIES =  libnavigator_astar_interface.a libconventional_ackerman.a
 
-PUBLIC_BINARIES = navigator_astar
+PUBLIC_BINARIES = path_planner
 
-TARGETS =  libprob_models.a libnavigator_astar_interface.a navigator_astar navigator_precomputed_cost_ackerman startgoal_simulator\
+TARGETS =  libprob_models.a libnavigator_astar_interface.a path_planner navigator_precomputed_cost_ackerman startgoal_simulator\
  libconventional_ackerman.a
 
 PUBLIC_LIBRARIES_SO = libnavigator_astar_interface.so
@@ -38,7 +38,7 @@ ifndef NO_TCPD
 LFLAGS += -lwrap -lnsl
 endif
 
-navigator_astar: navigator_astar.o navigator_ackerman_ipc.o conventional_ackerman.o conventional_astar_ackerman.o rs.o FH/fh.o FH/fib.o MessageControl.o \
+path_planner: navigator_astar.o navigator_ackerman_ipc.o conventional_ackerman.o conventional_astar_ackerman.o rs.o FH/fh.o FH/fib.o MessageControl.o \
 	trajectory_ackerman.o libnavigator_astar_interface.a
 
 navigator_precomputed_cost_ackerman:  navigator_precomputed_cost_ackerman.o FH/fh.o

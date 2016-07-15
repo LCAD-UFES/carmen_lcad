@@ -9,6 +9,7 @@
 #include <prob_map.h>
 #include <carmen/motion_planner_interface.h>
 #include <carmen/grid_mapping_interface.h>
+#include <carmen/rddf_interface.h>
 static carmen_robot_ackerman_config_t robot_config;
 static carmen_navigator_config_t nav_config;
 
@@ -41,6 +42,7 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	messageControl.carmen_planner_ackerman_get_status(&status);
 
 	//Mensagem que faz andar
+	//if(false)//TODO comentado para nao entrar
 	if (status.path.length > 0)
 	{
 		carmen_motion_planner_publish_path_message(status.path.points, status.path.length, current_algorithm);
@@ -65,8 +67,8 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	}
 
 
-
 	//Mensagem que exibe o caminho na tela
+	if(false)	//TODO comapracao feita para nunca entrar
 	if (status.path.length > 0)
 	{
 		static carmen_navigator_ackerman_plan_tree_message plan_tree_msg;
@@ -94,17 +96,45 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 		carmen_test_ipc(err, "Could not publish", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME);
 	}
 
+	//Pose RDDF
+	int anotation[1000];
+	carmen_ackerman_traj_point_t *poses_ahead;
+	carmen_rddf_publish_road_profile_message(
+		status.path.points,
+		status.path.points,
+		status.path.length,
+		0,
+		anotation);
+
+
+
 }
 
 
 static void
 goal_list_handler(carmen_behavior_selector_goal_list_message *msg)
 {
+	printf("goal_list_handler\n");
 
 	if ((msg->size <= 0) || !msg->goal_list)
 		return;
 
 	messageControl.carmen_planner_ackerman_update_goal(msg->goal_list);
+}
+
+static void
+navigator_ackerman_set_goal_message_handler(carmen_navigator_ackerman_set_goal_message *msg)
+{
+	carmen_ackerman_traj_point_t goal_list;
+	goal_list.x = msg->x;
+	goal_list.y = msg->y;
+	goal_list.theta = msg->theta;
+	goal_list.v = 0;
+	goal_list.theta = 0;
+
+	printf("goal_list_handler\n");
+
+	messageControl.carmen_planner_ackerman_update_goal(&goal_list);
 }
 
 
@@ -239,6 +269,13 @@ main(int argc, char **argv)
 	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) goal_list_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) state_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t)localize_globalpos_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_subscribe_message(
+			(char *)CARMEN_NAVIGATOR_ACKERMAN_SET_GOAL_NAME,
+			(char *)CARMEN_NAVIGATOR_ACKERMAN_SET_GOAL_FMT,
+			NULL, sizeof(carmen_navigator_ackerman_set_goal_message),
+			(carmen_handler_t)navigator_ackerman_set_goal_message_handler,
+			CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_ipc_dispatch();
 
