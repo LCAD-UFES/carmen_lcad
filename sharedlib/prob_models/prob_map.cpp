@@ -407,11 +407,19 @@ carmen_prob_models_update_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sens
 		{
 			cell_hit_by_ray.x = (sensor_data->ray_position_in_the_floor[thread_id][i].x / map->config.resolution);
 			cell_hit_by_ray.y = (sensor_data->ray_position_in_the_floor[thread_id][i].y / map->config.resolution);
-
-			if (sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] > sensor_params->log_odds.log_odds_l0)
+			if (map_grid_is_valid(map, cell_hit_by_ray.x, cell_hit_by_ray.y))
 			{
-				if (map_grid_is_valid(map, cell_hit_by_ray.x, cell_hit_by_ray.y))
-					carmen_prob_models_log_odds_occupancy_grid_mapping(map, cell_hit_by_ray.x, cell_hit_by_ray.y, sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i]);
+				if (!sensor_data->maxed[thread_id][i] && !(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][i], highest_sensor, safe_range_above_sensors)))
+					if (sensor_data->obstacle_height[thread_id][i] > sensor_params->unsafe_height_above_ground)
+						carmen_prob_models_log_odds_occupancy_grid_mapping(map, cell_hit_by_ray.x, cell_hit_by_ray.y, sensor_params->log_odds.log_odds_occ);
+
+				if (sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] > sensor_params->log_odds.log_odds_l0)
+				{
+
+
+					if (sensor_data->obstacle_height[thread_id][i] < sensor_params->unsafe_height_above_ground)
+						carmen_prob_models_log_odds_occupancy_grid_mapping(map, cell_hit_by_ray.x, cell_hit_by_ray.y, sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i]);
+				}
 			}
 		}
 	}
@@ -1019,15 +1027,19 @@ carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data
 		if (carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][i], highest_sensor, safe_range_above_sensors))
 			sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] = sensor_params->log_odds.log_odds_l0;
 		else
-			if (sensor_data->obstacle_height[thread_id][i] < sensor_params->unsafe_height_above_ground)
+		{
+
 			{
 				//			sensor_data->occupancy_log_odds_of_each_ray_target[i] = get_log_odds_via_unexpeted_delta_range(sensor_params, sensor_data, i, scan_index, delta_difference_mean, delta_difference_stddev);
 				sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] = get_log_odds_via_unexpeted_delta_range(sensor_params, sensor_data, i, scan_index, reduce_sensitivity, thread_id);// +
 				//get_log_odds_via_unexpeted_delta_range_reverse(sensor_params, sensor_data, i, scan_index, reduce_sensitivity, thread_id);
 			}
-			else
-				sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] = sensor_params->log_odds.log_odds_occ;
-
+//			else
+//			{
+//				if (!sensor_data->maxed[thread_id][i] && !sensor_data->ray_hit_the_robot[thread_id][i])
+//					sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] = sensor_params->log_odds.log_odds_occ;
+//			}
+		}
 		if ((sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] > sensor_params->log_odds.log_odds_l0) && (min_ray_size > sensor_data->ray_size_in_the_floor[thread_id][i]))
 		{
 			min_ray_size = sensor_data->ray_size_in_the_floor[thread_id][i];
