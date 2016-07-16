@@ -732,22 +732,18 @@ void carmen_logwrite_write_to_file_velodyne(carmen_velodyne_partial_scan_message
 
 	sprintf(path, "%s/%lf.pointcloud", subdir, msg->timestamp);
 
-	FILE *image_file = fopen(path, "w");
-
-	fprintf(image_file, "VELODYNE_PARTIAL_SCAN_IN_FILE ");
-	fprintf(image_file, "%d ", msg->number_of_32_laser_shots);
+	FILE *image_file = fopen(path, "wb");
 
 	for(i = 0; i < msg->number_of_32_laser_shots; i++)
 	{
-		fprintf(image_file, "%lf ", msg->partial_scan[i].angle);
-
+		fwrite(&(msg->partial_scan[i].angle), sizeof(double), 1, image_file);
 		fwrite(msg->partial_scan[i].distance, sizeof(short), 32, image_file);
 		fwrite(msg->partial_scan[i].intensity, sizeof(char), 32, image_file);
 	}
 
 	fclose(image_file);
 
-	carmen_fprintf(outfile, "VELODYNE_PARTIAL_SCAN_IN_FILE %s ", path);
+	carmen_fprintf(outfile, "VELODYNE_PARTIAL_SCAN_IN_FILE %s %d ", path, msg->number_of_32_laser_shots);
 	carmen_fprintf(outfile, "%f %s %f\n", msg->timestamp, msg->host, timestamp);
 }
 
@@ -938,20 +934,17 @@ void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(carmen_bumblebee_b
 	{
 		sprintf(path, "%s/%lf.bb%d.image", subdir, msg->timestamp, bumblebee_num);
 
-		FILE *image_file = fopen(path, "w");
+		FILE *image_file = fopen(path, "wb");
 
-		fprintf(image_file, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE%d ", bumblebee_num);
-		fprintf(image_file, "%d ", msg->width);
-		fprintf(image_file, "%d ", msg->height);
-		fprintf(image_file, "%d ", msg->image_size);
-		fprintf(image_file, "%d ", msg->isRectified);
 		fwrite(msg->raw_left, msg->image_size, sizeof(unsigned char), image_file);
 		fwrite(msg->raw_right, msg->image_size, sizeof(unsigned char), image_file);
 
 		fclose(image_file);
 
-		carmen_fprintf(outfile, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE%d %s ", bumblebee_num, path);
+		carmen_fprintf(outfile, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE%d %s %d %d %d %d ", bumblebee_num, path,
+				msg->width, msg->height, msg->image_size, msg->isRectified);
 		carmen_fprintf(outfile, "%f %s %f\n", msg->timestamp, msg->host, timestamp);
+
 		frame_number = 0;
 	}
 

@@ -1158,10 +1158,7 @@ char* carmen_string_and_file_to_velodyne_partial_scan_message(char* string, carm
 	static char path[1024];
 
 	CLF_READ_STRING(path, &current_pos);
-
-	FILE *image_file = fopen(path, "r");
-
-    fscanf(image_file, "VELODYNE_PARTIAL_SCAN_IN_FILE %d ", &(msg->number_of_32_laser_shots));
+	msg->number_of_32_laser_shots = CLF_READ_INT(&current_pos);
 
     // store the number of 32 laser shots allocated to avoid unecessary reallocs
     static int num_laser_shots_allocated = 0;
@@ -1177,12 +1174,13 @@ char* carmen_string_and_file_to_velodyne_partial_scan_message(char* string, carm
 		num_laser_shots_allocated = msg->number_of_32_laser_shots;
 	}
 
+	FILE *image_file = fopen(path, "rb");
+
 	for(i = 0; i < msg->number_of_32_laser_shots; i++)
 	{
-		fscanf(image_file, "%lf ", &(msg->partial_scan[i].angle));
-
-	    fread(msg->partial_scan[i].distance, 32, sizeof(short), image_file);
-	    fread(msg->partial_scan[i].intensity, 32, sizeof(char), image_file);
+		fread(&(msg->partial_scan[i].angle), sizeof(double), 1, image_file);
+	    fread(msg->partial_scan[i].distance, sizeof(short), 32, image_file);
+	    fread(msg->partial_scan[i].intensity, sizeof(char), 32, image_file);
 	}
 
     fclose(image_file);
@@ -1399,19 +1397,18 @@ char* carmen_string_and_file_to_bumblebee_basic_stereoimage_message(char* string
 
 	CLF_READ_STRING(path, &current_pos);
 
-	FILE *image_file = fopen(path, "r");
-
-    fscanf(image_file, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE%d ", &camera);
-    fscanf(image_file, "%d ", &(msg->width));
-    fscanf(image_file, "%d ", &(msg->height));
-    fscanf(image_file, "%d ", &(msg->image_size));
-    fscanf(image_file, "%d ", &(msg->isRectified));
+    msg->width = CLF_READ_INT(&current_pos);
+    msg->height = CLF_READ_INT(&current_pos);
+    msg->image_size = CLF_READ_INT(&current_pos);
+    msg->isRectified = CLF_READ_INT(&current_pos);
 
 	if(msg->raw_left == NULL)
 		msg->raw_left = (unsigned char*) malloc (msg->image_size * sizeof(unsigned char));
 
 	if(msg->raw_right == NULL)
 		msg->raw_right = (unsigned char*) malloc (msg->image_size * sizeof(unsigned char));
+
+	FILE *image_file = fopen(path, "rb");
 
     fread(msg->raw_left, msg->image_size, sizeof(unsigned char), image_file);
     fread(msg->raw_right, msg->image_size, sizeof(unsigned char), image_file);
