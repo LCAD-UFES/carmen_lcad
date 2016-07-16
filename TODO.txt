@@ -1,6 +1,17 @@
+16/07/2016
+- Tem que mudar o obstacle avoider (e model predictive planner?) para usar apenas o mapa de distancia
+- Tem que mudar o model predictive planner para ele:
+	- Se alterar de acordo com o caso de estar rodando com a IARA ou simulador (latencia)
+		- Assinar a mensagem de status do carro e, se recebe-la, chavear para IARA
+	- Funcionar em caso de reh
+- Tem que testar os novos parametros de PID para velocidade na IARA
+- Tem que discutir a interface para o novo path_planner:
+	- Ele tem que gerar um goal intermediario e fazer uma lane ate este goal que seja trafegavel pelo model predictive planner
+	- Esta lane deve conter velocidades, que nao devem ser zero no inicio e no goal intermediario ao mesmo	
+
 05/06/2014
 
-- Tem que mudar os process ini para usarem o novo arquivo de anotacoes
+- Tem que mudar os process ini para usarem o novo arquivo de anotacoes - OK
 - O localizer piorou um pouco
 - A sinalizacao de quebra molas, cancelas, etc., quando tem dois deste objetos um perto um do outro, nao se comportam adequadamente.
 
@@ -9,12 +20,12 @@
 
 - O rrt_planner move o volante segundo sua velocidade maxima ate atingir o angulo alvo e depois para neste angulo.
 	- O rrt_path_follower deve fazer o mesmo, com mais intervalos discretos entre o angulo inicial e final.
-	- Alternativamente, deveriamos usar uma celeracao do volante, ao inves de velocidade, em ambos os modulos.
+	- Alternativamente, deveriamos usar uma aceleracao do volante, ao inves de velocidade, em ambos os modulos.
 
 
 01/06/2014
 
-- O obstacle_avoider tem que receber o cost_map e nao o grid map
+- O obstacle_avoider tem que receber o cost_map e nao o grid map - OK
 
 
 29/05/2014

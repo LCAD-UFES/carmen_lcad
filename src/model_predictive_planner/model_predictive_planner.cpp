@@ -534,7 +534,6 @@ goal_pose_vector_too_different(Pose goal_pose, Pose localizer_pose)
 }
 
 
-
 void
 compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseVector, double target_v,
 		Pose *localizer_pose, vector<vector<carmen_ackerman_path_point_t> > &paths,
