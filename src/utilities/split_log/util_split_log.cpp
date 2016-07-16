@@ -117,6 +117,14 @@ main(int argc, char **argv)
 				sprintf(output_complete_name, "%s.part%d.txt", output_log_name, partition_number);
 				output_file.open(output_complete_name);
 
+				if (!output_file.is_open())
+				{
+					cout << "Error: Couldn't open the file '" << output_complete_name << "'" << endl;
+					exit(-1);
+				}
+
+				output_file << header << "\n";
+
 				boost::split(strs, line, boost::is_any_of(" "));
 				starting_timestamp = atof(strs[strs.size() - 1].c_str());
 			}
