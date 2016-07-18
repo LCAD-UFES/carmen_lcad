@@ -1,7 +1,3 @@
- /*********************************************************
-	---   Skeleton Module Application ---
-**********************************************************/
-
 #include <carmen/carmen.h>
 #include "obstacle_distance_mapper_interface.h"
 #include <carmen/grid_mapping_interface.h>
@@ -151,19 +147,8 @@ carmen_mapper_create_distance_map(carmen_grid_mapping_distance_map *lmap, carmen
 			compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
 }
 
-
 void
-mapper_publish_distance_map(double timestamp, double obstacle_probability_threshold)
-{
-	if (distance_map.complete_distance == NULL)
-		carmen_mapper_initialize_distance_map(&distance_map, &map);
-
-	carmen_mapper_create_distance_map(&distance_map, &map, obstacle_probability_threshold);
-	carmen_grid_mapping_publish_distance_map_message(&distance_map, timestamp);
-}
-
-void
-carmen_prob_models_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t *map, carmen_grid_mapping_distance_map *distance_map, double distance_for_zero_cost_in_pixels)
+carmen_mapper_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t *map, carmen_grid_mapping_distance_map *distance_map, double distance_for_zero_cost_in_pixels)
 {
 	carmen_prob_models_initialize_cost_map(cost_map, map, map->config.resolution);
 
@@ -179,15 +164,31 @@ carmen_prob_models_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t 
 }
 
 
-/*********************************************************
-		   --- Publishers ---
-**********************************************************/
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Publishers                                                                                //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+void
+mapper_publish_distance_map(double timestamp, double obstacle_probability_threshold)
+{
+	if (distance_map.complete_distance == NULL)
+		carmen_mapper_initialize_distance_map(&distance_map, &map);
+
+	carmen_mapper_create_distance_map(&distance_map, &map, obstacle_probability_threshold);
+	carmen_grid_mapping_publish_distance_map_message(&distance_map, timestamp);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-/*********************************************************
-		   --- Handlers ---
-**********************************************************/
 
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Handlers                                                                                  //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
 void
 carmen_grid_mapping_map_handler(carmen_grid_mapping_message *msg)
 {
@@ -196,9 +197,7 @@ carmen_grid_mapping_map_handler(carmen_grid_mapping_message *msg)
 	carmen_grid_mapping_copy_map_from_message(&map, msg);
 
 	mapper_publish_distance_map(msg->timestamp, obstacle_probability_threshold);
-	carmen_prob_models_build_obstacle_cost_map(&cost_map, &map, &distance_map, obstacle_cost_distance);
-	// Old carmen_prob_models_build_obstacle_cost_map below
-	// carmen_prob_models_build_obstacle_cost_map(&cost_map, &map,	map.config.resolution, obstacle_cost_distance, obstacle_probability_threshold);
+	carmen_mapper_build_obstacle_cost_map(&cost_map, &map, &distance_map, obstacle_cost_distance);
 	carmen_prob_models_create_compact_map(&compacted_cost_map, &cost_map, 0.0);
 
 	if (compacted_cost_map.number_of_known_points_on_the_map > 0)
@@ -260,9 +259,6 @@ main(int argc, char **argv)
 
   /* Read parameters */
   read_parameters(argc, argv);
-
-  /* Define messages that your module publishes */
-
 
   /* Subscribe to mapper messages */
   carmen_grid_mapping_subscribe_message(NULL,
