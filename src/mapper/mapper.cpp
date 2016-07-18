@@ -791,15 +791,15 @@ carmen_mapper_initialize_distance_map(carmen_grid_mapping_distance_map *lmap, ca
 }
 
 
-void
-mapper_publish_distance_map(double timestamp, double obstacle_probability_threshold)
-{
-	if (distance_map.complete_distance == NULL)
-		carmen_mapper_initialize_distance_map(&distance_map, &map);
-
-	carmen_mapper_create_distance_map(&distance_map, &map, obstacle_probability_threshold);
-	carmen_grid_mapping_publish_distance_map_message(&distance_map, timestamp);
-}
+//void
+//mapper_publish_distance_map(double timestamp, double obstacle_probability_threshold)
+//{
+//	if (distance_map.complete_distance == NULL)
+//		carmen_mapper_initialize_distance_map(&distance_map, &map);
+//
+//	carmen_mapper_create_distance_map(&distance_map, &map, obstacle_probability_threshold);
+//	carmen_grid_mapping_publish_distance_map_message(&distance_map, timestamp);
+//}
 
 
 void
@@ -819,24 +819,24 @@ carmen_prob_models_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t 
 }
 
 
-void
-mapper_publish_cost_and_distance_maps(double timestamp)
-{
-	carmen_compact_map_t compacted_cost_map;
-
-	mapper_publish_distance_map(timestamp, obstacle_probability_threshold);
-	carmen_prob_models_build_obstacle_cost_map(&cost_map, &map, &distance_map, obstacle_cost_distance);
-	// Old carmen_prob_models_build_obstacle_cost_map below
-	// carmen_prob_models_build_obstacle_cost_map(&cost_map, &map,	map.config.resolution, obstacle_cost_distance, obstacle_probability_threshold);
-	carmen_prob_models_create_compact_map(&compacted_cost_map, &cost_map, 0.0);
-
-	if (compacted_cost_map.number_of_known_points_on_the_map > 0)
-	{
-		carmen_map_server_publish_compact_cost_map_message(&compacted_cost_map,	timestamp);
-		carmen_prob_models_clear_carmen_map_using_compact_map(&cost_map, &compacted_cost_map, 0.0);
-		carmen_prob_models_free_compact_map(&compacted_cost_map);
-	}
-}
+//void
+//mapper_publish_cost_and_distance_maps(double timestamp)
+//{
+//	carmen_compact_map_t compacted_cost_map;
+//
+//	mapper_publish_distance_map(timestamp, obstacle_probability_threshold);
+//	carmen_prob_models_build_obstacle_cost_map(&cost_map, &map, &distance_map, obstacle_cost_distance);
+//	// Old carmen_prob_models_build_obstacle_cost_map below
+//	// carmen_prob_models_build_obstacle_cost_map(&cost_map, &map,	map.config.resolution, obstacle_cost_distance, obstacle_probability_threshold);
+//	carmen_prob_models_create_compact_map(&compacted_cost_map, &cost_map, 0.0);
+//
+//	if (compacted_cost_map.number_of_known_points_on_the_map > 0)
+//	{
+//		carmen_map_server_publish_compact_cost_map_message(&compacted_cost_map,	timestamp);
+//		carmen_prob_models_clear_carmen_map_using_compact_map(&cost_map, &compacted_cost_map, 0.0);
+//		carmen_prob_models_free_compact_map(&compacted_cost_map);
+//	}
+//}
 
 
 void
@@ -857,7 +857,8 @@ mapper_publish_map(double timestamp)
 
 	carmen_grid_mapping_publish_message(&map, timestamp);
 
-	mapper_publish_cost_and_distance_maps(timestamp);
+	//moved to obstacle_distance_mapper
+	//mapper_publish_cost_and_distance_maps(timestamp);
 }
 
 void

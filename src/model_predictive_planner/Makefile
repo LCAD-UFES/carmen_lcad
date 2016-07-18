@@ -21,7 +21,7 @@ IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/
 #SUBDIRS += model
 LFLAGS += 	-lgrid_mapping -lmap_io -lmap_util -lmap_interface -lparam_interface -lipc -lglobal -lmap_interface  -lprob_models -llocalize_ackerman_interface -lsimulator_ackerman_interface \
 		-lrobot_ackerman_interface -lbase_ackerman_interface \
-		-lnavigator_ackerman_interface -lobstacle_avoider_interface -lgrid_mapping_interface -lrrt_planner_interface \
+		-lnavigator_ackerman_interface -lobstacle_avoider_interface -lgrid_mapping_interface -lobstacle_distance_mapper_interface -lrrt_planner_interface \
 		-lmap_server_interface -lbehavior_selector_interface  -lrotation_geometry \
 		-L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper \
 		-lrddf_interface -lmotion_planner_interface -lnavigator_gui_interface -llocalize_ackerman_core \

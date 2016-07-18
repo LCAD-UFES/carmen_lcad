@@ -18,9 +18,9 @@ void
 carmen_grid_mapping_moving_objects_raw_map_subscribe_message(carmen_grid_mapping_message *message,
 			       carmen_handler_t handler, carmen_subscribe_t subscribe_how);
 
-void
-carmen_grid_mapping_distance_map_subscribe_message(carmen_grid_mapping_distance_map_message *message,
-			       carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+//void
+//carmen_grid_mapping_distance_map_subscribe_message(carmen_grid_mapping_distance_map_message *message,
+//			       carmen_handler_t handler, carmen_subscribe_t subscribe_how);
 
 void
 carmen_grid_mapping_unsubscribe_message(carmen_handler_t handler);
@@ -37,8 +37,8 @@ carmen_grid_mapping_publish_message(carmen_map_t *carmen_map, double timestamp);
 void
 carmen_grid_mapping_moving_objects_raw_map_publish_message(carmen_map_t *carmen_map, double timestamp);
 
-void
-carmen_grid_mapping_publish_distance_map_message(carmen_grid_mapping_distance_map *distance_map, double timestamp);
+//void
+//carmen_grid_mapping_publish_distance_map_message(carmen_grid_mapping_distance_map *distance_map, double timestamp);
 
 #ifdef __cplusplus
 }
