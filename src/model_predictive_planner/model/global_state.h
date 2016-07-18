@@ -14,6 +14,7 @@
 #include "../model/command.h"
 #include "../model/robot_state.h"
 #include <carmen/carmen.h>
+#include <carmen/obstacle_distance_mapper_interface.h>
 #include <carmen/behavior_selector_messages.h>
 #include <list>
 #include <boost/geometry.hpp>
