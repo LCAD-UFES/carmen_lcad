@@ -34,6 +34,7 @@
 #include "velodyne_intensity_drawer.h"
 #include "annotation_drawer.h"
 
+static int num_laser_devices;
 static int moving_objects_point_clouds_size = 1;
 static int stereo_point_cloud_size;
 static int laser_size;
@@ -122,23 +123,25 @@ static int front_bullbar_right_corner_laser_id;
 static int rear_bullbar_left_corner_laser_id;
 static int rear_bullbar_right_corner_laser_id;
 
-#define BOARD_1_LASER_HIERARCHY_SIZE 3
-
-carmen_pose_3D_t* board_1_laser_hierarchy[BOARD_1_LASER_HIERARCHY_SIZE] = {&laser_pose, &sensor_board_1_pose, &car_pose};
-
-#define FRONT_BULLBAR_LEFT_CORNER_HIERARCHY_SIZE 3
-#define FRONT_BULLBAR_RIGHT_CORNER_HIERARCHY_SIZE 3
-
-carmen_pose_3D_t* front_bullbar_left_corner_hierarchy[FRONT_BULLBAR_LEFT_CORNER_HIERARCHY_SIZE]  = {&front_bullbar_left_corner_pose, &front_bullbar_pose, &car_pose};
-carmen_pose_3D_t* front_bullbar_right_corner_hierarchy[FRONT_BULLBAR_RIGHT_CORNER_HIERARCHY_SIZE] = {&front_bullbar_right_corner_pose, &front_bullbar_pose, &car_pose};
-
-#define REAR_BULLBAR_LEFT_CORNER_HIERARCHY_SIZE 3
-#define REAR_BULLBAR_RIGHT_CORNER_HIERARCHY_SIZE 3
-
-carmen_pose_3D_t* rear_bullbar_left_corner_hierarchy[REAR_BULLBAR_LEFT_CORNER_HIERARCHY_SIZE]  = {&rear_bullbar_left_corner_pose, &rear_bullbar_pose, &car_pose};
-carmen_pose_3D_t* rear_bullbar_right_corner_hierarchy[REAR_BULLBAR_RIGHT_CORNER_HIERARCHY_SIZE] = {&rear_bullbar_right_corner_pose, &rear_bullbar_pose, &car_pose};
-
 static carmen_pose_3D_t car_fused_pose;
+
+#define BOARD_1_LASER_HIERARCHY_SIZE 4
+
+carmen_pose_3D_t* board_1_laser_hierarchy[BOARD_1_LASER_HIERARCHY_SIZE] = {&laser_pose, &sensor_board_1_pose, &car_pose, &car_fused_pose};
+
+#define FRONT_BULLBAR_LEFT_CORNER_HIERARCHY_SIZE 4
+#define FRONT_BULLBAR_RIGHT_CORNER_HIERARCHY_SIZE 4
+
+carmen_pose_3D_t* front_bullbar_left_corner_hierarchy[FRONT_BULLBAR_LEFT_CORNER_HIERARCHY_SIZE]  = {&front_bullbar_left_corner_pose, &front_bullbar_pose, &car_pose, &car_fused_pose};
+carmen_pose_3D_t* front_bullbar_right_corner_hierarchy[FRONT_BULLBAR_RIGHT_CORNER_HIERARCHY_SIZE] = {&front_bullbar_right_corner_pose, &front_bullbar_pose, &car_pose, &car_fused_pose};
+
+#define REAR_BULLBAR_LEFT_CORNER_HIERARCHY_SIZE 4
+#define REAR_BULLBAR_RIGHT_CORNER_HIERARCHY_SIZE 4
+
+carmen_pose_3D_t* rear_bullbar_left_corner_hierarchy[REAR_BULLBAR_LEFT_CORNER_HIERARCHY_SIZE]  = {&rear_bullbar_left_corner_pose, &rear_bullbar_pose, &car_pose, &car_fused_pose};
+carmen_pose_3D_t* rear_bullbar_right_corner_hierarchy[REAR_BULLBAR_RIGHT_CORNER_HIERARCHY_SIZE] = {&rear_bullbar_right_corner_pose, &rear_bullbar_pose, &car_pose, &car_fused_pose};
+
+
 //static double car_v = 0.0;
 static double car_phi = 0.0;
 
@@ -812,7 +815,7 @@ carmen_laser_draw_dispatcher(carmen_laser_laser_message* laser_message, int pare
 		
 		point_cloud[last_laser_position].points[j] = get_laser_reading_position_from_reference(angle, range, parentsSize, parents);
 
-        point_cloud[last_laser_position].points[j].z = 0.0;
+        //point_cloud[last_laser_position].points[j].z = 1.0;
 
         point_cloud[last_laser_position].point_color[j].x = 1.0;
         point_cloud[last_laser_position].point_color[j].y = 1.0;
@@ -835,7 +838,7 @@ carmen_laser_draw_dispatcher(carmen_laser_laser_message* laser_message, int pare
 static void
 carmen_laser_laser_message_handler(carmen_laser_laser_message* laser_message)
 {
-	//printf("carmen_laser_laser_message_handler 1\n");
+	//printf("carmen_laser_laser_message_handler %d\n", laser_message->id);
 //    if (!odometry_initialized)
 //        return;
 	//printf("Odometry OK\n");
@@ -1531,6 +1534,8 @@ init_stuff(int argc, char** argv)
             {(char*) "xsens", (char*) "pitch", CARMEN_PARAM_DOUBLE, &(xsens_pose.orientation.pitch), 0, NULL},
             {(char*) "xsens", (char*) "yaw", CARMEN_PARAM_DOUBLE, &(xsens_pose.orientation.yaw), 0, NULL},
 
+            {(char*) "laser", (char*) "num_laser_devices", CARMEN_PARAM_INT, &num_laser_devices, 0, NULL},
+
             {(char*) "laser", (char*) "x", CARMEN_PARAM_DOUBLE, &(laser_pose.position.x), 0, NULL},
             {(char*) "laser", (char*) "y", CARMEN_PARAM_DOUBLE, &(laser_pose.position.y), 0, NULL},
             {(char*) "laser", (char*) "z", CARMEN_PARAM_DOUBLE, &(laser_pose.position.z), 0, NULL},
@@ -2176,10 +2181,11 @@ subscribe_ipc_messages(void)
     carmen_fused_odometry_subscribe_fused_odometry_particle_message(NULL,
                                                                     (carmen_handler_t) carmen_fused_odometry_message_handler,
                                                                     CARMEN_SUBSCRIBE_LATEST);
-	//printf("carmen_laser_subscribe_frontlaser_message\n");
-    carmen_laser_subscribe_frontlaser_message(NULL,
-                                              (carmen_handler_t) carmen_laser_laser_message_handler,
-                                              CARMEN_SUBSCRIBE_LATEST);
+    // subscribe na mensagem de cada laser definido na config
+    for (int i = 1; i <= num_laser_devices; i++) {
+        printf("carmen_laser_subscribe: laser_id: %d\n", i);
+        carmen_laser_subscribe_laser_message(i, NULL, (carmen_handler_t) carmen_laser_laser_message_handler, CARMEN_SUBSCRIBE_LATEST);
+    }
 
     carmen_laser_subscribe_laser_message(6, NULL, (carmen_handler_t) carmen_laser_laser_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
