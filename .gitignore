@@ -317,6 +317,7 @@ src/xsens_MTi-G/example
 src/xsens_MTi-G/subscribe_xsens_mtig
 src/xsens_MTi-G/xsens_mtig
 src/laser-ldmrs/laser_ldmrs
+src/obstacle_distance_mapper/obstacle_distance_mapper
 .cproject
 .project
 bin/gnuplot_path

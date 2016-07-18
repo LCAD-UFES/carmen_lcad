@@ -4,6 +4,9 @@ include ../Makefile.conf
 MODULE_NAME = OBSTACLE_DISTANCE_MAPPER
 MODULE_COMMENT = Obstacle Distance Mapper Module
 
+CFLAGS += -Wall -std=c99 -mfpmath=sse -msse2 -msse4.2 -ffast-math -fassociative-math -O4 -fopenmp -funroll-all-loops
+CXXFLAGS += -Wall -mfpmath=sse -msse2 -msse4.2 -ffast-math -fassociative-math -O4 -fopenmp -funroll-all-loops
+
 LINK = g++
 
 # Application specific include directories. 
@@ -19,7 +22,6 @@ LFLAGS += -lparam_interface -lipc -lglobal -lobstacle_distance_mapper_interface 
 	       -lgrid_mapping_interface -lmap_server_interface -lrotation_geometry -lgeometry -lm -lz -ltf \
 	       -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 	       	
-CFLAGS += -Wall
 # Source code files (.c, .cpp) 
 SOURCES = obstacle_distance_mapper_main.cpp obstacle_distance_mapper_interface.c
 

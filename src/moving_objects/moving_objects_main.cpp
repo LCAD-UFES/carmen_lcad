@@ -768,28 +768,6 @@ get_alive_sensors(int argc, char **argv)
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne8_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[8].unexpeted_delta_range_sigma, 0, NULL},
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne9_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[9].unexpeted_delta_range_sigma, 0, NULL},
 
-			{(char*)"localize_ackerman", (char*)"velodyne_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne1_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[1].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne2_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[2].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne3_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[3].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne4_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[4].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne5_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[5].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne6_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[6].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne7_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[7].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne8_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[8].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne9_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[9].lambda_short_min, 0, NULL},
-
-			{(char*)"localize_ackerman", (char*)"velodyne_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne1_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[1].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne2_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[2].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne3_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[3].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne4_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[4].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne5_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[5].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne6_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[6].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne7_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[7].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne8_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[8].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne9_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[9].lambda_short_max, 0, NULL},
-
 			{(char*)"localize_ackerman",  (char*)"velodyne_range_max_factor", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].range_max_factor, 0, NULL}
 
 
