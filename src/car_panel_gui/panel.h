@@ -17,13 +17,12 @@
 #include <carmen/fused_odometry_interface.h>
 #include <carmen/robot_ackerman_interface.h>
 
-#include "components/lights.h"
-#include "components/arrow.h"
-#include "components/steering.h"
-#include "components/speedometer.h"
-#include "components/accelerator.h"
-#include "components/accelerators/without_time.h"
-#include "components/accelerators/with_time.h"
+#include "lights.h"
+#include "arrow.h"
+#include "steering.h"
+#include "speedometer.h"
+#include "accelerator.h"
+#include "without_time.h"
 
 typedef enum
 {

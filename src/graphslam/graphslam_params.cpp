@@ -232,7 +232,7 @@ get_sensors_param(int argc, char **argv)
 		init_velodyne_points(&spherical_sensor_data[0].points, &spherical_sensor_data[0].intensity);
 		spherical_sensor_params[0].sensor_to_board_matrix = create_rotation_matrix(spherical_sensor_params[0].pose.orientation);
 		spherical_sensor_data[0].point_cloud_index = 0;
-		carmen_prob_models_alloc_sensor_data(&spherical_sensor_data[0], spherical_sensor_params[0].vertical_resolution);
+		carmen_prob_models_alloc_sensor_data(&spherical_sensor_data[0], spherical_sensor_params[0].vertical_resolution, 1);
 
 		if (max_range < spherical_sensor_params[0].range_max)
 		{
@@ -301,7 +301,7 @@ get_sensors_param(int argc, char **argv)
 			init_velodyne_points(&spherical_sensor_data[i].points, &spherical_sensor_data[i].intensity);
 			spherical_sensor_params[i].sensor_to_board_matrix = create_rotation_matrix(spherical_sensor_params[i].pose.orientation);
 			spherical_sensor_data[i].point_cloud_index = 0;
-			carmen_prob_models_alloc_sensor_data(&spherical_sensor_data[i], spherical_sensor_params[i].vertical_resolution);
+			carmen_prob_models_alloc_sensor_data(&spherical_sensor_data[i], spherical_sensor_params[i].vertical_resolution, 1);
 
 			//TODO : tem que fazer esta medida para as cameras igual foi feito para o velodyne
 			spherical_sensor_params[i].delta_difference_mean = (double *)calloc(50, sizeof(double));
@@ -415,7 +415,7 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 	p_map_params->grid_sy = p_map_params->height /  p_map_params->grid_res;
 	p_map_params->grid_size = p_map_params->grid_sx * p_map_params->grid_sy;
 
-	localize_ackerman_velodyne_laser_read_parameters(argc, argv);
+	//localize_ackerman_velodyne_laser_read_parameters(argc, argv);
 
 	carmen_param_allow_unfound_variables(1);
 
@@ -521,7 +521,7 @@ read_parameters_without_mapper(int argc, char **argv, carmen_localize_ackerman_p
 	sensor_board_1_to_car_matrix = create_rotation_matrix(sensor_board_1_pose.orientation);
 	get_alive_sensors(argc, argv);
 	get_sensors_param(argc, argv);
-	localize_ackerman_velodyne_laser_read_parameters(argc, argv);
+	//localize_ackerman_velodyne_laser_read_parameters(argc, argv);
 	carmen_param_allow_unfound_variables(1);
 
 	carmen_param_t param_optional_list[] =
@@ -571,6 +571,6 @@ read_parameters_without_mapper(int argc, char **argv, carmen_localize_ackerman_p
 	p_map_params->grid_sy = p_map_params->height /  p_map_params->grid_res;
 	p_map_params->grid_size = p_map_params->grid_sx * p_map_params->grid_sy;
 
-	carmen_prob_models_alloc_sensor_data(&velodyne_data, velodyne_params.vertical_resolution);
+	carmen_prob_models_alloc_sensor_data(&velodyne_data, velodyne_params.vertical_resolution, 1);
 	carmen_param_allow_unfound_variables(1);
 }

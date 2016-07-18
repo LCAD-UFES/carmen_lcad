@@ -24,8 +24,7 @@ public:
 	virtual void build_rrt_path() {};
 
 	virtual void compute_x_new_alternatives_and_associated_commands_and_times(vector<RRT_Node *> &x_new_alternatives_computed,
-			vector<Command> &x_new_associated_commands, vector<double> &x_new_associated_commands_times,
-			RRT_Node &x_near, Pose &x_rand) = 0;
+			vector<Command> &x_new_associated_commands, vector<double> &x_new_associated_commands_times, RRT_Node &x_near, Pose &x_rand) = 0;
 
 	void check_necessary_conditions_and_build_rrt_path();
 
@@ -86,7 +85,9 @@ public:
 	 */
 	void prune_nodes();
 
+	void smooth_principal_path_from_tree_using_conjugate_gradient (RRT_Node *goal);
 
+	void get_path(RRT_Node *goal);
 
 
 public:
@@ -110,8 +111,8 @@ public:
 	double change_path_distance;
 	double change_path_theta;
 
-//private:
 	vector<RRT_Node *> reaches_goal_nodes;
+
 };
 
 #endif /* RRT_H_ */

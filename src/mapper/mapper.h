@@ -23,5 +23,7 @@ void mapper_update_grid_map(carmen_point_t xt, double *zt, sensor_parameters_t *
 void mapper_save_current_map();
 void mapper_initialize(carmen_map_config_t *map_config, carmen_robot_ackerman_config_t main_car_config);
 void mapper_change_map_origin_to_another_map_block(carmen_position_t *map_origin);
+int run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global);
+
 
 #endif /* MAPPER_H_ */

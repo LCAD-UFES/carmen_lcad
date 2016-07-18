@@ -18,8 +18,21 @@ double	  t1;
 #include "util/util.h"
 #include <carmen/navigator_gui_interface.h>
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_spline.h>
+#include <gsl/gsl_multimin.h>
+#include <gsl/gsl_math.h>
+
 #include <queue>
 #include <list>
+
+//FILE *plot = fopen("p.m", "w");
+//FILE *normal = fopen("normal.m", "a");
+//FILE *smooth = fopen("smooth.m", "a");
+//int cont=0;
 
 
 RRT::RRT()
@@ -592,3 +605,343 @@ bool RRT::is_valid_path()
 	return true;
 }
 
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Smooth Path Using Conjugate Gradient                                                      //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+double
+recalculate_theta (Pose &left, Pose &current, Pose &right)					//Recalculate cars orientantio
+{
+    double x1 = 0.25*(right.x - left.x) + 0.75*(right.x - current.x);
+    double y1 = 0.25*(right.y - left.y) + 0.75*(right.y - current.y);
+
+    return atan2(y1, x1);
+}
+
+
+double
+recalculate_delta_time (double x1, double x2, double v, double theta)      //Recalculate time duration of command
+{                                                                          //Using first equation of ackerman model of movement
+	return ((x2 - x1) / (v * cos(theta)));
+}
+
+
+double
+recalculate_phi (double theta1, double theta2, double v, double time, double L)    //Recalculate wheel angle
+{                                                                                  //Using last equation of ackerman model of movement
+	return atan (((theta2 - theta1)* L) / (time * v));
+}
+
+
+void
+recalculate_theta_time_phi(list<RRT_Path_Edge> &path)
+{
+//    int i, size = path.size();
+    list<RRT_Path_Edge>::iterator it_ant = path.begin();
+    list<RRT_Path_Edge>::iterator it = path.begin();
+
+    it->time = recalculate_delta_time(it->p1.pose.x, it->p2.pose.x, it->command.v, it->p1.pose.theta);
+    //it->command.phi
+    for (it++; it != path.end(); it_ant++, it++)
+    {
+//    	msg->path[i-1].p2.theta = msg->path[i].p1.theta = get_desired_heading(msg->path[i-1].p1, msg->path[i].p1, msg->path[i].p2);
+    	it_ant->p2.pose.theta = it->p1.pose.theta = recalculate_theta(it_ant->p1.pose, it->p1.pose, it->p2.pose);
+
+//      msg->path[i].time = recalculate_delta_time(msg->path[i]);
+    	it->time = recalculate_delta_time(it->p1.pose.x, it->p2.pose.x, it->command.v, it->p1.pose.theta);
+
+//      msg->path[i-1].p2.phi = msg->path[i].p1.phi = msg->path[i-1].phi = get_desired_wheel_angle (msg->path[i], GlobalState::robot_config.distance_between_front_and_rear_axles);
+    	it_ant->p2.v_and_phi.phi = it->p1.v_and_phi.phi = it->command.phi =
+    			recalculate_phi (it->p1.pose.theta, it->p2.pose.theta, it->command.v, it->time, GlobalState::robot_config.distance_between_front_and_rear_axles);
+    }
+}
+
+
+void
+save_smoothed_path_back_to_tree (RRT_Node *goal, list<RRT_Path_Edge> path)
+{
+	list<RRT_Edge>::iterator it_tree;
+	list<RRT_Path_Edge>::iterator it_path = path.end();
+	RRT_Node *parent;
+
+	it_path--;
+
+	do
+	{
+		parent = goal->parent;
+		it_tree = goal->prev_nodes.begin();
+
+		for (; it_tree != goal->prev_nodes.end(); it_tree++)
+		{
+			if (it_tree->n1 == parent)
+			{
+				//printf ("a%f %f  %f %f\n", it_path->p1.pose.x, it_path->p1.pose.y, it_path->p2.pose.x, it_path->p2.pose.y);
+				it_tree->n1->robot_state = it_path->p1;
+				it_tree->n2->robot_state = it_path->p2;
+				it_tree->command = it_path->command;
+				it_tree->time = it_path->time;
+				it_path--;
+				//printf ("b%f %f  %f %f\n", it_tree->n1->robot_state.pose.x, it_tree->n1->robot_state.pose.y, it_tree->n2->robot_state.pose.x, it_tree->n2->robot_state.pose.y);
+				break;
+			}
+		}
+		goal = goal->parent;
+	}
+	while (goal);
+}
+
+
+//Function to be minimized summation[x(i+1)-2x(i)+x(i-1)]
+double
+my_f(const gsl_vector *v, void *params)
+{
+	list<RRT_Path_Edge> *p = (list<RRT_Path_Edge> *)params;
+	int i, j, size =(p->size()-1);                                  //(p->size-1)Instead of -2 because the message size is 4 but the message has 5 points
+	double a=0, b=0, sum=0;                                       //and we have to discount the first and last point that wont be optimized
+
+	//printf("%d\n", size+1);
+	double x_prev = p->front().p1.pose.x;			//x(i-1)
+	double x      = gsl_vector_get(v, 0);		//x(i)
+	double x_next = gsl_vector_get(v, 1);		//x(i+1)
+
+	double y_prev = p->front().p1.pose.y;
+	double y      = gsl_vector_get(v, size);
+	double y_next = gsl_vector_get(v, size+1);
+	//printf("---%f %f\n", x_prev, y_prev);
+	//printf("---%f %f\n", x, y);
+	///printf("---%f %f\n", x_next, y_next);
+	for (i = 2, j = (size+2); i < size; i++, j++)
+	{
+		a = x_next - (2*x) + x_prev;
+		b = y_next - (2*y) + y_prev;
+		sum += (a*a + b*b);
+
+		x_prev = x;
+		x      = x_next;
+		x_next = gsl_vector_get(v, i);
+
+		y_prev = y;
+		y      = y_next;
+		y_next = gsl_vector_get(v, j);
+		//printf("---%f %f\n", x_next, y_next);
+	}
+
+	x_prev = x;
+	x      = x_next;
+	x_next = p->back().p2.pose.x;
+
+	y_prev = y;
+	y      = y_next;
+	y_next = p->back().p2.pose.y;
+
+	//printf("---%f %f\n", x_next, y_next);
+	a = x_next - (2*x) + x_prev;
+	b = y_next - (2*y) + y_prev;
+	sum += (a*a + b*b);
+
+	//getchar();
+
+	return (sum);
+}
+
+
+// The gradient of f, df = (df/dx, df/dy)
+//derivative in each point [2x(i-2)-8x(i-1)+12x(i)-8x(i+1)+2x(i+2)]
+void
+my_df (const gsl_vector *v, void *params, gsl_vector *df)
+{
+	list<RRT_Path_Edge> *p = (list<RRT_Path_Edge> *)params;
+	int i, j, size =(p->size()-1);
+
+	double x_prev2= 0;
+	double x_prev = p->front().p1.pose.x;
+	double x      = gsl_vector_get(v, 0);
+	double x_next = gsl_vector_get(v, 1);
+	double x_next2= gsl_vector_get(v, 2);
+	double sum_x  =  (10*x) - (8*x_next) + (2*x_next2) - (4*x_prev);
+	gsl_vector_set(df, 0, sum_x);
+
+	double y_prev2= 0;
+	double y_prev = p->front().p1.pose.y;
+	double y      = gsl_vector_get(v, size);
+	double y_next = gsl_vector_get(v, size+1);
+	double y_next2= gsl_vector_get(v, size+2);
+	double sum_y  = (10*y) - (8*y_next) + (2*y_next2) - (4*y_prev);
+	gsl_vector_set(df, size, sum_y);
+//	printf("---%f %f\n", x_prev, y_prev);
+//	printf("---%f %f\n", x, y);
+//	printf("---%f %f\n", x_next, y_next);
+//	printf("---%f %f\n", x_next2, y_next2);
+
+	for (i = 3, j = (size+3); i < size; i++, j++)
+	{
+		x_prev2= x_prev;
+		x_prev = x;
+		x      = x_next;
+		x_next = x_next2;
+		x_next2= gsl_vector_get(v, i);
+		sum_x = (2*x_prev2) - (8*x_prev) + (12*x) - (8*x_next) + (2*x_next2);
+		gsl_vector_set(df, (i-2), sum_x);
+
+		y_prev2= y_prev;
+		y_prev = y;
+		y      = y_next;
+		y_next = y_next2;
+		y_next2= gsl_vector_get(v, j);
+		sum_y = (2*y_prev2) - (8*y_prev) + (12*y) - (8*y_next) + (2*y_next2);
+		gsl_vector_set(df, (j-2), sum_y);
+//		printf("---%f %f\n", x_next2, y_next2);
+	}
+
+	x_prev2= x_prev;
+	x_prev = x;
+	x      = x_next;
+	x_next = x_next2;
+	x_next2= p->back().p2.pose.x;
+	sum_x  = (2*x_prev2) - (8*x_prev) + (12*x) - (8*x_next) + (2*x_next2);
+	gsl_vector_set(df, size-2, sum_x);
+
+	y_prev2= y_prev;
+	y_prev = y;
+	y      = y_next;
+	y_next = y_next2;
+	y_next2= p->back().p2.pose.y;
+	sum_y  = (2*y_prev2) - (8*y_prev) + (12*y) - (8*y_next) + (2*y_next2);
+	gsl_vector_set(df, (2*size)-2, sum_y);
+//	printf("---%f %f\n", x_next2, y_next2);
+
+	x_prev2= x_prev;
+	x_prev = x;
+	x      = x_next;
+	x_next = x_next2;
+	sum_x  = (2*x_prev2) - (8*x_prev) + (10*x) - (4*x_next);
+	gsl_vector_set(df, size-1, sum_x);
+
+	y_prev2= y_prev;
+	y_prev = y;
+	y      = y_next;
+	y_next = y_next2;
+	sum_y  = (2*y_prev2) - (8*y_prev) + (10*y) - (4*y_next);
+	gsl_vector_set(df, (2*size)-1, sum_y);
+
+//	getchar();
+}
+
+
+// Compute both f and df together
+void
+my_fdf (const gsl_vector *x, void *params, double *f, gsl_vector *df)
+{
+	*f = my_f(x, params);
+	my_df(x, params, df);
+}
+
+
+void RRT::smooth_principal_path_from_tree_using_conjugate_gradient (RRT_Node *goal)
+{
+	size_t iter = 0;
+	int status, i=0, j=0, size;
+
+	const gsl_multimin_fdfminimizer_type *T;
+	gsl_multimin_fdfminimizer *s;
+
+	gsl_vector *v;
+	gsl_multimin_function_fdf my_func;
+
+	list<RRT_Path_Edge>::iterator it;
+	list<RRT_Path_Edge> path;
+	path = Dijkstra::build_path(goal);
+
+	if (path.size() < 4)
+		return;
+
+	size = path.size()+1;
+
+	my_func.n = (2*size)-4;
+	my_func.f = my_f;
+	my_func.df = my_df;
+	my_func.fdf = my_fdf;
+	my_func.params = &path;
+
+	v = gsl_vector_alloc ((2*size)-4);
+	it = path.begin();
+
+//	fprintf(plot, "a%d = [\n", cont);
+//	printf ("size %d\n\n", size);
+//	fprintf(plot, "%f %f\n", it->p1.pose.x, it->p1.pose.y);
+//	fprintf(normal, "%f %f\n", it->p1.pose.x, it->p1.pose.y);
+//	printf ("a%f %f\n", it->p1.pose.x, it->p1.pose.y);
+	for (i=0, j=(size-2); i < (size-2); i++, j++, it++)
+	{
+//		fprintf(plot, "%f %f\n", it->p2.pose.x, it->p2.pose.y);
+//		fprintf(normal, "%f %f\n", it->p2.pose.x, it->p2.pose.y);
+//		printf ("a%f %f\n", it->p2.pose.x, it->p2.pose.y);
+		gsl_vector_set (v, i, it->p2.pose.x);
+		gsl_vector_set (v, j, it->p2.pose.y);
+	}
+//	fprintf(plot, "%f %f]\n\n", it->p2.pose.x, it->p2.pose.y);
+//	fprintf(normal, "%f %f\n", it->p2.pose.x, it->p2.pose.y);
+//	printf ("a%f %f\n", it->p2.pose.x, it->p2.pose.y);
+
+	T = gsl_multimin_fdfminimizer_conjugate_fr;
+	s = gsl_multimin_fdfminimizer_alloc (T, (2*size)-4);
+
+	gsl_multimin_fdfminimizer_set (s, &my_func, v, 0.1, 0.01);  //(function_fdf, gsl_vector, step_size, tol)
+
+	do
+	{
+		iter++;
+		status = gsl_multimin_fdfminimizer_iterate (s);
+
+		if (status){
+			//printf("%%Saiu STATUS %d\n", status);
+			break;
+		}
+
+		status = gsl_multimin_test_gradient (s->gradient, 0.01);        //(gsl_vector, epsabs) and  |g| < epsabs
+
+		if (status == GSL_SUCCESS)
+		{
+			//printf ("%%Minimum found!!!\n");
+		}
+	}
+	while (status == GSL_CONTINUE && iter < 999);
+
+	it = path.begin();
+
+//	fprintf(plot, "b%d = [   \n%f %f\n", cont, it->p1.pose.x, it->p1.pose.y);
+//	fprintf(smooth, "%f %f\n", it->p1.pose.x, it->p1.pose.y);
+//	printf ("z%f %f\n", it->p1.pose.x, it->p1.pose.y);
+	for (i=0, j=(size-2); i < (size-2); i++, j++)
+	{
+		it->p2.pose.x = gsl_vector_get (s->x, i);
+		it->p2.pose.y = gsl_vector_get (s->x, j);
+//		fprintf(plot, "%f %f\n", it->p2.pose.x, it->p2.pose.y);
+//		fprintf(smooth, "%f %f\n", it->p2.pose.x, it->p2.pose.y);
+//		printf ("z%f %f\n", it->p2.pose.x, it->p2.pose.y);
+		if (it != path.end())
+		{
+			it++;
+			it->p1.pose.x = gsl_vector_get (s->x, i);
+			it->p1.pose.y = gsl_vector_get (s->x, j);
+			//fprintf(plot, "%f %f\n", it->p1.pose.x, it->p1.pose.y);
+//			printf ("z%f %f\n", it->p1.pose.x, it->p1.pose.y);
+		}
+	}
+//	fprintf(plot, "%f %f]\n\n", it->p2.pose.x, it->p2.pose.y);
+//	fprintf(smooth, "%f %f\n", it->p2.pose.x, it->p2.pose.y);
+//	fprintf(plot, "\nplot (a%d(:,1), a%d(:,2), b%d(:,1), b%d(:,2)); \nstr = input (\"a   :\");\n\n", cont, cont, cont, cont);
+//	printf ("z%f %f\n", it->p2.pose.x, it->p2.pose.y);
+//	printf ("\n");
+
+	recalculate_theta_time_phi (path);
+
+	save_smoothed_path_back_to_tree (goal, path);
+
+	gsl_multimin_fdfminimizer_free (s);
+	gsl_vector_free (v);
+}

@@ -8,43 +8,39 @@
 #include <signal.h>
 #include <string.h>
 #include <stdio.h>
-#include "util/dijkstra.h"
+
+#include <carmen/carmen.h>
 #include <carmen/behavior_selector_interface.h>
 #include <carmen/fused_odometry_interface.h>
 #include <carmen/grid_mapping_interface.h>
+#include <carmen/grid_mapping.h>
 #include <carmen/map_server_interface.h>
-#include <carmen/carmen.h>
+#include <carmen/motion_planner_interface.h>
+#include <carmen/navigator_gui_interface.h>
+#include <carmen/rddf_interface.h>
 
 #include <prob_measurement_model.h>
 #include <prob_map.h>
 #include <prob_interface.h>
 #include <prob_measurement_model.h>
 #include <prob_transforms.h>
-#include <carmen/grid_mapping.h>
-
-#include "rrt.h"
 
 #include "model/robot_config.h"
 #include "model/global_state.h"
-
 #include "message/rrt_planner_interface.h"
-
 #include "util/util.h"
 #include "util/ackerman.h"
+#include "util/dijkstra.h"
 #include "util/publisher_util.h"
 #include "util/obstacle_detection.h"
 #include "path_follower/follower.h"
 #include "path_follower/path_follower_ackerman.h"
 #include "util/lane.h"
-#include "rs.h"
-#include <carmen/motion_planner_interface.h>
-
-#include <carmen/navigator_gui_interface.h>
-
-#include <carmen/rddf_interface.h>
 
 #include "rrt_parking.h"
 #include "rrt_lane.h"
+#include "rrt.h"
+#include "rs.h"
 
 
 RRT_Parking *rrt_parking;
@@ -110,16 +106,12 @@ publish_rrt_path_message(list<RRT_Path_Edge> &path)
 		msg.path[i].phi = it->command.phi;
 		msg.path[i].time = it->time;
 
-//		printf("p1.x = %.2lf, p1.y = %.2lf, p1.theta = %.2lf\n"
-//			   "p2.x = %.2lf, p2.y = %.2lf, p2.theta = %.2lf\n"
-//			   "p1.v = %.2lf, p1.phi = %.2lf\n"
-//			   "p2.v = %.2lf, p2.phi = %.2lf\n"
-//			   "command.v = %.2lf, command.phi = %.2lf\n",
-//			   it->p1.pose.x, it->p1.pose.y, it->p1.pose.theta,
-//			   it->p2.pose.x, it->p2.pose.y, it->p2.pose.theta,
-//			   it->p1.v_and_phi.v, it->p1.v_and_phi.phi,
-//			   it->p2.v_and_phi.v, it->p2.v_and_phi.phi,
-//			   it->command.v, it->command.phi);
+//		printf( "p1.x = %lf, p1.y = %lf, p1.theta = %lf, p1.v = %lf, p1.phi = %lf\n"
+//				"p2.x = %lf, p2.y = %lf, p2.theta = %lf, p2.v = %lf, p2.phi = %lf\n"
+//				"command.v = %lf, command.phi = %lf, command.time = %lf\n",
+//				msg.path[i].p1.x, msg.path[i].p1.y, msg.path[i].p1.theta, msg.path[i].p1.v, msg.path[i].p1.phi,
+//				msg.path[i].p2.x, msg.path[i].p2.y, msg.path[i].p2.theta, msg.path[i].p2.v, msg.path[i].p2.phi,
+//				msg.path[i].v,  msg.path[i].phi,  msg.path[i].time);
 
 		if (GlobalState::show_debug_info)
 			printf("v = %2.2lf, phi = %2.2lf, t = %2.3lf, p1.v = %2.2lf, p1.phi = %2.2lf, p2.v = %2.2lf, p2.phi = %2.2lf\n",
@@ -134,7 +126,6 @@ publish_rrt_path_message(list<RRT_Path_Edge> &path)
 	}
 
 	Publisher_Util::publish_rrt_path_message(&msg);
-
 	free(msg.path);
 }
 
@@ -145,7 +136,10 @@ RRT::publish_status_message()
 	if (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT)
 	{
 		if (GlobalState::publish_tree)
+		{
 			Publisher_Util::publish_plan_tree_message(tree, reaches_goal_nodes);
+			//Publisher_Util::publish_principal_path_message(selected_rrt->path);
+		}
 	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////

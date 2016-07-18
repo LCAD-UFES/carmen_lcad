@@ -33,6 +33,9 @@ typedef struct {
 } PropertyGTK;
 
 
+const int bumblebee_image_width = 1280;
+const int bumblebee_image_height = 960;
+
 PropertyGTK property_vector[50];
 int property_vector_size;
 
@@ -168,24 +171,28 @@ rectify_image(
 		unsigned char *rectfied_rgb_right,
 		unsigned char *rectfied_rgb_left)
 {
-	static unsigned char *r_vector = new unsigned char[1280*960*2];
-	static unsigned char *g_vector = new unsigned char[1280*960*2];
-	static unsigned char *b_vector = new unsigned char[1280*960*2];
+	static unsigned char *r_vector = new unsigned char[bumblebee_image_width * bumblebee_image_height * 2];
+	static unsigned char *g_vector = new unsigned char[bumblebee_image_width * bumblebee_image_height * 2];
+	static unsigned char *b_vector = new unsigned char[bumblebee_image_width * bumblebee_image_height * 2];
 
 	unsigned char * aux;
 	TriclopsInput	input;
 	TriclopsColorImage  img_right, img_left;
 
-	deinterlace_rgb_single(rgb_image, r_vector, g_vector, b_vector, 1280, 6 * 960);
+	// o "6" estava hard code na funcao "deinterlace_rgb_single" abaixo. Acho que era o num de bytes
+	// em duas imagens (rgb para as imagens esquerda e direita), mas nao tenho certeza.
+	int num_bytes_in_two_images = 6;
+
+	deinterlace_rgb_single(rgb_image, r_vector, g_vector, b_vector, bumblebee_image_width, num_bytes_in_two_images * bumblebee_image_height);
 	omp_set_num_threads(2);
 	#pragma omp parallel sections private(input, aux) shared(img_right, img_left, triclops, r_vector, g_vector, b_vector)
 	{
 		#pragma omp section
 		{
 			input.inputType 	= TriInp_RGB;
-			input.nrows	= 960;
-			input.ncols	= 1280;
-			input.rowinc	= 1280;
+			input.nrows	= bumblebee_image_height;
+			input.ncols	= bumblebee_image_width;
+			input.rowinc	= bumblebee_image_width;
 			input.u.rgb.red   	= r_vector;
 			input.u.rgb.green 	= g_vector;
 			input.u.rgb.blue  	= b_vector;
@@ -196,31 +203,31 @@ rectify_image(
 		#pragma omp section
 		{
 			input.inputType 	= TriInp_RGB;
-			input.nrows	= 960;
-			input.ncols	= 1280;
-			input.rowinc	= 1280;
+			input.nrows	= bumblebee_image_height;
+			input.ncols	= bumblebee_image_width;
+			input.rowinc	= bumblebee_image_width;
 			aux = (unsigned char*)r_vector;
-			input.u.rgb.red = &aux[1280 * 960];
+			input.u.rgb.red = &aux[bumblebee_image_width * bumblebee_image_height];
 			aux = (unsigned char*)g_vector;
-			input.u.rgb.green = &aux[1280 * 960];
+			input.u.rgb.green = &aux[bumblebee_image_width * bumblebee_image_height];
 			aux = (unsigned char*)b_vector;
-			input.u.rgb.blue = &aux[1280 * 960];
+			input.u.rgb.blue = &aux[bumblebee_image_width * bumblebee_image_height];
 
-			triclopsRectifyColorImage( triclops, TriCam_LEFT, &input, &img_left );
+			triclopsRectifyColorImage( triclops, TriCam_LEFT, &input, &img_left);
 		}
 	}
 
-	interpolate_triclops_stereo_image(rectfied_rgb_left, &img_left, rectfied_rgb_right, &img_right, 1280, 960);
+	interpolate_triclops_stereo_image(rectfied_rgb_left, &img_left, rectfied_rgb_right, &img_right, bumblebee_image_width, bumblebee_image_height);
 }
 
 void
 image_grabber_handler(FlyCapture2::Image* pImage)
 {
-	static unsigned char *deinterleaved = new unsigned char[1280*960*2];
-	static unsigned char *rgb = new unsigned char[1280*960*2*3];
+	static unsigned char *deinterleaved = new unsigned char[bumblebee_image_width * bumblebee_image_height * 2];
+	static unsigned char *rgb = new unsigned char[bumblebee_image_width * bumblebee_image_height * 2 * 3];
 
-	static unsigned char *rectfied_rgb_right = new unsigned char[1280*960*3];
-	static unsigned char *rectfied_rgb_left = new unsigned char[1280*960*3];
+	static unsigned char *rectfied_rgb_right = new unsigned char[bumblebee_image_width * bumblebee_image_height * 3];
+	static unsigned char *rectfied_rgb_left = new unsigned char[bumblebee_image_width * bumblebee_image_height * 3];
 
 	double timestamp;
 
@@ -229,15 +236,15 @@ image_grabber_handler(FlyCapture2::Image* pImage)
 
 	dc1394_deinterlace_stereo( pImage->GetData(),
 			deinterleaved,
-			1280,
-			2*960 );
+			bumblebee_image_width,
+			bumblebee_image_height * 2);
 
-	dc1394_bayer_decoding_8bit( deinterleaved,
+	dc1394_bayer_decoding_8bit(deinterleaved,
 			rgb,
-			1280,
-			2*960,
+			bumblebee_image_width,
+			bumblebee_image_height * 2,
 			DC1394_COLOR_FILTER_GBRG,
-			DC1394_BAYER_METHOD_NEAREST );
+			DC1394_BAYER_METHOD_NEAREST);
 
 	if (_rectify_image)
 	{
@@ -246,7 +253,7 @@ image_grabber_handler(FlyCapture2::Image* pImage)
 	}
 	else
 	{
-		carmen_bumblebee_publish_stereoimage_message(rgb + 1280 * 960 * 3, rgb, timestamp, camera_id);
+		carmen_bumblebee_publish_stereoimage_message(rgb + bumblebee_image_width * bumblebee_image_height * 3, rgb, timestamp, camera_id);
 	}
 }
 
@@ -281,8 +288,8 @@ configure_format7()
 	Format7ImageSettings format7;
 	format7.mode = MODE_3;
 	format7.pixelFormat = PIXEL_FORMAT_RAW16;
-	format7.width = 1280;
-	format7.height = 960;
+	format7.width = bumblebee_image_width;
+	format7.height = bumblebee_image_height;
 	cam.SetFormat7Configuration(&format7, (float)100);
 }
 
@@ -292,8 +299,7 @@ calculate_max_fps()
 	Format7ImageSettings format7;
 	unsigned int package_size;
 	float porcentage;
-	unsigned int package_ideal_size = 1280.0 * 960.0 * 16.0 / 3840.0;
-
+	unsigned int package_ideal_size = bumblebee_image_width * bumblebee_image_height * 16.0 / (bumblebee_image_width * 3 /*antes ao inves de widh * 3 estava 3840.0*/);
 
 	cam.GetFormat7Configuration(&format7, &package_size, &porcentage);
 
@@ -335,7 +341,6 @@ update_gui_property_values(bool update_all = true)
 
 		error = cam.GetProperty(&prop);
 		handle_error(error);
-
 
 		gtk_toggle_button_set_active((GtkToggleButton*)property_vector[i].check_button_auto, prop.autoManualMode);
 
@@ -385,10 +390,8 @@ capture_image()
 
 		time_to_sleep = (1.0 / fps) - (carmen_get_time() - t1);
 
-
 		if (time_to_sleep >= 0)
 			usleep(time_to_sleep * 1000000);
-			
 	}
 }
 
@@ -571,7 +574,7 @@ get_triclops_context_from_camera( TriclopsContext* pTriclops )
 	if ( tErr != TriclopsErrorOk )
 		fprintf( stderr, "triclopsGetDefaultContextFromFile failed!\n" );
 
-	tErr = triclopsSetResolution( triclops, 960, 1280);
+	tErr = triclopsSetResolution( triclops, bumblebee_image_height, bumblebee_image_width);
 
 	tErr = triclopsSetRectImgQuality(triclops, TriRectQlty_STANDARD);
 
@@ -807,11 +810,10 @@ create_gui(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-
 	Error error;
 	BusManager busMgr;
-	unsigned int numCameras;
 
+	unsigned int numCameras;
 	signal(SIGINT, shutdown_module);
 
 	carmen_ipc_initialize(argc, argv);
@@ -820,9 +822,7 @@ int main(int argc, char **argv)
 	read_parameters(argc, argv);
 
 	carmen_bumblebee_basic_define_messages(camera_id);
-
-	initialize_bumblebee_message(1280, 960, 3, 1);
-
+	initialize_bumblebee_message(bumblebee_image_width, bumblebee_image_height, 3, 1);
 	get_triclops_context_from_camera( &triclops );
 
 	error = busMgr.GetNumOfCameras(&numCameras);
@@ -845,15 +845,52 @@ int main(int argc, char **argv)
 			gtk_main();
 
 #pragma omp section
-		for (unsigned int i = 0; i < numCameras; i++)
+{
+		PGRGuid guid;
+
+		switch(camera_id)
 		{
-			PGRGuid guid;
-			error = busMgr.GetCameraFromIndex(i, &guid);
-
-			handle_error(error);
-
-			RunSingleCamera( guid );
+			case 3:
+			{
+				guid.value[0] = 3457480844;
+				guid.value[1] = 3613351916;
+				guid.value[2] = 2004438421;
+				guid.value[3] = 3416170437;
+				break;
+			}
+			case 2:
+			{
+				guid.value[0] = 974707561;
+				guid.value[1] = 985729633;
+				guid.value[2] = 775922204;
+				guid.value[3] = 290697668;
+				break;
+			}
+			case 8:
+			{
+				guid.value[0] = 601418508;
+				guid.value[1] = 2305730356;
+				guid.value[2] = 1188433416;
+				guid.value[3] = 3449098016;
+				break;
+			}
+			default:
+			{
+				/**
+				 * Os guid acima sao codigos identificadores unicos para cada camera e sao DIFERENTES
+				 * dos codigos cadastrados previamente (veja funcao CameraContextByGuid). Para obter este
+				 * guid, ligue a camera em um computador SOZINHA (sem outras cameras) e execute o comando
+				 * ./util_list_camera_ids no bin do carmen (pode ser necessario compilar o modulo utilities).
+				 * O numero exibido na tela deve ser adicionado na lista acima junto com o numero da camera.
+				 */
+				printf("ERROR: Camera id not supported. Please, contact Alberto Ferreira De Souza (alberto@lcad.inf.ufes.br) for more information\n");
+				printf("See comment in bumblebee_basic_flycap_main.cpp line 875\n");
+				exit(-1);
+			}
 		}
+
+		RunSingleCamera(guid);
+} // omp section
 	}
 
 	return 0;

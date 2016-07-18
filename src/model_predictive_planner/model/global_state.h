@@ -14,11 +14,14 @@
 #include "../model/command.h"
 #include "../model/robot_state.h"
 #include <carmen/carmen.h>
+#include <carmen/obstacle_distance_mapper_interface.h>
 #include <carmen/behavior_selector_messages.h>
 #include <list>
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/point.hpp>
 #include <boost/geometry/index/rtree.hpp>
+
+#include "../kdtree/KDTree2D.hpp"
 
 namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
@@ -29,7 +32,7 @@ using namespace std;
 class GlobalState
 {
 public:
-	static Robot_Config robot_config;
+	static carmen_robot_ackerman_config_t robot_config;
 	static double param_max_vel;
 
 	static double max_phi_velocity;		// Equivalente a rodar o volante todo para um lado em 1 segundo.
@@ -53,19 +56,20 @@ public:
 
 	static bool last_path_received_is_empty;
 
-	static vector<carmen_point_t> lane_points;
-	static vector<Pose> lane_points_on_map;
-	static carmen_map_t lane_map;
 	static carmen_map_t cost_map;
+	static carmen_grid_mapping_distance_map_message *localize_map;
 	static bgi::rtree< occupied_cell, bgi::quadratic<16> > obstacles_rtree;
 	static bool cost_map_initialized;
+	static KDTree2D obstacles_kdtree;
+	static vector<vector<cell_coords_t>> cell_mask;
 
 	static bool	  following_path; // true if the path is being followed
 
 	static int	  cheat; // if true the algorithm will use the true pose, otherwise will use the localize pose
 
 	static double obstacle_threshold;
-
+	static bool ford_escape_online;
+	static carmen_ford_escape_status_message ford_escape_status;
 	static int current_algorithm;//which algorithm is running, define at carmen_navigator_ackerman_algorithm_t
 	static int behavior_selector_state;
 

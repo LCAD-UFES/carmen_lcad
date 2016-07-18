@@ -70,6 +70,8 @@ static carmen_map_p offline_grid_map = NULL;
 
 int frame = 1;
 
+int number_of_threads = 1;
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -269,6 +271,7 @@ deallocation_moving_objects_point_clouds_message()
 	for (i = 0; i < moving_objects_point_clouds_message.num_point_clouds; i++)
 	{
 		free(moving_objects_point_clouds_message.point_clouds[i].points);
+		free(moving_objects_point_clouds_message.point_clouds[i].particulas);
 	}
 	free(moving_objects_point_clouds_message.point_clouds);
 }
@@ -358,6 +361,18 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 				moving_objects_point_clouds_message.point_clouds[i].points[j].z = pit->z + it->car_global_pose.position.z;
 				j++;
 			}
+
+			//fixme para a visualização das partículas
+			moving_objects_point_clouds_message.point_clouds[i].particulas = (particle_print_t*) malloc(400 * sizeof(particle_print_t));
+			if(it->particle_set.size() > 0) {
+				for(int k = 0; k < 400; k++){
+					moving_objects_point_clouds_message.point_clouds[i].particulas[k].class_id = it->particle_set[k].class_id;
+					moving_objects_point_clouds_message.point_clouds[i].particulas[k].geometry = it->particle_set[k].model_features.geometry;
+					moving_objects_point_clouds_message.point_clouds[i].particulas[k].pose = it->particle_set[k].pose;
+					moving_objects_point_clouds_message.point_clouds[i].particulas[k].velocity = it->particle_set[k].velocity;
+				}
+			}
+
 
 			i++;
 		}
@@ -591,7 +606,7 @@ get_sensors_param(int argc, char **argv)
 				&spherical_sensor_data[0].robot_velocity, &spherical_sensor_data[0].robot_timestamp, &spherical_sensor_data[0].robot_phi);
 		spherical_sensor_params[0].sensor_to_board_matrix = create_rotation_matrix(spherical_sensor_params[0].pose.orientation);
 		spherical_sensor_data[0].point_cloud_index = 0;
-		carmen_prob_models_alloc_sensor_data(&spherical_sensor_data[0], spherical_sensor_params[0].vertical_resolution);
+		carmen_prob_models_alloc_sensor_data(&spherical_sensor_data[0], spherical_sensor_params[0].vertical_resolution, number_of_threads);
 
 		if (max_range < spherical_sensor_params[0].range_max)
 		{
@@ -665,7 +680,7 @@ get_sensors_param(int argc, char **argv)
 					&spherical_sensor_data[i].robot_velocity, &spherical_sensor_data[i].robot_timestamp, &spherical_sensor_data[i].robot_phi);
 			spherical_sensor_params[i].sensor_to_board_matrix = create_rotation_matrix(spherical_sensor_params[i].pose.orientation);
 			spherical_sensor_data[i].point_cloud_index = 0;
-			carmen_prob_models_alloc_sensor_data(&spherical_sensor_data[i], spherical_sensor_params[i].vertical_resolution);
+			carmen_prob_models_alloc_sensor_data(&spherical_sensor_data[i], spherical_sensor_params[i].vertical_resolution, number_of_threads);
 
 			//TODO : tem que fazer esta medida para as cameras igual foi feito para o velodyne
 			if(i == 8) {
@@ -783,14 +798,18 @@ get_alive_sensors(int argc, char **argv)
 
 	for (i = 0; i < number_of_sensors; i++)
 	{
-		spherical_sensor_data[i].ray_position_in_the_floor = NULL;
-		spherical_sensor_data[i].maxed = NULL;
-		spherical_sensor_data[i].obstacle_height = NULL;
-		spherical_sensor_data[i].occupancy_log_odds_of_each_ray_target = NULL;
+
+		spherical_sensor_data[i].ray_position_in_the_floor = (carmen_vector_2D_t**)calloc(number_of_threads ,sizeof(carmen_vector_2D_t*));
+		spherical_sensor_data[i].maxed = (int**)calloc(number_of_threads ,sizeof(int*));
+		spherical_sensor_data[i].obstacle_height = (double**)calloc(number_of_threads ,sizeof(double*));
+		spherical_sensor_data[i].occupancy_log_odds_of_each_ray_target = (double**)calloc(number_of_threads ,sizeof(double*));
 		spherical_sensor_data[i].point_cloud_index = 0;
 		spherical_sensor_data[i].points = NULL;
-		spherical_sensor_data[i].ray_origin_in_the_floor = NULL;
-		spherical_sensor_data[i].ray_size_in_the_floor = NULL;
+		spherical_sensor_data[i].ray_origin_in_the_floor = (carmen_vector_2D_t**)calloc(number_of_threads ,sizeof(carmen_vector_2D_t*));;
+		spherical_sensor_data[i].ray_size_in_the_floor = (double**)calloc(number_of_threads ,sizeof(double*));
+		spherical_sensor_data[i].processed_intensity = (double**)calloc(number_of_threads ,sizeof(double*));
+		spherical_sensor_data[i].ray_hit_the_robot = (int**)calloc(number_of_threads ,sizeof(int*));
+		spherical_sensor_data[i].ray_that_hit_the_nearest_target = (int*)calloc(number_of_threads ,sizeof(int));
 
 		spherical_sensor_params[i].name = NULL;
 		spherical_sensor_params[i].ray_order = NULL;
@@ -798,6 +817,17 @@ get_alive_sensors(int argc, char **argv)
 		spherical_sensor_params[i].vertical_correction = NULL;
 		spherical_sensor_params[i].vertical_resolution = 0;
 
+		for (int j = 0; j < number_of_threads; j++)
+		{
+			spherical_sensor_data[i].ray_position_in_the_floor[j] = NULL;
+			spherical_sensor_data[i].maxed[j] = NULL;
+			spherical_sensor_data[i].obstacle_height[j] = NULL;
+			spherical_sensor_data[i].occupancy_log_odds_of_each_ray_target[j] = NULL;
+			spherical_sensor_data[i].ray_origin_in_the_floor[j] = NULL;
+			spherical_sensor_data[i].ray_size_in_the_floor[j] = NULL;
+			spherical_sensor_data[i].processed_intensity[i] = NULL;
+			spherical_sensor_data[i].ray_hit_the_robot[j] = NULL;
+		}
 
 		if (spherical_sensor_params[i].alive)
 		{
@@ -855,10 +885,17 @@ read_parameters(int argc, char **argv)
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+void sigint(int)
+{
+ 	exit(0);
+}
 
 int
 main(int argc, char **argv)
 {
+
+	signal(SIGINT, sigint);
+
 	/* Connect to IPC Server */
 	carmen_ipc_initialize(argc, argv);
 
@@ -881,17 +918,22 @@ main(int argc, char **argv)
 	carmen_moving_objects_point_clouds_define_messages();
 
 	/* Subscribe to sensor and filter messages */
+	carmen_localize_ackerman_subscribe_globalpos_message(NULL,
+				(carmen_handler_t) localize_ackerman_handler, CARMEN_SUBSCRIBE_LATEST);
+
     carmen_velodyne_subscribe_partial_scan_message(NULL,
     		(carmen_handler_t) velodyne_partial_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
     carmen_stereo_velodyne_subscribe_scan_message(8, NULL,
     		(carmen_handler_t)velodyne_variable_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_localize_ackerman_subscribe_globalpos_message(NULL,
-			(carmen_handler_t) localize_ackerman_handler, CARMEN_SUBSCRIBE_LATEST);
+//    carmen_localize_ackerman_subscribe_globalpos_message(NULL,
+//			(carmen_handler_t) localize_ackerman_handler, CARMEN_SUBSCRIBE_LATEST);
 
     carmen_map_server_subscribe_offline_map(NULL,
     		(carmen_handler_t) carmen_map_server_offline_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+
 
 	carmen_ipc_dispatch();
 

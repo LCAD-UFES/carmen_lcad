@@ -15,7 +15,7 @@ car_panel::car_panel(int argc, char *argv[])
 {
 	if (!checkArguments(argc, argv))
 	{
-		subscribe_messages(2, 1.0);
+		subscribe_messages(3, 1.0);
 	}
 }
 
