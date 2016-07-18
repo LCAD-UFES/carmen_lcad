@@ -395,6 +395,7 @@ src/model_predictive_planner/problems.txt
 sharedlib/libsickldmrs/libsickldmrs.so.1
 bin/laser_ldmrs
 sharedlib/libsickldmrs/sickldmrstest
+sharedlib/libsickldmrs/sickldmrstest
 src/laser-ldmrs/laser_ldmrs
 src/moving_objects/Makefile.depend
 src/moving_objects/libmoving_objects_interface.a

@@ -50,6 +50,9 @@ bool   GlobalState::following_path		= false;
 
 double GlobalState::obstacle_threshold	= 0.5;
 
+bool GlobalState::ford_escape_online = false;
+carmen_ford_escape_status_message GlobalState::ford_escape_status;
+
 int GlobalState::current_algorithm = CARMEN_BEHAVIOR_SELECTOR_RRT;
 int GlobalState::behavior_selector_state = BEHAVIOR_SELECTOR_FOLLOWING_LANE;
 

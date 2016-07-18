@@ -5,11 +5,12 @@
  *      Author: romulo
  */
 
+#include <carmen/carmen.h>
 #include <carmen/behavior_selector_interface.h>
 #include <carmen/fused_odometry_interface.h>
 #include <carmen/grid_mapping_interface.h>
 #include <carmen/map_server_interface.h>
-#include <carmen/carmen.h>
+#include <carmen/ford_escape_hybrid_interface.h>
 
 #include <carmen/rddf_messages.h>
 #include <carmen/rddf_interface.h>
@@ -692,6 +693,29 @@ carmen_grid_mapping_distance_map_message_handler(carmen_grid_mapping_distance_ma
 }
 
 
+void
+ford_escape_status_handler(carmen_ford_escape_status_message *msg)
+{
+	//TODO tratar tambem comandos de ultrapassagem (ou talvez tratar no behavior selector)
+	GlobalState::ford_escape_status.g_XGV_turn_signal = msg->g_XGV_turn_signal;
+	//Tratando se o navegador esta em no modo real ou em modo simulacao
+	GlobalState::ford_escape_online = true;
+}
+
+
+void
+rddf_message_handler(/*carmen_rddf_road_profile_message *message*/)
+{
+//	printf("RDDF NUM POSES: %d \n", message->number_of_poses);
+//
+//	for (int i = 0; i < message->number_of_poses; i++)
+//	{
+//		printf("RDDF %d: x  = %lf, y = %lf , theta = %lf\n", i, message->poses[i].x, message->poses[i].y, message->poses[i].theta);
+//		//getchar();
+//	}
+}
+
+
 static void
 navigator_ackerman_go_message_handler()
 {
@@ -761,19 +785,6 @@ register_handlers_specific()
 
 
 void
-rddf_message_handler(/*carmen_rddf_road_profile_message *message*/)
-{
-//	printf("RDDF NUM POSES: %d \n", message->number_of_poses);
-//
-//	for (int i = 0; i < message->number_of_poses; i++)
-//	{
-//		printf("RDDF %d: x  = %lf, y = %lf , theta = %lf\n", i, message->poses[i].x, message->poses[i].y, message->poses[i].theta);
-//		//getchar();
-//	}
-}
-
-
-void
 register_handlers()
 {
 	signal(SIGINT, signal_handler);
@@ -790,6 +801,8 @@ register_handlers()
 	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) behaviour_selector_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_rddf_subscribe_road_profile_message(&goal_list_message, (carmen_handler_t) rddf_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_ford_escape_subscribe_status_message(NULL, (carmen_handler_t) ford_escape_status_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	register_handlers_specific();
 }

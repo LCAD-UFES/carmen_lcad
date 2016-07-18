@@ -20,6 +20,7 @@ extern int merge_with_offline_map;
 extern int update_and_merge_with_mapper_saved_maps;
 extern int build_snapshot_map;
 extern int update_and_merge_with_snapshot_map;
+extern int decay_to_offline_map;
 
 extern carmen_pose_3D_t sensor_board_1_pose;
 extern rotation_matrix *board_to_car_matrix;
@@ -285,7 +286,8 @@ build_map_using_velodyne(sensor_parameters_t *sensor_params, sensor_data_t *sens
 		//set_map_equal_offline_map(&map);
 		//add_offline_map_over_unknown(&map);
 
-		map_decay_to_offline_map(&map);
+		if(decay_to_offline_map)
+			map_decay_to_offline_map(&map);
 
 		// @@@ Alberto: Mapa padrao Lucas -> colocar DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS ao inves de UPDATE_CELLS_CROSSED_BY_RAYS
 		//update_cells_in_the_velodyne_perceptual_field(&map, snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);

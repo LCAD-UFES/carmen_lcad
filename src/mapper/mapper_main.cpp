@@ -64,6 +64,8 @@ int build_snapshot_map;
 int update_cells_below_car;
 int update_and_merge_with_mapper_saved_maps;
 int update_and_merge_with_snapshot_map;
+int decay_to_offline_map;
+
 
 carmen_pose_3D_t sensor_board_1_pose;
 
@@ -751,6 +753,7 @@ read_parameters(int argc, char **argv,
 			{(char*)"mapper",  (char*)"merge_with_offline_map", CARMEN_PARAM_ONOFF, &merge_with_offline_map, 0, NULL},
 			{(char*)"mapper",  (char*)"update_and_merge_with_mapper_saved_maps", CARMEN_PARAM_ONOFF, &update_and_merge_with_mapper_saved_maps, 0, NULL},
 			{(char*)"mapper",  (char*)"update_cells_below_car", CARMEN_PARAM_ONOFF, &update_cells_below_car, 0, NULL},
+			{(char*)"mapper",  (char*)"decay_to_offline_map", CARMEN_PARAM_ONOFF, &decay_to_offline_map, 0, NULL},
 
 			{(char*)"mapper",  (char*)"update_and_merge_with_snapshot_map", CARMEN_PARAM_ONOFF, &update_and_merge_with_snapshot_map, 0, NULL},
 			{(char*)"mapper",  (char*)"number_of_threads", CARMEN_PARAM_INT, &number_of_threads, 0, NULL},

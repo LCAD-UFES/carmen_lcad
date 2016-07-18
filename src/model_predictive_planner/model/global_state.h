@@ -67,7 +67,8 @@ public:
 	static int	  cheat; // if true the algorithm will use the true pose, otherwise will use the localize pose
 
 	static double obstacle_threshold;
-
+	static bool ford_escape_online;
+	static carmen_ford_escape_status_message ford_escape_status;
 	static int current_algorithm;//which algorithm is running, define at carmen_navigator_ackerman_algorithm_t
 	static int behavior_selector_state;
 
