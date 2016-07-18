@@ -25,7 +25,7 @@ bool GlobalState::last_goal = true;
 
 bool GlobalState::last_path_received_is_empty = false;
 
-Robot_Config GlobalState::robot_config;
+carmen_robot_ackerman_config_t GlobalState::robot_config;
 double GlobalState::param_max_vel = 0.0;
 
 double GlobalState::max_phi_velocity = 1.0 * 0.48;		// Equivalente a rodar o volante todo para um lado (27.7 graus = 0.48 radianos) em 1 segundo.
@@ -49,6 +49,9 @@ int    GlobalState::cheat 				= 0;
 bool   GlobalState::following_path		= false;
 
 double GlobalState::obstacle_threshold	= 0.5;
+
+bool GlobalState::ford_escape_online = false;
+carmen_ford_escape_status_message GlobalState::ford_escape_status;
 
 int GlobalState::current_algorithm = CARMEN_BEHAVIOR_SELECTOR_RRT;
 int GlobalState::behavior_selector_state = BEHAVIOR_SELECTOR_FOLLOWING_LANE;

@@ -609,7 +609,7 @@ TrajectoryLookupTable::predict_next_pose(Robot_State &robot_state, Command &requ
 			GlobalState::robot_config.understeer_coeficient,
 			GlobalState::robot_config.distance_between_front_and_rear_axles);
 
-	double max_curvature_change = GlobalState::robot_config.desired_steering_command_rate * delta_t;
+	double max_curvature_change = GlobalState::robot_config.maximum_steering_command_rate * delta_t;
 
 	// Euler method
 	for (int i = 0; i < n; i++)

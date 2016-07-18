@@ -295,6 +295,8 @@ src/stereo_velodyne/stereo_velodyne
 src/subdir_module_example/teste_subdir
 src/tracker/tracker
 src/tracker/tracker_main
+src/tracker_opentld/tracker_opentld
+src/tracker_opentld/tracker_test
 src/traffic_light/log_generate_images
 src/traffic_light/mapping_traffic_light
 src/traffic_light/traffic_light
@@ -303,6 +305,7 @@ src/ultrasonic/ultrasonic
 src/ultrasonic/ultrasonic_viewer
 src/v_disparity/v_disparity_view
 src/velodyne/velodyne
+../sharedlib/libvisual_tracker_interface.so
 src/viewer_3D/viewer_3D
 src/viewer_3D/xsens_viewer
 src/visual_odometry_package2/visual_odometry2
@@ -385,12 +388,14 @@ src/traffic_light/libtraffic_light_interface.so.1
 src/ultrasonic/libultrasonic_filter_interface.so.1
 src/velodyne/libvelodyne_interface.so.1
 src/visual_odometry_package2/libvisual_odometry_interface.so.1
+src/visual_tracker/libvisual_tracker_interface.so.1
 src/xsens/libxsens_interface.so.1
 src/xsens_MTi-G/libxsens_mtig_interface.so.1
 src/model_predictive_planner/gnuplot_path.txt
 src/model_predictive_planner/problems.txt
 sharedlib/libsickldmrs/libsickldmrs.so.1
 bin/laser_ldmrs
+sharedlib/libsickldmrs/sickldmrstest
 sharedlib/libsickldmrs/sickldmrstest
 src/laser-ldmrs/laser_ldmrs
 src/moving_objects/Makefile.depend

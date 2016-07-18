@@ -31,7 +31,7 @@ using namespace std;
 class GlobalState
 {
 public:
-	static Robot_Config robot_config;
+	static carmen_robot_ackerman_config_t robot_config;
 	static double param_max_vel;
 
 	static double max_phi_velocity;		// Equivalente a rodar o volante todo para um lado em 1 segundo.
@@ -67,7 +67,8 @@ public:
 	static int	  cheat; // if true the algorithm will use the true pose, otherwise will use the localize pose
 
 	static double obstacle_threshold;
-
+	static bool ford_escape_online;
+	static carmen_ford_escape_status_message ford_escape_status;
 	static int current_algorithm;//which algorithm is running, define at carmen_navigator_ackerman_algorithm_t
 	static int behavior_selector_state;
 

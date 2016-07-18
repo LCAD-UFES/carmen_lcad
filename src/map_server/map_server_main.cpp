@@ -527,7 +527,7 @@ rddf_message_handler(carmen_rddf_road_profile_message *message)
 void
 astar_goal_list_message_handler(carmen_navigator_ackerman_astar_goal_list_message *msg)
 {
-	distance_to_update_lane_map = 1.0;
+	distance_to_update_lane_map = 0.0;
 	carmen_rddf_road_profile_message message;
 	message.number_of_poses = msg->size;
 	message.poses = msg->goal_list;
@@ -700,8 +700,8 @@ register_handlers()
 
 	if(lanemap_incoming_message_type == 0)
 		carmen_rddf_subscribe_road_profile_message(NULL, (carmen_handler_t) rddf_message_handler, CARMEN_SUBSCRIBE_LATEST);
-//	else if (lanemap_incoming_message_type == 1)
-//		carmen_navigator_ackerman_subscribe_astar_goal_list_message(NULL, (carmen_handler_t) astar_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	else if (lanemap_incoming_message_type == 1)
+		carmen_navigator_ackerman_subscribe_astar_goal_list_message(NULL, (carmen_handler_t) astar_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	else if (lanemap_incoming_message_type == 2)
 		carmen_navigator_spline_subscribe_path_message(NULL , (carmen_handler_t) navigator_spline_path_handler, CARMEN_SUBSCRIBE_LATEST);
 

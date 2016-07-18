@@ -810,11 +810,10 @@ create_gui(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-
 	Error error;
 	BusManager busMgr;
-	unsigned int numCameras;
 
+	unsigned int numCameras;
 	signal(SIGINT, shutdown_module);
 
 	carmen_ipc_initialize(argc, argv);
@@ -823,9 +822,7 @@ int main(int argc, char **argv)
 	read_parameters(argc, argv);
 
 	carmen_bumblebee_basic_define_messages(camera_id);
-
 	initialize_bumblebee_message(bumblebee_image_width, bumblebee_image_height, 3, 1);
-
 	get_triclops_context_from_camera( &triclops );
 
 	error = busMgr.GetNumOfCameras(&numCameras);
@@ -861,6 +858,14 @@ int main(int argc, char **argv)
 				guid.value[3] = 3416170437;
 				break;
 			}
+			case 2:
+			{
+				guid.value[0] = 974707561;
+				guid.value[1] = 985729633;
+				guid.value[2] = 775922204;
+				guid.value[3] = 290697668;
+				break;
+			}
 			case 8:
 			{
 				guid.value[0] = 601418508;
@@ -874,40 +879,17 @@ int main(int argc, char **argv)
 				/**
 				 * Os guid acima sao codigos identificadores unicos para cada camera e sao DIFERENTES
 				 * dos codigos cadastrados previamente (veja funcao CameraContextByGuid). Para obter este
-				 * guid, ligue a camera em um computador SOZINHA (sem outras cameras) e descomente as instrucoes
-				 * abaixo. O numero "0" na funcao GetCameraFromIndex eh o numero da camera atribuido pelo sistema
-				 * operacional. Se mais de uma camera estiver ligada no computador, cada camera recebera um numero
-				 * em ordem crescente (a primeira camera recebe o numero 0, a segunda o numero 1, e assim por diante).
+				 * guid, ligue a camera em um computador SOZINHA (sem outras cameras) e execute o comando
+				 * ./util_list_camera_ids no bin do carmen (pode ser necessario compilar o modulo utilities).
+				 * O numero exibido na tela deve ser adicionado na lista acima junto com o numero da camera.
 				 */
-				// busMgr.GetCameraFromIndex(0, &guid);
-				// printf("0: %u %u %u %u\n", guid.value[0], guid.value[1], guid.value[2], guid.value[3]);
-
-				printf("ERROR: Camera id not supported. Please, contact Alberto Ferreira De Souza for more information\n");
+				printf("ERROR: Camera id not supported. Please, contact Alberto Ferreira De Souza (alberto@lcad.inf.ufes.br) for more information\n");
 				printf("See comment in bumblebee_basic_flycap_main.cpp line 875\n");
 				exit(-1);
 			}
 		}
 
 		RunSingleCamera(guid);
-
-// CODIGO APENAS PARA EXPLICACAO DOS ERROS PARA OS COLEGAS. APAGAR A PARTIR DE 30/07/2016.
-//		for (unsigned int i = 0; i < numCameras; i++)
-//		{
-//			PGRGuid guid;
-//			error = busMgr.GetCameraFromIndex(i, &guid);
-//
-//			error = busMgr.GetCameraFromIndex(0, &guid);
-//			printf("0: %u %u %u %u\n", guid.value[0], guid.value[1], guid.value[2], guid.value[3]);
-//
-//			error = busMgr.GetCameraFromIndex(1, &guid);
-//			printf("1: %u %u %u %u\n", guid.value[0], guid.value[1], guid.value[2], guid.value[3]);
-//
-//			error = busMgr.GetCameraFromIndex(2, &guid);
-//			printf("2: %u %u %u %u\n", guid.value[0], guid.value[1], guid.value[2], guid.value[3]);
-//
-//			handle_error(error);
-//		}
-
 } // omp section
 	}
 

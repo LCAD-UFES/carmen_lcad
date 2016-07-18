@@ -143,6 +143,7 @@ set_wrench_efforts_desired_v_and_curvature()
 	{
 		v = ford_escape_hybrid_config->current_motion_command_vector[i].v;
 		phi = (1.0 + v / (6.94 / 0.3)) * ford_escape_hybrid_config->current_motion_command_vector[i].phi;
+//		phi = ford_escape_hybrid_config->current_motion_command_vector[i].phi;
 	}
 	else
 	{
@@ -150,6 +151,7 @@ set_wrench_efforts_desired_v_and_curvature()
 		phi = 0.0;
 	}
 	g_phi = phi / (1.0 + v / (6.94 / 0.3));
+//	g_phi = phi;
 
 	// The function carmen_ford_escape_hybrid_steering_PID_controler() uses g_atan_desired_curvature to compute the g_steering_command that is sent to the car.
 	// This function is called when new info about the current measured velocity (g_XGV_velocity) arrives from the car via Jaus messages handled

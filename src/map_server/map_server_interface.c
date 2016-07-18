@@ -430,7 +430,8 @@ carmen_map_server_localize_map_message_to_localize_map(carmen_map_server_localiz
 		//localize_map->y_offset = NULL;
 	}
 
-	if (localize_map->complete_distance == NULL || localize_map->carmen_map.complete_map == NULL)
+//	if (localize_map->complete_distance == NULL || localize_map->carmen_map.complete_map == NULL)
+	if (localize_map->carmen_map.complete_map == NULL)
 	{
 //		localize_map->carmen_variance_remission_map.complete_map = (double*) malloc(sizeof(double) * message->size);
 		localize_map->carmen_mean_remission_map.complete_map = (double*) malloc(sizeof(double) * message->size);

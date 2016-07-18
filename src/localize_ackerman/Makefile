@@ -9,8 +9,8 @@ LINK = g++
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/gl_plotter 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_plotter
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src 
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -fopenmp
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -fopenmp
 
 
 LFLAGS += -lgrid_mapping -lgrid_mapping_interface -lglobal -lparam_interface -lmap_io -lmap_util -llaser_interface \

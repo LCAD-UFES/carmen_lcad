@@ -143,7 +143,7 @@ add_points_to_goal_list_interval(carmen_ackerman_path_point_t p1, carmen_ackerma
 	{
 		new_point.x = p1.x + i * delta_x;
 		new_point.y = p1.y + i * delta_y;
-		new_point.theta = p1.theta + i * delta_theta;
+		new_point.theta = carmen_normalize_theta(p1.theta + i * delta_theta);
 
 		detailed_lane.push_back(new_point);
 	}
@@ -273,11 +273,14 @@ filter_path(vector<carmen_ackerman_path_point_t> &path)
 	for (i = 1; i < path.size(); i += 2)
 		path.erase(path.begin() + i);
 
-//	for (i = 0; i < path.size(); i += 2)
-//		if ((i + 1) < path.size())
-//			path[i].time += path[i + 1].time;
-//	for (i = 1; i < path.size(); i += 2)
-//		path.erase(path.begin() + i);
+	if (GlobalState::ford_escape_online)
+	{
+		for (i = 0; i < path.size(); i += 2)
+			if ((i + 1) < path.size())
+				path[i].time += path[i + 1].time;
+		for (i = 1; i < path.size(); i += 2)
+			path.erase(path.begin() + i);
+	}
 }
 
 
@@ -339,19 +342,13 @@ bool
 path_has_collision(vector<carmen_ackerman_path_point_t> path)
 {
 	carmen_point_t pose;
-	carmen_robot_ackerman_config_t car_config;
-
-	car_config.distance_between_rear_car_and_rear_wheels =
-			GlobalState::robot_config.distance_between_rear_car_and_rear_wheels;
-	car_config.length = GlobalState::robot_config.length;
-	car_config.width = GlobalState::robot_config.width;
 
 	for (unsigned int j = 0; j < path.size(); j++)
 	{
 		pose.x = path[j].x;
 		pose.y = path[j].y;
 		pose.theta = path[j].theta;
-		if (obstacle_avoider_pose_hit_obstacle(pose, &GlobalState::cost_map, &car_config))
+		if (obstacle_avoider_pose_hit_obstacle(pose, &GlobalState::cost_map, &GlobalState::robot_config))
 		{
 			printf("---------- HIT OBSTACLE!!!!\n");
 			return (true);
@@ -504,6 +501,36 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 }
 
 
+bool
+goal_pose_vector_too_different(Pose goal_pose, Pose localizer_pose)
+{
+	static Pose g_last_goal_pose;
+	bool too_different = false;
+
+	if (g_last_goal_pose.x == 0.0 && g_last_goal_pose.y == 0.0)
+	{
+		g_last_goal_pose = goal_pose;
+		return (true);
+	}
+
+	double distance_between_goals = g_last_goal_pose.distance(goal_pose);
+	double distance_to_goal = localizer_pose.distance(goal_pose);
+	if ((distance_between_goals / distance_to_goal) > 0.2) // 20%
+		too_different = true;
+
+	double angle_diff = g_last_goal_pose.get_theta_diff(goal_pose);
+	angle_diff = rad2deg(angle_diff);
+	if (angle_diff > 10.0)
+		too_different = true;
+
+	g_last_goal_pose = goal_pose;
+	if (too_different)
+		printf("TOO DIFFERENT!!!\n");
+
+	return (too_different);
+}
+
+
 void
 compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseVector, double target_v,
 		Pose *localizer_pose, vector<vector<carmen_ackerman_path_point_t> > &paths,
@@ -529,19 +556,6 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		lane_in_local_pose.clear();
 
 	build_detailed_lane(&lane_in_local_pose, detailed_lane);
-	//
-	//	//Metric evaluation
-	//	if(detailed_lane.size() > 0){
-	//
-	//		double distance_metric = sqrt(pow(detailed_lane.at(0).x, 2) + pow(detailed_lane.at(0).y, 2));
-	//		double x_rddf = localizer_pose->x + detailed_lane.at(0).x * cos(localizer_pose->theta) - detailed_lane.at(0).y * sin(localizer_pose->theta);
-	//		double y_rddf = localizer_pose->y + detailed_lane.at(0).x * sin(localizer_pose->theta) + detailed_lane.at(0).y * cos(localizer_pose->theta);
-	//		double theta_rddf = detailed_lane.at(0).theta + localizer_pose->theta;
-	//
-	//		fprintf(stderr, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf \n", localizer_pose->x, localizer_pose->y, localizer_pose->theta, lastOdometryVector[0].v, lastOdometryVector[0].phi,
-	//				x_rddf, y_rddf, theta_rddf, detailed_lane.at(0).v, detailed_lane.at(0).phi, distance_metric, goal_list_message->timestamp);
-	//	}
-	//	fprintf(stderr, "%lf \n", distance_metric);
 
 	otcps.resize(paths.size());
 	bool has_valid_path = false;
@@ -555,7 +569,13 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		{
 			bool use_lane;
 			if (j == 0)
+			{
 				use_lane = true;
+				if (goal_pose_vector_too_different(goalPoseVector.at(0), *localizer_pose))
+				{
+					previous_good_tcp.valid = false;
+				}
+			}
 			else
 			{
 				use_lane = false;
@@ -564,7 +584,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 
 			TrajectoryLookupTable::TrajectoryDimensions td = get_trajectory_dimensions_from_robot_state(localizer_pose, lastOdometryVector[i], &goalPoseVector[j]);
 			TrajectoryLookupTable::TrajectoryControlParameters tcp;
-//			previous_good_tcp.valid = false;
+			// previous_good_tcp.valid = false;
 			if (!get_tcp_from_td(tcp, previous_good_tcp, td))
 				continue;
 
@@ -610,6 +630,12 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	{
 		previous_good_tcp = best_otcp;
 		last_timestamp = carmen_get_time();
+
+		// Mostra a detailed_lane como um plano nas interfaces
+//		move_path_to_current_robot_pose(detailed_lane, localizer_pose);
+//		filter_path(detailed_lane);
+//		filter_path(detailed_lane);
+//		paths.push_back(detailed_lane);
 	}
 	else if ((carmen_get_time() - last_timestamp) > 0.5)
 		previous_good_tcp.valid = false;
@@ -625,7 +651,7 @@ ModelPredictive::compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Com
 	vector<Command> lastOdometryVector;
 	vector<Pose> goalPoseVector;
 
-//	double i_time = carmen_get_time();
+	double i_time = carmen_get_time();
 
 	vector<int> magicSignals = {0, 1, -1, 2, -2, 3, -3,  4, -4,  5, -5};
 	// @@@ Tranformar os dois loops abaixo em uma funcao -> compute_alternative_path_options()
@@ -650,8 +676,8 @@ ModelPredictive::compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Com
 
 	compute_paths(lastOdometryVector, goalPoseVector, target_v, localizer_pose, paths, goal_list_message);
 
-//	printf("%ld plano(s), tp = %lf\n", paths.size(), carmen_get_time() - i_time);
-//	fflush(stdout);
+	printf("%ld plano(s), tp = %lf\n", paths.size(), carmen_get_time() - i_time);
+	fflush(stdout);
 
 	return (paths);
 }

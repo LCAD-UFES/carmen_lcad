@@ -6,7 +6,7 @@ MODULE_COMMENT = Bumblebee2 Basic Camera Module
 
 LINK = g++
 
-CXXFLAGS +=  -fopenmp
+CXXFLAGS += -fopenmp
 CFLAGS +=  `pkg-config --cflags opencv` -fopenmp
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libbee/include/ \
@@ -40,14 +40,14 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src \
 	
 
 SOURCES = bumblebee_basic_main.cpp bumblebee_basic_interface.c \
- bumblebee_basic_simulator.c bumblebee_basic_flycap_main.cpp bumblebee_basic_view.cpp
+ bumblebee_basic_simulator.c bumblebee_basic_flycap_main.cpp bumblebee_basic_view.cpp 
 PUBLIC_INCLUDES = bumblebee_basic_messages.h bumblebee_basic_interface.h
 PUBLIC_LIBRARIES = libbumblebee_basic_interface.a 
 PUBLIC_BINARIES = bumblebee_basic bumblebee_basic_simulator bumblebee_basic_flycap
 TARGETS = libbee libbumblebee_basic_interface.a bumblebee_basic bumblebee_basic_simulator bumblebee_basic_flycap
 PUBLIC_LIBRARIES_SO = libbumblebee_basic_interface.so
-PUBLIC_BINARIES += bumblebee_basic_view
-TARGETS += bumblebee_basic_view
+PUBLIC_BINARIES += bumblebee_basic_view 
+TARGETS += bumblebee_basic_view 
 
 libbee:
 	$(MAKE) build -C $(CARMEN_HOME)/sharedlib/libbee
@@ -68,6 +68,5 @@ clean: clean_libbee
 
 clean_libbee:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libbee
-# rules
 
 include ../Makefile.rules
