@@ -341,6 +341,28 @@ write_tdd_to_file(FILE *problems, TrajectoryLookupTable::TrajectoryDiscreteDimen
 bool
 path_has_collision(vector<carmen_ackerman_path_point_t> path)
 {
+	double proximity_to_obstacles_for_path = 0.0;
+	double circle_radius = (GlobalState::robot_config.width + 0.4) / 2.0; // metade da largura do carro + um espacco de guarda
+
+	for (unsigned int i = 0; i < path.size(); i += 1)
+	{
+		proximity_to_obstacles_for_path += compute_distance_to_closest_obstacles(path[i], circle_radius,
+				&GlobalState::robot_config, GlobalState::localizer_pose, GlobalState::distance_map);
+	}
+
+	if (proximity_to_obstacles_for_path > 0.0)
+	{
+		printf("---------- PATH HIT OBSTACLE!!!!\n");
+		return (true);
+	}
+	else
+		return (false);
+}
+
+
+bool
+path_has_collision_old(vector<carmen_ackerman_path_point_t> path)
+{
 	carmen_point_t pose;
 
 	for (unsigned int j = 0; j < path.size(); j++)
@@ -350,7 +372,7 @@ path_has_collision(vector<carmen_ackerman_path_point_t> path)
 		pose.theta = path[j].theta;
 		if (obstacle_avoider_pose_hit_obstacle(pose, &GlobalState::cost_map, &GlobalState::robot_config))
 		{
-			printf("---------- HIT OBSTACLE!!!!\n");
+			printf("---------- PATH HIT OBSTACLE!!!!\n");
 			return (true);
 		}
 	}
@@ -484,16 +506,16 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 	path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, g_car_latency_buffer_mp, false);
 	if (path_has_loop(td.dist, otcp.sf))
 	{
-		printf(KRED "+++++++++++++ Path had loop...\n" RESET);
+		printf(KRED "+++++++++++++ Path has loop...\n" RESET);
 		return (false);
 	}
+
+	if (path_has_collision(path))
+		return (false);
 
 	move_path_to_current_robot_pose(path, localizer_pose);
 	//	apply_system_delay(path);
 	//	apply_system_latencies(path);
-
-	if (path_has_collision(path))
-		return (false);
 
 	filter_path(path);
 

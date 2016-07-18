@@ -43,8 +43,6 @@ public:
 	static Pose *localizer_pose;
 	static Pose *last_plan_pose;
 	static double localizer_pose_timestamp;
-	static double rrt_planner_timestamp;
-	static double last_rrt_path_message_timestamp;
 
 	static Command last_odometry;
 
@@ -56,7 +54,7 @@ public:
 	static bool last_path_received_is_empty;
 
 	static carmen_map_t cost_map;
-	static carmen_grid_mapping_distance_map_message *localize_map;
+	static carmen_grid_mapping_distance_map_message *distance_map;
 	static bgi::rtree< occupied_cell, bgi::quadratic<16> > obstacles_rtree;
 	static bool cost_map_initialized;
 	static KDTree2D obstacles_kdtree;
