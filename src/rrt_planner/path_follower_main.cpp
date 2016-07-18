@@ -217,6 +217,11 @@ rrt_path_message_handler(rrt_path_message *msg)
 	list<RRT_Path_Edge> path;
 	RRT_Path_Edge edge;
 
+//	double tm_to;
+//	tm_to = carmen_get_time();
+//
+//	printf("diff: %lf\n", tm_to - msg->tm_from);
+
 	if (msg->size > 0)
 	{
 		GlobalState::last_rrt_path_message_timestamp = msg->timestamp;
