@@ -491,28 +491,6 @@ get_alive_sensors(int argc, char **argv)
 			{(char*)"mapper", (char*)"stereo_velodyne8_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[8].unexpeted_delta_range_sigma, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_velodyne9_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[9].unexpeted_delta_range_sigma, 0, NULL},
 
-			{(char*)"mapper", (char*)"velodyne_lambda_short_min", CARMEN_PARAM_DOUBLE, &sensors_params[0].lambda_short_min, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne1_lambda_short_min", CARMEN_PARAM_DOUBLE, &sensors_params[1].lambda_short_min, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne2_lambda_short_min", CARMEN_PARAM_DOUBLE, &sensors_params[2].lambda_short_min, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne3_lambda_short_min", CARMEN_PARAM_DOUBLE, &sensors_params[3].lambda_short_min, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne4_lambda_short_min", CARMEN_PARAM_DOUBLE, &sensors_params[4].lambda_short_min, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne5_lambda_short_min", CARMEN_PARAM_DOUBLE, &sensors_params[5].lambda_short_min, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne6_lambda_short_min", CARMEN_PARAM_DOUBLE, &sensors_params[6].lambda_short_min, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne7_lambda_short_min", CARMEN_PARAM_DOUBLE, &sensors_params[7].lambda_short_min, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne8_lambda_short_min", CARMEN_PARAM_DOUBLE, &sensors_params[8].lambda_short_min, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne9_lambda_short_min", CARMEN_PARAM_DOUBLE, &sensors_params[9].lambda_short_min, 0, NULL},
-
-			{(char*)"mapper", (char*)"velodyne_lambda_short_max", CARMEN_PARAM_DOUBLE, &sensors_params[0].lambda_short_max, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne1_lambda_short_max", CARMEN_PARAM_DOUBLE, &sensors_params[1].lambda_short_max, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne2_lambda_short_max", CARMEN_PARAM_DOUBLE, &sensors_params[2].lambda_short_max, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne3_lambda_short_max", CARMEN_PARAM_DOUBLE, &sensors_params[3].lambda_short_max, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne4_lambda_short_max", CARMEN_PARAM_DOUBLE, &sensors_params[4].lambda_short_max, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne5_lambda_short_max", CARMEN_PARAM_DOUBLE, &sensors_params[5].lambda_short_max, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne6_lambda_short_max", CARMEN_PARAM_DOUBLE, &sensors_params[6].lambda_short_max, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne7_lambda_short_max", CARMEN_PARAM_DOUBLE, &sensors_params[7].lambda_short_max, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne8_lambda_short_max", CARMEN_PARAM_DOUBLE, &sensors_params[8].lambda_short_max, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne9_lambda_short_max", CARMEN_PARAM_DOUBLE, &sensors_params[9].lambda_short_max, 0, NULL},
-
 			{(char*)"mapper", (char*)"unsafe_height_above_ground", CARMEN_PARAM_DOUBLE, &sensors_params[0].unsafe_height_above_ground, 0, NULL},
 
 			{(char*)"mapper",  (char*)"velodyne_range_max_factor", CARMEN_PARAM_DOUBLE, &sensors_params[0].range_max_factor, 0, NULL}
@@ -777,9 +755,6 @@ read_parameters(int argc, char **argv,
 			{(char *)"grid_mapping", (char *)"map_locc", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.log_odds.log_odds_occ, 0, NULL},
 			{(char *)"grid_mapping", (char *)"map_lfree", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.log_odds.log_odds_free, 0, NULL},
 			{(char *)"grid_mapping", (char *)"map_l0", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.log_odds.log_odds_l0, 0, NULL},
-			{(char *)"grid_mapping", (char *)"map_log_odds_max", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.lambda_short_min, 0, NULL},
-			{(char *)"grid_mapping", (char *)"map_log_odds_min", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.lambda_short_max, 0, NULL},
-
 
 			{(char *) "ultrasonic_sensor_r1", (char *) "x", 	CARMEN_PARAM_DOUBLE, &(ultrasonic_sensor_r1_g.position.x), 0, NULL},
 			{(char *) "ultrasonic_sensor_r1", (char *) "y", 	CARMEN_PARAM_DOUBLE, &(ultrasonic_sensor_r1_g.position.y), 0, NULL},

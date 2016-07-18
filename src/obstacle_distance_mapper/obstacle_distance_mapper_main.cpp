@@ -188,15 +188,14 @@ carmen_prob_models_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t 
 		   --- Handlers ---
 **********************************************************/
 
-void carmen_grid_mapping_map_handler(carmen_grid_mapping_message*  msg)
+void
+carmen_grid_mapping_map_handler(carmen_grid_mapping_message *msg)
 {
 	carmen_compact_map_t compacted_cost_map;
 
-	double timestamp = msg->timestamp;
-
 	carmen_grid_mapping_copy_map_from_message(&map, msg);
 
-	mapper_publish_distance_map(timestamp, obstacle_probability_threshold);
+	mapper_publish_distance_map(msg->timestamp, obstacle_probability_threshold);
 	carmen_prob_models_build_obstacle_cost_map(&cost_map, &map, &distance_map, obstacle_cost_distance);
 	// Old carmen_prob_models_build_obstacle_cost_map below
 	// carmen_prob_models_build_obstacle_cost_map(&cost_map, &map,	map.config.resolution, obstacle_cost_distance, obstacle_probability_threshold);
@@ -204,10 +203,15 @@ void carmen_grid_mapping_map_handler(carmen_grid_mapping_message*  msg)
 
 	if (compacted_cost_map.number_of_known_points_on_the_map > 0)
 	{
-		carmen_map_server_publish_compact_cost_map_message(&compacted_cost_map,	timestamp);
+		carmen_map_server_publish_compact_cost_map_message(&compacted_cost_map,	msg->timestamp);
 		carmen_prob_models_clear_carmen_map_using_compact_map(&cost_map, &compacted_cost_map, 0.0);
 		carmen_prob_models_free_compact_map(&compacted_cost_map);
 	}
+
+//	static double last_timestamp = 0.0;
+//	double timestamp = carmen_get_time();
+//	printf("delta_t %lf\n", timestamp - last_timestamp);
+//	last_timestamp = timestamp;
 }
 
 
@@ -224,9 +228,8 @@ shutdown_module(int signo)
 }
 
 
-
-static int read_parameters
-(int argc, char **argv)
+static int
+read_parameters(int argc, char **argv)
 {
 	int num_items;
 
@@ -264,7 +267,7 @@ main(int argc, char **argv)
   /* Subscribe to mapper messages */
   carmen_grid_mapping_subscribe_message(NULL,
   			       (carmen_handler_t) carmen_grid_mapping_map_handler,
-  			       CARMEN_SUBSCRIBE_ALL);
+  			       CARMEN_SUBSCRIBE_LATEST);
 
   /* Loop forever waiting for messages */
   carmen_ipc_dispatch();

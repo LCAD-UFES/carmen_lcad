@@ -1024,7 +1024,9 @@ carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data
 
 			if (sensor_data->obstacle_height[thread_id][i] > sensor_params->unsafe_height_above_ground)
 				if (!sensor_data->maxed[thread_id][i] && !sensor_data->ray_hit_the_robot[thread_id][i] && !(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][i], highest_sensor, safe_range_above_sensors)))
+				{
 					sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] = sensor_params->log_odds.log_odds_occ;
+				}
 		}
 		if ((sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] > sensor_params->log_odds.log_odds_l0) && (min_ray_size > sensor_data->ray_size_in_the_floor[thread_id][i]))
 		{
@@ -1920,8 +1922,6 @@ carmen_update_cells_in_the_sensor_perceptual_field(carmen_map_t *map, carmen_poi
 	laser_params.l0 = sensor_params->log_odds.log_odds_l0;
 	laser_params.lfree = sensor_params->log_odds.log_odds_free;
 	laser_params.locc = sensor_params->log_odds.log_odds_occ;
-	laser_params.lambda_short_min = sensor_params->lambda_short_min;
-	laser_params.lambda_short_max = sensor_params->lambda_short_max;
 
 	carmen_update_cells_in_the_laser_perceptual_field(map, xt, zt, &laser_params);
 }

@@ -36,7 +36,6 @@ carmen_rddf_road_profile_message goal_list_message;
 
 static int update_lookup_table = 0;
 
-static double localize_time_stamp = 0.0;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
@@ -53,7 +52,7 @@ publish_model_predictive_rrt_path_message(list<RRT_Path_Edge> path)
 	list<RRT_Path_Edge>::iterator it;
 
 	msg.host  = carmen_get_host();
-	msg.timestamp = GlobalState::localizer_pose_timestamp;//GlobalState::rrt_planner_timestamp;
+	msg.timestamp = GlobalState::localizer_pose_timestamp;
 	msg.last_goal = GlobalState::last_goal ? 1 : 0;
 
 	if (GlobalState::goal_pose)
@@ -183,7 +182,7 @@ publish_navigator_ackerman_plan_message(carmen_ackerman_traj_point_t *path, int 
 	carmen_navigator_ackerman_plan_message msg;
 
 	msg.host = carmen_get_host();
-	msg.timestamp = localize_time_stamp;//carmen_get_time();
+	msg.timestamp = GlobalState::localizer_pose_timestamp;
 	msg.path_length = path_size;
 	msg.path = path;
 
@@ -235,7 +234,7 @@ publish_navigator_ackerman_status_message()
 	msg.robot.theta = GlobalState::localizer_pose->theta;
 	msg.robot.v		= GlobalState::last_odometry.v;
 	msg.robot.phi	= GlobalState::last_odometry.phi;
-	msg.timestamp	= localize_time_stamp;//carmen_get_time();
+	msg.timestamp	= GlobalState::localizer_pose_timestamp;
 
 	err = IPC_publishData(CARMEN_NAVIGATOR_ACKERMAN_STATUS_NAME, &msg);
 
@@ -566,8 +565,6 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	Pose pose = Util::convert_to_pose(msg->globalpos);
 	GlobalState::set_robot_pose(pose, msg->timestamp);
 
-	localize_time_stamp = msg->timestamp;
-
 	build_and_follow_path();
 }
 
@@ -579,8 +576,6 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 
 	Pose pose = Util::convert_to_pose(msg->truepose);
 	GlobalState::set_robot_pose(pose, msg->timestamp);
-
-	localize_time_stamp = msg->timestamp;
 
 	build_and_follow_path();
 }
@@ -690,7 +685,7 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 static void
 carmen_grid_mapping_distance_map_message_handler(carmen_grid_mapping_distance_map_message *message)
 {
-	GlobalState::localize_map = message;
+	GlobalState::distance_map = message;
 }
 
 
