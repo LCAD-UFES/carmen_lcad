@@ -12,7 +12,7 @@ PACKAGES = ipc global param_daemon proccontrol robot_ackerman_gui laser-new  	\
 	   rrt_planner subdir_module_example velodyne log_filter rddf 		\
 	   download_map parking_assistant navigator_astar 			\
 	   tracker navigator_spline						\
-	   navigator_gui navigator_gui2 mapper map_server car_panel_gui		\
+	   navigator_gui navigator_gui2 mapper obstacle_distance_mapper map_server car_panel_gui		\
 	   web_cam v_disparity stereo_velodyne motion_planner behavior_selector \
 	   base_ackerman driving_playback ford_escape_hybrid			\
 	   path_interpolator_planner kinect ultrasonic traffic_light 		\

@@ -9,10 +9,11 @@
 
 static int waiting_cicles = 0;
 
-/*********************************************************
-		   --- Publishers ---
-**********************************************************/
-
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Publishers                                                                                //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
 void 
 publish_upkeymessage(carmen_skeleton_module_sensor_keymessage_message* sensor_message)
 {
@@ -41,11 +42,15 @@ publish_upkeymessage(carmen_skeleton_module_sensor_keymessage_message* sensor_me
   err = IPC_publishData(CARMEN_SKELETON_MODULE_FILTER_UPKEYMESSAGE_NAME, &filter_message);
   carmen_test_ipc_exit(err, "Could not publish", CARMEN_SKELETON_MODULE_FILTER_UPKEYMESSAGE_FMT);
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-/*********************************************************
-		   --- Handlers ---
-**********************************************************/
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Handlers                                                                                  //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 void 
 keymessage_handler(carmen_skeleton_module_sensor_keymessage_message *message)
