@@ -185,6 +185,7 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 	double dt = 1.0 / (1808.0 * 12.0);
 	carmen_pose_3D_t robot_interpolated_position = sensor_data->robot_pose[point_cloud_index];
 	int i = 0;
+
 	// Ray-trace the grid
 	#pragma omp for
 	for (int j = 0; j < N; j += 1)
@@ -216,6 +217,7 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 		//build_front_laser_message_from_velodyne_point_cloud (sensor_params, sensor_data, v_zt, i);
 		//i = i +  sensor_params->vertical_resolution;
 	}
+	//printf("\n###############################################################\n");
 }
 
 
