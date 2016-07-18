@@ -339,19 +339,13 @@ bool
 path_has_collision(vector<carmen_ackerman_path_point_t> path)
 {
 	carmen_point_t pose;
-	carmen_robot_ackerman_config_t car_config;
-
-	car_config.distance_between_rear_car_and_rear_wheels =
-			GlobalState::robot_config.distance_between_rear_car_and_rear_wheels;
-	car_config.length = GlobalState::robot_config.length;
-	car_config.width = GlobalState::robot_config.width;
 
 	for (unsigned int j = 0; j < path.size(); j++)
 	{
 		pose.x = path[j].x;
 		pose.y = path[j].y;
 		pose.theta = path[j].theta;
-		if (obstacle_avoider_pose_hit_obstacle(pose, &GlobalState::cost_map, &car_config))
+		if (obstacle_avoider_pose_hit_obstacle(pose, &GlobalState::cost_map, &GlobalState::robot_config))
 		{
 			printf("---------- HIT OBSTACLE!!!!\n");
 			return (true);

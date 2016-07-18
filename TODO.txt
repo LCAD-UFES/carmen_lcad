@@ -1,4 +1,6 @@
 16/07/2016
+- No curso em https://sites.google.com/a/sheffield.ac.uk/video-lectures-on-modelling-analysis-and-control/home/model-predictive-control#INTRODUCTION
+	- Vi ate o 9
 - Tem que mudar o obstacle avoider (e model predictive planner?) para usar apenas o mapa de distancia
 - Tem que mudar o model predictive planner para ele:
 	- Se alterar de acordo com o caso de estar rodando com a IARA ou simulador (latencia)

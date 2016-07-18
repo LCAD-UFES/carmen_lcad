@@ -112,6 +112,60 @@ publish_map(double timestamp)
 
 
 static void
+carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *globalpos_message)
+{
+	double distance_to_annotation;
+
+	if (visual_odometry_is_global_pos)
+		interpolator.AddMessageToInterpolationList(globalpos_message);
+	else
+		mapper_set_robot_pose_into_the_map(globalpos_message, update_cells_below_car);
+
+	// Map annotations handling
+	distance_to_annotation = DIST2D(last_rddf_annotation_message.annotation_point, globalpos_history[last_globalpos].pose.position);
+	if (((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
+		 (last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)) &&
+		(distance_to_annotation < 35.0))
+		robot_near_bump_or_barrier = 1;
+	else
+		robot_near_bump_or_barrier = 0;
+
+	if (ok_to_publish)
+	{
+		int aux = -1;
+		for (int i = 0; i < NUM_VELODYNE_POINT_CLOUDS; i++)
+		{
+			if (sensors_data[0].points_timestamp[i] == globalpos_message->timestamp)
+			{
+				aux = sensors_data[0].point_cloud_index;
+				sensors_data[0].point_cloud_index = i;
+				run_mapper(&sensors_params[0], &sensors_data[0], r_matrix_car_to_global);
+				publish_map(globalpos_message->timestamp);
+				sensors_data[0].point_cloud_index = aux;
+				break;
+			}
+		}
+	}
+
+//	static double previous_timestamp = 0.0;
+//	double t = carmen_get_time();
+//	printf("%lf\n", t - previous_timestamp);
+//	previous_timestamp = t;
+}
+
+
+static void
+true_pos_message_handler(carmen_simulator_ackerman_truepos_message *pose)
+{
+	if (offline_map_available)
+	{
+		mapper_merge_online_map_with_offline_map(&offline_map);
+		publish_map(pose->timestamp);
+	}
+}
+
+
+static void
 velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
 	mapper_velodyne_partial_scan(velodyne_message);
@@ -178,60 +232,6 @@ static void
 velodyne_variable_scan_message_handler9(carmen_velodyne_variable_scan_message *message)
 {
 	mapper_velodyne_variable_scan(9, message);
-}
-
-
-static void
-carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *globalpos_message)
-{
-	double distance_to_annotation;
-
-	if (visual_odometry_is_global_pos)
-		interpolator.AddMessageToInterpolationList(globalpos_message);
-	else
-		mapper_set_robot_pose_into_the_map(globalpos_message, update_cells_below_car);
-
-	// Map annotations handling
-	distance_to_annotation = DIST2D(last_rddf_annotation_message.annotation_point, globalpos_history[last_globalpos].pose.position);
-	if (((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
-		 (last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)) &&
-		(distance_to_annotation < 35.0))
-		robot_near_bump_or_barrier = 1;
-	else
-		robot_near_bump_or_barrier = 0;
-
-	if (ok_to_publish)
-	{
-		int aux = -1;
-		for (int i = 0; i < NUM_VELODYNE_POINT_CLOUDS; i++)
-		{
-			if (sensors_data[0].points_timestamp[i] == globalpos_message->timestamp)
-			{
-				aux = sensors_data[0].point_cloud_index;
-				sensors_data[0].point_cloud_index = i;
-				run_mapper(&sensors_params[0], &sensors_data[0], r_matrix_car_to_global);
-				publish_map(globalpos_message->timestamp);
-				sensors_data[0].point_cloud_index = aux;
-				break;
-			}
-		}
-	}
-
-//	static double previous_timestamp = 0.0;
-//	double t = carmen_get_time();
-//	printf("%lf\n", t - previous_timestamp);
-//	previous_timestamp = t;
-}
-
-
-static void
-true_pos_message_handler(carmen_simulator_ackerman_truepos_message *pose)
-{
-	if (offline_map_available)
-	{
-		mapper_merge_online_map_with_offline_map(&offline_map);
-		publish_map(pose->timestamp);
-	}
 }
 
 

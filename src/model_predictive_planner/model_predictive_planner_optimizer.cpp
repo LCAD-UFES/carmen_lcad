@@ -386,9 +386,8 @@ distance_from_traj_point_to_obstacle(carmen_ackerman_path_point_t point, double 
 	return (distance);
 }
 
-
 double
-compute_proximity_to_obstacles_using_localize_map(vector<carmen_ackerman_path_point_t> path)
+compute_proximity_to_obstacles_using_localize_map_old(vector<carmen_ackerman_path_point_t> path)
 {
 //	FILE *plot;
 //
@@ -443,6 +442,49 @@ compute_proximity_to_obstacles_using_localize_map(vector<carmen_ackerman_path_po
 
 
 double
+compute_distance_to_closest_obstacles(carmen_ackerman_path_point_t path_pose, int number_of_point)
+{
+	double circle_radius = (GlobalState::robot_config.width + 1.6) / 2.0; // metade da largura do carro + um espacco de guarda
+			//0.3 + sqrt(pow(GlobalState::robot_config.width / 2.0, 2) + pow(GlobalState::robot_config.distance_between_rear_car_and_rear_wheels, 2));
+	double displacement_inc = GlobalState::robot_config.distance_between_front_and_rear_axles / (number_of_point - 2);
+	double displacement = 0.0;
+	double x_gpos = GlobalState::localizer_pose->x - GlobalState::cost_map.config.x_origin;
+	double y_gpos = GlobalState::localizer_pose->y - GlobalState::cost_map.config.y_origin;
+	double proximity_to_obstacles = 0.0;
+
+	for (int i = -1; i < number_of_point; i++)
+	{
+		displacement = displacement_inc * i;
+
+		if (i < 0)
+			displacement = -GlobalState::robot_config.distance_between_rear_car_and_rear_wheels;
+
+		if (i == number_of_point - 1)
+			displacement = GlobalState::robot_config.distance_between_front_and_rear_axles + GlobalState::robot_config.distance_between_front_car_and_front_wheels;
+
+		double distance = distance_from_traj_point_to_obstacle(path_pose, x_gpos, y_gpos, displacement, circle_radius);
+		double delta = distance - circle_radius;
+		if (delta < 0.0)
+			proximity_to_obstacles += delta * delta;
+	}
+
+	return proximity_to_obstacles;
+}
+
+
+double
+compute_proximity_to_obstacles_using_localize_map(vector<carmen_ackerman_path_point_t> path)
+{
+	double proximity_to_obstacles_for_path = 0.0;
+	for (unsigned int i = 0; i < path.size(); i += 1)
+	{
+		proximity_to_obstacles_for_path += compute_distance_to_closest_obstacles(path[i], 4);
+	}
+	return (proximity_to_obstacles_for_path);
+}
+
+
+double
 my_f(const gsl_vector *x, void *params)
 {
 	ObjectiveFunctionParams *my_params = (ObjectiveFunctionParams *) params;
@@ -452,8 +494,8 @@ my_f(const gsl_vector *x, void *params)
 
 	if (tcp.tt < 0.2) // o tempo nao pode ser pequeno demais
 		tcp.tt = 0.2;
-	if (tcp.a < -GlobalState::robot_config.desired_decelaration_forward) // a aceleracao nao pode ser negativa demais
-		tcp.a = -GlobalState::robot_config.desired_decelaration_forward;
+	if (tcp.a < -GlobalState::robot_config.maximum_deceleration_forward) // a aceleracao nao pode ser negativa demais
+		tcp.a = -GlobalState::robot_config.maximum_deceleration_forward;
 
 	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->phi_i, g_car_latency_buffer_op, false);
 	//TCP_SEED nao eh modificado pelo CG?
@@ -526,8 +568,8 @@ my_g(const gsl_vector *x, void *params)
 
 	if (tcp.tt < 0.2) // o tempo nao pode ser pequeno demais
 		tcp.tt = 0.2;
-	if (tcp.a < -GlobalState::robot_config.desired_decelaration_forward) // a aceleracao nao pode ser negativa demais
-		tcp.a = -GlobalState::robot_config.desired_decelaration_forward;
+	if (tcp.a < -GlobalState::robot_config.maximum_deceleration_forward) // a aceleracao nao pode ser negativa demais
+		tcp.a = -GlobalState::robot_config.maximum_deceleration_forward;
 
 	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->phi_i, g_car_latency_buffer_op, false);
 
@@ -708,9 +750,9 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 	if (a < 0.0)
 	{
 		params.optimize_time = false;
-		if (a < -GlobalState::robot_config.desired_decelaration_forward)
+		if (a < -GlobalState::robot_config.maximum_deceleration_forward)
 		{
-			a = -GlobalState::robot_config.desired_decelaration_forward;
+			a = -GlobalState::robot_config.maximum_deceleration_forward;
 			tcp_seed.tt = tcp_seed.tt * 2.0;
 		}
 	}

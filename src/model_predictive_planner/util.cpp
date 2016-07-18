@@ -99,15 +99,6 @@ Pose Util::random_pose()
 	return p;
 }
 
-Command Util::random_command()
-{
-	Command c;
-	c.v	  = (normalized_random() * GlobalState::robot_config.max_vel * 2) - GlobalState::robot_config.max_vel;
-	c.phi = (normalized_random() * GlobalState::robot_config.max_phi * 2) - GlobalState::robot_config.max_phi;
-
-	return c;
-}
-
 double Util::get_time()
 {
 	struct timeval t;
