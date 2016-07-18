@@ -25,7 +25,7 @@ LFLAGS += 	-lgrid_mapping -lmap_io -lmap_util -lmap_interface -lparam_interface 
 		-lmap_server_interface -lbehavior_selector_interface  -lrotation_geometry \
 		-L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper \
 		-lrddf_interface -lmotion_planner_interface -lnavigator_gui_interface -llocalize_ackerman_core \
-		-lcollision_detection -lgsl -lgslcblas -lm
+		-lcollision_detection -lgsl -lgslcblas -lm -lford_escape_hybrid_interface
 			
 			
 SOURCES = model_predictive_planner_main.cpp model_predictive_planner.cpp trajectory_lookup_table.cpp \
