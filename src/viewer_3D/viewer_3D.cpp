@@ -962,10 +962,10 @@ carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_c
 		moving_objects_tracking[i].num_associated = moving_objects_point_clouds_message->point_clouds[i].num_associated;
 
 		//fixme para a visualização das particulas
-		moving_objects_tracking[i].particulas = (particle_print_t*) malloc(400 * sizeof(particle_print_t));
-		for(int k = 0; k < 400; k++){
-			moving_objects_tracking[i].particulas[k] = moving_objects_point_clouds_message->point_clouds[i].particulas[k];
-		}
+//		moving_objects_tracking[i].particulas = (particle_print_t*) malloc(400 * sizeof(particle_print_t));
+//		for(int k = 0; k < 400; k++){
+//			moving_objects_tracking[i].particulas[k] = moving_objects_point_clouds_message->point_clouds[i].particulas[k];
+//		}
 
 		for (k = 0; k < moving_objects_point_clouds_message->point_clouds[i].point_size; k++, j++)
 		{
