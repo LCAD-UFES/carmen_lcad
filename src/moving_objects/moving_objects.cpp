@@ -1601,7 +1601,7 @@ detect_points_above_ground_in_vertical_beam(int i, const moving_objects_input_da
 	for (int k = 0; k < velodyne_params->vertical_resolution; k++)
 	{
 		if (velodyne_data->obstacle_height[0][k] >= 0.5 && velodyne_data->obstacle_height[0][k] <= MAXIMUM_HEIGHT_OF_OBSTACLE
-				&& !velodyne_data->ray_hit_the_robot[k])
+				&& !velodyne_data->ray_hit_the_robot[0][k])
 		{
 			point_clouds[last_num_points].x = velodyne_data->ray_position_in_the_floor[0][k].x;
 			point_clouds[last_num_points].y = velodyne_data->ray_position_in_the_floor[0][k].y;
