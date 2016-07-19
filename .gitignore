@@ -399,6 +399,7 @@ bin/laser_ldmrs
 sharedlib/libsickldmrs/sickldmrstest
 sharedlib/libsickldmrs/sickldmrstest
 src/laser-ldmrs/laser_ldmrs
+src/fused_odometry/rotation_geometry.o
 src/moving_objects/Makefile.depend
 src/moving_objects/libmoving_objects_interface.a
 src/moving_objects/monte_carlo_moving_objects_tracking.a
