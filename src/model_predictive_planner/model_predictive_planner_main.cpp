@@ -474,8 +474,8 @@ build_and_follow_path()
 			publish_model_predictive_rrt_path_message(path_follower_path);
 			publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
 		}
-		else
-			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi);
+//		else
+//			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi);
 //		{
 //			if (GlobalState::last_odometry.v == 0.0)
 //				publish_path_follower_single_motion_command(0.0, 0.0);

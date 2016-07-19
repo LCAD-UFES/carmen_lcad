@@ -581,7 +581,6 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 
 	otcps.resize(paths.size());
 	bool has_valid_path = false;
-	double target_v_orig = target_v;
 	//	#pragma omp parallel num_threads(5)
 	//	{
 	for (unsigned int i = 0; i < lastOdometryVector.size(); i++)
@@ -599,10 +598,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 				}
 			}
 			else
-			{
 				use_lane = false;
-				target_v = target_v_orig / 2.0;
-			}
 
 			TrajectoryLookupTable::TrajectoryDimensions td = get_trajectory_dimensions_from_robot_state(localizer_pose, lastOdometryVector[i], &goalPoseVector[j]);
 			TrajectoryLookupTable::TrajectoryControlParameters tcp;
