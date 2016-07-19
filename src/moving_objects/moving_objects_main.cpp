@@ -271,7 +271,7 @@ deallocation_moving_objects_point_clouds_message()
 	for (i = 0; i < moving_objects_point_clouds_message.num_point_clouds; i++)
 	{
 		free(moving_objects_point_clouds_message.point_clouds[i].points);
-		free(moving_objects_point_clouds_message.point_clouds[i].particulas);
+//		free(moving_objects_point_clouds_message.point_clouds[i].particulas);
 	}
 	free(moving_objects_point_clouds_message.point_clouds);
 }
@@ -363,15 +363,15 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 			}
 
 			//fixme para a visualização das partículas
-			moving_objects_point_clouds_message.point_clouds[i].particulas = (particle_print_t*) malloc(400 * sizeof(particle_print_t));
-			if(it->particle_set.size() > 0) {
-				for(int k = 0; k < 400; k++){
-					moving_objects_point_clouds_message.point_clouds[i].particulas[k].class_id = it->particle_set[k].class_id;
-					moving_objects_point_clouds_message.point_clouds[i].particulas[k].geometry = it->particle_set[k].model_features.geometry;
-					moving_objects_point_clouds_message.point_clouds[i].particulas[k].pose = it->particle_set[k].pose;
-					moving_objects_point_clouds_message.point_clouds[i].particulas[k].velocity = it->particle_set[k].velocity;
-				}
-			}
+//			moving_objects_point_clouds_message.point_clouds[i].particulas = (particle_print_t*) malloc(400 * sizeof(particle_print_t));
+//			if(it->particle_set.size() > 0) {
+//				for(int k = 0; k < 400; k++){
+//					moving_objects_point_clouds_message.point_clouds[i].particulas[k].class_id = it->particle_set[k].class_id;
+//					moving_objects_point_clouds_message.point_clouds[i].particulas[k].geometry = it->particle_set[k].model_features.geometry;
+//					moving_objects_point_clouds_message.point_clouds[i].particulas[k].pose = it->particle_set[k].pose;
+//					moving_objects_point_clouds_message.point_clouds[i].particulas[k].velocity = it->particle_set[k].velocity;
+//				}
+//			}
 
 
 			i++;

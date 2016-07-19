@@ -115,7 +115,7 @@ typedef struct {
 	int	num_associated;
 	carmen_vector_3D_t object_pose;
 	carmen_vector_3D_t *points;
-	particle_print_t *particulas; // para a visualização das partículas
+	// particle_print_t *particulas; // para a visualização das partículas
 } t_point_cloud_struct;
 
 typedef struct {
@@ -129,8 +129,9 @@ typedef struct {
 #define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_NAME 	"carmen_moving_objects_point_clouds_message_name"
 
 /* The message's format, will be used for message data marshalling (serialization) for network socket transport. */
-/* fixme                                                                                                                                            model features...............................................*/
-#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_FMT		"{int, <{int, double, double, double, double, double, double, double, double, int, {int, string, {double, double, double}, double, double, double}, int, {double, double, double}, <{double, double, double}:1>,<{{double, double, double}, double, int, {double, double, double} }:1>}:1>, double, string}"
+/* fixme                                                                                                                                       model features...............................................*/
+#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_FMT		"{int, <{int, double, double, double, double, double, double, double, double, int, {int, string, {double, double, double}, double, double, double}, int, {double, double, double}, <{double, double, double}:1>}:1>, double, string}"
+//#define CARMEN_MOVING_OBJECTS_POINT_CLOUDS_MESSAGE_FMT		"{int, <{int, double, double, double, double, double, double, double, double, int, {int, string, {double, double, double}, double, double, double}, int, {double, double, double}, <{double, double, double}:1>,<{{double, double, double}, double, int, {double, double, double} }:1>}:1>, double, string}"
 
 
 struct _moving_objects_tracking
