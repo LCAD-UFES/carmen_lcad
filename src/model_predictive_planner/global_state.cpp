@@ -24,12 +24,11 @@ bool GlobalState::last_goal = true;
 bool GlobalState::last_path_received_is_empty = false;
 
 carmen_robot_ackerman_config_t GlobalState::robot_config;
+
 double GlobalState::param_max_vel = 0.0;
 
 double GlobalState::max_phi_velocity = 1.0 * 0.48;		// Equivalente a rodar o volante todo para um lado (27.7 graus = 0.48 radianos) em 1 segundo.
 														// A velocidade de mudanca de phi nao pode ultrapassar este valor
-double GlobalState::max_phi_acceleration = 0.48 / (0.2 * 0.2); // Alcanca a velocidade maxima em 0.2 segundos (s = at²; a = s/t²).
-														// A velocidade de phi pode aumentar no maximo deste valor por segundo
 double GlobalState::time_to_change_gears = 1.0;
 
 carmen_map_t GlobalState::cost_map;

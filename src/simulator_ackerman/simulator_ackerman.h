@@ -98,9 +98,7 @@ typedef struct
 	double motion_timeout;
 	double time_of_last_command;
 
-	double maximum_steering_command_curvature;
 	double maximum_steering_command_rate;
-	double maximum_capable_curvature;
 	double understeer_coeficient;
 	double maximum_speed_forward;
 	double maximum_speed_reverse;

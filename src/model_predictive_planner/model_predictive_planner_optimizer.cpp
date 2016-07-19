@@ -68,6 +68,27 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 	tcp.vf = params->tcp_seed->vf;
 	tcp.sf = params->tcp_seed->sf;
 
+	if (tcp.tt < 0.2) // o tempo nao pode ser pequeno demais
+		tcp.tt = 0.2;
+
+	if (tcp.has_k1)
+	{
+		if (tcp.k1 > GlobalState::robot_config.max_phi)
+			tcp.k1 = GlobalState::robot_config.max_phi;
+		else if (tcp.k1 < -GlobalState::robot_config.max_phi)
+			tcp.k1 = -GlobalState::robot_config.max_phi;
+	}
+
+	if (tcp.k2 > GlobalState::robot_config.max_phi)
+		tcp.k2 = GlobalState::robot_config.max_phi;
+	else if (tcp.k2 < -GlobalState::robot_config.max_phi)
+		tcp.k2 = -GlobalState::robot_config.max_phi;
+
+	if (tcp.k3 > GlobalState::robot_config.max_phi)
+		tcp.k3 = GlobalState::robot_config.max_phi;
+	else if (tcp.k3 < -GlobalState::robot_config.max_phi)
+		tcp.k3 = -GlobalState::robot_config.max_phi;
+
 	tcp.valid = true;
 
 	return (tcp);
@@ -495,8 +516,8 @@ my_f(const gsl_vector *x, void *params)
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(x, my_params);
 	TrajectoryLookupTable::TrajectoryDimensions td;
 
-	if (tcp.tt < 0.2) // o tempo nao pode ser pequeno demais
-		tcp.tt = 0.2;
+//	if (tcp.tt < 0.2) // o tempo nao pode ser pequeno demais
+//		tcp.tt = 0.2;
 	if (tcp.a < -GlobalState::robot_config.maximum_deceleration_forward) // a aceleracao nao pode ser negativa demais
 		tcp.a = -GlobalState::robot_config.maximum_deceleration_forward;
 
@@ -508,6 +529,7 @@ my_f(const gsl_vector *x, void *params)
 	double result = sqrt((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 			(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 0.2) +
 			(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2));
+	my_params->plan_cost = result;
 
 	return (result);
 }
@@ -569,8 +591,8 @@ my_g(const gsl_vector *x, void *params)
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(x, my_params);
 	TrajectoryLookupTable::TrajectoryDimensions td;
 
-	if (tcp.tt < 0.2) // o tempo nao pode ser pequeno demais
-		tcp.tt = 0.2;
+//	if (tcp.tt < 0.2) // o tempo nao pode ser pequeno demais
+//		tcp.tt = 0.2;
 	if (tcp.a < -GlobalState::robot_config.maximum_deceleration_forward) // a aceleracao nao pode ser negativa demais
 		tcp.a = -GlobalState::robot_config.maximum_deceleration_forward;
 
@@ -600,12 +622,18 @@ my_g(const gsl_vector *x, void *params)
 	my_params->tcp_seed->vf = tcp.vf;
 	my_params->tcp_seed->sf = tcp.sf;
 
-	double result = sqrt(
+	double result = sqrt((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
+			(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 0.2) +
+			(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2));
+	my_params->plan_cost = result;
+
+	result = sqrt(
 			5.0 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 			15.0 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
 			15.0 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
 			1.5 * path_to_lane_distance + // já é quandrática
 			10.0 * proximity_to_obstacles); // já é quandrática
+
 	return (result);
 }
 
@@ -897,7 +925,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
-	if ((tcp.tt < 0.2)/* || (s->f > 0.75)*/) // too short plan or bad minimum (s->f should be close to zero)
+	if ((tcp.tt < 0.2) || (params.plan_cost > 1.2)) // too short plan or bad minimum
 		tcp.valid = false;
 
 	gsl_multimin_fdfminimizer_free(s);
@@ -959,11 +987,11 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 		status = gsl_multimin_test_gradient(s->gradient, 0.16); // esta funcao retorna GSL_CONTINUE ou zero
 //		params.suitable_acceleration = compute_suitable_acceleration(gsl_vector_get(x, 2), target_td, target_v);
 
-	} while ((s->f > 0.005) && (status == GSL_CONTINUE) && (iter < 30));
+	} while ((params.plan_cost > 0.005) && (status == GSL_CONTINUE) && (iter < 30));
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
-	if ((tcp.tt < 0.2) || (s->f > 0.05)) // too short plan or bad minimum (s->f should be close to zero) mudei de 0.05 para outro
+	if ((tcp.tt < 0.2) || (params.plan_cost > 0.05)) // too short plan or bad minimum (s->f should be close to zero) mudei de 0.05 para outro
 		tcp.valid = false;
 
 	if (target_td.dist < 3.0 && tcp.valid == false) // para debugar

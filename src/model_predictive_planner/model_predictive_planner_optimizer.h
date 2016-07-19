@@ -25,6 +25,7 @@ struct ObjectiveFunctionParams
 	unsigned int path_size;
 	bool use_lane;
 	bool optimize_time;
+	double plan_cost;
 };
 
 TrajectoryLookupTable::TrajectoryControlParameters get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,

@@ -256,7 +256,6 @@ typedef struct {
 	double maximum_deceleration_forward;
 	double maximum_deceleration_reverse;
 	double maximum_acceleration_reverse;
-	double maximum_steering_command_curvature;
 	double maximum_steering_command_rate;
 	double understeer_coeficient;
 } carmen_robot_ackerman_config_t;

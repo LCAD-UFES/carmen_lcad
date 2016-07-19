@@ -159,10 +159,11 @@ compute_new_phi(carmen_simulator_ackerman_config_t *simulator_config)
 	else
 		current_curvature = desired_curvature;
 
-	if (fabs(current_curvature) > simulator_config->maximum_capable_curvature)
+	double max_c = carmen_get_curvature_from_phi(simulator_config->max_phi, 0.0, simulator_config->understeer_coeficient, simulator_config->distance_between_front_and_rear_axles);
+	if (fabs(current_curvature) > max_c)
 	{
 		current_curvature = current_curvature / fabs(current_curvature);
-		current_curvature *= simulator_config->maximum_capable_curvature;
+		current_curvature *= max_c;
 	}
 
 	simulator_config->phi = get_phi_from_curvature(current_curvature, simulator_config);
@@ -777,7 +778,8 @@ SpeedControlLogic(carmen_ackerman_path_point_t pose, carmen_simulator_ackerman_c
 
 	double v_cmd_max = carmen_fmax(v_scl, (kt + simulator_config->delta_t  - a_scl) / b_scl);
 
-	double k_max_scl = carmen_fmin(simulator_config->maximum_steering_command_curvature, a_scl + b_scl * v_cmd);
+	double k_max_scl = carmen_fmin(carmen_get_curvature_from_phi(simulator_config->max_phi, pose.v, simulator_config->understeer_coeficient, simulator_config->distance_between_front_and_rear_axles),
+			a_scl + b_scl * v_cmd);
 
 	double kt_dt = carmen_get_curvature_from_phi(simulator_config->target_phi, pose.v, simulator_config->understeer_coeficient, simulator_config->distance_between_front_and_rear_axles);
 	if (fabs(kt_dt) >= k_max_scl)
@@ -800,7 +802,8 @@ DynamicsResponse(carmen_ackerman_path_point_t pose, carmen_simulator_ackerman_co
 
 	simulator_config->target_v = SpeedControlLogic(pose, simulator_config);
 
-	pose.phi = get_phi_from_curvature(carmen_clamp(-simulator_config->maximum_steering_command_curvature, kt + dk_dt_cmd * simulator_config->delta_t, simulator_config->maximum_steering_command_curvature), simulator_config);
+	double c = carmen_get_curvature_from_phi(simulator_config->max_phi, pose.v, simulator_config->understeer_coeficient, simulator_config->distance_between_front_and_rear_axles);
+	pose.phi = get_phi_from_curvature(carmen_clamp(-c, kt + dk_dt_cmd * simulator_config->delta_t, c), simulator_config);
 
 	if (pose.v >= 0)
 		dv_dt_cmd = carmen_clamp(-simulator_config->maximum_deceleration_forward, simulator_config->target_v - pose.v, simulator_config->maximum_acceleration_forward);
