@@ -37,8 +37,6 @@ public:
 
 	static double max_phi_velocity;		// Equivalente a rodar o volante todo para um lado em 1 segundo.
 										// A velocidade de mudanca de phi nao pode ultrapassar este valor
-	static double max_phi_acceleration; // A velocidade de phi pode aumentar no maximo deste valor por segundo
-
 	static double time_to_change_gears;
 
 	static Pose *localizer_pose;

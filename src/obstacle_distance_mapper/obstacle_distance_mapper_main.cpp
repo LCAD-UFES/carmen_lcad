@@ -20,6 +20,7 @@ carmen_grid_mapping_distance_map 	 distance_map;
 
 using namespace std;
 
+
 inline void
 compute_intermediate_pixel_distance(int x, int y,
 		double **distance, short int **x_offset, short int **y_offset)
@@ -38,6 +39,7 @@ compute_intermediate_pixel_distance(int x, int y,
 			}
 		}
 }
+
 
 void
 carmen_mapper_initialize_distance_map(carmen_grid_mapping_distance_map *lmap, carmen_map_p cmap)
@@ -97,6 +99,7 @@ carmen_mapper_initialize_distance_map(carmen_grid_mapping_distance_map *lmap, ca
 	}
 }
 
+
 /* compute minimum distance to all occupied cells */
 void
 carmen_mapper_create_distance_map(carmen_grid_mapping_distance_map *lmap, carmen_map_p map,
@@ -147,6 +150,7 @@ carmen_mapper_create_distance_map(carmen_grid_mapping_distance_map *lmap, carmen
 			compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
 }
 
+
 void
 carmen_mapper_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t *map, carmen_grid_mapping_distance_map *distance_map, double distance_for_zero_cost_in_pixels)
 {
@@ -189,6 +193,7 @@ mapper_publish_distance_map(double timestamp, double obstacle_probability_thresh
 // Handlers                                                                                  //
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
+
 void
 carmen_grid_mapping_map_handler(carmen_grid_mapping_message *msg)
 {

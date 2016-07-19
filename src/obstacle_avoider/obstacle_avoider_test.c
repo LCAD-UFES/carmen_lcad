@@ -325,7 +325,6 @@ read_parameters(int argc, char **argv)
 			{"robot", "max_velocity", CARMEN_PARAM_DOUBLE, &motion_planner_config.max_v, 1, NULL},
 			{"robot", "maximum_acceleration_forward", CARMEN_PARAM_DOUBLE, &motion_planner_config.maximum_acceleration_forward, 1, NULL},
 			{"robot", "understeer_coeficient", CARMEN_PARAM_DOUBLE, &motion_planner_config.understeer_coeficient, 1, NULL},
-			{"robot", "maximum_steering_command_curvature", CARMEN_PARAM_DOUBLE, &motion_planner_config.maximum_steering_command_curvature, 1, NULL},
 			{"robot", "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &motion_planner_config.distance_between_front_and_rear_axles, 1, NULL},
 			{"commandline", "max_v", CARMEN_PARAM_DOUBLE, &max_v, 0, NULL},
 			{"commandline", "max_phi", CARMEN_PARAM_DOUBLE, &max_phi, 0, NULL},
