@@ -5,11 +5,11 @@
 #include <carmen/carmen.h>
 
 
-//#define HOKUYO_ALWAYS_IN_SCIP20
+#define HOKUYO_ALWAYS_IN_SCIP20
 
-#define URG_BUFSIZE 8192
-#define URG_ANGULAR_STEP (M_PI/512.)
-#define URG_MAX_BEAMS 768
+#define URG_BUFSIZE 8192*2
+#define URG_ANGULAR_STEP (M_PI/720.0)
+#define URG_MAX_BEAMS 1080
 
 typedef struct HokuyoRangeReading{
   int timestamp;

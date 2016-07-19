@@ -45,8 +45,6 @@ carmen_vector_3D_t carmen_get_sensor_sphere_point_in_robot_cartesian_reference(c
 
 carmen_pose_3D_t carmen_ackerman_interpolated_robot_position_at_time(carmen_pose_3D_t robot_pose, double dt, double v, double phi, double distance_between_front_and_rear_axles);
 
-carmen_pose_3D_t get_world_pose(carmen_pose_3D_t* local_pose);
-
 #ifdef __cplusplus
 }
 #endif
