@@ -30,6 +30,8 @@ sensor_parameters_t velodyne_params;
 sensor_data_t velodyne_data;
 double highest_point;
 
+int number_of_threads = 1;
+
 void
 init_velodyne_points(spherical_point_cloud **velodyne_points_out, unsigned char ***intensity)
 {
@@ -128,14 +130,17 @@ get_alive_sensors(int argc, char **argv)
 
 	for (i = 0; i < number_of_sensors; i++)
 	{
-		spherical_sensor_data[i].ray_position_in_the_floor = NULL;
-		spherical_sensor_data[i].maxed = NULL;
-		spherical_sensor_data[i].obstacle_height = NULL;
-		spherical_sensor_data[i].occupancy_log_odds_of_each_ray_target = NULL;
+		spherical_sensor_data[i].ray_position_in_the_floor = (carmen_vector_2D_t**)calloc(number_of_threads ,sizeof(carmen_vector_2D_t*));
+		spherical_sensor_data[i].maxed = (int**)calloc(number_of_threads ,sizeof(int*));
+		spherical_sensor_data[i].obstacle_height = (double**)calloc(number_of_threads ,sizeof(double*));
+		spherical_sensor_data[i].occupancy_log_odds_of_each_ray_target = (double**)calloc(number_of_threads ,sizeof(double*));
 		spherical_sensor_data[i].point_cloud_index = 0;
 		spherical_sensor_data[i].points = NULL;
-		spherical_sensor_data[i].ray_origin_in_the_floor = NULL;
-		spherical_sensor_data[i].ray_size_in_the_floor = NULL;
+		spherical_sensor_data[i].ray_origin_in_the_floor = (carmen_vector_2D_t**)calloc(number_of_threads ,sizeof(carmen_vector_2D_t*));;
+		spherical_sensor_data[i].ray_size_in_the_floor = (double**)calloc(number_of_threads ,sizeof(double*));
+		spherical_sensor_data[i].processed_intensity = (double**)calloc(number_of_threads ,sizeof(double*));
+		spherical_sensor_data[i].ray_hit_the_robot = (int**)calloc(number_of_threads ,sizeof(int*));
+		spherical_sensor_data[i].ray_that_hit_the_nearest_target = (int*)calloc(number_of_threads ,sizeof(int));
 
 		spherical_sensor_params[i].name = NULL;
 		spherical_sensor_params[i].ray_order = NULL;
@@ -143,6 +148,17 @@ get_alive_sensors(int argc, char **argv)
 		spherical_sensor_params[i].vertical_correction = NULL;
 		spherical_sensor_params[i].vertical_resolution = 0;
 
+		for (int j = 0; j < number_of_threads; j++)
+		{
+			spherical_sensor_data[i].ray_position_in_the_floor[j] = NULL;
+			spherical_sensor_data[i].maxed[j] = NULL;
+			spherical_sensor_data[i].obstacle_height[j] = NULL;
+			spherical_sensor_data[i].occupancy_log_odds_of_each_ray_target[j] = NULL;
+			spherical_sensor_data[i].ray_origin_in_the_floor[j] = NULL;
+			spherical_sensor_data[i].ray_size_in_the_floor[j] = NULL;
+			spherical_sensor_data[i].processed_intensity[i] = NULL;
+			spherical_sensor_data[i].ray_hit_the_robot[j] = NULL;
+		}
 
 		if (spherical_sensor_params[i].alive)
 		{
@@ -542,6 +558,30 @@ read_parameters_without_mapper(int argc, char **argv, carmen_localize_ackerman_p
 	fclose(f);
 
 	velodyne_data.point_cloud_index = 0;
+
+	velodyne_data.ray_position_in_the_floor = (carmen_vector_2D_t**)calloc(number_of_threads ,sizeof(carmen_vector_2D_t*));
+	velodyne_data.maxed = (int**)calloc(number_of_threads ,sizeof(int*));
+	velodyne_data.obstacle_height = (double**)calloc(number_of_threads ,sizeof(double*));
+	velodyne_data.occupancy_log_odds_of_each_ray_target = (double**)calloc(number_of_threads ,sizeof(double*));
+	velodyne_data.point_cloud_index = 0;
+	velodyne_data.points = NULL;
+	velodyne_data.ray_origin_in_the_floor = (carmen_vector_2D_t**)calloc(number_of_threads ,sizeof(carmen_vector_2D_t*));;
+	velodyne_data.ray_size_in_the_floor = (double**)calloc(number_of_threads ,sizeof(double*));
+	velodyne_data.processed_intensity = (double**)calloc(number_of_threads ,sizeof(double*));
+	velodyne_data.ray_hit_the_robot = (int**)calloc(number_of_threads ,sizeof(int*));
+	velodyne_data.ray_that_hit_the_nearest_target = (int*)calloc(number_of_threads ,sizeof(int));
+
+	for (int j = 0; j < number_of_threads; j++)
+	{
+		velodyne_data.ray_position_in_the_floor[j] = NULL;
+		velodyne_data.maxed[j] = NULL;
+		velodyne_data.obstacle_height[j] = NULL;
+		velodyne_data.occupancy_log_odds_of_each_ray_target[j] = NULL;
+		velodyne_data.ray_origin_in_the_floor[j] = NULL;
+		velodyne_data.ray_size_in_the_floor[j] = NULL;
+		velodyne_data.processed_intensity[i] = NULL;
+		velodyne_data.ray_hit_the_robot[j] = NULL;
+	}
 
 	p_map_params->width = 2 * velodyne_params.range_max;
 	p_map_params->height = 2 * velodyne_params.range_max;
