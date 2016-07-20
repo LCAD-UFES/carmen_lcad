@@ -757,34 +757,7 @@ localize_map_update_handler(carmen_map_server_localize_map_message *message)
 
 	necessary_maps_available = 1;
 }
-/*
 
-static void
-offline_map_update_handler(carmen_map_server_offline_map_message *offline_map_message)
-{
-	carmen_localize_ackerman_param_p param;
-
-	if (new_map != NULL)
-		carmen_map_destroy(&new_map);
-	new_map = (carmen_map_t *) calloc(1, sizeof(carmen_map_t));
-	carmen_map_server_copy_offline_map_from_message(new_map, offline_map_message);
-
-	param = filter->param;
-
-	 create a localize map
-	carmen_warn("Creating likelihood maps... ");
-	double t1 = carmen_get_time();
-	carmen_to_localize_ackerman_map(new_map, &map, param);
-	double t2 = carmen_get_time();
-	carmen_warn("done. t =% lfs\n", t2 - t1);
-
-	x_origin = offline_map_message->config.x_origin;
-	y_origin = offline_map_message->config.y_origin;
-
-	necessary_maps_available = 1;
-}
-
-*/
 
 static void
 globalpos_query_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, 
@@ -1397,8 +1370,6 @@ subscribe_to_ipc_message()
 			carmen_robot_ackerman_subscribe_frontlaser_message(&front_laser, (carmen_handler_t) robot_ackerman_frontlaser_handler, CARMEN_SUBSCRIBE_LATEST);
 		}
 
-
-//		carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
 
 		carmen_map_server_subscribe_localize_map_message(NULL,
 				(carmen_handler_t) localize_map_update_handler, CARMEN_SUBSCRIBE_LATEST);

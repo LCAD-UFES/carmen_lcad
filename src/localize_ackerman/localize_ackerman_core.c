@@ -346,13 +346,13 @@ carmen_localize_ackerman_incorporate_laser(carmen_localize_ackerman_particle_fil
 			forward_offset, num_readings, laser_maxrange, backwards);
 
 	/* test for global mode */
-	filter->global_mode = global_mode_test(filter);
+	//filter->global_mode = global_mode_test(filter);
 
-	if (filter->global_mode)
-	{
-		compute_weight_of_each_laser_reading_using_global_map(filter, map, laser_x, laser_y, num_readings);
-	}
-	else 
+//	if (filter->global_mode)
+//	{
+//		compute_weight_of_each_laser_reading_using_global_map(filter, map, laser_x, laser_y, num_readings);
+//	}
+//	else
 	{
 		compute_weight_of_each_laser_reading_using_local_map(filter, map, laser_x, laser_y, num_readings);
 
@@ -1377,7 +1377,7 @@ localize_map_correlation_correction(carmen_localize_ackerman_particle_filter_p f
 	int i;
 
 	/* test for global mode */
-	filter->global_mode = global_mode_test(filter);
+	//filter->global_mode = global_mode_test(filter);
 
 	for (i = 0; i < filter->param->num_particles; i++)
 	{
@@ -1976,7 +1976,7 @@ carmen_localize_ackerman_summarize_swarm(carmen_localize_ackerman_particle_filte
 	double total_weight = 0;
 	int i;
 
-	summary->converged = !filter->global_mode;
+	summary->converged = 1;//!filter->global_mode;
 
 	/* compute mean particle pose */
 	mean_x = 0;
@@ -2032,7 +2032,7 @@ carmen_localize_ackerman_summarize_velodyne(carmen_localize_ackerman_particle_fi
 	double total_weight = 0;
 	int i;
 
-	summary->converged = !filter->global_mode;
+	summary->converged = 1;//!filter->global_mode;
 
 	/* compute mean particle pose */
 	mean_x = 0;
@@ -2090,7 +2090,7 @@ void carmen_localize_ackerman_summarize(carmen_localize_ackerman_particle_filter
 	double total_weight = 0;
 	int i, x, y;
 
-	summary->converged = !filter->global_mode;
+	summary->converged = 1;//!filter->global_mode;
 
 	weights = (double *)calloc(filter->param->num_particles, sizeof(double));
 	carmen_test_alloc(weights);
