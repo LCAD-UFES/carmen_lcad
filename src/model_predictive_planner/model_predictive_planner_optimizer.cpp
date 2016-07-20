@@ -70,24 +70,27 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 
 	if (tcp.tt < 0.2) // o tempo nao pode ser pequeno demais
 		tcp.tt = 0.2;
+	if (tcp.a < -GlobalState::robot_config.maximum_deceleration_forward) // a aceleracao nao pode ser negativa demais
+		tcp.a = -GlobalState::robot_config.maximum_deceleration_forward;
 
+	double max_phi_during_planning = 1.5 * GlobalState::robot_config.max_phi;
 	if (tcp.has_k1)
 	{
-		if (tcp.k1 > GlobalState::robot_config.max_phi)
-			tcp.k1 = GlobalState::robot_config.max_phi;
-		else if (tcp.k1 < -GlobalState::robot_config.max_phi)
-			tcp.k1 = -GlobalState::robot_config.max_phi;
+		if (tcp.k1 > max_phi_during_planning)
+			tcp.k1 = max_phi_during_planning;
+		else if (tcp.k1 < -max_phi_during_planning)
+			tcp.k1 = -max_phi_during_planning;
 	}
 
-	if (tcp.k2 > GlobalState::robot_config.max_phi)
-		tcp.k2 = GlobalState::robot_config.max_phi;
-	else if (tcp.k2 < -GlobalState::robot_config.max_phi)
-		tcp.k2 = -GlobalState::robot_config.max_phi;
+	if (tcp.k2 > max_phi_during_planning)
+		tcp.k2 = max_phi_during_planning;
+	else if (tcp.k2 < -max_phi_during_planning)
+		tcp.k2 = -max_phi_during_planning;
 
-	if (tcp.k3 > GlobalState::robot_config.max_phi)
-		tcp.k3 = GlobalState::robot_config.max_phi;
-	else if (tcp.k3 < -GlobalState::robot_config.max_phi)
-		tcp.k3 = -GlobalState::robot_config.max_phi;
+	if (tcp.k3 > max_phi_during_planning)
+		tcp.k3 = max_phi_during_planning;
+	else if (tcp.k3 < -max_phi_during_planning)
+		tcp.k3 = -max_phi_during_planning;
 
 	tcp.valid = true;
 
@@ -516,11 +519,6 @@ my_f(const gsl_vector *x, void *params)
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(x, my_params);
 	TrajectoryLookupTable::TrajectoryDimensions td;
 
-//	if (tcp.tt < 0.2) // o tempo nao pode ser pequeno demais
-//		tcp.tt = 0.2;
-	if (tcp.a < -GlobalState::robot_config.maximum_deceleration_forward) // a aceleracao nao pode ser negativa demais
-		tcp.a = -GlobalState::robot_config.maximum_deceleration_forward;
-
 	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->phi_i, g_car_latency_buffer_op, false);
 	//TCP_SEED nao eh modificado pelo CG?
 	my_params->tcp_seed->vf = tcp.vf;
@@ -590,11 +588,6 @@ my_g(const gsl_vector *x, void *params)
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(x, my_params);
 	TrajectoryLookupTable::TrajectoryDimensions td;
-
-//	if (tcp.tt < 0.2) // o tempo nao pode ser pequeno demais
-//		tcp.tt = 0.2;
-	if (tcp.a < -GlobalState::robot_config.maximum_deceleration_forward) // a aceleracao nao pode ser negativa demais
-		tcp.a = -GlobalState::robot_config.maximum_deceleration_forward;
 
 	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->phi_i, g_car_latency_buffer_op, false);
 
@@ -925,7 +918,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
-	if ((tcp.tt < 0.2) || (params.plan_cost > 1.2)) // too short plan or bad minimum
+	if ((tcp.tt < 0.2) || (params.plan_cost > 1.6)) // too short plan or bad minimum
 		tcp.valid = false;
 
 	gsl_multimin_fdfminimizer_free(s);
