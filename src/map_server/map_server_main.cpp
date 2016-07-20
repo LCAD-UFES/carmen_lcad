@@ -369,19 +369,6 @@ publish_a_new_offline_map_if_robot_moved_to_another_block(carmen_point_t *pose, 
 
 	time_now = carmen_get_time();
 
-//	if (publish_google_map){
-//
-//		if ((time_now - last_time_changed_google_map) > time_interval_for_map_change && (current_google_map->config.x_origin != x_origin || current_google_map->config.y_origin != y_origin))
-//				{
-//					last_time_changed_google_map = time_now;
-////					read_google_maps_image(x_origin, y_origin);
-//
-//					if (current_google_map->complete_map != NULL)
-//						carmen_map_server_publish_offline_map_message(current_google_map, timestamp);
-//
-//				}
-//	}
-
 	if ((time_now - last_time_changed) > time_interval_for_map_change && (current_map->config.x_origin != x_origin || current_map->config.y_origin != y_origin))
 	{
 		last_time_changed = time_now;
@@ -391,17 +378,8 @@ publish_a_new_offline_map_if_robot_moved_to_another_block(carmen_point_t *pose, 
 		carmen_grid_mapping_get_block_map_by_origin(map_path, '2', *pose, current_sum_sqr_remission_map);
 		carmen_grid_mapping_get_block_map_by_origin(map_path, 'c', *pose, current_count_remission_map);
 
-		if (!publish_google_map)
-		{
-			if (current_map->complete_map != NULL)
-			{
-				carmen_prob_models_calc_mean_and_variance_remission_map(current_mean_remission_map, current_variance_remission_map, current_sum_remission_map, current_sum_sqr_remission_map, current_count_remission_map);
-	//			if (!publish_google_map)
-			}
-		}
-		else
-			read_google_maps_image(current_mean_remission_map, x_origin, y_origin);
-//		carmen_map_server_publish_offline_map_message(current_google_map, timestamp);
+		if (current_map->complete_map != NULL)
+			carmen_prob_models_calc_mean_and_variance_remission_map(current_mean_remission_map, current_variance_remission_map, current_sum_remission_map, current_sum_sqr_remission_map, current_count_remission_map);
 
 		carmen_to_localize_ackerman_map(current_map, current_mean_remission_map, current_variance_remission_map, &localize_map, &localize_param);
 

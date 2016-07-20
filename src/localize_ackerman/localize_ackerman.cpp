@@ -470,11 +470,6 @@ velodyne_variable_scan_localize(carmen_velodyne_variable_scan_message *message, 
 
 	carmen_localize_ackerman_run_with_velodyne_correction(filter, &map, &local_compacted_map, &local_compacted_mean_remission_map, &local_compacted_variance_remission_map, &binary_map);
 
-//	//if (filter->initialized)
-//	{
-//		carmen_localize_ackerman_summarize_velodyne(filter, &summary);
-//		publish_particles_prediction(filter, &summary, message->timestamp);
-//	}
 
 //	if (fabs(base_ackerman_odometry_vector[odometry_index].v) > 0.2)
 	{
@@ -521,10 +516,6 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	if (!velodyne_initilized)
 		return;
 
-	//localalize_using_map_velodyne_partial_scan(velodyne_message);
-
-	//if (binary_map.map_size == 0)
-		//return;
 
 	carmen_localize_ackerman_run_with_velodyne_prediction(filter, &base_ackerman_odometry_vector[odometry_index],
 				&fused_odometry_vector[fused_odometry_index], use_velocity_prediction,
@@ -539,12 +530,10 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	{
 		carmen_localize_ackerman_run_with_velodyne_resample(filter);
 	}
-		//swarm(filter, &map, &local_compacted_map, &local_compacted_mean_remission_map, &local_compacted_variance_remission_map, &fused_odometry_vector[fused_odometry_index],&binary_map);
 
 	if (filter->initialized)
 	{
 		carmen_localize_ackerman_summarize_velodyne(filter, &summary);
-//		carmen_localize_ackerman_summarize_swarm(filter, &summary);
 		publish_globalpos(&summary, base_ackerman_odometry_vector[odometry_index].v,
 				base_ackerman_odometry_vector[odometry_index].phi, velodyne_message->timestamp);
 //		publish_particles_correction(filter, &summary, velodyne_message->timestamp);
@@ -745,7 +734,7 @@ carmen_localize_ackerman_initialize_handler(carmen_localize_ackerman_initialize_
 //			first = 0;
 //		}
 
-//		publish_first_globalpos(initialize_msg); // Alberto: se publicar pode sujar o mapa devido a inicializacao.
+		publish_first_globalpos(initialize_msg); // Alberto: se publicar pode sujar o mapa devido a inicializacao.
 	}
 	else if (initialize_msg->distribution == CARMEN_INITIALIZE_UNIFORM)
 	{
@@ -753,6 +742,8 @@ carmen_localize_ackerman_initialize_handler(carmen_localize_ackerman_initialize_
 		carmen_localize_ackerman_initialize_particles_uniform(filter, &front_laser, &map);
 		publish_particles(filter, &summary, initialize_msg->timestamp);
 	}
+	necessary_maps_available = 0;
+
 }
 
 
