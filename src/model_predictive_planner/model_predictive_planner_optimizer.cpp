@@ -73,7 +73,7 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 	if (tcp.a < -GlobalState::robot_config.maximum_deceleration_forward) // a aceleracao nao pode ser negativa demais
 		tcp.a = -GlobalState::robot_config.maximum_deceleration_forward;
 
-	double max_phi_during_planning = 1.5 * GlobalState::robot_config.max_phi;
+	double max_phi_during_planning = 1.8 * GlobalState::robot_config.max_phi;
 	if (tcp.has_k1)
 	{
 		if (tcp.k1 > max_phi_during_planning)
