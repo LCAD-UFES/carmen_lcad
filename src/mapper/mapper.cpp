@@ -20,6 +20,7 @@ extern int merge_with_offline_map;
 extern int update_and_merge_with_mapper_saved_maps;
 extern int build_snapshot_map;
 extern int update_and_merge_with_snapshot_map;
+extern int decay_to_offline_map;
 
 extern carmen_pose_3D_t sensor_board_1_pose;
 extern rotation_matrix *board_to_car_matrix;
@@ -51,7 +52,7 @@ carmen_grid_mapping_distance_map distance_map;
 
 extern carmen_map_t offline_map;
 
-rotation_matrix *r_matrix_car_to_global = NULL;
+extern rotation_matrix *r_matrix_car_to_global;
 
 int globalpos_initialized = 0;
 extern carmen_localize_ackerman_globalpos_message *globalpos_history;
@@ -184,6 +185,7 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 	double dt = 1.0 / (1808.0 * 12.0);
 	carmen_pose_3D_t robot_interpolated_position = sensor_data->robot_pose[point_cloud_index];
 	int i = 0;
+
 	// Ray-trace the grid
 	#pragma omp for
 	for (int j = 0; j < N; j += 1)
@@ -204,7 +206,7 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 		if (update_cells_crossed_by_rays == UPDATE_CELLS_CROSSED_BY_RAYS)
 			carmen_prob_models_update_cells_crossed_by_ray(snapshot_map, sensor_params, sensor_data, tid);
 
-			// carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(map, sensor_params, sensor_data);
+		// carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(map, sensor_params, sensor_data);
 		carmen_prob_models_update_log_odds_of_cells_hit_by_rays(snapshot_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid);
 
 		if (update_and_merge_with_mapper_saved_maps)
@@ -215,6 +217,7 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 		//build_front_laser_message_from_velodyne_point_cloud (sensor_params, sensor_data, v_zt, i);
 		//i = i +  sensor_params->vertical_resolution;
 	}
+	//printf("\n###############################################################\n");
 }
 
 
@@ -285,7 +288,8 @@ build_map_using_velodyne(sensor_parameters_t *sensor_params, sensor_data_t *sens
 		//set_map_equal_offline_map(&map);
 		//add_offline_map_over_unknown(&map);
 
-		map_decay_to_offline_map(&map);
+		if(decay_to_offline_map)
+			map_decay_to_offline_map(&map);
 
 		// @@@ Alberto: Mapa padrao Lucas -> colocar DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS ao inves de UPDATE_CELLS_CROSSED_BY_RAYS
 		//update_cells_in_the_velodyne_perceptual_field(&map, snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
@@ -392,7 +396,7 @@ mapper_change_map_origin_to_another_map_block(carmen_position_t *map_origin)
 }
 
 
-static int
+int
 run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global)
 {
 	//carmen_point_t world_pose;
@@ -499,14 +503,13 @@ mapper_velodyne_partial_scan(carmen_velodyne_partial_scan_message *velodyne_mess
 	sensors_data[0].robot_velocity[sensors_data[0].point_cloud_index] = globalpos_history[last_globalpos].velocity;
 	sensors_data[0].robot_timestamp[sensors_data[0].point_cloud_index] = globalpos_history[last_globalpos].timestamp;
 	sensors_data[0].robot_phi[sensors_data[0].point_cloud_index] = globalpos_history[last_globalpos].phi;
-
+	sensors_data[0].points_timestamp[sensors_data[0].point_cloud_index] = velodyne_message->timestamp;
 
 	if (velodyne_message_id >= 0)
 	{
-		if (build_snapshot_map)
-			ok_to_publish = 1;
-		else
-			ok_to_publish = run_mapper(&sensors_params[0], &sensors_data[0], r_matrix_car_to_global);
+		//if (build_snapshot_map)
+		ok_to_publish = 1;
+		//else
 
 		if (velodyne_message_id > 1000000)
 			velodyne_message_id = 0;
@@ -583,15 +586,17 @@ inline void
 compute_intermediate_pixel_distance(int x, int y,
 		double **distance, short int **x_offset, short int **y_offset)
 {
-	for (int i = -1; i <= 1; i++)
-		for (int j = -1; j <= 1; j++)
+	for (int i = -1; i < 2; i++)
+		for (int j = -1; j < 2; j++)
 		{
 			double v = distance[x + i][y + j] + ((i * j != 0) ? 1.414213562 : 1.0);
 			if (v < distance[x][y])
 			{
+				int xpi = x + i;
+				int ypj = y + j;
 				distance[x][y] = v;
-				x_offset[x][y] = x_offset[x + i][y + j] + i;
-				y_offset[x][y] = y_offset[x + i][y + j] + j;
+				x_offset[x][y] = x_offset[xpi][ypj] + i;
+				y_offset[x][y] = y_offset[xpi][ypj] + j;
 			}
 		}
 }
@@ -788,15 +793,15 @@ carmen_mapper_initialize_distance_map(carmen_grid_mapping_distance_map *lmap, ca
 }
 
 
-void
-mapper_publish_distance_map(double timestamp, double obstacle_probability_threshold)
-{
-	if (distance_map.complete_distance == NULL)
-		carmen_mapper_initialize_distance_map(&distance_map, &map);
-
-	carmen_mapper_create_distance_map(&distance_map, &map, obstacle_probability_threshold);
-	carmen_grid_mapping_publish_distance_map_message(&distance_map, timestamp);
-}
+//void
+//mapper_publish_distance_map(double timestamp, double obstacle_probability_threshold)
+//{
+//	if (distance_map.complete_distance == NULL)
+//		carmen_mapper_initialize_distance_map(&distance_map, &map);
+//
+//	carmen_mapper_create_distance_map(&distance_map, &map, obstacle_probability_threshold);
+//	carmen_grid_mapping_publish_distance_map_message(&distance_map, timestamp);
+//}
 
 
 void
@@ -816,24 +821,24 @@ carmen_prob_models_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t 
 }
 
 
-void
-mapper_publish_cost_and_distance_maps(double timestamp)
-{
-	carmen_compact_map_t compacted_cost_map;
-
-	mapper_publish_distance_map(timestamp, obstacle_probability_threshold);
-	carmen_prob_models_build_obstacle_cost_map(&cost_map, &map, &distance_map, obstacle_cost_distance);
-	// Old carmen_prob_models_build_obstacle_cost_map below
-	// carmen_prob_models_build_obstacle_cost_map(&cost_map, &map,	map.config.resolution, obstacle_cost_distance, obstacle_probability_threshold);
-	carmen_prob_models_create_compact_map(&compacted_cost_map, &cost_map, 0.0);
-
-	if (compacted_cost_map.number_of_known_points_on_the_map > 0)
-	{
-		carmen_map_server_publish_compact_cost_map_message(&compacted_cost_map,	timestamp);
-		carmen_prob_models_clear_carmen_map_using_compact_map(&cost_map, &compacted_cost_map, 0.0);
-		carmen_prob_models_free_compact_map(&compacted_cost_map);
-	}
-}
+//void
+//mapper_publish_cost_and_distance_maps(double timestamp)
+//{
+//	carmen_compact_map_t compacted_cost_map;
+//
+//	mapper_publish_distance_map(timestamp, obstacle_probability_threshold);
+//	carmen_prob_models_build_obstacle_cost_map(&cost_map, &map, &distance_map, obstacle_cost_distance);
+//	// Old carmen_prob_models_build_obstacle_cost_map below
+//	// carmen_prob_models_build_obstacle_cost_map(&cost_map, &map,	map.config.resolution, obstacle_cost_distance, obstacle_probability_threshold);
+//	carmen_prob_models_create_compact_map(&compacted_cost_map, &cost_map, 0.0);
+//
+//	if (compacted_cost_map.number_of_known_points_on_the_map > 0)
+//	{
+//		carmen_map_server_publish_compact_cost_map_message(&compacted_cost_map,	timestamp);
+//		carmen_prob_models_clear_carmen_map_using_compact_map(&cost_map, &compacted_cost_map, 0.0);
+//		carmen_prob_models_free_compact_map(&compacted_cost_map);
+//	}
+//}
 
 
 void
@@ -854,7 +859,8 @@ mapper_publish_map(double timestamp)
 
 	carmen_grid_mapping_publish_message(&map, timestamp);
 
-	mapper_publish_cost_and_distance_maps(timestamp);
+	//moved to obstacle_distance_mapper
+	//mapper_publish_cost_and_distance_maps(timestamp);
 }
 
 void

@@ -7,6 +7,8 @@
 #include <carmen/bumblebee_basic_interface.h>
 #include <sys/time.h>
 #include <stdio.h>
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
 
 #define LEFT 0
 #define RIGHT 1
@@ -172,6 +174,9 @@ int main(int argc, char **argv)
   {
 		while(1)
 		{
+			memset(rawLeft, 0, (bumblebee_basic_width * bumblebee_basic_height * 3) * sizeof(unsigned char));
+			memset(rawRight, 0, (bumblebee_basic_width * bumblebee_basic_height * 3) * sizeof(unsigned char));
+
 			libbee_get_rectified_images(imageLeft, imageRight, &(msg.timestamp));
 
 			InterpolateTriclopsStereoImage(rawLeft, imageLeft,rawRight, imageRight, bumblebee_basic_width, bumblebee_basic_height);
@@ -184,6 +189,14 @@ int main(int argc, char **argv)
 				timestamp_fps = msg.timestamp;
 				fps = 0.0;
 			}
+
+//			char nome[256];
+//			static int count = 0;
+//			cv::Mat frame = cv::Mat(cv::Size(bumblebee_basic_width, bumblebee_basic_height), CV_8UC3, rawLeft, bumblebee_basic_width * 3);
+//			sprintf(nome, "%dimage.png", count);
+//			count++;
+//			cv::imwrite(nome, frame);
+
 			//usleep(5000000);
 		//	static double time_lastmsg = carmen_get_time();
 		//	if (fabs(time_lastmsg - carmen_get_time()) > 1.0)

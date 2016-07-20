@@ -111,27 +111,38 @@ publish_goal_list()
 		if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
 			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_0))
 			goal_list_msg.goal_list->v = 0.0;
+
 		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
-			(last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BARRIER))
+			(last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK))
 			goal_list_msg.goal_list->v = carmen_fmin(2.0, goal_list_msg.goal_list->v);
+
+		else if (last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)
+			goal_list_msg.goal_list->v = carmen_fmin(1.2, goal_list_msg.goal_list->v);
+
 		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
 			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_5))
 			goal_list_msg.goal_list->v = carmen_fmin(5.0 / 3.6, goal_list_msg.goal_list->v);
+
 		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
 			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_10))
 			goal_list_msg.goal_list->v = carmen_fmin(10.0 / 3.6, goal_list_msg.goal_list->v);
+
 		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
 			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_15))
 			goal_list_msg.goal_list->v = carmen_fmin(15.0 / 3.6, goal_list_msg.goal_list->v);
+
 		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
 			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_20))
 			goal_list_msg.goal_list->v = carmen_fmin(20.0 / 3.6, goal_list_msg.goal_list->v);
+
 		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
 			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_30))
 			goal_list_msg.goal_list->v = carmen_fmin(30.0 / 3.6, goal_list_msg.goal_list->v);
+
 		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
 			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_40))
 			goal_list_msg.goal_list->v = carmen_fmin(40.0 / 3.6, goal_list_msg.goal_list->v);
+
 		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
 			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_60))
 			goal_list_msg.goal_list->v = carmen_fmin(60.0 / 3.6, goal_list_msg.goal_list->v);

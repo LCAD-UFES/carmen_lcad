@@ -609,7 +609,7 @@ TrajectoryLookupTable::predict_next_pose(Robot_State &robot_state, Command &requ
 			GlobalState::robot_config.understeer_coeficient,
 			GlobalState::robot_config.distance_between_front_and_rear_axles);
 
-	double max_curvature_change = GlobalState::robot_config.desired_steering_command_rate * delta_t;
+	double max_curvature_change = GlobalState::robot_config.maximum_steering_command_rate * delta_t;
 
 	// Euler method
 	for (int i = 0; i < n; i++)
@@ -926,7 +926,7 @@ compare_td(TrajectoryLookupTable::TrajectoryDimensions td1, TrajectoryLookupTabl
 bool
 path_has_loop(double dist, double sf)
 {
-	if (sf > (M_PI * dist * 1.5)) // se sf for maior que meio arco com diametro dist mais um pouco (1.5) tem loop
+	if (sf > (M_PI * dist * 1.1)) // se sf for maior que meio arco com diametro dist mais um pouco (1.1) tem loop
 		return (true);
 	return (false);
 }

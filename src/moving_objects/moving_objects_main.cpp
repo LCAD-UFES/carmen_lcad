@@ -271,7 +271,7 @@ deallocation_moving_objects_point_clouds_message()
 	for (i = 0; i < moving_objects_point_clouds_message.num_point_clouds; i++)
 	{
 		free(moving_objects_point_clouds_message.point_clouds[i].points);
-		free(moving_objects_point_clouds_message.point_clouds[i].particulas);
+//		free(moving_objects_point_clouds_message.point_clouds[i].particulas);
 	}
 	free(moving_objects_point_clouds_message.point_clouds);
 }
@@ -363,15 +363,15 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 			}
 
 			//fixme para a visualização das partículas
-			moving_objects_point_clouds_message.point_clouds[i].particulas = (particle_print_t*) malloc(400 * sizeof(particle_print_t));
-			if(it->particle_set.size() > 0) {
-				for(int k = 0; k < 400; k++){
-					moving_objects_point_clouds_message.point_clouds[i].particulas[k].class_id = it->particle_set[k].class_id;
-					moving_objects_point_clouds_message.point_clouds[i].particulas[k].geometry = it->particle_set[k].model_features.geometry;
-					moving_objects_point_clouds_message.point_clouds[i].particulas[k].pose = it->particle_set[k].pose;
-					moving_objects_point_clouds_message.point_clouds[i].particulas[k].velocity = it->particle_set[k].velocity;
-				}
-			}
+//			moving_objects_point_clouds_message.point_clouds[i].particulas = (particle_print_t*) malloc(400 * sizeof(particle_print_t));
+//			if(it->particle_set.size() > 0) {
+//				for(int k = 0; k < 400; k++){
+//					moving_objects_point_clouds_message.point_clouds[i].particulas[k].class_id = it->particle_set[k].class_id;
+//					moving_objects_point_clouds_message.point_clouds[i].particulas[k].geometry = it->particle_set[k].model_features.geometry;
+//					moving_objects_point_clouds_message.point_clouds[i].particulas[k].pose = it->particle_set[k].pose;
+//					moving_objects_point_clouds_message.point_clouds[i].particulas[k].velocity = it->particle_set[k].velocity;
+//				}
+//			}
 
 
 			i++;
@@ -767,28 +767,6 @@ get_alive_sensors(int argc, char **argv)
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne7_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[7].unexpeted_delta_range_sigma, 0, NULL},
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne8_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[8].unexpeted_delta_range_sigma, 0, NULL},
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne9_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[9].unexpeted_delta_range_sigma, 0, NULL},
-
-			{(char*)"localize_ackerman", (char*)"velodyne_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne1_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[1].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne2_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[2].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne3_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[3].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne4_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[4].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne5_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[5].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne6_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[6].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne7_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[7].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne8_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[8].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne9_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[9].lambda_short_min, 0, NULL},
-
-			{(char*)"localize_ackerman", (char*)"velodyne_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne1_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[1].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne2_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[2].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne3_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[3].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne4_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[4].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne5_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[5].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne6_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[6].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne7_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[7].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne8_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[8].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne9_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[9].lambda_short_max, 0, NULL},
 
 			{(char*)"localize_ackerman",  (char*)"velodyne_range_max_factor", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].range_max_factor, 0, NULL}
 

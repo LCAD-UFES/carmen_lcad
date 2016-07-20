@@ -37,6 +37,7 @@ typedef struct {
 	char *host;
 } carmen_visual_tracker_test_message;
 
+//Verificar se eh necessario mudar para ter dados da camera usada
 typedef struct {
 	bounding_box rect;
 	double confidence;

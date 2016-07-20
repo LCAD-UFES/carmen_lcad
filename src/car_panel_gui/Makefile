@@ -6,7 +6,7 @@ MODULE_COMMENT = Graphics User Interface for car panel
 
 LINK = g++
 
-CXXFLAGS += -Wl,-O3
+CXXFLAGS += 
 DEL_FILE = rm -f
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/src/car_panel_gui
@@ -19,26 +19,24 @@ LFLAGS += -lglobal -lGLU -lipc -lz -lparam_interface -lmap_interface -llocalize_
 	  -lmotion_planner_interface -lrobot_ackerman_interface -lbase_ackerman_interface
 
 # Source code files (.c, .cpp) 
-SOURCES	= 	components/characters/character.cpp \
-		components/speedometer.cpp \
-		components/steering.cpp \
-		components/lights.cpp \
-		components/arrow.cpp \
-		components/accelerator.cpp \
-		components/accelerators/with_time.cpp \
-		components/accelerators/without_time.cpp \
+SOURCES	= 	character.cpp \
+		speedometer.cpp \
+		steering.cpp \
+		lights.cpp \
+		arrow.cpp \
+		accelerator.cpp \
+		without_time.cpp \
 		panel.cpp \
 		car_panel.cpp \
 		panel_gui.cpp		
 
-OBJECTS =	components/characters/character.o \
-		components/speedometer.o \
-		components/steering.o \
-		components/lights.o \
-		components/arrow.o \
-		components/accelerator.o \
-		components/accelerators/with_time.o \
-		components/accelerators/without_time.o \
+OBJECTS =	character.o \
+		speedometer.o \
+		steering.o \
+		lights.o \
+		arrow.o \
+		accelerator.o \
+		without_time.o \
 		panel.o \
 		car_panel.o 
 
@@ -48,7 +46,7 @@ PUBLIC_LIBRARIES = libcar_panel.a
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = car_panel_gui
 
-TARGETS = libcar_panel.a car_panel_gui
+TARGETS = car_panel_gui libcar_panel.a
 
 PUBLIC_LIBRARIES_SO = libcar_panel.so
 

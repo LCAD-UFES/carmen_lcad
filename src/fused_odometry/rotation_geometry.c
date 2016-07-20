@@ -351,4 +351,3 @@ carmen_get_sensor_sphere_point_in_robot_cartesian_reference(carmen_sphere_coord_
 
 	return car_reference;
 }
-

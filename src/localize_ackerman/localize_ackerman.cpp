@@ -470,11 +470,6 @@ velodyne_variable_scan_localize(carmen_velodyne_variable_scan_message *message, 
 
 	carmen_localize_ackerman_run_with_velodyne_correction(filter, &map, &local_compacted_map, &local_compacted_mean_remission_map, &local_compacted_variance_remission_map, &binary_map);
 
-//	//if (filter->initialized)
-//	{
-//		carmen_localize_ackerman_summarize_velodyne(filter, &summary);
-//		publish_particles_prediction(filter, &summary, message->timestamp);
-//	}
 
 //	if (fabs(base_ackerman_odometry_vector[odometry_index].v) > 0.2)
 	{
@@ -521,10 +516,6 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	if (!velodyne_initilized)
 		return;
 
-	//localalize_using_map_velodyne_partial_scan(velodyne_message);
-
-	//if (binary_map.map_size == 0)
-		//return;
 
 	carmen_localize_ackerman_run_with_velodyne_prediction(filter, &base_ackerman_odometry_vector[odometry_index],
 				&fused_odometry_vector[fused_odometry_index], use_velocity_prediction,
@@ -539,12 +530,10 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	{
 		carmen_localize_ackerman_run_with_velodyne_resample(filter);
 	}
-		//swarm(filter, &map, &local_compacted_map, &local_compacted_mean_remission_map, &local_compacted_variance_remission_map, &fused_odometry_vector[fused_odometry_index],&binary_map);
 
 	if (filter->initialized)
 	{
 		carmen_localize_ackerman_summarize_velodyne(filter, &summary);
-//		carmen_localize_ackerman_summarize_swarm(filter, &summary);
 		publish_globalpos(&summary, base_ackerman_odometry_vector[odometry_index].v,
 				base_ackerman_odometry_vector[odometry_index].phi, velodyne_message->timestamp);
 //		publish_particles_correction(filter, &summary, velodyne_message->timestamp);
@@ -745,7 +734,7 @@ carmen_localize_ackerman_initialize_handler(carmen_localize_ackerman_initialize_
 //			first = 0;
 //		}
 
-//		publish_first_globalpos(initialize_msg); // Alberto: se publicar pode sujar o mapa devido a inicializacao.
+		publish_first_globalpos(initialize_msg); // Alberto: se publicar pode sujar o mapa devido a inicializacao.
 	}
 	else if (initialize_msg->distribution == CARMEN_INITIALIZE_UNIFORM)
 	{
@@ -753,6 +742,8 @@ carmen_localize_ackerman_initialize_handler(carmen_localize_ackerman_initialize_
 		carmen_localize_ackerman_initialize_particles_uniform(filter, &front_laser, &map);
 		publish_particles(filter, &summary, initialize_msg->timestamp);
 	}
+	necessary_maps_available = 0;
+
 }
 
 
@@ -766,34 +757,7 @@ localize_map_update_handler(carmen_map_server_localize_map_message *message)
 
 	necessary_maps_available = 1;
 }
-/*
 
-static void
-offline_map_update_handler(carmen_map_server_offline_map_message *offline_map_message)
-{
-	carmen_localize_ackerman_param_p param;
-
-	if (new_map != NULL)
-		carmen_map_destroy(&new_map);
-	new_map = (carmen_map_t *) calloc(1, sizeof(carmen_map_t));
-	carmen_map_server_copy_offline_map_from_message(new_map, offline_map_message);
-
-	param = filter->param;
-
-	 create a localize map
-	carmen_warn("Creating likelihood maps... ");
-	double t1 = carmen_get_time();
-	carmen_to_localize_ackerman_map(new_map, &map, param);
-	double t2 = carmen_get_time();
-	carmen_warn("done. t =% lfs\n", t2 - t1);
-
-	x_origin = offline_map_message->config.x_origin;
-	y_origin = offline_map_message->config.y_origin;
-
-	necessary_maps_available = 1;
-}
-
-*/
 
 static void
 globalpos_query_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, 
@@ -1003,27 +967,9 @@ get_alive_sensors(int argc, char **argv)
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne8_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[8].unexpeted_delta_range_sigma, 0, NULL},
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne9_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[9].unexpeted_delta_range_sigma, 0, NULL},
 
-			{(char*)"localize_ackerman", (char*)"velodyne_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne1_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[1].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne2_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[2].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne3_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[3].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne4_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[4].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne5_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[5].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne6_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[6].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne7_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[7].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne8_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[8].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne9_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[9].lambda_short_min, 0, NULL},
 
-			{(char*)"localize_ackerman", (char*)"velodyne_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne1_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[1].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne2_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[2].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne3_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[3].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne4_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[4].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne5_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[5].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne6_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[6].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne7_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[7].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne8_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[8].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne9_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[9].lambda_short_max, 0, NULL},
+			{(char*)"localize_ackerman", (char*)"unsafe_height_above_ground", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].unsafe_height_above_ground, 0, NULL},
+
 
 			{(char*)"localize_ackerman",  (char*)"velodyne_range_max_factor", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].range_max_factor, 0, NULL}
 
@@ -1035,6 +981,8 @@ get_alive_sensors(int argc, char **argv)
 	{
 		if (i == STEREO_MAPPING_SENSOR_INDEX)
 			continue;
+
+		spherical_sensor_params[i].unsafe_height_above_ground = spherical_sensor_params[0].unsafe_height_above_ground;
 
 
 		spherical_sensor_data[i].ray_position_in_the_floor = (carmen_vector_2D_t**)calloc(number_of_threads ,sizeof(carmen_vector_2D_t*));
@@ -1422,8 +1370,6 @@ subscribe_to_ipc_message()
 			carmen_robot_ackerman_subscribe_frontlaser_message(&front_laser, (carmen_handler_t) robot_ackerman_frontlaser_handler, CARMEN_SUBSCRIBE_LATEST);
 		}
 
-
-//		carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
 
 		carmen_map_server_subscribe_localize_map_message(NULL,
 				(carmen_handler_t) localize_map_update_handler, CARMEN_SUBSCRIBE_LATEST);

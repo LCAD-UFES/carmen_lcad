@@ -801,194 +801,194 @@ draw_tracking_moving_objects(moving_objects_tracking_t *moving_objects_tracking,
 
 		destroy_rotation_matrix(rotate);
 
-		if (draw_particles_flag == 1) {
-			//todo para visualizar as particulas apenas
-			for(j = 0; j < 10; j++){
-				carmen_pose_3D_t pos;
-				pos = moving_objects_tracking[i].moving_objects_pose;
-				carmen_vector_3D_t p1, p2, p3 , p4, p5, p6, p7, p8, t;
-				carmen_vector_3D_t s1, s2, s3, s4; /* moving object direction arrow */
-				double correction_wheel_height = 0.28;
-				double W, L, H;
-
-				pos.position.x = moving_objects_tracking[i].particulas[j].pose.x - offset.x;
-				pos.position.y = moving_objects_tracking[i].particulas[j].pose.y - offset.y;
-				pos.position.z = 0.0;
-				pos.orientation.yaw = moving_objects_tracking[i].particulas[j].pose.theta;
-
-				W = moving_objects_tracking[i].particulas[j].geometry.width;
-				L = moving_objects_tracking[i].particulas[j].geometry.length;
-				H = moving_objects_tracking[i].particulas[j].geometry.height;
-
-		//		W = moving_objects_tracking[i].width;
-		//		L = moving_objects_tracking[i].length;
-		//		H = moving_objects_tracking[i].height;
-
-				rotate = compute_rotation_matrix(NULL, pos.orientation);
-
-				glColor3d(moving_objects_tracking[i].model_features.red -0.5,
-						moving_objects_tracking[i].model_features.green -0.5,
-						moving_objects_tracking[i].model_features.blue -0.5);
-
-				p1.x = - L/2.0;
-				p1.y = - W/2.0;
-				p1.z = 0.0 - correction_wheel_height;
-
-				p2.x = L/2.0;
-				p2.y = - W/2.0;
-				p2.z = 0.0 - correction_wheel_height;
-
-				p3.x = L/2.0;
-				p3.y = W/2.0;
-				p3.z = 0.0 - correction_wheel_height;
-
-				p4.x = - L/2.0;
-				p4.y = W/2.0;
-				p4.z = 0.0 - correction_wheel_height;
-
-				p5.x = - L/2.0;
-				p5.y = - W/2.0;
-				p5.z = H - correction_wheel_height;
-
-				p6.x = L/2.0;
-				p6.y = - W/2.0;
-				p6.z = H - correction_wheel_height;
-
-				p7.x = L/2.0;
-				p7.y = W/2.0;
-				p7.z = H - correction_wheel_height;
-
-				p8.x = - L/2.0;
-				p8.y = W/2.0;
-				p8.z = H - correction_wheel_height;
-
-				t = multiply_matrix_vector(rotate, p1);
-				p1 = add_vectors(t, pos.position);
-
-				t = multiply_matrix_vector(rotate, p2);
-				p2 = add_vectors(t, pos.position);
-
-				t = multiply_matrix_vector(rotate, p3);
-				p3 = add_vectors(t, pos.position);
-
-				t = multiply_matrix_vector(rotate, p4);
-				p4 = add_vectors(t, pos.position);
-
-				t = multiply_matrix_vector(rotate, p5);
-				p5 = add_vectors(t, pos.position);
-
-				t = multiply_matrix_vector(rotate, p6);
-				p6 = add_vectors(t, pos.position);
-
-				t = multiply_matrix_vector(rotate, p7);
-				p7 = add_vectors(t, pos.position);
-
-				t = multiply_matrix_vector(rotate, p8);
-				p8 = add_vectors(t, pos.position);
-
-				glBegin (GL_LINES);
-
-				glVertex3d (p1.x, p1.y, p1.z);
-				glVertex3d (p2.x, p2.y, p2.z);
-
-				glVertex3d (p2.x, p2.y, p2.z);
-				glVertex3d (p3.x, p3.y, p3.z);
-
-				glVertex3d (p3.x, p3.y, p3.z);
-				glVertex3d (p4.x, p4.y, p4.z);
-
-				glVertex3d (p4.x, p4.y, p4.z);
-				glVertex3d (p1.x, p1.y, p1.z);
-				//////////////////////////////
-
-				glVertex3d (p5.x, p5.y, p5.z);
-				glVertex3d (p6.x, p6.y, p6.z);
-
-				glVertex3d (p6.x, p6.y, p6.z);
-				glVertex3d (p7.x, p7.y, p7.z);
-
-				glVertex3d (p7.x, p7.y, p7.z);
-				glVertex3d (p8.x, p8.y, p8.z);
-
-				glVertex3d (p8.x, p8.y, p8.z);
-				glVertex3d (p5.x, p5.y, p5.z);
-				//////////////////////////////
-
-				glVertex3d (p1.x, p1.y, p1.z);
-				glVertex3d (p5.x, p5.y, p5.z);
-
-				glVertex3d (p2.x, p2.y, p2.z);
-				glVertex3d (p6.x, p6.y, p6.z);
-
-				glVertex3d (p3.x, p3.y, p3.z);
-				glVertex3d (p7.x, p7.y, p7.z);
-
-				glVertex3d (p4.x, p4.y, p4.z);
-				glVertex3d (p8.x, p8.y, p8.z);
-
-				glEnd ();
-
-				/* Moving Object direction arrow */
-				s1.x = 0.0;
-				s1.y = 0.0;
-				s1.z = H - correction_wheel_height;
-
-				s2.x = L/2.0;
-				s2.y = 0.0;
-				s2.z = H - correction_wheel_height;
-
-				s3.x = (L/2.0) - 0.3;
-				s3.y = 0.2;
-				s3.z = H - correction_wheel_height;
-
-				s4.x = (L/2.0) - 0.3;
-				s4.y = -0.2;
-				s4.z = H - correction_wheel_height;
-
-				t = multiply_matrix_vector(rotate, s1);
-				s1 = add_vectors(t, pos.position);
-
-				t = multiply_matrix_vector(rotate, s2);
-				s2 = add_vectors(t, pos.position);
-
-				t = multiply_matrix_vector(rotate, s3);
-				s3 = add_vectors(t, pos.position);
-
-				t = multiply_matrix_vector(rotate, s4);
-				s4 = add_vectors(t, pos.position);
-
-				glBegin(GL_LINES);
-				/* Part of arrow: | */
-				glVertex3d(s1.x, s1.y, s1.z);
-				glVertex3d(s2.x, s2.y, s2.z);
-
-				/* Part of arrow: / */
-				glVertex3d(s3.x, s3.y, s3.z);
-				glVertex3d(s2.x, s2.y, s2.z);
-
-				/* Part of arrow: \ */
-				glVertex3d(s4.x, s4.y, s4.z);
-				glVertex3d(s2.x, s2.y, s2.z);
-
-				glEnd();
-
-				//center of object
-				glPushAttrib(GL_POINT_BIT);
-				glPointSize(5);
-				glBegin(GL_POINTS);
-				glVertex3d(s1.x, s1.y, s1.z);
-				glEnd();
-				glPopAttrib();
-
-				/* has to drawn after stuff above, so that it appears on top */
-	//			draw_number_associated(pos.position.x, pos.position.y, moving_objects_tracking[i].num_associated,
-	//					moving_objects_tracking[i].model_features.model_name);
-//				draw_linear_velocity(pos.position.x, pos.position.y, moving_objects_tracking[i].particulas[j].velocity,
-//						moving_objects_tracking[i].particulas[j].geometry.height);
-
-				destroy_rotation_matrix(rotate);
-			}
-		}
+//		if (draw_particles_flag == 1) {
+//			//todo para visualizar as particulas apenas
+//			for(j = 0; j < 10; j++){
+//				carmen_pose_3D_t pos;
+//				pos = moving_objects_tracking[i].moving_objects_pose;
+//				carmen_vector_3D_t p1, p2, p3 , p4, p5, p6, p7, p8, t;
+//				carmen_vector_3D_t s1, s2, s3, s4; /* moving object direction arrow */
+//				double correction_wheel_height = 0.28;
+//				double W, L, H;
+//
+//				pos.position.x = moving_objects_tracking[i].particulas[j].pose.x - offset.x;
+//				pos.position.y = moving_objects_tracking[i].particulas[j].pose.y - offset.y;
+//				pos.position.z = 0.0;
+//				pos.orientation.yaw = moving_objects_tracking[i].particulas[j].pose.theta;
+//
+//				W = moving_objects_tracking[i].particulas[j].geometry.width;
+//				L = moving_objects_tracking[i].particulas[j].geometry.length;
+//				H = moving_objects_tracking[i].particulas[j].geometry.height;
+//
+//		//		W = moving_objects_tracking[i].width;
+//		//		L = moving_objects_tracking[i].length;
+//		//		H = moving_objects_tracking[i].height;
+//
+//				rotate = compute_rotation_matrix(NULL, pos.orientation);
+//
+//				glColor3d(moving_objects_tracking[i].model_features.red -0.5,
+//						moving_objects_tracking[i].model_features.green -0.5,
+//						moving_objects_tracking[i].model_features.blue -0.5);
+//
+//				p1.x = - L/2.0;
+//				p1.y = - W/2.0;
+//				p1.z = 0.0 - correction_wheel_height;
+//
+//				p2.x = L/2.0;
+//				p2.y = - W/2.0;
+//				p2.z = 0.0 - correction_wheel_height;
+//
+//				p3.x = L/2.0;
+//				p3.y = W/2.0;
+//				p3.z = 0.0 - correction_wheel_height;
+//
+//				p4.x = - L/2.0;
+//				p4.y = W/2.0;
+//				p4.z = 0.0 - correction_wheel_height;
+//
+//				p5.x = - L/2.0;
+//				p5.y = - W/2.0;
+//				p5.z = H - correction_wheel_height;
+//
+//				p6.x = L/2.0;
+//				p6.y = - W/2.0;
+//				p6.z = H - correction_wheel_height;
+//
+//				p7.x = L/2.0;
+//				p7.y = W/2.0;
+//				p7.z = H - correction_wheel_height;
+//
+//				p8.x = - L/2.0;
+//				p8.y = W/2.0;
+//				p8.z = H - correction_wheel_height;
+//
+//				t = multiply_matrix_vector(rotate, p1);
+//				p1 = add_vectors(t, pos.position);
+//
+//				t = multiply_matrix_vector(rotate, p2);
+//				p2 = add_vectors(t, pos.position);
+//
+//				t = multiply_matrix_vector(rotate, p3);
+//				p3 = add_vectors(t, pos.position);
+//
+//				t = multiply_matrix_vector(rotate, p4);
+//				p4 = add_vectors(t, pos.position);
+//
+//				t = multiply_matrix_vector(rotate, p5);
+//				p5 = add_vectors(t, pos.position);
+//
+//				t = multiply_matrix_vector(rotate, p6);
+//				p6 = add_vectors(t, pos.position);
+//
+//				t = multiply_matrix_vector(rotate, p7);
+//				p7 = add_vectors(t, pos.position);
+//
+//				t = multiply_matrix_vector(rotate, p8);
+//				p8 = add_vectors(t, pos.position);
+//
+//				glBegin (GL_LINES);
+//
+//				glVertex3d (p1.x, p1.y, p1.z);
+//				glVertex3d (p2.x, p2.y, p2.z);
+//
+//				glVertex3d (p2.x, p2.y, p2.z);
+//				glVertex3d (p3.x, p3.y, p3.z);
+//
+//				glVertex3d (p3.x, p3.y, p3.z);
+//				glVertex3d (p4.x, p4.y, p4.z);
+//
+//				glVertex3d (p4.x, p4.y, p4.z);
+//				glVertex3d (p1.x, p1.y, p1.z);
+//				//////////////////////////////
+//
+//				glVertex3d (p5.x, p5.y, p5.z);
+//				glVertex3d (p6.x, p6.y, p6.z);
+//
+//				glVertex3d (p6.x, p6.y, p6.z);
+//				glVertex3d (p7.x, p7.y, p7.z);
+//
+//				glVertex3d (p7.x, p7.y, p7.z);
+//				glVertex3d (p8.x, p8.y, p8.z);
+//
+//				glVertex3d (p8.x, p8.y, p8.z);
+//				glVertex3d (p5.x, p5.y, p5.z);
+//				//////////////////////////////
+//
+//				glVertex3d (p1.x, p1.y, p1.z);
+//				glVertex3d (p5.x, p5.y, p5.z);
+//
+//				glVertex3d (p2.x, p2.y, p2.z);
+//				glVertex3d (p6.x, p6.y, p6.z);
+//
+//				glVertex3d (p3.x, p3.y, p3.z);
+//				glVertex3d (p7.x, p7.y, p7.z);
+//
+//				glVertex3d (p4.x, p4.y, p4.z);
+//				glVertex3d (p8.x, p8.y, p8.z);
+//
+//				glEnd ();
+//
+//				/* Moving Object direction arrow */
+//				s1.x = 0.0;
+//				s1.y = 0.0;
+//				s1.z = H - correction_wheel_height;
+//
+//				s2.x = L/2.0;
+//				s2.y = 0.0;
+//				s2.z = H - correction_wheel_height;
+//
+//				s3.x = (L/2.0) - 0.3;
+//				s3.y = 0.2;
+//				s3.z = H - correction_wheel_height;
+//
+//				s4.x = (L/2.0) - 0.3;
+//				s4.y = -0.2;
+//				s4.z = H - correction_wheel_height;
+//
+//				t = multiply_matrix_vector(rotate, s1);
+//				s1 = add_vectors(t, pos.position);
+//
+//				t = multiply_matrix_vector(rotate, s2);
+//				s2 = add_vectors(t, pos.position);
+//
+//				t = multiply_matrix_vector(rotate, s3);
+//				s3 = add_vectors(t, pos.position);
+//
+//				t = multiply_matrix_vector(rotate, s4);
+//				s4 = add_vectors(t, pos.position);
+//
+//				glBegin(GL_LINES);
+//				/* Part of arrow: | */
+//				glVertex3d(s1.x, s1.y, s1.z);
+//				glVertex3d(s2.x, s2.y, s2.z);
+//
+//				/* Part of arrow: / */
+//				glVertex3d(s3.x, s3.y, s3.z);
+//				glVertex3d(s2.x, s2.y, s2.z);
+//
+//				/* Part of arrow: \ */
+//				glVertex3d(s4.x, s4.y, s4.z);
+//				glVertex3d(s2.x, s2.y, s2.z);
+//
+//				glEnd();
+//
+//				//center of object
+//				glPushAttrib(GL_POINT_BIT);
+//				glPointSize(5);
+//				glBegin(GL_POINTS);
+//				glVertex3d(s1.x, s1.y, s1.z);
+//				glEnd();
+//				glPopAttrib();
+//
+//				/* has to drawn after stuff above, so that it appears on top */
+//	//			draw_number_associated(pos.position.x, pos.position.y, moving_objects_tracking[i].num_associated,
+//	//					moving_objects_tracking[i].model_features.model_name);
+////				draw_linear_velocity(pos.position.x, pos.position.y, moving_objects_tracking[i].particulas[j].velocity,
+////						moving_objects_tracking[i].particulas[j].geometry.height);
+//
+//				destroy_rotation_matrix(rotate);
+//			}
+//		}
 	}
 }
 

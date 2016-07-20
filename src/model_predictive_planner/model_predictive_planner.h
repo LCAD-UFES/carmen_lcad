@@ -18,6 +18,10 @@ public:
 			Command last_odometry, double max_v, carmen_rddf_road_profile_message *goal_list_message);
 };
 
+double compute_distance_to_closest_obstacles(carmen_ackerman_path_point_t path_pose, double circle_radius,
+		carmen_robot_ackerman_config_t *robot_config, Pose *global_pos,
+		carmen_grid_mapping_distance_map_message *distance_map);
+
 
 
 #endif /* MODEL_PREDICTIVE_PLANNER_H_ */

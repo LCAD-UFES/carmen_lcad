@@ -12,6 +12,8 @@
 
 #include "moving_objects.h"
 
+#define BASELINE
+
 using namespace std;
 
 
@@ -21,8 +23,9 @@ const double norm_factor_x = 10.0;
 const double norm_factor_y = 10.0;
 const double norm_factor_z = 10.0;
 
-const double alpha_1 =  1.0; // desvio padrão da velocidade padrão 0.2
-const double alpha_2 =  0.1; // desvio padrão de theta padrão 0.01
+const double sigma = 0.5;			// desvio padrão dos pesos das partículas
+const double alpha_1 = 1.0; // desvio padrão da velocidade padrão 0.2
+const double alpha_2 = 0.05; // desvio padrão de theta padrão 0.01
 const double v_min   =  0.0; // velocidade mínima
 const double v_max   = 25.0; // velocidade máxima
 

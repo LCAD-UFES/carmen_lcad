@@ -14,6 +14,7 @@
 #include "../model/command.h"
 #include "../model/robot_state.h"
 #include <carmen/carmen.h>
+#include <carmen/obstacle_distance_mapper_interface.h>
 #include <carmen/behavior_selector_messages.h>
 #include <list>
 #include <boost/geometry.hpp>
@@ -31,20 +32,16 @@ using namespace std;
 class GlobalState
 {
 public:
-	static Robot_Config robot_config;
+	static carmen_robot_ackerman_config_t robot_config;
 	static double param_max_vel;
 
 	static double max_phi_velocity;		// Equivalente a rodar o volante todo para um lado em 1 segundo.
 										// A velocidade de mudanca de phi nao pode ultrapassar este valor
-	static double max_phi_acceleration; // A velocidade de phi pode aumentar no maximo deste valor por segundo
-
 	static double time_to_change_gears;
 
 	static Pose *localizer_pose;
 	static Pose *last_plan_pose;
 	static double localizer_pose_timestamp;
-	static double rrt_planner_timestamp;
-	static double last_rrt_path_message_timestamp;
 
 	static Command last_odometry;
 
@@ -56,7 +53,7 @@ public:
 	static bool last_path_received_is_empty;
 
 	static carmen_map_t cost_map;
-	static carmen_grid_mapping_distance_map_message *localize_map;
+	static carmen_grid_mapping_distance_map_message *distance_map;
 	static bgi::rtree< occupied_cell, bgi::quadratic<16> > obstacles_rtree;
 	static bool cost_map_initialized;
 	static KDTree2D obstacles_kdtree;
@@ -67,7 +64,8 @@ public:
 	static int	  cheat; // if true the algorithm will use the true pose, otherwise will use the localize pose
 
 	static double obstacle_threshold;
-
+	static bool ford_escape_online;
+	static carmen_ford_escape_status_message ford_escape_status;
 	static int current_algorithm;//which algorithm is running, define at carmen_navigator_ackerman_algorithm_t
 	static int behavior_selector_state;
 

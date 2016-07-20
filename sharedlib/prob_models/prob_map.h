@@ -77,13 +77,12 @@ typedef struct _sensor_parameters
 	log_odds_param log_odds;
 	char *name;
 	double unexpeted_delta_range_sigma;
-	double lambda_short_min;
-	double lambda_short_max;
 	double *remission_calibration;
 	double *vertical_correction;
 	double *delta_difference_mean, *delta_difference_stddev;
 	int vertical_resolution;
 	int *ray_order;
+	double unsafe_height_above_ground;
 
 	double sigma_zhit, zhit, zshort, zmax, zrand;
 	double lambda_short;

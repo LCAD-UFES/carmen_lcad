@@ -14,7 +14,7 @@ using namespace std;
 
 struct ObjectiveFunctionParams
 {
-	double target_v, suitable_acceleration;
+	double target_v, suitable_acceleration, suitable_tt;
 	double distance_by_index;
 	double theta_by_index;
 	double d_yaw_by_index;
@@ -24,6 +24,8 @@ struct ObjectiveFunctionParams
 	vector<unsigned int> path_point_nearest_to_lane;
 	unsigned int path_size;
 	bool use_lane;
+	bool optimize_time;
+	double plan_cost;
 };
 
 TrajectoryLookupTable::TrajectoryControlParameters get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
