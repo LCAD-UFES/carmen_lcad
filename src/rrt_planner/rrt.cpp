@@ -613,8 +613,60 @@ bool RRT::is_valid_path()
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
+Pose
+calculate_point_in_curvature_arc (Pose &p1, Pose &p2)
+{
+	double delta_x=0, delta_y=0, p1x=p1.x, p1y=p1.y, p2x=p2.x, p2y=p2.y; //Copy values to variables avoids always acessing the structures
+	Pose p0;
+
+	if (p1x < p2x && p1y < p2y)
+	{
+		delta_x = p2x - p1x;
+		delta_y = p2y - p1y;
+		p0.x = p1x - delta_x;
+		p0.y = p1y - delta_y;
+		return p0;
+	}
+	if (p1x > p2x && p1y < p2y)
+	{
+		delta_x = p1x - p2x;
+		delta_y = p2y - p1y;
+		p0.x = p1x + delta_x;
+		p0.y = p1y - delta_y;
+		return p0;
+	}
+	if (p1x > p2x && p1y > p2y)
+	{
+		delta_x = p1x - p2x;
+		delta_y = p1y - p2y;
+		p0.x = p1x + delta_x;
+		p0.y = p1y + delta_y;
+		return p0;
+	}
+
+	delta_x = p2x - p1x;
+	delta_y = p1y - p2y;
+	p0.x = p1x - delta_x;
+	p0.y = p1y + delta_y;
+	return p0;
+
+}
+
+
 double
-recalculate_theta (Pose &left, Pose &current, Pose &right)					//Recalculate cars orientantio
+recalculate_theta (Pose &current, Pose &right)			            		//Recalculate cars orientantion
+{
+	Pose left = calculate_point_in_curvature_arc (current, right);
+
+    double x1 = (right.x - left.x) + (right.x - current.x);
+    double y1 = (right.y - left.y) + (right.y - current.y);
+
+    return atan2(y1, x1);
+}
+
+
+double
+recalculate_theta_old (Pose &left, Pose &current, Pose &right)					//Recalculate cars orientantio
 {
     double x1 = 0.25*(right.x - left.x) + 0.75*(right.x - current.x);
     double y1 = 0.25*(right.y - left.y) + 0.75*(right.y - current.y);
@@ -640,24 +692,31 @@ recalculate_phi (double theta1, double theta2, double v, double time, double L) 
 void
 recalculate_theta_time_phi(list<RRT_Path_Edge> &path)
 {
-//    int i, size = path.size();
     list<RRT_Path_Edge>::iterator it_ant = path.begin();
-    list<RRT_Path_Edge>::iterator it = path.begin();
+    list<RRT_Path_Edge>::iterator it = it_ant;
+    double L = GlobalState::robot_config.distance_between_front_and_rear_axles;
+    int first = 0;
 
+    it->p1.pose.theta = recalculate_theta(it->p1.pose, it->p2.pose);
     it->time = recalculate_delta_time(it->p1.pose.x, it->p2.pose.x, it->command.v, it->p1.pose.theta);
-    //it->command.phi
+
     for (it++; it != path.end(); it_ant++, it++)
     {
-//    	msg->path[i-1].p2.theta = msg->path[i].p1.theta = get_desired_heading(msg->path[i-1].p1, msg->path[i].p1, msg->path[i].p2);
-    	it_ant->p2.pose.theta = it->p1.pose.theta = recalculate_theta(it_ant->p1.pose, it->p1.pose, it->p2.pose);
+    	it_ant->p2.pose.theta = it->p1.pose.theta = recalculate_theta(it->p1.pose, it->p2.pose);
 
-//      msg->path[i].time = recalculate_delta_time(msg->path[i]);
+    	if (first == 0)
+    	{
+    		first = 1;
+    		it_ant->command.phi = recalculate_phi (it_ant->p1.pose.theta, it_ant->p2.pose.theta, it_ant->command.v, it_ant->time, L);
+    	}
+
     	it->time = recalculate_delta_time(it->p1.pose.x, it->p2.pose.x, it->command.v, it->p1.pose.theta);
 
-//      msg->path[i-1].p2.phi = msg->path[i].p1.phi = msg->path[i-1].phi = get_desired_wheel_angle (msg->path[i], GlobalState::robot_config.distance_between_front_and_rear_axles);
-    	it_ant->p2.v_and_phi.phi = it->p1.v_and_phi.phi = it->command.phi =
-    			recalculate_phi (it->p1.pose.theta, it->p2.pose.theta, it->command.v, it->time, GlobalState::robot_config.distance_between_front_and_rear_axles);
+    	it_ant->p2.v_and_phi.phi = it->p1.v_and_phi.phi = it_ant->command.phi =
+    			recalculate_phi (it->p1.pose.theta, it->p2.pose.theta, it->command.v, it->time, L);
     }
+
+    it_ant->command.phi = it_ant->p2.v_and_phi.phi;
 }
 
 
