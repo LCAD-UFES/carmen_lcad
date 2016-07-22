@@ -386,9 +386,8 @@ char *carmen_string_to_laser_laser_message_orig(char *string,
 char *carmen_string_to_laser_laser_message(char *string,
 		carmen_laser_laser_message *laser)
 {
-	char *current_pos = string;
+	char *current_pos = string - 10;
 	int i, num_readings, num_remissions;
-
 	if (strncmp(current_pos, "RAWLASER", 8) == 0) {
 		current_pos += 8;
 		laser->id = CLF_READ_INT(&current_pos);

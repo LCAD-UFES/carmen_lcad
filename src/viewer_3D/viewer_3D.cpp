@@ -941,7 +941,7 @@ carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_c
 	init_moving_objects_tracking(current_num_point_clouds, previous_num_point_clouds);
 	previous_num_point_clouds = current_num_point_clouds;
 
-	int k,l;
+	int k;
 
 	j = 0;
 
