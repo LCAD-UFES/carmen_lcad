@@ -215,24 +215,6 @@ RRT_Lane::build_rrt_path()
 				GlobalState::goal_pose->x, GlobalState::goal_pose->y, GlobalState::goal_pose->theta,
 				tree.root_node->robot_state.pose.x, tree.root_node->robot_state.pose.y, tree.root_node->robot_state.pose.theta);
 	}
-
-/*	it = path.begin();
-
-	RRT_Path_Edge p;
-	p.time = 0.0;
-	p.p1.pose.x = 0.0;
-	p.p1.pose.y = 0.0;
-
-	//it->p1.pose.x = 0.0;
-	//printf ("aaaaaaaaaaaaaaaaaaaaaaaaaaaa%f %f\n", it->p1.pose.x, it->p1.pose.y);
-
-	for (it = path.begin(); it != path.end(); it++, i++)
-	{
-		it->p1.pose.x = 0.0;
-		//printf ("%f %f\n", it->p1.pose.x, it->p1.pose.y);
-	}
-	it--;
-	printf ("%f %f\n\n", it->p2.pose.x, it->p2.pose.y);*/
 }
 
 

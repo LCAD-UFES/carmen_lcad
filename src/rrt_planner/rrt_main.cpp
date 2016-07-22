@@ -89,20 +89,20 @@ publish_rrt_path_message(list<RRT_Path_Edge> &path)
 
 	for (it = path.begin(); it != path.end(); it++, i++)
 	{
-		msg.path[i].p1.x = it->p1.pose.x;
-		msg.path[i].p1.y = it->p1.pose.y;
+		msg.path[i].p1.x     = it->p1.pose.x;
+		msg.path[i].p1.y     = it->p1.pose.y;
 		msg.path[i].p1.theta = it->p1.pose.theta;
-		msg.path[i].p1.v = it->p1.v_and_phi.v;
-		msg.path[i].p1.phi = it->p1.v_and_phi.phi;
+		msg.path[i].p1.v     = it->p1.v_and_phi.v;
+		msg.path[i].p1.phi   = it->p1.v_and_phi.phi;
 
-		msg.path[i].p2.x = it->p2.pose.x;
-		msg.path[i].p2.y = it->p2.pose.y;
+		msg.path[i].p2.x     = it->p2.pose.x;
+		msg.path[i].p2.y     = it->p2.pose.y;
 		msg.path[i].p2.theta = it->p2.pose.theta;
-		msg.path[i].p2.v = it->p2.v_and_phi.v;
-		msg.path[i].p2.phi = it->p2.v_and_phi.phi;
+		msg.path[i].p2.v     = it->p2.v_and_phi.v;
+		msg.path[i].p2.phi   = it->p2.v_and_phi.phi;
 
-		msg.path[i].v = it->command.v;
-		msg.path[i].phi = it->command.phi;
+		msg.path[i].v    = it->command.v;
+		msg.path[i].phi  = it->command.phi;
 		msg.path[i].time = it->time;
 
 //		printf( "p1.x = %lf, p1.y = %lf, p1.theta = %lf, p1.v = %lf, p1.phi = %lf\n"
@@ -118,6 +118,7 @@ publish_rrt_path_message(list<RRT_Path_Edge> &path)
 					it->p1.v_and_phi.v, carmen_radians_to_degrees(it->p1.v_and_phi.phi),
 					it->p2.v_and_phi.v, carmen_radians_to_degrees(it->p2.v_and_phi.phi));
 	}
+
 	if (GlobalState::show_debug_info)
 	{
 		printf("\n");

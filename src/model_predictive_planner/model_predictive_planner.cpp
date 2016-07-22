@@ -339,13 +339,20 @@ write_tdd_to_file(FILE *problems, TrajectoryLookupTable::TrajectoryDiscreteDimen
 
 
 bool
-path_has_collision(vector<carmen_ackerman_path_point_t> path)
+path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> path)
 {
 	double proximity_to_obstacles_for_path = 0.0;
 	double circle_radius = (GlobalState::robot_config.width + 0.4) / 2.0; // metade da largura do carro + um espacco de guarda
 
 	for (unsigned int i = 0; i < path.size(); i += 1)
 	{
+		if ((path[i].phi > GlobalState::robot_config.max_phi) ||
+				(path[i].phi < -GlobalState::robot_config.max_phi))
+		{
+			printf("---------- PHI EXCEEDED THE MAX_PHI!!!!\n");
+			return (true);
+		}
+
 		proximity_to_obstacles_for_path += compute_distance_to_closest_obstacles(path[i], circle_radius,
 				&GlobalState::robot_config, GlobalState::localizer_pose, GlobalState::distance_map);
 	}
@@ -510,7 +517,7 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 		return (false);
 	}
 
-	if (path_has_collision(path))
+	if (path_has_collision_or_phi_exceeded(path))
 		return (false);
 
 	move_path_to_current_robot_pose(path, localizer_pose);

@@ -1,15 +1,26 @@
+20/07/2016
+
+- Melhorar o PID de steering usando o simulador
+- Descobrir por que o model predictive planner faz planos ruins na reta e na saida de quebra molas
+- Fazer o novo controle da IARA (model predictive control)
+
+
 16/07/2016
+
 - No curso em https://sites.google.com/a/sheffield.ac.uk/video-lectures-on-modelling-analysis-and-control/home/model-predictive-control#INTRODUCTION
 	- Vi ate o 9
-- Tem que mudar o obstacle avoider (e model predictive planner?) para usar apenas o mapa de distancia
+- Tem que mudar o model predictive planner para usar apenas o mapa de distancia - OK 
+	- Tem que parar de assinar o cost map
+- Tem que mudar o obstacle avoider para usar apenas o mapa de distancia
 - Tem que mudar o model predictive planner para ele:
-	- Se alterar de acordo com o caso de estar rodando com a IARA ou simulador (latencia)
-		- Assinar a mensagem de status do carro e, se recebe-la, chavear para IARA
+	- Se alterar de acordo com o caso de estar rodando com a IARA ou simulador (latencia) - OK
+		- Assinar a mensagem de status do carro e, se recebe-la, chavear para IARA - OK
 	- Funcionar em caso de reh
-- Tem que testar os novos parametros de PID para velocidade na IARA
+- Tem que testar os novos parametros de PID para velocidade na IARA - OK
 - Tem que discutir a interface para o novo path_planner:
 	- Ele tem que gerar um goal intermediario e fazer uma lane ate este goal que seja trafegavel pelo model predictive planner
 	- Esta lane deve conter velocidades, que nao devem ser zero no inicio e no goal intermediario ao mesmo	
+
 
 05/06/2014
 

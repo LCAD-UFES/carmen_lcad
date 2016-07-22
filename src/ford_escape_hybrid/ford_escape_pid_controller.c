@@ -91,7 +91,7 @@ carmen_ford_escape_hybrid_steering_PID_controler(double *steering_command,
 	integral_t_1 = integral_t;
 
 	*steering_command = carmen_clamp(-100.0, u_t, 100.0);
-//	fprintf(stdout, "STEERING (cc, dc, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
+//	fprintf(stdout, "STEERING (cc, dc, e, i, d, s, t): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
 //		atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t, *steering_command, carmen_get_time());
 }
 
