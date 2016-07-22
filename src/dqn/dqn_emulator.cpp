@@ -8,9 +8,11 @@
 #include <carmen/localize_ackerman_interface.h>
 #include <carmen/robot_ackerman_interface.h>
 #include <carmen/grid_mapping_interface.h>
+#include <carmen/mapper_interface.h>
 #include <carmen/map_server_interface.h>
 #include <carmen/collision_detection.h>
 #include <carmen/rddf_interface.h>
+#include <carmen/mapper.h>
 #include <carmen/grid_mapping.h>
 #include <carmen/rddf_index.h>
 #include <prob_map.h>
@@ -191,7 +193,7 @@ y_coord(double x, double y, double pose_y, double pose_theta)
 void
 draw_ackerman_shape(Mat *map_image,
 		double pose_x, double pose_y, double pose_theta,
-		carmen_grid_mapping_message *map_message,
+		carmen_mapper_map_message *map_message,
 		Scalar color)
 {
 	cv::Point polygons[4];
@@ -217,7 +219,7 @@ draw_ackerman_shape(Mat *map_image,
 
 
 Mat
-map_to_image(carmen_grid_mapping_message *message)
+map_to_image(carmen_mapper_map_message *message)
 {
 	double map_probability;
 	Mat map_image = Mat(Size(message->config.x_size, message->config.y_size), CV_8UC3);
@@ -297,7 +299,7 @@ cost_map_to_image(carmen_map_t *message)
 
 
 void
-draw_rddf_in_the_map(Mat *map_image, carmen_grid_mapping_message *map_message)
+draw_rddf_in_the_map(Mat *map_image, carmen_mapper_map_message *map_message)
 {
 	for (int i = RDDF_LIMIT_INITIAL_POSE; i < RDDF_LIMIT_FINAL_POSE; i++)
 	{
@@ -316,7 +318,7 @@ draw_rddf_in_the_map(Mat *map_image, carmen_grid_mapping_message *map_message)
 void
 draw_globalpose_in_the_map(Mat *map_image,
 		carmen_localize_ackerman_globalpos_message *localize_ackerman_message,
-		carmen_grid_mapping_message *map_message)
+		carmen_mapper_map_message *map_message)
 {
 	draw_ackerman_shape(map_image, localize_ackerman_message->globalpos.x,
 			localize_ackerman_message->globalpos.y,
@@ -326,7 +328,7 @@ draw_globalpose_in_the_map(Mat *map_image,
 
 
 void
-draw_final_goal_in_the_map(Mat *map_image, carmen_grid_mapping_message *map_message)
+draw_final_goal_in_the_map(Mat *map_image, carmen_mapper_map_message *map_message)
 {
 	draw_ackerman_shape(map_image, rddf_index->index[rddf_index_final_goal].x,
 				rddf_index->index[rddf_index_final_goal].y,
@@ -401,7 +403,7 @@ reset_experiment()
 
 
 Mat*
-draw_map_car_and_rddf(carmen_grid_mapping_message *message)
+draw_map_car_and_rddf(carmen_mapper_map_message *message)
 {
 	//Mat map_image = map_to_image(message);
 	Mat *map_image = cost_map_to_image(&cost_map);
@@ -607,7 +609,7 @@ summarize_experiment()
 
 
 FrameDataSp
-PreprocessScreen(Mat *raw_screen, carmen_grid_mapping_message *message)
+PreprocessScreen(Mat *raw_screen, carmen_mapper_map_message *message)
 {
 	// ************************************************
 	// CHECK IF IT CAN'T BE OPTIMIZED TO AVOID IMAGE CREATION ALL THE TIME!!!!!!!!!
@@ -785,7 +787,7 @@ update_command_using_dqn(double v, double phi)
 
 
 void
-grid_mapping_handler(carmen_grid_mapping_message *message)
+grid_mapping_handler(carmen_mapper_map_message *message)
 {
 	static int first = 1;
 

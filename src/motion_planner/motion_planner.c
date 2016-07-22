@@ -937,7 +937,7 @@ motion_planner_set_algorithm(carmen_behavior_selector_algorithm_t new_algorithm,
 
 
 void 
-copy_grid_mapping_to_map_vector(carmen_grid_mapping_message *grid_map, int position)
+copy_grid_mapping_to_map_vector(carmen_mapper_map_message *grid_map, int position)
 {
 	int i;
 

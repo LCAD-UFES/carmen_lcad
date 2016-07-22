@@ -28,7 +28,7 @@ LFLAGS += -lnet_conn -lforms -lGA -lX11 -lglut -lGLU -lGL -lm -fopenmp # -lfl -l
 MAE_FILES = tracker.con
 
 # Required default libraries to comunicate with Carmen Core.
-LFLAGS += -lparam_interface -lipc -lglobal `pkg-config --libs opencv` -lgrid_mapping_interface -lrddf_interface \
+LFLAGS += -lparam_interface -lipc -lglobal `pkg-config --libs opencv` -lmapper_interface -lrddf_interface \
 	-llocalize_ackerman_interface -lrobot_ackerman_interface -lrddf_index -lprob_models -lmap_server_interface \
 	-lcollision_detection -lmap_interface -lrotation_geometry -lgrid_mapping -lmap_io -lboost_system -lglog -lcaffe-d
 CFLAGS += -Wall -Wno-write-strings -Wno-sign-compare -g #-fopenmp -pg

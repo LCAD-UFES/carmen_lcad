@@ -11,7 +11,7 @@
 #include <carmen/behavior_selector_interface.h>
 #include <carmen/fused_odometry_interface.h>
 #include <carmen/obstacle_avoider_interface.h>
-#include <carmen/grid_mapping_interface.h>
+#include <carmen/mapper_interface.h>
 
 
 extern int autonomous_status;
@@ -140,7 +140,7 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message * msg)
 
 
 static void
-map_handler(carmen_grid_mapping_message *message)
+map_handler(carmen_mapper_map_message *message)
 {
 	if (current_map < NUM_MAPS - 1)
 		current_map++;
@@ -199,7 +199,7 @@ register_handlers()
 
 	carmen_subscribe_message(CARMEN_NAVIGATOR_ACKERMAN_STOP_NAME, CARMEN_DEFAULT_MESSAGE_FMT, NULL, sizeof(carmen_default_message), stop_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_grid_mapping_subscribe_message(NULL, (carmen_handler_t) map_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_mapper_subscribe_message(NULL, (carmen_handler_t) map_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 

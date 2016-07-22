@@ -5,7 +5,7 @@ CFLAGS += -DOLD_MOTION_MODEL
 IFLAGS += -I../obstacle_avoider
 LFLAGS += -lmap_interface -lparam_interface -llocalize_ackerman_interface -lobstacle_avoider -lobstacle_avoider_interface \
 	  -llaser_interface -lgeometry -llocalize_ackerman_motion -lbase_ackerman_interface \
-	  -lglobal -lipc -lgrid_mapping_interface -lfused_odometry_interface -lcollision_detection -lmap_server_interface \
+	  -lglobal -lipc -lfused_odometry_interface -lcollision_detection -lmap_server_interface -lmapper_interface \
 	  -lmap_server_interface -lford_escape_hybrid_interface -lfann
 
 MODULE_NAME = SIMULATOR ACKERMAN

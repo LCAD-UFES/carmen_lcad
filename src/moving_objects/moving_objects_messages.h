@@ -6,7 +6,6 @@ http://www.cs.cmu.edu/~ipc/
 
 *********************************************************/
 
-#include <carmen/grid_mapping_interface.h>
 #include <carmen/grid_mapping.h>
 #include <carmen/map_io.h>
 #include <carmen/map_interface.h>

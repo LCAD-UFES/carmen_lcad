@@ -3,7 +3,7 @@
 #include <prob_transforms.h>
 #include <prob_map.h>
 #include <carmen/grid_mapping.h>
-#include <carmen/grid_mapping_interface.h>
+#include <carmen/mapper_interface.h>
 #include <omp.h>
 
 #include "mapper.h"
@@ -48,7 +48,7 @@ carmen_map_t map, sum_remission_map, sum_sqr_remission_map, count_remission_map,
 
 carmen_map_t cost_map;
 
-carmen_grid_mapping_distance_map distance_map;
+carmen_mapper_distance_map distance_map;
 
 extern carmen_map_t offline_map;
 
@@ -678,7 +678,7 @@ compute_intermediate_pixel_distance_new(int x, int y,
 
 /* compute minimum distance to all occupied cells */
 void
-carmen_mapper_create_distance_map(carmen_grid_mapping_distance_map *lmap, carmen_map_p cmap,
+carmen_mapper_create_distance_map(carmen_mapper_distance_map *lmap, carmen_map_p cmap,
 		double minimum_occupied_prob)
 {
 	int x, y;
@@ -735,7 +735,7 @@ carmen_mapper_create_distance_map(carmen_grid_mapping_distance_map *lmap, carmen
 
 
 void
-carmen_mapper_initialize_distance_map(carmen_grid_mapping_distance_map *lmap, carmen_map_p cmap)
+carmen_mapper_initialize_distance_map(carmen_mapper_distance_map *lmap, carmen_map_p cmap)
 {
 	int i;
 
@@ -805,7 +805,7 @@ carmen_mapper_initialize_distance_map(carmen_grid_mapping_distance_map *lmap, ca
 
 
 void
-carmen_prob_models_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t *map, carmen_grid_mapping_distance_map *distance_map, double distance_for_zero_cost_in_pixels)
+carmen_prob_models_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t *map, carmen_mapper_distance_map *distance_map, double distance_for_zero_cost_in_pixels)
 {
 	carmen_prob_models_initialize_cost_map(cost_map, map, map->config.resolution);
 
@@ -857,7 +857,7 @@ mapper_publish_map(double timestamp)
 //	//	publish_frontlaser(timestamp);
 //	}
 
-	carmen_grid_mapping_publish_message(&map, timestamp);
+	carmen_mapper_publish_message(&map, timestamp);
 
 	//moved to obstacle_distance_mapper
 	//mapper_publish_cost_and_distance_maps(timestamp);
@@ -921,7 +921,7 @@ mapper_initialize(carmen_map_config_t *main_map_config, carmen_robot_ackerman_co
 	carmen_grid_mapping_create_new_map(&sum_sqr_remission_map, map_config.x_size, map_config.y_size, map_config.resolution);
 	carmen_grid_mapping_create_new_map(&count_remission_map, map_config.x_size, map_config.y_size, map_config.resolution);
 
-	memset(&distance_map, 0, sizeof(carmen_grid_mapping_distance_map));
+	memset(&distance_map, 0, sizeof(carmen_mapper_distance_map));
 
 	globalpos_initialized = 0; // Only considered initialized when first message is received
 

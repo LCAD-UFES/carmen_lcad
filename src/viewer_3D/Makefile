@@ -7,7 +7,7 @@ LFLAGS += 	-lglobal -ljpeg -lipc -lparam_interface -lGLEW -lGL -lGLU -lglut -lX1
 		-lfused_odometry_interface -lgps_xyz_interface -lxsens_interface -lstereo_point_cloud_interface -lglm -lrotation_geometry\
 		-lcurl `pkg-config --libs opencv` \
 		-lvelodyne_interface -lcarmen_gps_wrapper -lm -ldownload_map -lstereo_velodyne_interface -lstereo_velodyne \
-		-lstereo_interface -lgrid_mapping_interface -lnavigator_ackerman_interface -lbehavior_selector_interface \
+		-lstereo_interface -lmapper_interface -lnavigator_ackerman_interface -lbehavior_selector_interface \
 		-llocalize_ackerman_interface -lobstacle_avoider_interface -lmotion_planner_interface -lrddf_interface \
 		-lmoving_objects_interface -lgps_nmea_interface
 		

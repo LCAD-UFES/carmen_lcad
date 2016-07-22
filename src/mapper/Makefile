@@ -17,9 +17,9 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
 
 # Required default libraries to comunicate with Carmen Core.
-LFLAGS += -lgrid_mapping -lmap_io -lmap_util -lmap_interface -lipc -lprob_models -lm -lz -lglobal 		\
-	-lparam_interface -llaser_interface -lipc -lgrid_mapping_interface -lobstacle_avoider_interface		\
-	 -llocalize_ackerman_interface -lmap_interface -lgrid_mapping -lipc		\
+LFLAGS += -lgrid_mapping -lmapper -lmap_io -lmap_util -lmap_interface -lipc -lprob_models -lm -lz -lglobal 		\
+	-lparam_interface -llaser_interface -lipc -lmapper_interface -lobstacle_avoider_interface		\
+	 -llocalize_ackerman_interface -lmap_interface -lmapper -lipc		\
 	-lultrasonic_filter_interface -lstereo_mapping_interface -lrotation_geometry -lvelodyne_interface	\
 	-lfused_odometry_interface  -lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface		\
 	`pkg-config --libs opencv` -lgeometry -lmap_server_interface -lsimulator_ackerman_interface -lrddf_interface \
@@ -33,21 +33,28 @@ LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_r
 
 	
 # Source code files (.c, .cpp) 
-SOURCES = mapper.cpp mapper_main.cpp message_interpolation.cpp convert_maps_from_float_to_double.cpp
+SOURCES = mapper.cpp mapper_main.cpp message_interpolation.cpp convert_maps_from_float_to_double.cpp mapper_interface.c
 
 # Public headers, linked to 'carmen/include/carmen/'.
-PUBLIC_INCLUDES = 
+PUBLIC_INCLUDES = mapper_messages.h mapper_interface.h mapper.h
 
 # Public libraries, linked to 'carmen/lib'.
-PUBLIC_LIBRARIES = 
+PUBLIC_LIBRARIES = libmapper_interface.a libmapper.a
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = mapper
-TARGETS = convert_maps_from_float_to_double libprob_models.a mapper
+TARGETS = convert_maps_from_float_to_double libprob_models.a mapper libmapper_interface.a libmapper.a
 
-mapper: mapper.o mapper_main.o 
+libmapper_interface.a:	mapper_interface.o
+
+libmapper.a: mapper.o
+
+libmapper_interface.so.1:	libmapper_interface.o
+
+mapper: mapper.o mapper_main.o libmapper.a
 
 convert_maps_from_float_to_double: convert_maps_from_float_to_double.o
+
 
 # rules
 

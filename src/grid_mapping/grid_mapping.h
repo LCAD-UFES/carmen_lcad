@@ -14,7 +14,6 @@ extern "C"
 #endif
 
 #include <carmen/carmen.h>
-#include <carmen/grid_mapping_messages.h>
 
 
 /**

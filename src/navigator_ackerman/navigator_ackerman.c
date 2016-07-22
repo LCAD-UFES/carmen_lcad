@@ -30,7 +30,7 @@
 #include "navigator_ackerman.h"
 #include "navigator_ackerman_ipc.h"
 #include "planner_ackerman_interface.h"
-#include <carmen/grid_mapping_interface.h>
+#include <carmen/mapper_interface.h>
 #include <prob_measurement_model.h>
 #include <prob_map.h>
 #include <carmen/rddf_messages.h>
@@ -290,7 +290,7 @@ carmen_navigator_ackerman_goal_place(char *name)
 
 
 void
-grid_mapping_map_handler(carmen_grid_mapping_message *online_map_message)
+mapper_map_handler(carmen_mapper_map_message *online_map_message)
 {
 	carmen_map_t *new_map;
 
@@ -298,7 +298,7 @@ grid_mapping_map_handler(carmen_grid_mapping_message *online_map_message)
 		return;
 
 	new_map = (carmen_map_t *) calloc(1, sizeof(carmen_map_t));
-	carmen_grid_mapping_copy_map_from_message(new_map, online_map_message);
+	carmen_mapper_copy_map_from_message(new_map, online_map_message);
 
 	if (nav_map != NULL)
 		carmen_map_destroy(&nav_map);
@@ -408,7 +408,7 @@ main(int argc, char **argv)
 
 	signal(SIGINT, navigator_shutdown);
 
-	carmen_grid_mapping_subscribe_message(NULL, (carmen_handler_t) grid_mapping_map_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_mapper_subscribe_message(NULL, (carmen_handler_t) mapper_map_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) goal_list_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) state_handler, CARMEN_SUBSCRIBE_LATEST);
 

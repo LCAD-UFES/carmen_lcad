@@ -7,7 +7,6 @@
 
 #include <carmen/behavior_selector_interface.h>
 #include <carmen/fused_odometry_interface.h>
-#include <carmen/grid_mapping_interface.h>
 #include <carmen/map_server_interface.h>
 #include <carmen/carmen.h>
 

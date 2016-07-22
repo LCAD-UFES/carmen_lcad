@@ -7,8 +7,8 @@
 #include <carmen/velodyne_interface.h>
 #include <carmen/download_map_interface.h>
 #include <carmen/stereo_velodyne_interface.h>
+#include <carmen/mapper_interface.h>
 #include <carmen/stereo_velodyne.h>
-#include <carmen/grid_mapping_interface.h>
 #include <carmen/navigator_ackerman_interface.h>
 #include <carmen/behavior_selector_interface.h>
 #include <carmen/localize_ackerman_interface.h>
@@ -1074,7 +1074,7 @@ gps_xyz_message_handler(carmen_gps_xyz_message *gps_xyz_raw_message)
 }
 
 static void
-grid_mapping_message_handler(carmen_grid_mapping_message *message)
+mapper_message_handler(carmen_mapper_map_message *message)
 {
     double time_since_last_draw = carmen_get_time() - lastDisplayTime;
 
@@ -2229,8 +2229,8 @@ subscribe_ipc_messages(void)
                                                   (carmen_handler_t) velodyne_variable_scan_message_handler,
                                                   CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_grid_mapping_subscribe_message(NULL,
-                                          (carmen_handler_t) grid_mapping_message_handler,
+    carmen_mapper_subscribe_message(NULL,
+                                          (carmen_handler_t) mapper_message_handler,
                                           CARMEN_SUBSCRIBE_LATEST);
 
     carmen_navigator_ackerman_subscribe_plan_message(NULL,

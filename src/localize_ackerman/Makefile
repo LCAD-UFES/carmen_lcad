@@ -13,7 +13,7 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -fop
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -fopenmp
 
 
-LFLAGS += -lgrid_mapping -lgrid_mapping_interface -lglobal -lparam_interface -lmap_io -lmap_util -llaser_interface \
+LFLAGS += -lgrid_mapping -lmapper_interface -lglobal -lparam_interface -lmap_io -lmap_util -llaser_interface \
 	  -lrobot_ackerman_interface -lobstacle_avoider_interface -lipc -lmap_server_interface \
 	  -lfused_odometry_interface -lvelodyne_interface -lrotation_geometry -lprob_models -lgl_plotter \
 	  -lGLEW -lGL -lGLU -lglut -lX11 -lmap_interface -lbase_ackerman_interface \

@@ -27,8 +27,6 @@
  ********************************************************/
 
 #include <carmen/carmen.h>
-#include <carmen/grid_mapping_messages.h>
-#include <carmen/grid_mapping_interface.h>
 #include <carmen/map_server_interface.h>
 
 #include "simulator_ackerman.h"

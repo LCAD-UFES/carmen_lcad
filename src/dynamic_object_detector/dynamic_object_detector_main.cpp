@@ -3,7 +3,7 @@
 **********************************************************/
 
 #include <carmen/carmen.h>
-#include <carmen/grid_mapping_interface.h>
+#include <carmen/mapper_interface.h>
 #include <carmen/map_server_interface.h>
 #include <carmen/dynamic_object_detector_interface.h>
 #include <carmen/dynamic_object_detector_messages.h>
@@ -13,18 +13,18 @@
 
 
 static int map_counter = 0;
-static carmen_grid_mapping_message *current_map_g = NULL;
-static carmen_grid_mapping_message *previous_map_g = NULL;
+static carmen_mapper_map_message *current_map_g = NULL;
+static carmen_mapper_map_message *previous_map_g = NULL;
 static carmen_dynamic_object_detector_clustered_objects_message *dynamic_objects_map_g = NULL;
 static int car_global_x, car_global_y;
 
 void
 initialize_analyzed_maps()
 {
-	current_map_g = (carmen_grid_mapping_message *) malloc (sizeof(carmen_grid_mapping_message));
+	current_map_g = (carmen_mapper_map_message *) malloc (sizeof(carmen_mapper_map_message));
 	current_map_g->complete_map = NULL;
 
-	previous_map_g = (carmen_grid_mapping_message *) malloc (sizeof(carmen_grid_mapping_message));
+	previous_map_g = (carmen_mapper_map_message *) malloc (sizeof(carmen_mapper_map_message));
 	previous_map_g->complete_map = NULL;
 }
 
@@ -68,7 +68,7 @@ carmen_dynamic_object_detector_cartesian_points* to_map_pose(carmen_dynamic_obje
 
 
 void
-copy_current_map_to_previous_map(carmen_grid_mapping_message* previous_map, carmen_grid_mapping_message* current_map)
+copy_current_map_to_previous_map(carmen_mapper_map_message* previous_map, carmen_mapper_map_message* current_map)
 {
  
 	if(previous_map != NULL && current_map != NULL)
@@ -103,7 +103,7 @@ copy_current_map_to_previous_map(carmen_grid_mapping_message* previous_map, carm
 }
 
 carmen_dynamic_object_detector_clustered_objects_message *
-carmen_configure_dynamic_object_detector_clustered_message_with_grid_mapping_information(carmen_grid_mapping_message* gridmap)
+carmen_configure_dynamic_object_detector_clustered_message_with_grid_mapping_information(carmen_mapper_map_message* gridmap)
 {
 	if(dynamic_objects_map_g->objects_map == NULL)
 		dynamic_objects_map_g->objects_map = (double*) malloc (gridmap->size * sizeof(double));
@@ -290,7 +290,7 @@ void carmen_dynamic_object_detector_add_cell_to_dynamic_objects_list(int cell_nu
 }
 
 carmen_dynamic_object_detector_clustered_objects_message *
-carmen_dynamic_object_detector_run(carmen_grid_mapping_message* current_map, carmen_grid_mapping_message* previous_map)
+carmen_dynamic_object_detector_run(carmen_mapper_map_message* current_map, carmen_mapper_map_message* previous_map)
 {
 	for(int i = 0; i < previous_map_g->size; i++)
 	{
@@ -332,7 +332,7 @@ carmen_dynamic_object_detector_publish_clustered_objects_message(carmen_dynamic_
 **********************************************************/
 
 void
-carmen_grid_mapping_handler(carmen_grid_mapping_message* message)
+carmen_grid_mapping_handler(carmen_mapper_map_message* message)
 {
 	
 	if(current_map_g->complete_map == NULL)
@@ -416,7 +416,7 @@ main(int argc, char **argv)
   carmen_dynamic_object_detector_define_messages();
 
   /* Subscribe to sensor and filter messages */
-  carmen_grid_mapping_subscribe_message(NULL, (carmen_handler_t)carmen_grid_mapping_handler, CARMEN_SUBSCRIBE_LATEST);
+  carmen_mapper_subscribe_message(NULL, (carmen_handler_t)carmen_grid_mapping_handler, CARMEN_SUBSCRIBE_LATEST);
   
   /* Subscribe to car positioning messages */
   carmen_localize_ackerman_subscribe_globalpos_message(NULL,(carmen_handler_t)carmen_localize_ackerman_handler, CARMEN_SUBSCRIBE_LATEST);

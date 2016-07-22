@@ -29,15 +29,12 @@
 #include <carmen/carmen.h>
 #include <carmen/robot_ackerman_messages.h>
 #include <carmen/robot_ackerman_interface.h>
-#include <carmen/grid_mapping_interface.h>
-#include <carmen/grid_mapping_messages.h>
 #include <carmen/map_server_interface.h>
 #include <carmen/fused_odometry_interface.h>
 #include <carmen/velodyne_interface.h>
 #include <carmen/stereo_velodyne.h>
 #include <carmen/stereo_velodyne_interface.h>
 #include <carmen/grid_mapping.h>
-#include <carmen/grid_mapping_interface.h>
 
 
 #include <prob_measurement_model.h>

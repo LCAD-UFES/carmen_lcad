@@ -8,7 +8,6 @@
 #include <carmen/carmen.h>
 #include <carmen/behavior_selector_interface.h>
 #include <carmen/fused_odometry_interface.h>
-#include <carmen/grid_mapping_interface.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
 #include <carmen/map_server_interface.h>
 #include <carmen/ford_escape_hybrid_interface.h>

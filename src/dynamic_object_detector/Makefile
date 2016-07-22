@@ -10,7 +10,7 @@ LINK = g++
 IFLAGS += 
 
 # Required default libraries to comunicate with Carmen Core.
-LFLAGS += -lparam_interface -lipc -lglobal -lgrid_mapping_interface -ldynamic_object_detector_interface -lmap_server_interface -lfused_odometry_interface -llocalize_ackerman_interface
+LFLAGS += -lparam_interface -lipc -lglobal -lmapper_interface -ldynamic_object_detector_interface -lmap_server_interface -lfused_odometry_interface -llocalize_ackerman_interface
 CFLAGS += -Wall
 # Source code files (.c, .cpp) 
 SOURCES = dynamic_object_detector_main.cpp dynamic_object_detector_interface.c

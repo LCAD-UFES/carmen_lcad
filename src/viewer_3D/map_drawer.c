@@ -1,5 +1,5 @@
 #include <carmen/carmen.h>
-#include <carmen/grid_mapping_interface.h>
+#include <carmen/mapper_interface.h>
 
 #include <GL/glew.h>
 #include <GL/glut.h>
@@ -183,7 +183,7 @@ static float* create_vertex_data(carmen_map_t map)
 
 
 void
-add_map_message(map_drawer* m_drawer, carmen_grid_mapping_message *message)
+add_map_message(map_drawer* m_drawer, carmen_mapper_map_message *message)
 {
 	carmen_map_t map;
 

@@ -7,8 +7,8 @@
 #include <time.h>
 #include "carmen_thread.h"
 #include <stdio.h>
-#include <carmen/grid_mapping_interface.h>
-#include <carmen/grid_mapping_messages.h>
+#include <carmen/mapper_interface.h>
+#include <carmen/mapper_messages.h>
 #include <carmen/global_graphics_qt.h>
 #include "map_config.h"
 #include "robot_config.h"
@@ -157,7 +157,7 @@ void map_handler(carmen_map_t *new_map) {
 	}
 }
 
-void grid_map_handler(carmen_grid_mapping_message *new_grid_map) {
+void grid_map_handler(carmen_mapper_map_message *new_grid_map) {
 	carmen_map_t m;
 	m.map = NULL;
 

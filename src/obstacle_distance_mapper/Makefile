@@ -19,7 +19,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -lparam_interface -lipc -lglobal -lobstacle_distance_mapper_interface \
 		   -lgrid_mapping -lmap_io -lmap_util -lprob_models -lmap_interface \
-	       -lgrid_mapping_interface -lmap_server_interface -lrotation_geometry -lgeometry -lm -lz -ltf \
+	       -lmapper_interface -lmap_server_interface -lrotation_geometry -lgeometry -lm -lz -ltf \
 	       -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 	       	
 # Source code files (.c, .cpp) 

@@ -1,7 +1,7 @@
 #include "navigator_gui2_main.h"
 
 #include <carmen/navigator_ackerman_interface.h>
-#include <carmen/grid_mapping_interface.h>
+#include <carmen/mapper_interface.h>
 #include <prob_map.h>
 #include <carmen/fused_odometry_messages.h>
 #include <carmen/fused_odometry_interface.h>
@@ -418,7 +418,7 @@ static void map_update_handler(carmen_map_t *new_map)
  */
 
 static carmen_map_t*
-copy_grid_mapping_to_map(carmen_grid_mapping_message *grid_map)
+copy_grid_mapping_to_map(carmen_mapper_map_message *grid_map)
 {
 	int i;
 	carmen_map_t *map;
@@ -464,7 +464,7 @@ copy_grid_mapping_to_map2(carmen_moving_objects_map_message *grid_map)
 }
 
 static void
-clone_grid_mapping_to_map(carmen_grid_mapping_message *grid_map, carmen_map_t *map)
+clone_grid_mapping_to_map(carmen_mapper_map_message *grid_map, carmen_map_t *map)
 {
 	map->config = grid_map->config;
 
@@ -501,7 +501,7 @@ navigator_get_offline_map_pointer()
 }
 
 static void
-offline_map_update_handler(carmen_grid_mapping_message *new_map)
+offline_map_update_handler(carmen_mapper_map_message *new_map)
 {
 	if (new_map->size <= 0)
 		return;
@@ -530,7 +530,7 @@ offline_map_update_handler(carmen_grid_mapping_message *new_map)
 
 
 static void
-grid_mapping_handler(carmen_grid_mapping_message *message)
+mapper_handler(carmen_mapper_map_message *message)
 {
 	static double last_time_stamp = 0.0;
 
@@ -1212,7 +1212,7 @@ main(int argc, char *argv[])
 	carmen_test_alloc(lane_map);
 
 	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
-	carmen_grid_mapping_subscribe_message(NULL, (carmen_handler_t) grid_mapping_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_mapper_subscribe_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
 //	carmen_grid_mapping_moving_objects_raw_map_subscribe_message(NULL, (carmen_handler_t) grid_mapping_moving_objects_raw_map_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_moving_objects_map_subscribe_message(NULL, (carmen_handler_t) grid_mapping_moving_objects_raw_map_handler, CARMEN_SUBSCRIBE_LATEST);
 

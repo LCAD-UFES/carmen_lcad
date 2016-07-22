@@ -13,7 +13,7 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
 LFLAGS += -lglobal -lparam_interface -lipc -lprob_models \
-	-llocalize_interface -llocalize_ackerman_interface -lgrid_mapping_interface \
+	-llocalize_interface -llocalize_ackerman_interface -lmapper_interface \
 	-lbase_interface -lmap_interface -lrobot_ackerman_interface \
 	-lobstacle_avoider_interface -lsimulator_ackerman_interface \
 	-ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system \

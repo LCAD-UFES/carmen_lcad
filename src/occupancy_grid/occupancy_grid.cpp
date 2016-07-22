@@ -8,6 +8,7 @@
 #include "occupancy_grid.h"
 #include <math.h>
 #include <carmen/grid_mapping_messages.h>
+#include <carmen/mapper_messages.h>
 
 OccupancyGrid::OccupancyGrid() {
 	x_size = 400;
@@ -160,7 +161,7 @@ void OccupancyGrid::publish() {
 		}
 	}
 
-	carmen_grid_mapping_message grid_map_message;
+	carmen_mapper_map_message grid_map_message;
 
 	grid_map_message.complete_map = map;
 	grid_map_message.size = x_size * y_size;

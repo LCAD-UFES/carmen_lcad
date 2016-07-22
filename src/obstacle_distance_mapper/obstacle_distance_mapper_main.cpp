@@ -1,6 +1,6 @@
 #include <carmen/carmen.h>
 #include "obstacle_distance_mapper_interface.h"
-#include <carmen/grid_mapping_interface.h>
+#include <carmen/mapper_interface.h>
 
 #include <prob_measurement_model.h>
 #include <prob_transforms.h>
@@ -16,7 +16,7 @@ double obstacle_cost_distance 			= 1.0;
 
 carmen_map_t 						 map;
 carmen_map_t 						 cost_map;
-carmen_grid_mapping_distance_map 	 distance_map;
+carmen_mapper_distance_map 	 distance_map;
 
 using namespace std;
 
@@ -42,7 +42,7 @@ compute_intermediate_pixel_distance(int x, int y,
 
 
 void
-carmen_mapper_initialize_distance_map(carmen_grid_mapping_distance_map *lmap, carmen_map_p cmap)
+carmen_mapper_initialize_distance_map(carmen_mapper_distance_map *lmap, carmen_map_p cmap)
 {
 	int i;
 
@@ -102,7 +102,7 @@ carmen_mapper_initialize_distance_map(carmen_grid_mapping_distance_map *lmap, ca
 
 /* compute minimum distance to all occupied cells */
 void
-carmen_mapper_create_distance_map(carmen_grid_mapping_distance_map *lmap, carmen_map_p map,
+carmen_mapper_create_distance_map(carmen_mapper_distance_map *lmap, carmen_map_p map,
 		double minimum_occupied_prob)
 {
 	int x, y;
@@ -152,7 +152,7 @@ carmen_mapper_create_distance_map(carmen_grid_mapping_distance_map *lmap, carmen
 
 
 void
-carmen_mapper_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t *map, carmen_grid_mapping_distance_map *distance_map, double distance_for_zero_cost_in_pixels)
+carmen_mapper_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t *map, carmen_mapper_distance_map *distance_map, double distance_for_zero_cost_in_pixels)
 {
 	carmen_prob_models_initialize_cost_map(cost_map, map, map->config.resolution);
 
@@ -195,11 +195,11 @@ mapper_publish_distance_map(double timestamp, double obstacle_probability_thresh
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 void
-carmen_grid_mapping_map_handler(carmen_grid_mapping_message *msg)
+carmen_mapper_map_handler(carmen_mapper_map_message *msg)
 {
 	carmen_compact_map_t compacted_cost_map;
 
-	carmen_grid_mapping_copy_map_from_message(&map, msg);
+	carmen_mapper_copy_map_from_message(&map, msg);
 
 	mapper_publish_distance_map(msg->timestamp, obstacle_probability_threshold);
 	carmen_mapper_build_obstacle_cost_map(&cost_map, &map, &distance_map, obstacle_cost_distance);
@@ -266,8 +266,8 @@ main(int argc, char **argv)
   read_parameters(argc, argv);
 
   /* Subscribe to mapper messages */
-  carmen_grid_mapping_subscribe_message(NULL,
-  			       (carmen_handler_t) carmen_grid_mapping_map_handler,
+  carmen_mapper_subscribe_message(NULL,
+  			       (carmen_handler_t) carmen_mapper_map_handler,
   			       CARMEN_SUBSCRIBE_LATEST);
 
   /* Loop forever waiting for messages */
