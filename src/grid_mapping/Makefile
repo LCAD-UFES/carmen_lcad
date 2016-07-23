@@ -23,7 +23,7 @@ LFLAGS += -lprob_models -lmap_io -lglobal -lparam_interface -llaser_interface -l
 CFLAGS +=  -std=c99
 
 # Source code files (.c, .cpp) 
-SOURCES = grid_mapping_main.cpp message_interpolation.cpp grid_mapping_interface.c  grid_mapping.c grid_mapping_test.c build_complete_map.c complete_map_to_block_map.c
+SOURCES = grid_mapping_main.cpp message_interpolation.cpp grid_mapping_interface.c  grid_mapping.c grid_mapping_test.c build_complete_map.c complete_map_to_block_map.c complete_map_to_bitmap.c bitmap_to_complete_map.c
 
 # Public headers, linked to 'carmen/include/carmen/'.
 PUBLIC_INCLUDES = grid_mapping_messages.h grid_mapping_interface.h grid_mapping.h
@@ -32,9 +32,9 @@ PUBLIC_INCLUDES = grid_mapping_messages.h grid_mapping_interface.h grid_mapping.
 PUBLIC_LIBRARIES = libgrid_mapping_interface.a libgrid_mapping.a
 
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
-PUBLIC_BINARIES = grid_mapping build_complete_map complete_map_to_block_map
+PUBLIC_BINARIES = grid_mapping build_complete_map complete_map_to_block_map complete_map_to_bitmap bitmap_to_complete_map
 
-TARGETS = libprob_models.a libgrid_mapping_interface.a libgrid_mapping.a grid_mapping  grid_mapping_test build_complete_map complete_map_to_block_map
+TARGETS = libprob_models.a libgrid_mapping_interface.a libgrid_mapping.a grid_mapping  grid_mapping_test build_complete_map complete_map_to_block_map complete_map_to_bitmap bitmap_to_complete_map
 PUBLIC_LIBRARIES_SO =
 
 ifndef NO_PYTHON
@@ -70,6 +70,10 @@ grid_mapping_test:  grid_mapping_test.o libgrid_mapping.a libgrid_mapping_interf
 build_complete_map: build_complete_map.o libgrid_mapping.a
 
 complete_map_to_block_map: complete_map_to_block_map.o libgrid_mapping.a
+
+complete_map_to_bitmap: complete_map_to_bitmap.o libgrid_mapping.a
+
+bitmap_to_complete_map: bitmap_to_complete_map.o libgrid_mapping.a
 
 # rules
 
