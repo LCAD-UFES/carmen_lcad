@@ -1,15 +1,17 @@
 # Laser-new - laser server
 
 Laser server
+
 to run all lasers configured:
 `./laser`
 
 to run a specific laser
 `./laser -id [laser_id]`
 
-Always when a new laser was configured icrease the `laser_num_laser_devices` parameter on carmen_ford_escape.ini
+Whenever a new laser is added, it is necessary to increase the `laser_num_laser_devices` parameter on carmen_ford_escape.ini
 
-the message published is laser_laser_message
+The message published is carmen_laser_laser_message
+
 ## Driver Hokuyo 
 
 ### Settings
@@ -61,7 +63,7 @@ to put the hokuyo id 3 on rear bullbar right corner, modify the parameter with t
 rear_bullbar_right_corner_laser_id	3
 ```
 Is possible configure the position of laser modifing the parameters
-
+```bash
 [rear|front]_bullbar_[right|left]_corner_x	0
 [rear|front]_bullbar_[right|left]_corner_y	-0.772
 [rear|front]_bullbar_[right|left]_corner_z	0.2
@@ -69,9 +71,9 @@ Is possible configure the position of laser modifing the parameters
 [rear|front]_bullbar_[right|left]_corner_pitch	0.0
 [rear|front]_bullbar_[right|left]_corner_roll	0.0
 [rear|front]_bullbar_[right|left]_corner_laser_id	3
-
+```
 - REMEBER!: the laser are in position 0 relative with the bullbar position, if the bullbar potision change, the laser position also will.
-- Always when a new laser was configured icrease the `laser_num_laser_devices` parameter on carmen_ford_escape.ini
+- Whenever a new laser is added, it is necessary to increase the `laser_num_laser_devices` parameter on carmen_ford_escape.ini
 
 ### Run
 
