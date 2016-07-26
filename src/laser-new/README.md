@@ -10,9 +10,11 @@ to run a specific laser
 
 Whenever a new laser is added, it is necessary to increase the `laser_num_laser_devices` parameter on carmen_ford_escape.ini
 
-The message published is carmen_laser_laser_message
 
 ## Driver Hokuyo 
+[Hokuyo UTM-30LX](https://www.hokuyo-aut.jp/02sensor/07scanner/utm_30lx.html)
+
+The message published is carmen_laser_laser_message
 
 ### Settings
 Check the carmen-ford-escape.ini if you want to modify some of the parameters
