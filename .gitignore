@@ -132,6 +132,14 @@ bin/xsens_listener
 bin/xsens_mtig
 bin/xsens_viewer
 bin/laser_ldmrs
+bin/bitmap_to_complete_map
+bin/complete_map_to_bitmap
+bin/kitti2carmen_main
+bin/obstacle_distance_mapper
+bin/path_planner
+bin/util_list_camera_ids
+bin/util_publish_pose
+bin/util_split_log
 data/rndf/rddf-log_voltadaufes-20140806-2.kml.timestamp.index
 data/rndf/rddf-log_voltadaufes-20140806-2.kml.x.index
 data/rndf/rddf-log_voltadaufes-20140806-2.kml.y.index
@@ -406,3 +414,12 @@ src/moving_objects/monte_carlo_moving_objects_tracking.a
 src/moving_objects/moving_objects.a
 src/moving_objects/moving_objects_interface.o
 src/moving_objects/moving_objects_main.o
+src/grid_mapping/bitmap_to_complete_map
+src/grid_mapping/complete_map_to_bitmap
+src/path_planner/libnavigator_astar_interface.so.1
+src/path_planner/navigator_precomputed_cost_ackerman
+src/path_planner/path_planner
+src/path_planner/startgoal_simulator
+src/utilities/list_camera_ids/util_list_camera_ids
+src/utilities/publish_pose/util_publish_pose
+src/utilities/split_log/util_split_log
