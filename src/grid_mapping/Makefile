@@ -37,7 +37,7 @@ PUBLIC_LIBRARIES = libgrid_mapping.a
 # Public binaries, your application specific module laucher, copied to 'carmen/bin'.
 PUBLIC_BINARIES = grid_mapping build_complete_map complete_map_to_block_map complete_map_to_bitmap bitmap_to_complete_map
 
-TARGETS = libprob_models.a libgrid_mapping.a  build_complete_map complete_map_to_block_map
+TARGETS = libprob_models.a libgrid_mapping.a  build_complete_map complete_map_to_block_map complete_map_to_bitmap bitmap_to_complete_map
 #MODIFICACOES DE LUAN:
 #TARGETS = libprob_models.a libgrid_mapping_interface.a libgrid_mapping.a grid_mapping  grid_mapping_test build_complete_map complete_map_to_block_map complete_map_to_bitmap bitmap_to_complete_map
 
