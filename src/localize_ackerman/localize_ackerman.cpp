@@ -739,7 +739,7 @@ carmen_localize_ackerman_initialize_handler(carmen_localize_ackerman_initialize_
 		carmen_localize_ackerman_initialize_particles_uniform(filter, &front_laser, &map);
 		publish_particles(filter, &summary, initialize_msg->timestamp);
 	}
-	necessary_maps_available = 0;
+//	necessary_maps_available = 0;
 
 }
 
