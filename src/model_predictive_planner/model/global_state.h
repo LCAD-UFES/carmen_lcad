@@ -53,7 +53,7 @@ public:
 	static bool last_path_received_is_empty;
 
 	static carmen_map_t cost_map;
-	static carmen_grid_mapping_distance_map_message *distance_map;
+	static carmen_mapper_distance_map_message *distance_map;
 	static bgi::rtree< occupied_cell, bgi::quadratic<16> > obstacles_rtree;
 	static bool cost_map_initialized;
 	static KDTree2D obstacles_kdtree;

@@ -371,9 +371,9 @@ compute_proximity_to_obstacles_kdtree(vector<carmen_ackerman_path_point_t> path)
 
 double
 //distance_from_traj_point_to_obstacle(carmen_ackerman_path_point_t point, Pose *global_pos,
-//		double displacement, double min_dist, carmen_grid_mapping_distance_map_message *distance_map, FILE *plot)
+//		double displacement, double min_dist, carmen_mapper_distance_map_message *distance_map, FILE *plot)
 distance_from_traj_point_to_obstacle(carmen_ackerman_path_point_t point, Pose *global_pos,
-		double displacement, double min_dist, carmen_grid_mapping_distance_map_message *distance_map)
+		double displacement, double min_dist, carmen_mapper_distance_map_message *distance_map)
 {
 	// Move path point to map coordinates
 	carmen_ackerman_path_point_t path_point_in_map_coords;
@@ -469,7 +469,7 @@ distance_from_traj_point_to_obstacle(carmen_ackerman_path_point_t point, Pose *g
 double
 compute_distance_to_closest_obstacles(carmen_ackerman_path_point_t path_pose, double circle_radius,
 		carmen_robot_ackerman_config_t *robot_config, Pose *global_pos,
-		carmen_grid_mapping_distance_map_message *distance_map)
+		carmen_mapper_distance_map_message *distance_map)
 {
 	int number_of_point = 4;
 	double displacement_inc = robot_config->distance_between_front_and_rear_axles / (number_of_point - 2);
