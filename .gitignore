@@ -146,7 +146,6 @@ data/rndf/rddf-log_voltadaufes-20140806-2.kml.y.index
 data/rndf/rndf_log_voltadaufes-20140418-estacionamento.kml.timestamp.index
 data/rndf/rndf_log_voltadaufes-20140418-estacionamento.kml.x.index
 data/rndf/rndf_log_voltadaufes-20140418-estacionamento.kml.y.index
-include/
 sharedlib/OpenJAUS/libjaus/lib/libjaus.so
 sharedlib/OpenJAUS/libopenJaus/lib/libopenJaus.so
 sharedlib/OpenJAUS/ojNodeManager/bin/ojNodeManager
