@@ -74,10 +74,10 @@ stereo_message_handler(carmen_simple_stereo_disparity_message *message)
 	cvCvtColor(reference_image, reference_image_gray, CV_BGR2GRAY);
 	//cvSmooth(reference_image_gray,reference_image_gray,CV_BLUR, 0,0, 21, 3);
 
-	cvShowImage("1", reference_image);
-	cvWaitKey(33);
-    cvShowImage("2", reference_image_gray);
-    cvWaitKey(33);
+//	cvShowImage("1", reference_image);
+//	cvWaitKey(33);
+//    cvShowImage("2", reference_image_gray);
+//    cvWaitKey(33);
 
 	if (!flipped)
 	{
