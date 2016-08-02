@@ -37,6 +37,7 @@
 static int num_laser_devices;
 static int moving_objects_point_clouds_size = 1;
 static int stereo_point_cloud_size;
+static int ldmrs_size;
 static int laser_size;
 static int velodyne_size;
 static int odometry_size;
@@ -46,6 +47,14 @@ static int localize_ackerman_size;
 static point_cloud *stereo_point_cloud;
 static int last_stereo_point_cloud;
 static int stereo_initialized;
+
+static point_cloud *ldmrs_points;
+static point_cloud *ldmrs_points_car;
+static int last_ldmrs_position;
+static int ldmrs_initialized;
+
+static point_cloud *front_bullbar_middle_laser_points;
+static int front_bullbar_middle_laser_points_idx;
 
 static point_cloud *laser_points;
 static point_cloud *laser_points_car;
@@ -111,6 +120,7 @@ static carmen_pose_3D_t camera_pose;
 static carmen_pose_3D_t velodyne_pose;
 static carmen_pose_3D_t sensor_board_1_pose;
 static carmen_pose_3D_t front_bullbar_pose;
+static carmen_pose_3D_t front_bullbar_middle_pose;
 static carmen_pose_3D_t front_bullbar_left_corner_pose;
 static carmen_pose_3D_t front_bullbar_right_corner_pose;
 static carmen_pose_3D_t rear_bullbar_pose;
@@ -128,6 +138,10 @@ static carmen_pose_3D_t car_fused_pose;
 #define BOARD_1_LASER_HIERARCHY_SIZE 4
 
 carmen_pose_3D_t* board_1_laser_hierarchy[BOARD_1_LASER_HIERARCHY_SIZE] = {&laser_pose, &sensor_board_1_pose, &car_pose, &car_fused_pose};
+
+#define FRONT_BULLBAR_MIDDLE_HIERARCHY_SIZE 4
+
+carmen_pose_3D_t* front_bullbar_middle_hierarchy[FRONT_BULLBAR_MIDDLE_HIERARCHY_SIZE]  = {&front_bullbar_middle_pose, &front_bullbar_pose, &car_pose, &car_fused_pose};
 
 #define FRONT_BULLBAR_LEFT_CORNER_HIERARCHY_SIZE 4
 #define FRONT_BULLBAR_RIGHT_CORNER_HIERARCHY_SIZE 4
@@ -188,6 +202,7 @@ static int follow_car_flag;
 static int zero_z_flag;
 
 static CarDrawer* car_drawer;
+static point_cloud_drawer* ldmrs_drawer;
 static point_cloud_drawer* laser_drawer;
 static point_cloud_drawer* velodyne_drawer;
 static velodyne_360_drawer* v_360_drawer;
@@ -734,6 +749,18 @@ get_laser_reading_position_from_reference(double angle, double range, int parent
 }
 
 carmen_vector_3D_t
+get_ldmrs_reading_position_from_reference(double hAngle, double vAngle, double range, int parentsSize, carmen_pose_3D_t* parents[])
+{
+    carmen_vector_3D_t laser_point;
+
+    laser_point.x = range * cos(hAngle) * cos(vAngle);
+    laser_point.y = range * sin(hAngle);
+    laser_point.z = range * cos(hAngle) * sin(vAngle);
+
+	return get_world_position(laser_point, parentsSize, parents, 0);
+}
+
+carmen_vector_3D_t
 get_world_position(int graphSize, carmen_pose_3D_t* sceneGraph[])
 {
 	if (graphSize <= 0) {
@@ -781,6 +808,82 @@ generate_octomap_file(point_cloud current_reading, carmen_fused_odometry_message
     }
 }
 
+
+static void
+carmen_ldmrs_add_point_cloud(point_cloud* point_cloud, int last_ldmrs_position, int parentsSize, carmen_pose_3D_t** parents, double hAngle, double vAngle, double range, int *j)
+{
+    if (range >= 0.0 && range <= 50.0)
+    {
+    	point_cloud[last_ldmrs_position].points[(*j)] = get_ldmrs_reading_position_from_reference(hAngle, vAngle, range, parentsSize, parents);
+
+    	point_cloud[last_ldmrs_position].point_color[(*j)].x = 1.0;
+    	point_cloud[last_ldmrs_position].point_color[(*j)].y = 1.0;
+    	point_cloud[last_ldmrs_position].point_color[(*j)].z = 1.0;
+    	(*j)++;
+    }
+    else
+    {
+    	// This removes points at infinity
+        point_cloud[last_ldmrs_position].num_points--;
+    }
+}
+
+static void
+carmen_ldmrs_draw_dispatcher(carmen_laser_ldmrs_message* laser_message, int parentsSize, carmen_pose_3D_t** parents, point_cloud* point_cloud, int* current_ldmrs_position)
+{
+	// circular list of points history
+    *current_ldmrs_position = (*current_ldmrs_position + 1) % ldmrs_size;
+	int last_ldmrs_position = *current_ldmrs_position;
+
+    int num_points = laser_message->scan_points;
+	
+    if (point_cloud[last_ldmrs_position].points == NULL || point_cloud[last_ldmrs_position].point_color == NULL)
+    {
+        point_cloud[last_ldmrs_position].points = (carmen_vector_3D_t*) malloc (4 * num_points * sizeof (carmen_vector_3D_t));
+        point_cloud[last_ldmrs_position].point_color = (carmen_vector_3D_t*) malloc (4 * num_points * sizeof (carmen_vector_3D_t));
+        point_cloud[last_ldmrs_position].num_points = 4 * num_points;
+    }
+
+    point_cloud[last_ldmrs_position].num_points = 4 * num_points;
+    point_cloud[last_ldmrs_position].car_position = car_fused_pose.position;
+    point_cloud[last_ldmrs_position].timestamp = laser_message->timestamp;
+
+    int j = 0;
+    double hAngle, vAngle, range;
+    for (int i = 0; i < num_points; i++)
+    {
+        hAngle = laser_message->arraypoints1[i].horizontal_angle;
+        vAngle = laser_message->arraypoints1[i].vertical_angle;
+        range = laser_message->arraypoints1[i].radial_distance;
+        carmen_ldmrs_add_point_cloud(point_cloud, last_ldmrs_position, parentsSize, parents, hAngle, vAngle, range, &j);
+
+        hAngle = laser_message->arraypoints2[i].horizontal_angle;
+        vAngle = laser_message->arraypoints2[i].vertical_angle;
+        range = laser_message->arraypoints2[i].radial_distance;
+        carmen_ldmrs_add_point_cloud(point_cloud, last_ldmrs_position, parentsSize, parents, hAngle, vAngle, range, &j);
+
+        hAngle = laser_message->arraypoints3[i].horizontal_angle;
+        vAngle = laser_message->arraypoints3[i].vertical_angle;
+        range = laser_message->arraypoints3[i].radial_distance;
+        carmen_ldmrs_add_point_cloud(point_cloud, last_ldmrs_position, parentsSize, parents, hAngle, vAngle, range, &j);
+
+        hAngle = laser_message->arraypoints4[i].horizontal_angle;
+        vAngle = laser_message->arraypoints4[i].vertical_angle;
+        range = laser_message->arraypoints4[i].radial_distance;
+        carmen_ldmrs_add_point_cloud(point_cloud, last_ldmrs_position, parentsSize, parents, hAngle, vAngle, range, &j);
+    }
+    add_point_cloud(ldmrs_drawer, point_cloud[last_ldmrs_position]);
+}
+
+
+static void
+carmen_laser_ldmrs_message_handler(carmen_laser_ldmrs_message* laser_message)
+{
+    ldmrs_initialized = 1;
+	carmen_ldmrs_draw_dispatcher(laser_message, FRONT_BULLBAR_MIDDLE_HIERARCHY_SIZE, front_bullbar_middle_hierarchy, front_bullbar_middle_laser_points, &front_bullbar_middle_laser_points_idx);
+}
+
+
 static void
 carmen_laser_draw_dispatcher(carmen_laser_laser_message* laser_message, int parentsSize, carmen_pose_3D_t** parents, point_cloud* point_cloud, int* current_laser_position)
 {
@@ -789,7 +892,7 @@ carmen_laser_draw_dispatcher(carmen_laser_laser_message* laser_message, int pare
 	int last_laser_position = *current_laser_position;
 
     int num_points = laser_message->num_readings;
-	
+
     if (point_cloud[last_laser_position].points == NULL || point_cloud[last_laser_position].point_color == NULL)
     {
         point_cloud[last_laser_position].points = (carmen_vector_3D_t*) malloc (num_points * sizeof (carmen_vector_3D_t));
@@ -812,7 +915,7 @@ carmen_laser_draw_dispatcher(carmen_laser_laser_message* laser_message, int pare
         double range = laser_message->range[i];
 
         //point_cloud[last_laser_position].points[j] = get_point_position_global_reference(point_cloud[last_laser_position].car_position, point_cloud_car[last_laser_position].points[j], //r_matrix_car_to_global);
-		
+
 		point_cloud[last_laser_position].points[j] = get_laser_reading_position_from_reference(angle, range, parentsSize, parents);
 
         //point_cloud[last_laser_position].points[j].z = 1.0;
@@ -834,6 +937,7 @@ carmen_laser_draw_dispatcher(carmen_laser_laser_message* laser_message, int pare
     //destroy_rotation_matrix(r_matrix_car_to_global);
     add_point_cloud(laser_drawer, point_cloud[last_laser_position]);
 }
+
 
 static void
 carmen_laser_laser_message_handler(carmen_laser_laser_message* laser_message)
@@ -1246,6 +1350,38 @@ init_laser(void)
 }
 
 static void
+init_ldmrs(void)
+{
+    ldmrs_initialized = 0; // Only considered initialized when first message is received
+
+    ldmrs_points = (point_cloud*) malloc(ldmrs_size * sizeof (point_cloud));
+    ldmrs_points_car = (point_cloud*) malloc(ldmrs_size * sizeof (point_cloud));
+
+	front_bullbar_middle_laser_points = (point_cloud*) malloc(ldmrs_size * sizeof (point_cloud));
+
+    int i;
+    for (i = 0; i < ldmrs_size; i++)
+    {
+        ldmrs_points[i].points = NULL;
+        ldmrs_points[i].point_color = NULL;
+        ldmrs_points[i].num_points = 0;
+        ldmrs_points[i].timestamp = carmen_get_time();
+
+        ldmrs_points_car[i].points = NULL;
+        ldmrs_points_car[i].point_color = NULL;
+        ldmrs_points_car[i].num_points = 0;
+        ldmrs_points_car[i].timestamp = carmen_get_time();
+
+		front_bullbar_middle_laser_points[i].points = NULL;
+        front_bullbar_middle_laser_points[i].point_color = NULL;
+        front_bullbar_middle_laser_points[i].num_points = 0;
+        front_bullbar_middle_laser_points[i].timestamp = carmen_get_time();
+    }
+
+    last_ldmrs_position = 0;
+}
+
+static void
 init_gps(void)
 {
     gps_initialized = 0; // Only considered initialized when first message is received
@@ -1405,6 +1541,7 @@ init_drawers(int argc, char** argv, int bumblebee_basic_width, int bumblebee_bas
     carmen_pose_3D_t stereo_velodyne_pose = get_stereo_velodyne_pose_3D(argc, argv, camera);
     car_drawer = createCarDrawer(argc, argv);
     laser_drawer = create_point_cloud_drawer(laser_size);
+    ldmrs_drawer = create_point_cloud_drawer(ldmrs_size);
     velodyne_drawer = create_point_cloud_drawer(velodyne_size);
     v_360_drawer = create_velodyne_360_drawer(velodyne_pose, sensor_board_1_pose);
 
@@ -1428,6 +1565,7 @@ destroy_drawers()
 {
     destroyCarDrawer(car_drawer);
     destroy_point_cloud_drawer(laser_drawer);
+    destroy_point_cloud_drawer(ldmrs_drawer);
     destroy_point_cloud_drawer(velodyne_drawer);
     destroy_velodyne_360_drawer(v_360_drawer);
     //destroy_variable_velodyne_drawer(var_v_drawer);
@@ -1462,6 +1600,7 @@ init_stuff(int argc, char** argv)
 
         carmen_param_t param_list[] = {
             {(char*) "viewer_3D", (char*) "laser_size", CARMEN_PARAM_INT, &laser_size, 0, NULL},
+            {(char*) "viewer_3D", (char*) "ldmrs_size", CARMEN_PARAM_INT, &ldmrs_size, 0, NULL},
             {(char*) "viewer_3D", (char*) "velodyne_size", CARMEN_PARAM_INT, &velodyne_size, 0, NULL},
             {(char*) "viewer_3D", (char*) "odometry_size", CARMEN_PARAM_INT, &odometry_size, 0, NULL},
             {(char*) "viewer_3D", (char*) "gps_size", CARMEN_PARAM_INT, &gps_size, 0, NULL},
@@ -1488,6 +1627,13 @@ init_stuff(int argc, char** argv)
             {(char*) "front_bullbar", (char*) "pitch", CARMEN_PARAM_DOUBLE, &(front_bullbar_pose.orientation.pitch), 0, NULL},
             {(char*) "front_bullbar", (char*) "yaw", CARMEN_PARAM_DOUBLE, &(front_bullbar_pose.orientation.yaw), 0, NULL},
             
+            {(char*) "front_bullbar_middle", (char*) "x", CARMEN_PARAM_DOUBLE, &(front_bullbar_middle_pose.position.x), 0, NULL},
+            {(char*) "front_bullbar_middle", (char*) "y", CARMEN_PARAM_DOUBLE, &(front_bullbar_middle_pose.position.y), 0, NULL},
+            {(char*) "front_bullbar_middle", (char*) "z", CARMEN_PARAM_DOUBLE, &(front_bullbar_middle_pose.position.z), 0, NULL},
+            {(char*) "front_bullbar_middle", (char*) "roll", CARMEN_PARAM_DOUBLE, &(front_bullbar_middle_pose.orientation.roll), 0, NULL},
+            {(char*) "front_bullbar_middle", (char*) "pitch", CARMEN_PARAM_DOUBLE, &(front_bullbar_middle_pose.orientation.pitch), 0, NULL},
+            {(char*) "front_bullbar_middle", (char*) "yaw", CARMEN_PARAM_DOUBLE, &(front_bullbar_middle_pose.orientation.yaw), 0, NULL},
+
             {(char*) "front_bullbar_left_corner", (char*) "x", CARMEN_PARAM_DOUBLE, &(front_bullbar_left_corner_pose.position.x), -10, NULL},
             {(char*) "front_bullbar_left_corner", (char*) "y", CARMEN_PARAM_DOUBLE, &(front_bullbar_left_corner_pose.position.y), 0, NULL},
             {(char*) "front_bullbar_left_corner", (char*) "z", CARMEN_PARAM_DOUBLE, &(front_bullbar_left_corner_pose.position.z), 0, NULL},
@@ -1652,6 +1798,7 @@ init_stuff(int argc, char** argv)
 
     init_moving_objects_point_clouds();
     init_laser();
+    init_ldmrs();
     init_velodyne();
     init_gps();
     init_xsens_xyz();
@@ -1866,10 +2013,13 @@ draw_loop(window *w)
 			draw_laser_points(rear_bullbar_left_corner_laser_points, rear_bullbar_left_corner_laser_points, laser_size);
 			draw_laser_points(rear_bullbar_right_corner_laser_points, rear_bullbar_right_corner_laser_points, laser_size);
 			
+            draw_laser_points(ldmrs_points, ldmrs_points_car, ldmrs_size);
+			draw_laser_points(front_bullbar_middle_laser_points, front_bullbar_middle_laser_points, ldmrs_size);
         }
         else if (draw_points_flag == 2)
         {
             draw_point_cloud(laser_drawer);
+            draw_point_cloud(ldmrs_drawer);
         }
 
         if (draw_velodyne_flag == 1)
@@ -2054,10 +2204,12 @@ draw_loop2(window *w)
         if (draw_points_flag == 1)
         {
             draw_laser_points(laser_points, laser_points_car, laser_size);
+            draw_laser_points(ldmrs_points, ldmrs_points_car, ldmrs_size);
         }
         else if (draw_points_flag == 2)
         {
             draw_point_cloud(laser_drawer);
+            draw_point_cloud(ldmrs_drawer);
         }
 
         if (draw_velodyne_flag == 1)
@@ -2186,6 +2338,8 @@ subscribe_ipc_messages(void)
         printf("carmen_laser_subscribe: laser_id: %d\n", i);
         carmen_laser_subscribe_laser_message(i, NULL, (carmen_handler_t) carmen_laser_laser_message_handler, CARMEN_SUBSCRIBE_LATEST);
     }
+
+    carmen_laser_subscribe_ldmrs_message(NULL, (carmen_handler_t) carmen_laser_ldmrs_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
     carmen_laser_subscribe_laser_message(6, NULL, (carmen_handler_t) carmen_laser_laser_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
