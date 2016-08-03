@@ -487,7 +487,7 @@ publish_base_ackerman_odometry_message(carmen_visual_odometry_pose6d_message *vi
 }
 
 static void
-publish_base_ackerman_velocity_message(carmen_visual_odometry_pose6d_message *visual_odometry_message)
+publish_robot_ackerman_velocity_message(carmen_visual_odometry_pose6d_message *visual_odometry_message)
 {
 	IPC_RETURN_TYPE err = IPC_OK;
 //	static carmen_base_ackerman_odometry_message odometry;
@@ -600,7 +600,7 @@ bumblebee_stereo_message_handler(carmen_bumblebee_basic_stereoimage_message *mes
 	//		visual_odometry_assembly_image_message(pose_6d, left_image,
 	//						       bumblebee_basic_height, bumblebee_basic_width, message->timestamp, carmen_get_host());
 
-			printf("VO\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n", pose_6d.x, pose_6d.y, pose_6d.z, carmen_radians_to_degrees(pose_6d.yaw), carmen_radians_to_degrees(pose_6d.pitch), carmen_radians_to_degrees(pose_6d.roll));
+//			printf("VO\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n", pose_6d.x, pose_6d.y, pose_6d.z, carmen_radians_to_degrees(pose_6d.yaw), carmen_radians_to_degrees(pose_6d.pitch), carmen_radians_to_degrees(pose_6d.roll));
 
 			// copy the inlier indices to visual odometry image messages (viewer)
 			// viso_inliers_indices = viso->getInlierIndices();
@@ -617,7 +617,7 @@ bumblebee_stereo_message_handler(carmen_bumblebee_basic_stereoimage_message *mes
 //				publish_base_ackerman_odometry_message(&odometry_msg);
 
 			if(!ackerman_publish_velocity)
-				publish_base_ackerman_velocity_message(&odometry_msg);
+				publish_robot_ackerman_velocity_message(&odometry_msg);
 			
 			if(visual_odometry_is_global_pos)
 				publish_visual_odometry_as_global_pos(&odometry_msg);
