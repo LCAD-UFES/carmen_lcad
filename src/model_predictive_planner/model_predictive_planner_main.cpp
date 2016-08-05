@@ -757,10 +757,10 @@ register_handlers_specific()
 			(carmen_handler_t)navigator_ackerman_stop_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_map_server_subscribe_compact_cost_map(
-			NULL,
-			(carmen_handler_t) map_server_compact_cost_map_message_handler,
-			CARMEN_SUBSCRIBE_LATEST);
+//	carmen_map_server_subscribe_compact_cost_map(
+//			NULL,
+//			(carmen_handler_t) map_server_compact_cost_map_message_handler,
+//			CARMEN_SUBSCRIBE_LATEST);
 
 //	carmen_behavior_selector_subscribe_goal_list_message(
 //			NULL,
