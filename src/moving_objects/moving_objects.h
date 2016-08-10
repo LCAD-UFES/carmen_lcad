@@ -20,6 +20,8 @@ using namespace std;
 #ifndef MOVING_OBJECTS_H
 #define MOVING_OBJECTS_H
 
+//#define AJUSTE
+
 #ifdef __cplusplus
 extern "C" {
 #endif
