@@ -12,8 +12,6 @@
 
 #include "moving_objects.h"
 
-//#define BASELINE
-
 using namespace std;
 
 
