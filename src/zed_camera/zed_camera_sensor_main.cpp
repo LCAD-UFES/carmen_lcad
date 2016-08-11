@@ -98,15 +98,11 @@ int setupCamera() {
         delete zed;
         exit(0);
     }
-    //STANDARD: Structure conservative, no occlusion filling. Application example : Obstacle detection, 3D reconstructions, 3D measures
-    //FILL: Occlusion filling, edge sharpening, advanced post-filtering. Application example : Refocusing, Multi-view generation
-    sl::zed::SENSING_MODE dm_type = sl::zed::STANDARD;
 
     // the depth is limited to 20. METERS as define in zed::init()
     // Set the maximum distance of depth/disparity estimation (all values after this limit will be reported as TOO_FAR value)
     zed->setDepthClampValue(5000);
 
-    int ConfidenceIdx = 100;
     sl::zed::ZED_SELF_CALIBRATION_STATUS old_self_calibration_status = sl::zed::SELF_CALIBRATION_NOT_CALLED;
 
     //Jetson only. Execute the calling thread on core 2
@@ -143,6 +139,11 @@ int main(int argc, char **argv)
 
   int width = zed->getImageSize().width;
   int height = zed->getImageSize().height;
+
+  int ConfidenceIdx = 100;
+  //STANDARD: Structure conservative, no occlusion filling. Application example : Obstacle detection, 3D reconstructions, 3D measures
+  //FILL: Occlusion filling, edge sharpening, advanced post-filtering. Application example : Refocusing, Multi-view generation
+  sl::zed::SENSING_MODE dm_type = sl::zed::STANDARD;
 
   if(isStereo) {
       while(1) {

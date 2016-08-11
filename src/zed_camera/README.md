@@ -22,6 +22,11 @@ $ cmake ..
 $ make
 ```
 
+### Run
+
+```
+./zed_camera_sensor <stereo|depth>
+```
 
 ### Development
 
