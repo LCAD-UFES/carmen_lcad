@@ -45,6 +45,7 @@ void behavior_selector_get_state(carmen_behavior_selector_state_t *current_state
 void behavior_selector_get_goal_list(carmen_ackerman_traj_point_t **goal_list_out, int *goal_list_size_out, int *goal_list_index_out, double *goal_list_time_out);
 
 carmen_ackerman_traj_point_t get_robot_pose();
+double get_max_v();
 
 // TODO: retirar as duas funcoes deste contexto de lib e deixa-las apenas visiveis (static) no behavior_selector_main.cpp
 void publish_goal_list();

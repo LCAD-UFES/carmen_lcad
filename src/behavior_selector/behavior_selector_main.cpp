@@ -111,7 +111,6 @@ publish_goal_list()
 		if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
 			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_0))
 			goal_list_msg.goal_list->v = 0.0;
-
 		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
 			(last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK))
 			goal_list_msg.goal_list->v = carmen_fmin(2.0, goal_list_msg.goal_list->v);
@@ -149,6 +148,8 @@ publish_goal_list()
 	}
 	else if (obstacle_avoider_active_recently)
 		goal_list_msg.goal_list->v = carmen_fmin(2.5, goal_list_msg.goal_list->v);
+//	else
+//		goal_list_msg.goal_list->v = get_max_v();
 
 	if (goal_list_msg.size > 0)
 	{

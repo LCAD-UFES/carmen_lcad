@@ -391,6 +391,13 @@ get_robot_pose()
 }
 
 
+double
+get_max_v()
+{
+	return (robot_config.max_v);
+}
+
+
 void
 behavior_selector_update_rddf(carmen_rddf_road_profile_message *rddf_msg)
 {

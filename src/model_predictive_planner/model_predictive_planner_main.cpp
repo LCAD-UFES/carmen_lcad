@@ -29,7 +29,6 @@
 
 #define DIST_SQR(x1,y1,x2,y2) ((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2))
 
-carmen_rddf_annotation_message last_rddf_annotation_message;
 Tree tree; //tree rooted on robot
 TrajectoryLookupTable *g_trajectory_lookup_table;
 carmen_rddf_road_profile_message goal_list_message;
@@ -626,14 +625,7 @@ behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_
 	goal_pose.y = msg->goal_list->y;
 	goal_pose.theta = carmen_normalize_theta(msg->goal_list->theta);
 
-	// Map annotations handling
-	double distance_to_annotation = DIST2D(last_rddf_annotation_message.annotation_point, *GlobalState::localizer_pose);
-	if (((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
-		 (last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)) &&
-		(distance_to_annotation < 30.0))
-		GlobalState::robot_config.max_v = 1.0;
-	else
-		GlobalState::robot_config.max_v = fmin(msg->goal_list->v, GlobalState::param_max_vel);
+	GlobalState::robot_config.max_v = fmin(msg->goal_list->v, GlobalState::param_max_vel);
 
 //	printf("vgoal = %lf\n", GlobalState::robot_config.max_vel);
 
