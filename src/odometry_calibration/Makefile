@@ -24,7 +24,7 @@ IFLAGS += `pkg-config --cflags opencv`
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/pso 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/pso -lpso++ -fopenmp
 LFLAGS += `pkg-config --libs opencv`	  
-LFLAGS += -lgrid_mapping_interface -lgrid_mapping -lmap_io -lmap_interface
+LFLAGS += -lmapper_interface -lgrid_mapping -lmap_io -lmap_interface
 
 SOURCES = grab_data_for_calibration.cpp calibrate_bias.cpp
 

@@ -8,7 +8,6 @@
 #include <carmen/carmen.h>
 #include <carmen/behavior_selector_interface.h>
 #include <carmen/fused_odometry_interface.h>
-#include <carmen/grid_mapping_interface.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
 #include <carmen/map_server_interface.h>
 #include <carmen/ford_escape_hybrid_interface.h>
@@ -675,7 +674,7 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 
 
 static void
-carmen_grid_mapping_distance_map_message_handler(carmen_grid_mapping_distance_map_message *message)
+carmen_mapper_distance_map_message_handler(carmen_mapper_distance_map_message *message)
 {
 	GlobalState::distance_map = message;
 }
@@ -750,10 +749,10 @@ register_handlers_specific()
 			(carmen_handler_t)navigator_ackerman_stop_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_map_server_subscribe_compact_cost_map(
-			NULL,
-			(carmen_handler_t) map_server_compact_cost_map_message_handler,
-			CARMEN_SUBSCRIBE_LATEST);
+//	carmen_map_server_subscribe_compact_cost_map(
+//			NULL,
+//			(carmen_handler_t) map_server_compact_cost_map_message_handler,
+//			CARMEN_SUBSCRIBE_LATEST);
 
 //	carmen_behavior_selector_subscribe_goal_list_message(
 //			NULL,
@@ -768,7 +767,7 @@ register_handlers_specific()
 			CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_grid_mapping_distance_map_subscribe_message(NULL,
-			(carmen_handler_t) carmen_grid_mapping_distance_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+			(carmen_handler_t) carmen_mapper_distance_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 

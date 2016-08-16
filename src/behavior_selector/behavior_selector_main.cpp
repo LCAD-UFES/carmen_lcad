@@ -2,8 +2,6 @@
 #include <carmen/carmen.h>
 #include <carmen/rddf_messages.h>
 #include <carmen/rddf_interface.h>
-#include <carmen/grid_mapping_messages.h>
-#include <carmen/grid_mapping_interface.h>
 #include <carmen/grid_mapping.h>
 #include <prob_map.h>
 #include <carmen/map_server_interface.h>

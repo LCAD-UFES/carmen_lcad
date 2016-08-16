@@ -34,7 +34,7 @@ void publish_motion_planner_path(carmen_ackerman_motion_command_t *motion_comman
 void publish_obstacle_avoider_path(carmen_ackerman_motion_command_t *motion_commands_vector, int num_motion_commands);
 void publish_status(void);
 void publish_plan(void);
-void copy_grid_mapping_to_map_vector(carmen_grid_mapping_message *grid_map, int position);
+void copy_grid_mapping_to_map_vector(carmen_mapper_map_message *grid_map, int position);
 void motion_planning_obstacle_avoiding_handler();
 
 void carmen_obstacle_avoider_publish_base_ackerman_motion_command(carmen_ackerman_motion_command_p motion_commands, int num_motion_commands);

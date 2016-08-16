@@ -9,7 +9,6 @@
 #include <carmen/fused_odometry_interface.h>
 #include <carmen/velodyne_interface.h>
 #include <carmen/rotation_geometry.h>
-#include <carmen/grid_mapping_interface.h>
 #include <carmen/stereo_velodyne.h>
 #include <carmen/stereo_velodyne_interface.h>
 #include <prob_map.h>

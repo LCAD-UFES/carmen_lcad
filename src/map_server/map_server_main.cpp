@@ -1,7 +1,6 @@
 #include <carmen/carmen.h>
 #include <carmen/localize_ackerman_messages.h>
 #include <carmen/grid_mapping.h>
-#include <carmen/grid_mapping_interface.h>
 #include "map_server_messages.h"
 #include "map_server_interface.h"
 #include <carmen/carmen_rrt_util.h>
@@ -532,7 +531,7 @@ navigator_spline_path_handler(carmen_navigator_spline_path_message *msg)
 static void
 map_request_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, void *clientData __attribute__ ((unused)))
 {
-	carmen_grid_mapping_message map_msg;
+	carmen_mapper_map_message map_msg;
 	IPC_RETURN_TYPE err;
 
 	if (current_map->complete_map != NULL)
@@ -652,7 +651,7 @@ define_messages()
 	err = IPC_defineMsg(CARMEN_NAVIGATOR_SPLINE_PATH_NAME, IPC_VARIABLE_LENGTH, CARMEN_NAVIGATOR_SPLINE_PATH_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_NAVIGATOR_SPLINE_PATH_NAME);
 
-	carmen_grid_mapping_define_messages();
+	carmen_mapper_define_messages();
 	carmen_map_server_define_offline_map_message();
 	// carmen_map_server_define_cost_map_message();
 	carmen_map_server_define_compact_lane_map_message();
@@ -795,7 +794,7 @@ main(int argc, char **argv)
 		carmen_map_server_publish_localize_map_message(&localize_map);
 
 		if (publish_grid_mapping_map_at_startup)
-			carmen_grid_mapping_publish_message(current_map, timestamp);
+			carmen_mapper_publish_message(current_map, timestamp);
 	}
 	else
 	{

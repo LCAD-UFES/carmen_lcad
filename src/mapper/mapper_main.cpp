@@ -9,7 +9,7 @@
 #include <carmen/fused_odometry_interface.h>
 #include <carmen/velodyne_interface.h>
 #include <carmen/rotation_geometry.h>
-#include <carmen/grid_mapping_interface.h>
+#include <carmen/mapper_interface.h>
 #include <carmen/stereo_velodyne.h>
 #include <carmen/stereo_velodyne_interface.h>
 #include <carmen/grid_mapping.h>
@@ -914,7 +914,7 @@ define_mapper_messages()
 {
 	/* register initialize message */
 	carmen_map_server_define_compact_cost_map_message();
-	carmen_grid_mapping_define_messages();
+	carmen_mapper_define_messages();
 }
 
 void initialize_transforms()

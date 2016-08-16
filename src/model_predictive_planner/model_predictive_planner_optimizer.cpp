@@ -369,17 +369,13 @@ compute_proximity_to_obstacles_kdtree(vector<carmen_ackerman_path_point_t> path)
 }
 
 
-double
-//distance_from_traj_point_to_obstacle(carmen_ackerman_path_point_t point, Pose *global_pos,
-//		double displacement, double min_dist, carmen_grid_mapping_distance_map_message *distance_map, FILE *plot)
-distance_from_traj_point_to_obstacle(carmen_ackerman_path_point_t point, Pose *global_pos,
-		double displacement, double min_dist, carmen_grid_mapping_distance_map_message *distance_map)
+carmen_ackerman_path_point_t
+move_path_point_to_map_coordinates(const carmen_ackerman_path_point_t& point, double displacement,
+		Pose* global_pos, carmen_mapper_distance_map_message* distance_map)
 {
-	// Move path point to map coordinates
 	carmen_ackerman_path_point_t path_point_in_map_coords;
 	double x = point.x;
 	double y = point.y;
-
 	double coss = cos(point.theta);
 	double sine = sin(point.theta);
 	double x_disp = x + displacement * coss;
@@ -387,9 +383,21 @@ distance_from_traj_point_to_obstacle(carmen_ackerman_path_point_t point, Pose *g
 
 	coss = cos(global_pos->theta);
 	sine = sin(global_pos->theta);
-	path_point_in_map_coords.x = (global_pos->x - distance_map->config.x_origin + x_disp * coss - y_disp * sine) / distance_map->config.resolution; // no meio do carro
-	path_point_in_map_coords.y = (global_pos->y - distance_map->config.y_origin + x_disp * sine + y_disp * coss) / distance_map->config.resolution; // no meio do carro
+	path_point_in_map_coords.x = (global_pos->x - distance_map->config.x_origin	+ x_disp * coss - y_disp * sine) / distance_map->config.resolution; // no meio do carro
+	path_point_in_map_coords.y = (global_pos->y - distance_map->config.y_origin	+ x_disp * sine + y_disp * coss) / distance_map->config.resolution; // no meio do carro
 
+	return (path_point_in_map_coords);
+}
+
+
+double
+//distance_from_traj_point_to_obstacle(carmen_ackerman_path_point_t point, Pose *global_pos,
+//		double displacement, double min_dist, carmen_mapper_distance_map_message *distance_map, FILE *plot)
+distance_from_traj_point_to_obstacle(carmen_ackerman_path_point_t point, Pose *global_pos,
+		double displacement, double min_dist, carmen_mapper_distance_map_message *distance_map)
+{
+	// Move path point to map coordinates
+	carmen_ackerman_path_point_t path_point_in_map_coords =	move_path_point_to_map_coordinates(point, displacement, global_pos,	distance_map);
 	int x_map_cell = (int) round(path_point_in_map_coords.x);
 	int y_map_cell = (int) round(path_point_in_map_coords.y);
 
@@ -397,14 +405,17 @@ distance_from_traj_point_to_obstacle(carmen_ackerman_path_point_t point, Pose *g
 	int index = y_map_cell + distance_map->config.y_size * x_map_cell;
 	if (index < 0 || index >= distance_map->size)
 		return (min_dist);
-	carmen_ackerman_path_point_t nearest_obstacle;
-	nearest_obstacle.x = (double) distance_map->complete_x_offset[index] + (double) x_map_cell;
-	nearest_obstacle.y = (double) distance_map->complete_y_offset[index] + (double) y_map_cell;
 
-//	fprintf(plot, "%lf %lf red\n", path_point_in_map_coords.x, path_point_in_map_coords.y);
-//	fprintf(plot, "%lf %lf green\n", nearest_obstacle.x, nearest_obstacle.y);
+	double x1 = (double) distance_map->complete_x_offset[index] + (double) x_map_cell;
+	double y1 = (double) distance_map->complete_y_offset[index] + (double) y_map_cell;
 
-	double distance_in_map_coordinates = dist(path_point_in_map_coords, nearest_obstacle);
+	double x2 = path_point_in_map_coords.x;
+	double y2 = path_point_in_map_coords.y;
+
+	double dx = x1 - x2;
+	double dy = y1 - y2;
+
+	double distance_in_map_coordinates = sqrt(dx * dx + dy * dy);
 	double distance = distance_in_map_coordinates * distance_map->config.resolution;
 
 	return (distance);
@@ -469,7 +480,7 @@ distance_from_traj_point_to_obstacle(carmen_ackerman_path_point_t point, Pose *g
 double
 compute_distance_to_closest_obstacles(carmen_ackerman_path_point_t path_pose, double circle_radius,
 		carmen_robot_ackerman_config_t *robot_config, Pose *global_pos,
-		carmen_grid_mapping_distance_map_message *distance_map)
+		carmen_mapper_distance_map_message *distance_map)
 {
 	int number_of_point = 4;
 	double displacement_inc = robot_config->distance_between_front_and_rear_axles / (number_of_point - 2);

@@ -11,7 +11,6 @@ using namespace std;
 #include <carmen/velodyne_interface.h>
 #include <carmen/fused_odometry_interface.h>
 #include <carmen/carmen_gps_wrapper.h>
-#include <carmen/grid_mapping_interface.h>
 
 #include "rddf_interface.h"
 #include "rddf_messages.h"

@@ -43,7 +43,7 @@ static carmen_ackerman_traj_point_t trajectory_vector_of_points[MAX_TRAJECTORY_V
 
 
 void
-add_map_to_map_vector(carmen_grid_mapping_message *message)
+add_map_to_map_vector(carmen_mapper_map_message *message)
 {
 	if (current_map < NUM_MAPS - 1)
 		current_map++;
@@ -144,7 +144,7 @@ build_navigator_ackerman_plan_message(carmen_ackerman_motion_command_p motion_co
 
 
 void
-copy_grid_mapping_to_map_vector(carmen_grid_mapping_message *grid_map, int position)
+copy_grid_mapping_to_map_vector(carmen_mapper_map_message *grid_map, int position)
 {
 	int i;
 

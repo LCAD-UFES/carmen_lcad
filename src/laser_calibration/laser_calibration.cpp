@@ -3,7 +3,6 @@
 #include <prob_transforms.h>
 #include <prob_map.h>
 #include <carmen/grid_mapping.h>
-#include <carmen/grid_mapping_interface.h>
 
 #include "laser_calibration.h"
 

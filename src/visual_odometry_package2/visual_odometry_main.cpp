@@ -16,6 +16,8 @@ static int bumblebee_basic_height;
 static int ackerman_publish_odometry;
 static int visual_odometry_is_global_pos;
 
+static int visual_odometry_publish_velocity;
+
 Matrix visual_odometry_pose_6d_transformation_matrix;
 VisualOdometryStereo *viso = NULL;
 VisualOdometryStereo::parameters viso_param;
@@ -450,9 +452,8 @@ initialize_pose_6d_transformation_matrix()
 	transformer.lookupTransform("/carmen", "/visual_odometry", tf::Time(0), g_carmen_to_visual_odometry_transform);
 }
 
-
 static void
-publish_base_ackerman_odometry(carmen_visual_odometry_pose6d_message *visual_odometry_message)
+publish_base_ackerman_odometry_message(carmen_visual_odometry_pose6d_message *visual_odometry_message)
 {
 	IPC_RETURN_TYPE err = IPC_OK;
 	static carmen_base_ackerman_odometry_message odometry;
@@ -483,6 +484,45 @@ publish_base_ackerman_odometry(carmen_visual_odometry_pose6d_message *visual_odo
 	err = IPC_publishData(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, &odometry);
 	carmen_test_ipc(err, "Could not publish base_odometry_message",
 			CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
+}
+
+static void
+publish_robot_ackerman_velocity_message(carmen_visual_odometry_pose6d_message *visual_odometry_message)
+{
+	IPC_RETURN_TYPE err = IPC_OK;
+//	static carmen_base_ackerman_odometry_message odometry;
+	carmen_robot_ackerman_velocity_message robot_ackerman_velocity_message;
+//	static int first = 1;
+//	static double first_timestamp;
+
+//	if (first)
+//	{
+//		odometry.host = visual_odometry_message->host;
+//		odometry.x = 0;
+//		odometry.y = 0;
+//		odometry.theta = 0;
+//
+//		odometry.v = odometry.phi = 0;
+////		first_timestamp = visual_odometry_message->timestamp;
+//		first = 0;
+//	}
+
+//	odometry.x = visual_odometry_message->pose_6d.x;
+//	odometry.y = visual_odometry_message->pose_6d.y;
+//	odometry.theta = visual_odometry_message->pose_6d.yaw;
+	robot_ackerman_velocity_message.v = visual_odometry_message->v;
+	robot_ackerman_velocity_message.phi = visual_odometry_message->phi;
+	robot_ackerman_velocity_message.timestamp = visual_odometry_message->timestamp;
+
+//	printf("v_phi_time %lf %lf %lf\n", odometry.v, -odometry.phi, odometry.timestamp - first_timestamp); // @@@ Alberto: O phi esta negativado porque o carro inicialmente publicava a odometria ao contrario
+
+//	err = IPC_publishData(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, &odometry);
+//	carmen_test_ipc(err, "Could not publish base_odometry_message",
+//			CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
+	err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, &robot_ackerman_velocity_message);
+		carmen_test_ipc(err, "Could not publish base_ackerman_velocity_message",
+				CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME);
+
 }
 
 static void
@@ -560,7 +600,7 @@ bumblebee_stereo_message_handler(carmen_bumblebee_basic_stereoimage_message *mes
 	//		visual_odometry_assembly_image_message(pose_6d, left_image,
 	//						       bumblebee_basic_height, bumblebee_basic_width, message->timestamp, carmen_get_host());
 
-			printf("VO\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n", pose_6d.x, pose_6d.y, pose_6d.z, carmen_radians_to_degrees(pose_6d.yaw), carmen_radians_to_degrees(pose_6d.pitch), carmen_radians_to_degrees(pose_6d.roll));
+//			printf("VO\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n", pose_6d.x, pose_6d.y, pose_6d.z, carmen_radians_to_degrees(pose_6d.yaw), carmen_radians_to_degrees(pose_6d.pitch), carmen_radians_to_degrees(pose_6d.roll));
 
 			// copy the inlier indices to visual odometry image messages (viewer)
 			// viso_inliers_indices = viso->getInlierIndices();
@@ -573,8 +613,11 @@ bumblebee_stereo_message_handler(carmen_bumblebee_basic_stereoimage_message *mes
 			err = IPC_publishData(CARMEN_VISUAL_ODOMETRY_POSE6D_MESSAGE_NAME, &odometry_msg);
 			carmen_test_ipc_exit(err, "Could not publish", CARMEN_VISUAL_ODOMETRY_POSE6D_MESSAGE_NAME);
 			
-			if(!ackerman_publish_odometry)
-				publish_base_ackerman_odometry(&odometry_msg);
+//			if(!ackerman_publish_odometry)
+//				publish_base_ackerman_odometry_message(&odometry_msg);
+
+			if(visual_odometry_publish_velocity)
+				publish_robot_ackerman_velocity_message(&odometry_msg);
 			
 			if(visual_odometry_is_global_pos)
 				publish_visual_odometry_as_global_pos(&odometry_msg);
@@ -628,6 +671,7 @@ read_parameters(int argc, char **argv)
 		{bumblebee_string, (char *) "height", CARMEN_PARAM_INT, &bumblebee_basic_height, 0, NULL},
 		{(char *) "robot", (char *) "maximum_acceleration_forward", CARMEN_PARAM_DOUBLE, &maximum_acceleration_forward, 0, NULL},
 		{(char *) "robot", (char *) "publish_odometry", CARMEN_PARAM_ONOFF, &ackerman_publish_odometry, 0, NULL},
+		{(char *) "visual_odometry", (char *) "publish", CARMEN_PARAM_ONOFF, &visual_odometry_publish_velocity, 0, NULL},
 		{(char*)camera_string, (char*)"x", CARMEN_PARAM_DOUBLE, &camera_pose.position.x, 0, NULL},
 		{(char*)camera_string, (char*)"y", CARMEN_PARAM_DOUBLE, &camera_pose.position.y, 0, NULL},
 		{(char*)camera_string, (char*)"z", CARMEN_PARAM_DOUBLE, &camera_pose.position.z, 0, NULL},

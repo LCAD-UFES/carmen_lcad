@@ -9,7 +9,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 IFLAGS += `$(GTK_CONFIG) --cflags`
 LFLAGS += $(INTERFACE_LIBS) -lgrid_mapping -lprob_models -lX11 -lglobal -lipc \
 	-lgeometry -lmap_interface -lobstacle_avoider_interface -ldynamic_object_detector_interface \
-	-lparam_interface -lgrid_mapping_interface -lbase_ackerman_interface \
+	-lparam_interface -lmapper_interface -lbase_ackerman_interface \
 	-lsimulator_ackerman_interface -llocalize_ackerman_interface -lnavigator_ackerman_interface  \
 	-lmap_graphics -lglobal_graphics `pkg-config --libs gtk+-2.0` -lfused_odometry_interface \
 	-lmap_io -lrddf_interface -lmap_server_interface -lbehavior_selector_interface \

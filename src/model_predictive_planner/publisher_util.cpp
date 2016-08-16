@@ -9,7 +9,6 @@
 #include "rrt_planner_interface.h"
 #include <map>
 #include "model/global_state.h"
-#include <carmen/grid_mapping_interface.h>
 //#include "dijkstra.h"
 
 void

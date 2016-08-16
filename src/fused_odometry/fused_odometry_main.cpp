@@ -3,7 +3,6 @@
 #include <carmen/xsens_interface.h>
 #include <carmen/gps_xyz_interface.h>
 #include <carmen/visual_odometry_interface.h>
-#include <carmen/grid_mapping_interface.h>
 #include <carmen/map_server_interface.h>
 #include <carmen/localize_ackerman_core.h>
 

@@ -9,7 +9,7 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
 
 LFLAGS += $(INTERFACE_LIBS) -lglobal -lipc -lmap_interface -lparam_interface  \
-	-lgrid_mapping_interface -lrddf_interface -lnavigator_ackerman_interface \
+	-lmapper_interface -lrddf_interface -lnavigator_ackerman_interface \
 	-llocalize_ackerman_interface -lmap_server_interface -lcollision_detection -lmotion_planner_interface \
 	-lobstacle_avoider_interface -lgrid_mapping -lmap_io -lmap_util \
 	-lprob_models -lrotation_geometry
