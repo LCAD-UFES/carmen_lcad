@@ -6,11 +6,14 @@
 #include <vpLaserScan.h>
 #include <carmen/carmen.h>
 #include <carmen/laser_ldmrs_interface.h>
+#include <carmen/base_ackerman_interface.h>
+#include <carmen/base_ackerman_messages.h>
 
 volatile int done = 0;
 //static int last_frame = -1;
 static char *laser_ldmrs_port = 0;
 static char *laser_ldmrs_address = 0;
+vpSickLDMRS laser;
 
 /*********************************************************
 		   --- Publishers ---
@@ -34,7 +37,9 @@ static void shutdown_module(int signo)
 {
 	(void) signo;
 	done = 1;
+	carmen_ipc_disconnect();
 	printf("laser_ldmrs: disconnected.\n");
+	exit(0);
 }
 
 static int carmen_laser_ldmrs_read_parameters(int argc, char **argv)
@@ -51,6 +56,16 @@ static int carmen_laser_ldmrs_read_parameters(int argc, char **argv)
 	carmen_param_install_params(argc, argv, param_list, num_items);
 
 	return 0;
+}
+
+static void
+base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *odometry_message)
+{
+	short velocity_cms = short (odometry_message->v * 100.0);
+	short phi_mrad = short (odometry_message->phi * 1000);
+	short yaw_rate = 0;
+
+	laser.sendEgoMotionData(velocity_cms, phi_mrad, yaw_rate);
 }
 
 /*
@@ -195,10 +210,29 @@ static void carmen_laser_ldmrs_copy_message(vpLaserScan laserscan[4], carmen_las
 	}
 }
 
+static void carmen_laser_ldmrs_objects_build_message(vpLaserObjectData *objectData, carmen_laser_ldmrs_objects_message *message)
+{
+	message->num_objects = objectData->getNumObjects();
+	std::vector<vpObject> objectsList = objectData->getObjectList();
+	message->objects_list = (carmen_laser_ldmrs_object *) malloc(message->num_objects * sizeof(carmen_laser_ldmrs_object));
+	for(int i = 0; i < message->num_objects; i++){
+		message->objects_list[i].id = objectsList[i].getObjectId();
+		message->objects_list[i].x = 0.01 * objectsList[i].getObjectBoxCenter().x_pos;
+		message->objects_list[i].y = 0.01 * objectsList[i].getObjectBoxCenter().y_pos;
+		int xv = objectsList[i].getAbsoluteVelocity().x_pos;
+		int yv = objectsList[i].getAbsoluteVelocity().y_pos;
+		double velocity = 0.01 * sqrt(xv*xv + yv*yv);
+		message->objects_list[i].velocity = velocity;
+		message->objects_list[i].orientation = (((double) objectsList[i].getObjectBoxOrientation())/32.0)*M_PI/180;
+		message->objects_list[i].lenght = 0.01 * objectsList[i].getObjectBoxSize().x_size;
+		message->objects_list[i].width = 0.01 * objectsList[i].getObjectBoxSize().y_size;
+	}
+}
+
 int main(int argc, char **argv)
 {
 	static carmen_laser_ldmrs_message message;
-	vpSickLDMRS laser;
+	static carmen_laser_ldmrs_objects_message objectsMessage;
 
 	message.scan_points = 0;
 
@@ -220,12 +254,43 @@ int main(int argc, char **argv)
 
 	carmen_ipc_addPeriodicTimer(10, publish_heartbeats, NULL);
 
+	// Subscribe to odometry messages
+	carmen_base_ackerman_subscribe_odometry_message(NULL,
+    		(carmen_handler_t) base_ackerman_odometry_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
 	laser.setIpAddress(laser_ldmrs_address);
 	laser.setPort(atoi(laser_ldmrs_port));
 	laser.setup();
 
 	vpLaserScan laserscan[4];
+	//vpLaserObjectData objectData;
+
 	for ( ; ; ) {
+
+		vpLaserObjectData objectData;
+		if(laser.tracking(&objectData) == true)
+		{
+			carmen_laser_ldmrs_objects_build_message(&objectData, &objectsMessage);
+
+//			printf("num objects: %d, list size: %ld, Timestamp: %lf\n",objectData.getNumObjects(),objectData.getObjectList().size(), objectData.getStartTimestamp());
+//			for(int i = 0; i < objectData.getNumObjects(); i++){
+//				printf("obj id: %d\n",objectData.getObjectList()[i].getObjectId());
+//				printf("relative timestamp: %d\n",objectData.getObjectList()[i].getRelativeTimestamp());
+//				printf("obj abs vel x: %d\n",(int) objectData.getObjectList()[i].getAbsoluteVelocity().x_pos);
+//				printf("obj abs vel y: %d\n",(int) objectData.getObjectList()[i].getAbsoluteVelocity().y_pos);
+//				printf("obj rel vel x: %d\n",(int) objectData.getObjectList()[i].getRelativeVelocity().x_pos);
+//				printf("obj rel vel y: %d\n",(int) objectData.getObjectList()[i].getRelativeVelocity().y_pos);
+//
+//				printf("obj pos x: %d\n",(int) objectData.getObjectList()[i].getBoundingBoxCenter().x_pos);
+//				printf("obj pos y: %d\n",(int) objectData.getObjectList()[i].getBoundingBoxCenter().y_pos);
+//
+//				printf("obj size x: %d\n",objectData.getObjectList()[i].getObjectBoxSize().x_size);
+//				printf("obj size y: %d\n\n",objectData.getObjectList()[i].getObjectBoxSize().y_size);
+//			}
+
+			carmen_laser_publish_ldmrs_objects(&objectsMessage);
+		}
+
 		// Get the measured points in the four layers
 		if (laser.measure(laserscan) == false)
 			continue;

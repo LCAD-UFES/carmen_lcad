@@ -51,6 +51,7 @@
 #include <vpScanPoint.h>
 #include <vpLaserScan.h>
 #include <vpLaserScanner.h>
+#include <vpLaserObjectData.h>
 
 /**
  * Human readable measure point
@@ -91,32 +92,43 @@ struct sickldmrs_scan {
 
 class /*VISP_EXPORT*/ vpSickLDMRS : public vpLaserScanner
 {
- public:
-  enum MagicWord {
-    MagicWordC2 = 0xAFFEC0C2   ///< The magic word that allows to identify the messages that are sent by the Sick LD-MRS.
-  };
-  enum DataType {
-    MeasuredData = 0x2202      ///< Flag to indicate that the body of a message contains measured data.
-  };
-  vpSickLDMRS();
-  /*! Copy constructor. */
-  vpSickLDMRS(const vpSickLDMRS &sick) : vpLaserScanner(sick) {
-    socket_fd = sick.socket_fd;
-    body = new unsigned char [104000];
-  };
-  virtual ~vpSickLDMRS();
-  bool setup(std::string ip, int port);
-  bool setup();
-  bool measure(vpLaserScan laserscan[4]);
 
- protected:
-  int socket_fd;  
- private:
-  unsigned char *body;
-  std::vector<float> vAngle; // constant vertical angle for each layer
-  double time_offset;
-  bool isFirstMeasure;
- };
+public:
+
+	enum MagicWord {
+		MagicWordC2 = 0xAFFEC0C2   ///< The magic word that allows to identify the messages that are sent by the Sick LD-MRS.
+	};
+	enum DataType {
+		MeasuredData = 0x2202,      ///< Flag to indicate that the body of a message contains measured data.
+		ObjectData = 0x2221,
+		EgoMotionData = 0x2850
+	};
+
+	vpSickLDMRS();
+
+	/*! Copy constructor. */
+	vpSickLDMRS(const vpSickLDMRS &sick) : vpLaserScanner(sick) {
+		socket_fd = sick.socket_fd;
+		body = new unsigned char [104000];
+	};
+
+	virtual ~vpSickLDMRS();
+	bool setup(std::string ip, int port);
+	bool setup();
+	bool measure(vpLaserScan laserscan[4]);
+	bool tracking(vpLaserObjectData *objectData);
+	bool sendEgoMotionData(short velocity, short steeringWheelAngle, short yawRate);
+
+protected:
+
+	int socket_fd;
+
+private:
+	unsigned char *body;
+	std::vector<float> vAngle; // constant vertical angle for each layer
+	double time_offset;
+	bool isFirstMeasure;
+};
 
 
 #endif

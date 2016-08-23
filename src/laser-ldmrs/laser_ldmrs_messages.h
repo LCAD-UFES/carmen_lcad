@@ -38,11 +38,32 @@ typedef struct {
 	char *host; 			/* !!! mandatory !!! */
 } carmen_laser_ldmrs_message;
 
+typedef struct {
+	unsigned short id;
+	double x;
+	double y;
+	double lenght;
+	double width;
+	double velocity;
+	double orientation;
+} carmen_laser_ldmrs_object;
+
+typedef struct {
+	unsigned short num_objects;
+	carmen_laser_ldmrs_object *objects_list;
+	double timestamp;
+	char *host;
+} carmen_laser_ldmrs_objects_message;
+
 /* The message's name, will be used for message registration in IPC Central module */
 #define      CARMEN_LASER_LDMRS_NAME       "carmen_laser_ldmrs"
 
 /* The message's format, will be used for message data marshalling (serialization) for network socket transport. */
 #define      CARMEN_LASER_LDMRS_FMT        "{short,double,double,short,double,double,short,<{double,double,double}:7>,<{double,double,double}:7>,<{double,double,double}:7>,<{double,double,double}:7>,double,string}"
+
+#define		 CARMEN_LASER_LDMRS_OBJECTS_NAME "carmen_laser_ldmrs_objects"
+
+#define		 CARMEN_LASER_LDMRS_OBJECTS_FMT  "{short,<{short,double,double,double,double,double,double}:1>,double,string}"
 
 #ifdef __cplusplus
 }
