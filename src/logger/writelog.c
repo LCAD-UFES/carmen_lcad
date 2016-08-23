@@ -193,6 +193,31 @@ void carmen_logwrite_write_laser_ldmrs(carmen_laser_ldmrs_message *laser,
 			laser->host, timestamp);
 }
 
+void carmen_logwrite_write_laser_ldmrs_objects(carmen_laser_ldmrs_objects_message *laser,
+		int laser_num, carmen_FILE *outfile,
+		double timestamp)
+{
+	int i;
+	(void)laser_num;
+	carmen_fprintf(outfile, "LASER_LDMRS_OBJECTS ");
+	carmen_fprintf(outfile, "%d ",
+			laser->num_objects);
+	for(i = 0; i < laser->num_objects; i++)
+	{
+		carmen_fprintf(outfile,"%d %f %f %f %f %f %f ",
+				laser->objects_list[i].id,
+				laser->objects_list[i].x,
+				laser->objects_list[i].y,
+				laser->objects_list[i].lenght,
+				laser->objects_list[i].width,
+				laser->objects_list[i].velocity,
+				laser->objects_list[i].orientation);
+	}
+
+	carmen_fprintf(outfile, "%f %s %f\n", laser->timestamp,
+				laser->host, timestamp);
+}
+
 void carmen_logwrite_write_robot_ackerman_laser(carmen_robot_ackerman_laser_message *laser,
 		int laser_num, carmen_FILE *outfile,
 		double timestamp)
