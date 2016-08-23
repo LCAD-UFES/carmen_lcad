@@ -26,6 +26,7 @@
 #include <carmen/behavior_selector_interface.h>
 #include <carmen/obstacle_avoider_interface.h>
 #include <carmen/dynamic_object_detector_interface.h>
+#include <carmen/moving_objects_interface.h>
 #include <car_panel.h>
 
 #include <carmen/rddf_util.h>
@@ -163,6 +164,7 @@ namespace View
 
 		carmen_list_t *simulator_objects;
 		carmen_list_t *people;
+		carmen_list_t *moving_objects_list;
 
 		carmen_world_point_t simulator_trueposition;
 		double time_of_simulator_update;
@@ -267,7 +269,7 @@ namespace View
 		void navigator_graphics_change_map(carmen_map_p new_map);
 		void navigator_graphics_update_simulator_truepos(carmen_point_t truepose);
 		void navigator_graphics_update_simulator_objects(int num_objects, carmen_traj_point_t *objects_list);
-
+		void navigator_graphics_update_moving_objects(int num_point_clouds, moving_objects_tracking_t *moving_objects_tracking);
 		void navigator_graphics_update_plan_tree(
 				carmen_ackerman_traj_point_p p1,
 				carmen_ackerman_traj_point_p p2,
@@ -317,6 +319,7 @@ namespace View
 		void draw_goal_list(GtkMapViewer	*the_map_view, carmen_world_point_t goal);
 		void draw_simulated_robot(GtkMapViewer *the_map_view);
 		void draw_simulated_objects(GtkMapViewer *the_map_view);
+		void draw_moving_objects(GtkMapViewer *the_map_view);
 		void draw_placing_animation(GtkMapViewer *the_map_view);
 		void draw_path(carmen_world_point_t *path, int num_path_points, GdkColor path_colour, GdkColor robot_color, GtkMapViewer *the_map_view);
 		void draw_road_velocity_control(GtkMapViewer *the_map_view);

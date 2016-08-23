@@ -2044,7 +2044,6 @@ draw_loop(window *w)
         {
             draw_point_cloud(laser_drawer);
             draw_point_cloud(ldmrs_drawer);
-            draw_ldmrs_objects(ldmrs_objects_tracking, num_ldmrs_objects);
         }
 
         if (draw_velodyne_flag == 1)
@@ -2096,7 +2095,7 @@ draw_loop(window *w)
 
 		   draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset);
 		   draw_tracking_moving_objects(moving_objects_tracking, current_num_point_clouds, offset, draw_particles_flag);
-
+		   draw_ldmrs_objects(ldmrs_objects_tracking, num_ldmrs_objects);
         }
 
         if (draw_gps_flag)
@@ -2274,6 +2273,7 @@ draw_loop2(window *w)
 
            draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset);
            draw_tracking_moving_objects(moving_objects_tracking, current_num_point_clouds, offset, draw_particles_flag);
+           draw_ldmrs_objects(ldmrs_objects_tracking, num_ldmrs_objects);
         }
 
         if (draw_gps_flag)
