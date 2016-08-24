@@ -20,8 +20,8 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/pid
 MODULE_NAME = FORD_ESCAPE_HYBRID
 MODULE_COMMENT = "LCAD driver for TORC/JAUS Ford Escape Hybrid"
 
-SOURCES = ford_escape_hybrid.c ford_escape_pid_controller.c ford_escape_hybrid_interface.c \
-	  ford_escape_hybrid_train_base.c ford_escape_hybrid_test.c ford_escape_hybrid_test_curves.c
+SOURCES = ford_escape_hybrid.c ford_escape_hybrid_interface.c ford_escape_hybrid_train_base.c \
+	  ford_escape_hybrid_test.c ford_escape_hybrid_test_curves.c #ford_escape_pid_controller.c
 
 PUBLIC_INCLUDES = ford_escape_hybrid_messages.h ford_escape_hybrid_interface.h
 PUBLIC_LIBRARIES = libford_escape_hybrid_interface.a 
@@ -37,8 +37,6 @@ TARGETS += libford_escape_hybrid_interface.so.1
 endif
 
 # rules
-
-# rules
 OpenJAUS:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/OpenJAUS/
 
@@ -50,13 +48,13 @@ clean: clean_libpid
 clean_libpid:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcontrol/pid/
 
-ford_escape_hybrid: ford_escape_hybrid.o ford_escape_pid_controller.o
+ford_escape_hybrid: ford_escape_hybrid.o #ford_escape_pid_controller.o
 
 ford_escape_hybrid_train_base: ford_escape_hybrid_train_base.o
 ford_escape_hybrid_test: ford_escape_hybrid_test.o
 ford_escape_hybrid_test_curves: ford_escape_hybrid_test_curves.o
 
-libford_escape_hybrid_interface.a: ford_escape_hybrid_interface.o ford_escape_pid_controller.o
+libford_escape_hybrid_interface.a: ford_escape_hybrid_interface.o #ford_escape_pid_controller.o
 
 libford_escape_hybrid_interface.so.1: ford_escape_hybrid_interface.o
 

@@ -52,7 +52,7 @@ carmen_ford_escape_subscribe_status_message(carmen_ford_escape_status_message *m
 
 void
 carmen_ford_escape_unsubscribe_status_message(carmen_handler_t handler);
-
+/*
 void
 carmen_ford_escape_hybrid_steering_PID_controler(double *steering_command, 
 	double atan_desired_curvature, double atan_current_curvature, double delta_t);
@@ -63,7 +63,7 @@ carmen_ford_escape_hybrid_velocity_PID_controler(double *throttle_command, doubl
 
 void 
 carmen_ford_escape_hybrid_read_pid_parameters(int argc, char *argv[]);
-
+*/
 
 #ifdef __cplusplus
 }
