@@ -40,9 +40,12 @@
 #include <fann_data.h>
 #include <floatfann.h>
 #include <pthread.h>
+#include <pid.h>
+
 
 #define NUM_VELOCITY_ANN_INPUTS	360
 #define NUM_STEERING_ANN_INPUTS	80
+
 
 static double
 get_acceleration(double v, double target_v, carmen_simulator_ackerman_config_t *simulator_config)
@@ -301,8 +304,11 @@ compute_new_velocity_with_ann(carmen_simulator_ackerman_config_t *simulator_conf
 		init_velocity_ann_input(velocity_ann_input);
 	}
 	
-	carmen_ford_escape_hybrid_velocity_PID_controler(&throttle_command, &brakes_command, &gear_command, 
-		simulator_config->target_v, simulator_config->v, simulator_config->delta_t);
+	//carmen_ford_escape_hybrid_velocity_PID_controler(&throttle_command, &brakes_command, &gear_command,
+	//	simulator_config->target_v, simulator_config->v, simulator_config->delta_t);
+	carmen_libpid_velocity_PID_controler(&throttle_command, &brakes_command, &gear_command,
+							simulator_config->target_v, simulator_config->v, simulator_config->delta_t);
+
 
 	if (gear_command == 129) // marcha reh
 	{
@@ -600,6 +606,7 @@ compute_new_phi_with_ann_new(carmen_simulator_ackerman_config_t *simulator_confi
 	return (simulator_config->phi);
 }
 
+
 double
 compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 {
@@ -624,11 +631,15 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 	atan_current_curvature = atan(compute_curvature(simulator_config->phi, simulator_config));
 	atan_desired_curvature = atan(compute_curvature(simulator_config->target_phi, simulator_config));
 
-	carmen_ford_escape_hybrid_steering_PID_controler(&steering_command,
-		atan_desired_curvature, atan_current_curvature, simulator_config->delta_t);
+	//carmen_ford_escape_hybrid_steering_PID_controler(&steering_command,
+	//	atan_desired_curvature, atan_current_curvature, simulator_config->delta_t);
+	carmen_libpid_steering_PID_controler(&steering_command, atan_desired_curvature,
+											atan_current_curvature, simulator_config->delta_t);
+
 
 	build_steering_ann_input(steering_ann_input, steering_command, atan_current_curvature);
 	steering_ann_output = fann_run(steering_ann, steering_ann_input);
+
 
 	// Alberto: O ganho de 1.05 abaixo foi necessario pois a rede nao estava gerando curvaturas mais extremas
 	// que nao aparecem no treino mas apenas rodando livremente na simulacao

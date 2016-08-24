@@ -6,15 +6,16 @@ IFLAGS += -I../obstacle_avoider
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/OpenJAUS/ojTorc/include/
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/OpenJAUS/libjaus/include/
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/OpenJAUS/libopenJaus/include/
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/pid
 
 LFLAGS += -lmap_interface -lparam_interface -llocalize_ackerman_interface -lobstacle_avoider -lobstacle_avoider_interface \
 	  -llaser_interface -lgeometry -llocalize_ackerman_motion -lmotion_planner_interface -lbase_ackerman_interface \
-	  -lglobal -lipc -lmapper_interface -lfused_odometry_interface -lcollision_detection -lmap_server_interface  -lopenJaus -ljaus -lojTorc
+	  -lglobal -lipc -lmapper_interface -lfused_odometry_interface -lcollision_detection -lmap_server_interface  -lopenJaus -ljaus -lojTorc -lpid
 
 LFLAGS	+= -L$(CARMEN_HOME)/sharedlib/OpenJAUS/libjaus/lib/  
 LFLAGS	+= -L$(CARMEN_HOME)/sharedlib/OpenJAUS/libopenJaus/lib/
 LFLAGS	+= -L$(CARMEN_HOME)/sharedlib/OpenJAUS/ojTorc/lib/	  
-	  
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/pid	  
 
 MODULE_NAME = FORD_ESCAPE_HYBRID
 MODULE_COMMENT = "LCAD driver for TORC/JAUS Ford Escape Hybrid"
@@ -27,7 +28,7 @@ PUBLIC_LIBRARIES = libford_escape_hybrid_interface.a
 PUBLIC_BINARIES = ford_escape_hybrid ford_escape_hybrid_train_base ford_escape_hybrid_test ford_escape_hybrid_test_curves
 MAN_PAGES =
 
-TARGETS = OpenJAUS ford_escape_hybrid ford_escape_hybrid_train_base libford_escape_hybrid_interface.a ford_escape_hybrid_test ford_escape_hybrid_test_curves
+TARGETS = OpenJAUS libpid ford_escape_hybrid ford_escape_hybrid_train_base libford_escape_hybrid_interface.a ford_escape_hybrid_test ford_escape_hybrid_test_curves
 
 
 ifndef NO_PYTHON
@@ -40,6 +41,14 @@ endif
 # rules
 OpenJAUS:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/OpenJAUS/
+
+libpid: 
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcontrol/pid/
+	
+clean: clean_libpid
+
+clean_libpid:
+	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcontrol/pid/
 
 ford_escape_hybrid: ford_escape_hybrid.o ford_escape_pid_controller.o
 

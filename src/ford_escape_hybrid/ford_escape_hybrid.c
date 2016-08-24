@@ -33,6 +33,7 @@
 #include <openJaus.h>				// Header file for the OpenJAUS specific C/C++ code base
 #include <torc.h>
 #include <torcInterface.h>
+#include <pid.h>
 
 #include "ford_escape_hybrid.h"
 
@@ -445,15 +446,20 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 			
 		set_wrench_efforts_desired_v_and_curvature();
 		delta_t = get_steering_delta_t();
-		carmen_ford_escape_hybrid_steering_PID_controler(&g_steering_command, 
-			g_atan_desired_curvature, -atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t);
+
+		//carmen_ford_escape_hybrid_steering_PID_controler
+		carmen_libpid_steering_PID_controler(&g_steering_command, g_atan_desired_curvature,
+				-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t);
+
 
 		previous_gear_command = g_gear_command;
 
 		//printf("%lf %lf %lf\n", carmen_radians_to_degrees(ford_escape_hybrid_config->filtered_phi), carmen_radians_to_degrees(g_phi), carmen_radians_to_degrees(ford_escape_hybrid_config->filtered_phi - g_phi));
 
 		delta_t = get_velocity_delta_t();
-		carmen_ford_escape_hybrid_velocity_PID_controler(&g_throttle_command, &g_brakes_command, &g_gear_command, 
+
+		//carmen_ford_escape_hybrid_velocity_PID_controler
+		carmen_libpid_velocity_PID_controler(&g_throttle_command, &g_brakes_command, &g_gear_command,
 			g_desired_velocity, ford_escape_hybrid_config->filtered_v, delta_t);
 
 		if (previous_gear_command != g_gear_command)
@@ -765,7 +771,8 @@ main(int argc, char** argv)
 	initialize_structures();
 
 	read_parameters(argc, argv, ford_escape_hybrid_config);
-	carmen_ford_escape_hybrid_read_pid_parameters(argc, argv);
+	//carmen_ford_escape_hybrid_read_pid_parameters(argc, argv);
+	carmen_libpid_read_PID_parameters(argc, argv);
 	
 	initialize_ipc();
 

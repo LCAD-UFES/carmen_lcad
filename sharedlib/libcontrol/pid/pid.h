@@ -1,0 +1,19 @@
+#ifndef PID_H
+#define PID_H
+
+
+void carmen_libpid_steering_PID_controler(double *steering_command, double atan_desired_curvature,
+													double atan_current_curvature, double delta_t);
+
+
+void carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_command, int *gear_command,
+											double desired_velocity, double current_velocity, double delta_t);
+
+
+void carmen_libpid_read_PID_parameters(int argc, char *argv[]);
+
+void
+printa_test();
+
+
+#endif // PID_H

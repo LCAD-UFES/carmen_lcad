@@ -375,6 +375,13 @@ sharedlib/libxsens_mtig_interface.so
 sharedlib/libelas/libelas.so.1
 sharedlib/libvelodyne/libvelodyne.so.1
 sharedlib/libviso2.3/src/libviso.so.1
+sharedlib/libcontrol/Makefile.depend
+sharedlib/libcontrol/pid/libpid.a
+sharedlib/libcontrol/pid/Makefile.depend
+sharedlib/libcontrol/pid/pid.o
+sharedlib/libcontrol/mpc/libmpc.a
+sharedlib/libcontrol/mpc/Makefile.depend
+sharedlib/libcontrol/mpc/mpc.o
 src/base_ackerman/libbase_ackerman_interface.so.1
 src/camera/libcamera_interface.so.1
 src/dynamic_object_detector/libdynamic_object_detector_interface.so.1
