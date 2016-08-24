@@ -172,21 +172,9 @@ void carmen_logwrite_write_laser_ldmrs(carmen_laser_ldmrs_message *laser,
 	for(i = 0; i < laser->scan_points; i++)
 	{
 		carmen_fprintf(outfile, "%f %f %f ",
-				    laser->arraypoints1[i].horizontal_angle,
-				    laser->arraypoints1[i].vertical_angle,
-				    laser->arraypoints1[i].radial_distance);
-		carmen_fprintf(outfile, "%f %f %f ",
-				    laser->arraypoints2[i].horizontal_angle,
-				    laser->arraypoints2[i].vertical_angle,
-				    laser->arraypoints2[i].radial_distance);
-		carmen_fprintf(outfile, "%f %f %f ",
-				    laser->arraypoints3[i].horizontal_angle,
-				    laser->arraypoints3[i].vertical_angle,
-				    laser->arraypoints3[i].radial_distance);
-		carmen_fprintf(outfile, "%f %f %f ",
-				    laser->arraypoints4[i].horizontal_angle,
-				    laser->arraypoints4[i].vertical_angle,
-				    laser->arraypoints4[i].radial_distance);
+				    laser->arraypoints[i].horizontal_angle,
+				    laser->arraypoints[i].vertical_angle,
+				    laser->arraypoints[i].radial_distance);
 	}
 
 	carmen_fprintf(outfile, "%f %s %f\n", laser->timestamp,

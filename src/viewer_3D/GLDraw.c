@@ -806,7 +806,7 @@ draw_tracking_moving_objects(moving_objects_tracking_t *moving_objects_tracking,
 		carmen_vector_3D_t offset, int draw_particles_flag)
 {
 	/*** MOVING OBJECTS MODULE ***/
-	int i,j;
+	int i;
 	rotation_matrix *rotate = NULL;
 
 	for (i = 0; i < current_num_point_clouds; i++)
@@ -996,7 +996,7 @@ draw_tracking_moving_objects(moving_objects_tracking_t *moving_objects_tracking,
 
 		destroy_rotation_matrix(rotate);
 
-//		if (draw_particles_flag == 1) {
+		if (draw_particles_flag == 1) {
 //			//todo para visualizar as particulas apenas
 //			for(j = 0; j < 10; j++){
 //				carmen_pose_3D_t pos;
@@ -1183,7 +1183,7 @@ draw_tracking_moving_objects(moving_objects_tracking_t *moving_objects_tracking,
 //
 //				destroy_rotation_matrix(rotate);
 //			}
-//		}
+		}
 	}
 }
 

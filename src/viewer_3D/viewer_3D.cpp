@@ -837,40 +837,33 @@ carmen_ldmrs_draw_dispatcher(carmen_laser_ldmrs_message* laser_message, int pare
 	int last_ldmrs_position = *current_ldmrs_position;
 
     int num_points = laser_message->scan_points;
-	
+
     if (point_cloud[last_ldmrs_position].points == NULL || point_cloud[last_ldmrs_position].point_color == NULL)
     {
-        point_cloud[last_ldmrs_position].points = (carmen_vector_3D_t*) malloc (4 * num_points * sizeof (carmen_vector_3D_t));
-        point_cloud[last_ldmrs_position].point_color = (carmen_vector_3D_t*) malloc (4 * num_points * sizeof (carmen_vector_3D_t));
-        point_cloud[last_ldmrs_position].num_points = 4 * num_points;
+        point_cloud[last_ldmrs_position].points = (carmen_vector_3D_t*) malloc (num_points * sizeof (carmen_vector_3D_t));
+        point_cloud[last_ldmrs_position].point_color = (carmen_vector_3D_t*) malloc (num_points * sizeof (carmen_vector_3D_t));
+        point_cloud[last_ldmrs_position].num_points = num_points;
+    } else {
+    	free(point_cloud[last_ldmrs_position].points);
+    	free(point_cloud[last_ldmrs_position].point_color);
+
+    	point_cloud[last_ldmrs_position].points = (carmen_vector_3D_t*) malloc (num_points * sizeof (carmen_vector_3D_t));
+		point_cloud[last_ldmrs_position].point_color = (carmen_vector_3D_t*) malloc (num_points * sizeof (carmen_vector_3D_t));
+
     }
 
-    point_cloud[last_ldmrs_position].num_points = 4 * num_points;
+    point_cloud[last_ldmrs_position].num_points = num_points;
     point_cloud[last_ldmrs_position].car_position = car_fused_pose.position;
     point_cloud[last_ldmrs_position].timestamp = laser_message->timestamp;
+
 
     int j = 0;
     double hAngle, vAngle, range;
     for (int i = 0; i < num_points; i++)
     {
-        hAngle = laser_message->arraypoints1[i].horizontal_angle;
-        vAngle = laser_message->arraypoints1[i].vertical_angle;
-        range = laser_message->arraypoints1[i].radial_distance;
-        carmen_ldmrs_add_point_cloud(point_cloud, last_ldmrs_position, parentsSize, parents, hAngle, vAngle, range, &j);
-
-        hAngle = laser_message->arraypoints2[i].horizontal_angle;
-        vAngle = laser_message->arraypoints2[i].vertical_angle;
-        range = laser_message->arraypoints2[i].radial_distance;
-        carmen_ldmrs_add_point_cloud(point_cloud, last_ldmrs_position, parentsSize, parents, hAngle, vAngle, range, &j);
-
-        hAngle = laser_message->arraypoints3[i].horizontal_angle;
-        vAngle = laser_message->arraypoints3[i].vertical_angle;
-        range = laser_message->arraypoints3[i].radial_distance;
-        carmen_ldmrs_add_point_cloud(point_cloud, last_ldmrs_position, parentsSize, parents, hAngle, vAngle, range, &j);
-
-        hAngle = laser_message->arraypoints4[i].horizontal_angle;
-        vAngle = laser_message->arraypoints4[i].vertical_angle;
-        range = laser_message->arraypoints4[i].radial_distance;
+        hAngle = laser_message->arraypoints[i].horizontal_angle;
+        vAngle = laser_message->arraypoints[i].vertical_angle;
+        range = laser_message->arraypoints[i].radial_distance;
         carmen_ldmrs_add_point_cloud(point_cloud, last_ldmrs_position, parentsSize, parents, hAngle, vAngle, range, &j);
     }
     add_point_cloud(ldmrs_drawer, point_cloud[last_ldmrs_position]);
@@ -889,22 +882,26 @@ static void
 carmen_laser_ldmrs_objects_message_handler(carmen_laser_ldmrs_objects_message* laser_message)
 {
     ldmrs_initialized = 1;
-    num_ldmrs_objects = laser_message->num_objects;
-    if(ldmrs_objects_tracking != NULL)
-    	free(ldmrs_objects_tracking);
 
-    ldmrs_objects_tracking = (carmen_laser_ldmrs_object *) malloc(num_ldmrs_objects * sizeof(carmen_laser_ldmrs_object));
+    if(laser_message->num_objects > 0)
+    {
+		if(num_ldmrs_objects != laser_message->num_objects)
+		{
+			num_ldmrs_objects = laser_message->num_objects;
+			ldmrs_objects_tracking = (carmen_laser_ldmrs_object *) realloc(ldmrs_objects_tracking, num_ldmrs_objects * sizeof(carmen_laser_ldmrs_object));
+			carmen_test_alloc(ldmrs_objects_tracking);
+		}
 
-    for(int i = 0; i < num_ldmrs_objects; i++){
-    	ldmrs_objects_tracking[i].id = laser_message->objects_list[i].id;
-    	ldmrs_objects_tracking[i].lenght = laser_message->objects_list[i].lenght;
-    	ldmrs_objects_tracking[i].width = laser_message->objects_list[i].width;
-    	ldmrs_objects_tracking[i].orientation = laser_message->objects_list[i].orientation;
-    	ldmrs_objects_tracking[i].velocity = laser_message->objects_list[i].velocity;
-    	ldmrs_objects_tracking[i].x = laser_message->objects_list[i].x;
-    	ldmrs_objects_tracking[i].y = laser_message->objects_list[i].y;
+		for(int i = 0; i < num_ldmrs_objects; i++){
+			ldmrs_objects_tracking[i].id = laser_message->objects_list[i].id;
+			ldmrs_objects_tracking[i].lenght = laser_message->objects_list[i].lenght;
+			ldmrs_objects_tracking[i].width = laser_message->objects_list[i].width;
+			ldmrs_objects_tracking[i].orientation = laser_message->objects_list[i].orientation;
+			ldmrs_objects_tracking[i].velocity = laser_message->objects_list[i].velocity;
+			ldmrs_objects_tracking[i].x = laser_message->objects_list[i].x;
+			ldmrs_objects_tracking[i].y = laser_message->objects_list[i].y;
+		}
     }
-
 }
 
 
@@ -1897,6 +1894,7 @@ destroy_stuff()
     free(particles_weight);
 
     free(moving_objects_tracking);
+    free(ldmrs_objects_tracking);
 
     destroy_drawers();
 }

@@ -30,10 +30,7 @@ typedef struct {
 	double start_angle;
 	double end_angle;
 	uint16_t scan_points;
-	carmen_laser_ldmrs_point *arraypoints1;
-	carmen_laser_ldmrs_point *arraypoints2;
-	carmen_laser_ldmrs_point *arraypoints3;
-	carmen_laser_ldmrs_point *arraypoints4;
+	carmen_laser_ldmrs_point *arraypoints;
 	double timestamp; 		/* !!! mandatory !!! */
 	char *host; 			/* !!! mandatory !!! */
 } carmen_laser_ldmrs_message;
@@ -59,7 +56,7 @@ typedef struct {
 #define      CARMEN_LASER_LDMRS_NAME       "carmen_laser_ldmrs"
 
 /* The message's format, will be used for message data marshalling (serialization) for network socket transport. */
-#define      CARMEN_LASER_LDMRS_FMT        "{short,double,double,short,double,double,short,<{double,double,double}:7>,<{double,double,double}:7>,<{double,double,double}:7>,<{double,double,double}:7>,double,string}"
+#define      CARMEN_LASER_LDMRS_FMT        "{short,double,double,short,double,double,short,<{double,double,double}:7>,double,string}"
 
 #define		 CARMEN_LASER_LDMRS_OBJECTS_NAME "carmen_laser_ldmrs_objects"
 

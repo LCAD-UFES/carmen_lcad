@@ -177,36 +177,51 @@ static void carmen_laser_ldmrs_copy_message(vpLaserScan laserscan[4], carmen_las
 	message->start_angle = laserscan[0].getStartAngle();
 	message->end_angle = laserscan[0].getStopAngle();
 
-	if(message->scan_points != laserscan[0].getNumPoints())
-	{
-		message->scan_points = laserscan[0].getNumPoints();
-		message->arraypoints1 = (carmen_laser_ldmrs_point *)realloc(message->arraypoints1, message->scan_points * sizeof(carmen_laser_ldmrs_point));
-		carmen_test_alloc(message->arraypoints1);
-		message->arraypoints2 = (carmen_laser_ldmrs_point *)realloc(message->arraypoints1, message->scan_points * sizeof(carmen_laser_ldmrs_point));
-		carmen_test_alloc(message->arraypoints2);
-		message->arraypoints3 = (carmen_laser_ldmrs_point *)realloc(message->arraypoints1, message->scan_points * sizeof(carmen_laser_ldmrs_point));
-		carmen_test_alloc(message->arraypoints3);
-		message->arraypoints4 = (carmen_laser_ldmrs_point *)realloc(message->arraypoints1, message->scan_points * sizeof(carmen_laser_ldmrs_point));
-		carmen_test_alloc(message->arraypoints4);
-	}
 	std::vector<vpScanPoint> pointsInLayer1 = laserscan[0].getScanPoints();
 	std::vector<vpScanPoint> pointsInLayer2 = laserscan[1].getScanPoints();
 	std::vector<vpScanPoint> pointsInLayer3 = laserscan[2].getScanPoints();
 	std::vector<vpScanPoint> pointsInLayer4 = laserscan[3].getScanPoints();
-	for(int i = 0; i < message->scan_points; i++)
+
+	int sizeLayer1 = pointsInLayer1.size();
+	int sizeLayer2 = pointsInLayer2.size();
+	int sizeLayer3 = pointsInLayer3.size();
+	int sizeLayer4 = pointsInLayer4.size();
+
+	//printf("size1: %d, size2: %d, size3: %d, size4: %d\n",sizeLayer1,sizeLayer2,sizeLayer3,sizeLayer4);
+
+	if(message->scan_points != laserscan[0].getNumPoints())
 	{
-		message->arraypoints1[i].horizontal_angle = pointsInLayer1[i].getHAngle();
-		message->arraypoints1[i].vertical_angle = pointsInLayer1[i].getVAngle();
-		message->arraypoints1[i].radial_distance = pointsInLayer1[i].getRadialDist();
-		message->arraypoints2[i].horizontal_angle = pointsInLayer2[i].getHAngle();
-		message->arraypoints2[i].vertical_angle = pointsInLayer2[i].getVAngle();
-		message->arraypoints2[i].radial_distance = pointsInLayer2[i].getRadialDist();
-		message->arraypoints3[i].horizontal_angle = pointsInLayer3[i].getHAngle();
-		message->arraypoints3[i].vertical_angle = pointsInLayer3[i].getVAngle();
-		message->arraypoints3[i].radial_distance = pointsInLayer3[i].getRadialDist();
-		message->arraypoints4[i].horizontal_angle = pointsInLayer4[i].getHAngle();
-		message->arraypoints4[i].vertical_angle = pointsInLayer4[i].getVAngle();
-		message->arraypoints4[i].radial_distance = pointsInLayer4[i].getRadialDist();
+		message->scan_points = laserscan[0].getNumPoints();
+		message->arraypoints = (carmen_laser_ldmrs_point *)realloc(message->arraypoints, message->scan_points * sizeof(carmen_laser_ldmrs_point));
+		carmen_test_alloc(message->arraypoints);
+	}
+
+	for(int i = 0; i < sizeLayer1; i++)
+	{
+		message->arraypoints[i].horizontal_angle = pointsInLayer1[i].getHAngle();
+		message->arraypoints[i].vertical_angle = pointsInLayer1[i].getVAngle();
+		message->arraypoints[i].radial_distance = pointsInLayer1[i].getRadialDist();
+	}
+
+	for(int i = 0; i < sizeLayer2; i++)
+	{
+		message->arraypoints[i + sizeLayer1].horizontal_angle = pointsInLayer2[i].getHAngle();
+		message->arraypoints[i + sizeLayer1].vertical_angle = pointsInLayer2[i].getVAngle();
+		message->arraypoints[i + sizeLayer1].radial_distance = pointsInLayer2[i].getRadialDist();
+	}
+
+	for(int i = 0; i < sizeLayer3; i++)
+	{
+		message->arraypoints[i + sizeLayer1 + sizeLayer2].horizontal_angle = pointsInLayer3[i].getHAngle();
+		message->arraypoints[i + sizeLayer1 + sizeLayer2].vertical_angle = pointsInLayer3[i].getVAngle();
+		message->arraypoints[i + sizeLayer1 + sizeLayer2].radial_distance = pointsInLayer3[i].getRadialDist();
+	}
+
+	for(int i = 0; i < sizeLayer4; i++)
+	{
+		message->arraypoints[i + sizeLayer1 + sizeLayer2 + sizeLayer3].horizontal_angle = pointsInLayer4[i].getHAngle();
+		message->arraypoints[i + sizeLayer1 + sizeLayer2 + sizeLayer3].vertical_angle = pointsInLayer4[i].getVAngle();
+		message->arraypoints[i + sizeLayer1 + sizeLayer2 + sizeLayer3].radial_distance = pointsInLayer4[i].getRadialDist();
 	}
 }
 
@@ -271,22 +286,6 @@ int main(int argc, char **argv)
 		if(laser.tracking(&objectData) == true)
 		{
 			carmen_laser_ldmrs_objects_build_message(&objectData, &objectsMessage);
-
-//			printf("num objects: %d, list size: %ld, Timestamp: %lf\n",objectData.getNumObjects(),objectData.getObjectList().size(), objectData.getStartTimestamp());
-//			for(int i = 0; i < objectData.getNumObjects(); i++){
-//				printf("obj id: %d\n",objectData.getObjectList()[i].getObjectId());
-//				printf("relative timestamp: %d\n",objectData.getObjectList()[i].getRelativeTimestamp());
-//				printf("obj abs vel x: %d\n",(int) objectData.getObjectList()[i].getAbsoluteVelocity().x_pos);
-//				printf("obj abs vel y: %d\n",(int) objectData.getObjectList()[i].getAbsoluteVelocity().y_pos);
-//				printf("obj rel vel x: %d\n",(int) objectData.getObjectList()[i].getRelativeVelocity().x_pos);
-//				printf("obj rel vel y: %d\n",(int) objectData.getObjectList()[i].getRelativeVelocity().y_pos);
-//
-//				printf("obj pos x: %d\n",(int) objectData.getObjectList()[i].getBoundingBoxCenter().x_pos);
-//				printf("obj pos y: %d\n",(int) objectData.getObjectList()[i].getBoundingBoxCenter().y_pos);
-//
-//				printf("obj size x: %d\n",objectData.getObjectList()[i].getObjectBoxSize().x_size);
-//				printf("obj size y: %d\n\n",objectData.getObjectList()[i].getObjectBoxSize().y_size);
-//			}
 
 			carmen_laser_publish_ldmrs_objects(&objectsMessage);
 		}

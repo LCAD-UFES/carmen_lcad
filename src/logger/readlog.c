@@ -449,33 +449,15 @@ char *carmen_string_to_laser_ldmrs_message(char *string,
 	if(laser->scan_points != num_readings)
 	{
 		laser->scan_points = num_readings;
-		laser->arraypoints1 = (carmen_laser_ldmrs_point *)realloc(laser->arraypoints1, laser->scan_points * sizeof(carmen_laser_ldmrs_point));
-		carmen_test_alloc(laser->arraypoints1);
-		laser->arraypoints2 = (carmen_laser_ldmrs_point *)realloc(laser->arraypoints2, laser->scan_points * sizeof(carmen_laser_ldmrs_point));
-		carmen_test_alloc(laser->arraypoints2);
-		laser->arraypoints3 = (carmen_laser_ldmrs_point *)realloc(laser->arraypoints3, laser->scan_points * sizeof(carmen_laser_ldmrs_point));
-		carmen_test_alloc(laser->arraypoints3);
-		laser->arraypoints4 = (carmen_laser_ldmrs_point *)realloc(laser->arraypoints4, laser->scan_points * sizeof(carmen_laser_ldmrs_point));
-		carmen_test_alloc(laser->arraypoints4);
+		laser->arraypoints = (carmen_laser_ldmrs_point *)realloc(laser->arraypoints, laser->scan_points * sizeof(carmen_laser_ldmrs_point));
+		carmen_test_alloc(laser->arraypoints);
 	}
 
 	for(i = 0; i < laser->scan_points; i++)
 	{
-	    laser->arraypoints1[i].horizontal_angle = CLF_READ_DOUBLE(&current_pos);
-	    laser->arraypoints1[i].vertical_angle = CLF_READ_DOUBLE(&current_pos);
-	    laser->arraypoints1[i].radial_distance = CLF_READ_DOUBLE(&current_pos);
-
-	    laser->arraypoints2[i].horizontal_angle = CLF_READ_DOUBLE(&current_pos);
-	    laser->arraypoints2[i].vertical_angle = CLF_READ_DOUBLE(&current_pos);
-	    laser->arraypoints2[i].radial_distance = CLF_READ_DOUBLE(&current_pos);
-
-	    laser->arraypoints3[i].horizontal_angle = CLF_READ_DOUBLE(&current_pos);
-	    laser->arraypoints3[i].vertical_angle = CLF_READ_DOUBLE(&current_pos);
-	    laser->arraypoints3[i].radial_distance = CLF_READ_DOUBLE(&current_pos);
-
-	    laser->arraypoints4[i].horizontal_angle = CLF_READ_DOUBLE(&current_pos);
-	    laser->arraypoints4[i].vertical_angle = CLF_READ_DOUBLE(&current_pos);
-	    laser->arraypoints4[i].radial_distance = CLF_READ_DOUBLE(&current_pos);
+	    laser->arraypoints[i].horizontal_angle = CLF_READ_DOUBLE(&current_pos);
+	    laser->arraypoints[i].vertical_angle = CLF_READ_DOUBLE(&current_pos);
+	    laser->arraypoints[i].radial_distance = CLF_READ_DOUBLE(&current_pos);
 	}
 
 	laser->timestamp = CLF_READ_DOUBLE(&current_pos);

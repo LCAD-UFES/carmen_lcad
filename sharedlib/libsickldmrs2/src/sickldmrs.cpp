@@ -72,7 +72,7 @@
  */
 vpSickLDMRS::vpSickLDMRS()
 {
-	ip = "192.168.0.1";
+	ip = "192.168.0.104";
 	port = 12002;
 	body = new unsigned char [104000];
 	isFirstMeasure = true;
