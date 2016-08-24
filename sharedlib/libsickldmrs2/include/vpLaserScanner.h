@@ -59,33 +59,35 @@
  */
 class /*VISP_EXPORT*/ vpLaserScanner
 {
- public:
-  /*! Default constructor that initialize all the internal variable to zero. */
-  vpLaserScanner() {
-    ip = "null";
-    port = 0;
-  };
-  /*! Copy constructor. */
-  vpLaserScanner(const vpLaserScanner &scanner) {
-    ip = scanner.ip;
-    port = scanner.port;
-  };
-  /*! Default destructor that does nothing. */
-  virtual ~vpLaserScanner() {};
+public:
+	/*! Default constructor that initialize all the internal variable to zero. */
+	vpLaserScanner() {
+		ip = "null";
+		port = 0;
+	};
 
-  /*! Set the Ethernet address of the laser. */
-  void setIpAddress(std::string ip) {
-    this->ip = ip;
-  };
-  
-  /*! Set the communication port. */
-  void setPort(int port) {
-    this->port = port;
-  };
-  
- protected:
-  std::string ip;
-  int port;
+	/*! Copy constructor. */
+	vpLaserScanner(const vpLaserScanner &scanner) {
+		ip = scanner.ip;
+		port = scanner.port;
+	};
+
+	/*! Default destructor that does nothing. */
+	virtual ~vpLaserScanner() {};
+
+	/*! Set the Ethernet address of the laser. */
+	void setIpAddress(std::string ip) {
+		this->ip = ip;
+	};
+
+	/*! Set the communication port. */
+	void setPort(int port) {
+		this->port = port;
+	};
+
+protected:
+	std::string ip;
+	int port;
 };
 
 #endif

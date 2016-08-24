@@ -1,3 +1,6 @@
+bin/zed*
+include/
+.idea/
 *.o
 *.a
 Makefile.depend
@@ -205,6 +208,14 @@ src/graphslam/multimap_matching
 src/graphslam/multimap_optimization
 src/graphslam/run_icp
 src/graphslam/run_icp_for_loop_closure
+src/visual_graphslam/gen_data_to_plot
+src/visual_graphslam/grab_data
+src/visual_graphslam/graphslam
+src/visual_graphslam/graphslam_publish
+src/visual_graphslam/multimap_matching
+src/visual_graphslam/multimap_optimization
+src/visual_graphslam/run_icp
+src/visual_graphslam/run_icp_for_loop_closure
 src/obstacle_avoider/obstacle_avoider_test
 src/odometry_calibration/calibrate_bias
 src/odometry_calibration/debug.txt

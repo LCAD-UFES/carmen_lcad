@@ -424,7 +424,7 @@ localize_ackerman_initialize_message(carmen_localize_ackerman_initialize_message
 
 
 void
-alloc_rddf_global_data(carmen_rddf_road_profile_message *message)
+alloc_rddf_global_data(carmen_behavior_selector_road_profile_message *message)
 {
 	rddf_message = (carmen_rddf_road_profile_message *) calloc (1, sizeof(carmen_rddf_road_profile_message));
 
@@ -437,7 +437,7 @@ alloc_rddf_global_data(carmen_rddf_road_profile_message *message)
 
 
 void
-realloc_rddf_global_data(carmen_rddf_road_profile_message *message)
+realloc_rddf_global_data(carmen_behavior_selector_road_profile_message *message)
 {
 	if (message->number_of_poses != rddf_message->number_of_poses)
 	{
@@ -456,7 +456,7 @@ realloc_rddf_global_data(carmen_rddf_road_profile_message *message)
 
 
 void
-copy_local_rddf_to_global_rddf(carmen_rddf_road_profile_message *message)
+copy_local_rddf_to_global_rddf(carmen_behavior_selector_road_profile_message *message)
 {
 	memcpy(rddf_message->annotations, message->annotations, message->number_of_poses * sizeof(int));
 	memcpy(rddf_message->poses, message->poses, message->number_of_poses * sizeof(carmen_ackerman_traj_point_t));
@@ -465,7 +465,7 @@ copy_local_rddf_to_global_rddf(carmen_rddf_road_profile_message *message)
 
 
 static void
-rddf_message_handler(carmen_rddf_road_profile_message *message)
+rddf_message_handler(carmen_behavior_selector_road_profile_message *message)
 {
 	static carmen_point_t pose_in_last_publish = {0.0, 0.0, 0.0};
 
@@ -500,33 +500,6 @@ rddf_message_handler(carmen_rddf_road_profile_message *message)
 	}
 }
 
-
-void
-astar_goal_list_message_handler(carmen_navigator_ackerman_astar_goal_list_message *msg)
-{
-	distance_to_update_lane_map = 0.0;
-	carmen_rddf_road_profile_message message;
-	message.number_of_poses = msg->size;
-	message.poses = msg->goal_list;
-	message.number_of_poses_back = msg->size;
-	message.poses_back = msg->goal_list;
-	message.annotations = (int*) calloc(msg->size, sizeof(int));
-	rddf_message_handler(&message);
-}
-
-static void
-navigator_spline_path_handler(carmen_navigator_spline_path_message *msg)
-{
-	distance_to_update_lane_map = 0.0;
-	carmen_rddf_road_profile_message message;
-	message.number_of_poses = msg->size;
-	message.poses = msg->goal_list;
-	message.number_of_poses_back = msg->size;
-	message.poses_back = msg->goal_list;
-	message.annotations = (int*) calloc(msg->size, sizeof(int));
-	rddf_message_handler(&message);
-
-}
 
 static void
 map_request_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, void *clientData __attribute__ ((unused)))
@@ -675,13 +648,8 @@ register_handlers()
 	carmen_localize_ackerman_subscribe_initialize_message(NULL,
 			(carmen_handler_t) localize_ackerman_initialize_message, CARMEN_SUBSCRIBE_LATEST);
 
-	if(lanemap_incoming_message_type == 0)
-		carmen_rddf_subscribe_road_profile_message(NULL, (carmen_handler_t) rddf_message_handler, CARMEN_SUBSCRIBE_LATEST);
-	else if (lanemap_incoming_message_type == 1)
-		carmen_navigator_ackerman_subscribe_astar_goal_list_message(NULL, (carmen_handler_t) astar_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
-	else if (lanemap_incoming_message_type == 2)
-		carmen_navigator_spline_subscribe_path_message(NULL , (carmen_handler_t) navigator_spline_path_handler, CARMEN_SUBSCRIBE_LATEST);
-
+    carmen_subscribe_message(CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT,
+                             NULL, sizeof (carmen_behavior_selector_road_profile_message), (carmen_handler_t) rddf_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 //	carmen_download_map_subscribe_message(NULL, (carmen_handler_t) download_map_handler, CARMEN_SUBSCRIBE_LATEST);
 

@@ -30,6 +30,9 @@ int num_of_models;
 
 int first_associate_object_point_clouds_flag = 1;
 
+#ifdef AJUSTE
+extern FILE * parametro;
+#endif
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -996,8 +999,8 @@ filter_static_objects(std::list<object_point_cloud_data_t> &list_current_point_c
 	double map_resolution = occupancy_grid_map->config.resolution;
 	double map_x_origin = occupancy_grid_map->config.x_origin;
 	double map_y_origin = occupancy_grid_map->config.y_origin;
-	double map_x_size = occupancy_grid_map->config.x_size;
-	double map_y_size = occupancy_grid_map->config.y_size;
+	int map_x_size = occupancy_grid_map->config.x_size;
+	int map_y_size = occupancy_grid_map->config.y_size;
 
 	for (std::list<object_point_cloud_data_t>::iterator it = list_current_point_clouds.begin(); it != list_current_point_clouds.end();)
 	{
@@ -1009,7 +1012,7 @@ filter_static_objects(std::list<object_point_cloud_data_t> &list_current_point_c
 			int y = carmen_round((pit->y + it->car_global_pose.position.y - map_y_origin)/map_resolution);
 
 			/* Check point cloud off limits of gridmap */
-			if (x < 0 || y < 0 || x > map_x_size || y > map_y_size)
+			if (x < 0 || y < 0 || x >= map_x_size || y >= map_y_size)
 			{
 				off_limits = true;
 				break;
@@ -1021,9 +1024,11 @@ filter_static_objects(std::list<object_point_cloud_data_t> &list_current_point_c
 				points_in_occupied_grid++;
 		}
 
-		if (points_in_occupied_grid/it->point_cloud.size() >= threshold_points_in_occupied_grid_rate)
+		//if (((double)points_in_occupied_grid)/((double)it->point_cloud.size()) >= threshold_points_in_occupied_grid_rate)
+		if (points_in_occupied_grid > 1)
 		{
 			it = list_current_point_clouds.erase(it);
+			//printf("removido\n");
 			continue;
 		}
 		if (off_limits)
@@ -1035,6 +1040,46 @@ filter_static_objects(std::list<object_point_cloud_data_t> &list_current_point_c
 	}
 }
 
+void
+filter_static_points(pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud_ptr, carmen_map_p & occupancy_grid_map,
+		moving_objects_input_data_t moving_objects_input)
+{
+
+	/* Check if global position is set */
+	if (moving_objects_input.first_offline_map_message != -1)
+		return;
+
+	if (occupancy_grid_map == NULL)
+		return;
+
+	double map_resolution = occupancy_grid_map->config.resolution;
+	double map_x_origin = occupancy_grid_map->config.x_origin;
+	double map_y_origin = occupancy_grid_map->config.y_origin;
+	int map_x_size = occupancy_grid_map->config.x_size;
+	int map_y_size = occupancy_grid_map->config.y_size;
+
+	for (pcl::PointCloud<pcl::PointXYZ>::iterator it = pcl_cloud_ptr->points.begin(); it != pcl_cloud_ptr->points.end(); )
+	{
+		int x = carmen_round((it->x + moving_objects_input.car_global_pose.position.x - map_x_origin)/map_resolution);
+		int y = carmen_round((it->y + moving_objects_input.car_global_pose.position.y - map_y_origin)/map_resolution);
+
+		/* Check point cloud off limits of gridmap */
+		if (x < 0 || y < 0 || x >= map_x_size || y >= map_y_size)
+		{
+			it = pcl_cloud_ptr->points.erase(it);
+			continue;
+		}
+
+		double occupancy_rate = occupancy_grid_map->map[x][y];
+
+		if (occupancy_rate >= threshold_occupancy_rate)
+			it = pcl_cloud_ptr->points.erase(it);
+		else
+			it++;
+	}
+
+
+}
 
 void
 associate_object_point_clouds(std::list<object_point_cloud_data_t> &list_point_clouds,
@@ -1042,7 +1087,7 @@ associate_object_point_clouds(std::list<object_point_cloud_data_t> &list_point_c
 		moving_objects_input_data_t moving_objects_input)
 {
 	filter_curbs_point_cloud(list_current_point_clouds);
-	//filter_static_objects(list_current_point_clouds, occupancy_grid_map, moving_objects_input);
+	filter_static_objects(list_current_point_clouds, occupancy_grid_map, moving_objects_input);
 	if (first_associate_object_point_clouds_flag)
 	{
 		set_list_color_palette_and_association();
@@ -1371,9 +1416,9 @@ clear_obj_model_features(object_point_cloud_data_t &object_point_cloud)
 	clear_obj_model_features(object_point_cloud.model_features);
 }
 
-
+#ifdef AJUSTE
 void
-print_object_details(object_point_cloud_data_t obj_point_cloud)
+print_object_details(object_point_cloud_data_t obj_point_cloud, double x, double y)
 {
 	/* Analysis pose and dimensions
 	double dist = measurement_model(obj_point_cloud.mean_particle,
@@ -1401,10 +1446,12 @@ print_object_details(object_point_cloud_data_t obj_point_cloud)
 	*
 	*/
 
-	if (obj_point_cloud.mean_particle.pose.x == obj_point_cloud.mean_particle.pose.x) // verifica se é NaN
-		printf("%d %s %lf %lf %lf %lf %lf %lf %lf\n",
+	if (obj_point_cloud.mean_particle.pose.x == obj_point_cloud.mean_particle.pose.x && parametro != NULL) // verifica se é NaN
+		fprintf(parametro,"%d %s %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
 			obj_point_cloud.num_color_associate,
 			obj_point_cloud.model_features.model_name,
+			x - obj_point_cloud.car_global_pose.position.x,
+			y - obj_point_cloud.car_global_pose.position.y,
 			obj_point_cloud.mean_particle.pose.x - obj_point_cloud.car_global_pose.position.x,
 			obj_point_cloud.mean_particle.pose.y - obj_point_cloud.car_global_pose.position.y,
 			obj_point_cloud.mean_particle.pose.theta,
@@ -1425,7 +1472,7 @@ print_object_details(object_point_cloud_data_t obj_point_cloud)
 //				obj_point_cloud.num_color_associate);
 //	}
 }
-
+#endif
 
 bool
 is_moving_object(object_point_cloud_data_t obj_point_cloud)
@@ -1506,7 +1553,9 @@ particle_filter_moving_objects_tracking(std::list<object_point_cloud_data_t> &li
 			/*** ANALYSE MOVING OBJECT CONDITIONS/THRESHOLDS ***/
 			if (is_moving_object(*it))
 			{
-				//print_object_details(*it);
+#ifdef AJUSTE
+				print_object_details(*it,x,y);
+#endif
 			}
 			else
 			{
@@ -1519,7 +1568,10 @@ particle_filter_moving_objects_tracking(std::list<object_point_cloud_data_t> &li
 			clear_obj_model_features(*it);
 		}
 	}
-	//printf("\n");
+#ifdef AJUSTE
+	if (parametro != NULL)
+		fprintf(parametro,"\n");
+#endif
 }
 
 
@@ -1600,7 +1652,8 @@ detect_points_above_ground_in_vertical_beam(int i, const moving_objects_input_da
 
 	for (int k = 0; k < velodyne_params->vertical_resolution; k++)
 	{
-		if (velodyne_data->obstacle_height[0][k] >= 0.5 && velodyne_data->obstacle_height[0][k] <= MAXIMUM_HEIGHT_OF_OBSTACLE
+		if (velodyne_data->obstacle_height[0][k] >= 0.5
+				&& velodyne_data->obstacle_height[0][k] <= MAXIMUM_HEIGHT_OF_OBSTACLE
 				&& !velodyne_data->ray_hit_the_robot[0][k])
 		{
 			point_clouds[last_num_points].x = velodyne_data->ray_position_in_the_floor[0][k].x;
@@ -1609,8 +1662,8 @@ detect_points_above_ground_in_vertical_beam(int i, const moving_objects_input_da
 			last_num_points++;
 		}
 		else if (velodyne_data->occupancy_log_odds_of_each_ray_target[0][k] > velodyne_params->log_odds.log_odds_l0
-				//&& velodyne_data->obstacle_height[0][k] <= MAXIMUM_HEIGHT_OF_OBSTACLE
-				&& (velodyne_data->obstacle_height[0][k] >= 0.3 && velodyne_data->obstacle_height[0][k] <= MAXIMUM_HEIGHT_OF_OBSTACLE)
+				&& velodyne_data->obstacle_height[0][k] >= 0.30
+				&& velodyne_data->obstacle_height[0][k] <= MAXIMUM_HEIGHT_OF_OBSTACLE
 				&& !velodyne_data->ray_hit_the_robot[0][k])
 		{
 			point_clouds[last_num_points].x = velodyne_data->ray_position_in_the_floor[0][k].x;
@@ -2000,6 +2053,9 @@ detect_and_follow_moving_objects(carmen_velodyne_partial_scan_message *velodyne_
 	convert_carmen_vector_3d_to_pcl_point_subtracting_global_pose(carmen_vector_3d_point_cloud, size_of_point_cloud,
 			pcl_cloud_ptr, moving_objects_input);
 
+	/*** REMOVES THE POINTS PRESENT IN OFFLINE MAP ***/
+	//filter_static_points(pcl_cloud_ptr, occupancy_grid_map, moving_objects_input);
+
 	/*** SEGMENT POINT CLOUDS - RETURNS CLUSTER INDICES ***/
 	cluster_indices = find_objects_in_point_clouds(pcl_cloud_ptr);
 
@@ -2007,7 +2063,11 @@ detect_and_follow_moving_objects(carmen_velodyne_partial_scan_message *velodyne_
 	list_point_clouds = association_list_point_clouds(pcl_cloud_ptr, moving_objects_input.car_global_pose, cluster_indices,
 			velodyne_message->timestamp, occupancy_grid_map, moving_objects_input);
 
-	//printf("%f\n",velodyne_message->timestamp);
+#ifdef AJUSTE
+	if (parametro != NULL)
+		fprintf(parametro,"%f\n",velodyne_message->timestamp);
+#endif
+
 	/*** PARTICLE FILTER FOR DATMO ***/
 	particle_filter_moving_objects_tracking(list_point_clouds);
 

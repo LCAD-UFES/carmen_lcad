@@ -447,7 +447,6 @@ void on_menuDisplay_ShowCommandPath_toggled (GtkCheckMenuItem* togglebutton __at
 
 }
 
-
 extern "C" G_MODULE_EXPORT
 void on_menuGoals_EditRddfGoals_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
@@ -465,7 +464,7 @@ extern "C" G_MODULE_EXPORT
 void on_menuDisplay_ShowDynamicObjects_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
-
+	global_gui->nav_panel_config->show_dynamic_objects = gtk_check_menu_item_get_active(togglebutton);
 }
 
 extern "C" G_MODULE_EXPORT
@@ -1034,7 +1033,7 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 
 	if (global_gui->nav_panel_config->show_dynamic_objects)
 	{
-//		global_gui->draw_dynamic_objects(the_map_view);
+		global_gui->draw_moving_objects(the_map_view);
 	}
 
 	global_gui->draw_path_vector(the_map_view);

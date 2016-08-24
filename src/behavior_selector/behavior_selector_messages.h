@@ -98,6 +98,20 @@ typedef carmen_default_message carmen_behavior_selector_remove_goal_message;
 #define		CARMEN_BEHAVIOR_SELECTOR_REMOVE_GOAL_NAME 	"carmen_behavior_selector_remove_goal"
 #define 	CARMEN_BEHAVIOR_SELECTOR_REMOVE_GOAL_FMT	CARMEN_DEFAULT_MESSAGE_FMT
 
+typedef struct
+{
+    int number_of_poses;
+    int number_of_poses_back;
+    carmen_ackerman_traj_point_t *poses;
+    carmen_ackerman_traj_point_t *poses_back;
+    // int *signals_annotations;
+    int *annotations;
+    double timestamp;
+    char *host;
+} carmen_behavior_selector_road_profile_message;
+
+#define CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME "carmen_behavior_selector_road_profile_message"
+#define CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT "{int, int, <{double, double, double, double, double}:1>, <{double, double, double, double, double}:2>, <int:1>, double, string}"
 
 
 #endif /* BEHAVIOR_SELECTOR_MESSAGES_H_ */

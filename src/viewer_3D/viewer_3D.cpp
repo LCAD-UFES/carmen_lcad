@@ -77,7 +77,8 @@ moving_objects_tracking_t  *moving_objects_tracking;
 int current_num_point_clouds;
 int previous_num_point_clouds = 0;
 
-
+int num_ldmrs_objects = 0;
+carmen_laser_ldmrs_object *ldmrs_objects_tracking;
 /************************************************************************
  * TODO: A variavel abaixo esta hard code, colocar para ser lida de algum lugar
  * **********************************************************************/
@@ -881,6 +882,29 @@ carmen_laser_ldmrs_message_handler(carmen_laser_ldmrs_message* laser_message)
 {
     ldmrs_initialized = 1;
 	carmen_ldmrs_draw_dispatcher(laser_message, FRONT_BULLBAR_MIDDLE_HIERARCHY_SIZE, front_bullbar_middle_hierarchy, front_bullbar_middle_laser_points, &front_bullbar_middle_laser_points_idx);
+}
+
+
+static void
+carmen_laser_ldmrs_objects_message_handler(carmen_laser_ldmrs_objects_message* laser_message)
+{
+    ldmrs_initialized = 1;
+    num_ldmrs_objects = laser_message->num_objects;
+    if(ldmrs_objects_tracking != NULL)
+    	free(ldmrs_objects_tracking);
+
+    ldmrs_objects_tracking = (carmen_laser_ldmrs_object *) malloc(num_ldmrs_objects * sizeof(carmen_laser_ldmrs_object));
+
+    for(int i = 0; i < num_ldmrs_objects; i++){
+    	ldmrs_objects_tracking[i].id = laser_message->objects_list[i].id;
+    	ldmrs_objects_tracking[i].lenght = laser_message->objects_list[i].lenght;
+    	ldmrs_objects_tracking[i].width = laser_message->objects_list[i].width;
+    	ldmrs_objects_tracking[i].orientation = laser_message->objects_list[i].orientation;
+    	ldmrs_objects_tracking[i].velocity = laser_message->objects_list[i].velocity;
+    	ldmrs_objects_tracking[i].x = laser_message->objects_list[i].x;
+    	ldmrs_objects_tracking[i].y = laser_message->objects_list[i].y;
+    }
+
 }
 
 
@@ -2071,6 +2095,7 @@ draw_loop(window *w)
 
 		   draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset);
 		   draw_tracking_moving_objects(moving_objects_tracking, current_num_point_clouds, offset, draw_particles_flag);
+		   draw_ldmrs_objects(ldmrs_objects_tracking, num_ldmrs_objects);
         }
 
         if (draw_gps_flag)
@@ -2248,6 +2273,7 @@ draw_loop2(window *w)
 
            draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset);
            draw_tracking_moving_objects(moving_objects_tracking, current_num_point_clouds, offset, draw_particles_flag);
+           draw_ldmrs_objects(ldmrs_objects_tracking, num_ldmrs_objects);
         }
 
         if (draw_gps_flag)
@@ -2340,6 +2366,8 @@ subscribe_ipc_messages(void)
     }
 
     carmen_laser_subscribe_ldmrs_message(NULL, (carmen_handler_t) carmen_laser_ldmrs_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_laser_subscribe_ldmrs_objects_message(NULL, (carmen_handler_t) carmen_laser_ldmrs_objects_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
     carmen_laser_subscribe_laser_message(6, NULL, (carmen_handler_t) carmen_laser_laser_message_handler, CARMEN_SUBSCRIBE_LATEST);
 

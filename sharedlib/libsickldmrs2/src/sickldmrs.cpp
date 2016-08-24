@@ -205,7 +205,7 @@ bool vpSickLDMRS::measure(vpLaserScan laserscan[4])
 
 	if (msgtype!=vpSickLDMRS::MeasuredData){
 		//printf("The message in not relative to measured data !!!\n");
-		return true;
+		return false;
 	}
 
 	// decode measured data
@@ -283,3 +283,189 @@ bool vpSickLDMRS::measure(vpLaserScan laserscan[4])
 	return true;
 }
 
+bool vpSickLDMRS::tracking(vpLaserObjectData *objectData)
+{
+
+	unsigned int *uintptr;
+	unsigned short *ushortptr;
+	static unsigned char header[24];
+	ushortptr=(unsigned short *)header;
+	uintptr=(unsigned int *)header;
+
+	assert (sizeof(header) == 24);
+	//std::cout << "size " << sizeof(header) << std::endl;
+
+//	double time_second = 0;
+//
+//	if (isFirstMeasure) {
+//		time_second = vpTime::measureTimeSecond();
+//	}
+
+	// read the 24 bytes header
+	if (recv(socket_fd, header, sizeof(header), MSG_WAITALL) == -1) {
+		printf("recv\n");
+		perror("recv");
+		return false;
+	}
+
+	if (ntohl(uintptr[0]) != vpSickLDMRS::MagicWordC2) {
+		printf("Error, wrong magic number !!!\n");
+		return false;
+	}
+
+	// get the message body
+	uint16_t msgtype = ntohs(ushortptr[7]);
+	uint32_t msgLength = ntohl(uintptr[2]);
+
+	ssize_t len = recv(socket_fd, body, msgLength, MSG_WAITALL);
+	if (len != (ssize_t)msgLength){
+		printf("Error, wrong msg length: %d of %d bytes.\n", (int)len, msgLength);
+		return false;
+	}
+
+	if (msgtype!=vpSickLDMRS::ObjectData){
+		//printf("The message in not relative to measured data !!!\n");
+		return false;
+	}
+
+	// decode object data
+
+	// get the start timestamp
+	uintptr=(unsigned int *) body;
+	unsigned int seconds = uintptr[1];
+	unsigned int fractional=uintptr[0];
+	double startTimestamp = seconds + fractional / 4294967296.; // 4294967296. = 2^32
+
+	// get number of objects
+	ushortptr = (unsigned short *) (body + 8);
+	unsigned short numObjects = ushortptr[0];
+
+	objectData->setNumObjects(numObjects);
+	objectData->setStartTimestamp(startTimestamp);
+
+	unsigned short tam = 0;
+	// decode objects
+	for (int i=0; i < numObjects; i++) {
+
+		vpObject objectContent;
+
+		unsigned short objectID = (unsigned short) body[10 + tam];
+		unsigned short objectAge = (unsigned short) body[10+2 + tam];
+		unsigned short objectPredictionAge = (unsigned short) body[10+4 + tam];
+		unsigned short relativeTimestamp = (unsigned short) body[10+6 + tam];
+
+		point_2d referencePoint;
+		referencePoint.x_pos = (short) body[10+8 + tam];
+		referencePoint.y_pos = (short) body[10+8 + 2 + tam];
+
+		point_2d referencePointSigma;
+		referencePointSigma.x_pos = (short) body[10+12 + tam];
+		referencePointSigma.y_pos = (short) body[10+12 + 2 + tam];
+
+		point_2d closestPoint;
+		closestPoint.x_pos = (short) body[10 + 16 + tam];
+		closestPoint.y_pos = (short) body[10 + 16 + 2 + tam];
+
+		point_2d boundingBoxCenter;
+		boundingBoxCenter.x_pos = (short) body[10 + 20 + tam];
+		boundingBoxCenter.y_pos = (short) body[10 + 20 + 2 + tam];
+
+		size_2d boundingBoxSize;
+		boundingBoxSize.x_size = (unsigned short) body[10 + 24 + tam];
+		boundingBoxSize.y_size = (unsigned short) body[10 + 24 + 2 + tam];
+
+		point_2d objectBoxCenter;
+		objectBoxCenter.x_pos = (short) body[10 + 28 + tam];
+		objectBoxCenter.y_pos = (short) body[10 + 28 + 2 + tam];
+
+		size_2d objectBoxSize;
+		objectBoxSize.x_size = (unsigned short) body[10 + 32 + tam];
+		objectBoxSize.y_size = (unsigned short) body[10 + 32 + 2 + tam];
+
+		short objectBoxOrientation = (short) body[10+36 + tam];
+
+		point_2d absoluteVelocity;
+		absoluteVelocity.x_pos = (short) body[10 + 38 + tam];
+		absoluteVelocity.y_pos = (short) body[10 + 38 + 2 + tam];
+
+		size_2d absoluteVelocitySigma;
+		absoluteVelocitySigma.x_size = (unsigned short) body[10 + 42 + tam];
+		absoluteVelocitySigma.y_size = (unsigned short) body[10 + 42 + 2 + tam];
+
+		point_2d relativeVelocity;
+		relativeVelocity.x_pos = (short) body[10 + 46 + tam];
+		relativeVelocity.y_pos = (short) body[10 + 46 + 2 + tam];
+
+		unsigned short numContourPoints = (unsigned short) body[10+56 + tam];
+
+		objectContent.setObjectId(objectID);
+		objectContent.setObjectAge(objectAge);
+		objectContent.setObjectPredictionAge(objectPredictionAge);
+		objectContent.setRelativeTimestamp(relativeTimestamp);
+		objectContent.setReferencePoint(referencePoint);
+		objectContent.setReferencePointSigma(referencePointSigma);
+		objectContent.setClosestPoint(closestPoint);
+		objectContent.setBoundingBoxCenter(boundingBoxCenter);
+		objectContent.setBoundingBoxSize(boundingBoxSize);
+		objectContent.setObjectBoxCenter(objectBoxCenter);
+		objectContent.setObjectBoxSize(objectBoxSize);
+		objectContent.setObjectBoxOrientation(objectBoxOrientation);
+		objectContent.setAbsoluteVelocity(absoluteVelocity);
+		objectContent.setAbsoluteVelocitySigma(absoluteVelocitySigma);
+		objectContent.setRelativeVelocity(relativeVelocity);
+		objectContent.setNumContourPoints(numContourPoints);
+
+		for(int j = 0; j < numContourPoints; j ++) {
+			point_2d contourPoint;
+			contourPoint.x_pos = (short) body[10 + 58 + tam + j*4];
+			contourPoint.y_pos = (short) body[10 + 58 + 2 +tam + j*4];
+
+			objectContent.addContourPoint(contourPoint);
+		}
+		tam = 10 + 58 + tam + numContourPoints*4;
+		objectData->addObject(objectContent);
+	}
+
+	return true;
+}
+
+bool vpSickLDMRS::sendEgoMotionData(short velocity, short steeringWheelAngle, short yawRate)
+{
+	unsigned int *uintptr;
+	unsigned short *ushortptr;
+	short *shortptr;
+	static unsigned char header[24];
+	ushortptr=(unsigned short *)header;
+	uintptr=(unsigned int *)header;
+
+	uintptr[0] = htonl(vpSickLDMRS::MagicWordC2);			// set magic word
+	ushortptr[7] = htonl(vpSickLDMRS::EgoMotionData);		// set the data type
+	uintptr[2] = htonl(10);									// set the size of message
+	uintptr[1] = 0;
+	header[12] = 0;
+	header[13] = htonl(07);
+
+	if(send(socket_fd, header, sizeof(header), MSG_WAITALL) == -1)
+	{
+		printf("send\n");
+		perror("send");
+		return false;
+	}
+
+	ushortptr = (unsigned short *) body;
+	shortptr = (short int *) body;
+
+	ushortptr[0] = 1;
+	shortptr[1] = velocity;
+	shortptr[2] = 0;
+	shortptr[3] = steeringWheelAngle;
+	shortptr[4] = yawRate;
+
+	if(send(socket_fd, body, 10, MSG_WAITALL) == -1)
+	{
+		printf("send\n");
+		perror("send");
+		return false;
+	}
+	return true;
+}

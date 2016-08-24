@@ -16,7 +16,7 @@ static int bumblebee_basic_height;
 static int ackerman_publish_odometry;
 static int visual_odometry_is_global_pos;
 
-static int ackerman_publish_velocity;
+static int visual_odometry_publish_velocity;
 
 Matrix visual_odometry_pose_6d_transformation_matrix;
 VisualOdometryStereo *viso = NULL;
@@ -616,7 +616,7 @@ bumblebee_stereo_message_handler(carmen_bumblebee_basic_stereoimage_message *mes
 //			if(!ackerman_publish_odometry)
 //				publish_base_ackerman_odometry_message(&odometry_msg);
 
-			if(!ackerman_publish_velocity)
+			if(visual_odometry_publish_velocity)
 				publish_robot_ackerman_velocity_message(&odometry_msg);
 			
 			if(visual_odometry_is_global_pos)
@@ -671,7 +671,7 @@ read_parameters(int argc, char **argv)
 		{bumblebee_string, (char *) "height", CARMEN_PARAM_INT, &bumblebee_basic_height, 0, NULL},
 		{(char *) "robot", (char *) "maximum_acceleration_forward", CARMEN_PARAM_DOUBLE, &maximum_acceleration_forward, 0, NULL},
 		{(char *) "robot", (char *) "publish_odometry", CARMEN_PARAM_ONOFF, &ackerman_publish_odometry, 0, NULL},
-		{(char *) "robot", (char *) "publish_velocity", CARMEN_PARAM_ONOFF, &ackerman_publish_velocity, 0, NULL},
+		{(char *) "visual_odometry", (char *) "publish", CARMEN_PARAM_ONOFF, &visual_odometry_publish_velocity, 0, NULL},
 		{(char*)camera_string, (char*)"x", CARMEN_PARAM_DOUBLE, &camera_pose.position.x, 0, NULL},
 		{(char*)camera_string, (char*)"y", CARMEN_PARAM_DOUBLE, &camera_pose.position.y, 0, NULL},
 		{(char*)camera_string, (char*)"z", CARMEN_PARAM_DOUBLE, &camera_pose.position.z, 0, NULL},

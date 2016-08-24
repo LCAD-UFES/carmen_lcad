@@ -144,7 +144,7 @@ struct _moving_objects_tracking
 	object_model_features_t model_features;
 	int	num_associated;
 	double timestamp;
-	particle_print_t *particulas; // para a visualização das partículas
+	//particle_print_t *particulas; // para a visualização das partículas
 };
 
 typedef struct _moving_objects_tracking moving_objects_tracking_t;
