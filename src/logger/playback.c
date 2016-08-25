@@ -59,6 +59,7 @@ carmen_simulator_ackerman_truepos_message truepos_ackerman;
 carmen_robot_ackerman_laser_message laser_ackerman1, laser_ackerman2, laser_ackerman3, laser_ackerman4, laser_ackerman5;
 carmen_laser_laser_message rawlaser1, rawlaser2, rawlaser3, rawlaser4, rawlaser5;
 carmen_laser_ldmrs_message laser_ldmrs;
+carmen_laser_ldmrs_objects_message laser_ldmrs_objects;
 
 carmen_imu_message imu;
 carmen_gps_gpgga_message gpsgga;
@@ -301,6 +302,7 @@ typedef struct {
 logger_callback_t logger_callbacks[] =
 	{
 		{"LASER_LDMRS", CARMEN_LASER_LDMRS_NAME, (converter_func) carmen_string_to_laser_ldmrs_message, &laser_ldmrs, 0},
+		{"LASER_LDMRS_OBJECTS", CARMEN_LASER_LDMRS_NAME, (converter_func) carmen_string_to_laser_ldmrs_objects_message, &laser_ldmrs_objects, 0},
 		{"RAWLASER1", CARMEN_LASER_FRONTLASER_NAME, (converter_func) carmen_string_to_laser_laser_message, &rawlaser1, 0},
 		{"RAWLASER2", CARMEN_LASER_REARLASER_NAME, (converter_func) carmen_string_to_laser_laser_message, &rawlaser2, 0},
 		{"RAWLASER3", CARMEN_LASER_LASER3_NAME, (converter_func) carmen_string_to_laser_laser_message, &rawlaser3, 0},
@@ -631,6 +633,7 @@ int main(int argc, char **argv)
 	memset(&laser_ackerman4, 0, sizeof(laser_ackerman4));
 	memset(&laser_ackerman5, 0, sizeof(laser_ackerman5));
 	memset(&laser_ldmrs, 0, sizeof(laser_ldmrs));
+	memset(&laser_ldmrs_objects, 0, sizeof(laser_ldmrs_objects));
 	memset(&rawlaser1, 0, sizeof(rawlaser1));
 	memset(&rawlaser2, 0, sizeof(rawlaser2));
 	memset(&rawlaser3, 0, sizeof(rawlaser3));

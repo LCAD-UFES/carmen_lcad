@@ -498,7 +498,7 @@ int main(int argc, char **argv)
   strcpy(filename, argv[1]);
 
   for (p = strlen(filename) - 1; p >= 0; p--)
-	  if (filename[p] == "/")
+	  if (filename[p] == '/')
 		  break;
 
   strcpy(filename_without_path, filename + p);

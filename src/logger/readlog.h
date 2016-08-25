@@ -241,6 +241,8 @@ char* carmen_string_to_ultrasonic_message(char* string, carmen_ultrasonic_sonar_
 
 char* carmen_string_to_laser_ldmrs_message(char *string, carmen_laser_ldmrs_message *laser);
 
+char* carmen_string_to_laser_ldmrs_objects_message(char *string, carmen_laser_ldmrs_objects_message *laserObjects);
+
 #ifdef __cplusplus
 }
 #endif

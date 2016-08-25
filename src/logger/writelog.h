@@ -235,6 +235,10 @@ void carmen_logwrite_write_laser_ldmrs(carmen_laser_ldmrs_message *laser,
 		int laser_num, carmen_FILE *outfile,
 		double timestamp);
 
+void carmen_logwrite_write_laser_ldmrs_objects(carmen_laser_ldmrs_objects_message *laser,
+		int laser_num, carmen_FILE *outfile,
+		double timestamp);
+
 #ifdef __cplusplus
 }
 #endif

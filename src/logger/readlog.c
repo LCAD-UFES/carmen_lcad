@@ -466,6 +466,41 @@ char *carmen_string_to_laser_ldmrs_message(char *string,
 	return current_pos;
 }
 
+char *carmen_string_to_laser_ldmrs_objects_message(char *string,
+		carmen_laser_ldmrs_objects_message *laserObjects)
+{
+	char *current_pos = string;
+	int i, num_readings;
+
+	if (strncmp(current_pos, "LASER_LDMRS_OBJECTS", 19) == 0)
+			current_pos += 19;
+
+	num_readings = CLF_READ_INT(&current_pos);
+
+	if(laserObjects->num_objects != num_readings)
+	{
+		laserObjects->num_objects = num_readings;
+		laserObjects->objects_list = (carmen_laser_ldmrs_object *)realloc(laserObjects->objects_list, laserObjects->num_objects * sizeof(carmen_laser_ldmrs_object));
+		carmen_test_alloc(laserObjects->objects_list);
+	}
+
+	for(i = 0; i < laserObjects->num_objects; i++)
+	{
+		laserObjects->objects_list[i].id = CLF_READ_INT(&current_pos);
+		laserObjects->objects_list[i].x = CLF_READ_DOUBLE(&current_pos);
+		laserObjects->objects_list[i].y = CLF_READ_DOUBLE(&current_pos);
+		laserObjects->objects_list[i].lenght = CLF_READ_DOUBLE(&current_pos);
+		laserObjects->objects_list[i].width = CLF_READ_DOUBLE(&current_pos);
+		laserObjects->objects_list[i].velocity = CLF_READ_DOUBLE(&current_pos);
+		laserObjects->objects_list[i].orientation = CLF_READ_DOUBLE(&current_pos);
+	}
+
+	laserObjects->timestamp = CLF_READ_DOUBLE(&current_pos);
+	copy_host_string(&laserObjects->host, &current_pos);
+
+	return current_pos;
+}
+
 char *carmen_string_to_robot_ackerman_laser_message(char *string,
 		carmen_robot_ackerman_laser_message *laser)
 {
