@@ -66,7 +66,7 @@ typedef struct
 //	return (tcp);
 //}
 
-
+/*
 double
 generate_optimized_steering_using_mpc(carmen_ackerman_motion_command_p current_motion_command_vector,
 			double nun_motion_commands,
@@ -115,3 +115,4 @@ carmen_libmpc_steering_MPC_controler(double *steering_command, double atan_desir
 
 	return *steering_command;
 }
+*/

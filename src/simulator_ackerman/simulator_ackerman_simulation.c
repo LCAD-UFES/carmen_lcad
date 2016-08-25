@@ -650,7 +650,7 @@ compute_new_phi_with_MPC(carmen_simulator_ackerman_config_t *simulator_config)
 {
 	static double steering_command = 0.0;
 	double atan_current_curvature;
-	double atan_desired_curvature;
+	double atan_desired_curvature = 0.0;
 	static fann_type steering_ann_input[NUM_STEERING_ANN_INPUTS];
 	fann_type *steering_ann_output;
 	static struct fann *steering_ann = NULL;
@@ -669,8 +669,8 @@ compute_new_phi_with_MPC(carmen_simulator_ackerman_config_t *simulator_config)
 	atan_current_curvature = atan(compute_curvature(simulator_config->phi, simulator_config));
 	atan_desired_curvature = atan(compute_curvature(simulator_config->target_phi, simulator_config));
 
-	carmen_libmpc_steering_MPC_controler(&steering_command, atan_desired_curvature,
-											atan_current_curvature, simulator_config);
+	//carmen_libmpc_steering_MPC_controler(&steering_command, atan_desired_curvature,
+	//										atan_current_curvature, simulator_config);
 
 	build_steering_ann_input(steering_ann_input, steering_command, atan_current_curvature);
 	steering_ann_output = fann_run(steering_ann, steering_ann_input);
