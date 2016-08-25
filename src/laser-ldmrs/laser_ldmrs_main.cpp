@@ -177,6 +177,10 @@ static void carmen_laser_ldmrs_copy_message(vpLaserScan laserscan[4], carmen_las
 	message->start_angle = laserscan[0].getStartAngle();
 	message->end_angle = laserscan[0].getStopAngle();
 
+	if(laserscan[0].getNumPoints() == 0) {
+		return;
+	}
+
 	std::vector<vpScanPoint> pointsInLayer1 = laserscan[0].getScanPoints();
 	std::vector<vpScanPoint> pointsInLayer2 = laserscan[1].getScanPoints();
 	std::vector<vpScanPoint> pointsInLayer3 = laserscan[2].getScanPoints();
@@ -227,13 +231,28 @@ static void carmen_laser_ldmrs_copy_message(vpLaserScan laserscan[4], carmen_las
 
 static void carmen_laser_ldmrs_objects_build_message(vpLaserObjectData *objectData, carmen_laser_ldmrs_objects_message *message)
 {
-	message->num_objects = objectData->getNumObjects();
+
 	std::vector<vpObject> objectsList = objectData->getObjectList();
-	message->objects_list = (carmen_laser_ldmrs_object *) malloc(message->num_objects * sizeof(carmen_laser_ldmrs_object));
+
+	if(objectData->getNumObjects() == 0) {
+		return;
+	}
+
+	if(message->num_objects != objectData->getNumObjects()) {
+		message->num_objects = objectData->getNumObjects();
+		message->objects_list = (carmen_laser_ldmrs_object *) realloc(message->objects_list, message->num_objects * sizeof(carmen_laser_ldmrs_object));
+		carmen_test_alloc(message->objects_list);
+	}
+
+	//printf("\n num obj: %d\n",message->num_objects);
+
 	for(int i = 0; i < message->num_objects; i++){
+
 		message->objects_list[i].id = objectsList[i].getObjectId();
-		message->objects_list[i].x = 0.01 * objectsList[i].getObjectBoxCenter().x_pos;
-		message->objects_list[i].y = 0.01 * objectsList[i].getObjectBoxCenter().y_pos;
+		message->objects_list[i].x = 0.01 * (objectsList[i].getObjectBoxCenter().x_pos + objectsList[i].getReferencePoint().x_pos);
+		message->objects_list[i].y = 0.01 * (objectsList[i].getObjectBoxCenter().y_pos + objectsList[i].getReferencePoint().y_pos);
+
+		//printf("x: %lf y: %lf\n", message->objects_list[i].x, message->objects_list[i].y);
 		int xv = objectsList[i].getAbsoluteVelocity().x_pos;
 		int yv = objectsList[i].getAbsoluteVelocity().y_pos;
 		double velocity = 0.01 * sqrt(xv*xv + yv*yv);
@@ -241,6 +260,8 @@ static void carmen_laser_ldmrs_objects_build_message(vpLaserObjectData *objectDa
 		message->objects_list[i].orientation = (((double) objectsList[i].getObjectBoxOrientation())/32.0)*M_PI/180;
 		message->objects_list[i].lenght = 0.01 * objectsList[i].getObjectBoxSize().x_size;
 		message->objects_list[i].width = 0.01 * objectsList[i].getObjectBoxSize().y_size;
+		//printf("id: %d cp: %d\n", objectsList[i].getObjectId(), objectsList[i].getNumContourPoints());
+		//printf("l: %lf w: %lf\n", message->objects_list[i].lenght, message->objects_list[i].width);
 	}
 }
 
@@ -280,6 +301,8 @@ int main(int argc, char **argv)
 	vpLaserScan laserscan[4];
 	//vpLaserObjectData objectData;
 
+	laser.sendEgoMotionData(0, 0, 0);
+
 	for ( ; ; ) {
 
 		vpLaserObjectData objectData;
@@ -287,7 +310,8 @@ int main(int argc, char **argv)
 		{
 			carmen_laser_ldmrs_objects_build_message(&objectData, &objectsMessage);
 
-			carmen_laser_publish_ldmrs_objects(&objectsMessage);
+			if (objectData.getNumObjects() > 0)
+				carmen_laser_publish_ldmrs_objects(&objectsMessage);
 		}
 
 		// Get the measured points in the four layers
@@ -306,7 +330,8 @@ int main(int argc, char **argv)
 			}
 		}
 		*/
-		carmen_laser_publish_ldmrs(&message);
+		if (laserscan[0].getNumPoints() > 0)
+			carmen_laser_publish_ldmrs(&message);
 	}
 	carmen_ipc_disconnect();
 

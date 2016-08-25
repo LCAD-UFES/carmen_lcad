@@ -896,10 +896,10 @@ carmen_laser_ldmrs_objects_message_handler(carmen_laser_ldmrs_objects_message* l
 			ldmrs_objects_tracking[i].id = laser_message->objects_list[i].id;
 			ldmrs_objects_tracking[i].lenght = laser_message->objects_list[i].lenght;
 			ldmrs_objects_tracking[i].width = laser_message->objects_list[i].width;
-			ldmrs_objects_tracking[i].orientation = laser_message->objects_list[i].orientation;
+			ldmrs_objects_tracking[i].orientation = laser_message->objects_list[i].orientation + car_fused_pose.orientation.yaw;
 			ldmrs_objects_tracking[i].velocity = laser_message->objects_list[i].velocity;
-			ldmrs_objects_tracking[i].x = laser_message->objects_list[i].x;
-			ldmrs_objects_tracking[i].y = laser_message->objects_list[i].y;
+			ldmrs_objects_tracking[i].x = laser_message->objects_list[i].x + front_bullbar_pose.position.x + car_fused_pose.position.x;
+			ldmrs_objects_tracking[i].y = laser_message->objects_list[i].y + front_bullbar_pose.position.y + car_fused_pose.position.y;
 		}
     }
 }
