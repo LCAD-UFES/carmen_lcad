@@ -330,7 +330,7 @@ void velodyne_partial_scan_handler( carmen_velodyne_partial_scan_message* msg)
 {
 	//fprintf(stderr, "V");
 	if (log_velodyne_save_to_file)
-		carmen_logwrite_write_to_file_velodyne(msg, outfile, carmen_get_time() - logger_starttime, filename_without_path);
+		carmen_logwrite_write_to_file_velodyne(msg, outfile, carmen_get_time() - logger_starttime, filename);
 	else
 		carmen_logwrite_write_velodyne_partial_scan(msg, outfile, carmen_get_time() - logger_starttime);
 
@@ -346,7 +346,7 @@ void bumblebee1_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_mes
 {
 	//fprintf(stderr, "b1s");
 	if (log_bumblebee_save_to_file)
-		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 1, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename_without_path);
+		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 1, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename);
 	else
 		carmen_logwrite_write_bumblebee_basic_steroimage(message, 1, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save);
 }
@@ -355,7 +355,7 @@ void bumblebee2_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_mes
 {
 	//fprintf(stderr, "b2s");
 	if (log_bumblebee_save_to_file)
-		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 2, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename_without_path);
+		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 2, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename);
 	else
 		carmen_logwrite_write_bumblebee_basic_steroimage(message, 2, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save);
 }
@@ -364,7 +364,7 @@ void bumblebee3_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_mes
 {
 	//fprintf(stderr, "b3s");
 	if (log_bumblebee_save_to_file)
-		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 3, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename_without_path);
+		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 3, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename);
 	else
 		carmen_logwrite_write_bumblebee_basic_steroimage(message, 3, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save);
 }
@@ -373,7 +373,7 @@ void bumblebee4_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_mes
 {
 	//fprintf(stderr, "b4s");
 	if (log_bumblebee_save_to_file)
-		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 4, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename_without_path);
+		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 4, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename);
 	else
 		carmen_logwrite_write_bumblebee_basic_steroimage(message, 4, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save);
 }
@@ -382,7 +382,7 @@ void bumblebee5_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_mes
 {
 	//fprintf(stderr, "b5s");
 	if (log_bumblebee_save_to_file)
-		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 5, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename_without_path);
+		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 5, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename);
 	else
 		carmen_logwrite_write_bumblebee_basic_steroimage(message, 5, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save);
 }
@@ -391,7 +391,7 @@ void bumblebee6_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_mes
 {
 	//fprintf(stderr, "b6s");
 	if (log_bumblebee_save_to_file)
-		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 6, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename_without_path);
+		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 6, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename);
 	else
 		carmen_logwrite_write_bumblebee_basic_steroimage(message, 6, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save);
 }
@@ -400,7 +400,7 @@ void bumblebee7_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_mes
 {
 	//fprintf(stderr, "b7s");
 	if (log_bumblebee_save_to_file)
-		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 7, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename_without_path);
+		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 7, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename);
 	else
 		carmen_logwrite_write_bumblebee_basic_steroimage(message, 7, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save);
 }
@@ -409,7 +409,7 @@ void bumblebee8_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_mes
 {
 	//fprintf(stderr, "b8s");
 	if (log_bumblebee_save_to_file)
-		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 8, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename_without_path);
+		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 8, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename);
 	else
 		carmen_logwrite_write_bumblebee_basic_steroimage(message, 8, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save);
 }
@@ -418,7 +418,7 @@ void bumblebee9_basic_stereoimage_handler(carmen_bumblebee_basic_stereoimage_mes
 {
 	//fprintf(stderr, "b9s");
 	if (log_bumblebee_save_to_file)
-		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 9, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename_without_path);
+		carmen_logwrite_write_to_file_bumblebee_basic_steroimage(message, 9, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save, filename);
 	else
 		carmen_logwrite_write_bumblebee_basic_steroimage(message, 9, outfile, carmen_get_time() - logger_starttime, log_bumblebee_frames_to_save);
 }
