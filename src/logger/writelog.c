@@ -734,7 +734,7 @@ void carmen_logwrite_write_to_file_velodyne(carmen_velodyne_partial_scan_message
 	/**
 	 * TODO: @Filipe: Check if the mkdir call is time consuming.
 	 */
-	sprintf(directory, "./%s_velodyne", log_filename);
+	sprintf(directory, "%s_velodyne", log_filename);
 	mkdir(directory, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
 
 	sprintf(subdir, "%s/%d", directory, high_level_subdir);
@@ -931,7 +931,7 @@ void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(carmen_bumblebee_b
 	/**
 	 * TODO: @Filipe: Check if the mkdir call is time consuming.
 	 */
-	sprintf(directory, "./%s_bumblebee", log_filename);
+	sprintf(directory, "%s_bumblebee", log_filename);
 	mkdir(directory, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
 
 	sprintf(subdir, "%s/%d", directory, high_level_subdir);
