@@ -31,7 +31,7 @@ void render(frame_viz &data, const Mat3b &color_frame, ConfigXML *config, bool v
 			Mat3b img_symbol = SinalizacaoHorizontal::toIMG(ROAD_SIGN::FAIXA_PEDESTRE);
 			resize(img_symbol, img_symbol, symbol_size, INTER_NEAREST);
 			Rect symbol_destination = Rect(img.cols / 2 - symbol_size.width / 2, (2 + i) * padding + box_height + i*symbol_size.height, symbol_size.width, symbol_size.height);
-			img_symbol.copyTo(img(symbol_destination));
+			//img_symbol.copyTo(img(symbol_destination));
 			break;
 		}
 
@@ -182,7 +182,7 @@ void render(frame_viz &data, const Mat3b &color_frame, ConfigXML *config, bool v
 	Mat3b imgRoadSigns = img.clone();
 	const double alphaSymbols = 0.8;
 	for (auto s : data.symbols) if (s.id != ROAD_SIGN::FAIXA_PEDESTRE) fillConvexPoly(imgRoadSigns, s.region, BGR_BLUE);
-	addWeighted(imgRoadSigns, 1 - alphaSymbols, img, alphaSymbols, 0, img);
+	//addWeighted(imgRoadSigns, 1 - alphaSymbols, img, alphaSymbols, 0, img);
 
 	// mostra o �cone dos simbolos detectados
 	for (unsigned int i = 0; i < data.symbols.size(); i++) {
@@ -197,7 +197,7 @@ void render(frame_viz &data, const Mat3b &color_frame, ConfigXML *config, bool v
 		else
 			symbol_destination = Rect(data.symbols[i].region[0].x, data.symbols[i].region[0].y - img_symbol.rows, img_symbol.cols, img_symbol.rows);
 
-		img_symbol.copyTo(img(symbol_destination));
+		//img_symbol.copyTo(img(symbol_destination));
 	}
 
 #pragma endregion

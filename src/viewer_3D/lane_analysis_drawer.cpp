@@ -1,6 +1,8 @@
 #include "lane_analysis_drawer.h"
+#include "math.h"
 
 void draw_lane_analysis(lane_analysis_drawer * lane_drawer) {
+	bool draw_lines = true;
 	glPointSize (3.0);
 
 		// TRAIL
@@ -14,7 +16,7 @@ void draw_lane_analysis(lane_analysis_drawer * lane_drawer) {
 				glVertex3d (lane_drawer->left[i].x, lane_drawer->left[i].y, lane_drawer->left[i].z);
 	        glEnd ();
 
-	        if (i > 0) {
+	        if (draw_lines && i > 0) {
 				glBegin(GL_LINES);
 					glVertex3d (lane_drawer->left[i].x, lane_drawer->left[i].y, lane_drawer->left[i].z);
 					glVertex3d (lane_drawer->left[i-1].x, lane_drawer->left[i-1].y, lane_drawer->left[i-1].z);
@@ -30,7 +32,7 @@ void draw_lane_analysis(lane_analysis_drawer * lane_drawer) {
 				glVertex3d (lane_drawer->right[i].x, lane_drawer->right[i].y, lane_drawer->right[i].z);
 			glEnd ();
 
-			if (i > 0) {
+			if (draw_lines && i > 0) {
 				glBegin(GL_LINES);
 					glVertex3d (lane_drawer->right[i].x, lane_drawer->right[i].y, lane_drawer->right[i].z);
 					glVertex3d (lane_drawer->right[i-1].x, lane_drawer->right[i-1].y, lane_drawer->right[i-1].z);
@@ -48,7 +50,7 @@ void draw_lane_analysis(lane_analysis_drawer * lane_drawer) {
 				glVertex3d (lane_drawer->left_ahead[i].x, lane_drawer->left_ahead[i].y, lane_drawer->left_ahead[i].z);
 			glEnd ();
 
-			if (i > 0) {
+			if (draw_lines && i > 0) {
 				glBegin(GL_LINES);
 					glVertex3d (lane_drawer->left_ahead[i].x, lane_drawer->left_ahead[i].y, lane_drawer->left_ahead[i].z);
 					glVertex3d (lane_drawer->left_ahead[i-1].x, lane_drawer->left_ahead[i-1].y, lane_drawer->left_ahead[i-1].z);
@@ -63,7 +65,7 @@ void draw_lane_analysis(lane_analysis_drawer * lane_drawer) {
 				glVertex3d (lane_drawer->right_ahead[i].x, lane_drawer->right_ahead[i].y, lane_drawer->right_ahead[i].z);
 			glEnd ();
 
-			if (i > 0) {
+			if (draw_lines && i > 0) {
 				glBegin(GL_LINES);
 					glVertex3d (lane_drawer->right_ahead[i].x, lane_drawer->right_ahead[i].y, lane_drawer->right_ahead[i].z);
 					glVertex3d (lane_drawer->right_ahead[i-1].x, lane_drawer->right_ahead[i-1].y, lane_drawer->right_ahead[i-1].z);
@@ -71,12 +73,17 @@ void draw_lane_analysis(lane_analysis_drawer * lane_drawer) {
 			}
 		}
 
+		glBegin(GL_LINES);
+			glVertex3d (elas_direction.x, elas_direction.y, elas_direction.z);
+			glVertex3d (elas_direction.x*10, elas_direction.y*10, elas_direction.z);
+		glEnd();
+
 	glPointSize (1.0);
 }
 
 // calculates the real world position of the estimated lane positions
 // and add it to a trail that will be drawn
-void add_to_trail(carmen_elas_lane_estimation_message * message, const carmen_pose_3D_t &car_pose, lane_analysis_drawer * lane_drawer) {
+void add_to_trail(carmen_elas_lane_estimation_message * message, const carmen_pose_3D_t &car_pose, lane_analysis_drawer * lane_drawer, carmen_vector_3D_t * localize_ackerman_trail, int localize_ackerman_size) {
 
 	// TODO: break line sequence in these cases, to show the discontinuity
 	// if the message contains NaN, do not add to the trail
@@ -87,7 +94,7 @@ void add_to_trail(carmen_elas_lane_estimation_message * message, const carmen_po
 	const double deviation = message->lane_deviation;
 
 	// set the distance from the pose to the visible region on the camera
-	const int shift = 7.1;
+	const int shift = 0.1;
 
 	// calculates the distance of the left lane markings from the car center
 	const double dist_left = (1 + deviation) * (lane_width / 2.0);
@@ -97,6 +104,7 @@ void add_to_trail(carmen_elas_lane_estimation_message * message, const carmen_po
 	const double _theta = car_pose.orientation.yaw;
 
 	// calculates the unit vector of the car orientation
+	carmen_vector_3D_t car_pos = car_pose.position;
 	cv::Point2d _orientation_unit;
 	_orientation_unit.x = cos(_theta);
 	_orientation_unit.y = sin(_theta);
@@ -109,15 +117,15 @@ void add_to_trail(carmen_elas_lane_estimation_message * message, const carmen_po
 
 	// left point
 	carmen_vector_3D_t _left;
-	_left.x = car_pose.position.x + shift * _orientation_unit.x + dist_left * _orthogonal_unit.x;
-	_left.y = car_pose.position.y + shift * _orientation_unit.y + dist_left * _orthogonal_unit.y;
-	_left.z = car_pose.position.z;
+	_left.x = car_pos.x + shift * _orientation_unit.x + dist_left * _orthogonal_unit.x;
+	_left.y = car_pos.y + shift * _orientation_unit.y + dist_left * _orthogonal_unit.y;
+	_left.z = car_pos.z;
 
 	// right point
 	carmen_vector_3D_t _right;
-	_right.x = car_pose.position.x + shift * _orientation_unit.x - dist_right * _orthogonal_unit.x;
-	_right.y = car_pose.position.y + shift * _orientation_unit.y - dist_right * _orthogonal_unit.y;
-	_right.z = car_pose.position.z;
+	_right.x = car_pos.x + shift * _orientation_unit.x - dist_right * _orthogonal_unit.x;
+	_right.y = car_pos.y + shift * _orientation_unit.y - dist_right * _orthogonal_unit.y;
+	_right.z = car_pos.z;
 
 	// add the points to their trails
 	lane_drawer->left.push_back(_left);

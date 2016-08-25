@@ -53,6 +53,8 @@ void ELAS::lane_position_estimation(const pre_processed * _pre_processed, const 
 	_out_lane_position->is_hough_only = HOUGH_ONLY;
 
 	Mat1b map_srf_skel = Helper::skeleton(_feature_maps->map_srf); // approx +1.5ms
+	imshow("_feature_maps->map_srf", _feature_maps->map_srf);
+	imshow("map_srf_skel", map_srf_skel);
 	_out_raw_houghs->ego_lane = Houghs::getHoughs(map_srf_skel, _cfg->roi, _out_raw_houghs->adjacent_lanes);
 
 	/* Display the selected houghs
@@ -204,12 +206,14 @@ void ELAS::clear_buffers() {
 bool ELAS::buffer_mechanism(vector<HoughLine> & houghs_X, ConfigXML * _cfg) {
 	// adiciono as houghs em potenciais para o buffer
 	bool esqH = false, dirH = false; // flag para descartar as houghs
+	printf("%d -- %d\n", (int)esqBuffer.size(), (int)dirBuffer.size());
 	if (!houghs_X[0].isEmpty()) {
 		if (esqBuffer.size() < BUFFER_HOUGHS_SIZE || Houghs::validaHough(houghs_X[0], esqBuffer, _cfg)) {
 			esqBufferRejeitados.clear();
 			Helper::pushBuffer(esqBuffer, houghs_X[0], BUFFER_HOUGHS_SIZE);
 		} else {
 			Helper::pushBuffer(esqBufferRejeitados, houghs_X[0], BUFFER_HOUGHS_SIZE);
+			cout << "\t\t\t\tRejeitado: ESQ" << endl;
 			esqH = true;
 		}
 	}
@@ -220,6 +224,7 @@ bool ELAS::buffer_mechanism(vector<HoughLine> & houghs_X, ConfigXML * _cfg) {
 			Helper::pushBuffer(dirBuffer, houghs_X[1], BUFFER_HOUGHS_SIZE);
 		} else {
 			Helper::pushBuffer(dirBufferRejeitados, houghs_X[1], BUFFER_HOUGHS_SIZE);
+			cout << "\t\t\t\tRejeitado: DIR" << endl;
 			dirH = true;
 		}
 	}
@@ -235,6 +240,7 @@ bool ELAS::buffer_mechanism(vector<HoughLine> & houghs_X, ConfigXML * _cfg) {
 		// swap desse buffer
 		// zerar os outros
 		if (esqCheio) {
+			cout << "\t\t\t\tBuffers ESQ lotado!" << endl;
 			HoughDoMeio rawMeasurement = HoughLine::getKalmanMeasurement(esqBufferRejeitados.back(), dirBuffer.back(), _cfg);
 			if (rawMeasurement.largura > BUFFER_MIN_LENGTH) {
 				esqBuffer = esqBufferRejeitados;
@@ -244,10 +250,17 @@ bool ELAS::buffer_mechanism(vector<HoughLine> & houghs_X, ConfigXML * _cfg) {
 		}
 
 		if (dirCheio) {
+			cout << "\t\t\t\tBuffers DIR lotado!" << endl;
 			HoughDoMeio rawMeasurement = HoughLine::getKalmanMeasurement(esqBuffer.back(), dirBufferRejeitados.back(), _cfg);
 			if (rawMeasurement.largura > BUFFER_MIN_LENGTH) {
-				dirBuffer = dirBufferRejeitados;
-				resetarKalman = true;
+				double mediaPosicao, desvioPosicao;
+				Houghs::posicaoBufferStatistics(dirBufferRejeitados, mediaPosicao, desvioPosicao, _cfg);
+				Houghs::posicaoBufferStatistics(dirBuffer, mediaPosicao, desvioPosicao, _cfg);
+				printf("------------------------> %.2f", desvioPosicao);
+				if (desvioPosicao < 5) {
+					dirBuffer = dirBufferRejeitados;
+					resetarKalman = true;
+				}
 			}
 			dirBufferRejeitados.clear();
 		}

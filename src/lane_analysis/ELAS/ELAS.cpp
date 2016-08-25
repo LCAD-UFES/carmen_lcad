@@ -86,6 +86,7 @@ void ELAS::run(const Mat3b & original_frame) {
 		imshow("pre-processing", out_pre_process->grayFrameRoiIPM);
 		imshow("mask IPM", out_pre_process->maskIPM);
 	}
+	out_raw_elas_message->ipm_image = out_pre_process->colorFrameRoiIPM; // only to save to video
 
 	// feature map generation
 	feature_map_generation(out_pre_process, cfg, out_feature_maps);
@@ -97,7 +98,6 @@ void ELAS::run(const Mat3b & original_frame) {
 	}
 
 	// crosswalk detection
-	printf("\n\nTODO: crosswalk detection\n\n");
 	crosswalk_detection(out_feature_maps, cfg, out_crosswalks);
 	if (DISPLAY_CROSSWALK) {
 		imshow("crosswalk map", out_crosswalks->mask);

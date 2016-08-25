@@ -44,6 +44,7 @@ struct raw_elas_message {
 	double car_position_x;
 	vector<road_sign> pavement_signs;
 	int idx_frame;
+	Mat3b ipm_image;
 };
 
 // methods

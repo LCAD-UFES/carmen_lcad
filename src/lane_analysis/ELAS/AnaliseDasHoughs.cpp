@@ -476,7 +476,7 @@ void AnaliseDasHoughs::executar2D(const Mat1b &mapa1ipm, const vector<HoughLine>
 		if (dir.isEmpty()) cout << "  - direita: sem hough" << endl;
 	}
 
-	if (config->display) {
+	if (config->display || true) {
 		// histograma da metade de baixo em 1d
 		Mat1d histograma1D = Mat1d(Size(esqHistograma1D.cols, esqHistograma1D.rows), double(0));
 		Rect esqArea1D = Rect(0, 0, posicaoCarroIPM.x, esqHistograma1D.rows);

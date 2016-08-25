@@ -10,11 +10,12 @@
 #include "ELAS/ELAS.h"
 
 #define SHOW_DISPLAY
-// #define SAVE_TO_DISK // requires SHOW_DISPLAY
+//#define SAVE_TO_DISK // requires SHOW_DISPLAY
 
-#define TEST_OFFLINE_DATASET
+//#define TEST_OFFLINE_DATASET
 #define DATASET_RETA_DA_PENHA
 // #define DATASET_GOPRO // GoPro or UFES
+#define TRECHO 5
 
 // #define TEST_MESSAGES_PUBLISH
 
@@ -146,15 +147,37 @@ static int fnumber = 0;
 void
 lane_analysis_handler(carmen_bumblebee_basic_stereoimage_message * stereo_image)
 {
+	int trecho_info[3]; // {id_dataset, from, to}
+	switch(TRECHO){
+		case 0:  trecho_info[0] = 0; trecho_info[1] = 0;    trecho_info[2] = 100000;break;
+		case 1:  trecho_info[0] = 1; trecho_info[1] = 600;  trecho_info[2] = 800;  break;
+		case 2:  trecho_info[0] = 1; trecho_info[1] = 825;  trecho_info[2] = 950;  break;
+		case 3:  trecho_info[0] = 1; trecho_info[1] = 1340; trecho_info[2] = 1515; break;
+		case 4:  trecho_info[0] = 2; trecho_info[1] = 380;  trecho_info[2] = 680;  break;
+		case 5:  trecho_info[0] = 2; trecho_info[1] = 740;  trecho_info[2] = 1040; break;
+		case 6:  trecho_info[0] = 2; trecho_info[1] = 2700; trecho_info[2] = 3030; break;
+		case 7:  trecho_info[0] = 4; trecho_info[1] = 130;  trecho_info[2] = 970;  break;
+		case 8:  trecho_info[0] = 4; trecho_info[1] = 2230; trecho_info[2] = 2530; break;
+		case 9:  trecho_info[0] = 4; trecho_info[1] = 3050; trecho_info[2] = 3500; break;
+		case 10: trecho_info[0] = 4; trecho_info[1] = 3630; trecho_info[2] = 3930; break;
+		case 11: trecho_info[0] = 4; trecho_info[1] = 4060; trecho_info[2] = 4590; break;
+		case 12: trecho_info[0] = 4; trecho_info[1] = 5420; trecho_info[2] = 5620; break;
+		default: trecho_info[0] = 0; trecho_info[1] = 0;    trecho_info[2] = 100000;break;
+	}
+#ifndef TEST_OFFLINE_DATASET
+	trecho_info[0] = 0; trecho_info[1] = 0;    trecho_info[2] = 100000;
+#endif
 
 #ifdef TEST_OFFLINE_DATASET
+
+	if (fnumber == 0 && trecho_info[1] != 0) fnumber = trecho_info[1];
 
 	#ifdef DATASET_GOPRO
 		Mat3b image = imread("/dados/berriel/MEGA/datasets/VIX_S01/images/lane_" + to_string(fnumber) + ".png");
 	#endif
 
 	#ifdef DATASET_RETA_DA_PENHA
-		Mat3b image = imread("/dados/berriel/datasets/carmen/reta-da-penha-04/images/lane_" + to_string(fnumber) + ".png");
+		Mat3b image = imread("/dados/berriel/datasets/carmen/reta-da-penha-0"+to_string(trecho_info[0])+"/images/lane_"+to_string(fnumber)+".png");
 	#endif
 
 #else
@@ -169,17 +192,18 @@ lane_analysis_handler(carmen_bumblebee_basic_stereoimage_message * stereo_image)
 	cv::resize(image, image, Size(640,480));
 
 	/* SAVE TO DISK
-	string img_fname = "/dados/berriel/datasets/carmen/reta-da-penha-04/all/lane_" + to_string(fnumber) + ".png";
+	string img_fname = "/dados/berriel/datasets/carmen/reta-da-penha-01/images/lane_" + to_string(fnumber) + ".png";
 	cv::imwrite(img_fname, image);
 	printf("Save to disk #%04d to disk!\n", fnumber);
 	std::ofstream outfile;
-	outfile.open("/dados/berriel/datasets/carmen/reta-da-penha-04/all_imgs_timestamp.txt", std::ios_base::app);
+	outfile.open("/dados/berriel/datasets/carmen/reta-da-penha-01/all_imgs_timestamp.txt", std::ios_base::app);
 	outfile << to_string(stereo_image->timestamp) << "\t" << img_fname << endl;
 	fnumber++;
+	return;
 	/***/
 #endif
 	fnumber++;
-	if (!image.empty()) {
+	if (!image.empty() && (trecho_info[2] != 0 && fnumber <= trecho_info[2])) {
 		cout << "frame: " << fnumber << endl;
 		// run ELAS
 		ELAS::run(image);
@@ -203,9 +227,13 @@ lane_analysis_handler(carmen_bumblebee_basic_stereoimage_message * stereo_image)
 #ifdef SHOW_DISPLAY
 #ifdef SAVE_TO_DISK
 		Mat3b img_tosave;
-		string img_fname = "/dados/berriel/datasets/carmen/reta-da-penha-04/result-20160711/lane_" + to_string(fnumber) + ".png";
+		string input_fname = "/dados/video-retadapenha/" + to_string(TRECHO) + "/input/" + to_string(fnumber - trecho_info[1]) + ".png";
+		string output_fname = "/dados/video-retadapenha/" + to_string(TRECHO) + "/output/" + to_string(fnumber - trecho_info[1]) + ".png";
+		string ipm_fname = "/dados/video-retadapenha/" + to_string(TRECHO) + "/ipm/" + to_string(fnumber - trecho_info[1]) + ".png";
 		ELAS::display(image, &_raw_elas_message, &img_tosave);
-		imwrite(img_fname, img_tosave);
+		imwrite(input_fname, image);
+		imwrite(output_fname, img_tosave);
+		imwrite(ipm_fname, _raw_elas_message.ipm_image);
 #else
 		// display viz
 		ELAS::display(image, &_raw_elas_message);
