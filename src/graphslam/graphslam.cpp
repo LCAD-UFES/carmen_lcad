@@ -232,6 +232,9 @@ add_odometry_edges(SparseOptimizer *optimizer)
 		dist = dist * (1.045);
 		//measure.setTranslation(Vector2d(dist * cos(measure[2]), dist * sin(measure[2])));
 
+		if(abs(input_data[i + 1].time - input_data[i].time) > 10)
+			continue;
+
 		if (i >= BEGIN_ID && i <= END_ID)
 		{
 			// SE2 bla_teste = input_data[BEGIN_ID].odom.inverse() * input_data[i + 1].odom;

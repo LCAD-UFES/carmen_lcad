@@ -440,6 +440,31 @@ publish_first_globalpos(carmen_localize_ackerman_initialize_message *initialize_
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+void
+publish_on_mapping_mode(carmen_fused_odometry_message *msg, double timestamp)
+{
+	if (mapping_mode)
+	{
+		printf("aqui\n");
+		IPC_RETURN_TYPE err;
+		carmen_pose_3D robot_pose = msg->pose;
+		double dt = timestamp - msg->timestamp;
+		robot_pose = carmen_ackerman_interpolated_robot_position_at_time(robot_pose, dt, msg->velocity.x, msg->phi, car_config.distance_between_front_and_rear_axles);
+
+		globalpos.timestamp = timestamp;
+		globalpos.host = carmen_get_host();
+		globalpos.v = msg->velocity.x;
+		globalpos.phi = msg->phi;
+		globalpos.pose = robot_pose;
+		globalpos.velocity = msg->velocity;
+		globalpos.globalpos.x = globalpos.pose.position.x;
+		globalpos.globalpos.y = globalpos.pose.position.y;
+		globalpos.globalpos.theta = globalpos.pose.orientation.yaw;
+
+		err = IPC_publishData(CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME, &globalpos);
+		carmen_test_ipc_exit(err, "Could not publish",	CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME);
+	}
+}
 
 void
 velodyne_variable_scan_localize(carmen_velodyne_variable_scan_message *message, int sensor)
@@ -447,14 +472,18 @@ velodyne_variable_scan_localize(carmen_velodyne_variable_scan_message *message, 
 	int odometry_index, fused_odometry_index;
 	int velodyne_initilized;
 
-	if (!necessary_maps_available || base_ackerman_odometry_index < 0)
-		return;
-
 	if (mapping_mode)
+	{
+		publish_on_mapping_mode(&fused_odometry_vector[fused_odometry_index], message->timestamp);
 		return;
+	}
 
 	odometry_index = get_base_ackerman_odometry_index_by_timestamp(message->timestamp);
 	fused_odometry_index = get_fused_odometry_index_by_timestamp(message->timestamp);
+
+	if (!necessary_maps_available || base_ackerman_odometry_index < 0)
+		return;
+
 
 	velodyne_initilized = localize_ackerman_velodyne_variable_scan(message, &spherical_sensor_params[sensor], &spherical_sensor_data[sensor], &(globalpos.velocity));
 	if (!velodyne_initilized)
@@ -494,20 +523,26 @@ velodyne_variable_scan_localize(carmen_velodyne_variable_scan_message *message, 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
+
+
 static void
 velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
 	int odometry_index, fused_odometry_index;
 	int velodyne_initilized;
 
+	odometry_index = get_base_ackerman_odometry_index_by_timestamp(velodyne_message->timestamp);
+	fused_odometry_index = get_fused_odometry_index_by_timestamp(velodyne_message->timestamp);
+
+	if (mapping_mode)
+	{
+		publish_on_mapping_mode(&fused_odometry_vector[fused_odometry_index], velodyne_message->timestamp);
+		return;
+	}
+
 	if (!necessary_maps_available)
 		return;
 
-	if (mapping_mode)
-		return;
-
-	odometry_index = get_base_ackerman_odometry_index_by_timestamp(velodyne_message->timestamp);
-	fused_odometry_index = get_fused_odometry_index_by_timestamp(velodyne_message->timestamp);
 
 	velodyne_initilized = localize_ackerman_velodyne_partial_scan(velodyne_message, &spherical_sensor_params[0], &spherical_sensor_data[0], &(globalpos.velocity), fused_odometry_vector[fused_odometry_index].phi);
 	if (!velodyne_initilized)
@@ -675,7 +710,7 @@ base_ackerman_odometry_handler(carmen_base_ackerman_odometry_message *msg)
 static void
 fused_odometry_handler(carmen_fused_odometry_message *msg)
 {
-	IPC_RETURN_TYPE err;
+
 
 	static int is_first_fused_odometry_message = 1;
 
@@ -689,25 +724,7 @@ fused_odometry_handler(carmen_fused_odometry_message *msg)
 	fused_odometry_index = (fused_odometry_index + 1) % FUSED_ODOMETRY_VECTOR_SIZE;
 	fused_odometry_vector[fused_odometry_index] = *msg;
 
-	if (mapping_mode)
-	{
 
-		globalpos.timestamp = msg->timestamp;
-		globalpos.host = carmen_get_host();
-		globalpos.v = msg->velocity.x;
-		globalpos.phi = msg->phi;
-		globalpos.pose = msg->pose;
-		globalpos.velocity = msg->velocity;
-		globalpos.globalpos.x = globalpos.pose.position.x;
-		globalpos.globalpos.y = globalpos.pose.position.y;
-		globalpos.globalpos.theta = globalpos.pose.orientation.yaw;
-
-		err = IPC_publishData(CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME, &globalpos);
-		carmen_test_ipc_exit(err, "Could not publish",
-				CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME);
-
-		return;
-	}
 
 }
 
@@ -1354,6 +1371,11 @@ subscribe_to_ipc_message()
 
 	carmen_fused_odometry_subscribe_fused_odometry_message(NULL, (carmen_handler_t) fused_odometry_handler,	CARMEN_SUBSCRIBE_LATEST);
 
+	if (spherical_sensor_params[0].alive)
+	{
+		carmen_velodyne_subscribe_partial_scan_message(NULL, (carmen_handler_t) velodyne_partial_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	}
+
 	/* Subscribe to front and rear laser messages */
 	if (!mapping_mode)
 	{
@@ -1381,10 +1403,7 @@ subscribe_to_ipc_message()
 		carmen_test_ipc(err, "Could not subscribe", CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_QUERY_NAME);
 		IPC_setMsgQueueLength(CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_QUERY_NAME, 1);
 
-		if (spherical_sensor_params[0].alive)
-		{
-			carmen_velodyne_subscribe_partial_scan_message(NULL, (carmen_handler_t) velodyne_partial_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
-		}
+
 		if (spherical_sensor_params[1].alive)
 		{
 			carmen_stereo_velodyne_subscribe_scan_message(1, NULL,

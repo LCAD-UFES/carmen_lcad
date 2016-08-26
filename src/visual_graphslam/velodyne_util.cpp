@@ -238,7 +238,8 @@ add_velodyne_spherical_points_to_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::P
 
 	for (i = 0, j = 0; i < v_zt->num_points; i = i + velodyne_params->vertical_resolution, j++, dt += velodyne_params->time_spent_by_each_scan)
 	{
-		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(*robot_pose, dt, v, phi, distance_between_front_and_rear_axles);
+		//dt = 0;
+		robot_interpolated_position = *robot_pose;//carmen_ackerman_interpolated_robot_position_at_time(*robot_pose, dt, v, phi, distance_between_front_and_rear_axles);
 		r_matrix_car_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
 
 		for(k = 0; k < velodyne_params->vertical_resolution; k++)

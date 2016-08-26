@@ -160,7 +160,7 @@ perform_icp(pcl::PointCloud<pcl::PointXYZRGB>::Ptr source_pointcloud, pcl::Point
 	(*measured_pose_out) = gicp.getFinalTransformation().cast<double>();
 
 	pcl::transformPointCloud(out_pcl_pointcloud, out_pcl_pointcloud_transformed, (*measured_pose_out));
-	// save_clouds_for_debug(*source_pointcloud, *target_pointcloud, out_pcl_pointcloud_transformed);
+	 save_clouds_for_debug(*source_pointcloud, *target_pointcloud, out_pcl_pointcloud_transformed);
 
 	if(gicp.hasConverged())
 	{
