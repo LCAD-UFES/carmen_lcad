@@ -9,7 +9,7 @@ MODULE_COMMENT = Proportional Integral Derivative Controller
 #IFLAGS += 
 #LFLAGS += 
 
-SOURCES = pid.c
+SOURCES = pid.cpp
  
 PUBLIC_INCLUDES = pid.h
 #PUBLIC_LIBRARIES = libpid.a 

@@ -41,6 +41,7 @@
 #include <floatfann.h>
 #include <pthread.h>
 #include <pid.h>
+#include <car_neural_model.h>
 
 
 #define NUM_VELOCITY_ANN_INPUTS	360
@@ -637,9 +638,7 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 	build_steering_ann_input(steering_ann_input, steering_command, atan_current_curvature);
 	steering_ann_output = fann_run(steering_ann, steering_ann_input);
 
-	// Alberto: O ganho de 1.05 abaixo foi necessario pois a rede nao estava gerando curvaturas mais extremas
-	// que nao aparecem no treino mas apenas rodando livremente na simulacao
-	simulator_config->phi = 1.05 * get_phi_from_curvature(tan(steering_ann_output[0]), simulator_config);
+	simulator_config->phi = get_phi_from_curvature(tan(steering_ann_output[0]), simulator_config);
 
 	return (simulator_config->phi);
 }
@@ -650,7 +649,7 @@ compute_new_phi_with_MPC(carmen_simulator_ackerman_config_t *simulator_config)
 {
 	static double steering_command = 0.0;
 	double atan_current_curvature;
-	double atan_desired_curvature = 0.0;
+	double atan_desired_curvature;
 	static fann_type steering_ann_input[NUM_STEERING_ANN_INPUTS];
 	fann_type *steering_ann_output;
 	static struct fann *steering_ann = NULL;
@@ -669,10 +668,11 @@ compute_new_phi_with_MPC(carmen_simulator_ackerman_config_t *simulator_config)
 	atan_current_curvature = atan(compute_curvature(simulator_config->phi, simulator_config));
 	atan_desired_curvature = atan(compute_curvature(simulator_config->target_phi, simulator_config));
 
-	//carmen_libmpc_steering_MPC_controler(&steering_command, atan_desired_curvature,
-	//										atan_current_curvature, simulator_config);
+	carmen_libpid_steering_PID_controler(&steering_command, atan_desired_curvature,
+												atan_current_curvature, simulator_config->delta_t);
 
 	build_steering_ann_input(steering_ann_input, steering_command, atan_current_curvature);
+
 	steering_ann_output = fann_run(steering_ann, steering_ann_input);
 
 	simulator_config->phi = get_phi_from_curvature(tan(steering_ann_output[0]), simulator_config);

@@ -9,7 +9,7 @@ MODULE_COMMENT = Model Predictive Controller
 #IFLAGS += 
 #LFLAGS += 
 
-SOURCES = mpc.c
+SOURCES = mpc.cpp
  
 PUBLIC_INCLUDES = mpc.h
 #PUBLIC_LIBRARIES = libpid.a
