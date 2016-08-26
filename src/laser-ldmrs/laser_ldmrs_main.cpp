@@ -244,15 +244,13 @@ static void carmen_laser_ldmrs_objects_build_message(vpLaserObjectData *objectDa
 		carmen_test_alloc(message->objects_list);
 	}
 
-	//printf("\n num obj: %d\n",message->num_objects);
-
-	for(int i = 0; i < message->num_objects; i++){
+	for(int i = 0; i < message->num_objects; i++)
+	{
 
 		message->objects_list[i].id = objectsList[i].getObjectId();
-		message->objects_list[i].x = 0.01 * (objectsList[i].getObjectBoxCenter().x_pos + objectsList[i].getReferencePoint().x_pos);
-		message->objects_list[i].y = 0.01 * (objectsList[i].getObjectBoxCenter().y_pos + objectsList[i].getReferencePoint().y_pos);
+		message->objects_list[i].x = 0.01 * (objectsList[i].getObjectBoxCenter().x_pos);
+		message->objects_list[i].y = 0.01 * (objectsList[i].getObjectBoxCenter().y_pos);
 
-		//printf("x: %lf y: %lf\n", message->objects_list[i].x, message->objects_list[i].y);
 		int xv = objectsList[i].getAbsoluteVelocity().x_pos;
 		int yv = objectsList[i].getAbsoluteVelocity().y_pos;
 		double velocity = 0.01 * sqrt(xv*xv + yv*yv);
@@ -260,8 +258,6 @@ static void carmen_laser_ldmrs_objects_build_message(vpLaserObjectData *objectDa
 		message->objects_list[i].orientation = (((double) objectsList[i].getObjectBoxOrientation())/32.0)*M_PI/180;
 		message->objects_list[i].lenght = 0.01 * objectsList[i].getObjectBoxSize().x_size;
 		message->objects_list[i].width = 0.01 * objectsList[i].getObjectBoxSize().y_size;
-		//printf("id: %d cp: %d\n", objectsList[i].getObjectId(), objectsList[i].getNumContourPoints());
-		//printf("l: %lf w: %lf\n", message->objects_list[i].lenght, message->objects_list[i].width);
 	}
 }
 

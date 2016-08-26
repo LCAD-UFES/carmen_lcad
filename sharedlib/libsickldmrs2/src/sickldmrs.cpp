@@ -158,6 +158,32 @@ bool vpSickLDMRS::setup()
 	return true;
 }
 
+
+unsigned int readUValueLE(unsigned char* buffer, unsigned char bytes)
+{
+	unsigned int value;
+
+	switch (bytes)
+	{
+	case 1:
+		value = buffer[0];
+		break;
+	case 2:
+		value = buffer[0];
+		value += ((unsigned int)buffer[1]) << 8;
+		break;
+	case 4:
+		value = buffer[0];
+		value += ((unsigned int)buffer[1]) << 8;
+		value += ((unsigned int)buffer[2]) << 16;
+		value += ((unsigned int)buffer[3]) << 24;
+		break;
+	default:
+		value = 0xFFFFFFFF;
+	}
+
+	return value;
+}
 /*!
   Get the measures of the four scan layers.
 
@@ -283,6 +309,7 @@ bool vpSickLDMRS::measure(vpLaserScan laserscan[4])
 	return true;
 }
 
+
 bool vpSickLDMRS::tracking(vpLaserObjectData *objectData)
 {
 
@@ -336,67 +363,108 @@ bool vpSickLDMRS::tracking(vpLaserObjectData *objectData)
 	unsigned int fractional=uintptr[0];
 	double startTimestamp = seconds + fractional / 4294967296.; // 4294967296. = 2^32
 
+	unsigned int offset = 8;
 	// get number of objects
-	ushortptr = (unsigned short *) (body + 8);
-	unsigned short numObjects = ushortptr[0];
-
+	// ushortptr = (unsigned short *) (body + 8);
+	unsigned short numObjects = (unsigned short) readUValueLE(&(body[offset]), 2);
 	objectData->setNumObjects(numObjects);
 	objectData->setStartTimestamp(startTimestamp);
 
-	unsigned short tam = 0;
+	offset += 2;
+
 	// decode objects
 	for (int i=0; i < numObjects; i++) {
 
 		vpObject objectContent;
 
-		unsigned short objectID = (unsigned short) body[10 + tam];
-		unsigned short objectAge = (unsigned short) body[10+2 + tam];
-		unsigned short objectPredictionAge = (unsigned short) body[10+4 + tam];
-		unsigned short relativeTimestamp = (unsigned short) body[10+6 + tam];
+		unsigned short objectID = (unsigned short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
+
+		unsigned short objectAge = (unsigned short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
+
+		unsigned short objectPredictionAge = (unsigned short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
+
+		unsigned short relativeTimestamp = (unsigned short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
 
 		point_2d referencePoint;
-		referencePoint.x_pos = (short) body[10+8 + tam];
-		referencePoint.y_pos = (short) body[10+8 + 2 + tam];
+		referencePoint.x_pos = (short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
+
+		referencePoint.y_pos = (short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
 
 		point_2d referencePointSigma;
-		referencePointSigma.x_pos = (short) body[10+12 + tam];
-		referencePointSigma.y_pos = (short) body[10+12 + 2 + tam];
+		referencePointSigma.x_pos = (short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
+
+		referencePointSigma.y_pos = (short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
 
 		point_2d closestPoint;
-		closestPoint.x_pos = (short) body[10 + 16 + tam];
-		closestPoint.y_pos = (short) body[10 + 16 + 2 + tam];
+		closestPoint.x_pos = (short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
+		closestPoint.y_pos = (short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
 
 		point_2d boundingBoxCenter;
-		boundingBoxCenter.x_pos = (short) body[10 + 20 + tam];
-		boundingBoxCenter.y_pos = (short) body[10 + 20 + 2 + tam];
+		boundingBoxCenter.x_pos = (short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
+		boundingBoxCenter.y_pos = (short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
 
 		size_2d boundingBoxSize;
-		boundingBoxSize.x_size = (unsigned short) body[10 + 24 + tam];
-		boundingBoxSize.y_size = (unsigned short) body[10 + 24 + 2 + tam];
+		boundingBoxSize.x_size = (unsigned short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
+		boundingBoxSize.y_size = (unsigned short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
 
 		point_2d objectBoxCenter;
-		objectBoxCenter.x_pos = (short) body[10 + 28 + tam];
-		objectBoxCenter.y_pos = (short) body[10 + 28 + 2 + tam];
+		objectBoxCenter.x_pos = (short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
+		objectBoxCenter.y_pos = (short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
 
 		size_2d objectBoxSize;
-		objectBoxSize.x_size = (unsigned short) body[10 + 32 + tam];
-		objectBoxSize.y_size = (unsigned short) body[10 + 32 + 2 + tam];
+		objectBoxSize.x_size = (unsigned short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
+		objectBoxSize.y_size = (unsigned short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
 
-		short objectBoxOrientation = (short) body[10+36 + tam];
+		short objectBoxOrientation = (short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
 
 		point_2d absoluteVelocity;
-		absoluteVelocity.x_pos = (short) body[10 + 38 + tam];
-		absoluteVelocity.y_pos = (short) body[10 + 38 + 2 + tam];
+		absoluteVelocity.x_pos = (short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
+		absoluteVelocity.y_pos = (short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
 
 		size_2d absoluteVelocitySigma;
-		absoluteVelocitySigma.x_size = (unsigned short) body[10 + 42 + tam];
-		absoluteVelocitySigma.y_size = (unsigned short) body[10 + 42 + 2 + tam];
+		absoluteVelocitySigma.x_size = (unsigned short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
+		absoluteVelocitySigma.y_size = (unsigned short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
 
 		point_2d relativeVelocity;
-		relativeVelocity.x_pos = (short) body[10 + 46 + tam];
-		relativeVelocity.y_pos = (short) body[10 + 46 + 2 + tam];
+		relativeVelocity.x_pos = (short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
+		relativeVelocity.y_pos = (short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
 
-		unsigned short numContourPoints = (unsigned short) body[10+56 + tam];
+		//reserved Class
+		offset += 2;
+
+		// reserved
+		offset += 2;
+
+		// reserved
+		offset += 2;
+
+		unsigned short numContourPoints = (unsigned short) readUValueLE(&(body[offset]), 2);
+		offset += 2;
 
 		objectContent.setObjectId(objectID);
 		objectContent.setObjectAge(objectAge);
@@ -410,19 +478,25 @@ bool vpSickLDMRS::tracking(vpLaserObjectData *objectData)
 		objectContent.setObjectBoxCenter(objectBoxCenter);
 		objectContent.setObjectBoxSize(objectBoxSize);
 		objectContent.setObjectBoxOrientation(objectBoxOrientation);
-		objectContent.setAbsoluteVelocity(absoluteVelocity);
+
+		if (absoluteVelocity.x_pos < -320.0)
+			objectContent.setAbsoluteVelocity(relativeVelocity);
+		else
+			objectContent.setAbsoluteVelocity(absoluteVelocity);
+
 		objectContent.setAbsoluteVelocitySigma(absoluteVelocitySigma);
 		objectContent.setRelativeVelocity(relativeVelocity);
 		objectContent.setNumContourPoints(numContourPoints);
 
 		for(int j = 0; j < numContourPoints; j ++) {
 			point_2d contourPoint;
-			contourPoint.x_pos = (short) body[10 + 58 + tam + j*4];
-			contourPoint.y_pos = (short) body[10 + 58 + 2 +tam + j*4];
+			contourPoint.x_pos = (short) readUValueLE(&(body[offset]), 2);
+			offset += 2;
+			contourPoint.y_pos = (short) readUValueLE(&(body[offset]), 2);
+			offset += 2;
 
 			objectContent.addContourPoint(contourPoint);
 		}
-		tam = 10 + 58 + tam + numContourPoints*4;
 		objectData->addObject(objectContent);
 	}
 

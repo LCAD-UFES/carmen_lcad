@@ -302,7 +302,7 @@ typedef struct {
 logger_callback_t logger_callbacks[] =
 	{
 		{"LASER_LDMRS", CARMEN_LASER_LDMRS_NAME, (converter_func) carmen_string_to_laser_ldmrs_message, &laser_ldmrs, 0},
-		{"LASER_LDMRS_OBJECTS", CARMEN_LASER_LDMRS_NAME, (converter_func) carmen_string_to_laser_ldmrs_objects_message, &laser_ldmrs_objects, 0},
+		{"LASER_LDMRS_OBJECTS", CARMEN_LASER_LDMRS_OBJECTS_NAME, (converter_func) carmen_string_to_laser_ldmrs_objects_message, &laser_ldmrs_objects, 0},
 		{"RAWLASER1", CARMEN_LASER_FRONTLASER_NAME, (converter_func) carmen_string_to_laser_laser_message, &rawlaser1, 0},
 		{"RAWLASER2", CARMEN_LASER_REARLASER_NAME, (converter_func) carmen_string_to_laser_laser_message, &rawlaser2, 0},
 		{"RAWLASER3", CARMEN_LASER_LASER3_NAME, (converter_func) carmen_string_to_laser_laser_message, &rawlaser3, 0},

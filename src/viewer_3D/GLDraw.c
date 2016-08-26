@@ -623,15 +623,14 @@ draw_ldmrs_objects(carmen_laser_ldmrs_object *ldmrs_objects_tracking, int num_ld
 
 		pos.position.x = ldmrs_objects_tracking[i].x;
 		pos.position.y = ldmrs_objects_tracking[i].y;
+		pos.position.z = 0.85;
 
-
-		pos.position.z = 0.0;
 		pos.orientation.yaw = ldmrs_objects_tracking[i].orientation;
 
 		W = ldmrs_objects_tracking[i].width;
 		L = ldmrs_objects_tracking[i].lenght;
 
-		H = 1.0;
+		H = 0.0;
 
 //		W = moving_objects_tracking[i].width;
 //		L = moving_objects_tracking[i].length;
