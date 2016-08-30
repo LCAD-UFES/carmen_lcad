@@ -436,7 +436,7 @@ calculate_disired_test_signal(int t)
 
 
 	if(t<3000){
-		result = sin_signal(t, 0.001);            //frequence = (1/40)update_control_output_pid
+		result = sin_signal(t, 0.05);            //frequence = (1/40)update_control_output_pid
 	}else{
 		if(t<6500){
 			result = square_signal(t,500); //sinal quadrangular
