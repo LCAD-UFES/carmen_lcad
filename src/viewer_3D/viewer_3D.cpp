@@ -892,7 +892,8 @@ carmen_laser_ldmrs_objects_message_handler(carmen_laser_ldmrs_objects_message* l
 			carmen_test_alloc(ldmrs_objects_tracking);
 		}
 
-		for(int i = 0; i < num_ldmrs_objects; i++){
+		for(int i = 0; i < num_ldmrs_objects; i++)
+		{
 			ldmrs_objects_tracking[i].id = laser_message->objects_list[i].id;
 			ldmrs_objects_tracking[i].lenght = laser_message->objects_list[i].lenght;
 			ldmrs_objects_tracking[i].width = laser_message->objects_list[i].width;
@@ -900,6 +901,7 @@ carmen_laser_ldmrs_objects_message_handler(carmen_laser_ldmrs_objects_message* l
 			ldmrs_objects_tracking[i].velocity = laser_message->objects_list[i].velocity;
 			ldmrs_objects_tracking[i].x = laser_message->objects_list[i].x + front_bullbar_pose.position.x + car_fused_pose.position.x;
 			ldmrs_objects_tracking[i].y = laser_message->objects_list[i].y + front_bullbar_pose.position.y + car_fused_pose.position.y;
+			ldmrs_objects_tracking[i].classId = laser_message->objects_list[i].classId;
 		}
     }
 }
@@ -2037,6 +2039,9 @@ draw_loop(window *w)
 			
             draw_laser_points(ldmrs_points, ldmrs_points_car, ldmrs_size);
 			draw_laser_points(front_bullbar_middle_laser_points, front_bullbar_middle_laser_points, ldmrs_size);
+
+			draw_ldmrs_objects(ldmrs_objects_tracking, num_ldmrs_objects);
+
         }
         else if (draw_points_flag == 2)
         {
@@ -2093,7 +2098,6 @@ draw_loop(window *w)
 
 		   draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset);
 		   draw_tracking_moving_objects(moving_objects_tracking, current_num_point_clouds, offset, draw_particles_flag);
-		   draw_ldmrs_objects(ldmrs_objects_tracking, num_ldmrs_objects);
         }
 
         if (draw_gps_flag)
@@ -2228,6 +2232,8 @@ draw_loop2(window *w)
         {
             draw_laser_points(laser_points, laser_points_car, laser_size);
             draw_laser_points(ldmrs_points, ldmrs_points_car, ldmrs_size);
+
+            draw_ldmrs_objects(ldmrs_objects_tracking, num_ldmrs_objects);
         }
         else if (draw_points_flag == 2)
         {
@@ -2271,7 +2277,6 @@ draw_loop2(window *w)
 
            draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset);
            draw_tracking_moving_objects(moving_objects_tracking, current_num_point_clouds, offset, draw_particles_flag);
-           draw_ldmrs_objects(ldmrs_objects_tracking, num_ldmrs_objects);
         }
 
         if (draw_gps_flag)

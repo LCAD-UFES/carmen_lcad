@@ -101,7 +101,8 @@ public:
 	enum DataType {
 		MeasuredData = 0x2202,      ///< Flag to indicate that the body of a message contains measured data.
 		ObjectData = 0x2221,
-		EgoMotionData = 0x2850
+		EgoMotionData = 0x2850,
+		ErrorData = 0x2030
 	};
 
 	vpSickLDMRS();
@@ -118,6 +119,7 @@ public:
 	bool measure(vpLaserScan laserscan[4]);
 	bool tracking(vpLaserObjectData *objectData);
 	bool sendEgoMotionData(short velocity, short steeringWheelAngle, short yawRate);
+	bool getErrors();
 
 protected:
 

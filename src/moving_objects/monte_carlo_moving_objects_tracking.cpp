@@ -69,6 +69,11 @@ sample_motion_model(double delta_time, particle_datmo_t particle_t_1, double mea
 	particle_t.model_features = get_obj_model_features(particle_t.class_id);
 //	particle_t.model_features_3d = get_obj_model_features_3d(particle_t.class_id, object_models_3d);
 
+	if(mean > 0 && mean_particle.dist > 0)
+	{
+
+	}
+
 	return particle_t;
 }
 
@@ -569,28 +574,28 @@ algorithm_monte_carlo(std::vector<particle_datmo_t> particle_set_t_1, double x, 
 	particle_datmo_t particle_t;
 	double total_weight = 0.0;
 	//double sigma = 3.0;	// todo Verificar a variância mais adequada
-	double total_dist = 0.0;
+	//double total_dist = 0.0;
 
-	double sum_dist = 0;
+//	double sum_dist = 0;
 	double mean_dist = 0;
-	double sum_var = 0;
-	double var, tmp;
+//	double sum_var = 0;
+//	double var, tmp;
 	// obtenção da media
-	for (std::vector<particle_datmo_t>::iterator it = particle_set_t_1.begin(); it != particle_set_t_1.end(); ++it)
-	{
-		it->dist = measurement_model(*it, x, y, pcl_cloud, obj_geometry, car_global_position);
-		sum_dist += it->dist;
-	}
-	mean_dist = sum_dist / num_of_particles;
-
-
-	// obtencao da variancia
-	for (std::vector<particle_datmo_t>::iterator it = particle_set_t_1.begin(); it != particle_set_t_1.end(); ++it)
-	{
-		tmp = mean_dist - it->dist;
-		sum_var += (tmp * tmp);
-	}
-	var = sum_var/num_of_particles;
+//	for (std::vector<particle_datmo_t>::iterator it = particle_set_t_1.begin(); it != particle_set_t_1.end(); ++it)
+//	{
+//		it->dist = measurement_model(*it, x, y, pcl_cloud, obj_geometry, car_global_position);
+//		sum_dist += it->dist;
+//	}
+//	mean_dist = sum_dist / num_of_particles;
+//
+//
+//	// obtencao da variancia
+//	for (std::vector<particle_datmo_t>::iterator it = particle_set_t_1.begin(); it != particle_set_t_1.end(); ++it)
+//	{
+//		tmp = mean_dist - it->dist;
+//		sum_var += (tmp * tmp);
+//	}
+//	var = sum_var/num_of_particles;
 //
 //	sigma = sqrt(mean_dist);
 
@@ -626,6 +631,8 @@ algorithm_monte_carlo(std::vector<particle_datmo_t> particle_set_t_1, double x, 
 	/* Resample */
 	//if (mean_particle.velocity > threshold_min_velocity) // teste para fazer o resample com velocidades altas
 		resample(particle_set_t);
+
+	num_association = num_association + 1;
 
 	return particle_set_t;
 }

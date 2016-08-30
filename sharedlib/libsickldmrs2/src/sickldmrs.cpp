@@ -295,8 +295,8 @@ bool vpSickLDMRS::measure(vpLaserScan laserscan[4])
 		ushortptr = (unsigned short *) (body+44+i*10);
 		unsigned char layer = ((unsigned char)  body[44+i*10])&0x0F;
 		unsigned char echo  = ((unsigned char)  body[44+i*10])>>4;
-		//unsigned char flags = (unsigned char)  body[44+i*10+1];
-
+		unsigned char flags = (unsigned char)  body[44+i*10+1];
+		scanPoint.setFlags(flags);
 		if (echo==0) {
 			hAngle = (2.f * M_PI / numSteps)*(short) ushortptr[1];
 			rDist = 0.01 * ushortptr[2]; // cm to meters conversion
@@ -455,6 +455,7 @@ bool vpSickLDMRS::tracking(vpLaserObjectData *objectData)
 		offset += 2;
 
 		//reserved Class
+		unsigned short classification = (unsigned short) readUValueLE(&(body[offset]), 2);
 		offset += 2;
 
 		// reserved
@@ -486,6 +487,7 @@ bool vpSickLDMRS::tracking(vpLaserObjectData *objectData)
 
 		objectContent.setAbsoluteVelocitySigma(absoluteVelocitySigma);
 		objectContent.setRelativeVelocity(relativeVelocity);
+		objectContent.setClassification(classification);
 		objectContent.setNumContourPoints(numContourPoints);
 
 		for(int j = 0; j < numContourPoints; j ++) {
@@ -507,7 +509,6 @@ bool vpSickLDMRS::sendEgoMotionData(short velocity, short steeringWheelAngle, sh
 {
 	unsigned int *uintptr;
 	unsigned short *ushortptr;
-	short *shortptr;
 	static unsigned char header[24];
 	ushortptr=(unsigned short *)header;
 	uintptr=(unsigned int *)header;
@@ -526,20 +527,160 @@ bool vpSickLDMRS::sendEgoMotionData(short velocity, short steeringWheelAngle, sh
 		return false;
 	}
 
-	ushortptr = (unsigned short *) body;
-	shortptr = (short int *) body;
+	// version
+	body[0] = 0x01;
+	body[1] = 0x00;
 
-	ushortptr[0] = 1;
-	shortptr[1] = velocity;
-	shortptr[2] = 0;
-	shortptr[3] = steeringWheelAngle;
-	shortptr[4] = yawRate;
+	// velocity
+	body[2] = (unsigned char) velocity & 0x00FF;
+	body[3] = (unsigned char) ((velocity & 0xFF00) >> 8);
+
+	// reserved
+	body[4] = 0x00;
+	body[5] = 0x00;
+
+	// steering wheel angle
+	body[6] = (unsigned char) steeringWheelAngle & 0x00FF;
+	body[7] = (unsigned char) ((steeringWheelAngle & 0xFF00) >> 8);
+
+	// yaw rate
+	body[8] = (unsigned char) yawRate & 0x00FF;
+	body[9] = (unsigned char) ((yawRate & 0xFF00) >> 8);
 
 	if(send(socket_fd, body, 10, MSG_WAITALL) == -1)
 	{
 		printf("send\n");
 		perror("send");
 		return false;
+	}
+	return true;
+}
+
+bool vpSickLDMRS::getErrors()
+{
+	unsigned int *uintptr;
+	unsigned short *ushortptr;
+	static unsigned char header[24];
+	ushortptr=(unsigned short *)header;
+	uintptr=(unsigned int *)header;
+
+	assert (sizeof(header) == 24);
+
+	// read the 24 bytes header
+	if (recv(socket_fd, header, sizeof(header), MSG_WAITALL) == -1) {
+		printf("recv\n");
+		perror("recv");
+		return false;
+	}
+
+	if (ntohl(uintptr[0]) != vpSickLDMRS::MagicWordC2) {
+		printf("Error, wrong magic number !!!\n");
+		return false;
+	}
+
+	// get the message body
+	uint16_t msgtype = ntohs(ushortptr[7]);
+	uint32_t msgLength = ntohl(uintptr[2]);
+
+	ssize_t len = recv(socket_fd, body, msgLength, MSG_WAITALL);
+	if (len != (ssize_t)msgLength){
+		printf("Error, wrong msg length: %d of %d bytes.\n", (int)len, msgLength);
+		return false;
+	}
+
+	if (msgtype!=vpSickLDMRS::ErrorData){
+		//printf("The message in not relative to measured data !!!\n");
+		return false;
+	}
+
+	// decode message
+	unsigned short errorRegister1 = (unsigned short) readUValueLE(&(body[0]), 2);
+	unsigned short errorRegister2 = (unsigned short) readUValueLE(&(body[2]), 2);
+	unsigned short warningRegister1 = (unsigned short) readUValueLE(&(body[4]), 2);
+	unsigned short warningRegister2 = (unsigned short) readUValueLE(&(body[6]), 2);
+
+	// print FPGA error messages
+	if((errorRegister1 & 0x0003) != 0)
+	{
+		printf("FPGA Error: Contact Support.\n");
+	}
+	if((errorRegister1 & 0x000C) != 0)
+	{
+		printf("FPGA Error: decrease scan resolution/frequency/range.\n");
+	}
+	if((errorRegister1 & 0x0010) != 0)
+	{
+		printf("FPGA Error: Contact Support.\n");
+	}
+	if((errorRegister1 & 0x0100) != 0)
+	{
+		printf("FPGA Error: APD Under Temperature, provide heating.\n");
+	}
+	if((errorRegister1 & 0x0200) != 0)
+	{
+		printf("FPGA Error: APD Over Temperature, provide cooling.\n");
+	}
+	if((errorRegister1 & 0x3C00) != 0)
+	{
+		printf("FPGA Error: Contact support.\n");
+	}
+
+	// processor errors
+	if((errorRegister2 & 0x0001) != 0)
+	{
+		printf("DSP Error: Internal communication error. The DSP did not receive any scan data from the FPGA.\n");
+	}
+	if((errorRegister2 & 0x0002) != 0)
+	{
+		printf("DSP Error: Internal communication error. The DSP could not communicate correctly with the FPGA via the control interface.\n");
+	}
+	if((errorRegister2 & 0x0004) != 0)
+	{
+		printf("DSP Error: Internal communication error. The DSP did not receive valid scan data from the FPGA for more than 500 ms.\n");
+	}
+	if((errorRegister2 & 0x0008) != 0)
+	{
+		printf("DSP Error: Contact support.\n");
+	}
+	if((errorRegister2 & 0x0010) != 0)
+	{
+		printf("DSP Error: Incorrect configuration data, load correct configuration values.\n");
+	}
+	if((errorRegister2 & 0x0020) != 0)
+	{
+		printf("DSP Error: Configuration contains incorrect parameters, load correct configuration values.\n");
+	}
+	if((errorRegister2 & 0x0040) != 0)
+	{
+		printf("DSP Error: Data processing timeout, decrease scan resolution or scan frequency.\n");
+	}
+	if((errorRegister2 & 0x0200) != 0)
+	{
+		printf("DSP Error: Severe deviation (> 10\%%) from expected scan frequency. This may indicate motor trouble.\n");
+	}
+	if((errorRegister2 & 0x0400) != 0)
+	{
+		printf("DSP Error: Motor blocked. No rotation of the internal mirror was detected, and automatic restart has failed.\n");
+	}
+
+	// fpga warningg
+	if((warningRegister1 & 0x0008) != 0)
+	{
+		printf("FPGA Warning: Low temperature.\n");
+	}
+	if((warningRegister1 & 0x0010) != 0)
+	{
+		printf("FPGA Warning: High temperature.\n");
+	}
+
+	// dsp warningg
+	if((warningRegister2 & 0x0040) != 0)
+	{
+		printf("DSP Warning: Memory access failure, restart LD-MRS, contact support.\n");
+	}
+	if((warningRegister2 & 0x8000) != 0)
+	{
+		printf("DSP Warning: High temperature.\n");
 	}
 	return true;
 }

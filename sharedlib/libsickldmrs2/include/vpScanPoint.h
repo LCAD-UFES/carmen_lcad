@@ -79,12 +79,14 @@ class vpScanPoint // Note that here VISP_EXPORT should not be added since this c
     this->rDist = 0;
     this->hAngle = 0;
     this->vAngle = 0;
+    this->flags = 0;
   }
   /*! Copy constructor. */
   inline vpScanPoint(const vpScanPoint &scanpoint) {
     this->rDist = scanpoint.rDist;
     this->hAngle = scanpoint.hAngle;
     this->vAngle = scanpoint.vAngle;
+    this->flags = scanpoint.flags;
   }
   /*! 
     Set the polar point coordinates. 
@@ -92,10 +94,11 @@ class vpScanPoint // Note that here VISP_EXPORT should not be added since this c
     \param hAngle : Horizontal angle in radian.
     \param vAngle : Vertical angle in radian.   
   */
-  inline vpScanPoint(double rDist, double hAngle, double vAngle) {
+  inline vpScanPoint(double rDist, double hAngle, double vAngle, unsigned char flags) {
     this->rDist = rDist;
     this->hAngle = hAngle;
     this->vAngle = vAngle;
+    this->flags = flags;
   }
   /*! Destructor that does nothing. */
   inline virtual ~vpScanPoint() {};
@@ -160,6 +163,13 @@ class vpScanPoint // Note that here VISP_EXPORT should not be added since this c
    
   friend inline std::ostream &operator << (std::ostream &s, const vpScanPoint &p);
 
+  inline unsigned char getFlags() const {
+	  return this->flags;
+  }
+
+  inline void setFlags(unsigned char flags) {
+	  this->flags = flags;
+  }
    /*!
      
      Returns true if sp1 and sp2 are equal; otherwire returns false.
@@ -211,6 +221,7 @@ class vpScanPoint // Note that here VISP_EXPORT should not be added since this c
    double rDist;
    double hAngle;
    double vAngle;
+   unsigned char flags;
 };
 
 /*!
