@@ -29,10 +29,12 @@ static char* gps_gpgga_output_filename = "gps.txt";
 static char* gps_xyz_output_filename = "gps_xyz.csv";
 static char* fused_odometry_output_filename = "fused_odometry.txt";
 static char* car_odometry_output_filename = "car_odometry.txt";
+static char* globalpos_output_filename = "globalpos.txt";
 static FILE* gps_gpgga_output_file = NULL;
 static FILE* gps_xyz_output_file = NULL;
 static FILE* fused_odometry_output_file = NULL;
 static FILE* car_odometry_output_file = NULL;
+static FILE* globalpos_output_file = NULL;
 static long message_index = 0;
 
 static unsigned short int m_gamma[2048];
@@ -45,6 +47,10 @@ static carmen_base_ackerman_odometry_message car_odometry_message_buffer[100];
 
 static int imu_odometry_message_index = 0;
 static carmen_xsens_global_quat_message imu_odometry_message_buffer[100];
+
+static int globalpos_message_index = 0;
+static carmen_localize_ackerman_globalpos_message globalpos_message_buffer[100];
+
 
 int
 find_nearest_gps_xyz_message(double timestamp)
@@ -78,6 +84,28 @@ find_nearest_odometry_message(double timestamp)
 				nearest_index = i;
 			}
 
+	return nearest_index;
+}
+
+
+int
+find_nearest_globalpos_message(double timestamp)
+{
+	int i, nearest_index = -1;
+	double shortest_interval = MAXDOUBLE;
+
+	for (i = 0; i < 100; i++)
+	{
+		if (globalpos_message_buffer[i].host != NULL)
+		{
+			double delta_t = timestamp - globalpos_message_buffer[i].timestamp;
+			if ((delta_t > 0.0) && (delta_t < shortest_interval))
+			{
+				shortest_interval = delta_t;
+				nearest_index = i;
+			}
+		}
+	}
 	return nearest_index;
 }
 
@@ -236,6 +264,7 @@ save_stereo_image_to_file(carmen_simple_stereo_disparity_message *stereo_message
 	cvRelease((void**) &reference_img);
 }
 
+
 void
 save_odom_metadata_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int camera)
 {
@@ -263,6 +292,43 @@ save_odom_metadata_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_im
 						stereo_image->timestamp, left_img_filename, right_img_filename
 				);
 				fflush(car_odometry_output_file);
+			}
+		}
+	}
+}
+
+
+void
+save_globalpos_metadata_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int camera)
+{
+	int nearest_globalpos_message_index = -1;
+	char *left_img_filename, *right_img_filename;
+
+	if (stereo_image != NULL)
+	{
+		nearest_globalpos_message_index = find_nearest_globalpos_message(stereo_image->timestamp);
+		if (nearest_globalpos_message_index >= 0)
+		{
+			create_stereo_filename_from_timestamp(stereo_image->timestamp, &left_img_filename, &right_img_filename, camera);
+
+			if (globalpos_output_file != NULL)
+			{
+				double x = globalpos_message_buffer[nearest_globalpos_message_index].globalpos.x;
+				double y = globalpos_message_buffer[nearest_globalpos_message_index].globalpos.y;
+				double theta = globalpos_message_buffer[nearest_globalpos_message_index].globalpos.theta;
+				double v = globalpos_message_buffer[nearest_globalpos_message_index].v;
+				double delta_t = stereo_image->timestamp -
+						globalpos_message_buffer[nearest_globalpos_message_index].timestamp;
+
+				x += v * delta_t * cos(theta);
+				y += v * delta_t * sin(theta);
+
+				fprintf(globalpos_output_file, "%.3lf;%.3lf;%.3lf;%.3lf;%.25lf;%s;%s\n",
+						x, y, theta, v,
+						stereo_image->timestamp,
+						left_img_filename, right_img_filename
+				);
+				fflush(globalpos_output_file);
 			}
 		}
 	}
@@ -357,6 +423,7 @@ bumblebee_basic_handler_7(carmen_bumblebee_basic_stereoimage_message *stereo_ima
 void
 bumblebee_basic_handler_8(carmen_bumblebee_basic_stereoimage_message *stereo_image)
 {
+	save_globalpos_metadata_to_file(stereo_image, 8);
 	save_odom_metadata_to_file(stereo_image, 8);
 	save_gps_metadata_to_file(stereo_image, 8);
 	save_image_to_file(stereo_image, 8);
@@ -456,6 +523,7 @@ fused_odometry_handler(carmen_fused_odometry_message *fused_odometry_message)
 {
 	printf("fused_odometry_handler is not implemented yet! timestamp: %.25f\n", fused_odometry_message-> timestamp);
 }
+
 
 void
 shutdown_module(int signo)
@@ -696,6 +764,13 @@ xsens_mti_message_handler(carmen_xsens_global_quat_message *xsens_xyz)
 }
 
 
+static void
+localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *globalpos)
+{
+	globalpos_message_buffer[(globalpos_message_index + 1) % 100] = *globalpos;
+}
+
+
 void
 initialize_module_args(int argc, char **argv)
 {
@@ -703,7 +778,7 @@ initialize_module_args(int argc, char **argv)
 	// foram passados corretamente
 	if (argc < 2)
 	{
-		printf("Use: \n %s [bumblebee | gps | fused_odometry | kinect] [<output_path>]\n\n", argv[0]);
+		printf("Use: \n %s see code\n\n", argv[0]);
 		printf("\nOBS: output_path must be used if sensor is bumblebee or kinect.\n\n");
 		exit(-1);
 	}
@@ -734,6 +809,11 @@ initialize_module_args(int argc, char **argv)
 				carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) car_odometry_message_handler, CARMEN_SUBSCRIBE_ALL);
 				carmen_xsens_subscribe_xsens_global_quat_message(NULL, (carmen_handler_t) xsens_mti_message_handler, CARMEN_SUBSCRIBE_ALL);
 				car_odometry_output_file = fopen(car_odometry_output_filename, "w");
+			}
+			else if (!strcmp(argv[3], "with_globalpos"))
+			{
+				carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
+				globalpos_output_file = fopen(globalpos_output_filename, "w");
 			}
 		}
 

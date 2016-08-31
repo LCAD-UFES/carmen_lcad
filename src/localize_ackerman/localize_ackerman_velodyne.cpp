@@ -471,6 +471,7 @@ debug_remission_map_velodyne(carmen_velodyne_partial_scan_message *velodyne_mess
 }
 
 
+// Computes local_compacted_map and local_compacted_mean_remission_map maps
 int
 localize_ackerman_velodyne_partial_scan(carmen_velodyne_partial_scan_message *velodyne_message, sensor_parameters_t *velodyne_params, sensor_data_t *velodyne_data,
 					carmen_vector_3D_t *robot_velocity, double phi)
@@ -523,22 +524,21 @@ localize_ackerman_velodyne_partial_scan(carmen_velodyne_partial_scan_message *ve
 							&local_sum_remission_map, &local_sum_sqr_remission_map, &local_count_remission_map);
 
 		carmen_prob_models_free_compact_map(&local_compacted_map);
-//		carmen_prob_models_free_compact_map(&local_compacted_mean_remission_map);
+		carmen_prob_models_free_compact_map(&local_compacted_mean_remission_map);
 //		carmen_prob_models_free_compact_map(&local_compacted_variance_remission_map);
 
+		// Build local_compacted_map from local_map computed by compute_laser_rays_from_velodyne_and_create_a_local_map()
 		carmen_prob_models_create_compact_map(&local_compacted_map, &local_map, -1.0);
 		carmen_prob_models_create_compact_map(&local_compacted_mean_remission_map, &local_mean_remission_map, -1.0);
 //		carmen_prob_models_create_compact_map(&local_compacted_variance_remission_map, &local_variance_remission_map, -1.0);
 
-//		create_binary_map(&binary_map, local_compacted_mean_remission_map);
-
+		// Clear maps for next point cloud
 		carmen_prob_models_clear_carmen_map_using_compact_map(&local_map, &local_compacted_map, -1.0);
 		carmen_prob_models_clear_carmen_map_using_compact_map(&local_mean_remission_map, &local_compacted_mean_remission_map, -1.0);
 //		carmen_prob_models_clear_carmen_map_using_compact_map(&local_variance_remission_map, &local_compacted_variance_remission_map, -1.0);
 		carmen_prob_models_clear_carmen_map_using_compact_map(&local_sum_remission_map, &local_compacted_mean_remission_map, -1.0);
 //		carmen_prob_models_clear_carmen_map_using_compact_map(&local_sum_sqr_remission_map, &local_compacted_variance_remission_map, -1.0);
 		carmen_prob_models_clear_carmen_map_using_compact_map(&local_count_remission_map, &local_compacted_mean_remission_map, -1.0);
-
 
 		if (velodyne_message_id > 1000000)
 			velodyne_message_id = 0;

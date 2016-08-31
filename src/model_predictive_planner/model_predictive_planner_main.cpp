@@ -674,7 +674,7 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 
 
 static void
-carmen_mapper_distance_map_message_handler(carmen_mapper_distance_map_message *message)
+carmen_mapper_distance_map_message_handler(carmen_obstacle_distance_mapper_message *message)
 {
 	GlobalState::distance_map = message;
 }
@@ -766,7 +766,7 @@ register_handlers_specific()
 			(carmen_handler_t)navigator_ackerman_set_goal_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_grid_mapping_distance_map_subscribe_message(NULL,
+	carmen_obstacle_distance_mapper_subscribe_message(NULL,
 			(carmen_handler_t) carmen_mapper_distance_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 

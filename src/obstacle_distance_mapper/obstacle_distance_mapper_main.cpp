@@ -8,151 +8,19 @@
 #include <iostream>
 #include <string.h>
 
-#define      HUGE_DISTANCE     32000
-
 
 double obstacle_probability_threshold 	= 0.5;
 double obstacle_cost_distance 			= 1.0;
 
 carmen_map_t 						 map;
 carmen_map_t 						 cost_map;
-carmen_mapper_distance_map 	 distance_map;
+carmen_prob_models_distance_map 	 distance_map;
 
 using namespace std;
 
 
-inline void
-compute_intermediate_pixel_distance(int x, int y,
-		double **distance, short int **x_offset, short int **y_offset)
-{
-	for (int i = -1; i < 2; i++)
-		for (int j = -1; j < 2; j++)
-		{
-			double v = distance[x + i][y + j] + ((i * j != 0) ? 1.414213562 : 1.0);
-			if (v < distance[x][y])
-			{
-				int xpi = x + i;
-				int ypj = y + j;
-				distance[x][y] = v;
-				x_offset[x][y] = x_offset[xpi][ypj] + i;
-				y_offset[x][y] = y_offset[xpi][ypj] + j;
-			}
-		}
-}
-
-
 void
-carmen_mapper_initialize_distance_map(carmen_mapper_distance_map *lmap, carmen_map_p cmap)
-{
-	int i;
-
-	if (lmap->complete_distance == NULL)
-	{
-		/* copy map parameters from carmen map */
-		lmap->config = cmap->config;
-
-		/* allocate distance map */
-		lmap->complete_distance = (double *) calloc(
-				lmap->config.x_size * lmap->config.y_size, sizeof(double));
-		carmen_test_alloc(lmap->complete_distance);
-
-		lmap->distance = (double **) calloc(lmap->config.x_size,
-				sizeof(double *));
-		carmen_test_alloc(lmap->distance);
-
-		/* allocate x offset map */
-		lmap->complete_x_offset = (short int *) calloc(
-				lmap->config.x_size * lmap->config.y_size, sizeof(short int));
-		carmen_test_alloc(lmap->complete_x_offset);
-		lmap->x_offset = (short int **) calloc(lmap->config.x_size,
-				sizeof(short int *));
-		carmen_test_alloc(lmap->x_offset);
-		/* allocate y offset map */
-		lmap->complete_y_offset = (short int *) calloc(
-				lmap->config.x_size * lmap->config.y_size, sizeof(short int));
-		carmen_test_alloc(lmap->complete_y_offset);
-		lmap->y_offset = (short int **) calloc(lmap->config.x_size,
-				sizeof(short int *));
-		carmen_test_alloc(lmap->y_offset);
-	}
-	else
-	{
-		/* copy map parameters from carmen map */
-		lmap->config = cmap->config;
-
-		memset(lmap->complete_distance, 0,
-				lmap->config.x_size * lmap->config.y_size * sizeof(double));
-		memset(lmap->distance, 0, lmap->config.x_size * sizeof(double *));
-		memset(lmap->complete_x_offset, 0,
-				lmap->config.x_size * lmap->config.y_size * sizeof(short int));
-		memset(lmap->x_offset, 0, lmap->config.x_size * sizeof(short int *));
-		memset(lmap->complete_y_offset, 0,
-				lmap->config.x_size * lmap->config.y_size * sizeof(short int));
-		memset(lmap->y_offset, 0, lmap->config.x_size * sizeof(short int *));
-	}
-
-	for (i = 0; i < lmap->config.x_size; i++)
-	{
-		lmap->distance[i] = lmap->complete_distance + i * lmap->config.y_size;
-		lmap->x_offset[i] = lmap->complete_x_offset + i * lmap->config.y_size;
-		lmap->y_offset[i] = lmap->complete_y_offset + i * lmap->config.y_size;
-	}
-}
-
-
-/* compute minimum distance to all occupied cells */
-void
-carmen_mapper_create_distance_map(carmen_mapper_distance_map *lmap, carmen_map_p map,
-		double minimum_occupied_prob)
-{
-	int x, y;
-
-	lmap->config = map->config;
-
-	double **cmap_map = map->map;
-	double **distance = lmap->distance;
-	short int **x_offset = lmap->x_offset;
-	short int **y_offset = lmap->y_offset;
-
-	int x_size = lmap->config.x_size;
-	int y_size = lmap->config.y_size;
-
-	int total_size = x_size * y_size;
-	std::fill_n(lmap->complete_distance, total_size, HUGE_DISTANCE);
-	std::fill_n(lmap->complete_x_offset, total_size, HUGE_DISTANCE);
-	std::fill_n(lmap->complete_y_offset, total_size, HUGE_DISTANCE);
-
-	/* Initialize the distance measurements before dynamic programming */
-	for (x = 0; x < x_size; x++)
-	{
-		for (y = 0; y < y_size; y++)
-		{
-			if (cmap_map[x][y] > minimum_occupied_prob)
-			{
-				distance[x][y] = 0.0;
-				x_offset[x][y] = 0.0;
-				y_offset[x][y] = 0.0;
-			}
-		}
-	}
-
-	/* Use dynamic programming to estimate the minimum distance from
-     every map cell to an occupied map cell */
-
-	/* pass 1 */
-	for (x = 1; x < x_size - 1; x++)
-		for (y = 1; y < y_size - 1; y++)
-			compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
-
-	/* pass 2 */
-	for (x = x_size - 2; x >= 1; x--)
-		for (y = y_size - 2; y >= 1; y--)
-			compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
-}
-
-
-void
-carmen_mapper_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t *map, carmen_mapper_distance_map *distance_map, double distance_for_zero_cost_in_pixels)
+carmen_mapper_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t *map, carmen_prob_models_distance_map *distance_map, double distance_for_zero_cost_in_pixels)
 {
 	carmen_prob_models_initialize_cost_map(cost_map, map, map->config.resolution);
 
@@ -178,10 +46,10 @@ void
 mapper_publish_distance_map(double timestamp, double obstacle_probability_threshold)
 {
 	if (distance_map.complete_distance == NULL)
-		carmen_mapper_initialize_distance_map(&distance_map, &map);
+		carmen_prob_models_initialize_distance_map(&distance_map, &map);
 
-	carmen_mapper_create_distance_map(&distance_map, &map, obstacle_probability_threshold);
-	carmen_grid_mapping_publish_distance_map_message(&distance_map, timestamp);
+	carmen_prob_models_create_distance_map(&distance_map, &map, obstacle_probability_threshold);
+	carmen_obstacle_distance_mapper_publish_distance_map_message(&distance_map, timestamp);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////

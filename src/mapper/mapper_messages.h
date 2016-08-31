@@ -43,33 +43,6 @@ typedef struct
 #define CARMEN_MAPPER_COMPACT_MAP_MESSAGE_FMT		"{<int:4>, <int:4>, <double:4>, int, {int, int, double, [byte:64], string, double, double}, double, string}"
 
 
-typedef struct
-{
-	carmen_map_config_t config;
-	short int *complete_x_offset;
-	short int *complete_y_offset;
-	short int **x_offset;
-	short int **y_offset;
-	double *complete_distance;
-	double **distance;
-} carmen_mapper_distance_map;
-
-#define CARMEN_MAPPER_DISTANCE_MAP_MESSAGE_NAME	"carmen_mapper_distance_map"
-#define CARMEN_MAPPER_DISTANCE_MAP_MESSAGE_FMT	"{{int, int, double, [byte:64], string, double, double}, int, <short:2>, <short:2>, double, string}"
-
-
-//typedef struct
-//{
-//	carmen_map_config_t config;
-//	int size;
-//	short int *complete_x_offset;
-//	short int *complete_y_offset;
-//	double timestamp;
-//	char *host;
-//} carmen_mapper_distance_map_message;
-//
-
-
 #ifdef __cplusplus
 }
 #endif
