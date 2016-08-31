@@ -209,6 +209,14 @@ public:
 		this->relativeVelocity = relativeVelocity;
 	}
 
+	inline unsigned short int getClassification() const {
+		return classification;
+	}
+
+	inline void setClassification(unsigned short int classification) {
+		this->classification = classification;
+	}
+
 private:
 	unsigned short int objectID;
 	unsigned short int objectAge;
@@ -225,6 +233,7 @@ private:
 	point_2d absoluteVelocity;
 	size_2d absoluteVelocitySigma;
 	point_2d relativeVelocity;
+	unsigned short int classification;
 	unsigned short int numContourPoints;
 	std::vector<point_2d> listContourPoints;
 };

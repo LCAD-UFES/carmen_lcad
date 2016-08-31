@@ -458,6 +458,7 @@ char *carmen_string_to_laser_ldmrs_message(char *string,
 	    laser->arraypoints[i].horizontal_angle = CLF_READ_DOUBLE(&current_pos);
 	    laser->arraypoints[i].vertical_angle = CLF_READ_DOUBLE(&current_pos);
 	    laser->arraypoints[i].radial_distance = CLF_READ_DOUBLE(&current_pos);
+	    laser->arraypoints[i].flags = CLF_READ_INT(&current_pos);
 	}
 
 	laser->timestamp = CLF_READ_DOUBLE(&current_pos);
@@ -493,6 +494,7 @@ char *carmen_string_to_laser_ldmrs_objects_message(char *string,
 		laserObjects->objects_list[i].width = CLF_READ_DOUBLE(&current_pos);
 		laserObjects->objects_list[i].velocity = CLF_READ_DOUBLE(&current_pos);
 		laserObjects->objects_list[i].orientation = CLF_READ_DOUBLE(&current_pos);
+		laserObjects->objects_list[i].classId = CLF_READ_INT(&current_pos);
 	}
 
 	laserObjects->timestamp = CLF_READ_DOUBLE(&current_pos);

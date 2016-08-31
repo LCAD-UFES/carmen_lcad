@@ -1,6 +1,6 @@
 include $(CARMEN_HOME)/src/Makefile.conf
 
-SUBDIRS += pid mpc
+SUBDIRS += pid mpc rlpid
 
 MODULE_NAME = LIBCONTROL
 MODULE_COMMENT = Low Level Control Library

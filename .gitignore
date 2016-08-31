@@ -393,6 +393,12 @@ sharedlib/libcontrol/pid/pid.o
 sharedlib/libcontrol/mpc/libmpc.a
 sharedlib/libcontrol/mpc/Makefile.depend
 sharedlib/libcontrol/mpc/mpc.o
+sharedlib/libcontrol/rlpid/b.txt
+sharedlib/libcontrol/rlpid/e.txt
+sharedlib/libcontrol/rlpid/librlpid.a
+sharedlib/libcontrol/rlpid/Makefile.depend
+sharedlib/libcontrol/rlpid/rlpid
+sharedlib/libcontrol/rlpid/rlpid.o
 sharedlib/libcarneuralmodel/car_neural_model.o
 sharedlib/libcarneuralmodel/libcarneuralmodel.a
 sharedlib/libcarneuralmodel/Makefile.depend

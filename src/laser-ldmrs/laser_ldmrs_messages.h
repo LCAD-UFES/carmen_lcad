@@ -19,6 +19,7 @@ typedef struct {
 	double horizontal_angle;
 	double vertical_angle;
 	double radial_distance;
+	unsigned short flags;
 } carmen_laser_ldmrs_point;
 
 /* Message Struct Example */
@@ -43,6 +44,7 @@ typedef struct {
 	double width;
 	double velocity;
 	double orientation;
+	unsigned short classId;
 } carmen_laser_ldmrs_object;
 
 typedef struct {
@@ -56,11 +58,11 @@ typedef struct {
 #define      CARMEN_LASER_LDMRS_NAME       "carmen_laser_ldmrs"
 
 /* The message's format, will be used for message data marshalling (serialization) for network socket transport. */
-#define      CARMEN_LASER_LDMRS_FMT        "{short,double,double,short,double,double,short,<{double,double,double}:7>,double,string}"
+#define      CARMEN_LASER_LDMRS_FMT        "{short,double,double,short,double,double,short,<{double,double,double,short}:7>,double,string}"
 
 #define		 CARMEN_LASER_LDMRS_OBJECTS_NAME "carmen_laser_ldmrs_objects"
 
-#define		 CARMEN_LASER_LDMRS_OBJECTS_FMT  "{short,<{short,double,double,double,double,double,double}:1>,double,string}"
+#define		 CARMEN_LASER_LDMRS_OBJECTS_FMT  "{short,<{short,double,double,double,double,double,double,short}:1>,double,string}"
 
 #ifdef __cplusplus
 }

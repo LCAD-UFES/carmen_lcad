@@ -21,7 +21,7 @@ using namespace std;
 #define MOVING_OBJECTS_H
 
 //#define AJUSTE			// para ajuste dos parâmetros
-#define BASELINE			// para o baseline
+//#define BASELINE			// para o baseline
 
 #ifdef __cplusplus
 extern "C" {
