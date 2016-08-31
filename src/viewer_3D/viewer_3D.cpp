@@ -813,7 +813,7 @@ generate_octomap_file(point_cloud current_reading, carmen_fused_odometry_message
 static void
 carmen_ldmrs_add_point_cloud(point_cloud* point_cloud, int last_ldmrs_position, int parentsSize, carmen_pose_3D_t** parents, double hAngle, double vAngle, double range, int *j)
 {
-    if (range >= 0.0 && range <= 50.0)
+    if (range >= 0.0 && range <= 200.0)
     {
     	point_cloud[last_ldmrs_position].points[(*j)] = get_ldmrs_reading_position_from_reference(hAngle, vAngle, range, parentsSize, parents);
 
@@ -897,10 +897,12 @@ carmen_laser_ldmrs_objects_message_handler(carmen_laser_ldmrs_objects_message* l
 			ldmrs_objects_tracking[i].id = laser_message->objects_list[i].id;
 			ldmrs_objects_tracking[i].lenght = laser_message->objects_list[i].lenght;
 			ldmrs_objects_tracking[i].width = laser_message->objects_list[i].width;
-			ldmrs_objects_tracking[i].orientation = laser_message->objects_list[i].orientation + car_fused_pose.orientation.yaw;
+			ldmrs_objects_tracking[i].orientation = carmen_normalize_theta(laser_message->objects_list[i].orientation + car_fused_pose.orientation.yaw);
 			ldmrs_objects_tracking[i].velocity = laser_message->objects_list[i].velocity;
-			ldmrs_objects_tracking[i].x = laser_message->objects_list[i].x + front_bullbar_pose.position.x + car_fused_pose.position.x;
-			ldmrs_objects_tracking[i].y = laser_message->objects_list[i].y + front_bullbar_pose.position.y + car_fused_pose.position.y;
+			double x = (laser_message->objects_list[i].x + front_bullbar_pose.position.x) * cos(car_fused_pose.orientation.yaw) - (laser_message->objects_list[i].y + front_bullbar_pose.position.y) * sin(car_fused_pose.orientation.yaw);
+			double y = (laser_message->objects_list[i].x + front_bullbar_pose.position.x) * sin(car_fused_pose.orientation.yaw) + (laser_message->objects_list[i].y + front_bullbar_pose.position.y) * cos(car_fused_pose.orientation.yaw);
+			ldmrs_objects_tracking[i].x = x + car_fused_pose.position.x;
+			ldmrs_objects_tracking[i].y = y + front_bullbar_pose.position.y + car_fused_pose.position.y;
 			ldmrs_objects_tracking[i].classId = laser_message->objects_list[i].classId;
 		}
     }
@@ -2040,8 +2042,6 @@ draw_loop(window *w)
             draw_laser_points(ldmrs_points, ldmrs_points_car, ldmrs_size);
 			draw_laser_points(front_bullbar_middle_laser_points, front_bullbar_middle_laser_points, ldmrs_size);
 
-			draw_ldmrs_objects(ldmrs_objects_tracking, num_ldmrs_objects);
-
         }
         else if (draw_points_flag == 2)
         {
@@ -2098,6 +2098,8 @@ draw_loop(window *w)
 
 		   draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset);
 		   draw_tracking_moving_objects(moving_objects_tracking, current_num_point_clouds, offset, draw_particles_flag);
+
+		   draw_ldmrs_objects(ldmrs_objects_tracking, num_ldmrs_objects);
         }
 
         if (draw_gps_flag)
@@ -2232,8 +2234,6 @@ draw_loop2(window *w)
         {
             draw_laser_points(laser_points, laser_points_car, laser_size);
             draw_laser_points(ldmrs_points, ldmrs_points_car, ldmrs_size);
-
-            draw_ldmrs_objects(ldmrs_objects_tracking, num_ldmrs_objects);
         }
         else if (draw_points_flag == 2)
         {
@@ -2277,6 +2277,8 @@ draw_loop2(window *w)
 
            draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset);
            draw_tracking_moving_objects(moving_objects_tracking, current_num_point_clouds, offset, draw_particles_flag);
+
+           draw_ldmrs_objects(ldmrs_objects_tracking, num_ldmrs_objects);
         }
 
         if (draw_gps_flag)
