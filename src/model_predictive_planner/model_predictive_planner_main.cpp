@@ -641,40 +641,7 @@ behavior_selector_state_message_handler(carmen_behavior_selector_state_message *
 
 
 static void
-map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_message *message)
-{
-	static carmen_compact_map_t *compact_cost_map = NULL;
-
-	if (compact_cost_map == NULL)
-	{
-		carmen_grid_mapping_create_new_map(&GlobalState::cost_map, message->config.x_size, message->config.y_size, message->config.resolution);
-		memset(GlobalState::cost_map.complete_map, 0, GlobalState::cost_map.config.x_size * GlobalState::cost_map.config.y_size * sizeof(double));
-
-		compact_cost_map = (carmen_compact_map_t *) (calloc(1, sizeof(carmen_compact_map_t)));
-		carmen_cpy_compact_cost_message_to_compact_map(compact_cost_map, message);
-		carmen_prob_models_uncompress_compact_map(&GlobalState::cost_map, compact_cost_map);
-	}
-	else
-	{
-		carmen_prob_models_clear_carmen_map_using_compact_map(&GlobalState::cost_map, compact_cost_map, 0.0);
-		carmen_prob_models_free_compact_map(compact_cost_map);
-		carmen_cpy_compact_cost_message_to_compact_map(compact_cost_map, message);
-		carmen_prob_models_uncompress_compact_map(&GlobalState::cost_map, compact_cost_map);
-	}
-
-	GlobalState::cost_map.config = message->config;
-
-//	compute_obstacles_rtree(message);
-//	compute_obstacles_kdtree(message);
-
-//	if(!GlobalState::cost_map_initialized)
-//		create_map_obstacle_mask();
-	GlobalState::cost_map_initialized = true;
-}
-
-
-static void
-carmen_mapper_distance_map_message_handler(carmen_mapper_distance_map_message *message)
+carmen_obstacle_distance_mapper_message_handler(carmen_obstacle_distance_mapper_message *message)
 {
 	GlobalState::distance_map = message;
 }
@@ -766,8 +733,8 @@ register_handlers_specific()
 			(carmen_handler_t)navigator_ackerman_set_goal_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_grid_mapping_distance_map_subscribe_message(NULL,
-			(carmen_handler_t) carmen_mapper_distance_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_obstacle_distance_mapper_subscribe_message(NULL,
+			(carmen_handler_t) carmen_obstacle_distance_mapper_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 

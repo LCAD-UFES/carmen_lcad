@@ -392,7 +392,10 @@ globalpos_ackerman_initialize_from_xsens(carmen_fused_odometry_state_vector init
 	mean.y = initial_state.pose.position.y;
 	mean.theta = initial_state.pose.orientation.yaw;// - 0.35;
 
-	carmen_point_t std = get_std_error(&xsens_handler, fused_odometry_parameters);
+	carmen_point_t std;
+	std.x = fused_odometry_parameters->xsens_gps_x_std_error;
+	std.y = fused_odometry_parameters->xsens_gps_y_std_error;
+	std.theta = fused_odometry_parameters->xsens_yaw_std_error;
 
 	carmen_localize_ackerman_initialize_gaussian_time_command(mean, std, timestamp);
 

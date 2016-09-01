@@ -181,7 +181,7 @@ build_detailed_lane(vector<carmen_ackerman_path_point_t> *lane_in_local_pose, ve
 	if (lane_in_local_pose->size() > 2)
 	{
 		vector<carmen_ackerman_path_point_t> temp_detail;
-		for (int i = 0; i < (lane_in_local_pose->size() - 1); i++)
+		for (unsigned int i = 0; i < (lane_in_local_pose->size() - 1); i++)
 			add_points_to_goal_list_interval(lane_in_local_pose->at(i), lane_in_local_pose->at(i+1), temp_detail);
 
 		//add last point

@@ -8,6 +8,8 @@ extern "C" {
 #include <carmen/carmen.h>
 #include "prob_measurement_model.h"
 
+#define      HUGE_DISTANCE     32000
+
 typedef enum _ProbabilisticMapColor
 {
 	PMC_BLACK = 0,
@@ -124,6 +126,18 @@ typedef struct _sensor_data
 	int *ray_that_hit_the_nearest_target;
 } sensor_data_t;
 
+
+typedef struct
+{
+	carmen_map_config_t config;
+	short int *complete_x_offset;
+	short int *complete_y_offset;
+	short int **x_offset;
+	short int **y_offset;
+	double *complete_distance;
+	double **distance;
+} carmen_prob_models_distance_map;
+
 void init_carmen_map(const ProbabilisticMapParams *params, carmen_map_t *carmen_map);
 void init_probabilistic_grid_map_model(ProbabilisticMapParams *params, carmen_map_t *carmen_map);
 void init_probabilistic_map(ProbabilisticMapParams *params, carmen_map_t *carmen_map, ProbabilisticMap *map, int num_particles);
@@ -221,6 +235,10 @@ void carmen_prob_models_initialize_cost_map(carmen_map_t *cost_map, carmen_map_t
 
 void carmen_prob_models_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t *map, double resolution, double obstacle_cost_distance, double occupancy_threshold);
 
+void carmen_prob_models_create_distance_map(carmen_prob_models_distance_map *lmap, carmen_map_p map,
+		double minimum_occupied_prob);
+
+void carmen_prob_models_initialize_distance_map(carmen_prob_models_distance_map *lmap, carmen_map_p cmap);
 
 #ifdef __cplusplus
 }

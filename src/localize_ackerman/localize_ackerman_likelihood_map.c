@@ -27,6 +27,7 @@
  ********************************************************/
 
 #include <carmen/carmen.h>
+#include <prob_map.h>
 #include "localize_ackerman_core.h"
 
 #define      HUGE_DISTANCE     32000
@@ -43,7 +44,7 @@ carmen_localize_ackerman_create_distance_map(carmen_localize_ackerman_map_p lmap
 
 	for (x = 0; x < lmap->config.x_size; x++)
 	{
-		for (y = 0; y < lmap->config.y_size; y++) 
+		for (y = 0; y < lmap->config.y_size; y++)
 		{
 			lmap->distance[x][y] = HUGE_DISTANCE;
 			lmap->x_offset[x][y] = HUGE_DISTANCE;
@@ -348,11 +349,25 @@ carmen_to_localize_ackerman_map(carmen_map_p cmap,
 {
 	carmen_localize_ackerman_initialize_localize_map(lmap, cmap);
 
+	static carmen_prob_models_distance_map *distance_map = NULL;
+
+	if (distance_map == NULL)
+	{
+		distance_map =  (carmen_prob_models_distance_map *)calloc(1, sizeof(carmen_prob_models_distance_map));
+		carmen_prob_models_initialize_distance_map(distance_map, cmap);
+	}
+
 	/*add remission map into localize map*/
 	lmap->carmen_mean_remission_map = *mean_remission_map;
 	lmap->carmen_variance_remission_map = *variance_remission_map;
 
-	carmen_localize_ackerman_create_distance_map(lmap, cmap, param->occupied_prob);
+	carmen_prob_models_create_distance_map(distance_map, cmap, param->occupied_prob);
+	lmap->complete_distance = distance_map->complete_distance;
+	lmap->complete_x_offset = distance_map->complete_x_offset;
+	lmap->complete_y_offset = distance_map->complete_y_offset;
+	lmap->distance = distance_map->distance;
+	lmap->x_offset = distance_map->x_offset;
+	lmap->y_offset = distance_map->y_offset;
 
 //	create_likelihood_map(lmap, lmap->prob, param->lmap_std); 
 //	create_likelihood_map(lmap, lmap->gprob, param->global_lmap_std); 
@@ -361,9 +376,10 @@ carmen_to_localize_ackerman_map(carmen_map_p cmap,
 	carmen_localize_ackerman_create_stretched_likelihood_map(lmap->gprob, lmap, param->global_lmap_std, param->global_beam_minlikelihood);
 }
 
-/* Writes a carmen map out to a ppm file */
 
-void carmen_localize_ackerman_write_map_to_ppm(char *filename, 
+/* Writes a carmen map out to a ppm file */
+void
+carmen_localize_ackerman_write_map_to_ppm(char *filename,
 		carmen_localize_ackerman_map_p map)
 {
 	FILE *fp;

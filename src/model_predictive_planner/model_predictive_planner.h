@@ -20,7 +20,7 @@ public:
 
 double compute_distance_to_closest_obstacles(carmen_ackerman_path_point_t path_pose, double circle_radius,
 		carmen_robot_ackerman_config_t *robot_config, Pose *global_pos,
-		carmen_mapper_distance_map_message *distance_map);
+		carmen_obstacle_distance_mapper_message *distance_map);
 
 
 
