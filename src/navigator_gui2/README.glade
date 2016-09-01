@@ -1,0 +1,2 @@
+O arquivo texto que descreve a interface fica em data/gui
+Parte do navitor_gui2 esta no maptools e tambem no global (global_graphics.c)

@@ -351,6 +351,18 @@
                       </object>
                     </child>
                     <child>
+                      <object class="GtkRadioMenuItem" id="menuSuperimposedMaps_RemissionMap">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="label" translatable="yes">Remission Map</property>
+                        <property name="use_underline">True</property>
+                        <property name="draw_as_radio">True</property>
+                        <property name="group">menuSuperimposedMaps_None</property>
+                        <signal name="toggled" handler="on_menuSuperimposedMaps_RemissionMap_toggled" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
                       <object class="GtkRadioMenuItem" id="menuSuperimposedMovingObjects">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
