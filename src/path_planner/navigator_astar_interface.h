@@ -40,7 +40,7 @@
 #ifndef NAVIGATOR_ASTAR_INTERFACE_H
 #define NAVIGATOR_ASTAR_INTERFACE_H
 
-#include <carmen/navigator_astar_messages.h>
+#include "path_planner_messages.h"
 
 #ifdef __cplusplus
 extern "C" {

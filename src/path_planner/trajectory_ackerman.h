@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-#include "navigator_astar_messages.h"
+#include "path_planner_messages.h"
 
 	void check_path_capacity(carmen_planner_path_p path);
 	int carmen_planner_util_add_path_point(carmen_ackerman_traj_point_t point,

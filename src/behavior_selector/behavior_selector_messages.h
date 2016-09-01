@@ -26,12 +26,22 @@ typedef struct {
 #define		CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME		"carmen_behavior_selector_goal_list"
 #define		CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_FMT		"{<{double, double, double, double, double}:2>,int,double,string}"
 
+typedef struct {
+	carmen_ackerman_traj_point_t *goal_list;
+	int size;
+	double timestamp;
+	char *host;
+} carmen_behavior_selector_goal_list_rddf_message;
+
+#define		CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME		"carmen_behavior_selector_goal_list"
+#define		CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_FMT		"{<{double, double, double, double, double}:2>,int,double,string}"
+
 typedef enum {
 	CARMEN_BEHAVIOR_SELECTOR_GRADIENT, CARMEN_BEHAVIOR_SELECTOR_A_STAR, CARMEN_BEHAVIOR_SELECTOR_RRT, CARMEN_BEHAVIOR_SELECTOR_RDDF, CARMEN_BEHAVIOR_SELECTOR_INVALID_PLANNER
 } carmen_behavior_selector_algorithm_t;
 
 typedef enum {
-	CARMEN_BEHAVIOR_SELECTOR_USER_GOAL, CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL
+	CARMEN_BEHAVIOR_SELECTOR_USER_GOAL, CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL, CARMEN_BEHAVIOR_SELECTOR_PATH_PLANNER_GOAL
 } carmen_behavior_selector_goal_source_t;
 
 typedef struct {

@@ -1,5 +1,5 @@
 #include <carmen/carmen.h>
-#include "navigator_astar_messages.h"
+#include "path_planner_messages.h"
 #include "navigator_astar_interface.h"
 
 #include <carmen/behavior_selector_messages.h>

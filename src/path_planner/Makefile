@@ -21,7 +21,7 @@ MODULE_COMMENT = Path Planer pow!
 SOURCES = navigator_astar.cpp conventional_ackerman.c conventional_astar_ackerman.cpp rs.cpp FH/fh.cpp FH/fib.cpp MessageControl.cpp navigator_ackerman_ipc.c \
 	navigator_astar_interface.c trajectory_ackerman.c navigator_precomputed_cost_ackerman.c
 
-PUBLIC_INCLUDES = navigator_astar_messages.h navigator_astar_interface.h navigator_astar.hpp MessageControl.hpp
+PUBLIC_INCLUDES = path_planner_messages.h navigator_astar_interface.h navigator_astar.hpp MessageControl.hpp
 PUBLIC_LIBRARIES =  libnavigator_astar_interface.a libconventional_ackerman.a
 
 PUBLIC_BINARIES = path_planner

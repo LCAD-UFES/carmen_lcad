@@ -1,47 +1,22 @@
-/*********************************************************
- *
- * This source code is part of the Carnegie Mellon Robot
- * Navigation Toolkit (CARMEN)
- *
- * CARMEN Copyright (c) 2002 Michael Montemerlo, Nicholas
- * Roy, Sebastian Thrun, Dirk Haehnel, Cyrill Stachniss,
- * and Jared Glover
- *
- * CARMEN is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public 
- * License as published by the Free Software Foundation; 
- * either version 2 of the License, or (at your option)
- * any later version.
- *
- * CARMEN is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- * PURPOSE.  See the GNU General Public License for more 
- * details.
- *
- * You should have received a copy of the GNU General 
- * Public License along with CARMEN; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, 
- * Suite 330, Boston, MA  02111-1307 USA
- *
- ********************************************************/
-
 /*******************************************
  * library with the functions for the guts *
  * of the simulator                        *
  *******************************************/
+
 #include <carmen/carmen.h>
-#include "simulator_ackerman.h"
-#include "simulator_ackerman_simulation.h"
-#include "objects_ackerman.h"
 #include <carmen/collision_detection.h>
 #include <fann.h>
 #include <fann_train.h>
 #include <fann_data.h>
 #include <floatfann.h>
 #include <pthread.h>
-#include <pid.h>
 #include <car_neural_model.h>
+#include <rlpid.h>
+#include <pid.h>
+#include <mpc.h>
+#include "simulator_ackerman.h"
+#include "simulator_ackerman_simulation.h"
+#include "objects_ackerman.h"
 
 
 #define NUM_VELOCITY_ANN_INPUTS	360
@@ -629,6 +604,9 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 		init_steering_ann_input(steering_ann_input);
 	}
 
+
+	printf("----%d\n", simulator_config->nun_motion_commands);
+
 	atan_current_curvature = atan(compute_curvature(simulator_config->phi, simulator_config));
 	atan_desired_curvature = atan(compute_curvature(simulator_config->target_phi, simulator_config));
 
@@ -636,6 +614,7 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 											atan_current_curvature, simulator_config->delta_t);
 
 	build_steering_ann_input(steering_ann_input, steering_command, atan_current_curvature);
+
 	steering_ann_output = fann_run(steering_ann, steering_ann_input);
 
 	simulator_config->phi = get_phi_from_curvature(tan(steering_ann_output[0]), simulator_config);
@@ -645,7 +624,7 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 
 
 double
-compute_new_phi_with_MPC(carmen_simulator_ackerman_config_t *simulator_config)
+compute_new_phi_on_ann_with_RL_PID(carmen_simulator_ackerman_config_t *simulator_config)
 {
 	static double steering_command = 0.0;
 	double atan_current_curvature;
@@ -668,10 +647,67 @@ compute_new_phi_with_MPC(carmen_simulator_ackerman_config_t *simulator_config)
 	atan_current_curvature = atan(compute_curvature(simulator_config->phi, simulator_config));
 	atan_desired_curvature = atan(compute_curvature(simulator_config->target_phi, simulator_config));
 
-	carmen_libpid_steering_PID_controler(&steering_command, atan_desired_curvature,
-												atan_current_curvature, simulator_config->delta_t);
+	carmen_libpid_steering_PID_controler (&steering_command, atan_desired_curvature,
+											atan_current_curvature, simulator_config->delta_t);
+
+
+	carmen_libmpc_get_steering_effort_using_RL_PID (atan_desired_curvature,	atan_current_curvature, simulator_config->delta_t);
+
 
 	build_steering_ann_input(steering_ann_input, steering_command, atan_current_curvature);
+
+	steering_ann_output = fann_run(steering_ann, steering_ann_input);
+
+	simulator_config->phi = get_phi_from_curvature(tan(steering_ann_output[0]), simulator_config);
+
+	return (simulator_config->phi);
+}
+
+
+double
+compute_new_phi_on_ann_with_MPC(carmen_simulator_ackerman_config_t *simulator_config)
+{
+	if (simulator_config->nun_motion_commands < 1)
+		return simulator_config->phi;
+
+
+	static double effort_steering = 0.0;
+	double atan_current_curvature;
+	double atan_desired_curvature;
+	static fann_type steering_ann_input[NUM_STEERING_ANN_INPUTS];
+	fann_type *steering_ann_output;
+	static struct fann *steering_ann = NULL;
+
+
+	//carmen_libcarneuralmodel_init_steering_ann (steering_ann, steering_ann_input);
+	if (steering_ann == NULL)
+	{
+		steering_ann = fann_create_from_file("steering_ann.net");
+		if (steering_ann == NULL)
+		{
+			printf("Error: Could not create steering_ann\n");
+			exit(1);
+		}
+		carmen_libcarneuralmodel_init_steering_ann_input(steering_ann_input);
+	}
+
+	atan_current_curvature = carmen_get_curvature_from_phi(simulator_config->phi, simulator_config->v, simulator_config->understeer_coeficient,
+									simulator_config->distance_between_front_and_rear_axles);
+
+	atan_desired_curvature = carmen_get_curvature_from_phi(simulator_config->target_phi, simulator_config->v, simulator_config->understeer_coeficient,
+										simulator_config->distance_between_front_and_rear_axles);
+
+
+	carmen_libpid_steering_PID_controler(&effort_steering, atan_desired_curvature,
+												atan_current_curvature, simulator_config->delta_t);
+
+	// Mudar effort_steering to past_steering
+	// Adicionar simulator_config->time_of_last_command
+	carmen_libmpc_get_optimized_steering_effort_using_MPC(simulator_config->current_motion_command_vector,
+											simulator_config->nun_motion_commands,  atan_current_curvature, steering_ann, steering_ann_input,
+											simulator_config->v, simulator_config->understeer_coeficient, simulator_config->distance_between_front_and_rear_axles);
+
+	carmen_libcarneuralmodel_build_steering_ann_input(steering_ann_input, effort_steering, atan_current_curvature);
 
 	steering_ann_output = fann_run(steering_ann, steering_ann_input);
 
@@ -691,6 +727,7 @@ carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulat
 	update_target_v_and_target_phi(simulator_config);
 	v   = compute_new_velocity_with_ann(simulator_config);
 	phi = compute_new_phi_with_ann(simulator_config);
+	//phi = compute_new_phi_on_ann_with_MPC(simulator_config);
 //	v   = compute_new_velocity(simulator_config);
 //	phi = compute_new_phi(simulator_config);// + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.1));
 		
