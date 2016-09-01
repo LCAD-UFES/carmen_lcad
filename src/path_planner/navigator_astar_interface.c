@@ -27,7 +27,7 @@
  ********************************************************/
 
 #include <carmen/carmen.h>
-#include "navigator_astar_messages.h"//TODO add in carmen/carmen.h
+#include "path_planner_messages.h"//TODO add in carmen/carmen.h
 #ifndef NO_ZLIB
 #include <zlib.h>
 #endif
