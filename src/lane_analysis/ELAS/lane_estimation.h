@@ -14,7 +14,7 @@
 #include "AnaliseDasHoughs.h"
 #include "FiltroDeParticulasHough.h"
 
-#define DISPLAY_PARTICLE_FILTER true
+#define DISPLAY_PARTICLE_FILTER false
 
 #define HOUGH_ONLY false
 #define BUFFER_HOUGHS_SIZE 10

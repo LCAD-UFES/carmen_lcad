@@ -121,7 +121,7 @@ void IPM::createMaps()
 			ptRowX[i] = pt.x;
 			ptRowY[i] = pt.y;			
 		}
-	}	
+	}
 }
 
 vector<Point2d> IPM::applyHomographyInv(const vector<Point2d> &points) {
