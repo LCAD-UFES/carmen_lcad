@@ -1,6 +1,7 @@
 
 #include <carmen/carmen.h>
 #include <carmen/rddf_messages.h>
+#include <carmen/path_planner_messages.h>
 #include <carmen/rddf_interface.h>
 #include <carmen/grid_mapping.h>
 #include <prob_map.h>
@@ -24,6 +25,8 @@ double param_distance_interval;
 
 carmen_obstacle_avoider_robot_will_hit_obstacle_message last_obstacle_avoider_robot_hit_obstacle_message;
 carmen_rddf_annotation_message last_rddf_annotation_message;
+carmen_behavior_selector_goal_source_t last_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
+carmen_behavior_selector_goal_source_t goal_list_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
 
 
 int
@@ -151,9 +154,19 @@ publish_goal_list()
 
 	if (goal_list_msg.size > 0)
 	{
-		err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME, &goal_list_msg);
-		carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME);
+		if (goal_list_road_profile_message == last_road_profile_message)
+		{
+			err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME, &goal_list_msg);
+			carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME);
+		}
+
+		if (last_road_profile_message == CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL)
+		{
+			err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME, &goal_list_msg);
+			carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME);
+		}
 	}
+
 
 	//printf("Goal List: %d\n", goal_list_msg.size);
 }
@@ -223,28 +236,47 @@ rddf_handler(carmen_rddf_road_profile_message *rddf_msg)
 		return;
 
 	behavior_selector_update_rddf(rddf_msg);
+	last_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
 
-	//TODO publicar carmen_behavior_selector_road_profile_message
-	carmen_behavior_selector_road_profile_message msg;
-	msg.annotations = rddf_msg->annotations;
-	msg.number_of_poses = rddf_msg->number_of_poses;
-	msg.number_of_poses_back = rddf_msg->number_of_poses_back;
-	msg.poses = rddf_msg->poses;
-	msg.poses_back = rddf_msg->poses_back;
-	msg.timestamp = carmen_get_time();
-	msg.host = carmen_get_host();
+	if(goal_list_road_profile_message == CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL)
+	{
+		carmen_behavior_selector_road_profile_message msg;
+		msg.annotations = rddf_msg->annotations;
+		msg.number_of_poses = rddf_msg->number_of_poses;
+		msg.number_of_poses_back = rddf_msg->number_of_poses_back;
+		msg.poses = rddf_msg->poses;
+		msg.poses_back = rddf_msg->poses_back;
+		msg.timestamp = carmen_get_time();
+		msg.host = carmen_get_host();
 
-	IPC_RETURN_TYPE err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, &msg);
-	carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME);
+		IPC_RETURN_TYPE err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, &msg);
+		carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME);
+	}
+}
 
-	//TODO só para guardar o codigo abaixo para ajudar a pensar numa solução mais inteligente para troca de algoritmo (17-8-16) se esse comentario estiver aqui em 2017 apague
-	//	if(lanemap_incoming_message_type == 0)
-	//		carmen_rddf_subscribe_road_profile_message(NULL, (carmen_handler_t) rddf_message_handler, CARMEN_SUBSCRIBE_LATEST);
-	//	else if (lanemap_incoming_message_type == 1)
-	//		carmen_navigator_ackerman_subscribe_astar_goal_list_message(NULL, (carmen_handler_t) astar_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
-	//	else if (lanemap_incoming_message_type == 2)
-	//		carmen_navigator_spline_subscribe_path_message(NULL , (carmen_handler_t) navigator_spline_path_handler, CARMEN_SUBSCRIBE_LATEST);
+static void
+path_planner_road_profile_handler(carmen_path_planner_road_profile_message *rddf_msg)
+{
+	if (!necessary_maps_available)
+		return;
 
+	behavior_selector_update_rddf((carmen_rddf_road_profile_message*)rddf_msg);
+	last_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_PATH_PLANNER_GOAL;
+
+	if(goal_list_road_profile_message == CARMEN_BEHAVIOR_SELECTOR_PATH_PLANNER_GOAL)
+	{
+		carmen_behavior_selector_road_profile_message msg;
+		msg.annotations = rddf_msg->annotations;
+		msg.number_of_poses = rddf_msg->number_of_poses;
+		msg.number_of_poses_back = rddf_msg->number_of_poses_back;
+		msg.poses = rddf_msg->poses;
+		msg.poses_back = rddf_msg->poses_back;
+		msg.timestamp = carmen_get_time();
+		msg.host = carmen_get_host();
+
+		IPC_RETURN_TYPE err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, &msg);
+		carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME);
+	}
 }
 
 
@@ -407,6 +439,11 @@ register_handlers()
 	// **************************************************
 	// filipe:: TODO: criar funcoes de subscribe no interfaces!
 	// **************************************************
+
+    carmen_subscribe_message((char *) CARMEN_PATH_PLANNER_ROAD_PROFILE_MESSAGE_NAME,
+			(char *) CARMEN_PATH_PLANNER_ROAD_PROFILE_MESSAGE_FMT,
+			NULL, sizeof (carmen_path_planner_road_profile_message),
+			(carmen_handler_t)path_planner_road_profile_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_subscribe_message((char *) CARMEN_BEHAVIOR_SELECTOR_SET_ALGOTITHM_NAME,
 			(char *) CARMEN_BEHAVIOR_SELECTOR_SET_ALGOTITHM_FMT,

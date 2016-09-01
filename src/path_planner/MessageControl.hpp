@@ -10,7 +10,7 @@
 #include "trajectory_ackerman.h"
 #include "navigator_ackerman_ipc.h"
 
-#include "navigator_astar_messages.h"
+#include "path_planner_messages.h"
 
 
 class MessageControl

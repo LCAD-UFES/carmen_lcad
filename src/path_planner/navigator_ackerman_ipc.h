@@ -31,7 +31,7 @@
 
 
 
-#include "navigator_astar_messages.h"
+#include "path_planner_messages.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -30,7 +30,7 @@
 
 Tree tree; //tree rooted on robot
 TrajectoryLookupTable *g_trajectory_lookup_table;
-carmen_rddf_road_profile_message goal_list_message;
+carmen_behavior_selector_road_profile_message goal_list_message;
 
 static int update_lookup_table = 0;
 
@@ -658,7 +658,7 @@ ford_escape_status_handler(carmen_ford_escape_status_message *msg)
 
 
 void
-rddf_message_handler(/*carmen_rddf_road_profile_message *message*/)
+rddf_message_handler(/*carmen_behavior_selector_road_profile_message *message*/)
 {
 //	printf("RDDF NUM POSES: %d \n", message->number_of_poses);
 //
@@ -754,7 +754,13 @@ register_handlers()
 
 	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) behaviour_selector_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_rddf_subscribe_road_profile_message(&goal_list_message, (carmen_handler_t) rddf_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	//carmen_rddf_subscribe_road_profile_message(&goal_list_message, (carmen_handler_t) rddf_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_subscribe_message(CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT,
+    		&goal_list_message, sizeof (carmen_behavior_selector_road_profile_message), (carmen_handler_t) rddf_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+
+
 
 	carmen_ford_escape_subscribe_status_message(NULL, (carmen_handler_t) ford_escape_status_handler, CARMEN_SUBSCRIBE_LATEST);
 
