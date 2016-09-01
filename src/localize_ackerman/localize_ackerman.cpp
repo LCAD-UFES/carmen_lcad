@@ -62,7 +62,7 @@ static int base_ackerman_odometry_index = -1;
 
 #define FUSED_ODOMETRY_VECTOR_SIZE 50
 static carmen_fused_odometry_message fused_odometry_vector[FUSED_ODOMETRY_VECTOR_SIZE];
-static int fused_odometry_index = -1;
+static int g_fused_odometry_index = -1;
 
 /* global variables */
 carmen_map_t *new_map = NULL;
@@ -310,7 +310,7 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 	globalpos.phi = phi;
 	globalpos.converged = summary->converged;
 
-	if (fused_odometry_index == -1)
+	if (g_fused_odometry_index == -1)
 	{
 		globalpos.pose.orientation.pitch = globalpos.pose.orientation.roll = globalpos.pose.position.z = 0.0;
 		globalpos.velocity.x = globalpos.velocity.y = globalpos.velocity.z = 0.0;
@@ -444,7 +444,7 @@ publish_first_globalpos(carmen_localize_ackerman_initialize_message *initialize_
 void
 publish_on_mapping_mode(carmen_fused_odometry_message *msg, double timestamp)
 {
-	if (mapping_mode)
+	if (g_fused_odometry_index != -1)
 	{
 		IPC_RETURN_TYPE err;
 		carmen_pose_3D robot_pose = msg->pose;
@@ -477,15 +477,14 @@ velodyne_variable_scan_localize(carmen_velodyne_variable_scan_message *message, 
 	odometry_index = get_base_ackerman_odometry_index_by_timestamp(message->timestamp);
 	fused_odometry_index = get_fused_odometry_index_by_timestamp(message->timestamp);
 
+	if (!necessary_maps_available || base_ackerman_odometry_index < 0)
+		return;
+
 	if (mapping_mode)
 	{
 		publish_on_mapping_mode(&fused_odometry_vector[fused_odometry_index], message->timestamp);
 		return;
 	}
-
-	if (!necessary_maps_available || base_ackerman_odometry_index < 0)
-		return;
-
 
 	velodyne_initilized = localize_ackerman_velodyne_variable_scan(message, &spherical_sensor_params[sensor], &spherical_sensor_data[sensor], &(globalpos.velocity));
 	if (!velodyne_initilized)
@@ -708,8 +707,6 @@ base_ackerman_odometry_handler(carmen_base_ackerman_odometry_message *msg)
 static void
 fused_odometry_handler(carmen_fused_odometry_message *msg)
 {
-
-
 	static int is_first_fused_odometry_message = 1;
 
 	if (is_first_fused_odometry_message)
@@ -718,12 +715,8 @@ fused_odometry_handler(carmen_fused_odometry_message *msg)
 		return;
 	}
 
-
-	fused_odometry_index = (fused_odometry_index + 1) % FUSED_ODOMETRY_VECTOR_SIZE;
-	fused_odometry_vector[fused_odometry_index] = *msg;
-
-
-
+	g_fused_odometry_index = (g_fused_odometry_index + 1) % FUSED_ODOMETRY_VECTOR_SIZE;
+	fused_odometry_vector[g_fused_odometry_index] = *msg;
 }
 
 
