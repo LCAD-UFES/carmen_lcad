@@ -170,16 +170,12 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 					      int point_cloud_index, int update_cells_crossed_by_rays, int build_snapshot_map __attribute__ ((unused)))
 {
 	int tid = omp_get_thread_num();
-	int nearest_timestamp_index = get_nearest_timestamp_index(sensor_data->robot_timestamp,
-			sensor_data->points, point_cloud_index);
-	spherical_point_cloud v_zt = sensor_data->points[nearest_timestamp_index];
+	spherical_point_cloud v_zt = sensor_data->points[point_cloud_index];
 	int N = v_zt.num_points / sensor_params->vertical_resolution;
 
 	double v = sensor_data->robot_velocity[point_cloud_index].x;
 	double phi = sensor_data->robot_phi[point_cloud_index];
-	//int N = v_zt.num_points / sensor_params->vertical_resolution;
 
-	//double dt = 0.0494 / (double) N; // @@@ Alberto: este dt depende da velocidade de rotação do Velodyne, que não é fixa. Tem que ser calculado do acordo com a velocidade de rotação do Velodyne.
 	double dt = 1.0 / (1808.0 * 12.0);
 	carmen_pose_3D_t robot_interpolated_position = sensor_data->robot_pose[point_cloud_index];
 	int i = 0;
