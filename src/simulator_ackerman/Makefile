@@ -3,15 +3,20 @@ include ../Makefile.conf
 CFLAGS += -DOLD_MOTION_MODEL 
 
 IFLAGS += -I../obstacle_avoider
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/pid
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarneuralmodel
-
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/pid
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/pid
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/mpc
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/rlpid
 
 LFLAGS += -lmap_interface -lparam_interface -llocalize_ackerman_interface -lobstacle_avoider -lobstacle_avoider_interface \
 	  -llaser_interface -lgeometry -llocalize_ackerman_motion -lbase_ackerman_interface \
 	  -lglobal -lipc -lfused_odometry_interface -lcollision_detection -lmap_server_interface -lmapper_interface \
-	  -lmap_server_interface -lford_escape_hybrid_interface -lfann -lpid -lcarneuralmodel
+	  -lmap_server_interface -lford_escape_hybrid_interface -lfann -lmpc -lgsl -lgslcblas -lcarneuralmodel -lpid -lrlpid 
+
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcarneuralmodel
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/pid
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/mpc
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/rlpid
 
 MODULE_NAME = SIMULATOR ACKERMAN
 MODULE_COMMENT = "simulates the readings of a ackerman robot on a map"
@@ -24,21 +29,13 @@ PUBLIC_LIBRARIES = libsimulator_ackerman_interface.a
 PUBLIC_BINARIES = simulator_ackerman simulator_ackerman_connect_multiple
 MAN_PAGES =
 
-TARGETS = libpid libcarneuralmodel simulator_ackerman simulator_ackerman_test  libsimulator_ackerman_interface.a simulator_ackerman_connect_multiple
+TARGETS = libcarneuralmodel libpid librlpid libmpc simulator_ackerman simulator_ackerman_test  libsimulator_ackerman_interface.a simulator_ackerman_connect_multiple
 
 
 ifndef NO_PYTHON
 PUBLIC_LIBRARIES_SO = libsimulator_ackerman_interface.so
 TARGETS += libsimulator_ackerman_interface.so.1
 endif
-
-
-# rules
-libpid:
-	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcontrol/pid/
-clean: clean_libpid
-clean_libpid:
-	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcontrol/pid/
 
 
 libcarneuralmodel:
@@ -48,13 +45,34 @@ clean_libcarneuralmodel:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcarneuralmodel
 
 
+libpid:
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcontrol/pid/
+clean: clean_libpid
+clean_libpid:
+	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcontrol/pid/
+
+
+librlpid:
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcontrol/rlpid/
+clean: clean_librlpid
+clean_librlpid:
+	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcontrol/rlpid/
+
+
+libmpc:
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcontrol/mpc/
+clean: clean_libmpc
+clean_libmpc:
+	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcontrol/mpc/
+
+
 simulator_ackerman:	simulator_ackerman.o simulator_ackerman_simulation.o objects_ackerman.o
 
 libsimulator_ackerman_interface.a: simulator_ackerman_interface.o
 
 libsimulator_ackerman_interface.so.1: simulator_ackerman_interface.o
 
-simulator_ackerman_test:	simulator_ackerman_test.o
+simulator_ackerman_test: simulator_ackerman_test.o
 
 simulator_ackerman_connect_multiple: simulator_ackerman_connect_multiple.o simulator_ackerman_interface.o
 

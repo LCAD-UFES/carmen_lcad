@@ -37,8 +37,9 @@ carmen_libcarneuralmodel_build_steering_ann_input(fann_type *input, double s, do
 }
 
 
+/* NAO ESTA FUNCIONANDO PQ TEM Q RETORNAR O fann_create_from_file
 void
-carmen_libcarneuralmodel_init_steering_ann (fann *steering_ann, fann_type *steering_ann_input)
+carmen_libcarneuralmodel_init_steering_ann (struct fann *steering_ann, fann_type *steering_ann_input)
 {
 	if (steering_ann == NULL)
 	{
@@ -51,3 +52,29 @@ carmen_libcarneuralmodel_init_steering_ann (fann *steering_ann, fann_type *steer
 		carmen_libcarneuralmodel_init_steering_ann_input(steering_ann_input);
 	}
 }
+*/
+
+/*
+double
+carmen_libcarneuralmodel_compute_new_phi (double phi, double target_phi, double v, double understeer_coeficient,
+											double distance_between_front_and_rear_axles, double delta_t)
+{
+	double atan_current_curvature;
+	double atan_desired_curvature;
+
+
+
+}*/
+
+
+
+
+
+
+
+
+
+
+
+
+

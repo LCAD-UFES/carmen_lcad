@@ -44,6 +44,10 @@ typedef struct {
 } rbf_neuron;
 
 
+double
+carmen_libmpc_get_steering_effort_using_RL_PID (double atan_desired_curvature, double atan_current_curvature, double delta_t);
+
+
 #ifdef __cplusplus
 }
 #endif
