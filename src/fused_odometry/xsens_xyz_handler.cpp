@@ -17,6 +17,8 @@ static char *gps_tf_name = (char *) "/gps";
 
 static carmen_fused_odometry_parameters *fused_odometry_parameters;
 
+static int reinitialized_gps = 0;
+
 sensor_vector_xsens_xyz **xsens_sensor_vector = NULL;
 int xsens_sensor_vector_index = 0;
 
@@ -390,7 +392,10 @@ globalpos_ackerman_initialize_from_xsens(carmen_fused_odometry_state_vector init
 	mean.y = initial_state.pose.position.y;
 	mean.theta = initial_state.pose.orientation.yaw;// - 0.35;
 
-	carmen_point_t std = get_std_error(&xsens_handler, fused_odometry_parameters);
+	carmen_point_t std;
+	std.x = fused_odometry_parameters->xsens_gps_x_std_error;
+	std.y = fused_odometry_parameters->xsens_gps_y_std_error;
+	std.theta = fused_odometry_parameters->xsens_yaw_std_error;
 
 	carmen_localize_ackerman_initialize_gaussian_time_command(mean, std, timestamp);
 
@@ -720,11 +725,13 @@ xsens_mti_message_handler(carmen_xsens_global_quat_message *xsens_mti)
 	}
 
 	// Must check if timestamp has changed due to log file jump on log playback
-	if (check_time_difference(xsens_mti->timestamp))
+
+	if (reinitialized_gps)//if (check_time_difference(xsens_mti->timestamp))
 	{
 		carmen_fused_odometry_initialize(fused_odometry_parameters);
 		initialize_states(xsens_mti);
-	
+		reinitialized_gps = 0;
+
 		return;
 	}
 
@@ -823,6 +830,11 @@ gps_hdt_message_handler(carmen_gps_gphdt_message *message)
 	if (!xsens_handler.initial_state_initialized)
 		return;
 
+//	if (check_time_difference(message->timestamp))
+//	{
+//		initialized_gps = 1;
+//	}
+
 	sensor_vector_xsens_xyz *sensor_vector = create_sensor_vector_gps_hdt(message);
 
 	if (!kalman_filter)
@@ -874,6 +886,11 @@ carmen_gps_xyz_message_handler(carmen_gps_xyz_message *message)
 
 	if (!xsens_handler.initial_state_initialized)
 		return;
+
+	if (check_time_difference(message->timestamp))
+	{
+		reinitialized_gps = 1;
+	}
 
 	sensor_vector_xsens_xyz *sensor_vector = create_sensor_vector_gps_xyz(message);
 

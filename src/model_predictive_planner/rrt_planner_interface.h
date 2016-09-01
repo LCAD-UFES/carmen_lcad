@@ -9,7 +9,6 @@
 #define RRT_PLANNER_INTERFACE_H_
 
 #include "rrt_planner_message.h"
-#include <carmen/grid_mapping_messages.h>
 
 #ifdef __cplusplus
 extern "C" {

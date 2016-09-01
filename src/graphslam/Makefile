@@ -26,7 +26,7 @@ LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_r
 		-lpcl_octree -lpcl_sample_consensus -lpcl_filters -lpcl_visualization  -lboost_system -lboost_thread-mt -lrt -lboost_signals -lboost_system
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_plotter -lprob_models -lrotation_geometry
 LFLAGS += `pkg-config --libs opencv`	  
-LFLAGS += -lgrid_mapping_interface -lgrid_mapping -lmap_io -lmap_interface
+LFLAGS += -lmapper_interface -lgrid_mapping -lmap_io -lmap_interface
 
 SOURCES = grab_data.cpp velodyne_util.cpp graphslam.cpp run_icp_for_loop_closure.cpp graphslam_publish_main.cpp graphslam_params.cpp multimap_optimization.cpp multimap_matching.cpp gen_data_to_plot.cpp
 

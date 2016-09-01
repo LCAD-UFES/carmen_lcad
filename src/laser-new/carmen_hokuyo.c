@@ -29,7 +29,7 @@ int carmen_hokuyo_connect(carmen_laser_device_t * device, char* filename, int ba
   HokuyoURG* urg=(HokuyoURG*)device->device_data;
   result=hokuyo_open(urg,filename);
   if (result<=0){
-    fprintf(stderr, "error\n  Unable to opening device\n");
+    fprintf(stderr, "error\n  Unable to opening device: %s\n",filename);
     return result;
   }
   return 1;
@@ -86,8 +86,8 @@ int carmen_hokuyo_start(carmen_laser_device_t* device){
   if (rv<=0)
     return 0;
   int bfov=(int)(device->config.fov/URG_ANGULAR_STEP);
-  if (bfov>768)
-    bfov=768;
+  //if (bfov>768)
+  //  bfov=768; Disabled for Hokuyo  UTM-30LX
   int bmin=URG_MAX_BEAMS/2-bfov/2;
   int bmax=URG_MAX_BEAMS/2+bfov/2;
   fprintf(stderr, "Configuring hokuyo continuous mode, bmin=%d, bmax=%d\n", bmin, bmax);

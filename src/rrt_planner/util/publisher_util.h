@@ -31,16 +31,19 @@ public:
 	static void publish_navigator_ackerman_status_message();
 
 	static void publish_plan_message(list<RRT_Edge> &path);
+
 	static void publish_plan_message(carmen_navigator_ackerman_plan_message msg);
 
-
 	static void publish_utility_map(Gradient_Cost_Map u);
+
 	static void publish_obstacle_cost_map(carmen_map_t c);
 
 	//for path follower
 	static void publish_rrt_path_message(rrt_path_message *msg);
 
 	static void publish_path(list<RRT_Path_Edge> &path);
+
+	static void publish_principal_path_message(list<RRT_Path_Edge> &path);
 
 private:
 	static carmen_navigator_ackerman_plan_message	get_path(list<RRT_Edge> &path);

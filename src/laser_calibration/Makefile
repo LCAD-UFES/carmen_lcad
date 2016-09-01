@@ -16,7 +16,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -lgrid_mapping -lprob_models -lm -lz -lmap_io -lmap_util -llocalize_ackerman_core   -lglobal -lparam_interface -llaser_interface -lipc \
-	-lgrid_mapping_interface -lobstacle_avoider_interface -llocalize_ackerman_interface \
+	-lmapper_interface -lobstacle_avoider_interface -llocalize_ackerman_interface \
 	-llocalize_ackerman_interface -lmap_interface -lgrid_mapping -lultrasonic_filter_interface \
 	-lstereo_mapping_interface -lrotation_geometry -lvelodyne_interface -lfused_odometry_interface  -lstereo_velodyne \
 	-lstereo_velodyne_interface -lstereo_interface `pkg-config --libs opencv` -lgeometry -lmap_server_interface -lsimulator_ackerman_interface

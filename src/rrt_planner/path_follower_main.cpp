@@ -7,7 +7,6 @@
 
 #include <carmen/behavior_selector_interface.h>
 #include <carmen/fused_odometry_interface.h>
-#include <carmen/grid_mapping_interface.h>
 #include <carmen/map_server_interface.h>
 #include <carmen/carmen.h>
 
@@ -216,6 +215,11 @@ rrt_path_message_handler(rrt_path_message *msg)
 {
 	list<RRT_Path_Edge> path;
 	RRT_Path_Edge edge;
+
+//	double tm_to;
+//	tm_to = carmen_get_time();
+//
+//	printf("diff: %lf\n", tm_to - msg->tm_from);
 
 	if (msg->size > 0)
 	{

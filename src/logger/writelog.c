@@ -160,37 +160,52 @@ void carmen_logwrite_write_laser_ldmrs(carmen_laser_ldmrs_message *laser,
 	int i;
 	(void)laser_num;
 	carmen_fprintf(outfile, "LASER_LDMRS ");
-	carmen_fprintf(outfile, "%d %d %d %d %.3lf %.3lf %d %.3lf %.3lf %.3lf %.3lf %.3lf %.3lf %d ",
+	carmen_fprintf(outfile, "%d %f %f %d %f %f %d ",
 			laser->scan_number,
-			laser->scanner_status,
-			laser->sync_phase_offset,
-//			laser->scan_start_time.tv_sec,
-//			laser->scan_start_time.tv_nsec,
-//			laser->scan_end_time.tv_sec,
-//			laser->scan_end_time.tv_nsec,
+			laser->scan_start_time,
+			laser->scan_end_time,
 			laser->angle_ticks_per_rotation,
 			laser->start_angle,
 			laser->end_angle,
-			laser->scan_points,
-			laser->mount_yaw,
-			laser->mount_pitch,
-			laser->mount_roll,
-			laser->mount_x,
-			laser->mount_y,
-			laser->mount_z,
-			laser->flags);
+			laser->scan_points);
 
 	for(i = 0; i < laser->scan_points; i++)
-		carmen_fprintf(outfile, "%1d %1d %1d %.5f %.3f %.3f ",
-				    laser->points[i].layer,
-				    laser->points[i].echo,
-				    laser->points[i].flags,
-				    laser->points[i].horizontal_angle,
-				    laser->points[i].radial_distance,
-				    laser->points[i].pulse_width);
+	{
+		carmen_fprintf(outfile, "%f %f %f %d ",
+				    laser->arraypoints[i].horizontal_angle,
+				    laser->arraypoints[i].vertical_angle,
+				    laser->arraypoints[i].radial_distance,
+					laser->arraypoints[i].flags);
+	}
 
 	carmen_fprintf(outfile, "%f %s %f\n", laser->timestamp,
 			laser->host, timestamp);
+}
+
+void carmen_logwrite_write_laser_ldmrs_objects(carmen_laser_ldmrs_objects_message *laser,
+		int laser_num, carmen_FILE *outfile,
+		double timestamp)
+{
+	int i;
+	(void)laser_num;
+	carmen_fprintf(outfile, "LASER_LDMRS_OBJECTS ");
+	carmen_fprintf(outfile, "%d ",
+			laser->num_objects);
+	for(i = 0; i < laser->num_objects; i++)
+	{
+		carmen_fprintf(outfile,"%d %f %f %f %f %f %f %d ",
+				laser->objects_list[i].id,
+				laser->objects_list[i].x,
+				laser->objects_list[i].y,
+				laser->objects_list[i].lenght,
+				laser->objects_list[i].width,
+				laser->objects_list[i].velocity,
+				laser->objects_list[i].orientation,
+				laser->objects_list[i].classId);
+	}
+
+	carmen_fprintf(outfile, "%f %s %f\n", laser->timestamp,
+				laser->host, timestamp);
 }
 
 void carmen_logwrite_write_robot_ackerman_laser(carmen_robot_ackerman_laser_message *laser,
@@ -704,6 +719,50 @@ void carmen_logwrite_write_velodyne_partial_scan(carmen_velodyne_partial_scan_me
 	carmen_fprintf(outfile, "%f %s %f\n", msg->timestamp, msg->host, timestamp);
 }
 
+void carmen_logwrite_write_to_file_velodyne(carmen_velodyne_partial_scan_message* msg, carmen_FILE *outfile,
+		double timestamp, char *log_filename)
+{
+	const double HIGH_LEVEL_SUBDIR_TIME = 100.0 * 100.0; // new each 100 x 100 seconds
+	const double LOW_LEVEL_SUBDIR_TIME = 100.0; // new each 100 seconds
+
+	int high_level_subdir = ((int) (msg->timestamp / HIGH_LEVEL_SUBDIR_TIME)) * HIGH_LEVEL_SUBDIR_TIME;
+	int low_level_subdir = ((int) (msg->timestamp / LOW_LEVEL_SUBDIR_TIME)) * LOW_LEVEL_SUBDIR_TIME;
+
+	int i;
+	static char directory[1024];
+	static char subdir[1024];
+	static char path[1024];
+
+	/**
+	 * TODO: @Filipe: Check if the mkdir call is time consuming.
+	 */
+	sprintf(directory, "%s_velodyne", log_filename);
+	mkdir(directory, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
+
+	sprintf(subdir, "%s/%d", directory, high_level_subdir);
+	mkdir(subdir, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
+
+	sprintf(subdir, "%s/%d/%d", directory, high_level_subdir, low_level_subdir);
+	mkdir(subdir, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
+
+	sprintf(path, "%s/%lf.pointcloud", subdir, msg->timestamp);
+
+	FILE *image_file = fopen(path, "wb");
+
+	for(i = 0; i < msg->number_of_32_laser_shots; i++)
+	{
+		fwrite(&(msg->partial_scan[i].angle), sizeof(double), 1, image_file);
+		fwrite(msg->partial_scan[i].distance, sizeof(short), 32, image_file);
+		fwrite(msg->partial_scan[i].intensity, sizeof(char), 32, image_file);
+	}
+
+	fclose(image_file);
+
+	carmen_fprintf(outfile, "VELODYNE_PARTIAL_SCAN_IN_FILE %s %d ", path, msg->number_of_32_laser_shots);
+	carmen_fprintf(outfile, "%f %s %f\n", msg->timestamp, msg->host, timestamp);
+}
+
+
 char *hex_char_distance_and_intensity_variable;
 
 void
@@ -856,6 +915,55 @@ void carmen_logwrite_write_bumblebee_basic_steroimage(carmen_bumblebee_basic_ste
                 frame_number = 0;
         }
         frame_number++;
+}
+
+void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(carmen_bumblebee_basic_stereoimage_message* msg, int bumblebee_num, carmen_FILE *outfile,
+		double timestamp, int frequency, char *log_filename)
+{
+	const double HIGH_LEVEL_SUBDIR_TIME = 100.0 * 100.0; // new each 100 x 100 seconds
+	const double LOW_LEVEL_SUBDIR_TIME = 100.0; // new each 100 seconds
+
+	int high_level_subdir = ((int) (msg->timestamp / HIGH_LEVEL_SUBDIR_TIME)) * HIGH_LEVEL_SUBDIR_TIME;
+	int low_level_subdir = ((int) (msg->timestamp / LOW_LEVEL_SUBDIR_TIME)) * LOW_LEVEL_SUBDIR_TIME;
+
+	static char directory[1024];
+	static char subdir[1024];
+	static char path[1024];
+
+	/**
+	 * TODO: @Filipe: Check if the mkdir call is time consuming.
+	 */
+	sprintf(directory, "%s_bumblebee", log_filename);
+	mkdir(directory, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
+
+	sprintf(subdir, "%s/%d", directory, high_level_subdir);
+	mkdir(subdir, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
+
+	sprintf(subdir, "%s/%d/%d", directory, high_level_subdir, low_level_subdir);
+	mkdir(subdir, ACCESSPERMS); // if the directory exists, mkdir returns an error silently
+
+	// DEBUG:
+	//printf("%lf %d %d %s\n", msg->timestamp, high_level_subdir, low_level_subdir, subdir);
+
+	if ((frame_number % frequency) == 0)
+	{
+		sprintf(path, "%s/%lf.bb%d.image", subdir, msg->timestamp, bumblebee_num);
+
+		FILE *image_file = fopen(path, "wb");
+
+		fwrite(msg->raw_left, msg->image_size, sizeof(unsigned char), image_file);
+		fwrite(msg->raw_right, msg->image_size, sizeof(unsigned char), image_file);
+
+		fclose(image_file);
+
+		carmen_fprintf(outfile, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE%d %s %d %d %d %d ", bumblebee_num, path,
+				msg->width, msg->height, msg->image_size, msg->isRectified);
+		carmen_fprintf(outfile, "%f %s %f\n", msg->timestamp, msg->host, timestamp);
+
+		frame_number = 0;
+	}
+
+	frame_number++;
 }
 
 void

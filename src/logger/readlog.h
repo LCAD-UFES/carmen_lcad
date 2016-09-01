@@ -60,6 +60,7 @@ extern "C" {
 #define CLF_READ_DOUBLE(str) strtod(*(str), (str))
 #define CLF_READ_INT(str) (int)strtol(*(str), (str), 10)
 #define CLF_READ_CHAR(str) (char) ( ( (*str)++)[0] )
+void CLF_READ_STRING(char *dst, char **string);
 
 /** Index structure used to process a logfile. **/
 typedef struct {
@@ -107,6 +108,8 @@ int carmen_logfile_read_line(carmen_logfile_index_p index, carmen_FILE *infile,
  **/
 int carmen_logfile_read_next_line(carmen_logfile_index_p index, carmen_FILE *infile,
 				  int max_line_length, char *line);
+
+int first_wordlength(char *str);
 
 char *carmen_string_to_visual_odometry_message(char *string,
 						carmen_visual_odometry_pose6d_message *odometry);
@@ -178,6 +181,7 @@ char *carmen_string_to_gps_gphdt_message(char *string,
 
 char* carmen_string_to_bumblebee_basic_stereoimage_message(char* string, carmen_bumblebee_basic_stereoimage_message* msg);
 
+char* carmen_string_and_file_to_bumblebee_basic_stereoimage_message(char* string, carmen_bumblebee_basic_stereoimage_message* msg);
 
 /** Converts the string to a robot-ackerman-velocity message.
  * @param string A string describing the message in the carmen logfile format.
@@ -213,6 +217,8 @@ char *carmen_string_to_kinect_video_message(char *string, carmen_kinect_video_me
 
 char* carmen_string_to_velodyne_partial_scan_message(char* string, carmen_velodyne_partial_scan_message* msg);
 
+char* carmen_string_and_file_to_velodyne_partial_scan_message(char* string, carmen_velodyne_partial_scan_message* msg);
+
 char* carmen_string_to_variable_velodyne_scan_message(char* string, carmen_velodyne_variable_scan_message* msg);
 
 char* carmen_string_to_velodyne_gps_message(char* string, carmen_velodyne_gps_message* msg);
@@ -234,6 +240,8 @@ char* carmen_string_to_base_ackerman_motion_message(char* string, carmen_base_ac
 char* carmen_string_to_ultrasonic_message(char* string, carmen_ultrasonic_sonar_sensor_message* ultrasonic_msg);
 
 char* carmen_string_to_laser_ldmrs_message(char *string, carmen_laser_ldmrs_message *laser);
+
+char* carmen_string_to_laser_ldmrs_objects_message(char *string, carmen_laser_ldmrs_objects_message *laserObjects);
 
 #ifdef __cplusplus
 }

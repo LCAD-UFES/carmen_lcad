@@ -1,5 +1,4 @@
 #include <carmen/carmen.h>
-#include <carmen/grid_mapping_interface.h>
 #include <carmen/grid_mapping.h>
 #include <prob_map.h>
 #include "obstacle_avoider_messages.h"

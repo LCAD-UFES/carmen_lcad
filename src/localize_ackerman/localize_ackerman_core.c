@@ -126,28 +126,6 @@ void carmen_localize_ackerman_incorporate_odometry(carmen_localize_ackerman_part
 	/* keep track of the last odometry */
 }
 
-/* test to see if localize should switch to global mode */
-
-static int
-global_mode_test(carmen_localize_ackerman_particle_filter_p filter)
-{
-	int i;
-	double mean_x = 0, mean_y = 0;
-
-	for (i = 0; i < filter->param->num_particles; i++) 
-	{
-		mean_x += filter->particles[i].x;
-		mean_y += filter->particles[i].y;
-	}
-	mean_x /= filter->param->num_particles;
-	mean_y /= filter->param->num_particles;
-
-	for (i = 0; i < filter->param->num_particles; i++)
-		if (fabs(filter->particles[i].x - mean_x) > filter->param->global_distance_threshold || 
-		    fabs(filter->particles[i].y - mean_y) > filter->param->global_distance_threshold)
-			return (1);
-	return (0);
-}
 
 /* compute positions of laser points assuming robot pos is (0, 0, 0) */
 static void
@@ -179,49 +157,6 @@ compute_positions_of_laser_points_in_the_robot_reference(carmen_localize_ackerma
 	}
 }
 
-/* compute weight of each laser reading - using global map */
-static void
-compute_weight_of_each_laser_reading_using_global_map(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_p map,
-		double *laser_x, double *laser_y, int num_readings)
-{
-	int i, j, x, y, robot_x, robot_y;
-	double p_x, p_y, ctheta, stheta;
-
-	double global_log_small_prob = log(filter->param->global_beam_minlikelihood);
-
-	for (i = 0; i < filter->param->num_particles; i++)
-	{
-		filter->particles[i].weight = 0.0;
-		p_x = (filter->particles[i].x - map->config.x_origin) / map->config.resolution;
-		p_y = (filter->particles[i].y - map->config.y_origin) / map->config.resolution;
-		ctheta = cos(filter->particles[i].theta);
-		stheta = sin(filter->particles[i].theta);
-
-		for (j = 0; j < num_readings; j += filter->param->laser_skip)
-		{
-			if (filter->laser_mask[j])
-			{
-				x = (p_x + laser_x[j] * ctheta - laser_y[j] * stheta);
-				y = (p_y + laser_x[j] * stheta + laser_y[j] * ctheta);
-				robot_x = p_x;
-				robot_y = p_y;
-				if (x < 0 || y < 0 || x >= map->config.x_size ||
-						y >= map->config.y_size || map->carmen_map.map[x][y] == -1)
-					filter->particles[i].weight += global_log_small_prob;
-				else if (filter->param->constrain_to_map &&
-						(robot_x < 0 || robot_y < 0 ||
-								robot_x >= map->config.x_size ||
-								robot_y >= map->config.y_size ||
-								map->carmen_map.map[robot_x][robot_y] >
-				filter->param->occupied_prob))
-					filter->particles[i].weight += global_log_small_prob;
-				else
-					filter->particles[i].weight += map->gprob[x][y];
-				/* 	  *  filter->param->global_evidence_weight; */
-			}
-		}
-	}
-}
 
 /* compute weight of each laser reading */
 static void
@@ -346,13 +281,13 @@ carmen_localize_ackerman_incorporate_laser(carmen_localize_ackerman_particle_fil
 			forward_offset, num_readings, laser_maxrange, backwards);
 
 	/* test for global mode */
-	filter->global_mode = global_mode_test(filter);
+	//filter->global_mode = global_mode_test(filter);
 
-	if (filter->global_mode)
-	{
-		compute_weight_of_each_laser_reading_using_global_map(filter, map, laser_x, laser_y, num_readings);
-	}
-	else 
+//	if (filter->global_mode)
+//	{
+//		compute_weight_of_each_laser_reading_using_global_map(filter, map, laser_x, laser_y, num_readings);
+//	}
+//	else
 	{
 		compute_weight_of_each_laser_reading_using_local_map(filter, map, laser_x, laser_y, num_readings);
 
@@ -378,13 +313,13 @@ carmen_localize_ackerman_resample_velodyne(carmen_localize_ackerman_particle_fil
 	double position, step_size;
 
 	// alloc vectors if necessary
-	if ( num_particles != filter->param->num_particles)
+	if (num_particles != filter->param->num_particles)
 	{
 		free(temp_particles);
 		free(cumulative_sum);
 
 		/* Allocate memory necessary for resampling */
-		cumulative_sum = (double *)calloc(filter->param->num_particles, sizeof(double));
+		cumulative_sum = (double *) calloc(filter->param->num_particles, sizeof(double));
 		carmen_test_alloc(cumulative_sum);
 		temp_particles = (carmen_localize_ackerman_particle_p) calloc(filter->param->num_particles, sizeof(carmen_localize_ackerman_particle_t));
 		carmen_test_alloc(temp_particles);
@@ -392,23 +327,21 @@ carmen_localize_ackerman_resample_velodyne(carmen_localize_ackerman_particle_fil
 		num_particles = filter->param->num_particles;
 	}
 
-
+	// Particles weights here are probabilities
 	weight_sum = 0.0;	
-	/* change log weights back into probabilities */
-	for(i = 0; i < filter->param->num_particles; i++)
+	for (i = 0; i < filter->param->num_particles; i++)
 	{	
-		/* Sum the weights of all of the particles */
 		weight_sum += filter->particles[i].weight;
 		cumulative_sum[i] = weight_sum;
 	}
 
 	/* choose random starting position for low-variance walk */
 	position = carmen_uniform_random(0, weight_sum);
-	step_size = weight_sum / (double)filter->param->num_particles;
+	step_size = weight_sum / (double) filter->param->num_particles;
 	which_particle = 0;
 
 	/* draw num_particles random samples */
-	for(i = 0; i < filter->param->num_particles; i++)
+	for (i = 0; i < filter->param->num_particles; i++)
 	{
 		position += step_size;
 
@@ -418,7 +351,7 @@ carmen_localize_ackerman_resample_velodyne(carmen_localize_ackerman_particle_fil
 			which_particle = 0;
 		}
 
-		while(position > cumulative_sum[which_particle])
+		while (position > cumulative_sum[which_particle])
 			which_particle++;
 
 		temp_particles[i] = filter->particles[which_particle];
@@ -431,8 +364,10 @@ carmen_localize_ackerman_resample_velodyne(carmen_localize_ackerman_particle_fil
 	temp_particles = aux;
 }
 
+
 /* resample particle filter */
-void carmen_localize_ackerman_resample(carmen_localize_ackerman_particle_filter_p filter)
+void
+carmen_localize_ackerman_resample(carmen_localize_ackerman_particle_filter_p filter)
 {
 	static double *cumulative_sum = NULL;
 	static carmen_localize_ackerman_particle_p temp_particles = NULL;
@@ -786,7 +721,7 @@ get_particle_max_weight(carmen_localize_ackerman_particle_filter_p filter)
 	int i;
 	for (i = 1; i < filter->param->num_particles; i++)
 	{
-		if(filter->particles[i].weight > max_weight)
+		if (filter->particles[i].weight > max_weight)
 			max_weight = filter->particles[i].weight;
 	}
 
@@ -799,11 +734,8 @@ convert_particles_log_weights_to_prob(carmen_localize_ackerman_particle_filter_p
 {
 	double max_weight = get_particle_max_weight(filter);
 
-	int i;
-	for (i = 0; i < filter->param->num_particles; i++)
-	{
+	for (int i = 0; i < filter->param->num_particles; i++)
 		filter->particles[i].weight = exp(filter->particles[i].weight - max_weight);
-	}
 }
 
 
@@ -914,7 +846,7 @@ hausdoff_distance(carmen_map_t *global_map, carmen_compact_map_t *local_map, car
 
 
 
-static void
+void
 hausdoff_distance_correction(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_map)
 {
 	double w;
@@ -932,7 +864,7 @@ hausdoff_distance_correction(carmen_localize_ackerman_particle_filter_p filter, 
 
 
 static double
-map_particle_correction(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_map, carmen_localize_ackerman_particle_t *particle)
+map_particle_correction(carmen_localize_ackerman_map_t *localize_map, carmen_compact_map_t *local_map, carmen_localize_ackerman_particle_t *particle)
 {
 	cell_coords_t local, global;
 	double particle_weight = 0.0;
@@ -942,8 +874,8 @@ map_particle_correction(carmen_localize_ackerman_particle_filter_p filter, carme
 	double cos_theta = cos(particle->theta);
 	double map_center_x = (double) local_map->config.x_size * 0.5;
 	double map_center_y = (double) local_map->config.y_size * 0.5;
-	robot_position.x = particle->x - global_map->config.x_origin;
-	robot_position.y = particle->y - global_map->config.y_origin;
+	robot_position.x = particle->x - localize_map->config.x_origin;
+	robot_position.y = particle->y - localize_map->config.y_origin;
 	double robot_position_in_the_map_x = (robot_position.x / local_map->config.resolution) + 0.5;
 	double robot_position_in_the_map_y = (robot_position.y / local_map->config.resolution) + 0.5;
 
@@ -955,13 +887,8 @@ map_particle_correction(carmen_localize_ackerman_particle_filter_p filter, carme
 		global = calc_global_cell_coordinate_fast(&local, map_center_x, map_center_y,
 					robot_position_in_the_map_x, robot_position_in_the_map_y, sin_theta, cos_theta);
 
-		if (global.x >= 0 && global.y >= 0 && global.x < global_map->config.x_size && global.y < global_map->config.y_size)
-		{
-			if (filter->global_mode)
-				particle_weight += global_map->gprob[global.x][global.y];
-			else
-				particle_weight += global_map->prob[global.x][global.y];
-		}
+		if (global.x >= 0 && global.y >= 0 && global.x < localize_map->config.x_size && global.y < localize_map->config.y_size)
+			particle_weight += localize_map->prob[global.x][global.y];
 	}
 
 	return particle_weight;
@@ -979,7 +906,7 @@ cosine_correction_with_remission_map_and_log_likelihood(carmen_localize_ackerman
 
 	for (i = 0; i < filter->param->num_particles; i++)
 	{
-		w2 = map_particle_correction(filter, global_map, local_map, &(filter->particles[i]));
+		w2 = map_particle_correction(global_map, local_map, &(filter->particles[i]));
 		inner_product_between_maps(&inner_product_remission, &norm_local_remission_map, &norm_global_remission_map, &global_map->carmen_mean_remission_map, local_mean_remission_map, &(filter->particles[i]));
 		//inner_product_between_maps(&inner_product, &norm_local_map, &norm_global_map, &global_map->carmen_map, local_map, &(filter->particles[i]));
 		inner_product = inner_product + inner_product_remission;
@@ -1002,7 +929,7 @@ cosine_correction_with_remission_map_and_grid_map(carmen_localize_ackerman_parti
 	double inner_product = 0.0, norm_local_map = 0.0, norm_global_map = 0.0;
 
 	int i;
-
+#pragma omp parallel for
 	for (i = 0; i < filter->param->num_particles; i++)
 	{
 		inner_product_between_maps(&inner_product_remission, &norm_local_remission_map, &norm_global_remission_map, &global_map->carmen_mean_remission_map, local_mean_remission_map, &(filter->particles[i]));
@@ -1080,6 +1007,7 @@ cosine_correction_with_remission_map(carmen_localize_ackerman_particle_filter_p 
 	double min_weight = 0.000001, w;
 	double inner_product, norm_local_map, norm_global_map;
 	int i;
+//#pragma omp parallel for
 	for (i = 0; i < filter->param->num_particles; i++)
 	{
 		inner_product_between_maps(&inner_product, &norm_local_map, &norm_global_map, &global_map->carmen_mean_remission_map, local_mean_remission_map, &(filter->particles[i]));
@@ -1197,7 +1125,7 @@ normalized_mutual_information(carmen_map_t *global_map, carmen_compact_map_t *lo
 
 
 
-static void
+void
 mutual_information_correction(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_mean_remission_map)
 {
 
@@ -1215,7 +1143,7 @@ mutual_information_correction(carmen_localize_ackerman_particle_filter_p filter,
 	convert_particles_log_weights_to_prob(filter);
 }
 
-static double
+double
 hamming_distance(carmen_map_t *global_map, carmen_compact_map_t *local_map, carmen_localize_ackerman_binary_map_t *binary_map, carmen_localize_ackerman_particle_t *particle)
 {
 	int i;
@@ -1281,7 +1209,7 @@ hamming_distance(carmen_map_t *global_map, carmen_compact_map_t *local_map, carm
 	return (double)hamming_dist / local_map->number_of_known_points_on_the_map;
 }
 
-static void
+void
 hamming_distance_between_remission_maps(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_map, carmen_localize_ackerman_binary_map_t *binary_map)
 {
 	int i;
@@ -1366,25 +1294,15 @@ correlation_correction(carmen_localize_ackerman_particle_filter_p filter, carmen
 }
 
 
-
-
-
-
 void
-localize_map_correlation_correction(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_map)
+localize_map_correlation_correction(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_t *localize_map, carmen_compact_map_t *local_map)
 {
-	int i;
-
-	/* test for global mode */
-	filter->global_mode = global_mode_test(filter);
-
-	for (i = 0; i < filter->param->num_particles; i++)
-	{
-		filter->particles[i].weight = map_particle_correction(filter, global_map, local_map, &(filter->particles[i]));
-	}
+	for (int i = 0; i < filter->param->num_particles; i++)
+		filter->particles[i].weight = map_particle_correction(localize_map, local_map, &(filter->particles[i]));
 
 	convert_particles_log_weights_to_prob(filter);
 }
+
 
 static double
 carmen_localize_ackerman_function_velodyne_evaluation(
@@ -1403,7 +1321,7 @@ carmen_localize_ackerman_function_velodyne_evaluation(
 	switch (filter->param->correction_type)
 	{
 		case 0:
-			w = map_particle_correction(filter, map, local_map, &(filter->particles[i]));
+			w = map_particle_correction(map, local_map, &(filter->particles[i]));
 			//w = exp(w);
 			break;
 		case 1:
@@ -1452,10 +1370,10 @@ carmen_localize_ackerman_function_velodyne_evaluation(
 
 void
 carmen_localize_ackerman_run_with_velodyne_correction(
-		carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_p map,
+		carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_p localize_map,
 		carmen_compact_map_t *local_map, carmen_compact_map_t *local_mean_remission_map,
 		carmen_compact_map_t *local_variance_remission_map  __attribute__ ((unused)),
-		carmen_localize_ackerman_binary_map_t *binary_map)
+		carmen_localize_ackerman_binary_map_t *binary_map __attribute__ ((unused)))
 {
 	if (!filter->initialized)
 		return;
@@ -1463,43 +1381,33 @@ carmen_localize_ackerman_run_with_velodyne_correction(
 	switch (filter->param->correction_type)
 	{
 		case 0:
-			localize_map_correlation_correction(filter, map, local_map);
+			// The localize_map used in this function must be in log likelihood
+			localize_map_correlation_correction(filter, localize_map, local_map);
 			break;
 
 		case 1:
-			cosine_correction(filter, map, local_map);
+			cosine_correction(filter, localize_map, local_map);
 			break;
 
 		case 2:
-			cosine_correction_with_likelihood_map(filter, map, local_map);
+			cosine_correction_with_likelihood_map(filter, localize_map, local_map);
 			break;
 
 		case 3:
-			correlation_correction(filter, map, local_map);
+			correlation_correction(filter, localize_map, local_map);
 			break;
 
 		case 4:
-			cosine_correction_with_remission_map(filter, map, local_mean_remission_map);
+			cosine_correction_with_remission_map(filter, localize_map, local_mean_remission_map);
 			break;
 
 		case 5:
-			cosine_correction_with_remission_map_and_grid_map(filter, map, local_mean_remission_map, local_map);
+			cosine_correction_with_remission_map_and_grid_map(filter, localize_map, local_mean_remission_map, local_map);
 			break;
 
 		case 6:
-			cosine_correction_with_remission_map_and_log_likelihood(filter, map, local_mean_remission_map, local_map);
+			cosine_correction_with_remission_map_and_log_likelihood(filter, localize_map, local_mean_remission_map, local_map);
 			break;
-
-		case 7:
-			hamming_distance_between_remission_maps(filter, map, local_mean_remission_map, binary_map);
-			break;
-
-		case 8:
-			mutual_information_correction(filter, map, local_mean_remission_map);
-			break;
-
-		case 9:
-			hausdoff_distance_correction(filter, map, local_map);
 	}
 }
 
@@ -1986,7 +1894,7 @@ carmen_localize_ackerman_summarize_swarm(carmen_localize_ackerman_particle_filte
 	double total_weight = 0;
 	int i;
 
-	summary->converged = !filter->global_mode;
+	summary->converged = 1;//!filter->global_mode;
 
 	/* compute mean particle pose */
 	mean_x = 0;
@@ -2042,14 +1950,14 @@ carmen_localize_ackerman_summarize_velodyne(carmen_localize_ackerman_particle_fi
 	double total_weight = 0;
 	int i;
 
-	summary->converged = !filter->global_mode;
+	summary->converged = 1;//!filter->global_mode;
 
 	/* compute mean particle pose */
 	mean_x = 0;
 	mean_y = 0;
 	mean_theta_x = 0;
 	mean_theta_y = 0;
-	for(i = 0; i < filter->param->num_particles; i++) 
+	for (i = 0; i < filter->param->num_particles; i++)
 	{
 		mean_x += filter->particles[i].x * filter->particles[i].weight;
 		mean_y += filter->particles[i].y * filter->particles[i].weight;
@@ -2068,7 +1976,8 @@ carmen_localize_ackerman_summarize_velodyne(carmen_localize_ackerman_particle_fi
 	std_y = 0;
 	std_theta = 0;
 	xy_cov = 0;
-	for(i = 0; i < filter->param->num_particles; i++) {
+	for(i = 0; i < filter->param->num_particles; i++)
+	{
 		diff_x = (filter->particles[i].x - summary->mean.x);
 		diff_y = (filter->particles[i].y - summary->mean.y);
 		diff_theta = carmen_normalize_theta(filter->particles[i].theta -
@@ -2082,10 +1991,11 @@ carmen_localize_ackerman_summarize_velodyne(carmen_localize_ackerman_particle_fi
 	summary->std.y = sqrt(std_y / filter->param->num_particles);
 	summary->std.theta = sqrt(std_theta / filter->param->num_particles);
 	summary->xy_cov = sqrt(xy_cov / filter->param->num_particles);
-
 }
 
-void carmen_localize_ackerman_summarize(carmen_localize_ackerman_particle_filter_p filter, 
+
+void
+carmen_localize_ackerman_summarize(carmen_localize_ackerman_particle_filter_p filter,
 		carmen_localize_ackerman_summary_p summary,
 		carmen_localize_ackerman_map_p map,
 		int num_readings, double *range,
@@ -2100,7 +2010,7 @@ void carmen_localize_ackerman_summarize(carmen_localize_ackerman_particle_filter
 	double total_weight = 0;
 	int i, x, y;
 
-	summary->converged = !filter->global_mode;
+	summary->converged = 1;//!filter->global_mode;
 
 	weights = (double *)calloc(filter->param->num_particles, sizeof(double));
 	carmen_test_alloc(weights);

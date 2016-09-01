@@ -16,42 +16,53 @@ extern "C" {
 #endif
 
 typedef struct {
-	uint8_t layer;
-	uint8_t echo;
-	uint8_t flags;
-	float horizontal_angle;
-	float radial_distance;
-	float pulse_width;
+	double horizontal_angle;
+	double vertical_angle;
+	double radial_distance;
+	unsigned short flags;
 } carmen_laser_ldmrs_point;
 
 /* Message Struct Example */
 typedef struct {                                     
 	uint16_t scan_number;
-	uint16_t scanner_status;
-	uint16_t sync_phase_offset;
-//	struct timespec scan_start_time;
-//	struct timespec scan_end_time;
+	double scan_start_time;
+	double scan_end_time;
 	uint16_t angle_ticks_per_rotation;
-	float start_angle;
-	float end_angle;
+	double start_angle;
+	double end_angle;
 	uint16_t scan_points;
-	float mount_yaw;
-	float mount_pitch;
-	float mount_roll;
-	float mount_x;
-	float mount_y;
-	float mount_z;
-	uint16_t flags;
-	carmen_laser_ldmrs_point *points;
+	carmen_laser_ldmrs_point *arraypoints;
 	double timestamp; 		/* !!! mandatory !!! */
 	char *host; 			/* !!! mandatory !!! */
 } carmen_laser_ldmrs_message;
+
+typedef struct {
+	unsigned short id;
+	double x;
+	double y;
+	double lenght;
+	double width;
+	double velocity;
+	double orientation;
+	unsigned short classId;
+} carmen_laser_ldmrs_object;
+
+typedef struct {
+	unsigned short num_objects;
+	carmen_laser_ldmrs_object *objects_list;
+	double timestamp;
+	char *host;
+} carmen_laser_ldmrs_objects_message;
 
 /* The message's name, will be used for message registration in IPC Central module */
 #define      CARMEN_LASER_LDMRS_NAME       "carmen_laser_ldmrs"
 
 /* The message's format, will be used for message data marshalling (serialization) for network socket transport. */
-#define      CARMEN_LASER_LDMRS_FMT        "{short,short,short,short,float,float,short,float,float,float,float,float,float,short,<{byte,byte,byte,float,float,float}:7>,double,string}"
+#define      CARMEN_LASER_LDMRS_FMT        "{short,double,double,short,double,double,short,<{double,double,double,short}:7>,double,string}"
+
+#define		 CARMEN_LASER_LDMRS_OBJECTS_NAME "carmen_laser_ldmrs_objects"
+
+#define		 CARMEN_LASER_LDMRS_OBJECTS_FMT  "{short,<{short,double,double,double,double,double,double,short}:1>,double,string}"
 
 #ifdef __cplusplus
 }

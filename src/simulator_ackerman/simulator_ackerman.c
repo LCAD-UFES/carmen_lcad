@@ -27,9 +27,8 @@
  ********************************************************/
 
 #include <carmen/carmen.h>
-#include <carmen/grid_mapping_messages.h>
-#include <carmen/grid_mapping_interface.h>
 #include <carmen/map_server_interface.h>
+#include <pid.h>
 
 #include "simulator_ackerman.h"
 #include "simulator_ackerman_simulation.h"
@@ -69,7 +68,7 @@ carmen_destroy_simulator_map(carmen_map_t *map)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-static void 
+static void
 set_object_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, 
 		void *clientData __attribute__ ((unused)))
 {
@@ -87,7 +86,7 @@ set_object_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 }
 
 
-static void 
+static void
 set_truepose_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, 
 		void *clientData __attribute__ ((unused)))
 {
@@ -660,9 +659,7 @@ read_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *conf
 			{"robot", "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &(config->distance_between_front_and_rear_axles), 1,NULL},
 			{"robot", "max_velocity", CARMEN_PARAM_DOUBLE, &(config->max_v), 1,NULL},
 			{"robot", "max_steering_angle", CARMEN_PARAM_DOUBLE, &(config->max_phi), 1, NULL},
-			{"robot", "maximum_steering_command_curvature", CARMEN_PARAM_DOUBLE, &(config->maximum_steering_command_curvature), 0, NULL},
 			{"robot", "maximum_steering_command_rate", CARMEN_PARAM_DOUBLE, &(config->maximum_steering_command_rate), 0, NULL},
-			{"robot", "maximum_capable_curvature", CARMEN_PARAM_DOUBLE, &(config->maximum_capable_curvature), 0, NULL},
 			{"robot", "understeer_coeficient", CARMEN_PARAM_DOUBLE, &(config->understeer_coeficient), 0, NULL},
 			{"robot", "maximum_speed_forward", CARMEN_PARAM_DOUBLE, &(config->maximum_speed_forward), 0, NULL},
 			{"robot", "maximum_speed_reverse", CARMEN_PARAM_DOUBLE, &(config->maximum_speed_reverse), 0, NULL},
@@ -762,7 +759,8 @@ main(int argc, char **argv)
 	memset(nun_motion_commands, 0, NUM_MOTION_COMMANDS_VECTORS);
 
 	read_parameters(argc, argv, &simulator_conf);
-	carmen_ford_escape_hybrid_read_pid_parameters(argc, argv);
+	//carmen_ford_escape_hybrid_read_pid_parameters(argc, argv);
+	carmen_libpid_read_PID_parameters(argc, argv);
 	
 	carmen_simulator_ackerman_initialize_object_model(argc, argv);
 

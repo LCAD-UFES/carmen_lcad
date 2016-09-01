@@ -70,6 +70,18 @@ static carmen_map_p offline_grid_map = NULL;
 
 int frame = 1;
 
+int number_of_threads = 1;
+
+
+#ifdef AJUSTE
+double sigma = 7.0;			// desvio padrão dos pesos das partículas (0.1 funciona apenas no baseline)
+double alpha_1 = 1.5; 		// desvio padrão da velocidade padrão 0.2
+double alpha_2 = 0.05; 		// desvio padrão de theta padrão 0.01
+//
+FILE * parametro;
+static int cont = 0;
+#endif
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -269,6 +281,7 @@ deallocation_moving_objects_point_clouds_message()
 	for (i = 0; i < moving_objects_point_clouds_message.num_point_clouds; i++)
 	{
 		free(moving_objects_point_clouds_message.point_clouds[i].points);
+//		free(moving_objects_point_clouds_message.point_clouds[i].particulas);
 	}
 	free(moving_objects_point_clouds_message.point_clouds);
 }
@@ -283,6 +296,39 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	Eigen::Vector3f	color_palette;
 	std::list<object_point_cloud_data_t> list_point_clouds;
 	std::list<color_palette_and_association_data_t> l_color_palette_and_association;
+
+
+#ifdef AJUSTE
+	// todo modificações para testar os parâmetros primeira mensagem
+
+	char filename[256];
+
+
+	if(cont == 0)
+	{
+		sprintf(filename,"parametros/final-22.txt");
+		parametro = fopen(filename,"w");
+		cont++;
+	}
+//	if (velodyne_message->timestamp == 1379356494.718246)
+//	{
+//		if(parametro != NULL){
+//			fclose(parametro);
+//		}
+//		if (alpha_1 < 3.0) {
+//			if (cont > 0)
+//				alpha_1 += 0.5;
+//		} else {
+//			alpha_1 = 1.0;
+//			sigma += 1.0;
+//		}
+//
+//		sprintf(filename,"parametros/final-22.txt",cont+16,sigma,alpha_1,alpha_2);
+//		//sprintf(filename,"parametros/%02d_sig-%.1f_alf1-%.1f_alf2-%.2f.txt",cont+16,sigma,alpha_1,alpha_2);
+//		parametro = fopen(filename,"w");
+//		cont++;
+//	}
+#endif
 
 	if (localize_initialized)
 	{
@@ -359,6 +405,18 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 				j++;
 			}
 
+			//fixme para a visualização das partículas
+//			moving_objects_point_clouds_message.point_clouds[i].particulas = (particle_print_t*) malloc(400 * sizeof(particle_print_t));
+//			if(it->particle_set.size() > 0) {
+//				for(int k = 0; k < 400; k++){
+//					moving_objects_point_clouds_message.point_clouds[i].particulas[k].class_id = it->particle_set[k].class_id;
+//					moving_objects_point_clouds_message.point_clouds[i].particulas[k].geometry = it->particle_set[k].model_features.geometry;
+//					moving_objects_point_clouds_message.point_clouds[i].particulas[k].pose = it->particle_set[k].pose;
+//					moving_objects_point_clouds_message.point_clouds[i].particulas[k].velocity = it->particle_set[k].velocity;
+//				}
+//			}
+
+
 			i++;
 		}
 
@@ -369,6 +427,104 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	}
 
 }
+
+// todo para a base KITTI
+static void
+velodyne_variable_scan_message_handler(carmen_velodyne_variable_scan_message *velodyne_message)
+{
+
+	int i, j;
+	int num_points;
+	int num_point_clouds;
+	Eigen::Vector3f	color_palette;
+	std::list<object_point_cloud_data_t> list_point_clouds;
+	std::list<color_palette_and_association_data_t> l_color_palette_and_association;
+
+	if (localize_initialized)
+	{
+		num_points = velodyne_message->number_of_shots * spherical_sensor_params[8].vertical_resolution;
+
+		if (first_velodyne_message_flag)
+		{
+			carmen_3d_point_clouds = (carmen_vector_3D_t *) malloc(velodyne_message->number_of_shots*spherical_sensor_params[8].vertical_resolution*sizeof(carmen_vector_3D_t));
+			carmen_test_alloc(carmen_3d_point_clouds);
+			first_velodyne_message_flag = 0;
+		}
+
+		if (spherical_sensor_data[8].points == NULL)
+			return;
+
+		moving_objects_input = bundle_moving_objects_input_data();
+
+		list_point_clouds = detect_and_follow_moving_objects_variable_scan(velodyne_message, &spherical_sensor_params[8],
+				&spherical_sensor_data[8], &car_fused_velocity, car_phi, moving_objects_input, carmen_3d_point_clouds,
+				offline_grid_map);
+
+		num_point_clouds = list_point_clouds.size();
+
+		/*** PRINT NUMBER OF POINT CLOUDS SEGMENTED IN THE SCENE ***/
+//		printf("frame: %d \n", frame);
+//		printf("num_point_clouds: %d \n", num_point_clouds);
+//		printf("current timestamp: %.10f \n", velodyne_message->timestamp);
+		frame++;
+
+		if (num_point_clouds == 0)
+			return;
+
+		l_color_palette_and_association = get_color_palette_and_association();
+
+		init_allocation_moving_objects_point_clouds_message(num_point_clouds);
+
+		i = 0;
+		for (std::list<object_point_cloud_data_t>::const_iterator it = list_point_clouds.begin(); it != list_point_clouds.end(); it++, i++)
+		{
+			num_points = it->point_cloud.size();
+			init_allocation_moving_objects_points_for_point_cloud_i(i, num_points);
+		}
+
+		moving_objects_point_clouds_message.num_point_clouds = num_point_clouds;
+
+		i = 0;
+		for (std::list<object_point_cloud_data_t>::const_iterator it = list_point_clouds.begin(); it != list_point_clouds.end(); ++it)
+		{
+			j = 0;
+
+			color_palette = get_rgb_from_color_palette_and_association(it->num_color_associate, l_color_palette_and_association);
+
+			moving_objects_point_clouds_message.point_clouds[i].r = ((double)color_palette[0]) / 255.0;
+			moving_objects_point_clouds_message.point_clouds[i].g = ((double)color_palette[1]) / 255.0;
+			moving_objects_point_clouds_message.point_clouds[i].b = ((double)color_palette[2]) / 255.0;
+			moving_objects_point_clouds_message.point_clouds[i].point_size      = it->point_cloud.size();
+			moving_objects_point_clouds_message.point_clouds[i].linear_velocity = it->linear_velocity;
+			moving_objects_point_clouds_message.point_clouds[i].orientation     = it->orientation;
+			moving_objects_point_clouds_message.point_clouds[i].object_pose.x   = it->object_pose.position.x;// + it->car_global_pose.position.x;//it->centroid[0] + it->car_global_pose.position.x;
+			moving_objects_point_clouds_message.point_clouds[i].object_pose.y   = it->object_pose.position.y;// + it->car_global_pose.position.y;//it->centroid[1] + it->car_global_pose.position.y;
+			moving_objects_point_clouds_message.point_clouds[i].object_pose.z   = it->object_pose.position.z + it->car_global_pose.position.z;//it->centroid[2] + it->car_global_pose.position.z;
+			moving_objects_point_clouds_message.point_clouds[i].height          = it->geometry.height;
+			moving_objects_point_clouds_message.point_clouds[i].length          = it->geometry.length;
+			moving_objects_point_clouds_message.point_clouds[i].width           = it->geometry.width;
+			moving_objects_point_clouds_message.point_clouds[i].geometric_model = it->geometric_model;
+			moving_objects_point_clouds_message.point_clouds[i].model_features  = it->model_features;
+			moving_objects_point_clouds_message.point_clouds[i].num_associated  = it->num_color_associate;
+
+			for (pcl::PointCloud<pcl::PointXYZ>::const_iterator pit = it->point_cloud.begin(); pit != it->point_cloud.end(); pit++)
+			{
+				moving_objects_point_clouds_message.point_clouds[i].points[j].x = pit->x + it->car_global_pose.position.x;
+				moving_objects_point_clouds_message.point_clouds[i].points[j].y = pit->y + it->car_global_pose.position.y;
+				moving_objects_point_clouds_message.point_clouds[i].points[j].z = pit->z + it->car_global_pose.position.z;
+				j++;
+			}
+
+			i++;
+		}
+
+		moving_objects_point_clouds_message.timestamp = velodyne_message->timestamp;
+		carmen_moving_objects_point_clouds_publish_message(&moving_objects_point_clouds_message);
+		deallocation_moving_objects_point_clouds_message();
+	}
+
+}
+
 
 
 void static
@@ -420,6 +576,33 @@ init_velodyne_points(spherical_point_cloud **velodyne_points_out, unsigned char 
 	*robot_timestamp_out = robot_timestamp;
 }
 
+double *
+get_variable_velodyne_correction()
+{
+	double *vert_angle = (double*) calloc(64,sizeof(double));
+	carmen_test_alloc(vert_angle);
+
+	// angulo vertical minimo
+	double vmin = carmen_radians_to_degrees(-0.45);
+	// angulo vertical maximo
+	double vmax = carmen_radians_to_degrees(0.111);
+	// intervalo angular vertical
+	double vstep = (vmax - vmin) / 64.0;
+
+	for(int i = 0; i < 64; i++) {
+		vert_angle[i] = vmin + vstep * i;
+	}
+
+	return vert_angle;
+}
+
+void
+print_correction(double * correction, int res)
+{
+	for(int i = 0; i < res; i++)
+		printf("%f ", correction[i]);
+}
+
 
 static void
 get_sensors_param(int argc, char **argv)
@@ -466,7 +649,7 @@ get_sensors_param(int argc, char **argv)
 				&spherical_sensor_data[0].robot_velocity, &spherical_sensor_data[0].robot_timestamp, &spherical_sensor_data[0].robot_phi);
 		spherical_sensor_params[0].sensor_to_board_matrix = create_rotation_matrix(spherical_sensor_params[0].pose.orientation);
 		spherical_sensor_data[0].point_cloud_index = 0;
-		carmen_prob_models_alloc_sensor_data(&spherical_sensor_data[0], spherical_sensor_params[0].vertical_resolution);
+		carmen_prob_models_alloc_sensor_data(&spherical_sensor_data[0], spherical_sensor_params[0].vertical_resolution, number_of_threads);
 
 		if (max_range < spherical_sensor_params[0].range_max)
 		{
@@ -503,6 +686,7 @@ get_sensors_param(int argc, char **argv)
 
 			};
 
+
 			carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 
 			if (flipped)
@@ -531,18 +715,27 @@ get_sensors_param(int argc, char **argv)
 
 			spherical_sensor_params[i].range_max_factor = 1.0;
 			spherical_sensor_params[i].ray_order = generates_ray_order(spherical_sensor_params[i].vertical_resolution);
-			spherical_sensor_params[i].vertical_correction = get_stereo_velodyne_correction(flipped, i, spherical_sensor_params[i].vertical_resolution, roi_ini, roi_end, 0, 0);
+
+			spherical_sensor_params[i].vertical_correction = get_variable_velodyne_correction();
+//			spherical_sensor_params[i].vertical_correction = get_stereo_velodyne_correction(flipped, i, spherical_sensor_params[i].vertical_resolution, roi_ini, roi_end, 0, 0);
+
 			init_velodyne_points(&spherical_sensor_data[i].points, &spherical_sensor_data[i].intensity, &spherical_sensor_data[i].robot_pose,
 					&spherical_sensor_data[i].robot_velocity, &spherical_sensor_data[i].robot_timestamp, &spherical_sensor_data[i].robot_phi);
 			spherical_sensor_params[i].sensor_to_board_matrix = create_rotation_matrix(spherical_sensor_params[i].pose.orientation);
 			spherical_sensor_data[i].point_cloud_index = 0;
-			carmen_prob_models_alloc_sensor_data(&spherical_sensor_data[i], spherical_sensor_params[i].vertical_resolution);
+			carmen_prob_models_alloc_sensor_data(&spherical_sensor_data[i], spherical_sensor_params[i].vertical_resolution, number_of_threads);
 
 			//TODO : tem que fazer esta medida para as cameras igual foi feito para o velodyne
-			spherical_sensor_params[i].delta_difference_mean = (double *)calloc(50, sizeof(double));
-			spherical_sensor_params[i].delta_difference_stddev = (double *)calloc(50, sizeof(double));
-			for (j = 0; j < 50; j++)
-				spherical_sensor_params[i].delta_difference_stddev[j] = 1.0;
+			if(i == 8) {
+				spherical_sensor_params[i].delta_difference_mean = carmen_velodyne_get_delta_difference_mean();
+				spherical_sensor_params[i].delta_difference_stddev = carmen_velodyne_get_delta_difference_stddev();
+
+			} else {
+				spherical_sensor_params[i].delta_difference_mean = (double *)calloc(50, sizeof(double));
+				spherical_sensor_params[i].delta_difference_stddev = (double *)calloc(50, sizeof(double));
+				for (j = 0; j < 50; j++)
+					spherical_sensor_params[i].delta_difference_stddev[j] = 1.0;
+			}
 
 		}
 	}
@@ -618,28 +811,6 @@ get_alive_sensors(int argc, char **argv)
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne8_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[8].unexpeted_delta_range_sigma, 0, NULL},
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne9_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[9].unexpeted_delta_range_sigma, 0, NULL},
 
-			{(char*)"localize_ackerman", (char*)"velodyne_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne1_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[1].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne2_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[2].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne3_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[3].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne4_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[4].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne5_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[5].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne6_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[6].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne7_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[7].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne8_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[8].lambda_short_min, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne9_lambda_short_min", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[9].lambda_short_min, 0, NULL},
-
-			{(char*)"localize_ackerman", (char*)"velodyne_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne1_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[1].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne2_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[2].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne3_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[3].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne4_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[4].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne5_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[5].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne6_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[6].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne7_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[7].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne8_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[8].lambda_short_max, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne9_lambda_short_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[9].lambda_short_max, 0, NULL},
-
 			{(char*)"localize_ackerman",  (char*)"velodyne_range_max_factor", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].range_max_factor, 0, NULL}
 
 
@@ -648,14 +819,18 @@ get_alive_sensors(int argc, char **argv)
 
 	for (i = 0; i < number_of_sensors; i++)
 	{
-		spherical_sensor_data[i].ray_position_in_the_floor = NULL;
-		spherical_sensor_data[i].maxed = NULL;
-		spherical_sensor_data[i].obstacle_height = NULL;
-		spherical_sensor_data[i].occupancy_log_odds_of_each_ray_target = NULL;
+
+		spherical_sensor_data[i].ray_position_in_the_floor = (carmen_vector_2D_t**)calloc(number_of_threads ,sizeof(carmen_vector_2D_t*));
+		spherical_sensor_data[i].maxed = (int**)calloc(number_of_threads ,sizeof(int*));
+		spherical_sensor_data[i].obstacle_height = (double**)calloc(number_of_threads ,sizeof(double*));
+		spherical_sensor_data[i].occupancy_log_odds_of_each_ray_target = (double**)calloc(number_of_threads ,sizeof(double*));
 		spherical_sensor_data[i].point_cloud_index = 0;
 		spherical_sensor_data[i].points = NULL;
-		spherical_sensor_data[i].ray_origin_in_the_floor = NULL;
-		spherical_sensor_data[i].ray_size_in_the_floor = NULL;
+		spherical_sensor_data[i].ray_origin_in_the_floor = (carmen_vector_2D_t**)calloc(number_of_threads ,sizeof(carmen_vector_2D_t*));;
+		spherical_sensor_data[i].ray_size_in_the_floor = (double**)calloc(number_of_threads ,sizeof(double*));
+		spherical_sensor_data[i].processed_intensity = (double**)calloc(number_of_threads ,sizeof(double*));
+		spherical_sensor_data[i].ray_hit_the_robot = (int**)calloc(number_of_threads ,sizeof(int*));
+		spherical_sensor_data[i].ray_that_hit_the_nearest_target = (int*)calloc(number_of_threads ,sizeof(int));
 
 		spherical_sensor_params[i].name = NULL;
 		spherical_sensor_params[i].ray_order = NULL;
@@ -663,6 +838,17 @@ get_alive_sensors(int argc, char **argv)
 		spherical_sensor_params[i].vertical_correction = NULL;
 		spherical_sensor_params[i].vertical_resolution = 0;
 
+		for (int j = 0; j < number_of_threads; j++)
+		{
+			spherical_sensor_data[i].ray_position_in_the_floor[j] = NULL;
+			spherical_sensor_data[i].maxed[j] = NULL;
+			spherical_sensor_data[i].obstacle_height[j] = NULL;
+			spherical_sensor_data[i].occupancy_log_odds_of_each_ray_target[j] = NULL;
+			spherical_sensor_data[i].ray_origin_in_the_floor[j] = NULL;
+			spherical_sensor_data[i].ray_size_in_the_floor[j] = NULL;
+			spherical_sensor_data[i].processed_intensity[i] = NULL;
+			spherical_sensor_data[i].ray_hit_the_robot[j] = NULL;
+		}
 
 		if (spherical_sensor_params[i].alive)
 		{
@@ -720,10 +906,17 @@ read_parameters(int argc, char **argv)
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+void sigint(int)
+{
+ 	exit(0);
+}
 
 int
 main(int argc, char **argv)
 {
+
+	signal(SIGINT, sigint);
+
 	/* Connect to IPC Server */
 	carmen_ipc_initialize(argc, argv);
 
@@ -746,17 +939,22 @@ main(int argc, char **argv)
 	carmen_moving_objects_point_clouds_define_messages();
 
 	/* Subscribe to sensor and filter messages */
-    carmen_velodyne_subscribe_partial_scan_message(NULL,
-                                                   (carmen_handler_t) velodyne_partial_scan_message_handler,
-                                                   CARMEN_SUBSCRIBE_LATEST);
+	carmen_localize_ackerman_subscribe_globalpos_message(NULL,
+				(carmen_handler_t) localize_ackerman_handler, CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_localize_ackerman_subscribe_globalpos_message(NULL,
-                                                         (carmen_handler_t) localize_ackerman_handler,
-                                                         CARMEN_SUBSCRIBE_LATEST);
+    carmen_velodyne_subscribe_partial_scan_message(NULL,
+    		(carmen_handler_t) velodyne_partial_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_stereo_velodyne_subscribe_scan_message(8, NULL,
+    		(carmen_handler_t)velodyne_variable_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+//    carmen_localize_ackerman_subscribe_globalpos_message(NULL,
+//			(carmen_handler_t) localize_ackerman_handler, CARMEN_SUBSCRIBE_LATEST);
 
     carmen_map_server_subscribe_offline_map(NULL,
-            								(carmen_handler_t) carmen_map_server_offline_map_message_handler,
-            								CARMEN_SUBSCRIBE_LATEST);
+    		(carmen_handler_t) carmen_map_server_offline_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+
 
 	carmen_ipc_dispatch();
 

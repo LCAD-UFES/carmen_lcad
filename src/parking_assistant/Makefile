@@ -14,7 +14,7 @@ IFLAGS +=
 
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -lparam_interface -lglobal -lipc -lparking_assistant_interface \
-		  -llocalize_ackerman_interface -lgrid_mapping_interface -lcollision_detection \
+		  -llocalize_ackerman_interface -lmapper_interface -lcollision_detection \
 		  -lultrasonic_filter_interface -lbehavior_selector_interface \
 		  -lnavigator_ackerman_interface -llocalize_ackerman_interface -lsimulator_ackerman_interface \
 		  -lplayback_interface -lnavigator_gui2_interface -lGL -lglut -lGLU -lvoice -lespeak

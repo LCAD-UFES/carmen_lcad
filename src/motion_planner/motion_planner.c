@@ -418,10 +418,7 @@ get_motion_command_phi(double phi, double time, carmen_ackerman_traj_point_t cur
 	if (phi_signal_negative(current_robot_position, center_of_the_car_front_axel, point_in_trajectory))
 		desired_phi = -desired_phi;
 
-	max_phi = carmen_get_phi_from_curvature(carmen_robot_ackerman_config.maximum_steering_command_curvature,
-			current_robot_position.v,
-			carmen_robot_ackerman_config.understeer_coeficient,
-			carmen_robot_ackerman_config.distance_between_front_and_rear_axles);
+	max_phi = carmen_robot_ackerman_config.max_phi;
 
 	if (fabs(desired_phi) > max_phi)
 		desired_phi = (desired_phi / fabs(desired_phi)) * max_phi;
@@ -940,7 +937,7 @@ motion_planner_set_algorithm(carmen_behavior_selector_algorithm_t new_algorithm,
 
 
 void 
-copy_grid_mapping_to_map_vector(carmen_grid_mapping_message *grid_map, int position)
+copy_grid_mapping_to_map_vector(carmen_mapper_map_message *grid_map, int position)
 {
 	int i;
 
@@ -1167,7 +1164,6 @@ motion_planner_read_parameters(int argc, char **argv)
 			{"robot", "maximum_deceleration_reverse", CARMEN_PARAM_DOUBLE, &(carmen_robot_ackerman_config.maximum_deceleration_reverse), 0, NULL},
 
 			{"robot", "understeer_coeficient", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.understeer_coeficient, 1, NULL},
-			{"robot", "maximum_steering_command_curvature", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.maximum_steering_command_curvature, 1, NULL},
 			{"robot", "maximum_steering_command_rate", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.maximum_steering_command_rate, 1, NULL},
 			{"motion_planner", "phi_gain", CARMEN_PARAM_DOUBLE, &phi_gain, 1, NULL},
 	};

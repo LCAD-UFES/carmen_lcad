@@ -226,7 +226,7 @@ build_trajectory_stop_smooth_trajectory_phi() //This function allows to create a
 {
 	for (int i = 0; i < 50; i++)
 	{
-		motion_commands_vector[i].v = 2.5;
+		motion_commands_vector[i].v = 4.0;
 		motion_commands_vector[i].phi = 0.0;//t * (max_phi / t1);
 		motion_commands_vector[i].time = 0.1;//delta_t;
 	}
@@ -245,7 +245,7 @@ timer_handler()
 
 	//if (first_time)
 	//{
-	printf("AAAAAA\n\n\n");
+	//printf("AAAAAA\n\n\n");
 	build_trajectory_stop_smooth_trajectory_phi();
 		//first_time = 0;
 	//}
@@ -325,7 +325,6 @@ read_parameters(int argc, char **argv)
 			{"robot", "max_velocity", CARMEN_PARAM_DOUBLE, &motion_planner_config.max_v, 1, NULL},
 			{"robot", "maximum_acceleration_forward", CARMEN_PARAM_DOUBLE, &motion_planner_config.maximum_acceleration_forward, 1, NULL},
 			{"robot", "understeer_coeficient", CARMEN_PARAM_DOUBLE, &motion_planner_config.understeer_coeficient, 1, NULL},
-			{"robot", "maximum_steering_command_curvature", CARMEN_PARAM_DOUBLE, &motion_planner_config.maximum_steering_command_curvature, 1, NULL},
 			{"robot", "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &motion_planner_config.distance_between_front_and_rear_axles, 1, NULL},
 			{"commandline", "max_v", CARMEN_PARAM_DOUBLE, &max_v, 0, NULL},
 			{"commandline", "max_phi", CARMEN_PARAM_DOUBLE, &max_phi, 0, NULL},

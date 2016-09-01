@@ -5,7 +5,7 @@
 #include <carmen/carmen.h>
 #include <carmen/parking_assistant_interface.h>
 #include <carmen/localize_ackerman_interface.h>
-#include <carmen/grid_mapping_interface.h>
+#include <carmen/mapper_interface.h>
 #include <carmen/ultrasonic_filter_interface.h>
 #include <carmen/collision_detection.h>
 #include <carmen/global_graphics.h>
@@ -24,7 +24,7 @@
 #define OFFSET_Y_CAR_POSE		0.4
 #define DISTANCE_NEIGHBOR_CAR	1.531
 
-MessageInterpolation<carmen_localize_ackerman_globalpos_message, carmen_grid_mapping_message> interpolator(1); //3
+MessageInterpolation<carmen_localize_ackerman_globalpos_message, carmen_mapper_map_message> interpolator(1); //3
 
 static carmen_robot_ackerman_config_t car_config;
 
@@ -205,7 +205,7 @@ step_point_reached(carmen_point_t p, carmen_point_t step_point)
 **********************************************************/
 
 static void
-carmen_grid_mapping_message_handler(carmen_grid_mapping_message *message)
+carmen_mapper_message_handler(carmen_mapper_map_message *message)
 {
 
     carmen_localize_ackerman_globalpos_message car;
@@ -375,8 +375,8 @@ carmen_subscribe_to_relevant_messages()
             (carmen_handler_t)carmen_localize_ackerman_globalpos_message_handler,
             CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_grid_mapping_subscribe_message(NULL,
-            (carmen_handler_t)carmen_grid_mapping_message_handler,
+    carmen_mapper_subscribe_message(NULL,
+            (carmen_handler_t)carmen_mapper_message_handler,
             CARMEN_SUBSCRIBE_LATEST);
 }
 

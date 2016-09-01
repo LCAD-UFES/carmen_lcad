@@ -30,7 +30,9 @@ int num_of_models;
 
 int first_associate_object_point_clouds_flag = 1;
 
-
+#ifdef AJUSTE
+extern FILE * parametro;
+#endif
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -838,12 +840,22 @@ init_particle_set(object_point_cloud_data_t &object_pcloud, int num_particles, d
 		particle_datmo_t particle_t_1;
 		particle_t_1.pose.x = x;
 		particle_t_1.pose.y = y;
-		particle_t_1.pose.theta = carmen_uniform_random(-M_PI, M_PI);//object_pcloud.orientation;//carmen_normalize_theta(it->orientation + carmen_gaussian_random(0.0, M_PI));//
-		particle_t_1.velocity = carmen_uniform_random(0.0, 25.0);//object_pcloud.linear_velocity;//
-//		particle_t_1.weight = (1.0 / double(num_of_particles)); //not necessary
+
+		// Inicializa 50% das vezes aleatório e 50% com os dados do centroid
+		if ((rand() % 100) <= 50)
+		{
+			particle_t_1.pose.theta = carmen_uniform_random(-M_PI, M_PI);
+			particle_t_1.velocity = carmen_uniform_random(0.0, 25.0);
+		} else
+		{
+			particle_t_1.pose.theta = carmen_normalize_theta(object_pcloud.orientation + carmen_uniform_random(-M_PI/6, M_PI/6));
+			particle_t_1.velocity = object_pcloud.linear_velocity + carmen_uniform_random(-5.0, 5.0);
+		}
+
+		//particle_t_1.weight = (1.0 / double(num_of_particles)); //not necessary
 		particle_t_1.class_id = get_random_model_id(num_models);
 		particle_t_1.model_features = get_obj_model_features(particle_t_1.class_id);
-//		particle_t_1.model_features_3d = get_obj_model_features_3d(particle_t_1.class_id, object_models_3d);
+		//particle_t_1.model_features_3d = get_obj_model_features_3d(particle_t_1.class_id, object_models_3d);
 		particle_t_1.timestamp = object_pcloud.timestamp;
 
 		object_pcloud.particle_set.push_back(particle_t_1);
@@ -987,8 +999,8 @@ filter_static_objects(std::list<object_point_cloud_data_t> &list_current_point_c
 	double map_resolution = occupancy_grid_map->config.resolution;
 	double map_x_origin = occupancy_grid_map->config.x_origin;
 	double map_y_origin = occupancy_grid_map->config.y_origin;
-	double map_x_size = occupancy_grid_map->config.x_size;
-	double map_y_size = occupancy_grid_map->config.y_size;
+	int map_x_size = occupancy_grid_map->config.x_size;
+	int map_y_size = occupancy_grid_map->config.y_size;
 
 	for (std::list<object_point_cloud_data_t>::iterator it = list_current_point_clouds.begin(); it != list_current_point_clouds.end();)
 	{
@@ -1000,7 +1012,7 @@ filter_static_objects(std::list<object_point_cloud_data_t> &list_current_point_c
 			int y = carmen_round((pit->y + it->car_global_pose.position.y - map_y_origin)/map_resolution);
 
 			/* Check point cloud off limits of gridmap */
-			if (x < 0 || y < 0 || x > map_x_size || y > map_y_size)
+			if (x < 0 || y < 0 || x >= map_x_size || y >= map_y_size)
 			{
 				off_limits = true;
 				break;
@@ -1012,9 +1024,11 @@ filter_static_objects(std::list<object_point_cloud_data_t> &list_current_point_c
 				points_in_occupied_grid++;
 		}
 
-		if (points_in_occupied_grid/it->point_cloud.size() >= threshold_points_in_occupied_grid_rate)
+		//if (((double)points_in_occupied_grid)/((double)it->point_cloud.size()) >= threshold_points_in_occupied_grid_rate)
+		if (points_in_occupied_grid > 1)
 		{
 			it = list_current_point_clouds.erase(it);
+			//printf("removido\n");
 			continue;
 		}
 		if (off_limits)
@@ -1026,6 +1040,46 @@ filter_static_objects(std::list<object_point_cloud_data_t> &list_current_point_c
 	}
 }
 
+void
+filter_static_points(pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud_ptr, carmen_map_p & occupancy_grid_map,
+		moving_objects_input_data_t moving_objects_input)
+{
+
+	/* Check if global position is set */
+	if (moving_objects_input.first_offline_map_message != -1)
+		return;
+
+	if (occupancy_grid_map == NULL)
+		return;
+
+	double map_resolution = occupancy_grid_map->config.resolution;
+	double map_x_origin = occupancy_grid_map->config.x_origin;
+	double map_y_origin = occupancy_grid_map->config.y_origin;
+	int map_x_size = occupancy_grid_map->config.x_size;
+	int map_y_size = occupancy_grid_map->config.y_size;
+
+	for (pcl::PointCloud<pcl::PointXYZ>::iterator it = pcl_cloud_ptr->points.begin(); it != pcl_cloud_ptr->points.end(); )
+	{
+		int x = carmen_round((it->x + moving_objects_input.car_global_pose.position.x - map_x_origin)/map_resolution);
+		int y = carmen_round((it->y + moving_objects_input.car_global_pose.position.y - map_y_origin)/map_resolution);
+
+		/* Check point cloud off limits of gridmap */
+		if (x < 0 || y < 0 || x >= map_x_size || y >= map_y_size)
+		{
+			it = pcl_cloud_ptr->points.erase(it);
+			continue;
+		}
+
+		double occupancy_rate = occupancy_grid_map->map[x][y];
+
+		if (occupancy_rate >= threshold_occupancy_rate)
+			it = pcl_cloud_ptr->points.erase(it);
+		else
+			it++;
+	}
+
+
+}
 
 void
 associate_object_point_clouds(std::list<object_point_cloud_data_t> &list_point_clouds,
@@ -1033,7 +1087,7 @@ associate_object_point_clouds(std::list<object_point_cloud_data_t> &list_point_c
 		moving_objects_input_data_t moving_objects_input)
 {
 	filter_curbs_point_cloud(list_current_point_clouds);
-	//filter_static_objects(list_current_point_clouds, occupancy_grid_map, moving_objects_input);
+	filter_static_objects(list_current_point_clouds, occupancy_grid_map, moving_objects_input);
 	if (first_associate_object_point_clouds_flag)
 	{
 		set_list_color_palette_and_association();
@@ -1307,6 +1361,7 @@ compute_average_state_and_update_timestamp(std::vector<particle_datmo_t> &partic
 	most_frequent = max_element(vec_class_counter.begin(), vec_class_counter.end());
 	mean_particle.class_id = most_frequent - vec_class_counter.begin();
 	mean_particle.model_features = get_obj_model_features(mean_particle.class_id);
+	mean_particle.timestamp = timestamp;
 
 	return mean_particle;
 }
@@ -1361,11 +1416,11 @@ clear_obj_model_features(object_point_cloud_data_t &object_point_cloud)
 	clear_obj_model_features(object_point_cloud.model_features);
 }
 
-
+#ifdef AJUSTE
 void
-print_object_details(object_point_cloud_data_t obj_point_cloud)
+print_object_details(object_point_cloud_data_t obj_point_cloud, double x, double y)
 {
-	/* Analysis pose and dimensions */
+	/* Analysis pose and dimensions
 	double dist = measurement_model(obj_point_cloud.mean_particle,
 			obj_point_cloud.mean_particle.pose.x,
 			obj_point_cloud.mean_particle.pose.y,
@@ -1388,6 +1443,23 @@ print_object_details(object_point_cloud_data_t obj_point_cloud)
 			dist,
 			obj_point_cloud.mean_particle.weight);
 
+	*
+	*/
+
+	if (obj_point_cloud.mean_particle.pose.x == obj_point_cloud.mean_particle.pose.x && parametro != NULL) // verifica se é NaN
+		fprintf(parametro,"%d %s %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
+			obj_point_cloud.num_color_associate,
+			obj_point_cloud.model_features.model_name,
+			x - obj_point_cloud.car_global_pose.position.x,
+			y - obj_point_cloud.car_global_pose.position.y,
+			obj_point_cloud.mean_particle.pose.x - obj_point_cloud.car_global_pose.position.x,
+			obj_point_cloud.mean_particle.pose.y - obj_point_cloud.car_global_pose.position.y,
+			obj_point_cloud.mean_particle.pose.theta,
+			obj_point_cloud.mean_particle.velocity,
+			obj_point_cloud.model_features.geometry.width,
+			obj_point_cloud.model_features.geometry.length,
+			obj_point_cloud.model_features.geometry.height);
+
 	/* Statistics purposes */
 //	for (std::vector<particle_datmo>::iterator it = obj_point_cloud.particle_set.begin();
 //			it != obj_point_cloud.particle_set.end(); ++it)
@@ -1400,7 +1472,7 @@ print_object_details(object_point_cloud_data_t obj_point_cloud)
 //				obj_point_cloud.num_color_associate);
 //	}
 }
-
+#endif
 
 bool
 is_moving_object(object_point_cloud_data_t obj_point_cloud)
@@ -1472,7 +1544,7 @@ particle_filter_moving_objects_tracking(std::list<object_point_cloud_data_t> &li
 
 			/* KNOWN ISSUE: Car global position included due to lost of precision problem with PCL point types */
 			particle_set_t = algorithm_monte_carlo(particle_set_t_1, x, y, delta_time, it->point_cloud,
-				it->geometry, it->car_global_pose.position, it->num_color_associate);
+				it->geometry, it->car_global_pose.position, it->num_color_associate, it->mean_particle);
 
 			particle_reference = compute_average_state_and_update_timestamp(particle_set_t, it->timestamp);
 
@@ -1481,7 +1553,9 @@ particle_filter_moving_objects_tracking(std::list<object_point_cloud_data_t> &li
 			/*** ANALYSE MOVING OBJECT CONDITIONS/THRESHOLDS ***/
 			if (is_moving_object(*it))
 			{
-				//print_object_details(*it);
+#ifdef AJUSTE
+				print_object_details(*it,x,y);
+#endif
 			}
 			else
 			{
@@ -1494,6 +1568,10 @@ particle_filter_moving_objects_tracking(std::list<object_point_cloud_data_t> &li
 			clear_obj_model_features(*it);
 		}
 	}
+#ifdef AJUSTE
+	if (parametro != NULL)
+		fprintf(parametro,"\n");
+#endif
 }
 
 
@@ -1570,26 +1648,27 @@ detect_points_above_ground_in_vertical_beam(int i, const moving_objects_input_da
 		sensor_data_t *velodyne_data, sensor_parameters_t *velodyne_params, carmen_vector_3D_t *point_clouds, int last_num_points)
 {
 	carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(velodyne_data, velodyne_params, i,
-			moving_objects_input.highest_sensor, moving_objects_input.safe_range_above_sensors, 1);
+			moving_objects_input.highest_sensor, moving_objects_input.safe_range_above_sensors, 1, 0);
 
 	for (int k = 0; k < velodyne_params->vertical_resolution; k++)
 	{
-		if (velodyne_data->obstacle_height[k] >= 0.5 && velodyne_data->obstacle_height[k] <= MAXIMUM_HEIGHT_OF_OBSTACLE
-				&& !velodyne_data->ray_hit_the_robot[k])
+		if (velodyne_data->obstacle_height[0][k] >= 0.5
+				&& velodyne_data->obstacle_height[0][k] <= MAXIMUM_HEIGHT_OF_OBSTACLE
+				&& !velodyne_data->ray_hit_the_robot[0][k])
 		{
-			point_clouds[last_num_points].x = velodyne_data->ray_position_in_the_floor[k].x;
-			point_clouds[last_num_points].y = velodyne_data->ray_position_in_the_floor[k].y;
-			point_clouds[last_num_points].z = velodyne_data->obstacle_height[k];
+			point_clouds[last_num_points].x = velodyne_data->ray_position_in_the_floor[0][k].x;
+			point_clouds[last_num_points].y = velodyne_data->ray_position_in_the_floor[0][k].y;
+			point_clouds[last_num_points].z = velodyne_data->obstacle_height[0][k];
 			last_num_points++;
 		}
-		else if (velodyne_data->occupancy_log_odds_of_each_ray_target[k] > velodyne_params->log_odds.log_odds_l0
-				//&& velodyne_data->obstacle_height[k] <= MAXIMUM_HEIGHT_OF_OBSTACLE
-				&& (velodyne_data->obstacle_height[k] >= 0.3 && velodyne_data->obstacle_height[k] <= MAXIMUM_HEIGHT_OF_OBSTACLE)
-				&& !velodyne_data->ray_hit_the_robot[k])
+		else if (velodyne_data->occupancy_log_odds_of_each_ray_target[0][k] > velodyne_params->log_odds.log_odds_l0
+				&& velodyne_data->obstacle_height[0][k] >= 0.30
+				&& velodyne_data->obstacle_height[0][k] <= MAXIMUM_HEIGHT_OF_OBSTACLE
+				&& !velodyne_data->ray_hit_the_robot[0][k])
 		{
-			point_clouds[last_num_points].x = velodyne_data->ray_position_in_the_floor[k].x;
-			point_clouds[last_num_points].y = velodyne_data->ray_position_in_the_floor[k].y;
-			point_clouds[last_num_points].z = velodyne_data->obstacle_height[k];
+			point_clouds[last_num_points].x = velodyne_data->ray_position_in_the_floor[0][k].x;
+			point_clouds[last_num_points].y = velodyne_data->ray_position_in_the_floor[0][k].y;
+			point_clouds[last_num_points].z = velodyne_data->obstacle_height[0][k];
 			last_num_points++;
 		}
 
@@ -1623,7 +1702,7 @@ detect_points_above_ground(sensor_parameters_t *velodyne_params, sensor_data_t *
 
 		carmen_prob_models_compute_relevant_map_coordinates(velodyne_data, velodyne_params, i, robot_interpolated_position.position,
 				moving_objects_input.sensor_board_1_pose, r_matrix_car_to_global, moving_objects_input.sensor_board_1_to_car_matrix,
-				moving_objects_input.robot_wheel_radius, x_origin, y_origin, &moving_objects_input.car_config, 0);
+				moving_objects_input.robot_wheel_radius, x_origin, y_origin, &moving_objects_input.car_config, 0, 0);
 
 		last_num_points = detect_points_above_ground_in_vertical_beam(i, moving_objects_input, velodyne_data, velodyne_params,
 				point_clouds, last_num_points);
@@ -1646,7 +1725,7 @@ build_point_cloud_using_velodyne_message(carmen_velodyne_partial_scan_message *v
 	if (velodyne_data->last_timestamp == 0.0)
 	{
 		velodyne_data->last_timestamp = velodyne_message->timestamp;
-		velodyne_message_id = -2; // correntemente sao necessarias pelo menos 2 mensagens para se ter uma volta completa de velodyne
+		velodyne_message_id = 0; // correntemente sao necessarias pelo menos 2 mensagens para se ter uma volta completa de velodyne
 	}
 
 	velodyne_data->current_timestamp = velodyne_message->timestamp;
@@ -1974,6 +2053,109 @@ detect_and_follow_moving_objects(carmen_velodyne_partial_scan_message *velodyne_
 	convert_carmen_vector_3d_to_pcl_point_subtracting_global_pose(carmen_vector_3d_point_cloud, size_of_point_cloud,
 			pcl_cloud_ptr, moving_objects_input);
 
+	/*** REMOVES THE POINTS PRESENT IN OFFLINE MAP ***/
+	//filter_static_points(pcl_cloud_ptr, occupancy_grid_map, moving_objects_input);
+
+	/*** SEGMENT POINT CLOUDS - RETURNS CLUSTER INDICES ***/
+	cluster_indices = find_objects_in_point_clouds(pcl_cloud_ptr);
+
+	/*** ASSOCIATE AND CONFIGURE POINT CLOUDS ***/
+	list_point_clouds = association_list_point_clouds(pcl_cloud_ptr, moving_objects_input.car_global_pose, cluster_indices,
+			velodyne_message->timestamp, occupancy_grid_map, moving_objects_input);
+
+#ifdef AJUSTE
+	if (parametro != NULL)
+		fprintf(parametro,"%f\n",velodyne_message->timestamp);
+#endif
+
+	/*** PARTICLE FILTER FOR DATMO ***/
+	particle_filter_moving_objects_tracking(list_point_clouds);
+
+	/* Set the global variable list_previous_point_clouds for next frame */
+	set_association_list_point_clouds(list_point_clouds);
+
+	return list_point_clouds;
+}
+
+// TODO Versão para funcionar com a base KITTI
+
+int
+build_point_cloud_using_variable_velodyne_message(carmen_velodyne_variable_scan_message *velodyne_message,
+		sensor_parameters_t *velodyne_params, sensor_data_t *velodyne_data, carmen_vector_3D_t *robot_velocity,
+		double phi, moving_objects_input_data_t moving_objects_input, carmen_vector_3D_t *point_clouds)
+{
+	static rotation_matrix *r_matrix_car_to_global = NULL;
+	static int velodyne_message_id;
+	int current_point_cloud_index;
+	int num_points = velodyne_message->number_of_shots * velodyne_params->vertical_resolution;
+	int last_num_points = 0;
+
+	if (velodyne_data->last_timestamp == 0.0)
+	{
+		velodyne_data->last_timestamp = velodyne_message->timestamp;
+	//	velodyne_message_id = -2; // correntemente sao necessarias pelo menos 2 mensagens para se ter uma volta completa de velodyne
+	}
+
+	velodyne_data->current_timestamp = velodyne_message->timestamp;
+
+	build_sensor_point_cloud(&(velodyne_data->points), velodyne_data->intensity, &(velodyne_data->point_cloud_index), num_points,
+			moving_objects_input.num_velodyne_point_clouds);
+
+	carmen_velodyne_variable_scan_update_points(velodyne_message,
+			velodyne_params->vertical_resolution,
+			&(velodyne_data->points[velodyne_data->point_cloud_index]),
+			velodyne_data->intensity[velodyne_data->point_cloud_index],
+			velodyne_params->ray_order,
+			velodyne_params->vertical_correction,
+			velodyne_params->range_max,
+			velodyne_message->timestamp);
+
+	if (velodyne_message_id >= 0)
+	{
+		carmen_pose_3D_t local_pose;
+
+		local_pose.position          = moving_objects_input.car_fused_pose.position;
+		local_pose.orientation.yaw   = moving_objects_input.car_fused_pose.orientation.yaw;
+		local_pose.orientation.pitch = local_pose.orientation.roll = 0.0;
+
+		r_matrix_car_to_global = compute_rotation_matrix(r_matrix_car_to_global, local_pose.orientation);
+		current_point_cloud_index = velodyne_data->point_cloud_index;
+		last_num_points = detect_points_above_ground(velodyne_params, velodyne_data, r_matrix_car_to_global, &local_pose,
+				robot_velocity, 0.0, 0.0, current_point_cloud_index, phi, moving_objects_input, point_clouds);
+
+		if (velodyne_message_id > 1000000)
+			velodyne_message_id = 0;
+	}
+	velodyne_message_id++;
+	velodyne_data->last_timestamp = velodyne_message->timestamp;
+
+	return last_num_points;
+}
+
+std::list<object_point_cloud_data_t>
+detect_and_follow_moving_objects_variable_scan(carmen_velodyne_variable_scan_message *velodyne_message, sensor_parameters_t *velodyne_params,
+		sensor_data_t *velodyne_data, carmen_vector_3D_t *robot_velocity, double phi,
+		moving_objects_input_data_t moving_objects_input, carmen_vector_3D_t *carmen_vector_3d_point_cloud,
+		carmen_map_p & occupancy_grid_map)
+{
+	int size_of_point_cloud = 0;
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
+	std::vector<pcl::PointIndices> cluster_indices;
+	std::list<object_point_cloud_data_t> list_point_clouds;
+
+	if (object_models.empty())
+	{
+		set_object_models(object_models);
+	}
+
+	/*** GET POINTS FROM LASER SCAN ***/
+	size_of_point_cloud = build_point_cloud_using_variable_velodyne_message(velodyne_message, velodyne_params, velodyne_data,
+			robot_velocity, phi, moving_objects_input, carmen_vector_3d_point_cloud);
+
+	/*** CONVERT TO PCL POINT CLOUD FORMAT SUBTRACTING GLOBAL POSE ***/
+	convert_carmen_vector_3d_to_pcl_point_subtracting_global_pose(carmen_vector_3d_point_cloud, size_of_point_cloud,
+			pcl_cloud_ptr, moving_objects_input);
+
 	/*** SEGMENT POINT CLOUDS - RETURNS CLUSTER INDICES ***/
 	cluster_indices = find_objects_in_point_clouds(pcl_cloud_ptr);
 
@@ -1984,7 +2166,7 @@ detect_and_follow_moving_objects(carmen_velodyne_partial_scan_message *velodyne_
 	/*** PARTICLE FILTER FOR DATMO ***/
 	particle_filter_moving_objects_tracking(list_point_clouds);
 
-	/* Set the global variable list_previous_point_clouds for next frame */
+	/* Set the global variable list_previous_point_clouds for next iteration */
 	set_association_list_point_clouds(list_point_clouds);
 
 	return list_point_clouds;

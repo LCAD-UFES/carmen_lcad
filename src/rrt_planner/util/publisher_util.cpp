@@ -9,7 +9,6 @@
 #include "../message/rrt_planner_interface.h"
 #include <map>
 #include "../model/global_state.h"
-#include <carmen/grid_mapping_interface.h>
 #include "dijkstra.h"
 
 void
@@ -46,8 +45,8 @@ Publisher_Util::publish_plan_tree_message(Tree &t, const vector<RRT_Node *> &rea
 		plan_tree_msg.num_edges += t.nodes[i]->adjacency_nodes.size();
 	}
 
-	plan_tree_msg.p1 = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * plan_tree_msg.num_edges);
-	plan_tree_msg.p2 = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * plan_tree_msg.num_edges);
+	plan_tree_msg.p1 = (carmen_ackerman_traj_point_t *) malloc (sizeof(carmen_ackerman_traj_point_t) * plan_tree_msg.num_edges);
+	plan_tree_msg.p2 = (carmen_ackerman_traj_point_t *) malloc (sizeof(carmen_ackerman_traj_point_t) * plan_tree_msg.num_edges);
 	plan_tree_msg.mask = (int *) malloc(sizeof(int) * plan_tree_msg.num_edges);
 
 	int aux = 0;
@@ -114,6 +113,56 @@ Publisher_Util::publish_plan_tree_message(Tree &t, const vector<RRT_Node *> &rea
 	free(plan_tree_msg.mask);
 }
 
+void
+Publisher_Util::publish_principal_path_message(list<RRT_Path_Edge> &path)
+{
+	if(path.empty())
+		return;
+
+	static carmen_navigator_ackerman_plan_tree_message plan_tree_msg;
+	IPC_RETURN_TYPE err = IPC_OK;
+	static bool	first_time = true;
+
+	if (first_time)
+	{
+		define_plan_tree_message();
+		plan_tree_msg.host = carmen_get_host();
+		first_time = false;
+	}
+
+	plan_tree_msg.timestamp = carmen_get_time();
+	plan_tree_msg.num_edges = 0;
+
+	plan_tree_msg.p1 = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * plan_tree_msg.num_edges);
+	plan_tree_msg.p2 = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * plan_tree_msg.num_edges);
+	plan_tree_msg.mask = (int *) malloc(sizeof(int) * plan_tree_msg.num_edges);
+
+	carmen_navigator_ackerman_plan_message msg;
+
+	plan_tree_msg.num_path = 1;
+
+	msg = get_path(path);
+
+	if (msg.path_length > 100)
+	{
+		printf("Error: msg.path_length > 100 in Publisher_Util::publish_plan_tree_message()\n");
+		exit(1);
+	}
+
+	memcpy(plan_tree_msg.paths[0], msg.path, sizeof(carmen_ackerman_traj_point_t) * msg.path_length);
+
+	plan_tree_msg.path_size[0] = msg.path_length;
+
+	err = IPC_publishData(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME, &plan_tree_msg);
+
+	carmen_test_ipc(err, "Could not publish", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME);
+
+	free(msg.path);
+	free(plan_tree_msg.p1);
+	free(plan_tree_msg.p2);
+	free(plan_tree_msg.mask);
+}
+
 
 void
 Publisher_Util::publish_navigator_ackerman_plan_message(carmen_navigator_ackerman_plan_message msg)
@@ -160,7 +209,6 @@ Publisher_Util::get_path(list<RRT_Path_Edge> &path)
 {
 	carmen_navigator_ackerman_plan_message msg;
 	list<RRT_Path_Edge>::iterator it;
-	list<RRT_Path_Edge>::reverse_iterator rit;
 	int i;
 
 	msg.host = carmen_get_host();
@@ -178,23 +226,27 @@ Publisher_Util::get_path(list<RRT_Path_Edge> &path)
 
 	it = path.begin();
 
-	for (i = 0; it != path.end(); it++)
+	for (i = 0; it != path.end(); it++, i++)
 	{
 		msg.path[i].x	  = it->p1.pose.x;
 		msg.path[i].y	  = it->p1.pose.y;
 		msg.path[i].theta = it->p1.pose.theta;
 		msg.path[i].v	  = it->command.v;
 		msg.path[i].phi	  = it->command.phi;
-		i++;
+
+//		printf( "p.x = %lf, p.y = %lf, p.theta = %lf, p.v = %lf, p.phi = %lf\n",
+//				msg.path[i].x, msg.path[i].y, msg.path[i].theta, msg.path[i].v, msg.path[i].phi);
 	}
 
-	rit = path.rbegin();
+	it--;
+	msg.path[i].x	  = it->p2.pose.x;
+	msg.path[i].y	  = it->p2.pose.y;
+	msg.path[i].theta = it->p2.pose.theta;
+	msg.path[i].v	  = it->command.v;
+	msg.path[i].phi	  = it->command.phi;
 
-	msg.path[i].x	  = rit->p2.pose.x;
-	msg.path[i].y	  = rit->p2.pose.y;
-	msg.path[i].theta = rit->p2.pose.theta;
-	msg.path[i].v	  = rit->command.v;
-	msg.path[i].phi	  = rit->command.phi;
+//	printf( "p.x = %lf, p.y = %lf, p.theta = %lf, p.v = %lf, p.phi = %lf\n\n",
+//					msg.path[i].x, msg.path[i].y, msg.path[i].theta, msg.path[i].v, msg.path[i].phi);
 
 	return msg;
 }

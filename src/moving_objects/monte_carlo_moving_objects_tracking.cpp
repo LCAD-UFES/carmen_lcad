@@ -6,42 +6,73 @@
 
 
 particle_datmo_t
-sample_motion_model(double delta_time, particle_datmo_t particle_t_1, double mean)
+sample_motion_model(double delta_time, particle_datmo_t particle_t_1, double mean, particle_datmo_t mean_particle)
 {
 	particle_datmo_t particle_t;
 	carmen_point_t pose_t, pose_t_1;
 	double v;
+
 
 	pose_t_1.x     = particle_t_1.pose.x;
 	pose_t_1.y     = particle_t_1.pose.y;
 	pose_t_1.theta = particle_t_1.pose.theta;
 	v              = particle_t_1.velocity;
 
-//	v = v + carmen_gaussian_random(0.0, alpha_1);
-	v = v + carmen_gaussian_random(0.0, mean*0.1);
+	v = v + carmen_gaussian_random(0.0, alpha_1);
+//	v = v + carmen_gaussian_random(0.0, mean*0.1);
 	if (v > v_max) v = v_max;
 	if (v < v_min) v = v_min;
 
 	pose_t_1.theta = pose_t_1.theta + carmen_gaussian_random(0.0, alpha_2);
+
+/*  Os resultados melhores estão com inicialização aleatória da orientação utilizando o mesmo desvio padrão fixo.
+	double c = 100.0;
+
+	if (mean > c) {
+		mean = c;
+	}
+
+	mean = mean * M_PI / c;
+
+	double theta_noise = carmen_gaussian_random(0.0, mean);
+
+	if(theta_noise > M_PI) {
+		theta_noise = M_PI;
+	} else if (theta_noise < -M_PI){
+		theta_noise = -M_PI;
+	}
+	pose_t_1.theta = pose_t_1.theta + theta_noise;
+*/
+
 	pose_t_1.theta = carmen_normalize_theta(pose_t_1.theta);
 
 	pose_t.x = pose_t_1.x + delta_time*v*cos(pose_t_1.theta);
 	pose_t.y = pose_t_1.y + delta_time*v*sin(pose_t_1.theta);
 
-	particle_t.pose.theta = carmen_normalize_theta(pose_t_1.theta);
+	particle_t.pose.theta = pose_t_1.theta;
 	particle_t.pose.x     = pose_t.x;
 	particle_t.pose.y     = pose_t.y;
 	particle_t.velocity   = v;
 	particle_t.weight     = particle_t_1.weight;
-
 	// Keep same class with 90% probability
+#ifndef BASELINE
+// fixme modificado para o baseline
 	if ((rand() % 100) <= 90)
+	//if (carmen_uniform_random(0.0, 100.0) <= 90.0)
 		particle_t.class_id = particle_t_1.class_id;
 	else
 		particle_t.class_id = get_random_model_id(num_of_models);
+#else
+	particle_t.class_id = 0;
+#endif
 
 	particle_t.model_features = get_obj_model_features(particle_t.class_id);
 //	particle_t.model_features_3d = get_obj_model_features_3d(particle_t.class_id, object_models_3d);
+
+	if(mean > 0 && mean_particle.dist > 0)
+	{
+
+	}
 
 	return particle_t;
 }
@@ -226,6 +257,30 @@ dist_bounding_box(carmen_point_t particle_pose, pcl::PointCloud<pcl::PointXYZ> &
 	double diff_diagonal = (model_diagonal_xy - object_diagonal_xy);
 //	penalty += 2*diff_diagonal + diff_height;
 	penalty += diff_length*diff_length + diff_width*diff_width + diff_height*diff_height + diff_diagonal*diff_diagonal;
+
+	/*
+	// aqui penaiza de acordo com o ponto de vista do objeto em relação ao carro.
+	double local_x = x_pose - car_global_position.x;
+	double local_y = y_pose - car_global_position.y;
+	double local_theta = atan2(local_y,local_x);
+
+	if((local_theta < M_PI/36 && local_theta > -M_PI/36) || (local_theta > 35*M_PI/36 && local_theta < -35*M_PI/36))
+	{
+		//caso 1
+		diff_width = (model_geometry.width - obj_geometry.length)*width_normalizer;
+		penalty += diff_width*diff_width + diff_height*diff_height;
+	} else if( (local_theta > M_PI/36 && local_theta < 3*M_PI/8) || (local_theta > 5*M_PI/8 && local_theta < 35*M_PI/36) ||
+			(local_theta < -M_PI/36 && local_theta > -3*M_PI/8) || (local_theta < -5*M_PI/8 && local_theta > -35*M_PI/36))
+	{
+		//caso 2
+		penalty += diff_length*diff_length + diff_width*diff_width + diff_height*diff_height + diff_diagonal*diff_diagonal;
+	} else if( (local_theta > 3*M_PI/8 && local_theta < 5*M_PI/8) || (local_theta < -3*M_PI/8 && local_theta > -5*M_PI/8) )
+	{
+		//caso 3
+		penalty += diff_length*diff_length + diff_height*diff_height;
+	}
+	*/
+
 	// Avoid division by zero
 	if (pcl_size != 0)
 		return sum/pcl_size + 0.2*penalty; //return normalized distance with penalty
@@ -278,12 +333,14 @@ measurement_model(particle_datmo_t &particle_t, double x, double y, pcl::PointCl
 	double dist;
 
 	/*** NEAREST NEIGHBOUR - VERSÃO DO EDUARDO: ***/
-	//dist = dist_nearest_neighbor(x, y, particle_t.pose);
-
+#ifdef BASELINE
+	dist = dist_nearest_neighbor(x, y, particle_t.pose);
+#else
 	/*** 2D BOUNDING BOX ***/
+//	fixme modificado para o baseline
 	dist = dist_bounding_box(particle_t.pose, pcl_cloud, particle_t.model_features.geometry,
 			obj_geometry, car_global_position, x, y);
-
+#endif
 	/*** 3D MODEL POINT CLOUD ***/
 //	pcl::PointCloud<pcl::PointXYZ>::Ptr model_cloud(new pcl::PointCloud<pcl::PointXYZ>);
 //	model_cloud = get_model_point_cloud(particle_t.class_id, object_models_3d);
@@ -459,7 +516,6 @@ void
 normalize_weights(std::vector<particle_datmo_t> &particle_set, double total_weight)
 {
 	/* normalize weights */
-// FIXME - Verificar a normalização
 
 //	double max_weight = -DBL_MAX;
 //	for (std::vector<particle_datmo_t>::iterator it = particle_set.begin(); it != particle_set.end(); ++it)
@@ -512,36 +568,34 @@ compute_weights(std::vector<particle_datmo_t> &particle_set, double total_dist)
 
 std::vector<particle_datmo_t>
 algorithm_monte_carlo(std::vector<particle_datmo_t> particle_set_t_1, double x, double y, double delta_time,
-		pcl::PointCloud<pcl::PointXYZ> &pcl_cloud, object_geometry_t obj_geometry, carmen_vector_3D_t car_global_position, int num_association)
+		pcl::PointCloud<pcl::PointXYZ> &pcl_cloud, object_geometry_t obj_geometry, carmen_vector_3D_t car_global_position, int num_association, particle_datmo_t mean_particle)
 {
 	std::vector<particle_datmo_t> particle_set_t;
 	particle_datmo_t particle_t;
 	double total_weight = 0.0;
-	double sigma = 3.0;
-	double total_dist = 0.0;
+	//double sigma = 3.0;	// todo Verificar a variância mais adequada
+	//double total_dist = 0.0;
 
-	sigma = obj_geometry.length + obj_geometry.width;
-
-	double sum_dist = 0;
+//	double sum_dist = 0;
 	double mean_dist = 0;
-	double sum_var = 0;
-	double var, tmp;
+//	double sum_var = 0;
+//	double var, tmp;
 	// obtenção da media
-	for (std::vector<particle_datmo_t>::iterator it = particle_set_t_1.begin(); it != particle_set_t_1.end(); ++it)
-	{
-		it->dist = measurement_model(*it, x, y, pcl_cloud, obj_geometry, car_global_position);
-		sum_dist += it->dist;
-	}
-	mean_dist = sum_dist / num_of_particles;
-
-
-	// obtencao da variancia
-	for (std::vector<particle_datmo_t>::iterator it = particle_set_t_1.begin(); it != particle_set_t_1.end(); ++it)
-	{
-		tmp = mean_dist - it->dist;
-		sum_var += (tmp * tmp);
-	}
-	var = sum_var/num_of_particles;
+//	for (std::vector<particle_datmo_t>::iterator it = particle_set_t_1.begin(); it != particle_set_t_1.end(); ++it)
+//	{
+//		it->dist = measurement_model(*it, x, y, pcl_cloud, obj_geometry, car_global_position);
+//		sum_dist += it->dist;
+//	}
+//	mean_dist = sum_dist / num_of_particles;
+//
+//
+//	// obtencao da variancia
+//	for (std::vector<particle_datmo_t>::iterator it = particle_set_t_1.begin(); it != particle_set_t_1.end(); ++it)
+//	{
+//		tmp = mean_dist - it->dist;
+//		sum_var += (tmp * tmp);
+//	}
+//	var = sum_var/num_of_particles;
 //
 //	sigma = sqrt(mean_dist);
 
@@ -549,14 +603,13 @@ algorithm_monte_carlo(std::vector<particle_datmo_t> particle_set_t_1, double x, 
 	for (std::vector<particle_datmo_t>::iterator it = particle_set_t_1.begin(); it != particle_set_t_1.end(); ++it)
 	{
 		// Motion Model
-		particle_t = sample_motion_model(delta_time, (*it), mean_dist);
+		particle_t = sample_motion_model(delta_time, (*it), mean_dist, mean_particle);
 
 		// Measurement Model
 		particle_t.dist = measurement_model(particle_t, x, y, pcl_cloud, obj_geometry, car_global_position);
 
 		// Weighing particles (still not normalized)
 //		total_dist += particle_t.dist;
-// FIXME - Verificar a gaussiana
 //		particle_t.weight = -particle_t.dist * particle_t.dist * 100.0;
 		//particle_t.weight = particle_weight_pose_reading_model(particle_t.dist);
 		particle_t.weight = particle_weight_by_normal_distribution(particle_t.dist, sigma, 0.0);
@@ -576,7 +629,10 @@ algorithm_monte_carlo(std::vector<particle_datmo_t> particle_set_t_1, double x, 
 //	compute_weights(particle_set_t, total_dist);
 
 	/* Resample */
-	resample(particle_set_t);
+	//if (mean_particle.velocity > threshold_min_velocity) // teste para fazer o resample com velocidades altas
+		resample(particle_set_t);
+
+	num_association = num_association + 1;
 
 	return particle_set_t;
 }

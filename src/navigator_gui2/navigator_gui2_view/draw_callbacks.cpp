@@ -212,6 +212,18 @@ void on_menuMaps_RemissionMap_toggled (GtkCheckMenuItem* togglebutton __attribut
 }
 
 extern "C" G_MODULE_EXPORT
+void on_menuSuperimposedMaps_RemissionMap_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
+		GtkGui* gui)
+{
+	if(gtk_check_menu_item_get_active(togglebutton))
+	{
+		superimposed_is_set = 1;
+		navigator_get_map(CARMEN_REMISSION_MAP_v, superimposed_is_set);
+		carmen_map_graphics_redraw_superimposed(global_gui->controls_.map_view);
+	}
+}
+
+extern "C" G_MODULE_EXPORT
 void on_menuMaps_MovingObjects_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
@@ -447,7 +459,6 @@ void on_menuDisplay_ShowCommandPath_toggled (GtkCheckMenuItem* togglebutton __at
 
 }
 
-
 extern "C" G_MODULE_EXPORT
 void on_menuGoals_EditRddfGoals_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
@@ -465,7 +476,7 @@ extern "C" G_MODULE_EXPORT
 void on_menuDisplay_ShowDynamicObjects_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
-
+	global_gui->nav_panel_config->show_dynamic_objects = gtk_check_menu_item_get_active(togglebutton);
 }
 
 extern "C" G_MODULE_EXPORT
@@ -1034,7 +1045,7 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 
 	if (global_gui->nav_panel_config->show_dynamic_objects)
 	{
-//		global_gui->draw_dynamic_objects(the_map_view);
+		global_gui->draw_moving_objects(the_map_view);
 	}
 
 	global_gui->draw_path_vector(the_map_view);

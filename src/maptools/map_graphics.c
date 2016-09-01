@@ -181,7 +181,7 @@ regenerate_map_pixmap(GtkMapViewer *map_view)
 
 	if (superimposed_map)
 	{
-		image_data = carmen_graphics_convert_to_image(superimposed_map, 0);
+		image_data = carmen_graphics_convert_to_image(superimposed_map, map_view->draw_flags);
 
 		image2 = gdk_pixbuf_new_from_data((guchar *)image_data, GDK_COLORSPACE_RGB,
 				FALSE, 8,  superimposed_map->config.y_size, superimposed_map->config.x_size,

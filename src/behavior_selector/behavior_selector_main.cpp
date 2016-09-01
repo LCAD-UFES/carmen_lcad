@@ -1,9 +1,8 @@
 
 #include <carmen/carmen.h>
 #include <carmen/rddf_messages.h>
+#include <carmen/path_planner_messages.h>
 #include <carmen/rddf_interface.h>
-#include <carmen/grid_mapping_messages.h>
-#include <carmen/grid_mapping_interface.h>
 #include <carmen/grid_mapping.h>
 #include <prob_map.h>
 #include <carmen/map_server_interface.h>
@@ -26,6 +25,8 @@ double param_distance_interval;
 
 carmen_obstacle_avoider_robot_will_hit_obstacle_message last_obstacle_avoider_robot_hit_obstacle_message;
 carmen_rddf_annotation_message last_rddf_annotation_message;
+carmen_behavior_selector_goal_source_t last_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
+carmen_behavior_selector_goal_source_t goal_list_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
 
 
 int
@@ -105,18 +106,67 @@ publish_goal_list()
 	double distance_to_act_on_annotation = (fabs(current_robot_pose_v_and_phi.v) < 2.0)? 10.0: fabs(current_robot_pose_v_and_phi.v) * 6.5;
 	// Map annotations handling
 	double distance_to_annotation = DIST2D(last_rddf_annotation_message.annotation_point, get_robot_pose());
-	if (((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
-		 (last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)) &&
-		(distance_to_annotation < distance_to_act_on_annotation) && annotation_is_forward(get_robot_pose(), last_rddf_annotation_message.annotation_point))
-		goal_list_msg.goal_list->v = 2.0;
+	if ((distance_to_annotation < distance_to_act_on_annotation) &&
+		annotation_is_forward(get_robot_pose(), last_rddf_annotation_message.annotation_point))
+	{
+		if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_0))
+			goal_list_msg.goal_list->v = 0.0;
+		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
+			(last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK))
+			goal_list_msg.goal_list->v = carmen_fmin(2.0, goal_list_msg.goal_list->v);
+
+		else if (last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)
+			goal_list_msg.goal_list->v = carmen_fmin(1.2, goal_list_msg.goal_list->v);
+
+		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_5))
+			goal_list_msg.goal_list->v = carmen_fmin(5.0 / 3.6, goal_list_msg.goal_list->v);
+
+		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_10))
+			goal_list_msg.goal_list->v = carmen_fmin(10.0 / 3.6, goal_list_msg.goal_list->v);
+
+		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_15))
+			goal_list_msg.goal_list->v = carmen_fmin(15.0 / 3.6, goal_list_msg.goal_list->v);
+
+		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_20))
+			goal_list_msg.goal_list->v = carmen_fmin(20.0 / 3.6, goal_list_msg.goal_list->v);
+
+		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_30))
+			goal_list_msg.goal_list->v = carmen_fmin(30.0 / 3.6, goal_list_msg.goal_list->v);
+
+		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_40))
+			goal_list_msg.goal_list->v = carmen_fmin(40.0 / 3.6, goal_list_msg.goal_list->v);
+
+		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_60))
+			goal_list_msg.goal_list->v = carmen_fmin(60.0 / 3.6, goal_list_msg.goal_list->v);
+	}
 	else if (obstacle_avoider_active_recently)
-		goal_list_msg.goal_list->v = 2.5;
+		goal_list_msg.goal_list->v = carmen_fmin(2.5, goal_list_msg.goal_list->v);
+//	else
+//		goal_list_msg.goal_list->v = get_max_v();
 
 	if (goal_list_msg.size > 0)
 	{
-		err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME, &goal_list_msg);
-		carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME);
+		if (goal_list_road_profile_message == last_road_profile_message)
+		{
+			err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME, &goal_list_msg);
+			carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME);
+		}
+
+		if (last_road_profile_message == CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL)
+		{
+			err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME, &goal_list_msg);
+			carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME);
+		}
 	}
+
 
 	//printf("Goal List: %d\n", goal_list_msg.size);
 }
@@ -186,6 +236,47 @@ rddf_handler(carmen_rddf_road_profile_message *rddf_msg)
 		return;
 
 	behavior_selector_update_rddf(rddf_msg);
+	last_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
+
+	if(goal_list_road_profile_message == CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL)
+	{
+		carmen_behavior_selector_road_profile_message msg;
+		msg.annotations = rddf_msg->annotations;
+		msg.number_of_poses = rddf_msg->number_of_poses;
+		msg.number_of_poses_back = rddf_msg->number_of_poses_back;
+		msg.poses = rddf_msg->poses;
+		msg.poses_back = rddf_msg->poses_back;
+		msg.timestamp = carmen_get_time();
+		msg.host = carmen_get_host();
+
+		IPC_RETURN_TYPE err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, &msg);
+		carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME);
+	}
+}
+
+static void
+path_planner_road_profile_handler(carmen_path_planner_road_profile_message *rddf_msg)
+{
+	if (!necessary_maps_available)
+		return;
+
+	behavior_selector_update_rddf((carmen_rddf_road_profile_message*)rddf_msg);
+	last_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_PATH_PLANNER_GOAL;
+
+	if(goal_list_road_profile_message == CARMEN_BEHAVIOR_SELECTOR_PATH_PLANNER_GOAL)
+	{
+		carmen_behavior_selector_road_profile_message msg;
+		msg.annotations = rddf_msg->annotations;
+		msg.number_of_poses = rddf_msg->number_of_poses;
+		msg.number_of_poses_back = rddf_msg->number_of_poses_back;
+		msg.poses = rddf_msg->poses;
+		msg.poses_back = rddf_msg->poses_back;
+		msg.timestamp = carmen_get_time();
+		msg.host = carmen_get_host();
+
+		IPC_RETURN_TYPE err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, &msg);
+		carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME);
+	}
 }
 
 
@@ -349,6 +440,11 @@ register_handlers()
 	// filipe:: TODO: criar funcoes de subscribe no interfaces!
 	// **************************************************
 
+    carmen_subscribe_message((char *) CARMEN_PATH_PLANNER_ROAD_PROFILE_MESSAGE_NAME,
+			(char *) CARMEN_PATH_PLANNER_ROAD_PROFILE_MESSAGE_FMT,
+			NULL, sizeof (carmen_path_planner_road_profile_message),
+			(carmen_handler_t)path_planner_road_profile_handler, CARMEN_SUBSCRIBE_LATEST);
+
 	carmen_subscribe_message((char *) CARMEN_BEHAVIOR_SELECTOR_SET_ALGOTITHM_NAME,
 			(char *) CARMEN_BEHAVIOR_SELECTOR_SET_ALGOTITHM_FMT,
 			NULL, sizeof(carmen_behavior_selector_set_algorithm_message),
@@ -429,7 +525,7 @@ read_parameters(int argc, char **argv)
 	carmen_param_allow_unfound_variables(1);
 	carmen_param_t optional_param_list[] =
 	{
-			{"commandline", "activate_tracking", CARMEN_PARAM_ONOFF, &activate_tracking, 0, NULL}
+			{(char *) "commandline", (char *) "activate_tracking", CARMEN_PARAM_ONOFF, &activate_tracking, 0, NULL}
 	};
 	carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
 

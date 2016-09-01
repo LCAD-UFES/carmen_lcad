@@ -21,9 +21,16 @@ const double norm_factor_x = 10.0;
 const double norm_factor_y = 10.0;
 const double norm_factor_z = 10.0;
 
-const double alpha_1 =  1.0; // desvio padrão da velocidade padrão 0.2
-const double alpha_2 =  0.1; // desvio padrão de theta padrão 0.01
-const double v_min   =  0.0; // velocidade mínima
+#ifdef AJUSTE
+extern double sigma  ;// = 	0.3;	 // desvio padrão dos pesos das partículas
+extern double alpha_1;// = 	1.0;  // desvio padrão da velocidade padrão 0.2
+extern double alpha_2;// = 0.05; // desvio padrão de theta padrão 0.01
+#else
+const double sigma   = 	3.0;	 // desvio padrão dos pesos das partículas
+const double alpha_1 = 	1.0;  // desvio padrão da velocidade padrão 0.2
+const double alpha_2 = 0.05; // desvio padrão de theta padrão 0.01
+#endif
+const double v_min   =	0.0;  // velocidade mínima
 const double v_max   = 25.0; // velocidade máxima
 
 
@@ -31,7 +38,7 @@ const double v_max   = 25.0; // velocidade máxima
 
 std::vector<particle_datmo_t>
 algorithm_monte_carlo(std::vector<particle_datmo_t> particle_set_t_1, double x, double y, double delta_time,
-		pcl::PointCloud<pcl::PointXYZ> &pcl_cloud, object_geometry_t, carmen_vector_3D_t car_global_position, int num_association);
+		pcl::PointCloud<pcl::PointXYZ> &pcl_cloud, object_geometry_t, carmen_vector_3D_t car_global_position, int num_association, particle_datmo_t mean_particle);
 
 double
 measurement_model(particle_datmo_t &particle_t, double x, double y, pcl::PointCloud<pcl::PointXYZ> &pcl_cloud,

@@ -3,7 +3,8 @@
 #include <prob_transforms.h>
 #include <prob_map.h>
 #include <carmen/grid_mapping.h>
-#include <carmen/grid_mapping_interface.h>
+#include <carmen/mapper_interface.h>
+#include <omp.h>
 
 #include "mapper.h"
 
@@ -19,6 +20,7 @@ extern int merge_with_offline_map;
 extern int update_and_merge_with_mapper_saved_maps;
 extern int build_snapshot_map;
 extern int update_and_merge_with_snapshot_map;
+extern int decay_to_offline_map;
 
 extern carmen_pose_3D_t sensor_board_1_pose;
 extern rotation_matrix *board_to_car_matrix;
@@ -33,7 +35,10 @@ extern int publish_moving_objects_raw_map;
 
 extern int robot_near_bump_or_barrier;
 extern double obstacle_cost_distance, obstacle_probability_threshold;
+extern int ok_to_publish;
+extern int number_of_threads;
 
+#define      HUGE_DISTANCE     32000
 
 /**
  * The map
@@ -45,7 +50,7 @@ carmen_map_t cost_map;
 
 extern carmen_map_t offline_map;
 
-rotation_matrix *r_matrix_car_to_global = NULL;
+extern rotation_matrix *r_matrix_car_to_global;
 
 int globalpos_initialized = 0;
 extern carmen_localize_ackerman_globalpos_message *globalpos_history;
@@ -110,9 +115,9 @@ build_front_laser_message_from_velodyne_point_cloud(sensor_parameters_t *sensor_
 	laser_ray_angle_index = (int)(v_zt.sphere_points[i].horizontal_angle / 0.5) % (720);
 
 	//if (carmen_prob_models_log_odds_to_probabilistic(sensor_data->occupancy_log_odds_of_each_ray_target[sensor_data->ray_that_hit_the_nearest_target]) > 0.95)
-	flaser.range[laser_ray_angle_index] = sensor_data->ray_size_in_the_floor[sensor_data->ray_that_hit_the_nearest_target];
+	flaser.range[laser_ray_angle_index] = sensor_data->ray_size_in_the_floor[0][sensor_data->ray_that_hit_the_nearest_target[0]];
 
-	if (sensor_data->maxed[sensor_data->ray_that_hit_the_nearest_target])
+	if (sensor_data->maxed[0][sensor_data->ray_that_hit_the_nearest_target[0]])
 			flaser.range[laser_ray_angle_index] = sensor_params->current_range_max;
 
 //	printf("%lf ", flaser.range[laser_ray_angle_index]);
@@ -162,45 +167,51 @@ get_nearest_timestamp_index(double *robot_timestamp, spherical_point_cloud *poin
 
 static void
 update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global,
-					      int point_cloud_index, int update_cells_crossed_by_rays, int build_snapshot_map)
+					      int point_cloud_index, int update_cells_crossed_by_rays, int build_snapshot_map __attribute__ ((unused)))
 {
-	int nearest_timestamp_index = get_nearest_timestamp_index(sensor_data->robot_timestamp,
-			sensor_data->points, point_cloud_index);
-	spherical_point_cloud v_zt = sensor_data->points[nearest_timestamp_index];
+	int tid = omp_get_thread_num();
+	spherical_point_cloud v_zt = sensor_data->points[point_cloud_index];
+	int N = v_zt.num_points / sensor_params->vertical_resolution;
 
 	double v = sensor_data->robot_velocity[point_cloud_index].x;
 	double phi = sensor_data->robot_phi[point_cloud_index];
-	//int N = v_zt.num_points / sensor_params->vertical_resolution;
 
-	//double dt = 0.0494 / (double) N; // @@@ Alberto: este dt depende da velocidade de rotação do Velodyne, que não é fixa. Tem que ser calculado do acordo com a velocidade de rotação do Velodyne.
 	double dt = 1.0 / (1808.0 * 12.0);
 	carmen_pose_3D_t robot_interpolated_position = sensor_data->robot_pose[point_cloud_index];
+	int i = 0;
 
 	// Ray-trace the grid
-	for (int i = 0, j = 0; i < v_zt.num_points; i = i +  sensor_params->vertical_resolution, j++)
+	#pragma omp for
+	for (int j = 0; j < N; j += 1)
 	{
-		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(robot_interpolated_position, dt, v, phi, car_config.distance_between_front_and_rear_axles);
+		i = j * sensor_params->vertical_resolution;
+		double dt2 = j * dt;
+		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(sensor_data->robot_pose[point_cloud_index], dt2, v, phi, car_config.distance_between_front_and_rear_axles);
 		r_matrix_robot_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
 
 		change_sensor_rear_range_max(sensor_params, v_zt.sphere_points[i].horizontal_angle);
 
 		carmen_prob_models_compute_relevant_map_coordinates(sensor_data, sensor_params, i, robot_interpolated_position.position, sensor_board_1_pose,
-				r_matrix_robot_to_global, board_to_car_matrix, robot_wheel_radius, x_origin, y_origin, &car_config, robot_near_bump_or_barrier);
+				r_matrix_robot_to_global, board_to_car_matrix, robot_wheel_radius, x_origin, y_origin, &car_config, robot_near_bump_or_barrier, tid);
 
 		carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data, sensor_params, i, highest_sensor, safe_range_above_sensors,
-				robot_near_bump_or_barrier);
+				robot_near_bump_or_barrier, tid);
 
 		if (update_cells_crossed_by_rays == UPDATE_CELLS_CROSSED_BY_RAYS)
-			carmen_prob_models_update_cells_crossed_by_ray(snapshot_map, sensor_params, sensor_data);
+			carmen_prob_models_update_cells_crossed_by_ray(snapshot_map, sensor_params, sensor_data, tid);
 
-			// carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(map, sensor_params, sensor_data);
-		carmen_prob_models_update_log_odds_of_cells_hit_by_rays(snapshot_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors);
-		carmen_prob_models_update_intensity_of_cells_hit_by_rays(&sum_remission_map, &sum_sqr_remission_map, &count_remission_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, NULL);
+		// carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(map, sensor_params, sensor_data);
+		carmen_prob_models_update_log_odds_of_cells_hit_by_rays(snapshot_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid);
+
+		if (update_and_merge_with_mapper_saved_maps)
+			carmen_prob_models_update_intensity_of_cells_hit_by_rays(&sum_remission_map, &sum_sqr_remission_map, &count_remission_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, NULL, tid);
 
 		//Lucas: Mapa para deteccao de objetos moveis
-		carmen_prob_models_update_log_odds_of_cells_hit_by_rays(&moving_objects_raw_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors);
+		//carmen_prob_models_update_log_odds_of_cells_hit_by_rays(&moving_objects_raw_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors);
 		//build_front_laser_message_from_velodyne_point_cloud (sensor_params, sensor_data, v_zt, i);
+		//i = i +  sensor_params->vertical_resolution;
 	}
+	//printf("\n###############################################################\n");
 }
 
 
@@ -230,11 +241,12 @@ add_offline_map_over_unknown(carmen_map_t *current_map)
 void
 map_decay_to_offline_map(carmen_map_t *current_map)
 {
-	int xi, yi;
+	//int xi, yi;
 
-	for (xi = 0; xi < current_map->config.x_size; xi++)
+	#pragma omp for
+	for (int xi = 0; xi < current_map->config.x_size; xi++)
 	{
-		for (yi = 0; yi < current_map->config.y_size; yi++)
+		for (int yi = 0; yi < current_map->config.y_size; yi++)
 		{
 			if (current_map->map[xi][yi] >= 0.0)
 			{
@@ -254,23 +266,30 @@ map_decay_to_offline_map(carmen_map_t *current_map)
 static void
 build_map_using_velodyne(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global)
 {
-	static carmen_map_t *snapshot_map = NULL;
+	//int N = 4;
+	static carmen_map_t **snapshot_map;
+	static int first = 1;
+	if (first)
+	{
+		snapshot_map = (carmen_map_t **)calloc(number_of_threads, sizeof(carmen_map_t *));
+		first = 0;
+	}
 
-	snapshot_map = carmen_prob_models_check_if_new_snapshot_map_allocation_is_needed(snapshot_map, &map);
-	//set_map_equal_offline_map(&map);
-	//add_offline_map_over_unknown(&map);
+#pragma omp parallel num_threads(number_of_threads)
+	{
+		int tid = omp_get_thread_num();
+		snapshot_map[tid] = carmen_prob_models_check_if_new_snapshot_map_allocation_is_needed(snapshot_map[tid], &map);
+		//set_map_equal_offline_map(&map);
+		//add_offline_map_over_unknown(&map);
 
+		if(decay_to_offline_map)
+			map_decay_to_offline_map(&map);
 
-	map_decay_to_offline_map(&map);
-
-	// @@@ Alberto: Mapa padrao Lucas -> colocar DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS ao inves de UPDATE_CELLS_CROSSED_BY_RAYS
-	//update_cells_in_the_velodyne_perceptual_field(&map, snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
-	update_cells_in_the_velodyne_perceptual_field(snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
-	carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map);
-	//if (build_snapshot_map)
-
-
-	//add_offline_map_over_unknown(&map);
+		// @@@ Alberto: Mapa padrao Lucas -> colocar DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS ao inves de UPDATE_CELLS_CROSSED_BY_RAYS
+		//update_cells_in_the_velodyne_perceptual_field(&map, snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
+		update_cells_in_the_velodyne_perceptual_field(snapshot_map[tid], sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
+		carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map, number_of_threads);
+	}
 }
 
 
@@ -371,7 +390,7 @@ mapper_change_map_origin_to_another_map_block(carmen_position_t *map_origin)
 }
 
 
-static int
+int
 run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global)
 {
 	//carmen_point_t world_pose;
@@ -449,7 +468,7 @@ int
 mapper_velodyne_partial_scan(carmen_velodyne_partial_scan_message *velodyne_message)
 {
 	static int velodyne_message_id;
-	int ok_to_publish;
+	//int ok_to_publish;
 
 	int num_points = velodyne_message->number_of_32_laser_shots * sensors_params[0].vertical_resolution;
 
@@ -478,14 +497,13 @@ mapper_velodyne_partial_scan(carmen_velodyne_partial_scan_message *velodyne_mess
 	sensors_data[0].robot_velocity[sensors_data[0].point_cloud_index] = globalpos_history[last_globalpos].velocity;
 	sensors_data[0].robot_timestamp[sensors_data[0].point_cloud_index] = globalpos_history[last_globalpos].timestamp;
 	sensors_data[0].robot_phi[sensors_data[0].point_cloud_index] = globalpos_history[last_globalpos].phi;
-
+	sensors_data[0].points_timestamp[sensors_data[0].point_cloud_index] = velodyne_message->timestamp;
 
 	if (velodyne_message_id >= 0)
 	{
-		if (build_snapshot_map)
-			ok_to_publish = 1;
-		else
-			ok_to_publish = run_mapper(&sensors_params[0], &sensors_data[0], r_matrix_car_to_global);
+		//if (build_snapshot_map)
+		ok_to_publish = 1;
+		//else
 
 		if (velodyne_message_id > 1000000)
 			velodyne_message_id = 0;
@@ -501,7 +519,7 @@ int
 mapper_velodyne_variable_scan(int sensor_number, carmen_velodyne_variable_scan_message *message)
 {
 	static int message_id;
-	int ok_to_publish;
+
 
 	int num_points = message->number_of_shots * sensors_params[sensor_number].vertical_resolution;
 
@@ -559,23 +577,6 @@ mapper_merge_online_map_with_offline_map(carmen_map_t *offline_map)
 
 
 void
-mapper_publish_cost_map(double timestamp)
-{
-	carmen_compact_map_t compacted_cost_map;
-
-	carmen_prob_models_build_obstacle_cost_map(&cost_map, &map,	map.config.resolution, obstacle_cost_distance, obstacle_probability_threshold);
-	carmen_prob_models_create_compact_map(&compacted_cost_map, &cost_map, 0.0);
-
-	if (compacted_cost_map.number_of_known_points_on_the_map > 0)
-	{
-		carmen_map_server_publish_compact_cost_map_message(&compacted_cost_map,	timestamp);
-		carmen_prob_models_clear_carmen_map_using_compact_map(&cost_map, &compacted_cost_map, 0.0);
-		carmen_prob_models_free_compact_map(&compacted_cost_map);
-	}
-}
-
-
-void
 mapper_publish_map(double timestamp)
 {
 	if (build_snapshot_map)
@@ -584,17 +585,9 @@ mapper_publish_map(double timestamp)
 		run_snapshot_mapper();
 	}
 
-	if (publish_moving_objects_raw_map) //Alberto: Estudo para fazer o modulo de DATMO
-	{
-		carmen_grid_mapping_moving_objects_raw_map_publish_message(&moving_objects_raw_map, timestamp);
-		carmen_prob_models_clean_carmen_map(&moving_objects_raw_map);
-	//	publish_frontlaser(timestamp);
-	}
-
-	carmen_grid_mapping_publish_message(&map, timestamp);
-
-	mapper_publish_cost_map(timestamp);
+	carmen_mapper_publish_message(&map, timestamp);
 }
+
 
 void
 mapper_set_robot_pose_into_the_map(carmen_localize_ackerman_globalpos_message *globalpos_message, int UPDATE_CELLS_BELOW_CAR)

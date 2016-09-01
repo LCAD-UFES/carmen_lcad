@@ -12,6 +12,9 @@
 #include <carmen/localize_ackerman_core.h>
 #include <carmen/localize_ackerman_likelihood_map.h>
 #include <carmen/map_server_messages.h>
+#include <carmen/mapper_messages.h>
+#include <carmen/mapper_interface.h>
+
 
 #ifdef __cplusplus
 extern "C" {

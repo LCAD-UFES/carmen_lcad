@@ -6,7 +6,7 @@ MODULE_COMMENT = "LOG FILTER Module"
 CFLAGS += #-DPARSE_DEBUG
 IFLAGS += 
 LFLAGS += -lparam_interface -lbumblebee_basic_interface -lcarmenserial -lipc -lglobal `pkg-config --libs --cflags opencv`
-LFLAGS +=  -lgps_nmea_interface -lgps_xyz_interface -lfused_odometry_interface -lkinect_interface -lweb_cam_interface -lstereo_interface -lbase_ackerman_interface -lxsens_interface
+LFLAGS +=  -lgps_nmea_interface -lgps_xyz_interface -lfused_odometry_interface -llocalize_ackerman_interface -lkinect_interface -lweb_cam_interface -lstereo_interface -lbase_ackerman_interface -lxsens_interface
 
 SOURCES = log_filter_main.c
 

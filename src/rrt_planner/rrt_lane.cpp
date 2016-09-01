@@ -5,9 +5,9 @@
  *      Author: romulo
  */
 
-#include "rrt_lane.h"
 #include <carmen/carmen.h>
 #include <carmen/behavior_selector_messages.h>
+#include <carmen/navigator_gui_interface.h>
 #include "model/global_state.h"
 #include "path_follower/path_follower_ackerman.h"
 #include "path_follower/follower.h"
@@ -15,7 +15,9 @@
 #include "util/publisher_util.h"
 #include "util/dijkstra.h"
 #include "util/util.h"
-#include <carmen/navigator_gui_interface.h>
+#include "rrt_lane.h"
+#include "rrt.h"
+
 
 // Distribuicao de custos
 RRT_Lane::RRT_Lane() {
@@ -135,6 +137,8 @@ RRT_Lane::random_pose_close_to_the_lane(double p_sub_lane, double radius)
 void
 RRT_Lane::build_rrt_path()
 {
+	list<RRT_Path_Edge>::iterator it;
+
 	double		build_time, initial_time;
 	double 		radius = GlobalState::robot_config.length;
 	int			status, i;
@@ -190,6 +194,7 @@ RRT_Lane::build_rrt_path()
 
 	if (GlobalState::goal_node)
 	{
+		//RRT::smooth_principal_path_from_tree_using_conjugate_gradient(GlobalState::goal_node);
 		path = Dijkstra::build_path(GlobalState::goal_node);
 		path_timestamp = GlobalState::localizer_pose_timestamp;
 	}

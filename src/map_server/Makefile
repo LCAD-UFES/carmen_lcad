@@ -12,9 +12,9 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
 
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS +=  -lgrid_mapping -lprob_models -lz -lmap_io -lmap_util -lmap_interface -lglobal -lparam_interface -lnavigator_spline_interface \
-	-lgrid_mapping_interface -llocalize_ackerman_interface  -lipc \
+	-lmapper_interface -llocalize_ackerman_interface  -lipc \
 	-L/usr/lib64/libkml -lrrt_util_wrapper -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper -llocalize_ackerman_core \
-	-lrotation_geometry -ldownload_map -lrddf_interface -ltracker_interface
+	-lrotation_geometry -ldownload_map -lrddf_interface -ltracker_interface -lnavigator_astar_interface
 		
 CFLAGS += -std=c99 
 CXXFLAGS += -Wno-write-strings

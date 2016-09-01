@@ -9,7 +9,6 @@
 #include "rrt_planner_interface.h"
 #include <map>
 #include "model/global_state.h"
-#include <carmen/grid_mapping_interface.h>
 //#include "dijkstra.h"
 
 void
@@ -37,7 +36,7 @@ Publisher_Util::publish_plan_tree_message(Tree tree)
 		first_time = false;
 	}
 
-	plan_tree_msg.timestamp = carmen_get_time();
+	plan_tree_msg.timestamp = GlobalState::localizer_pose_timestamp;//carmen_get_time();
 	plan_tree_msg.num_edges = tree.num_edges;
 
 	plan_tree_msg.p1 = tree.p1;

@@ -7,7 +7,6 @@
 #include <prob_monte_carlo.h>
 #include <prob_transforms.h>
 #include <prob_map.h>
-#include <carmen/grid_mapping_interface.h>
 #include <carmen/fused_odometry_interface.h>
 #include <carmen/rotation_geometry.h>
 #include <carmen/velodyne_interface.h>
