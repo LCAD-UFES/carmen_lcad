@@ -297,7 +297,7 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 	if (g_reinitiaze_particles)
 	{
 		g_reinitiaze_particles--;
-//		return;
+		return;
 	}
 		
 	globalpos.timestamp = timestamp;
