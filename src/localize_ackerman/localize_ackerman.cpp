@@ -297,7 +297,7 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 	if (g_reinitiaze_particles)
 	{
 		g_reinitiaze_particles--;
-		return;
+//		return;
 	}
 		
 	globalpos.timestamp = timestamp;
@@ -728,10 +728,8 @@ fused_odometry_handler(carmen_fused_odometry_message *msg)
 
 
 void
-carmen_localize_ackerman_initialize_handler(carmen_localize_ackerman_initialize_message *initialize_msg)
+carmen_localize_ackerman_initialize_message_handler(carmen_localize_ackerman_initialize_message *initialize_msg)
 {
-//	static int first = 1;
-
 	if (initialize_msg->distribution == CARMEN_INITIALIZE_GAUSSIAN)
 	{
 		carmen_localize_ackerman_initialize_particles_gaussians(filter,
@@ -740,11 +738,7 @@ carmen_localize_ackerman_initialize_handler(carmen_localize_ackerman_initialize_
 		g_std = initialize_msg->std[0];
 		g_reinitiaze_particles = 10;
 
-//		if (first) // Alberto: isto estava impedindo de se poder reinicializar o log em outro ponto
-//		{
-			filter->last_timestamp = initialize_msg->timestamp;
-//			first = 0;
-//		}
+		filter->last_timestamp = initialize_msg->timestamp;
 
 		publish_first_globalpos(initialize_msg); // Alberto: se publicar pode sujar o mapa devido a inicializacao.
 	}
@@ -754,8 +748,6 @@ carmen_localize_ackerman_initialize_handler(carmen_localize_ackerman_initialize_
 		carmen_localize_ackerman_initialize_particles_uniform(filter, &front_laser, &localize_map);
 		publish_particles(filter, &summary, initialize_msg->timestamp);
 	}
-//	necessary_maps_available = 0;
-
 }
 
 
@@ -1365,7 +1357,7 @@ subscribe_to_ipc_message()
 	IPC_RETURN_TYPE err;
 
 	/* subscribe to initialization messages */
-	carmen_localize_ackerman_subscribe_initialize_message(NULL, (carmen_handler_t) carmen_localize_ackerman_initialize_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_localize_ackerman_subscribe_initialize_message(NULL, (carmen_handler_t) carmen_localize_ackerman_initialize_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_fused_odometry_subscribe_fused_odometry_message(NULL, (carmen_handler_t) fused_odometry_handler,	CARMEN_SUBSCRIBE_LATEST);
 
