@@ -9,18 +9,17 @@
 #include <carmen/base_ackerman_interface.h>
 #include <carmen/base_ackerman_messages.h>
 
-volatile int done = 0;
-//static int last_frame = -1;
 static char *laser_ldmrs_port = 0;
 static char *laser_ldmrs_address = 0;
-static double axle_distance = 0;
+static double axle_distance = 2.65;
 vpSickLDMRS laser;
 
 /*********************************************************
 		   --- Publishers ---
  **********************************************************/
 
-void publish_heartbeats(void *clientData,
+void
+publish_heartbeats(void *clientData,
 		   unsigned long currentTime,
 		   unsigned long scheduledTime)
 {
@@ -34,16 +33,27 @@ void publish_heartbeats(void *clientData,
 		   --- Handlers ---
  **********************************************************/
 
-static void shutdown_module(int signo)
+static void
+shutdown_module(int signo)
 {
-	(void) signo;
-	done = 1;
-	carmen_ipc_disconnect();
-	printf("laser_ldmrs: disconnected.\n");
-	exit(0);
+	if (signo == SIGINT)
+	{
+		carmen_ipc_disconnect();
+		printf("laser_ldmrs: disconnected.\n");
+		exit(0);
+	}
+
+	if (signo == SIGTERM)
+	{
+		carmen_ipc_disconnect();
+		printf("laser_ldmrs: disconnected.\n");
+		exit(0);
+	}
 }
 
-static int carmen_laser_ldmrs_read_parameters(int argc, char **argv)
+
+static int
+carmen_laser_ldmrs_read_parameters(int argc, char **argv)
 {
 	int num_items;
 
@@ -60,6 +70,7 @@ static int carmen_laser_ldmrs_read_parameters(int argc, char **argv)
 	return 0;
 }
 
+
 static void
 base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *odometry_message)
 {
@@ -70,107 +81,13 @@ base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *od
 	laser.sendEgoMotionData(velocity_cms, phi_mrad, yaw_rate);
 }
 
-/*
-static void carmen_laser_ldmrs_copy_message(struct sickldmrs_scan *scan, carmen_laser_ldmrs_message *message)
-{
-	int i;
 
-	message->scan_number = scan->scan_number;
-	message->scanner_status = scan->scanner_status;
-	message->sync_phase_offset = scan->sync_phase_offset;
-//	message->scan_start_time = scan->scan_start_time;
-//	message->scan_end_time = scan->scan_end_time;
-	message->angle_ticks_per_rotation = scan->angle_ticks_per_rotation;
-	message->start_angle = scan->start_angle;
-	message->end_angle = scan->end_angle;
-	message->mount_yaw = scan->mount_yaw;
-	message->mount_pitch = scan->mount_pitch;
-	message->mount_roll = scan->mount_roll;
-	message->mount_x = scan->mount_x;
-	message->mount_y = scan->mount_y;
-	message->mount_z = scan->mount_z;
-	message->flags = scan->flags;
-	if(message->scan_points != scan->scan_points)
-	{
-		message->scan_points = scan->scan_points;
-		message->points = (carmen_laser_ldmrs_point *)realloc(message->points, message->scan_points * sizeof(carmen_laser_ldmrs_point));
-		carmen_test_alloc(message->points);
-	}
-	for(i = 0; i < message->scan_points; i++)
-	{
-		message->points[i].layer = scan->points[i].layer;
-		message->points[i].echo = scan->points[i].echo;
-		message->points[i].flags = scan->points[i].flags;
-		message->points[i].horizontal_angle = scan->points[i].horizontal_angle;
-		message->points[i].radial_distance = scan->points[i].radial_distance;
-		message->points[i].pulse_width = scan->points[i].pulse_width;
-	}
-}
+/*********************************************************
+		   --- Build messages ---
+ **********************************************************/
 
-int main(int argc, char **argv)
-{
-	static carmen_laser_ldmrs_message message;
-	struct sickldmrs_device *dev;
-	int rc;
-
-	message.scan_points = 0;
-
-	// Connect to IPC Server
-	carmen_ipc_initialize(argc, argv);
-
-	// Check the param server version
-	carmen_param_check_version(argv[0]);
-
-	// Register shutdown cleaner handler
-	signal(SIGINT, shutdown_module);
-	signal(SIGTERM, shutdown_module);
-
-	// Read application specific parameters (Optional)
-	carmen_laser_ldmrs_read_parameters(argc, argv);
-
-	// Define published messages by your module
-	carmen_laser_define_ldmrs_messages();
-
-	carmen_ipc_addPeriodicTimer(10, publish_heartbeats, NULL);
-
-	dev = sickldmrs_init(laser_ldmrs_address, laser_ldmrs_port, true);
-	if (dev != NULL)
-	{
-		//dev->debug = 1;
-		if ((rc = sickldmrs_get_status(dev, -1)) < 0)
-			errx(2, "sickldmrs_get_status: %s\n", strerror(-rc));
-		if ((rc = sickldmrs_config_output(dev, 0x00ee, -1)) < 0)
-			errx(2, "sickldmrs_config_output: %s\n", strerror(rc));
-		// scan frequency -> 25 Hz
-		if ((rc = sickldmrs_set_parameter(dev, SLDMRS_PARAM_SCAN_FREQUENCY, 6400, -1)) < 0)
-			errx(2, "sickldmrs_set_parameter: %s", strerror(rc));
-		if ((rc = sickldmrs_get_parameter(dev, SLDMRS_PARAM_SCAN_FREQUENCY, -1)) < 0)
-			errx(2, "sickldmrs_get_parameter: %s", strerror(rc));
-
-		while (!done)
-		{
-			carmen_ipc_sleep(1./25.);	// 25Hz
-
-			sickldmrs_lock(dev);
-			if (dev->scan != NULL && dev->scan->scan_number != last_frame)
-			{
-				//sickldmrs_print_scan(dev->scan); //DEBUG
-				carmen_laser_ldmrs_copy_message(dev->scan, &message);
-				carmen_laser_publish_ldmrs(&message);
-				last_frame = dev->scan->scan_number;
-			}
-			sickldmrs_unlock(dev);
-		}
-		sickldmrs_end(dev);
-	}
-
-	carmen_ipc_disconnect();
-
-	return 0;
-}
-*/
-
-static void carmen_laser_ldmrs_copy_message(vpLaserScan laserscan[4], carmen_laser_ldmrs_message *message)
+static void
+carmen_laser_ldmrs_copy_message(vpLaserScan laserscan[4], carmen_laser_ldmrs_message *message)
 {
 	message->scan_number = laserscan[0].getMeasurementId();
 	message->scan_start_time = laserscan[0].getStartTimestamp();
@@ -236,7 +153,9 @@ static void carmen_laser_ldmrs_copy_message(vpLaserScan laserscan[4], carmen_las
 	}
 }
 
-static void carmen_laser_ldmrs_objects_build_message(vpLaserObjectData *objectData, carmen_laser_ldmrs_objects_message *message)
+
+static void
+carmen_laser_ldmrs_objects_build_message(vpLaserObjectData *objectData, carmen_laser_ldmrs_objects_message *message)
 {
 
 	std::vector<vpObject> objectsList = objectData->getObjectList();
@@ -267,68 +186,20 @@ static void carmen_laser_ldmrs_objects_build_message(vpLaserObjectData *objectDa
 		message->objects_list[i].width = 0.01 * objectsList[i].getObjectBoxSize().y_size;
 
 		message->objects_list[i].classId = objectsList[i].getClassification();
-
-//		int strSize = 0;
-//		char clssName[50];
-//		switch (message->objects_list[i].classId)
-//		{
-//			case 0:
-//				strcpy(clssName, "Unclassified");
-//				strSize = strlen(clssName);
-//				message->objects_list[i].className = (char*) malloc(strSize * sizeof(char));
-//				strcpy(message->objects_list[i].className, clssName);
-//				break;
-//			case 1:
-//				strcpy(clssName, "Small");
-//				strSize = strlen(clssName);
-//				message->objects_list[i].className = (char*) malloc(strSize * sizeof(char));
-//				strcpy(message->objects_list[i].className, clssName);
-//				break;
-//			case 2:
-//				strcpy(clssName, "Big");
-//				strSize = strlen(clssName);
-//				message->objects_list[i].className = (char*) malloc(strSize * sizeof(char));
-//				strcpy(message->objects_list[i].className, clssName);
-//				break;
-//			case 3:
-//				strcpy(clssName, "Pedestrian");
-//				strSize = strlen(clssName);
-//				message->objects_list[i].className = (char*) malloc(strSize * sizeof(char));
-//				strcpy(message->objects_list[i].className, clssName);
-//				break;
-//			case 4:
-//				strcpy(clssName, "Bike");
-//				strSize = strlen(clssName);
-//				message->objects_list[i].className = (char*) malloc(strSize * sizeof(char));
-//				strcpy(message->objects_list[i].className, clssName);
-//				break;
-//			case 5:
-//				strcpy(clssName, "Car");
-//				strSize = strlen(clssName);
-//				message->objects_list[i].className = (char*) malloc(strSize * sizeof(char));
-//				strcpy(message->objects_list[i].className, clssName);
-//				break;
-//			case 6:
-//				strcpy(clssName, "Truck");
-//				strSize = strlen(clssName);
-//				message->objects_list[i].className = (char*) malloc(strSize * sizeof(char));
-//				strcpy(message->objects_list[i].className, clssName);
-//				break;
-//			default:
-//				strcpy(clssName, "Unknown");
-//				strSize = strlen(clssName);
-//				message->objects_list[i].className = (char*) malloc(strSize * sizeof(char));
-//				strcpy(message->objects_list[i].className, clssName);
-//				break;
-//		}
-
 	}
 }
 
-int main(int argc, char **argv)
+
+/*********************************************************
+		   --- Main Function ---
+ **********************************************************/
+
+int
+main(int argc, char **argv)
 {
 	static carmen_laser_ldmrs_message message;
 	static carmen_laser_ldmrs_objects_message objectsMessage;
+	unsigned short dataType;
 
 	message.scan_points = 0;
 
@@ -359,29 +230,29 @@ int main(int argc, char **argv)
 	carmen_base_ackerman_subscribe_odometry_message(NULL,
 	    		(carmen_handler_t) base_ackerman_odometry_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	for ( ; ; ) {
 
-		// Get measured objects
+	for ( ; ; )
+	{
 		vpLaserObjectData objectData;
-		if(laser.tracking(&objectData) == true)
-		{
-			carmen_laser_ldmrs_objects_build_message(&objectData, &objectsMessage);
-
-			if (objectData.getNumObjects() > 0)
-				carmen_laser_publish_ldmrs_objects(&objectsMessage);
-		}
-
-		// Get the measured points in the four layers
 		vpLaserScan laserscan[4];
-		if (laser.measure(laserscan) == true)
+
+		dataType = laser.readData(laserscan, &objectData);
+
+		switch (dataType)
 		{
-			carmen_laser_ldmrs_copy_message(laserscan, &message);
-			if (laserscan[0].getNumPoints() > 0)
-				carmen_laser_publish_ldmrs(&message);
+			case vpSickLDMRS::MeasuredData:
+				carmen_laser_ldmrs_copy_message(laserscan, &message);
+				if (laserscan[0].getNumPoints() > 0)
+					carmen_laser_publish_ldmrs(&message);
+				break;
+			case vpSickLDMRS::ObjectData:
+				carmen_laser_ldmrs_objects_build_message(&objectData, &objectsMessage);
+				if (objectData.getNumObjects() > 0)
+					carmen_laser_publish_ldmrs_objects(&objectsMessage);
+				break;
+			default:
+				break;
 		}
-
-		//laser.getErrors();
-
 	}
 	carmen_ipc_disconnect();
 

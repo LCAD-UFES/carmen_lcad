@@ -116,10 +116,11 @@ public:
 	virtual ~vpSickLDMRS();
 	bool setup(std::string ip, int port);
 	bool setup();
-	bool measure(vpLaserScan laserscan[4]);
-	bool tracking(vpLaserObjectData *objectData);
+	void decodeScanData(vpLaserScan laserscan[4]);
+	void decodeObjectsData(vpLaserObjectData *objectData);
+	void decodeErrorData();
+	unsigned short readData(vpLaserScan laserscan[4], vpLaserObjectData *objectData);
 	bool sendEgoMotionData(short velocity, short steeringWheelAngle, short yawRate);
-	bool getErrors();
 
 protected:
 
