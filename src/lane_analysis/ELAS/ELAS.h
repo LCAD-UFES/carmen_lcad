@@ -49,7 +49,8 @@ struct raw_elas_message {
 
 // methods
 void run(const cv::Mat3b & original_frame);
-void init(std::string &config_fname, string & config_xml_fname);
+void init(std::string &config_fname, std::string &config_xml_fname);
+void init(std::string &datasets_dir, std::string &data_dir, std::string &config_xml_fname);
 void setIPM(cv::Size& _origSize, cv::Size& _dstSize, std::vector<cv::Point2f>& _origPoints, std::vector<cv::Point2f>& _dstPoints);
 ConfigXML * getConfigXML();
 void finishProgram();

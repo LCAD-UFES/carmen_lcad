@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<origSize>
+  1280 960</origSize>
+<dstSize>
+  400 400</dstSize>
+<calibration_points>
+  3.58500000e+02 6.23500000e+02 452. 567. 744. 563. 7.92500000e+02
+  6.19500000e+02</calibration_points>
+<dst_points>
+  116. 248. 116. 48. 284. 48. 284. 248.</dst_points>
+<scale_x>2.5000000000000001e-02</scale_x>
+<scale_y>2.5000000000000001e-02</scale_y>
+</opencv_storage>

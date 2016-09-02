@@ -30,6 +30,6 @@ lane_analysis
 lane_analysis_viz
 
 # Directories
-data/
+#data/
 libs/
 obj/

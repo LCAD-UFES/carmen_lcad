@@ -1290,11 +1290,10 @@ carmen_download_map_handler(carmen_download_map_message *message)
     new_map_has_been_received = 1;
 }
 
-static double last_timestamp = 0; // somente para salvar o vídeo
-static double now_timestamp = 0; // somente para salvar o vídeo
-static void lane_analysis_handler(carmen_elas_lane_estimation_message * message) {
-	now_timestamp = message->timestamp;
-	add_to_trail(message, car_fused_pose, lane_drawer, localize_ackerman_trail, last_localize_ackerman_trail);
+static void lane_analysis_handler(carmen_elas_lane_analysis_message * message) {
+	carmen_vector_3D_t position_offset = get_position_offset();
+	position_offset.z = 0;
+	add_to_trail(message, lane_drawer, position_offset);
 }
 
 static void
@@ -2196,28 +2195,6 @@ draw_loop(window *w)
 
         draw_interface(i_drawer);
 
-        /* RODRIGO BERRIEL: salva o que está sendo exibido no viewer 3d */
-        if (last_timestamp != now_timestamp) {
-        	last_timestamp = now_timestamp;
-			int save_w = 600;
-			int save_h = 1000;
-			uchar * bgr_data = (uchar*)malloc(save_w * save_h * sizeof(uchar) * 3);
-			glReadPixels(0, 0, save_h, save_w, GL_BGR, GL_UNSIGNED_BYTE, bgr_data);
-
-			cv::Mat bgr_img = cv::Mat(save_w, save_h, CV_8UC3, bgr_data);
-			cv::flip(bgr_img, bgr_img, 0);
-
-			char numstr[21];
-			sprintf(numstr, "%d", n);
-
-			std::string save_fname = "/dados/video-retadapenha/"CHANGE""/viewer3D/";
-			save_fname += numstr;
-			save_fname += ".png";
-			// cv::imshow(save_fname, bgr_img);
-			cv::imwrite(save_fname, bgr_img);
-			n++;
-        }
-        /**/
     }
 }
 
@@ -2486,7 +2463,7 @@ subscribe_ipc_messages(void)
 			(carmen_handler_t)plan_tree_handler,
 			CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_elas_lane_estimation_subscribe(NULL, (carmen_handler_t) lane_analysis_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_elas_lane_analysis_subscribe(NULL, (carmen_handler_t) lane_analysis_handler, CARMEN_SUBSCRIBE_LATEST);
 
 }
 

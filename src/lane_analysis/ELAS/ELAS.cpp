@@ -62,6 +62,46 @@ void ELAS::init(string & config_fname, string & config_xml_fname) {
 
 }
 
+void ELAS::init(string &datasets_dir, string &data_dir, string & config_xml_fname) {
+	printf("\n******************************************\nEgo-Lane Analysis System\ninit() - ...\n\n");
+
+	cfg = new ConfigXML();
+
+	// TODO: load calibration params via config file
+	printf("Loading config... ");
+	cfg->DATASETS_DIR = datasets_dir;
+	cfg->DATA_DIR = data_dir;
+	printf("DONE!\n");
+	loadDatasetConfig(config_xml_fname, *cfg);
+
+	// overwrite display and verbose settings
+	cfg->display = false;
+	cfg->verbose = false;
+
+	// TODO: calib correctly
+	cfg->carPosition = Point2d(cfg->dataset.FrameSize.width / 2.0, cfg->dataset.FrameSize.height);
+	cfg->carPositionIPM = cfg->ipm->applyHomography(Point2d(cfg->dataset.FrameSize.width / 2.0, (double)cfg->roi.height));
+
+	printf("Config:\n\tDATASETS_DIR\t%s\n\tDATA_DIR\t%s\n", cfg->DATASETS_DIR.c_str(), cfg->DATA_DIR.c_str());
+
+	// init lane estimation
+	printf("Lane Estimation Module :: init()... ");
+	lane_estimation_init(cfg);
+	printf("DONE!\n");
+
+	// init lmt detector
+	printf("LMT Detector :: init()... ");
+	lmt_classification_init(cfg);
+	printf("DONE!\n");
+
+	// load road markings templates
+	printf("Loading road markings templates... ");
+	printf("%d loaded!\n", SinalizacaoHorizontal::loadTemplates());
+
+	printf("init() - DONE!\n******************************************\n");
+
+}
+
 void ELAS::run(const Mat3b & original_frame) {
 
 	out_pre_process = new pre_processed();
