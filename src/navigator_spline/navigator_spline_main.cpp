@@ -16,9 +16,9 @@ static carmen_ackerman_traj_point_t poses[MAX_POSITIONS + EXTRA_POSITIONS + 100]
 
 
 static void tracker_position_handler(carmen_tracker_position_message *message);
-static void publish_spline_path_message(carmen_ackerman_traj_point_t *poses, int number_of_poses);
+void publish_spline_path_message(carmen_ackerman_traj_point_t *poses, int number_of_poses);
 static void publish_spline_goal_message(carmen_ackerman_traj_point_t poses);
-static void publish_spline_goal_list_message(carmen_ackerman_traj_point_t *poses, int number_of_poses);
+void publish_spline_goal_list_message(carmen_ackerman_traj_point_t *poses, int number_of_poses);
 
 
 void
@@ -42,7 +42,9 @@ periodic_publish_spline_path_message()
 //	publish_spline_path_message(poses, poses_size);
 	publish_spline_goal_message(poses[20]);
 }
-static void
+
+
+void
 publish_spline_path_message(carmen_ackerman_traj_point_t *poses, int number_of_poses)
 {
 	IPC_RETURN_TYPE err;
@@ -58,8 +60,7 @@ publish_spline_path_message(carmen_ackerman_traj_point_t *poses, int number_of_p
 }
 
 
-static void
-publish_spline_goal_message(carmen_ackerman_traj_point_t poses)
+void publish_spline_goal_message(carmen_ackerman_traj_point_t poses)
 {
 	IPC_RETURN_TYPE err;
 	carmen_navigator_ackerman_set_goal_message goal_msg;
@@ -86,8 +87,7 @@ publish_spline_goal_message(carmen_ackerman_traj_point_t poses)
 }
 
 
-static void
-publish_spline_goal_list_message(carmen_ackerman_traj_point_t *poses, int number_of_poses)
+void publish_spline_goal_list_message(carmen_ackerman_traj_point_t *poses, int number_of_poses)
 {
 	IPC_RETURN_TYPE err;
 	carmen_behavior_selector_goal_list_message goal_list_msg;
@@ -106,9 +106,9 @@ publish_spline_goal_list_message(carmen_ackerman_traj_point_t *poses, int number
 		   --- Handlers ---
  **********************************************************/
 
-static void
-rddf_message_handler(carmen_rddf_road_profile_message *message)
-{
+////static void
+////rddf_message_handler(carmen_rddf_road_profile_message *message)
+//{
 
 //	std::vector<double> X;
 //	std::vector<double> Y;
@@ -155,7 +155,7 @@ rddf_message_handler(carmen_rddf_road_profile_message *message)
 //	goal.theta = globalpos.theta;
 //	carmen_behavior_selector_add_goal(goal);
 //	publish_spline_goal_list_message(poses + 3, 1);
-}
+//}
 
 
 
@@ -193,7 +193,7 @@ tracker_position_handler(carmen_tracker_position_message *message)
 	}
 	else
 	{
-		for (int i = 0; i < global_localize_ackerman_globalpos_message.size(); i++)
+		for (unsigned int i = 0; i < global_localize_ackerman_globalpos_message.size(); i++)
 		{
 			if (fabs(message->timestamp - global_localize_ackerman_globalpos_message[i].timestamp) < 0.01)
 			{
@@ -234,7 +234,7 @@ tracker_position_handler(carmen_tracker_position_message *message)
 		x.set_points(I,X);
 		y.set_points(I,Y);
 
-		for (int i = 0; i < I.size() + EXTRA_POSITIONS; i++)
+		for (unsigned int i = 0; i < I.size() + (unsigned int)EXTRA_POSITIONS; i++)
 		{
 			poses[i].x = x(I[0] + i);
 			poses[i].y = y(I[0] + i);
@@ -249,8 +249,8 @@ tracker_position_handler(carmen_tracker_position_message *message)
 	//publish_spline_goal_list_message(poses + I.size() - 1, 1); //todo colocar o menor possivel, pode ajudar.
 //	publish_spline_path_message(poses, I.size() + EXTRA_POSITIONS);
 
-	printf("pose X %f Y %f I %d theta %f\t", message->object_position.x, message->object_position.y, I[I.size() - 1], globalpos.theta);
-	printf("I.size(): %d\n",I.size());
+	printf("pose X %f Y %f I %d theta %f\t", message->object_position.x, message->object_position.y, (int)I[I.size() - 1], globalpos.theta);
+	printf("I.size(): %d\n",(int)I.size());
 }
 
 static void
@@ -297,7 +297,7 @@ main(int argc, char **argv)
 	carmen_navigator_spline_define_messages();
 	carmen_tracker_define_message_position();
 
-	carmen_rddf_subscribe_road_profile_message(NULL, (carmen_handler_t) rddf_message_handler, CARMEN_SUBSCRIBE_LATEST);
+    //carmen_rddf_subscribe_road_profile_message(NULL, (carmen_handler_t) rddf_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_globalpos_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_tracker_subscribe_position_message(NULL,(carmen_handler_t) tracker_position_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_ipc_addPeriodicTimer(1 / 2, (TIMER_HANDLER_TYPE) periodic_publish_spline_path_message, NULL);

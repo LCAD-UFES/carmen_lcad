@@ -47,7 +47,7 @@ get_trajectory_dimensions_from_robot_state(Pose *localizer_pose, Command last_od
 
 
 bool
-move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_rddf_road_profile_message *goal_list_message,
+move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_selector_road_profile_message *goal_list_message,
 		Pose *goal_pose, vector<carmen_ackerman_path_point_t> *lane_in_local_pose)
 {
 	double last_dist = DBL_MAX;
@@ -563,7 +563,7 @@ goal_pose_vector_too_different(Pose goal_pose, Pose localizer_pose)
 void
 compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseVector, double target_v,
 		Pose *localizer_pose, vector<vector<carmen_ackerman_path_point_t> > &paths,
-		carmen_rddf_road_profile_message *goal_list_message)
+		carmen_behavior_selector_road_profile_message *goal_list_message)
 {
 	vector<carmen_ackerman_path_point_t> lane_in_local_pose, detailed_lane;
 	static TrajectoryLookupTable::TrajectoryControlParameters previous_good_tcp;
@@ -669,9 +669,9 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 }
 
 
-vector<vector<carmen_ackerman_path_point_t>>
-ModelPredictive::compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Command last_odometry,
-		double target_v, carmen_rddf_road_profile_message *goal_list_message)
+vector<vector<carmen_ackerman_path_point_t> >
+compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Command last_odometry,
+		double target_v, carmen_behavior_selector_road_profile_message *goal_list_message)
 {
 	vector<Command> lastOdometryVector;
 	vector<Pose> goalPoseVector;

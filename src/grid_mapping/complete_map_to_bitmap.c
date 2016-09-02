@@ -50,8 +50,7 @@ main(int argc, char **argv)
 	if(img)
 	    free(img);
 
-	img = (unsigned char *)malloc(3*width*height);
-	memset(img,0,sizeof(img));
+	img = (unsigned char *)calloc(3 * width * height, sizeof(unsigned char));
 
 
 	for (int x = 0; x < width; x++)

@@ -59,7 +59,6 @@ main(int argc, char **argv)
 
 	unsigned char *img = NULL;
 
-	int i;
 	unsigned char r,g,b;
 	double mult = 1.0/255.0;
 	double prob;

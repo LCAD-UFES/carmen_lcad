@@ -17,7 +17,7 @@ class Accelerator
 {
 public:
 	Accelerator();
-	~Accelerator();
+	virtual ~Accelerator();
 	void draw(void);
 
 	virtual void update(double velocity, double time) = 0;

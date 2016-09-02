@@ -452,7 +452,7 @@ initialize_pose_6d_transformation_matrix()
 	transformer.lookupTransform("/carmen", "/visual_odometry", tf::Time(0), g_carmen_to_visual_odometry_transform);
 }
 
-static void
+void
 publish_base_ackerman_odometry_message(carmen_visual_odometry_pose6d_message *visual_odometry_message)
 {
 	IPC_RETURN_TYPE err = IPC_OK;

@@ -323,7 +323,7 @@ save_globalpos_metadata_to_file(carmen_bumblebee_basic_stereoimage_message *ster
 				x += v * delta_t * cos(theta);
 				y += v * delta_t * sin(theta);
 
-				fprintf(globalpos_output_file, "%.3lf;%.3lf;%.3lf;%.3lf;%.25lf;%s;%s\n",
+				fprintf(globalpos_output_file, "%.3lf,%.3lf,%.3lf,%.3lf,%.25lf,%s,%s\n",
 						x, y, theta, v,
 						stereo_image->timestamp,
 						left_img_filename, right_img_filename
@@ -541,6 +541,8 @@ shutdown_module(int signo)
 			fclose(fused_odometry_output_file);
 		if (car_odometry_output_file != NULL)
 			fclose(car_odometry_output_file);
+		if (globalpos_output_file != NULL)
+			fclose(globalpos_output_file);
 
 		exit(0);
 	}
@@ -767,7 +769,8 @@ xsens_mti_message_handler(carmen_xsens_global_quat_message *xsens_xyz)
 static void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *globalpos)
 {
-	globalpos_message_buffer[(globalpos_message_index + 1) % 100] = *globalpos;
+	globalpos_message_buffer[globalpos_message_index] = *globalpos;
+	globalpos_message_index = (globalpos_message_index + 1) % 100;
 }
 
 
@@ -814,6 +817,7 @@ initialize_module_args(int argc, char **argv)
 			{
 				carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 				globalpos_output_file = fopen(globalpos_output_filename, "w");
+				fprintf(globalpos_output_file, "x, y, theta, v, timestamp, left_img, right_img\n");
 			}
 		}
 

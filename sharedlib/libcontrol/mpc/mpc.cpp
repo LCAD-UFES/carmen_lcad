@@ -53,9 +53,9 @@ compute_total_trajectory_time (carmen_ackerman_motion_command_p current_motion_c
 vector<double>
 get_effort_vector_from_spline_descriptors (EFFORT_SPLINE_DESCRIPTOR descriptors, PARAMS p)
 {
-	int time = (compute_total_trajectory_time (p.motion_commands_vector, p.size) / 4);
+	double time = (compute_total_trajectory_time (p.motion_commands_vector, p.size) / 4.0);
 	double x[4] = { descriptors.k1, descriptors.k2, descriptors.k3, descriptors.k4 };
-	double y[4] = { 0.0, time, (time*2), (time*3) };
+	double y[4] = { 0.0, time, time * 2.0, time * 3.0 };
 
 	vector<double> effort_vector;
 

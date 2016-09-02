@@ -82,7 +82,7 @@ calculate_distance()
     {
         distance = sqrt(pow(localize_message.globalpos.x - it.base()->annotation_point.x, 2) +
                         pow(localize_message.globalpos.y - it.base()->annotation_point.y, 2));
-        orientation = abs(carmen_radians_to_degrees(localize_message.globalpos.theta - it.base()->annotation_orientation)) < 10 ? 1 : 0;
+        orientation = fabs(carmen_radians_to_degrees(localize_message.globalpos.theta - it.base()->annotation_orientation)) < 10 ? 1 : 0;
         behind = fabs(carmen_normalize_theta((atan2(localize_message.globalpos.y - it.base()->annotation_point.y,
                                                     localize_message.globalpos.x - it.base()->annotation_point.x) - M_PI
                                              - localize_message.globalpos.theta))) > M_PI_2;

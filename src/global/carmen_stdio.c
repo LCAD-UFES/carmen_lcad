@@ -226,6 +226,7 @@ void carmen_fprintf(carmen_FILE *fp, const char *fmt, ...)
   }
 }
 
+#ifndef NO_ZLIB
 int carmen_compress(unsigned char *pDest, unsigned long *pDest_len, unsigned char *pSource, unsigned long source_len, int level)
 {
   int status;
@@ -276,4 +277,5 @@ int carmen_uncompress(unsigned char *pDest, unsigned long *pDest_len, unsigned c
 
   return inflateEnd(&stream);
 }
+#endif
 

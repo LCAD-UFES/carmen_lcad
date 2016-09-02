@@ -19,7 +19,7 @@
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/contrib/detection_based_tracker.hpp>
 
-#include "dlib/svm.h"
+#include <dlib/svm.h>
 
 #define WIDTH 9
 #define HEIGHT 20

@@ -1151,7 +1151,7 @@ carmen_param_install_params(int argc, char *argv[], carmen_param_p param_list,
     } /* switch (param_list[index].type) */
     if (err < 0)
       carmen_param_usage((char *)argv[0], param_list, num_items,
-			carmen_param_get_error());
+    		  "%s", carmen_param_get_error());
     install_parameter(param_list[index].module, param_list[index].variable, 
 		      param_list[index].user_variable, 
 		      param_list[index].type, param_list[index].subscribe, 

@@ -87,7 +87,7 @@ MessageControl::carmen_planner_ackerman_update_goal(carmen_ackerman_traj_point_t
 		return false;
 
 	requested_goal = goal;
-	printf("teste: %d\n", requested_goal->x);
+	printf("teste: %lf\n", requested_goal->x);
 	plan();
 	carmen_planner_ackerman_regenerate_trajectory();
 

@@ -606,7 +606,10 @@ static void add_comments_to_log_file(void)
   fflush(stdout);
   
   do {
-    fgets(comment_string, COMMENT_LENGTH, stdin);
+
+    char *e = fgets(comment_string, COMMENT_LENGTH, stdin);
+    e = e; //removing fgets' compilation warning
+
     last_line_p = (comment_string[0] == '\n'); /* the "newline" character */
     if (last_line_p) {
       if (has_comments_p)

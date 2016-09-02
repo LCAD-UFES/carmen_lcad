@@ -286,12 +286,13 @@ compute_plan(Tree *tree)
 {
 	if (goal_list_message.number_of_poses == 0)
 	{
+		vector<carmen_ackerman_path_point_t> a;
 		printf("Error: trying to compute plan without rddf\n");
-		return vector<carmen_ackerman_path_point_t>();
+		return a;
 	}
 
 	free_tree(tree);
-	vector<vector<carmen_ackerman_path_point_t>> path = ModelPredictive::compute_path_to_goal(GlobalState::localizer_pose,
+	vector<vector<carmen_ackerman_path_point_t> > path = compute_path_to_goal(GlobalState::localizer_pose,
 			GlobalState::goal_pose, GlobalState::last_odometry, GlobalState::robot_config.max_v, &goal_list_message);
 
 	if (path.size() == 0)
@@ -756,7 +757,7 @@ register_handlers()
 
 	//carmen_rddf_subscribe_road_profile_message(&goal_list_message, (carmen_handler_t) rddf_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_subscribe_message(CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT,
+    carmen_subscribe_message((char *)CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, (char *)CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT,
     		&goal_list_message, sizeof (carmen_behavior_selector_road_profile_message), (carmen_handler_t) rddf_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 

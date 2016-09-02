@@ -16,7 +16,8 @@ LFLAGS += -lglobal -lparam_interface -lipc -lGL -lGLU -lglut \
 
 	
 CFLAGS += -W -Wall `pkg-config --cflags opencv`
-CFLAGS += -std=c11 -O4
+CFLAGS += -O4
+CXXFLAGS += -std=c++11
 
 #SUBDIRS = traffic_light_view
 
