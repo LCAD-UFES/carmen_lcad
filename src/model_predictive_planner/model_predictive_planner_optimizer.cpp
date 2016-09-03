@@ -290,44 +290,6 @@ compute_path_points_nearest_to_lane(ObjectiveFunctionParams *param, vector<carme
 }
 
 
-double
-compute_proximity_to_obstacles(vector<carmen_ackerman_path_point_t> path)
-{
-	double proximity_to_obstacles = 0.0;
-	double min_dist = 2.2 / 2.0; // metade da largura do carro
-	int k = 1;
-	for (unsigned int i = 0; i < path.size(); i += 1)
-	{
-		// Move path point to map coordinates
-		carmen_ackerman_path_point_t path_point_in_map_coords;
-		double x_gpos = GlobalState::localizer_pose->x - GlobalState::cost_map.config.x_origin;
-		double y_gpos = GlobalState::localizer_pose->y - GlobalState::cost_map.config.y_origin;
-		double coss = cos(GlobalState::localizer_pose->theta);
-		double sine = sin(GlobalState::localizer_pose->theta);
-		double L_2 = GlobalState::robot_config.distance_between_front_and_rear_axles / 2.0;
-		path_point_in_map_coords.x = x_gpos + path[i].x * coss - path[i].y * sine + L_2 * coss; // no meio do carro
-		path_point_in_map_coords.y = y_gpos + path[i].x * sine + path[i].y * coss + L_2 * sine; // no meio do carro
-
-		// Search for nearest neighbors in the map
-		vector<occupied_cell> returned_occupied_cells;
-		occupied_cell sought = occupied_cell(path_point_in_map_coords.x, path_point_in_map_coords.y);
-		// knn search
-		GlobalState::obstacles_rtree.query(bgi::nearest(sought, k), std::back_inserter(returned_occupied_cells));
-
-		carmen_ackerman_path_point_t nearest_obstacle;
-		nearest_obstacle.x = returned_occupied_cells[0].get<0>();
-		nearest_obstacle.y = returned_occupied_cells[0].get<1>();
-//		printf("Coordenada no do robô x: %lf y: %lf \n", path_point_in_map_coords.x, path_point_in_map_coords.y);
-//		getchar();
-		double distance = dist(path_point_in_map_coords, nearest_obstacle);
-		double delta = distance - min_dist;
-		if (delta < 0.0)
-			proximity_to_obstacles += delta * delta;
-	}
-	return (proximity_to_obstacles);
-}
-
-
 //KD-TREE
 double
 compute_proximity_to_obstacles_kdtree(vector<carmen_ackerman_path_point_t> path)
@@ -357,7 +319,7 @@ compute_proximity_to_obstacles_kdtree(vector<carmen_ackerman_path_point_t> path)
 		//Get the nearest point
 		Point2D nearest_obstacle = GlobalState::obstacles_kdtree.nearest(path_point_in_map_coords);
 
-		double distance = std::sqrt(pow(nearest_obstacle.position[0] - path_point_in_map_coords.position[0], 2) + pow(nearest_obstacle.position[1] - path_point_in_map_coords.position[1], 2));
+		double distance = sqrt(pow(nearest_obstacle.position[0] - path_point_in_map_coords.position[0], 2) + pow(nearest_obstacle.position[1] - path_point_in_map_coords.position[1], 2));
 
 		double delta = distance - min_dist;
 
@@ -616,8 +578,6 @@ my_g(const gsl_vector *x, void *params)
 
 	double proximity_to_obstacles = 0.0;
 
-//	if (use_obstacles && !GlobalState::obstacles_rtree.empty())
-//		proximity_to_obstacles = compute_proximity_to_obstacles(path);
 	if (use_obstacles && GlobalState::distance_map != NULL)
 		proximity_to_obstacles = compute_proximity_to_obstacles_using_distance_map(path);
 //	if (use_obstacles && !GlobalState::obstacles_kdtree.empty())
