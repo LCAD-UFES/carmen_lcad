@@ -20,6 +20,8 @@
 #include <carmen/web_cam_interface.h>
 #include <carmen/stereo_interface.h>
 #include <carmen/base_ackerman_interface.h>
+#include <carmen/localize_ackerman_interface.h>
+#include <carmen/localize_ackerman_messages.h>
 #include <carmen/stereo_util.h>
 #include <carmen/xsens_interface.h>
 #include "../kinect/kinect_util.h"
@@ -803,14 +805,14 @@ initialize_module_args(int argc, char **argv)
 		{
 			if (!strcmp(argv[3], "with_gps"))
 			{
-				carmen_gps_xyz_subscribe_message(NULL, (carmen_handler_t) gps_xyz_message_handler, CARMEN_SUBSCRIBE_ALL);
+				carmen_gps_xyz_subscribe_message(NULL, (carmen_handler_t) gps_xyz_message_handler, CARMEN_SUBSCRIBE_LATEST);
 				gps_xyz_output_file = fopen(gps_xyz_output_filename, "w");
 				fprintf(gps_xyz_output_file, "timestamp,x,y\n");
 			}
 			else if (!strcmp(argv[3], "with_odometry"))
 			{
-				carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) car_odometry_message_handler, CARMEN_SUBSCRIBE_ALL);
-				carmen_xsens_subscribe_xsens_global_quat_message(NULL, (carmen_handler_t) xsens_mti_message_handler, CARMEN_SUBSCRIBE_ALL);
+				carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) car_odometry_message_handler, CARMEN_SUBSCRIBE_LATEST);
+				carmen_xsens_subscribe_xsens_global_quat_message(NULL, (carmen_handler_t) xsens_mti_message_handler, CARMEN_SUBSCRIBE_LATEST);
 				car_odometry_output_file = fopen(car_odometry_output_filename, "w");
 			}
 			else if (!strcmp(argv[3], "with_globalpos"))
@@ -821,15 +823,15 @@ initialize_module_args(int argc, char **argv)
 			}
 		}
 
-		carmen_bumblebee_basic_subscribe_stereoimage(1, NULL, (carmen_handler_t) bumblebee_basic_handler_1, CARMEN_SUBSCRIBE_ALL);
-		carmen_bumblebee_basic_subscribe_stereoimage(2, NULL, (carmen_handler_t) bumblebee_basic_handler_2, CARMEN_SUBSCRIBE_ALL);
-		carmen_bumblebee_basic_subscribe_stereoimage(3, NULL, (carmen_handler_t) bumblebee_basic_handler_3, CARMEN_SUBSCRIBE_ALL);
-		carmen_bumblebee_basic_subscribe_stereoimage(4, NULL, (carmen_handler_t) bumblebee_basic_handler_4, CARMEN_SUBSCRIBE_ALL);
-		carmen_bumblebee_basic_subscribe_stereoimage(5, NULL, (carmen_handler_t) bumblebee_basic_handler_5, CARMEN_SUBSCRIBE_ALL);
-		carmen_bumblebee_basic_subscribe_stereoimage(6, NULL, (carmen_handler_t) bumblebee_basic_handler_6, CARMEN_SUBSCRIBE_ALL);
-		carmen_bumblebee_basic_subscribe_stereoimage(7, NULL, (carmen_handler_t) bumblebee_basic_handler_7, CARMEN_SUBSCRIBE_ALL);
-		carmen_bumblebee_basic_subscribe_stereoimage(8, NULL, (carmen_handler_t) bumblebee_basic_handler_8, CARMEN_SUBSCRIBE_ALL);
-		carmen_bumblebee_basic_subscribe_stereoimage(9, NULL, (carmen_handler_t) bumblebee_basic_handler_9, CARMEN_SUBSCRIBE_ALL);
+		carmen_bumblebee_basic_subscribe_stereoimage(1, NULL, (carmen_handler_t) bumblebee_basic_handler_1, CARMEN_SUBSCRIBE_LATEST);
+		carmen_bumblebee_basic_subscribe_stereoimage(2, NULL, (carmen_handler_t) bumblebee_basic_handler_2, CARMEN_SUBSCRIBE_LATEST);
+		carmen_bumblebee_basic_subscribe_stereoimage(3, NULL, (carmen_handler_t) bumblebee_basic_handler_3, CARMEN_SUBSCRIBE_LATEST);
+		carmen_bumblebee_basic_subscribe_stereoimage(4, NULL, (carmen_handler_t) bumblebee_basic_handler_4, CARMEN_SUBSCRIBE_LATEST);
+		carmen_bumblebee_basic_subscribe_stereoimage(5, NULL, (carmen_handler_t) bumblebee_basic_handler_5, CARMEN_SUBSCRIBE_LATEST);
+		carmen_bumblebee_basic_subscribe_stereoimage(6, NULL, (carmen_handler_t) bumblebee_basic_handler_6, CARMEN_SUBSCRIBE_LATEST);
+		carmen_bumblebee_basic_subscribe_stereoimage(7, NULL, (carmen_handler_t) bumblebee_basic_handler_7, CARMEN_SUBSCRIBE_LATEST);
+		carmen_bumblebee_basic_subscribe_stereoimage(8, NULL, (carmen_handler_t) bumblebee_basic_handler_8, CARMEN_SUBSCRIBE_LATEST);
+		carmen_bumblebee_basic_subscribe_stereoimage(9, NULL, (carmen_handler_t) bumblebee_basic_handler_9, CARMEN_SUBSCRIBE_LATEST);
 
 		return;
 	}
@@ -837,7 +839,7 @@ initialize_module_args(int argc, char **argv)
 	// se o sensor escolhido foi o gps
 	else if (!strcmp(sensor, "gps"))
 	{
-		carmen_gps_subscribe_nmea_message(NULL, (carmen_handler_t) gps_gpgga_handler, CARMEN_SUBSCRIBE_ALL);
+		carmen_gps_subscribe_nmea_message(NULL, (carmen_handler_t) gps_gpgga_handler, CARMEN_SUBSCRIBE_LATEST);
 		gps_gpgga_output_file = fopen(gps_gpgga_output_filename, "w");
 
 		return;
@@ -846,7 +848,7 @@ initialize_module_args(int argc, char **argv)
 	// se o sensor escolhido foi o fused_odometry
 	else if (!strcmp(sensor, "fused_odometry"))
 	{
-		carmen_fused_odometry_subscribe_fused_odometry_message(NULL, (carmen_handler_t) fused_odometry_handler, CARMEN_SUBSCRIBE_ALL);
+		carmen_fused_odometry_subscribe_fused_odometry_message(NULL, (carmen_handler_t) fused_odometry_handler, CARMEN_SUBSCRIBE_LATEST);
 		fused_odometry_output_file = fopen(fused_odometry_output_filename, "w");
 
 		return;
@@ -863,8 +865,8 @@ initialize_module_args(int argc, char **argv)
 		output_dir_name = argv[2];
 
 		initialize_m_gamma ();
-		carmen_kinect_subscribe_depth_message(0, NULL, (carmen_handler_t) kinect_depth_handler, CARMEN_SUBSCRIBE_ALL);
-		carmen_kinect_subscribe_video_message(0, NULL, (carmen_handler_t) kinect_video_handler, CARMEN_SUBSCRIBE_ALL);
+		carmen_kinect_subscribe_depth_message(0, NULL, (carmen_handler_t) kinect_depth_handler, CARMEN_SUBSCRIBE_LATEST);
+		carmen_kinect_subscribe_video_message(0, NULL, (carmen_handler_t) kinect_video_handler, CARMEN_SUBSCRIBE_LATEST);
 
 		return;
 	}
@@ -879,7 +881,7 @@ initialize_module_args(int argc, char **argv)
 
 		output_dir_name = argv[2];
 
-		carmen_web_cam_subscribe_message (NULL, (carmen_handler_t) carmen_web_cam_message_handler, CARMEN_SUBSCRIBE_ALL);
+		carmen_web_cam_subscribe_message (NULL, (carmen_handler_t) carmen_web_cam_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 		return;
 	}
@@ -894,15 +896,15 @@ initialize_module_args(int argc, char **argv)
 
 		output_dir_name = argv[2];
 
-		carmen_stereo_subscribe(1, NULL, (carmen_handler_t) stereo_handler_1, CARMEN_SUBSCRIBE_ALL);
-		carmen_stereo_subscribe(2, NULL, (carmen_handler_t) stereo_handler_2, CARMEN_SUBSCRIBE_ALL);
-		carmen_stereo_subscribe(3, NULL, (carmen_handler_t) stereo_handler_3, CARMEN_SUBSCRIBE_ALL);
-		carmen_stereo_subscribe(4, NULL, (carmen_handler_t) stereo_handler_4, CARMEN_SUBSCRIBE_ALL);
-		carmen_stereo_subscribe(5, NULL, (carmen_handler_t) stereo_handler_5, CARMEN_SUBSCRIBE_ALL);
-		carmen_stereo_subscribe(6, NULL, (carmen_handler_t) stereo_handler_6, CARMEN_SUBSCRIBE_ALL);
-		carmen_stereo_subscribe(7, NULL, (carmen_handler_t) stereo_handler_7, CARMEN_SUBSCRIBE_ALL);
-		carmen_stereo_subscribe(8, NULL, (carmen_handler_t) stereo_handler_8, CARMEN_SUBSCRIBE_ALL);
-		carmen_stereo_subscribe(9, NULL, (carmen_handler_t) stereo_handler_9, CARMEN_SUBSCRIBE_ALL);
+		carmen_stereo_subscribe(1, NULL, (carmen_handler_t) stereo_handler_1, CARMEN_SUBSCRIBE_LATEST);
+		carmen_stereo_subscribe(2, NULL, (carmen_handler_t) stereo_handler_2, CARMEN_SUBSCRIBE_LATEST);
+		carmen_stereo_subscribe(3, NULL, (carmen_handler_t) stereo_handler_3, CARMEN_SUBSCRIBE_LATEST);
+		carmen_stereo_subscribe(4, NULL, (carmen_handler_t) stereo_handler_4, CARMEN_SUBSCRIBE_LATEST);
+		carmen_stereo_subscribe(5, NULL, (carmen_handler_t) stereo_handler_5, CARMEN_SUBSCRIBE_LATEST);
+		carmen_stereo_subscribe(6, NULL, (carmen_handler_t) stereo_handler_6, CARMEN_SUBSCRIBE_LATEST);
+		carmen_stereo_subscribe(7, NULL, (carmen_handler_t) stereo_handler_7, CARMEN_SUBSCRIBE_LATEST);
+		carmen_stereo_subscribe(8, NULL, (carmen_handler_t) stereo_handler_8, CARMEN_SUBSCRIBE_LATEST);
+		carmen_stereo_subscribe(9, NULL, (carmen_handler_t) stereo_handler_9, CARMEN_SUBSCRIBE_LATEST);
 
 		return;
 	}
@@ -919,6 +921,12 @@ main(int argc, char *argv[])
 	carmen_param_check_version(argv[0]);
 	carmen_kinect_define_kinect_messages(0);
 	initialize_module_args(argc, argv);
+
+	memset(gps_xyz_message_buffer, 0, 100 * sizeof(carmen_gps_xyz_message));
+	memset(car_odometry_message_buffer, 0, 100 * sizeof(carmen_base_ackerman_odometry_message));
+	memset(imu_odometry_message_buffer, 0, 100 * sizeof(carmen_xsens_global_quat_message));
+	memset(globalpos_message_buffer, 0, 100 * sizeof(carmen_localize_ackerman_globalpos_message));
+
 	carmen_ipc_dispatch();
 
 	return(0);
