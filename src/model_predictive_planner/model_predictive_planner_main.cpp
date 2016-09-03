@@ -338,50 +338,6 @@ stop()
 
 
 void
-compute_obstacles_rtree(carmen_map_server_compact_cost_map_message *map)
-{
-
-//	static double p_x_o = 0.0;
-//	static double p_y_o = 0.0;
-
-	if (GlobalState::localizer_pose && GlobalState::goal_pose)// &&
-//		p_x_o != GlobalState::cost_map.config.x_origin &&
-//		p_y_o != GlobalState::cost_map.config.y_origin)
-	{
-		GlobalState::obstacles_rtree.clear();
-
-		int px = (GlobalState::localizer_pose->x - GlobalState::cost_map.config.x_origin) / GlobalState::cost_map.config.resolution;
-		int py = (GlobalState::localizer_pose->y - GlobalState::cost_map.config.y_origin) / GlobalState::cost_map.config.resolution;
-		int gx = (GlobalState::goal_pose->x - GlobalState::cost_map.config.x_origin) / GlobalState::cost_map.config.resolution;
-		int gy = (GlobalState::goal_pose->y - GlobalState::cost_map.config.y_origin) / GlobalState::cost_map.config.resolution;
-		int margin = 0.0 / GlobalState::cost_map.config.resolution;
-		int sqr_d = DIST_SQR(px,py,gx,gy) + margin * margin;
-		int count = 0;
-		int total = 0;
-		for (int i = 0; i < map->size; i += 1)
-		{
-			if (map->value[i] > 0.5)
-			{
-				if ((DIST_SQR(px,py,map->coord_x[i],map->coord_y[i]) < sqr_d) &&
-					(DIST_SQR(gx,gy,map->coord_x[i],map->coord_y[i]) < sqr_d))
-				{
-					occupied_cell map_cell = occupied_cell(
-							(double) map->coord_x[i] * GlobalState::cost_map.config.resolution,
-							(double) map->coord_y[i] * GlobalState::cost_map.config.resolution);
-					GlobalState::obstacles_rtree.insert(map_cell);
-					count++;
-				}
-				total++;
-			}
-		}
-//		p_x_o = GlobalState::cost_map.config.x_origin;
-//		p_y_o = GlobalState::cost_map.config.y_origin;
-//		printf("fraction = %lf\n", (double) count / (double) total);
-		fflush(stdout);
-	}
-}
-
-void
 compute_obstacles_kdtree(carmen_map_server_compact_cost_map_message *map)
 {
 

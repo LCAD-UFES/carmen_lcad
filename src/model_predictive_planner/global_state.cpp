@@ -32,7 +32,6 @@ double GlobalState::max_phi_velocity = 1.0 * 0.48;		// Equivalente a rodar o vol
 double GlobalState::time_to_change_gears = 1.0;
 
 carmen_map_t GlobalState::cost_map;
-bgi::rtree< occupied_cell, bgi::quadratic<16> > GlobalState::obstacles_rtree;
 
 carmen_obstacle_distance_mapper_message *GlobalState::distance_map = NULL;
 KDTree2D GlobalState::obstacles_kdtree;
