@@ -3,7 +3,8 @@
 #include <carmen/traffic_light_interface.h>
 #include <carmen/traffic_light_messages.h>
 
-#include <opencv2/legacy/legacy.hpp>
+#include <opencv/cv.h>
+//#include <opencv2/legacy/legacy.hpp>
 /* Image show */
 static GtkWidget *drawing_area;
 static GdkPixbuf *src_buffer;

@@ -769,7 +769,7 @@ int bmp_open(char *filename, int have_graphics __attribute__ ((unused)))
 	{
 		for(y=0;y<new_map->config.y_size;y++)
 		{
-			pixel = cvGetAt(bmpfile,height-y-1,x);
+			pixel = CV_IMAGE_ELEM(bmpfile, CvScalar,height-y-1,x);
 			new_map->map[x][y] = 1-pixel.val[0]/255;
 		}
 	}

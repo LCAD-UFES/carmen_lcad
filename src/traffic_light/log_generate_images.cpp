@@ -6,7 +6,7 @@
 
 #include <iostream>
 #include <opencv2/highgui/highgui.hpp>
-#include <opencv2/legacy/legacy.hpp>
+#include <opencv/cv.h>
 
 using namespace cv;
 using namespace std;

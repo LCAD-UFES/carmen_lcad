@@ -541,8 +541,8 @@ int main(int argc __attribute__ ((unused)), char **argv)
 	image_right_copy = cvCreateImage(cvSize(left->width, left->height), IPL_DEPTH_8U, 3);
 
 
-	cvCopyImage(left, image_left_copy);
-	cvCopyImage(right, image_right_copy);
+	cvCopy(left, image_left_copy);
+	cvCopy(right, image_right_copy);
 
 	cvSmooth(left, left, CV_GAUSSIAN, 3, 0, 0, 0);
 	cvSmooth(right, right, CV_GAUSSIAN, 3, 0, 0, 0);

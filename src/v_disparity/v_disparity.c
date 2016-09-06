@@ -1,4 +1,5 @@
 #include "v_disparity.h"
+#include "opencv2/core/version.hpp"
 
 #ifndef NO_CUDA
 #include "v_disparity_GPU.h"
@@ -88,24 +89,24 @@ void resize_line(double resize_factor, CvPoint *A, CvPoint *B, v_disparity insta
 
   if (A->x < B->x)
   {
-    A->x = cvRound(A->x - resize_factor * lenght * dX);
-    B->x = cvRound(B->x + resize_factor * lenght * dX);
+    A->x = round(A->x - resize_factor * lenght * dX);
+    B->x = round(B->x + resize_factor * lenght * dX);
   }
   else
   {
-    A->x = cvRound(A->x + resize_factor * lenght * dX);
-    B->x = cvRound(B->x - resize_factor * lenght * dX);
+    A->x = round(A->x + resize_factor * lenght * dX);
+    B->x = round(B->x - resize_factor * lenght * dX);
   }
 
   if (A->y > B->y)
   {
-    A->y = cvRound(A->y + resize_factor * lenght * dY);
-    B->y = cvRound(A->y - resize_factor * lenght * dY);
+    A->y = round(A->y + resize_factor * lenght * dY);
+    B->y = round(A->y - resize_factor * lenght * dY);
   }
   else
   {
-    A->y = cvRound(A->y - resize_factor * lenght * dY);
-    B->y = cvRound(B->y + resize_factor * lenght * dY);
+    A->y = round(A->y - resize_factor * lenght * dY);
+    B->y = round(B->y + resize_factor * lenght * dY);
   }
 }
 
@@ -114,7 +115,12 @@ cvLineSegment *find_hough_lines(const IplImage *image, int *n_lines, v_disparity
   IplImage *ch1_image = cvCloneImage(image);
   cvCanny(ch1_image, ch1_image, 50, 200, 3);
 
+#if CV_MAJOR_VERSION == 2
   CvSeq *lines = cvHoughLines2(ch1_image, instance.memory_storage, CV_HOUGH_PROBABILISTIC, 1, CV_PI/360.0, 60, 45, 10);
+#elif CV_MAJOR_VERSION == 3
+  CvSeq *lines = cvHoughLines2(ch1_image, instance.memory_storage, CV_HOUGH_PROBABILISTIC, 1, CV_PI/360.0, 60, 45, 10, 0, CV_PI);
+#endif
+  
 
   // Copy the found lines
   *n_lines = lines->total;
