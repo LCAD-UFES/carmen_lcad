@@ -424,6 +424,55 @@ carmen_prob_models_update_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sens
 	}
 }
 
+void
+carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(carmen_map_t *map, carmen_map_t *sum_occupancy_map, carmen_map_t *count_occupancy_map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id)
+{
+	int i;
+	cell_coords_t cell_hit_by_ray, cell_hit_by_nearest_ray;
+	double log_odds_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target = 0.0;
+
+	cell_hit_by_nearest_ray.x = (sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].x / map->config.resolution);
+	cell_hit_by_nearest_ray.y = (sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].y / map->config.resolution);
+
+	if (map_grid_is_valid(map, cell_hit_by_nearest_ray.x, cell_hit_by_nearest_ray.y))
+		log_odds_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target = map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y];
+
+	for (i = 0; i < sensor_params->vertical_resolution; i++)
+	{
+		if (i != sensor_data->ray_that_hit_the_nearest_target[thread_id])
+		{
+			cell_hit_by_ray.x = (sensor_data->ray_position_in_the_floor[thread_id][i].x / map->config.resolution);
+			cell_hit_by_ray.y = (sensor_data->ray_position_in_the_floor[thread_id][i].y / map->config.resolution);
+			if (map_grid_is_valid(map, cell_hit_by_ray.x, cell_hit_by_ray.y))
+				if (sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] > sensor_params->log_odds.log_odds_l0){
+					carmen_prob_models_log_odds_occupancy_grid_mapping(map, cell_hit_by_ray.x, cell_hit_by_ray.y, sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i]);
+
+					sum_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] += carmen_prob_models_log_odds_to_probabilistic(sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i]); //map->map[cell_hit_by_ray.x][cell_hit_by_ray.y];
+					if(count_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] == -1.0)
+						count_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] = 0.0;
+					count_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] += 1.0;
+				}
+		}
+	}
+
+	if (map_grid_is_valid(map, cell_hit_by_nearest_ray.x, cell_hit_by_nearest_ray.y))
+	{
+		map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y] = log_odds_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target;
+
+		if (!sensor_data->maxed[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]] &&
+			!sensor_data->ray_hit_the_robot[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]] &&
+			!(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]], highest_sensor, safe_range_above_sensors))){
+			carmen_prob_models_log_odds_occupancy_grid_mapping(map, cell_hit_by_nearest_ray.x, cell_hit_by_nearest_ray.y, 2.0 * sensor_params->log_odds.log_odds_occ);
+
+			sum_occupancy_map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y] += carmen_prob_models_log_odds_to_probabilistic(2.0 * sensor_params->log_odds.log_odds_occ); //map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y];
+			if(count_occupancy_map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y] == -1.0)
+				count_occupancy_map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y] = 0.0;
+			count_occupancy_map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y] += 1.0;
+
+		}
+
+	}
+}
 
 void
 carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id)
@@ -627,6 +676,57 @@ carmen_prob_models_update_cells_crossed_by_ray(carmen_map_t *map, sensor_paramet
 //				ray_start_occupied = 0;
 //			if (ray_start_occupied == 0)
 				carmen_prob_models_log_odds_occupancy_grid_mapping(map, nx, ny, sensor_params->log_odds.log_odds_free);
+			if (map->map[nx][ny] >= 0.5)
+				break;	// do not cross obstacles until they are cleared
+		}
+	}
+}
+
+void
+carmen_prob_models_update_sum_and_count_cells_crossed_by_ray(carmen_map_t *map, carmen_map_t *sum_occupancy_map, carmen_map_t *count_occupancy_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id)
+{
+	int j;
+	cell_coords_t a, b;
+	double dx, dy, dr;
+	int step_count;
+	int nx, ny;
+//	int ray_start_occupied = 0;
+
+//	if (sensor_data->maxed[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]])
+//		return;
+
+	a.x = (sensor_data->ray_origin_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].x / map->config.resolution);
+	a.y = (sensor_data->ray_origin_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].y / map->config.resolution);
+	b.x = (sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].x / map->config.resolution);
+	b.y = (sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].y / map->config.resolution);
+
+	// Compute line parameters
+	dx = (double) (b.x - a.x);
+	dy = (double) (b.y - a.y);
+	dr = sqrt(dx * dx + dy * dy);
+
+	step_count = (int)floor(dr / 1.0) + 2;
+	dx /= (step_count - 1);
+	dy /= (step_count - 1);
+
+	// Walk the line and update the grid
+	for (j = 0; j < step_count - 1; j++)
+	{
+		nx = (int) (a.x + dx * (double) j + 0.5);
+		ny = (int) (a.y + dy * (double) j + 0.5);
+
+		if (map_grid_is_valid(map, nx, ny) && !((nx == b.x) && (ny == b.y)))
+		{
+//			if ((j < 8) && (map->map[nx][ny] > 0.85)) // Alberto: estes numeros sao bem ad hoc...
+//				ray_start_occupied = 1;
+//			if (ray_start_occupied && (map->map[nx][ny] <= 0.85))
+//				ray_start_occupied = 0;
+//			if (ray_start_occupied == 0)
+			carmen_prob_models_log_odds_occupancy_grid_mapping(map, nx, ny, sensor_params->log_odds.log_odds_free);
+			sum_occupancy_map->map[nx][ny] += carmen_prob_models_log_odds_to_probabilistic(sensor_params->log_odds.log_odds_free);
+			if(count_occupancy_map->map[nx][ny] == -1.0)
+				count_occupancy_map->map[nx][ny] = 0.0;
+			count_occupancy_map->map[nx][ny] += 1.0;
 			if (map->map[nx][ny] >= 0.5)
 				break;	// do not cross obstacles until they are cleared
 		}
