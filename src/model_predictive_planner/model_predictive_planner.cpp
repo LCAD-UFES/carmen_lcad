@@ -60,29 +60,31 @@ move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_select
 	double goal_y = goal_in_car_reference[1];
 	//	printf("Goal x: %lf y: %lf \n", goal_x, goal_y);
 
-	if ((goal_list_message->number_of_poses < 2) && (goal_list_message->number_of_poses_back < 2))
+	if ((goal_list_message->number_of_poses < 2))
 		return false;
 
 	vector<carmen_ackerman_path_point_t> poses_back;
 	carmen_ackerman_path_point_t local_reference_lane_point;
 
-	//Get the back poses
-
-	for (int i = 0; i < goal_list_message->number_of_poses_back; i++)
+	//Get the back poses if uses RDDF - That dont work with ASTAR PathPlanner
+	if ((goal_list_message->number_of_poses_back > 2))
 	{
-		SE2 lane_back_in_world_reference(goal_list_message->poses_back[i].x, goal_list_message->poses_back[i].y, goal_list_message->poses_back[i].theta);
-		SE2 lane_back_in_car_reference = robot_pose.inverse() * lane_back_in_world_reference;
-
-		local_reference_lane_point = {lane_back_in_car_reference[0], lane_back_in_car_reference[1], lane_back_in_car_reference[2],
-				goal_list_message->poses_back[i].v, goal_list_message->poses_back[i].phi, 0.0};
-
-		poses_back.push_back(local_reference_lane_point);
-
-		if (local_reference_lane_point.x <= 0)
+		for (int i = 0; i < goal_list_message->number_of_poses_back; i++)
 		{
-			for (int j = (poses_back.size() - 1); j >= 0 ; j--)
-				lane_in_local_pose->push_back(poses_back.at(j));
-			break;
+			SE2 lane_back_in_world_reference(goal_list_message->poses_back[i].x, goal_list_message->poses_back[i].y, goal_list_message->poses_back[i].theta);
+			SE2 lane_back_in_car_reference = robot_pose.inverse() * lane_back_in_world_reference;
+
+			local_reference_lane_point = {lane_back_in_car_reference[0], lane_back_in_car_reference[1], lane_back_in_car_reference[2],
+					goal_list_message->poses_back[i].v, goal_list_message->poses_back[i].phi, 0.0};
+
+			poses_back.push_back(local_reference_lane_point);
+
+			if (local_reference_lane_point.x <= 0)
+			{
+				for (int j = (poses_back.size() - 1); j >= 0 ; j--)
+					lane_in_local_pose->push_back(poses_back.at(j));
+				break;
+			}
 		}
 	}
 
@@ -110,7 +112,7 @@ move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_select
 			return false;
 		last_dist = dist;
 	}
-	return false;
+	return true;
 }
 
 
@@ -577,14 +579,18 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		first_time = false;
 		last_timestamp = carmen_get_time();
 	}
-
+//	printf("Goal list: %d \n", goal_list_message->number_of_poses);
 	bool goal_in_lane = false;
 	goal_in_lane = move_lane_to_robot_reference_system(localizer_pose, goal_list_message, &goalPoseVector[0], &lane_in_local_pose);
 
 	if (!goal_in_lane)
 		lane_in_local_pose.clear();
 
+//	printf("Lane in local: %lu \n", lane_in_local_pose.size());
+
 	build_detailed_lane(&lane_in_local_pose, detailed_lane);
+
+//	printf("detailed_lane: %lu \n", detailed_lane.size());
 
 	otcps.resize(paths.size());
 	bool has_valid_path = false;

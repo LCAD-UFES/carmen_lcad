@@ -240,6 +240,9 @@ void carmen_prob_models_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_m
 void carmen_prob_models_create_distance_map(carmen_prob_models_distance_map *lmap, carmen_map_p map,
 		double minimum_occupied_prob);
 
+void carmen_prob_models_create_masked_distance_map(carmen_prob_models_distance_map *lmap, carmen_map_p map,
+		double minimum_occupied_prob, carmen_point_p robot_position, carmen_point_p goal_position);
+
 void carmen_prob_models_initialize_distance_map(carmen_prob_models_distance_map *lmap, carmen_map_p cmap);
 
 #ifdef __cplusplus
