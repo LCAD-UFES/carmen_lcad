@@ -53,7 +53,7 @@ static int initial_map_y;
 static int publish_grid_mapping_map_at_startup = 0;
 static int publish_google_map = 0;
 static int lanemap_incoming_message_type = 0;
-
+static int goal_source_path_planner = 0;
 static carmen_point_t pose_g;
 
 int is_first_rddf_message = 1;
@@ -292,7 +292,6 @@ add_lane_to_the_map(carmen_map_t *lane_map, carmen_rddf_road_profile_message *me
 		add_points_interval_to_the_map(lane_map, lane_probability, message->poses[i], message->poses[i + 1]);
 	}
 
-
 	// backward direction
 	for (i = 0; i < (message->number_of_poses_back - 1); i++)
 	{
@@ -430,8 +429,9 @@ alloc_rddf_global_data(carmen_behavior_selector_road_profile_message *message)
 
 	rddf_message->annotations = (int *) calloc (message->number_of_poses, sizeof(int));
 	rddf_message->poses = (carmen_ackerman_traj_point_t *) calloc (message->number_of_poses, sizeof(carmen_ackerman_traj_point_t));
-	rddf_message->poses_back = (carmen_ackerman_traj_point_t *) calloc (message->number_of_poses_back, sizeof(carmen_ackerman_traj_point_t));
 	rddf_message->number_of_poses = message->number_of_poses;
+
+	rddf_message->poses_back = (carmen_ackerman_traj_point_t *) calloc (message->number_of_poses_back, sizeof(carmen_ackerman_traj_point_t));
 	rddf_message->number_of_poses_back = message->number_of_poses_back;
 }
 
@@ -444,6 +444,7 @@ realloc_rddf_global_data(carmen_behavior_selector_road_profile_message *message)
 		rddf_message->annotations = (int *) realloc (rddf_message->annotations, message->number_of_poses * sizeof(int));
 		rddf_message->poses = (carmen_ackerman_traj_point_t *) realloc (rddf_message->poses, message->number_of_poses * sizeof(carmen_ackerman_traj_point_t));
 	}
+
 
 	if (message->number_of_poses_back != rddf_message->number_of_poses_back)
 	{
@@ -469,8 +470,14 @@ rddf_message_handler(carmen_behavior_selector_road_profile_message *message)
 {
 	static carmen_point_t pose_in_last_publish = {0.0, 0.0, 0.0};
 
-	if (message->number_of_poses <= 0 || message->number_of_poses_back <= 0)
-		return;
+	if (goal_source_path_planner)
+	{
+		if (message->number_of_poses <= 0)
+			return;
+	}
+
+	else if (message->number_of_poses <= 0 || message->number_of_poses_back <= 0)
+			return;
 
 	if (is_first_rddf_message)
 	{
@@ -479,7 +486,14 @@ rddf_message_handler(carmen_behavior_selector_road_profile_message *message)
 	}
 	else
 	{
-		if ((message->number_of_poses != rddf_message->number_of_poses) || (message->number_of_poses_back != rddf_message->number_of_poses_back))
+		if (goal_source_path_planner)
+		{
+			if ((message->number_of_poses != rddf_message->number_of_poses))
+				realloc_rddf_global_data(message);
+		}
+
+		else if ((message->number_of_poses != rddf_message->number_of_poses) ||
+				(message->number_of_poses_back != rddf_message->number_of_poses_back))
 			realloc_rddf_global_data(message);
 
 		copy_local_rddf_to_global_rddf(message);
@@ -487,8 +501,8 @@ rddf_message_handler(carmen_behavior_selector_road_profile_message *message)
 		double distance_without_lane_map;
 
 		distance_without_lane_map =
-			sqrt(pow(pose_g.x - pose_in_last_publish.x, 2) +
-				pow(pose_g.y - pose_in_last_publish.y, 2));
+				sqrt(pow(pose_g.x - pose_in_last_publish.x, 2) +
+						pow(pose_g.y - pose_in_last_publish.y, 2));
 
 		if ((distance_without_lane_map > distance_to_update_lane_map) || (offline_map_published))
 		{
@@ -556,6 +570,7 @@ read_localize_parameters(int argc, char **argv)
 			{(char*)"robot",  (char*)"distance_between_front_and_rear_axles",		CARMEN_PARAM_DOUBLE, &(car_config.distance_between_front_and_rear_axles), 1, NULL},
 			{(char*)"robot",  (char*)"distance_between_rear_car_and_rear_wheels",		CARMEN_PARAM_DOUBLE, &(car_config.distance_between_rear_car_and_rear_wheels), 1, NULL},
 			{(char*)"robot",  (char*)"distance_between_rear_wheels",			CARMEN_PARAM_DOUBLE, &(car_config.distance_between_rear_wheels), 1, NULL},
+			{(char *) "behavior_selector",   (char *) "goal_source_path_planner", 		CARMEN_PARAM_ONOFF,  &goal_source_path_planner, 0, NULL}
 	};
 
 
