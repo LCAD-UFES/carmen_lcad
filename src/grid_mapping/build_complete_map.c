@@ -12,7 +12,9 @@
 
 static char *map_path = "/home/romulo/carmen/data/map_volta_da_ufes-20121003-01";
 static double map_resolution = 0.2;
-char *map_type = NULL;
+char *map_type = "mmmmmmm";
+static char *map_name = "%s/complete_map.map";
+static char *map_name_info = "%s/complete_map.info";
 
 
 static void
@@ -38,7 +40,8 @@ get_map_origin_by_filename(char *filename, double *x_origin, double *y_origin)
 
 	div_char = strrchr(map_name, '_');
 
-	if (div_char != NULL && (map_name[0] == 'm' || map_name[0] == 'g' || map_name[0] == 's' || map_name[0] == '2' || map_name[0] == 'c'))
+	if (div_char != NULL && (map_name[0] == 'm' || map_name[0] == 'g' || map_name[0] == 's' || map_name[0] == '2' || map_name[0] == 'c'
+			|| map_name[0] == 'u' || map_name[0] == 'o' || map_name[0] == 'e'))
 	{
 		aux = strrchr(map_name, '.');
 
@@ -115,8 +118,8 @@ main(int argc, char **argv)
 	double x_origin, y_origin, size = 0.0;
 	char complete_map_name[1024];
 	
-	map_type = (char *) malloc(1024);
-	strcpy(map_type, "mmmmmmm");
+//	map_type = (char *) malloc(1024);
+//	strcpy(map_type, "mmmmmmm");
 
 	carmen_ipc_initialize(argc, argv);
 	read_parameters(argc, argv);
@@ -129,7 +132,7 @@ main(int argc, char **argv)
 
 	dp  = opendir(map_path);
 	sprintf(complete_map_name, "rm %s/complete_map.*", map_path);
-	system(complete_map_name); 
+//	system(complete_map_name);
 
 	for (dirp = readdir(dp), i = 0; dirp != NULL; dirp = readdir(dp))
 	{
@@ -212,10 +215,21 @@ main(int argc, char **argv)
 
 	closedir(dp);
 
-	sprintf(global_map_path, "%s/complete_map.map", map_path);
+	if (map_type[0] == 'u'){
+		map_name = "%s/complete_map_sum.map";
+		map_name_info = "%s/complete_map_sum.info";
+	}else if(map_type[0] == 'o'){
+		map_name = "%s/complete_map_count.map";
+		map_name_info = "%s/complete_map_count.info";
+	}else if(map_type[0] == 'e'){
+		map_name = "%s/complete_map_mean.map";
+		map_name_info = "%s/complete_map_mean.info";
+	}
+
+	sprintf(global_map_path, map_name, map_path);
 	carmen_grid_mapping_save_map(global_map_path, &complete_map);
 
-	sprintf(global_map_path, "%s/complete_map.info", map_path);
+	sprintf(global_map_path, map_name_info, map_path);
 	file = fopen(global_map_path, "w");
 
 	fprintf(file, "%f\n%f\n", complete_map.config.x_origin, complete_map.config.y_origin);
