@@ -19,10 +19,6 @@
 #include "objects_ackerman.h"
 
 
-#define NUM_VELOCITY_ANN_INPUTS	360
-#define NUM_STEERING_ANN_INPUTS	80
-
-
 static double
 get_acceleration(double v, double target_v, carmen_simulator_ackerman_config_t *simulator_config)
 {
@@ -227,6 +223,7 @@ update_target_v_and_target_phi(carmen_simulator_ackerman_config_t *simulator_con
 		simulator_config->target_phi = simulator_config->current_motion_command_vector[i].phi;
 		//printf("i = %d\n", i);
 	}
+	simulator_config->current_motion_command_vector_index = i;
 }
 
 
@@ -604,9 +601,6 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 		init_steering_ann_input(steering_ann_input);
 	}
 
-
-	printf("----%d\n", simulator_config->nun_motion_commands);
-
 	atan_current_curvature = atan(compute_curvature(simulator_config->phi, simulator_config));
 	atan_desired_curvature = atan(compute_curvature(simulator_config->target_phi, simulator_config));
 
@@ -667,17 +661,15 @@ compute_new_phi_on_ann_with_RL_PID(carmen_simulator_ackerman_config_t *simulator
 double
 compute_new_phi_on_ann_with_MPC(carmen_simulator_ackerman_config_t *simulator_config)
 {
-	if (simulator_config->nun_motion_commands < 1)
-		return simulator_config->phi;
-
-
-	static double effort_steering = 0.0;
+	static double steering_effort = 0.0;
 	double atan_current_curvature;
 	double atan_desired_curvature;
 	static fann_type steering_ann_input[NUM_STEERING_ANN_INPUTS];
 	fann_type *steering_ann_output;
 	static struct fann *steering_ann = NULL;
 
+	if (simulator_config->nun_motion_commands < 1)
+		return simulator_config->phi;
 
 	//carmen_libcarneuralmodel_init_steering_ann (steering_ann, steering_ann_input);
 	if (steering_ann == NULL)
@@ -697,17 +689,12 @@ compute_new_phi_on_ann_with_MPC(carmen_simulator_ackerman_config_t *simulator_co
 	atan_desired_curvature = carmen_get_curvature_from_phi(simulator_config->target_phi, simulator_config->v, simulator_config->understeer_coeficient,
 										simulator_config->distance_between_front_and_rear_axles);
 
-
-	carmen_libpid_steering_PID_controler(&effort_steering, atan_desired_curvature,
-												atan_current_curvature, simulator_config->delta_t);
-
-	// Mudar effort_steering to past_steering
-	// Adicionar simulator_config->time_of_last_command
-	carmen_libmpc_get_optimized_steering_effort_using_MPC(simulator_config->current_motion_command_vector,
+	// Por que nao passa o atan_desired_curvature?
+	steering_effort = carmen_libmpc_get_optimized_steering_effort_using_MPC(simulator_config->current_motion_command_vector,
 											simulator_config->nun_motion_commands,  atan_current_curvature, steering_ann, steering_ann_input,
 											simulator_config->v, simulator_config->understeer_coeficient, simulator_config->distance_between_front_and_rear_axles);
 
-	carmen_libcarneuralmodel_build_steering_ann_input(steering_ann_input, effort_steering, atan_current_curvature);
+	carmen_libcarneuralmodel_build_steering_ann_input(steering_ann_input, steering_effort, atan_current_curvature);
 
 	steering_ann_output = fann_run(steering_ann, steering_ann_input);
 
