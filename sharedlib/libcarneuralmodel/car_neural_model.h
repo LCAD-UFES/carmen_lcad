@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#define NUM_VELOCITY_ANN_INPUTS	360
+#define NUM_STEERING_ANN_INPUTS	80
 
 void
 carmen_libcarneuralmodel_init_steering_ann_input(fann_type *input);

@@ -1037,8 +1037,8 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 		global_gui->draw_path(
 				global_gui->canditade_path[i],
 				global_gui->candidate_path_size[i],
-				carmen_green,
-				carmen_green, the_map_view);
+				global_gui->path_colour,
+				global_gui->path_colour, the_map_view);
 
 	if (global_gui->nav_panel_config->draw_path && global_gui->nav_panel_config->edit_rddf_goals)
 		global_gui->draw_path(global_gui->path, global_gui->num_path_points, global_gui->path_colour, carmen_black, the_map_view);

@@ -424,6 +424,55 @@ carmen_prob_models_update_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sens
 	}
 }
 
+void
+carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(carmen_map_t *map, carmen_map_t *sum_occupancy_map, carmen_map_t *count_occupancy_map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id)
+{
+	int i;
+	cell_coords_t cell_hit_by_ray, cell_hit_by_nearest_ray;
+	double log_odds_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target = 0.0;
+
+	cell_hit_by_nearest_ray.x = (sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].x / map->config.resolution);
+	cell_hit_by_nearest_ray.y = (sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].y / map->config.resolution);
+
+	if (map_grid_is_valid(map, cell_hit_by_nearest_ray.x, cell_hit_by_nearest_ray.y))
+		log_odds_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target = map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y];
+
+	for (i = 0; i < sensor_params->vertical_resolution; i++)
+	{
+		if (i != sensor_data->ray_that_hit_the_nearest_target[thread_id])
+		{
+			cell_hit_by_ray.x = (sensor_data->ray_position_in_the_floor[thread_id][i].x / map->config.resolution);
+			cell_hit_by_ray.y = (sensor_data->ray_position_in_the_floor[thread_id][i].y / map->config.resolution);
+			if (map_grid_is_valid(map, cell_hit_by_ray.x, cell_hit_by_ray.y))
+				if (sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] > sensor_params->log_odds.log_odds_l0){
+					carmen_prob_models_log_odds_occupancy_grid_mapping(map, cell_hit_by_ray.x, cell_hit_by_ray.y, sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i]);
+
+					sum_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] += carmen_prob_models_log_odds_to_probabilistic(sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i]); //map->map[cell_hit_by_ray.x][cell_hit_by_ray.y];
+					if(count_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] == -1.0)
+						count_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] = 0.0;
+					count_occupancy_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] += 1.0;
+				}
+		}
+	}
+
+	if (map_grid_is_valid(map, cell_hit_by_nearest_ray.x, cell_hit_by_nearest_ray.y))
+	{
+		map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y] = log_odds_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target;
+
+		if (!sensor_data->maxed[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]] &&
+			!sensor_data->ray_hit_the_robot[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]] &&
+			!(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]], highest_sensor, safe_range_above_sensors))){
+			carmen_prob_models_log_odds_occupancy_grid_mapping(map, cell_hit_by_nearest_ray.x, cell_hit_by_nearest_ray.y, 2.0 * sensor_params->log_odds.log_odds_occ);
+
+			sum_occupancy_map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y] += carmen_prob_models_log_odds_to_probabilistic(2.0 * sensor_params->log_odds.log_odds_occ); //map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y];
+			if(count_occupancy_map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y] == -1.0)
+				count_occupancy_map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y] = 0.0;
+			count_occupancy_map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y] += 1.0;
+
+		}
+
+	}
+}
 
 void
 carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id)
@@ -627,6 +676,57 @@ carmen_prob_models_update_cells_crossed_by_ray(carmen_map_t *map, sensor_paramet
 //				ray_start_occupied = 0;
 //			if (ray_start_occupied == 0)
 				carmen_prob_models_log_odds_occupancy_grid_mapping(map, nx, ny, sensor_params->log_odds.log_odds_free);
+			if (map->map[nx][ny] >= 0.5)
+				break;	// do not cross obstacles until they are cleared
+		}
+	}
+}
+
+void
+carmen_prob_models_update_sum_and_count_cells_crossed_by_ray(carmen_map_t *map, carmen_map_t *sum_occupancy_map, carmen_map_t *count_occupancy_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id)
+{
+	int j;
+	cell_coords_t a, b;
+	double dx, dy, dr;
+	int step_count;
+	int nx, ny;
+//	int ray_start_occupied = 0;
+
+//	if (sensor_data->maxed[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]])
+//		return;
+
+	a.x = (sensor_data->ray_origin_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].x / map->config.resolution);
+	a.y = (sensor_data->ray_origin_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].y / map->config.resolution);
+	b.x = (sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].x / map->config.resolution);
+	b.y = (sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].y / map->config.resolution);
+
+	// Compute line parameters
+	dx = (double) (b.x - a.x);
+	dy = (double) (b.y - a.y);
+	dr = sqrt(dx * dx + dy * dy);
+
+	step_count = (int)floor(dr / 1.0) + 2;
+	dx /= (step_count - 1);
+	dy /= (step_count - 1);
+
+	// Walk the line and update the grid
+	for (j = 0; j < step_count - 1; j++)
+	{
+		nx = (int) (a.x + dx * (double) j + 0.5);
+		ny = (int) (a.y + dy * (double) j + 0.5);
+
+		if (map_grid_is_valid(map, nx, ny) && !((nx == b.x) && (ny == b.y)))
+		{
+//			if ((j < 8) && (map->map[nx][ny] > 0.85)) // Alberto: estes numeros sao bem ad hoc...
+//				ray_start_occupied = 1;
+//			if (ray_start_occupied && (map->map[nx][ny] <= 0.85))
+//				ray_start_occupied = 0;
+//			if (ray_start_occupied == 0)
+			carmen_prob_models_log_odds_occupancy_grid_mapping(map, nx, ny, sensor_params->log_odds.log_odds_free);
+			sum_occupancy_map->map[nx][ny] += carmen_prob_models_log_odds_to_probabilistic(sensor_params->log_odds.log_odds_free);
+			if(count_occupancy_map->map[nx][ny] == -1.0)
+				count_occupancy_map->map[nx][ny] = 0.0;
+			count_occupancy_map->map[nx][ny] += 1.0;
 			if (map->map[nx][ny] >= 0.5)
 				break;	// do not cross obstacles until they are cleared
 		}
@@ -2350,3 +2450,150 @@ carmen_prob_models_create_distance_map(carmen_prob_models_distance_map *lmap, ca
 		for (y = y_size - 2; y >= 1; y--)
 			compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
 }
+
+
+/* compute minimum distance to all occupied cells OVERRIDE */
+int is_inside_ellipse(int x, int y, int c_y, int c_x, int i_a2, int i_b2, double cosalpha, double sinalpha)
+{
+
+    return (carmen_square(cosalpha * (x - c_x) + sinalpha * (y - c_y)) * i_a2 +
+            carmen_square(sinalpha * (x - c_x) - cosalpha * (y - c_y)) * i_b2) <= 1;
+
+}
+
+
+/* compute minimum distance to all occupied cells OVERRIDE */
+void
+carmen_prob_models_create_masked_distance_map(carmen_prob_models_distance_map *lmap,
+                                            carmen_map_p map,
+                                            double minimum_occupied_prob,
+                                            carmen_point_p robot_position,
+                                            carmen_point_p goal_position
+                                            )
+{
+    int x, y;
+
+    lmap->config = map->config;
+
+    double **cmap_map = map->map;
+    double **distance = lmap->distance;
+    short int **x_offset = lmap->x_offset;
+    short int **y_offset = lmap->y_offset;
+
+    int x_size = lmap->config.x_size;
+    int y_size = lmap->config.y_size;
+
+    int total_size = x_size * y_size;
+    std::fill_n(lmap->complete_distance, total_size, HUGE_DISTANCE);
+    std::fill_n(lmap->complete_x_offset, total_size, HUGE_DISTANCE);
+    std::fill_n(lmap->complete_y_offset, total_size, HUGE_DISTANCE);
+
+    /* Initialize the distance measurements before dynamic programming */
+    for (x = 0; x < x_size; x++)
+    {
+        for (y = 0; y < y_size; y++)
+        {
+            if (cmap_map[x][y] > minimum_occupied_prob)
+            {
+                distance[x][y] = 0.0;
+                x_offset[x][y] = 0.0;
+                y_offset[x][y] = 0.0;
+            }
+        }
+    }
+
+    /* Use dynamic programming to estimate the minimum distance from
+     every map cell to an occupied map cell */
+    /*  */
+
+    if (NULL != robot_position && NULL != goal_position) {
+
+        // avoiding a lot of divisions
+        double inverse_resolution = 1.0/map->config.resolution;
+
+        /* convert the robot position to grid map index */
+        int r_y = floor((robot_position->y - map->config.y_origin) * inverse_resolution  + 0.5);
+        int r_x = floor((robot_position->x - map->config.x_origin) * inverse_resolution + 0.5);
+
+        /* convert the goal position to grid map index */
+        int g_y = floor((goal_position->y - map->config.y_origin) * inverse_resolution + 0.5);
+        int g_x = floor((goal_position->x - map->config.x_origin) * inverse_resolution + 0.5);
+
+        /* the ellipse orientation */
+        double alpha = 0, cosalpha, sinalpha;
+
+        /* */
+        int c_y = (r_y + g_y) / 2;
+        int c_x = (r_x + g_x) / 2;
+
+        double a = sqrt(carmen_square(g_y - c_y) + carmen_square(g_x - c_x)) + 10 * inverse_resolution;
+        double b = 30 * inverse_resolution;
+
+        /* get the ellipse rotation and the a and b params */
+        if (r_x < g_x) {
+
+            alpha = atan2(g_y - r_y, g_x - r_x);
+
+        } else if (g_x < r_x) {
+
+            alpha = atan2(r_y - g_y, r_x - g_x);
+
+        } else if (r_y < g_y) {
+
+            alpha = atan2(g_y - r_y, g_x - r_x);
+
+        } else if (g_y < r_y) {
+
+            alpha = atan2(r_y - g_y, r_x - g_x);
+
+        }
+
+        sinalpha = sin(alpha);
+        cosalpha = cos(alpha);
+
+        double i_a2 = 1.0/(a * a);
+        double i_b2 = 1.0/(b * b);
+
+       /* pass 1 */
+        for (x = 1; x < x_size - 1; x++)
+            for (y = 1; y < y_size - 1; y++)
+            {
+                if (is_inside_ellipse(x, y, c_y, c_x, i_a2, i_b2, cosalpha, sinalpha))
+                    compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
+                else
+                {
+                    distance[x][y] = 0.0;
+                    x_offset[x][y] = x;
+                    y_offset[x][y] = y;
+                }
+            }
+        /* pass 2 */
+        for (x = x_size - 2; x >= 1; x--)
+            for (y = y_size - 2; y >= 1; y--)
+            {
+                 if (is_inside_ellipse(x, y, c_y, c_x, i_a2, i_b2, cosalpha, sinalpha))
+                    compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
+                else
+                {
+                    distance[x][y] = 0.0;
+                    x_offset[x][y] = x;
+                    y_offset[x][y] = y;
+                }
+
+            }
+    }
+    else
+    {
+        /* pass 1 */
+        for (x = 1; x < x_size - 1; x++)
+            for (y = 1; y < y_size - 1; y++)
+                compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
+
+        /* pass 2 */
+        for (x = x_size - 2; x >= 1; x--)
+            for (y = y_size - 2; y >= 1; y--)
+                compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
+
+    }
+}
+

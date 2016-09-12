@@ -6,17 +6,13 @@
 #include "car_neural_model.h"
 
 
-//#define NUM_VELOCITY_ANN_INPUTS	360
-#define NUM_STEERING_ANN_INPUT	80
-
-
 void
 carmen_libcarneuralmodel_init_steering_ann_input(fann_type *input)
 {
 	int i;
 
 	// steering = 0, current_curvature = 0
-	for (i = 0; i < (NUM_STEERING_ANN_INPUT - 1); i += 2)
+	for (i = 0; i < (NUM_STEERING_ANN_INPUTS - 1); i += 2)
 	{
 		input[i] = 0.0;
 		input[i + 1] = 0.0;
@@ -29,11 +25,11 @@ carmen_libcarneuralmodel_build_steering_ann_input(fann_type *input, double s, do
 {
 	int i;
 
-	for (i = 0; i < (NUM_STEERING_ANN_INPUT - 2); i++)
+	for (i = 0; i < (NUM_STEERING_ANN_INPUTS - 2); i++)
 		input[i] = input[i + 2];
 
-	input[NUM_STEERING_ANN_INPUT - 2] = s / 100.0;
-	input[NUM_STEERING_ANN_INPUT - 1] = cc;
+	input[NUM_STEERING_ANN_INPUTS - 2] = s / 100.0;
+	input[NUM_STEERING_ANN_INPUTS - 1] = cc;
 }
 
 
