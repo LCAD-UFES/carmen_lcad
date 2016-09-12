@@ -5,12 +5,12 @@ MODULE_NAME = OBSTACLE_DISTANCE_MAPPER
 MODULE_COMMENT = Obstacle Distance Mapper Module
 
 #To debug
-CFLAGS += -Wall -std=c99 -mfpmath=sse -msse2 -msse4.2 -fassociative-math -O0
-CXXFLAGS += -Wall -mfpmath=sse -msse2 -msse4.2 -fassociative-math -O0
+#CFLAGS += -Wall -std=c99 -mfpmath=sse -msse2 -msse4.2 -fassociative-math -O0
+#CXXFLAGS += -Wall -mfpmath=sse -msse2 -msse4.2 -fassociative-math -O0
 
 #To release
-#CFLAGS += -Wall -std=c99 -mfpmath=sse -msse2 -msse4.2 -ffast-math -fassociative-math -O4 -fopenmp -funroll-all-loops
-#CXXFLAGS += -Wall -mfpmath=sse -msse2 -msse4.2 -ffast-math -fassociative-math -O4 -fopenmp -funroll-all-loops
+CFLAGS += -Wall -std=c99 -mfpmath=sse -msse2 -msse4.2 -ffast-math -fassociative-math -O4 -fopenmp -funroll-all-loops
+CXXFLAGS += -Wall -mfpmath=sse -msse2 -msse4.2 -ffast-math -fassociative-math -O4 -fopenmp -funroll-all-loops
 
 LINK = g++
 
