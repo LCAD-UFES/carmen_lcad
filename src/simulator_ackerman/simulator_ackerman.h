@@ -29,14 +29,8 @@
 #ifndef SIMULATOR_ACKERMAN_H
 #define SIMULATOR_ACKERMAN_H
 
-#include "simulator_ackerman_messages.h"
-#include <carmen/localize_ackerman_motion.h>
-#include <carmen/fused_odometry_messages.h>
-
-
 #define NUM_MOTION_COMMANDS_VECTORS	5
 #define	NUM_MOTION_COMMANDS_PER_VECTOR	200
-
 
 #ifdef __cplusplus
 extern "C" {

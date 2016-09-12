@@ -1,4 +1,5 @@
 #include <carmen/carmen.h>
+#include <carmen/simulator_ackerman.h>
 #include <list>
 #include <vector>
 #include <fann.h>
@@ -12,8 +13,9 @@
 #include <car_neural_model.h>
 #include "mpc.h"
 
-using namespace std;
+#define DELTA_T (1.0 / 40.0)
 
+using namespace std;
 
 list<double> past_motion_command_list;
 vector<double> new_command_vector;
@@ -32,11 +34,12 @@ compute_total_trajectory_time(carmen_ackerman_motion_command_p current_motion_co
 
 
 vector<double>
-get_effort_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR descriptors, PARAMS p)
+get_effort_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors)
 {
-	double time = (compute_total_trajectory_time(p.motion_commands_vector, p.size) / 4.0);
-	double x[4] = { 0.0, time, time * 2.0, time * 3.0 };
-	double y[4] = { descriptors.k1, descriptors.k2, descriptors.k3, descriptors.k4 };
+	double delta_t = DELTA_T;
+	double total_time = delta_t * (NUM_STEERING_ANN_INPUTS / 2); // Cada steering input da rede neural tem dois valores (ver rede neural)
+	double x[4] = { 0.0, total_time / 3.0, 2.0 * total_time / 3.0, total_time };
+	double y[4] = { descriptors->k1, descriptors->k2, descriptors->k3, descriptors->k4 };
 
 	gsl_interp_accel *acc = gsl_interp_accel_alloc();
 	const gsl_interp_type *type = gsl_interp_cspline;
@@ -45,13 +48,8 @@ get_effort_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR descriptors, 
 	gsl_spline_init(phi_effort_spline, x, y, 4);
 
 	vector<double> effort_vector;
-	double t = 0.0;
-	double delta_t = time / p.size;
-	for (int i = 0; i < p.size; i++)
-	{
+	for (double t = 0.0; t < total_time; t += delta_t)
 		effort_vector.push_back(gsl_spline_eval(phi_effort_spline, t, acc));
-		t += delta_t;
-	}
 
 	gsl_spline_free(phi_effort_spline);
 	gsl_interp_accel_free(acc);
@@ -61,30 +59,28 @@ get_effort_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR descriptors, 
 
 
 vector<double>
-get_phi_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR descriptors, PARAMS p)
+get_phi_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, PARAMS *p)
 {
-	double phi;
-	vector<double> command_vector;
-	vector<double> effort_vector;
-	fann_type *steering_ann_output;
 	fann_type steering_ann_input[NUM_STEERING_ANN_INPUTS];
+	memcpy(steering_ann_input, p->steering_ann_input, NUM_STEERING_ANN_INPUTS * sizeof(fann_type));
 
-	memcpy(steering_ann_input, p.steering_ann_input, NUM_STEERING_ANN_INPUTS * sizeof(fann_type));
+	vector<double> effort_vector = get_effort_vector_from_spline_descriptors(descriptors);
 
-	effort_vector = get_effort_vector_from_spline_descriptors(descriptors, p);
-
-	for (int i = 0; i < p.size; i++)
+	vector<double> phi_vector;
+	double current_atan_of_curvature = p->atan_current_curvature;
+	for (unsigned int i = 0; i < effort_vector.size(); i++)
 	{
-		carmen_libcarneuralmodel_build_steering_ann_input(steering_ann_input, effort_vector[i], p.atan_current_curvature);
+		double effort = carmen_clamp(-100.0, effort_vector[i], 100.0);
+		carmen_libcarneuralmodel_build_steering_ann_input(steering_ann_input, effort, current_atan_of_curvature);
 
-		steering_ann_output = fann_run(p.steering_ann, steering_ann_input);
+		fann_type *steering_ann_output = fann_run(p->steering_ann, steering_ann_input);
+		current_atan_of_curvature = steering_ann_output[0];
 
-		phi = carmen_get_phi_from_curvature(tan(steering_ann_output[0]), p.v, p.understeer_coeficient, p.distance_rear_axles);
-
-		command_vector.push_back(phi);
+		double phi = carmen_get_phi_from_curvature(tan(current_atan_of_curvature), p->v, p->understeer_coeficient, p->distance_rear_axles);
+		phi_vector.push_back(phi);
 	}
 
-	return (command_vector);
+	return (phi_vector);
 }
 
 
@@ -92,22 +88,32 @@ double
 my_f(const gsl_vector *v, void *params)
 {
 	EFFORT_SPLINE_DESCRIPTOR d;
-	PARAMS *p = (PARAMS *)params;
-	vector<double> new_command_vector;
-	double error = 0;
+	PARAMS *p = (PARAMS *) params;
 
 	d.k1 = gsl_vector_get(v, 0);
 	d.k2 = gsl_vector_get(v, 1);
 	d.k3 = gsl_vector_get(v, 2);
 	d.k4 = gsl_vector_get(v, 3);
 
-	new_command_vector = get_phi_vector_from_spline_descriptors(d, *p);
-//	printf("FOIIIIIUUU\n\n");
+	vector<double> phi_vector = get_phi_vector_from_spline_descriptors(&d, p);
 
-	for (int i = 0; i < p->size; i++)
+	double delta_t = DELTA_T;
+	double motion_commands_vector_time = p->motion_commands_vector[0].time;
+	double phi_vector_time = 0.0;
+	double error = 0.0;
+	for (unsigned int i = 0, j = 0; i < phi_vector.size(); i++)
 	{
-		error += sqrt((new_command_vector[i] - p->motion_commands_vector[i].phi) * 
-					  (new_command_vector[i] - p->motion_commands_vector[i].phi));
+		error += sqrt((phi_vector[i] - p->motion_commands_vector[j].phi) *
+					  (phi_vector[i] - p->motion_commands_vector[j].phi));
+
+		phi_vector_time += delta_t;
+		if (phi_vector_time > motion_commands_vector_time)
+		{
+			j++;
+			if (j >= p->motion_commands_vector_size)
+				break;
+			motion_commands_vector_time += p->motion_commands_vector[j].time;
+		}
 	}
 
 	return (error);
@@ -115,7 +121,7 @@ my_f(const gsl_vector *v, void *params)
 
 
 void
-my_df (const gsl_vector *v, void *params, gsl_vector *df)
+my_df(const gsl_vector *v, void *params, gsl_vector *df)
 {
 	double h = 0.1;
 	double f_x = my_f(v, params);
@@ -161,17 +167,16 @@ my_df (const gsl_vector *v, void *params, gsl_vector *df)
 
 
 void
-my_fdf (const gsl_vector *x, void *params, double *f, gsl_vector *df)
+my_fdf(const gsl_vector *x, void *params, double *f, gsl_vector *df)
 {
 	*f = my_f (x, params);
 	my_df (x, params, df);
 }
 
 
-double
-get_optmized_effort (PARAMS par)
+EFFORT_SPLINE_DESCRIPTOR
+get_optimized_effort(PARAMS *par, EFFORT_SPLINE_DESCRIPTOR seed)
 {
-	static EFFORT_SPLINE_DESCRIPTOR seed = {0.0, 0.0, 0.0, 0.0};
 	size_t iter = 0;
 	int status;
 
@@ -185,7 +190,7 @@ get_optmized_effort (PARAMS par)
 	my_func.f = my_f;
 	my_func.df = my_df;
 	my_func.fdf = my_fdf;
-	my_func.params = &par;
+	my_func.params = par;
 
 	x = gsl_vector_alloc (4);  //Num of parameters to minimize
 	gsl_vector_set(x, 0, seed.k1);
@@ -223,29 +228,113 @@ get_optmized_effort (PARAMS par)
 	gsl_multimin_fdfminimizer_free(s);
 	gsl_vector_free(x);
 
-	return (seed.k1);
+	return (seed);
+}
+
+
+void
+plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, carmen_simulator_ackerman_config_t *simulator_config)
+{
+#define PAST_SIZE (NUM_STEERING_ANN_INPUTS * 8)
+	static double cphi[PAST_SIZE];
+	static double dphi[PAST_SIZE];
+	static double timestamp[PAST_SIZE];
+	static bool first_time = true;
+	static double first_timestamp;
+
+	double t = carmen_get_time();
+	if (first_time)
+	{
+		first_timestamp = t;
+		first_time = false;
+	}
+
+	memmove(cphi, cphi + 1, (PAST_SIZE - 1) * sizeof(double));
+	memmove(dphi, dphi + 1, (PAST_SIZE - 1) * sizeof(double));
+	memmove(timestamp, timestamp + 1, (PAST_SIZE - 1) * sizeof(double));
+
+	double v = simulator_config->v;
+	double understeer_coeficient = simulator_config->understeer_coeficient;
+	double distance_rear_axles = simulator_config->distance_between_front_and_rear_axles;
+	cphi[PAST_SIZE - 1] = carmen_get_phi_from_curvature(p->atan_current_curvature, v, understeer_coeficient, distance_rear_axles);
+	dphi[PAST_SIZE - 1] = carmen_get_phi_from_curvature(p->atan_desired_curvature, v, understeer_coeficient, distance_rear_axles);
+
+	timestamp[PAST_SIZE - 1] = t - first_timestamp;
+
+	if (t - first_timestamp > 12.0)
+	{
+		FILE *gnuplot_data_file = fopen("gnuplot_data.txt", "w");
+
+		// Dados passados
+		for (int i = 0; i < PAST_SIZE; i++)
+			fprintf(gnuplot_data_file, "%lf %lf %lf\n",
+					timestamp[i], cphi[i], dphi[i]);
+
+		// Dados futuros
+		vector<double> phi_vector = get_phi_vector_from_spline_descriptors(seed, p);
+
+		double delta_t = DELTA_T;
+		double motion_commands_vector_time = p->motion_commands_vector[0].time;
+		double phi_vector_time = 0.0;
+		for (unsigned int i = 0, j = 0; i < phi_vector.size(); i++)
+		{
+			phi_vector_time += delta_t;
+			fprintf(gnuplot_data_file, "%lf %lf %lf\n",
+					timestamp[PAST_SIZE-1] + phi_vector_time, phi_vector[i], p->motion_commands_vector[j].phi);
+
+			if (phi_vector_time > motion_commands_vector_time)
+			{
+				j++;
+				if (j >= p->motion_commands_vector_size)
+					break;
+				motion_commands_vector_time += p->motion_commands_vector[j].time;
+			}
+		}
+
+		fclose(gnuplot_data_file);
+
+		// Plot dados passados e futuros
+		FILE *gnuplot_pipe = popen("gnuplot -persist", "w");
+		fprintf(gnuplot_pipe, "set arrow from %lf, %lf to %lf, %lf nohead\n",
+							timestamp[PAST_SIZE-1], -0.3, timestamp[PAST_SIZE-1], 0.3);
+		fprintf(gnuplot_pipe, "plot "
+				"'./gnuplot_data.txt' using 1:2 with lines title 'cphi',"
+				"'./gnuplot_data.txt' using 1:3 with lines title 'dphi'\n");
+
+		fflush(gnuplot_pipe);
+		pclose(gnuplot_pipe);
+		getchar();
+		system("pkill gnuplot");
+	}
 }
 
 
 // Core Function of Model Predictive Control
 double
-carmen_libmpc_get_optimized_steering_effort_using_MPC(carmen_ackerman_motion_command_p current_motion_command_vector,
-											int nun_motion_commands, double atan_current_curvature, struct fann *steering_ann, fann_type *steering_ann_input,
-											double v, double understeer_coeficient, double distance_between_front_and_rear_axles)
+carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvature, double atan_desired_curvature,
+											fann_type *steering_ann_input, struct fann *steering_ann,
+											carmen_simulator_ackerman_config_t *simulator_config)
 {
 	PARAMS p;
+	static EFFORT_SPLINE_DESCRIPTOR seed = {0.0, 0.0, 0.0, 0.0};
 
+	if (simulator_config->current_motion_command_vector == NULL)
+	{
+		seed = {0.0, 0.0, 0.0, 0.0};
+		return (0.0);
+	}
 //	if (simulator_config->current_motion_command_vector_index >= simulator_config->nun_motion_commands) // tem que passar o simulator config e tratar
 //		return (0.0);
 
-	p.motion_commands_vector = current_motion_command_vector;
-	p.size = nun_motion_commands;
+	p.motion_commands_vector = simulator_config->current_motion_command_vector;
+	p.motion_commands_vector_size = simulator_config->nun_motion_commands;
 	p.atan_current_curvature = atan_current_curvature;
+	p.atan_desired_curvature = atan_desired_curvature;
 	p.steering_ann = steering_ann;
 	memcpy(p.steering_ann_input, steering_ann_input, NUM_STEERING_ANN_INPUTS * sizeof(fann_type));
-	p.v = v;
-	p.understeer_coeficient = understeer_coeficient;
-	p.distance_rear_axles = distance_between_front_and_rear_axles;
+	p.v = simulator_config->v;
+	p.understeer_coeficient = simulator_config->understeer_coeficient;
+	p.distance_rear_axles = simulator_config->distance_between_front_and_rear_axles;
 
 	// (i) Usar o effort_spline_descriptor_seed para criar uma seed do vetor de esforcos.
 	// (ii) Usar o simulador para, com o vetor de esforcos, gerar um vetor de motion_commands
@@ -253,7 +342,11 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(carmen_ackerman_motion_com
 	// vetor de motion_commands otimo.
 	// Retornar o primeiro (proximo) effort associado a este vetor de motion_commands otimo.
 
-	return (get_optmized_effort(p));
+	seed = get_optimized_effort(&p, seed);
+	plot_state(&seed, &p, simulator_config);
+	double effort = seed.k1;
+
+	return (carmen_clamp(-100.0, effort, 100.0));
 }
 
 /*
@@ -288,8 +381,3 @@ get_optmized_steering_effort_using_MPC(double atan_desired_curvature, double ata
 	return (carmen_clamp(-100.0, u_t, 100.0));
 }
 */
-
-
-
-
-

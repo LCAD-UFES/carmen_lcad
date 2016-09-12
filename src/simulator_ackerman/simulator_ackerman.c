@@ -140,9 +140,11 @@ localize_initialize_message_handler(carmen_localize_ackerman_initialize_message 
 		simulator_config->odom_pose.theta = init_msg->mean[0].theta;
 		simulator_config->v = 0;
 		simulator_config->phi = 0;
-		simulator_config->current_motion_command_vector = NULL;
 		simulator_config->target_v = 0;
 		simulator_config->target_phi = 0;
+		simulator_config->current_motion_command_vector = NULL;
+		simulator_config->nun_motion_commands = 0;
+		simulator_config->current_motion_command_vector_index = 0;
 	}
 }
 
@@ -458,12 +460,14 @@ simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
 
 	simulator_config->delta_t = timestamp - last_timestamp;
 	
-	if (simulator_config->real_time && !simulator_config->sync_mode) 
+	if (!simulator_config->sync_mode)
 	{
 		delta_time = timestamp - simulator_config->time_of_last_command;
 		if ((simulator_config->v > 0 || simulator_config->phi > 0) && (delta_time > simulator_config->motion_timeout))
 		{
 			simulator_config->current_motion_command_vector = NULL;
+			simulator_config->nun_motion_commands = 0;
+			simulator_config->current_motion_command_vector_index = 0;
 			simulator_config->target_v = 0;
 			simulator_config->target_phi = 0;
 		}
@@ -755,7 +759,6 @@ main(int argc, char **argv)
 	// Init relevant data strutures
 	memset(&simulator_conf, 0, sizeof(carmen_simulator_ackerman_config_t));
 	simulator_config = &simulator_conf;
-	simulator_config->current_motion_command_vector = NULL;
 	memset(nun_motion_commands, 0, NUM_MOTION_COMMANDS_VECTORS);
 
 	read_parameters(argc, argv, &simulator_conf);
