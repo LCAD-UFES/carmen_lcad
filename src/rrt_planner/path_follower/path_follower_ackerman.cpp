@@ -298,7 +298,7 @@ Path_Follower_Ackerman::build_and_send_robot_motion_command_vector()
 {
 	int motion_command_size = 0;
 //	double fixed_time = 0.09;
-	double fixed_time = 0.09 / 2.0;
+	double fixed_time = 0.09 / 1.0;
 
 	list<RRT_Path_Edge>::iterator edge = path.begin();
 
