@@ -551,6 +551,10 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 	atan_current_curvature = atan(compute_curvature(simulator_config->phi, simulator_config));
 	atan_desired_curvature = atan(compute_curvature(simulator_config->target_phi, simulator_config));
 
+
+	//pid_plot_curvature(simulator_config->phi, simulator_config->target_phi);
+
+
 	carmen_libpid_steering_PID_controler(&steering_command, atan_desired_curvature,
 											atan_current_curvature, simulator_config->delta_t);
 

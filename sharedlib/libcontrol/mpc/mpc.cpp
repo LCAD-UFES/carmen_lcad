@@ -37,7 +37,7 @@ vector<double>
 get_effort_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors)
 {
 	double delta_t = DELTA_T;
-	double total_time = delta_t * (NUM_STEERING_ANN_INPUTS / 2); // Cada steering input da rede neural tem dois valores (ver rede neural)
+	double total_time = delta_t * (NUM_STEERING_ANN_INPUTS / 4); // Cada steering input da rede neural tem dois valores (ver rede neural)
 	double x[4] = { 0.0, total_time / 3.0, 2.0 * total_time / 3.0, total_time };
 	double y[4] = { descriptors->k1, descriptors->k2, descriptors->k3, descriptors->k4 };
 
@@ -217,7 +217,7 @@ get_optimized_effort(PARAMS *par, EFFORT_SPLINE_DESCRIPTOR seed)
 //			printf ("Minimum found at:\n");
 	} while ((status == GSL_CONTINUE) && (iter < 30));
 
-	printf("iter = %ld\n", iter);
+	//printf("iter = %ld\n", iter);
 
 	// A seed inicia em zero e armazena o melhor conjunto de parametros do ciclo de otimizacao anterior
 	seed.k1 = gsl_vector_get(s->x, 0);
@@ -235,18 +235,23 @@ get_optimized_effort(PARAMS *par, EFFORT_SPLINE_DESCRIPTOR seed)
 void
 plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, carmen_simulator_ackerman_config_t *simulator_config)
 {
-#define PAST_SIZE (NUM_STEERING_ANN_INPUTS * 8)
+#define PAST_SIZE (NUM_STEERING_ANN_INPUTS * 4)
 	static double cphi[PAST_SIZE];
 	static double dphi[PAST_SIZE];
 	static double timestamp[PAST_SIZE];
 	static bool first_time = true;
 	static double first_timestamp;
+	static FILE *gnuplot_pipe;
 
 	double t = carmen_get_time();
 	if (first_time)
 	{
 		first_timestamp = t;
 		first_time = false;
+
+		gnuplot_pipe = popen("gnuplot -persist", "w");
+		fprintf(gnuplot_pipe, "set xrange [0:18]\n");
+		fprintf(gnuplot_pipe, "set yrange [-0.12:0.12]\n");
 	}
 
 	memmove(cphi, cphi + 1, (PAST_SIZE - 1) * sizeof(double));
@@ -261,14 +266,14 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, carmen_simulator_ackerman_
 
 	timestamp[PAST_SIZE - 1] = t - first_timestamp;
 
-	if (t - first_timestamp > 12.0)
+	if (t - first_timestamp > 9.0)
 	{
 		FILE *gnuplot_data_file = fopen("gnuplot_data.txt", "w");
 
 		// Dados passados
 		for (int i = 0; i < PAST_SIZE; i++)
 			fprintf(gnuplot_data_file, "%lf %lf %lf\n",
-					timestamp[i], cphi[i], dphi[i]);
+					timestamp[i] - timestamp[0], cphi[i], dphi[i]);
 
 		// Dados futuros
 		vector<double> phi_vector = get_phi_vector_from_spline_descriptors(seed, p);
@@ -276,11 +281,12 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, carmen_simulator_ackerman_
 		double delta_t = DELTA_T;
 		double motion_commands_vector_time = p->motion_commands_vector[0].time;
 		double phi_vector_time = 0.0;
+		double begin_predition_time = timestamp[PAST_SIZE-1] - timestamp[0];
 		for (unsigned int i = 0, j = 0; i < phi_vector.size(); i++)
 		{
 			phi_vector_time += delta_t;
 			fprintf(gnuplot_data_file, "%lf %lf %lf\n",
-					timestamp[PAST_SIZE-1] + phi_vector_time, phi_vector[i], p->motion_commands_vector[j].phi);
+					(timestamp[PAST_SIZE-1] - timestamp[0]) + phi_vector_time, phi_vector[i], p->motion_commands_vector[j].phi);
 
 			if (phi_vector_time > motion_commands_vector_time)
 			{
@@ -294,17 +300,17 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, carmen_simulator_ackerman_
 		fclose(gnuplot_data_file);
 
 		// Plot dados passados e futuros
-		FILE *gnuplot_pipe = popen("gnuplot -persist", "w");
-		fprintf(gnuplot_pipe, "set arrow from %lf, %lf to %lf, %lf nohead\n",
-							timestamp[PAST_SIZE-1], -0.3, timestamp[PAST_SIZE-1], 0.3);
+
+		fprintf(gnuplot_pipe, "unset arrow\nset arrow from %lf, %lf to %lf, %lf nohead\n",
+				begin_predition_time, -0.3, begin_predition_time, 0.3);
 		fprintf(gnuplot_pipe, "plot "
 				"'./gnuplot_data.txt' using 1:2 with lines title 'cphi',"
 				"'./gnuplot_data.txt' using 1:3 with lines title 'dphi'\n");
 
 		fflush(gnuplot_pipe);
-		pclose(gnuplot_pipe);
-		getchar();
-		system("pkill gnuplot");
+		//pclose(gnuplot_pipe);
+		//getchar();
+		//system("pkill gnuplot");
 	}
 }
 

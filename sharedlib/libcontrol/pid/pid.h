@@ -16,6 +16,11 @@ void carmen_libpid_velocity_PID_controler(double *throttle_command, double *brak
 
 void carmen_libpid_read_PID_parameters(int argc, char *argv[]);
 
+
+void
+pid_plot_curvature(double current_phi, double desired_phi);
+
+
 void
 printa_test();
 
