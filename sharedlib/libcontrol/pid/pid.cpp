@@ -39,7 +39,7 @@ static double g_brake_gap;
 void
 pid_plot_curvature(double current_phi, double desired_phi)
 {
-#define PAST_SIZE 50
+#define PAST_SIZE 500
 	static double cphi[PAST_SIZE];
 	static double dphi[PAST_SIZE];
 	static double timestamp[PAST_SIZE];

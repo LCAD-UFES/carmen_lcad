@@ -101,6 +101,7 @@ my_f(const gsl_vector *v, void *params)
 	double motion_commands_vector_time = p->motion_commands_vector[0].time;
 	double phi_vector_time = 0.0;
 	double error = 0.0;
+
 	for (unsigned int i = 0, j = 0; i < phi_vector.size(); i++)
 	{
 		error += sqrt((phi_vector[i] - p->motion_commands_vector[j].phi) *
@@ -215,7 +216,7 @@ get_optimized_effort(PARAMS *par, EFFORT_SPLINE_DESCRIPTOR seed)
 
 //		if (status == GSL_SUCCESS)
 //			printf ("Minimum found at:\n");
-	} while ((status == GSL_CONTINUE) && (iter < 30));
+	} while ((status == GSL_CONTINUE) && (iter < 999));
 
 	//printf("iter = %ld\n", iter);
 
@@ -235,7 +236,7 @@ get_optimized_effort(PARAMS *par, EFFORT_SPLINE_DESCRIPTOR seed)
 void
 plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, carmen_simulator_ackerman_config_t *simulator_config)
 {
-#define PAST_SIZE (NUM_STEERING_ANN_INPUTS * 4)
+#define PAST_SIZE (NUM_STEERING_ANN_INPUTS * 6)
 	static double cphi[PAST_SIZE];
 	static double dphi[PAST_SIZE];
 	static double timestamp[PAST_SIZE];
@@ -266,7 +267,7 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, carmen_simulator_ackerman_
 
 	timestamp[PAST_SIZE - 1] = t - first_timestamp;
 
-	if (t - first_timestamp > 9.0)
+	if (t - first_timestamp > 16.0)
 	{
 		FILE *gnuplot_data_file = fopen("gnuplot_data.txt", "w");
 
