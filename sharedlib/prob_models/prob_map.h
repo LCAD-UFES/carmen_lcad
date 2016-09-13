@@ -240,9 +240,6 @@ void carmen_prob_models_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_m
 void carmen_prob_models_create_distance_map(carmen_prob_models_distance_map *lmap, carmen_map_p map,
 		double minimum_occupied_prob);
 
-/* verify if a given point is inside a given circle */
-int is_inside_circle(int dx, int dy, double radius_2);
-
 /* verify if a given point is inside a given ellipse */
 int is_inside_ellipse(int dx, int dy, double i_minor, double i_major, double cosalpha, double sinalpha);
 

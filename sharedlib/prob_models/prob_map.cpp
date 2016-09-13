@@ -2451,12 +2451,6 @@ carmen_prob_models_create_distance_map(carmen_prob_models_distance_map *lmap, ca
 			compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
 }
 
-/* verify if a given point is inside a given circle */
-int is_inside_circle(int dx, int dy, double radius_2)
-{
-    return (carmen_square(dx) + carmen_square(dy)) < radius_2;
-}
-
 /* verify if a given point is inside a given ellipse */
 int is_inside_ellipse(int x, int y, int f1x, int f1y, int f2x, int f2y, double major_axis)
 {
@@ -2478,6 +2472,7 @@ void carmen_prob_models_create_masked_distance_map(
         carmen_point_p goal_position)
 {
     int x, y;
+    double t1 = carmen_get_time();
 
     lmap->config = map->config;
 
@@ -2561,4 +2556,6 @@ void carmen_prob_models_create_masked_distance_map(
             for (y = y_size - 2; y >= 1; y--)
                 compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
     }
+
+    printf("Freq: %.4f\n", 1.0/(carmen_get_time() - t1));
 }
