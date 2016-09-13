@@ -494,6 +494,11 @@ define_messages()
 			CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_FMT);
 	carmen_test_ipc_exit(err, "Could not define message",
 			CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME);
+
+	err = IPC_defineMsg(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME, IPC_VARIABLE_LENGTH,
+			CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_FMT);
+	carmen_test_ipc_exit(err, "Could not define message",
+			CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME);
 }
 
 

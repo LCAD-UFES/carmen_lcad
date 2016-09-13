@@ -1,6 +1,11 @@
+11/09/2016
+
+- Considerar usar o modelo neural da IARA no obstacle avoider para ver se, nas curvas, o obstacle avoider mostra a mesma trajetoria do model_predictive_planner
+
+
 20/07/2016
 
-- Melhorar o PID de steering usando o simulador
+- Melhorar o PID de steering usando o simulador - OK
 - Descobrir por que o model predictive planner faz planos ruins na reta e na saida de quebra molas
 - Fazer o novo controle da IARA (model predictive control)
 

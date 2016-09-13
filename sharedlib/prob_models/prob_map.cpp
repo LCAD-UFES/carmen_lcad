@@ -2461,108 +2461,108 @@ carmen_prob_models_create_distance_map(carmen_prob_models_distance_map *lmap, ca
 			compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
 }
 
-
-/* compute minimum distance to all occupied cells OVERRIDE */
-void
-carmen_prob_models_create_masked_distance_map(carmen_prob_models_distance_map *lmap,
-											carmen_map_p map,
-											double minimum_occupied_prob,
-											carmen_point_p robot_position,
-											carmen_point_p goal_position
-											)
+/* verify if a given point is inside a given ellipse */
+int is_inside_ellipse(int x, int y, int f1x, int f1y, int f2x, int f2y, double major_axis)
 {
-	int x, y;
+    int xmf1x_sqd = carmen_square(x - f1x);
+    int ymf1y_sqd = carmen_square(y - f1y);
 
-	lmap->config = map->config;
+    int xmf2x_sqd = carmen_square(x - f2x);
+    int ymf2y_sqd = carmen_square(y - f2y);
 
-	double **cmap_map = map->map;
-	double **distance = lmap->distance;
-	short int **x_offset = lmap->x_offset;
-	short int **y_offset = lmap->y_offset;
-
-	int x_size = lmap->config.x_size;
-	int y_size = lmap->config.y_size;
-
-	int total_size = x_size * y_size;
-	std::fill_n(lmap->complete_distance, total_size, HUGE_DISTANCE);
-	std::fill_n(lmap->complete_x_offset, total_size, HUGE_DISTANCE);
-	std::fill_n(lmap->complete_y_offset, total_size, HUGE_DISTANCE);
-
-	/* Initialize the distance measurements before dynamic programming */
-	for (x = 0; x < x_size; x++)
-	{
-		for (y = 0; y < y_size; y++)
-		{
-			if (cmap_map[x][y] > minimum_occupied_prob)
-			{
-				distance[x][y] = 0.0;
-				x_offset[x][y] = 0.0;
-				y_offset[x][y] = 0.0;
-			}
-		}
-	}
-
-	/* Use dynamic programming to estimate the minimum distance from
-     every map cell to an occupied map cell */
-	/*  */
-
-	if (NULL != robot_position && NULL != goal_position) {
-
-		/* convert the robot position to grid map index */
-		int r_row = floor((robot_position->y - map->config.y_origin) / map->config.resolution + 0.5);
-		int r_col = floor((robot_position->x - map->config.x_origin) / map->config.resolution + 0.5);
-
-		/* convert the robot position to grid map index */
-		int g_row = floor((goal_position->y - map->config.y_origin) / map->config.resolution + 0.5);
-		int g_col = floor((goal_position->x - map->config.x_origin) / map->config.resolution + 0.5);
-
-		/* */
-		int c_row = (r_row + g_row) / 2;
-		int c_col = (r_col + g_col) / 2;
-
-		double i_major = 1.0/(carmen_square((g_row - c_row) + (10.0/map->config.resolution)));
-		double i_minor = 1.0/(30.0/map->config.resolution);
-
-		/* pass 1 */
-		for (x = 1; x < x_size - 1; x++)
-			for (y = 1; y < y_size - 1; y++)
-			{
-				if (carmen_square(x - c_col) * i_major + carmen_square(y - c_row) * i_minor <= 1)
-					compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
-				else
-				{
-					distance[x][y] = 0.0;
-					x_offset[x][y] = x;
-					y_offset[x][y] = y;
-				}
-			}
-		/* pass 2 */
-		for (x = x_size - 2; x >= 1; x--)
-			for (y = y_size - 2; y >= 1; y--)
-			{
-				if (carmen_square(x - c_col) * i_major + carmen_square(y - c_row) * i_minor <= 1)
-					compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
-				else
-				{
-					distance[x][y] = 0.0;
-					x_offset[x][y] = x;
-					y_offset[x][y] = y;
-				}
-
-			}
-	}
-	else
-	{
-		/* pass 1 */
-		for (x = 1; x < x_size - 1; x++)
-			for (y = 1; y < y_size - 1; y++)
-				compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
-
-		/* pass 2 */
-		for (x = x_size - 2; x >= 1; x--)
-			for (y = y_size - 2; y >= 1; y--)
-				compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
-
-	}
+    return sqrt(xmf1x_sqd + ymf1y_sqd) + sqrt(xmf2x_sqd + ymf2y_sqd) < major_axis;
 }
 
+/* compute minimum distance to all occupied cells */
+void carmen_prob_models_create_masked_distance_map(
+        carmen_prob_models_distance_map *lmap,
+        carmen_map_p map,
+        double minimum_occupied_prob,
+        carmen_point_p robot_position,
+        carmen_point_p goal_position)
+{
+    int x, y;
+
+    lmap->config = map->config;
+
+    double **cmap_map = map->map;
+    double **distance = lmap->distance;
+    short int **x_offset = lmap->x_offset;
+    short int **y_offset = lmap->y_offset;
+
+    int x_size = lmap->config.x_size;
+    int y_size = lmap->config.y_size;
+
+    int total_size = x_size * y_size;
+    std::fill_n(lmap->complete_distance, total_size, HUGE_DISTANCE);
+    std::fill_n(lmap->complete_x_offset, total_size, HUGE_DISTANCE);
+    std::fill_n(lmap->complete_y_offset, total_size, HUGE_DISTANCE);
+
+    /* Initialize the distance measurements before dynamic programming */
+    for (x = 0; x < x_size; x++)
+    {
+        for (y = 0; y < y_size; y++)
+        {
+            if (cmap_map[x][y] > minimum_occupied_prob)
+            {
+                distance[x][y] = 0.0;
+                x_offset[x][y] = 0.0;
+                y_offset[x][y] = 0.0;
+            }
+        }
+    }
+
+    /* Use dynamic programming to estimate the minimum distance from
+     every map cell to an occupied map cell */
+    if (NULL != robot_position && NULL != goal_position)
+    {
+        double inverse_resolution = 1.0/map->config.resolution;
+
+        /* get the robot position in the map coordinates */
+        int rx = floor((robot_position->x - map->config.x_origin) * inverse_resolution + 0.5);
+        int ry = floor((robot_position->y - map->config.y_origin) * inverse_resolution + 0.5);
+
+        /* get the goal position in the map coordinates */
+        int gx = floor((goal_position->x - map->config.x_origin) * inverse_resolution + 0.5);
+        int gy = floor((goal_position->y - map->config.y_origin) * inverse_resolution + 0.5);
+
+        int major_axis = sqrt(carmen_square(ry - gy) + carmen_square(rx - gx)) + 15 * inverse_resolution;
+
+        /* pass 1 */
+        for (x = 1; x < x_size - 1; x++)
+            for (y = 1; y < y_size - 1; y++)
+                if (is_inside_ellipse(x, y, rx, ry, gx, gy, major_axis))
+                    compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
+                else
+                {
+                    distance[x][y] = 0.0;
+                    x_offset[x][y] = x;
+                    y_offset[x][y] = y;
+                }
+
+        /* pass 2 */
+        for (x = x_size - 2; x >= 1; x--)
+            for (y = y_size - 2; y >= 1; y--)
+                if (is_inside_ellipse(x, y, rx, ry, gx, gy, major_axis))
+                    compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
+                else
+                {
+                    distance[x][y] = 0.0;
+                    x_offset[x][y] = x;
+                    y_offset[x][y] = y;
+                }
+
+    }
+    else
+    {
+        /* pass 1 */
+        for (x = 1; x < x_size - 1; x++)
+            for (y = 1; y < y_size - 1; y++)
+                compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
+
+        /* pass 2 */
+        for (x = x_size - 2; x >= 1; x--)
+            for (y = y_size - 2; y >= 1; y--)
+                compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
+    }
+}

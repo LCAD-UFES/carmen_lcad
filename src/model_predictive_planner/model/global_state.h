@@ -69,6 +69,8 @@ public:
 	static int publish_lane_map;
 	static int reuse_last_path;
 
+	static int use_path_planner;
+
 	static double obstacle_cost_distance;
 
 	static RRT_Node *goal_node; //the node that represents goal pose on the graph or NULL

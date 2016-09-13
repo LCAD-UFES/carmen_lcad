@@ -1,4 +1,5 @@
 #include <carmen/carmen.h>
+#include <carmen/simulator_ackerman.h>
 #include "pid.h"
 
 
@@ -36,8 +37,60 @@ static double g_brake_gap;
 
 
 void
+pid_plot_curvature(double current_phi, double desired_phi)
+{
+#define PAST_SIZE 50
+	static double cphi[PAST_SIZE];
+	static double dphi[PAST_SIZE];
+	static double timestamp[PAST_SIZE];
+	static bool first_time = true;
+	static double first_timestamp;
+	static FILE *gnuplot_pipe;
+
+	double t = carmen_get_time();
+	if (first_time)
+	{
+		first_timestamp = t;
+		first_time = false;
+
+		gnuplot_pipe = popen("gnuplot -persist", "w");
+		fprintf(gnuplot_pipe, "set xrange [0:18]\n");
+		fprintf(gnuplot_pipe, "set yrange [-0.12:0.12]\n");
+	}
+
+	memmove(cphi, cphi + 1, (PAST_SIZE - 1) * sizeof(double));
+	memmove(dphi, dphi + 1, (PAST_SIZE - 1) * sizeof(double));
+	memmove(timestamp, timestamp + 1, (PAST_SIZE - 1) * sizeof(double));
+
+	cphi[PAST_SIZE - 1] = current_phi;
+	dphi[PAST_SIZE - 1] = desired_phi;
+
+	timestamp[PAST_SIZE - 1] = t - first_timestamp;
+
+	if (t - first_timestamp > 9.0)
+	{
+		FILE *gnuplot_data_file = fopen("gnuplot_data.txt", "w");
+
+		// Dados passados
+		for (int i = 0; i < PAST_SIZE; i++)
+			fprintf(gnuplot_data_file, "%lf %lf %lf\n",
+					timestamp[i] - timestamp[0], cphi[i], dphi[i]);
+
+		fclose(gnuplot_data_file);
+
+
+		fprintf(gnuplot_pipe, "plot "
+				"'./gnuplot_data.txt' using 1:2 with lines title 'cphi',"
+				"'./gnuplot_data.txt' using 1:3 with lines title 'dphi'\n");
+
+		fflush(gnuplot_pipe);
+	}
+}
+
+
+void
 carmen_libpid_steering_PID_controler(double *steering_command, double atan_desired_curvature,
-												double atan_current_curvature, double delta_t)
+									 double atan_current_curvature, double current_velocity, double delta_t)
 {
 	// http://en.wikipedia.org/wiki/PID_controller -> Discrete implementation
 	double 		error_t;		// error in time t
@@ -65,8 +118,10 @@ carmen_libpid_steering_PID_controler(double *steering_command, double atan_desir
 	integral_t_1 = integral_t;
 
 	*steering_command = carmen_clamp(-100.0, u_t, 100.0);
-//	fprintf(stdout, "STEERING (cc, dc, e, i, d, s, t): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
-//		atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t, *steering_command, carmen_get_time());
+	current_velocity = current_velocity;
+//	fprintf(stdout, "STEERING (cc, dc, e, i, d, s, v, t): %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
+//		atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t,
+//		*steering_command, current_velocity, carmen_get_time());
 }
 
 

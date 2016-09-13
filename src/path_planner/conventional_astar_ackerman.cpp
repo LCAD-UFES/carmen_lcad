@@ -283,16 +283,16 @@ AstarAckerman::astar_init_parameters(carmen_ackerman_traj_point_t goal)
 
 	DIRECTION[0] = astar_config.path_interval;
 	DIRECTION[1] = astar_config.path_interval;
-	ORIENTATION[0] = -robot_conf_g.max_phi;
+	ORIENTATION[0] = -robot_conf_g.max_phi / 3;
 	ORIENTATION[1] = 0;
-	ORIENTATION[2] = robot_conf_g.max_phi;
+	ORIENTATION[2] = robot_conf_g.max_phi / 3;
 	GOAL = goal;
 	cont_nos_abertos_novos = 0;
 	cont_nos_abertos_alterados = 0;
 	cont_nos_podados = 0;
 	cont_nos_abertos_alterados_fechados = 0;
 	if (astar_config.use_rs)
-		rs_init_parameters(robot_conf_g.max_phi, robot_conf_g.distance_between_front_and_rear_axles);
+		rs_init_parameters(robot_conf_g.max_phi / 3, robot_conf_g.distance_between_front_and_rear_axles);
 }
 
 

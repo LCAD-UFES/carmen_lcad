@@ -13,7 +13,7 @@ static carmen_robot_ackerman_config_t robot_config;
 static carmen_navigator_config_t nav_config;
 
 static carmen_behavior_selector_algorithm_t current_algorithm = CARMEN_BEHAVIOR_SELECTOR_A_STAR;
-carmen_behavior_selector_state_t current_state = BEHAVIOR_SELECTOR_PARKING;
+carmen_behavior_selector_state_t current_state = BEHAVIOR_SELECTOR_FOLLOWING_LANE;
 int steering_model = 1;
 MessageControl messageControl;
 
