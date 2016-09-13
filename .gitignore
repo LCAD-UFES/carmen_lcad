@@ -8,6 +8,7 @@ Makefile.depend
 *~
 *complete_map.map
 .settings/org.eclipse.cdt.codan.core.prefs
+data/map*/*.bmp
 bin/debug.txt
 bin/out.txt
 bin/build_average_map

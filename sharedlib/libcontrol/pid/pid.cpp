@@ -90,7 +90,7 @@ pid_plot_curvature(double current_phi, double desired_phi)
 
 void
 carmen_libpid_steering_PID_controler(double *steering_command, double atan_desired_curvature,
-												double atan_current_curvature, double delta_t)
+									 double atan_current_curvature, double current_velocity, double delta_t)
 {
 	// http://en.wikipedia.org/wiki/PID_controller -> Discrete implementation
 	double 		error_t;		// error in time t
@@ -118,8 +118,10 @@ carmen_libpid_steering_PID_controler(double *steering_command, double atan_desir
 	integral_t_1 = integral_t;
 
 	*steering_command = carmen_clamp(-100.0, u_t, 100.0);
-//	fprintf(stdout, "STEERING (cc, dc, e, i, d, s, t): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
-//		atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t, *steering_command, carmen_get_time());
+	current_velocity = current_velocity;
+//	fprintf(stdout, "STEERING (cc, dc, e, i, d, s, v, t): %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
+//		atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t,
+//		*steering_command, current_velocity, carmen_get_time());
 }
 
 

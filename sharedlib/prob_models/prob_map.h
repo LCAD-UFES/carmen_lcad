@@ -240,7 +240,8 @@ void carmen_prob_models_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_m
 void carmen_prob_models_create_distance_map(carmen_prob_models_distance_map *lmap, carmen_map_p map,
 		double minimum_occupied_prob);
 
-int is_inside_ellipse(int x, int y, int c_y, int c_x, int i_a2, int i_b2, double cosalpha, double sinalpha);
+/* verify if a given point is inside a given ellipse */
+int is_inside_ellipse(int dx, int dy, double i_minor, double i_major, double cosalpha, double sinalpha);
 
 void carmen_prob_models_create_masked_distance_map(carmen_prob_models_distance_map *lmap, carmen_map_p map,
 		double minimum_occupied_prob, carmen_point_p robot_position, carmen_point_p goal_position);
