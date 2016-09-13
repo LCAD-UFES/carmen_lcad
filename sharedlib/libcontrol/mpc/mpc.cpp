@@ -37,7 +37,7 @@ vector<double>
 get_effort_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors)
 {
 	double delta_t = DELTA_T;
-	double total_time = delta_t * (NUM_STEERING_ANN_INPUTS / 4); // Cada steering input da rede neural tem dois valores (ver rede neural)
+	double total_time = delta_t * (2 * NUM_STEERING_ANN_INPUTS / 4); // Cada steering input da rede neural tem dois valores (ver rede neural)
 	double x[4] = { 0.0, total_time / 3.0, 2.0 * total_time / 3.0, total_time };
 	double y[4] = { descriptors->k1, descriptors->k2, descriptors->k3, descriptors->k4 };
 
@@ -236,7 +236,7 @@ get_optimized_effort(PARAMS *par, EFFORT_SPLINE_DESCRIPTOR seed)
 void
 plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, carmen_simulator_ackerman_config_t *simulator_config)
 {
-#define PAST_SIZE (NUM_STEERING_ANN_INPUTS * 6)
+#define PAST_SIZE (NUM_STEERING_ANN_INPUTS * 2)
 	static double cphi[PAST_SIZE];
 	static double dphi[PAST_SIZE];
 	static double timestamp[PAST_SIZE];
