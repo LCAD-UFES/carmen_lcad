@@ -71,7 +71,7 @@ get_phi_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, PA
 	for (unsigned int i = 0; i < effort_vector.size(); i++)
 	{
 		double effort = carmen_clamp(-100.0, effort_vector[i], 100.0);
-		carmen_libcarneuralmodel_build_steering_ann_input(steering_ann_input, effort, current_atan_of_curvature);
+		carmen_libcarneuralmodel_build_steering_ann_input(steering_ann_input, effort, current_atan_of_curvature, p->v);
 
 		fann_type *steering_ann_output = fann_run(p->steering_ann, steering_ann_input);
 		current_atan_of_curvature = steering_ann_output[0];
