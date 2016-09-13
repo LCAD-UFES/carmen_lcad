@@ -55,8 +55,11 @@ mapper_publish_distance_map(double timestamp, double obstacle_probability_thresh
 	if (distance_map.complete_distance == NULL)
 		carmen_prob_models_initialize_distance_map(&distance_map, &map);
 
-	carmen_prob_models_create_distance_map(&distance_map, &map, obstacle_probability_threshold);
-//	carmen_prob_models_create_masked_distance_map(&distance_map, &map, obstacle_probability_threshold, &g_robot_position, &g_goal_position);
+	if (0.0 != g_goal_position.x && 0.0 != g_goal_position.y)
+	    carmen_prob_models_create_masked_distance_map(&distance_map, &map, obstacle_probability_threshold, &g_robot_position, &g_goal_position);
+	else
+	    carmen_prob_models_create_distance_map(&distance_map, &map, obstacle_probability_threshold);
+
 	carmen_obstacle_distance_mapper_publish_distance_map_message(&distance_map, timestamp);
 }
 
