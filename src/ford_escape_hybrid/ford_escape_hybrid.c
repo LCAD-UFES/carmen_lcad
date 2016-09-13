@@ -449,7 +449,8 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 
 		//carmen_ford_escape_hybrid_steering_PID_controler
 		carmen_libpid_steering_PID_controler(&g_steering_command, g_atan_desired_curvature,
-				-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t);
+				-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)),
+				ford_escape_hybrid_config->filtered_v, delta_t);
 
 
 		previous_gear_command = g_gear_command;

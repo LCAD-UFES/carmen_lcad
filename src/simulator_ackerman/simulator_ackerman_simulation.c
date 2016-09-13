@@ -556,7 +556,7 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 
 
 	carmen_libpid_steering_PID_controler(&steering_command, atan_desired_curvature,
-											atan_current_curvature, simulator_config->delta_t);
+											atan_current_curvature, simulator_config->v, simulator_config->delta_t);
 
 	build_steering_ann_input(steering_ann_input, steering_command, atan_current_curvature);
 
@@ -593,9 +593,9 @@ compute_new_phi_on_ann_with_RL_PID(carmen_simulator_ackerman_config_t *simulator
 	atan_desired_curvature = atan(compute_curvature(simulator_config->target_phi, simulator_config));
 
 	carmen_libpid_steering_PID_controler (&steering_command, atan_desired_curvature,
-											atan_current_curvature, simulator_config->delta_t);
+											atan_current_curvature, simulator_config->v, simulator_config->delta_t);
 
-	carmen_libmpc_get_steering_effort_using_RL_PID (atan_desired_curvature,	atan_current_curvature, simulator_config->delta_t);
+	carmen_libmpc_get_steering_effort_using_RL_PID(atan_desired_curvature,	atan_current_curvature, simulator_config->delta_t);
 
 	build_steering_ann_input(steering_ann_input, steering_command, atan_current_curvature);
 
