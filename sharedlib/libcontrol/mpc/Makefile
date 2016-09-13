@@ -1,7 +1,7 @@
 include $(CARMEN_HOME)/src/Makefile.conf
 
 LINK = g++
-CXXFLAGS += -std=c++11
+CXXFLAGS += -std=c++0x
 
 MODULE_NAME = MPC
 MODULE_COMMENT = Model Predictive Controller 

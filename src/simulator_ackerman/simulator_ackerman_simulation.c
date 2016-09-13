@@ -112,6 +112,7 @@ compute_new_phi(carmen_simulator_ackerman_config_t *simulator_config)
 	double desired_curvature;
 	double delta_curvature;
 	double minimum_time_to_reach_desired_curvature;
+	double phi;
 
 	current_curvature = compute_curvature(simulator_config->phi, simulator_config);
 	desired_curvature = compute_curvature(simulator_config->target_phi, simulator_config);
@@ -135,16 +136,11 @@ compute_new_phi(carmen_simulator_ackerman_config_t *simulator_config)
 		current_curvature *= max_c;
 	}
 
-	simulator_config->phi = get_phi_from_curvature(current_curvature, simulator_config);
+	phi = get_phi_from_curvature(current_curvature, simulator_config);
 
-	if (fabs(simulator_config->phi) > simulator_config->max_phi) 
-	{
-		simulator_config->phi = simulator_config->phi/fabs(simulator_config->phi);
-		simulator_config->phi *= simulator_config->max_phi;
-	}
 	//printf("desired_phi = %lf, phi = %lf\n", simulator_config->target_phi, simulator_config->phi);
 
-	return (simulator_config->phi);
+	return (phi);
 }
 
 
@@ -221,35 +217,6 @@ update_target_v_and_target_phi(carmen_simulator_ackerman_config_t *simulator_con
 }
 
 
-void
-init_velocity_ann_input(fann_type *input)
-{
-	int i;
-	
-	// acelerador = 0, freio = 100.0, v = 0.0
-	for (i = 0; i < (NUM_VELOCITY_ANN_INPUTS - 1); i += 3)
-	{
-		input[i] = 0.0;
-		input[i + 1] = 100.0 / 100.0;
-		input[i + 2] = 0.0;
-	}
-}
-
-
-void
-build_velocity_ann_input(fann_type *input, double t, double b, double cv)
-{
-	int i;
-
-	for (i = 0; i < (NUM_VELOCITY_ANN_INPUTS - 3); i++)
-		input[i] = input[i + 3];
-	
-	input[NUM_VELOCITY_ANN_INPUTS - 3] = t / 100.0;
-	input[NUM_VELOCITY_ANN_INPUTS - 2] = b / 100.0;
-	input[NUM_VELOCITY_ANN_INPUTS - 1] = cv / 5.0;
-}
-
-
 double
 compute_new_velocity_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 {
@@ -268,24 +235,22 @@ compute_new_velocity_with_ann(carmen_simulator_ackerman_config_t *simulator_conf
 			printf("Error: Could not create velocity_ann\n");
 			exit(1);
 		}
-		init_velocity_ann_input(velocity_ann_input);
+		carmen_libcarneuralmodel_init_velocity_ann_input(velocity_ann_input);
 	}
 	
-	//carmen_ford_escape_hybrid_velocity_PID_controler(&throttle_command, &brakes_command, &gear_command,
-	//	simulator_config->target_v, simulator_config->v, simulator_config->delta_t);
 	carmen_libpid_velocity_PID_controler(&throttle_command, &brakes_command, &gear_command,
 							simulator_config->target_v, simulator_config->v, simulator_config->delta_t);
 
 	if (gear_command == 129) // marcha reh
 	{
-		build_velocity_ann_input(velocity_ann_input, throttle_command, brakes_command, -simulator_config->v);
+		carmen_libcarneuralmodel_build_velocity_ann_input(velocity_ann_input, throttle_command, brakes_command, -simulator_config->v);
 		velocity_ann_output = fann_run(velocity_ann, velocity_ann_input);
 
 		simulator_config->v = velocity_ann_output[0];
 	}
 	else
 	{
-		build_velocity_ann_input(velocity_ann_input, throttle_command, brakes_command, simulator_config->v);
+		carmen_libcarneuralmodel_build_velocity_ann_input(velocity_ann_input, throttle_command, brakes_command, simulator_config->v);
 		velocity_ann_output = fann_run(velocity_ann, velocity_ann_input);
 
 		simulator_config->v = velocity_ann_output[0];
@@ -306,19 +271,6 @@ init_steering_ann_input(fann_type *input)
 		input[i] = 0.0;
 		input[i + 1] = 0.0;
 	}
-}
-
-
-void
-build_steering_ann_input(fann_type *input, double s, double cc)
-{
-	int i;
-
-	for (i = 0; i < (NUM_STEERING_ANN_INPUTS - 2); i++)
-		input[i] = input[i + 2];
-	
-	input[NUM_STEERING_ANN_INPUTS - 2] = s / 100.0;
-	input[NUM_STEERING_ANN_INPUTS - 1] = cc;
 }
 
 
@@ -552,19 +504,19 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 	atan_desired_curvature = atan(compute_curvature(simulator_config->target_phi, simulator_config));
 
 
-	//pid_plot_curvature(simulator_config->phi, simulator_config->target_phi);
+	pid_plot_curvature(simulator_config->phi, simulator_config->target_phi);
 
 
 	carmen_libpid_steering_PID_controler(&steering_command, atan_desired_curvature,
 											atan_current_curvature, simulator_config->delta_t);
 
-	build_steering_ann_input(steering_ann_input, steering_command, atan_current_curvature);
+	carmen_libcarneuralmodel_build_steering_ann_input(steering_ann_input, steering_command, atan_current_curvature);
 
 	steering_ann_output = fann_run(steering_ann, steering_ann_input);
 
-	simulator_config->phi = get_phi_from_curvature(tan(steering_ann_output[0]), simulator_config);
+	double phi = get_phi_from_curvature(tan(steering_ann_output[0]), simulator_config);
 
-	return (simulator_config->phi);
+	return (phi);
 }
 
 
@@ -597,13 +549,13 @@ compute_new_phi_on_ann_with_RL_PID(carmen_simulator_ackerman_config_t *simulator
 
 	carmen_libmpc_get_steering_effort_using_RL_PID (atan_desired_curvature,	atan_current_curvature, simulator_config->delta_t);
 
-	build_steering_ann_input(steering_ann_input, steering_command, atan_current_curvature);
+	carmen_libcarneuralmodel_build_steering_ann_input(steering_ann_input, steering_command, atan_current_curvature);
 
 	steering_ann_output = fann_run(steering_ann, steering_ann_input);
 
-	simulator_config->phi = get_phi_from_curvature(tan(steering_ann_output[0]), simulator_config);
+	double phi = get_phi_from_curvature(tan(steering_ann_output[0]), simulator_config);
 
-	return (simulator_config->phi);
+	return (phi);
 }
 
 
@@ -644,9 +596,9 @@ compute_new_phi_on_ann_with_MPC(carmen_simulator_ackerman_config_t *simulator_co
 
 	steering_ann_output = fann_run(steering_ann, steering_ann_input);
 
-	simulator_config->phi = get_phi_from_curvature(tan(steering_ann_output[0]), simulator_config);
+	double phi = get_phi_from_curvature(tan(steering_ann_output[0]), simulator_config);
 
-	return (simulator_config->phi);
+	return (phi);
 }
 
 
@@ -656,14 +608,25 @@ carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulat
 	carmen_point_t new_odom;
 	carmen_point_t new_true;
 	double v, phi;
+	//static double previous_phi = 0.0;
 
 	update_target_v_and_target_phi(simulator_config);
-	//v   = compute_new_velocity_with_ann(simulator_config);
+
+	v   = compute_new_velocity_with_ann(simulator_config);
 	phi = compute_new_phi_with_ann(simulator_config);
-	//phi = compute_new_phi_on_ann_with_MPC(simulator_config);
-	v   = compute_new_velocity(simulator_config);
-//	phi = compute_new_phi(simulator_config);// + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.1));
-		
+
+	//double temp_phi = simulator_config->phi;
+	//simulator_config->phi = previous_phi;
+	//previous_phi = compute_new_phi_with_ann(simulator_config);
+	//previous_phi  = compute_new_phi_on_ann_with_MPC(simulator_config);
+	//simulator_config->phi = temp_phi;
+
+	//v   = compute_new_velocity(simulator_config);
+	//phi = compute_new_phi(simulator_config);// + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.1));
+
+	phi = carmen_clamp(-simulator_config->max_phi, phi, simulator_config->max_phi);
+	simulator_config->phi = phi;
+
 	new_odom = simulator_config->odom_pose;
 	new_true = simulator_config->true_pose;
 
