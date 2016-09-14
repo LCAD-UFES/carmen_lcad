@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include <carmen/simulator_ackerman.h>
 
 #define NUM_VELOCITY_ANN_INPUTS	360
 #define NUM_STEERING_ANN_INPUTS	120
@@ -19,6 +20,8 @@ void carmen_libcarneuralmodel_init_steering_ann (struct fann *steering_ann, fann
 void carmen_libcarneuralmodel_init_velocity_ann_input(fann_type *input);
 
 void carmen_libcarneuralmodel_build_velocity_ann_input(fann_type *input, double t, double b, double cv);
+
+void carmen_libcarneuralmodel_recalc_pos(carmen_simulator_ackerman_config_t *simulator_config);
 
 
 #ifdef __cplusplus
