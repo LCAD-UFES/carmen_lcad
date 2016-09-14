@@ -23,14 +23,13 @@ carmen_libcarneuralmodel_init_steering_ann_input(fann_type *input)
 
 
 void
-carmen_libcarneuralmodel_build_steering_ann_input(fann_type *input, double s, double cc, double v)
+carmen_libcarneuralmodel_build_steering_ann_input(fann_type *input, double s, double cc)
 {
 	int i;
 
-	for (i = 0; i < (NUM_STEERING_ANN_INPUTS - 3); i++)
-		input[i] = input[i + 3];
+	for (i = 0; i < (NUM_STEERING_ANN_INPUTS - 2); i++)
+		input[i] = input[i + 2];
 
-	input[NUM_STEERING_ANN_INPUTS - 3] = v / 100.0;
 	input[NUM_STEERING_ANN_INPUTS - 2] = s / 100.0;
 	input[NUM_STEERING_ANN_INPUTS - 1] = cc;
 }
@@ -81,9 +80,9 @@ carmen_libcarneuralmodel_compute_new_phi_with_ann(double v, double current_phi, 
 
 	atan_desired_curvature = carmen_get_curvature_from_phi(desired_phi, v, understeer_coeficient, distance_between_front_and_rear_axles);
 
-	carmen_libpid_steering_PID_controler(&steering_command, atan_desired_curvature,	atan_current_curvature, v, time);
+	carmen_libpid_steering_PID_controler(&steering_command, atan_desired_curvature,	atan_current_curvature, time);
 
-	carmen_libcarneuralmodel_build_steering_ann_input(steering_ann_input, steering_command, atan_current_curvature, v);
+	carmen_libcarneuralmodel_build_steering_ann_input(steering_ann_input, steering_command, atan_current_curvature);
 
 	steering_ann_output = fann_run(steering_ann, steering_ann_input);
 
