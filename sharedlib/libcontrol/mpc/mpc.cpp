@@ -37,7 +37,7 @@ vector<double>
 get_effort_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors)
 {
 	double delta_t = DELTA_T;
-	double total_time = delta_t * (NUM_STEERING_ANN_INPUTS / 4); // Cada steering input da rede neural tem dois valores (ver rede neural)
+	double total_time = delta_t * (2 * NUM_STEERING_ANN_INPUTS / 4); // Cada steering input da rede neural tem dois valores (ver rede neural)
 	double x[4] = { 0.0, total_time / 3.0, 2.0 * total_time / 3.0, total_time };
 	double y[4] = { descriptors->k1, descriptors->k2, descriptors->k3, descriptors->k4 };
 
@@ -71,7 +71,7 @@ get_phi_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, PA
 	for (unsigned int i = 0; i < effort_vector.size(); i++)
 	{
 		double effort = carmen_clamp(-100.0, effort_vector[i], 100.0);
-		carmen_libcarneuralmodel_build_steering_ann_input(steering_ann_input, effort, current_atan_of_curvature);
+		carmen_libcarneuralmodel_build_steering_ann_input(steering_ann_input, effort, current_atan_of_curvature, p->v);
 
 		fann_type *steering_ann_output = fann_run(p->steering_ann, steering_ann_input);
 		current_atan_of_curvature = steering_ann_output[0];
@@ -101,6 +101,7 @@ my_f(const gsl_vector *v, void *params)
 	double motion_commands_vector_time = p->motion_commands_vector[0].time;
 	double phi_vector_time = 0.0;
 	double error = 0.0;
+
 	for (unsigned int i = 0, j = 0; i < phi_vector.size(); i++)
 	{
 		error += sqrt((phi_vector[i] - p->motion_commands_vector[j].phi) *
@@ -215,7 +216,7 @@ get_optimized_effort(PARAMS *par, EFFORT_SPLINE_DESCRIPTOR seed)
 
 //		if (status == GSL_SUCCESS)
 //			printf ("Minimum found at:\n");
-	} while ((status == GSL_CONTINUE) && (iter < 30));
+	} while ((status == GSL_CONTINUE) && (iter < 999));
 
 	//printf("iter = %ld\n", iter);
 
@@ -235,7 +236,7 @@ get_optimized_effort(PARAMS *par, EFFORT_SPLINE_DESCRIPTOR seed)
 void
 plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, carmen_simulator_ackerman_config_t *simulator_config)
 {
-#define PAST_SIZE (NUM_STEERING_ANN_INPUTS * 4)
+#define PAST_SIZE (NUM_STEERING_ANN_INPUTS * 2)
 	static double cphi[PAST_SIZE];
 	static double dphi[PAST_SIZE];
 	static double timestamp[PAST_SIZE];
@@ -266,7 +267,7 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, carmen_simulator_ackerman_
 
 	timestamp[PAST_SIZE - 1] = t - first_timestamp;
 
-	if (t - first_timestamp > 9.0)
+	if (t - first_timestamp > 16.0)
 	{
 		FILE *gnuplot_data_file = fopen("gnuplot_data.txt", "w");
 

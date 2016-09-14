@@ -2,13 +2,16 @@ include $(CARMEN_HOME)/src/Makefile.conf
 
 LINK = g++
 CFLAGS += -pg
-CXXFLAGS += -std=c++0x -pg 
+CXXFLAGS += -std=c++0x -pg
 
 MODULE_NAME = Car Neural Model
 MODULE_COMMENT = Car Neural Ackeman Motion Model
 
-#IFLAGS +=
-LFLAGS += -lfann
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/pid
+
+LFLAGS += -lfann -lpid
+
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/pid
 
 SOURCES = car_neural_model.cpp
  

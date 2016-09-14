@@ -2417,6 +2417,8 @@ void
 carmen_prob_models_create_distance_map(carmen_prob_models_distance_map *lmap, carmen_map_p map,
 		double minimum_occupied_prob)
 {
+//	double time = carmen_get_time();
+
 	int x, y;
 
 	lmap->config = map->config;
@@ -2460,6 +2462,8 @@ carmen_prob_models_create_distance_map(carmen_prob_models_distance_map *lmap, ca
 	for (x = x_size - 2; x >= 1; x--)
 		for (y = y_size - 2; y >= 1; y--)
 			compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
+
+//	printf("Freq: %lf \n", (carmen_get_time()-time));
 }
 
 /* verify if a given point is inside a given ellipse */
@@ -2482,6 +2486,7 @@ void carmen_prob_models_create_masked_distance_map(
         carmen_point_p robot_position,
         carmen_point_p goal_position)
 {
+//	double time_now = carmen_get_time();
     int x, y;
 
     lmap->config = map->config;
@@ -2529,6 +2534,7 @@ void carmen_prob_models_create_masked_distance_map(
 
         int major_axis = sqrt(carmen_square(ry - gy) + carmen_square(rx - gx)) + 15 * inverse_resolution;
 
+
         /* pass 1 */
         for (x = 1; x < x_size - 1; x++)
             for (y = 1; y < y_size - 1; y++)
@@ -2536,9 +2542,11 @@ void carmen_prob_models_create_masked_distance_map(
                     compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
                 else
                 {
-                    distance[x][y] = 0.0;
-                    x_offset[x][y] = x;
-                    y_offset[x][y] = y;
+//                	x_far_far_away = (x > ((x_size-1)/2) ? 1 : (x_size - 2));
+//                	y_far_far_away = (y > ((y_size-1)/2) ? 1 : (x_size - 2));
+                    distance[x][y] = HUGE_DISTANCE;
+                    x_offset[x][y] = (x > ((x_size-1)/2)) ? 1 : (x_size - 2);
+                    y_offset[x][y] = (y > ((y_size-1)/2)) ? 1 : (x_size - 2);
                 }
 
         /* pass 2 */
@@ -2548,9 +2556,9 @@ void carmen_prob_models_create_masked_distance_map(
                     compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
                 else
                 {
-                    distance[x][y] = 0.0;
-                    x_offset[x][y] = x;
-                    y_offset[x][y] = y;
+                    distance[x][y] = HUGE_DISTANCE;
+                    x_offset[x][y] = (x > ((x_size-1)/2)) ? 1 : (x_size - 2);
+                    y_offset[x][y] = (y > ((y_size-1)/2)) ? 1 : (x_size - 2);
                 }
 
     }
@@ -2566,4 +2574,6 @@ void carmen_prob_models_create_masked_distance_map(
             for (y = y_size - 2; y >= 1; y--)
                 compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
     }
+
+//    printf("time: %lf \n", (carmen_get_time()-time_now));
 }
