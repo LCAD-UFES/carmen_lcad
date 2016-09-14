@@ -1,4 +1,5 @@
 #include <carmen/carmen.h>
+#include <carmen/simulator_ackerman.h>
 #include <fann.h>
 #include <fann_train.h>
 #include <fann_data.h>
@@ -54,9 +55,8 @@ carmen_libcarneuralmodel_init_steering_ann (struct fann *steering_ann, fann_type
 
 
 double
-carmen_libcarneuralmodel_compute_new_phi_with_ann_PID(carmen_ackerman_traj_point_t current_robot_position, double v, double current_phi,
-																double desired_phi, double time, double understeer_coeficient,
-																double distance_between_front_and_rear_axles)
+carmen_libcarneuralmodel_compute_new_phi_with_ann(double v, double current_phi, double desired_phi, double time,
+													  double understeer_coeficient, double distance_between_front_and_rear_axles)
 {
 	static double steering_command = 0.0;
 	double atan_current_curvature;
@@ -123,9 +123,7 @@ carmen_libcarneuralmodel_build_velocity_ann_input(fann_type *input, double t, do
 
 
 double
-carmen_libcarneuralmodel_compute_new_velocity_with_ann_PID(carmen_ackerman_traj_point_t current_robot_position, double desired_v, double v, double current_phi,
-														double desired_phi, double time, double understeer_coeficient,
-														double distance_between_front_and_rear_axles)
+carmen_libcarneuralmodel_compute_new_velocity_with_ann(double desired_v, double v, double time)
 {
 	static double throttle_command = 0.0;
 	static double brakes_command = 100.0 / 100.0;
@@ -166,4 +164,103 @@ carmen_libcarneuralmodel_compute_new_velocity_with_ann_PID(carmen_ackerman_traj_
 
 	return (next_velocity);
 }
+
+
+void
+update_target_v_and_target_phi(carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands, double &target_v,
+								double &target_phi, double time_of_last_command, int &current_motion_command_vector_index)
+{
+	double time_elapsed_since_last_motion_command, motion_command_time_consumed;
+	int i, motion_command_completely_consumed;
+
+	if (current_motion_command_vector == NULL)
+	{
+		target_v = 0.0;
+		target_phi = 0.0;
+		return;
+	}
+
+	time_elapsed_since_last_motion_command = carmen_get_time() - time_of_last_command;
+
+	i = 0;
+	motion_command_completely_consumed = 1;
+	motion_command_time_consumed = 0.0;
+	do
+	{
+		motion_command_time_consumed += current_motion_command_vector[i].time;
+		if (motion_command_time_consumed > time_elapsed_since_last_motion_command)
+		{
+			motion_command_completely_consumed = 0;
+			break;
+		}
+		i++;
+	} while (i < nun_motion_commands);
+
+	if (motion_command_completely_consumed)
+	{
+		target_v = 0.0;
+		//printf("motion command completely consumed; i = %d\n", i);
+	}
+	else
+	{
+		target_v = current_motion_command_vector[i].v;
+		target_phi = current_motion_command_vector[i].phi;
+		//printf("i = %d\n", i);
+	}
+	current_motion_command_vector_index = i;
+}
+
+
+
+void
+carmen_libcarneuralmodel_compute_new_pos_with_ann(carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands, double &target_v,
+													double &current_v, double &target_phi, double &current_phi, double time_of_last_command,
+													int &current_motion_command_vector_index, double delta_t, double understeer_coeficient,
+													double distance_between_front_and_rear_axles, double max_phi, carmen_point_t &odom_pose, carmen_point_t &true_pose)
+{
+	carmen_point_t new_odom;
+	carmen_point_t new_true;
+	double v, phi;
+
+	update_target_v_and_target_phi(current_motion_command_vector, nun_motion_commands, target_v,
+									target_phi, time_of_last_command, current_motion_command_vector_index);
+
+	v   = carmen_libcarneuralmodel_compute_new_velocity_with_ann(target_v, current_v, delta_t);
+	phi = carmen_libcarneuralmodel_compute_new_phi_with_ann(current_v, current_phi, target_phi, delta_t,
+																understeer_coeficient, distance_between_front_and_rear_axles);
+
+	phi = carmen_clamp(-max_phi, phi, max_phi);
+
+	new_odom = odom_pose;
+	new_true = true_pose;
+
+	new_odom.x +=  v *  delta_t * cos(new_true.theta);
+	new_odom.y +=  v * delta_t * sin(new_true.theta);
+	new_odom.theta += v * delta_t * tan(phi) / distance_between_front_and_rear_axles;
+	new_odom.theta = carmen_normalize_theta(new_odom.theta);
+
+	new_true.x +=  v * delta_t * cos(new_true.theta);
+	new_true.y +=  v * delta_t * sin(new_true.theta);
+	new_true.theta += v * delta_t * tan(phi) / distance_between_front_and_rear_axles;
+	new_true.theta = carmen_normalize_theta(new_true.theta);
+
+	//if(hit_something_in_the_map(simulator_config, new_true))
+	//	return; // Do not update pose
+
+	odom_pose = new_odom;
+	true_pose = new_true;
+}
+
+
+
+
+void
+carmen_libcarneuralmodel_recalc_pos(carmen_simulator_ackerman_config_t *simulator_config)
+{
+	carmen_libcarneuralmodel_compute_new_pos_with_ann(simulator_config->current_motion_command_vector, simulator_config->nun_motion_commands, simulator_config->target_v,
+			simulator_config->v, simulator_config->target_phi, simulator_config->phi, simulator_config->time_of_last_command,
+			simulator_config->current_motion_command_vector_index, simulator_config->delta_t, simulator_config->understeer_coeficient,
+			simulator_config->distance_between_front_and_rear_axles, simulator_config->max_phi, simulator_config->odom_pose, simulator_config->true_pose);
+}
+
 

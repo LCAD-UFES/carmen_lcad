@@ -37,7 +37,7 @@ vector<double>
 get_effort_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors)
 {
 	double delta_t = DELTA_T;
-	double total_time = delta_t * (2 * NUM_STEERING_ANN_INPUTS / 4); // Cada steering input da rede neural tem dois valores (ver rede neural)
+	double total_time = delta_t * (NUM_STEERING_ANN_INPUTS / 6); // Cada steering input da rede neural tem dois valores (ver rede neural)
 	double x[4] = { 0.0, total_time / 3.0, 2.0 * total_time / 3.0, total_time };
 	double y[4] = { descriptors->k1, descriptors->k2, descriptors->k3, descriptors->k4 };
 
@@ -124,37 +124,43 @@ my_f(const gsl_vector *v, void *params)
 void
 my_df(const gsl_vector *v, void *params, gsl_vector *df)
 {
+	EFFORT_SPLINE_DESCRIPTOR d;
 	double h = 0.1;
 	double f_x = my_f(v, params);
 	gsl_vector *x_h;
 
 	x_h = gsl_vector_alloc(4);
 
-	gsl_vector_set(x_h, 0, gsl_vector_get(v, 0) + h);
-	gsl_vector_set(x_h, 1, gsl_vector_get(v, 1));
-	gsl_vector_set(x_h, 2, gsl_vector_get(v, 2));
-	gsl_vector_set(x_h, 3, gsl_vector_get(v, 3));
+	d.k1 = gsl_vector_get(v, 0);
+	d.k2 = gsl_vector_get(v, 1);
+	d.k3 = gsl_vector_get(v, 2);
+	d.k4 = gsl_vector_get(v, 3);
+
+	gsl_vector_set(x_h, 0, d.k1 + h);
+	gsl_vector_set(x_h, 1, d.k2);
+	gsl_vector_set(x_h, 2, d.k3);
+	gsl_vector_set(x_h, 3, d.k4);
 	double f_k1_h = my_f(x_h, params);
 	double df_k1_h = (f_k1_h - f_x) / h;
 
-	gsl_vector_set(x_h, 0, gsl_vector_get(v, 0));
-	gsl_vector_set(x_h, 1, gsl_vector_get(v, 1) + h);
-	gsl_vector_set(x_h, 2, gsl_vector_get(v, 2));
-	gsl_vector_set(x_h, 3, gsl_vector_get(v, 3));
+	gsl_vector_set(x_h, 0, d.k1);
+	gsl_vector_set(x_h, 1, d.k2 + h);
+	gsl_vector_set(x_h, 2, d.k3);
+	gsl_vector_set(x_h, 3, d.k4);
 	double f_k2_h = my_f(x_h, params);
 	double df_k2_h = (f_k2_h - f_x) / h;
 
-	gsl_vector_set(x_h, 0, gsl_vector_get(v, 0));
-	gsl_vector_set(x_h, 1, gsl_vector_get(v, 1));
-	gsl_vector_set(x_h, 2, gsl_vector_get(v, 2) + h);
-	gsl_vector_set(x_h, 3, gsl_vector_get(v, 3));
+	gsl_vector_set(x_h, 0, d.k1);
+	gsl_vector_set(x_h, 1, d.k2);
+	gsl_vector_set(x_h, 2, d.k3 + h);
+	gsl_vector_set(x_h, 3, d.k4);
 	double f_k3_h = my_f(x_h, params);
 	double df_k3_h = (f_k3_h - f_x) / h;
 
-	gsl_vector_set(x_h, 0, gsl_vector_get(v, 0));
-	gsl_vector_set(x_h, 1, gsl_vector_get(v, 1));
-	gsl_vector_set(x_h, 2, gsl_vector_get(v, 2));
-	gsl_vector_set(x_h, 3, gsl_vector_get(v, 3) + h);
+	gsl_vector_set(x_h, 0, d.k1);
+	gsl_vector_set(x_h, 1, d.k2);
+	gsl_vector_set(x_h, 2, d.k3);
+	gsl_vector_set(x_h, 3, d.k4 + h);
 	double f_k4_h = my_f(x_h, params);
 	double df_k4_h = (f_k4_h - f_x) / h;
 
@@ -236,7 +242,7 @@ get_optimized_effort(PARAMS *par, EFFORT_SPLINE_DESCRIPTOR seed)
 void
 plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, carmen_simulator_ackerman_config_t *simulator_config)
 {
-#define PAST_SIZE (NUM_STEERING_ANN_INPUTS * 2)
+#define PAST_SIZE (NUM_STEERING_ANN_INPUTS * 4)
 	static double cphi[PAST_SIZE];
 	static double dphi[PAST_SIZE];
 	static double timestamp[PAST_SIZE];

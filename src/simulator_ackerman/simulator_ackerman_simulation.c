@@ -507,48 +507,13 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 
 	//pid_plot_curvature(simulator_config->phi, simulator_config->target_phi);
 
-
+	//PID
 	carmen_libpid_steering_PID_controler(&steering_command, atan_desired_curvature,
 											atan_current_curvature, simulator_config->v, simulator_config->delta_t);
 
-	carmen_libcarneuralmodel_build_steering_ann_input(steering_ann_input, steering_command, atan_current_curvature, simulator_config->v);
+	//RL_PID
+	//carmen_libmpc_get_steering_effort_using_RL_PID(atan_desired_curvature,	atan_current_curvature, simulator_config->delta_t);
 
-	steering_ann_output = fann_run(steering_ann, steering_ann_input);
-
-	double phi = get_phi_from_curvature(tan(steering_ann_output[0]), simulator_config);
-
-	return (phi);
-}
-
-
-double
-compute_new_phi_on_ann_with_RL_PID(carmen_simulator_ackerman_config_t *simulator_config)
-{
-	static double steering_command = 0.0;
-	double atan_current_curvature;
-	double atan_desired_curvature;
-	static fann_type steering_ann_input[NUM_STEERING_ANN_INPUTS];
-	fann_type *steering_ann_output;
-	static struct fann *steering_ann = NULL;
-
-	if (steering_ann == NULL)
-	{
-		steering_ann = fann_create_from_file("steering_ann.net");
-		if (steering_ann == NULL)
-		{
-			printf("Error: Could not create steering_ann\n");
-			exit(1);
-		}
-		init_steering_ann_input(steering_ann_input);
-	}
-
-	atan_current_curvature = atan(compute_curvature(simulator_config->phi, simulator_config));
-	atan_desired_curvature = atan(compute_curvature(simulator_config->target_phi, simulator_config));
-
-	//carmen_libpid_steering_PID_controler (&steering_command, atan_desired_curvature,
-	//										atan_current_curvature, simulator_config->v, simulator_config->delta_t);
-
-	carmen_libmpc_get_steering_effort_using_RL_PID(atan_desired_curvature,	atan_current_curvature, simulator_config->delta_t);
 
 	carmen_libcarneuralmodel_build_steering_ann_input(steering_ann_input, steering_command, atan_current_curvature, simulator_config->v);
 
