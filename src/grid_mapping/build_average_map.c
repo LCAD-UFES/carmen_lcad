@@ -47,6 +47,7 @@ carmen_grid_mapping_read_complete_map_type(char *map_path, carmen_map_t *map, ch
 	}
 
 	sprintf(global_map_path, map_name, map_path);
+	printf("Reading map %s\n", global_map_path);
 	rtr = carmen_map_read_gridmap_chunk(global_map_path, map);
 
 	sprintf(global_map_path, map_name_info, map_path);
@@ -108,11 +109,25 @@ main(int argc, char **argv)
 	{
 		for (int y = 0; y < complete_map_sum.config.y_size; y++)
 		{
-			if(complete_map_count.map[x][y] > 0.0)
+			if (complete_map_count.map[x][y] > 0.0)
 			{
 				mean = complete_map_sum.map[x][y] / complete_map_count.map[x][y];
 
 				complete_map_average.map[x][y] = mean;
+
+//				if(map1.map[x][y] < 0.0 && map2.map[x][y] < 0.0 && map3.map[x][y] < 0.0)
+//					continue;
+//
+//				//			mean = carmen_prob_models_log_odds_to_probabilistic(get_log_odds(map1.map[x][y]) +
+//				//					get_log_odds(map2.map[x][y]) + get_log_odds(map3.map[x][y]));
+//				int count = (map1.map[x][y] < 0.0 ? 0 : 1) +
+//						(map2.map[x][y] < 0.0 ? 0 : 1) +
+//						(map3.map[x][y] < 0.0 ? 0 : 1);
+//
+//				mean = ((map1.map[x][y] < 0.0 ? 0.0 : map1.map[x][y]) +
+//						(map2.map[x][y] < 0.0 ? 0.0 : map2.map[x][y]) +
+//						(map3.map[x][y] < 0.0 ? 0.0 : map3.map[x][y])) / count;
+
 //				if (mean < 0.5)
 //					complete_map_average.map[x][y] = 0.0;
 //				else if (mean > 0.6)
@@ -120,13 +135,15 @@ main(int argc, char **argv)
 //				else
 //					complete_map_average.map[x][y] = mean;
 //				complete_map_average.map[x][y] = mean > 0.5 ? mean : 0.0;
+//				complete_map_average.map[x][y] = ((mean < 0.68) && (mean > 0.0)) ? 0.0  : mean;
 			}
 		}
 
 	}
 
-		sprintf(new_complete_map_name, "%s/complete_map.map", map_path);
-		carmen_grid_mapping_save_map(new_complete_map_name, &complete_map_average);
+	sprintf(new_complete_map_name, "%scomplete_map.map", map_path);
+	printf("Saving map %s\n", new_complete_map_name);
+	carmen_grid_mapping_save_map(new_complete_map_name, &complete_map_average);
 
-		return 1;
+	return 1;
 }

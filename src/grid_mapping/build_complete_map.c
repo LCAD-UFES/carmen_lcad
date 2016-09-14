@@ -224,6 +224,9 @@ main(int argc, char **argv)
 	}else if(map_type[0] == 'e'){
 		map_name = "%s/complete_map_mean.map";
 		map_name_info = "%s/complete_map_mean.info";
+	}else if(map_type[0] == 'm'){
+		map_name = "%s/complete_map.map";
+		map_name_info = "%s/complete_map.info";
 	}
 
 	sprintf(global_map_path, map_name, map_path);
