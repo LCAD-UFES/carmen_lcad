@@ -906,16 +906,9 @@ read_parameters(int argc, char **argv)
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-void sigint(int)
-{
- 	exit(0);
-}
-
 int
 main(int argc, char **argv)
 {
-
-	signal(SIGINT, sigint);
 
 	/* Connect to IPC Server */
 	carmen_ipc_initialize(argc, argv);

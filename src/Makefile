@@ -6,7 +6,7 @@ PACKAGES = ipc global param_daemon proccontrol robot_ackerman_gui laser-new  	\
 	   obstacle_avoider simulator_ackerman localize_ackerman robot_ackerman \
 	   maptools mapeditor logger dynamic_object_detector \
 	   navigator_ackerman joystick pantilt laser gps gps_xyz imu camera  	\
-	   fused_odometry viewer_3D bumblebee_basic laser-ldmrs 		\
+	   fused_odometry moving_objects viewer_3D bumblebee_basic laser-ldmrs 		\
 	   stereo road_finding v_disparity stereo_mapping grid_mapping 		\
 	   visual_odometry_package2 stereo_point_cloud xsens xsens_MTi-G	\
 	   rrt_planner subdir_module_example velodyne log_filter rddf 		\
