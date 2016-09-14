@@ -590,13 +590,21 @@ my_g(const gsl_vector *x, void *params)
 			(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 0.2) +
 			(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2));
 	my_params->plan_cost = result;
+	double w1,w2,w3,w4,w5;
+	w1 = 5.0; w2 = 15.0; w3 = 15.0; w4 = 1.5; w5 = 10.0;
+
+//	if(GlobalState::ford_escape_status.g_XGV_turn_signal)
+//	{
+//		printf("To de boa\n");
+//		w5 = 10.0;//
+//	}
 
 	result = sqrt(
-			5.0 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
-			15.0 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
-			15.0 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
-			1.5 * path_to_lane_distance + // já é quandrática
-			10.0 * proximity_to_obstacles); // já é quandrática
+			w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
+			w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
+			w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
+			w4 * path_to_lane_distance + // já é quandrática
+			w5 * proximity_to_obstacles); // já é quandrática
 
 	return (result);
 }
