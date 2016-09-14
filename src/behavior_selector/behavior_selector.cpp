@@ -176,6 +176,12 @@ fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_poin
 		}
 	}
 
+	if(j == 0)
+	{
+		goal_list[j] = rddf->poses[rddf->number_of_poses - 1];
+		j++;
+	}
+
 	goal_list_size = j;
 	goal_list_time = rddf->timestamp;
 

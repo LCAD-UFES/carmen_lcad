@@ -16,6 +16,7 @@ static carmen_behavior_selector_algorithm_t current_algorithm = CARMEN_BEHAVIOR_
 carmen_behavior_selector_state_t current_state = BEHAVIOR_SELECTOR_FOLLOWING_LANE;
 int steering_model = 1;
 MessageControl messageControl;
+double currentVelocity = 0.0;
 
 static void
 localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
@@ -109,6 +110,11 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	    path_planner_road_profile_message.timestamp = carmen_get_time();
 	    path_planner_road_profile_message.host = carmen_get_host();
 
+		for (int i = 0; i < path_planner_road_profile_message.number_of_poses; i++)
+		{
+			path_planner_road_profile_message.poses[i].v = currentVelocity;
+		}
+
 	    err = IPC_publishData(CARMEN_PATH_PLANNER_ROAD_PROFILE_MESSAGE_NAME, &path_planner_road_profile_message);
 	    carmen_test_ipc_exit(err, "Could not publish", CARMEN_PATH_PLANNER_ROAD_PROFILE_MESSAGE_FMT);
 	}
@@ -119,11 +125,10 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 static void
 goal_list_handler(carmen_behavior_selector_goal_list_rddf_message *msg)
 {
-	printf("goal_list_handler\n");
-
 	if ((msg->size <= 0) || !msg->goal_list)
 		return;
 
+	currentVelocity = msg->goal_list[msg->size - 1].v;
 	messageControl.carmen_planner_ackerman_update_goal(msg->goal_list);
 }
 
@@ -137,9 +142,6 @@ navigator_ackerman_set_goal_message_handler(carmen_navigator_ackerman_set_goal_m
 	goal_list.theta = msg->theta;
 	goal_list.v = 0;
 	goal_list.theta = 0;
-
-	printf("goal_list_handler\n");
-
 	messageControl.carmen_planner_ackerman_update_goal(&goal_list);
 }
 
