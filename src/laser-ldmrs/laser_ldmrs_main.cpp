@@ -11,7 +11,9 @@
 
 static char *laser_ldmrs_port = 0;
 static char *laser_ldmrs_address = 0;
-static double axle_distance = 2.65;
+static double axle_distance = 2.625;
+
+static carmen_base_ackerman_odometry_message odometry_message;
 vpSickLDMRS laser;
 
 /*********************************************************
@@ -74,6 +76,8 @@ carmen_laser_ldmrs_read_parameters(int argc, char **argv)
 static void
 base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *odometry_message)
 {
+	axle_distance = 2.625;
+
 	short velocity_cms = (short) (odometry_message->v * 100.0);
 	short phi_mrad = (short) (odometry_message->phi * 1000);
 	short yaw_rate = (short) (odometry_message->v * tan(odometry_message->phi) / axle_distance) * 10000;
@@ -226,10 +230,10 @@ main(int argc, char **argv)
 	laser.setPort(atoi(laser_ldmrs_port));
 	laser.setup();
 
+	memset(&odometry_message, 0, sizeof(carmen_base_ackerman_odometry_message));
 	// Subscribe to odometry messages
-	carmen_base_ackerman_subscribe_odometry_message(NULL,
+	carmen_base_ackerman_subscribe_odometry_message(&odometry_message,
 	    		(carmen_handler_t) base_ackerman_odometry_message_handler, CARMEN_SUBSCRIBE_LATEST);
-
 
 	for ( ; ; )
 	{
@@ -250,11 +254,13 @@ main(int argc, char **argv)
 				if (objectData.getNumObjects() > 0)
 					carmen_laser_publish_ldmrs_objects(&objectsMessage);
 				break;
+			case 0:
+				carmen_ipc_sleep((1.0 / 12.5) / 10.0);
 			default:
 				break;
 		}
+
 	}
-	carmen_ipc_disconnect();
 
 	return 0;
 }
