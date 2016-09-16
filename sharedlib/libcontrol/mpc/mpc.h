@@ -33,6 +33,11 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 											fann_type *steering_ann_input, struct fann *steering_ann,
 											carmen_simulator_ackerman_config_t *simulator_config);
 
+double
+carmen_libmpc_get_optimized_steering_effort_using_MPCc(double atan_current_curvature, double atan_desired_curvature,
+											fann_type *steering_ann_input, struct fann *steering_ann,
+											ford_escape_hybrid_config_t *simulator_config);
+
 #ifdef __cplusplus
 }
 #endif

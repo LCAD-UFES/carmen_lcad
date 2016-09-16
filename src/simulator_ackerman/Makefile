@@ -7,6 +7,7 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarneuralmodel
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/pid
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/mpc
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/rlpid
+IFLAGS += -I$(CARMEN_HOME)/include/carmen
 
 LFLAGS += -lmap_interface -lparam_interface -llocalize_ackerman_interface -lobstacle_avoider -lobstacle_avoider_interface \
 	  -llaser_interface -lgeometry -llocalize_ackerman_motion -lbase_ackerman_interface \

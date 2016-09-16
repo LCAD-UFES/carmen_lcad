@@ -33,9 +33,16 @@
 #include <openJaus.h>				// Header file for the OpenJAUS specific C/C++ code base
 #include <torc.h>
 #include <torcInterface.h>
-#include <pid.h>
-
 #include "ford_escape_hybrid.h"
+
+#include <fann.h>
+#include <fann_data.h>
+#include <floatfann.h>
+#include <fann_train.h>
+#include <pid.h>
+#include <car_neural_model.h>
+#include <mpc.h>
+
 
 
 static ford_escape_hybrid_config_t *ford_escape_hybrid_config = NULL;
@@ -143,8 +150,8 @@ set_wrench_efforts_desired_v_and_curvature()
 	if (i < ford_escape_hybrid_config->nun_motion_commands)
 	{
 		v = ford_escape_hybrid_config->current_motion_command_vector[i].v;
-		phi = (1.0 + v / (6.94 / 0.3)) * ford_escape_hybrid_config->current_motion_command_vector[i].phi;
-//		phi = ford_escape_hybrid_config->current_motion_command_vector[i].phi;
+//		phi = (1.0 + v / (6.94 / 0.3)) * ford_escape_hybrid_config->current_motion_command_vector[i].phi;
+		phi = ford_escape_hybrid_config->current_motion_command_vector[i].phi;
 	}
 	else
 	{
@@ -431,6 +438,22 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 	double raw_phi;
 	double delta_t;
 	int previous_gear_command;
+	static fann_type steering_ann_input[NUM_STEERING_ANN_INPUTS];
+	static struct fann *steering_ann = NULL;
+
+	if (ford_escape_hybrid_config->nun_motion_commands < 1)
+		return;
+
+	if (steering_ann == NULL)
+	{
+		steering_ann = fann_create_from_file("steering_ann.net");
+		if (steering_ann == NULL)
+		{
+			printf("Error: Could not create steering_ann\n");
+			exit(1);
+		}
+		carmen_libcarneuralmodel_init_steering_ann_input(steering_ann_input);
+	}
 
 	reportCurvature = reportCurvatureMessageFromJausMessage(curvature_message);
 	if (reportCurvature)
@@ -449,7 +472,9 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 
 		//carmen_ford_escape_hybrid_steering_PID_controler
 		g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature, -atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi,
-												ford_escape_hybrid_config)), delta_t);
+																	ford_escape_hybrid_config)), delta_t);
+//		g_steering_command = carmen_libmpc_get_optimized_steering_effort_using_MPCc(-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), g_atan_desired_curvature,
+//																				steering_ann_input, steering_ann, ford_escape_hybrid_config);
 
 
 		previous_gear_command = g_gear_command;

@@ -416,7 +416,7 @@ build_path_follower_path(vector<carmen_ackerman_path_point_t> path)
 
 
 void
-build_and_follow_path_new()
+build_and_follow_path()
 {
 	list<RRT_Path_Edge> path_follower_path;
 
@@ -449,7 +449,7 @@ build_and_follow_path_new()
 
 
 void
-build_and_follow_path()
+build_and_follow_path_old()
 {
 	if (GlobalState::goal_pose && (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT))
 	{
