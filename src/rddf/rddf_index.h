@@ -43,6 +43,10 @@ class carmen_pose_index_element
 		double timestamp_index_position;
 
 		double& operator[](int position);
+		carmen_pose_index_element()
+		{
+			x = y = z = roll = pitch = yaw = timestamp_index_position = 0;
+		}
 };
 
 

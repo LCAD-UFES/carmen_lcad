@@ -85,7 +85,7 @@ static int disp_fps = 0, disp_last_fps = 0; //display fps
 //Messages
 //static carmen_localize_ackerman_globalpos_message localize_message;
 static carmen_fused_odometry_message localize_message;
-static carmen_rddf_annotation_message annotation_message;
+//static carmen_rddf_annotation_message annotation_message;
 
 //pose images
 static carmen_pose_3D_t sensor_board_1_pose;

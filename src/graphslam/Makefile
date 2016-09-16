@@ -5,6 +5,8 @@ MODULE_COMMENT = teste_grab_data
 
 LINK = g++
 
+CXXFLAGS += -Wno-deprecated -Wno-deprecated-declarations
+
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/  
 IFLAGS += -I/usr/include/eigen3 
 IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ -I/usr/local/include/g2o/

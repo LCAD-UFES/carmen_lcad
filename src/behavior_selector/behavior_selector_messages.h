@@ -33,7 +33,7 @@ typedef struct {
 	char *host;
 } carmen_behavior_selector_goal_list_rddf_message;
 
-#define		CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME		"carmen_behavior_selector_goal_list"
+#define		CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME		"carmen_behavior_selector_goal_list_rddf"
 #define		CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_FMT		"{<{double, double, double, double, double}:2>,int,double,string}"
 
 typedef enum {

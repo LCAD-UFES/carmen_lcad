@@ -50,8 +50,6 @@ static stereo_util camera_params;
 static carmen_position_t right_image_point;
 static carmen_position_t right_image_point0;
 static carmen_position_t right_image_point1;
-static carmen_position_t left_image_point0;
-static carmen_position_t left_image_point1;
 
 static carmen_bumblebee_basic_stereoimage_message	visual_search_bumblebee_message;
 static carmen_tracker_train_message		visual_search_training_message;
@@ -104,7 +102,7 @@ redraw_right_image()
  		  GDK_RGB_DITHER_NONE, 0, 0);
 }
 
-static void 
+void
 redraw_left_image()
 {
 	gdk_draw_pixbuf(left_image_drawing_area->window,
@@ -116,7 +114,7 @@ redraw_left_image()
 }
 
 // Draws a cross at the X-Y selected position
-static void
+void
 draw_cross(GtkWidget *drawing, double x_img_point, double y_img_point, int value)
 {
 	cairo_t * drawing_area = gdk_cairo_create(drawing->window);
@@ -152,7 +150,7 @@ draw_cross(GtkWidget *drawing, double x_img_point, double y_img_point, int value
 }
 
 // Draws a retangle
-static void
+void
 draw_retangle(GtkWidget *drawing, double x1, double y1, double x2, double y2, int value)
 {
 	cairo_t * drawing_area = gdk_cairo_create(drawing->window);
@@ -189,7 +187,7 @@ static carmen_position_t
 getPointCloundFromDisparity(float * disparityMap, carmen_position_t init_point, carmen_position_t final_point, stereo_util camera_params)
 {
 	double pointDisparity;
-	carmen_position_t new_point {9999.0, 0.0};
+	carmen_position_t new_point = {9999.0, 0.0};
 	for (int y = (int)init_point.y; y < (int) final_point.y; y++)
 	{
 		for (int x = (int)init_point.x; x < (int) final_point.x; x++)
@@ -217,16 +215,17 @@ getPointCloundFromDisparity(float * disparityMap, carmen_position_t init_point, 
 
 static carmen_position_t get_point_from_window_disparity(double image_timestamp, carmen_position_t init_point, carmen_position_t final_point)
 {
-	static unsigned short* depth_map = (unsigned short*) malloc(camera_params.width * camera_params.height * sizeof(unsigned short));
-	for (int i = 0; i < global_simple_stereo_disparity_message.size(); i++)
+	carmen_position_t new_point = {0.0, 0.0};
+	for (unsigned int i = 0; i < global_simple_stereo_disparity_message.size(); i++)
 	{
 		if (fabs(image_timestamp - global_simple_stereo_disparity_message[i].timestamp) < 0.1)
 		{
-			carmen_position_t new_point = getPointCloundFromDisparity(global_simple_stereo_disparity_message[i].disparity, init_point, final_point, camera_params);
+			new_point = getPointCloundFromDisparity(global_simple_stereo_disparity_message[i].disparity, init_point, final_point, camera_params);
 			return new_point;
 		}
 	}
-	return carmen_position_t{0.0, 0.0};
+
+	return new_point;
 }
 
 
@@ -247,7 +246,7 @@ bumblebee_image_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image
 	static double width_in_train = -1.0;
 	static double dynamic_scale_factor_init = -1.0;
 
-	int i, x_, y_;
+	int i;
 	int largura = 0;
 	int altura = 0;
 	float scale = 0;

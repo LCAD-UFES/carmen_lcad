@@ -34,7 +34,7 @@
 
 #define DEFAULT_ROBOT_COLOUR 	carmen_red
 #define DEFAULT_GOAL_COLOUR 	carmen_yellow
-#define DEFAULT_PATH_COLOUR 	carmen_blue
+#define DEFAULT_PATH_COLOUR 	carmen_light_blue
 #define DEFAULT_TREE_COLOUR 	carmen_orange
 #define DEFAULT_PEOPLE_COLOUR 	carmen_orange
 

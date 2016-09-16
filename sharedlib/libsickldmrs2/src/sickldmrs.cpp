@@ -184,57 +184,19 @@ unsigned int readUValueLE(unsigned char* buffer, unsigned char bytes)
 
 	return value;
 }
-/*!
-  Get the measures of the four scan layers.
 
-  \return true if the measures are retrieven, false otherwise.
 
- */
-bool vpSickLDMRS::measure(vpLaserScan laserscan[4])
+// decode scan data
+void vpSickLDMRS::decodeScanData(vpLaserScan laserscan[4])
 {
 	unsigned int *uintptr;
 	unsigned short *ushortptr;
-	static unsigned char header[24];
-	ushortptr=(unsigned short *)header;
-	uintptr=(unsigned int *)header;
-
-	assert (sizeof(header) == 24);
-	//std::cout << "size " << sizeof(header) << std::endl;
 
 	double time_second = 0;
 
 	if (isFirstMeasure) {
 		time_second = vpTime::measureTimeSecond();
 	}
-
-	// read the 24 bytes header
-	if (recv(socket_fd, header, sizeof(header), MSG_WAITALL) == -1) {
-		printf("recv\n");
-		perror("recv");
-		return false;
-	}
-
-	if (ntohl(uintptr[0]) != vpSickLDMRS::MagicWordC2) {
-		printf("Error, wrong magic number !!!\n");
-		return false;
-	}
-
-	// get the message body
-	uint16_t msgtype = ntohs(ushortptr[7]);
-	uint32_t msgLength = ntohl(uintptr[2]);
-
-	ssize_t len = recv(socket_fd, body, msgLength, MSG_WAITALL);
-	if (len != (ssize_t)msgLength){
-		printf("Error, wrong msg length: %d of %d bytes.\n", (int)len, msgLength);
-		return false;
-	}
-
-	if (msgtype!=vpSickLDMRS::MeasuredData){
-		//printf("The message in not relative to measured data !!!\n");
-		return false;
-	}
-
-	// decode measured data
 
 	// get the measurement number
 	unsigned short measurementId;
@@ -306,58 +268,15 @@ bool vpSickLDMRS::measure(vpLaserScan laserscan[4])
 			laserscan[layer].addPoint(scanPoint);
 		}
 	}
-	return true;
 }
 
-
-bool vpSickLDMRS::tracking(vpLaserObjectData *objectData)
+// decode the objects data
+void vpSickLDMRS::decodeObjectsData(vpLaserObjectData *objectData)
 {
+	// get the start timestamp
 
 	unsigned int *uintptr;
-	unsigned short *ushortptr;
-	static unsigned char header[24];
-	ushortptr=(unsigned short *)header;
-	uintptr=(unsigned int *)header;
 
-	assert (sizeof(header) == 24);
-	//std::cout << "size " << sizeof(header) << std::endl;
-
-//	double time_second = 0;
-//
-//	if (isFirstMeasure) {
-//		time_second = vpTime::measureTimeSecond();
-//	}
-
-	// read the 24 bytes header
-	if (recv(socket_fd, header, sizeof(header), MSG_WAITALL) == -1) {
-		printf("recv\n");
-		perror("recv");
-		return false;
-	}
-
-	if (ntohl(uintptr[0]) != vpSickLDMRS::MagicWordC2) {
-		printf("Error, wrong magic number !!!\n");
-		return false;
-	}
-
-	// get the message body
-	uint16_t msgtype = ntohs(ushortptr[7]);
-	uint32_t msgLength = ntohl(uintptr[2]);
-
-	ssize_t len = recv(socket_fd, body, msgLength, MSG_WAITALL);
-	if (len != (ssize_t)msgLength){
-		printf("Error, wrong msg length: %d of %d bytes.\n", (int)len, msgLength);
-		return false;
-	}
-
-	if (msgtype!=vpSickLDMRS::ObjectData){
-		//printf("The message in not relative to measured data !!!\n");
-		return false;
-	}
-
-	// decode object data
-
-	// get the start timestamp
 	uintptr=(unsigned int *) body;
 	unsigned int seconds = uintptr[1];
 	unsigned int fractional=uintptr[0];
@@ -480,7 +399,7 @@ bool vpSickLDMRS::tracking(vpLaserObjectData *objectData)
 		objectContent.setObjectBoxSize(objectBoxSize);
 		objectContent.setObjectBoxOrientation(objectBoxOrientation);
 
-		if (absoluteVelocity.x_pos < -320.0)
+		if (absoluteVelocity.x_pos < -32000)
 			objectContent.setAbsoluteVelocity(relativeVelocity);
 		else
 			objectContent.setAbsoluteVelocity(absoluteVelocity);
@@ -502,96 +421,11 @@ bool vpSickLDMRS::tracking(vpLaserObjectData *objectData)
 		objectData->addObject(objectContent);
 	}
 
-	return true;
 }
 
-bool vpSickLDMRS::sendEgoMotionData(short velocity, short steeringWheelAngle, short yawRate)
+// this function decode the error messages from device
+void vpSickLDMRS::decodeErrorData()
 {
-	unsigned int *uintptr;
-	unsigned short *ushortptr;
-	static unsigned char header[24];
-	ushortptr=(unsigned short *)header;
-	uintptr=(unsigned int *)header;
-
-	uintptr[0] = htonl(vpSickLDMRS::MagicWordC2);			// set magic word
-	ushortptr[7] = htonl(vpSickLDMRS::EgoMotionData);		// set the data type
-	uintptr[2] = htonl(10);									// set the size of message
-	uintptr[1] = 0;
-	header[12] = 0;
-	header[13] = htonl(07);
-
-	if(send(socket_fd, header, sizeof(header), MSG_WAITALL) == -1)
-	{
-		printf("send\n");
-		perror("send");
-		return false;
-	}
-
-	// version
-	body[0] = 0x01;
-	body[1] = 0x00;
-
-	// velocity
-	body[2] = (unsigned char) velocity & 0x00FF;
-	body[3] = (unsigned char) ((velocity & 0xFF00) >> 8);
-
-	// reserved
-	body[4] = 0x00;
-	body[5] = 0x00;
-
-	// steering wheel angle
-	body[6] = (unsigned char) steeringWheelAngle & 0x00FF;
-	body[7] = (unsigned char) ((steeringWheelAngle & 0xFF00) >> 8);
-
-	// yaw rate
-	body[8] = (unsigned char) yawRate & 0x00FF;
-	body[9] = (unsigned char) ((yawRate & 0xFF00) >> 8);
-
-	if(send(socket_fd, body, 10, MSG_WAITALL) == -1)
-	{
-		printf("send\n");
-		perror("send");
-		return false;
-	}
-	return true;
-}
-
-bool vpSickLDMRS::getErrors()
-{
-	unsigned int *uintptr;
-	unsigned short *ushortptr;
-	static unsigned char header[24];
-	ushortptr=(unsigned short *)header;
-	uintptr=(unsigned int *)header;
-
-	assert (sizeof(header) == 24);
-
-	// read the 24 bytes header
-	if (recv(socket_fd, header, sizeof(header), MSG_WAITALL) == -1) {
-		printf("recv\n");
-		perror("recv");
-		return false;
-	}
-
-	if (ntohl(uintptr[0]) != vpSickLDMRS::MagicWordC2) {
-		printf("Error, wrong magic number !!!\n");
-		return false;
-	}
-
-	// get the message body
-	uint16_t msgtype = ntohs(ushortptr[7]);
-	uint32_t msgLength = ntohl(uintptr[2]);
-
-	ssize_t len = recv(socket_fd, body, msgLength, MSG_WAITALL);
-	if (len != (ssize_t)msgLength){
-		printf("Error, wrong msg length: %d of %d bytes.\n", (int)len, msgLength);
-		return false;
-	}
-
-	if (msgtype!=vpSickLDMRS::ErrorData){
-		//printf("The message in not relative to measured data !!!\n");
-		return false;
-	}
 
 	// decode message
 	unsigned short errorRegister1 = (unsigned short) readUValueLE(&(body[0]), 2);
@@ -678,9 +512,155 @@ bool vpSickLDMRS::getErrors()
 	{
 		printf("DSP Warning: Memory access failure, restart LD-MRS, contact support.\n");
 	}
+	if((warningRegister2 & 0x0080) != 0)
+	{
+		printf("DSP Warning: Segment overflow.\n");
+	}
+	if((warningRegister2 & 0x0100) != 0)
+	{
+		printf("DSP Warning: Invalid Ego Motion data.\n");
+	}
 	if((warningRegister2 & 0x8000) != 0)
 	{
 		printf("DSP Warning: High temperature.\n");
 	}
+
+}
+
+// read data sent from sensor and decode it
+unsigned short vpSickLDMRS::readData(vpLaserScan laserscan[4], vpLaserObjectData *objectData)
+{
+	unsigned int *uintptr;
+	unsigned short *ushortptr;
+	unsigned short dataType;
+	static unsigned char header[24];
+	ushortptr=(unsigned short *)header;
+	uintptr=(unsigned int *)header;
+
+	assert (sizeof(header) == 24);
+	//std::cout << "size " << sizeof(header) << std::endl;
+
+	// read the 24 bytes header
+	if (recv(socket_fd, header, sizeof(header), MSG_WAITALL) == -1) {
+		printf("recv\n");
+		perror("recv");
+		return false;
+	}
+
+	if (ntohl(uintptr[0]) != vpSickLDMRS::MagicWordC2) {
+		printf("Error, wrong magic number !!!\n");
+		return false;
+	}
+
+	// get the message body
+	uint16_t msgtype = ntohs(ushortptr[7]);
+	uint32_t msgLength = ntohl(uintptr[2]);
+
+	ssize_t len = recv(socket_fd, body, msgLength, MSG_WAITALL);
+	if (len != (ssize_t)msgLength){
+		printf("Error, wrong msg length: %d of %d bytes.\n", (int)len, msgLength);
+		return false;
+	}
+
+	switch (msgtype)
+	{
+		case vpSickLDMRS::MeasuredData:
+			dataType = vpSickLDMRS::MeasuredData;
+			decodeScanData(laserscan);
+			break;
+		case vpSickLDMRS::ObjectData:
+			dataType = vpSickLDMRS::ObjectData;
+			decodeObjectsData(objectData);
+			break;
+		case vpSickLDMRS::ErrorData:
+			dataType = vpSickLDMRS::ErrorData;
+			decodeErrorData();
+			break;
+		default:
+			dataType = 0;
+			break;
+	}
+
+	return dataType;
+}
+
+bool vpSickLDMRS::sendEgoMotionData(short velocity, short steeringWheelAngle, short yawRate)
+{
+	//message that will be sent to the laser
+	unsigned char motion_data[34];
+
+	/*
+	 * inserting the header part of the message
+	 */
+
+	// magic word
+	motion_data[0] = 0xAF;
+	motion_data[1] = 0xFE;
+	motion_data[2] = 0xC0;
+	motion_data[3] = 0xC2;
+
+	// size of previous message
+	motion_data[4] = 0x00;
+	motion_data[5] = 0x00;
+	motion_data[6] = 0x00;
+	motion_data[7] = 0x00;
+
+	// size of this message
+	motion_data[8] = 0x00;
+	motion_data[9] = 0x00;
+	motion_data[10] = 0x00;
+	motion_data[11] = 0x0A;
+
+	// reserved
+	motion_data[12] = 0x00;
+
+	// device ID
+	motion_data[13] = 0x00;
+
+	// data type
+	motion_data[14] = 0x28;
+	motion_data[15] = 0x50;
+
+	// NTP timestamp
+	motion_data[16] = 0x00;
+	motion_data[17] = 0x00;
+	motion_data[18] = 0x00;
+	motion_data[19] = 0x00;
+	motion_data[20] = 0x00;
+	motion_data[21] = 0x00;
+	motion_data[22] = 0x00;
+	motion_data[23] = 0x00;
+
+	/*
+	 * inserting the body of the message
+	 */
+	// version
+	motion_data[24] = 0x01;
+	motion_data[25] = 0x00;
+
+	// velocity
+	motion_data[26] = (unsigned char) (velocity & 0x00FF);
+	motion_data[27] = (unsigned char) ((velocity & 0xFF00) >> 8);
+
+	// reserved
+	motion_data[28] = 0x00;
+	motion_data[29] = 0x00;
+
+	// steering wheel angle
+	motion_data[30] = (unsigned char) (steeringWheelAngle & 0x00FF);
+	motion_data[31] = (unsigned char) ((steeringWheelAngle & 0xFF00) >> 8);
+
+	// yaw rate
+	motion_data[32] = (unsigned char) (yawRate & 0x00FF);
+	motion_data[33] = (unsigned char) ((yawRate & 0xFF00) >> 8);
+
+	//sending the message to the laser
+	if(send(socket_fd, motion_data, 34, 0) != 34)
+	{
+		printf("Failed to send data to socket.\n");
+		perror("Failed to send data to socket.");
+		return false;
+	}
+
 	return true;
 }

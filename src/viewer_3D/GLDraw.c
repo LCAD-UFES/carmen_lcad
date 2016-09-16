@@ -791,6 +791,36 @@ draw_ldmrs_objects(carmen_laser_ldmrs_object *ldmrs_objects_tracking, int num_ld
 		glEnd();
 		glPopAttrib();
 
+//		char class_name[50];
+//
+//		switch (ldmrs_objects_tracking[i].classId)
+//		{
+//			case 0:
+//				strcpy(class_name,"Unclassified");
+//				break;
+//			case 1:
+//				strcpy(class_name,"Small");
+//				break;
+//			case 2:
+//				strcpy(class_name,"Big");
+//				break;
+//			case 3:
+//				strcpy(class_name,"Pedestrian");
+//				break;
+//			case 4:
+//				strcpy(class_name,"Bike");
+//				break;
+//			case 5:
+//				strcpy(class_name,"Car");
+//				break;
+//			case 6:
+//				strcpy(class_name,"Truck");
+//				break;
+//			default:
+//				strcpy(class_name,"Unknown");
+//				break;
+//		}
+
 		/* has to drawn after stuff above, so that it appears on top */
 		draw_number_associated(pos.position.x, pos.position.y, ldmrs_objects_tracking[i].id,"");
 		draw_linear_velocity(pos.position.x, pos.position.y, ldmrs_objects_tracking[i].velocity,

@@ -34,7 +34,7 @@ static int horizontal_ROI_end;
 static int ROI_width;
 static int ROI_height;
 
-static int camera;
+//static int camera;
 
 static int bumblebee_basic_width;
 static int bumblebee_basic_height;

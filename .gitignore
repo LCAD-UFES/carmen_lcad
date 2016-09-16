@@ -8,8 +8,10 @@ Makefile.depend
 *~
 *complete_map.map
 .settings/org.eclipse.cdt.codan.core.prefs
+data/map*/*.bmp
 bin/debug.txt
 bin/out.txt
+bin/build_average_map
 bin/calibrate_bias
 bin/grab_data
 bin/grab_data_for_calibration
@@ -232,6 +234,7 @@ src/grid_mapping/complete_map_to_block_map
 src/grid_mapping/grid_mapping
 src/grid_mapping/grid_mapping_test
 src/grid_mapping/grid_mapping_view
+src/grid_mapping/build_average_map
 src/ipc/central
 src/ipc/ipc-die-test
 src/ipc/ipc-endian-test

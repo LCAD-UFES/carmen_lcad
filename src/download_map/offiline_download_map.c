@@ -101,14 +101,10 @@ download(double first_x, double first_y, double end_x, double end_y)
 	//IplImage *big_map_img = cvCreateImage(cvSize(10000, 10000), IPL_DEPTH_8U, 3);
 
 	double latitude, longitude, elevation, map_center_x, map_center_y;
-	int x_origin, y_origin, hemi;
-	double img_center_x, img_center_y, img_center_z, zone;
+	int x_origin, y_origin;//, hemi;
+	//double img_center_x, img_center_y, img_center_z, zone;
 	double x, y;
-	int i, j, z, w, bz, bw;
-	int first_time = 1;
-	static double first_img_origin_x, first_img_origin_y;
-
-	char aux[100];
+	int i, j;
 
 	for (j=0, y = first_y; y <= end_y; y += 100.0, j++)
 	{

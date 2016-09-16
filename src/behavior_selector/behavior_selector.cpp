@@ -176,6 +176,12 @@ fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_poin
 		}
 	}
 
+	if(j == 0)
+	{
+		goal_list[j] = rddf->poses[rddf->number_of_poses - 1];
+		j++;
+	}
+
 	goal_list_size = j;
 	goal_list_time = rddf->timestamp;
 
@@ -412,7 +418,9 @@ behavior_selector_update_rddf(carmen_rddf_road_profile_message *rddf_msg)
 	if (((goal_list_size - goal_list_index) > 1) &&
 		(rddf_msg->annotations[rddf_msg->number_of_poses - 1] != RDDF_ANNOTATION_END_POINT_AREA || (rddf_msg->annotations[rddf_msg->number_of_poses - 1] == RDDF_ANNOTATION_END_POINT_AREA &&
 		carmen_distance_ackerman_traj(&goal_list[goal_list_size - 1], &rddf_msg->poses[rddf_msg->number_of_poses - 1]) < 0.1)))
-		return;
+	{
+		//return;
+	}
 
 	goal_list_index = 0;
 	goal_list_size = 0;

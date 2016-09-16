@@ -80,6 +80,10 @@ public:
 	double pitch;
 	double yaw;
 	double timestamp_index_position;
+	carmen_pose_index_element()
+	{
+		x = y = z = roll = pitch = yaw = timestamp_index_position = 0.0;
+	}
 
 	double& operator [](int position)
 	{

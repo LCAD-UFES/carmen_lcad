@@ -1347,7 +1347,7 @@ visual_search(INPUT_DESC *input __attribute__ ((unused)))
 	{
 		if ((count%10 == 0))
 		{
-			load_input_image(input, "last_image.pnm");
+			load_input_image(input, (char *)"last_image.pnm");
 			update_input_layer_neurons_and_image_light(input);
 			set_scale_before(); 
 			printf("TREINANDO!!!!!!, g_confidence = %f\n", g_confidence);

@@ -156,7 +156,7 @@ r2d(double angle)
 
 
 void
-add_gps_edge(SparseOptimizer *optimizer, VertexSE2 *v, SE2 measure, double gps_std, double yaw_std)
+add_gps_edge(SparseOptimizer *optimizer, VertexSE2 *v, SE2 measure, double gps_std)
 {
 	Matrix3d cov;
 	Matrix3d information;
@@ -335,7 +335,6 @@ add_gps_edges(SparseOptimizer *optimizer)
 
 	for (size_t i = 0; i < input_data.size(); i++)
 	{
-		int gps_valid = input_data[i].gps_orientation_valid;
 		double gps_yaw = input_data[i].gps_yaw;
 		double gps_std = input_data[i].gps_std;
 		SE2 gmeasure = input_data[i].gps;
@@ -367,7 +366,7 @@ add_gps_edges(SparseOptimizer *optimizer)
 //			 ((fabs(diff[2]) < 0.35))) // && (sqrt(pow(diff[0], 2) + pow(diff[1], 2)) < 1.0)))
 		{
 			VertexSE2 *v = dynamic_cast<VertexSE2*>(optimizer->vertices()[i]);
-			add_gps_edge(optimizer, v, measure, gps_std, (gps_valid ? (1.05) : (3.14 * 100000)));
+			add_gps_edge(optimizer, v, measure, gps_std);
 		}
 //		else
 //			printf("Attention to GPS %d: %lf %lf %lf!!\n", (int) i, diff[0], diff[1], diff[2]);

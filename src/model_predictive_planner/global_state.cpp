@@ -32,7 +32,6 @@ double GlobalState::max_phi_velocity = 1.0 * 0.48;		// Equivalente a rodar o vol
 double GlobalState::time_to_change_gears = 1.0;
 
 carmen_map_t GlobalState::cost_map;
-bgi::rtree< occupied_cell, bgi::quadratic<16> > GlobalState::obstacles_rtree;
 
 carmen_obstacle_distance_mapper_message *GlobalState::distance_map = NULL;
 KDTree2D GlobalState::obstacles_kdtree;
@@ -55,6 +54,8 @@ int GlobalState::behavior_selector_state = BEHAVIOR_SELECTOR_FOLLOWING_LANE;
 
 int GlobalState::publish_tree = 1;
 int GlobalState::reuse_last_path = 0;
+
+int GlobalState::use_path_planner = 0;
 
 double GlobalState::obstacle_cost_distance = 1.5; // distancia para zero custo (os custos sao lineares com a distancia para obstaculos)
 

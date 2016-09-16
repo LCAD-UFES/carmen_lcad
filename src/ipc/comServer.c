@@ -2696,8 +2696,8 @@ static void stdinHnd(void)
   char inputLine[81];
   
   bzero(inputLine,sizeof(inputLine));
-  fgets(inputLine,80,stdin);
-  
+  char *e = fgets(inputLine, 80, stdin);
+  e = e; //removing fgets' compilation warning
   /* Kill the \n at the end of the line */
   inputLine[strlen(inputLine)-1] = '\0';
   

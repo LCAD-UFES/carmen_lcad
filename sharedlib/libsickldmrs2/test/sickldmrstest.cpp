@@ -11,11 +11,12 @@ int main()
 	laser.setup();
 
 	vpLaserScan laserscan[4];
+	vpLaserObjectData objectData;
 	for ( ; ; ) {
 		//double t1 = vpTime::measureTimeMs();
 
 		// Get the measured points in the four layers
-		if (laser.measure(laserscan) == false)
+		if (laser.readData(laserscan, &objectData) == vpSickLDMRS::MeasuredData)
 			continue;
 
 		// Measures time across iterations

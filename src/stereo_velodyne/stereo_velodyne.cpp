@@ -28,9 +28,9 @@ find_stereo_vertical_correction(stereo_util interface, double **vertical_correct
 	double *vertical_correction;
 	int height = roi_end - roi_ini;
 
-	inc_vertical = (int)(((double) height / (double) vertical_resolution));
+	inc_vertical = (int) (0.5 + ((double) height / (double) vertical_resolution));
 
-	vertical_correction = (double *)calloc(vertical_resolution, sizeof(double));
+	vertical_correction = (double *) calloc(vertical_resolution, sizeof(double));
 	carmen_test_alloc(vertical_correction);
 
 	for (y = roi_ini, i = vertical_resolution - 1; y < roi_end; y += inc_vertical, i--)
@@ -47,9 +47,9 @@ find_stereo_horizontal_correction(stereo_util interface, double **horizontal_cor
 
 	int width = roi_end - roi_ini;
 
-	inc_horizontal =  (int)(((double) width / (double) horizontal_resolution) );
+	inc_horizontal =  (int) (0.5 + ((double) width / (double) horizontal_resolution) );
 
-	horizontal_correction = (double *)calloc(horizontal_resolution, sizeof(double));
+	horizontal_correction = (double *) calloc(horizontal_resolution, sizeof(double));
 	carmen_test_alloc(horizontal_correction);
 
 	for (x = roi_ini, j = horizontal_resolution - 1; x <  roi_end; x += inc_horizontal, j--)

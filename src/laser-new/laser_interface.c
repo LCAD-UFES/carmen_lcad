@@ -184,7 +184,7 @@ carmen_laser_get_offset(int which, carmen_point_t *laser_offset)
   sprintf(param_name, "laser_laser%d_position", which);
   error = carmen_param_get_string(param_name, &laser_pose_str, NULL);
   if (error == -1) 
-    carmen_die((char *)carmen_param_get_error());
+    carmen_die("%s", carmen_param_get_error());
   
   num_scanned = sscanf(laser_pose_str, "%*c %lf %lf %lf %*c", &x, &y, 
 		       &theta);
