@@ -176,7 +176,9 @@ void lane_analysis_handler(carmen_bumblebee_basic_stereoimage_message * stereo_i
 	}
 
 	// get the image from the bumblebee
-	Mat3b image(image_height, image_width);
+	Mat3b image;
+	if (stereo_image->image_size == 3686400) image = Mat3b(960, 1280);
+	else image = Mat3b(480, 640);
 
 	if (camera_side == CameraSide::LEFT) image.data = (uchar *) stereo_image->raw_left;
 	else if(camera_side == CameraSide::RIGHT) image.data = (uchar *) stereo_image->raw_right;
