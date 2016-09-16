@@ -35,10 +35,11 @@ carmen_libcarneuralmodel_build_steering_ann_input(fann_type *input, double s, do
 }
 
 
-/* NAO ESTA FUNCIONANDO PQ TEM Q RETORNAR O fann_create_from_file
-void
-carmen_libcarneuralmodel_init_steering_ann (struct fann *steering_ann, fann_type *steering_ann_input)
+/*struct fann *
+carmen_libcarneuralmodel_init_steering_ann (fann_type *steering_ann_input)
 {
+	struct fann *steering_ann;
+
 	if (steering_ann == NULL)
 	{
 		steering_ann = fann_create_from_file("steering_ann.net");
@@ -49,20 +50,35 @@ carmen_libcarneuralmodel_init_steering_ann (struct fann *steering_ann, fann_type
 		}
 		carmen_libcarneuralmodel_init_steering_ann_input(steering_ann_input);
 	}
+
+	return steering_ann;
+}*/
+
+
+double
+carmen_libcarneuralmodel_compute_new_phi_from_effort(double steering_effort, double atan_current_curvature, fann_type *steering_ann_input, struct fann *steering_ann,
+														double v, double understeer_coeficient, double distance_between_front_and_rear_axles)
+{
+	fann_type *steering_ann_output;
+
+	carmen_libcarneuralmodel_build_steering_ann_input(steering_ann_input, steering_effort, atan_current_curvature);
+
+	steering_ann_output = fann_run(steering_ann, steering_ann_input);
+
+	double phi = carmen_get_phi_from_curvature(tan(steering_ann_output[0]), v, understeer_coeficient, distance_between_front_and_rear_axles);
+
+	return (phi);
 }
-*/
 
 
 double
 carmen_libcarneuralmodel_compute_new_phi_with_ann(double v, double current_phi, double desired_phi, double time,
 													  double understeer_coeficient, double distance_between_front_and_rear_axles)
 {
-	static double steering_command = 0.0;
+	static double steering_effort = 0.0;
 	double atan_current_curvature;
 	double atan_desired_curvature;
-	double new_phi;
 	static fann_type steering_ann_input[NUM_STEERING_ANN_INPUTS];
-	fann_type *steering_ann_output;
 	static struct fann *steering_ann = NULL;
 
 	if (steering_ann == NULL)
@@ -80,13 +96,15 @@ carmen_libcarneuralmodel_compute_new_phi_with_ann(double v, double current_phi, 
 
 	atan_desired_curvature = carmen_get_curvature_from_phi(desired_phi, v, understeer_coeficient, distance_between_front_and_rear_axles);
 
-	carmen_libpid_steering_PID_controler(&steering_command, atan_desired_curvature,	atan_current_curvature, time);
+	//PID
+	steering_effort = carmen_libpid_steering_PID_controler(atan_desired_curvature, atan_current_curvature, time);
 
-	carmen_libcarneuralmodel_build_steering_ann_input(steering_ann_input, steering_command, atan_current_curvature);
+	//RL_PID
+	//steering_effort = carmen_librlpid_compute_new_phi_with_ann (current_phi, desired_phi, /*next_desired_phi*/desired_phi, steering_ann_input,
+	//		steering_ann, v, understeer_coeficient, distance_between_front_and_rear_axles);
 
-	steering_ann_output = fann_run(steering_ann, steering_ann_input);
-
-	new_phi = carmen_get_phi_from_curvature(tan(steering_ann_output[0]), v, understeer_coeficient, distance_between_front_and_rear_axles);
+	double new_phi = carmen_libcarneuralmodel_compute_new_phi_from_effort(steering_effort, atan_current_curvature, steering_ann_input,
+														steering_ann, v, understeer_coeficient, distance_between_front_and_rear_axles);
 
 	return (new_phi);
 }
@@ -246,11 +264,16 @@ carmen_libcarneuralmodel_compute_new_pos_with_ann(carmen_ackerman_motion_command
 	//if(hit_something_in_the_map(simulator_config, new_true))
 	//	return; // Do not update pose
 
-	odom_pose = new_odom;
-	true_pose = new_true;
+	odom_pose.x = new_odom.x;
+	odom_pose.y = new_odom.y;
+	odom_pose.theta = new_odom.theta;
+	true_pose.x = new_true.x;
+	true_pose.y = new_true.y;
+	true_pose.theta = new_true.theta;
+
+	current_v = v;
+	current_phi = phi;
 }
-
-
 
 
 void

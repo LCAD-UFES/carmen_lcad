@@ -335,7 +335,7 @@ apply_system_latencies(vector<carmen_ackerman_path_point_t> &path)
 	for (i = 0; i < path.size(); i++)
 	{
 		j = i;
-		for (double lat = 0.0; lat < 0.3; j++)
+		for (double lat = 0.0; lat < 0.1; j++)
 		{
 			if (j >= path.size())
 				break;
@@ -351,7 +351,7 @@ apply_system_latencies(vector<carmen_ackerman_path_point_t> &path)
 	for (i = 0; i < path.size(); i++)
 	{
 		j = i;
-		for (double lat = 0.0; lat < 0.2; j++)
+		for (double lat = 0.0; lat < 0.6; j++)
 		{
 			if (j >= path.size())
 				break;
@@ -565,9 +565,9 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 
 	move_path_to_current_robot_pose(path, localizer_pose);
 	//	apply_system_delay(path);
-	//	apply_system_latencies(path);
+	apply_system_latencies(path);
 
-	filter_path(path);
+	//filter_path(path);
 
 	return (true);
 }

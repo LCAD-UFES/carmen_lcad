@@ -416,7 +416,7 @@ build_path_follower_path(vector<carmen_ackerman_path_point_t> path)
 
 
 void
-build_and_follow_path()
+build_and_follow_path_new()
 {
 	list<RRT_Path_Edge> path_follower_path;
 
@@ -449,7 +449,7 @@ build_and_follow_path()
 
 
 void
-build_and_follow_path_old()
+build_and_follow_path()
 {
 	if (GlobalState::goal_pose && (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT))
 	{
@@ -459,8 +459,8 @@ build_and_follow_path_old()
 			publish_model_predictive_planner_motion_commands(path);
 			publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
 		}
-		else
-			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi);
+//		else
+//			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi);
 
 		publish_plan_tree_for_navigator_gui(tree);
 		publish_navigator_ackerman_status_message();

@@ -37,7 +37,7 @@ vector<double>
 get_effort_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors)
 {
 	double delta_t = DELTA_T;
-	double total_time = delta_t * (NUM_STEERING_ANN_INPUTS / 6); // Cada steering input da rede neural tem dois valores (ver rede neural)
+	double total_time = delta_t * (NUM_STEERING_ANN_INPUTS / 3); // Cada steering input da rede neural tem dois valores (ver rede neural)
 	double x[4] = { 0.0, total_time / 3.0, 2.0 * total_time / 3.0, total_time };
 	double y[4] = { descriptors->k1, descriptors->k2, descriptors->k3, descriptors->k4 };
 
@@ -240,6 +240,8 @@ get_optimized_effort(PARAMS *par, EFFORT_SPLINE_DESCRIPTOR seed)
 }
 
 
+/*
+
 void
 plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, carmen_simulator_ackerman_config_t *simulator_config)
 {
@@ -316,6 +318,88 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, carmen_simulator_ackerman_
 		//system("pkill gnuplot");
 	}
 }
+*/
+
+
+
+void
+plot_state2(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, carmen_simulator_ackerman_config_t *simulator_config)
+{
+	#define PAST_SIZE 1000
+	static list<double> cphi;
+	static list<double> dphi;
+	static list<double> timestamp;
+	static bool first_time = true;
+	static double first_timestamp;
+	static FILE *gnuplot_pipe;
+	list<double>::reverse_iterator itc;
+	list<double>::reverse_iterator itd;
+	list<double>::reverse_iterator itt;
+
+	double t = carmen_get_time();
+
+	if (first_time)
+	{
+		first_timestamp = t;
+		first_time = false;
+
+		gnuplot_pipe = popen("gnuplot -persist", "w");
+		fprintf(gnuplot_pipe, "set xrange [0:30]\n");
+		fprintf(gnuplot_pipe, "set yrange [-0.12:0.12]\n");
+	}
+
+	cphi.push_front(carmen_get_phi_from_curvature(p->atan_current_curvature, simulator_config->v, simulator_config->understeer_coeficient, simulator_config->distance_between_front_and_rear_axles));
+	dphi.push_front(carmen_get_phi_from_curvature(p->atan_desired_curvature, simulator_config->v, simulator_config->understeer_coeficient, simulator_config->distance_between_front_and_rear_axles));
+	timestamp.push_front(t - first_timestamp);
+
+	while(cphi.size() > PAST_SIZE)
+	{
+		cphi.pop_back();
+		dphi.pop_back();
+		timestamp.pop_back();
+	}
+
+
+	FILE *gnuplot_data_file = fopen("gnuplot_data.txt", "w");
+
+	// Dados passados
+	for (itc = cphi.rbegin(), itd = dphi.rbegin(), itt = timestamp.rbegin(); itc != cphi.rend(); itc++, itd++, itt++)
+		fprintf(gnuplot_data_file, "%lf %lf %lf\n", *itt - timestamp.back(), *itc, *itd);
+
+	// Dados futuros
+	vector<double> phi_vector = get_phi_vector_from_spline_descriptors(seed, p);
+
+	double delta_t = DELTA_T;
+	double motion_commands_vector_time = p->motion_commands_vector[0].time;
+	double phi_vector_time = 0.0;
+	double begin_predition_time = timestamp.front() - timestamp.back();
+	for (unsigned int i = 0, j = 0; i < phi_vector.size(); i++)
+	{
+		phi_vector_time += delta_t;
+		fprintf(gnuplot_data_file, "%lf %lf %lf\n",
+				(timestamp.front() - timestamp.back()) + phi_vector_time, phi_vector[i], p->motion_commands_vector[j].phi);
+
+		if (phi_vector_time > motion_commands_vector_time)
+		{
+			j++;
+			if (j >= p->motion_commands_vector_size)
+				break;
+			motion_commands_vector_time += p->motion_commands_vector[j].time;
+		}
+	}
+	fclose(gnuplot_data_file);
+
+	//double begin_predition_time = timestamp.front() - timestamp.back();
+
+	fprintf(gnuplot_pipe, "unset arrow\nset arrow from %lf, %lf to %lf, %lf nohead\n",
+			begin_predition_time, -0.3, begin_predition_time, 0.3);
+
+	fprintf(gnuplot_pipe, "plot "
+			"'./gnuplot_data.txt' using 1:2 with lines title 'cphi',"
+			"'./gnuplot_data.txt' using 1:3 with lines title 'dphi'\n");
+
+	fflush(gnuplot_pipe);
+}
 
 
 // Core Function of Model Predictive Control
@@ -352,7 +436,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 	// Retornar o primeiro (proximo) effort associado a este vetor de motion_commands otimo.
 
 	seed = get_optimized_effort(&p, seed);
-	plot_state(&seed, &p, simulator_config);
+	plot_state2(&seed, &p, simulator_config);
 	double effort = seed.k1;
 
 	return (carmen_clamp(-100.0, effort, 100.0));
