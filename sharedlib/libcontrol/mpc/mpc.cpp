@@ -221,10 +221,10 @@ get_optimized_effort(PARAMS *par, EFFORT_SPLINE_DESCRIPTOR seed)
 		status = gsl_multimin_test_gradient(s->gradient, 1e-3);
 
 //		if (status == GSL_SUCCESS)
-//			printf ("Minimum found at:\n");
+//			printf ("Minimum found at: ");
 	} while ((status == GSL_CONTINUE) && (iter < 999));
 
-	//printf("iter = %ld\n", iter);
+//	printf("iter = %ld\n", iter);
 
 	// A seed inicia em zero e armazena o melhor conjunto de parametros do ciclo de otimizacao anterior
 	seed.k1 = gsl_vector_get(s->x, 0);
@@ -322,18 +322,20 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, carmen_simulator_ackerman_
 
 
 void
-plot_state2(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double understeer_coeficient, double distance_between_front_and_rear_axles)
+plot_state2(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double understeer_coeficient, double distance_between_front_and_rear_axles, double effort)
 {
-	#define PAST_SIZE 1000
+	#define PAST_SIZE 700
 	static list<double> cphi;
 	static list<double> dphi;
 	static list<double> timestamp;
+	static list<double> ef;
 	static bool first_time = true;
 	static double first_timestamp;
 	static FILE *gnuplot_pipe;
 	list<double>::reverse_iterator itc;
 	list<double>::reverse_iterator itd;
 	list<double>::reverse_iterator itt;
+	list<double>::reverse_iterator ite;
 
 	double t = carmen_get_time();
 
@@ -342,7 +344,7 @@ plot_state2(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double underste
 		first_timestamp = t;
 		first_time = false;
 
-		gnuplot_pipe = popen("gnuplot -persist", "w");
+		gnuplot_pipe = popen("gnuplot", "w");
 		fprintf(gnuplot_pipe, "set xrange [0:30]\n");
 		fprintf(gnuplot_pipe, "set yrange [-0.12:0.12]\n");
 	}
@@ -350,20 +352,22 @@ plot_state2(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double underste
 	cphi.push_front(carmen_get_phi_from_curvature(p->atan_current_curvature, v, understeer_coeficient, distance_between_front_and_rear_axles));
 	dphi.push_front(carmen_get_phi_from_curvature(p->atan_desired_curvature, v, understeer_coeficient, distance_between_front_and_rear_axles));
 	timestamp.push_front(t - first_timestamp);
+	ef.push_front(effort);
 
 	while(cphi.size() > PAST_SIZE)
 	{
 		cphi.pop_back();
 		dphi.pop_back();
 		timestamp.pop_back();
+		ef.pop_back();
 	}
 
 
 	FILE *gnuplot_data_file = fopen("gnuplot_data.txt", "w");
 
 	// Dados passados
-	for (itc = cphi.rbegin(), itd = dphi.rbegin(), itt = timestamp.rbegin(); itc != cphi.rend(); itc++, itd++, itt++)
-		fprintf(gnuplot_data_file, "%lf %lf %lf\n", *itt - timestamp.back(), *itc, *itd);
+	for (itc = cphi.rbegin(), itd = dphi.rbegin(), itt = timestamp.rbegin(), ite = ef.rbegin(); itc != cphi.rend(); itc++, itd++, itt++, ite++)
+		fprintf(gnuplot_data_file, "%lf %lf %lf %lf\n", *itt - timestamp.back(), *itc, *itd, *ite/100);
 
 	// Dados futuros
 	vector<double> phi_vector = get_phi_vector_from_spline_descriptors(seed, p);
@@ -395,7 +399,8 @@ plot_state2(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double underste
 
 	fprintf(gnuplot_pipe, "plot "
 			"'./gnuplot_data.txt' using 1:2 with lines title 'cphi',"
-			"'./gnuplot_data.txt' using 1:3 with lines title 'dphi'\n");
+			"'./gnuplot_data.txt' using 1:3 with lines title 'dphi',"
+			"'./gnuplot_data.txt' using 1:4 with lines title 'effort'\n");
 
 	fflush(gnuplot_pipe);
 }
@@ -467,8 +472,9 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_desired_curvat
 	p.distance_rear_axles = distance_between_front_and_rear_axles;
 
 	seed = get_optimized_effort(&p, seed);
-	plot_state2(&seed, &p, v, understeer_coeficient, distance_between_front_and_rear_axles);
-	double effort = 0.5 * seed.k1;
+	double effort = seed.k1;
+
+	plot_state2(&seed, &p, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
 
 	return (carmen_clamp(-100.0, effort, 100.0));
 }
