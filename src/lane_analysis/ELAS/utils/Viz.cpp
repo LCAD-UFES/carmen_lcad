@@ -218,7 +218,7 @@ void render(frame_viz &data, const Mat3b &color_frame, ConfigXML *config, bool v
 	Point mid_right = config->ipm->applyHomographyInv(data.lane_position.right[idx_mid_right]) + Point2d(0, config->roi.y);
 	Point mid_left = config->ipm->applyHomographyInv(data.lane_position.left[idx_mid_left]) + Point2d(0, config->roi.y);
 
-	arrowedLine(img, base_center, direction_middle, colorLaneBase, 2);
+	//arrowedLine(img, base_center, direction_middle, colorLaneBase, 2);
 	line(img, base_right, base_left, colorLaneBase, 2);
 	line(img, base_right, mid_right, colorLaneBase, 2);
 	line(img, base_left, mid_left, colorLaneBase, 2);

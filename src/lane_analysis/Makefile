@@ -6,7 +6,7 @@ MODULE_COMMENT = Ego-Lane Analysis System - ELAS
 
 
 LINK = g++
-CXXFLAGS += -Wall -std=c++11
+CXXFLAGS += -Wall -std=gnu++11
 
 LFLAGS += -lparam_interface -lipc -lglobal -llocalize_ackerman_interface -lmap_server_interface -lbumblebee_basic_interface
 LFLAGS += -L./ELAS/build/ -lELAS
@@ -21,15 +21,16 @@ PUBLIC_INCLUDES = lane_analysis_interface.h lane_analysis_messages.h
 PUBLIC_LIBRARIES = liblane_analysis_interface.a
 PUBLIC_BINARIES = lane_analysis
 
-TARGETS 		= lane_analysis lane_analysis_viz
+#TARGETS 		= lane_analysis lane_analysis_viz
+TARGETS 		= lane_analysis
 
 build-elas:
-	cd ELAS && cd build && cmake -D BUILD_CARMEN:BOOL=TRUE -D OpenCV_DIR=/usr/local/opencv-2.4.12.3/build .. && make && cd ../..
+	cd ELAS && cd build && cmake -D BUILD_CARMEN:BOOL=TRUE -D OpenCV_DIR=/usr/local/opencv-2.4.9/build -D OpenCV_FOUND=TRUE .. && make && cd ../..
 
 liblane_analysis_interface.a: lane_analysis_interface.o
 
 lane_analysis: build-elas liblane_analysis_interface.a lane_analysis.o
-lane_analysis_viz: lane_analysis_viz_main.o
+#lane_analysis_viz: lane_analysis_viz_main.o
 
 # rules
 include ../Makefile.rules

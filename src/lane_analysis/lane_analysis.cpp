@@ -289,7 +289,18 @@ static void register_ipc_messages(void) {
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_ELAS_LANE_ANALYSIS_NAME);
 }
 
+
+int 
+catch_opencv_error(int status, const char* func_name, const char* err_msg, const char* filename, int line, void *i_dont_know)
+{
+	printf("Peguei!\n");
+	return (1);
+}
+
+
 int main(int argc, char ** argv) {
+	cvRedirectError(catch_opencv_error, NULL, NULL);
+
 	// connect to IPC server
 	carmen_ipc_initialize(argc, argv);
 

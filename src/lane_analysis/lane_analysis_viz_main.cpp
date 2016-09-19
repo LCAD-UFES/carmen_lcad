@@ -22,6 +22,7 @@ using namespace std;
 
 int main(int argc, char * argv[]) {
 
+	argc = argc;
 	printf("RUNNING: %s\n\n", argv[0]);
 
 	// read calibration image
