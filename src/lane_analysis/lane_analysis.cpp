@@ -195,7 +195,7 @@ void lane_analysis_handler(carmen_bumblebee_basic_stereoimage_message * stereo_i
 		printf("CARMEN::ELAS... done!\n");
 
 		// get the raw message
-		printf("\nget_raw_message()... ");
+		printf("get_raw_message()... ");
 		_raw_elas_message = ELAS::get_raw_message();
 		_raw_elas_message.idx_frame = fnumber;
 		printf("done!\n");

@@ -4,8 +4,6 @@ using namespace std;
 using namespace cv;
 
 void ELAS::feature_map_generation(const pre_processed * _pre_processed, const ConfigXML * _cfg, feature_maps * out) {
-	printf("feature_map_generation()\n");
-
 	// step row filter map: SRF
 	out->map_srf = get_map_srf(_pre_processed->grayFrame, TAU_BEGIN, TAU_END, MAP_SRF_THRES);
 

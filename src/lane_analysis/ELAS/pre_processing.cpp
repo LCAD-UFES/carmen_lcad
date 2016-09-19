@@ -4,8 +4,6 @@ using namespace std;
 using namespace cv;
 
 void ELAS::pre_processing(const Mat3b & original_frame, const ConfigXML * _cfg, pre_processed * out) {
-	printf("pre_processing()\n");
-
 	// frame full size
 	out->colorFrame = original_frame;
 	out->grayFrame = toGrayscale(original_frame);
