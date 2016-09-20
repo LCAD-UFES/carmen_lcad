@@ -53,6 +53,7 @@ bin/kinect
 bin/kinect_laser
 bin/kinect_mrds
 bin/kinect_view
+bin/lane_analysis
 bin/laser
 bin/laserview
 bin/local.map
