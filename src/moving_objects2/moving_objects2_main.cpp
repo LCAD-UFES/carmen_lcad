@@ -79,6 +79,9 @@ int number_of_threads = 1;
 rotation_matrix *r_matrix_car_to_global = NULL;
 
 
+carmen_localize_ackerman_map_t localize_map;
+
+
 
 
 
@@ -87,6 +90,17 @@ rotation_matrix *r_matrix_car_to_global = NULL;
 // Handlers                                                                                  //
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
+
+static void
+localize_map_update_handler(carmen_map_server_localize_map_message *message)
+{
+	carmen_map_server_localize_map_message_to_localize_map(message, &localize_map);
+
+//	x_origin = message->config.x_origin;
+//	y_origin = message->config.y_origin;
+//
+//	necessary_maps_available = 1;
+}
 
 
 static void
@@ -638,6 +652,9 @@ read_parameters(int argc, char **argv,
 static void
 subscribe_to_ipc_messages()
 {
+	carmen_map_server_subscribe_localize_map_message(NULL,
+					(carmen_handler_t) localize_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
+
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL,
 			(carmen_handler_t)carmen_localize_ackerman_globalpos_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
@@ -717,7 +734,23 @@ subscribe_to_ipc_messages()
 	// esse handler eh subscribe_all porque todas as anotacoes precisam ser recebidas!
 }
 
+static void
+init_localize_map()
+{
+	localize_map.carmen_map.complete_map = NULL;
+	localize_map.complete_distance = NULL;
+	localize_map.complete_gprob = NULL;
+	localize_map.complete_prob = NULL;
+	localize_map.complete_x_offset = NULL;
+	localize_map.complete_y_offset = NULL;
 
+	localize_map.carmen_map.map = NULL;
+	localize_map.distance = NULL;
+	localize_map.gprob = NULL;
+	localize_map.prob = NULL;
+	localize_map.x_offset = NULL;
+	localize_map.y_offset = NULL;
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -736,6 +769,8 @@ main(int argc, char **argv)
 
 	/* Register shutdown cleaner handler */
 	signal(SIGINT, shutdown_module);
+
+	init_localize_map();
 
 	/* Initialize all the relevant parameters */
 	read_parameters(argc, argv, &map_config, &car_config);
