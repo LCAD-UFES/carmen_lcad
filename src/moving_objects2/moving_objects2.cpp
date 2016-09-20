@@ -44,6 +44,8 @@ extern double obstacle_cost_distance, obstacle_probability_threshold;
 extern int ok_to_publish;
 extern int number_of_threads;
 
+extern carmen_localize_ackerman_map_t localize_map;
+
 #define      HUGE_DISTANCE     32000
 
 /**
@@ -169,6 +171,95 @@ get_nearest_timestamp_index(double *robot_timestamp, spherical_point_cloud *poin
 	//printf("time diff = %lf, index = %d, cindex = %d\n", timestamp_diff, index_nearest_timestamp, cindex);
 
 	return (index_nearest_timestamp);
+}
+
+void
+segment_remission_map(carmen_map_t *remission_map, carmen_map_t *map)
+{
+	cv::Mat map_img = cv::Mat::zeros(remission_map->config.x_size, remission_map->config.y_size, CV_8UC1);
+	cv::Mat occupancy_map_img = cv::Mat::zeros(remission_map->config.x_size, remission_map->config.y_size, CV_8UC1);
+
+	int erosion_size = 1;
+	cv::Mat element = getStructuringElement( cv::MORPH_ELLIPSE,
+			cv::Size( 2*erosion_size + 1, 2*erosion_size+1 ),
+			cv::Point( erosion_size, erosion_size ));
+
+
+	for (int i = 0; i < remission_map->config.x_size; i++)
+	{
+		for (int j = 0; j < remission_map->config.x_size; j++)
+		{
+			//if (remission_map->map[i][j] < 0.0)
+				//continue;
+
+			uchar aux = (uchar)((255.0 * (1.0 - (remission_map->map[i][j] < 0 ? 1 : remission_map->map[i][j]))) + 0.5);
+			map_img.at<uchar>(i, j) = aux;
+
+			aux = 255 * (map->map[i][j] > 0.5 ? 1.0 : 0.0);
+			occupancy_map_img.at<uchar>(i, j) = aux;
+		}
+	}
+	std::vector<std::vector<cv::Point> > contours;
+	std::vector<std::vector<cv::Point> > contours2;
+
+    cv::medianBlur(map_img, map_img, 5);
+	cv::threshold(map_img, map_img, 235, 255, cv::THRESH_BINARY);
+
+	findContours(occupancy_map_img.clone(), contours2, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
+
+	for (uint i = 0; i < contours2.size(); i++)
+	{
+		double area = contourArea(contours2[i]) * map->config.resolution;
+
+		if (area < 10)
+			drawContours(occupancy_map_img, contours2, i, CV_RGB(0, 0, 0), -1);
+	}
+
+	cv::dilate(occupancy_map_img, occupancy_map_img, element);
+
+	findContours(occupancy_map_img.clone(), contours2, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
+
+	for (uint i = 0; i < contours2.size(); i++)
+	{
+		drawContours(map_img, contours2, i, CV_RGB(0, 0, 0), -1);
+	}
+
+	cv::imshow("map_img2", map_img);
+
+	findContours(map_img.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
+
+	double max_area = -DBL_MAX;
+	int index = 0;
+
+	for (uint i = 0; i < contours.size(); i++)
+	{
+		double area = contourArea(contours[i])* map->config.resolution;
+
+		if (area < 1000)
+			drawContours(map_img, contours, i, CV_RGB(0, 0, 0), -1);
+	}
+
+	erosion_size = 3;
+	element = getStructuringElement( cv::MORPH_ELLIPSE,
+			cv::Size( 2*erosion_size + 1, 2*erosion_size+1 ),
+			cv::Point( erosion_size, erosion_size ));
+	//cv::medianBlur(map_img, map_img, 5);
+	cv::dilate(map_img, map_img, element);
+
+	for (uint i = 0; i < contours2.size(); i++)
+	{
+		drawContours(map_img, contours2, i, CV_RGB(0, 0, 0), -1);
+	}
+
+//	for (uint i = 0; i < contours.size(); i++)
+//	{
+//		if (i != index)
+//			drawContours(map_img, contours, i, CV_RGB(0, 0, 0), -1);
+//	}
+
+	cv::imshow("occupancy_map_img", occupancy_map_img);
+	cv::imshow("map_img", map_img);
+	cv::waitKey(33);
 }
 
 
@@ -427,7 +518,9 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 		carmen_prob_models_update_log_odds_of_cells_hit_by_rays(snapshot_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid);
 
 	}
-	show_map(snapshot_map);
+
+	segment_remission_map(&localize_map.carmen_mean_remission_map, &localize_map.carmen_map);
+	//show_map(snapshot_map);
 	//show_map(&offline_map);
 	//printf("\n###############################################################\n");
 }
