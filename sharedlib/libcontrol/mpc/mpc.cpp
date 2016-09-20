@@ -112,7 +112,7 @@ get_phi_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, PA
 		current_atan_of_curvature = steering_ann_output[0];
 
 		double phi = carmen_get_phi_from_curvature(tan(current_atan_of_curvature), p->v, p->understeer_coeficient, p->distance_rear_axles);
-		phi = phi + p->dk;
+		//phi = phi + p->dk;
 
 		phi_vector.push_back(phi);
 	}
@@ -509,12 +509,24 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_desired_curvat
 {
 	PARAMS p;
 	static EFFORT_SPLINE_DESCRIPTOR seed = {0.0, 0.0, 0.0, 0.0};
+	//static fann_type steering_ann_input[NUM_STEERING_ANN_INPUTS];
+	//static struct fann *steering_ann = NULL;
 
 	if (current_motion_command_vector == NULL)
 	{
 		seed = {0.0, 0.0, 0.0, 0.0};
 		return (0.0);
 	}
+	/*if (steering_ann == NULL)
+	{
+		steering_ann = fann_create_from_file("steering_ann.net");
+		if (steering_ann == NULL)
+		{
+			printf("Error: Could not create steering_ann\n");
+			exit(1);
+		}
+		carmen_libcarneuralmodel_init_steering_ann_input(steering_ann_input);
+	}*/
 //	if (simulator_config->current_motion_command_vector_index >= simulator_config->nun_motion_commands) // tem que passar o simulator config e tratar
 //		return (0.0);
 

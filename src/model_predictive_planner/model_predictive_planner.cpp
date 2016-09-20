@@ -335,7 +335,7 @@ apply_system_latencies(vector<carmen_ackerman_path_point_t> &path)
 	for (i = 0; i < path.size(); i++)
 	{
 		j = i;
-		for (double lat = 0.0; lat < 0.0; j++)
+		for (double lat = 0.0; lat < 0.3; j++)
 		{
 			if (j >= path.size())
 				break;
@@ -393,7 +393,7 @@ path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> path)
 				(path[i].phi < -GlobalState::robot_config.max_phi))
 		{
 			printf("---------- PHI EXCEEDED THE MAX_PHI!!!!\n");
-			return (true);
+			path[i].phi = carmen_clamp(-GlobalState::robot_config.max_phi, path[i].phi, GlobalState::robot_config.max_phi);
 		}
 
 		proximity_to_obstacles_for_path += compute_distance_to_closest_obstacles(path[i], circle_radius,
@@ -564,10 +564,13 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 		return (false);
 
 	move_path_to_current_robot_pose(path, localizer_pose);
-	//	apply_system_delay(path);
-	//apply_system_latencies(path);
 
-	filter_path(path);
+	//	apply_system_delay(path);
+
+	if (GlobalState::use_mpc)
+		apply_system_latencies(path);
+	else
+		filter_path(path);
 
 	return (true);
 }

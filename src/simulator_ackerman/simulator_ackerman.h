@@ -107,6 +107,9 @@ typedef struct
 	carmen_ackerman_motion_command_p current_motion_command_vector;
 	int nun_motion_commands;
 	int current_motion_command_vector_index;
+
+	unsigned int use_mpc;
+
 } carmen_simulator_ackerman_config_t, *carmen_simulator_ackerman_config_p;
 
 typedef struct {

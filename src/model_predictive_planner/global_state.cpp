@@ -40,6 +40,7 @@ vector<vector<cell_coords_t>> GlobalState::cell_mask;
 bool GlobalState::cost_map_initialized 	= false;
 
 bool GlobalState::use_obstacle_avoider = true;
+bool GlobalState::use_mpc = false;
 
 int    GlobalState::cheat 				= 0;
 bool   GlobalState::following_path		= false;

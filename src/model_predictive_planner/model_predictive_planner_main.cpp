@@ -520,7 +520,10 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	Pose pose = Util::convert_to_pose(msg->globalpos);
 	GlobalState::set_robot_pose(pose, msg->timestamp);
 
-	build_and_follow_path();
+	if (GlobalState::use_mpc)
+		build_and_follow_path_old();
+	else
+		build_and_follow_path();
 }
 
 
@@ -728,7 +731,7 @@ read_parameters_specific(int argc, char **argv)
 {
 	carmen_param_t optional_param_list[] = {
 			{(char *)"rrt",	(char *)"use_obstacle_avoider", 	CARMEN_PARAM_ONOFF,		&GlobalState::use_obstacle_avoider, 	1, NULL},
-
+			{(char *)"rrt",	(char *)"use_mpc",					CARMEN_PARAM_ONOFF,		&GlobalState::use_mpc, 					0, NULL},
 			{(char *)"rrt",	(char *)"publish_tree",				CARMEN_PARAM_ONOFF,		&GlobalState::publish_tree,				1, NULL},
 			{(char *)"rrt",	(char *)"reuse_last_path",			CARMEN_PARAM_ONOFF,		&GlobalState::reuse_last_path,			1, NULL},
 			{(char *)"rrt",	(char *)"obstacle_cost_distance",	CARMEN_PARAM_DOUBLE,	&GlobalState::obstacle_cost_distance,	1, NULL}

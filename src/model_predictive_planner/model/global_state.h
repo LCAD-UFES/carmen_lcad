@@ -63,6 +63,7 @@ public:
 	static int behavior_selector_state;
 
 	static bool use_obstacle_avoider;
+	static bool use_mpc;
 
 	static int publish_tree;
 	static int show_debug_info;
