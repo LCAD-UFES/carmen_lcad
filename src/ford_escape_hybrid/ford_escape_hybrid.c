@@ -438,22 +438,9 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 	double raw_phi;
 	double delta_t;
 	int previous_gear_command;
-	static fann_type steering_ann_input[NUM_STEERING_ANN_INPUTS];
-	static struct fann *steering_ann = NULL;
 
 	if (ford_escape_hybrid_config->nun_motion_commands < 1)
 		return;
-
-	if (steering_ann == NULL)
-	{
-		steering_ann = fann_create_from_file("steering_ann.net");
-		if (steering_ann == NULL)
-		{
-			printf("Error: Could not create steering_ann\n");
-			exit(1);
-		}
-		carmen_libcarneuralmodel_init_steering_ann_input(steering_ann_input);
-	}
 
 	reportCurvature = reportCurvatureMessageFromJausMessage(curvature_message);
 	if (reportCurvature)
@@ -475,9 +462,11 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 																	ford_escape_hybrid_config)), delta_t);
 
 		//MPC
-//		g_steering_command = carmen_libmpc_get_optimized_steering_effort_using_MPC(g_atan_desired_curvature, -atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)),
-//																				steering_ann_input, steering_ann, ford_escape_hybrid_config->current_motion_command_vector, ford_escape_hybrid_config->nun_motion_commands,
-//																				ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config->understeer_coeficient, ford_escape_hybrid_config->distance_between_front_and_rear_axles);
+//		g_steering_command = carmen_libmpc_get_optimized_steering_effort_using_MPC(g_atan_desired_curvature,
+//				-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)),
+//				ford_escape_hybrid_config->current_motion_command_vector, ford_escape_hybrid_config->nun_motion_commands,
+//				ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config->filtered_phi,
+//				ford_escape_hybrid_config->understeer_coeficient, ford_escape_hybrid_config->distance_between_front_and_rear_axles);
 
 
 		previous_gear_command = g_gear_command;
