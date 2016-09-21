@@ -1,0 +1,11 @@
+<config>
+	<verbose>true</verbose>
+	<display_images>true</display_images>
+	<particle_filter num="500"></particle_filter>
+	<dataset name="GoPro 01" path="D:/datasets/GoPro/05052015/gopro_subset/">
+		<frame_sequence start="30000" end="30800"></frame_sequence>
+		<frame_size width="960" height="540"></frame_size>
+		<region_of_interest x="0" y="345" width="960" height="165"></region_of_interest>
+		<ipm_points top_right="460" top_left="531" bottom_left="799" bottom_right="218"></ipm_points>
+	</dataset>
+</config>

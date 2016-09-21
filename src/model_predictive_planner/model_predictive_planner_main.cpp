@@ -338,50 +338,6 @@ stop()
 
 
 void
-compute_obstacles_rtree(carmen_map_server_compact_cost_map_message *map)
-{
-
-//	static double p_x_o = 0.0;
-//	static double p_y_o = 0.0;
-
-	if (GlobalState::localizer_pose && GlobalState::goal_pose)// &&
-//		p_x_o != GlobalState::cost_map.config.x_origin &&
-//		p_y_o != GlobalState::cost_map.config.y_origin)
-	{
-		GlobalState::obstacles_rtree.clear();
-
-		int px = (GlobalState::localizer_pose->x - GlobalState::cost_map.config.x_origin) / GlobalState::cost_map.config.resolution;
-		int py = (GlobalState::localizer_pose->y - GlobalState::cost_map.config.y_origin) / GlobalState::cost_map.config.resolution;
-		int gx = (GlobalState::goal_pose->x - GlobalState::cost_map.config.x_origin) / GlobalState::cost_map.config.resolution;
-		int gy = (GlobalState::goal_pose->y - GlobalState::cost_map.config.y_origin) / GlobalState::cost_map.config.resolution;
-		int margin = 0.0 / GlobalState::cost_map.config.resolution;
-		int sqr_d = DIST_SQR(px,py,gx,gy) + margin * margin;
-		int count = 0;
-		int total = 0;
-		for (int i = 0; i < map->size; i += 1)
-		{
-			if (map->value[i] > 0.5)
-			{
-				if ((DIST_SQR(px,py,map->coord_x[i],map->coord_y[i]) < sqr_d) &&
-					(DIST_SQR(gx,gy,map->coord_x[i],map->coord_y[i]) < sqr_d))
-				{
-					occupied_cell map_cell = occupied_cell(
-							(double) map->coord_x[i] * GlobalState::cost_map.config.resolution,
-							(double) map->coord_y[i] * GlobalState::cost_map.config.resolution);
-					GlobalState::obstacles_rtree.insert(map_cell);
-					count++;
-				}
-				total++;
-			}
-		}
-//		p_x_o = GlobalState::cost_map.config.x_origin;
-//		p_y_o = GlobalState::cost_map.config.y_origin;
-//		printf("fraction = %lf\n", (double) count / (double) total);
-		fflush(stdout);
-	}
-}
-
-void
 compute_obstacles_kdtree(carmen_map_server_compact_cost_map_message *map)
 {
 
@@ -503,8 +459,8 @@ build_and_follow_path_old()
 			publish_model_predictive_planner_motion_commands(path);
 			publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
 		}
-		else
-			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi);
+//		else
+//			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi);
 
 		publish_plan_tree_for_navigator_gui(tree);
 		publish_navigator_ackerman_status_message();
@@ -659,14 +615,14 @@ ford_escape_status_handler(carmen_ford_escape_status_message *msg)
 
 
 void
-rddf_message_handler(/*carmen_behavior_selector_road_profile_message *message*/)
+lane_message_handler(/*carmen_behavior_selector_road_profile_message *message*/)
 {
 //	printf("RDDF NUM POSES: %d \n", message->number_of_poses);
 //
 //	for (int i = 0; i < message->number_of_poses; i++)
 //	{
 //		printf("RDDF %d: x  = %lf, y = %lf , theta = %lf\n", i, message->poses[i].x, message->poses[i].y, message->poses[i].theta);
-//		//getchar();
+//		getchar();
 //	}
 }
 
@@ -755,12 +711,10 @@ register_handlers()
 
 	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) behaviour_selector_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	//carmen_rddf_subscribe_road_profile_message(&goal_list_message, (carmen_handler_t) rddf_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	//carmen_rddf_subscribe_road_profile_message(&goal_list_message, (carmen_handler_t) lane_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
     carmen_subscribe_message((char *)CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, (char *)CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT,
-    		&goal_list_message, sizeof (carmen_behavior_selector_road_profile_message), (carmen_handler_t) rddf_message_handler, CARMEN_SUBSCRIBE_LATEST);
-
-
+    		&goal_list_message, sizeof (carmen_behavior_selector_road_profile_message), (carmen_handler_t) lane_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 
 	carmen_ford_escape_subscribe_status_message(NULL, (carmen_handler_t) ford_escape_status_handler, CARMEN_SUBSCRIBE_LATEST);
@@ -802,7 +756,8 @@ read_parameters(int argc, char **argv)
 			{(char *)"robot", 	(char *)"maximum_deceleration_forward",					CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_deceleration_forward,					1, NULL},
 			{(char *)"robot", 	(char *)"maximum_deceleration_reverse",					CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_deceleration_reverse,					1, NULL},
 			{(char *)"robot", 	(char *)"maximum_steering_command_rate",				CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_steering_command_rate,					1, NULL},
-			{(char *)"robot", 	(char *)"understeer_coeficient",						CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.understeer_coeficient,							1, NULL}
+			{(char *)"robot", 	(char *)"understeer_coeficient",						CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.understeer_coeficient,							1, NULL},
+			{(char *) "behavior_selector",   (char *) "goal_source_path_planner", 		CARMEN_PARAM_ONOFF,  &GlobalState::use_path_planner, 											0, NULL}
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));

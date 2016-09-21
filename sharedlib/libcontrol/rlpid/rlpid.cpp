@@ -1,5 +1,10 @@
 #include <carmen/carmen.h>
-#include <time.h>
+#include <fann.h>
+#include <fann_train.h>
+#include <fann_data.h>
+#include <floatfann.h>
+#include <pthread.h>
+#include <car_neural_model.h>
 #include "rlpid.h"
 
 
@@ -18,6 +23,8 @@ double pid_params[3]; //K ->The parameters Kp,Ki and Kd respectvely
 double recomended_pid_params[3]; //K' ->The new recomended params of Kp,Ki and Kd respectvely
 double best_pid[3];
 rbf_neuron network[neural_network_size]; //The size is defined at .h file
+
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////   READ PARAMETERS   //////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -90,9 +97,9 @@ initializate_variables(past_variables pv)
 		error_order[i] = 0;
 		recomended_pid_params[i] = 0;
 	}
-	pid_params[0] = 0.12;
-	pid_params[1] = 0.32;
-	pid_params[2] = 0.08;
+	pid_params[0] = 1250; //0.12;
+	pid_params[1] = 600; //0.32;
+	pid_params[2] = 25; //0.08;
 /////////////////////////// INITIALIZE ESTRUCT VARIABLES //////////////////////////////
 	pv.past_td_error = 0;
 	pv.past_critic_value = 0;
@@ -467,7 +474,61 @@ save_variables(past_variables pv)
 	}
 	return pv;
 }
-////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////   PRINT VARIABLES   ////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void
+print_variables()
+{
+	printf("\n\ntd_error = %lf, sigma_critical_deviation = %lf\ncritic_value (V) = %lf, reinforcement_signal = %lf\nU[0] = %lf, U[1] = %lf\nerror[0] = %lf, error_order[1] = %lf, error_order[2] = %lf\npid_params[0] = %lf, pid_params[1] = %lf, pid_params[2] = %lf\nrecomended_pid_params[0] = %lf, recomended_pid_params[1] = %lf, recomended_pid_params[2] = %lf\n\n",td_error, sigma_critical_deviation, critic_value, reinforcement_signal, U[0], U[1], error[0], error_order[1], error_order[2], pid_params[0], pid_params[1], pid_params[2], recomended_pid_params[0], recomended_pid_params[1], recomended_pid_params[2]);
+}
+
+void
+plota_graficos(int opcao, int largura_janela, int altura_janela, int intervalox, int intervaloy)// o intervalo y vai de -y até +y
+{
+	FILE *gnuplot;
+
+	gnuplot= popen("gnuplot -persistent", "w");
+	fprintf(gnuplot, "set terminal wxt size %d,%d\n",largura_janela, altura_janela);
+	fprintf(gnuplot, "set yrange [%d:%d]\n", -intervaloy, intervaloy);
+	fprintf(gnuplot, "set xrange [0:%d]\n", intervalox);
+
+	switch(opcao)
+	{
+	case 1:
+		fprintf(gnuplot, "plot './b.txt' using  6 title \"y_desejado\"with lines,  \
+	     '' using 3 title \"y_obtido\" with lines\n");
+		break;
+	case 2:
+		fprintf(gnuplot, "set multiplot layout 1,2 rowsfirst\n");
+		fprintf(gnuplot, "plot './b.txt' using 9 title \"erro\" with lines\n");
+		fprintf(gnuplot, "plot './b.txt' using  6 title \"y_desejado\"with lines,  \
+	     '' using 3 title \"y_obtido\" with lines\n");
+		fprintf(gnuplot, "unset multiplot\n");
+		break;
+	case 3:
+		fprintf(gnuplot, "plot './b.txt' using  6 title \"y_desejado\"with lines,  \
+	     '' using 3 title \"y_obtido\" with lines,  \
+	     '' using 9 title \"erro\" with lines\n");
+		break;
+	case 4:
+		fprintf(gnuplot, "set multiplot layout 1,2 rowsfirst\n");
+		fprintf(gnuplot, "plot './b.txt' using 12 title \"u_entrada_da_planta\" with lines\n");
+		fprintf(gnuplot, "plot './b.txt' using  6 title \"y_desejado\"with lines,  \
+	     '' using 3 title \"y_obtido\" with lines\n");
+		fprintf(gnuplot, "unset multiplot\n");
+		break;
+	default:
+		fprintf(gnuplot, "plot './b.txt' using  6 title \"y_desejado\"with lines,  \
+	     '' using 3 title \"y_obtido\" with lines\n");
+		break;
+	}
+	//fprintf(gnuplot, "e\n");
+	fflush(gnuplot);//*/**.c
+}
+
+
 void
 load_variables(past_variables pv)
 {
@@ -488,59 +549,79 @@ load_variables(past_variables pv)
 
 
 double
-carmen_libmpc_get_steering_effort_using_RL_PID (double atan_desired_curvature, double atan_current_curvature, double delta_t)
+carmen_librlpid_compute_effort_signal (double current_phi, double desired_phi, double next_desired_phi, fann_type *steering_ann_input,
+							struct fann *steering_ann, double v, double understeer_coeficient, double distance_between_front_and_rear_axles)
 {
-	printf("FOIIIIIII\n\n");
-	printf("%f %f %f", atan_desired_curvature, atan_current_curvature, delta_t);
+	bool first_time = true;
+	past_variables pv;
+	intelligent_control_params params;
 
-	return 0.0;
+	if(first_time)
+	{
+		params = read_parameters("params.txt");
+//		if(params == NULL)
+//		{
+//			printf("\nError: Could not open Reinforcement Learning PID parameters\n\n");
+//			exit(1);
+//		}
+		pv = initializate_variables(pv); // Step 1
+		load_variables(pv);
+		first_time = false;
+	}
+
+	calculate_error(desired_phi, desired_phi); // Step 2 ==> CALCULA ERRO
+
+	external_reinforcement_signal(params.alfa_weight_coef, params.beta_weight_coef, params.error_band); //Step 3 ==> RECOMPENSA
+
+	update_neetwork_hidden_unit_phi();// ==> UPDATE PHI
+	update_recomended_pid_output(); //Step 4 ==> UPDATE K`
+	critic_value = update_critic_value_output();	//Step 4 ==> UPDATE V
+
+	update_pid_params(); //Step 5 ==> UPDATE K
+
+	update_plant_input_u(); //Step 5 ==> UPDATE U
+
+	pv = save_variables(pv);
+
+	//Estimate FUTURE reward
+	double atan_current_curvature = carmen_get_curvature_from_phi(current_phi, v, understeer_coeficient, distance_between_front_and_rear_axles);
+
+	double future_phi = carmen_libcarneuralmodel_compute_new_phi_from_effort(U[0], atan_current_curvature, steering_ann_input, steering_ann, v,
+																			understeer_coeficient, distance_between_front_and_rear_axles);		//Step 6 ==> PREVE Y(t+1)
+
+	calculate_error(next_desired_phi, future_phi); // Step 6 ==> CALCULA ERRO
+
+	update_neetwork_hidden_unit_phi_future();// ==> UPDATE PHI
+
+	future_critic_value = update_critic_value_future(); //Step 7 ==> UPDATE V
+
+	calculate_td_error(params.discount_factor); //Step 8 ==> CALCULA ERRO TD
+
+	load_variables(pv);
+
+	weights_update(params.actor_learning_rate, params.critic_learning_rate); //Step 9 ==> UPDATE PESOS
+	center_vector_update(params.learning_rate_center); //Setp 10 ==> UPDATE CENTRO
+	width_scalar_update(params.learning_rate_width); //Step 10 ==> UPDATE WIDTH SCALAR
+
+	return U[0];
 }
 
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////   PRINT VARIABLES   ////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void
-print_variables()
-{
-	printf("\n\ntd_error = %lf, sigma_critical_deviation = %lf\ncritic_value (V) = %lf, reinforcement_signal = %lf\nU[0] = %lf, U[1] = %lf\nerror[0] = %lf, error_order[1] = %lf, error_order[2] = %lf\npid_params[0] = %lf, pid_params[1] = %lf, pid_params[2] = %lf\nrecomended_pid_params[0] = %lf, recomended_pid_params[1] = %lf, recomended_pid_params[2] = %lf\n\n",td_error, sigma_critical_deviation, critic_value, reinforcement_signal, U[0], U[1], error[0], error_order[1], error_order[2], pid_params[0], pid_params[1], pid_params[2], recomended_pid_params[0], recomended_pid_params[1], recomended_pid_params[2]);
-}
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////   MAIN CODE   ////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /*int
 main()
 {
-	FILE *gnuplot;
+	//FILE *erro;
 	FILE *output;
-	FILE *erro;
+	char* name = "param.txt";
 	double y_desired = 0;
 	double y = 0;
 	int t = 0;
-	//double verifica_error = 1;
-	//int flag = 0;
-	//double actual_error = 1;
-	//double t_s = 0.001; //Periodo de amostragem -> Sampling period
 	past_variables pv;
 
-	intelligent_control_params params = read_parameters("params.txt");
-	printf("e_band = %lf",params.error_band);
-	srand(time(NULL));
-
-
 	output = fopen("b.txt", "w");
-	erro = fopen("e.txt", "w");
-	gnuplot= popen("gnuplot -persistent", "w");
-	fprintf(gnuplot, "set terminal wxt size 1000,800\n");//set multiplot layout 1,2 rowsfirst\n");
-	fprintf(gnuplot, "set yrange [-2:2]\n");
-	fprintf(gnuplot, "set xrange [0:11500]\n");
-	fprintf(gnuplot, "plot './b.txt' using  6 title \"y_desejado\"with lines,  \
-     '' using 3 title \"y_obtido\" with lines\n");
-	//fprintf(gnuplot, "plot './e.txt' using 3 title \"erro\" with lines\n");
-	//fprintf(gnuplot, "unset multiplot\n");
-	//fprintf(gnuplot, "plot '-' w l\n");
-	//fprintf(gnuplot, "replot '-' w l using 3 with lines\n");
+
+	intelligent_control_params params = read_parameters("params.txt");
+	srand(time(NULL));
 
 //________________________________________________________________________
 	pv = initializate_variables(pv); // Step 1
@@ -563,13 +644,11 @@ main()
 
 		if (fabs(error[0]) <= params.error_band){
 			//flag = 1; //Encontrou o controlador certo.
-			fprintf(output, "Yconvergiu = %lf ,Yd = %lf %d\n", y, y_desired, t);
-			//fprintf(output, "\n");
+			fprintf(output, "Yconvergiu = %lf ,Yd = %lf ,erro = %lf ,u = %lf %d\n", y, y_desired, error_order[0], U[0], t);
 		}else{
-			fprintf(output, "Ydivergiu = %lf ,Yd = %lf %d\n", y, y_desired, t);
-			//fprintf(output, "\n");
+			fprintf(output, "Ydivergiu = %lf ,Yd = %lf ,erro = %lf ,u = %lf %d\n", y, y_desired, error_order[0], U[0], t);
 		}
-		//fprintf(gnuplot, "%f,%f\n", y_desired,y); //Plota o valor de Y calculado
+
 //________________________________________________________________________
 		external_reinforcement_signal(params.alfa_weight_coef, params.beta_weight_coef, params.error_band); //Step 3 ==> RECOMPENSA
 //________________________________________________________________________
@@ -580,7 +659,7 @@ main()
 		//fprintf("Error: %lf PID: %lf %lf %lf DELTAS: %lf %lf %lf\n", error_order[0], pid_params[0], pid_params[1], pid_params[2],
 		//		recomended_pid_params[0], recomended_pid_params[1], recomended_pid_params[2]);
 
-		fprintf(erro, "Error = %lf\n", error_order[0]);
+		//fprintf(erro, "Error = %lf\n", error_order[0]);
 
 		update_pid_params(); //Step 5 ==> UPDATE K
 //________________________________________________________________________
@@ -612,11 +691,7 @@ main()
 		//print_variables();
 		t++;
 	}
-	//fprintf(gnuplot, ";\n");
-	fprintf(gnuplot, "e\n");
-	fflush(gnuplot);
-	//int i = 0;
-	//scanf("%d",&i);
+	plota_graficos(2, 1100, 600, 10000, 2);
 	return 0;
 }
 */

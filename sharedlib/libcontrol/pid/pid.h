@@ -6,8 +6,7 @@ extern "C" {
 #endif
 
 
-void carmen_libpid_steering_PID_controler(double *steering_command, double atan_desired_curvature,
-													double atan_current_curvature, double delta_t);
+double carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_current_curvature, double delta_t);
 
 
 void carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_command, int *gear_command,
@@ -15,6 +14,11 @@ void carmen_libpid_velocity_PID_controler(double *throttle_command, double *brak
 
 
 void carmen_libpid_read_PID_parameters(int argc, char *argv[]);
+
+
+void
+pid_plot_curvature(double current_phi, double desired_phi);
+
 
 void
 printa_test();

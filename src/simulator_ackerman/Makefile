@@ -7,6 +7,7 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarneuralmodel
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/pid
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/mpc
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/rlpid
+IFLAGS += -I$(CARMEN_HOME)/include/carmen
 
 LFLAGS += -lmap_interface -lparam_interface -llocalize_ackerman_interface -lobstacle_avoider -lobstacle_avoider_interface \
 	  -llaser_interface -lgeometry -llocalize_ackerman_motion -lbase_ackerman_interface \
@@ -24,7 +25,7 @@ MODULE_COMMENT = "simulates the readings of a ackerman robot on a map"
 SOURCES = simulator_ackerman.c objects_ackerman.c simulator_ackerman_simulation.c simulator_ackerman_test.c \
 	simulator_ackerman_interface.c
 
-PUBLIC_INCLUDES = simulator_ackerman_messages.h simulator_ackerman_interface.h
+PUBLIC_INCLUDES = simulator_ackerman_messages.h simulator_ackerman_interface.h simulator_ackerman.h
 PUBLIC_LIBRARIES = libsimulator_ackerman_interface.a
 PUBLIC_BINARIES = simulator_ackerman simulator_ackerman_connect_multiple
 MAN_PAGES =

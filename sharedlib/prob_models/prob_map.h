@@ -192,6 +192,10 @@ carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data
 		double highest_sensor, double safe_range_above_sensors, int reduce_sensitivity, int thread_id);
 
 void
+carmen_prob_models_get_occuppancy_log_odds_by_height(sensor_data_t *sensor_data, sensor_parameters_t *sensor_params, int scan_index,
+		double highest_sensor, double safe_range_above_sensors, int reduce_sensitivity, int thread_id);
+
+void
 carmen_prob_models_compute_relevant_map_coordinates(sensor_data_t *sensor_data, sensor_parameters_t *sensor_params, int scan_index,
 		carmen_vector_3D_t robot_position, carmen_pose_3D_t sensor_board_pose, rotation_matrix *r_matrix_robot_to_global, rotation_matrix *board_to_robot_matrix,
 		double robot_wheel_radius, double x_origin, double y_origin, carmen_robot_ackerman_config_t *car_config,
@@ -201,8 +205,11 @@ void carmen_prob_models_updade_cells_bellow_robot(carmen_point_t pose, carmen_ma
 void carmen_prob_models_alloc_sensor_data(sensor_data_t *sensor_data, int vertical_resolution, int number_of_threads);
 void carmen_prob_models_log_odds_occupancy_grid_mapping(carmen_map_t *map, int xi, int yi, double inverse_sensor_model_value, ProbabilisticMapParams map_params);
 void carmen_prob_models_update_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id);
+void carmen_prob_models_update_log_odds_of_nearest_target(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id);
+void carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(carmen_map_t *map, carmen_map_t *sum_occupancy_map, carmen_map_t *count_occupancy_map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id);
 void carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id);
 void carmen_prob_models_update_cells_crossed_by_ray(carmen_map_t *map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id);
+void carmen_prob_models_update_sum_and_count_cells_crossed_by_ray(carmen_map_t *map, carmen_map_t *sum_occupancy_map, carmen_map_t *count_occupancy_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id);
 void carmen_prob_models_create_compact_map(carmen_compact_map_t *cmap, carmen_map_t *map, double value);
 void carmen_prob_models_free_compact_map(carmen_compact_map_t *map);
 
@@ -237,6 +244,12 @@ void carmen_prob_models_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_m
 
 void carmen_prob_models_create_distance_map(carmen_prob_models_distance_map *lmap, carmen_map_p map,
 		double minimum_occupied_prob);
+
+/* verify if a given point is inside a given ellipse */
+int is_inside_ellipse(int dx, int dy, double i_minor, double i_major, double cosalpha, double sinalpha);
+
+void carmen_prob_models_create_masked_distance_map(carmen_prob_models_distance_map *lmap, carmen_map_p map,
+		double minimum_occupied_prob, carmen_point_p robot_position, carmen_point_p goal_position);
 
 void carmen_prob_models_initialize_distance_map(carmen_prob_models_distance_map *lmap, carmen_map_p cmap);
 

@@ -52,7 +52,8 @@ move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_select
 {
 	double last_dist = DBL_MAX;
 	double dist = 0.0;
-
+	double close_to_goal_x;
+	double close_to_goal_y;
 	SE2 robot_pose(localizer_pose->x, localizer_pose->y, localizer_pose->theta);
 	SE2 goal_in_world_reference(goal_pose->x, goal_pose->y, goal_pose->theta);
 	SE2 goal_in_car_reference = robot_pose.inverse() * goal_in_world_reference;
@@ -60,35 +61,45 @@ move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_select
 	double goal_y = goal_in_car_reference[1];
 	//	printf("Goal x: %lf y: %lf \n", goal_x, goal_y);
 
-	if ((goal_list_message->number_of_poses < 2) && (goal_list_message->number_of_poses_back < 2))
+	if ((goal_list_message->number_of_poses < 2 || goal_list_message->number_of_poses > 250))
 		return false;
 
 	vector<carmen_ackerman_path_point_t> poses_back;
 	carmen_ackerman_path_point_t local_reference_lane_point;
+	//Get the back poses if uses RDDF - That dont work with ASTAR PathPlanner
 
-	//Get the back poses
-
-	for (int i = 0; i < goal_list_message->number_of_poses_back; i++)
+	if ((goal_list_message->number_of_poses_back > 2))
 	{
-		SE2 lane_back_in_world_reference(goal_list_message->poses_back[i].x, goal_list_message->poses_back[i].y, goal_list_message->poses_back[i].theta);
-		SE2 lane_back_in_car_reference = robot_pose.inverse() * lane_back_in_world_reference;
-
-		local_reference_lane_point = {lane_back_in_car_reference[0], lane_back_in_car_reference[1], lane_back_in_car_reference[2],
-				goal_list_message->poses_back[i].v, goal_list_message->poses_back[i].phi, 0.0};
-
-		poses_back.push_back(local_reference_lane_point);
-
-		if (local_reference_lane_point.x <= 0)
+		for (int i = 0; i < goal_list_message->number_of_poses_back; i++)
 		{
-			for (int j = (poses_back.size() - 1); j >= 0 ; j--)
-				lane_in_local_pose->push_back(poses_back.at(j));
-			break;
+			SE2 lane_back_in_world_reference(goal_list_message->poses_back[i].x, goal_list_message->poses_back[i].y, goal_list_message->poses_back[i].theta);
+			SE2 lane_back_in_car_reference = robot_pose.inverse() * lane_back_in_world_reference;
+
+			local_reference_lane_point = {lane_back_in_car_reference[0], lane_back_in_car_reference[1], lane_back_in_car_reference[2],
+					goal_list_message->poses_back[i].v, goal_list_message->poses_back[i].phi, 0.0};
+
+			poses_back.push_back(local_reference_lane_point);
+
+			if (local_reference_lane_point.x <= 0)
+			{
+				for (int j = (poses_back.size() - 1); j >= 0 ; j--)
+					lane_in_local_pose->push_back(poses_back.at(j));
+				break;
+			}
 		}
 	}
 
 	int index = 0;
 	if (goal_list_message->poses[0].x == goal_list_message->poses[1].x && goal_list_message->poses[0].y == goal_list_message->poses[1].y)
 		index = 1;
+	//Insert the first pose (car pose) to path_planner lane
+	if(GlobalState::use_path_planner)
+	{
+		local_reference_lane_point = {0.0, 0.0, localizer_pose->theta,
+						goal_list_message->poses[0].v, goal_list_message->poses[0].phi, 0.0};
+		lane_in_local_pose->push_back(local_reference_lane_point);
+		index = 1;
+	}
 
 	for (int k = index; k < goal_list_message->number_of_poses; k++)
 	{
@@ -101,10 +112,15 @@ move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_select
 				goal_list_message->poses[k].v, goal_list_message->poses[k].phi, 0.0};
 
 		lane_in_local_pose->push_back(local_reference_lane_point);
+		close_to_goal_x = fabs(goal_x - local_reference_lane_point.x);
+		close_to_goal_y = fabs(goal_y - local_reference_lane_point.y);
 
-		if (local_reference_lane_point.x == goal_x && local_reference_lane_point.y == goal_y)
+
+		if ((close_to_goal_x < 0.000000001) && (close_to_goal_y < 0.000000001))
+		{
+//			printf("Dist_goal_x: %lf Dist_goal_Y: %lf \n", close_to_goal_x, close_to_goal_y);
 			return true;
-
+		}
 		dist = sqrt((carmen_square(local_reference_lane_point.x - goal_x) + carmen_square(local_reference_lane_point.y - goal_y)));
 		if (last_dist < dist)
 			return false;
@@ -160,7 +176,7 @@ copy_starting_nearest_point_of_zero(vector<carmen_ackerman_path_point_t> &detail
 	{
 		//		printf("Temp x: %lf y: %lf \n", temp_detail.at(i).x, temp_detail.at(i).y);
 		if (temp_detail.at(i).x > 0.0)
-		{
+		{ //Comentado para dados do teste
 			double distance1 = sqrt((carmen_square(temp_detail.at(i-1).x - 0.0) + carmen_square(temp_detail.at(i-1).y - 0.0)));
 			double distance2 = sqrt((carmen_square(temp_detail.at(i).x - 0.0) + carmen_square(temp_detail.at(i).y - 0.0)));
 			if ((distance1 < distance2))
@@ -176,7 +192,34 @@ copy_starting_nearest_point_of_zero(vector<carmen_ackerman_path_point_t> &detail
 
 
 bool
-build_detailed_lane(vector<carmen_ackerman_path_point_t> *lane_in_local_pose, vector<carmen_ackerman_path_point_t> &detailed_lane)
+build_detailed_path_lane(vector<carmen_ackerman_path_point_t> *lane_in_local_pose, vector<carmen_ackerman_path_point_t> &detailed_lane)
+{
+	if (lane_in_local_pose->size() > 2 && lane_in_local_pose->size() < 200)
+	{
+		for (unsigned int i = 0; i < (lane_in_local_pose->size() - 1); i++)
+		{
+			add_points_to_goal_list_interval(lane_in_local_pose->at(i), lane_in_local_pose->at(i+1), detailed_lane);
+			if (detailed_lane.size() > 250)
+			{
+				detailed_lane.clear();
+				return false;
+			}
+		}
+		//add last point
+		detailed_lane.push_back(lane_in_local_pose->back());
+	}
+	else
+	{
+		printf(KGRN "+++++++++++++ ERRO MENSAGEM DA LANE POSES !!!!\n" RESET);
+		detailed_lane.clear();
+		return (false);
+	}
+	return (true);
+}
+
+
+bool
+build_detailed_rddf_lane(vector<carmen_ackerman_path_point_t> *lane_in_local_pose, vector<carmen_ackerman_path_point_t> &detailed_lane)
 {
 	if (lane_in_local_pose->size() > 2)
 	{
@@ -292,7 +335,7 @@ apply_system_latencies(vector<carmen_ackerman_path_point_t> &path)
 	for (i = 0; i < path.size(); i++)
 	{
 		j = i;
-		for (double lat = 0.0; lat < 0.3; j++)
+		for (double lat = 0.0; lat < 0.0; j++)
 		{
 			if (j >= path.size())
 				break;
@@ -308,7 +351,7 @@ apply_system_latencies(vector<carmen_ackerman_path_point_t> &path)
 	for (i = 0; i < path.size(); i++)
 	{
 		j = i;
-		for (double lat = 0.0; lat < 0.2; j++)
+		for (double lat = 0.0; lat < 0.6; j++)
 		{
 			if (j >= path.size())
 				break;
@@ -522,7 +565,7 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 
 	move_path_to_current_robot_pose(path, localizer_pose);
 	//	apply_system_delay(path);
-	//	apply_system_latencies(path);
+	//apply_system_latencies(path);
 
 	filter_path(path);
 
@@ -558,6 +601,58 @@ goal_pose_vector_too_different(Pose goal_pose, Pose localizer_pose)
 
 	return (too_different);
 }
+//-----------Funcoes para extrair dados do Experimento------------------------
+double
+dist(carmen_ackerman_path_point_t v, carmen_ackerman_path_point_t w)
+{
+    return sqrt((carmen_square(v.x - w.x) + carmen_square(v.y - w.y)));
+}
+
+
+double
+get_distance_between_point_to_line(carmen_ackerman_path_point_t p1,
+        carmen_ackerman_path_point_t p2,
+        carmen_ackerman_path_point_t robot)
+{
+    //https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+    double delta_x = p2.x - p1.x;
+    double delta_y = p2.y - p1.y;
+    double d = sqrt(delta_x * delta_x + delta_y * delta_y);
+    double x2y1 =  p2.x * p1.y;
+    double y2x1 =  p2.y * p1.x;
+
+    if (d < 0.0000001)
+        return dist(p2, robot);
+
+    return abs((delta_y * 0.0) - (delta_x * 0.0) + x2y1 - y2x1) / d;
+
+}
+
+void
+get_points2(vector<carmen_ackerman_path_point_t> &detailed_goal_list, int &index_p1, int &index_p2, int &mais_proxima)
+{
+
+    double d = sqrt(pow(detailed_goal_list.at(0).x, 2) + pow(detailed_goal_list.at(0).y, 2));
+    double d2 = sqrt(pow(detailed_goal_list.at(2).x, 2) + pow(detailed_goal_list.at(2).y, 2));
+    double centro = sqrt(pow(detailed_goal_list.at(1).x, 2) + pow(detailed_goal_list.at(1).y, 2));
+    if (d < d2)
+    {
+        index_p1 = 0;
+        index_p2 = 1;
+        mais_proxima = d;
+        if(centro < d)
+            mais_proxima = centro;
+    }
+    else
+    {
+        index_p1 = 1;
+        index_p2 = 2;
+        mais_proxima = d2;
+        if(centro < d2)
+            mais_proxima = centro;
+    }
+}
+//------------------------------------------------------------
 
 
 void
@@ -576,7 +671,9 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		previous_good_tcp.valid = false;
 		first_time = false;
 		last_timestamp = carmen_get_time();
+//		fprintf(stderr, "Localise_x Localise_y Localise_theta velocity phi rddf_x rddf_y rddf_theta rddf_velocity rddf_phi_zero lateralDist rddf_phi_atan erro_theta Timestamp\n");
 	}
+//	printf("Goal list: %d \n", goal_list_message->number_of_poses);
 
 	bool goal_in_lane = false;
 	goal_in_lane = move_lane_to_robot_reference_system(localizer_pose, goal_list_message, &goalPoseVector[0], &lane_in_local_pose);
@@ -584,7 +681,44 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	if (!goal_in_lane)
 		lane_in_local_pose.clear();
 
-	build_detailed_lane(&lane_in_local_pose, detailed_lane);
+//	printf("Lane in local: %lu \n", lane_in_local_pose.size());
+
+	if(GlobalState::use_path_planner)
+		build_detailed_path_lane(&lane_in_local_pose, detailed_lane);
+	else
+		build_detailed_rddf_lane(&lane_in_local_pose, detailed_lane);
+
+	//---------------EXPERIMENT DATA----------------------------------
+//	  if (detailed_lane.size() > 0)
+//	    {
+//	        carmen_ackerman_path_point_t localize;
+//	        localize.x = 0.0;
+//	        localize.y = 0.0;
+//	        //Metric evaluation
+//	        int index1;
+//	        int index2;
+//	        int mais_proxima;
+//	        get_points2(detailed_lane,index1, index2,mais_proxima);
+//	//      printf("%lf %lf \n", detailed_goal_list.at(index1).x, detailed_goal_list.at(index2).x);
+//	        double distance_metric = get_distance_between_point_to_line(detailed_lane.at(index1), detailed_lane.at(index2), localize);
+//	//      printf("%lf \n", distance_metric);
+//	        double x_rddf = localizer_pose->x + detailed_lane.at(mais_proxima).x * cos(localizer_pose->theta) - detailed_lane.at(mais_proxima).y * sin(localizer_pose->theta);
+//	        double y_rddf = localizer_pose->y + detailed_lane.at(mais_proxima).x * sin(localizer_pose->theta) + detailed_lane.at(mais_proxima).y * cos(localizer_pose->theta);
+//	        double theta_rddf = detailed_lane.at(mais_proxima).theta + localizer_pose->theta;
+//	        double volante_rddf_theta = atan2(detailed_lane.at(index1).y - detailed_lane.at(index2).y , detailed_lane.at(index1).x - detailed_lane.at(index2).x);
+//	        double erro_theta = abs(volante_rddf_theta - localizer_pose->theta);
+////          1-Localise_x 2-Localise_y 3-Localise_theta 4-velocity 5-phi 6-rddf_x 7-rddf_y 8-rddf_theta 9-rddf_velocity 10-rddf_phi 11-lateralDist 12-volante 13-erro_theta 14-Timestamp
+// 	        fprintf(stderr, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf \n", localizer_pose->x, localizer_pose->y, localizer_pose->theta,
+//	                lastOdometryVector[0].v, lastOdometryVector[0].phi, x_rddf, y_rddf, theta_rddf, detailed_lane.at(mais_proxima).v,
+//					detailed_lane.at(mais_proxima).phi, distance_metric, volante_rddf_theta, erro_theta, goal_list_message->timestamp);
+//
+//	    }
+//	  return
+
+//	----------------------------------------------------------------------------
+
+
+//	printf("detailed_lane: %lu \n", detailed_lane.size());
 
 	otcps.resize(paths.size());
 	bool has_valid_path = false;

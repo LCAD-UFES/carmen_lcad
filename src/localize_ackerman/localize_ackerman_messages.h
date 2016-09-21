@@ -74,8 +74,7 @@ typedef struct {
 /* Contains the mean and standard deviation of the position of the robot */
 
 typedef struct {
-  carmen_point_t globalpos, globalpos_std;
-  carmen_point_t odometrypos;
+  carmen_point_t globalpos, globalpos_std, odometrypos;
   carmen_pose_3D_t pose;
   carmen_vector_3D_t velocity;
   double v, phi;
@@ -86,7 +85,7 @@ typedef struct {
 } carmen_localize_ackerman_globalpos_message;
 
 #define CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME "carmen_localize_ackerman_globalpos"
-#define CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_FMT  "{{double,double,double},{double,double,double},{{double,double,double},{double,double,double}},{double,double,double},{double,double,double},double,double,double,int,double,string}"
+#define CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_FMT  "{{double,double,double},{double,double,double},{double,double,double},{{double,double,double},{double,double,double}},{double,double,double},double,double,double,int,double,string}"
 
 /* particle message */
 

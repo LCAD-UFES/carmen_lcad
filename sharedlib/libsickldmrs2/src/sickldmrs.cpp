@@ -399,7 +399,7 @@ void vpSickLDMRS::decodeObjectsData(vpLaserObjectData *objectData)
 		objectContent.setObjectBoxSize(objectBoxSize);
 		objectContent.setObjectBoxOrientation(objectBoxOrientation);
 
-		if (absoluteVelocity.x_pos < -320.0)
+		if (absoluteVelocity.x_pos < -32000)
 			objectContent.setAbsoluteVelocity(relativeVelocity);
 		else
 			objectContent.setAbsoluteVelocity(absoluteVelocity);

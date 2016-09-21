@@ -8,8 +8,10 @@ Makefile.depend
 *~
 *complete_map.map
 .settings/org.eclipse.cdt.codan.core.prefs
+data/map*/*.bmp
 bin/debug.txt
 bin/out.txt
+bin/build_average_map
 bin/calibrate_bias
 bin/grab_data
 bin/grab_data_for_calibration
@@ -51,6 +53,7 @@ bin/kinect
 bin/kinect_laser
 bin/kinect_mrds
 bin/kinect_view
+bin/lane_analysis
 bin/laser
 bin/laserview
 bin/local.map
@@ -231,6 +234,7 @@ src/grid_mapping/complete_map_to_block_map
 src/grid_mapping/grid_mapping
 src/grid_mapping/grid_mapping_test
 src/grid_mapping/grid_mapping_view
+src/grid_mapping/build_average_map
 src/ipc/central
 src/ipc/ipc-die-test
 src/ipc/ipc-endian-test
@@ -461,3 +465,16 @@ src/path_planner/startgoal_simulator
 src/utilities/list_camera_ids/util_list_camera_ids
 src/utilities/publish_pose/util_publish_pose
 src/utilities/split_log/util_split_log
+src/visual_graphslam/visual_gen_data_to_plot
+src/visual_graphslam/visual_grab_data
+src/visual_graphslam/visual_graphslam
+src/visual_graphslam/visual_graphslam_publish
+src/visual_graphslam/visual_multimap_matching
+src/visual_graphslam/visual_multimap_optimization
+src/visual_graphslam/visual_run_icp_for_loop_closure
+sharedlib/libsickldmrs2/sickldmrstest
+src/moving_objects2/moving_objects2
+src/moving_objects_simulator/moving_objects_simulator
+bin/moving_objects2
+bin/moving_objects_simulator
+

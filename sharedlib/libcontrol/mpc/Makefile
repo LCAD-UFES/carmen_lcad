@@ -1,12 +1,13 @@
 include $(CARMEN_HOME)/src/Makefile.conf
 
 LINK = g++
-CFLAGS += -std=c99
+CXXFLAGS += -std=c++0x
 
 MODULE_NAME = MPC
 MODULE_COMMENT = Model Predictive Controller 
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarneuralmodel
+IFLAGS += -I$(CARMEN_HOME)/include/carmen
 
 LFLAGS +=  -lfann -lgsl -lgslcblas -lcarneuralmodel
 

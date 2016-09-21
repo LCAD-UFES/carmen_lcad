@@ -1,13 +1,14 @@
 include $(CARMEN_HOME)/src/Makefile.conf
 
 LINK = g++
-CFLAGS += -std=c99
+CXXFLAGS += -std=c++0x
 
 MODULE_NAME = RL_PID
 MODULE_COMMENT = Reinforciment Learning Based PID 
 
-#IFLAGS += 
-#LFLAGS += 
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarneuralmodel
+
+LFLAGS += -lcarneuralmodel -lfann  
 
 SOURCES = rlpid.cpp
  

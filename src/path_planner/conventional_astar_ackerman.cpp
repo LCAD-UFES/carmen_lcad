@@ -283,16 +283,16 @@ AstarAckerman::astar_init_parameters(carmen_ackerman_traj_point_t goal)
 
 	DIRECTION[0] = astar_config.path_interval;
 	DIRECTION[1] = astar_config.path_interval;
-	ORIENTATION[0] = -robot_conf_g.max_phi;
+	ORIENTATION[0] = -robot_conf_g.max_phi / 3;
 	ORIENTATION[1] = 0;
-	ORIENTATION[2] = robot_conf_g.max_phi;
+	ORIENTATION[2] = robot_conf_g.max_phi / 3;
 	GOAL = goal;
 	cont_nos_abertos_novos = 0;
 	cont_nos_abertos_alterados = 0;
 	cont_nos_podados = 0;
 	cont_nos_abertos_alterados_fechados = 0;
 	if (astar_config.use_rs)
-		rs_init_parameters(robot_conf_g.max_phi, robot_conf_g.distance_between_front_and_rear_axles);
+		rs_init_parameters(robot_conf_g.max_phi / 3, robot_conf_g.distance_between_front_and_rear_axles);
 }
 
 
@@ -475,9 +475,9 @@ AstarAckerman::open_node(carmen_astar_node_p node)
 				new_point = carmen_conventional_astar_ackerman_kinematic_3(
 						node->point, robot_conf_g.distance_between_front_and_rear_axles, ORIENTATION[j], DIRECTION[i]);
 
-			//if (is_obstacle_1d(new_point))
+			if (is_obstacle_1d(new_point))
 			//if (is_obstacle(new_point))
-			if (is_obstacle_new(new_point))
+			//if (is_obstacle_new(new_point))
 
 			//if (is_obstacle_cost(new_point))
 				continue;
@@ -728,7 +728,7 @@ AstarAckerman::is_obstacle_1d(carmen_ackerman_traj_point_t point)
 
 	for (i = 0; i <= front; i++) {
 		obstacle_value = carmen_conventional_get_cost(round(x + cos(point.theta) * i), round(y + sin(point.theta) * i));
-		if (obstacle_value > 0.40 || obstacle_value < 0)
+		if (obstacle_value > 0.0 || obstacle_value < 0)
 			return TRUE;
 	}
 	return FALSE;
