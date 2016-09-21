@@ -7,7 +7,7 @@ LINK = g++
 
 IFLAGS +=  -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
 
-LFLAGS += -lglobal -lparam_interface -lipc -lGL -lGLU -lglut \
+LFLAGS += -std=c++11 -lglobal -lparam_interface -lipc -lGL -lGLU -lglut \
 	 -ltime_profile -lbumblebee_basic_interface -lstereo_interface -ltf \
 	 -llocalize_ackerman_interface -lrddf_interface \
 	 `pkg-config --libs opencv` -L$(CARMEN_HOME)/sharedlib/libtf/src \
@@ -16,7 +16,7 @@ LFLAGS += -lglobal -lparam_interface -lipc -lGL -lGLU -lglut \
 
 	
 CFLAGS += -W -Wall `pkg-config --cflags opencv`
-CFLAGS += -O4
+CFLAGS += -O4 
 CXXFLAGS += -std=c++11
 
 #SUBDIRS = traffic_light_view
