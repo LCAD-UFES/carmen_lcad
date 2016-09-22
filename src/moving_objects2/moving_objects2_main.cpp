@@ -227,9 +227,6 @@ offline_map_handler(carmen_map_server_offline_map_message *msg)
 }
 
 
-
-
-
 static void
 shutdown_module(int signo)
 {
