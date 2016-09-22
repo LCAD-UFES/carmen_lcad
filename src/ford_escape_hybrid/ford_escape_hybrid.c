@@ -457,17 +457,21 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 		set_wrench_efforts_desired_v_and_curvature();
 		delta_t = get_steering_delta_t();
 
-		//carmen_ford_escape_hybrid_steering_PID_controler
-		g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature, -atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi,
-																	ford_escape_hybrid_config)), delta_t);
+		if (ford_escape_hybrid_config->use_mpc)
+		{
+			g_steering_command = carmen_libmpc_get_optimized_steering_effort_using_MPC(g_atan_desired_curvature,
+					-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)),
+					ford_escape_hybrid_config->current_motion_command_vector, ford_escape_hybrid_config->nun_motion_commands,
+					ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config->filtered_phi,
+					ford_escape_hybrid_config->understeer_coeficient, ford_escape_hybrid_config->distance_between_front_and_rear_axles);
+		}
+		else
+		{
+			//pid_plot_curvature(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->current_motion_command_vector[0].phi);
+			g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
+					-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t);
 
-		//MPC
-//		g_steering_command = carmen_libmpc_get_optimized_steering_effort_using_MPC(g_atan_desired_curvature,
-//				-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)),
-//				ford_escape_hybrid_config->current_motion_command_vector, ford_escape_hybrid_config->nun_motion_commands,
-//				ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config->filtered_phi,
-//				ford_escape_hybrid_config->understeer_coeficient, ford_escape_hybrid_config->distance_between_front_and_rear_axles);
-
+		}
 
 		previous_gear_command = g_gear_command;
 
@@ -656,7 +660,9 @@ read_parameters(int argc, char *argv[], ford_escape_hybrid_config_t *config)
 
 		{"robot", "phi_multiplier", CARMEN_PARAM_DOUBLE, &phi_multiplier, 0, NULL},
 		{"robot", "phi_bias", CARMEN_PARAM_DOUBLE, &phi_bias, 0, NULL},
-		{"robot", "v_multiplier", CARMEN_PARAM_DOUBLE, &v_multiplier, 0, NULL}
+		{"robot", "v_multiplier", CARMEN_PARAM_DOUBLE, &v_multiplier, 0, NULL},
+
+		{"rrt",   "use_mpc",                    CARMEN_PARAM_ONOFF, &(config->use_mpc), 0, NULL}
 	};
 
 	num_items = sizeof(param_list)/sizeof(param_list[0]);

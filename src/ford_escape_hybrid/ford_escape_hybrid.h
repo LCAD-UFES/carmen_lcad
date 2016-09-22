@@ -58,6 +58,8 @@ typedef struct
 	double time_of_last_command;
 	
 	double XGV_v_and_phi_timestamp;
+
+	unsigned int use_mpc;
 } ford_escape_hybrid_config_t, *ford_escape_hybrid_config_p;
 
 #ifdef __cplusplus
