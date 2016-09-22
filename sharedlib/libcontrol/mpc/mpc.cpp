@@ -13,7 +13,7 @@
 #include "mpc.h"
 
 #define DELTA_T (1.0 / 40.0)
-#define PREDICTION_HORIZON	0.6
+#define PREDICTION_HORIZON	(1.5*0.6)
 
 using namespace std;
 
@@ -48,7 +48,7 @@ car_model(double steering_effort, double atan_current_curvature, fann_type *stee
 {
 	double phi = carmen_libcarneuralmodel_compute_new_phi_from_effort(steering_effort, atan_current_curvature, steering_ann_input,
 			param->steering_ann, param->v, param->understeer_coeficient, param->distance_rear_axles);
-	//phi = phi - 0.1;
+	//phi = phi - 0.01;
 	
 	return (phi);
 }
@@ -112,7 +112,9 @@ my_f(const gsl_vector *v, void *params)
 		}
 	}
 
-	return (error_sum);
+	double cost = error_sum + 0.003 * sqrt((p->previous_k1 - d.k1) * (p->previous_k1 - d.k1));
+
+	return (cost);
 }
 
 
@@ -337,6 +339,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_desired_curvat
 		}
 		carmen_libcarneuralmodel_init_steering_ann_input(param.steering_ann_input);
 		param.dk = 0.0;
+		param.previous_k1 = 0.0;
 		first_time = false;
 	}
 
@@ -363,6 +366,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_desired_curvat
 	// Calcula o dk do proximo ciclo
 	double Cxk = car_model(effort, atan_current_curvature, param.steering_ann_input, &param);
 	param.dk = yp - Cxk;
+	param.previous_k1 = effort;
 
 	plot_state2(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
 

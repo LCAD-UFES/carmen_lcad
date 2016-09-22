@@ -26,6 +26,7 @@ typedef struct
 	double understeer_coeficient;
 	double distance_rear_axles;
 	double dk;
+	double previous_k1;
 } PARAMS;
 
 
