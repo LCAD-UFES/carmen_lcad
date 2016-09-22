@@ -497,7 +497,8 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 	{
 		steering_effort = carmen_libmpc_get_optimized_steering_effort_using_MPC(atan_desired_curvature, atan_current_curvature,
 																			simulator_config->current_motion_command_vector, simulator_config->nun_motion_commands,
-																			simulator_config->v, simulator_config->phi, simulator_config->understeer_coeficient, simulator_config->distance_between_front_and_rear_axles);
+																			simulator_config->v, simulator_config->phi, simulator_config->time_of_last_command,
+																			simulator_config->understeer_coeficient, simulator_config->distance_between_front_and_rear_axles);
 	}
 	else
 	{

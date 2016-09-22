@@ -85,7 +85,6 @@ my_f(const gsl_vector *v, void *params)
 	PARAMS *p = (PARAMS *) params;
 
 	double delta_t = DELTA_T;
-	double motion_commands_vector_time = p->motion_commands_vector[0].time;
 	double phi_vector_time = 0.0;
 	double error = 0.0;
 	double error_sum = 0.0;
@@ -97,7 +96,15 @@ my_f(const gsl_vector *v, void *params)
 
 	vector<double> phi_vector = get_phi_vector_from_spline_descriptors(&d, p);
 
-	for (unsigned int i = 0, j = 0; i < phi_vector.size(); i++)
+	double motion_commands_vector_time = p->motion_commands_vector[0].time;
+	unsigned int j = 0;
+	while ((motion_commands_vector_time < p->time_elapsed_since_last_motion_command) && (j < p->motion_commands_vector_size))
+	{
+		j++;
+		motion_commands_vector_time += p->motion_commands_vector[j].time;
+	}
+
+	for (unsigned int i = 0; i < phi_vector.size(); i++)
 	{
 		error = phi_vector[i] - p->motion_commands_vector[j].phi;
 		error_sum += sqrt(error * error);
@@ -287,10 +294,18 @@ plot_state2(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double underste
 	vector<double> future_effort_vector = get_effort_vector_from_spline_descriptors(seed);
 
 	double delta_t = DELTA_T;
-	double motion_commands_vector_time = p->motion_commands_vector[0].time;
 	double phi_vector_time = 0.0;
 	double begin_predition_time = timestamp_vector.front() - timestamp_vector.back();
-	for (unsigned int i = 0, j = 0; i < phi_vector.size(); i++)
+
+	double motion_commands_vector_time = p->motion_commands_vector[0].time;
+	unsigned int j = 0;
+	while ((motion_commands_vector_time < p->time_elapsed_since_last_motion_command) && (j < p->motion_commands_vector_size))
+	{
+		j++;
+		motion_commands_vector_time += p->motion_commands_vector[j].time;
+	}
+
+	for (unsigned int i = 0; i < phi_vector.size(); i++)
 	{
 		phi_vector_time += delta_t;
 		fprintf(gnuplot_data_file, "%lf %lf %lf %lf %d %d\n",
@@ -322,7 +337,7 @@ plot_state2(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double underste
 double
 carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_desired_curvature, double atan_current_curvature,
 		carmen_ackerman_motion_command_p current_motion_command_vector,
-		int nun_motion_commands, double v, double yp,
+		int nun_motion_commands, double v, double yp, double time_of_last_motion_command,
 		double understeer_coeficient, double distance_between_front_and_rear_axles)
 {
 	static PARAMS param;
@@ -359,6 +374,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_desired_curvat
 	param.v = v;
 	param.understeer_coeficient = understeer_coeficient;
 	param.distance_rear_axles = distance_between_front_and_rear_axles;
+	param.time_elapsed_since_last_motion_command = carmen_get_time() - time_of_last_motion_command;
 
 	seed = get_optimized_effort(&param, seed);
 	double effort = carmen_clamp(-100.0, seed.k1, 100.0);
