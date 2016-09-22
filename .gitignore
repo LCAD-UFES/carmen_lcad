@@ -158,6 +158,8 @@ src/visual_graphslam/bin/visual_graphslam_publish
 src/visual_graphslam/bin/visual_multimap_matching
 src/visual_graphslam/bin/visual_multimap_optimization
 src/visual_graphslam/bin/visual_run_icp_for_loop_closure
+bin/tracker_opentld
+src/zed_camera/zed_camera_sensor
 data/rndf/rddf-log_voltadaufes-20140806-2.kml.timestamp.index
 data/rndf/rddf-log_voltadaufes-20140806-2.kml.x.index
 data/rndf/rddf-log_voltadaufes-20140806-2.kml.y.index

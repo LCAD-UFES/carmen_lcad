@@ -14,7 +14,7 @@ IFLAGS += -I$(CARMEN_HOME)/include/carmen
 LFLAGS += -lmap_interface -lparam_interface -llocalize_ackerman_interface -lobstacle_avoider -lobstacle_avoider_interface \
 	  -llaser_interface -lgeometry -llocalize_ackerman_motion -lmotion_planner_interface -lbase_ackerman_interface \
 	  -lglobal -lipc -lmapper_interface -lfused_odometry_interface -lcollision_detection -lmap_server_interface \
-	  -lopenJaus -ljaus -lojTorc -lfann -lmpc -lgsl -lgslcblas -lcarneuralmodel -lpid
+	  -lopenJaus -ljaus -lojTorc -lmpc -lgsl -lgslcblas -lcarneuralmodel -lpid -lfann
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/OpenJAUS/libjaus/lib/  
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/OpenJAUS/libopenJaus/lib/

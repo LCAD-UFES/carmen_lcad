@@ -26,14 +26,15 @@ typedef struct
 	double understeer_coeficient;
 	double distance_rear_axles;
 	double dk;
+	double previous_k1;
 } PARAMS;
 
 
 double
-carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_desired_curvature, double atan_current_curvature, fann_type *steering_ann_input,
-														struct fann *steering_ann, carmen_ackerman_motion_command_p current_motion_command_vector,
-														int nun_motion_commands, double v, double yp,
-														double understeer_coeficient, double distance_between_front_and_rear_axles);
+carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_desired_curvature, double atan_current_curvature,
+		carmen_ackerman_motion_command_p current_motion_command_vector,
+		int nun_motion_commands, double v, double yp,
+		double understeer_coeficient, double distance_between_front_and_rear_axles);
 
 #ifdef __cplusplus
 }
