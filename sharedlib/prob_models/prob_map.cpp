@@ -2467,24 +2467,13 @@ carmen_prob_models_initialize_distance_map(carmen_prob_models_distance_map *lmap
 }
 
 
-/* compute minimum distance to all occupied cells */
 void
-carmen_prob_models_create_distance_map(carmen_prob_models_distance_map *lmap, carmen_map_p map,
-		double minimum_occupied_prob)
+initialize_distance_measurements(int x_size, int y_size,
+		double minimum_occupied_prob, carmen_prob_models_distance_map* lmap,
+		double** cmap_map, double** distance, short int** x_offset,
+		short int** y_offset)
 {
-//	double time = carmen_get_time();
-
 	int x, y;
-
-	lmap->config = map->config;
-
-	double **cmap_map = map->map;
-	double **distance = lmap->distance;
-	short int **x_offset = lmap->x_offset;
-	short int **y_offset = lmap->y_offset;
-
-	int x_size = lmap->config.x_size;
-	int y_size = lmap->config.y_size;
 
 	int total_size = x_size * y_size;
 	std::fill_n(lmap->complete_distance, total_size, HUGE_DISTANCE);
@@ -2504,6 +2493,31 @@ carmen_prob_models_create_distance_map(carmen_prob_models_distance_map *lmap, ca
 			}
 		}
 	}
+}
+
+
+/* compute minimum distance to all occupied cells */
+void
+carmen_prob_models_create_distance_map(carmen_prob_models_distance_map *lmap, carmen_map_p map,
+		double minimum_occupied_prob)
+{
+//	double time2 = carmen_get_time();
+
+	int x, y;
+
+	lmap->config = map->config;
+
+	double **cmap_map = map->map;
+	double **distance = lmap->distance;
+	short int **x_offset = lmap->x_offset;
+	short int **y_offset = lmap->y_offset;
+
+	int x_size = lmap->config.x_size;
+	int y_size = lmap->config.y_size;
+
+	/* Initialize the distance measurements before dynamic programming */
+	initialize_distance_measurements(x_size, y_size, minimum_occupied_prob,
+			lmap, cmap_map, distance, x_offset, y_offset);
 
 	/* Use dynamic programming to estimate the minimum distance from
      every map cell to an occupied map cell */
@@ -2518,8 +2532,80 @@ carmen_prob_models_create_distance_map(carmen_prob_models_distance_map *lmap, ca
 		for (y = y_size - 2; y >= 1; y--)
 			compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
 
-//	printf("Freq: %lf \n", (carmen_get_time()-time));
+//	printf("time2: %lf \n", (carmen_get_time()-time2));
 }
+
+
+/* compute minimum distance to all occupied cells */
+void
+carmen_prob_models_create_masked_distance_map(
+        carmen_prob_models_distance_map *lmap,
+        carmen_map_p map,
+        double minimum_occupied_prob,
+        carmen_point_p robot_position,
+        carmen_point_p goal_position)
+{
+#define DIST_SQR(x1,y1,x2,y2) ((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2))
+
+	int x, y;
+
+	lmap->config = map->config;
+
+	double **cmap_map = map->map;
+	double **distance = lmap->distance;
+	short int **x_offset = lmap->x_offset;
+	short int **y_offset = lmap->y_offset;
+
+	int x_size = lmap->config.x_size;
+	int y_size = lmap->config.y_size;
+
+	if (NULL != robot_position && NULL != goal_position)
+	{
+
+		int px = (robot_position->x - map->config.x_origin) / map->config.resolution;
+		int py = (robot_position->y - map->config.y_origin) / map->config.resolution;
+		int gx = (goal_position->x - map->config.x_origin) / map->config.resolution;
+		int gy = (goal_position->y - map->config.y_origin) / map->config.resolution;
+		int margin = 15.0 / map->config.resolution;
+		int sqr_d = DIST_SQR(px,py,gx,gy) + margin * margin;
+
+		/* Initialize the distance measurements before dynamic programming */
+		initialize_distance_measurements(x_size, y_size, minimum_occupied_prob,
+										lmap, cmap_map, distance, x_offset, y_offset);
+
+		/* Use dynamic programming to estimate the minimum distance from
+     every map cell to an occupied map cell */
+
+		/* pass 1 */
+		for (x = 1; x < x_size - 1; x++)
+			for (y = 1; y < y_size - 1; y++)
+			{
+				if ((DIST_SQR(px,py,x,y) < sqr_d) && (DIST_SQR(gx,gy,x,y) < sqr_d))
+					compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
+				else
+				{
+					distance[x][y] = HUGE_DISTANCE;
+					x_offset[x][y] = (x > ((x_size-1)/2)) ? 1 : (x_size - 2);
+					y_offset[x][y] = (y > ((y_size-1)/2)) ? 1 : (x_size - 2);
+				}
+			}
+
+		/* pass 2 */
+		for (x = x_size - 2; x >= 1; x--)
+			for (y = y_size - 2; y >= 1; y--)
+			{
+				if ((DIST_SQR(px,py,x,y) < sqr_d) && (DIST_SQR(gx,gy,x,y) < sqr_d))
+					compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
+				else
+				{
+					distance[x][y] = HUGE_DISTANCE;
+					x_offset[x][y] = (x > ((x_size-1)/2)) ? 1 : (x_size - 2);
+					y_offset[x][y] = (y > ((y_size-1)/2)) ? 1 : (x_size - 2);
+				}
+			}
+	}
+}
+
 
 /* verify if a given point is inside a given ellipse */
 int is_inside_ellipse(int x, int y, int f1x, int f1y, int f2x, int f2y, double major_axis)
@@ -2534,7 +2620,7 @@ int is_inside_ellipse(int x, int y, int f1x, int f1y, int f2x, int f2y, double m
 }
 
 /* compute minimum distance to all occupied cells */
-void carmen_prob_models_create_masked_distance_map(
+void carmen_prob_models_create_masked_distance_map_old(
         carmen_prob_models_distance_map *lmap,
         carmen_map_p map,
         double minimum_occupied_prob,
@@ -2554,24 +2640,9 @@ void carmen_prob_models_create_masked_distance_map(
     int x_size = lmap->config.x_size;
     int y_size = lmap->config.y_size;
 
-    int total_size = x_size * y_size;
-    std::fill_n(lmap->complete_distance, total_size, HUGE_DISTANCE);
-    std::fill_n(lmap->complete_x_offset, total_size, HUGE_DISTANCE);
-    std::fill_n(lmap->complete_y_offset, total_size, HUGE_DISTANCE);
-
     /* Initialize the distance measurements before dynamic programming */
-    for (x = 0; x < x_size; x++)
-    {
-        for (y = 0; y < y_size; y++)
-        {
-            if (cmap_map[x][y] > minimum_occupied_prob)
-            {
-                distance[x][y] = 0.0;
-                x_offset[x][y] = 0.0;
-                y_offset[x][y] = 0.0;
-            }
-        }
-    }
+    	initialize_distance_measurements(x_size, y_size, minimum_occupied_prob,
+    			lmap, cmap_map, distance, x_offset, y_offset);
 
     /* Use dynamic programming to estimate the minimum distance from
      every map cell to an occupied map cell */
@@ -2617,18 +2688,4 @@ void carmen_prob_models_create_masked_distance_map(
                 }
 
     }
-    else
-    {
-        /* pass 1 */
-        for (x = 1; x < x_size - 1; x++)
-            for (y = 1; y < y_size - 1; y++)
-                compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
-
-        /* pass 2 */
-        for (x = x_size - 2; x >= 1; x--)
-            for (y = y_size - 2; y >= 1; y--)
-                compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
-    }
-
-//    printf("time: %lf \n", (carmen_get_time()-time_now));
 }
