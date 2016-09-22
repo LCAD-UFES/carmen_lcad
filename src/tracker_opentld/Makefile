@@ -19,7 +19,7 @@ SOURCES = tracker_opentld_main.cpp \
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES =  
 TARGETS = tracker_opentld tracker_test
-PUBLIC_BINARIES =
+PUBLIC_BINARIES = tracker_opentld
 
 tracker_opentld: tracker_opentld_main.o \
 	main_utils/Gui.o \
