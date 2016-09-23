@@ -27,8 +27,6 @@
 
 using namespace g2o;
 
-TrajectoryLookupTable::CarLatencyBuffer g_car_latency_buffer_mp;
-
 
 TrajectoryLookupTable::TrajectoryDimensions
 get_trajectory_dimensions_from_robot_state(Pose *localizer_pose, Command last_odometry,	Pose *goal_pose)
@@ -455,48 +453,6 @@ put_shorter_path_in_front(vector<vector<carmen_ackerman_path_point_t> > &paths, 
 }
 
 
-void
-add_plan_segment_to_car_latency_buffer(vector<carmen_ackerman_path_point_t> path)
-{
-	double t = 0.0;
-
-	unsigned int j;
-	for (int i = j = 0; i < (int) (MAX_PLANNING_TIME / LATENCY_CICLE_TIME); i++)
-	{
-		g_car_latency_buffer_mp.previous_v[i + V_LATENCY_BUFFER_SIZE] = path[j].v;
-		g_car_latency_buffer_mp.previous_phi[i + PHI_LATENCY_BUFFER_SIZE] = path[j].phi;
-		if ((double) i * LATENCY_CICLE_TIME > t)
-		{
-			t += path[j].time;
-			j++;
-			if (j >= path.size())
-				break;
-		}
-	}
-}
-
-
-void
-add_odometry_to_car_latency_buffer(Command c)
-{
-	if (g_car_latency_buffer_mp.timestamp != 0.0)
-	{
-		int last_delay = (GlobalState::localizer_pose_timestamp - g_car_latency_buffer_mp.timestamp) / LATENCY_CICLE_TIME;
-		for (int i = 0; i < V_LATENCY_BUFFER_TOTAL_SIZE - last_delay; i++)
-			g_car_latency_buffer_mp.previous_v[i + last_delay] = g_car_latency_buffer_mp.previous_v[i];
-		for (int i = 0; i < last_delay; i++)
-			g_car_latency_buffer_mp.previous_v[i] = c.v;
-
-		for (int i = 0; i < PHI_LATENCY_BUFFER_TOTAL_SIZE - last_delay; i++)
-			g_car_latency_buffer_mp.previous_phi[i + last_delay] = g_car_latency_buffer_mp.previous_phi[i];
-		for (int i = 0; i < last_delay; i++)
-			g_car_latency_buffer_mp.previous_phi[i] = c.phi;
-	}
-
-	g_car_latency_buffer_mp.timestamp = GlobalState::localizer_pose_timestamp;
-}
-
-
 TrajectoryLookupTable::TrajectoryControlParameters
 get_shorter_path(int &shorter_path, int num_paths, vector<vector<carmen_ackerman_path_point_t> > paths,
 		const vector<TrajectoryLookupTable::TrajectoryControlParameters> otcps)
@@ -553,7 +509,7 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 		TrajectoryLookupTable::TrajectoryDimensions td,
 		Pose *localizer_pose)
 {
-	path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, g_car_latency_buffer_mp, false);
+	path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false);
 	if (path_has_loop(td.dist, otcp.sf))
 	{
 		printf(KRED "+++++++++++++ Path has loop...\n" RESET);
@@ -802,7 +758,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	else if ((carmen_get_time() - last_timestamp) > 0.5)
 		previous_good_tcp.valid = false;
 
-	//		add_plan_segment_to_car_latency_buffer(path[0]);
+//		add_plan_segment_to_car_latency_buffer(path[0]);
 }
 
 
@@ -826,7 +782,6 @@ compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Command last_odometr
 
 	for (int i = 0; i < 1; i++)
 	{
-		//printf("Goal x: %lf Goal y: %lf \n",goal_pose->x, goal_pose->y);
 		Pose newPose = *goal_pose;
 		newPose.x += 0.3 * (double) magicSignals[i] * cos(carmen_normalize_theta((goal_pose->theta) - carmen_degrees_to_radians(90.0)));
 		newPose.y += 0.3 * (double) magicSignals[i] * sin(carmen_normalize_theta((goal_pose->theta) - carmen_degrees_to_radians(90.0)));

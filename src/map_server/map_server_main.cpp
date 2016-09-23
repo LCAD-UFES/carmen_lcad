@@ -322,7 +322,7 @@ build_lane_map(carmen_rddf_road_profile_message *message, carmen_map_t *lane_map
 
 	add_lane_to_the_map(lane_map, message, 1.0);
 
-	carmen_prob_models_convert_to_linear_distance_to_obstacles_map(lane_map, lane_map, 0.5, lane_width, 1);
+	carmen_prob_models_convert_to_linear_distance_to_obstacles_map(lane_map, lane_map, 0.4, lane_width, 1);
 }
 
 

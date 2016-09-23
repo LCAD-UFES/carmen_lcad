@@ -56,7 +56,7 @@ mapper_publish_distance_map(double timestamp, double obstacle_probability_thresh
 	if (distance_map.complete_distance == NULL)
 		carmen_prob_models_initialize_distance_map(&distance_map, &map);
 
-	if (0.0 != g_goal_position.x && 0.0 != g_goal_position.y)
+	if ((g_goal_position.x != 0.0) && (g_goal_position.y != 0.0))
 		carmen_prob_models_create_masked_distance_map(&distance_map, &map, obstacle_probability_threshold, &g_robot_position, &g_goal_position);
 	else
 		carmen_prob_models_create_distance_map(&distance_map, &map, obstacle_probability_threshold);
