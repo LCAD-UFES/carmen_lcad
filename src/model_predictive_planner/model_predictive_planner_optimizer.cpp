@@ -512,7 +512,7 @@ my_df(const gsl_vector *v, void *params, gsl_vector *df)
 {
 	double f_x = my_f(v, params);
 
-	double h = 0.00001;
+	double h = 0.0002;
 
 	gsl_vector *x_h;
 	x_h = gsl_vector_alloc(3);
@@ -616,7 +616,7 @@ my_dg(const gsl_vector *v, void *params, gsl_vector *df)
 {
 	double g_x = my_g(v, params);
 
-	double h = 0.00001;//<<< 0.00001
+	double h = 0.0002;//<<< 0.00001
 
 	gsl_vector *x_h;
 	x_h = gsl_vector_alloc(4);
@@ -891,7 +891,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 		//	--
 //		params.suitable_acceleration = compute_suitable_acceleration(gsl_vector_get(x, 3), target_td, target_v);
 
-	} while (/*(s->f > MAX_LANE_DIST) &&*/ (status == GSL_CONTINUE) && (iter < 25)); //alterado de 0.005
+	} while (/*(s->f > MAX_LANE_DIST) &&*/ (status == GSL_CONTINUE) && (iter < 15)); //alterado de 0.005
 
 	printf("iter = %ld\n", iter);
 
@@ -957,13 +957,14 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 			break;
 
 		status = gsl_multimin_test_gradient(s->gradient, 0.16); // esta funcao retorna GSL_CONTINUE ou zero
-//		params.suitable_acceleration = compute_suitable_acceleration(gsl_vector_get(x, 2), target_td, target_v);
 
-	} while ((params.plan_cost > 0.005) && (status == GSL_CONTINUE) && (iter < 30));
+	} while ((params.plan_cost > 0.005) && (status == GSL_CONTINUE) && (iter < 15));
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
+//	if (!params.optimize_time)
+//		params.suitable_acceleration = tcp.a;
 
-	if ((tcp.tt < 0.2) || (params.plan_cost > 0.05)) // too short plan or bad minimum (s->f should be close to zero) mudei de 0.05 para outro
+	if ((tcp.tt < 0.2) || (params.plan_cost > 0.07)) // too short plan or bad minimum (s->f should be close to zero) mudei de 0.05 para outro
 		tcp.valid = false;
 
 	if (target_td.dist < 3.0 && tcp.valid == false) // para debugar
