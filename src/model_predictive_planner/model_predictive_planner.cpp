@@ -23,7 +23,6 @@
 
 #include "g2o/types/slam2d/se2.h"
 
-#define SYSTEM_DELAY 0.3
 
 using namespace g2o;
 
@@ -57,14 +56,12 @@ move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_select
 	SE2 goal_in_car_reference = robot_pose.inverse() * goal_in_world_reference;
 	double goal_x = goal_in_car_reference[0];
 	double goal_y = goal_in_car_reference[1];
-	//	printf("Goal x: %lf y: %lf \n", goal_x, goal_y);
 
 	if ((goal_list_message->number_of_poses < 2 || goal_list_message->number_of_poses > 250))
 		return false;
 
 	vector<carmen_ackerman_path_point_t> poses_back;
 	carmen_ackerman_path_point_t local_reference_lane_point;
-	//Get the back poses if uses RDDF - That dont work with ASTAR PathPlanner
 
 	if ((goal_list_message->number_of_poses_back > 2))
 	{
@@ -90,8 +87,9 @@ move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_select
 	int index = 0;
 	if (goal_list_message->poses[0].x == goal_list_message->poses[1].x && goal_list_message->poses[0].y == goal_list_message->poses[1].y)
 		index = 1;
-	//Insert the first pose (car pose) to path_planner lane
-	if(GlobalState::use_path_planner)
+
+	// Insert the first pose (car pose) to path_planner lane
+	if (GlobalState::use_path_planner)
 	{
 		local_reference_lane_point = {0.0, 0.0, localizer_pose->theta,
 						goal_list_message->poses[0].v, goal_list_message->poses[0].phi, 0.0};
@@ -101,10 +99,8 @@ move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_select
 
 	for (int k = index; k < goal_list_message->number_of_poses; k++)
 	{
-
 		SE2 lane_in_world_reference(goal_list_message->poses[k].x, goal_list_message->poses[k].y, goal_list_message->poses[k].theta);
 		SE2 lane_in_car_reference = robot_pose.inverse() * lane_in_world_reference;
-
 
 		local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2],
 				goal_list_message->poses[k].v, goal_list_message->poses[k].phi, 0.0};
@@ -113,12 +109,9 @@ move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_select
 		close_to_goal_x = fabs(goal_x - local_reference_lane_point.x);
 		close_to_goal_y = fabs(goal_y - local_reference_lane_point.y);
 
-
 		if ((close_to_goal_x < 0.000000001) && (close_to_goal_y < 0.000000001))
-		{
-//			printf("Dist_goal_x: %lf Dist_goal_Y: %lf \n", close_to_goal_x, close_to_goal_y);
 			return true;
-		}
+
 		dist = sqrt((carmen_square(local_reference_lane_point.x - goal_x) + carmen_square(local_reference_lane_point.y - goal_y)));
 		if (last_dist < dist)
 			return false;
@@ -131,8 +124,6 @@ move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_select
 void
 add_points_to_goal_list_interval(carmen_ackerman_path_point_t p1, carmen_ackerman_path_point_t p2, vector<carmen_ackerman_path_point_t> &detailed_lane)
 {
-
-	//double theta;
 	double delta_x, delta_y, delta_theta, distance;
 	int i;
 
@@ -140,12 +131,6 @@ add_points_to_goal_list_interval(carmen_ackerman_path_point_t p1, carmen_ackerma
 
 	double distance_between_goals = 0.1;
 	int num_points = distance / distance_between_goals;
-
-	//  NOTA IMPORTANTISSIMA: ESTUDAR POR QUE O CODIGO COMENTADO NAO DA O MESMO
-	//  RESULTADO QUE O CODIGO ABAIXO!!!!
-	//	theta = atan2(p2.y - p1.y, p2.x - p1.x);
-	//	delta_x = (distance * cos(theta)) / (double) num_points;
-	//	delta_y = (distance * sin(theta)) / (double) num_points;
 
 	delta_x = (p2.x - p1.x) / num_points;
 	delta_y = (p2.y - p1.y) / num_points;
@@ -169,17 +154,14 @@ copy_starting_nearest_point_of_zero(vector<carmen_ackerman_path_point_t> &detail
 {
 	detailed_lane.clear();
 
-	//mantendo primeiro ponto mais proximo de 0
 	for (unsigned int i = 1; i < temp_detail.size(); i++)
 	{
-		//		printf("Temp x: %lf y: %lf \n", temp_detail.at(i).x, temp_detail.at(i).y);
 		if (temp_detail.at(i).x > 0.0)
-		{ //Comentado para dados do teste
+		{
 			double distance1 = sqrt((carmen_square(temp_detail.at(i-1).x - 0.0) + carmen_square(temp_detail.at(i-1).y - 0.0)));
 			double distance2 = sqrt((carmen_square(temp_detail.at(i).x - 0.0) + carmen_square(temp_detail.at(i).y - 0.0)));
 			if ((distance1 < distance2))
 				i--;
-			// slice
 			int k = 0;
 			for (unsigned int j = i; j < temp_detail.size(); j++ , k++)
 				detailed_lane.push_back(temp_detail.at(j));
@@ -203,7 +185,6 @@ build_detailed_path_lane(vector<carmen_ackerman_path_point_t> *lane_in_local_pos
 				return false;
 			}
 		}
-		//add last point
 		detailed_lane.push_back(lane_in_local_pose->back());
 	}
 	else
@@ -225,9 +206,7 @@ build_detailed_rddf_lane(vector<carmen_ackerman_path_point_t> *lane_in_local_pos
 		for (unsigned int i = 0; i < (lane_in_local_pose->size() - 1); i++)
 			add_points_to_goal_list_interval(lane_in_local_pose->at(i), lane_in_local_pose->at(i+1), temp_detail);
 
-		//add last point
 		temp_detail.push_back(lane_in_local_pose->back());
-		//mantendo primeiro ponto mais proximo de 0
 		copy_starting_nearest_point_of_zero(detailed_lane, temp_detail);
 	}
 	else
@@ -237,60 +216,6 @@ build_detailed_rddf_lane(vector<carmen_ackerman_path_point_t> *lane_in_local_pos
 		return (false);
 	}
 	return (true);
-}
-
-
-int
-find_pose_in_path(double &time_displacement, Pose *localizer_pose, vector<carmen_ackerman_path_point_t> path)
-{
-	time_displacement = 0.0;
-	carmen_ackerman_path_point_t p;
-	unsigned int i;
-
-	for (i = 0; i < (path.size() - 1); i++)
-		if (Util::between(p, localizer_pose, path[i], path[i+1]))
-			break;
-
-	time_displacement = p.time;
-
-	return (i);
-}
-
-
-double
-compute_delay(vector<carmen_ackerman_path_point_t> path, int path_index,
-		double localizer_pose_timestamp, double path_timestamp, double time_displacement)
-{
-	double path_time_up_to_localizer_pose = path_timestamp;
-	for (int i = 0; i < path_index; i++)
-		path_time_up_to_localizer_pose += path[i].time;
-	path_time_up_to_localizer_pose += time_displacement;
-
-	double delay = localizer_pose_timestamp - path_time_up_to_localizer_pose;
-
-	return (delay);
-}
-
-
-void
-apply_system_delay(vector<carmen_ackerman_path_point_t> &path)
-{
-	double delay = 0.0;
-	unsigned int index;
-
-	if (path.size() < 1)
-		return;
-
-	for (index = 0; (delay < SYSTEM_DELAY) && (index < path.size()); index++)
-		delay += path[index].time;
-	for (unsigned int j = 0; j < (index - 1); j++)
-		path.erase(path.begin());
-
-	if (index < path.size())
-	{
-		path[0].time -= delay - SYSTEM_DELAY;
-		// std::cout << "$$$$$$$$$$$$$$ index = " << index << "  time discount = " << delay - SYSTEM_DELAY << std::endl;
-	}
 }
 
 
@@ -462,8 +387,6 @@ get_shorter_path(int &shorter_path, int num_paths, vector<vector<carmen_ackerman
 
 	for (int i = 0; i < num_paths; i++)
 	{
-		// que garantia temos que otcps[i] é valido?????
-		// paths[i] contém vários paths provienientes do lixo da memória
 		if ((paths[i].size() > 0) && (otcps[i].sf < shorter_path_size) && otcps[i].valid)
 		{
 			shorter_path_size = otcps[i].sf;
@@ -521,8 +444,6 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 
 	move_path_to_current_robot_pose(path, localizer_pose);
 
-	//	apply_system_delay(path);
-
 	if (GlobalState::use_mpc)
 		apply_system_latencies(path);
 	else
@@ -555,11 +476,13 @@ goal_pose_vector_too_different(Pose goal_pose, Pose localizer_pose)
 		too_different = true;
 
 	g_last_goal_pose = goal_pose;
-	if (too_different)
-		printf("TOO DIFFERENT!!!\n");
+//	if (too_different)
+//		printf("TOO DIFFERENT!!!\n");
 
 	return (too_different);
 }
+
+
 //-----------Funcoes para extrair dados do Experimento------------------------
 double
 dist(carmen_ackerman_path_point_t v, carmen_ackerman_path_point_t w)
@@ -586,6 +509,7 @@ get_distance_between_point_to_line(carmen_ackerman_path_point_t p1,
     return abs((delta_y * 0.0) - (delta_x * 0.0) + x2y1 - y2x1) / d;
 
 }
+
 
 void
 get_points2(vector<carmen_ackerman_path_point_t> &detailed_goal_list, int &index_p1, int &index_p2, int &mais_proxima)
@@ -630,9 +554,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		previous_good_tcp.valid = false;
 		first_time = false;
 		last_timestamp = carmen_get_time();
-//		fprintf(stderr, "Localise_x Localise_y Localise_theta velocity phi rddf_x rddf_y rddf_theta rddf_velocity rddf_phi_zero lateralDist rddf_phi_atan erro_theta Timestamp\n");
 	}
-//	printf("Goal list: %d \n", goal_list_message->number_of_poses);
 
 	bool goal_in_lane = false;
 	goal_in_lane = move_lane_to_robot_reference_system(localizer_pose, goal_list_message, &goalPoseVector[0], &lane_in_local_pose);
@@ -640,44 +562,10 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	if (!goal_in_lane)
 		lane_in_local_pose.clear();
 
-//	printf("Lane in local: %lu \n", lane_in_local_pose.size());
-
-	if(GlobalState::use_path_planner)
+	if (GlobalState::use_path_planner)
 		build_detailed_path_lane(&lane_in_local_pose, detailed_lane);
 	else
 		build_detailed_rddf_lane(&lane_in_local_pose, detailed_lane);
-
-	//---------------EXPERIMENT DATA----------------------------------
-//	  if (detailed_lane.size() > 0)
-//	    {
-//	        carmen_ackerman_path_point_t localize;
-//	        localize.x = 0.0;
-//	        localize.y = 0.0;
-//	        //Metric evaluation
-//	        int index1;
-//	        int index2;
-//	        int mais_proxima;
-//	        get_points2(detailed_lane,index1, index2,mais_proxima);
-//	//      printf("%lf %lf \n", detailed_goal_list.at(index1).x, detailed_goal_list.at(index2).x);
-//	        double distance_metric = get_distance_between_point_to_line(detailed_lane.at(index1), detailed_lane.at(index2), localize);
-//	//      printf("%lf \n", distance_metric);
-//	        double x_rddf = localizer_pose->x + detailed_lane.at(mais_proxima).x * cos(localizer_pose->theta) - detailed_lane.at(mais_proxima).y * sin(localizer_pose->theta);
-//	        double y_rddf = localizer_pose->y + detailed_lane.at(mais_proxima).x * sin(localizer_pose->theta) + detailed_lane.at(mais_proxima).y * cos(localizer_pose->theta);
-//	        double theta_rddf = detailed_lane.at(mais_proxima).theta + localizer_pose->theta;
-//	        double volante_rddf_theta = atan2(detailed_lane.at(index1).y - detailed_lane.at(index2).y , detailed_lane.at(index1).x - detailed_lane.at(index2).x);
-//	        double erro_theta = abs(volante_rddf_theta - localizer_pose->theta);
-////          1-Localise_x 2-Localise_y 3-Localise_theta 4-velocity 5-phi 6-rddf_x 7-rddf_y 8-rddf_theta 9-rddf_velocity 10-rddf_phi 11-lateralDist 12-volante 13-erro_theta 14-Timestamp
-// 	        fprintf(stderr, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf \n", localizer_pose->x, localizer_pose->y, localizer_pose->theta,
-//	                lastOdometryVector[0].v, lastOdometryVector[0].phi, x_rddf, y_rddf, theta_rddf, detailed_lane.at(mais_proxima).v,
-//					detailed_lane.at(mais_proxima).phi, distance_metric, volante_rddf_theta, erro_theta, goal_list_message->timestamp);
-//
-//	    }
-//	  return
-
-//	----------------------------------------------------------------------------
-
-
-//	printf("detailed_lane: %lu \n", detailed_lane.size());
 
 	otcps.resize(paths.size());
 	bool has_valid_path = false;
@@ -692,7 +580,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 			if (j == 0)
 			{
 				use_lane = true;
-				if (goal_pose_vector_too_different(goalPoseVector.at(0), *localizer_pose))
+				if (false)//goal_pose_vector_too_different(goalPoseVector.at(0), *localizer_pose))
 				{
 					previous_good_tcp.valid = false;
 				}
@@ -726,7 +614,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 			else
 			{
 				otcps[j + i * lastOdometryVector.size()] = otcp;
-				printf(KYEL "+++++++++++++ Could NOT optimize !!!!\n" RESET);
+				// printf(KYEL "+++++++++++++ Could NOT optimize !!!!\n" RESET);
 			}
 		}
 
@@ -757,8 +645,6 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	}
 	else if ((carmen_get_time() - last_timestamp) > 0.5)
 		previous_good_tcp.valid = false;
-
-//		add_plan_segment_to_car_latency_buffer(path[0]);
 }
 
 
@@ -769,7 +655,7 @@ compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Command last_odometr
 	vector<Command> lastOdometryVector;
 	vector<Pose> goalPoseVector;
 
-	double i_time = carmen_get_time();
+//	double i_time = carmen_get_time();
 
 	vector<int> magicSignals = {0, 1, -1, 2, -2, 3, -3,  4, -4,  5, -5};
 	// @@@ Tranformar os dois loops abaixo em uma funcao -> compute_alternative_path_options()
@@ -793,8 +679,8 @@ compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Command last_odometr
 
 	compute_paths(lastOdometryVector, goalPoseVector, target_v, localizer_pose, paths, goal_list_message);
 
-	printf("%ld plano(s), tp = %lf\n", paths.size(), carmen_get_time() - i_time);
-	fflush(stdout);
+//	printf("%ld plano(s), tp = %lf\n", paths.size(), carmen_get_time() - i_time);
+//	fflush(stdout);
 
 	return (paths);
 }

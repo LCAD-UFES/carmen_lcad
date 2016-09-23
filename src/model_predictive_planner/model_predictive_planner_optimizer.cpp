@@ -129,7 +129,6 @@ compute_abstacles_cost(vector<carmen_ackerman_path_point_t> path)
 			max_obstacles_cost = current_cost;
 	}
 
-	// std::cout << "max_obstacles_cost = " << max_obstacles_cost << std::endl;
 	return (max_obstacles_cost * 0.08);
 }
 
@@ -282,61 +281,6 @@ distance_from_traj_point_to_obstacle(carmen_ackerman_path_point_t point, Pose *g
 }
 
 
-//double
-//compute_proximity_to_obstacles_using_distance_map_old(vector<carmen_ackerman_path_point_t> path)
-//{
-////	FILE *plot;
-////
-////	plot = fopen("Data.csv", "w");
-//
-//	double proximity_to_obstacles = 0.0;
-//	double min_dist = (GlobalState::robot_config.width + 1.6) / 2.0; // metade da largura do carro + um espacco de guarda
-//	double x_gpos = GlobalState::localizer_pose->x - GlobalState::cost_map.config.x_origin;
-//	double y_gpos = GlobalState::localizer_pose->y - GlobalState::cost_map.config.y_origin;
-//	for (unsigned int i = 0; i < path.size(); i += 1)
-//	{
-//		double displacement = -GlobalState::robot_config.distance_between_rear_car_and_rear_wheels;
-////		double distance = distance_from_traj_point_to_obstacle(path[i], x_gpos, y_gpos, displacement, min_dist, plot);
-//		double distance = distance_from_traj_point_to_obstacle(path[i], x_gpos, y_gpos, displacement, min_dist);
-//		double delta = distance - min_dist;
-//		if (delta < 0.0)
-//			proximity_to_obstacles += delta * delta;
-//
-//		displacement = 0.0;//-GlobalState::robot_config.distance_between_rear_car_and_rear_wheels;
-////		double distance = distance_from_traj_point_to_obstacle(path[i], x_gpos, y_gpos, displacement, min_dist, plot);
-//		distance = distance_from_traj_point_to_obstacle(path[i], x_gpos, y_gpos, displacement, min_dist);
-//		delta = distance - min_dist;
-//		if (delta < 0.0)
-//			proximity_to_obstacles += delta * delta;
-//
-//		displacement = GlobalState::robot_config.distance_between_front_and_rear_axles / 2.0;
-////		distance = distance_from_traj_point_to_obstacle(path[i], x_gpos, y_gpos, displacement, min_dist, plot);
-//		distance = distance_from_traj_point_to_obstacle(path[i], x_gpos, y_gpos, displacement, min_dist);
-//		delta = distance - min_dist;
-//		if (delta < 0.0)
-//			proximity_to_obstacles += delta * delta;
-//
-//		displacement = GlobalState::robot_config.distance_between_front_and_rear_axles;// + GlobalState::robot_config.distance_between_front_car_and_front_wheels;
-////		distance = distance_from_traj_point_to_obstacle(path[i], x_gpos, y_gpos, displacement, min_dist, plot);
-//		distance = distance_from_traj_point_to_obstacle(path[i], x_gpos, y_gpos, displacement, min_dist);
-//		delta = distance - min_dist;
-//		if (delta < 0.0)
-//			proximity_to_obstacles += delta * delta;
-//
-//		displacement = GlobalState::robot_config.distance_between_front_and_rear_axles + GlobalState::robot_config.distance_between_front_car_and_front_wheels;
-////		distance = distance_from_traj_point_to_obstacle(path[i], x_gpos, y_gpos, displacement, min_dist, plot);
-//		distance = distance_from_traj_point_to_obstacle(path[i], x_gpos, y_gpos, displacement, min_dist);
-//		delta = distance - min_dist;
-//		if (delta < 0.0)
-//			proximity_to_obstacles += delta * delta;
-//	}
-////	fflush(plot);
-////	fclose(plot);
-////	printf("po %lf\n", proximity_to_obstacles);
-//	return (proximity_to_obstacles);
-//}
-
-
 double
 compute_distance_to_closest_obstacles(carmen_ackerman_path_point_t path_pose, double circle_radius,
 		carmen_robot_ackerman_config_t *robot_config, Pose *global_pos,
@@ -391,7 +335,6 @@ my_f(const gsl_vector *x, void *params)
 	TrajectoryLookupTable::TrajectoryDimensions td;
 
 	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->phi_i, false);
-	//TCP_SEED nao eh modificado pelo CG?
 	my_params->tcp_seed->vf = tcp.vf;
 	my_params->tcp_seed->sf = tcp.sf;
 
@@ -404,7 +347,6 @@ my_f(const gsl_vector *x, void *params)
 }
 
 
-/* The gradient of f, df = (df/dx, df/dy). */
 void
 my_df(const gsl_vector *v, void *params, gsl_vector *df)
 {
@@ -441,7 +383,6 @@ my_df(const gsl_vector *v, void *params, gsl_vector *df)
 }
 
 
-/* Compute both f and df together. */
 void
 my_fdf(const gsl_vector *x, void *params, double *f, gsl_vector *df)
 {
@@ -450,8 +391,6 @@ my_fdf(const gsl_vector *x, void *params, double *f, gsl_vector *df)
 }
 
 
-
-//Compute cost function to optimize lane
 double
 my_g(const gsl_vector *x, void *params)
 {
@@ -765,7 +704,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 
 	} while (/*(s->f > MAX_LANE_DIST) &&*/ (status == GSL_CONTINUE) && (iter < 15)); //alterado de 0.005
 
-	printf("iter = %ld\n", iter);
+	// printf("iter = %ld\n", iter);
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
@@ -775,8 +714,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	gsl_multimin_fdfminimizer_free(s);
 	gsl_vector_free(x);
 
-	//print_tcp(tcp);
-	//printf("f %2.4lf\n", s->f);
+	// print_tcp(tcp);
 	return (tcp);
 }
 
@@ -851,7 +789,8 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 	//		getchar();
 	//		system("pkill gnuplot");
 	//	}
-	printf("Iteracoes: %lu \n", iter);
+
+	// printf("Iteracoes: %lu \n", iter);
 	return (tcp);
 }
 

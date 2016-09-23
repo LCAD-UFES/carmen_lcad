@@ -104,6 +104,8 @@ set_truepose_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 	simulator_config->true_pose.x = msg.pose.x;
 	simulator_config->true_pose.y = msg.pose.y;
 	simulator_config->true_pose.theta = msg.pose.theta;
+	simulator_config->phi = simulator_config->target_phi = 0.0;
+	simulator_config->v = simulator_config->target_v = 0.0;
 }
 
 
