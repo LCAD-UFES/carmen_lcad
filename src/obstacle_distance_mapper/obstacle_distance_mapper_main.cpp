@@ -56,10 +56,10 @@ mapper_publish_distance_map(double timestamp, double obstacle_probability_thresh
 	if (distance_map.complete_distance == NULL)
 		carmen_prob_models_initialize_distance_map(&distance_map, &map);
 
-//	if (0.0 != g_goal_position.x && 0.0 != g_goal_position.y)
-//	    carmen_prob_models_create_masked_distance_map(&distance_map, &map, obstacle_probability_threshold, &g_robot_position, &g_goal_position);
-//	else
-	    carmen_prob_models_create_distance_map(&distance_map, &map, obstacle_probability_threshold);
+	if (0.0 != g_goal_position.x && 0.0 != g_goal_position.y)
+		carmen_prob_models_create_masked_distance_map(&distance_map, &map, obstacle_probability_threshold, &g_robot_position, &g_goal_position);
+	else
+		carmen_prob_models_create_distance_map(&distance_map, &map, obstacle_probability_threshold);
 
 	carmen_obstacle_distance_mapper_publish_distance_map_message(&distance_map, timestamp);
 }
@@ -144,9 +144,7 @@ carmen_mapper_map_handler(carmen_mapper_map_message *msg)
 	carmen_compact_map_t compacted_cost_map;
 
 	carmen_mapper_copy_map_from_message(&map, msg);
-//	double timestamp = carmen_get_time();
 	mapper_publish_distance_map(msg->timestamp, obstacle_probability_threshold);
-//	printf("delta_t %lf\n", carmen_get_time() - timestamp);
 	carmen_mapper_build_obstacle_cost_map(&cost_map, &map, &distance_map, obstacle_cost_distance);
 	carmen_prob_models_create_compact_map(&compacted_cost_map, &cost_map, 0.0);
 

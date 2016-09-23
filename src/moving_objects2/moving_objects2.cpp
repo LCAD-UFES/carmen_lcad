@@ -285,7 +285,21 @@ segment_remission_map(carmen_map_t *remission_map, carmen_map_t *map)
 
 
 void
-show_map(carmen_map_t *map, cv::Mat road_map)
+copy_carmen_map_to_opencv(carmen_map_t *map, cv::Mat *map_img)
+{
+	for (int i = 0; i < map->config.x_size; i++)
+	{
+		for (int j = 0; j < map->config.x_size; j++)
+		{
+			uchar aux = 255 * (map->map[i][j] > 0.5 ? 1.0 : 0.0);
+			map_img->at<uchar>(i, j) = aux;
+		}
+	}
+}
+
+
+void
+show_map(carmen_map_t *map, carmen_map_t *offline_grid_map, cv::Mat road_map)
 {
 	cv::Mat map_img = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC1);
 	cv::Mat map_img_bkp = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC1);
@@ -305,6 +319,13 @@ show_map(carmen_map_t *map, cv::Mat road_map)
 	std::vector<std::vector<cv::Point> > contours2;
 
 	//#######################copia de mapa do carmen para imagem opencv
+//	// copy map
+//	copy_carmen_map_to_opencv(map, &map_img);
+//	// backup map
+//	copy_carmen_map_to_opencv(map, &map_img_bkp);
+//	// copy offline map
+//	copy_carmen_map_to_opencv(&offline_map, &offline_map_img);
+
 	for (int i = 0; i < map->config.x_size; i++)
 	{
 		for (int j = 0; j < map->config.x_size; j++)
@@ -312,7 +333,7 @@ show_map(carmen_map_t *map, cv::Mat road_map)
 			uchar aux = 255 * (map->map[i][j] > 0.5 ? 1.0 : 0.0);
 			map_img_bkp.at<uchar>(i, j)  = map_img.at<uchar>(i, j) = aux;
 
-			aux = 255 * (offline_map.map[i][j] > 0.5 ? 1.0 : 0.0);
+			aux = 255 * (offline_grid_map->map[i][j] > 0.5 ? 1.0 : 0.0);
 			offline_map_img.at<uchar>(i, j) = aux;
 		}
 	}
@@ -440,6 +461,11 @@ show_map(carmen_map_t *map, cv::Mat road_map)
     }
 
     //##################pinta as associações
+
+    // ######### cria o vetor de retângulos orientados
+	std::vector<cv::RotatedRect> minRect(contours.size());
+
+
     cv::RNG rng(12345);
     for (uint i = 0; i < objs.size(); i++)
     {
@@ -475,6 +501,8 @@ show_map(carmen_map_t *map, cv::Mat road_map)
 		}
 		cv::Mat roi = map_img_bkp(cv::Rect(minP, maxP));
 
+		minRect[i] = cv::minAreaRect(cv::Mat(contours[i]));
+
 		for (int y = 0; y < roi.rows; y++)
 			for (int x = 0; x < roi.cols; x++)
 				if (roi.at<uchar>(y, x) > 128)
@@ -485,17 +513,27 @@ show_map(carmen_map_t *map, cv::Mat road_map)
     		//drawContours(map_img_out, contours, (int)objs[i].y, color, -1);
 
     	if ((int)objs[i].z > 0.0)
+    	{
     		drawContours(last_map_img_out, contours2, (int)objs[i].z, color, -1);
 
+    		//desenha os retangulos
+			cv::Point2f rect_points[4];
+			minRect[i].points(rect_points);
+			for( int j = 0; j < 4; j++ )
+			{
+				cv::line( map_img_out, rect_points[j], rect_points[(j+1)%4], cv::Scalar(0, 0, 255), 1, 8 );
+				cv::line( offline_map_img, rect_points[j], rect_points[(j+1)%4], CV_RGB(255, 255, 255), 1, 8 );
+			}
+    	}
     }
 
 	//cv::medianBlur(map_img2, map_img2, 3);
 
     cv::imshow("map_img_out", map_img_out);
-    cv::imshow("last_map_img_out", last_map_img_out);
+    //cv::imshow("last_map_img_out", last_map_img_out);
 
 
-    //cv::imshow("offline_map_img", offline_map_img);
+    cv::imshow("offline_map_img", offline_map_img);
 	//cv::imshow("last_map_img", last_map_img);
 	//cv::imshow("map_img", map_img);
 	//cv::imshow("map", map_img2);
@@ -548,7 +586,7 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 	}
 
 	cv::Mat road_map = segment_remission_map(&localize_map.carmen_mean_remission_map, &localize_map.carmen_map);
-	show_map(snapshot_map, road_map);
+	show_map(snapshot_map, &localize_map.carmen_map, road_map);
 	//show_map(&offline_map);
 	//printf("\n###############################################################\n");
 }
