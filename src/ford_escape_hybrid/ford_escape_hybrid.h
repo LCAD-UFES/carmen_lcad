@@ -52,6 +52,7 @@ typedef struct
 	double length;
 	double distance_between_front_and_rear_axles;
 	double understeer_coeficient;
+	double max_phi;
 	
 	carmen_ackerman_motion_command_p current_motion_command_vector;
 	int nun_motion_commands;

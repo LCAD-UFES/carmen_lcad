@@ -261,7 +261,7 @@ motion_command_handler(carmen_base_ackerman_motion_command_message *motion_comma
 	{
 		simulator_config->current_motion_command_vector = motion_commands_vector[(NUM_MOTION_COMMANDS_VECTORS + current_motion_command_vetor - 1) % NUM_MOTION_COMMANDS_VECTORS];
 		simulator_config->nun_motion_commands = nun_motion_commands[(NUM_MOTION_COMMANDS_VECTORS + current_motion_command_vetor - 1) % NUM_MOTION_COMMANDS_VECTORS];
-		simulator_config->time_of_last_command = carmen_get_time();
+		simulator_config->time_of_last_command = motion_command_message->timestamp;
 	}
 
 	//print_motion_command_vector(motion_commands_vector[current_motion_command_vetor], nun_motion_commands[current_motion_command_vetor]);
@@ -659,8 +659,8 @@ read_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *conf
 			{"robot", "rearlaser_id", CARMEN_PARAM_INT, &(config->rear_laser_config.id), 0, NULL},
 			{"robot", "width", CARMEN_PARAM_DOUBLE, &(config->width), 1, NULL},
 			{"robot", "length", CARMEN_PARAM_DOUBLE, &(config->length), 1, NULL},
-			{"robot", "distance_between_rear_wheels", CARMEN_PARAM_DOUBLE, &(config->distance_between_rear_wheels), 1,NULL},
-			{"robot", "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &(config->distance_between_front_and_rear_axles), 1,NULL},
+			{"robot", "distance_between_rear_wheels", CARMEN_PARAM_DOUBLE, &(config->distance_between_rear_wheels), 1, NULL},
+			{"robot", "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &(config->distance_between_front_and_rear_axles), 1, NULL},
 			{"robot", "max_velocity", CARMEN_PARAM_DOUBLE, &(config->max_v), 1,NULL},
 			{"robot", "max_steering_angle", CARMEN_PARAM_DOUBLE, &(config->max_phi), 1, NULL},
 			{"robot", "maximum_steering_command_rate", CARMEN_PARAM_DOUBLE, &(config->maximum_steering_command_rate), 0, NULL},

@@ -57,7 +57,8 @@ carmen_libcarneuralmodel_init_steering_ann (fann_type *steering_ann_input)
 
 double
 carmen_libcarneuralmodel_compute_new_phi_from_effort(double steering_effort, double atan_current_curvature, fann_type *steering_ann_input, struct fann *steering_ann,
-														double v, double understeer_coeficient, double distance_between_front_and_rear_axles)
+														double v, double understeer_coeficient, double distance_between_front_and_rear_axles,
+														double max_phi)
 {
 	fann_type *steering_ann_output;
 
@@ -66,6 +67,7 @@ carmen_libcarneuralmodel_compute_new_phi_from_effort(double steering_effort, dou
 	steering_ann_output = fann_run(steering_ann, steering_ann_input);
 
 	double phi = carmen_get_phi_from_curvature(tan(steering_ann_output[0]), v, understeer_coeficient, distance_between_front_and_rear_axles);
+	phi = carmen_clamp(-max_phi, phi, max_phi);
 
 	return (phi);
 }
@@ -73,7 +75,7 @@ carmen_libcarneuralmodel_compute_new_phi_from_effort(double steering_effort, dou
 
 double
 carmen_libcarneuralmodel_compute_new_phi_with_ann(double v, double current_phi, double desired_phi, double time,
-													  double understeer_coeficient, double distance_between_front_and_rear_axles)
+	double understeer_coeficient, double distance_between_front_and_rear_axles, double max_phi)
 {
 	static double steering_effort = 0.0;
 	double atan_current_curvature;
@@ -104,7 +106,7 @@ carmen_libcarneuralmodel_compute_new_phi_with_ann(double v, double current_phi, 
 	//		steering_ann, v, understeer_coeficient, distance_between_front_and_rear_axles);
 
 	double new_phi = carmen_libcarneuralmodel_compute_new_phi_from_effort(steering_effort, atan_current_curvature, steering_ann_input,
-														steering_ann, v, understeer_coeficient, distance_between_front_and_rear_axles);
+							steering_ann, v, understeer_coeficient, distance_between_front_and_rear_axles, max_phi);
 
 	return (new_phi);
 }
@@ -244,7 +246,7 @@ carmen_libcarneuralmodel_compute_new_pos_with_ann(carmen_ackerman_motion_command
 
 	v   = carmen_libcarneuralmodel_compute_new_velocity_with_ann(target_v, current_v, delta_t);
 	phi = carmen_libcarneuralmodel_compute_new_phi_with_ann(current_v, current_phi, target_phi, delta_t,
-																understeer_coeficient, distance_between_front_and_rear_axles);
+				understeer_coeficient, distance_between_front_and_rear_axles, max_phi);
 
 	phi = carmen_clamp(-max_phi, phi, max_phi);
 

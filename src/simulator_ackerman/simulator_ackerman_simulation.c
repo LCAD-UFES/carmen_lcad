@@ -496,9 +496,10 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 	if (simulator_config->use_mpc)
 	{
 		steering_effort = carmen_libmpc_get_optimized_steering_effort_using_MPC(atan_desired_curvature, atan_current_curvature,
-																			simulator_config->current_motion_command_vector, simulator_config->nun_motion_commands,
-																			simulator_config->v, simulator_config->phi, simulator_config->time_of_last_command,
-																			simulator_config->understeer_coeficient, simulator_config->distance_between_front_and_rear_axles);
+							simulator_config->current_motion_command_vector, simulator_config->nun_motion_commands,
+							simulator_config->v, simulator_config->phi, simulator_config->time_of_last_command,
+							simulator_config->understeer_coeficient, simulator_config->distance_between_front_and_rear_axles,
+							simulator_config->max_phi);
 	}
 	else
 	{
@@ -513,7 +514,8 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 	}
 	return (carmen_libcarneuralmodel_compute_new_phi_from_effort(steering_effort, atan_current_curvature,
 				steering_ann_input, steering_ann, simulator_config->v,
-				simulator_config->understeer_coeficient, simulator_config->distance_between_front_and_rear_axles));
+				simulator_config->understeer_coeficient, simulator_config->distance_between_front_and_rear_axles,
+				simulator_config->max_phi));
 }
 
 

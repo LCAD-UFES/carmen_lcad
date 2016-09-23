@@ -44,8 +44,10 @@ typedef struct {
 } rbf_neuron;
 
 
-double carmen_librlpid_compute_effort_signal (double current_phi, double desired_phi, double next_desired_phi, fann_type *steering_ann_input,
-							struct fann *steering_ann, double v, double understeer_coeficient, double distance_between_front_and_rear_axles);
+double
+carmen_librlpid_compute_effort_signal(double current_phi, double desired_phi, double next_desired_phi, fann_type *steering_ann_input,
+	struct fann *steering_ann, double v, double understeer_coeficient, double distance_between_front_and_rear_axles,
+	double max_phi);
 
 
 #ifdef __cplusplus
