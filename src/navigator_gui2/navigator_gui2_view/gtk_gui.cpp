@@ -113,7 +113,6 @@ namespace View
 		goal_list_size = 0;
 
 		edited_rddf_goal_list = NULL;
-		original_rddf_goal_list = NULL;
 		edited_rddf_goal_size = 0;
 
 		last_navigator_update = 0.0;
@@ -1453,7 +1452,7 @@ namespace View
 		{
 			distance = sqrt(pow(world_point->pose.x - edited_rddf_goal_list[i].pose.x, 2) + pow(world_point->pose.y - edited_rddf_goal_list[i].pose.y, 2));
 
-			if(distance < min_distance)
+			if (distance < min_distance)
 			{
 				min_distance = distance;
 				near_waypoint_index = i;
@@ -1461,7 +1460,7 @@ namespace View
 			}
 		}
 
-		if(min_distance < MAX_DISTANCE)
+		if (min_distance < MAX_DISTANCE)
 			return &(edited_rddf_goal_list[near_waypoint_index]);
 
 		return NULL;
@@ -1504,12 +1503,12 @@ namespace View
 	int
 	GtkGui::select_near_rddf_point(GtkMapViewer *the_map_view __attribute__ ((unused)), carmen_world_point_t *world_point)
 	{
-		if(nav_panel_config->edit_rddf_goals)
+		if (nav_panel_config->edit_rddf_goals)
 		{
 			placement_status = EDITING_NEAR_RDDF;
 			near_rddf_point = find_near_rddf_point(world_point);
 
-			if(near_rddf_point)
+			if (near_rddf_point)
 				return TRUE;
 			else
 				return FALSE;
@@ -1518,6 +1517,50 @@ namespace View
 		}
 
 		return FALSE;
+	}
+
+	void
+	GtkGui::release_near_rddf_point()
+	{
+		if (nav_panel_config->edit_rddf_goals)
+		{
+			placement_status = NO_PLACEMENT;
+			near_rddf_point = NULL;
+			near_rddf_point_index = -1;
+
+			do_redraw();
+		}
+	}
+
+	void
+	GtkGui::delete_current_rddf_point()
+	{
+		if (nav_panel_config->edit_rddf_goals &&
+			placement_status == EDITING_NEAR_RDDF &&
+			near_rddf_point != NULL &&
+			near_rddf_point_index != -1)
+		{
+			if ((near_rddf_point_index == 0) && (edited_rddf_goal_size == 1))
+			{
+				return; // Cannot delete the last one of a list with only one
+			}
+			else if (near_rddf_point_index == (edited_rddf_goal_size - 1)) // The last in the list
+			{
+				edited_rddf_goal_size--;
+				near_rddf_point_index--;
+				near_rddf_point = &edited_rddf_goal_list[near_rddf_point_index];
+			}
+			else
+			{
+				for (int i = near_rddf_point_index; i < edited_rddf_goal_size - 1; i++)
+					edited_rddf_goal_list[i] = edited_rddf_goal_list[i + 1];
+
+				edited_rddf_goal_size--;
+				near_rddf_point = &edited_rddf_goal_list[near_rddf_point_index];
+			}
+
+			do_redraw();
+		}
 	}
 
 	int
@@ -1879,15 +1922,15 @@ namespace View
 		}
 
 		// draw rddf goals
-		if(nav_panel_config->edit_rddf_goals)
+		if (nav_panel_config->edit_rddf_goals)
 		{
-			for(i = 0; i < edited_rddf_goal_size; i++)
+			for (i = 0; i < edited_rddf_goal_size; i++)
 			{
 				carmen_world_point_t world_point;
 				world_point.pose = edited_rddf_goal_list[i].pose;
 				world_point.map = the_map_view->internal_map;
 
-				if(i != near_rddf_point_index)
+				if (i != near_rddf_point_index)
 				{
 					draw_robot_shape(the_map_view, &world_point, TRUE, &people_colour);
 					draw_robot_shape(the_map_view, &world_point, FALSE, &carmen_black);

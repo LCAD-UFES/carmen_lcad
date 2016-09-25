@@ -315,7 +315,7 @@ double
 compute_proximity_to_obstacles_using_distance_map(vector<carmen_ackerman_path_point_t> path)
 {
 	double proximity_to_obstacles_for_path = 0.0;
-	double circle_radius = (GlobalState::robot_config.width + 1.6) / 2.0; // metade da largura do carro + um espacco de guarda
+	double circle_radius = (GlobalState::robot_config.width + 1.4) / 2.0; // metade da largura do carro + um espacco de guarda
 
 	for (unsigned int i = 0; i < path.size(); i += 1)
 	{
@@ -425,8 +425,8 @@ my_g(const gsl_vector *x, void *params)
 			(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 0.2) +
 			(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2));
 
-	double w1,w2,w3,w4,w5;
-	w1 = 5.0; w2 = 15.0; w3 = 15.0; w4 = 1.5; w5 = 10.0;
+	double w1, w2, w3, w4, w5;
+	w1 = 5.0; w2 = 15.0; w3 = 15.0; w4 = 1.5; w5 = 15.0;
 
 	double result = sqrt(
 			w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
@@ -702,7 +702,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 		//	--
 //		params.suitable_acceleration = compute_suitable_acceleration(gsl_vector_get(x, 3), target_td, target_v);
 
-	} while (/*(s->f > MAX_LANE_DIST) &&*/ (status == GSL_CONTINUE) && (iter < 15)); //alterado de 0.005
+	} while (/*(s->f > MAX_LANE_DIST) &&*/ (status == GSL_CONTINUE) && (iter < 25));
 
 	// printf("iter = %ld\n", iter);
 
@@ -821,7 +821,7 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 	tcp_complete = get_optimized_trajectory_control_parameters(tcp_seed, target_td, target_v, params, has_previous_good_tcp);
 
 	// Atencao: params.suitable_acceleration deve ser preenchido na funcao acima para que nao seja alterado no inicio da otimizacao abaixo
-	if (tcp_complete.valid)
+//	if (tcp_complete.valid)
 		tcp_complete = optimized_lane_trajectory_control_parameters(tcp_complete, target_td, target_v, params);
 
 	return (tcp_complete);

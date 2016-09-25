@@ -104,8 +104,10 @@ set_truepose_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 	simulator_config->true_pose.x = msg.pose.x;
 	simulator_config->true_pose.y = msg.pose.y;
 	simulator_config->true_pose.theta = msg.pose.theta;
+	simulator_config->odom_pose.theta = msg.pose.theta;
 	simulator_config->phi = simulator_config->target_phi = 0.0;
 	simulator_config->v = simulator_config->target_v = 0.0;
+	simulator_config->initialize_neural_networks = 1;
 }
 
 
@@ -147,6 +149,7 @@ localize_initialize_message_handler(carmen_localize_ackerman_initialize_message 
 		simulator_config->current_motion_command_vector = NULL;
 		simulator_config->nun_motion_commands = 0;
 		simulator_config->current_motion_command_vector_index = 0;
+		simulator_config->initialize_neural_networks = 1;
 	}
 }
 

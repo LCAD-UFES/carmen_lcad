@@ -901,12 +901,24 @@ int keyboard_press_handler(GtkMapViewer *the_map_view,
 
 			case GDK_n:
 				global_gui->near_rddf_point_index++;
+				if (global_gui->near_rddf_point_index >= global_gui->edited_rddf_goal_size)
+					global_gui->near_rddf_point_index = global_gui->edited_rddf_goal_size - 1;
 				global_gui->near_rddf_point = &(global_gui->edited_rddf_goal_list[global_gui->near_rddf_point_index]);
 				break;
 
 			case GDK_p:
 				global_gui->near_rddf_point_index--;
+				if (global_gui->near_rddf_point_index < 0)
+					global_gui->near_rddf_point_index = 0;
 				global_gui->near_rddf_point = &(global_gui->edited_rddf_goal_list[global_gui->near_rddf_point_index]);
+				break;
+
+			case GDK_d:
+				global_gui->delete_current_rddf_point();
+				break;
+
+			case GDK_f:
+				global_gui->release_near_rddf_point();
 				break;
 
 			default:

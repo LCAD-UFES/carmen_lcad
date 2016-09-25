@@ -36,7 +36,8 @@ double
 carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_desired_curvature, double atan_current_curvature,
 		carmen_ackerman_motion_command_p current_motion_command_vector,
 		int nun_motion_commands, double v, double yp, double time_of_last_motion_command,
-		double understeer_coeficient, double distance_between_front_and_rear_axles, double max_phi);
+		double understeer_coeficient, double distance_between_front_and_rear_axles, double max_phi,
+		int initialize_neural_networks);
 
 
 #ifdef __cplusplus

@@ -28,6 +28,7 @@ static carmen_behavior_selector_goal_source_t current_goal_source = CARMEN_BEHAV
 static double change_goal_distance = 8.0;
 static carmen_behavior_selector_algorithm_t following_lane_planner;
 static carmen_behavior_selector_algorithm_t parking_planner;
+static double distance_to_remove_annotation_goal = 3.0;
 
 static carmen_rddf_road_profile_message *last_rddf_message = NULL;
 int position_of_next_annotation = 0;
@@ -158,7 +159,7 @@ fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_poin
 			 !hit_obstacle) ||
 			(((rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BUMP) ||
 			  (rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BARRIER)) &&
-			 (distance_to_annotation > 2.0) && (!hit_obstacle)))
+			 (distance_to_annotation > distance_to_remove_annotation_goal) && (!hit_obstacle)))
 		{
 			goal_list[j] = rddf->poses[i];
 			annotations[j] = rddf->annotations[i];
@@ -176,7 +177,7 @@ fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_poin
 		}
 	}
 
-	if(j == 0)
+	if (j == 0)
 	{
 		goal_list[j] = rddf->poses[rddf->number_of_poses - 1];
 		j++;
@@ -218,14 +219,13 @@ change_goal()
 	{
 		goal_list_size = 0;
 		goal_list_index = 0;
+
 		return 0;
 	}
 
-	//ultimo ponto do rddf
+	// ultimo ponto do rddf
 	if (goal_list_size == 1)
-	{
 		return 0;
-	}
 
 	distance_to_goal = carmen_distance_ackerman_traj(&robot_pose, &goal_list[goal_list_index]);
 
@@ -457,12 +457,15 @@ change_distance_between_waypoints_and_goals(double dist_between_waypoints, doubl
 
 
 void
-behavior_selector_initialize(carmen_robot_ackerman_config_t config, double dist_between_waypoints, double change_goal_dist, carmen_behavior_selector_algorithm_t f_planner, carmen_behavior_selector_algorithm_t p_planner)
+behavior_selector_initialize(carmen_robot_ackerman_config_t config, double dist_between_waypoints, double change_goal_dist,
+		carmen_behavior_selector_algorithm_t f_planner, carmen_behavior_selector_algorithm_t p_planner,
+		double dist_to_remove_annotation_goal)
 {
 	robot_config = config;
 	distance_between_waypoints = dist_between_waypoints;
 	change_goal_distance = change_goal_dist;
 	parking_planner = p_planner;
 	following_lane_planner = f_planner;
+	distance_to_remove_annotation_goal = dist_to_remove_annotation_goal;
 }
 

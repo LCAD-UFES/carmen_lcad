@@ -464,7 +464,7 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 					ford_escape_hybrid_config->current_motion_command_vector, ford_escape_hybrid_config->nun_motion_commands,
 					ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->time_of_last_command,
 					ford_escape_hybrid_config->understeer_coeficient, ford_escape_hybrid_config->distance_between_front_and_rear_axles,
-					ford_escape_hybrid_config->max_phi);
+					ford_escape_hybrid_config->max_phi, 0);
 		}
 		else
 		{

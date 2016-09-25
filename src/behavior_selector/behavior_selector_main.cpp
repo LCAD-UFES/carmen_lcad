@@ -104,7 +104,7 @@ publish_goal_list()
 	}
 
 	carmen_ackerman_traj_point_t current_robot_pose_v_and_phi = get_robot_pose();
-	double distance_to_act_on_annotation = (fabs(current_robot_pose_v_and_phi.v) < 2.0)? 10.0: fabs(current_robot_pose_v_and_phi.v) * 6.5;
+	double distance_to_act_on_annotation = (fabs(current_robot_pose_v_and_phi.v) < 2.0)? 10.0: fabs(current_robot_pose_v_and_phi.v) * 5.0;
 	// Map annotations handling
 	double distance_to_annotation = DIST2D(last_rddf_annotation_message.annotation_point, get_robot_pose());
 	if ((distance_to_annotation < distance_to_act_on_annotation) &&
@@ -151,7 +151,7 @@ publish_goal_list()
 	else if (obstacle_avoider_active_recently)
 		goal_list_msg.goal_list->v = carmen_fmin(2.5, goal_list_msg.goal_list->v);
 //	else
-//		goal_list_msg.goal_list->v = get_max_v();
+//		goal_list_msg.goal_list->v = 11.11;
 
 	if (goal_list_msg.size > 0)
 	{
@@ -167,9 +167,6 @@ publish_goal_list()
 			carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME);
 		}
 	}
-
-
-	//printf("Goal List: %d\n", goal_list_msg.size);
 }
 
 
@@ -239,7 +236,7 @@ rddf_handler(carmen_rddf_road_profile_message *rddf_msg)
 	behavior_selector_update_rddf(rddf_msg);
 	last_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
 
-	if(goal_list_road_profile_message == CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL)
+	if (goal_list_road_profile_message == CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL)
 	{
 		carmen_behavior_selector_road_profile_message msg;
 		msg.annotations = rddf_msg->annotations;
@@ -261,10 +258,10 @@ path_planner_road_profile_handler(carmen_path_planner_road_profile_message *rddf
 	if (!necessary_maps_available)
 		return;
 
-	behavior_selector_update_rddf((carmen_rddf_road_profile_message*)rddf_msg);
+	behavior_selector_update_rddf((carmen_rddf_road_profile_message *) rddf_msg);
 	last_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_PATH_PLANNER_GOAL;
 
-	if(goal_list_road_profile_message == CARMEN_BEHAVIOR_SELECTOR_PATH_PLANNER_GOAL)
+	if (goal_list_road_profile_message == CARMEN_BEHAVIOR_SELECTOR_PATH_PLANNER_GOAL)
 	{
 		carmen_behavior_selector_road_profile_message msg;
 		msg.annotations = rddf_msg->annotations;
@@ -507,7 +504,7 @@ read_parameters(int argc, char **argv)
 {
 	carmen_robot_ackerman_config_t robot_config;
 	//	carmen_map_t map;
-	double distance_between_waypoints, change_goal_distance;
+	double distance_between_waypoints, change_goal_distance, distance_to_remove_annotation_goal;
 	carmen_behavior_selector_algorithm_t parking_planner, following_lane_planner;
 
 	carmen_param_t param_list[] =
@@ -523,8 +520,9 @@ read_parameters(int argc, char **argv)
 			{(char *) "behavior_selector", (char *) "change_goal_distance", CARMEN_PARAM_DOUBLE, &change_goal_distance, 1, NULL},
 			{(char *) "behavior_selector", (char *) "following_lane_planner", CARMEN_PARAM_INT, &following_lane_planner, 1, NULL},
 			{(char *) "behavior_selector", (char *) "parking_planner", CARMEN_PARAM_INT, &parking_planner, 1, NULL},
-			{(char *) "rrt",   (char *) "distance_interval", CARMEN_PARAM_DOUBLE, &param_distance_interval, 1, NULL},
-			{(char *) "behavior_selector",   (char *) "goal_source_path_planner", CARMEN_PARAM_ONOFF, &param_goal_source_onoff, 0, NULL}
+			{(char *) "behavior_selector", (char *) "goal_source_path_planner", CARMEN_PARAM_ONOFF, &param_goal_source_onoff, 0, NULL},
+			{(char *) "behavior_selector", (char *) "distance_to_remove_annotation_goal", CARMEN_PARAM_DOUBLE, &distance_to_remove_annotation_goal, 0, NULL},
+			{(char *) "rrt",   (char *) "distance_interval", CARMEN_PARAM_DOUBLE, &param_distance_interval, 1, NULL}
 	};
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list)/sizeof(param_list[0]));
 
@@ -540,9 +538,8 @@ read_parameters(int argc, char **argv)
 
 	param_distance_between_waypoints = distance_between_waypoints;
 	param_change_goal_distance = change_goal_distance;
-
 	behavior_selector_initialize(robot_config, distance_between_waypoints,
-		change_goal_distance, following_lane_planner, parking_planner);
+		change_goal_distance, following_lane_planner, parking_planner, distance_to_remove_annotation_goal);
 
 	if (param_goal_source_onoff)
 		goal_list_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_PATH_PLANNER_GOAL;
@@ -567,6 +564,3 @@ main(int argc, char **argv)
 
 	return 0;
 }
-
-
-

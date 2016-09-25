@@ -314,10 +314,7 @@ path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> path)
 	{
 		if ((path[i].phi > GlobalState::robot_config.max_phi) ||
 				(path[i].phi < -GlobalState::robot_config.max_phi))
-		{
 			printf("---------- PHI EXCEEDED THE MAX_PHI!!!!\n");
-			path[i].phi = carmen_clamp(-GlobalState::robot_config.max_phi, path[i].phi, GlobalState::robot_config.max_phi);
-		}
 
 		proximity_to_obstacles_for_path += compute_distance_to_closest_obstacles(path[i], circle_radius,
 				&GlobalState::robot_config, GlobalState::localizer_pose, GlobalState::distance_map);

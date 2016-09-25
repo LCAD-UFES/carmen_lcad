@@ -574,6 +574,7 @@ predict_next_pose_step(Robot_State *new_robot_state, Command *requested_command,
 			achieved_curvature, initial_robot_state.v_and_phi.v,
 			GlobalState::robot_config.understeer_coeficient,
 			GlobalState::robot_config.distance_between_front_and_rear_axles);
+	new_robot_state->v_and_phi.phi = carmen_clamp(-GlobalState::robot_config.max_phi, new_robot_state->v_and_phi.phi, GlobalState::robot_config.max_phi);
 
 	// Tem que checar se as equacoes que governam esta mudancca de v estao corretas (precisa de um Euler?) e fazer o mesmo no caso do rrt_path_follower.
 	double delta_v = fabs(initial_robot_state.v_and_phi.v - requested_command->v);
