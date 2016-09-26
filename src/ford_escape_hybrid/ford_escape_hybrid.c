@@ -439,9 +439,6 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 	double delta_t;
 	int previous_gear_command;
 
-	if (ford_escape_hybrid_config->nun_motion_commands < 1)
-		return;
-
 	reportCurvature = reportCurvatureMessageFromJausMessage(curvature_message);
 	if (reportCurvature)
 	{
