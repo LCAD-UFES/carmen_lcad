@@ -108,6 +108,7 @@ namespace View
 			GtkLabel *labelGoal;
 			GtkLabel *labelGridCell;
 			GtkLabel *labelValue;
+			GtkLabel *distTraveled;
 
 			GtkToggleButton* buttonSyncMode;
 			GtkToggleButton* buttonNextTick;
@@ -259,6 +260,7 @@ namespace View
 
 		int navigator_graphics_update_map();
 		void navigator_graphics_update_display(carmen_traj_point_p	new_robot, carmen_world_point_p new_goal, int autonomous);
+		void set_distance_traveled(carmen_point_t robot_pose, double velocity);
 		void navigator_graphics_update_goal_list(carmen_ackerman_traj_point_t* goal_list, int size);
 		void navigator_graphics_update_waypoint_list(carmen_ackerman_traj_point_t* waypoint_list, int size);
 		void navigator_graphics_update_plan(carmen_ackerman_traj_point_p new_plan, int plan_length);

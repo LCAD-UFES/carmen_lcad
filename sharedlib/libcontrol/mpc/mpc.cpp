@@ -399,7 +399,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_desired_curvat
 	param.dk = yp - Cxk;
 	param.previous_k1 = effort;
 
-	plot_state2(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
+	//plot_state2(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
 
 	return (effort);
 }

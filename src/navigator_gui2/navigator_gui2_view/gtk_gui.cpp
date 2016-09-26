@@ -272,6 +272,7 @@ namespace View
 		controls_.labelGoal = GTK_LABEL(gtk_builder_get_object(builder, "labelGoal" ));
 		controls_.labelGridCell = GTK_LABEL(gtk_builder_get_object(builder, "labelGridCell" ));
 		controls_.labelValue = GTK_LABEL(gtk_builder_get_object(builder, "labelValue" ));
+		controls_.distTraveled = GTK_LABEL(gtk_builder_get_object(builder, "labelDistTraveled" ));
 
 		controls_.buttonSyncMode = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "buttonSyncMode" ));
 		controls_.buttonNextTick = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "buttonNextTick" ));
@@ -370,6 +371,33 @@ namespace View
 
 		label = GTK_BIN(this->controls_.buttonGo)->child;
 		gtk_label_set_text(GTK_LABEL(label), str);
+	}
+
+	void
+	GtkGui::set_distance_traveled(carmen_point_t robot_pose, double velocity)
+	{
+		char buffer[255];
+		static bool first_time = true;
+		static double dist_traveled;
+		static carmen_point_t previous_robot_pose;
+
+		if (first_time)
+		{
+			dist_traveled = 0.0;
+			previous_robot_pose = robot_pose;
+			first_time = false;
+		}
+		else
+		{
+			if (velocity > 0.2)
+			{
+				dist_traveled += carmen_distance(&robot_pose, &previous_robot_pose);
+				previous_robot_pose = robot_pose;
+			}
+		}
+
+		sprintf(buffer, "Dist Traveled: %'.3lf (Km)", dist_traveled / 1000.0);
+		gtk_label_set_text(GTK_LABEL(this->controls_.distTraveled), buffer);
 	}
 
 	void
@@ -472,6 +500,8 @@ namespace View
 
 		sprintf(buffer, "Goal: %.1f m, %.1f m", goal.pose.x, goal.pose.y);
 		gtk_label_set_text(GTK_LABEL(this->controls_.labelGoal), buffer);
+
+		set_distance_traveled(robot.pose, robot_traj.t_vel);
 
 		last_navigator_update = carmen_get_time();
 
