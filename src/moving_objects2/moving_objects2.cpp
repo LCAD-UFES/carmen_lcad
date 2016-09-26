@@ -173,7 +173,7 @@ get_nearest_timestamp_index(double *robot_timestamp, spherical_point_cloud *poin
 	return (index_nearest_timestamp);
 }
 
-void
+cv::Mat
 segment_remission_map(carmen_map_t *remission_map, carmen_map_t *map)
 {
 	cv::Mat map_img = cv::Mat::zeros(remission_map->config.x_size, remission_map->config.y_size, CV_8UC1);
@@ -207,24 +207,23 @@ segment_remission_map(carmen_map_t *remission_map, carmen_map_t *map)
 
 	findContours(occupancy_map_img.clone(), contours2, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
 
-	for (uint i = 0; i < contours2.size(); i++)
-	{
-		double area = contourArea(contours2[i]) * map->config.resolution;
-
-		if (area < 10)
-			drawContours(occupancy_map_img, contours2, i, CV_RGB(0, 0, 0), -1);
-	}
+//	for (uint i = 0; i < contours2.size(); i++)
+//	{
+//		double area = contourArea(contours2[i]) * map->config.resolution;
+//
+//		if (area < 10)
+//			drawContours(occupancy_map_img, contours2, i, CV_RGB(0, 0, 0), -1);
+//	}
 
 	cv::dilate(occupancy_map_img, occupancy_map_img, element);
 
 	findContours(occupancy_map_img.clone(), contours2, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
-
 	for (uint i = 0; i < contours2.size(); i++)
 	{
 		drawContours(map_img, contours2, i, CV_RGB(0, 0, 0), -1);
 	}
 
-	cv::imshow("map_img2", map_img);
+	//cv::imshow("map_img2", map_img);
 
 	findContours(map_img.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
 
@@ -235,7 +234,7 @@ segment_remission_map(carmen_map_t *remission_map, carmen_map_t *map)
 	{
 		double area = contourArea(contours[i])* map->config.resolution;
 
-		if (area < 1000)
+		if (area < 500)
 			drawContours(map_img, contours, i, CV_RGB(0, 0, 0), -1);
 	}
 
@@ -251,20 +250,56 @@ segment_remission_map(carmen_map_t *remission_map, carmen_map_t *map)
 		drawContours(map_img, contours2, i, CV_RGB(0, 0, 0), -1);
 	}
 
+	erosion_size = 1;
+	element = getStructuringElement( cv::MORPH_ELLIPSE,
+			cv::Size( 2*erosion_size + 1, 2*erosion_size+1 ),
+			cv::Point( erosion_size, erosion_size ));
+
+	cv::dilate(map_img, map_img, element);
+	cv::erode(map_img, map_img, element);
+
+//	cv::erode(map_img, map_img, element);
+//
+//	findContours(map_img.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
+//
+//	for (uint i = 0; i < contours.size(); i++)
+//	{
+//		double area = contourArea(contours[i])* map->config.resolution;
+//
+//		if (area < 500)
+//			drawContours(map_img, contours, i, CV_RGB(0, 0, 0), -1);
+//	}
+	//cv::dilate(map_img, map_img, element);
+
 //	for (uint i = 0; i < contours.size(); i++)
 //	{
 //		if (i != index)
 //			drawContours(map_img, contours, i, CV_RGB(0, 0, 0), -1);
 //	}
-
-	cv::imshow("occupancy_map_img", occupancy_map_img);
-	cv::imshow("map_img", map_img);
-	cv::waitKey(33);
+	cv::threshold(map_img, map_img, 235, 255, cv::THRESH_BINARY_INV);
+//	cv::imshow("occupancy_map_img", occupancy_map_img);
+	//cv::imshow("map_img10", map_img);
+	//cv::waitKey(0);
+	return map_img;
 }
 
 
 void
-show_map(carmen_map_t *map)
+copy_carmen_map_to_opencv(carmen_map_t *map, cv::Mat *map_img)
+{
+	for (int i = 0; i < map->config.x_size; i++)
+	{
+		for (int j = 0; j < map->config.x_size; j++)
+		{
+			uchar aux = 255 * (map->map[i][j] > 0.5 ? 1.0 : 0.0);
+			map_img->at<uchar>(i, j) = aux;
+		}
+	}
+}
+
+
+void
+show_map(carmen_map_t *map, carmen_map_t *offline_grid_map, cv::Mat road_map)
 {
 	cv::Mat map_img = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC1);
 	cv::Mat map_img_bkp = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC1);
@@ -280,7 +315,17 @@ show_map(carmen_map_t *map)
 	cv::Mat map_img_out = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC3);
 	cv::Mat last_map_img_out = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC3);
 
+	std::vector<std::vector<cv::Point> > contours;
+	std::vector<std::vector<cv::Point> > contours2;
+
 	//#######################copia de mapa do carmen para imagem opencv
+//	// copy map
+//	copy_carmen_map_to_opencv(map, &map_img);
+//	// backup map
+//	copy_carmen_map_to_opencv(map, &map_img_bkp);
+//	// copy offline map
+//	copy_carmen_map_to_opencv(&offline_map, &offline_map_img);
+
 	for (int i = 0; i < map->config.x_size; i++)
 	{
 		for (int j = 0; j < map->config.x_size; j++)
@@ -288,7 +333,7 @@ show_map(carmen_map_t *map)
 			uchar aux = 255 * (map->map[i][j] > 0.5 ? 1.0 : 0.0);
 			map_img_bkp.at<uchar>(i, j)  = map_img.at<uchar>(i, j) = aux;
 
-			aux = 255 * (offline_map.map[i][j] > 0.5 ? 1.0 : 0.0);
+			aux = 255 * (offline_grid_map->map[i][j] > 0.5 ? 1.0 : 0.0);
 			offline_map_img.at<uchar>(i, j) = aux;
 		}
 	}
@@ -296,10 +341,14 @@ show_map(carmen_map_t *map)
 	cv::dilate( map_img, map_img, element);
 	cv::dilate( offline_map_img, offline_map_img, element);
 
-	//cv::dilate( map_img, map_img, element);
+	findContours(road_map.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
+
+	for (uint i = 0; i < contours.size(); i++)
+	{
+		drawContours(map_img, contours, i, CV_RGB(0, 0, 0), -1);
+	}
 	map_img.copyTo(map_img2);
-	std::vector<std::vector<cv::Point> > contours;
-	std::vector<std::vector<cv::Point> > contours2;
+
 
 	//#################remove objetos estaticos e grandes
 	findContours(map_img.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
@@ -412,6 +461,11 @@ show_map(carmen_map_t *map)
     }
 
     //##################pinta as associações
+
+    // ######### cria o vetor de retângulos orientados
+	std::vector<cv::RotatedRect> minRect(contours.size());
+
+
     cv::RNG rng(12345);
     for (uint i = 0; i < objs.size(); i++)
     {
@@ -447,6 +501,8 @@ show_map(carmen_map_t *map)
 		}
 		cv::Mat roi = map_img_bkp(cv::Rect(minP, maxP));
 
+		minRect[i] = cv::minAreaRect(cv::Mat(contours[i]));
+
 		for (int y = 0; y < roi.rows; y++)
 			for (int x = 0; x < roi.cols; x++)
 				if (roi.at<uchar>(y, x) > 128)
@@ -457,19 +513,29 @@ show_map(carmen_map_t *map)
     		//drawContours(map_img_out, contours, (int)objs[i].y, color, -1);
 
     	if ((int)objs[i].z > 0.0)
+    	{
     		drawContours(last_map_img_out, contours2, (int)objs[i].z, color, -1);
 
+    		//desenha os retangulos
+			cv::Point2f rect_points[4];
+			minRect[i].points(rect_points);
+			for( int j = 0; j < 4; j++ )
+			{
+				cv::line( map_img_out, rect_points[j], rect_points[(j+1)%4], cv::Scalar(0, 0, 255), 1, 8 );
+				cv::line( offline_map_img, rect_points[j], rect_points[(j+1)%4], CV_RGB(255, 255, 255), 1, 8 );
+			}
+    	}
     }
 
 	//cv::medianBlur(map_img2, map_img2, 3);
 
     cv::imshow("map_img_out", map_img_out);
-    cv::imshow("last_map_img_out", last_map_img_out);
+    //cv::imshow("last_map_img_out", last_map_img_out);
 
 
     cv::imshow("offline_map_img", offline_map_img);
 	//cv::imshow("last_map_img", last_map_img);
-	cv::imshow("map_img", map_img);
+	//cv::imshow("map_img", map_img);
 	//cv::imshow("map", map_img2);
 	cv::waitKey(33);
 	last_map_img = map_img2;
@@ -505,22 +571,22 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 		carmen_prob_models_compute_relevant_map_coordinates(sensor_data, sensor_params, i, robot_interpolated_position.position, sensor_board_1_pose,
 				r_matrix_robot_to_global, board_to_car_matrix, robot_wheel_radius, x_origin, y_origin, &car_config, robot_near_bump_or_barrier, tid);
 
-		carmen_prob_models_get_occuppancy_log_odds_by_height(sensor_data, sensor_params, i, highest_sensor, safe_range_above_sensors,
+		carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data, sensor_params, i, highest_sensor, safe_range_above_sensors,
 				robot_near_bump_or_barrier, tid);
 
-		sensor_params->log_odds.log_odds_free = -37;
+		//sensor_params->log_odds.log_odds_free = -37;
 
 		carmen_prob_models_update_cells_crossed_by_ray(snapshot_map, sensor_params, sensor_data, tid);
 
 		//sensor_params->log_odds.log_odds_occ = 37;
 
-		//carmen_prob_models_update_log_odds_of_nearest_target(snapshot_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid);
-		carmen_prob_models_update_log_odds_of_cells_hit_by_rays(snapshot_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid);
+		carmen_prob_models_update_log_odds_of_nearest_target(snapshot_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid);
+//		carmen_prob_models_update_log_odds_of_cells_hit_by_rays(snapshot_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid);
 
 	}
 
-	segment_remission_map(&localize_map.carmen_mean_remission_map, &localize_map.carmen_map);
-	//show_map(snapshot_map);
+	cv::Mat road_map = segment_remission_map(&localize_map.carmen_mean_remission_map, &localize_map.carmen_map);
+	show_map(snapshot_map, &localize_map.carmen_map, road_map);
 	//show_map(&offline_map);
 	//printf("\n###############################################################\n");
 }

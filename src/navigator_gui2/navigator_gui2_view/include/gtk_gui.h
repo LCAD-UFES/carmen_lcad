@@ -108,6 +108,7 @@ namespace View
 			GtkLabel *labelGoal;
 			GtkLabel *labelGridCell;
 			GtkLabel *labelValue;
+			GtkLabel *distTraveled;
 
 			GtkToggleButton* buttonSyncMode;
 			GtkToggleButton* buttonNextTick;
@@ -184,7 +185,6 @@ namespace View
 		int goal_list_size;
 
 		carmen_rddf_waypoint *edited_rddf_goal_list;
-		carmen_rddf_waypoint *original_rddf_goal_list;
 		int edited_rddf_goal_size;
 
 		int ignore_click;
@@ -260,6 +260,7 @@ namespace View
 
 		int navigator_graphics_update_map();
 		void navigator_graphics_update_display(carmen_traj_point_p	new_robot, carmen_world_point_p new_goal, int autonomous);
+		void set_distance_traveled(carmen_point_t robot_pose, double velocity);
 		void navigator_graphics_update_goal_list(carmen_ackerman_traj_point_t* goal_list, int size);
 		void navigator_graphics_update_waypoint_list(carmen_ackerman_traj_point_t* waypoint_list, int size);
 		void navigator_graphics_update_plan(carmen_ackerman_traj_point_p new_plan, int plan_length);
@@ -300,6 +301,8 @@ namespace View
 		int selecting_near_waypoint_action(GtkMapViewer *the_map_view __attribute__ ((unused)), carmen_world_point_t *world_point);
 		carmen_rddf_waypoint* find_near_rddf_point(carmen_world_point_t *world_point);
 		int select_near_rddf_point(GtkMapViewer *the_map_view __attribute__ ((unused)), carmen_world_point_t *world_point);
+		void release_near_rddf_point();
+		void delete_current_rddf_point();
 		void update_edited_rddf_goal_list();
 		int original_rdff_list_contains(carmen_world_point_t world_point);
 

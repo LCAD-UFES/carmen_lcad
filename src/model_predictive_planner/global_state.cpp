@@ -34,8 +34,6 @@ double GlobalState::time_to_change_gears = 1.0;
 carmen_map_t GlobalState::cost_map;
 
 carmen_obstacle_distance_mapper_message *GlobalState::distance_map = NULL;
-KDTree2D GlobalState::obstacles_kdtree;
-vector<vector<cell_coords_t>> GlobalState::cell_mask;
 
 bool GlobalState::cost_map_initialized 	= false;
 

@@ -549,8 +549,9 @@ load_variables(past_variables pv)
 
 
 double
-carmen_librlpid_compute_effort_signal (double current_phi, double desired_phi, double next_desired_phi, fann_type *steering_ann_input,
-							struct fann *steering_ann, double v, double understeer_coeficient, double distance_between_front_and_rear_axles)
+carmen_librlpid_compute_effort_signal(double current_phi, double desired_phi, double next_desired_phi, fann_type *steering_ann_input,
+	struct fann *steering_ann, double v, double understeer_coeficient, double distance_between_front_and_rear_axles,
+	double max_phi)
 {
 	bool first_time = true;
 	past_variables pv;
@@ -588,7 +589,7 @@ carmen_librlpid_compute_effort_signal (double current_phi, double desired_phi, d
 	double atan_current_curvature = carmen_get_curvature_from_phi(current_phi, v, understeer_coeficient, distance_between_front_and_rear_axles);
 
 	double future_phi = carmen_libcarneuralmodel_compute_new_phi_from_effort(U[0], atan_current_curvature, steering_ann_input, steering_ann, v,
-																			understeer_coeficient, distance_between_front_and_rear_axles);		//Step 6 ==> PREVE Y(t+1)
+								understeer_coeficient, distance_between_front_and_rear_axles, max_phi);		//Step 6 ==> PREVE Y(t+1)
 
 	calculate_error(next_desired_phi, future_phi); // Step 6 ==> CALCULA ERRO
 

@@ -18,8 +18,6 @@
 #include <carmen/behavior_selector_messages.h>
 #include <list>
 
-#include "../kdtree/KDTree2D.hpp"
-
 
 using namespace std;
 
@@ -49,8 +47,6 @@ public:
 	static carmen_map_t cost_map;
 	static carmen_obstacle_distance_mapper_message *distance_map;
 	static bool cost_map_initialized;
-	static KDTree2D obstacles_kdtree;
-	static vector<vector<cell_coords_t>> cell_mask;
 
 	static bool	  following_path; // true if the path is being followed
 

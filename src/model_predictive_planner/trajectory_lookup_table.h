@@ -55,15 +55,8 @@
 
 #define NUM_VELOCITY_PROFILES	4
 
-#define V_LATENCY				0.0
-#define PHI_LATENCY				0.0
 #define LATENCY_CICLE_TIME		0.01
 #define MAX_PLANNING_TIME		1.0
-const int V_LATENCY_BUFFER_SIZE = (V_LATENCY / LATENCY_CICLE_TIME);
-const int V_LATENCY_BUFFER_TOTAL_SIZE = (V_LATENCY_BUFFER_SIZE + MAX_PLANNING_TIME / LATENCY_CICLE_TIME);
-const int PHI_LATENCY_BUFFER_SIZE = (PHI_LATENCY / LATENCY_CICLE_TIME);
-const int PHI_LATENCY_BUFFER_TOTAL_SIZE = (PHI_LATENCY_BUFFER_SIZE + MAX_PLANNING_TIME / LATENCY_CICLE_TIME);
-
 
 //To error layout
 #define KNRM  "\x1B[0m"
@@ -129,7 +122,6 @@ public:
 
 	//typedef struct _TrajectoryDiscreteDimensions TrajectoryDiscreteDimensions;
 
-
 	struct Plan
 	{
 		vector<carmen_ackerman_path_point_t> path;
@@ -144,27 +136,6 @@ public:
 	void build_trajectory_lookup_table();
 	void evaluate_trajectory_lookup_table();
 	void update_lookup_table_entries();
-
-
-	class CarLatencyBuffer
-	{
-	public:
-		double previous_v[V_LATENCY_BUFFER_TOTAL_SIZE];
-		double previous_phi[PHI_LATENCY_BUFFER_TOTAL_SIZE];
-		double timestamp;
-
-		CarLatencyBuffer()
-		{
-			for (int i = 0; i < V_LATENCY_BUFFER_TOTAL_SIZE; i++)
-				previous_v[i] = 0.0;
-
-			for (int i = 0; i < PHI_LATENCY_BUFFER_TOTAL_SIZE; i++)
-				previous_phi[i] = 0.0;
-
-			timestamp = 0.0;
-		}
-	};
-
 };
 
 
@@ -177,7 +148,7 @@ TrajectoryLookupTable::TrajectoryControlParameters search_lookup_table(Trajector
 
 vector<carmen_ackerman_path_point_t> simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_phi,
-		TrajectoryLookupTable::CarLatencyBuffer car_latency_buffer,	bool display_phi_profile);
+		bool display_phi_profile);
 
 bool path_has_loop(double dist, double sf);
 void move_path_to_current_robot_pose(vector<carmen_ackerman_path_point_t> &path, Pose *localizer_pose);

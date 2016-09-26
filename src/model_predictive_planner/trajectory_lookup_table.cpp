@@ -21,7 +21,7 @@
 
 
 TrajectoryLookupTable::TrajectoryControlParameters trajectory_lookup_table[N_DIST][N_THETA][N_D_YAW][N_I_PHI][N_I_V];
-TrajectoryLookupTable::CarLatencyBuffer g_car_latency_buffer;
+
 
 TrajectoryLookupTable::TrajectoryLookupTable(int update_lookup_table)
 {
@@ -574,6 +574,7 @@ predict_next_pose_step(Robot_State *new_robot_state, Command *requested_command,
 			achieved_curvature, initial_robot_state.v_and_phi.v,
 			GlobalState::robot_config.understeer_coeficient,
 			GlobalState::robot_config.distance_between_front_and_rear_axles);
+	new_robot_state->v_and_phi.phi = carmen_clamp(-GlobalState::robot_config.max_phi, new_robot_state->v_and_phi.phi, GlobalState::robot_config.max_phi);
 
 	// Tem que checar se as equacoes que governam esta mudancca de v estao corretas (precisa de um Euler?) e fazer o mesmo no caso do rrt_path_follower.
 	double delta_v = fabs(initial_robot_state.v_and_phi.v - requested_command->v);
@@ -641,8 +642,7 @@ double
 compute_path_via_simulation(Robot_State &robot_state, Command &command,
 		vector<carmen_ackerman_path_point_t> &path,
 		TrajectoryLookupTable::TrajectoryControlParameters tcp,
-		gsl_spline *phi_spline, gsl_interp_accel *acc, double v0, double i_phi,
-		TrajectoryLookupTable::CarLatencyBuffer car_latency_buffer)
+		gsl_spline *phi_spline, gsl_interp_accel *acc, double v0, double i_phi)
 {
 	int i = 0;
 	double t, last_t;
@@ -659,35 +659,10 @@ compute_path_via_simulation(Robot_State &robot_state, Command &command,
 	command.phi = gsl_spline_eval(phi_spline, 0.0, acc);
 	robot_state.v_and_phi = command;
 	Robot_State last_robot_state = robot_state;
-	//	bool is_first_phi = true;
-	//	bool is_first_v = true;
 	for (last_t = t = 0.0; t < tcp.tt; t += delta_t)
 	{
-		if (t < PHI_LATENCY)
-			command.phi = car_latency_buffer.previous_phi[(int) (t / LATENCY_CICLE_TIME)];
-		else
-			command.phi = gsl_spline_eval(phi_spline, t - PHI_LATENCY, acc);
-
-		//		if ((t >= PHI_LATENCY) && is_first_phi)
-		//		{
-		//			if (fabs(command.phi - car_latency_buffer.previous_phi[PHI_LATENCY_BUFFER_SIZE - 1]) > carmen_degrees_to_radians(2.0))
-		//				printf("phi after latency does not match planned phi!!!!!\n");
-		//
-		//			is_first_phi = false;
-		//		}
-
-		if (t < V_LATENCY)
-			command.v = car_latency_buffer.previous_v[(int) (t / LATENCY_CICLE_TIME)];
-		else
-			command.v += tcp.a * delta_t;
-
-		//		if ((t >= V_LATENCY) && is_first_v)
-		//		{
-		//			if (fabs(command.v - car_latency_buffer.previous_v[V_LATENCY_BUFFER_SIZE - 1]) > 0.2)
-		//				printf("v after latency does not match planned v!!!!!\n");
-		//
-		//			is_first_v = false;
-		//		}
+		command.phi = gsl_spline_eval(phi_spline, t, acc);
+		command.v += tcp.a * delta_t;
 
 		TrajectoryLookupTable::predict_next_pose(robot_state, command, delta_t,	&distance_traveled, delta_t);
 		if ((i % reduction_factor) == 0)
@@ -751,7 +726,7 @@ print_phi_profile_temp(gsl_spline *phi_spline, gsl_interp_accel *acc, double tot
 vector<carmen_ackerman_path_point_t>
 simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_phi,
-		TrajectoryLookupTable::CarLatencyBuffer car_latency_buffer,	bool display_phi_profile)
+		bool display_phi_profile)
 {
 	vector<carmen_ackerman_path_point_t> path;
 	if (!tcp.valid)
@@ -787,7 +762,7 @@ simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 	Command command;
 	Robot_State robot_state;
 
-	double distance_traveled = compute_path_via_simulation(robot_state, command, path, tcp, phi_spline, acc, v0, i_phi, car_latency_buffer);
+	double distance_traveled = compute_path_via_simulation(robot_state, command, path, tcp, phi_spline, acc, v0, i_phi);
 
 	gsl_spline_free(phi_spline);
 	gsl_interp_accel_free(acc);
@@ -837,7 +812,7 @@ compute_trajectory_dimensions(TrajectoryLookupTable::TrajectoryControlParameters
 	double d_i_phi = get_i_phi_by_index(i_phi);
 	double d_i_v0 = get_initial_velocity_by_index(i_v0);
 	TrajectoryLookupTable::TrajectoryDimensions td;
-	path = simulate_car_from_parameters(td, tcp, d_i_v0, d_i_phi, g_car_latency_buffer, print);
+	path = simulate_car_from_parameters(td, tcp, d_i_v0, d_i_phi, print);
 	if (tcp.valid && print)
 		print_path(path);
 

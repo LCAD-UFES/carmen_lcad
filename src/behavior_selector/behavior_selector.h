@@ -13,7 +13,9 @@
 
 void change_distance_between_waypoints_and_goals(double dist_between_waypoints, double change_goal_dist);
 
-void behavior_selector_initialize(carmen_robot_ackerman_config_t config, double dist_between_waypoints, double change_goal_dist, carmen_behavior_selector_algorithm_t f_planner, carmen_behavior_selector_algorithm_t p_planner);
+void behavior_selector_initialize(carmen_robot_ackerman_config_t config, double dist_between_waypoints,
+		double change_goal_dist, carmen_behavior_selector_algorithm_t f_planner, carmen_behavior_selector_algorithm_t p_planner,
+		double distance_to_remove_annotation_goal);
 
 void behavior_selector_update_robot_pose(carmen_ackerman_traj_point_t robot_pose, int *state_updated);
 

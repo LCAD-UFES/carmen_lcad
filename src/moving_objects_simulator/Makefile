@@ -7,16 +7,16 @@ MODULE_COMMENT = Moving objects simulator
 LINK = g++
 
 # Application specific include directories.
-IFLAGS += 
+IFLAGS += -I/usr/include/eigen3 -I/usr/include/pcl-1.7/  -I/usr/include/vtk-5.8/
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/gl_plotter 
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_plotter
 
 # Required default libraries to comunicate with Carmen Core.
-LFLAGS += -lgrid_mapping -lparam_interface -lipc -lglobal \
--lfused_odometry_interface -llocalize_ackerman_interface \
--llocalize_ackerman_core \
--llocalize_ackerman_motion
+LFLAGS += -lparam_interface -lipc -lglobal \
+-llocalize_ackerman_interface -lmoving_objects_interface \
 
 # C++11 flag
-CFLAGS += -Wall -w -msse3
+CFLAGS += -Wall
 
 # Source code files (.c, .cpp) 
 SOURCES = moving_objects_simulator_main.cpp
