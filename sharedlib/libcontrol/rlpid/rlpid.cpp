@@ -556,18 +556,19 @@ carmen_librlpid_compute_effort_signal (double current_phi, double desired_phi, d
 	past_variables pv;
 	intelligent_control_params params;
 
-	if(first_time)
-	{
-		params = read_parameters("params.txt");
-//		if(params == NULL)
-//		{
-//			printf("\nError: Could not open Reinforcement Learning PID parameters\n\n");
-//			exit(1);
-//		}
-		pv = initializate_variables(pv); // Step 1
-		load_variables(pv);
-		first_time = false;
-	}
+//	if(first_time)
+//	{
+//		params = read_parameters("params.txt");
+////		if(params == NULL)
+////		{
+////			printf("\nError: Could not open Reinforcement Learning PID parameters\n\n");
+////			exit(1);
+////		}
+//		pv = initializate_variables(pv); // Step 1
+//		load_variables(pv);
+//		first_time = false;
+//	}
+	printf("entrou aqui\n");
 
 	calculate_error(desired_phi, desired_phi); // Step 2 ==> CALCULA ERRO
 
