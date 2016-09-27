@@ -152,6 +152,7 @@ bin/visual_graphslam_publish
 bin/visual_multimap_matching
 bin/visual_multimap_optimization
 bin/visual_run_icp_for_loop_closure
+src/clean_map/clean_map
 src/visual_graphslam/bin/visual_grab_data
 src/visual_graphslam/bin/visual_graphslam
 src/visual_graphslam/bin/visual_graphslam_publish
