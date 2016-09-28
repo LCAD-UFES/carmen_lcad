@@ -30,6 +30,13 @@ rbf_neuron network[neural_network_size]; //The size is defined at .h file
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 intelligent_control_params read_parameters(const char* parameters) { //Read the initial values of the parameters from a file
 	FILE* file = fopen(parameters, "r");
+
+	if(file == NULL)
+	{
+		printf("\nError: Could not open Reinforcement Learning PID parameters\n\n");
+		exit(1);
+	}
+
 	intelligent_control_params params;
 	char trash[50];
 
@@ -537,7 +544,7 @@ load_variables(past_variables pv)
 	sigma_critical_deviation = pv.past_sigma_critical_deviation;
 	critic_value = pv.past_critic_value;
 
-	for(i = 0; i < 3; i++)
+	for (i = 0; i < 3; i++)
 	{
 		U[i] = pv.past_U[i];
 		error[i] = pv.past_error[i];
@@ -557,21 +564,18 @@ carmen_librlpid_compute_effort_signal(double current_phi, double desired_phi, do
 	past_variables pv;
 	intelligent_control_params params;
 
-//	if(first_time)
-//	{
-//		params = read_parameters("params.txt");
-////		if(params == NULL)
-////		{
-////			printf("\nError: Could not open Reinforcement Learning PID parameters\n\n");
-////			exit(1);
-////		}
-//		pv = initializate_variables(pv); // Step 1
-//		load_variables(pv);
-//		first_time = false;
-//	}
-	printf("entrou aqui\n");
+	if(first_time)
+	{
+		params = read_parameters("rlpid_params.txt");
+		pv = initializate_variables(pv); // Step 1
+		load_variables(pv);
+		first_time = false;
+	}
 
-	calculate_error(desired_phi, desired_phi); // Step 2 ==> CALCULA ERRO
+
+	printf("%f  ", U[0]);
+
+	calculate_error(current_phi, desired_phi); // Step 2 ==> CALCULA ERRO
 
 	external_reinforcement_signal(params.alfa_weight_coef, params.beta_weight_coef, params.error_band); //Step 3 ==> RECOMPENSA
 
@@ -605,16 +609,17 @@ carmen_librlpid_compute_effort_signal(double current_phi, double desired_phi, do
 	center_vector_update(params.learning_rate_center); //Setp 10 ==> UPDATE CENTRO
 	width_scalar_update(params.learning_rate_width); //Step 10 ==> UPDATE WIDTH SCALAR
 
+	printf("%f\n", U[0]);
+
 	return U[0];
 }
 
 
-/*int
-main()
+void
+a_main()
 {
 	//FILE *erro;
 	FILE *output;
-	char* name = "param.txt";
 	double y_desired = 0;
 	double y = 0;
 	int t = 0;
@@ -694,6 +699,5 @@ main()
 		t++;
 	}
 	plota_graficos(2, 1100, 600, 10000, 2);
-	return 0;
 }
-*/
+
