@@ -1,6 +1,11 @@
 #ifndef MOVING_OBJECTS2_H_
 #define MOVING_OBJECTS2_H_
 
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
 #include <tf.h>
 
 //#define	MINIMUM_VELODYNE_DISTANCE 0.75
@@ -25,5 +30,6 @@ void moving_objects2_initialize(carmen_map_config_t *map_config, carmen_robot_ac
 void moving_objects2_change_map_origin_to_another_map_block(carmen_position_t *map_origin);
 int run_moving_objects2(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global);
 
+cv::Mat segment_remission_map(carmen_map_t *remission_map, carmen_map_t *map);
 
 #endif /* MOVING_OBJECTS2_H_ */
