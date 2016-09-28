@@ -538,7 +538,8 @@ carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulat
 
 	update_target_v_and_target_phi(simulator_config);
 
-	v   = compute_new_velocity_with_ann(simulator_config);
+	//v   = compute_new_velocity_with_ann(simulator_config);
+	v   = compute_new_velocity(simulator_config);
 	phi = compute_new_phi_with_ann(simulator_config);
 
 	//double temp_phi = simulator_config->phi;
@@ -546,7 +547,6 @@ carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulat
 	//previous_phi = compute_new_phi_with_ann(simulator_config);
 	//simulator_config->phi = temp_phi;
 
-	v   = compute_new_velocity(simulator_config);
 	//phi = compute_new_phi(simulator_config);// + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.1));
 
 	phi = carmen_clamp(-simulator_config->max_phi, phi, simulator_config->max_phi);

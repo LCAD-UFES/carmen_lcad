@@ -48,7 +48,7 @@ car_model(double steering_effort, double atan_current_curvature, fann_type *stee
 {
 	double phi = carmen_libcarneuralmodel_compute_new_phi_from_effort(steering_effort, atan_current_curvature, steering_ann_input,
 			param->steering_ann, param->v, param->understeer_coeficient, param->distance_rear_axles, 2.0 * param->max_phi);
-	// phi = phi - 0.01;
+	//phi = 1.2 * phi;// - 0.01;
 	
 	return (phi);
 }
@@ -106,7 +106,7 @@ my_f(const gsl_vector *v, void *params)
 	for (unsigned int i = 0; i < phi_vector.size(); i++)
 	{
 		error = phi_vector[i] - p->motion_commands_vector[j].phi;
-		error_sum += (error * error);
+		error_sum += sqrt(error * error);
 
 		phi_vector_time += delta_t;
 		if (phi_vector_time > motion_commands_vector_time)
@@ -118,7 +118,7 @@ my_f(const gsl_vector *v, void *params)
 		}
 	}
 
-	double cost = sqrt(error_sum);// + 0.005 * ((p->previous_k1 - d.k1) * (p->previous_k1 - d.k1)));
+	double cost = error_sum + 0.001 * sqrt((p->previous_k1 - d.k1) * (p->previous_k1 - d.k1));
 	//printf("%lf  %lf  %lf  %lf\n", cost, p->previous_k1, d.k1, p->previous_k1 - d.k1);
 
 	return (cost);
@@ -348,8 +348,8 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_desired_curvat
 //	static int count = 0;
 //
 //	count++;
-//	if (count > 80)
-//		printf("passei\n");
+//	if ((count % (2*80)) == 0)
+//		atan_current_curvature += 0.1;
 
 	//atan_current_curvature *= 1.1;
 
@@ -399,7 +399,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_desired_curvat
 
 	// Calcula o dk do proximo ciclo
 	double Cxk = car_model(effort, atan_current_curvature, param.steering_ann_input, &param);
-	//param.dk = yp - Cxk;
+	param.dk = yp - Cxk;
 	param.previous_k1 = effort;
 
 	plot_state(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
