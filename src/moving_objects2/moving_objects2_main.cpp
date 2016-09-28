@@ -81,7 +81,7 @@ rotation_matrix *r_matrix_car_to_global = NULL;
 
 carmen_localize_ackerman_map_t localize_map;
 
-
+cv::Mat road_map;
 
 
 
@@ -94,12 +94,25 @@ carmen_localize_ackerman_map_t localize_map;
 static void
 localize_map_update_handler(carmen_map_server_localize_map_message *message)
 {
+
+	static bool first_time = true;
+	carmen_position_t map_origin;
+
+	if (first_time)
+	{
+		offline_map_available = true;
+		first_time = false;
+	}
+
 	carmen_map_server_localize_map_message_to_localize_map(message, &localize_map);
 
-//	x_origin = message->config.x_origin;
-//	y_origin = message->config.y_origin;
-//
-//	necessary_maps_available = 1;
+	map_origin.x = message->config.x_origin;
+	map_origin.y = message->config.y_origin;
+
+	moving_objects2_change_map_origin_to_another_map_block(&map_origin);
+
+	road_map = segment_remission_map(&localize_map.carmen_mean_remission_map, &localize_map.carmen_map);
+
 }
 
 
@@ -126,104 +139,16 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		}
 	}
 
-//	static double previous_timestamp = 0.0;
-//	double t = carmen_get_time();
-//	printf("%lf\n", t - previous_timestamp);
-//	previous_timestamp = t;
+	//	static double previous_timestamp = 0.0;
+	//	double t = carmen_get_time();
+	//	printf("%lf\n", t - previous_timestamp);
+	//	previous_timestamp = t;
 }
 
 static void
 velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
 	moving_objects2_velodyne_partial_scan(velodyne_message);
-}
-
-
-static void
-velodyne_variable_scan_message_handler1(carmen_velodyne_variable_scan_message *message)
-{
-	moving_objects2_velodyne_variable_scan(1, message);
-}
-
-
-static void
-velodyne_variable_scan_message_handler2(carmen_velodyne_variable_scan_message *message)
-{
-	moving_objects2_velodyne_variable_scan(2, message);
-}
-
-
-static void
-velodyne_variable_scan_message_handler3(carmen_velodyne_variable_scan_message *message)
-{
-	moving_objects2_velodyne_variable_scan(3, message);
-}
-
-
-static void
-velodyne_variable_scan_message_handler4(carmen_velodyne_variable_scan_message *message)
-{
-	moving_objects2_velodyne_variable_scan(4, message);
-}
-
-
-static void
-velodyne_variable_scan_message_handler5(carmen_velodyne_variable_scan_message *message)
-{
-	moving_objects2_velodyne_variable_scan(5, message);
-}
-
-
-static void
-velodyne_variable_scan_message_handler6(carmen_velodyne_variable_scan_message *message)
-{
-	moving_objects2_velodyne_variable_scan(6, message);
-}
-
-
-static void
-velodyne_variable_scan_message_handler7(carmen_velodyne_variable_scan_message *message)
-{
-	moving_objects2_velodyne_variable_scan(7, message);
-}
-
-
-static void
-velodyne_variable_scan_message_handler8(carmen_velodyne_variable_scan_message *message)
-{
-	moving_objects2_velodyne_variable_scan(8, message);
-}
-
-
-static void
-velodyne_variable_scan_message_handler9(carmen_velodyne_variable_scan_message *message)
-{
-	moving_objects2_velodyne_variable_scan(9, message);
-}
-
-
-static void
-offline_map_handler(carmen_map_server_offline_map_message *msg)
-{
-	static bool first_time = true;
-	carmen_position_t map_origin;
-
-	if (first_time)
-	{
-		offline_map_available = true;
-		first_time = false;
-	}
-
-	map_origin.x = msg->config.x_origin;
-	map_origin.y = msg->config.y_origin;
-
-	memcpy(offline_map.complete_map, msg->complete_map, msg->config.x_size * msg->config.y_size * sizeof(double));
-	offline_map.config = msg->config;
-
-	moving_objects2_change_map_origin_to_another_map_block(&map_origin);
-
-	if (merge_with_offline_map)
-		moving_objects2_merge_online_map_with_offline_map(&offline_map);
 }
 
 
@@ -405,36 +330,9 @@ get_alive_sensors(int argc, char **argv)
 }
 
 
-static int *
-generates_ray_order(int size)
-{
-	int i;
-
-	int *ray_order = (int *)malloc(size * sizeof(int));
-	carmen_test_alloc(ray_order);
-
-	for (i = 0; i < size; i++)
-		ray_order[i] = i;
-
-	return ray_order;
-}
-
-
 static void
 get_sensors_param(int argc, char **argv)
 {
-	int i, j;
-	int flipped;
-	int horizontal_resolution;
-	char stereo_velodyne_string[256];
-
-	int stereo_velodyne_vertical_roi_ini;
-	int stereo_velodyne_vertical_roi_end;
-
-	int stereo_velodyne_horizontal_roi_ini;
-	int stereo_velodyne_horizontal_roi_end;
-
-	int roi_ini, roi_end;
 
 	sensors_params[0].pose = velodyne_pose;
 	sensors_params[0].sensor_robot_reference = carmen_change_sensor_reference(sensor_board_1_pose.position, sensors_params[0].pose.position, board_to_car_matrix);
@@ -466,80 +364,9 @@ get_sensors_param(int argc, char **argv)
 		carmen_prob_models_alloc_sensor_data(&sensors_data[0], sensors_params[0].vertical_resolution, number_of_threads);
 
 		sensors_params[0].remission_calibration = NULL;//(double *) calloc(256 * sensors_params[0].vertical_resolution, sizeof(double));
-//		FILE *f = fopen("../data/remission_calibration.txt", "r");
-//		for (i = 0; i < 256 * sensors_params[0].vertical_resolution; i++)
-//		{
-//			fscanf(f, "%lf", &sensors_params[0].remission_calibration[i]);
-//		}
-//		fclose(f);
+
 	}
 
-	for (i = 1; i < number_of_sensors; i++)
-	{
-		if (i == STEREO_MAPPING_SENSOR_INDEX)
-			continue;
-
-		if (sensors_params[i].alive)
-		{
-			sensors_params[i].pose = get_stereo_velodyne_pose_3D(argc, argv, i);
-
-			sensors_params[i].sensor_robot_reference = carmen_change_sensor_reference(sensor_board_1_pose.position, sensors_params[i].pose.position, board_to_car_matrix);
-			sensors_params[i].height = sensors_params[i].sensor_robot_reference.z + robot_wheel_radius;
-
-			if (sensors_params[i].height > highest_sensor)
-				highest_sensor = sensors_params[i].height;
-
-			sensors_params[i].time_spent_by_each_scan = 0.0;
-
-			sprintf(stereo_velodyne_string, "%s%d", "stereo", i);
-
-
-			carmen_param_t param_list[] =
-			{
-					{sensors_params[i].name, (char*) "vertical_resolution", CARMEN_PARAM_INT, &sensors_params[i].vertical_resolution, 0, NULL},
-					{sensors_params[i].name, (char*) "horizontal_resolution", CARMEN_PARAM_INT, &horizontal_resolution, 0, NULL},
-					{sensors_params[i].name, (char*) "flipped", CARMEN_PARAM_ONOFF, &flipped, 0, NULL},
-					{sensors_params[i].name, (char*) "range_max", CARMEN_PARAM_DOUBLE, &sensors_params[i].range_max, 0, NULL},
-					{sensors_params[i].name, (char*) "vertical_roi_ini", CARMEN_PARAM_INT, &stereo_velodyne_vertical_roi_ini, 0, NULL },
-					{sensors_params[i].name, (char*) "vertical_roi_end", CARMEN_PARAM_INT, &stereo_velodyne_vertical_roi_end, 0, NULL },
-					{sensors_params[i].name, (char*) "horizontal_roi_ini", CARMEN_PARAM_INT, &stereo_velodyne_horizontal_roi_ini, 0, NULL },
-					{sensors_params[i].name, (char*) "horizontal_roi_end", CARMEN_PARAM_INT, &stereo_velodyne_horizontal_roi_end, 0, NULL }
-
-			};
-
-			carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
-
-			if (flipped)
-			{
-				sensors_params[i].vertical_resolution = horizontal_resolution;
-				roi_ini = stereo_velodyne_horizontal_roi_ini;
-				roi_end = stereo_velodyne_horizontal_roi_end;
-			}
-			else
-			{
-				roi_ini = stereo_velodyne_vertical_roi_ini;
-				roi_end = stereo_velodyne_vertical_roi_end;
-			}
-
-			if (sensors_params[i].vertical_resolution > (roi_end - roi_ini))
-			{
-				carmen_die("The stereo_velodyne_vertical_resolution is bigger than stereo point cloud height");
-			}
-			sensors_params[i].range_max_factor = 1.0;
-			sensors_params[i].ray_order = generates_ray_order(sensors_params[i].vertical_resolution);
-			sensors_params[i].vertical_correction = get_stereo_velodyne_correction(flipped, i, sensors_params[i].vertical_resolution, roi_ini, roi_end, 0, 0);
-			init_velodyne_points(&sensors_data[i].points, &sensors_data[i].intensity, &sensors_data[i].robot_pose, &sensors_data[i].robot_velocity,  &sensors_data[i].robot_timestamp, &sensors_data[i].robot_phi, &sensors_data[i].points_timestamp);
-			sensors_params[i].sensor_to_board_matrix = create_rotation_matrix(sensors_params[i].pose.orientation);
-			sensors_data[i].point_cloud_index = 0;
-			carmen_prob_models_alloc_sensor_data(&sensors_data[i], sensors_params[i].vertical_resolution, number_of_threads);
-
-			//TODO : tem que fazer esta medida para as cameras igual foi feito para o velodyne
-			sensors_params[i].delta_difference_mean = (double *)calloc(50, sizeof(double));
-			sensors_params[i].delta_difference_stddev = (double *)calloc(50, sizeof(double));
-			for (j = 0; j < 50; j++)
-				sensors_params[i].delta_difference_stddev[j] = 1.0;
-		}
-	}
 }
 
 
@@ -595,29 +422,9 @@ read_parameters(int argc, char **argv,
 			{(char*)"mapper",  (char*)"create_map_sum_and_count", CARMEN_PARAM_ONOFF, &create_map_sum_and_count, 0, NULL},
 
 			{(char*)"mapper",  (char*)"update_and_merge_with_snapshot_map", CARMEN_PARAM_ONOFF, &update_and_merge_with_snapshot_map, 0, NULL},
-			{(char*)"mapper",  (char*)"number_of_threads", CARMEN_PARAM_INT, &number_of_threads, 0, NULL},
+			{(char*)"mapper",  (char*)"number_of_threads", CARMEN_PARAM_INT, &number_of_threads, 0, NULL}
 
 
-
-			{(char *) "visual_odometry", (char *) "is_global_pos", CARMEN_PARAM_ONOFF, &visual_odometry_is_global_pos, 0, NULL},
-
-			{(char *)"grid_mapping", (char *)"ultrasonic_sensor_sampling_step", CARMEN_PARAM_INT, &ultrasonic_sensor_params.sampling_step, 0, NULL},
-			{(char *)"grid_mapping", (char *)"ultrasonic_sensor_num_beams", CARMEN_PARAM_INT, &ultrasonic_sensor_params.laser_beams, 0, NULL},
-			{(char *)"grid_mapping", (char *)"ultrasonic_sensor_fov_range", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.fov_range, 0, NULL},
-			{(char *)"grid_mapping", (char *)"ultrasonic_sensor_max_range", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.range_max, 0, NULL},
-			{(char *)"grid_mapping", (char *)"ultrasonic_sensor_lambda_short", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.lambda_short, 0, NULL},
-			{(char *)"grid_mapping", (char *)"ultrasonic_sensor_sigma_zhit", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.sigma_zhit, 0, NULL},
-			{(char *)"grid_mapping", (char *)"ultrasonic_sensor_zhit", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.zhit, 0, NULL},
-			{(char *)"grid_mapping", (char *)"ultrasonic_sensor_zmax", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.zmax, 0, NULL},
-			{(char *)"grid_mapping", (char *)"ultrasonic_sensor_zrand", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.zrand, 0, NULL},
-			{(char *)"grid_mapping", (char *)"ultrasonic_sensor_zshort", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.zshort, 0, NULL},
-
-			{(char *)"grid_mapping", (char *)"map_locc", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.log_odds.log_odds_occ, 0, NULL},
-			{(char *)"grid_mapping", (char *)"map_lfree", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.log_odds.log_odds_free, 0, NULL},
-			{(char *)"grid_mapping", (char *)"map_l0", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.log_odds.log_odds_l0, 0, NULL},
-
-			{(char *)"rrt",	(char *)"obstacle_cost_distance",	CARMEN_PARAM_DOUBLE,	&obstacle_cost_distance,	1, NULL},
-			{(char *)"rrt",	(char *)"obstacle_probability_threshold",	CARMEN_PARAM_DOUBLE,	&obstacle_probability_threshold,	1, NULL}
 
 	};
 
@@ -650,7 +457,7 @@ static void
 subscribe_to_ipc_messages()
 {
 	carmen_map_server_subscribe_localize_map_message(NULL,
-					(carmen_handler_t) localize_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
+			(carmen_handler_t) localize_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL,
 			(carmen_handler_t)carmen_localize_ackerman_globalpos_message_handler,
@@ -663,70 +470,6 @@ subscribe_to_ipc_messages()
 				CARMEN_SUBSCRIBE_LATEST);
 	}
 
-	if (sensors_params[1].alive)
-	{
-		carmen_stereo_velodyne_subscribe_scan_message(1, NULL,
-				(carmen_handler_t)velodyne_variable_scan_message_handler1,
-				CARMEN_SUBSCRIBE_LATEST);
-	}
-
-	if (sensors_params[2].alive)
-	{
-		carmen_stereo_velodyne_subscribe_scan_message(2, NULL,
-				(carmen_handler_t)velodyne_variable_scan_message_handler2,
-				CARMEN_SUBSCRIBE_LATEST);
-	}
-
-	if (sensors_params[3].alive)
-	{
-		carmen_stereo_velodyne_subscribe_scan_message(3, NULL,
-				(carmen_handler_t)velodyne_variable_scan_message_handler3,
-				CARMEN_SUBSCRIBE_LATEST);
-	}
-
-	if (sensors_params[4].alive)
-	{
-		carmen_stereo_velodyne_subscribe_scan_message(4, NULL,
-				(carmen_handler_t)velodyne_variable_scan_message_handler4,
-				CARMEN_SUBSCRIBE_LATEST);
-	}
-
-	if (sensors_params[5].alive)
-	{
-		carmen_stereo_velodyne_subscribe_scan_message(5, NULL,
-				(carmen_handler_t)velodyne_variable_scan_message_handler5,
-				CARMEN_SUBSCRIBE_LATEST);
-	}
-
-	if (sensors_params[6].alive)
-	{
-		carmen_stereo_velodyne_subscribe_scan_message(6, NULL,
-				(carmen_handler_t)velodyne_variable_scan_message_handler6,
-				CARMEN_SUBSCRIBE_LATEST);
-	}
-
-	if (sensors_params[7].alive)
-	{
-		carmen_stereo_velodyne_subscribe_scan_message(7, NULL,
-				(carmen_handler_t)velodyne_variable_scan_message_handler7,
-				CARMEN_SUBSCRIBE_LATEST);
-	}
-
-	if (sensors_params[8].alive)
-	{
-		carmen_stereo_velodyne_subscribe_scan_message(8, NULL,
-				(carmen_handler_t)velodyne_variable_scan_message_handler8,
-				CARMEN_SUBSCRIBE_LATEST);
-	}
-
-	if (sensors_params[9].alive)
-	{
-		carmen_stereo_velodyne_subscribe_scan_message(9, NULL,
-				(carmen_handler_t)velodyne_variable_scan_message_handler9,
-				CARMEN_SUBSCRIBE_LATEST);
-	}
-
-	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	// esse handler eh subscribe_all porque todas as anotacoes precisam ser recebidas!
 }
