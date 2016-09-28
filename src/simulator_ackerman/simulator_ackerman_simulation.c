@@ -471,6 +471,44 @@ compute_steering_with_qlearning(double *steering_command, double atan_desired_cu
 
 
 double
+compute_new_phi_with_ann_old(carmen_simulator_ackerman_config_t *simulator_config)
+{
+	static double steering_command = 0.0;
+	double atan_current_curvature;
+	double atan_desired_curvature;
+	static fann_type steering_ann_input[NUM_STEERING_ANN_INPUTS];
+	fann_type *steering_ann_output;
+	static struct fann *steering_ann = NULL;
+
+	if (steering_ann == NULL)
+	{
+		steering_ann = fann_create_from_file("steering_ann.net");
+		if (steering_ann == NULL)
+		{
+			printf("Error: Could not create steering_ann\n");
+			exit(1);
+		}
+		init_steering_ann_input(steering_ann_input);
+	}
+
+	atan_current_curvature = atan(compute_curvature(simulator_config->phi, simulator_config));
+	atan_desired_curvature = atan(compute_curvature(simulator_config->target_phi, simulator_config));
+
+	carmen_ford_escape_hybrid_steering_PID_controler(&steering_command,
+		atan_desired_curvature, atan_current_curvature, simulator_config->delta_t);
+
+	build_steering_ann_input(steering_ann_input, steering_command, atan_current_curvature);
+	steering_ann_output = fann_run(steering_ann, steering_ann_input);
+
+	// Alberto: O ganho de 1.05 abaixo foi necessario pois a rede nao estava gerando curvaturas mais extremas
+	// que nao aparecem no treino mas apenas rodando livremente na simulacao
+	simulator_config->phi = 1.05 * get_phi_from_curvature(tan(steering_ann_output[0]), simulator_config);
+
+	return (simulator_config->phi);
+}
+
+
+double
 compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 {
 	static double steering_effort = 0.0;
