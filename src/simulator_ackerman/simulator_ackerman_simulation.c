@@ -538,7 +538,7 @@ carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulat
 
 	update_target_v_and_target_phi(simulator_config);
 
-	//v   = compute_new_velocity_with_ann(simulator_config);
+	v   = compute_new_velocity_with_ann(simulator_config);
 	phi = compute_new_phi_with_ann(simulator_config);
 
 	//double temp_phi = simulator_config->phi;

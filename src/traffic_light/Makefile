@@ -4,6 +4,7 @@ MODULE_NAME = TRAFFIC_LIGHT
 MODULE_COMMENT = Mapping, Detection and Inference State of Traffic Lights
 
 LINK = g++
+CXXFLAGS += -std=c++0x
 
 IFLAGS +=  -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
 

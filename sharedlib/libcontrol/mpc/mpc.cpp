@@ -106,7 +106,7 @@ my_f(const gsl_vector *v, void *params)
 	for (unsigned int i = 0; i < phi_vector.size(); i++)
 	{
 		error = phi_vector[i] - p->motion_commands_vector[j].phi;
-		error_sum += sqrt(error * error);
+		error_sum += (error * error);
 
 		phi_vector_time += delta_t;
 		if (phi_vector_time > motion_commands_vector_time)
@@ -118,7 +118,8 @@ my_f(const gsl_vector *v, void *params)
 		}
 	}
 
-	double cost = error_sum + 0.000005 * sqrt((p->previous_k1 - d.k1) * (p->previous_k1 - d.k1));
+	double cost = sqrt(error_sum);// + 0.005 * ((p->previous_k1 - d.k1) * (p->previous_k1 - d.k1)));
+	//printf("%lf  %lf  %lf  %lf\n", cost, p->previous_k1, d.k1, p->previous_k1 - d.k1);
 
 	return (cost);
 }
@@ -236,7 +237,7 @@ get_optimized_effort(PARAMS *par, EFFORT_SPLINE_DESCRIPTOR seed)
 
 
 void
-plot_state2(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double understeer_coeficient, double distance_between_front_and_rear_axles, double effort)
+plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double understeer_coeficient, double distance_between_front_and_rear_axles, double effort)
 {
 	#define PAST_SIZE 300
 	static list<double> cphi_vector;
@@ -256,7 +257,7 @@ plot_state2(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double underste
 
 		gnuplot_pipe = popen("gnuplot", "w"); // -persist to keep last plot after program closes
 		fprintf(gnuplot_pipe, "set xrange [0:PAST_SIZE/20]\n");
-		fprintf(gnuplot_pipe, "set yrange [-100.10:100.10]\n");
+		fprintf(gnuplot_pipe, "set yrange [-110.0:110.0]\n");
 		fprintf(gnuplot_pipe, "set y2range [-0.55:0.55]\n");
 		fprintf(gnuplot_pipe, "set xlabel 'senconds'\n");
 		fprintf(gnuplot_pipe, "set ylabel 'effort'\n");
@@ -323,7 +324,7 @@ plot_state2(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double underste
 	fclose(gnuplot_data_file);
 
 	fprintf(gnuplot_pipe, "unset arrow\nset arrow from %lf, %lf to %lf, %lf nohead\n",
-			begin_predition_time, -30.0, begin_predition_time, 30.0);
+			begin_predition_time, -60.0, begin_predition_time, 60.0);
 
 	fprintf(gnuplot_pipe, "plot "
 			"'./gnuplot_data.txt' using 1:2:5 with lines linecolor variable title 'cphi' axes x1y2,"
@@ -349,6 +350,8 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_desired_curvat
 //	count++;
 //	if (count > 80)
 //		printf("passei\n");
+
+	//atan_current_curvature *= 1.1;
 
 	if (first_time)
 	{
@@ -396,10 +399,10 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_desired_curvat
 
 	// Calcula o dk do proximo ciclo
 	double Cxk = car_model(effort, atan_current_curvature, param.steering_ann_input, &param);
-	param.dk = yp - Cxk;
+	//param.dk = yp - Cxk;
 	param.previous_k1 = effort;
 
-	//plot_state2(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
+	plot_state(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
 
 	return (effort);
 }

@@ -57,6 +57,8 @@ carmen_map_t map, sum_remission_map, sum_sqr_remission_map, count_remission_map,
 
 carmen_map_t cost_map;
 
+extern cv::Mat road_map;
+
 extern carmen_map_t offline_map;
 
 extern rotation_matrix *r_matrix_car_to_global;
@@ -189,9 +191,6 @@ segment_remission_map(carmen_map_t *remission_map, carmen_map_t *map)
 	{
 		for (int j = 0; j < remission_map->config.x_size; j++)
 		{
-			//if (remission_map->map[i][j] < 0.0)
-				//continue;
-
 			uchar aux = (uchar)((255.0 * (1.0 - (remission_map->map[i][j] < 0 ? 1 : remission_map->map[i][j]))) + 0.5);
 			map_img.at<uchar>(i, j) = aux;
 
@@ -207,14 +206,6 @@ segment_remission_map(carmen_map_t *remission_map, carmen_map_t *map)
 
 	findContours(occupancy_map_img.clone(), contours2, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
 
-//	for (uint i = 0; i < contours2.size(); i++)
-//	{
-//		double area = contourArea(contours2[i]) * map->config.resolution;
-//
-//		if (area < 10)
-//			drawContours(occupancy_map_img, contours2, i, CV_RGB(0, 0, 0), -1);
-//	}
-
 	cv::dilate(occupancy_map_img, occupancy_map_img, element);
 
 	findContours(occupancy_map_img.clone(), contours2, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
@@ -222,8 +213,6 @@ segment_remission_map(carmen_map_t *remission_map, carmen_map_t *map)
 	{
 		drawContours(map_img, contours2, i, CV_RGB(0, 0, 0), -1);
 	}
-
-	//cv::imshow("map_img2", map_img);
 
 	findContours(map_img.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
 
@@ -258,101 +247,38 @@ segment_remission_map(carmen_map_t *remission_map, carmen_map_t *map)
 	cv::dilate(map_img, map_img, element);
 	cv::erode(map_img, map_img, element);
 
-//	cv::erode(map_img, map_img, element);
-//
-//	findContours(map_img.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
-//
-//	for (uint i = 0; i < contours.size(); i++)
-//	{
-//		double area = contourArea(contours[i])* map->config.resolution;
-//
-//		if (area < 500)
-//			drawContours(map_img, contours, i, CV_RGB(0, 0, 0), -1);
-//	}
-	//cv::dilate(map_img, map_img, element);
-
-//	for (uint i = 0; i < contours.size(); i++)
-//	{
-//		if (i != index)
-//			drawContours(map_img, contours, i, CV_RGB(0, 0, 0), -1);
-//	}
 	cv::threshold(map_img, map_img, 235, 255, cv::THRESH_BINARY_INV);
-//	cv::imshow("occupancy_map_img", occupancy_map_img);
-	//cv::imshow("map_img10", map_img);
-	//cv::waitKey(0);
 	return map_img;
 }
 
 
 void
-copy_carmen_map_to_opencv(carmen_map_t *map, cv::Mat *map_img)
+copy_carmen_map_to_opencv(carmen_map_t *map, carmen_map_t *offline_grid_map,
+		cv::Mat *map_img, cv::Mat *map_img_bkp, cv::Mat *offline_map_img)
 {
 	for (int i = 0; i < map->config.x_size; i++)
 	{
 		for (int j = 0; j < map->config.x_size; j++)
 		{
 			uchar aux = 255 * (map->map[i][j] > 0.5 ? 1.0 : 0.0);
-			map_img->at<uchar>(i, j) = aux;
+			map_img_bkp->at<uchar>(i, j) = map_img->at<uchar>(i, j) = aux;
+
+			aux = 255 * (offline_grid_map->map[i][j] > 0.5 ? 1.0 : 0.0);
+			offline_map_img->at<uchar>(i, j) = aux;
 		}
 	}
 }
 
 
-void
-show_map(carmen_map_t *map, carmen_map_t *offline_grid_map, cv::Mat road_map)
+cv::Mat
+remove_static_objects(cv::Mat map_img, cv::Mat offline_map_img, carmen_map_t *map)
 {
-	cv::Mat map_img = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC1);
-	cv::Mat map_img_bkp = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC1);
-	cv::Mat offline_map_img = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC1);
-	static cv::Mat last_map_img;
-	int erosion_size = 2;
-	cv::Mat element = getStructuringElement( cv::MORPH_ELLIPSE,
-	                                       cv::Size( 2*erosion_size + 1, 2*erosion_size+1 ),
-	                                       cv::Point( erosion_size, erosion_size ));
-
+	std::vector<std::vector<cv::Point> > contours;
 
 	cv::Mat map_img2 = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC1);
-	cv::Mat map_img_out = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC3);
-	cv::Mat last_map_img_out = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC3);
-
-	std::vector<std::vector<cv::Point> > contours;
-	std::vector<std::vector<cv::Point> > contours2;
-
-	//#######################copia de mapa do carmen para imagem opencv
-//	// copy map
-//	copy_carmen_map_to_opencv(map, &map_img);
-//	// backup map
-//	copy_carmen_map_to_opencv(map, &map_img_bkp);
-//	// copy offline map
-//	copy_carmen_map_to_opencv(&offline_map, &offline_map_img);
-
-	for (int i = 0; i < map->config.x_size; i++)
-	{
-		for (int j = 0; j < map->config.x_size; j++)
-		{
-			uchar aux = 255 * (map->map[i][j] > 0.5 ? 1.0 : 0.0);
-			map_img_bkp.at<uchar>(i, j)  = map_img.at<uchar>(i, j) = aux;
-
-			aux = 255 * (offline_grid_map->map[i][j] > 0.5 ? 1.0 : 0.0);
-			offline_map_img.at<uchar>(i, j) = aux;
-		}
-	}
-
-	cv::dilate( map_img, map_img, element);
-	cv::dilate( offline_map_img, offline_map_img, element);
-
-	findContours(road_map.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
-
-	for (uint i = 0; i < contours.size(); i++)
-	{
-		drawContours(map_img, contours, i, CV_RGB(0, 0, 0), -1);
-	}
-	map_img.copyTo(map_img2);
-
-
-	//#################remove objetos estaticos e grandes
 	findContours(map_img.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
-//	findContours(last_map_img.clone(), contours2, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
+
+	map_img.copyTo(map_img2);
 
 	for (uint i = 0; i < contours.size(); i++)
 	{
@@ -390,97 +316,101 @@ show_map(carmen_map_t *map, carmen_map_t *offline_grid_map, cv::Mat road_map)
 			std::vector<cv::Point> contours_poly;
 			cv::approxPolyDP(cv::Mat(contours[i]), contours_poly, 3, true);
 			cv::Rect r = cv::boundingRect(cv::Mat(contours_poly));
-			cv::rectangle( offline_map_img, r.tl(), r.br(), CV_RGB(180, 180, 180), 2, 8, 0 );
+			cv::rectangle(offline_map_img, r.tl(), r.br(), CV_RGB(180, 180, 180), 2, 8, 0 );
 			drawContours(offline_map_img, contours, i, CV_RGB(128, 128, 128), -1);
 		}
 	}
 
-//	cv::dilate( map_img2, map_img2, element);
+	return map_img2;
+}
 
-	if (last_map_img.empty())
-	{
-		last_map_img = map_img2;
-		return;
-	}
-	contours.erase(contours.begin(),contours.end());
 
-	//###################associação dos objetos
-	findContours(map_img2.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
+std::vector<cv::Point3d>
+associate_objects(cv::Mat map_img, cv::Mat last_map_img, carmen_map_t *map)
+{
+	std::vector<std::vector<cv::Point> > contours;
+	std::vector<std::vector<cv::Point> > contours2;
+
+	findContours(map_img.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
 	findContours(last_map_img.clone(), contours2, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
 
 	std::vector<cv::Moments> map_mu(contours.size());
-    std::vector<cv::Moments> last_map_mu(contours2.size());
+	std::vector<cv::Moments> last_map_mu(contours2.size());
 
-    for (uint i = 0; i < contours.size(); i++)
-    	map_mu[i] = moments(contours[i], false);
+	for (uint i = 0; i < contours.size(); i++)
+		map_mu[i] = moments(contours[i], false);
 
-    for (uint i = 0; i < contours2.size(); i++)
-    	last_map_mu[i] = moments(contours2[i], false);
+	for (uint i = 0; i < contours2.size(); i++)
+		last_map_mu[i] = moments(contours2[i], false);
 
-    std::vector<cv::Point3d> objs(map_mu.size());
+	std::vector<cv::Point3d> objs(map_mu.size());
 
 
-    for (uint i = 0; i < map_mu.size(); i++)
-    {
-    	int x_center = map_mu[i].m10 / map_mu[i].m00;
-    	int y_center = map_mu[i].m01 / map_mu[i].m00;
-    	double min_dist = DBL_MAX;
-    	double index = -1;
+	for (uint i = 0; i < map_mu.size(); i++)
+	{
+		int x_center = map_mu[i].m10 / map_mu[i].m00;
+		int y_center = map_mu[i].m01 / map_mu[i].m00;
+		double min_dist = DBL_MAX;
+		double index = -1;
 
-    	for (uint j = 0; j < last_map_mu.size(); j++)
-    	{
-    		int x_center2 = last_map_mu[j].m10 / last_map_mu[j].m00;
-    		int y_center2 = last_map_mu[j].m01 / last_map_mu[j].m00;
-    		double dist = sqrt(pow(x_center - x_center2, 2) + pow(y_center - y_center2, 2));
-    		if (min_dist > dist)
-    		{
-    			min_dist = dist;
-    			index = j;
-    		}
-    	}
+		for (uint j = 0; j < last_map_mu.size(); j++)
+		{
+			int x_center2 = last_map_mu[j].m10 / last_map_mu[j].m00;
+			int y_center2 = last_map_mu[j].m01 / last_map_mu[j].m00;
+			double dist = sqrt(pow(x_center - x_center2, 2) + pow(y_center - y_center2, 2));
+			if (min_dist > dist)
+			{
+				min_dist = dist;
+				index = j;
+			}
+		}
 //    	if ((min_dist * map->config.resolution) > 1.0)
-    		objs[i] = cv::Point3d(min_dist, i, index);
+			objs[i] = cv::Point3d(min_dist, i, index);
 //    	else
 //    		objs[i] = cv::Point3d(min_dist, -1.0, -1.0);
-    }
+	}
 
-    for (uint i = 0; i < objs.size(); i++)
-    {
-    	if ((int)objs[i].z < 0.0)
-    		continue;
+	for (uint i = 0; i < objs.size(); i++)
+	{
+		if ((int)objs[i].z < 0.0)
+			continue;
 
-    	for (uint j = i + 1; j < objs.size(); j++)
-    		if ((int)objs[i].z == (int)objs[j].z && (objs[j].x * map->config.resolution) > 1.5)
-    		{
-    			if (objs[i].x < objs[j].x)
-    				objs[j].z = -1.0;
-    			else
-    				objs[i].z = -1.0;
+		for (uint j = i + 1; j < objs.size(); j++)
+			if ((int)objs[i].z == (int)objs[j].z && (objs[j].x * map->config.resolution) > 1.5)
+			{
+				if (objs[i].x < objs[j].x)
+					objs[j].z = -1.0;
+				else
+					objs[i].z = -1.0;
 
-    		}
-    }
+			}
+	}
 
-    //##################pinta as associações
+	return objs;
+}
 
-    // ######### cria o vetor de retângulos orientados
+
+void
+draw_associations(std::vector<cv::Point3d> objs, std::vector< std::vector<cv::Point> > contours,
+		cv::Mat map_img_bkp, cv::Mat *map_img_out)
+{
+
 	std::vector<cv::RotatedRect> minRect(contours.size());
 
-
-    cv::RNG rng(12345);
-    for (uint i = 0; i < objs.size(); i++)
-    {
-    	uchar R, G, B;
-    	cv::Scalar color;
-    	if ((int)objs[i].z < 0.0)
-    	{
-    		R = 255; G = 255; B = 255;
-    	}
-    	else
-    	{
-    		R = rng.uniform(0, 255); G = rng.uniform(0, 255); B = rng.uniform(0, 255);
-    	}
-    	color = cv::Scalar(R, G, B);
-
+	cv::RNG rng(12345);
+	for (uint i = 0; i < objs.size(); i++)
+	{
+		uchar R, G, B;
+		cv::Scalar color;
+		if ((int)objs[i].z < 0.0)
+		{
+			R = 255; G = 255; B = 255;
+		}
+		else
+		{
+			R = rng.uniform(0, 255); G = rng.uniform(0, 255); B = rng.uniform(0, 255);
+		}
+		color = cv::Scalar(R, G, B);
 
 		cv::Point2i minP = cv::Point(INT_MAX, INT_MAX);
 		cv::Point2i maxP = cv::Point(-INT_MAX, -INT_MAX);
@@ -506,33 +436,76 @@ show_map(carmen_map_t *map, carmen_map_t *offline_grid_map, cv::Mat road_map)
 		for (int y = 0; y < roi.rows; y++)
 			for (int x = 0; x < roi.cols; x++)
 				if (roi.at<uchar>(y, x) > 128)
-					map_img_out.at<cv::Vec3b>(y + minP.y, x + minP.x) = cv::Vec3b(R, G, B);
+					map_img_out->at<cv::Vec3b>(y + minP.y, x + minP.x) = cv::Vec3b(R, G, B);
 
+		if ((int)objs[i].z > 0.0)
+		{
+			//drawContours(*last_map_img_out, contours2, (int)objs[i].z, color, -1);
 
-    	//if ((int)objs[i].y > 0.0)
-    		//drawContours(map_img_out, contours, (int)objs[i].y, color, -1);
-
-    	if ((int)objs[i].z > 0.0)
-    	{
-    		drawContours(last_map_img_out, contours2, (int)objs[i].z, color, -1);
-
-    		//desenha os retangulos
+			//desenha os retangulos
 			cv::Point2f rect_points[4];
 			minRect[i].points(rect_points);
 			for( int j = 0; j < 4; j++ )
-			{
-				cv::line( map_img_out, rect_points[j], rect_points[(j+1)%4], cv::Scalar(0, 0, 255), 1, 8 );
-				cv::line( offline_map_img, rect_points[j], rect_points[(j+1)%4], CV_RGB(255, 255, 255), 1, 8 );
-			}
-    	}
-    }
+				cv::line( *map_img_out, rect_points[j], rect_points[(j+1)%4], cv::Scalar(0, 0, 255), 1, 8 );
+		}
+	}
 
-	//cv::medianBlur(map_img2, map_img2, 3);
+}
+
+
+void
+filter_objects_and_associate(carmen_map_t *map, carmen_map_t *offline_grid_map, cv::Mat &road_map)
+{
+	cv::Mat map_img = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC1);
+	cv::Mat map_img_bkp = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC1);
+	cv::Mat offline_map_img = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC1);
+	static cv::Mat last_map_img;
+	int erosion_size = 2;
+	cv::Mat element = getStructuringElement( cv::MORPH_ELLIPSE,
+	                                       cv::Size( 2*erosion_size + 1, 2*erosion_size+1 ),
+	                                       cv::Point( erosion_size, erosion_size ));
+
+
+	cv::Mat map_img2 = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC1);
+	cv::Mat map_img_out = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC3);
+	cv::Mat last_map_img_out = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC3);
+
+	std::vector<std::vector<cv::Point> > contours;
+
+	// #### copia de mapa do carmen para imagem opencv
+	copy_carmen_map_to_opencv(map, offline_grid_map, &map_img, &map_img_bkp, &offline_map_img);
+
+	cv::dilate( map_img, map_img, element);
+	cv::dilate( offline_map_img, offline_map_img, element);
+
+	findContours(road_map.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
+
+	for (uint i = 0; i < contours.size(); i++)
+	{
+		drawContours(map_img, contours, i, CV_RGB(0, 0, 0), -1);
+	}
+	map_img.copyTo(map_img2);
+
+	// #### remove objetos estáticos e grandes
+	map_img = remove_static_objects(map_img, offline_map_img, map);
+
+	if (last_map_img.empty())
+	{
+		last_map_img = map_img;
+		return;
+	}
+	contours.erase(contours.begin(),contours.end());
+
+	findContours(map_img.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
+
+	// #### associação dos objetos
+	std::vector<cv::Point3d> objs = associate_objects(map_img, last_map_img, map);
+
+	// #### pinta as associações
+	draw_associations(objs, contours, map_img_bkp, &map_img_out);
 
     cv::imshow("map_img_out", map_img_out);
     //cv::imshow("last_map_img_out", last_map_img_out);
-
-
     cv::imshow("offline_map_img", offline_map_img);
 	//cv::imshow("last_map_img", last_map_img);
 	//cv::imshow("map_img", map_img);
@@ -585,8 +558,8 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 
 	}
 
-	cv::Mat road_map = segment_remission_map(&localize_map.carmen_mean_remission_map, &localize_map.carmen_map);
-	show_map(snapshot_map, &localize_map.carmen_map, road_map);
+//	cv::Mat road_map = segment_remission_map(&localize_map.carmen_mean_remission_map, &localize_map.carmen_map);
+	filter_objects_and_associate(snapshot_map, &localize_map.carmen_map, road_map);
 	//show_map(&offline_map);
 	//printf("\n###############################################################\n");
 }

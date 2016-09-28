@@ -150,7 +150,7 @@ set_wrench_efforts_desired_v_and_curvature()
 	if (i < ford_escape_hybrid_config->nun_motion_commands)
 	{
 		v = ford_escape_hybrid_config->current_motion_command_vector[i].v;
-//		phi = (1.0 + v / (6.94 / 0.3)) * ford_escape_hybrid_config->current_motion_command_vector[i].phi;
+		phi = (1.0 + v / (6.94 / 0.3)) * ford_escape_hybrid_config->current_motion_command_vector[i].phi;
 		phi = ford_escape_hybrid_config->current_motion_command_vector[i].phi;
 	}
 	else
@@ -158,7 +158,7 @@ set_wrench_efforts_desired_v_and_curvature()
 		v = 0.0;
 		phi = 0.0;
 	}
-//	g_phi = phi / (1.0 + v / (6.94 / 0.3));
+	g_phi = phi / (1.0 + v / (6.94 / 0.3));
 	g_phi = phi;
 
 	// The function carmen_ford_escape_hybrid_steering_PID_controler() uses g_atan_desired_curvature to compute the g_steering_command that is sent to the car.
@@ -465,10 +465,9 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 		}
 		else
 		{
-			pid_plot_curvature(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->current_motion_command_vector[0].phi);
+			pid_plot_curvature(ford_escape_hybrid_config->filtered_phi, get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config));
 			g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
 					-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t);
-
 		}
 
 		previous_gear_command = g_gear_command;
