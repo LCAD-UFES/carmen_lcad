@@ -48,7 +48,7 @@ car_model(double steering_effort, double atan_current_curvature, fann_type *stee
 {
 	double phi = carmen_libcarneuralmodel_compute_new_phi_from_effort(steering_effort, atan_current_curvature, steering_ann_input,
 			param->steering_ann, param->v, param->understeer_coeficient, param->distance_rear_axles, 2.0 * param->max_phi);
-	//phi = 1.2 * phi;// - 0.01;
+	phi = 1.0 * phi;// - 0.01;
 	
 	return (phi);
 }
@@ -348,7 +348,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_desired_curvat
 //	static int count = 0;
 //
 //	count++;
-//	if ((count % (2*80)) == 0)
+//	if ((count % (80)) == 0)
 //		atan_current_curvature += 0.1;
 
 	//atan_current_curvature *= 1.1;
