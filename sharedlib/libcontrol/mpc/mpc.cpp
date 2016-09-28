@@ -237,7 +237,7 @@ get_optimized_effort(PARAMS *par, EFFORT_SPLINE_DESCRIPTOR seed)
 
 
 void
-plot_state2(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double understeer_coeficient, double distance_between_front_and_rear_axles, double effort)
+plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double understeer_coeficient, double distance_between_front_and_rear_axles, double effort)
 {
 	#define PAST_SIZE 300
 	static list<double> cphi_vector;
@@ -324,7 +324,7 @@ plot_state2(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double underste
 	fclose(gnuplot_data_file);
 
 	fprintf(gnuplot_pipe, "unset arrow\nset arrow from %lf, %lf to %lf, %lf nohead\n",
-			begin_predition_time, -30.0, begin_predition_time, 30.0);
+			begin_predition_time, -60.0, begin_predition_time, 60.0);
 
 	fprintf(gnuplot_pipe, "plot "
 			"'./gnuplot_data.txt' using 1:2:5 with lines linecolor variable title 'cphi' axes x1y2,"
@@ -402,7 +402,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_desired_curvat
 	//param.dk = yp - Cxk;
 	param.previous_k1 = effort;
 
-	plot_state2(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
+	plot_state(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
 
 	return (effort);
 }
