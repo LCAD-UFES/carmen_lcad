@@ -75,10 +75,7 @@ compute_new_velocity(carmen_simulator_ackerman_config_t *simulator_config)
 		simulator_config->v += command_signal * acceleration * time;
 	}
 
-	simulator_config->v = carmen_clamp(
-			-simulator_config->maximum_speed_reverse,
-			simulator_config->v,
-			simulator_config->maximum_speed_forward);
+	simulator_config->v = carmen_clamp(-simulator_config->maximum_speed_reverse, simulator_config->v, simulator_config->maximum_speed_forward);
 	
 	return (simulator_config->v);
 }
@@ -469,7 +466,7 @@ compute_steering_with_qlearning(double *steering_command, double atan_desired_cu
 	pattern_number = (pattern_number + 1) % num_data;
 }
 
-
+/*
 double
 compute_new_phi_with_ann_old(carmen_simulator_ackerman_config_t *simulator_config)
 {
@@ -506,7 +503,7 @@ compute_new_phi_with_ann_old(carmen_simulator_ackerman_config_t *simulator_confi
 
 	return (simulator_config->phi);
 }
-
+*/
 
 double
 compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
@@ -576,16 +573,11 @@ carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulat
 
 	update_target_v_and_target_phi(simulator_config);
 
-	//v   = compute_new_velocity_with_ann(simulator_config);
-	v   = compute_new_velocity(simulator_config);
-	phi = compute_new_phi_with_ann(simulator_config);
-
-	//double temp_phi = simulator_config->phi;
-	//simulator_config->phi = previous_phi;
-	//previous_phi = compute_new_phi_with_ann(simulator_config);
-	//simulator_config->phi = temp_phi;
-
 	//phi = compute_new_phi(simulator_config);// + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.1));
+	v   = compute_new_velocity(simulator_config);
+
+	phi = compute_new_phi_with_ann(simulator_config);
+	//v   = compute_new_velocity_with_ann(simulator_config);
 
 	phi = carmen_clamp(-simulator_config->max_phi, phi, simulator_config->max_phi);
 	simulator_config->phi = phi;
