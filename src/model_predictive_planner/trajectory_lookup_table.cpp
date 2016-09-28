@@ -642,12 +642,12 @@ double
 compute_path_via_simulation(Robot_State &robot_state, Command &command,
 		vector<carmen_ackerman_path_point_t> &path,
 		TrajectoryLookupTable::TrajectoryControlParameters tcp,
-		gsl_spline *phi_spline, gsl_interp_accel *acc, double v0, double i_phi)
+		gsl_spline *phi_spline, gsl_interp_accel *acc, double v0, double i_phi, double delta_t)
 {
 	int i = 0;
 	double t, last_t;
 	double distance_traveled = 0.0;
-	double delta_t = 0.15;
+	//double delta_t = 0.075;
 	int reduction_factor = 1 + (int)((tcp.tt / delta_t) / 90.0);
 
 	robot_state.pose.x = 0.0;
@@ -726,7 +726,7 @@ print_phi_profile_temp(gsl_spline *phi_spline, gsl_interp_accel *acc, double tot
 vector<carmen_ackerman_path_point_t>
 simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 		TrajectoryLookupTable::TrajectoryControlParameters &tcp, double v0, double i_phi,
-		bool display_phi_profile)
+		bool display_phi_profile, double delta_t)
 {
 	vector<carmen_ackerman_path_point_t> path;
 	if (!tcp.valid)
@@ -762,7 +762,7 @@ simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 	Command command;
 	Robot_State robot_state;
 
-	double distance_traveled = compute_path_via_simulation(robot_state, command, path, tcp, phi_spline, acc, v0, i_phi);
+	double distance_traveled = compute_path_via_simulation(robot_state, command, path, tcp, phi_spline, acc, v0, i_phi, delta_t);
 
 	gsl_spline_free(phi_spline);
 	gsl_interp_accel_free(acc);
