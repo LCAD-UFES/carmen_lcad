@@ -1,0 +1,6 @@
+net: "model_action_critic.prototxt"
+base_lr: 0.005
+lr_policy: "fixed"
+snapshot_prefix: "actor_critic_phi"
+solver_type: RMSPROP
+solver_mode: CPU

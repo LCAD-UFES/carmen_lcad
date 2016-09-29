@@ -137,49 +137,49 @@ static void
 update_random_object(int i, 
 		     carmen_simulator_ackerman_config_t *simulator_config)
 {
-  carmen_object_ackerman_t new;
+  carmen_object_ackerman_t new_object;
   double vx, vy;
   double separation;
   double dist;
 
   double mean_x, mean_y, delta_x, delta_y;
 
-  new = object_list[i];
-  if (!new.is_robot) 
+  new_object = object_list[i];
+  if (!new_object.is_robot)
     {
-      separation = hypot(new.x1 - new.x2, new.y1 - new.y2);
+      separation = hypot(new_object.x1 - new_object.x2, new_object.y1 - new_object.y2);
       if(separation > MAX_STEP)
 	{      
-	  mean_x = (new.x1+new.x2)/2;
-	  mean_y = (new.y1+new.y2)/2;
+	  mean_x = (new_object.x1+new_object.x2)/2;
+	  mean_y = (new_object.y1+new_object.y2)/2;
 	  
-	  delta_x = fabs((new.x1 - new.x2)/2);
-	  delta_y = fabs((new.y1 - new.y2)/2);
+	  delta_x = fabs((new_object.x1 - new_object.x2)/2);
+	  delta_y = fabs((new_object.y1 - new_object.y2)/2);
 	  
-	  new.x1 = carmen_gaussian_random(mean_x, delta_x);
-	  new.x2 = carmen_gaussian_random(mean_x, delta_x);
-	  new.y1 = carmen_gaussian_random(mean_y, delta_y);
-	  new.y2 = carmen_gaussian_random(mean_y, delta_y);
+	  new_object.x1 = carmen_gaussian_random(mean_x, delta_x);
+	  new_object.x2 = carmen_gaussian_random(mean_x, delta_x);
+	  new_object.y1 = carmen_gaussian_random(mean_y, delta_y);
+	  new_object.y2 = carmen_gaussian_random(mean_y, delta_y);
 	}
       else
 	{
-	  vx = new.tv * cos(new.theta) * simulator_config->delta_t;
-	  vy = new.tv * sin(new.theta) * simulator_config->delta_t; 
-	  new.x1 += carmen_gaussian_random(vx, vx/10.0);
-	  new.x2 += carmen_gaussian_random(vx, vx/10.0);
-	  new.y1 += carmen_gaussian_random(vy, vy/10.0);
-	  new.y2 += carmen_gaussian_random(vy, vy/10.0);
+	  vx = new_object.tv * cos(new_object.theta) * simulator_config->delta_t;
+	  vy = new_object.tv * sin(new_object.theta) * simulator_config->delta_t;
+	  new_object.x1 += carmen_gaussian_random(vx, vx/10.0);
+	  new_object.x2 += carmen_gaussian_random(vx, vx/10.0);
+	  new_object.y1 += carmen_gaussian_random(vy, vy/10.0);
+	  new_object.y2 += carmen_gaussian_random(vy, vy/10.0);
 	  
 	}
       
-      dist = hypot((new.x1+new.x2)/2.0-simulator_config->true_pose.x, 
-		   (new.y1+new.y2)/2.0-simulator_config->true_pose.y);
+      dist = hypot((new_object.x1+new_object.x2)/2.0-simulator_config->true_pose.x,
+		   (new_object.y1+new_object.y2)/2.0-simulator_config->true_pose.y);
       
-      if (!in_map(new.x1, new.y1, &(simulator_config->map)) || 
-	  !in_map(new.x2, new.y2, &(simulator_config->map)) || 
+      if (!in_map(new_object.x1, new_object.y1, &(simulator_config->map)) ||
+	  !in_map(new_object.x2, new_object.y2, &(simulator_config->map)) ||
 	  dist < min_dist_from_robot ||
-	  carmen_simulator_object_too_close(new.x1, new.y1, i) ||
-	  carmen_simulator_object_too_close(new.x2, new.y2, i))
+	  carmen_simulator_object_too_close(new_object.x1, new_object.y1, i) ||
+	  carmen_simulator_object_too_close(new_object.x2, new_object.y2, i))
 	{      
 	  object_list[i].theta = carmen_normalize_theta
 	    (carmen_gaussian_random(M_PI+object_list[i].theta, M_PI/4));
@@ -188,17 +188,17 @@ update_random_object(int i,
     }
   else
     {
-      vx = new.tv * cos(new.theta) * simulator_config->delta_t;
-      vy = new.tv * sin(new.theta) * simulator_config->delta_t; 
-      new.x1 += carmen_gaussian_random(vx, vx/10.0);
-      new.y1 += carmen_gaussian_random(vy, vy/10.0);
+      vx = new_object.tv * cos(new_object.theta) * simulator_config->delta_t;
+      vy = new_object.tv * sin(new_object.theta) * simulator_config->delta_t;
+      new_object.x1 += carmen_gaussian_random(vx, vx/10.0);
+      new_object.y1 += carmen_gaussian_random(vy, vy/10.0);
 
-      dist = hypot(new.x1-simulator_config->true_pose.x, 
-		   new.y1-simulator_config->true_pose.y);
+      dist = hypot(new_object.x1-simulator_config->true_pose.x,
+		   new_object.y1-simulator_config->true_pose.y);
 
-      if (!in_map(new.x1, new.y1, &(simulator_config->map)) || 
+      if (!in_map(new_object.x1, new_object.y1, &(simulator_config->map)) ||
 	  dist < min_dist_from_robot ||
-	  carmen_simulator_object_too_close(new.x1, new.y1, i))
+	  carmen_simulator_object_too_close(new_object.x1, new_object.y1, i))
 	{      
 	  object_list[i].theta = carmen_normalize_theta
 	    (carmen_gaussian_random(M_PI+object_list[i].theta, M_PI/4));
@@ -206,7 +206,7 @@ update_random_object(int i,
 	  return;
 	}
     }
-  object_list[i] = new;
+  object_list[i] = new_object;
   object_list[i].time_of_last_update = carmen_get_time();
 }
 
@@ -214,48 +214,48 @@ static void
 update_line_follower(carmen_object_ackerman_t * object, 
 		     carmen_simulator_ackerman_config_t *simulator_config)
 {
-  carmen_object_ackerman_t new;
+  carmen_object_ackerman_t new_object;
   double vx, vy;
   double separation;
   double dist = 0;
 
   double mean_x, mean_y, delta_x, delta_y;
 
-  new = *object;
+  new_object = *object;
 
   if (!object->is_robot) 
     {
-      separation = hypot(new.x1 - new.x2, new.y1 - new.y2);
+      separation = hypot(new_object.x1 - new_object.x2, new_object.y1 - new_object.y2);
       
       if(separation > MAX_STEP)
 	{      
-	  mean_x = (new.x1+new.x2)/2;
-	  mean_y = (new.y1+new.y2)/2;
+	  mean_x = (new_object.x1+new_object.x2)/2;
+	  mean_y = (new_object.y1+new_object.y2)/2;
 	  
-	  delta_x = fabs((new.x1 - new.x2)/2);
-	  delta_y = fabs((new.y1 - new.y2)/2);
+	  delta_x = fabs((new_object.x1 - new_object.x2)/2);
+	  delta_y = fabs((new_object.y1 - new_object.y2)/2);
 	  
-	  new.x1 = carmen_gaussian_random(mean_x, delta_x);
-	  new.x2 = carmen_gaussian_random(mean_x, delta_x);
-	  new.y1 = carmen_gaussian_random(mean_y, delta_y);
-	  new.y2 = carmen_gaussian_random(mean_y, delta_y);
+	  new_object.x1 = carmen_gaussian_random(mean_x, delta_x);
+	  new_object.x2 = carmen_gaussian_random(mean_x, delta_x);
+	  new_object.y1 = carmen_gaussian_random(mean_y, delta_y);
+	  new_object.y2 = carmen_gaussian_random(mean_y, delta_y);
 	}
       else
 	{
-	  vx = new.tv * cos(new.theta) * simulator_config->delta_t;
-	  vy = new.tv * sin(new.theta) * simulator_config->delta_t; 
-	  new.x1 += carmen_gaussian_random(vx, vx/10.0);
-	  new.x2 += carmen_gaussian_random(vx, vx/10.0);
-	  new.y1 += carmen_gaussian_random(vy, vy/10.0);
-	  new.y2 += carmen_gaussian_random(vy, vy/10.0);
+	  vx = new_object.tv * cos(new_object.theta) * simulator_config->delta_t;
+	  vy = new_object.tv * sin(new_object.theta) * simulator_config->delta_t;
+	  new_object.x1 += carmen_gaussian_random(vx, vx/10.0);
+	  new_object.x2 += carmen_gaussian_random(vx, vx/10.0);
+	  new_object.y1 += carmen_gaussian_random(vy, vy/10.0);
+	  new_object.y2 += carmen_gaussian_random(vy, vy/10.0);
 	  
 	}
       
       dist = hypot((object->x1+object->x2)/2.0-simulator_config->true_pose.x, 
 		   (object->y1+object->y2)/2.0-simulator_config->true_pose.y);
       
-      if (!in_map(new.x1, new.y1, &(simulator_config->map)) || 
-	  !in_map(new.x2, new.y2, &(simulator_config->map)) || 
+      if (!in_map(new_object.x1, new_object.y1, &(simulator_config->map)) ||
+	  !in_map(new_object.x2, new_object.y2, &(simulator_config->map)) ||
 	  dist < min_dist_from_robot)
 	{      
 	  return;
@@ -263,21 +263,21 @@ update_line_follower(carmen_object_ackerman_t * object,
     }
   else
     {
-      vx = new.tv * cos(new.theta) * simulator_config->delta_t;
-      vy = new.tv * sin(new.theta) * simulator_config->delta_t; 
-      new.x1 += carmen_gaussian_random(vx, vx/10.0);
-      new.y1 += carmen_gaussian_random(vy, vy/10.0);
+      vx = new_object.tv * cos(new_object.theta) * simulator_config->delta_t;
+      vy = new_object.tv * sin(new_object.theta) * simulator_config->delta_t;
+      new_object.x1 += carmen_gaussian_random(vx, vx/10.0);
+      new_object.y1 += carmen_gaussian_random(vy, vy/10.0);
 
       dist = hypot(object->x1-simulator_config->true_pose.x, 
 		   object->y1-simulator_config->true_pose.y);
       
-      if (!in_map(new.x1, new.y1, &(simulator_config->map)) || 
+      if (!in_map(new_object.x1, new_object.y1, &(simulator_config->map)) ||
 	  dist < min_dist_from_robot)
 	{      
 	  return;
 	}
     }
-  *object = new;
+  *object = new_object;
   object->time_of_last_update = carmen_get_time();
 }
 

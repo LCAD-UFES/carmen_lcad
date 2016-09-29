@@ -8,9 +8,9 @@ layers {
   top: "dummy1"
   memory_data_param {
     batch_size: 32
-    channels: 4
-    height: 84
-    width: 84
+    channels: 3
+    height: 200
+    width: 200
   }
 }
 #target_input: expected rewards for each action. This value is compared to the q-value predicted by the network and the difference (euclidean loss) is used to update the weights.
@@ -48,7 +48,7 @@ layers {
   memory_data_param {
     batch_size: 32
     #channels: 2
-    channels: 240 # 120 copias da velocidade e 120 copias do angulo do volante
+    channels: 1024 # metade p/ velocidade e metade p/ o angulo do volante
     height: 1
     width: 1
   }
@@ -67,12 +67,12 @@ layers {
   bottom: "frames"
   top: "conv1"
   convolution_param {
-    num_output: 16
-    kernel_size: 21
-    stride: 7
+    num_output: 32
+    kernel_size: 10
+    stride: 5
     weight_filler {
       type: "gaussian"
-      std: 0.001
+      std: 0.01
     }
   }
 }
@@ -86,17 +86,29 @@ layers {
   }
 }
 layers {
+  name: "pool1"
+  type: POOLING
+  bottom: "conv1"
+  top: "pool1"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 1
+  }
+}
+layers {
   name: "conv2_layer"
   type: CONVOLUTION
-  bottom: "conv1"
+  bottom: "pool1"
   top: "conv2"
   convolution_param {
-    num_output: 32
-    kernel_size: 3
-    stride: 3
+    num_output: 64
+    pad: 2
+    kernel_size: 8
+    stride: 4
     weight_filler {
       type: "gaussian"
-      std: 0.001
+      std: 0.01
     }
   }
 }
@@ -110,10 +122,45 @@ layers {
   }
 }
 layers {
-    name: "flaten_conv2"
+  name: "pool2"
+  type: POOLING
+  bottom: "conv2"
+  top: "pool2"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 1
+  }
+}
+layers {
+  name: "conv3_layer"
+  type: CONVOLUTION
+  bottom: "pool2"
+  top: "conv3"
+  convolution_param {
+    num_output: 128
+    kernel_size: 3
+    stride:1
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+  }
+}
+layers {
+  name: "conv3_relu_layer"
+  type: RELU
+  bottom: "conv3"
+  top: "conv3"
+  relu_param {
+    negative_slope: 0.01
+  }
+}
+layers {
+    name: "flaten_conv3"
     type: FLATTEN
-    bottom: "conv2"
-    top: "flaten_conv2"
+    bottom: "conv3"
+    top: "flaten_conv3"
 }
 
 layers {
@@ -123,11 +170,11 @@ layers {
     top: "flaten_odometry"
 }
 layers {
-  name: "concat_odometry_and_conv2"
+  name: "concat_odometry_and_conv3"
   type: CONCAT
-  bottom: "flaten_conv2"
+  bottom: "flaten_conv3"
   bottom: "flaten_odometry"
-  top: "odometry_and_conv2"
+  top: "odometry_and_conv3"
   concat_param {
     axis: 1
   }
@@ -135,13 +182,13 @@ layers {
 layers {
   name: "ip1_layer"
   type: INNER_PRODUCT
-  bottom: "odometry_and_conv2"
+  bottom: "odometry_and_conv3"
   top: "ip1"
   inner_product_param {
-    num_output: 256
+    num_output: 1024
     weight_filler {
       type: "gaussian"
-      std: 0.001
+      std: 0.01
     }
   }
 }
@@ -152,15 +199,35 @@ layers {
   top: "ip1"
 }
 layers {
-  name: "ip2_layer"
+  name: "ip1.5_layer"
   type: INNER_PRODUCT
   bottom: "ip1"
+  top: "ip1.5"
+  inner_product_param {
+    num_output: 1024
+    weight_filler {
+      type: "gaussian"
+      std: 0.01
+    }
+  }
+}
+layers {
+  name: "ip1.5_tanh_layer"
+  type: TANH
+  bottom: "ip1.5"
+  top: "ip1.5"
+}
+
+layers {
+  name: "ip2_layer"
+  type: INNER_PRODUCT
+  bottom: "ip1.5"
   top: "q_values"
   inner_product_param {
     num_output: 5
     weight_filler {
       type: "gaussian"
-      std: 0.001
+      std: 0.01
     }
   }
 }
