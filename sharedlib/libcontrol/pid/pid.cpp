@@ -38,60 +38,6 @@ static double g_velocity_backward_deccelerating_Ki;
 static double g_velocity_backward_deccelerating_Kd;
 static double g_brake_gap;
 
-/*
-
-void
-pid_plot_curvature_old(double current_phi, double desired_phi)
-{
-	#define PAST_SIZE 600
-	static double cphi[PAST_SIZE];
-	static double dphi[PAST_SIZE];
-	static double timestamp[PAST_SIZE];
-	static bool first_time = true;
-	static double first_timestamp;
-	static FILE *gnuplot_pipe;
-
-	double t = carmen_get_time();
-	if (first_time)
-	{
-		first_timestamp = t;
-		first_time = false;
-
-		gnuplot_pipe = popen("gnuplot -persist", "w");
-		fprintf(gnuplot_pipe, "set xrange [0:18]\n");
-		fprintf(gnuplot_pipe, "set yrange [-0.12:0.12]\n");
-	}
-
-	memmove(cphi, cphi + 1, (PAST_SIZE - 1) * sizeof(double));
-	memmove(dphi, dphi + 1, (PAST_SIZE - 1) * sizeof(double));
-	memmove(timestamp, timestamp + 1, (PAST_SIZE - 1) * sizeof(double));
-
-	cphi[PAST_SIZE - 1] = current_phi;
-	dphi[PAST_SIZE - 1] = desired_phi;
-
-	timestamp[PAST_SIZE - 1] = t - first_timestamp;
-
-	if (t - first_timestamp > 16.0)
-	{
-		FILE *gnuplot_data_file = fopen("gnuplot_data.txt", "w");
-
-		// Dados passados
-		for (int i = 0; i < PAST_SIZE; i++)
-			fprintf(gnuplot_data_file, "%lf %lf %lf\n",
-					timestamp[i] - timestamp[0], cphi[i], dphi[i]);
-
-		fclose(gnuplot_data_file);
-
-
-		fprintf(gnuplot_pipe, "plot "
-				"'./gnuplot_data.txt' using 1:2 with lines title 'cphi',"
-				"'./gnuplot_data.txt' using 1:3 with lines title 'dphi'\n");
-
-		fflush(gnuplot_pipe);
-	}
-}
-*/
-
 
 void
 pid_plot_curvature(double current_phi, double desired_phi)
@@ -115,7 +61,7 @@ pid_plot_curvature(double current_phi, double desired_phi)
 
 		gnuplot_pipe = popen("gnuplot", "w"); //("gnuplot -persist", "w") to keep last plot after program closes
 		fprintf(gnuplot_pipe, "set xrange [0:30]\n");
-		fprintf(gnuplot_pipe, "set yrange [-0.12:0.12]\n");
+		fprintf(gnuplot_pipe, "set yrange [-0.55:0.55]\n");
 	}
 
 	cphi.push_front(current_phi);
