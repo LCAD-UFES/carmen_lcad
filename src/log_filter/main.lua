@@ -116,7 +116,7 @@ local function load_images_and_labels(csv_name, year, dataset_prefix)
     i = i + 1
   end
   
-  imgs = prepro(imgs, false, true) -- preprocess in place, and don't augment
+  --imgs = prepro(imgs, false, true) -- preprocess in place, and don't augment
   return imgs, labels
 end -- load_images_and_labels()
 
@@ -197,8 +197,19 @@ local function build_net(cnn_output, labels)
   criterion = nn.ClassNLLCriterion()
 end -- build_net()
 
+function file_exists(name)
+   local f=io.open(name,"r")
+   if f~=nil then io.close(f) return true else return false end
+end
 
 local function train_net(batchInputs, batchLabels)
+  if file_exists("trained_net.tensor") then
+    model = torch.load("trained_net.tensor")
+    print("ATENTION: loading trained_net.tensor instead of training!")
+    print("Delete this file if you want to train.")
+    return
+  end
+      
 -- https://github.com/torch/nn/blob/master/doc/training.md
   local optimState = {learningRate = opt.learning_rate, momentum = opt.momentum, learningRateDecay = 5e-7}
   --model = model:cuda()
@@ -233,6 +244,7 @@ local function train_net(batchInputs, batchLabels)
     optim.sgd(feval, params, optimState)
     --print("epoch = ", epoch)
   end
+  torch.save("trained_net.tensor", model)
 end -- train_net()
 
 
@@ -242,7 +254,7 @@ local function evaluate_resuts(results, labels)
   for i = 1,results:size(1) do
      confusion:add(results[i], labels[i])
   end
-  print(confusion)
+--  print(confusion)
 --  print(results:exp())
 --  print(results:size())
 --  for i = 1, results:size(1) do
@@ -308,15 +320,16 @@ local function main()
   local training_images = torch.load("training-20140418.csv.images.tensor_images.tensor")
   local training_labels = torch.load("training-20140418.csv.labels.tensor_labels.tensor")
   local correct = 0
+  local win1, win2
   for i = 1, test_images:size(1) do
-    --image.display{image = training_images[i], zoom = 1, legend = 'training image ' .. tostring(i)}
+    win1 = image.display{image = test_images[i], zoom = 1, win=win1, legend = 'test image ' .. tostring(i)}
     local max_val, index = torch.max(results, 2)
-    --image.display{image = test_images[test_labels[index[i]:max()]], zoom = 1, legend = 'test image ' .. test_labels[index[i]:max()]}
-    if math.abs(training_labels[i] - test_labels[index[i]:max()]) <= opt.allowed_distance then
+    win2 = image.display{image = training_images[index[i]:max()], zoom = 1, win=win2, legend = 'training image ' .. training_labels[index[i]:max()]}
+    if math.abs(test_labels[i] - training_labels[index[i]:max()]) <= opt.allowed_distance then
       correct = correct + 1
     end
-    print("trainig_label, test_label ", training_labels[i], test_labels[index[i]:max()])
-    -- local line = io.read() 
+    print("test_label, training_label ", test_labels[i], training_labels[index[i]:max()])
+    local line = io.read() 
   end
   print("correct = " .. 100 * correct / test_images:size(1) .. "%")
   

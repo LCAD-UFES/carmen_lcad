@@ -104,9 +104,9 @@ initializate_variables(past_variables pv)
 		error_order[i] = 0;
 		recomended_pid_params[i] = 0;
 	}
-	pid_params[0] = 1250; //0.12;
-	pid_params[1] = 600; //0.32;
-	pid_params[2] = 25; //0.08;
+	pid_params[0] = 0.12; //1250
+	pid_params[1] = 0.32; //600
+	pid_params[2] = 0.08; //25
 /////////////////////////// INITIALIZE ESTRUCT VARIABLES //////////////////////////////
 	pv.past_td_error = 0;
 	pv.past_critic_value = 0;
@@ -120,9 +120,9 @@ initializate_variables(past_variables pv)
 		pv.past_error_order[i] = 0;
 		pv.past_recomended_pid_params[i] = 0;
 	}
-	pv.past_pid_params[0] = 0.12;
-	pv.past_pid_params[1] = 0.32;
-	pv.past_pid_params[2] = 0.08;
+	pv.past_pid_params[0] = 0.12; //1250
+	pv.past_pid_params[1] = 0.32; //600; //
+	pv.past_pid_params[2] = 0.08; //25; //
 ///////////////////////////////// INITIALIZE NETWORK //////////////////////////////////
 	for (i = 0; i < neural_network_size; i++)
 	{
@@ -560,25 +560,26 @@ carmen_librlpid_compute_effort_signal(double current_phi, double desired_phi, do
 	struct fann *steering_ann, double v, double understeer_coeficient, double distance_between_front_and_rear_axles,
 	double max_phi)
 {
-	bool first_time = true;
-	past_variables pv;
-	intelligent_control_params params;
+	static bool first_time = true;
+	static past_variables pv;
+	static intelligent_control_params params;
+	fann_type ann_input[NUM_STEERING_ANN_INPUTS];
 
 	if(first_time)
 	{
 		params = read_parameters("rlpid_params.txt");
 		pv = initializate_variables(pv); // Step 1
-		load_variables(pv);
 		first_time = false;
 	}
 
+	memcpy(ann_input, steering_ann_input, NUM_STEERING_ANN_INPUTS * sizeof(fann_type));
 
-	printf("%f  ", U[0]);
+	load_variables(pv);
+
+	//printf("%f  %f  %f %f  %f  %f\n", U[0], U[1], U[2], error[0], error[1], error[2]);
 
 	calculate_error(current_phi, desired_phi); // Step 2 ==> CALCULA ERRO
-
 	external_reinforcement_signal(params.alfa_weight_coef, params.beta_weight_coef, params.error_band); //Step 3 ==> RECOMPENSA
-
 	update_neetwork_hidden_unit_phi();// ==> UPDATE PHI
 	update_recomended_pid_output(); //Step 4 ==> UPDATE K`
 	critic_value = update_critic_value_output();	//Step 4 ==> UPDATE V
@@ -592,15 +593,12 @@ carmen_librlpid_compute_effort_signal(double current_phi, double desired_phi, do
 	//Estimate FUTURE reward
 	double atan_current_curvature = carmen_get_curvature_from_phi(current_phi, v, understeer_coeficient, distance_between_front_and_rear_axles);
 
-	double future_phi = carmen_libcarneuralmodel_compute_new_phi_from_effort(U[0], atan_current_curvature, steering_ann_input, steering_ann, v,
+	double future_phi = carmen_libcarneuralmodel_compute_new_phi_from_effort(-100 * U[0], atan_current_curvature, ann_input, steering_ann, v,
 								understeer_coeficient, distance_between_front_and_rear_axles, max_phi);		//Step 6 ==> PREVE Y(t+1)
 
 	calculate_error(next_desired_phi, future_phi); // Step 6 ==> CALCULA ERRO
-
 	update_neetwork_hidden_unit_phi_future();// ==> UPDATE PHI
-
 	future_critic_value = update_critic_value_future(); //Step 7 ==> UPDATE V
-
 	calculate_td_error(params.discount_factor); //Step 8 ==> CALCULA ERRO TD
 
 	load_variables(pv);
@@ -609,9 +607,9 @@ carmen_librlpid_compute_effort_signal(double current_phi, double desired_phi, do
 	center_vector_update(params.learning_rate_center); //Setp 10 ==> UPDATE CENTRO
 	width_scalar_update(params.learning_rate_width); //Step 10 ==> UPDATE WIDTH SCALAR
 
-	printf("%f\n", U[0]);
+	//printf("%f\n", U[0]);
 
-	return U[0];
+	return carmen_clamp(-100.0, (-100 * U[0]), 100.0);
 }
 
 
