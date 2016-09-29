@@ -22,11 +22,6 @@ std::string action_to_string(DqnAction a)
 			return std::string("DQN_ACTION_NONE");
 			break;
 		}
-//		case DQN_ACTION_STEER_NONE:
-//		{
-//			return std::string("DQN_ACTION_STEER_NONE");
-//			break;
-//		}
 		case DQN_ACTION_STEER_LEFT:
 		{
 			return std::string("DQN_ACTION_STEER_LEFT");
@@ -96,7 +91,7 @@ std::string PrintQValues(const std::vector<float>& q_values, const std::vector<D
 }
 
 
-DqnCaffe::DqnCaffe(DqnParams params, char *program_name)
+DqnCaffe::DqnCaffe(DqnParams params, char *program_name __attribute__((unused)))
 {
 	_params = params;
 
@@ -157,7 +152,7 @@ void DqnCaffe::Initialize()
 	assert(HasBlobSize(
 	  *net_->blob_by_name("frames"),
 	  DqnParams::kMinibatchSize,
-	  DqnParams::kInputFrameCount,
+	  DqnParams::kInputFrameCount * DqnParams::kNumChannelsPerImage,
 	  DqnParams::kCroppedFrameSize,
 	  DqnParams::kCroppedFrameSize));
 
@@ -174,7 +169,7 @@ void DqnCaffe::Initialize()
 	odometry_input_layer_ = boost::dynamic_pointer_cast<caffe::MemoryDataLayer<float> >(net_->layer_by_name("odometry_input_layer"));
 
 	assert(odometry_input_layer_);
-	assert(HasBlobSize(*net_->blob_by_name("odometry"), DqnParams::kMinibatchSize, 240, 1, 1));
+	assert(HasBlobSize(*net_->blob_by_name("odometry"), DqnParams::kMinibatchSize, DqnParams::kNumAdditionalDataNeurons, 1, 1));
 }
 
 
@@ -208,9 +203,6 @@ DqnCaffe::SelectActionGreedily(const InputFrames& last_frames, double v, double 
 	v_vector.push_back(v);
 	phi_vector.push_back(phi);
 
-	// *****************************
-	// CHECAR SE AS DUAS INSTRUCOES "std::vector<InputFrames>{{last_frames}}" e "frames_vector.push_back(last_frames);" SAO DE FATO EQUIVALENTES!!
-	// *****************************
 	return SelectActionGreedily(frames_vector, v_vector, phi_vector, qs).front();
 }
 
@@ -224,6 +216,12 @@ std::vector<std::pair<DqnAction, float> > DqnCaffe::SelectActionGreedily(
 	MyArray<float, DqnParams::kMinibatchDataSize> frames_input;
 	OdometryLayerInputData odometry;
 
+	// DEBUG:
+//	cv::Mat batch(cv::Size(DqnParams::kMinibatchSize * DqnParams::kCroppedFrameSize / 4,  4 * DqnParams::kCroppedFrameSize), CV_32FC3);
+//	cv::Mat teste(cv::Size(DqnParams::kCroppedFrameSize, DqnParams::kCroppedFrameSize), CV_32FC3);
+//	memset(teste.data, 0, teste.cols * teste.rows * 3 * sizeof(float));
+//	memset(batch.data, 0, batch.cols * batch.rows * 3 * sizeof(float));
+
 	for (size_t i = 0; i < DqnParams::kMinibatchSize; ++i)
 	{
 		// Input frames to the net and compute Q values for each legal actions
@@ -233,13 +231,27 @@ std::vector<std::pair<DqnAction, float> > DqnCaffe::SelectActionGreedily(
 			{
 				const FrameDataSp& frame_data = last_frames_batch[i][j];
 
-				std::copy(frame_data->begin(), frame_data->end(),
-					frames_input.begin() + i * DqnParams::kInputDataSize + j * DqnParams::kCroppedFrameDataSize);
+				for (int k = 0; k < frame_data->size(); k++)
+				{
+					// DEBUG:
+//					teste.at<float>(k) = (float) frame_data->at(k) / 255.0;
+					frames_input[i * DqnParams::kInputDataSize + j * DqnParams::kCroppedFrameDataSize + k] = (float) frame_data->at(k) / 255.0;
+				}
+
+				// DEBUG:
+//				int h = i / 4;
+//				int w = i % 4;
+//				teste.copyTo(batch(cv::Rect(h * DqnParams::kCroppedFrameSize, w * DqnParams::kCroppedFrameSize, DqnParams::kCroppedFrameSize, DqnParams::kCroppedFrameSize)));
+
+				//std::copy(frame_data->begin(), frame_data->end(),
+				//	frames_input.begin() + i * DqnParams::kInputDataSize + j * DqnParams::kCroppedFrameDataSize);
 			}
 			else
 			{
 				for (int k = 0; k < DqnParams::kCroppedFrameDataSize; k++)
-					frames_input[i * DqnParams::kInputDataSize + j * DqnParams::kCroppedFrameDataSize + k] = 0;
+				{
+					frames_input[i * DqnParams::kInputDataSize + j * DqnParams::kCroppedFrameDataSize + k] = 0.0;
+				}
 			}
 		}
 	}
@@ -248,17 +260,25 @@ std::vector<std::pair<DqnAction, float> > DqnCaffe::SelectActionGreedily(
 	{
 		if (i < v_batch.size())
 		{
-			for (int j = 0; j < 120; j++)
-				odometry.push_back(v_batch[i] / 30.0); // 50.0 = MAX_SPEED <- Colocar como parametro do sistema
-			for (int j = 120; j < 240; j++)
-				odometry.push_back(carmen_radians_to_degrees(phi_batch[i]) / 60.0); // 60.0 = MAX_PHI <- Colocar como parametro do sistema
+			//fprintf(stderr, "%d| V: %lf PHI: %lf\n", i, v_batch[i], phi_batch[i]);
+
+			for (int j = 0; j < DqnParams::kNumAdditionalDataNeurons / 2; j++)
+				odometry.push_back(v_batch[i] / 30.0); // MAX_SPEED <- Colocar como parametro do sistema
+			for (int j = DqnParams::kNumAdditionalDataNeurons / 2; j < DqnParams::kNumAdditionalDataNeurons; j++)
+				odometry.push_back(carmen_radians_to_degrees(phi_batch[i]) / 60.0); // MAX_PHI <- Colocar como parametro do sistema
 		}
 		else
 		{
-			for (int j = 0; j < 240; j++)
+			//fprintf(stderr, "%d| V: %lf PHI: %lf\n", i, 0.0, 0.0);
+
+			for (int j = 0; j < DqnParams::kNumAdditionalDataNeurons; j++)
 				odometry.push_back(0);
 		}
 	}
+
+	// DEBUG:
+//	cv::imshow("batch", batch);
+//	cv::waitKey(-1);
 
 	InputDataIntoLayers(frames_input, dummy_input_data_, dummy_input_data_, odometry);
 	net_->ForwardPrefilled(NULL);
@@ -272,24 +292,14 @@ std::vector<std::pair<DqnAction, float> > DqnCaffe::SelectActionGreedily(
 	{
 		std::vector<float> q_values(legal_actions_.size());
 
-		// ***********************************
-		// CHECAR SE A INSTRUCAO ABAIXO DE FATO EQUIVALE AO FOR!!!!!!
-		// ***********************************
-		// std::transform(legal_actions_.begin(), legal_actions_.end(), q_values.begin(), action_evaluator);
 		for (size_t action_id = 0; action_id < legal_actions_.size(); action_id++)
 		{
 			float q = q_values_blob_->data_at(i, static_cast<int>(legal_actions_[action_id]), 0, 0);
-			//assert(!isnan(q));
 			if (isnan(q)) q = 0;
 			q_values[action_id] = q;
 		}
 
 		if (qs != NULL) qs->push_back(q_values);
-
-//		if (last_frames_batch.size() == 1)
-//		{
-//			std::cout << PrintQValues(q_values, legal_actions_);
-//		}
 
 		// Select the action with the maximum Q value
 		const int max_idx = std::distance(q_values.begin(), std::max_element(q_values.begin(), q_values.end()));
@@ -303,8 +313,6 @@ std::vector<std::pair<DqnAction, float> > DqnCaffe::SelectActionGreedily(
 std::pair<DqnAction, float>
 DqnCaffe::SelectAction(const InputFrames& last_frames, double epsilon, double v, double phi)
 {
-	static int n = 0;
-
 	double probability;
 	std::pair<DqnAction, float> output;
 
@@ -314,9 +322,6 @@ DqnCaffe::SelectAction(const InputFrames& last_frames, double epsilon, double v,
 	std::vector<std::vector<float> > qs;
 	output = SelectActionGreedily(last_frames, v, phi, &qs);
 
-	//if (n % 100 == 0)
-		std::cout << PrintQValues(qs.front(), legal_actions_);
-
 	if (probability < epsilon) // Select randomly
 	{
 		int random_idx = rand() % legal_actions_.size();
@@ -324,18 +329,10 @@ DqnCaffe::SelectAction(const InputFrames& last_frames, double epsilon, double v,
 		output.first = legal_actions_[random_idx];
 		output.second = qs.front().at(random_idx); // value predicted by the network for this action
 
-		//if (n++ % 100 == 0)
-			std::cout << action_to_string(output.first) << " (random)" << std::endl;
-
 		return output;
 	}
 	else
-	{
-		//if (n++ % 100 == 0)
-			std::cout << action_to_string(output.first) << " (greedy)" << std::endl;
-
 		return output;
-	}
 }
 
 
@@ -396,7 +393,6 @@ show_input_frames(InputFrames frames, int id)
 	cv::resize(img, res, res.size());
 	cv::imshow(/*"input frames"*/name, res);
 	cv::waitKey(1);
-	printf("Show %s\n", name);
 }
 
 
@@ -405,12 +401,7 @@ DqnCaffe::Update()
 {
 	current_iter_++;
 
-//	if (current_iter_ >= 20) exit(0);
-
 	int i, j, random_transition_id;
-
-	// DEBUG:
-	// std::cout << "iteration: " << current_iter_ << std::endl;
 
 	// Sample transitions from replay memory
 	std::vector<int> transitions;
@@ -452,46 +443,12 @@ DqnCaffe::Update()
 
 		target_last_frames.push_back(transition.frame_after_action);
 
-// DEBUG:
-//		if (i == 0 || i == 8 || i == 20 || i == 31)
-//			show_input_frames(target_last_frames, i);
-
 		v_batch.push_back(transition.v);
 		phi_batch.push_back(transition.phi);
 		target_last_frames_batch.push_back(target_last_frames);
 	}
 
-
-//	static int nupdate = 0;
-//	std::cout << "nupdate: " << nupdate << std::endl;
-//	nupdate++;
-//	cv::waitKey(1);
-
 	std::vector<std::pair<DqnAction, float> > actions_and_values = SelectActionGreedily(target_last_frames_batch, v_batch, phi_batch);
-
-// DEBUG:
-//	printf("\na_and_v size:  %ld\n\n", actions_and_values.size());
-//
-//	for (int i = 0; i < actions_and_values.size(); i++)
-//		std::cout << i << " Greedy: " << action_to_string(actions_and_values[i].first) << " " << actions_and_values[i].second << std::endl;
-//
-//	printf("\n");
-//
-
-// DEBUG:
-//	int num_problems = 0;
-//	for (int i = 0; i < actions_and_values.size(); i++)
-//	{
-//		if (actions_and_values[i].second > 10.0 && num_problems < 4)
-//		{
-//			printf("PROBLEM IN %d %lf %lf\n", i, v_batch[i], phi_batch[i]);
-//			show_input_frames(target_last_frames_batch[i], i);
-//			num_problems++;
-//		}
-//	}
-//
-//	if (num_problems)
-//		cv::waitKey(-1);
 
 	// frames_input: 4 frames
 	static FramesLayerInputData frames_input;
@@ -538,6 +495,7 @@ DqnCaffe::Update()
 	}
 
 	int transition_id_in_the_action_value_vector = 0;
+	int already_printed = 0;
 
 	for (i = 0; i < DqnParams::kMinibatchSize; ++i)
 	{
@@ -548,17 +506,11 @@ DqnCaffe::Update()
 		}
 
 		Transition& transition = replay_memory_[transitions[i]];
-		DqnAction action = transition.action; //std::get < 1 > (transition);
+		DqnAction action = transition.action;
 
 		assert(static_cast<int>(action) < DqnParams::kOutputCount);
 
-		double reward = transition.reward; // std::get < 2 > (transition);
-
-		// ***********************************
-		// WHY IS THIS IMPORTANT????
-		// ***********************************
-		//assert(reward >= -1.0 && reward <= 1.0);
-
+		double reward = transition.reward;
 		double target = 0.0;
 
 		if (DqnParams::TrainingModel == DQN_Q_LEARNING)
@@ -570,10 +522,19 @@ DqnCaffe::Update()
 				// proximo estado NAO eh calculado para estados finais. Por isso o indice "transition_id_in_the_action_value_vector" eh usado para acessa-la
 				// ao inves do "i". NUNCA TROQUE O "transition_id_in_the_action_value_vector" ABAIXO PARA i!!! ISSO FARA O CODIGO ACESSAR POSICOES INVALIDAS
 				// DO VETOR, NAO DARA NENHUM ERRO E A REDE USARA VALORES MALUCOS PARA SE CALCULAR SE ATUALIZAR!!!!
-				target = reward + gamma_ * actions_and_values[transition_id_in_the_action_value_vector].second - transition.estimated_reward;
+				target = reward + gamma_ * actions_and_values[transition_id_in_the_action_value_vector].second /*- transition.estimated_reward*/;
+
+				// DEBUG:
+				if (!already_printed)
+				{
+					fprintf(stderr, "SAMPLE 0 RW: % 02.4lf\tNET: % 2.4lf TGT: % 4.4lf\n", reward, actions_and_values[transition_id_in_the_action_value_vector].second, target);
+					already_printed = 1;
+				}
+
 				transition_id_in_the_action_value_vector++;
 			}
 			else
+			{
 				// @filipe: Isso nao eh problema? Imagine que o robo passou por uma pose "A" e eventualmente chegou ao goal. A acao realizada na pose A
 				// deve se reforcada nesse caso porque ela levou ao goal. Agora, imagine que o carro fez um trajeto qualquer e parou em "A". Com
 				// o codigo abaixo, vamos treinar a recompensa imediata em "A"... Eh como se estivessemos desvalorizando "A" dado que podemos a partir
@@ -581,6 +542,13 @@ DqnCaffe::Update()
 				// imediata e a predicao da rede? TODO: Pensar se essa solucao nao causa problema nos casos finais normais (atingir o goal e bater) e
 				// se ela for OK, implementar.
 				target = reward;
+
+				if (!already_printed)
+				{
+					fprintf(stderr, "SAMPLE 0 RW: % 02.4lf\tNET:  ------ TGT: % 4.4lf\n", reward, target);
+					already_printed = 1;
+				}
+			}
 		}
 		else if (DqnParams::TrainingModel == DQN_DISCOUNTED_TOTAL_REWARD || DqnParams::TrainingModel == DQN_INFINITY_HORIZON_DISCOUNTED_MODEL)
 		{
@@ -596,28 +564,25 @@ DqnCaffe::Update()
 		target_input[i * DqnParams::kOutputCount + static_cast<int>(action)] = target;
 		filter_input[i * DqnParams::kOutputCount + static_cast<int>(action)] = 1;
 
-		for (j = 0; j < 120; j++)
-			odometry_input[240 * i + j] = (float) transition.v / 30.0; // 50.0 = MAX_SPEED <- Colocar como parametro do sistema
-		for (j = 120; j < 240; j++)
-			odometry_input[240 * i + j] = (float) carmen_radians_to_degrees(transition.phi) / 60.0; // 60.0 = MAX_PHI <- Colocar como parametro do sistema
-
-		// DEBUG:
-		///*std::cout*/ std::cout << "filter:" << action_to_string(action) << " reward: " << reward << " net estimation: " << actions_and_values[i].second << " target: " << target << std::endl;
+		for (j = 0; j < DqnParams::kNumAdditionalDataNeurons / 2; j++)
+			odometry_input[DqnParams::kNumAdditionalDataNeurons * i + j] = (float) transition.v / 30.0; // MAX_SPEED <- Colocar como parametro do sistema
+		for (j = DqnParams::kNumAdditionalDataNeurons / 2; j < DqnParams::kNumAdditionalDataNeurons; j++)
+			odometry_input[DqnParams::kNumAdditionalDataNeurons * i + j] = (float) carmen_radians_to_degrees(transition.phi) / 60.0; // MAX_PHI <- Colocar como parametro do sistema
 
 		for (j = 0; j < DqnParams::kInputFrameCount; ++j)
 		{
-			FrameDataSp& frame_data = transition.input_frames[j]; //std::get < 0 > (transition)[j];
+			FrameDataSp& frame_data = transition.input_frames[j];
 
-			// ******************************************************************************************************
-			// @filipe: isso nao vai dar problema? O frame_data eh uchar e o frames_input eh float.......
-			// ******************************************************************************************************
-			std::copy(frame_data->begin(), frame_data->end(),
-				frames_input.begin() + i * DqnParams::kInputDataSize + j * DqnParams::kCroppedFrameDataSize);
+			for (int k = 0; k < frame_data->size(); k++)
+				frames_input[i * DqnParams::kInputDataSize + j * DqnParams::kCroppedFrameDataSize + k] = frame_data->at(k);
+
+			//std::copy(frame_data->begin(), frame_data->end(),
+			//	frames_input.begin() + i * DqnParams::kInputDataSize + j * DqnParams::kCroppedFrameDataSize);
 		}
 	}
 
 	InputDataIntoLayers(frames_input, target_input, filter_input, odometry_input);
-	solver_->Step(1); // @filipe: checar se o parametro nao deveria ser 0. olhar o comentario na definicao da funcao.
+	solver_->Step(2); // @filipe: checar se o parametro nao deveria ser 0. olhar o comentario na definicao da funcao.
 
 	assert(!isnan(net_->layer_by_name("conv1_layer")->blobs().front()->data_at(1, 0, 0, 0)));
 	assert(!isnan(net_->layer_by_name("conv2_layer")->blobs().front()->data_at(1, 0, 0, 0)));
@@ -670,7 +635,7 @@ DqnCaffe::Update()
 			current_expected[action_id] = net_->blob_by_name("target")->data_at(i, action_id, 0, 0);
 		}
 
-
+//			DEBUG:
 //			std::cout << "batch " << i << " command " << action_id << " net q values: " << net_->blob_by_name("filtered_q_values")->data_at(i, action_id, 0, 0) << " target: " <<
 //					net_->blob_by_name("target")->data_at(i, action_id, 0, 0) << " reward: " << replay_memory_[transitions[i]].reward << " Qt-1 " << actions_and_values[i].second <<
 //					" estimated_reward " << replay_memory_[transitions[i]].estimated_reward << std::endl;
@@ -678,27 +643,28 @@ DqnCaffe::Update()
 //		std::cout << std::endl;
 	}
 
-	static int n = 0;
-
-	if (1)//n++ % 100 == 0)
-	{
-		std::cout << std::endl;
-
-		std::cout << "\t\t\t\t\t\t\t\t\t\t\t\t\t" << "Curr Diff: " << "\t\t\t\t\t\t" << "Max Diff: " << std::endl;
-		//std::cout << "Curr Diff: " << std::endl;
-		for (j = 0; j < legal_actions_.size(); j++)
-			std::cout << "\t\t\t\t\t\t\t\t\t\t\t\t\t" <<  action_to_string(legal_actions_[j]) << ": " << current_max_diff[j] << "\t\t\t" << action_to_string(legal_actions_[j]) << ": " << max_diff[j] << std::endl;
-			//std::cout << action_to_string(legal_actions_[j]) << ": " << current_max_diff[j] << " Pred: " << current_pred[j] << " Expected: " << current_expected[j] << std::endl;
-
-		std::cout << std::endl;
-
-		//std::cout << "Max Diff: " << std::endl;
-		for (j = 0; j < legal_actions_.size(); j++)
-			std::cout << "\t\t\t\t\t\t\t\t\t\t\t\t\t" <<  action_to_string(legal_actions_[j]) << ": " << current_max_diff[j] << "\t\t\t" << action_to_string(legal_actions_[j]) << ": " << max_diff[j] << std::endl;
-			//std::cout << action_to_string(legal_actions_[j]) << ": " << max_diff[j] << std::endl;
-
-		std::cout << std::endl;
-	}
+// DEBUG:
+//	static int n = 0;
+//
+//	if (1)//n++ % 100 == 0)
+//	{
+//		std::cout << std::endl;
+//
+//		std::cout << "\t\t\t\t\t\t\t\t\t\t\t\t\t" << "Curr Diff: " << "\t\t\t\t\t\t" << "Max Diff: " << std::endl;
+//		//std::cout << "Curr Diff: " << std::endl;
+//		for (j = 0; j < legal_actions_.size(); j++)
+//			std::cout << "\t\t\t\t\t\t\t\t\t\t\t\t\t" <<  action_to_string(legal_actions_[j]) << ": " << current_max_diff[j] << "\t\t\t" << action_to_string(legal_actions_[j]) << ": " << max_diff[j] << std::endl;
+//			//std::cout << action_to_string(legal_actions_[j]) << ": " << current_max_diff[j] << " Pred: " << current_pred[j] << " Expected: " << current_expected[j] << std::endl;
+//
+//		std::cout << std::endl;
+//
+//		//std::cout << "Max Diff: " << std::endl;
+//		for (j = 0; j < legal_actions_.size(); j++)
+//			std::cout << "\t\t\t\t\t\t\t\t\t\t\t\t\t" <<  action_to_string(legal_actions_[j]) << ": " << current_max_diff[j] << "\t\t\t" << action_to_string(legal_actions_[j]) << ": " << max_diff[j] << std::endl;
+//			//std::cout << action_to_string(legal_actions_[j]) << ": " << max_diff[j] << std::endl;
+//
+//		std::cout << std::endl;
+//	}
 }
 
 

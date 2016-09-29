@@ -19,7 +19,7 @@ LFLAGS += -lparam_interface -lipc -lglobal \
 CFLAGS += -Wall
 
 # Source code files (.c, .cpp) 
-SOURCES = moving_objects_simulator_main.cpp
+SOURCES = moving_objects_simulator_main.cpp moving_objects_simulator.cpp
 
 # Public headers, linked to 'carmen/include/carmen/'.
 PUBLIC_INCLUDES = 
@@ -33,7 +33,7 @@ PUBLIC_BINARIES = moving_objects_simulator
 TARGETS = moving_objects_simulator
 PUBLIC_LIBRARIES_SO = 
 
-moving_objects_simulator:	moving_objects_simulator_main.o
+moving_objects_simulator:	moving_objects_simulator_main.o moving_objects_simulator.o
 # rules
 
 include ../Makefile.rules

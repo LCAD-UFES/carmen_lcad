@@ -431,6 +431,53 @@ torc_report_velocity_state_message_handler(OjCmpt XGV_CCU __attribute__ ((unused
 }
 
 
+void
+//static void // Se for static nao deixa compilar sem ser usada
+torc_report_curvature_message_handler_old(OjCmpt XGV_CCU __attribute__ ((unused)), JausMessage curvature_message)
+{
+	ReportCurvatureMessage reportCurvature;
+	double raw_phi;
+	double delta_t;
+	int previous_gear_command;
+
+	reportCurvature = reportCurvatureMessageFromJausMessage(curvature_message);
+	if (reportCurvature)
+	{
+		g_XGV_atan_curvature = reportCurvature->atanOfCurrentCurvature; // @@@ Alberto: a curvatura do carro vem ao contrario de carmen
+
+		ford_escape_hybrid_config->XGV_v_and_phi_timestamp = carmen_get_time();
+
+		raw_phi = get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config);
+		carmen_add_bias_and_multiplier_to_v_and_phi(&(ford_escape_hybrid_config->filtered_v), &(ford_escape_hybrid_config->filtered_phi),
+						    g_XGV_velocity, raw_phi,
+						    0.0, v_multiplier, phi_bias, phi_multiplier);
+
+		set_wrench_efforts_desired_v_and_curvature();
+		delta_t = get_steering_delta_t();
+		g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature, -atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t);
+
+		previous_gear_command = g_gear_command;
+
+		//printf("%lf %lf %lf\n", carmen_radians_to_degrees(ford_escape_hybrid_config->filtered_phi), carmen_radians_to_degrees(g_phi), carmen_radians_to_degrees(ford_escape_hybrid_config->filtered_phi - g_phi));
+
+		delta_t = get_velocity_delta_t();
+		carmen_libpid_velocity_PID_controler(&g_throttle_command, &g_brakes_command, &g_gear_command,
+			g_desired_velocity, ford_escape_hybrid_config->filtered_v, delta_t);
+
+		if (previous_gear_command != g_gear_command)
+			publish_ford_escape_gear_command(XGV_CCU);
+
+		publish_ford_escape_throttle_and_brakes_command(XGV_CCU);
+
+		reportCurvatureMessageDestroy(reportCurvature);
+	}
+	else
+	{
+		carmen_warn("In torc_report_curvature_message_handler(): Error unpacking %s message.\n", jausMessageCommandCodeString(curvature_message));
+	}
+}
+
+
 static void
 torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), JausMessage curvature_message)
 {

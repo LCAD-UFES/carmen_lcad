@@ -10,6 +10,15 @@
 extern "C" {
 #endif
 
+//#define __USE_RL_CONTROL
+#ifdef __USE_RL_CONTROL
+
+void
+set_rl_control(double steering, double throttle, double brake);
+
+#endif
+
+
 /* recalculates the actual position */
 
 void carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulator_config);

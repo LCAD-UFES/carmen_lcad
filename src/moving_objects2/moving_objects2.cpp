@@ -307,7 +307,7 @@ remove_static_objects(cv::Mat map_img, cv::Mat offline_map_img, carmen_map_t *ma
 				if (offline_map_img.at<uchar>(y + minP.y, x + minP.x) > 128)
 					count++;
 
-		double area = contourArea(contours[i]) * map->config.resolution;
+		double area = contourArea(contours[i]) * map->config.resolution * map->config.resolution; // resulução da area ao quadrado
 
 		if (((double) count / contours[i].size()) > 0.9 || area < 1.0 || area > 200.0)
 			drawContours(map_img2, contours, i, CV_RGB(0, 0, 0), -1);

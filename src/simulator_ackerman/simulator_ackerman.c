@@ -34,6 +34,10 @@
 #include "simulator_ackerman_simulation.h"
 #include "simulator_ackerman_messages.h"
 
+#ifdef __USE_RL_CONTROL
+#include <rlcontrol_interface.h>
+double time_last_message_arrived = 0;
+#endif
 
 #include "objects_ackerman.h"
 
@@ -497,6 +501,13 @@ simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
 	carmen_publish_heartbeat("simulator");
 
 	last_timestamp = timestamp;
+
+#ifdef __USE_RL_CONTROL
+	if (timestamp - time_last_message_arrived > 0.5)
+	{
+		set_rl_control(0,0,100);
+	}
+#endif
 }
 
 
@@ -530,6 +541,16 @@ fill_laser_config_data(carmen_simulator_ackerman_laser_config_t *lasercfg)
 
 }
 
+#ifdef __USE_RL_CONTROL
+
+void
+rl_control_handler(carmen_rl_control_message *message)
+{
+	set_rl_control(message->steering, message->throttle, message->brake);
+	time_last_message_arrived = message->timestamp;
+}
+
+#endif
 
 static int
 subscribe_to_relevant_messages()
@@ -567,6 +588,12 @@ subscribe_to_relevant_messages()
 
 	carmen_base_ackerman_subscribe_motion_command(NULL, (carmen_handler_t) motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
 	
+#ifdef __USE_RL_CONTROL
+
+	carmen_rl_control_subscribe_message(NULL, (carmen_handler_t) rl_control_handler, CARMEN_SUBSCRIBE_LATEST);
+
+#endif
+
 	return (0);
 }
 
@@ -761,6 +788,10 @@ main(int argc, char **argv)
 {
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
+
+#ifdef __USE_RL_CONTROL
+	set_rl_control(0,0,100);
+#endif
 
 	// Init relevant data strutures
 	memset(&simulator_conf, 0, sizeof(carmen_simulator_ackerman_config_t));

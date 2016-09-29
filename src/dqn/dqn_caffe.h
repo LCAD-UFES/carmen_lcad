@@ -9,8 +9,6 @@
 #include <caffe/solver.hpp>
 #include <caffe/layers/memory_data_layer.hpp>
 
-
-
 /** @filipe: deveriam ter 2 redes e 2 conjuntos de acoes, um para velocidade e outro para steering **/
 enum DqnAction
 {
@@ -48,26 +46,25 @@ public:
 	double EVALUATE_WITH_EPSILON; 	// "Epsilon value to be used in evaluation mode"
 	int REPEAT_GAMES; 				// "Number of games played in evaluation mode"
 
-	static const int kRawFrameHeight = 210;
-	static const int kRawFrameWidth = 160;
-	static const int kCroppedFrameSize = 84;
-	static const int kCroppedFrameDataSize = kCroppedFrameSize * kCroppedFrameSize;
-	static const int kInputFrameCount = 4;
+	static const int kNumAdditionalDataNeurons = 1024;
+	static const int kCroppedFrameSize = 200;
+	static const int kNumChannelsPerImage = 3;
+	static const int kCroppedFrameDataSize = kCroppedFrameSize * kCroppedFrameSize * kNumChannelsPerImage;
+	static const int kInputFrameCount = 1;
 	static const int kInputDataSize = kCroppedFrameDataSize * kInputFrameCount;
 	static const int kMinibatchSize = 32;
 	static const int kMinibatchDataSize = kInputDataSize * kMinibatchSize;
-	static const int kOutputCount = 5; //6;
-	static const DqnTrainingModel TrainingModel = DQN_DISCOUNTED_TOTAL_REWARD; //DQN_Q_LEARNING;
+	static const int kOutputCount = 5;
+	static const DqnTrainingModel TrainingModel = DQN_Q_LEARNING;
 
 	DqnParams()
 	{
 		USE_GPU = true;
 		SOLVER_FILE = "dqn_solver.prototxt";
-		REPLAY_MEMORY_SIZE = 500000;
-		NUM_ITERATIONS = 1000000;
-//		NUM_ITERATIONS = 100000;
+		REPLAY_MEMORY_SIZE = 1000000;
+		//NUM_ITERATIONS = 1000000;
 		GAMMA = 0.9;
-		NUM_WARMUP_TRANSITIONS = 500;
+		NUM_WARMUP_TRANSITIONS = 100;
 		SKIP_FRAME = 0;
 		MODEL_FILE = "";
 		EVALUATION_MODE = false;
@@ -85,11 +82,6 @@ public:
 	{
 		this->reserve(array_size);
 	}
-
-//	size_t size()
-//	{
-//		return array_size;
-//	}
 };
 
 
@@ -101,10 +93,9 @@ typedef MyArray<FrameDataSp, DqnParams::kInputFrameCount> InputFrames;
 typedef MyArray<float, DqnParams::kMinibatchDataSize> FramesLayerInputData;
 typedef MyArray<float, DqnParams::kMinibatchSize * DqnParams::kOutputCount> TargetLayerInputData;
 typedef MyArray<float, DqnParams::kMinibatchSize * DqnParams::kOutputCount> FilterLayerInputData;
-typedef MyArray<float, DqnParams::kMinibatchSize * 240> OdometryLayerInputData;
+typedef MyArray<float, DqnParams::kMinibatchSize * DqnParams::kNumAdditionalDataNeurons> OdometryLayerInputData;
 
 
-//typedef std::tuple<InputFrames, DqnAction, float, boost::optional<FrameDataSp> > Transition;
 class Transition
 {
 public:
@@ -146,7 +137,6 @@ class DqnCaffe
 	boost::shared_ptr<caffe::Solver<float> > solver_;
 	boost::shared_ptr<caffe::Net<float> > net_;
 
-	//const ActionVect legal_actions_;
 	std::vector<DqnAction> legal_actions_;
 	std::string solver_param_;
 
