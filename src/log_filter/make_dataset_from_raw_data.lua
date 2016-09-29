@@ -164,14 +164,14 @@ local function save_images(csv_name1, csv_name2, images_dir1, images_dir2, num_i
       if (i <= tonumber(num_images)) then
         local img1 = image.load(images_dir1 .. left_img1, 3, 'byte')
         img1 = image.scale(img1, 640, 480, 'bilinear')
-        img1 = image.crop(img1, 0, 80, 640, 360)
+        img1 = image.crop(img1, 0, 0, 640, 360)
         img1 = image.scale(img1, 224, 224, 'bilinear')
         imgs1[i] = img1
         labels1[i] = index1
   
         local img2 = image.load(images_dir2 .. left_img2, 3, 'byte')
         img2 = image.scale(img2, 640, 480, 'bilinear')
-        img2 = image.crop(img2, 0, 80, 640, 360)
+        img2 = image.crop(img2, 0, 0, 640, 360)
         img2 = image.scale(img2, 224, 224, 'bilinear')
         imgs2[i] = img2
         labels2[i] = index1
@@ -195,7 +195,7 @@ local function main(name1, name2, name3, name4, name5)
   -- qlua make_dataset_from_raw_data.lua training-20140418.csv globalpos.txt > test-20160906.csv
   --view_image_pair(name1, name2, name3, name4)
   -- qlua make_dataset_from_raw_data.lua training-20140418.csv test-20160906.csv /media/alberto/Seagate\ Backup\ Plus\ Drive/images-20140418/ /media/alberto/Seagate\ Backup\ Plus\ Drive/images-20160906/  
-  --save_images(name1, name2, name3, name4, name5)
+  save_images(name1, name2, name3, name4, name5)
   -- qlua make_dataset_from_raw_data.lua training-20140418.csv test-20160906.csv /media/alberto/Seagate\ Backup\ Plus\ Drive/images-20140418/ /media/alberto/Seagate\ Backup\ Plus\ Drive/images-20160906/ 100
   -- Depois de rodar tudo, rode o main.lua como abaixo
   --qlua main.lua -e 4000 -m 0.0 -p -n 100 -- gera a base de dados e roda a rede
