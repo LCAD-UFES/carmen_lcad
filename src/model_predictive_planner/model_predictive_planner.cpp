@@ -532,6 +532,38 @@ get_points2(vector<carmen_ackerman_path_point_t> &detailed_goal_list, int &index
             mais_proxima = centro;
     }
 }
+
+void
+save_experiment_data(carmen_behavior_selector_road_profile_message *goal_list_message,
+					Pose *localizer_pose, vector<carmen_ackerman_path_point_t> &detailed_lane,
+					const vector<Command> &lastOdometryVector)
+{
+	if (detailed_lane.size() > 0)
+	{
+		carmen_ackerman_path_point_t localize;
+		localize.x = 0.0;
+		localize.y = 0.0;
+		//Metric evaluation
+		int index1;
+		int index2;
+		int mais_proxima;
+		get_points2(detailed_lane,index1, index2,mais_proxima);
+		//      printf("%lf %lf \n", detailed_goal_list.at(index1).x, detailed_goal_list.at(index2).x);
+		double distance_metric = get_distance_between_point_to_line(detailed_lane.at(index1), detailed_lane.at(index2), localize);
+		//      printf("%lf \n", distance_metric);
+		double x_rddf = localizer_pose->x + detailed_lane.at(mais_proxima).x * cos(localizer_pose->theta) - detailed_lane.at(mais_proxima).y * sin(localizer_pose->theta);
+		double y_rddf = localizer_pose->y + detailed_lane.at(mais_proxima).x * sin(localizer_pose->theta) + detailed_lane.at(mais_proxima).y * cos(localizer_pose->theta);
+		double theta_rddf = detailed_lane.at(mais_proxima).theta + localizer_pose->theta;
+		double volante_rddf_theta = atan2(detailed_lane.at(index1).y - detailed_lane.at(index2).y , detailed_lane.at(index1).x - detailed_lane.at(index2).x);
+		double erro_theta = abs(volante_rddf_theta - localizer_pose->theta);
+		//          1-Localise_x 2-Localise_y 3-Localise_theta 4-velocity 5-phi 6-rddf_x 7-rddf_y 8-rddf_theta 9-rddf_velocity 10-rddf_phi 11-lateralDist 12-volante 13-erro_theta 14-Timestamp
+		fprintf(stderr, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf \n", localizer_pose->x, localizer_pose->y, localizer_pose->theta,
+				lastOdometryVector[0].v, lastOdometryVector[0].phi, x_rddf, y_rddf, theta_rddf, detailed_lane.at(mais_proxima).v,
+				detailed_lane.at(mais_proxima).phi, distance_metric, volante_rddf_theta, erro_theta, goal_list_message->timestamp);
+
+	}
+}
+
 //------------------------------------------------------------
 
 
@@ -563,6 +595,13 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		build_detailed_path_lane(&lane_in_local_pose, detailed_lane);
 	else
 		build_detailed_rddf_lane(&lane_in_local_pose, detailed_lane);
+
+/***************************************
+ * Funcao para extrair dados para artigo
+ *	save_experiment_data(goal_list_message, localizer_pose,
+						 detailed_lane, lastOdometryVector);
+ *	return;
+******************************************/
 
 	otcps.resize(paths.size());
 	bool has_valid_path = false;
