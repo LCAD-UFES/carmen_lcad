@@ -27,6 +27,71 @@
 using namespace g2o;
 
 
+void
+plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_path_point_t> &pLane,
+		  vector<carmen_ackerman_path_point_t> &pSeed)
+{
+//	plot data Table - Last TCP - Optmizer tcp - Lane
+	//Plot Optmizer step tcp and lane?
+
+	#define DELTA_T (1.0 / 40.0)
+
+//	#define PAST_SIZE 300
+//	static vector<carmen_ackerman_path_point_t> pOTCP_vector;
+//	static vector<carmen_ackerman_path_point_t> pLane_vector;
+//	static vector<carmen_ackerman_path_point_t> pSeed_vector;
+//	static vector<double> timestamp_vector;
+	static bool first_time = true;
+//	static double first_timestamp;
+	static FILE *gnuplot_pipe;
+
+//	double t = carmen_get_time();
+
+	if (first_time)
+	{
+//		first_timestamp = t;
+		first_time = false;
+
+		gnuplot_pipe = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+		fprintf(gnuplot_pipe, "set xrange [0:40]\n");
+		fprintf(gnuplot_pipe, "set yrange [-10:10]\n");
+//		fprintf(gnuplot_pipe, "set y2range [-0.55:0.55]\n");
+		fprintf(gnuplot_pipe, "set xlabel 'senconds'\n");
+		fprintf(gnuplot_pipe, "set ylabel 'effort'\n");
+//		fprintf(gnuplot_pipe, "set y2label 'phi (radians)'\n");
+//		fprintf(gnuplot_pipe, "set ytics nomirror\n");
+//		fprintf(gnuplot_pipe, "set y2tics\n");
+		fprintf(gnuplot_pipe, "set tics out\n");
+	}
+
+
+	FILE *gnuplot_data_file = fopen("gnuplot_data.txt", "w");
+	FILE *gnuplot_data_lane = fopen("gnuplot_data_lane.txt", "w");
+	FILE *gnuplot_data_seed = fopen("gnuplot_data_seed.txt", "w");
+
+	// Dados passados
+	for (unsigned int i = 0; i < pOTCP.size(); i++)
+		fprintf(gnuplot_data_file, "%lf %lf %lf %lf %lf %lf %lf\n", pOTCP.at(i).x, pOTCP.at(i).y, 1.0 * cos(pOTCP.at(i).theta), 1.0 * sin(pOTCP.at(i).theta), pOTCP.at(i).theta, pOTCP.at(i).phi, pOTCP.at(i).time);
+	for (unsigned int i = 0; i < pLane.size(); i++)
+		fprintf(gnuplot_data_lane, "%lf %lf %lf %lf %lf %lf %lf\n", pLane.at(i).x, pLane.at(i).y, 1.0 * cos(pLane.at(i).theta), 1.0 * sin(pLane.at(i).theta), pLane.at(i).theta, pLane.at(i).phi, pLane.at(i).time);
+
+	for (unsigned int i = 0; i < pSeed.size(); i++)
+		fprintf(gnuplot_data_seed, "%lf %lf\n", pSeed.at(i).x, pSeed.at(i).y);
+
+	fclose(gnuplot_data_file);
+	fclose(gnuplot_data_lane);
+	fclose(gnuplot_data_seed);
+
+//	fprintf(gnuplot_pipe, "unset arrow\nset arrow from %lf, %lf to %lf, %lf nohead\n",0, -60.0, 0, 60.0);
+
+	fprintf(gnuplot_pipe, "plot "
+			"'./gnuplot_data.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'OTCP',"
+			"'./gnuplot_data_lane.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane',"
+			"'./gnuplot_data_seed.txt' using 1:2 with lines title 'Seed' axes x1y1\n");
+
+	fflush(gnuplot_pipe);
+}
+
 TrajectoryLookupTable::TrajectoryDimensions
 get_trajectory_dimensions_from_robot_state(Pose *localizer_pose, Command last_odometry,	Pose *goal_pose)
 {
@@ -425,11 +490,13 @@ get_tcp_from_td(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
 
 bool
 get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
+		vector<carmen_ackerman_path_point_t> &path_local,
 		TrajectoryLookupTable::TrajectoryControlParameters otcp,
 		TrajectoryLookupTable::TrajectoryDimensions td,
 		Pose *localizer_pose)
 {
 	path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false, 0.025);
+	path_local = path;
 	if (path_has_loop(td.dist, otcp.sf))
 	{
 		printf(KRED "+++++++++++++ Path has loop...\n" RESET);
@@ -634,12 +701,19 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 			otcp = get_complete_optimized_trajectory_control_parameters(tcp, td, target_v, detailed_lane,
 					use_lane, previous_good_tcp.valid);
 			//otcp = get_optimized_trajectory_control_parameters(tcp, td, target_v, &lane_in_local_pose);
-
 			if (otcp.valid)
 			{
 				vector<carmen_ackerman_path_point_t> path;
-				if (!get_path_from_optimized_tcp(path, otcp, td, localizer_pose))
+				vector<carmen_ackerman_path_point_t> path_local;
+
+				//TODO Descomentar para usar o plot!
+//				vector<carmen_ackerman_path_point_t> pathSeed;
+//				pathSeed = simulate_car_from_parameters(td, tcp, lastOdometryVector[0].v, lastOdometryVector[0].phi, false, 0.025);
+
+				if (!get_path_from_optimized_tcp(path, path_local, otcp, td, localizer_pose))
 					continue;
+//TODO Gnuplot
+//				plot_state(path_local,detailed_lane,pathSeed);
 
 				paths[j + i * lastOdometryVector.size()] = path;
 				otcps[j + i * lastOdometryVector.size()] = otcp;
@@ -681,6 +755,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	}
 	else if ((carmen_get_time() - last_timestamp) > 0.5)
 		previous_good_tcp.valid = false;
+
 }
 
 

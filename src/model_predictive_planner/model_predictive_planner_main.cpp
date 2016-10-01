@@ -556,6 +556,7 @@ signal_handler(int sig)
 		save_trajectory_lookup_table();
 		printf("New trajectory_lookup_table.bin saved.\n");
 	}
+	system("pkill gnuplot");
 	carmen_ipc_disconnect();
 	exit(1);
 }
