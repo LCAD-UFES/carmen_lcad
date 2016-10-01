@@ -20,7 +20,7 @@ using namespace std;
 #ifndef MOVING_OBJECTS_H
 #define MOVING_OBJECTS_H
 
-#define AJUSTE			// para ajuste dos parâmetros
+//#define AJUSTE			// para ajuste dos parâmetros
 //#define BASELINE			// para o baseline
 
 #ifdef __cplusplus

@@ -70,72 +70,8 @@ extern int last_globalpos;
 carmen_robot_ackerman_config_t car_config;
 carmen_map_config_t map_config;
 
-double x_origin, y_origin; // map origin in meters
+extern double x_origin, y_origin; // map origin in meters
 
-static carmen_laser_laser_message flaser; // moving_objects
-
-
-static void
-change_sensor_rear_range_max(sensor_parameters_t *sensor_params, double angle)
-{
-	if ((angle > M_PI / 2.0) || (angle < -M_PI / 2.0))
-		sensor_params->current_range_max = sensor_params->range_max / sensor_params->range_max_factor;
-	else
-		sensor_params->current_range_max = sensor_params->range_max;
-}
-
-// Inicio do teste: moving_objects - Eduardo
-void
-publish_frontlaser(double timestamp)
-{
-	IPC_RETURN_TYPE err = IPC_OK;
-
-	//carmen_simulator_ackerman_calc_laser_msg(&flaser, simulator_config, 0);
-
-	flaser.timestamp = timestamp;
-	err = IPC_publishData(CARMEN_LASER_FRONTLASER_NAME, &flaser);
-	carmen_test_ipc(err, "Could not publish laser_frontlaser_message",
-			CARMEN_LASER_FRONTLASER_NAME);
-}
-
-void
-build_front_laser_message_from_velodyne_point_cloud(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, spherical_point_cloud v_zt, int i)
-{
-	static int first = 1;
-
-	if (first)
-	{
-		flaser.host = carmen_get_host();
-		flaser.num_readings = 720;
-		flaser.range = (double *)calloc
-				(720, sizeof(double));
-		carmen_test_alloc(flaser.range);
-
-		flaser.num_remissions = 0;
-		flaser.remission = 0;
-
-		flaser.config.angular_resolution = 0.5;
-		flaser.config.fov = sensor_params->fov_range;
-		flaser.config.maximum_range = sensor_params->range_max;
-		flaser.config.remission_mode = REMISSION_NONE;
-		flaser.config.start_angle = sensor_params->start_angle;
-		first = 0;
-	}
-
-	int laser_ray_angle_index = 0;
-	laser_ray_angle_index = (int)(v_zt.sphere_points[i].horizontal_angle / 0.5) % (720);
-
-	//if (carmen_prob_models_log_odds_to_probabilistic(sensor_data->occupancy_log_odds_of_each_ray_target[sensor_data->ray_that_hit_the_nearest_target]) > 0.95)
-	flaser.range[laser_ray_angle_index] = sensor_data->ray_size_in_the_floor[0][sensor_data->ray_that_hit_the_nearest_target[0]];
-
-	if (sensor_data->maxed[0][sensor_data->ray_that_hit_the_nearest_target[0]])
-			flaser.range[laser_ray_angle_index] = sensor_params->current_range_max;
-
-//	printf("%lf ", flaser.range[laser_ray_angle_index]);
-
-}
-
-//teste: fim
 
 int
 get_nearest_timestamp_index(double *robot_timestamp, spherical_point_cloud *points, int cindex)
@@ -216,9 +152,6 @@ segment_remission_map(carmen_map_t *remission_map, carmen_map_t *map)
 
 	findContours(map_img.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
 
-	double max_area = -DBL_MAX;
-	int index = 0;
-
 	for (uint i = 0; i < contours.size(); i++)
 	{
 		double area = contourArea(contours[i])* map->config.resolution;
@@ -269,94 +202,205 @@ copy_carmen_map_to_opencv(carmen_map_t *map, carmen_map_t *offline_grid_map,
 	}
 }
 
-
-cv::Mat
-remove_static_objects(cv::Mat map_img, cv::Mat offline_map_img, carmen_map_t *map)
+void
+find_min_max_contour_points(cv::Point2i &minP, cv::Point2i &maxP, std::vector<cv::Point> &contour)
 {
-	std::vector<std::vector<cv::Point> > contours;
+	minP = cv::Point(INT_MAX, INT_MAX);
+	maxP = cv::Point(-INT_MAX, -INT_MAX);
 
-	cv::Mat map_img2 = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC1);
-	findContours(map_img.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
-
-	map_img.copyTo(map_img2);
-
-	for (uint i = 0; i < contours.size(); i++)
+	for (uint i = 0; i < contour.size(); i++)
 	{
-		int count = 0;
-		cv::Point2i minP = cv::Point(INT_MAX, INT_MAX);
-		cv::Point2i maxP = cv::Point(-INT_MAX, -INT_MAX);
-		for (uint j = 0; j < contours[i].size(); j++)
-		{
-			if (maxP.x < contours[i][j].x)
-				maxP.x = contours[i][j].x;
+		if (maxP.x < contour[i].x)
+			maxP.x = contour[i].x;
 
-			if (maxP.y < contours[i][j].y)
-				maxP.y = contours[i][j].y;
+		if (maxP.y < contour[i].y)
+			maxP.y = contour[i].y;
 
-			if (minP.x > contours[i][j].x)
-				minP.x = contours[i][j].x;
+		if (minP.x > contour[i].x)
+			minP.x = contour[i].x;
 
-			if (minP.y > contours[i][j].y)
-				minP.y = contours[i][j].y;
-
-		}
-		cv::Mat roi = map_img2(cv::Rect(minP, maxP));
-
-		for (int y = 0; y < roi.rows; y++)
-			for (int x = 0; x < roi.cols; x++)
-				if (offline_map_img.at<uchar>(y + minP.y, x + minP.x) > 128)
-					count++;
-
-		double area = contourArea(contours[i]) * map->config.resolution * map->config.resolution; // resulução da area ao quadrado
-
-		if (((double) count / contours[i].size()) > 0.9 || area < 1.0 || area > 200.0)
-			drawContours(map_img2, contours, i, CV_RGB(0, 0, 0), -1);
-		else
-		{
-			std::vector<cv::Point> contours_poly;
-			cv::approxPolyDP(cv::Mat(contours[i]), contours_poly, 3, true);
-			cv::Rect r = cv::boundingRect(cv::Mat(contours_poly));
-			cv::rectangle(offline_map_img, r.tl(), r.br(), CV_RGB(180, 180, 180), 2, 8, 0 );
-			drawContours(offline_map_img, contours, i, CV_RGB(128, 128, 128), -1);
-		}
+		if (minP.y > contour[i].y)
+			minP.y = contour[i].y;
 	}
+}
 
-	return map_img2;
+inline double
+euclidian_distanvce2D(cv::Point &a, cv::Point &b)
+{
+	double diffX = a.x - b.x;
+	double diffY = a.y - b.y;
+	return sqrt((diffX * diffX) + (diffY * diffY));
 }
 
 
-std::vector<cv::Point3d>
-associate_objects(cv::Mat map_img, cv::Mat last_map_img, carmen_map_t *map)
+void
+show_clusters(int rows, int cols, std::vector<std::vector<cv::Point> > &clusters, std::vector<cv::Point> &centroids,char *name)
 {
-	std::vector<std::vector<cv::Point> > contours;
-	std::vector<std::vector<cv::Point> > contours2;
-
-	findContours(map_img.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
-	findContours(last_map_img.clone(), contours2, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
-
-	std::vector<cv::Moments> map_mu(contours.size());
-	std::vector<cv::Moments> last_map_mu(contours2.size());
-
-	for (uint i = 0; i < contours.size(); i++)
-		map_mu[i] = moments(contours[i], false);
-
-	for (uint i = 0; i < contours2.size(); i++)
-		last_map_mu[i] = moments(contours2[i], false);
-
-	std::vector<cv::Point3d> objs(map_mu.size());
-
-
-	for (uint i = 0; i < map_mu.size(); i++)
+	std::vector<cv::Vec3b> colors;
+	int n_labels = clusters.size();
+	for (int i = 0; i < n_labels; ++i)
 	{
-		int x_center = map_mu[i].m10 / map_mu[i].m00;
-		int y_center = map_mu[i].m01 / map_mu[i].m00;
+		colors.push_back(cv::Vec3b(rand() & 255, rand() & 255, rand() & 255));
+	}
+
+	// Draw the points
+	cv::Mat3b res(rows, cols, cv::Vec3b(0, 0, 0));
+	for (uint i = 0; i < clusters.size(); ++i)
+	{
+		for (uint j = 0; j < clusters[i].size(); ++j)
+			res(clusters[i][j]) = colors[i];
+	}
+
+	// Draw centroids
+	for (int i = 0; i < n_labels; ++i)
+	{
+		cv::circle(res, centroids[i], 3, cv::Scalar(colors[i][0], colors[i][1], colors[i][2]), CV_FILLED);
+		cv::circle(res, centroids[i], 10, cv::Scalar(255 - colors[i][0], 255 - colors[i][1], 255 - colors[i][2]));
+	}
+
+	cv::imshow(name, res);
+	cv::waitKey(33);
+
+}
+
+void
+create_groups(cv::Mat &map, std::vector<std::vector<cv::Point> > &clusters, std::vector<cv::Point> &centroids)
+{
+	cv::Mat map_img = map.clone();
+	std::vector<std::vector<cv::Point> > contours;
+	findContours(map_img.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
+
+	std::vector<std::vector<int> > contours_group(contours.size());
+
+	for(uint i = 0; i < contours.size(); i++)
+	{
+		for (uint j = i; j < contours.size(); j++)
+		{
+			for (uint k = 0; k < contours[i].size(); k++)
+			{
+				for (uint l = 0; l < contours[j].size(); l++)
+				{
+					if (euclidian_distanvce2D(contours[i][k], contours[j][l]) < 5)
+					{
+						contours_group[i].push_back(j);
+						k = contours[i].size();
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	for(uint i = 0; i < contours_group.size(); i++)
+	{
+		for (uint j = 0; j < contours_group[i].size(); j++)
+		{
+			for (uint k = i + 1; k < contours_group.size(); k++)
+			{
+				for (uint l = 0; l < contours_group[k].size(); l++)
+				{
+					if (contours_group[i][j] == contours_group[k][l])
+					{
+						std::vector<int> aux;
+						for (uint m = 0; m < contours_group[k].size(); m++)
+						{
+							bool include = 1;
+							for (uint n = 0; n < contours_group[i].size(); n++)
+							{
+								if (contours_group[k][m] == contours_group[i][n])
+								{
+									include = 0;
+									break;
+								}
+							}
+							if (include)
+								aux.push_back(contours_group[k][m]);
+						}
+						contours_group[i].insert(contours_group[i].end(), aux.begin(), aux.end());
+						contours_group[k].erase(contours_group[k].begin(), contours_group[k].end());
+					}
+				}
+			}
+		}
+	}
+
+	for (uint i = 0; i < contours_group.size(); i++)
+	{
+		if (contours_group[i].empty())
+			continue;
+		std::vector<cv::Point> cluster;
+		cv::Point2i center = cv::Point(0, 0);
+		for (uint j = 0; j < contours_group[i].size(); j++)
+		{
+			cv::Point2i minP, maxP;
+			find_min_max_contour_points(minP, maxP, contours[contours_group[i][j]]);
+
+			cv::Mat roi = map_img(cv::Rect(minP, maxP));
+
+			for (int y = 0; y < roi.rows; y++)
+				for (int x = 0; x < roi.cols; x++)
+					if (roi.at<uchar>(y, x) > 128)
+					{
+						cluster.push_back(cv::Point(x + minP.x, y + minP.y));
+						center.x += x + minP.x;
+						center.y += y + minP.y;
+					}
+		}
+		if (cluster.empty())
+			continue;
+
+		center.x /= cluster.size();
+		center.y /= cluster.size();
+		clusters.push_back(cluster);
+		centroids.push_back(center);
+	}
+
+//	show_clusters(map_img.rows, map_img.cols, clusters, centroids, (char*)"Clusters0");
+}
+
+
+void
+remove_static_objects(cv::Mat offline_map_img, carmen_map_t *map, std::vector<std::vector<cv::Point> > &clusters, std::vector<cv::Point> &centroids)
+{
+	for (uint i = 0; i < clusters.size(); i++)
+	{
+		int count = 0;
+		for (uint j = 0; j < clusters[i].size(); j++)
+		{
+			if (offline_map_img.at<uchar>(clusters[i][j].y, clusters[i][j].x) > 128)
+				count++;
+		}
+
+		double area = clusters[i].size() * map->config.resolution; // resulução da area ao quadrado
+
+		if (((double) count / clusters[i].size()) > 0.9 /*|| area < 1.0*/ || area > 200.0)
+		{
+			clusters.erase(clusters.begin() + i);
+			centroids.erase(centroids.begin() + i);
+		}
+	}
+}
+
+
+void
+associate_objects(std::vector<cv::Point3d> &objs, std::vector<cv::Point> &centroids, std::vector<cv::Point> &last_centroids, double map_resolution)
+{
+	if (centroids.empty())
+		return;
+
+	objs.resize(centroids.size());
+
+	for (uint i = 0; i < centroids.size(); i++)
+	{
+		int x_center = centroids[i].x;
+		int y_center = centroids[i].y;
 		double min_dist = DBL_MAX;
 		double index = -1;
 
-		for (uint j = 0; j < last_map_mu.size(); j++)
+		for (uint j = 0; j < last_centroids.size(); j++)
 		{
-			int x_center2 = last_map_mu[j].m10 / last_map_mu[j].m00;
-			int y_center2 = last_map_mu[j].m01 / last_map_mu[j].m00;
+			int x_center2 = last_centroids[j].x;
+			int y_center2 = last_centroids[j].y;
 			double dist = sqrt(pow(x_center - x_center2, 2) + pow(y_center - y_center2, 2));
 			if (min_dist > dist)
 			{
@@ -364,10 +408,8 @@ associate_objects(cv::Mat map_img, cv::Mat last_map_img, carmen_map_t *map)
 				index = j;
 			}
 		}
-//    	if ((min_dist * map->config.resolution) > 1.0)
-			objs[i] = cv::Point3d(min_dist, i, index);
-//    	else
-//    		objs[i] = cv::Point3d(min_dist, -1.0, -1.0);
+
+		objs[i] = cv::Point3d(min_dist, i, index);
 	}
 
 	for (uint i = 0; i < objs.size(); i++)
@@ -376,7 +418,7 @@ associate_objects(cv::Mat map_img, cv::Mat last_map_img, carmen_map_t *map)
 			continue;
 
 		for (uint j = i + 1; j < objs.size(); j++)
-			if ((int)objs[i].z == (int)objs[j].z && (objs[j].x * map->config.resolution) > 1.5)
+			if ((int)objs[i].z == (int)objs[j].z && (objs[j].x * map_resolution) > 1.5)
 			{
 				if (objs[i].x < objs[j].x)
 					objs[j].z = -1.0;
@@ -385,17 +427,14 @@ associate_objects(cv::Mat map_img, cv::Mat last_map_img, carmen_map_t *map)
 
 			}
 	}
-
-	return objs;
 }
 
 
 void
-draw_associations(std::vector<cv::Point3d> objs, std::vector< std::vector<cv::Point> > contours,
-		cv::Mat map_img_bkp, cv::Mat *map_img_out)
+draw_associations(std::vector<cv::Point3d> objs, std::vector<std::vector<cv::Point> > &clusters, cv::Mat *map_img_out)
 {
 
-	std::vector<cv::RotatedRect> minRect(contours.size());
+	std::vector<cv::RotatedRect> minRect(clusters.size());
 
 	cv::RNG rng(12345);
 	for (uint i = 0; i < objs.size(); i++)
@@ -412,31 +451,11 @@ draw_associations(std::vector<cv::Point3d> objs, std::vector< std::vector<cv::Po
 		}
 		color = cv::Scalar(R, G, B);
 
-		cv::Point2i minP = cv::Point(INT_MAX, INT_MAX);
-		cv::Point2i maxP = cv::Point(-INT_MAX, -INT_MAX);
-		for (uint j = 0; j < contours[i].size(); j++)
-		{
-			if (maxP.x < contours[i][j].x)
-				maxP.x = contours[i][j].x;
+		minRect[i] = cv::minAreaRect(cv::Mat(clusters[i]));
 
-			if (maxP.y < contours[i][j].y)
-				maxP.y = contours[i][j].y;
 
-			if (minP.x > contours[i][j].x)
-				minP.x = contours[i][j].x;
-
-			if (minP.y > contours[i][j].y)
-				minP.y = contours[i][j].y;
-
-		}
-		cv::Mat roi = map_img_bkp(cv::Rect(minP, maxP));
-
-		minRect[i] = cv::minAreaRect(cv::Mat(contours[i]));
-
-		for (int y = 0; y < roi.rows; y++)
-			for (int x = 0; x < roi.cols; x++)
-				if (roi.at<uchar>(y, x) > 128)
-					map_img_out->at<cv::Vec3b>(y + minP.y, x + minP.x) = cv::Vec3b(R, G, B);
+		for (uint j = 0; j < clusters[i].size(); j++)
+			map_img_out->at<cv::Vec3b>(clusters[i][j].y, clusters[i][j].x) = cv::Vec3b(R, G, B);
 
 		if ((int)objs[i].z > 0.0)
 		{
@@ -459,24 +478,26 @@ filter_objects_and_associate(carmen_map_t *map, carmen_map_t *offline_grid_map, 
 	cv::Mat map_img = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC1);
 	cv::Mat map_img_bkp = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC1);
 	cv::Mat offline_map_img = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC1);
-	static cv::Mat last_map_img;
+	//static cv::Mat last_map_img;
 	int erosion_size = 2;
 	cv::Mat element = getStructuringElement( cv::MORPH_ELLIPSE,
 	                                       cv::Size( 2*erosion_size + 1, 2*erosion_size+1 ),
 	                                       cv::Point( erosion_size, erosion_size ));
 
+	static std::vector<std::vector<cv::Point> > last_clusters;
+	static std::vector<cv::Point> last_centroids;
 
 	cv::Mat map_img2 = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC1);
 	cv::Mat map_img_out = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC3);
-	cv::Mat last_map_img_out = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC3);
+	//cv::Mat last_map_img_out = cv::Mat::zeros(map->config.x_size, map->config.y_size, CV_8UC3);
 
 	std::vector<std::vector<cv::Point> > contours;
 
 	// #### copia de mapa do carmen para imagem opencv
 	copy_carmen_map_to_opencv(map, offline_grid_map, &map_img, &map_img_bkp, &offline_map_img);
 
-	cv::dilate( map_img, map_img, element);
-	cv::dilate( offline_map_img, offline_map_img, element);
+	std::vector<std::vector<cv::Point> > clusters;
+	std::vector<cv::Point> centroids;
 
 	findContours(road_map.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
 
@@ -484,34 +505,41 @@ filter_objects_and_associate(carmen_map_t *map, carmen_map_t *offline_grid_map, 
 	{
 		drawContours(map_img, contours, i, CV_RGB(0, 0, 0), -1);
 	}
+	//cv::dilate( map_img, map_img, element);
+	cv::dilate( offline_map_img, offline_map_img, element);
+
+	create_groups(map_img, clusters, centroids);
+
 	map_img.copyTo(map_img2);
 
 	// #### remove objetos estáticos e grandes
-	map_img = remove_static_objects(map_img, offline_map_img, map);
+	remove_static_objects(offline_map_img, map, clusters, centroids);
 
-	if (last_map_img.empty())
+	if (last_clusters.empty())
 	{
-		last_map_img = map_img;
+		last_clusters = clusters;
+		last_centroids = centroids;
 		return;
 	}
-	contours.erase(contours.begin(),contours.end());
+	show_clusters(map_img.rows, map_img.cols, clusters, centroids, (char*)"Clusters1");
+	show_clusters(map_img.rows, map_img.cols, last_clusters, last_centroids, (char*)"Clusters");
 
-	findContours(map_img.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
-
+	std::vector<cv::Point3d> objs;
 	// #### associação dos objetos
-	std::vector<cv::Point3d> objs = associate_objects(map_img, last_map_img, map);
+	associate_objects(objs, centroids, last_centroids, map->config.resolution);
 
 	// #### pinta as associações
-	draw_associations(objs, contours, map_img_bkp, &map_img_out);
+	draw_associations(objs, clusters, &map_img_out);
 
-    cv::imshow("map_img_out", map_img_out);
+	cv::imshow("map_img_out", map_img_out);
     //cv::imshow("last_map_img_out", last_map_img_out);
-    cv::imshow("offline_map_img", offline_map_img);
+   // cv::imshow("offline_map_img", offline_map_img);
 	//cv::imshow("last_map_img", last_map_img);
 	//cv::imshow("map_img", map_img);
 	//cv::imshow("map", map_img2);
-	cv::waitKey(33);
-	last_map_img = map_img2;
+//	cv::waitKey(33);
+	last_clusters = clusters;
+	last_centroids = centroids;
 }
 
 
@@ -538,8 +566,6 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 		double dt2 = j * dt;
 		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(sensor_data->robot_pose[point_cloud_index], dt2, v, phi, car_config.distance_between_front_and_rear_axles);
 		r_matrix_robot_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
-
-		change_sensor_rear_range_max(sensor_params, v_zt.sphere_points[i].horizontal_angle);
 
 		carmen_prob_models_compute_relevant_map_coordinates(sensor_data, sensor_params, i, robot_interpolated_position.position, sensor_board_1_pose,
 				r_matrix_robot_to_global, board_to_car_matrix, robot_wheel_radius, x_origin, y_origin, &car_config, robot_near_bump_or_barrier, tid);
@@ -993,7 +1019,6 @@ moving_objects2_publish_map(double timestamp)
 		memcpy(map.complete_map, offline_map.complete_map, offline_map.config.x_size *  offline_map.config.y_size * sizeof(double));
 		run_snapshot_moving_objects2();
 	}
-
 }
 
 

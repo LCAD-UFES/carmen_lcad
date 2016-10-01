@@ -394,6 +394,9 @@ carmen_prob_models_update_log_odds_of_nearest_target(carmen_map_t *map,  sensor_
 	cell_hit_by_nearest_ray.x = (sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].x / map->config.resolution);
 	cell_hit_by_nearest_ray.y = (sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].y / map->config.resolution);
 
+	if (sensor_data->obstacle_height[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]] < 0.5)
+		return;
+
 	if (map_grid_is_valid(map, cell_hit_by_nearest_ray.x, cell_hit_by_nearest_ray.y))
 	{
 

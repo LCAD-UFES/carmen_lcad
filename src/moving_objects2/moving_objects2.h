@@ -27,7 +27,6 @@ void moving_objects2_set_robot_pose_into_the_map(carmen_localize_ackerman_global
 void moving_objects2_update_grid_map(carmen_point_t xt, double *zt, sensor_parameters_t *sensor_params);
 void moving_objects2_save_current_map();
 void moving_objects2_initialize(carmen_map_config_t *map_config, carmen_robot_ackerman_config_t main_car_config);
-void moving_objects2_change_map_origin_to_another_map_block(carmen_position_t *map_origin);
 int run_moving_objects2(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global);
 
 cv::Mat segment_remission_map(carmen_map_t *remission_map, carmen_map_t *map);
