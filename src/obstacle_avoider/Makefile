@@ -26,9 +26,15 @@ PUBLIC_INCLUDES = obstacle_avoider_interface.h obstacle_avoider_messages.h colli
 PUBLIC_LIBRARIES = libobstacle_avoider_interface.a libobstacle_avoider.a libcollision_detection.a
 PUBLIC_BINARIES = obstacle_avoider obstacle_avoider_test
 
-TARGETS = libvoice.a libobstacle_avoider.a obstacle_avoider libobstacle_avoider_interface.a libcollision_detection.a obstacle_avoider_test
+TARGETS = libcarmodel libvoice.a libobstacle_avoider.a obstacle_avoider libobstacle_avoider_interface.a libcollision_detection.a obstacle_avoider_test
 
 PUBLIC_LIBRARIES_SO = libobstacle_avoider_interface.so
+
+libcarmodel:
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcarmodel
+clean: clean_libcarmodel
+clean_libcarmodel:
+	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcarmodel
 
 libvoice.a:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libvoice
