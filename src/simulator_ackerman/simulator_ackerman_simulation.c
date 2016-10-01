@@ -5,19 +5,15 @@
 
 #include <carmen/carmen.h>
 #include <carmen/collision_detection.h>
-#include <fann.h>
-#include <fann_train.h>
-#include <fann_data.h>
-#include <floatfann.h>
-#include <pthread.h>
-#include <car_neural_model.h>
+#include <carmen/ford_escape_hybrid.h>
 #include <rlpid.h>
 #include <pid.h>
+#include <car_model.h>
+#include <mpc.h>
+#include <pthread.h>
 #include "simulator_ackerman.h"
 #include "simulator_ackerman_simulation.h"
 #include "objects_ackerman.h"
-#include <carmen/ford_escape_hybrid.h>
-#include <mpc.h>
 
 #ifdef __USE_RL_CONTROL
 
