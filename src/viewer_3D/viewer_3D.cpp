@@ -1929,7 +1929,8 @@ destroy_stuff()
 
     destroy_drawers();
 }
-static int n = 0;
+
+
 void
 draw_loop(window *w)
 {
@@ -2212,6 +2213,7 @@ draw_loop(window *w)
 
     }
 }
+
 
 void
 draw_loop2(window *w)
