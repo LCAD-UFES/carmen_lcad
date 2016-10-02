@@ -10,7 +10,7 @@
 
 
 #define DELTA_T (1.0 / 40.0)
-#define PREDICTION_HORIZON	(2.3*0.6)
+#define PREDICTION_HORIZON	(1.3*0.6)
 
 using namespace std;
 
