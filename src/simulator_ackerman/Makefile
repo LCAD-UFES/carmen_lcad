@@ -3,21 +3,21 @@ include ../Makefile.conf
 CFLAGS += -DOLD_MOTION_MODEL 
 
 IFLAGS += -I../obstacle_avoider
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarneuralmodel
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/pid
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/mpc
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/rlpid
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/pid
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarmodel
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/mpc
 IFLAGS += -I$(CARMEN_HOME)/include/carmen
 
 LFLAGS += -lmap_interface -lparam_interface -llocalize_ackerman_interface -lobstacle_avoider -lobstacle_avoider_interface \
 	  -llaser_interface -lgeometry -llocalize_ackerman_motion -lbase_ackerman_interface \
 	  -lglobal -lipc -lfused_odometry_interface -lcollision_detection -lmap_server_interface -lmapper_interface \
-	  -lmap_server_interface -lford_escape_hybrid_interface -lfann -lmpc -lgsl -lgslcblas -lcarneuralmodel -lpid -lrlpid 
+	  -lmap_server_interface -lford_escape_hybrid_interface -lfann -lrlpid -lmpc -lgsl -lgslcblas -lpid -lcarmodel
 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcarneuralmodel
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/pid
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/mpc
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/rlpid
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/pid
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcarmodel
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/mpc
 
 MODULE_NAME = SIMULATOR ACKERMAN
 MODULE_COMMENT = "simulates the readings of a ackerman robot on a map"
@@ -30,7 +30,7 @@ PUBLIC_LIBRARIES = libsimulator_ackerman_interface.a
 PUBLIC_BINARIES = simulator_ackerman simulator_ackerman_connect_multiple
 MAN_PAGES =
 
-TARGETS = libcarneuralmodel libpid librlpid libmpc simulator_ackerman simulator_ackerman_test  libsimulator_ackerman_interface.a simulator_ackerman_connect_multiple
+TARGETS = libpid librlpid libcarmodel libmpc simulator_ackerman simulator_ackerman_test  libsimulator_ackerman_interface.a simulator_ackerman_connect_multiple
 
 
 ifndef NO_PYTHON
@@ -39,11 +39,11 @@ TARGETS += libsimulator_ackerman_interface.so.1
 endif
 
 
-libcarneuralmodel:
-	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcarneuralmodel
-clean: clean_libcarneuralmodel
-clean_libcarneuralmodel:
-	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcarneuralmodel
+libcarmodel:
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcarmodel
+clean: clean_libcarmodel
+clean_libcarmodel:
+	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcarmodel
 
 
 libpid:

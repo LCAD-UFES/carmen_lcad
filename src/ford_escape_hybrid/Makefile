@@ -6,7 +6,7 @@ IFLAGS += -I../obstacle_avoider
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/OpenJAUS/ojTorc/include/
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/OpenJAUS/libjaus/include/
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/OpenJAUS/libopenJaus/include/
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarneuralmodel
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarmodel
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/pid
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/mpc
 IFLAGS += -I$(CARMEN_HOME)/include/carmen
@@ -14,12 +14,12 @@ IFLAGS += -I$(CARMEN_HOME)/include/carmen
 LFLAGS += -lmap_interface -lparam_interface -llocalize_ackerman_interface -lobstacle_avoider -lobstacle_avoider_interface \
 	  -llaser_interface -lgeometry -llocalize_ackerman_motion -lmotion_planner_interface -lbase_ackerman_interface \
 	  -lglobal -lipc -lmapper_interface -lfused_odometry_interface -lcollision_detection -lmap_server_interface \
-	  -lopenJaus -ljaus -lojTorc -lmpc -lgsl -lgslcblas -lcarneuralmodel -lpid -lfann
+	  -lopenJaus -ljaus -lojTorc -lmpc -lgsl -lgslcblas -lcarmodel -lpid -lfann
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/OpenJAUS/libjaus/lib/  
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/OpenJAUS/libopenJaus/lib/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/OpenJAUS/ojTorc/lib/	  
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcarneuralmodel
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcarmodel
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/pid
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/mpc
 
@@ -34,7 +34,7 @@ PUBLIC_LIBRARIES = libford_escape_hybrid_interface.a
 PUBLIC_BINARIES = ford_escape_hybrid ford_escape_hybrid_train_base ford_escape_hybrid_test ford_escape_hybrid_test_curves
 MAN_PAGES =
 
-TARGETS = OpenJAUS libcarneuralmodel libpid libmpc ford_escape_hybrid ford_escape_hybrid_train_base libford_escape_hybrid_interface.a ford_escape_hybrid_test ford_escape_hybrid_test_curves
+TARGETS = OpenJAUS libcarmodel libpid libmpc ford_escape_hybrid ford_escape_hybrid_train_base libford_escape_hybrid_interface.a ford_escape_hybrid_test ford_escape_hybrid_test_curves
 
 
 ifndef NO_PYTHON
@@ -46,11 +46,11 @@ endif
 OpenJAUS:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/OpenJAUS/
 
-libcarneuralmodel:
-	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcarneuralmodel
-clean: clean_libcarneuralmodel
-clean_libcarneuralmodel:
-	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcarneuralmodel
+libcarmodel:
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcarmodel
+clean: clean_libcarmodel
+clean_libcarmodel:
+	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcarmodel
 
 libpid:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcontrol/pid/

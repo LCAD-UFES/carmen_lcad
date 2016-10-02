@@ -6,6 +6,9 @@ extern "C" {
 #endif
 
 
+#include <car_model.h>
+
+
 #define neural_network_size (6)
 #define PI (3.141592653589793)
 

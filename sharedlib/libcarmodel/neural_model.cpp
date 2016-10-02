@@ -1,11 +1,4 @@
-#include <carmen/carmen.h>
-#include <carmen/simulator_ackerman.h>
-#include <fann.h>
-#include <fann_train.h>
-#include <fann_data.h>
-#include <floatfann.h>
-#include <pid.h>
-#include "car_neural_model.h"
+#include "car_model.h"
 
 
 void
@@ -278,13 +271,13 @@ carmen_libcarneuralmodel_compute_new_pos_with_ann(carmen_ackerman_motion_command
 }
 
 
-void
-carmen_libcarneuralmodel_recalc_pos(carmen_simulator_ackerman_config_t *simulator_config)
-{
-	carmen_libcarneuralmodel_compute_new_pos_with_ann(simulator_config->current_motion_command_vector, simulator_config->nun_motion_commands, simulator_config->target_v,
-			simulator_config->v, simulator_config->target_phi, simulator_config->phi, simulator_config->time_of_last_command,
-			simulator_config->current_motion_command_vector_index, simulator_config->delta_t, simulator_config->understeer_coeficient,
-			simulator_config->distance_between_front_and_rear_axles, simulator_config->max_phi, simulator_config->odom_pose, simulator_config->true_pose);
-}
+//void
+//carmen_libcarneuralmodel_recalc_pos(carmen_simulator_ackerman_config_t *simulator_config)
+//{
+//	carmen_libcarneuralmodel_compute_new_pos_with_ann(simulator_config->current_motion_command_vector, simulator_config->nun_motion_commands, simulator_config->target_v,
+//			simulator_config->v, simulator_config->target_phi, simulator_config->phi, simulator_config->time_of_last_command,
+//			simulator_config->current_motion_command_vector_index, simulator_config->delta_t, simulator_config->understeer_coeficient,
+//			simulator_config->distance_between_front_and_rear_axles, simulator_config->max_phi, simulator_config->odom_pose, simulator_config->true_pose);
+//}
 
 
