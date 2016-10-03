@@ -505,7 +505,7 @@ limit_maximum_centripetal_acceleration(vector<carmen_ackerman_path_point_t> &pat
 		}
 	}
 
-	printf("max_c_a = %lf\n", max_centripetal_acceleration);
+//	printf("max_c_a = %lf\n", max_centripetal_acceleration);
 
 	if (max_centripetal_acceleration > MAX_CENTRIPETAL_ACCELERATION)
 	{
