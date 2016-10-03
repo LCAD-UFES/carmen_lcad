@@ -53,16 +53,16 @@ localize_ackerman_init_handler(carmen_localize_ackerman_initialize_message *loca
 	else
 		return;
 
-	current_vector_index = 0;
+	current_vector_index = timestamp_moving_objects_list.size();
 
 	x_pos2 = timestamp_moving_objects_list[current_vector_index].x_car;
 	y_pos2 = timestamp_moving_objects_list[current_vector_index].y_car;
 
 	dist = euclidean_distance(x_pos,y_pos,x_pos2,y_pos2);
 
-	while((dist > 50.0) && (current_vector_index < (int) timestamp_moving_objects_list.size()))
+	while((dist > 14.0) && (current_vector_index > 0))
 	{
-		current_vector_index++;
+		current_vector_index--;
 		x_pos2 = timestamp_moving_objects_list[current_vector_index].x_car;
 		y_pos2 = timestamp_moving_objects_list[current_vector_index].y_car;
 		dist = euclidean_distance(x_pos, y_pos, x_pos2, y_pos2);
