@@ -12,14 +12,13 @@ require 'pl'
 
 opt = lapp[[
    -p,--prepair_samples                        prepair samples using pre-trained cnn
-   -n,--num_samples      (default 5)           number of samples to prepair (only useful with -p)
    -d,--display_images                         display image samples during preparation (only useful with -p)
    -r,--learning_rate    (default 0.05)        learning rate
-   -m,--momentum         (default 0.5)         momentum
+   -m,--momentum         (default 0.0)         momentum
    -e,--num_epochs       (default 500)         number of epochs
    -s,--sanity                                 sanity test (train and test with training set)
    -t,--threads          (default 4)           number of threads
-   -a,--allowed_distance (default 5)           maximum allowed distance from target image (in images)
+   -a,--max_allowed_distance (default 19)      maximum allowed distance from target image (in images)
 ]]
 
 --
@@ -83,44 +82,6 @@ local function prepro(imgs, data_augment, on_gpu)
 end
 
 
-local function load_images_and_labels(csv_name, year, dataset_prefix)
-  local csv = require("csv")
-  local f = csv.open(csv_name)
-  local i = -1
-  local x, y, px, py, img_file_name
-  local num_imgs = opt.num_samples
-  local imgs = torch.Tensor(num_imgs, 3, 224, 224)
-  local labels = torch.Tensor(num_imgs)
-  for fields in f:lines() do
-    if i ~= -1 then
-      local label
-      for j, v in ipairs(fields) do
-        if j == 1 then img_file_name = year .. v .. ".bb08.l.png" end 
-        if j == 2 then x = tonumber(v) end 
-        if j == 3 then y = tonumber(v) end 
-        if j == 4 then label = tonumber(v) end 
-      end
-      if i >= 1 and i <= num_imgs then
-        print(img_file_name, ' dist = ', math.sqrt((x - px) * (x - px) + (y - py) * (y - py)))
-        local img = image.load(img_file_name, 3, 'byte')
-        img = image.scale(img, 224, 224, 'bilinear')
-        imgs[i] = img
-        labels[i] = label
-        if opt.display_images then
-          image.display{image = imgs[i], zoom = 1, legend = 'image ' .. tostring(i)}
-        end
-      end
-      px = x
-      py = y
-    end
-    i = i + 1
-  end
-  
-  --imgs = prepro(imgs, false, true) -- preprocess in place, and don't augment
-  return imgs, labels
-end -- load_images_and_labels()
-
-
 local function compute_cnn_output_for_images(images)
   local batch_size = 10
   local images_batch = images:split(batch_size, 1)
@@ -146,27 +107,7 @@ local function compute_cnn_output_for_images(images)
 end -- compute_cnn_output_for_images()
 
 
-local function prepair_samples_using_cnn(csv_name, year, dataset_prefix)
-  print("Generating samples for " .. dataset_prefix .. " " .. csv_name)
-  local images, labels = load_images_and_labels(csv_name, year, dataset_prefix)
-  local cnn_output = compute_cnn_output_for_images(images)
-  torch.save(dataset_prefix .. "_images.tensor", images)
-  torch.save(dataset_prefix .. "_labels.tensor", labels)
-  torch.save(dataset_prefix .. "_cnn_out.tensor", cnn_output)
-  
-  if opt.display_images then
-    for i = 1, images:size(1), 1 do
-      local cnn_output_ret = torch.reshape(cnn_output[i], 24, 32)
-      --local cnn_output_image = image.scale(cnn_output_ret:double(), 32*8, 24*8, 'simple')
-      
-      image.display{image = images[i], zoom = 1, legend = 'image ' .. tostring(i)}
-      image.display{image = cnn_output_ret, zoom = 8, legend = 'model ' .. tostring(i)}
-    end
-  end
-end -- prepair_samples_using_cnn()
-
-
-local function prepair_samples_using_cnn_new(images_file_name, labels_file_name)
+local function prepair_samples_using_cnn(images_file_name, labels_file_name)
   print("Generating samples for " .. images_file_name .. " and " .. labels_file_name)
   local images = torch.load(images_file_name)
   local labels = torch.load(labels_file_name)
@@ -202,11 +143,11 @@ function file_exists(name)
    if f~=nil then io.close(f) return true else return false end
 end
 
-local function train_net(batchInputs, batchLabels)
-  if file_exists("trained_net.tensor") then
-    model = torch.load("trained_net.tensor")
-    print("ATENTION: loading trained_net.tensor instead of training!")
-    print("Delete this file if you want to train.")
+local function train_net(batchInputs, batchLabels, offset)
+  if file_exists('trained_net' .. offset .. '.tensor') then
+    model = torch.load('trained_net' .. offset .. '.tensor')
+    print('ATENTION: loading trained_net' .. offset .. '.tensor instead of training!')
+    print('Delete this file if you want to train.')
     return
   end
       
@@ -244,7 +185,7 @@ local function train_net(batchInputs, batchLabels)
     optim.sgd(feval, params, optimState)
     --print("epoch = ", epoch)
   end
-  torch.save("trained_net.tensor", model)
+  torch.save('trained_net' .. offset .. '.tensor', model)
 end -- train_net()
 
 
@@ -269,29 +210,30 @@ local function test_net(cnn_output, labels)
   evaluate_resuts(results, labels)  
   return results:exp()
 end -- test_net()
+        
 
-
-local function main()
+local function main(year_for_train, year_for_test, offset)
+  train_filename = 'UFES-' .. year_for_train .. '-' .. offset .. '-train.csv'
+  test_filename = 'UFES-' .. year_for_test .. '-' .. offset .. '-test.csv'
+  
   if opt.prepair_samples then  
     print("Preparing Samples...\n")
     
-    cnn_model = torch.load('/home/alberto/neuraltalk2/cnn.model')
+    cnn_model = torch.load('/home/avelino/neuraltalk2/cnn.model')
     cnn_model = cnn_model:cuda()
     -- print(cnn_model)
     cnn_model:evaluate()
     -- local images = torch.load('/home/alberto/neuraltalk2/image.data')
     
     print("- Training Samples\n")
-    -- prepair_samples_using_cnn("/dados/GPS_clean/UFES-2012-30-train.csv", "/dados/GPS_clean/2012/", "training") -- depois que preparar, nao precisa rodar de novo
-    prepair_samples_using_cnn_new("training-20140418.csv.images.tensor", "training-20140418.csv.labels.tensor") -- depois que preparar, nao precisa rodar de novo
+    prepair_samples_using_cnn(train_filename .. ".images.tensor", train_filename .. ".labels.tensor") -- depois que preparar, nao precisa rodar de novo
     print("- Test Samples\n")
-    -- prepair_samples_using_cnn("/dados/GPS_clean/UFES-2014-30-train.csv", "/dados/GPS_clean/2014/", "test") -- depois que preparar, nao precisa rodar de novo
-    prepair_samples_using_cnn_new("test-20160906.csv.images.tensor", "test-20160906.csv.labels.tensor") -- depois que preparar, nao precisa rodar de novo
+    prepair_samples_using_cnn(test_filename .. ".images.tensor", test_filename .. ".labels.tensor") -- depois que preparar, nao precisa rodar de novo
   end
   
-  local images = torch.load("training-20140418.csv.images.tensor_images.tensor")
-  local cnn_output = torch.load("training-20140418.csv.images.tensor_cnn_out.tensor")
-  local labels = torch.load("training-20140418.csv.labels.tensor_labels.tensor")
+  local images = torch.load(train_filename .. ".images.tensor_images.tensor")
+  local cnn_output = torch.load(train_filename .. ".images.tensor_cnn_out.tensor")
+  local labels = torch.load(train_filename .. ".labels.tensor_labels.tensor")
   
   print("++++ Build net")
   build_net(cnn_output, labels)
@@ -299,41 +241,64 @@ local function main()
 
   -- treinar a rede com cada cnn_output (input) com o label correspondente (target)
   print("++++ Train net")
-  train_net(cnn_output:float(), labels)
+  train_net(cnn_output:float(), labels, offset)
   print()
   
   -- testar com as images de 2012 (teste de sanidade) e depois com images de 2014 (tem que ler e gerar tensor em forma de arquivo)
   local test_images, test_cnn_output, test_labels
   if opt.sanity then
     print("==== Test net: sanity test! ====")
-    test_images = torch.load("training-20140418.csv.images.tensor_images.tensor")
-    test_cnn_output = torch.load("training-20140418.csv.images.tensor_cnn_out.tensor")
-    test_labels = torch.load("training-20140418.csv.labels.tensor_labels.tensor")
+    test_images = torch.load(train_filename .. ".images.tensor_images.tensor")
+    test_cnn_output = torch.load(train_filename .. ".images.tensor_cnn_out.tensor")
+    test_labels = torch.load(train_filename .. ".labels.tensor_labels.tensor")
   else
     print("==== Test net: real test! ====")
-    test_images = torch.load("test-20160906.csv.images.tensor_images.tensor")
-    test_cnn_output = torch.load("test-20160906.csv.images.tensor_cnn_out.tensor")
-    test_labels = torch.load("test-20160906.csv.labels.tensor_labels.tensor")
+    test_images = torch.load(test_filename .. ".images.tensor_images.tensor")
+    test_cnn_output = torch.load(test_filename .. ".images.tensor_cnn_out.tensor")
+    test_labels = torch.load(test_filename .. ".labels.tensor_labels.tensor")
   end
   local results = test_net(test_cnn_output:float(), test_labels) -- os mesmos <images, labels> (sanidade) ou os de 2014
   
-  local training_images = torch.load("training-20140418.csv.images.tensor_images.tensor")
-  local training_labels = torch.load("training-20140418.csv.labels.tensor_labels.tensor")
-  local correct = 0
-  local win1, win2
-  for i = 1, test_images:size(1) do
-    win1 = image.display{image = test_images[i], zoom = 1, win=win1, legend = 'test image ' .. tostring(i)}
-    local max_val, index = torch.max(results, 2)
-    win2 = image.display{image = training_images[index[i]:max()], zoom = 1, win=win2, legend = 'training image ' .. training_labels[index[i]:max()]}
-    if math.abs(test_labels[i] - training_labels[index[i]:max()]) <= opt.allowed_distance then
-      correct = correct + 1
+  local training_images = torch.load(train_filename .. ".images.tensor_images.tensor")
+  local training_labels = torch.load(train_filename .. ".labels.tensor_labels.tensor")
+  
+  if opt.display_images then
+    local win1, win2
+    for i = 1, test_images:size(1) do
+      win1 = image.display{image = test_images[i], zoom = 1, win=win1, legend = 'test image ' .. tostring(i)}
+      win2 = image.display{image = training_images[index[i]:max()], zoom = 1, win=win2, legend = 'training image ' .. training_labels[index[i]:max()]}
+      print("test_label, training_label ", test_labels[i], training_labels[index[i]:max()])
+      local line = io.read()
     end
-    print("test_label, training_label ", test_labels[i], training_labels[index[i]:max()])
-    local line = io.read() 
   end
-  print("correct = " .. 100 * correct / test_images:size(1) .. "%")
+  
+  local result = io.open('result-' .. year_for_train .. '-' .. year_for_test .. '-cnn-' .. offset .. '-' .. offset .. '.txt', "w+")
+  for allowed_distance = 0, opt.max_allowed_distance do
+    local correct = 0
+    for i = 1, test_images:size(1) do
+      local max_val, index = torch.max(results, 2)
+      if math.abs(test_labels[i] - training_labels[index[i]:max()]) <= allowed_distance then
+        correct = correct + 1
+      end
+    end
+    result:write(100 * correct / test_images:size(1) .. '\n')
+  end
+  result:close()
   
 end -- main()
 
-main()
--- qlua main.lua -e 5000 -m 0.0
+offsets = {30.0, 15.0, 10.0, 5.0, 1.0}
+years = {{20140418, 20160906}}
+
+for i, year_pair in pairs(years) do
+  year_for_train = year_pair[1]
+  year_for_test  = year_pair[2]
+  for ii, offset in pairs(offsets) do
+    main(year_for_train, year_for_test, offset)
+  end
+end
+  --qlua main.lua -e 4000 -p -- gera a base de dados e roda a rede
+  -- So rodar teste de sanidade
+  --qlua main.lua -e 4000 -s
+  -- So rodar teste de verdade
+  --qlua main.lua -e 4000
