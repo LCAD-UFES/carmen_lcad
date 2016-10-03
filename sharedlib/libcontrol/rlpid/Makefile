@@ -6,9 +6,10 @@ CXXFLAGS += -std=c++0x
 MODULE_NAME = RL_PID
 MODULE_COMMENT = Reinforciment Learning Based PID 
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarneuralmodel
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/pid
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarmodel
 
-LFLAGS += -lcarneuralmodel -lfann  
+LFLAGS += -lfann -lpid -lcarmodel  
 
 SOURCES = rlpid.cpp
  

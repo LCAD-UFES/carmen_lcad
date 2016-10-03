@@ -1,34 +1,5 @@
-
-
-/*********************************************************
- *
- * This source code is part of the Carnegie Mellon Robot
- * Navigation Toolkit (CARMEN)
- *
- * CARMEN Copyright (c) 2002 Michael Montemerlo, Nicholas
- * Roy, Sebastian Thrun, Dirk Haehnel, Cyrill Stachniss,
- * and Jared Glover
- *
- * CARMEN is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public 
- * License as published by the Free Software Foundation; 
- * either version 2 of the License, or (at your option)
- * any later version.
- *
- * CARMEN is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- * PURPOSE.  See the GNU General Public License for more 
- * details.
- *
- * You should have received a copy of the GNU General 
- * Public License along with CARMEN; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, 
- * Suite 330, Boston, MA  02111-1307 USA
- *
- ********************************************************/
-
 #include <carmen/carmen.h>
+#include <car_model.h>
 #include "collision_detection.h"
 #include "obstacle_avoider.h"
 
@@ -94,6 +65,27 @@ initialize_map_vector(int number_of_maps)
 }
 
 
+int
+build_predicted_trajectory_old(carmen_ackerman_motion_command_p motion_commands_vector, int num_motion_commands,
+		carmen_ackerman_traj_point_t initial_pose, carmen_robot_ackerman_config_t *carmen_robot_ackerman_config)
+{
+	int i, trajectory_vector_of_points_size = 0;
+	carmen_ackerman_traj_point_t pose;
+
+	pose = initial_pose;
+
+	for (i = 0; i < num_motion_commands; i++)
+	{
+		pose = predict_new_robot_position(pose, motion_commands_vector[i].v, motion_commands_vector[i].phi, motion_commands_vector[i].time, carmen_robot_ackerman_config);
+		trajectory_vector_of_points[trajectory_vector_of_points_size] = pose;
+		trajectory_vector_of_points_size++;
+		if (trajectory_vector_of_points_size >= (MAX_TRAJECTORY_VECTOR_OF_POINTS_SIZE - 2))
+			break;
+	}
+	return (trajectory_vector_of_points_size);
+}
+
+
 static int
 build_predicted_trajectory(carmen_ackerman_motion_command_p motion_commands_vector, int num_motion_commands,
 		carmen_ackerman_traj_point_t initial_pose, carmen_robot_ackerman_config_t *carmen_robot_ackerman_config)
@@ -106,6 +98,10 @@ build_predicted_trajectory(carmen_ackerman_motion_command_p motion_commands_vect
 	for (i = 0; i < num_motion_commands; i++)
 	{
 		pose = predict_new_robot_position(pose, motion_commands_vector[i].v, motion_commands_vector[i].phi, motion_commands_vector[i].time, carmen_robot_ackerman_config);
+//		double distance_traveled = 0.0;
+//		pose = carmen_libcarmodel_recalc_pos_ackerman(pose, motion_commands_vector[i].v, motion_commands_vector[i].phi,
+//				motion_commands_vector[i].time, &distance_traveled, motion_commands_vector[i].time, *carmen_robot_ackerman_config);
+
 		trajectory_vector_of_points[trajectory_vector_of_points_size] = pose;
 		trajectory_vector_of_points_size++;
 		if (trajectory_vector_of_points_size >= (MAX_TRAJECTORY_VECTOR_OF_POINTS_SIZE - 2))

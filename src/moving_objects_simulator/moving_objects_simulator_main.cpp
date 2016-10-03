@@ -17,6 +17,10 @@ int num_of_models;
 std::vector<timestamp_moving_objects> timestamp_moving_objects_list;
 int current_vector_index = 0;
 
+double previous_timestamp = 0.0;
+double delta_time = 0.1;
+int first = 1;
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
 // Handlers                                                                                  //
@@ -56,14 +60,12 @@ localize_ackerman_init_handler(carmen_localize_ackerman_initialize_message *loca
 
 	dist = euclidean_distance(x_pos,y_pos,x_pos2,y_pos2);
 
-	printf("%d dist: %lf\n",current_vector_index, dist);
-	while((dist > 50.0) && (current_vector_index < timestamp_moving_objects_list.size()))
+	while((dist > 50.0) && (current_vector_index < (int) timestamp_moving_objects_list.size()))
 	{
 		current_vector_index++;
 		x_pos2 = timestamp_moving_objects_list[current_vector_index].x_car;
 		y_pos2 = timestamp_moving_objects_list[current_vector_index].y_car;
 		dist = euclidean_distance(x_pos, y_pos, x_pos2, y_pos2);
-		printf("%d dist: %lf\n",current_vector_index, dist);
 	}
 	ok_to_publish = 1;
 }
@@ -73,12 +75,23 @@ void
 publish_moving_objects()
 {
 
-	if(ok_to_publish && (current_vector_index < timestamp_moving_objects_list.size()))
-	{
+//	if(!first && (previous_timestamp + delta_time - timestamp_moving_objects_list[current_vector_index].timestamp > 0.05 ) )
+//	{
+//		delta_time += 0.1;
+//		return;
+//	}
+//	else
+//		delta_time = 0.1;
 
+
+	if(ok_to_publish && (current_vector_index < (int) timestamp_moving_objects_list.size()))
+	{
+		first = 0;
 		moving_objects_point_clouds_message.num_point_clouds = timestamp_moving_objects_list[current_vector_index].objects.size();
 		moving_objects_point_clouds_message.point_clouds = (t_point_cloud_struct *) (malloc(moving_objects_point_clouds_message.num_point_clouds * sizeof(t_point_cloud_struct)));
 		carmen_test_alloc(moving_objects_point_clouds_message.point_clouds);
+
+		previous_timestamp = timestamp_moving_objects_list[current_vector_index].timestamp;
 
 		for(int i = 0; i < moving_objects_point_clouds_message.num_point_clouds; i++)
 		{
@@ -117,8 +130,8 @@ publish_moving_objects()
 			moving_objects_point_clouds_message.point_clouds[i].point_size = 1;
 			moving_objects_point_clouds_message.point_clouds[i].linear_velocity = timestamp_moving_objects_list[current_vector_index].objects[i].velocity_obj;
 			moving_objects_point_clouds_message.point_clouds[i].orientation = carmen_normalize_theta(timestamp_moving_objects_list[current_vector_index].objects[i].orientation_obj);
-			moving_objects_point_clouds_message.point_clouds[i].object_pose.x = timestamp_moving_objects_list[current_vector_index].objects[i].pos_x_obj - timestamp_moving_objects_list[current_vector_index].objects[i].pos_x_iara + timestamp_moving_objects_list[current_vector_index].objects[i].x_global_pos;
-			moving_objects_point_clouds_message.point_clouds[i].object_pose.y = timestamp_moving_objects_list[current_vector_index].objects[i].pos_y_obj - timestamp_moving_objects_list[current_vector_index].objects[i].pos_y_iara + timestamp_moving_objects_list[current_vector_index].objects[i].y_global_pos;
+			moving_objects_point_clouds_message.point_clouds[i].object_pose.x = (timestamp_moving_objects_list[current_vector_index].objects[i].pos_x_obj - timestamp_moving_objects_list[current_vector_index].objects[i].pos_x_iara) + timestamp_moving_objects_list[current_vector_index].x_car;
+			moving_objects_point_clouds_message.point_clouds[i].object_pose.y = (timestamp_moving_objects_list[current_vector_index].objects[i].pos_y_obj - timestamp_moving_objects_list[current_vector_index].objects[i].pos_y_iara) + timestamp_moving_objects_list[current_vector_index].y_car;
 			moving_objects_point_clouds_message.point_clouds[i].object_pose.z = 0.0;
 			moving_objects_point_clouds_message.point_clouds[i].height = timestamp_moving_objects_list[current_vector_index].objects[i].height;
 			moving_objects_point_clouds_message.point_clouds[i].length = timestamp_moving_objects_list[current_vector_index].objects[i].length;
@@ -128,8 +141,8 @@ publish_moving_objects()
 			moving_objects_point_clouds_message.point_clouds[i].num_associated = timestamp_moving_objects_list[current_vector_index].objects[i].id;
 
 			moving_objects_point_clouds_message.point_clouds[i].points = (carmen_vector_3D_t *) malloc(1 * sizeof(carmen_vector_3D_t));
-			moving_objects_point_clouds_message.point_clouds[i].points[0].x = timestamp_moving_objects_list[current_vector_index].objects[i].pos_x_obj - timestamp_moving_objects_list[current_vector_index].objects[i].pos_x_iara + timestamp_moving_objects_list[current_vector_index].objects[i].x_global_pos;
-			moving_objects_point_clouds_message.point_clouds[i].points[0].y = timestamp_moving_objects_list[current_vector_index].objects[i].pos_y_obj - timestamp_moving_objects_list[current_vector_index].objects[i].pos_y_iara + timestamp_moving_objects_list[current_vector_index].objects[i].y_global_pos;
+			moving_objects_point_clouds_message.point_clouds[i].points[0].x = (timestamp_moving_objects_list[current_vector_index].objects[i].pos_x_obj - timestamp_moving_objects_list[current_vector_index].objects[i].pos_x_iara) + timestamp_moving_objects_list[current_vector_index].x_car;
+			moving_objects_point_clouds_message.point_clouds[i].points[0].y = (timestamp_moving_objects_list[current_vector_index].objects[i].pos_y_obj - timestamp_moving_objects_list[current_vector_index].objects[i].pos_y_iara) + timestamp_moving_objects_list[current_vector_index].y_car;
 			moving_objects_point_clouds_message.point_clouds[i].points[0].z = 0.0;
 
 			moving_objects_point_clouds_message.timestamp = carmen_get_time();

@@ -28,8 +28,6 @@ carmen_map_t offline_map;
 carmen_localize_ackerman_globalpos_message *globalpos_history;
 int last_globalpos;
 
-static int visual_odometry_is_global_pos = 0;
-
 
 /**
  * Model params
@@ -83,6 +81,8 @@ carmen_localize_ackerman_map_t localize_map;
 
 cv::Mat road_map;
 
+double x_origin, y_origin;
+
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -94,9 +94,7 @@ cv::Mat road_map;
 static void
 localize_map_update_handler(carmen_map_server_localize_map_message *message)
 {
-
 	static bool first_time = true;
-	carmen_position_t map_origin;
 
 	if (first_time)
 	{
@@ -106,13 +104,10 @@ localize_map_update_handler(carmen_map_server_localize_map_message *message)
 
 	carmen_map_server_localize_map_message_to_localize_map(message, &localize_map);
 
-	map_origin.x = message->config.x_origin;
-	map_origin.y = message->config.y_origin;
-
-	moving_objects2_change_map_origin_to_another_map_block(&map_origin);
+	x_origin = message->config.x_origin;
+	y_origin = message->config.y_origin;
 
 	road_map = segment_remission_map(&localize_map.carmen_mean_remission_map, &localize_map.carmen_map);
-
 }
 
 
@@ -138,11 +133,6 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 			}
 		}
 	}
-
-	//	static double previous_timestamp = 0.0;
-	//	double t = carmen_get_time();
-	//	printf("%lf\n", t - previous_timestamp);
-	//	previous_timestamp = t;
 }
 
 static void
@@ -218,63 +208,10 @@ get_alive_sensors(int argc, char **argv)
 	carmen_param_t param_list[] =
 	{
 			{(char*)"mapper", (char*)"velodyne", CARMEN_PARAM_ONOFF, &sensors_params[0].alive, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne1", CARMEN_PARAM_ONOFF, &sensors_params[1].alive, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne2", CARMEN_PARAM_ONOFF, &sensors_params[2].alive, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne3", CARMEN_PARAM_ONOFF, &sensors_params[3].alive, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne4", CARMEN_PARAM_ONOFF, &sensors_params[4].alive, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne5", CARMEN_PARAM_ONOFF, &sensors_params[5].alive, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne6", CARMEN_PARAM_ONOFF, &sensors_params[6].alive, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne7", CARMEN_PARAM_ONOFF, &sensors_params[7].alive, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne8", CARMEN_PARAM_ONOFF, &sensors_params[8].alive, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne9", CARMEN_PARAM_ONOFF, &sensors_params[9].alive, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_mapping", CARMEN_PARAM_ONOFF, &sensors_params[STEREO_MAPPING_SENSOR_INDEX].alive, 0, NULL},
-
 			{(char*)"mapper", (char*)"velodyne_locc", CARMEN_PARAM_DOUBLE, &sensors_params[0].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne1_locc", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne2_locc", CARMEN_PARAM_DOUBLE, &sensors_params[2].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne3_locc", CARMEN_PARAM_DOUBLE, &sensors_params[3].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne4_locc", CARMEN_PARAM_DOUBLE, &sensors_params[4].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne5_locc", CARMEN_PARAM_DOUBLE, &sensors_params[5].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne6_locc", CARMEN_PARAM_DOUBLE, &sensors_params[6].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne7_locc", CARMEN_PARAM_DOUBLE, &sensors_params[7].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne8_locc", CARMEN_PARAM_DOUBLE, &sensors_params[8].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne9_locc", CARMEN_PARAM_DOUBLE, &sensors_params[9].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_mapping_locc", CARMEN_PARAM_DOUBLE, &sensors_params[STEREO_MAPPING_SENSOR_INDEX].log_odds.log_odds_occ, 0, NULL},
-
-
 			{(char*)"mapper", (char*)"velodyne_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[0].log_odds.log_odds_free, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne1_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_free, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne2_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[2].log_odds.log_odds_free, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne3_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[3].log_odds.log_odds_free, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne4_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[4].log_odds.log_odds_free, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne5_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[5].log_odds.log_odds_free, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne6_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[6].log_odds.log_odds_free, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne7_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[7].log_odds.log_odds_free, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne8_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[8].log_odds.log_odds_free, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne9_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[9].log_odds.log_odds_free, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_mapping_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[STEREO_MAPPING_SENSOR_INDEX].log_odds.log_odds_free, 0, NULL},
-
 			{(char*)"mapper", (char*)"velodyne_l0", CARMEN_PARAM_DOUBLE, &sensors_params[0].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne1_l0", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne2_l0", CARMEN_PARAM_DOUBLE, &sensors_params[2].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne3_l0", CARMEN_PARAM_DOUBLE, &sensors_params[3].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne4_l0", CARMEN_PARAM_DOUBLE, &sensors_params[4].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne5_l0", CARMEN_PARAM_DOUBLE, &sensors_params[5].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne6_l0", CARMEN_PARAM_DOUBLE, &sensors_params[6].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne7_l0", CARMEN_PARAM_DOUBLE, &sensors_params[7].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne8_l0", CARMEN_PARAM_DOUBLE, &sensors_params[8].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne9_l0", CARMEN_PARAM_DOUBLE, &sensors_params[9].log_odds.log_odds_l0, 0, NULL},
-
 			{(char*)"mapper", (char*)"velodyne_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[0].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne1_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[1].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne2_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[2].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne3_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[3].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne4_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[4].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne5_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[5].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne6_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[6].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne7_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[7].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne8_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[8].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne9_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[9].unexpeted_delta_range_sigma, 0, NULL},
 
 			{(char*)"mapper", (char*)"unsafe_height_above_ground", CARMEN_PARAM_DOUBLE, &sensors_params[0].unsafe_height_above_ground, 0, NULL},
 
@@ -366,6 +303,7 @@ get_sensors_param(int argc, char **argv)
 		sensors_params[0].remission_calibration = NULL;//(double *) calloc(256 * sensors_params[0].vertical_resolution, sizeof(double));
 
 	}
+	sensors_params[0].current_range_max = sensors_params[0].range_max;
 
 }
 
@@ -515,9 +453,7 @@ main(int argc, char **argv)
 	/* Initialize all the relevant parameters */
 	read_parameters(argc, argv, &map_config, &car_config);
 
-
 	moving_objects2_initialize(&map_config, car_config);
-
 
 	/* Subscribe to relevant messages */
 	subscribe_to_ipc_messages();

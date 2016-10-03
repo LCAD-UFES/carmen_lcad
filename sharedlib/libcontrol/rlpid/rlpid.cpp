@@ -1,10 +1,4 @@
 #include <carmen/carmen.h>
-#include <fann.h>
-#include <fann_train.h>
-#include <fann_data.h>
-#include <floatfann.h>
-#include <pthread.h>
-#include <car_neural_model.h>
 #include "rlpid.h"
 
 

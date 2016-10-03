@@ -28,20 +28,14 @@
 
 #include <carmen/carmen.h>
 #include <carmen/fused_odometry_interface.h>
-
 #include <jaus.h>				// Header file for JAUS types, structs and messages
 #include <openJaus.h>				// Header file for the OpenJAUS specific C/C++ code base
 #include <torc.h>
 #include <torcInterface.h>
-#include "ford_escape_hybrid.h"
-
-#include <fann.h>
-#include <fann_data.h>
-#include <floatfann.h>
-#include <fann_train.h>
+#include <car_model.h>
 #include <pid.h>
-#include <car_neural_model.h>
 #include <mpc.h>
+#include "ford_escape_hybrid.h"
 
 
 

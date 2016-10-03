@@ -6,12 +6,12 @@ CXXFLAGS += -std=c++0x -O4
 MODULE_NAME = MPC
 MODULE_COMMENT = Model Predictive Controller 
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarneuralmodel
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarmodel
 IFLAGS += -I$(CARMEN_HOME)/include/carmen
 
-LFLAGS +=  -lfann -lgsl -lgslcblas -lcarneuralmodel
+LFLAGS +=  -lfann -lgsl -lgslcblas -lcarmodel
 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcarneuralmodel 
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcarmodel 
 
 SOURCES = mpc.cpp
  

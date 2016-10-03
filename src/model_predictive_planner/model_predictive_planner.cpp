@@ -27,6 +27,71 @@
 using namespace g2o;
 
 
+void
+plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_path_point_t> &pLane,
+		  vector<carmen_ackerman_path_point_t> &pSeed)
+{
+//	plot data Table - Last TCP - Optmizer tcp - Lane
+	//Plot Optmizer step tcp and lane?
+
+	#define DELTA_T (1.0 / 40.0)
+
+//	#define PAST_SIZE 300
+//	static vector<carmen_ackerman_path_point_t> pOTCP_vector;
+//	static vector<carmen_ackerman_path_point_t> pLane_vector;
+//	static vector<carmen_ackerman_path_point_t> pSeed_vector;
+//	static vector<double> timestamp_vector;
+	static bool first_time = true;
+//	static double first_timestamp;
+	static FILE *gnuplot_pipe;
+
+//	double t = carmen_get_time();
+
+	if (first_time)
+	{
+//		first_timestamp = t;
+		first_time = false;
+
+		gnuplot_pipe = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+		fprintf(gnuplot_pipe, "set xrange [0:40]\n");
+		fprintf(gnuplot_pipe, "set yrange [-10:10]\n");
+//		fprintf(gnuplot_pipe, "set y2range [-0.55:0.55]\n");
+		fprintf(gnuplot_pipe, "set xlabel 'senconds'\n");
+		fprintf(gnuplot_pipe, "set ylabel 'effort'\n");
+//		fprintf(gnuplot_pipe, "set y2label 'phi (radians)'\n");
+//		fprintf(gnuplot_pipe, "set ytics nomirror\n");
+//		fprintf(gnuplot_pipe, "set y2tics\n");
+		fprintf(gnuplot_pipe, "set tics out\n");
+	}
+
+
+	FILE *gnuplot_data_file = fopen("gnuplot_data.txt", "w");
+	FILE *gnuplot_data_lane = fopen("gnuplot_data_lane.txt", "w");
+	FILE *gnuplot_data_seed = fopen("gnuplot_data_seed.txt", "w");
+
+	// Dados passados
+	for (unsigned int i = 0; i < pOTCP.size(); i++)
+		fprintf(gnuplot_data_file, "%lf %lf %lf %lf %lf %lf %lf\n", pOTCP.at(i).x, pOTCP.at(i).y, 1.0 * cos(pOTCP.at(i).theta), 1.0 * sin(pOTCP.at(i).theta), pOTCP.at(i).theta, pOTCP.at(i).phi, pOTCP.at(i).time);
+	for (unsigned int i = 0; i < pLane.size(); i++)
+		fprintf(gnuplot_data_lane, "%lf %lf %lf %lf %lf %lf %lf\n", pLane.at(i).x, pLane.at(i).y, 1.0 * cos(pLane.at(i).theta), 1.0 * sin(pLane.at(i).theta), pLane.at(i).theta, pLane.at(i).phi, pLane.at(i).time);
+
+	for (unsigned int i = 0; i < pSeed.size(); i++)
+		fprintf(gnuplot_data_seed, "%lf %lf\n", pSeed.at(i).x, pSeed.at(i).y);
+
+	fclose(gnuplot_data_file);
+	fclose(gnuplot_data_lane);
+	fclose(gnuplot_data_seed);
+
+//	fprintf(gnuplot_pipe, "unset arrow\nset arrow from %lf, %lf to %lf, %lf nohead\n",0, -60.0, 0, 60.0);
+
+	fprintf(gnuplot_pipe, "plot "
+			"'./gnuplot_data.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'OTCP',"
+			"'./gnuplot_data_lane.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane',"
+			"'./gnuplot_data_seed.txt' using 1:2 with lines title 'Seed' axes x1y1\n");
+
+	fflush(gnuplot_pipe);
+}
+
 TrajectoryLookupTable::TrajectoryDimensions
 get_trajectory_dimensions_from_robot_state(Pose *localizer_pose, Command last_odometry,	Pose *goal_pose)
 {
@@ -316,8 +381,7 @@ path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> path)
 				(path[i].phi < -GlobalState::robot_config.max_phi))
 			printf("---------- PHI EXCEEDED THE MAX_PHI!!!!\n");
 
-		proximity_to_obstacles_for_path += compute_distance_to_closest_obstacles(path[i], circle_radius,
-				&GlobalState::robot_config, GlobalState::localizer_pose, GlobalState::distance_map);
+		proximity_to_obstacles_for_path += compute_distance_to_closest_obstacles(path[i], circle_radius);
 	}
 
 	if (proximity_to_obstacles_for_path > 0.0)
@@ -423,13 +487,48 @@ get_tcp_from_td(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
 }
 
 
+void
+limit_maximum_centripetal_acceleration(vector<carmen_ackerman_path_point_t> &path)
+{
+#define MAX_CENTRIPETAL_ACCELERATION 2.0
+
+	double max_centripetal_acceleration = 0.0;
+
+	for (unsigned int i = 0; i < path.size(); i += 1)
+	{
+		if (fabs(path[i].phi) > 0.001)
+		{
+			double radius_of_curvature = GlobalState::robot_config.distance_between_front_and_rear_axles / fabs(tan(path[i].phi));
+			double centripetal_acceleration = (path[i].v * path[i].v) / radius_of_curvature;
+			if (centripetal_acceleration > max_centripetal_acceleration)
+				max_centripetal_acceleration = centripetal_acceleration;
+		}
+	}
+
+//	printf("max_c_a = %lf\n", max_centripetal_acceleration);
+
+	if (max_centripetal_acceleration > MAX_CENTRIPETAL_ACCELERATION)
+	{
+		double reduction_factor = MAX_CENTRIPETAL_ACCELERATION / max_centripetal_acceleration;
+
+		for (unsigned int i = 0; i < path.size(); i += 1)
+		{
+			path[i].v *= reduction_factor;
+			path[i].time *= 1.0 / reduction_factor;
+		}
+	}
+}
+
+
 bool
 get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
+		vector<carmen_ackerman_path_point_t> &path_local,
 		TrajectoryLookupTable::TrajectoryControlParameters otcp,
 		TrajectoryLookupTable::TrajectoryDimensions td,
 		Pose *localizer_pose)
 {
 	path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false, 0.025);
+	path_local = path;
 	if (path_has_loop(td.dist, otcp.sf))
 	{
 		printf(KRED "+++++++++++++ Path has loop...\n" RESET);
@@ -440,6 +539,8 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 		return (false);
 
 	move_path_to_current_robot_pose(path, localizer_pose);
+
+	limit_maximum_centripetal_acceleration(path);
 
 	if (GlobalState::use_mpc)
 		apply_system_latencies(path);
@@ -532,6 +633,39 @@ get_points2(vector<carmen_ackerman_path_point_t> &detailed_goal_list, int &index
             mais_proxima = centro;
     }
 }
+
+
+void
+save_experiment_data(carmen_behavior_selector_road_profile_message *goal_list_message,
+					Pose *localizer_pose, vector<carmen_ackerman_path_point_t> &detailed_lane,
+					const vector<Command> &lastOdometryVector)
+{
+	if (detailed_lane.size() > 0)
+	{
+		carmen_ackerman_path_point_t localize;
+		localize.x = 0.0;
+		localize.y = 0.0;
+		//Metric evaluation
+		int index1;
+		int index2;
+		int mais_proxima;
+		get_points2(detailed_lane,index1, index2,mais_proxima);
+		//      printf("%lf %lf \n", detailed_goal_list.at(index1).x, detailed_goal_list.at(index2).x);
+		double distance_metric = get_distance_between_point_to_line(detailed_lane.at(index1), detailed_lane.at(index2), localize);
+		//      printf("%lf \n", distance_metric);
+		double x_rddf = localizer_pose->x + detailed_lane.at(mais_proxima).x * cos(localizer_pose->theta) - detailed_lane.at(mais_proxima).y * sin(localizer_pose->theta);
+		double y_rddf = localizer_pose->y + detailed_lane.at(mais_proxima).x * sin(localizer_pose->theta) + detailed_lane.at(mais_proxima).y * cos(localizer_pose->theta);
+		double theta_rddf = detailed_lane.at(mais_proxima).theta + localizer_pose->theta;
+		double volante_rddf_theta = atan2(detailed_lane.at(index1).y - detailed_lane.at(index2).y , detailed_lane.at(index1).x - detailed_lane.at(index2).x);
+		double erro_theta = abs(volante_rddf_theta - localizer_pose->theta);
+		//          1-Localise_x 2-Localise_y 3-Localise_theta 4-velocity 5-phi 6-rddf_x 7-rddf_y 8-rddf_theta 9-rddf_velocity 10-rddf_phi 11-lateralDist 12-volante 13-erro_theta 14-Timestamp
+		fprintf(stderr, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf \n", localizer_pose->x, localizer_pose->y, localizer_pose->theta,
+				lastOdometryVector[0].v, lastOdometryVector[0].phi, x_rddf, y_rddf, theta_rddf, detailed_lane.at(mais_proxima).v,
+				detailed_lane.at(mais_proxima).phi, distance_metric, volante_rddf_theta, erro_theta, goal_list_message->timestamp);
+
+	}
+}
+
 //------------------------------------------------------------
 
 
@@ -564,6 +698,13 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	else
 		build_detailed_rddf_lane(&lane_in_local_pose, detailed_lane);
 
+/***************************************
+ * Funcao para extrair dados para artigo
+ *	save_experiment_data(goal_list_message, localizer_pose,
+						 detailed_lane, lastOdometryVector);
+ *	return;
+******************************************/
+
 	otcps.resize(paths.size());
 	bool has_valid_path = false;
 	//	#pragma omp parallel num_threads(5)
@@ -595,12 +736,19 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 			otcp = get_complete_optimized_trajectory_control_parameters(tcp, td, target_v, detailed_lane,
 					use_lane, previous_good_tcp.valid);
 			//otcp = get_optimized_trajectory_control_parameters(tcp, td, target_v, &lane_in_local_pose);
-
 			if (otcp.valid)
 			{
 				vector<carmen_ackerman_path_point_t> path;
-				if (!get_path_from_optimized_tcp(path, otcp, td, localizer_pose))
+				vector<carmen_ackerman_path_point_t> path_local;
+
+				//TODO Descomentar para usar o plot!
+//				vector<carmen_ackerman_path_point_t> pathSeed;
+//				pathSeed = simulate_car_from_parameters(td, tcp, lastOdometryVector[0].v, lastOdometryVector[0].phi, false, 0.025);
+
+				if (!get_path_from_optimized_tcp(path, path_local, otcp, td, localizer_pose))
 					continue;
+//TODO Gnuplot
+//				plot_state(path_local,detailed_lane,pathSeed);
 
 				paths[j + i * lastOdometryVector.size()] = path;
 				otcps[j + i * lastOdometryVector.size()] = otcp;
@@ -642,6 +790,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	}
 	else if ((carmen_get_time() - last_timestamp) > 0.5)
 		previous_good_tcp.valid = false;
+
 }
 
 
