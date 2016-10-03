@@ -388,7 +388,7 @@ my_g(const gsl_vector *x, void *params)
 			(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2));
 
 	double w1, w2, w3, w4, w5;
-	w1 = 5.0; w2 = 15.0; w3 = 15.0; w4 = 1.5; w5 = 10.0;
+	w1 = 10.0; w2 = 15.0; w3 = 15.0; w4 = 1.5; w5 = 10.0;
 
 	double result = sqrt(
 			w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
@@ -632,11 +632,11 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	else
 		gsl_vector_set(x, 3, tcp_seed.a);
 
-	const gsl_multimin_fdfminimizer_type *T = gsl_multimin_fdfminimizer_vector_bfgs2;
+	const gsl_multimin_fdfminimizer_type *T = gsl_multimin_fdfminimizer_conjugate_fr;
 	gsl_multimin_fdfminimizer *s = gsl_multimin_fdfminimizer_alloc(T, 4);
 
 	// int gsl_multimin_fdfminimizer_set (gsl_multimin_fdfminimizer * s, gsl_multimin_function_fdf * fdf, const gsl_vector * x, double step_size, double tol)
-	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.0001, 0.01);
+	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.0001, 0.1);
 
 	size_t iter = 0;
 	int status;
@@ -664,9 +664,9 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 		//	--
 //		params.suitable_acceleration = compute_suitable_acceleration(gsl_vector_get(x, 3), target_td, target_v);
 
-	} while (/*(s->f > MAX_LANE_DIST) &&*/ (status == GSL_CONTINUE) && (iter < 15));
+	} while (/*(s->f > MAX_LANE_DIST) &&*/ (status == GSL_CONTINUE) && (iter < 30));
 
-	// printf("iter = %ld\n", iter);
+//	printf("iter = %ld\n", iter);
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
@@ -709,10 +709,10 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 	else
 		gsl_vector_set(x, 2, tcp_seed.a);
 
-	const gsl_multimin_fdfminimizer_type *T = gsl_multimin_fdfminimizer_vector_bfgs2;
+	const gsl_multimin_fdfminimizer_type *T = gsl_multimin_fdfminimizer_conjugate_fr;
 	gsl_multimin_fdfminimizer *s = gsl_multimin_fdfminimizer_alloc(T, 3);
 
-	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.0001, 0.01);
+	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.0001, 0.1);
 
 	size_t iter = 0;
 	int status;
@@ -726,7 +726,7 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 
 		status = gsl_multimin_test_gradient(s->gradient, 0.16); // esta funcao retorna GSL_CONTINUE ou zero
 
-	} while ((params.plan_cost > 0.005) && (status == GSL_CONTINUE) && (iter < 10));
+	} while ((params.plan_cost > 0.005) && (status == GSL_CONTINUE) && (iter < 30));
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
@@ -752,7 +752,7 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 	//		system("pkill gnuplot");
 	//	}
 
-	// printf("Iteracoes: %lu \n", iter);
+//	printf("Iteracoes: %lu \n", iter);
 	return (tcp);
 }
 

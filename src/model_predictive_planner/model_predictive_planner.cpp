@@ -339,7 +339,7 @@ apply_system_latencies(vector<carmen_ackerman_path_point_t> &path)
 	for (i = 0; i < path.size(); i++)
 	{
 		j = i;
-		for (double lat = 0.0; lat < 0.3; j++)
+		for (double lat = 0.0; lat < 0.6; j++)
 		{
 			if (j >= path.size())
 				break;
