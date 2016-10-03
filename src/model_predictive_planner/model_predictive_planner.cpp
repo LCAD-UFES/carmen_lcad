@@ -339,7 +339,7 @@ apply_system_latencies(vector<carmen_ackerman_path_point_t> &path)
 	for (i = 0; i < path.size(); i++)
 	{
 		j = i;
-		for (double lat = 0.0; lat < 0.6; j++)
+		for (double lat = 0.0; lat < 0.3; j++)
 		{
 			if (j >= path.size())
 				break;
@@ -381,8 +381,7 @@ path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> path)
 				(path[i].phi < -GlobalState::robot_config.max_phi))
 			printf("---------- PHI EXCEEDED THE MAX_PHI!!!!\n");
 
-		proximity_to_obstacles_for_path += compute_distance_to_closest_obstacles(path[i], circle_radius,
-				&GlobalState::robot_config, GlobalState::localizer_pose, GlobalState::distance_map);
+		proximity_to_obstacles_for_path += compute_distance_to_closest_obstacles(path[i], circle_radius);
 	}
 
 	if (proximity_to_obstacles_for_path > 0.0)
@@ -488,6 +487,39 @@ get_tcp_from_td(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
 }
 
 
+void
+limit_maximum_centripetal_acceleration(vector<carmen_ackerman_path_point_t> &path)
+{
+#define MAX_CENTRIPETAL_ACCELERATION 2.0
+
+	double max_centripetal_acceleration = 0.0;
+
+	for (unsigned int i = 0; i < path.size(); i += 1)
+	{
+		if (fabs(path[i].phi) > 0.001)
+		{
+			double radius_of_curvature = GlobalState::robot_config.distance_between_front_and_rear_axles / fabs(tan(path[i].phi));
+			double centripetal_acceleration = (path[i].v * path[i].v) / radius_of_curvature;
+			if (centripetal_acceleration > max_centripetal_acceleration)
+				max_centripetal_acceleration = centripetal_acceleration;
+		}
+	}
+
+	printf("max_c_a = %lf\n", max_centripetal_acceleration);
+
+	if (max_centripetal_acceleration > MAX_CENTRIPETAL_ACCELERATION)
+	{
+		double reduction_factor = MAX_CENTRIPETAL_ACCELERATION / max_centripetal_acceleration;
+
+		for (unsigned int i = 0; i < path.size(); i += 1)
+		{
+			path[i].v *= reduction_factor;
+			path[i].time *= 1.0 / reduction_factor;
+		}
+	}
+}
+
+
 bool
 get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 		vector<carmen_ackerman_path_point_t> &path_local,
@@ -507,6 +539,8 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 		return (false);
 
 	move_path_to_current_robot_pose(path, localizer_pose);
+
+	limit_maximum_centripetal_acceleration(path);
 
 	if (GlobalState::use_mpc)
 		apply_system_latencies(path);
@@ -599,6 +633,7 @@ get_points2(vector<carmen_ackerman_path_point_t> &detailed_goal_list, int &index
             mais_proxima = centro;
     }
 }
+
 
 void
 save_experiment_data(carmen_behavior_selector_road_profile_message *goal_list_message,

@@ -10,7 +10,7 @@
 
 
 #define DELTA_T (1.0 / 40.0)
-#define PREDICTION_HORIZON	(1.3*0.6)
+#define PREDICTION_HORIZON	(1.0*0.6)
 
 using namespace std;
 
@@ -117,7 +117,7 @@ my_f(const gsl_vector *v, void *params)
 		}
 	}
 
-	double cost = error_sum + 0.0001 * sqrt((p->previous_k1 - d.k1) * (p->previous_k1 - d.k1));
+	double cost = error_sum + 0.0005 * sqrt((p->previous_k1 - d.k1) * (p->previous_k1 - d.k1));
 	//printf("%lf  %lf  %lf  %lf\n", cost, p->previous_k1, d.k1, p->previous_k1 - d.k1);
 
 	return (cost);
@@ -416,11 +416,11 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_desired_curvat
 	static PARAMS param;
 	static EFFORT_SPLINE_DESCRIPTOR seed = {0.0, 0.0, 0.0, 0.0};
 	static bool first_time = true;
-	static int count = 0;
-
-	count++;
-	if ((count % (80)) == 0)
-		atan_current_curvature += 0.1;
+//	static int count = 0;
+//
+//	count++;
+//	if ((count % (80)) == 0)
+//		atan_current_curvature += 0.1;
 
 //	apply_system_latencies(current_motion_command_vector, nun_motion_commands);
 

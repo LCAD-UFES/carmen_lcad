@@ -72,24 +72,24 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 	if (tcp.a < -GlobalState::robot_config.maximum_deceleration_forward) // a aceleracao nao pode ser negativa demais
 		tcp.a = -GlobalState::robot_config.maximum_deceleration_forward;
 
-	double max_phi_during_planning = 1.8 * GlobalState::robot_config.max_phi;
-	if (tcp.has_k1)
-	{
-		if (tcp.k1 > max_phi_during_planning)
-			tcp.k1 = max_phi_during_planning;
-		else if (tcp.k1 < -max_phi_during_planning)
-			tcp.k1 = -max_phi_during_planning;
-	}
-
-	if (tcp.k2 > max_phi_during_planning)
-		tcp.k2 = max_phi_during_planning;
-	else if (tcp.k2 < -max_phi_during_planning)
-		tcp.k2 = -max_phi_during_planning;
-
-	if (tcp.k3 > max_phi_during_planning)
-		tcp.k3 = max_phi_during_planning;
-	else if (tcp.k3 < -max_phi_during_planning)
-		tcp.k3 = -max_phi_during_planning;
+//	double max_phi_during_planning = 1.8 * GlobalState::robot_config.max_phi;
+//	if (tcp.has_k1)
+//	{
+//		if (tcp.k1 > max_phi_during_planning)
+//			tcp.k1 = max_phi_during_planning;
+//		else if (tcp.k1 < -max_phi_during_planning)
+//			tcp.k1 = -max_phi_during_planning;
+//	}
+//
+//	if (tcp.k2 > max_phi_during_planning)
+//		tcp.k2 = max_phi_during_planning;
+//	else if (tcp.k2 < -max_phi_during_planning)
+//		tcp.k2 = -max_phi_during_planning;
+//
+//	if (tcp.k3 > max_phi_during_planning)
+//		tcp.k3 = max_phi_during_planning;
+//	else if (tcp.k3 < -max_phi_during_planning)
+//		tcp.k3 = -max_phi_during_planning;
 
 	tcp.valid = true;
 
@@ -108,28 +108,6 @@ move_path_to_current_robot_pose(vector<carmen_ackerman_path_point_t> &path, Pose
 		it->y = y;
 		it->theta = carmen_normalize_theta(it->theta + localizer_pose->theta);
 	}
-}
-
-
-double
-compute_abstacles_cost(vector<carmen_ackerman_path_point_t> path)
-{
-	double max_obstacles_cost = 0.0;
-
-	move_path_to_current_robot_pose(path, GlobalState::localizer_pose);
-	for (unsigned int i = 0; i < path.size(); i++)
-	{
-		carmen_point_t robot_pose = {path[i].x, path[i].y, path[i].theta};
-
-		double current_cost = carmen_obstacle_avoider_get_maximum_occupancy_of_map_cells_hit_by_robot_border(
-				&robot_pose, &GlobalState::cost_map,
-				GlobalState::robot_config.length, GlobalState::robot_config.width,
-				GlobalState::robot_config.distance_between_rear_car_and_rear_wheels);
-		if (current_cost > max_obstacles_cost)
-			max_obstacles_cost = current_cost;
-	}
-
-	return (max_obstacles_cost * 0.08);
 }
 
 
@@ -228,66 +206,52 @@ compute_path_points_nearest_to_lane(ObjectiveFunctionParams *param, vector<carme
 }
 
 
-carmen_ackerman_path_point_t
-move_path_point_to_map_coordinates(const carmen_ackerman_path_point_t& point, double displacement,
-		Pose* global_pos, carmen_obstacle_distance_mapper_message* distance_map)
+inline carmen_ackerman_path_point_t
+move_path_point_to_map_coordinates(const carmen_ackerman_path_point_t point, double displacement)
 {
 	carmen_ackerman_path_point_t path_point_in_map_coords;
-	double x = point.x;
-	double y = point.y;
-	double coss = cos(point.theta);
-	double sine = sin(point.theta);
-	double x_disp = x + displacement * coss;
-	double y_disp = y + displacement * sine;
+	double coss, sine;
 
-	coss = cos(global_pos->theta);
-	sine = sin(global_pos->theta);
-	path_point_in_map_coords.x = (global_pos->x - distance_map->config.x_origin	+ x_disp * coss - y_disp * sine) / distance_map->config.resolution; // no meio do carro
-	path_point_in_map_coords.y = (global_pos->y - distance_map->config.y_origin	+ x_disp * sine + y_disp * coss) / distance_map->config.resolution; // no meio do carro
+	sincos(point.theta, &sine, &coss);
+	double x_disp = point.x + displacement * coss;
+	double y_disp = point.y + displacement * sine;
+
+	sincos(GlobalState::localizer_pose->theta, &sine, &coss);
+	path_point_in_map_coords.x = (GlobalState::localizer_pose->x - GlobalState::distance_map->config.x_origin + x_disp * coss - y_disp * sine) / GlobalState::distance_map->config.resolution;
+	path_point_in_map_coords.y = (GlobalState::localizer_pose->y - GlobalState::distance_map->config.y_origin + x_disp * sine + y_disp * coss) / GlobalState::distance_map->config.resolution;
 
 	return (path_point_in_map_coords);
 }
 
 
 double
-//distance_from_traj_point_to_obstacle(carmen_ackerman_path_point_t point, Pose *global_pos,
-//		double displacement, double min_dist, carmen_mapper_distance_map_message *distance_map, FILE *plot)
-distance_from_traj_point_to_obstacle(carmen_ackerman_path_point_t point, Pose *global_pos,
-		double displacement, double min_dist, carmen_obstacle_distance_mapper_message *distance_map)
+distance_from_traj_point_to_obstacle(carmen_ackerman_path_point_t point, double displacement, double min_dist)
 {
 	// Move path point to map coordinates
-	carmen_ackerman_path_point_t path_point_in_map_coords =	move_path_point_to_map_coordinates(point, displacement, global_pos,	distance_map);
+	carmen_ackerman_path_point_t path_point_in_map_coords =	move_path_point_to_map_coordinates(point, displacement);
 	int x_map_cell = (int) round(path_point_in_map_coords.x);
 	int y_map_cell = (int) round(path_point_in_map_coords.y);
 
 	// Os mapas de carmen sao orientados a colunas, logo a equacao eh como abaixo
-	int index = y_map_cell + distance_map->config.y_size * x_map_cell;
-	if (index < 0 || index >= distance_map->size)
+	int index = y_map_cell + GlobalState::distance_map->config.y_size * x_map_cell;
+	if (index < 0 || index >= GlobalState::distance_map->size)
 		return (min_dist);
 
-	double x1 = (double) distance_map->complete_x_offset[index] + (double) x_map_cell;
-	double y1 = (double) distance_map->complete_y_offset[index] + (double) y_map_cell;
-
-	double x2 = path_point_in_map_coords.x;
-	double y2 = path_point_in_map_coords.y;
-
-	double dx = x1 - x2;
-	double dy = y1 - y2;
+	double dx = (double) GlobalState::distance_map->complete_x_offset[index] + (double) x_map_cell - path_point_in_map_coords.x;
+	double dy = (double) GlobalState::distance_map->complete_y_offset[index] + (double) y_map_cell - path_point_in_map_coords.y;
 
 	double distance_in_map_coordinates = sqrt(dx * dx + dy * dy);
-	double distance = distance_in_map_coordinates * distance_map->config.resolution;
+	double distance = distance_in_map_coordinates * GlobalState::distance_map->config.resolution;
 
 	return (distance);
 }
 
 
 double
-compute_distance_to_closest_obstacles(carmen_ackerman_path_point_t path_pose, double circle_radius,
-		carmen_robot_ackerman_config_t *robot_config, Pose *global_pos,
-		carmen_obstacle_distance_mapper_message *distance_map)
+compute_distance_to_closest_obstacles(carmen_ackerman_path_point_t path_pose, double circle_radius)
 {
 	int number_of_point = 4;
-	double displacement_inc = robot_config->distance_between_front_and_rear_axles / (number_of_point - 2);
+	double displacement_inc = GlobalState::robot_config.distance_between_front_and_rear_axles / (number_of_point - 2);
 	double displacement = 0.0;
 	double proximity_to_obstacles = 0.0;
 
@@ -296,12 +260,12 @@ compute_distance_to_closest_obstacles(carmen_ackerman_path_point_t path_pose, do
 		displacement = displacement_inc * i;
 
 		if (i < 0)
-			displacement = -robot_config->distance_between_rear_car_and_rear_wheels;
+			displacement = -GlobalState::robot_config.distance_between_rear_car_and_rear_wheels;
 
 		if (i == number_of_point - 1)
-			displacement = robot_config->distance_between_front_and_rear_axles + GlobalState::robot_config.distance_between_front_car_and_front_wheels;
+			displacement = GlobalState::robot_config.distance_between_front_and_rear_axles + GlobalState::robot_config.distance_between_front_car_and_front_wheels;
 
-		double distance = distance_from_traj_point_to_obstacle(path_pose, global_pos, displacement, circle_radius, distance_map);
+		double distance = distance_from_traj_point_to_obstacle(path_pose, displacement, circle_radius);
 		double delta = distance - circle_radius;
 		if (delta < 0.0)
 			proximity_to_obstacles += delta * delta;
@@ -318,10 +282,8 @@ compute_proximity_to_obstacles_using_distance_map(vector<carmen_ackerman_path_po
 	double circle_radius = (GlobalState::robot_config.width + 1.6) / 2.0; // metade da largura do carro + um espacco de guarda
 
 	for (unsigned int i = 0; i < path.size(); i += 1)
-	{
-		proximity_to_obstacles_for_path += compute_distance_to_closest_obstacles(path[i], circle_radius,
-				&GlobalState::robot_config, GlobalState::localizer_pose, GlobalState::distance_map);
-	}
+		proximity_to_obstacles_for_path += compute_distance_to_closest_obstacles(path[i], circle_radius);
+
 	return (proximity_to_obstacles_for_path);
 }
 
@@ -764,7 +726,7 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 
 		status = gsl_multimin_test_gradient(s->gradient, 0.16); // esta funcao retorna GSL_CONTINUE ou zero
 
-	} while ((params.plan_cost > 0.005) && (status == GSL_CONTINUE) && (iter < 15));
+	} while ((params.plan_cost > 0.005) && (status == GSL_CONTINUE) && (iter < 10));
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
