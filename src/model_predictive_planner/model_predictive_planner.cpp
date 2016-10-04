@@ -487,9 +487,8 @@ get_tcp_from_td(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
 
 
 void
-limit_maximum_centripetal_acceleration_old(vector<carmen_ackerman_path_point_t> &path)
+limit_maximum_centripetal_acceleration(vector<carmen_ackerman_path_point_t> &path)
 {
-#define MAX_CENTRIPETAL_ACCELERATION 2.0
 
 	double max_centripetal_acceleration = 0.0;
 
@@ -506,9 +505,9 @@ limit_maximum_centripetal_acceleration_old(vector<carmen_ackerman_path_point_t> 
 
 //	printf("max_c_a = %lf\n", max_centripetal_acceleration);
 
-	if (max_centripetal_acceleration > MAX_CENTRIPETAL_ACCELERATION)
+	if (max_centripetal_acceleration > GlobalState::robot_max_centripetal_acceleration)
 	{
-		double reduction_factor = MAX_CENTRIPETAL_ACCELERATION / max_centripetal_acceleration;
+		double reduction_factor = GlobalState::robot_max_centripetal_acceleration / max_centripetal_acceleration;
 
 		for (unsigned int i = 0; i < path.size(); i += 1)
 		{
@@ -520,9 +519,8 @@ limit_maximum_centripetal_acceleration_old(vector<carmen_ackerman_path_point_t> 
 
 
 void
-limit_maximum_centripetal_acceleration(double &target_v, vector<carmen_ackerman_path_point_t> &path)
+limit_maximum_centripetal_acceleration_new(double &target_v, vector<carmen_ackerman_path_point_t> &path)
 {
-#define MAX_CENTRIPETAL_ACCELERATION 2.0
 
 	double max_centripetal_acceleration = 0.0;
 
@@ -536,11 +534,12 @@ limit_maximum_centripetal_acceleration(double &target_v, vector<carmen_ackerman_
 				max_centripetal_acceleration = centripetal_acceleration;
 		}
 	}
-
-	if (max_centripetal_acceleration > MAX_CENTRIPETAL_ACCELERATION)
+	printf("max_c_a = %lf\n", max_centripetal_acceleration);
+	printf("De: %lf\n", target_v);
+	if (max_centripetal_acceleration > GlobalState::robot_max_centripetal_acceleration)
 	{
-		double reduction_factor = MAX_CENTRIPETAL_ACCELERATION / max_centripetal_acceleration;
-		printf("De: %lf\n", target_v);
+		double reduction_factor = GlobalState::robot_max_centripetal_acceleration / max_centripetal_acceleration;
+		printf("De1: %lf\n", target_v);
 		target_v *= reduction_factor;
 		printf("Reduzi para: %lf\n", target_v);
 	}
@@ -567,7 +566,7 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 
 	move_path_to_current_robot_pose(path, localizer_pose);
 
-//	limit_maximum_centripetal_acceleration(path);
+	limit_maximum_centripetal_acceleration(path);
 
 	if (GlobalState::use_mpc)
 		apply_system_latencies(path);
@@ -725,7 +724,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	else
 		build_detailed_rddf_lane(&lane_in_local_pose, detailed_lane);
 
-	limit_maximum_centripetal_acceleration(target_v ,detailed_lane);
+//	limit_maximum_centripetal_acceleration(target_v ,detailed_lane);
 
 /***************************************
  * Funcao para extrair dados para artigo

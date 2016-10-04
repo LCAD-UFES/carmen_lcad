@@ -27,6 +27,8 @@ public:
 	static carmen_robot_ackerman_config_t robot_config;
 	static double param_max_vel;
 
+	static double robot_max_centripetal_acceleration;
+
 	static double max_phi_velocity;		// Equivalente a rodar o volante todo para um lado em 1 segundo.
 										// A velocidade de mudanca de phi nao pode ultrapassar este valor
 	static double time_to_change_gears;
