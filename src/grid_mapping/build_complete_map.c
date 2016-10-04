@@ -145,6 +145,7 @@ main(int argc, char **argv)
 
 		get_map_origin_by_filename(full_path, &x_origin, &y_origin);
 
+
 		if (i == 0)
 		{
 			carmen_map_read_gridmap_chunk(full_path, &block_map);
@@ -205,6 +206,7 @@ main(int argc, char **argv)
 		strcat(full_path, dirp->d_name);
 
 		carmen_map_read_gridmap_chunk(full_path, &block_map);
+//		printf("block map read = %s \n",full_path);
 		get_map_origin_by_filename(full_path, &block_map.config.x_origin, &block_map.config.y_origin);
 		build_complete_map(&block_map, &complete_map);
 		free(block_map.complete_map);
@@ -224,6 +226,9 @@ main(int argc, char **argv)
 	}else if(map_type[0] == 'e'){
 		map_name = "%s/complete_map_mean.map";
 		map_name_info = "%s/complete_map_mean.info";
+	}else if(map_type[0] == 's'){
+		map_name = "%s/complete_map_remission.map";
+		map_name_info = "%s/complete_map_remission.info";
 	}else if(map_type[0] == 'm'){
 		map_name = "%s/complete_map.map";
 		map_name_info = "%s/complete_map.info";
