@@ -25,6 +25,8 @@ bool GlobalState::last_path_received_is_empty = false;
 
 carmen_robot_ackerman_config_t GlobalState::robot_config;
 
+double GlobalState::robot_max_centripetal_acceleration = 0.0;
+
 double GlobalState::param_max_vel = 0.0;
 
 double GlobalState::max_phi_velocity = 1.0 * 0.48;		// Equivalente a rodar o volante todo para um lado (27.7 graus = 0.48 radianos) em 1 segundo.

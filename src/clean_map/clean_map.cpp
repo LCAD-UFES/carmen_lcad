@@ -201,6 +201,11 @@ segment_remission_map(carmen_map_t *remission_map, carmen_map_t *map)
 			occupancy_map_img.at<uchar>(i, j) = aux;
 		}
 	}
+
+//	cv::Mat map_img1 = cv::Mat::zeros(600, 800, CV_8UC1);
+//	map_img1 = map_img;
+//	cv::imshow("map_img1", map_img1);
+
 	std::vector<std::vector<cv::Point> > contours;
 	std::vector<std::vector<cv::Point> > contours2;
 
@@ -208,8 +213,16 @@ segment_remission_map(carmen_map_t *remission_map, carmen_map_t *map)
 
 	cv::threshold(map_img, map_img, 235/*isto pode ser calibrado*/, 255, cv::THRESH_BINARY);
 
+//	cv::Mat map_img2 = cv::Mat::zeros(600, 800, CV_8UC1);
+//	map_img2 = map_img;
+//	cv::imshow("map_img2", map_img2);
+
 	cv::erode(map_img, map_img, element);
 
+//	cv::Mat map_img3 = cv::Mat::zeros(600, 800, CV_8UC1);
+//	map_img3 = map_img;
+//	cv::imshow("map_img3", map_img3);
+//	cv::waitKey(0);
 
 	findContours(map_img.clone(), contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE, cv::Point(0, 0));
 

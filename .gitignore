@@ -152,6 +152,8 @@ bin/visual_graphslam_publish
 bin/visual_multimap_matching
 bin/visual_multimap_optimization
 bin/visual_run_icp_for_loop_closure
+bin/build_road_map
+bin/clean_map
 src/clean_map/clean_map
 src/visual_graphslam/bin/visual_grab_data
 src/visual_graphslam/bin/visual_graphslam
@@ -238,6 +240,7 @@ src/grid_mapping/grid_mapping
 src/grid_mapping/grid_mapping_test
 src/grid_mapping/grid_mapping_view
 src/grid_mapping/build_average_map
+src/grid_mapping/build_road_map
 src/ipc/central
 src/ipc/ipc-die-test
 src/ipc/ipc-endian-test

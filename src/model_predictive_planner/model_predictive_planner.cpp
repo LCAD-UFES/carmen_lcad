@@ -27,6 +27,94 @@
 using namespace g2o;
 
 
+//-----------Funcoes para extrair dados do Experimento------------------------
+double
+dist(carmen_ackerman_path_point_t v, carmen_ackerman_path_point_t w)
+{
+    return sqrt((carmen_square(v.x - w.x) + carmen_square(v.y - w.y)));
+}
+
+
+double
+get_distance_between_point_to_line(carmen_ackerman_path_point_t p1,
+        carmen_ackerman_path_point_t p2,
+        carmen_ackerman_path_point_t robot)
+{
+    //https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+    double delta_x = p2.x - p1.x;
+    double delta_y = p2.y - p1.y;
+    double d = sqrt(delta_x * delta_x + delta_y * delta_y);
+    double x2y1 =  p2.x * p1.y;
+    double y2x1 =  p2.y * p1.x;
+
+    if (d < 0.0000001)
+        return dist(p2, robot);
+
+    return abs((delta_y * 0.0) - (delta_x * 0.0) + x2y1 - y2x1) / d;
+
+}
+
+
+void
+get_points2(vector<carmen_ackerman_path_point_t> &detailed_goal_list, int &index_p1, int &index_p2, int &mais_proxima)
+{
+
+    double d = sqrt(pow(detailed_goal_list.at(0).x, 2) + pow(detailed_goal_list.at(0).y, 2));
+    double d2 = sqrt(pow(detailed_goal_list.at(2).x, 2) + pow(detailed_goal_list.at(2).y, 2));
+    double centro = sqrt(pow(detailed_goal_list.at(1).x, 2) + pow(detailed_goal_list.at(1).y, 2));
+    if (d < d2)
+    {
+        index_p1 = 0;
+        index_p2 = 1;
+        mais_proxima = d;
+        if(centro < d)
+            mais_proxima = centro;
+    }
+    else
+    {
+        index_p1 = 1;
+        index_p2 = 2;
+        mais_proxima = d2;
+        if(centro < d2)
+            mais_proxima = centro;
+    }
+}
+
+
+void
+save_experiment_data(carmen_behavior_selector_road_profile_message *goal_list_message,
+					Pose *localizer_pose, vector<carmen_ackerman_path_point_t> &detailed_lane,
+					const vector<Command> &lastOdometryVector)
+{
+	if (detailed_lane.size() > 0)
+	{
+		carmen_ackerman_path_point_t localize;
+		localize.x = 0.0;
+		localize.y = 0.0;
+		//Metric evaluation
+		int index1;
+		int index2;
+		int mais_proxima;
+		get_points2(detailed_lane,index1, index2,mais_proxima);
+		//      printf("%lf %lf \n", detailed_goal_list.at(index1).x, detailed_goal_list.at(index2).x);
+		double distance_metric = get_distance_between_point_to_line(detailed_lane.at(index1), detailed_lane.at(index2), localize);
+		//      printf("%lf \n", distance_metric);
+		double x_rddf = localizer_pose->x + detailed_lane.at(mais_proxima).x * cos(localizer_pose->theta) - detailed_lane.at(mais_proxima).y * sin(localizer_pose->theta);
+		double y_rddf = localizer_pose->y + detailed_lane.at(mais_proxima).x * sin(localizer_pose->theta) + detailed_lane.at(mais_proxima).y * cos(localizer_pose->theta);
+		double theta_rddf = detailed_lane.at(mais_proxima).theta + localizer_pose->theta;
+		double volante_rddf_theta = atan2(detailed_lane.at(index1).y - detailed_lane.at(index2).y , detailed_lane.at(index1).x - detailed_lane.at(index2).x);
+		double erro_theta = abs(volante_rddf_theta - localizer_pose->theta);
+		//          1-Localise_x 2-Localise_y 3-Localise_theta 4-velocity 5-phi 6-rddf_x 7-rddf_y 8-rddf_theta 9-rddf_velocity 10-rddf_phi 11-lateralDist 12-volante 13-erro_theta 14-Timestamp
+		fprintf(stderr, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf \n", localizer_pose->x, localizer_pose->y, localizer_pose->theta,
+				lastOdometryVector[0].v, lastOdometryVector[0].phi, x_rddf, y_rddf, theta_rddf, detailed_lane.at(mais_proxima).v,
+				detailed_lane.at(mais_proxima).phi, distance_metric, volante_rddf_theta, erro_theta, goal_list_message->timestamp);
+
+	}
+}
+
+//------------------------------------------------------------
+
+
 void
 plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_path_point_t> &pLane,
 		  vector<carmen_ackerman_path_point_t> &pSeed)
@@ -69,7 +157,6 @@ plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_p
 	FILE *gnuplot_data_lane = fopen("gnuplot_data_lane.txt", "w");
 	FILE *gnuplot_data_seed = fopen("gnuplot_data_seed.txt", "w");
 
-	// Dados passados
 	for (unsigned int i = 0; i < pOTCP.size(); i++)
 		fprintf(gnuplot_data_file, "%lf %lf %lf %lf %lf %lf %lf\n", pOTCP.at(i).x, pOTCP.at(i).y, 1.0 * cos(pOTCP.at(i).theta), 1.0 * sin(pOTCP.at(i).theta), pOTCP.at(i).theta, pOTCP.at(i).phi, pOTCP.at(i).time);
 	for (unsigned int i = 0; i < pLane.size(); i++)
@@ -488,9 +575,8 @@ get_tcp_from_td(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
 
 
 void
-limit_maximum_centripetal_acceleration(vector<carmen_ackerman_path_point_t> &path)
+limit_maximum_centripetal_acceleration_old(vector<carmen_ackerman_path_point_t> &path)
 {
-#define MAX_CENTRIPETAL_ACCELERATION 2.0
 
 	double max_centripetal_acceleration = 0.0;
 
@@ -507,15 +593,44 @@ limit_maximum_centripetal_acceleration(vector<carmen_ackerman_path_point_t> &pat
 
 //	printf("max_c_a = %lf\n", max_centripetal_acceleration);
 
-	if (max_centripetal_acceleration > MAX_CENTRIPETAL_ACCELERATION)
+	if (max_centripetal_acceleration > GlobalState::robot_max_centripetal_acceleration)
 	{
-		double reduction_factor = MAX_CENTRIPETAL_ACCELERATION / max_centripetal_acceleration;
+		double reduction_factor = GlobalState::robot_max_centripetal_acceleration / max_centripetal_acceleration;
 
 		for (unsigned int i = 0; i < path.size(); i += 1)
 		{
 			path[i].v *= reduction_factor;
 			path[i].time *= 1.0 / reduction_factor;
 		}
+	}
+}
+
+
+void
+limit_maximum_centripetal_acceleration(double &target_v, vector<carmen_ackerman_path_point_t> &path)
+{
+	double max_centripetal_acceleration = 0.0;
+
+	for (unsigned int i = 0; (i < path.size() - 1) && (path.size() != 0); i += 1)
+	{
+		double L = GlobalState::robot_config.distance_between_front_and_rear_axles;
+		double delta_theta = fabs(path[i + 1].theta - path[i].theta);
+		double l = dist(path[i], path[i + 1]);
+		path[i].phi = L * atan(delta_theta / l);
+
+		if (fabs(path[i].phi) > 0.001)
+		{
+			double radius_of_curvature = L / fabs(tan(path[i].phi));
+			double centripetal_acceleration = (path[i].v * path[i].v) / radius_of_curvature;
+			if (centripetal_acceleration > max_centripetal_acceleration)
+				max_centripetal_acceleration = centripetal_acceleration;
+		}
+	}
+
+	if (max_centripetal_acceleration > GlobalState::robot_max_centripetal_acceleration)
+	{
+		double reduction_factor = GlobalState::robot_max_centripetal_acceleration / max_centripetal_acceleration;
+		target_v *= reduction_factor;
 	}
 }
 
@@ -540,7 +655,7 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 
 	move_path_to_current_robot_pose(path, localizer_pose);
 
-	limit_maximum_centripetal_acceleration(path);
+//	limit_maximum_centripetal_acceleration_old(path);
 
 	if (GlobalState::use_mpc)
 		apply_system_latencies(path);
@@ -581,94 +696,6 @@ goal_pose_vector_too_different(Pose goal_pose, Pose localizer_pose)
 }
 
 
-//-----------Funcoes para extrair dados do Experimento------------------------
-double
-dist(carmen_ackerman_path_point_t v, carmen_ackerman_path_point_t w)
-{
-    return sqrt((carmen_square(v.x - w.x) + carmen_square(v.y - w.y)));
-}
-
-
-double
-get_distance_between_point_to_line(carmen_ackerman_path_point_t p1,
-        carmen_ackerman_path_point_t p2,
-        carmen_ackerman_path_point_t robot)
-{
-    //https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
-    double delta_x = p2.x - p1.x;
-    double delta_y = p2.y - p1.y;
-    double d = sqrt(delta_x * delta_x + delta_y * delta_y);
-    double x2y1 =  p2.x * p1.y;
-    double y2x1 =  p2.y * p1.x;
-
-    if (d < 0.0000001)
-        return dist(p2, robot);
-
-    return abs((delta_y * 0.0) - (delta_x * 0.0) + x2y1 - y2x1) / d;
-
-}
-
-
-void
-get_points2(vector<carmen_ackerman_path_point_t> &detailed_goal_list, int &index_p1, int &index_p2, int &mais_proxima)
-{
-
-    double d = sqrt(pow(detailed_goal_list.at(0).x, 2) + pow(detailed_goal_list.at(0).y, 2));
-    double d2 = sqrt(pow(detailed_goal_list.at(2).x, 2) + pow(detailed_goal_list.at(2).y, 2));
-    double centro = sqrt(pow(detailed_goal_list.at(1).x, 2) + pow(detailed_goal_list.at(1).y, 2));
-    if (d < d2)
-    {
-        index_p1 = 0;
-        index_p2 = 1;
-        mais_proxima = d;
-        if(centro < d)
-            mais_proxima = centro;
-    }
-    else
-    {
-        index_p1 = 1;
-        index_p2 = 2;
-        mais_proxima = d2;
-        if(centro < d2)
-            mais_proxima = centro;
-    }
-}
-
-
-void
-save_experiment_data(carmen_behavior_selector_road_profile_message *goal_list_message,
-					Pose *localizer_pose, vector<carmen_ackerman_path_point_t> &detailed_lane,
-					const vector<Command> &lastOdometryVector)
-{
-	if (detailed_lane.size() > 0)
-	{
-		carmen_ackerman_path_point_t localize;
-		localize.x = 0.0;
-		localize.y = 0.0;
-		//Metric evaluation
-		int index1;
-		int index2;
-		int mais_proxima;
-		get_points2(detailed_lane,index1, index2,mais_proxima);
-		//      printf("%lf %lf \n", detailed_goal_list.at(index1).x, detailed_goal_list.at(index2).x);
-		double distance_metric = get_distance_between_point_to_line(detailed_lane.at(index1), detailed_lane.at(index2), localize);
-		//      printf("%lf \n", distance_metric);
-		double x_rddf = localizer_pose->x + detailed_lane.at(mais_proxima).x * cos(localizer_pose->theta) - detailed_lane.at(mais_proxima).y * sin(localizer_pose->theta);
-		double y_rddf = localizer_pose->y + detailed_lane.at(mais_proxima).x * sin(localizer_pose->theta) + detailed_lane.at(mais_proxima).y * cos(localizer_pose->theta);
-		double theta_rddf = detailed_lane.at(mais_proxima).theta + localizer_pose->theta;
-		double volante_rddf_theta = atan2(detailed_lane.at(index1).y - detailed_lane.at(index2).y , detailed_lane.at(index1).x - detailed_lane.at(index2).x);
-		double erro_theta = abs(volante_rddf_theta - localizer_pose->theta);
-		//          1-Localise_x 2-Localise_y 3-Localise_theta 4-velocity 5-phi 6-rddf_x 7-rddf_y 8-rddf_theta 9-rddf_velocity 10-rddf_phi 11-lateralDist 12-volante 13-erro_theta 14-Timestamp
-		fprintf(stderr, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf \n", localizer_pose->x, localizer_pose->y, localizer_pose->theta,
-				lastOdometryVector[0].v, lastOdometryVector[0].phi, x_rddf, y_rddf, theta_rddf, detailed_lane.at(mais_proxima).v,
-				detailed_lane.at(mais_proxima).phi, distance_metric, volante_rddf_theta, erro_theta, goal_list_message->timestamp);
-
-	}
-}
-
-//------------------------------------------------------------
-
-
 void
 compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseVector, double target_v,
 		Pose *localizer_pose, vector<vector<carmen_ackerman_path_point_t> > &paths,
@@ -697,6 +724,8 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		build_detailed_path_lane(&lane_in_local_pose, detailed_lane);
 	else
 		build_detailed_rddf_lane(&lane_in_local_pose, detailed_lane);
+
+	limit_maximum_centripetal_acceleration(target_v, detailed_lane);
 
 /***************************************
  * Funcao para extrair dados para artigo
