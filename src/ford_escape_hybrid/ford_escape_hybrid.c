@@ -304,6 +304,43 @@ publish_ford_escape_gear_command(OjCmpt XGV_CCU)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+int
+apply_system_latencies(carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands)
+{
+	int i, j;
+
+	for (i = 0; i < nun_motion_commands; i++)
+	{
+		j = i;
+		for (double lat = 0.0; lat < 0.3; j++)
+		{
+			if (j >= nun_motion_commands)
+				break;
+			lat += current_motion_command_vector[j].time;
+		}
+		if (j >= nun_motion_commands)
+			break;
+		current_motion_command_vector[i].phi = current_motion_command_vector[j].phi;
+	}
+
+	for (i = 0; i < nun_motion_commands; i++)
+	{
+		j = i;
+		for (double lat = 0.0; lat < 0.6; j++)
+		{
+			if (j >= nun_motion_commands)
+				break;
+			lat += current_motion_command_vector[j].time;
+		}
+		if (j >= nun_motion_commands)
+			break;
+		current_motion_command_vector[i].v = current_motion_command_vector[j].v;
+	}
+
+	return (i);
+}
+
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                              //
@@ -329,6 +366,9 @@ base_ackerman_motion_command_message_handler(carmen_base_ackerman_motion_command
 	ford_escape_hybrid_config->current_motion_command_vector = motion_commands_vector[current_motion_command_vetor];
 	ford_escape_hybrid_config->nun_motion_commands = nun_motion_commands[current_motion_command_vetor];
 	ford_escape_hybrid_config->time_of_last_command = motion_command_message->timestamp;
+
+	if (ford_escape_hybrid_config->use_mpc)
+		ford_escape_hybrid_config->nun_motion_commands = apply_system_latencies(ford_escape_hybrid_config->current_motion_command_vector, ford_escape_hybrid_config->nun_motion_commands);
 }
 
 
@@ -438,6 +478,7 @@ torc_report_curvature_message_handler_old(OjCmpt XGV_CCU __attribute__ ((unused)
 	if (reportCurvature)
 	{
 		g_XGV_atan_curvature = reportCurvature->atanOfCurrentCurvature; // @@@ Alberto: a curvatura do carro vem ao contrario de carmen
+		//g_XGV_atan_curvature += get_curvature_from_phi(carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.05)), ford_escape_hybrid_config);
 
 		ford_escape_hybrid_config->XGV_v_and_phi_timestamp = carmen_get_time();
 

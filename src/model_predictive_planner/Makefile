@@ -14,7 +14,12 @@ CXXFLAGS += -std=c++0x -ffast-math -O3 -march=native -msse3
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarmodel
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/pid
+
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcarmodel
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/pid
 
 #G2O
 IFLAGS += -I/usr/include/eigen3 
@@ -27,7 +32,7 @@ LFLAGS += 	-lgrid_mapping -lmap_io -lmap_util -lmap_interface -lparam_interface 
 		-lmap_server_interface -lbehavior_selector_interface  -lrotation_geometry \
 		-L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper \
 		-lrddf_interface -lmotion_planner_interface -lnavigator_gui_interface -llocalize_ackerman_core \
-		-lcollision_detection -lgsl -lgslcblas -lm -lford_escape_hybrid_interface
+		-lcollision_detection -lgsl -lgslcblas -lm -lford_escape_hybrid_interface -lpid -lcarmodel
 			
 			
 SOURCES = model_predictive_planner_main.cpp model_predictive_planner.cpp trajectory_lookup_table.cpp \
@@ -36,15 +41,33 @@ SOURCES = model_predictive_planner_main.cpp model_predictive_planner.cpp traject
 PUBLIC_BINARIES = model_predictive_planner
 PUBLIC_LIBRARIES = 
 
-TARGETS = model_predictive_planner
+TARGETS = libpid libcarmodel model_predictive_planner
+
+libpid:
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcontrol/pid/
+clean: clean_libpid
+clean_libpid:
+	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcontrol/pid/
+	
+libcarmodel:
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcarmodel
+clean: clean_libcarmodel
+clean_libcarmodel:
+	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcarmodel
 
 model_predictive_planner: model_predictive_planner_main.o model_predictive_planner.o trajectory_lookup_table.o \
 	model_predictive_planner_optimizer.o global_state.o publisher_util.o util.o pose.o command.o
+
 trajectory_lookup_table: trajectory_lookup_table.o
+
 global_state: global_state.o
+
 publisher_util: publisher_util.o
+
 util: util.o
+
 pose: pose.o
+
 command: command.o
 
 include ../Makefile.rules

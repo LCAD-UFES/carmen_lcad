@@ -1,6 +1,6 @@
 include ../Makefile.conf
 
-CFLAGS += -DOLD_MOTION_MODEL 
+CFLAGS += -DOLD_MOTION_MODEL -std=c99
 
 IFLAGS += -I../obstacle_avoider
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/rlpid
