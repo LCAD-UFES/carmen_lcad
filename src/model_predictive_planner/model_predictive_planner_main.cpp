@@ -17,7 +17,6 @@
 #include <carmen/grid_mapping.h>
 #include <prob_map.h>
 
-#include "model/robot_config.h"
 #include "model/global_state.h"
 #include "model/rrt_node.h"
 #include "model/pose.h"

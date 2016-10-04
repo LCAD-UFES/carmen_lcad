@@ -13,10 +13,8 @@ using namespace std;
 #include <list>
 #include "rrt_planner_message.h"
 #include "model/tree.h"
-//#include "../rrt.h"
-//#include "util.h"
-#include "model/cost_map.h"
 #include "model/rrt_node.h"
+
 
 class Publisher_Util
 {
@@ -31,7 +29,6 @@ public:
 
 	static void publish_plan_message(carmen_navigator_ackerman_plan_message msg);
 
-	static void publish_utility_map(Gradient_Cost_Map u);
 	static void publish_obstacle_cost_map(carmen_map_t c);
 };
 

@@ -10,10 +10,9 @@
 
 #include <carmen/carmen.h>
 #include "model/rrt_node.h"
-#include "model/robot_config.h"
 #include "model/command.h"
 #include "model/pose.h"
-#include "model/cost_map.h"
+
 
 class Util
 {

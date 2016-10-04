@@ -1,5 +1,0 @@
-plot 'phi_plot.txt' using 1:2 with lines
-pause 2
-replot
-reread
-

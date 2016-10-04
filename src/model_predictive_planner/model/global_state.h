@@ -9,10 +9,7 @@
 #define GLOBAL_STATE_H_
 
 #include "../model/pose.h"
-#include "../model/robot_config.h"
-#include "../model/cost_map.h"
 #include "../model/command.h"
-#include "../model/robot_state.h"
 #include <carmen/carmen.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
 #include <carmen/behavior_selector_messages.h>
@@ -38,8 +35,6 @@ public:
 	static double localizer_pose_timestamp;
 
 	static Command last_odometry;
-
-	static Robot_State initial_robot_state; // initial state used to recontruct the tree or to follow the path
 
 	static Pose *goal_pose;
 	static bool last_goal;
@@ -77,9 +72,6 @@ public:
 	static void set_goal_pose(Pose goal_pose);
 
 	static void set_robot_pose(Pose robot_pose, double timestamp);
-
-	static Robot_State estimate_initial_robot_state();
-	static Robot_State predict_initial_robot_state(carmen_point_t point, double pose_timestamp);
 
 	static void set_offline_map(carmen_map_t *new_map);
 
