@@ -12,7 +12,7 @@
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
 #include <gsl/gsl_multimin.h>
-
+#include <car_model.h>
 #include "trajectory_lookup_table.h"
 #include "model_predictive_planner_optimizer.h"
 
@@ -560,86 +560,24 @@ generate_random_trajectory_control_parameters_sample(int i_v, int dist)
 }
 
 
-double
-predict_next_pose_step(Robot_State *new_robot_state, Command *requested_command, double delta_t,
-		double &achieved_curvature, const double &desired_curvature, double &max_curvature_change)
+carmen_ackerman_path_point_t
+convert_to_carmen_ackerman_path_point_t(const carmen_ackerman_traj_point_t robot_state, const double time)
 {
-	Robot_State initial_robot_state = *new_robot_state;
+	carmen_ackerman_path_point_t path_point;
 
-	double delta_curvature = fabs(achieved_curvature - desired_curvature);
-	double command_curvature_signal = (achieved_curvature < desired_curvature) ? 1.0 : -1.0;
+	path_point.x = robot_state.x;
+	path_point.y = robot_state.y;
+	path_point.theta = robot_state.theta;
+	path_point.v = robot_state.v;
+	path_point.phi = robot_state.phi;
+	path_point.time = time;
 
-	achieved_curvature = achieved_curvature + command_curvature_signal * fmin(delta_curvature, max_curvature_change);
-	new_robot_state->v_and_phi.phi = carmen_get_phi_from_curvature(
-			achieved_curvature, initial_robot_state.v_and_phi.v,
-			GlobalState::robot_config.understeer_coeficient,
-			GlobalState::robot_config.distance_between_front_and_rear_axles);
-	new_robot_state->v_and_phi.phi = carmen_clamp(-GlobalState::robot_config.max_phi, new_robot_state->v_and_phi.phi, GlobalState::robot_config.max_phi);
-
-	// Tem que checar se as equacoes que governam esta mudancca de v estao corretas (precisa de um Euler?) e fazer o mesmo no caso do rrt_path_follower.
-	double delta_v = fabs(initial_robot_state.v_and_phi.v - requested_command->v);
-	double command_v_signal = (initial_robot_state.v_and_phi.v <= requested_command->v) ? 1.0 : -1.0;
-	new_robot_state->v_and_phi.v = initial_robot_state.v_and_phi.v + command_v_signal * delta_v;
-
-	double move_x = new_robot_state->v_and_phi.v * delta_t * cos(initial_robot_state.pose.theta);
-	double move_y = new_robot_state->v_and_phi.v * delta_t * sin(initial_robot_state.pose.theta);
-
-	new_robot_state->pose.x	   += move_x;
-	new_robot_state->pose.y	   += move_y;
-	new_robot_state->pose.theta += new_robot_state->v_and_phi.v * delta_t * tan(new_robot_state->v_and_phi.phi) / GlobalState::robot_config.distance_between_front_and_rear_axles;
-
-	return sqrt(move_x * move_x + move_y * move_y);
-}
-
-
-Robot_State
-TrajectoryLookupTable::predict_next_pose(Robot_State &robot_state, Command &requested_command,
-		double full_time_interval, double *distance_traveled, double delta_t)
-{
-	int n = floor(full_time_interval / delta_t);
-	double remaining_time = full_time_interval - ((double) n * delta_t);
-	Robot_State achieved_robot_state = robot_state; // achieved_robot_state eh computado iterativamente abaixo a partir do estado atual do robo
-
-	double curvature = carmen_get_curvature_from_phi(
-			requested_command.phi, requested_command.v,
-			GlobalState::robot_config.understeer_coeficient,
-			GlobalState::robot_config.distance_between_front_and_rear_axles);
-
-	double new_curvature = carmen_get_curvature_from_phi(
-			achieved_robot_state.v_and_phi.phi, achieved_robot_state.v_and_phi.v,
-			GlobalState::robot_config.understeer_coeficient,
-			GlobalState::robot_config.distance_between_front_and_rear_axles);
-
-	double max_curvature_change = GlobalState::robot_config.maximum_steering_command_rate * delta_t;
-
-	// Euler method
-	for (int i = 0; i < n; i++)
-	{
-		double dist_walked = predict_next_pose_step(&achieved_robot_state, &requested_command, delta_t,
-				new_curvature, curvature, max_curvature_change);
-
-		if (distance_traveled)
-			*distance_traveled += dist_walked;
-	}
-
-	if (remaining_time > 0.0)
-	{
-		double dist_walked = predict_next_pose_step(&achieved_robot_state, &requested_command, delta_t,
-				new_curvature, curvature, max_curvature_change);
-
-		if (distance_traveled)
-			*distance_traveled += dist_walked;
-	}
-
-	achieved_robot_state.pose.theta = carmen_normalize_theta(achieved_robot_state.pose.theta);
-	robot_state = achieved_robot_state;
-
-	return (achieved_robot_state);
+	return (path_point);
 }
 
 
 double
-compute_path_via_simulation(Robot_State &robot_state, Command &command,
+compute_path_via_simulation(carmen_ackerman_traj_point_t &robot_state, Command &command,
 		vector<carmen_ackerman_path_point_t> &path,
 		TrajectoryLookupTable::TrajectoryControlParameters tcp,
 		gsl_spline *phi_spline, gsl_interp_accel *acc, double v0, double i_phi, double delta_t)
@@ -650,36 +588,38 @@ compute_path_via_simulation(Robot_State &robot_state, Command &command,
 	//double delta_t = 0.075;
 	int reduction_factor = 1 + (int)((tcp.tt / delta_t) / 90.0);
 
-	robot_state.pose.x = 0.0;
-	robot_state.pose.y = 0.0;
-	robot_state.pose.theta = 0.0;
-	robot_state.v_and_phi.v = v0;
-	robot_state.v_and_phi.phi = i_phi;
+	robot_state.x = 0.0;
+	robot_state.y = 0.0;
+	robot_state.theta = 0.0;
+	robot_state.v = v0;
+	robot_state.phi = i_phi;
 	command.v = v0;
 	command.phi = gsl_spline_eval(phi_spline, 0.0, acc);
-	robot_state.v_and_phi = command;
-	Robot_State last_robot_state = robot_state;
+	robot_state.v = command.v;
+	robot_state.phi = command.phi;
+	carmen_ackerman_traj_point_t last_robot_state = robot_state;
 	for (last_t = t = 0.0; t < tcp.tt; t += delta_t)
 	{
 		command.phi = gsl_spline_eval(phi_spline, t, acc);
 		command.v += tcp.a * delta_t;
 
-		TrajectoryLookupTable::predict_next_pose(robot_state, command, delta_t,	&distance_traveled, delta_t);
+		robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, delta_t, &distance_traveled, delta_t, GlobalState::robot_config);
 		if ((i % reduction_factor) == 0)
 		{
-			path.push_back(Util::convert_to_carmen_ackerman_path_point_t(last_robot_state, t + delta_t - last_t));
+			path.push_back(convert_to_carmen_ackerman_path_point_t(last_robot_state, t + delta_t - last_t));
 			last_robot_state = robot_state;
 			last_t = t + delta_t;
 		}
 		i++;
 	}
+
 	if ((t - tcp.tt) != delta_t)
 	{
 		delta_t = delta_t - (t - tcp.tt);
 		command.phi = gsl_spline_eval(phi_spline, tcp.tt, acc);
 		command.v += tcp.a * delta_t;
-		TrajectoryLookupTable::predict_next_pose(robot_state, command, delta_t, &distance_traveled, delta_t);
-		path.push_back(Util::convert_to_carmen_ackerman_path_point_t(last_robot_state, tcp.tt - last_t));
+		robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, delta_t, &distance_traveled, delta_t, GlobalState::robot_config);
+		path.push_back(convert_to_carmen_ackerman_path_point_t(last_robot_state, tcp.tt - last_t));
 	}
 
 	return (distance_traveled);
@@ -760,15 +700,15 @@ simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 	print_phi_profile_temp(phi_spline, acc, tcp.tt, display_phi_profile);
 
 	Command command;
-	Robot_State robot_state;
+	carmen_ackerman_traj_point_t robot_state;
 
 	double distance_traveled = compute_path_via_simulation(robot_state, command, path, tcp, phi_spline, acc, v0, i_phi, delta_t);
 
 	gsl_spline_free(phi_spline);
 	gsl_interp_accel_free(acc);
-	td.dist = sqrt(robot_state.pose.x * robot_state.pose.x + robot_state.pose.y * robot_state.pose.y);
-	td.theta = atan2(robot_state.pose.y, robot_state.pose.x);
-	td.d_yaw = robot_state.pose.theta;
+	td.dist = sqrt(robot_state.x * robot_state.x + robot_state.y * robot_state.y);
+	td.theta = atan2(robot_state.y, robot_state.x);
+	td.d_yaw = robot_state.theta;
 	td.phi_i = i_phi;
 	td.v_i = v0;
 	tcp.vf = command.v;

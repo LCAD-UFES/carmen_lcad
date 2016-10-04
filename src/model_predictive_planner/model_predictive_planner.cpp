@@ -657,9 +657,11 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 
 //	limit_maximum_centripetal_acceleration_old(path);
 
-	if (GlobalState::use_mpc)
-		apply_system_latencies(path);
-	else
+//	if (GlobalState::use_mpc)
+//		apply_system_latencies(path);
+//	else
+//		filter_path(path);
+	if (!GlobalState::use_mpc)
 		filter_path(path);
 
 	return (true);

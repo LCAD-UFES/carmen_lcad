@@ -1,6 +1,8 @@
 #include <carmen/carmen.h>
 
+
 carmen_base_ackerman_odometry_message odometry;
+
 
 int
 main(int argc, char **argv)

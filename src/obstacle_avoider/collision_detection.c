@@ -365,26 +365,3 @@ pose_hit_obstacle_ultrasonic(carmen_point_t pose, carmen_map_t *map, carmen_robo
 
 	return 0;
 }
-
-
-carmen_ackerman_traj_point_t
-predict_new_robot_position(carmen_ackerman_traj_point_t current_robot_position, double v, double phi, double time, carmen_robot_ackerman_config_t *car_config)
-{
-	carmen_ackerman_traj_point_t new_robot_position;
-	int i;
-	double delta_time;
-
-	new_robot_position = current_robot_position;
-	delta_time = time / 1.0;
-	for (i = 0; i < 1; i++)
-	{
-		new_robot_position.x = new_robot_position.x + v * cos(new_robot_position.theta) * delta_time;
-		new_robot_position.y = new_robot_position.y + v * sin(new_robot_position.theta) * delta_time;
-		new_robot_position.theta = new_robot_position.theta + (v * tan(phi) / car_config->distance_between_front_and_rear_axles) * delta_time;
-	}
-
-	new_robot_position.v = v;
-	new_robot_position.phi = phi;
-	
-	return (new_robot_position);
-}
