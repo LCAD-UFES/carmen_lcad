@@ -91,7 +91,7 @@ build_predicted_trajectory(carmen_ackerman_motion_command_p motion_commands_vect
 
 carmen_navigator_ackerman_plan_message
 build_navigator_ackerman_plan_message(carmen_ackerman_motion_command_p motion_commands_vector, int num_motion_commands,
-			carmen_robot_ackerman_config_t *carmen_robot_ackerman_config)
+			carmen_robot_ackerman_config_t *carmen_robot_ackerman_config, double timestamp)
 {
 	int i, trajectory_vector_of_points_size;
 	carmen_navigator_ackerman_plan_message predicted_trajectory_message;
@@ -110,7 +110,7 @@ build_navigator_ackerman_plan_message(carmen_ackerman_motion_command_p motion_co
 		predicted_trajectory_message.path[i].phi 	= trajectory_vector_of_points[i].phi;
 	}
 
-	predicted_trajectory_message.timestamp = carmen_get_time();
+	predicted_trajectory_message.timestamp = timestamp;
 	predicted_trajectory_message.host = carmen_get_host();
 
 	return predicted_trajectory_message;

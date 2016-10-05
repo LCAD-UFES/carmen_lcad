@@ -3,7 +3,8 @@
 
 
 void 
-carmen_obstacle_avoider_publish_base_ackerman_motion_command(carmen_ackerman_motion_command_p motion_commands, int num_motion_commands)
+carmen_obstacle_avoider_publish_base_ackerman_motion_command(carmen_ackerman_motion_command_p motion_commands,
+		int num_motion_commands, double timestamp)
 {
 	IPC_RETURN_TYPE err;
 	carmen_base_ackerman_motion_command_message motion_command_message;
@@ -13,7 +14,7 @@ carmen_obstacle_avoider_publish_base_ackerman_motion_command(carmen_ackerman_mot
 	motion_command_message.num_motion_commands = num_motion_commands;
 	motion_command_message.motion_command = motion_commands;
 
-	motion_command_message.timestamp = carmen_get_time();
+	motion_command_message.timestamp = timestamp;
 
 	err = IPC_publishData(CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME, &motion_command_message);
 	carmen_test_ipc(err, "Could not publish", CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME);
@@ -43,8 +44,6 @@ carmen_obstacle_avoider_publish_motion_planner_path(carmen_navigator_ackerman_pl
 void
 carmen_obstacle_avoider_publish_path(carmen_navigator_ackerman_plan_message msg)
 {
-	//printf("%f %f %d", msg.path->x, msg.path->y, msg.path_length);
-
 	static int first_time = TRUE;
 	IPC_RETURN_TYPE err;
 
