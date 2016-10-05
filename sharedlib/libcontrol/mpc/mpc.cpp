@@ -334,29 +334,6 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double understee
 }
 
 
-void
-apply_system_latencies(carmen_ackerman_motion_command_p current_motion_command_vector,	int nun_motion_commands)
-{
-	int i, j;
-
-	for (i = 0; i < nun_motion_commands; i++)
-	{
-		j = i;
-		for (double lat = 0.0; lat < 0.3; j++)
-		{
-			if (j >= nun_motion_commands)
-				break;
-			lat += current_motion_command_vector[j].time;
-		}
-		if (j >= nun_motion_commands)
-			break;
-		current_motion_command_vector[i].phi = current_motion_command_vector[j].phi;
-	}
-
-	nun_motion_commands = nun_motion_commands -(nun_motion_commands - i);
-}
-
-
 bool
 init_mpc(bool &first_time, PARAMS &param, EFFORT_SPLINE_DESCRIPTOR &seed,
 		double atan_desired_curvature, double atan_current_curvature,
@@ -421,8 +398,6 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_desired_curvat
 //	count++;
 //	if ((count % (80)) == 0)
 //		atan_current_curvature += 0.1;
-
-//	apply_system_latencies(current_motion_command_vector, nun_motion_commands);
 
 //	atan_current_curvature *= 1.1;
 

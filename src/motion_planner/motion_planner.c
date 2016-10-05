@@ -708,7 +708,8 @@ stop_robot()
 	}
 
 	current_motion_command_vetor_index = 0;
-	carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands_vector[current_motion_command_vetor_index], nun_motion_commands[current_motion_command_vetor_index]);
+	carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands_vector[current_motion_command_vetor_index],
+			nun_motion_commands[current_motion_command_vetor_index], carmen_get_time());
 	IPC_listen(50);
 	publish_obstacle_avoider_path(motion_commands_vector[current_motion_command_vetor_index], nun_motion_commands[current_motion_command_vetor_index]);
 	IPC_listen(50);
@@ -797,7 +798,8 @@ motion_planning_obstacle_avoiding_handler()
 
 	current_motion_command_vetor_index = next_motion_command_vector_index;
 
-	carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands_vector[current_motion_command_vetor_index], nun_motion_commands[current_motion_command_vetor_index]);
+	carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands_vector[current_motion_command_vetor_index],
+			nun_motion_commands[current_motion_command_vetor_index], carmen_get_time());
 	IPC_listen(50);
 	publish_obstacle_avoider_path(motion_commands_vector[current_motion_command_vetor_index], nun_motion_commands[current_motion_command_vetor_index]);
 	IPC_listen(50);
@@ -1132,7 +1134,8 @@ publish_astar_path(carmen_ackerman_traj_point_t *path, int path_size, carmen_ack
 	nun_motion_commands[next_motion_command_vector_index] = motion_command_index;
 	current_motion_command_vetor_index = next_motion_command_vector_index;
 
-	carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands_vector[current_motion_command_vetor_index], nun_motion_commands[current_motion_command_vetor_index]);
+	carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands_vector[current_motion_command_vetor_index],
+			nun_motion_commands[current_motion_command_vetor_index], carmen_get_time());
 	publish_obstacle_avoider_path(motion_commands_vector[current_motion_command_vetor_index], nun_motion_commands[current_motion_command_vetor_index]);
 	publish_motion_planner_path(motion_commands_vector[current_motion_command_vetor_index], nun_motion_commands[current_motion_command_vetor_index]);
 
