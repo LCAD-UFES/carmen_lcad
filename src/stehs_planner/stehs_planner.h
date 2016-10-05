@@ -1,11 +1,9 @@
 #ifndef STEHS_PLANNER_H
 #define STEHS_PLANNER_H
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 #include <carmen/carmen.h>
 #include <carmen/behavior_selector_interface.h>
@@ -18,6 +16,7 @@ extern "C" {
 #include <carmen/grid_mapping.h>
 #include <prob_map.h>
 
+#include "CircleNode.hpp"
 
 typedef struct
 {
@@ -34,6 +33,9 @@ typedef struct
 	unsigned int show_debug_info;
 	unsigned int cheat;
 	bool ready;
+
+	// circle path
+	CircleNode *goal_circle;
 
 } stehs_planner_config_t, *stehs_planner_config_p;
 
