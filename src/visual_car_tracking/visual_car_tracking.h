@@ -9,10 +9,11 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
-#include <iostream>
-#include <stdio.h>
 #include <carmen/bumblebee_basic_interface.h>
 #include <carmen/bumblebee_basic_messages.h>
+
+#include <unistd.h>
+
 
 
 void cascade_car_finder(carmen_bumblebee_basic_stereoimage_message*);
