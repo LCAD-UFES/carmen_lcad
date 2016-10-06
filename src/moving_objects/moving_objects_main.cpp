@@ -74,12 +74,12 @@ int number_of_threads = 1;
 
 
 #ifdef AJUSTE
-double sigma = 7.0;			// desvio padrão dos pesos das partículas (0.1 funciona apenas no baseline)
-double alpha_1 = 2.0; 		// desvio padrão da velocidade padrão 0.2
-double alpha_2 = 0.15; 		// desvio padrão de theta padrão 0.01
+double sigma = 1.0;			// desvio padrão dos pesos das partículas (0.1 funciona apenas no baseline)
+double alpha_1 = 0.5; 		// desvio padrão da velocidade padrão 0.2
+double alpha_2 = 0.12; 		// desvio padrão de theta padrão 0.01
 //
 FILE * parametro;
-static int cont = 1;
+static int cont = 0;
 #endif
 
 
@@ -309,14 +309,6 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 			fclose(parametro);
 		}
 
-//		if (alpha_1 < 2.0) {
-//			if (cont > 0)
-//				alpha_1 += 0.5;
-//		} else {
-//			alpha_1 = 1.0;
-//			sigma += 1.0;
-//		}
-
 		if (alpha_2 < 0.18)
 		{
 			if (cont > 0)
@@ -331,13 +323,19 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 			}
 			else
 			{
-				alpha_1 = 1.0;
+				alpha_1 = 0.5;
 				sigma += 2.0;
+
+				if(sigma > 3.0)
+				{
+					sigma = 1.0;
+				}
+
 			}
 		}
 
 		//sprintf(filename,"parametros/final-22.txt",cont+16,sigma,alpha_1,alpha_2);
-		sprintf(filename,"parametros/%02d_sig-%.2f_alf1-%.2f_alf2-%.2f.txt",cont+26,sigma,alpha_1,alpha_2);
+		sprintf(filename,"parametros/%02d_sig-%.2f_alf1-%.2f_alf2-%.2f.txt",cont+1,sigma,alpha_1,alpha_2);
 		parametro = fopen(filename,"w");
 		cont++;
 	}

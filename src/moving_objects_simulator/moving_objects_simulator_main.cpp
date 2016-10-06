@@ -20,6 +20,39 @@ int current_vector_index = 0;
 double previous_timestamp = 0.0;
 double delta_time = 0.1;
 int first = 1;
+int start_pos = 0;
+
+carmen_point_t initial_pose, actual_pose;
+
+
+void
+find_start_position()
+{
+
+	start_pos = 1;
+	double x_pos, y_pos, x_pos2, y_pos2;
+	double dist = 0.0;
+
+	x_pos = actual_pose.x;
+	y_pos = actual_pose.y;
+
+	current_vector_index = timestamp_moving_objects_list.size() - 1;
+
+	x_pos2 = timestamp_moving_objects_list[current_vector_index].x_car;
+	y_pos2 = timestamp_moving_objects_list[current_vector_index].y_car;
+
+	dist = euclidean_distance(x_pos,y_pos,x_pos2,y_pos2);
+
+	while((dist > 14.0) && (current_vector_index > 0))
+	{
+		current_vector_index--;
+		x_pos2 = timestamp_moving_objects_list[current_vector_index].x_car;
+		y_pos2 = timestamp_moving_objects_list[current_vector_index].y_car;
+		dist = euclidean_distance(x_pos, y_pos, x_pos2, y_pos2);
+	}
+	ok_to_publish = 1;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
@@ -42,47 +75,40 @@ shutdown_module(int signo)
 void
 localize_ackerman_init_handler(carmen_localize_ackerman_initialize_message *localize_ackerman_init_message)
 {
-	double x_pos, y_pos, x_pos2, y_pos2;
-	double dist = 0.0;
 
 	if(localize_ackerman_init_message->num_modes > 0)
 	{
-		x_pos = localize_ackerman_init_message->mean[0].x;
-		y_pos = localize_ackerman_init_message->mean[0].y;
+		initial_pose.x = localize_ackerman_init_message->mean[0].x;
+		initial_pose.y = localize_ackerman_init_message->mean[0].y;
 	}
 	else
 		return;
 
-	current_vector_index = timestamp_moving_objects_list.size();
+}
 
-	x_pos2 = timestamp_moving_objects_list[current_vector_index].x_car;
-	y_pos2 = timestamp_moving_objects_list[current_vector_index].y_car;
 
-	dist = euclidean_distance(x_pos,y_pos,x_pos2,y_pos2);
+static void
+localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
+{
+	double dist = 0.0;
 
-	while((dist > 14.0) && (current_vector_index > 0))
+	actual_pose.x = msg->globalpos.x;
+	actual_pose.y = msg->globalpos.y;
+
+	if(start_pos == 0)
 	{
-		current_vector_index--;
-		x_pos2 = timestamp_moving_objects_list[current_vector_index].x_car;
-		y_pos2 = timestamp_moving_objects_list[current_vector_index].y_car;
-		dist = euclidean_distance(x_pos, y_pos, x_pos2, y_pos2);
+		dist = euclidean_distance(initial_pose.x, initial_pose.y, actual_pose.x, actual_pose.y);
+		if(dist > 20.0)
+		{
+			find_start_position();
+		}
 	}
-	ok_to_publish = 1;
 }
 
 
 void
 publish_moving_objects()
 {
-
-//	if(!first && (previous_timestamp + delta_time - timestamp_moving_objects_list[current_vector_index].timestamp > 0.05 ) )
-//	{
-//		delta_time += 0.1;
-//		return;
-//	}
-//	else
-//		delta_time = 0.1;
-
 
 	if(ok_to_publish && (current_vector_index < (int) timestamp_moving_objects_list.size()))
 	{
@@ -257,6 +283,8 @@ main(int argc, char **argv)
 	/* Subscribe to sensor and filter messages */
 	carmen_localize_ackerman_subscribe_initialize_message(&localize_ackerman_init_message, (carmen_handler_t) localize_ackerman_init_handler,
 			CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_ipc_addPeriodicTimer(0.1, (TIMER_HANDLER_TYPE) publish_moving_objects, NULL);
 
