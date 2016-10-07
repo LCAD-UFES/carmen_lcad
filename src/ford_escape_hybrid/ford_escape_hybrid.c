@@ -144,7 +144,7 @@ set_wrench_efforts_desired_v_and_curvature()
 	if (i < ford_escape_hybrid_config->nun_motion_commands)
 	{
 		v = ford_escape_hybrid_config->current_motion_command_vector[i].v;
-		phi = (1.0 + v / (6.94 / 0.3)) * ford_escape_hybrid_config->current_motion_command_vector[i].phi;
+		//phi = (1.0 + v / (6.94 / 0.3)) * ford_escape_hybrid_config->current_motion_command_vector[i].phi;
 		phi = ford_escape_hybrid_config->current_motion_command_vector[i].phi;
 	}
 	else
@@ -152,7 +152,7 @@ set_wrench_efforts_desired_v_and_curvature()
 		v = 0.0;
 		phi = 0.0;
 	}
-	g_phi = phi / (1.0 + v / (6.94 / 0.3));
+	//g_phi = phi / (1.0 + v / (6.94 / 0.3));
 	g_phi = phi;
 
 	// The function carmen_ford_escape_hybrid_steering_PID_controler() uses g_atan_desired_curvature to compute the g_steering_command that is sent to the car.
@@ -478,7 +478,6 @@ torc_report_curvature_message_handler_old(OjCmpt XGV_CCU __attribute__ ((unused)
 	if (reportCurvature)
 	{
 		g_XGV_atan_curvature = reportCurvature->atanOfCurrentCurvature; // @@@ Alberto: a curvatura do carro vem ao contrario de carmen
-		//g_XGV_atan_curvature += get_curvature_from_phi(carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.05)), ford_escape_hybrid_config);
 
 		ford_escape_hybrid_config->XGV_v_and_phi_timestamp = carmen_get_time();
 
@@ -525,6 +524,7 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 	if (reportCurvature)
 	{
 		g_XGV_atan_curvature = reportCurvature->atanOfCurrentCurvature; // @@@ Alberto: a curvatura do carro vem ao contrario de carmen
+		//g_XGV_atan_curvature += get_curvature_from_phi(carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.05)), ford_escape_hybrid_config);
 
 		ford_escape_hybrid_config->XGV_v_and_phi_timestamp = carmen_get_time();
 
