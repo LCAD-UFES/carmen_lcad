@@ -291,7 +291,10 @@ static void register_ipc_messages(void) {
 
 
 int 
-catch_opencv_error(int status, const char* func_name, const char* err_msg, const char* filename, int line, void *i_dont_know)
+catch_opencv_error(int status __attribute__ ((unused)),
+		const char* func_name __attribute__ ((unused)), const char* err_msg __attribute__ ((unused)),
+		const char* filename __attribute__ ((unused)), int line __attribute__ ((unused)),
+		void *i_dont_know __attribute__ ((unused)))
 {
 	printf("Peguei!\n");
 	return (1);
