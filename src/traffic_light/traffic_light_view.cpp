@@ -10,9 +10,11 @@ static GdkPixbuf *src_buffer;
 
 static IplImage *right_image = NULL;
 
-/* Parameters */
+// Parameters //
 static int image_width;
 static int image_height;
+static int window_view_height;
+static int window_view_width;
 /* Camera Index */
 static int camera;
 carmen_traffic_light_message traffic_light_message;
@@ -90,9 +92,17 @@ updateIPC(gpointer *data __attribute__((unused)))
 static void
 traffic_light_message_handler(carmen_traffic_light_message *message)
 {
-    
-    src_buffer = gdk_pixbuf_new_from_data(message->traffic_light_image, GDK_COLORSPACE_RGB,
-                                          FALSE, 8, image_width, image_height, image_width * 3, NULL, NULL);
+
+
+	    cv::Mat image;
+	    image.create(image_height, image_width, CV_8UC3);
+	    image.data = (uchar *) message->traffic_light_image;
+	    cv::Mat resized_image ;
+	    resized_image.create(window_view_height,window_view_width,CV_8UC3);
+	    cv::Size size(window_view_width,window_view_height);
+	    resize(image, resized_image, size);
+    src_buffer = gdk_pixbuf_new_from_data(resized_image.data, GDK_COLORSPACE_RGB,
+                                          FALSE, 8, window_view_width, window_view_height, window_view_width * 3, NULL, NULL);
     redraw_viewer();
 
 }
@@ -109,9 +119,9 @@ start_graphics(int argc, char *argv[])
     gtk_window_set_title(GTK_WINDOW(main_window), "Traffic Light View");
     drawing_area = gtk_drawing_area_new();
 
-    gtk_widget_set_usize(drawing_area, image_width, image_height);
+    gtk_widget_set_usize(drawing_area, window_view_width, window_view_height);
 
-    //gtk_widget_set_usize(drawing_area, image_width + image_width + image_width + image_width + image_width + 40, image_height);
+    //gtk_widget_set_usize(drawing_area, window_view_width + window_view_width + window_view_width + window_view_width + window_view_width + 40, window_view_height);
 
     gtk_container_add(GTK_CONTAINER(main_window), drawing_area);
 
@@ -152,12 +162,16 @@ read_parameters(int argc, char **argv)
         { bumblebee_string, (char*) "width", CARMEN_PARAM_INT, &image_width, 0,
             NULL},
         { bumblebee_string, (char*) "height", CARMEN_PARAM_INT, &image_height, 0,
-            NULL}
+            NULL},
+        { "traffic_light_viewer", (char*) "width", CARMEN_PARAM_INT, &window_view_width, 0,
+                    NULL},
+        { "traffic_light_viewer", (char*) "height", CARMEN_PARAM_INT, &window_view_height, 0,
+          NULL}
+
     };
 
     num_items = sizeof (param_list) / sizeof (param_list[0]);
     carmen_param_install_params(argc, argv, param_list, num_items);
-
     return 0;
 }
 
