@@ -102,7 +102,7 @@ traffic_light_message_handler(carmen_traffic_light_message *message)
 	    cv::Size size(window_view_width,window_view_height);
 	    resize(image, resized_image, size);
     src_buffer = gdk_pixbuf_new_from_data(resized_image.data, GDK_COLORSPACE_RGB,
-                                          FALSE, 8, window_view_width, window_view_height, window_view_width * 3, NULL, NULL);
+         FALSE, 8, window_view_width, window_view_height, window_view_width * 3, NULL, NULL);
     redraw_viewer();
 
 }
@@ -159,15 +159,10 @@ read_parameters(int argc, char **argv)
     sprintf(bumblebee_string, "%s%d", "bumblebee_basic", camera);
 
     carmen_param_t param_list[] = {
-        { bumblebee_string, (char*) "width", CARMEN_PARAM_INT, &image_width, 0,
-            NULL},
-        { bumblebee_string, (char*) "height", CARMEN_PARAM_INT, &image_height, 0,
-            NULL},
-        { "traffic_light_viewer", (char*) "width", CARMEN_PARAM_INT, &window_view_width, 0,
-                    NULL},
-        { "traffic_light_viewer", (char*) "height", CARMEN_PARAM_INT, &window_view_height, 0,
-          NULL}
-
+        { (char*) bumblebee_string,(char*) "width", CARMEN_PARAM_INT, &image_width, 0, NULL},
+        { (char*) bumblebee_string,(char*) "height", CARMEN_PARAM_INT, &image_height, 0, NULL},
+        { (char*) "traffic_light_viewer",(char*) "width", CARMEN_PARAM_INT, &window_view_width, 0, NULL},
+        { (char*) "traffic_light_viewer",(char*) "height", CARMEN_PARAM_INT, &window_view_height, 0, NULL}
     };
 
     num_items = sizeof (param_list) / sizeof (param_list[0]);
