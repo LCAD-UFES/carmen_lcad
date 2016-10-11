@@ -607,7 +607,7 @@ draw_linear_velocity(double x, double y, double linear_velocity, double height)
 }
 
 void
-draw_ldmrs_objects(carmen_laser_ldmrs_object *ldmrs_objects_tracking, int num_ldmrs_objects)
+draw_ldmrs_objects(carmen_laser_ldmrs_object *ldmrs_objects_tracking, int num_ldmrs_objects, double min_velocity)
 {
 
 	int i;
@@ -615,6 +615,8 @@ draw_ldmrs_objects(carmen_laser_ldmrs_object *ldmrs_objects_tracking, int num_ld
 
 	for (i = 0; i < num_ldmrs_objects; i++)
 	{
+		if (ldmrs_objects_tracking[i].velocity < min_velocity)
+			continue;
 		carmen_pose_3D_t pos;
 		carmen_vector_3D_t p1, p2, p3 , p4, p5, p6, p7, p8, t;
 		carmen_vector_3D_t s1, s2, s3, s4; /* moving object direction arrow */
