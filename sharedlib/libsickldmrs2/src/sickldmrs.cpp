@@ -436,93 +436,93 @@ void vpSickLDMRS::decodeErrorData()
 	// print FPGA error messages
 	if((errorRegister1 & 0x0003) != 0)
 	{
-		printf("FPGA Error: Contact Support.\n");
+		fprintf(stderr,"FPGA Error: Contact Support.\n");
 	}
 	if((errorRegister1 & 0x000C) != 0)
 	{
-		printf("FPGA Error: decrease scan resolution/frequency/range.\n");
+		fprintf(stderr,"FPGA Error: decrease scan resolution/frequency/range.\n");
 	}
 	if((errorRegister1 & 0x0010) != 0)
 	{
-		printf("FPGA Error: Contact Support.\n");
+		fprintf(stderr,"FPGA Error: Contact Support.\n");
 	}
 	if((errorRegister1 & 0x0100) != 0)
 	{
-		printf("FPGA Error: APD Under Temperature, provide heating.\n");
+		fprintf(stderr,"FPGA Error: APD Under Temperature, provide heating.\n");
 	}
 	if((errorRegister1 & 0x0200) != 0)
 	{
-		printf("FPGA Error: APD Over Temperature, provide cooling.\n");
+		fprintf(stderr,"FPGA Error: APD Over Temperature, provide cooling.\n");
 	}
 	if((errorRegister1 & 0x3C00) != 0)
 	{
-		printf("FPGA Error: Contact support.\n");
+		fprintf(stderr,"FPGA Error: Contact support.\n");
 	}
 
 	// processor errors
 	if((errorRegister2 & 0x0001) != 0)
 	{
-		printf("DSP Error: Internal communication error. The DSP did not receive any scan data from the FPGA.\n");
+		fprintf(stderr,"DSP Error: Internal communication error. The DSP did not receive any scan data from the FPGA.\n");
 	}
 	if((errorRegister2 & 0x0002) != 0)
 	{
-		printf("DSP Error: Internal communication error. The DSP could not communicate correctly with the FPGA via the control interface.\n");
+		fprintf(stderr,"DSP Error: Internal communication error. The DSP could not communicate correctly with the FPGA via the control interface.\n");
 	}
 	if((errorRegister2 & 0x0004) != 0)
 	{
-		printf("DSP Error: Internal communication error. The DSP did not receive valid scan data from the FPGA for more than 500 ms.\n");
+		fprintf(stderr,"DSP Error: Internal communication error. The DSP did not receive valid scan data from the FPGA for more than 500 ms.\n");
 	}
 	if((errorRegister2 & 0x0008) != 0)
 	{
-		printf("DSP Error: Contact support.\n");
+		fprintf(stderr,"DSP Error: Contact support.\n");
 	}
 	if((errorRegister2 & 0x0010) != 0)
 	{
-		printf("DSP Error: Incorrect configuration data, load correct configuration values.\n");
+		fprintf(stderr,"DSP Error: Incorrect configuration data, load correct configuration values.\n");
 	}
 	if((errorRegister2 & 0x0020) != 0)
 	{
-		printf("DSP Error: Configuration contains incorrect parameters, load correct configuration values.\n");
+		fprintf(stderr,"DSP Error: Configuration contains incorrect parameters, load correct configuration values.\n");
 	}
 	if((errorRegister2 & 0x0040) != 0)
 	{
-		printf("DSP Error: Data processing timeout, decrease scan resolution or scan frequency.\n");
+		fprintf(stderr,"DSP Error: Data processing timeout, decrease scan resolution or scan frequency.\n");
 	}
 	if((errorRegister2 & 0x0200) != 0)
 	{
-		printf("DSP Error: Severe deviation (> 10\%%) from expected scan frequency. This may indicate motor trouble.\n");
+		fprintf(stderr,"DSP Error: Severe deviation (> 10\%%) from expected scan frequency. This may indicate motor trouble.\n");
 	}
 	if((errorRegister2 & 0x0400) != 0)
 	{
-		printf("DSP Error: Motor blocked. No rotation of the internal mirror was detected, and automatic restart has failed.\n");
+		fprintf(stderr,"DSP Error: Motor blocked. No rotation of the internal mirror was detected, and automatic restart has failed.\n");
 	}
 
 	// fpga warningg
 	if((warningRegister1 & 0x0008) != 0)
 	{
-		printf("FPGA Warning: Low temperature.\n");
+		fprintf(stderr,"FPGA Warning: Low temperature.\n");
 	}
 	if((warningRegister1 & 0x0010) != 0)
 	{
-		printf("FPGA Warning: High temperature.\n");
+		fprintf(stderr,"FPGA Warning: High temperature.\n");
 	}
 
 	// dsp warningg
 	if((warningRegister2 & 0x0040) != 0)
 	{
-		printf("DSP Warning: Memory access failure, restart LD-MRS, contact support.\n");
+		fprintf(stderr,"DSP Warning: Memory access failure, restart LD-MRS, contact support.\n");
 	}
 	if((warningRegister2 & 0x0080) != 0)
 	{
-		printf("DSP Warning: Segment overflow.\n");
+		fprintf(stderr,"DSP Warning: Segment overflow.\n");
 	}
 	if((warningRegister2 & 0x0100) != 0)
 	{
-		printf("DSP Warning: Invalid Ego Motion data.\n");
+		fprintf(stderr,"DSP Warning: Invalid Ego Motion data.\n");
 	}
 	if((warningRegister2 & 0x8000) != 0)
 	{
-		printf("DSP Warning: High temperature.\n");
+		fprintf(stderr,"DSP Warning: High temperature.\n");
 	}
 
 }

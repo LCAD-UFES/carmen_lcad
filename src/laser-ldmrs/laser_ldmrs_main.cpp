@@ -11,7 +11,7 @@
 
 static char *laser_ldmrs_port = 0;
 static char *laser_ldmrs_address = 0;
-static double axle_distance = 2.625;
+static double axle_distance = 0.0;
 
 static carmen_base_ackerman_odometry_message odometry_message;
 vpSickLDMRS laser;
@@ -61,9 +61,9 @@ carmen_laser_ldmrs_read_parameters(int argc, char **argv)
 
 	carmen_param_t param_list[] =
 	{
-			{(char*)"laser_ldmrs", (char*)"address", CARMEN_PARAM_STRING, &laser_ldmrs_address, 0, NULL},
-			{(char*)"laser_ldmrs", (char*)"port", CARMEN_PARAM_STRING, &laser_ldmrs_port, 0, NULL},
-			{(char*)"robot", (char*) "distance_between_front_and_rear_axles", CARMEN_PARAM_STRING, &axle_distance, 0, NULL}
+			{(char*)"laser_ldmrs", 	(char*)	"address", 	CARMEN_PARAM_STRING, &laser_ldmrs_address, 0, NULL},
+			{(char*)"laser_ldmrs", 	(char*)	"port", 	CARMEN_PARAM_STRING, &laser_ldmrs_port, 0, NULL},
+			{(char*)"robot", 		(char*) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &axle_distance, 0, NULL}
 	};
 
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
@@ -76,7 +76,6 @@ carmen_laser_ldmrs_read_parameters(int argc, char **argv)
 static void
 base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *odometry_message)
 {
-	axle_distance = 2.625;
 
 	short velocity_cms = (short) (odometry_message->v * 100.0);
 	short phi_mrad = (short) (odometry_message->phi * 1000);

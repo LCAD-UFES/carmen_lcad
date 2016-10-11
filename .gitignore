@@ -488,3 +488,5 @@ src/stehs_planner/stehs_planner
 src/stehs_planner/stehs_planner_main.o
 src/stehs_planner/stehs_planner.o
 bin/stehs_planner
+bin/visual_car_tracking
+src/visual_car_tracking/visual_car_tracking
