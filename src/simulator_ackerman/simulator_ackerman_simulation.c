@@ -593,6 +593,10 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 	}
 
 #endif
+
+//	if (libmpc_stiction_simulation(steering_effort, simulator_config->phi))
+//		return (simulator_config->phi);
+
 	steering_effort *= (1.0 / (1.0 + simulator_config->v / 1.5));
 	carmen_clamp(-100.0, steering_effort, 100.0);
 

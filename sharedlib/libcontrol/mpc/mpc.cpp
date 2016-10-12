@@ -12,6 +12,9 @@
 #define DELTA_T (1.0 / 40.0)
 #define PREDICTION_HORIZON	(0.65*0.6)
 
+FILE *gnuplot_save;
+bool save_plot = false;
+
 using namespace std;
 
 
@@ -223,7 +226,7 @@ get_optimized_effort(PARAMS *par, EFFORT_SPLINE_DESCRIPTOR seed)
 
 	} while ((status == GSL_CONTINUE) && (iter < 15));
 
-	printf("iter = %ld\n", iter);
+	//printf("iter = %ld\n", iter);
 
 	seed.k1 = carmen_clamp(-100.0, gsl_vector_get(s->x, 0), 100.0);
 	seed.k2 = carmen_clamp(-100.0, gsl_vector_get(s->x, 1), 100.0);
@@ -272,6 +275,9 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double understee
 	dphi_vector.push_front(carmen_get_phi_from_curvature(p->atan_desired_curvature, v, understeer_coeficient, distance_between_front_and_rear_axles));
 	timestamp_vector.push_front(t - first_timestamp);
 	effort_vector.push_front(effort);
+
+	if (save_plot)
+		fprintf(gnuplot_save, "%lf %lf %lf %lf\n", timestamp_vector.front(), cphi_vector.front(), dphi_vector.front(), effort_vector.front()/100);
 
 	while (cphi_vector.size() > PAST_SIZE)
 	{
@@ -336,6 +342,108 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double understee
 }
 
 
+void
+open_file_to_save_plot()
+{
+	time_t rawtime;
+	struct tm * timeinfo;
+
+	time ( &rawtime );
+	timeinfo = localtime ( &rawtime );
+
+	char name[32];
+	char aux[8];
+	//name[0] = '/0';
+	//aux[0] = '/0';
+
+	sprintf(name, "%d", timeinfo->tm_year + 1900);
+
+	sprintf(aux, "%d", timeinfo->tm_mon + 1);
+	strcat (name, aux);
+
+	sprintf(aux, "%d", timeinfo->tm_mday);
+	strcat (name, aux);
+	strcat (name,"_");
+
+	sprintf(aux, "%d", timeinfo->tm_hour);
+	strcat (name, aux);
+	strcat (name, "h");
+
+	sprintf(aux, "%d", timeinfo->tm_min);
+	strcat (name, aux);
+	strcat (name, "m");
+
+	sprintf(aux, "%d", timeinfo->tm_sec);
+	strcat (name, aux);
+
+	//printf("%s\n", name);
+	//printf( "[%d %d %d %d:%d:%d]", timeinfo->tm_mday, timeinfo->tm_mon + 1, timeinfo->tm_year + 1900, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+
+	gnuplot_save = fopen(name, "w");
+
+	/*
+	plot "20161012_17h56m5" using 1:2 with lines,\
+	"20161012_17h56m5" using 1:3 with lines,\
+	"20161012_17h56m5" using 1:4 with lines
+	*/
+}
+
+int
+libmpc_stiction_simulation(double effort, double current_curvature)
+{
+	/*static list<double> curvature_list;
+	list<double>::reverse_iterator iterator;
+	double aux;
+
+	curvature_list.push_front(current_curvature);
+
+	while (curvature_list.size() > 4)   // 4 is the Number of iterations the current curvature must remain constant to suffer Stiction
+		curvature_list.pop_back();
+
+	iterator = curvature_list.rbegin();
+
+	aux = *iterator;
+	iterator++;
+
+	while (aux == *iterator)
+	{
+		if (iterator == curvature_list.rend())
+		{
+			printf("FOI\n");
+			break;
+		}
+		else
+			iterator++;
+	}*/
+	printf("%f\n", effort);
+
+	current_curvature = current_curvature+10;
+
+	static double first_effort;
+	static bool control = true;
+
+	if (control)
+	{
+		first_effort = effort;
+		control = false;
+		return (false);
+	}
+	else
+	{
+		if (abs(first_effort - effort) < 2)
+		{
+			printf("%f %f\n", effort, first_effort);
+			return (true);
+		}
+		else
+		{
+			control = true;
+			return (false);
+		}
+	}
+}
+
+
 bool
 init_mpc(bool &first_time, PARAMS &param, EFFORT_SPLINE_DESCRIPTOR &seed,
 		double atan_desired_curvature, double atan_current_curvature,
@@ -344,6 +452,8 @@ init_mpc(bool &first_time, PARAMS &param, EFFORT_SPLINE_DESCRIPTOR &seed,
 		double understeer_coeficient, double distance_between_front_and_rear_axles, double max_phi,
 		int initialize_neural_networks)
 {
+	static bool open = true;
+
 	if (first_time)
 	{
 		param.steering_ann = fann_create_from_file("steering_ann.net");
@@ -380,6 +490,13 @@ init_mpc(bool &first_time, PARAMS &param, EFFORT_SPLINE_DESCRIPTOR &seed,
 	param.distance_rear_axles = distance_between_front_and_rear_axles;
 	param.max_phi = max_phi;
 	param.time_elapsed_since_last_motion_command = carmen_get_time() - time_of_last_motion_command;
+
+
+	if (save_plot && open)
+	{
+		open_file_to_save_plot();
+		open = false;
+	}
 
 	return (true);
 }
