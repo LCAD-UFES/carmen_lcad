@@ -15,36 +15,18 @@
 #include <carmen/rddf_index.h>
 #include <prob_map.h>
 
+#include "g2o/types/slam2d/se2.h"
 #include <caffe/caffe.hpp>
 #include <boost/smart_ptr.hpp>
-#include "dqn_caffe.h"
+
+#include "DqnParams.h"
+#include "DqnEpisode.h"
+#include "DqnNet.h"
 
 const int VIEWER_ACTIVE = 1;
 
 using namespace cv;
 
-class Event
-{
-public:
-	FrameDataSp frame;
-	DqnAction action;
-	double v, phi, imediate_reward;
-	double q_value_of_selected_action;
-	double current_episode_reward;
-
-	Event() { frame = FrameDataSp(); action = DQN_ACTION_NONE; v = phi = 0; imediate_reward = 0; q_value_of_selected_action = 0; }
-
-	Event(FrameDataSp frame_param, DqnAction action_param, double v_param, double phi_param, double imediate_reward_param, double estimated_reward_param, double current_episode_reward_param)
-	{
-		current_episode_reward = current_episode_reward_param;
-		q_value_of_selected_action = estimated_reward_param;
-		imediate_reward = imediate_reward_param;
-		action = action_param;
-		frame = frame_param;
-		phi = phi_param;
-		v = v_param;
-	}
-};
 
 /*********************************/
 /** INTERNAL PARAMETERS - BEGIN **/
@@ -61,11 +43,12 @@ double STEERING_UPDATE = carmen_degrees_to_radians(2);
 const int GOAL_LIST_STEP = 1; //6; // draw one pose after each 'GOAL_LIST_STEP' number of poses
 
 const double PARTIAL_GOAL_REWARD = 0.05;
-const double FINAL_GOAL_REWARD = 0.25;
-const double ACHIEVE_FINAL_GOAL_AND_STOP_REWARD = 2.5;
+const double FINAL_GOAL_REWARD = 1.0;
+const double ACHIEVE_FINAL_GOAL_AND_STOP_REWARD = 2.0;
 const double DISTANCE_PUNISHMENT_PER_METER = 0;
 const double TIME_PUNISHMENT_PER_SECOND = -0.01;
-const double COLLISION_PUNISHMENT = -10;
+const double COLLISION_PUNISHMENT = -1;
+const double STARVATION_PUNISHMENT = -0.2;
 
 const double MIN_DIST_TO_CONSIDER_ACHIEVEMENT = 1.0;
 const double MIN_ORIENTATION_DIFFERENCE_TO_CONSIDER_ACHIEVEMENT = carmen_degrees_to_radians(10);
@@ -95,10 +78,10 @@ int car_already_accelerated_in_this_experiment = 0;
 int collision_detected = 0;
 int reposed_requested = 1;
 carmen_ackerman_motion_command_t current_command = {0, 0, 0};
-DqnAction current_action = DQN_ACTION_NONE;
+int current_action = 0;
 float current_q = 0;
 double epsilon = EPSILON_INITIAL;
-InputFrames input_frames;
+//InputFrames input_frames;
 int num_times_car_hit_final_goal = 0;
 int use_greedy = 0;
 
@@ -135,9 +118,48 @@ carmen_map_server_compact_cost_map_message compact_cost_map_message;
 carmen_compact_map_t compact_cost_map;
 carmen_map_t cost_map;
 
-DqnCaffe *dqn_caffe;
-vector<Event*> episode;
+deque<int> last_commands;
+deque<double> last_vs;
+deque<double> last_phis;
+deque<carmen_point_t> last_goal_poses;
+
+//DqnCaffe *dqn_caffe;
+//vector<Event*> episode;
+DqnNet *dqn_net = 0;
+deque<DqnEpisode*> episodes;
+DqnEpisode *episode = 0;
 double start_of_the_program;
+
+int step_active = 0;
+int only_run = 0;
+
+void
+show_frame(Mat *frame)
+{
+	imshow("frame", *frame);
+	char key = ' ';
+
+	if (step_active)
+		key = waitKey(-1);
+	else
+		key = waitKey(4);
+
+	switch (key)
+	{
+		case 'g':
+			use_greedy = !use_greedy;
+			fprintf(stderr, "*** USE GREEDY: %d\n", use_greedy);
+			break;
+		case 'r':
+			only_run = !only_run;
+			fprintf(stderr, "*** ONLY_RUN: %d\n", only_run);
+			break;
+		case 's':
+			step_active = !step_active;
+			fprintf(stderr, "*** STEP_ACTIVE: %d\n", step_active);
+			break;
+	}
+}
 
 
 void
@@ -172,7 +194,8 @@ shutdown_module(int signo)
 
 		if (!stoped)
 		{
-			dqn_caffe->GetSolver()->Snapshot();
+			//dqn_caffe->GetSolver()->Snapshot();
+			dqn_net->SaveTrain();
 			publish_motion_command(0, 0);
 			stoped = true;
 		}
@@ -421,6 +444,34 @@ publish_starting_pose()
 
 
 void
+reinitialize_queues()
+{
+	int i;
+
+	last_vs.clear();
+	last_phis.clear();
+	last_commands.clear();
+	last_goal_poses.clear();
+
+	for (i = 0; i < DQN_NUM_PAST_COMMANDS_TO_STORE; i++)
+		last_commands.push_back(0);
+
+	for (i = 0; i < DQN_NUM_PAST_ODOMS_TO_STORE; i++)
+	{
+		last_vs.push_back(0.0);
+		last_phis.push_back(0.0);
+	}
+
+	for (i = 0; i < DQN_NUM_PAST_GOAL_POSES_TO_STORE; i++)
+	{
+		carmen_point_t goal;
+		memset(&goal, 0, sizeof(goal));
+		last_goal_poses.push_back(goal);
+	}
+}
+
+
+void
 reinitize_experiment_configuration()
 {
 	// set all fields of the structure to 0. note: I use this in some function to check if some action is necessary.
@@ -435,32 +486,111 @@ reinitize_experiment_configuration()
 	reposed_requested = 1;
 	achieved_goal_in_this_experiment = 0;
 	car_already_accelerated_in_this_experiment = 0;
-	current_action = DQN_ACTION_NONE;
+	current_action = 0;
 	current_q = 0;
+	reinitialize_queues();
 
 	static int n = 0;
 
-	if (n >= 2)
+	if (n == 0)
 	{
-		use_greedy = 1;
-		n = 0;
+		epsilon = 1.0;
+		n++;
+	}
+	else if (n == 1)
+	{
+		epsilon = 0.5;
+		n++;
+	}
+	else if (n == 2)
+	{
+		epsilon = 0.1;
+		n++;
+	}
+	else if (n <= 6)
+	{
+		epsilon = 0.0;
+		n++;
 	}
 	else
 	{
-		use_greedy = 0;
-		n++;
+		n = 0;
 	}
 
 	// set all fields of the structure to 0
 	memset(&current_command, 0, sizeof(current_command));
-	input_frames.clear();
+	//input_frames.clear();
 
 	rddf_index_last_pose = rddf_starting_pose_id;
 }
 
 
 void
-reset_experiment()
+free_episode(DqnEpisode *episode)
+{
+	for (int i = 0; i < episode->GetInteractions()->size(); i++)
+	{
+		episode->GetInteractions()->at(i)->free();
+		delete(episode->GetInteractions()->at(i));
+	}
+
+	delete(episode);
+}
+
+
+void
+apply_reward_decay_to_episode_rewards(DqnEpisode* episode)
+{
+	int i, j;
+	double future_reward, decayed_reward;
+
+	//for (i = 0; i < episode->GetInteractions()->size(); i++)
+	//{
+	//	episode->GetInteractions()->at(i)->immediate_reward *= 20;
+	//}
+
+	for (i = 0; i < episode->GetInteractions()->size(); i++)
+	{
+		// A ideia aqui eh assim que encontrar uma recompensa imediata diferente de zero, eu vou backpropagando
+		// a recompensa para os eventos anteriores ate esbarrar em outra recompensa imediata.
+		if (episode->GetInteractions()->at(i)->immediate_reward != 0)
+		{
+			j = i - 1;
+			future_reward = episode->GetInteractions()->at(i)->immediate_reward;
+
+			while (j >= 0)
+			{
+				if (episode->GetInteractions()->at(j)->immediate_reward != 0)
+					break;
+
+				decayed_reward = future_reward * pow(DQN_GAMMA, i - j);
+				//printf("%d => %lf => %lf\n", j, episode->GetInteractions()->at(j)->immediate_reward, decayed_reward);
+				episode->GetInteractions()->at(j)->immediate_reward = decayed_reward;
+
+				j--;
+			}
+		}
+	}
+
+	//exit(0);
+}
+
+
+void
+perform_episode_post_processing()
+{
+	if (DQN_TRAINING_MODE == DQN_MODE_REWARD_WITH_DECAY)
+	{
+		apply_reward_decay_to_episode_rewards(episode);
+		//apply_bonuses_for_time_of_fight(episode);
+	}
+
+	//apply_bonuses_for_winning_or_losing(episode);
+}
+
+
+void
+summarize_experiment()
 {
 	if (achieved_goal_in_this_experiment)
 	{
@@ -481,8 +611,42 @@ reset_experiment()
 		num_experiences_in_this_level = 0;
 	}
 
+	// update the max reward
+	if (episode_total_reward > max_reward_so_far)
+		max_reward_so_far = episode_total_reward;
+
 	num_experiences_in_this_level++;
 
+	if (episode != NULL)
+	{
+		perform_episode_post_processing();
+		episodes.push_back(episode);
+
+		if (episodes.size() >= DQN_NUM_EPISODES_TO_STORE)
+		{
+			free_episode(episodes[0]);
+			episodes.pop_front();
+		}
+	}
+
+	//add_transitions_to_replay_memory();
+
+//	static const double delta_epsilon = (EPSILON_FINAL - EPSILON_INITIAL) / (double) dqn_caffe->params()->NUM_ITERATIONS;
+//
+//	if (dqn_caffe->current_iteration() < dqn_caffe->params()->NUM_ITERATIONS)
+//		epsilon = EPSILON_INITIAL + delta_epsilon * dqn_caffe->current_iteration();
+//	else
+//		epsilon = EPSILON_FINAL;
+	epsilon -= EPSILON_DELTA;
+
+	if (epsilon <= EPSILON_MIN)
+		epsilon = EPSILON_MIN;
+}
+
+
+void
+reinitialize_robot_and_goal_poses()
+{
 	if (num_rddf_poses_from_origin < 60)
 		rddf_goal_id = 20; //(rand() % (rddf_index->size() - num_rddf_poses_from_origin)) + num_rddf_poses_from_origin;
 	else
@@ -496,15 +660,17 @@ reset_experiment()
 	experiment_starting_pose_x = rddf_index->index[rddf_starting_pose_id].x + carmen_gaussian_random(0, GAUSSIAN_VARIANCE_X);
 	experiment_starting_pose_y = rddf_index->index[rddf_starting_pose_id].y + carmen_gaussian_random(0, GAUSSIAN_VARIANCE_Y);
 	experiment_starting_pose_theta = carmen_normalize_theta(rddf_index->index[rddf_starting_pose_id].yaw + carmen_gaussian_random(0, GAUSSIAN_VARIANCE_THETA));
+}
 
+
+void
+reset_experiment()
+{
+	reinitialize_robot_and_goal_poses();
 	publish_starting_pose();
 	reinitize_experiment_configuration();
 
-	// clear the episode
-	for (int i = 0; i < episode.size(); i++)
-		delete(episode[i]);
-
-	episode.clear();
+	episode = new DqnEpisode();
 }
 
 
@@ -591,16 +757,16 @@ car_hit_obstacle()
 
 
 double
-update_agent_reward(double current_time)
+update_agent_reward(double current_time __attribute__((unused)))
 {
 	double imediate_reward;
-	static double last_time = 0;
-	double time_difference;
+	//static double last_time = 0;
+	//double time_difference;
 
 	imediate_reward = 0.0;
 
-	if (agent_achieved_partial_goal())
-		imediate_reward += PARTIAL_GOAL_REWARD;
+//	if (agent_achieved_partial_goal())
+//		imediate_reward += PARTIAL_GOAL_REWARD;
 
 	if (agent_achieved_final_goal())
 	{
@@ -617,11 +783,11 @@ update_agent_reward(double current_time)
 		num_times_car_hit_final_goal++;
 	}
 
-	if (last_time > 0.001)
-	{
-		time_difference = current_time - last_time;
-		imediate_reward += (time_difference * TIME_PUNISHMENT_PER_SECOND);
-	}
+//	if (last_time > 0.001)
+//	{
+//		time_difference = current_time - last_time;
+//		imediate_reward += (time_difference * TIME_PUNISHMENT_PER_SECOND);
+//	}
 
 	if (car_hit_obstacle())
 	{
@@ -630,121 +796,106 @@ update_agent_reward(double current_time)
 	}
 
 	episode_total_reward += imediate_reward;
-	last_time = current_time;
+	//last_time = current_time;
 
 	return imediate_reward;
 }
 
 
-void
-add_frame_to_list(InputFrames *frames, FrameDataSp frame)
-{
-	frames->push_back(frame);
-
-	if ((int) frames->size() > DqnParams::kInputFrameCount)
-	{
-		for (int i = 0; i < (int) (frames->size() - 1); i++)
-			frames->at(i) = frames->at(i + 1);
-
-		frames->pop_back();
-	}
-}
-
-
-double
-calculate_delayed_reward(vector<Event*> *episode, int t)
-{
-	double delayed_reward = 0;
-
-	for (int i = t; i < episode->size(); i++)
-		delayed_reward += (episode->at(i)->imediate_reward * pow(dqn_caffe->params()->GAMMA, i - t));
-
-	if (delayed_reward < min_delayed_reward) min_delayed_reward = delayed_reward;
-	if (delayed_reward > max_delayed_reward) max_delayed_reward = delayed_reward;
-
-	return delayed_reward;
-}
-
-
-void
-add_transitions_to_replay_memory()
-{
-	int i;
-	InputFrames frames;
-	double total_reward = episode_total_reward;
-	double reward;
-
-	if (episode.size() < DqnParams::kInputFrameCount + 1)
-		return;
-
-	for (i = 0; i < DqnParams::kInputFrameCount; i++)
-		frames.push_back(episode[i]->frame);
-
-	for (i = DqnParams::kInputFrameCount; i < (episode.size() - 1); i++)
-	{
-		FrameDataSp current_frame = episode[i]->frame;
-		FrameDataSp frame_after_action = episode[i + 1]->frame;
-
-		if (DqnParams::TrainingModel == DQN_Q_LEARNING) reward = episode[i]->imediate_reward;
-		// @filipe: o modelo de recompensa com desconto nao eh bem assim nao...
-		else if (DqnParams::TrainingModel == DQN_DISCOUNTED_TOTAL_REWARD) reward = total_reward; // * pow(dqn_caffe->params()->GAMMA, (double) episode.size() - i);
-		else if (DqnParams::TrainingModel == DQN_INFINITY_HORIZON_DISCOUNTED_MODEL) reward = calculate_delayed_reward(&episode, i);
-		else exit(printf("ERROR: Unknown training model!\n"));
-
-		add_frame_to_list(&frames, current_frame);
-		dqn_caffe->AddTransition(Transition(frames, episode[i]->action, reward, frame_after_action, episode[i]->v, episode[i]->phi, false, episode[i]->q_value_of_selected_action));
-	}
-
-	if (DqnParams::TrainingModel == DQN_Q_LEARNING || DqnParams::TrainingModel == DQN_INFINITY_HORIZON_DISCOUNTED_MODEL) reward = episode[i]->imediate_reward;
-	// @filipe: o modelo de recompensa com desconto nao eh bem assim nao...
-	else if (DqnParams::TrainingModel == DQN_DISCOUNTED_TOTAL_REWARD) reward = total_reward; // * pow(dqn_caffe->params()->GAMMA, (double) episode.size() - i);
-//	else if (DqnParams::TrainingModel == DQN_INFINITY_HORIZON_DISCOUNTED_MODEL)
+//void
+//add_frame_to_list(InputFrames *frames, FrameDataSp frame)
+//{
+//	frames->push_back(frame);
+//
+//	if ((int) frames->size() > DqnParams::kInputFrameCount)
 //	{
-//		reward = episode[i]->imediate_reward;
+//		for (int i = 0; i < (int) (frames->size() - 1); i++)
+//			frames->at(i) = frames->at(i + 1);
 //
-//		if (reward < min_delayed_reward) min_delayed_reward = reward;
-//		if (reward > max_delayed_reward) max_delayed_reward = reward;
+//		frames->pop_back();
 //	}
-	else exit(printf("ERROR: Unknown training model!\n"));
-
-	// the last transition is a special case
-	dqn_caffe->AddTransition(Transition(frames, episode[i]->action, reward, FrameDataSp(), episode[i]->v, episode[i]->phi, true, episode[i]->q_value_of_selected_action));
-}
-
-
-void
-summarize_experiment()
-{
-//	static const double delta_epsilon = (EPSILON_FINAL - EPSILON_INITIAL) / (double) dqn_caffe->params()->NUM_ITERATIONS;
+//}
 //
-//	if (dqn_caffe->current_iteration() < dqn_caffe->params()->NUM_ITERATIONS)
-//		epsilon = EPSILON_INITIAL + delta_epsilon * dqn_caffe->current_iteration();
-//	else
-//		epsilon = EPSILON_FINAL;
+//
+//double
+//calculate_delayed_reward(vector<Event*> *episode, int t)
+//{
+//	double delayed_reward = 0;
+//
+//	for (int i = t; i < episode->size(); i++)
+//		delayed_reward += (episode->at(i)->imediate_reward * pow(dqn_caffe->params()->GAMMA, i - t));
+//
+//	if (delayed_reward < min_delayed_reward) min_delayed_reward = delayed_reward;
+//	if (delayed_reward > max_delayed_reward) max_delayed_reward = delayed_reward;
+//
+//	return delayed_reward;
+//}
+//
+//
+//void
+//add_transitions_to_replay_memory()
+//{
+//	int i;
+//	InputFrames frames;
+//	double total_reward = episode_total_reward;
+//	double reward;
+//
+//	if (episode.size() < DqnParams::kInputFrameCount + 1)
+//		return;
+//
+//	for (i = 0; i < DqnParams::kInputFrameCount; i++)
+//		frames.push_back(episode[i]->frame);
+//
+//	for (i = DqnParams::kInputFrameCount; i < (episode.size() - 1); i++)
+//	{
+//		FrameDataSp current_frame = episode[i]->frame;
+//		FrameDataSp frame_after_action = episode[i + 1]->frame;
+//
+//		if (DqnParams::TrainingModel == DQN_Q_LEARNING) reward = episode[i]->imediate_reward;
+//		// @filipe: o modelo de recompensa com desconto nao eh bem assim nao...
+//		else if (DqnParams::TrainingModel == DQN_DISCOUNTED_TOTAL_REWARD) reward = total_reward; // * pow(dqn_caffe->params()->GAMMA, (double) episode.size() - i);
+//		else if (DqnParams::TrainingModel == DQN_INFINITY_HORIZON_DISCOUNTED_MODEL) reward = calculate_delayed_reward(&episode, i);
+//		else exit(printf("ERROR: Unknown training model!\n"));
+//
+//		add_frame_to_list(&frames, current_frame);
+//		dqn_caffe->AddTransition(Transition(frames, episode[i]->action, reward, frame_after_action, episode[i]->v, episode[i]->phi, false, episode[i]->q_value_of_selected_action));
+//	}
+//
+//	if (DqnParams::TrainingModel == DQN_Q_LEARNING || DqnParams::TrainingModel == DQN_INFINITY_HORIZON_DISCOUNTED_MODEL) reward = episode[i]->imediate_reward;
+//	// @filipe: o modelo de recompensa com desconto nao eh bem assim nao...
+//	else if (DqnParams::TrainingModel == DQN_DISCOUNTED_TOTAL_REWARD) reward = total_reward; // * pow(dqn_caffe->params()->GAMMA, (double) episode.size() - i);
+////	else if (DqnParams::TrainingModel == DQN_INFINITY_HORIZON_DISCOUNTED_MODEL)
+////	{
+////		reward = episode[i]->imediate_reward;
+////
+////		if (reward < min_delayed_reward) min_delayed_reward = reward;
+////		if (reward > max_delayed_reward) max_delayed_reward = reward;
+////	}
+//	else exit(printf("ERROR: Unknown training model!\n"));
+//
+//	// the last transition is a special case
+//	dqn_caffe->AddTransition(Transition(frames, episode[i]->action, reward, FrameDataSp(), episode[i]->v, episode[i]->phi, true, episode[i]->q_value_of_selected_action));
+//}
 
-	epsilon -= EPSILON_DELTA;
 
-	if (epsilon <= EPSILON_MIN)
-		epsilon = EPSILON_MIN;
-
-	// update the max reward
-	if (episode_total_reward > max_reward_so_far)
-		max_reward_so_far = episode_total_reward;
-
-	add_transitions_to_replay_memory();
-}
-
-
-FrameDataSp
-PreprocessScreen(Mat *raw_screen, carmen_mapper_map_message *message)
+Mat*
+preprocess_screen(Mat *raw_screen, carmen_mapper_map_message *message)
 {
-	// ************************************************
-	// CHECK IF IT CAN'T BE OPTIMIZED TO AVOID IMAGE CREATION ALL THE TIME!!!!!!!!!
-	// ************************************************
+	static int first = 1;
 
-	Mat resized;
+	static Mat *float_img = NULL;
+	static Mat *resized = NULL;
+	static Mat *rotated = NULL;
 
-	resized = Mat(Size(DqnParams::kCroppedFrameSize, DqnParams::kCroppedFrameSize), CV_8UC3);
+	// in the first time the function is called, the matrices are allocated
+	if (first)
+	{
+		float_img = new Mat(Size(raw_screen->cols, raw_screen->rows), CV_32FC3);
+		rotated = new Mat(Size(raw_screen->cols, raw_screen->rows), CV_32FC3);
+		resized = new Mat(Size(DQN_FRAME_DIM, DQN_FRAME_DIM), CV_32FC3);
+
+		first = 0;
+	}
 
 	int robot_x = (int) ((localize_ackerman_message.globalpos.y - message->config.y_origin) / message->config.resolution);
 	int robot_y = (int) ((localize_ackerman_message.globalpos.x - message->config.x_origin) / message->config.resolution);
@@ -767,66 +918,62 @@ PreprocessScreen(Mat *raw_screen, carmen_mapper_map_message *message)
 	if (left < 0) { left = 0; }
 	if (left + width >= raw_screen->cols) { left -= (left + width - raw_screen->cols); left -= 1; }
 
-	Mat *raw_screen_rotated = new Mat(Size(raw_screen->cols, raw_screen->rows), CV_8UC3);
+	// convert image to float
+	raw_screen->convertTo(*float_img, CV_32FC3);
+	(*float_img) /= 255.0;
 
 	//rotate image
 	cv::Point center = cv::Point(robot_x, robot_y);
 	Mat rot_mat = getRotationMatrix2D(center, carmen_radians_to_degrees(-localize_ackerman_message.globalpos.theta), 1.0);
-	warpAffine(*raw_screen, *raw_screen_rotated, rot_mat, raw_screen_rotated->size());
+	warpAffine(*float_img, *rotated, rot_mat, rotated->size());
 
 	Rect roi(top, left, width, height);
-	resize((*raw_screen_rotated)(roi), resized, resized.size(), 0, 0, INTER_CUBIC);
+	resize((*rotated)(roi), *resized, resized->size(), 0, 0, INTER_CUBIC);
 
-	rotate(resized, 90, resized); // to make it look like in navigator_gui2
+	rotate(*resized, 90, *resized); // to make it look like in navigator_gui2
 
 	if (VIEWER_ACTIVE)
 	{
 		Mat net_input_view(Size(200, 200), CV_8UC3);
-		resize(resized, net_input_view, net_input_view.size(), 0, 0, INTER_CUBIC);
+		resize(*resized, net_input_view, net_input_view.size(), 0, 0, INTER_CUBIC);
 		imshow("netinput", net_input_view);
 		waitKey(1);
 	}
 
-	FrameDataSp screen = boost::shared_ptr<FrameData>(new FrameData());
-
-	for (int i = 0; i < (resized.rows * resized.cols * resized.channels()); i++)
-		screen->push_back(resized.data[i]);
-
-	delete(raw_screen_rotated);
-	return screen;
+	return resized;
 }
 
 
 void
-update_current_command_with_dqn_action(DqnAction action)
+update_current_command_with_dqn_action(int action)
 {
 	switch(action)
 	{
-		case DQN_ACTION_SPEED_DOWN:
+		case 0:
+		{
+			// keep the same command
+			break;
+		}
+		case 1:
 		{
 			current_command.v -= SPEED_UPDATE;
 			break;
 		}
-		case DQN_ACTION_SPEED_UP:
+		case 2:
 		{
 			current_command.v += SPEED_UPDATE;
 			break;
 		}
-		case DQN_ACTION_STEER_LEFT:
+		case 3:
 		{
 			current_command.phi += STEERING_UPDATE;
 			current_command.phi = carmen_normalize_theta(current_command.phi);
 			break;
 		}
-		case DQN_ACTION_STEER_RIGHT:
+		case 4:
 		{
 			current_command.phi -= STEERING_UPDATE;
 			current_command.phi = carmen_normalize_theta(current_command.phi);
-			break;
-		}
-		case DQN_ACTION_NONE:
-		{
-			// keep the same command
 			break;
 		}
 		default:
@@ -845,33 +992,53 @@ update_current_command_with_dqn_action(DqnAction action)
 
 
 void
-update_command_using_dqn(double v, double phi)
+update_command_using_dqn(Mat *frame)
 {
 	// DEBUG: faz o carro acelerar para frente apenas
-//	current_action = DQN_ACTION_SPEED_UP;
-//	update_current_command_with_dqn_action(current_action);
-//	return;
+	// current_action = DQN_ACTION_SPEED_UP;
+	// update_current_command_with_dqn_action(current_action);
+	// return;
 
-	if ((int) input_frames.size() >= DqnParams::kInputFrameCount)
+	if (episode->GetInteractions()->size() >= DQN_NUM_INPUT_FRAMES)
 	{
-		std::pair<DqnAction, float> action_and_q;
+		double prob = (double) rand() / (double) RAND_MAX;
 
-		if (use_greedy)
-			action_and_q = dqn_caffe->SelectAction(input_frames, 0, v, phi);
+		if (use_greedy || prob > epsilon)
+		{
+			std::pair<int, float> action_and_q;
+			vector<Mat*> input;
+
+			for (int k = DQN_NUM_INPUT_FRAMES - 1; k >= 1; k--)
+				input.push_back(episode->GetInteractions()->at(episode->GetInteractions()->size() - k)->input);
+
+			input.push_back(frame);
+
+			//cv::imshow("1", *(input[0]));
+			//cv::imshow("2", *(input[1]));
+			//cv::imshow("3", *(input[2]));
+			//cv::imshow("4", *(input[3]));
+			//cv::imshow("5", *(input[4]));
+			//cv::imshow("6", *(input[5]));
+			//cv::waitKey(1);
+
+			static vector<float> additional_data(DQN_NUM_ADDITIONAL_DATA);
+			DqnInteration::BuildDataVector(&last_commands, &last_vs, &last_phis, &last_goal_poses, &additional_data);
+			action_and_q = dqn_net->SelectAction(input, &additional_data);
+
+			current_action = action_and_q.first;
+			current_q = action_and_q.second;
+
+		}
 		else
-			action_and_q = dqn_caffe->SelectAction(input_frames, epsilon, v, phi);
-
-		current_q = action_and_q.second;
-		current_action = action_and_q.first;
-		update_current_command_with_dqn_action(current_action);
+		{
+			current_action = rand() % DQN_TOTAL_ACTIONS;
+			current_q = 0.0;
+		}
 	}
 	else
 	{
-		current_q = TIME_PUNISHMENT_PER_SECOND; // 0;
-
-		current_action = DQN_ACTION_NONE;
-		// set all fields of the structure to 0
-		memset(&current_command, 0, sizeof(current_command));
+		current_q = 0;
+		current_action = 0;
 	}
 }
 
@@ -905,25 +1072,25 @@ print_report(double distance_to_goal, int achieved_goal_in_this_experiment)
 void
 train_net_a_little()
 {
-//	static int n = 0;
-//
-//	if (++n < 20)
-//		return;
-//
-//	n = 0;
+	if (only_run)
+		return;
 
 	double init = carmen_get_time();
-	if (dqn_caffe->memory_size() > dqn_caffe->params()->NUM_WARMUP_TRANSITIONS)
-	{
-		for (int i = 0; i < 1000 && i < dqn_caffe->memory_size(); i++)
-		{
-			if (i % 1 == 0)
-				// o cara que completa esse fprintf esta em dqn_caffe.cpp na funcao update
-				fprintf(stderr, "TRAINING THE NET %d OF %d SAMPLES | TIME: %.2lf | TIME PER SAMPLE: %.2lf || \t",
-					i, (dqn_caffe->memory_size() < 5000) ? (dqn_caffe->memory_size()) : (1000), carmen_get_time() - init, (carmen_get_time() - init) / (double) i);
 
-			dqn_caffe->Update();
-		}
+	// treina algumas vezes o tamanho do ultimo experimento
+	int n = 4 * episode->GetInteractions()->size();
+
+	for (int i = 0; i < n; i++)
+	{
+		if (i % 30 == 0)
+			// o cara que completa esse fprintf esta em dqn_caffe.cpp na funcao update
+			fprintf(stderr, "TRAINING THE NET %d OF %ld SAMPLES | TIME: %.2lf | TIME PER SAMPLE: %.2lf\n",
+				i, n, carmen_get_time() - init, (i <= 0) ? (0) : ((carmen_get_time() - init) / (double) i));
+
+		int random_ep = rand() % episodes.size();
+		int random_tr = (rand() % (episodes[random_ep]->GetInteractions()->size() - DQN_NUM_INPUT_FRAMES)) + DQN_NUM_INPUT_FRAMES;
+
+		dqn_net->TrainTransition(episodes[random_ep], random_tr);
 	}
 }
 
@@ -955,10 +1122,125 @@ save_snapshot_if_necessary()
 	if (n >= 1000)
 	{
 		n = 0;
-		dqn_caffe->GetSolver()->Snapshot();
+		dqn_net->SaveTrain();
 	}
 	else
 		n++;
+}
+
+
+int
+new_experiment_is_consolidated(carmen_mapper_map_message *message)
+{
+	// espera um segundo no inicio de cada novo experimento (necessario para dar tempo das mensagens de inicializacao se consolidarem nos modulos)
+	if (abs(carmen_get_time() - time_since_new_starting_localization_was_sent) < 1.0)
+	{
+		fprintf(stderr, "Waiting for the consolidation of the new experiment\n");
+		return 0;
+	}
+	else
+	{
+		if (!new_localization_already_consolidated)
+		{
+			time_experiment_start = carmen_get_time();
+			new_localization_already_consolidated = 1;
+		}
+	}
+
+	// wait for the necessary messages and data
+	if (localize_ackerman_message.timestamp == 0 || compact_cost_map_message.timestamp == 0 || cost_map.complete_map == NULL)
+	{
+		fprintf(stderr, "Waiting for necessary messages\n");
+		return 0;
+	}
+
+	// TODO: pode acontecer da localizacao dizer que o robo ja esta no lugar certo, mas o mapa ainda nao ter desenhado ele no lugar certo.
+	if (reposed_requested && sqrt(pow(localize_ackerman_message.globalpos.x - experiment_starting_pose_x, 2) + pow(localize_ackerman_message.globalpos.y - experiment_starting_pose_y, 2)) > 1.5)
+	{
+		fprintf(stderr, "Waiting for a new localization\n");
+		publish_starting_pose();
+		return 0;
+	}
+	else
+		reposed_requested = 0;
+
+	if (map_is_unstable(message))
+	{
+		fprintf(stderr, "Waiting for a new map\n");
+		return 0;
+	}
+
+	if (fabs(carmen_get_time() - localize_ackerman_message.timestamp) > 180.0)
+		exit(printf("Error: long time without localizer...\n"));
+
+	return 1;
+}
+
+
+carmen_point_t
+compute_goal_pose_in_car_reference()
+{
+	g2o::SE2 car_pose(localize_ackerman_message.globalpos.x, localize_ackerman_message.globalpos.y, localize_ackerman_message.globalpos.theta);
+	g2o::SE2 goal_pose(rddf_index->index[rddf_goal_id].x, rddf_index->index[rddf_goal_id].y, rddf_index->index[rddf_goal_id].yaw);
+	g2o::SE2 goal_in_car_ref = car_pose.inverse() * goal_pose;
+
+	carmen_point_t goal;
+
+	goal.x = goal_in_car_ref.toVector()[0];
+	goal.y = goal_in_car_ref.toVector()[1];
+	goal.theta = goal_in_car_ref.toVector()[2];
+
+	return goal;
+}
+
+
+void
+add_a_priori_data_to_queues()
+{
+	carmen_point_t goal = compute_goal_pose_in_car_reference();
+
+	last_vs.push_back(localize_ackerman_message.v);
+	last_phis.push_back(localize_ackerman_message.phi);
+
+	if (last_vs.size() > DQN_NUM_PAST_ODOMS_TO_STORE)
+	{
+		last_vs.pop_front();
+		last_phis.pop_front();
+	}
+
+	last_goal_poses.push_back(goal);
+
+	if (last_goal_poses.size() > DQN_NUM_PAST_GOAL_POSES_TO_STORE)
+		last_goal_poses.pop_front();
+}
+
+
+void
+add_a_posteri_data_to_queues()
+{
+	last_commands.push_back(current_action);
+
+	if (last_commands.size() > DQN_NUM_PAST_COMMANDS_TO_STORE)
+		last_commands.pop_front();
+}
+
+
+DqnInteration*
+CopyStuffAndBuildInteraction(Mat *frame, int action, double immediate_reward)
+{
+	Mat *frame_copy = new Mat(frame->rows, frame->cols, frame->type());
+	frame->copyTo(*frame_copy);
+
+	std::deque<int> *last_commands_copy = new std::deque<int>(last_commands);
+
+	std::deque<double> *last_vs_copy = new std::deque<double>(last_vs);
+	std::deque<double> *last_phis_copy = new std::deque<double>(last_phis);
+	std::deque<carmen_point_t> *last_goal_poses_copy = new std::deque<carmen_point_t>(last_goal_poses);
+
+	DqnInteration *interaction = new DqnInteration(frame_copy, immediate_reward, action, last_commands_copy,
+			last_vs_copy, last_phis_copy, last_goal_poses_copy);
+
+	return interaction;
 }
 
 
@@ -974,61 +1256,26 @@ map_mapping_handler(carmen_mapper_map_message *message)
 		first = 0;
 	}
 
-	// espera um segundo no inicio de cada novo experimento (necessario para dar tempo das mensagens de inicializacao se consolidarem nos modulos)
-	if (abs(carmen_get_time() - time_since_new_starting_localization_was_sent) < 1.0)
-	{
-		fprintf(stderr, "Waiting for the consolidation of the new experiment\n");
+	if (!new_experiment_is_consolidated(message))
 		return;
-	}
-	else
-	{
-		if (!new_localization_already_consolidated)
-		{
-			time_experiment_start = carmen_get_time();
-			new_localization_already_consolidated = 1;
-		}
-	}
 
-	// wait for the necessary messages and data
-	if (localize_ackerman_message.timestamp == 0 || compact_cost_map_message.timestamp == 0 || cost_map.complete_map == NULL)
-	{
-		fprintf(stderr, "Waiting for necessary messages\n");
-		return;
-	}
-
-	// TODO: pode acontecer da localizacao dizer que o robo ja esta no lugar certo, mas o mapa ainda nao ter desenhado ele no lugar certo.
-	if (reposed_requested && sqrt(pow(localize_ackerman_message.globalpos.x - experiment_starting_pose_x, 2) + pow(localize_ackerman_message.globalpos.y - experiment_starting_pose_y, 2)) > 1.5)
-	{
-		fprintf(stderr, "Waiting for a new localization\n");
-		publish_starting_pose();
-		return;
-	}
-	else
-		reposed_requested = 0;
-
-	if (map_is_unstable(message))
-	{
-		fprintf(stderr, "Waiting for a new map\n");
-		return;
-	}
-
-	if (fabs(carmen_get_time() - localize_ackerman_message.timestamp) > 180.0)
-		exit(printf("Error: long time without localizer...\n"));
-
-	double imediate_reward;
+	double immediate_reward;
 
 	Mat *final_map_image = draw_map_car_and_rddf(message);
-	FrameDataSp frame = PreprocessScreen(final_map_image, message);
-	add_frame_to_list(&input_frames, frame);
+	Mat *frame = preprocess_screen(final_map_image, message);
 
-	update_command_using_dqn(localize_ackerman_message.v, localize_ackerman_message.phi);
+	add_a_priori_data_to_queues();
+	update_command_using_dqn(frame);
+	update_current_command_with_dqn_action(current_action);
+	add_a_posteri_data_to_queues();
+
 	publish_motion_command(current_command.v, current_command.phi);
-	imediate_reward = update_agent_reward(message->timestamp);
+	immediate_reward = update_agent_reward(message->timestamp);
 
 	if (collision_detected)
 		publish_motion_command(0, 0);
 
-	episode.push_back(new Event(frame, current_action, localize_ackerman_message.v, localize_ackerman_message.phi, imediate_reward, current_q, episode_total_reward));
+	episode->AddInteration(CopyStuffAndBuildInteraction(frame, current_action, immediate_reward));
 
 	static double time_last_printf = 0;
 
@@ -1043,11 +1290,7 @@ map_mapping_handler(carmen_mapper_map_message *message)
 	}
 
 	fprintf(stderr, "%cCMD: (% 2.1lf, % 2.1lf)   Q: % 3.2lf \t RW: % 2.4lf   TOT: % 2.2lf \t LVL: %d of %ld \t EPS: %.2lf \t CONC: %d MCONC: %d \t CALLS_SEC: %.1f \n",
-			(use_greedy) ? ('*') : ('-'), current_command.v, current_command.phi, current_q, imediate_reward, episode_total_reward, num_rddf_poses_from_origin, rddf_index->size() - 1, epsilon, num_consecutive_goal_achievements, max_consecutive_goal_achievements, (float) ncalls / (carmen_get_time() - time_last_printf));
-
-	// If the size of replay memory is enough, update DQN
-	//if (dqn_caffe->memory_size() > dqn_caffe->params()->NUM_WARMUP_TRANSITIONS)
-		//dqn_caffe->Update();
+			(use_greedy) ? ('*') : ('-'), current_command.v, current_command.phi, current_q, immediate_reward, episode_total_reward, num_rddf_poses_from_origin, rddf_index->size() - 1, epsilon, num_consecutive_goal_achievements, max_consecutive_goal_achievements, (float) ncalls / (carmen_get_time() - time_last_printf));
 
 	if (fabs(localize_ackerman_message.v) > 0.5)
 	{
@@ -1063,16 +1306,16 @@ map_mapping_handler(carmen_mapper_map_message *message)
 		}
 	}
 
+	int starved = (car_is_stoped && fabs(carmen_get_time() - instant_car_stoped) > 10.0);
+
 	// If the car stopped after already accelerating, finish the experiment. Do the same
 	// if a collision is detected.
 	if (/*(fabs(localize_ackerman_message.v) < 0.01 && car_already_accelerated_in_this_experiment) ||*/
 		(collision_detected) ||
 		/*((carmen_get_time() - time_experiment_start) > 300.0) ||*/
-		(car_is_stoped && fabs(carmen_get_time() - instant_car_stoped) > 10.0) ||
+		starved ||
 		(achieved_goal_in_this_experiment && (distance_to_goal() < MIN_DIST_TO_CONSIDER_ACHIEVEMENT) && (abs(localize_ackerman_message.v) < SPEED_UPDATE)))
 	{
-		print_report(distance_to_goal(), achieved_goal_in_this_experiment);
-
 		// DEBUG:
 //		printf("COLISION: %d TIME: %d GOAL: %d\n", collision_detected, ((carmen_get_time() - time_experiment_start) > 300.0), (achieved_goal_in_this_experiment && (distance_to_goal() < MIN_DIST_TO_CONSIDER_ACHIEVEMENT) && (abs(localize_ackerman_message.v) < SPEED_UPDATE)));
 //		printf("T_C: %lf TS: %lf DELTA: %lf\n", carmen_get_time(), time_experiment_start, carmen_get_time() - time_experiment_start);
@@ -1080,11 +1323,25 @@ map_mapping_handler(carmen_mapper_map_message *message)
 //		printf("\n------------\n");
 //		getchar();
 
+		if (starved)
+		{
+			int last_id = episode->GetInteractions()->size() - 1;
+			episode->GetInteractions()->at(last_id)->immediate_reward = STARVATION_PUNISHMENT;
+			episode_total_reward += STARVATION_PUNISHMENT;
+		}
+
+		print_report(distance_to_goal(), achieved_goal_in_this_experiment);
+		printf("Publish STOP motion command\n");
 		publish_motion_command(0, 0);
+		printf("Summarizing experiment\n");
 		summarize_experiment();
+		printf("Training net\n");
 		train_net_a_little();
+		printf("Saving snapshot (if necessary)\n");
 		save_snapshot_if_necessary();
+		printf("Reseting experiment\n");
 		reset_experiment();
+		printf("Done. New experimet started.\n");
 	}
 
 	//delete(final_map_image);
@@ -1119,7 +1376,7 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 
 
 void
-initialize_global_structures(char **argv, char *pre_train)
+initialize_global_structures(char **argv __attribute__((unused)), char *pre_train)
 {
 	// set all fields of all structures to 0
 	memset(&localize_ackerman_message, 0, sizeof(localize_ackerman_message));
@@ -1129,11 +1386,13 @@ initialize_global_structures(char **argv, char *pre_train)
 
 	rddf_index_already_used_in_the_experiment = (char *) calloc (rddf_index->size(), sizeof(char));
 
-	dqn_caffe = new DqnCaffe(DqnParams(), argv[0]);
-	dqn_caffe->Initialize();
+	//dqn_caffe = new DqnCaffe(DqnParams(), argv[0]);
+	//dqn_caffe->Initialize();
+
+	dqn_net = new DqnNet("dqn_solver.prototxt");
 
 	if (pre_train != NULL)
-		dqn_caffe->LoadTrainedModel(pre_train);
+		dqn_net->LoadTrain(pre_train);
 
 	if (VIEWER_ACTIVE)
 	{
@@ -1143,6 +1402,8 @@ initialize_global_structures(char **argv, char *pre_train)
 		moveWindow("map", 10, 10);
 		moveWindow("netinput", 500, 10);
 	}
+
+	reinitialize_queues();
 }
 
 

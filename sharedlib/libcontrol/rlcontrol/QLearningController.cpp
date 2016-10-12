@@ -18,17 +18,27 @@ QLearningController::_build_input_datum(State state)
 	d.set_width(input_size);
 	d.set_label(0);
 
-//	printf("state.desired_v.size(): %ld\n", state.desired_v.size());
-//	printf("state.measured_v.size(): %ld\n", state.measured_v.size());
-//	printf("state.last_commmands.size(): %ld\n", state.last_commmands.size());
-//	exit(0);
+	//printf("state.desired_v.size(): %ld\n", state.desired.size());
+	//printf("state.measured_v.size(): %ld\n", state.measured.size());
+	//printf("state.last_commmands.size(): %ld\n", state.last_commmands.size());
+
+	//for (i = 0; i < state.desired.size(); i++)
+	//	printf("state.desired[%d]: %lf\n", i, state.desired[i] / 60.0);
+    //
+	//for (i = 0; i < state.measured.size(); i++)
+	//	printf("state.measured[%d]: %lf\n", i, state.measured[i] / 60.0);
+    //
+	//for (i = 0; i < state.last_commmands.size(); i++)
+	//	printf("state.last_commmands[%d]: %lf\n", i, state.last_commmands[i] / 100.0);
+
+	//exit(0);
 
 	for (i = 0; i < _NUM_FUTURE_VELOCITIES; i++)
 	{
 		if (i >= state.desired.size())
 			d.add_float_data(0);
 		else
-			d.add_float_data(state.desired[i] / 30.0);
+			d.add_float_data(state.desired[i] / 60.0);
 	}
 
 	for (i = 0; i < _NUM_PAST_VELOCITIES; i++)
@@ -36,7 +46,7 @@ QLearningController::_build_input_datum(State state)
 		if (i >= state.measured.size())
 			d.add_float_data(0);
 		else
-			d.add_float_data(state.measured[i] / 30.0);
+			d.add_float_data(state.measured[i] / 60.0);
 	}
 
 	for (i = 0; i < _NUM_PAST_COMMANDS; i++)
