@@ -8,6 +8,7 @@
 #include <carmen/moving_objects_messages.h>
 #include <carmen/moving_objects_interface.h>
 #include <vector>
+#include <map>
 
 
 typedef struct {
@@ -40,6 +41,11 @@ typedef struct {
 	double timestamp;
 } timestamp_moving_objects;
 
+typedef struct {
+	int index;
+	int publishing;
+	std::vector<moving_object_data> objects;
+} moving_objects_by_id_t;
 
 double
 euclidean_distance(double x1, double y1, double x2, double y2);
