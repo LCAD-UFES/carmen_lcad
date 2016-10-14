@@ -1,5 +1,5 @@
 net: "dqn.prototxt"
-base_lr: 0.1
+base_lr: 0.01
 lr_policy: "fixed"
 solver_type: RMSPROP
 solver_mode: GPU

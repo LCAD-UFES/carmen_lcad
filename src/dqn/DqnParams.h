@@ -28,9 +28,9 @@
 #define DQN_GAMMA 0.99 									// "Discount factor of future rewards (0,1]"
 #define DQN_NUM_EPISODES_TO_STORE 20					// "Capacity of replay memory"
 
-#define DQN_FRAME_DIM 200
+#define DQN_FRAME_DIM 100
 #define DQN_FRAME_CHANNELS 3
-#define DQN_NUM_INPUT_FRAMES 1
+#define DQN_NUM_INPUT_FRAMES 3
 
 #define DQN_NUM_PAST_COMMANDS_TO_STORE 5
 #define DQN_NUM_PAST_ODOMS_TO_STORE 5

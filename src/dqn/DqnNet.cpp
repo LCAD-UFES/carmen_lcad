@@ -145,16 +145,16 @@ DqnNet::DqnNet(char *solver_file)
 		_AddDatumToVector(&train_add_data_datum_vector, _BuildEmptyDatum(1, 1, DQN_TOTAL_ADDITIONAL_DATA_SIZE));
 	}
 
-	//cv::namedWindow("1");
-	//cv::namedWindow("2");
-	//cv::namedWindow("3");
+	cv::namedWindow("1");
+	cv::namedWindow("2");
+	cv::namedWindow("3");
 	//cv::namedWindow("4");
 	//cv::namedWindow("5");
 	//cv::namedWindow("6");
-    //
-	//cv::moveWindow("1", 100, 100);
-	//cv::moveWindow("2", 300, 100);
-	//cv::moveWindow("3", 500, 100);
+
+	cv::moveWindow("1", 600, 100);
+	cv::moveWindow("2", 800, 100);
+	cv::moveWindow("3", 1000, 100);
 	//cv::moveWindow("4", 100, 300);
 	//cv::moveWindow("5", 300, 300);
 	//cv::moveWindow("6", 500, 300);
@@ -174,6 +174,8 @@ DqnNet::SelectAction(vector<Mat*> input, vector<float> *additional_data, int sho
 	if (show_output)
 	{
 		cv::imshow("1", *(input[0]));
+		cv::imshow("2", *(input[1]));
+		cv::imshow("3", *(input[2]));
 		waitKey(1);
 	}
 
@@ -198,7 +200,7 @@ DqnNet::SelectAction(vector<Mat*> input, vector<float> *additional_data, int sho
 	for (i = 0; i < DQN_NUM_COMMANDS; i++)
 	{
 		if (show_output)
-			printf("%d => %f\n", i, output[i]);
+			printf("%d => %f | ", i, output[i]);
 
 		if (output[i] > action_and_reward.second)
 		{
@@ -208,7 +210,7 @@ DqnNet::SelectAction(vector<Mat*> input, vector<float> *additional_data, int sho
 	}
 
 	if (show_output)
-		printf("SEL: %d => %f\n", action_and_reward.first, action_and_reward.second);
+		printf("|| SEL: %d => %f\n", action_and_reward.first, action_and_reward.second);
 
 	return action_and_reward;
 }
@@ -487,8 +489,8 @@ DqnNet::_TrainTransitionRewardWithDecay(DqnEpisode *episode, int transition_id)
 		inputs.push_back(episode->GetInteractions()->at(sample_pos - k)->input);
 
 	cv::imshow("1", *(inputs[0]));
-	//cv::imshow("2", *(inputs[1]));
-	//cv::imshow("3", *(inputs[2]));
+	cv::imshow("2", *(inputs[1]));
+	cv::imshow("3", *(inputs[2]));
 	//cv::imshow("4", *(inputs[3]));
 	//cv::imshow("5", *(inputs[4]));
 	//cv::imshow("6", *(inputs[5]));
@@ -607,8 +609,8 @@ DqnNet::_TrainTransitionQLearning(DqnEpisode *episode, int transition_id)
 		inputs.push_back(episode->GetInteractions()->at(sample_pos - k)->input);
 
 	cv::imshow("1", *(inputs[0]));
-	//cv::imshow("2", *(inputs[1]));
-	//cv::imshow("3", *(inputs[2]));
+	cv::imshow("2", *(inputs[1]));
+	cv::imshow("3", *(inputs[2]));
 	//cv::imshow("4", *(inputs[3]));
 	//cv::imshow("5", *(inputs[4]));
 	//cv::imshow("6", *(inputs[5]));
