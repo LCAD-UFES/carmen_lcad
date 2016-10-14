@@ -410,15 +410,15 @@ libmpc_stiction_simulation(double current_phi)
 	}
 	else
 	{
-		printf("a%f\n", abs(first_phi - current_phi));
+//		printf("a%lf\n", fabs(first_phi - current_phi));
 		if (abs(first_phi - current_phi) < 0.0107)
 		{
-			printf("Stic %f %f\n", first_phi, current_phi);
+//			printf("Stic %lf %lf\n", first_phi, current_phi);
 			return (true);
 		}
 		else
 		{
-			printf("Saiu\n");
+//			printf("Saiu\n");
 			cont = 0;
 			return (false);
 		}
@@ -516,8 +516,9 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_desired_curvat
 	param.dk = yp - Cxk;
 	param.previous_k1 = effort;
 
-	effort /= (1.0 / (1.0 + v / 7.0));
-	carmen_clamp(-100.0, effort, 100.0);
+	/** Tentativa de correcao da oscilacao em velocidades altas **/
+//	effort /= (1.0 / (1.0 + v / 7.0));
+//	carmen_clamp(-100.0, effort, 100.0);
 
 	//plot_state(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
 

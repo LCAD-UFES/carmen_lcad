@@ -131,7 +131,7 @@ plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_p
 //	static vector<double> timestamp_vector;
 	static bool first_time = true;
 //	static double first_timestamp;
-	static FILE *gnuplot_pipe;
+	static FILE *gnuplot_pipeMP;
 
 //	double t = carmen_get_time();
 
@@ -140,16 +140,16 @@ plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_p
 //		first_timestamp = t;
 		first_time = false;
 
-		gnuplot_pipe = popen("gnuplot", "w"); // -persist to keep last plot after program closes
-		fprintf(gnuplot_pipe, "set xrange [0:40]\n");
-		fprintf(gnuplot_pipe, "set yrange [-10:10]\n");
+		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+		fprintf(gnuplot_pipeMP, "set xrange [0:40]\n");
+		fprintf(gnuplot_pipeMP, "set yrange [-10:10]\n");
 //		fprintf(gnuplot_pipe, "set y2range [-0.55:0.55]\n");
-		fprintf(gnuplot_pipe, "set xlabel 'senconds'\n");
-		fprintf(gnuplot_pipe, "set ylabel 'effort'\n");
+		fprintf(gnuplot_pipeMP, "set xlabel 'senconds'\n");
+		fprintf(gnuplot_pipeMP, "set ylabel 'effort'\n");
 //		fprintf(gnuplot_pipe, "set y2label 'phi (radians)'\n");
 //		fprintf(gnuplot_pipe, "set ytics nomirror\n");
 //		fprintf(gnuplot_pipe, "set y2tics\n");
-		fprintf(gnuplot_pipe, "set tics out\n");
+		fprintf(gnuplot_pipeMP, "set tics out\n");
 	}
 
 
@@ -171,12 +171,12 @@ plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_p
 
 //	fprintf(gnuplot_pipe, "unset arrow\nset arrow from %lf, %lf to %lf, %lf nohead\n",0, -60.0, 0, 60.0);
 
-	fprintf(gnuplot_pipe, "plot "
+	fprintf(gnuplot_pipeMP, "plot "
 			"'./gnuplot_data.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'OTCP',"
 			"'./gnuplot_data_lane.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane',"
 			"'./gnuplot_data_seed.txt' using 1:2 with lines title 'Seed' axes x1y1\n");
 
-	fflush(gnuplot_pipe);
+	fflush(gnuplot_pipeMP);
 }
 
 TrajectoryLookupTable::TrajectoryDimensions
@@ -240,19 +240,11 @@ move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_select
 	if (goal_list_message->poses[0].x == goal_list_message->poses[1].x && goal_list_message->poses[0].y == goal_list_message->poses[1].y)
 		index = 1;
 
-	// Insert the first pose (car pose) to path_planner lane
-	if (GlobalState::use_path_planner)
-	{
-		local_reference_lane_point = {0.0, 0.0, localizer_pose->theta,
-						goal_list_message->poses[0].v, goal_list_message->poses[0].phi, 0.0};
-		lane_in_local_pose->push_back(local_reference_lane_point);
-		index = 1;
-	}
-
 	for (int k = index; k < goal_list_message->number_of_poses; k++)
 	{
 		SE2 lane_in_world_reference(goal_list_message->poses[k].x, goal_list_message->poses[k].y, goal_list_message->poses[k].theta);
 		SE2 lane_in_car_reference = robot_pose.inverse() * lane_in_world_reference;
+
 
 		local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2],
 				goal_list_message->poses[k].v, goal_list_message->poses[k].phi, 0.0};
@@ -278,6 +270,7 @@ add_points_to_goal_list_interval(carmen_ackerman_path_point_t p1, carmen_ackerma
 {
 	double delta_x, delta_y, delta_theta, distance;
 	int i;
+	static bool first = true;
 
 	distance = sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
 
@@ -290,13 +283,28 @@ add_points_to_goal_list_interval(carmen_ackerman_path_point_t p1, carmen_ackerma
 
 	carmen_ackerman_path_point_t new_point = {p1.x, p1.y, p1.theta, p1.v, p1.phi, 0.0};
 
+
 	for (i = 0; i < num_points; i++)
 	{
 		new_point.x = p1.x + i * delta_x;
 		new_point.y = p1.y + i * delta_y;
 		new_point.theta = carmen_normalize_theta(p1.theta + i * delta_theta);
 
-		detailed_lane.push_back(new_point);
+		if (new_point.x == 0.0 && first)
+			first = false;
+		if (new_point.x > 0.0)
+		{
+			if (first)
+			{
+				// Insert the first pose (car pose) to path_planner lane
+				carmen_ackerman_path_point_t first_point = {0.0, 0.0, 0.0, p1.v, p1.phi, 0.0};
+				detailed_lane.push_back(first_point);
+				first = false;
+			}
+
+			detailed_lane.push_back(new_point);
+		}
+
 	}
 }
 
@@ -773,13 +781,13 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 				vector<carmen_ackerman_path_point_t> path_local;
 
 				//TODO Descomentar para usar o plot!
-//				vector<carmen_ackerman_path_point_t> pathSeed;
-//				pathSeed = simulate_car_from_parameters(td, tcp, lastOdometryVector[0].v, lastOdometryVector[0].phi, false, 0.025);
+				vector<carmen_ackerman_path_point_t> pathSeed;
+				pathSeed = simulate_car_from_parameters(td, tcp, lastOdometryVector[0].v, lastOdometryVector[0].phi, false, 0.025);
 
 				if (!get_path_from_optimized_tcp(path, path_local, otcp, td, localizer_pose))
 					continue;
 //TODO Gnuplot
-//				plot_state(path_local,detailed_lane,pathSeed);
+				plot_state(path_local,detailed_lane,pathSeed);
 
 				paths[j + i * lastOdometryVector.size()] = path;
 				otcps[j + i * lastOdometryVector.size()] = otcp;

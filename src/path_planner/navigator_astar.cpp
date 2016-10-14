@@ -26,12 +26,19 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	IPC_RETURN_TYPE err = IPC_OK;
 	static int roundValue = 2;
 	static carmen_ackerman_traj_point_t robot_position;
+//
+//	robot_position.x = round(msg->globalpos.x * roundValue) / roundValue;
+//	robot_position.y = round(msg->globalpos.y * roundValue) / roundValue;
+//	robot_position.theta = round(msg->globalpos.theta * roundValue) / roundValue;
+//	robot_position.v = msg->v;
+//	robot_position.phi = msg->phi;
 
-	robot_position.x = round(msg->globalpos.x * roundValue) / roundValue;
-	robot_position.y = round(msg->globalpos.y * roundValue) / roundValue;
-	robot_position.theta = round(msg->globalpos.theta * roundValue) / roundValue;
+	robot_position.x = msg->globalpos.x;
+	robot_position.y = msg->globalpos.y;
+	robot_position.theta = msg->globalpos.theta;
 	robot_position.v = msg->v;
 	robot_position.phi = msg->phi;
+
 
 
 	if (messageControl.carmen_planner_ackerman_update_robot(&robot_position, &robot_config) == 0)
