@@ -8,11 +8,10 @@
 #ifndef TRAJECTORY_LOOKUP_TABLE_H_
 #define TRAJECTORY_LOOKUP_TABLE_H_
 
+#include <vector>
 #include "carmen/rddf_interface.h"
-
-#include "model/robot_state.h"
 #include "model/global_state.h"
-#include "util.h"
+
 
 #define N_DIST			15				// Number of Distances traveled in polar coordinates
 #define FIRST_DIST		2.3				// First Distance, or scale factor of its geometric progression (Wikipedia)
@@ -130,8 +129,6 @@ public:
 
 	TrajectoryLookupTable(int update_lookup_table);
 
-	static Robot_State predict_next_pose(Robot_State &robot_state, Command &requested_command,
-			double full_time_interval, double *distance_traveled, double delta_t);
 	bool load_trajectory_lookup_table();
 	void build_trajectory_lookup_table();
 	void evaluate_trajectory_lookup_table();

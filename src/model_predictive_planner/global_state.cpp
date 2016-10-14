@@ -15,8 +15,6 @@ double GlobalState::localizer_pose_timestamp = 0;
 
 Command GlobalState::last_odometry;
 
-Robot_State GlobalState::initial_robot_state;
-
 int GlobalState::show_debug_info;
 Pose *GlobalState::goal_pose  = NULL;
 bool GlobalState::last_goal = true;
@@ -24,6 +22,8 @@ bool GlobalState::last_goal = true;
 bool GlobalState::last_path_received_is_empty = false;
 
 carmen_robot_ackerman_config_t GlobalState::robot_config;
+
+double GlobalState::robot_max_centripetal_acceleration = 0.0;
 
 double GlobalState::param_max_vel = 0.0;
 

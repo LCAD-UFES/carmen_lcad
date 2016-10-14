@@ -11,6 +11,7 @@ static int necessary_maps_available = 0;
 static int current_motion_command_vetor = 0;
 static carmen_ackerman_motion_command_t motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS][NUM_MOTION_COMMANDS_PER_VECTOR];
 static int num_motion_commands_in_vector[NUM_MOTION_COMMANDS_VECTORS];
+static double timestamp_of_motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS];
 
 static carmen_robot_ackerman_config_t carmen_robot_ackerman_config;
 static double carmen_robot_ackerman_collision_avoidance_frequency;
@@ -73,13 +74,14 @@ static carmen_behavior_selector_state_t current_state = BEHAVIOR_SELECTOR_PARKIN
 
 
 static void
-publish_navigator_ackerman_plan_message_with_obstacle_avoider_path(carmen_ackerman_motion_command_t *motion_commands_vector, int num_motion_commands)
+publish_navigator_ackerman_plan_message_with_obstacle_avoider_path(carmen_ackerman_motion_command_t *motion_commands_vector,
+		int num_motion_commands, double timestamp)
 {
 	carmen_navigator_ackerman_plan_message msg;
 
 	if (num_motion_commands > 0)
 	{
-		msg = build_navigator_ackerman_plan_message(motion_commands_vector, num_motion_commands, &carmen_robot_ackerman_config);
+		msg = build_navigator_ackerman_plan_message(motion_commands_vector, num_motion_commands, &carmen_robot_ackerman_config, timestamp);
 		carmen_obstacle_avoider_publish_path(msg);
 
 		free(msg.path);
@@ -88,13 +90,14 @@ publish_navigator_ackerman_plan_message_with_obstacle_avoider_path(carmen_ackerm
 
 
 static void
-publish_navigator_ackerman_plan_message_with_motion_planner_path(carmen_ackerman_motion_command_t *motion_commands_vector, int num_motion_commands)
+publish_navigator_ackerman_plan_message_with_motion_planner_path(carmen_ackerman_motion_command_t *motion_commands_vector,
+		int num_motion_commands, double timestamp)
 {
 	carmen_navigator_ackerman_plan_message msg;
 
 	if (num_motion_commands > 0)
 	{
-		msg = build_navigator_ackerman_plan_message(motion_commands_vector, num_motion_commands, &carmen_robot_ackerman_config);
+		msg = build_navigator_ackerman_plan_message(motion_commands_vector, num_motion_commands, &carmen_robot_ackerman_config, timestamp);
 		carmen_obstacle_avoider_publish_motion_planner_path(msg);
 
 		free(msg.path);
@@ -117,10 +120,12 @@ publish_base_ackerman_motion_command_message_to_stop_robot(char *reason)
 			motion_commands_vector[i][j].phi = 0.0;
 		}
 		num_motion_commands_in_vector[i] = NUM_MOTION_COMMANDS_PER_VECTOR - 1;
+		timestamp_of_motion_commands_vector[i] = carmen_get_time();
 	}
 
 	current_motion_command_vetor = 0;
-	carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands_vector[current_motion_command_vetor], num_motion_commands_in_vector[current_motion_command_vetor]);
+	carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands_vector[current_motion_command_vetor],
+			num_motion_commands_in_vector[current_motion_command_vetor], timestamp_of_motion_commands_vector[current_motion_command_vetor]);
 
 	carmen_verbose("Robot stopped due to %s\n", reason);
 }
@@ -139,7 +144,7 @@ void
 obstacle_avoider_timer_handler()
 {
 	// Este eh o handler principal: ele realiza a funcionalidade do modulo
-	static double last_time_stamp = 0.0;
+	static double time_of_last_call = 0.0;
 	static int robot_hit_obstacle = 0;
 
 	if (current_algorithm != CARMEN_BEHAVIOR_SELECTOR_RRT) // Alberto: Por que nao opera se nao for este algoritmo?
@@ -156,14 +161,16 @@ obstacle_avoider_timer_handler()
 
 	if (num_motion_commands_in_vector[motion_command_vetor] > 0)
 	{
-		carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands_vector[motion_command_vetor], num_motion_commands_in_vector[motion_command_vetor]);
+		carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands_vector[motion_command_vetor],
+				num_motion_commands_in_vector[motion_command_vetor], timestamp_of_motion_commands_vector[motion_command_vetor]);
 
-		if (ackerman_collision_avoidance && ((carmen_get_time() - last_time_stamp) > 0.2))
+		if (ackerman_collision_avoidance && ((carmen_get_time() - time_of_last_call) > 0.2))
 		{
 			carmen_obstacle_avoider_publish_robot_hit_obstacle_message(robot_hit_obstacle);
 			robot_hit_obstacle = 0;
-			publish_navigator_ackerman_plan_message_with_obstacle_avoider_path(motion_commands_vector[motion_command_vetor], num_motion_commands_in_vector[motion_command_vetor]);
-			last_time_stamp = carmen_get_time();
+			publish_navigator_ackerman_plan_message_with_obstacle_avoider_path(motion_commands_vector[motion_command_vetor],
+					num_motion_commands_in_vector[motion_command_vetor], timestamp_of_motion_commands_vector[motion_command_vetor]);
+			time_of_last_call = carmen_get_time();
 		}
 	}
 }
@@ -194,7 +201,7 @@ check_message_absence_timeout_timer_handler(void)
 static void
 robot_ackerman_motion_command_message_handler(carmen_robot_ackerman_motion_command_message *motion_command_message)
 {
-	static double last_time_stamp = 0.0;
+	static double time_of_last_call = 0.0;
 	carmen_ackerman_motion_command_p next_motion_command_vector;
 	int i, num_motion_commands;
 
@@ -215,12 +222,15 @@ robot_ackerman_motion_command_message_handler(carmen_robot_ackerman_motion_comma
 		next_motion_command_vector[i] = motion_command_message->motion_command[i];
 
 	num_motion_commands_in_vector[(current_motion_command_vetor + 1) % NUM_MOTION_COMMANDS_VECTORS] = num_motion_commands;
+	timestamp_of_motion_commands_vector[(current_motion_command_vetor + 1) % NUM_MOTION_COMMANDS_VECTORS] = motion_command_message->timestamp;
 	current_motion_command_vetor = (current_motion_command_vetor + 1) % NUM_MOTION_COMMANDS_VECTORS;
 
-	if (ackerman_collision_avoidance && ((carmen_get_time() - last_time_stamp) > 0.2))
+	// @@@ Alberto: Estranho o codigo abaixo... Examinar.
+	if (ackerman_collision_avoidance && ((carmen_get_time() - time_of_last_call) > 0.2))
 	{
-		publish_navigator_ackerman_plan_message_with_motion_planner_path(next_motion_command_vector, num_motion_commands);
-		last_time_stamp = carmen_get_time();
+		publish_navigator_ackerman_plan_message_with_motion_planner_path(next_motion_command_vector,
+				num_motion_commands, motion_command_message->timestamp);
+		time_of_last_call = carmen_get_time();
 	}
 
 	carmen_robot_ackerman_motion_command_time_of_last_update = motion_command_message->timestamp;
@@ -356,6 +366,8 @@ read_parameters(int argc, char **argv)
 			{"robot", "distance_between_rear_wheels", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.distance_between_rear_wheels, 1,NULL},
 			{"robot", "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.distance_between_front_and_rear_axles, 1, NULL},
 			{"robot", "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.distance_between_rear_car_and_rear_wheels, 1, NULL},
+			{"robot", "maximum_steering_command_rate", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.maximum_steering_command_rate, 1, NULL},
+			{"robot", "understeer_coeficient", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.understeer_coeficient, 1, NULL},
 			{"robot", "allow_rear_motion", CARMEN_PARAM_ONOFF, &carmen_robot_ackerman_config.allow_rear_motion, 1, NULL},
 			{"robot", "sensor_timeout", CARMEN_PARAM_DOUBLE, &robot_sensor_timeout, 1, NULL},
 			{"robot", "command_timeout", CARMEN_PARAM_DOUBLE, &command_timeout, 1, NULL},
@@ -379,7 +391,8 @@ carmen_obstacle_avoider_initialize(int argc, char **argv)
 
 	initialize_map_vector(NUM_MAPS);
 
-	memset(num_motion_commands_in_vector, 0, NUM_MOTION_COMMANDS_VECTORS);
+	memset(num_motion_commands_in_vector, 0, NUM_MOTION_COMMANDS_VECTORS * sizeof(int));
+	memset(timestamp_of_motion_commands_vector, 0, NUM_MOTION_COMMANDS_VECTORS * sizeof(double));
 
 	if (read_parameters(argc, argv) < 0)
 		carmen_die("Could not read the parameters properly in carmen_obstacle_avoider_initialize()");

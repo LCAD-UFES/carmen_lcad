@@ -17,7 +17,7 @@ extern "C" {
 
 
 carmen_ackerman_traj_point_t
-carmen_libcarmodel_recalc_pos_ackerman(carmen_ackerman_traj_point_t robot_state, double targuet_v, double targuet_phi,
+carmen_libcarmodel_recalc_pos_ackerman(carmen_ackerman_traj_point_t robot_state, double target_v, double target_phi,
 		double full_time_interval, double *distance_traveled, double delta_t, carmen_robot_ackerman_config_t robot_config);
 
 

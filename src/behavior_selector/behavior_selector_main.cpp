@@ -27,7 +27,6 @@ carmen_obstacle_avoider_robot_will_hit_obstacle_message last_obstacle_avoider_ro
 carmen_rddf_annotation_message last_rddf_annotation_message;
 carmen_behavior_selector_goal_source_t last_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
 carmen_behavior_selector_goal_source_t goal_list_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
-//carmen_behavior_selector_goal_source_t goal_list_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_PATH_PLANNER_GOAL;
 static int param_goal_source_onoff = 0;
 
 int
@@ -115,10 +114,10 @@ publish_goal_list()
 			goal_list_msg.goal_list->v = 0.0;
 		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
 			(last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK))
-			goal_list_msg.goal_list->v = carmen_fmin(2.0, goal_list_msg.goal_list->v);
+			goal_list_msg.goal_list->v = carmen_fmin(3.0, goal_list_msg.goal_list->v);
 
 		else if (last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)
-			goal_list_msg.goal_list->v = carmen_fmin(1.2, goal_list_msg.goal_list->v);
+			goal_list_msg.goal_list->v = carmen_fmin(3.0, goal_list_msg.goal_list->v);
 
 		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
 			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_5))

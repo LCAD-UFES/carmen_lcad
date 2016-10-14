@@ -594,6 +594,13 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 
 #endif
 
+//	printf("%f\n", simulator_config->phi);
+//	if (libmpc_stiction_simulation(simulator_config->phi))
+//		return (simulator_config->phi);
+
+	steering_effort *= (1.0 / (1.0 + simulator_config->v / 1.5));
+	carmen_clamp(-100.0, steering_effort, 100.0);
+
 	double phi = carmen_libcarneuralmodel_compute_new_phi_from_effort(steering_effort, atan_current_curvature,
 			steering_ann_input, steering_ann, simulator_config->v,
 			simulator_config->understeer_coeficient, simulator_config->distance_between_front_and_rear_axles,
@@ -616,8 +623,8 @@ carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulat
 	//phi = compute_new_phi(simulator_config);// + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.1));
 	v   = compute_new_velocity(simulator_config);
 
-	phi = compute_new_phi_with_ann(simulator_config);
 	//v   = compute_new_velocity_with_ann(simulator_config);
+	phi = compute_new_phi_with_ann(simulator_config) + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.05));
 
 	phi = carmen_clamp(-simulator_config->max_phi, phi, simulator_config->max_phi);
 	simulator_config->phi = phi;

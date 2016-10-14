@@ -64,12 +64,77 @@ carmen_destroy_simulator_map(carmen_map_t *map)
 }
 
 
+int
+apply_system_latencies(carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands)
+{
+	int i, j;
+
+	for (i = 0; i < nun_motion_commands; i++)
+	{
+		j = i;
+		for (double lat = 0.0; lat < 0.3; j++)
+		{
+			if (j >= nun_motion_commands)
+				break;
+			lat += current_motion_command_vector[j].time;
+		}
+		if (j >= nun_motion_commands)
+			break;
+		current_motion_command_vector[i].phi = current_motion_command_vector[j].phi;
+	}
+
+	for (i = 0; i < nun_motion_commands; i++)
+	{
+		j = i;
+		for (double lat = 0.0; lat < 0.6; j++)
+		{
+			if (j >= nun_motion_commands)
+				break;
+			lat += current_motion_command_vector[j].time;
+		}
+		if (j >= nun_motion_commands)
+			break;
+		current_motion_command_vector[i].v = current_motion_command_vector[j].v;
+	}
+
+	return (i);
+}
+
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-//												//
-// Handlers											//
-//												//
+//                                                                                              //
+// Handlers                                                                                     //
+//                                                                                              //
 //////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+static void
+motion_command_handler(carmen_base_ackerman_motion_command_message *motion_command_message)
+{
+	int num_motion_commands, i;
+
+	if (!necessary_maps_available)
+		return;
+
+	current_motion_command_vetor = (current_motion_command_vetor + 1) % NUM_MOTION_COMMANDS_VECTORS;
+
+	if (motion_command_message->num_motion_commands < NUM_MOTION_COMMANDS_PER_VECTOR)
+		num_motion_commands = motion_command_message->num_motion_commands;
+	else
+		num_motion_commands = NUM_MOTION_COMMANDS_PER_VECTOR;
+
+	for (i = 0; i < num_motion_commands; i++)
+		motion_commands_vector[current_motion_command_vetor][i] = motion_command_message->motion_command[i];
+	nun_motion_commands[current_motion_command_vetor] = num_motion_commands;
+
+	simulator_config->current_motion_command_vector = motion_commands_vector[(NUM_MOTION_COMMANDS_VECTORS + current_motion_command_vetor - 1) % NUM_MOTION_COMMANDS_VECTORS];
+	simulator_config->nun_motion_commands = nun_motion_commands[(NUM_MOTION_COMMANDS_VECTORS + current_motion_command_vetor - 1) % NUM_MOTION_COMMANDS_VECTORS];
+	simulator_config->time_of_last_command = motion_command_message->timestamp;
+
+	if (simulator_config->use_mpc)
+		simulator_config->nun_motion_commands = apply_system_latencies(simulator_config->current_motion_command_vector, simulator_config->nun_motion_commands);
+}
 
 
 static void
@@ -215,7 +280,6 @@ offline_map_update_handler(carmen_map_server_offline_map_message *offline_map_me
 }
 
 
-
 static void 
 truepos_query_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, 
 		void *clientData __attribute__ ((unused)))
@@ -239,44 +303,6 @@ truepos_query_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 }
 
 
-static void
-motion_command_handler(carmen_base_ackerman_motion_command_message *motion_command_message)
-{
-	int num_motion_commands, i;
-	static int num_times = 0;
-
-	if (!necessary_maps_available)
-		return;
-    
-	current_motion_command_vetor = (current_motion_command_vetor + 1) % NUM_MOTION_COMMANDS_VECTORS;
-
-	if (motion_command_message->num_motion_commands < NUM_MOTION_COMMANDS_PER_VECTOR)
-		num_motion_commands = motion_command_message->num_motion_commands;
-	else
-		num_motion_commands = NUM_MOTION_COMMANDS_PER_VECTOR;
-
-	for (i = 0; i < num_motion_commands; i++)
-		motion_commands_vector[current_motion_command_vetor][i] = motion_command_message->motion_command[i];
-	nun_motion_commands[current_motion_command_vetor] = num_motion_commands;
-
-#define CAR_LATENCY	0
-
-	if (num_times < CAR_LATENCY)
-	{
-		num_times++;
-		return;
-	}
-	else
-	{
-		simulator_config->current_motion_command_vector = motion_commands_vector[(NUM_MOTION_COMMANDS_VECTORS + current_motion_command_vetor - 1) % NUM_MOTION_COMMANDS_VECTORS];
-		simulator_config->nun_motion_commands = nun_motion_commands[(NUM_MOTION_COMMANDS_VECTORS + current_motion_command_vetor - 1) % NUM_MOTION_COMMANDS_VECTORS];
-		simulator_config->time_of_last_command = motion_command_message->timestamp;
-	}
-
-	//print_motion_command_vector(motion_commands_vector[current_motion_command_vetor], nun_motion_commands[current_motion_command_vetor]);
-}
-
-
 /* handles ctrl+c */
 static void 
 shutdown_module(int x)
@@ -292,9 +318,9 @@ shutdown_module(int x)
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-//												//
-// Publishers											//
-//												//
+//                                                                                              //
+// Publishers                                                                                   //
+//                                                                                              //
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -445,10 +471,10 @@ publish_rearlaser(double timestamp)
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-//												//
-// Updates the robot's position, the people's position, and the laser reading 			//
-// and then publishes the laser reading and the odometry					//
-//												//
+//                                                                                              //
+// Updates the robot's position, the people's position, and the laser reading                   //
+// and then publishes the laser reading and the odometry                                        //
+//                                                                                              //
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 void
@@ -513,9 +539,9 @@ simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-//												//
-// Inicializations										//
-//												//
+//                                                                                              //
+// Inicializations                                                                              //
+//                                                                                              //
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 

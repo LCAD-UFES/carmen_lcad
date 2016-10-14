@@ -1,6 +1,6 @@
 net: "model_qlearning.prototxt"
-base_lr: 0.001
+base_lr: 0.02
 lr_policy: "fixed"
 snapshot_prefix: "qlearning_phi"
 solver_type: RMSPROP
-solver_mode: CPU
+solver_mode: GPU

@@ -97,6 +97,7 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	}
 
 	//Pose RDDF
+	if (status.path.length > 0)
 	{
 		int annotations[1000];
 	    IPC_RETURN_TYPE err;

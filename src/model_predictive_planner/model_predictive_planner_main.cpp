@@ -17,7 +17,6 @@
 #include <carmen/grid_mapping.h>
 #include <prob_map.h>
 
-#include "model/robot_config.h"
 #include "model/global_state.h"
 #include "model/rrt_node.h"
 #include "model/pose.h"
@@ -644,6 +643,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "robot", 	(char *) "maximum_deceleration_reverse",				CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_deceleration_reverse,					1, NULL},
 		{(char *) "robot", 	(char *) "maximum_steering_command_rate",				CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.maximum_steering_command_rate,					1, NULL},
 		{(char *) "robot", 	(char *) "understeer_coeficient",						CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.understeer_coeficient,							1, NULL},
+		{(char *) "robot", 	(char *) "max_centripetal_acceleration",				CARMEN_PARAM_DOUBLE, &GlobalState::robot_max_centripetal_acceleration,							1, NULL},
 		{(char *) "behavior_selector", (char *) "goal_source_path_planner", 		CARMEN_PARAM_ONOFF,  &GlobalState::use_path_planner, 											0, NULL}
 	};
 

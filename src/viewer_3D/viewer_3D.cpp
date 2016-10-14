@@ -47,6 +47,7 @@ static int num_laser_devices;
 static int moving_objects_point_clouds_size = 1;
 static int stereo_point_cloud_size;
 static int ldmrs_size;
+static double ldmrs_min_velocity;
 static int laser_size;
 static int velodyne_size;
 static int odometry_size;
@@ -1653,6 +1654,7 @@ init_stuff(int argc, char** argv)
         carmen_param_t param_list[] = {
             {(char*) "viewer_3D", (char*) "laser_size", CARMEN_PARAM_INT, &laser_size, 0, NULL},
             {(char*) "viewer_3D", (char*) "ldmrs_size", CARMEN_PARAM_INT, &ldmrs_size, 0, NULL},
+			{(char*) "viewer_3D", (char*) "ldmrs_min_velocity", CARMEN_PARAM_DOUBLE, &ldmrs_min_velocity, 0, NULL},
             {(char*) "viewer_3D", (char*) "velodyne_size", CARMEN_PARAM_INT, &velodyne_size, 0, NULL},
             {(char*) "viewer_3D", (char*) "odometry_size", CARMEN_PARAM_INT, &odometry_size, 0, NULL},
             {(char*) "viewer_3D", (char*) "gps_size", CARMEN_PARAM_INT, &gps_size, 0, NULL},
@@ -2127,7 +2129,7 @@ draw_loop(window *w)
 		   draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset);
 		   draw_tracking_moving_objects(moving_objects_tracking, current_num_point_clouds, offset, draw_particles_flag);
 
-		   draw_ldmrs_objects(ldmrs_objects_tracking, num_ldmrs_objects);
+		   draw_ldmrs_objects(ldmrs_objects_tracking, num_ldmrs_objects, ldmrs_min_velocity);
         }
 
         if (draw_gps_flag)
@@ -2310,7 +2312,7 @@ draw_loop2(window *w)
            draw_moving_objects_point_clouds(moving_objects_point_clouds, moving_objects_point_clouds_size, offset);
            draw_tracking_moving_objects(moving_objects_tracking, current_num_point_clouds, offset, draw_particles_flag);
 
-           draw_ldmrs_objects(ldmrs_objects_tracking, num_ldmrs_objects);
+           draw_ldmrs_objects(ldmrs_objects_tracking, num_ldmrs_objects, ldmrs_min_velocity);
         }
 
         if (draw_gps_flag)

@@ -24,13 +24,20 @@ PUBLIC_BINARIES = lane_analysis
 #TARGETS 		= lane_analysis lane_analysis_viz
 TARGETS 		= lane_analysis
 
+#build-elas:
+#	cd ELAS && cd build && cmake  -DCMAKE_BUILD_TYPE=Debug -D BUILD_CARMEN:BOOL=TRUE -D OpenCV_DIR=/usr/local/opencv-2.4.9/build -D OpenCV_FOUND=TRUE .. && make && cd ../..
 build-elas:
+	mkdir -p ELAS/build
 	cd ELAS && cd build && cmake -D BUILD_CARMEN:BOOL=TRUE -D OpenCV_DIR=/usr/local/opencv-2.4.9/build -D OpenCV_FOUND=TRUE .. && make && cd ../..
 
 liblane_analysis_interface.a: lane_analysis_interface.o
 
 lane_analysis: build-elas liblane_analysis_interface.a lane_analysis.o
 #lane_analysis_viz: lane_analysis_viz_main.o
+
+clean: clean_elas
+clean_elas:
+	rm -r ELAS/build
 
 # rules
 include ../Makefile.rules

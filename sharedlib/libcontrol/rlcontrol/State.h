@@ -17,16 +17,16 @@ public:
 
 	State(deque<double> desired_param, deque<double> measured_param, deque<double> last_commmands_param)
 	{
-		desired = desired_param;
-		measured = measured_param;
-		last_commmands = last_commmands_param;
+		desired = deque<double>(desired_param);
+		measured = deque<double>(measured_param);
+		last_commmands = deque<double>(last_commmands_param);
 	}
 
 	void operator=(State &state)
 	{
-		desired = state.desired;
-		measured = state.measured;
-		last_commmands = state.last_commmands;
+		desired = deque<double>(state.desired);
+		measured = deque<double>(state.measured);
+		last_commmands = deque<double>(state.last_commmands);
 	}
 
 	void clear()

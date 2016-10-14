@@ -1,11 +1,7 @@
 #ifndef STEHS_PLANNER_H
 #define STEHS_PLANNER_H
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
+#include <list>
 
 #include <carmen/carmen.h>
 #include <carmen/behavior_selector_interface.h>
@@ -18,28 +14,59 @@ extern "C" {
 #include <carmen/grid_mapping.h>
 #include <prob_map.h>
 
+#include "CircleNode.hpp"
 
-typedef struct
+class StehsPlanner
 {
-	carmen_point_t pose;
-	double v;
-	double phi;
 
+private:
+
+	// the robot global state
+	carmen_ackerman_traj_point_t start;
+
+	//
 	carmen_ackerman_traj_point_t goal;
 	carmen_obstacle_distance_mapper_message *distance_map;
 
 	carmen_robot_ackerman_config_t robot_config;
 
+	// the planner activation flag
 	bool active;
+
 	unsigned int show_debug_info;
 	unsigned int cheat;
 	bool ready;
 
-} stehs_planner_config_t, *stehs_planner_config_p;
+	// circle path
+	std::list<CircleNode> circle_path;
 
+	// the trajectory found
+	std::list<carmen_ackerman_motion_command_t> command_list;
 
-#ifdef __cplusplus
-}
-#endif
+	//
+	void SpaceExploration();
+
+	//
+	void SpaceTimeExploration();
+
+	//
+	void HeuristicSearch();
+
+	// the distance between two points
+	double Distance(const carmen_ackerman_traj_point_t &a, const carmen_ackerman_traj_point_t &b);
+
+	// the nearest obstacle distance
+	double ObstacleDistance(const carmen_ackerman_traj_point_t &p);
+
+public:
+
+	// constructor
+	StehsPlanner();
+
+	//
+	std::list<carmen_ackerman_motion_command_t> BuildPath();
+
+};
+
 
 #endif

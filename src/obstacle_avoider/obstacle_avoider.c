@@ -65,27 +65,6 @@ initialize_map_vector(int number_of_maps)
 }
 
 
-int
-build_predicted_trajectory_old(carmen_ackerman_motion_command_p motion_commands_vector, int num_motion_commands,
-		carmen_ackerman_traj_point_t initial_pose, carmen_robot_ackerman_config_t *carmen_robot_ackerman_config)
-{
-	int i, trajectory_vector_of_points_size = 0;
-	carmen_ackerman_traj_point_t pose;
-
-	pose = initial_pose;
-
-	for (i = 0; i < num_motion_commands; i++)
-	{
-		pose = predict_new_robot_position(pose, motion_commands_vector[i].v, motion_commands_vector[i].phi, motion_commands_vector[i].time, carmen_robot_ackerman_config);
-		trajectory_vector_of_points[trajectory_vector_of_points_size] = pose;
-		trajectory_vector_of_points_size++;
-		if (trajectory_vector_of_points_size >= (MAX_TRAJECTORY_VECTOR_OF_POINTS_SIZE - 2))
-			break;
-	}
-	return (trajectory_vector_of_points_size);
-}
-
-
 static int
 build_predicted_trajectory(carmen_ackerman_motion_command_p motion_commands_vector, int num_motion_commands,
 		carmen_ackerman_traj_point_t initial_pose, carmen_robot_ackerman_config_t *carmen_robot_ackerman_config)
@@ -97,10 +76,9 @@ build_predicted_trajectory(carmen_ackerman_motion_command_p motion_commands_vect
 
 	for (i = 0; i < num_motion_commands; i++)
 	{
-		pose = predict_new_robot_position(pose, motion_commands_vector[i].v, motion_commands_vector[i].phi, motion_commands_vector[i].time, carmen_robot_ackerman_config);
-//		double distance_traveled = 0.0;
-//		pose = carmen_libcarmodel_recalc_pos_ackerman(pose, motion_commands_vector[i].v, motion_commands_vector[i].phi,
-//				motion_commands_vector[i].time, &distance_traveled, motion_commands_vector[i].time, *carmen_robot_ackerman_config);
+		double distance_traveled = 0.0;
+		pose = carmen_libcarmodel_recalc_pos_ackerman(pose, motion_commands_vector[i].v, motion_commands_vector[i].phi,
+				motion_commands_vector[i].time, &distance_traveled, motion_commands_vector[i].time, *carmen_robot_ackerman_config);
 
 		trajectory_vector_of_points[trajectory_vector_of_points_size] = pose;
 		trajectory_vector_of_points_size++;
@@ -113,7 +91,7 @@ build_predicted_trajectory(carmen_ackerman_motion_command_p motion_commands_vect
 
 carmen_navigator_ackerman_plan_message
 build_navigator_ackerman_plan_message(carmen_ackerman_motion_command_p motion_commands_vector, int num_motion_commands,
-			carmen_robot_ackerman_config_t *carmen_robot_ackerman_config)
+			carmen_robot_ackerman_config_t *carmen_robot_ackerman_config, double timestamp)
 {
 	int i, trajectory_vector_of_points_size;
 	carmen_navigator_ackerman_plan_message predicted_trajectory_message;
@@ -132,7 +110,7 @@ build_navigator_ackerman_plan_message(carmen_ackerman_motion_command_p motion_co
 		predicted_trajectory_message.path[i].phi 	= trajectory_vector_of_points[i].phi;
 	}
 
-	predicted_trajectory_message.timestamp = carmen_get_time();
+	predicted_trajectory_message.timestamp = timestamp;
 	predicted_trajectory_message.host = carmen_get_host();
 
 	return predicted_trajectory_message;

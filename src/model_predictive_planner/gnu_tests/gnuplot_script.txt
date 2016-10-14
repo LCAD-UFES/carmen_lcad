@@ -1,7 +1,0 @@
-set xrange [-1:20]
-set yrange [-5:3]
-plot 'gnuplot_traj.txt' using 1:2:3:4 w vec size  0.3, 10 filled
-replot 'gnuplot_lane.txt' using 1:2:3:4 w vec size  0.3, 10 filled
-pause 2
-replot
-reread

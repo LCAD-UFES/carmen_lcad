@@ -4,7 +4,8 @@ using namespace std;
 using namespace cv;
 
 int SinalizacaoHorizontal::loadTemplates() {
-	string templateDirectory = "/dados/berriel/MEGA/projects/lane-research/data/images/templates/";
+	string carmenHomeDirectory = getenv("CARMEN_HOME");
+	string templateDirectory = carmenHomeDirectory + "/src/lane_analysis/data/images/templates/";
 
 	templates.push_back(TemplateSinalizacao(ROAD_SIGN::FRENTE, imread(templateDirectory + "seta-01-bin.png", IMREAD_GRAYSCALE)));
 	templates.push_back(TemplateSinalizacao(ROAD_SIGN::FRENTE, imread(templateDirectory + "seta-02-bin.png", IMREAD_GRAYSCALE)));
@@ -19,7 +20,8 @@ int SinalizacaoHorizontal::loadTemplates() {
 }
 
 Mat3b SinalizacaoHorizontal::toIMG(int _id) {
-	string templateDirectory = "/dados/berriel/MEGA/projects/lane-research/data/images/templates/";
+	string carmenHomeDirectory = getenv("CARMEN_HOME");
+	string templateDirectory = carmenHomeDirectory + "/src/lane_analysis/data/images/templates/";
 	switch (_id) {
 		case ROAD_SIGN::FRENTE: return imread(templateDirectory + "seta-01-bin.png");
 		case ROAD_SIGN::FRENTE_CURTA: return imread(templateDirectory + "seta-02-bin.png");
