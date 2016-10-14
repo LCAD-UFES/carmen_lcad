@@ -14,8 +14,10 @@ bin/out.txt
 bin/build_average_map
 bin/calibrate_bias
 bin/grab_data
+bin/grab_data_guarapari
 bin/grab_data_for_calibration
 bin/graphslam
+bin/graphslam_guarapari
 bin/graphslam_publish
 bin/base_ackerman
 bin/behavior_selector
@@ -209,8 +211,9 @@ src/global/test_movement
 src/global/test_multicentral
 src/global/test_serial
 src/graphslam/gen_data_to_plot
-src/graphslam/grab_data
+src/graphslam/grab_data_guarapari
 src/graphslam/graphslam
+src/graphslam/graphslam_guarapari
 src/graphslam/graphslam_publish
 src/graphslam/multimap_matching
 src/graphslam/multimap_optimization
