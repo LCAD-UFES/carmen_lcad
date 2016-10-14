@@ -33,8 +33,8 @@ using namespace cv;
 /*********************************/
 
 const int NUM_MOTION_COMMANDS = 10;
-const double MAX_SPEED = 10.0;
-const double MIN_SPEED = -10.0;
+const double MAX_SPEED = 4.0;
+const double MIN_SPEED = -4.0;
 const double MAX_PHI = carmen_degrees_to_radians(28);
 const double MIN_PHI = carmen_degrees_to_radians(-28);
 double SPEED_UPDATE = 0.2;
@@ -51,6 +51,7 @@ const double COLLISION_PUNISHMENT = -1;
 const double STARVATION_PUNISHMENT = -0.2;
 
 const double MIN_DIST_TO_CONSIDER_ACHIEVEMENT = 1.0;
+const double MIN_VELOCITY_TO_CONSIDER_STOP = 1.0;
 const double MIN_ORIENTATION_DIFFERENCE_TO_CONSIDER_ACHIEVEMENT = carmen_degrees_to_radians(10);
 
 const double EPSILON_INITIAL = 0.3;
@@ -61,7 +62,7 @@ const double GAUSSIAN_VARIANCE_X = 0.0;
 const double GAUSSIAN_VARIANCE_Y = 0.0;
 const double GAUSSIAN_VARIANCE_THETA = carmen_degrees_to_radians(0);
 
-const int NUM_CONSECUTIVE_GOAL_ACHIEVEMENTS_TO_GO_TO_THE_NEXT_LEVEL = 20;
+const int NUM_CONSECUTIVE_GOAL_ACHIEVEMENTS_TO_GO_TO_THE_NEXT_LEVEL = 4;
 const int JMP_POSES_FROM_BEGINING = 10;
 
 /*********************************/
@@ -430,9 +431,12 @@ publish_starting_pose()
 	pose.y = experiment_starting_pose_y;
 	pose.theta = experiment_starting_pose_theta;
 
-	std.x = 0.0001;
-	std.y = 0.0001;
+	std.x = 0.001;
+	std.y = 0.001;
 	std.theta = carmen_degrees_to_radians(0.01);
+
+	if (fabs(pose.x) < 0.1 || fabs(pose.y) < 0.1)
+		exit(printf("ERROR: localize pose 0\n"));
 
 	carmen_localize_ackerman_initialize_gaussian_command(pose, std);
 
@@ -491,29 +495,33 @@ reinitize_experiment_configuration()
 	reinitialize_queues();
 
 	static int n = 0;
+	static int k = 0;
 
-	if (n == 0)
+	// primeiros 100 experimentos aleatorios
+	if (k < 100)
 	{
 		epsilon = 1.0;
-		n++;
+		k++;
 	}
-	else if (n == 1)
+
+	if (n <= 1)
 	{
-		epsilon = 0.5;
+		epsilon = 0.6;
 		n++;
 	}
-	else if (n == 2)
+	else if (n <= 2)
+	{
+		epsilon = 0.3;
+		n++;
+	}
+	else if (n <= 5)
 	{
 		epsilon = 0.1;
 		n++;
 	}
-	else if (n <= 6)
-	{
-		epsilon = 0.0;
-		n++;
-	}
 	else
 	{
+		epsilon = 0.0;
 		n = 0;
 	}
 
@@ -619,13 +627,16 @@ summarize_experiment()
 
 	if (episode != NULL)
 	{
-		perform_episode_post_processing();
-		episodes.push_back(episode);
-
-		if (episodes.size() >= DQN_NUM_EPISODES_TO_STORE)
+		if (episode->GetInteractions()->size() > 10)
 		{
-			free_episode(episodes[0]);
-			episodes.pop_front();
+			perform_episode_post_processing();
+			episodes.push_back(episode);
+
+			if (episodes.size() >= DQN_NUM_EPISODES_TO_STORE)
+			{
+				free_episode(episodes[0]);
+				episodes.pop_front();
+			}
 		}
 	}
 
@@ -647,15 +658,21 @@ summarize_experiment()
 void
 reinitialize_robot_and_goal_poses()
 {
-	if (num_rddf_poses_from_origin < 60)
-		rddf_goal_id = 20; //(rand() % (rddf_index->size() - num_rddf_poses_from_origin)) + num_rddf_poses_from_origin;
-	else
-	{
+	//if (num_rddf_poses_from_origin < 15)
+		//rddf_goal_id = 20; //(rand() % (rddf_index->size() - num_rddf_poses_from_origin)) + num_rddf_poses_from_origin;
+	//else
+	//{
 		rddf_goal_id = (rand() % (rddf_index->size() - num_rddf_poses_from_origin)) + num_rddf_poses_from_origin;
-		epsilon = 0.3;
-	}
+		//epsilon = 0.3;
+	//}
 
 	rddf_starting_pose_id = rddf_goal_id - num_rddf_poses_from_origin;
+
+	printf("rddf_starting_pose_id: %d rddf_goal_id: %d num_rddf_poses_from_origin: %d\n",
+		rddf_starting_pose_id, rddf_goal_id, num_rddf_poses_from_origin);
+
+	if (rddf_starting_pose_id < 0 || rddf_starting_pose_id >= rddf_index->size())
+		exit(printf("ERROR: invalid rddf_starting_pose_id: %d\n", rddf_starting_pose_id));
 
 	experiment_starting_pose_x = rddf_index->index[rddf_starting_pose_id].x + carmen_gaussian_random(0, GAUSSIAN_VARIANCE_X);
 	experiment_starting_pose_y = rddf_index->index[rddf_starting_pose_id].y + carmen_gaussian_random(0, GAUSSIAN_VARIANCE_Y);
@@ -680,7 +697,7 @@ draw_map_car_and_rddf(carmen_mapper_map_message *message)
 	//Mat map_image = map_to_image(message);
 	Mat *map_image = cost_map_to_image(&cost_map);
 
-	draw_rddf_in_the_map(map_image, message);
+	//draw_rddf_in_the_map(map_image, message);
 	draw_final_goal_in_the_map(map_image, message);
 	draw_globalpose_in_the_map(map_image, &localize_ackerman_message, message);
 
@@ -773,10 +790,11 @@ update_agent_reward(double current_time __attribute__((unused)))
 		if (num_times_car_hit_final_goal < 10)
 			imediate_reward += FINAL_GOAL_REWARD;
 
-		if (abs(localize_ackerman_message.v) <= SPEED_UPDATE)
+		achieved_goal_in_this_experiment = 1;
+
+		if (abs(localize_ackerman_message.v) <= MIN_VELOCITY_TO_CONSIDER_STOP)
 		{
 			// se o agente parar no goal ele dobra o premio
-			achieved_goal_in_this_experiment = 1;
 			imediate_reward += ACHIEVE_FINAL_GOAL_AND_STOP_REWARD;
 		}
 
@@ -900,11 +918,12 @@ preprocess_screen(Mat *raw_screen, carmen_mapper_map_message *message)
 	int robot_x = (int) ((localize_ackerman_message.globalpos.y - message->config.y_origin) / message->config.resolution);
 	int robot_y = (int) ((localize_ackerman_message.globalpos.x - message->config.x_origin) / message->config.resolution);
 
-	int top = robot_x - raw_screen->rows / 6;
-	int height = raw_screen->rows / 3;
+	// defome a area de corte ao redor do carro
+	int top = robot_x - raw_screen->rows / 14;
+	int height = raw_screen->rows / 7;
 
-	int left = robot_y - raw_screen->cols / 6;
-	int width = raw_screen->cols / 3;
+	int left = robot_y - raw_screen->cols / 14;
+	int width = raw_screen->cols / 7;
 
 	// ***************************
 	// CHECAR SE O -1 EH NECESSARIO
@@ -1078,14 +1097,19 @@ train_net_a_little()
 	double init = carmen_get_time();
 
 	// treina algumas vezes o tamanho do ultimo experimento
-	int n = 4 * episode->GetInteractions()->size();
+	int n = 3 * episode->GetInteractions()->size();
 
 	for (int i = 0; i < n; i++)
 	{
+		if (i % 10 == 0)
+		{
+			publish_motion_command(0, 0);
+		}
+
 		if (i % 30 == 0)
 			// o cara que completa esse fprintf esta em dqn_caffe.cpp na funcao update
-			fprintf(stderr, "TRAINING THE NET %d OF %ld SAMPLES | TIME: %.2lf | TIME PER SAMPLE: %.2lf\n",
-				i, n, carmen_get_time() - init, (i <= 0) ? (0) : ((carmen_get_time() - init) / (double) i));
+			fprintf(stderr, "TRAINING THE NET %d OF %d SAMPLES | TIME: %.2lf | TIME PER SAMPLE: %.2lf\n",
+				i, n, carmen_get_time() - init, (i <= 0) ? (0.0) : ((carmen_get_time() - init) / (double) i));
 
 		int random_ep = rand() % episodes.size();
 		int random_tr = (rand() % (episodes[random_ep]->GetInteractions()->size() - DQN_NUM_INPUT_FRAMES)) + DQN_NUM_INPUT_FRAMES;
@@ -1244,6 +1268,41 @@ CopyStuffAndBuildInteraction(Mat *frame, int action, double immediate_reward)
 }
 
 
+int
+new_messages_received(carmen_mapper_map_message *message, carmen_localize_ackerman_globalpos_message *localize_ackerman_message)
+{
+	int new_message_received = 0;
+	static double map_time = 0;
+	static double localize_time = 0;
+
+	if (message->timestamp != map_time && localize_ackerman_message->timestamp != localize_time)
+		new_message_received = 1;
+
+	map_time = message->timestamp;
+	localize_time = localize_ackerman_message->timestamp;
+
+	return new_message_received;
+}
+
+
+int
+skiped_enough_frames()
+{
+	static int n = 0;
+
+	if (n >= DQN_SKIP_FRAME)
+	{
+		n = 0;
+		return 1;
+	}
+	else
+	{
+		n++;
+		return 0;
+	}
+}
+
+
 void
 map_mapping_handler(carmen_mapper_map_message *message)
 {
@@ -1256,7 +1315,10 @@ map_mapping_handler(carmen_mapper_map_message *message)
 		first = 0;
 	}
 
-	if (!new_experiment_is_consolidated(message))
+	if (!new_experiment_is_consolidated(message) || !(new_messages_received(message, &localize_ackerman_message)))
+		return;
+
+	if (!skiped_enough_frames())
 		return;
 
 	double immediate_reward;
@@ -1290,7 +1352,8 @@ map_mapping_handler(carmen_mapper_map_message *message)
 	}
 
 	fprintf(stderr, "%cCMD: (% 2.1lf, % 2.1lf)   Q: % 3.2lf \t RW: % 2.4lf   TOT: % 2.2lf \t LVL: %d of %ld \t EPS: %.2lf \t CONC: %d MCONC: %d \t CALLS_SEC: %.1f \n",
-			(use_greedy) ? ('*') : ('-'), current_command.v, current_command.phi, current_q, immediate_reward, episode_total_reward, num_rddf_poses_from_origin, rddf_index->size() - 1, epsilon, num_consecutive_goal_achievements, max_consecutive_goal_achievements, (float) ncalls / (carmen_get_time() - time_last_printf));
+			(use_greedy) ? ('*') : ('-'), current_command.v, current_command.phi, current_q, immediate_reward, episode_total_reward, num_rddf_poses_from_origin, rddf_index->size() - 1, epsilon, num_consecutive_goal_achievements, max_consecutive_goal_achievements,
+			(carmen_get_time() == time_last_printf) ? (0) : ((float) ncalls / (carmen_get_time() - time_last_printf)));
 
 	if (fabs(localize_ackerman_message.v) > 0.5)
 	{
@@ -1314,7 +1377,9 @@ map_mapping_handler(carmen_mapper_map_message *message)
 		(collision_detected) ||
 		/*((carmen_get_time() - time_experiment_start) > 300.0) ||*/
 		starved ||
-		(achieved_goal_in_this_experiment && (distance_to_goal() < MIN_DIST_TO_CONSIDER_ACHIEVEMENT) && (abs(localize_ackerman_message.v) < SPEED_UPDATE)))
+		(achieved_goal_in_this_experiment
+		&& (distance_to_goal() < MIN_DIST_TO_CONSIDER_ACHIEVEMENT)
+		/*&& (abs(localize_ackerman_message.v) < MIN_VELOCITY_TO_CONSIDER_STOP)*/))
 	{
 		// DEBUG:
 //		printf("COLISION: %d TIME: %d GOAL: %d\n", collision_detected, ((carmen_get_time() - time_experiment_start) > 300.0), (achieved_goal_in_this_experiment && (distance_to_goal() < MIN_DIST_TO_CONSIDER_ACHIEVEMENT) && (abs(localize_ackerman_message.v) < SPEED_UPDATE)));
@@ -1400,7 +1465,7 @@ initialize_global_structures(char **argv __attribute__((unused)), char *pre_trai
 		namedWindow("netinput");
 
 		moveWindow("map", 10, 10);
-		moveWindow("netinput", 500, 10);
+		moveWindow("netinput", 350, 50);
 	}
 
 	reinitialize_queues();

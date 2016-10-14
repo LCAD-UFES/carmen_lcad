@@ -8,9 +8,9 @@ layers {
   top: "dummy1"
   memory_data_param {
     batch_size: 1
-    channels: 3
-    height: 200
-    width: 200
+    channels: 9
+    height: 100
+    width: 100
   }
 }
 #target_input: expected rewards for each action. This value is compared to the q-value predicted by the network and the difference (euclidean loss) is used to update the weights.
@@ -66,12 +66,12 @@ layers {
   bottom: "frames"
   top: "conv1"
   convolution_param {
-    num_output: 8
+    num_output: 32
     kernel_size: 4
     stride: 2
     weight_filler {
       type: "gaussian"
-      std: 0.01
+      std: 0.05
     }
   }
 }
@@ -98,12 +98,12 @@ layers {
   bottom: "pool1"
   top: "conv2"
   convolution_param {
-    num_output: 8
+    num_output: 32
     kernel_size: 4
     stride: 2
     weight_filler {
       type: "gaussian"
-      std: 0.01
+      std: 0.05
     }
   }
 }
@@ -130,12 +130,12 @@ layers {
   bottom: "pool2"
   top: "conv3"
   convolution_param {
-    num_output: 8
+    num_output: 64
     kernel_size: 4
     stride: 2
     weight_filler {
       type: "gaussian"
-      std: 0.01
+      std: 0.05
     }
   }
 }
@@ -146,37 +146,21 @@ layers {
   top: "conv3"
 }
 layers {
-    name: "flaten_conv3"
-    type: FLATTEN
-    bottom: "conv3"
-    top: "flaten_conv3"
-}
-layers {
     name: "flaten_additional_data"
     type: FLATTEN
     bottom: "additional_data"
     top: "flaten_add_data"
 }
 layers {
-  name: "concat_add_data_and_conv3"
-  type: CONCAT
-  bottom: "flaten_conv3"
-  bottom: "flaten_add_data"
-  top: "add_data_and_conv3"
-  #concat_param {
-    #axis: 1
-  #}
-}
-layers {
   name: "ip1_layer"
   type: INNER_PRODUCT
-  bottom: "add_data_and_conv3"
+  bottom: "conv3"
   top: "ip1"
   inner_product_param {
-    num_output: 16
+    num_output: 64
     weight_filler {
       type: "gaussian"
-      std: 0.01
+      std: 0.05
     }
   }
 }
@@ -189,13 +173,13 @@ layers {
 layers {
   name: "ip1.5_layer"
   type: INNER_PRODUCT
-  bottom: "ip1"
+  bottom: "flaten_add_data"
   top: "ip1.5"
   inner_product_param {
-    num_output: 16
+    num_output: 64
     weight_filler {
       type: "gaussian"
-      std: 0.01
+      std: 0.05
     }
   }
 }
@@ -205,17 +189,42 @@ layers {
   bottom: "ip1.5"
   top: "ip1.5"
 }
-
+layers {
+  name: "concat_ips"
+  type: CONCAT
+  bottom: "ip1"
+  bottom: "ip1.5"
+  top: "concated"
+}
 layers {
   name: "ip2_layer"
   type: INNER_PRODUCT
-  bottom: "ip1.5"
+  bottom: "concated"
+  top: "ip2"
+  inner_product_param {
+    num_output: 64
+    weight_filler {
+      type: "gaussian"
+      std: 0.05
+    }
+  }
+}
+layers {
+  name: "ip2_tanh_layer"
+  type: TANH
+  bottom: "ip2"
+  top: "ip2"
+}
+layers {
+  name: "ip3_layer"
+  type: INNER_PRODUCT
+  bottom: "ip2"
   top: "q_values"
   inner_product_param {
     num_output: 5
     weight_filler {
       type: "gaussian"
-      std: 0.01
+      std: 0.05
     }
   }
 }

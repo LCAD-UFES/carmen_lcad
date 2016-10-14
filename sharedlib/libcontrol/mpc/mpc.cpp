@@ -13,7 +13,7 @@
 #define PREDICTION_HORIZON	(0.65*0.6)
 
 FILE *gnuplot_save;
-bool save_plot = false;
+bool save_plot = true;
 
 using namespace std;
 
@@ -356,7 +356,11 @@ open_file_to_save_plot()
 	//name[0] = '/0';
 	//aux[0] = '/0';
 
-	sprintf(name, "%d", timeinfo->tm_year + 1900);
+
+	strcat (name, "mpc_plot_");
+
+	sprintf(aux, "%d", timeinfo->tm_year + 1900);
+	strcat (name, aux);
 
 	sprintf(aux, "%d", timeinfo->tm_mon + 1);
 	strcat (name, aux);
@@ -382,62 +386,40 @@ open_file_to_save_plot()
 	gnuplot_save = fopen(name, "w");
 
 	/*
-	plot "20161012_17h56m5" using 1:2 with lines,\
-	"20161012_17h56m5" using 1:3 with lines,\
-	"20161012_17h56m5" using 1:4 with lines
+	plot "mpc_plot_20161013_16h42m56" using 1:2 with lines, "mpc_plot_20161013_16h42m56" using 1:3 with lines, "mpc_plot_20161013_16h42m56" using 1:4 with lines
 	*/
 }
 
 int
-libmpc_stiction_simulation(double effort, double current_curvature)
+libmpc_stiction_simulation(double current_phi)
 {
-	/*static list<double> curvature_list;
-	list<double>::reverse_iterator iterator;
-	double aux;
+	static double first_phi;
+	//static bool control = true;
+	static unsigned int cont = 0;
 
-	curvature_list.push_front(current_curvature);
-
-	while (curvature_list.size() > 4)   // 4 is the Number of iterations the current curvature must remain constant to suffer Stiction
-		curvature_list.pop_back();
-
-	iterator = curvature_list.rbegin();
-
-	aux = *iterator;
-	iterator++;
-
-	while (aux == *iterator)
+	if (cont <= 5)
 	{
-		if (iterator == curvature_list.rend())
-		{
-			printf("FOI\n");
-			break;
-		}
+		if (current_phi > -0.001 && current_phi < 0.001)
+			cont++;
 		else
-			iterator++;
-	}*/
-	printf("%f\n", effort);
+			cont = 0;
 
-	current_curvature = current_curvature+10;
+		first_phi = current_phi;
 
-	static double first_effort;
-	static bool control = true;
-
-	if (control)
-	{
-		first_effort = effort;
-		control = false;
 		return (false);
 	}
 	else
 	{
-		if (abs(first_effort - effort) < 2)
+		printf("a%f\n", abs(first_phi - current_phi));
+		if (abs(first_phi - current_phi) < 0.0107)
 		{
-			printf("%f %f\n", effort, first_effort);
+			printf("Stic %f %f\n", first_phi, current_phi);
 			return (true);
 		}
 		else
 		{
-			control = true;
+			printf("Saiu\n");
+			cont = 0;
 			return (false);
 		}
 	}
@@ -537,7 +519,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_desired_curvat
 	effort /= (1.0 / (1.0 + v / 7.0));
 	carmen_clamp(-100.0, effort, 100.0);
 
-	plot_state(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
+	//plot_state(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
 
 	return (effort);
 }
