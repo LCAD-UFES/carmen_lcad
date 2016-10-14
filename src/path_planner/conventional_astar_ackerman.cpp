@@ -475,11 +475,11 @@ AstarAckerman::open_node(carmen_astar_node_p node)
 				new_point = carmen_conventional_astar_ackerman_kinematic_3(
 						node->point, robot_conf_g.distance_between_front_and_rear_axles, ORIENTATION[j], DIRECTION[i]);
 
-			if (is_obstacle_1d(new_point))
+			//if (is_obstacle_1d(new_point))
 			//if (is_obstacle(new_point))
 			//if (is_obstacle_new(new_point))
 
-			//if (is_obstacle_cost(new_point))
+			if (is_obstacle_cost(new_point))
 				continue;
 
 

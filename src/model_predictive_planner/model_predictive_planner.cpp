@@ -261,7 +261,7 @@ move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_select
 		close_to_goal_x = fabs(goal_x - local_reference_lane_point.x);
 		close_to_goal_y = fabs(goal_y - local_reference_lane_point.y);
 
-		if ((close_to_goal_x < 0.000000001) && (close_to_goal_y < 0.000000001))
+		if ((close_to_goal_x < 0.6) && (close_to_goal_y < 0.6))
 			return true;
 
 		dist = sqrt((carmen_square(local_reference_lane_point.x - goal_x) + carmen_square(local_reference_lane_point.y - goal_y)));
