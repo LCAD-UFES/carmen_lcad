@@ -12,6 +12,9 @@
 #define DELTA_T (1.0 / 40.0)
 #define PREDICTION_HORIZON	(0.65*0.6)
 
+FILE *gnuplot_save;
+bool save_plot = true;
+
 using namespace std;
 
 
@@ -223,7 +226,7 @@ get_optimized_effort(PARAMS *par, EFFORT_SPLINE_DESCRIPTOR seed)
 
 	} while ((status == GSL_CONTINUE) && (iter < 15));
 
-	printf("iter = %ld\n", iter);
+	//printf("iter = %ld\n", iter);
 
 	seed.k1 = carmen_clamp(-100.0, gsl_vector_get(s->x, 0), 100.0);
 	seed.k2 = carmen_clamp(-100.0, gsl_vector_get(s->x, 1), 100.0);
@@ -272,6 +275,9 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double understee
 	dphi_vector.push_front(carmen_get_phi_from_curvature(p->atan_desired_curvature, v, understeer_coeficient, distance_between_front_and_rear_axles));
 	timestamp_vector.push_front(t - first_timestamp);
 	effort_vector.push_front(effort);
+
+	if (save_plot)
+		fprintf(gnuplot_save, "%lf %lf %lf %lf\n", timestamp_vector.front(), cphi_vector.front(), dphi_vector.front(), effort_vector.front()/100);
 
 	while (cphi_vector.size() > PAST_SIZE)
 	{
@@ -336,6 +342,90 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double understee
 }
 
 
+void
+open_file_to_save_plot()
+{
+	time_t rawtime;
+	struct tm * timeinfo;
+
+	time ( &rawtime );
+	timeinfo = localtime ( &rawtime );
+
+	char name[32];
+	char aux[8];
+	//name[0] = '/0';
+	//aux[0] = '/0';
+
+
+	strcat (name, "mpc_plot_");
+
+	sprintf(aux, "%d", timeinfo->tm_year + 1900);
+	strcat (name, aux);
+
+	sprintf(aux, "%d", timeinfo->tm_mon + 1);
+	strcat (name, aux);
+
+	sprintf(aux, "%d", timeinfo->tm_mday);
+	strcat (name, aux);
+	strcat (name,"_");
+
+	sprintf(aux, "%d", timeinfo->tm_hour);
+	strcat (name, aux);
+	strcat (name, "h");
+
+	sprintf(aux, "%d", timeinfo->tm_min);
+	strcat (name, aux);
+	strcat (name, "m");
+
+	sprintf(aux, "%d", timeinfo->tm_sec);
+	strcat (name, aux);
+
+	//printf("%s\n", name);
+	//printf( "[%d %d %d %d:%d:%d]", timeinfo->tm_mday, timeinfo->tm_mon + 1, timeinfo->tm_year + 1900, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+
+	gnuplot_save = fopen(name, "w");
+
+	/*
+	plot "mpc_plot_20161013_16h42m56" using 1:2 with lines, "mpc_plot_20161013_16h42m56" using 1:3 with lines, "mpc_plot_20161013_16h42m56" using 1:4 with lines
+	*/
+}
+
+int
+libmpc_stiction_simulation(double current_phi)
+{
+	static double first_phi;
+	//static bool control = true;
+	static unsigned int cont = 0;
+
+	if (cont <= 5)
+	{
+		if (current_phi > -0.001 && current_phi < 0.001)
+			cont++;
+		else
+			cont = 0;
+
+		first_phi = current_phi;
+
+		return (false);
+	}
+	else
+	{
+		printf("a%f\n", abs(first_phi - current_phi));
+		if (abs(first_phi - current_phi) < 0.0107)
+		{
+			printf("Stic %f %f\n", first_phi, current_phi);
+			return (true);
+		}
+		else
+		{
+			printf("Saiu\n");
+			cont = 0;
+			return (false);
+		}
+	}
+}
+
+
 bool
 init_mpc(bool &first_time, PARAMS &param, EFFORT_SPLINE_DESCRIPTOR &seed,
 		double atan_desired_curvature, double atan_current_curvature,
@@ -344,6 +434,8 @@ init_mpc(bool &first_time, PARAMS &param, EFFORT_SPLINE_DESCRIPTOR &seed,
 		double understeer_coeficient, double distance_between_front_and_rear_axles, double max_phi,
 		int initialize_neural_networks)
 {
+	static bool open = true;
+
 	if (first_time)
 	{
 		param.steering_ann = fann_create_from_file("steering_ann.net");
@@ -380,6 +472,13 @@ init_mpc(bool &first_time, PARAMS &param, EFFORT_SPLINE_DESCRIPTOR &seed,
 	param.distance_rear_axles = distance_between_front_and_rear_axles;
 	param.max_phi = max_phi;
 	param.time_elapsed_since_last_motion_command = carmen_get_time() - time_of_last_motion_command;
+
+
+	if (save_plot && open)
+	{
+		open_file_to_save_plot();
+		open = false;
+	}
 
 	return (true);
 }
@@ -420,7 +519,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_desired_curvat
 	effort /= (1.0 / (1.0 + v / 7.0));
 	carmen_clamp(-100.0, effort, 100.0);
 
-	plot_state(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
+	//plot_state(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
 
 	return (effort);
 }

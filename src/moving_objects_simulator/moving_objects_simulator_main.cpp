@@ -15,6 +15,8 @@ std::vector<object_model_features_t> object_models;
 int num_of_models;
 
 std::vector<timestamp_moving_objects> timestamp_moving_objects_list;
+std::map<int,moving_objects_by_id_t> moving_objects_by_id_map;
+
 int current_vector_index = 0;
 
 double previous_timestamp = 0.0;
@@ -24,6 +26,8 @@ int start_pos = 0;
 
 carmen_point_t initial_pose, actual_pose;
 
+#define MIN_DIST 10.0
+#define PUBLISH_BY_ID
 
 void
 find_start_position()
@@ -53,6 +57,34 @@ find_start_position()
 	ok_to_publish = 1;
 }
 
+
+void
+update_publishing_flag()
+{
+
+	double x_pos, y_pos, dist;
+
+
+	std::map<int,moving_objects_by_id_t>::iterator it;
+	for(it = moving_objects_by_id_map.begin(); it != moving_objects_by_id_map.end(); it++)
+	{
+		for(int i = 0; i < (int) it->second.objects.size(); i++)
+		{
+			x_pos = it->second.objects[i].pos_x_obj - it->second.objects[i].pos_x_iara + it->second.objects[i].x_global_pos;
+			y_pos = it->second.objects[i].pos_y_obj - it->second.objects[i].pos_y_iara + it->second.objects[i].y_global_pos;
+
+			dist = euclidean_distance(actual_pose.x, actual_pose.y, x_pos, y_pos);
+
+			if(dist < MIN_DIST && it->second.publishing == 0)
+			{
+				it->second.publishing = 1;
+				it->second.index = 0;
+				break;
+			}
+		}
+	}
+
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
@@ -90,11 +122,14 @@ localize_ackerman_init_handler(carmen_localize_ackerman_initialize_message *loca
 static void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
-	double dist = 0.0;
-
 	actual_pose.x = msg->globalpos.x;
 	actual_pose.y = msg->globalpos.y;
 
+#ifdef PUBLISH_BY_ID
+	update_publishing_flag();
+#else
+
+	double dist = 0.0;
 	if(start_pos == 0)
 	{
 		dist = euclidean_distance(initial_pose.x, initial_pose.y, actual_pose.x, actual_pose.y);
@@ -103,11 +138,17 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 			find_start_position();
 		}
 	}
+#endif
 }
 
 
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Publishers                                                                                  //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
 void
-publish_moving_objects()
+publish_moving_objects_by_timestamp()
 {
 
 	if(ok_to_publish && (current_vector_index < (int) timestamp_moving_objects_list.size()))
@@ -184,6 +225,99 @@ publish_moving_objects()
 	return;
 }
 
+
+void
+publish_moving_objects_by_id()
+{
+
+	int num_of_objects = 0;
+	int i = 0;
+
+	std::map<int,moving_objects_by_id_t>::iterator it;
+	for(it = moving_objects_by_id_map.begin(); it != moving_objects_by_id_map.end(); it++)
+	{
+		if(it->second.publishing == 1 && it->second.index < (int) it->second.objects.size())
+		{
+			num_of_objects++;
+		}
+	}
+
+	if(num_of_objects == 0){
+		return;
+	}
+
+	// alocação da mensagem
+	moving_objects_point_clouds_message.num_point_clouds = num_of_objects;
+	moving_objects_point_clouds_message.point_clouds = (t_point_cloud_struct *) (malloc(moving_objects_point_clouds_message.num_point_clouds * sizeof(t_point_cloud_struct)));
+	carmen_test_alloc(moving_objects_point_clouds_message.point_clouds);
+
+	for(it = moving_objects_by_id_map.begin(); it != moving_objects_by_id_map.end(); it++)
+	{
+		if(it->second.publishing == 1 && it->second.index < (int) it->second.objects.size())
+		{
+			int geometric_model = 0;
+			int idMod = -1;
+			if(strcmp("Car", it->second.objects[it->second.index].tipo) == 0)
+			{
+				geometric_model = 0;
+				idMod = 0;
+			}
+			if(strcmp("Bike", it->second.objects[it->second.index].tipo) == 0)
+			{
+				geometric_model = 11;
+				idMod = 1;
+			}
+			if(strcmp("Truck", it->second.objects[it->second.index].tipo) == 0)
+			{
+				geometric_model = 21;
+				idMod = 2;
+			}
+			if(strcmp("Bus", it->second.objects[it->second.index].tipo) == 0)
+			{
+				geometric_model = 31;
+				idMod = 3;
+			}
+			if(strcmp("Pedestrian", it->second.objects[it->second.index].tipo) == 0)
+			{
+				geometric_model = 41;
+				idMod = 4;
+			}
+
+			moving_objects_point_clouds_message.point_clouds[i].r = 1.0;
+			moving_objects_point_clouds_message.point_clouds[i].g = 1.0;
+			moving_objects_point_clouds_message.point_clouds[i].b = 1.0;
+			moving_objects_point_clouds_message.point_clouds[i].point_size = 1;
+			moving_objects_point_clouds_message.point_clouds[i].linear_velocity = it->second.objects[it->second.index].velocity_obj;
+			moving_objects_point_clouds_message.point_clouds[i].orientation = carmen_normalize_theta(it->second.objects[it->second.index].orientation_obj);
+			moving_objects_point_clouds_message.point_clouds[i].object_pose.x = (it->second.objects[it->second.index].pos_x_obj - it->second.objects[it->second.index].pos_x_iara) + it->second.objects[it->second.index].x_global_pos;
+			moving_objects_point_clouds_message.point_clouds[i].object_pose.y = (it->second.objects[it->second.index].pos_y_obj - it->second.objects[it->second.index].pos_y_iara) + it->second.objects[it->second.index].y_global_pos;
+			moving_objects_point_clouds_message.point_clouds[i].object_pose.z = 0.0;
+			moving_objects_point_clouds_message.point_clouds[i].height = it->second.objects[it->second.index].height;
+			moving_objects_point_clouds_message.point_clouds[i].length = it->second.objects[it->second.index].length;
+			moving_objects_point_clouds_message.point_clouds[i].width= it->second.objects[it->second.index].width;
+			moving_objects_point_clouds_message.point_clouds[i].geometric_model = geometric_model;
+			moving_objects_point_clouds_message.point_clouds[i].model_features = get_obj_model_features(idMod);
+			moving_objects_point_clouds_message.point_clouds[i].num_associated = it->second.objects[it->second.index].id;
+
+			moving_objects_point_clouds_message.point_clouds[i].points = (carmen_vector_3D_t *) malloc(1 * sizeof(carmen_vector_3D_t));
+			moving_objects_point_clouds_message.point_clouds[i].points[0].x = (it->second.objects[it->second.index].pos_x_obj - it->second.objects[it->second.index].pos_x_iara) + it->second.objects[it->second.index].x_global_pos;
+			moving_objects_point_clouds_message.point_clouds[i].points[0].y = (it->second.objects[it->second.index].pos_y_obj - it->second.objects[it->second.index].pos_y_iara) + it->second.objects[it->second.index].y_global_pos;
+			moving_objects_point_clouds_message.point_clouds[i].points[0].z = 0.0;
+
+			moving_objects_point_clouds_message.timestamp = carmen_get_time();
+
+			it->second.index++;
+			i++;
+		}
+	}
+
+	carmen_moving_objects_point_clouds_publish_message(&moving_objects_point_clouds_message);
+
+	free(moving_objects_point_clouds_message.point_clouds);
+
+	return;
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                              //
 // Initializations                                                                              //
@@ -248,6 +382,50 @@ initialize_objects_by_timestamp()
 	return;
 }
 
+
+void
+intialize_objects_by_ids()
+{
+	moving_object_data moving_object;
+	moving_objects_by_id_t moving_objects_by_id;
+
+	input = fopen(input_filename,"r");
+
+	while(!feof(input))
+	{
+		//reads the parameters from the file
+		fscanf(input,"%lf %lf %lf %d %[^ ] %d %lf %lf %lf %lf %lf %lf %lf %lf %d %lf %lf %lf %lf %lf\n",
+				&moving_object.x_global_pos,
+				&moving_object.y_global_pos,
+				&moving_object.timestamp,
+				&moving_object.id,
+				moving_object.tipo,
+				&moving_object.oclusion,
+				&moving_object.alpha,
+				&moving_object.height,
+				&moving_object.width,
+				&moving_object.length,
+				&moving_object.pos_x_obj,
+				&moving_object.pos_y_obj,
+				&moving_object.l10,
+				&moving_object.orientation_obj,
+				&moving_object.l12,
+				&moving_object.pos_x_iara,
+				&moving_object.pos_y_iara,
+				&moving_object.l15,
+				&moving_object.orientation_iara,
+				&moving_object.velocity_obj);
+
+		moving_objects_by_id_map[moving_object.id].objects.push_back(moving_object);
+		moving_objects_by_id_map[moving_object.id].index = 0;
+		moving_objects_by_id_map[moving_object.id].publishing = 0;
+	}
+
+	fclose(input);
+
+	return;
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 int
 main(int argc, char **argv)
@@ -265,7 +443,12 @@ main(int argc, char **argv)
 
 	num_of_models = object_models.size();
 
+#ifdef PUBLISH_BY_ID
+	intialize_objects_by_ids();
+#else
 	initialize_objects_by_timestamp();
+#endif
+
 
 	/* Connect to IPC Server */
 	carmen_ipc_initialize(argc, argv);
@@ -286,8 +469,11 @@ main(int argc, char **argv)
 
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_ipc_addPeriodicTimer(0.1, (TIMER_HANDLER_TYPE) publish_moving_objects, NULL);
-
+#ifdef PUBLISH_BY_ID
+	carmen_ipc_addPeriodicTimer(0.1, (TIMER_HANDLER_TYPE) publish_moving_objects_by_id, NULL);
+#else
+	carmen_ipc_addPeriodicTimer(0.1, (TIMER_HANDLER_TYPE) publish_moving_objects_by_timestamp, NULL);
+#endif
 	carmen_ipc_dispatch();
 
 	return (0);
