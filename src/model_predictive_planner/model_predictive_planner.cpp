@@ -781,13 +781,13 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 				vector<carmen_ackerman_path_point_t> path_local;
 
 				//TODO Descomentar para usar o plot!
-				vector<carmen_ackerman_path_point_t> pathSeed;
-				pathSeed = simulate_car_from_parameters(td, tcp, lastOdometryVector[0].v, lastOdometryVector[0].phi, false, 0.025);
+//				vector<carmen_ackerman_path_point_t> pathSeed;
+//				pathSeed = simulate_car_from_parameters(td, tcp, lastOdometryVector[0].v, lastOdometryVector[0].phi, false, 0.025);
 
 				if (!get_path_from_optimized_tcp(path, path_local, otcp, td, localizer_pose))
 					continue;
 //TODO Gnuplot
-				plot_state(path_local,detailed_lane,pathSeed);
+//				plot_state(path_local,detailed_lane,pathSeed);
 
 				paths[j + i * lastOdometryVector.size()] = path;
 				otcps[j + i * lastOdometryVector.size()] = otcp;
