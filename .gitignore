@@ -211,6 +211,7 @@ src/global/test_movement
 src/global/test_multicentral
 src/global/test_serial
 src/graphslam/gen_data_to_plot
+src/graphslam/grab_data
 src/graphslam/grab_data_guarapari
 src/graphslam/graphslam
 src/graphslam/graphslam_guarapari
