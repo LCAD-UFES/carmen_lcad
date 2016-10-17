@@ -40,7 +40,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_desired_curvat
 		int initialize_neural_networks);
 
 int
-libmpc_stiction_simulation(double effort);
+libmpc_stiction_simulation(double effort, double v);
 
 
 #ifdef __cplusplus

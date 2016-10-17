@@ -594,8 +594,8 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 
 #endif
 
-//	printf("%f\n", simulator_config->phi);
-//	if (libmpc_stiction_simulation(simulator_config->phi))
+//	printf("%f\n", steering_effort);
+//	if (libmpc_stiction_simulation(steering_effort, simulator_config->v))
 //		return (simulator_config->phi);
 
 	/* Reproducao da correcao da oscilacao em velocidades altas */

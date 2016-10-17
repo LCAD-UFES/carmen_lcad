@@ -230,10 +230,17 @@ dist_bounding_box(carmen_point_t particle_pose, pcl::PointCloud<pcl::PointXYZ> &
 	double length_normalizer = norm_factor_x/model_geometry.length;
 	double height_normalizer = norm_factor_x/model_geometry.height;
 
+//	pcl::PointCloud<pcl::PointXYZ>::iterator end = point_cloud.points.end();
 	/*** BOX POSITIONING ***/
-	for (pcl::PointCloud<pcl::PointXYZ>::iterator it = point_cloud.points.begin(); it != point_cloud.points.end(); ++it)
+//	for (pcl::PointCloud<pcl::PointXYZ>::iterator it = point_cloud.points.begin(); it != end; ++it)
+//	{
+//		new_pt = transf2d_bounding_box(car_global_position.x + it->x - particle_pose.x, car_global_position.y + it->y - particle_pose.y, -particle_pose.theta);
+//		sum += dist_btw_point_and_box(new_pt, width_normalizer, length_normalizer);
+//	}
+
+	for (long unsigned int i; i < pcl_size; i++)
 	{
-		new_pt = transf2d_bounding_box(car_global_position.x + it->x - particle_pose.x, car_global_position.y + it->y - particle_pose.y, -particle_pose.theta);
+		new_pt = transf2d_bounding_box(car_global_position.x + point_cloud.points[i].x - particle_pose.x, car_global_position.y + point_cloud.points[i].y - particle_pose.y, -particle_pose.theta);
 		sum += dist_btw_point_and_box(new_pt, width_normalizer, length_normalizer);
 	}
 
