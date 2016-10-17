@@ -220,7 +220,7 @@ void carmen_logwrite_write_laser_ldmrs_objects_data(carmen_laser_ldmrs_objects_d
 			laser->num_objects);
 	for(i = 0; i < laser->num_objects; i++)
 	{
-		carmen_fprintf(outfile,"%d %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d ",
+		carmen_fprintf(outfile,"%d %d %d %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d ",
 				laser->objects_data_list[i].object_id,
 				laser->objects_data_list[i].object_age,
 				laser->objects_data_list[i].object_prediction_age,
