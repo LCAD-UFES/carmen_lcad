@@ -9,11 +9,11 @@
 #include "mpc.h"
 
 
-#define DELTA_T (1.0 / 40.0)
+#define DELTA_T (1.0 / 40.0) // 40 Htz
 #define PREDICTION_HORIZON	(0.65*0.6)
 
 FILE *gnuplot_save;
-bool save_plot = true;
+bool save_plot = false;
 
 using namespace std;
 
@@ -43,13 +43,45 @@ get_effort_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors)
 }
 
 
+vector<double>
+get_velocity_supersampling_motion_commands_vector(PARAMS *param, unsigned int size)
+{
+	vector<double> velocity_vector;
+	double phi_vector_time = 0.0;
+	double motion_commands_vector_time = param->motion_commands_vector[0].time;
+	unsigned int j = 0;
+
+	//printf("%d -- ", size);
+
+	for (unsigned int i = 0; i < size; i++)
+	{
+		velocity_vector.push_back(param->motion_commands_vector[j].v);
+
+		phi_vector_time += DELTA_T;
+		if (phi_vector_time > motion_commands_vector_time)
+		{
+			j++;
+			if (j >= param->motion_commands_vector_size)
+				break;
+
+			motion_commands_vector_time += param->motion_commands_vector[j].time;
+		}
+
+		//printf("%f ", velocity_vector[i]);
+	}
+	//printf("\n");
+
+	return (velocity_vector);
+}
+
+
 double
-car_model(double steering_effort, double atan_current_curvature, fann_type *steering_ann_input, PARAMS *param)
+car_model(double steering_effort, double atan_current_curvature, double v, fann_type *steering_ann_input, PARAMS *param)
 {
 //	steering_effort = steering_effort * (1.0 / (1.0 + param->v / 7.0));
 //	steering_effort = carmen_clamp(-100.0, steering_effort, 100.0);
 	double phi = carmen_libcarneuralmodel_compute_new_phi_from_effort(steering_effort, atan_current_curvature, steering_ann_input,
-			param->steering_ann, param->v, param->understeer_coeficient, param->distance_rear_axles, 2.0 * param->max_phi);
+			param->steering_ann, v, param->understeer_coeficient, param->distance_rear_axles, 2.0 * param->max_phi);
 	phi = 1.0 * phi;// - 0.01;
 	
 	return (phi);
@@ -63,12 +95,14 @@ get_phi_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, PA
 	memcpy(steering_ann_input, param->steering_ann_input, NUM_STEERING_ANN_INPUTS * sizeof(fann_type));
 
 	vector<double> effort_vector = get_effort_vector_from_spline_descriptors(descriptors);
+	vector<double> velocity_vector = get_velocity_supersampling_motion_commands_vector(param, effort_vector.size());
 	vector<double> phi_vector;
 	double atan_current_curvature = param->atan_current_curvature;
 
 	for (unsigned int i = 0; i < effort_vector.size(); i++)
 	{
-		double phi = car_model(effort_vector[i], atan_current_curvature, steering_ann_input, param);
+		double phi = car_model(effort_vector[i], atan_current_curvature, param->v, steering_ann_input, param);
+//		double phi = car_model(effort_vector[i], atan_current_curvature, velocity_vector[i], steering_ann_input, param);
 //		phi = phi + param->dk;
 
 //		phi_vector.push_back(phi);
@@ -353,9 +387,8 @@ open_file_to_save_plot()
 
 	char name[32];
 	char aux[8];
-	//name[0] = '/0';
-	//aux[0] = '/0';
-
+	name[0] = '\0';
+	aux[0] = '\0';
 
 	strcat (name, "mpc_plot_");
 
@@ -380,45 +413,39 @@ open_file_to_save_plot()
 	sprintf(aux, "%d", timeinfo->tm_sec);
 	strcat (name, aux);
 
-	//printf("%s\n", name);
-	//printf( "[%d %d %d %d:%d:%d]", timeinfo->tm_mday, timeinfo->tm_mon + 1, timeinfo->tm_year + 1900, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
-
 	gnuplot_save = fopen(name, "w");
 
-	/*
-	plot "mpc_plot_20161013_16h42m56" using 1:2 with lines, "mpc_plot_20161013_16h42m56" using 1:3 with lines, "mpc_plot_20161013_16h42m56" using 1:4 with lines
-	*/
+//	plot "mpc_plot_20161015_11h56m27" using 1:2 with lines, "mpc_plot_20161015_11h56m27" using 1:3 with lines, "mpc_plot_20161015_11h56m27" using 1:4 with lines
 }
 
 int
-libmpc_stiction_simulation(double current_phi)
+libmpc_stiction_simulation(double effort, double v)
 {
-	static double first_phi;
+	static double first_eff;
 	//static bool control = true;
 	static unsigned int cont = 0;
 
-	if (cont <= 5)
+	if (cont <= 40)
 	{
-		if (current_phi > -0.001 && current_phi < 0.001)
+		if (effort > -5 && effort < 5)
 			cont++;
 		else
 			cont = 0;
 
-		first_phi = current_phi;
+		first_eff = effort;
 
 		return (false);
 	}
 	else
 	{
-//		printf("a%lf\n", fabs(first_phi - current_phi));
-		if (abs(first_phi - current_phi) < 0.0107)
+		if (fabs(first_eff - effort) < (0.7*v))
 		{
-//			printf("Stic %lf %lf\n", first_phi, current_phi);
+			printf("Stic f%lf c%lf abs%lf\n", first_eff, effort, fabs(first_eff - effort));
 			return (true);
 		}
 		else
 		{
-//			printf("Saiu\n");
+			printf("Saiu\n");
 			cont = 0;
 			return (false);
 		}
@@ -512,15 +539,15 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_desired_curvat
 	double effort = seed.k1;
 
 	// Calcula o dk do proximo ciclo
-	double Cxk = car_model(effort, atan_current_curvature, param.steering_ann_input, &param);
+	double Cxk = car_model(effort, atan_current_curvature, param.v, param.steering_ann_input, &param);
 	param.dk = yp - Cxk;
 	param.previous_k1 = effort;
 
 	/** Tentativa de correcao da oscilacao em velocidades altas **/
 //	effort /= (1.0 / (1.0 + v / 7.0));
-//	carmen_clamp(-100.0, effort, 100.0);
 
-	//plot_state(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
+//	plot_state(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
 
+	carmen_clamp(-100.0, effort, 100.0);
 	return (effort);
 }
