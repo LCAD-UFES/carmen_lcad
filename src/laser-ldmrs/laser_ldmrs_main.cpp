@@ -193,6 +193,53 @@ carmen_laser_ldmrs_objects_build_message(vpLaserObjectData *objectData, carmen_l
 }
 
 
+static void
+carmen_laser_ldmrs_objects_data_build_message(vpLaserObjectData *objectData, carmen_laser_ldmrs_objects_data_message *message)
+{
+
+	std::vector<vpObject> objectsList = objectData->getObjectList();
+
+	if(objectData->getNumObjects() == 0) {
+		return;
+	}
+
+	if(message->num_objects != objectData->getNumObjects()) {
+		message->num_objects = objectData->getNumObjects();
+		message->objects_data_list = (carmen_laser_ldmrs_object_data *) realloc(message->objects_data_list, message->num_objects * sizeof(carmen_laser_ldmrs_object_data));
+		carmen_test_alloc(message->objects_data_list);
+	}
+
+	for(int i = 0; i < message->num_objects; i++)
+	{
+		message->objects_data_list[i].object_id = objectsList[i].getObjectId();
+		message->objects_data_list[i].object_age = objectsList[i].getObjectAge();
+		message->objects_data_list[i].object_prediction_age = objectsList[i].getObjectPredictionAge();
+		message->objects_data_list[i].reference_point_x = 0.01 * (double) objectsList[i].getReferencePoint().x_pos;
+		message->objects_data_list[i].reference_point_y = 0.01 * (double) objectsList[i].getReferencePoint().y_pos;;
+		message->objects_data_list[i].reference_point_sigma_x = 0.01 * (double) objectsList[i].getReferencePointSigma().x_pos;
+		message->objects_data_list[i].reference_point_sigma_y = 0.01 * (double) objectsList[i].getReferencePointSigma().y_pos;;
+		message->objects_data_list[i].closest_point_x = 0.01 * (double) objectsList[i].getClosestPoint().x_pos;
+		message->objects_data_list[i].closest_point_y = 0.01 * (double) objectsList[i].getClosestPoint().x_pos;;
+		message->objects_data_list[i].bounding_box_center_x = 0.01 * (double) objectsList[i].getBoundingBoxCenter().x_pos;
+		message->objects_data_list[i].bounding_box_center_y = 0.01 * (double) objectsList[i].getBoundingBoxCenter().y_pos;
+		message->objects_data_list[i].bounding_box_length = 0.01 * (double) objectsList[i].getBoundingBoxSize().y_size;
+		message->objects_data_list[i].bounding_box_width = 0.01 * (double) objectsList[i].getBoundingBoxSize().x_size;
+		message->objects_data_list[i].object_box_center_x = 0.01 * (double) objectsList[i].getObjectBoxCenter().x_pos;
+		message->objects_data_list[i].object_box_center_y = 0.01 * (double) objectsList[i].getObjectBoxCenter().y_pos;
+		message->objects_data_list[i].object_box_lenght = 0.01 * (double) objectsList[i].getObjectBoxSize().y_size;
+		message->objects_data_list[i].object_box_width = 0.01 * (double) objectsList[i].getObjectBoxSize().x_size;
+		message->objects_data_list[i].object_box_orientation = carmen_normalize_theta(((double) objectsList[i].getObjectBoxOrientation()/32.0) * M_PI/180.0) ;
+		message->objects_data_list[i].abs_velocity_x = 0.01 * (double) objectsList[i].getAbsoluteVelocity().x_pos;
+		message->objects_data_list[i].abs_velocity_y = 0.01 * (double) objectsList[i].getAbsoluteVelocity().y_pos;
+		message->objects_data_list[i].abs_velocity_sigma_x = 0.01 * (double) objectsList[i].getAbsoluteVelocitySigma().x_size;
+		message->objects_data_list[i].abs_velocity_sigma_y = 0.01 * (double) objectsList[i].getAbsoluteVelocitySigma().y_size;
+		message->objects_data_list[i].relative_velocity_x = 0.01 * (double) objectsList[i].getRelativeVelocity().x_pos;
+		message->objects_data_list[i].relative_velocity_y = 0.01 * (double) objectsList[i].getRelativeVelocity().y_pos;
+		message->objects_data_list[i].class_id = objectsList[i].getClassification();
+	}
+}
+
+
 /*********************************************************
 		   --- Main Function ---
  **********************************************************/
@@ -202,6 +249,7 @@ main(int argc, char **argv)
 {
 	static carmen_laser_ldmrs_message message;
 	static carmen_laser_ldmrs_objects_message objectsMessage;
+	static carmen_laser_ldmrs_objects_data_message objectsDataMessage;
 	unsigned short dataType;
 
 	message.scan_points = 0;
@@ -249,9 +297,10 @@ main(int argc, char **argv)
 					carmen_laser_publish_ldmrs(&message);
 				break;
 			case vpSickLDMRS::ObjectData:
-				carmen_laser_ldmrs_objects_build_message(&objectData, &objectsMessage);
+				carmen_laser_ldmrs_objects_data_build_message(&objectData, &objectsDataMessage);
+				//carmen_laser_ldmrs_objects_build_message(&objectData, &objectsMessage);
 				if (objectData.getNumObjects() > 0)
-					carmen_laser_publish_ldmrs_objects(&objectsMessage);
+					carmen_laser_publish_ldmrs_objects_data(&objectsDataMessage);
 				break;
 			case 0:
 				carmen_ipc_sleep((1.0 / 12.5) / 10.0);

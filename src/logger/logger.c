@@ -236,6 +236,13 @@ void laser_ldmrs_objects_handler(carmen_laser_ldmrs_objects_message *laser)
 				    carmen_get_time() - logger_starttime);
 }
 
+void laser_ldmrs_objects_data_handler(carmen_laser_ldmrs_objects_data_message *laser)
+{
+  //fprintf(stderr, "1");
+  carmen_logwrite_write_laser_ldmrs_objects_data(laser, 1, outfile,
+				    carmen_get_time() - logger_starttime);
+}
+
 void localize_ackerman_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
   //fprintf(stderr, "L");
@@ -578,6 +585,9 @@ int main(int argc, char **argv)
 					  CARMEN_SUBSCRIBE_ALL);
     carmen_laser_subscribe_ldmrs_objects_message(NULL, (carmen_handler_t)
 					  laser_ldmrs_objects_handler,
+					  CARMEN_SUBSCRIBE_ALL);
+    carmen_laser_subscribe_ldmrs_objects_data_message(NULL, (carmen_handler_t)
+					  laser_ldmrs_objects_data_handler,
 					  CARMEN_SUBSCRIBE_ALL);
   }
 
