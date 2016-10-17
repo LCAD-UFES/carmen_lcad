@@ -1,0 +1,293 @@
+#include <stdio.h>
+#include <iostream>
+#include <vector>
+#include <list>
+#include <string>
+
+#include <carmen/carmen.h>
+#include <carmen/bumblebee_basic_interface.h>
+#include <carmen/bumblebee_basic_messages.h>
+
+#include <carmen/visual_tracker_interface.h>
+#include <carmen/visual_tracker_messages.h>
+
+// OpenCV
+#include <opencv2/core/core.hpp>
+#include <opencv2/legacy/legacy.hpp>
+#include <opencv2/highgui/highgui.hpp>
+//#include <opencv/cv.h>
+//#include <opencv/highgui.h>
+
+//Goturn_tracker
+#include "tracker/tracker.h"
+#include "regressor/regressor_train.h"
+#include "gui.h"
+//using namespace std;
+
+
+#define TACKER_OPENTLD_MAX_WINDOW_WIDTH 640
+#define TACKER_OPENTLD_MAX_WINDOW_HEIGHT 480
+#define BUMBLEBEE_BASIC_VIEW_NUM_COLORS 3
+
+static int received_image = 0;
+
+static int tld_image_width = 0;
+static int tld_image_height = 0;
+
+static int camera_side = 0;
+
+static carmen_bumblebee_basic_stereoimage_message last_message;
+
+static int msg_fps = 0, msg_last_fps = 0; //message fps
+static int disp_fps = 0, disp_last_fps = 0; //display fps
+
+static carmen_visual_tracker_output_message message_output;
+
+
+//Goturn_tracker
+std::string model_file = "tracker.prototxt";
+std::string trained_file = "tracker.caffemodel";
+int gpu_id = 0;
+//Goturn things
+Regressor regressor(model_file, trained_file, gpu_id, false);
+
+// Ensuring randomness for fairness.
+//	srandom (time(NULL));
+
+const bool show_intermediate_output = false;
+// Create a tracker object.
+Tracker tracker(show_intermediate_output);
+
+static BoundingBox box;
+static std::string window_name = "GOTURN";
+
+using namespace cv;
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Publishers                                                                                //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void
+publish_visual_tracker_output_message()
+{
+	IPC_RETURN_TYPE err;
+	err = IPC_publishData(CARMEN_VISUAL_TRACKER_OUTPUT_MESSAGE_NAME, &message_output);
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_VISUAL_TRACKER_OUTPUT_MESSAGE_NAME);
+}
+
+void
+carmen_visual_tracker_define_messages()
+{
+	carmen_visual_tracker_define_message_output();
+}
+
+void
+build_and_publish_message(char *host, double timestamp)
+{
+
+	//fprintf(stderr, "%lf %lf\n", message_output.timestamp, message_output.confidence);
+
+	publish_visual_tracker_output_message();
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void
+process_goturn_detection(IplImage img, double time_stamp)
+{
+
+	cv::Mat mat_image=cvarrToMat(&img);
+	cv::Mat prev_image;
+	prev_image = mat_image.clone();
+	if(box.x1_ == -1)
+	{
+
+	}
+	else
+		tracker.Track(mat_image, &regressor, &box);
+
+	box.DrawBoundingBox(&prev_image);
+
+	cv::imshow(window_name, prev_image);
+
+	char c = cv::waitKey(5);
+
+	switch (c)
+	{
+	case 'r':
+
+		CvRect rect;
+
+		if (getBBFromUser(&img, rect, window_name) == 0)
+		{
+			return;
+		}
+
+		box.x1_ = rect.x;
+		box.y1_ = rect.y;
+		box.x2_ = rect.x+rect.width;
+		box.y2_ = rect.y+rect.height;
+		tracker.Init(mat_image, box, &regressor);
+		break;
+
+	case 'q':
+		exit(0);
+	}
+		// Track and estimate the bounding box location.
+
+}
+
+
+static void
+process_image(carmen_bumblebee_basic_stereoimage_message *msg)
+{
+	IplImage *src_image = NULL;
+	IplImage *rgb_image = NULL;
+	IplImage *resized_rgb_image = NULL;
+
+	src_image = cvCreateImage(cvSize(msg->width, msg->height), IPL_DEPTH_8U, BUMBLEBEE_BASIC_VIEW_NUM_COLORS);
+	rgb_image = cvCreateImage(cvSize(msg->width, msg->height), IPL_DEPTH_8U, BUMBLEBEE_BASIC_VIEW_NUM_COLORS);
+
+	if (camera_side == 0)
+		src_image->imageData = (char*) msg->raw_left;
+	else
+		src_image->imageData = (char*) msg->raw_right;
+
+	cvtColor(cvarrToMat(src_image), cvarrToMat(rgb_image), cv::COLOR_RGB2BGR);
+
+	if (tld_image_width == msg->width && tld_image_height == msg->height)
+		process_goturn_detection(cvarrToMat(rgb_image), msg->timestamp);
+	else
+	{
+		resized_rgb_image = cvCreateImage(cvSize(tld_image_width , tld_image_height), rgb_image->depth, rgb_image->nChannels);
+		cvResize(rgb_image, resized_rgb_image);
+		process_goturn_detection(cvarrToMat(resized_rgb_image), msg->timestamp);
+	}
+
+
+	cvReleaseImage(&rgb_image);
+	cvReleaseImage(&resized_rgb_image);
+	cvReleaseImage(&src_image);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Handlers                                                                                  //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+static void
+image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
+{
+	static double last_timestamp = 0.0;
+	static double last_time = 0.0;
+	double time_now = carmen_get_time();
+
+	//Just process Rectified images
+	if (image_msg->isRectified)
+	{
+
+		if (!received_image)
+		{
+			received_image = 1;
+			last_timestamp = image_msg->timestamp;
+			last_time = time_now;
+		}
+
+
+		if ((image_msg->timestamp - last_timestamp) > 1.0)
+		{
+			msg_last_fps = msg_fps;
+			msg_fps = 0;
+			last_timestamp = image_msg->timestamp;
+		}
+		msg_fps++;
+
+		if ((time_now - last_time) > 1.0)
+		{
+
+			disp_last_fps = disp_fps;
+			disp_fps = 0;
+			last_time = time_now;
+		}
+		disp_fps++;
+
+
+		last_message = *image_msg;
+		process_image(image_msg);
+
+//		build_and_publish_message(image_msg->host, image_msg->timestamp);
+		//		double time_f = carmen_get_time() - time_now;
+		//		printf("tp: %lf \n", time_f);
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+static void
+shutdown_camera_view(int x)
+{
+	if (x == SIGINT)
+	{
+		carmen_ipc_disconnect();
+		printf("Disconnected from robot.\n");
+		exit(0);
+	}
+}
+
+//
+static int
+read_parameters(int argc, char **argv)
+{
+	int num_items;
+
+	carmen_param_t param_list[] = {
+			{(char*) "tracker_opentld", (char*) "view_width", CARMEN_PARAM_INT, &tld_image_width, TACKER_OPENTLD_MAX_WINDOW_WIDTH, NULL},
+			{(char*) "tracker_opentld", (char*) "view_height", CARMEN_PARAM_INT, &tld_image_height, TACKER_OPENTLD_MAX_WINDOW_HEIGHT, NULL},
+
+	};
+
+	num_items = sizeof (param_list) / sizeof (param_list[0]);
+	carmen_param_install_params(argc, argv, param_list, num_items);
+
+	return 0;
+}
+
+int
+main(int argc, char **argv)
+{
+
+	int camera = 0;
+
+	if (argc != 3)
+	{
+		fprintf(stderr, "%s: Wrong number of parameters. tracker_opentld requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)\n>", argv[0], argc - 1, argv[0]);
+		exit(1);
+	}
+
+	camera = atoi(argv[1]);
+	camera_side = atoi(argv[2]);
+
+	carmen_ipc_initialize(argc, argv);
+	carmen_param_check_version(argv[0]);
+	read_parameters(argc, argv);
+
+	box.x1_ = -1;
+
+//-----
+
+	signal(SIGINT, shutdown_camera_view);
+
+
+	carmen_visual_tracker_define_messages();
+
+	carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) image_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_ipc_dispatch();
+
+}

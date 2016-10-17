@@ -614,23 +614,25 @@ get_current_list_point_clouds(pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_point_clou
 	Eigen::Vector4f max_point;
 	object_geometry_t point_cloud_geometry;
 
-	for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin(); it != cluster_indices.end(); ++it)
+	std::vector<pcl::PointIndices>::const_iterator end = cluster_indices.end();
+
+	for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin(); it != end; ++it)
 	{
 		get_point_cloud_cluster_with_cluster_indices(aux_pcl_cloud, pcl_point_cloud_ptr, *it);
 		/*** PROPOSAL XY POSE OF POINT CLOUD ***/
 //		pcl::compute3DCentroid(*aux_pcl_cloud, centroid2);
-		pcl::getMinMax3D(*aux_pcl_cloud, min_point, max_point);
+//		pcl::getMinMax3D(*aux_pcl_cloud, min_point, max_point);
 
 //		double d_x = max_point[0] - min_point[0];
 //		double d_y = max_point[1] - min_point[1];
-		double d_z = max_point[2] - min_point[2];
+//		double d_z = max_point[2] - min_point[2];
 		//centroid[0] = 0.5f * (max_point[0] + min_point[0]);
 		//centroid[1] = 0.5f * (max_point[1] + min_point[1]);
 		//centroid[2] = 0.5f * (max_point[2] + min_point[2]);
 		aux_objects_data.point_cloud = *aux_pcl_cloud;
 		//get_geometry_and_center_point_cloud(aux_pcl_cloud, point_cloud_geometry, centroid);
 		get_geom_and_center_by_moie(aux_pcl_cloud, point_cloud_geometry, centroid);
-		point_cloud_geometry.height = fabs(d_z);
+//		point_cloud_geometry.height = fabs(d_z);
 //		centroid2[0] = 0.5f * (max_point[0] + min_point[0]);
 //		centroid2[1] = 0.5f * (max_point[1] + min_point[1]);
 //		centroid2[2] = 0.5f * (max_point[2] + min_point[2]);

@@ -191,6 +191,7 @@ ParticleSwarmOptimization::_update_pbest()
 	{
 		if (_fitness[i] > _pbest_fitness[i])
 		{
+			_pbest_fitness[i] = _fitness[i];
 			_copy(_particles[i], _pbest[i]);
 		}
 	}

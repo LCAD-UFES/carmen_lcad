@@ -165,6 +165,7 @@ update_pbest()
 	{
 		if (fitness[i] > pbest_fitness[i])
 		{
+			pbest_fitness[i] = fitness[i];
 			copy(particles[i], pbest[i]);
 		}
 	}
