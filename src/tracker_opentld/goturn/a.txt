@@ -1,0 +1,367 @@
+regressor/regressor.cpp: In member function ‘void Regressor::WrapInputLayer(size_t, std::vector<std::vector<cv::Mat> >*, std::vector<std::vector<cv::Mat> >*)’:
+regressor/regressor.cpp:264:23: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+   for (int n = 0; n < num_images; ++n) {
+                       ^
+regressor/regressor.cpp:275:23: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+   for (int n = 0; n < num_images; ++n) {
+                       ^
+train/train.cpp:12:37: fatal error: network/regressor_train.h: No such file or directory
+ #include "network/regressor_train.h"
+                                     ^
+compilation terminated.
+loader/loader_alov.cpp: In constructor ‘LoaderAlov::LoaderAlov(const string&, const string&)’:
+loader/loader_alov.cpp:36:26: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+   for (size_t i = 0; i < max_categories; ++i) {
+                          ^
+loader/loader_alov.cpp: In member function ‘void LoaderAlov::get_videos(bool, std::vector<Video>*) const’:
+loader/loader_alov.cpp:136:37: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+     for (size_t i = start_num; i <= end_num; ++i) {
+                                     ^
+loader/loader_imagenet_det.cpp: In constructor ‘LoaderImagenetDet::LoaderImagenetDet(const string&, const string&)’:
+loader/loader_imagenet_det.cpp:41:26: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+   for (size_t i = 0; i < max_subfolders; ++i) {
+                          ^
+loader/loader_imagenet_det.cpp: In member function ‘void LoaderImagenetDet::ComputeStatistics() const’:
+loader/loader_imagenet_det.cpp:245:50: warning: ‘mean_height_frac’ may be used uninitialized in this function [-Wmaybe-uninitialized]
+       mean_height_frac = (static_cast<double>(n) * mean_height_frac + height_frac) / static_cast<double>(n + 1);
+                                                  ^
+loader/loader_imagenet_det.cpp:244:49: warning: ‘mean_width_frac’ may be used uninitialized in this function [-Wmaybe-uninitialized]
+       mean_width_frac = (static_cast<double>(n) * mean_width_frac + width_frac) / static_cast<double>(n + 1);
+                                                 ^
+loader/loader_imagenet_det.cpp:243:45: warning: ‘mean_height’ may be used uninitialized in this function [-Wmaybe-uninitialized]
+       mean_height = (static_cast<double>(n) * mean_height + height) / static_cast<double>(n + 1);
+                                             ^
+loader/loader_imagenet_det.cpp:242:44: warning: ‘mean_width’ may be used uninitialized in this function [-Wmaybe-uninitialized]
+       mean_width = (static_cast<double>(n) * mean_width + width) / static_cast<double>(n + 1);
+                                            ^
+loader/video.cpp: In member function ‘void Video::ShowVideo() const’:
+loader/video.cpp:21:65: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+   for (size_t image_frame_num = start_frame; image_frame_num <= end_frame; ++image_frame_num) {
+                                                                 ^
+loader/video.cpp:32:32: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+     if (annotated_frame_num == image_frame_num) {
+                                ^
+loader/video.cpp:39:56: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+       if (annotated_frame_index < annotations.size() - 1) {
+                                                        ^
+loader/video.cpp:29:10: warning: variable ‘has_bounding_box’ set but not used [-Wunused-but-set-variable]
+     bool has_bounding_box = false;
+          ^
+loader/video.cpp: In member function ‘void Video::LoadAnnotation(int, int*, cv::Mat*, BoundingBox*) const’:
+loader/video.cpp:78:45: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+   } else if (*frame_num >= image_files.size()) {
+                                             ^
+helper/bounding_box.cpp: In member function ‘void BoundingBox::Shift(const cv::Mat&, double, double, double, double, bool, BoundingBox*) const’:
+helper/bounding_box.cpp:235:97: error: ‘min’ was not declared in this scope
+       width_scale_factor = max(min_scale, min(max_scale, sample_exp_two_sided(lambda_scale_frac)));
+                                                                                                 ^
+helper/bounding_box.cpp:235:97: note: suggested alternatives:
+In file included from /usr/include/c++/4.8/vector:60:0,
+                 from helper/bounding_box.h:4,
+                 from helper/bounding_box.cpp:1:
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+     min(const _Tp& __a, const _Tp& __b, _Compare __comp)
+     ^
+In file included from /usr/local/include/opencv2/core/core.hpp:4884:0,
+                 from /usr/local/include/opencv/cv.h:64,
+                 from helper/bounding_box.h:6,
+                 from helper/bounding_box.cpp:1:
+/usr/local/include/opencv2/core/mat.hpp:1375:43: note:   ‘cv::min’
+ template<typename _Tp> static inline void min(double s, const Mat_<_Tp>& a, Mat_<_Tp>& c)
+                                           ^
+In file included from /usr/include/c++/4.8/vector:60:0,
+                 from helper/bounding_box.h:4,
+                 from helper/bounding_box.cpp:1:
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+     min(const _Tp& __a, const _Tp& __b, _Compare __comp)
+     ^
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+helper/bounding_box.cpp:235:98: error: ‘max’ was not declared in this scope
+       width_scale_factor = max(min_scale, min(max_scale, sample_exp_two_sided(lambda_scale_frac)));
+                                                                                                  ^
+helper/bounding_box.cpp:235:98: note: suggested alternatives:
+In file included from /usr/include/c++/4.8/vector:60:0,
+                 from helper/bounding_box.h:4,
+                 from helper/bounding_box.cpp:1:
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+     max(const _Tp& __a, const _Tp& __b, _Compare __comp)
+     ^
+In file included from /usr/local/include/opencv2/core/core.hpp:4884:0,
+                 from /usr/local/include/opencv/cv.h:64,
+                 from helper/bounding_box.h:6,
+                 from helper/bounding_box.cpp:1:
+/usr/local/include/opencv2/core/mat.hpp:1390:43: note:   ‘cv::max’
+ template<typename _Tp> static inline void max(double s, const Mat_<_Tp>& a, Mat_<_Tp>& c)
+                                           ^
+In file included from /usr/include/c++/4.8/vector:60:0,
+                 from helper/bounding_box.h:4,
+                 from helper/bounding_box.cpp:1:
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+     max(const _Tp& __a, const _Tp& __b, _Compare __comp)
+     ^
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+helper/bounding_box.cpp:243:76: error: ‘min’ was not declared in this scope
+     new_width = max(1.0, min(static_cast<double>(image.cols - 1), new_width));
+                                                                            ^
+helper/bounding_box.cpp:243:76: note: suggested alternatives:
+In file included from /usr/include/c++/4.8/vector:60:0,
+                 from helper/bounding_box.h:4,
+                 from helper/bounding_box.cpp:1:
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+     min(const _Tp& __a, const _Tp& __b, _Compare __comp)
+     ^
+In file included from /usr/local/include/opencv2/core/core.hpp:4884:0,
+                 from /usr/local/include/opencv/cv.h:64,
+                 from helper/bounding_box.h:6,
+                 from helper/bounding_box.cpp:1:
+/usr/local/include/opencv2/core/mat.hpp:1375:43: note:   ‘cv::min’
+ template<typename _Tp> static inline void min(double s, const Mat_<_Tp>& a, Mat_<_Tp>& c)
+                                           ^
+In file included from /usr/include/c++/4.8/vector:60:0,
+                 from helper/bounding_box.h:4,
+                 from helper/bounding_box.cpp:1:
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+     min(const _Tp& __a, const _Tp& __b, _Compare __comp)
+     ^
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+helper/bounding_box.cpp:243:77: error: ‘max’ was not declared in this scope
+     new_width = max(1.0, min(static_cast<double>(image.cols - 1), new_width));
+                                                                             ^
+helper/bounding_box.cpp:243:77: note: suggested alternatives:
+In file included from /usr/include/c++/4.8/vector:60:0,
+                 from helper/bounding_box.h:4,
+                 from helper/bounding_box.cpp:1:
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+     max(const _Tp& __a, const _Tp& __b, _Compare __comp)
+     ^
+In file included from /usr/local/include/opencv2/core/core.hpp:4884:0,
+                 from /usr/local/include/opencv/cv.h:64,
+                 from helper/bounding_box.h:6,
+                 from helper/bounding_box.cpp:1:
+/usr/local/include/opencv2/core/mat.hpp:1390:43: note:   ‘cv::max’
+ template<typename _Tp> static inline void max(double s, const Mat_<_Tp>& a, Mat_<_Tp>& c)
+                                           ^
+In file included from /usr/include/c++/4.8/vector:60:0,
+                 from helper/bounding_box.h:4,
+                 from helper/bounding_box.cpp:1:
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+     max(const _Tp& __a, const _Tp& __b, _Compare __comp)
+     ^
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+helper/bounding_box.cpp:254:98: error: ‘min’ was not declared in this scope
+       height_scale_factor = max(min_scale, min(max_scale, sample_exp_two_sided(lambda_scale_frac)));
+                                                                                                  ^
+helper/bounding_box.cpp:254:98: note: suggested alternatives:
+In file included from /usr/include/c++/4.8/vector:60:0,
+                 from helper/bounding_box.h:4,
+                 from helper/bounding_box.cpp:1:
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+     min(const _Tp& __a, const _Tp& __b, _Compare __comp)
+     ^
+In file included from /usr/local/include/opencv2/core/core.hpp:4884:0,
+                 from /usr/local/include/opencv/cv.h:64,
+                 from helper/bounding_box.h:6,
+                 from helper/bounding_box.cpp:1:
+/usr/local/include/opencv2/core/mat.hpp:1375:43: note:   ‘cv::min’
+ template<typename _Tp> static inline void min(double s, const Mat_<_Tp>& a, Mat_<_Tp>& c)
+                                           ^
+In file included from /usr/include/c++/4.8/vector:60:0,
+                 from helper/bounding_box.h:4,
+                 from helper/bounding_box.cpp:1:
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+     min(const _Tp& __a, const _Tp& __b, _Compare __comp)
+     ^
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+helper/bounding_box.cpp:254:99: error: ‘max’ was not declared in this scope
+       height_scale_factor = max(min_scale, min(max_scale, sample_exp_two_sided(lambda_scale_frac)));
+                                                                                                   ^
+helper/bounding_box.cpp:254:99: note: suggested alternatives:
+In file included from /usr/include/c++/4.8/vector:60:0,
+                 from helper/bounding_box.h:4,
+                 from helper/bounding_box.cpp:1:
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+     max(const _Tp& __a, const _Tp& __b, _Compare __comp)
+     ^
+In file included from /usr/local/include/opencv2/core/core.hpp:4884:0,
+                 from /usr/local/include/opencv/cv.h:64,
+                 from helper/bounding_box.h:6,
+                 from helper/bounding_box.cpp:1:
+/usr/local/include/opencv2/core/mat.hpp:1390:43: note:   ‘cv::max’
+ template<typename _Tp> static inline void max(double s, const Mat_<_Tp>& a, Mat_<_Tp>& c)
+                                           ^
+In file included from /usr/include/c++/4.8/vector:60:0,
+                 from helper/bounding_box.h:4,
+                 from helper/bounding_box.cpp:1:
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+     max(const _Tp& __a, const _Tp& __b, _Compare __comp)
+     ^
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+helper/bounding_box.cpp:262:78: error: ‘min’ was not declared in this scope
+     new_height = max(1.0, min(static_cast<double>(image.rows - 1), new_height));
+                                                                              ^
+helper/bounding_box.cpp:262:78: note: suggested alternatives:
+In file included from /usr/include/c++/4.8/vector:60:0,
+                 from helper/bounding_box.h:4,
+                 from helper/bounding_box.cpp:1:
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+     min(const _Tp& __a, const _Tp& __b, _Compare __comp)
+     ^
+In file included from /usr/local/include/opencv2/core/core.hpp:4884:0,
+                 from /usr/local/include/opencv/cv.h:64,
+                 from helper/bounding_box.h:6,
+                 from helper/bounding_box.cpp:1:
+/usr/local/include/opencv2/core/mat.hpp:1375:43: note:   ‘cv::min’
+ template<typename _Tp> static inline void min(double s, const Mat_<_Tp>& a, Mat_<_Tp>& c)
+                                           ^
+In file included from /usr/include/c++/4.8/vector:60:0,
+                 from helper/bounding_box.h:4,
+                 from helper/bounding_box.cpp:1:
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+     min(const _Tp& __a, const _Tp& __b, _Compare __comp)
+     ^
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+helper/bounding_box.cpp:262:79: error: ‘max’ was not declared in this scope
+     new_height = max(1.0, min(static_cast<double>(image.rows - 1), new_height));
+                                                                               ^
+helper/bounding_box.cpp:262:79: note: suggested alternatives:
+In file included from /usr/include/c++/4.8/vector:60:0,
+                 from helper/bounding_box.h:4,
+                 from helper/bounding_box.cpp:1:
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+     max(const _Tp& __a, const _Tp& __b, _Compare __comp)
+     ^
+In file included from /usr/local/include/opencv2/core/core.hpp:4884:0,
+                 from /usr/local/include/opencv/cv.h:64,
+                 from helper/bounding_box.h:6,
+                 from helper/bounding_box.cpp:1:
+/usr/local/include/opencv2/core/mat.hpp:1390:43: note:   ‘cv::max’
+ template<typename _Tp> static inline void max(double s, const Mat_<_Tp>& a, Mat_<_Tp>& c)
+                                           ^
+In file included from /usr/include/c++/4.8/vector:60:0,
+                 from helper/bounding_box.h:4,
+                 from helper/bounding_box.cpp:1:
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+     max(const _Tp& __a, const _Tp& __b, _Compare __comp)
+     ^
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+helper/bounding_box.cpp:287:81: error: ‘max’ was not declared in this scope
+     new_center_x = min(image.cols - new_width / 2, max(new_width / 2, new_x_temp));
+                                                                                 ^
+helper/bounding_box.cpp:287:81: note: suggested alternatives:
+In file included from /usr/include/c++/4.8/vector:60:0,
+                 from helper/bounding_box.h:4,
+                 from helper/bounding_box.cpp:1:
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+     max(const _Tp& __a, const _Tp& __b, _Compare __comp)
+     ^
+In file included from /usr/local/include/opencv2/core/core.hpp:4884:0,
+                 from /usr/local/include/opencv/cv.h:64,
+                 from helper/bounding_box.h:6,
+                 from helper/bounding_box.cpp:1:
+/usr/local/include/opencv2/core/mat.hpp:1390:43: note:   ‘cv::max’
+ template<typename _Tp> static inline void max(double s, const Mat_<_Tp>& a, Mat_<_Tp>& c)
+                                           ^
+In file included from /usr/include/c++/4.8/vector:60:0,
+                 from helper/bounding_box.h:4,
+                 from helper/bounding_box.cpp:1:
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+     max(const _Tp& __a, const _Tp& __b, _Compare __comp)
+     ^
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+helper/bounding_box.cpp:287:82: error: ‘min’ was not declared in this scope
+     new_center_x = min(image.cols - new_width / 2, max(new_width / 2, new_x_temp));
+                                                                                  ^
+helper/bounding_box.cpp:287:82: note: suggested alternatives:
+In file included from /usr/include/c++/4.8/vector:60:0,
+                 from helper/bounding_box.h:4,
+                 from helper/bounding_box.cpp:1:
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+     min(const _Tp& __a, const _Tp& __b, _Compare __comp)
+     ^
+In file included from /usr/local/include/opencv2/core/core.hpp:4884:0,
+                 from /usr/local/include/opencv/cv.h:64,
+                 from helper/bounding_box.h:6,
+                 from helper/bounding_box.cpp:1:
+/usr/local/include/opencv2/core/mat.hpp:1375:43: note:   ‘cv::min’
+ template<typename _Tp> static inline void min(double s, const Mat_<_Tp>& a, Mat_<_Tp>& c)
+                                           ^
+In file included from /usr/include/c++/4.8/vector:60:0,
+                 from helper/bounding_box.h:4,
+                 from helper/bounding_box.cpp:1:
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+     min(const _Tp& __a, const _Tp& __b, _Compare __comp)
+     ^
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+helper/bounding_box.cpp:313:83: error: ‘max’ was not declared in this scope
+     new_center_y = min(image.rows - new_height / 2, max(new_height / 2, new_y_temp));
+                                                                                   ^
+helper/bounding_box.cpp:313:83: note: suggested alternatives:
+In file included from /usr/include/c++/4.8/vector:60:0,
+                 from helper/bounding_box.h:4,
+                 from helper/bounding_box.cpp:1:
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+     max(const _Tp& __a, const _Tp& __b, _Compare __comp)
+     ^
+In file included from /usr/local/include/opencv2/core/core.hpp:4884:0,
+                 from /usr/local/include/opencv/cv.h:64,
+                 from helper/bounding_box.h:6,
+                 from helper/bounding_box.cpp:1:
+/usr/local/include/opencv2/core/mat.hpp:1390:43: note:   ‘cv::max’
+ template<typename _Tp> static inline void max(double s, const Mat_<_Tp>& a, Mat_<_Tp>& c)
+                                           ^
+In file included from /usr/include/c++/4.8/vector:60:0,
+                 from helper/bounding_box.h:4,
+                 from helper/bounding_box.cpp:1:
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+     max(const _Tp& __a, const _Tp& __b, _Compare __comp)
+     ^
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
+helper/bounding_box.cpp:313:84: error: ‘min’ was not declared in this scope
+     new_center_y = min(image.rows - new_height / 2, max(new_height / 2, new_y_temp));
+                                                                                    ^
+helper/bounding_box.cpp:313:84: note: suggested alternatives:
+In file included from /usr/include/c++/4.8/vector:60:0,
+                 from helper/bounding_box.h:4,
+                 from helper/bounding_box.cpp:1:
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+     min(const _Tp& __a, const _Tp& __b, _Compare __comp)
+     ^
+In file included from /usr/local/include/opencv2/core/core.hpp:4884:0,
+                 from /usr/local/include/opencv/cv.h:64,
+                 from helper/bounding_box.h:6,
+                 from helper/bounding_box.cpp:1:
+/usr/local/include/opencv2/core/mat.hpp:1375:43: note:   ‘cv::min’
+ template<typename _Tp> static inline void min(double s, const Mat_<_Tp>& a, Mat_<_Tp>& c)
+                                           ^
+In file included from /usr/include/c++/4.8/vector:60:0,
+                 from helper/bounding_box.h:4,
+                 from helper/bounding_box.cpp:1:
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+     min(const _Tp& __a, const _Tp& __b, _Compare __comp)
+     ^
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
+make: *** [all] Error 1

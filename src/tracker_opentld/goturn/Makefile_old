@@ -1,0 +1,6 @@
+CFLAGS = -Wall -g 
+IFLAGS = -I. -I $(CAFFE_HOME)/include -I $(CAFFE_HOME)/build/include -I $(CAFFE_HOME)/build/src `pkg-config --cflags opencv` -D CPU_ONLY
+LFLAGS = -lboost_system -lboost_filesystem -lboost_regex `pkg-config --libs opencv` -L $(CAFFE_HOME)/build/lib -lcaffe -ltinyxml -lglog  
+
+all:
+	g++ -o goturn_tracker_main goturn_tracker_main.cpp regressor/*cpp tracker/*cpp train/*cpp loader/*cpp helper/*cpp $(CFLAGS) $(IFLAGS) $(LFLAGS)   
