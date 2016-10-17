@@ -2,6 +2,8 @@
 
 This is the code for our tracker, GOTURN: Generic Object Tracking Using Regression Networks.
 
+[Download Caffemodel](https://goo.gl/WXlXMt)
+
 GOTURN appeared in this paper:
 
 **[Learning to Track at 100 FPS with Deep Regression Networks](http://davheld.github.io/GOTURN/GOTURN.html)**,
