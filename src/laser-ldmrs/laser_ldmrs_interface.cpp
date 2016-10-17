@@ -14,7 +14,7 @@ carmen_laser_define_ldmrs_messages()
 				CARMEN_LASER_LDMRS_OBJECTS_FMT);
 		carmen_test_ipc_exit(err, "Could not define", CARMEN_LASER_LDMRS_OBJECTS_NAME);
 
-	err = IPC_defineMsg(CARMEN_LASER_LDMRS_OBJECTS_NAME, IPC_VARIABLE_LENGTH,
+	err = IPC_defineMsg(CARMEN_LASER_LDMRS_OBJECTS_DATA_NAME, IPC_VARIABLE_LENGTH,
 					CARMEN_LASER_LDMRS_OBJECTS_DATA_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_LASER_LDMRS_OBJECTS_DATA_NAME);
 }

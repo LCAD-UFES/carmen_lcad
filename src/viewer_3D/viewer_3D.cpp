@@ -940,13 +940,13 @@ carmen_laser_ldmrs_objects_data_message_handler(carmen_laser_ldmrs_objects_data_
 		{
 			ldmrs_objects_tracking[i].id = laser_message->objects_data_list[i].object_id;
 			//pode estar invertido
-			ldmrs_objects_tracking[i].lenght = laser_message->objects_data_list[i].object_box_lenght;
-			ldmrs_objects_tracking[i].width = laser_message->objects_data_list[i].object_box_width;
+			ldmrs_objects_tracking[i].width = laser_message->objects_data_list[i].object_box_lenght;
+			ldmrs_objects_tracking[i].lenght = laser_message->objects_data_list[i].object_box_width;
 			//orientacao
 			ldmrs_objects_tracking[i].orientation = carmen_normalize_theta(laser_message->objects_data_list[i].object_box_orientation + car_fused_pose.orientation.yaw);
 
 			// calcula a velocidade
-			if(laser_message->objects_data_list[i].abs_velocity_sigma_x < 1.0 && laser_message->objects_data_list[i].abs_velocity_sigma_y < 1.0)
+			if(laser_message->objects_data_list[i].abs_velocity_sigma_x < 1.5 && laser_message->objects_data_list[i].abs_velocity_sigma_y < 1.5)
 			{
 				double abs_velocity = sqrt( pow(laser_message->objects_data_list[i].abs_velocity_x,2) + pow(laser_message->objects_data_list[i].abs_velocity_y,2));
 				ldmrs_objects_tracking[i].velocity = abs_velocity;

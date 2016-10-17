@@ -219,7 +219,7 @@ carmen_laser_ldmrs_objects_data_build_message(vpLaserObjectData *objectData, car
 		message->objects_data_list[i].reference_point_sigma_x = 0.01 * (double) objectsList[i].getReferencePointSigma().x_pos;
 		message->objects_data_list[i].reference_point_sigma_y = 0.01 * (double) objectsList[i].getReferencePointSigma().y_pos;;
 		message->objects_data_list[i].closest_point_x = 0.01 * (double) objectsList[i].getClosestPoint().x_pos;
-		message->objects_data_list[i].closest_point_y = 0.01 * (double) objectsList[i].getClosestPoint().x_pos;;
+		message->objects_data_list[i].closest_point_y = 0.01 * (double) objectsList[i].getClosestPoint().y_pos;;
 		message->objects_data_list[i].bounding_box_center_x = 0.01 * (double) objectsList[i].getBoundingBoxCenter().x_pos;
 		message->objects_data_list[i].bounding_box_center_y = 0.01 * (double) objectsList[i].getBoundingBoxCenter().y_pos;
 		message->objects_data_list[i].bounding_box_length = 0.01 * (double) objectsList[i].getBoundingBoxSize().y_size;
