@@ -135,7 +135,7 @@ carmen_laser_ldmrs_copy_message(vpLaserScan laserscan[4], carmen_laser_ldmrs_mes
 		message->arraypoints[i + sizeLayer1].horizontal_angle = pointsInLayer2[i].getHAngle();
 		message->arraypoints[i + sizeLayer1].vertical_angle = pointsInLayer2[i].getVAngle();
 		message->arraypoints[i + sizeLayer1].radial_distance = pointsInLayer2[i].getRadialDist();
-		message->arraypoints[i + sizeLayer1].flags = pointsInLayer1[i].getFlags();
+		message->arraypoints[i + sizeLayer1].flags = pointsInLayer2[i].getFlags();
 	}
 
 	for(int i = 0; i < sizeLayer3; i++)
@@ -143,7 +143,7 @@ carmen_laser_ldmrs_copy_message(vpLaserScan laserscan[4], carmen_laser_ldmrs_mes
 		message->arraypoints[i + sizeLayer1 + sizeLayer2].horizontal_angle = pointsInLayer3[i].getHAngle();
 		message->arraypoints[i + sizeLayer1 + sizeLayer2].vertical_angle = pointsInLayer3[i].getVAngle();
 		message->arraypoints[i + sizeLayer1 + sizeLayer2].radial_distance = pointsInLayer3[i].getRadialDist();
-		message->arraypoints[i + sizeLayer1 + sizeLayer2].flags = pointsInLayer1[i].getFlags();
+		message->arraypoints[i + sizeLayer1 + sizeLayer2].flags = pointsInLayer3[i].getFlags();
 
 	}
 
@@ -152,7 +152,7 @@ carmen_laser_ldmrs_copy_message(vpLaserScan laserscan[4], carmen_laser_ldmrs_mes
 		message->arraypoints[i + sizeLayer1 + sizeLayer2 + sizeLayer3].horizontal_angle = pointsInLayer4[i].getHAngle();
 		message->arraypoints[i + sizeLayer1 + sizeLayer2 + sizeLayer3].vertical_angle = pointsInLayer4[i].getVAngle();
 		message->arraypoints[i + sizeLayer1 + sizeLayer2 + sizeLayer3].radial_distance = pointsInLayer4[i].getRadialDist();
-		message->arraypoints[i + sizeLayer1 + sizeLayer2 + sizeLayer3].flags = pointsInLayer1[i].getFlags();
+		message->arraypoints[i + sizeLayer1 + sizeLayer2 + sizeLayer3].flags = pointsInLayer4[i].getFlags();
 	}
 }
 
