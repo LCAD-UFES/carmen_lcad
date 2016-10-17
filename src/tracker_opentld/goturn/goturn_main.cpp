@@ -89,6 +89,32 @@ carmen_visual_tracker_define_messages()
 void
 build_and_publish_message(char *host, double timestamp)
 {
+	bounding_box box_detected;
+		if (box.x1_ != -1.0)
+		{
+			box_detected.x = box.x1_;
+			box_detected.y = box.y1_;
+			box_detected.width = box.get_width();
+			box_detected.height = box.get_height();
+
+			message_output.rect = box_detected;
+			message_output.confidence = 1.0;
+			message_output.host = host;
+			message_output.timestamp = timestamp;
+		}
+
+		else
+		{
+			box_detected.x = -1;
+			box_detected.y = -1;
+			box_detected.width = -1;
+			box_detected.height = -1;
+
+			message_output.rect = box_detected;
+			message_output.confidence = 0.0;
+			message_output.host = host;
+			message_output.timestamp = timestamp;
+		}
 
 	//fprintf(stderr, "%lf %lf\n", message_output.timestamp, message_output.confidence);
 
@@ -101,22 +127,27 @@ build_and_publish_message(char *host, double timestamp)
 void
 process_goturn_detection(IplImage img, double time_stamp)
 {
+	char string1[128];
+	CvFont font;
+
+//	cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, .4, .5, 0, 1, 8);
+//	cvRectangle(&img, cvPoint(0, 0), cvPoint(img.width, 50), CV_RGB(0, 0, 255), CV_FILLED, 8, 0);
+//	sprintf(string1, "Time:%.2f, FPS:%d", time_stamp, disp_last_fps);
+//	cvPutText(&img, string1, cvPoint(25, 25), &font, CV_RGB(255, 255, 255));
 
 	cv::Mat mat_image=cvarrToMat(&img);
 	cv::Mat prev_image;
 	prev_image = mat_image.clone();
-	if(box.x1_ == -1)
-	{
-
-	}
-	else
+	if(box.x1_ != -1.0)
 		tracker.Track(mat_image, &regressor, &box);
 
 	box.DrawBoundingBox(&prev_image);
 
+
+
 	cv::imshow(window_name, prev_image);
 
-	char c = cv::waitKey(5);
+	char c = cv::waitKey(2);
 
 	switch (c)
 	{
@@ -221,7 +252,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 		last_message = *image_msg;
 		process_image(image_msg);
 
-//		build_and_publish_message(image_msg->host, image_msg->timestamp);
+		build_and_publish_message(image_msg->host, image_msg->timestamp);
 		//		double time_f = carmen_get_time() - time_now;
 		//		printf("tp: %lf \n", time_f);
 	}
@@ -277,7 +308,10 @@ main(int argc, char **argv)
 	carmen_param_check_version(argv[0]);
 	read_parameters(argc, argv);
 
-	box.x1_ = -1;
+	box.x1_ = -1.0;
+	box.y1_ = -1.0;
+	box.x2_ = -1.0;
+	box.y2_ = -1.0;
 
 //-----
 
