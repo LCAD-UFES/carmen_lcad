@@ -30,6 +30,7 @@
 #define NAVIGATOR_ASTAR_H
 
 #include <carmen/behavior_selector_interface.h>
+#include <carmen/obstacle_distance_mapper_interface.h>
 
 
 #ifdef __cplusplus

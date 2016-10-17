@@ -21,24 +21,14 @@ double currentVelocity = 0.0;
 static void
 localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
-//	if (current_algorithm != CARMEN_BEHAVIOR_SELECTOR_A_STAR)
-//		return;
 	IPC_RETURN_TYPE err = IPC_OK;
-	static int roundValue = 2;
 	static carmen_ackerman_traj_point_t robot_position;
-//
-//	robot_position.x = round(msg->globalpos.x * roundValue) / roundValue;
-//	robot_position.y = round(msg->globalpos.y * roundValue) / roundValue;
-//	robot_position.theta = round(msg->globalpos.theta * roundValue) / roundValue;
-//	robot_position.v = msg->v;
-//	robot_position.phi = msg->phi;
 
 	robot_position.x = msg->globalpos.x;
 	robot_position.y = msg->globalpos.y;
 	robot_position.theta = msg->globalpos.theta;
 	robot_position.v = msg->v;
 	robot_position.phi = msg->phi;
-
 
 
 	if (messageControl.carmen_planner_ackerman_update_robot(&robot_position, &robot_config) == 0)
@@ -200,6 +190,14 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 
 }
 
+static void
+carmen_obstacle_distance_mapper_message_handler(carmen_obstacle_distance_mapper_message *message)
+{
+	printf("carmen_obstacle_distance_mapper_message_handler\n");
+	messageControl.carmen_planner_ackerman_setDistanceMap(message);
+}
+
+
 
 static void
 navigator_shutdown(int signal)
@@ -285,6 +283,7 @@ main(int argc, char **argv)
 	//carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) goal_list_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) state_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t)localize_globalpos_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_obstacle_distance_mapper_subscribe_message(NULL, (carmen_handler_t) carmen_obstacle_distance_mapper_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_subscribe_message(
 			(char *)CARMEN_NAVIGATOR_ACKERMAN_SET_GOAL_NAME,

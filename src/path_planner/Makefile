@@ -9,7 +9,7 @@ IFLAGS +=
 LFLAGS += $(INTERFACE_LIBS) -lglobal -lipc \
 	-lmap_interface -lgrid_mapping -lmapper_interface \
 	-lparam_interface -lX11 \
-	-llocalize_ackerman_interface  -lmap_io -lprob_models \
+	-llocalize_ackerman_interface  -lmap_io -lprob_models -lobstacle_distance_mapper_interface\
 	-lsimulator_ackerman_interface -lobstacle_avoider_interface -lrddf_interface -lrobot_ackerman_interface \
 	-lmotion_planner_interface -lcollision_detection -lmap_server_interface -lbehavior_selector_interface -lrotation_geometry  -lrddf_interface
 CFLAGS += #-pg 
