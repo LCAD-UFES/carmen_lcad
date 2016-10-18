@@ -1,7 +1,7 @@
 
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
-
+#include <locale.h>
 
 using namespace cv;
 
@@ -10,10 +10,8 @@ int
 process_bumblebee(FILE *f, char *dir)
 {
 	int i, j, w, h, img_size, is_rect;
-	char name[1024], host[64], path[1024];
+	char name[1024], host[64], path[1024], timestamp[64], local_timestamp[64];
 	uchar r, g, b;
-	double timestamp;
-	double local_timestamp;
 	static uchar *raw_left = NULL;
 	static uchar *raw_right = NULL;
 
@@ -76,14 +74,16 @@ process_bumblebee(FILE *f, char *dir)
 	imshow("img_l", img_l);
 	waitKey(1);
 
-	fscanf(f, "%lf %s %lf", &timestamp, host, &local_timestamp);
+	fscanf(f, "%s %s %s", timestamp, host, local_timestamp);
 
 	char outnamel[1024];
 	char outnamer[1024];
-	sprintf(outnamer, "%s/%f-r.png", dir, timestamp);
+	sprintf(outnamer, "%s/%s-r.png", dir, timestamp);
 	imwrite(outnamer, img_r);
-	sprintf(outnamel, "%s/%f-l.png", dir, timestamp);
+	sprintf(outnamel, "%s/%s-l.png", dir, timestamp);
 	imwrite(outnamel, img_l);
+
+	printf("Saving images %s and %s\n", outnamer, outnamel);
 
 	return 1;
 }
@@ -92,7 +92,9 @@ process_bumblebee(FILE *f, char *dir)
 int
 main(int argc, char **argv)
 {
-	if (argc < 4)
+	setlocale(LC_ALL, NULL);
+
+	if (argc < 3)
 	{
 		printf("Use %s <bumbs.txt> <out-dir>\n", argv[0]);
 		return 0;
