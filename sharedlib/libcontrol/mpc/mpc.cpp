@@ -83,6 +83,7 @@ car_model(double steering_effort, double atan_current_curvature, double v, fann_
 	double phi = carmen_libcarneuralmodel_compute_new_phi_from_effort(steering_effort, atan_current_curvature, steering_ann_input,
 			param->steering_ann, v, param->understeer_coeficient, param->distance_rear_axles, 2.0 * param->max_phi);
 	phi = 1.0 * phi;// - 0.01;
+//	phi *= (1.0 / (1.0 + v / 10.0));
 	
 	return (phi);
 }
@@ -101,8 +102,8 @@ get_phi_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, PA
 
 	for (unsigned int i = 0; i < effort_vector.size(); i++)
 	{
-		double phi = car_model(effort_vector[i], atan_current_curvature, param->v, steering_ann_input, param);
-//		double phi = car_model(effort_vector[i], atan_current_curvature, velocity_vector[i], steering_ann_input, param);
+//		double phi = car_model(effort_vector[i], atan_current_curvature, param->v, steering_ann_input, param);
+		double phi = car_model(effort_vector[i], atan_current_curvature, velocity_vector[i], steering_ann_input, param);
 //		phi = phi + param->dk;
 
 //		phi_vector.push_back(phi);
@@ -418,8 +419,9 @@ open_file_to_save_plot()
 //	plot "mpc_plot_20161015_11h56m27" using 1:2 with lines, "mpc_plot_20161015_11h56m27" using 1:3 with lines, "mpc_plot_20161015_11h56m27" using 1:4 with lines
 }
 
+
 int
-libmpc_stiction_simulation(double effort, double v)
+libmpc_stiction_simulation_old(double effort, double v)
 {
 	static double first_eff;
 	//static bool control = true;
@@ -450,6 +452,23 @@ libmpc_stiction_simulation(double effort, double v)
 			return (false);
 		}
 	}
+}
+
+
+int
+libmpc_stiction_simulation(double effort, double v)
+{
+	static double previous_effort = 0.0;
+	bool has_stiction;
+
+	if (fabs(effort - previous_effort) < (0.03 * v))
+		has_stiction = true;
+	else
+		has_stiction = false;
+
+	previous_effort = effort;
+
+	return (has_stiction);
 }
 
 
@@ -544,9 +563,9 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_desired_curvat
 	param.previous_k1 = effort;
 
 	/** Tentativa de correcao da oscilacao em velocidades altas **/
-//	effort /= (1.0 / (1.0 + v / 7.0));
+	//effort /= (1.0 / (1.0 + v / 3.5)); boa
 
-//	plot_state(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
+	plot_state(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
 
 	carmen_clamp(-100.0, effort, 100.0);
 	return (effort);
