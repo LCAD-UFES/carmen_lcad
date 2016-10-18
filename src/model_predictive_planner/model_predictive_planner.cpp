@@ -23,6 +23,7 @@
 
 #include "g2o/types/slam2d/se2.h"
 
+#include <prob_map.h>
 
 using namespace g2o;
 
@@ -469,6 +470,7 @@ path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> path)
 {
 	double proximity_to_obstacles_for_path = 0.0;
 	double circle_radius = (GlobalState::robot_config.width + 0.4) / 2.0; // metade da largura do carro + um espacco de guarda
+	carmen_point_t localizer = {GlobalState::localizer_pose->x, GlobalState::localizer_pose->y, GlobalState::localizer_pose->theta};
 
 	for (unsigned int i = 0; i < path.size(); i += 1)
 	{
@@ -476,7 +478,9 @@ path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> path)
 				(path[i].phi < -GlobalState::robot_config.max_phi))
 			printf("---------- PHI EXCEEDED THE MAX_PHI!!!!\n");
 
-		proximity_to_obstacles_for_path += compute_distance_to_closest_obstacles(path[i], circle_radius);
+		carmen_point_t point_to_check = {path[i].x, path[i].y, path[i].theta};
+		proximity_to_obstacles_for_path += obstacle_avoider_compute_distance_to_closest_obstacles(&localizer,
+				point_to_check, GlobalState::robot_config, GlobalState::distance_map, circle_radius);
 	}
 
 	if (proximity_to_obstacles_for_path > 0.0)

@@ -2617,11 +2617,8 @@ is_inside_ellipse(int x, int y, int f1x, int f1y, int f2x, int f2y, double major
 }
 
 /* compute minimum distance to all occupied cells */
-void carmen_prob_models_create_masked_distance_map_old(
-        carmen_prob_models_distance_map *lmap,
-        carmen_map_p map,
-        double minimum_occupied_prob,
-        carmen_point_p robot_position,
+void carmen_prob_models_create_masked_distance_map_old(carmen_prob_models_distance_map *lmap,
+        carmen_map_p map, double minimum_occupied_prob, carmen_point_p robot_position,
         carmen_point_p goal_position)
 {
 //	double time_now = carmen_get_time();

@@ -43,6 +43,8 @@ static int disp_fps = 0, disp_last_fps = 0; //display fps
 
 static carmen_visual_tracker_output_message message_output;
 
+const double fontScale = 2.0;
+const int thickness = 3;
 
 //Goturn_tracker
 std::string model_file = "tracker.prototxt";
@@ -125,27 +127,31 @@ build_and_publish_message(char *host, double timestamp)
 
 
 void
-process_goturn_detection(IplImage img, double time_stamp)
+process_goturn_detection(Mat *img, double time_stamp)
 {
 	char string1[128];
 	CvFont font;
 
-//	cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, .4, .5, 0, 1, 8);
-//	cvRectangle(&img, cvPoint(0, 0), cvPoint(img.width, 50), CV_RGB(0, 0, 255), CV_FILLED, 8, 0);
-//	sprintf(string1, "Time:%.2f, FPS:%d", time_stamp, disp_last_fps);
-//	cvPutText(&img, string1, cvPoint(25, 25), &font, CV_RGB(255, 255, 255));
-
-	cv::Mat mat_image=cvarrToMat(&img);
-	cv::Mat prev_image;
-	prev_image = mat_image.clone();
+	//cv::Mat mat_image=cvarrToMat(&img);
+	//cv::Mat prev_image;
+	//prev_image = mat_image.clone();
 	if(box.x1_ != -1.0)
-		tracker.Track(mat_image, &regressor, &box);
+	{
+		tracker.Track(*img, &regressor, &box);
+		box.DrawBoundingBox(img);
+	}
 
-	box.DrawBoundingBox(&prev_image);
+	cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, .4, .5, 0, 1, 8);
+//	cvRectangle(&prev_image, cvPoint(0, 0), cvPoint(img.width, 50), CV_RGB(0, 0, 255), CV_FILLED, 8, 0);
+//	cvPutText(&prev_image.data, string1, cvPoint(25, 25), &font, CV_RGB(255, 255, 255));
+	// draw the box
+	sprintf(string1, "Time:%.2f, FPS:%d", time_stamp, disp_last_fps);
+	cv::Size s = img->size();
+	cv::Point textOrg(25,25);
+	cv::rectangle(*img, cv::Point(0, 0), cv::Point(s.width, 50), Scalar::all(0));
+	cv::putText(*img, string1,textOrg,FONT_HERSHEY_SIMPLEX, 0.4,Scalar::all(255),1,8);
 
-
-
-	cv::imshow(window_name, prev_image);
+	cv::imshow(window_name, *img);
 
 	char c = cv::waitKey(2);
 
@@ -155,7 +161,7 @@ process_goturn_detection(IplImage img, double time_stamp)
 
 		CvRect rect;
 
-		if (getBBFromUser(&img, rect, window_name) == 0)
+		if (getBBFromUser(img, rect, window_name) == 0)
 		{
 			return;
 		}
@@ -164,7 +170,7 @@ process_goturn_detection(IplImage img, double time_stamp)
 		box.y1_ = rect.y;
 		box.x2_ = rect.x+rect.width;
 		box.y2_ = rect.y+rect.height;
-		tracker.Init(mat_image, box, &regressor);
+		tracker.Init(*img, box, &regressor);
 		break;
 
 	case 'q':
@@ -178,33 +184,42 @@ process_goturn_detection(IplImage img, double time_stamp)
 static void
 process_image(carmen_bumblebee_basic_stereoimage_message *msg)
 {
-	IplImage *src_image = NULL;
-	IplImage *rgb_image = NULL;
-	IplImage *resized_rgb_image = NULL;
+	static Mat *src_image = NULL;
+	static Mat *rgb_image = NULL;
+	static Mat *resized_rgb_image = NULL;
 
-	src_image = cvCreateImage(cvSize(msg->width, msg->height), IPL_DEPTH_8U, BUMBLEBEE_BASIC_VIEW_NUM_COLORS);
-	rgb_image = cvCreateImage(cvSize(msg->width, msg->height), IPL_DEPTH_8U, BUMBLEBEE_BASIC_VIEW_NUM_COLORS);
+	if (src_image == NULL)
+	{
+		src_image = new Mat(Size(msg->width, msg->height), CV_8UC3);
+		rgb_image = new Mat(Size(msg->width, msg->height), CV_8UC3);
+		resized_rgb_image = new Mat(Size(tld_image_width , tld_image_height), CV_8UC3);
+	}
 
 	if (camera_side == 0)
-		src_image->imageData = (char*) msg->raw_left;
-	else
-		src_image->imageData = (char*) msg->raw_right;
-
-	cvtColor(cvarrToMat(src_image), cvarrToMat(rgb_image), cv::COLOR_RGB2BGR);
-
-	if (tld_image_width == msg->width && tld_image_height == msg->height)
-		process_goturn_detection(cvarrToMat(rgb_image), msg->timestamp);
+	{
+		//src_image->imageData = (char*) msg->raw_left;
+		memcpy(src_image->data, msg->raw_left, msg->image_size * sizeof(char));
+	}
 	else
 	{
-		resized_rgb_image = cvCreateImage(cvSize(tld_image_width , tld_image_height), rgb_image->depth, rgb_image->nChannels);
+		//src_image->imageData = (char*) msg->raw_right;
+		memcpy(src_image->data, msg->raw_right, msg->image_size * sizeof(char));
+	}
+
+	cvtColor(*src_image, *rgb_image, cv::COLOR_RGB2BGR);
+
+	if (tld_image_width == msg->width && tld_image_height == msg->height)
+		process_goturn_detection(rgb_image, msg->timestamp);
+	else
+	{
 		cvResize(rgb_image, resized_rgb_image);
-		process_goturn_detection(cvarrToMat(resized_rgb_image), msg->timestamp);
+		process_goturn_detection(resized_rgb_image, msg->timestamp);
 	}
 
 
-	cvReleaseImage(&rgb_image);
-	cvReleaseImage(&resized_rgb_image);
-	cvReleaseImage(&src_image);
+	//cvReleaseImage(&rgb_image);
+	//cvReleaseImage(&resized_rgb_image);
+	//cvReleaseImage(&src_image);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -253,9 +268,10 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 		process_image(image_msg);
 
 		build_and_publish_message(image_msg->host, image_msg->timestamp);
-		//		double time_f = carmen_get_time() - time_now;
-		//		printf("tp: %lf \n", time_f);
+		double time_f = carmen_get_time() - time_now;
+		printf("tp: %lf \n", time_f);
 	}
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////

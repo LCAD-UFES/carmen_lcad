@@ -1,367 +1,209 @@
-regressor/regressor.cpp: In member function ‘void Regressor::WrapInputLayer(size_t, std::vector<std::vector<cv::Mat> >*, std::vector<std::vector<cv::Mat> >*)’:
-regressor/regressor.cpp:264:23: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
-   for (int n = 0; n < num_images; ++n) {
-                       ^
-regressor/regressor.cpp:275:23: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
-   for (int n = 0; n < num_images; ++n) {
-                       ^
-train/train.cpp:12:37: fatal error: network/regressor_train.h: No such file or directory
- #include "network/regressor_train.h"
-                                     ^
-compilation terminated.
-loader/loader_alov.cpp: In constructor ‘LoaderAlov::LoaderAlov(const string&, const string&)’:
-loader/loader_alov.cpp:36:26: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
-   for (size_t i = 0; i < max_categories; ++i) {
-                          ^
-loader/loader_alov.cpp: In member function ‘void LoaderAlov::get_videos(bool, std::vector<Video>*) const’:
-loader/loader_alov.cpp:136:37: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
-     for (size_t i = start_num; i <= end_num; ++i) {
-                                     ^
-loader/loader_imagenet_det.cpp: In constructor ‘LoaderImagenetDet::LoaderImagenetDet(const string&, const string&)’:
-loader/loader_imagenet_det.cpp:41:26: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
-   for (size_t i = 0; i < max_subfolders; ++i) {
-                          ^
-loader/loader_imagenet_det.cpp: In member function ‘void LoaderImagenetDet::ComputeStatistics() const’:
-loader/loader_imagenet_det.cpp:245:50: warning: ‘mean_height_frac’ may be used uninitialized in this function [-Wmaybe-uninitialized]
-       mean_height_frac = (static_cast<double>(n) * mean_height_frac + height_frac) / static_cast<double>(n + 1);
-                                                  ^
-loader/loader_imagenet_det.cpp:244:49: warning: ‘mean_width_frac’ may be used uninitialized in this function [-Wmaybe-uninitialized]
-       mean_width_frac = (static_cast<double>(n) * mean_width_frac + width_frac) / static_cast<double>(n + 1);
-                                                 ^
-loader/loader_imagenet_det.cpp:243:45: warning: ‘mean_height’ may be used uninitialized in this function [-Wmaybe-uninitialized]
-       mean_height = (static_cast<double>(n) * mean_height + height) / static_cast<double>(n + 1);
-                                             ^
-loader/loader_imagenet_det.cpp:242:44: warning: ‘mean_width’ may be used uninitialized in this function [-Wmaybe-uninitialized]
-       mean_width = (static_cast<double>(n) * mean_width + width) / static_cast<double>(n + 1);
-                                            ^
-loader/video.cpp: In member function ‘void Video::ShowVideo() const’:
-loader/video.cpp:21:65: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
-   for (size_t image_frame_num = start_frame; image_frame_num <= end_frame; ++image_frame_num) {
-                                                                 ^
-loader/video.cpp:32:32: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
-     if (annotated_frame_num == image_frame_num) {
-                                ^
-loader/video.cpp:39:56: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
-       if (annotated_frame_index < annotations.size() - 1) {
-                                                        ^
-loader/video.cpp:29:10: warning: variable ‘has_bounding_box’ set but not used [-Wunused-but-set-variable]
-     bool has_bounding_box = false;
-          ^
-loader/video.cpp: In member function ‘void Video::LoadAnnotation(int, int*, cv::Mat*, BoundingBox*) const’:
-loader/video.cpp:78:45: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
-   } else if (*frame_num >= image_files.size()) {
-                                             ^
-helper/bounding_box.cpp: In member function ‘void BoundingBox::Shift(const cv::Mat&, double, double, double, double, bool, BoundingBox*) const’:
-helper/bounding_box.cpp:235:97: error: ‘min’ was not declared in this scope
-       width_scale_factor = max(min_scale, min(max_scale, sample_exp_two_sided(lambda_scale_frac)));
-                                                                                                 ^
-helper/bounding_box.cpp:235:97: note: suggested alternatives:
-In file included from /usr/include/c++/4.8/vector:60:0,
-                 from helper/bounding_box.h:4,
-                 from helper/bounding_box.cpp:1:
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-     min(const _Tp& __a, const _Tp& __b, _Compare __comp)
-     ^
-In file included from /usr/local/include/opencv2/core/core.hpp:4884:0,
-                 from /usr/local/include/opencv/cv.h:64,
-                 from helper/bounding_box.h:6,
-                 from helper/bounding_box.cpp:1:
-/usr/local/include/opencv2/core/mat.hpp:1375:43: note:   ‘cv::min’
- template<typename _Tp> static inline void min(double s, const Mat_<_Tp>& a, Mat_<_Tp>& c)
-                                           ^
-In file included from /usr/include/c++/4.8/vector:60:0,
-                 from helper/bounding_box.h:4,
-                 from helper/bounding_box.cpp:1:
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-     min(const _Tp& __a, const _Tp& __b, _Compare __comp)
-     ^
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-helper/bounding_box.cpp:235:98: error: ‘max’ was not declared in this scope
-       width_scale_factor = max(min_scale, min(max_scale, sample_exp_two_sided(lambda_scale_frac)));
-                                                                                                  ^
-helper/bounding_box.cpp:235:98: note: suggested alternatives:
-In file included from /usr/include/c++/4.8/vector:60:0,
-                 from helper/bounding_box.h:4,
-                 from helper/bounding_box.cpp:1:
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-     max(const _Tp& __a, const _Tp& __b, _Compare __comp)
-     ^
-In file included from /usr/local/include/opencv2/core/core.hpp:4884:0,
-                 from /usr/local/include/opencv/cv.h:64,
-                 from helper/bounding_box.h:6,
-                 from helper/bounding_box.cpp:1:
-/usr/local/include/opencv2/core/mat.hpp:1390:43: note:   ‘cv::max’
- template<typename _Tp> static inline void max(double s, const Mat_<_Tp>& a, Mat_<_Tp>& c)
-                                           ^
-In file included from /usr/include/c++/4.8/vector:60:0,
-                 from helper/bounding_box.h:4,
-                 from helper/bounding_box.cpp:1:
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-     max(const _Tp& __a, const _Tp& __b, _Compare __comp)
-     ^
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-helper/bounding_box.cpp:243:76: error: ‘min’ was not declared in this scope
-     new_width = max(1.0, min(static_cast<double>(image.cols - 1), new_width));
-                                                                            ^
-helper/bounding_box.cpp:243:76: note: suggested alternatives:
-In file included from /usr/include/c++/4.8/vector:60:0,
-                 from helper/bounding_box.h:4,
-                 from helper/bounding_box.cpp:1:
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-     min(const _Tp& __a, const _Tp& __b, _Compare __comp)
-     ^
-In file included from /usr/local/include/opencv2/core/core.hpp:4884:0,
-                 from /usr/local/include/opencv/cv.h:64,
-                 from helper/bounding_box.h:6,
-                 from helper/bounding_box.cpp:1:
-/usr/local/include/opencv2/core/mat.hpp:1375:43: note:   ‘cv::min’
- template<typename _Tp> static inline void min(double s, const Mat_<_Tp>& a, Mat_<_Tp>& c)
-                                           ^
-In file included from /usr/include/c++/4.8/vector:60:0,
-                 from helper/bounding_box.h:4,
-                 from helper/bounding_box.cpp:1:
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-     min(const _Tp& __a, const _Tp& __b, _Compare __comp)
-     ^
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-helper/bounding_box.cpp:243:77: error: ‘max’ was not declared in this scope
-     new_width = max(1.0, min(static_cast<double>(image.cols - 1), new_width));
-                                                                             ^
-helper/bounding_box.cpp:243:77: note: suggested alternatives:
-In file included from /usr/include/c++/4.8/vector:60:0,
-                 from helper/bounding_box.h:4,
-                 from helper/bounding_box.cpp:1:
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-     max(const _Tp& __a, const _Tp& __b, _Compare __comp)
-     ^
-In file included from /usr/local/include/opencv2/core/core.hpp:4884:0,
-                 from /usr/local/include/opencv/cv.h:64,
-                 from helper/bounding_box.h:6,
-                 from helper/bounding_box.cpp:1:
-/usr/local/include/opencv2/core/mat.hpp:1390:43: note:   ‘cv::max’
- template<typename _Tp> static inline void max(double s, const Mat_<_Tp>& a, Mat_<_Tp>& c)
-                                           ^
-In file included from /usr/include/c++/4.8/vector:60:0,
-                 from helper/bounding_box.h:4,
-                 from helper/bounding_box.cpp:1:
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-     max(const _Tp& __a, const _Tp& __b, _Compare __comp)
-     ^
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-helper/bounding_box.cpp:254:98: error: ‘min’ was not declared in this scope
-       height_scale_factor = max(min_scale, min(max_scale, sample_exp_two_sided(lambda_scale_frac)));
-                                                                                                  ^
-helper/bounding_box.cpp:254:98: note: suggested alternatives:
-In file included from /usr/include/c++/4.8/vector:60:0,
-                 from helper/bounding_box.h:4,
-                 from helper/bounding_box.cpp:1:
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-     min(const _Tp& __a, const _Tp& __b, _Compare __comp)
-     ^
-In file included from /usr/local/include/opencv2/core/core.hpp:4884:0,
-                 from /usr/local/include/opencv/cv.h:64,
-                 from helper/bounding_box.h:6,
-                 from helper/bounding_box.cpp:1:
-/usr/local/include/opencv2/core/mat.hpp:1375:43: note:   ‘cv::min’
- template<typename _Tp> static inline void min(double s, const Mat_<_Tp>& a, Mat_<_Tp>& c)
-                                           ^
-In file included from /usr/include/c++/4.8/vector:60:0,
-                 from helper/bounding_box.h:4,
-                 from helper/bounding_box.cpp:1:
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-     min(const _Tp& __a, const _Tp& __b, _Compare __comp)
-     ^
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-helper/bounding_box.cpp:254:99: error: ‘max’ was not declared in this scope
-       height_scale_factor = max(min_scale, min(max_scale, sample_exp_two_sided(lambda_scale_frac)));
-                                                                                                   ^
-helper/bounding_box.cpp:254:99: note: suggested alternatives:
-In file included from /usr/include/c++/4.8/vector:60:0,
-                 from helper/bounding_box.h:4,
-                 from helper/bounding_box.cpp:1:
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-     max(const _Tp& __a, const _Tp& __b, _Compare __comp)
-     ^
-In file included from /usr/local/include/opencv2/core/core.hpp:4884:0,
-                 from /usr/local/include/opencv/cv.h:64,
-                 from helper/bounding_box.h:6,
-                 from helper/bounding_box.cpp:1:
-/usr/local/include/opencv2/core/mat.hpp:1390:43: note:   ‘cv::max’
- template<typename _Tp> static inline void max(double s, const Mat_<_Tp>& a, Mat_<_Tp>& c)
-                                           ^
-In file included from /usr/include/c++/4.8/vector:60:0,
-                 from helper/bounding_box.h:4,
-                 from helper/bounding_box.cpp:1:
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-     max(const _Tp& __a, const _Tp& __b, _Compare __comp)
-     ^
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-helper/bounding_box.cpp:262:78: error: ‘min’ was not declared in this scope
-     new_height = max(1.0, min(static_cast<double>(image.rows - 1), new_height));
-                                                                              ^
-helper/bounding_box.cpp:262:78: note: suggested alternatives:
-In file included from /usr/include/c++/4.8/vector:60:0,
-                 from helper/bounding_box.h:4,
-                 from helper/bounding_box.cpp:1:
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-     min(const _Tp& __a, const _Tp& __b, _Compare __comp)
-     ^
-In file included from /usr/local/include/opencv2/core/core.hpp:4884:0,
-                 from /usr/local/include/opencv/cv.h:64,
-                 from helper/bounding_box.h:6,
-                 from helper/bounding_box.cpp:1:
-/usr/local/include/opencv2/core/mat.hpp:1375:43: note:   ‘cv::min’
- template<typename _Tp> static inline void min(double s, const Mat_<_Tp>& a, Mat_<_Tp>& c)
-                                           ^
-In file included from /usr/include/c++/4.8/vector:60:0,
-                 from helper/bounding_box.h:4,
-                 from helper/bounding_box.cpp:1:
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-     min(const _Tp& __a, const _Tp& __b, _Compare __comp)
-     ^
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-helper/bounding_box.cpp:262:79: error: ‘max’ was not declared in this scope
-     new_height = max(1.0, min(static_cast<double>(image.rows - 1), new_height));
-                                                                               ^
-helper/bounding_box.cpp:262:79: note: suggested alternatives:
-In file included from /usr/include/c++/4.8/vector:60:0,
-                 from helper/bounding_box.h:4,
-                 from helper/bounding_box.cpp:1:
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-     max(const _Tp& __a, const _Tp& __b, _Compare __comp)
-     ^
-In file included from /usr/local/include/opencv2/core/core.hpp:4884:0,
-                 from /usr/local/include/opencv/cv.h:64,
-                 from helper/bounding_box.h:6,
-                 from helper/bounding_box.cpp:1:
-/usr/local/include/opencv2/core/mat.hpp:1390:43: note:   ‘cv::max’
- template<typename _Tp> static inline void max(double s, const Mat_<_Tp>& a, Mat_<_Tp>& c)
-                                           ^
-In file included from /usr/include/c++/4.8/vector:60:0,
-                 from helper/bounding_box.h:4,
-                 from helper/bounding_box.cpp:1:
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-     max(const _Tp& __a, const _Tp& __b, _Compare __comp)
-     ^
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-helper/bounding_box.cpp:287:81: error: ‘max’ was not declared in this scope
-     new_center_x = min(image.cols - new_width / 2, max(new_width / 2, new_x_temp));
-                                                                                 ^
-helper/bounding_box.cpp:287:81: note: suggested alternatives:
-In file included from /usr/include/c++/4.8/vector:60:0,
-                 from helper/bounding_box.h:4,
-                 from helper/bounding_box.cpp:1:
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-     max(const _Tp& __a, const _Tp& __b, _Compare __comp)
-     ^
-In file included from /usr/local/include/opencv2/core/core.hpp:4884:0,
-                 from /usr/local/include/opencv/cv.h:64,
-                 from helper/bounding_box.h:6,
-                 from helper/bounding_box.cpp:1:
-/usr/local/include/opencv2/core/mat.hpp:1390:43: note:   ‘cv::max’
- template<typename _Tp> static inline void max(double s, const Mat_<_Tp>& a, Mat_<_Tp>& c)
-                                           ^
-In file included from /usr/include/c++/4.8/vector:60:0,
-                 from helper/bounding_box.h:4,
-                 from helper/bounding_box.cpp:1:
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-     max(const _Tp& __a, const _Tp& __b, _Compare __comp)
-     ^
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-helper/bounding_box.cpp:287:82: error: ‘min’ was not declared in this scope
-     new_center_x = min(image.cols - new_width / 2, max(new_width / 2, new_x_temp));
-                                                                                  ^
-helper/bounding_box.cpp:287:82: note: suggested alternatives:
-In file included from /usr/include/c++/4.8/vector:60:0,
-                 from helper/bounding_box.h:4,
-                 from helper/bounding_box.cpp:1:
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-     min(const _Tp& __a, const _Tp& __b, _Compare __comp)
-     ^
-In file included from /usr/local/include/opencv2/core/core.hpp:4884:0,
-                 from /usr/local/include/opencv/cv.h:64,
-                 from helper/bounding_box.h:6,
-                 from helper/bounding_box.cpp:1:
-/usr/local/include/opencv2/core/mat.hpp:1375:43: note:   ‘cv::min’
- template<typename _Tp> static inline void min(double s, const Mat_<_Tp>& a, Mat_<_Tp>& c)
-                                           ^
-In file included from /usr/include/c++/4.8/vector:60:0,
-                 from helper/bounding_box.h:4,
-                 from helper/bounding_box.cpp:1:
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-     min(const _Tp& __a, const _Tp& __b, _Compare __comp)
-     ^
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-helper/bounding_box.cpp:313:83: error: ‘max’ was not declared in this scope
-     new_center_y = min(image.rows - new_height / 2, max(new_height / 2, new_y_temp));
-                                                                                   ^
-helper/bounding_box.cpp:313:83: note: suggested alternatives:
-In file included from /usr/include/c++/4.8/vector:60:0,
-                 from helper/bounding_box.h:4,
-                 from helper/bounding_box.cpp:1:
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-     max(const _Tp& __a, const _Tp& __b, _Compare __comp)
-     ^
-In file included from /usr/local/include/opencv2/core/core.hpp:4884:0,
-                 from /usr/local/include/opencv/cv.h:64,
-                 from helper/bounding_box.h:6,
-                 from helper/bounding_box.cpp:1:
-/usr/local/include/opencv2/core/mat.hpp:1390:43: note:   ‘cv::max’
- template<typename _Tp> static inline void max(double s, const Mat_<_Tp>& a, Mat_<_Tp>& c)
-                                           ^
-In file included from /usr/include/c++/4.8/vector:60:0,
-                 from helper/bounding_box.h:4,
-                 from helper/bounding_box.cpp:1:
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-     max(const _Tp& __a, const _Tp& __b, _Compare __comp)
-     ^
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-/usr/include/c++/4.8/bits/stl_algobase.h:260:5: note:   ‘std::max’
-helper/bounding_box.cpp:313:84: error: ‘min’ was not declared in this scope
-     new_center_y = min(image.rows - new_height / 2, max(new_height / 2, new_y_temp));
-                                                                                    ^
-helper/bounding_box.cpp:313:84: note: suggested alternatives:
-In file included from /usr/include/c++/4.8/vector:60:0,
-                 from helper/bounding_box.h:4,
-                 from helper/bounding_box.cpp:1:
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-     min(const _Tp& __a, const _Tp& __b, _Compare __comp)
-     ^
-In file included from /usr/local/include/opencv2/core/core.hpp:4884:0,
-                 from /usr/local/include/opencv/cv.h:64,
-                 from helper/bounding_box.h:6,
-                 from helper/bounding_box.cpp:1:
-/usr/local/include/opencv2/core/mat.hpp:1375:43: note:   ‘cv::min’
- template<typename _Tp> static inline void min(double s, const Mat_<_Tp>& a, Mat_<_Tp>& c)
-                                           ^
-In file included from /usr/include/c++/4.8/vector:60:0,
-                 from helper/bounding_box.h:4,
-                 from helper/bounding_box.cpp:1:
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-     min(const _Tp& __a, const _Tp& __b, _Compare __comp)
-     ^
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-/usr/include/c++/4.8/bits/stl_algobase.h:239:5: note:   ‘std::min’
-make: *** [all] Error 1
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+ no time accumulated
+
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  Ts/call  Ts/call  name    
+  0.00      0.00     0.00      812     0.00     0.00  boost::detail::atomic_exchange_and_add(int*, int)
+  0.00      0.00     0.00      304     0.00     0.00  boost::detail::sp_counted_base::weak_release()
+  0.00      0.00     0.00        2     0.00     0.00  cv::Mat::release()
+  0.00      0.00     0.00        2     0.00     0.00  cv::Mat::~Mat()
+  0.00      0.00     0.00        1     0.00     0.00  carmen_visual_tracker_define_messages()
+  0.00      0.00     0.00        1     0.00     0.00  __static_initialization_and_destruction_0(int, int)
+  0.00      0.00     0.00        1     0.00     0.00  __static_initialization_and_destruction_0(int, int)
+  0.00      0.00     0.00        1     0.00     0.00  read_parameters(int, char**)
+  0.00      0.00     0.00        1     0.00     0.00  RegressorBase::~RegressorBase()
+  0.00      0.00     0.00        1     0.00     0.00  cv::Point_<int>::Point_()
+  0.00      0.00     0.00        1     0.00     0.00  boost::shared_ptr<caffe::Net<float> >::~shared_ptr()
+  0.00      0.00     0.00        1     0.00     0.00  boost::detail::shared_count::~shared_count()
+  0.00      0.00     0.00        1     0.00     0.00  boost::detail::sp_counted_base::release()
+
+ %         the percentage of the total running time of the
+time       program used by this function.
+
+cumulative a running sum of the number of seconds accounted
+ seconds   for by this function and those listed above it.
+
+ self      the number of seconds accounted for by this
+seconds    function alone.  This is the major sort for this
+           listing.
+
+calls      the number of times this function was invoked, if
+           this function is profiled, else blank.
+ 
+ self      the average number of milliseconds spent in this
+ms/call    function per call, if this function is profiled,
+	   else blank.
+
+ total     the average number of milliseconds spent in this
+ms/call    function and its descendents per call, if this 
+	   function is profiled, else blank.
+
+name       the name of the function.  This is the minor sort
+           for this listing. The index shows the location of
+	   the function in the gprof listing. If the index is
+	   in parenthesis it shows where it would appear in
+	   the gprof listing if it were to be printed.
+
+Copyright (C) 2012 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.
+
+		     Call graph (explanation follows)
+
+
+granularity: each sample hit covers 2 byte(s) no time propagated
+
+index % time    self  children    called     name
+                0.00    0.00     304/812         boost::detail::sp_counted_base::weak_release() [676]
+                0.00    0.00     508/812         boost::detail::sp_counted_base::release() [687]
+[675]    0.0    0.00    0.00     812         boost::detail::atomic_exchange_and_add(int*, int) [675]
+-----------------------------------------------
+                0.00    0.00     304/304         boost::detail::sp_counted_base::release() [687]
+[676]    0.0    0.00    0.00     304         boost::detail::sp_counted_base::weak_release() [676]
+                0.00    0.00     304/812         boost::detail::atomic_exchange_and_add(int*, int) [675]
+-----------------------------------------------
+                0.00    0.00       2/2           cv::Mat::~Mat() [678]
+[677]    0.0    0.00    0.00       2         cv::Mat::release() [677]
+-----------------------------------------------
+                0.00    0.00       1/2           Regressor::~Regressor() [898]
+                0.00    0.00       1/2           Tracker::~Tracker() [878]
+[678]    0.0    0.00    0.00       2         cv::Mat::~Mat() [678]
+                0.00    0.00       2/2           cv::Mat::release() [677]
+-----------------------------------------------
+                0.00    0.00       1/1           main [313]
+[679]    0.0    0.00    0.00       1         carmen_visual_tracker_define_messages() [679]
+-----------------------------------------------
+                                   1             __static_initialization_and_destruction_0(int, int) [680]
+                0.00    0.00       1/1           __libc_csu_init [1021]
+[680]    0.0    0.00    0.00       1+1       __static_initialization_and_destruction_0(int, int) [680]
+                                   1             __static_initialization_and_destruction_0(int, int) [680]
+-----------------------------------------------
+                                   1             __static_initialization_and_destruction_0(int, int) [681]
+                0.00    0.00       1/1           __libc_csu_init [1021]
+[681]    0.0    0.00    0.00       1+1       __static_initialization_and_destruction_0(int, int) [681]
+                0.00    0.00       1/1           cv::Point_<int>::Point_() [684]
+                                   1             __static_initialization_and_destruction_0(int, int) [681]
+-----------------------------------------------
+                0.00    0.00       1/1           main [313]
+[682]    0.0    0.00    0.00       1         read_parameters(int, char**) [682]
+-----------------------------------------------
+                0.00    0.00       1/1           Regressor::~Regressor() [898]
+[683]    0.0    0.00    0.00       1         RegressorBase::~RegressorBase() [683]
+                0.00    0.00       1/1           boost::shared_ptr<caffe::Net<float> >::~shared_ptr() [685]
+-----------------------------------------------
+                0.00    0.00       1/1           __static_initialization_and_destruction_0(int, int) [681]
+[684]    0.0    0.00    0.00       1         cv::Point_<int>::Point_() [684]
+-----------------------------------------------
+                0.00    0.00       1/1           RegressorBase::~RegressorBase() [683]
+[685]    0.0    0.00    0.00       1         boost::shared_ptr<caffe::Net<float> >::~shared_ptr() [685]
+                0.00    0.00       1/1           boost::detail::shared_count::~shared_count() [686]
+-----------------------------------------------
+                0.00    0.00       1/1           boost::shared_ptr<caffe::Net<float> >::~shared_ptr() [685]
+[686]    0.0    0.00    0.00       1         boost::detail::shared_count::~shared_count() [686]
+                0.00    0.00       1/1           boost::detail::sp_counted_base::release() [687]
+-----------------------------------------------
+                0.00    0.00       1/1           boost::detail::shared_count::~shared_count() [686]
+[687]    0.0    0.00    0.00       1         boost::detail::sp_counted_base::release() [687]
+                0.00    0.00     508/812         boost::detail::atomic_exchange_and_add(int*, int) [675]
+                0.00    0.00     304/304         boost::detail::sp_counted_base::weak_release() [676]
+-----------------------------------------------
+
+ This table describes the call tree of the program, and was sorted by
+ the total amount of time spent in each function and its children.
+
+ Each entry in this table consists of several lines.  The line with the
+ index number at the left hand margin lists the current function.
+ The lines above it list the functions that called this function,
+ and the lines below it list the functions this one called.
+ This line lists:
+     index	A unique number given to each element of the table.
+		Index numbers are sorted numerically.
+		The index number is printed next to every function name so
+		it is easier to look up where the function is in the table.
+
+     % time	This is the percentage of the `total' time that was spent
+		in this function and its children.  Note that due to
+		different viewpoints, functions excluded by options, etc,
+		these numbers will NOT add up to 100%.
+
+     self	This is the total amount of time spent in this function.
+
+     children	This is the total amount of time propagated into this
+		function by its children.
+
+     called	This is the number of times the function was called.
+		If the function called itself recursively, the number
+		only includes non-recursive calls, and is followed by
+		a `+' and the number of recursive calls.
+
+     name	The name of the current function.  The index number is
+		printed after it.  If the function is a member of a
+		cycle, the cycle number is printed between the
+		function's name and the index number.
+
+
+ For the function's parents, the fields have the following meanings:
+
+     self	This is the amount of time that was propagated directly
+		from the function into this parent.
+
+     children	This is the amount of time that was propagated from
+		the function's children into this parent.
+
+     called	This is the number of times this parent called the
+		function `/' the total number of times the function
+		was called.  Recursive calls to the function are not
+		included in the number after the `/'.
+
+     name	This is the name of the parent.  The parent's index
+		number is printed after it.  If the parent is a
+		member of a cycle, the cycle number is printed between
+		the name and the index number.
+
+ If the parents of the function cannot be determined, the word
+ `<spontaneous>' is printed in the `name' field, and all the other
+ fields are blank.
+
+ For the function's children, the fields have the following meanings:
+
+     self	This is the amount of time that was propagated directly
+		from the child into the function.
+
+     children	This is the amount of time that was propagated from the
+		child's children to the function.
+
+     called	This is the number of times the function called
+		this child `/' the total number of times the child
+		was called.  Recursive calls by the child are not
+		listed in the number after the `/'.
+
+     name	This is the name of the child.  The child's index
+		number is printed after it.  If the child is a
+		member of a cycle, the cycle number is printed
+		between the name and the index number.
+
+ If there are any cycles (circles) in the call graph, there is an
+ entry for the cycle-as-a-whole.  This entry shows who called the
+ cycle (as parents) and the members of the cycle (as children.)
+ The `+' recursive calls entry shows the number of function calls that
+ were internal to the cycle, and the calls entry for each member shows,
+ for that member, how many times it was called from other members of
+ the cycle.
+
+Copyright (C) 2012 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.
+
+Index by function name
+
+ [679] carmen_visual_tracker_define_messages() [677] cv::Mat::release() [676] boost::detail::sp_counted_base::weak_release()
+ [680] __static_initialization_and_destruction_0(int, int) (goturn_main.cpp) [678] cv::Mat::~Mat() [687] boost::detail::sp_counted_base::release()
+ [681] __static_initialization_and_destruction_0(int, int) (gui.cpp) [684] cv::Point_<int>::Point_() [675] boost::detail::atomic_exchange_and_add(int*, int)
+ [682] read_parameters(int, char**) (goturn_main.cpp) [685] boost::shared_ptr<caffe::Net<float> >::~shared_ptr()
+ [683] RegressorBase::~RegressorBase() [686] boost::detail::shared_count::~shared_count()

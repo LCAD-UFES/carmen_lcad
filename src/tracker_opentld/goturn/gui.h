@@ -31,7 +31,7 @@
  * @param gui initialized gui
  * @return PROGRAM_EXIT if 'q' or 'Q' pressed, SUCCESS if everything went right
  */
-int getBBFromUser(IplImage *img, CvRect &rect, std::string windowName);
+int getBBFromUser(cv::Mat *img, CvRect &rect, std::string windowName);
 
 
 #endif /* GUI_H_ */

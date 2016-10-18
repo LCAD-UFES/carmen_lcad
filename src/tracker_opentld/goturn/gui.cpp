@@ -31,60 +31,63 @@
 using std::string;
 
 static string window_name;
-static CvFont font;
-static IplImage *img0;
-static IplImage *img1;
-static CvPoint point;
+static cv::Mat *img0 = 0;
+static cv::Mat *img1 = 0;
+static cv::Point clicked_point;
 static CvRect *bb;
 static int drag = 0;
 
 static void mouseHandler(int event, int x, int y, int flags, void *param)
 {
-    /* user press left button */
-    if(event == CV_EVENT_LBUTTONDOWN && !drag)
-    {
-        point = cvPoint(x, y);
-        drag = 1;
-    }
+	/* user press left button */
+	if(event == CV_EVENT_LBUTTONDOWN && !drag)
+	{
+		clicked_point = cv::Point(x, y);
+		drag = 1;
+	}
 
-    /* user drag the mouse */
-    if(event == CV_EVENT_MOUSEMOVE && drag)
-    {
-        img1 = (IplImage *) cvClone(img0);
+	/* user drag the mouse */
+	if(event == CV_EVENT_MOUSEMOVE && drag)
+	{
+		//img1 = (IplImage *) cvClone(img0);
+		memcpy(img1->data, img0->data, img0->rows * img0->cols * img0->channels() * sizeof(uchar));
+		cv::rectangle(*img1, clicked_point, cv::Point(x, y), cv::Scalar(255, 0, 0), 1, 8, 0);
+		cv::imshow(window_name.c_str(), *img1);
+	}
 
-        cvRectangle(img1, point, cvPoint(x, y), CV_RGB(255, 0, 0), 1, 8, 0);
-
-        cvShowImage(window_name.c_str(), img1);
-        cvReleaseImage(&img1);
-    }
-
-    /* user release left button */
-    if(event == CV_EVENT_LBUTTONUP && drag)
-    {
-        *bb = cvRect(point.x, point.y, x - point.x, y - point.y);
-        drag = 0;
-    }
+	/* user release left button */
+	if(event == CV_EVENT_LBUTTONUP && drag)
+	{
+		*bb = cvRect(clicked_point.x, clicked_point.y, x - clicked_point.x, y - clicked_point.y);
+		drag = 0;
+	}
 }
 
 // TODO: member of Gui
 // --> problem: callback function mouseHandler as member!
-int getBBFromUser(IplImage *img, CvRect &rect, string windowName)
+int getBBFromUser(cv::Mat *img, CvRect &rect, string windowName)
 {
-    window_name = windowName;
-    img0 = (IplImage *) cvClone(img);
+	if (img0 == 0)
+	{
+		img0 = new cv::Mat(cv::Size(img->cols, img->rows), CV_8UC3);
+		img1 = new cv::Mat(cv::Size(img->cols, img->rows), CV_8UC3);
+	}
+
+	memcpy(img0->data, img->data, img->rows * img->cols * img->channels() * sizeof(uchar));
+    //img0 = (IplImage *) cvClone(img);
+
+	window_name = windowName;
     rect = cvRect(-1, -1, -1, -1);
     bb = &rect;
     bool correctBB = false;
-    cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 0.5, 0.5, 0, 1, 8);
-
-    cvSetMouseCallback(window_name.c_str(), mouseHandler, NULL);
-    cvPutText(img0, "Draw a bounding box and press Enter", cvPoint(0, 60),
-              &font, cvScalar(255, 255, 0));
-    cvShowImage(window_name.c_str(), img0);
+    cv::setMouseCallback(window_name.c_str(), mouseHandler, NULL);
+    cv::putText(*img0, "Draw a bounding box and press Enter", cv::Point(0, 60),
+    		cv::FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar::all(255), 1, 8);
+    cv::imshow(window_name.c_str(), *img0);
 
     while(!correctBB)
     {
-        char key = cvWaitKey(0);
+        char key = cv::waitKey(0);
 
         if(tolower(key) == 'q')
         {
@@ -109,10 +112,9 @@ int getBBFromUser(IplImage *img, CvRect &rect, string windowName)
         rect.height = abs(rect.height);
     }
 
-    cvSetMouseCallback(window_name.c_str(), NULL, NULL);
-
-    cvReleaseImage(&img0);
-    cvReleaseImage(&img1);
+//    cvSetMouseCallback(window_name.c_str(), NULL, NULL);
+//    cvReleaseImage(&img0);
+//    cvReleaseImage(&img1);
 
     return 1;
 }
