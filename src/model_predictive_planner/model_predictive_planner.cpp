@@ -23,7 +23,6 @@
 
 #include "g2o/types/slam2d/se2.h"
 
-#include <prob_map.h>
 
 using namespace g2o;
 

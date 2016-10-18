@@ -19,7 +19,6 @@
 #include "model/global_state.h"
 #include "util.h"
 #include "model_predictive_planner_optimizer.h"
-#include <prob_map.h>
 
 bool use_obstacles = true;
 
