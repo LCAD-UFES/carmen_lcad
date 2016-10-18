@@ -28,7 +28,7 @@ MessageControl::carmen_planner_ackerman_regenerate_trajectory()
 	this->path.points = (carmen_ackerman_traj_point_p)  calloc(path.capacity, sizeof(carmen_ackerman_traj_point_t));
 	carmen_test_alloc(path.points);
 
-	this->astarAckeman.carmen_planner_map =carmen_planner_map;
+	this->astarAckeman.carmen_planner_map = carmen_planner_map;
 	this->astarAckeman.carmen_conventional_astar_ackerman_astar(robot, *requested_goal, &path, robot_conf_g);
 
 }
@@ -78,6 +78,24 @@ MessageControl::carmen_planner_ackerman_set_cost_map(carmen_map_t *new_map)
 		carmen_planner_ackerman_regenerate_trajectory();
 	}
 }
+
+
+int
+MessageControl::carmen_planner_ackerman_setDistanceMap(carmen_obstacle_distance_mapper_message *newDistanceMap)
+{
+	this->distanceMap = newDistanceMap;
+	this->astarAckeman.distanceMap = newDistanceMap;
+
+	//carmen_conventional_set_costs(new_map);
+	if (this->requested_goal)
+	{
+		//plan();
+		carmen_planner_ackerman_regenerate_trajectory();
+	}
+
+	return true;
+}
+
 
 
 int

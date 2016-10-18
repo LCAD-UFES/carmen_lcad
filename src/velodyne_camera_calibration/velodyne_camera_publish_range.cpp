@@ -5,6 +5,8 @@
 #include <carmen/carmen.h>
 #include <carmen/bumblebee_basic_interface.h>
 #include <carmen/velodyne_interface.h>
+#include <carmen/visual_tracker_interface.h>
+#include <string>
 
 #include <tf.h>
 
@@ -22,11 +24,16 @@ int bumblebee_basic_height;
 
 carmen_bumblebee_basic_stereoimage_message bumblebee_message;
 
+static cv::Rect box;
+static double confidence;
+
 // CAM POSE: 0.245000 0.283000 0.075000 0.017453 0.026300 0.000000 FX: 0.753883
 // CAM POSE: 0.245000 0.283000 0.085000 0.017453 0.026300 -0.017453 FX: 0.753883
 
+//CAM POSE: 0.245000 -0.207000 0.085000 0.017453 0.026300 -0.017453 FX: 0.753883
+
 double camera_x = 0.245;
-double camera_y = 0.283; //-0.287;
+double camera_y = -0.207000; //0.283; //-0.287;
 double camera_z = 0.085;
 double camera_roll = 0.017453; //0;
 double camera_pitch = 0.0263;
@@ -107,6 +114,10 @@ show_velodyne(carmen_velodyne_partial_scan_message *velodyne_message)
 
 	static int first = 1;
 
+	double average_range = 0.0;
+	int count_range = 0;
+
+
 	if (first)
 	{
 		namedWindow("Range");
@@ -128,6 +139,9 @@ show_velodyne(carmen_velodyne_partial_scan_message *velodyne_message)
 	static Mat *intensity_zoom = new Mat(Size(WINDOW_WIDTH /*range_zoom * velodyne_message->number_of_32_laser_shots*/, RANGE_WINDOW_ZOOM * 32), CV_8UC3);
 	static Mat *bumb_image = new Mat(Size(bumblebee_message.width, bumblebee_message.height), CV_8UC3);
 	static Mat *bumb_zoom = new Mat(Size(bumblebee_message.width / 2, bumblebee_message.height / 2), CV_8UC3);
+
+	static Mat *bum_image_640 = new Mat(Size(640, 480), CV_8UC3);
+
 
 	static Mat *colored_orig = new Mat(Size(velodyne_message->number_of_32_laser_shots, 32), CV_8UC3);
 	static Mat *colored_zoom = new Mat(Size(WINDOW_WIDTH /*range_zoom * velodyne_message->number_of_32_laser_shots*/, RANGE_WINDOW_ZOOM * 32), CV_8UC3);
@@ -174,6 +188,7 @@ show_velodyne(carmen_velodyne_partial_scan_message *velodyne_message)
 		{
 			double range = (((double) velodyne_message->partial_scan[j].distance[i]) / 500.0);
 			double intensity = (((double) velodyne_message->partial_scan[j].intensity[i])) *  10;
+
 
 			int l = range_orig->rows - i - 1;
 			double h = carmen_normalize_theta(carmen_degrees_to_radians(velodyne_message->partial_scan[j].angle));
@@ -248,11 +263,30 @@ show_velodyne(carmen_velodyne_partial_scan_message *velodyne_message)
 
 						if (r > 5)
 						{
-							circle(*bumb_image, cv::Point(ipx, ipy), 2, Scalar(0, 0, r), -1);
+							//	a < x0 < a+c and b < y0 < b + d
+							if((ipx > box.x) && ( ipx < (box.x + box.width)) && (ipy > box.y) && ( ipy < (box.y + box.height)) &&
+									(confidence > 0)){
+
+								average_range += range;
+								count_range += 1;
+
+
+//								printf("%f\t %f\t %f\t \n",r, range, velodyne_message->partial_scan[j].distance[i] );
+								circle(*bumb_image, cv::Point(ipx, ipy), 2, Scalar(0, r, 0), -1);
+								rectangle(*bumb_image, cv::Point(box.x, box.y),cv::Point(box.x + box.width, box.y + box.height), Scalar( 0, r, 0 ), 1, 4 );
+
+							}
+							else
+							{
+								circle(*bumb_image, cv::Point(ipx, ipy), 2, Scalar(0, 0, r), -1);
+
+							}
 
 							range_orig->data[l * range_orig->step + 3 * j + 0] ^= (uchar) bumblebee_message.raw_right[3 * (ipy * bumblebee_message.width + ipx) + 2];
 							range_orig->data[l * range_orig->step + 3 * j + 1] ^= (uchar) bumblebee_message.raw_right[3 * (ipy * bumblebee_message.width + ipx) + 1];
 							range_orig->data[l * range_orig->step + 3 * j + 2] ^= (uchar) bumblebee_message.raw_right[3 * (ipy * bumblebee_message.width + ipx) + 0];
+
+
 						}
 
 //					}
@@ -280,15 +314,29 @@ show_velodyne(carmen_velodyne_partial_scan_message *velodyne_message)
 		}
 	}
 
+	if (confidence > 0)
+	{
+		double averange_distance = average_range / count_range;
+		char str[50];
+		sprintf(str,"range: %f",averange_distance);
+		putText(*bumb_image, str, Point2f(10,20), FONT_HERSHEY_PLAIN, 1.2,  Scalar(0,0,0));
+	}
+//	if( confidence > 0)
+//		printf("averange_distance = %f\n", averange_distance);
+
 	resize(*range_orig, *range_zoom, range_zoom->size());
 	resize(*intensity_orig, *intensity_zoom, intensity_zoom->size());
+
+
+	resize(*bumb_image, *bum_image_640, bum_image_640->size());
+
 	resize(*bumb_image, *bumb_zoom, bumb_zoom->size());
 	resize(*colored_orig, *colored_zoom, colored_zoom->size());
 
 	imshow("Range", *range_zoom);
 //	imshow("Range ORIG", *range_orig);
 //	imshow("Intensity", *intensity_zoom);
-	imshow("Bumblebee", *bumb_zoom);
+	imshow("Bumblebee", *bum_image_640);
 	imshow("Colored", *colored_zoom);
 
 	int k = waitKey(5);
@@ -358,6 +406,18 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	show_velodyne(velodyne_message);
 }
 
+void
+carmen_visual_tracker_output_message_handler(carmen_visual_tracker_output_message *visual_tracker_output_message)
+{
+
+	box.x = visual_tracker_output_message->rect.x;
+	box.y = visual_tracker_output_message->rect.y;
+	box.width = visual_tracker_output_message->rect.width;
+	box.height = visual_tracker_output_message->rect.height;
+
+	confidence = visual_tracker_output_message->confidence;
+
+}
 
 int
 read_parameters(int argc, char **argv, int camera)
@@ -391,6 +451,10 @@ main(int argc, char **argv)
 	carmen_velodyne_subscribe_partial_scan_message(NULL,
 			(carmen_handler_t)velodyne_partial_scan_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_visual_tracker_subscribe_output(NULL,
+				(carmen_handler_t)carmen_visual_tracker_output_message_handler,
+				CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_ipc_dispatch();
 

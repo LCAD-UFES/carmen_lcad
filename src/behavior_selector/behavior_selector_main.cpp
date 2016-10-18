@@ -249,6 +249,7 @@ rddf_handler(carmen_rddf_road_profile_message *rddf_msg)
 		IPC_RETURN_TYPE err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, &msg);
 		carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME);
 	}
+	publish_goal_list();
 }
 
 static void
@@ -274,6 +275,7 @@ path_planner_road_profile_handler(carmen_path_planner_road_profile_message *rddf
 		IPC_RETURN_TYPE err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, &msg);
 		carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME);
 	}
+	publish_goal_list();
 }
 
 

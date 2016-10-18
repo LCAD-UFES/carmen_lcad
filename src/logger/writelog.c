@@ -208,6 +208,50 @@ void carmen_logwrite_write_laser_ldmrs_objects(carmen_laser_ldmrs_objects_messag
 				laser->host, timestamp);
 }
 
+
+void carmen_logwrite_write_laser_ldmrs_objects_data(carmen_laser_ldmrs_objects_data_message *laser,
+		int laser_num, carmen_FILE *outfile,
+		double timestamp)
+{
+	int i;
+	(void)laser_num;
+	carmen_fprintf(outfile, "LASER_LDMRS_OBJECTS_DATA ");
+	carmen_fprintf(outfile, "%d ",
+			laser->num_objects);
+	for(i = 0; i < laser->num_objects; i++)
+	{
+		carmen_fprintf(outfile,"%d %d %d %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d ",
+				laser->objects_data_list[i].object_id,
+				laser->objects_data_list[i].object_age,
+				laser->objects_data_list[i].object_prediction_age,
+				laser->objects_data_list[i].reference_point_x,
+				laser->objects_data_list[i].reference_point_y,
+				laser->objects_data_list[i].reference_point_sigma_x,
+				laser->objects_data_list[i].reference_point_sigma_y,
+				laser->objects_data_list[i].closest_point_x,
+				laser->objects_data_list[i].closest_point_y,
+				laser->objects_data_list[i].bounding_box_center_x,
+				laser->objects_data_list[i].bounding_box_center_y,
+				laser->objects_data_list[i].bounding_box_length,
+				laser->objects_data_list[i].bounding_box_width,
+				laser->objects_data_list[i].object_box_center_x,
+				laser->objects_data_list[i].object_box_center_y,
+				laser->objects_data_list[i].object_box_lenght,
+				laser->objects_data_list[i].object_box_width,
+				laser->objects_data_list[i].object_box_orientation,
+				laser->objects_data_list[i].abs_velocity_x,
+				laser->objects_data_list[i].abs_velocity_y,
+				laser->objects_data_list[i].abs_velocity_sigma_x,
+				laser->objects_data_list[i].abs_velocity_sigma_y,
+				laser->objects_data_list[i].relative_velocity_x,
+				laser->objects_data_list[i].relative_velocity_y,
+				laser->objects_data_list[i].class_id);
+	}
+
+	carmen_fprintf(outfile, "%f %s %f\n", laser->timestamp,
+				laser->host, timestamp);
+}
+
 void carmen_logwrite_write_robot_ackerman_laser(carmen_robot_ackerman_laser_message *laser,
 		int laser_num, carmen_FILE *outfile,
 		double timestamp)

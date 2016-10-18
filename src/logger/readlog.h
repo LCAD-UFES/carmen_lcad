@@ -243,6 +243,8 @@ char* carmen_string_to_laser_ldmrs_message(char *string, carmen_laser_ldmrs_mess
 
 char* carmen_string_to_laser_ldmrs_objects_message(char *string, carmen_laser_ldmrs_objects_message *laserObjects);
 
+char *carmen_string_to_laser_ldmrs_objects_data_message(char *string, carmen_laser_ldmrs_objects_data_message *laserObjectsData);
+
 #ifdef __cplusplus
 }
 #endif

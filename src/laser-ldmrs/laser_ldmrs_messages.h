@@ -54,6 +54,42 @@ typedef struct {
 	char *host;
 } carmen_laser_ldmrs_objects_message;
 
+
+typedef struct {
+	unsigned short object_id;
+	unsigned short object_age;
+	unsigned short object_prediction_age;
+	double reference_point_x;
+	double reference_point_y;
+	double reference_point_sigma_x;
+	double reference_point_sigma_y;
+	double closest_point_x;
+	double closest_point_y;
+	double bounding_box_center_x;
+	double bounding_box_center_y;
+	double bounding_box_length;
+	double bounding_box_width;
+	double object_box_center_x;
+	double object_box_center_y;
+	double object_box_lenght;
+	double object_box_width;
+	double object_box_orientation;
+	double abs_velocity_x;
+	double abs_velocity_y;
+	double abs_velocity_sigma_x;
+	double abs_velocity_sigma_y;
+	double relative_velocity_x;
+	double relative_velocity_y;
+	unsigned short class_id;
+} carmen_laser_ldmrs_object_data;
+
+typedef struct {
+	unsigned short num_objects;
+	carmen_laser_ldmrs_object_data *objects_data_list;
+	double timestamp;
+	char *host;
+} carmen_laser_ldmrs_objects_data_message;
+
 /* The message's name, will be used for message registration in IPC Central module */
 #define      CARMEN_LASER_LDMRS_NAME       "carmen_laser_ldmrs"
 
@@ -63,6 +99,11 @@ typedef struct {
 #define		 CARMEN_LASER_LDMRS_OBJECTS_NAME "carmen_laser_ldmrs_objects"
 
 #define		 CARMEN_LASER_LDMRS_OBJECTS_FMT  "{short,<{short,double,double,double,double,double,double,short}:1>,double,string}"
+
+#define		 CARMEN_LASER_LDMRS_OBJECTS_DATA_NAME "carmen_laser_ldmrs_objects_data"
+
+#define		 CARMEN_LASER_LDMRS_OBJECTS_DATA_FMT  "{short,<{short,short,short,double,double,double,double,double,double,double,double,double,double,double,double,double,double,double,double,double,double,double,double,double,short}:1>,double,string}"
+
 
 #ifdef __cplusplus
 }

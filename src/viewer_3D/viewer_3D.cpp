@@ -889,7 +889,7 @@ carmen_laser_ldmrs_message_handler(carmen_laser_ldmrs_message* laser_message)
 	carmen_ldmrs_draw_dispatcher(laser_message, FRONT_BULLBAR_MIDDLE_HIERARCHY_SIZE, front_bullbar_middle_hierarchy, front_bullbar_middle_laser_points, &front_bullbar_middle_laser_points_idx);
 }
 
-
+//object
 static void
 carmen_laser_ldmrs_objects_message_handler(carmen_laser_ldmrs_objects_message* laser_message)
 {
@@ -914,8 +914,55 @@ carmen_laser_ldmrs_objects_message_handler(carmen_laser_ldmrs_objects_message* l
 			double x = (laser_message->objects_list[i].x + front_bullbar_pose.position.x) * cos(car_fused_pose.orientation.yaw) - (laser_message->objects_list[i].y + front_bullbar_pose.position.y) * sin(car_fused_pose.orientation.yaw);
 			double y = (laser_message->objects_list[i].x + front_bullbar_pose.position.x) * sin(car_fused_pose.orientation.yaw) + (laser_message->objects_list[i].y + front_bullbar_pose.position.y) * cos(car_fused_pose.orientation.yaw);
 			ldmrs_objects_tracking[i].x = x + car_fused_pose.position.x;
-			ldmrs_objects_tracking[i].y = y + front_bullbar_pose.position.y + car_fused_pose.position.y;
+			ldmrs_objects_tracking[i].y = y + car_fused_pose.position.y;
 			ldmrs_objects_tracking[i].classId = laser_message->objects_list[i].classId;
+		}
+    }
+}
+
+
+//object
+static void
+carmen_laser_ldmrs_objects_data_message_handler(carmen_laser_ldmrs_objects_data_message* laser_message)
+{
+    ldmrs_initialized = 1;
+
+    if(laser_message->num_objects > 0)
+    {
+		if(num_ldmrs_objects != laser_message->num_objects)
+		{
+			num_ldmrs_objects = laser_message->num_objects;
+			ldmrs_objects_tracking = (carmen_laser_ldmrs_object *) realloc(ldmrs_objects_tracking, num_ldmrs_objects * sizeof(carmen_laser_ldmrs_object));
+			carmen_test_alloc(ldmrs_objects_tracking);
+		}
+
+		for(int i = 0; i < num_ldmrs_objects; i++)
+		{
+			ldmrs_objects_tracking[i].id = laser_message->objects_data_list[i].object_id;
+			//pode estar invertido
+			ldmrs_objects_tracking[i].width = laser_message->objects_data_list[i].object_box_lenght;
+			ldmrs_objects_tracking[i].lenght = laser_message->objects_data_list[i].object_box_width;
+			//orientacao
+			ldmrs_objects_tracking[i].orientation = carmen_normalize_theta(laser_message->objects_data_list[i].object_box_orientation + car_fused_pose.orientation.yaw);
+
+			// calcula a velocidade
+			if(laser_message->objects_data_list[i].abs_velocity_sigma_x < 1.5 && laser_message->objects_data_list[i].abs_velocity_sigma_y < 1.5)
+			{
+				double abs_velocity = sqrt( pow(laser_message->objects_data_list[i].abs_velocity_x,2) + pow(laser_message->objects_data_list[i].abs_velocity_y,2));
+				ldmrs_objects_tracking[i].velocity = abs_velocity;
+			}
+			else
+			{
+				ldmrs_objects_tracking[i].velocity = 0.0;
+			}
+
+			// calcula a posição
+			double x = (laser_message->objects_data_list[i].object_box_center_x + front_bullbar_pose.position.x) * cos(car_fused_pose.orientation.yaw) - (laser_message->objects_data_list[i].object_box_center_y + front_bullbar_pose.position.y) * sin(car_fused_pose.orientation.yaw);
+			double y = (laser_message->objects_data_list[i].object_box_center_x + front_bullbar_pose.position.x) * sin(car_fused_pose.orientation.yaw) + (laser_message->objects_data_list[i].object_box_center_y + front_bullbar_pose.position.y) * cos(car_fused_pose.orientation.yaw);
+			ldmrs_objects_tracking[i].x = x + car_fused_pose.position.x;
+			ldmrs_objects_tracking[i].y = y + car_fused_pose.position.y;
+
+			ldmrs_objects_tracking[i].classId = laser_message->objects_data_list[i].class_id;
 		}
     }
 }
@@ -2407,6 +2454,8 @@ subscribe_ipc_messages(void)
     carmen_laser_subscribe_ldmrs_message(NULL, (carmen_handler_t) carmen_laser_ldmrs_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
     carmen_laser_subscribe_ldmrs_objects_message(NULL, (carmen_handler_t) carmen_laser_ldmrs_objects_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_laser_subscribe_ldmrs_objects_data_message(NULL, (carmen_handler_t) carmen_laser_ldmrs_objects_data_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
     carmen_laser_subscribe_laser_message(6, NULL, (carmen_handler_t) carmen_laser_laser_message_handler, CARMEN_SUBSCRIBE_LATEST);
 

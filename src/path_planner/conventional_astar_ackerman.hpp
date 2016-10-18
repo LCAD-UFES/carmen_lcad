@@ -28,6 +28,8 @@
 
 #ifndef CONVENTIONAL_ASTAR_ACKERMAN_H
 #define CONVENTIONAL_ASTAR_ACKERMAN_H
+#include <carmen/obstacle_distance_mapper_interface.h>
+
 	typedef struct {
 	    double f_score;
 	    double g_score;
@@ -69,6 +71,7 @@ public:
 	carmen_behavior_selector_state_t current_state;//TODO extern
 	carmen_map_t *carmen_planner_map;//TODO extern
 	carmen_navigator_ackerman_astar_t astar_config;//TODO extern
+	carmen_obstacle_distance_mapper_message *distanceMap = NULL;
 
 	int astar_call_cont;
 	int cont_nos_abertos_novos;
