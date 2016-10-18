@@ -379,6 +379,15 @@ fused_odometry_message_handler(carmen_fused_odometry_message *fused_odometry_mes
 }
 
 
+carmen_localize_ackerman_globalpos_message global_pos, previous_global_pos;
+static void
+localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
+{
+	previous_global_pos = global_pos;
+	global_pos = *msg;
+}
+
+
 static void
 ford_escape_signals_message_handler(carmen_ford_escape_signals_message *msg)
 {
@@ -538,12 +547,43 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 
 		if (ford_escape_hybrid_config->use_mpc)
 		{
-			g_steering_command = -carmen_libmpc_get_optimized_steering_effort_using_MPC(-g_atan_desired_curvature,
+			g_steering_command = -carmen_libmpc_get_optimized_steering_effort_using_MPC(
 					atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)),
 					ford_escape_hybrid_config->current_motion_command_vector, ford_escape_hybrid_config->nun_motion_commands,
 					ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->time_of_last_command,
 					ford_escape_hybrid_config->understeer_coeficient, ford_escape_hybrid_config->distance_between_front_and_rear_axles,
 					ford_escape_hybrid_config->max_phi, 0);
+
+			///////////////////////// So para guardar os phi s para medir erro no modelo do carro
+			if (ford_escape_hybrid_config->nun_motion_commands > 0)
+			{
+				double motion_commands_vector_time = ford_escape_hybrid_config->current_motion_command_vector[0].time;
+				int j = 0;
+				while ((motion_commands_vector_time	< ford_escape_hybrid_config->XGV_v_and_phi_timestamp - ford_escape_hybrid_config->time_of_last_command) &&
+					   (j < ford_escape_hybrid_config->nun_motion_commands - 1))
+				{
+					j++;
+					motion_commands_vector_time += ford_escape_hybrid_config->current_motion_command_vector[j].time;
+				}
+
+				double
+				dist23(carmen_point_t v, carmen_point_t w)
+				{
+					return sqrt((carmen_square(v.x - w.x) + carmen_square(v.y - w.y)));
+				}
+
+				double L = ford_escape_hybrid_config->distance_between_front_and_rear_axles;
+				double delta_theta = global_pos.globalpos.theta - previous_global_pos.globalpos.theta;
+				double l = dist23(global_pos.globalpos, previous_global_pos.globalpos);
+				double real_phi = L * atan(delta_theta / l);
+				printf("timestamp, x, y, theta, real_phi, phi_sent, phi_measured, v, "
+						"%lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
+						ford_escape_hybrid_config->XGV_v_and_phi_timestamp,
+						global_pos.globalpos.x, global_pos.globalpos.y, global_pos.globalpos.theta,
+						real_phi, ford_escape_hybrid_config->current_motion_command_vector[j].phi, ford_escape_hybrid_config->filtered_phi,
+						ford_escape_hybrid_config->filtered_v);
+			}
+			///////////////////////// Acima: So para guardar os phi s para medir erro no modelo do carro
 		}
 		else
 		{
@@ -777,6 +817,7 @@ subscribe_to_relevant_messages()
 
 	carmen_base_ackerman_subscribe_motion_command(NULL, (carmen_handler_t) base_ackerman_motion_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_fused_odometry_subscribe_fused_odometry_message(NULL, (carmen_handler_t) fused_odometry_message_handler,	CARMEN_SUBSCRIBE_LATEST);
+	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 

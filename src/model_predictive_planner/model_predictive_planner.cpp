@@ -618,6 +618,7 @@ void
 limit_maximum_centripetal_acceleration(double &target_v, vector<carmen_ackerman_path_point_t> &path)
 {
 	double max_centripetal_acceleration = 0.0;
+	static double reduction_factor = 0.0;
 
 	for (unsigned int i = 0; (i < path.size() - 1) && (path.size() != 0); i += 1)
 	{
@@ -637,7 +638,7 @@ limit_maximum_centripetal_acceleration(double &target_v, vector<carmen_ackerman_
 
 	if (max_centripetal_acceleration > GlobalState::robot_max_centripetal_acceleration)
 	{
-		double reduction_factor = GlobalState::robot_max_centripetal_acceleration / max_centripetal_acceleration;
+		reduction_factor += 0.2 * ((GlobalState::robot_max_centripetal_acceleration / max_centripetal_acceleration) - reduction_factor);
 		target_v *= reduction_factor;
 	}
 }
@@ -735,6 +736,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	else
 		build_detailed_rddf_lane(&lane_in_local_pose, detailed_lane);
 
+	// Aberto: @@@ Esta funcao escreve no phi de detailed_lane
 	limit_maximum_centripetal_acceleration(target_v, detailed_lane);
 
 /***************************************

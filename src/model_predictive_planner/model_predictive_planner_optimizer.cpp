@@ -712,7 +712,7 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 	const gsl_multimin_fdfminimizer_type *T = gsl_multimin_fdfminimizer_conjugate_fr;
 	gsl_multimin_fdfminimizer *s = gsl_multimin_fdfminimizer_alloc(T, 3);
 
-	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.0001, 0.1);
+	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.01, 0.1);
 
 	size_t iter = 0;
 	int status;
