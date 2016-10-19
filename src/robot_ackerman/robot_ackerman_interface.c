@@ -189,7 +189,7 @@ carmen_robot_ackerman_follow_trajectory(carmen_ackerman_traj_point_p trajectory,
 
 
 void 
-carmen_robot_ackerman_publish_motion_command(carmen_ackerman_motion_command_p motion_command, int num_motion_commands)
+carmen_robot_ackerman_publish_motion_command(carmen_ackerman_motion_command_p motion_command, int num_motion_commands, double timestamp)
 {
 	IPC_RETURN_TYPE err;
 	static carmen_robot_ackerman_motion_command_message msg;
@@ -208,7 +208,7 @@ carmen_robot_ackerman_publish_motion_command(carmen_ackerman_motion_command_p mo
 	msg.motion_command = motion_command;
 	msg.num_motion_commands = num_motion_commands;
 
-	msg.timestamp = carmen_get_time();
+	msg.timestamp = timestamp;
 	msg.host = carmen_get_host();
 
 	err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_MOTION_COMMAND_NAME, &msg);

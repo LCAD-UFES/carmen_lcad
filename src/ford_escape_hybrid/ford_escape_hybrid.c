@@ -105,7 +105,7 @@ get_curvature_from_phi(double phi, ford_escape_hybrid_config_t *ford_escape_hybr
 	
 	v = ford_escape_hybrid_config->filtered_v;
 
-	curvature = tan(phi / (1.0 + v * v * ford_escape_hybrid_config->understeer_coeficient)) / ford_escape_hybrid_config->distance_between_front_and_rear_axles;
+	curvature = tan(phi / (1.0 + v * v * ford_escape_hybrid_config->understeer_coeficient2)) / ford_escape_hybrid_config->distance_between_front_and_rear_axles;
 	
 	return (curvature);
 }
@@ -117,7 +117,7 @@ get_phi_from_curvature(double curvature, ford_escape_hybrid_config_t *ford_escap
 	double phi, v;
 	
 	v = ford_escape_hybrid_config->filtered_v;
-	phi = atan(curvature * ford_escape_hybrid_config->distance_between_front_and_rear_axles) * (1.0 + v * v * ford_escape_hybrid_config->understeer_coeficient);
+	phi = atan(curvature * ford_escape_hybrid_config->distance_between_front_and_rear_axles) * (1.0 + v * v * ford_escape_hybrid_config->understeer_coeficient2);
 	
 	return (phi);
 }
@@ -551,7 +551,7 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 					atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)),
 					ford_escape_hybrid_config->current_motion_command_vector, ford_escape_hybrid_config->nun_motion_commands,
 					ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->time_of_last_command,
-					ford_escape_hybrid_config->understeer_coeficient, ford_escape_hybrid_config->distance_between_front_and_rear_axles,
+					ford_escape_hybrid_config->understeer_coeficient2, ford_escape_hybrid_config->distance_between_front_and_rear_axles,
 					ford_escape_hybrid_config->max_phi, 0);
 
 			///////////////////////// So para guardar os phi s para medir erro no modelo do carro
@@ -776,7 +776,8 @@ read_parameters(int argc, char *argv[], ford_escape_hybrid_config_t *config)
 		{"robot", "width", CARMEN_PARAM_DOUBLE, &(config->width), 1, NULL},
 		{"robot", "length", CARMEN_PARAM_DOUBLE, &(config->length), 1, NULL},
 		{"robot", "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &(config->distance_between_front_and_rear_axles), 1, NULL},
-		{"robot", "understeer_coeficient", CARMEN_PARAM_DOUBLE, &(config->understeer_coeficient), 0, NULL},
+//		{"robot", "understeer_coeficient", CARMEN_PARAM_DOUBLE, &(config->understeer_coeficient), 0, NULL},
+		{"robot", "understeer_coeficient2", CARMEN_PARAM_DOUBLE, &(config->understeer_coeficient2), 0, NULL},
 		{"robot", "max_steering_angle", CARMEN_PARAM_DOUBLE, &(config->max_phi), 1, NULL},
 
 		{"robot", "phi_multiplier", CARMEN_PARAM_DOUBLE, &phi_multiplier, 0, NULL},

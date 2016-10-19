@@ -1045,12 +1045,12 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 		global_gui->draw_path(global_gui->obstacle_avoider_path, global_gui->obstacle_avoider_path_size, carmen_red, carmen_red, the_map_view);
 	}
 
-	for (int i = 0; i < global_gui->num_candidate_path; i++)
-		global_gui->draw_path(
-				global_gui->canditade_path[i],
-				global_gui->candidate_path_size[i],
-				global_gui->path_colour,
-				global_gui->path_colour, the_map_view);
+	if (global_gui->nav_panel_config->draw_path)
+	{
+		for (int i = 0; i < global_gui->num_candidate_path; i++)
+			global_gui->draw_path(global_gui->canditade_path[i], global_gui->candidate_path_size[i], global_gui->path_colour,
+					global_gui->path_colour, the_map_view);
+	}
 
 	if (global_gui->nav_panel_config->draw_path && global_gui->nav_panel_config->edit_rddf_goals)
 		global_gui->draw_path(global_gui->path, global_gui->num_path_points, global_gui->path_colour, carmen_black, the_map_view);

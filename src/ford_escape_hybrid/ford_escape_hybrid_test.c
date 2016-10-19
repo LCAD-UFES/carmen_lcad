@@ -25,7 +25,7 @@ main(int argc, char **argv)
 			printf("\nEstado atual: v=%f phi=%f\n", odometry.v, carmen_radians_to_degrees(odometry.phi));
 			printf("Enviando comando, v=%f, phi=%f, time=%f\n",
 					motion_command.v, carmen_radians_to_degrees(motion_command.phi), motion_command.time);
-			carmen_base_ackerman_publish_motion_command(&motion_command, 1);
+			carmen_base_ackerman_publish_motion_command(&motion_command, 1, carmen_get_time());
 			carmen_ipc_sleep(0);
 			printf("Enviar novamente (y, n)?[y]: ");
 			if (getchar_unlocked() == 'n')

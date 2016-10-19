@@ -94,6 +94,7 @@ typedef struct
 
 	double maximum_steering_command_rate;
 	double understeer_coeficient;
+	double understeer_coeficient2;
 	double maximum_speed_forward;
 	double maximum_speed_reverse;
 	double maximum_acceleration_forward;

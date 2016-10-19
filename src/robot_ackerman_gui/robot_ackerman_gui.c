@@ -117,7 +117,7 @@ odometry_handler(void)
     motion_command.v = 0.0;
     motion_command.phi = 0.0;
     motion_command.time = 1.0;
-    carmen_robot_ackerman_publish_motion_command(&motion_command, 1);
+    carmen_robot_ackerman_publish_motion_command(&motion_command, 1, carmen_get_time());
   }
   else 
   {
@@ -343,7 +343,7 @@ button_release_event(GtkWidget *widget __attribute__ ((unused)),
   motion_command.v = 0.0;
   motion_command.phi = 0.0;
   motion_command.time = 1.0;
-  carmen_robot_ackerman_publish_motion_command(&motion_command, 1);
+  carmen_robot_ackerman_publish_motion_command(&motion_command, 1, carmen_get_time());
   
   return 1;
 }
@@ -413,7 +413,7 @@ key_press_event(GtkWidget *widget __attribute__ ((unused)),
       motion_command.v = v;
       motion_command.phi = phi;
       motion_command.time = 1.0;
-      carmen_robot_ackerman_publish_motion_command(&motion_command, 1);
+      carmen_robot_ackerman_publish_motion_command(&motion_command, 1, carmen_get_time());
       current_commanded_v = v;
       current_commanded_phi = phi; 
       time_since_last_key_command = carmen_get_time();
@@ -1021,7 +1021,7 @@ Joystick_Event(GtkWidget *widget __attribute__ ((unused)),
     motion_command.v = v;
     motion_command.phi = phi;
     motion_command.time = 1.0;
-    carmen_robot_ackerman_publish_motion_command(&motion_command, 1);
+    carmen_robot_ackerman_publish_motion_command(&motion_command, 1, carmen_get_time());
     last_update = carmen_get_time();
 
   }

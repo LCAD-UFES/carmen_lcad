@@ -105,7 +105,7 @@ send_base_ackerman_command(carmen_ackerman_traj_point_t *path, int size)
 		motion_command_vector[i].time = delta_time;
 	}
 
-	carmen_base_ackerman_publish_motion_command(motion_command_vector, size);
+	carmen_base_ackerman_publish_motion_command(motion_command_vector, size, carmen_get_time());
 }
 
 static void

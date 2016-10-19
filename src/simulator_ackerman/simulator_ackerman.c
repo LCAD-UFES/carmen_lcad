@@ -117,6 +117,8 @@ motion_command_handler(carmen_base_ackerman_motion_command_message *motion_comma
 	if (!necessary_maps_available)
 		return;
 
+//	printf("delay %lf\n", carmen_get_time() - motion_command_message->timestamp);
+
 	current_motion_command_vetor = (current_motion_command_vetor + 1) % NUM_MOTION_COMMANDS_VECTORS;
 
 	if (motion_command_message->num_motion_commands < NUM_MOTION_COMMANDS_PER_VECTOR)
@@ -723,6 +725,7 @@ read_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *conf
 			{"robot", "max_steering_angle", CARMEN_PARAM_DOUBLE, &(config->max_phi), 1, NULL},
 			{"robot", "maximum_steering_command_rate", CARMEN_PARAM_DOUBLE, &(config->maximum_steering_command_rate), 0, NULL},
 			{"robot", "understeer_coeficient", CARMEN_PARAM_DOUBLE, &(config->understeer_coeficient), 0, NULL},
+			{"robot", "understeer_coeficient2", CARMEN_PARAM_DOUBLE, &(config->understeer_coeficient2), 0, NULL},
 			{"robot", "maximum_speed_forward", CARMEN_PARAM_DOUBLE, &(config->maximum_speed_forward), 0, NULL},
 			{"robot", "maximum_speed_reverse", CARMEN_PARAM_DOUBLE, &(config->maximum_speed_reverse), 0, NULL},
 			{"robot", "maximum_acceleration_forward", CARMEN_PARAM_DOUBLE, &(config->maximum_acceleration_forward), 0, NULL},

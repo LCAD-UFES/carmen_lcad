@@ -174,8 +174,7 @@ namespace View
 
 		if (nav_panel_config->show_particles || nav_panel_config->show_gaussians)
 		{
-			carmen_localize_ackerman_subscribe_particle_message
-			(&particle_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+			carmen_localize_ackerman_subscribe_particle_message(&particle_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
 		}
 
 		if (nav_panel_config->show_lasers)

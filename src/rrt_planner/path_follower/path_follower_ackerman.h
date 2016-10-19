@@ -23,8 +23,8 @@ public:
 	void set_path(list<RRT_Path_Edge> path);
 	list<RRT_Path_Edge> &get_path();
 	void set_path_lost_condition(double distance_threshold, double theta_threshold);
-	void publish_path_follower_single_motion_command(double v, double phi);
-	void publish_path_follower_motion_commands(carmen_ackerman_motion_command_t *commands, int num_commands);
+	void publish_path_follower_single_motion_command(double v, double phi, double timestamp);
+	void publish_path_follower_motion_commands(carmen_ackerman_motion_command_t *commands, int num_commands, double timestamp);
 
 	/**
 	 * Verify if the car advanced on the path

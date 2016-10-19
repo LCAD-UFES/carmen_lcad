@@ -81,7 +81,7 @@ void carmen_robot_ackerman_subscribe_motion_command(carmen_robot_ackerman_motion
 void carmen_robot_ackerman_move_along_vector(double distance, double theta);
 void carmen_robot_ackerman_follow_trajectory(carmen_ackerman_traj_point_p trajectory, int trajectory_length,
 			carmen_ackerman_traj_point_t *robot);
-void carmen_robot_ackerman_publish_motion_command(carmen_ackerman_motion_command_p motion_command, int num_motion_commands);
+void carmen_robot_ackerman_publish_motion_command(carmen_ackerman_motion_command_p motion_command, int num_motion_commands, double timestamp);
 
 #ifdef __cplusplus
 }

@@ -51,7 +51,8 @@ typedef struct
 	double width;
 	double length;
 	double distance_between_front_and_rear_axles;
-	double understeer_coeficient;
+//	double understeer_coeficient;
+	double understeer_coeficient2; // Sera que isso soh eh preciso ao ler da IARA? Se sim, o paramentro acima deve ser zero em todos os modulos
 	double max_phi;
 	
 	carmen_ackerman_motion_command_p current_motion_command_vector;

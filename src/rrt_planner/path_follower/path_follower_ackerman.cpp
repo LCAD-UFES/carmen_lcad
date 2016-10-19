@@ -34,7 +34,7 @@ Path_Follower_Ackerman::stop()
 {
 	GlobalState::following_path = false;
 	// printf("stop\n");
-	publish_path_follower_single_motion_command(0, 0);
+	publish_path_follower_single_motion_command(0, 0, carmen_get_time());
 }
 
 
@@ -116,9 +116,9 @@ Path_Follower_Ackerman::build_and_send_refined_path()
 	if (path.empty())
 	{
 //		if (GlobalState::last_odometry.v == 0.0)
-//			publish_path_follower_single_motion_command(0.0, 0.0);
+//			publish_path_follower_single_motion_command(0.0, 0.0, carmen_get_time());
 //		else
-			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi);
+			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, carmen_get_time());
 		return;
 	}
 
@@ -314,5 +314,5 @@ Path_Follower_Ackerman::build_and_send_robot_motion_command_vector()
 
 	motion_command_size = handle_empty_rrt_path(motion_command_size);
 
-	publish_path_follower_motion_commands(motion_command_vector, motion_command_size);
+	publish_path_follower_motion_commands(motion_command_vector, motion_command_size, GlobalState::localizer_pose_timestamp);
 }

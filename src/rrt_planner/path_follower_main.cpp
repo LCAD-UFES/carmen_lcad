@@ -38,7 +38,7 @@ Path_Follower_Ackerman follower;
 
 
 void
-Path_Follower_Ackerman::publish_path_follower_motion_commands(carmen_ackerman_motion_command_t *commands, int num_commands)
+Path_Follower_Ackerman::publish_path_follower_motion_commands(carmen_ackerman_motion_command_t *commands, int num_commands, double timestamp)
 {
 //	system("clear");
 //	for (int i = 0; (i < num_commands) && (i < 20); i++)
@@ -46,14 +46,14 @@ Path_Follower_Ackerman::publish_path_follower_motion_commands(carmen_ackerman_mo
 //	fflush(stdout);
 
 	if (use_obstacle_avoider)
-		carmen_robot_ackerman_publish_motion_command(commands, num_commands);
+		carmen_robot_ackerman_publish_motion_command(commands, num_commands, timestamp);
 	else
-		carmen_base_ackerman_publish_motion_command(commands, num_commands);
+		carmen_base_ackerman_publish_motion_command(commands, num_commands, timestamp);
 }
 
 
 void
-Path_Follower_Ackerman::publish_path_follower_single_motion_command(double v, double phi)
+Path_Follower_Ackerman::publish_path_follower_single_motion_command(double v, double phi, double timestamp)
 {
 	carmen_ackerman_motion_command_t commands[2];
 
@@ -61,7 +61,7 @@ Path_Follower_Ackerman::publish_path_follower_single_motion_command(double v, do
 	commands[0].phi = phi;
 	commands[0].time = 0.5;
 	commands[1] = commands[0];
-	publish_path_follower_motion_commands(commands, 2);
+	publish_path_follower_motion_commands(commands, 2, timestamp);
 }
 
 

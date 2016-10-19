@@ -44,7 +44,7 @@ send_trajectory_to_robot()
 
 	for (i = 0; i < NUM_MOTION_COMMANDS_PER_VECTOR; i++)
 		printf("v = %lf, phi = %lf, t = %lf\n", motion_commands_vector[i].v, motion_commands_vector[i].phi, motion_commands_vector[i].time);*/
-	carmen_robot_ackerman_publish_motion_command(motion_commands_vector, NUM_MOTION_COMMANDS_PER_VECTOR);
+	carmen_robot_ackerman_publish_motion_command(motion_commands_vector, NUM_MOTION_COMMANDS_PER_VECTOR, carmen_get_time());
 }
 /*
 double

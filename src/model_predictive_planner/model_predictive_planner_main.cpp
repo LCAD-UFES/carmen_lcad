@@ -42,14 +42,14 @@ static int update_lookup_table = 0;
 
 
 void
-publish_model_predictive_rrt_path_message(list<RRT_Path_Edge> path)
+publish_model_predictive_rrt_path_message(list<RRT_Path_Edge> path, double timestamp)
 {
 	int i = 0;
 	rrt_path_message msg;
 	list<RRT_Path_Edge>::iterator it;
 
 	msg.host  = carmen_get_host();
-	msg.timestamp = GlobalState::localizer_pose_timestamp;
+	msg.timestamp = timestamp;
 	msg.last_goal = GlobalState::last_goal ? 1 : 0;
 
 	if (GlobalState::goal_pose)
@@ -101,7 +101,7 @@ publish_model_predictive_rrt_path_message(list<RRT_Path_Edge> path)
 
 
 void
-publish_model_predictive_planner_motion_commands(vector<carmen_ackerman_path_point_t> path)
+publish_model_predictive_planner_motion_commands(vector<carmen_ackerman_path_point_t> path, double timestamp)
 {
 	if (!GlobalState::following_path)
 		return;
@@ -120,26 +120,26 @@ publish_model_predictive_planner_motion_commands(vector<carmen_ackerman_path_poi
 
 	int num_commands = path.size();
 	if (GlobalState::use_obstacle_avoider)
-		carmen_robot_ackerman_publish_motion_command(commands, num_commands);
+		carmen_robot_ackerman_publish_motion_command(commands, num_commands, timestamp);
 	else
-		carmen_base_ackerman_publish_motion_command(commands, num_commands);
+		carmen_base_ackerman_publish_motion_command(commands, num_commands, timestamp);
 
 	free(commands);
 }
 
 
 void
-publish_path_follower_motion_commands(carmen_ackerman_motion_command_t *commands, int num_commands)
+publish_path_follower_motion_commands(carmen_ackerman_motion_command_t *commands, int num_commands, double timestamp)
 {
 	if (GlobalState::use_obstacle_avoider)
-		carmen_robot_ackerman_publish_motion_command(commands, num_commands);
+		carmen_robot_ackerman_publish_motion_command(commands, num_commands, timestamp);
 	else
-		carmen_base_ackerman_publish_motion_command(commands, num_commands);
+		carmen_base_ackerman_publish_motion_command(commands, num_commands, timestamp);
 }
 
 
 void
-publish_path_follower_single_motion_command(double v, double phi)
+publish_path_follower_single_motion_command(double v, double phi, double timestamp)
 {
 	carmen_ackerman_motion_command_t commands[2];
 
@@ -147,12 +147,12 @@ publish_path_follower_single_motion_command(double v, double phi)
 	commands[0].phi = phi;
 	commands[0].time = 0.5;
 	commands[1] = commands[0];
-	publish_path_follower_motion_commands(commands, 2);
+	publish_path_follower_motion_commands(commands, 2, timestamp);
 }
 
 
 void
-publish_model_predictive_planner_single_motion_command(double v, double phi)
+publish_model_predictive_planner_single_motion_command(double v, double phi, double timestamp)
 {
 	vector<carmen_ackerman_path_point_t> path;
 
@@ -162,9 +162,9 @@ publish_model_predictive_planner_single_motion_command(double v, double phi)
 	traj.time = 1.0;
 	path.push_back(traj);
 	path.push_back(traj);
-	publish_model_predictive_planner_motion_commands(path);
+	publish_model_predictive_planner_motion_commands(path, timestamp);
 
-	publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi);
+	publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
 }
 
 
@@ -327,7 +327,7 @@ void
 stop()
 {
 	GlobalState::following_path = false;
-	publish_model_predictive_planner_single_motion_command(0.0, 0.0);
+	publish_model_predictive_planner_single_motion_command(0.0, 0.0, carmen_get_time());
 }
 
 
@@ -366,7 +366,7 @@ build_path_follower_path(vector<carmen_ackerman_path_point_t> path)
 
 
 void
-build_and_follow_path()
+build_and_follow_path(double timestamp)
 {
 	list<RRT_Path_Edge> path_follower_path;
 
@@ -376,16 +376,16 @@ build_and_follow_path()
 		if (tree.num_paths > 0 && path.size() > 0)
 		{
 			path_follower_path = build_path_follower_path(path);
-			publish_model_predictive_rrt_path_message(path_follower_path);
+			publish_model_predictive_rrt_path_message(path_follower_path, timestamp);
 			publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
 		}
 //		else
-//			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi);
+//			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
 //		{
 //			if (GlobalState::last_odometry.v == 0.0)
-//				publish_path_follower_single_motion_command(0.0, 0.0);
+//				publish_path_follower_single_motion_command(0.0, 0.0, timestamp);
 //			else
-//				publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi);
+//				publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
 //		}
 		publish_plan_tree_for_navigator_gui(tree);
 		publish_navigator_ackerman_status_message();
@@ -394,18 +394,18 @@ build_and_follow_path()
 
 
 void
-build_and_follow_path_old()
+build_and_follow_path_old(double timestamp)
 {
 	if (GlobalState::goal_pose && (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT))
 	{
 		vector<carmen_ackerman_path_point_t> path = compute_plan(&tree);
 		if (tree.num_paths > 0 && path.size() > 0)
 		{
-			publish_model_predictive_planner_motion_commands(path);
+			publish_model_predictive_planner_motion_commands(path, timestamp);
 			publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
 		}
 //		else
-//			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi);
+//			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
 
 		publish_plan_tree_for_navigator_gui(tree);
 		publish_navigator_ackerman_status_message();
@@ -427,9 +427,9 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	GlobalState::set_robot_pose(pose, msg->timestamp);
 
 	if (GlobalState::use_mpc)
-		build_and_follow_path_old();
+		build_and_follow_path_old(msg->timestamp);
 	else
-		build_and_follow_path();
+		build_and_follow_path(msg->timestamp);
 }
 
 
@@ -439,7 +439,10 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	Pose pose = Util::convert_to_pose(msg->truepose);
 	GlobalState::set_robot_pose(pose, msg->timestamp);
 
-	build_and_follow_path();
+	if (GlobalState::use_mpc)
+		build_and_follow_path_old(msg->timestamp);
+	else
+		build_and_follow_path(msg->timestamp);
 }
 
 

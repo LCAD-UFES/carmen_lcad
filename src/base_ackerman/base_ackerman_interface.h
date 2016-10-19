@@ -65,7 +65,7 @@ void carmen_base_ackerman_subscribe_odometry_message(carmen_base_ackerman_odomet
 void
 carmen_base_ackerman_unsubscribe_odometry_message(carmen_handler_t handler);
 
-void carmen_base_ackerman_publish_motion_command(carmen_ackerman_motion_command_p motion_command, int num_motion_commands);
+void carmen_base_ackerman_publish_motion_command(carmen_ackerman_motion_command_p motion_command, int num_motion_commands, double timestamp);
 
 void carmen_base_ackerman_subscribe_motion_command(carmen_base_ackerman_motion_command_message *motion_command,
 				     carmen_handler_t handler,

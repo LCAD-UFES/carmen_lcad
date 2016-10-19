@@ -140,6 +140,8 @@ publish_base_ackerman_motion_command_message_to_stop_robot(char *reason)
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+// Esta funcao consome as trajetorias (vetor de v, phi, t) recebidas por robot_ackerman_motion_command_message_handler()
+// (na verdade, a última recebida)
 void
 obstacle_avoider_timer_handler()
 {
@@ -164,6 +166,7 @@ obstacle_avoider_timer_handler()
 		carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands_vector[motion_command_vetor],
 				num_motion_commands_in_vector[motion_command_vetor], timestamp_of_motion_commands_vector[motion_command_vetor]);
 
+		// Apenas para visualizacao (path vermelho) e para informar ao pipeline acima sobre a deteccao de obstaculos (ou nao)
 		if (ackerman_collision_avoidance && ((carmen_get_time() - time_of_last_call) > 0.2))
 		{
 			carmen_obstacle_avoider_publish_robot_hit_obstacle_message(robot_hit_obstacle);
@@ -198,6 +201,7 @@ check_message_absence_timeout_timer_handler(void)
 }
 
 
+// Esta funcao recebe trajetorias (vetor de v, phi, t) do pipeline acima
 static void
 robot_ackerman_motion_command_message_handler(carmen_robot_ackerman_motion_command_message *motion_command_message)
 {
@@ -225,7 +229,7 @@ robot_ackerman_motion_command_message_handler(carmen_robot_ackerman_motion_comma
 	timestamp_of_motion_commands_vector[(current_motion_command_vetor + 1) % NUM_MOTION_COMMANDS_VECTORS] = motion_command_message->timestamp;
 	current_motion_command_vetor = (current_motion_command_vetor + 1) % NUM_MOTION_COMMANDS_VECTORS;
 
-	// @@@ Alberto: Estranho o codigo abaixo... Examinar.
+	// Apenas para a visualizacao da mensagem recebida (path verde)
 	if (ackerman_collision_avoidance && ((carmen_get_time() - time_of_last_call) > 0.2))
 	{
 		publish_navigator_ackerman_plan_message_with_motion_planner_path(next_motion_command_vector,

@@ -35,7 +35,7 @@ send_trajectory_to_robot()
 	
 	for (i = 0; i < NUM_MOTION_COMMANDS_PER_VECTOR; i++)
 		printf("v = %lf, phi = %lf, t = %lf\n", motion_commands_vector[i].v, motion_commands_vector[i].phi, motion_commands_vector[i].time);
-	carmen_base_ackerman_publish_motion_command(motion_commands_vector, NUM_MOTION_COMMANDS_PER_VECTOR);
+	carmen_base_ackerman_publish_motion_command(motion_commands_vector, NUM_MOTION_COMMANDS_PER_VECTOR, carmen_get_time());
 }
 
 double
@@ -167,7 +167,7 @@ build_trajectory_stop_smoothing(double initial_dt, double final_dt)
 				motion_commands_vector[0].time);
 
 		do {
-			carmen_base_ackerman_publish_motion_command(&motion_commands_vector[i], 1);
+			carmen_base_ackerman_publish_motion_command(&motion_commands_vector[i], 1, carmen_get_time());
 			carmen_ipc_sleep(fmin(0.05, motion_commands_vector[i].time));
 		} while ((time_first_command_sent + motion_commands_vector[i].time) < carmen_get_time());
 
