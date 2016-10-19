@@ -32,7 +32,7 @@ void kalman_update_state(kalman_filter *filter, kalman_filter_params *state[], d
   CV_MAT_ELEM(*filter->control, float, 0, 0) = controls[0];
   CV_MAT_ELEM(*filter->control, float, 1, 0) = controls[1];
   const CvMat *y_k = cvKalmanPredict(filter->kalman_filter, filter->control);
-  cvKalmanPredict(filter->kalman_filter, filter->control);
+  //cvKalmanPredict(filter->kalman_filter, filter->control);
 
   CV_MAT_ELEM(*filter->z_k, float, 0, 0) = measurements[0];
   CV_MAT_ELEM(*filter->z_k, float, 1, 0) = measurements[1];
@@ -43,8 +43,12 @@ void kalman_update_state(kalman_filter *filter, kalman_filter_params *state[], d
   fprintf(stdout, "Predicted   = [%f°, %f m]\n", carmen_radians_to_degrees(CV_MAT_ELEM(*y_k, float, 0, 0)), CV_MAT_ELEM(*y_k, float, 1, 0));
   fprintf(stdout, "Corrected   = [%f°, %f m]\n", carmen_radians_to_degrees(CV_MAT_ELEM(*x_k, float, 0, 0)), CV_MAT_ELEM(*x_k, float, 1, 0));
 
-//  state[0]->value = CV_MAT_ELEM(*x_k, float, 0, 0);
-//  state[1]->value = CV_MAT_ELEM(*x_k, float, 1, 0);
+  printf("State: %f, %f\n",state[0]->value,state[1]->value );
+
+  //state[0]->value = measurements[0];
+  //state[1]->value = measurements[1];
+  state[0]->value = CV_MAT_ELEM(*x_k, float, 0, 0);
+  state[1]->value = CV_MAT_ELEM(*x_k, float, 1, 0);
 }
 
 void init_kalman_filter_params(kalman_filter_params *state, double value_variance, double value_variance_factor, double observation_variance)
