@@ -73,6 +73,58 @@ random_double()
 	return ((double) rand() / (double) RAND_MAX);
 }
 
+
+void
+exporta_pesos()
+{
+	FILE *output;
+	output = fopen("weigths.txt", "w");
+	int i = 0;
+
+	for (i = 0; i < neural_network_size; i++)
+	{
+		fprintf(output, "%lf ->w_weight[0]\n%lf ->w_weight[1]\n%lf ->w_weight[2]\n", network[i].w_neuron_weight[0], network[i].w_neuron_weight[1], network[i].w_neuron_weight[2]);
+		fprintf(output, "%lf ->v_weight\n", network[i].v_neuron_weight);
+		fprintf(output, "%lf ->center_vector[0]\n%lf ->center_vector[1]\n%lf ->center_vector[2]\n", network[i].center_vector[0], network[i].center_vector[1], network[i].center_vector[2]);
+		fprintf(output, "%lf ->width_scalar_sigma\n", network[i].width_scalar_sigma);
+		fprintf(output, "%lf ->phi_value\n", network[i].phi_value);
+	}
+	fclose(output);
+}
+
+void
+importa_pesos()
+{
+	FILE* file = fopen("weigths.txt", "r");
+	char trash[50];
+	int i = 0;
+
+	if(file != NULL){
+		for (i = 0; i < neural_network_size; i++)
+		{
+			fscanf(file, "%lf", &network[i].w_neuron_weight[0]);
+			fscanf(file, "%s", trash);
+			fscanf(file, "%lf", &network[i].w_neuron_weight[1]);
+			fscanf(file, "%s", trash);
+			fscanf(file, "%lf", &network[i].w_neuron_weight[2]);
+			fscanf(file, "%s", trash);
+			fscanf(file, "%lf", &network[i].v_neuron_weight);
+			fscanf(file, "%s", trash);
+			fscanf(file, "%lf", &network[i].center_vector[0]);
+			fscanf(file, "%s", trash);
+			fscanf(file, "%lf", &network[i].center_vector[1]);
+			fscanf(file, "%s", trash);
+			fscanf(file, "%lf", &network[i].center_vector[2]);
+			fscanf(file, "%s", trash);
+			fscanf(file, "%lf", &network[i].width_scalar_sigma);
+			fscanf(file, "%s", trash);
+			fscanf(file, "%lf", &network[i].phi_value);
+			fscanf(file, "%s", trash);
+		}
+	}
+}
+
+
 #define RBF_MULTIPLIER 1.0
 #define FF_MULTIPLIER 0.05
 #define GAUSS_MULTIPLIER 0.05
@@ -141,7 +193,8 @@ update_plant_input_u()
 { //Where:  U[0] = u(t), U[1] = u(t-1), U[2] = u(t-2)
 	U[2] = U[1]; //Update the past u values
 	U[1] = U[0];
-	U[0] = U[1] + pid_params[1] * error_order[0] + pid_params[0] * error_order[1] + pid_params[2] * error_order[2]; //Calculate actual output value.
+	//U[0] = U[1] + pid_params[1] * error_order[0] + pid_params[0] * error_order[1] + pid_params[2] * error_order[2]; //Calculate actual output value.
+	U[0] = pid_params[1] * error_order[0] + pid_params[0] * error_order[1] + pid_params[2] * error_order[2];
 	//printf("\nkp = %lf, ki = %lf, kd = %lf, error_o1 = %lf, error_o2 = %lf, error_o3 = %lf\n",pid_params[1], pid_params[0], pid_params[2], error_order[0], error_order[1], error_order[2]);
 	//U(t) = U(t-1) + Ki*e(t) + Kp*Delta(e(t)) + Kd*Delta^2(e(t))
 }
@@ -602,6 +655,7 @@ carmen_librlpid_compute_effort_signal(double current_phi, double desired_phi, do
 	width_scalar_update(params.learning_rate_width); //Step 10 ==> UPDATE WIDTH SCALAR
 
 	//printf("%f\n", U[0]);
+	exporta_pesos();
 
 	return carmen_clamp(-100.0, (-100 * U[0]), 100.0);
 }
