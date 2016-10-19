@@ -12,14 +12,16 @@
 #include <carmen/rddf_messages.h>
 #include <carmen/rddf_interface.h>
 #include <carmen/grid_mapping.h>
-#include <prob_map.h>
+#include <carmen/collision_detection.h>
+
+#include <cmath>
+#include <queue>
 
 #include "CircleNode.hpp"
 
 class StehsPlanner
 {
-
-private:
+public:
 
 	// the robot global state
 	carmen_ackerman_traj_point_t start;
@@ -47,24 +49,24 @@ private:
 	void SpaceExploration();
 
 	//
-	void SpaceTimeExploration();
+	//void SpaceTimeExploration();
 
 	//
-	void HeuristicSearch();
+	//void HeuristicSearch();
 
 	// the distance between two points
 	double Distance(const carmen_ackerman_traj_point_t &a, const carmen_ackerman_traj_point_t &b);
 
 	// the nearest obstacle distance
-	double ObstacleDistance(const carmen_ackerman_traj_point_t &p);
-
-public:
+	double ObstacleDistance(const carmen_ackerman_traj_point_t &point);
 
 	// constructor
 	StehsPlanner();
 
 	//
 	std::list<carmen_ackerman_motion_command_t> BuildPath();
+
+	std::vector<CircleNode> Expand(CircleNodePtr current);
 
 };
 
