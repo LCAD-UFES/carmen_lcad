@@ -9,8 +9,8 @@ LINK = g++
 #CXXFLAGS += -std=c++0x -O0
 #CFLAGS += -msse3 -O4 -fopenmp
 #CXXFLAGS += -std=c++0x -msse3 -O4 -fopenmp
-CFLAGS += -ffast-math -O3 -march=native -msse3
-CXXFLAGS += -std=c++0x -ffast-math -O3 -march=native -msse3
+CFLAGS += -ffast-math -O3 -msse3 #-march=native
+CXXFLAGS += -std=c++0x -ffast-math -O3 -msse3 #-march=native
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models

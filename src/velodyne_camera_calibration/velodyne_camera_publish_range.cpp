@@ -19,6 +19,7 @@ const int WINDOW_WIDTH = 1366;
 int bumblebee_received = 0;
 
 int camera;
+int camera_id;
 int bumblebee_basic_width;
 int bumblebee_basic_height;
 
@@ -441,11 +442,20 @@ read_parameters(int argc, char **argv, int camera)
 int
 main(int argc, char **argv)
 {
+	if (argc != 2)
+	{
+		fprintf(stderr, "%s: Wrong number of parameters. Requires 2 parameter and received %d. \n Usage: %s <camera_number>\n>", argv[0], argc - 1, argv[0]);
+		exit(1);
+	}
+
+	camera_id = atoi(argv[1]);
+//	camera_side = atoi(argv[2]);
+
 	carmen_ipc_initialize(argc, argv);
 
-	read_parameters(argc, argv, 3);
+	read_parameters(argc, argv, camera_id);
 
-	carmen_bumblebee_basic_subscribe_stereoimage(3, &bumblebee_message,
+	carmen_bumblebee_basic_subscribe_stereoimage(camera_id, &bumblebee_message,
 			(carmen_handler_t) bumblebee_basic_image_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_velodyne_subscribe_partial_scan_message(NULL,
