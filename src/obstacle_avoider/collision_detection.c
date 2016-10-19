@@ -384,6 +384,34 @@ move_path_point_to_map_coordinates(const carmen_point_t point, carmen_point_t *l
 	return (path_point_in_map_coords);
 }
 
+double
+carmen_obstacle_avoider_distance_from_global_point_to_obstacle(carmen_point_t global_point, carmen_obstacle_distance_mapper_message *distance_map)
+{
+	carmen_point_t global_point_in_map_coords;
+
+	// Move global path point coordinates to map coordinates
+	global_point_in_map_coords.x = (global_point->x - distance_map->config.x_origin) / distance_map->config.resolution;
+	global_point_in_map_coords.y = (global_point->y - distance_map->config.y_origin) / distance_map->config.resolution;
+
+	// Transform coordinates to integer indexes
+	int x_map_cell = (int) round(global_point_in_map_coords.x);
+	int y_map_cell = (int) round(global_point_in_map_coords.y);
+
+	// Os mapas de carmen sao orientados a colunas, logo a equacao eh como abaixo
+	int index = y_map_cell + distance_map->config.y_size * x_map_cell;
+	if (index < 0 || index >= distance_map->size)
+		return (-1.0);
+
+	double dx = (double) distance_map->complete_x_offset[index] + (double) x_map_cell - global_point_in_map_coords.x;
+	double dy = (double) distance_map->complete_y_offset[index] + (double) y_map_cell - global_point_in_map_coords.y;
+
+	double distance_in_map_coordinates = sqrt(dx * dx + dy * dy);
+	double distance = distance_in_map_coordinates * distance_map->config.resolution;
+
+	return (distance);
+}
+
+
 
 double
 distance_from_traj_point_to_obstacle(carmen_point_t point,  carmen_point_t *localizer_pose,
