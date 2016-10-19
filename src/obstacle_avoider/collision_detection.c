@@ -1,7 +1,8 @@
+#define _GNU_SOURCE
 #include <carmen/carmen.h>
 #include "collision_detection.h"
 #include "obstacle_avoider_messages.h"
-
+#include <math.h>
 #define SECURITY_VELOCITY_PERCENT 0.5
 
 
@@ -366,11 +367,10 @@ pose_hit_obstacle_ultrasonic(carmen_point_t pose, carmen_map_t *map, carmen_robo
 	return 0;
 }
 
-inline carmen_ackerman_path_point_t
-move_path_point_to_map_coordinates(const carmen_point_t point, carmen_point_t *localizer_pose,
-		carmen_obstacle_distance_mapper_message *distance_map, double displacement)
+inline carmen_point_t
+move_path_point_to_world_coordinates(const carmen_point_t point, carmen_point_t *localizer_pose, double displacement)
 {
-	carmen_ackerman_path_point_t path_point_in_map_coords;
+	carmen_point_t path_point_in_map_coords;
 	double coss, sine;
 
 	sincos(point.theta, &sine, &coss);
@@ -378,14 +378,14 @@ move_path_point_to_map_coordinates(const carmen_point_t point, carmen_point_t *l
 	double y_disp = point.y + displacement * sine;
 
 	sincos(localizer_pose->theta, &sine, &coss);
-	path_point_in_map_coords.x = (localizer_pose->x - distance_map->config.x_origin + x_disp * coss - y_disp * sine) / distance_map->config.resolution;
-	path_point_in_map_coords.y = (localizer_pose->y - distance_map->config.y_origin + x_disp * sine + y_disp * coss) / distance_map->config.resolution;
+	path_point_in_map_coords.x = (localizer_pose->x + x_disp * coss - y_disp * sine);
+	path_point_in_map_coords.y = (localizer_pose->y + x_disp * sine + y_disp * coss);
 
 	return (path_point_in_map_coords);
 }
 
 double
-carmen_obstacle_avoider_distance_from_global_point_to_obstacle(carmen_point_t global_point, carmen_obstacle_distance_mapper_message *distance_map)
+carmen_obstacle_avoider_distance_from_global_point_to_obstacle(carmen_point_t *global_point, carmen_obstacle_distance_mapper_message *distance_map)
 {
 	carmen_point_t global_point_in_map_coords;
 
@@ -412,34 +412,32 @@ carmen_obstacle_avoider_distance_from_global_point_to_obstacle(carmen_point_t gl
 }
 
 
+//double
+//distance_from_traj_point_to_obstacle(carmen_point_t point,  carmen_point_t *localizer_pose,
+//		carmen_obstacle_distance_mapper_message *distance_map, double displacement, double min_dist)
+//{
+//	// Move path point to map coordinates
+//	carmen_ackerman_path_point_t path_point_in_map_coords =	move_path_point_to_map_coordinates(point, localizer_pose, distance_map, displacement);
+//	int x_map_cell = (int) round(path_point_in_map_coords.x);
+//	int y_map_cell = (int) round(path_point_in_map_coords.y);
+//
+//	// Os mapas de carmen sao orientados a colunas, logo a equacao eh como abaixo
+//	int index = y_map_cell + distance_map->config.y_size * x_map_cell;
+//	if (index < 0 || index >= distance_map->size)
+//		return (min_dist);
+//
+//	double dx = (double) distance_map->complete_x_offset[index] + (double) x_map_cell - path_point_in_map_coords.x;
+//	double dy = (double) distance_map->complete_y_offset[index] + (double) y_map_cell - path_point_in_map_coords.y;
+//
+//	double distance_in_map_coordinates = sqrt(dx * dx + dy * dy);
+//	double distance = distance_in_map_coordinates * distance_map->config.resolution;
+//
+//	return (distance);
+//}
+
 
 double
-distance_from_traj_point_to_obstacle(carmen_point_t point,  carmen_point_t *localizer_pose,
-		carmen_obstacle_distance_mapper_message *distance_map, double displacement, double min_dist)
-{
-	// Move path point to map coordinates
-	carmen_ackerman_path_point_t path_point_in_map_coords =	move_path_point_to_map_coordinates(point, localizer_pose, distance_map, displacement);
-	int x_map_cell = (int) round(path_point_in_map_coords.x);
-	int y_map_cell = (int) round(path_point_in_map_coords.y);
-
-	// Os mapas de carmen sao orientados a colunas, logo a equacao eh como abaixo
-	int index = y_map_cell + distance_map->config.y_size * x_map_cell;
-	if (index < 0 || index >= distance_map->size)
-		return (min_dist);
-
-	double dx = (double) distance_map->complete_x_offset[index] + (double) x_map_cell - path_point_in_map_coords.x;
-	double dy = (double) distance_map->complete_y_offset[index] + (double) y_map_cell - path_point_in_map_coords.y;
-
-	double distance_in_map_coordinates = sqrt(dx * dx + dy * dy);
-	double distance = distance_in_map_coordinates * distance_map->config.resolution;
-
-	return (distance);
-}
-
-
-//parametros: carmen_point_t path_pose, carmen_robot_ackerman_config_t double circle_radius
-double
-obstacle_avoider_compute_distance_to_closest_obstacles(carmen_point_t *localizer_pose, carmen_point_t point_to_check,
+carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(carmen_point_t *localizer_pose, carmen_point_t point_to_check,
 		carmen_robot_ackerman_config_t robot_config,
 		carmen_obstacle_distance_mapper_message *distance_map, double circle_radius)
 {
@@ -447,6 +445,8 @@ obstacle_avoider_compute_distance_to_closest_obstacles(carmen_point_t *localizer
 	double displacement_inc = robot_config.distance_between_front_and_rear_axles / (number_of_point - 2);
 	double displacement = 0.0;
 	double proximity_to_obstacles = 0.0;
+//	double circle_radius = (robot_config.width + 0.4) / 2.0; // metade da largura do carro + um espacco de guarda
+	carmen_point_t point_in_map_coords;
 
 	for (int i = -1; i < number_of_point; i++)
 	{
@@ -458,10 +458,15 @@ obstacle_avoider_compute_distance_to_closest_obstacles(carmen_point_t *localizer
 		if (i == number_of_point - 1)
 			displacement = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
 
-		double distance = distance_from_traj_point_to_obstacle(point_to_check, localizer_pose, distance_map, displacement, circle_radius);
-		double delta = distance - circle_radius;
-		if (delta < 0.0)
-			proximity_to_obstacles += delta * delta;
+		point_in_map_coords = move_path_point_to_world_coordinates(point_to_check, localizer_pose, displacement);
+		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&point_in_map_coords, distance_map);
+		//distance equals to -1.0 when the coordinates are outside of map
+		if(distance != -1.0)
+		{
+			double delta = distance - circle_radius;
+			if (delta < 0.0)
+				proximity_to_obstacles += delta * delta;
+		}
 	}
 
 	return (proximity_to_obstacles);

@@ -205,22 +205,22 @@ compute_path_points_nearest_to_lane(ObjectiveFunctionParams *param, vector<carme
 }
 
 
-//inline carmen_ackerman_path_point_t
-//move_path_point_to_map_coordinates(const carmen_ackerman_path_point_t point, double displacement)
-//{
-//	carmen_ackerman_path_point_t path_point_in_map_coords;
-//	double coss, sine;
-//
-//	sincos(point.theta, &sine, &coss);
-//	double x_disp = point.x + displacement * coss;
-//	double y_disp = point.y + displacement * sine;
-//
-//	sincos(GlobalState::localizer_pose->theta, &sine, &coss);
-//	path_point_in_map_coords.x = (GlobalState::localizer_pose->x - GlobalState::distance_map->config.x_origin + x_disp * coss - y_disp * sine) / GlobalState::distance_map->config.resolution;
-//	path_point_in_map_coords.y = (GlobalState::localizer_pose->y - GlobalState::distance_map->config.y_origin + x_disp * sine + y_disp * coss) / GlobalState::distance_map->config.resolution;
-//
-//	return (path_point_in_map_coords);
-//}
+inline carmen_ackerman_path_point_t
+move_path_point_to_map_coordinates(const carmen_ackerman_path_point_t point, double displacement)
+{
+	carmen_ackerman_path_point_t path_point_in_map_coords;
+	double coss, sine;
+
+	sincos(point.theta, &sine, &coss);
+	double x_disp = point.x + displacement * coss;
+	double y_disp = point.y + displacement * sine;
+
+	sincos(GlobalState::localizer_pose->theta, &sine, &coss);
+	path_point_in_map_coords.x = (GlobalState::localizer_pose->x - GlobalState::distance_map->config.x_origin + x_disp * coss - y_disp * sine) / GlobalState::distance_map->config.resolution;
+	path_point_in_map_coords.y = (GlobalState::localizer_pose->y - GlobalState::distance_map->config.y_origin + x_disp * sine + y_disp * coss) / GlobalState::distance_map->config.resolution;
+
+	return (path_point_in_map_coords);
+}
 
 
 //double
@@ -283,7 +283,7 @@ compute_proximity_to_obstacles_using_distance_map(vector<carmen_ackerman_path_po
 	for (unsigned int i = 0; i < path.size(); i += 1)
 	{
 		carmen_point_t point_to_check = {path[i].x, path[i].y, path[i].theta};
-		proximity_to_obstacles_for_path += obstacle_avoider_compute_distance_to_closest_obstacles(&localizer,
+		proximity_to_obstacles_for_path += carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&localizer,
 				point_to_check, GlobalState::robot_config, GlobalState::distance_map, circle_radius);
 	}
 	return (proximity_to_obstacles_for_path);

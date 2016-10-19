@@ -478,7 +478,7 @@ path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> path)
 			printf("---------- PHI EXCEEDED THE MAX_PHI!!!!\n");
 
 		carmen_point_t point_to_check = {path[i].x, path[i].y, path[i].theta};
-		proximity_to_obstacles_for_path += obstacle_avoider_compute_distance_to_closest_obstacles(&localizer,
+		proximity_to_obstacles_for_path += carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&localizer,
 				point_to_check, GlobalState::robot_config, GlobalState::distance_map, circle_radius);
 	}
 
