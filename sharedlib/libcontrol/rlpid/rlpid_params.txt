@@ -4,5 +4,5 @@
 0.015	learning_rate_critic;    //Eta_gama_0.015
 0.98	discount_factor;         //Gama
 0.01	error_band;              //epslon
-0.013	alfa_a;                  //actor_learning_rate_0.013
-0.01	alfa_c;                  //critic_learning_rate_0.01
+0.033	alfa_a;                  //actor_learning_rate_0.013
+0.03	alfa_c;                  //critic_learning_rate_0.01

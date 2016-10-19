@@ -77,6 +77,9 @@ static kalman_filter_params pitch_state, height_state;
 static double horizon_line;
 static kalman_filter camera_ekf;
 
+/* Car parameters */
+static double sensor_board_height, camera_relative_height, wheel_radius;
+
 /* Stereo Mapping Message */
 static carmen_stereo_mapping_message msg_stereo_mapping;
 
@@ -376,11 +379,13 @@ disparity_map_handler(carmen_simple_stereo_disparity_message *message)
 
   if (view_mode == VIEW_MODE_BIRDS_EYE)
   {
+	  //inverse_perspective_mapping(map_params, stereo_map, right_image, 2.0, carmen_degrees_to_radians(2), horizon_line, perceptual_field_mask, stereo_util_instance);
+
     inverse_perspective_mapping(map_params, stereo_map, right_image, height_state.value, pitch_state.value, horizon_line, perceptual_field_mask, stereo_util_instance);
   }
   else if (view_mode == VIEW_MODE_BIRDS_EYE_OPENCV)
   {
-    opencv_birds_eye_remap(map_params, right_image, stereo_map, height_state.value, pitch_state.value, stereo_util_instance);
+	  opencv_birds_eye_remap(map_params, right_image, stereo_map, height_state.value, pitch_state.value, stereo_util_instance);
   }
   else if (view_mode == VIEW_MODE_ROAD_FINDING)
   {
@@ -442,12 +447,15 @@ read_parameters(int argc, char **argv)
 {
   int num_items;
   char stereo_string[256];
+  char sensor_board_string[256];
 
   if (argc < 2)
     carmen_die("%s: Wrong number of parameters. stereo_mapping requires a parameter.\nUsage:\n %s <camera_number>\n", argv[0], argv[0]);
 
   camera = atoi(argv[1]);
   sprintf(stereo_string, "%s%d", "stereo", camera);
+
+  sprintf(sensor_board_string, "%s%d", "sensor_board_", 1);
 
   if (argc == 3)
     view_mode = argv[2][0];
@@ -471,8 +479,11 @@ read_parameters(int argc, char **argv)
       {(char*) "stereo_map", (char*) "log_odds_min", CARMEN_PARAM_INT, &map_params.log_odds_min, 0, NULL},
       {(char*) "stereo_map", (char*) "log_odds_bias", CARMEN_PARAM_INT, &map_params.log_odds_bias, 0, NULL},
       {(char*) "stereo_map", (char*) "laser_num_beams", CARMEN_PARAM_INT, &map_params.num_ranges, 0, NULL}, // only for consistency in ProbabilisticMapParams inicialization
-      {(char*) "camera", (char*) "z", CARMEN_PARAM_DOUBLE, &height_state.value, 0, NULL},
-      {(char*) "camera", (char*) "pitch", CARMEN_PARAM_DOUBLE, &pitch_state.value, 0, NULL}
+      {(char*) "camera", (char*) "z", CARMEN_PARAM_DOUBLE, &camera_relative_height, 0, NULL},
+      {(char*) "camera", (char*) "pitch", CARMEN_PARAM_DOUBLE, &pitch_state.value, 0, NULL},
+      {sensor_board_string, (char*) "z", CARMEN_PARAM_DOUBLE, &sensor_board_height, 0, NULL},
+      {(char*) "robot", (char*) "wheel_radius", CARMEN_PARAM_DOUBLE, &wheel_radius, 0, NULL}
+
   };
 
   num_items = sizeof(param_list) / sizeof(param_list[0]);
@@ -484,6 +495,9 @@ read_parameters(int argc, char **argv)
 static void
 init_stereo_mapping()
 {
+  /* Init camera height relative to the world*/
+  height_state.value = wheel_radius + sensor_board_height + camera_relative_height;
+
   /* Init the grid parameters */
   map_params.grid_sx = (int) ceil(map_params.width / map_params.grid_res);
   map_params.grid_sy = (int) ceil(map_params.height / map_params.grid_res);
