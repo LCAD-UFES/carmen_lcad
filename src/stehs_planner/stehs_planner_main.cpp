@@ -1,4 +1,4 @@
-#include "stehs_planner.h"
+#include "stehs_planner.hpp"
 
 
 StehsPlanner stehs_planner;
@@ -58,12 +58,12 @@ navigator_ackerman_set_goal_message_handler(carmen_navigator_ackerman_set_goal_m
 */
 
 
-static void
+/*static void
 base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *msg)
 {
-	stehs_planner.v = msg->v;
-	stehs_planner.phi = msg->phi;
-}
+	stehs_planner.start_pose.v = msg->v;
+	stehs_planner.start_pose.phi = msg->phi;
+}*/
 
 
 static void
@@ -132,7 +132,7 @@ register_handlers()
 //	else
 //		carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t) simulator_ackerman_truepos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) base_ackerman_odometry_message_handler, CARMEN_SUBSCRIBE_LATEST);
+//	carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) base_ackerman_odometry_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 //	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) behavior_selector_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
 

@@ -7,8 +7,9 @@ class Circle
 public:
 
 	// public variables
+	double x;
+	double y;
 	double radius;
-	double x, y;
 
 	// basic constructor
 	Circle();

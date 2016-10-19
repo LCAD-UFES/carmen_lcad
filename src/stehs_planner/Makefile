@@ -17,13 +17,13 @@ LFLAGS += 	-lgrid_mapping -lmap_io -lmap_util -lmap_interface -lparam_interface 
 		-lcollision_detection -lm -lford_escape_hybrid_interface
 
 
-SOURCES = stehs_planner_main.cpp stehs_planner.cpp
+SOURCES = stehs_planner_main.cpp stehs_planner.cpp CircleNode.cpp Circle.cpp
 
 PUBLIC_BINARIES = stehs_planner
 PUBLIC_LIBRARIES =
 
 TARGETS = stehs_planner
 
-stehs_planner: stehs_planner_main.o stehs_planner.o
+stehs_planner: stehs_planner_main.o stehs_planner.o CircleNode.o Circle.o
 
 include ../Makefile.rules
