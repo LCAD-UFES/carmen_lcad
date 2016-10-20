@@ -49,13 +49,12 @@ class CircleNodePtrComparator {
 public:
 
 	// operator overloading
-	bool operator() (CircleNodePtr a, CircleNodePtr b) {
+	bool operator() (CircleNodePtr a, CircleNodePtr b)
+	{
 
-	// the default c++ stl is a max heap, so wee need to invert here
-	return a->f > b->f;
-
+		// the default c++ stl is a max heap, so wee need to invert here
+		return (a->f > b->f);
 	}
-
 };
 
 #endif

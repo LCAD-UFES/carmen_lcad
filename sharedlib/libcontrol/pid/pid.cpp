@@ -257,6 +257,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 //		g_velocity_PID_controler_state, current_velocity, desired_velocity, error_t,
 //		*throttle_command, *brakes_command,
 //		integral_t, derivative_t, carmen_get_time());
+//	fflush(stdout);
 }
 
 

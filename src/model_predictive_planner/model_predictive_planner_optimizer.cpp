@@ -512,11 +512,15 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 	//
 	// O valor de maxS pode ser computado substituindo (iv) em (i):
 	// maxS = Vo*-Vo/a + 1/2*a*(-Vo/a)^2 = -Vo^2/a + 1/2*Vo^2/a = -1/2*Vo^2/a
+	//
+	// Se estou co velocidade vi e quero chagar a vt, sendo que vt < vi, a eh negativo. O tempo, tt, para
+	// ir de vi a vt pode ser derivado de dS/dt = Vo + a*t -> vt = vi + a*tt; a*tt = vt - vi; tt = (vt - vi) / a
 
 	if (target_v < 0.0)
 		target_v = 0.0;
 
 	double a = (target_v - target_td.v_i) / tcp_seed.tt;
+	double tt = (target_v - target_td.v_i) / a;
 
 	if (a >= 0.0)
 	{
@@ -531,11 +535,10 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 		if (a < -GlobalState::robot_config.maximum_deceleration_forward)
 		{
 			a = -GlobalState::robot_config.maximum_deceleration_forward;
-			tcp_seed.tt = tcp_seed.tt * 2.0;
+			tt = (target_v - target_td.v_i) / a;
 		}
 	}
-
-	params.suitable_tt = tcp_seed.tt;
+	params.suitable_tt = tcp_seed.tt = tt;
 	params.suitable_acceleration = tcp_seed.a = a;
 }
 

@@ -621,7 +621,7 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 //		return (simulator_config->phi);
 
 	/* Reproducao da correcao da oscilacao em velocidades altas */
-	steering_effort *= (1.0 / (1.0 + (simulator_config->v * simulator_config->v) / 100.5)); // boa
+	steering_effort *= (1.0 / (1.0 + (simulator_config->v * simulator_config->v) / 200.5)); // boa
 //	carmen_clamp(-100.0, steering_effort, 100.0);
 
 //	static double previous_effort = 0.0;

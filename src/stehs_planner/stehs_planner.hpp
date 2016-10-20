@@ -30,6 +30,8 @@ public:
 	carmen_ackerman_traj_point_t goal;
 	carmen_obstacle_distance_mapper_message *distance_map;
 
+	carmen_behavior_selector_road_profile_message *goal_list_message;
+
 	carmen_robot_ackerman_config_t robot_config;
 
 	// the planner activation flag
@@ -45,7 +47,7 @@ public:
 	// the trajectory found
 	std::list<carmen_ackerman_motion_command_t> command_list;
 
-	//
+	// TODO it needs to receive the start and goal node
 	void SpaceExploration();
 
 	//
@@ -57,8 +59,14 @@ public:
 	// the distance between two points
 	double Distance(const carmen_ackerman_traj_point_t &a, const carmen_ackerman_traj_point_t &b);
 
+	// the distance between two points
+	double Distance(double ax, double ay, double bx, double by);
+
 	// the nearest obstacle distance
 	double ObstacleDistance(const carmen_ackerman_traj_point_t &point);
+
+	// the nearest obstacle distance, overloaded version
+	double ObstacleDistance(double x, double y);
 
 	// constructor
 	StehsPlanner();
@@ -66,7 +74,11 @@ public:
 	//
 	std::list<carmen_ackerman_motion_command_t> BuildPath();
 
-	std::vector<CircleNode> Expand(CircleNodePtr current);
+	std::vector<CircleNodePtr> Expand(CircleNodePtr current);
+
+	void BuildCirclePath(CircleNodePtr goal_node);
+
+	bool Exist(CircleNodePtr current, std::vector<CircleNodePtr> &closed_set);
 
 };
 

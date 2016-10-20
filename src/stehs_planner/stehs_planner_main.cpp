@@ -119,6 +119,21 @@ signal_handler(int sig)
 }
 
 
+void
+lane_message_handler(carmen_behavior_selector_road_profile_message *message)
+{
+	stehs_planner.goal_list_message = message;
+
+//	printf("RDDF NUM POSES: %d \n", message->number_of_poses);
+//
+//	for (int i = 0; i < message->number_of_poses; i++)
+//	{
+//		printf("RDDF %d: x  = %lf, y = %lf , theta = %lf\n", i, message->poses[i].x, message->poses[i].y, message->poses[i].theta);
+//		getchar();
+//	}
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -139,6 +154,9 @@ register_handlers()
 	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) behaviour_selector_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_obstacle_distance_mapper_subscribe_message(NULL,	(carmen_handler_t) carmen_obstacle_distance_mapper_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_subscribe_message((char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, (char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT,
+    		NULL, sizeof (carmen_behavior_selector_road_profile_message), (carmen_handler_t) lane_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_subscribe_message(
 		(char *) CARMEN_NAVIGATOR_ACKERMAN_GO_NAME,
