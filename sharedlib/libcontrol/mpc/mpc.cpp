@@ -169,7 +169,7 @@ my_f(const gsl_vector *v, void *params)
 		}
 	}
 
-	double cost = error_sum + 0.0011 * sqrt((p->previous_k1 - d.k1) * (p->previous_k1 - d.k1));
+	double cost = error_sum;// + 0.00011 * sqrt((p->previous_k1 - d.k1) * (p->previous_k1 - d.k1));
 	//printf("%lf  %lf  %lf  %lf\n", cost, p->previous_k1, d.k1, p->previous_k1 - d.k1);
 
 	return (cost);
@@ -566,7 +566,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 	param.previous_k1 = effort;
 
 	/** Tentativa de correcao da oscilacao em velocidades altas **/
-	effort /= (1.0 / (1.0 + (v * v) / 100.5)); // boa
+	effort /= (1.0 / (1.0 + (v * v) / 200.5)); // boa
 
 	plot_state(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
 

@@ -946,15 +946,15 @@ carmen_laser_ldmrs_objects_data_message_handler(carmen_laser_ldmrs_objects_data_
 			ldmrs_objects_tracking[i].orientation = carmen_normalize_theta(laser_message->objects_data_list[i].object_box_orientation + car_fused_pose.orientation.yaw);
 
 			// calcula a velocidade
-			if(laser_message->objects_data_list[i].abs_velocity_sigma_x < 1.5 && laser_message->objects_data_list[i].abs_velocity_sigma_y < 1.5)
-			{
+//			if(laser_message->objects_data_list[i].abs_velocity_sigma_x < 1.5 && laser_message->objects_data_list[i].abs_velocity_sigma_y < 1.5)
+//			{
 				double abs_velocity = sqrt( pow(laser_message->objects_data_list[i].abs_velocity_x,2) + pow(laser_message->objects_data_list[i].abs_velocity_y,2));
 				ldmrs_objects_tracking[i].velocity = abs_velocity;
-			}
-			else
-			{
-				ldmrs_objects_tracking[i].velocity = 0.0;
-			}
+//			}
+//			else
+//			{
+//				ldmrs_objects_tracking[i].velocity = 0.0;
+//			}
 
 			// calcula a posição
 			double x = (laser_message->objects_data_list[i].object_box_center_x + front_bullbar_pose.position.x) * cos(car_fused_pose.orientation.yaw) - (laser_message->objects_data_list[i].object_box_center_y + front_bullbar_pose.position.y) * sin(car_fused_pose.orientation.yaw);
