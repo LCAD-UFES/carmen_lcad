@@ -21,7 +21,7 @@ public:
 	Circle(const Circle &c);
 
 	// comparison operator overloading
-	bool Overlap(const Circle& c);
+	bool Overlap(const Circle& c, double overlap_factor);
 
 };
 
