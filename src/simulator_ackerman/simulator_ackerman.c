@@ -72,7 +72,7 @@ apply_system_latencies(carmen_ackerman_motion_command_p current_motion_command_v
 	for (i = 0; i < nun_motion_commands; i++)
 	{
 		j = i;
-		for (double lat = 0.0; lat < 0.3; j++)
+		for (double lat = 0.0; lat < 0.2; j++)
 		{
 			if (j >= nun_motion_commands)
 				break;

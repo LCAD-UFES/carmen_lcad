@@ -91,6 +91,7 @@ double
 car_model(double steering_effort, double atan_current_curvature, double v, fann_type *steering_ann_input, PARAMS *param)
 {
 //	steering_effort = steering_effort * (1.0 / (1.0 + param->v / 7.0));
+	steering_effort *= (1.0 / (1.0 + (param->v * param->v) / 200.5)); // boa
 //	steering_effort = carmen_clamp(-100.0, steering_effort, 100.0);
 	double phi = carmen_libcarneuralmodel_compute_new_phi_from_effort(steering_effort, atan_current_curvature, steering_ann_input,
 			param->steering_ann, v, param->understeer_coeficient, param->distance_rear_axles, 2.0 * param->max_phi);
@@ -566,7 +567,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 	param.previous_k1 = effort;
 
 	/** Tentativa de correcao da oscilacao em velocidades altas **/
-	effort /= (1.0 / (1.0 + (v * v) / 200.5)); // boa
+	// effort /= (1.0 / (1.0 + (v * v) / 200.5)); // boa
 
 	plot_state(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
 
