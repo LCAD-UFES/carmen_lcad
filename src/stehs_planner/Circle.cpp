@@ -12,7 +12,7 @@ Circle::Circle(double x_, double y_, double r_) : x(x_), y(y_), radius(r_) {}
 Circle::Circle(const Circle &c) : x(c.x), y(c.y), radius(c.radius) {}
 
 // comparison operator overloading
-bool Circle::Overlap(const Circle& c)
+bool Circle::Overlap(const Circle& c, double overlap_factor)
 {
 
 	double distance;
@@ -33,6 +33,6 @@ bool Circle::Overlap(const Circle& c)
 	// get the squared distance between the 2 circles
 	distance = std::sqrt(std::pow(x - c.x, 2) + std::pow(y - c.y, 2));
 
-	return (distance - greater) < smaller * 0.5;
+	return (distance - greater) < smaller * overlap_factor;
 
 }
