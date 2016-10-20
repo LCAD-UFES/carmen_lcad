@@ -643,7 +643,7 @@ limit_maximum_centripetal_acceleration(double &target_v, vector<carmen_ackerman_
 	{
 		reduction_factor += 0.2 * ((GlobalState::robot_max_centripetal_acceleration / max_centripetal_acceleration) - reduction_factor);
 		target_v *= reduction_factor;
-		printf("redution %lf, target_v %lf\n", reduction_factor, target_v);
+		// printf("redution %lf, target_v %lf\n", reduction_factor, target_v);
 	}
 }
 

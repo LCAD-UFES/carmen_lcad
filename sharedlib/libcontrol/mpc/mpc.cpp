@@ -91,11 +91,11 @@ double
 car_model(double steering_effort, double atan_current_curvature, double v, fann_type *steering_ann_input, PARAMS *param)
 {
 //	steering_effort = steering_effort * (1.0 / (1.0 + param->v / 7.0));
-	steering_effort *= (1.0 / (1.0 + (param->v * param->v) / 200.5)); // boa
+	steering_effort *= (1.0 / (1.0 + (param->v * param->v) / 100.0)); // boa
 //	steering_effort = carmen_clamp(-100.0, steering_effort, 100.0);
 	double phi = carmen_libcarneuralmodel_compute_new_phi_from_effort(steering_effort, atan_current_curvature, steering_ann_input,
 			param->steering_ann, v, param->understeer_coeficient, param->distance_rear_axles, 2.0 * param->max_phi);
-	phi = 1.0 * phi;// - 0.01;
+//	phi = 1.0 * phi;// - 0.01;
 //	phi *= (1.0 / (1.0 + v / 10.0));
 	
 	return (phi);
