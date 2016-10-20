@@ -11,12 +11,18 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDy
 MODULE_NAME = VELODYNE CAMERA CALIBRATION
 MODULE_COMMENT = Velodyne Camera Calibration
 
-SOURCES = velodyne_camera_calibration.cpp velodyne_camera_publish_range.cpp
-PUBLIC_BINARIES = 
-TARGETS = velodyne_camera_calibration velodyne_camera_publish_range
+SOURCES = velodyne_camera_calibration_main.cpp velodyne_camera_publish_range.cpp \
+			velodyne_camera_calibration.cpp
 
-velodyne_camera_calibration: velodyne_camera_calibration.o 
+PUBLIC_INCLUDES = velodyne_camera_calibration.h
+PUBLIC_LIBRARIES = libcollision_detection.a: collision_detection.o
+PUBLIC_BINARIES = 
+TARGETS = velodyne_camera_calibration_main velodyne_camera_publish_range libvelodyne_camera_calibration.a
+
+velodyne_camera_calibration_main: velodyne_camera_calibration_main.o 
 
 velodyne_camera_publish_range: velodyne_camera_publish_range.o
+
+libvelodyne_camera_calibration.a: velodyne_camera_calibration.o
 
 include ../Makefile.rules
