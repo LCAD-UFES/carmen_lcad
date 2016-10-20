@@ -573,16 +573,16 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 					return sqrt((carmen_square(v.x - w.x) + carmen_square(v.y - w.y)));
 				}
 
-//				double L = ford_escape_hybrid_config->distance_between_front_and_rear_axles;
-//				double delta_theta = global_pos.globalpos.theta - previous_global_pos.globalpos.theta;
-//				double l = dist23(global_pos.globalpos, previous_global_pos.globalpos);
-//				double real_phi = L * atan(delta_theta / l);
-//				printf("timestamp, x, y, theta, real_phi, phi_sent, phi_measured, v, "
-//						"%lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
-//						ford_escape_hybrid_config->XGV_v_and_phi_timestamp,
-//						global_pos.globalpos.x, global_pos.globalpos.y, global_pos.globalpos.theta,
-//						real_phi, ford_escape_hybrid_config->current_motion_command_vector[j].phi, ford_escape_hybrid_config->filtered_phi,
-//						ford_escape_hybrid_config->filtered_v);
+				double L = ford_escape_hybrid_config->distance_between_front_and_rear_axles;
+				double delta_theta = global_pos.globalpos.theta - previous_global_pos.globalpos.theta;
+				double l = dist23(global_pos.globalpos, previous_global_pos.globalpos);
+				double real_phi = L * atan(delta_theta / l);
+				printf("timestamp, x, y, theta, real_phi, phi_sent, phi_measured, v, "
+						"%lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
+						ford_escape_hybrid_config->XGV_v_and_phi_timestamp,
+						global_pos.globalpos.x, global_pos.globalpos.y, global_pos.globalpos.theta,
+						real_phi, ford_escape_hybrid_config->current_motion_command_vector[j].phi, ford_escape_hybrid_config->filtered_phi,
+						ford_escape_hybrid_config->filtered_v);
 			}
 			///////////////////////// Acima: So para guardar os phi s para medir erro no modelo do carro
 		}
