@@ -13,7 +13,7 @@
 #define PREDICTION_HORIZON	(0.65*0.6)
 
 FILE *gnuplot_save;
-bool save_and_plot = true;
+bool save_and_plot = false;
 
 using namespace std;
 
@@ -493,8 +493,8 @@ libmpc_stiction_correction(double current_phi, double desired_phi, double effort
 //	if (v < 5.5)
 //		return (1.0);
 
-	static double last_phi;
-	static double last_effort;
+	static double last_phi = v;
+	//static double last_effort;
 	static unsigned int cont = 0;
 
 	double dif_current = fabs(fabs(current_phi) - fabs(last_phi));
@@ -510,7 +510,7 @@ libmpc_stiction_correction(double current_phi, double desired_phi, double effort
 			cont = 0;
 
 		last_phi = current_phi;
-		last_effort = effort;
+	//	last_effort = effort;
 
 		printf("c%lf d%lf %lf %lf\n", current_phi, desired_phi, dif_current, dif_current_desired);
 
