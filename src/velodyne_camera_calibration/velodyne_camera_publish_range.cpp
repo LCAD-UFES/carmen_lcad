@@ -36,6 +36,7 @@ show_velodyne(carmen_velodyne_partial_scan_message *velodyne_message)
 
 	static int first = 1;
 
+	vector<double> median_ranges;
 	double average_range = 0.0;
 	int count_range = 0;
 
@@ -73,7 +74,6 @@ show_velodyne(carmen_velodyne_partial_scan_message *velodyne_message)
 	const float MAX_RANGE = 30.0;
 	const float MIN_RANGE = 0.5;
 
-
 	laser_in_cam_px = carmen_velodyne_camera_calibration_lasers_points_in_camera(velodyne_message, &bumblebee_message);
 	rectangle(*bumb_image, cv::Point(box.x, box.y),cv::Point(box.x + box.width, box.y + box.height), Scalar( 0, r, 0 ), 1, 4 );
 
@@ -92,9 +92,10 @@ show_velodyne(carmen_velodyne_partial_scan_message *velodyne_message)
 			r *= 255;
 			r = 255 - r;
 
-			average_range += laser_in_cam_px.at(i).laser_polar.length;
-			count_range += 1;
+			median_ranges.push_back(laser_in_cam_px.at(i).laser_polar.length);
 
+//			average_range += laser_in_cam_px.at(i).laser_polar.length;
+//			count_range += 1;
 
 			//printf("%f\t %f\t %f\t \n",r, range, velodyne_message->partial_scan[j].distance[i] );
 			circle(*bumb_image, cv::Point(laser_in_cam_px.at(i).ipx, laser_in_cam_px.at(i).ipy), 2, Scalar(0, r, 0), -1);
@@ -103,11 +104,15 @@ show_velodyne(carmen_velodyne_partial_scan_message *velodyne_message)
 
 	}
 
-	if (confidence > 0)
+	if (median_ranges.size() > 0/**/)
 	{
-		double averange_distance = average_range / count_range;
+		std::sort(median_ranges.begin(), median_ranges.end());
+		int middle = median_ranges.size() / 2;
+		double median = median_ranges.at(middle);
+
+//		double averange_distance = average_range / count_range;
 		char str[50];
-		sprintf(str,"range: %f",averange_distance);
+		sprintf(str,"range: %f",median);
 		putText(*bumb_image, str, Point2f(10,20), FONT_HERSHEY_PLAIN, 1.2,  Scalar(0,0,0));
 	}
 

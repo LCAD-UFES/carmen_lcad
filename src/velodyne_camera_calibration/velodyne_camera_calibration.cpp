@@ -95,6 +95,7 @@ move_to_camera_reference(tf::Point p3d_velodyne_reference)
 	return board_frame_to_camera_frame * velodyne_frame_to_board_frame * p3d_velodyne_reference;
 }
 
+//TODO Mover RANGES da referencia da camera para referencia do carro
 
 std::vector<carmen_velodyne_points_in_cam_t>
 carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_partial_scan_message *velodyne_message,
@@ -177,7 +178,7 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_parti
 std::vector<carmen_velodyne_points_in_cam_t>
 carmen_velodyne_camera_calibration_lasers_points_bounding_box(carmen_velodyne_partial_scan_message *velodyne_message,
 		carmen_bumblebee_basic_stereoimage_message *bumblebee_message, carmen_visual_tracker_output_message *visual_tracker_output_message)
-		{
+{
 
 	carmen_visual_tracker_output_message box_message = {visual_tracker_output_message->rect, visual_tracker_output_message->confidence,
 			visual_tracker_output_message->timestamp ,visual_tracker_output_message->host};
