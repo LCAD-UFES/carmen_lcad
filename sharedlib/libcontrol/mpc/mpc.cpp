@@ -422,13 +422,16 @@ open_file_to_save_plot()
 
 	gnuplot_save = fopen(name, "w");
 
-//	plot "mpc_plot_20161015_11h56m27" using 1:2 with lines, "mpc_plot_20161015_11h56m27" using 1:3 with lines, "mpc_plot_20161015_11h56m27" using 1:4 with lines
+//	plot "mpc_plot_20161020_22h57m36" using 1:2 with lines, "mpc_plot_20161020_22h57m36" using 1:3 with lines, "mpc_plot_20161020_22h57m36" using 1:4 with lines
 }
 
 
 int
-libmpc_stiction_simulation_old(double effort, double v)
+libmpc_stiction_simulation(double effort, double v)
 {
+//	if (v < 8.0)
+//		return false;
+
 	static double first_eff;
 	//static bool control = true;
 	static unsigned int cont = 0;
@@ -446,9 +449,9 @@ libmpc_stiction_simulation_old(double effort, double v)
 	}
 	else
 	{
-		if (fabs(first_eff - effort) < (0.7*v))
+		if (fabs(first_eff - effort) < (3*v))
 		{
-			printf("Stic f%lf c%lf abs%lf\n", first_eff, effort, fabs(first_eff - effort));
+			//printf("Stic f%lf c%lf abs%lf %lf\n", first_eff, effort, fabs(first_eff - effort), (3*v));
 			return (true);
 		}
 		else
@@ -462,7 +465,7 @@ libmpc_stiction_simulation_old(double effort, double v)
 
 
 int
-libmpc_stiction_simulation(double effort, double v)
+libmpc_stiction_simulation_new(double effort, double v)
 {
 	static double previous_effort = 0.0;
 	bool has_stiction;
@@ -475,6 +478,52 @@ libmpc_stiction_simulation(double effort, double v)
 	previous_effort = effort;
 
 	return (has_stiction);
+}
+
+
+double
+libmpc_stiction_correction(double current_phi, double desired_phi, double effort, double v)
+{
+	if (v < 5.5)
+		return (1.0);
+
+	static double last_phi;
+	static double last_effort;
+	static unsigned int cont = 0;
+
+	double dif_phi = fabs(current_phi) - fabs(last_phi);
+	double dif_efort = fabs(last_effort) - fabs(effort);
+
+	if (cont <= 10)
+	{
+		if (dif_phi < 0.002 && dif_efort > 0.0)
+			cont++;
+		else
+			cont = 0;
+
+		last_phi = current_phi;
+		last_effort = effort;
+
+		return (1.0);
+	}
+	else
+	{
+		cont = 0;
+		printf("c%lf d%lf ef%lf abs%lf\n", current_phi, desired_phi, effort, fabs(desired_phi - current_phi));
+
+		return (1.6 * v);
+		/*if (fabs(desired_phi - current_phi) < (1.6 * v))
+		{
+			printf("c%lf d%lf ef%lf abs%lf\n", current_phi, desired_phi, effort, fabs(desired_phi - current_phi));
+			return (true);
+		}
+		else
+		{
+			printf("SSSSSSSSSSS\n");
+			cont = 0;
+			return (false);
+		}*/
+	}
 }
 
 
@@ -569,7 +618,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 	/** Tentativa de correcao da oscilacao em velocidades altas **/
 	// effort /= (1.0 / (1.0 + (v * v) / 200.5)); // boa
 
-	plot_state(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
+	//plot_state(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
 
 	carmen_clamp(-100.0, effort, 100.0);
 	return (effort);
