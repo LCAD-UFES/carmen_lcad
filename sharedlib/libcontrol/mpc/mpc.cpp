@@ -13,9 +13,13 @@
 #define PREDICTION_HORIZON	(0.65*0.6)
 
 FILE *gnuplot_save;
-bool save_plot = false;
+bool save_and_plot = true;
 
 using namespace std;
+
+
+carmen_ackerman_motion_command_t *motion_commands_vector_mpc_plan;
+int num_motion_commands_mpc_plan;
 
 
 vector<double>
@@ -325,8 +329,8 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double understee
 	timestamp_vector.push_front(t - first_timestamp);
 	effort_vector.push_front(effort);
 
-	if (save_plot)
-		fprintf(gnuplot_save, "%lf %lf %lf %lf\n", timestamp_vector.front(), cphi_vector.front(), dphi_vector.front(), effort_vector.front()/100);
+	if (save_and_plot)
+		fprintf(gnuplot_save, "%lf %lf %lf %lf\n", timestamp_vector.front(), cphi_vector.front(), dphi_vector.front(), effort_vector.front()/200);
 
 	while (cphi_vector.size() > PAST_SIZE)
 	{
@@ -422,7 +426,9 @@ open_file_to_save_plot()
 
 	gnuplot_save = fopen(name, "w");
 
-//	plot "mpc_plot_20161020_22h57m36" using 1:2 with lines, "mpc_plot_20161020_22h57m36" using 1:3 with lines, "mpc_plot_20161020_22h57m36" using 1:4 with lines
+/*	file_name = "mpc_plot_20161021_9h52m47"
+	plot file_name using 1:2 with lines, file_name using 1:3 with lines, file_name using 1:4 with lines
+*/
 }
 
 
@@ -484,19 +490,21 @@ libmpc_stiction_simulation_new(double effort, double v)
 double
 libmpc_stiction_correction(double current_phi, double desired_phi, double effort, double v)
 {
-	if (v < 5.5)
-		return (1.0);
+//	if (v < 5.5)
+//		return (1.0);
 
 	static double last_phi;
 	static double last_effort;
 	static unsigned int cont = 0;
 
-	double dif_phi = fabs(current_phi) - fabs(last_phi);
-	double dif_efort = fabs(last_effort) - fabs(effort);
+	double dif_current = fabs(fabs(current_phi) - fabs(last_phi));
+	static double dif_current_desired = 0.0;
+
+	dif_current_desired += fabs((fabs(desired_phi) - fabs(current_phi)));
 
 	if (cont <= 10)
 	{
-		if (dif_phi < 0.002 && dif_efort > 0.0)
+		if (dif_current < 0.002 && dif_current_desired > 0.0)
 			cont++;
 		else
 			cont = 0;
@@ -504,14 +512,16 @@ libmpc_stiction_correction(double current_phi, double desired_phi, double effort
 		last_phi = current_phi;
 		last_effort = effort;
 
+		printf("c%lf d%lf %lf %lf\n", current_phi, desired_phi, dif_current, dif_current_desired);
+
 		return (1.0);
 	}
 	else
 	{
 		cont = 0;
-		printf("c%lf d%lf ef%lf abs%lf\n", current_phi, desired_phi, effort, fabs(desired_phi - current_phi));
+		printf("---------c%lf d%lf ef%lf abs%lf\n", current_phi, desired_phi, effort, fabs(desired_phi - current_phi));
 
-		return (1.6 * v);
+		return 1.0;//(1.6 * v);
 		/*if (fabs(desired_phi - current_phi) < (1.6 * v))
 		{
 			printf("c%lf d%lf ef%lf abs%lf\n", current_phi, desired_phi, effort, fabs(desired_phi - current_phi));
@@ -573,7 +583,7 @@ init_mpc(bool &first_time, PARAMS &param, EFFORT_SPLINE_DESCRIPTOR &seed, double
 	param.time_elapsed_since_last_motion_command = carmen_get_time() - time_of_last_motion_command;
 
 
-	if (save_plot && open)
+	if (save_and_plot && open)
 	{
 		open_file_to_save_plot();
 		open = false;
@@ -618,7 +628,8 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 	/** Tentativa de correcao da oscilacao em velocidades altas **/
 	// effort /= (1.0 / (1.0 + (v * v) / 200.5)); // boa
 
-	//plot_state(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
+	if (save_and_plot)
+		plot_state(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
 
 	carmen_clamp(-100.0, effort, 100.0);
 	return (effort);
