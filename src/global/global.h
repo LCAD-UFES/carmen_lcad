@@ -280,6 +280,11 @@ struct _cell_coords_t
 
 typedef struct _cell_coords_t cell_coords_t;
 
+typedef struct {
+	int ipx;
+	int ipy;
+	carmen_sphere_coord_t laser_polar;
+} carmen_velodyne_points_in_cam_t, *carmen_velodyne_points_in_cam_p;
 
 typedef enum { CARMEN_MOTOR, CARMEN_SERVO } carmen_arm_joint_t;
 
