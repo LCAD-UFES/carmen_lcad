@@ -3,7 +3,7 @@ include ../Makefile.conf
 CFLAGS += `pkg-config --cflags opencv` -g -Wall
 IFLAGS += 
 LFLAGS += -lstdc++ -lglobal -lipc -lparam_interface `pkg-config --libs opencv` -lvelodyne_interface \
-	-lbumblebee_basic_interface -lvisual_tracker_interface -ltf
+	-lbumblebee_basic_interface -lvisual_tracker_interface -ltf -lvelodyne_camera_calibration
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system

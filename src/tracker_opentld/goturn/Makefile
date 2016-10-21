@@ -8,7 +8,7 @@ LINK = g++
 CFLAGS += -Wall -pg
 CXXFLAGS += -Wall -pg
 IFLAGS += -I $(CUDA_HOME)/targets/x86_64-linux/include -I. -I $(CAFFE_HOME)/include -I $(CAFFE_HOME)/build/include \
-		  -I $(CAFFE_HOME)/build/src `pkg-config --cflags opencv`
+		  -I $(CAFFE_HOME)/build/src `pkg-config --cflags opencv` -D CPU_ONLY
 		  
 LFLAGS += -lboost_system -lboost_filesystem -lboost_regex `pkg-config --libs opencv` \
 		  -L $(CAFFE_HOME)/build/lib -lcaffe -ltinyxml -lglog -lopencv_video -lparam_interface -lipc \
