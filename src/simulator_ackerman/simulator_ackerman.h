@@ -112,6 +112,7 @@ typedef struct
 	int initialize_neural_networks;
 
 	unsigned int use_mpc;
+	carmen_localize_ackerman_globalpos_message global_pos;
 
 } carmen_simulator_ackerman_config_t, *carmen_simulator_ackerman_config_p;
 

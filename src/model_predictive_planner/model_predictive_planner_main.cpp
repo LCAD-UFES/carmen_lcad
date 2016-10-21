@@ -114,6 +114,9 @@ publish_model_predictive_planner_motion_commands(vector<carmen_ackerman_path_poi
 		commands[i].v = it->v;
 		commands[i].phi = it->phi;
 		commands[i].time = it->time;
+		commands[i].x = it->x;
+		commands[i].y = it->y;
+		commands[i].theta = it->theta;
 
 		i++;
 	}
@@ -394,7 +397,7 @@ build_and_follow_path(double timestamp)
 
 
 void
-build_and_follow_path_old(double timestamp)
+build_and_follow_path_new(double timestamp)
 {
 	if (GlobalState::goal_pose && (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT))
 	{
@@ -427,7 +430,7 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	GlobalState::set_robot_pose(pose, msg->timestamp);
 
 	if (GlobalState::use_mpc)
-		build_and_follow_path_old(msg->timestamp);
+		build_and_follow_path_new(msg->timestamp);
 	else
 		build_and_follow_path(msg->timestamp);
 }
@@ -440,7 +443,7 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	GlobalState::set_robot_pose(pose, msg->timestamp);
 
 	if (GlobalState::use_mpc)
-		build_and_follow_path_old(msg->timestamp);
+		build_and_follow_path_new(msg->timestamp);
 	else
 		build_and_follow_path(msg->timestamp);
 }

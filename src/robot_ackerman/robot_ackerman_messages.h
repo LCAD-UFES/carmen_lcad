@@ -151,7 +151,7 @@ typedef struct
 	char *host;                 /**< The host from which this message was sent **/
 } carmen_robot_ackerman_motion_command_message;
 #define      CARMEN_ROBOT_ACKERMAN_MOTION_COMMAND_NAME		"carmen_robot_ackerman_motion_command"
-#define      CARMEN_ROBOT_ACKERMAN_MOTION_COMMAND_FMT		"{int,<{double,double,double}:1>,double,string}"
+#define      CARMEN_ROBOT_ACKERMAN_MOTION_COMMAND_FMT		"{int,<{double,double,double,double,double,double}:1>,double,string}"
 
 
 #define      CARMEN_OBSTACLE_AVOIDER_PATH_NAME			"carmen_obstacle_avoider_path"
