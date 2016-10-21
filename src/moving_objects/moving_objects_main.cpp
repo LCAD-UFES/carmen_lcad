@@ -74,12 +74,12 @@ int number_of_threads = 1;
 
 
 #ifdef AJUSTE
-double sigma = 1.0;			// desvio padrão dos pesos das partículas (0.1 funciona apenas no baseline)
+double sigma = 5.0;			// desvio padrão dos pesos das partículas (0.1 funciona apenas no baseline)
 double alpha_1 = 0.5; 		// desvio padrão da velocidade padrão 0.2
 double alpha_2 = 0.12; 		// desvio padrão de theta padrão 0.01
-//
 FILE * parametro;
 static int cont = 0;
+static int rodada = 1;
 #endif
 
 
@@ -317,25 +317,27 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 		else
 		{
 			alpha_2 = 0.12;
-			if(alpha_1 < 2.0)
-			{
-				alpha_1 += 0.5;
-			}
-			else
-			{
-				alpha_1 = 0.5;
+//			if(alpha_1 < 2.0)
+//			{
+//				alpha_1 += 0.5;
+//			}
+//			else
+//			{
+//				alpha_1 = 0.5;
 				sigma += 2.0;
 
-				if(sigma > 3.0)
+				if(sigma > 9.0)
 				{
-					sigma = 1.0;
+					sigma = 5.0;
+					rodada++;
+					cont = 0;
 				}
 
-			}
+//			}
 		}
 
 		//sprintf(filename,"parametros/final-22.txt",cont+16,sigma,alpha_1,alpha_2);
-		sprintf(filename,"parametros/%02d_sig-%.2f_alf1-%.2f_alf2-%.2f.txt",cont+1,sigma,alpha_1,alpha_2);
+		sprintf(filename,"parametros/%d_%02d_sig-%.2f_alf1-%.2f_alf2-%.2f.txt",rodada,cont+1,sigma,alpha_1,alpha_2);
 		parametro = fopen(filename,"w");
 		cont++;
 	}
@@ -357,7 +359,7 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 
 		moving_objects_input = bundle_moving_objects_input_data();
 
-		list_point_clouds = detect_and_follow_moving_objects(velodyne_message, &spherical_sensor_params[0],
+		detect_and_follow_moving_objects(list_point_clouds, velodyne_message, &spherical_sensor_params[0],
 				&spherical_sensor_data[0], &car_fused_velocity, car_phi, moving_objects_input, carmen_3d_point_clouds,
 				offline_grid_map);
 
@@ -467,7 +469,7 @@ velodyne_variable_scan_message_handler(carmen_velodyne_variable_scan_message *ve
 
 		moving_objects_input = bundle_moving_objects_input_data();
 
-		list_point_clouds = detect_and_follow_moving_objects_variable_scan(velodyne_message, &spherical_sensor_params[8],
+		 detect_and_follow_moving_objects_variable_scan(list_point_clouds, velodyne_message, &spherical_sensor_params[8],
 				&spherical_sensor_data[8], &car_fused_velocity, car_phi, moving_objects_input, carmen_3d_point_clouds,
 				offline_grid_map);
 

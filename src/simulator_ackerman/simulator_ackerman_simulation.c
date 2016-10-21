@@ -617,11 +617,26 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 #endif
 
 //	printf("%f\n", steering_effort);
+//	int ocured_stiction = 0;
 //	if (libmpc_stiction_simulation(steering_effort, simulator_config->v))
+//	{
+//		//ocured_stiction = 1;
+////		printf("Stic c%lf d%lf e%lf\n", simulator_config->phi, simulator_config->target_phi, steering_effort);
+//
 //		return (simulator_config->phi);
+//	}
+////	else
+////	{
+////		if (ocured_stiction && fabs(steering_effort) < 7)
+////		{
+////			steering_effort *= 0.1;
+////		}
+////	}
+//
+//	steering_effort *= libmpc_stiction_correction(simulator_config->phi, simulator_config->target_phi, steering_effort, simulator_config->v);
 
 	/* Reproducao da correcao da oscilacao em velocidades altas */
-	steering_effort *= (1.0 / (1.0 + (simulator_config->v * simulator_config->v) / 200.5)); // boa
+//	steering_effort *= (1.0 / (1.0 + (simulator_config->v * simulator_config->v) / 200.5)); // boa
 //	carmen_clamp(-100.0, steering_effort, 100.0);
 
 //	static double previous_effort = 0.0;

@@ -41,6 +41,9 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 int
 libmpc_stiction_simulation(double effort, double v);
 
+double
+libmpc_stiction_correction(double current_phi, double desired_phi, double effort, double v);
+
 
 #ifdef __cplusplus
 }
