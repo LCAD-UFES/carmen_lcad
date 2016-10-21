@@ -165,6 +165,8 @@ src/visual_graphslam/bin/visual_multimap_optimization
 src/visual_graphslam/bin/visual_run_icp_for_loop_closure
 bin/tracker_opentld
 src/tracker_opentld/goturn/goturn_tracker
+src/velodyne_camera_calibration/velodyne_camera_publish_range
+src/velodyne_camera_calibration/velodyne_camera_calibration_main
 src/zed_camera/zed_camera_sensor
 data/rndf/rddf-log_voltadaufes-20140806-2.kml.timestamp.index
 data/rndf/rddf-log_voltadaufes-20140806-2.kml.x.index
