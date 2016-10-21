@@ -10,9 +10,10 @@ MODULE_COMMENT = Model Predictive Controller
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarmodel
 IFLAGS += -I$(CARMEN_HOME)/include/carmen
 
-LFLAGS +=  -lfann -lgsl -lgslcblas -lcarmodel
+LFLAGS +=  -lfann -lgsl -lgslcblas -lcarmodel -lobstacle_avoider_interface
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcarmodel 
+LFLAGS += -L$(CARMEN_HOME)/lib 
 
 SOURCES = mpc.cpp mpc_position_control.cpp
  
