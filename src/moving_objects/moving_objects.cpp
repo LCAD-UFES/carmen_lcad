@@ -601,11 +601,11 @@ get_geom_and_center_by_moie(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
 }
 
 
-std::list<object_point_cloud_data_t>
-get_current_list_point_clouds(pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_point_cloud_ptr,
+void
+get_current_list_point_clouds(std::list<object_point_cloud_data_t> &list_point_clouds,
+		pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_point_cloud_ptr,
 		vector<pcl::PointIndices> cluster_indices, carmen_pose_3D_t car_global_pose, double timestamp)
 {
-	std::list<object_point_cloud_data_t> list_point_clouds;
 	pcl::PointCloud<pcl::PointXYZ>::Ptr aux_pcl_cloud(new pcl::PointCloud<pcl::PointXYZ>);
 	Eigen::Vector4f centroid;
 //	Eigen::Vector4f centroid2;
@@ -680,7 +680,6 @@ get_current_list_point_clouds(pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_point_clou
 		aux_pcl_cloud->clear();
 	}
 
-	return list_point_clouds;
 }
 
 
@@ -887,7 +886,6 @@ associate_point_clouds_by_centroids_distance(std::list<object_point_cloud_data_t
 			if  (pit->label_associate == 0)
 			{
 				distance_3d = distance_between_3d_points(it->centroid, it->car_global_pose, pit->centroid, pit->car_global_pose);
-//				distance_3d = distance_between_2d_points(it->centroid, it->car_global_pose, pit->centroid, pit->car_global_pose);
 				if (distance_3d < min_dist)
 				{
 					pit->delta_time_t_and_t_1 = -1.0;
@@ -1030,7 +1028,6 @@ filter_static_objects(std::list<object_point_cloud_data_t> &list_current_point_c
 		if (points_in_occupied_grid > 1)
 		{
 			it = list_current_point_clouds.erase(it);
-			//printf("removido\n");
 			continue;
 		}
 		if (off_limits)
@@ -1103,22 +1100,22 @@ associate_object_point_clouds(std::list<object_point_cloud_data_t> &list_point_c
 }
 
 
-std::list<object_point_cloud_data_t>
-association_list_point_clouds(pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud_ptr, carmen_pose_3D_t car_global_pose,
+void
+association_list_point_clouds(std::list<object_point_cloud_data_t> &list_point_clouds,
+		pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud_ptr, carmen_pose_3D_t car_global_pose,
 		std::vector<pcl::PointIndices> cluster_indices, double timestamp, carmen_map_p & occupancy_grid_map,
 		moving_objects_input_data_t moving_objects_input)
 {
 	std::list<object_point_cloud_data_t> list_current_point_clouds;
-	std::list<object_point_cloud_data_t> list_point_clouds;
+	//std::list<object_point_cloud_data_t> list_point_clouds;
 
-	list_current_point_clouds = get_current_list_point_clouds(pcl_cloud_ptr, cluster_indices, car_global_pose, timestamp);
+	get_current_list_point_clouds(list_current_point_clouds, pcl_cloud_ptr, cluster_indices, car_global_pose, timestamp);
 	/*** VERSÃO DO EDUARDO: ***/
 	//list_current_point_clouds = get_current_list_point_clouds2(pcl_cloud_ptr, cluster_indices, car_global_pose, timestamp);
 	associate_object_point_clouds(list_point_clouds, list_current_point_clouds, occupancy_grid_map, moving_objects_input);
 	include_unassociated_objects_point_clouds(list_point_clouds, list_current_point_clouds);
 	exclude_unecessary_objects_from_point_clouds(list_point_clouds, car_global_pose);
 
-	return list_point_clouds;
 }
 
 
@@ -2025,8 +2022,9 @@ set_object_models(std::vector<object_features_3d_t> &obj_models)
 }
 
 
-std::list<object_point_cloud_data_t>
-detect_and_follow_moving_objects(carmen_velodyne_partial_scan_message *velodyne_message, sensor_parameters_t *velodyne_params,
+void
+detect_and_follow_moving_objects(std::list<object_point_cloud_data_t> &list_point_clouds,
+		carmen_velodyne_partial_scan_message *velodyne_message, sensor_parameters_t *velodyne_params,
 		sensor_data_t *velodyne_data, carmen_vector_3D_t *robot_velocity, double phi,
 		moving_objects_input_data_t moving_objects_input, carmen_vector_3D_t *carmen_vector_3d_point_cloud,
 		carmen_map_p & occupancy_grid_map)
@@ -2034,7 +2032,6 @@ detect_and_follow_moving_objects(carmen_velodyne_partial_scan_message *velodyne_
 	int size_of_point_cloud = 0;
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
 	std::vector<pcl::PointIndices> cluster_indices;
-	std::list<object_point_cloud_data_t> list_point_clouds;
 
 	if (object_models.empty())
 	{
@@ -2055,14 +2052,11 @@ detect_and_follow_moving_objects(carmen_velodyne_partial_scan_message *velodyne_
 	convert_carmen_vector_3d_to_pcl_point_subtracting_global_pose(carmen_vector_3d_point_cloud, size_of_point_cloud,
 			pcl_cloud_ptr, moving_objects_input);
 
-	/*** REMOVES THE POINTS PRESENT IN OFFLINE MAP ***/
-	//filter_static_points(pcl_cloud_ptr, occupancy_grid_map, moving_objects_input);
-
 	/*** SEGMENT POINT CLOUDS - RETURNS CLUSTER INDICES ***/
 	cluster_indices = find_objects_in_point_clouds(pcl_cloud_ptr);
 
 	/*** ASSOCIATE AND CONFIGURE POINT CLOUDS ***/
-	list_point_clouds = association_list_point_clouds(pcl_cloud_ptr, moving_objects_input.car_global_pose, cluster_indices,
+	association_list_point_clouds(list_point_clouds, pcl_cloud_ptr, moving_objects_input.car_global_pose, cluster_indices,
 			velodyne_message->timestamp, occupancy_grid_map, moving_objects_input);
 
 #ifdef AJUSTE
@@ -2075,8 +2069,6 @@ detect_and_follow_moving_objects(carmen_velodyne_partial_scan_message *velodyne_
 
 	/* Set the global variable list_previous_point_clouds for next frame */
 	set_association_list_point_clouds(list_point_clouds);
-
-	return list_point_clouds;
 }
 
 // TODO Versão para funcionar com a base KITTI
@@ -2134,8 +2126,10 @@ build_point_cloud_using_variable_velodyne_message(carmen_velodyne_variable_scan_
 	return last_num_points;
 }
 
-std::list<object_point_cloud_data_t>
-detect_and_follow_moving_objects_variable_scan(carmen_velodyne_variable_scan_message *velodyne_message, sensor_parameters_t *velodyne_params,
+
+void
+detect_and_follow_moving_objects_variable_scan(std::list<object_point_cloud_data_t> &list_point_clouds,
+		carmen_velodyne_variable_scan_message *velodyne_message, sensor_parameters_t *velodyne_params,
 		sensor_data_t *velodyne_data, carmen_vector_3D_t *robot_velocity, double phi,
 		moving_objects_input_data_t moving_objects_input, carmen_vector_3D_t *carmen_vector_3d_point_cloud,
 		carmen_map_p & occupancy_grid_map)
@@ -2143,7 +2137,6 @@ detect_and_follow_moving_objects_variable_scan(carmen_velodyne_variable_scan_mes
 	int size_of_point_cloud = 0;
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
 	std::vector<pcl::PointIndices> cluster_indices;
-	std::list<object_point_cloud_data_t> list_point_clouds;
 
 	if (object_models.empty())
 	{
@@ -2162,7 +2155,7 @@ detect_and_follow_moving_objects_variable_scan(carmen_velodyne_variable_scan_mes
 	cluster_indices = find_objects_in_point_clouds(pcl_cloud_ptr);
 
 	/*** ASSOCIATE AND CONFIGURE POINT CLOUDS ***/
-	list_point_clouds = association_list_point_clouds(pcl_cloud_ptr, moving_objects_input.car_global_pose, cluster_indices,
+	association_list_point_clouds(list_point_clouds, pcl_cloud_ptr, moving_objects_input.car_global_pose, cluster_indices,
 			velodyne_message->timestamp, occupancy_grid_map, moving_objects_input);
 
 	/*** PARTICLE FILTER FOR DATMO ***/
@@ -2170,6 +2163,4 @@ detect_and_follow_moving_objects_variable_scan(carmen_velodyne_variable_scan_mes
 
 	/* Set the global variable list_previous_point_clouds for next iteration */
 	set_association_list_point_clouds(list_point_clouds);
-
-	return list_point_clouds;
 }

@@ -282,6 +282,13 @@ offline_map_update_handler(carmen_map_server_offline_map_message *offline_map_me
 }
 
 
+static void
+localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
+{
+	simulator_config->global_pos = *msg;
+}
+
+
 static void 
 truepos_query_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, 
 		void *clientData __attribute__ ((unused)))
@@ -616,6 +623,8 @@ subscribe_to_relevant_messages()
 
 	carmen_base_ackerman_subscribe_motion_command(NULL, (carmen_handler_t) motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
 	
+	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
 #ifdef __USE_RL_CONTROL
 
 	carmen_rl_control_subscribe_message(NULL, (carmen_handler_t) rl_control_handler, CARMEN_SUBSCRIBE_LATEST);
