@@ -81,6 +81,12 @@ apply_system_latencies(carmen_ackerman_motion_command_p current_motion_command_v
 		if (j >= nun_motion_commands)
 			break;
 		current_motion_command_vector[i].phi = current_motion_command_vector[j].phi;
+//		current_motion_command_vector[i].phi = current_motion_command_vector[j].phi;
+//		current_motion_command_vector[i].v = current_motion_command_vector[j].v;
+//		current_motion_command_vector[i].x = current_motion_command_vector[j].x;
+//		current_motion_command_vector[i].y = current_motion_command_vector[j].y;
+//		current_motion_command_vector[i].theta = current_motion_command_vector[j].theta;
+//		current_motion_command_vector[i].time = current_motion_command_vector[j].time;
 	}
 
 	for (i = 0; i < nun_motion_commands; i++)

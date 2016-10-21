@@ -6,6 +6,7 @@
 #include <gsl/gsl_spline.h>
 #include <gsl/gsl_multimin.h>
 #include <car_model.h>
+#include <obstacle_avoider_interface.h>
 #include "mpc.h"
 
 
@@ -192,7 +193,7 @@ my_f(const gsl_vector *v, void *params)
 	}
 
 	double cost = error_sum;// + 0.00011 * sqrt((p->previous_k1 - d.k1) * (p->previous_k1 - d.k1));
-	printf("%lf\n", cost);
+//	printf("%lf\n", cost);
 
 	return (cost);
 }
@@ -295,7 +296,7 @@ get_optimized_effort(PARAMS *par, EFFORT_SPLINE_DESCRIPTOR seed)
 
 	} while ((status == GSL_CONTINUE) && (iter < 15));
 
-	//printf("iter = %ld\n", iter);
+	printf("iter = %ld\n", iter);
 
 	seed.k1 = carmen_clamp(-100.0, gsl_vector_get(s->x, 0), 100.0);
 	seed.k2 = carmen_clamp(-100.0, gsl_vector_get(s->x, 1), 100.0);
@@ -508,6 +509,27 @@ init_mpc(bool &first_time, PARAMS &param, EFFORT_SPLINE_DESCRIPTOR &seed, double
 }
 
 
+void
+publish_mpc_plan_message(vector<carmen_ackerman_traj_point_t> pose_vector)
+{
+	int i;
+	carmen_navigator_ackerman_plan_message predicted_trajectory_message;
+
+	predicted_trajectory_message.path_length = pose_vector.size();
+	predicted_trajectory_message.path = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * predicted_trajectory_message.path_length);
+
+	for (i = 0; i < predicted_trajectory_message.path_length; i++)
+		predicted_trajectory_message.path[i] = pose_vector[i];
+
+	predicted_trajectory_message.timestamp = carmen_get_time();
+	predicted_trajectory_message.host = carmen_get_host();
+
+	carmen_obstacle_avoider_publish_motion_planner_path(predicted_trajectory_message);
+
+	free(predicted_trajectory_message.path);
+}
+
+
 double
 carmen_libmpc_get_optimized_steering_effort_using_MPC_position_control(double atan_current_curvature,
 		carmen_ackerman_motion_command_p current_motion_command_vector,	int nun_motion_commands,
@@ -538,12 +560,17 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC_position_control(double at
 	// Calcula o dk do proximo ciclo
 	double Cxk = car_model(effort, atan_current_curvature, param.v, param.steering_ann_input, &param);
 	param.dk = yp - Cxk;
+	param.dk = 0.0;
 	param.previous_k1 = effort;
 
 	/** Tentativa de correcao da oscilacao em velocidades altas **/
 	// effort /= (1.0 / (1.0 + (v * v) / 200.5)); // boa
 
 	plot_state(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
+
+	vector<carmen_ackerman_traj_point_t> pose_vector;
+	get_phi_vector_from_spline_descriptors(pose_vector, &seed, &param);
+	publish_mpc_plan_message(pose_vector);
 
 	carmen_clamp(-100.0, effort, 100.0);
 	return (effort);
