@@ -9,7 +9,7 @@
 * CAFFE
 * Visual_Tracker module
 * bumblebee_basic module (this module subscribes to `carmen_bumblebee_basic_stereoimage_message` with retified image)
-* [Download Caffemodel](https://goo.gl/WXlXMt)
+* [Download Caffemodel](https://goo.gl/A7xKwY)
 
 ## Compiling
 

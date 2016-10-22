@@ -15,9 +15,9 @@ PACKAGES = ipc global param_daemon proccontrol robot_ackerman_gui laser-new  	\
 	   mapper obstacle_distance_mapper map_server car_panel_gui		\
 	   web_cam v_disparity stereo_velodyne motion_planner behavior_selector \
 	   base_ackerman driving_playback ford_escape_hybrid			\
-	   path_interpolator_planner kinect ultrasonic path_planner		\
+	   path_interpolator_planner kinect ultrasonic 		\
 	   odometry_calibration utilities visual_tracker tracker_opentld	\
-	   visual_car_tracking model_predictive_planner #traffic_light 
+	   visual_car_tracking model_predictive_planner utilities #traffic_light 
 
 ifndef NO_CPP
 PACKAGES += carmenpp
