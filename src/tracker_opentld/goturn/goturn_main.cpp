@@ -24,9 +24,9 @@
 #include "gui.h"
 //using namespace std;
 
-
-#define TACKER_OPENTLD_MAX_WINDOW_WIDTH 640
-#define TACKER_OPENTLD_MAX_WINDOW_HEIGHT 480
+//
+//#define TACKER_OPENTLD_MAX_WINDOW_WIDTH 1280
+//#define TACKER_OPENTLD_MAX_WINDOW_HEIGHT 960
 #define BUMBLEBEE_BASIC_VIEW_NUM_COLORS 3
 
 static int received_image = 0;
@@ -148,7 +148,7 @@ process_goturn_detection(Mat *img, double time_stamp)
 	sprintf(string1, "Time:%.2f, FPS:%d", time_stamp, disp_last_fps);
 	cv::Size s = img->size();
 	cv::Point textOrg(25,25);
-	cv::rectangle(*img, cv::Point(0, 0), cv::Point(s.width, 50), Scalar::all(0));
+	cv::rectangle(*img, cv::Point(0, 0), cv::Point(s.width, 50), Scalar::all(0), -1);
 	cv::putText(*img, string1,textOrg,FONT_HERSHEY_SIMPLEX, 0.4,Scalar::all(255),1,8);
 
 	cv::imshow(window_name, *img);
@@ -212,8 +212,8 @@ process_image(carmen_bumblebee_basic_stereoimage_message *msg)
 		process_goturn_detection(rgb_image, msg->timestamp);
 	else
 	{
-		cvResize(rgb_image, resized_rgb_image);
-		process_goturn_detection(resized_rgb_image, msg->timestamp);
+//		cv::resize(*rgb_image, *resized_rgb_image, Size(tld_image_width,tld_image_height));
+		process_goturn_detection(rgb_image, msg->timestamp);
 	}
 
 
@@ -294,8 +294,8 @@ read_parameters(int argc, char **argv)
 	int num_items;
 
 	carmen_param_t param_list[] = {
-			{(char*) "tracker_opentld", (char*) "view_width", CARMEN_PARAM_INT, &tld_image_width, TACKER_OPENTLD_MAX_WINDOW_WIDTH, NULL},
-			{(char*) "tracker_opentld", (char*) "view_height", CARMEN_PARAM_INT, &tld_image_height, TACKER_OPENTLD_MAX_WINDOW_HEIGHT, NULL},
+			{(char*) "tracker_opentld", (char*) "view_width", CARMEN_PARAM_INT, &tld_image_width, 0, NULL},
+			{(char*) "tracker_opentld", (char*) "view_height", CARMEN_PARAM_INT, &tld_image_height, 0, NULL},
 
 	};
 
