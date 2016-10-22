@@ -588,24 +588,24 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 
 #else
 
-	if (simulator_config->use_mpc)
-	{
+//	if (simulator_config->use_mpc)
+//	{
 		steering_effort = carmen_libmpc_get_optimized_steering_effort_using_MPC(atan_current_curvature,
 							simulator_config->current_motion_command_vector, simulator_config->nun_motion_commands,
 							simulator_config->v, simulator_config->phi, simulator_config->time_of_last_command,
 							simulator_config->understeer_coeficient2, simulator_config->distance_between_front_and_rear_axles,
 							simulator_config->max_phi, simulator_config->initialize_neural_networks);
-//		steering_effort = carmen_libmpc_get_optimized_steering_effort_using_MPC_position_control(atan_current_curvature,
+////	steering_effort = carmen_libmpc_get_optimized_steering_effort_using_MPC_position_control(atan_current_curvature,
 //							simulator_config->current_motion_command_vector, simulator_config->nun_motion_commands,
 //							simulator_config->v, simulator_config->phi, simulator_config->time_of_last_command,
 //							simulator_config->understeer_coeficient2, simulator_config->distance_between_front_and_rear_axles,
 //							simulator_config->max_phi, simulator_config->maximum_steering_command_rate,
 //							simulator_config->global_pos, simulator_config->initialize_neural_networks);
-	}
-	else
-	{
-		//pid_plot_curvature(simulator_config->phi, simulator_config->target_phi);
-		steering_effort = carmen_libpid_steering_PID_controler(atan_desired_curvature, atan_current_curvature, simulator_config->delta_t);
+//	}
+//	else
+//	{
+//		pid_plot_curvature(simulator_config->phi, simulator_config->target_phi);
+//		steering_effort = carmen_libpid_steering_PID_controler(atan_desired_curvature, atan_current_curvature, simulator_config->delta_t);
 
 
 		//RL_PID
@@ -618,7 +618,7 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 //
 //			steering_effort = rleffort;
 //		}
-	}
+//	}
 
 #endif
 
@@ -665,8 +665,22 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 }
 
 
+carmen_robot_ackerman_config_t
+get_robot_config(carmen_simulator_ackerman_config_t *simulator_config)
+{
+	carmen_robot_ackerman_config_t robot_config;
+
+	robot_config.distance_between_front_and_rear_axles = simulator_config->distance_between_front_and_rear_axles;
+	robot_config.understeer_coeficient = simulator_config->understeer_coeficient;
+	robot_config.max_phi = simulator_config->max_phi;
+	robot_config.maximum_steering_command_rate = simulator_config->maximum_steering_command_rate;
+
+	return (robot_config);
+}
+
+
 void
-carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulator_config)
+carmen_simulator_ackerman_recalc_pos_old(carmen_simulator_ackerman_config_t *simulator_config)
 {
 	carmen_point_t new_odom;
 	carmen_point_t new_true;
@@ -680,6 +694,59 @@ carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulat
 
 	//v   = compute_new_velocity_with_ann(simulator_config);
 	phi = compute_new_phi_with_ann(simulator_config);// + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.05));
+
+	phi = carmen_clamp(-simulator_config->max_phi, phi, simulator_config->max_phi);
+	simulator_config->phi = phi;
+	simulator_config->initialize_neural_networks = 0;
+
+	new_odom = simulator_config->odom_pose;
+	new_true = simulator_config->true_pose;
+
+	carmen_ackerman_traj_point_t robot_state;
+	robot_state.x = simulator_config->global_pos.globalpos.x;
+	robot_state.y = simulator_config->global_pos.globalpos.y;
+	robot_state.theta = simulator_config->global_pos.globalpos.theta;
+
+	double distance_traveled = 0.0;
+	carmen_ackerman_traj_point_t pose = carmen_libcarmodel_recalc_pos_ackerman(robot_state, simulator_config->target_v,
+			simulator_config->target_phi, 0.025, &distance_traveled, 0.025, get_robot_config(simulator_config));
+
+//	new_odom.x +=  v * simulator_config->delta_t * cos(new_true.theta);
+//	new_odom.y +=  v * simulator_config->delta_t * sin(new_true.theta);
+//	new_odom.theta += v * simulator_config->delta_t * tan(phi) / simulator_config->distance_between_front_and_rear_axles;
+//	new_odom.theta = carmen_normalize_theta(new_odom.theta);
+
+	new_odom.x = pose.x;
+	new_odom.y = pose.y;
+	new_odom.theta = pose.theta;
+
+	new_true.x +=  v * simulator_config->delta_t * cos(new_true.theta);
+	new_true.y +=  v * simulator_config->delta_t * sin(new_true.theta);
+	new_true.theta += v * simulator_config->delta_t * tan(phi) / simulator_config->distance_between_front_and_rear_axles;
+	new_true.theta = carmen_normalize_theta(new_true.theta);
+
+	if (hit_something_in_the_map(simulator_config, new_true))
+		return; // Do not update pose
+
+	simulator_config->odom_pose = new_odom;
+	simulator_config->true_pose = new_true;
+}
+
+
+void
+carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulator_config)
+{
+	carmen_point_t new_odom;
+	carmen_point_t new_true;
+	double v, phi;
+
+	update_target_v_and_target_phi(simulator_config);
+
+	//phi = compute_new_phi(simulator_config);// + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.1));
+	v   = compute_new_velocity(simulator_config);
+
+	phi = compute_new_phi_with_ann(simulator_config);// + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.05));
+	//v   = compute_new_velocity_with_ann(simulator_config);
 
 	phi = carmen_clamp(-simulator_config->max_phi, phi, simulator_config->max_phi);
 	simulator_config->phi = phi;
@@ -703,8 +770,6 @@ carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulat
 
 	simulator_config->odom_pose = new_odom;
 	simulator_config->true_pose = new_true;
-
-	//carmen_libcarneuralmodel_recalc_pos(simulator_config);
 }
 
 

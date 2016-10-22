@@ -148,6 +148,7 @@ bin/path_planner
 bin/util_list_camera_ids
 bin/util_publish_pose
 bin/util_split_log
+bin/util_publish_initial_pose
 bin/visual_grab_data
 bin/visual_graphslam
 bin/visual_graphslam_publish
