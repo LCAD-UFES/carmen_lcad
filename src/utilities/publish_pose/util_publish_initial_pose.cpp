@@ -32,7 +32,7 @@ define_messages()
 int
 main(int argc, char **argv)
 {
-	double initial_timestamp, timestamp;
+	double initial_timestamp, time_passed;
 	carmen_point_t pose;
 
 	if (argc < 4)
@@ -52,9 +52,9 @@ main(int argc, char **argv)
 
 	while (1)
 	{
-		timestamp = (carmen_get_time() - initial_timestamp);
+		time_passed = (carmen_get_time() - initial_timestamp);
 
-		if (timestamp < 4)
+		if (time_passed < 4)
 			publish_starting_pose(pose);
 		else
 			usleep((int) sleep_time);

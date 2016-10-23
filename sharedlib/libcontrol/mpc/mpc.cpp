@@ -9,8 +9,11 @@
 #include "mpc.h"
 
 
-#define DELTA_T (1.0 / 40.0) // 40 Htz
+#define DELTA_T (1.0 / 40.0) // 0.025 40 Htz
 #define PREDICTION_HORIZON	(0.65*0.6)
+#define CAR_MODEL_GAIN 100.0
+#define CONTROL_OUTPUT_GAIN 0.0
+#define SMOOTH_OUTPUT_FACTOR 0.0
 
 FILE *gnuplot_save;
 bool save_and_plot = false;
@@ -95,7 +98,7 @@ double
 car_model(double steering_effort, double atan_current_curvature, double v, fann_type *steering_ann_input, PARAMS *param)
 {
 //	steering_effort = steering_effort * (1.0 / (1.0 + param->v / 7.0));
-	steering_effort *= (1.0 / (1.0 + (param->v * param->v) / 100.0)); // boa
+	steering_effort *= (1.0 / (1.0 + (param->v * param->v) / CAR_MODEL_GAIN)); // boa
 //	steering_effort = carmen_clamp(-100.0, steering_effort, 100.0);
 	double phi = carmen_libcarneuralmodel_compute_new_phi_from_effort(steering_effort, atan_current_curvature, steering_ann_input,
 			param->steering_ann, v, param->understeer_coeficient, param->distance_rear_axles, 2.0 * param->max_phi);
@@ -311,7 +314,7 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double understee
 		first_timestamp = t;
 		first_time = false;
 
-		gnuplot_pipe = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+		gnuplot_pipe = popen("gnuplot -persist", "w"); // -persist to keep last plot after program closes
 		fprintf(gnuplot_pipe, "set xrange [0:PAST_SIZE/20]\n");
 		fprintf(gnuplot_pipe, "set yrange [-110.0:110.0]\n");
 		fprintf(gnuplot_pipe, "set y2range [-0.55:0.55]\n");
@@ -426,7 +429,7 @@ open_file_to_save_plot()
 
 	gnuplot_save = fopen(name, "w");
 
-/*	file_name = "mpc_plot_20161021_9h52m47"
+/*	file_name = "mpc_plot_20161023_11h4m49"
 	plot file_name using 1:2 with lines, file_name using 1:3 with lines, file_name using 1:4 with lines
 */
 }
@@ -457,6 +460,7 @@ libmpc_stiction_simulation(double effort, double v)
 	{
 		if (fabs(first_eff - effort) < (3*v))
 		{
+			//printf("Entrou\n");
 			//printf("Stic f%lf c%lf abs%lf %lf\n", first_eff, effort, fabs(first_eff - effort), (3*v));
 			return (true);
 		}
@@ -490,50 +494,43 @@ libmpc_stiction_simulation_new(double effort, double v)
 double
 libmpc_stiction_correction(double current_phi, double desired_phi, double effort, double v)
 {
-//	if (v < 5.5)
+//	if (v < 8.5)
 //		return (1.0);
 
-	static double last_phi = v;
-	//static double last_effort;
 	static unsigned int cont = 0;
+	static unsigned int wait = 0;
 
-	double dif_current = fabs(fabs(current_phi) - fabs(last_phi));
-	static double dif_current_desired = 0.0;
+	static double last_eff = 0.0;
+	static double dif_phi = 0.0;
+	static double dif_eff = 0.0;
 
-	dif_current_desired += fabs((fabs(desired_phi) - fabs(current_phi)));
+	dif_phi += fabs(fabs(desired_phi) - fabs(current_phi));
+	dif_eff += fabs(fabs(effort) - fabs(last_eff));
 
-	if (cont <= 10)
+	if (effort < 5 && effort > -5)
 	{
-		if (dif_current < 0.002 && dif_current_desired > 0.0)
-			cont++;
-		else
-			cont = 0;
-
-		last_phi = current_phi;
-	//	last_effort = effort;
-
-		printf("c%lf d%lf %lf %lf\n", current_phi, desired_phi, dif_current, dif_current_desired);
-
-		return (1.0);
-	}
-	else
-	{
+		dif_phi = 0.0;
+		dif_eff = 0.0;
 		cont = 0;
-		printf("---------c%lf d%lf ef%lf abs%lf\n", current_phi, desired_phi, effort, fabs(desired_phi - current_phi));
-
-		return 1.0;//(1.6 * v);
-		/*if (fabs(desired_phi - current_phi) < (1.6 * v))
+	}
+	else if (dif_phi > 0.0005 && dif_eff > 15 && cont < 1 && wait == 0)
 		{
-			printf("c%lf d%lf ef%lf abs%lf\n", current_phi, desired_phi, effort, fabs(desired_phi - current_phi));
-			return (true);
+			printf("Aplicou\n");
+			cont++;
+
+			printf("dp%lf de%lf ef%lf %lf\n", dif_phi, dif_eff,  effort, 0.04 * v * effort*effort);
+			return (0.04 * v * effort);
 		}
 		else
 		{
-			printf("SSSSSSSSSSS\n");
-			cont = 0;
-			return (false);
-		}*/
-	}
+			wait++;
+			if (wait > 50)
+				wait = 0;
+
+			return (1.0);
+		}
+
+	return (1.0);
 }
 
 
