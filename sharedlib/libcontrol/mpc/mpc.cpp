@@ -624,8 +624,9 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 
 	/** Tentativa de correcao da oscilacao em velocidades altas **/
 	// effort /= (1.0 / (1.0 + (v * v) / 200.5)); // boa
+	effort += carmen_uniform_random(-2.0, 2.0);
 
-	if (save_and_plot)
+//	if (save_and_plot)
 		plot_state(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
 
 	carmen_clamp(-100.0, effort, 100.0);
