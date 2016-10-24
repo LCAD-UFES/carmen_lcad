@@ -48,7 +48,9 @@ public:
 	std::list<carmen_ackerman_motion_command_t> command_list;
 
 	// TODO it needs to receive the start and goal node
-	void SpaceExploration();
+	bool SpaceExploration(CircleNodePtr start_node, CircleNodePtr goal_node);
+
+	void RDDFSpaceExploration();
 
 	//
 	//void SpaceTimeExploration();
@@ -58,6 +60,8 @@ public:
 
 	// the distance between two points
 	double Distance(const carmen_ackerman_traj_point_t &a, const carmen_ackerman_traj_point_t &b);
+
+	double Distance2(const carmen_ackerman_traj_point_t &a, const carmen_ackerman_traj_point_t &b);
 
 	// the distance between two points
 	double Distance(double ax, double ay, double bx, double by);
@@ -79,6 +83,10 @@ public:
 	void BuildCirclePath(CircleNodePtr goal_node);
 
 	bool Exist(CircleNodePtr current, std::vector<CircleNodePtr> &closed_set);
+
+	int FindClosestRDDFIndex();
+
+	int FindNextRDDFIndex(double radius_2, int current_rddf_index);
 
 };
 

@@ -20,12 +20,24 @@ StehsPlanner::Distance(double ax, double ay, double bx, double by)
 	return std::sqrt(dx * dx + dy * dy);
 }
 
+
 double
 StehsPlanner::Distance(const carmen_ackerman_traj_point_t &a, const carmen_ackerman_traj_point_t &b)
 {
 	double dx = a.x - b.x;
 	double dy = a.y - b.y;
 	double distance = sqrt(dx * dx + dy * dy);
+
+	return (distance);
+}
+
+
+double
+StehsPlanner::Distance2(const carmen_ackerman_traj_point_t &a, const carmen_ackerman_traj_point_t &b)
+{
+	double dx = a.x - b.x;
+	double dy = a.y - b.y;
+	double distance = (dx * dx + dy * dy);
 
 	return (distance);
 }
@@ -149,21 +161,15 @@ StehsPlanner::Expand(CircleNodePtr current)
 }
 
 
-void
-StehsPlanner::SpaceExploration()
+bool
+StehsPlanner::SpaceExploration(CircleNodePtr start_node, CircleNodePtr goal_node)
 {
-
-	//TODO verificar se os dados para os calculos estao disponiveis, se nao, nao fazer nada
-	// create the start circle node
-	CircleNodePtr start_node =  new CircleNode(start.x, start.y, ObstacleDistance(start), 0.0, Distance(start, goal), nullptr);
-
-	// create the goal circle node
-	CircleNodePtr goal_node = new CircleNode(goal.x, goal.y, ObstacleDistance(goal), DBL_MAX, DBL_MAX, nullptr);
-
 	// create the priority queue
 	std::priority_queue<CircleNodePtr, std::vector<CircleNodePtr>, CircleNodePtrComparator> open_set;
 
 	std::vector<CircleNodePtr> closed_set;
+
+	bool sucessfull = false;
 
 	open_set.push(start_node);
 
@@ -185,8 +191,8 @@ StehsPlanner::SpaceExploration()
 
 				delete tmp;
 			}
+			sucessfull = true;
 			break;
-
 		}
 		else if (!Exist(current, closed_set))
 		{
@@ -214,7 +220,6 @@ StehsPlanner::SpaceExploration()
 					goal_node->parent = current;
 				}
 			}
-
 			closed_set.push_back(current);
 		}
 	}
@@ -227,8 +232,83 @@ StehsPlanner::SpaceExploration()
 
 		delete tmp;
 	}
+
+	return (sucessfull);
 }
 
+
+int
+StehsPlanner::FindClosestRDDFIndex()
+{
+	double current_distance = 0.0;
+	double previous_distance = Distance(start, goal_list_message->poses[0]);
+	int i;
+
+	for (i = 1; i < goal_list_message->number_of_poses; i++)
+	{
+		current_distance = Distance(start, goal_list_message->poses[i]);
+
+		if (current_distance > previous_distance)
+			break;
+	}
+
+	return (i - 1);
+}
+
+
+int
+StehsPlanner::FindNextRDDFIndex(double radius_2, int current_rddf_index)
+{
+	int i = current_rddf_index + 1;
+
+	while (Distance2(goal_list_message->poses[current_rddf_index], goal_list_message->poses[i]) < radius_2)
+	{
+		i++;
+	}
+
+	return (i - 1);
+}
+
+
+void
+StehsPlanner::RDDFSpaceExploration()
+{
+	//TODO verificar se os dados para os calculos estao disponiveis, se nao, nao fazer nada
+	// create the start circle node
+	CircleNodePtr start_node =  new CircleNode(start.x, start.y, ObstacleDistance(start), 0.0, 0.0, nullptr);
+
+	// create the goal circle node
+	CircleNodePtr goal_node = new CircleNode(goal.x, goal.y, ObstacleDistance(goal), DBL_MAX, DBL_MAX, nullptr);
+
+	int current_rddf_index = FindClosestRDDFIndex();
+
+	CircleNodePtr current_node = new CircleNode(goal_list_message->poses[current_rddf_index].x, goal_list_message->poses[current_rddf_index].y, ObstacleDistance(goal_list_message->poses[current_rddf_index]), DBL_MAX, DBL_MAX, nullptr);
+
+	if (current_node->circle.Overlap(start_node->circle, 0.5))
+	{
+		circle_path.push_back(*start_node);
+		delete current_node;
+		current_node = start_node;
+	}
+	else
+	{
+		start_node->f = Distance(start.x, start.y, current_node->circle.x, current_node->circle.y);
+		SpaceExploration(start_node, current_node);
+	}
+
+	while (!current_node->circle.Overlap(goal_node->circle, 0.5))
+	{
+		current_rddf_index = FindNextRDDFIndex(current_node->circle.radius * current_node->circle.radius, current_rddf_index);
+
+		current_node = new CircleNode(goal_list_message->poses[current_rddf_index].x, goal_list_message->poses[current_rddf_index].y, ObstacleDistance(goal_list_message->poses[current_rddf_index]), 0.0, 0.0, nullptr);
+
+		//circle_path.push_back(*start_node);
+
+
+	}
+
+
+}
 //
 //void
 //StehsPlanner::SpaceTimeExploration() {}
