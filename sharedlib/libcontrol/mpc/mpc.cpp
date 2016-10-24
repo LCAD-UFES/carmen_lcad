@@ -11,7 +11,7 @@
 
 #define DELTA_T (1.0 / 40.0) // 0.025 40 Htz
 #define PREDICTION_HORIZON	(0.65*0.6)
-#define CAR_MODEL_GAIN 100.0
+#define CAR_MODEL_GAIN 200.0
 #define CONTROL_OUTPUT_GAIN 0.0
 #define SMOOTH_OUTPUT_FACTOR 0.0
 
@@ -494,8 +494,8 @@ libmpc_stiction_simulation_new(double effort, double v)
 double
 libmpc_stiction_correction(double current_phi, double desired_phi, double effort, double v)
 {
-//	if (v < 8.5)
-//		return (1.0);
+	if (v < 5.5)
+		return (1.0);
 
 	static unsigned int cont = 0;
 	static unsigned int wait = 0;
@@ -504,7 +504,7 @@ libmpc_stiction_correction(double current_phi, double desired_phi, double effort
 	static double dif_phi = 0.0;
 	static double dif_eff = 0.0;
 
-	dif_phi += fabs(fabs(desired_phi) - fabs(current_phi));
+	dif_phi += desired_phi - current_phi;
 	dif_eff += fabs(fabs(effort) - fabs(last_eff));
 
 	if (effort < 5 && effort > -5)
@@ -513,22 +513,22 @@ libmpc_stiction_correction(double current_phi, double desired_phi, double effort
 		dif_eff = 0.0;
 		cont = 0;
 	}
-	else if (dif_phi > 0.0005 && dif_eff > 15 && cont < 1 && wait == 0)
-		{
-			printf("Aplicou\n");
-			cont++;
+	else if (fabs(dif_phi) > 0.001 && dif_eff > 15 && cont < 2 && wait == 0)
+	{
+		printf("Aplicou\n");
+		cont++;
 
-			printf("dp%lf de%lf ef%lf %lf\n", dif_phi, dif_eff,  effort, 0.04 * v * effort*effort);
-			return (0.04 * v * effort);
-		}
-		else
-		{
-			wait++;
-			if (wait > 50)
-				wait = 0;
+		printf("dp%lf de%lf ef%lf %lf\n", dif_phi, dif_eff,  effort, 0.04 * v * effort*effort);
+		return (0.4 * v);
+	}
+	else
+	{
+		wait++;
+		if (wait > 30)
+			wait = 0;
 
-			return (1.0);
-		}
+		return (1.0);
+	}
 
 	return (1.0);
 }
@@ -624,7 +624,10 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 
 	/** Tentativa de correcao da oscilacao em velocidades altas **/
 	// effort /= (1.0 / (1.0 + (v * v) / 200.5)); // boa
-	effort += carmen_uniform_random(-2.0, 2.0);
+//	effort += carmen_uniform_random(-2.0, 2.0);
+
+	int index = get_motion_timed_index_to_motion_command(&param);
+	effort *= libmpc_stiction_correction(yp, current_motion_command_vector[index].phi, effort, v);
 
 //	if (save_and_plot)
 		plot_state(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
