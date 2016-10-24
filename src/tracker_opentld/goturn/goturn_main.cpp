@@ -7,9 +7,12 @@
 #include <carmen/carmen.h>
 #include <carmen/bumblebee_basic_interface.h>
 #include <carmen/bumblebee_basic_messages.h>
+#include <carmen/velodyne_interface.h>
+#include <tf.h>
 
 #include <carmen/visual_tracker_interface.h>
 #include <carmen/visual_tracker_messages.h>
+#include <carmen/velodyne_camera_calibration.h>
 
 // OpenCV
 #include <opencv2/core/core.hpp>
@@ -30,6 +33,10 @@
 #define BUMBLEBEE_BASIC_VIEW_NUM_COLORS 3
 
 static int received_image = 0;
+
+std::vector<carmen_velodyne_points_in_cam_t> points_lasers_in_cam;
+
+carmen_velodyne_partial_scan_message *velodyne_message;
 
 static int tld_image_width = 0;
 static int tld_image_height = 0;
@@ -60,12 +67,26 @@ const bool show_intermediate_output = false;
 // Create a tracker object.
 Tracker tracker(show_intermediate_output);
 
+
 static BoundingBox box;
+
+bounding_box box_1;
+
+double average_box_confidence;
 static std::string window_name = "GOTURN";
+
 
 using namespace cv;
 
+struct Image_Box{
+	cv::Mat prev_image;
+	BoundingBox prev_box;
+	double confidence;
+};
 
+int num_prev_frames = 2;
+
+std::vector<Image_Box> last_track;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
@@ -100,7 +121,7 @@ build_and_publish_message(char *host, double timestamp)
 			box_detected.height = box.get_height();
 
 			message_output.rect = box_detected;
-			message_output.confidence = 1.0;
+			message_output.confidence = average_box_confidence;
 			message_output.host = host;
 			message_output.timestamp = timestamp;
 		}
@@ -125,20 +146,88 @@ build_and_publish_message(char *host, double timestamp)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+void
+calculate_box_average(BoundingBox &box, std::vector<Image_Box> &last_track, Mat* img, int step, int cont)
+{
+	BoundingBox average_box;
+	int repeat = 0;
+	average_box.x1_ = 0.0;
+	average_box.x2_ = 0.0;
+	average_box.y1_ = 0.0;
+	average_box.y2_ = 0.0;
+
+	average_box.x1_ += box.x1_;
+	average_box.x2_ += box.x2_;
+	average_box.y1_ += box.y1_;
+	average_box.y2_ += box.y2_;
+	int limit = step/last_track.size();
+
+//	for(int i = cont%last_track.size(); repeat < limit; i = (i + step)%last_track.size(), repeat++)
+	for(int i = 0; i < last_track.size(); i++)
+	{
+		tracker.Init(last_track[i].prev_image, last_track[i].prev_box, &regressor);
+
+		tracker.Track(*img, &regressor, &last_track[i].prev_box);
+
+		average_box.x1_ = last_track[i].prev_box.x1_;
+		average_box.x2_ = last_track[i].prev_box.x2_;
+		average_box.y1_ = last_track[i].prev_box.y1_;
+		average_box.y2_ = last_track[i].prev_box.y2_;
+		rectangle(*img, cv::Point(average_box.x1_, average_box.y1_),cv::Point(average_box.x2_ , average_box.y2_), Scalar( 0, 255, 0 ), 1, 4 );
+//		average_box.DrawBoundingBox(img);
+		last_track[(cont%num_prev_frames)].confidence = 1.0; //
+	}
+
+//		printf("ok\n");
+//	average_box.x1_ /= 3;
+//	average_box.x2_ /= 3;
+//	average_box.y1_ /= 3;
+//	average_box.y2_ /= 3;
+
+//	box = average_box;
+
+}
 
 void
 process_goturn_detection(Mat *img, double time_stamp)
 {
 	char string1[128];
 	CvFont font;
+	bool recovery = false;
+	static int cont = 0;
+	static int first = 0;
+	int step = 30;
+
 
 	//cv::Mat mat_image=cvarrToMat(&img);
-	//cv::Mat prev_image;
-	//prev_image = mat_image.clone();
+	static Mat prev_image;
+	prev_image = img->clone();
 	if(box.x1_ != -1.0)
 	{
+
 		tracker.Track(*img, &regressor, &box);
+		if (cont > num_prev_frames)
+		{
+			calculate_box_average(box, last_track, img, step, cont);
+//			recovery = true;
+
+		}
+		//Apenas para publicar-ainda falta definir
+//		average_box_confidence = 1.0;
+
+		last_track[(cont%num_prev_frames)].prev_image = prev_image;
+		last_track[(cont%num_prev_frames)].prev_box = box;
+
+//		points_lasers_in_cam = carmen_velodyne_camera_calibration_lasers_points_bounding_box(velodyne_message,
+//				&last_message, &last_track[(cont%num_prev_frames)].confidence, &box_1);
+
+//		laser_in_cam_px = carmen_velodyne_camera_calibration_lasers_points_bounding_box(velodyne_message, &last_message);
+		last_track[(cont%num_prev_frames)].confidence = 1.0; //
+		cont++;
+		tracker.Init(*img, box, &regressor);
+
 		box.DrawBoundingBox(img);
+
 	}
 
 	cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, .4, .5, 0, 1, 8);
@@ -170,7 +259,12 @@ process_goturn_detection(Mat *img, double time_stamp)
 		box.y1_ = rect.y;
 		box.x2_ = rect.x+rect.width;
 		box.y2_ = rect.y+rect.height;
+		last_track[(cont%num_prev_frames)].prev_image = prev_image;
+		last_track[(cont%num_prev_frames)].prev_box = box;
+		cont++;
 		tracker.Init(*img, box, &regressor);
+//		first = 1;
+//		tracker.Track(*img, &regressor, &box);
 		break;
 
 	case 'q':
@@ -268,10 +362,30 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 		process_image(image_msg);
 
 		build_and_publish_message(image_msg->host, image_msg->timestamp);
-		double time_f = carmen_get_time() - time_now;
-		printf("tp: %lf \n", time_f);
+//		double time_f = carmen_get_time() - time_now;
+//		printf("tp: %lf \n", time_f);
 	}
 
+}
+
+
+void
+velodyne_partial_scan_message_handler(/*carmen_velodyne_partial_scan_message *velodyne_message*/)
+{
+//	static int n = 0;
+//	static double time = 0;
+//
+//	if (velodyne_message->timestamp - time > 1.0)
+//	{
+//		printf("VELO: %d\n", n);
+//		time = velodyne_message->timestamp;
+//		n = 0;
+//	}
+//	else
+//		n++;
+
+//	carmen_velodyne_camera_calibration_arrange_velodyne_vertical_angles_to_true_position(velodyne_message);
+//	show_velodyne(velodyne_message);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -323,13 +437,12 @@ main(int argc, char **argv)
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 	read_parameters(argc, argv);
+	last_track.resize(num_prev_frames);
 
 	box.x1_ = -1.0;
 	box.y1_ = -1.0;
 	box.x2_ = -1.0;
 	box.y2_ = -1.0;
-
-//-----
 
 	signal(SIGINT, shutdown_camera_view);
 
@@ -337,6 +450,9 @@ main(int argc, char **argv)
 	carmen_visual_tracker_define_messages();
 
 	carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) image_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_velodyne_subscribe_partial_scan_message(velodyne_message,(carmen_handler_t)velodyne_partial_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
 
 	carmen_ipc_dispatch();
 

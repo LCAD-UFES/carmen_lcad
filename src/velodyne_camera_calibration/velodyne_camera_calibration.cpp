@@ -177,14 +177,16 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_parti
 
 std::vector<carmen_velodyne_points_in_cam_t>
 carmen_velodyne_camera_calibration_lasers_points_bounding_box(carmen_velodyne_partial_scan_message *velodyne_message,
-		carmen_bumblebee_basic_stereoimage_message *bumblebee_message, carmen_visual_tracker_output_message *visual_tracker_output_message)
+		carmen_bumblebee_basic_stereoimage_message *bumblebee_message, double *confidence, bounding_box *box)
 {
 
-	carmen_visual_tracker_output_message box_message = {visual_tracker_output_message->rect, visual_tracker_output_message->confidence,
-			visual_tracker_output_message->timestamp ,visual_tracker_output_message->host};
+//	carmen_visual_tracker_output_message box_message = {visual_tracker_output_message->rect, visual_tracker_output_message->confidence,
+//			visual_tracker_output_message->timestamp ,visual_tracker_output_message->host};
 	vector<carmen_velodyne_points_in_cam_t> laser_points_in_camera;
 	carmen_sphere_coord_t laser_angles;
 	carmen_velodyne_points_in_cam_t laser_ipxy_points;
+
+	carmen_velodyne_camera_calibration_arrange_velodyne_vertical_angles_to_true_position(velodyne_message);
 
 	for (int i = 0; i < 32; i++)
 	{
@@ -240,8 +242,9 @@ carmen_velodyne_camera_calibration_lasers_points_bounding_box(carmen_velodyne_pa
 						b = 254;
 
 
-					if((r > 5) && (ipx > box_message.rect.x) && ( ipx < (box_message.rect.x + box_message.rect.width)) && (ipy > box_message.rect.y) && ( ipy < (box_message.rect.y + box_message.rect.height)) &&
-							(box_message.confidence > 0))
+					if((r > 5) && (ipx > box->x) && ( ipx < (box->x + box->width)) && (ipy > box->y) &&
+							( ipy < (box->y + box->height)) &&
+							(confidence > 0))
 					{
 						//	a < x0 < a+c and b < y0 < b + d
 						laser_angles = {h, v, range};

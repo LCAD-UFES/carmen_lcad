@@ -18,6 +18,6 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_parti
 
 std::vector<carmen_velodyne_points_in_cam_t>
 carmen_velodyne_camera_calibration_lasers_points_bounding_box(carmen_velodyne_partial_scan_message *velodyne_message,
-		carmen_bumblebee_basic_stereoimage_message *bumblebee_message, carmen_visual_tracker_output_message *visual_tracker_output_message);
+		carmen_bumblebee_basic_stereoimage_message *bumblebee_message, double *confidence, bounding_box *box);
 
 #endif /* SRC_VELODYNE_CAMERA_CALIBRATION_VELODYNE_CAMERA_CALIBRATION_H_ */

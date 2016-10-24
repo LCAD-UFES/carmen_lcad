@@ -6,7 +6,7 @@
 #include <carmen/velodyne_interface.h>
 #include <carmen/visual_tracker_interface.h>
 #include <string>
-#include "velodyne_camera_calibration.h"
+#include <carmen/velodyne_camera_calibration.h>
 #include <tf.h>
 
 using namespace cv;
