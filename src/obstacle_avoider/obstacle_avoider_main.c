@@ -89,7 +89,7 @@ publish_navigator_ackerman_plan_message_with_obstacle_avoider_path(carmen_ackerm
 }
 
 
-static void
+void
 publish_navigator_ackerman_plan_message_with_motion_planner_path(carmen_ackerman_motion_command_t *motion_commands_vector,
 		int num_motion_commands, double timestamp)
 {

@@ -30,7 +30,7 @@ static carmen_navigator_panel_config_t nav_panel_config;
 static carmen_navigator_map_t map_type = CARMEN_NAVIGATOR_MAP_v;
 static carmen_navigator_map_t superimposedmap_type = CARMEN_NONE_v;
 static carmen_map_p map = NULL, cost_map = NULL, offline_map = NULL, localize_map = NULL,
-		navigator_map = NULL, complete_map = NULL, moving_objects_map = NULL, lane_map = NULL, remission_map = NULL;
+		complete_map = NULL, moving_objects_map = NULL, lane_map = NULL, remission_map = NULL;
 carmen_localize_ackerman_map_t localize_all_maps;
 int first_localize_map_message_received = 1;
 static double last_navigator_status = 0.0;
@@ -204,16 +204,23 @@ navigator_get_cost_map(int is_superimposed)
 	}
 }
 
-static void
+
+carmen_map_t *
 navigator_get_complete_map(int is_superimposed)
 {
 	if (is_superimposed)
-		return;
+		return (NULL);
 
 	if (complete_map == NULL)
 	{
 		complete_map = (carmen_map_t *) malloc(sizeof(carmen_map_t));
-		carmen_grid_mapping_read_complete_map(map_path, complete_map);
+		int result = carmen_grid_mapping_read_complete_map(map_path, complete_map);
+		if (result == -1)
+		{
+			free(complete_map);
+			complete_map = NULL;
+			return (NULL);
+		}
 	}
 
 	if (map_type != CARMEN_COMPLETE_MAP_v)
@@ -221,6 +228,8 @@ navigator_get_complete_map(int is_superimposed)
 		gui->navigator_graphics_display_map(complete_map, CARMEN_COMPLETE_MAP_v);
 		map_type = CARMEN_COMPLETE_MAP_v;
 	}
+
+	return (complete_map);
 }
 
 
@@ -283,35 +292,6 @@ navigator_get_grid_mapping_moving_objects_map(int is_superimposed)
 	{
 		superimposedmap_type = CARMEN_MOVING_OBJECTS_MAP_v;
 		carmen_map_interface_set_superimposed_map(moving_objects_map);
-	}
-}
-
-
-static void
-navigator_get_navigator_cost_map(carmen_navigator_map_t type, int is_superimposed)
-{
-	if (navigator_map != NULL)
-		carmen_map_destroy(&navigator_map);
-
-	navigator_map = (carmen_map_t *)calloc(1, sizeof(carmen_map_t));
-	carmen_test_alloc(navigator_map);
-
-	memset(navigator_map, 0, sizeof(carmen_map_t));
-
-	carmen_navigator_ackerman_get_map((carmen_navigator_ackerman_map_t) type, navigator_map);
-
-	if (navigator_map->complete_map == NULL)
-		return;
-
-	if (!is_superimposed)
-	{
-		gui->navigator_graphics_display_map(navigator_map, type);
-		map_type = type;
-	}
-	else
-	{
-		superimposedmap_type = type;
-		carmen_map_interface_set_superimposed_map(navigator_map);
 	}
 }
 
@@ -396,16 +376,14 @@ navigator_get_map(carmen_navigator_map_t type, int is_superimposed)
 	case CARMEN_REMISSION_MAP_v:
 		navigator_get_remission_map(is_superimposed);
 		break;
-
 	case CARMEN_MOVING_OBJECTS_MAP_v:
 		navigator_get_grid_mapping_moving_objects_map(is_superimposed);
 		break;
 
 	default:
-		navigator_get_navigator_cost_map(type, is_superimposed);
+		navigator_get_grid_mapping(is_superimposed);
 		break;
 	}
-
 }
 
 
@@ -491,21 +469,21 @@ clone_grid_mapping_to_map2(carmen_moving_objects_map_message *grid_map, carmen_m
 carmen_map_t*
 navigator_get_complete_map_map_pointer()
 {
-//	if (complete_map == NULL)
-//	{
-//		navigator_get_complete_map(0);
-//		complete_map = (carmen_map_t *) malloc(sizeof(carmen_map_t));
-//		carmen_grid_mapping_read_complete_map(map_path, complete_map);
-//		map_type = CARMEN_COMPLETE_MAP_v;
-//	}
+	if (complete_map == NULL)
+	{
+		if (navigator_get_complete_map(0) == NULL)
+			return (NULL);
+	}
+	map_type = CARMEN_COMPLETE_MAP_v;
 
-	navigator_get_complete_map(0);
 	return complete_map;
 }
 
 carmen_map_t*
 navigator_get_offline_map_pointer()
 {
+	map_type = CARMEN_OFFLINE_MAP_v;
+
 	return offline_map;
 }
 

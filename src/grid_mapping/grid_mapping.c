@@ -716,7 +716,10 @@ carmen_grid_mapping_read_complete_map(char *map_path, carmen_map_t *map)
 	file = fopen(global_map_path, "r");
 
 	if (file == NULL)
+	{
 		fprintf(stderr, "Error: complete map not found!\n");
+		return -1;
+	}
 
 	fscanf(file, "%s\n", aux);
 	map->config.x_origin = atof(aux);

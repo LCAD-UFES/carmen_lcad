@@ -558,7 +558,6 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 {
 	static double steering_effort = 0.0;
 	double atan_current_curvature;
-	double atan_desired_curvature;
 	static fann_type steering_ann_input[NUM_STEERING_ANN_INPUTS];
 	static struct fann *steering_ann = NULL;
 
@@ -579,17 +578,14 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 	atan_current_curvature = carmen_get_curvature_from_phi(simulator_config->phi, simulator_config->v, simulator_config->understeer_coeficient2,
 															simulator_config->distance_between_front_and_rear_axles);
 
-	atan_desired_curvature = carmen_get_curvature_from_phi(simulator_config->target_phi, simulator_config->v, simulator_config->understeer_coeficient2,
-															simulator_config->distance_between_front_and_rear_axles);
-
 #ifdef __USE_RL_CONTROL
 
 	steering_effot = rl_control_steering;
 
 #else
 
-//	if (simulator_config->use_mpc)
-//	{
+	if (simulator_config->use_mpc)
+	{
 		steering_effort = carmen_libmpc_get_optimized_steering_effort_using_MPC(atan_current_curvature,
 							simulator_config->current_motion_command_vector, simulator_config->nun_motion_commands,
 							simulator_config->v, simulator_config->phi, simulator_config->time_of_last_command,
@@ -601,11 +597,13 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 //							simulator_config->understeer_coeficient2, simulator_config->distance_between_front_and_rear_axles,
 //							simulator_config->max_phi, simulator_config->maximum_steering_command_rate,
 //							simulator_config->global_pos, simulator_config->initialize_neural_networks);
-//	}
-//	else
-//	{
-//		pid_plot_curvature(simulator_config->phi, simulator_config->target_phi);
-//		steering_effort = carmen_libpid_steering_PID_controler(atan_desired_curvature, atan_current_curvature, simulator_config->delta_t);
+	}
+	else
+	{
+		pid_plot_curvature(simulator_config->phi, simulator_config->target_phi);
+		double atan_desired_curvature = carmen_get_curvature_from_phi(simulator_config->target_phi, simulator_config->v, simulator_config->understeer_coeficient2,
+																simulator_config->distance_between_front_and_rear_axles);
+		steering_effort = carmen_libpid_steering_PID_controler(atan_desired_curvature, atan_current_curvature, simulator_config->delta_t);
 
 
 		//RL_PID
@@ -618,28 +616,17 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 //
 //			steering_effort = rleffort;
 //		}
-//	}
+	}
 
 #endif
 
-//	printf("%f\n", steering_effort);
-//	int ocured_stiction = 0;
+	// Stiction Correction
+//	steering_effort *= libmpc_stiction_correction(simulator_config->phi, simulator_config->target_phi, steering_effort, simulator_config->v);
 //	if (libmpc_stiction_simulation(steering_effort, simulator_config->v))
 //	{
-//		//ocured_stiction = 1;
-////		printf("Stic c%lf d%lf e%lf\n", simulator_config->phi, simulator_config->target_phi, steering_effort);
-//
-//		return (simulator_config->phi);
+//		//printf("Stic c%lf d%lf e%lf\n", simulator_config->phi, simulator_config->target_phi, steering_effort);
+//		return simulator_config->phi;
 //	}
-////	else
-////	{
-////		if (ocured_stiction && fabs(steering_effort) < 7)
-////		{
-////			steering_effort *= 0.1;
-////		}
-////	}
-//
-//	steering_effort *= libmpc_stiction_correction(simulator_config->phi, simulator_config->target_phi, steering_effort, simulator_config->v);
 
 	/* Reproducao da correcao da oscilacao em velocidades altas */
 //	steering_effort *= (1.0 / (1.0 + (simulator_config->v * simulator_config->v) / 200.5)); // boa
