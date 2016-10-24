@@ -145,6 +145,22 @@ dist(carmen_ackerman_traj_point_t v, carmen_ackerman_motion_command_t w)
 
 
 double
+distance_point_to_line(carmen_ackerman_traj_point_t point, carmen_ackerman_motion_command_t *line_a, carmen_ackerman_motion_command_t *line_b)
+{
+//	printf("%lf %lf %lf %lf %lf %lf\n", point.x, point.y, line_a->x, line_a->y, line_b->x, line_b->y);
+	//yA - yB = a, xB - xA = b e xAyB - xByA=c
+	double a = line_a->y - line_b->y;
+	double b = line_b->x - line_a->x;
+	double c = (line_a->x * line_b->y) - (line_b->x * line_a->y);
+
+	// dist = |ax0 + by0 + c| / √(a^2 + b^2)
+	double dist = fabs((a *  point.x) + (b * point.y) + c) / sqrt((a * a) + (b * b));
+
+	return (dist);
+}
+
+
+double
 my_f(const gsl_vector *v, void *params)
 {
 	EFFORT_SPLINE_DESCRIPTOR d;
@@ -179,7 +195,13 @@ my_f(const gsl_vector *v, void *params)
 
 	for (unsigned int i = 0; i < pose_vector.size(); i++)
 	{
-		error = dist(pose_vector[i], p->motion_commands_vector[j]);
+//		printf("%lf %lf\n", pose_vector[i].x, pose_vector[i].y);
+//		error = dist(pose_vector[i], p->motion_commands_vector[j]);
+		if (j < 1)
+			error = distance_point_to_line(pose_vector[i], &p->motion_commands_vector[j], &p->motion_commands_vector[j+1]);
+		else
+			error = distance_point_to_line(pose_vector[i], &p->motion_commands_vector[j-1], &p->motion_commands_vector[j]);
+
 		error_sum += sqrt(error * error);
 
 		pose_vector_time += delta_t;
@@ -193,7 +215,7 @@ my_f(const gsl_vector *v, void *params)
 	}
 
 	double cost = error_sum;// + 0.00011 * sqrt((p->previous_k1 - d.k1) * (p->previous_k1 - d.k1));
-//	printf("%lf\n", cost);
+	printf("%lf\n", cost);
 
 	return (cost);
 }
@@ -382,7 +404,7 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double understee
 		phi_vector_time += delta_t;
 		fprintf(gnuplot_data_file, "%lf %lf %lf %lf %d %d\n",
 				begin_predition_time + phi_vector_time, phi_vector[i], p->motion_commands_vector[timed_index_to_motion_command].phi,
-				future_effort_vector[i], 4, 5);
+				future_effort_vector[i], 1, 2);
 
 		if (phi_vector_time > motion_commands_vector_time)
 		{

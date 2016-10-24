@@ -366,7 +366,7 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double understee
 		phi_vector_time += delta_t;
 		fprintf(gnuplot_data_file, "%lf %lf %lf %lf %d %d\n",
 				begin_predition_time + phi_vector_time, phi_vector[i], p->motion_commands_vector[timed_index_to_motion_command].phi,
-				future_effort_vector[i], 4, 5);
+				future_effort_vector[i], 1, 2);
 
 		if (phi_vector_time > motion_commands_vector_time)
 		{
