@@ -14,7 +14,15 @@ using namespace std;
 
 
 FILE *gnuplot_save;
-bool save_and_plot = true;
+bool save_and_plot = false;
+
+
+typedef struct {
+	vector<double> v;
+	vector<double> phi;
+	vector<double> time;
+	double total_time_of_commands;
+} MOTION_COMMAND;
 
 
 double
@@ -549,6 +557,42 @@ stiction_correction(double current_phi, double desired_phi, double effort, doubl
 	}
 
 	return (0.0);
+}
+
+
+MOTION_COMMAND
+init(carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands, double time_of_velodyne_message)
+{
+	MOTION_COMMAND commands;
+	double elapsed_time = carmen_get_time() - time_of_velodyne_message;
+	double sum_of_motion_commands_vector_time = current_motion_command_vector[0].time;
+	int j = 0;
+
+	while ((sum_of_motion_commands_vector_time	< elapsed_time) && (j < nun_motion_commands))
+	{
+		j++;
+		sum_of_motion_commands_vector_time += current_motion_command_vector[j].time;
+	}
+
+	j--;
+	sum_of_motion_commands_vector_time -= current_motion_command_vector[j].time;
+	current_motion_command_vector[j].time = elapsed_time - sum_of_motion_commands_vector_time;
+
+	sum_of_motion_commands_vector_time = 0.0;
+	while (sum_of_motion_commands_vector_time <= PREDICTION_HORIZON)
+	{
+		commands.v.push_back(current_motion_command_vector[j].v);
+		commands.phi.push_back(current_motion_command_vector[j].phi);
+		commands.time.push_back(current_motion_command_vector[j].time);
+
+		j++;
+		sum_of_motion_commands_vector_time += current_motion_command_vector[j].time;
+	}
+	commands.total_time_of_commands = sum_of_motion_commands_vector_time;
+
+
+
+	return commands;
 }
 
 

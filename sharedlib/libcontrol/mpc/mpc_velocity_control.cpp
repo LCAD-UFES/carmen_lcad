@@ -22,12 +22,7 @@ carmen_libmpc_get_optimized_velocity_effort_using_MPC(double *throttle_command, 
 		double time_of_last_motion_command)
 {
 	static int mpc_state_controller = STOP_CAR;
-	static double error_t_1 = 0.0;	// error in time t-1
-	static double integral_t = 0.0;
-	static double integral_t_1 = 0.0;
-	double error_t;		// error in time t
-	double derivative_t;
-	double u_t = 0.0;		// u(t)	-> actuation in time t
+	double g_brake_gap = 17.0;   // Q issu????
 
 	if (fabs(desired_velocity) < 0.05)
 	{
@@ -81,37 +76,30 @@ carmen_libmpc_get_optimized_velocity_effort_using_MPC(double *throttle_command, 
 
 	if (mpc_state_controller == MOVE_CAR_BACKWARD_ACCELERATING)
 	{
-		*throttle_command = -u_t;
-		*brake_command = g_brake_gap;
-
-		if ((desired_velocity < 0.0) && (error_t > (0.0 + g_minimum_delta_velocity)))
-		{
-			error_t_1 = integral_t = integral_t_1 = 0.0;
-			mpc_state_controller = MOVE_CAR_BACKWARD_DECCELERATING;
-		}
-		if (desired_velocity >= 0.0)
-			mpc_state_controller = STOP_CAR;
+//		*throttle_command = -u_t;
+//		*brake_command = g_brake_gap;
+//
+//		if ((desired_velocity < 0.0) && (error_t > (0.0 + g_minimum_delta_velocity)))
+//		{
+//			error_t_1 = integral_t = integral_t_1 = 0.0;
+//			mpc_state_controller = MOVE_CAR_BACKWARD_DECCELERATING;
+//		}
+//		if (desired_velocity >= 0.0)
+//			mpc_state_controller = STOP_CAR;
 	}
 	else if (mpc_state_controller == MOVE_CAR_BACKWARD_DECCELERATING)
 	{
-		*throttle_command = 0.0;
-		*brake_command = u_t + g_brake_gap;
-
-		if ((desired_velocity < 0.0) && (error_t < (0.0 - g_minimum_delta_velocity)))
-		{
-			error_t_1 = integral_t = integral_t_1 = 0.0;
-			mpc_state_controller = MOVE_CAR_BACKWARD_ACCELERATING;
-		}
-		if (desired_velocity >= 0.0)
-			mpc_state_controller = STOP_CAR;
+//		*throttle_command = 0.0;
+//		*brake_command = u_t + g_brake_gap;
+//
+//		if ((desired_velocity < 0.0) && (error_t < (0.0 - g_minimum_delta_velocity)))
+//		{
+//			error_t_1 = integral_t = integral_t_1 = 0.0;
+//			mpc_state_controller = MOVE_CAR_BACKWARD_ACCELERATING;
+//		}
+//		if (desired_velocity >= 0.0)
+//			mpc_state_controller = STOP_CAR;
 	}
-
-	error_t_1 = error_t;
-	// Anti windup
-	if ((*throttle_command < 0.0) || (*throttle_command > 100.0) ||
-			(*brake_command < g_brake_gap) || (*brake_command > 100.0))
-		integral_t = integral_t_1;
-	integral_t_1 = integral_t;
 
 	*throttle_command = carmen_clamp(0.0, *throttle_command, 100.0);
 	*brake_command = carmen_clamp(g_brake_gap, *brake_command, 100.0);
