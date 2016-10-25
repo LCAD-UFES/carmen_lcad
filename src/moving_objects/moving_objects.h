@@ -13,7 +13,7 @@
 #include <carmen/stereo_velodyne.h>
 #include <tf.h>
 #include <algorithm>
-#include <time.h>
+#include <omp.h>
 
 using namespace std;
 
