@@ -36,10 +36,13 @@ static int received_image = 0;
 
 std::vector<carmen_velodyne_points_in_cam_t> points_lasers_in_cam;
 
-carmen_velodyne_partial_scan_message *velodyne_message;
+carmen_velodyne_partial_scan_message *velodyne_message_arrange;
 
 static int tld_image_width = 0;
 static int tld_image_height = 0;
+
+const float MAX_RANGE = 30.0;
+const float MIN_RANGE = 0.5;
 
 static int camera_side = 0;
 
@@ -208,7 +211,7 @@ process_goturn_detection(Mat *img, double time_stamp)
 		tracker.Track(*img, &regressor, &box);
 		if (cont > num_prev_frames)
 		{
-			calculate_box_average(box, last_track, img, step, cont);
+//			calculate_box_average(box, last_track, img, step, cont);
 //			recovery = true;
 
 		}
@@ -218,10 +221,58 @@ process_goturn_detection(Mat *img, double time_stamp)
 		last_track[(cont%num_prev_frames)].prev_image = prev_image;
 		last_track[(cont%num_prev_frames)].prev_box = box;
 
+		box_1.x = box.x1_;
+		box_1.y = box.y1_;
+		box_1.width = box.get_width();
+		box_1.height = box.get_height();
+
+
+		last_track[(cont%num_prev_frames)].confidence = 1.0;
 //		points_lasers_in_cam = carmen_velodyne_camera_calibration_lasers_points_bounding_box(velodyne_message,
 //				&last_message, &last_track[(cont%num_prev_frames)].confidence, &box_1);
 
-//		laser_in_cam_px = carmen_velodyne_camera_calibration_lasers_points_bounding_box(velodyne_message, &last_message);
+		points_lasers_in_cam = carmen_velodyne_camera_calibration_lasers_points_in_camera(velodyne_message_arrange,&last_message);
+
+//		points_lasers_in_cam = carmen_velodyne_camera_calibration_lasers_points_bounding_box(velodyne_message_arrange, &last_message,
+//				&last_track[(cont%num_prev_frames)].confidence, &box_1);
+
+		cv::Rect mini_box;
+		mini_box.x = box_1.x + (box_1.width/3);
+		mini_box.y = box_1.y + (box_1.height/3);
+		mini_box.width = (box_1.width/3);
+		mini_box.height = (box_1.height/3);
+		Scalar yellow = CV_RGB(255, 255, 0);
+		Scalar white = CV_RGB(255, 255, 255);
+
+		rectangle(*img, cv::Point(mini_box.x, mini_box.y),cv::Point(mini_box.x + mini_box.width, mini_box.y + mini_box.height), yellow, 1, 4 );
+		for(int i = 0; i < points_lasers_in_cam.size(); i++)
+			{
+				if((points_lasers_in_cam.at(i).ipx > box_1.x) && ( points_lasers_in_cam.at(i).ipx < (box_1.x + box_1.width)) &&
+						(points_lasers_in_cam.at(i).ipy > box_1.y) && (points_lasers_in_cam.at(i).ipy < (box_1.y + box_1.height)))
+				{
+					if (points_lasers_in_cam.at(i).laser_polar.length <= MIN_RANGE)
+						points_lasers_in_cam.at(i).laser_polar.length = MAX_RANGE;
+
+					if (points_lasers_in_cam.at(i).laser_polar.length > MAX_RANGE)
+						points_lasers_in_cam.at(i).laser_polar.length = MAX_RANGE;
+
+
+					circle(*img, cv::Point(points_lasers_in_cam.at(i).ipx, points_lasers_in_cam.at(i).ipy), 2, Scalar(0, 255, 0), -1);
+
+					if((points_lasers_in_cam.at(i).ipx > mini_box.x) && ( points_lasers_in_cam.at(i).ipx < (mini_box.x + mini_box.width)) &&
+							(points_lasers_in_cam.at(i).ipy > mini_box.y) && (points_lasers_in_cam.at(i).ipy < (mini_box.y + mini_box.height)))
+					{
+		//				ranges_d.push_back(points_lasers_in_cam.at(i).laser_polar.length);
+						circle(*img, cv::Point(points_lasers_in_cam.at(i).ipx, points_lasers_in_cam.at(i).ipy), 2, white, -1);
+		//				average_range += points_lasers_in_cam.at(i).laser_polar.length;
+					}
+
+					//printf("%f\t %f\t %f\t \n",r, range, velodyne_message->partial_scan[j].distance[i] );
+
+				}
+
+			}
+
 		last_track[(cont%num_prev_frames)].confidence = 1.0; //
 		cont++;
 		tracker.Init(*img, box, &regressor);
@@ -370,7 +421,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 
 
 void
-velodyne_partial_scan_message_handler(/*carmen_velodyne_partial_scan_message *velodyne_message*/)
+velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
 //	static int n = 0;
 //	static double time = 0;
@@ -383,8 +434,8 @@ velodyne_partial_scan_message_handler(/*carmen_velodyne_partial_scan_message *ve
 //	}
 //	else
 //		n++;
-
-//	carmen_velodyne_camera_calibration_arrange_velodyne_vertical_angles_to_true_position(velodyne_message);
+	velodyne_message_arrange = velodyne_message;
+	carmen_velodyne_camera_calibration_arrange_velodyne_vertical_angles_to_true_position(velodyne_message_arrange);
 //	show_velodyne(velodyne_message);
 }
 
@@ -451,7 +502,7 @@ main(int argc, char **argv)
 
 	carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) image_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_velodyne_subscribe_partial_scan_message(velodyne_message,(carmen_handler_t)velodyne_partial_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_velodyne_subscribe_partial_scan_message(NULL,(carmen_handler_t)velodyne_partial_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 
 	carmen_ipc_dispatch();
