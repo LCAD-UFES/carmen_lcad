@@ -35,17 +35,17 @@ double fy = 1.00518;
 
 const int column_correspondence[32] =
 {
-	0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23, 8,
-	24, 9, 25, 10, 26, 11, 27, 12, 28, 13, 29, 14, 30, 15, 31
+		0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23, 8,
+		24, 9, 25, 10, 26, 11, 27, 12, 28, 13, 29, 14, 30, 15, 31
 };
 
 
 const static double sorted_vertical_angles[32] =
 {
-	-30.67, -29.33, -28.0, -26.67, -25.33, -24.0, -22.67, -21.33, -20.0,
-	-18.67, -17.33, -16.0, -14.67, -13.33, -12.0, -10.67, -9.3299999, -8.0,
-	-6.6700001, -5.3299999, -4.0, -2.6700001, -1.33, 0.0, 1.33, 2.6700001, 4.0,
-	5.3299999, 6.6700001, 8.0, 9.3299999, 10.67
+		-30.67, -29.33, -28.0, -26.67, -25.33, -24.0, -22.67, -21.33, -20.0,
+		-18.67, -17.33, -16.0, -14.67, -13.33, -12.0, -10.67, -9.3299999, -8.0,
+		-6.6700001, -5.3299999, -4.0, -2.6700001, -1.33, 0.0, 1.33, 2.6700001, 4.0,
+		5.3299999, 6.6700001, 8.0, 9.3299999, 10.67
 };
 
 void
@@ -100,7 +100,7 @@ move_to_camera_reference(tf::Point p3d_velodyne_reference)
 std::vector<carmen_velodyne_points_in_cam_t>
 carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_partial_scan_message *velodyne_message,
 		carmen_bumblebee_basic_stereoimage_message *bumblebee_message)
-{
+		{
 
 	vector<carmen_velodyne_points_in_cam_t> laser_points_in_camera;
 
@@ -157,14 +157,14 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_parti
 					if (px < 10 || px >= (bumblebee_message->width - 10))
 						b = 254;
 
-						if (r > 5)
-						{
-							//	a < x0 < a+c and b < y0 < b + d
-							carmen_sphere_coord_t laser_polar = {h, v, range};
-							carmen_velodyne_points_in_cam_t laser_px_points = {ipx, ipy, laser_polar};
-							laser_points_in_camera.push_back(laser_px_points);
+					if (r > 5)
+					{
+						//	a < x0 < a+c and b < y0 < b + d
+						carmen_sphere_coord_t laser_polar = {h, v, range};
+						carmen_velodyne_points_in_cam_t laser_px_points = {ipx, ipy, laser_polar};
+						laser_points_in_camera.push_back(laser_px_points);
 
-						}
+					}
 
 				}
 
@@ -173,18 +173,20 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_parti
 	}
 	return laser_points_in_camera;
 
-}
+		}
 
 std::vector<carmen_velodyne_points_in_cam_t>
 carmen_velodyne_camera_calibration_lasers_points_bounding_box(carmen_velodyne_partial_scan_message *velodyne_message,
-		carmen_bumblebee_basic_stereoimage_message *bumblebee_message, carmen_visual_tracker_output_message *visual_tracker_output_message)
-{
+		carmen_bumblebee_basic_stereoimage_message *bumblebee_message, double *confidence, bounding_box *box)
+		{
 
-	carmen_visual_tracker_output_message box_message = {visual_tracker_output_message->rect, visual_tracker_output_message->confidence,
-			visual_tracker_output_message->timestamp ,visual_tracker_output_message->host};
+	//	carmen_visual_tracker_output_message box_message = {visual_tracker_output_message->rect, visual_tracker_output_message->confidence,
+	//			visual_tracker_output_message->timestamp ,visual_tracker_output_message->host};
 	vector<carmen_velodyne_points_in_cam_t> laser_points_in_camera;
 	carmen_sphere_coord_t laser_angles;
 	carmen_velodyne_points_in_cam_t laser_ipxy_points;
+
+	carmen_velodyne_camera_calibration_arrange_velodyne_vertical_angles_to_true_position(velodyne_message);
 
 	for (int i = 0; i < 32; i++)
 	{
@@ -240,20 +242,20 @@ carmen_velodyne_camera_calibration_lasers_points_bounding_box(carmen_velodyne_pa
 						b = 254;
 
 
-					if((r > 5) && (ipx > box_message.rect.x) && ( ipx < (box_message.rect.x + box_message.rect.width)) && (ipy > box_message.rect.y) && ( ipy < (box_message.rect.y + box_message.rect.height)) &&
-							(box_message.confidence > 0))
-					{
+//					if((r > 5) && (ipx > box->x) && ( ipx < (box->x + box->width)) && (ipy > box->y) &&
+//							( ipy < (box->y + box->height)))
+//					{
 						//	a < x0 < a+c and b < y0 < b + d
 						laser_angles = {h, v, range};
 						laser_ipxy_points = {ipx, ipy, laser_angles};
 						laser_points_in_camera.push_back(laser_ipxy_points);
-					}
+//					}
 
 
 				}
 
 			}
 		}
-		return laser_points_in_camera;
 	}
+	return laser_points_in_camera;
 		}

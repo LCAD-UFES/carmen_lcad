@@ -6,7 +6,7 @@
 #include <carmen/velodyne_interface.h>
 #include <carmen/visual_tracker_interface.h>
 #include <string>
-#include "velodyne_camera_calibration.h"
+#include <carmen/velodyne_camera_calibration.h>
 #include <tf.h>
 
 using namespace cv;
@@ -73,14 +73,23 @@ show_velodyne(carmen_velodyne_partial_scan_message *velodyne_message)
 //	float g = 0;
 	const float MAX_RANGE = 30.0;
 	const float MIN_RANGE = 0.5;
-
+	cv::Rect mini_box;
+	mini_box.x = box.x + (box.width/3);
+	mini_box.y = box.y + (box.height/3);
+	mini_box.width = (box.width/3);
+	mini_box.height = (box.height/3);
+	Scalar yellow = CV_RGB(255, 255, 0);
+	Scalar white = CV_RGB(255, 255, 255);
 	laser_in_cam_px = carmen_velodyne_camera_calibration_lasers_points_in_camera(velodyne_message, &bumblebee_message);
 	rectangle(*bumb_image, cv::Point(box.x, box.y),cv::Point(box.x + box.width, box.y + box.height), Scalar( 0, r, 0 ), 1, 4 );
+	rectangle(*bumb_image, cv::Point(mini_box.x, mini_box.y),cv::Point(mini_box.x + mini_box.width, mini_box.y + mini_box.height), yellow, 1, 4 );
+
+	vector<double> ranges_d;
 
 	for(int i = 0; i < laser_in_cam_px.size(); i++)
 	{
 		if((laser_in_cam_px.at(i).ipx > box.x) && ( laser_in_cam_px.at(i).ipx < (box.x + box.width)) && (laser_in_cam_px.at(i).ipy > box.y) &&
-				(laser_in_cam_px.at(i).ipy < (box.y + box.height)) &&	(confidence > 0))
+				(laser_in_cam_px.at(i).ipy < (box.y + box.height)))
 		{
 			if (laser_in_cam_px.at(i).laser_polar.length <= MIN_RANGE)
 				laser_in_cam_px.at(i).laser_polar.length = MAX_RANGE;
@@ -91,14 +100,21 @@ show_velodyne(carmen_velodyne_partial_scan_message *velodyne_message)
 			r = laser_in_cam_px.at(i).laser_polar.length / MAX_RANGE;
 			r *= 255;
 			r = 255 - r;
+			circle(*bumb_image, cv::Point(laser_in_cam_px.at(i).ipx, laser_in_cam_px.at(i).ipy), 2, Scalar(0, r, 0), -1);
+			count_range += 1;
 
-			median_ranges.push_back(laser_in_cam_px.at(i).laser_polar.length);
+			if((laser_in_cam_px.at(i).ipx > mini_box.x) && ( laser_in_cam_px.at(i).ipx < (mini_box.x + mini_box.width)) && (laser_in_cam_px.at(i).ipy > mini_box.y) &&
+							(laser_in_cam_px.at(i).ipy < (mini_box.y + mini_box.height)))
+			{
+				median_ranges.push_back(laser_in_cam_px.at(i).laser_polar.length);
+//				ranges_d.push_back(laser_in_cam_px.at(i).laser_polar.length);
+				circle(*bumb_image, cv::Point(laser_in_cam_px.at(i).ipx, laser_in_cam_px.at(i).ipy), 2, white, -1);
+//				average_range += laser_in_cam_px.at(i).laser_polar.length;
+			}
 
-//			average_range += laser_in_cam_px.at(i).laser_polar.length;
-//			count_range += 1;
+
 
 			//printf("%f\t %f\t %f\t \n",r, range, velodyne_message->partial_scan[j].distance[i] );
-			circle(*bumb_image, cv::Point(laser_in_cam_px.at(i).ipx, laser_in_cam_px.at(i).ipy), 2, Scalar(0, r, 0), -1);
 
 		}
 
@@ -108,12 +124,23 @@ show_velodyne(carmen_velodyne_partial_scan_message *velodyne_message)
 	{
 		std::sort(median_ranges.begin(), median_ranges.end());
 		int middle = median_ranges.size() / 2;
+		double interval = median_ranges.back() - median_ranges.at(0);
 		double median = median_ranges.at(middle);
 
 //		double averange_distance = average_range / count_range;
-		char str[50];
-		sprintf(str,"range: %f",median);
-		putText(*bumb_image, str, Point2f(10,20), FONT_HERSHEY_PLAIN, 1.2,  Scalar(0,0,0));
+
+		double threshold_ = 3.0;
+		cv::Size s = bumb_image->size();
+		rectangle(*bumb_image, cv::Point(0, 0), cv::Point(s.width, 50), Scalar::all(0), -1);
+		char str[256];
+		char yesno[4];
+		if (interval < threshold_)
+			sprintf(yesno,"%s", "YES");
+		else
+			sprintf(yesno,"%s", "NO");
+
+		sprintf(str,"Median range: %lf  interval: %lf GOOD: %s Points mini: %ld Points: %d \n",median, interval, yesno, median_ranges.size(), count_range);
+		putText(*bumb_image, str, Point2f(10,20), FONT_HERSHEY_PLAIN, 1.5,  Scalar(255,255,255));
 	}
 
 	resize(*bumb_image, *bum_image_640, bum_image_640->size());

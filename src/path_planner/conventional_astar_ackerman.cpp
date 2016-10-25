@@ -259,7 +259,7 @@ int AstarAckerman::rs_get_astar_path(int rs_pathl, carmen_ackerman_traj_point_p 
 			check_path_capacity(path);
 			path->points[path->length] = carmen_conventional_astar_ackerman_kinematic_3(
 					path->points[path->length - 1], robot_conf_g.distance_between_front_and_rear_axles, points[i + 1].phi, space_interval * velocity_signal);
-			if (is_obstacle_new(path->points[path->length]))
+			if (hitObstacle(path->points[path->length]))
 				return 1;
 			path->length++;
 
@@ -267,7 +267,7 @@ int AstarAckerman::rs_get_astar_path(int rs_pathl, carmen_ackerman_traj_point_p 
 		check_path_capacity(path);
 		path->points[path->length] = carmen_conventional_astar_ackerman_kinematic_3(
 				path->points[path->length - 1], robot_conf_g.distance_between_front_and_rear_axles, points[i + 1].phi, space_rest * velocity_signal);
-		if (is_obstacle_new(path->points[path->length]))
+		if (hitObstacle(path->points[path->length]))
 			return 1;
 
 		path->length++;
@@ -330,7 +330,7 @@ AstarAckerman::carmen_conventional_astar_ackerman_astar(carmen_ackerman_traj_poi
 	}
 
 
-	if (is_obstacle_new(goal))
+	if (hitObstacle(goal))
 	{
 		//printf("GOAL is obstacle\n");
 		return;
@@ -475,11 +475,7 @@ AstarAckerman::open_node(carmen_astar_node_p node)
 				new_point = carmen_conventional_astar_ackerman_kinematic_3(
 						node->point, robot_conf_g.distance_between_front_and_rear_axles, ORIENTATION[j], DIRECTION[i]);
 
-			//if (is_obstacle_1d(new_point))
-			//if (is_obstacle(new_point))
-			//if (is_obstacle_new(new_point))
-
-			if (is_obstacle_cost(new_point))
+			if (hitObstacle(new_point))
 				continue;
 
 
@@ -610,143 +606,33 @@ AstarAckerman::add_list_fh(carmen_astar_node_p new_node)
 }
 
 
-int  AstarAckerman::is_obstacle_new(carmen_ackerman_traj_point_t point)
+int  AstarAckerman::hitObstacle(carmen_ackerman_traj_point_t point)
 {
-	int vertical_size   = round((robot_conf_g.length + astar_config.robot_fat_space) / carmen_planner_map->config.resolution);
-	int horizontal_size = round(((robot_conf_g.width + astar_config.robot_fat_space) / carmen_planner_map->config.resolution) / 2.0);
-	int distance_between_rear_car_and_rear_wheels = round(robot_conf_g.distance_between_rear_car_and_rear_wheels / carmen_planner_map->config.resolution);
-	double obstacle_value = 0;
-	int v, h, i;
+	double circle_radius =  (robot_conf_g.width + 0.6) / 2.0;
+	carmen_point_t localizer_pose;
+	localizer_pose.x = point.x;
+	localizer_pose.y = point.y;
+	localizer_pose.theta = point.theta;
 
-	carmen_ackerman_traj_point_t vertical_pose, horizontal_pose[2];
-	double delta_vertical_x, delta_vertical_y, delta_horizontal_x, delta_horizontal_y;
+	carmen_point_t point_to_check;
+	point_to_check.theta = 0.0;
+	point_to_check.y = 0.0;
+	point_to_check.x = 0.0;
 
-	point.x = (point.x - carmen_planner_map->config.x_origin) / carmen_planner_map->config.resolution;
-	point.y = (point.y - carmen_planner_map->config.y_origin) / carmen_planner_map->config.resolution;
+	circle_radius += 0;
+//	printf("X %2.f Y %.2f\n", point.x, point.y);
+	double obstacleCount = carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&localizer_pose, point_to_check, this->robot_conf_g, this->distanceMap, circle_radius);
 
-	delta_vertical_x = cos(point.theta);
-	delta_vertical_y = sin(point.theta);
-
-	delta_horizontal_x = cos(M_PI / 2.0 - point.theta);
-	delta_horizontal_y = sin(M_PI / 2.0 - point.theta);
-
-	point.x -= distance_between_rear_car_and_rear_wheels * delta_vertical_x;
-	point.y -= distance_between_rear_car_and_rear_wheels * delta_vertical_y;
-
-	vertical_pose = point;
-
-	for (v = 0; v < vertical_size; v++)
+	if(obstacleCount > 0)
 	{
-		horizontal_pose[0] = vertical_pose;
-		horizontal_pose[1] = vertical_pose;
-
-		for (h = 0; h < horizontal_size; h++)
-		{
-			for (i = 0; i < 2; i++)
-			{
-				obstacle_value = carmen_conventional_get_cost(round(horizontal_pose[i].x), round(horizontal_pose[i].y));
-				if (obstacle_value > 0.9 || obstacle_value < 0)
-					return TRUE;
-			}
-
-			horizontal_pose[0].x = horizontal_pose[0].x - delta_horizontal_x;
-			horizontal_pose[0].y = horizontal_pose[0].y + delta_horizontal_y;
-
-			horizontal_pose[1].x = horizontal_pose[1].x + delta_horizontal_x;
-			horizontal_pose[1].y = horizontal_pose[1].y - delta_horizontal_y;
-		}
-		vertical_pose.x = vertical_pose.x + delta_vertical_x;
-		vertical_pose.y = vertical_pose.y + delta_vertical_y;
+		printf("hit!!!!\n");
+		return true;
 	}
-	return FALSE;
-}
-
-
-int
-AstarAckerman::is_obstacle(carmen_ackerman_traj_point_t point)
-{
-	double width_m = (robot_conf_g.width + astar_config.robot_fat_space) / carmen_planner_map->config.resolution;
-	double height_m = (robot_conf_g.length + astar_config.robot_fat_space) / carmen_planner_map->config.resolution;
-
-	double x = (point.x - carmen_planner_map->config.x_origin) / carmen_planner_map->config.resolution;
-	double y = (point.y - carmen_planner_map->config.y_origin) / carmen_planner_map->config.resolution;
-
-	double current_x = x;
-	double current_y = y;
-
-	double obstacle_value;
-
-
-	double delta_x, delta_y;
-	double alfa = M_PI / 2 - point.theta;
-	double h;
-	for (h = 0; h < height_m; h = h + 0.5)
-	{
-		delta_x = cos(point.theta) * h;
-		delta_y = sin(point.theta) * h;
-
-		current_x = x + delta_x;
-		current_y = y + delta_y;
-		double w;
-		for (w = 0; w < width_m / 2; w = w + 0.5)
-		{
-			int sinal = -1;
-
-			delta_x = cos(alfa) * w;
-			delta_y = sin(alfa) * w;
-			int i;
-			for (i = 0; i < 2; i++)
-			{
-				int aux_x, aux_y;
-
-				aux_x = (int)(current_x + sinal * delta_x);
-				sinal *= -1;
-				aux_y = (int)(current_y + sinal * delta_y);
-
-				obstacle_value = carmen_conventional_get_cost(aux_x, aux_y);
-
-				if (obstacle_value > 0.9 || obstacle_value < 0)
-					return TRUE;
-			}
-		}
-	}
-	return FALSE;
-}
-
-
-int
-AstarAckerman::is_obstacle_1d(carmen_ackerman_traj_point_t point)
-{
-	double x = (point.x - carmen_planner_map->config.x_origin) / carmen_planner_map->config.resolution;
-	double y = (point.y - carmen_planner_map->config.y_origin) / carmen_planner_map->config.resolution;
-	double obstacle_value;
-	double front = round(robot_conf_g.length / carmen_planner_map->config.resolution);
-	int i;
-
-	if (x < 0 || x >= carmen_planner_map->config.x_size || y < 0 || y >= carmen_planner_map->config.y_size)
-		return TRUE;
-
-	for (i = 0; i <= front; i++) {
-		obstacle_value = carmen_conventional_get_cost(round(x + cos(point.theta) * i), round(y + sin(point.theta) * i));
-		if (obstacle_value > 0.0 || obstacle_value < 0)
-			return TRUE;
-	}
-	return FALSE;
-}
-
-
-int
-AstarAckerman::is_obstacle_cost(carmen_ackerman_traj_point_t point)
-{
-	int obstacle_value = carmen_conventional_get_cost(
-			(point.x - carmen_planner_map->config.x_origin) / carmen_planner_map->config.resolution,
-			(point.y - carmen_planner_map->config.y_origin) / carmen_planner_map->config.resolution);
-	if (obstacle_value > 0.40 || obstacle_value < 0)
-		return TRUE;
 	else
-		return FALSE;
+	{
+		return false;
+	}
 }
-
 
 void
 AstarAckerman::clean_astar_map()
@@ -897,3 +783,4 @@ AstarAckerman::smooth_path_astar(carmen_planner_path_p path)
 		}
 	}
 }
+
