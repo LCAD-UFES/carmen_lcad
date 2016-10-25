@@ -193,8 +193,8 @@ update_plant_input_u()
 { //Where:  U[0] = u(t), U[1] = u(t-1), U[2] = u(t-2)
 	U[2] = U[1]; //Update the past u values
 	U[1] = U[0];
-	//U[0] = U[1] + pid_params[1] * error_order[0] + pid_params[0] * error_order[1] + pid_params[2] * error_order[2]; //Calculate actual output value.
-	U[0] = pid_params[1] * error_order[0] + pid_params[0] * error_order[1] + pid_params[2] * error_order[2];
+	U[0] = U[1] + pid_params[1] * error_order[0] + pid_params[0] * error_order[1] + pid_params[2] * error_order[2]; //Calculate actual output value.
+	//U[0] = pid_params[1] * error_order[0] + pid_params[0] * error_order[1] + pid_params[2] * error_order[2];
 	//printf("\nkp = %lf, ki = %lf, kd = %lf, error_o1 = %lf, error_o2 = %lf, error_o3 = %lf\n",pid_params[1], pid_params[0], pid_params[2], error_order[0], error_order[1], error_order[2]);
 	//U(t) = U(t-1) + Ki*e(t) + Kp*Delta(e(t)) + Kd*Delta^2(e(t))
 }

@@ -1,11 +1,5 @@
-#include <carmen/carmen.h>
 #include <list>
 #include <vector>
-#include <gsl/gsl_math.h>
-#include <gsl/gsl_errno.h>
-#include <gsl/gsl_spline.h>
-#include <gsl/gsl_multimin.h>
-#include <car_model.h>
 #include <obstacle_avoider_interface.h>
 #include "mpc.h"
 
@@ -45,7 +39,7 @@ get_effort_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors)
 
 
 unsigned int
-get_motion_timed_index_to_motion_command(PARAMS* p)
+get_motion_timed_index_to_motion_command_vector(PARAMS* p)
 {
 	double motion_commands_vector_time = p->motion_commands_vector[0].time;
 	unsigned int j = 0;
@@ -66,7 +60,7 @@ get_velocity_supersampling_motion_commands_vector(PARAMS *param, unsigned int si
 	vector<double> velocity_vector;
 	double phi_vector_time = 0.0;
 
-	unsigned int timed_index_to_motion_command = get_motion_timed_index_to_motion_command(param);
+	unsigned int timed_index_to_motion_command = get_motion_timed_index_to_motion_command_vector(param);
 	double motion_commands_vector_time = param->motion_commands_vector[timed_index_to_motion_command].time;
 
 	for (unsigned int i = 0; i < size; i++)
@@ -98,7 +92,7 @@ car_model(double steering_effort, double atan_current_curvature, double v, fann_
 			param->steering_ann, v, param->understeer_coeficient, param->distance_rear_axles, 2.0 * param->max_phi);
 //	phi = 1.0 * phi;// - 0.01;
 //	phi *= (1.0 / (1.0 + v / 10.0));
-	
+
 	return (phi);
 }
 
@@ -140,16 +134,14 @@ get_phi_vector_from_spline_descriptors(vector<carmen_ackerman_traj_point_t> &pos
 double
 dist(carmen_ackerman_traj_point_t v, carmen_ackerman_motion_command_t w)
 {
-
     return sqrt((carmen_square(v.x - w.x) + carmen_square(v.y - w.y)));
-
 }
 
 
 double
 distance_point_to_line(carmen_ackerman_traj_point_t point, carmen_ackerman_motion_command_t *line_a, carmen_ackerman_motion_command_t *line_b)
 {
-//	printf("%lf %lf %lf %lf %lf %lf\n", point.x, point.y, line_a->x, line_a->y, line_b->x, line_b->y);
+	//printf("%lf %lf %lf %lf %lf %lf\n", point.x, point.y, line_a->x, line_a->y, line_b->x, line_b->y);
 	//yA - yB = a, xB - xA = b e xAyB - xByA=c
 	double a = line_a->y - line_b->y;
 	double b = line_b->x - line_a->x;
@@ -199,10 +191,7 @@ my_f(const gsl_vector *v, void *params)
 	{
 //		printf("%lf %lf\n", pose_vector[i].x, pose_vector[i].y);
 //		error = dist(pose_vector[i], p->motion_commands_vector[j]);
-		if (j < 1)
-			error = distance_point_to_line(pose_vector[i], &p->motion_commands_vector[j], &p->motion_commands_vector[j+1]);
-		else
-			error = distance_point_to_line(pose_vector[i], &p->motion_commands_vector[j-1], &p->motion_commands_vector[j]);
+		error = distance_point_to_line(pose_vector[i], &p->motion_commands_vector[j], &p->motion_commands_vector[j+1]);
 
 		error_sum += sqrt(error * error);
 
@@ -217,7 +206,7 @@ my_f(const gsl_vector *v, void *params)
 	}
 
 	double cost = error_sum;// + 0.00011 * sqrt((p->previous_k1 - d.k1) * (p->previous_k1 - d.k1));
-	printf("%lf\n", cost);
+	//printf("%lf\n", cost);
 
 	return (cost);
 }
@@ -365,7 +354,7 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double understee
 		fprintf(gnuplot_pipe, "set tics out\n");
 	}
 
-	unsigned int timed_index_to_motion_command = get_motion_timed_index_to_motion_command(p);
+	unsigned int timed_index_to_motion_command = get_motion_timed_index_to_motion_command_vector(p);
 	dphi_vector.push_front(p->motion_commands_vector[timed_index_to_motion_command].phi);
 	cphi_vector.push_front(carmen_get_phi_from_curvature(p->atan_current_curvature, v, understeer_coeficient, distance_between_front_and_rear_axles));
 	timestamp_vector.push_front(t - first_timestamp);

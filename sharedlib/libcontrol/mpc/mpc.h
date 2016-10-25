@@ -5,6 +5,13 @@
 extern "C" {
 #endif
 
+#include <carmen/carmen.h>
+#include <gsl/gsl_math.h>
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_spline.h>
+#include <gsl/gsl_multimin.h>
+#include <car_model.h>
+
 
 typedef struct {
 	double k1;

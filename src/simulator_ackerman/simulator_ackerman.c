@@ -68,11 +68,17 @@ int
 apply_system_latencies(carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands)
 {
 	int i, j;
+	double steering_discount;
+
+	if (simulator_config->use_mpc)
+		steering_discount = 0.2;
+	else
+		steering_discount = 0.4;
 
 	for (i = 0; i < nun_motion_commands; i++)
 	{
 		j = i;
-		for (double lat = 0.0; lat < 0.2; j++)
+		for (double lat = 0.0; lat < steering_discount; j++)
 		{
 			if (j >= nun_motion_commands)
 				break;
