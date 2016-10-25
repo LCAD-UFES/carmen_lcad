@@ -140,7 +140,9 @@ get_phi_vector_from_spline_descriptors(vector<carmen_ackerman_traj_point_t> &pos
 double
 dist(carmen_ackerman_traj_point_t v, carmen_ackerman_motion_command_t w)
 {
+
     return sqrt((carmen_square(v.x - w.x) + carmen_square(v.y - w.y)));
+
 }
 
 
