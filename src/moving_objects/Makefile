@@ -24,11 +24,12 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libstereovgram
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libelas
 LFLAGS += -lparam_interface -lipc -lglobal -lbumblebee_basic_interface -lelas -lstereovgram -lstereo -lstdc++ -fopenmp -lm
 
-CFLAGS += -Wall -fopenmp #-O3
+CFLAGS += -g -pg -Wall -fopenmp
 CFLAGS += -w -msse3
 
 # Required for debugging:
-CXXFLAGS += -g -O0
+CXXFLAGS += -g -pg -Wall -fopenmp
+CXXFLAGS += -w -msse3
 
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -lgrid_mapping -lparam_interface -lipc -lglobal -lmapper_interface -lmoving_objects_interface -lmap_server_interface -lfused_odometry_interface -llocalize_ackerman_interface -llaser_interface -lrotation_geometry -lmap_io -lmap_util \

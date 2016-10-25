@@ -950,6 +950,14 @@ carmen_laser_ldmrs_objects_data_message_handler(carmen_laser_ldmrs_objects_data_
 //			{
 				double abs_velocity = sqrt( pow(laser_message->objects_data_list[i].abs_velocity_x,2) + pow(laser_message->objects_data_list[i].abs_velocity_y,2));
 				ldmrs_objects_tracking[i].velocity = abs_velocity;
+
+				if(laser_message->objects_data_list[i].object_age < 45)
+				{
+					ldmrs_objects_tracking[i].velocity = 0.0;
+				}
+
+//				printf("id %3d age %5d r_x %8.5lf r_y %8.5lf\n", laser_message->objects_data_list[i].object_id,
+//						laser_message->objects_data_list[i].object_age, laser_message->objects_data_list[i].reference_point_x, laser_message->objects_data_list[i].reference_point_y);
 //			}
 //			else
 //			{
@@ -964,6 +972,7 @@ carmen_laser_ldmrs_objects_data_message_handler(carmen_laser_ldmrs_objects_data_
 
 			ldmrs_objects_tracking[i].classId = laser_message->objects_data_list[i].class_id;
 		}
+//		printf("\n");
     }
 }
 
