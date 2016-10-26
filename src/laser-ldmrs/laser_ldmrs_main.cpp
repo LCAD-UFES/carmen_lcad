@@ -103,6 +103,8 @@ carmen_laser_ldmrs_copy_message(vpLaserScan laserscan[4], carmen_laser_ldmrs_mes
 		return;
 	}
 
+	int num_of_points = laserscan[0].getNumPoints();
+
 	std::vector<vpScanPoint> pointsInLayer1 = laserscan[0].getScanPoints();
 	std::vector<vpScanPoint> pointsInLayer2 = laserscan[1].getScanPoints();
 	std::vector<vpScanPoint> pointsInLayer3 = laserscan[2].getScanPoints();
@@ -113,11 +115,13 @@ carmen_laser_ldmrs_copy_message(vpLaserScan laserscan[4], carmen_laser_ldmrs_mes
 	int sizeLayer3 = pointsInLayer3.size();
 	int sizeLayer4 = pointsInLayer4.size();
 
-	//printf("size1: %d, size2: %d, size3: %d, size4: %d\n",sizeLayer1,sizeLayer2,sizeLayer3,sizeLayer4);
+	if(num_of_points > (sizeLayer1 + sizeLayer2 +sizeLayer3 + sizeLayer4)){
+		num_of_points = sizeLayer1 + sizeLayer2 +sizeLayer3 + sizeLayer4;
+	}
 
-	if(message->scan_points != laserscan[0].getNumPoints())
+	if(message->scan_points != num_of_points)
 	{
-		message->scan_points = laserscan[0].getNumPoints();
+		message->scan_points = num_of_points;
 		message->arraypoints = (carmen_laser_ldmrs_point *)realloc(message->arraypoints, message->scan_points * sizeof(carmen_laser_ldmrs_point));
 		carmen_test_alloc(message->arraypoints);
 	}
