@@ -16,9 +16,103 @@ static double axle_distance = 0.0;
 static carmen_base_ackerman_odometry_message odometry_message;
 vpSickLDMRS laser;
 
-/*********************************************************
-		   --- Publishers ---
- **********************************************************/
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Publishers                                                                                //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void
+publish_variable_velodyne_message(vpLaserScan laserscan[4])
+{
+	carmen_velodyne_variable_scan_message velodyne_message;
+
+	double start_angle_deg = carmen_radians_to_degrees(2*M_PI*laserscan[0].getStartAngle() /(double) laserscan[0].getNumSteps());
+	double end_angle_deg = carmen_radians_to_degrees(2*M_PI*laserscan[0].getStopAngle() /(double) laserscan[0].getNumSteps());
+	int number_of_shots = (start_angle_deg - end_angle_deg) / 0.5;
+
+
+	velodyne_message.number_of_shots = number_of_shots;
+	velodyne_message.partial_scan = (carmen_velodyne_shot *) malloc (velodyne_message.number_of_shots * sizeof(carmen_velodyne_shot));
+	velodyne_message.timestamp = carmen_get_time();
+	velodyne_message.host = carmen_get_host();
+
+
+	// alocacao
+	for (int i = 0; i < velodyne_message.number_of_shots; i++)
+	{
+		velodyne_message.partial_scan[i].shot_size = 4;
+		velodyne_message.partial_scan[i].distance = (unsigned short*) calloc (4, sizeof(unsigned short));
+		velodyne_message.partial_scan[i].intensity = (unsigned char*) calloc (4, sizeof(unsigned char));
+		velodyne_message.partial_scan[i].angle = start_angle_deg + 0.5 * i;
+	}
+
+
+	if(laserscan[0].getNumPoints() == 0) {
+		return;
+	}
+
+	int num_of_points = laserscan[0].getNumPoints();
+
+	std::vector<vpScanPoint> pointsInLayer1 = laserscan[0].getScanPoints();
+	std::vector<vpScanPoint> pointsInLayer2 = laserscan[1].getScanPoints();
+	std::vector<vpScanPoint> pointsInLayer3 = laserscan[2].getScanPoints();
+	std::vector<vpScanPoint> pointsInLayer4 = laserscan[3].getScanPoints();
+
+	int sizeLayer1 = pointsInLayer1.size();
+	int sizeLayer2 = pointsInLayer2.size();
+	int sizeLayer3 = pointsInLayer3.size();
+	int sizeLayer4 = pointsInLayer4.size();
+
+	if(num_of_points > (sizeLayer1 + sizeLayer2 +sizeLayer3 + sizeLayer4)){
+		num_of_points = sizeLayer1 + sizeLayer2 +sizeLayer3 + sizeLayer4;
+	}
+
+//	if(message->scan_points != num_of_points)
+//	{
+//		message->scan_points = num_of_points;
+//		message->arraypoints = (carmen_laser_ldmrs_point *)realloc(message->arraypoints, message->scan_points * sizeof(carmen_laser_ldmrs_point));
+//		carmen_test_alloc(message->arraypoints);
+//	}
+//
+//	int i;
+//	for(i = 0; i < sizeLayer1; i++)
+//	{
+//		message->arraypoints[i].horizontal_angle = pointsInLayer1[i].getHAngle();
+//		message->arraypoints[i].vertical_angle = pointsInLayer1[i].getVAngle();
+//		message->arraypoints[i].radial_distance = pointsInLayer1[i].getRadialDist();
+//		message->arraypoints[i].flags = pointsInLayer1[i].getFlags();
+//	}
+//
+//	for(i = 0; i < sizeLayer2; i++)
+//	{
+//		message->arraypoints[i + sizeLayer1].horizontal_angle = pointsInLayer2[i].getHAngle();
+//		message->arraypoints[i + sizeLayer1].vertical_angle = pointsInLayer2[i].getVAngle();
+//		message->arraypoints[i + sizeLayer1].radial_distance = pointsInLayer2[i].getRadialDist();
+//		message->arraypoints[i + sizeLayer1].flags = pointsInLayer2[i].getFlags();
+//	}
+//
+//	for(i = 0; i < sizeLayer3; i++)
+//	{
+//		message->arraypoints[i + sizeLayer1 + sizeLayer2].horizontal_angle = pointsInLayer3[i].getHAngle();
+//		message->arraypoints[i + sizeLayer1 + sizeLayer2].vertical_angle = pointsInLayer3[i].getVAngle();
+//		message->arraypoints[i + sizeLayer1 + sizeLayer2].radial_distance = pointsInLayer3[i].getRadialDist();
+//		message->arraypoints[i + sizeLayer1 + sizeLayer2].flags = pointsInLayer3[i].getFlags();
+//
+//	}
+//
+//	for(i = 0; i < sizeLayer4; i++)
+//	{
+//		message->arraypoints[i + sizeLayer1 + sizeLayer2 + sizeLayer3].horizontal_angle = pointsInLayer4[i].getHAngle();
+//		message->arraypoints[i + sizeLayer1 + sizeLayer2 + sizeLayer3].vertical_angle = pointsInLayer4[i].getVAngle();
+//		message->arraypoints[i + sizeLayer1 + sizeLayer2 + sizeLayer3].radial_distance = pointsInLayer4[i].getRadialDist();
+//		message->arraypoints[i + sizeLayer1 + sizeLayer2 + sizeLayer3].flags = pointsInLayer4[i].getFlags();
+//	}
+}
+
 
 void
 publish_heartbeats(void *clientData,
@@ -30,10 +124,27 @@ publish_heartbeats(void *clientData,
 	(void)scheduledTime;
 	carmen_publish_heartbeat((char*)"laser_ldmrs");
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
 
-/*********************************************************
-		   --- Handlers ---
- **********************************************************/
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Handlers                                                                                  //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+static void
+base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *odometry_message)
+{
+
+	short velocity_cms = (short) (odometry_message->v * 100.0);
+	short phi_mrad = (short) (odometry_message->phi * 1000);
+	short yaw_rate = (short) (odometry_message->v * tan(odometry_message->phi) / axle_distance) * 10000;
+
+	laser.sendEgoMotionData(velocity_cms, phi_mrad, yaw_rate);
+}
+
 
 static void
 shutdown_module(int signo)
@@ -52,6 +163,7 @@ shutdown_module(int signo)
 		exit(0);
 	}
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 static int
@@ -73,18 +185,6 @@ carmen_laser_ldmrs_read_parameters(int argc, char **argv)
 }
 
 
-static void
-base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *odometry_message)
-{
-
-	short velocity_cms = (short) (odometry_message->v * 100.0);
-	short phi_mrad = (short) (odometry_message->phi * 1000);
-	short yaw_rate = (short) (odometry_message->v * tan(odometry_message->phi) / axle_distance) * 10000;
-
-	laser.sendEgoMotionData(velocity_cms, phi_mrad, yaw_rate);
-}
-
-
 /*********************************************************
 		   --- Build messages ---
  **********************************************************/
@@ -103,6 +203,8 @@ carmen_laser_ldmrs_copy_message(vpLaserScan laserscan[4], carmen_laser_ldmrs_mes
 		return;
 	}
 
+	int num_of_points = laserscan[0].getNumPoints();
+
 	std::vector<vpScanPoint> pointsInLayer1 = laserscan[0].getScanPoints();
 	std::vector<vpScanPoint> pointsInLayer2 = laserscan[1].getScanPoints();
 	std::vector<vpScanPoint> pointsInLayer3 = laserscan[2].getScanPoints();
@@ -113,16 +215,19 @@ carmen_laser_ldmrs_copy_message(vpLaserScan laserscan[4], carmen_laser_ldmrs_mes
 	int sizeLayer3 = pointsInLayer3.size();
 	int sizeLayer4 = pointsInLayer4.size();
 
-	//printf("size1: %d, size2: %d, size3: %d, size4: %d\n",sizeLayer1,sizeLayer2,sizeLayer3,sizeLayer4);
+	if(num_of_points > (sizeLayer1 + sizeLayer2 +sizeLayer3 + sizeLayer4)){
+		num_of_points = sizeLayer1 + sizeLayer2 +sizeLayer3 + sizeLayer4;
+	}
 
-	if(message->scan_points != laserscan[0].getNumPoints())
+	if(message->scan_points != num_of_points)
 	{
-		message->scan_points = laserscan[0].getNumPoints();
+		message->scan_points = num_of_points;
 		message->arraypoints = (carmen_laser_ldmrs_point *)realloc(message->arraypoints, message->scan_points * sizeof(carmen_laser_ldmrs_point));
 		carmen_test_alloc(message->arraypoints);
 	}
 
-	for(int i = 0; i < sizeLayer1; i++)
+	int i;
+	for(i = 0; i < sizeLayer1; i++)
 	{
 		message->arraypoints[i].horizontal_angle = pointsInLayer1[i].getHAngle();
 		message->arraypoints[i].vertical_angle = pointsInLayer1[i].getVAngle();
@@ -130,7 +235,7 @@ carmen_laser_ldmrs_copy_message(vpLaserScan laserscan[4], carmen_laser_ldmrs_mes
 		message->arraypoints[i].flags = pointsInLayer1[i].getFlags();
 	}
 
-	for(int i = 0; i < sizeLayer2; i++)
+	for(i = 0; i < sizeLayer2; i++)
 	{
 		message->arraypoints[i + sizeLayer1].horizontal_angle = pointsInLayer2[i].getHAngle();
 		message->arraypoints[i + sizeLayer1].vertical_angle = pointsInLayer2[i].getVAngle();
@@ -138,7 +243,7 @@ carmen_laser_ldmrs_copy_message(vpLaserScan laserscan[4], carmen_laser_ldmrs_mes
 		message->arraypoints[i + sizeLayer1].flags = pointsInLayer2[i].getFlags();
 	}
 
-	for(int i = 0; i < sizeLayer3; i++)
+	for(i = 0; i < sizeLayer3; i++)
 	{
 		message->arraypoints[i + sizeLayer1 + sizeLayer2].horizontal_angle = pointsInLayer3[i].getHAngle();
 		message->arraypoints[i + sizeLayer1 + sizeLayer2].vertical_angle = pointsInLayer3[i].getVAngle();
@@ -147,7 +252,7 @@ carmen_laser_ldmrs_copy_message(vpLaserScan laserscan[4], carmen_laser_ldmrs_mes
 
 	}
 
-	for(int i = 0; i < sizeLayer4; i++)
+	for(i = 0; i < sizeLayer4; i++)
 	{
 		message->arraypoints[i + sizeLayer1 + sizeLayer2 + sizeLayer3].horizontal_angle = pointsInLayer4[i].getHAngle();
 		message->arraypoints[i + sizeLayer1 + sizeLayer2 + sizeLayer3].vertical_angle = pointsInLayer4[i].getVAngle();
@@ -239,10 +344,6 @@ carmen_laser_ldmrs_objects_data_build_message(vpLaserObjectData *objectData, car
 	}
 }
 
-
-/*********************************************************
-		   --- Main Function ---
- **********************************************************/
 
 int
 main(int argc, char **argv)

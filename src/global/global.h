@@ -205,7 +205,10 @@ typedef struct {
 } carmen_ackerman_path_point_t, *carmen_ackerman_path_point_p;
 
 
-typedef struct {
+typedef struct { // Mudado para incluir x, y, e theta para testar novo mpc de posicao. Este tipo deve ser mudado para o tipo acima se der certo o novo mpc.
+	double x;
+	double y;
+	double theta;
 	double v;
 	double phi;
 	double time;
@@ -277,6 +280,11 @@ struct _cell_coords_t
 
 typedef struct _cell_coords_t cell_coords_t;
 
+typedef struct {
+	int ipx;
+	int ipy;
+	carmen_sphere_coord_t laser_polar;
+} carmen_velodyne_points_in_cam_t, *carmen_velodyne_points_in_cam_p;
 
 typedef enum { CARMEN_MOTOR, CARMEN_SERVO } carmen_arm_joint_t;
 

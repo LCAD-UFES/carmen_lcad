@@ -89,7 +89,7 @@ publish_navigator_ackerman_plan_message_with_obstacle_avoider_path(carmen_ackerm
 }
 
 
-static void
+void
 publish_navigator_ackerman_plan_message_with_motion_planner_path(carmen_ackerman_motion_command_t *motion_commands_vector,
 		int num_motion_commands, double timestamp)
 {
@@ -232,8 +232,8 @@ robot_ackerman_motion_command_message_handler(carmen_robot_ackerman_motion_comma
 	// Apenas para a visualizacao da mensagem recebida (path verde)
 	if (ackerman_collision_avoidance && ((carmen_get_time() - time_of_last_call) > 0.2))
 	{
-		publish_navigator_ackerman_plan_message_with_motion_planner_path(next_motion_command_vector,
-				num_motion_commands, motion_command_message->timestamp);
+//		publish_navigator_ackerman_plan_message_with_motion_planner_path(next_motion_command_vector,
+//				num_motion_commands, motion_command_message->timestamp);
 		time_of_last_call = carmen_get_time();
 	}
 

@@ -68,11 +68,17 @@ int
 apply_system_latencies(carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands)
 {
 	int i, j;
+	double steering_discount;
+
+	if (simulator_config->use_mpc)
+		steering_discount = 0.2;
+	else
+		steering_discount = 0.4;
 
 	for (i = 0; i < nun_motion_commands; i++)
 	{
 		j = i;
-		for (double lat = 0.0; lat < 0.2; j++)
+		for (double lat = 0.0; lat < steering_discount; j++)
 		{
 			if (j >= nun_motion_commands)
 				break;
@@ -81,6 +87,12 @@ apply_system_latencies(carmen_ackerman_motion_command_p current_motion_command_v
 		if (j >= nun_motion_commands)
 			break;
 		current_motion_command_vector[i].phi = current_motion_command_vector[j].phi;
+//		current_motion_command_vector[i].phi = current_motion_command_vector[j].phi;
+//		current_motion_command_vector[i].v = current_motion_command_vector[j].v;
+//		current_motion_command_vector[i].x = current_motion_command_vector[j].x;
+//		current_motion_command_vector[i].y = current_motion_command_vector[j].y;
+//		current_motion_command_vector[i].theta = current_motion_command_vector[j].theta;
+//		current_motion_command_vector[i].time = current_motion_command_vector[j].time;
 	}
 
 	for (i = 0; i < nun_motion_commands; i++)
@@ -279,6 +291,13 @@ offline_map_update_handler(carmen_map_server_offline_map_message *offline_map_me
 {
 	carmen_map_server_copy_offline_map_from_message(&(simulator_config->map), offline_map_message);
 	necessary_maps_available = 1;
+}
+
+
+static void
+localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
+{
+	simulator_config->global_pos = *msg;
 }
 
 
@@ -616,6 +635,8 @@ subscribe_to_relevant_messages()
 
 	carmen_base_ackerman_subscribe_motion_command(NULL, (carmen_handler_t) motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
 	
+	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
 #ifdef __USE_RL_CONTROL
 
 	carmen_rl_control_subscribe_message(NULL, (carmen_handler_t) rl_control_handler, CARMEN_SUBSCRIBE_LATEST);

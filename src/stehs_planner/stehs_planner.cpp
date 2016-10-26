@@ -20,12 +20,24 @@ StehsPlanner::Distance(double ax, double ay, double bx, double by)
 	return std::sqrt(dx * dx + dy * dy);
 }
 
+
 double
 StehsPlanner::Distance(const carmen_ackerman_traj_point_t &a, const carmen_ackerman_traj_point_t &b)
 {
 	double dx = a.x - b.x;
 	double dy = a.y - b.y;
 	double distance = sqrt(dx * dx + dy * dy);
+
+	return (distance);
+}
+
+
+double
+StehsPlanner::Distance2(const carmen_ackerman_traj_point_t &a, const carmen_ackerman_traj_point_t &b)
+{
+	double dx = a.x - b.x;
+	double dy = a.y - b.y;
+	double distance = (dx * dx + dy * dy);
 
 	return (distance);
 }
@@ -51,7 +63,7 @@ StehsPlanner::ObstacleDistance(double x, double y)
 	p.x = x;
 	p.y = y;
 
-	return (carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&p, distance_map)); // TODO verificar se esta funcao foi modificada
+	return (carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&p, distance_map));
 }
 
 double
@@ -60,21 +72,23 @@ StehsPlanner::ObstacleDistance(const carmen_ackerman_traj_point_t &point)
 	carmen_point_t p;
 	p = traj_to_point_t(point);
 
-	return (carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&p, distance_map)); // TODO verificar se esta funcao foi modificada
+	return (carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&p, distance_map));
 }
 
 
-void
+std::list<CircleNode>
 StehsPlanner::BuildCirclePath(CircleNodePtr node)
 {
-	circle_path.clear();
+	std::list<CircleNode> temp_circle_path;
 
 	while (node != NULL)
 	{
-		circle_path.push_front(*node);
+		temp_circle_path.push_front(*node);
 
 		node = node->parent;
 	}
+
+	return(temp_circle_path);
 }
 
 bool
@@ -85,7 +99,7 @@ StehsPlanner::Exist(CircleNodePtr current, std::vector<CircleNodePtr> &closed_se
 
 	while (it != end)
 	{
-		if (current->circle.Overlap((*it)->circle, 0.1))
+		if (current->circle.Overlap((*it)->circle, MAX_OVERLAP_FACTOR))
 			return true;
 
 		it++;
@@ -129,13 +143,13 @@ StehsPlanner::Expand(CircleNodePtr current)
 		double nx = x + px;
 		double ny = y + py;
 
-		double obst = ObstacleDistance(nx, ny);
+		double obstacle_distance = ObstacleDistance(nx, ny);
 
-		if (obst > robot_config.width * 0.5) {
+		if (obstacle_distance > robot_config.width * 0.5) {
 
 			// create the next child
 			// TODO verificar se é possível remover filhos com overlap
-			children.push_back(new CircleNode(nx, ny, obst, pg + pr, pg + pr + Distance(nx, ny, goal.x, goal.y), current));
+			children.push_back(new CircleNode(nx, ny, obstacle_distance, pg + pr, pg + pr + Distance(nx, ny, goal.x, goal.y), current));
 
 		}
 
@@ -149,16 +163,15 @@ StehsPlanner::Expand(CircleNodePtr current)
 }
 
 
-void
-StehsPlanner::SpaceExploration()
+std::list<CircleNode>
+StehsPlanner::SpaceExploration(CircleNodePtr start_node, CircleNodePtr goal_node)
 {
+	std::list<CircleNode> temp_circle_path;
 
-	//TODO verificar se os dados para os calculos estao disponiveis, se nao, nao fazer nada
-	// create the start circle node
-	CircleNodePtr start_node =  new CircleNode(start.x, start.y, ObstacleDistance(start), 0.0, Distance(start, goal), nullptr);
+	start_node->g = 0.0;
+	start_node->f = Distance(start_node->circle.x, start_node->circle.y, goal_node->circle.x, goal_node->circle.y);
 
-	// create the goal circle node
-	CircleNodePtr goal_node = new CircleNode(goal.x, goal.y, ObstacleDistance(goal), DBL_MAX, DBL_MAX, nullptr);
+	goal_node->g = goal_node->f = DBL_MAX;
 
 	// create the priority queue
 	std::priority_queue<CircleNodePtr, std::vector<CircleNodePtr>, CircleNodePtrComparator> open_set;
@@ -175,7 +188,7 @@ StehsPlanner::SpaceExploration()
 
 		if (goal_node->f < current->f)
 		{
-			BuildCirclePath(goal_node);
+			temp_circle_path = BuildCirclePath(goal_node);
 
 			while(!open_set.empty())
 			{
@@ -186,7 +199,6 @@ StehsPlanner::SpaceExploration()
 				delete tmp;
 			}
 			break;
-
 		}
 		else if (!Exist(current, closed_set))
 		{
@@ -205,7 +217,7 @@ StehsPlanner::SpaceExploration()
 
 			}
 
-			if (current->circle.Overlap(goal_node->circle, 0.5))
+			if (current->circle.Overlap(goal_node->circle, MIN_OVERLAP_FACTOR))
 			{
 
 				if (current->f < goal_node->g)
@@ -214,7 +226,6 @@ StehsPlanner::SpaceExploration()
 					goal_node->parent = current;
 				}
 			}
-
 			closed_set.push_back(current);
 		}
 	}
@@ -227,8 +238,138 @@ StehsPlanner::SpaceExploration()
 
 		delete tmp;
 	}
+
+	return (temp_circle_path);
 }
 
+
+int
+StehsPlanner::FindClosestRDDFIndex()
+{
+	double current_distance = 0.0;
+	double previous_distance = Distance(start, goal_list_message->poses[0]);
+	int i;
+
+	for (i = 1; i < goal_list_message->number_of_poses; i++)
+	{
+		current_distance = Distance(start, goal_list_message->poses[i]);
+
+		if (current_distance > previous_distance)
+			break;
+	}
+
+	return (i - 1);
+}
+
+
+int
+StehsPlanner::FindNextRDDFIndex(double radius_2, int current_rddf_index)
+{
+	int i = current_rddf_index + 1;
+
+	while (Distance2(goal_list_message->poses[current_rddf_index], goal_list_message->poses[i]) < radius_2)
+	{
+		i++;
+	}
+
+	return (i - 1);
+}
+
+
+int
+StehsPlanner::FindNextRDDFFreeIndex(int current_rddf_index)
+{
+
+	double obstacle_distance;
+
+	do
+	{
+		obstacle_distance = ObstacleDistance(goal_list_message->poses[current_rddf_index++]);
+	} while (obstacle_distance < robot_config.width * 0.5);
+
+	return (current_rddf_index);
+}
+
+
+void
+StehsPlanner::ConnectCirclePathGaps()
+{
+	std::list<CircleNode> temp_circle_path;
+
+	std::list<CircleNode>::iterator it = circle_path.begin();
+	std::list<CircleNode>::iterator previous_it = it;
+	++it;
+
+	while (it != circle_path.end())
+	{
+		if(!it->circle.Overlap(previous_it->circle, MIN_OVERLAP_FACTOR))
+		{
+			temp_circle_path = SpaceExploration(&(*previous_it), &(*it));
+			if(!temp_circle_path.empty())
+				circle_path.splice(previous_it,temp_circle_path);
+			else
+			{
+				// TODO O que fazer?
+			}
+		}
+		previous_it = it;
+		++it;
+	}
+}
+
+
+void
+StehsPlanner::RDDFSpaceExploration()
+{
+	//TODO verificar se os dados para os calculos estao disponiveis, se nao, nao fazer nada
+	// create the start circle node
+	CircleNodePtr start_node =  new CircleNode(start.x, start.y, ObstacleDistance(start), 0.0, 0.0, nullptr);
+
+	// create the goal circle node
+	CircleNodePtr goal_node = new CircleNode(goal.x, goal.y, ObstacleDistance(goal), DBL_MAX, DBL_MAX, nullptr);
+
+	int current_rddf_index = FindClosestRDDFIndex();
+
+	CircleNodePtr current_node = new CircleNode(goal_list_message->poses[current_rddf_index].x, goal_list_message->poses[current_rddf_index].y, ObstacleDistance(goal_list_message->poses[current_rddf_index]), DBL_MAX, DBL_MAX, nullptr);
+
+	circle_path.push_back(*start_node);
+
+//	if (current_node->circle.Overlap(start_node->circle, 0.5))
+//	{
+//		circle_path.push_back(*start_node);
+//		delete current_node;
+//		current_node = start_node;
+//	}
+//	else
+//	{
+//		SpaceExploration(start_node, current_node);
+//	}
+
+	double obstacle_distance = 0.0;
+
+	while (!current_node->circle.Overlap(goal_node->circle, MIN_OVERLAP_FACTOR))
+	{
+		// We decided to use radius^2 to optimize the Distance computation
+		current_rddf_index = FindNextRDDFIndex(current_node->circle.radius * current_node->circle.radius, current_rddf_index);
+
+		obstacle_distance = ObstacleDistance(goal_list_message->poses[current_rddf_index]);
+		if (obstacle_distance > robot_config.width * 0.5)
+		{
+			current_node = new CircleNode(goal_list_message->poses[current_rddf_index].x, goal_list_message->poses[current_rddf_index].y, obstacle_distance, 0.0, 0.0, nullptr);
+		}
+		else
+		{
+			current_rddf_index = FindNextRDDFFreeIndex(current_rddf_index);
+			obstacle_distance = ObstacleDistance(goal_list_message->poses[current_rddf_index]);
+
+			current_node = new CircleNode(goal_list_message->poses[current_rddf_index].x, goal_list_message->poses[current_rddf_index].y, obstacle_distance, 0.0, 0.0, nullptr);
+			//SpaceExploration(current_node, next_free_node);
+		}
+		circle_path.push_back(*current_node);
+	}
+
+
+}
 //
 //void
 //StehsPlanner::SpaceTimeExploration() {}

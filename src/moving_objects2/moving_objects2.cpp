@@ -531,13 +531,15 @@ filter_objects_and_associate(carmen_map_t *map, carmen_map_t *offline_grid_map, 
 	// #### pinta as associações
 	draw_associations(objs, clusters, &map_img_out);
 
+
+	// TODO publicar a mensagem para o viewer 3D e implementar o filtro de partículas.
 	cv::imshow("map_img_out", map_img_out);
     //cv::imshow("last_map_img_out", last_map_img_out);
-   // cv::imshow("offline_map_img", offline_map_img);
+    //cv::imshow("offline_map_img", offline_map_img);
 	//cv::imshow("last_map_img", last_map_img);
 	//cv::imshow("map_img", map_img);
 	//cv::imshow("map", map_img2);
-//	cv::waitKey(33);
+	//cv::waitKey(33);
 	last_clusters = clusters;
 	last_centroids = centroids;
 }
@@ -584,7 +586,7 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 
 	}
 
-//	cv::Mat road_map = segment_remission_map(&localize_map.carmen_mean_remission_map, &localize_map.carmen_map);
+	cv::Mat road_map = segment_remission_map(&localize_map.carmen_mean_remission_map, &localize_map.carmen_map);
 	filter_objects_and_associate(snapshot_map, &localize_map.carmen_map, road_map);
 	//show_map(&offline_map);
 	//printf("\n###############################################################\n");

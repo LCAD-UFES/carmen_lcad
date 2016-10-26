@@ -5,15 +5,19 @@ MODULE_COMMENT = Thrun tracker inside the tracker_opentld module
 
 LINK = g++
 
-CFLAGS += -Wall -pg
-CXXFLAGS += -Wall -pg
+CFLAGS += -Wall
+CXXFLAGS += -Wall
 IFLAGS += -I $(CUDA_HOME)/targets/x86_64-linux/include -I. -I $(CAFFE_HOME)/include -I $(CAFFE_HOME)/build/include \
-		  -I $(CAFFE_HOME)/build/src `pkg-config --cflags opencv`
+		  -I $(CAFFE_HOME)/build/src `pkg-config --cflags opencv` -I /usr/local/cuda-7.5/include/ # -D CPU_ONLY
+		  
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
 		  
 LFLAGS += -lboost_system -lboost_filesystem -lboost_regex `pkg-config --libs opencv` \
 		  -L $(CAFFE_HOME)/build/lib -lcaffe -ltinyxml -lglog -lopencv_video -lparam_interface -lipc \
-		  -lglobal -lbumblebee_basic_interface -lvisual_tracker_interface
+		  -lglobal -lbumblebee_basic_interface -lvisual_tracker_interface -lcudnn -lcublas -lvelodyne_camera_calibration \
+		  -lvelodyne_interface -lstereo_interface -llocalize_ackerman_interface
 
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
 SOURCES = goturn_main.cpp \
 		  gui.cpp \
@@ -33,7 +37,7 @@ SOURCES = goturn_main.cpp \
 		  helper/bounding_box.cpp \
 		  helper/helper.cpp \
 		  helper/high_res_timer.cpp \
-		  helper/image_proc.cpp
+		  helper/image_proc.cpp 
  
 PUBLIC_INCLUDES = 
     
@@ -59,7 +63,7 @@ goturn_tracker: goturn_main.o \
 		helper/bounding_box.o \
 		helper/helper.o \
 		helper/high_res_timer.o \
-		helper/image_proc.o
+		helper/image_proc.o 
 
 
 include ../../Makefile.rules

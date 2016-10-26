@@ -11,7 +11,7 @@ Circle::Circle(double x_, double y_, double r_) : x(x_), y(y_), radius(r_) {}
 // copy constructor
 Circle::Circle(const Circle &c) : x(c.x), y(c.y), radius(c.radius) {}
 
-// comparison operator overloading
+// Evaluate the overlap of 1 - overlap_factor
 bool Circle::Overlap(const Circle& c, double overlap_factor)
 {
 

@@ -1,9 +1,80 @@
-# GOTURN
+# GOTURN - LCAD VERSION README
 
+
+
+
+# Building
+## Dependencies
+* OpenCV
+* CAFFE
+* Visual_Tracker module
+* bumblebee_basic module (this module subscribes to `carmen_bumblebee_basic_stereoimage_message` with retified image)
+* [Download Caffemodel](https://goo.gl/A7xKwY)
+
+## Compiling
+
+Add to your bash the lines:
+ #Caffe
+ export CAFFE_HOME=<INSERT HERE YOUR CAFFE DIRECTORY>
+ export PATH=$CAFFE_HOME/build/tools:$PATH
+ export PATH=$CAFFE_HOME/build/lib:$PATH
+ export LD_LIBRARY_PATH=$CAFFE_HOME/build/lib:$LD_LIBRARY_PATH
+
+After, compile carmen
+
+This module publish the messages defined by the visual_tracker module (`carmen_visual_tracker_output_message`) because of that, it needs to be compiled as well.
+
+Navigate with the terminal to the directory of Visual_Tracker Module.
+```bash
+cd $CARMEN_HOME/src/visual_tracker/
+make
+```
+If you want run in GPU mode, comment in Makefile in IFLAGS the flag: -D CPU_ONLY
+
+Navigate with the terminal to the directory of this module.
+```bash
+cd $CARMEN_HOME/src/tracker_opentld/gorturn/
+make
+```
+
+# Usage
+## Keyboard shortcuts
+
+* `r` clear model, let user reinit tracking
+
+## Run
+Check the carmen-ford-escape.ini if you want to modify some of the parameters
+
+- Visual Tracker OpenTLD parameters
+```bash
+  tracker_opentld_view_width				640 --window and image width (can be equal to bumbeblee)
+  tracker_opentld_view_height				480 --window and image height (can be equal to bumbeblee)
+```
+
+Run the Central:
+`./central`
+
+##### Proccontrol options
+check the camera_number before start.
+
+play a log with camera using
+
+`./proccontrol process-volta_da_ufes_playback_viewer_3D.ini`
+
+Connect and turn on a Bumbeblee camera
+
+Navigate with the terminal to the directory and run
+```bash
+cd $CARMEN_HOME/src/tracker_opentld/goturn/
+./goturn_tracker <camera_number> <camera_side (0-left; 1-right)>
+```
+To test and see the published messages on terminal
+```bash
+./tracker_test
+```
+
+# GOTURN - README
 This is the code for our tracker, GOTURN: Generic Object Tracking Using Regression Networks.
-
-[Download Caffemodel](https://goo.gl/WXlXMt)
-
 GOTURN appeared in this paper:
 
 **[Learning to Track at 100 FPS with Deep Regression Networks](http://davheld.github.io/GOTURN/GOTURN.html)**,
