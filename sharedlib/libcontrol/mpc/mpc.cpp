@@ -14,7 +14,7 @@ using namespace std;
 
 
 FILE *gnuplot_save;
-bool save_and_plot = false;
+bool save_and_plot = true;
 
 
 typedef struct {
@@ -507,12 +507,12 @@ libmpc_stiction_simulation_new(double effort, double v)
 
 
 // STICTION CORRECTION PARAMETERS
-#define STEERING_ADDITIVE_BUMP 4.0  		// Amplitude of bump
-#define BUMP_SLEEP_TIME 30.0				// Time will be wait ultil next correction
+#define STEERING_ADDITIVE_BUMP 3.0
+#define BUMP_SLEEP_TIME 30.0
 #define NUMBER_CICLES_APPLYING_BUMP 2
 #define MAX_CUMULATIVE_STEERING_ERROR 0.001
 #define MAX_CUMULATIVE_EFFORT_ERROR 15.0
-#define MIN_VELOCITY_TO_CHECK_STICTION 5.5		// Only correct stinction at speeds above MIN_VELOCITY_TO_CHECK_STICTION m/s
+#define MIN_VELOCITY_TO_CHECK_STICTION 5.5
 
 
 double

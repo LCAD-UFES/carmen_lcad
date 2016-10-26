@@ -655,7 +655,10 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 		TrajectoryLookupTable::TrajectoryDimensions td,
 		Pose *localizer_pose)
 {
-	path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false, 0.025);
+	if (GlobalState::use_mpc)
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false, 0.025);
+	else
+		path = simulate_car_from_parameters(td, otcp, td.v_i, td.phi_i, false);
 	path_local = path;
 	if (path_has_loop(td.dist, otcp.sf))
 	{
