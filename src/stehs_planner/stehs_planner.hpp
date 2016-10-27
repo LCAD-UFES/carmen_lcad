@@ -44,7 +44,7 @@ public:
 
 	unsigned int show_debug_info;
 	unsigned int cheat;
-	bool ready;
+	bool lane_ready, distance_map_ready, goal_ready;
 
 	// circle path
 	std::list<CircleNode> circle_path;
@@ -83,7 +83,7 @@ public:
 	//
 	std::list<carmen_ackerman_motion_command_t> BuildPath();
 
-	std::vector<CircleNodePtr> Expand(CircleNodePtr current);
+	void Expand(CircleNodePtr current, std::priority_queue<CircleNodePtr, std::vector<CircleNodePtr>, CircleNodePtrComparator> &open_set);
 
 	std::list<CircleNode> BuildCirclePath(CircleNodePtr goal_node);
 

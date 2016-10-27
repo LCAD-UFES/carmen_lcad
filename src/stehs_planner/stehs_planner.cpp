@@ -2,15 +2,9 @@
 
 
 // constructor
-StehsPlanner::StehsPlanner() {}
+StehsPlanner::StehsPlanner():lane_ready(false), distance_map_ready(false), goal_ready(false) {}
 
 
-/*std::vector<CircleNode>
-StehsPlanner::Expand(CircleNodePtr current)
-{
-	//stehs_planner.goal;
-
-}*/
 
 double
 StehsPlanner::Distance(double ax, double ay, double bx, double by)
@@ -99,7 +93,7 @@ StehsPlanner::Exist(CircleNodePtr current, std::vector<CircleNodePtr> &closed_se
 
 	while (it != end)
 	{
-		if (current->circle.Overlap((*it)->circle, MAX_OVERLAP_FACTOR))
+		if (current->parent != (*it) && current->parent != (*it)->parent && current->circle.Overlap((*it)->circle, MAX_OVERLAP_FACTOR))
 			return true;
 
 		it++;
@@ -109,11 +103,9 @@ StehsPlanner::Exist(CircleNodePtr current, std::vector<CircleNodePtr> &closed_se
 }
 
 
-std::vector<CircleNodePtr>
-StehsPlanner::Expand(CircleNodePtr current)
+void
+StehsPlanner::Expand(CircleNodePtr current,	std::priority_queue<CircleNodePtr, std::vector<CircleNodePtr>, CircleNodePtrComparator> &open_set)
 {
-
-	std::vector<CircleNodePtr> children;
 
 	// Considering a 2m radius parent circle that involves the car we
 	// want 32 children circles
@@ -149,7 +141,7 @@ StehsPlanner::Expand(CircleNodePtr current)
 
 			// create the next child
 			// TODO verificar se é possível remover filhos com overlap
-			children.push_back(new CircleNode(nx, ny, obstacle_distance, pg + pr, pg + pr + Distance(nx, ny, goal.x, goal.y), current));
+			open_set.push(new CircleNode(nx, ny, obstacle_distance, pg + pr, pg + pr + Distance(nx, ny, goal.x, goal.y), current));
 
 		}
 
@@ -158,8 +150,6 @@ StehsPlanner::Expand(CircleNodePtr current)
 		x = c * x - s * y;
 		y = s * t + c * y;
 	}
-
-	return children;
 }
 
 
@@ -178,7 +168,7 @@ StehsPlanner::SpaceExploration(CircleNodePtr start_node, CircleNodePtr goal_node
 
 	std::vector<CircleNodePtr> closed_set;
 
-	open_set.push(start_node);
+	Expand(start_node, open_set);
 
 	while (!open_set.empty())
 	{
@@ -188,7 +178,7 @@ StehsPlanner::SpaceExploration(CircleNodePtr start_node, CircleNodePtr goal_node
 
 		if (goal_node->f < current->f)
 		{
-			temp_circle_path = BuildCirclePath(goal_node);
+			temp_circle_path = BuildCirclePath(goal_node->parent);
 
 			while(!open_set.empty())
 			{
@@ -202,20 +192,7 @@ StehsPlanner::SpaceExploration(CircleNodePtr start_node, CircleNodePtr goal_node
 		}
 		else if (!Exist(current, closed_set))
 		{
-			std::vector<CircleNodePtr> children = Expand(current);
-
-			// iterator
-			std::vector<CircleNodePtr>::iterator it = children.begin();
-			std::vector<CircleNodePtr>::iterator end = children.end();
-
-			while (it != end)
-			{
-				open_set.push(*it);
-
-				// update the iterator
-				++it;
-
-			}
+			Expand(current, open_set);
 
 			if (current->circle.Overlap(goal_node->circle, MIN_OVERLAP_FACTOR))
 			{
@@ -227,6 +204,10 @@ StehsPlanner::SpaceExploration(CircleNodePtr start_node, CircleNodePtr goal_node
 				}
 			}
 			closed_set.push_back(current);
+		}
+		else
+		{
+			delete current;
 		}
 	}
 
@@ -368,7 +349,14 @@ StehsPlanner::RDDFSpaceExploration()
 		circle_path.push_back(*current_node);
 	}
 
+	ConnectCirclePathGaps();
 
+	std::list<CircleNode>::iterator it;
+
+	for(it = circle_path.begin(); it != circle_path.end(); ++it)
+	{
+		printf("x: %f y: %f r: %f\n",it->circle.x, it->circle.y, it->circle.radius);
+	}
 }
 //
 //void
