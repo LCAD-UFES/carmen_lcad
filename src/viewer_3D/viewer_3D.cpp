@@ -685,11 +685,14 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message* velo
 static void
 velodyne_variable_scan_message_handler(carmen_velodyne_variable_scan_message* velodyne_message)
 {
-//	printf("RECEBENDO\n");
-//    if (draw_velodyne_flag == 4)
-//    {
-        add_variable_velodyne_message(var_v_drawer, velodyne_message, car_fused_pose, sensor_board_1_pose);
-//    }
+	add_variable_velodyne_message(var_v_drawer, velodyne_message, car_fused_pose, sensor_board_1_pose);
+}
+
+
+static void
+sick_variable_scan_message_handler(carmen_velodyne_variable_scan_message* velodyne_message)
+{
+	add_variable_velodyne_message(var_v_drawer, velodyne_message, car_fused_pose, front_bullbar_pose);
 }
 
 carmen_vector_3D_t
@@ -2507,6 +2510,10 @@ subscribe_ipc_messages(void)
     carmen_stereo_velodyne_subscribe_scan_message(8, NULL,
                                                   (carmen_handler_t) velodyne_variable_scan_message_handler,
                                                   CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_stereo_velodyne_subscribe_scan_message(1, NULL,
+                                                      (carmen_handler_t) sick_variable_scan_message_handler,
+                                                      CARMEN_SUBSCRIBE_LATEST);
 
     carmen_mapper_subscribe_message(NULL,
                                           (carmen_handler_t) mapper_message_handler,
