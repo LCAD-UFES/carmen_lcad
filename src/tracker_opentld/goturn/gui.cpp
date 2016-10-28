@@ -39,6 +39,10 @@ static int drag = 0;
 
 static void mouseHandler(int event, int x, int y, int flags, void *param)
 {
+	// just to avoid the unused warnings
+	(void) flags;
+	(void) param;
+
 	/* user press left button */
 	if(event == CV_EVENT_LBUTTONDOWN && !drag)
 	{
@@ -94,7 +98,7 @@ int getBBFromUser(cv::Mat *img, CvRect &rect, string windowName)
             return 0;
         }
 
-        if(((key == '\n') || (key == '\r') || (key == '\r\n')) && (bb->x != -1) && (bb->y != -1))
+        if(((key == '\n') || (key == '\r') /*|| (key == '\r\n')*/) && (bb->x != -1) && (bb->y != -1))
         {
             correctBB = true;
         }

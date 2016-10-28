@@ -52,6 +52,10 @@ static int tld_image_height = 0;
 const float MAX_RANGE = 30.0;
 const float MIN_RANGE = 0.5;
 
+carmen_pose_3D_t camera_pose_parameters;
+carmen_pose_3D_t board_pose_parameters;
+
+
 static int camera_side = 0;
 
 static carmen_bumblebee_basic_stereoimage_message last_message;
@@ -87,7 +91,6 @@ double average_box_confidence;
 static std::string window_name = "GOTURN";
 
 
-using namespace cv;
 
 struct Image_Box{
 	cv::Mat prev_image;
@@ -102,6 +105,154 @@ stereo_util camera_parameters;
 carmen_vector_3D_t trackerPoint;
 std::vector<carmen_localize_ackerman_globalpos_message>  localizeVector;
 
+using namespace std;
+
+static vector<carmen_ackerman_traj_point_t> tracker_global_poses;
+static vector<carmen_ackerman_traj_point_t> localize_poses_plot;
+
+using namespace cv;
+
+//Funcao para debugar usando gnuplot
+void
+plot_state(vector<carmen_ackerman_traj_point_t> &points, vector<carmen_ackerman_traj_point_t> &spline,
+		  vector<carmen_ackerman_traj_point_t> &localize_plot)
+{
+//	plot data Table - Last TCP - Optmizer tcp - Lane
+	//Plot Optmizer step tcp and lane?
+
+	#define DELTA_T (1.0 / 40.0)
+
+//	#define PAST_SIZE 300
+	static bool first_time = true;
+//	static double first_timestamp;
+	static FILE *gnuplot_pipeMP;
+
+//	double t = carmen_get_time();
+
+	if (first_time)
+	{
+//		first_timestamp = t;
+		first_time = false;
+
+		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+		fprintf(gnuplot_pipeMP, "set xrange [0:40]\n");
+		fprintf(gnuplot_pipeMP, "set yrange [-10:10]\n");
+//		fprintf(gnuplot_pipe, "set y2range [-0.55:0.55]\n");
+		fprintf(gnuplot_pipeMP, "set xlabel 'x'\n");
+		fprintf(gnuplot_pipeMP, "set ylabel 'y'\n");
+//		fprintf(gnuplot_pipe, "set y2label 'phi (radians)'\n");
+//		fprintf(gnuplot_pipe, "set ytics nomirror\n");
+//		fprintf(gnuplot_pipe, "set y2tics\n");
+		fprintf(gnuplot_pipeMP, "set tics out\n");
+	}
+
+
+	FILE *gnuplot_data_points = fopen("gnuplot_data_points.txt", "w");
+	FILE *gnuplot_data_spline = fopen("gnuplot_data_spline.txt", "w");
+	FILE *gnuplot_data_localize = fopen("gnuplot_data_localize.txt", "w");
+	double x_plot, y_plot;
+	double first_points_x = spline[0].x; // points[0].x;
+	double first_points_y = spline[0].y; //points[0].y;
+	double first_spline_x = spline[0].x;
+	double first_spline_y = spline[0].y;
+	double first_localize_x = spline[0].x; //localize_plot[0].x;
+	double first_localize_y = spline[0].y; //localize_plot[0].y;
+
+	for (unsigned int i = 0; i < points.size(); i++)
+	{
+		x_plot = points[i].x - first_points_x;
+		y_plot = points[i].y - first_points_y;
+		fprintf(gnuplot_data_points, "%lf %lf %lf %lf %lf %lf\n", x_plot, y_plot, 1.0 * cos(points.at(i).theta),
+				1.0 * sin(points.at(i).theta), points.at(i).theta, points.at(i).phi);
+	}
+	for (unsigned int i = 0; i < spline.size(); i++)
+	{
+		x_plot = spline[i].x - first_spline_x;
+		y_plot = spline[i].y - first_spline_y;
+		fprintf(gnuplot_data_spline, "%lf %lf %lf %lf %lf %lf\n", x_plot, y_plot, 1.0 * cos(spline.at(i).theta),
+				1.0 * sin(spline.at(i).theta), spline.at(i).theta, spline.at(i).phi);
+	}
+	for (unsigned int i = 0; i < localize_plot.size(); i++)
+	{
+		x_plot = localize_plot[i].x - first_localize_x;
+		y_plot = localize_plot[i].y - first_localize_y;
+		fprintf(gnuplot_data_localize, "%lf %lf %lf %lf %lf %lf\n", x_plot, y_plot, 1.0 * cos(localize_plot.at(i).theta),
+				1.0 * sin(localize_plot.at(i).theta), localize_plot.at(i).theta, localize_plot.at(i).phi);
+	}
+
+	fclose(gnuplot_data_points);
+	fclose(gnuplot_data_spline);
+	fclose(gnuplot_data_localize);
+
+//	fprintf(gnuplot_pipe, "unset arrow\nset arrow from %lf, %lf to %lf, %lf nohead\n",0, -60.0, 0, 60.0);
+
+//	//TODO to print points
+	fprintf(gnuplot_pipeMP, "plot "
+				"'./gnuplot_data_points.txt' using 1:2 title 'tracker_points',"
+				"'./gnuplot_data_localize.txt' using 1:2 title 'localize',"
+				"'./gnuplot_data_spline.txt' using 1:2 title 'spline' w lines\n");
+
+//	fprintf(gnuplot_pipeMP, "plot "
+//				"'./gnuplot_data_points.txt' using 1:2 title 'tracker_points',"
+//				"'./gnuplot_data_spline.txt' using 1:2 title 'spline'\n"
+//				"'./gnuplot_data_localize.txt' using 1:2 title 'localize' axes x1y1\n"
+//			);
+
+	//TODO to print lines
+//	fprintf(gnuplot_pipeMP, "plot "
+//			"'./gnuplot_data_points.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'tracker_points',"
+//			"'./gnuplot_data_spline.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'spline',"
+//			"'./gnuplot_data_localize.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'localize'\n");
+
+	fflush(gnuplot_pipeMP);
+}
+
+
+//TODO verificar se eh necessario
+carmen_ackerman_traj_point_t
+move_path_to_current_robot_pose(carmen_vector_3D_t *objectPoint, carmen_ackerman_traj_point_t *localizer_pose)
+{
+	carmen_ackerman_traj_point_t globalpoint;
+	globalpoint.x = localizer_pose->x + objectPoint->x * cos(localizer_pose->theta) - objectPoint->y * sin(localizer_pose->theta);
+	globalpoint.y = localizer_pose->y + objectPoint->x * sin(localizer_pose->theta) + objectPoint->y * cos(localizer_pose->theta);
+//	globalpoint.theta = carmen_normalize_theta(objectPoint.theta + localizer_pose->theta);
+
+	return globalpoint;
+}
+
+
+
+void
+plot_to_debug_state(vector<carmen_ackerman_traj_point_t> poses, carmen_vector_3D_t tracker_Point, carmen_ackerman_traj_point_t localize_plot, unsigned int maxPositions)
+{
+
+
+	if(tracker_global_poses.size() > 1)
+	{
+		tracker_global_poses.back().theta = carmen_normalize_theta(
+				atan2(tracker_global_poses.back().y - tracker_global_poses[tracker_global_poses.size() - 2].y,
+						tracker_global_poses.back().x - tracker_global_poses[tracker_global_poses.size() - 2].x));
+	}
+
+	if (tracker_global_poses.size() > maxPositions)
+	{
+		tracker_global_poses.erase(tracker_global_poses.begin());
+	}
+	if (localize_poses_plot.size() > maxPositions)
+	{
+		localize_poses_plot.erase(localize_poses_plot.begin());
+	}
+
+	tracker_global_poses.push_back(move_path_to_current_robot_pose(&tracker_Point, &localize_plot));
+	//if Soh pra testar bug
+
+	localize_poses_plot.push_back(localize_plot);
+
+	if( poses.size() > 0 && tracker_global_poses.size() > 0 && localize_poses_plot.size() > 0)
+		plot_state(tracker_global_poses, poses, localize_poses_plot);
+
+
+}
 
 
 carmen_vector_3D_t
@@ -236,18 +387,18 @@ calculate_box_average(BoundingBox &box, std::vector<Image_Box> &last_track, Mat*
 }
 
 void
-process_goturn_detection(Mat *img, double time_stamp)
+goturn_tracker(Mat *img, double time_stamp)
 {
-	char string1[128];
+	char string1[1024]; strcpy(string1, "");
 	CvFont font;
 	static int cont = 0;
 
 	//cv::Mat mat_image=cvarrToMat(&img);
 	static Mat prev_image;
 	prev_image = img->clone();
-	if(box.x1_ != -1.0)
-	{
 
+	if (box.x1_ != -1.0)
+	{
 		tracker.Track(*img, &regressor, &box);
 		if (cont > num_prev_frames)
 		{
@@ -258,7 +409,7 @@ process_goturn_detection(Mat *img, double time_stamp)
 		//Apenas para publicar-ainda falta definir
 //		average_box_confidence = 1.0;
 
-		last_track[(cont%num_prev_frames)].prev_image = prev_image;
+		last_track[(cont%num_prev_frames)].prev_image = prev_image.clone();
 		last_track[(cont%num_prev_frames)].prev_box = box;
 
 		box_1.x = box.x1_;
@@ -271,24 +422,24 @@ process_goturn_detection(Mat *img, double time_stamp)
 //		points_lasers_in_cam = carmen_velodyne_camera_calibration_lasers_points_bounding_box(velodyne_message,
 //				&last_message, &last_track[(cont%num_prev_frames)].confidence, &box_1);
 
-		points_lasers_in_cam = carmen_velodyne_camera_calibration_lasers_points_in_camera(velodyne_message_arrange,&last_message);
+		points_lasers_in_cam = carmen_velodyne_camera_calibration_lasers_points_in_camera(velodyne_message_arrange, &last_message);
 
 //		points_lasers_in_cam = carmen_velodyne_camera_calibration_lasers_points_bounding_box(velodyne_message_arrange, &last_message,
 //				&last_track[(cont%num_prev_frames)].confidence, &box_1);
 
 		cv::Rect mini_box;
-		mini_box.x = box_1.x + (box_1.width/3);
-		mini_box.y = box_1.y + (box_1.height/3);
-		mini_box.width = (box_1.width/3);
-		mini_box.height = (box_1.height/3);
+		mini_box.x = box_1.x + (box_1.width / 3);
+		mini_box.y = box_1.y + (box_1.height / 3);
+		mini_box.width = (box_1.width / 3);
+		mini_box.height = (box_1.height / 3);
 		Scalar yellow = CV_RGB(255, 255, 0);
 		Scalar white = CV_RGB(255, 255, 255);
 		vector<double> median_ranges;
 
 		rectangle(*img, cv::Point(mini_box.x, mini_box.y),cv::Point(mini_box.x + mini_box.width, mini_box.y + mini_box.height), yellow, 1, 4 );
-		for(unsigned int i = 0; i < points_lasers_in_cam.size(); i++)
+		for (unsigned int i = 0; i < points_lasers_in_cam.size(); i++)
 		{
-			if((points_lasers_in_cam.at(i).ipx > box_1.x) && ( points_lasers_in_cam.at(i).ipx < (box_1.x + box_1.width)) &&
+			if ((points_lasers_in_cam.at(i).ipx > box_1.x) && (points_lasers_in_cam.at(i).ipx < (box_1.x + box_1.width)) &&
 					(points_lasers_in_cam.at(i).ipy > box_1.y) && (points_lasers_in_cam.at(i).ipy < (box_1.y + box_1.height)))
 			{
 				if (points_lasers_in_cam.at(i).laser_polar.length <= MIN_RANGE)
@@ -300,7 +451,7 @@ process_goturn_detection(Mat *img, double time_stamp)
 				median_ranges.push_back(points_lasers_in_cam.at(i).laser_polar.length);
 				circle(*img, cv::Point(points_lasers_in_cam.at(i).ipx, points_lasers_in_cam.at(i).ipy), 2, Scalar(0, 255, 0), -1);
 
-				if((points_lasers_in_cam.at(i).ipx > mini_box.x) && ( points_lasers_in_cam.at(i).ipx < (mini_box.x + mini_box.width)) &&
+				if ((points_lasers_in_cam.at(i).ipx > mini_box.x) && ( points_lasers_in_cam.at(i).ipx < (mini_box.x + mini_box.width)) &&
 						(points_lasers_in_cam.at(i).ipy > mini_box.y) && (points_lasers_in_cam.at(i).ipy < (mini_box.y + mini_box.height)))
 				{
 	//				ranges_d.push_back(points_lasers_in_cam.at(i).laser_polar.length);
@@ -328,7 +479,7 @@ process_goturn_detection(Mat *img, double time_stamp)
 
 		last_track[(cont%num_prev_frames)].confidence = 1.0; //
 		cont++;
-		tracker.Init(*img, box, &regressor);
+		//tracker.Init(*img, box, &regressor);
 
 		box.DrawBoundingBox(img);
 
@@ -345,7 +496,6 @@ process_goturn_detection(Mat *img, double time_stamp)
 	cv::putText(*img, string1,textOrg,FONT_HERSHEY_SIMPLEX, 0.4,Scalar::all(255),1,8);
 
 	cv::imshow(window_name, *img);
-
 	char c = cv::waitKey(2);
 
 	switch (c)
@@ -379,8 +529,8 @@ process_goturn_detection(Mat *img, double time_stamp)
 }
 
 
-static void
-process_image(carmen_bumblebee_basic_stereoimage_message *msg)
+Mat
+image_pre_processing(carmen_bumblebee_basic_stereoimage_message *msg)
 {
 	static Mat *src_image = NULL;
 	static Mat *rgb_image = NULL;
@@ -404,19 +554,46 @@ process_image(carmen_bumblebee_basic_stereoimage_message *msg)
 
 	cvtColor(*src_image, *rgb_image, cv::COLOR_RGB2BGR);
 
-	if (tld_image_width == msg->width && tld_image_height == msg->height)
-		process_goturn_detection(rgb_image, msg->timestamp);
-	else
-	{
-//		cv::resize(*rgb_image, *resized_rgb_image, Size(tld_image_width,tld_image_height));
-		process_goturn_detection(rgb_image, msg->timestamp);
-	}
+	// Mat resized_rgb_image(Size(rgb_image->cols * 0.25, rgb_image->rows * 0.25), CV_8UC3);
+	// cv::resize(*rgb_image, resized_rgb_image, resized_rgb_image.size());
+	Mat resized_rgb_image = *rgb_image;
 
-
-	//cvReleaseImage(&rgb_image);
-	//cvReleaseImage(&resized_rgb_image);
-	//cvReleaseImage(&src_image);
+	return (resized_rgb_image);
 }
+
+
+carmen_vector_3D_t
+move_from_camera_to_car_pose(carmen_vector_3D_t trackerPoint /*, carmen_ackerman_traj_point_t localize_pose_car*/)
+{
+	//
+	//	posicao da camera em relacao a board
+	//	posicao da board em relacao ao carro
+	// joga o ponto em relacao a essa bagunca
+	carmen_vector_3D_t tracker_car_pose;
+	tracker_car_pose.x = trackerPoint.x + camera_pose_parameters.position.x + board_pose_parameters.position.x;
+	tracker_car_pose.y = trackerPoint.y + camera_pose_parameters.position.y + board_pose_parameters.position.y;
+
+	return tracker_car_pose;
+
+//	tf::Point tracker_pose(trackerPoint.x, trackerPoint.y, trackerPoint.z);
+//
+//	tf::Transform pose_camera_in_board(tf::Quaternion(camera_pose_parameters.orientation.yaw,
+//			camera_pose_parameters.orientation.pitch, camera_pose_parameters.orientation.roll),
+//			tf::Vector3(camera_pose_parameters.position.x, camera_pose_parameters.position.y, camera_pose_parameters.position.z));
+//
+//	tf::Transform pose_board(tf::Quaternion(board_pose_parameters.orientation.yaw,
+//			board_pose_parameters.orientation.pitch, board_pose_parameters.orientation.roll),
+//			tf::Vector3(board_pose_parameters.position.x, board_pose_parameters.position.y, board_pose_parameters.position.z));
+//
+//	tf::Transform camera_frame_to_board_frame = pose_camera_in_board;
+//	tf::Transform board_car_frame_ = pose_board.inverse();
+//
+//	tracker_pose = board_car_frame_ * camera_frame_to_board_frame * tracker_pose;
+	//carmen_vector_3D_t tacker_car_pose = {tracker_pose.x(), tracker_pose.y(), tracker_pose.z()};
+
+//	return tracker_car_pose;
+}
+
 
 static void
 publishSplineRDDF()
@@ -424,17 +601,27 @@ publishSplineRDDF()
 	static std::vector<double> X;
 	static std::vector<double> Y;
 	static std::vector<double> I;
-	static int index = 0;
+	static vector<double> pose_times;
+	static vector<double> pose_thetas;
 	static unsigned int maxPositions = 20;
-	static unsigned int extraPositions = 20;
+	static unsigned int extraPositions = 0;
 
 	vector<carmen_ackerman_traj_point_t> poses;
 	tk::spline x, y;
 	carmen_ackerman_traj_point_t localizePose;
+	carmen_vector_3D_t tracker_in_car_reference;
 
+//	static int skipSplinePoints = 0;
+//	if (skipSplinePoints < 5)
+//	{
+//		skipSplinePoints++;
+//		return;
+//	}
+//	skipSplinePoints = 0;
 
-	double minTimestampDiff = 666.0;
-	int minTimestampIndex = 0;
+	double minTimestampDiff = DBL_MAX;
+	int minTimestampIndex = -1;
+
 	for (unsigned int i = 0; i < localizeVector.size(); i++)
 	{
 		if(fabs(localizeVector[i].timestamp - velodyne_message_arrange->timestamp) < minTimestampDiff)
@@ -444,49 +631,136 @@ publishSplineRDDF()
 		}
 	}
 
+	printf("LOCALIZE FOUND: %d DIFF: %lf POSE %lf %lf TIME: %lf\n", minTimestampIndex, minTimestampDiff, localizeVector[minTimestampIndex].globalpos.x,
+			localizeVector[minTimestampIndex].globalpos.y, localizeVector[minTimestampIndex].timestamp);
+
+	if(localizeVector.size() < 1)
+		return;
+
 	localizePose.x = localizeVector[minTimestampIndex].globalpos.x;
 	localizePose.y = localizeVector[minTimestampIndex].globalpos.y;
 	localizePose.theta = localizeVector[minTimestampIndex].globalpos.theta;
 	localizePose.v = localizeVector[minTimestampIndex].v;
 	localizePose.phi = localizeVector[minTimestampIndex].phi;
 
-	double distancia = sqrt(pow(trackerPoint.x, 2) + pow(trackerPoint.y, 2));
-	double angulo = atan2(trackerPoint.y, trackerPoint.x);
+	tracker_in_car_reference = move_from_camera_to_car_pose(trackerPoint);
+
+//	printf("publisher sic: X: %lf Y: %lf\n", localizePose.x, localizePose.y);
+
+//	double distancia = sqrt(pow(trackerPoint.x, 2) + pow(trackerPoint.y, 2));
+//	double angulo = atan2(trackerPoint.y, trackerPoint.x);
 	//distancia -= 4; //TODO porque?
 
-	X.push_back(localizePose.x + distancia * cos(carmen_normalize_theta(localizePose.theta + carmen_degrees_to_radians(angulo))));
-	Y.push_back(localizePose.y + distancia * sin(carmen_normalize_theta(localizePose.theta + carmen_degrees_to_radians(angulo))));
-	I.push_back(index++);
+//	X.push_back(localizePose.x + distancia * cos(carmen_normalize_theta(localizePose.theta + carmen_degrees_to_radians(angulo))));
+//	Y.push_back(localizePose.y + distancia * sin(carmen_normalize_theta(localizePose.theta + carmen_degrees_to_radians(angulo))));
+//	I.push_back(index++);
+
+//	X.push_back(localizePose.x + tracker_in_car_reference.x * cos(localizePose.theta) - tracker_in_car_reference.y * sin(localizePose.theta));
+//	Y.push_back(localizePose.y + tracker_in_car_reference.x * sin(localizePose.theta) + tracker_in_car_reference.y * cos(localizePose.theta));
+//	I.push_back(index++);
+
+	if ((X.size() == 0) || (X[X.size() - 1] != localizePose.x))
+	{
+		pose_times.push_back(localizeVector[minTimestampIndex].timestamp);
+		pose_thetas.push_back(localizePose.theta);
+
+		X.push_back(localizePose.x + tracker_in_car_reference.x * cos(localizePose.theta) - tracker_in_car_reference.y * sin(localizePose.theta));
+		Y.push_back(localizePose.y + tracker_in_car_reference.x * sin(localizePose.theta) + tracker_in_car_reference.y * cos(localizePose.theta));
+
+		// X.push_back(localizePose.x);
+		// Y.push_back(localizePose.y);
+	}
+
+	//I.push_back(index++);
 
 	if (I.size() > maxPositions)
 	{
 		X.erase(X.begin());
 		Y.erase(Y.begin());
-		I.erase(I.begin());
+		//I.erase(I.begin());
+		pose_times.erase(pose_times.begin());
+		pose_thetas.erase(pose_thetas.begin());
 	}
+
+	I.clear();
+	for (unsigned int i = 0; i < X.size(); i++)
+		I.push_back(i);
+
+	printf("\n\n-----------------------\n");
+
+
+	std::vector<double> Xspline;
+	std::vector<double> Yspline;
+	std::vector<double> Ispline;
+
+	Xspline.push_back(localizeVector[localizeVector.size() - 1].globalpos.x);
+	Yspline.push_back(localizeVector[localizeVector.size() - 1].globalpos.y);
+	Ispline.push_back(0);
+
+	for (unsigned int i = 0; i < X.size(); i++)
+	{
+		Xspline.push_back(X[i]);
+		Yspline.push_back(Y[i]);
+		Ispline.push_back(i + 1);
+
+		//printf("\tX: %lf Y: %lf T: %lf\n", X[i], Y[i], pose_times[i]);
+	}
+
+	//getchar();
 
 	if (I.size() > 1)
 	{
-		x.set_points(I,X);
-		y.set_points(I,Y);
+		x.set_points(Ispline, Xspline, true);
+		y.set_points(Ispline, Yspline, true);
 		carmen_ackerman_traj_point_t newPose;
-		newPose.x = x(I[0]);
-		newPose.y = y(I[0]);
+
+		newPose.x = x(Ispline[0]);
+		newPose.y = y(Ispline[0]);
 		poses.push_back(newPose);
 
-		for (unsigned int i = 1; i < I.size() + (unsigned int)extraPositions; i++)
+		for (unsigned int i = 1; i < Ispline.size() + (unsigned int) extraPositions; i++)
 		{
-			newPose.x = x(I[0] + i);
-			newPose.y = y(I[0] + i);
+			newPose.x = x(Ispline[0] + i);
+			newPose.y = y(Ispline[0] + i);
 			newPose.v = 1.0;
-			poses.back().theta = carmen_normalize_theta(atan2(poses[i - 1].x - poses[i].x, poses[i - 1].y - poses[i].y));
+
 			poses.push_back(newPose);
+
+			double piy = poses[i].y - poses[0].y;
+			double pi_1y = poses[i - 1].y - poses[0].y;
+			double pix = poses[i].x - poses[0].x;
+			double pi_1x = poses[i - 1].x - poses[0].x;
+
+			poses[i - 1].theta = atan2(piy - pi_1y, pix - pi_1x);
+
+			double dt = (pose_times[i] - pose_times[i - 1]);
+			double dist = sqrt(pow(piy - pi_1y, 2) + pow(pix - pi_1x, 2));
+			double predv = dist / dt;
+
+			printf("PX: %lf PY: %lf P-1X: %lf P-1Y: %lf DIST: %lf\n", pix, piy, pi_1x, pi_1y, dist);
+			printf("TEST: %lf TLOC:%lf TDIFF: %lf v: %lf vpred: %lf dt: %lf ID: %lf\n", poses[i - 1].theta, pose_thetas[i - 1],
+					fabs(poses[i - 1].theta - pose_thetas[i - 1]),
+					localizePose.v, predv, dt, Ispline[0] + i);
 		}
 	}
+
+	// CHECAR POR QUE CHEGOU COM 0 AQUI
+	if (poses.size() > 0)
+		poses.pop_back();
+
+	for (unsigned int i = 0; i < poses.size(); i++)
+		printf("X: %lf Y: %lf TH: %lf\n", poses[i].x, poses[i].y, poses[i].theta);
+	printf("\n\n-----------------------\n");
+
+
+	plot_to_debug_state(poses, tracker_in_car_reference, localizePose, 100);
 
 	//Pose RDDF
 	if (poses.size() > 0)
 	{
+		//ELIMINA ULTIMO PONTO POR CAUSA DA FALTA DE THETA
+//		poses.pop_back();
+
 		int annotations[1000];
 	    IPC_RETURN_TYPE err;
 	    carmen_rddf_road_profile_message path_planner_road_profile_message;
@@ -515,7 +789,14 @@ publishSplineRDDF()
 static void
 localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *message)
 {
+	//printf("LOCALIZER: %lf %lf\n", message->globalpos.x, message->globalpos.y);
+
 	static unsigned int maxPositions = 100;
+	//TODO primeira pose do localize no playback = 0.0 ERROOO!!!
+	if(round(message->globalpos.x) == 0.0  || round(message->globalpos.y) == 0.0 || message->timestamp == 0){
+		return;
+	}
+
 	localizeVector.push_back(*message);
 
 	if (localizeVector.size() > maxPositions)
@@ -523,7 +804,6 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *message)
 		localizeVector.erase(localizeVector.begin());
 	}
 }
-
 
 
 static void
@@ -536,14 +816,12 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 	//Just process Rectified images
 	if (image_msg->isRectified)
 	{
-
 		if (!received_image)
 		{
 			received_image = 1;
 			last_timestamp = image_msg->timestamp;
 			last_time = time_now;
 		}
-
 
 		if ((image_msg->timestamp - last_timestamp) > 1.0)
 		{
@@ -562,12 +840,22 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 		}
 		disp_fps++;
 
+//		for (int i = 0; i < localizeVector.size(); i++)
+//		{
+//			printf("VECTOR: %lf %lf\n", localizeVector[i].globalpos.x, localizeVector[i].globalpos.y);
+//		}
+//
+//		return;
+
+		//return;
 
 		last_message = *image_msg;
-		process_image(image_msg);
+		Mat preprossed_image = image_pre_processing(image_msg);
+		goturn_tracker(&preprossed_image, image_msg->timestamp);
 
 		build_and_publish_message(image_msg->host, image_msg->timestamp);
-		publishSplineRDDF();
+		if (box_1.x > 0.0 && box_1.y > 0.0)
+			publishSplineRDDF();
 //		double time_f = carmen_get_time() - time_now;
 //		printf("tp: %lf \n", time_f);
 	}
@@ -609,13 +897,29 @@ shutdown_camera_view(int x)
 
 //
 static int
-read_parameters(int argc, char **argv)
+read_parameters(int argc, char **argv, int camera)
 {
 	int num_items;
+	std::ostringstream myStream;
+	myStream << camera << std::flush;
+	std::string camera_string = "camera";
+	camera_string.append(myStream.str());
 
 	carmen_param_t param_list[] = {
-			{(char*) "tracker_opentld", (char*) "view_width", CARMEN_PARAM_INT, &tld_image_width, 0, NULL},
-			{(char*) "tracker_opentld", (char*) "view_height", CARMEN_PARAM_INT, &tld_image_height, 0, NULL},
+			{(char*) "tracker_opentld", 	(char*) "view_width", CARMEN_PARAM_INT, &tld_image_width, 0, NULL},
+			{(char*) "tracker_opentld", 	(char*) "view_height", CARMEN_PARAM_INT, &tld_image_height, 0, NULL},
+			{(char*) camera_string.c_str(), (char*) "x", CARMEN_PARAM_DOUBLE, &(camera_pose_parameters.position.x), 0, NULL},
+			{(char*) camera_string.c_str(), (char*) "y", CARMEN_PARAM_DOUBLE, &(camera_pose_parameters.position.y), 0, NULL},
+			{(char*) camera_string.c_str(), (char*) "z", CARMEN_PARAM_DOUBLE, &(camera_pose_parameters.position.z), 0, NULL},
+			{(char*) camera_string.c_str(), (char*) "roll", CARMEN_PARAM_DOUBLE, &(camera_pose_parameters.orientation.roll), 0, NULL},
+			{(char*) camera_string.c_str(), (char*) "pitch", CARMEN_PARAM_DOUBLE, &(camera_pose_parameters.orientation.pitch), 0, NULL},
+			{(char*) camera_string.c_str(), (char*) "yaw", CARMEN_PARAM_DOUBLE, &(camera_pose_parameters.orientation.yaw), 0, NULL},
+			{(char*) "sensor_board_1",      (char*) "x", CARMEN_PARAM_DOUBLE, &(board_pose_parameters.position.x), 0, NULL},
+			{(char*) "sensor_board_1",      (char*) "y", CARMEN_PARAM_DOUBLE, &(board_pose_parameters.position.y), 0, NULL},
+			{(char*) "sensor_board_1",      (char*) "z", CARMEN_PARAM_DOUBLE, &(board_pose_parameters.position.z), 0, NULL},
+			{(char*) "sensor_board_1",      (char*) "roll", CARMEN_PARAM_DOUBLE, &(board_pose_parameters.orientation.roll), 0, NULL},
+			{(char*) "sensor_board_1",      (char*) "pitch", CARMEN_PARAM_DOUBLE, &(board_pose_parameters.orientation.pitch), 0, NULL},
+			{(char*) "sensor_board_1",      (char*) "yaw", CARMEN_PARAM_DOUBLE, &(board_pose_parameters.orientation.yaw), 0, NULL}
 
 	};
 
@@ -628,7 +932,6 @@ read_parameters(int argc, char **argv)
 int
 main(int argc, char **argv)
 {
-
 	int camera = 0;
 
 	if (argc != 3)
@@ -642,7 +945,7 @@ main(int argc, char **argv)
 
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
-	read_parameters(argc, argv);
+	read_parameters(argc, argv, camera);
 	last_track.resize(num_prev_frames);
 	camera_parameters = get_stereo_instance(camera, tld_image_width, tld_image_height);
 
@@ -656,14 +959,9 @@ main(int argc, char **argv)
 
 
 	carmen_visual_tracker_define_messages();
-
 	carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) image_handler, CARMEN_SUBSCRIBE_LATEST);
-
 	carmen_velodyne_subscribe_partial_scan_message(NULL,(carmen_handler_t)velodyne_partial_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
-
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_globalpos_handler, CARMEN_SUBSCRIBE_LATEST);
-
-
 
 	carmen_ipc_dispatch();
 
