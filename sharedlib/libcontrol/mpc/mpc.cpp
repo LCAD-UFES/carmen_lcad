@@ -512,7 +512,7 @@ libmpc_stiction_simulation_new(double effort, double v)
 #define NUMBER_CICLES_APPLYING_BUMP 2
 #define MAX_CUMULATIVE_STEERING_ERROR 0.001
 #define MAX_CUMULATIVE_EFFORT_ERROR 15.0
-#define MIN_VELOCITY_TO_CHECK_STICTION 5.5
+#define MIN_VELOCITY_TO_CHECK_STICTION 8.4
 
 
 double
