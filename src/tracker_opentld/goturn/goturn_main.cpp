@@ -386,146 +386,190 @@ calculate_box_average(BoundingBox &box, std::vector<Image_Box> &last_track, Mat*
 
 }
 
-void
-goturn_tracker(Mat *img, double time_stamp)
+
+cv::Rect
+get_mini_box_and_update_carmen_box()
 {
-	char string1[1024]; strcpy(string1, "");
-	CvFont font;
-	static int cont = 0;
+	box_1.x = box.x1_;
+	box_1.y = box.y1_;
+	box_1.width = box.get_width();
+	box_1.height = box.get_height();
 
-	//cv::Mat mat_image=cvarrToMat(&img);
-	static Mat prev_image;
-	prev_image = img->clone();
+	cv::Rect mini_box;
+	mini_box.x = box_1.x + (box_1.width / 3);
+	mini_box.y = box_1.y + (box_1.height / 3);
+	mini_box.width = (box_1.width / 3);
+	mini_box.height = (box_1.height / 3);
 
-	if (box.x1_ != -1.0)
+	return (mini_box);
+}
+
+
+std::vector<carmen_vector_3D_t>
+extract_points_inside_box(const cv::Rect& mini_box, Mat* img)
+{
+	std::vector<carmen_vector_3D_t> points_inside_box;
+
+	rectangle(*img, cv::Point(mini_box.x, mini_box.y), cv::Point(mini_box.x + mini_box.width, mini_box.y + mini_box.height), CV_RGB(255, 255, 0), 1, 4);
+	for (unsigned int i = 0; i < points_lasers_in_cam.size(); i++)
 	{
-		tracker.Track(*img, &regressor, &box);
-		if (cont > num_prev_frames)
+		if ((points_lasers_in_cam.at(i).ipx > box_1.x) && (points_lasers_in_cam.at(i).ipx < (box_1.x + box_1.width)) && (points_lasers_in_cam.at(i).ipy > box_1.y)
+				&& (points_lasers_in_cam.at(i).ipy < (box_1.y + box_1.height)))
 		{
-//			calculate_box_average(box, last_track, img, cont);
-//			recovery = true;
+			if (points_lasers_in_cam.at(i).laser_polar.length <= MIN_RANGE)
+				points_lasers_in_cam.at(i).laser_polar.length = MAX_RANGE;
 
+			if (points_lasers_in_cam.at(i).laser_polar.length > MAX_RANGE)
+				points_lasers_in_cam.at(i).laser_polar.length = MAX_RANGE;
+
+			points_inside_box.push_back(carmen_covert_sphere_to_cartesian_coord(points_lasers_in_cam.at(i).laser_polar));
+			circle(*img, cv::Point(points_lasers_in_cam.at(i).ipx, points_lasers_in_cam.at(i).ipy), 2, Scalar(0, 255, 0), -1);
+			if ((points_lasers_in_cam.at(i).ipx > mini_box.x) && (points_lasers_in_cam.at(i).ipx < (mini_box.x + mini_box.width)) &&
+				(points_lasers_in_cam.at(i).ipy > mini_box.y) && (points_lasers_in_cam.at(i).ipy < (mini_box.y + mini_box.height)))
+				circle(*img, cv::Point(points_lasers_in_cam.at(i).ipx, points_lasers_in_cam.at(i).ipy), 2, CV_RGB(255, 255, 255), -1);
 		}
-		//Apenas para publicar-ainda falta definir
-//		average_box_confidence = 1.0;
+	}
 
-		last_track[(cont%num_prev_frames)].prev_image = prev_image.clone();
-		last_track[(cont%num_prev_frames)].prev_box = box;
-
-		box_1.x = box.x1_;
-		box_1.y = box.y1_;
-		box_1.width = box.get_width();
-		box_1.height = box.get_height();
+	return (points_inside_box);
+}
 
 
-		last_track[(cont%num_prev_frames)].confidence = 1.0;
-//		points_lasers_in_cam = carmen_velodyne_camera_calibration_lasers_points_bounding_box(velodyne_message,
-//				&last_message, &last_track[(cont%num_prev_frames)].confidence, &box_1);
+bool
+my_compare_function (carmen_vector_3D_t i, carmen_vector_3D_t j)
+{
+	return (i.x < j.x);
+}
 
-		points_lasers_in_cam = carmen_velodyne_camera_calibration_lasers_points_in_camera(velodyne_message_arrange, &last_message);
 
-//		points_lasers_in_cam = carmen_velodyne_camera_calibration_lasers_points_bounding_box(velodyne_message_arrange, &last_message,
-//				&last_track[(cont%num_prev_frames)].confidence, &box_1);
+carmen_vector_3D_t
+compute_average_point(std::vector<carmen_vector_3D_t> points_inside_box, int begin_best_group, int end_best_group)
+{
+	carmen_vector_3D_t average_point = {0.0, 0.0, 0.0};
 
-		cv::Rect mini_box;
-		mini_box.x = box_1.x + (box_1.width / 3);
-		mini_box.y = box_1.y + (box_1.height / 3);
-		mini_box.width = (box_1.width / 3);
-		mini_box.height = (box_1.height / 3);
-		Scalar yellow = CV_RGB(255, 255, 0);
-		Scalar white = CV_RGB(255, 255, 255);
-		vector<double> median_ranges;
+	for (int i = begin_best_group; i < end_best_group; i++)
+	{
+		average_point.x += points_inside_box[i].x;
+		average_point.y += points_inside_box[i].y;
+		average_point.z += points_inside_box[i].z;
+	}
 
-		rectangle(*img, cv::Point(mini_box.x, mini_box.y),cv::Point(mini_box.x + mini_box.width, mini_box.y + mini_box.height), yellow, 1, 4 );
-		for (unsigned int i = 0; i < points_lasers_in_cam.size(); i++)
+	double num_points = end_best_group - begin_best_group;
+
+	average_point.x /= (double) (num_points);
+	average_point.y /= (double) (num_points);
+	average_point.z /= (double) (num_points);
+
+	return (average_point);
+}
+
+
+carmen_vector_3D_t
+compute_target_point(std::vector<carmen_vector_3D_t> points_inside_box)
+{
+	std::vector<carmen_vector_3D_t> points_inside_box_copy(points_inside_box);
+
+	//for (unsigned int i = 0; i < points_inside_box_copy.size(); i++)
+		//points_inside_box_copy[i].x = (int) round(points_inside_box_copy[i].x * 100.0);
+	int begin_best_group = 0;
+	int end_best_group = 0;
+	int group_pivot = 0;
+	int num_points_in_the_group = 0;
+	int num_points_best_group = 0;
+	double dist;
+
+	sort(points_inside_box.begin(), points_inside_box.end(), my_compare_function);
+
+	for (unsigned int i = 0; i < points_inside_box.size(); i++)
+	{
+		dist = fabs(points_inside_box[i].x - points_inside_box[group_pivot].x);
+
+		if (dist > 0.3)
 		{
-			if ((points_lasers_in_cam.at(i).ipx > box_1.x) && (points_lasers_in_cam.at(i).ipx < (box_1.x + box_1.width)) &&
-					(points_lasers_in_cam.at(i).ipy > box_1.y) && (points_lasers_in_cam.at(i).ipy < (box_1.y + box_1.height)))
+			if (num_points_in_the_group > num_points_best_group)
 			{
-				if (points_lasers_in_cam.at(i).laser_polar.length <= MIN_RANGE)
-					points_lasers_in_cam.at(i).laser_polar.length = MAX_RANGE;
-
-				if (points_lasers_in_cam.at(i).laser_polar.length > MAX_RANGE)
-					points_lasers_in_cam.at(i).laser_polar.length = MAX_RANGE;
-
-				median_ranges.push_back(points_lasers_in_cam.at(i).laser_polar.length);
-				circle(*img, cv::Point(points_lasers_in_cam.at(i).ipx, points_lasers_in_cam.at(i).ipy), 2, Scalar(0, 255, 0), -1);
-
-				if ((points_lasers_in_cam.at(i).ipx > mini_box.x) && ( points_lasers_in_cam.at(i).ipx < (mini_box.x + mini_box.width)) &&
-						(points_lasers_in_cam.at(i).ipy > mini_box.y) && (points_lasers_in_cam.at(i).ipy < (mini_box.y + mini_box.height)))
-				{
-	//				ranges_d.push_back(points_lasers_in_cam.at(i).laser_polar.length);
-					circle(*img, cv::Point(points_lasers_in_cam.at(i).ipx, points_lasers_in_cam.at(i).ipy), 2, white, -1);
-	//				average_range += points_lasers_in_cam.at(i).laser_polar.length;
-				}
-
-				//printf("%f\t %f\t %f\t \n",r, range, velodyne_message->partial_scan[j].distance[i] );
-
+				begin_best_group = group_pivot;
+				end_best_group = i - 1;
+				num_points_best_group = num_points_in_the_group;
 			}
 
+			group_pivot = i;
+			num_points_in_the_group = 0;
 		}
-
-		if (median_ranges.size() > 0/**/)
-		{
-			std::sort(median_ranges.begin(), median_ranges.end());
-			int middle = median_ranges.size() / 2;
-			double median = median_ranges.at(middle);
-
-			trackerPoint = compute_3d_point(box_1, median);
-
-	//		double averange_distance = average_range / count_range;
-			sprintf(string1,"range: %f x: %f y: %f z: %f ", median, trackerPoint.x, trackerPoint.y, trackerPoint.z);
-		}
-
-		last_track[(cont%num_prev_frames)].confidence = 1.0; //
-		cont++;
-		//tracker.Init(*img, box, &regressor);
-
-		box.DrawBoundingBox(img);
-
+		else
+			num_points_in_the_group++;
 	}
+
+	carmen_vector_3D_t average_point = compute_average_point(points_inside_box, begin_best_group, end_best_group);
+
+	return (average_point);
+}
+
+
+char
+display_bbox_and_velodyne_points(double timestamp, Mat* img)
+{
+	char string1[1024];
+	strcpy(string1, "");
+	CvFont font;
 
 	cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, .4, .5, 0, 1, 8);
-//	cvRectangle(&prev_image, cvPoint(0, 0), cvPoint(img.width, 50), CV_RGB(0, 0, 255), CV_FILLED, 8, 0);
-//	cvPutText(&prev_image.data, string1, cvPoint(25, 25), &font, CV_RGB(255, 255, 255));
-	// draw the box
-	sprintf(string1, "%s Time:%.2f, FPS:%d",string1, time_stamp, disp_last_fps);
+	sprintf(string1, "%s Time:%.2f, FPS:%d RANGE: %lf", string1, timestamp, disp_last_fps, trackerPoint.x);
+
 	cv::Size s = img->size();
-	cv::Point textOrg(25,25);
+	cv::Point textOrg(25, 25);
+
 	cv::rectangle(*img, cv::Point(0, 0), cv::Point(s.width, 50), Scalar::all(0), -1);
-	cv::putText(*img, string1,textOrg,FONT_HERSHEY_SIMPLEX, 0.4,Scalar::all(255),1,8);
-
+	cv::putText(*img, string1, textOrg, FONT_HERSHEY_SIMPLEX, 0.4, Scalar::all(255), 1, 8);
 	cv::imshow(window_name, *img);
-	char c = cv::waitKey(2);
 
+	char c = cv::waitKey(2);
+	return c;
+}
+
+
+void
+bounding_box_interface(char c, Mat* img)
+{
 	switch (c)
 	{
-	case 'r':
+		case 'r':
+			CvRect rect;
 
-		CvRect rect;
+			if (getBBFromUser(img, rect, window_name) == 0)
+				return;
 
-		if (getBBFromUser(img, rect, window_name) == 0)
-		{
-			return;
-		}
+			box.x1_ = rect.x;
+			box.y1_ = rect.y;
+			box.x2_ = rect.x + rect.width;
+			box.y2_ = rect.y + rect.height;
 
-		box.x1_ = rect.x;
-		box.y1_ = rect.y;
-		box.x2_ = rect.x+rect.width;
-		box.y2_ = rect.y+rect.height;
-		last_track[(cont%num_prev_frames)].prev_image = prev_image;
-		last_track[(cont%num_prev_frames)].prev_box = box;
-		cont++;
-		tracker.Init(*img, box, &regressor);
-//		first = 1;
-//		tracker.Track(*img, &regressor, &box);
-		break;
+			tracker.Init(*img, box, &regressor);
 
-	case 'q':
-		exit(0);
+			break;
+
+		case 'q':
+			exit(0);
 	}
-		// Track and estimate the bounding box location.
+}
 
+
+void
+goturn_tracker(Mat *img, double timestamp)
+{
+	if (box.x1_ != -1.0)
+	{
+		tracker.Track(*img, &regressor, &box); // calls Thrun's tracker
+
+		cv::Rect mini_box = get_mini_box_and_update_carmen_box();
+		points_lasers_in_cam = carmen_velodyne_camera_calibration_lasers_points_in_camera(velodyne_message_arrange, &last_message);
+		std::vector<carmen_vector_3D_t> points_inside_box = extract_points_inside_box(mini_box, img);
+		trackerPoint = compute_target_point(points_inside_box);
+
+		box.DrawBoundingBox(img);
+	}
+
+	char c = display_bbox_and_velodyne_points(timestamp, img);
+	bounding_box_interface(c, img);
 }
 
 
