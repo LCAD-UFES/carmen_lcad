@@ -20,6 +20,15 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	stehs_planner.start.v = msg->v;
 	stehs_planner.start.phi = msg->phi;
 
+//	printf("GLOBAL POS x: %f y: %f theta: %f v: %f phi: %f\n", stehs_planner.start.x, stehs_planner.start.y,
+//			stehs_planner.start.theta, stehs_planner.start.v, stehs_planner.start.phi);
+
+	if(stehs_planner.lane_ready && stehs_planner.distance_map_ready && stehs_planner.goal_ready)
+	{
+		double time = carmen_get_time();
+		stehs_planner.RDDFSpaceExploration();
+		printf("%f\n", carmen_get_time() - time);
+	}
 	// chamar funcao principal aqui
 }
 
@@ -83,6 +92,8 @@ behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_
 
 	stehs_planner.goal.v = fmin(msg->goal_list->v, stehs_planner.robot_config.max_v);
 
+	stehs_planner.goal_ready = true;
+
 	//GlobalState::set_goal_pose(goal_pose);   // Criar uma flag para verificar se chegou goal ou não?
 }
 
@@ -91,6 +102,8 @@ static void
 carmen_obstacle_distance_mapper_message_handler(carmen_obstacle_distance_mapper_message *message)
 {
 	stehs_planner.distance_map = message;
+
+	stehs_planner.distance_map_ready = true;
 }
 
 
@@ -123,12 +136,13 @@ void
 lane_message_handler(carmen_behavior_selector_road_profile_message *message)
 {
 	stehs_planner.goal_list_message = message;
+	stehs_planner.lane_ready = true;
 
-//	printf("RDDF NUM POSES: %d \n", message->number_of_poses);
+//	printf("RDDF NUM POSES: %d \n", stehs_planner.goal_list_message->number_of_poses);
 //
-//	for (int i = 0; i < message->number_of_poses; i++)
+//	for (int i = 0; i < stehs_planner.goal_list_message->number_of_poses; i++)
 //	{
-//		printf("RDDF %d: x  = %lf, y = %lf , theta = %lf\n", i, message->poses[i].x, message->poses[i].y, message->poses[i].theta);
+//		printf("RDDF %d: x  = %lf, y = %lf , theta = %lf\n", i, stehs_planner.goal_list_message->poses[i].x, stehs_planner.goal_list_message->poses[i].y, stehs_planner.goal_list_message->poses[i].theta);
 //		getchar();
 //	}
 }
@@ -218,7 +232,7 @@ main(int argc, char **argv)
 	carmen_param_check_version(argv[0]);
 	read_parameters(argc, argv);
 
-	//register_handlers();
+	register_handlers();
 
 	carmen_ipc_dispatch();
 }

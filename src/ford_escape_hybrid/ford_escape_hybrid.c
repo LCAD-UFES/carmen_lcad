@@ -122,7 +122,6 @@ get_phi_from_curvature(double curvature, ford_escape_hybrid_config_t *ford_escap
 	return (phi);
 }
 
-double g_phi = 0.0;
 
 static void
 set_wrench_efforts_desired_v_and_curvature()
@@ -144,16 +143,16 @@ set_wrench_efforts_desired_v_and_curvature()
 	if (i < ford_escape_hybrid_config->nun_motion_commands)
 	{
 		v = ford_escape_hybrid_config->current_motion_command_vector[i].v;
-		//phi = (1.0 + v / (6.94 / 0.3)) * ford_escape_hybrid_config->current_motion_command_vector[i].phi;
-		phi = ford_escape_hybrid_config->current_motion_command_vector[i].phi;
+		if (!ford_escape_hybrid_config->use_mpc)
+			phi = (1.0 + v / (6.94 / 0.3)) * ford_escape_hybrid_config->current_motion_command_vector[i].phi;
+		else
+			phi = ford_escape_hybrid_config->current_motion_command_vector[i].phi;
 	}
 	else
 	{
 		v = 0.0;
 		phi = 0.0;
 	}
-	//g_phi = phi / (1.0 + v / (6.94 / 0.3));
-	g_phi = phi;
 
 	// The function carmen_ford_escape_hybrid_steering_PID_controler() uses g_atan_desired_curvature to compute the g_steering_command that is sent to the car.
 	// This function is called when new info about the current measured velocity (g_XGV_velocity) arrives from the car via Jaus messages handled
@@ -501,8 +500,6 @@ torc_report_curvature_message_handler_old(OjCmpt XGV_CCU __attribute__ ((unused)
 
 		previous_gear_command = g_gear_command;
 
-		//printf("%lf %lf %lf\n", carmen_radians_to_degrees(ford_escape_hybrid_config->filtered_phi), carmen_radians_to_degrees(g_phi), carmen_radians_to_degrees(ford_escape_hybrid_config->filtered_phi - g_phi));
-
 		delta_t = get_velocity_delta_t();
 		carmen_libpid_velocity_PID_controler(&g_throttle_command, &g_brakes_command, &g_gear_command,
 			g_desired_velocity, ford_escape_hybrid_config->filtered_v, delta_t);
@@ -588,14 +585,12 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 		}
 		else
 		{
-			pid_plot_curvature(ford_escape_hybrid_config->filtered_phi, get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config));
+			pid_plot_curvature(ford_escape_hybrid_config->filtered_phi, -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config));
 			g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
 					-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t);
 		}
 
 		previous_gear_command = g_gear_command;
-
-		//printf("%lf %lf %lf\n", carmen_radians_to_degrees(ford_escape_hybrid_config->filtered_phi), carmen_radians_to_degrees(g_phi), carmen_radians_to_degrees(ford_escape_hybrid_config->filtered_phi - g_phi));
 
 		delta_t = get_velocity_delta_t();
 

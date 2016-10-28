@@ -621,7 +621,7 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 #endif
 
 	// Stiction Simulation  -----------------------------------------------------------------------------------
-	if (libmpc_stiction_simulation(steering_effort, simulator_config->v))
+	if (0)//libmpc_stiction_simulation(steering_effort, simulator_config->v))
 	{
 		//printf("Stic c%lf d%lf e%lf\n", simulator_config->phi, simulator_config->target_phi, steering_effort);
 		return simulator_config->phi;
