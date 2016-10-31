@@ -384,6 +384,34 @@ move_path_point_to_world_coordinates(const carmen_point_t point, carmen_point_t 
 	return (path_point_in_map_coords);
 }
 
+
+carmen_position_t
+carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(carmen_point_t *global_point, carmen_obstacle_distance_mapper_message *distance_map)
+{
+	carmen_point_t global_point_in_map_coords;
+	carmen_position_t cell;
+	cell.x = -1.0;
+	cell.x = -1.0;
+	// Move global path point coordinates to map coordinates
+	global_point_in_map_coords.x = (global_point->x - distance_map->config.x_origin) / distance_map->config.resolution;
+	global_point_in_map_coords.y = (global_point->y - distance_map->config.y_origin) / distance_map->config.resolution;
+
+	// Transform coordinates to integer indexes
+	int x_map_cell = (int) round(global_point_in_map_coords.x);
+	int y_map_cell = (int) round(global_point_in_map_coords.y);
+
+	// Os mapas de carmen sao orientados a colunas, logo a equacao eh como abaixo
+	int index = y_map_cell + distance_map->config.y_size * x_map_cell;
+	if (index < 0 || index >= distance_map->size)
+		return (cell);
+
+	cell.x = (double) distance_map->complete_x_offset[index] + (double) x_map_cell;
+	cell.y = (double) distance_map->complete_y_offset[index] + (double) y_map_cell;
+
+	return (cell);
+}
+
+
 double
 carmen_obstacle_avoider_distance_from_global_point_to_obstacle(carmen_point_t *global_point, carmen_obstacle_distance_mapper_message *distance_map)
 {
@@ -412,6 +440,7 @@ carmen_obstacle_avoider_distance_from_global_point_to_obstacle(carmen_point_t *g
 }
 
 
+/*A funcao abaixo foi substituida pela funcao acima para atender casos mais geras*/
 //double
 //distance_from_traj_point_to_obstacle(carmen_point_t point,  carmen_point_t *localizer_pose,
 //		carmen_obstacle_distance_mapper_message *distance_map, double displacement, double min_dist)
