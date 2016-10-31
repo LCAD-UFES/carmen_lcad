@@ -46,7 +46,7 @@ CGSmoother::~CGSmoother() {
 }
 
 void
-set_distance_map(carmen_obstacle_distance_mapper_message *distance_map)
+CGSmoother::set_distance_map(carmen_obstacle_distance_mapper_message *distance_map)
 {
 	CGSmoother::distance_map = distance_map;
 }
@@ -116,16 +116,15 @@ bool CGSmoother::UnsafePath(Vector2DArrayPtr<double> path) {
     bool unsafe = false;
 
     // direct access
-    std::vector<Vector2D<double>> &positions(path->vs);
+    std::vector<Vector2D<double> > &positions(path->vs);
     std::vector<State2D> &poses(input_path->states); //original copy
 
     // upper index limit
     unsigned int limit = dim - 1;
-
+    unsigned int start = 0;
     // TODO
     // get a safety factor
-    double safety = 1.0;
-    carmen_point_t local_point = {0.0, 0.0, 0.0};
+//    double safety = 1.0;
     carmen_point_t path_point;
     for (unsigned int i = 1, j = start + 1; i < limit; ++i, ++j) {
 
@@ -134,12 +133,12 @@ bool CGSmoother::UnsafePath(Vector2DArrayPtr<double> path) {
             // TODO
             // verify if the current position is a valid one
 
-        	path_point = {positions[i].x, positions[i].y};
-        	double obstacle = carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&path_point,
-        			local_point, CGSmoother::robot_config, CGSmoother::distance_map, CGSmoother::circle_radius);
-            if (obstacle > 0.0 )//tem colisao
-            {git a
+        	path_point = {positions[i].x, positions[i].y, 0.0};
+        	path_point.theta = atan2(positions[i].y - positions[i-1].y, positions[i].x - positions[i-1].x);
 
+        	double obstacle = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&path_point, CGSmoother::distance_map);
+            if ((obstacle - circle_radius) < 0.0 )//tem colisao
+            {
                 // lock the current point
                 locked_positions[i] = true;
 
@@ -148,7 +147,6 @@ bool CGSmoother::UnsafePath(Vector2DArrayPtr<double> path) {
 
                 // set the unsafe flag
                 unsafe = false;
-
             }
 
         }
@@ -177,58 +175,63 @@ double CGSmoother::ABSMax(double a, double b, double c) {
 
 }
 
-// get the obstacle and voronoi contribution
-Vector2D<double> CGSmoother::GetObstacleDerivative(
-        const Vector2D<double> &xim1,
-        const Vector2D<double> &xi,
-        const Vector2D<double> &xip1) {
-
-    // the resultin value
-    Vector2D<double> res;
-
-    // get the nearest obstacle distance
-    // TODO
-    // it needs to use the collision detection
-    double obst_distance = DBL_MAX;//TODO kkk Funcao do Ranik colision_detection;
-
-    // the obstacle and voronoi field terms are valid when dmax is greater or equal to the nearest obstacle distance
-    if (dmax > obst_distance) {
-
-        // get the nearest obstacle position
-        Vector2D<double> nearest(DBL_MAX);//TODO Retornar o X,Y da colision_detection global do obstaculo mais proximo);
-
-        // get the current vector Xi - Oi
-        Vector2D<double> ximoi(xi - nearest);
-
-        // normalize the vector
-        ximoi.Normalize();
-
-        // the current obstacle derivative contribution
-        res = ximoi;
-        res.Multiply(wo * (obst_distance - dmax));
-
-    }
-
-    return res;
-
-}
+//// get the obstacle and voronoi contribution
+//Vector2D<double> CGSmoother::GetObstacleDerivative(
+//        const Vector2D<double> &xim1,
+//        const Vector2D<double> &xi,
+//        const Vector2D<double> &xip1) {
+//
+//    // the resultin value
+//    Vector2D<double> res;
+//    carmen_point_t path_point;
+//    path_point = {xi.x, xi.y, 0.0};
+//    // get the nearest obstacle distance
+//    // TODO
+//    // it needs to use the collision detection
+//
+//    double obst_distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&path_point, CGSmoother::distance_map);
+//
+//    // the obstacle and voronoi field terms are valid when dmax is greater or equal to the nearest obstacle distance
+//    if (dmax > obst_distance) {
+//
+//        // get the nearest obstacle position
+//    	carmen_position_t obstacle_cell = carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(&path_point, CGSmoother::distance_map);
+//        Vector2D<double> nearest(obstacle_cell.x, obstacle_cell.y);//TODO Retornar o X,Y da colision_detection global do obstaculo mais proximo);
+//
+//        // get the current vector Xi - Oi
+//        Vector2D<double> ximoi(xi - nearest);
+//
+//        // normalize the vector
+//        ximoi.Normalize();
+//
+//        // the current obstacle derivative contribution
+//        res = ximoi;
+//        res.Multiply(wo * (obst_distance - dmax));
+//
+//    }
+//
+//    return res;
+//
+//}
 
 // get the obstacle and voronoi contribution
 // overloaded version
 Vector2D<double> CGSmoother::GetObstacleDerivative(
-        const Vector2D<double> &xim1,
         const Vector2D<double> &xi,
-        const Vector2D<double> &xip1,
         double nearest_obstacle_distance) {
 
     // the resultin value
     Vector2D<double> res;
-
+    //convert to carmen type
+    carmen_point_t path_point;
+    path_point = {xi.x, xi.y, 0.0};
     // get the nearest obstacle position
     // TODO
     // needs to use the collision detection function
     //TODO Retornar o X,Y da colision_detection global do obstaculo mais proximo);
-    Vector2D<double> nearest(grid.GetObstaclePosition(xi));
+    carmen_position_t obstacle_cell = carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(&path_point, CGSmoother::distance_map);
+
+    Vector2D<double> nearest(obstacle_cell.x, obstacle_cell.y);
 
     // get the current vector Xi - Oi
     Vector2D<double> ximoi(xi - nearest);
@@ -360,10 +363,10 @@ void CGSmoother::ComputeGradient() {
     gtrialx_norm = 0.0;
 
     // the tmp solution direct access
-    std::vector<Vector2D<double>> &trialxs(trialx->vs);
+    std::vector<Vector2D<double> > &trialxs(trialx->vs);
 
     // the gradient direct access
-    std::vector<Vector2D<double>> &gradient(gtrialx->vs);
+    std::vector<Vector2D<double> > &gradient(gtrialx->vs);
 
     // reset the first gradient value
     gradient[1].x = 0.0;
@@ -448,8 +451,8 @@ void CGSmoother::ComputeGradient() {
 // take a step at the current direction vector (s)
 void CGSmoother::TakeStep(double factor) {
 
-    std::vector<Vector2D<double>> &current(x->vs);
-    std::vector<Vector2D<double>> &next(trialx->vs);
+    std::vector<Vector2D<double> > &current(x->vs);
+    std::vector<Vector2D<double> > &next(trialx->vs);
 
     // get the limit
     unsigned int limit = dim - 2;
@@ -489,11 +492,12 @@ void CGSmoother::EvaluateF(
 
     //
     Vector2D<double> dxi, dxip1, tmp;
-
+    carmen_point_t path_point;
+    path_point = {xi.x, xi.y, 0.0};
     // get the nearest obstacle distance
     // TODO
     // it needs to use the collision detection module
-    double obst_distance = grid.GetObstacleDistance(xi);
+    double obst_distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&path_point, CGSmoother::distance_map);
 
     if (dmax >= obst_distance) {
 
@@ -529,18 +533,19 @@ void CGSmoother::EvaluateG(
 
     // some tmp Vector2D helpers
     Vector2D<double> dxi, dxip1;
-
+    carmen_point_t path_point;
+    path_point = {xi.x, xi.y, 0.0};
     // get the nearest obstacle distance
     // TODO
     // it needs to use the collision detection module
-    double obst_distance = grid.GetObstacleDistance(xi);
+    double obst_distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&path_point, CGSmoother::distance_map);
 
     if (dmax >= obst_distance) {
 
         // add the obstacle and the voronoi contributions
         // overloaded method
         // is the current pose a stop one?
-        gradient.Add(GetObstacleDerivative(xim1, xi, xip1, obst_distance));
+        gradient.Add(GetObstacleDerivative(xi, obst_distance));
 
     }
 
@@ -565,17 +570,19 @@ CGSmoother::EvaluateG(
     // some tmp Vector2D helpers
     Vector2D<double> dxi, dxip1;
 
+    carmen_point_t path_point;
+    path_point = {xi.x, xi.y, 0.0};
     // get the nearest obstacle distance
     // TODO
     // it needs to use the collision detection module
-    double obst_distance = grid.GetObstacleDistance(xi);
+    double obst_distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&path_point, CGSmoother::distance_map);
 
     if (dmax >= obst_distance) {
 
         // add the obstacle and the voronoi contributions
         // overloaded method
         // is the current pose a stop one?
-        gradient.Add(GetObstacleDerivative(xim1, xi, xip1, obst_distance));
+        gradient.Add(GetObstacleDerivative(xi, obst_distance));
 
     }
 
@@ -600,8 +607,10 @@ void CGSmoother::EvaluateFG(
     //
     Vector2D<double> dxi, dxip1;
 
+    carmen_point_t path_point;
+    path_point = {xi.x, xi.y, 0.0};
     // get the nearest obstacle distance
-    double obst_distance = grid.GetObstacleDistance(xi);
+    double obst_distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&path_point, CGSmoother::distance_map);
 
     if (dmax >= obst_distance) {
 
@@ -613,7 +622,7 @@ void CGSmoother::EvaluateFG(
         // add the obstacle and the voronoi contributions
         // overloaded method
         // is the current pose a stop one?
-        gradient.Add(GetObstacleDerivative(xim1, xi, xip1, obst_distance));
+        gradient.Add(GetObstacleDerivative(xi, obst_distance));
 
     }
 
@@ -655,10 +664,10 @@ void CGSmoother::EvaluateFunctionAndGradient() {
     gtrialx_norm = 0.0;
 
     // the tmp solution direct access
-    std::vector<Vector2D<double>> &trialxs(trialx->vs);
+    std::vector<Vector2D<double> > &trialxs(trialx->vs);
 
     // the gradient direct access
-    std::vector<Vector2D<double>> &gradient(gtrialx->vs);
+    std::vector<Vector2D<double> > &gradient(gtrialx->vs);
 
     unsigned int i;
 
@@ -1245,10 +1254,10 @@ bool CGSmoother::Setup(StateArrayPtr path, bool locked) {
 
     // direct access
     std::vector<State2D> &states(path->states);
-    std::vector<Vector2D<double>> &xs(x->vs);
-    std::vector<Vector2D<double>> &x1s(x1->vs);
-    std::vector<Vector2D<double>> &trialxs(trialx->vs);
-
+    std::vector<Vector2D<double> > &xs(x->vs);
+    std::vector<Vector2D<double> > &x1s(x1->vs);
+    std::vector<Vector2D<double> > &trialxs(trialx->vs);
+    unsigned int  start = 0;
     // copy the input positions
     // and lock the stopping points
     for (unsigned int i = 0, j = start; i < dim; ++i, ++j) {
@@ -1331,7 +1340,7 @@ bool CGSmoother::Setup(StateArrayPtr path, bool locked) {
 }
 
 // update the conjugate direction -> s(i+1) = -gradient + gamma * s(i)
-void CGSmoother::UpdateConjugateDirection(std::vector<Vector2D<double>> &s, const std::vector<Vector2D<double>> &gradient, double gamma) {
+void CGSmoother::UpdateConjugateDirection(std::vector<Vector2D<double> > &s, const std::vector<Vector2D<double> > &gradient, double gamma) {
 
     // reset the current s_norm
     s_norm = 0.0;
@@ -1363,6 +1372,7 @@ void CGSmoother::UpdateConjugateDirection(std::vector<Vector2D<double>> &s, cons
 // the Polak-Ribiere Conjugate Gradient Method With More-Thuente Line Search
 void CGSmoother::ConjugateGradientPR(StateArrayPtr path, bool locked) {
 
+	(void)locked;
     // configure the path
     if (!Setup(path, false)) {
 
@@ -1380,8 +1390,8 @@ void CGSmoother::ConjugateGradientPR(StateArrayPtr path, bool locked) {
     do {
 
         // the direction is up or down?
-        double direction;
-        double inverse_snorm;
+//        double direction;
+//        double inverse_snorm;
         double betha = 0;
 
         unsigned int iter = 0;
@@ -1421,7 +1431,7 @@ void CGSmoother::ConjugateGradientPR(StateArrayPtr path, bool locked) {
                 iter += 1;
 
                 // get the next step
-                int info = MTLineSearch(1.0/s_norm);
+//                int info = MTLineSearch(1.0/s_norm);
 
                 // SUCCESS!
                 // verify the restart case
@@ -1478,7 +1488,8 @@ void CGSmoother::InputPathUpdate(Vector2DArrayPtr<double> solution, StateArrayPt
 
     // direct access
     std::vector<State2D> &states(output->states);
-    std::vector<Vector2D<double>> &xs(solution->vs);
+    std::vector<Vector2D<double> > &xs(solution->vs);
+    unsigned int  start = 0;
 
     for (unsigned int i = 0, j = start; i < dim; ++i, ++j) {
 
@@ -1490,13 +1501,14 @@ void CGSmoother::InputPathUpdate(Vector2DArrayPtr<double> solution, StateArrayPt
 
 }
 
+
 //// TODO show the current path in the map - VISUALIZACAO LEGAL!
 //void CGSmoother::ShowPath(StateArrayPtr path, bool plot_locked) {
 //
 //
 //    // get the map
-//    unsigned int h = grid.GetHeight(); //TODO map.config
-//    unsigned int w = grid.GetWidth();
+//    unsigned int h = CGSmoother::distance_map->config.y_size; //TODO map.config
+//    unsigned int w = CGSmoother::distance_map->config.x_size;
 //
 //    unsigned char *map = grid.GetGridMap();//TODO Converter do mapa do carmen para imagem do Opencv
 //
@@ -1542,7 +1554,7 @@ void CGSmoother::InputPathUpdate(Vector2DArrayPtr<double> solution, StateArrayPt
 
 // get a bezier point given four points and the time
 // using cubic bezier interpolation
-Vector2D<double> CGSmoother::GetBezierPoint(std::vector<Vector2D<double>> &points, double t) {
+Vector2D<double> CGSmoother::GetBezierPoint(std::vector<Vector2D<double> > &points, double t) {
 
     for (unsigned int index = 3; 0 < index; --index) {
 
@@ -1562,8 +1574,10 @@ Vector2D<double> CGSmoother::GetBezierPoint(std::vector<Vector2D<double>> &point
 // build a bezier curve passing through a set of states
 void CGSmoother::BuildBezierControlPoints(
     const std::vector<State2D> &input,
-    std::vector<Vector2D<double>> &p1,
-    std::vector<Vector2D<double>> &p2) {
+    std::vector<Vector2D<double> > &p1,
+    std::vector<Vector2D<double> > &p2) {
+
+	unsigned int  start = 0;
 
     // the dimension
     unsigned int n = input.size();
@@ -1581,12 +1595,12 @@ void CGSmoother::BuildBezierControlPoints(
     p2.resize(n, tmp);
 
     // the matriz diagonals
-    std::vector<Vector2D<double>> a(n);
-    std::vector<Vector2D<double>> b(n);
-    std::vector<Vector2D<double>> c(n);
+    std::vector<Vector2D<double> > a(n);
+    std::vector<Vector2D<double> > b(n);
+    std::vector<Vector2D<double> > c(n);
 
     // the right hand side vector
-    std::vector<Vector2D<double>> rhs(n);
+    std::vector<Vector2D<double> > rhs(n);
 
     // left most segment
     a[0].x = 0.0;
@@ -1681,18 +1695,18 @@ void CGSmoother::BuildBezierControlPoints(
 void CGSmoother::DrawBezierCurve(
                 const std::vector<State2D> &input,
                 std::vector<State2D> &output,
-                const std::vector<Vector2D<double>> &p1,
-                const std::vector<Vector2D<double>> &p2)
+                const std::vector<Vector2D<double> > &p1,
+                const std::vector<Vector2D<double> > &p2)
 {
 
     // get the grid resoluiton
-    double resolution = grid.GetResolution();//mapconfig
-    double inverse_resolution = grid.GetInverseResolution();//map config
+    double resolution = CGSmoother::distance_map->config.resolution;//mapconfig
+//    double inverse_resolution = (1/CGSmoother::distance_map->config.resolution);//map config
     double resolution_factor = resolution;
     double res2 = std::pow(resolution, 2);
 
     // the four points to tbe interpolated
-    std::vector<Vector2D<double>> piece(4);
+    std::vector<Vector2D<double> > piece(4);
 
     unsigned int ipsize = input.size();
 
@@ -1766,7 +1780,7 @@ StateArrayPtr CGSmoother::Interpolate(StateArrayPtr path) {
         std::vector<State2D> &output(interpolated_path->states);
 
         // the control points
-        std::vector<Vector2D<double>> p1, p2;
+        std::vector<Vector2D<double> > p1, p2;
 
         // compute and build the bezier control points
         BuildBezierControlPoints(input, p1, p2);

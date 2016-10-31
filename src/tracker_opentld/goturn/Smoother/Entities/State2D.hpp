@@ -28,15 +28,11 @@ class State2D : public smoother::Pose2D {
         State2D();
 
         // simple constructor, the input is a pose
-        State2D(
-                const smoother::Pose2D& pose,
-                double vel = 0.0,
-                double wheel_angle = 0.0,
-                double t_ = 0.0,
-            );
+        State2D(const smoother::Pose2D& pose, double vel = 0.0,
+        		double wheel_angle = 0.0, double t_ = 0.0);
 
         // copy constructor
-        State2D(const astar::State2D&);
+        State2D(const State2D&);
 
         // distance between two poses
         double Distance(const State2D&);

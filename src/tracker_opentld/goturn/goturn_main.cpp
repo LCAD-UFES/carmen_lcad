@@ -33,6 +33,10 @@
 #include "gui.h"
 #include "spline.h"
 
+//CGSMOOTHER BEZIER CURVE interpolation
+//#include "Smoother/CGSmoother.hpp"
+
+
 //using namespace std;
 
 //
@@ -105,6 +109,8 @@ stereo_util camera_parameters;
 carmen_vector_3D_t trackerPoint;
 std::vector<carmen_localize_ackerman_globalpos_message>  localizeVector;
 
+
+
 using namespace std;
 
 static vector<carmen_ackerman_traj_point_t> tracker_global_poses;
@@ -145,6 +151,7 @@ plot_state(vector<carmen_ackerman_traj_point_t> &points, vector<carmen_ackerman_
 //		fprintf(gnuplot_pipe, "set y2tics\n");
 		fprintf(gnuplot_pipeMP, "set tics out\n");
 	}
+
 
 
 	FILE *gnuplot_data_points = fopen("gnuplot_data_points.txt", "w");
@@ -563,6 +570,7 @@ goturn_tracker(Mat *img, double timestamp)
 		cv::Rect mini_box = get_mini_box_and_update_carmen_box();
 		points_lasers_in_cam = carmen_velodyne_camera_calibration_lasers_points_in_camera(velodyne_message_arrange, &last_message);
 		std::vector<carmen_vector_3D_t> points_inside_box = extract_points_inside_box(mini_box, img);
+		//TODO eliminar pontos 	que bateram no chao.
 		trackerPoint = compute_target_point(points_inside_box);
 
 		box.DrawBoundingBox(img);

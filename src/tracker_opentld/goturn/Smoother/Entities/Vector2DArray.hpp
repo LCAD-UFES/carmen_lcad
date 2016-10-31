@@ -14,7 +14,7 @@ class Vector2DArray {
     public:
 
         // the current array
-        std::vector<smoother::Vector2D<T>> vs;
+        std::vector<smoother::Vector2D<T> > vs;
 
         // compare two Vector2DArray
         bool EqualsTo(const smoother::Vector2DArray<T> &b) {
@@ -25,7 +25,7 @@ class Vector2DArray {
                 unsigned int v_size = vs.size();
 
                 // get the direct access
-                const std::vector<smoother::Vector2D<T>> &vectors(b.vs);
+                const std::vector<smoother::Vector2D<T> > &vectors(b.vs);
 
                 for (unsigned int i = 0; i < v_size; ++i) {
 
@@ -45,7 +45,7 @@ class Vector2DArray {
         // == operator overloading
 
         // reset all values in a given position array
-        static void SetZero(std::vector<smoother::Vector2D<T>> &v) {
+        static void SetZero(std::vector<smoother::Vector2D<T> > &v) {
 
             // get the vector size
             unsigned int v_size = v.size();
@@ -61,7 +61,7 @@ class Vector2DArray {
 
         // custom dot product
         static T DotProduct(
-                const std::vector<smoother::Vector2D<T>> &a, const std::vector<smoother::Vector2D<T>> &b)
+                const std::vector<smoother::Vector2D<T> > &a, const std::vector<smoother::Vector2D<T> > &b)
         {
             // the resulting dot product
             T dot = (T) 0.0;
@@ -89,7 +89,7 @@ class Vector2DArray {
         }
 
         // scale a given Vector2D array
-        static void ScaleVector(T value, std::vector<smoother::Vector2D<T>> &v) {
+        static void ScaleVector(T value, std::vector<smoother::Vector2D<T> > &v) {
 
             // get the vector size
             unsigned int v_size = v.size();
@@ -104,7 +104,7 @@ class Vector2DArray {
         }
 
         // add the first vector2D array to the second one
-        static void AddVectors(const std::vector<smoother::Vector2D<T>> &a, std::vector<smoother::Vector2D<T>> &b) {
+        static void AddVectors(const std::vector<smoother::Vector2D<T> > &a, std::vector<smoother::Vector2D<T> > &b) {
 
             // get the size
             unsigned int size = a.size();
@@ -124,7 +124,7 @@ class Vector2DArray {
 
         // subtract two vectors and store the result at the third one
         // C == A - B
-        static void SubtractCAB(std::vector<smoother::Vector2D<T>> &c, const std::vector<smoother::Vector2D<T>> &a, const std::vector<smoother::Vector2D<T>> &b) {
+        static void SubtractCAB(std::vector<smoother::Vector2D<T> > &c, const std::vector<smoother::Vector2D<T> > &a, const std::vector<smoother::Vector2D<T> > &b) {
 
             // get the size
             unsigned int size = a.size();
@@ -164,7 +164,7 @@ class Vector2DArray {
         }
 
         // compute a norm 2 for a Vector2D array
-        static T VectorNorm2(const std::vector<smoother::Vector2D<T>> &v) {
+        static T VectorNorm2(const std::vector<smoother::Vector2D<T> > &v) {
 
             // the resulting norm
             T norm = (T) 0.0;
