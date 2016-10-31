@@ -7,7 +7,9 @@
 ## Dependencies
 * OpenCV
 * CAFFE
+* Tinyxml (sudo apt-get install libtinyxml-dev)
 * Visual_Tracker module
+* Velodyne Camera Calibration
 * bumblebee_basic module (this module subscribes to `carmen_bumblebee_basic_stereoimage_message` with retified image)
 * [Download Caffemodel](https://goo.gl/A7xKwY)
 
@@ -29,6 +31,13 @@ Navigate with the terminal to the directory of Visual_Tracker Module.
 cd $CARMEN_HOME/src/visual_tracker/
 make
 ```
+
+Navigate with the terminal to the directory of Velodyne Camera Calibration.
+```bash
+cd $CARMEN_HOME/src/velodyne_camera_calibration/
+make
+```
+
 If you want run in GPU mode, comment in Makefile in IFLAGS the flag: -D CPU_ONLY
 
 Navigate with the terminal to the directory of this module.
