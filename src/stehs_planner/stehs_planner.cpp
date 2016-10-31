@@ -2,7 +2,19 @@
 
 
 // constructor
-StehsPlanner::StehsPlanner():lane_ready(false), distance_map_ready(false), goal_ready(false) {}
+StehsPlanner::StehsPlanner():lane_ready(false), distance_map_ready(false), goal_ready(false) {
+
+	// creates a new opencv window
+	cv::namedWindow("CirclePath", cv::WINDOW_AUTOSIZE);
+
+}
+
+// destructor
+StehsPlanner::~StehsPlanner() {
+
+	cv::destroyAllWindows();
+
+}
 
 
 
@@ -302,6 +314,9 @@ StehsPlanner::ConnectCirclePathGaps()
 void
 StehsPlanner::RDDFSpaceExploration()
 {
+	// clear the old circle path
+	circle_path.clear();
+
 	//TODO verificar se os dados para os calculos estao disponiveis, se nao, nao fazer nada
 	// create the start circle node
 	CircleNodePtr start_node =  new CircleNode(start.x, start.y, ObstacleDistance(start), 0.0, 0.0, nullptr);
@@ -351,12 +366,16 @@ StehsPlanner::RDDFSpaceExploration()
 
 	ConnectCirclePathGaps();
 
-	std::list<CircleNode>::iterator it;
+	ShowCirclePath();
 
+/*
+	std::list<CircleNode>::iterator it;
 	for(it = circle_path.begin(); it != circle_path.end(); ++it)
 	{
 		printf("x: %f y: %f r: %f\n",it->circle.x, it->circle.y, it->circle.radius);
 	}
+*/
+
 }
 //
 //void
@@ -370,3 +389,79 @@ StehsPlanner::RDDFSpaceExploration()
 ////
 //std::list<carmen_ackerman_motion_command_t>
 //BuildPath();
+
+unsigned char* StehsPlanner::GetCurrentMap() {
+
+	unsigned int width = distance_map->config.x_size;
+	unsigned int height = distance_map->config.y_size;
+
+	unsigned int size = width * height;
+
+	unsigned char *map = new unsigned char[size];
+
+	for (unsigned int i = 0; i < size; ++i) {
+
+		// get the current row
+		unsigned int row = (height - 1) - i % height;
+
+		// get the current col
+		unsigned int col = i / height;
+
+		// get the current index
+		unsigned int index = row * width + col;
+
+		if (0.0 == distance_map->complete_x_offset[i] && 0.0 == distance_map->complete_y_offset[i]) {
+
+			map[index] = 0;
+
+		} else {
+
+			map[index] = 255;
+
+		}
+
+	}
+
+	return map;
+}
+
+void StehsPlanner::ShowCirclePath() {
+
+	// get the current map
+	unsigned char *map = GetCurrentMap();
+
+	unsigned int width = distance_map->config.x_size;
+	unsigned int height = distance_map->config.y_size;
+
+	// create a new opencv image
+	cv::Mat img(width, height, CV_8UC1, map);
+
+	// get the inverse resolution
+	double inverse_resolution = 1.0 / distance_map->config.resolution;
+
+	//
+	std::list<CircleNode>::iterator it = circle_path.begin();
+	std::list<CircleNode>::iterator end = circle_path.end();
+
+	while (it != end) {
+
+		unsigned int row = height - std::floor((it->circle.y - distance_map->config.y_origin) * inverse_resolution + 0.5);
+		unsigned int col = std::floor((it->circle.x - distance_map->config.x_origin) * inverse_resolution + 0.5);
+
+		double radius = it->circle.radius * inverse_resolution;
+
+		// void circle(Mat& img, Point center, int radius, const Scalar& color, int thickness=1)
+		cv::circle(img, cv::Point(col, row), radius, cv::Scalar(0, 0, 0), 1);
+
+		// show the current image
+		cv::imshow("CirclePath", img);
+
+		cv::waitKey(30);
+
+		// move to next circle
+		++it;
+
+	}
+
+	delete [] map;
+}

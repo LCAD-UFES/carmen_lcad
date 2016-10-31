@@ -14,7 +14,7 @@ LFLAGS += 	-lgrid_mapping -lmap_io -lmap_util -lmap_interface -lparam_interface 
 		-lnavigator_ackerman_interface -lobstacle_avoider_interface -lmapper_interface -lobstacle_distance_mapper_interface -lrrt_planner_interface \
 		-lmap_server_interface -lbehavior_selector_interface \
 		-lrddf_interface -lmotion_planner_interface -lnavigator_gui_interface -llocalize_ackerman_core \
-		-lcollision_detection -lm -lford_escape_hybrid_interface
+		-lcollision_detection -lm -lford_escape_hybrid_interface `pkg-config --cflags opencv` `pkg-config --libs opencv`
 
 
 SOURCES = stehs_planner_main.cpp stehs_planner.cpp CircleNode.cpp Circle.cpp

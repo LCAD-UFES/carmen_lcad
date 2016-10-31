@@ -1,7 +1,8 @@
 #ifndef STEHS_PLANNER_H
 #define STEHS_PLANNER_H
 
-
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 #include <carmen/carmen.h>
 #include <carmen/behavior_selector_interface.h>
@@ -80,6 +81,9 @@ public:
 	// constructor
 	StehsPlanner();
 
+	// destructor
+	~StehsPlanner();
+
 	//
 	std::list<carmen_ackerman_motion_command_t> BuildPath();
 
@@ -96,6 +100,10 @@ public:
 	int FindNextRDDFFreeIndex(int current_rddf_index);
 
 	void ConnectCirclePathGaps();
+
+	unsigned char* GetCurrentMap();
+
+	void ShowCirclePath();
 
 };
 
