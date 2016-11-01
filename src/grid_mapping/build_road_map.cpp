@@ -21,14 +21,14 @@
 #include <omp.h>
 #include <vector>
 
-static char *map_path = ".";
+static char *map_path = (char *)".";
 char new_complete_map_name[1024];
 
 
-static char *map_name = ".";
-static char *map_name_info = ".";
+static char *map_name = (char *)".";
+static char *map_name_info = (char *)".";
 
-char *map_type = "mmmmmmm";
+char *map_type = (char *)"mmmmmmm";
 
 static void
 read_parameters(int argc, char **argv)
@@ -40,45 +40,45 @@ read_parameters(int argc, char **argv)
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 }
 
-static void
-get_map_origin_by_filename(char *filename, double *x_origin, double *y_origin)
-{
-	char map_name[1000], *div_char, *aux;
-
-	*x_origin = *y_origin = 0.0;
-
-	if (filename == NULL)
-		return;
-
-	div_char = strrchr(filename, '/');
-
-	if (div_char == NULL)
-	{
-		return;
-	}
-
-	div_char++;
-
-	strcpy(map_name, div_char);
-
-	div_char = strrchr(map_name, '_');
-
-	if (div_char != NULL && (map_name[0] == 'm' || map_name[0] == 'g' || map_name[0] == 's' || map_name[0] == '2' || map_name[0] == 'c'
-			|| map_name[0] == 'u' || map_name[0] == 'o' || map_name[0] == 'e'))
-	{
-		aux = strrchr(map_name, '.');
-
-		*aux = '\0';
-		*div_char = '\0';
-		div_char++;
-
-		if((isdigit(*(map_name + 1)) || *(map_name + 1) == '-') && (isdigit(*div_char) || *div_char == '-'))
-		{
-			*x_origin = atof(map_name + 1);
-			*y_origin = atof(div_char);
-		}
-	}
-}
+//static void
+//get_map_origin_by_filename(char *filename, double *x_origin, double *y_origin)
+//{
+//	char map_name[1000], *div_char, *aux;
+//
+//	*x_origin = *y_origin = 0.0;
+//
+//	if (filename == NULL)
+//		return;
+//
+//	div_char = strrchr(filename, '/');
+//
+//	if (div_char == NULL)
+//	{
+//		return;
+//	}
+//
+//	div_char++;
+//
+//	strcpy(map_name, div_char);
+//
+//	div_char = strrchr(map_name, '_');
+//
+//	if (div_char != NULL && (map_name[0] == 'm' || map_name[0] == 'g' || map_name[0] == 's' || map_name[0] == '2' || map_name[0] == 'c'
+//			|| map_name[0] == 'u' || map_name[0] == 'o' || map_name[0] == 'e'))
+//	{
+//		aux = strrchr(map_name, '.');
+//
+//		*aux = '\0';
+//		*div_char = '\0';
+//		div_char++;
+//
+//		if((isdigit(*(map_name + 1)) || *(map_name + 1) == '-') && (isdigit(*div_char) || *div_char == '-'))
+//		{
+//			*x_origin = atof(map_name + 1);
+//			*y_origin = atof(div_char);
+//		}
+//	}
+//}
 
 
 int
@@ -89,20 +89,20 @@ carmen_grid_mapping_read_complete_map_type(char *map_path, carmen_map_t *map, ch
 	int rtr;
 
 	if (map_type[0] == 'u'){
-		map_name = "%s/complete_map_sum.map";
-		map_name_info = "%s/complete_map_sum.info";
+		map_name = (char *)"%s/complete_map_sum.map";
+		map_name_info = (char *)"%s/complete_map_sum.info";
 	}else if(map_type[0] == 'o'){
-		map_name = "%s/complete_map_count.map";
-		map_name_info = "%s/complete_map_count.info";
+		map_name = (char *)"%s/complete_map_count.map";
+		map_name_info = (char *)"%s/complete_map_count.info";
 	}else if(map_type[0] == 'e'){
-		map_name = "%s/complete_map_mean.map";
-		map_name_info = "%s/complete_map_mean.info";
+		map_name = (char *)"%s/complete_map_mean.map";
+		map_name_info = (char *)"%s/complete_map_mean.info";
 	}else if(map_type[0] == 's'){
-		map_name = "%s/complete_map_remission.map";
-		map_name_info = "%s/complete_map_remission.info";
+		map_name = (char *)"%s/complete_map_remission.map";
+		map_name_info = (char *)"%s/complete_map_remission.info";
 	}else{
-		map_name = "%s/complete_map.map";
-		map_name_info = "%s/complete_map.info";
+		map_name = (char *)"%s/complete_map.map";
+		map_name_info = (char *)"%s/complete_map.info";
 	}
 
 	sprintf(global_map_path, map_name, map_path);
@@ -261,7 +261,7 @@ int
 main(int argc, char **argv)
 {
 
-	FILE *file;
+//	FILE *file;
 	char full_path[1000] = "";
 	char map_name_offline[1000] = "";
 
@@ -271,12 +271,12 @@ main(int argc, char **argv)
 	//	struct dirent *dirp;
 	//	int i;
 	//	double x_origin, y_origin, size = 0.0;
-	char complete_map_name[1024];
+//	char complete_map_name[1024];
 
 	carmen_map_t offline_map;
 	carmen_map_t remission_map;
 	carmen_map_t road_map;
-	carmen_map_t block_map;
+//	carmen_map_t block_map;
 
 	//	carmen_map_t map1;
 	//	carmen_map_t map_limpo;
