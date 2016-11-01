@@ -9,7 +9,7 @@ using namespace smoother;
 CGSmoother::CGSmoother() :
     wo(0.002), ws(4.0), wk(4.0), dmax(5.0), alpha(0.2), kmax(0.22),
     min_turn_radius(5.0), max_speed(40), max_lateral_acceleration(1.0), safety_factor(1.0),
-    input_path(nullptr), cg_status(CGIddle),
+    input_path(NULL), cg_status(CGIddle),
     fx(), gx_norm(), fx1(), gx1_norm(), ftrialx(), x1mx_norm(), gtrialx_norm(), trialxmx_norm(),
     s(), s_norm(), sg(),
     locked_positions(),
@@ -110,7 +110,7 @@ std::vector<carmen_ackerman_traj_point_t> CGSmoother::FromState2D(StateArrayPtr 
 }
 
 // verify if a given path is safe
-bool CGSmoother::UnsafePath(Vector2DArrayPtr<double> path) {
+bool CGSmoother::UnsafePath(Vector2DArrayPtr path) {
 
     // the boolean result
     bool unsafe = false;
@@ -133,7 +133,9 @@ bool CGSmoother::UnsafePath(Vector2DArrayPtr<double> path) {
             // TODO
             // verify if the current position is a valid one
 
-        	path_point = {positions[i].x, positions[i].y, 0.0};
+        	//path_point = {positions[i].x, positions[i].y, 0.0};
+        	path_point.x = positions[i].x;
+        	path_point.x = positions[i].y;
         	path_point.theta = atan2(positions[i].y - positions[i-1].y, positions[i].x - positions[i-1].x);
 
         	double obstacle = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&path_point, CGSmoother::distance_map);
@@ -151,7 +153,7 @@ bool CGSmoother::UnsafePath(Vector2DArrayPtr<double> path) {
 
         }
 
-    }
+     }
 
     return unsafe;
 }
@@ -184,7 +186,9 @@ double CGSmoother::ABSMax(double a, double b, double c) {
 //    // the resultin value
 //    Vector2D<double> res;
 //    carmen_point_t path_point;
-//    path_point = {xi.x, xi.y, 0.0};
+//    path_point.x = xi.x;
+//	  path_point.y = xi.y;
+//	  path_point.theta = 0.0;
 //    // get the nearest obstacle distance
 //    // TODO
 //    // it needs to use the collision detection
@@ -224,7 +228,9 @@ Vector2D<double> CGSmoother::GetObstacleDerivative(
     Vector2D<double> res;
     //convert to carmen type
     carmen_point_t path_point;
-    path_point = {xi.x, xi.y, 0.0};
+    path_point.x = xi.x;
+	path_point.y = xi.y;
+	path_point.theta = 0.0;
     // get the nearest obstacle position
     // TODO
     // needs to use the collision detection function
@@ -493,7 +499,9 @@ void CGSmoother::EvaluateF(
     //
     Vector2D<double> dxi, dxip1, tmp;
     carmen_point_t path_point;
-    path_point = {xi.x, xi.y, 0.0};
+    path_point.x = xi.x;
+	path_point.y = xi.y;
+	path_point.theta = 0.0;
     // get the nearest obstacle distance
     // TODO
     // it needs to use the collision detection module
@@ -534,7 +542,9 @@ void CGSmoother::EvaluateG(
     // some tmp Vector2D helpers
     Vector2D<double> dxi, dxip1;
     carmen_point_t path_point;
-    path_point = {xi.x, xi.y, 0.0};
+    path_point.x = xi.x;
+	path_point.y = xi.y;
+	path_point.theta = 0.0;
     // get the nearest obstacle distance
     // TODO
     // it needs to use the collision detection module
@@ -571,7 +581,9 @@ CGSmoother::EvaluateG(
     Vector2D<double> dxi, dxip1;
 
     carmen_point_t path_point;
-    path_point = {xi.x, xi.y, 0.0};
+    path_point.x = xi.x;
+	path_point.y = xi.y;
+	path_point.theta = 0.0;
     // get the nearest obstacle distance
     // TODO
     // it needs to use the collision detection module
@@ -608,7 +620,9 @@ void CGSmoother::EvaluateFG(
     Vector2D<double> dxi, dxip1;
 
     carmen_point_t path_point;
-    path_point = {xi.x, xi.y, 0.0};
+    path_point.x = xi.x;
+	path_point.y = xi.y;
+	path_point.theta = 0.0;
     // get the nearest obstacle distance
     double obst_distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&path_point, CGSmoother::distance_map);
 
@@ -1081,7 +1095,7 @@ int CGSmoother::MTLineSearch(double lambda) {
 
             // update the best solution so far
             // flip x1 and bestx
-            Vector2DArrayPtr<double> tmp = trialx;
+            Vector2DArrayPtr tmp = trialx;
             trialx = x1;
             x1 = tmp;
 
@@ -1324,7 +1338,7 @@ bool CGSmoother::Setup(StateArrayPtr path, bool locked) {
     gx_norm = gx1_norm = s_norm = gtrialx_norm;
 
     // flip the gradients
-    Vector2DArrayPtr<double> vs = gtrialx;
+    Vector2DArrayPtr vs = gtrialx;
     gtrialx = gx;
     gx = vs;
 
@@ -1457,12 +1471,12 @@ void CGSmoother::ConjugateGradientPR(StateArrayPtr path, bool locked) {
                 UpdateConjugateDirection(s, gx1->vs, betha);
 
                 // the new position is a better one
-                Vector2DArrayPtr<double> tmp = x;
+                Vector2DArrayPtr tmp = x;
                 x = x1;
                 x1 = tmp;
 
                 // flip the gradient vectors
-                Vector2DArrayPtr<double> gradient = gx1;
+                Vector2DArrayPtr gradient = gx1;
                 gx1 = gx;
                 gx = gradient;
 
@@ -1484,7 +1498,7 @@ void CGSmoother::ConjugateGradientPR(StateArrayPtr path, bool locked) {
 }
 
 // copy the current solution to the input path
-void CGSmoother::InputPathUpdate(Vector2DArrayPtr<double> solution, StateArrayPtr output) {
+void CGSmoother::InputPathUpdate(Vector2DArrayPtr solution, StateArrayPtr output) {
 
     // direct access
     std::vector<State2D> &states(output->states);
@@ -1492,11 +1506,9 @@ void CGSmoother::InputPathUpdate(Vector2DArrayPtr<double> solution, StateArrayPt
     unsigned int  start = 0;
 
     for (unsigned int i = 0, j = start; i < dim; ++i, ++j) {
-
         // set the new position
         states[j].position.x = xs[i].x;
         states[j].position.y = xs[i].y;
-
     }
 
 }

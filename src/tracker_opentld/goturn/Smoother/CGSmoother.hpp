@@ -89,37 +89,37 @@ class CGSmoother {
         smoother::StateArrayPtr input_path;
 
         // the solution vector
-        smoother::Vector2DArrayPtr<double> x;
+        smoother::Vector2DArrayPtr x;
 
         // the cost function evaluated at x
         double fx;
 
         // the gradient evaluated at x
-        smoother::Vector2DArrayPtr<double> gx;
+        smoother::Vector2DArrayPtr gx;
 
         // the gradient norm - Evaluated at the first point x
         double gx_norm;
 
         // the solution vector at the next position
-        smoother::Vector2DArrayPtr<double> x1;
+        smoother::Vector2DArrayPtr x1;
 
         // the cost function evaluated at x1
         double fx1;
 
         // the gradient evaluated at x1
-        smoother::Vector2DArrayPtr<double> gx1;
+        smoother::Vector2DArrayPtr gx1;
 
         // the gradient norm - Evaluated at the second point x1
         double gx1_norm;
 
         // the nest trial solution
-        smoother::Vector2DArrayPtr<double> trialx;
+        smoother::Vector2DArrayPtr trialx;
 
         // the best solution function value
         double ftrialx;
 
         // the best solution gradient
-        smoother::Vector2DArrayPtr<double> gtrialx;
+        smoother::Vector2DArrayPtr gtrialx;
 
         // the best solution gradient norm
         double gtrialx_norm;
@@ -183,7 +183,7 @@ class CGSmoother {
         std::vector<carmen_ackerman_traj_point_t> FromState2D(smoother::StateArrayPtr);
 
         // verify if a given path is unsafe
-        bool UnsafePath(smoother::Vector2DArrayPtr<double>);
+        bool UnsafePath(smoother::Vector2DArrayPtr);
 
         // get the greater number considering the absolute values
         double ABSMax(double a, double b, double c);
@@ -295,7 +295,7 @@ class CGSmoother {
         void ConjugateGradientPR(smoother::StateArrayPtr path, bool locked = false);
 
         // copy the current solution to the input path
-        void InputPathUpdate(smoother::Vector2DArrayPtr<double>, smoother::StateArrayPtr);
+        void InputPathUpdate(smoother::Vector2DArrayPtr, smoother::StateArrayPtr);
 
         // show the current path in the map
         void ShowPath(smoother::StateArrayPtr, bool plot_locked = true);
