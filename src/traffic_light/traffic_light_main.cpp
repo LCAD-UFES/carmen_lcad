@@ -192,7 +192,7 @@ detect(cv::Mat frame)
 
     cvtColor(half_image, frame_gray, CV_BGR2GRAY);
     equalizeHist(frame_gray, frame_gray);
-    //-- Detect traffic lights  
+    //-- Detect traffic lights
     ts_cascade.detectMultiScale(frame_gray, semaphores, 1.1, 3, 0, Size(0, 0), Size(200, 400));
 
     traffic_light_message.signals = semaphores.size();
@@ -212,7 +212,7 @@ detect(cv::Mat frame)
 
         read_image_svm(croppedImage);
 
-        if (learned_function(sample) >= 0)
+        if (learned_function(sample) >= 0 && traffic_light_message.distance <=200 && traffic_light_message.distance != -1 )
         {
             circle(frame, Point(50, 130), 50, Scalar(255, 0, 0), -1, 8);
             cv::rectangle(frame, p1, p2, CV_RGB(0, 0, 255), 3, 10, 0);
@@ -230,7 +230,7 @@ detect(cv::Mat frame)
 		out << traffic_light_message.distance << " "<<num<<" 1 0"<<endl;
 		out.close();
         }
-        else if (learned_function(sample) < 0)
+        else if (learned_function(sample) < 0 && traffic_light_message.distance <=200 && traffic_light_message.distance != -1)
         {
             circle(frame, Point(50, 130), 50, Scalar(0, 255, 0), -1, 8);
             cv::rectangle(frame, p1, p2, CV_RGB(0, 255, 0), 3, 10, 0);
