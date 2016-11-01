@@ -7,7 +7,7 @@ using namespace std;
 
 
 #define DELTA_T (1.0 / 40.0) // 0.025 40 Htz
-#define PREDICTION_HORIZON	(0.65*0.6)
+#define PREDICTION_HORIZON	(0.4)
 #define CAR_MODEL_GAIN 200.0
 #define CONTROL_OUTPUT_GAIN 0.0
 #define SMOOTH_OUTPUT_FACTOR 0.0
@@ -333,7 +333,7 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *params, double v, double unde
 		first_timestamp = t;
 		first_time = false;
 
-		gnuplot_pipe = popen("gnuplot -persist", "w"); // -persist to keep last plot after program closes
+		gnuplot_pipe = popen("gnuplot", "w"); // -persist to keep last plot after program closes
 		fprintf(gnuplot_pipe, "set xrange [0:PAST_SIZE/20]\n");
 		fprintf(gnuplot_pipe, "set yrange [-110.0:110.0]\n");
 		fprintf(gnuplot_pipe, "set y2range [-0.55:0.55]\n");
@@ -369,7 +369,7 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *params, double v, double unde
 	for (it_cphi = cphi_vector.rbegin(), it_dphi = dphi_vector.rbegin(), it_timestamp = timestamp_vector.rbegin(), it_effort = effort_vector.rbegin();
 		 it_cphi != cphi_vector.rend();
 		 it_cphi++, it_dphi++, it_timestamp++, it_effort++)
-		fprintf(gnuplot_data_file, "%lf %lf %lf %lf %d %d\n", *it_timestamp - timestamp_vector.back(), *it_cphi, *it_dphi, *it_effort, 1, 2);
+		fprintf(gnuplot_data_file, "%lf %lf %lf %lf %d %d\n", *it_timestamp - timestamp_vector.back(), *it_cphi, *it_dphi, *it_effort, 1, 2); //1-red 2-green 3-blue 4-magenta 5-lightblue 6-yellow 7-black 8-orange 9-grey
 
 	// Dados futuros
 	vector<double> phi_vector = get_phi_vector_from_spline_descriptors(seed, params);
@@ -385,7 +385,7 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *params, double v, double unde
 		phi_vector_time += delta_t;
 		fprintf(gnuplot_data_file, "%lf %lf %lf %lf %d %d\n",
 				begin_predition_time + phi_vector_time, phi_vector[i], params->motion_commands_vector[timed_index_to_motion_command].phi,
-				future_effort_vector[i], 1, 2);
+				future_effort_vector[i], 6, 2);
 
 		if (phi_vector_time > motion_commands_vector_time)
 		{
