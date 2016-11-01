@@ -32,7 +32,9 @@
 #include "Entities/State2D.hpp"
 #include "Entities/Vector2DArray.hpp"
 #include "Entities/GridCellIndex.hpp"
-#include "carmen/carmen.h"
+#include <carmen/carmen.h>
+#include <carmen/collision_detection.h>
+
 
 namespace smoother {
 
@@ -123,7 +125,7 @@ class CGSmoother {
         double gtrialx_norm;
 
         // the displacement between the next and previous gradient
-        std::vector<smoother::Vector2D<double>> gx1mgx;
+        std::vector<smoother::Vector2D<double> > gx1mgx;
 
         // the norm of the displacement vector between the old and the best new path
         double x1mx_norm;
@@ -132,7 +134,7 @@ class CGSmoother {
         double trialxmx_norm;
 
         // the direction vector (Krylov Space)
-        std::vector<smoother::Vector2D<double>> s;
+        std::vector<smoother::Vector2D<double> > s;
 
         // the direction vector norm
         double s_norm;
@@ -186,20 +188,18 @@ class CGSmoother {
         // get the greater number considering the absolute values
         double ABSMax(double a, double b, double c);
 
-        // get the obstacle and voronoi contribution
-        smoother::Vector2D<double> GetObstacleDerivative(
-                    const smoother::Vector2D<double>&,
-                    const smoother::Vector2D<double>&,
-                    const smoother::Vector2D<double>&
-                );
+//        // get the obstacle and voronoi contribution
+//        smoother::Vector2D<double> GetObstacleDerivative(
+//                    const smoother::Vector2D<double>&,
+//                    const smoother::Vector2D<double>&,
+//                    const smoother::Vector2D<double>&
+//                );
 
         // get the obstacle and voronoi contribution
         // overloaded version
         smoother::Vector2D<double> GetObstacleDerivative(
                     const smoother::Vector2D<double>&,
-                    const smoother::Vector2D<double>&,
-                    const smoother::Vector2D<double>&,
-                    double nearest_obstacle_distance,
+                    double nearest_obstacle_distance
                 );
 
         // get the curvature contribution
@@ -289,7 +289,7 @@ class CGSmoother {
         bool Setup(smoother::StateArrayPtr path, bool locked);
 
         // update the conjugate direction -> s(i+1) = -gradient + gamma * s(i)
-        void UpdateConjugateDirection(std::vector<smoother::Vector2D<double>> &s, const std::vector<smoother::Vector2D<double>> &gradient, double gamma);
+        void UpdateConjugateDirection(std::vector<smoother::Vector2D<double> > &s, const std::vector<smoother::Vector2D<double> > &gradient, double gamma);
 
         // the Polak-Ribiere Conjugate Gradient Method With Moré-Thuente Line Search
         void ConjugateGradientPR(smoother::StateArrayPtr path, bool locked = false);
@@ -301,20 +301,20 @@ class CGSmoother {
         void ShowPath(smoother::StateArrayPtr, bool plot_locked = true);
 
         // get a bezier point given four points and the time
-        inline smoother::Vector2D<double> GetBezierPoint(std::vector<smoother::Vector2D<double>> &points, double t);
+        inline smoother::Vector2D<double> GetBezierPoint(std::vector<smoother::Vector2D<double> > &points, double t);
 
         // build a set of control points between the states
         void BuildBezierControlPoints(
                 const std::vector<smoother::State2D>&,
-                std::vector<smoother::Vector2D<double>> &p1,
-                std::vector<smoother::Vector2D<double>> &p2);
+                std::vector<smoother::Vector2D<double> > &p1,
+                std::vector<smoother::Vector2D<double> > &p2);
 
         // build a bezier curve passing through a set of states
         void DrawBezierCurve(
                 const std::vector<smoother::State2D>&,
                 std::vector<smoother::State2D> &,
-                const std::vector<smoother::Vector2D<double>> &p1,
-                const std::vector<smoother::Vector2D<double>> &p2);
+                const std::vector<smoother::Vector2D<double> > &p1,
+                const std::vector<smoother::Vector2D<double> > &p2);
 
         // interpolate a given path
         smoother::StateArrayPtr Interpolate(smoother::StateArrayPtr);
