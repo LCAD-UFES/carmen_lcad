@@ -18,7 +18,7 @@
 #include <opencv2/core/core.hpp>        // Basic OpenCV structures (cv::Mat, Scalar)
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/contrib/detection_based_tracker.hpp>
-
+#include <stdio.h>
 #include <dlib/svm.h>
 
 #define WIDTH 9
@@ -192,7 +192,7 @@ detect(cv::Mat frame)
 
     cvtColor(half_image, frame_gray, CV_BGR2GRAY);
     equalizeHist(frame_gray, frame_gray);
-    //-- Detect traffic lights  
+    //-- Detect traffic lights
     ts_cascade.detectMultiScale(frame_gray, semaphores, 1.1, 3, 0, Size(0, 0), Size(200, 400));
 
     traffic_light_message.signals = semaphores.size();
@@ -212,7 +212,7 @@ detect(cv::Mat frame)
 
         read_image_svm(croppedImage);
 
-        if (learned_function(sample) >= 0)
+        if (learned_function(sample) >= 0 && traffic_light_message.distance <=200 && traffic_light_message.distance != -1 )
         {
             circle(frame, Point(50, 130), 50, Scalar(255, 0, 0), -1, 8);
             cv::rectangle(frame, p1, p2, CV_RGB(0, 0, 255), 3, 10, 0);
@@ -225,12 +225,12 @@ detect(cv::Mat frame)
             traffic_light.y2 = p2.y;
             last.push_back(traffic_light);
             traffic_light_message.state = (char *) "R";
-    ofstream out;
-    out.open("saida.txt", std::fstream::out | std::fstream::app);
-    out << traffic_light_message.distance << " "<<num<<" 1 0"<<endl;
-    out.close();
+		ofstream out;
+		out.open("saida.txt", std::fstream::out | std::fstream::app);
+		out << traffic_light_message.distance << " "<<num<<" 1 0"<<endl;
+		out.close();
         }
-        else if (learned_function(sample) < 0)
+        else if (learned_function(sample) < 0 && traffic_light_message.distance <=200 && traffic_light_message.distance != -1)
         {
             circle(frame, Point(50, 130), 50, Scalar(0, 255, 0), -1, 8);
             cv::rectangle(frame, p1, p2, CV_RGB(0, 255, 0), 3, 10, 0);
@@ -263,9 +263,13 @@ ofstream out;
     int fontFace = FONT_HERSHEY_COMPLEX;
     double fontScale = 2;
     int thickness = 3;
-
-    putText(frame, text, Point(20, 900), fontFace, fontScale, Scalar(255, 255, 255), thickness, 8);
-      
+    cout<<text<<"\n";
+    if (frame.cols > 900)
+    {
+    	putText(frame, text, cv::Point(20, 900), fontFace, fontScale, Scalar(255, 255, 255), thickness, 8);
+    }
+    else
+    	putText(frame, text, cv::Point(20, 400), fontFace, 1, Scalar(255, 255, 255), thickness, 8);
     return frame;
 }
 
@@ -283,7 +287,7 @@ compute_traffic_light(carmen_bumblebee_basic_stereoimage_message * stereo_image)
     image.data = (uchar *) stereo_image->raw_right;
 
     //Detecting
-    detect(image);
+    image=detect(image);
 
     //coping the image to message
     traffic_light_message.traffic_light_image = (uchar*) image.data;
@@ -356,7 +360,6 @@ main(int argc, char **argv)
     /* connect to IPC server */
 
     carmen_ipc_initialize(argc, argv);
-
     carmen_param_check_version(argv[0]);
 
     if ((argc != 2))

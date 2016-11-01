@@ -12,6 +12,7 @@
 #include <carmen/stereo_util.h>
 #include <tf.h>
 
+
 #include <carmen/visual_tracker_interface.h>
 #include <carmen/visual_tracker_messages.h>
 #include <carmen/velodyne_camera_calibration.h>
@@ -44,6 +45,13 @@
 //#define TACKER_OPENTLD_MAX_WINDOW_HEIGHT 960
 #define BUMBLEBEE_BASIC_VIEW_NUM_COLORS 3
 
+//extern rotation_matrix *r_matrix_car_to_global; //verificar
+//extern rotation_matrix *board_to_car_matrix;
+rotation_matrix *car_to_global_matrix;
+rotation_matrix *sensor_board_to_car_matrix;
+rotation_matrix * sensor_to_board_matrix;
+carmen_pose_3D_t velodyne_pose;
+
 static int received_image = 0;
 
 std::vector<carmen_velodyne_points_in_cam_t> points_lasers_in_cam;
@@ -62,6 +70,7 @@ carmen_pose_3D_t velodyne_pose_parameters;
 
 
 static int camera_side = 0;
+int first_matrix = 1;
 
 static carmen_bumblebee_basic_stereoimage_message last_message;
 
@@ -427,6 +436,16 @@ extract_points_inside_box(const cv::Rect& mini_box, Mat* img)
 				points_lasers_in_cam.at(i).laser_polar.length = MAX_RANGE;
 
 			//points_lasers_in_cam.at(i).laser_polar.length *= 500;
+
+			//Teste em produção para correção dos pontos no mundo, não apagar.
+//			car_to_global_matrix = compute_rotation_matrix(car_to_global_matrix, localizeVector[localizeVector.size() - 1].pose.orientation);
+//			carmen_vector_3D_t point_position_in_the_robot = carmen_get_sensor_sphere_point_in_robot_cartesian_reference(points_lasers_in_cam.at(i).laser_polar,
+//																			velodyne_pose, board_pose_parameters, sensor_to_board_matrix, sensor_board_to_car_matrix);
+//			carmen_vector_3D_t global_point_position_in_the_world = carmen_change_sensor_reference(localizeVector[localizeVector.size() - 1].pose.position,
+//																			point_position_in_the_robot, car_to_global_matrix);
+//
+//			points_inside_box.push_back(global_point_position_in_the_world);
+
 			points_inside_box.push_back(carmen_covert_sphere_to_cartesian_coord(points_lasers_in_cam.at(i).laser_polar));
 
 			circle(*img, cv::Point(points_lasers_in_cam.at(i).ipx, points_lasers_in_cam.at(i).ipy), 2, Scalar(0, 255, 0), -1);
@@ -440,6 +459,17 @@ extract_points_inside_box(const cv::Rect& mini_box, Mat* img)
 	return (points_inside_box);
 }
 
+
+//carmen_vector_3D_t
+//get_global_point_from_velodyne(carmen_sphere_coord_t sphere_point, velodyne_pose, rotation_matrix *r_matrix_car_to_global, carmen_vector_3D_t robot_position)
+//{
+//	carmen_vector_3D_t point_position_in_the_robot = carmen_get_sensor_sphere_point_in_robot_cartesian_reference(sphere_point, velodyne_params->pose, sensor_board_1_pose,
+//			velodyne_params->sensor_to_board_matrix, sensor_board_1_to_car_matrix);
+//
+//	carmen_vector_3D_t global_point_position_in_the_world = carmen_change_sensor_reference(robot_position, point_position_in_the_robot, r_matrix_car_to_global);
+//
+//	return global_point_position_in_the_world;
+//}
 
 bool
 my_compare_function (carmen_vector_3D_t i, carmen_vector_3D_t j)
@@ -766,6 +796,10 @@ publishSplineRDDF()
 		}
 	}
 
+//	printf("LOCALIZE FOUND: %d DIFF: %lf POSE %lf %lf TIME: %lf\n", minTimestampIndex, minTimestampDiff, localizeVector[minTimestampIndex].globalpos.x,
+//			localizeVector[minTimestampIndex].globalpos.y, localizeVector[minTimestampIndex].timestamp);
+
+
 	if(localizeVector.size() < 1)
 		return;
 
@@ -849,7 +883,7 @@ publishSplineRDDF()
 	for (unsigned int i = 0; i < X.size(); i++)
 		I.push_back(i);
 
-	printf("\n\n-----------------------\n");
+//	printf("\n\n-----------------------\n");
 
 	std::vector<double> Xspline;
 	std::vector<double> Yspline;
@@ -902,10 +936,13 @@ publishSplineRDDF()
 			double dist = sqrt(pow(piy - pi_1y, 2) + pow(pix - pi_1x, 2));
 			double predv = dist / dt;
 
-			//printf("PX: %lf PY: %lf P-1X: %lf P-1Y: %lf DIST: %lf\n", pix, piy, pi_1x, pi_1y, dist);
-			//printf("TEST: %lf TLOC:%lf TDIFF: %lf v: %lf vpred: %lf dt: %lf ID: %lf\n", poses[i - 1].theta, pose_thetas[i - 1],
-					//fabs(poses[i - 1].theta - pose_thetas[i - 1]),
-					//localizePose.v, predv, dt, Ispline[0] + i);
+
+
+//			printf("PX: %lf PY: %lf P-1X: %lf P-1Y: %lf DIST: %lf\n", pix, piy, pi_1x, pi_1y, dist);
+//			printf("TEST: %lf TLOC:%lf TDIFF: %lf v: %lf vpred: %lf dt: %lf ID: %lf\n", poses[i - 1].theta, pose_thetas[i - 1],
+//					fabs(poses[i - 1].theta - pose_thetas[i - 1]),
+//					localizePose.v, predv, dt, Ispline[0] + i);
+
 		}
 	}
 
@@ -916,6 +953,12 @@ publishSplineRDDF()
 	//for (unsigned int i = 0; i < poses.size(); i++)
 		//printf("X: %lf Y: %lf TH: %lf\n", poses[i].x, poses[i].y, poses[i].theta);
 	//printf("\n\n-----------------------\n");
+
+//	for (unsigned int i = 0; i < poses.size(); i++)
+//		printf("X: %lf Y: %lf TH: %lf\n", poses[i].x, poses[i].y, poses[i].theta);
+//	printf("\n\n-----------------------\n");
+
+
 
 	plot_to_debug_state(poses, target_pose_in_the_world, localizePose, 100);
 
@@ -954,11 +997,15 @@ static void
 localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *message)
 {
 	//printf("LOCALIZER: %lf %lf\n", message->globalpos.x, message->globalpos.y);
-
 	static unsigned int maxPositions = 100;
 	//TODO primeira pose do localize no playback = 0.0 ERROOO!!!
 	if(round(message->globalpos.x) == 0.0  || round(message->globalpos.y) == 0.0 || message->timestamp == 0){
 		return;
+	}
+
+	if(first_matrix){
+		car_to_global_matrix = create_rotation_matrix(message->pose.orientation);
+		first_matrix = 0;
 	}
 
 	localizeVector.push_back(*message);
@@ -1092,6 +1139,8 @@ read_parameters(int argc, char **argv, int camera)
 			{(char *) "velodyne",    (char *) "roll",  CARMEN_PARAM_DOUBLE, &(velodyne_pose_parameters.orientation.roll), 0, NULL}
 
 	};
+	sensor_board_to_car_matrix = create_rotation_matrix(board_pose_parameters.orientation);
+	sensor_to_board_matrix = create_rotation_matrix(velodyne_pose.orientation);
 
 	num_items = sizeof (param_list) / sizeof (param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
