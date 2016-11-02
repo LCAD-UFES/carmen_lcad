@@ -1,6 +1,6 @@
 include ../Makefile.conf
 
-CFLAGS += `pkg-config --cflags opencv` -g -Wall
+CFLAGS += `pkg-config --cflags opencv` -Wall
 IFLAGS += 
 LFLAGS += -lstdc++ -lglobal -lipc -lparam_interface `pkg-config --libs opencv` -lvelodyne_interface \
 	-lbumblebee_basic_interface -lvisual_tracker_interface -ltf 

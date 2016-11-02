@@ -87,7 +87,11 @@ move_to_camera_reference(tf::Point p3d_velodyne_reference)
 {
 	tf::Transform pose_velodyne_in_board(Quaternion(-0.01, -0.0227, 0), Vector3(0.145, 0, 0.48));
 	tf::Transform pose_camera_in_board(Quaternion(camera_yaw, camera_pitch, camera_roll),
-			Vector3(camera_x, camera_y, camera_z));
+			Vector3(camera_x, 0.149 /*camera_y*/, camera_z));
+
+//	tf::Transform pose_velodyne_in_board(Quaternion(-0.01, -0.0227, 0), Vector3(0.145, 0, 0.48));
+//	tf::Transform pose_camera_in_board(Quaternion(0, 0, 0),
+//			Vector3(0.25, 0.149 + 0.24004, 0.214));
 
 	tf::Transform velodyne_frame_to_board_frame = pose_velodyne_in_board;
 	tf::Transform board_frame_to_camera_frame = pose_camera_in_board.inverse();
@@ -126,6 +130,9 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_parti
 			if (range > MAX_RANGE)
 				range = MAX_RANGE;
 
+			if (range >= MAX_RANGE)
+				continue;
+
 			r = range / MAX_RANGE;
 			r *= 255;
 			r = 255 - r;
@@ -134,7 +141,6 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_parti
 
 			if (p3d_velodyne_reference.x() > 0)
 			{
-
 				tf::Point p3d_camera_reference = move_to_camera_reference(p3d_velodyne_reference);
 
 				const int XB3_MAX_PIXEL_WIDTH = bumblebee_message->width;//1280;//TODO MESMO DA IMAGEM OU PRECISA SER UM VALOR FIXO?
@@ -163,9 +169,7 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_parti
 						carmen_sphere_coord_t laser_polar = {h, v, range};
 						carmen_velodyne_points_in_cam_t laser_px_points = {ipx, ipy, laser_polar};
 						laser_points_in_camera.push_back(laser_px_points);
-
 					}
-
 				}
 
 			}
