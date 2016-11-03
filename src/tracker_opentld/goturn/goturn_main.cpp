@@ -16,6 +16,7 @@
 #include <carmen/visual_tracker_interface.h>
 #include <carmen/visual_tracker_messages.h>
 #include <carmen/velodyne_camera_calibration.h>
+#include "Smoother/Helpers/wrap2pi.hpp"
 
 #include <carmen/rddf_interface.h>
 #include <carmen/rddf_messages.h>
@@ -29,11 +30,11 @@
 //#include <opencv/highgui.h>
 
 //Goturn_tracker
-#include "tracker/tracker.h"
 #include "regressor/regressor_train.h"
-#include "gui.h"
+#include "g2o/types/slam2d/se2.h"
+#include "tracker/tracker.h"
 #include "spline.h"
-
+#include "gui.h"
 //CGSMOOTHER BEZIER CURVE interpolation
 //#include "Smoother/CGSmoother.hpp"
 
@@ -204,7 +205,7 @@ plot_state(vector<carmen_vector_3D_t> &points, vector<carmen_ackerman_traj_point
 	fprintf(gnuplot_pipeMP, "plot "
 				"'./gnuplot_data_points.txt' using 1:2 title 'tracker_points',"
 				"'./gnuplot_data_localize.txt' using 1:2 title 'localize',"
-				"'./gnuplot_data_spline.txt' using 1:2 title 'spline' w lines\n");
+				"'./gnuplot_data_spline.txt' using 1:2 title 'spline' w lines \n");
 
 //	fprintf(gnuplot_pipeMP, "plot "
 //				"'./gnuplot_data_points.txt' using 1:2 title 'tracker_points',"
@@ -437,7 +438,7 @@ extract_points_inside_box(const cv::Rect& mini_box, Mat* img)
 
 			//points_lasers_in_cam.at(i).laser_polar.length *= 500;
 
-			//Teste em produção para correção dos pontos no mundo, não apagar.
+			//Teste em producao para correcao dos pontos no mundo, nao apagar.
 //			car_to_global_matrix = compute_rotation_matrix(car_to_global_matrix, localizeVector[localizeVector.size() - 1].pose.orientation);
 //			carmen_vector_3D_t point_position_in_the_robot = carmen_get_sensor_sphere_point_in_robot_cartesian_reference(points_lasers_in_cam.at(i).laser_polar,
 //																			velodyne_pose, board_pose_parameters, sensor_to_board_matrix, sensor_board_to_car_matrix);
@@ -445,6 +446,15 @@ extract_points_inside_box(const cv::Rect& mini_box, Mat* img)
 //																			point_position_in_the_robot, car_to_global_matrix);
 //
 //			points_inside_box.push_back(global_point_position_in_the_world);
+
+			/*********************************************************************************************************************
+			 * IMPORTANTE! (Em duvida, pergunte para o filipe)
+			 * EU FACO O ANGULO HORIZONTAL SER NEGATIVO PORQUE OS DADOS DO VELODYNE NAO ESTAO DE ACORDO COM O REFERENCIAL DO
+			 * CARMEN, ELES CRESCEM PARA A DIREITA, AO INVES DE CRESCEREM PARA A ESQUERDA. NA HORA DE PROJETAR OS DADOS DO
+			 * VELODYNE NA CAMERA, O SINAL FAZ SENTIDO PORQUE AS COLUNAS DA CAMERA TAMBEM CRESCEM PARA A DIREITA.
+			 *********************************************************************************************************************/
+			points_lasers_in_cam.at(i).laser_polar.horizontal_angle = -points_lasers_in_cam.at(i).laser_polar.horizontal_angle;
+			//printf("hangle: %lf\n", carmen_radians_to_degrees(points_lasers_in_cam.at(i).laser_polar.horizontal_angle));
 
 			points_inside_box.push_back(carmen_covert_sphere_to_cartesian_coord(points_lasers_in_cam.at(i).laser_polar));
 
@@ -833,11 +843,11 @@ publishSplineRDDF()
 	// target_pose_in_the_world = move_point_from_velodyne_frame_to_world_frame(trackerPoint, localizePose);
 	// *********************************************************************************
 
-	printf("LOCALIZE: %lf %lf TARGET: %lf %lf\n",
-			localizeVector[minTimestampIndex].globalpos.x,
-			localizeVector[minTimestampIndex].globalpos.y,
-			target_pose_in_the_world.x,
-			target_pose_in_the_world.y);
+	//printf("LOCALIZE: %lf %lf TARGET: %lf %lf\n",
+			//localizeVector[minTimestampIndex].globalpos.x,
+			//localizeVector[minTimestampIndex].globalpos.y,
+			//target_pose_in_the_world.x,
+			//target_pose_in_the_world.y);
 
 //	printf("publisher sic: X: %lf Y: %lf\n", localizePose.x, localizePose.y);
 
@@ -889,28 +899,75 @@ publishSplineRDDF()
 	std::vector<double> Yspline;
 	std::vector<double> Ispline;
 
+	std::vector<double> Xteste;
+	std::vector<double> Yteste;
+	std::vector<double> Tteste;
+
 	double first_pose_x = localizeVector[localizeVector.size() - 1].globalpos.x;
-	double first_pose_y = localizeVector[localizeVector.size() - 1].globalpos.x;
+	double first_pose_y = localizeVector[localizeVector.size() - 1].globalpos.y;
+	double first_pose_tetha = localizeVector[localizeVector.size() - 1].globalpos.theta;
 
 	Xspline.push_back(localizeVector[localizeVector.size() - 1].globalpos.x - first_pose_x);
 	Yspline.push_back(localizeVector[localizeVector.size() - 1].globalpos.y - first_pose_y);
 	Ispline.push_back(0);
 
+	Xteste.push_back(0.0);
+	Yteste.push_back(0.0);
+	Tteste.push_back(0.0);
+
+	g2o::SE2 robot_pose(first_pose_x, first_pose_y, first_pose_tetha);
+	double target_x = 0.0;
+	double target_y = 0.0;
+
+	double angle = 0.0;
+	double angle_diff = 0.0;
+
 	for (unsigned int i = 0; i < X.size(); i++)
 	{
-		Xspline.push_back(X[i] - first_pose_x);
-		Yspline.push_back(Y[i] - first_pose_y);
+		double pix = X[i] - first_pose_x;
+		double piy = Y[i] - first_pose_y;
+
+		g2o::SE2 target_in_world_reference(X[i], Y[i], angle);
+		g2o::SE2 target_in_car_reference = robot_pose.inverse() * target_in_world_reference;
+
+		target_x = target_in_car_reference[0];
+		target_y = target_in_car_reference[1];
+
+//		angle = fabs(carmen_radians_to_degrees(atan2(piy - Yspline.back(), pix - Xspline.back())));
+
+		angle = atan2(target_y - Yteste.back(), target_x - Xspline.back());
+
+		if(Tteste.size() > 2)
+			angle_diff = fabs(carmen_radians_to_degrees(carmen_normalize_theta(mrpt::math::angDistance(angle, Tteste.back()))));
+
+		//printf("X: %lf  Y: %lf angle: %lf\n",target_x, target_y, angle);
+		//printf("Xback: %lf  Yback: %lf angleDiff: %lf size: %d\n\n", Xteste.back(), Yteste.back(), angle_diff, Tteste.size());
+
+//		double dt = (pose_times[i] - pose_times[i - 1]);
+//		double dist = sqrt(pow(piy - pi_1y, 2) + pow(pix - pi_1x, 2));
+
+		if ((fabs(carmen_radians_to_degrees(angle)) > 30.0) || (angle_diff > 20.0) || (target_x < 4.5))
+			continue;
+
+		Xspline.push_back(pix);
+		Yspline.push_back(piy);
 		Ispline.push_back(i + 1);
 
-		//printf("\tX: %lf Y: %lf T: %lf\n", X[i], Y[i], pose_times[i]);
+		Xteste.push_back(target_x);
+		Yteste.push_back(target_y);
+		Tteste.push_back(angle);
+
+		printf("\tX: %lf Y: %lf T: %lf\n", X[i], Y[i], pose_times[i]);
 	}
+
+	printf("Xteste size: %ld\n", Xteste.size());
 
 	//getchar();
 
-	if (I.size() > 1)
+	if (Ispline.size() > 1)
 	{
-		x.set_points(Ispline, Xspline, true);
-		y.set_points(Ispline, Yspline, true);
+		x.set_points(Ispline, Xteste /*Xspline*/, true);
+		y.set_points(Ispline, Yteste /*Yspline*/, true);
 		carmen_ackerman_traj_point_t newPose;
 
 		newPose.x = x(Ispline[0]) + first_pose_x;
