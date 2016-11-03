@@ -8,6 +8,9 @@ LINK = g++
 CFLAGS +=
 CXXFLAGS += -Wno-reorder
 IFLAGS += `pkg-config --cflags opencv` -I Helpers -I Entities
+
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
 		  
 LFLAGS += `pkg-config --libs opencv` -lopencv_video -lglobal \
 		-llocalize_ackerman_interface -lobstacle_distance_mapper_interface \

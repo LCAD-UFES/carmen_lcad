@@ -34,7 +34,7 @@
 #include "Entities/GridCellIndex.hpp"
 #include <carmen/carmen.h>
 #include <carmen/collision_detection.h>
-//#include <carmen/obstacle_distance_mapper_interface.h>
+#include <carmen/obstacle_distance_mapper_interface.h>
 
 
 namespace smoother {
@@ -299,7 +299,7 @@ class CGSmoother {
         void InputPathUpdate(smoother::Vector2DArrayPtr, smoother::StateArrayPtr);
 
         // show the current path in the map
-        void ShowPath(smoother::StateArrayPtr, bool plot_locked = true);
+//        void ShowPath(smoother::StateArrayPtr, bool plot_locked = true);
 
         // get a bezier point given four points and the time
         inline smoother::Vector2D<double> GetBezierPoint(std::vector<smoother::Vector2D<double> > &points, double t);

@@ -1825,13 +1825,13 @@ std::vector<carmen_ackerman_traj_point_t> CGSmoother::Smooth(
         StateArrayPtr input = ToState2D(raw_path);
 
         // show the map
-        ShowPath(input);
+//        ShowPath(input);
 
         // conjugate gradient based on the Polak-Ribiere formula
         ConjugateGradientPR(input);
 
         // show the map
-        ShowPath(input);
+//        ShowPath(input);
 
         // now, interpolate the entire path
         // StateArrayPtr interpolated_path = new StateArray();
@@ -1840,7 +1840,7 @@ std::vector<carmen_ackerman_traj_point_t> CGSmoother::Smooth(
         StateArrayPtr interpolated_path = Interpolate(input);
 
         // show the map
-        ShowPath(interpolated_path);
+//        ShowPath(interpolated_path);
 
         // minimize again the interpolated path
         // conjugate gradient based on the Polak-Ribiere formula

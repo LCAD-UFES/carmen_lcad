@@ -81,7 +81,7 @@ public:
     std::vector<State2D> states;
 
     // default constructor
-    StateArray();
+    StateArray(){}
 
     StateArray(unsigned int size) : states(size) {}
 

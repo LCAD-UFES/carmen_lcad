@@ -5,15 +5,19 @@ MODULE_COMMENT = Thrun tracker inside the tracker_opentld module
 
 LINK = g++
 
+#SUBDIRS += Smoother
+
 CFLAGS += -Wall
 CXXFLAGS += -Wall -Wno-ignored-qualifiers
 IFLAGS += -I $(CUDA_HOME)/targets/x86_64-linux/include -I. -I $(CAFFE_HOME)/include -I $(CAFFE_HOME)/build/include \
 		  -I $(CAFFE_HOME)/build/src `pkg-config --cflags opencv` -I /usr/local/cuda-7.5/include/ \
-		  #-lcudnn -lcublas # -D CPU_ONLY
+		  # -lcudnn -lcublas \
+		  # -D CPU_ONLY 
 		  
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
 
-#IFLAGS += -I Smoother -I Smoother/Entities -I Smoother/Helpers
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
 
 #G2O
 IFLAGS += -I/usr/include/eigen3 
@@ -23,12 +27,10 @@ LFLAGS += -lboost_system -lboost_filesystem -lboost_regex `pkg-config --libs ope
 		  -L $(CAFFE_HOME)/build/lib -lcaffe -ltinyxml -lglog -lopencv_video -lparam_interface -lipc \
 		  -lglobal -lbumblebee_basic_interface -lvisual_tracker_interface -lvelodyne_camera_calibration \
 		  -lvelodyne_interface -lstereo_interface -llocalize_ackerman_interface -lrotation_geometry \
-		  -lobstacle_distance_mapper_interface -lcollision_detection #-lsmoother
+		  -lobstacle_distance_mapper_interface -lobstacle_avoider_interface -L Smoother -lsmoother -lcollision_detection
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath\
 		-lboost_thread-mt -lrt -lboost_signals -lboost_system
-
-#SUBDIRS += Smoother
 
 SOURCES = goturn_main.cpp \
 		  gui.cpp \
@@ -53,7 +55,7 @@ SOURCES = goturn_main.cpp \
 PUBLIC_INCLUDES = 
     
 PUBLIC_LIBRARIES =
-TARGETS = goturn_tracker
+TARGETS = libsmoother goturn_tracker
 PUBLIC_BINARIES = 
 
 goturn_tracker: goturn_main.o \
@@ -76,5 +78,12 @@ goturn_tracker: goturn_main.o \
 		helper/high_res_timer.o \
 		helper/image_proc.o
 
+libsmoother:
+	$(MAKE) -C Smoother
+
+clean: clean_libsmoother
+
+clean_libsmoother:
+	$(MAKE) clean -C Smoother
 
 include ../../Makefile.rules
