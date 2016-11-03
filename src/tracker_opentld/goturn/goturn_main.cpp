@@ -905,7 +905,7 @@ publishSplineRDDF()
 
 	double first_pose_x = localizeVector[localizeVector.size() - 1].globalpos.x;
 	double first_pose_y = localizeVector[localizeVector.size() - 1].globalpos.y;
-	double first_pose_tetha = localizeVector[localizeVector.size() - 1].globalpos.theta;
+	double first_pose_theta = localizeVector[localizeVector.size() - 1].globalpos.theta;
 
 	Xspline.push_back(localizeVector[localizeVector.size() - 1].globalpos.x - first_pose_x);
 	Yspline.push_back(localizeVector[localizeVector.size() - 1].globalpos.y - first_pose_y);
@@ -915,30 +915,33 @@ publishSplineRDDF()
 	Yteste.push_back(0.0);
 	Tteste.push_back(0.0);
 
-	g2o::SE2 robot_pose(first_pose_x, first_pose_y, first_pose_tetha);
-	double target_x = 0.0;
-	double target_y = 0.0;
+//	double target_x = 0.0;
+//	double target_y = 0.0;
 
 	double angle = 0.0;
 	double angle_diff = 0.0;
 
+	g2o::SE2 robot_pose(first_pose_x, first_pose_y, first_pose_theta);
+	g2o::SE2 last_pose(first_pose_x, first_pose_y, first_pose_theta);
+
 	for (unsigned int i = 0; i < X.size(); i++)
 	{
-		double pix = X[i] - first_pose_x;
-		double piy = Y[i] - first_pose_y;
+//		double pix = X[i] - first_pose_x;
+//		double piy = Y[i] - first_pose_y;
 
 		g2o::SE2 target_in_world_reference(X[i], Y[i], angle);
+		g2o::SE2 target_in_last_pose_reference = last_pose.inverse() * target_in_world_reference;
 		g2o::SE2 target_in_car_reference = robot_pose.inverse() * target_in_world_reference;
 
-		target_x = target_in_car_reference[0];
-		target_y = target_in_car_reference[1];
+//		target_x = target_in_car_reference[0];
+//		target_y = target_in_car_reference[1];
 
 //		angle = fabs(carmen_radians_to_degrees(atan2(piy - Yspline.back(), pix - Xspline.back())));
 
-		angle = atan2(target_y - Yteste.back(), target_x - Xspline.back());
+		double angle_from_last_pose = atan2(target_in_last_pose_reference[1], target_in_last_pose_reference[0]);
 
-		if(Tteste.size() > 2)
-			angle_diff = fabs(carmen_radians_to_degrees(carmen_normalize_theta(mrpt::math::angDistance(angle, Tteste.back()))));
+		//if(Tteste.size() > 2)
+			//angle_diff = fabs(carmen_radians_to_degrees(carmen_normalize_theta(mrpt::math::angDistance(angle, Tteste.back()))));
 
 		//printf("X: %lf  Y: %lf angle: %lf\n",target_x, target_y, angle);
 		//printf("Xback: %lf  Yback: %lf angleDiff: %lf size: %d\n\n", Xteste.back(), Yteste.back(), angle_diff, Tteste.size());
@@ -946,18 +949,19 @@ publishSplineRDDF()
 //		double dt = (pose_times[i] - pose_times[i - 1]);
 //		double dist = sqrt(pow(piy - pi_1y, 2) + pow(pix - pi_1x, 2));
 
-		if ((fabs(carmen_radians_to_degrees(angle)) > 30.0) || (angle_diff > 20.0) || (target_x < 4.5))
+		if ((fabs(carmen_radians_to_degrees(angle_from_last_pose)) > 20.0) /*|| (angle_diff > 20.0)*/ || (target_in_last_pose_reference[0] < 0))
 			continue;
 
-		Xspline.push_back(pix);
-		Yspline.push_back(piy);
+//		Xspline.push_back(pix);
+//		Yspline.push_back(piy);
 		Ispline.push_back(i + 1);
 
-		Xteste.push_back(target_x);
-		Yteste.push_back(target_y);
-		Tteste.push_back(angle);
+		Xteste.push_back(target_in_car_reference[0]);
+		Yteste.push_back(target_in_car_reference[1]);
+		Tteste.push_back(angle); // TODO: CORRIGIR ESSE ANGULO. ELE ESTA NA REF. DO PONTO ANTERIOR, MAS ELE DEVERIA ESTAR NA REF. DO CARRO.
 
-		printf("\tX: %lf Y: %lf T: %lf\n", X[i], Y[i], pose_times[i]);
+		last_pose = g2o::SE2(X[i], Y[i], angle_from_last_pose);
+		printf("\tX: %lf Y: %lf T: %lf\n", target_in_car_reference[0], target_in_car_reference[1], angle);
 	}
 
 	printf("Xteste size: %ld\n", Xteste.size());
@@ -969,6 +973,8 @@ publishSplineRDDF()
 		x.set_points(Ispline, Xteste /*Xspline*/, true);
 		y.set_points(Ispline, Yteste /*Yspline*/, true);
 		carmen_ackerman_traj_point_t newPose;
+
+		// TODO: MOVER OS PONTOS DA SPLINE PARA A REFERENCIA DO MUNDO.
 
 		newPose.x = x(Ispline[0]) + first_pose_x;
 		newPose.y = y(Ispline[0]) + first_pose_y;
