@@ -28,7 +28,7 @@ StehsPlanner::Distance(double ax, double ay, double bx, double by)
 
 
 double
-StehsPlanner::Distance(const carmen_ackerman_traj_point_t &a, const carmen_ackerman_traj_point_t &b)
+StehsPlanner::Distance(const State &a, const State &b)
 {
 	double dx = a.x - b.x;
 	double dy = a.y - b.y;
@@ -39,7 +39,7 @@ StehsPlanner::Distance(const carmen_ackerman_traj_point_t &a, const carmen_acker
 
 
 double
-StehsPlanner::Distance2(const carmen_ackerman_traj_point_t &a, const carmen_ackerman_traj_point_t &b)
+StehsPlanner::Distance2(const State &a, const State &b)
 {
 	double dx = a.x - b.x;
 	double dy = a.y - b.y;
@@ -50,7 +50,7 @@ StehsPlanner::Distance2(const carmen_ackerman_traj_point_t &a, const carmen_acke
 
 
 carmen_point_t
-traj_to_point_t(carmen_ackerman_traj_point_t traj)
+traj_to_point_t(State traj)
 {
 	carmen_point_t point;
 
@@ -73,7 +73,7 @@ StehsPlanner::ObstacleDistance(double x, double y)
 }
 
 double
-StehsPlanner::ObstacleDistance(const carmen_ackerman_traj_point_t &point)
+StehsPlanner::ObstacleDistance(const State &point)
 {
 	carmen_point_t p;
 	p = traj_to_point_t(point);
@@ -312,6 +312,23 @@ StehsPlanner::ConnectCirclePathGaps()
 
 
 void
+StehsPlanner::UpdateCircleGoalDistance()  // Iterate the entire circle path computing the accumulated distance to goal
+{
+	std::list<CircleNode>::reverse_iterator next = circle_path.rbegin();
+	std::list<CircleNode>::reverse_iterator current = next;
+	std::list<CircleNode>::reverse_iterator end = circle_path.rend();
+
+	current++;
+	next->f = 0.0;
+
+	for (; current != end; current++, next++)
+	{
+		current->f = Distance(current->circle.x, current->circle.y, next->circle.x, next->circle.y) + next->f;
+	}
+}
+
+
+void
 StehsPlanner::RDDFSpaceExploration()
 {
 	// clear the old circle path
@@ -366,6 +383,8 @@ StehsPlanner::RDDFSpaceExploration()
 
 	ConnectCirclePathGaps();
 
+	UpdateCircleGoalDistance();
+
 	ShowCirclePath();
 
 /*
@@ -376,16 +395,113 @@ StehsPlanner::RDDFSpaceExploration()
 	}
 */
 
+
 }
 //
 //void
 //StehsPlanner::SpaceTimeExploration() {}
 //
 ////
-//void
-//StehsPlanner::HeuristicSearch() {}
+
+double
+StehsPlanner::TimeHeuristic(State s) // TODO Optimize this linear search verifying only the next, current and previous circles
+{
+	std::list<CircleNode>::iterator it = circle_path.begin();
+	std::list<CircleNode>::iterator end = circle_path.end();
+
+	double circle_distance = DBL_MAX;
+	double current_distance;
+	double goal_distance = DBL_MAX;
+
+	for (; it != end; it++)
+	{
+		current_distance = Distance(s.x, s.y, it->circle.x, it->circle.y);
+
+		if (current_distance < circle_distance)
+		{
+			circle_distance = current_distance;
+			goal_distance = it->f;
+		}
+	}
+
+	if (s.v == 0)
+		return (DBL_MAX);
+	else
+		return ((circle_distance + goal_distance) / fabs(s.v));
+}
+
+
+void
+StehsPlanner::HeuristicSearch()
+{
+//	double;
+//	StateNode start_node(start, 0.0, X, nullptr);
+//	start_node->g = 0.0;
+//	start_node->f = Distance(start_node->circle.x, start_node->circle.y, goal_node->circle.x, goal_node->circle.y);
 //
+//	goal_node->g = goal_node->f = DBL_MAX;
 //
+//	// create the priority queue
+//	std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> open_set;
+//
+//	std::vector<CircleNodePtr> closed_set;
+//
+//	Expand(start_node, open_set);
+//
+//	while (!open_set.empty())
+//	{
+//		// get the circle wich is the closest to the goal node
+//		CircleNodePtr current = open_set.top();
+//		open_set.pop();
+//
+//		if (goal_node->f < current->f)
+//		{
+//			temp_circle_path = BuildCirclePath(goal_node->parent);
+//
+//			while(!open_set.empty())
+//			{
+//				CircleNodePtr tmp = open_set.top();
+//
+//				open_set.pop();
+//
+//				delete tmp;
+//			}
+//			break;
+//		}
+//		else if (!Exist(current, closed_set))
+//		{
+//			Expand(current, open_set);
+//
+//			if (current->circle.Overlap(goal_node->circle, MIN_OVERLAP_FACTOR))
+//			{
+//
+//				if (current->f < goal_node->g)
+//				{
+//					goal_node->g = current->f;
+//					goal_node->parent = current;
+//				}
+//			}
+//			closed_set.push_back(current);
+//		}
+//		else
+//		{
+//			delete current;
+//		}
+//	}
+//
+//	while(!closed_set.empty())
+//	{
+//		CircleNodePtr tmp = closed_set.back();
+//
+//		closed_set.pop_back();
+//
+//		delete tmp;
+//	}
+//
+//	return (temp_circle_path);
+}
+
+
 ////
 //std::list<carmen_ackerman_motion_command_t>
 //BuildPath();
