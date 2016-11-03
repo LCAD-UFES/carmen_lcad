@@ -17,13 +17,13 @@ LFLAGS += 	-lgrid_mapping -lmap_io -lmap_util -lmap_interface -lparam_interface 
 		-lcollision_detection -lm -lford_escape_hybrid_interface `pkg-config --cflags opencv` `pkg-config --libs opencv`
 
 
-SOURCES = stehs_planner_main.cpp stehs_planner.cpp CircleNode.cpp Circle.cpp
+SOURCES = stehs_planner_main.cpp stehs_planner.cpp CircleNode.cpp Circle.cpp StateNode.cpp
 
 PUBLIC_BINARIES = stehs_planner
 PUBLIC_LIBRARIES =
 
 TARGETS = stehs_planner
 
-stehs_planner: stehs_planner_main.o stehs_planner.o CircleNode.o Circle.o
+stehs_planner: stehs_planner_main.o stehs_planner.o CircleNode.o Circle.o StateNode.o
 
 include ../Makefile.rules

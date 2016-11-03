@@ -26,12 +26,14 @@
 #include <carmen/xsens_interface.h>
 #include "../kinect/kinect_util.h"
 
+#include <tf.h>
+
 static char* output_dir_name;
-static char* gps_gpgga_output_filename = "gps.txt";
-static char* gps_xyz_output_filename = "gps_xyz.csv";
-static char* fused_odometry_output_filename = "fused_odometry.txt";
-static char* car_odometry_output_filename = "car_odometry.txt";
-static char* globalpos_output_filename = "globalpos.txt";
+static char* gps_gpgga_output_filename = (char*)"gps.txt";
+static char* gps_xyz_output_filename = (char*)"gps_xyz.csv";
+static char* fused_odometry_output_filename = (char*)"fused_odometry.txt";
+static char* car_odometry_output_filename = (char*)"car_odometry.txt";
+static char* globalpos_output_filename = (char*)"globalpos.txt";
 static FILE* gps_gpgga_output_file = NULL;
 static FILE* gps_xyz_output_file = NULL;
 static FILE* fused_odometry_output_file = NULL;
@@ -53,6 +55,8 @@ static carmen_xsens_global_quat_message imu_odometry_message_buffer[100];
 static int globalpos_message_index = 0;
 static carmen_localize_ackerman_globalpos_message globalpos_message_buffer[100];
 
+static int fused_odometry_message_index = 0;
+static carmen_fused_odometry_message fused_odometry_message_buffer[100];
 
 int
 find_nearest_gps_xyz_message(double timestamp)
@@ -130,6 +134,27 @@ find_nearest_xsens_message(double timestamp)
 }
 
 
+int
+find_nearest_fused_odometry_message(double timestamp)
+{
+	int i, nearest_index = -1;
+	double shortest_interval = MAXDOUBLE;
+
+	for (i = 0; i < 100; i++)
+	{
+		if (fused_odometry_message_buffer[i].host != NULL)
+		{
+			double delta_t = timestamp - fused_odometry_message_buffer[i].timestamp;
+			if ((delta_t > 0.0) && (delta_t < shortest_interval))
+			{
+				shortest_interval = delta_t;
+				nearest_index = i;
+			}
+		}
+	}
+	return nearest_index;
+}
+
 void
 compose_output_path(char *dirname, char *filename, char **composed_path)
 {
@@ -159,16 +184,16 @@ compose_filename_from_timestamp_bb(double timestamp, char **filename, char *exte
 void
 create_stereo_filename_from_timestamp(double timestamp, char **left_img_filename, char **right_img_filename, int camera)
 {
-	compose_filename_from_timestamp_bb(timestamp, left_img_filename, "l.png", camera);
-	compose_filename_from_timestamp_bb(timestamp, right_img_filename, "r.png", camera);
+	compose_filename_from_timestamp_bb(timestamp, left_img_filename, (char*)"l.png", camera);
+	compose_filename_from_timestamp_bb(timestamp, right_img_filename, (char*)"r.png", camera);
 }
 
 
 void
 create_disparity_filename_from_timestamp(double timestamp, char **ref_img_filename, char **disp_img_filename, int camera)
 {
-	compose_filename_from_timestamp_bb(timestamp, disp_img_filename, "disp.png", camera);
-	compose_filename_from_timestamp_bb(timestamp, ref_img_filename, "ref.png", camera);
+	compose_filename_from_timestamp_bb(timestamp, disp_img_filename, (char*)"disp.png", camera);
+	compose_filename_from_timestamp_bb(timestamp, ref_img_filename, (char*)"ref.png", camera);
 }
 
 
@@ -222,8 +247,8 @@ save_image_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int
 	cvSaveImage(left_composed_path, left_img, NULL);
 	cvSaveImage(right_composed_path, right_img, NULL);
 
-	printf("left image saved: %s\n", left_composed_path);
-	printf("right image saved: %s\n", right_composed_path);
+//	printf("left image saved: %s\n", left_composed_path);
+//	printf("right image saved: %s\n", right_composed_path);
 
 	free(left_img_filename);
 	free(left_composed_path);
@@ -338,6 +363,54 @@ save_globalpos_metadata_to_file(carmen_bumblebee_basic_stereoimage_message *ster
 
 
 void
+save_fused_odometry_metadata_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int camera)
+{
+	int nearest_fused_odometry_message_index = -1;
+	char *left_img_filename, *right_img_filename;
+	static double global_x = 0.0, global_y = 0.0;
+
+	if (stereo_image != NULL)
+	{
+		nearest_fused_odometry_message_index = find_nearest_fused_odometry_message(stereo_image->timestamp);
+		if (nearest_fused_odometry_message_index >= 0)
+		{
+			create_stereo_filename_from_timestamp(stereo_image->timestamp, &left_img_filename, &right_img_filename, camera);
+
+			if (fused_odometry_output_file != NULL)
+			{
+				double x = fused_odometry_message_buffer[nearest_fused_odometry_message_index].pose.position.x;
+				double y = fused_odometry_message_buffer[nearest_fused_odometry_message_index].pose.position.y;
+				double z = fused_odometry_message_buffer[nearest_fused_odometry_message_index].pose.position.z;
+
+				double roll = fused_odometry_message_buffer[nearest_fused_odometry_message_index].pose.orientation.roll;
+				double pitch = fused_odometry_message_buffer[nearest_fused_odometry_message_index].pose.orientation.pitch;
+				double yaw = fused_odometry_message_buffer[nearest_fused_odometry_message_index].pose.orientation.yaw;
+
+				tf::Quaternion q = tf::createQuaternionFromRPY(roll, pitch, yaw);
+
+				if (global_x == 0.0)
+					global_x = x;
+				if (global_y == 0.0)
+					global_y = y;
+				x += -global_x;
+				y += -global_y;
+
+				fprintf(fused_odometry_output_file, "%s/%s %.6lf %.6lf %.6lf %.6lf %.6lf %.6lf %.6lf\n",
+						(char*)"images",left_img_filename,
+						x, y, z,
+						q.getW(), //W
+						q.getX(), //P -> roll
+						q.getY(), //Q -> pitch
+						q.getZ() //R -> yaw
+				);
+				fflush(fused_odometry_output_file);
+			}
+		}
+	}
+}
+
+
+void
 save_gps_metadata_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int camera)
 {
 	int nearest_gps_xyz_message_index = -1;
@@ -425,6 +498,7 @@ bumblebee_basic_handler_7(carmen_bumblebee_basic_stereoimage_message *stereo_ima
 void
 bumblebee_basic_handler_8(carmen_bumblebee_basic_stereoimage_message *stereo_image)
 {
+	save_fused_odometry_metadata_to_file(stereo_image, 8);
 	save_globalpos_metadata_to_file(stereo_image, 8);
 	save_odom_metadata_to_file(stereo_image, 8);
 	save_gps_metadata_to_file(stereo_image, 8);
@@ -523,7 +597,8 @@ gps_gpgga_handler(carmen_gps_gpgga_message *gps_gpgga_message)
 void
 fused_odometry_handler(carmen_fused_odometry_message *fused_odometry_message)
 {
-	printf("fused_odometry_handler is not implemented yet! timestamp: %.25f\n", fused_odometry_message-> timestamp);
+	fused_odometry_message_buffer[fused_odometry_message_index] = *fused_odometry_message;
+	fused_odometry_message_index = (fused_odometry_message_index + 1) % 100;
 }
 
 
@@ -554,21 +629,21 @@ shutdown_module(int signo)
 void
 create_kinect_depth_img_filename_from_timestamp(double timestamp, char **depth_img_filename)
 {
-	compose_filename_from_timestamp(timestamp, depth_img_filename, ".depth.meters.png");
+	compose_filename_from_timestamp(timestamp, depth_img_filename, (char*)".depth.meters.png");
 }
 
 
 void
 create_kinect_rgb_depth_img_filename_from_timestamp(double timestamp, char **depth_img_filename)
 {
-	compose_filename_from_timestamp(timestamp, depth_img_filename, ".depth.rgb.png");
+	compose_filename_from_timestamp(timestamp, depth_img_filename, (char*)".depth.rgb.png");
 }
 
 
 void
 create_kinect_video_img_filename_from_timestamp(double timestamp, char **video_img_filename)
 {
-	compose_filename_from_timestamp(timestamp, video_img_filename, ".video.png");
+	compose_filename_from_timestamp(timestamp, video_img_filename, (char*)".video.png");
 }
 
 
@@ -734,7 +809,7 @@ carmen_web_cam_message_handler (carmen_web_cam_message *message)
 	IplImage *img = cvCreateImageHeader(cvSize(message->width, message->height), IPL_DEPTH_8U, 3);
 	img->imageData = message->img_data;
 
-	compose_filename_from_timestamp(message->timestamp, &filename, "bmp");
+	compose_filename_from_timestamp(message->timestamp, &filename, (char*)"bmp");
 	compose_output_path(output_dir_name, filename, &composed_path);
 
 	printf("web_cam image: %s\n", composed_path);
@@ -820,6 +895,12 @@ initialize_module_args(int argc, char **argv)
 				carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 				globalpos_output_file = fopen(globalpos_output_filename, "w");
 				fprintf(globalpos_output_file, "x, y, theta, v, timestamp, left_img, right_img\n");
+			}
+			else if (!strcmp(argv[3], "with_fusedodom"))
+			{
+				carmen_fused_odometry_subscribe_fused_odometry_message(NULL, (carmen_handler_t) fused_odometry_handler, CARMEN_SUBSCRIBE_LATEST);
+				fused_odometry_output_file = fopen(fused_odometry_output_filename, "w");
+				fprintf(fused_odometry_output_file, "image x y z w p q r\n");
 			}
 		}
 
