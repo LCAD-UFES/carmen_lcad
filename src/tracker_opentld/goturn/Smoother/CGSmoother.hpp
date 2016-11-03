@@ -34,6 +34,7 @@
 #include "Entities/GridCellIndex.hpp"
 #include <carmen/carmen.h>
 #include <carmen/collision_detection.h>
+//#include <carmen/obstacle_distance_mapper_interface.h>
 
 
 namespace smoother {

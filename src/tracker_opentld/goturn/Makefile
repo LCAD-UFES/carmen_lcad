@@ -8,18 +8,23 @@ LINK = g++
 CFLAGS += -Wall
 CXXFLAGS += -Wall -Wno-ignored-qualifiers
 IFLAGS += -I $(CUDA_HOME)/targets/x86_64-linux/include -I. -I $(CAFFE_HOME)/include -I $(CAFFE_HOME)/build/include \
-		  -I $(CAFFE_HOME)/build/src `pkg-config --cflags opencv` -I /usr/local/cuda-7.5/include/ # -D CPU_ONLY
+		  -I $(CAFFE_HOME)/build/src `pkg-config --cflags opencv` -I /usr/local/cuda-7.5/include/ \
+		  #-lcudnn -lcublas # -D CPU_ONLY
 		  
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
-	  
+
+#IFLAGS += -I Smoother -I Smoother/Entities -I Smoother/Helpers
+
 LFLAGS += -lboost_system -lboost_filesystem -lboost_regex `pkg-config --libs opencv` \
 		  -L $(CAFFE_HOME)/build/lib -lcaffe -ltinyxml -lglog -lopencv_video -lparam_interface -lipc \
-		  -lglobal -lbumblebee_basic_interface -lvisual_tracker_interface -lcudnn -lcublas -lvelodyne_camera_calibration \
-		  -lvelodyne_interface -lstereo_interface -llocalize_ackerman_interface -lrotation_geometry #-lsmoother
+		  -lglobal -lbumblebee_basic_interface -lvisual_tracker_interface -lvelodyne_camera_calibration \
+		  -lvelodyne_interface -lstereo_interface -llocalize_ackerman_interface -lrotation_geometry \
+		  -lobstacle_distance_mapper_interface -lcollision_detection #-lsmoother
 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath\
+		-lboost_thread-mt -lrt -lboost_signals -lboost_system
 
-SUBDIRS += #Smoother
+#SUBDIRS += Smoother
 
 SOURCES = goturn_main.cpp \
 		  gui.cpp \
@@ -39,7 +44,7 @@ SOURCES = goturn_main.cpp \
 		  helper/bounding_box.cpp \
 		  helper/helper.cpp \
 		  helper/high_res_timer.cpp \
-		  helper/image_proc.cpp 
+		  helper/image_proc.cpp
  
 PUBLIC_INCLUDES = 
     
@@ -65,7 +70,7 @@ goturn_tracker: goturn_main.o \
 		helper/bounding_box.o \
 		helper/helper.o \
 		helper/high_res_timer.o \
-		helper/image_proc.o 
+		helper/image_proc.o
 
 
 include ../../Makefile.rules
