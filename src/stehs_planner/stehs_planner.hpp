@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "CircleNode.hpp"
+#include "StateNode.hpp"
 
 #define MIN_OVERLAP_FACTOR 0.5		// if two circles overlaps more than this factor then they are considered connected
 #define MAX_OVERLAP_FACTOR 0.1		// if two circles overlaps more than this factor then they are considered the same
@@ -30,10 +31,10 @@ class StehsPlanner
 public:
 
 	// the robot global state
-	carmen_ackerman_traj_point_t start;
+	State start;
 
 	//
-	carmen_ackerman_traj_point_t goal;
+	State goal;
 	carmen_obstacle_distance_mapper_message *distance_map;
 
 	carmen_behavior_selector_road_profile_message *goal_list_message;
@@ -51,7 +52,7 @@ public:
 	std::list<CircleNode> circle_path;
 
 	// the trajectory found
-	std::list<carmen_ackerman_motion_command_t> command_list;
+	std::list<State> state_list;
 
 	// TODO it needs to receive the start and goal node
 	std::list<CircleNode> SpaceExploration(CircleNodePtr start_node, CircleNodePtr goal_node);
@@ -62,18 +63,18 @@ public:
 	//void SpaceTimeExploration();
 
 	//
-	//void HeuristicSearch();
+	void HeuristicSearch();
 
 	// the distance between two points
-	double Distance(const carmen_ackerman_traj_point_t &a, const carmen_ackerman_traj_point_t &b);
+	double Distance(const State &a, const State &b);
 
-	double Distance2(const carmen_ackerman_traj_point_t &a, const carmen_ackerman_traj_point_t &b);
+	double Distance2(const State &a, const State &b);
 
 	// the distance between two points
 	double Distance(double ax, double ay, double bx, double by);
 
 	// the nearest obstacle distance
-	double ObstacleDistance(const carmen_ackerman_traj_point_t &point);
+	double ObstacleDistance(const State &point);
 
 	// the nearest obstacle distance, overloaded version
 	double ObstacleDistance(double x, double y);
@@ -85,7 +86,7 @@ public:
 	~StehsPlanner();
 
 	//
-	std::list<carmen_ackerman_motion_command_t> BuildPath();
+	std::list<State> BuildPath();
 
 	void Expand(CircleNodePtr current, std::priority_queue<CircleNodePtr, std::vector<CircleNodePtr>, CircleNodePtrComparator> &open_set);
 
@@ -95,9 +96,13 @@ public:
 
 	int FindClosestRDDFIndex();
 
+	void UpdateCircleGoalDistance();
+
 	int FindNextRDDFIndex(double radius_2, int current_rddf_index);
 
 	int FindNextRDDFFreeIndex(int current_rddf_index);
+
+	double TimeHeuristic(State s);
 
 	void ConnectCirclePathGaps();
 
