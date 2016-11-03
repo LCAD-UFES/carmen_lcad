@@ -10,7 +10,11 @@ CXXFLAGS += -Wall -Wno-ignored-qualifiers
 IFLAGS += -I $(CUDA_HOME)/targets/x86_64-linux/include -I. -I $(CAFFE_HOME)/include -I $(CAFFE_HOME)/build/include \
 		  -I $(CAFFE_HOME)/build/src `pkg-config --cflags opencv` -I /usr/local/cuda-7.5/include/ # -D CPU_ONLY
 		  
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I Smoother/Helpers/
+
+#G2O
+IFLAGS += -I/usr/include/eigen3 
+IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ -I/usr/local/include/g2o/
 	  
 LFLAGS += -lboost_system -lboost_filesystem -lboost_regex `pkg-config --libs opencv` \
 		  -L $(CAFFE_HOME)/build/lib -lcaffe -ltinyxml -lglog -lopencv_video -lparam_interface -lipc \
