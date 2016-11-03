@@ -247,8 +247,8 @@ save_image_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int
 	cvSaveImage(left_composed_path, left_img, NULL);
 	cvSaveImage(right_composed_path, right_img, NULL);
 
-	printf("left image saved: %s\n", left_composed_path);
-	printf("right image saved: %s\n", right_composed_path);
+//	printf("left image saved: %s\n", left_composed_path);
+//	printf("right image saved: %s\n", right_composed_path);
 
 	free(left_img_filename);
 	free(left_composed_path);
@@ -367,6 +367,7 @@ save_fused_odometry_metadata_to_file(carmen_bumblebee_basic_stereoimage_message 
 {
 	int nearest_fused_odometry_message_index = -1;
 	char *left_img_filename, *right_img_filename;
+	static double global_x = 0.0, global_y = 0.0;
 
 	if (stereo_image != NULL)
 	{
@@ -380,18 +381,27 @@ save_fused_odometry_metadata_to_file(carmen_bumblebee_basic_stereoimage_message 
 				double x = fused_odometry_message_buffer[nearest_fused_odometry_message_index].pose.position.x;
 				double y = fused_odometry_message_buffer[nearest_fused_odometry_message_index].pose.position.y;
 				double z = fused_odometry_message_buffer[nearest_fused_odometry_message_index].pose.position.z;
+
 				double roll = fused_odometry_message_buffer[nearest_fused_odometry_message_index].pose.orientation.roll;
 				double pitch = fused_odometry_message_buffer[nearest_fused_odometry_message_index].pose.orientation.pitch;
 				double yaw = fused_odometry_message_buffer[nearest_fused_odometry_message_index].pose.orientation.yaw;
+
 				tf::Quaternion q = tf::createQuaternionFromRPY(roll, pitch, yaw);
 
-				fprintf(fused_odometry_output_file, "%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%.3lf,%s,%s\n",
+				if (global_x == 0.0)
+					global_x = x;
+				if (global_y == 0.0)
+					global_y = y;
+				x += -global_x;
+				y += -global_y;
+
+				fprintf(fused_odometry_output_file, "%s/%s %.6lf %.6lf %.6lf %.6lf %.6lf %.6lf %.6lf\n",
+						(char*)"images",left_img_filename,
 						x, y, z,
 						q.getW(), //W
 						q.getX(), //P -> roll
 						q.getY(), //Q -> pitch
-						q.getZ(), //R -> yaw
-						left_img_filename, right_img_filename
+						q.getZ() //R -> yaw
 				);
 				fflush(fused_odometry_output_file);
 			}
@@ -890,7 +900,7 @@ initialize_module_args(int argc, char **argv)
 			{
 				carmen_fused_odometry_subscribe_fused_odometry_message(NULL, (carmen_handler_t) fused_odometry_handler, CARMEN_SUBSCRIBE_LATEST);
 				fused_odometry_output_file = fopen(fused_odometry_output_filename, "w");
-				fprintf(fused_odometry_output_file, "x, y, z, q1, q1, q3, q4, left_img, right_img\n");
+				fprintf(fused_odometry_output_file, "image x y z w p q r\n");
 			}
 		}
 
