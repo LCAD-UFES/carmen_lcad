@@ -918,26 +918,29 @@ publishSplineRDDF()
 //	double target_x = 0.0;
 //	double target_y = 0.0;
 
-	double angle = 0.0;
-	double angle_diff = 0.0;
+	//double angle = 0.0;
+	//double angle_diff = 0.0;
 
 	g2o::SE2 robot_pose(first_pose_x, first_pose_y, first_pose_theta);
 	g2o::SE2 last_pose(first_pose_x, first_pose_y, first_pose_theta);
+
+	int n = 1;
 
 	for (unsigned int i = 0; i < X.size(); i++)
 	{
 //		double pix = X[i] - first_pose_x;
 //		double piy = Y[i] - first_pose_y;
 
-		g2o::SE2 target_in_world_reference(X[i], Y[i], angle);
+		g2o::SE2 target_in_world_reference(X[i], Y[i], 0);
 		g2o::SE2 target_in_last_pose_reference = last_pose.inverse() * target_in_world_reference;
 		g2o::SE2 target_in_car_reference = robot_pose.inverse() * target_in_world_reference;
 
 //		target_x = target_in_car_reference[0];
 //		target_y = target_in_car_reference[1];
-
 //		angle = fabs(carmen_radians_to_degrees(atan2(piy - Yspline.back(), pix - Xspline.back())));
 
+		double angle_in_the_world = atan2(Y[i] - last_pose[1], X[i] - last_pose[0]);
+		double angle_in_car_reference = atan2(target_in_car_reference[1], target_in_car_reference[0]);
 		double angle_from_last_pose = atan2(target_in_last_pose_reference[1], target_in_last_pose_reference[0]);
 
 		//if(Tteste.size() > 2)
@@ -949,19 +952,21 @@ publishSplineRDDF()
 //		double dt = (pose_times[i] - pose_times[i - 1]);
 //		double dist = sqrt(pow(piy - pi_1y, 2) + pow(pix - pi_1x, 2));
 
-		if ((fabs(carmen_radians_to_degrees(angle_from_last_pose)) > 20.0) /*|| (angle_diff > 20.0)*/ || (target_in_last_pose_reference[0] < 0))
+		if ((fabs(carmen_radians_to_degrees(angle_from_last_pose)) > 20.0) /*|| (angle_diff > 20.0)*/
+				|| (target_in_last_pose_reference[0] < 0)
+				|| target_in_car_reference[0] < 4.5)
 			continue;
 
 //		Xspline.push_back(pix);
 //		Yspline.push_back(piy);
-		Ispline.push_back(i + 1);
+		Ispline.push_back(n++);
 
 		Xteste.push_back(target_in_car_reference[0]);
 		Yteste.push_back(target_in_car_reference[1]);
-		Tteste.push_back(angle); // TODO: CORRIGIR ESSE ANGULO. ELE ESTA NA REF. DO PONTO ANTERIOR, MAS ELE DEVERIA ESTAR NA REF. DO CARRO.
+		Tteste.push_back(angle_in_car_reference); // TODO: CORRIGIR ESSE ANGULO. ELE ESTA NA REF. DO PONTO ANTERIOR, MAS ELE DEVERIA ESTAR NA REF. DO CARRO.
 
-		last_pose = g2o::SE2(X[i], Y[i], angle_from_last_pose);
-		printf("\tX: %lf Y: %lf T: %lf\n", target_in_car_reference[0], target_in_car_reference[1], angle);
+		last_pose = g2o::SE2(X[i], Y[i], angle_in_the_world);
+		printf("\tX: %lf Y: %lf T: %lf\n", target_in_car_reference[0], target_in_car_reference[1], angle_in_car_reference);
 	}
 
 	printf("Xteste size: %ld\n", Xteste.size());
@@ -975,15 +980,26 @@ publishSplineRDDF()
 		carmen_ackerman_traj_point_t newPose;
 
 		// TODO: MOVER OS PONTOS DA SPLINE PARA A REFERENCIA DO MUNDO.
+		g2o::SE2 spline_point_in_car_reference(x(Ispline[0]), y(Ispline[0]), 0);
+		g2o::SE2 spline_point_in_the_world = robot_pose * spline_point_in_car_reference;
 
-		newPose.x = x(Ispline[0]) + first_pose_x;
-		newPose.y = y(Ispline[0]) + first_pose_y;
+		newPose.x = spline_point_in_the_world[0];
+		newPose.y = spline_point_in_the_world[1];
+		//newPose.x = x(Ispline[0]) + first_pose_x;
+		//newPose.y = y(Ispline[0]) + first_pose_y;
+
 		poses.push_back(newPose);
 
 		for (unsigned int i = 1; i < Ispline.size() + (unsigned int) extraPositions; i++)
 		{
-			newPose.x = x(Ispline[0] + i) + first_pose_x;
-			newPose.y = y(Ispline[0] + i) + first_pose_y;
+			// TODO: MOVER OS PONTOS DA SPLINE PARA A REFERENCIA DO MUNDO.
+			g2o::SE2 spline_point_in_car_reference(x(Ispline[0] + i), y(Ispline[0] + i), 0);
+			g2o::SE2 spline_point_in_the_world = robot_pose * spline_point_in_car_reference;
+
+			newPose.x = spline_point_in_the_world[0];
+			newPose.y = spline_point_in_the_world[1];
+			//newPose.x = x(Ispline[0] + i) + first_pose_x;
+			//newPose.y = y(Ispline[0] + i) + first_pose_y;
 			newPose.v = 1.0;
 
 			poses.push_back(newPose);
@@ -1020,6 +1036,7 @@ publishSplineRDDF()
 //	for (unsigned int i = 0; i < poses.size(); i++)
 //		printf("X: %lf Y: %lf TH: %lf\n", poses[i].x, poses[i].y, poses[i].theta);
 //	printf("\n\n-----------------------\n");
+
 
 
 
