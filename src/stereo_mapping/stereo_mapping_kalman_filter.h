@@ -36,8 +36,7 @@ typedef struct
   CvMat *z_k;
 } kalman_filter;
 
-void kalman_update_state(kalman_filter *filter, kalman_filter_params *state[], double controls[], double measurements[]);
-
+void kalman_update_state(cv::KalmanFilter *filter, kalman_filter_params *state[], double measurements[]);
 void init_kalman_filter_params(kalman_filter_params *state, double value_variance, double value_variance_factor, double observation_variance);
 
 #ifdef __cplusplus

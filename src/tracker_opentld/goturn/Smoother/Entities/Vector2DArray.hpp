@@ -210,11 +210,11 @@ class Vector2DArray {
 
         }
 
-
 };
 
-template<typename T>
-using Vector2DArrayPtr = Vector2DArray<double>*;
+typedef Vector2DArray<double>* Vector2DArrayPtr;
+//template<typename T>
+//using Vector2DArrayPtr = Vector2DArray<double>*;
 
 }
 
