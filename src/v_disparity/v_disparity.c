@@ -15,7 +15,9 @@ v_disparity get_v_disparity_instance(stereo_util stereo_util_instance, int stere
 	instance.polygon = cvCreateSeq(CV_SEQ_CONTOUR, sizeof(CvSeq), sizeof(CvPoint), instance.polygon_storage);
 
 	int n_edges = 4;
-	CvPoint edges[4] = {cvPoint(80, 380), cvPoint(200, 220), cvPoint(280, 220), cvPoint(400, 380)};
+	//CvPoint edges[4] = {cvPoint(80, 380), cvPoint(200, 220), cvPoint(280, 220), cvPoint(400, 380)};
+	//This are the points that make the blue region (safe region) in the v-disparity viewer
+	CvPoint edges[4] = {cvPoint(170, 357), cvPoint(284, 270), cvPoint(340, 270), cvPoint(412, 357)}; // <- calibrated for camera 8 at 640 x 480 resolution
 
 	build_polygon(edges, n_edges, instance);
 
@@ -175,6 +177,7 @@ void compute_height_and_pitch(IplImage *v_disparity_map, double slope_threshould
 
 	*pitch = atan((instance.stereo_util_instance.yc - linear_coef) / instance.stereo_util_instance.fx);
 	*height = instance.stereo_util_instance.baseline * cos(*pitch) / angular_coef;
+	*horizon_line = linear_coef;
 
 	/*Debug Code
 	 */
@@ -185,16 +188,17 @@ void compute_height_and_pitch(IplImage *v_disparity_map, double slope_threshould
 		printf("best sum: %d, angular coef: %f, baseline: %f, cos(pitch): %f;\n",best_sum, angular_coef, instance.stereo_util_instance.baseline, cos(*pitch));
 		printf("yc: %f, linear coef: %f, fx: %f\n",instance.stereo_util_instance.yc , linear_coef, instance.stereo_util_instance.fx);
 	}
-	if(*height < 0){
-		printf("Negative height Alert!\n");
+
+	if(*height < 1){
+		printf("low height Alert!\n");
 		printf("Height: %f\n", *height);
 		printf("best sum: %d, angular coef: %f, baseline: %f, cos(pitch): %f;\n",best_sum, angular_coef, instance.stereo_util_instance.baseline, cos(*pitch));
 		printf("yc: %f, linear coef: %f, fx: %f\n",instance.stereo_util_instance.yc , linear_coef, instance.stereo_util_instance.fx);
 	}
 
-	//*/
+	// End of Debug Code
 
-	*horizon_line = linear_coef;
+
 }
 
 
