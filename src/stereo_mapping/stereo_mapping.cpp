@@ -75,7 +75,7 @@ unsigned short int *v_disparity_data;
 /* Camera State */
 static kalman_filter_params pitch_state, height_state;
 static double horizon_line;
-static kalman_filter camera_ekf;
+static cv::KalmanFilter camera_ekf;
 
 /* Car parameters */
 static double sensor_board_height, camera_relative_height, wheel_radius;
@@ -114,6 +114,7 @@ shutdown_stereo_mapping(int x)
 
 
 static carmen_6d_point last_state_from_sensor, new_state_from_sensor;
+static double new_state_timestamp, last_state_timestamp;
 
 static void
 fused_odometry_message_handler(carmen_fused_odometry_message *message)
@@ -125,6 +126,7 @@ fused_odometry_message_handler(carmen_fused_odometry_message *message)
   new_state_from_sensor.roll = message->pose.orientation.roll;
   new_state_from_sensor.pitch = message->pose.orientation.pitch;
   new_state_from_sensor.yaw = message->pose.orientation.yaw;
+  new_state_timestamp = message->timestamp;
 }
 
 static void
@@ -273,9 +275,9 @@ try_save_state(int n_road_lines, carmen_simple_stereo_disparity_message *message
 static void
 update_camera_state(double camera_pitch, double camera_height)
 {
-  // compute changes (control)
-  double delta_height = new_state_from_sensor.z - last_state_from_sensor.z;
-  double delta_pitch = new_state_from_sensor.pitch - last_state_from_sensor.pitch;
+  //time since last frame
+  double dt = new_state_timestamp - last_state_timestamp;
+  if(dt > 1000) dt = 1; //fix for the first time it runs
 
   // update state with the received state
   last_state_from_sensor.x = new_state_from_sensor.x;
@@ -284,12 +286,18 @@ update_camera_state(double camera_pitch, double camera_height)
   last_state_from_sensor.roll = new_state_from_sensor.roll;
   last_state_from_sensor.pitch = new_state_from_sensor.pitch;
   last_state_from_sensor.yaw = new_state_from_sensor.yaw;
+  last_state_timestamp = new_state_timestamp;
 
   // update camera state
-  double control[2] = { delta_pitch, delta_height };
   double measurement[2] = { camera_pitch, camera_height };
   kalman_filter_params *state[2] = { &pitch_state, &height_state };
-  kalman_update_state(&camera_ekf, state, control, measurement);
+
+  //update transition matrix
+  camera_ekf.transitionMatrix.at<float>(0,2) = dt;
+  camera_ekf.transitionMatrix.at<float>(1,3) = dt;
+
+  //compute kalman filter
+  kalman_update_state(&camera_ekf, state, measurement);
 }
 
 
@@ -542,7 +550,7 @@ init_stereo_mapping()
 
   v_disparity_data = alloc_v_disparity_map(v_disparity_instance);
 
-  horizon_line = 192;
+  horizon_line = 240; //192;
 
   // create a state with two Degrees of Freedom (pitch and height with respect to the ground plane)
   init_kalman_filter_params(&pitch_state, carmen_degrees_to_radians(1.5), 2.0, carmen_degrees_to_radians(3.0));
@@ -550,12 +558,19 @@ init_stereo_mapping()
 
   // OpenCV Kalman Filter: see http://opencv.willowgarage.com/documentation/motion_analysis_and_object_tracking.html
   // Initialize Kalman filters transition, control and measurement matrixes
-  camera_ekf.kalman_filter = cvCreateKalman(2, 2, 2);
-  cvSetIdentity(camera_ekf.kalman_filter->transition_matrix, cvRealScalar(1));
-  cvSetIdentity(camera_ekf.kalman_filter->control_matrix, cvRealScalar(1));
-  cvSetIdentity(camera_ekf.kalman_filter->measurement_matrix, cvRealScalar(1));
-  camera_ekf.control = cvCreateMat(2, 1, CV_32FC1);//control
-  camera_ekf.z_k = cvCreateMat(2, 1, CV_32FC1);//measurements
+  camera_ekf.init(4,2,0, CV_64F);
+
+  camera_ekf.transitionMatrix = *(cv::Mat_<double>(4, 4) << 1,0,1,0,   0,1,0,1,  0,0,1,0,  0,0,0,1);
+
+  camera_ekf.statePost.at<double>(0) = 0; //initial pitch
+  camera_ekf.statePost.at<double>(1) = 2; //initial height
+  camera_ekf.statePost.at<double>(2) = 0; //initial velocity in pitch direction
+  camera_ekf.statePost.at<double>(3) = 0; //initial velocity in height direction
+
+  cv::setIdentity(camera_ekf.measurementMatrix);
+  cv::setIdentity(camera_ekf.processNoiseCov, cv::Scalar::all(1e-4)); //1e-4
+  cv::setIdentity(camera_ekf.measurementNoiseCov, cv::Scalar::all(0.5)); //para height 1 está bom //0.5 apresentou bons resultados para pitch
+  cv::setIdentity(camera_ekf.errorCovPost, cv::Scalar::all(1)); //1  //1e3 maybe?
 }
 
 
