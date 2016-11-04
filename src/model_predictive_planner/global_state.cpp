@@ -55,6 +55,7 @@ int GlobalState::publish_tree = 1;
 int GlobalState::reuse_last_path = 0;
 
 int GlobalState::use_path_planner = 0;
+int GlobalState::use_tracker_goal_and_lane = 0;
 
 double GlobalState::obstacle_cost_distance = 1.5; // distancia para zero custo (os custos sao lineares com a distancia para obstaculos)
 

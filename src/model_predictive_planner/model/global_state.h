@@ -64,6 +64,7 @@ public:
 	static int reuse_last_path;
 
 	static int use_path_planner;
+	static int use_tracker_goal_and_lane;
 
 	static double obstacle_cost_distance;
 
