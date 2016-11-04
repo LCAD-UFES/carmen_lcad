@@ -177,7 +177,7 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_parti
 
 						laser_points_in_camera.push_back(laser_px_points);
 
-						if (laser_points_in_camera.size() < 5) printf("H: %lf\n", hblablabla);
+						//if (laser_points_in_camera.size() < 5) printf("H: %lf\n", hblablabla);
 					}
 				}
 

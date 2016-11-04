@@ -14,10 +14,10 @@ IFLAGS += -I $(CUDA_HOME)/targets/x86_64-linux/include -I. -I $(CAFFE_HOME)/incl
 		  # -lcudnn -lcublas \
 		  # -D CPU_ONLY 
 		  
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I$(CARMEN_HOME)/sharedlib/alglib/src
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/alglib/
 
 #G2O
 IFLAGS += -I/usr/include/eigen3 
@@ -27,7 +27,7 @@ LFLAGS += -lboost_system -lboost_filesystem -lboost_regex `pkg-config --libs ope
 		  -L $(CAFFE_HOME)/build/lib -lcaffe -ltinyxml -lglog -lopencv_video -lparam_interface -lipc \
 		  -lglobal -lbumblebee_basic_interface -lvisual_tracker_interface -lvelodyne_camera_calibration \
 		  -lvelodyne_interface -lstereo_interface -llocalize_ackerman_interface -lrotation_geometry \
-		  -lobstacle_distance_mapper_interface -lobstacle_avoider_interface -L Smoother -lsmoother -lcollision_detection
+		  -lobstacle_distance_mapper_interface -lobstacle_avoider_interface -L Smoother -lsmoother -lcollision_detection -lalglib
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath\
 		-lboost_thread-mt -lrt -lboost_signals -lboost_system
