@@ -842,7 +842,7 @@ create_smoothed_path()
 		pose_thetas.erase(pose_thetas.begin());
 	}
 
-	// FIXME Incluir as modificações de correção de pontos
+	// FIXME Incluir as modificacoes de correcao de pontos
 
 	//	printf("\n\n-----------------------\n");
 
@@ -897,7 +897,9 @@ create_smoothed_path()
 		if ((fabs(carmen_radians_to_degrees(angle_from_last_pose)) > 20.0) /*|| (angle_diff > 20.0)*/
 				|| (target_in_last_pose_reference[0] < 0)
 				|| target_in_car_reference[0] < 4.5)
+		{
 			continue;
+		}
 
 		Xteste.push_back(target_in_car_reference[0]);
 		Yteste.push_back(target_in_car_reference[1]);
@@ -925,7 +927,7 @@ create_smoothed_path()
 		pose_temp.v = 0.0;
 		poses_filtered.push_back(pose_temp);
 	}
-
+	printf("\n\n----------poses_filtered: %ld-------------\n", poses_filtered.size());
 	if (poses_filtered.size() > 5)
 	{
 		printf("\n\n----------To aqui-------------\n");
@@ -1163,8 +1165,11 @@ publishSplineRDDF()
 
 		if ((fabs(carmen_radians_to_degrees(angle_from_last_pose)) > 20.0) /*|| (angle_diff > 20.0)*/
 				|| (target_in_last_pose_reference[0] < 0)
-				|| target_in_car_reference[0] < 4.5)
+				|| target_in_car_reference[0] < 4.5){
+			X.erase(X.begin() + i);
+			Y.erase(Y.begin() + i);
 			continue;
+		}
 
 //		Xspline.push_back(pix);
 //		Yspline.push_back(piy);
@@ -1334,8 +1339,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 		if (box_1.x > 0.0 && box_1.y > 0.0)
 		{
 			vector<carmen_ackerman_traj_point_t> path_complete;
-//			path_complete = publishSplineRDDF();
-			path_complete = create_smoothed_path();
+			path_complete = publishSplineRDDF();
+//			path_complete = create_smoothed_path();
 			build_and_publish_path_as_RDDF(path_complete, image_msg->timestamp);
 		}
 //		double time_f = carmen_get_time() - time_now;

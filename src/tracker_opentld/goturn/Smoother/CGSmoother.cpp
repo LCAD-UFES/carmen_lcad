@@ -72,7 +72,7 @@ StateArrayPtr CGSmoother::ToState2D(std::vector<carmen_ackerman_traj_point_t> &p
     for (unsigned int i = 0; i < psize; ++i) {
 
         states[i].position.x = path[i].x;
-        states[i].position.y = path[i].x;
+        states[i].position.y = path[i].y;
         states[i].orientation = path[i].theta;
         states[i].phi = path[i].phi;
         states[i].v = path[i].v;
@@ -729,7 +729,7 @@ void CGSmoother::EvaluateFunctionAndGradient() {
 
 }
 
-// the Moré-Thuente step trial
+// the Mor-Thuente step trial
 // The purpose of cstep is to compute a safeguarded step for
 // a linesearch and to update an interval of uncertainty for
 // a minimizer of the function.
@@ -993,7 +993,7 @@ int CGSmoother::CStep(
 
 }
 
-// the Moré-Thuente line serch
+// the Mor-Thuente line serch
 // based on the minpack and derivates codes
 int CGSmoother::MTLineSearch(double lambda) {
 
@@ -1379,7 +1379,7 @@ void CGSmoother::UpdateConjugateDirection(std::vector<Vector2D<double> > &s, con
 
     // euclidean norm
     s_norm = std::sqrt(s_norm);
-
+//FIXME pode dividir por zero
     sg /= s_norm;
 }
 
