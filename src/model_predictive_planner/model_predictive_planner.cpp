@@ -738,7 +738,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	if (!goal_in_lane)
 		lane_in_local_pose.clear();
 
-	if (GlobalState::use_path_planner)
+	if (GlobalState::use_path_planner || GlobalState::use_tracker_goal_and_lane)
 		build_detailed_path_lane(&lane_in_local_pose, detailed_lane);
 	else
 		build_detailed_rddf_lane(&lane_in_local_pose, detailed_lane);

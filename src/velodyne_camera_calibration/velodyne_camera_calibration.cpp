@@ -116,10 +116,12 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_parti
 		{
 			double range = (((double) velodyne_message->partial_scan[j].distance[i]) / 500.0);
 
-			double h = carmen_normalize_theta(carmen_degrees_to_radians(velodyne_message->partial_scan[j].angle));
+			double hangle = velodyne_message->partial_scan[j].angle;
+			double hrad = carmen_degrees_to_radians(hangle);
+			double hblablabla = carmen_normalize_theta(hrad);
 
-			float r = 0;
-			float b = 0;
+			//float r = 0;
+			//float b = 0;
 
 			const float MAX_RANGE = 30.0;
 			const float MIN_RANGE = 0.5;
@@ -133,11 +135,11 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_parti
 			if (range >= MAX_RANGE)
 				continue;
 
-			r = range / MAX_RANGE;
-			r *= 255;
-			r = 255 - r;
+			//r = range / MAX_RANGE;
+			//r *= 255;
+			//r = 255 - r;
 
-			tf::Point p3d_velodyne_reference = spherical_to_cartesian(h, v, range);
+			tf::Point p3d_velodyne_reference = spherical_to_cartesian(hblablabla, v, range);
 
 			if (p3d_velodyne_reference.x() > 0)
 			{
@@ -160,15 +162,22 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_parti
 
 				if (px >= 0 && px <= bumblebee_message->width && py >= 0 && py <= bumblebee_message->height)
 				{
-					if (px < 10 || px >= (bumblebee_message->width - 10))
-						b = 254;
+					//if (px < 10 || px >= (bumblebee_message->width - 10))
+						//b = 254;
 
-					if (r > 5)
+					//if (r > 5)
 					{
-						//	a < x0 < a+c and b < y0 < b + d
-						carmen_sphere_coord_t laser_polar = {h, v, range};
-						carmen_velodyne_points_in_cam_t laser_px_points = {ipx, ipy, laser_polar};
+						carmen_velodyne_points_in_cam_t laser_px_points; //= {ipx, ipy, laser_polar};
+
+						laser_px_points.ipx = ipx;
+						laser_px_points.ipy = ipy;
+						laser_px_points.laser_polar.horizontal_angle = hblablabla;
+						laser_px_points.laser_polar.vertical_angle = v;
+						laser_px_points.laser_polar.length = range;
+
 						laser_points_in_camera.push_back(laser_px_points);
+
+						//if (laser_points_in_camera.size() < 5) printf("H: %lf\n", hblablabla);
 					}
 				}
 
@@ -176,9 +185,8 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_parti
 		}
 	}
 	return laser_points_in_camera;
-
-		}
-
+}
+/*
 std::vector<carmen_velodyne_points_in_cam_t>
 carmen_velodyne_camera_calibration_lasers_points_bounding_box(carmen_velodyne_partial_scan_message *velodyne_message,
 		carmen_bumblebee_basic_stereoimage_message *bumblebee_message, double *confidence, bounding_box *box)
@@ -263,3 +271,6 @@ carmen_velodyne_camera_calibration_lasers_points_bounding_box(carmen_velodyne_pa
 	}
 	return laser_points_in_camera;
 		}
+*/
+
+

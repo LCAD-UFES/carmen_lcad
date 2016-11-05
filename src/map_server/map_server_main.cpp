@@ -54,6 +54,7 @@ static int publish_grid_mapping_map_at_startup = 0;
 static int publish_google_map = 0;
 static int lanemap_incoming_message_type = 0;
 static int goal_source_path_planner = 0;
+static int rddf_source_tracker = 0;
 static carmen_point_t pose_g;
 
 int is_first_rddf_message = 1;
@@ -470,7 +471,7 @@ rddf_message_handler(carmen_behavior_selector_road_profile_message *message)
 {
 	static carmen_point_t pose_in_last_publish = {0.0, 0.0, 0.0};
 
-	if (goal_source_path_planner)
+	if (goal_source_path_planner || rddf_source_tracker)
 	{
 		if (message->number_of_poses <= 0)
 			return;
@@ -486,7 +487,7 @@ rddf_message_handler(carmen_behavior_selector_road_profile_message *message)
 	}
 	else
 	{
-		if (goal_source_path_planner)
+		if (goal_source_path_planner || rddf_source_tracker)
 		{
 			if ((message->number_of_poses != rddf_message->number_of_poses))
 				realloc_rddf_global_data(message);
@@ -570,7 +571,8 @@ read_localize_parameters(int argc, char **argv)
 			{(char*)"robot",  (char*)"distance_between_front_and_rear_axles",		CARMEN_PARAM_DOUBLE, &(car_config.distance_between_front_and_rear_axles), 1, NULL},
 			{(char*)"robot",  (char*)"distance_between_rear_car_and_rear_wheels",		CARMEN_PARAM_DOUBLE, &(car_config.distance_between_rear_car_and_rear_wheels), 1, NULL},
 			{(char*)"robot",  (char*)"distance_between_rear_wheels",			CARMEN_PARAM_DOUBLE, &(car_config.distance_between_rear_wheels), 1, NULL},
-			{(char *) "behavior_selector",   (char *) "goal_source_path_planner", 		CARMEN_PARAM_ONOFF,  &goal_source_path_planner, 0, NULL}
+			{(char *) "behavior_selector",   (char *) "goal_source_path_planner", 		CARMEN_PARAM_ONOFF,  &goal_source_path_planner, 0, NULL},
+			{(char *) "rddf",   (char *) "source_tracker", 		CARMEN_PARAM_ONOFF,  &rddf_source_tracker, 0, NULL}
 	};
 
 
