@@ -463,6 +463,7 @@ bumblebee_basic_handler_2(carmen_bumblebee_basic_stereoimage_message *stereo_ima
 void
 bumblebee_basic_handler_3(carmen_bumblebee_basic_stereoimage_message *stereo_image)
 {
+	save_fused_odometry_metadata_to_file(stereo_image, 3);
 	save_image_to_file(stereo_image, 3);
 }
 
