@@ -35,6 +35,7 @@
 #include <carmen/carmen.h>
 #include <carmen/collision_detection.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
+#include <math.h>
 
 
 namespace smoother {
@@ -336,8 +337,8 @@ class CGSmoother {
 
         // smooth a given path
         std::vector<carmen_ackerman_traj_point_t> Smooth(std::vector<carmen_ackerman_traj_point_t> &input_path);
-        void set_distance_map(carmen_obstacle_distance_mapper_message *distance_map);
-        void set_robot_config(carmen_robot_ackerman_config_t robot_config);
+//        void set_distance_map(carmen_obstacle_distance_mapper_message *distance_map);
+//        void set_robot_config(carmen_robot_ackerman_config_t robot_config);
 };
 
 }
