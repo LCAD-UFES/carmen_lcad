@@ -45,18 +45,18 @@ CGSmoother::~CGSmoother() {
 
 }
 
-void
-CGSmoother::set_distance_map(carmen_obstacle_distance_mapper_message *distance_map)
-{
-	CGSmoother::distance_map = distance_map;
-}
-void
-CGSmoother::set_robot_config(carmen_robot_ackerman_config_t robot_config)
-{
-	CGSmoother::robot_config = robot_config;
-	CGSmoother::circle_radius = (robot_config.width + 0.4) / 2.0;
-
-}
+//void
+//CGSmoother::set_distance_map(carmen_obstacle_distance_mapper_message *distance_map)
+//{
+//	CGSmoother::distance_map = distance_map;
+//}
+//void
+//CGSmoother::set_robot_config(carmen_robot_ackerman_config_t robot_config)
+//{
+//	CGSmoother::robot_config = robot_config;
+//	CGSmoother::circle_radius = (robot_config.width + 0.4) / 2.0;
+//
+//}
 
 // convert carmen_ackerman_traj_point_t to smoother::State2D
 StateArrayPtr CGSmoother::ToState2D(std::vector<carmen_ackerman_traj_point_t> &path) {
@@ -138,7 +138,7 @@ bool CGSmoother::UnsafePath(Vector2DArrayPtr path) {
         	path_point.x = positions[i].y;
         	path_point.theta = atan2(positions[i].y - positions[i-1].y, positions[i].x - positions[i-1].x);
 
-        	double obstacle = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&path_point, CGSmoother::distance_map);
+        	double obstacle = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&path_point, distance_map);
             if ((obstacle - circle_radius) < 0.0 )//tem colisao
             {
                 // lock the current point
@@ -193,13 +193,13 @@ double CGSmoother::ABSMax(double a, double b, double c) {
 //    // TODO
 //    // it needs to use the collision detection
 //
-//    double obst_distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&path_point, CGSmoother::distance_map);
+//    double obst_distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&path_point, distance_map);
 //
 //    // the obstacle and voronoi field terms are valid when dmax is greater or equal to the nearest obstacle distance
 //    if (dmax > obst_distance) {
 //
 //        // get the nearest obstacle position
-//    	carmen_position_t obstacle_cell = carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(&path_point, CGSmoother::distance_map);
+//    	carmen_position_t obstacle_cell = carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(&path_point, distance_map);
 //        Vector2D<double> nearest(obstacle_cell.x, obstacle_cell.y);//TODO Retornar o X,Y da colision_detection global do obstaculo mais proximo);
 //
 //        // get the current vector Xi - Oi
@@ -235,7 +235,7 @@ Vector2D<double> CGSmoother::GetObstacleDerivative(
     // TODO
     // needs to use the collision detection function
     //TODO Retornar o X,Y da colision_detection global do obstaculo mais proximo);
-    carmen_position_t obstacle_cell = carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(&path_point, CGSmoother::distance_map);
+    carmen_position_t obstacle_cell = carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(&path_point, distance_map);
 
     Vector2D<double> nearest(obstacle_cell.x, obstacle_cell.y);
 
@@ -505,7 +505,7 @@ void CGSmoother::EvaluateF(
     // get the nearest obstacle distance
     // TODO
     // it needs to use the collision detection module
-    double obst_distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&path_point, CGSmoother::distance_map);
+    double obst_distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&path_point, distance_map);
 
     if (dmax >= obst_distance) {
 
@@ -548,7 +548,7 @@ void CGSmoother::EvaluateG(
     // get the nearest obstacle distance
     // TODO
     // it needs to use the collision detection module
-    double obst_distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&path_point, CGSmoother::distance_map);
+    double obst_distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&path_point, distance_map);
 
     if (dmax >= obst_distance) {
 
@@ -587,7 +587,7 @@ CGSmoother::EvaluateG(
     // get the nearest obstacle distance
     // TODO
     // it needs to use the collision detection module
-    double obst_distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&path_point, CGSmoother::distance_map);
+    double obst_distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&path_point, distance_map);
 
     if (dmax >= obst_distance) {
 
@@ -624,7 +624,7 @@ void CGSmoother::EvaluateFG(
 	path_point.y = xi.y;
 	path_point.theta = 0.0;
     // get the nearest obstacle distance
-    double obst_distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&path_point, CGSmoother::distance_map);
+    double obst_distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&path_point, distance_map);
 
     if (dmax >= obst_distance) {
 
@@ -1712,7 +1712,7 @@ void CGSmoother::DrawBezierCurve(
 {
 
     // get the grid resoluiton
-    double resolution = CGSmoother::distance_map->config.resolution;//mapconfig
+    double resolution = distance_map->config.resolution;//mapconfig
 //    double inverse_resolution = (1/CGSmoother::distance_map->config.resolution);//map config
     double resolution_factor = resolution;
     double res2 = std::pow(resolution, 2);

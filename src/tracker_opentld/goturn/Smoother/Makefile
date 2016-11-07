@@ -14,7 +14,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
 		  
 LFLAGS += `pkg-config --libs opencv` -lopencv_video -lglobal \
 		-llocalize_ackerman_interface -lobstacle_distance_mapper_interface \
-		-lcollision_detection -lsmoother
+		-lsmoother
 		
 SOURCES = CGSmoother.cpp \
 		Entities/Pose2D.cpp \
