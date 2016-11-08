@@ -568,9 +568,9 @@ init_stereo_mapping()
   camera_ekf.statePost.at<double>(3) = 0; //initial velocity in height direction
 
   cv::setIdentity(camera_ekf.measurementMatrix);
-  cv::setIdentity(camera_ekf.processNoiseCov, cv::Scalar::all(1e-4)); //1e-4
-  cv::setIdentity(camera_ekf.measurementNoiseCov, cv::Scalar::all(0.5)); //para height 1 está bom //0.5 apresentou bons resultados para pitch
-  cv::setIdentity(camera_ekf.errorCovPost, cv::Scalar::all(1)); //1  //1e3 maybe?
+  cv::setIdentity(camera_ekf.processNoiseCov, cv::Scalar::all(1e-3));
+  cv::setIdentity(camera_ekf.measurementNoiseCov, cv::Scalar::all(5e-2));
+  cv::setIdentity(camera_ekf.errorCovPost, cv::Scalar::all(1e3));
 }
 
 
