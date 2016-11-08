@@ -8,9 +8,9 @@ ifndef CARMEN_DEBUG
 CFLAGS += -O3 -fopenmp -pg
 endif
 
-LINK = gcc
 
-CFLAGS += -std=c99
+LINK = g++
+CFLAGS += -Wall
 IFLAGS += -I/usr/local/include
 LFLAGS += -lglobal -lparam_interface -lipc -lGL -lGLU -lglut \
 	  -lstereo_interface -lbumblebee_basic_interface \
@@ -19,7 +19,7 @@ LFLAGS += -lglobal -lparam_interface -lipc -lGL -lGLU -lglut \
 MODULE_NAME = V_DISPARITY
 MODULE_COMMENT = V-Disparity Library and Viewer
 
-SOURCES = v_disparity.c
+SOURCES = v_disparity.cpp
 PUBLIC_INCLUDES = v_disparity.h
  
 ifndef NO_CUDA
