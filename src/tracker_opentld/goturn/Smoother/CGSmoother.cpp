@@ -8,7 +8,7 @@ using namespace smoother;
 
 CGSmoother::CGSmoother() :
     wo(0.002), ws(4.0), wk(4.0), dmax(5.0), alpha(0.2), kmax(0.22),
-    min_turn_radius(0.22), max_speed(40), max_lateral_acceleration(1.0), safety_factor(1.0),
+    min_turn_radius(5.58), max_speed(40), max_lateral_acceleration(1.0), safety_factor(1.0),
     input_path(NULL), cg_status(CGIddle),
     fx(), gx_norm(), fx1(), gx1_norm(), ftrialx(), x1mx_norm(), gtrialx_norm(), trialxmx_norm(),
     s(), s_norm(), sg(),
