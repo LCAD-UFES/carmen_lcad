@@ -184,18 +184,14 @@ class CGSmoother {
         // convert the input path to carmen_ackerman_traj_point_t
         std::vector<carmen_ackerman_traj_point_t> FromState2D(smoother::StateArrayPtr);
 
+        // convert a position to the grid cell index
+        smoother::GridCellIndex PoseToIndex(const smoother::Vector2D<double> &p);
+
         // verify if a given path is unsafe
         bool UnsafePath(smoother::Vector2DArrayPtr);
 
         // get the greater number considering the absolute values
         double ABSMax(double a, double b, double c);
-
-//        // get the obstacle and voronoi contribution
-//        smoother::Vector2D<double> GetObstacleDerivative(
-//                    const smoother::Vector2D<double>&,
-//                    const smoother::Vector2D<double>&,
-//                    const smoother::Vector2D<double>&
-//                );
 
         // get the obstacle and voronoi contribution
         // overloaded version
@@ -299,8 +295,11 @@ class CGSmoother {
         // copy the current solution to the input path
         void InputPathUpdate(smoother::Vector2DArrayPtr, smoother::StateArrayPtr);
 
+        // conver the carmen map format to the opencv image
+        unsigned char* GetGridMap();
+
         // show the current path in the map
-//        void ShowPath(smoother::StateArrayPtr, bool plot_locked = true);
+        void ShowPath(smoother::StateArrayPtr, bool plot_locked = true);
 
         // get a bezier point given four points and the time
         inline smoother::Vector2D<double> GetBezierPoint(std::vector<smoother::Vector2D<double> > &points, double t);
