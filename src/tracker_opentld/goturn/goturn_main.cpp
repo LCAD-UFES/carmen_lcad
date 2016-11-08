@@ -211,7 +211,7 @@ plot_state(vector<carmen_vector_3D_t> &points, vector<carmen_ackerman_traj_point
 	fprintf(gnuplot_pipeMP, "plot "
 				"'./gnuplot_data_points.txt' using 1:2 title 'tracker_points',"
 				"'./gnuplot_data_localize.txt' using 1:2 title 'localize',"
-				"'./gnuplot_data_spline.txt' using 1:2 title 'spline' w lines\n");
+				"'./gnuplot_data_spline.txt' using 1:2 title 'spline'\n");
 
 //	fprintf(gnuplot_pipeMP, "plot "
 //				"'./gnuplot_data_points.txt' using 1:2 title 'tracker_points',"
@@ -825,6 +825,7 @@ sincronized_localize_pose_with_velodyne()
 vector<carmen_ackerman_traj_point_t>
 create_smoothed_path_bezier(double timestamp)
 {
+	(void)timestamp;
 	static vector<double> pose_times;
 	static vector<double> pose_thetas;
 	static unsigned int maxPositions = 20;
@@ -1152,7 +1153,7 @@ build_interpolation(vector<carmen_vector_3D_t> target_points, carmen_ackerman_tr
 
 
 barycentricinterpolant
-build_interpolation2(vector<carmen_vector_3D_t> target_points, carmen_ackerman_traj_point_t localize_pose, vector<double> target_point_times, double localize_timestamp)
+build_interpolation2(vector<carmen_vector_3D_t> target_points, carmen_ackerman_traj_point_t localize_pose)
 {
 	ae_int_t info;
 	ae_int_t polynomial_order;
@@ -1220,7 +1221,7 @@ create_smoothed_path3(double timestamp_image)
 	static vector<double> pose_times;
 	static vector<double> pose_thetas;
 	static unsigned int maxPositions = 20;
-	int minTimestampIndex = 0;
+//	int minTimestampIndex = 0;
 
 	static vector<carmen_vector_3D_t> target_points;
 	static vector<double> target_point_times;
@@ -1347,17 +1348,47 @@ move_target_pose_backwards(carmen_ackerman_traj_point_t target_pose, carmen_acke
 	target_pose_moved.phi = target_pose.phi;
 }
 
+void
+correct_thetas(vector<carmen_ackerman_traj_point_t> &target_poses)
+{
+	for(unsigned int i = 1; i < target_poses.size() - 1; i++ )
+	{
+		target_poses[i].theta = atan2(
+				target_poses[i + 1].y - target_poses[i - 1].y,
+				target_poses[i + 1].x - target_poses[i - 1].x);
+	}
+
+	target_poses.at(target_poses.size()-1).theta = target_poses.at(target_poses.size()-2).theta;
+}
+
+void
+remove_points_behind_car(vector<carmen_ackerman_traj_point_t> &target_poses, carmen_ackerman_traj_point_t localize_sync)
+{
+	for (std::vector<carmen_ackerman_traj_point_t>::iterator it = target_poses.begin();it != target_poses.end(); ++it)
+	{
+		g2o::SE2 robot_pose(localize_sync.x, localize_sync.y ,localize_sync.theta);
+		g2o::SE2 target_in_world_reference(it->x, it->y ,it->theta);
+		g2o::SE2 target_in_robot_reference = robot_pose.inverse() * target_in_world_reference;
+
+		if (target_in_robot_reference[0] < -4.5){
+			target_poses.erase(it);
+		}
+	}
+}
+
 
 vector<carmen_ackerman_traj_point_t>
 create_smoothed_path(double timestamp_image)
 {
+	(void) timestamp_image;
 	static vector<double> pose_times;
 	static vector<double> pose_thetas;
 	static unsigned int maxPositions = 20;
-	int minTimestampIndex = 0;
 	static vector<carmen_ackerman_traj_point_t> poses_smooth;
 
+	static vector<carmen_ackerman_traj_point_t> target_poses_new;
 	static vector<carmen_ackerman_traj_point_t> target_poses;
+	static int robot_in_start_position = 1;
 
 	carmen_vector_3D_t target_pose_in_the_world;
 
@@ -1370,17 +1401,41 @@ create_smoothed_path(double timestamp_image)
 	target_pose_in_the_world = move_point_from_velodyne_frame_to_world_frame(trackerPoint, sync_pose_and_time.first);
 
 	if (target_poses.size() == 0)
+	{
 		target_poses.push_back(sync_pose_and_time.first);
+		target_poses_new.push_back(sync_pose_and_time.first);
+	}
+
+	if (target_poses.size() == 2 && robot_in_start_position)
+	{
+		carmen_ackerman_traj_point_t target_pose_first = sync_pose_and_time.first;
+
+		double dist_robot_to_target = sqrt(pow((target_pose_in_the_world.x - target_pose_first.x),2) + pow((target_pose_in_the_world.y - target_pose_first.y),2));
+		double dx = target_pose_in_the_world.x - sync_pose_and_time.first.x;
+		double dy = target_pose_in_the_world.y - sync_pose_and_time.first.y;
+		double delta_x = dx / 10.0;
+		double delta_y = dy / 10.0;
+
+
+		while (dist_robot_to_target > 3.0)
+		{
+			target_pose_first.x += delta_x;
+			target_pose_first.y += delta_y;
+			dist_robot_to_target = sqrt(pow((target_pose_in_the_world.x - target_pose_first.x),2) + pow((target_pose_in_the_world.y - target_pose_first.y),2));
+			target_poses_new.push_back(target_pose_first);
+		}
+		robot_in_start_position = 0;
+	}
 
 	static double time_last_pose_was_added = 0;
 
 	int point_added = 0;
 
 	if (point_is_valid(target_pose_in_the_world, sync_pose_and_time.first)
-		//|| ((fabs(sync_pose_and_time.second - time_last_pose_was_added) > 1.0) && (sync_pose_and_time.first.v > 0.5))
+		|| ((fabs(sync_pose_and_time.second - time_last_pose_was_added) > 1.0) && (sync_pose_and_time.first.v > 0.5))
 	)
 	{
-		carmen_ackerman_traj_point_t target_pose, target_pose_moved;
+		carmen_ackerman_traj_point_t target_pose;
 
 		target_pose.x = target_pose_in_the_world.x;
 		target_pose.y = target_pose_in_the_world.y;
@@ -1393,18 +1448,37 @@ create_smoothed_path(double timestamp_image)
 		target_pose.phi = 0;
 
 //		move_target_pose_backwards(target_pose, target_pose_moved, target_poses[target_poses.size() - 1]);
-		target_pose_in_the_world.x = target_pose.x;
-		target_pose_in_the_world.y = target_pose.y;
+//		target_pose_in_the_world.x = target_pose.x;
+//		target_pose_in_the_world.y = target_pose.y;
 
 		target_poses.push_back(target_pose);
 
 		if (target_poses.size() > maxPositions)
 			target_poses.erase(target_poses.begin());
 
+		if (target_poses_new.size() > maxPositions)
+			target_poses_new.erase(target_poses_new.begin());
+
 		time_last_pose_was_added = sync_pose_and_time.second;
 		point_added = 1;
 	}
 
+	double distance_last_goal_to_target = sqrt(pow((target_poses_new.back().x - target_poses.back().x),2) + pow((target_poses_new.back().y - target_poses.back().y),2));
+
+//	printf("dist: %lf size: %ld \n", distance_last_goal_to_target, target_poses_new.size());
+	if (distance_last_goal_to_target > 6.0)
+	{
+		target_poses_new.push_back(target_poses.back());
+//		printf("add point in new x: %lf y: %lf \n", target_poses.back().x, target_poses.back().y);
+
+	}
+
+	//melhorar os thetas
+	if(target_poses_new.size() > 2)
+		correct_thetas(target_poses_new);
+
+	//remove point behind car
+	remove_points_behind_car(target_poses_new, sync_pose_and_time.first);
 
 	if (point_added){
 //		if (target_poses.size() > 5)
@@ -1416,11 +1490,12 @@ create_smoothed_path(double timestamp_image)
 //		if (poses_smooth.size() > 0)
 //			poses_smooth.pop_back();
 
-		plot_to_debug_state(target_poses, target_pose_in_the_world, sync_pose_and_time.first, 100);
+		plot_to_debug_state(target_poses_new, target_pose_in_the_world, sync_pose_and_time.first, maxPositions);
 	}
 
-	return target_poses;
+	return target_poses_new;
 }
+
 
 
 void
@@ -1451,6 +1526,7 @@ build_and_publish_path_as_RDDF(vector<carmen_ackerman_traj_point_t> poses_comple
 
 }
 
+/*
 
 static vector<carmen_ackerman_traj_point_t>
 publishSplineRDDF()
@@ -1634,7 +1710,7 @@ publishSplineRDDF()
 //		double dt = (pose_times[i] - pose_times[i - 1]);
 //		double dist = sqrt(pow(piy - pi_1y, 2) + pow(pix - pi_1x, 2));
 
-		if ((fabs(carmen_radians_to_degrees(angle_from_last_pose)) > 20.0) /*|| (angle_diff > 20.0)*/
+		if ((fabs(carmen_radians_to_degrees(angle_from_last_pose)) > 20.0) || (angle_diff > 20.0)
 				|| (target_in_last_pose_reference[0] < 0)
 				|| target_in_car_reference[0] < 4.5){
 			X.erase(X.begin() + i);
@@ -1660,8 +1736,8 @@ publishSplineRDDF()
 
 	if (Ispline.size() > 1)
 	{
-		x.set_points(Ispline, Xteste /*Xspline*/, true);
-		y.set_points(Ispline, Yteste /*Yspline*/, true);
+		x.set_points(Ispline, Xteste Xspline, true);
+		y.set_points(Ispline, Yteste Yspline, true);
 		carmen_ackerman_traj_point_t newPose;
 
 		// TODO: MOVER OS PONTOS DA SPLINE PARA A REFERENCIA DO MUNDO.
@@ -1727,6 +1803,7 @@ publishSplineRDDF()
 
 	return poses;
 }
+*/
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
