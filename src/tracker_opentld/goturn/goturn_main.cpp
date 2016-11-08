@@ -616,6 +616,14 @@ goturn_tracker(Mat *img, double timestamp)
 
 		cv::Rect mini_box = get_mini_box_and_update_carmen_box();
 		points_lasers_in_cam = carmen_velodyne_camera_calibration_lasers_points_in_camera(velodyne_message_arrange, &last_message);
+//
+//		for(unsigned int i = 0;i < points_lasers_in_cam.size(); i++)
+//		{
+//			double h = points_lasers_in_cam.at(i).laser_polar.horizontal_angle;
+//			double v = points_lasers_in_cam.at(i).laser_polar.vertical_angle;
+//			double l = points_lasers_in_cam.at(i).laser_polar.length;
+//			printf("h:%lf v:%lf l:%lf \n", h, v );
+//		}
 
 		if (points_lasers_in_cam.size() < 5)
 			return 0;
@@ -935,6 +943,7 @@ create_smoothed_path_bezier(double timestamp)
 				|| (target_in_last_pose_reference[0] < 0)
 				|| target_in_car_reference[0] < 4.5)
 		{
+			poses_raw.erase(poses_raw.begin() + i);
 			continue;
 		}
 
@@ -959,7 +968,7 @@ create_smoothed_path_bezier(double timestamp)
 
 		pose_temp.x = point_in_the_world[0];
 		pose_temp.y = point_in_the_world[1];
-		pose_temp.theta = 0.0;
+		pose_temp.theta = point_in_the_world[2];
 		pose_temp.phi = 0.0;
 		pose_temp.v = 0.0;
 		poses_filtered.push_back(pose_temp);

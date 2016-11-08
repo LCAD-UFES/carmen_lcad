@@ -104,6 +104,10 @@ std::vector<carmen_ackerman_traj_point_t> CGSmoother::FromState2D(StateArrayPtr 
         output[i].phi = states[i].phi;
 
     }
+    // calculate theta
+    for (unsigned int i = 1; i < output.size()-1; ++i) {
+    	output[i].theta = atan2(output[i+1].y - output[i-1].y, output[i+1].x - output[i-1].x);
+    }
 
     return output;
 
@@ -135,7 +139,7 @@ bool CGSmoother::UnsafePath(Vector2DArrayPtr path) {
 
         	//path_point = {positions[i].x, positions[i].y, 0.0};
         	path_point.x = positions[i].x;
-        	path_point.x = positions[i].y;
+        	path_point.y = positions[i].y;
         	path_point.theta = atan2(positions[i+1].y - positions[i-1].y, positions[i+1].x - positions[i-1].x);
 
         	double obstacle = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&path_point, distance_map);
