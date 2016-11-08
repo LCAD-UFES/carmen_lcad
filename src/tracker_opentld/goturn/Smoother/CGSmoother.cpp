@@ -136,7 +136,7 @@ bool CGSmoother::UnsafePath(Vector2DArrayPtr path) {
         	//path_point = {positions[i].x, positions[i].y, 0.0};
         	path_point.x = positions[i].x;
         	path_point.x = positions[i].y;
-        	path_point.theta = atan2(positions[i].y - positions[i-1].y, positions[i].x - positions[i-1].x);
+        	path_point.theta = atan2(positions[i+1].y - positions[i-1].y, positions[i+1].x - positions[i-1].x);
 
         	double obstacle = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&path_point, distance_map);
             if ((obstacle - circle_radius) < 0.0 )//tem colisao
@@ -352,8 +352,8 @@ Vector2D<double> CGSmoother::GetSmoothPathDerivative(
     Vector2D<double> res;
 
     // custom formula
-    res.x += ws * (xim2.x - 4.0 * xim1.x + 6.0 * xi.x - 4.0 * xip1.x + xip2.x);
-    res.x += ws * (xim2.y - 4.0 * xim1.y + 6.0 * xi.y - 4.0 * xip1.y + xip2.y);
+    res.x = ws * (xim2.x - 4.0 * xim1.x + 6.0 * xi.x - 4.0 * xip1.x + xip2.x);
+    res.y = ws * (xim2.y - 4.0 * xim1.y + 6.0 * xi.y - 4.0 * xip1.y + xip2.y);
 
     return res;
 
@@ -1446,7 +1446,7 @@ void CGSmoother::ConjugateGradientPR(StateArrayPtr path, bool locked) {
 
                 // get the next step
                 int info = MTLineSearch(1.0/s_norm);
-
+                (void) info;
                 // SUCCESS!
                 // verify the restart case
                 if (0 != iter % dim) {
@@ -1720,9 +1720,9 @@ void CGSmoother::DrawBezierCurve(
     // the four points to tbe interpolated
     std::vector<Vector2D<double> > piece(4);
 
-    unsigned int ipsize = input.size();
+    int ipsize = input.size() - 1;
 
-    for (unsigned int i = 0, j = 0; i < ipsize; ++i, ++j) {
+    for (unsigned int i = 0, j = 0; i < (unsigned int) ipsize; ++i, ++j) {
 
         // direct access
         const Vector2D<double> &left(input[i].position), &right(input[i+1].position);

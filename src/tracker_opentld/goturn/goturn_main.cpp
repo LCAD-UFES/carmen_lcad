@@ -813,179 +813,179 @@ sincronized_localize_pose_with_velodyne()
 	return stamped_pose;
 }
 
+//TODO Ajustar pesos do otimizador
+vector<carmen_ackerman_traj_point_t>
+create_smoothed_path_bezier(double timestamp)
+{
+	static vector<double> pose_times;
+	static vector<double> pose_thetas;
+	static unsigned int maxPositions = 20;
+//	int minTimestampIndex = 0;
 
-//vector<carmen_ackerman_traj_point_t>
-//create_smoothed_path(double timestamp)
-//{
-//	static vector<double> pose_times;
-//	static vector<double> pose_thetas;
-//	static unsigned int maxPositions = 20;
-////	int minTimestampIndex = 0;
-//
-//	static vector<carmen_ackerman_traj_point_t> poses_raw;
-//	vector<carmen_ackerman_traj_point_t> poses_filtered;
-//	vector<carmen_ackerman_traj_point_t> poses_smooth;
-//
-//	carmen_ackerman_traj_point_t localizePose;
-//	carmen_vector_3D_t target_pose_in_the_world;
-//
-//	if(localizeVector.size() < 1)
-//		return poses_smooth;
-//
-////	minTimestampIndex = sincronized_localize_pose_with_velodyne();
-//
-//	double minTimestampDiff = DBL_MAX;
-//	int minTimestampIndex = -1;
-//
-//	for (unsigned int i = 0; i < localizeVector.size(); i++)
-//	{
-//		if(fabs(localizeVector[i].timestamp - velodyne_message_arrange->timestamp) < minTimestampDiff)
-//		{
-//			minTimestampIndex = i;
-//			minTimestampDiff = fabs(localizeVector[i].timestamp - velodyne_message_arrange->timestamp);
-//		}
-//	}
-//
-//	localizePose.x = localizeVector[minTimestampIndex].globalpos.x;
-//	localizePose.y = localizeVector[minTimestampIndex].globalpos.y;
-//	localizePose.theta = localizeVector[minTimestampIndex].globalpos.theta;
-//	localizePose.v = localizeVector[minTimestampIndex].v;
-//	localizePose.phi = localizeVector[minTimestampIndex].phi;
-//
-//	//    printf("LOCALIZE FOUND: %d DIFF: %lf POSE %lf %lf TIME: %lf\n", minTimestampIndex, minTimestampDiff, localizeVector[minTimestampIndex].globalpos.x,
-//	//            localizeVector[minTimestampIndex].globalpos.y, localizeVector[minTimestampIndex].timestamp);
-//
-//	target_pose_in_the_world = move_point_from_velodyne_frame_to_world_frame(trackerPoint, localizePose);
-//
-//
-//	if ((poses_raw.size() == 0) || (poses_raw[poses_raw.size() - 1].x != target_pose_in_the_world.x))
-//	{
-//		carmen_ackerman_traj_point_t pose_temp;
-//
-//		pose_times.push_back(localizeVector[minTimestampIndex].timestamp);
-//		pose_thetas.push_back(localizePose.theta);
-//
-//
-//		pose_temp.x = target_pose_in_the_world.x;
-//		pose_temp.y = target_pose_in_the_world.y;
-//
-//		poses_raw.push_back(pose_temp);
-//	}
-//
-//	if (poses_raw.size() > maxPositions)
-//	{
-//		poses_raw.erase(poses_raw.begin());
-//		pose_times.erase(pose_times.begin());
-//		pose_thetas.erase(pose_thetas.begin());
-//	}
-//
-//	// FIXME Incluir as modificacoes de correcao de pontos
-//
-//	//	printf("\n\n-----------------------\n");
-//
-////vai ser armazenado em poses_filtered
-//	std::vector<double> Xteste;
-//	std::vector<double> Yteste;
-//	std::vector<double> Tteste;
-//
-//	double first_pose_x = localizeVector[localizeVector.size() - 1].globalpos.x;
-//	double first_pose_y = localizeVector[localizeVector.size() - 1].globalpos.y;
-//	double first_pose_theta = localizeVector[localizeVector.size() - 1].globalpos.theta;
-//
-//	Xteste.push_back(0.0);
-//	Yteste.push_back(0.0);
-//	Tteste.push_back(0.0);
-//
-//	//	double target_x = 0.0;
-//	//	double target_y = 0.0;
-//
-//	//double angle = 0.0;
-//	//double angle_diff = 0.0;
-//
-//	g2o::SE2 robot_pose(first_pose_x, first_pose_y, first_pose_theta);
-//	g2o::SE2 last_pose(first_pose_x, first_pose_y, first_pose_theta);
-//
-//	for (unsigned int i = 0; i < poses_raw.size(); i++)
-//	{
-//		//		double pix = X[i] - first_pose_x;
-//		//		double piy = Y[i] - first_pose_y;
-//
-//		g2o::SE2 target_in_world_reference(poses_raw[i].x, poses_raw[i].y, 0);
-//		g2o::SE2 target_in_last_pose_reference = last_pose.inverse() * target_in_world_reference;
-//		g2o::SE2 target_in_car_reference = robot_pose.inverse() * target_in_world_reference;
-//
-//		//		target_x = target_in_car_reference[0];
-//		//		target_y = target_in_car_reference[1];
-//		//		angle = fabs(carmen_radians_to_degrees(atan2(piy - Yspline.back(), pix - Xspline.back())));
-//
-//		double angle_in_the_world = atan2(poses_raw[i].y - last_pose[1], poses_raw[i].x - last_pose[0]);
-//		double angle_in_car_reference = atan2(target_in_car_reference[1], target_in_car_reference[0]);
-//		double angle_from_last_pose = atan2(target_in_last_pose_reference[1], target_in_last_pose_reference[0]);
-//
-//		//if(Tteste.size() > 2)
-//		//angle_diff = fabs(carmen_radians_to_degrees(carmen_normalize_theta(mrpt::math::angDistance(angle, Tteste.back()))));
-//
-//		//printf("X: %lf  Y: %lf angle: %lf\n",target_x, target_y, angle);
-//		//printf("Xback: %lf  Yback: %lf angleDiff: %lf size: %d\n\n", Xteste.back(), Yteste.back(), angle_diff, Tteste.size());
-//
-//		//		double dt = (pose_times[i] - pose_times[i - 1]);
-//		//		double dist = sqrt(pow(piy - pi_1y, 2) + pow(pix - pi_1x, 2));
-//
-//		if ((fabs(carmen_radians_to_degrees(angle_from_last_pose)) > 20.0) /*|| (angle_diff > 20.0)*/
-//				|| (target_in_last_pose_reference[0] < 0)
-//				|| target_in_car_reference[0] < 4.5)
-//		{
-//			continue;
-//		}
-//
-//		Xteste.push_back(target_in_car_reference[0]);
-//		Yteste.push_back(target_in_car_reference[1]);
-//		Tteste.push_back(angle_in_car_reference); // TODO: CORRIGIR ESSE ANGULO. ELE ESTA NA REF. DO PONTO ANTERIOR, MAS ELE DEVERIA ESTAR NA REF. DO CARRO.
-//
-//		last_pose = g2o::SE2(poses_raw[i].x, poses_raw[i].y, angle_in_the_world);
-//		printf("\tX: %lf Y: %lf T: %lf\n", target_in_car_reference[0], target_in_car_reference[1], angle_in_car_reference);
-//	}
-//
-//	printf("Xteste size: %ld\n", Xteste.size());
-//
-//	//getchar();
-//	carmen_ackerman_traj_point_t pose_temp;
-//	for(unsigned int i = 0; i < Xteste.size(); i++)
-//	{
-//
-//		// TODO: MOVER OS PONTOS FILTRADOS PARA A REFERENCIA DO MUNDO.
-//		g2o::SE2 point_in_car_reference(Xteste[i], Yteste[i], 0.0);
-//		g2o::SE2 point_in_the_world = robot_pose * point_in_car_reference;
-//
-//		pose_temp.x = point_in_the_world[0];
-//		pose_temp.y = point_in_the_world[1];
-//		pose_temp.theta = 0.0;
-//		pose_temp.phi = 0.0;
-//		pose_temp.v = 0.0;
-//		poses_filtered.push_back(pose_temp);
-//	}
-////	printf("\n\n----------poses_filtered: %ld-------------\n", poses_filtered.size());
-//	if (poses_filtered.size() > 5)
-//	{
-//		poses_smooth = path_smoother.Smooth(poses_filtered);
-//	}
-//
-//	// CHECAR POR QUE CHEGOU COM 0 AQUI
-//	if (poses_smooth.size() > 0)
-//		poses_smooth.pop_back();
-//
-//	//for (unsigned int i = 0; i < poses.size(); i++)
-//	//printf("X: %lf Y: %lf TH: %lf\n", poses[i].x, poses[i].y, poses[i].theta);
-//	//printf("\n\n-----------------------\n");
-//
-//	//	for (unsigned int i = 0; i < poses.size(); i++)
-//	//		printf("X: %lf Y: %lf TH: %lf\n", poses[i].x, poses[i].y, poses[i].theta);
-//	//	printf("\n\n-----------------------\n");
-//
-//	plot_to_debug_state(poses_smooth, target_pose_in_the_world, localizePose, 100);
-//
-//	return poses_smooth;
-//}
+	static vector<carmen_ackerman_traj_point_t> poses_raw;
+	vector<carmen_ackerman_traj_point_t> poses_filtered;
+	vector<carmen_ackerman_traj_point_t> poses_smooth;
+
+	carmen_ackerman_traj_point_t localizePose;
+	carmen_vector_3D_t target_pose_in_the_world;
+
+	if(localizeVector.size() < 1)
+		return poses_smooth;
+
+//	minTimestampIndex = sincronized_localize_pose_with_velodyne();
+
+	double minTimestampDiff = DBL_MAX;
+	int minTimestampIndex = -1;
+
+	for (unsigned int i = 0; i < localizeVector.size(); i++)
+	{
+		if(fabs(localizeVector[i].timestamp - velodyne_message_arrange->timestamp) < minTimestampDiff)
+		{
+			minTimestampIndex = i;
+			minTimestampDiff = fabs(localizeVector[i].timestamp - velodyne_message_arrange->timestamp);
+		}
+	}
+
+	localizePose.x = localizeVector[minTimestampIndex].globalpos.x;
+	localizePose.y = localizeVector[minTimestampIndex].globalpos.y;
+	localizePose.theta = localizeVector[minTimestampIndex].globalpos.theta;
+	localizePose.v = localizeVector[minTimestampIndex].v;
+	localizePose.phi = localizeVector[minTimestampIndex].phi;
+
+	//    printf("LOCALIZE FOUND: %d DIFF: %lf POSE %lf %lf TIME: %lf\n", minTimestampIndex, minTimestampDiff, localizeVector[minTimestampIndex].globalpos.x,
+	//            localizeVector[minTimestampIndex].globalpos.y, localizeVector[minTimestampIndex].timestamp);
+
+	target_pose_in_the_world = move_point_from_velodyne_frame_to_world_frame(trackerPoint, localizePose);
+
+
+	if ((poses_raw.size() == 0) || (poses_raw[poses_raw.size() - 1].x != target_pose_in_the_world.x))
+	{
+		carmen_ackerman_traj_point_t pose_temp;
+
+		pose_times.push_back(localizeVector[minTimestampIndex].timestamp);
+		pose_thetas.push_back(localizePose.theta);
+
+
+		pose_temp.x = target_pose_in_the_world.x;
+		pose_temp.y = target_pose_in_the_world.y;
+
+		poses_raw.push_back(pose_temp);
+	}
+
+	if (poses_raw.size() > maxPositions)
+	{
+		poses_raw.erase(poses_raw.begin());
+		pose_times.erase(pose_times.begin());
+		pose_thetas.erase(pose_thetas.begin());
+	}
+
+	// FIXME Incluir as modificacoes de correcao de pontos
+
+	//	printf("\n\n-----------------------\n");
+
+//vai ser armazenado em poses_filtered
+	std::vector<double> Xteste;
+	std::vector<double> Yteste;
+	std::vector<double> Tteste;
+
+	double first_pose_x = localizeVector[localizeVector.size() - 1].globalpos.x;
+	double first_pose_y = localizeVector[localizeVector.size() - 1].globalpos.y;
+	double first_pose_theta = localizeVector[localizeVector.size() - 1].globalpos.theta;
+
+	Xteste.push_back(0.0);
+	Yteste.push_back(0.0);
+	Tteste.push_back(0.0);
+
+	//	double target_x = 0.0;
+	//	double target_y = 0.0;
+
+	//double angle = 0.0;
+	//double angle_diff = 0.0;
+
+	g2o::SE2 robot_pose(first_pose_x, first_pose_y, first_pose_theta);
+	g2o::SE2 last_pose(first_pose_x, first_pose_y, first_pose_theta);
+
+	for (unsigned int i = 0; i < poses_raw.size(); i++)
+	{
+		//		double pix = X[i] - first_pose_x;
+		//		double piy = Y[i] - first_pose_y;
+
+		g2o::SE2 target_in_world_reference(poses_raw[i].x, poses_raw[i].y, 0);
+		g2o::SE2 target_in_last_pose_reference = last_pose.inverse() * target_in_world_reference;
+		g2o::SE2 target_in_car_reference = robot_pose.inverse() * target_in_world_reference;
+
+		//		target_x = target_in_car_reference[0];
+		//		target_y = target_in_car_reference[1];
+		//		angle = fabs(carmen_radians_to_degrees(atan2(piy - Yspline.back(), pix - Xspline.back())));
+
+		double angle_in_the_world = atan2(poses_raw[i].y - last_pose[1], poses_raw[i].x - last_pose[0]);
+		double angle_in_car_reference = atan2(target_in_car_reference[1], target_in_car_reference[0]);
+		double angle_from_last_pose = atan2(target_in_last_pose_reference[1], target_in_last_pose_reference[0]);
+
+		//if(Tteste.size() > 2)
+		//angle_diff = fabs(carmen_radians_to_degrees(carmen_normalize_theta(mrpt::math::angDistance(angle, Tteste.back()))));
+
+		//printf("X: %lf  Y: %lf angle: %lf\n",target_x, target_y, angle);
+		//printf("Xback: %lf  Yback: %lf angleDiff: %lf size: %d\n\n", Xteste.back(), Yteste.back(), angle_diff, Tteste.size());
+
+		//		double dt = (pose_times[i] - pose_times[i - 1]);
+		//		double dist = sqrt(pow(piy - pi_1y, 2) + pow(pix - pi_1x, 2));
+
+		if ((fabs(carmen_radians_to_degrees(angle_from_last_pose)) > 20.0) /*|| (angle_diff > 20.0)*/
+				|| (target_in_last_pose_reference[0] < 0)
+				|| target_in_car_reference[0] < 4.5)
+		{
+			continue;
+		}
+
+		Xteste.push_back(target_in_car_reference[0]);
+		Yteste.push_back(target_in_car_reference[1]);
+		Tteste.push_back(angle_in_car_reference); // TODO: CORRIGIR ESSE ANGULO. ELE ESTA NA REF. DO PONTO ANTERIOR, MAS ELE DEVERIA ESTAR NA REF. DO CARRO.
+
+		last_pose = g2o::SE2(poses_raw[i].x, poses_raw[i].y, angle_in_the_world);
+		printf("\tX: %lf Y: %lf T: %lf\n", target_in_car_reference[0], target_in_car_reference[1], angle_in_car_reference);
+	}
+
+	printf("Xteste size: %ld\n", Xteste.size());
+
+	//getchar();
+	carmen_ackerman_traj_point_t pose_temp;
+	for(unsigned int i = 0; i < Xteste.size(); i++)
+	{
+
+		// TODO: MOVER OS PONTOS FILTRADOS PARA A REFERENCIA DO MUNDO.
+		g2o::SE2 point_in_car_reference(Xteste[i], Yteste[i], 0.0);
+		g2o::SE2 point_in_the_world = robot_pose * point_in_car_reference;
+
+		pose_temp.x = point_in_the_world[0];
+		pose_temp.y = point_in_the_world[1];
+		pose_temp.theta = 0.0;
+		pose_temp.phi = 0.0;
+		pose_temp.v = 0.0;
+		poses_filtered.push_back(pose_temp);
+	}
+//	printf("\n\n----------poses_filtered: %ld-------------\n", poses_filtered.size());
+	if (poses_filtered.size() > 5)
+	{
+		poses_smooth = path_smoother.Smooth(poses_filtered);
+	}
+
+	// CHECAR POR QUE CHEGOU COM 0 AQUI
+	if (poses_smooth.size() > 0)
+		poses_smooth.pop_back();
+
+	//for (unsigned int i = 0; i < poses.size(); i++)
+	//printf("X: %lf Y: %lf TH: %lf\n", poses[i].x, poses[i].y, poses[i].theta);
+	//printf("\n\n-----------------------\n");
+
+	//	for (unsigned int i = 0; i < poses.size(); i++)
+	//		printf("X: %lf Y: %lf TH: %lf\n", poses[i].x, poses[i].y, poses[i].theta);
+	//	printf("\n\n-----------------------\n");
+
+	plot_to_debug_state(poses_smooth, target_pose_in_the_world, localizePose, 100);
+
+	return poses_smooth;
+}
 
 
 int
