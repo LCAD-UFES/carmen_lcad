@@ -211,7 +211,7 @@ plot_state(vector<carmen_vector_3D_t> &points, vector<carmen_ackerman_traj_point
 	fprintf(gnuplot_pipeMP, "plot "
 				"'./gnuplot_data_points.txt' using 1:2 title 'tracker_points',"
 				"'./gnuplot_data_localize.txt' using 1:2 title 'localize',"
-				"'./gnuplot_data_spline.txt' using 1:2 title 'spline' w lines \n");
+				"'./gnuplot_data_spline.txt' using 1:2 title 'spline' w lines\n");
 
 //	fprintf(gnuplot_pipeMP, "plot "
 //				"'./gnuplot_data_points.txt' using 1:2 title 'tracker_points',"
@@ -1355,6 +1355,7 @@ create_smoothed_path(double timestamp_image)
 	static vector<double> pose_thetas;
 	static unsigned int maxPositions = 20;
 	int minTimestampIndex = 0;
+	static vector<carmen_ackerman_traj_point_t> poses_smooth;
 
 	static vector<carmen_ackerman_traj_point_t> target_poses;
 
@@ -1391,11 +1392,11 @@ create_smoothed_path(double timestamp_image)
 		target_pose.v = 1.0;
 		target_pose.phi = 0;
 
-		//move_target_pose_backwards(target_pose, target_pose_moved, target_poses[target_poses.size() - 1]);
+//		move_target_pose_backwards(target_pose, target_pose_moved, target_poses[target_poses.size() - 1]);
 		target_pose_in_the_world.x = target_pose.x;
 		target_pose_in_the_world.y = target_pose.y;
 
-		target_poses.push_back(target_pose_moved);
+		target_poses.push_back(target_pose);
 
 		if (target_poses.size() > maxPositions)
 			target_poses.erase(target_poses.begin());
@@ -1404,8 +1405,19 @@ create_smoothed_path(double timestamp_image)
 		point_added = 1;
 	}
 
-	if (point_added)
+
+	if (point_added){
+//		if (target_poses.size() > 5)
+//		{
+//			poses_smooth = path_smoother.Smooth(target_poses);
+//		}
+//
+//		// CHECAR POR QUE CHEGOU COM 0 AQUI
+//		if (poses_smooth.size() > 0)
+//			poses_smooth.pop_back();
+
 		plot_to_debug_state(target_poses, target_pose_in_the_world, sync_pose_and_time.first, 100);
+	}
 
 	return target_poses;
 }
