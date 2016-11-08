@@ -8,14 +8,14 @@ using namespace smoother;
 
 CGSmoother::CGSmoother() :
     wo(0.002), ws(4.0), wk(4.0), dmax(5.0), alpha(0.2), kmax(0.22),
-    min_turn_radius(5.0), max_speed(40), max_lateral_acceleration(1.0), safety_factor(1.0),
+    min_turn_radius(0.22), max_speed(40), max_lateral_acceleration(1.0), safety_factor(1.0),
     input_path(NULL), cg_status(CGIddle),
     fx(), gx_norm(), fx1(), gx1_norm(), ftrialx(), x1mx_norm(), gtrialx_norm(), trialxmx_norm(),
     s(), s_norm(), sg(),
     locked_positions(),
     max_iterations(400), dim(0), step(0.01),
     default_step_length(1.0), stepmax(1e06), stepmin(1e-12),
-    ftol(1e-04), gtol(0.99999), xtol(1e-06), distance_map(NULL), circle_radius(0.0) {
+    ftol(1e-04), gtol(0.99999), xtol(1e-06), distance_map(NULL), circle_radius(1.0) {
 
     // start the x and x1 vectors
     x = new Vector2DArray<double>();
@@ -1445,7 +1445,7 @@ void CGSmoother::ConjugateGradientPR(StateArrayPtr path, bool locked) {
                 iter += 1;
 
                 // get the next step
-//                int info = MTLineSearch(1.0/s_norm);
+                int info = MTLineSearch(1.0/s_norm);
 
                 // SUCCESS!
                 // verify the restart case

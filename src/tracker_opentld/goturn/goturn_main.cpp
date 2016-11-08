@@ -815,12 +815,12 @@ sincronized_localize_pose_with_velodyne()
 
 
 //vector<carmen_ackerman_traj_point_t>
-//create_smoothed_path()
+//create_smoothed_path(double timestamp)
 //{
 //	static vector<double> pose_times;
 //	static vector<double> pose_thetas;
 //	static unsigned int maxPositions = 20;
-//	int minTimestampIndex = 0;
+////	int minTimestampIndex = 0;
 //
 //	static vector<carmen_ackerman_traj_point_t> poses_raw;
 //	vector<carmen_ackerman_traj_point_t> poses_filtered;
@@ -832,8 +832,19 @@ sincronized_localize_pose_with_velodyne()
 //	if(localizeVector.size() < 1)
 //		return poses_smooth;
 //
-//	minTimestampIndex = sincronized_localize_pose_with_velodyne();
+////	minTimestampIndex = sincronized_localize_pose_with_velodyne();
 //
+//	double minTimestampDiff = DBL_MAX;
+//	int minTimestampIndex = -1;
+//
+//	for (unsigned int i = 0; i < localizeVector.size(); i++)
+//	{
+//		if(fabs(localizeVector[i].timestamp - velodyne_message_arrange->timestamp) < minTimestampDiff)
+//		{
+//			minTimestampIndex = i;
+//			minTimestampDiff = fabs(localizeVector[i].timestamp - velodyne_message_arrange->timestamp);
+//		}
+//	}
 //
 //	localizePose.x = localizeVector[minTimestampIndex].globalpos.x;
 //	localizePose.y = localizeVector[minTimestampIndex].globalpos.y;
@@ -953,12 +964,10 @@ sincronized_localize_pose_with_velodyne()
 //		pose_temp.v = 0.0;
 //		poses_filtered.push_back(pose_temp);
 //	}
-//	printf("\n\n----------poses_filtered: %ld-------------\n", poses_filtered.size());
+////	printf("\n\n----------poses_filtered: %ld-------------\n", poses_filtered.size());
 //	if (poses_filtered.size() > 5)
 //	{
-//		printf("\n\n----------To aqui-------------\n");
 //		poses_smooth = path_smoother.Smooth(poses_filtered);
-//		printf("\n\n----------path_smoother: %ld-------------\n", poses_smooth.size());
 //	}
 //
 //	// CHECAR POR QUE CHEGOU COM 0 AQUI
@@ -977,6 +986,7 @@ sincronized_localize_pose_with_velodyne()
 //
 //	return poses_smooth;
 //}
+
 
 int
 target_point_in_relation_to_last_target_detection_is_valid(
