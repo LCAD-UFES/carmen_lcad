@@ -5,6 +5,8 @@
 
 using namespace std;
 
+#define DELTA_T (1.0 / 40.0) // 0.025 40 Htz
+#define PREDICTION_HORIZON	0.4
 
 enum
 {
