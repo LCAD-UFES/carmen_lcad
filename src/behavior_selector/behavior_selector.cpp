@@ -158,7 +158,8 @@ fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_poin
 			 (distance_to_last_obstacle >= 15.0) &&
 			 !hit_obstacle) ||
 			(((rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BUMP) ||
-			  (rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BARRIER)) &&
+			  (rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BARRIER) ||
+			  (rddf->annotations[i] == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK)) &&
 			 (distance_to_annotation > distance_to_remove_annotation_goal) && (!hit_obstacle)))
 		{
 			goal_list[j] = rddf->poses[i];
@@ -166,6 +167,7 @@ fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_poin
 			current_pose = rddf->poses[i];
 			j++;
 		}
+
 		// se a anotacao estiver em cima de um obstaculo, adiciona um waypoint na posicao
 		// anterior mais proxima da anotacao que estiver livre
 		else if (((rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BUMP) || (rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BARRIER)) && (distance_to_last_obstacle_free_waypoint > 1.5) && (hit_obstacle))
@@ -174,6 +176,15 @@ fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_poin
 			annotations[j] = rddf->annotations[last_obstacle_free_waypoint_index];
 			current_pose = rddf->poses[last_obstacle_free_waypoint_index];
 			j++;
+		}
+		else if ((rddf->annotations[i] == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) && (hit_obstacle))
+		{
+			goal_list[j] = rddf->poses[last_obstacle_free_waypoint_index];
+			annotations[j] = rddf->annotations[last_obstacle_free_waypoint_index];
+			current_pose = rddf->poses[last_obstacle_free_waypoint_index];
+			j++;
+
+			break;
 		}
 	}
 
