@@ -15,7 +15,7 @@ using namespace std;
 
 FILE *gnuplot_save;
 FILE *gnuplot_save_total;
-bool save_and_plot = false;
+bool save_and_plot = true;
 
 
 typedef struct {
@@ -428,7 +428,7 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *params, double v, double unde
 
 
 void
-open_file_to_save_plot()
+open_file_to_save_plot(bool total)
 {
 	time_t rawtime;
 	struct tm * timeinfo;
@@ -441,7 +441,10 @@ open_file_to_save_plot()
 	name[0] = '\0';
 	aux[0] = '\0';
 
-	strcat (name, "mpc_plot_");
+	if (total)
+		strcat (name, "mpc_plot_TOTAL");
+	else
+		strcat (name, "mpc_plot_");
 
 	sprintf(aux, "%d", timeinfo->tm_year + 1900);
 	strcat (name, aux);
@@ -464,56 +467,15 @@ open_file_to_save_plot()
 	sprintf(aux, "%d", timeinfo->tm_sec);
 	strcat (name, aux);
 
-	gnuplot_save = fopen(name, "w");
+	if (total)
+		gnuplot_save_total = fopen(name, "w");
+	else
+		gnuplot_save = fopen(name, "w");
 
-/*	file_name = "mpc_plot_20161023_11h4m49"
+/*	file_name = ""
 	plot file_name using 1:2 with lines, file_name using 1:3 with lines, file_name using 1:4 with lines
 
 	plot file_name using 1:2:5 with lines linecolor variable title 'cphi' axes x1y2, file_name using 1:3:6 with lines linecolor variable title 'dphi' axes x1y2
-*/
-}void
-open_file_to_save_plot2()
-{
-	time_t rawtime;
-	struct tm * timeinfo;
-
-	time ( &rawtime );
-	timeinfo = localtime ( &rawtime );
-
-	char name[32];
-	char aux[8];
-	name[0] = '\0';
-	aux[0] = '\0';
-
-	strcat (name, "mpc_plot_TOTAL");
-
-	sprintf(aux, "%d", timeinfo->tm_year + 1900);
-	strcat (name, aux);
-
-	sprintf(aux, "%d", timeinfo->tm_mon + 1);
-	strcat (name, aux);
-
-	sprintf(aux, "%d", timeinfo->tm_mday);
-	strcat (name, aux);
-	strcat (name,"_");
-
-	sprintf(aux, "%d", timeinfo->tm_hour);
-	strcat (name, aux);
-	strcat (name, "h");
-
-	sprintf(aux, "%d", timeinfo->tm_min);
-	strcat (name, aux);
-	strcat (name, "m");
-
-	sprintf(aux, "%d", timeinfo->tm_sec);
-	strcat (name, aux);
-
-	gnuplot_save_total = fopen(name, "w");
-
-/*	file_name = "mpc_plot_20161023_11h4m49"
-	plot file_name using 1:2 with lines, file_name using 1:3 with lines, file_name using 1:4 with lines
-
-	plot file_name using 1:2 with lines variable title 'cphi' axes x1y2, file_name using 1:3 with lines variable title 'dphi' axes x1y2
 */
 }
 
@@ -682,7 +644,7 @@ init_mpc(bool &first_time, PARAMS &params, EFFORT_SPLINE_DESCRIPTOR &seed, doubl
 		first_time = false;
 
 		if (save_and_plot)
-			open_file_to_save_plot2();
+			open_file_to_save_plot(true);
 	}
 
 	if (current_motion_command_vector == NULL)
@@ -744,7 +706,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 
 	if (save_and_plot)
 	{
-		open_file_to_save_plot();
+		open_file_to_save_plot(false);
 		plot_state(&seed, &params, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
 		fclose(gnuplot_save);
 	}
