@@ -17,18 +17,32 @@ using namespace tf;
 const int RANGE_WINDOW_ZOOM = 5;
 const int WINDOW_WIDTH = 1366;
 
+typedef struct {
+	carmen_velodyne_points_in_cam_t velodyne_points_in_cam;
+	double angle;
+} carmen_velodyne_points_in_cam_with_angle_t, *carmen_velodyne_points_in_cam_with_angle_p;
+
+
 
 // CAM POSE: 0.245000 0.283000 0.075000 0.017453 0.026300 0.000000 FX: 0.753883
 // CAM POSE: 0.245000 0.283000 0.085000 0.017453 0.026300 -0.017453 FX: 0.753883
 
 //CAM POSE: 0.245000 -0.207000 0.085000 0.017453 0.026300 -0.017453 FX: 0.753883
 
-double camera_x = 0.245;
-double camera_y = -0.207000; //0.283; //-0.287;
-double camera_z = 0.085;
-double camera_roll = 0.017453; //0;
-double camera_pitch = 0.0263;
+//double camera_x = 0.245;
+//double camera_y = -0.207000; //0.283; //-0.287;
+//double camera_z = 0.085;
+//double camera_roll = 0.017453; //0;
+//double camera_pitch = 0.0263;
+//double camera_yaw = -0.017453; // 0;
+
+double camera_x = 0.130; //0.25;
+double camera_y = -0.131; //0.149; //-0.287;
+double camera_z = 0.204; //0.214;
+double camera_roll = -0.017453; //0;
+double camera_pitch = 0.034907;
 double camera_yaw = -0.017453; // 0;
+
 
 double fx = 0.753883;
 double fy = 1.00518;
@@ -87,7 +101,7 @@ move_to_camera_reference(tf::Point p3d_velodyne_reference)
 {
 	tf::Transform pose_velodyne_in_board(Quaternion(-0.01, -0.0227, 0), Vector3(0.145, 0, 0.48));
 	tf::Transform pose_camera_in_board(Quaternion(camera_yaw, camera_pitch, camera_roll),
-			Vector3(camera_x, 0.149 /*camera_y*/, camera_z));
+			Vector3(camera_x, camera_y, camera_z));
 
 //	tf::Transform pose_velodyne_in_board(Quaternion(-0.01, -0.0227, 0), Vector3(0.145, 0, 0.48));
 //	tf::Transform pose_camera_in_board(Quaternion(0, 0, 0),
@@ -174,6 +188,95 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_parti
 						laser_px_points.laser_polar.horizontal_angle = hblablabla;
 						laser_px_points.laser_polar.vertical_angle = v;
 						laser_px_points.laser_polar.length = range;
+
+						laser_points_in_camera.push_back(laser_px_points);
+
+						//if (laser_points_in_camera.size() < 5) printf("H: %lf\n", hblablabla);
+					}
+				}
+
+			}
+		}
+	}
+	return laser_points_in_camera;
+}
+
+std::vector<carmen_velodyne_points_in_cam_with_angle_t>
+carmen_velodyne_camera_calibration_lasers_points_in_camera_with_angles(carmen_velodyne_partial_scan_message *velodyne_message,
+		carmen_bumblebee_basic_stereoimage_message *bumblebee_message)
+		{
+
+	vector<carmen_velodyne_points_in_cam_with_angle_t> laser_points_in_camera;
+
+	for (int i = 0; i < 32; i++)
+	{
+		double v = carmen_normalize_theta(carmen_degrees_to_radians(sorted_vertical_angles[i]));
+
+		for (int j = 1; j < velodyne_message->number_of_32_laser_shots; j++)
+		{
+			double range = (((double) velodyne_message->partial_scan[j].distance[i]) / 500.0);
+
+			double hangle = velodyne_message->partial_scan[j].angle;
+			double hrad = carmen_degrees_to_radians(hangle);
+			double hblablabla = carmen_normalize_theta(hrad);
+
+			double hangle_1 = velodyne_message->partial_scan[j-1].angle;
+			double hrad_1 = carmen_degrees_to_radians(hangle);
+			double hblablabla_1 = carmen_normalize_theta(hrad);
+			//float r = 0;
+			//float b = 0;
+
+			const float MAX_RANGE = 30.0;
+			const float MIN_RANGE = 0.5;
+
+			if (range <= MIN_RANGE)
+				range = MAX_RANGE;
+
+			if (range > MAX_RANGE)
+				range = MAX_RANGE;
+
+			if (range >= MAX_RANGE)
+				continue;
+
+			//r = range / MAX_RANGE;
+			//r *= 255;
+			//r = 255 - r;
+
+			tf::Point p3d_velodyne_reference = spherical_to_cartesian(hblablabla, v, range);
+
+			if (p3d_velodyne_reference.x() > 0)
+			{
+				tf::Point p3d_camera_reference = move_to_camera_reference(p3d_velodyne_reference);
+
+				const int XB3_MAX_PIXEL_WIDTH = bumblebee_message->width;//1280;//TODO MESMO DA IMAGEM OU PRECISA SER UM VALOR FIXO?
+				const int XB3_MAX_PIXEL_HEIGHT = bumblebee_message->height; //960;//TODO MESMO DA IMAGEM OU PRECISA SER UM VALOR FIXO?
+				const double XB3_PIXEL_SIZE = 0.00000375f;//pixel size (in meters)
+
+				double f_meters = fx * XB3_MAX_PIXEL_WIDTH * XB3_PIXEL_SIZE;
+
+				double cu = 0.500662 * (double) bumblebee_message->width;
+				double cv = 0.506046 * (double) bumblebee_message->height;
+
+				double px = (f_meters * (p3d_camera_reference.y() / p3d_camera_reference.x()) / XB3_PIXEL_SIZE + cu);
+				double py = (f_meters * (-p3d_camera_reference.z() / p3d_camera_reference.x()) / XB3_PIXEL_SIZE + cv);
+
+				int ipx = (int) px;
+				int ipy = (int) py;
+
+				if (px >= 0 && px <= bumblebee_message->width && py >= 0 && py <= bumblebee_message->height)
+				{
+					//if (px < 10 || px >= (bumblebee_message->width - 10))
+						//b = 254;
+
+					//if (r > 5)
+					{
+						carmen_velodyne_points_in_cam_with_angle_t laser_px_points; //= {ipx, ipy, laser_polar};
+
+						laser_px_points.velodyne_points_in_cam.ipx = ipx;
+						laser_px_points.velodyne_points_in_cam.ipy = ipy;
+						laser_px_points.velodyne_points_in_cam.laser_polar.horizontal_angle = hblablabla;
+						laser_px_points.velodyne_points_in_cam.laser_polar.vertical_angle = v;
+						laser_px_points.velodyne_points_in_cam.laser_polar.length = range;
 
 						laser_points_in_camera.push_back(laser_px_points);
 

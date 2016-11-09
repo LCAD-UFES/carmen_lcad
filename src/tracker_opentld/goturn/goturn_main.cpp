@@ -158,6 +158,7 @@ plot_state(vector<carmen_vector_3D_t> &points, vector<carmen_ackerman_traj_point
 
 		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
 		fprintf(gnuplot_pipeMP, "set size ratio -1\n");
+		fprintf(gnuplot_pipeMP, "set key outside\n");
 //		fprintf(gnuplot_pipeMP, "set xrange [0:40]\n");
 //		fprintf(gnuplot_pipeMP, "set yrange [-10:10]\n");
 //		fprintf(gnuplot_pipe, "set y2range [-0.55:0.55]\n");
@@ -1026,8 +1027,8 @@ target_point_in_relation_to_last_target_detection_is_valid(
 	if (dist < 1.0)
 		return 0;
 
-	printf("ACCEPTING POINT DUE TO INVALID ANGLE VARIATION: TP Y: %lf LP Y: %lf TP X: %lf LP X: %lf ANGLE: %lf\n",
-			target_pose.y, last_pose.y, target_pose.x, last_pose.x, carmen_radians_to_degrees(fabs(diff)));
+//	printf("ACCEPTING POINT DUE TO INVALID ANGLE VARIATION: TP Y: %lf LP Y: %lf TP X: %lf LP X: %lf ANGLE: %lf\n",
+//			target_pose.y, last_pose.y, target_pose.x, last_pose.x, carmen_radians_to_degrees(fabs(diff)));
 
 //	if (target_in_last_pose_reference[0] < 0)
 //	{
@@ -1349,6 +1350,53 @@ move_target_pose_backwards(carmen_ackerman_traj_point_t target_pose, carmen_acke
 }
 
 void
+get_motion_control(carmen_ackerman_traj_point_t prev, carmen_ackerman_traj_point_t next, double speed, double elapsed_time)
+{
+	double w_v_error = 0.0;
+	double w_v_past_error = 0.0;
+	double how_far;
+	double desired_speed;
+	double v_error, v_past_error, v_total_error;
+	double brake, gas;
+
+	how_far = 0.0;
+	desired_speed = (prev.v * how_far) + (prev.v * (1 - how_far));
+	v_error = speed - desired_speed;
+	v_past_error = v_error * elapsed_time;
+	v_total_error = (w_v_error * v_error) + (w_v_past_error * v_past_error);
+
+	if (v_total_error >0){
+
+	}
+}
+
+// get the desired speed
+double
+get_curvature_constraint(carmen_ackerman_traj_point_t prev, carmen_ackerman_traj_point_t current, carmen_ackerman_traj_point_t next)
+{
+
+    // get the appropriated displacement vectors
+	carmen_ackerman_traj_point_t dxi;
+	carmen_ackerman_traj_point_t dxip1;
+
+	dxi.x = current.x - prev.x;
+	dxi.y = current.y - prev.y;
+
+    dxip1.x = next.x - current.x;
+    dxip1.y = next.y - current.y;
+
+    // get the angle between the two vectors
+    double angle = std::fabs(mrpt::math::angDistance<double>(atan2(dxip1.y, dxip1.x), atan2(dxi.y, dxi.x)));
+
+    // get the turn radius
+    double radius = std::sqrt(dxi.x*dxi.x + dxi.y*dxi.y) / angle;
+
+    // get the curvature constraint
+    return sqrt(radius * 0.4);
+
+}
+
+void
 correct_thetas(vector<carmen_ackerman_traj_point_t> &target_poses)
 {
 	for(unsigned int i = 1; i < target_poses.size() - 1; i++ )
@@ -1414,6 +1462,7 @@ create_lane_from_target_poses(vector<carmen_ackerman_traj_point_t> &target_poses
 		return target_poses_new_with_additional_points;
 	}
 
+
 //	if (target_poses_new.size() > 2) // caso em que a distancia para o 1o target eh problematico
 //	{
 //		double dist_to_first_target = sqrt(pow(target_poses_new[1].x - localize_sync.x, 2) + pow(target_poses_new[1].y - localize_sync.y, 2));
@@ -1451,6 +1500,7 @@ create_lane_from_target_poses(vector<carmen_ackerman_traj_point_t> &target_poses
 //		return target_poses_new_with_additional_points;
 //	}
 
+
 //	if (target_poses.size() == 2 && robot_in_start_position)
 //	{
 //		carmen_ackerman_traj_point_t target_pose_first = sync_pose_and_time.first;
@@ -1487,13 +1537,13 @@ create_lane_from_target_poses(vector<carmen_ackerman_traj_point_t> &target_poses
 vector<carmen_ackerman_traj_point_t>
 create_smoothed_path(double timestamp_image)
 {
-	(void) timestamp_image;
 	static vector<double> pose_times;
 	static vector<double> pose_thetas;
 	static unsigned int maxPositions = 20;
 	static vector<carmen_ackerman_traj_point_t> poses_smooth;
 
 	static vector<carmen_ackerman_traj_point_t> target_poses;
+	static vector<double> times;
 	static int robot_in_start_position = 1;
 
 	carmen_vector_3D_t target_pose_in_the_world;
@@ -1507,7 +1557,10 @@ create_smoothed_path(double timestamp_image)
 	target_pose_in_the_world = move_point_from_velodyne_frame_to_world_frame(trackerPoint, sync_pose_and_time.first);
 
 	if (target_poses.size() == 0)
+	{
 		target_poses.push_back(sync_pose_and_time.first);
+		times.push_back(timestamp_image);
+	}
 
 	static double time_last_pose_was_added = 0;
 
@@ -1534,9 +1587,13 @@ create_smoothed_path(double timestamp_image)
 //		target_pose_in_the_world.y = target_pose.y;
 
 		target_poses.push_back(target_pose);
+		times.push_back(timestamp_image);
 
 		if (target_poses.size() > maxPositions)
+		{
 			target_poses.erase(target_poses.begin());
+			times.erase(times.begin());
+		}
 
 		time_last_pose_was_added = sync_pose_and_time.second;
 		point_added = 1;
@@ -1545,6 +1602,31 @@ create_smoothed_path(double timestamp_image)
 	if (target_poses.size() < 2)
 		return vector<carmen_ackerman_traj_point_t>();
 
+	double v;
+
+	if(target_poses.size() > 6)
+	{
+		double x = target_poses[target_poses.size() - 1].x;
+		double y = target_poses[target_poses.size() - 1].y;
+
+		double x_1 = target_poses[target_poses.size() - 6].x;
+		double y_1 = target_poses[target_poses.size() - 6].y;
+
+		double dist = sqrt(pow(x - x_1,2) +pow(y - y_1,2));
+		double dt = fabs(times[times.size() - 1] - times[times.size() - 6]);
+
+		if (dt == 0 /*|| dist > 5.0*/)
+			v = 0;
+		else
+			v = dist/dt;
+	}
+	else
+	{
+		v = 0;
+	}
+
+
+	printf("v: %lf size: %ld\n", v, target_poses.size());
 	//remove point behind car
 	vector<carmen_ackerman_traj_point_t> target_poses_new = create_lane_from_target_poses(target_poses, sync_pose_and_time.first);
 
