@@ -184,8 +184,8 @@ disparity_map_handler(carmen_simple_stereo_disparity_message *message)
 
   // fill the ground plane
   int n_samples = get_road_pixels_list(right_image, points, samples, road_profile_image, message->disparity, 0, v_disparity_instance);
-
-  for (int i = 0; i < n_samples; i++)
+  int i;
+  for (i = 0; i < n_samples; i++)
   {
     CvScalar pixel = cvGet2D(right_image, points[i].y, points[i].x);
     pixel.val[1] = 255;

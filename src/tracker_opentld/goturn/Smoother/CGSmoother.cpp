@@ -8,14 +8,14 @@ using namespace smoother;
 
 CGSmoother::CGSmoother() :
     wo(0.002), ws(4.0), wk(4.0), dmax(5.0), alpha(0.2), kmax(0.22),
-    min_turn_radius(5.0), max_speed(40), max_lateral_acceleration(1.0), safety_factor(1.0),
+    min_turn_radius(5.58), max_speed(40), max_lateral_acceleration(1.0), safety_factor(1.0),
     input_path(NULL), cg_status(CGIddle),
     fx(), gx_norm(), fx1(), gx1_norm(), ftrialx(), x1mx_norm(), gtrialx_norm(), trialxmx_norm(),
     s(), s_norm(), sg(),
     locked_positions(),
     max_iterations(400), dim(0), step(0.01),
     default_step_length(1.0), stepmax(1e06), stepmin(1e-12),
-    ftol(1e-04), gtol(0.99999), xtol(1e-06), distance_map(NULL), circle_radius(0.0) {
+    ftol(1e-04), gtol(0.99999), xtol(1e-06), distance_map(NULL), circle_radius(1.0) {
 
     // start the x and x1 vectors
     x = new Vector2DArray<double>();
@@ -104,8 +104,25 @@ std::vector<carmen_ackerman_traj_point_t> CGSmoother::FromState2D(StateArrayPtr 
         output[i].phi = states[i].phi;
 
     }
+    // calculate theta
+    for (unsigned int i = 1; i < output.size()-1; ++i) {
+    	output[i].theta = atan2(output[i+1].y - output[i-1].y, output[i+1].x - output[i-1].x);
+    }
 
     return output;
+
+}
+
+// convert a position to the grid cell index
+GridCellIndex CGSmoother::PoseToIndex(const smoother::Vector2D<double> &p) {
+
+	// build a new grid cell
+	GridCellIndex gc(
+			std::floor((p.x - distance_map->config.x_origin) / distance_map->config.resolution + 0.5),
+			std::floor((p.y - distance_map->config.y_origin) / distance_map->config.resolution + 0.5)
+		);
+
+	return gc;
 
 }
 
@@ -135,8 +152,8 @@ bool CGSmoother::UnsafePath(Vector2DArrayPtr path) {
 
         	//path_point = {positions[i].x, positions[i].y, 0.0};
         	path_point.x = positions[i].x;
-        	path_point.x = positions[i].y;
-        	path_point.theta = atan2(positions[i].y - positions[i-1].y, positions[i].x - positions[i-1].x);
+        	path_point.y = positions[i].y;
+        	//path_point.theta = atan2(positions[i+1].y - positions[i-1].y, positions[i+1].x - positions[i-1].x);
 
         	double obstacle = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&path_point, distance_map);
             if ((obstacle - circle_radius) < 0.0 )//tem colisao
@@ -177,47 +194,6 @@ double CGSmoother::ABSMax(double a, double b, double c) {
 
 }
 
-//// get the obstacle and voronoi contribution
-//Vector2D<double> CGSmoother::GetObstacleDerivative(
-//        const Vector2D<double> &xim1,
-//        const Vector2D<double> &xi,
-//        const Vector2D<double> &xip1) {
-//
-//    // the resultin value
-//    Vector2D<double> res;
-//    carmen_point_t path_point;
-//    path_point.x = xi.x;
-//	  path_point.y = xi.y;
-//	  path_point.theta = 0.0;
-//    // get the nearest obstacle distance
-//    // TODO
-//    // it needs to use the collision detection
-//
-//    double obst_distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&path_point, distance_map);
-//
-//    // the obstacle and voronoi field terms are valid when dmax is greater or equal to the nearest obstacle distance
-//    if (dmax > obst_distance) {
-//
-//        // get the nearest obstacle position
-//    	carmen_position_t obstacle_cell = carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(&path_point, distance_map);
-//        Vector2D<double> nearest(obstacle_cell.x, obstacle_cell.y);//TODO Retornar o X,Y da colision_detection global do obstaculo mais proximo);
-//
-//        // get the current vector Xi - Oi
-//        Vector2D<double> ximoi(xi - nearest);
-//
-//        // normalize the vector
-//        ximoi.Normalize();
-//
-//        // the current obstacle derivative contribution
-//        res = ximoi;
-//        res.Multiply(wo * (obst_distance - dmax));
-//
-//    }
-//
-//    return res;
-//
-//}
-
 // get the obstacle and voronoi contribution
 // overloaded version
 Vector2D<double> CGSmoother::GetObstacleDerivative(
@@ -226,27 +202,27 @@ Vector2D<double> CGSmoother::GetObstacleDerivative(
 
     // the resultin value
     Vector2D<double> res;
+
     //convert to carmen type
     carmen_point_t path_point;
     path_point.x = xi.x;
 	path_point.y = xi.y;
 	path_point.theta = 0.0;
-    // get the nearest obstacle position
+
+	// get the nearest obstacle position
     // TODO
     // needs to use the collision detection function
     //TODO Retornar o X,Y da colision_detection global do obstaculo mais proximo);
     carmen_position_t obstacle_cell = carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(&path_point, distance_map);
 
-    Vector2D<double> nearest(obstacle_cell.x, obstacle_cell.y);
-
-    // get the current vector Xi - Oi
-    Vector2D<double> ximoi(xi - nearest);
+    // compute the difference between the car and the nearest obstace
+    res.x = xi.x - obstacle_cell.x;
+    res.y = xi.y - obstacle_cell.y;
 
     // normalize the vector
-    ximoi.Multiply(1.0/nearest_obstacle_distance);
+    res.Multiply(1.0/nearest_obstacle_distance);
 
     // the current obstacle derivative contribution
-    res = ximoi;
     res.Multiply(wo * 2.0 * (nearest_obstacle_distance - dmax));
 
     return res;
@@ -352,8 +328,8 @@ Vector2D<double> CGSmoother::GetSmoothPathDerivative(
     Vector2D<double> res;
 
     // custom formula
-    res.x += ws * (xim2.x - 4.0 * xim1.x + 6.0 * xi.x - 4.0 * xip1.x + xip2.x);
-    res.x += ws * (xim2.y - 4.0 * xim1.y + 6.0 * xi.y - 4.0 * xip1.y + xip2.y);
+    res.x = ws * (xim2.x - 4.0 * xim1.x + 6.0 * xi.x - 4.0 * xip1.x + xip2.x);
+    res.y = ws * (xim2.y - 4.0 * xim1.y + 6.0 * xi.y - 4.0 * xip1.y + xip2.y);
 
     return res;
 
@@ -567,7 +543,6 @@ void CGSmoother::EvaluateG(
 
 }
 
-
 // process the current points
 void
 CGSmoother::EvaluateG(
@@ -602,7 +577,6 @@ CGSmoother::EvaluateG(
     gradient.Add(GetCurvatureDerivative(xim1, xi, xip1));
 
 }
-
 
 // process the current points
 void CGSmoother::EvaluateFG(
@@ -683,7 +657,11 @@ void CGSmoother::EvaluateFunctionAndGradient() {
     // the gradient direct access
     std::vector<Vector2D<double> > &gradient(gtrialx->vs);
 
-    unsigned int i;
+    // starts at the second point
+    unsigned int i = 1;
+
+    // the second point
+
 
     // iterate from the third element till the third last
     // and get the individual derivatives
@@ -720,6 +698,9 @@ void CGSmoother::EvaluateFunctionAndGradient() {
         }
 
     }
+
+    // last but one point
+
 
     // set the euclidean norm final touch
     gtrialx_norm = std::sqrt(gtrialx_norm);
@@ -1285,7 +1266,13 @@ bool CGSmoother::Setup(StateArrayPtr path, bool locked) {
     if (!locked) {
 
         // resize the locked positions vector
-        locked_positions.resize(dim, false);
+        locked_positions.resize(dim);
+
+        for (unsigned int i = 0; i < dim; ++i) {
+
+        	locked_positions[i] = false;
+
+        }
 
         // lock the first and last positions
         locked_positions[0] = locked_positions[1] = locked_positions[dim - 2] = locked_positions[dim - 1] = true;
@@ -1445,8 +1432,8 @@ void CGSmoother::ConjugateGradientPR(StateArrayPtr path, bool locked) {
                 iter += 1;
 
                 // get the next step
-//                int info = MTLineSearch(1.0/s_norm);
-
+                int info = MTLineSearch(1.0/s_norm);
+                (void) info;
                 // SUCCESS!
                 // verify the restart case
                 if (0 != iter % dim) {
@@ -1513,56 +1500,93 @@ void CGSmoother::InputPathUpdate(Vector2DArrayPtr solution, StateArrayPtr output
 
 }
 
+// convert the carmen map to an OpenCV image
+unsigned char* CGSmoother::GetGridMap() {
+
+	unsigned int width = distance_map->config.x_size;
+	unsigned int height = distance_map->config.y_size;
+
+	unsigned int size = width * height;
+
+	unsigned char *map = new unsigned char[size];
+
+	for (unsigned int i = 0; i < size; ++i) {
+
+		// get the current row
+		unsigned int row = (height - 1) - i % height;
+
+		// get the current col
+		unsigned int col = i / height;
+
+		// get the current index
+		unsigned int index = row * width + col;
+
+		if (0.0 == distance_map->complete_x_offset[i] && 0.0 == distance_map->complete_y_offset[i]) {
+
+			map[index] = 0;
+
+		} else {
+
+			map[index] = 255;
+
+		}
+
+	}
+
+	return map;
+
+}
 
 //// TODO show the current path in the map - VISUALIZACAO LEGAL!
-//void CGSmoother::ShowPath(StateArrayPtr path, bool plot_locked) {
-//
-//
-//    // get the map
-//    unsigned int h = CGSmoother::distance_map->config.y_size; //TODO map.config
-//    unsigned int w = CGSmoother::distance_map->config.x_size;
-//
-//    unsigned char *map = grid.GetGridMap();//TODO Converter do mapa do carmen para imagem do Opencv
-//
-//    // create a image
-//    cv::Mat image(w, h, CV_8UC1, map);
-//
-//    // draw a new window
-//    cv::namedWindow("Smooth", cv::WINDOW_AUTOSIZE);
-//
-//    // draw each point
-//    for (unsigned int i = 0; i < path->states.size(); ++i) {
-//
-//        if (!plot_locked && locked_positions[i]) {
-//
-//            continue;
-//
-//        }
-//
-//        // get the current point
-//        GridCellIndex index(grid.PoseToIndex(path->states[i].position));
-//
-//        // convert to opencv point
-//        cv::Point p1(index.col - 1, h - index.row - 1);
-//        cv::Point p2(index.col + 1, h - index.row + 1);
-//
-//        cv::rectangle(image, p1, p2, cv::Scalar(0, 0, 0), 1);
-//
-//        // show the image
-//        cv::imshow("Smooth", image);
-//
-//        // draw in the windows
-//        cv::waitKey(30);
-//
-//    }
-//
-//    delete [] map;
-//
-//    // destroy
-//    cv::destroyWindow("Smooth");
-//
-//}
+void CGSmoother::ShowPath(StateArrayPtr path, bool plot_locked) {
 
+    // get the map
+    unsigned int h = distance_map->config.y_size; //TODO map.config
+    unsigned int w = distance_map->config.x_size;
+
+    unsigned char *map = GetGridMap();
+
+    // create a image
+    cv::Mat image(w, h, CV_8UC1, map);
+
+    // draw a new window
+    cv::namedWindow("Smooth", cv::WINDOW_AUTOSIZE);
+
+    // draw each point
+    for (unsigned int i = 0; i < path->states.size(); ++i) {
+
+        if (!plot_locked && locked_positions[i]) {
+
+            continue;
+
+        }
+
+        // get the current point
+        GridCellIndex index(PoseToIndex(path->states[i].position));
+
+        // invert the row representation
+        index.row = h - index.row;
+
+        // convert to opencv point
+        cv::Point p1(index.col - 1, index.row - 1);
+        cv::Point p2(index.col + 1, index.row + 1);
+
+        cv::rectangle(image, p1, p2, cv::Scalar(0, 0, 0), 1);
+
+        // show the image
+        cv::imshow("Smooth", image);
+
+        // draw the window
+        cv::waitKey(30);
+
+    }
+
+    delete [] map;
+
+    // destroy
+    cv::destroyWindow("Smooth");
+
+}
 
 // get a bezier point given four points and the time
 // using cubic bezier interpolation
@@ -1720,9 +1744,9 @@ void CGSmoother::DrawBezierCurve(
     // the four points to tbe interpolated
     std::vector<Vector2D<double> > piece(4);
 
-    unsigned int ipsize = input.size();
+    int ipsize = input.size() - 1;
 
-    for (unsigned int i = 0, j = 0; i < ipsize; ++i, ++j) {
+    for (unsigned int i = 0, j = 0; i < (unsigned int) ipsize; ++i, ++j) {
 
         // direct access
         const Vector2D<double> &left(input[i].position), &right(input[i+1].position);
@@ -1819,37 +1843,60 @@ StateArrayPtr CGSmoother::Interpolate(StateArrayPtr path) {
 std::vector<carmen_ackerman_traj_point_t> CGSmoother::Smooth(
         std::vector<carmen_ackerman_traj_point_t> &raw_path) {
 
-    if (5 <= raw_path.size()) {
 
-        // convert the raw path to our internal representation
-        StateArrayPtr input = ToState2D(raw_path);
+	// convert the raw path to our internal representation
+	StateArrayPtr input = ToState2D(raw_path);
+
+	if (4 > raw_path.size()) {
 
         // show the map
-//        ShowPath(input);
+        // ShowPath(input);
 
         // conjugate gradient based on the Polak-Ribiere formula
         ConjugateGradientPR(input);
 
-        // show the map
-//        ShowPath(input);
-
-        // now, interpolate the entire path
-        // StateArrayPtr interpolated_path = new StateArray();
-        // interpolated_path->states = raw_path->states;
-        // return interpolated_path;
-        StateArrayPtr interpolated_path = Interpolate(input);
-
-        // show the map
-//        ShowPath(interpolated_path);
-
-        // minimize again the interpolated path
-        // conjugate gradient based on the Polak-Ribiere formula
-        ConjugateGradientPR(interpolated_path);
-
-        return FromState2D(interpolated_path);
-
     }
 
-    return std::vector<carmen_ackerman_traj_point_t>(raw_path);
+	// show the map
+	// ShowPath(input);
+
+	// now, interpolate the entire path
+	// StateArrayPtr interpolated_path = new StateArray();
+	// interpolated_path->states = raw_path->states;
+	// return interpolated_path;
+	StateArrayPtr interpolated_path = Interpolate(input);
+
+	// show the map
+	// ShowPath(interpolated_path);
+
+	// minimize again the interpolated path
+	// conjugate gradient based on the Polak-Ribiere formula
+	ConjugateGradientPR(interpolated_path);
+
+	// show the map, again
+	// ShowPath(interpolated_path);
+
+	return FromState2D(interpolated_path);
+
+    // return std::vector<carmen_ackerman_traj_point_t>(raw_path);
+
+}
+
+// get the desired speed
+double GetCurvatureConstraint(const Vector2D<double> &prev, const Vector2D<double> &current, const Vector2D<double> &next)
+{
+
+    // get the appropriated displacement vectors
+    Vector2D<double> dxi(current.x - prev.x, current.y - prev.y);
+    Vector2D<double> dxip1(next.x - current.x, next.y - current.y);
+
+    // get the angle between the two vectors
+    double angle = std::fabs(mrpt::math::angDistance<double>(std::atan2(dxip1.y, dxip1.x), std::atan2(dxi.y, dxi.x)));
+
+    // get the turn radius
+    double radius = dxi.Norm() / angle;
+
+    // get the curvature constraint
+    return std::sqrt(radius * 0.4);
 
 }

@@ -408,6 +408,10 @@ carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(carmen_point
 	cell.x = (double) distance_map->complete_x_offset[index] + (double) x_map_cell;
 	cell.y = (double) distance_map->complete_y_offset[index] + (double) y_map_cell;
 
+	// convert to global coordinates system
+	cell.x = distance_map->config.x_origin + cell.x * distance_map->config.resolution;
+	cell.y = distance_map->config.y_origin + cell.y * distance_map->config.resolution;
+
 	return (cell);
 }
 

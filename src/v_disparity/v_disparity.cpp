@@ -4,6 +4,7 @@
 #include "v_disparity_GPU.h"
 #endif
 
+
 v_disparity get_v_disparity_instance(stereo_util stereo_util_instance, int stereo_disparity)
 {
 	v_disparity instance;
@@ -111,26 +112,50 @@ void resize_line(double resize_factor, CvPoint *A, CvPoint *B, v_disparity insta
 	}
 }
 
+
+
 cvLineSegment *find_hough_lines(const IplImage *image, int *n_lines, v_disparity instance)
 {
 	IplImage *ch1_image = cvCloneImage(image);
-	cvCanny(ch1_image, ch1_image, 50, 200, 3);
 
-	CvSeq *lines = cvHoughLines2(ch1_image, instance.memory_storage, CV_HOUGH_PROBABILISTIC, 1, CV_PI/360.0, 60, 45, 10);
+	/* Morphological skeleton of the image */
+	cv::Mat img(ch1_image);
+	cv::threshold(img, img, 127, 255, cv::THRESH_BINARY);
+	cv::Mat skel(img.size(), CV_8UC1, cv::Scalar(0));
+	cv::Mat temp(img.size(), CV_8UC1, cv::Scalar(0));
+	cv::Mat eroded(img.size(), CV_8UC1, cv::Scalar(0));
 
-	// Copy the found lines
-	*n_lines = lines->total;
-	cvLineSegment *found_lines = (cvLineSegment*)malloc(lines->total * sizeof(cvLineSegment));
+	cv::Mat element = cv::getStructuringElement(cv::MORPH_CROSS, cv::Size(3, 3));
 
-	for(int i = 0; i < lines->total; i++ )
+	bool done;
+	do
 	{
-		CvPoint *line = (CvPoint*)cvGetSeqElem(lines, i);
-		found_lines[i].A = line[0];
-		found_lines[i].B = line[1];
-	}
+	  cv::erode(img, eroded, element);
+	  cv::dilate(eroded, temp, element); // temp = open(img)
+	  cv::subtract(img, temp, temp);
+	  cv::bitwise_or(skel, temp, skel);
+	  eroded.copyTo(img);
 
-	if (ch1_image)
-		cvReleaseImage(&ch1_image);
+	  done = (cv::countNonZero(img) == 0);
+	} while (!done);
+	//skel is the result of this process, the other Mat's so far were only to help
+	//cv::imshow("Skeleton", skel);
+
+
+	/*  Apply Hough transform to find lines */
+	cv::vector<cv::Vec4i> lines;
+
+	cv::HoughLinesP(skel, lines, 1, CV_PI/360.0, 60, 45, 10);
+
+	cvLineSegment *found_lines = new cvLineSegment[lines.size()];
+	*n_lines = lines.size();
+
+	for( size_t i = 0; i < lines.size(); i++ )
+	{
+
+		found_lines[i].A = cvPoint(lines[i][0],lines[i][1]);
+		found_lines[i].B = cvPoint(lines[i][2],lines[i][3]);
+	}
 
 	cvClearMemStorage(instance.memory_storage);
 
@@ -179,8 +204,7 @@ void compute_height_and_pitch(IplImage *v_disparity_map, double slope_threshould
 	*height = instance.stereo_util_instance.baseline * cos(*pitch) / angular_coef;
 	*horizon_line = linear_coef;
 
-	/*Debug Code
-	 */
+	/*Debug Code*/
 	if(*height > 100)
 	{
 		printf("Infinite Bug Alert!\n");
@@ -383,7 +407,7 @@ void compute_v_disparity_info(unsigned short int *v_disparity_data, IplImage *v_
 	compute_height_and_pitch(v_disparity_map, slope_threshould, lines, n_lines, height, pitch, horizon_line, instance);
 
 	// Clean up memory
-	free(lines);
+	delete(lines);
 }
 
 static int
