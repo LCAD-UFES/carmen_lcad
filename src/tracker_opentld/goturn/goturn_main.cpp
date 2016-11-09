@@ -1361,19 +1361,24 @@ correct_thetas(vector<carmen_ackerman_traj_point_t> &target_poses)
 	target_poses.at(target_poses.size()-1).theta = target_poses.at(target_poses.size()-2).theta;
 }
 
-void
-remove_points_behind_car(vector<carmen_ackerman_traj_point_t> &target_poses, carmen_ackerman_traj_point_t localize_sync)
+
+vector<carmen_ackerman_traj_point_t>
+create_lane_from_target_poses(vector<carmen_ackerman_traj_point_t> &target_poses, carmen_ackerman_traj_point_t localize_sync)
 {
+	vector<carmen_ackerman_traj_point_t> target_poses_new;
+
 	for (std::vector<carmen_ackerman_traj_point_t>::iterator it = target_poses.begin();it != target_poses.end(); ++it)
 	{
 		g2o::SE2 robot_pose(localize_sync.x, localize_sync.y ,localize_sync.theta);
 		g2o::SE2 target_in_world_reference(it->x, it->y ,it->theta);
 		g2o::SE2 target_in_robot_reference = robot_pose.inverse() * target_in_world_reference;
 
-		if (target_in_robot_reference[0] < -4.5){
+		if (target_in_robot_reference[0] < 0.0){
 			target_poses.erase(it);
 		}
 	}
+
+	return target_poses_new;
 }
 
 
@@ -1386,7 +1391,7 @@ create_smoothed_path(double timestamp_image)
 	static unsigned int maxPositions = 20;
 	static vector<carmen_ackerman_traj_point_t> poses_smooth;
 
-	static vector<carmen_ackerman_traj_point_t> target_poses_new;
+	vector<carmen_ackerman_traj_point_t> target_poses_new;
 	static vector<carmen_ackerman_traj_point_t> target_poses;
 	static int robot_in_start_position = 1;
 
@@ -1466,7 +1471,7 @@ create_smoothed_path(double timestamp_image)
 	double distance_last_goal_to_target = sqrt(pow((target_poses_new.back().x - target_poses.back().x),2) + pow((target_poses_new.back().y - target_poses.back().y),2));
 
 //	printf("dist: %lf size: %ld \n", distance_last_goal_to_target, target_poses_new.size());
-	if (distance_last_goal_to_target > 6.0)
+	if (distance_last_goal_to_target > 2.0)
 	{
 		target_poses_new.push_back(target_poses.back());
 //		printf("add point in new x: %lf y: %lf \n", target_poses.back().x, target_poses.back().y);
@@ -1478,12 +1483,12 @@ create_smoothed_path(double timestamp_image)
 		correct_thetas(target_poses_new);
 
 	//remove point behind car
-	remove_points_behind_car(target_poses_new, sync_pose_and_time.first);
+	create_lane_from_target_poses(target_poses_new, sync_pose_and_time.first);
 
 	if (point_added){
-//		if (target_poses.size() > 5)
+//		if (target_poses_new.size() > 5)
 //		{
-//			poses_smooth = path_smoother.Smooth(target_poses);
+//			poses_smooth = path_smoother.Smooth(target_poses_new);
 //		}
 //
 //		// CHECAR POR QUE CHEGOU COM 0 AQUI
