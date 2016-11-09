@@ -1486,7 +1486,8 @@ create_smoothed_path(double timestamp_image)
 	create_lane_from_target_poses(target_poses_new, sync_pose_and_time.first);
 
 	if (point_added){
-//		if (target_poses_new.size() > 5)
+		//To run with smoother
+//		if (target_poses.size() > 1)
 //		{
 //			poses_smooth = path_smoother.Smooth(target_poses_new);
 //		}

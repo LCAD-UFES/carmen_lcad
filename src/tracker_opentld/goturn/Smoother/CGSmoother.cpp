@@ -543,7 +543,6 @@ void CGSmoother::EvaluateG(
 
 }
 
-
 // process the current points
 void
 CGSmoother::EvaluateG(
@@ -578,7 +577,6 @@ CGSmoother::EvaluateG(
     gradient.Add(GetCurvatureDerivative(xim1, xi, xip1));
 
 }
-
 
 // process the current points
 void CGSmoother::EvaluateFG(
@@ -659,7 +657,11 @@ void CGSmoother::EvaluateFunctionAndGradient() {
     // the gradient direct access
     std::vector<Vector2D<double> > &gradient(gtrialx->vs);
 
-    unsigned int i;
+    // starts at the second point
+    unsigned int i = 1;
+
+    // the second point
+
 
     // iterate from the third element till the third last
     // and get the individual derivatives
@@ -696,6 +698,9 @@ void CGSmoother::EvaluateFunctionAndGradient() {
         }
 
     }
+
+    // last but one point
+
 
     // set the euclidean norm final touch
     gtrialx_norm = std::sqrt(gtrialx_norm);
@@ -1838,10 +1843,11 @@ StateArrayPtr CGSmoother::Interpolate(StateArrayPtr path) {
 std::vector<carmen_ackerman_traj_point_t> CGSmoother::Smooth(
         std::vector<carmen_ackerman_traj_point_t> &raw_path) {
 
-    if (5 <= raw_path.size()) {
 
-        // convert the raw path to our internal representation
-        StateArrayPtr input = ToState2D(raw_path);
+	// convert the raw path to our internal representation
+	StateArrayPtr input = ToState2D(raw_path);
+
+	if (4 > raw_path.size()) {
 
         // show the map
         // ShowPath(input);
@@ -1849,29 +1855,48 @@ std::vector<carmen_ackerman_traj_point_t> CGSmoother::Smooth(
         // conjugate gradient based on the Polak-Ribiere formula
         ConjugateGradientPR(input);
 
-        // show the map
-        // ShowPath(input);
-
-        // now, interpolate the entire path
-        // StateArrayPtr interpolated_path = new StateArray();
-        // interpolated_path->states = raw_path->states;
-        // return interpolated_path;
-        StateArrayPtr interpolated_path = Interpolate(input);
-
-        // show the map
-        // ShowPath(interpolated_path);
-
-        // minimize again the interpolated path
-        // conjugate gradient based on the Polak-Ribiere formula
-        ConjugateGradientPR(interpolated_path);
-
-        // show the map, again
-        // ShowPath(interpolated_path);
-
-        return FromState2D(interpolated_path);
-
     }
 
-    return std::vector<carmen_ackerman_traj_point_t>(raw_path);
+	// show the map
+	// ShowPath(input);
+
+	// now, interpolate the entire path
+	// StateArrayPtr interpolated_path = new StateArray();
+	// interpolated_path->states = raw_path->states;
+	// return interpolated_path;
+	StateArrayPtr interpolated_path = Interpolate(input);
+
+	// show the map
+	// ShowPath(interpolated_path);
+
+	// minimize again the interpolated path
+	// conjugate gradient based on the Polak-Ribiere formula
+	ConjugateGradientPR(interpolated_path);
+
+	// show the map, again
+	// ShowPath(interpolated_path);
+
+	return FromState2D(interpolated_path);
+
+    // return std::vector<carmen_ackerman_traj_point_t>(raw_path);
+
+}
+
+// get the desired speed
+double GetCurvatureConstraint(const Vector2D<double> &prev, const Vector2D<double> &current, const Vector2D<double> &next)
+{
+
+    // get the appropriated displacement vectors
+    Vector2D<double> dxi(current.x - prev.x, current.y - prev.y);
+    Vector2D<double> dxip1(next.x - current.x, next.y - current.y);
+
+    // get the angle between the two vectors
+    double angle = std::fabs(mrpt::math::angDistance<double>(std::atan2(dxip1.y, dxip1.x), std::atan2(dxi.y, dxi.x)));
+
+    // get the turn radius
+    double radius = dxi.Norm() / angle;
+
+    // get the curvature constraint
+    return std::sqrt(radius * 0.4);
 
 }
