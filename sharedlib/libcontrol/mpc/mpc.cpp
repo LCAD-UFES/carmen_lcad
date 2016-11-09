@@ -15,7 +15,7 @@ using namespace std;
 
 FILE *gnuplot_save;
 FILE *gnuplot_save_total;
-bool save_and_plot = true;
+bool save_and_plot = false;
 
 
 typedef struct {
