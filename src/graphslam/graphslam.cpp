@@ -247,7 +247,7 @@ add_odometry_edges(SparseOptimizer *optimizer)
 
 			SE2 rot_gps = input_data[0].gps;
 			rot_gps.setTranslation(Vector2d(0, 0));
-
+			//blablabla
 			bla_teste = rot_gps * bla_teste;
 
 			printf("odom: %d %lf %lf %lf\n", (int) i + 1, bla_teste[0], bla_teste[1], carmen_radians_to_degrees(bla_teste[2]));
