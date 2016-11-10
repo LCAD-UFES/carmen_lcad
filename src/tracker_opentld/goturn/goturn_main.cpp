@@ -16,7 +16,6 @@
 #include <carmen/visual_tracker_interface.h>
 #include <carmen/visual_tracker_messages.h>
 #include <carmen/velodyne_camera_calibration.h>
-#include "Smoother/Helpers/wrap2pi.hpp"
 
 #include <carmen/rddf_interface.h>
 #include <carmen/rddf_messages.h>
@@ -28,6 +27,9 @@
 //#include <opencv/cv.h>
 //#include <opencv/highgui.h>
 
+#include <locale.h>
+
+#include "Smoother/Helpers/wrap2pi.hpp"
 //Goturn_tracker
 #include "regressor/regressor_train.h"
 #include "g2o/types/slam2d/se2.h"
@@ -576,6 +578,7 @@ display_bbox_and_velodyne_points(double timestamp, Mat* img)
 	cv::rectangle(*img, cv::Point(0, 0), cv::Point(s.width, 50), Scalar::all(0), -1);
 	cv::putText(*img, string1, textOrg, FONT_HERSHEY_SIMPLEX, 0.4, Scalar::all(255), 1, 8);
 	cv::imshow(window_name, *img);
+	setlocale(LC_ALL, "C");
 
 	char c = cv::waitKey(2);
 	return c;
@@ -1349,26 +1352,26 @@ move_target_pose_backwards(carmen_ackerman_traj_point_t target_pose, carmen_acke
 	target_pose_moved.phi = target_pose.phi;
 }
 
-void
-get_motion_control(carmen_ackerman_traj_point_t prev, carmen_ackerman_traj_point_t next, double speed, double elapsed_time)
-{
-	double w_v_error = 0.0;
-	double w_v_past_error = 0.0;
-	double how_far;
-	double desired_speed;
-	double v_error, v_past_error, v_total_error;
-	double brake, gas;
-
-	how_far = 0.0;
-	desired_speed = (prev.v * how_far) + (prev.v * (1 - how_far));
-	v_error = speed - desired_speed;
-	v_past_error = v_error * elapsed_time;
-	v_total_error = (w_v_error * v_error) + (w_v_past_error * v_past_error);
-
-	if (v_total_error >0){
-
-	}
-}
+//void
+//get_motion_control(carmen_ackerman_traj_point_t prev, carmen_ackerman_traj_point_t next, double speed, double elapsed_time)
+//{
+//	double w_v_error = 0.0;
+//	double w_v_past_error = 0.0;
+//	double how_far;
+//	double desired_speed;
+//	double v_error, v_past_error, v_total_error;
+//	double brake, gas;
+//
+//	how_far = 0.0;
+//	desired_speed = (prev.v * how_far) + (prev.v * (1 - how_far));
+//	v_error = speed - desired_speed;
+//	v_past_error = v_error * elapsed_time;
+//	v_total_error = (w_v_error * v_error) + (w_v_past_error * v_past_error);
+//
+//	if (v_total_error >0){
+//
+//	}
+//}
 
 // get the desired speed
 double
@@ -1544,7 +1547,6 @@ create_smoothed_path(double timestamp_image)
 
 	static vector<carmen_ackerman_traj_point_t> target_poses;
 	static vector<double> times;
-	static int robot_in_start_position = 1;
 
 	carmen_vector_3D_t target_pose_in_the_world;
 
@@ -1616,13 +1618,13 @@ create_smoothed_path(double timestamp_image)
 		double dt = fabs(times[times.size() - 1] - times[times.size() - 6]);
 
 		if (dt == 0 /*|| dist > 5.0*/)
-			v = 0;
+			v = 0.5;
 		else
-			v = dist/dt;
+			v = 0.5;//dist/dt;
 	}
 	else
 	{
-		v = 0;
+		v = 0.5;
 	}
 
 
@@ -2159,6 +2161,8 @@ main(int argc, char **argv)
 		fprintf(stderr, "%s: Wrong number of parameters. tracker_opentld requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)\n>", argv[0], argc - 1, argv[0]);
 		exit(1);
 	}
+
+	setlocale(LC_ALL, "C");
 
 	camera = atoi(argv[1]);
 	camera_side = atoi(argv[2]);
