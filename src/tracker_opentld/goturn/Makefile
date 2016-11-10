@@ -30,7 +30,8 @@ LFLAGS += -lboost_system -lboost_filesystem -lboost_regex `pkg-config --libs ope
 		  -lobstacle_distance_mapper_interface -lobstacle_avoider_interface -L Smoother -lsmoother -lcollision_detection -lalglib
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath\
-		-lboost_thread-mt -lrt -lboost_signals -lboost_system
+		-lboost_thread-mt -lrt -lboost_signals -lboost_system \
+		-L/usr/local/cuda-7.5/lib64/ -lcublas
 
 SOURCES = goturn_main.cpp \
 		  gui.cpp \

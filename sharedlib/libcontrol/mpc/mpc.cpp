@@ -353,7 +353,7 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *params, double v, double unde
 	effort_vector.push_front(effort);
 
 	if (save_and_plot)
-			fprintf(gnuplot_save_total, "%lf %lf %lf %lf\n", timestamp_vector.front(), cphi_vector.front(), dphi_vector.front(), effort_vector.front()/200);
+			fprintf(gnuplot_save_total, "%lf %lf %lf %lf %lf\n", timestamp_vector.front(), cphi_vector.front(), dphi_vector.front(), effort_vector.front()/200, params->v);
 
 	while (cphi_vector.size() > PAST_SIZE)
 	{
