@@ -15,6 +15,11 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
+# Application specific include directories.
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include
+# Required default libraries to comunicate with Carmen Core.
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2 
+
 
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -lgrid_mapping -lmapper -lmap_io -lmap_util -lmap_interface -lipc -lprob_models -lm -lz -lglobal 		\
@@ -23,7 +28,7 @@ LFLAGS += -lgrid_mapping -lmapper -lmap_io -lmap_util -lmap_interface -lipc -lpr
 	-lultrasonic_filter_interface -lstereo_mapping_interface -lrotation_geometry -lvelodyne_interface	\
 	-lfused_odometry_interface  -lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface		\
 	`pkg-config --libs opencv` -lgeometry -lmap_server_interface -lsimulator_ackerman_interface -lrddf_interface \
-	-lparking_assistant_interface  -llocalize_ackerman_core 
+	-lparking_assistant_interface  -llocalize_ackerman_core -llaser_ldmrs_interface -llaser_ldmrs_utils
 
 LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
