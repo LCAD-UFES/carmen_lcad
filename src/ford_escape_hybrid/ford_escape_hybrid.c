@@ -585,9 +585,10 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 		}
 		else
 		{
-			pid_plot_curvature(ford_escape_hybrid_config->filtered_phi, -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config));
 			g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
 					-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t);
+
+			pid_plot_curvature(ford_escape_hybrid_config->filtered_phi, -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), g_steering_command, ford_escape_hybrid_config->filtered_v);
 		}
 
 		previous_gear_command = g_gear_command;

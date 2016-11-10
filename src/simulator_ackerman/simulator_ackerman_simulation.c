@@ -550,13 +550,8 @@ compute_new_phi_with_ann_old(carmen_simulator_ackerman_config_t *simulator_confi
 	simulator_config->phi = 1.05 * get_phi_from_curvature2(tan(steering_ann_output[0]), simulator_config);
 
 	return (simulator_config->phi);
-}
-*/
+}*/
 
-
-FILE *gnuplot_save;
-double first_time = 0.0;
-int init = 1;
 
 double
 compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
@@ -617,19 +612,11 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 	}
 	else
 	{
-		pid_plot_curvature(simulator_config->phi, simulator_config->target_phi);
 		double atan_desired_curvature = carmen_get_curvature_from_phi(simulator_config->target_phi, simulator_config->v, simulator_config->understeer_coeficient2,
 																simulator_config->distance_between_front_and_rear_axles);
 		steering_effort = carmen_libpid_steering_PID_controler(atan_desired_curvature, atan_current_curvature, simulator_config->delta_t);
 
-		if (init)
-		{
-			first_time = carmen_get_time();
-			gnuplot_save = fopen("PID_OLD", "w");
-			init = 0;
-		}
-		fprintf(gnuplot_save, "%lf %lf %lf %lf\n", carmen_get_time() - first_time, simulator_config->target_phi, simulator_config->phi, steering_effort/200);
-
+		pid_plot_curvature(simulator_config->phi, simulator_config->target_phi, steering_effort, simulator_config->v);
 	}
 
 #endif
