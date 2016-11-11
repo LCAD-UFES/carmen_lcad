@@ -283,9 +283,9 @@ compute_plan(Tree *tree)
 {
 	if (goal_list_message.number_of_poses == 0)
 	{
-		vector<carmen_ackerman_path_point_t> a;
 		printf("Error: trying to compute plan without rddf\n");
-		return a;
+//		vector<carmen_ackerman_path_point_t> a;
+//		return a;
 	}
 
 	free_tree(tree);
@@ -375,21 +375,31 @@ build_and_follow_path(double timestamp)
 
 	if (GlobalState::goal_pose && (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT))
 	{
-		vector<carmen_ackerman_path_point_t> path = compute_plan(&tree);
-		if (tree.num_paths > 0 && path.size() > 0)
+		double distance_to_goal = sqrt(pow(GlobalState::goal_pose->x - GlobalState::localizer_pose->x, 2) + pow(GlobalState::goal_pose->y - GlobalState::localizer_pose->y, 2));
+		// achieve the goal!
+		if (distance_to_goal < 0.5 && GlobalState::robot_config.max_v == 0)
 		{
-			path_follower_path = build_path_follower_path(path);
-			publish_model_predictive_rrt_path_message(path_follower_path, timestamp);
-			publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
+			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
 		}
-//		else
-//			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
-//		{
-//			if (GlobalState::last_odometry.v == 0.0)
-//				publish_path_follower_single_motion_command(0.0, 0.0, timestamp);
-//			else
-//				publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
-//		}
+		else
+		{
+
+			vector<carmen_ackerman_path_point_t> path = compute_plan(&tree);
+			if (tree.num_paths > 0 && path.size() > 0)
+			{
+				path_follower_path = build_path_follower_path(path);
+				publish_model_predictive_rrt_path_message(path_follower_path, timestamp);
+				publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
+			}
+			//		else
+			//			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
+			//		{
+			//			if (GlobalState::last_odometry.v == 0.0)
+			//				publish_path_follower_single_motion_command(0.0, 0.0, timestamp);
+			//			else
+			//				publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
+			//		}
+		}
 		publish_plan_tree_for_navigator_gui(tree);
 		publish_navigator_ackerman_status_message();
 	}
@@ -399,17 +409,33 @@ build_and_follow_path(double timestamp)
 void
 build_and_follow_path_new(double timestamp)
 {
+
+	static double last_phi;
+	static int first = 1;
 	if (GlobalState::goal_pose && (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT))
 	{
-		vector<carmen_ackerman_path_point_t> path = compute_plan(&tree);
-		if (tree.num_paths > 0 && path.size() > 0)
+		double distance_to_goal = sqrt(pow(GlobalState::goal_pose->x - GlobalState::localizer_pose->x, 2) + pow(GlobalState::goal_pose->y - GlobalState::localizer_pose->y, 2));
+		// achieve the goal!
+		if (distance_to_goal < 0.5 && GlobalState::robot_config.max_v == 0 && GlobalState::last_odometry.v < 0.15)
 		{
-			publish_model_predictive_planner_motion_commands(path, timestamp);
-			publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
+			if (first)
+			{
+				last_phi = GlobalState::last_odometry.phi;
+				first = 0;
+			}
+			publish_path_follower_single_motion_command(0.0, 0.0, timestamp);
 		}
-//		else
-//			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
-
+		else
+		{
+			vector<carmen_ackerman_path_point_t> path = compute_plan(&tree);
+			if (tree.num_paths > 0 && path.size() > 0)
+			{
+				publish_model_predictive_planner_motion_commands(path, timestamp);
+				publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
+			}
+			//		else
+			//			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
+		}
 		publish_plan_tree_for_navigator_gui(tree);
 		publish_navigator_ackerman_status_message();
 	}

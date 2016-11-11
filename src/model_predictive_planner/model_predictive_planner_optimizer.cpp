@@ -70,6 +70,9 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 		tcp.tt = 0.2;
 	if (tcp.a < -GlobalState::robot_config.maximum_deceleration_forward) // a aceleracao nao pode ser negativa demais
 		tcp.a = -GlobalState::robot_config.maximum_deceleration_forward;
+//	if (tcp.a > GlobalState::robot_config.maximum_acceleration_forward) // a aceleracao nao pode ser negativa demais
+//		tcp.a = GlobalState::robot_config.maximum_acceleration_forward;
+
 
 //	double max_phi_during_planning = 1.8 * GlobalState::robot_config.max_phi;
 //	if (tcp.has_k1)
@@ -498,6 +501,16 @@ compute_suitable_acceleration(double tt, TrajectoryLookupTable::TrajectoryDimens
 }
 
 
+//void
+//estimate_piramidal_profile()
+//{
+//TODO modo para fazer profile piramide INCOMPLETO
+//		double estimate_vf = sqrt((target_td.dist / 2.0) * GlobalState::robot_config.maximum_acceleration_forward);
+//		a = (estimate_vf - target_td.v_i) / tcp_seed.tt;
+//		params.optimize_time = false;
+//}
+
+
 void
 compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 		TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed,
@@ -520,7 +533,22 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 		target_v = 0.0;
 
 	double a = (target_v - target_td.v_i) / tcp_seed.tt;
-	double tt = (target_v - target_td.v_i) / a;
+	double tt;
+
+	if (a == 0) //avoid div by zero and plan v = 0 e vi = 0
+	{
+		a = GlobalState::robot_config.maximum_acceleration_forward;
+		tt = tcp_seed.tt;
+		//estimate_piramidal_profile(); //TODO modo para fazer profile piramide
+	}
+
+	else
+		tt = (target_v - target_td.v_i) / a;
+
+	if (tt > 10.0)
+		tt = 10.0;
+	else if (tt < 0.0)
+		tt = 0.0;
 
 	if (a >= 0.0)
 	{
