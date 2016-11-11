@@ -336,31 +336,31 @@ void
 build_and_publish_message(char *host, double timestamp)
 {
 	bounding_box box_detected;
-		if (box.x1_ != -1.0)
-		{
-			box_detected.x = box.x1_;
-			box_detected.y = box.y1_;
-			box_detected.width = box.get_width();
-			box_detected.height = box.get_height();
+	if (box.x1_ != -1.0)
+	{
+		box_detected.x = box.x1_;
+		box_detected.y = box.y1_;
+		box_detected.width = box.get_width();
+		box_detected.height = box.get_height();
 
-			message_output.rect = box_detected;
-			message_output.confidence = average_box_confidence;
-			message_output.host = host;
-			message_output.timestamp = timestamp;
-		}
+		message_output.rect = box_detected;
+		message_output.confidence = average_box_confidence;
+		message_output.host = host;
+		message_output.timestamp = timestamp;
+	}
 
-		else
-		{
-			box_detected.x = -1;
-			box_detected.y = -1;
-			box_detected.width = -1;
-			box_detected.height = -1;
+	else
+	{
+		box_detected.x = -1;
+		box_detected.y = -1;
+		box_detected.width = -1;
+		box_detected.height = -1;
 
-			message_output.rect = box_detected;
-			message_output.confidence = 0.0;
-			message_output.host = host;
-			message_output.timestamp = timestamp;
-		}
+		message_output.rect = box_detected;
+		message_output.confidence = 0.0;
+		message_output.host = host;
+		message_output.timestamp = timestamp;
+	}
 
 	//fprintf(stderr, "%lf %lf\n", message_output.timestamp, message_output.confidence);
 
@@ -522,10 +522,6 @@ compute_average_point(std::vector<carmen_vector_3D_t> points_inside_box, int beg
 carmen_vector_3D_t
 compute_target_point(std::vector<carmen_vector_3D_t> points_inside_box)
 {
-	std::vector<carmen_vector_3D_t> points_inside_box_copy(points_inside_box);
-
-	//for (unsigned int i = 0; i < points_inside_box_copy.size(); i++)
-		//points_inside_box_copy[i].x = (int) round(points_inside_box_copy[i].x * 100.0);
 	int begin_best_group = 0;
 	int end_best_group = 0;
 	int group_pivot = 0;
@@ -554,10 +550,11 @@ compute_target_point(std::vector<carmen_vector_3D_t> points_inside_box)
 		else
 			num_points_in_the_group++;
 	}
-
-	carmen_vector_3D_t average_point = compute_average_point(points_inside_box, begin_best_group, end_best_group);
-
-	return (average_point);
+//TODO Tratar caso quando segunda parte do grupo nao tem dist > 3
+	if (begin_best_group != end_best_group)
+		return compute_average_point(points_inside_box, begin_best_group, end_best_group);
+	else
+		return points_inside_box[begin_best_group];
 }
 
 
@@ -629,11 +626,19 @@ goturn_tracker(Mat *img, double timestamp)
 //			printf("h:%lf v:%lf l:%lf \n", h, v );
 //		}
 
-		if (points_lasers_in_cam.size() < 5)
+		if (points_lasers_in_cam.size() == 0)
+		{
+			printf("Nenhum ponto do velodyne na camera \n");
 			return 0;
+		}
 
 		std::vector<carmen_vector_3D_t> points_inside_box = extract_points_inside_box(mini_box, img);
-		//TODO eliminar pontos 	que bateram no chao.
+
+		if (points_inside_box.size() == 0)
+		{
+			printf("Nenhum ponto do velodyne dentro da BOX\n");
+			return 0;
+		}
 		trackerPoint = compute_target_point(points_inside_box);
 
 		box.DrawBoundingBox(img);
@@ -1336,21 +1341,21 @@ create_smoothed_path3(double timestamp_image)
 }
 
 
-void
-move_target_pose_backwards(carmen_ackerman_traj_point_t target_pose, carmen_ackerman_traj_point_t &target_pose_moved, carmen_ackerman_traj_point_t localize)
-{
-	g2o::SE2 tp_transf(target_pose.x, target_pose.y, 0);
-	g2o::SE2 local_transf(localize.x, localize.y, localize.theta);
-	g2o::SE2 tm_transf = local_transf.inverse() * tp_transf;
-	g2o::SE2 moved_tm = g2o::SE2(tm_transf[0] - 7, tm_transf[1], tm_transf[2]);
-	tm_transf = local_transf * moved_tm;
-
-	target_pose_moved.x = tm_transf[0];
-	target_pose_moved.y = tm_transf[1];
-	target_pose_moved.theta = target_pose.theta;
-	target_pose_moved.v = target_pose.v;
-	target_pose_moved.phi = target_pose.phi;
-}
+//void
+//move_target_pose_backwards(carmen_ackerman_traj_point_t target_pose, carmen_ackerman_traj_point_t &target_pose_moved, carmen_ackerman_traj_point_t localize)
+//{
+//	g2o::SE2 tp_transf(target_pose.x, target_pose.y, 0);
+//	g2o::SE2 local_transf(localize.x, localize.y, localize.theta);
+//	g2o::SE2 tm_transf = local_transf.inverse() * tp_transf;
+//	g2o::SE2 moved_tm = g2o::SE2(tm_transf[0] - 7, tm_transf[1], tm_transf[2]);
+//	tm_transf = local_transf * moved_tm;
+//
+//	target_pose_moved.x = tm_transf[0];
+//	target_pose_moved.y = tm_transf[1];
+//	target_pose_moved.theta = target_pose.theta;
+//	target_pose_moved.v = target_pose.v;
+//	target_pose_moved.phi = target_pose.phi;
+//}
 
 //void
 //get_motion_control(carmen_ackerman_traj_point_t prev, carmen_ackerman_traj_point_t next, double speed, double elapsed_time)
@@ -1452,7 +1457,7 @@ create_lane_from_target_poses(vector<carmen_ackerman_traj_point_t> &target_poses
 
 		double dist_to_target = sqrt(pow(target_pose.x - goal_pose.x, 2) + pow(target_pose.y - goal_pose.y, 2));
 
-		while (dist_to_target > 7.0)
+		while (dist_to_target > 9.0)
 		{
 			target_poses_new_with_additional_points.push_back(goal_pose);
 
@@ -1618,19 +1623,28 @@ create_smoothed_path(double timestamp_image)
 		double dt = fabs(times[times.size() - 1] - times[times.size() - 6]);
 
 		if (dt == 0 /*|| dist > 5.0*/)
-			v = 0.5;
+			v = 4.0;
 		else
-			v = 0.5;//dist/dt;
+			v = 4.0;
 	}
 	else
 	{
-		v = 0.5;
+		v = 4.0;
 	}
 
 
-	printf("v: %lf size: %ld\n", v, target_poses.size());
 	//remove point behind car
 	vector<carmen_ackerman_traj_point_t> target_poses_new = create_lane_from_target_poses(target_poses, sync_pose_and_time.first);
+
+	double vfinal = 4.0;
+	double dv = vfinal / ((double) target_poses_new.size());
+
+	for (int i = 0; i < target_poses_new.size(); i++)
+	{
+		double vi = vfinal - i * dv;
+		target_poses_new[i].v = 0.0; //vi;
+//		printf("v: %lf size: %ld\n", v, target_poses.size());
+	}
 
 	//melhorar os thetas
 	if(target_poses_new.size() > 2)
