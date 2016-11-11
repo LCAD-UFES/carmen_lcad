@@ -8,8 +8,6 @@
 #include <prob_transforms.h>
 #include <carmen/fused_odometry_interface.h>
 #include <carmen/velodyne_interface.h>
-#include <carmen/laser_ldmrs_interface.h>
-#include <carmen/laser_ldmrs_utils.h>
 #include <carmen/rotation_geometry.h>
 #include <carmen/mapper_interface.h>
 #include <carmen/stereo_velodyne.h>
@@ -59,8 +57,6 @@ int use_simulator_pose = 0;
 
 rotation_matrix *board_to_car_matrix = NULL;
 
-rotation_matrix *bullbar_to_car_matrix = NULL;
-
 double highest_sensor = 0.0;
 
 int merge_with_offline_map;
@@ -73,7 +69,6 @@ int create_map_sum_and_count;
 
 
 carmen_pose_3D_t sensor_board_1_pose;
-carmen_pose_3D_t front_bullbar;
 
 sensor_parameters_t *sensors_params;
 sensor_parameters_t ultrasonic_sensor_params;
@@ -81,7 +76,6 @@ sensor_data_t *sensors_data;
 int number_of_sensors;
 
 carmen_pose_3D_t velodyne_pose;
-carmen_pose_3D_t sick_pose;
 
 char *map_path;
 
@@ -123,7 +117,6 @@ publish_map(double timestamp)
 static void
 carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *globalpos_message)
 {
-
 	double distance_to_annotation;
 
 	if (visual_odometry_is_global_pos)
@@ -142,8 +135,6 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 
 	if (ok_to_publish)
 	{
-		printf("Running Mapper\n");
-
 		int aux = -1;
 		for (int i = 0; i < NUM_VELODYNE_POINT_CLOUDS; i++)
 		{
@@ -156,14 +147,6 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 				sensors_data[0].point_cloud_index = aux;
 				break;
 			}
-
-			aux = sensors_data[1].point_cloud_index;
-			sensors_data[1].point_cloud_index = i;
-			run_mapper(&sensors_params[1], &sensors_data[1], r_matrix_car_to_global);
-			publish_map(globalpos_message->timestamp);
-			sensors_data[1].point_cloud_index = aux;
-
-			break;
 		}
 	}
 
@@ -188,7 +171,7 @@ true_pos_message_handler(carmen_simulator_ackerman_truepos_message *pose)
 static void
 velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
-	//mapper_velodyne_partial_scan(0, velodyne_message);
+	mapper_velodyne_partial_scan(velodyne_message);
 }
 
 
@@ -198,15 +181,6 @@ velodyne_variable_scan_message_handler1(carmen_velodyne_variable_scan_message *m
 	mapper_velodyne_variable_scan(1, message);
 }
 
-static void
-laser_ldrms_message_handler(carmen_laser_ldmrs_message* msg)
-{
-	vpLaserScan laserscan[4];
-	carmen_laser_ldmrs_copy_message_to_laser_scan(msg, laserscan);
-	carmen_velodyne_partial_scan_message partial_scan_message = carmen_laser_ldmrs_convert_laser_scan_to_partial_velodyne_message(laserscan, msg->timestamp);
-
-	mapper_velodyne_partial_scan(1, &partial_scan_message);
-}
 
 static void
 velodyne_variable_scan_message_handler2(carmen_velodyne_variable_scan_message *message)
@@ -398,7 +372,7 @@ shutdown_module(int signo)
 	{
 		if (update_and_merge_with_mapper_saved_maps)
 			mapper_save_current_map();
-
+			
 		carmen_ipc_disconnect();
 		fprintf(stderr, "Shutdown mapper_main\n");
 
@@ -603,8 +577,6 @@ get_sensors_param(int argc, char **argv)
 
 	int roi_ini, roi_end;
 
-	//velodyne
-
 	sensors_params[0].pose = velodyne_pose;
 	sensors_params[0].sensor_robot_reference = carmen_change_sensor_reference(sensor_board_1_pose.position, sensors_params[0].pose.position, board_to_car_matrix);
 
@@ -643,53 +615,7 @@ get_sensors_param(int argc, char **argv)
 //		fclose(f);
 	}
 
-
-	//sick
-	sensors_params[1].pose = sick_pose;
-	sensors_params[1].sensor_robot_reference = carmen_change_sensor_reference(front_bullbar.position, sensors_params[0].pose.position, bullbar_to_car_matrix);
-
-	sensors_params[1].height = sensors_params[0].sensor_robot_reference.z + robot_wheel_radius;
-
-	if (sensors_params[1].height > highest_sensor)
-		highest_sensor = sensors_params[0].height;
-
-	if (sensors_params[1].alive)
-	{
-		int ray_order[32] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
-		sensors_params[1].ray_order = ray_order;
-
-		double vertical_correction[32] = {-1.2, -0.4, 0.4, 1.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-		sensors_params[1].vertical_correction = vertical_correction;
-
-		double delta_difference_mean[32] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-		sensors_params[1].delta_difference_mean = delta_difference_mean;
-
-		double delta_difference_stddev[32] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-		sensors_params[1].delta_difference_stddev = delta_difference_stddev;
-
-		carmen_param_t param_list[] =
-		{
-				{(char*)"sick", (char*)"vertical_resolution", CARMEN_PARAM_INT, &sensors_params[1].vertical_resolution, 0, NULL},
-				{(char *)"mapper", (char*)"velodyne_range_max", CARMEN_PARAM_DOUBLE, &sensors_params[1].range_max, 0, NULL},
-				{(char*)"sick", (char*)"time_spent_by_each_scan", CARMEN_PARAM_DOUBLE, &sensors_params[1].time_spent_by_each_scan, 0, NULL},
-		};
-
-		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
-		init_velodyne_points(&sensors_data[1].points, &sensors_data[1].intensity, &sensors_data[1].robot_pose, &sensors_data[1].robot_velocity, &sensors_data[1].robot_timestamp, &sensors_data[1].robot_phi, &sensors_data[1].points_timestamp);
-		sensors_params[1].sensor_to_board_matrix = create_rotation_matrix(sensors_params[1].pose.orientation);
-		sensors_data[1].point_cloud_index = 0;
-		carmen_prob_models_alloc_sensor_data(&sensors_data[1], sensors_params[1].vertical_resolution, number_of_threads);
-
-		sensors_params[1].remission_calibration = NULL;//(double *) calloc(256 * sensors_params[0].vertical_resolution, sizeof(double));
-//		FILE *f = fopen("../data/remission_calibration.txt", "r");
-//		for (i = 0; i < 256 * sensors_params[0].vertical_resolution; i++)
-//		{
-//			fscanf(f, "%lf", &sensors_params[0].remission_calibration[i]);
-//		}
-//		fclose(f);
-	}
-
-	for (i = 2; i < number_of_sensors; i++)
+	for (i = 1; i < number_of_sensors; i++)
 	{
 		if (i == STEREO_MAPPING_SENSOR_INDEX)
 			continue;
@@ -788,22 +714,6 @@ read_parameters(int argc, char **argv,
 			{(char*)"velodyne",  (char*)"pitch", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.pitch), 0, NULL},
 			{(char*)"velodyne",  (char*)"yaw", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.yaw), 0, NULL},
 
-			{(char*)"front_bullbar",  (char*)"x", CARMEN_PARAM_DOUBLE, &(front_bullbar.position.x),	0, NULL},
-			{(char*)"front_bullbar",  (char*)"y", CARMEN_PARAM_DOUBLE, &(front_bullbar.position.y),	0, NULL},
-			{(char*)"front_bullbar",  (char*)"z", CARMEN_PARAM_DOUBLE, &(front_bullbar.position.z),	0, NULL},
-			{(char*)"front_bullbar",  (char*)"roll", CARMEN_PARAM_DOUBLE, &(front_bullbar.orientation.roll),0, NULL},
-			{(char*)"front_bullbar",  (char*)"pitch", CARMEN_PARAM_DOUBLE, &(front_bullbar.orientation.pitch),0, NULL},
-			{(char*)"front_bullbar",  (char*)"yaw", CARMEN_PARAM_DOUBLE, &(front_bullbar.orientation.yaw),	0, NULL},
-
-
-			{(char*)"sick",  (char*)"x", CARMEN_PARAM_DOUBLE, &(sick_pose.position.x), 0, NULL},
-			{(char*)"sick",  (char*)"y", CARMEN_PARAM_DOUBLE, &(sick_pose.position.y), 0, NULL},
-			{(char*)"sick",  (char*)"z", CARMEN_PARAM_DOUBLE, &(sick_pose.position.z), 0, NULL},
-			{(char*)"sick",  (char*)"roll", CARMEN_PARAM_DOUBLE, &(sick_pose.orientation.roll), 0, NULL},
-			{(char*)"sick",  (char*)"pitch", CARMEN_PARAM_DOUBLE, &(sick_pose.orientation.pitch), 0, NULL},
-			{(char*)"sick",  (char*)"yaw", CARMEN_PARAM_DOUBLE, &(sick_pose.orientation.yaw), 0, NULL},
-
-
 			{(char*)"robot",  (char*)"wheel_radius", CARMEN_PARAM_DOUBLE, &(robot_wheel_radius), 0, NULL},
 			{(char*)"mapper",  (char*)"number_of_sensors", CARMEN_PARAM_INT, &number_of_sensors, 0, NULL},
 			{(char*)"mapper",  (char*)"safe_range_above_sensors", CARMEN_PARAM_DOUBLE, &safe_range_above_sensors, 0, NULL},
@@ -897,7 +807,6 @@ read_parameters(int argc, char **argv,
 	carmen_grid_mapping_init_parameters(map_resolution, map_width);
 
 	board_to_car_matrix = create_rotation_matrix(sensor_board_1_pose.orientation);
-	bullbar_to_car_matrix = create_rotation_matrix(front_bullbar.orientation);
 
 	get_alive_sensors(argc, argv);
 
@@ -929,11 +838,8 @@ subscribe_to_ipc_messages()
 
 	if (sensors_params[1].alive)
 	{
-//		carmen_stereo_velodyne_subscribe_scan_message(1, NULL,
-//				(carmen_handler_t)velodyne_variable_scan_message_handler1,
-//				CARMEN_SUBSCRIBE_LATEST);
-
-		carmen_laser_subscribe_ldmrs_message(NULL, (carmen_handler_t) laser_ldrms_message_handler,
+		carmen_stereo_velodyne_subscribe_scan_message(1, NULL,
+				(carmen_handler_t)velodyne_variable_scan_message_handler1,
 				CARMEN_SUBSCRIBE_LATEST);
 	}
 
