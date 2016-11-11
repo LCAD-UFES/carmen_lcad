@@ -7,7 +7,7 @@ using namespace std;
 
 
 #define DELTA_T (1.0 / 40.0) // 0.025 40 Htz
-#define PREDICTION_HORIZON	0.4
+#define PREDICTION_HORIZON	0.4 //Must be DELTA_T multiple
 #define CAR_MODEL_GAIN 200.0
 #define CONTROL_OUTPUT_GAIN 0.0
 #define SMOOTH_OUTPUT_FACTOR 0.0
@@ -586,6 +586,20 @@ stiction_correction(double current_phi, double desired_phi, double effort, doubl
 }
 
 
+double
+get_point_between_points_aproximating_with_line(double x1, double y1, double x2, double y2, double x_middle)
+{
+	// Line Equation a = yA - yB, b = xB - xA, c = xAyB - xByA
+	double a = y1 - y2;
+	double b = x2 - x1;
+	double c = (x1 * y2) - (x2 * y1);
+
+	double y_middle = ((-a * x_middle) -c) / b;
+
+	return (y_middle);
+}
+
+
 MOTION_COMMAND
 get_motion_commands_vector(carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands, double time_of_velodyne_message)
 {
@@ -594,17 +608,34 @@ get_motion_commands_vector(carmen_ackerman_motion_command_p current_motion_comma
 	double sum_of_motion_commands_vector_time = current_motion_command_vector[0].time;
 	int j = 0;
 
-	while ((sum_of_motion_commands_vector_time	< elapsed_time) && (j < nun_motion_commands))
+	while ((sum_of_motion_commands_vector_time	< elapsed_time) && (j < nun_motion_commands)) // TODO Tratar se sair por j <nun_motion_commands
 	{
 		j++;
 		sum_of_motion_commands_vector_time += current_motion_command_vector[j].time;
 	}
 
-	j--;
 	sum_of_motion_commands_vector_time -= current_motion_command_vector[j].time;
-	current_motion_command_vector[j].time = elapsed_time - sum_of_motion_commands_vector_time;
+	current_motion_command_vector[j].time -= (elapsed_time - sum_of_motion_commands_vector_time);
 
-	sum_of_motion_commands_vector_time = 0.0;
+//	for (unsigned int i = 0; i < phi_vector.size(); i++)
+//	{
+//		error = phi_vector[i] - params->motion_commands_vector[j].phi;
+//		error_sum += sqrt(error * error);
+//
+//		phi_vector_time += delta_t;
+//		if (phi_vector_time > motion_commands_vector_time)
+//		{
+//			j++;
+//			if (j >= params->motion_commands_vector_size)
+//				break;
+//			motion_commands_vector_time += params->motion_commands_vector[j].time;
+//		}
+//	}
+//
+
+
+
+	sum_of_motion_commands_vector_time = current_motion_command_vector[j].time;
 	while (sum_of_motion_commands_vector_time <= PREDICTION_HORIZON)
 	{
 		commands.v.push_back(current_motion_command_vector[j].v);
@@ -614,9 +645,25 @@ get_motion_commands_vector(carmen_ackerman_motion_command_p current_motion_comma
 		j++;
 		sum_of_motion_commands_vector_time += current_motion_command_vector[j].time;
 	}
-	commands.total_time_of_commands = sum_of_motion_commands_vector_time;
 
+	if (sum_of_motion_commands_vector_time > PREDICTION_HORIZON)
+	{
+		current_motion_command_vector[j].time -= (sum_of_motion_commands_vector_time - PREDICTION_HORIZON);
 
+		commands.v.push_back(current_motion_command_vector[j].v);
+		commands.phi.push_back(current_motion_command_vector[j].phi);
+		commands.time.push_back(current_motion_command_vector[j].time);
+
+	}
+
+	FILE *save = fopen("motion_command", "w");
+	for (j = 0, sum_of_motion_commands_vector_time = 0.0; j < commands.v.size(); j++)
+	{
+		sum_of_motion_commands_vector_time += commands.time[j];
+		fprintf(save, "%lf %lf %lf\n", commands.v[j], commands.phi[j], commands.time[j]);
+	}
+	fprintf(save, "%lf\n", sum_of_motion_commands_vector_time);
+	fclose(save);
 
 	return commands;
 }
@@ -688,6 +735,8 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 					understeer_coeficient, distance_between_front_and_rear_axles, max_phi, initialize_neural_networks))
 		return (0.0);
 
+	//get_motion_commands_vector(current_motion_command_vector, nun_motion_commands, time_of_last_motion_command);
+
 	seed = get_optimized_effort(&params, seed);
 	double effort = seed.k1;
 
@@ -700,7 +749,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 	// effort /= (1.0 / (1.0 + (v * v) / 200.5)); // boa
 	//effort += carmen_uniform_random(-2.0, 2.0);
 
-	int index = get_motion_timed_index_to_motion_command(&params);
+	//int index = get_motion_timed_index_to_motion_command(&params);
 	//effort += stiction_correction(yp, current_motion_command_vector[index].phi, effort, v);
 	//--------------------------------------------------------------------------------------------------------------------
 
