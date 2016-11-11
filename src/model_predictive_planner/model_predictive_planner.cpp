@@ -26,6 +26,7 @@
 
 using namespace g2o;
 
+int print_and_plot = 0;
 
 //-----------Funcoes para extrair dados do Experimento------------------------
 double
@@ -349,7 +350,8 @@ build_detailed_path_lane(vector<carmen_ackerman_path_point_t> *lane_in_local_pos
 	}
 	else
 	{
-		printf(KGRN "+++++++++++++ ERRO MENSAGEM DA LANE POSES !!!!\n" RESET);
+		if(print_and_plot)
+			printf(KGRN "+++++++++++++ ERRO MENSAGEM DA LANE POSES !!!!\n" RESET);
 		detailed_lane.clear();
 		return (false);
 	}
@@ -371,7 +373,8 @@ build_detailed_rddf_lane(vector<carmen_ackerman_path_point_t> *lane_in_local_pos
 	}
 	else
 	{
-		printf(KGRN "+++++++++++++ ERRO MENSAGEM DA LANE POSES !!!!\n" RESET);
+		if(print_and_plot)
+			printf(KGRN "+++++++++++++ ERRO MENSAGEM DA LANE POSES !!!!\n" RESET);
 		detailed_lane.clear();
 		return (false);
 	}
@@ -790,13 +793,18 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 				vector<carmen_ackerman_path_point_t> path_local;
 
 				//TODO Descomentar para usar o plot!
-//				vector<carmen_ackerman_path_point_t> pathSeed;
-//				pathSeed = simulate_car_from_parameters(td, tcp, lastOdometryVector[0].v, lastOdometryVector[0].phi, false, 0.025);
+				vector<carmen_ackerman_path_point_t> pathSeed;
+				if (print_and_plot)
+				{
+					pathSeed = simulate_car_from_parameters(td, tcp, lastOdometryVector[0].v, lastOdometryVector[0].phi, false, 0.025);
+				}
 
 				if (!get_path_from_optimized_tcp(path, path_local, otcp, td, localizer_pose))
 					continue;
-//TODO Gnuplot
-//				plot_state(path_local,detailed_lane,pathSeed);
+
+				//TODO Gnuplot
+				if (print_and_plot)
+					plot_state(path_local,detailed_lane,pathSeed);
 
 				paths[j + i * lastOdometryVector.size()] = path;
 				otcps[j + i * lastOdometryVector.size()] = otcp;
@@ -848,6 +856,7 @@ compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Command last_odometr
 {
 	vector<Command> lastOdometryVector;
 	vector<Pose> goalPoseVector;
+	vector<vector<carmen_ackerman_path_point_t>> paths;
 
 //	double i_time = carmen_get_time();
 
@@ -868,7 +877,6 @@ compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Command last_odometr
 		goalPoseVector.push_back(newPose);
 	}
 
-	vector<vector<carmen_ackerman_path_point_t>> paths;
 	paths.resize(lastOdometryVector.size() * goalPoseVector.size());
 
 	compute_paths(lastOdometryVector, goalPoseVector, target_v, localizer_pose, paths, goal_list_message);
