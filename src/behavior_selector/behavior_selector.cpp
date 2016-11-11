@@ -138,8 +138,13 @@ fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_poin
 	int last_obstacle_free_waypoint_index = -1;
 	carmen_ackerman_traj_point_t robot_pose = current_pose;
 
+	//printf("fill goal list\n");
+
 	for (int i = 0; i < rddf->number_of_poses && j < GOAL_LIST_SIZE; i++)
 	{
+//		if(rddf->annotations[i] != 0)
+//			printf("annotation: %d\n", rddf->annotations[i]);
+
 		double distance = carmen_distance_ackerman_traj(&current_pose, &rddf->poses[i]);
 		int hit_obstacle = trajectory_pose_hit_obstacle(rddf->poses[i], current_map, &robot_config);
 
@@ -179,7 +184,9 @@ fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_poin
 		}
 		else if ((rddf->annotations[i] == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) && (hit_obstacle))
 		{
+			//printf("Hit!\n");
 			goal_list[j] = rddf->poses[last_obstacle_free_waypoint_index];
+			//goal_list[j].v = 0.0;
 			annotations[j] = rddf->annotations[last_obstacle_free_waypoint_index];
 			current_pose = rddf->poses[last_obstacle_free_waypoint_index];
 			j++;

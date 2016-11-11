@@ -38,9 +38,12 @@ static double g_velocity_backward_deccelerating_Ki;
 static double g_velocity_backward_deccelerating_Kd;
 static double g_brake_gap;
 
+//FILE *gnuplot_save_pid;
+//double first_time = 0.0;
+//int init = 1;
 
 void
-pid_plot_curvature(double current_phi, double desired_phi)
+pid_plot_curvature(double current_phi, double desired_phi, double steering_effort, double v)
 {
 	#define PAST_SIZE 1000
 	static list<double> cphi;
@@ -89,6 +92,14 @@ pid_plot_curvature(double current_phi, double desired_phi)
 			"'./gnuplot_data.txt' using 1:3 with lines title 'dphi'\n");
 
 	fflush(gnuplot_pipe);
+
+//	if (init)
+//	{
+//		first_time = carmen_get_time();
+//		gnuplot_save_pid = fopen("PID_OLD", "w");
+//		init = 0;
+//	}
+//	fprintf(gnuplot_save_pid, "%lf %lf %lf %lf %lf\n", carmen_get_time() - first_time, desired_phi, current_phi, steering_effort/200, v);
 }
 
 
