@@ -12,7 +12,7 @@
 #include <string.h>
 #include "voice.h"
 
-#define MIN_TIME_BETWEEN_MESSAGES 5.0 // essa variavel define o intervalo minimo entre as mensagens para que o robo nao fique falando toda hora
+#define MIN_TIME_BETWEEN_MESSAGES 1.0 // essa variavel define o intervalo minimo entre as mensagens para que o robo nao fique falando toda hora
 double last_message_published_time = 0;
 
 void
@@ -35,9 +35,12 @@ carmen_voice_send_alert(char *message)
 
 		output = AUDIO_OUTPUT_PLAYBACK;
 
+		printf("saying '%s'\n", message);
 		espeak_Initialize(output, Buflength, path, Options);
 		espeak_SetVoiceByName(Voice);
 		espeak_Synth(message, Size, position, position_type, end_position, flags, unique_identifier, user_data);
+		espeak_Terminate();
+		//espeak_Synchronize();
 
 		last_message_published_time = time(NULL);
 	}
