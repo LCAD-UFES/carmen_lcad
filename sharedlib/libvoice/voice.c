@@ -18,6 +18,7 @@ double last_message_published_time = 0;
 void
 carmen_voice_send_alert(char *message)
 {
+	static int start_playing = 0;
 	double current_time = time(NULL);
 
 	if (fabs(current_time - last_message_published_time) > MIN_TIME_BETWEEN_MESSAGES)
@@ -35,12 +36,19 @@ carmen_voice_send_alert(char *message)
 
 		output = AUDIO_OUTPUT_PLAYBACK;
 
+		if (start_playing && !espeak_IsPlaying())
+		{
+			espeak_Terminate();
+			start_playing = 0;
+		}
+		else if (start_playing && espeak_IsPlaying())
+			return;
+
 		printf("saying '%s'\n", message);
 		espeak_Initialize(output, Buflength, path, Options);
 		espeak_SetVoiceByName(Voice);
 		espeak_Synth(message, Size, position, position_type, end_position, flags, unique_identifier, user_data);
-		espeak_Terminate();
-		//espeak_Synchronize();
+		start_playing = 1;
 
 		last_message_published_time = time(NULL);
 	}
