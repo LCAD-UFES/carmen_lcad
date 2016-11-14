@@ -607,6 +607,7 @@ bounding_box_interface(char c, Mat* img)
 		box.y2_ = rect.y + rect.height;
 
 		tracker.Init(*img, box, &regressor);
+		carmen_voice_send_alert((char *) "Novo alvo registrado!\n");
 
 		break;
 
@@ -1553,6 +1554,8 @@ create_lane_from_target_poses(vector<carmen_ackerman_traj_point_t> &target_poses
 void
 compute_goal_velocity(vector<carmen_ackerman_traj_point_t> &target_poses, vector<double> times, double &sum, carmen_ackerman_traj_point_t localize)
 {
+	(void) sum;
+
 	if(target_poses.size() > 6)
 	{
 		double x = target_poses[target_poses.size() - 1].x;
@@ -2114,8 +2117,6 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 			return;
 
 		build_and_publish_message(image_msg->host, image_msg->timestamp);
-
-		//carmen_voice_send_alert((char *) "Seguindo o carro da frente");
 
 		if (box_1.x > 0.0 && box_1.y > 0.0)
 		{
