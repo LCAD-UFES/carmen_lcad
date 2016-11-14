@@ -39,6 +39,8 @@
 //CGSMOOTHER BEZIER CURVE interpolation
 #include "Smoother/CGSmoother.hpp"
 
+#include "gsl_smooth_points.h"
+
 #include <interpolation.h>
 #include <voice.h>
 
@@ -1444,7 +1446,7 @@ create_lane_from_target_poses(vector<carmen_ackerman_traj_point_t> &target_poses
 		double dist_to_localize = sqrt(pow(target_in_robot_reference[0], 2) + pow(target_in_robot_reference[1], 2));
 		double dist_to_target = sqrt(pow(it->x - target.x, 2) + pow(it->y - target.y, 2));
 
-		if (target_in_robot_reference[0] >= 0.5 && dist_to_target >= 6.0 && dist_to_localize > 0.01)
+		if (target_in_robot_reference[0] >= 0.5 && dist_to_target >= 9.0 && dist_to_localize > 0.01)
 			target_poses_new.push_back(*it);
 	}
 
@@ -1604,7 +1606,7 @@ create_smoothed_path(double timestamp_image)
 	static vector<double> pose_times;
 	static vector<double> pose_thetas;
 	static unsigned int maxPositions = 20;
-	static vector<carmen_ackerman_traj_point_t> poses_smooth;
+	vector<carmen_ackerman_traj_point_t> target_poses_smooth;
 
 	static vector<carmen_ackerman_traj_point_t> target_poses;
 	static vector<double> times;
@@ -1652,12 +1654,18 @@ create_smoothed_path(double timestamp_image)
 		target_poses.push_back(target_pose);
 		times.push_back(timestamp_image);
 		//calcular as velocidades dos targets
-		compute_goal_velocity(target_poses, times, sum, sync_pose_and_time.first);
+
+
+		//smooth_points
+		target_poses_smooth = smooth_points(target_poses);
+
+		compute_goal_velocity(target_poses_smooth, times, sum, sync_pose_and_time.first);
 
 		if (target_poses.size() > maxPositions)
 		{
 //			sum -= target_poses[0].v;
 			target_poses.erase(target_poses.begin());
+			target_poses_smooth.erase(target_poses_smooth.begin());
 			times.erase(times.begin());
 		}
 
@@ -1665,12 +1673,12 @@ create_smoothed_path(double timestamp_image)
 		point_added = 1;
 	}
 
-	if (target_poses.size() < 2)
+	if (target_poses_smooth.size() < 2)
 		return vector<carmen_ackerman_traj_point_t>();
 
 
 	//remove point behind car
-	vector<carmen_ackerman_traj_point_t> target_poses_new = create_lane_from_target_poses(target_poses, sync_pose_and_time.first);
+	vector<carmen_ackerman_traj_point_t> target_poses_new = create_lane_from_target_poses(target_poses_smooth, sync_pose_and_time.first);
 
 
 
@@ -1706,7 +1714,7 @@ create_smoothed_path(double timestamp_image)
 	////		printf("v: %lf size: %ld\n", v, target_poses.size());
 	//	}
 
-	//melhorar os thetas
+
 	if(target_poses_new.size() > 2)
 		correct_thetas(target_poses_new);
 
