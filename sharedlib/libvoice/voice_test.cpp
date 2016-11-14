@@ -6,7 +6,7 @@ int main()
 
 	while (1)
 	{
-		carmen_voice_send_alert(message, 1, "en-uk-north");
+		carmen_voice_send_alert(message, 2, "en-uk-north");
 	}
 
 	return 0;

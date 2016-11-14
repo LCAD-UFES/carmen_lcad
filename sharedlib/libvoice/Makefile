@@ -1,8 +1,8 @@
 include ../../src/Makefile.conf
 
 LINK=g++
-CFLAGS += -std=c99 -Wno-write-strings
-CXXFLAGS += -std=c++0x -Wno-write-strings
+CFLAGS += -std=c99 -Wno-write-strings  
+CXXFLAGS += -std=c++0x -Wno-write-strings 
 
 LFLAGS += -lespeak 
 	  
