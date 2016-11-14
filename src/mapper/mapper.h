@@ -16,7 +16,7 @@
 
 void mapper_merge_online_map_with_offline_map(carmen_map_t *offline_map);
 int mapper_velodyne_variable_scan(int sensor_number, carmen_velodyne_variable_scan_message *message);
-int mapper_velodyne_partial_scan(carmen_velodyne_partial_scan_message *velodyne_message);
+int mapper_velodyne_partial_scan(int sensor_number, carmen_velodyne_partial_scan_message *velodyne_message);
 void mapper_publish_map(double timestamp);
 void mapper_set_robot_pose_into_the_map(carmen_localize_ackerman_globalpos_message *globalpos_message, int UPDATE_CELLS_BELOW_CAR);
 void mapper_update_grid_map(carmen_point_t xt, double *zt, sensor_parameters_t *sensor_params);
