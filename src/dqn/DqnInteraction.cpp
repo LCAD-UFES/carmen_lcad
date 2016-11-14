@@ -9,7 +9,8 @@ DqnInteration::DqnInteration()
 {
 	input = NULL;
 	immediate_reward = -DBL_MAX;
-	action = -1;
+	action_v = -1;
+	action_phi = -1;
 
 	last_commands = NULL;
 	last_vs = NULL;
@@ -26,7 +27,9 @@ DqnInteration::DqnInteration(DqnInteration *iter)
 	iter->input->copyTo(*input);
 
 	immediate_reward = iter->immediate_reward;
-	action = iter->action;
+
+	action_v = iter->action_v;
+	action_phi = iter->action_phi;
 
 	last_commands = new std::deque<int>(*(iter->last_commands));
 	last_vs = new std::deque<double>(*(iter->last_vs));
@@ -37,13 +40,15 @@ DqnInteration::DqnInteration(DqnInteration *iter)
 
 
 DqnInteration::DqnInteration(Mat *input_p, double immediate_reward_p,
-		int action_p, std::deque<int> *last_commands_p,
+		int action_v_p, int action_phi_p, std::deque<int> *last_commands_p,
 		std::deque<double> *last_vs_p, std::deque<double> *last_phis_p,
 		std::deque<carmen_point_t> *last_goal_poses_p)
 {
 	input = input_p;
 	immediate_reward = immediate_reward_p;
-	action = action_p;
+
+	action_v = action_v_p;
+	action_phi = action_phi_p;
 
 	last_commands = last_commands_p;
 	last_phis = last_phis_p;
@@ -82,6 +87,10 @@ DqnInteration::BuildDataVector(std::deque<int> *last_commands_p,
 	int i, p;
 
 	assert(vec);
+	assert(last_vs_p->size() <= DQN_NUM_PAST_ODOMS_TO_STORE);
+	assert(last_commands_p->size() <= 2 * DQN_NUM_PAST_COMMANDS_TO_STORE);
+	assert(last_goal_poses_p->size() <= DQN_NUM_PAST_GOAL_POSES_TO_STORE);
+
 
 	if (vec->size() != DQN_NUM_ADDITIONAL_DATA)
 		exit(printf("Error:: DqnInteration:: BuildDataVector:: output vector should be alloc'd previously\n"));
@@ -93,7 +102,7 @@ DqnInteration::BuildDataVector(std::deque<int> *last_commands_p,
 	for (i = 0; i < last_commands_p->size(); i++)
 		vec->at(p + i) = last_commands_p->at(i) / 10.0;
 
-	p += DQN_NUM_PAST_COMMANDS_TO_STORE;
+	p += (2 * DQN_NUM_PAST_COMMANDS_TO_STORE);
 
 	for (i = 0; i < last_vs_p->size(); i++)
 	{
@@ -105,8 +114,8 @@ DqnInteration::BuildDataVector(std::deque<int> *last_commands_p,
 
 	for (i = 0; i < last_goal_poses_p->size(); i++)
 	{
-		vec->at(p + 3 * i + 0) = last_goal_poses_p->at(i).x / 100.0;
-		vec->at(p + 3 * i + 1) = last_goal_poses_p->at(i).y / 100.0;
+		vec->at(p + 3 * i + 0) = last_goal_poses_p->at(i).x / 10.0;
+		vec->at(p + 3 * i + 1) = last_goal_poses_p->at(i).y / 10.0;
 		vec->at(p + 3 * i + 2) = last_goal_poses_p->at(i).theta / M_PI;
 	}
 }

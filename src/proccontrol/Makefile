@@ -1,7 +1,5 @@
 include ../Makefile.conf
 
-CFLAGS +=
- 
 LFLAGS += -lcarmenserial -lglobal -lipc -lespeak 
 
 MODULE_NAME = PROCCONTROL

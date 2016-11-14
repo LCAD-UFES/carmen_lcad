@@ -148,20 +148,33 @@ DqnNet::DqnNet(char *solver_file)
 	cv::namedWindow("1");
 	cv::namedWindow("2");
 	cv::namedWindow("3");
-	//cv::namedWindow("4");
+	cv::namedWindow("4");
 	//cv::namedWindow("5");
 	//cv::namedWindow("6");
 
 	cv::moveWindow("1", 600, 100);
-	cv::moveWindow("2", 800, 100);
-	cv::moveWindow("3", 1000, 100);
-	//cv::moveWindow("4", 100, 300);
+	cv::moveWindow("2", 750, 100);
+	cv::moveWindow("3", 900, 100);
+	cv::moveWindow("4", 1050, 100);
 	//cv::moveWindow("5", 300, 300);
 	//cv::moveWindow("6", 500, 300);
+
+	if (DQN_TRAINING_MODE == DQN_MODE_Q_LEARNING)
+	{
+		cv::namedWindow("f1");
+		cv::namedWindow("f2");
+		cv::namedWindow("f3");
+		cv::namedWindow("f4");
+
+		cv::moveWindow("f1", 600, 400);
+		cv::moveWindow("f2", 750, 400);
+		cv::moveWindow("f3", 900, 400);
+		cv::moveWindow("f4", 1050, 400);
+	}
 }
 
 
-std::pair<int, double>
+std::pair<std::pair<int, double>, std::pair<int, double>>
 DqnNet::SelectAction(vector<Mat*> input, vector<float> *additional_data, int show_output)
 {
 	int i;
@@ -176,6 +189,7 @@ DqnNet::SelectAction(vector<Mat*> input, vector<float> *additional_data, int sho
 		cv::imshow("1", *(input[0]));
 		cv::imshow("2", *(input[1]));
 		cv::imshow("3", *(input[2]));
+		cv::imshow("4", *(input[3]));
 		waitKey(1);
 	}
 
@@ -192,27 +206,49 @@ DqnNet::SelectAction(vector<Mat*> input, vector<float> *additional_data, int sho
 
 	net_->ForwardPrefilled(&loss);
 
-	std::pair<int, double> action_and_reward(-1, -DBL_MAX);
+	std::pair<std::pair<int, double>, std::pair<int, double>> actions_and_rewards;
+	std::pair<int, double> v_action_and_reward(-1, -DBL_MAX);
+	std::pair<int, double> phi_action_and_reward(-1, -DBL_MAX);
 
 	// select the action with max. Q
 	const float *output = net_->blob_by_name(DQN_OUTPUT_BLOB_NAME)->cpu_data();
 
-	for (i = 0; i < DQN_NUM_COMMANDS; i++)
+	for (i = 0; i < DQN_NUM_COMMANDS / 2; i++)
 	{
 		if (show_output)
 			printf("%d => %f | ", i, output[i]);
 
-		if (output[i] > action_and_reward.second)
+		if (output[i] > v_action_and_reward.second)
 		{
-			action_and_reward.first = i;
-			action_and_reward.second = output[i];
+			v_action_and_reward.first = i;
+			v_action_and_reward.second = output[i];
+		}
+	}
+
+	for (i = DQN_NUM_COMMANDS / 2; i < DQN_NUM_COMMANDS; i++)
+	{
+		if (show_output)
+			printf("%d => %f | ", i, output[i]);
+
+		if (output[i] > phi_action_and_reward.second)
+		{
+			phi_action_and_reward.first = i - DQN_NUM_COMMANDS / 2;
+			phi_action_and_reward.second = output[i];
 		}
 	}
 
 	if (show_output)
-		printf("|| SEL: %d => %f\n", action_and_reward.first, action_and_reward.second);
+		printf("|| SEL V: %d => %f SEL PHI: %d => %lf\n",
+				v_action_and_reward.first,
+				v_action_and_reward.second,
+				phi_action_and_reward.first,
+				phi_action_and_reward.second
+		);
 
-	return action_and_reward;
+	actions_and_rewards.first = v_action_and_reward;
+	actions_and_rewards.second = phi_action_and_reward;
+
+	return actions_and_rewards;
 }
 
 
@@ -491,7 +527,7 @@ DqnNet::_TrainTransitionRewardWithDecay(DqnEpisode *episode, int transition_id)
 	cv::imshow("1", *(inputs[0]));
 	cv::imshow("2", *(inputs[1]));
 	cv::imshow("3", *(inputs[2]));
-	//cv::imshow("4", *(inputs[3]));
+	cv::imshow("4", *(inputs[3]));
 	//cv::imshow("5", *(inputs[4]));
 	//cv::imshow("6", *(inputs[5]));
 
@@ -519,10 +555,7 @@ DqnNet::_TrainTransitionRewardWithDecay(DqnEpisode *episode, int transition_id)
 	//printf("Additional Data: ");
     //
 	//for (k = 0; k < DQN_NUM_ADDITIONAL_DATA; k++)
-	//{
-	//	if (k == 5 || k == 15) printf("\n");
 	//	printf("%d %f ", k, episode->GetInteractions()->at(sample_pos)->AdditionalDataVector()->at(k));
-	//}
     //
 	//printf("\n");
 
@@ -547,8 +580,11 @@ DqnNet::_TrainTransitionRewardWithDecay(DqnEpisode *episode, int transition_id)
 	double target = episode->GetInteractions()->at(sample_pos)->immediate_reward;
 
 	// set the action performed in the episode and its respective value
-	train_target_datum_vector[j].set_float_data(episode->GetInteractions()->at(sample_pos)->action, target);
-	train_filter_datum_vector[j].set_float_data(episode->GetInteractions()->at(sample_pos)->action, 1.0);
+	train_target_datum_vector[j].set_float_data(episode->GetInteractions()->at(sample_pos)->action_v, target);
+	train_filter_datum_vector[j].set_float_data(episode->GetInteractions()->at(sample_pos)->action_v, 1.0);
+
+	train_target_datum_vector[j].set_float_data(episode->GetInteractions()->at(sample_pos)->action_phi + DQN_TOTAL_ACTIONS / 2, target);
+	train_filter_datum_vector[j].set_float_data(episode->GetInteractions()->at(sample_pos)->action_phi + DQN_TOTAL_ACTIONS / 2, 1.0);
 
 	/*if (i % 20 == 0 && j == 0)
 	{
@@ -611,16 +647,16 @@ DqnNet::_TrainTransitionQLearning(DqnEpisode *episode, int transition_id)
 	cv::imshow("1", *(inputs[0]));
 	cv::imshow("2", *(inputs[1]));
 	cv::imshow("3", *(inputs[2]));
-	//cv::imshow("4", *(inputs[3]));
+	cv::imshow("4", *(inputs[3]));
 	//cv::imshow("5", *(inputs[4]));
 	//cv::imshow("6", *(inputs[5]));
-	static int step = 0;
-	char c = ' ';
 
-	if (step) c = cv::waitKey(-1);
-	else c = cv::waitKey(5);
-
-	if (c == 's') step = !step;
+	//printf("Additional Data: ");
+    //
+	//for (k = 0; k < DQN_NUM_ADDITIONAL_DATA; k++)
+	//	printf("%d => %f\n", k, episode->GetInteractions()->at(sample_pos)->AdditionalDataVector()->at(k));
+    //
+	//printf("\n");
 
 	//show_control(episode->GetInteractions()->at(sample_pos)->buttons_states,
 			//episode->GetInteractions()->at(sample_pos)->action);
@@ -640,8 +676,9 @@ DqnNet::_TrainTransitionQLearning(DqnEpisode *episode, int transition_id)
 	double target;
 
 	// if it is the last sample, we train only the immediate reward
-	if (sample_pos == episode->GetInteractions()->size() - 1)
+	if (sample_pos >= episode->GetInteractions()->size() - 1)
 	{
+		printf("Training final sample\n");
 		target = episode->GetInteractions()->at(sample_pos)->immediate_reward;
 
 		/*
@@ -663,18 +700,23 @@ DqnNet::_TrainTransitionQLearning(DqnEpisode *episode, int transition_id)
 			future_inputs.push_back(episode->GetInteractions()->at(sample_pos - k)->input);
 		future_inputs.push_back(episode->GetInteractions()->at(sample_pos + 1)->input);
 
-		//imshow("future", *episode->GetInteractions()->at(sample_pos + 1)->input);
-		//waitKey(1);
-
 		// OBS: I am performing a forward for each sample of the batch and it is obviously a inefficient solution.
 		// I kept it so far to maintain the code clean. In the future I will change it.
-		std::pair<int, double> action_and_reward = SelectAction(future_inputs,
+		std::pair<std::pair<int, double>, std::pair<int, double>> actions_and_rewards;
+		actions_and_rewards = SelectAction(future_inputs,
 				episode->GetInteractions()->at(sample_pos + 1)->AdditionalDataVector(), 0
 				/*buttons_states,
 				episode->GetInteractions()->at(sample_pos + 1)->last_commands,
 				episode->GetInteractions()->at(sample_pos + 1)->rom_info*/ );
 
-		target = episode->GetInteractions()->at(sample_pos)->immediate_reward + DQN_GAMMA * action_and_reward.second;
+		double max_future_reward = (actions_and_rewards.first.second > actions_and_rewards.second.second) ? (actions_and_rewards.first.second) : (actions_and_rewards.second.second);
+		target = episode->GetInteractions()->at(sample_pos)->immediate_reward + DQN_GAMMA * max_future_reward;
+
+		cv::imshow("f1", *(future_inputs[0]));
+		cv::imshow("f2", *(future_inputs[1]));
+		cv::imshow("f3", *(future_inputs[2]));
+		cv::imshow("f4", *(future_inputs[3]));
+		waitKey(1);
 
 		/*if (i % 20 == 0 && j == 0)
 		{
@@ -685,8 +727,24 @@ DqnNet::_TrainTransitionQLearning(DqnEpisode *episode, int transition_id)
 		}*/
 	}
 
-	train_target_datum_vector[j].set_float_data(episode->GetInteractions()->at(sample_pos)->action, target);
-	train_filter_datum_vector[j].set_float_data(episode->GetInteractions()->at(sample_pos)->action, 1.0);
+	static int step = 0;
+	char c = ' ';
+
+	if (step) c = cv::waitKey(-1);
+	else c = cv::waitKey(5);
+
+	if (c == 's') step = !step;
+
+	//printf("action_v: %d action_phi: %d => %d\n",
+			//episode->GetInteractions()->at(sample_pos)->action_v,
+			//episode->GetInteractions()->at(sample_pos)->action_phi,
+			//episode->GetInteractions()->at(sample_pos)->action_phi + DQN_TOTAL_ACTIONS / 2);
+
+	train_target_datum_vector[j].set_float_data(episode->GetInteractions()->at(sample_pos)->action_v, target);
+	train_filter_datum_vector[j].set_float_data(episode->GetInteractions()->at(sample_pos)->action_v, 1.0);
+
+	train_target_datum_vector[j].set_float_data(episode->GetInteractions()->at(sample_pos)->action_phi + DQN_TOTAL_ACTIONS / 2, target);
+	train_filter_datum_vector[j].set_float_data(episode->GetInteractions()->at(sample_pos)->action_phi + DQN_TOTAL_ACTIONS / 2, 1.0);
 
 	frames_input_layer_->AddDatumVector(train_input_datum_vector);
 	additional_data_input_layer_->AddDatumVector(train_add_data_datum_vector);

@@ -21,7 +21,8 @@ class DqnInteration
 
 		Mat* input;
 		double immediate_reward;
-		int action;
+		int action_v;
+		int action_phi;
 		std::deque<int> *last_commands;
 		std::deque<double> *last_vs;
 		std::deque<double> *last_phis;
@@ -30,7 +31,7 @@ class DqnInteration
 		DqnInteration();
 		DqnInteration(DqnInteration *iter);
 		DqnInteration(Mat *input_p, double immediate_reward_p,
-					int action_p, std::deque<int> *last_commands_p,
+					int action_v_p, int action_phi_p, std::deque<int> *last_commands_p,
 					std::deque<double> *last_vs_p, std::deque<double> *last_phis_p,
 					std::deque<carmen_point_t> *last_goal_poses_p);
 
