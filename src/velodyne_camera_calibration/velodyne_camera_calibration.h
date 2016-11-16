@@ -14,7 +14,7 @@ carmen_velodyne_camera_calibration_arrange_velodyne_vertical_angles_to_true_posi
 
 std::vector<carmen_velodyne_points_in_cam_t>
 carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_partial_scan_message *velodyne_message,
-		carmen_bumblebee_basic_stereoimage_message *bumblebee_message);
+		int image_width, int image_height);
 
 //std::vector<carmen_velodyne_points_in_cam_t>
 //carmen_velodyne_camera_calibration_lasers_points_bounding_box(carmen_velodyne_partial_scan_message *velodyne_message,

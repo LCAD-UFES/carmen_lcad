@@ -117,9 +117,8 @@ move_to_camera_reference(tf::Point p3d_velodyne_reference)
 
 std::vector<carmen_velodyne_points_in_cam_t>
 carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_partial_scan_message *velodyne_message,
-		carmen_bumblebee_basic_stereoimage_message *bumblebee_message)
+		int image_width, int image_height)
 		{
-
 	vector<carmen_velodyne_points_in_cam_t> laser_points_in_camera;
 
 	for (int i = 0; i < 32; i++)
@@ -137,7 +136,7 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_parti
 			//float r = 0;
 			//float b = 0;
 
-			const float MAX_RANGE = 30.0;
+			const float MAX_RANGE = 50.0;
 			const float MIN_RANGE = 0.5;
 
 			if (range <= MIN_RANGE)
@@ -159,14 +158,14 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_parti
 			{
 				tf::Point p3d_camera_reference = move_to_camera_reference(p3d_velodyne_reference);
 
-				const int XB3_MAX_PIXEL_WIDTH = bumblebee_message->width;//1280;//TODO MESMO DA IMAGEM OU PRECISA SER UM VALOR FIXO?
-				const int XB3_MAX_PIXEL_HEIGHT = bumblebee_message->height; //960;//TODO MESMO DA IMAGEM OU PRECISA SER UM VALOR FIXO?
+				const int XB3_MAX_PIXEL_WIDTH = image_width;//1280;//TODO MESMO DA IMAGEM OU PRECISA SER UM VALOR FIXO?
+				const int XB3_MAX_PIXEL_HEIGHT = image_height; //960;//TODO MESMO DA IMAGEM OU PRECISA SER UM VALOR FIXO?
 				const double XB3_PIXEL_SIZE = 0.00000375f;//pixel size (in meters)
 
 				double f_meters = fx * XB3_MAX_PIXEL_WIDTH * XB3_PIXEL_SIZE;
 
-				double cu = 0.500662 * (double) bumblebee_message->width;
-				double cv = 0.506046 * (double) bumblebee_message->height;
+				double cu = 0.500662 * (double) image_width;
+				double cv = 0.506046 * (double) image_height;
 
 				double px = (f_meters * (p3d_camera_reference.y() / p3d_camera_reference.x()) / XB3_PIXEL_SIZE + cu);
 				double py = (f_meters * (-p3d_camera_reference.z() / p3d_camera_reference.x()) / XB3_PIXEL_SIZE + cv);
@@ -174,7 +173,7 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_parti
 				int ipx = (int) px;
 				int ipy = (int) py;
 
-				if (px >= 0 && px <= bumblebee_message->width && py >= 0 && py <= bumblebee_message->height)
+				if (px >= 0 && px <= image_width && py >= 0 && py <= image_height)
 				{
 					//if (px < 10 || px >= (bumblebee_message->width - 10))
 						//b = 254;
@@ -226,7 +225,7 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_angles(carmen_ve
 			//float r = 0;
 			//float b = 0;
 
-			const float MAX_RANGE = 30.0;
+			const float MAX_RANGE = 50.0;
 			const float MIN_RANGE = 0.5;
 
 			if (range <= MIN_RANGE)

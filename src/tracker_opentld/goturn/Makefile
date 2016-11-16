@@ -86,7 +86,6 @@ goturn_tracker: goturn_main.o \
 		helper/high_res_timer.o \
 		helper/image_proc.o \
 		gsl_smooth_points.o
-		
 
 # rules
 libvoice.a:

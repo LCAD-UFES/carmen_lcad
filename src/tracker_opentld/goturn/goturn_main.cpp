@@ -4,14 +4,12 @@
 #include <list>
 #include <string>
 
-
 #include <carmen/carmen.h>
 #include <carmen/bumblebee_basic_interface.h>
 #include <carmen/bumblebee_basic_messages.h>
 #include <carmen/velodyne_interface.h>
 #include <carmen/stereo_util.h>
 #include <tf.h>
-
 
 #include <carmen/visual_tracker_interface.h>
 #include <carmen/visual_tracker_messages.h>
@@ -24,38 +22,36 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/legacy/legacy.hpp>
 #include <opencv2/highgui/highgui.hpp>
-//#include <opencv/cv.h>
-//#include <opencv/highgui.h>
-
 #include <locale.h>
 
 #include "Smoother/Helpers/wrap2pi.hpp"
-//Goturn_tracker
+#include "Smoother/CGSmoother.hpp"
 #include "regressor/regressor_train.h"
 #include "g2o/types/slam2d/se2.h"
 #include "tracker/tracker.h"
 #include "spline.h"
 #include "gui.h"
-//CGSMOOTHER BEZIER CURVE interpolation
-#include "Smoother/CGSmoother.hpp"
 
 #include "gsl_smooth_points.h"
 
 #include <interpolation.h>
 #include <voice.h>
 
+using namespace std;
+using namespace cv;
 using namespace alglib;
 
-
-//using namespace std;
-
-//
-//#define TACKER_OPENTLD_MAX_WINDOW_WIDTH 1280
-//#define TACKER_OPENTLD_MAX_WINDOW_HEIGHT 960
 #define BUMBLEBEE_BASIC_VIEW_NUM_COLORS 3
+#define MAX_POSES_IN_TRAJECTORY 20
+#define DELTA_T (1.0 / 40.0)
 
-//extern rotation_matrix *r_matrix_car_to_global; //verificar
-//extern rotation_matrix *board_to_car_matrix;
+struct Image_Box
+{
+	cv::Mat prev_image;
+	BoundingBox prev_box;
+	double confidence;
+};
+
 rotation_matrix *car_to_global_matrix;
 rotation_matrix *sensor_board_to_car_matrix;
 rotation_matrix * sensor_to_board_matrix;
@@ -77,11 +73,8 @@ carmen_pose_3D_t camera_pose_parameters;
 carmen_pose_3D_t board_pose_parameters;
 carmen_pose_3D_t velodyne_pose_parameters;
 
-
 static int camera_side = 0;
 int first_matrix = 1;
-
-static carmen_bumblebee_basic_stereoimage_message last_message;
 
 static int msg_fps = 0, msg_last_fps = 0; //message fps
 static int disp_fps = 0, disp_last_fps = 0; //display fps
@@ -91,105 +84,73 @@ static carmen_visual_tracker_output_message message_output;
 const double fontScale = 2.0;
 const int thickness = 3;
 
-//Goturn_tracker
+int gpu_id = 0;
 std::string model_file = "tracker.prototxt";
 std::string trained_file = "tracker.caffemodel";
-int gpu_id = 0;
-//Goturn things
 Regressor regressor(model_file, trained_file, gpu_id, false);
 
-// Ensuring randomness for fairness.
-//	srandom (time(NULL));
+int tracker_is_initialized = 0;
+int tracker_restart_requested = 0;
 
 const bool show_intermediate_output = false;
-// Create a tracker object.
 Tracker tracker(show_intermediate_output);
 
-
 static BoundingBox box;
-
 bounding_box box_1;
 
 double average_box_confidence;
 static std::string window_name = "GOTURN";
 tf::Transformer transformer;
-
-
-
-struct Image_Box{
-	cv::Mat prev_image;
-	BoundingBox prev_box;
-	double confidence;
-};
-
+int exit_requested = 0;
 int num_prev_frames = 2;
 
 std::vector<Image_Box> last_track;
 stereo_util camera_parameters;
 carmen_vector_3D_t trackerPoint;
+carmen_vector_3D_t target_pose_in_the_world;
 std::vector<carmen_localize_ackerman_globalpos_message>  localizeVector;
-
-// Instancia da classe Smoother
 smoother::CGSmoother path_smoother;
-
-using namespace std;
 
 static vector<carmen_vector_3D_t> tracker_global_poses;
 static vector<carmen_ackerman_traj_point_t> localize_poses_plot;
 
-using namespace cv;
+int show_final_image = 0;
+double image_zoom = 1.0 / 2.0;
+int retain_image_active = 0;
+Rect image_temp_bbox(-1, -1, -1, -1);
+Rect image_final_bbox(-1, -1, -1, -1);
 
-//Funcao para debugar usando gnuplot
+
 void
 plot_state(vector<carmen_vector_3D_t> &points, vector<carmen_ackerman_traj_point_t> &spline,
 		vector<carmen_ackerman_traj_point_t> &localize_plot)
 {
-	//	plot data Table - Last TCP - Optmizer tcp - Lane
-	//Plot Optmizer step tcp and lane?
-
-#define DELTA_T (1.0 / 40.0)
-
-	//	#define PAST_SIZE 300
 	static bool first_time = true;
-	//	static double first_timestamp;
 	static FILE *gnuplot_pipeMP;
-
-	//	double t = carmen_get_time();
 
 	if (first_time)
 	{
-		//		first_timestamp = t;
 		first_time = false;
 
-		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+		gnuplot_pipeMP = popen("gnuplot", "w");
 		fprintf(gnuplot_pipeMP, "set size ratio -1\n");
 		fprintf(gnuplot_pipeMP, "set key outside\n");
-		//		fprintf(gnuplot_pipeMP, "set xrange [0:40]\n");
-		//		fprintf(gnuplot_pipeMP, "set yrange [-10:10]\n");
-		//		fprintf(gnuplot_pipe, "set y2range [-0.55:0.55]\n");
 		fprintf(gnuplot_pipeMP, "set xlabel 'x'\n");
 		fprintf(gnuplot_pipeMP, "set ylabel 'y'\n");
-		//		fprintf(gnuplot_pipe, "set y2label 'phi (radians)'\n");
-		//		fprintf(gnuplot_pipe, "set ytics nomirror\n");
-		//		fprintf(gnuplot_pipe, "set y2tics\n");
-		//		fprintf(gnuplot_pipeMP, "set tics out\n");
-		//		fprintf(gnuplot_pipeMP, "set xtics 0.02\n");
-		//		fprintf(gnuplot_pipeMP, "set ytics 0.02\n");
 	}
 
 	FILE *gnuplot_data_points = fopen("gnuplot_data_points.txt", "w");
 	FILE *gnuplot_data_spline = fopen("gnuplot_data_spline.txt", "w");
 	FILE *gnuplot_data_localize = fopen("gnuplot_data_localize.txt", "w");
+
 	double x_plot, y_plot;
-	double first_x = 7757859.3; // spline[0].x; //points[0].x;
-	double first_y = -363559.8; // spline[0].y; //points[0].y;
+	double first_x = 7757859.3;
+	double first_y = -363559.8;
 
 	for (unsigned int i = 0; i < points.size(); i++)
 	{
 		x_plot = points[i].x - first_x;
 		y_plot = points[i].y - first_y;
-		//		fprintf(gnuplot_data_points, "%lf %lf %lf %lf %lf %lf\n", x_plot, y_plot, 1.0 * cos(points.at(i).theta),
-		//				1.0 * sin(points.at(i).theta), points.at(i).theta, points.at(i).phi);
 		fprintf(gnuplot_data_points, "%lf %lf\n", x_plot, y_plot);
 	}
 	for (unsigned int i = 0; i < spline.size(); i++)
@@ -211,25 +172,10 @@ plot_state(vector<carmen_vector_3D_t> &points, vector<carmen_ackerman_traj_point
 	fclose(gnuplot_data_spline);
 	fclose(gnuplot_data_localize);
 
-	//	fprintf(gnuplot_pipe, "unset arrow\nset arrow from %lf, %lf to %lf, %lf nohead\n",0, -60.0, 0, 60.0);
-
-	//	//TODO to print points
 	fprintf(gnuplot_pipeMP, "plot "
 			"'./gnuplot_data_points.txt' using 1:2 title 'tracker_points',"
 			"'./gnuplot_data_localize.txt' using 1:2 title 'localize',"
 			"'./gnuplot_data_spline.txt' using 1:2 title 'spline'\n");
-
-	//	fprintf(gnuplot_pipeMP, "plot "
-	//				"'./gnuplot_data_points.txt' using 1:2 title 'tracker_points',"
-	//				"'./gnuplot_data_spline.txt' using 1:2 title 'spline'\n"
-	//				"'./gnuplot_data_localize.txt' using 1:2 title 'localize' axes x1y1\n"
-	//			);
-
-	//TODO to print lines
-	//	fprintf(gnuplot_pipeMP, "plot "
-	//			"'./gnuplot_data_points.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'tracker_points',"
-	//			"'./gnuplot_data_spline.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'spline',"
-	//			"'./gnuplot_data_localize.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'localize'\n");
 
 	fflush(gnuplot_pipeMP);
 }
@@ -252,26 +198,20 @@ move_path_to_current_robot_pose(carmen_vector_3D_t *objectPoint, carmen_ackerman
 void
 plot_to_debug_state(vector<carmen_ackerman_traj_point_t> poses, carmen_vector_3D_t tracker_Point, carmen_ackerman_traj_point_t localize_plot, unsigned int maxPositions)
 {
-	//	if(tracker_global_poses.size() > 1)
-	//	{
-	//		tracker_global_poses.back().theta = carmen_normalize_theta(
-	//				atan2(tracker_global_poses.back().y - tracker_global_poses[tracker_global_poses.size() - 2].y,
-	//						tracker_global_poses.back().x - tracker_global_poses[tracker_global_poses.size() - 2].x));
-	//	}
+//	if(tracker_global_poses.size() > 1)
+//	{
+//		tracker_global_poses.back().theta = carmen_normalize_theta(
+//				atan2(tracker_global_poses.back().y - tracker_global_poses[tracker_global_poses.size() - 2].y,
+//						tracker_global_poses.back().x - tracker_global_poses[tracker_global_poses.size() - 2].x));
+//	}
 
 	if (tracker_global_poses.size() > maxPositions)
-	{
 		tracker_global_poses.erase(tracker_global_poses.begin());
-	}
 
 	if (localize_poses_plot.size() > maxPositions)
-	{
 		localize_poses_plot.erase(localize_poses_plot.begin());
-	}
 
 	tracker_global_poses.push_back(tracker_Point); //move_path_to_current_robot_pose(&tracker_Point, &localize_plot));
-	//if Soh pra testar bug
-
 	localize_poses_plot.push_back(localize_plot);
 
 	if (poses.size() > 0 && tracker_global_poses.size() > 0 && localize_poses_plot.size() > 0)
@@ -319,8 +259,6 @@ compute_3d_point(bounding_box box, double range)
 // Publishers                                                                                //
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
-
-
 void
 publish_visual_tracker_output_message()
 {
@@ -329,16 +267,19 @@ publish_visual_tracker_output_message()
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_VISUAL_TRACKER_OUTPUT_MESSAGE_NAME);
 }
 
+
 void
 carmen_visual_tracker_define_messages()
 {
 	carmen_visual_tracker_define_message_output();
 }
 
+
 void
-build_and_publish_message(char *host, double timestamp)
+publish_box_message(char *host, double timestamp)
 {
 	bounding_box box_detected;
+
 	if (box.x1_ != -1.0)
 	{
 		box_detected.x = box.x1_;
@@ -351,7 +292,6 @@ build_and_publish_message(char *host, double timestamp)
 		message_output.host = host;
 		message_output.timestamp = timestamp;
 	}
-
 	else
 	{
 		box_detected.x = -1;
@@ -364,8 +304,6 @@ build_and_publish_message(char *host, double timestamp)
 		message_output.host = host;
 		message_output.timestamp = timestamp;
 	}
-
-	//fprintf(stderr, "%lf %lf\n", message_output.timestamp, message_output.confidence);
 
 	publish_visual_tracker_output_message();
 }
@@ -402,14 +340,12 @@ calculate_box_average(BoundingBox &box, std::vector<Image_Box> &last_track, Mat*
 		last_track[(cont%num_prev_frames)].confidence = 1.0; //
 	}
 
-	//		printf("ok\n");
+	//	printf("ok\n");
 	//	average_box.x1_ /= 3;
 	//	average_box.x2_ /= 3;
 	//	average_box.y1_ /= 3;
 	//	average_box.y2_ /= 3;
-
 	//	box = average_box;
-
 }
 
 
@@ -432,11 +368,15 @@ get_mini_box_and_update_carmen_box()
 
 
 std::vector<carmen_vector_3D_t>
-extract_points_inside_box(const cv::Rect& mini_box, Mat* img)
+select_velodyne_points_inside_box_and_draw_them(const cv::Rect& mini_box, Mat* img)
 {
 	std::vector<carmen_vector_3D_t> points_inside_box;
 
-	rectangle(*img, cv::Point(mini_box.x, mini_box.y), cv::Point(mini_box.x + mini_box.width, mini_box.y + mini_box.height), CV_RGB(255, 255, 0), 1, 4);
+//	rectangle(*img,
+//			cv::Point(mini_box.x, mini_box.y),
+//			cv::Point(mini_box.x + mini_box.width, mini_box.y + mini_box.height),
+//			CV_RGB(255, 255, 0), 1, 4);
+
 	for (unsigned int i = 0; i < points_lasers_in_cam.size(); i++)
 	{
 		if ((points_lasers_in_cam.at(i).ipx > box_1.x) && (points_lasers_in_cam.at(i).ipx < (box_1.x + box_1.width)) && (points_lasers_in_cam.at(i).ipy > box_1.y)
@@ -449,7 +389,6 @@ extract_points_inside_box(const cv::Rect& mini_box, Mat* img)
 				points_lasers_in_cam.at(i).laser_polar.length = MAX_RANGE;
 
 			//points_lasers_in_cam.at(i).laser_polar.length *= 500;
-
 			//Teste em producao para correcao dos pontos no mundo, nao apagar.
 			//			car_to_global_matrix = compute_rotation_matrix(car_to_global_matrix, localizeVector[localizeVector.size() - 1].pose.orientation);
 			//			carmen_vector_3D_t point_position_in_the_robot = carmen_get_sensor_sphere_point_in_robot_cartesian_reference(points_lasers_in_cam.at(i).laser_polar,
@@ -473,9 +412,11 @@ extract_points_inside_box(const cv::Rect& mini_box, Mat* img)
 			circle(*img, cv::Point(points_lasers_in_cam.at(i).ipx, points_lasers_in_cam.at(i).ipy), 2, Scalar(0, 255, 0), -1);
 
 			if ((points_lasers_in_cam.at(i).ipx > mini_box.x) && (points_lasers_in_cam.at(i).ipx < (mini_box.x + mini_box.width)) &&
-					(points_lasers_in_cam.at(i).ipy > mini_box.y) && (points_lasers_in_cam.at(i).ipy < (mini_box.y + mini_box.height)))
+				(points_lasers_in_cam.at(i).ipy > mini_box.y) && (points_lasers_in_cam.at(i).ipy < (mini_box.y + mini_box.height)))
 				circle(*img, cv::Point(points_lasers_in_cam.at(i).ipx, points_lasers_in_cam.at(i).ipy), 2, CV_RGB(255, 255, 255), -1);
 		}
+		else
+			circle(*img, cv::Point(points_lasers_in_cam.at(i).ipx, points_lasers_in_cam.at(i).ipy), 2, Scalar(0, 255, 255), -1);
 	}
 
 	return (points_inside_box);
@@ -492,7 +433,6 @@ extract_points_inside_box(const cv::Rect& mini_box, Mat* img)
 //
 //	return global_point_position_in_the_world;
 //}
-
 bool
 my_compare_function (carmen_vector_3D_t i, carmen_vector_3D_t j)
 {
@@ -523,7 +463,7 @@ compute_average_point(std::vector<carmen_vector_3D_t> points_inside_box, int beg
 
 
 carmen_vector_3D_t
-compute_target_point(std::vector<carmen_vector_3D_t> points_inside_box)
+compute_target_3d_position(std::vector<carmen_vector_3D_t> points_inside_box)
 {
 	int begin_best_group = 0;
 	int end_best_group = 0;
@@ -538,7 +478,7 @@ compute_target_point(std::vector<carmen_vector_3D_t> points_inside_box)
 	{
 		dist = fabs(points_inside_box[i].x - points_inside_box[group_pivot].x);
 
-		if (dist > 0.3)
+		if (dist > 0.5)
 		{
 			if (num_points_in_the_group > num_points_best_group)
 			{
@@ -565,27 +505,25 @@ char
 display_bbox_and_velodyne_points(double timestamp, Mat* img)
 {
 	int ZOOM = 2;
-
-	char string1[1024];
-	strcpy(string1, "");
-	CvFont font;
+//	char string1[1024];
+//	strcpy(string1, "");
+//	CvFont font;
 
 	Mat zoom(Size(img->cols / ZOOM, img->rows / ZOOM), CV_8UC3);
 	resize(*img, zoom, zoom.size());
 
-	cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, .4, .5, 0, 1, 8);
-	sprintf(string1, "%s Time:%.2f, FPS:%d X: %lf Y: %lf Z: %lf\n", string1, timestamp,
-			disp_last_fps, trackerPoint.x , trackerPoint.y, trackerPoint.z);
-
-	cv::Size s = img->size();
-	cv::Point textOrg(25, 25);
-
-	cv::rectangle(zoom, cv::Point(0, 0), cv::Point(s.width / ZOOM, 50), Scalar::all(0), -1);
-	cv::putText(zoom, string1, textOrg, FONT_HERSHEY_SIMPLEX, 0.8 / ZOOM, Scalar::all(255), 1, 8);
+//	cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, .4, .5, 0, 1, 8);
+//	sprintf(string1, "Time:%.2f, FPS:%d X: %lf Y: %lf Z: %lf\n", timestamp,
+//			disp_last_fps, trackerPoint.x , trackerPoint.y, trackerPoint.z);
+//
+//	cv::Size s = img->size();
+//	cv::Point textOrg(25, 25);
+//
+//	cv::rectangle(zoom, cv::Point(0, 0), cv::Point(s.width / ZOOM, 50), Scalar::all(0), -1);
+//	cv::putText(zoom, string1, textOrg, FONT_HERSHEY_SIMPLEX, 0.8 / ZOOM, Scalar::all(255), 1, 8);
 
 	cv::imshow(window_name, zoom);
-
-	setlocale(LC_ALL, "C");
+//	setlocale(LC_ALL, "C");
 
 	char c = cv::waitKey(2);
 	return c;
@@ -597,66 +535,60 @@ bounding_box_interface(char c, Mat* img)
 {
 	switch (c)
 	{
-	case 'r':
-		CvRect rect;
+		case 'r':
+			CvRect rect;
 
-		if (getBBFromUser(img, rect, window_name) == 0)
-			return;
+			if (getBBFromUser(img, rect, window_name) == 0)
+				return;
 
-		box.x1_ = rect.x;
-		box.y1_ = rect.y;
-		box.x2_ = rect.x + rect.width;
-		box.y2_ = rect.y + rect.height;
+			box.x1_ = rect.x;
+			box.y1_ = rect.y;
+			box.x2_ = rect.x + rect.width;
+			box.y2_ = rect.y + rect.height;
 
-		tracker.Init(*img, box, &regressor);
-		carmen_voice_send_alert((char *) "Novo alvo registrado!\n");
+			tracker.Init(*img, box, &regressor);
+			//carmen_voice_send_alert((char *) "Ah!\n");
 
-		break;
+			tracker_is_initialized = 1;
+			tracker_restart_requested = 1;
 
-	case 'q':
-		exit(0);
+			break;
+
+		case 'q':
+			exit(0);
 	}
 }
 
 
 int
-goturn_tracker(Mat *img, double timestamp)
+call_tracker_and_compute_object_3d_position(Mat *img, int bumblebee_height, int bumblebee_width)
 {
 	if (box.x1_ != -1.0)
 	{
 		tracker.Track(*img, &regressor, &box); // calls Thrun's tracker
-
 		cv::Rect mini_box = get_mini_box_and_update_carmen_box();
-		points_lasers_in_cam = carmen_velodyne_camera_calibration_lasers_points_in_camera(velodyne_message_arrange, &last_message);
-		//
-		//		for(unsigned int i = 0;i < points_lasers_in_cam.size(); i++)
-		//		{
-		//			double h = points_lasers_in_cam.at(i).laser_polar.horizontal_angle;
-		//			double v = points_lasers_in_cam.at(i).laser_polar.vertical_angle;
-		//			double l = points_lasers_in_cam.at(i).laser_polar.length;
-		//			printf("h:%lf v:%lf l:%lf \n", h, v );
-		//		}
+
+		points_lasers_in_cam = carmen_velodyne_camera_calibration_lasers_points_in_camera(
+				velodyne_message_arrange, bumblebee_width, bumblebee_height);
 
 		if (points_lasers_in_cam.size() == 0)
 		{
-			printf("Nenhum ponto do velodyne na camera \n");
+			printf("There are not velodyne points in the imagex\n");
 			return 0;
 		}
 
-		std::vector<carmen_vector_3D_t> points_inside_box = extract_points_inside_box(mini_box, img);
+		std::vector<carmen_vector_3D_t> points_inside_box =
+				select_velodyne_points_inside_box_and_draw_them(mini_box, img);
 
 		if (points_inside_box.size() == 0)
 		{
-			printf("Nenhum ponto do velodyne dentro da BOX\n");
+			printf("There are not velodyne points inside the box\n");
 			return 0;
 		}
-		trackerPoint = compute_target_point(points_inside_box);
 
-		box.DrawBoundingBox(img);
+		trackerPoint = compute_target_3d_position(points_inside_box);
+		//box.DrawBoundingBox(img);
 	}
-
-	char c = display_bbox_and_velodyne_points(timestamp, img);
-	bounding_box_interface(c, img);
 
 	return 1;
 }
@@ -689,9 +621,10 @@ image_pre_processing(carmen_bumblebee_basic_stereoimage_message *msg)
 
 	// Mat resized_rgb_image(Size(rgb_image->cols * 0.25, rgb_image->rows * 0.25), CV_8UC3);
 	// cv::resize(*rgb_image, resized_rgb_image, resized_rgb_image.size());
-	Mat resized_rgb_image = *rgb_image;
+	//Mat resized_rgb_image = *rgb_image;
+	//return (resized_rgb_image);
 
-	return (resized_rgb_image);
+	return (*rgb_image);
 }
 
 
@@ -811,7 +744,7 @@ move_point_from_velodyne_frame_to_world_frame(carmen_vector_3D_t trackerPoint, c
 
 
 pair<carmen_ackerman_traj_point_t, double>
-sincronized_localize_pose_with_velodyne()
+find_localize_pose_most_sync_with_velodyne()
 {
 	pair<carmen_ackerman_traj_point_t, double> stamped_pose;
 
@@ -1066,7 +999,7 @@ point_is_valid(carmen_vector_3D_t target_pose_in_the_world, carmen_ackerman_traj
 	static carmen_vector_3D_t last_target_pose;
 	static double last_pose_angle = 0;
 
-	if (first)
+	if (first || tracker_restart_requested)
 	{
 		last_target_pose.x = localize_pose.x;
 		last_target_pose.y = localize_pose.y;
@@ -1253,8 +1186,8 @@ create_smoothed_path3(double timestamp_image)
 		return vector<carmen_ackerman_traj_point_t>();
 
 	pair<carmen_ackerman_traj_point_t, double> sync_pose_and_time;
-	sync_pose_and_time = sincronized_localize_pose_with_velodyne();
 
+	sync_pose_and_time = find_localize_pose_most_sync_with_velodyne();
 	target_pose_in_the_world = move_point_from_velodyne_frame_to_world_frame(trackerPoint, sync_pose_and_time.first);
 
 	if (point_is_valid(target_pose_in_the_world, sync_pose_and_time.first))
@@ -1430,7 +1363,7 @@ correct_thetas(vector<carmen_ackerman_traj_point_t> &target_poses)
 
 
 vector<carmen_ackerman_traj_point_t>
-create_lane_from_target_poses(vector<carmen_ackerman_traj_point_t> &target_poses, carmen_ackerman_traj_point_t localize_sync)
+filter_trajectory(vector<carmen_ackerman_traj_point_t> &target_poses, carmen_ackerman_traj_point_t localize_sync)
 {
 	vector<carmen_ackerman_traj_point_t> target_poses_new;
 	carmen_ackerman_traj_point_t target = target_poses[target_poses.size() - 1];
@@ -1450,7 +1383,7 @@ create_lane_from_target_poses(vector<carmen_ackerman_traj_point_t> &target_poses
 			target_poses_new.push_back(*it);
 	}
 
-	if (target_poses_new.size() <= 2) // caso inicial
+	if (target_poses_new.size() <= 2) // caso inicial: adiciona poses entre o localizer e a posicao do target
 	{
 		double n_slices;
 		carmen_ackerman_traj_point_t target_pose;
@@ -1554,7 +1487,8 @@ create_lane_from_target_poses(vector<carmen_ackerman_traj_point_t> &target_poses
 
 
 void
-compute_goal_velocity(vector<carmen_ackerman_traj_point_t> &target_poses, vector<double> times, double &sum, carmen_ackerman_traj_point_t localize)
+compute_goal_velocity(vector<carmen_ackerman_traj_point_t> &target_poses, vector<double> times, double &sum,
+		carmen_ackerman_traj_point_t localize)
 {
 	(void) sum;
 
@@ -1600,123 +1534,103 @@ compute_goal_velocity(vector<carmen_ackerman_traj_point_t> &target_poses, vector
 }
 
 
+void
+add_point_to_trajectory_and_compute_smooth_trajectory(carmen_vector_3D_t target_pose, double image_timestamp,
+		vector<carmen_ackerman_traj_point_t> *trajectory, vector<double> *timestamps,
+		vector<carmen_ackerman_traj_point_t> *smooth_trajectory, carmen_ackerman_traj_point_t localize_pose,
+		double sum)
+{
+	carmen_ackerman_traj_point_t trajectory_pose;
+
+	trajectory_pose.x = target_pose.x;
+	trajectory_pose.y = target_pose.y;
+
+	trajectory_pose.theta = atan2(
+			target_pose.y - trajectory->at(trajectory->size() - 1).y,
+			target_pose.x - trajectory->at(trajectory->size() - 1).x);
+
+	trajectory_pose.phi = 0;
+
+	trajectory->push_back(trajectory_pose);
+	timestamps->push_back(image_timestamp);
+
+	//smooth_points
+	//(*smooth_trajectory) = smooth_points(*trajectory);
+	//compute_goal_velocity(*smooth_trajectory, *timestamps, sum, localize_pose);
+	compute_goal_velocity(*trajectory, *timestamps, sum, localize_pose);
+
+	if (trajectory->size() > MAX_POSES_IN_TRAJECTORY)
+	{
+		trajectory->erase(trajectory->begin());
+		timestamps->erase(timestamps->begin());
+	}
+
+	if (smooth_trajectory->size() > MAX_POSES_IN_TRAJECTORY)
+		smooth_trajectory->erase(smooth_trajectory->begin());
+}
+
+
 vector<carmen_ackerman_traj_point_t>
-create_smoothed_path(double timestamp_image)
+build_trajectory(double image_timestamp)
 {
 	static vector<double> pose_times;
 	static vector<double> pose_thetas;
-	static unsigned int maxPositions = 20;
-	vector<carmen_ackerman_traj_point_t> target_poses_smooth;
-
-	static vector<carmen_ackerman_traj_point_t> target_poses;
+	static vector<carmen_ackerman_traj_point_t> trajectory;
 	static vector<double> times;
 	static double sum = 0.0;
+	static double time_last_pose_was_added = 0;
+	pair<carmen_ackerman_traj_point_t, double> pose_and_time;
+	vector<carmen_ackerman_traj_point_t> smooth_trajectory;
+	int point_added = 0;
 
-	carmen_vector_3D_t target_pose_in_the_world;
+	if (tracker_restart_requested)
+	{
+		pose_times.clear();
+		pose_thetas.clear();
+		trajectory.clear();
+		times.clear();
+		sum = 0.0;
+		time_last_pose_was_added = 0;
+	}
 
 	if(localizeVector.size() < 1)
 		return vector<carmen_ackerman_traj_point_t>();
 
-	pair<carmen_ackerman_traj_point_t, double> sync_pose_and_time;
-	sync_pose_and_time = sincronized_localize_pose_with_velodyne();
+	// busca a mensagem do localizer mais proxima
+	pose_and_time = find_localize_pose_most_sync_with_velodyne();
+	target_pose_in_the_world = move_point_from_velodyne_frame_to_world_frame(trackerPoint, pose_and_time.first);
 
-	target_pose_in_the_world = move_point_from_velodyne_frame_to_world_frame(trackerPoint, sync_pose_and_time.first);
-
-	if (target_poses.size() == 0)
+	// se for a primeira pose, adiciona a pose do localize no inicio.
+	if (trajectory.size() == 0)
 	{
-		target_poses.push_back(sync_pose_and_time.first);
-		times.push_back(timestamp_image);
+		trajectory.push_back(pose_and_time.first);
+		times.push_back(image_timestamp);
 	}
 
-	static double time_last_pose_was_added = 0;
-
-	int point_added = 0;
-
-	if (point_is_valid(target_pose_in_the_world, sync_pose_and_time.first)
-			|| ((fabs(sync_pose_and_time.second - time_last_pose_was_added) > 0.5/*1.0*/) && (sync_pose_and_time.first.v > 0.5))
-	)
+	// se (o ponto no mundo for valido) ou (nenhum ponto foi adicionado nos ultimos 0.5
+	// segundos e o carro esta se movendo)
+	if (point_is_valid(target_pose_in_the_world, pose_and_time.first) ||
+		((fabs(pose_and_time.second - time_last_pose_was_added) > 0.5) &&
+			(pose_and_time.first.v > 0.5)))
 	{
-		carmen_ackerman_traj_point_t target_pose;
+		add_point_to_trajectory_and_compute_smooth_trajectory(target_pose_in_the_world, image_timestamp,
+				&trajectory, &times, &smooth_trajectory, pose_and_time.first, sum);
 
-		target_pose.x = target_pose_in_the_world.x;
-		target_pose.y = target_pose_in_the_world.y;
-
-		target_pose.theta = atan2(
-				target_pose_in_the_world.y - target_poses[target_poses.size() - 1].y,
-				target_pose_in_the_world.x - target_poses[target_poses.size() - 1].x);
-
-		target_pose.phi = 0;
-
-		//		move_target_pose_backwards(target_pose, target_pose_moved, target_poses[target_poses.size() - 1]);
-		//		target_pose_in_the_world.x = target_pose.x;
-		//		target_pose_in_the_world.y = target_pose.y;
-
-		target_poses.push_back(target_pose);
-		times.push_back(timestamp_image);
-		//calcular as velocidades dos targets
-
-
-		//smooth_points
-		target_poses_smooth = smooth_points(target_poses);
-
-		compute_goal_velocity(target_poses_smooth, times, sum, sync_pose_and_time.first);
-
-		if (target_poses.size() > maxPositions)
-		{
-//			sum -= target_poses[0].v;
-			target_poses.erase(target_poses.begin());
-			target_poses_smooth.erase(target_poses_smooth.begin());
-			times.erase(times.begin());
-		}
-
-		time_last_pose_was_added = sync_pose_and_time.second;
 		point_added = 1;
+		time_last_pose_was_added = pose_and_time.second;
 	}
 
-	if (target_poses_smooth.size() < 2)
+	//if (smooth_trajectory.size() < 2)
+	if (trajectory.size() < 2)
 		return vector<carmen_ackerman_traj_point_t>();
 
+	// remove points behind car, etc.
+	vector<carmen_ackerman_traj_point_t> filtered_trajectory = filter_trajectory(
+			//smooth_trajectory, pose_and_time.first);
+			trajectory, pose_and_time.first);
 
-	//remove point behind car
-	vector<carmen_ackerman_traj_point_t> target_poses_new = create_lane_from_target_poses(target_poses_smooth, sync_pose_and_time.first);
-
-
-
-	//printf("spline size: %ld poses size: %ld\n",target_poses_new.size(), target_poses.size());
-	// por que 0?
-	if(target_poses_new.size() > 0)
-	{
-//		compute_goal_velocity(target_poses, target_poses_new, times);
-	}
-	else
-	{
-		//printf("poses size: %ld x: %lf y: %lf\n",target_poses.size(), target_poses[target_poses.size() - 1].x, target_poses[target_poses.size() - 1].y);
-	}
-
-	//caso em que o carro se aproxima demais do target
-	for (unsigned int i = 0; i < target_poses_new.size(); i++)
-	{
-//		double dist = sqrt(pow(target_poses_new[target_poses_new.size()-1].x - sync_pose_and_time.first.x,2) +pow(target_poses_new[target_poses_new.size()-1].y - sync_pose_and_time.first.y,2));
-//
-//		if(dist < 7.0)
-//			target_poses_new[target_poses_new.size()-1].v = (dist/10) * (1/(10+target_poses_new[target_poses_new.size()-1].v)) ;
-
-		//printf("v[%d]: %lf \n", i,target_poses_new[i].v * 3.6);
-	}
-	//printf("\n");
-	//	double vfinal = 4.0;
-	//	double dv = vfinal / ((double) target_poses_new.size());
-	//
-	//	for (int i = 0; i < target_poses_new.size(); i++)
-	//	{
-	//		double vi = vfinal - i * dv;
-	//		target_poses_new[i].v = 0.0; //vi;
-	////		printf("v: %lf size: %ld\n", v, target_poses.size());
-	//	}
-
-
-	if(target_poses_new.size() > 2)
-		correct_thetas(target_poses_new);
+	if(filtered_trajectory.size() > 2)
+		correct_thetas(filtered_trajectory);
 
 	if (point_added)
 	{
@@ -1730,24 +1644,19 @@ create_smoothed_path(double timestamp_image)
 		//		if (poses_smooth.size() > 0)
 		//			poses_smooth.pop_back();
 
-		plot_to_debug_state(target_poses_new, target_pose_in_the_world, sync_pose_and_time.first, maxPositions);
+		plot_to_debug_state(filtered_trajectory, target_pose_in_the_world, pose_and_time.first, MAX_POSES_IN_TRAJECTORY);
 	}
 
-	return target_poses_new;
+	return filtered_trajectory;
 }
 
 
 
 void
-build_and_publish_path_as_RDDF(vector<carmen_ackerman_traj_point_t> poses_complete,double timestamp)
+publish_trajectory(vector<carmen_ackerman_traj_point_t> poses_complete,double timestamp)
 {
-
 	if (poses_complete.size() > 0)
 	{
-		//		printf("\n\n--------To Publicando : ---------------\n");
-		//ELIMINA ULTIMO PONTO POR CAUSA DA FALTA DE THETA
-		//		poses.pop_back();
-
 		int annotations[1000];
 		IPC_RETURN_TYPE err;
 		carmen_rddf_road_profile_message path_planner_road_profile_message;
@@ -1763,7 +1672,6 @@ build_and_publish_path_as_RDDF(vector<carmen_ackerman_traj_point_t> poses_comple
 		err = IPC_publishData(CARMEN_RDDF_ROAD_PROFILE_MESSAGE_NAME, &path_planner_road_profile_message);
 		carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_ROAD_PROFILE_MESSAGE_FMT);
 	}
-
 }
 
 /*
@@ -2107,34 +2015,283 @@ show_fps(carmen_bumblebee_basic_stereoimage_message* image_msg)
 		last_time = time_now;
 	}
 	disp_fps++;
+}
 
+
+void
+mouseHandler(int event, int x, int y, int flags, void *param)
+{
+//	if (!mark_bbox_active)
+//		return;
+	Mat *img = (Mat *) param;
+
+	if (x < 0 || y < 0 || x > img->cols || y > img->rows)
+		return;
+
+	static int drag = 0;
+	static cv::Point clicked_point(0, 0);
+
+	// just to avoid the unused warnings
+	(void) flags;
+	(void) param;
+
+	/* user press left button */
+	if(event == CV_EVENT_LBUTTONDOWN && !drag)
+	{
+		clicked_point = cv::Point(x, y);
+		printf("Clicked point: %d %d\n", x, y);
+		drag = 1;
+	}
+
+	/* user drag the mouse */
+	if(event == CV_EVENT_MOUSEMOVE && drag)
+	{
+		printf("Drawing rect\n");
+		image_temp_bbox = Rect(clicked_point.x, clicked_point.y, x - clicked_point.x, y - clicked_point.y);
+	}
+
+	/* user release left button */
+	if(event == CV_EVENT_LBUTTONUP && drag)
+	{
+		printf("BBox set: %d %d %d %d\n", clicked_point.x, clicked_point.y, x - clicked_point.x, y - clicked_point.y);
+		image_final_bbox = Rect(clicked_point.x, clicked_point.y, x - clicked_point.x, y - clicked_point.y);
+		image_temp_bbox = Rect(-1, -1, -1, -1);
+		show_final_image = 1;
+		drag = 0;
+	}
+}
+
+
+void
+display_interfaces(carmen_bumblebee_basic_stereoimage_message* image_msg, Mat *preprocessed_image)
+{
+	static Mat *mini_img = NULL;
+	static Mat *view_img = NULL;
+
+	if (mini_img == NULL)
+	{
+		mini_img = new Mat(preprocessed_image->rows * image_zoom, preprocessed_image->cols * image_zoom, preprocessed_image->type());
+		view_img = new Mat(preprocessed_image->rows * image_zoom, preprocessed_image->cols * image_zoom, preprocessed_image->type());
+		resize(*preprocessed_image, *mini_img, mini_img->size());
+	}
+
+	if (!retain_image_active)
+		resize(*preprocessed_image, *mini_img, mini_img->size());
+
+	mini_img->copyTo(*view_img);
+
+	if (image_temp_bbox.x > 0 && image_temp_bbox.width > 0)
+		rectangle(*view_img, image_temp_bbox, Scalar(255, 0, 0), 1);
+
+	if (show_final_image && image_final_bbox.x > 0 && image_final_bbox.width > 0)
+		rectangle(*view_img, image_final_bbox, Scalar(0, 255, 0), 1);
+
+	if (box.x1_ > 0 && box.x2_ > 0)
+	{
+		Rect r(box.x1_ * image_zoom, box.y1_ * image_zoom, (box.x2_ - box.x1_) * image_zoom, (box.y2_ - box.y1_) * image_zoom);
+		rectangle(*view_img, r, Scalar(0, 0, 255), 2);
+	}
+
+	imshow("filipe", *view_img);
+	cv::setMouseCallback("filipe", mouseHandler, view_img);
+	char c = waitKey(5);
+
+	if (c == 's')
+	{
+		tracker_restart_requested = 1;
+
+		box.x1_ = image_final_bbox.x / image_zoom;
+		box.y1_ = image_final_bbox.y / image_zoom;
+		box.x2_ = (image_final_bbox.x + image_final_bbox.width) / image_zoom;
+		box.y2_ = (image_final_bbox.y + image_final_bbox.height) / image_zoom;
+
+		tracker.Init(*preprocessed_image, box, &regressor);
+		//carmen_voice_send_alert((char *) "Ah!\n");
+		tracker_is_initialized = 1;
+		retain_image_active = 0;
+		show_final_image = 0;
+	}
+	else if (c == 'p')
+		retain_image_active = !retain_image_active;
+}
+
+
+int
+box_is_valid()
+{
+	if (box_1.x < 0.0 || box_1.y < 0.0) return 0;
+	else if (box_1.height < 0.0 || box_1.width < 0.0) return 0;
+	else return 1;
+}
+
+
+double
+compute_average_range_diff(deque<carmen_vector_3D_t> last_target_poses_in_laser)
+{
+	if (last_target_poses_in_laser.size() <= 1)
+		return 0;
+
+	double range = 0;
+
+	for (uint i = 1; i < last_target_poses_in_laser.size(); i++)
+	{
+		//printf("Range[%d]: %lf diff: %lf\n", i, last_target_poses_in_laser[i].x, fabs(last_target_poses_in_laser[i].x - last_target_poses_in_laser[i - 1].x));
+		range += fabs(last_target_poses_in_laser[i].x - last_target_poses_in_laser[i - 1].x);
+	}
+
+	range /= (double) last_target_poses_in_laser.size();
+	return range;
+}
+
+
+double
+compute_average_lateral_shift(deque<carmen_vector_3D_t> last_target_poses_in_laser)
+{
+	if (last_target_poses_in_laser.size() <= 1)
+		return 0;
+
+	double lateral_motion = 0;
+
+	for (uint i = 1; i < last_target_poses_in_laser.size(); i++)
+	{
+		//printf("Y[%d]: %lf diff: %lf\n", i, last_target_poses_in_laser[i].y, fabs(last_target_poses_in_laser[i].y - last_target_poses_in_laser[i - 1].y));
+		lateral_motion += fabs(last_target_poses_in_laser[i].y - last_target_poses_in_laser[i - 1].y);
+	}
+
+	lateral_motion /= (double) last_target_poses_in_laser.size();
+	return lateral_motion;
+}
+
+
+int
+target_is_valid()
+{
+	static deque<carmen_vector_3D_t> last_target_poses_in_laser;
+
+	double avg_range_diff = compute_average_range_diff(last_target_poses_in_laser);
+	double lat_shift = compute_average_lateral_shift(last_target_poses_in_laser);
+
+	printf("Range variation: %lf range: %lf \t Lateral shift: %lf!\n", avg_range_diff, trackerPoint.x, fabs(lat_shift));
+
+	if (tracker_restart_requested)
+		last_target_poses_in_laser.clear();
+
+	last_target_poses_in_laser.push_back(trackerPoint);
+
+	if (last_target_poses_in_laser.size() > 10)
+		last_target_poses_in_laser.pop_front();
+
+	if (last_target_poses_in_laser.size() <= 5 ||
+		((avg_range_diff < 1.0) && (lat_shift < 0.5)))
+	{
+		return 1;
+	}
+
+	if (avg_range_diff > 5.0) printf("Invalid range variation: %lf range: %lf!\n", avg_range_diff, trackerPoint.x);
+	if (lat_shift > 5.0) printf("Invalid lateral shift: %lf!\n", fabs(lat_shift));
+
+	return 0;
+}
+
+
+int
+errors_exist_in_tracking(int success, double timestamp)
+{
+	int error_detected = 0;
+	static double time_since_box_became_valid = timestamp;
+
+	if (tracker_restart_requested)
+		time_since_box_became_valid = timestamp;
+
+	if (tracker_is_initialized && (!success || !box_is_valid())) // what to do???
+	{
+		printf("sucess: %d box_is_valid(): %d\n", success, box_is_valid());
+		error_detected = 1;
+	}
+	else if (tracker_is_initialized && !target_is_valid())
+		error_detected = 1;
+	else
+	{
+		time_since_box_became_valid = timestamp;
+		return 0;
+	}
+
+	if (error_detected && (fabs(timestamp - time_since_box_became_valid) > 0.5))
+	{
+		// give control to the user
+		//carmen_voice_send_alert("Sistema de rastreamento instavel! Por favor, assuma o controle!");
+	}
+
+	return 1;
+}
+
+
+int
+errors_exist_trajectory_generation(vector<carmen_ackerman_traj_point_t> trajectory, double timestamp)
+{
+	int error_detected = 0;
+	static double time_since_trajectory_became_valid = timestamp;
+
+	if (tracker_restart_requested)
+		time_since_trajectory_became_valid = timestamp;
+
+	if (tracker_is_initialized && trajectory.size() <= 0) // what to do???
+	{
+		printf("trajectory.size(): %ld\n", trajectory.size());
+		error_detected = 1;
+	}
+	else
+	{
+		time_since_trajectory_became_valid = timestamp;
+		return 0;
+	}
+
+	if (error_detected)
+	{
+		if (fabs(timestamp - time_since_trajectory_became_valid) > 0.5)
+		{
+			// give control to the user
+			//carmen_voice_send_alert("Geracao de trajetorias instavel! Por favor, assuma o controle!");
+		}
+	}
+
+	return 1;
 }
 
 
 static void
 image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 {
+	if (exit_requested)
+		exit(printf("Closing...\n"));
+
 	if (image_msg->isRectified)
 	{
-		show_fps(image_msg);
-		last_message = *image_msg;
-		Mat preprossed_image = image_pre_processing(image_msg);
-		int success = goturn_tracker(&preprossed_image, image_msg->timestamp);
+		vector<carmen_ackerman_traj_point_t> trajectory;
+		Mat preprocessed_image = image_pre_processing(image_msg);
 
-		if (!success)
+		int success = call_tracker_and_compute_object_3d_position(
+				&preprocessed_image, image_msg->height, image_msg->width);
+
+		display_interfaces(image_msg, &preprocessed_image);
+
+		if (!success || errors_exist_in_tracking(success, image_msg->timestamp))
 			return;
 
-		build_and_publish_message(image_msg->host, image_msg->timestamp);
-
-		if (box_1.x > 0.0 && box_1.y > 0.0)
+		if (tracker_is_initialized)
 		{
-			vector<carmen_ackerman_traj_point_t> path_complete;
-			//			path_complete = publishSplineRDDF();
-			path_complete = create_smoothed_path(image_msg->timestamp);
-			build_and_publish_path_as_RDDF(path_complete, image_msg->timestamp);
+			trajectory = build_trajectory(image_msg->timestamp);
+
+			if (errors_exist_trajectory_generation(trajectory, image_msg->timestamp))
+				return;
+
+			publish_box_message(image_msg->host, image_msg->timestamp);
+			publish_trajectory(trajectory, image_msg->timestamp);
+
+			if (tracker_restart_requested)
+				tracker_restart_requested = 0;
 		}
 	}
-
 }
 
 
@@ -2171,8 +2328,9 @@ shutdown_camera_view(int x)
 {
 	if (x == SIGINT)
 	{
-		carmen_ipc_disconnect();
+//		carmen_ipc_disconnect();
 		printf("Disconnected from robot.\n");
+		exit_requested = 1;
 		exit(0);
 	}
 }
@@ -2255,14 +2413,12 @@ main(int argc, char **argv)
 	last_track.resize(num_prev_frames);
 	camera_parameters = get_stereo_instance(camera, tld_image_width, tld_image_height);
 
-
 	box.x1_ = -1.0;
 	box.y1_ = -1.0;
 	box.x2_ = -1.0;
 	box.y2_ = -1.0;
 
 	signal(SIGINT, shutdown_camera_view);
-
 
 	carmen_visual_tracker_define_messages();
 	carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) image_handler, CARMEN_SUBSCRIBE_LATEST);
