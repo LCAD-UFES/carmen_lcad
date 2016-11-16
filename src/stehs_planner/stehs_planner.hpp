@@ -25,6 +25,7 @@
 
 #define MIN_OVERLAP_FACTOR 0.5		// if two circles overlaps more than this factor then they are considered connected
 #define MAX_OVERLAP_FACTOR 0.1		// if two circles overlaps more than this factor then they are considered the same
+#define RGOAL 0.5
 
 class StehsPlanner
 {
@@ -54,7 +55,18 @@ public:
 	// the trajectory found
 	std::list<State> state_list;
 
+	// the min step-rate threshold
+	double kmin;
+
 	// TODO it needs to receive the start and goal node
+
+	// constructor
+	StehsPlanner();
+
+	// destructor
+	~StehsPlanner();
+
+	//
 	std::list<CircleNode> SpaceExploration(CircleNodePtr start_node, CircleNodePtr goal_node);
 
 	void RDDFSpaceExploration();
@@ -79,12 +91,6 @@ public:
 	// the nearest obstacle distance, overloaded version
 	double ObstacleDistance(double x, double y);
 
-	// constructor
-	StehsPlanner();
-
-	// destructor
-	~StehsPlanner();
-
 	//
 	std::list<State> BuildPath();
 
@@ -102,13 +108,24 @@ public:
 
 	int FindNextRDDFFreeIndex(int current_rddf_index);
 
-	double TimeHeuristic(State s);
-
 	void ConnectCirclePathGaps();
 
 	unsigned char* GetCurrentMap();
 
 	void ShowCirclePath();
+
+	double TimeHeuristic(State s);
+
+	void BuildStateList(StateNodePtr goal_node);
+
+	bool Exist(StateNodePtr current, std::vector<StateNodePtr> &closed_set, double k);
+
+	void Expand(StateNodePtr current, std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set, double k);
+
+	void GoalExpand(StateNodePtr current, StateNodePtr goal_node);
+
+	void SetSwap(std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set, std::vector<StateNodePtr> &closed_set);
+
 
 };
 
