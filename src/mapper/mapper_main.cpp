@@ -157,13 +157,13 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 				break;
 			}
 
-			aux = sensors_data[1].point_cloud_index;
-			sensors_data[1].point_cloud_index = i;
-			run_mapper(&sensors_params[1], &sensors_data[1], r_matrix_car_to_global);
-			publish_map(globalpos_message->timestamp);
-			sensors_data[1].point_cloud_index = aux;
-
-			break;
+//			aux = sensors_data[1].point_cloud_index;
+//			sensors_data[1].point_cloud_index = i;
+//			run_mapper(&sensors_params[1], &sensors_data[1], r_matrix_car_to_global);
+//			publish_map(globalpos_message->timestamp);
+//			sensors_data[1].point_cloud_index = aux;
+//
+//			break;
 		}
 	}
 

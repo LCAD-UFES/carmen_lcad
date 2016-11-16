@@ -1,8 +1,21 @@
 #include "stehs_planner.hpp"
 
-
 // constructor
-StehsPlanner::StehsPlanner():lane_ready(false), distance_map_ready(false), goal_ready(false) {
+StehsPlanner::StehsPlanner():
+		start(),
+		goal(),
+		distance_map(nullptr),
+		goal_list_message(nullptr),
+		robot_config(),
+		active(false),
+		show_debug_info(),
+		cheat(),
+		lane_ready(false),
+		distance_map_ready(false),
+		goal_ready(false),
+		circle_path(),
+		state_list(),
+		kmin(1.0 / 4.0) {
 
 	// creates a new opencv window
 	cv::namedWindow("CirclePath", cv::WINDOW_AUTOSIZE);
@@ -430,75 +443,144 @@ StehsPlanner::TimeHeuristic(State s) // TODO Optimize this linear search verifyi
 		return ((circle_distance + goal_distance) / fabs(s.v));
 }
 
+void
+StehsPlanner::BuildStateList(StateNodePtr goal_node) { (void) goal_node;}
+// TODO we need to implement the circle radius clustering
+bool
+StehsPlanner::Exist(StateNodePtr current, std::vector<StateNodePtr> &closed_set, double k) {
+
+	std::vector<StateNodePtr>::iterator it = closed_set.begin();
+	std::vector<StateNodePtr>::iterator end = closed_set.end();
+
+	while (it != end)
+	{
+		if (current->Equals(*(*it), k))
+				return true;
+
+		it++;
+
+	}
+
+	return false;
+
+}
+
+
+// TODO Rânik control mode!!!
+void
+StehsPlanner::Expand(
+		StateNodePtr current,
+		std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set,
+		double k) {
+
+	(void) current;
+	(void) open_set;
+	(void) k;
+
+}
+
+void
+StehsPlanner::GoalExpand(StateNodePtr current, StateNodePtr goal_node) {
+
+	(void) current;
+	(void) goal_node;
+
+}
+
+void
+StehsPlanner::SetSwap(
+		std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set,
+		std::vector<StateNodePtr> &closed_set) {
+
+	(void) open_set;
+	(void) closed_set;
+
+}
 
 void
 StehsPlanner::HeuristicSearch()
 {
-//	double;
-//	StateNode start_node(start, 0.0, X, nullptr);
-//	start_node->g = 0.0;
-//	start_node->f = Distance(start_node->circle.x, start_node->circle.y, goal_node->circle.x, goal_node->circle.y);
-//
-//	goal_node->g = goal_node->f = DBL_MAX;
-//
-//	// create the priority queue
-//	std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> open_set;
-//
-//	std::vector<CircleNodePtr> closed_set;
-//
-//	Expand(start_node, open_set);
-//
-//	while (!open_set.empty())
-//	{
-//		// get the circle wich is the closest to the goal node
-//		CircleNodePtr current = open_set.top();
-//		open_set.pop();
-//
-//		if (goal_node->f < current->f)
-//		{
-//			temp_circle_path = BuildCirclePath(goal_node->parent);
-//
-//			while(!open_set.empty())
-//			{
-//				CircleNodePtr tmp = open_set.top();
-//
-//				open_set.pop();
-//
-//				delete tmp;
-//			}
-//			break;
-//		}
-//		else if (!Exist(current, closed_set))
-//		{
-//			Expand(current, open_set);
-//
-//			if (current->circle.Overlap(goal_node->circle, MIN_OVERLAP_FACTOR))
-//			{
-//
-//				if (current->f < goal_node->g)
-//				{
-//					goal_node->g = current->f;
-//					goal_node->parent = current;
-//				}
-//			}
-//			closed_set.push_back(current);
-//		}
-//		else
-//		{
-//			delete current;
-//		}
-//	}
-//
-//	while(!closed_set.empty())
-//	{
-//		CircleNodePtr tmp = closed_set.back();
-//
-//		closed_set.pop_back();
-//
-//		delete tmp;
-//	}
-//
-//	return (temp_circle_path);
+
+	//StateNode(const State &s, double g_, double f_, StateNode *p);
+	// build the start node, the initial configuration
+	StateNodePtr start_node = new StateNode(start, 0.0, TimeHeuristic(start), nullptr);
+
+	StateNodePtr goal_node = new StateNode(goal, DBL_MAX, DBL_MAX, nullptr);
+
+	// create the priority queue
+	std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> open_set;
+
+	//
+	std::vector<StateNodePtr> closed_set;
+
+	open_set.push(start_node);
+
+	// the inital step-rate
+	double k = 1.0;
+
+	while (!open_set.empty())
+	{
+		// get the circle wich is the closest to the goal node
+		StateNodePtr current = open_set.top();
+		open_set.pop();
+
+		if (goal_node->f < current->f)
+		{
+			BuildStateList(goal_node);
+
+			while(!open_set.empty())
+			{
+				StateNodePtr tmp = open_set.top();
+
+				open_set.pop();
+
+				delete tmp;
+			}
+
+			break;
+
+		}
+		else if (!Exist(current, closed_set, k))
+		{
+			// find the children states configuration
+			Expand(current, open_set, k);
+
+			if (current->h < RGOAL)
+			{
+				GoalExpand(current, goal_node);
+			}
+
+			closed_set.push_back(current);
+		}
+		else
+		{
+			delete current;
+		}
+
+		//
+		if (open_set.empty()) {
+
+			k *= 0.5;
+
+			if (k > kmin) {
+
+				SetSwap(open_set, closed_set);
+
+			}
+
+		}
+
+	}
+
+	while(!closed_set.empty())
+	{
+		StateNodePtr tmp = closed_set.back();
+
+		closed_set.pop_back();
+
+		delete tmp;
+	}
+
 }
 
 
