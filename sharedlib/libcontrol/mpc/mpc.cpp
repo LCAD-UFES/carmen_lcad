@@ -607,13 +607,13 @@ get_motion_commands_vector(carmen_ackerman_motion_command_p current_motion_comma
 	double elapsed_time = carmen_get_time() - time_of_velodyne_message;
 	double sum_of_motion_commands_vector_time = current_motion_command_vector[0].time;
 	int j = 0;
+	double vector_time = 0.0;
 
 	while ((sum_of_motion_commands_vector_time	< elapsed_time) && (j < nun_motion_commands)) // TODO Tratar se sair por j <nun_motion_commands
 	{
 		j++;
 		sum_of_motion_commands_vector_time += current_motion_command_vector[j].time;
 	}
-
 	sum_of_motion_commands_vector_time -= current_motion_command_vector[j].time;
 	current_motion_command_vector[j].time -= (elapsed_time - sum_of_motion_commands_vector_time);
 
@@ -631,39 +631,42 @@ get_motion_commands_vector(carmen_ackerman_motion_command_p current_motion_comma
 //			motion_commands_vector_time += params->motion_commands_vector[j].time;
 //		}
 //	}
+//	sum_of_motion_commands_vector_time = current_motion_command_vector[j].time;
+	double total_time = 0.0;
+	while (total_time < PREDICTION_HORIZON)
+	{
+		commands.v.push_back(current_motion_command_vector[j].v);
+		commands.phi.push_back(current_motion_command_vector[j].phi);
+		commands.time.push_back(DELTA_T);
+
+		vector_time += DELTA_T;
+		total_time += DELTA_T;
+		if (vector_time > current_motion_command_vector[j].time)
+		{
+			j++;
+			if (j >= nun_motion_commands)
+				break;
+//			sum_of_motion_commands_vector_time += current_motion_command_vector[j].time;
+		}
+	}
+//	if (sum_of_motion_commands_vector_time > PREDICTION_HORIZON)
+//	{
+//		current_motion_command_vector[j].time -= (sum_of_motion_commands_vector_time - PREDICTION_HORIZON);
 //
-
-
-
-	sum_of_motion_commands_vector_time = current_motion_command_vector[j].time;
-	while (sum_of_motion_commands_vector_time <= PREDICTION_HORIZON)
-	{
-		commands.v.push_back(current_motion_command_vector[j].v);
-		commands.phi.push_back(current_motion_command_vector[j].phi);
-		commands.time.push_back(current_motion_command_vector[j].time);
-
-		j++;
-		sum_of_motion_commands_vector_time += current_motion_command_vector[j].time;
-	}
-
-	if (sum_of_motion_commands_vector_time > PREDICTION_HORIZON)
-	{
-		current_motion_command_vector[j].time -= (sum_of_motion_commands_vector_time - PREDICTION_HORIZON);
-
-		commands.v.push_back(current_motion_command_vector[j].v);
-		commands.phi.push_back(current_motion_command_vector[j].phi);
-		commands.time.push_back(current_motion_command_vector[j].time);
-
-	}
-
-	FILE *save = fopen("motion_command", "w");
-	for (j = 0, sum_of_motion_commands_vector_time = 0.0; j < commands.v.size(); j++)
+//		commands.v.push_back(current_motion_command_vector[j].v);
+//		commands.phi.push_back(current_motion_command_vector[j].phi);
+//		commands.time.push_back(current_motion_command_vector[j].time);
+//
+//	}
+//	FILE *save = fopen("motion_command", "w");
+	for (j = 0, sum_of_motion_commands_vector_time = 0.0; (unsigned)j < commands.v.size(); j++)
 	{
 		sum_of_motion_commands_vector_time += commands.time[j];
-		fprintf(save, "%lf %lf %lf\n", commands.v[j], commands.phi[j], commands.time[j]);
+//		fprintf(save, "%lf %lf %lf\n", commands.v[j], commands.phi[j], commands.time[j]);
+		printf("%lf %lf %lf\n", commands.v[j], commands.phi[j], commands.time[j]);
 	}
-	fprintf(save, "%lf\n", sum_of_motion_commands_vector_time);
-	fclose(save);
+//	fprintf(save, "%lf\n", sum_of_motion_commands_vector_time);
+//	fclose(save);
 
 	return commands;
 }
