@@ -1507,15 +1507,19 @@ compute_goal_velocity(vector<carmen_ackerman_traj_point_t> &target_poses, vector
 		double multiplier;
 
 		// caso tenha duvida sobre os valores abaixo, converse com luan
-		if (dist_to_localize < 9.0) multiplier = 0.0;
-		else if (dist_to_localize < 14) multiplier = 0.2 * (dist_to_localize - 9);
-		else if (dist_to_localize < 22) multiplier = 1.0 + (0.03125 * (dist_to_localize - 14));
+		if (dist_to_localize < 8.0) multiplier = 0.0;
+		else if (dist_to_localize < 13) multiplier = 0.2 * (dist_to_localize - 8);
+		else if (dist_to_localize < 21) multiplier = 1.0 + (0.03125 * (dist_to_localize - 13));
 		else multiplier = 1.25;
 
 		if (dt == 0 /*|| dist < 7.5*/)
 			target_poses[target_poses.size() - 1].v = 0.0;
 		else
 			target_poses[target_poses.size() - 1].v = (dist / dt) * multiplier;
+
+
+		if (target_poses[target_poses.size() - 1].v > 30.0)
+			target_poses[target_poses.size() - 1].v = 30.0;
 
 		printf("Dist to localize: %lf multiplier: %lf velocity: %lf velocity multiplied: %lf car velocity: %lf\n",
 				dist_to_localize, multiplier, 3.6 * (dist / dt), target_poses[target_poses.size() - 1].v * 3.6,
