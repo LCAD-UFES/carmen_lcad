@@ -63,6 +63,8 @@ std::vector<carmen_velodyne_points_in_cam_t> points_lasers_in_cam;
 
 carmen_velodyne_partial_scan_message *velodyne_message_arrange;
 
+bool display_all_points_velodyne = 0;
+
 static int tld_image_width = 0;
 static int tld_image_height = 0;
 
@@ -122,6 +124,7 @@ Rect image_temp_bbox(-1, -1, -1, -1);
 Rect image_final_bbox(-1, -1, -1, -1);
 double avg_range_diff = 0;
 double lat_shift = 0;
+int quant_points_in_box = 0;
 
 
 void
@@ -542,8 +545,16 @@ call_tracker_and_compute_object_3d_position(Mat *img, int bumblebee_height, int 
 		tracker.Track(*img, &regressor, &box); // calls Thrun's tracker
 		cv::Rect mini_box = get_mini_box_and_update_carmen_box();
 
+		if(display_all_points_velodyne)
+		{
 		points_lasers_in_cam = carmen_velodyne_camera_calibration_lasers_points_in_camera(
 				velodyne_message_arrange, bumblebee_width, bumblebee_height);
+
+		}else
+		{
+			points_lasers_in_cam = carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle(
+							velodyne_message_arrange, bumblebee_width, bumblebee_height);
+		}
 
 		if (points_lasers_in_cam.size() == 0)
 		{
@@ -554,6 +565,7 @@ call_tracker_and_compute_object_3d_position(Mat *img, int bumblebee_height, int 
 		std::vector<carmen_vector_3D_t> points_inside_box =
 				select_velodyne_points_inside_box_and_draw_them(mini_box, img, show_velodyne_active);
 
+		quant_points_in_box = points_inside_box.size();
 		if (points_inside_box.size() == 0)
 		{
 			printf("There are not velodyne points inside the box\n");
@@ -2048,9 +2060,9 @@ write_additional_information(Mat *m, double timestamp)
 	CvFont font;
 
 	cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, .4, .5, 0, 1, 8);
-	sprintf(string1, "Time:%.2f, FPS:%d X: %.2lf Y: %.2lf Z: %.2lf RD: %.2lf LD: %.5lf", timestamp,
+	sprintf(string1, "Time:%.2f, FPS:%d X: %.2lf Y: %.2lf Z: %.2lf RD: %.2lf LD: %.5lf POINTS: %d", timestamp,
 			disp_last_fps, trackerPoint.x , trackerPoint.y, trackerPoint.z,
-			avg_range_diff, lat_shift);
+			avg_range_diff, lat_shift, quant_points_in_box);
 
 	cv::Size s = m->size();
 	cv::Point textOrg(25, 25);
@@ -2082,6 +2094,8 @@ handle_char(Mat *preprocessed_image, char c)
 		retain_image_active = !retain_image_active;
 	else if (c == 'v')
 		show_velodyne_active = !show_velodyne_active;
+	else if (c == 'a')
+		display_all_points_velodyne = !display_all_points_velodyne;
 }
 
 
