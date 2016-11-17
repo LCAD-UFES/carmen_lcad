@@ -9,6 +9,6 @@
 #define VOICE_H_
 
 #include <espeak/speak_lib.h>
-void carmen_voice_send_alert(char *message, int min_time_between_messages = 1, char *language = "pt+f3");
+void carmen_voice_send_alert(char *message, int min_time_between_messages = 1, char *language = "pt+f1");
 
 #endif /* VOICE_H_ */

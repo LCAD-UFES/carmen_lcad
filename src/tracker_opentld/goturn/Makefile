@@ -63,7 +63,7 @@ SOURCES = goturn_main.cpp \
 PUBLIC_INCLUDES = 
     
 PUBLIC_LIBRARIES =
-TARGETS = libvoice.a libsmoother goturn_tracker
+TARGETS = alglib libvoice.a velodyne_camera_calibration libsmoother goturn_tracker
 PUBLIC_BINARIES = 
 
 goturn_tracker: goturn_main.o \
@@ -86,12 +86,17 @@ goturn_tracker: goturn_main.o \
 		helper/high_res_timer.o \
 		helper/image_proc.o \
 		gsl_smooth_points.o
-		
 
 # rules
 libvoice.a:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libvoice
 	
+alglib:
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/alglib
+
+velodyne_camera_calibration:
+	$(MAKE) -C $(CARMEN_HOME)/src/velodyne_camera_calibration
+
 libsmoother:
 	$(MAKE) -C Smoother
 
