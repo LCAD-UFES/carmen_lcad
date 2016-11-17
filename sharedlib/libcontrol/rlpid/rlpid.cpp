@@ -125,9 +125,9 @@ importa_pesos()
 }
 
 
-#define RBF_MULTIPLIER 1.0
-#define FF_MULTIPLIER 0.05
-#define GAUSS_MULTIPLIER 0.05
+#define RBF_MULTIPLIER 10.0 //1.0
+#define FF_MULTIPLIER 1.0 //0.05
+#define GAUSS_MULTIPLIER 1.0 //0.05
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////   INITIALIZATION   //////////////////////////////////////////////////////////////////////
@@ -166,9 +166,9 @@ initializate_variables(past_variables pv)
 		pv.past_error_order[i] = 0;
 		pv.past_recomended_pid_params[i] = 0;
 	}
-	pv.past_pid_params[0] = 0.12; //1250
-	pv.past_pid_params[1] = 0.32; //600; //
-	pv.past_pid_params[2] = 0.08; //25; //
+	pv.past_pid_params[0] = 1250;//0.12; //1250
+	pv.past_pid_params[1] = 600;//0.32; //600; //
+	pv.past_pid_params[2] = 25;//0.08; //25; //
 ///////////////////////////////// INITIALIZE NETWORK //////////////////////////////////
 	for (i = 0; i < neural_network_size; i++)
 	{
@@ -623,9 +623,9 @@ carmen_librlpid_compute_effort_signal(double current_phi, double desired_phi, do
 
 	load_variables(pv);
 
-	//printf("%f  %f  %f %f  %f  %f\n", U[0], U[1], U[2], error[0], error[1], error[2]);
+	printf("u %f  e %f  kp %f ki %f  kd %f\n", U[0], error[0], pid_params[0], pid_params[1], pid_params[2]);
 
-	calculate_error(current_phi, desired_phi); // Step 2 ==> CALCULA ERRO
+	calculate_error(desired_phi, current_phi); // Step 2 ==> CALCULA ERRO
 	external_reinforcement_signal(params.alfa_weight_coef, params.beta_weight_coef, params.error_band); //Step 3 ==> RECOMPENSA
 	update_neetwork_hidden_unit_phi();// ==> UPDATE PHI
 	update_recomended_pid_output(); //Step 4 ==> UPDATE K`
@@ -640,7 +640,7 @@ carmen_librlpid_compute_effort_signal(double current_phi, double desired_phi, do
 	//Estimate FUTURE reward
 	double atan_current_curvature = carmen_get_curvature_from_phi(current_phi, v, understeer_coeficient, distance_between_front_and_rear_axles);
 
-	double future_phi = carmen_libcarneuralmodel_compute_new_phi_from_effort(-100 * U[0], atan_current_curvature, ann_input, steering_ann, v,
+	double future_phi = carmen_libcarneuralmodel_compute_new_phi_from_effort(U[0], atan_current_curvature, ann_input, steering_ann, v,
 								understeer_coeficient, distance_between_front_and_rear_axles, max_phi);		//Step 6 ==> PREVE Y(t+1)
 
 	calculate_error(next_desired_phi, future_phi); // Step 6 ==> CALCULA ERRO
@@ -657,7 +657,53 @@ carmen_librlpid_compute_effort_signal(double current_phi, double desired_phi, do
 	//printf("%f\n", U[0]);
 	exporta_pesos();
 
-	return carmen_clamp(-100.0, (-100 * U[0]), 100.0);
+	return carmen_clamp(-100.0, (U[0]), 100.0);
+}
+
+
+double
+carmen_librlpid_compute_effort(double current_curvature, double desired_curvature)
+{
+	static bool first_time = true;
+	static past_variables pv;
+	static intelligent_control_params params;
+
+	if(first_time)
+	{
+		params = read_parameters("rlpid_params.txt");
+		pv = initializate_variables(pv); // Step 1
+		first_time = false;
+	}
+
+	calculate_error(desired_curvature, current_curvature); // Step 6 ==> CALCULA ERRO
+	update_neetwork_hidden_unit_phi_future();// ==> UPDATE PHI
+	future_critic_value = update_critic_value_future(); //Step 7 ==> UPDATE V
+	calculate_td_error(params.discount_factor); //Step 8 ==> CALCULA ERRO TD
+	load_variables(pv);
+	weights_update(params.actor_learning_rate, params.critic_learning_rate); //Step 9 ==> UPDATE PESOS
+	center_vector_update(params.learning_rate_center); //Setp 10 ==> UPDATE CENTRO
+	width_scalar_update(params.learning_rate_width); //Step 10 ==> UPDATE WIDTH SCALAR
+
+
+
+	load_variables(pv);
+	calculate_error(desired_curvature, current_curvature); // Step 2 ==> CALCULA ERRO
+	external_reinforcement_signal(params.alfa_weight_coef, params.beta_weight_coef, params.error_band); //Step 3 ==> RECOMPENSA
+	update_neetwork_hidden_unit_phi();// ==> UPDATE PHI
+	update_recomended_pid_output(); //Step 4 ==> UPDATE K`
+	critic_value = update_critic_value_output();	//Step 4 ==> UPDATE V
+
+	update_pid_params(); //Step 5 ==> UPDATE K
+
+	update_plant_input_u(); //Step 5 ==> UPDATE U
+
+	//pv = save_variables(pv);
+
+	printf("u %f  e %f  kp %f ki %f  kd %f\n", U[0], error[0], pid_params[0], pid_params[1], pid_params[2]);
+
+	//exporta_pesos();
+
+	return carmen_clamp(-100.0, (U[0]), 100.0);
 }
 
 

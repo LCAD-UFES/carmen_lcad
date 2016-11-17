@@ -101,7 +101,6 @@ typedef struct
 	double maximum_deceleration_forward;
 	double maximum_deceleration_reverse;
 	double maximum_acceleration_reverse;
-	
 	double distance_between_rear_car_and_rear_wheels;
 	double length;
 
@@ -109,17 +108,20 @@ typedef struct
 	int nun_motion_commands;
 	int current_motion_command_vector_index;
 
-	int initialize_neural_networks;
-
-	unsigned int use_mpc;
 	carmen_localize_ackerman_globalpos_message global_pos;
+	carmen_robot_ackerman_config_t robot_config;
+
+	int initialize_neural_networks;
+	unsigned int use_mpc;
 
 } carmen_simulator_ackerman_config_t, *carmen_simulator_ackerman_config_p;
+
 
 typedef struct {
 	int exhaustive_value;
 	double steering_output;
 } exhaustive_value_to_steering_mapping;
+
 
 typedef struct {
 	double atan_desired_curvature;
@@ -127,9 +129,11 @@ typedef struct {
 	double b;
 } state;
 
+
 typedef struct {
 	double steering_command;
 } action;
+
 
 #ifdef __cplusplus
 }

@@ -1,14 +1,11 @@
 #include <list>
 #include <vector>
-#include <obstacle_avoider_interface.h>
 #include "mpc.h"
 
 
-#define DELTA_T (1.0 / 40.0) // 40 Htz
-#define PREDICTION_HORIZON	(2.0)
-
 FILE *gnuplot_save;
 bool save_plot = false;
+
 
 using namespace std;
 
