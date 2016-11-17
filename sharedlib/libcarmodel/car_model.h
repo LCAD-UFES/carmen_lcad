@@ -12,8 +12,8 @@ extern "C" {
 #include <floatfann.h>
 #include <pid.h>
 
-#define NUM_VELOCITY_ANN_INPUTS	360
-#define NUM_STEERING_ANN_INPUTS	80
+#define NUM_VELOCITY_ANN_INPUTS 360
+#define NUM_STEERING_ANN_INPUTS 80
 
 
 carmen_ackerman_traj_point_t
