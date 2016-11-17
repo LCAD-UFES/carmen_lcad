@@ -28,6 +28,9 @@
 #define MAX_OVERLAP_FACTOR 0.1		// if two circles overlaps more than this factor then they are considered the same
 #define RGOAL 0.5
 #define DELTA_T 0.01                // Size of step for the ackerman Euler method
+#define ALFA 1                // Weight of nearest circle radius for step_size
+#define BETA 1                // Weight of nearest circle path distance to goal for step_size
+#define MIN_STEP_SIZE 0.05
 
 class StehsPlanner
 {
@@ -125,6 +128,10 @@ public:
     double compute_new_phi_with_ann(double steering_effort, double current_phi, double current_v);
 
     StateNodePtr GetNextState(StateNodePtr current_state, double a, double w, double step_size);
+
+    CircleNodePtr FindNearestCircle(StateNodePtr state_node);
+
+    double UpdateStep(StateNodePtr state_node);
 
     void Expand(
                 StateNodePtr current,
