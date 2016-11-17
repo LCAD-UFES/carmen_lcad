@@ -480,7 +480,42 @@ StehsPlanner::GetNextState(StateNodePtr current_state, double a, double w, doubl
     return (next_state);
 }
 
-// TODO Rânik control mode!!!
+CircleNodePtr
+StehsPlanner::FindNearestCircle(StateNodePtr state_node)
+{
+	std::list<CircleNode>::iterator it = circle_path.begin();
+	std::list<CircleNode>::iterator end = circle_path.end();
+
+	double min_distance = DBL_MAX;
+	double current_distance;
+
+	for (; it != end; it++)
+	{
+		current_distance = Distance(state_node->state.x, state_node->state.y, it->circle.x, it->circle.y);
+
+		if (current_distance < min_distance)
+		{
+			min_distance = current_distance;
+		}
+		else
+		{
+			it--;
+			break;
+		}
+	}
+	return (it);
+}
+
+
+double
+StehsPlanner::UpdateStep(StateNodePtr state_node)   // TODO Pensar melhor nessa funcao, parece sempre retornar o MIN_STEP_SIZE
+{
+	CircleNodePtr nearest_circle = FindNearestCircle(state_node);
+
+	return (std::min(std::min((ALFA * nearest_circle->circle.radius) / state_node->state.v, (BETA * nearest_circle->f) / state_node->state.v), MIN_STEP_SIZE));
+}
+
+
 void
 StehsPlanner::Expand(
         StateNodePtr current_state,
@@ -492,7 +527,7 @@ StehsPlanner::Expand(
     double a[3] = {-1.0, 0.0, 1.0};
     double w[3] = {-0.01, 0.0, 0.01};
 
-    double step_size = ;
+    double step_size = UpdateStep(current_state);
 
     // the acceleration loop
     for (int i = 0; i < 3; ++i) {

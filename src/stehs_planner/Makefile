@@ -7,8 +7,10 @@ LINK = g++
 CXXFLAGS += -std=c++0x
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/pid
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarmodel
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/pid
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcarmodel
 
 LFLAGS += 	-lgrid_mapping -lmap_io -lmap_util -lmap_interface -lparam_interface -lipc -lglobal -lmap_interface  -lprob_models -llocalize_ackerman_interface -lsimulator_ackerman_interface \
