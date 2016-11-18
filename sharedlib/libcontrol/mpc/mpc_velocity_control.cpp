@@ -58,14 +58,8 @@ carmen_libmpc_get_optimized_velocity_effort_using_MPC(PARAMS &params)
 	if (init_velocity_mpc(params))
 		return;
 
-	double effort = seed.k1;
+	params.velocity_descriptors = get_optimized_effort(&params, seed);
 
-	// Calcula o dk do proximo ciclo
-	double Cxk = car_model(effort, atan_current_curvature, params.v, params.steering_ann_input, &params);
-	params.velocity_error = params. - Cxk;
-	params.previous_k1 = effort;
-
-	seed = get_optimized_effort(&params, seed);
 	static int mpc_state_controller = STOP_CAR;
 
 	if (fabs(desired_velocity) < 0.05)

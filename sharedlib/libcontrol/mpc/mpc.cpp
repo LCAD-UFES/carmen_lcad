@@ -169,12 +169,6 @@ my_f(const gsl_vector *v, void *params_ptr)
 	unsigned int j = get_motion_timed_index_to_motion_command(params);
 	double motion_commands_vector_time = params->motion_commands_vector[j].time;
 
-//	while ((motion_commands_vector_time < params->time_elapsed_since_last_motion_command) && (j < params->motion_commands_vector_size))
-//	{
-//		j++;
-//		motion_commands_vector_time += params->motion_commands_vector[j].time;
-//	}
-
 	for (unsigned int i = 0; i < phi_vector.size(); i++)
 	{
 		error = phi_vector[i] - params->motion_commands_vector[j].phi;
@@ -191,7 +185,6 @@ my_f(const gsl_vector *v, void *params_ptr)
 	}
 
 	double cost = error_sum;// + 0.00011 * sqrt((params->previous_k1 - d.k1) * (params->previous_k1 - d.k1));
-	//printf("%lf  %lf  %lf  %lf\n", cost, params->previous_k1, d.k1, params->previous_k1 - d.k1);
 
 	return (cost);
 }
@@ -293,7 +286,6 @@ get_optimized_effort(PARAMS *params, EFFORT_SPLINE_DESCRIPTOR seed)
 		status = gsl_multimin_test_gradient(s->gradient, 1e-3);
 
 	} while ((status == GSL_CONTINUE) && (iter < 15));
-
 	//printf("iter = %ld\n", iter);
 
 	seed.k1 = carmen_clamp(-100.0, gsl_vector_get(s->x, 0), 100.0);
