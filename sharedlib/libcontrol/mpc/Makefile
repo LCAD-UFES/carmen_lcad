@@ -15,7 +15,7 @@ LFLAGS +=  -lfann -lgsl -lgslcblas -lcarmodel -lobstacle_avoider_interface
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcarmodel 
 LFLAGS += -L$(CARMEN_HOME)/lib 
 
-SOURCES = mpc.cpp mpc_position_control.cpp
+SOURCES = mpc.cpp mpc_position_control.cpp 
  
 PUBLIC_INCLUDES = mpc.h
 #PUBLIC_LIBRARIES = libpid.a

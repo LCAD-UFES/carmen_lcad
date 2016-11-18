@@ -1,14 +1,11 @@
 #include <list>
 #include <vector>
-#include <obstacle_avoider_interface.h>
 #include "mpc.h"
 
 
-#define DELTA_T (1.0 / 40.0) // 40 Htz
-#define PREDICTION_HORIZON	(2.0)
-
 FILE *gnuplot_save;
 bool save_plot = false;
+
 
 using namespace std;
 
@@ -17,7 +14,7 @@ vector<double>
 get_effort_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors)
 {
 	double delta_t = DELTA_T;
-	double total_time = PREDICTION_HORIZON;
+	double total_time = POSITION_PREDICTION_HORIZON;
 	double x[4] = { 0.0, total_time / 3.0, 2.0 * total_time / 3.0, total_time };
 	double y[4] = { descriptors->k1, descriptors->k2, descriptors->k3, descriptors->k4 };
 
@@ -98,14 +95,41 @@ car_model(double steering_effort, double atan_current_curvature, double v, fann_
 
 
 vector<double>
-get_phi_vector_from_spline_descriptors(vector<carmen_ackerman_traj_point_t> &pose_vector, EFFORT_SPLINE_DESCRIPTOR *descriptors, PARAMS *param)
+get_phi_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, PARAMS *params)
+{
+	fann_type steering_ann_input[NUM_STEERING_ANN_INPUTS];
+	memcpy(steering_ann_input, params->steering_ann_input, NUM_STEERING_ANN_INPUTS * sizeof(fann_type));
+
+	vector<double> effort_vector = get_effort_vector_from_spline_descriptors(descriptors);
+	vector<double> velocity_vector = get_velocity_supersampling_motion_commands_vector(params, effort_vector.size());
+	vector<double> phi_vector;
+	double atan_current_curvature = params->atan_current_curvature;
+
+	for (unsigned int i = 0; i < effort_vector.size(); i++)
+	{
+//		double phi = car_model(effort_vector[i], atan_current_curvature, params->v, steering_ann_input, params);
+		double phi = car_model(effort_vector[i], atan_current_curvature, velocity_vector[i], steering_ann_input, params);
+		phi = phi + params->dk;
+
+//		phi_vector.push_back(phi);
+		phi_vector.push_back(phi + params->dk);
+
+		atan_current_curvature = carmen_get_curvature_from_phi(phi, params->v, params->understeer_coeficient, params->distance_rear_axles);
+	}
+	return (phi_vector);
+}
+
+
+vector<carmen_ackerman_traj_point_t>
+get_pose_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, PARAMS *param)
 {
 	fann_type steering_ann_input[NUM_STEERING_ANN_INPUTS];
 	memcpy(steering_ann_input, param->steering_ann_input, NUM_STEERING_ANN_INPUTS * sizeof(fann_type));
 
 	vector<double> effort_vector = get_effort_vector_from_spline_descriptors(descriptors);
 	vector<double> velocity_vector = get_velocity_supersampling_motion_commands_vector(param, effort_vector.size());
-	vector<double> phi_vector;
+	//vector<double> phi_vector;
+	vector<carmen_ackerman_traj_point_t> pose_vector;
 
 	double atan_current_curvature = param->atan_current_curvature;
 
@@ -114,20 +138,20 @@ get_phi_vector_from_spline_descriptors(vector<carmen_ackerman_traj_point_t> &pos
 	robot_state.y = param->global_pos.globalpos.y;
 	robot_state.theta = param->global_pos.globalpos.theta;
 	double distance_traveled = 0.0;
+
 	for (unsigned int i = 0; i < effort_vector.size(); i++)
 	{
 		double phi = car_model(effort_vector[i], atan_current_curvature, velocity_vector[i], steering_ann_input, param);
-		phi_vector.push_back(phi + param->dk);
+		//phi_vector.push_back(phi + param->dk);
 		atan_current_curvature = carmen_get_curvature_from_phi(phi, param->v, param->understeer_coeficient, param->distance_rear_axles);
 
 		robot_state.v = velocity_vector[i];
 		robot_state.phi = phi;
-		carmen_ackerman_traj_point_t pose = carmen_libcarmodel_recalc_pos_ackerman(robot_state, velocity_vector[i], phi,
-				DELTA_T, &distance_traveled, DELTA_T, param->robot_config);
+		carmen_ackerman_traj_point_t pose = carmen_libcarmodel_recalc_pos_ackerman(robot_state, velocity_vector[i], phi, DELTA_T, &distance_traveled, DELTA_T, *param->robot_config);
 		pose_vector.push_back(pose);
 		robot_state = pose;
 	}
-	return (phi_vector);
+	return (pose_vector);
 }
 
 
@@ -139,13 +163,16 @@ dist(carmen_ackerman_traj_point_t v, carmen_ackerman_motion_command_t w)
 
 
 double
-distance_point_to_line(carmen_ackerman_traj_point_t point, carmen_ackerman_motion_command_t *line_a, carmen_ackerman_motion_command_t *line_b)
+distance_point_to_line(carmen_ackerman_traj_point_t point, carmen_ackerman_motion_command_t line_a, carmen_ackerman_motion_command_t line_b)
 {
 	//printf("%lf %lf %lf %lf %lf %lf\n", point.x, point.y, line_a->x, line_a->y, line_b->x, line_b->y);
 	//yA - yB = a, xB - xA = b e xAyB - xByA=c
-	double a = line_a->y - line_b->y;
-	double b = line_b->x - line_a->x;
-	double c = (line_a->x * line_b->y) - (line_b->x * line_a->y);
+	double a = line_a.y - line_b.y;
+	double b = line_b.x - line_a.x;
+	double c = (line_a.x * line_b.y) - (line_b.x * line_a.y);
+
+	if ( a == 0.0 || b == 0.0)
+		return (5.0);   //  quando os pontos sao iguais, oq fazer?
 
 	// dist = |ax0 + by0 + c| / √(a^2 + b^2)
 	double dist = fabs((a *  point.x) + (b * point.y) + c) / sqrt((a * a) + (b * b));
@@ -160,7 +187,6 @@ my_f(const gsl_vector *v, void *params)
 	EFFORT_SPLINE_DESCRIPTOR d;
 	PARAMS *p = (PARAMS *) params;
 
-	double delta_t = DELTA_T;
 	double pose_vector_time = 0.0;
 	double error = 0.0;
 	double error_sum = 0.0;
@@ -170,8 +196,7 @@ my_f(const gsl_vector *v, void *params)
 	d.k3 = gsl_vector_get(v, 2);
 	d.k4 = gsl_vector_get(v, 3);
 
-	vector<carmen_ackerman_traj_point_t> pose_vector;
-	vector<double> phi_vector = get_phi_vector_from_spline_descriptors(pose_vector, &d, p);
+	vector<carmen_ackerman_traj_point_t> pose_vector = get_pose_vector_from_spline_descriptors(&d, p);
 
 	// TODO: por que nao da para substituir isso pela funcao que (aparentemente) faz a mesma coisa?
 	double motion_commands_vector_time = p->motion_commands_vector[0].time;
@@ -182,22 +207,24 @@ my_f(const gsl_vector *v, void *params)
 		j++;
 		motion_commands_vector_time += p->motion_commands_vector[j].time;
 	}
+	//printf("k1 %lf k2 %lf k3 %lf k4\n", d.k1, d.k2, d.k3, d.k4);
 
-//	printf("x %lf  y %lf t %lf,  xp %lf  yp %lf t %lf\n",
-//			p->motion_commands_vector[j].x, p->motion_commands_vector[j].y, p->motion_commands_vector[j].theta,
-//			pose_vector[0].x, pose_vector[0].y, pose_vector[0].theta);
+//	printf("x %lf  y %lf t %lf,  xp %lf  yp %lf t %lf\n", p->motion_commands_vector[j].x, p->motion_commands_vector[j].y, p->motion_commands_vector[j].theta, pose_vector[0].x, pose_vector[0].y, pose_vector[0].theta);
 
 	for (unsigned int i = 0; i < pose_vector.size(); i++)
 	{
-//		printf("%lf %lf\n", pose_vector[i].x, pose_vector[i].y);
+//		printf("x %lf  y %lf xp %lf  yp %lf\n", p->motion_commands_vector[j].x, p->motion_commands_vector[j].y, pose_vector[i].x, pose_vector[i].y);
+
 //		error = dist(pose_vector[i], p->motion_commands_vector[j]);
-		error = distance_point_to_line(pose_vector[i], &p->motion_commands_vector[j], &p->motion_commands_vector[j+1]);
+//		printf("dist %lf\n", error);
+		error = distance_point_to_line(pose_vector[i], p->motion_commands_vector[j], p->motion_commands_vector[j+1]);
 
-		error_sum += sqrt(error * error);
+		error_sum += fabs(error);
 
-		pose_vector_time += delta_t;
+		pose_vector_time += DELTA_T;
 		if (pose_vector_time > motion_commands_vector_time)
 		{
+			//printf("Time %lf\n", p->motion_commands_vector[j].time);
 			j++;
 			if (j >= p->motion_commands_vector_size)
 				break;
@@ -206,7 +233,7 @@ my_f(const gsl_vector *v, void *params)
 	}
 
 	double cost = error_sum;// + 0.00011 * sqrt((p->previous_k1 - d.k1) * (p->previous_k1 - d.k1));
-	//printf("%lf\n", cost);
+	//printf("erro %lf\n\n", cost);
 
 	return (cost);
 }
@@ -215,52 +242,52 @@ my_f(const gsl_vector *v, void *params)
 void
 my_df(const gsl_vector *v, void *params, gsl_vector *df)
 {
-	EFFORT_SPLINE_DESCRIPTOR d;
-	double h = 0.1;
-	double f_x = my_f(v, params);
-	gsl_vector *x_h;
+		EFFORT_SPLINE_DESCRIPTOR d;
+		double h = 0.1;
+		double f_x = my_f(v, params);
+		gsl_vector *x_h;
 
-	x_h = gsl_vector_alloc(4);
+		x_h = gsl_vector_alloc(4);
 
-	d.k1 = gsl_vector_get(v, 0);
-	d.k2 = gsl_vector_get(v, 1);
-	d.k3 = gsl_vector_get(v, 2);
-	d.k4 = gsl_vector_get(v, 3);
+		d.k1 = gsl_vector_get(v, 0);
+		d.k2 = gsl_vector_get(v, 1);
+		d.k3 = gsl_vector_get(v, 2);
+		d.k4 = gsl_vector_get(v, 3);
 
-	gsl_vector_set(x_h, 0, d.k1 + h);
-	gsl_vector_set(x_h, 1, d.k2);
-	gsl_vector_set(x_h, 2, d.k3);
-	gsl_vector_set(x_h, 3, d.k4);
-	double f_k1_h = my_f(x_h, params);
-	double df_k1_h = (f_k1_h - f_x) / h;
+		gsl_vector_set(x_h, 0, d.k1 + h);
+		gsl_vector_set(x_h, 1, d.k2);
+		gsl_vector_set(x_h, 2, d.k3);
+		gsl_vector_set(x_h, 3, d.k4);
+		double f_k1_h = my_f(x_h, params);
+		double df_k1_h = (f_k1_h - f_x) / h;
 
-	gsl_vector_set(x_h, 0, d.k1);
-	gsl_vector_set(x_h, 1, d.k2 + h);
-	gsl_vector_set(x_h, 2, d.k3);
-	gsl_vector_set(x_h, 3, d.k4);
-	double f_k2_h = my_f(x_h, params);
-	double df_k2_h = (f_k2_h - f_x) / h;
+		gsl_vector_set(x_h, 0, d.k1);
+		gsl_vector_set(x_h, 1, d.k2 + h);
+		gsl_vector_set(x_h, 2, d.k3);
+		gsl_vector_set(x_h, 3, d.k4);
+		double f_k2_h = my_f(x_h, params);
+		double df_k2_h = (f_k2_h - f_x) / h;
 
-	gsl_vector_set(x_h, 0, d.k1);
-	gsl_vector_set(x_h, 1, d.k2);
-	gsl_vector_set(x_h, 2, d.k3 + h);
-	gsl_vector_set(x_h, 3, d.k4);
-	double f_k3_h = my_f(x_h, params);
-	double df_k3_h = (f_k3_h - f_x) / h;
+		gsl_vector_set(x_h, 0, d.k1);
+		gsl_vector_set(x_h, 1, d.k2);
+		gsl_vector_set(x_h, 2, d.k3 + h);
+		gsl_vector_set(x_h, 3, d.k4);
+		double f_k3_h = my_f(x_h, params);
+		double df_k3_h = (f_k3_h - f_x) / h;
 
-	gsl_vector_set(x_h, 0, d.k1);
-	gsl_vector_set(x_h, 1, d.k2);
-	gsl_vector_set(x_h, 2, d.k3);
-	gsl_vector_set(x_h, 3, d.k4 + h);
-	double f_k4_h = my_f(x_h, params);
-	double df_k4_h = (f_k4_h - f_x) / h;
+		gsl_vector_set(x_h, 0, d.k1);
+		gsl_vector_set(x_h, 1, d.k2);
+		gsl_vector_set(x_h, 2, d.k3);
+		gsl_vector_set(x_h, 3, d.k4 + h);
+		double f_k4_h = my_f(x_h, params);
+		double df_k4_h = (f_k4_h - f_x) / h;
 
-	gsl_vector_set(df, 0, df_k1_h);
-	gsl_vector_set(df, 1, df_k2_h);
-	gsl_vector_set(df, 2, df_k3_h);
-	gsl_vector_set(df, 3, df_k4_h);
+		gsl_vector_set(df, 0, df_k1_h);
+		gsl_vector_set(df, 1, df_k2_h);
+		gsl_vector_set(df, 2, df_k3_h);
+		gsl_vector_set(df, 3, df_k4_h);
 
-	gsl_vector_free(x_h);
+		gsl_vector_free(x_h);
 }
 
 
@@ -307,9 +334,9 @@ get_optimized_effort(PARAMS *par, EFFORT_SPLINE_DESCRIPTOR seed)
 
 		status = gsl_multimin_test_gradient(s->gradient, 1e-3);
 
-	} while ((status == GSL_CONTINUE) && (iter < 15));
+	} while ((status == GSL_CONTINUE) && (iter < 30));
 
-	printf("iter = %ld\n", iter);
+	printf("iter = %ld status %d\n", iter, status);
 
 	seed.k1 = carmen_clamp(-100.0, gsl_vector_get(s->x, 0), 100.0);
 	seed.k2 = carmen_clamp(-100.0, gsl_vector_get(s->x, 1), 100.0);
@@ -382,7 +409,7 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double understee
 
 	// Dados futuros
 	vector<carmen_ackerman_traj_point_t> pose_vector;
-	vector<double> phi_vector = get_phi_vector_from_spline_descriptors(pose_vector, seed, p);
+	vector<double> phi_vector = get_phi_vector_from_spline_descriptors(seed, p);
 	vector<double> future_effort_vector = get_effort_vector_from_spline_descriptors(seed);
 
 	double delta_t = DELTA_T;
@@ -466,7 +493,7 @@ bool
 init_mpc(bool &first_time, PARAMS &param, EFFORT_SPLINE_DESCRIPTOR &seed, double atan_current_curvature,
 		carmen_ackerman_motion_command_p current_motion_command_vector,	int nun_motion_commands,
 		double v, double time_of_last_motion_command,
-		double understeer_coeficient, double distance_between_front_and_rear_axles, double max_phi, double maximum_steering_command_rate,
+		carmen_robot_ackerman_config_t *robot_config,
 		carmen_localize_ackerman_globalpos_message global_pos, int initialize_neural_networks)
 {
 	static bool open = true;
@@ -482,14 +509,14 @@ init_mpc(bool &first_time, PARAMS &param, EFFORT_SPLINE_DESCRIPTOR &seed, double
 		carmen_libcarneuralmodel_init_steering_ann_input(param.steering_ann_input);
 		param.dk = 0.0;
 		param.previous_k1 = 0.0;
-		param.robot_config.distance_between_front_and_rear_axles = distance_between_front_and_rear_axles;
-		param.robot_config.understeer_coeficient = understeer_coeficient;
-		param.robot_config.max_phi = max_phi;
-		param.robot_config.maximum_steering_command_rate = maximum_steering_command_rate;
+		param.robot_config = robot_config;
+
 		first_time = false;
+
+		seed = {0.0, 0.0, 0.0, 0.0};
 	}
 
-	if (current_motion_command_vector == NULL)
+	if (current_motion_command_vector == NULL || nun_motion_commands < 2 )
 	{
 		seed = {0.0, 0.0, 0.0, 0.0};
 
@@ -506,9 +533,9 @@ init_mpc(bool &first_time, PARAMS &param, EFFORT_SPLINE_DESCRIPTOR &seed, double
 	param.motion_commands_vector_size = nun_motion_commands;
 	param.atan_current_curvature = atan_current_curvature;
 	param.v = v;
-	param.understeer_coeficient = understeer_coeficient;
-	param.distance_rear_axles = distance_between_front_and_rear_axles;
-	param.max_phi = max_phi;
+	param.understeer_coeficient = robot_config->understeer_coeficient;
+	param.distance_rear_axles = robot_config->distance_between_front_and_rear_axles;
+	param.max_phi = robot_config->max_phi;
 	param.time_elapsed_since_last_motion_command = carmen_get_time() - time_of_last_motion_command;
 	param.global_pos = global_pos;
 
@@ -547,23 +574,16 @@ double
 carmen_libmpc_get_optimized_steering_effort_using_MPC_position_control(double atan_current_curvature,
 		carmen_ackerman_motion_command_p current_motion_command_vector,	int nun_motion_commands,
 		double v, double yp, double time_of_last_motion_command,
-		double understeer_coeficient, double distance_between_front_and_rear_axles, double max_phi, double maximum_steering_command_rate,
+		carmen_robot_ackerman_config_t *robot_config,
 		carmen_localize_ackerman_globalpos_message global_pos, int initialize_neural_networks)
 {
 	static PARAMS param;
 	static EFFORT_SPLINE_DESCRIPTOR seed = {0.0, 0.0, 0.0, 0.0};
 	static bool first_time = true;
-//	static int count = 0;
-//
-//	count++;
-//	if ((count % (80)) == 0)
-//		atan_current_curvature += 0.1;
-
-//	atan_current_curvature *= 1.1;
 
 	if (!init_mpc(first_time, param, seed, atan_current_curvature,
 					current_motion_command_vector,	nun_motion_commands, v, time_of_last_motion_command,
-					understeer_coeficient, distance_between_front_and_rear_axles, max_phi, maximum_steering_command_rate,
+					robot_config,
 					global_pos, initialize_neural_networks))
 		return (0.0);
 
@@ -576,15 +596,13 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC_position_control(double at
 	param.dk = 0.0;
 	param.previous_k1 = effort;
 
-	/** Tentativa de correcao da oscilacao em velocidades altas **/
-	// effort /= (1.0 / (1.0 + (v * v) / 200.5)); // boa
-
-	plot_state(&seed, &param, v, understeer_coeficient, distance_between_front_and_rear_axles, effort);
+	plot_state(&seed, &param, v, robot_config->understeer_coeficient, robot_config->distance_between_front_and_rear_axles, effort);
 
 	vector<carmen_ackerman_traj_point_t> pose_vector;
-	get_phi_vector_from_spline_descriptors(pose_vector, &seed, &param);
-	publish_mpc_plan_message(pose_vector);
+	//get_phi_vector_from_spline_descriptors(pose_vector, &seed, &param);
+	//publish_mpc_plan_message(pose_vector);
 
 	carmen_clamp(-100.0, effort, 100.0);
+	//printf("St %lf\n", effort);
 	return (effort);
 }

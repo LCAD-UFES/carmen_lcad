@@ -5,8 +5,6 @@
 
 using namespace std;
 
-#define DELTA_T (1.0 / 40.0) // 0.025 40 Htz
-#define PREDICTION_HORIZON	0.4
 
 enum
 {
@@ -18,13 +16,51 @@ enum
 };
 
 
-void
-carmen_libmpc_get_optimized_velocity_effort_using_MPC(double *throttle_command, double *brake_command, int *gear_command,
-		carmen_ackerman_motion_command_p current_motion_command_vector,	int nun_motion_commands, double desired_velocity, double current_velocity,
-		double time_of_last_motion_command)
+bool
+init_velocity_mpc(PARAMS &params)
 {
+	static bool first_time = true;
+
+	if (first_time)
+	{
+		params.velocity_ann = fann_create_from_file("velocity_ann.net");
+		if (params.velocity_ann == NULL)
+		{
+			printf("Error: Could not create velocity_ann\n");
+			exit(1);
+		}
+		carmen_libcarneuralmodel_init_velocity_ann_input(velocity_ann_input);
+
+		params.velocity_descriptors.k1 = 0.0;
+		params.velocity_descriptors.k2 = 0.0;
+		params.velocity_descriptors.k3 = 0.0;
+		params.velocity_descriptors.k4 = 0.0;
+
+		params.velocity_error = 0.0;
+		params.previous_velocity_k1 = 0.0;
+
+
+//		if (save_and_plot)
+//			open_file_to_save_plot(true);
+
+		first_time = false;
+		return (true);
+	}
+
+	return (false);
+}
+
+
+
+void
+carmen_libmpc_get_optimized_velocity_effort_using_MPC(PARAMS &params)
+{
+	if (init_velocity_mpc(params))
+		return;
+
+	params.velocity_descriptors = get_optimized_effort(&params, seed);
+
 	static int mpc_state_controller = STOP_CAR;
-	double g_brake_gap = 17.0;   // Q issu????
 
 	if (fabs(desired_velocity) < 0.05)
 	{

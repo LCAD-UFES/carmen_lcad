@@ -54,8 +54,9 @@ class DqnNet
 
 		DqnNet(char *solver_file);
 
-		// the first element is the action, and the second the estimated reward
-		std::pair<int, double> SelectAction(vector<Mat*> input,
+		// the first pair refers to velocity and the second to phi.
+		// the first element of each pair is the action, and the second the estimated reward
+		std::pair<std::pair<int, double>, std::pair<int, double>> SelectAction(vector<Mat*> input,
 				vector<float> *additional_data, int show_output = 1);
 
 		//void Train(DqnEpisode *episode);

@@ -8,7 +8,7 @@ layers {
   top: "dummy1"
   memory_data_param {
     batch_size: 1
-    channels: 9
+    channels: 12
     height: 100
     width: 100
   }
@@ -21,7 +21,7 @@ layers {
   top: "dummy2"
   memory_data_param {
     batch_size: 1
-    channels: 5
+    channels: 42
     height: 1
     width: 1
   }
@@ -35,7 +35,7 @@ layers {
   top: "dummy3"
   memory_data_param {
     batch_size: 1
-    channels: 5
+    channels: 42
     height: 1
     width: 1
   }
@@ -47,7 +47,7 @@ layers {
   top: "dummy4"
   memory_data_param {
     batch_size: 1
-    channels: 300 
+    channels: 30 
     height: 1
     width: 1
   }
@@ -130,7 +130,7 @@ layers {
   bottom: "pool2"
   top: "conv3"
   convolution_param {
-    num_output: 64
+    num_output: 32
     kernel_size: 4
     stride: 2
     weight_filler {
@@ -157,7 +157,7 @@ layers {
   bottom: "conv3"
   top: "ip1"
   inner_product_param {
-    num_output: 64
+    num_output: 32
     weight_filler {
       type: "gaussian"
       std: 0.05
@@ -176,7 +176,7 @@ layers {
   bottom: "flaten_add_data"
   top: "ip1.5"
   inner_product_param {
-    num_output: 64
+    num_output: 32
     weight_filler {
       type: "gaussian"
       std: 0.05
@@ -202,7 +202,7 @@ layers {
   bottom: "concated"
   top: "ip2"
   inner_product_param {
-    num_output: 64
+    num_output: 32
     weight_filler {
       type: "gaussian"
       std: 0.05
@@ -221,7 +221,7 @@ layers {
   bottom: "ip2"
   top: "q_values"
   inner_product_param {
-    num_output: 5
+    num_output: 42
     weight_filler {
       type: "gaussian"
       std: 0.05

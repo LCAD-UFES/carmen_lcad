@@ -96,7 +96,7 @@ carmen_visual_tracker_define_messages()
 }
 
 void
-build_and_publish_message(char *host, double timestamp)
+publish_box_message(char *host, double timestamp)
 {
 	bounding_box box_detected;
 		if (box.x1_ != -1.0)
@@ -335,7 +335,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 		last_message = *image_msg;
 		process_image(image_msg);
 
-		build_and_publish_message(image_msg->host, image_msg->timestamp);
+		publish_box_message(image_msg->host, image_msg->timestamp);
 //		double time_f = carmen_get_time() - time_now;
 //		printf("tp: %lf \n", time_f);
 	}

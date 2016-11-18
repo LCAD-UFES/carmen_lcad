@@ -544,13 +544,16 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 
 		if (ford_escape_hybrid_config->use_mpc)
 		{
+			carmen_robot_ackerman_config_t robot_config;
+			robot_config.understeer_coeficient = ford_escape_hybrid_config->understeer_coeficient2;
+			robot_config.distance_between_front_and_rear_axles = ford_escape_hybrid_config->distance_between_front_and_rear_axles;
+			robot_config.max_phi = ford_escape_hybrid_config->max_phi;
 			// printf("delay %lf\n", carmen_get_time() - ford_escape_hybrid_config->time_of_last_command);
 			g_steering_command = -carmen_libmpc_get_optimized_steering_effort_using_MPC(
 					atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)),
 					ford_escape_hybrid_config->current_motion_command_vector, ford_escape_hybrid_config->nun_motion_commands,
 					ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->time_of_last_command,
-					ford_escape_hybrid_config->understeer_coeficient2, ford_escape_hybrid_config->distance_between_front_and_rear_axles,
-					ford_escape_hybrid_config->max_phi, 0);
+					&robot_config, 0);
 
 			///////////////////////// So para guardar os phi s para medir erro no modelo do carro
 //			if (ford_escape_hybrid_config->nun_motion_commands > 0)

@@ -32,7 +32,8 @@ LFLAGS += -lboost_system -lboost_filesystem -lboost_regex `pkg-config --libs ope
 		  -L $(CAFFE_HOME)/build/lib -lcaffe -ltinyxml -lglog -lopencv_video -lparam_interface -lipc \
 		  -lglobal -lbumblebee_basic_interface -lvisual_tracker_interface -lvelodyne_camera_calibration \
 		  -lvelodyne_interface -lstereo_interface -llocalize_ackerman_interface -lrotation_geometry \
-		  -lobstacle_distance_mapper_interface -lobstacle_avoider_interface -L Smoother -lsmoother -lcollision_detection -lalglib
+		  -lobstacle_distance_mapper_interface -lobstacle_avoider_interface -L Smoother -lsmoother \
+		  -lgsl -lgslcblas -lm -lcollision_detection -lalglib
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath\
 		-lboost_thread-mt -lrt -lboost_signals -lboost_system \
@@ -56,12 +57,13 @@ SOURCES = goturn_main.cpp \
 		  helper/bounding_box.cpp \
 		  helper/helper.cpp \
 		  helper/high_res_timer.cpp \
-		  helper/image_proc.cpp
+		  helper/image_proc.cpp \
+		  gsl_smooth_points.cpp
  
 PUBLIC_INCLUDES = 
     
 PUBLIC_LIBRARIES =
-TARGETS = libvoice.a libsmoother goturn_tracker
+TARGETS = alglib libvoice.a velodyne_camera_calibration libsmoother goturn_tracker
 PUBLIC_BINARIES = 
 
 goturn_tracker: goturn_main.o \
@@ -82,12 +84,19 @@ goturn_tracker: goturn_main.o \
 		helper/bounding_box.o \
 		helper/helper.o \
 		helper/high_res_timer.o \
-		helper/image_proc.o
+		helper/image_proc.o \
+		gsl_smooth_points.o
 
 # rules
 libvoice.a:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libvoice
 	
+alglib:
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/alglib
+
+velodyne_camera_calibration:
+	$(MAKE) -C $(CARMEN_HOME)/src/velodyne_camera_calibration
+
 libsmoother:
 	$(MAKE) -C Smoother
 

@@ -758,6 +758,7 @@ read_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *conf
 			{"rrt",   "use_mpc",                    CARMEN_PARAM_ONOFF, &(config->use_mpc), 0, NULL}
 	};
 
+
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
 
@@ -830,6 +831,16 @@ read_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *conf
 	if(config->use_rear_laser)
 		fill_laser_config_data( &(config->rear_laser_config));
 
+
+
+	config->robot_config.maximum_steering_command_rate = config->maximum_steering_command_rate;
+	config->robot_config.understeer_coeficient = config->understeer_coeficient;
+	config->robot_config.maximum_acceleration_forward = config->maximum_acceleration_forward;
+	config->robot_config.maximum_deceleration_forward = config->maximum_deceleration_forward;
+	config->robot_config.maximum_acceleration_reverse = config->maximum_acceleration_reverse;
+	config->robot_config.maximum_deceleration_reverse = config->maximum_deceleration_reverse;
+	config->robot_config.distance_between_rear_car_and_rear_wheels = config->distance_between_rear_car_and_rear_wheels;
+	config->robot_config.length = config->length;
 }
 
 

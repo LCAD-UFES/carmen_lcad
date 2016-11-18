@@ -14,6 +14,7 @@
 #include <carmen/rddf_interface.h>
 #include <carmen/grid_mapping.h>
 #include <carmen/collision_detection.h>
+#include <car_model.h>
 
 #include <cmath>
 #include <queue>
@@ -25,90 +26,123 @@
 
 #define MIN_OVERLAP_FACTOR 0.5		// if two circles overlaps more than this factor then they are considered connected
 #define MAX_OVERLAP_FACTOR 0.1		// if two circles overlaps more than this factor then they are considered the same
+#define RGOAL 0.5
+#define DELTA_T 0.01                // Size of step for the ackerman Euler method
+#define ALFA 1                // Weight of nearest circle radius for step_size
+#define BETA 1                // Weight of nearest circle path distance to goal for step_size
+#define MIN_STEP_SIZE 0.05
 
 class StehsPlanner
 {
 public:
 
-	// the robot global state
-	State start;
+    // the robot global state
+    State start;
 
-	//
-	State goal;
-	carmen_obstacle_distance_mapper_message *distance_map;
+    //
+    State goal;
+    carmen_obstacle_distance_mapper_message *distance_map;
 
-	carmen_behavior_selector_road_profile_message *goal_list_message;
+    carmen_behavior_selector_road_profile_message *goal_list_message;
 
-	carmen_robot_ackerman_config_t robot_config;
+    carmen_robot_ackerman_config_t robot_config;
 
-	// the planner activation flag
-	bool active;
+    // the planner activation flag
+    bool active;
 
-	unsigned int show_debug_info;
-	unsigned int cheat;
-	bool lane_ready, distance_map_ready, goal_ready;
+    unsigned int show_debug_info;
+    unsigned int cheat;
+    bool lane_ready, distance_map_ready, goal_ready;
 
-	// circle path
-	std::list<CircleNode> circle_path;
+    // circle path
+    std::list<CircleNode> circle_path;
 
-	// the trajectory found
-	std::list<State> state_list;
+    // the trajectory found
+    std::list<State> state_list;
 
-	// TODO it needs to receive the start and goal node
-	std::list<CircleNode> SpaceExploration(CircleNodePtr start_node, CircleNodePtr goal_node);
+    // the min step-rate threshold
+    double kmin;
 
-	void RDDFSpaceExploration();
+    // TODO it needs to receive the start and goal node
 
-	//
-	//void SpaceTimeExploration();
+    // constructor
+    StehsPlanner();
 
-	//
-	void HeuristicSearch();
+    // destructor
+    ~StehsPlanner();
 
-	// the distance between two points
-	double Distance(const State &a, const State &b);
+    //
+    std::list<CircleNode> SpaceExploration(CircleNodePtr start_node, CircleNodePtr goal_node);
 
-	double Distance2(const State &a, const State &b);
+    void RDDFSpaceExploration();
 
-	// the distance between two points
-	double Distance(double ax, double ay, double bx, double by);
+    //
+    //void SpaceTimeExploration();
 
-	// the nearest obstacle distance
-	double ObstacleDistance(const State &point);
+    //
+    void HeuristicSearch();
 
-	// the nearest obstacle distance, overloaded version
-	double ObstacleDistance(double x, double y);
+    // the distance between two points
+    double Distance(const State &a, const State &b);
 
-	// constructor
-	StehsPlanner();
+    double Distance2(const State &a, const State &b);
 
-	// destructor
-	~StehsPlanner();
+    // the distance between two points
+    double Distance(double ax, double ay, double bx, double by);
 
-	//
-	std::list<State> BuildPath();
+    // the nearest obstacle distance
+    double ObstacleDistance(const State &point);
 
-	void Expand(CircleNodePtr current, std::priority_queue<CircleNodePtr, std::vector<CircleNodePtr>, CircleNodePtrComparator> &open_set);
+    // the nearest obstacle distance, overloaded version
+    double ObstacleDistance(double x, double y);
 
-	std::list<CircleNode> BuildCirclePath(CircleNodePtr goal_node);
+    //
+    std::list<State> BuildPath();
 
-	bool Exist(CircleNodePtr current, std::vector<CircleNodePtr> &closed_set);
+    void Expand(CircleNodePtr current, std::priority_queue<CircleNodePtr, std::vector<CircleNodePtr>, CircleNodePtrComparator> &open_set);
 
-	int FindClosestRDDFIndex();
+    std::list<CircleNode> BuildCirclePath(CircleNodePtr goal_node);
 
-	void UpdateCircleGoalDistance();
+    bool Exist(CircleNodePtr current, std::vector<CircleNodePtr> &closed_set);
 
-	int FindNextRDDFIndex(double radius_2, int current_rddf_index);
+    int FindClosestRDDFIndex();
 
-	int FindNextRDDFFreeIndex(int current_rddf_index);
+    void UpdateCircleGoalDistance();
 
-	double TimeHeuristic(State s);
+    int FindNextRDDFIndex(double radius_2, int current_rddf_index);
 
-	void ConnectCirclePathGaps();
+    int FindNextRDDFFreeIndex(int current_rddf_index);
 
-	unsigned char* GetCurrentMap();
+    void ConnectCirclePathGaps();
 
-	void ShowCirclePath();
+    unsigned char* GetCurrentMap();
+
+    void ShowCirclePath();
+
+    double TimeHeuristic(State s);
+
+    void BuildStateList(StateNodePtr goal_node);
+
+    bool Exist(StateNodePtr current, std::vector<StateNodePtr> &closed_set, double k);
+
+    double compute_new_phi_with_ann(double steering_effort, double current_phi, double current_v);
+
+    StateNodePtr GetNextState(StateNodePtr current_state, double a, double w, double step_size);
+
+    CircleNodePtr FindNearestCircle(StateNodePtr state_node);
+
+    double UpdateStep(StateNodePtr state_node);
+
+    void Expand(
+                StateNodePtr current,
+                std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set,
+                std::vector<StateNodePtr> &closed_set,
+                double k);
+
+    void GoalExpand(StateNodePtr current, StateNodePtr goal_node);
+
+    void SetSwap(std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set, std::vector<StateNodePtr> &closed_set);
+
 
 };
 
