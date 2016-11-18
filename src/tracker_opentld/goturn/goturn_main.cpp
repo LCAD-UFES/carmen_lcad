@@ -63,6 +63,8 @@ std::vector<carmen_velodyne_points_in_cam_t> points_lasers_in_cam;
 
 carmen_velodyne_partial_scan_message *velodyne_message_arrange;
 
+bool display_all_points_velodyne = 0;
+
 static int tld_image_width = 0;
 static int tld_image_height = 0;
 
@@ -116,9 +118,13 @@ static vector<carmen_ackerman_traj_point_t> localize_poses_plot;
 
 int show_final_image = 0;
 double image_zoom = 1.0 / 2.0;
+int show_velodyne_active = 0;
 int retain_image_active = 0;
 Rect image_temp_bbox(-1, -1, -1, -1);
 Rect image_final_bbox(-1, -1, -1, -1);
+double avg_range_diff = 0;
+double lat_shift = 0;
+int quant_points_in_box = 0;
 
 
 void
@@ -368,7 +374,7 @@ get_mini_box_and_update_carmen_box()
 
 
 std::vector<carmen_vector_3D_t>
-select_velodyne_points_inside_box_and_draw_them(const cv::Rect& mini_box, Mat* img)
+select_velodyne_points_inside_box_and_draw_them(const cv::Rect& mini_box, Mat* img, int show_velodyne)
 {
 	std::vector<carmen_vector_3D_t> points_inside_box;
 
@@ -415,7 +421,7 @@ select_velodyne_points_inside_box_and_draw_them(const cv::Rect& mini_box, Mat* i
 				(points_lasers_in_cam.at(i).ipy > mini_box.y) && (points_lasers_in_cam.at(i).ipy < (mini_box.y + mini_box.height)))
 				circle(*img, cv::Point(points_lasers_in_cam.at(i).ipx, points_lasers_in_cam.at(i).ipy), 2, CV_RGB(255, 255, 255), -1);
 		}
-		else
+		else if (show_velodyne)
 			circle(*img, cv::Point(points_lasers_in_cam.at(i).ipx, points_lasers_in_cam.at(i).ipy), 2, Scalar(0, 255, 255), -1);
 	}
 
@@ -501,35 +507,6 @@ compute_target_3d_position(std::vector<carmen_vector_3D_t> points_inside_box)
 }
 
 
-char
-display_bbox_and_velodyne_points(double timestamp, Mat* img)
-{
-	int ZOOM = 2;
-//	char string1[1024];
-//	strcpy(string1, "");
-//	CvFont font;
-
-	Mat zoom(Size(img->cols / ZOOM, img->rows / ZOOM), CV_8UC3);
-	resize(*img, zoom, zoom.size());
-
-//	cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, .4, .5, 0, 1, 8);
-//	sprintf(string1, "Time:%.2f, FPS:%d X: %lf Y: %lf Z: %lf\n", timestamp,
-//			disp_last_fps, trackerPoint.x , trackerPoint.y, trackerPoint.z);
-//
-//	cv::Size s = img->size();
-//	cv::Point textOrg(25, 25);
-//
-//	cv::rectangle(zoom, cv::Point(0, 0), cv::Point(s.width / ZOOM, 50), Scalar::all(0), -1);
-//	cv::putText(zoom, string1, textOrg, FONT_HERSHEY_SIMPLEX, 0.8 / ZOOM, Scalar::all(255), 1, 8);
-
-	cv::imshow(window_name, zoom);
-//	setlocale(LC_ALL, "C");
-
-	char c = cv::waitKey(2);
-	return c;
-}
-
-
 void
 bounding_box_interface(char c, Mat* img)
 {
@@ -568,8 +545,16 @@ call_tracker_and_compute_object_3d_position(Mat *img, int bumblebee_height, int 
 		tracker.Track(*img, &regressor, &box); // calls Thrun's tracker
 		cv::Rect mini_box = get_mini_box_and_update_carmen_box();
 
+		if(display_all_points_velodyne)
+		{
 		points_lasers_in_cam = carmen_velodyne_camera_calibration_lasers_points_in_camera(
 				velodyne_message_arrange, bumblebee_width, bumblebee_height);
+
+		}else
+		{
+			points_lasers_in_cam = carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle(
+							velodyne_message_arrange, bumblebee_width, bumblebee_height);
+		}
 
 		if (points_lasers_in_cam.size() == 0)
 		{
@@ -578,8 +563,9 @@ call_tracker_and_compute_object_3d_position(Mat *img, int bumblebee_height, int 
 		}
 
 		std::vector<carmen_vector_3D_t> points_inside_box =
-				select_velodyne_points_inside_box_and_draw_them(mini_box, img);
+				select_velodyne_points_inside_box_and_draw_them(mini_box, img, show_velodyne_active);
 
+		quant_points_in_box = points_inside_box.size();
 		if (points_inside_box.size() == 0)
 		{
 			printf("There are not velodyne points inside the box\n");
@@ -1379,7 +1365,7 @@ filter_trajectory(vector<carmen_ackerman_traj_point_t> &target_poses, carmen_ack
 		double dist_to_localize = sqrt(pow(target_in_robot_reference[0], 2) + pow(target_in_robot_reference[1], 2));
 		double dist_to_target = sqrt(pow(it->x - target.x, 2) + pow(it->y - target.y, 2));
 
-		if (target_in_robot_reference[0] >= 0.5 && dist_to_target >= 9.0 && dist_to_localize > 0.01)
+		if (target_in_robot_reference[0] >= 0.5 && dist_to_target >= 7.0 && dist_to_localize > 0.01)
 			target_poses_new.push_back(*it);
 	}
 
@@ -1401,7 +1387,7 @@ filter_trajectory(vector<carmen_ackerman_traj_point_t> &target_poses, carmen_ack
 
 		double dist_to_target = sqrt(pow(target_pose.x - goal_pose.x, 2) + pow(target_pose.y - goal_pose.y, 2));
 
-		while (dist_to_target > 9.0)
+		while (dist_to_target > 7.0)
 		{
 			target_poses_new_with_additional_points.push_back(goal_pose);
 
@@ -1990,7 +1976,7 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *message)
 
 
 void
-show_fps(carmen_bumblebee_basic_stereoimage_message* image_msg)
+compute_fps(carmen_bumblebee_basic_stereoimage_message* image_msg)
 {
 	static double last_timestamp = 0.0;
 	static double last_time = 0.0;
@@ -2067,6 +2053,53 @@ mouseHandler(int event, int x, int y, int flags, void *param)
 
 
 void
+write_additional_information(Mat *m, double timestamp)
+{
+	char string1[1024];
+	strcpy(string1, "");
+	CvFont font;
+
+	cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, .4, .5, 0, 1, 8);
+	sprintf(string1, "Time:%.2f, FPS:%d X: %.2lf Y: %.2lf Z: %.2lf RD: %.2lf LD: %.5lf POINTS: %d", timestamp,
+			disp_last_fps, trackerPoint.x , trackerPoint.y, trackerPoint.z,
+			avg_range_diff, lat_shift, quant_points_in_box);
+
+	cv::Size s = m->size();
+	cv::Point textOrg(25, 25);
+
+	cv::rectangle(*m, cv::Point(0, 0), cv::Point(s.width, 50), Scalar::all(0), -1);
+	cv::putText(*m, string1, textOrg, FONT_HERSHEY_SIMPLEX, 0.4, Scalar::all(255), 1, 8);
+}
+
+
+void
+handle_char(Mat *preprocessed_image, char c)
+{
+	if (c == '\r' || c == '\n')
+	{
+		tracker_restart_requested = 1;
+
+		box.x1_ = image_final_bbox.x / image_zoom;
+		box.y1_ = image_final_bbox.y / image_zoom;
+		box.x2_ = (image_final_bbox.x + image_final_bbox.width) / image_zoom;
+		box.y2_ = (image_final_bbox.y + image_final_bbox.height) / image_zoom;
+
+		tracker.Init(*preprocessed_image, box, &regressor);
+		//carmen_voice_send_alert((char *) "Ah!\n");
+		tracker_is_initialized = 1;
+		retain_image_active = 0;
+		show_final_image = 0;
+	}
+	else if (c == 'p')
+		retain_image_active = !retain_image_active;
+	else if (c == 'v')
+		show_velodyne_active = !show_velodyne_active;
+	else if (c == 'a')
+		display_all_points_velodyne = !display_all_points_velodyne;
+}
+
+
+void
 display_interfaces(carmen_bumblebee_basic_stereoimage_message* image_msg, Mat *preprocessed_image)
 {
 	static Mat *mini_img = NULL;
@@ -2096,27 +2129,15 @@ display_interfaces(carmen_bumblebee_basic_stereoimage_message* image_msg, Mat *p
 		rectangle(*view_img, r, Scalar(0, 0, 255), 2);
 	}
 
-	imshow("filipe", *view_img);
-	cv::setMouseCallback("filipe", mouseHandler, view_img);
+	compute_fps(image_msg);
+	write_additional_information(view_img, image_msg->timestamp);
+
+	imshow("bumblebee", *view_img);
+	cv::setMouseCallback("bumblebee", mouseHandler, view_img);
+	setlocale(LC_ALL, "C");
 	char c = waitKey(5);
 
-	if (c == 's')
-	{
-		tracker_restart_requested = 1;
-
-		box.x1_ = image_final_bbox.x / image_zoom;
-		box.y1_ = image_final_bbox.y / image_zoom;
-		box.x2_ = (image_final_bbox.x + image_final_bbox.width) / image_zoom;
-		box.y2_ = (image_final_bbox.y + image_final_bbox.height) / image_zoom;
-
-		tracker.Init(*preprocessed_image, box, &regressor);
-		//carmen_voice_send_alert((char *) "Ah!\n");
-		tracker_is_initialized = 1;
-		retain_image_active = 0;
-		show_final_image = 0;
-	}
-	else if (c == 'p')
-		retain_image_active = !retain_image_active;
+	handle_char(preprocessed_image, c);
 }
 
 
@@ -2172,8 +2193,8 @@ target_is_valid()
 {
 	static deque<carmen_vector_3D_t> last_target_poses_in_laser;
 
-	double avg_range_diff = compute_average_range_diff(last_target_poses_in_laser);
-	double lat_shift = compute_average_lateral_shift(last_target_poses_in_laser);
+	avg_range_diff = compute_average_range_diff(last_target_poses_in_laser);
+	lat_shift = compute_average_lateral_shift(last_target_poses_in_laser);
 
 	printf("Range variation: %lf range: %lf \t Lateral shift: %lf!\n", avg_range_diff, trackerPoint.x, fabs(lat_shift));
 

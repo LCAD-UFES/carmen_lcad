@@ -12,6 +12,14 @@ extern "C" {
 #include <gsl/gsl_spline.h>
 #include <gsl/gsl_multimin.h>
 #include <car_model.h>
+#include <obstacle_avoider_interface.h>
+
+
+#define DELTA_T (1.0 / 40.0) // 0.025 40 Htz
+#define PREDICTION_HORIZON	0.4 //Must be DELTA_T multiple
+#define CAR_MODEL_GAIN 200.0
+#define CONTROL_OUTPUT_GAIN 0.0
+#define SMOOTH_OUTPUT_FACTOR 0.0
 
 
 typedef struct {
@@ -37,7 +45,7 @@ typedef struct
 	double time_elapsed_since_last_motion_command;
 	double max_phi;
 	carmen_localize_ackerman_globalpos_message global_pos;
-	carmen_robot_ackerman_config_t robot_config;
+	carmen_robot_ackerman_config_t *robot_config;
 } PARAMS;
 
 
@@ -45,7 +53,7 @@ double
 carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvature,
 		carmen_ackerman_motion_command_p current_motion_command_vector,
 		int nun_motion_commands, double v, double yp, double time_of_last_motion_command,
-		double understeer_coeficient, double distance_between_front_and_rear_axles, double max_phi,
+		carmen_robot_ackerman_config_t *robot_config,
 		int initialize_neural_networks);
 
 
