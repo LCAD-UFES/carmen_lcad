@@ -17,6 +17,7 @@ extern "C" {
 
 #define DELTA_T (1.0 / 40.0) // 0.025 40 Htz
 #define PREDICTION_HORIZON	0.4 //Must be DELTA_T multiple
+#define POSITION_PREDICTION_HORIZON	1.2 //Must be DELTA_T multiple
 #define CAR_MODEL_GAIN 200.0
 #define CONTROL_OUTPUT_GAIN 0.0
 #define SMOOTH_OUTPUT_FACTOR 0.0
@@ -34,15 +35,25 @@ typedef struct
 {
 	carmen_ackerman_motion_command_t *motion_commands_vector;
 	unsigned int motion_commands_vector_size;
+
 	struct fann *steering_ann;
 	fann_type steering_ann_input[NUM_STEERING_ANN_INPUTS];
+//	struct fann *velocity_ann = NULL;
+//	fann_type velocity_ann_input[NUM_VELOCITY_ANN_INPUTS];
+
+	EFFORT_SPLINE_DESCRIPTOR velocity_descriptors;
+
 	double atan_current_curvature;
 	double v;
 	double understeer_coeficient;
 	double distance_rear_axles;
 	double dk;
 	double previous_k1;
-	double time_elapsed_since_last_motion_command;
+
+	double velocity_error; 									// dk of velocity control
+	double previous_velocity_k1; 							// previous velocity effort to compute velocity_error (dk)
+
+	double time_elapsed_since_last_motion_command; 			// Time of velodyne message, the trajectory is planned at this time, the elapsed time must be discounted
 	double max_phi;
 	carmen_localize_ackerman_globalpos_message global_pos;
 	carmen_robot_ackerman_config_t *robot_config;
@@ -61,7 +72,7 @@ double
 carmen_libmpc_get_optimized_steering_effort_using_MPC_position_control(double atan_current_curvature,
 		carmen_ackerman_motion_command_p current_motion_command_vector,
 		int nun_motion_commands, double v, double yp, double time_of_last_motion_command,
-		double understeer_coeficient, double distance_between_front_and_rear_axles, double max_phi, double maximum_steering_command_rate,
+		carmen_robot_ackerman_config_t *robot_config,
 		carmen_localize_ackerman_globalpos_message global_pos, int initialize_neural_networks);
 
 int
