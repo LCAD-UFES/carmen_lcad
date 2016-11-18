@@ -65,7 +65,7 @@ get_effort_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors)
 
 
 unsigned int
-get_motion_timed_index_to_motion_command(PARAMS* params)
+get_motion_timed_index_to_motion_command(PARAMS* params) // TODO nao devia retornar j--   ????
 {
 	double motion_commands_vector_time = params->motion_commands_vector[0].time;
 	unsigned int j = 0;
@@ -601,6 +601,7 @@ get_motion_commands_vector(carmen_ackerman_motion_command_p current_motion_comma
 	double time_interval = 0.0;
 	double total_time = 0.0;
 
+	// TODO usar a get_motion timed index
 	while ((sum_of_motion_commands_vector_time	< elapsed_time) && (j < nun_motion_commands)) // TODO Tratar se sair por j <nun_motion_commands
 	{
 		j++;
@@ -704,7 +705,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 
 	//get_motion_commands_vector(current_motion_command_vector, nun_motion_commands, time_of_last_motion_command);
 
-	//seed = get_optimized_effort(&params, seed);
+	//seed = get_optimized_effort(&params, seed); // TODO essa funcao vai aqui ou depois do car_model???
 	double effort = seed.k1;
 
 	// Calcula o dk do proximo ciclo
