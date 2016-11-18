@@ -172,7 +172,7 @@ compute_phi(double current_v, double current_phi, double d, SE2 &goal_pose_in_ca
 		else if (current_phi < 0)
 			phi = current_phi + STEERING_STOPPING_DELTA;
 
-		printf("stopping phi! current: %lf new: %lf\n", current_phi, phi);
+		//printf("stopping phi! current: %lf new: %lf\n", current_phi, phi);
 	}
 	else if (d < DIST_TO_POINT_TO_GOAL)
 	{
@@ -185,7 +185,7 @@ compute_phi(double current_v, double current_phi, double d, SE2 &goal_pose_in_ca
 		//if (desired_phi - current_phi > 0) phi = current_phi + STEERING_CHANGING_DELTA;
 		//else phi = current_phi - STEERING_CHANGING_DELTA;
 
-		printf("t: %lf curr phi: %lf des phi: %lf phi: %lf\n", th, current_phi, desired_phi, phi);
+		//printf("t: %lf curr phi: %lf des phi: %lf phi: %lf\n", th, current_phi, desired_phi, phi);
 	}
 
 	return phi;
@@ -228,6 +228,8 @@ base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *ms
 	v = compute_v(v, d, goal_pose_in_car_ref);
 	phi = compute_phi(msg->v, phi, d, goal_pose_in_car_ref);
 	publish_motion_command(v, phi);
+
+	printf("v: %lf phi: %lf || curr_v: %lf curr_phi: %lf\n", v, phi, msg->v, msg->phi);
 }
 
 
