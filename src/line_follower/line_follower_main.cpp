@@ -19,8 +19,8 @@ const double MIN_SPEED_TO_START_STEERING = 1.0;
 
 const double DIST_TO_REDUCE = 10.0;
 const double DIST_TO_STOP = 1.0;
-const double MAX_SPEED = 10.0;
-const double TIME_TO_ACHIEVE_MAX_SPEED = 5.0;
+const double MAX_SPEED = 6.0;
+const double TIME_TO_ACHIEVE_MAX_SPEED = 10.0;
 
 
 carmen_localize_ackerman_globalpos_message globalpos;

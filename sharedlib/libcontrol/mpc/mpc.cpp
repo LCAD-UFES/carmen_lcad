@@ -697,7 +697,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 
 	//get_motion_commands_vector(current_motion_command_vector, nun_motion_commands, time_of_last_motion_command);
 
-	//seed = get_optimized_effort(&params, seed); // TODO essa funcao vai aqui ou depois do car_model???
+	seed = get_optimized_effort(&params, seed); // TODO essa funcao vai aqui ou depois do car_model???
 	double effort = seed.k1;
 
 	// Calcula o dk do proximo ciclo
@@ -713,7 +713,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 	//effort += stiction_correction(yp, current_motion_command_vector[index].phi, effort, v);
 	//--------------------------------------------------------------------------------------------------------------------
 
-	seed = get_optimized_effort(&params, seed);
+	//seed = get_optimized_effort(&params, seed);
 
 	if (save_and_plot)
 	{
