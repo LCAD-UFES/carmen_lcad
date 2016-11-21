@@ -110,7 +110,7 @@ get_velocity_supersampling_motion_commands_vector(PARAMS *params, unsigned int s
 double
 car_model(double steering_effort, double atan_current_curvature, double v, fann_type *steering_ann_input, PARAMS *params)
 {
-	steering_effort *= (1.0 / (1.0 + (params->v * params->v) / CAR_MODEL_GAIN)); // boa
+//	steering_effort *= (1.0 / (1.0 + (params->v * params->v) / CAR_MODEL_GAIN)); // boa
 	steering_effort = carmen_clamp(-100.0, steering_effort, 100.0);
 
 	double phi = carmen_libcarneuralmodel_compute_new_phi_from_effort(steering_effort, atan_current_curvature, steering_ann_input,
@@ -697,7 +697,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 
 	//get_motion_commands_vector(current_motion_command_vector, nun_motion_commands, time_of_last_motion_command);
 
-	//seed = get_optimized_effort(&params, seed); // TODO essa funcao vai aqui ou depois do car_model???
+	seed = get_optimized_effort(&params, seed); // TODO essa funcao vai aqui ou depois do car_model???
 	double effort = seed.k1;
 
 	// Calcula o dk do proximo ciclo
@@ -713,7 +713,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 	//effort += stiction_correction(yp, current_motion_command_vector[index].phi, effort, v);
 	//--------------------------------------------------------------------------------------------------------------------
 
-	seed = get_optimized_effort(&params, seed);
+	//seed = get_optimized_effort(&params, seed);
 
 	if (save_and_plot)
 	{
