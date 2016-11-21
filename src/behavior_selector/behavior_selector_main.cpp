@@ -149,8 +149,8 @@ publish_goal_list()
 	}
 	else if (obstacle_avoider_active_recently)
 		goal_list_msg.goal_list->v = carmen_fmin(2.5, goal_list_msg.goal_list->v);
-//	else
-//		goal_list_msg.goal_list->v = 20.11;
+	else
+		goal_list_msg.goal_list->v = 16.66;
 
 	if (goal_list_msg.size > 0)
 	{

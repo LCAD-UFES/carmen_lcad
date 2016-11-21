@@ -189,7 +189,7 @@ carmen_localize_ackerman_create_stretched_likelihood_map(double **prob, carmen_l
 	for (int x = 0; x < lmap->config.x_size; x++)
 	{
 		for (int y = 0; y < lmap->config.y_size; y++)
-		{
+		{	// Alberto: @@@ Precisa de uma referencia para o codigo abaixo
 			prob[x][y] /= max;
 			prob[x][y] = log(min_likelihood + (1.0 - min_likelihood) * prob[x][y]);
 		}
