@@ -60,10 +60,11 @@ carmen_pose_3D_t velodyne_pose;
 static int received_image = 0;
 
 std::vector<carmen_velodyne_points_in_cam_t> points_lasers_in_cam;
+std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> points_lasers_in_cam_with_obstacle;
 
 carmen_velodyne_partial_scan_message *velodyne_message_arrange;
 
-bool display_all_points_velodyne = 0;
+bool display_all_points_velodyne = true;
 
 static int tld_image_width = 0;
 static int tld_image_height = 0;
@@ -111,7 +112,9 @@ stereo_util camera_parameters;
 carmen_vector_3D_t trackerPoint;
 carmen_vector_3D_t target_pose_in_the_world;
 std::vector<carmen_localize_ackerman_globalpos_message>  localizeVector;
+std::vector<carmen_velodyne_partial_scan_message> velodyne_vector;
 smoother::CGSmoother path_smoother;
+static unsigned int maxPositions = 100;
 
 static vector<carmen_vector_3D_t> tracker_global_poses;
 static vector<carmen_ackerman_traj_point_t> localize_poses_plot;
@@ -125,7 +128,10 @@ Rect image_final_bbox(-1, -1, -1, -1);
 double avg_range_diff = 0;
 double lat_shift = 0;
 int quant_points_in_box = 0;
-
+int quant_points_in_box_left = 0;
+int quant_points_in_box_right = 0;
+int quant_points_in_box_free = 0;
+int quant_points_in_box_obstacle = 0;
 
 void
 plot_state(vector<carmen_vector_3D_t> &points, vector<carmen_ackerman_traj_point_t> &spline,
@@ -377,22 +383,34 @@ std::vector<carmen_vector_3D_t>
 select_velodyne_points_inside_box_and_draw_them(const cv::Rect& mini_box, Mat* img, int show_velodyne)
 {
 	std::vector<carmen_vector_3D_t> points_inside_box;
+	int points_in_left = 0;
+	int points_in_right = 0;
+	int points_in_box_free = 0;
+	int points_in_box_obstacle = 0;
 
 //	rectangle(*img,
 //			cv::Point(mini_box.x, mini_box.y),
 //			cv::Point(mini_box.x + mini_box.width, mini_box.y + mini_box.height),
 //			CV_RGB(255, 255, 0), 1, 4);
 
-	for (unsigned int i = 0; i < points_lasers_in_cam.size(); i++)
+	//TODO: verificar qual size usar, o total ou so dos hit em obstaculos
+	for (unsigned int i = 0; i < points_lasers_in_cam_with_obstacle.size(); i++)
 	{
-		if ((points_lasers_in_cam.at(i).ipx > box_1.x) && (points_lasers_in_cam.at(i).ipx < (box_1.x + box_1.width)) && (points_lasers_in_cam.at(i).ipy > box_1.y)
-				&& (points_lasers_in_cam.at(i).ipy < (box_1.y + box_1.height)))
-		{
-			if (points_lasers_in_cam.at(i).laser_polar.length <= MIN_RANGE)
-				points_lasers_in_cam.at(i).laser_polar.length = MAX_RANGE;
 
-			if (points_lasers_in_cam.at(i).laser_polar.length > MAX_RANGE)
-				points_lasers_in_cam.at(i).laser_polar.length = MAX_RANGE;
+		//verificar se bateu no obstaculo e mostrar na tela
+		if(!display_all_points_velodyne && !points_lasers_in_cam_with_obstacle.at(i).hit_in_obstacle)
+			continue;
+
+		if ((points_lasers_in_cam_with_obstacle.at(i).velodyne_points_in_cam.ipx > box_1.x) &&
+				(points_lasers_in_cam_with_obstacle.at(i).velodyne_points_in_cam.ipx < (box_1.x + box_1.width)) &&
+				(points_lasers_in_cam_with_obstacle.at(i).velodyne_points_in_cam.ipy > box_1.y)
+				&& (points_lasers_in_cam_with_obstacle.at(i).velodyne_points_in_cam.ipy < (box_1.y + box_1.height)))
+		{
+			if (points_lasers_in_cam_with_obstacle.at(i).velodyne_points_in_cam.laser_polar.length <= MIN_RANGE)
+				points_lasers_in_cam_with_obstacle.at(i).velodyne_points_in_cam.laser_polar.length = MAX_RANGE;
+
+			if (points_lasers_in_cam_with_obstacle.at(i).velodyne_points_in_cam.laser_polar.length > MAX_RANGE)
+				points_lasers_in_cam_with_obstacle.at(i).velodyne_points_in_cam.laser_polar.length = MAX_RANGE;
 
 			//points_lasers_in_cam.at(i).laser_polar.length *= 500;
 			//Teste em producao para correcao dos pontos no mundo, nao apagar.
@@ -410,20 +428,43 @@ select_velodyne_points_inside_box_and_draw_them(const cv::Rect& mini_box, Mat* i
 			 * CARMEN, ELES CRESCEM PARA A DIREITA, AO INVES DE CRESCEREM PARA A ESQUERDA. NA HORA DE PROJETAR OS DADOS DO
 			 * VELODYNE NA CAMERA, O SINAL FAZ SENTIDO PORQUE AS COLUNAS DA CAMERA TAMBEM CRESCEM PARA A DIREITA.
 			 *********************************************************************************************************************/
-			points_lasers_in_cam.at(i).laser_polar.horizontal_angle = -points_lasers_in_cam.at(i).laser_polar.horizontal_angle;
+			points_lasers_in_cam_with_obstacle.at(i).velodyne_points_in_cam.laser_polar.horizontal_angle = -points_lasers_in_cam_with_obstacle.at(i).velodyne_points_in_cam.laser_polar.horizontal_angle;
 			//printf("hangle: %lf\n", carmen_radians_to_degrees(points_lasers_in_cam.at(i).laser_polar.horizontal_angle));
 
-			points_inside_box.push_back(carmen_covert_sphere_to_cartesian_coord(points_lasers_in_cam.at(i).laser_polar));
+			points_inside_box.push_back(carmen_covert_sphere_to_cartesian_coord(points_lasers_in_cam_with_obstacle.at(i).velodyne_points_in_cam.laser_polar));
 
-			circle(*img, cv::Point(points_lasers_in_cam.at(i).ipx, points_lasers_in_cam.at(i).ipy), 2, Scalar(0, 255, 0), -1);
+			if(points_lasers_in_cam_with_obstacle.at(i).velodyne_points_in_cam.ipx > (box_1.x + (box_1.width/ 2)))
+			{
+				circle(*img, cv::Point(points_lasers_in_cam_with_obstacle.at(i).velodyne_points_in_cam.ipx,
+						points_lasers_in_cam_with_obstacle.at(i).velodyne_points_in_cam.ipy), 2, Scalar(0, 255, 0), -1);
+				points_in_right++;
+			}else
+			{
+				circle(*img, cv::Point(points_lasers_in_cam_with_obstacle.at(i).velodyne_points_in_cam.ipx,
+						points_lasers_in_cam_with_obstacle.at(i).velodyne_points_in_cam.ipy), 2, Scalar(255, 100, 0), -1);
+				points_in_left++;
+			}
 
-			if ((points_lasers_in_cam.at(i).ipx > mini_box.x) && (points_lasers_in_cam.at(i).ipx < (mini_box.x + mini_box.width)) &&
-				(points_lasers_in_cam.at(i).ipy > mini_box.y) && (points_lasers_in_cam.at(i).ipy < (mini_box.y + mini_box.height)))
-				circle(*img, cv::Point(points_lasers_in_cam.at(i).ipx, points_lasers_in_cam.at(i).ipy), 2, CV_RGB(255, 255, 255), -1);
+			if(points_lasers_in_cam_with_obstacle.at(i).hit_in_obstacle == true)
+				points_in_box_obstacle++;
+			else
+				points_in_box_free++;
+
+//			circle(*img, cv::Point(points_lasers_in_cam.at(i).ipx, points_lasers_in_cam.at(i).ipy), 2, Scalar(0, 255, 0), -1);
+
+//			if ((points_lasers_in_cam.at(i).ipx > mini_box.x) && (points_lasers_in_cam.at(i).ipx < (mini_box.x + mini_box.width)) &&
+//				(points_lasers_in_cam.at(i).ipy > mini_box.y) && (points_lasers_in_cam.at(i).ipy < (mini_box.y + mini_box.height)))
+//				circle(*img, cv::Point(points_lasers_in_cam.at(i).ipx, points_lasers_in_cam.at(i).ipy), 2, CV_RGB(255, 255, 255), -1);
 		}
 		else if (show_velodyne)
-			circle(*img, cv::Point(points_lasers_in_cam.at(i).ipx, points_lasers_in_cam.at(i).ipy), 2, Scalar(0, 255, 255), -1);
+			circle(*img, cv::Point(points_lasers_in_cam_with_obstacle.at(i).velodyne_points_in_cam.ipx,
+					points_lasers_in_cam_with_obstacle.at(i).velodyne_points_in_cam.ipy), 2, Scalar(0, 255, 255), -1);
 	}
+
+	quant_points_in_box_left = points_in_left;
+	quant_points_in_box_right = points_in_right;
+	quant_points_in_box_free = points_in_box_free;
+	quant_points_in_box_obstacle = points_in_box_obstacle;
 
 	return (points_inside_box);
 }
@@ -537,26 +578,56 @@ bounding_box_interface(char c, Mat* img)
 }
 
 
+carmen_velodyne_partial_scan_message
+find_velodyne_most_sync_with_cam(double bumblebee_timestamp)
+{
+	carmen_velodyne_partial_scan_message velodyne;
+
+	double minTimestampDiff = DBL_MAX;
+	int minTimestampIndex = -1;
+
+	for (unsigned int i = 0; i < velodyne_vector.size(); i++)
+	{
+		if(fabs(velodyne_vector[i].timestamp - bumblebee_timestamp) < minTimestampDiff)
+		{
+			minTimestampIndex = i;
+			minTimestampDiff = fabs(velodyne_vector[i].timestamp - bumblebee_timestamp);
+		}
+	}
+
+	velodyne = velodyne_vector[minTimestampIndex];
+
+	return velodyne;
+}
+
+
+
+
 int
-call_tracker_and_compute_object_3d_position(Mat *img, int bumblebee_height, int bumblebee_width)
+call_tracker_and_compute_object_3d_position(Mat *img, int bumblebee_height, int bumblebee_width, double bumblebee_timestamp)
 {
 	if (box.x1_ != -1.0)
 	{
 		tracker.Track(*img, &regressor, &box); // calls Thrun's tracker
 		cv::Rect mini_box = get_mini_box_and_update_carmen_box();
 
-		if(display_all_points_velodyne)
-		{
-		points_lasers_in_cam = carmen_velodyne_camera_calibration_lasers_points_in_camera(
-				velodyne_message_arrange, bumblebee_width, bumblebee_height);
+//		if(display_all_points_velodyne)
+//		{
+//		points_lasers_in_cam = carmen_velodyne_camera_calibration_lasers_points_in_camera(
+//				velodyne_message_arrange, bumblebee_width, bumblebee_height);
+//
+//		}else
+//		{
+//			points_lasers_in_cam = carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle(
+//							velodyne_message_arrange, bumblebee_width, bumblebee_height);
+//		}
 
-		}else
-		{
-			points_lasers_in_cam = carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle(
-							velodyne_message_arrange, bumblebee_width, bumblebee_height);
-		}
+		carmen_velodyne_partial_scan_message velodyne_sync_with_cam = find_velodyne_most_sync_with_cam(bumblebee_timestamp);
+		points_lasers_in_cam_with_obstacle =  carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_display(
+				&velodyne_sync_with_cam, bumblebee_width, bumblebee_height);
 
-		if (points_lasers_in_cam.size() == 0)
+		//TODO: verificar qual size usar, o total ou so dos hit em obstaculos
+		if (points_lasers_in_cam_with_obstacle.size() == 0)
 		{
 			printf("There are not velodyne points in the imagex\n");
 			return 0;
@@ -759,6 +830,7 @@ find_localize_pose_most_sync_with_velodyne()
 
 	return stamped_pose;
 }
+
 
 //TODO Ajustar pesos do otimizador
 vector<carmen_ackerman_traj_point_t>
@@ -1954,7 +2026,7 @@ static void
 localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *message)
 {
 	//printf("LOCALIZER: %lf %lf\n", message->globalpos.x, message->globalpos.y);
-	static unsigned int maxPositions = 100;
+
 
 	//TODO primeira pose do localize no playback = 0.0 ERROOO!!!
 	if(fabs(message->globalpos.x) < 0.00001  || fabs(message->globalpos.y) < 0.00001 || fabs(message->timestamp) < 0.0001){
@@ -2060,9 +2132,9 @@ write_additional_information(Mat *m, double timestamp)
 	CvFont font;
 
 	cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, .4, .5, 0, 1, 8);
-	sprintf(string1, "Time:%.2f, FPS:%d X: %.2lf Y: %.2lf Z: %.2lf RD: %.2lf LD: %.5lf POINTS: %d", timestamp,
-			disp_last_fps, trackerPoint.x , trackerPoint.y, trackerPoint.z,
-			avg_range_diff, lat_shift, quant_points_in_box);
+	sprintf(string1, "FPS:%d X: %.2lf Y: %.2lf RD: %.2lf LD: %.3lf TP: %d pL: %d pR: %d pF: %d po: %d",
+			disp_last_fps, trackerPoint.x , trackerPoint.y, /*trackerPoint.z,*/
+			avg_range_diff, lat_shift, quant_points_in_box, quant_points_in_box_left, quant_points_in_box_right, quant_points_in_box_free, quant_points_in_box_obstacle );
 
 	cv::Size s = m->size();
 	cv::Point textOrg(25, 25);
@@ -2296,7 +2368,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 		Mat preprocessed_image = image_pre_processing(image_msg);
 
 		int success = call_tracker_and_compute_object_3d_position(
-				&preprocessed_image, image_msg->height, image_msg->width);
+				&preprocessed_image, image_msg->height, image_msg->width, image_msg->timestamp );
 
 		display_interfaces(image_msg, &preprocessed_image);
 
@@ -2316,6 +2388,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 			if (tracker_restart_requested)
 				tracker_restart_requested = 0;
 		}
+
 	}
 }
 
@@ -2336,6 +2409,22 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	//		n++;
 	velodyne_message_arrange = velodyne_message;
 	carmen_velodyne_camera_calibration_arrange_velodyne_vertical_angles_to_true_position(velodyne_message_arrange);
+
+	carmen_velodyne_partial_scan_message velodyne_copy;
+
+	velodyne_copy.host = velodyne_message_arrange->host;
+	velodyne_copy.number_of_32_laser_shots = velodyne_message_arrange->number_of_32_laser_shots;
+	velodyne_copy.partial_scan = (carmen_velodyne_32_laser_shot*)malloc(sizeof(carmen_velodyne_32_laser_shot) * velodyne_message_arrange->number_of_32_laser_shots);
+	memcpy(velodyne_copy.partial_scan, velodyne_message_arrange->partial_scan, sizeof(carmen_velodyne_32_laser_shot) * velodyne_message_arrange->number_of_32_laser_shots);
+	velodyne_copy.timestamp = velodyne_message_arrange->timestamp;
+
+	velodyne_vector.push_back(velodyne_copy);
+
+		if (velodyne_vector.size() > maxPositions)
+		{
+			free(velodyne_vector.begin()->partial_scan);
+			velodyne_vector.erase(velodyne_vector.begin());
+		}
 	//	show_velodyne(velodyne_message);
 }
 
