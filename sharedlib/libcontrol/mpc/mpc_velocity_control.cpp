@@ -17,54 +17,49 @@ enum
 
 
 bool
-init_velocity_mpc(PARAMS params, static EFFORT_SPLINE_DESCRIPTOR descriptors)
+init_velocity_mpc(PARAMS &params)
 {
 	static bool first_time = true;
 
 	if (first_time)
 	{
-		params.steering_ann = fann_create_from_file("steering_ann.net");
-		if (params.steering_ann == NULL)
+		params.velocity_ann = fann_create_from_file("velocity_ann.net");
+		if (params.velocity_ann == NULL)
 		{
-			printf("Error: Could not create steering_ann in carmen_libmpc_get_optimized_steering_effort_using_MPC()\n");
+			printf("Error: Could not create velocity_ann\n");
 			exit(1);
 		}
-		carmen_libcarneuralmodel_init_steering_ann_input(params.steering_ann_input);
-		params.dk = 0.0;
-		params.previous_k1 = 0.0;
-		first_time = false;
+		carmen_libcarneuralmodel_init_velocity_ann_input(velocity_ann_input);
+
+		params.velocity_descriptors.k1 = 0.0;
+		params.velocity_descriptors.k2 = 0.0;
+		params.velocity_descriptors.k3 = 0.0;
+		params.velocity_descriptors.k4 = 0.0;
+
+		params.velocity_error = 0.0;
+		params.previous_velocity_k1 = 0.0;
+
 
 //		if (save_and_plot)
 //			open_file_to_save_plot(true);
+
+		first_time = false;
+		return (true);
 	}
 
-	return true;
+	return (false);
 }
 
 
 
 void
-carmen_libmpc_get_optimized_velocity_effort_using_MPC(double *throttle_command, double *brake_command, int *gear_command, double current_velocity,
-		carmen_ackerman_motion_command_p current_motion_command_vector,	int nun_motion_commands, carmen_robot_ackerman_config_t *robot_config)
+carmen_libmpc_get_optimized_velocity_effort_using_MPC(PARAMS &params)
 {
-	static PARAMS params;
-	static EFFORT_SPLINE_DESCRIPTOR descriptors = {0.0, 0.0, 0.0, 0.0};
-	static bool first_time = true;
+	if (init_velocity_mpc(params))
+		return;
 
-	if (current_motion_command_vector == NULL || (!init_velocity_mpc(params, descriptors)))
-		return ();
+	params.velocity_descriptors = get_optimized_effort(&params, seed);
 
-	//get_motion_commands_vector(current_motion_command_vector, nun_motion_commands, time_of_last_motion_command);
-
-	//seed = get_optimized_effort(&params, seed);
-	double effort = seed.k1;
-
-	// Calcula o dk do proximo ciclo
-	double Cxk = car_model(effort, atan_current_curvature, params.v, params.steering_ann_input, &params);
-	params.dk = yp - Cxk;
-	params.previous_k1 = effort;
-
-	seed = get_optimized_effort(&params, seed);
 	static int mpc_state_controller = STOP_CAR;
 
 	if (fabs(desired_velocity) < 0.05)

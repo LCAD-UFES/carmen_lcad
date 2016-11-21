@@ -63,7 +63,7 @@ pid_plot_curvature(double current_phi, double desired_phi, double steering_effor
 		first_time = false;
 
 		gnuplot_pipe = popen("gnuplot -persist", "w"); //("gnuplot -persist", "w") to keep last plot after program closes
-		fprintf(gnuplot_pipe, "set xrange [0:10]\n");
+		fprintf(gnuplot_pipe, "set xrange [0:PAST_SIZE/30]\n");
 		fprintf(gnuplot_pipe, "set yrange [-0.55:0.55]\n");
 	}
 

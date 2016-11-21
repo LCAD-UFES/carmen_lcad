@@ -8,7 +8,7 @@ using namespace std;
 
 //FILE *gnuplot_save;
 FILE *gnuplot_save_total;
-bool save_and_plot = false;
+bool save_and_plot = true;
 
 
 typedef struct {
@@ -65,7 +65,7 @@ get_effort_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors)
 
 
 unsigned int
-get_motion_timed_index_to_motion_command(PARAMS* params)
+get_motion_timed_index_to_motion_command(PARAMS* params) // TODO nao devia retornar j--   ????
 {
 	double motion_commands_vector_time = params->motion_commands_vector[0].time;
 	unsigned int j = 0;
@@ -110,7 +110,7 @@ get_velocity_supersampling_motion_commands_vector(PARAMS *params, unsigned int s
 double
 car_model(double steering_effort, double atan_current_curvature, double v, fann_type *steering_ann_input, PARAMS *params)
 {
-	steering_effort *= (1.0 / (1.0 + (params->v * params->v) / CAR_MODEL_GAIN)); // boa
+//	steering_effort *= (1.0 / (1.0 + (params->v * params->v) / CAR_MODEL_GAIN)); // boa
 	steering_effort = carmen_clamp(-100.0, steering_effort, 100.0);
 
 	double phi = carmen_libcarneuralmodel_compute_new_phi_from_effort(steering_effort, atan_current_curvature, steering_ann_input,
@@ -169,12 +169,6 @@ my_f(const gsl_vector *v, void *params_ptr)
 	unsigned int j = get_motion_timed_index_to_motion_command(params);
 	double motion_commands_vector_time = params->motion_commands_vector[j].time;
 
-//	while ((motion_commands_vector_time < params->time_elapsed_since_last_motion_command) && (j < params->motion_commands_vector_size))
-//	{
-//		j++;
-//		motion_commands_vector_time += params->motion_commands_vector[j].time;
-//	}
-
 	for (unsigned int i = 0; i < phi_vector.size(); i++)
 	{
 		error = phi_vector[i] - params->motion_commands_vector[j].phi;
@@ -191,7 +185,6 @@ my_f(const gsl_vector *v, void *params_ptr)
 	}
 
 	double cost = error_sum;// + 0.00011 * sqrt((params->previous_k1 - d.k1) * (params->previous_k1 - d.k1));
-	//printf("%lf  %lf  %lf  %lf\n", cost, params->previous_k1, d.k1, params->previous_k1 - d.k1);
 
 	return (cost);
 }
@@ -293,7 +286,6 @@ get_optimized_effort(PARAMS *params, EFFORT_SPLINE_DESCRIPTOR seed)
 		status = gsl_multimin_test_gradient(s->gradient, 1e-3);
 
 	} while ((status == GSL_CONTINUE) && (iter < 15));
-
 	//printf("iter = %ld\n", iter);
 
 	seed.k1 = carmen_clamp(-100.0, gsl_vector_get(s->x, 0), 100.0);
@@ -601,6 +593,7 @@ get_motion_commands_vector(carmen_ackerman_motion_command_p current_motion_comma
 	double time_interval = 0.0;
 	double total_time = 0.0;
 
+	// TODO usar a get_motion timed index
 	while ((sum_of_motion_commands_vector_time	< elapsed_time) && (j < nun_motion_commands)) // TODO Tratar se sair por j <nun_motion_commands
 	{
 		j++;
@@ -704,7 +697,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 
 	//get_motion_commands_vector(current_motion_command_vector, nun_motion_commands, time_of_last_motion_command);
 
-	//seed = get_optimized_effort(&params, seed);
+	seed = get_optimized_effort(&params, seed); // TODO essa funcao vai aqui ou depois do car_model???
 	double effort = seed.k1;
 
 	// Calcula o dk do proximo ciclo
@@ -720,7 +713,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 	//effort += stiction_correction(yp, current_motion_command_vector[index].phi, effort, v);
 	//--------------------------------------------------------------------------------------------------------------------
 
-	seed = get_optimized_effort(&params, seed);
+	//seed = get_optimized_effort(&params, seed);
 
 	if (save_and_plot)
 	{
