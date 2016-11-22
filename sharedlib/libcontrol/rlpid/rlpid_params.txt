@@ -1,8 +1,8 @@
 0.6		alfa_weight_coef;        //alfa
 0.4		beta_weight_coef;        //beta
-0.05	learning_rate_actor;     //Eta_mi_0.025
-0.03	learning_rate_critic;    //Eta_gama_0.015
+0.5	learning_rate_actor;     //Eta_mi_0.025
+0.3	learning_rate_critic;    //Eta_gama_0.015
 0.98	discount_factor;         //Gama
 0.001	error_band;              //epslon_0.01
-0.8	alfa_a;                  //actor_learning_rate_0.013
-0.7	alfa_c;                  //critic_learning_rate_0.01
+0.11	alfa_a;                  //actor_learning_rate_0.013
+0.4	alfa_c;                  //critic_learning_rate_0.01
