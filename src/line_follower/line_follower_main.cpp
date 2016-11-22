@@ -17,9 +17,9 @@ const double STEERING_STOPPING_DELTA = (0.488677778 / 3.0) / CONTROL_FREQUENCY; 
 const double STEERING_CHANGING_DELTA = (0.488677778 / 0.5) / CONTROL_FREQUENCY; // max phi ate 0 em 1 seg
 const double MIN_SPEED_TO_START_STEERING = 1.0;
 
-const double DIST_TO_REDUCE = 8.0;
+const double DIST_TO_REDUCE = 5.0;
 const double DIST_TO_STOP = 2.0;
-const double MAX_SPEED = 3.0;
+const double MAX_SPEED = 6.0;
 const double TIME_TO_ACHIEVE_MAX_SPEED = 3.0;
 
 
