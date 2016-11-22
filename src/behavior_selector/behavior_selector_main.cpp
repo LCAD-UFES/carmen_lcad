@@ -29,6 +29,9 @@ carmen_behavior_selector_goal_source_t last_road_profile_message = CARMEN_BEHAVI
 carmen_behavior_selector_goal_source_t goal_list_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
 static int param_goal_source_onoff = 0;
 
+double deceleration_towards_annotation = 0.0;
+
+
 int
 annotation_is_forward(carmen_ackerman_traj_point_t robot_pose, carmen_vector_3D_t annotation_point)
 {
@@ -79,6 +82,100 @@ publish_current_state()
 }
 
 
+double
+get_velocity_at_next_annotation(const carmen_behavior_selector_goal_list_message goal_list_msg)
+{
+	double v = goal_list_msg.goal_list->v;
+
+	if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
+			&& (last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_0))
+		v = 0.0;
+	else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BUMP)
+			|| (last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK))
+		v = carmen_fmin(3.0, goal_list_msg.goal_list->v);
+	else if (last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)
+		v = carmen_fmin(3.0, goal_list_msg.goal_list->v);
+	else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
+			&& (last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_5))
+		v = carmen_fmin(5.0 / 3.6, goal_list_msg.goal_list->v);
+	else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
+			&& (last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_10))
+		v = carmen_fmin(10.0 / 3.6, goal_list_msg.goal_list->v);
+	else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
+			&& (last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_15))
+		v = carmen_fmin(15.0 / 3.6, goal_list_msg.goal_list->v);
+	else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
+			&& (last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_20))
+		v = carmen_fmin(20.0 / 3.6, goal_list_msg.goal_list->v);
+	else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
+			&& (last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_30))
+		v = carmen_fmin(30.0 / 3.6, goal_list_msg.goal_list->v);
+	else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
+			&& (last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_40))
+		v = carmen_fmin(40.0 / 3.6, goal_list_msg.goal_list->v);
+	else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
+			&& (last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_60))
+		v = carmen_fmin(60.0 / 3.6, goal_list_msg.goal_list->v);
+
+	return (v);
+}
+
+
+double
+get_distance_to_act_on_annotation(double current_v, double annotation_v, double distance_to_annotation)
+{
+	// v = v0 + a*t
+	// a*t = v - v0
+	// t = (v - v0) / a
+	// s = vo*t + 0.5 * a*t*t
+
+	if (current_v > annotation_v)
+	{
+		double a = -deceleration_towards_annotation;
+		double t = (annotation_v - current_v) / a;
+		if (t < 5.0)
+			t = 5.0;
+		double distance = current_v * t + 0.5 * a * t * t;
+		//printf("t %.1lf, ", t);
+
+		return (distance + 3.0 * get_robot_config()->distance_between_front_and_rear_axles);
+	}
+	else
+	{
+		return (distance_to_annotation);
+	}
+	//return ((fabs(current_v) < 2.0)? 10.0: fabs(current_v) * 5.0);
+}
+
+
+double
+get_velocity_at_goal(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
+		double velocity_at_next_annotation,	double distance_to_annotation, double distance_to_goal)
+{
+	// s = v0*t + 0.5*a*t*t
+	// t = -(sqrt(2*a*s + v*v)+v)/a or t = (sqrt(2*a*s + v*v)-v)/a
+
+	if (distance_to_annotation < distance_to_goal + get_robot_config()->distance_between_front_and_rear_axles)
+		return (velocity_at_next_annotation);
+
+	double s = distance_to_goal;
+	double a = -deceleration_towards_annotation;
+	double v = current_robot_pose_v_and_phi.v;
+	double sqr_term = 2.0 * a * s + v * v;
+	if (sqr_term <= 0.0)
+		return (velocity_at_next_annotation);
+	double t = (sqrt(sqr_term) - v) / a;
+
+	// vg = v + a*tg
+
+	double vg = v + a * t;
+	if (vg < velocity_at_next_annotation)
+		return (velocity_at_next_annotation);
+
+	return (vg);
+}
+
+
 void
 publish_goal_list()
 {
@@ -103,54 +200,22 @@ publish_goal_list()
 	}
 
 	carmen_ackerman_traj_point_t current_robot_pose_v_and_phi = get_robot_pose();
-	double distance_to_act_on_annotation = (fabs(current_robot_pose_v_and_phi.v) < 2.0)? 10.0: fabs(current_robot_pose_v_and_phi.v) * 5.0;
-	// Map annotations handling
 	double distance_to_annotation = DIST2D(last_rddf_annotation_message.annotation_point, get_robot_pose());
-	if ((distance_to_annotation < distance_to_act_on_annotation) &&
+	double velocity_at_next_annotation = get_velocity_at_next_annotation(goal_list_msg);
+	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, velocity_at_next_annotation, distance_to_annotation);
+	double distance_to_goal = carmen_distance_ackerman_traj(&current_robot_pose_v_and_phi, goal_list_msg.goal_list);
+//	printf("daann %.1lf, dann %.1lf, vg %.1lf\n", distance_to_act_on_annotation, distance_to_annotation, get_velocity_at_goal(current_robot_pose_v_and_phi,
+//			velocity_at_next_annotation, distance_to_annotation, distance_to_goal));
+
+	if (((distance_to_annotation < distance_to_act_on_annotation) ||
+		 (distance_to_annotation < distance_to_goal + get_robot_config()->distance_between_front_and_rear_axles)) &&
 		annotation_is_forward(get_robot_pose(), last_rddf_annotation_message.annotation_point))
-	{
-		if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
-			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_0))
-			goal_list_msg.goal_list->v = 0.0;
-		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
-			(last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK))
-			goal_list_msg.goal_list->v = carmen_fmin(3.0, goal_list_msg.goal_list->v);
-
-		else if (last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)
-			goal_list_msg.goal_list->v = carmen_fmin(3.0, goal_list_msg.goal_list->v);
-
-		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
-			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_5))
-			goal_list_msg.goal_list->v = carmen_fmin(5.0 / 3.6, goal_list_msg.goal_list->v);
-
-		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
-			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_10))
-			goal_list_msg.goal_list->v = carmen_fmin(10.0 / 3.6, goal_list_msg.goal_list->v);
-
-		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
-			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_15))
-			goal_list_msg.goal_list->v = carmen_fmin(15.0 / 3.6, goal_list_msg.goal_list->v);
-
-		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
-			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_20))
-			goal_list_msg.goal_list->v = carmen_fmin(20.0 / 3.6, goal_list_msg.goal_list->v);
-
-		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
-			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_30))
-			goal_list_msg.goal_list->v = carmen_fmin(30.0 / 3.6, goal_list_msg.goal_list->v);
-
-		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
-			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_40))
-			goal_list_msg.goal_list->v = carmen_fmin(40.0 / 3.6, goal_list_msg.goal_list->v);
-
-		else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
-			(last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_60))
-			goal_list_msg.goal_list->v = carmen_fmin(60.0 / 3.6, goal_list_msg.goal_list->v);
-	}
+		goal_list_msg.goal_list->v = get_velocity_at_goal(current_robot_pose_v_and_phi,
+				velocity_at_next_annotation, distance_to_annotation, distance_to_goal);
 	else if (obstacle_avoider_active_recently)
 		goal_list_msg.goal_list->v = carmen_fmin(2.5, goal_list_msg.goal_list->v);
 	else
-		goal_list_msg.goal_list->v = 16.66;
+		goal_list_msg.goal_list->v = 15.28;
 
 	if (goal_list_msg.size > 0)
 	{
@@ -515,6 +580,7 @@ read_parameters(int argc, char **argv)
 			{(char *) "robot", (char *) "length", CARMEN_PARAM_DOUBLE, &robot_config.length, 0, NULL},
 			{(char *) "robot", (char *) "width", CARMEN_PARAM_DOUBLE, &robot_config.width, 0, NULL},
 			{(char *) "robot", (char *) "maximum_acceleration_forward", CARMEN_PARAM_DOUBLE, &robot_config.maximum_acceleration_forward, 1, NULL},
+			{(char *) "robot", (char *) "maximum_deceleration_forward", CARMEN_PARAM_DOUBLE, &robot_config.maximum_deceleration_forward, 1, NULL},
 			{(char *) "robot", (char *) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &robot_config.distance_between_front_and_rear_axles, 1, NULL},
 			{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &robot_config.distance_between_rear_car_and_rear_wheels, 1, NULL}, 			
 			{(char *) "behavior_selector", (char *) "distance_between_waypoints", CARMEN_PARAM_DOUBLE, &distance_between_waypoints, 1, NULL},
@@ -546,6 +612,8 @@ read_parameters(int argc, char **argv)
 		goal_list_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_PATH_PLANNER_GOAL;
 	else
 		goal_list_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
+
+	deceleration_towards_annotation = robot_config.maximum_deceleration_forward / 4.0;
 }
 
 

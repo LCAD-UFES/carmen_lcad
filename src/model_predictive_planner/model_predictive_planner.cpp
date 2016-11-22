@@ -350,7 +350,7 @@ build_detailed_path_lane(vector<carmen_ackerman_path_point_t> *lane_in_local_pos
 	}
 	else
 	{
-		if(print_and_plot)
+		//if (print_and_plot)
 			printf(KGRN "+++++++++++++ ERRO MENSAGEM DA LANE POSES !!!!\n" RESET);
 		detailed_lane.clear();
 		return (false);
@@ -373,7 +373,7 @@ build_detailed_rddf_lane(vector<carmen_ackerman_path_point_t> *lane_in_local_pos
 	}
 	else
 	{
-		if(print_and_plot)
+		//if (print_and_plot)
 			printf(KGRN "+++++++++++++ ERRO MENSAGEM DA LANE POSES !!!!\n" RESET);
 		detailed_lane.clear();
 		return (false);
@@ -477,7 +477,7 @@ path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> path)
 	for (unsigned int i = 0; i < path.size(); i += 1)
 	{
 		if ((path[i].phi > GlobalState::robot_config.max_phi) ||
-				(path[i].phi < -GlobalState::robot_config.max_phi))
+			(path[i].phi < -GlobalState::robot_config.max_phi))
 			printf("---------- PHI EXCEEDED THE MAX_PHI!!!!\n");
 
 		carmen_point_t point_to_check = {path[i].x, path[i].y, path[i].theta};
@@ -815,7 +815,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 			else
 			{
 				otcps[j + i * lastOdometryVector.size()] = otcp;
-				// printf(KYEL "+++++++++++++ Could NOT optimize !!!!\n" RESET);
+				printf(KYEL "+++++++++++++ Could NOT optimize !!!!\n" RESET);
 			}
 		}
 

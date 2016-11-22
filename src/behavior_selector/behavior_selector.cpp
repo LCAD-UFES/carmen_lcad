@@ -422,6 +422,13 @@ get_max_v()
 }
 
 
+carmen_robot_ackerman_config_t *
+get_robot_config()
+{
+	return (&robot_config);
+}
+
+
 void
 behavior_selector_update_rddf(carmen_rddf_road_profile_message *rddf_msg)
 {
