@@ -450,7 +450,7 @@ main(int argc, char **argv)
 	read_parameters(argc, argv);
 
 	g_tld_track = new tld::TLD();
-	g_gui = new tld::Gui;
+	g_gui = new tld::Gui();
 
 	signal(SIGINT, shutdown_camera_view);
 
