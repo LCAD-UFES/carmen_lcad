@@ -133,6 +133,9 @@ int quant_points_in_box_right = 0;
 int quant_points_in_box_free = 0;
 int quant_points_in_box_obstacle = 0;
 
+int marked_width = 1;
+int marked_height = 1;
+
 void
 plot_state(vector<carmen_vector_3D_t> &points, vector<carmen_ackerman_traj_point_t> &spline,
 		vector<carmen_ackerman_traj_point_t> &localize_plot)
@@ -2156,6 +2159,9 @@ handle_char(Mat *preprocessed_image, char c)
 		box.x2_ = (image_final_bbox.x + image_final_bbox.width) / image_zoom;
 		box.y2_ = (image_final_bbox.y + image_final_bbox.height) / image_zoom;
 
+		marked_width = image_final_bbox.width / image_zoom;
+		marked_height = image_final_bbox.height / image_zoom;
+
 		tracker.Init(*preprocessed_image, box, &regressor);
 		//carmen_voice_send_alert((char *) "Ah!\n");
 		tracker_is_initialized = 1;
@@ -2372,15 +2378,42 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 
 		display_interfaces(image_msg, &preprocessed_image);
 
+		double marked_h_w_ratio = (double) marked_width / (double) marked_height;
+		double measured_h_w_ratio = (double) fabs(box.x2_ - box.x1_) / (double) fabs(box.y2_ - box.y1_);
+
+		if (measured_h_w_ratio / marked_h_w_ratio > 2.0)
+		{
+			Mat img(300, 300, CV_8UC3);
+			rectangle(img, Rect(0,0,300,300), Scalar(0, 0, 255), -1);
+			imshow("status", img);
+		}
+		else
+		{
+			Mat img(300, 300, CV_8UC3);
+			rectangle(img, Rect(0,0,300,300), Scalar(0, 255, 0), -1);
+			imshow("status", img);
+		}
+
 		if (!success || errors_exist_in_tracking(success, image_msg->timestamp))
+		{
+			Mat img(300, 300, CV_8UC3);
+			rectangle(img, Rect(0,0,300,300), Scalar(0, 0, 255), -1);
+			imshow("status", img);
+
 			return;
+		}
 
 		if (tracker_is_initialized)
 		{
 			trajectory = build_trajectory(image_msg->timestamp);
 
 			if (errors_exist_trajectory_generation(trajectory, image_msg->timestamp))
+			{
+				Mat img(300, 300, CV_8UC3);
+				rectangle(img, Rect(0,0,300,300), Scalar(0, 0, 255), -1);
+				imshow("status", img);
 				return;
+			}
 
 			publish_box_message(image_msg->host, image_msg->timestamp);
 			publish_trajectory(trajectory, image_msg->timestamp);
