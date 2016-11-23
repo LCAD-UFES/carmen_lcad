@@ -26,7 +26,7 @@ SOURCES = stehs_planner_main.cpp stehs_planner.cpp CircleNode.cpp Circle.cpp Sta
 PUBLIC_BINARIES = stehs_planner
 PUBLIC_LIBRARIES =
 
-TARGETS = stehs_planner
+TARGETS = libcarmodel stehs_planner
 
 
 libcarmodel:

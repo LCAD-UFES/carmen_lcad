@@ -14,8 +14,7 @@ StehsPlanner::StehsPlanner():
         distance_map_ready(false),
         goal_ready(false),
         circle_path(),
-        state_list(),
-        kmin(1.0 / 4.0) {
+        state_list() {
 
     // creates a new opencv window
     cv::namedWindow("CirclePath", cv::WINDOW_AUTOSIZE);
@@ -442,7 +441,16 @@ StehsPlanner::TimeHeuristic(State s) // TODO Optimize this linear search verifyi
 }
 
 void
-StehsPlanner::BuildStateList(StateNodePtr goal_node) { (void) goal_node;}
+StehsPlanner::BuildStateList(StateNodePtr goal_node)
+{
+	state_list.clear();
+
+	while(goal_node != nullptr)
+	{
+		state_list.push_front(goal_node->state);
+		goal_node = goal_node->parent;
+	}
+}
 
 // TODO we need to implement the circle radius clustering
 bool
@@ -457,11 +465,9 @@ StehsPlanner::Exist(StateNodePtr current, std::vector<StateNodePtr> &closed_set,
                 return true;
 
         it++;
-
     }
 
     return false;
-
 }
 
 StateNodePtr
@@ -476,6 +482,8 @@ StehsPlanner::GetNextState(StateNodePtr current_state, double a, double w, doubl
     double distance_traveled;
     next_state->state = carmen_libcarmodel_recalc_pos_ackerman(current_state->state, target_v, target_phi,
             step_size, &distance_traveled, DELTA_T, robot_config);
+
+    next_state->parent = current_state;
 
     return (next_state);
 }
@@ -503,7 +511,7 @@ StehsPlanner::FindNearestCircle(StateNodePtr state_node)
 			break;
 		}
 	}
-	return (it);
+	return &(*it);
 }
 
 
@@ -516,51 +524,64 @@ StehsPlanner::UpdateStep(StateNodePtr state_node)   // TODO Pensar melhor nessa 
 }
 
 
+bool
+StehsPlanner::Collision(StateNodePtr state_node)
+{
+	double circle_radius = (robot_config.width + 0.4) / 2.0; // metade da largura do carro + um espacco de guarda
+
+	carmen_point_t state = traj_to_point_t(state_node->state);
+
+	carmen_point_t trash;
+	trash.x = 0.0;
+	trash.y = 0.0;
+	trash.theta = 0.0;
+
+	return (carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&state, trash, robot_config, distance_map, circle_radius) > 0.0); // Returns 0 if there is not a collision
+}
+
+
 void
 StehsPlanner::Expand(
         StateNodePtr current_state,
         std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set,
         std::vector<StateNodePtr> &closed_set,
-        double k) {
-
+        double k)
+{
     // the car acceleration
     double a[3] = {-1.0, 0.0, 1.0};
     double w[3] = {-0.01, 0.0, 0.01};
 
-    double step_size = UpdateStep(current_state);
+    double step_size = k * UpdateStep(current_state);
 
     // the acceleration loop
-    for (int i = 0; i < 3; ++i) {
-
+    for (int i = 0; i < 3; ++i)
+    {
         // the steering angle acceleration
-        for (int j = 0; j < 3; ++j) {
-
-
+        for (int j = 0; j < 3; ++j)
+        {
             // get the next state
             StateNodePtr next_state = GetNextState(current_state, a[i], w[j], step_size);
 
-            if (!Exist(next_state, closed_set, k) && !Collision(next_state, distance_map)) {
-
-                // add the child state to the open set
+            if (!Exist(next_state, closed_set, k) && !Collision(next_state))
+            {
                 open_set.push(next_state);
-
-            } else {
-
-                delete next_state;
-
             }
-
+            else
+            {
+                delete next_state;
+            }
         }
-
     }
-
 }
 
 void
-StehsPlanner::GoalExpand(StateNodePtr current, StateNodePtr goal_node) {
+StehsPlanner::GoalExpand(StateNodePtr current, StateNodePtr goal_node,
+		std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set)
+{
 
     (void) current;
     (void) goal_node;
+    (void) open_set;
 
 }
 
@@ -569,9 +590,21 @@ StehsPlanner::SetSwap(
         std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set,
         std::vector<StateNodePtr> &closed_set) {
 
-    (void) open_set;
-    (void) closed_set;
+	std::vector<StateNodePtr> outputvec(open_set.size());
 
+	std::copy(&(open_set.top()), &(open_set.top()) + open_set.size(), &outputvec[0]);
+
+	while(!open_set.empty())
+	{
+		open_set.pop();
+	}
+
+	for (unsigned int i = 0; i < closed_set.size(); i++)
+	{
+		open_set.push(closed_set[i]);
+	}
+
+	closed_set = outputvec;
 }
 
 void
@@ -617,27 +650,23 @@ StehsPlanner::HeuristicSearch()
             break;
 
         }
-
         // find the children states configuration
         Expand(current, open_set, closed_set, k);
 
         if (current->h < RGOAL)
         {
-            GoalExpand(current, goal_node);
+            GoalExpand(current, goal_node, open_set);
         }
 
-        //
         closed_set.push_back(current);
 
-        //
-        if (open_set.empty()) {
-
+        if (open_set.empty())
+        {
             k *= 0.5;
 
-            if (k > kmin) {
-
+            if (k > KMIN)
+            {
                 SetSwap(open_set, closed_set);
-
             }
 
         }

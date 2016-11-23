@@ -20,17 +20,19 @@
 #include <queue>
 #include <list>
 #include <vector>
+#include <algorithm>
 
 #include "CircleNode.hpp"
 #include "StateNode.hpp"
 
 #define MIN_OVERLAP_FACTOR 0.5		// if two circles overlaps more than this factor then they are considered connected
 #define MAX_OVERLAP_FACTOR 0.1		// if two circles overlaps more than this factor then they are considered the same
-#define RGOAL 0.5
+#define RGOAL 0.5					// ???
 #define DELTA_T 0.01                // Size of step for the ackerman Euler method
-#define ALFA 1                // Weight of nearest circle radius for step_size
-#define BETA 1                // Weight of nearest circle path distance to goal for step_size
+#define ALFA 1                		// Weight of nearest circle radius for step_size
+#define BETA 1               		// Weight of nearest circle path distance to goal for step_size
 #define MIN_STEP_SIZE 0.05
+#define KMIN 0.0125 				// Step rate multiplier
 
 class StehsPlanner
 {
@@ -59,9 +61,6 @@ public:
 
     // the trajectory found
     std::list<State> state_list;
-
-    // the min step-rate threshold
-    double kmin;
 
     // TODO it needs to receive the start and goal node
 
@@ -132,6 +131,7 @@ public:
     CircleNodePtr FindNearestCircle(StateNodePtr state_node);
 
     double UpdateStep(StateNodePtr state_node);
+    bool Collision(StateNodePtr state_node);
 
     void Expand(
                 StateNodePtr current,
@@ -139,7 +139,8 @@ public:
                 std::vector<StateNodePtr> &closed_set,
                 double k);
 
-    void GoalExpand(StateNodePtr current, StateNodePtr goal_node);
+    void GoalExpand(StateNodePtr current, StateNodePtr goal_node,
+    		std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set);
 
     void SetSwap(std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set, std::vector<StateNodePtr> &closed_set);
 
