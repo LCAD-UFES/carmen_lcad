@@ -331,7 +331,7 @@ setStereoVideoCapture( PGRStereoCamera_t* stereoCamera, bool is_legacy_firewire 
 		// Bumblebee3 transmits stereo images in Format 7
 
 		// load the factory defaults - this is auto-everything
-		err = dc1394_memory_load( stereoCamera->camera, 0 );
+		err = dc1394_memory_load( stereoCamera->camera, 1 );
 		if ( err != DC1394_SUCCESS )
 		{
 			fprintf( stderr, "Can't load default memory channel\n" );

@@ -1284,7 +1284,7 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 
 	localize_ackerman_velodyne_laser_read_parameters(argc, argv);
 
-	param->xy_uncertainty_due_to_grid_resolution = (p_map_params->grid_res) * (p_map_params->grid_res);
+	param->xy_uncertainty_due_to_grid_resolution = (p_map_params->grid_res / 2.0) * (p_map_params->grid_res / 2.0);
 	param->yaw_uncertainty_due_to_grid_resolution = asin((p_map_params->grid_res / 2.0) / max_range) * asin((p_map_params->grid_res / 2.0) / max_range);
 	
 	carmen_param_allow_unfound_variables(1);
