@@ -1,19 +1,17 @@
 #ifndef MPC_H
 #define MPC_H
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+using namespace std;
 
 #include <carmen/carmen.h>
+#include <car_model.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
 #include <gsl/gsl_multimin.h>
-#include <car_model.h>
 #include <obstacle_avoider_interface.h>
-
+#include <list>
+#include <vector>
 
 #define DELTA_T (1.0 / 40.0) // 0.025 40 Htz
 #define PREDICTION_HORIZON	0.4 //Must be DELTA_T multiple
@@ -31,6 +29,17 @@ typedef struct {
 } EFFORT_SPLINE_DESCRIPTOR;
 
 
+typedef struct {
+	vector<double> v;
+	vector<double> phi;
+	vector<double> time;
+	double total_time_of_commands;
+} MOTION_COMMAND;
+
+
+typedef vector<double> (*get_vector_from_spline)(EFFORT_SPLINE_DESCRIPTOR *descriptors, void *params);
+
+
 typedef struct
 {
 	carmen_ackerman_motion_command_t *motion_commands_vector;
@@ -38,10 +47,12 @@ typedef struct
 
 	struct fann *steering_ann;
 	fann_type steering_ann_input[NUM_STEERING_ANN_INPUTS];
-//	struct fann *velocity_ann = NULL;
-//	fann_type velocity_ann_input[NUM_VELOCITY_ANN_INPUTS];
+	struct fann *velocity_ann;
+	fann_type velocity_ann_input[NUM_VELOCITY_ANN_INPUTS];
 
 	EFFORT_SPLINE_DESCRIPTOR velocity_descriptors;
+
+	MOTION_COMMAND path;
 
 	double atan_current_curvature;
 	double v;
@@ -57,33 +68,10 @@ typedef struct
 	double max_phi;
 	carmen_localize_ackerman_globalpos_message global_pos;
 	carmen_robot_ackerman_config_t *robot_config;
+
+	get_vector_from_spline get_vector_function;
+
 } PARAMS;
 
 
-double
-carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvature,
-		carmen_ackerman_motion_command_p current_motion_command_vector,
-		int nun_motion_commands, double v, double yp, double time_of_last_motion_command,
-		carmen_robot_ackerman_config_t *robot_config,
-		int initialize_neural_networks);
-
-
-double
-carmen_libmpc_get_optimized_steering_effort_using_MPC_position_control(double atan_current_curvature,
-		carmen_ackerman_motion_command_p current_motion_command_vector,
-		int nun_motion_commands, double v, double yp, double time_of_last_motion_command,
-		carmen_robot_ackerman_config_t *robot_config,
-		carmen_localize_ackerman_globalpos_message global_pos, int initialize_neural_networks);
-
-int
-libmpc_stiction_simulation(double effort, double v);
-
-double
-libmpc_stiction_correction(double current_phi, double desired_phi, double effort, double v);
-
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif // PID_H
+#endif // MPC_H

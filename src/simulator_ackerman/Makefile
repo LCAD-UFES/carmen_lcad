@@ -5,22 +5,18 @@ LINK = g++
 CFLAGS += -DOLD_MOTION_MODEL -std=c99
 
 IFLAGS += -I../obstacle_avoider
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/rlpid
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/pid
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarmodel
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/mpc
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol
 IFLAGS += -I$(CARMEN_HOME)/include/carmen
 
 LFLAGS += -lmap_interface -lparam_interface -llocalize_ackerman_interface -lobstacle_avoider \
 	  -llaser_interface -lgeometry -llocalize_ackerman_motion -lbase_ackerman_interface \
 	  -lglobal -lipc -lfused_odometry_interface -lcollision_detection -lmap_server_interface -lmapper_interface \
-	  -lmap_server_interface -lford_escape_hybrid_interface -lfann -lrlpid -lmpc -lgsl -lgslcblas -lpid -lcarmodel \
+	  -lmap_server_interface -lford_escape_hybrid_interface -lcontrol -lcarmodel -lfann -lgsl -lgslcblas \
 	  -lobstacle_avoider_interface
 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/rlpid
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/pid
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcarmodel
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/mpc
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol
 
 MODULE_NAME = SIMULATOR ACKERMAN
 MODULE_COMMENT = "simulates the readings of a ackerman robot on a map"
@@ -33,7 +29,7 @@ PUBLIC_LIBRARIES = libsimulator_ackerman_interface.a
 PUBLIC_BINARIES = simulator_ackerman simulator_ackerman_connect_multiple
 MAN_PAGES =
 
-TARGETS = libpid librlpid libcarmodel libmpc simulator_ackerman simulator_ackerman_test  libsimulator_ackerman_interface.a simulator_ackerman_connect_multiple
+TARGETS = libcarmodel libcontrol simulator_ackerman simulator_ackerman_test  libsimulator_ackerman_interface.a simulator_ackerman_connect_multiple
 
 
 ifndef NO_PYTHON
@@ -49,25 +45,11 @@ clean_libcarmodel:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcarmodel
 
 
-libpid:
-	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcontrol/pid/
-clean: clean_libpid
-clean_libpid:
-	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcontrol/pid/
-
-
-librlpid:
-	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcontrol/rlpid/
-clean: clean_librlpid
-clean_librlpid:
-	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcontrol/rlpid/
-
-
-libmpc:
-	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcontrol/mpc/
-clean: clean_libmpc
-clean_libmpc:
-	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcontrol/mpc/
+libcontrol:
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcontrol/
+clean: clean_libcontrol
+clean_libcontrol:
+	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcontrol/
 
 
 simulator_ackerman:	simulator_ackerman.o simulator_ackerman_simulation.o objects_ackerman.o

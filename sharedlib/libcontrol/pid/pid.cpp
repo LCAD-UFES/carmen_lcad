@@ -43,7 +43,7 @@ static double g_brake_gap;
 //int init = 1;
 
 void
-pid_plot_curvature(double current_phi, double desired_phi, double steering_effort, double v)
+pid_plot_curvature(double current_phi, double desired_phi)
 {
 	#define PAST_SIZE 300
 	static list<double> cphi;

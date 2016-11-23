@@ -1,5 +1,3 @@
-#include <list>
-#include <vector>
 #include "mpc.h"
 
 

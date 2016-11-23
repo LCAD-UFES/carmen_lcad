@@ -1,18 +1,33 @@
 include $(CARMEN_HOME)/src/Makefile.conf
 
-SUBDIRS += pid mpc rlpid
+LINK = g++
+CXXFLAGS += -std=c++0x
 
 MODULE_NAME = LIBCONTROL
 MODULE_COMMENT = Low Level Control Library
 
-#IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/pid
-#IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/mpc
+IFLAGS += -I$(CARMEN_HOME)/include/carmen
 
-#LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/pid
-#LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/mpc
+LFLAGS += -lfann -lgsl -lgslcblas -lcarmodel -lobstacle_avoider_interface
 
-#TARGETS = libcontrol.a  
+SOURCES = mpc/mpc.cpp pid/pid.cpp rlpid/rlpid.cpp
 
-#libcontrol.a: mpc.o pid.o
+PUBLIC_INCLUDES = control.h 
+
+TARGETS = libcontrol.a
+
+clean: clean_mpc
+clean_mpc:
+	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcontrol/mpc/
+
+clean: clean_pid
+clean_pid:
+	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcontrol/pid/
+
+clean: clean_rlpid
+clean_rlpid:
+	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcontrol/rlpid/
+
+libcontrol.a: mpc/mpc.o mpc/mpc_position_control.o pid/pid.o rlpid/rlpid.o
 
 include $(CARMEN_HOME)/src/Makefile.rules
