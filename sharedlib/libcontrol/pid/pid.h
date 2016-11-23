@@ -20,10 +20,6 @@ void
 pid_plot_curvature(double current_phi, double desired_phi);
 
 
-void
-printa_test();
-
-
 #ifdef __cplusplus
 }
 #endif

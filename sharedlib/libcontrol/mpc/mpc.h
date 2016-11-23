@@ -5,6 +5,10 @@ using namespace std;
 
 #include <carmen/carmen.h>
 #include <car_model.h>
+#include <fann.h>
+#include <fann_data.h>
+#include <floatfann.h>
+#include <fann_train.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>

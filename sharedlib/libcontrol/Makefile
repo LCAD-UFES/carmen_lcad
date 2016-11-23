@@ -8,7 +8,7 @@ MODULE_COMMENT = Low Level Control Library
 
 IFLAGS += -I$(CARMEN_HOME)/include/carmen
 
-LFLAGS += -lfann -lgsl -lgslcblas -lcarmodel -lobstacle_avoider_interface
+LFLAGS += -lcarmodel -lgsl -lgslcblas -lfann -lobstacle_avoider_interface
 
 SOURCES = mpc/mpc.cpp pid/pid.cpp rlpid/rlpid.cpp
 

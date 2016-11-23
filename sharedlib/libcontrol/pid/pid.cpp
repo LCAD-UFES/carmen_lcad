@@ -1,6 +1,7 @@
 #include <carmen/carmen.h>
 #include <carmen/simulator_ackerman.h>
 #include "pid.h"
+#include "../control.h"
 #include <list>
 
 
