@@ -1,8 +1,8 @@
 #include "StateNode.hpp"
-#include "Helpers/wrap2pi.hpp"
+
 // basic constructor
-StateNode::StateNode(const State &s, double g_, double f_, StateNode *p) :
-	g(g_), f(f_), h(), parent(p) {
+StateNode::StateNode(const State &s, double g_, double h_, StateNode *p) :
+	g(g_), f(g_ + h_), h(h_), parent(p) {
 
 	state.x = s.x;
 	state.y = s.y;
@@ -19,7 +19,7 @@ StateNode::StateNode(const State &s, double g_, double f_, StateNode *p) :
 
 // the copy constructor
 StateNode::StateNode(const StateNode& sn) :
-	 g(sn.g), f(sn.f), h(), parent(sn.parent) {
+	 g(sn.g), f(sn.f), h(sn.h), parent(sn.parent) {
 
 	state.x = sn.state.x;
 	state.y = sn.state.y;

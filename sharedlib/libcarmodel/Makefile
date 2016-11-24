@@ -7,11 +7,9 @@ CXXFLAGS += -std=c++0x -pg
 MODULE_NAME = CAR MODEL
 MODULE_COMMENT = Car Neural and Ackeman Motion Model
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/pid
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol
 
-LFLAGS += -lfann -lpid
-
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/pid
+LFLAGS += -lfann -lcontrol
 
 SOURCES = neural_model.cpp ackerman_model.cpp
  

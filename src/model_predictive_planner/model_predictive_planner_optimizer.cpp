@@ -393,7 +393,7 @@ my_g(const gsl_vector *x, void *params)
 			(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2));
 
 	double w1, w2, w3, w4, w5;
-	w1 = 10.0; w2 = 15.0; w3 = 15.0; w4 = 2.0; w5 = 10.0;
+	w1 = 2.0; w2 = 15.0; w3 = 15.0; w4 = 2.0; w5 = 10.0;
 
 	double result = sqrt(
 			w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
@@ -411,7 +411,7 @@ my_dg(const gsl_vector *v, void *params, gsl_vector *df)
 {
 	double g_x = my_g(v, params);
 
-	double h = 0.0002;//<<< 0.00001
+	double h = 0.00005;//<<< 0.00001
 
 	gsl_vector *x_h;
 	x_h = gsl_vector_alloc(4);
@@ -541,14 +541,13 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 		tt = tcp_seed.tt;
 		//estimate_piramidal_profile(); //TODO modo para fazer profile piramide
 	}
-
 	else
 		tt = (target_v - target_td.v_i) / a;
 
 	if (tt > 10.0)
 		tt = 10.0;
-	else if (tt < 0.0)
-		tt = 0.0;
+	else if (tt < 2.0)
+		tt = 2.0;
 
 	if (a >= 0.0)
 	{
@@ -568,6 +567,7 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 	}
 	params.suitable_tt = tcp_seed.tt = tt;
 	params.suitable_acceleration = tcp_seed.a = a;
+//	printf("a %lf, tt %lf\n", a, tt);
 }
 
 
@@ -697,14 +697,24 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 		//	--
 //		params.suitable_acceleration = compute_suitable_acceleration(gsl_vector_get(x, 3), target_td, target_v);
 
-	} while (/*(s->f > MAX_LANE_DIST) &&*/ (status == GSL_CONTINUE) && (iter < 30));
+	} while (/*(s->f > MAX_LANE_DIST) &&*/ (status == GSL_CONTINUE) && (iter < 50));
 
 //	printf("iter = %ld\n", iter);
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
-	if ((tcp.tt < 0.2) || (params.plan_cost > 1.6)) // too short plan or bad minimum
+	if (tcp.tt < 0.2)
+	{
+//		printf(">>>>>>>>>>>>>> tt < 0.2\n");
 		tcp.valid = false;
+	}
+
+//	printf("plan_cost = %lf\n", params.plan_cost);
+	if (params.plan_cost > 3.6)
+	{
+//		printf(">>>>>>>>>>>>>> plan_cost > 3.6\n");
+		tcp.valid = false;
+	}
 
 	gsl_multimin_fdfminimizer_free(s);
 	gsl_vector_free(x);

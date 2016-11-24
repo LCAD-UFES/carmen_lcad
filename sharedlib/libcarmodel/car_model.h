@@ -10,7 +10,7 @@ extern "C" {
 #include <fann_train.h>
 #include <fann_data.h>
 #include <floatfann.h>
-#include <pid.h>
+#include <control.h>
 
 #define NUM_VELOCITY_ANN_INPUTS 360
 #define NUM_STEERING_ANN_INPUTS 80

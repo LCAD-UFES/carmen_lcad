@@ -1,6 +1,7 @@
 #include <carmen/carmen.h>
 #include <carmen/simulator_ackerman.h>
 #include "pid.h"
+#include "../control.h"
 #include <list>
 
 
@@ -43,7 +44,7 @@ static double g_brake_gap;
 //int init = 1;
 
 void
-pid_plot_curvature(double current_phi, double desired_phi, double steering_effort, double v)
+pid_plot_curvature(double current_phi, double desired_phi)
 {
 	#define PAST_SIZE 300
 	static list<double> cphi;
@@ -63,7 +64,7 @@ pid_plot_curvature(double current_phi, double desired_phi, double steering_effor
 		first_time = false;
 
 		gnuplot_pipe = popen("gnuplot -persist", "w"); //("gnuplot -persist", "w") to keep last plot after program closes
-		fprintf(gnuplot_pipe, "set xrange [0:10]\n");
+		fprintf(gnuplot_pipe, "set xrange [0:PAST_SIZE/30]\n");
 		fprintf(gnuplot_pipe, "set yrange [-0.55:0.55]\n");
 	}
 

@@ -528,8 +528,8 @@ calc_global_cell_coordinate(cell_coords_t *local, carmen_map_config_t *local_map
 	dxg = dx * cos_theta - dy * sin_theta;
 	dyg = dx * sin_theta + dy * cos_theta;
 
-	global.x = (int) ((dxg + robot_position->x / local_map_config->resolution) + 0.5);
-	global.y = (int) ((dyg + robot_position->y / local_map_config->resolution) + 0.5);
+	global.x = (int) round(dxg + robot_position->x / local_map_config->resolution);
+	global.y = (int) round(dyg + robot_position->y / local_map_config->resolution);
 
 	return (global);
 }
@@ -548,8 +548,8 @@ calc_global_cell_coordinate_fast(cell_coords_t *local,
 	double dxg = dx * cos_theta - dy * sin_theta;
 	double dyg = dx * sin_theta + dy * cos_theta;
 
-	global.x = (int) (dxg + robot_position_in_the_map_x);
-	global.y = (int) (dyg + robot_position_in_the_map_y);
+	global.x = (int) round(dxg + robot_position_in_the_map_x);
+	global.y = (int) round(dyg + robot_position_in_the_map_y);
 
 	return (global);
 }
@@ -654,7 +654,7 @@ inner_product_between_maps(double *inner_product, double *norm_local_map, double
 		{
 			if (global_map->map[global.x][global.y] <= 0.001)
 			{
-				sum_global += 2;
+				sum_global += 2; // Alberto: @@@ Por que?
 			}
 			else
 			{
@@ -739,23 +739,51 @@ convert_particles_log_weights_to_prob(carmen_localize_ackerman_particle_filter_p
 }
 
 
+void
+normalize_particles_map_matching(carmen_localize_ackerman_particle_filter_p filter)
+{
+	double max = -100;
+	double min = 1000;
+
+	int i;
+	for (i = 0; i < filter->param->num_particles; i++)
+	{
+		if (max < filter->particles[i].weight)
+			max = filter->particles[i].weight;
+
+		if(min > filter->particles[i].weight)
+			min = filter->particles[i].weight;
+	}
+
+	for (i = 0; i < filter->param->num_particles; i++)
+	{
+		if (max - min != 0.0)
+			filter->particles[i].weight = (filter->particles[i].weight - min) / (max - min);
+		else
+			filter->particles[i].weight = 0.000001;
+	}
+}
+
+
 static void
 cosine_correction(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_map)
 {
 
-	double min_weight = 0.000001, w;
+	double w;
 	double inner_product, norm_local_map, norm_global_map;
 
 	int i;
 	for (i = 0; i < filter->param->num_particles; i++)
 	{
 		inner_product_between_maps(&inner_product, &norm_local_map, &norm_global_map, &global_map->carmen_map, local_map, &(filter->particles[i]));
-		w = inner_product / (sqrt(norm_local_map) * sqrt(norm_global_map));
-		w = 1.0 - (w > min_weight ? w : min_weight);
-		filter->particles[i].weight = (-(w * w) * 100);
+		if ((norm_local_map > 0.001) && (norm_global_map > 0.001))
+			w = inner_product / (sqrt(norm_local_map) * sqrt(norm_global_map));
+		else
+			w = -1.0;
+		filter->particles[i].weight = 1.0 + w;
 	}
-
-	convert_particles_log_weights_to_prob(filter);
+	normalize_particles_map_matching(filter);
+	//convert_particles_log_weights_to_prob(filter);
 }
 
 
@@ -876,8 +904,8 @@ map_particle_correction(carmen_localize_ackerman_map_t *localize_map, carmen_com
 	double map_center_y = (double) local_map->config.y_size * 0.5;
 	robot_position.x = particle->x - localize_map->config.x_origin;
 	robot_position.y = particle->y - localize_map->config.y_origin;
-	double robot_position_in_the_map_x = (robot_position.x / local_map->config.resolution) + 0.5;
-	double robot_position_in_the_map_y = (robot_position.y / local_map->config.resolution) + 0.5;
+	double robot_position_in_the_map_x = robot_position.x / local_map->config.resolution;
+	double robot_position_in_the_map_y = robot_position.y / local_map->config.resolution;
 
 	for (int i = 0; i < local_map->number_of_known_points_on_the_map; i++)
 	{

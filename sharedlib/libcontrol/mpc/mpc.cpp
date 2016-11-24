@@ -1,6 +1,5 @@
-#include <list>
-#include <vector>
 #include "mpc.h"
+#include "../control.h"
 
 
 using namespace std;
@@ -9,14 +8,7 @@ using namespace std;
 //FILE *gnuplot_save;
 FILE *gnuplot_save_total;
 bool save_and_plot = false;
-
-
-typedef struct {
-	vector<double> v;
-	vector<double> phi;
-	vector<double> time;
-	double total_time_of_commands;
-} MOTION_COMMAND;
+bool plot = false;
 
 
 double
@@ -65,7 +57,7 @@ get_effort_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors)
 
 
 unsigned int
-get_motion_timed_index_to_motion_command(PARAMS* params)
+get_motion_timed_index_to_motion_command(PARAMS* params) // TODO nao devia retornar j--   ????
 {
 	double motion_commands_vector_time = params->motion_commands_vector[0].time;
 	unsigned int j = 0;
@@ -110,7 +102,7 @@ get_velocity_supersampling_motion_commands_vector(PARAMS *params, unsigned int s
 double
 car_model(double steering_effort, double atan_current_curvature, double v, fann_type *steering_ann_input, PARAMS *params)
 {
-	steering_effort *= (1.0 / (1.0 + (params->v * params->v) / CAR_MODEL_GAIN)); // boa
+//	steering_effort *= (1.0 / (1.0 + (params->v * params->v) / CAR_MODEL_GAIN)); // boa
 	steering_effort = carmen_clamp(-100.0, steering_effort, 100.0);
 
 	double phi = carmen_libcarneuralmodel_compute_new_phi_from_effort(steering_effort, atan_current_curvature, steering_ann_input,
@@ -148,6 +140,34 @@ get_phi_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, PA
 }
 
 
+vector<double>
+get_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, void *params_ptr)
+{
+	PARAMS *params = (PARAMS *) params_ptr;
+
+	fann_type steering_ann_input[NUM_STEERING_ANN_INPUTS];
+	memcpy(steering_ann_input, params->steering_ann_input, NUM_STEERING_ANN_INPUTS * sizeof(fann_type));
+
+	vector<double> effort_vector = get_effort_vector_from_spline_descriptors(descriptors);
+	vector<double> velocity_vector = get_velocity_supersampling_motion_commands_vector(params, effort_vector.size());
+	vector<double> phi_vector;
+	double atan_current_curvature = params->atan_current_curvature;
+
+	for (unsigned int i = 0; i < effort_vector.size(); i++)
+	{
+		//		double phi = car_model(effort_vector[i], atan_current_curvature, params->v, steering_ann_input, params);
+		double phi = car_model(effort_vector[i], atan_current_curvature, velocity_vector[i], steering_ann_input, params);
+		//		phi = phi + params->dk;
+
+		//		phi_vector.push_back(phi);
+		phi_vector.push_back(phi + params->dk);
+
+		atan_current_curvature = carmen_get_curvature_from_phi(phi, params->v, params->understeer_coeficient, params->distance_rear_axles);
+	}
+	return (phi_vector);
+}
+
+
 double
 my_f(const gsl_vector *v, void *params_ptr)
 {
@@ -164,16 +184,11 @@ my_f(const gsl_vector *v, void *params_ptr)
 	d.k3 = gsl_vector_get(v, 2);
 	d.k4 = gsl_vector_get(v, 3);
 
-	vector<double> phi_vector = get_phi_vector_from_spline_descriptors(&d, params);
+	//vector<double> phi_vector = get_phi_vector_from_spline_descriptors(&d, params);
+	vector<double> phi_vector = params->get_vector_function(&d, params);
 
 	unsigned int j = get_motion_timed_index_to_motion_command(params);
 	double motion_commands_vector_time = params->motion_commands_vector[j].time;
-
-//	while ((motion_commands_vector_time < params->time_elapsed_since_last_motion_command) && (j < params->motion_commands_vector_size))
-//	{
-//		j++;
-//		motion_commands_vector_time += params->motion_commands_vector[j].time;
-//	}
 
 	for (unsigned int i = 0; i < phi_vector.size(); i++)
 	{
@@ -191,7 +206,6 @@ my_f(const gsl_vector *v, void *params_ptr)
 	}
 
 	double cost = error_sum;// + 0.00011 * sqrt((params->previous_k1 - d.k1) * (params->previous_k1 - d.k1));
-	//printf("%lf  %lf  %lf  %lf\n", cost, params->previous_k1, d.k1, params->previous_k1 - d.k1);
 
 	return (cost);
 }
@@ -258,8 +272,10 @@ my_fdf(const gsl_vector *x, void *params, double *f, gsl_vector *df)
 
 
 EFFORT_SPLINE_DESCRIPTOR
-get_optimized_effort(PARAMS *params, EFFORT_SPLINE_DESCRIPTOR seed)
+get_optimized_effort(PARAMS *params, EFFORT_SPLINE_DESCRIPTOR descriptors, vector<double> (*function)(EFFORT_SPLINE_DESCRIPTOR *, void *))
 {
+	params->get_vector_function = function;
+
 	gsl_vector *x;
 	gsl_multimin_function_fdf my_func;
 	size_t iter = 0;
@@ -272,10 +288,10 @@ get_optimized_effort(PARAMS *params, EFFORT_SPLINE_DESCRIPTOR seed)
 	my_func.params = params;
 
 	x = gsl_vector_alloc (4);  // Num of parameters to minimize
-	gsl_vector_set(x, 0, seed.k1);
-	gsl_vector_set(x, 1, seed.k2);
-	gsl_vector_set(x, 2, seed.k3);
-	gsl_vector_set(x, 3, seed.k4);
+	gsl_vector_set(x, 0, descriptors.k1);
+	gsl_vector_set(x, 1, descriptors.k2);
+	gsl_vector_set(x, 2, descriptors.k3);
+	gsl_vector_set(x, 3, descriptors.k4);
 
 	const gsl_multimin_fdfminimizer_type *T = gsl_multimin_fdfminimizer_conjugate_fr;
 	gsl_multimin_fdfminimizer *s = gsl_multimin_fdfminimizer_alloc(T, 4);
@@ -293,18 +309,17 @@ get_optimized_effort(PARAMS *params, EFFORT_SPLINE_DESCRIPTOR seed)
 		status = gsl_multimin_test_gradient(s->gradient, 1e-3);
 
 	} while ((status == GSL_CONTINUE) && (iter < 15));
-
 	//printf("iter = %ld\n", iter);
 
-	seed.k1 = carmen_clamp(-100.0, gsl_vector_get(s->x, 0), 100.0);
-	seed.k2 = carmen_clamp(-100.0, gsl_vector_get(s->x, 1), 100.0);
-	seed.k3 = carmen_clamp(-100.0, gsl_vector_get(s->x, 2), 100.0);
-	seed.k4 = carmen_clamp(-100.0, gsl_vector_get(s->x, 3), 100.0);
+	descriptors.k1 = carmen_clamp(-100.0, gsl_vector_get(s->x, 0), 100.0);
+	descriptors.k2 = carmen_clamp(-100.0, gsl_vector_get(s->x, 1), 100.0);
+	descriptors.k3 = carmen_clamp(-100.0, gsl_vector_get(s->x, 2), 100.0);
+	descriptors.k4 = carmen_clamp(-100.0, gsl_vector_get(s->x, 3), 100.0);
 
 	gsl_multimin_fdfminimizer_free(s);
 	gsl_vector_free(x);
 
-	return (seed);
+	return (descriptors);
 }
 
 
@@ -601,6 +616,7 @@ get_motion_commands_vector(carmen_ackerman_motion_command_p current_motion_comma
 	double time_interval = 0.0;
 	double total_time = 0.0;
 
+	// TODO usar a get_motion timed index
 	while ((sum_of_motion_commands_vector_time	< elapsed_time) && (j < nun_motion_commands)) // TODO Tratar se sair por j <nun_motion_commands
 	{
 		j++;
@@ -704,7 +720,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 
 	//get_motion_commands_vector(current_motion_command_vector, nun_motion_commands, time_of_last_motion_command);
 
-	//seed = get_optimized_effort(&params, seed);
+	seed = get_optimized_effort(&params, seed, get_vector_from_spline_descriptors); // TODO essa funcao vai aqui ou depois do car_model???
 	double effort = seed.k1;
 
 	// Calcula o dk do proximo ciclo
@@ -720,7 +736,9 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 	//effort += stiction_correction(yp, current_motion_command_vector[index].phi, effort, v);
 	//--------------------------------------------------------------------------------------------------------------------
 
-	seed = get_optimized_effort(&params, seed);
+
+	//seed = get_optimized_effort(&params, seed, get_vector_from_spline_descriptors);
+
 
 	if (save_and_plot)
 	{
