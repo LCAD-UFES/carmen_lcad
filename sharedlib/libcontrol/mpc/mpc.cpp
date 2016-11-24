@@ -71,6 +71,7 @@ get_motion_timed_index_to_motion_command(PARAMS* params) // TODO nao devia retor
 }
 
 
+
 vector<double>
 get_velocity_supersampling_motion_commands_vector(PARAMS *params, unsigned int size)
 {
@@ -616,7 +617,6 @@ get_motion_commands_vector(carmen_ackerman_motion_command_p current_motion_comma
 	double time_interval = 0.0;
 	double total_time = 0.0;
 
-	// TODO usar a get_motion timed index
 	while ((sum_of_motion_commands_vector_time	< elapsed_time) && (j < nun_motion_commands)) // TODO Tratar se sair por j <nun_motion_commands
 	{
 		j++;
