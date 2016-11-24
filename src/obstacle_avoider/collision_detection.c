@@ -368,7 +368,7 @@ pose_hit_obstacle_ultrasonic(carmen_point_t pose, carmen_map_t *map, carmen_robo
 }
 
 inline carmen_point_t
-move_path_point_to_world_coordinates(const carmen_point_t point, carmen_point_t *localizer_pose, double displacement)
+carmen_collision_detection_move_path_point_to_world_coordinates(const carmen_point_t point, carmen_point_t *localizer_pose, double displacement)
 {
 	carmen_point_t path_point_in_map_coords;
 	double coss, sine;
@@ -491,7 +491,7 @@ carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(carmen_point_t
 		if (i == number_of_point - 1)
 			displacement = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
 
-		point_in_map_coords = move_path_point_to_world_coordinates(point_to_check, localizer_pose, displacement);
+		point_in_map_coords = carmen_collision_detection_move_path_point_to_world_coordinates(point_to_check, localizer_pose, displacement);
 		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&point_in_map_coords, distance_map);
 		//distance equals to -1.0 when the coordinates are outside of map
 		if(distance != -1.0)
