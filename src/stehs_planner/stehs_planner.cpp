@@ -395,7 +395,7 @@ StehsPlanner::RDDFSpaceExploration()
 
     UpdateCircleGoalDistance();
 
-    ShowCirclePath();
+//    ShowCirclePath();
 
 /*
     std::list<CircleNode>::iterator it;
@@ -682,6 +682,23 @@ StehsPlanner::HeuristicSearch()
         delete tmp;
     }
 
+}
+
+
+void
+StehsPlanner::GeneratePath()
+{
+	RDDFSpaceExploration();
+
+	if (!circle_path.empty())
+	{
+		HeuristicSearch();
+	}
+	else
+	{
+		// TODO Pensar no que fazer. Consumir o plano, parar?
+		printf("Não foi possível encontrar um caminho válido.\n");
+	}
 }
 
 

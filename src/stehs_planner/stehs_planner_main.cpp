@@ -27,7 +27,7 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	{
 		double time = carmen_get_time();
 		stehs_planner.RDDFSpaceExploration();
-		printf("%f\n", carmen_get_time() - time);
+		printf("%f tam %ld\n", carmen_get_time() - time, stehs_planner.circle_path.size());
 	}
 	// chamar funcao principal aqui
 }

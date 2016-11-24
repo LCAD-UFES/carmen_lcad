@@ -144,7 +144,7 @@ public:
 
     void SetSwap(std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set, std::vector<StateNodePtr> &closed_set);
 
-
+    void GeneratePath();
 };
 
 
