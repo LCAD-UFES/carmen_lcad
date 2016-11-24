@@ -4,6 +4,8 @@
 #include <vector>
 #include <carmen/carmen.h>
 
+#include "Helpers/wrap2pi.hpp"
+
 typedef carmen_point_t Pose;
 
 typedef carmen_ackerman_traj_point_t State;
@@ -34,7 +36,7 @@ public:
 	// the theta weight
 
 	// basic constructor
-	StateNode(const State &s, double g_, double f_, StateNode *p);
+	StateNode(const State &s, double g_, double h_, StateNode *p);
 
 	// basic constructor
 	//StateNode(double x, double y, double radius, double g_, double f_, StateNode *p);

@@ -6,6 +6,60 @@ StehsPlanner stehs_planner;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
+// Publishers                                                                                //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void
+stehs_planner_publish_plan_tree_message()
+{
+//	static carmen_navigator_ackerman_plan_tree_message plan_tree_msg;
+//	IPC_RETURN_TYPE err = IPC_OK;
+//	static bool first_time = true;
+//
+//	if (first_time)
+//	{
+//		define_plan_tree_message();
+//		plan_tree_msg.host = carmen_get_host();
+//		first_time = false;
+//	}
+//
+//	plan_tree_msg.timestamp = GlobalState::localizer_pose_timestamp;//carmen_get_time();
+//	plan_tree_msg.num_edges = tree.num_edges;
+//
+//	plan_tree_msg.p1 = tree.p1;
+//	plan_tree_msg.p2 = tree.p2;
+//	plan_tree_msg.mask = tree.mask;
+//
+//	plan_tree_msg.num_path = tree.num_paths;
+//	if (plan_tree_msg.num_path > 500)
+//	{	// Ver tipo carmen_navigator_ackerman_plan_tree_message
+//		printf("Error: plan_tree_msg.num_path > 500 in Publisher_Util::publish_plan_tree_message()\n");
+//		exit(1);
+//	}
+//	for (int i = 0; i < tree.num_paths; i++)
+//	{
+//		if (tree.paths_sizes[i] > 100)
+//		{	// Ver tipo carmen_navigator_ackerman_plan_tree_message
+//			printf("Error: paths_sizes[%d] > 100 in Publisher_Util::publish_plan_tree_message()\n", i);
+//			exit(1);
+//		}
+//		memcpy(plan_tree_msg.paths[i], tree.paths[i], sizeof(carmen_ackerman_traj_point_t) * tree.paths_sizes[i]);
+//		plan_tree_msg.path_size[i] = tree.paths_sizes[i];
+//	}
+//
+//	err = IPC_publishData(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME, &plan_tree_msg);
+//
+//	carmen_test_ipc(err, "Could not publish", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
 // Handlers                                                                                  //
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -26,8 +80,10 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	if(stehs_planner.lane_ready && stehs_planner.distance_map_ready && stehs_planner.goal_ready)
 	{
 		double time = carmen_get_time();
-		stehs_planner.RDDFSpaceExploration();
-		printf("%f tam %ld\n", carmen_get_time() - time, stehs_planner.circle_path.size());
+		//stehs_planner.RDDFSpaceExploration();
+		stehs_planner.GeneratePath();
+		printf("%f tam %ld tam_path %ld\n", carmen_get_time() - time, stehs_planner.circle_path.size(),
+				stehs_planner.state_list.size());
 	}
 	// chamar funcao principal aqui
 }

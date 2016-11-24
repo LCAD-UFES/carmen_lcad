@@ -441,14 +441,14 @@ StehsPlanner::TimeHeuristic(State s) // TODO Optimize this linear search verifyi
 }
 
 void
-StehsPlanner::BuildStateList(StateNodePtr goal_node)
+StehsPlanner::BuildStateList(StateNodePtr node)
 {
 	state_list.clear();
 
-	while(goal_node != nullptr)
+	while(node != nullptr)
 	{
-		state_list.push_front(goal_node->state);
-		goal_node = goal_node->parent;
+		state_list.push_front(node->state);
+		node = node->parent;
 	}
 }
 
@@ -479,11 +479,14 @@ StehsPlanner::GetNextState(StateNodePtr current_state, double a, double w, doubl
 
     target_phi = carmen_clamp(-robot_config.max_phi, target_phi, robot_config.max_phi);
 
-    double distance_traveled;
+    double distance_traveled = 0.0;
     next_state->state = carmen_libcarmodel_recalc_pos_ackerman(current_state->state, target_v, target_phi,
             step_size, &distance_traveled, DELTA_T, robot_config);
 
     next_state->parent = current_state;
+    next_state->g = current_state->g + distance_traveled;
+    next_state->h = TimeHeuristic(next_state->state);
+    next_state->f = next_state->h + next_state->g;
 
     return (next_state);
 }
@@ -520,14 +523,21 @@ StehsPlanner::UpdateStep(StateNodePtr state_node)   // TODO Pensar melhor nessa 
 {
 	CircleNodePtr nearest_circle = FindNearestCircle(state_node);
 
-	return (std::min(std::min((ALFA * nearest_circle->circle.radius) / state_node->state.v, (BETA * nearest_circle->f) / state_node->state.v), MIN_STEP_SIZE));
+	if (state_node->state.v > 0.0)
+	{
+		return (std::min(std::min(ALFA * nearest_circle->circle.radius, BETA * nearest_circle->f), MIN_STEP_SIZE) / state_node->state.v);
+	}
+	else
+	{
+		return DELTA_T * 5.0;
+	}
 }
 
 
 bool
 StehsPlanner::Collision(StateNodePtr state_node)
 {
-	double circle_radius = (robot_config.width + 0.4) / 2.0; // metade da largura do carro + um espacco de guarda
+	double circle_radius = (robot_config.width + 0.4) * 0.5; // metade da largura do carro + um espacco de guarda
 
 	carmen_point_t state = traj_to_point_t(state_node->state);
 
@@ -574,16 +584,22 @@ StehsPlanner::Expand(
     }
 }
 
+
 void
-StehsPlanner::GoalExpand(StateNodePtr current, StateNodePtr goal_node,
+StehsPlanner::GoalExpand(StateNodePtr current, StateNodePtr &goal_node,
 		std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set)
 {
+	if(mrpt::math::angDistance<double>(current->state.theta, goal_node->state.theta) < MIN_THETA_DIFF )
+	{
+		goal_node->parent = current;
+		goal_node->f = current->f;
 
-    (void) current;
-    (void) goal_node;
-    (void) open_set;
+	}
 
+	// FIXME modificar isso;
+	(void) open_set;
 }
+
 
 void
 StehsPlanner::SetSwap(
