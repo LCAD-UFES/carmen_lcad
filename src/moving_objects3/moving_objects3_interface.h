@@ -1,39 +1,20 @@
 
-#ifndef _CARMEN_FAST_POLAR_SLAM_INTERFACE_H_
-#define _CARMEN_FAST_POLAR_SLAM_INTERFACE_H_
+#ifndef _CARMEN_MOVING_OBJECTS3_INTERFACE_H_
+#define _CARMEN_MOVING_OBJECTS3_INTERFACE_H_
 
 #ifdef __cplusplus
 extern "C" 
 {
 #endif
 
-	#include <carmen/fast_polar_slam_messages.h>
+	#include <carmen/moving_objects3_messages.h>
 
-	void carmen_fast_polar_slam_subscribe_best_particle_message(carmen_fast_polar_slam_best_particle_message *message,
+	void carmen_subscribe_velodyne_projected_message(carmen_velodyne_projected_on_ground_message *message,
 		carmen_handler_t handler, carmen_subscribe_t subscribe_how);
-	void carmen_fast_polar_slam_publish_best_particle_message(carmen_fast_polar_slam_best_particle_message *message);
-	void carmen_fast_polar_slam_unsubscribe_best_particle_message(carmen_handler_t handler);
+	void carmen_publish_velodyne_projected_message(carmen_velodyne_projected_on_ground_message *message);
+	void carmen_unsubscribe_velodyne_projected_message(carmen_handler_t handler);
 
-
-	void carmen_fast_polar_slam_subscribe_velodyne_projected_message(carmen_fast_polar_slam_velodyne_projected_on_ground_message *message,
-		carmen_handler_t handler, carmen_subscribe_t subscribe_how);
-	void carmen_fast_polar_slam_publish_velodyne_projected_message(carmen_fast_polar_slam_velodyne_projected_on_ground_message *message);
-	void carmen_fast_polar_slam_unsubscribe_velodyne_projected_message(carmen_handler_t handler);
-
-
-	void carmen_fast_polar_slam_subscribe_particles_message(carmen_fast_polar_slam_particles_message *message,
-		carmen_handler_t handler, carmen_subscribe_t subscribe_how);
-	void carmen_fast_polar_slam_publish_particles_message(carmen_fast_polar_slam_particles_message *message);
-	void carmen_fast_polar_slam_unsubscribe_particles_message(carmen_handler_t handler);
-
-
-	void carmen_fast_polar_slam_subscribe_measurement_model_message(carmen_fast_polar_slam_measurement_model_message *message,
-		carmen_handler_t handler, carmen_subscribe_t subscribe_how);
-	void carmen_fast_polar_slam_publish_measurement_model_message(carmen_fast_polar_slam_measurement_model_message *message);
-	void carmen_fast_polar_slam_unsubscribe_measurement_model_message(carmen_handler_t handler);
-
-
-	void carmen_fast_polar_slam_define_messages();
+	void carmen_moving_objects3_define_messages();
 
 #ifdef __cplusplus
 }
