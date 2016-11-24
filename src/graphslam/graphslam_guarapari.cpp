@@ -31,16 +31,12 @@ class Line
 {
 	public:
 		SE2 gps;
-		SE2 gps_trimble;
 		SE2 odom;
 		SE2 icp;
 		double time;
 		double gps_std;
 		double gps_yaw;
 		double gps_orientation_valid;
-		double gps_std_trimble;
-		double gps_yaw_trimble;
-		double gps_orientation_valid_trimble;
 };
 
 class LoopRestriction
@@ -77,14 +73,10 @@ read_data(char *filename)
 	double ox, oy, otheta;
 	double ix, iy, itheta;
 	double gx, gy, gtheta;
-	double gx_trimble, gy_trimble, gtheta_trimble;
 	double time;
 	double gps_std;
 	double gps_yaw;
 	int gps_orientation_valid;
-
-	double gps_std_trimble, gps_yaw_trimble;
-	int gps_orientation_valid_trimble_trimble;
 
 	if ((f = fopen(filename, "r")) == NULL)
 		exit(printf("Error: Unable to open file '%s'!\n", filename));
@@ -93,18 +85,15 @@ read_data(char *filename)
 
 	while(!feof(f))
 	{
-		n = fscanf(f, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %d %lf %lf %lf %lf %lf %d\n", //"%lf %lf %lf %lf %lf %lf 0.0 0.0 0.0 %f %lf %lf %d %lf %lf %lf %lf %lf %d\n"
+		n = fscanf(f, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %d\n",
 			&ox, &oy, &otheta,
 			&gx, &gy, &gtheta,
 			&ix, &iy, &itheta,
 			&time, &gps_std,
-			&gps_yaw, &gps_orientation_valid,
-
-			&gx_trimble, &gy_trimble, &gtheta_trimble,
-			&gps_std_trimble,&gps_yaw_trimble, &gps_orientation_valid_trimble_trimble
+			&gps_yaw, &gps_orientation_valid
 		);
 
-		if (n == 19) // se o num de campos lidos do scanf foi correto
+		if (n == 13) // se o num de campos lidos do scanf foi correto
 		{
 			Line l;
 
@@ -114,17 +103,12 @@ read_data(char *filename)
 
 			l.odom = SE2(ox, oy, otheta);
 			l.gps = SE2(gx, gy, gtheta);
-			l.gps_trimble = SE2(gx_trimble, gy_trimble, gtheta_trimble);
 //			l.icp = last_icp.inverse() * SE2(ix, iy, itheta);
 			l.icp = SE2(ix, iy, itheta);
 			l.time = time;
 			l.gps_std = gps_std;
 			l.gps_yaw = gps_yaw;
 			l.gps_orientation_valid = gps_orientation_valid;
-
-			l.gps_std_trimble = gps_std_trimble;
-			l.gps_yaw_trimble = gps_yaw_trimble;
-			l.gps_orientation_valid_trimble = gps_orientation_valid_trimble_trimble;
 
 			input_data.push_back(l);
 			last_icp = SE2(ix, iy, itheta);
@@ -177,20 +161,11 @@ add_gps_edge(SparseOptimizer *optimizer, VertexSE2 *v, SE2 measure, double gps_s
 	Matrix3d cov;
 	Matrix3d information;
 
-//	if (gps_std > 2.0)
-//	{
-//		gps_std = 1000.0;
-//	}
-//	else
-//	{
-//		gps_std = 0.2;
-//	}
-
-	cov.data()[0] = pow(/*gps_std * */ 20, 2);
+	cov.data()[0] = pow(gps_std * 25, 2);
 	cov.data()[1] = 0;
 	cov.data()[2] = 0;
 	cov.data()[3] = 0;
-	cov.data()[4] = pow(/*gps_std * */ 20, 2);
+	cov.data()[4] = pow(gps_std * 25, 2);
 	cov.data()[5] = 0;
 	cov.data()[6] = 0;
 	cov.data()[7] = 0;
@@ -214,28 +189,12 @@ add_vertices(SparseOptimizer *optimizer)
 
 	for (i = 0; i < input_data.size(); i++)
 	{
-
-//		SE2 estimate(
-//					input_data[i].odom.toVector()[0],
-//					input_data[i].odom.toVector()[1],
-//					input_data[i].odom.toVector()[2]
-//		 );
 		SE2 estimate(
 			input_data[i].gps.toVector()[0] - input_data[0].gps.toVector()[0],
 			input_data[i].gps.toVector()[1] - input_data[0].gps.toVector()[1],
 			input_data[i].gps.toVector()[2]
 		);
 
-//		printf("GPS %lf %lf %lf %lf %lf %lf %lf\n",input_data[i].gps.toVector()[0], input_data[i].gps.toVector()[1], input_data[i].gps.toVector()[2],
-//				input_data[0].gps.toVector()[0], input_data[0].gps.toVector()[1],
-//				input_data[i].gps.toVector()[0] - input_data[0].gps.toVector()[0],input_data[i].gps.toVector()[1] - input_data[0].gps.toVector()[1]);
-
-
-//		printf("ODOM %lf %lf %lf\n", input_data[i].odom.toVector()[0],
-//				input_data[i].odom.toVector()[1],
-//				input_data[i].odom.toVector()[2]);
-
-		//getchar();
 		VertexSE2* vertex = new VertexSE2;
 		vertex->setId(i);
 		vertex->setEstimate(estimate);
@@ -250,11 +209,11 @@ add_odometry_edges(SparseOptimizer *optimizer)
 	Matrix3d cov;
 	Matrix3d information;
 
-	cov.data()[0] = pow(0.01, 2);
+	cov.data()[0] = pow(0.1, 2);
 	cov.data()[1] = 0;
 	cov.data()[2] = 0;
 	cov.data()[3] = 0;
-	cov.data()[4] = pow(0.01, 2);
+	cov.data()[4] = pow(0.1, 2);
 	cov.data()[5] = 0;
 	cov.data()[6] = 0;
 	cov.data()[7] = 0;
@@ -270,11 +229,11 @@ add_odometry_edges(SparseOptimizer *optimizer)
 		double dist = sqrt(pow(measure[0], 2) + pow(measure[1], 2));
 		total_dist += dist;
 
-		dist = dist * (1.015);
-		measure.setTranslation(Vector2d(dist * cos(measure[2]), dist * sin(measure[2])));
+		dist = dist * (1.045);
+		//measure.setTranslation(Vector2d(dist * cos(measure[2]), dist * sin(measure[2])));
 
-		//if(abs(input_data[i + 1].time - input_data[i].time) > 10)
-			//continue;
+//		if(abs(input_data[i + 1].time - input_data[i].time) > 10)
+//			continue;
 
 		if (i >= BEGIN_ID && i <= END_ID)
 		{
@@ -366,7 +325,7 @@ find_loop_with_gps(SE2 pose, double time)
 
 
 void
-add_gps_edges(SparseOptimizer *optimizer, char id_gps)
+add_gps_edges(SparseOptimizer *optimizer)
 {
 //	int is_first = 1;
 	SE2 diff(0, 0, 0);
@@ -376,43 +335,20 @@ add_gps_edges(SparseOptimizer *optimizer, char id_gps)
 
 	for (size_t i = 0; i < input_data.size(); i++)
 	{
+
 		double dist_gps = 0.0;
-		SE2 input_data_gps;
-		SE2 input_data_gps_last;
-		SE2 input_data_first;
-		double gps_yaw;
-		double gps_std;
-
-		if(id_gps == 't')
-		{
-			input_data_gps = input_data[i].gps_trimble;
-			input_data_gps_last = input_data[i-1].gps_trimble;
-
-			gps_yaw = input_data[i].gps_yaw_trimble;
-			gps_std = input_data[i].gps_std_trimble;
-			input_data_first = input_data[0].gps_trimble;
-		}
-		else
-		{
-			input_data_gps = input_data[i].gps;
-			input_data_gps_last = input_data[i-1].gps;
-
-			gps_yaw = input_data[i].gps_yaw;
-			gps_std = input_data[i].gps_std;
-			input_data_first = input_data[0].gps;
-		}
-
 
 		if(i > 0)
-			dist_gps = sqrt( pow(input_data_gps.toVector()[0] - input_data_gps_last.toVector()[0],2.0) + pow(input_data_gps.toVector()[1] - input_data_gps_last.toVector()[1], 2.0));
+			dist_gps = sqrt( pow(input_data[i].gps.toVector()[0] - input_data[i-1].gps.toVector()[0],2.0) + pow(input_data[i].gps.toVector()[1] - input_data[i-1].gps.toVector()[1], 2.0));
 
-		if (gps_std == -1.0 || dist_gps < 1.0){
-//			printf("passou aqui \n");
+		if (/*input_data[i].gps_std == -1.0 ||*/ dist_gps < 0.5){
+			printf("passou aqui \n");
 			continue;
 		}
-
-//		SE2 gmeasure = input_data[i].gps;
-		SE2 measure(input_data_gps[0] - input_data_first[0], input_data_gps[1] - input_data_first[1], gps_yaw /*gmeasure[2]*/); // subtract the first gps
+		double gps_yaw = input_data[i].gps_yaw;
+		double gps_std = input_data[i].gps_std;
+		SE2 gmeasure = input_data[i].gps;
+		SE2 measure(gmeasure[0] - input_data[0].gps[0], gmeasure[1] - input_data[0].gps[1], gps_yaw /*gmeasure[2]*/); // subtract the first gps
 
 		if (i > 0)
 		{
@@ -424,11 +360,11 @@ add_gps_edges(SparseOptimizer *optimizer, char id_gps)
 		if (i >= BEGIN_ID && i <= END_ID)
 		{
 			// SE2 bla_teste = input_data[BEGIN_ID].gps.inverse() * gmeasure;
-			SE2 bla_teste = input_data_gps;
+			SE2 bla_teste = gmeasure;
 
 			bla_teste.setTranslation(Vector2d(
-				input_data_gps[0] - input_data[BEGIN_ID].gps[0],
-				input_data_gps[1] - input_data[BEGIN_ID].gps[1]
+				gmeasure[0] - input_data[BEGIN_ID].gps[0],
+				gmeasure[1] - input_data[BEGIN_ID].gps[1]
 			));
 
 			printf("gps: %d %lf %lf %lf\n", (int) i, bla_teste[0], bla_teste[1], carmen_radians_to_degrees(bla_teste[2]));
@@ -447,7 +383,6 @@ add_gps_edges(SparseOptimizer *optimizer, char id_gps)
 
 //		is_first = 0;
 		last_measure = measure;
-
 	}
 
 	printf("Total dist gps: %lf\n", total_dist);
@@ -572,8 +507,7 @@ load_data_to_optimizer(SparseOptimizer *optimizer)
 
 	add_vertices(optimizer);
 	add_odometry_edges(optimizer);
-	add_gps_edges(optimizer, 't');//gps trimble
-	add_gps_edges(optimizer, 'o');// gps antigo
+	add_gps_edges(optimizer);
 //	add_loop_closure_edges(optimizer);
 	// add_icp_edges(optimizer);
 	// exit(0);
