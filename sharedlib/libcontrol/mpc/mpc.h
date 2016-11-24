@@ -30,7 +30,7 @@ typedef struct {
 	double k2;
 	double k3;
 	double k4;
-} EFFORT_SPLINE_DESCRIPTOR;
+} EFFORT_SPLINE_DESCRIPTOR;   // TODO mudar para um vector
 
 
 typedef struct {
@@ -41,6 +41,7 @@ typedef struct {
 } MOTION_COMMAND;
 
 
+// Definition of type of pointer to function that will be passed to the optimizer
 typedef vector<double> (*get_vector_from_spline)(EFFORT_SPLINE_DESCRIPTOR *descriptors, void *params);
 
 
@@ -49,14 +50,12 @@ typedef struct
 	carmen_ackerman_motion_command_t *motion_commands_vector;
 	unsigned int motion_commands_vector_size;
 
+	MOTION_COMMAND path;
+
 	struct fann *steering_ann;
 	fann_type steering_ann_input[NUM_STEERING_ANN_INPUTS];
 	struct fann *velocity_ann;
 	fann_type velocity_ann_input[NUM_VELOCITY_ANN_INPUTS];
-
-	EFFORT_SPLINE_DESCRIPTOR velocity_descriptors;
-
-	MOTION_COMMAND path;
 
 	double atan_current_curvature;
 	double v;
@@ -68,12 +67,13 @@ typedef struct
 	double velocity_error; 									// dk of velocity control
 	double previous_velocity_k1; 							// previous velocity effort to compute velocity_error (dk)
 
-	double time_elapsed_since_last_motion_command; 			// Time of velodyne message, the trajectory is planned at this time, the elapsed time must be discounted
+	double time_elapsed_since_last_motion_command; 			// Time of velodyne message, the trajectory is planned at this time, the elapsed time must be discounted of the trajectory
 	double max_phi;
+
 	carmen_localize_ackerman_globalpos_message global_pos;
 	carmen_robot_ackerman_config_t *robot_config;
 
-	get_vector_from_spline get_vector_function;
+	get_vector_from_spline get_vector_function;				// Pointer to function that will be used to extract the vector of the spline
 
 } PARAMS;
 

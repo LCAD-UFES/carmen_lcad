@@ -584,14 +584,9 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 
 	if (simulator_config->use_mpc)
 	{
-		carmen_robot_ackerman_config_t robot_config;
-		robot_config.understeer_coeficient = simulator_config->understeer_coeficient2;
-		robot_config.distance_between_front_and_rear_axles = simulator_config->distance_between_front_and_rear_axles;
-		robot_config.max_phi = simulator_config->max_phi;
-
 		steering_effort = carmen_libmpc_get_optimized_steering_effort_using_MPC(atan_current_curvature,
 							simulator_config->current_motion_command_vector, simulator_config->nun_motion_commands,
-							simulator_config->v, simulator_config->phi, simulator_config->time_of_last_command, &robot_config,
+							simulator_config->v, simulator_config->phi, simulator_config->time_of_last_command, &simulator_config->robot_config,
 							simulator_config->initialize_neural_networks);
 
 //		//POSITION CONTROL
@@ -716,10 +711,11 @@ carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulat
 
 	update_target_v_and_target_phi(simulator_config);
 
+	// Velocity must be calculated before phi
+	v   = compute_new_velocity(simulator_config);
 	//phi = compute_new_phi(simulator_config);// + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.1));
-	//v   = compute_new_velocity(simulator_config);
 
-	v   = compute_new_velocity_with_ann(simulator_config);
+	//v   = compute_new_velocity_with_ann(simulator_config);
 	phi = compute_new_phi_with_ann(simulator_config);// + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.05));
 
 	phi = carmen_clamp(-simulator_config->max_phi, phi, simulator_config->max_phi);
