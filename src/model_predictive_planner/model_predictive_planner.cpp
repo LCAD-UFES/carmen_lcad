@@ -481,8 +481,11 @@ path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> path)
 			printf("---------- PHI EXCEEDED THE MAX_PHI!!!!\n");
 
 		carmen_point_t point_to_check = {path[i].x, path[i].y, path[i].theta};
-		proximity_to_obstacles_for_path += carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&localizer,
-				point_to_check, GlobalState::robot_config, GlobalState::distance_map, circle_radius);
+		if (GlobalState::distance_map != NULL)
+			proximity_to_obstacles_for_path += carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&localizer,
+					point_to_check, GlobalState::robot_config, GlobalState::distance_map, circle_radius);
+		else
+			return (true);
 	}
 
 	if (proximity_to_obstacles_for_path > 0.0)
@@ -716,6 +719,20 @@ goal_pose_vector_too_different(Pose goal_pose, Pose localizer_pose)
 	return (too_different);
 }
 
+bool
+goal_is_behide_car(Pose *localizer_pose, Pose *goal_pose)
+{//funcao tem que ser melhorada. Usar coordenadas polares pode ser melhor.
+	SE2 robot_pose(localizer_pose->x, localizer_pose->y, localizer_pose->theta);
+	SE2 goal_in_world_reference(goal_pose->x, goal_pose->y, goal_pose->theta);
+	SE2 goal_in_car_reference = robot_pose.inverse() * goal_in_world_reference;
+	double goal_x = goal_in_car_reference[0];
+
+	if(goal_x <= 0.0)
+		return true;
+
+	return false;
+}
+
 
 void
 compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseVector, double target_v,
@@ -734,6 +751,12 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		first_time = false;
 		last_timestamp = carmen_get_time();
 	}
+
+//	if(goal_is_behide_car(localizer_pose, &goalPoseVector[0]))
+//	{
+//		printf("goal is behide the car\n");
+//		return;
+//	}
 
 	bool goal_in_lane = false;
 	goal_in_lane = move_lane_to_robot_reference_system(localizer_pose, goal_list_message, &goalPoseVector[0], &lane_in_local_pose);

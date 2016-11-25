@@ -423,6 +423,7 @@ sharedlib/libcontrol/rlpid/rlpid.o
 sharedlib/libcarneuralmodel/car_neural_model.o
 sharedlib/libcarneuralmodel/libcarneuralmodel.a
 sharedlib/libcarneuralmodel/Makefile.depend
+sharedlib/libvoice/voice_test
 src/base_ackerman/libbase_ackerman_interface.so.1
 src/camera/libcamera_interface.so.1
 src/dynamic_object_detector/libdynamic_object_detector_interface.so.1

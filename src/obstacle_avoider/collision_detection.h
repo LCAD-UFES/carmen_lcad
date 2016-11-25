@@ -28,6 +28,9 @@ int trajectory_pose_hit_obstacle(carmen_ackerman_traj_point_t trajectory_pose, c
 double
 road_velocity_percentual(carmen_point_t pose, carmen_map_t *map, carmen_robot_ackerman_config_t *car_config);
 
+carmen_point_t
+carmen_collision_detection_move_path_point_to_world_coordinates(const carmen_point_t point, carmen_point_t *localizer_pose, double displacement);
+
 double
 carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(carmen_point_t *localizer_pose, carmen_point_t point_to_check,
 		carmen_robot_ackerman_config_t robot_config,
