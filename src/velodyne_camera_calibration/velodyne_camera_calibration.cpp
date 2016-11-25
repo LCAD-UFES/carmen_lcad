@@ -17,6 +17,9 @@ using namespace tf;
 const int RANGE_WINDOW_ZOOM = 5;
 const int WINDOW_WIDTH = 1366;
 
+const int MIN_ANGLE_OBSTACLE = 2;
+const int MAX_ANGLE_OBSTACLE = 188;
+
 typedef struct {
 	carmen_velodyne_points_in_cam_t velodyne_points_in_cam;
 	double angle;
@@ -254,7 +257,7 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle(carmen_
 				//printf("%lf %lf %lf\n", delta_x, delta_z, line_angle);
 
 				bool obstacle;
-				if((line_angle > 7.0) && (line_angle < 173.0))
+				if((line_angle > MIN_ANGLE_OBSTACLE) && (line_angle < MAX_ANGLE_OBSTACLE))
 					obstacle = true;
 				else
 					obstacle = false;
@@ -350,7 +353,7 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_dis
 
 				//printf("%lf %lf %lf\n", delta_x, delta_z, line_angle);
 
-				if((line_angle > 7.0) && (line_angle < 173.0))
+				if((line_angle > MIN_ANGLE_OBSTACLE) && (line_angle < MAX_ANGLE_OBSTACLE))
 					obstacle = true;
 				else
 					obstacle = false;
