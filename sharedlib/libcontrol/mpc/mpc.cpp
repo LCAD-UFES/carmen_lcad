@@ -700,8 +700,8 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 	// effort /= (1.0 / (1.0 + (v * v) / 200.5)); // boa
 	//effort += carmen_uniform_random(-2.0, 2.0);
 
-	int index = get_motion_timed_index_to_motion_command(&params);
-	effort += stiction_correction(yp, current_motion_command_vector[index].phi, effort, v);
+//	int index = get_motion_timed_index_to_motion_command(&params);
+//	effort += stiction_correction(yp, current_motion_command_vector[index].phi, effort, v);
 	//--------------------------------------------------------------------------------------------------------------------
 
 	if (save_and_plot)
