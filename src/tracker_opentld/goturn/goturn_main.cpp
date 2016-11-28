@@ -607,7 +607,7 @@ find_velodyne_most_sync_with_cam(double bumblebee_timestamp)
 
 
 int
-call_tracker_and_compute_object_3d_position(Mat *img, int bumblebee_height, int bumblebee_width, double bumblebee_timestamp)
+call_tracker_and_compute_object_3d_position(Mat *img, int bumblebee_height, int bumblebee_width, double bumblebee_timestamp, carmen_velodyne_partial_scan_message *velodyne_sync_with_cam)
 {
 	if (box.x1_ != -1.0)
 	{
@@ -625,9 +625,9 @@ call_tracker_and_compute_object_3d_position(Mat *img, int bumblebee_height, int 
 //							velodyne_message_arrange, bumblebee_width, bumblebee_height);
 //		}
 
-		carmen_velodyne_partial_scan_message velodyne_sync_with_cam = find_velodyne_most_sync_with_cam(bumblebee_timestamp);
+		(*velodyne_sync_with_cam) = find_velodyne_most_sync_with_cam(bumblebee_timestamp);
 		points_lasers_in_cam_with_obstacle =  carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_display(
-				&velodyne_sync_with_cam, bumblebee_width, bumblebee_height);
+				velodyne_sync_with_cam, bumblebee_width, bumblebee_height);
 
 		//TODO: verificar qual size usar, o total ou so dos hit em obstaculos
 		if (points_lasers_in_cam_with_obstacle.size() == 0)
@@ -804,7 +804,7 @@ move_point_from_velodyne_frame_to_world_frame(carmen_vector_3D_t trackerPoint, c
 
 
 pair<carmen_ackerman_traj_point_t, double>
-find_localize_pose_most_sync_with_velodyne()
+find_localize_pose_most_sync_with_velodyne(double timestamp)
 {
 	pair<carmen_ackerman_traj_point_t, double> stamped_pose;
 
@@ -813,10 +813,10 @@ find_localize_pose_most_sync_with_velodyne()
 
 	for (unsigned int i = 0; i < localizeVector.size(); i++)
 	{
-		if(fabs(localizeVector[i].timestamp - velodyne_message_arrange->timestamp) < minTimestampDiff)
+		if(fabs(localizeVector[i].timestamp - timestamp) < minTimestampDiff)
 		{
 			minTimestampIndex = i;
-			minTimestampDiff = fabs(localizeVector[i].timestamp - velodyne_message_arrange->timestamp);
+			minTimestampDiff = fabs(localizeVector[i].timestamp - timestamp);
 		}
 	}
 
@@ -1248,7 +1248,7 @@ create_smoothed_path3(double timestamp_image)
 
 	pair<carmen_ackerman_traj_point_t, double> sync_pose_and_time;
 
-	sync_pose_and_time = find_localize_pose_most_sync_with_velodyne();
+	sync_pose_and_time = find_localize_pose_most_sync_with_velodyne(timestamp_image);
 	target_pose_in_the_world = move_point_from_velodyne_frame_to_world_frame(trackerPoint, sync_pose_and_time.first);
 
 	if (point_is_valid(target_pose_in_the_world, sync_pose_and_time.first))
@@ -1636,7 +1636,7 @@ add_point_to_trajectory_and_compute_smooth_trajectory(carmen_vector_3D_t target_
 
 
 vector<carmen_ackerman_traj_point_t>
-build_trajectory(double image_timestamp)
+build_trajectory(double image_timestamp, carmen_velodyne_partial_scan_message *velodyne_sync_with_cam)
 {
 	static vector<double> pose_times;
 	static vector<double> pose_thetas;
@@ -1662,7 +1662,7 @@ build_trajectory(double image_timestamp)
 		return vector<carmen_ackerman_traj_point_t>();
 
 	// busca a mensagem do localizer mais proxima
-	pose_and_time = find_localize_pose_most_sync_with_velodyne();
+	pose_and_time = find_localize_pose_most_sync_with_velodyne(velodyne_sync_with_cam->timestamp);
 	target_pose_in_the_world = move_point_from_velodyne_frame_to_world_frame(trackerPoint, pose_and_time.first);
 
 	// se for a primeira pose, adiciona a pose do localize no inicio.
@@ -1671,6 +1671,13 @@ build_trajectory(double image_timestamp)
 		trajectory.push_back(pose_and_time.first);
 		times.push_back(image_timestamp);
 	}
+
+// Print to experiment data	
+/*	printf("TARGET_POSE_RAW x: %lf y: %lf timestamp: %lf\n",
+			target_pose_in_the_world.x,
+			target_pose_in_the_world.y,
+			image_timestamp);
+*/
 
 	// se (o ponto no mundo for valido) ou (nenhum ponto foi adicionado nos ultimos 0.5
 	// segundos e o carro esta se movendo)
@@ -1694,6 +1701,15 @@ build_trajectory(double image_timestamp)
 			//smooth_trajectory, pose_and_time.first);
 			trajectory, pose_and_time.first);
 
+// Print to experiment data	
+/*	printf("TARGET_POSE_FILTERED x: %lf y: %lf th: %lf v: %lf timestamp: %lf\n",
+			filtered_trajectory[filtered_trajectory.size() - 1].x,
+			filtered_trajectory[filtered_trajectory.size() - 1].y,
+			filtered_trajectory[filtered_trajectory.size() - 1].theta,
+			filtered_trajectory[filtered_trajectory.size() - 1].v,
+			image_timestamp);
+*/
+
 	if(filtered_trajectory.size() > 2)
 		correct_thetas(filtered_trajectory);
 
@@ -1709,7 +1725,7 @@ build_trajectory(double image_timestamp)
 		//		if (poses_smooth.size() > 0)
 		//			poses_smooth.pop_back();
 
-		plot_to_debug_state(filtered_trajectory, target_pose_in_the_world, pose_and_time.first, MAX_POSES_IN_TRAJECTORY);
+		//plot_to_debug_state(filtered_trajectory, target_pose_in_the_world, pose_and_time.first, MAX_POSES_IN_TRAJECTORY);
 	}
 
 	return filtered_trajectory;
@@ -2035,6 +2051,16 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *message)
 	if(fabs(message->globalpos.x) < 0.00001  || fabs(message->globalpos.y) < 0.00001 || fabs(message->timestamp) < 0.0001){
 		return;
 	}
+
+	//print to experiment data
+/*	printf("LOCALIZER x: %lf y: %lf th: %lf time: %lf v: %lf phi: %lf\n",
+			message->globalpos.x,
+			message->globalpos.y,
+			message->globalpos.theta,
+			message->timestamp,
+			message->v,
+			message->phi);
+*/
 
 	if(first_matrix){
 		car_to_global_matrix = create_rotation_matrix(message->pose.orientation);
@@ -2372,9 +2398,11 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 	{
 		vector<carmen_ackerman_traj_point_t> trajectory;
 		Mat preprocessed_image = image_pre_processing(image_msg);
+		carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
 
 		int success = call_tracker_and_compute_object_3d_position(
-				&preprocessed_image, image_msg->height, image_msg->width, image_msg->timestamp );
+				&preprocessed_image, image_msg->height, image_msg->width,
+				image_msg->timestamp, &velodyne_sync_with_cam);
 
 		display_interfaces(image_msg, &preprocessed_image);
 
@@ -2405,7 +2433,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 
 		if (tracker_is_initialized)
 		{
-			trajectory = build_trajectory(image_msg->timestamp);
+			trajectory = build_trajectory(image_msg->timestamp, &velodyne_sync_with_cam);
 
 			if (errors_exist_trajectory_generation(trajectory, image_msg->timestamp))
 			{

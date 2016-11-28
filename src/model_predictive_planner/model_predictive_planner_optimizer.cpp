@@ -538,13 +538,13 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 	if (a == 0) //avoid div by zero and plan v = 0 e vi = 0
 	{
 		tt = tcp_seed.tt;
-		params.optimize_time = true;
-
+		//params.optimize_time = true;
 	}
 	else
 		tt = (target_v - target_td.v_i) / a;
 
-	if (a > 0.0)
+
+	if (a >= 0.0)
 	{
 		params.optimize_time = true;
 		if (a > GlobalState::robot_config.maximum_acceleration_forward)
