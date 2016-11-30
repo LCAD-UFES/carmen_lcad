@@ -391,11 +391,12 @@ StehsPlanner::RDDFSpaceExploration()
         circle_path.push_back(*current_node);
     }
 
+    circle_path.push_back(*goal_node);
+
     ConnectCirclePathGaps();
 
     UpdateCircleGoalDistance();
 
-//    ShowCirclePath();
 
 /*
     std::list<CircleNode>::iterator it;
@@ -407,12 +408,9 @@ StehsPlanner::RDDFSpaceExploration()
 
 
 }
-//
-//void
-//StehsPlanner::SpaceTimeExploration() {}
-//
-////
 
+
+// TODO Isso ta certo?????
 double
 StehsPlanner::TimeHeuristic(State s) // TODO Optimize this linear search verifying only the next, current and previous circles
 {
@@ -439,6 +437,32 @@ StehsPlanner::TimeHeuristic(State s) // TODO Optimize this linear search verifyi
     else
         return ((circle_distance + goal_distance) / fabs(s.v));
 }
+
+
+double
+StehsPlanner::DistanceHeuristic(State state) // TODO Optimize this linear search verifying only the next, current and previous circles
+{
+    std::list<CircleNode>::iterator it = circle_path.begin();
+    std::list<CircleNode>::iterator end = circle_path.end();
+
+    double circle_distance = DBL_MAX;
+    double current_distance;
+    double goal_distance = DBL_MAX;
+
+    for (; it != end; it++)
+    {
+        current_distance = Distance(state.x, state.y, it->circle.x, it->circle.y);
+
+        if (current_distance < circle_distance)
+        {
+            circle_distance = current_distance;
+            goal_distance = it->f;
+        }
+    }
+
+    return ((circle_distance + goal_distance));
+}
+
 
 void
 StehsPlanner::BuildStateList(StateNodePtr node)
@@ -485,7 +509,7 @@ StehsPlanner::GetNextState(StateNodePtr current_state, double a, double w, doubl
 
     next_state->parent = current_state;
     next_state->g = current_state->g + distance_traveled;
-    next_state->h = TimeHeuristic(next_state->state);
+    next_state->h = Distance(next_state->state.x, next_state->state.y, goal.x, goal.y); //DistanceHeuristic(next_state->state); // TODO usar distancia direto????
     next_state->f = next_state->h + next_state->g;
 
     return (next_state);
@@ -522,15 +546,17 @@ double
 StehsPlanner::UpdateStep(StateNodePtr state_node)   // TODO Pensar melhor nessa funcao, parece sempre retornar o MIN_STEP_SIZE
 {
 	CircleNodePtr nearest_circle = FindNearestCircle(state_node);
+	double v = 1 / std::fabs(state_node->state.v);
 
-	if (state_node->state.v > 0.0)
-	{
-		return (std::min(std::min(ALFA * nearest_circle->circle.radius, BETA * nearest_circle->f), MIN_STEP_SIZE) / state_node->state.v);
-	}
-	else
-	{
-		return DELTA_T * 5.0;
-	}
+//	if (state_node->state.v != 0.0)
+//	{
+		//printf("F %lf\n", nearest_circle->f);
+		return (std::min(std::min(ALFA * nearest_circle->circle.radius, BETA * nearest_circle->f) * v, MIN_STEP_SIZE));
+//	}
+//	else
+//	{
+//		return DELTA_T * 50000.0;
+//	}
 }
 
 
@@ -569,8 +595,11 @@ StehsPlanner::Expand(
         // the steering angle acceleration
         for (int j = 0; j < 3; ++j)
         {
+        	//printf("\nState %lf %lf %lf %lf %lf %lf\n", current_state->state.x, current_state->state.y, current_state->state.theta, current_state->state.phi, current_state->state.v, step_size);
             // get the next state
             StateNodePtr next_state = GetNextState(current_state, a[i], w[j], step_size);
+
+        	//printf("State %lf %lf %lf %lf %lf\n", next_state->state.x, next_state->state.y, next_state->state.theta, next_state->state.phi, next_state->state.v);
 
             if (!Exist(next_state, closed_set, k) && !Collision(next_state))
             {
@@ -636,13 +665,13 @@ StehsPlanner::HeuristicSearch()
     // create the priority queue
     std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> open_set;
 
-    //
     std::vector<StateNodePtr> closed_set;
 
     open_set.push(start_node);
 
     // the inital step-rate
     double k = 1.0;
+    int cont = 0;
 
     while (!open_set.empty())
     {
@@ -663,14 +692,22 @@ StehsPlanner::HeuristicSearch()
                 delete tmp;
             }
 
+            //printf("Sucesso!!\n");
             break;
 
         }
         // find the children states configuration
         Expand(current, open_set, closed_set, k);
+        cont += 9;
+
+        printf("Nstate%d\n", cont);
+
+        //printf("h %lf f %lf T %ld\n", current->h, current->f, open_set.size());
 
         if (current->h < RGOAL)
         {
+           //printf("Goal!!\n");
+
             GoalExpand(current, goal_node, open_set);
         }
 
@@ -688,6 +725,8 @@ StehsPlanner::HeuristicSearch()
         }
 
     }
+
+    //ShowCirclePath(closed_set);
 
     while(!closed_set.empty())
     {
@@ -715,12 +754,10 @@ StehsPlanner::GeneratePath()
 		// TODO Pensar no que fazer. Consumir o plano, parar?
 		printf("Não foi possível encontrar um caminho válido.\n");
 	}
+
+	ShowCirclePath();
 }
 
-
-////
-//std::list<carmen_ackerman_motion_command_t>
-//BuildPath();
 
 unsigned char* StehsPlanner::GetCurrentMap() {
 
@@ -757,9 +794,10 @@ unsigned char* StehsPlanner::GetCurrentMap() {
     return map;
 }
 
-void StehsPlanner::ShowCirclePath() {
+void StehsPlanner::ShowCirclePath(std::vector<StateNodePtr> &state_node) {
 
-    // get the current map
+	//printf("Entrou\n");
+	// get the current map
     unsigned char *map = GetCurrentMap();
 
     unsigned int width = distance_map->config.x_size;
@@ -786,14 +824,99 @@ void StehsPlanner::ShowCirclePath() {
         cv::circle(img, cv::Point(col, row), radius, cv::Scalar(0, 0, 0), 1);
 
         // show the current image
-        cv::imshow("CirclePath", img);
+//        cv::imshow("CirclePath", img);
 
-        cv::waitKey(30);
+//        cv::waitKey(30);
 
         // move to next circle
         ++it;
 
     }
 
+    std::vector<StateNodePtr>::iterator its = state_node.begin();
+    std::vector<StateNodePtr>::iterator ends = state_node.end();
+
+    while (its != ends)
+    {
+    	unsigned int row = height - std::floor(((*its)->state.y - distance_map->config.y_origin) * inverse_resolution + 0.5);
+    	unsigned int col = std::floor(((*its)->state.x - distance_map->config.x_origin) * inverse_resolution + 0.5);
+
+    	cv::rectangle(img, cv::Point (col-3, row-3), cv::Point (col+3, row+3), cv::Scalar(0,0,0));
+
+//    	cv::imshow("CirclePath", img);
+//
+//    	cv::waitKey(30);
+
+    	its++;
+    }
+
+    cv::imshow("CirclePath", img);
+    cv::waitKey(1);
+
+	//printf("Saiu\n");
+    delete [] map;
+}
+
+
+void StehsPlanner::ShowCirclePath() {
+
+	//printf("Entrou\n");
+	// get the current map
+    unsigned char *map = GetCurrentMap();
+
+    unsigned int width = distance_map->config.x_size;
+    unsigned int height = distance_map->config.y_size;
+
+    // create a new opencv image
+    cv::Mat img(width, height, CV_8UC1, map);
+
+    // get the inverse resolution
+    double inverse_resolution = 1.0 / distance_map->config.resolution;
+
+    //
+    std::list<CircleNode>::iterator it = circle_path.begin();
+    std::list<CircleNode>::iterator end = circle_path.end();
+
+    while (it != end) {
+
+        unsigned int row = height - std::floor((it->circle.y - distance_map->config.y_origin) * inverse_resolution + 0.5);
+        unsigned int col = std::floor((it->circle.x - distance_map->config.x_origin) * inverse_resolution + 0.5);
+
+        double radius = it->circle.radius * inverse_resolution;
+
+        // void circle(Mat& img, Point center, int radius, const Scalar& color, int thickness=1)
+        cv::circle(img, cv::Point(col, row), radius, cv::Scalar(0, 0, 0), 1);
+
+        // show the current image
+//        cv::imshow("CirclePath", img);
+
+//        cv::waitKey(30);
+
+        // move to next circle
+        ++it;
+
+    }
+
+    std::list<State>::iterator its = state_list.begin();
+    std::list<State>::iterator ends = state_list.end();
+
+    while (its != ends)
+    {
+    	unsigned int row = height - std::floor((its->y - distance_map->config.y_origin) * inverse_resolution + 0.5);
+    	unsigned int col = std::floor((its->x - distance_map->config.x_origin) * inverse_resolution + 0.5);
+
+    	cv::rectangle(img, cv::Point (col-3, row-3), cv::Point (col+3, row+3), cv::Scalar(0,0,0));
+
+//    	cv::imshow("CirclePath", img);
+//
+//    	cv::waitKey(30);
+
+    	its++;
+    }
+
+    cv::imshow("CirclePath", img);
+    cv::waitKey(1);
+
+	//printf("Saiu\n");
     delete [] map;
 }
