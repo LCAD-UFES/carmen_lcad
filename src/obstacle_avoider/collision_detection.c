@@ -304,8 +304,10 @@ obstacle_avoider_pose_hit_obstacle(carmen_point_t pose, carmen_map_t *map, carme
 int
 pose_hit_obstacle(carmen_point_t pose, carmen_map_t *map, carmen_robot_ackerman_config_t *car_config)
 {
-	if (carmen_obstacle_avoider_get_maximum_occupancy_of_map_cells_hit_by_robot_border(&pose, map,
-			car_config->length, car_config->width, car_config->distance_between_rear_car_and_rear_wheels) > 0.5)
+	double prob = carmen_obstacle_avoider_get_maximum_occupancy_of_map_cells_hit_by_robot_border(&pose, map,
+			car_config->length, car_config->width, car_config->distance_between_rear_car_and_rear_wheels);
+
+	if (prob > 0.2)
 		return 1;
 	else
 		return 0;

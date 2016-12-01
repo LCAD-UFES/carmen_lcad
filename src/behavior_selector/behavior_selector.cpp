@@ -112,9 +112,9 @@ get_next_goal(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_point
 			distance_to_last_obstacle = carmen_distance_ackerman_traj(&rddf->poses[last_obstacle_index], &rddf->poses[i]);
 
 		if (((distance >= distance_between_waypoints) &&
-			 (distance_to_last_obstacle >= 8.0) &&
-			 !hit_obstacle) ||
-			 ((rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BUMP) || (rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BARRIER)))
+				(distance_to_last_obstacle >= 8.0) &&
+				!hit_obstacle) ||
+				((rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BUMP) || (rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BARRIER)))
 		{
 			*next_goal = rddf->poses[i];
 			return;
@@ -127,7 +127,6 @@ get_next_goal(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_point
 	return;
 }
 
-
 static void
 fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_point_t current_pose)
 {
@@ -138,8 +137,13 @@ fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_poin
 	int last_obstacle_free_waypoint_index = -1;
 	carmen_ackerman_traj_point_t robot_pose = current_pose;
 
+	//printf("fill goal list\n");
+
 	for (int i = 0; i < rddf->number_of_poses && j < GOAL_LIST_SIZE; i++)
 	{
+		//		if(rddf->annotations[i] != 0)
+		//			printf("annotation: %d\n", rddf->annotations[i]);
+
 		double distance = carmen_distance_ackerman_traj(&current_pose, &rddf->poses[i]);
 		int hit_obstacle = trajectory_pose_hit_obstacle(rddf->poses[i], current_map, &robot_config);
 
@@ -155,17 +159,19 @@ fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_poin
 		double distance_to_last_obstacle_free_waypoint = carmen_distance_ackerman_traj(&robot_pose, &rddf->poses[last_obstacle_free_waypoint_index]);
 
 		if (((distance >= distance_between_waypoints) &&
-			 (distance_to_last_obstacle >= 15.0) &&
-			 !hit_obstacle) ||
-			(((rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BUMP) ||
-			  (rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BARRIER)) &&
-			 (distance_to_annotation > distance_to_remove_annotation_goal) && (!hit_obstacle)))
+				(distance_to_last_obstacle >= 15.0) &&
+				!hit_obstacle) ||
+				(((rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BUMP) ||
+						(rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BARRIER) ||
+						(rddf->annotations[i] == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK)) &&
+						(distance_to_annotation > distance_to_remove_annotation_goal) && (!hit_obstacle)))
 		{
 			goal_list[j] = rddf->poses[i];
 			annotations[j] = rddf->annotations[i];
 			current_pose = rddf->poses[i];
 			j++;
 		}
+
 		// se a anotacao estiver em cima de um obstaculo, adiciona um waypoint na posicao
 		// anterior mais proxima da anotacao que estiver livre
 		else if (((rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BUMP) || (rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BARRIER)) && (distance_to_last_obstacle_free_waypoint > 1.5) && (hit_obstacle))
@@ -175,6 +181,18 @@ fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_poin
 			current_pose = rddf->poses[last_obstacle_free_waypoint_index];
 			j++;
 		}
+		else if ((rddf->annotations[i] == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) && (hit_obstacle))
+		{
+			printf("Hit!\n");
+			goal_list[j] = rddf->poses[last_obstacle_free_waypoint_index];
+			goal_list[j].v = 0.0;
+			annotations[j] = rddf->annotations[last_obstacle_free_waypoint_index];
+			current_pose = rddf->poses[last_obstacle_free_waypoint_index];
+			j++;
+
+			break;
+		}
+
 	}
 
 	if (j == 0)
@@ -190,7 +208,6 @@ fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_poin
 		change_state(annotations[goal_list_index]);
 }
 
-
 static void
 update_goal_index_to_next_collision_free_goal()
 {
@@ -200,7 +217,7 @@ update_goal_index_to_next_collision_free_goal()
 		get_next_goal(last_rddf_message, robot_pose, &next_goal);
 
 		if ((goal_list_index < goal_list_size) &&
-			(carmen_distance_ackerman_traj(&robot_pose, &next_goal) < carmen_distance_ackerman_traj(&robot_pose, &goal_list[goal_list_index])))
+				(carmen_distance_ackerman_traj(&robot_pose, &next_goal) < carmen_distance_ackerman_traj(&robot_pose, &goal_list[goal_list_index])))
 		{
 			goal_list_index = 0;
 			goal_list_size = 0;
@@ -416,8 +433,8 @@ behavior_selector_update_rddf(carmen_rddf_road_profile_message *rddf_msg)
 		return;
 
 	if (((goal_list_size - goal_list_index) > 1) &&
-		(rddf_msg->annotations[rddf_msg->number_of_poses - 1] != RDDF_ANNOTATION_END_POINT_AREA || (rddf_msg->annotations[rddf_msg->number_of_poses - 1] == RDDF_ANNOTATION_END_POINT_AREA &&
-		carmen_distance_ackerman_traj(&goal_list[goal_list_size - 1], &rddf_msg->poses[rddf_msg->number_of_poses - 1]) < 0.1)))
+			(rddf_msg->annotations[rddf_msg->number_of_poses - 1] != RDDF_ANNOTATION_END_POINT_AREA || (rddf_msg->annotations[rddf_msg->number_of_poses - 1] == RDDF_ANNOTATION_END_POINT_AREA &&
+					carmen_distance_ackerman_traj(&goal_list[goal_list_size - 1], &rddf_msg->poses[rddf_msg->number_of_poses - 1]) < 0.1)))
 	{
 		//return;
 	}
