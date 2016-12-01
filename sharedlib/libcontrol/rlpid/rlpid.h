@@ -5,11 +5,12 @@
 extern "C" {
 #endif
 
-
+#include <carmen/carmen.h>
 #include <car_model.h>
+#include "../control.h"
 
 
-#define neural_network_size (379)
+#define neural_network_size (1000)
 #define PI (3.141592653589793)
 
 typedef struct {
@@ -55,7 +56,7 @@ carmen_librlpid_compute_effort_signal(double current_phi, double desired_phi, do
 	double max_phi);
 
 
-double carmen_librlpid_compute_effort(double current_curvature, double desired_curvature);
+double carmen_librlpid_compute_effort(double current_curvature, double desired_curvature, double delta_t);
 
 
 #ifdef __cplusplus

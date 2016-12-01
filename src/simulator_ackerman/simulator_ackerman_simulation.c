@@ -576,6 +576,10 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 	atan_current_curvature = carmen_get_curvature_from_phi(simulator_config->phi, simulator_config->v, simulator_config->understeer_coeficient2,
 															simulator_config->distance_between_front_and_rear_axles);
 
+	double atan_desired_curvature = carmen_get_curvature_from_phi(simulator_config->target_phi, simulator_config->v, simulator_config->understeer_coeficient2,
+															simulator_config->distance_between_front_and_rear_axles);
+
+
 #ifdef __USE_RL_CONTROL
 
 	steering_effot = rl_control_steering;
@@ -584,10 +588,10 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 
 	if (simulator_config->use_mpc)
 	{
-		steering_effort = carmen_libmpc_get_optimized_steering_effort_using_MPC(atan_current_curvature,
-							simulator_config->current_motion_command_vector, simulator_config->nun_motion_commands,
-							simulator_config->v, simulator_config->phi, simulator_config->time_of_last_command, &simulator_config->robot_config,
-							simulator_config->initialize_neural_networks);
+//		steering_effort = carmen_libmpc_get_optimized_steering_effort_using_MPC(atan_current_curvature,
+//							simulator_config->current_motion_command_vector, simulator_config->nun_motion_commands,
+//							simulator_config->v, simulator_config->phi, simulator_config->time_of_last_command, &simulator_config->robot_config,
+//							simulator_config->initialize_neural_networks);
 
 //		//POSITION CONTROL
 //		carmen_robot_ackerman_config_t robot_config;
@@ -600,27 +604,29 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 //							simulator_config->global_pos, simulator_config->initialize_neural_networks);
 
 //		//RL_PID
-//		pid_plot_curvature(simulator_config->phi, simulator_config->target_phi, steering_effort, simulator_config->v);
-//		if (simulator_config->nun_motion_commands > 0)
-//		{
-////			double future_target_phi = simulator_config->current_motion_command_vector[simulator_config->current_motion_command_vector_index + 1].phi;
-////			double rleffort = carmen_librlpid_compute_effort_signal (simulator_config->phi, simulator_config->target_phi, future_target_phi, steering_ann_input,
-////					steering_ann, simulator_config->v, simulator_config->understeer_coeficient, simulator_config->distance_between_front_and_rear_axles, simulator_config->max_phi);
-////
-//			double atan_desired_curvature = carmen_get_curvature_from_phi(simulator_config->target_phi, simulator_config->v, simulator_config->understeer_coeficient2,
-//																		simulator_config->distance_between_front_and_rear_axles);
-//			steering_effort = carmen_librlpid_compute_effort(current_curvature, targuet_curvature);
-//			pid_plot_curvature(simulator_config->phi, simulator_config->target_phi);
-//		}
+		printf("RL-PID %lf %lf %lf %lf %lf\n", carmen_get_time(), simulator_config->target_phi, simulator_config->phi, steering_effort/200, simulator_config->v);
+
+		pid_plot_curvature(simulator_config->phi, simulator_config->target_phi);
+		if (simulator_config->nun_motion_commands > 0)
+		{
+//			double future_target_phi = simulator_config->current_motion_command_vector[simulator_config->current_motion_command_vector_index + 1].phi;
+//			double rleffort = carmen_librlpid_compute_effort_signal (simulator_config->phi, simulator_config->target_phi, future_target_phi, steering_ann_input,
+//					steering_ann, simulator_config->v, simulator_config->understeer_coeficient, simulator_config->distance_between_front_and_rear_axles, simulator_config->max_phi);
+//
+			steering_effort = carmen_librlpid_compute_effort(atan_current_curvature, atan_desired_curvature, simulator_config->delta_t);
+			pid_plot_curvature(simulator_config->phi, simulator_config->target_phi);
+		}
 	}
 	else
 	{
-		double atan_desired_curvature = carmen_get_curvature_from_phi(simulator_config->target_phi, simulator_config->v, simulator_config->understeer_coeficient2,
-																simulator_config->distance_between_front_and_rear_axles);
+//		double atan_desired_curvature = carmen_get_curvature_from_phi(simulator_config->target_phi, simulator_config->v, simulator_config->understeer_coeficient2,
+//																simulator_config->distance_between_front_and_rear_axles);
+
+		printf("PID %lf %lf %lf %lf %lf\n", carmen_get_time(), simulator_config->target_phi, simulator_config->phi, steering_effort/200, simulator_config->v);
+
 		steering_effort = carmen_libpid_steering_PID_controler(atan_desired_curvature, atan_current_curvature, simulator_config->delta_t);
 
 		pid_plot_curvature(simulator_config->phi, simulator_config->target_phi);
-
 	}
 
 #endif

@@ -36,7 +36,7 @@ carmen_librlpid_compute_effort_signal(double current_phi, double desired_phi, do
 	double max_phi);
 
 
-double carmen_librlpid_compute_effort(double current_curvature, double desired_curvature);
+double carmen_librlpid_compute_effort(double current_curvature, double desired_curvature, double delta_t);
 
 
 #ifdef __cplusplus
