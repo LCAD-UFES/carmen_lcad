@@ -82,7 +82,7 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 		double time = carmen_get_time();
 		//stehs_planner.RDDFSpaceExploration();
 		stehs_planner.GeneratePath();
-		printf("%f tam %ld tam_path %ld\n", carmen_get_time() - time, stehs_planner.circle_path.size(),
+		printf("Tempo %f Ncirc %ld Nstate %ld\n", carmen_get_time() - time, stehs_planner.circle_path.size(),
 				stehs_planner.state_list.size());
 	}
 	// chamar funcao principal aqui
@@ -183,6 +183,8 @@ static void
 signal_handler(int sig)
 {
 	printf("Signal %d received, exiting program ...\n", sig);
+
+	cv::destroyAllWindows();
 
 	exit(1);
 }
