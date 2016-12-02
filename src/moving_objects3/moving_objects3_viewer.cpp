@@ -11,7 +11,7 @@ const int MEASUREMENT_PROBABILITY_VIEWER_SIZE_WIDTH = 900; // pixels
 const int MEASUREMENT_PROBABILITY_VIEWER_SIZE_HEIGHT = 200; // pixels
 
 const int show_velodyne_on_ground_window = 1;
-const int show_laser_rays = 0;
+int show_laser_rays = 0;
 const int show_one_dimension_window = 1;
 
 double pixels_per_meter_x;
@@ -136,10 +136,10 @@ draw_velodyne_points(double *ranges, double *angles, double *intensities, int nu
 void
 draw_velodyne_on_ground()
 {
-	draw_car_centralized();
 	draw_circle(pow(2, NUM_SPHERES), 0, 0, 0, 0, 0);
 //	draw_velodyne_points(last_velodyne_on_ground_ranges, last_velodyne_on_ground_angles, last_velodyne_on_ground_intensities, velodyne_on_ground_message.num_rays);
 	draw_velodyne_points(current_velodyne_on_ground_ranges, current_velodyne_on_ground_angles, current_velodyne_on_ground_intensities, velodyne_on_ground_message.num_rays);
+	draw_car_centralized();
 }
 
 
@@ -261,6 +261,17 @@ Timer(int value __attribute__ ((unused)))
 
 
 void
+keyboard_handler(unsigned char key, int x, int y)
+{
+
+	if(key == 'l')
+	{
+		show_laser_rays = show_laser_rays ? 0 : 1;
+	}
+}
+
+
+void
 initialize_viewer(int argc, char **argv)
 {
 	glutInit(&argc, argv);
@@ -275,6 +286,7 @@ initialize_viewer(int argc, char **argv)
 		glutReshapeFunc(handle_velodyne_on_ground_resize);
 		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 		glutDisplayFunc(handle_velodyne_on_ground_display);
+		glutKeyboardFunc(keyboard_handler);
 	}
 
 	// VELODYNE 1D PLOT
@@ -286,6 +298,7 @@ initialize_viewer(int argc, char **argv)
 		glutReshapeFunc(handle_one_dimension_view_resize);
 		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 		glutDisplayFunc(handle_one_dimension_view_display);
+		glutKeyboardFunc(keyboard_handler);
 	}
 
 	glutTimerFunc(REDRAW_UPDATE_PERIOD, Timer, 1);
