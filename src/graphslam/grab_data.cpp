@@ -6,6 +6,7 @@
 #include <carmen/robot_ackerman_interface.h>
 #include <carmen/base_ackerman_interface.h>
 #include <carmen/velodyne_interface.h>
+#include <carmen/fused_odometry_interface.h>
 #include "velodyne_util.h"
 
 using namespace std;
@@ -51,6 +52,8 @@ int odometry_queue_current_position;
 int gps_stds_queue_current_position;
 int gps_orientation_queue_current_position;
 int gps_orientation_valid_position;
+
+extern bool use_fused_odometry;
 
 
 double
@@ -299,6 +302,9 @@ velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 void
 gps_xyz_message_handler(carmen_gps_xyz_message *message)
 {
+	if (use_fused_odometry)
+		return;
+
 	int xsid;
 	double yaw, pitch, roll;
 
@@ -395,6 +401,9 @@ base_ackermann_handler(carmen_base_ackerman_odometry_message *odometry)
 void
 xsens_mtig_message_handler(carmen_xsens_mtig_message* xsens_mtig)
 {
+	if (use_fused_odometry)
+		return;
+
 	StampedOrientation data;
 	Quaternion q(xsens_mtig->quat.q1, xsens_mtig->quat.q2, xsens_mtig->quat.q3, xsens_mtig->quat.q0);
 	Matrix3x3(q).getEulerYPR(data.orientation.yaw, data.orientation.pitch, data.orientation.roll);
@@ -408,6 +417,9 @@ xsens_mtig_message_handler(carmen_xsens_mtig_message* xsens_mtig)
 void
 xsens_mti_message_handler(carmen_xsens_global_quat_message *xsens_mti)
 {
+	if (use_fused_odometry)
+		return;
+
 	StampedOrientation data;
 	double *quat = xsens_mti->quat_data.m_data;
 	Transform new_rotation;
@@ -423,6 +435,9 @@ xsens_mti_message_handler(carmen_xsens_global_quat_message *xsens_mti)
 void
 gps_orientation_handler(carmen_gps_gphdt_message *message)
 {
+	if (use_fused_odometry)
+		return;
+
 	StampedOrientation data;
 
 	data.orientation.yaw = message->heading;
@@ -434,6 +449,70 @@ gps_orientation_handler(carmen_gps_gphdt_message *message)
 			gps_orientation_queue_current_position, GPS_QUEUE_MAX_SIZE);
 
 	add_message_to_queue<int>(gps_orientation_valid_queue, message->valid,
+			gps_orientation_valid_position, GPS_QUEUE_MAX_SIZE);
+}
+
+
+double
+get_particles_std(carmen_fused_odometry_particle_message *msg)
+{
+	double sum, mean, std_x = 0.0, std_y = 0.0;
+
+	sum = 0.0;
+	for (int i = 0; i < msg->num_particles; ++i)
+		sum += msg->particle_pos[i].x;
+	mean = sum / msg->num_particles;
+
+	for (int i = 0; i < msg->num_particles; ++i)
+		std_x += pow(msg->particle_pos[i].x - mean, 2.0);
+	std_x = sqrt(std_x / msg->num_particles);
+
+	sum = 0.0;
+	for (int i = 0; i < msg->num_particles; ++i)
+		sum += msg->particle_pos[i].y;
+	mean = sum / msg->num_particles;
+
+	for (int i = 0; i < msg->num_particles; ++i)
+		std_y += pow(msg->particle_pos[i].y - mean, 2.0);
+	std_y = sqrt(std_y / msg->num_particles);
+
+	return ((std_x + std_y) / 2.0);
+}
+
+
+static void
+fused_odometry_particle_message_handler(carmen_fused_odometry_particle_message *msg)
+{
+	StampedPose pose;
+
+	pose.pose.position.x = msg->pose.position.x;
+	pose.pose.position.y = msg->pose.position.y;
+	pose.pose.position.z = msg->pose.position.z;
+
+	pose.pose.orientation.roll = msg->pose.orientation.roll;
+	pose.pose.orientation.pitch = msg->pose.orientation.pitch;
+	pose.pose.orientation.yaw = msg->pose.orientation.yaw;
+
+	pose.time = msg->timestamp;
+
+	add_message_to_queue<StampedPose>(gps_queue, pose,
+			gps_queue_current_position, GPS_QUEUE_MAX_SIZE);
+
+	double gps_std = get_particles_std(msg);
+	add_message_to_queue<double>(gps_queue_stds, gps_std,
+			gps_stds_queue_current_position, GPS_QUEUE_MAX_SIZE);
+
+	StampedOrientation data;
+
+	data.orientation.yaw = msg->pose.orientation.yaw;
+	data.orientation.pitch = msg->pose.orientation.pitch;
+	data.orientation.roll = msg->pose.orientation.roll;
+	data.time = msg->timestamp;
+
+	add_message_to_queue<StampedOrientation>(gps_orientation_queue, data,
+			gps_orientation_queue_current_position, GPS_QUEUE_MAX_SIZE);
+
+	add_message_to_queue<int>(gps_orientation_valid_queue, 1,
 			gps_orientation_valid_position, GPS_QUEUE_MAX_SIZE);
 }
 
@@ -463,6 +542,10 @@ subscribe_to_ipc_messages()
 
 	carmen_velodyne_subscribe_partial_scan_message(NULL,
 		(carmen_handler_t) velodyne_handler,
+		CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_fused_odometry_subscribe_fused_odometry_particle_message(NULL,
+		(carmen_handler_t) fused_odometry_particle_message_handler,
 		CARMEN_SUBSCRIBE_LATEST);
 }
 
