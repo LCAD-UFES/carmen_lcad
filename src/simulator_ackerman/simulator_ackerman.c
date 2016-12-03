@@ -832,7 +832,7 @@ read_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *conf
 		fill_laser_config_data( &(config->rear_laser_config));
 
 
-
+	// TODO REMOVER ESTA PARTE E LER OS PARAMETROS DIRETAMENTE PARA O ROBO_CONFIG
 	config->robot_config.maximum_steering_command_rate = config->maximum_steering_command_rate;
 	config->robot_config.understeer_coeficient = config->understeer_coeficient;
 	config->robot_config.maximum_acceleration_forward = config->maximum_acceleration_forward;
@@ -840,6 +840,8 @@ read_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *conf
 	config->robot_config.maximum_acceleration_reverse = config->maximum_acceleration_reverse;
 	config->robot_config.maximum_deceleration_reverse = config->maximum_deceleration_reverse;
 	config->robot_config.distance_between_rear_car_and_rear_wheels = config->distance_between_rear_car_and_rear_wheels;
+	config->robot_config.distance_between_front_and_rear_axles = config->distance_between_front_and_rear_axles;
+	config->robot_config.max_phi = config->max_phi;
 	config->robot_config.length = config->length;
 }
 

@@ -3,8 +3,8 @@ include ../Makefile.conf
 # voice commands
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libvoice
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/pid
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarmodel
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarmodel/
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libvoice -lvoice -lespeak
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -fopenmp

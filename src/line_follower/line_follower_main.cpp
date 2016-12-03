@@ -8,19 +8,19 @@
 
 using namespace g2o;
 
-const int NUM_MOTION_COMMANDS = 10;
+const int NUM_MOTION_COMMANDS = 8;
 const double CONTROL_FREQUENCY = 40.0;
 
 const double DIST_TO_POINT_TO_GOAL = 1000.0;
 const double DIST_TO_STOP_STEERING = 3.0;
 const double STEERING_STOPPING_DELTA = (0.488677778 / 3.0) / CONTROL_FREQUENCY; // max phi ate 0 em 3 seg
-const double STEERING_CHANGING_DELTA = (0.488677778 / 1.0) / CONTROL_FREQUENCY; // max phi ate 0 em 1 seg
+const double STEERING_CHANGING_DELTA = (0.488677778 / 0.5) / CONTROL_FREQUENCY; // max phi ate 0 em 1 seg
 const double MIN_SPEED_TO_START_STEERING = 1.0;
 
-const double DIST_TO_REDUCE = 10.0;
-const double DIST_TO_STOP = 1.0;
-const double MAX_SPEED = 6.0;
-const double TIME_TO_ACHIEVE_MAX_SPEED = 10.0;
+const double DIST_TO_REDUCE = 8.0;
+const double DIST_TO_STOP = 2.0;
+const double MAX_SPEED = 5.5;
+const double TIME_TO_ACHIEVE_MAX_SPEED = 3.0;
 
 
 carmen_localize_ackerman_globalpos_message globalpos;
@@ -120,29 +120,52 @@ compute_v(double current_v, double d, SE2 &goal_pose_in_car_ref)
 	double v = 0.0;
 	double dv = 0.0;
 
-	if (d < DIST_TO_STOP || goal_pose_in_car_ref[0] <= 0)
+	dv = (MAX_SPEED / TIME_TO_ACHIEVE_MAX_SPEED) / CONTROL_FREQUENCY;
+
+	printf("d: %.2lf || ", d);
+
+	if (d < DIST_TO_STOP + 0.5 && current_v < 0.1)
 	{
-		//if (d < DIST_TO_STOP) printf("Stopping because goal was achieved!\n");
-		//else printf("Stopping because goal is behind car!\n");
 		v = 0.0;
-	}
-	else if (d < DIST_TO_REDUCE)
-	{
-		v = (MAX_SPEED / DIST_TO_REDUCE) * (d - DIST_TO_STOP);
-		//printf("Approaching the goal! Current v: %lf New v: %lf\n", current_v, v);
-	}
-	else if (current_v < MAX_SPEED)
-	{
-		dv = (MAX_SPEED / TIME_TO_ACHIEVE_MAX_SPEED) / CONTROL_FREQUENCY;
-		v = current_v + dv;
-		//printf("Raising speed! Current v: %lf dv: %lf v: %lf\n", current_v, dv, v);
 	}
 	else
 	{
-		//printf("Maintaining max speed!\n");
-		v = MAX_SPEED;
-	}
 
+		if (d < DIST_TO_STOP || goal_pose_in_car_ref[0] <= 0)
+		{
+			//if (d < DIST_TO_STOP) printf("Stopping because goal was achieved!\n");
+			//else printf("Stopping because goal is behind car!\n");
+			v = 0.0;
+		}
+		else if (d < DIST_TO_REDUCE)
+		{
+			double v_desired = (MAX_SPEED / DIST_TO_REDUCE) * (d - DIST_TO_STOP + 0.5);
+
+			if (current_v < 0.25)
+				v = 0.25;
+			else if (current_v < v_desired)
+//				v = current_v + dv;
+				v = current_v + (v_desired - current_v) * 0.1;
+			else
+				v = v_desired;
+
+			//printf("Approaching the goal! Current v: %lf New v: %lf\n", current_v, v);
+		}
+		else if (current_v < MAX_SPEED)
+		{
+			if (current_v < 0.25)
+				v = 0.25;
+			else
+				//v = current_v + dv;
+				v = current_v + (MAX_SPEED - current_v) * 0.1;
+			//printf("Raising speed! Current v: %lf dv: %lf v: %lf\n", current_v, dv, v);
+		}
+		else
+		{
+			//printf("Maintaining max speed!\n");
+			v = MAX_SPEED;
+		}
+	}
 	return v;
 }
 
@@ -195,15 +218,23 @@ compute_phi(double current_v, double current_phi, double d, SE2 &goal_pose_in_ca
 void
 base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *msg)
 {
-	static double v = 0;
-	static double phi = 0;
+	double v = 0;
+	double phi = 0;
 
 	if (goal_list.size <= 0 || rddf.number_of_poses <= 0)
 	{
 		printf("Empty goal list (%d) or rddf (%d)! Stopping the car!\n", goal_list.size, rddf.number_of_poses);
 
-		v /= 2.0;
-		phi /= 2.0;
+		if (msg->v < 1.0)
+		{
+			v = 0.0;
+			phi = 0.0;
+		}
+		else
+		{
+			v = msg->v / 2.0;
+			phi = msg->phi / 2.0;
+		}
 
 		publish_motion_command(v, phi);
 		return;
@@ -223,10 +254,10 @@ base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *ms
 	else
 		predicted_pose = globalpos.globalpos;
 
-	SE2 goal_pose_in_car_ref = compute_goal_pose_in_car_reference(predicted_pose, goal_list.goal_list[0]);
-	double d = dist(predicted_pose.x, predicted_pose.y, goal_list.goal_list[0].x, goal_list.goal_list[0].y);
-	v = compute_v(v, d, goal_pose_in_car_ref);
-	phi = compute_phi(msg->v, phi, d, goal_pose_in_car_ref);
+	SE2 goal_pose_in_car_ref = compute_goal_pose_in_car_reference(predicted_pose, goal_list.goal_list[goal_list.size - 1]);
+	double d = dist(predicted_pose.x, predicted_pose.y, goal_list.goal_list[goal_list.size - 1].x, goal_list.goal_list[goal_list.size - 1].y);
+	v = compute_v(msg->v, d, goal_pose_in_car_ref);
+	phi = compute_phi(msg->v, msg->phi, d, goal_pose_in_car_ref);
 	publish_motion_command(v, phi);
 
 	printf("v: %lf phi: %lf || curr_v: %lf curr_phi: %lf\n", v, phi, msg->v, msg->phi);

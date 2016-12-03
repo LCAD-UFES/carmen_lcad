@@ -14,8 +14,7 @@ StehsPlanner::StehsPlanner():
         distance_map_ready(false),
         goal_ready(false),
         circle_path(),
-        state_list(),
-        kmin(1.0 / 4.0) {
+        state_list() {
 
     // creates a new opencv window
     cv::namedWindow("CirclePath", cv::WINDOW_AUTOSIZE);
@@ -392,11 +391,12 @@ StehsPlanner::RDDFSpaceExploration()
         circle_path.push_back(*current_node);
     }
 
+    circle_path.push_back(*goal_node);
+
     ConnectCirclePathGaps();
 
     UpdateCircleGoalDistance();
 
-    ShowCirclePath();
 
 /*
     std::list<CircleNode>::iterator it;
@@ -408,12 +408,9 @@ StehsPlanner::RDDFSpaceExploration()
 
 
 }
-//
-//void
-//StehsPlanner::SpaceTimeExploration() {}
-//
-////
 
+
+// TODO Isso ta certo?????
 double
 StehsPlanner::TimeHeuristic(State s) // TODO Optimize this linear search verifying only the next, current and previous circles
 {
@@ -441,8 +438,43 @@ StehsPlanner::TimeHeuristic(State s) // TODO Optimize this linear search verifyi
         return ((circle_distance + goal_distance) / fabs(s.v));
 }
 
+
+double
+StehsPlanner::DistanceHeuristic(State state) // TODO Optimize this linear search verifying only the next, current and previous circles
+{
+    std::list<CircleNode>::iterator it = circle_path.begin();
+    std::list<CircleNode>::iterator end = circle_path.end();
+
+    double circle_distance = DBL_MAX;
+    double current_distance;
+    double goal_distance = DBL_MAX;
+
+    for (; it != end; it++)
+    {
+        current_distance = Distance(state.x, state.y, it->circle.x, it->circle.y);
+
+        if (current_distance < circle_distance)
+        {
+            circle_distance = current_distance;
+            goal_distance = it->f;
+        }
+    }
+
+    return ((circle_distance + goal_distance));
+}
+
+
 void
-StehsPlanner::BuildStateList(StateNodePtr goal_node) { (void) goal_node;}
+StehsPlanner::BuildStateList(StateNodePtr node)
+{
+	state_list.clear();
+
+	while(node != nullptr)
+	{
+		state_list.push_front(node->state);
+		node = node->parent;
+	}
+}
 
 // TODO we need to implement the circle radius clustering
 bool
@@ -457,11 +489,9 @@ StehsPlanner::Exist(StateNodePtr current, std::vector<StateNodePtr> &closed_set,
                 return true;
 
         it++;
-
     }
 
     return false;
-
 }
 
 StateNodePtr
@@ -473,9 +503,14 @@ StehsPlanner::GetNextState(StateNodePtr current_state, double a, double w, doubl
 
     target_phi = carmen_clamp(-robot_config.max_phi, target_phi, robot_config.max_phi);
 
-    double distance_traveled;
+    double distance_traveled = 0.0;
     next_state->state = carmen_libcarmodel_recalc_pos_ackerman(current_state->state, target_v, target_phi,
             step_size, &distance_traveled, DELTA_T, robot_config);
+
+    next_state->parent = current_state;
+    next_state->g = current_state->g + distance_traveled;
+    next_state->h = Distance(next_state->state.x, next_state->state.y, goal.x, goal.y); //DistanceHeuristic(next_state->state); // TODO usar distancia direto????
+    next_state->f = next_state->h + next_state->g;
 
     return (next_state);
 }
@@ -503,7 +538,7 @@ StehsPlanner::FindNearestCircle(StateNodePtr state_node)
 			break;
 		}
 	}
-	return (it);
+	return &(*it);
 }
 
 
@@ -511,8 +546,33 @@ double
 StehsPlanner::UpdateStep(StateNodePtr state_node)   // TODO Pensar melhor nessa funcao, parece sempre retornar o MIN_STEP_SIZE
 {
 	CircleNodePtr nearest_circle = FindNearestCircle(state_node);
+	double v = 1 / std::fabs(state_node->state.v);
 
-	return (std::min(std::min((ALFA * nearest_circle->circle.radius) / state_node->state.v, (BETA * nearest_circle->f) / state_node->state.v), MIN_STEP_SIZE));
+//	if (state_node->state.v != 0.0)
+//	{
+		//printf("F %lf\n", nearest_circle->f);
+		return (std::min(std::min(ALFA * nearest_circle->circle.radius, BETA * nearest_circle->f) * v, MIN_STEP_SIZE));
+//	}
+//	else
+//	{
+//		return DELTA_T * 50000.0;
+//	}
+}
+
+
+bool
+StehsPlanner::Collision(StateNodePtr state_node)
+{
+	double circle_radius = (robot_config.width + 0.4) * 0.5; // metade da largura do carro + um espacco de guarda
+
+	carmen_point_t state = traj_to_point_t(state_node->state);
+
+	carmen_point_t trash;
+	trash.x = 0.0;
+	trash.y = 0.0;
+	trash.theta = 0.0;
+
+	return (carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&state, trash, robot_config, distance_map, circle_radius) > 0.0); // Returns 0 if there is not a collision
 }
 
 
@@ -521,57 +581,75 @@ StehsPlanner::Expand(
         StateNodePtr current_state,
         std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set,
         std::vector<StateNodePtr> &closed_set,
-        double k) {
-
+        double k)
+{
     // the car acceleration
     double a[3] = {-1.0, 0.0, 1.0};
     double w[3] = {-0.01, 0.0, 0.01};
 
-    double step_size = UpdateStep(current_state);
+    double step_size = k * UpdateStep(current_state);
 
     // the acceleration loop
-    for (int i = 0; i < 3; ++i) {
-
+    for (int i = 0; i < 3; ++i)
+    {
         // the steering angle acceleration
-        for (int j = 0; j < 3; ++j) {
-
-
+        for (int j = 0; j < 3; ++j)
+        {
+        	//printf("\nState %lf %lf %lf %lf %lf %lf\n", current_state->state.x, current_state->state.y, current_state->state.theta, current_state->state.phi, current_state->state.v, step_size);
             // get the next state
             StateNodePtr next_state = GetNextState(current_state, a[i], w[j], step_size);
 
-            if (!Exist(next_state, closed_set, k) && !Collision(next_state, distance_map)) {
+        	//printf("State %lf %lf %lf %lf %lf\n", next_state->state.x, next_state->state.y, next_state->state.theta, next_state->state.phi, next_state->state.v);
 
-                // add the child state to the open set
+            if (!Exist(next_state, closed_set, k) && !Collision(next_state))
+            {
                 open_set.push(next_state);
-
-            } else {
-
-                delete next_state;
-
             }
-
+            else
+            {
+                delete next_state;
+            }
         }
-
     }
-
 }
+
 
 void
-StehsPlanner::GoalExpand(StateNodePtr current, StateNodePtr goal_node) {
+StehsPlanner::GoalExpand(StateNodePtr current, StateNodePtr &goal_node,
+		std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set)
+{
+	if(mrpt::math::angDistance<double>(current->state.theta, goal_node->state.theta) < MIN_THETA_DIFF )
+	{
+		goal_node->parent = current;
+		goal_node->f = current->f;
 
-    (void) current;
-    (void) goal_node;
+	}
 
+	// FIXME modificar isso;
+	(void) open_set;
 }
+
 
 void
 StehsPlanner::SetSwap(
         std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set,
         std::vector<StateNodePtr> &closed_set) {
 
-    (void) open_set;
-    (void) closed_set;
+	std::vector<StateNodePtr> outputvec(open_set.size());
 
+	std::copy(&(open_set.top()), &(open_set.top()) + open_set.size(), &outputvec[0]);
+
+	while(!open_set.empty())
+	{
+		open_set.pop();
+	}
+
+	for (unsigned int i = 0; i < closed_set.size(); i++)
+	{
+		open_set.push(closed_set[i]);
+	}
+
+	closed_set = outputvec;
 }
 
 void
@@ -587,13 +665,13 @@ StehsPlanner::HeuristicSearch()
     // create the priority queue
     std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> open_set;
 
-    //
     std::vector<StateNodePtr> closed_set;
 
     open_set.push(start_node);
 
     // the inital step-rate
     double k = 1.0;
+    int cont = 0;
 
     while (!open_set.empty())
     {
@@ -614,35 +692,41 @@ StehsPlanner::HeuristicSearch()
                 delete tmp;
             }
 
+            //printf("Sucesso!!\n");
             break;
 
         }
-
         // find the children states configuration
         Expand(current, open_set, closed_set, k);
+        cont += 9;
+
+        printf("Nstate%d\n", cont);
+
+        //printf("h %lf f %lf T %ld\n", current->h, current->f, open_set.size());
 
         if (current->h < RGOAL)
         {
-            GoalExpand(current, goal_node);
+           //printf("Goal!!\n");
+
+            GoalExpand(current, goal_node, open_set);
         }
 
-        //
         closed_set.push_back(current);
 
-        //
-        if (open_set.empty()) {
-
+        if (open_set.empty())
+        {
             k *= 0.5;
 
-            if (k > kmin) {
-
+            if (k > KMIN)
+            {
                 SetSwap(open_set, closed_set);
-
             }
 
         }
 
     }
+
+    //ShowCirclePath(closed_set);
 
     while(!closed_set.empty())
     {
@@ -656,9 +740,24 @@ StehsPlanner::HeuristicSearch()
 }
 
 
-////
-//std::list<carmen_ackerman_motion_command_t>
-//BuildPath();
+void
+StehsPlanner::GeneratePath()
+{
+	RDDFSpaceExploration();
+
+	if (!circle_path.empty())
+	{
+		HeuristicSearch();
+	}
+	else
+	{
+		// TODO Pensar no que fazer. Consumir o plano, parar?
+		printf("Não foi possível encontrar um caminho válido.\n");
+	}
+
+	ShowCirclePath();
+}
+
 
 unsigned char* StehsPlanner::GetCurrentMap() {
 
@@ -695,9 +794,10 @@ unsigned char* StehsPlanner::GetCurrentMap() {
     return map;
 }
 
-void StehsPlanner::ShowCirclePath() {
+void StehsPlanner::ShowCirclePath(std::vector<StateNodePtr> &state_node) {
 
-    // get the current map
+	//printf("Entrou\n");
+	// get the current map
     unsigned char *map = GetCurrentMap();
 
     unsigned int width = distance_map->config.x_size;
@@ -724,14 +824,99 @@ void StehsPlanner::ShowCirclePath() {
         cv::circle(img, cv::Point(col, row), radius, cv::Scalar(0, 0, 0), 1);
 
         // show the current image
-        cv::imshow("CirclePath", img);
+//        cv::imshow("CirclePath", img);
 
-        cv::waitKey(30);
+//        cv::waitKey(30);
 
         // move to next circle
         ++it;
 
     }
 
+    std::vector<StateNodePtr>::iterator its = state_node.begin();
+    std::vector<StateNodePtr>::iterator ends = state_node.end();
+
+    while (its != ends)
+    {
+    	unsigned int row = height - std::floor(((*its)->state.y - distance_map->config.y_origin) * inverse_resolution + 0.5);
+    	unsigned int col = std::floor(((*its)->state.x - distance_map->config.x_origin) * inverse_resolution + 0.5);
+
+    	cv::rectangle(img, cv::Point (col-3, row-3), cv::Point (col+3, row+3), cv::Scalar(0,0,0));
+
+//    	cv::imshow("CirclePath", img);
+//
+//    	cv::waitKey(30);
+
+    	its++;
+    }
+
+    cv::imshow("CirclePath", img);
+    cv::waitKey(1);
+
+	//printf("Saiu\n");
+    delete [] map;
+}
+
+
+void StehsPlanner::ShowCirclePath() {
+
+	//printf("Entrou\n");
+	// get the current map
+    unsigned char *map = GetCurrentMap();
+
+    unsigned int width = distance_map->config.x_size;
+    unsigned int height = distance_map->config.y_size;
+
+    // create a new opencv image
+    cv::Mat img(width, height, CV_8UC1, map);
+
+    // get the inverse resolution
+    double inverse_resolution = 1.0 / distance_map->config.resolution;
+
+    //
+    std::list<CircleNode>::iterator it = circle_path.begin();
+    std::list<CircleNode>::iterator end = circle_path.end();
+
+    while (it != end) {
+
+        unsigned int row = height - std::floor((it->circle.y - distance_map->config.y_origin) * inverse_resolution + 0.5);
+        unsigned int col = std::floor((it->circle.x - distance_map->config.x_origin) * inverse_resolution + 0.5);
+
+        double radius = it->circle.radius * inverse_resolution;
+
+        // void circle(Mat& img, Point center, int radius, const Scalar& color, int thickness=1)
+        cv::circle(img, cv::Point(col, row), radius, cv::Scalar(0, 0, 0), 1);
+
+        // show the current image
+//        cv::imshow("CirclePath", img);
+
+//        cv::waitKey(30);
+
+        // move to next circle
+        ++it;
+
+    }
+
+    std::list<State>::iterator its = state_list.begin();
+    std::list<State>::iterator ends = state_list.end();
+
+    while (its != ends)
+    {
+    	unsigned int row = height - std::floor((its->y - distance_map->config.y_origin) * inverse_resolution + 0.5);
+    	unsigned int col = std::floor((its->x - distance_map->config.x_origin) * inverse_resolution + 0.5);
+
+    	cv::rectangle(img, cv::Point (col-3, row-3), cv::Point (col+3, row+3), cv::Scalar(0,0,0));
+
+//    	cv::imshow("CirclePath", img);
+//
+//    	cv::waitKey(30);
+
+    	its++;
+    }
+
+    cv::imshow("CirclePath", img);
+    cv::waitKey(1);
+
+	//printf("Saiu\n");
     delete [] map;
 }

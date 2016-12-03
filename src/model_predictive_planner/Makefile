@@ -15,11 +15,10 @@ CXXFLAGS += -std=c++0x
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarmodel
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol/pid
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcontrol
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcarmodel
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol/pid
 
 #G2O
 IFLAGS += -I/usr/include/eigen3 
@@ -32,7 +31,7 @@ LFLAGS += 	-lgrid_mapping -lmap_io -lmap_util -lmap_interface -lparam_interface 
 		-lmap_server_interface -lbehavior_selector_interface  -lrotation_geometry \
 		-L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper \
 		-lrddf_interface -lmotion_planner_interface -lnavigator_gui_interface -llocalize_ackerman_core \
-		-lcollision_detection -lgsl -lgslcblas -lm -lford_escape_hybrid_interface -lpid -lcarmodel
+		-lcollision_detection -lcarmodel -lgsl -lgslcblas -lm -lford_escape_hybrid_interface
 			
 			
 SOURCES = model_predictive_planner_main.cpp model_predictive_planner.cpp trajectory_lookup_table.cpp \
@@ -41,14 +40,8 @@ SOURCES = model_predictive_planner_main.cpp model_predictive_planner.cpp traject
 PUBLIC_BINARIES = model_predictive_planner
 PUBLIC_LIBRARIES = 
 
-TARGETS = libpid libcarmodel model_predictive_planner
+TARGETS = libcarmodel model_predictive_planner
 
-libpid:
-	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcontrol/pid/
-clean: clean_libpid
-clean_libpid:
-	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcontrol/pid/
-	
 libcarmodel:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcarmodel
 clean: clean_libcarmodel
