@@ -535,25 +535,17 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 	double a = (target_v - target_td.v_i) / tcp_seed.tt;
 	double tt;
 
-	if (a == 0) //avoid div by zero and plan v = 0 e vi = 0
-	{
-		a = GlobalState::robot_config.maximum_acceleration_forward;
-		tt = tcp_seed.tt;
-		//estimate_piramidal_profile(); //TODO modo para fazer profile piramide
-	}
+	if (a == 0.0)
+		tt = PROFILE_TIME;
 	else
 		tt = (target_v - target_td.v_i) / a;
 
-	if (tt > 10.0)
-		tt = 10.0;
-	else if (tt < 2.0)
-		tt = 2.0;
-
-	if (a >= 0.0)
+	if (a > 0.0)
 	{
-		params.optimize_time = true;
-		if (a > GlobalState::robot_config.maximum_acceleration_forward)
-			a = GlobalState::robot_config.maximum_acceleration_forward;
+		params.optimize_time = false;
+//		if (a > GlobalState::robot_config.maximum_acceleration_forward)
+//			a = GlobalState::robot_config.maximum_acceleration_forward;
+		tt = (target_v - target_td.v_i) / (a * 5.0);
 	}
 
 	if (a < 0.0)
@@ -565,6 +557,12 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 			tt = (target_v - target_td.v_i) / a;
 		}
 	}
+
+	if (tt > 10.0)
+		tt = 10.0;
+	else if (tt < 2.0)
+		tt = 2.0;
+
 	params.suitable_tt = tcp_seed.tt = tt;
 	params.suitable_acceleration = tcp_seed.a = a;
 //	printf("a %lf, tt %lf\n", a, tt);
