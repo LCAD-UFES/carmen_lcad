@@ -3,7 +3,7 @@ include ../Makefile.conf
 MODULE_NAME = GRAPHSLAM_PACKAGE
 MODULE_COMMENT = teste_grab_data
 
-LINK = g++
+LINK = g++ 
 
 CXXFLAGS += -Wno-deprecated -Wno-deprecated-declarations
 

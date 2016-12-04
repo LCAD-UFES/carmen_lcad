@@ -512,7 +512,7 @@ fused_odometry_particle_message_handler(carmen_fused_odometry_particle_message *
 	add_message_to_queue<StampedOrientation>(gps_orientation_queue, data,
 			gps_orientation_queue_current_position, GPS_QUEUE_MAX_SIZE);
 
-	add_message_to_queue<int>(gps_orientation_valid_queue, 1,
+	add_message_to_queue<int>(gps_orientation_valid_queue, (gps_std < 0.5)? 1 : 0,
 			gps_orientation_valid_position, GPS_QUEUE_MAX_SIZE);
 }
 

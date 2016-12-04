@@ -22,7 +22,7 @@ mapper_global_map 				off
 mapper_merge_with_offline_map 			off
 mapper_update_and_merge_with_mapper_saved_maps	on
 mapper_build_snapshot_map			off
-mapper_velodyne_range_max		 	30.0
+mapper_velodyne_range_max		 	50.0
 mapper_velodyne_range_max_factor 		4.0
 
 6. Execute o programa "Step_1" na interface.
@@ -71,8 +71,8 @@ Como criar um mapa usando GraphSLAM [sem usar o process]:
 6. Mate o programa "./grab_data tmp2 tmp2/sync_data.txt"
 7. Mova os arquivos que estiverem na pasta tmp2 para a pasta tmp usando "mv tmp2/* tmp"
 8. Execute o programa "./run_icp_for_loop_closure tmp/sync_data.txt tmp tmp/loops.txt"
-9. Execute o programa "./graphslam tmp/sync_data.txt tmp/loops.txt tmp/opt_poses.txt"
-10. Execute o programa "./graphslam_publish tmp/opt_poses.txt" 
+9. Execute o programa "./graphslam tmp/sync_data.txt tmp/loops.txt tmp/poses_opt.txt"
+10. Execute o programa "./graphslam_publish tmp/poses_opt.txt" 
 11. Faca o playback de seu log novamente para criar o mapa
 	
 	***** NOTA: Lembre-se de mudar os parametros no carmen-ford-escape.ini para o modo de criacao de mapas. Os valores devem ser:
