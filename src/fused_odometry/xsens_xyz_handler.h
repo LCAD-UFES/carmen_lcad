@@ -27,6 +27,9 @@ typedef struct
 
 	int gps_performance_changed;
 	double gps_performance_degradation;
+
+	int gps_orientation_performance_changed;
+	double gps_orientation_performance_degradation;
 } xsens_xyz_handler;
 
 

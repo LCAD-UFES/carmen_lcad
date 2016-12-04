@@ -352,13 +352,13 @@ get_std_error(xsens_xyz_handler *xsens_handler, carmen_fused_odometry_parameters
 		{
 			std.x = fused_odometry_parameters->xsens_gps_x_std_error / 5.0;
 			std.y = fused_odometry_parameters->xsens_gps_y_std_error / 5.0;
-			std.theta = fused_odometry_parameters->xsens_yaw_std_error / 5.0;
+			std.theta = fused_odometry_parameters->xsens_yaw_std_error;// / 5.0;
 		}
 		else if (xsens_handler->gps_xyz.gps_quality == 5)
 		{
 			std.x = fused_odometry_parameters->xsens_gps_x_std_error / 2.0;
 			std.y = fused_odometry_parameters->xsens_gps_y_std_error / 2.0;
-			std.theta = fused_odometry_parameters->xsens_yaw_std_error / 2.0;
+			std.theta = fused_odometry_parameters->xsens_yaw_std_error;// / 2.0;
 		}
 		else
 		{
@@ -377,7 +377,7 @@ get_std_error(xsens_xyz_handler *xsens_handler, carmen_fused_odometry_parameters
 
 	std.x *= 1.0 + xsens_handler->gps_performance_degradation;
 	std.y *= 1.0 + xsens_handler->gps_performance_degradation;
-	std.theta *= 1.0 + xsens_handler->gps_performance_degradation;
+	std.theta *= 1.0 + xsens_handler->gps_performance_degradation + xsens_handler->gps_orientation_performance_degradation;
 
 	return (std);
 }
@@ -606,10 +606,16 @@ xsens_xyz_message_handler(carmen_xsens_xyz_message *xsens_xyz)
 			xsens_handler.gps_performance_degradation = 40.0;
 			xsens_handler.gps_performance_changed = 0;
 		}
+		if (xsens_handler.gps_orientation_performance_changed)
+		{
+			xsens_handler.gps_orientation_performance_degradation = 40.0;
+			xsens_handler.gps_orientation_performance_changed = 0;
+		}
 		prediction(sensor_vector->timestamp, fused_odometry_parameters);
 		correction(measure_weight_particle, sensor_vector, fused_odometry_parameters);
 		publish_fused_odometry();
 		xsens_handler.gps_performance_degradation *= 0.98; // fator de decaimento
+		xsens_handler.gps_orientation_performance_degradation *= 0.98; // fator de decaimento
 	}
 	xsens_handler.last_xsens_message_timestamp = xsens_xyz->timestamp;
 }
@@ -754,10 +760,16 @@ xsens_mti_message_handler(carmen_xsens_global_quat_message *xsens_mti)
 			xsens_handler.gps_performance_degradation = 50.0;
 			xsens_handler.gps_performance_changed = 0;
 		}
+		if (xsens_handler.gps_orientation_performance_changed)
+		{
+			xsens_handler.gps_orientation_performance_degradation = 40.0;
+			xsens_handler.gps_orientation_performance_changed = 0;
+		}
 		prediction(sensor_vector->timestamp, fused_odometry_parameters);
 		correction(measure_weight_orientation, sensor_vector, fused_odometry_parameters);
 		publish_fused_odometry();
 		xsens_handler.gps_performance_degradation *= 0.98; // fator de decaimento
+		xsens_handler.gps_orientation_performance_degradation *= 0.98; // fator de decaimento
 	}
 	xsens_handler.last_xsens_message_timestamp = xsens_mti->timestamp;
 }
@@ -784,7 +796,7 @@ detect_gps_performance_change(carmen_gps_xyz_message *message)
 			carmen_point_t current_position = {message->x, message->y, 0.0};
 			carmen_fused_odometry_control *ut = get_fused_odometry_control_vector();
 			double distance = carmen_distance(&previous_position, &current_position);
-			if (distance > (0.25 + 2.0 * (ut->v * 1/20.0))) // andou 2 vezes mais que o esperado
+			if (distance > (0.25 + 2.0 * (ut->v * 1.0 /20.0))) // andou 2 vezes mais que o esperado
 				xsens_handler.gps_performance_changed = 1;
 			else
 			{
@@ -813,8 +825,8 @@ detect_gps_performance_change(carmen_gps_gphdt_message *message)
 	}
 
 	if ((xsens_handler.gps_hdt.valid != message->valid) ||
-		(previous_heading - message->heading) > carmen_degrees_to_radians(15.0))
-		xsens_handler.gps_performance_changed = 1;
+		(fabs(previous_heading - message->heading)) > carmen_degrees_to_radians(15.0))
+		xsens_handler.gps_orientation_performance_changed = 1;
 
 	previous_heading = message->heading;
 }
