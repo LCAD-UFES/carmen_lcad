@@ -232,7 +232,7 @@ add_odometry_edges(SparseOptimizer *optimizer)
 		dist = dist * (1.0); // Alberto
 		//measure.setTranslation(Vector2d(dist * cos(measure[2]), dist * sin(measure[2])));
 
-		if(abs(input_data[i + 1].time - input_data[i].time) > 10)
+		if (abs(input_data[i + 1].time - input_data[i].time) > 10)
 			continue;
 
 		if (i >= BEGIN_ID && i <= END_ID)

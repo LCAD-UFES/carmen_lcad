@@ -542,7 +542,7 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 
 	if (a > 0.0)
 	{
-		params.optimize_time = false;
+		params.optimize_time = true;
 //		if (a > GlobalState::robot_config.maximum_acceleration_forward)
 //			a = GlobalState::robot_config.maximum_acceleration_forward;
 		tt = (target_v - target_td.v_i) / (a * 5.0);

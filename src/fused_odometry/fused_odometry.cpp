@@ -96,8 +96,8 @@ sample_motion_model(carmen_fused_odometry_particle x_t_1, carmen_fused_odometry_
 	tf::Vector3 x_t_global_position(x_t_1.state.pose.position.x, x_t_1.state.pose.position.y, x_t_1.state.pose.position.z);
 	x_t_global_position = x_t_global_position + displacement_global_reference;
 
-	double xy_uncertainty_due_to_grid_resolution = (0.2 / 2.0) * (0.2 / 2.0);
-	double yaw_uncertainty_due_to_grid_resolution = asin((0.2 / 2.0) / 50.0) * asin((0.2 / 2.0) / 50.0);
+	double xy_uncertainty_due_to_grid_resolution = (0.2 / 4.0) * (0.2 / 4.0);
+	double yaw_uncertainty_due_to_grid_resolution = asin((0.2 / 4.0)) * asin((0.2 / 4.0));
 	x_t.state.pose.position.x = x_t_global_position.getX() + carmen_gaussian_random(0.0, xy_uncertainty_due_to_grid_resolution);
 	x_t.state.pose.position.y = x_t_global_position.getY() + carmen_gaussian_random(0.0, xy_uncertainty_due_to_grid_resolution);
 	x_t.state.pose.position.z = 0.0; //x_t_global_position.getZ();
