@@ -535,17 +535,26 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 	double a = (target_v - target_td.v_i) / tcp_seed.tt;
 	double tt;
 
-	if (a == 0.0)
-		tt = PROFILE_TIME;
+	if (a == 0) //avoid div by zero and plan v = 0 e vi = 0
+	{
+		tt = tcp_seed.tt;
+		//params.optimize_time = true;
+	}
 	else
 		tt = (target_v - target_td.v_i) / a;
 
-	if (a > 0.0)
+
+	if (a >= 0.0)
 	{
 		params.optimize_time = true;
+<<<<<<< HEAD
 //		if (a > GlobalState::robot_config.maximum_acceleration_forward)
 //			a = GlobalState::robot_config.maximum_acceleration_forward;
 		tt = (target_v - target_td.v_i) / (a * 5.0);
+=======
+		if (a > GlobalState::robot_config.maximum_acceleration_forward)
+			a = GlobalState::robot_config.maximum_acceleration_forward;
+>>>>>>> 4cb77de7db7ba369f196cb4c71afece6a0cdbccd
 	}
 
 	if (a < 0.0)
