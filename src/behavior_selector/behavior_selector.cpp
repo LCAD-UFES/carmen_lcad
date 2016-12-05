@@ -230,6 +230,87 @@ get_next_goal(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_point
 //		change_state(annotations[goal_list_index]);
 //}
 
+
+static void
+fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_point_t current_pose)
+{
+	double distance_to_last_obstacle = 10000.0;
+	int last_obstacle_index = -1;
+	int j = 0;
+
+	int last_obstacle_free_waypoint_index = -1;
+	carmen_ackerman_traj_point_t robot_pose = current_pose;
+
+	//printf("fill goal list\n");
+
+	for (int i = 0; i < rddf->number_of_poses && j < GOAL_LIST_SIZE; i++)
+	{
+//		if(rddf->annotations[i] != 0)
+//			printf("annotation: %d\n", rddf->annotations[i]);
+
+		double distance = carmen_distance_ackerman_traj(&current_pose, &rddf->poses[i]);
+		int hit_obstacle = trajectory_pose_hit_obstacle(rddf->poses[i], current_map, &robot_config);
+
+		if (hit_obstacle)
+			last_obstacle_index = i;
+		else
+			last_obstacle_free_waypoint_index = i;
+
+		if (last_obstacle_index != -1)
+			distance_to_last_obstacle = carmen_distance_ackerman_traj(&rddf->poses[last_obstacle_index], &rddf->poses[i]);
+
+		double distance_to_annotation = carmen_distance_ackerman_traj(&robot_pose, &rddf->poses[i]);
+		double distance_to_last_obstacle_free_waypoint = carmen_distance_ackerman_traj(&robot_pose, &rddf->poses[last_obstacle_free_waypoint_index]);
+
+		if (((distance >= distance_between_waypoints) &&
+			 (distance_to_last_obstacle >= 15.0) &&
+			 !hit_obstacle) ||
+			(((rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BUMP) ||
+			  (rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BARRIER) ||
+			  (rddf->annotations[i] == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK)) &&
+			 (distance_to_annotation > distance_to_remove_annotation_goal) && (!hit_obstacle)))
+		{
+			goal_list[j] = rddf->poses[i];
+			annotations[j] = rddf->annotations[i];
+			current_pose = rddf->poses[i];
+			j++;
+		}
+
+		// se a anotacao estiver em cima de um obstaculo, adiciona um waypoint na posicao
+		// anterior mais proxima da anotacao que estiver livre
+		else if (((rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BUMP) || (rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BARRIER)) && (distance_to_last_obstacle_free_waypoint > 1.5) && (hit_obstacle))
+		{
+			goal_list[j] = rddf->poses[last_obstacle_free_waypoint_index];
+			annotations[j] = rddf->annotations[last_obstacle_free_waypoint_index];
+			current_pose = rddf->poses[last_obstacle_free_waypoint_index];
+			j++;
+		}
+		else if ((rddf->annotations[i] == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) && (hit_obstacle))
+		{
+			//printf("Hit!\n");
+			goal_list[j] = rddf->poses[last_obstacle_free_waypoint_index];
+			//goal_list[j].v = 0.0;
+			annotations[j] = rddf->annotations[last_obstacle_free_waypoint_index];
+			current_pose = rddf->poses[last_obstacle_free_waypoint_index];
+			j++;
+
+			break;
+		}
+	}
+
+	if (j == 0)
+	{
+		goal_list[j] = rddf->poses[rddf->number_of_poses - 1];
+		j++;
+	}
+
+	goal_list_size = j;
+	goal_list_time = rddf->timestamp;
+
+	if (goal_list_index < goal_list_size)
+		change_state(annotations[goal_list_index]);
+}
+
 static void
 update_goal_index_to_next_collision_free_goal()
 {
