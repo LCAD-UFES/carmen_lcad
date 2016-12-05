@@ -254,7 +254,7 @@ compute_new_velocity_with_ann(carmen_simulator_ackerman_config_t *simulator_conf
 	static double brakes_command = 100.0 / 100.0;
 	static int gear_command = 0;
 	static fann_type velocity_ann_input[NUM_VELOCITY_ANN_INPUTS];
-	fann_type *velocity_ann_output;
+//	fann_type *velocity_ann_output;
 	static struct fann *velocity_ann = NULL;
 
 	if (velocity_ann == NULL)
