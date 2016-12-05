@@ -115,7 +115,7 @@ publish_goal_list()
 		else if (last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BUMP)
 			goal_list_msg.goal_list->v = carmen_fmin(3.0, goal_list_msg.goal_list->v);
 		else if(last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK)
-			goal_list_msg.goal_list->v = carmen_fmin(2.5, goal_list_msg.goal_list->v);
+			goal_list_msg.goal_list->v = carmen_fmin(2.0, goal_list_msg.goal_list->v);
 		else if (last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)
 			goal_list_msg.goal_list->v = carmen_fmin(3.0, goal_list_msg.goal_list->v);
 
