@@ -135,6 +135,19 @@ carmen_libcarneuralmodel_build_velocity_ann_input(fann_type *input, double t, do
 
 
 double
+carmen_libcarneuralmodel_compute_new_velocity_from_efforts(fann_type *velocity_ann_input, struct fann *velocity_ann, double throttle_effort, double brake_effort, double current_velocity)
+{
+	fann_type *velocity_ann_output;
+
+	carmen_libcarneuralmodel_build_velocity_ann_input(velocity_ann_input, throttle_effort, brake_effort, current_velocity);
+
+	velocity_ann_output = fann_run(velocity_ann, velocity_ann_input);
+
+	return (velocity_ann_output[0]);
+}
+
+
+double
 carmen_libcarneuralmodel_compute_new_velocity_with_ann(double desired_v, double v, double time)
 {
 	static double throttle_command = 0.0;
