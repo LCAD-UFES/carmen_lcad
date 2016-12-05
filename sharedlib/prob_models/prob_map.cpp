@@ -946,6 +946,8 @@ carmen_prob_models_compute_expected_delta_ray(double ray_length, int ray_index, 
 }
 
 
+//extern FILE *plot_data;
+
 double
 get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int ray_index, int scan_index,
 		bool reduce_sensitivity, int thread_id)
@@ -967,18 +969,28 @@ get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, senso
 	if (previous_ray_index < 0)
 		return (sensor_params->log_odds.log_odds_l0);
 
-	if (sensor_data->maxed[thread_id][previous_ray_index] || sensor_data->maxed[thread_id][ray_index])
+//	fprintf(plot_data, " > ri %d  pm %d  cm %d  ap %lf  ac %lf ", ray_index, sensor_data->maxed[thread_id][previous_ray_index], sensor_data->maxed[thread_id][ray_index],
+//			sensor_params->vertical_correction[previous_ray_index], sensor_params->vertical_correction[ray_index]);
+
+//	if (sensor_data->maxed[thread_id][previous_ray_index] || sensor_data->maxed[thread_id][ray_index])
+//		return (sensor_params->log_odds.log_odds_l0);
+	if (sensor_data->maxed[thread_id][ray_index])
 		return (sensor_params->log_odds.log_odds_l0);
 
-	if (sensor_data->ray_hit_the_robot[thread_id][previous_ray_index] || sensor_data->ray_hit_the_robot[thread_id][ray_index])
+	if (sensor_data->ray_hit_the_robot[thread_id][previous_ray_index] ||
+		sensor_data->ray_hit_the_robot[thread_id][ray_index])
 		return (sensor_params->log_odds.log_odds_l0);
 
-	if ((sensor_data->obstacle_height[thread_id][previous_ray_index] < -2.0) || (sensor_data->obstacle_height[thread_id][ray_index] < -2.0))
+	if ((sensor_data->obstacle_height[thread_id][previous_ray_index] < -2.0) ||
+		(sensor_data->obstacle_height[thread_id][ray_index] < -2.0))
 		return (sensor_params->log_odds.log_odds_l0);
 
 	ray_length = sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index + ray_index].length;
 
-	ray_size1 = sensor_data->ray_size_in_the_floor[thread_id][previous_ray_index];
+	if (sensor_data->maxed[thread_id][previous_ray_index])
+		ray_size1 = sensor_params->height / tan(-carmen_degrees_to_radians(sensor_params->vertical_correction[previous_ray_index]));
+	else
+		ray_size1 = sensor_data->ray_size_in_the_floor[thread_id][previous_ray_index];
 	ray_size2 = sensor_data->ray_size_in_the_floor[thread_id][ray_index];
 
 	delta_ray = ray_size2 - ray_size1;
@@ -987,11 +999,13 @@ get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, senso
 
 	obstacle_evidence = (expected_delta_ray - delta_ray) / expected_delta_ray;
 	
-//	printf("%lf %lf %lf %lf\n", sensor_data->range[ray_index], expected_delta_ray, expected_delta_ray_old, obstacle_evidence);
-
 	// Testa se tem um obstaculo com um buraco em baixo
 	obstacle_evidence = (obstacle_evidence > 1.0)? 1.0: obstacle_evidence;
 	
+//	fprintf(plot_data, ": r_1 %lf  r1 %lf  r2 %lf  d %lf  ed %lf ",
+//			sensor_params->height / tan(-carmen_degrees_to_radians(sensor_params->vertical_correction[previous_ray_index])),
+//			ray_size1, ray_size2, delta_ray, expected_delta_ray);
+
 	if (reduce_sensitivity)
 	{
 		if (delta_ray > expected_delta_ray) // @@@ Alberto: nao trata buraco?
@@ -1017,8 +1031,15 @@ get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, senso
 	p_0 = (1.0 / exp(1.0 / sigma) - 1.0);
 	p_obstacle = (1.0 / exp(obstacle_evidence / sigma) - 1.0) / p_0;
 
-//	printf("%lf\n", p_obstacle);
-	log_odds = log(p_obstacle / (1.0 - p_obstacle));
+	if (p_obstacle >= 1.0)
+		log_odds = MAX_LOG_ODDS_POSSIBLE;
+	else
+		log_odds = log(p_obstacle / (1.0 - p_obstacle));
+
+	if (log_odds > MAX_LOG_ODDS_POSSIBLE)
+		log_odds = MAX_LOG_ODDS_POSSIBLE;
+
+//	fprintf(plot_data, " p0 %lf  po %lf  lo %lf; ", p_0, p_obstacle, log_odds);
 
 	return (log_odds);
 }
@@ -1191,11 +1212,14 @@ carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data
 			sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] = get_log_odds_via_unexpeted_delta_range(sensor_params, sensor_data, i, scan_index, reduce_sensitivity, thread_id);// +
 			//get_log_odds_via_unexpeted_delta_range_reverse(sensor_params, sensor_data, i, scan_index, reduce_sensitivity, thread_id);
 
+//			fprintf(plot_data, " oh %lf  uhag %lf # ", sensor_data->obstacle_height[thread_id][i], sensor_params->unsafe_height_above_ground);
 			if (sensor_data->obstacle_height[thread_id][i] > sensor_params->unsafe_height_above_ground)
+			{
 				if (!sensor_data->maxed[thread_id][i] && !sensor_data->ray_hit_the_robot[thread_id][i] && !(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][i], highest_sensor, safe_range_above_sensors)))
 				{
 					sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] = sensor_params->log_odds.log_odds_occ;
 				}
+			}
 		}
 		if ((sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] > sensor_params->log_odds.log_odds_l0) && (min_ray_size > sensor_data->ray_size_in_the_floor[thread_id][i]))
 		{
@@ -1203,6 +1227,8 @@ carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data
 			min_ray_size_index = i;
 		}
 	}
+//	fprintf(plot_data, "log odds %lf  ray %d ", sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][min_ray_size_index], min_ray_size_index);
+
 	sensor_data->ray_that_hit_the_nearest_target[thread_id] = min_ray_size_index;
 }
 
@@ -1226,14 +1252,17 @@ carmen_prob_models_ray_hit_the_robot(double distance_between_rear_robot_and_rear
 	 	 front
 	       x^
 	        |
-	x2,y2 --|-- x3,y3
+	x1,y1 --|-- x1,y0
 	      | | |
 	 y    | | |
 	 <----|-. |
 	      |   |
-	x1,y1 ----- x0,y0
+	x0,y1 ----- x0,y0
 		  rear
 	 */
+
+	robot_width += 0.8;
+	//distance_between_rear_robot_and_rear_wheels += 5.0;
 
 	carmen_vector_2D_t car_corners[2];
 	car_corners[0].y = -robot_width / 2;
@@ -1242,10 +1271,10 @@ carmen_prob_models_ray_hit_the_robot(double distance_between_rear_robot_and_rear
 	car_corners[1].x = robot_length - distance_between_rear_robot_and_rear_wheels;
 
 
-	if ((x < car_corners[0].x || y < car_corners[0].y) || (x > car_corners[1].x || y > car_corners[1].y))
-		return 0;
+	if ((x > car_corners[0].x) && (y > car_corners[0].y) && (x < car_corners[1].x) && (y < car_corners[1].y))
+		return 1;
 
-	return 1;
+	return 0;
 }
 
 
@@ -2231,9 +2260,9 @@ save_probabilistic_map(const ProbabilisticMap *map, carmen_point_t pose)
 void 
 copy_probabilistic_map(ProbabilisticMap *dst, const ProbabilisticMap *src)
 {
-	for(int x=0; x<map_params.grid_sx; x++)
+	for(int x = 0; x < map_params.grid_sx; x++)
 	{
-		for(int y=0; y<map_params.grid_sy; y++)
+		for(int y = 0; y < map_params.grid_sy; y++)
 		{
 			dst->image_map[x][y] = src->image_map[x][y];
 			dst->log_odds_map[x][y] = src->log_odds_map[x][y];

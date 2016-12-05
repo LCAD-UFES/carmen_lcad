@@ -4,8 +4,8 @@ include ../Makefile.conf
 MODULE_NAME = MAPPER_PACKAGE
 MODULE_COMMENT = Mapper Maps using Velodyne!
 
-CFLAGS += -Wall -std=c99  -mfpmath=sse -msse2 -msse4.2 -ffast-math -fassociative-math -O4 -fopenmp -funroll-all-loops -Wno-unused-but-set-variable
-CXXFLAGS += -Wno-unused-but-set-variable
+CFLAGS += -Wall -std=c99  -O3 #-mfpmath=sse -msse2 -msse4.2 -ffast-math -fassociative-math -O4 -fopenmp -funroll-all-loops -Wno-unused-but-set-variable
+CXXFLAGS += # -Wno-unused-but-set-variable
 #CFLAGS += -g -pg
 LINK = g++
 

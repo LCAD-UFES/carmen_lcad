@@ -166,6 +166,7 @@ get_nearest_timestamp_index(double *robot_timestamp, spherical_point_cloud *poin
 	return (index_nearest_timestamp);
 }
 
+//FILE *plot_data;
 
 static void
 update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global,
@@ -182,6 +183,7 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 	carmen_pose_3D_t robot_interpolated_position = sensor_data->robot_pose[point_cloud_index];
 	int i = 0;
 
+//	plot_data = fopen("plot_data.dat", "w");
 	// Ray-trace the grid
 	#pragma omp for
 	for (int j = 0; j < N; j += 1)
@@ -196,17 +198,19 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 		carmen_prob_models_compute_relevant_map_coordinates(sensor_data, sensor_params, i, robot_interpolated_position.position, sensor_board_1_pose,
 				r_matrix_robot_to_global, board_to_car_matrix, robot_wheel_radius, x_origin, y_origin, &car_config, robot_near_bump_or_barrier, tid);
 
+//		fprintf(plot_data, "%lf ", v_zt.sphere_points[i].horizontal_angle);
 		carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data, sensor_params, i, highest_sensor, safe_range_above_sensors,
 				robot_near_bump_or_barrier, tid);
 
-		if (update_cells_crossed_by_rays == UPDATE_CELLS_CROSSED_BY_RAYS){
-			if(create_map_sum_and_count)
+		if (update_cells_crossed_by_rays == UPDATE_CELLS_CROSSED_BY_RAYS)
+		{
+			if (create_map_sum_and_count)
 				carmen_prob_models_update_sum_and_count_cells_crossed_by_ray(snapshot_map, &sum_occupancy_map, &count_occupancy_map, sensor_params, sensor_data, tid);
 			else
 				carmen_prob_models_update_cells_crossed_by_ray(snapshot_map, sensor_params, sensor_data, tid);
 		}
 		// carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(map, sensor_params, sensor_data);
-		if(create_map_sum_and_count)
+		if (create_map_sum_and_count)
 			carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(snapshot_map, &sum_occupancy_map, &count_occupancy_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid);
 		else
 			carmen_prob_models_update_log_odds_of_cells_hit_by_rays(snapshot_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid);
@@ -218,7 +222,11 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 		//carmen_prob_models_update_log_odds_of_cells_hit_by_rays(&moving_objects_raw_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors);
 		//build_front_laser_message_from_velodyne_point_cloud (sensor_params, sensor_data, v_zt, i);
 		//i = i +  sensor_params->vertical_resolution;
+//		fprintf(plot_data, "\n");
 	}
+//	fprintf(plot_data, "\n");
+//	fclose(plot_data);
+//	system("cp plot_data.dat plot_data2.dat");
 	//printf("\n###############################################################\n");
 }
 

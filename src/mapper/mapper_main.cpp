@@ -142,7 +142,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 
 	if (ok_to_publish)
 	{
-		printf("Running Mapper\n");
+//		printf("Running Mapper\n");
 
 		int aux = -1;
 		for (int i = 0; i < NUM_VELODYNE_POINT_CLOUDS; i++)
@@ -192,7 +192,7 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 }
 
 
-static void
+void
 velodyne_variable_scan_message_handler1(carmen_velodyne_variable_scan_message *message)
 {
 	mapper_velodyne_variable_scan(1, message);
@@ -203,9 +203,9 @@ laser_ldrms_message_handler(carmen_laser_ldmrs_message* msg)
 {
 	vpLaserScan laserscan[4];
 	carmen_laser_ldmrs_copy_message_to_laser_scan(msg, laserscan);
-	carmen_velodyne_partial_scan_message partial_scan_message = carmen_laser_ldmrs_convert_laser_scan_to_partial_velodyne_message(laserscan, msg->timestamp);
+//	carmen_velodyne_partial_scan_message partial_scan_message = carmen_laser_ldmrs_convert_laser_scan_to_partial_velodyne_message(laserscan, msg->timestamp);
 
-	//mapper_velodyne_partial_scan(1, &partial_scan_message);
+//	mapper_velodyne_partial_scan(1, &partial_scan_message);
 }
 
 static void
