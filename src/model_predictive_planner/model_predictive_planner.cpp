@@ -26,7 +26,8 @@
 
 using namespace g2o;
 
-int print_and_plot = 0;
+int print_to_debug = 0;
+int plot_to_debug = 0;
 
 //-----------Funcoes para extrair dados do Experimento------------------------
 double
@@ -350,7 +351,7 @@ build_detailed_path_lane(vector<carmen_ackerman_path_point_t> *lane_in_local_pos
 	}
 	else
 	{
-		//if (print_and_plot)
+		if (print_to_debug)
 			printf(KGRN "+++++++++++++ ERRO MENSAGEM DA LANE POSES !!!!\n" RESET);
 		detailed_lane.clear();
 		return (false);
@@ -373,7 +374,7 @@ build_detailed_rddf_lane(vector<carmen_ackerman_path_point_t> *lane_in_local_pos
 	}
 	else
 	{
-		//if (print_and_plot)
+		if (print_to_debug)
 			printf(KGRN "+++++++++++++ ERRO MENSAGEM DA LANE POSES !!!!\n" RESET);
 		detailed_lane.clear();
 		return (false);
@@ -726,8 +727,9 @@ goal_is_behide_car(Pose *localizer_pose, Pose *goal_pose)
 	SE2 goal_in_world_reference(goal_pose->x, goal_pose->y, goal_pose->theta);
 	SE2 goal_in_car_reference = robot_pose.inverse() * goal_in_world_reference;
 	double goal_x = goal_in_car_reference[0];
+	double goal_theta = goal_in_car_reference[2];
 
-	if(goal_x <= 0.0)
+	if(goal_x <= 0.0 && fabs(goal_theta) < M_PI_2)
 		return true;
 
 	return false;
@@ -752,11 +754,11 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		last_timestamp = carmen_get_time();
 	}
 
-//	if(goal_is_behide_car(localizer_pose, &goalPoseVector[0]))
-//	{
-//		printf("goal is behide the car\n");
-//		return;
-//	}
+	if(goal_is_behide_car(localizer_pose, &goalPoseVector[0]))
+	{
+		printf("goal is behide the car\n");
+		return;
+	}
 
 	bool goal_in_lane = false;
 	goal_in_lane = move_lane_to_robot_reference_system(localizer_pose, goal_list_message, &goalPoseVector[0], &lane_in_local_pose);
@@ -817,7 +819,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 
 				//TODO Descomentar para usar o plot!
 				vector<carmen_ackerman_path_point_t> pathSeed;
-				if (print_and_plot)
+				if (plot_to_debug)
 				{
 					pathSeed = simulate_car_from_parameters(td, tcp, lastOdometryVector[0].v, lastOdometryVector[0].phi, false, 0.025);
 				}
@@ -826,7 +828,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 					continue;
 
 				//TODO Gnuplot
-				if (print_and_plot)
+				if (plot_to_debug)
 					plot_state(path_local,detailed_lane,pathSeed);
 
 				paths[j + i * lastOdometryVector.size()] = path;
@@ -838,7 +840,8 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 			else
 			{
 				otcps[j + i * lastOdometryVector.size()] = otcp;
-				printf(KYEL "+++++++++++++ Could NOT optimize !!!!\n" RESET);
+				if (print_to_debug)
+					printf(KYEL "+++++++++++++ Could NOT optimize !!!!\n" RESET);
 			}
 		}
 
