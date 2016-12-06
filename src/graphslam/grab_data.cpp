@@ -277,7 +277,7 @@ velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 
 			double gps_std = gps_queue_stds[gpsid];
 
-			if ((dt <= 0) || (dt_gps <= 0) || (odometry_queue[odomid].v < 0.05))
+			if ((dt <= 0) || (dt_gps <= 0))// || (odometry_queue[odomid].v < 0.05))
 				return;
 
 			ackerman_prediction(&dead_reckoning, odometry_queue[odomid].v, odometry_queue[odomid].phi, dt);
