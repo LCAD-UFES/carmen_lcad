@@ -112,7 +112,7 @@ get_phi_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, PA
 //		phi_vector.push_back(phi);
 		phi_vector.push_back(phi + params->dk);
 
-		atan_current_curvature = carmen_get_curvature_from_phi(phi, params->v, params->understeer_coeficient, params->distance_rear_axles);
+		atan_current_curvature = carmen_get_curvature_from_phi(phi, params->current_velocity, params->understeer_coeficient, params->distance_rear_axles);
 	}
 	return (phi_vector);
 }
@@ -141,7 +141,7 @@ get_pose_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, P
 	{
 		double phi = car_model(effort_vector[i], atan_current_curvature, velocity_vector[i], steering_ann_input, param);
 		//phi_vector.push_back(phi + param->dk);
-		atan_current_curvature = carmen_get_curvature_from_phi(phi, param->v, param->understeer_coeficient, param->distance_rear_axles);
+		atan_current_curvature = carmen_get_curvature_from_phi(phi, param->current_velocity, param->understeer_coeficient, param->distance_rear_axles);
 
 		robot_state.v = velocity_vector[i];
 		robot_state.phi = phi;
@@ -530,7 +530,7 @@ init_mpc(bool &first_time, PARAMS &param, EFFORT_SPLINE_DESCRIPTOR &seed, double
 	param.motion_commands_vector = current_motion_command_vector;
 	param.motion_commands_vector_size = nun_motion_commands;
 	param.atan_current_curvature = atan_current_curvature;
-	param.v = v;
+	param.current_velocity = v;
 	param.understeer_coeficient = robot_config->understeer_coeficient;
 	param.distance_rear_axles = robot_config->distance_between_front_and_rear_axles;
 	param.max_phi = robot_config->max_phi;
@@ -589,7 +589,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC_position_control(double at
 	double effort = seed.k1;
 
 	// Calcula o dk do proximo ciclo
-	double Cxk = car_model(effort, atan_current_curvature, param.v, param.steering_ann_input, &param);
+	double Cxk = car_model(effort, atan_current_curvature, param.current_velocity, param.steering_ann_input, &param);
 	param.dk = yp - Cxk;
 	param.dk = 0.0;
 	param.previous_k1 = effort;

@@ -1,7 +1,9 @@
 #ifndef MPC_H
 #define MPC_H
 
+
 using namespace std;
+
 
 #include <carmen/carmen.h>
 #include <car_model.h>
@@ -17,6 +19,7 @@ using namespace std;
 #include <list>
 #include <vector>
 
+
 #define DELTA_T (1.0 / 40.0) // 0.025 40 Htz
 #define PREDICTION_HORIZON	0.4 //Must be DELTA_T multiple
 #define POSITION_PREDICTION_HORIZON	1.2 //Must be DELTA_T multiple
@@ -30,19 +33,19 @@ typedef struct {
 	double k2;
 	double k3;
 	double k4;
-} EFFORT_SPLINE_DESCRIPTOR;   // TODO mudar para um vector
-
+} EFFORT_SPLINE_DESCRIPTOR;
 
 typedef struct {
 	vector<double> v;
 	vector<double> phi;
-	vector<double> time;
 	double total_time_of_commands;
 } MOTION_COMMAND;
 
 
 // Definition of type of pointer to function that will be passed to the optimizer
-typedef vector<double> (*get_vector_from_spline)(EFFORT_SPLINE_DESCRIPTOR *descriptors, void *params);
+//typedef vector<double> (*get_vector_from_spline)(EFFORT_SPLINE_DESCRIPTOR *descriptors, void *params);
+
+typedef double (*get_vector_from_spline)(EFFORT_SPLINE_DESCRIPTOR *descriptors, void *params);
 
 
 typedef struct
@@ -51,6 +54,7 @@ typedef struct
 	unsigned int motion_commands_vector_size;
 
 	MOTION_COMMAND path;
+	MOTION_COMMAND optimized_path;
 
 	struct fann *steering_ann;
 	fann_type steering_ann_input[NUM_STEERING_ANN_INPUTS];
@@ -58,13 +62,13 @@ typedef struct
 	fann_type velocity_ann_input[NUM_VELOCITY_ANN_INPUTS];
 
 	double atan_current_curvature;
-	double v;
+	double current_velocity;
 	double understeer_coeficient;
 	double distance_rear_axles;
-	double dk;
+	double dk;												// Disturbance error, to compensate for changes not modeled
 	double previous_k1;
 
-	double velocity_error; 									// dk of velocity control
+	double velocity_error_dk; 									// dk of velocity control
 	double previous_velocity_k1; 							// previous velocity effort to compute velocity_error (dk)
 
 	double time_elapsed_since_last_motion_command; 			// Time of velodyne message, the trajectory is planned at this time, the elapsed time must be discounted of the trajectory
@@ -76,6 +80,15 @@ typedef struct
 	get_vector_from_spline get_vector_function;				// Pointer to function that will be used to extract the vector of the spline
 
 } PARAMS;
+
+
+vector<double> get_effort_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors);
+
+
+void plot_velocity(EFFORT_SPLINE_DESCRIPTOR *descriptors, double current_velocity, PARAMS *params);
+
+
+void plot_phi(EFFORT_SPLINE_DESCRIPTOR *descriptors, double current_phi, PARAMS *params);
 
 
 #endif // MPC_H

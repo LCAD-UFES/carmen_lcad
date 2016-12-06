@@ -2,13 +2,12 @@
 #include "../control.h"
 
 
-using namespace std;
-
-
 //FILE *gnuplot_save;
 FILE *gnuplot_save_total;
-bool save_and_plot = false;
+bool save_plot = false;
 bool plot = false;
+bool print = false;
+bool use_velocity = true;
 
 
 double
@@ -103,7 +102,7 @@ get_velocity_supersampling_motion_commands_vector(PARAMS *params, unsigned int s
 double
 car_model(double steering_effort, double atan_current_curvature, double v, fann_type *steering_ann_input, PARAMS *params)
 {
-//	steering_effort *= (1.0 / (1.0 + (params->v * params->v) / CAR_MODEL_GAIN)); // boa
+//	steering_effort *= (1.0 / (1.0 + (params->current_velocity * params->current_velocity) / CAR_MODEL_GAIN)); // boa
 	steering_effort = carmen_clamp(-100.0, steering_effort, 100.0);
 
 	double phi = carmen_libcarneuralmodel_compute_new_phi_from_effort(steering_effort, atan_current_curvature, steering_ann_input,
@@ -128,21 +127,21 @@ get_phi_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, PA
 
 	for (unsigned int i = 0; i < effort_vector.size(); i++)
 	{
-//		double phi = car_model(effort_vector[i], atan_current_curvature, params->v, steering_ann_input, params);
+//		double phi = car_model(effort_vector[i], atan_current_curvature, params->current_velocity, steering_ann_input, params);
 		double phi = car_model(effort_vector[i], atan_current_curvature, velocity_vector[i], steering_ann_input, params);
 //		phi = phi + params->dk;
 
 //		phi_vector.push_back(phi);
 		phi_vector.push_back(phi + params->dk);
 
-		atan_current_curvature = carmen_get_curvature_from_phi(phi, params->v, params->understeer_coeficient, params->distance_rear_axles);
+		atan_current_curvature = carmen_get_curvature_from_phi(phi, params->current_velocity, params->understeer_coeficient, params->distance_rear_axles);
 	}
 	return (phi_vector);
 }
 
 
 vector<double>
-get_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, void *params_ptr)
+get_vector_from_spline_descriptors_old(EFFORT_SPLINE_DESCRIPTOR *descriptors, void *params_ptr)
 {
 	PARAMS *params = (PARAMS *) params_ptr;
 
@@ -151,22 +150,142 @@ get_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, void *
 
 	vector<double> effort_vector = get_effort_vector_from_spline_descriptors(descriptors);
 	vector<double> velocity_vector = get_velocity_supersampling_motion_commands_vector(params, effort_vector.size());
-	vector<double> phi_vector;
+
+	params->optimized_path.phi.clear();
+
 	double atan_current_curvature = params->atan_current_curvature;
 
 	for (unsigned int i = 0; i < effort_vector.size(); i++)
 	{
-		//		double phi = car_model(effort_vector[i], atan_current_curvature, params->v, steering_ann_input, params);
+		//		double phi = car_model(effort_vector[i], atan_current_curvature, params->current_velocity, steering_ann_input, params);
 		double phi = car_model(effort_vector[i], atan_current_curvature, velocity_vector[i], steering_ann_input, params);
 		//		phi = phi + params->dk;
 
 		//		phi_vector.push_back(phi);
-		phi_vector.push_back(phi + params->dk);
+		params->optimized_path.phi.push_back(phi + params->dk);
 
-		atan_current_curvature = carmen_get_curvature_from_phi(phi, params->v, params->understeer_coeficient, params->distance_rear_axles);
+		atan_current_curvature = carmen_get_curvature_from_phi(phi, params->current_velocity, params->understeer_coeficient, params->distance_rear_axles);
 	}
-	return (phi_vector);
+
+	return (params->optimized_path.phi);
 }
+
+
+double
+get_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, void *params_ptr)
+{
+	PARAMS *params = (PARAMS *) params_ptr;
+
+	double phi, phi_eror_sum = 0.0;
+
+	fann_type steering_ann_input[NUM_STEERING_ANN_INPUTS];
+	memcpy(steering_ann_input, params->steering_ann_input, NUM_STEERING_ANN_INPUTS * sizeof(fann_type));
+
+	vector<double> effort_vector = get_effort_vector_from_spline_descriptors(descriptors);
+
+	params->optimized_path.phi.clear();
+
+	double atan_current_curvature = params->atan_current_curvature;
+
+	for (unsigned int i = 0; i < effort_vector.size(); i++)
+	{
+		phi = car_model(effort_vector[i], atan_current_curvature, params->path.v[i], steering_ann_input, params);
+
+		phi = phi + params->dk;
+
+		phi_eror_sum += fabs(params->path.phi[i] - phi);
+
+		params->optimized_path.phi.push_back(phi);
+
+		atan_current_curvature = carmen_get_curvature_from_phi(phi, params->current_velocity, params->understeer_coeficient, params->distance_rear_axles);
+	}
+
+	return (phi_eror_sum);
+}
+
+
+double
+get_velocity_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, void *params_ptr)
+{
+	PARAMS *params = (PARAMS *) params_ptr;
+
+	double velocity, throttle_effort, brake_effort, velocity_eror_sum=0.0, current_velocity = params->current_velocity;
+
+	fann_type velocity_ann_input[NUM_VELOCITY_ANN_INPUTS];
+	memcpy(velocity_ann_input, params->velocity_ann_input, NUM_VELOCITY_ANN_INPUTS * sizeof(fann_type));
+
+	vector<double> effort_vector = get_effort_vector_from_spline_descriptors(descriptors);
+
+	params->optimized_path.v.clear();
+
+	for (unsigned int i = 0; i < effort_vector.size(); i++)
+	{
+		if (effort_vector[i] >= 0.0)        // If the effort is greater than 0, the car must accelerate, else it must breaks
+		{
+			throttle_effort = effort_vector[i];
+			brake_effort = 17.0;
+		}
+		else
+		{
+			throttle_effort = 0.0;
+			brake_effort = effort_vector[i];
+		}
+		velocity = carmen_libcarneuralmodel_compute_new_velocity_from_efforts(velocity_ann_input, params->velocity_ann, throttle_effort, brake_effort, current_velocity);
+
+		//printf("D %lf P %lf\n", params->path.v[i], velocity);
+		velocity_eror_sum += fabs(params->path.v[i] - velocity);
+
+		params->optimized_path.v.push_back(velocity);
+
+		current_velocity = velocity;
+	}
+
+	//printf("SAIU\n");
+	return (velocity_eror_sum);
+}
+
+
+//double
+//my_f_old(const gsl_vector *v, void *params_ptr)
+//{
+//	EFFORT_SPLINE_DESCRIPTOR d;
+//	PARAMS *params = (PARAMS *) params_ptr;
+//
+//	double delta_t = DELTA_T;
+//	double phi_vector_time = 0.0;
+//	double error = 0.0;
+//	double error_sum = 0.0;
+//
+//	d.k1 = gsl_vector_get(v, 0);
+//	d.k2 = gsl_vector_get(v, 1);
+//	d.k3 = gsl_vector_get(v, 2);
+//	d.k4 = gsl_vector_get(v, 3);
+//
+//	// This vector may contain velocity values or phi values depending on what is been optimized
+//	vector<double> vector = params->get_vector_function(&d, params);
+//
+//	unsigned int j = get_motion_timed_index_to_motion_command(params);
+//	double motion_commands_vector_time = params->motion_commands_vector[j].time;
+//
+//	for (unsigned int i = 0; i < vector.size(); i++)
+//	{
+//		error = vector[i] - params->motion_commands_vector[j].phi;
+//		error_sum += fabs(error);
+//
+//		phi_vector_time += delta_t;
+//		if (phi_vector_time > motion_commands_vector_time)
+//		{
+//			j++;
+//			if (j >= params->motion_commands_vector_size)
+//				break;
+//			motion_commands_vector_time += params->motion_commands_vector[j].time;
+//		}
+//	}
+//
+//	double cost = error_sum;// + 0.00011 * sqrt((params->previous_k1 - d.k1) * (params->previous_k1 - d.k1));
+//
+//	return (cost);
+//}
 
 
 double
@@ -175,36 +294,13 @@ my_f(const gsl_vector *v, void *params_ptr)
 	EFFORT_SPLINE_DESCRIPTOR d;
 	PARAMS *params = (PARAMS *) params_ptr;
 
-	double delta_t = DELTA_T;
-	double phi_vector_time = 0.0;
-	double error = 0.0;
-	double error_sum = 0.0;
-
 	d.k1 = gsl_vector_get(v, 0);
 	d.k2 = gsl_vector_get(v, 1);
 	d.k3 = gsl_vector_get(v, 2);
 	d.k4 = gsl_vector_get(v, 3);
 
-	//vector<double> phi_vector = get_phi_vector_from_spline_descriptors(&d, params);
-	vector<double> phi_vector = params->get_vector_function(&d, params);
-
-	unsigned int j = get_motion_timed_index_to_motion_command(params);
-	double motion_commands_vector_time = params->motion_commands_vector[j].time;
-
-	for (unsigned int i = 0; i < phi_vector.size(); i++)
-	{
-		error = phi_vector[i] - params->motion_commands_vector[j].phi;
-		error_sum += fabs(error);
-
-		phi_vector_time += delta_t;
-		if (phi_vector_time > motion_commands_vector_time)
-		{
-			j++;
-			if (j >= params->motion_commands_vector_size)
-				break;
-			motion_commands_vector_time += params->motion_commands_vector[j].time;
-		}
-	}
+	// This vector may contain velocity values or phi values depending on what is been optimized
+	double error_sum = params->get_vector_function(&d, params);
 
 	double cost = error_sum;// + 0.00011 * sqrt((params->previous_k1 - d.k1) * (params->previous_k1 - d.k1));
 
@@ -273,7 +369,7 @@ my_fdf(const gsl_vector *x, void *params, double *f, gsl_vector *df)
 
 
 EFFORT_SPLINE_DESCRIPTOR
-get_optimized_effort(PARAMS *params, EFFORT_SPLINE_DESCRIPTOR descriptors, vector<double> (*function)(EFFORT_SPLINE_DESCRIPTOR *, void *))
+get_optimized_effort(PARAMS *params, EFFORT_SPLINE_DESCRIPTOR descriptors, double (*function)(EFFORT_SPLINE_DESCRIPTOR *, void *))
 {
 	params->get_vector_function = function;
 
@@ -321,116 +417,6 @@ get_optimized_effort(PARAMS *params, EFFORT_SPLINE_DESCRIPTOR descriptors, vecto
 	gsl_vector_free(x);
 
 	return (descriptors);
-}
-
-
-void
-plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *params, double v, double understeer_coeficient, double distance_between_front_and_rear_axles, double effort)
-{
-	#define PAST_SIZE 300
-	static list<double> cphi_vector;
-	static list<double> dphi_vector;
-	static list<double> timestamp_vector;
-	static list<double> effort_vector;
-	static bool first_time = true;
-	static double first_timestamp;
-	static FILE *gnuplot_pipe;
-
-	double t = carmen_get_time();
-
-	if (first_time)
-	{
-		first_timestamp = t;
-		first_time = false;
-
-		gnuplot_pipe = popen("gnuplot", "w"); // -persist to keep last plot after program closes
-		fprintf(gnuplot_pipe, "set xrange [0:PAST_SIZE/20]\n");
-		fprintf(gnuplot_pipe, "set yrange [-110.0:110.0]\n");
-		fprintf(gnuplot_pipe, "set y2range [-0.55:0.55]\n");
-		fprintf(gnuplot_pipe, "set xlabel 'senconds'\n");
-		fprintf(gnuplot_pipe, "set ylabel 'effort'\n");
-		fprintf(gnuplot_pipe, "set y2label 'phi (radians)'\n");
-		fprintf(gnuplot_pipe, "set ytics nomirror\n");
-		fprintf(gnuplot_pipe, "set y2tics\n");
-		fprintf(gnuplot_pipe, "set tics out\n");
-	}
-
-	unsigned int timed_index_to_motion_command = get_motion_timed_index_to_motion_command(params);
-	dphi_vector.push_front(params->motion_commands_vector[timed_index_to_motion_command].phi);
-	cphi_vector.push_front(carmen_get_phi_from_curvature(params->atan_current_curvature, v, understeer_coeficient, distance_between_front_and_rear_axles));
-	timestamp_vector.push_front(t - first_timestamp);
-	effort_vector.push_front(effort);
-
-	if (save_and_plot)
-			fprintf(gnuplot_save_total, "%lf %lf %lf %lf %lf\n", timestamp_vector.front(), cphi_vector.front(), dphi_vector.front(), effort_vector.front()/200, params->v);
-
-	while (cphi_vector.size() > PAST_SIZE)
-	{
-		cphi_vector.pop_back();
-		dphi_vector.pop_back();
-		timestamp_vector.pop_back();
-		effort_vector.pop_back();
-	}
-
-	FILE *gnuplot_data_file = fopen("gnuplot_data.txt", "w");
-
-	// Dados passados
-	list<double>::reverse_iterator it_cphi, it_dphi, it_timestamp, it_effort;
-	for (it_cphi = cphi_vector.rbegin(), it_dphi = dphi_vector.rbegin(), it_timestamp = timestamp_vector.rbegin(), it_effort = effort_vector.rbegin();
-		 it_cphi != cphi_vector.rend();
-		 it_cphi++, it_dphi++, it_timestamp++, it_effort++)
-	{
-		fprintf(gnuplot_data_file, "%lf %lf %lf %lf %d %d\n", *it_timestamp - timestamp_vector.back(), *it_cphi, *it_dphi, *it_effort, 1, 2); //1-red 2-green 3-blue 4-magenta 5-lightblue 6-yellow 7-black 8-orange 9-grey
-		//if (save_and_plot)
-				//fprintf(gnuplot_save, "%lf %lf %lf %lf %d %d\n", *it_timestamp - timestamp_vector.back(), *it_cphi, *it_dphi, 	*it_effort, 1, 2);
-	}
-	// Dados futuros
-	vector<double> phi_vector = get_phi_vector_from_spline_descriptors(seed, params);
-	vector<double> future_effort_vector = get_effort_vector_from_spline_descriptors(seed);
-
-	double delta_t = DELTA_T;
-	double phi_vector_time = 0.0;
-	double begin_predition_time = timestamp_vector.front() - timestamp_vector.back();
-
-	double motion_commands_vector_time = params->motion_commands_vector[timed_index_to_motion_command].time;
-	for (unsigned int i = 0; i < phi_vector.size(); i++)
-	{
-		phi_vector_time += delta_t;
-
-		if (save_and_plot)
-				//fprintf(gnuplot_save, "%lf %lf %lf %lf %d %d\n", begin_predition_time + phi_vector_time, phi_vector[i], params->motion_commands_vector[timed_index_to_motion_command].phi, future_effort_vector[i], 8, 2);
-
-		fprintf(gnuplot_data_file, "%lf %lf %lf %lf %d %d\n",
-				begin_predition_time + phi_vector_time, phi_vector[i], params->motion_commands_vector[timed_index_to_motion_command].phi,
-				future_effort_vector[i], 8, 2);
-
-		if (phi_vector_time > motion_commands_vector_time)
-		{
-			timed_index_to_motion_command++;
-			if (timed_index_to_motion_command >= params->motion_commands_vector_size)
-				break;
-			motion_commands_vector_time += params->motion_commands_vector[timed_index_to_motion_command].time;
-		}
-	}
-
-//	double time = begin_predition_time + motion_commands_vector_time;
-//	for (; timed_index_to_motion_command < params->motion_commands_vector_size; timed_index_to_motion_command++)
-//	{
-//		begin_predition_time += params->motion_commands_vector[timed_index_to_motion_command].time;
-//		//if (save_and_plot)
-//			//fprintf(gnuplot_save, "%lf %lf %lf %lf %d %d\n", time, 0.0, params->motion_commands_vector[timed_index_to_motion_command].phi, 0.0, 8, 2);
-//
-//	}
-	fclose(gnuplot_data_file);
-
-	fprintf(gnuplot_pipe, "unset arrow\nset arrow from %lf, %lf to %lf, %lf nohead\n", begin_predition_time, -60.0, begin_predition_time, 60.0);
-
-	fprintf(gnuplot_pipe, "plot "
-			"'./gnuplot_data.txt' using 1:2:5 with lines linecolor variable title 'cphi' axes x1y2,"
-			"'./gnuplot_data.txt' using 1:3:6 with lines linecolor variable title 'dphi' axes x1y2,"
-			"'./gnuplot_data.txt' using 1:4 with lines title 'effort' axes x1y1\n");
-
-	fflush(gnuplot_pipe);
 }
 
 
@@ -593,8 +579,119 @@ stiction_correction(double current_phi, double desired_phi, double effort, doubl
 }
 
 
+void
+plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *params, double v, double understeer_coeficient, double distance_between_front_and_rear_axles, double effort)
+{
+	#define PAST_SIZE 300
+	static list<double> cphi_vector;
+	static list<double> dphi_vector;
+	static list<double> timestamp_vector;
+	static list<double> effort_vector;
+	static bool first_time = true;
+	static double first_timestamp;
+	static FILE *gnuplot_pipe;
+
+	double t = carmen_get_time();
+
+	if (first_time)
+	{
+		first_timestamp = t;
+		first_time = false;
+
+		gnuplot_pipe = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+		fprintf(gnuplot_pipe, "set xrange [0:PAST_SIZE/20]\n");
+		fprintf(gnuplot_pipe, "set yrange [-110.0:110.0]\n");
+		fprintf(gnuplot_pipe, "set y2range [-0.55:0.55]\n");
+		fprintf(gnuplot_pipe, "set xlabel 'senconds'\n");
+		fprintf(gnuplot_pipe, "set ylabel 'effort'\n");
+		fprintf(gnuplot_pipe, "set y2label 'phi (radians)'\n");
+		fprintf(gnuplot_pipe, "set ytics nomirror\n");
+		fprintf(gnuplot_pipe, "set y2tics\n");
+		fprintf(gnuplot_pipe, "set tics out\n");
+	}
+
+	unsigned int timed_index_to_motion_command = get_motion_timed_index_to_motion_command(params);
+	dphi_vector.push_front(params->motion_commands_vector[timed_index_to_motion_command].phi);
+	cphi_vector.push_front(carmen_get_phi_from_curvature(params->atan_current_curvature, v, understeer_coeficient, distance_between_front_and_rear_axles));
+	timestamp_vector.push_front(t - first_timestamp);
+	effort_vector.push_front(effort);
+
+	if (save_plot)
+			fprintf(gnuplot_save_total, "%lf %lf %lf %lf %lf\n", timestamp_vector.front(), cphi_vector.front(), dphi_vector.front(), effort_vector.front()/200, params->current_velocity);
+
+	while (cphi_vector.size() > PAST_SIZE)
+	{
+		cphi_vector.pop_back();
+		dphi_vector.pop_back();
+		timestamp_vector.pop_back();
+		effort_vector.pop_back();
+	}
+
+	FILE *gnuplot_data_file = fopen("gnuplot_data.txt", "w");
+
+	// Dados passados
+	list<double>::reverse_iterator it_cphi, it_dphi, it_timestamp, it_effort;
+	for (it_cphi = cphi_vector.rbegin(), it_dphi = dphi_vector.rbegin(), it_timestamp = timestamp_vector.rbegin(), it_effort = effort_vector.rbegin();
+		 it_cphi != cphi_vector.rend();
+		 it_cphi++, it_dphi++, it_timestamp++, it_effort++)
+	{
+		fprintf(gnuplot_data_file, "%lf %lf %lf %lf %d %d\n", *it_timestamp - timestamp_vector.back(), *it_cphi, *it_dphi, *it_effort, 1, 2); //1-red 2-green 3-blue 4-magenta 5-lightblue 6-yellow 7-black 8-orange 9-grey
+		//if (save_plot)
+				//fprintf(gnuplot_save, "%lf %lf %lf %lf %d %d\n", *it_timestamp - timestamp_vector.back(), *it_cphi, *it_dphi, 	*it_effort, 1, 2);
+	}
+	// Dados futuros
+	vector<double> phi_vector = get_phi_vector_from_spline_descriptors(seed, params);
+	vector<double> future_effort_vector = get_effort_vector_from_spline_descriptors(seed);
+
+	double delta_t = DELTA_T;
+	double phi_vector_time = 0.0;
+	double begin_predition_time = timestamp_vector.front() - timestamp_vector.back();
+
+	double motion_commands_vector_time = params->motion_commands_vector[timed_index_to_motion_command].time;
+	for (unsigned int i = 0; i < phi_vector.size(); i++)
+	{
+		phi_vector_time += delta_t;
+
+		//if (save_plot)
+				//fprintf(gnuplot_save, "%lf %lf %lf %lf %d %d\n", begin_predition_time + phi_vector_time, phi_vector[i], params->motion_commands_vector[timed_index_to_motion_command].phi, future_effort_vector[i], 8, 2);
+
+		fprintf(gnuplot_data_file, "%lf %lf %lf %lf %d %d\n",
+				begin_predition_time + phi_vector_time, phi_vector[i], params->motion_commands_vector[timed_index_to_motion_command].phi,
+				future_effort_vector[i], 8, 2);
+
+		if (phi_vector_time > motion_commands_vector_time)
+		{
+			timed_index_to_motion_command++;
+			if (timed_index_to_motion_command >= params->motion_commands_vector_size)
+				break;
+			motion_commands_vector_time += params->motion_commands_vector[timed_index_to_motion_command].time;
+		}
+	}
+
+//	double time = begin_predition_time + motion_commands_vector_time;
+//	for (; timed_index_to_motion_command < params->motion_commands_vector_size; timed_index_to_motion_command++)
+//	{
+//		begin_predition_time += params->motion_commands_vector[timed_index_to_motion_command].time;
+//		//if (save_plot)
+//			//fprintf(gnuplot_save, "%lf %lf %lf %lf %d %d\n", time, 0.0, params->motion_commands_vector[timed_index_to_motion_command].phi, 0.0, 8, 2);
+//
+//	}
+	fclose(gnuplot_data_file);
+
+	//fprintf(gnuplot_pipe, "unset arrow\nset arrow from %lf, %lf to %lf, %lf nohead\n", begin_predition_time, -60.0, begin_predition_time, 60.0);
+	fprintf(gnuplot_pipe, "unset arrow\nset arrow from %lf, graph 0 to %lf, graph 1 nohead\n", begin_predition_time, begin_predition_time);
+
+	fprintf(gnuplot_pipe, "plot "
+			"'./gnuplot_data.txt' using 1:2:5 with lines linecolor variable title 'cphi' axes x1y2,"
+			"'./gnuplot_data.txt' using 1:3:6 with lines linecolor variable title 'dphi' axes x1y2,"
+			"'./gnuplot_data.txt' using 1:4 with lines title 'effort' axes x1y1\n");
+
+	fflush(gnuplot_pipe);
+}
+
+
 double
-get_point_between_points_aproximating_with_line(double x1, double y1, double x2, double y2, double x_middle)
+get_point_aproximating_by_line(double x1, double y1, double x2, double y2, double x_middle)
 {
 	// Line Equation a = yA - yB, b = xB - xA, c = xAyB - xByA
 	double a = y1 - y2;
@@ -617,19 +714,19 @@ get_motion_commands_vector(carmen_ackerman_motion_command_p current_motion_comma
 	double time_interval = 0.0;
 	double total_time = 0.0;
 
-	while ((sum_of_motion_commands_vector_time	< elapsed_time) && (j < nun_motion_commands)) // TODO Tratar se sair por j <nun_motion_commands
+	while ((sum_of_motion_commands_vector_time < elapsed_time) && (j < nun_motion_commands)) // TODO Tratar se sair por j <nun_motion_commands
 	{
-		j++;
 		sum_of_motion_commands_vector_time += current_motion_command_vector[j].time;
+		j++;
 	}
 	sum_of_motion_commands_vector_time -= current_motion_command_vector[j].time;
 	current_motion_command_vector[j].time -= (elapsed_time - sum_of_motion_commands_vector_time);
 
 	while (total_time < PREDICTION_HORIZON)
 	{
-		commands.v.push_back(get_point_between_points_aproximating_with_line(0.0, current_motion_command_vector[j].v, current_motion_command_vector[j].time, current_motion_command_vector[j+1].v, time_interval));
-		commands.phi.push_back(get_point_between_points_aproximating_with_line(0.0, current_motion_command_vector[j].phi, current_motion_command_vector[j].time, current_motion_command_vector[j+1].phi, time_interval));
-		commands.time.push_back(DELTA_T);
+		commands.v.push_back(get_point_aproximating_by_line(0.0, current_motion_command_vector[j].v, current_motion_command_vector[j].time, current_motion_command_vector[j+1].v, time_interval));
+		commands.phi.push_back(get_point_aproximating_by_line(0.0, current_motion_command_vector[j].phi, current_motion_command_vector[j].time, current_motion_command_vector[j+1].phi, time_interval));
+		//commands.time.push_back(DELTA_T);
 
 		time_interval += DELTA_T;
 		total_time += DELTA_T;
@@ -643,12 +740,13 @@ get_motion_commands_vector(carmen_ackerman_motion_command_p current_motion_comma
 		}
 	}
 
-	for (j = 0, sum_of_motion_commands_vector_time = 0.0; (unsigned)j < commands.v.size(); j++)
-	{
-		sum_of_motion_commands_vector_time += commands.time[j];
-		printf("%lf %lf %lf\n", sum_of_motion_commands_vector_time, commands.phi[j], commands.v[j]);
-	}
-	printf("\n\n");
+//	for (j = 0, sum_of_motion_commands_vector_time = 0.0; (unsigned)j < commands.v.size(); j++)
+//	{
+//		sum_of_motion_commands_vector_time += DELTA_T;
+//		printf("------%lf %lf %lf\n", sum_of_motion_commands_vector_time, commands.phi[j], commands.v[j]);
+//	}
+//	printf("\n\n");
+
 	return commands;
 }
 
@@ -662,6 +760,14 @@ init_mpc(bool &first_time, PARAMS &params, EFFORT_SPLINE_DESCRIPTOR &seed, doubl
 {
 	if (first_time)
 	{
+		params.velocity_ann = fann_create_from_file("velocity_ann.net");
+		if (params.velocity_ann == NULL)
+		{
+			printf("Error: Could not create velocity_ann\n");
+			exit(1);
+		}
+		carmen_libcarneuralmodel_init_velocity_ann_input(params.velocity_ann_input);
+
 		params.steering_ann = fann_create_from_file("steering_ann.net");
 		if (params.steering_ann == NULL)
 		{
@@ -669,16 +775,18 @@ init_mpc(bool &first_time, PARAMS &params, EFFORT_SPLINE_DESCRIPTOR &seed, doubl
 			exit(1);
 		}
 		carmen_libcarneuralmodel_init_steering_ann_input(params.steering_ann_input);
+
 		params.dk = 0.0;
 		params.previous_k1 = 0.0;
 		first_time = false;
 
-		if (save_and_plot)
+		if (save_plot)
 			open_file_to_save_plot(true);
 	}
 
 	if (current_motion_command_vector == NULL)
 	{
+		printf("NULL\n");
 		seed = {0.0, 0.0, 0.0, 0.0};
 
 		return (false);
@@ -686,6 +794,7 @@ init_mpc(bool &first_time, PARAMS &params, EFFORT_SPLINE_DESCRIPTOR &seed, doubl
 
 	if (initialize_neural_networks)
 	{
+		printf("INITIALIZE\n");
 		carmen_libcarneuralmodel_init_steering_ann_input(params.steering_ann_input);
 		seed = {0.0, 0.0, 0.0, 0.0};
 	}
@@ -693,7 +802,7 @@ init_mpc(bool &first_time, PARAMS &params, EFFORT_SPLINE_DESCRIPTOR &seed, doubl
 	params.motion_commands_vector = current_motion_command_vector;
 	params.motion_commands_vector_size = nun_motion_commands;
 	params.atan_current_curvature = atan_current_curvature;
-	params.v = v;
+	params.current_velocity = v;
 	params.understeer_coeficient = robot_config->understeer_coeficient;
 	params.distance_rear_axles = robot_config->distance_between_front_and_rear_axles;
 	params.max_phi = robot_config->max_phi;
@@ -710,21 +819,43 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 		carmen_robot_ackerman_config_t *robot_config,
 		int initialize_neural_networks)
 {
+	if (current_motion_command_vector == NULL || nun_motion_commands < 16)
+		return 0.0;
+
 	static PARAMS params;
 	static EFFORT_SPLINE_DESCRIPTOR seed = {0.0, 0.0, 0.0, 0.0};
+	static EFFORT_SPLINE_DESCRIPTOR velocity_descriptors = {0.0, 0.0, 0.0, 0.0};
 	static bool first_time = true;
+	double throttle_effort, brake_effort, velocity, Cxk;
 
 	if (!init_mpc(first_time, params, seed, atan_current_curvature, current_motion_command_vector, nun_motion_commands, v, time_of_last_motion_command,
 					robot_config, initialize_neural_networks))
 		return (0.0);
 
-	//get_motion_commands_vector(current_motion_command_vector, nun_motion_commands, time_of_last_motion_command);
+	printf("Vel_IT ");
+	params.path = get_motion_commands_vector(current_motion_command_vector, nun_motion_commands, time_of_last_motion_command);
+	//velocity_descriptors = get_optimized_effort(&params, velocity_descriptors, get_velocity_vector_from_spline_descriptors);
 
+	//seed = get_optimized_effort(&params, seed, get_vector_from_spline_descriptors_old); // TODO essa funcao vai aqui ou depois do car_model???
 	seed = get_optimized_effort(&params, seed, get_vector_from_spline_descriptors); // TODO essa funcao vai aqui ou depois do car_model???
 	double effort = seed.k1;
 
+	if(velocity_descriptors.k1 >= 0.0)
+	{
+		throttle_effort = velocity_descriptors.k1;
+		brake_effort = 17.0;
+	}
+	else
+	{
+		throttle_effort = 0.0;
+		brake_effort = velocity_descriptors.k1;
+	}
+
+	velocity = carmen_libcarneuralmodel_compute_new_velocity_from_efforts(params.velocity_ann_input, params.velocity_ann, throttle_effort, brake_effort, v);
+	params.velocity_error_dk = v - velocity;
+
 	// Calcula o dk do proximo ciclo
-	double Cxk = car_model(effort, atan_current_curvature, params.v, params.steering_ann_input, &params);
+	Cxk = car_model(effort, atan_current_curvature, params.current_velocity, params.steering_ann_input, &params);
 	params.dk = yp - Cxk;
 	params.previous_k1 = effort;
 
@@ -740,13 +871,88 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 	//seed = get_optimized_effort(&params, seed, get_vector_from_spline_descriptors);
 
 
-	if (save_and_plot)
+	if (plot)
 	{
-		open_file_to_save_plot(false);
-		plot_state(&seed, &params, v, robot_config->understeer_coeficient, robot_config->distance_between_front_and_rear_axles, effort);
+		//open_file_to_save_plot(false);
+		//plot_state(&seed, &params, v, robot_config->understeer_coeficient, robot_config->distance_between_front_and_rear_axles, effort);
+		//plot_phi(&seed, carmen_get_phi_from_curvature(params.atan_current_curvature, v, params.understeer_coeficient, params.distance_rear_axles), &params);
+		//plot_velocity(&velocity_descriptors, v, &params);
 		//fclose(gnuplot_save);
 	}
 
 	carmen_clamp(-100.0, effort, 100.0);
 	return (effort);
 }
+
+
+/*double
+carmen_libmpc_compute_efforts(double *throttle_effort, double *brake_effort, double *steering_effort, double atan_current_curvature,
+		carmen_ackerman_motion_command_p current_motion_command_vector,	int nun_motion_commands,
+		double v, double yp, double time_of_last_motion_command,
+		carmen_robot_ackerman_config_t *robot_config,
+		int initialize_neural_networks)
+{
+	if (current_motion_command_vector == NULL || nun_motion_commands < 16)
+		return 0.0;
+
+	static PARAMS params;
+	static EFFORT_SPLINE_DESCRIPTOR seed = {0.0, 0.0, 0.0, 0.0};
+	static EFFORT_SPLINE_DESCRIPTOR velocity_descriptors = {0.0, 0.0, 0.0, 0.0};
+	static bool first_time = true;
+	double throttle_effort, brake_effort, velocity, Cxk;
+
+	if (!init_mpc(first_time, params, seed, atan_current_curvature, current_motion_command_vector, nun_motion_commands, v, time_of_last_motion_command,
+					robot_config, initialize_neural_networks))
+		return (0.0);
+
+	params.path = get_motion_commands_vector(current_motion_command_vector, nun_motion_commands, time_of_last_motion_command);
+	velocity_descriptors = get_optimized_effort(&params, velocity_descriptors, get_velocity_vector_from_spline_descriptors);
+
+//	printf("%lf %lf %lf %lf\n", velocity_descriptors.k1, velocity_descriptors.k2, velocity_descriptors.k3, velocity_descriptors.k4);
+
+	//seed = get_optimized_effort(&params, seed, get_vector_from_spline_descriptors_old); // TODO essa funcao vai aqui ou depois do car_model???
+	seed = get_optimized_effort(&params, seed, get_vector_from_spline_descriptors); // TODO essa funcao vai aqui ou depois do car_model???
+	double effort = seed.k1;
+
+	if(velocity_descriptors.k1 >= 0.0)
+	{
+		throttle_effort = velocity_descriptors.k1;
+		brake_effort = 0.0;
+	}
+	else
+	{
+		throttle_effort = 0.0;
+		brake_effort = velocity_descriptors.k1;
+	}
+
+	velocity = carmen_libcarneuralmodel_compute_new_velocity_from_efforts(params.velocity_ann_input, params.velocity_ann, throttle_effort, brake_effort, v);
+
+	// Calcula o dk do proximo ciclo
+	Cxk = car_model(effort, atan_current_curvature, params.current_velocity, params.steering_ann_input, &params);
+	params.dk = yp - Cxk;
+	params.previous_k1 = effort;
+
+	//--------	Tentativa de correcao da oscilacao em velocidades altas  -------------------------------------------------
+	// effort /= (1.0 / (1.0 + (v * v) / 200.5)); // boa
+	//effort += carmen_uniform_random(-2.0, 2.0);
+
+	//int index = get_motion_timed_index_to_motion_command(&params);
+	//effort += stiction_correction(yp, current_motion_command_vector[index].phi, effort, v);
+	//--------------------------------------------------------------------------------------------------------------------
+
+
+	//seed = get_optimized_effort(&params, seed, get_vector_from_spline_descriptors);
+
+
+	if (plot)
+	{
+		//open_file_to_save_plot(false);
+		//plot_state(&seed, &params, v, robot_config->understeer_coeficient, robot_config->distance_between_front_and_rear_axles, effort);
+		//plot_phi(&seed, carmen_get_phi_from_curvature(params.atan_current_curvature, v, params.understeer_coeficient, params.distance_rear_axles), &params);
+		plot_velocity(&velocity_descriptors, v, &params);
+		//fclose(gnuplot_save);
+	}
+
+	carmen_clamp(-100.0, effort, 100.0);
+	return (effort);
+}*/
