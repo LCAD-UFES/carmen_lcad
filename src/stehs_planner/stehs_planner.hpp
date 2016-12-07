@@ -31,7 +31,7 @@
 #define DELTA_T 0.01                // Size of step for the ackerman Euler method
 #define ALFA 1                		// Weight of nearest circle radius for step_size
 #define BETA 1               		// Weight of nearest circle path distance to goal for step_size
-#define MIN_STEP_SIZE 0.5			// step size in seconds
+#define MAX_STEP_SIZE 2.0			// max step size in seconds
 #define KMIN 0.0125 				// Step rate multiplier
 #define MIN_THETA_DIFF 0.24			// 15 degree
 
@@ -117,8 +117,11 @@ public:
 
     unsigned char* GetCurrentMap();
 
-    void ShowCirclePath(std::vector<StateNodePtr> &state_node);
+    cv::Mat ShowCirclePath(std::vector<StateNodePtr> &state_node);
+
     void ShowCirclePath();
+
+    cv::Mat ShowState(StateNodePtr &state_node, cv::Mat img);
 
     double TimeHeuristic(State s);
 

@@ -79,6 +79,7 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 
 	if(stehs_planner.lane_ready && stehs_planner.distance_map_ready && stehs_planner.goal_ready)
 	{
+		stehs_planner.lane_ready = stehs_planner.distance_map_ready = stehs_planner.goal_ready = false;
 		double time = carmen_get_time();
 		//stehs_planner.RDDFSpaceExploration();
 		stehs_planner.GeneratePath();
