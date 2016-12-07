@@ -10,6 +10,7 @@
 /* OpenCV Includes */
 #include<opencv/cv.h>
 #include<omp.h>
+#include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
 #define RED_OBSTACLES_DISTANCE  10.0
