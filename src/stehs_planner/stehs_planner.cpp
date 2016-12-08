@@ -410,37 +410,68 @@ StehsPlanner::RDDFSpaceExploration()
 }
 
 
-// TODO Isso ta certo?????
-double
-StehsPlanner::TimeHeuristic(State s) // TODO Optimize this linear search verifying only the next, current and previous circles
+std::list<CircleNode>::iterator
+StehsPlanner::FindNearestCircle(const State &state)
 {
-    std::list<CircleNode>::iterator it = circle_path.begin();
-    std::list<CircleNode>::iterator end = circle_path.end();
+	std::list<CircleNode>::iterator it = circle_path.begin();
+	std::list<CircleNode>::iterator end = circle_path.end();
 
-    double circle_distance = DBL_MAX;
-    double current_distance;
-    double goal_distance = DBL_MAX;
+	double min_distance = DBL_MAX;
+	double current_distance;
 
-    for (; it != end; it++)
-    {
-        current_distance = Distance(s.x, s.y, it->circle.x, it->circle.y);
+	for (; it != end; it++)
+	{
+		current_distance = Distance(state.x, state.y, it->circle.x, it->circle.y);
 
-        if (current_distance < circle_distance)
-        {
-            circle_distance = current_distance;
-            goal_distance = it->f;
-        }
-    }
-
-    if (s.v == 0)
-        return (DBL_MAX);
-    else
-        return ((circle_distance + goal_distance) / fabs(s.v));
+		if (current_distance < min_distance)
+		{
+			min_distance = current_distance;
+		}
+		else
+		{
+			it--;
+			break;
+		}
+	}
+	return it;
 }
 
 
 double
-StehsPlanner::DistanceHeuristic(State state) // TODO Optimize this linear search verifying only the next, current and previous circles
+StehsPlanner::TimeHeuristic(const State &state)
+{
+    std::list<CircleNode>::iterator nearest = FindNearestCircle(state);
+    std::list<CircleNode>::iterator previous = nearest;
+    previous--;
+    std::list<CircleNode>::iterator next = nearest;
+    next++;
+
+    double nearest_circle_distance, previous_circle_distance = DBL_MAX, next_circle_distance = DBL_MAX, min_distance;
+
+    // TODO Previous is needed?
+    if(previous != circle_path.end())
+    {
+    	previous_circle_distance = Distance(state.x, state.y, previous->circle.x, previous->circle.y) + previous->f;
+    }
+
+    if(next != circle_path.end())
+	{
+    	next_circle_distance = Distance(state.x, state.y, next->circle.x, next->circle.y) + next->f;
+	}
+
+    nearest_circle_distance = Distance(state.x, state.y, nearest->circle.x, nearest->circle.y) + nearest->f;
+
+    min_distance = std::min(nearest_circle_distance, std::min(next_circle_distance, previous_circle_distance));
+
+    if (state.v == 0.0)
+        return (DBL_MAX);
+    else
+        return ((min_distance) / fabs(state.v));
+}
+
+
+double
+StehsPlanner::DistanceHeuristic(const State &state) // TODO Optimize this linear search verifying only the next, current and previous circles
 {
     std::list<CircleNode>::iterator it = circle_path.begin();
     std::list<CircleNode>::iterator end = circle_path.end();
@@ -469,8 +500,15 @@ StehsPlanner::BuildStateList(StateNodePtr node)
 {
 	state_list.clear();
 
+	carmen_ackerman_path_point_t path_point;
 	while(node != nullptr)
 	{
+		path_point.x      = node->state.x    ;
+		path_point.y      = node->state.y    ;
+		path_point.theta  = node->state.theta;
+		path_point.v      = node->state.v    ;
+		path_point.phi    = node->state.phi  ;
+		path_point.time = node->step_size;
 		state_list.push_front(node->state);
 		node = node->parent;
 	}
@@ -508,44 +546,21 @@ StehsPlanner::GetNextState(StateNodePtr current_state, double a, double w, doubl
             step_size, &distance_traveled, DELTA_T, robot_config);
 
     next_state->parent = current_state;
-    next_state->g = current_state->g + distance_traveled;
-    next_state->h = Distance(next_state->state.x, next_state->state.y, goal.x, goal.y); //DistanceHeuristic(next_state->state); // TODO usar distancia direto????
-    next_state->f = next_state->h + next_state->g;
+    next_state->g = current_state->g + step_size;
+    next_state->h = TimeHeuristic(next_state->state);
+//    next_state->h = Distance(next_state->state.x, next_state->state.y, goal.x, goal.y); //DistanceHeuristic(next_state->state); // TODO usar distancia direto????
+    next_state->f = next_state->g + next_state->h;
+    next_state->step_size = step_size;
 
     return (next_state);
 }
 
-CircleNodePtr
-StehsPlanner::FindNearestCircle(StateNodePtr state_node)
-{
-	std::list<CircleNode>::iterator it = circle_path.begin();
-	std::list<CircleNode>::iterator end = circle_path.end();
-
-	double min_distance = DBL_MAX;
-	double current_distance;
-
-	for (; it != end; it++)
-	{
-		current_distance = Distance(state_node->state.x, state_node->state.y, it->circle.x, it->circle.y);
-
-		if (current_distance < min_distance)
-		{
-			min_distance = current_distance;
-		}
-		else
-		{
-			it--;
-			break;
-		}
-	}
-	return &(*it);
-}
 
 
 double
 StehsPlanner::UpdateStep(StateNodePtr state_node)   // TODO Pensar melhor nessa funcao, parece sempre retornar o MIN_STEP_SIZE
 {
-	CircleNodePtr nearest_circle = FindNearestCircle(state_node);
+	CircleNodePtr nearest_circle = &(*FindNearestCircle(state_node->state)); // a função FindNearestCircle retorna um iterador, aqui pegamos o elemento.
 	double v = std::fabs(state_node->state.v);
 
 //	if (state_node->state.v != 0.0)
@@ -713,7 +728,7 @@ StehsPlanner::HeuristicSearch()
 
         //printf("Nstate %d\n", cont);
 
-        //printf("h %lf f %lf T %ld\n", current->h, current->f, open_set.size());
+        printf("h %lf f %lf T %ld\n", current->h, current->f, open_set.size());
 
         if (current->h < RGOAL)
         {
@@ -756,8 +771,9 @@ StehsPlanner::HeuristicSearch()
 void
 StehsPlanner::GeneratePath()
 {
+	printf("Inicio space exploration\n");
 	RDDFSpaceExploration();
-
+	printf("Fim space exploration\n");
 	if (!circle_path.empty())
 	{
 		HeuristicSearch();
@@ -878,7 +894,6 @@ StehsPlanner::ShowCirclePath(std::vector<StateNodePtr> &state_node)
 cv::Mat
 StehsPlanner::ShowState(StateNodePtr &state_node, cv::Mat img)
 {
-	unsigned int width = distance_map->config.x_size;
 	unsigned int height = distance_map->config.y_size;
 	double inverse_resolution = 1.0 / distance_map->config.resolution;
 

@@ -61,7 +61,7 @@ public:
     std::list<CircleNode> circle_path;
 
     // the trajectory found
-    std::list<State> state_list;
+    std::list<carmen_ackerman_path_point_t> state_list;
 
     // TODO it needs to receive the start and goal node
 
@@ -123,9 +123,9 @@ public:
 
     cv::Mat ShowState(StateNodePtr &state_node, cv::Mat img);
 
-    double TimeHeuristic(State s);
+    double TimeHeuristic(const State &state);
 
-    double DistanceHeuristic(State s);
+    double DistanceHeuristic(const State &state);
 
     void BuildStateList(StateNodePtr goal_node);
 
@@ -135,7 +135,7 @@ public:
 
     StateNodePtr GetNextState(StateNodePtr current_state, double a, double w, double step_size);
 
-    CircleNodePtr FindNearestCircle(StateNodePtr state_node);
+    std::list<CircleNode>::iterator FindNearestCircle(const State &state);
 
     double UpdateStep(StateNodePtr state_node);
     bool Collision(StateNodePtr state_node);

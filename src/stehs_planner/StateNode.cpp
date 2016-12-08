@@ -4,6 +4,7 @@
 StateNode::StateNode(const State &s, double g_, double h_, StateNode *p) :
 	g(g_), f(g_ + h_), h(h_), parent(p) {
 
+	step_size = 0.0;
 	state.x = s.x;
 	state.y = s.y;
 	state.theta = s.theta;
@@ -21,6 +22,7 @@ StateNode::StateNode(const State &s, double g_, double h_, StateNode *p) :
 StateNode::StateNode(const StateNode& sn) :
 	 g(sn.g), f(sn.f), h(sn.h), parent(sn.parent) {
 
+	step_size = sn.step_size;
 	state.x = sn.state.x;
 	state.y = sn.state.y;
 	state.theta = sn.state.theta;
@@ -63,11 +65,13 @@ bool StateNode::operator<(const StateNode &sn) {
 // copy the node values
 void StateNode::operator=(const StateNode &sn) {
 
+	step_size = sn.step_size;
 	state.x = sn.state.x;
 	state.y = sn.state.y;
 	state.theta = sn.state.theta;
 	state.v = sn.state.v;
 	state.phi = sn.state.phi;
+
 
 	// the cost
 	g = sn.g;

@@ -3,6 +3,7 @@
 
 StehsPlanner stehs_planner;
 
+double localizer_pose_timestamp;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
@@ -14,44 +15,55 @@ StehsPlanner stehs_planner;
 void
 stehs_planner_publish_plan_tree_message()
 {
-//	static carmen_navigator_ackerman_plan_tree_message plan_tree_msg;
-//	IPC_RETURN_TYPE err = IPC_OK;
-//	static bool first_time = true;
-//
-//	if (first_time)
-//	{
-//		define_plan_tree_message();
-//		plan_tree_msg.host = carmen_get_host();
-//		first_time = false;
-//	}
-//
-//	plan_tree_msg.timestamp = GlobalState::localizer_pose_timestamp;//carmen_get_time();
-//	plan_tree_msg.num_edges = tree.num_edges;
-//
-//	plan_tree_msg.p1 = tree.p1;
-//	plan_tree_msg.p2 = tree.p2;
-//	plan_tree_msg.mask = tree.mask;
-//
-//	plan_tree_msg.num_path = tree.num_paths;
-//	if (plan_tree_msg.num_path > 500)
-//	{	// Ver tipo carmen_navigator_ackerman_plan_tree_message
-//		printf("Error: plan_tree_msg.num_path > 500 in Publisher_Util::publish_plan_tree_message()\n");
-//		exit(1);
-//	}
-//	for (int i = 0; i < tree.num_paths; i++)
-//	{
-//		if (tree.paths_sizes[i] > 100)
-//		{	// Ver tipo carmen_navigator_ackerman_plan_tree_message
-//			printf("Error: paths_sizes[%d] > 100 in Publisher_Util::publish_plan_tree_message()\n", i);
-//			exit(1);
-//		}
-//		memcpy(plan_tree_msg.paths[i], tree.paths[i], sizeof(carmen_ackerman_traj_point_t) * tree.paths_sizes[i]);
-//		plan_tree_msg.path_size[i] = tree.paths_sizes[i];
-//	}
-//
-//	err = IPC_publishData(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME, &plan_tree_msg);
-//
-//	carmen_test_ipc(err, "Could not publish", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME);
+	int i = 0;
+	rrt_path_message msg;
+	std::list<carmen_ackerman_path_point_t>::iterator it,next, end = stehs_planner.state_list.end();
+
+	msg.host  = carmen_get_host();
+	msg.timestamp = localizer_pose_timestamp;
+	msg.last_goal = 0; //GlobalState::last_goal ? 1 : 0;
+
+	State &goal = stehs_planner.state_list.back(); // coloca o ultimo estado como goal
+	msg.goal.x = goal.x;
+	msg.goal.y = goal.y;
+	msg.goal.theta = goal.theta;
+
+	msg.size = stehs_planner.state_list.size();
+	msg.path = (Edge_Struct *) malloc(sizeof(Edge_Struct) * msg.size);
+
+	it = stehs_planner.state_list.begin();
+	next = it;
+	next++;
+
+	for (; next != end; it++, i++, next++)
+	{
+		msg.path[i].p1.x     = it->x;
+		msg.path[i].p1.y     = it->y;
+		msg.path[i].p1.theta = it->theta;
+		msg.path[i].p1.v     = it->v;
+		msg.path[i].p1.phi   = it->phi;
+
+		msg.path[i].p2.x     = next->x;
+		msg.path[i].p2.y     = next->y;
+		msg.path[i].p2.theta = next->theta;
+		msg.path[i].p2.v     = next->v;
+		msg.path[i].p2.phi   = next->phi;
+
+		msg.path[i].v    = next->v;
+		msg.path[i].phi  = next->phi;
+		msg.path[i].time = next->time;
+
+//		printf( "p1.x = %lf, p1.y = %lf, p1.theta = %lf, p1.v = %lf, p1.phi = %lf\n"
+//				"p2.x = %lf, p2.y = %lf, p2.theta = %lf, p2.v = %lf, p2.phi = %lf\n"
+//				"command.v = %lf, command.phi = %lf, command.time = %lf\n",
+//				msg.path[i].p1.x, msg.path[i].p1.y, msg.path[i].p1.theta, msg.path[i].p1.v, msg.path[i].p1.phi,
+//				msg.path[i].p2.x, msg.path[i].p2.y, msg.path[i].p2.theta, msg.path[i].p2.v, msg.path[i].p2.phi,
+//				msg.path[i].v,  msg.path[i].phi,  msg.path[i].time);
+
+	}
+
+	Publisher_Util::publish_rrt_path_message(&msg);
+	free(msg.path);
 }
 
 
@@ -73,6 +85,7 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	stehs_planner.start.theta = msg->globalpos.theta;
 	stehs_planner.start.v = msg->v;
 	stehs_planner.start.phi = msg->phi;
+	localizer_pose_timestamp = msg->timestamp;
 
 //	printf("GLOBAL POS x: %f y: %f theta: %f v: %f phi: %f\n", stehs_planner.start.x, stehs_planner.start.y,
 //			stehs_planner.start.theta, stehs_planner.start.v, stehs_planner.start.phi);
@@ -284,11 +297,25 @@ read_parameters(int argc, char **argv)
 }
 
 
+void
+define_messages()
+{
+	IPC_RETURN_TYPE err;
+
+	err = IPC_defineMsg(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME, IPC_VARIABLE_LENGTH,
+			CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME);
+}
+
+
 int
 main(int argc, char **argv)
 {
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
+
+	define_messages();
+
 	read_parameters(argc, argv);
 
 	register_handlers();

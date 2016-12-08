@@ -21,14 +21,17 @@ public:
 	// the current state
 	State state;
 
-	// the g cost value
+	// the (time) cost from start to current state
 	double g;
 
-	// the total cost, included heuristic value
+	// the total (time) cost, g + h
 	double f;
 
-	// the heuristic value
+	// the (time) cost from current state to goal
 	double h;
+
+	// step size
+	double step_size;
 
 	// the parent node
 	StateNode *parent;
@@ -69,16 +72,16 @@ public:
 	bool operator() (StateNodePtr a, StateNodePtr b)
 	{
 
-		if(std::fabs(a->f - b->f) < 0.2 )
-		{
-			return (a->h > b->h);
-		}
-		else
-		{
-			return (a->f > b->f);
-		}
+//		if(std::fabs(a->f - b->f) < 0.2 )
+//		{
+//			return (a->h > b->h);
+//		}
+//		else
+//		{
+//			return (a->f > b->f);
+//		}
 		// the default c++ stl is a max heap, so wee need to invert here
-//		return (a->f > b->f);
+		return (a->f > b->f);
 	}
 };
 
