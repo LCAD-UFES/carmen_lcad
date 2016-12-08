@@ -161,15 +161,15 @@ add_gps_edge(SparseOptimizer *optimizer, VertexSE2 *v, SE2 measure, double gps_s
 	Matrix3d cov;
 	Matrix3d information;
 
-	cov.data()[0] = pow(gps_std * 250, 2); // Alberto
+	cov.data()[0] = pow(gps_std * 25.0, 2); // Alberto
 	cov.data()[1] = 0;
 	cov.data()[2] = 0;
 	cov.data()[3] = 0;
-	cov.data()[4] = pow(gps_std * 250, 2);
+	cov.data()[4] = pow(gps_std * 25.0, 2);
 	cov.data()[5] = 0;
 	cov.data()[6] = 0;
 	cov.data()[7] = 0;
-	cov.data()[8] = pow(3.14 * 1000, 2);
+	cov.data()[8] = pow(3.14 * 1000000, 2);
 	//cov.data()[8] = pow(yaw_std, 2);
 
 	information = cov.inverse();
@@ -229,7 +229,7 @@ add_odometry_edges(SparseOptimizer *optimizer)
 		double dist = sqrt(pow(measure[0], 2) + pow(measure[1], 2));
 		total_dist += dist;
 
-		dist = dist * (0.978); // Alberto
+		dist = dist * (1.045); // Alberto 1.0293
 		measure.setTranslation(Vector2d(dist * cos(measure[2]), dist * sin(measure[2])));
 
 		if (abs(input_data[i + 1].time - input_data[i].time) > 10)
