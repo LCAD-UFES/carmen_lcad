@@ -10,7 +10,7 @@ IFLAGS += -I$(CARMEN_HOME)/include/carmen
 
 LFLAGS += -lcarmodel -lgsl -lgslcblas -lfann -lobstacle_avoider_interface
 
-SOURCES = mpc/mpc.cpp mpc/mpc_position_control.cpp mpc/mpc_plot.cpp pid/pid.cpp rlpid/rlpid.cpp
+SOURCES = mpc/mpc.cpp mpc/mpc_position_control.cpp mpc/mpc_velocity.cpp mpc/mpc_plot.cpp pid/pid.cpp rlpid/rlpid.cpp
 
 PUBLIC_INCLUDES = control.h 
 
@@ -28,6 +28,6 @@ clean: clean_rlpid
 clean_rlpid:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcontrol/rlpid/
 
-libcontrol.a: mpc/mpc.o mpc/mpc_position_control.o mpc/mpc_plot.o pid/pid.o rlpid/rlpid.o
+libcontrol.a: mpc/mpc.o mpc/mpc_position_control.o mpc/mpc_velocity.o mpc/mpc_plot.o pid/pid.o rlpid/rlpid.o
 
 include $(CARMEN_HOME)/src/Makefile.rules
