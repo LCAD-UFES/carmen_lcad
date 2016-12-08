@@ -12,6 +12,7 @@
 
 /* OpenCV Includes */
 #include <opencv/cv.h>
+#include <opencv2/video/tracking.hpp>
 
 #ifdef __cplusplus
 extern "C" {
