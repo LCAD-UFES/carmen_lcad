@@ -12,11 +12,14 @@ public:
 	// the current circle reference
 	Circle circle;
 
-	// the g cost value
+	// the (distance) cost from start to current state
 	double g;
 
-	// the total cost, included heuristic value
+	// the total (distance) cost, g + h
 	double f;
+
+	// the (distance) cost from current state to goal
+	double h;
 
 	// the parent node
 	CircleNode *parent;

@@ -31,7 +31,7 @@
 #define DELTA_T 0.01                // Size of step for the ackerman Euler method
 #define ALFA 1                		// Weight of nearest circle radius for step_size
 #define BETA 1               		// Weight of nearest circle path distance to goal for step_size
-#define MIN_STEP_SIZE 0.5			// step size in seconds
+#define MAX_STEP_SIZE 2.0			// max step size in seconds
 #define KMIN 0.0125 				// Step rate multiplier
 #define MIN_THETA_DIFF 0.24			// 15 degree
 
@@ -61,7 +61,7 @@ public:
     std::list<CircleNode> circle_path;
 
     // the trajectory found
-    std::list<State> state_list;
+    std::list<carmen_ackerman_path_point_t> state_list;
 
     // TODO it needs to receive the start and goal node
 
@@ -117,12 +117,15 @@ public:
 
     unsigned char* GetCurrentMap();
 
-    void ShowCirclePath(std::vector<StateNodePtr> &state_node);
+    cv::Mat ShowCirclePath(std::vector<StateNodePtr> &state_node);
+
     void ShowCirclePath();
 
-    double TimeHeuristic(State s);
+    cv::Mat ShowState(StateNodePtr &state_node, cv::Mat img);
 
-    double DistanceHeuristic(State s);
+    double TimeHeuristic(const State &state);
+
+    double DistanceHeuristic(const State &state);
 
     void BuildStateList(StateNodePtr goal_node);
 
@@ -132,7 +135,7 @@ public:
 
     StateNodePtr GetNextState(StateNodePtr current_state, double a, double w, double step_size);
 
-    CircleNodePtr FindNearestCircle(StateNodePtr state_node);
+    std::list<CircleNode>::iterator FindNearestCircle(const State &state);
 
     double UpdateStep(StateNodePtr state_node);
     bool Collision(StateNodePtr state_node);

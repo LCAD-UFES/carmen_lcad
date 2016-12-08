@@ -410,37 +410,68 @@ StehsPlanner::RDDFSpaceExploration()
 }
 
 
-// TODO Isso ta certo?????
-double
-StehsPlanner::TimeHeuristic(State s) // TODO Optimize this linear search verifying only the next, current and previous circles
+std::list<CircleNode>::iterator
+StehsPlanner::FindNearestCircle(const State &state)
 {
-    std::list<CircleNode>::iterator it = circle_path.begin();
-    std::list<CircleNode>::iterator end = circle_path.end();
+	std::list<CircleNode>::iterator it = circle_path.begin();
+	std::list<CircleNode>::iterator end = circle_path.end();
 
-    double circle_distance = DBL_MAX;
-    double current_distance;
-    double goal_distance = DBL_MAX;
+	double min_distance = DBL_MAX;
+	double current_distance;
 
-    for (; it != end; it++)
-    {
-        current_distance = Distance(s.x, s.y, it->circle.x, it->circle.y);
+	for (; it != end; it++)
+	{
+		current_distance = Distance(state.x, state.y, it->circle.x, it->circle.y);
 
-        if (current_distance < circle_distance)
-        {
-            circle_distance = current_distance;
-            goal_distance = it->f;
-        }
-    }
-
-    if (s.v == 0)
-        return (DBL_MAX);
-    else
-        return ((circle_distance + goal_distance) / fabs(s.v));
+		if (current_distance < min_distance)
+		{
+			min_distance = current_distance;
+		}
+		else
+		{
+			it--;
+			break;
+		}
+	}
+	return it;
 }
 
 
 double
-StehsPlanner::DistanceHeuristic(State state) // TODO Optimize this linear search verifying only the next, current and previous circles
+StehsPlanner::TimeHeuristic(const State &state)
+{
+    std::list<CircleNode>::iterator nearest = FindNearestCircle(state);
+    std::list<CircleNode>::iterator previous = nearest;
+    previous--;
+    std::list<CircleNode>::iterator next = nearest;
+    next++;
+
+    double nearest_circle_distance, previous_circle_distance = DBL_MAX, next_circle_distance = DBL_MAX, min_distance;
+
+    // TODO Previous is needed?
+    if(previous != circle_path.end())
+    {
+    	previous_circle_distance = Distance(state.x, state.y, previous->circle.x, previous->circle.y) + previous->f;
+    }
+
+    if(next != circle_path.end())
+	{
+    	next_circle_distance = Distance(state.x, state.y, next->circle.x, next->circle.y) + next->f;
+	}
+
+    nearest_circle_distance = Distance(state.x, state.y, nearest->circle.x, nearest->circle.y) + nearest->f;
+
+    min_distance = std::min(nearest_circle_distance, std::min(next_circle_distance, previous_circle_distance));
+
+    if (state.v == 0.0)
+        return (DBL_MAX);
+    else
+        return ((min_distance) / fabs(state.v));
+}
+
+
+double
+StehsPlanner::DistanceHeuristic(const State &state) // TODO Optimize this linear search verifying only the next, current and previous circles
 {
     std::list<CircleNode>::iterator it = circle_path.begin();
     std::list<CircleNode>::iterator end = circle_path.end();
@@ -469,8 +500,15 @@ StehsPlanner::BuildStateList(StateNodePtr node)
 {
 	state_list.clear();
 
+	carmen_ackerman_path_point_t path_point;
 	while(node != nullptr)
 	{
+		path_point.x      = node->state.x    ;
+		path_point.y      = node->state.y    ;
+		path_point.theta  = node->state.theta;
+		path_point.v      = node->state.v    ;
+		path_point.phi    = node->state.phi  ;
+		path_point.time = node->step_size;
 		state_list.push_front(node->state);
 		node = node->parent;
 	}
@@ -486,7 +524,7 @@ StehsPlanner::Exist(StateNodePtr current, std::vector<StateNodePtr> &closed_set,
     while (it != end)
     {
         if (current->Equals(*(*it), k))
-                return true;
+        	return true;
 
         it++;
     }
@@ -508,50 +546,27 @@ StehsPlanner::GetNextState(StateNodePtr current_state, double a, double w, doubl
             step_size, &distance_traveled, DELTA_T, robot_config);
 
     next_state->parent = current_state;
-    next_state->g = current_state->g + distance_traveled;
-    next_state->h = Distance(next_state->state.x, next_state->state.y, goal.x, goal.y); //DistanceHeuristic(next_state->state); // TODO usar distancia direto????
-    next_state->f = next_state->h + next_state->g;
+    next_state->g = current_state->g + step_size;
+    next_state->h = TimeHeuristic(next_state->state);
+//    next_state->h = Distance(next_state->state.x, next_state->state.y, goal.x, goal.y); //DistanceHeuristic(next_state->state); // TODO usar distancia direto????
+    next_state->f = next_state->g + next_state->h;
+    next_state->step_size = step_size;
 
     return (next_state);
 }
 
-CircleNodePtr
-StehsPlanner::FindNearestCircle(StateNodePtr state_node)
-{
-	std::list<CircleNode>::iterator it = circle_path.begin();
-	std::list<CircleNode>::iterator end = circle_path.end();
-
-	double min_distance = DBL_MAX;
-	double current_distance;
-
-	for (; it != end; it++)
-	{
-		current_distance = Distance(state_node->state.x, state_node->state.y, it->circle.x, it->circle.y);
-
-		if (current_distance < min_distance)
-		{
-			min_distance = current_distance;
-		}
-		else
-		{
-			it--;
-			break;
-		}
-	}
-	return &(*it);
-}
 
 
 double
 StehsPlanner::UpdateStep(StateNodePtr state_node)   // TODO Pensar melhor nessa funcao, parece sempre retornar o MIN_STEP_SIZE
 {
-	CircleNodePtr nearest_circle = FindNearestCircle(state_node);
-	double v = 1 / std::fabs(state_node->state.v);
+	CircleNodePtr nearest_circle = &(*FindNearestCircle(state_node->state)); // a função FindNearestCircle retorna um iterador, aqui pegamos o elemento.
+	double v = std::fabs(state_node->state.v);
 
 //	if (state_node->state.v != 0.0)
 //	{
 		//printf("F %lf\n", nearest_circle->f);
-		return (std::min(std::min(ALFA * nearest_circle->circle.radius, BETA * nearest_circle->f) * v, MIN_STEP_SIZE));
+		return (std::min(std::min(ALFA * nearest_circle->circle.radius, BETA * nearest_circle->f) / v, MAX_STEP_SIZE));
 //	}
 //	else
 //	{
@@ -575,6 +590,7 @@ StehsPlanner::Collision(StateNodePtr state_node)
 	return (carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&state, trash, robot_config, distance_map, circle_radius) > 0.0); // Returns 0 if there is not a collision
 }
 
+cv::Mat imgem;
 
 void
 StehsPlanner::Expand(
@@ -584,13 +600,17 @@ StehsPlanner::Expand(
         double k)
 {
     // the car acceleration
-    double a[3] = {-1.0, 0.0, 1.0};
-    double w[3] = {-0.01, 0.0, 0.01};
+    double a[2] = {/*-1.0,*/ 0.0, 1.0};
+    double w[3] = {-0.05, 0.0, 0.05}; //TODO ler velocidade angular do volante do carmen.ini
 
     double step_size = k * UpdateStep(current_state);
 
+    // TODO tratar isso na UpdateStep
+    if(step_size < 0.2)
+    	step_size = 0.2;
+
     // the acceleration loop
-    for (int i = 0; i < 3; ++i)
+    for (int i = 0; i < 2; ++i)
     {
         // the steering angle acceleration
         for (int j = 0; j < 3; ++j)
@@ -601,9 +621,12 @@ StehsPlanner::Expand(
 
         	//printf("State %lf %lf %lf %lf %lf\n", next_state->state.x, next_state->state.y, next_state->state.theta, next_state->state.phi, next_state->state.v);
 
-            if (!Exist(next_state, closed_set, k) && !Collision(next_state))
+            // FIXME checar a mudança de 1.0 para k
+            if (!Exist(next_state, closed_set, 1.0 /*k*/) && !Collision(next_state))
             {
                 open_set.push(next_state);
+
+                ShowState(next_state, imgem);
             }
             else
             {
@@ -673,6 +696,8 @@ StehsPlanner::HeuristicSearch()
     double k = 1.0;
     int cont = 0;
 
+	imgem = ShowCirclePath(closed_set);
+
     while (!open_set.empty())
     {
         // get the circle wich is the closest to the goal node
@@ -692,21 +717,22 @@ StehsPlanner::HeuristicSearch()
                 delete tmp;
             }
 
+            printf("Nstate %ld cont %d\n", state_list.size(), cont);
             //printf("Sucesso!!\n");
             break;
 
         }
         // find the children states configuration
         Expand(current, open_set, closed_set, k);
-        cont += 9;
+        cont += 6;
 
-        printf("Nstate%d\n", cont);
+        //printf("Nstate %d\n", cont);
 
-        //printf("h %lf f %lf T %ld\n", current->h, current->f, open_set.size());
+        printf("h %lf f %lf T %ld\n", current->h, current->f, open_set.size());
 
         if (current->h < RGOAL)
         {
-           //printf("Goal!!\n");
+//            printf("Goal!!\n");
 
             GoalExpand(current, goal_node, open_set);
         }
@@ -715,6 +741,8 @@ StehsPlanner::HeuristicSearch()
 
         if (open_set.empty())
         {
+        	printf("Open set empty!\n");
+
             k *= 0.5;
 
             if (k > KMIN)
@@ -726,7 +754,7 @@ StehsPlanner::HeuristicSearch()
 
     }
 
-    //ShowCirclePath(closed_set);
+//    ShowCirclePath(closed_set);
 
     while(!closed_set.empty())
     {
@@ -743,8 +771,9 @@ StehsPlanner::HeuristicSearch()
 void
 StehsPlanner::GeneratePath()
 {
+	printf("Inicio space exploration\n");
 	RDDFSpaceExploration();
-
+	printf("Fim space exploration\n");
 	if (!circle_path.empty())
 	{
 		HeuristicSearch();
@@ -755,7 +784,7 @@ StehsPlanner::GeneratePath()
 		printf("Não foi possível encontrar um caminho válido.\n");
 	}
 
-	ShowCirclePath();
+//	ShowCirclePath();
 }
 
 
@@ -794,7 +823,9 @@ unsigned char* StehsPlanner::GetCurrentMap() {
     return map;
 }
 
-void StehsPlanner::ShowCirclePath(std::vector<StateNodePtr> &state_node) {
+cv::Mat
+StehsPlanner::ShowCirclePath(std::vector<StateNodePtr> &state_node)
+{
 
 	//printf("Entrou\n");
 	// get the current map
@@ -850,11 +881,31 @@ void StehsPlanner::ShowCirclePath(std::vector<StateNodePtr> &state_node) {
     	its++;
     }
 
-    cv::imshow("CirclePath", img);
-    cv::waitKey(1);
+//    cv::imshow("CirclePath", img);
+//    cv::waitKey(1);
 
 	//printf("Saiu\n");
     delete [] map;
+
+    return img;
+}
+
+
+cv::Mat
+StehsPlanner::ShowState(StateNodePtr &state_node, cv::Mat img)
+{
+	unsigned int height = distance_map->config.y_size;
+	double inverse_resolution = 1.0 / distance_map->config.resolution;
+
+	unsigned int row = height - std::floor((state_node->state.y - distance_map->config.y_origin) * inverse_resolution + 0.5);
+	unsigned int col = std::floor((state_node->state.x - distance_map->config.x_origin) * inverse_resolution + 0.5);
+
+	cv::rectangle(img, cv::Point (col-3, row-3), cv::Point (col+3, row+3), cv::Scalar(0,0,0));
+
+    cv::imshow("CirclePath", img);
+    cv::waitKey(1);
+
+    return img;
 }
 
 
