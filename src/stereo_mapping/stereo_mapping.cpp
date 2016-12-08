@@ -2,6 +2,7 @@
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 #include <opencv/ml.h>
+#include <opencv2/video/tracking.hpp>
 
 /* Carmen includes */
 #include <carmen/carmen.h>
@@ -560,12 +561,19 @@ init_stereo_mapping()
   // Initialize Kalman filters transition, control and measurement matrixes
   camera_ekf.init(4,2,0, CV_64F);
 
-  camera_ekf.transitionMatrix = *(cv::Mat_<double>(4, 4) << 1,0,1,0,   0,1,0,1,  0,0,1,0,  0,0,0,1);
+  double transition_coefficients[] = {
+		  	  	  	  	  	  	  	  1.0 , 0.0, 1.0, 0.0,
+		  	  	  	  	  	  	  	  0.0 , 1.0, 0.0, 1.0,
+									  0.0 , 0.0, 1.0, 0.0,
+									  0.0 , 0.0, 0.0 , 1.0
+  	  	  	  	  	  	  	  	  	  };
+  camera_ekf.transitionMatrix = cv::Mat(4 , 4, CV_64F, transition_coefficients);
+  //camera_ekf.transitionMatrix = *(cv::Mat_<double>(4, 4) << 1,0,1,0,   0,1,0,1,  0,0,1,0,  0,0,0,1);
 
   camera_ekf.statePost.at<double>(0) = 0; //initial pitch
   camera_ekf.statePost.at<double>(1) = 2; //initial height
   camera_ekf.statePost.at<double>(2) = 0; //initial velocity in pitch direction
-  camera_ekf.statePost.at<double>(3) = 0; //initial velocity in height direction
+  camera_ekf.statePost.at<double>(3) = 0; //initial velocity in height d
 
   cv::setIdentity(camera_ekf.measurementMatrix);
   cv::setIdentity(camera_ekf.processNoiseCov, cv::Scalar::all(1e-3));
