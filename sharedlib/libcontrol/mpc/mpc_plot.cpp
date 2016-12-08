@@ -1,4 +1,3 @@
-/*
 #include "mpc.h"
 
 
@@ -142,4 +141,3 @@ plot_phi(EFFORT_SPLINE_DESCRIPTOR *descriptors, double current_phi, PARAMS *para
 	effort_vector.push_front(descriptors->k1);
 
 }
-*/

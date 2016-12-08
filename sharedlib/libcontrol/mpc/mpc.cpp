@@ -11,14 +11,6 @@ FILE *gnuplot_save_total;
 bool save_and_plot = false;
 
 
-typedef struct {
-	vector<double> v;
-	vector<double> phi;
-	vector<double> time;
-	double total_time_of_commands;
-} MOTION_COMMAND;
-
-
 double
 get_effort_in_time_from_spline(EFFORT_SPLINE_DESCRIPTOR *descriptors, double time)
 {
@@ -110,7 +102,7 @@ get_velocity_supersampling_motion_commands_vector(PARAMS *params, unsigned int s
 double
 car_model(double steering_effort, double atan_current_curvature, double v, fann_type *steering_ann_input, PARAMS *params)
 {
-	steering_effort *= (1.0 / (1.0 + (params->v * params->v) / CAR_MODEL_GAIN)); // boa
+	steering_effort *= (1.0 / (1.0 + (params->current_velocity * params->current_velocity) / CAR_MODEL_GAIN)); // boa
 	steering_effort = carmen_clamp(-100.0, steering_effort, 100.0);
 
 	double phi = carmen_libcarneuralmodel_compute_new_phi_from_effort(steering_effort, atan_current_curvature, steering_ann_input,
@@ -142,7 +134,7 @@ get_phi_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, PA
 //		phi_vector.push_back(phi);
 		phi_vector.push_back(phi + params->dk);
 
-		atan_current_curvature = carmen_get_curvature_from_phi(phi, params->v, params->understeer_coeficient, params->distance_rear_axles);
+		atan_current_curvature = carmen_get_curvature_from_phi(phi, params->current_velocity, params->understeer_coeficient, params->distance_rear_axles);
 	}
 	return (phi_vector);
 }
@@ -346,7 +338,7 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *params, double v, double unde
 	effort_vector.push_front(effort);
 
 	if (save_and_plot)
-			fprintf(gnuplot_save_total, "%lf %lf %lf %lf %lf\n", timestamp_vector.front(), cphi_vector.front(), dphi_vector.front(), effort_vector.front()/200, params->v);
+			fprintf(gnuplot_save_total, "%lf %lf %lf %lf %lf\n", timestamp_vector.front(), cphi_vector.front(), dphi_vector.front(), effort_vector.front()/200, params->current_velocity);
 
 	while (cphi_vector.size() > PAST_SIZE)
 	{
@@ -591,53 +583,6 @@ get_point_between_points_aproximating_with_line(double x1, double y1, double x2,
 }
 
 
-MOTION_COMMAND
-get_motion_commands_vector(carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands, double time_of_velodyne_message)
-{
-	MOTION_COMMAND commands;
-	double elapsed_time = carmen_get_time() - time_of_velodyne_message;
-	double sum_of_motion_commands_vector_time = current_motion_command_vector[0].time;
-	int j = 0;
-	double time_interval = 0.0;
-	double total_time = 0.0;
-
-	// TODO usar a get_motion timed index
-	while ((sum_of_motion_commands_vector_time	< elapsed_time) && (j < nun_motion_commands)) // TODO Tratar se sair por j <nun_motion_commands
-	{
-		j++;
-		sum_of_motion_commands_vector_time += current_motion_command_vector[j].time;
-	}
-	sum_of_motion_commands_vector_time -= current_motion_command_vector[j].time;
-	current_motion_command_vector[j].time -= (elapsed_time - sum_of_motion_commands_vector_time);
-
-	while (total_time < PREDICTION_HORIZON)
-	{
-		commands.v.push_back(get_point_between_points_aproximating_with_line(0.0, current_motion_command_vector[j].v, current_motion_command_vector[j].time, current_motion_command_vector[j+1].v, time_interval));
-		commands.phi.push_back(get_point_between_points_aproximating_with_line(0.0, current_motion_command_vector[j].phi, current_motion_command_vector[j].time, current_motion_command_vector[j+1].phi, time_interval));
-		commands.time.push_back(DELTA_T);
-
-		time_interval += DELTA_T;
-		total_time += DELTA_T;
-		if (time_interval > current_motion_command_vector[j].time)
-		{
-			j++;
-			if (j >= nun_motion_commands)
-				break;
-
-			time_interval = time_interval - current_motion_command_vector[j].time;
-		}
-	}
-
-	for (j = 0, sum_of_motion_commands_vector_time = 0.0; (unsigned)j < commands.v.size(); j++)
-	{
-		sum_of_motion_commands_vector_time += commands.time[j];
-		printf("%lf %lf %lf\n", sum_of_motion_commands_vector_time, commands.phi[j], commands.v[j]);
-	}
-	printf("\n\n");
-	return commands;
-}
-
-
 bool
 init_mpc(bool &first_time, PARAMS &params, EFFORT_SPLINE_DESCRIPTOR &seed, double atan_current_curvature,
 		carmen_ackerman_motion_command_p current_motion_command_vector,	int nun_motion_commands,
@@ -678,7 +623,7 @@ init_mpc(bool &first_time, PARAMS &params, EFFORT_SPLINE_DESCRIPTOR &seed, doubl
 	params.motion_commands_vector = current_motion_command_vector;
 	params.motion_commands_vector_size = nun_motion_commands;
 	params.atan_current_curvature = atan_current_curvature;
-	params.v = v;
+	params.current_velocity = v;
 	params.understeer_coeficient = robot_config->understeer_coeficient;
 	params.distance_rear_axles = robot_config->distance_between_front_and_rear_axles;
 	params.max_phi = robot_config->max_phi;
@@ -709,7 +654,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 	double effort = seed.k1;
 
 	// Calcula o dk do proximo ciclo
-	double Cxk = car_model(effort, atan_current_curvature, params.v, params.steering_ann_input, &params);
+	double Cxk = car_model(effort, atan_current_curvature, params.current_velocity, params.steering_ann_input, &params);
 	params.dk = yp - Cxk;
 	params.previous_k1 = effort;
 
