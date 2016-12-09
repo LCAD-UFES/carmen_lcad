@@ -23,6 +23,19 @@
 bool use_obstacles = true;
 
 
+void
+compute_a_and_t_from_s(double s, double target_v,
+		TrajectoryLookupTable::TrajectoryDimensions target_td,
+		TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed,
+		ObjectiveFunctionParams *params)
+{
+	tcp_seed.tt = s / ((target_v + target_td.v_i) / 2.0);
+	double a = (target_v - target_td.v_i) / tcp_seed.tt;
+	params->suitable_tt = tcp_seed.tt;
+	params->suitable_acceleration = tcp_seed.a = a;
+}
+
+
 TrajectoryLookupTable::TrajectoryControlParameters
 fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 {
@@ -35,12 +48,19 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 		tcp.k1 = gsl_vector_get(x, 0);
 		tcp.k2 = gsl_vector_get(x, 1);
 		tcp.k3 = gsl_vector_get(x, 2);
-		if (params->optimize_time)
+		if (params->optimize_time == OPTIMIZE_TIME)
 		{
 			tcp.tt = gsl_vector_get(x, 3);
 			tcp.a = params->suitable_acceleration;
 		}
-		else
+		if (params->optimize_time == OPTIMIZE_DISTANCE)
+		{
+			tcp.s = gsl_vector_get(x, 3);
+			compute_a_and_t_from_s(tcp.s, params->target_v, *params->target_td, tcp, params);
+			tcp.a = params->suitable_acceleration;
+			tcp.tt = params->suitable_tt;
+		}
+		if (params->optimize_time == OPTIMIZE_ACCELERATION)
 		{
 			tcp.a = gsl_vector_get(x, 3);
 			tcp.tt = params->suitable_tt;
@@ -52,12 +72,19 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 
 		tcp.k2 = gsl_vector_get(x, 0);
 		tcp.k3 = gsl_vector_get(x, 1);
-		if (params->optimize_time)
+		if (params->optimize_time == OPTIMIZE_TIME)
 		{
 			tcp.tt = gsl_vector_get(x, 2);
 			tcp.a = params->suitable_acceleration;
 		}
-		else
+		if (params->optimize_time == OPTIMIZE_DISTANCE)
+		{
+			tcp.s = gsl_vector_get(x, 2);
+		//TODO Chamar funcao compute_a_and_t
+			tcp.a = params->suitable_acceleration;
+			tcp.tt = params->suitable_tt;
+		}
+		if (params->optimize_time == OPTIMIZE_ACCELERATION)
 		{
 			tcp.a = gsl_vector_get(x, 2);
 			tcp.tt = params->suitable_tt;
@@ -72,7 +99,6 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 		tcp.a = -GlobalState::robot_config.maximum_deceleration_forward;
 //	if (tcp.a > GlobalState::robot_config.maximum_acceleration_forward) // a aceleracao nao pode ser negativa demais
 //		tcp.a = GlobalState::robot_config.maximum_acceleration_forward;
-
 
 //	double max_phi_during_planning = 1.8 * GlobalState::robot_config.max_phi;
 //	if (tcp.has_k1)
@@ -532,47 +558,55 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 	if (target_v < 0.0)
 		target_v = 0.0;
 
-	double a = (target_v - target_td.v_i) / tcp_seed.tt;
-	double tt;
-
-	if (a == 0) //avoid div by zero and plan v = 0 e vi = 0
+	if (params.optimize_time == OPTIMIZE_DISTANCE)
 	{
-		tt = tcp_seed.tt;
-
-		if(target_td.v_i == 0.0)
-			params.optimize_time = false;
-		else
-			params.optimize_time = true;
+		compute_a_and_t_from_s(tcp_seed.s, target_v, target_td, tcp_seed, &params);
 	}
 	else
-		tt = (target_v - target_td.v_i) / a;
-
-
-	if (a > 0.0)
 	{
-		params.optimize_time = true;
-		if (a > GlobalState::robot_config.maximum_acceleration_forward)
-			a = GlobalState::robot_config.maximum_acceleration_forward;
-	}
+		double a = (target_v - target_td.v_i) / tcp_seed.tt;
+		double tt;
 
-	if (a < 0.0)
-	{
-		params.optimize_time = false;
-		if (a < -GlobalState::robot_config.maximum_deceleration_forward)
+
+		if (a == 0) //avoid div by zero and plan v = 0 e vi = 0
 		{
-			a = -GlobalState::robot_config.maximum_deceleration_forward;
-			tt = (target_v - target_td.v_i) / a;
+			tt = tcp_seed.tt;
+
+			if (target_td.v_i == 0.0)
+				params.optimize_time = OPTIMIZE_ACCELERATION;
+			else
+				params.optimize_time = OPTIMIZE_TIME;
 		}
+		else
+			tt = (target_v - target_td.v_i) / a;
+
+
+		if (a > 0.0)
+		{
+			params.optimize_time = OPTIMIZE_TIME;
+			if (a > GlobalState::robot_config.maximum_acceleration_forward)
+				a = GlobalState::robot_config.maximum_acceleration_forward;
+		}
+
+		if (a < 0.0)
+		{
+			params.optimize_time = OPTIMIZE_ACCELERATION;
+			if (a < -GlobalState::robot_config.maximum_deceleration_forward)
+			{
+				a = -GlobalState::robot_config.maximum_deceleration_forward;
+				tt = (target_v - target_td.v_i) / a;
+			}
+		}
+
+		if (tt > 10.0)
+			tt = 10.0;
+		else if (tt < 2.0)
+			tt = 2.0;
+
+		params.suitable_tt = tcp_seed.tt = tt;
+		params.suitable_acceleration = tcp_seed.a = a;
+	//	printf("a %lf, tt %lf\n", a, tt);
 	}
-
-	if (tt > 10.0)
-		tt = 10.0;
-	else if (tt < 2.0)
-		tt = 2.0;
-
-	params.suitable_tt = tcp_seed.tt = tt;
-	params.suitable_acceleration = tcp_seed.a = a;
-//	printf("a %lf, tt %lf\n", a, tt);
 }
 
 
@@ -665,7 +699,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	gsl_vector_set(x, 0, tcp_seed.k1);
 	gsl_vector_set(x, 1, tcp_seed.k2);
 	gsl_vector_set(x, 2, tcp_seed.k3);
-	if (params.optimize_time)
+	if (params.optimize_time == OPTIMIZE_TIME)
 		gsl_vector_set(x, 3, tcp_seed.tt);
 	else
 		gsl_vector_set(x, 3, tcp_seed.a);
@@ -752,9 +786,11 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 	gsl_vector *x = gsl_vector_alloc(3);
 	gsl_vector_set(x, 0, tcp_seed.k2);
 	gsl_vector_set(x, 1, tcp_seed.k3);
-	if (params.optimize_time)
+	if (params.optimize_time == OPTIMIZE_TIME)
 		gsl_vector_set(x, 2, tcp_seed.tt);
-	else
+	if (params.optimize_time == OPTIMIZE_DISTANCE)
+		gsl_vector_set(x, 2, tcp_seed.s);
+	if (params.optimize_time == OPTIMIZE_ACCELERATION)
 		gsl_vector_set(x, 2, tcp_seed.a);
 
 	const gsl_multimin_fdfminimizer_type *T = gsl_multimin_fdfminimizer_conjugate_fr;

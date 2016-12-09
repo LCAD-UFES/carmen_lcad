@@ -24,9 +24,13 @@ struct ObjectiveFunctionParams
 	vector<unsigned int> path_point_nearest_to_lane;
 	unsigned int path_size;
 	bool use_lane;
-	bool optimize_time;
+	int optimize_time;
 	double plan_cost;
 };
+
+#define OPTIMIZE_ACCELERATION 	0
+#define OPTIMIZE_TIME 			1
+#define OPTIMIZE_DISTANCE 		2
 
 TrajectoryLookupTable::TrajectoryControlParameters get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
 		TrajectoryLookupTable::TrajectoryDiscreteDimensions &tdd, double target_v, vector<carmen_ackerman_path_point_t> optimized_path);
