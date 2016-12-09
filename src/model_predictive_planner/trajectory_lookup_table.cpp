@@ -619,11 +619,7 @@ compute_path_via_simulation(carmen_ackerman_traj_point_t &robot_state, Command &
 	{
 		delta_t = delta_t - (t - tcp.tt);
 		command.phi = gsl_spline_eval(phi_spline, tcp.tt, acc);
-
-		if ((command.v + tcp.a * delta_t) < 0.0)
-			command.v = 0.0;
-		else
-			command.v += tcp.a * delta_t;
+		command.v += tcp.a * delta_t;
 
 		robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, delta_t, &distance_traveled, delta_t, GlobalState::robot_config);
 		path.push_back(convert_to_carmen_ackerman_path_point_t(last_robot_state, tcp.tt - last_t));
