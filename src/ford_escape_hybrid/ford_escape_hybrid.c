@@ -142,9 +142,9 @@ set_wrench_efforts_desired_v_and_curvature()
 	if (i < ford_escape_hybrid_config->nun_motion_commands)
 	{
 		v = ford_escape_hybrid_config->current_motion_command_vector[i].v;
-		if (!ford_escape_hybrid_config->use_mpc)
-			phi = (1.0 + v / (6.94 / 0.3)) * ford_escape_hybrid_config->current_motion_command_vector[i].phi;
-		else
+//		if (!ford_escape_hybrid_config->use_mpc)
+//			phi = (1.0 + v / (6.94 / 0.3)) * ford_escape_hybrid_config->current_motion_command_vector[i].phi;
+//		else
 			phi = ford_escape_hybrid_config->current_motion_command_vector[i].phi;
 	}
 	else
@@ -486,11 +486,10 @@ print_values_to_train_simulator(double atan_desired_curvature, double atan_curre
 	double 		error_t;		// error in time t
 	static double 	error_t_1 = 0.0;	// error in time t-1
 	static double 	integral_t = 0.0;
-	static double 	integral_t_1 = 0.0;
 	double		derivative_t;
 
 	if (delta_t == 0.0)
-		return 0.0;
+		return;
 
 	error_t = atan_desired_curvature - atan_current_curvature;
 	integral_t = integral_t + error_t * delta_t;
@@ -705,9 +704,7 @@ torc_report_whrench_effort_message_handler(OjCmpt XGV_CCU __attribute__ ((unused
 		g_XGV_brakes = reportWrenchEffort->resistiveLinearEffortXPercent;
 		carmen_verbose("throttle %.2f\tsteering %.2f\tbrakes %.2f\n", g_XGV_throttle, g_XGV_steering, g_XGV_brakes);
 
-		reportWrenchEf
-
-		fortMessageDestroy(reportWrenchEffort);
+		reportWrenchEffortMessageDestroy(reportWrenchEffort);
 	}
 	else
 	{
