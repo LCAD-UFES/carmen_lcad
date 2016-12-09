@@ -474,6 +474,14 @@ torc_report_velocity_state_message_handler(OjCmpt XGV_CCU __attribute__ ((unused
 
 
 void
+clear_current_motion_command_vector(carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands)
+{
+	for (int i = 0; i < nun_motion_commands; i++)
+		current_motion_command_vector[i].phi = 0.0;
+}
+
+
+void
 //static void // Se for static nao deixa compilar sem ser usada
 torc_report_curvature_message_handler_old(OjCmpt XGV_CCU __attribute__ ((unused)), JausMessage curvature_message)
 {
@@ -548,6 +556,9 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 			robot_config.understeer_coeficient = ford_escape_hybrid_config->understeer_coeficient2;
 			robot_config.distance_between_front_and_rear_axles = ford_escape_hybrid_config->distance_between_front_and_rear_axles;
 			robot_config.max_phi = ford_escape_hybrid_config->max_phi;
+
+			if (g_go_state == 0)
+				clear_current_motion_command_vector(ford_escape_hybrid_config->current_motion_command_vector, ford_escape_hybrid_config->nun_motion_commands);
 
 			g_steering_command = -carmen_libmpc_get_optimized_steering_effort_using_MPC(
 					atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)),
