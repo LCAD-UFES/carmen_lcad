@@ -584,6 +584,7 @@ get_tcp_from_td(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
 			printf(KMAG "@@@@@@@@@@@ Could not find a valid entry in the table!!!!\n\033[0m");
 			return (false);
 		}
+		tcp.s = td.dist;
 	}
 	else
 		tcp = previous_good_tcp;
@@ -754,7 +755,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		last_timestamp = carmen_get_time();
 	}
 
-	if(goal_is_behide_car(localizer_pose, &goalPoseVector[0]))
+	if (goal_is_behide_car(localizer_pose, &goalPoseVector[0]))
 	{
 		printf("goal is behide the car\n");
 		return;

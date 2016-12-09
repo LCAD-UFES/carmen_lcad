@@ -94,6 +94,7 @@ public:
 		double a;
 		double vf;
 		double sf;
+		double s;
 	};
 
 	struct TrajectoryDimensions
