@@ -26,8 +26,8 @@
 
 using namespace g2o;
 
-int print_to_debug = 0;
-int plot_to_debug = 0;
+int print_to_debug = 1;
+int plot_to_debug = 1;
 
 //-----------Funcoes para extrair dados do Experimento------------------------
 double
@@ -772,8 +772,8 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	else
 		build_detailed_rddf_lane(&lane_in_local_pose, detailed_lane);
 
-	// Aberto: @@@ Esta funcao escreve no phi de detailed_lane
-	limit_maximum_centripetal_acceleration(target_v, detailed_lane);
+	// Aberto: @@@ Esta funcao escreve no phi de detailed_lane //REDUZINDO DE 13 para 0.25 a velocidade
+//	limit_maximum_centripetal_acceleration(target_v, detailed_lane);
 
 /***************************************
  * Funcao para extrair dados para artigo
