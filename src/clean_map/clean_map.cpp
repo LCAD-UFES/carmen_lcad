@@ -174,6 +174,15 @@ get_nearest_timestamp_index(double *robot_timestamp, spherical_point_cloud *poin
 	return (index_nearest_timestamp);
 }
 
+cv::Mat rotate(cv::Mat src, double angle)
+{
+    cv::Mat dst;
+    cv::Point2f pt(src.cols/2., src.rows/2.);
+    cv::Mat r = getRotationMatrix2D(pt, angle, 1.0);
+    cv::warpAffine(src, dst, r, cv::Size(src.cols, src.rows));
+    return dst;
+}
+
 void
 segment_remission_map(carmen_map_t *remission_map, carmen_map_t *map)
 {
@@ -275,8 +284,8 @@ segment_remission_map(carmen_map_t *remission_map, carmen_map_t *map)
 		}
 	}
 
-	cv::imshow("offline_map_img", offline_map_img);
-	cv::imshow("map_img", map_img);
+	cv::imshow("offline_map_img", rotate(offline_map_img, 90));
+	cv::imshow("map_img", rotate(map_img, 90));
 	cv::waitKey(33);
 }
 
