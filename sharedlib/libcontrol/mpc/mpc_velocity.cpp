@@ -2,74 +2,6 @@
 #include "../control.h"
 
 
-//FILE *gnuplot_save;
-FILE *gnuplot_save_total;
-bool save_plot = false;
-bool plot = false;
-bool print = false;
-bool use_velocity = true;
-
-
-double
-get_effort_in_time_from_spline(EFFORT_SPLINE_DESCRIPTOR *descriptors, double time)
-{
-	double x[4] = { 0.0, PREDICTION_HORIZON / 3.0, 2.0 * PREDICTION_HORIZON / 3.0, PREDICTION_HORIZON };
-	double y[4] = { descriptors->k1, descriptors->k2, descriptors->k3, descriptors->k4 };
-
-	gsl_interp_accel *acc = gsl_interp_accel_alloc();
-	const gsl_interp_type *type = gsl_interp_cspline;
-	gsl_spline *phi_effort_spline = gsl_spline_alloc(type, 4);
-
-	gsl_spline_init(phi_effort_spline, x, y, 4);
-
-	double effort = gsl_spline_eval(phi_effort_spline, time, acc);
-
-	gsl_spline_free(phi_effort_spline);
-	gsl_interp_accel_free(acc);
-
-	return (effort);
-}
-
-
-vector<double>
-get_effort_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors)
-{
-	double x[4] = { 0.0, PREDICTION_HORIZON / 3.0, 2.0 * PREDICTION_HORIZON / 3.0, PREDICTION_HORIZON };
-	double y[4] = { descriptors->k1, descriptors->k2, descriptors->k3, descriptors->k4 };
-
-	gsl_interp_accel *acc = gsl_interp_accel_alloc();
-	const gsl_interp_type *type = gsl_interp_cspline;
-	gsl_spline *phi_effort_spline = gsl_spline_alloc(type, 4);
-
-	gsl_spline_init(phi_effort_spline, x, y, 4);
-
-	vector<double> effort_vector;
-	for (double t = 0.0; t < PREDICTION_HORIZON; t += DELTA_T)
-		effort_vector.push_back(gsl_spline_eval(phi_effort_spline, t, acc));
-		//effort_vector.push_back(carmen_clamp(-100.0, gsl_spline_eval(phi_effort_spline, t, acc), 100.0));
-
-	gsl_spline_free(phi_effort_spline);
-	gsl_interp_accel_free(acc);
-
-	return (effort_vector);
-}
-
-
-unsigned int
-get_motion_timed_index_to_motion_command(PARAMS* params) // TODO nao devia retornar j--   ????
-{
-	double motion_commands_vector_time = params->motion_commands_vector[0].time;
-	unsigned int j = 0;
-	while ((motion_commands_vector_time	< params->time_elapsed_since_last_motion_command) && (j < params->motion_commands_vector_size))
-	{
-		j++;
-		motion_commands_vector_time += params->motion_commands_vector[j].time;
-	}
-
-	return j;
-}
-
-
 double
 get_velocity_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, void *params_ptr)
 {
@@ -112,7 +44,7 @@ get_velocity_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptor
 
 
 double
-my_f(const gsl_vector *v, void *params_ptr)
+cost_function(const gsl_vector *v, void *params_ptr)
 {
 	EFFORT_SPLINE_DESCRIPTOR d;
 	PARAMS *params = (PARAMS *) params_ptr;
@@ -132,11 +64,11 @@ my_f(const gsl_vector *v, void *params_ptr)
 
 
 void
-my_df(const gsl_vector *v, void *params, gsl_vector *df)
+derivative_cost_function(const gsl_vector *v, void *params, gsl_vector *df)
 {
 	EFFORT_SPLINE_DESCRIPTOR d;
 	double h = 0.1;
-	double f_x = my_f(v, params);
+	double f_x = cost_function(v, params);
 	gsl_vector *x_h;
 
 	x_h = gsl_vector_alloc(4);
@@ -150,28 +82,28 @@ my_df(const gsl_vector *v, void *params, gsl_vector *df)
 	gsl_vector_set(x_h, 1, d.k2);
 	gsl_vector_set(x_h, 2, d.k3);
 	gsl_vector_set(x_h, 3, d.k4);
-	double f_k1_h = my_f(x_h, params);
+	double f_k1_h = cost_function(x_h, params);
 	double df_k1_h = (f_k1_h - f_x) / h;
 
 	gsl_vector_set(x_h, 0, d.k1);
 	gsl_vector_set(x_h, 1, d.k2 + h);
 	gsl_vector_set(x_h, 2, d.k3);
 	gsl_vector_set(x_h, 3, d.k4);
-	double f_k2_h = my_f(x_h, params);
+	double f_k2_h = cost_function(x_h, params);
 	double df_k2_h = (f_k2_h - f_x) / h;
 
 	gsl_vector_set(x_h, 0, d.k1);
 	gsl_vector_set(x_h, 1, d.k2);
 	gsl_vector_set(x_h, 2, d.k3 + h);
 	gsl_vector_set(x_h, 3, d.k4);
-	double f_k3_h = my_f(x_h, params);
+	double f_k3_h = cost_function(x_h, params);
 	double df_k3_h = (f_k3_h - f_x) / h;
 
 	gsl_vector_set(x_h, 0, d.k1);
 	gsl_vector_set(x_h, 1, d.k2);
 	gsl_vector_set(x_h, 2, d.k3);
 	gsl_vector_set(x_h, 3, d.k4 + h);
-	double f_k4_h = my_f(x_h, params);
+	double f_k4_h = cost_function(x_h, params);
 	double df_k4_h = (f_k4_h - f_x) / h;
 
 	gsl_vector_set(df, 0, df_k1_h);
@@ -184,10 +116,10 @@ my_df(const gsl_vector *v, void *params, gsl_vector *df)
 
 
 void
-my_fdf(const gsl_vector *x, void *params, double *f, gsl_vector *df)
+fdf(const gsl_vector *x, void *params, double *f, gsl_vector *df)
 {
-	*f = my_f (x, params);
-	my_df (x, params, df);
+	*f = cost_function (x, params);
+	derivative_cost_function (x, params, df);
 }
 
 
@@ -202,9 +134,9 @@ get_optimized_effort(PARAMS *params, EFFORT_SPLINE_DESCRIPTOR descriptors, doubl
 	int status;
 
 	my_func.n = 4;
-	my_func.f = my_f;
-	my_func.df = my_df;
-	my_func.fdf = my_fdf;
+	my_func.f = cost_function;
+	my_func.df = derivative_cost_function;
+	my_func.fdf = fdf;
 	my_func.params = params;
 
 	x = gsl_vector_alloc (4);  // Num of parameters to minimize
@@ -370,11 +302,9 @@ carmen_libmpc_compute_velocity_effort(carmen_ackerman_motion_command_p current_m
 	params.velocity_error_dk = current_velocity - velocity;
 
 
-	if (plot)
-	{
-		//plot_velocity(&velocity_descriptors, v, &params);
-	}
-
+	#ifdef PLOT
+		plot_velocity(&velocity_descriptors, current_velocity, &params);
+	#endif
 
 	return (velocity_descriptors.k1);
 }
