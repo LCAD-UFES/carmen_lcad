@@ -29,8 +29,21 @@ compute_a_and_t_from_s(double s, double target_v,
 		TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed,
 		ObjectiveFunctionParams *params)
 {
-	tcp_seed.tt = s / ((target_v + target_td.v_i) / 2.0);
+	// https://www.wolframalpha.com/input/?i=solve+s%3Dv*x%2B0.5*a*x%5E2
+	tcp_seed.tt = (2.0 * s) / (target_v + target_td.v_i);
 	double a = (target_v - target_td.v_i) / tcp_seed.tt;
+	if (a > GlobalState::robot_config.maximum_acceleration_forward)
+	{
+		a = GlobalState::robot_config.maximum_acceleration_forward;
+		double v = target_td.v_i;
+		tcp_seed.tt = (sqrt(2.0 * a * s + v * v) - v) / a;
+	}
+	else if (a < -GlobalState::robot_config.maximum_deceleration_forward)
+	{
+		a = -GlobalState::robot_config.maximum_deceleration_forward;
+		double v = target_td.v_i;
+		tcp_seed.tt = -(sqrt(2.0 * a * s + v * v) + v) / a;
+	}
 	params->suitable_tt = tcp_seed.tt;
 	params->suitable_acceleration = tcp_seed.a = a;
 }
@@ -557,7 +570,8 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 
 	if (target_v < 0.0)
 		target_v = 0.0;
-	params.optimize_time = OPTIMIZE_DISTANCE;
+//	params.optimize_time = OPTIMIZE_DISTANCE;
+	params.optimize_time = OPTIMIZE_TIME;
 
 	if (params.optimize_time == OPTIMIZE_DISTANCE)
 	{
