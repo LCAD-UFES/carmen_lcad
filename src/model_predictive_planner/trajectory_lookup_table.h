@@ -42,7 +42,7 @@
 #define RATIO_K3		1.394			// Ratio (Wikipedia) of k3 geometric progression
 #define ZERO_K3_I		7				// Index of zero k3
 
-#define N_I_V			8				// Number of Initial velocities
+#define N_I_V			9				// Number of Initial velocities
 #define FIRST_I_V		1.3				// First Initial velocity, or scale factor of its geometric progression
 #define RATIO_I_V		1.381				// Ratio (Wikipedia) of Initial velocity geometric progression
 #define ZERO_I_V_I		0				// Index of zero Initial velocity

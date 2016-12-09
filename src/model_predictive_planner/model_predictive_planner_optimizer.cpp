@@ -80,7 +80,7 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 		if (params->optimize_time == OPTIMIZE_DISTANCE)
 		{
 			tcp.s = gsl_vector_get(x, 2);
-		//TODO Chamar funcao compute_a_and_t
+			compute_a_and_t_from_s(tcp.s, params->target_v, *params->target_td, tcp, params);
 			tcp.a = params->suitable_acceleration;
 			tcp.tt = params->suitable_tt;
 		}
@@ -557,6 +557,7 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 
 	if (target_v < 0.0)
 		target_v = 0.0;
+	params.optimize_time = OPTIMIZE_TIME;
 
 	if (params.optimize_time == OPTIMIZE_DISTANCE)
 	{
@@ -701,7 +702,9 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	gsl_vector_set(x, 2, tcp_seed.k3);
 	if (params.optimize_time == OPTIMIZE_TIME)
 		gsl_vector_set(x, 3, tcp_seed.tt);
-	else
+	if (params.optimize_time == OPTIMIZE_DISTANCE)
+		gsl_vector_set(x, 3, tcp_seed.s);
+	if (params.optimize_time == OPTIMIZE_ACCELERATION)
 		gsl_vector_set(x, 3, tcp_seed.a);
 
 	const gsl_multimin_fdfminimizer_type *T = gsl_multimin_fdfminimizer_conjugate_fr;

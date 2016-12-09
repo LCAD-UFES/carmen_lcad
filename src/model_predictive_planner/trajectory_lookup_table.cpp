@@ -271,6 +271,7 @@ init_trajectory_lookup_table()
 	tcp.a = 0.0;
 	tcp.vf = 0.0;
 	tcp.sf = 0.0;
+	tcp.s = 0.0;
 
 	for (int i = 0; i < N_DIST; i++)
 		for (int j = 0; j < N_THETA; j++)
@@ -533,6 +534,7 @@ generate_trajectory_control_parameters_sample(double k2, double k3, int i_v, int
 	// v = v0 + a.t
 	tcp.vf = v0 + tcp.a * time;
 	tcp.tt = time;
+	tcp.s = distance;
 
 	return (tcp);
 }
@@ -617,7 +619,12 @@ compute_path_via_simulation(carmen_ackerman_traj_point_t &robot_state, Command &
 	{
 		delta_t = delta_t - (t - tcp.tt);
 		command.phi = gsl_spline_eval(phi_spline, tcp.tt, acc);
-		command.v += tcp.a * delta_t;
+
+		if ((command.v + tcp.a * delta_t) < 0.0)
+			command.v = 0.0;
+		else
+			command.v += tcp.a * delta_t;
+
 		robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, delta_t, &distance_traveled, delta_t, GlobalState::robot_config);
 		path.push_back(convert_to_carmen_ackerman_path_point_t(last_robot_state, tcp.tt - last_t));
 	}
