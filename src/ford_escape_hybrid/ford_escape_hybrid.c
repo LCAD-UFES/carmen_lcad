@@ -480,6 +480,28 @@ clear_current_motion_command_vector(carmen_ackerman_motion_command_p current_mot
 		current_motion_command_vector[i].phi = 0.0;
 }
 
+void
+print_values_to_train_simulator(double atan_desired_curvature, double atan_current_curvature, double delta_t, double steering_effort)
+{
+	double 		error_t;		// error in time t
+	static double 	error_t_1 = 0.0;	// error in time t-1
+	static double 	integral_t = 0.0;
+	static double 	integral_t_1 = 0.0;
+	double		derivative_t;
+
+	if (delta_t == 0.0)
+		return 0.0;
+
+	error_t = atan_desired_curvature - atan_current_curvature;
+	integral_t = integral_t + error_t * delta_t;
+	derivative_t = (error_t - error_t_1) / delta_t;
+
+	error_t_1 = error_t;
+
+	fprintf(stdout, "STEERING (cc, dc, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf\n",
+		atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t, steering_effort);
+}
+
 
 void
 //static void // Se for static nao deixa compilar sem ser usada
@@ -566,6 +588,8 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 					ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->time_of_last_command,
 					&robot_config, 0);
 
+			//print_values_to_train_simulator(g_atan_desired_curvature, -atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t, g_steering_command);
+
 			//		//RL_PID
 //					if (ford_escape_hybrid_config->nun_motion_commands > 0)
 //					{
@@ -606,14 +630,14 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 //						real_phi, ford_escape_hybrid_config->current_motion_command_vector[j].phi, ford_escape_hybrid_config->filtered_phi,
 //						ford_escape_hybrid_config->filtered_v);
 //			}
-			///////////////////////// Acima: So para guardar os phi s para medir erro no modelo do carro
+			///////////////////////// Acima: So para guardar os phis para medir erro no modelo do carro
 		}
 		else
 		{
 			g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
 					-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t);
 
-			printf("PID %lf %lf %lf %lf %lf\n", carmen_get_time(), -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), ford_escape_hybrid_config->filtered_phi, g_steering_command/200, ford_escape_hybrid_config->filtered_v);
+			//printf("PID %lf %lf %lf %lf %lf\n", carmen_get_time(), -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), ford_escape_hybrid_config->filtered_phi, g_steering_command/200, ford_escape_hybrid_config->filtered_v);
 
 			pid_plot_curvature(ford_escape_hybrid_config->filtered_phi, -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config));
 		}
@@ -681,7 +705,9 @@ torc_report_whrench_effort_message_handler(OjCmpt XGV_CCU __attribute__ ((unused
 		g_XGV_brakes = reportWrenchEffort->resistiveLinearEffortXPercent;
 		carmen_verbose("throttle %.2f\tsteering %.2f\tbrakes %.2f\n", g_XGV_throttle, g_XGV_steering, g_XGV_brakes);
 
-		reportWrenchEffortMessageDestroy(reportWrenchEffort);
+		reportWrenchEf
+
+		fortMessageDestroy(reportWrenchEffort);
 	}
 	else
 	{

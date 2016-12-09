@@ -26,8 +26,8 @@
 
 using namespace g2o;
 
-int print_to_debug = 1;
-int plot_to_debug = 1;
+int print_to_debug = 0;
+int plot_to_debug = 0;
 
 //-----------Funcoes para extrair dados do Experimento------------------------
 double
@@ -679,7 +679,7 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 
 	move_path_to_current_robot_pose(path, localizer_pose);
 
-//	limit_maximum_centripetal_acceleration_old(path);
+	limit_maximum_centripetal_acceleration_old(path);
 
 //	if (GlobalState::use_mpc)
 //		apply_system_latencies(path);
