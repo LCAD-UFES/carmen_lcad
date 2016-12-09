@@ -1,6 +1,4 @@
 #include <vector>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
 
 #include <carmen/carmen.h>
 #include <carmen/laser_interface.h>
@@ -188,7 +186,6 @@ shutdown_module(int signo)
 	if (signo == SIGINT)
 	{
 		carmen_ipc_disconnect();
-		cvDestroyAllWindows();
 
 		printf("Moving Objects: disconnected.\n");
 		exit(0);

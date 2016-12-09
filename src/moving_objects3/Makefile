@@ -14,7 +14,7 @@ LFLAGS += -lglobal -lipc -llaser_interface -lGL -lglut -lGLU -lvelodyne_interfac
 	 -L$(CARMEN_HOME)/sharedlib/prob_models -lprob_models -lmap_interface -lrotation_geometry -lfused_odometry_interface -lbase_ackerman_interface
 
 SOURCES = moving_objects3_interface.c tf_util.cpp \
-	moving_objects3_main.cpp polar_point.cpp moving_objects3_viewer.cpp 
+	moving_objects3_main.cpp polar_point.cpp moving_objects3_viewer.cpp moving_objects3_particle_filter.cpp 
 
 PUBLIC_INCLUDES = moving_objects3_interface.h moving_objects3_messages.h polar_point.h tf_util.h
 PUBLIC_LIBRARIES = libtf_util.a
