@@ -39,12 +39,9 @@ static double g_velocity_backward_deccelerating_Ki;
 static double g_velocity_backward_deccelerating_Kd;
 static double g_brake_gap;
 
-//FILE *gnuplot_save_pid;
-//double first_time = 0.0;
-//int init = 1;
 
 void
-pid_plot_curvature(double current_phi, double desired_phi)
+pid_plot(double current_phi, double desired_phi, double y_range, char* title)
 {
 	#define PAST_SIZE 300
 	static list<double> cphi;
@@ -62,10 +59,8 @@ pid_plot_curvature(double current_phi, double desired_phi)
 	{
 		first_timestamp = t;
 		first_time = false;
-
-		gnuplot_pipe = popen("gnuplot -persist", "w"); //("gnuplot -persist", "w") to keep last plot after program closes
-		fprintf(gnuplot_pipe, "set xrange [0:PAST_SIZE/30]\n");
-		fprintf(gnuplot_pipe, "set yrange [-0.55:0.55]\n");
+		gnuplot_pipe = popen("gnuplot", "w"); //("gnuplot -persist", "w") to keep last plot after program closes
+		fprintf(gnuplot_pipe, "set xrange [0:PAST_SIZE/30]\n set yrange [-%lf:%lf]\n", y_range, y_range);
 	}
 
 	cphi.push_front(current_phi);
@@ -85,22 +80,63 @@ pid_plot_curvature(double current_phi, double desired_phi)
 	for (itc = cphi.begin(), itd = dphi.begin(), itt = timestamp.begin(); itc != cphi.end(); itc++, itd++, itt++)
 		fprintf(gnuplot_data_file, "%lf %lf %lf\n", *itt - timestamp.back(), *itc, *itd);
 
+	fclose(gnuplot_data_file);
+
+
+	fprintf(gnuplot_pipe, "plot "
+			"'./gnuplot_data.txt' using 1:2 with lines title 'C%s', './gnuplot_data.txt' using 1:3 with lines title 'D%s'\n", title, title);
+
+	fflush(gnuplot_pipe);
+}
+
+
+void
+pid_plot_velocity(double current_phi, double desired_phi, double y_range, char* title)
+{
+	#define PAST_SIZE 300
+	static list<double> cphi;
+	static list<double> dphi;
+	static list<double> timestamp;
+	static bool first_time = true;
+	static double first_timestamp;
+	static FILE *gnuplot_pipe;
+	list<double>::iterator itc;
+	list<double>::iterator itd;
+	list<double>::iterator itt;
+
+	double t = carmen_get_time();
+	if (first_time)
+	{
+		first_timestamp = t;
+		first_time = false;
+		gnuplot_pipe = popen("gnuplot", "w"); //("gnuplot -persist", "w") to keep last plot after program closes
+		fprintf(gnuplot_pipe, "set xrange [0:PAST_SIZE/30]\n set yrange [-%lf:%lf]\n", y_range, y_range);
+	}
+
+	cphi.push_front(current_phi);
+	dphi.push_front(desired_phi);
+	timestamp.push_front(t - first_timestamp);
+
+	while(cphi.size() > PAST_SIZE)
+	{
+		cphi.pop_back();
+		dphi.pop_back();
+		timestamp.pop_back();
+	}
+
+
+	FILE *gnuplot_data_file = fopen("gnuplot_velocity_data.txt", "w");
+
+	for (itc = cphi.begin(), itd = dphi.begin(), itt = timestamp.begin(); itc != cphi.end(); itc++, itd++, itt++)
+		fprintf(gnuplot_data_file, "%lf %lf %lf\n", *itt - timestamp.back(), *itc, *itd);
 
 	fclose(gnuplot_data_file);
 
+
 	fprintf(gnuplot_pipe, "plot "
-			"'./gnuplot_data.txt' using 1:2 with lines title 'cphi',"
-			"'./gnuplot_data.txt' using 1:3 with lines title 'dphi'\n");
+			"'./gnuplot_velocity_data.txt' using 1:2 with lines title 'C%s', './gnuplot_velocity_data.txt' using 1:3 with lines title 'D%s'\n", title, title);
 
 	fflush(gnuplot_pipe);
-
-//	if (init)
-//	{
-//		first_time = carmen_get_time();
-//		gnuplot_save_pid = fopen("PID_NEW_CURVA", "w");
-//		init = 0;
-//	}
-//	fprintf(gnuplot_save_pid, "%lf %lf %lf %lf %lf\n", carmen_get_time() - first_time, desired_phi, current_phi, steering_effort/200, v);
 }
 
 
@@ -270,6 +306,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 //		*throttle_command, *brakes_command,
 //		integral_t, derivative_t, carmen_get_time());
 //	fflush(stdout);
+
 }
 
 

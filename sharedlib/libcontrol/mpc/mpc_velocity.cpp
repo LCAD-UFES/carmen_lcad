@@ -160,7 +160,7 @@ get_optimized_effort(PARAMS *params, EFFORT_SPLINE_DESCRIPTOR descriptors, doubl
 
 		status = gsl_multimin_test_gradient(s->gradient, 1e-3);
 
-	} while ((status == GSL_CONTINUE) && (iter < 15));
+	} while ((status == GSL_CONTINUE) && (iter < 3));
 	//printf("iter = %ld\n", iter);
 
 	descriptors.k1 = carmen_clamp(-100.0, gsl_vector_get(s->x, 0), 100.0);
@@ -269,21 +269,21 @@ init_mpc(PARAMS &params, EFFORT_SPLINE_DESCRIPTOR &seed, double current_velocity
 }
 
 
-double
-carmen_libmpc_compute_velocity_effort(carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands,
+void
+carmen_libmpc_compute_velocity_effort(/*double *throttle_command, double *brakes_command, int *gear_command,*/
+		carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands,
 		double current_velocity, double time_of_last_motion_command, carmen_robot_ackerman_config_t *robot_config)
 {
 	if (current_motion_command_vector == NULL || nun_motion_commands < 16)
-		return 0.0;
+		return;
 
 	static PARAMS params;
 	static EFFORT_SPLINE_DESCRIPTOR velocity_descriptors = {0.0, 0.0, 0.0, 0.0};
 	double throttle_effort, brake_effort, velocity;
 
 	if (!init_mpc(params, velocity_descriptors, current_velocity, time_of_last_motion_command, robot_config))
-		return (0.0);
+		return;
 
-	printf("Vel_IT ");
 	params.path = get_motion_commands_vector(current_motion_command_vector, nun_motion_commands, time_of_last_motion_command);
 	velocity_descriptors = get_optimized_effort(&params, velocity_descriptors, get_velocity_vector_from_spline_descriptors);
 
@@ -305,6 +305,4 @@ carmen_libmpc_compute_velocity_effort(carmen_ackerman_motion_command_p current_m
 	#ifdef PLOT
 		plot_velocity(&velocity_descriptors, current_velocity, &params);
 	#endif
-
-	return (velocity_descriptors.k1);
 }

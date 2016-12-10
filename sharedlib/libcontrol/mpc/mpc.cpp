@@ -1,6 +1,5 @@
-#include <list>
-#include <vector>
 #include "mpc.h"
+#include "../control.h"
 
 
 using namespace std;
