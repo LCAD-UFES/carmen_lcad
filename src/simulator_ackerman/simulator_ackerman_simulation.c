@@ -280,14 +280,14 @@ compute_new_velocity_with_ann(carmen_simulator_ackerman_config_t *simulator_conf
 
 //	if (simulator_config->use_mpc)
 //	{
-		carmen_libmpc_compute_velocity_effort(simulator_config->current_motion_command_vector, simulator_config->nun_motion_commands,
-				simulator_config->v, simulator_config->time_of_last_command, &simulator_config->robot_config);
+//		carmen_libmpc_compute_velocity_effort(simulator_config->current_motion_command_vector, simulator_config->nun_motion_commands,
+//				simulator_config->v, simulator_config->time_of_last_command, &simulator_config->robot_config);
 //	}
 //	else
-//	{
+	{
 		carmen_libpid_velocity_PID_controler(&throttle_command, &brakes_command, &gear_command,
 				simulator_config->target_v, simulator_config->v, simulator_config->delta_t);
-//	}
+	}
 
 #endif
 
@@ -735,7 +735,7 @@ carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulat
 	v   = compute_new_velocity(simulator_config);
 	//phi = compute_new_phi(simulator_config);// + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.1));
 
-	//v   = compute_new_velocity_with_ann(simulator_config);
+//	v   = compute_new_velocity_with_ann(simulator_config);
 	phi = compute_new_phi_with_ann(simulator_config);// + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.05));
 
 	phi = carmen_clamp(-simulator_config->max_phi, phi, simulator_config->max_phi);

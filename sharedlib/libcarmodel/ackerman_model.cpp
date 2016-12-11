@@ -2,7 +2,7 @@
 
 
 double
-predict_next_pose_step(carmen_ackerman_traj_point_p new_robot_state, double targuet_v, double delta_t,
+predict_next_pose_step(carmen_ackerman_traj_point_p new_robot_state, double target_v, double delta_t,
 		double &achieved_curvature, const double &desired_curvature, double &max_curvature_change,
 		carmen_robot_ackerman_config_t robot_config)
 {
@@ -17,17 +17,18 @@ predict_next_pose_step(carmen_ackerman_traj_point_p new_robot_state, double targ
 
 	new_robot_state->phi = carmen_clamp(-robot_config.max_phi, new_robot_state->phi, robot_config.max_phi);
 
-	// Tem que checar se as equacoes que governam esta mudancca de v estao corretas (precisa de um Euler?) e fazer o mesmo no caso do rrt_path_follower.
-	double delta_v = fabs(initial_robot_state.v - targuet_v);
-	double command_v_signal = (initial_robot_state.v <= targuet_v) ? 1.0 : -1.0;
-	new_robot_state->v = initial_robot_state.v + command_v_signal * delta_v;
+	double v0 = initial_robot_state.v;
+	double a = (target_v - v0) / delta_t;
+	double s = v0 * delta_t + 0.5 * a * delta_t * delta_t;
 
-	double move_x = new_robot_state->v * delta_t * cos(initial_robot_state.theta);
-	double move_y = new_robot_state->v * delta_t * sin(initial_robot_state.theta);
+	double move_x = s * cos(initial_robot_state.theta);
+	double move_y = s * sin(initial_robot_state.theta);
 
 	new_robot_state->x	   += move_x;
 	new_robot_state->y	   += move_y;
-	new_robot_state->theta += new_robot_state->v * delta_t * tan(new_robot_state->phi) / robot_config.distance_between_front_and_rear_axles;
+	new_robot_state->theta += s * tan(new_robot_state->phi) / robot_config.distance_between_front_and_rear_axles;
+
+	new_robot_state->v = target_v;
 
 	return sqrt(move_x * move_x + move_y * move_y);
 }
