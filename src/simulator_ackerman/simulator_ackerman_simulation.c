@@ -284,18 +284,14 @@ compute_new_velocity_with_ann(carmen_simulator_ackerman_config_t *simulator_conf
 //				simulator_config->v, simulator_config->time_of_last_command, &simulator_config->robot_config);
 //	}
 //	else
-	{
+//	{
 		carmen_libpid_velocity_PID_controler(&throttle_command, &brakes_command, &gear_command,
 				simulator_config->target_v, simulator_config->v, simulator_config->delta_t);
-<<<<<<< HEAD
-	}
-=======
 
 		#ifdef PLOT
 			pid_plot_velocity(simulator_config->target_v, simulator_config->v, 15.0, "vel");
 		#endif
 //	}
->>>>>>> 83a9da687ef07e2d0f8d41053ffcdae21c97ada8
 
 #endif
 
