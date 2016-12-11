@@ -254,7 +254,7 @@ compute_new_velocity_with_ann(carmen_simulator_ackerman_config_t *simulator_conf
 	static double brakes_command = 100.0 / 100.0;
 	static int gear_command = 0;
 	static fann_type velocity_ann_input[NUM_VELOCITY_ANN_INPUTS];
-	fann_type *velocity_ann_output;
+	//fann_type *velocity_ann_output;
 	static struct fann *velocity_ann = NULL;
 
 	if (velocity_ann == NULL)
@@ -280,44 +280,37 @@ compute_new_velocity_with_ann(carmen_simulator_ackerman_config_t *simulator_conf
 
 //	if (simulator_config->use_mpc)
 //	{
-//		carmen_libmpc_compute_velocity_effort(simulator_config->current_motion_command_vector, simulator_config->nun_motion_commands,
-//				simulator_config->v, simulator_config->time_of_last_command, &simulator_config->robot_config);
+		carmen_libmpc_compute_velocity_effort(&throttle_command, &brakes_command, &gear_command,
+				simulator_config->current_motion_command_vector, simulator_config->nun_motion_commands,
+				simulator_config->v, simulator_config->time_of_last_command, &simulator_config->robot_config);
 //	}
 //	else
-	{
+//	{
+		//printf("%lf %lf \n", throttle_command, brakes_command);
 		carmen_libpid_velocity_PID_controler(&throttle_command, &brakes_command, &gear_command,
 				simulator_config->target_v, simulator_config->v, simulator_config->delta_t);
-<<<<<<< HEAD
-	}
-=======
-
-		#ifdef PLOT
-			pid_plot_velocity(simulator_config->target_v, simulator_config->v, 15.0, "vel");
-		#endif
+//		#ifdef PLOT
+//			pid_plot_velocity(simulator_config->target_v, simulator_config->v, 15.0, "vel");
+//		#endif
 //	}
->>>>>>> 83a9da687ef07e2d0f8d41053ffcdae21c97ada8
 
 #endif
 
-	//printf("%lf %lf \n", throttle_command, brakes_command);
-
-	//simulator_config->v = carmen_libcarneuralmodel_compute_new_velocity_from_efforts(velocity_ann_input, velocity_ann, throttle_command, brakes_command, -simulator_config->v);
-
 	if (gear_command == 129) // marcha reh
 	{
-		carmen_libcarneuralmodel_build_velocity_ann_input(velocity_ann_input, throttle_command, brakes_command, -simulator_config->v);
-		velocity_ann_output = fann_run(velocity_ann, velocity_ann_input);
+//		carmen_libcarneuralmodel_build_velocity_ann_input(velocity_ann_input, throttle_command, brakes_command, -simulator_config->v);
+//					velocity_ann_output = fann_run(velocity_ann, velocity_ann_input);
+//		simulator_config->v = -velocity_ann_output[0];
 
-		simulator_config->v = -velocity_ann_output[0];
-
-//		simulator_config->v = - simulator_config->v;
+		simulator_config->v = -carmen_libcarneuralmodel_compute_new_velocity_from_efforts(velocity_ann_input, velocity_ann, throttle_command, brakes_command, -simulator_config->v);
 	}
 	else
 	{
-		carmen_libcarneuralmodel_build_velocity_ann_input(velocity_ann_input, throttle_command, brakes_command, simulator_config->v);
-		velocity_ann_output = fann_run(velocity_ann, velocity_ann_input);
+//		carmen_libcarneuralmodel_build_velocity_ann_input(velocity_ann_input, throttle_command, brakes_command, simulator_config->v);
+//						velocity_ann_output = fann_run(velocity_ann, velocity_ann_input);
+//		simulator_config->v = velocity_ann_output[0];
 
-		simulator_config->v = velocity_ann_output[0];
+		simulator_config->v = carmen_libcarneuralmodel_compute_new_velocity_from_efforts(velocity_ann_input, velocity_ann, throttle_command, brakes_command, simulator_config->v);
 	}
 	//simulator_config->v = simulator_config->v + simulator_config->v * carmen_gaussian_random(0.0, 0.007); // add some noise
 
@@ -741,7 +734,7 @@ carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulat
 	v   = compute_new_velocity(simulator_config);
 	//phi = compute_new_phi(simulator_config);// + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.1));
 
-//	v   = compute_new_velocity_with_ann(simulator_config);
+	//v   = compute_new_velocity_with_ann(simulator_config);
 	phi = compute_new_phi_with_ann(simulator_config);// + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.05));
 
 	phi = carmen_clamp(-simulator_config->max_phi, phi, simulator_config->max_phi);

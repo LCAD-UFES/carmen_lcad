@@ -30,15 +30,16 @@ get_velocity_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptor
 		}
 		velocity = carmen_libcarneuralmodel_compute_new_velocity_from_efforts(velocity_ann_input, params->velocity_ann, throttle_effort, brake_effort, current_velocity);
 
-		//printf("D %lf P %lf\n", params->path.v[i], velocity);
 		velocity_eror_sum += fabs(params->path.v[i] - velocity);
 
 		params->optimized_path.v.push_back(velocity);
 
 		current_velocity = velocity;
+
+		//printf("%lf %lf\n", throttle_effort, brake_effort);
+		printf("D %lf P %lf\n", params->path.v[i], velocity);
 	}
 
-	//printf("SAIU\n");
 	return (velocity_eror_sum);
 }
 
@@ -160,8 +161,8 @@ get_optimized_effort(PARAMS *params, EFFORT_SPLINE_DESCRIPTOR descriptors, doubl
 
 		status = gsl_multimin_test_gradient(s->gradient, 1e-3);
 
-	} while ((status == GSL_CONTINUE) && (iter < 3));
-	//printf("iter = %ld\n", iter);
+	} while ((status == GSL_CONTINUE) && (iter < 15));
+	printf("iter = %ld\n", iter);
 
 	descriptors.k1 = carmen_clamp(-100.0, gsl_vector_get(s->x, 0), 100.0);
 	descriptors.k2 = carmen_clamp(-100.0, gsl_vector_get(s->x, 1), 100.0);
@@ -252,8 +253,6 @@ init_mpc(PARAMS &params, EFFORT_SPLINE_DESCRIPTOR &seed, double current_velocity
 		}
 		carmen_libcarneuralmodel_init_velocity_ann_input(params.velocity_ann_input);
 
-		params.dk = 0.0;
-		params.previous_k1 = 0.0;
 		first_time = false;
 	}
 
@@ -270,7 +269,7 @@ init_mpc(PARAMS &params, EFFORT_SPLINE_DESCRIPTOR &seed, double current_velocity
 
 
 void
-carmen_libmpc_compute_velocity_effort(/*double *throttle_command, double *brakes_command, int *gear_command,*/
+carmen_libmpc_compute_velocity_effort(double *throttle_command, double *brake_command, int *gear_command,
 		carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands,
 		double current_velocity, double time_of_last_motion_command, carmen_robot_ackerman_config_t *robot_config)
 {
@@ -279,7 +278,7 @@ carmen_libmpc_compute_velocity_effort(/*double *throttle_command, double *brakes
 
 	static PARAMS params;
 	static EFFORT_SPLINE_DESCRIPTOR velocity_descriptors = {0.0, 0.0, 0.0, 0.0};
-	double throttle_effort, brake_effort, velocity;
+	double velocity;//throttle_effort, brake_effort,
 
 	if (!init_mpc(params, velocity_descriptors, current_velocity, time_of_last_motion_command, robot_config))
 		return;
@@ -287,18 +286,19 @@ carmen_libmpc_compute_velocity_effort(/*double *throttle_command, double *brakes
 	params.path = get_motion_commands_vector(current_motion_command_vector, nun_motion_commands, time_of_last_motion_command);
 	velocity_descriptors = get_optimized_effort(&params, velocity_descriptors, get_velocity_vector_from_spline_descriptors);
 
+	*gear_command = *gear_command;
 	if(velocity_descriptors.k1 >= 0.0)
 	{
-		throttle_effort = velocity_descriptors.k1;
-		brake_effort = 17.0;
+		*throttle_command = velocity_descriptors.k1;
+		*brake_command = 17.0;
 	}
 	else
 	{
-		throttle_effort = 0.0;
-		brake_effort = velocity_descriptors.k1;
+		*throttle_command = 0.0;
+		*brake_command = velocity_descriptors.k1;
 	}
 
-	velocity = carmen_libcarneuralmodel_compute_new_velocity_from_efforts(params.velocity_ann_input, params.velocity_ann, throttle_effort, brake_effort, current_velocity);
+	velocity = carmen_libcarneuralmodel_compute_new_velocity_from_efforts(params.velocity_ann_input, params.velocity_ann, *throttle_command, *brake_command, current_velocity);
 	params.velocity_error_dk = current_velocity - velocity;
 
 
