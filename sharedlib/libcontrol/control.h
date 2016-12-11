@@ -24,7 +24,7 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 
 
 void
-carmen_libmpc_compute_velocity_effort(/*double *throttle_command, double *brakes_command, int *gear_command,*/
+carmen_libmpc_compute_velocity_effort(double *throttle_command, double *brake_command, int *gear_command,
 		carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands,
 		double current_velocity, double time_of_last_motion_command, carmen_robot_ackerman_config_t *robot_config);
 

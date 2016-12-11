@@ -667,9 +667,9 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 
 	seed = get_optimized_effort(&params, seed);
 
-	#ifdef PLOT
-		plot_state(&seed, &params, v, robot_config->understeer_coeficient, robot_config->distance_between_front_and_rear_axles, effort);
-	#endif
+//	#ifdef PLOT
+//		plot_state(&seed, &params, v, robot_config->understeer_coeficient, robot_config->distance_between_front_and_rear_axles, effort);
+//	#endif
 
 	carmen_clamp(-100.0, effort, 100.0);
 	return (effort);
