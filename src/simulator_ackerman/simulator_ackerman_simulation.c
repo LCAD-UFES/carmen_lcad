@@ -287,7 +287,15 @@ compute_new_velocity_with_ann(carmen_simulator_ackerman_config_t *simulator_conf
 	{
 		carmen_libpid_velocity_PID_controler(&throttle_command, &brakes_command, &gear_command,
 				simulator_config->target_v, simulator_config->v, simulator_config->delta_t);
+<<<<<<< HEAD
 	}
+=======
+
+		#ifdef PLOT
+			pid_plot_velocity(simulator_config->target_v, simulator_config->v, 15.0, "vel");
+		#endif
+//	}
+>>>>>>> 83a9da687ef07e2d0f8d41053ffcdae21c97ada8
 
 #endif
 
@@ -633,14 +641,12 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 	}
 	else
 	{
-//		double atan_desired_curvature = carmen_get_curvature_from_phi(simulator_config->target_phi, simulator_config->v, simulator_config->understeer_coeficient2,
-//																simulator_config->distance_between_front_and_rear_axles);
-
-//		printf("PID %lf %lf %lf %lf %lf\n", carmen_get_time(), simulator_config->target_phi, simulator_config->phi, steering_effort/200, simulator_config->v);
+		//printf("PID %lf %lf %lf %lf %lf\n", carmen_get_time(), simulator_config->target_phi, simulator_config->phi, steering_effort/200, simulator_config->v);
 
 		steering_effort = carmen_libpid_steering_PID_controler(atan_desired_curvature, atan_current_curvature, simulator_config->delta_t);
-
-		pid_plot_curvature(simulator_config->phi, simulator_config->target_phi);
+		#ifdef PLOT
+			pid_plot(simulator_config->target_phi, simulator_config->phi, 0.55, "phi");
+		#endif
 	}
 
 #endif
