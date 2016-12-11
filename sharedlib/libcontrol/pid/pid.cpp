@@ -41,7 +41,7 @@ static double g_brake_gap;
 
 
 void
-pid_plot(double current_phi, double desired_phi, double y_range, char* title)
+pid_plot_phi(double current_phi, double desired_phi, double y_range, char* title)
 {
 	#define PAST_SIZE 300
 	static list<double> cphi;

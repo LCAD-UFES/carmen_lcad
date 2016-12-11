@@ -597,7 +597,7 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 //
 //						printf("RL-PID %lf %lf %lf %lf %lf\n", carmen_get_time(), -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), ford_escape_hybrid_config->filtered_phi, g_steering_command/200, ford_escape_hybrid_config->filtered_v);
 //
-//						pid_plot_curvature(ford_escape_hybrid_config->filtered_phi, -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config));
+//						pid_plot_phi(ford_escape_hybrid_config->filtered_phi, -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), 0.6, "phi");
 //					}
 
 			///////////////////////// So para guardar os phi s para medir erro no modelo do carro
@@ -638,7 +638,7 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 
 			//printf("PID %lf %lf %lf %lf %lf\n", carmen_get_time(), -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), ford_escape_hybrid_config->filtered_phi, g_steering_command/200, ford_escape_hybrid_config->filtered_v);
 
-			pid_plot_curvature(ford_escape_hybrid_config->filtered_phi, -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config));
+			pid_plot_phi(ford_escape_hybrid_config->filtered_phi, -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), 0.6, "phi");
 		}
 
 		previous_gear_command = g_gear_command;

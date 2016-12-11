@@ -2,7 +2,7 @@
 
 
 double
-predict_next_pose_step(carmen_ackerman_traj_point_p new_robot_state, double target_v, double delta_t,
+predict_next_pose_step(carmen_ackerman_traj_point_p new_robot_state, double target_v, double a, double delta_t,
 		double &achieved_curvature, const double &desired_curvature, double &max_curvature_change,
 		carmen_robot_ackerman_config_t robot_config)
 {
@@ -18,7 +18,6 @@ predict_next_pose_step(carmen_ackerman_traj_point_p new_robot_state, double targ
 	new_robot_state->phi = carmen_clamp(-robot_config.max_phi, new_robot_state->phi, robot_config.max_phi);
 
 	double v0 = initial_robot_state.v;
-	double a = (target_v - v0) / delta_t;
 	double s = v0 * delta_t + 0.5 * a * delta_t * delta_t;
 
 	double move_x = s * cos(initial_robot_state.theta);
@@ -38,6 +37,7 @@ carmen_ackerman_traj_point_t
 carmen_libcarmodel_recalc_pos_ackerman(carmen_ackerman_traj_point_t robot_state, double target_v, double target_phi,
 		double full_time_interval, double *distance_traveled, double delta_t, carmen_robot_ackerman_config_t robot_config)
 {
+	double a = (target_v - robot_state.v) / full_time_interval;
 	int n = floor(full_time_interval / delta_t);
 	double remaining_time = full_time_interval - ((double) n * delta_t);
 	carmen_ackerman_traj_point_t achieved_robot_state = robot_state; // achieved_robot_state eh computado iterativamente abaixo a partir do estado atual do robo
@@ -53,7 +53,7 @@ carmen_libcarmodel_recalc_pos_ackerman(carmen_ackerman_traj_point_t robot_state,
 	// Euler method
 	for (int i = 0; i < n; i++)
 	{
-		double dist_walked = predict_next_pose_step(&achieved_robot_state, target_v, delta_t,
+		double dist_walked = predict_next_pose_step(&achieved_robot_state, target_v, a, delta_t,
 				new_curvature, curvature, max_curvature_change, robot_config);
 
 		if (distance_traveled)
@@ -62,7 +62,7 @@ carmen_libcarmodel_recalc_pos_ackerman(carmen_ackerman_traj_point_t robot_state,
 
 	if (remaining_time > 0.0)
 	{
-		double dist_walked = predict_next_pose_step(&achieved_robot_state, target_v, delta_t,
+		double dist_walked = predict_next_pose_step(&achieved_robot_state, target_v, a, delta_t,
 				new_curvature, curvature, max_curvature_change, robot_config);
 
 		if (distance_traveled)

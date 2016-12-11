@@ -433,7 +433,7 @@ my_g(const gsl_vector *x, void *params)
 			(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2));
 
 	double w1, w2, w3, w4, w5;
-	w1 = 5.0; w2 = 15.0; w3 = 15.0; w4 = 0.5; w5 = 10.0;
+	w1 = 10.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 10.0;
 
 	double result = (
 			w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
@@ -483,7 +483,7 @@ my_dg(const gsl_vector *v, void *params, gsl_vector *df)
 	gsl_vector_set(x_h, 2, gsl_vector_get(v, 2));
 	gsl_vector_set(x_h, 3, gsl_vector_get(v, 3) + h);
 	double g_w_h = my_g(x_h, params);
-	double d_g_w_h = 150.0 * (g_w_h - g_x) / h;
+	double d_g_w_h = 200.0 * (g_w_h - g_x) / h;
 
 	gsl_vector_set(df, 0, d_g_x_h);
 	gsl_vector_set(df, 1, d_g_y_h);

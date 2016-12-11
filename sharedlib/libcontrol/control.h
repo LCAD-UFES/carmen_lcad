@@ -42,7 +42,7 @@ carmen_libpid_read_PID_parameters(int argc, char *argv[]);
 
 
 void
-pid_plot(double current_phi, double desired_phi, double y_range, char* title);
+pid_plot_phi(double current_phi, double desired_phi, double y_range, char *title);
 
 void
 pid_plot_velocity(double current_phi, double desired_phi, double y_range, char* title);

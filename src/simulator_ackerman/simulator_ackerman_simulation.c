@@ -287,15 +287,11 @@ compute_new_velocity_with_ann(carmen_simulator_ackerman_config_t *simulator_conf
 	{
 		carmen_libpid_velocity_PID_controler(&throttle_command, &brakes_command, &gear_command,
 				simulator_config->target_v, simulator_config->v, simulator_config->delta_t);
-<<<<<<< HEAD
 	}
-=======
 
-		#ifdef PLOT
-			pid_plot_velocity(simulator_config->target_v, simulator_config->v, 15.0, "vel");
-		#endif
-//	}
->>>>>>> 83a9da687ef07e2d0f8d41053ffcdae21c97ada8
+	#ifdef PLOT
+		pid_plot_velocity(simulator_config->target_v, simulator_config->v, 15.0, "vel");
+	#endif
 
 #endif
 
@@ -628,7 +624,7 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 //		//RL_PID
 		//printf("RL-PID %lf %lf %lf %lf %lf\n", carmen_get_time(), simulator_config->target_phi, simulator_config->phi, steering_effort/200, simulator_config->v);
 
-//		pid_plot_curvature(simulator_config->phi, simulator_config->target_phi);
+//		pid_plot_phi(simulator_config->phi, simulator_config->target_phi, 0.6, "phi");
 //		if (simulator_config->nun_motion_commands > 0)
 //		{
 ////			double future_target_phi = simulator_config->current_motion_command_vector[simulator_config->current_motion_command_vector_index + 1].phi;
@@ -636,7 +632,7 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 ////					steering_ann, simulator_config->v, simulator_config->understeer_coeficient, simulator_config->distance_between_front_and_rear_axles, simulator_config->max_phi);
 ////
 //			steering_effort = carmen_librlpid_compute_effort(atan_current_curvature, atan_desired_curvature, simulator_config->delta_t);
-//			pid_plot_curvature(simulator_config->phi, simulator_config->target_phi);
+//			pid_plot_phi(simulator_config->phi, simulator_config->target_phi, 0.6, "phi");
 //		}
 	}
 	else
