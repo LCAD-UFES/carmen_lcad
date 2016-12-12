@@ -8,6 +8,7 @@
 #include <prob_measurement_model.h>
 
 #include "moving_objects3_interface.h"
+#include "moving_objects3_particle_filter.h"
 
 using namespace std;
 
@@ -27,6 +28,7 @@ PolarSlamParams polar_slam_params;
 OdometryMotionModelParams odometry_model_params;
 BeanRangeFinderMeasurementModelParams laser_model_params;
 
+carmen_moving_objects3_particles_message particles_message;
 
 void
 arrange_velodyne_vertical_angles_to_true_position(carmen_velodyne_partial_scan_message *velodyne_message)
@@ -154,6 +156,30 @@ generate_2D_map_from_velodyne_pointcloud(carmen_velodyne_partial_scan_message *v
 	free(message.angles);
 	free(message.ranges);
 	free(message.intensity);
+
+	static int first = 1;
+
+	if(first == 1)
+	{
+		particles_message.num_particles = NUM_OF_PARTICLES;
+
+		particles_message.particles = (moving_objects3_particle_t*) malloc(particles_message.num_particles * sizeof(moving_objects3_particle_t));
+
+		for(int i = 0; i < particles_message.num_particles; i++)
+		{
+			particles_message.particles[i].pose.x = carmen_uniform_random(-35.0, 35.0);
+			particles_message.particles[i].pose.y = carmen_uniform_random(-35.0, 35.0);
+			particles_message.particles[i].pose.theta = carmen_uniform_random(-M_PI, M_PI);
+			particles_message.particles[i].geometry.length = 4.5;
+			particles_message.particles[i].geometry.width = 1.60;
+		}
+		first = 0;
+	}
+	particles_message.host = carmen_get_host();
+	particles_message.timestamp = velodyne_message->timestamp;
+
+	carmen_publish_moving_objects3_particles_message(&particles_message);
+
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 

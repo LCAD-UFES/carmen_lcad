@@ -1,12 +1,9 @@
 #include <carmen/carmen.h>
 
-#include <vector>
-#include "math.h"
-
 #ifndef _MOVING_OBJECTS3_PARTICLE_FILTER_H_
 #define _MOVING_OBJECTS3_PARTICLE_FILTER_H_
 
-#define NUM_OF_PARTICLES 100
+#define NUM_OF_PARTICLES 50
 #define MAX_ACCELERATION 1.0
 #define MAX_ANGULAR_VELOCITY 0.25
 
