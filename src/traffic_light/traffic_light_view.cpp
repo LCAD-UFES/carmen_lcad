@@ -3,7 +3,11 @@
 #include <carmen/traffic_light_interface.h>
 #include <carmen/traffic_light_messages.h>
 
-#include <opencv2/legacy/legacy.hpp>
+
+//#include <opencv2/legacy/legacy.hpp>
+#include <opencv/cv.h>
+#include "opencv2/imgproc/imgproc.hpp"
+
 /* Image show */
 static GtkWidget *drawing_area;
 static GdkPixbuf *src_buffer;
@@ -100,7 +104,11 @@ traffic_light_message_handler(carmen_traffic_light_message *message)
 	    cv::Mat resized_image ;
 	    resized_image.create(window_view_height,window_view_width,CV_8UC3);
 	    cv::Size size(window_view_width,window_view_height);
+#if CV_MAJOR_VERSION == 2
 	    resize(image, resized_image, size);
+#elif CV_MAJOR_VERSION == 3
+	    cv::resize(image, resized_image, size);
+#endif
     src_buffer = gdk_pixbuf_new_from_data(resized_image.data, GDK_COLORSPACE_RGB,
          FALSE, 8, window_view_width, window_view_height, window_view_width * 3, NULL, NULL);
     redraw_viewer();

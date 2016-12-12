@@ -6,7 +6,11 @@
 
 #include <iostream>
 #include <opencv2/highgui/highgui.hpp>
+#if CV_MAJOR_VERSION == 2
 #include <opencv2/legacy/legacy.hpp>
+#elif CV_MAJOR_VERSION == 3
+#include <opencv/cv.h>
+#endif
 
 using namespace cv;
 using namespace std;
