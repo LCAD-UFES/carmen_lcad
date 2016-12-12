@@ -345,9 +345,16 @@ my_f(const gsl_vector *x, void *params)
 	my_params->tcp_seed->vf = tcp.vf;
 	my_params->tcp_seed->sf = tcp.sf;
 
-	double result = ((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
+	double result;
+	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
+		result = ((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 			(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 0.2) +
 			(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2));
+	else
+		result = sqrt((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
+			(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 0.2) +
+			(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2));
+
 	my_params->plan_cost = result;
 
 	return (result);
@@ -357,9 +364,14 @@ my_f(const gsl_vector *x, void *params)
 void
 my_df(const gsl_vector *v, void *params, gsl_vector *df)
 {
+	double h;
+
 	double f_x = my_f(v, params);
 
-	double h = 0.00005;
+	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
+		h = 0.00005;
+	else
+		h = 0.0002;
 
 	gsl_vector *x_h;
 	x_h = gsl_vector_alloc(3);
@@ -380,7 +392,11 @@ my_df(const gsl_vector *v, void *params, gsl_vector *df)
 	gsl_vector_set(x_h, 1, gsl_vector_get(v, 1));
 	gsl_vector_set(x_h, 2, gsl_vector_get(v, 2) + h);
 	double f_z_h = my_f(x_h, params);
-	double d_f_z_h = 150.0 * (f_z_h - f_x) / h;
+	double d_f_z_h;
+	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
+		d_f_z_h = 150.0 * (f_z_h - f_x) / h;
+	else
+		d_f_z_h = (f_z_h - f_x) / h;
 
 	gsl_vector_set(df, 0, d_f_x_h);
 	gsl_vector_set(df, 1, d_f_y_h);
@@ -432,15 +448,28 @@ my_g(const gsl_vector *x, void *params)
 			(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 0.2) +
 			(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2));
 
-	double w1, w2, w3, w4, w5;
-	w1 = 10.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 10.0;
+	double w1, w2, w3, w4, w5, result;
+	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
+	{
+		w1 = 10.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 10.0;
+		result = (
+				w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
+				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
+				w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
+				w4 * path_to_lane_distance + // já é quandrática
+				w5 * proximity_to_obstacles); // já é quandrática
+	}
+	else
+	{
+		w1 = 2.0; w2 = 15.0; w3 = 15.0; w4 = 2.0; w5 = 10.0;
+		result = sqrt(
+				w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
+				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
+				w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
+				w4 * path_to_lane_distance + // já é quandrática
+				w5 * proximity_to_obstacles); // já é quandrática
+	}
 
-	double result = (
-			w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
-			w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
-			w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
-			w4 * path_to_lane_distance + // já é quandrática
-			w5 * proximity_to_obstacles); // já é quandrática
 
 	//printf("s %lf, tdc %.2lf, tdd %.2f, a %.2lf\n", tcp.s, td.dist, my_params->target_td->dist, tcp.a);
 	return (result);
@@ -483,7 +512,11 @@ my_dg(const gsl_vector *v, void *params, gsl_vector *df)
 	gsl_vector_set(x_h, 2, gsl_vector_get(v, 2));
 	gsl_vector_set(x_h, 3, gsl_vector_get(v, 3) + h);
 	double g_w_h = my_g(x_h, params);
-	double d_g_w_h = 200.0 * (g_w_h - g_x) / h;
+	double d_g_w_h;
+	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
+		d_g_w_h = 200.0 * (g_w_h - g_x) / h;
+	else
+		d_g_w_h = (g_w_h - g_x) / h;
 
 	gsl_vector_set(df, 0, d_g_x_h);
 	gsl_vector_set(df, 1, d_g_y_h);
@@ -572,8 +605,8 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 
 	if (target_v < 0.0)
 		target_v = 0.0;
-	params.optimize_time = OPTIMIZE_DISTANCE;
-//	params.optimize_time = OPTIMIZE_TIME;
+//	params.optimize_time = OPTIMIZE_DISTANCE;
+	params.optimize_time = OPTIMIZE_TIME;
 
 	if (params.optimize_time == OPTIMIZE_DISTANCE)
 	{
