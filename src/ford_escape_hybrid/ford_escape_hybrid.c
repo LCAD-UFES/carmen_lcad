@@ -142,9 +142,9 @@ set_wrench_efforts_desired_v_and_curvature()
 	if (i < ford_escape_hybrid_config->nun_motion_commands)
 	{
 		v = ford_escape_hybrid_config->current_motion_command_vector[i].v;
-//		if (!ford_escape_hybrid_config->use_mpc)
-//			phi = (1.0 + v / (6.94 / 0.3)) * ford_escape_hybrid_config->current_motion_command_vector[i].phi;
-//		else
+		if (!ford_escape_hybrid_config->use_mpc)
+			phi = (1.0 + v / (6.94 / 0.3)) * ford_escape_hybrid_config->current_motion_command_vector[i].phi;
+		else
 			phi = ford_escape_hybrid_config->current_motion_command_vector[i].phi;
 	}
 	else
@@ -589,16 +589,6 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 
 			//print_values_to_train_simulator(g_atan_desired_curvature, -atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t, g_steering_command);
 
-			//		//RL_PID
-//					if (ford_escape_hybrid_config->nun_motion_commands > 0)
-//					{
-//
-//						g_steering_command = carmen_librlpid_compute_effort(-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), g_atan_desired_curvature, delta_t);
-//
-//						printf("RL-PID %lf %lf %lf %lf %lf\n", carmen_get_time(), -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), ford_escape_hybrid_config->filtered_phi, g_steering_command/200, ford_escape_hybrid_config->filtered_v);
-//
-//						pid_plot_phi(ford_escape_hybrid_config->filtered_phi, -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), 0.6, "phi");
-//					}
 
 			///////////////////////// So para guardar os phi s para medir erro no modelo do carro
 //			if (ford_escape_hybrid_config->nun_motion_commands > 0)
@@ -633,6 +623,16 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 		}
 		else
 		{
+			//		//RL_PID
+//			if (ford_escape_hybrid_config->nun_motion_commands > 0)
+//			{
+//
+//				g_steering_command = carmen_librlpid_compute_effort(-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), g_atan_desired_curvature, delta_t);
+//
+//				printf("RL-PID %lf %lf %lf %lf %lf\n", carmen_get_time(), -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), ford_escape_hybrid_config->filtered_phi, g_steering_command/200, ford_escape_hybrid_config->filtered_v);
+//
+//				pid_plot_phi(ford_escape_hybrid_config->filtered_phi, -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), 0.6, "phi");
+//			}
 			g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
 					-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t);
 

@@ -20,8 +20,8 @@ using namespace std;
 #include <vector>
 
 
-#define DELTA_T (1.0 / 40.0) // 0.025 40 Htz
-#define PREDICTION_HORIZON	0.4 //Must be DELTA_T multiple
+#define DELTA_T 0.025 					// 0.025 40 Htz
+#define PREDICTION_HORIZON	0.4 		//Must be DELTA_T multiple
 #define POSITION_PREDICTION_HORIZON	1.2 //Must be DELTA_T multiple
 #define CAR_MODEL_GAIN 200.0
 #define CONTROL_OUTPUT_GAIN 0.0
@@ -36,6 +36,8 @@ typedef struct {
 } EFFORT_SPLINE_DESCRIPTOR;
 
 typedef struct {
+	vector<double> x;
+	vector<double> y;
 	vector<double> v;
 	vector<double> phi;
 	double total_time_of_commands;
@@ -68,7 +70,7 @@ typedef struct
 	double dk;												// Disturbance error, to compensate for changes not modeled
 	double previous_k1;
 
-	double velocity_error_dk; 									// dk of velocity control
+	double velocity_error_dk; 								// dk of velocity control
 	double previous_velocity_k1; 							// previous velocity effort to compute velocity_error (dk)
 
 	double time_elapsed_since_last_motion_command; 			// Time of velodyne message, the trajectory is planned at this time, the elapsed time must be discounted of the trajectory
@@ -82,13 +84,32 @@ typedef struct
 } PARAMS;
 
 
-vector<double> get_effort_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors);
+vector<double>
+get_effort_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, double prediction_horizon);
 
 
-void plot_velocity(EFFORT_SPLINE_DESCRIPTOR *descriptors, double current_velocity, PARAMS *params);
+vector<double>
+get_velocity_supersampling_motion_commands_vector(PARAMS *params, unsigned int size);
 
 
-void plot_phi(EFFORT_SPLINE_DESCRIPTOR *descriptors, double current_phi, PARAMS *params);
+double
+car_steering_model(double steering_effort, double atan_current_curvature, double v, fann_type *steering_ann_input, PARAMS *params);
+
+
+vector<double>
+get_phi_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, PARAMS *params);
+
+
+MOTION_COMMAND
+get_motion_commands_vector(carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands, double time_of_velodyne_message, double prediction_horizon);
+
+
+void
+plot_velocity(EFFORT_SPLINE_DESCRIPTOR *descriptors, double current_velocity, PARAMS *params, double prediction_horizon);
+
+
+void
+plot_phi(EFFORT_SPLINE_DESCRIPTOR *descriptors, double current_phi, PARAMS *params, double prediction_horizon);
 
 
 #endif // MPC_H

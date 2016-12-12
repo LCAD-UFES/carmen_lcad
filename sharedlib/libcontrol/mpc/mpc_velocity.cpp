@@ -12,7 +12,7 @@ get_velocity_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptor
 	fann_type velocity_ann_input[NUM_VELOCITY_ANN_INPUTS];
 	memcpy(velocity_ann_input, params->velocity_ann_input, NUM_VELOCITY_ANN_INPUTS * sizeof(fann_type));
 
-	vector<double> effort_vector = get_effort_vector_from_spline_descriptors(descriptors);
+	vector<double> effort_vector = get_effort_vector_from_spline_descriptors(descriptors, PREDICTION_HORIZON);
 
 	params->optimized_path.v.clear();
 
@@ -191,7 +191,7 @@ get_point_aproximating_by_line(double x1, double y1, double x2, double y2, doubl
 
 
 MOTION_COMMAND
-get_motion_commands_vector(carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands, double time_of_velodyne_message)
+get_motion_commands_vector(carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands, double time_of_velodyne_message, double prediction_horizon)
 {
 	MOTION_COMMAND commands;
 	double elapsed_time = carmen_get_time() - time_of_velodyne_message;
@@ -208,11 +208,12 @@ get_motion_commands_vector(carmen_ackerman_motion_command_p current_motion_comma
 	sum_of_motion_commands_vector_time -= current_motion_command_vector[j].time;
 	current_motion_command_vector[j].time -= (elapsed_time - sum_of_motion_commands_vector_time);
 
-	while (total_time < PREDICTION_HORIZON)
+	while (total_time < prediction_horizon)
 	{
+		commands.x.push_back(get_point_aproximating_by_line(0.0, current_motion_command_vector[j].x, current_motion_command_vector[j].time, current_motion_command_vector[j+1].x, time_interval));
+		commands.y.push_back(get_point_aproximating_by_line(0.0, current_motion_command_vector[j].y, current_motion_command_vector[j].time, current_motion_command_vector[j+1].y, time_interval));
 		commands.v.push_back(get_point_aproximating_by_line(0.0, current_motion_command_vector[j].v, current_motion_command_vector[j].time, current_motion_command_vector[j+1].v, time_interval));
 		commands.phi.push_back(get_point_aproximating_by_line(0.0, current_motion_command_vector[j].phi, current_motion_command_vector[j].time, current_motion_command_vector[j+1].phi, time_interval));
-		//commands.time.push_back(DELTA_T);
 
 		time_interval += DELTA_T;
 		total_time += DELTA_T;
@@ -225,11 +226,11 @@ get_motion_commands_vector(carmen_ackerman_motion_command_p current_motion_comma
 			time_interval = time_interval - current_motion_command_vector[j].time;
 		}
 	}
-
 //	for (j = 0, sum_of_motion_commands_vector_time = 0.0; (unsigned)j < commands.v.size(); j++)
 //	{
 //		sum_of_motion_commands_vector_time += DELTA_T;
-//		printf("------%lf %lf %lf\n", sum_of_motion_commands_vector_time, commands.phi[j], commands.v[j]);
+////		printf("------%lf %lf %lf\n", sum_of_motion_commands_vector_time, commands.phi[j], commands.v[j]);
+//		printf("------%lf %lf %lf\n", sum_of_motion_commands_vector_time, commands.x[j], commands.y[j]);
 //	}
 //	printf("\n\n");
 
@@ -283,7 +284,7 @@ carmen_libmpc_compute_velocity_effort(double *throttle_command, double *brake_co
 	if (!init_mpc(params, velocity_descriptors, current_velocity, time_of_last_motion_command, robot_config))
 		return;
 
-	params.path = get_motion_commands_vector(current_motion_command_vector, nun_motion_commands, time_of_last_motion_command);
+	params.path = get_motion_commands_vector(current_motion_command_vector, nun_motion_commands, time_of_last_motion_command, PREDICTION_HORIZON);
 	velocity_descriptors = get_optimized_effort(&params, velocity_descriptors, get_velocity_vector_from_spline_descriptors);
 
 	*gear_command = *gear_command;
@@ -303,6 +304,6 @@ carmen_libmpc_compute_velocity_effort(double *throttle_command, double *brake_co
 
 
 	#ifdef PLOT
-		plot_velocity(&velocity_descriptors, current_velocity, &params);
+		plot_velocity(&velocity_descriptors, current_velocity, &params, PREDICTION_HORIZON);
 	#endif
 }
