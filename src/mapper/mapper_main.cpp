@@ -31,9 +31,6 @@ carmen_map_t offline_map;
 carmen_localize_ackerman_globalpos_message *globalpos_history;
 int last_globalpos;
 
-int argc_g;
-char **argv_g;
-
 static int visual_odometry_is_global_pos = 0;
 static int parking_assistant_found_safe_space = 0;
 
@@ -112,6 +109,26 @@ publish_map(double timestamp)
 {
 	mapper_publish_map(timestamp);
 }
+
+
+void
+include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalpos_message* globalpos_message)
+{
+	int aux = -1;
+	for (int i = 0; i < NUM_VELODYNE_POINT_CLOUDS; i++)
+	{
+		if (sensors_data[sensor_number].points_timestamp[i] == globalpos_message->timestamp)
+		{
+			aux = sensors_data[sensor_number].point_cloud_index;
+			sensors_data[sensor_number].point_cloud_index = i;
+			run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
+			publish_map(globalpos_message->timestamp);
+			sensors_data[sensor_number].point_cloud_index = aux;
+			break;
+		}
+	}
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -137,71 +154,17 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 	// Map annotations handling
 	distance_to_annotation = DIST2D(last_rddf_annotation_message.annotation_point, globalpos_history[last_globalpos].pose.position);
 	if (((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
-			(last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)) &&
-			(distance_to_annotation < 35.0))
+		 (last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)) &&
+		(distance_to_annotation < 35.0))
 		robot_near_bump_or_barrier = 1;
 	else
 		robot_near_bump_or_barrier = 0;
 
 	if (ok_to_publish)
 	{
-		//		printf("Running Mapper\n");
-
-		//		int aux = -1;
-		//		for (int i = 0; i < NUM_VELODYNE_POINT_CLOUDS; i++)
-		//		{
-		//			if (sensors_data[0].points_timestamp[i] == globalpos_message->timestamp)
-		//			{
-		//				aux = sensors_data[0].point_cloud_index;
-		//				sensors_data[0].point_cloud_index = i;
-		//				run_mapper(&sensors_params[0], &sensors_data[0], r_matrix_car_to_global);
-		//				publish_map(globalpos_message->timestamp);
-		//				sensors_data[0].point_cloud_index = aux;
-		//				break;
-
-		if (sensors_params[10].alive) // verificar se "mapper_stereo_mapping" esta ligado
-		{
-			for (int i = 2; i < number_of_sensors - 1; i++)
-			{
-				if (sensors_params[i].alive)
-				{
-					int aux = -1;
-					for (int j = 0; j < NUM_VELODYNE_POINT_CLOUDS; j++)
-					{
-						if (sensors_data[0].points_timestamp[j] == globalpos_message->timestamp)
-						{
-							aux = sensors_data[i].point_cloud_index;
-							sensors_data[i].point_cloud_index = j;
-							run_mapper(&sensors_params[i], &sensors_data[i], r_matrix_car_to_global);
-							publish_map(globalpos_message->timestamp);
-							sensors_data[i].point_cloud_index = aux;
-							break;
-						}
-
-					}
-				}
-			}
-			}else{
-					int aux = -1;
-					for (int i = 0; i < NUM_VELODYNE_POINT_CLOUDS; i++)
-					{
-						if (sensors_data[0].points_timestamp[i] == globalpos_message->timestamp)
-						{
-							aux = sensors_data[0].point_cloud_index;
-							sensors_data[0].point_cloud_index = i;
-							run_mapper(&sensors_params[0], &sensors_data[0], r_matrix_car_to_global);
-							publish_map(globalpos_message->timestamp);
-							sensors_data[0].point_cloud_index = aux;
-							break;
-						}
-					}
-		//	static double previous_timestamp = 0.0;
-		//	double t = carmen_get_time();
-		//	printf("%lf\n", t - previous_timestamp);
-		//	previous_timestamp = t;
+		if (sensors_params[0].alive)
+			include_sensor_data_into_map(0, globalpos_message);
 	}
-
-}
 }
 
 
@@ -249,7 +212,9 @@ velodyne_variable_scan_message_handler2(carmen_velodyne_variable_scan_message *m
 static void
 velodyne_variable_scan_message_handler3(carmen_velodyne_variable_scan_message *message)
 {
-	mapper_velodyne_variable_scan(3, message);
+	//sensors_params[3].log_odds.log_odds_free = sensors_params[3].log_odds.log_odds_occ = sensors_params[3].log_odds.log_odds_l0 = -10.0;
+	if (mapper_velodyne_variable_scan(3, message))
+		publish_map(message->timestamp);
 }
 
 
@@ -502,10 +467,10 @@ get_alive_sensors(int argc, char **argv)
 			{(char*)"mapper", (char*)"stereo_velodyne9", CARMEN_PARAM_ONOFF, &sensors_params[9].alive, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_mapping", CARMEN_PARAM_ONOFF, &sensors_params[STEREO_MAPPING_SENSOR_INDEX].alive, 0, NULL},
 
-			{(char*)"mapper", (char*)"velodyne_locc", CARMEN_PARAM_DOUBLE, &sensors_params[0].log_odds.log_odds_occ, 1, NULL},
+			{(char*)"mapper", (char*)"velodyne_locc", CARMEN_PARAM_DOUBLE, &sensors_params[0].log_odds.log_odds_occ, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_velodyne1_locc", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_occ, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_velodyne2_locc", CARMEN_PARAM_DOUBLE, &sensors_params[2].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne3_locc", CARMEN_PARAM_DOUBLE, &sensors_params[3].log_odds.log_odds_occ, 1, NULL},
+			{(char*)"mapper", (char*)"stereo_velodyne3_locc", CARMEN_PARAM_DOUBLE, &sensors_params[3].log_odds.log_odds_occ, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_velodyne4_locc", CARMEN_PARAM_DOUBLE, &sensors_params[4].log_odds.log_odds_occ, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_velodyne5_locc", CARMEN_PARAM_DOUBLE, &sensors_params[5].log_odds.log_odds_occ, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_velodyne6_locc", CARMEN_PARAM_DOUBLE, &sensors_params[6].log_odds.log_odds_occ, 0, NULL},
@@ -514,11 +479,10 @@ get_alive_sensors(int argc, char **argv)
 			{(char*)"mapper", (char*)"stereo_velodyne9_locc", CARMEN_PARAM_DOUBLE, &sensors_params[9].log_odds.log_odds_occ, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_mapping_locc", CARMEN_PARAM_DOUBLE, &sensors_params[STEREO_MAPPING_SENSOR_INDEX].log_odds.log_odds_occ, 0, NULL},
 
-
 			{(char*)"mapper", (char*)"velodyne_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[0].log_odds.log_odds_free, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_velodyne1_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_free, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_velodyne2_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[2].log_odds.log_odds_free, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne3_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[3].log_odds.log_odds_free, 1, NULL},
+			{(char*)"mapper", (char*)"stereo_velodyne3_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[3].log_odds.log_odds_free, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_velodyne4_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[4].log_odds.log_odds_free, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_velodyne5_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[5].log_odds.log_odds_free, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_velodyne6_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[6].log_odds.log_odds_free, 0, NULL},
@@ -530,7 +494,7 @@ get_alive_sensors(int argc, char **argv)
 			{(char*)"mapper", (char*)"velodyne_l0", CARMEN_PARAM_DOUBLE, &sensors_params[0].log_odds.log_odds_l0, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_velodyne1_l0", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_l0, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_velodyne2_l0", CARMEN_PARAM_DOUBLE, &sensors_params[2].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne3_l0", CARMEN_PARAM_DOUBLE, &sensors_params[3].log_odds.log_odds_l0, 1, NULL},
+			{(char*)"mapper", (char*)"stereo_velodyne3_l0", CARMEN_PARAM_DOUBLE, &sensors_params[3].log_odds.log_odds_l0, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_velodyne4_l0", CARMEN_PARAM_DOUBLE, &sensors_params[4].log_odds.log_odds_l0, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_velodyne5_l0", CARMEN_PARAM_DOUBLE, &sensors_params[5].log_odds.log_odds_l0, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_velodyne6_l0", CARMEN_PARAM_DOUBLE, &sensors_params[6].log_odds.log_odds_l0, 0, NULL},
@@ -541,7 +505,7 @@ get_alive_sensors(int argc, char **argv)
 			{(char*)"mapper", (char*)"velodyne_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[0].unexpeted_delta_range_sigma, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_velodyne1_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[1].unexpeted_delta_range_sigma, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_velodyne2_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[2].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne3_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[3].unexpeted_delta_range_sigma, 1, NULL},
+			{(char*)"mapper", (char*)"stereo_velodyne3_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[3].unexpeted_delta_range_sigma, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_velodyne4_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[4].unexpeted_delta_range_sigma, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_velodyne5_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[5].unexpeted_delta_range_sigma, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_velodyne6_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[6].unexpeted_delta_range_sigma, 0, NULL},
@@ -727,7 +691,6 @@ get_sensors_param(int argc, char **argv)
 
 		if (sensors_params[i].alive)
 		{
-
 			sensors_params[i].pose = get_stereo_velodyne_pose_3D(argc, argv, i);
 
 			sensors_params[i].sensor_robot_reference = carmen_change_sensor_reference(sensor_board_1_pose.position, sensors_params[i].pose.position, board_to_car_matrix);
@@ -1109,9 +1072,6 @@ main(int argc, char **argv)
 {
 	carmen_map_config_t map_config;
 	carmen_robot_ackerman_config_t car_config;
-
-	argc_g = argc;
-	argv_g = argv;
 
 	/* Connect to IPC Server */
 	carmen_ipc_initialize(argc, argv);

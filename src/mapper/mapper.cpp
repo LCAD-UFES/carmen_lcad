@@ -3,7 +3,6 @@
 #include <prob_transforms.h>
 #include <prob_map.h>
 #include <carmen/grid_mapping.h>
-#include <carmen/stereo_velodyne.h>
 #include <carmen/mapper_interface.h>
 #include <omp.h>
 
@@ -39,9 +38,6 @@ extern int robot_near_bump_or_barrier;
 extern double obstacle_cost_distance, obstacle_probability_threshold;
 extern int ok_to_publish;
 extern int number_of_threads;
-
-extern int argc_g;
-extern char **argv_g;
 
 #define      HUGE_DISTANCE     32000
 
@@ -302,7 +298,7 @@ build_map_using_velodyne(sensor_parameters_t *sensor_params, sensor_data_t *sens
 		//set_map_equal_offline_map(&map);
 		//add_offline_map_over_unknown(&map);
 
-		if(decay_to_offline_map)
+		if (decay_to_offline_map)
 			map_decay_to_offline_map(&map);
 
 		// @@@ Alberto: Mapa padrao Lucas -> colocar DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS ao inves de UPDATE_CELLS_CROSSED_BY_RAYS
@@ -599,7 +595,8 @@ int
 mapper_velodyne_variable_scan(int sensor_number, carmen_velodyne_variable_scan_message *message)
 {
 	static int message_id;
-	sensors_params[sensor_number].pose = get_stereo_velodyne_pose_3D(argc_g, argv_g, sensor_number);
+
+
 	int num_points = message->number_of_shots * sensors_params[sensor_number].vertical_resolution;
 
 	ok_to_publish = 0;
