@@ -92,7 +92,7 @@ carmen_laser_ldmrs_object *ldmrs_objects_tracking;
 /************************************************************************
  * TODO: A variavel abaixo esta hard code, colocar para ser lida de algum lugar
  * **********************************************************************/
-static int camera = 8;
+static int camera = 3;
 
 static point_cloud *velodyne_points;
 static int last_velodyne_position;
@@ -2539,7 +2539,7 @@ subscribe_ipc_messages(void)
                                           (carmen_handler_t) carmen_download_map_handler,
                                           CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_stereo_velodyne_subscribe_scan_message(8, NULL,
+    carmen_stereo_velodyne_subscribe_scan_message(camera, NULL,
                                                   (carmen_handler_t) velodyne_variable_scan_message_handler,
                                                   CARMEN_SUBSCRIBE_LATEST);
 
