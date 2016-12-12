@@ -17,7 +17,9 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/core/core.hpp>        // Basic OpenCV structures (cv::Mat, Scalar)
 #include <opencv2/features2d/features2d.hpp>
+#if CV_MAJOR_VERSION == 2
 #include <opencv2/contrib/detection_based_tracker.hpp>
+#endif
 #include <stdio.h>
 #include <dlib/svm.h>
 
