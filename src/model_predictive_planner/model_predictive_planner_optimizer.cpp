@@ -29,8 +29,22 @@ compute_a_and_t_from_s(double s, double target_v,
 		TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed,
 		ObjectiveFunctionParams *params)
 {
-	tcp_seed.tt = s / ((target_v + target_td.v_i) / 2.0);
+	// https://www.wolframalpha.com/input/?i=solve+s%3Dv*x%2B0.5*a*x%5E2
+	tcp_seed.tt = (2.0 * s) / (target_v + target_td.v_i);
 	double a = (target_v - target_td.v_i) / tcp_seed.tt;
+	if (a > GlobalState::robot_config.maximum_acceleration_forward)
+	{
+		a = GlobalState::robot_config.maximum_acceleration_forward;
+		double v = target_td.v_i;
+		tcp_seed.tt = (sqrt(2.0 * a * s + v * v) - v) / a;
+	}
+	else if (a < -GlobalState::robot_config.maximum_deceleration_forward)
+	{
+		a = -GlobalState::robot_config.maximum_deceleration_forward;
+		double v = target_td.v_i;
+		tcp_seed.tt = -(sqrt(2.0 * a * s + v * v) + v) / a;
+	}
+//	printf("s %.1lf, a %.3lf, t %.1lf, tv %.1lf, vi %.1lf\n", s, a, tcp_seed.tt, target_v, target_td.v_i);
 	params->suitable_tt = tcp_seed.tt;
 	params->suitable_acceleration = tcp_seed.a = a;
 }
@@ -331,7 +345,7 @@ my_f(const gsl_vector *x, void *params)
 	my_params->tcp_seed->vf = tcp.vf;
 	my_params->tcp_seed->sf = tcp.sf;
 
-	double result = sqrt((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
+	double result = ((td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 			(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 0.2) +
 			(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2));
 	my_params->plan_cost = result;
@@ -345,7 +359,7 @@ my_df(const gsl_vector *v, void *params, gsl_vector *df)
 {
 	double f_x = my_f(v, params);
 
-	double h = 0.0002;
+	double h = 0.00005;
 
 	gsl_vector *x_h;
 	x_h = gsl_vector_alloc(3);
@@ -366,7 +380,7 @@ my_df(const gsl_vector *v, void *params, gsl_vector *df)
 	gsl_vector_set(x_h, 1, gsl_vector_get(v, 1));
 	gsl_vector_set(x_h, 2, gsl_vector_get(v, 2) + h);
 	double f_z_h = my_f(x_h, params);
-	double d_f_z_h = (f_z_h - f_x) / h;
+	double d_f_z_h = 150.0 * (f_z_h - f_x) / h;
 
 	gsl_vector_set(df, 0, d_f_x_h);
 	gsl_vector_set(df, 1, d_f_y_h);
@@ -419,15 +433,16 @@ my_g(const gsl_vector *x, void *params)
 			(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2));
 
 	double w1, w2, w3, w4, w5;
-	w1 = 2.0; w2 = 15.0; w3 = 15.0; w4 = 2.0; w5 = 10.0;
+	w1 = 10.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 10.0;
 
-	double result = sqrt(
+	double result = (
 			w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 			w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
 			w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
 			w4 * path_to_lane_distance + // já é quandrática
 			w5 * proximity_to_obstacles); // já é quandrática
 
+	//printf("s %lf, tdc %.2lf, tdd %.2f, a %.2lf\n", tcp.s, td.dist, my_params->target_td->dist, tcp.a);
 	return (result);
 }
 
@@ -468,7 +483,7 @@ my_dg(const gsl_vector *v, void *params, gsl_vector *df)
 	gsl_vector_set(x_h, 2, gsl_vector_get(v, 2));
 	gsl_vector_set(x_h, 3, gsl_vector_get(v, 3) + h);
 	double g_w_h = my_g(x_h, params);
-	double d_g_w_h = (g_w_h - g_x) / h;
+	double d_g_w_h = 200.0 * (g_w_h - g_x) / h;
 
 	gsl_vector_set(df, 0, d_g_x_h);
 	gsl_vector_set(df, 1, d_g_y_h);
@@ -557,7 +572,8 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 
 	if (target_v < 0.0)
 		target_v = 0.0;
-	params.optimize_time = OPTIMIZE_TIME;
+	params.optimize_time = OPTIMIZE_DISTANCE;
+//	params.optimize_time = OPTIMIZE_TIME;
 
 	if (params.optimize_time == OPTIMIZE_DISTANCE)
 	{

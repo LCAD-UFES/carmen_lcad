@@ -3,12 +3,14 @@
 #include <carmen/polar_point.h>
 #include <carmen/moving_objects3_interface.h>
 
+#include "moving_objects3_utils.h"
+
 int NUM_SPHERES = 6; // TODO: ler do param daemon
 const int REDRAW_UPDATE_PERIOD = 40;
-const int BEST_PARTICLE_MAP_VIEWER_SIZE = 600; // pixels
+const int MAP_VIEWER_SIZE = 600; // pixels
 const int NUM_POINTS_PER_VELODYNE = 36000;
-const int MEASUREMENT_PROBABILITY_VIEWER_SIZE_WIDTH = 900; // pixels
-const int MEASUREMENT_PROBABILITY_VIEWER_SIZE_HEIGHT = 200; // pixels
+const int ONE_DIMENSIONAL_PLOT_WIDTH = 900; // pixels
+const int ONE_DIMENSIONAL_PLOT_HEIGHT = 200; // pixels
 
 const int show_velodyne_on_ground_window = 1;
 int show_laser_rays = 0;
@@ -21,6 +23,7 @@ int velodyne_on_ground_window_id;
 int one_dimension_window_id;
 
 carmen_velodyne_projected_on_ground_message velodyne_on_ground_message;
+carmen_moving_objects3_particles_message particles_message;
 
 double last_velodyne_on_ground_angles[NUM_POINTS_PER_VELODYNE];
 double last_velodyne_on_ground_ranges[NUM_POINTS_PER_VELODYNE];
@@ -69,10 +72,10 @@ draw_spheres()
 {
 	draw_circle(pow(2, NUM_SPHERES), 0, 0, 0, 0, 0);
 
-//	for (int i = 0; i < NUM_SPHERES; i++)
-//	{
-//		draw_circle(pow(2, i + 1), 0, 0, 0, 0, 0);
-//	}
+	for (int i = 0; i < NUM_SPHERES; i++)
+	{
+		draw_circle(pow(2, i + 1), 0, 0, 0, 0, 0);
+	}
 }
 
 
@@ -134,11 +137,59 @@ draw_velodyne_points(double *ranges, double *angles, double *intensities, int nu
 
 
 void
+draw_particles(carmen_moving_objects3_particles_message particles_message)
+{
+	for (int i = 0; i < particles_message.num_particles; i++)
+	{
+		rectangle_points rect[3];
+
+		generate_rectangles_points(particles_message.particles[i], rect, rect+1, rect+2);
+
+		// draw inside car rectangle
+		glBegin(GL_LINE_LOOP);
+		glColor3f(0.0, 0.0, 0.9);
+
+		glVertex2f(rect[0].p1.x * pixels_per_meter_x, rect[0].p1.y * pixels_per_meter_y);
+		glVertex2f(rect[0].p2.x * pixels_per_meter_x, rect[0].p2.y * pixels_per_meter_y);
+		glVertex2f(rect[0].p3.x * pixels_per_meter_x, rect[0].p3.y * pixels_per_meter_y);
+		glVertex2f(rect[0].p4.x * pixels_per_meter_x, rect[0].p4.y * pixels_per_meter_y);
+
+		glEnd();
+
+
+		// draw car surface rectangle
+		glBegin(GL_LINE_LOOP);
+		glColor3f(0.0, 1.0, 0.0);
+
+		glVertex2f(rect[1].p1.x * pixels_per_meter_x, rect[1].p1.y * pixels_per_meter_y);
+		glVertex2f(rect[1].p2.x * pixels_per_meter_x, rect[1].p2.y * pixels_per_meter_y);
+		glVertex2f(rect[1].p3.x * pixels_per_meter_x, rect[1].p3.y * pixels_per_meter_y);
+		glVertex2f(rect[1].p4.x * pixels_per_meter_x, rect[1].p4.y * pixels_per_meter_y);
+
+		glEnd();
+
+		// draw car surface rectangle
+		glBegin(GL_LINE_LOOP);
+		glColor3f(1.0, 0.0, 0.0);
+
+		glVertex2f(rect[2].p3.x * pixels_per_meter_x, rect[2].p3.y * pixels_per_meter_y);
+		glVertex2f(rect[2].p2.x * pixels_per_meter_x, rect[2].p2.y * pixels_per_meter_y);
+		glVertex2f(rect[2].p1.x * pixels_per_meter_x, rect[2].p1.y * pixels_per_meter_y);
+		glVertex2f(rect[2].p4.x * pixels_per_meter_x, rect[2].p4.y * pixels_per_meter_y);
+
+		glEnd();
+	}
+}
+
+
+void
 draw_velodyne_on_ground()
 {
+//	draw_spheres();
 	draw_circle(pow(2, NUM_SPHERES), 0, 0, 0, 0, 0);
 //	draw_velodyne_points(last_velodyne_on_ground_ranges, last_velodyne_on_ground_angles, last_velodyne_on_ground_intensities, velodyne_on_ground_message.num_rays);
 	draw_velodyne_points(current_velodyne_on_ground_ranges, current_velodyne_on_ground_angles, current_velodyne_on_ground_intensities, velodyne_on_ground_message.num_rays);
+	draw_particles(particles_message);
 	draw_car_centralized();
 }
 
@@ -163,10 +214,10 @@ handle_velodyne_on_ground_resize(int w __attribute__ ((unused)), int h __attribu
 	glLoadIdentity();
 
 	gluOrtho2D(
-		((double) -BEST_PARTICLE_MAP_VIEWER_SIZE / 2),
-		((double) BEST_PARTICLE_MAP_VIEWER_SIZE / 2),
-		((double) -BEST_PARTICLE_MAP_VIEWER_SIZE / 2),
-		((double) BEST_PARTICLE_MAP_VIEWER_SIZE / 2)
+		((double) -MAP_VIEWER_SIZE / 2),
+		((double) MAP_VIEWER_SIZE / 2),
+		((double) -MAP_VIEWER_SIZE / 2),
+		((double) MAP_VIEWER_SIZE / 2)
 	);
 }
 
@@ -178,10 +229,10 @@ handle_one_dimension_view_resize(int w __attribute__ ((unused)), int h __attribu
 	glLoadIdentity();
 
 	gluOrtho2D(
-		((double) -MEASUREMENT_PROBABILITY_VIEWER_SIZE_WIDTH / 2),
-		((double) MEASUREMENT_PROBABILITY_VIEWER_SIZE_WIDTH / 2),
+		((double) -ONE_DIMENSIONAL_PLOT_WIDTH / 2),
+		((double) ONE_DIMENSIONAL_PLOT_WIDTH / 2),
 		((double) 0),
-		((double) MEASUREMENT_PROBABILITY_VIEWER_SIZE_HEIGHT + 20)
+		((double) ONE_DIMENSIONAL_PLOT_HEIGHT + 20)
 	);
 }
 
@@ -215,19 +266,19 @@ handle_one_dimension_view_display()
 	double px, py, jmp;
 	double MAX_RANGE = 50.0;
 
-	jmp = MEASUREMENT_PROBABILITY_VIEWER_SIZE_HEIGHT;
+	jmp = ONE_DIMENSIONAL_PLOT_HEIGHT;
 
 	glBegin(GL_LINES);
 	glColor3f(0.0, 0.0, 0.0);
-	glVertex2f(-MEASUREMENT_PROBABILITY_VIEWER_SIZE_WIDTH / 2, jmp);
-	glVertex2f(MEASUREMENT_PROBABILITY_VIEWER_SIZE_WIDTH / 2, jmp);
-	glVertex2f(-MEASUREMENT_PROBABILITY_VIEWER_SIZE_WIDTH / 2, 2 * jmp);
-	glVertex2f(MEASUREMENT_PROBABILITY_VIEWER_SIZE_WIDTH / 2, 2 * jmp);
+	glVertex2f(-ONE_DIMENSIONAL_PLOT_WIDTH / 2, jmp);
+	glVertex2f(ONE_DIMENSIONAL_PLOT_WIDTH / 2, jmp);
+	glVertex2f(-ONE_DIMENSIONAL_PLOT_WIDTH / 2, 2 * jmp);
+	glVertex2f(ONE_DIMENSIONAL_PLOT_WIDTH / 2, 2 * jmp);
 	glEnd();
 
 	for (i = 0; i < velodyne_on_ground_message.num_rays; i++)
 	{
-		px = (current_velodyne_on_ground_angles[i] / M_PI) * (MEASUREMENT_PROBABILITY_VIEWER_SIZE_WIDTH / 2 - 40);
+		px = (current_velodyne_on_ground_angles[i] / M_PI) * (ONE_DIMENSIONAL_PLOT_WIDTH / 2 - 40);
 		py = (current_velodyne_on_ground_ranges[i] / MAX_RANGE) * jmp;
 
 		// draw measurement
@@ -264,6 +315,9 @@ void
 keyboard_handler(unsigned char key, int x, int y)
 {
 
+	(void) x;
+	(void) y;
+
 	if(key == 'l')
 	{
 		show_laser_rays = show_laser_rays ? 0 : 1;
@@ -280,7 +334,7 @@ initialize_viewer(int argc, char **argv)
 	// VELODYNE ON GROUND
 	if (show_velodyne_on_ground_window)
 	{
-		glutInitWindowSize(BEST_PARTICLE_MAP_VIEWER_SIZE, BEST_PARTICLE_MAP_VIEWER_SIZE);
+		glutInitWindowSize(MAP_VIEWER_SIZE, MAP_VIEWER_SIZE);
 		glutInitWindowPosition(0, 0);
 		velodyne_on_ground_window_id = glutCreateWindow("Velodyne on ground");
 		glutReshapeFunc(handle_velodyne_on_ground_resize);
@@ -292,7 +346,7 @@ initialize_viewer(int argc, char **argv)
 	// VELODYNE 1D PLOT
 	if (show_one_dimension_window)
 	{
-		glutInitWindowSize(MEASUREMENT_PROBABILITY_VIEWER_SIZE_WIDTH, MEASUREMENT_PROBABILITY_VIEWER_SIZE_HEIGHT);
+		glutInitWindowSize(ONE_DIMENSIONAL_PLOT_WIDTH, ONE_DIMENSIONAL_PLOT_HEIGHT);
 		glutInitWindowPosition(0, 0);
 		one_dimension_window_id = glutCreateWindow("One dimesion plot");
 		glutReshapeFunc(handle_one_dimension_view_resize);
@@ -355,20 +409,32 @@ moving_objects3_velodyne_on_ground_message_handler()
 
 
 void
+moving_objects3_particles_message_handler()
+{
+
+}
+
+
+void
 subcribe_messages()
 {
 	carmen_subscribe_velodyne_projected_message(
 			&velodyne_on_ground_message,
 			(carmen_handler_t) moving_objects3_velodyne_on_ground_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_subscribe_moving_objects3_particles_message(
+				&particles_message,
+				(carmen_handler_t) moving_objects3_particles_message_handler,
+				CARMEN_SUBSCRIBE_LATEST);
 }
 
 
 void
 initialize_module(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused)))
 {
-	pixels_per_meter_x = ((double) BEST_PARTICLE_MAP_VIEWER_SIZE) / (2 * pow(2.0, NUM_SPHERES));
-	pixels_per_meter_y = ((double) BEST_PARTICLE_MAP_VIEWER_SIZE) / (2 * pow(2.0, NUM_SPHERES));
+	pixels_per_meter_x = ((double) MAP_VIEWER_SIZE) / (2 * pow(2.0, NUM_SPHERES));
+	pixels_per_meter_y = ((double) MAP_VIEWER_SIZE) / (2 * pow(2.0, NUM_SPHERES));
 }
 
 

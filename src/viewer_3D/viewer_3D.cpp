@@ -954,7 +954,7 @@ carmen_laser_ldmrs_objects_data_message_handler(carmen_laser_ldmrs_objects_data_
 				double abs_velocity = sqrt( pow(laser_message->objects_data_list[i].abs_velocity_x,2) + pow(laser_message->objects_data_list[i].abs_velocity_y,2));
 				ldmrs_objects_tracking[i].velocity = abs_velocity;
 
-				if(laser_message->objects_data_list[i].object_age < 45)
+				if(laser_message->objects_data_list[i].object_age < 15)
 				{
 					ldmrs_objects_tracking[i].velocity = 0.0;
 				}
@@ -2497,7 +2497,7 @@ subscribe_ipc_messages(void)
 
     carmen_laser_subscribe_ldmrs_message(NULL, (carmen_handler_t) carmen_laser_ldmrs_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_laser_subscribe_ldmrs_objects_message(NULL, (carmen_handler_t) carmen_laser_ldmrs_objects_message_handler, CARMEN_SUBSCRIBE_LATEST);
+//    carmen_laser_subscribe_ldmrs_objects_message(NULL, (carmen_handler_t) carmen_laser_ldmrs_objects_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
     carmen_laser_subscribe_ldmrs_objects_data_message(NULL, (carmen_handler_t) carmen_laser_ldmrs_objects_data_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
