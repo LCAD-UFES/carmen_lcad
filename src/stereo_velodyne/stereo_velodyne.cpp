@@ -206,12 +206,12 @@ get_stereo_velodyne_pose_3D(int argc, char **argv, int camera)
 	sprintf(stereo_velodyne_string, "%s%d", "camera", camera);
 
 	carmen_param_t param_list[] = {
-		{(char*)stereo_velodyne_string, (char*)"x", CARMEN_PARAM_DOUBLE, &(pose.position.x), 0, NULL},
-		{(char*)stereo_velodyne_string, (char*)"y", CARMEN_PARAM_DOUBLE, &(pose.position.y), 0, NULL},
-		{(char*)stereo_velodyne_string, (char*)"z", CARMEN_PARAM_DOUBLE, &(pose.position.z), 0, NULL},
-		{(char*)stereo_velodyne_string, (char*)"roll", CARMEN_PARAM_DOUBLE, &(pose.orientation.roll), 0, NULL},
-		{(char*)stereo_velodyne_string, (char*)"pitch", CARMEN_PARAM_DOUBLE,&(pose.orientation.pitch), 0, NULL},
-		{(char*)stereo_velodyne_string, (char*)"yaw", CARMEN_PARAM_DOUBLE, &(pose.orientation.yaw), 0, NULL},
+		{(char*)stereo_velodyne_string, (char*)"x", CARMEN_PARAM_DOUBLE, &(pose.position.x), 1, NULL},
+		{(char*)stereo_velodyne_string, (char*)"y", CARMEN_PARAM_DOUBLE, &(pose.position.y), 1, NULL},
+		{(char*)stereo_velodyne_string, (char*)"z", CARMEN_PARAM_DOUBLE, &(pose.position.z), 1, NULL},
+		{(char*)stereo_velodyne_string, (char*)"roll", CARMEN_PARAM_DOUBLE, &(pose.orientation.roll), 1, NULL},
+		{(char*)stereo_velodyne_string, (char*)"pitch", CARMEN_PARAM_DOUBLE,&(pose.orientation.pitch), 1, NULL},
+		{(char*)stereo_velodyne_string, (char*)"yaw", CARMEN_PARAM_DOUBLE, &(pose.orientation.yaw), 1, NULL},
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list)/sizeof(param_list[0]));
