@@ -23,7 +23,7 @@ withoutTime::update(double velocity, double time)
 	else
 		acceleration = 0.0;
 
-	this->acceleration = (9.0 * this->acceleration + acceleration) / 10.0; // Media para suavisar o display
+	this->acceleration = this->acceleration + (acceleration - this->acceleration) / 10.0; // Media para suavisar o display
 	this->velocity = velocity;
 	this->time = time;
 }

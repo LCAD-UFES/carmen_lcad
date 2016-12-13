@@ -91,11 +91,11 @@ pid_plot_phi(double current_phi, double desired_phi, double y_range, char* title
 
 
 void
-pid_plot_velocity(double current_phi, double desired_phi, double y_range, char* title)
+pid_plot_velocity(double current_vel, double desired_vel, double y_range, char* title)
 {
 	#define PAST_SIZE 300
-	static list<double> cphi;
-	static list<double> dphi;
+	static list<double> cvel;
+	static list<double> dvel;
 	static list<double> timestamp;
 	static bool first_time = true;
 	static double first_timestamp;
@@ -113,21 +113,21 @@ pid_plot_velocity(double current_phi, double desired_phi, double y_range, char* 
 		fprintf(gnuplot_pipe, "set xrange [0:PAST_SIZE/30]\n set yrange [-%lf:%lf]\n", y_range, y_range);
 	}
 
-	cphi.push_front(current_phi);
-	dphi.push_front(desired_phi);
+	cvel.push_front(current_vel);
+	dvel.push_front(desired_vel);
 	timestamp.push_front(t - first_timestamp);
 
-	while(cphi.size() > PAST_SIZE)
+	while(cvel.size() > PAST_SIZE)
 	{
-		cphi.pop_back();
-		dphi.pop_back();
+		cvel.pop_back();
+		dvel.pop_back();
 		timestamp.pop_back();
 	}
 
 
 	FILE *gnuplot_data_file = fopen("gnuplot_velocity_data.txt", "w");
 
-	for (itc = cphi.begin(), itd = dphi.begin(), itt = timestamp.begin(); itc != cphi.end(); itc++, itd++, itt++)
+	for (itc = cvel.begin(), itd = dvel.begin(), itt = timestamp.begin(); itc != cvel.end(); itc++, itd++, itt++)
 		fprintf(gnuplot_data_file, "%lf %lf %lf\n", *itt - timestamp.back(), *itc, *itd);
 
 	fclose(gnuplot_data_file);

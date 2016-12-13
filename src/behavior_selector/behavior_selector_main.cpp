@@ -30,8 +30,6 @@ carmen_behavior_selector_goal_source_t last_road_profile_message = CARMEN_BEHAVI
 carmen_behavior_selector_goal_source_t goal_list_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
 static int param_goal_source_onoff = 0;
 
-double deceleration_towards_annotation = 0.0;
-
 
 int
 annotation_is_forward(carmen_ackerman_traj_point_t robot_pose, carmen_vector_3D_t annotation_point)
@@ -98,7 +96,7 @@ get_velocity_at_next_annotation(const carmen_behavior_selector_goal_list_message
 			|| (last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK))
 		v = carmen_fmin(3.0, goal_list_msg.goal_list->v);
 	else if (last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)
-		v = carmen_fmin(3.0, goal_list_msg.goal_list->v);
+		v = carmen_fmin(1.0, goal_list_msg.goal_list->v);
 	else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
 			&& (last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_5))
 		v = carmen_fmin(5.0 / 3.6, goal_list_msg.goal_list->v);
@@ -135,14 +133,12 @@ get_distance_to_act_on_annotation(double current_v, double annotation_v, double 
 
 	if (current_v > annotation_v)
 	{
-		double a = -deceleration_towards_annotation;
+		double a = -get_robot_config()->maximum_acceleration_forward;
 		double t = (annotation_v - current_v) / a;
-		if (t < 5.0)
-			t = 5.0;
-		double distance = current_v * t + 0.5 * a * t * t;
-		//printf("t %.1lf, ", t);
+//		double distance = current_v * t + 0.5 * a * t * t;
+		double distance = annotation_v * t + (current_v - annotation_v) * (t / 2.0);
 
-		return (distance + 3.0 * get_robot_config()->distance_between_front_and_rear_axles);
+		return (distance);// + 3.0 * get_robot_config()->distance_between_front_and_rear_axles);
 	}
 	else
 	{
@@ -153,36 +149,19 @@ get_distance_to_act_on_annotation(double current_v, double annotation_v, double 
 
 double
 get_velocity_at_goal(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
-		double velocity_at_next_annotation,	double distance_to_annotation, double distance_to_goal)
+		double velocity_at_next_annotation,	double distance_to_goal)
 {
-/*	// s = v0*t + 0.5*a*t*t
-	// t = -(sqrt(2*a*s + v*v)+v)/a or t = (sqrt(2*a*s + v*v)-v)/a
+	// https://www.wolframalpha.com/input/?i=solve+s%3Dg*(g-v)%2Fa%2B(v-g)*(g-v)%2F(2*a)+for+g	double v0 = current_robot_pose_v_and_phi.v;
 
-	if (distance_to_annotation < distance_to_goal + get_robot_config()->distance_between_front_and_rear_axles)
-		return (velocity_at_next_annotation);
-
-	double s = distance_to_goal;
-	double a = -deceleration_towards_annotation;
-	double v = current_robot_pose_v_and_phi.v;
-	double sqr_term = 2.0 * a * s + v * v;
-	if (sqr_term <= 0.0)
-		return (velocity_at_next_annotation);
-	double t = (sqrt(sqr_term) - v) / a;
-
-	// vg = v + a*tg
-
-	double vg = v + a * t;
-	if (vg < velocity_at_next_annotation)
-		return (velocity_at_next_annotation);
-
-	return (vg);
-*/
 	double v0 = current_robot_pose_v_and_phi.v;
-	double va = velocity_at_next_annotation;
 	double dg = distance_to_goal;
-	double da = distance_to_annotation;
-	double vg = v0 - (v0 - va) * (dg / da) * 0.25;
-//	printf("v0 %.1lf, va %.1lf, dg %.1lf, da %.1lf\n", v0, va, dg, da);
+	double a = -get_robot_config()->maximum_acceleration_forward / 1.5;
+	double sqrt_val = 2.0 * a * dg + v0 * v0;
+	double vg = velocity_at_next_annotation;
+	if (sqrt_val > 0.0)
+		vg = sqrt(sqrt_val);
+	if (vg < velocity_at_next_annotation)
+		vg = velocity_at_next_annotation;
 	return (vg);
 }
 
@@ -198,9 +177,9 @@ set_goal_velocity_according_to_annotation(const carmen_behavior_selector_goal_li
 	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, velocity_at_next_annotation,
 			distance_to_annotation);
 	double distance_to_goal = carmen_distance_ackerman_traj(&current_robot_pose_v_and_phi, goal_list_msg.goal_list);
-	//	printf("ca %d, daann %.1lf, dann %.1lf, v %.1lf, vg %.1lf\n", clearing_annotation,
-	//			distance_to_act_on_annotation, distance_to_annotation, current_robot_pose_v_and_phi.v,
-	//			get_velocity_at_goal(current_robot_pose_v_and_phi, velocity_at_next_annotation, distance_to_annotation, distance_to_goal));
+//	printf("ca %d, daann %.1lf, dann %.1lf, v %.1lf, vg %.1lf\n", clearing_annotation,
+//			distance_to_act_on_annotation, distance_to_annotation, current_robot_pose_v_and_phi.v,
+//			get_velocity_at_goal(current_robot_pose_v_and_phi, velocity_at_next_annotation, distance_to_goal));
 	if (last_rddf_annotation_message_valid &&
 		(clearing_annotation ||
 		 (distance_to_annotation < distance_to_act_on_annotation) ||
@@ -208,7 +187,7 @@ set_goal_velocity_according_to_annotation(const carmen_behavior_selector_goal_li
 					&& annotation_is_forward(get_robot_pose(), last_rddf_annotation_message.annotation_point))))
 	{
 		clearing_annotation = true;
-		goal_list_msg.goal_list->v = get_velocity_at_goal(current_robot_pose_v_and_phi, velocity_at_next_annotation, distance_to_annotation, distance_to_goal);
+		goal_list_msg.goal_list->v = get_velocity_at_goal(current_robot_pose_v_and_phi, velocity_at_next_annotation, distance_to_goal);
 		if (!annotation_is_forward(get_robot_pose(), last_rddf_annotation_message.annotation_point))
 			clearing_annotation = false;
 	}
@@ -642,8 +621,6 @@ read_parameters(int argc, char **argv)
 		goal_list_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_PATH_PLANNER_GOAL;
 	else
 		goal_list_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
-
-	deceleration_towards_annotation = robot_config.maximum_deceleration_forward / 4.0;
 }
 
 

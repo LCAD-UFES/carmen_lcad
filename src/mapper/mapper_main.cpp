@@ -192,15 +192,17 @@ velodyne_variable_scan_message_handler1(carmen_velodyne_variable_scan_message *m
 	mapper_velodyne_variable_scan(1, message);
 }
 
+
 static void
 laser_ldrms_message_handler(carmen_laser_ldmrs_message* msg)
 {
 	vpLaserScan laserscan[4];
-	carmen_laser_ldmrs_copy_message_to_laser_scan(msg, laserscan);
-//	carmen_velodyne_partial_scan_message partial_scan_message = carmen_laser_ldmrs_convert_laser_scan_to_partial_velodyne_message(laserscan, msg->timestamp);
+	carmen_laser_ldmrs_copy_message_to_laser_scan(laserscan, msg);
+	carmen_velodyne_partial_scan_message partial_scan_message = carmen_laser_ldmrs_convert_laser_scan_to_partial_velodyne_message(laserscan, msg->timestamp);
 
-//	mapper_velodyne_partial_scan(1, &partial_scan_message);
+	mapper_velodyne_partial_scan(1, &partial_scan_message);
 }
+
 
 static void
 velodyne_variable_scan_message_handler2(carmen_velodyne_variable_scan_message *message)
@@ -447,10 +449,10 @@ get_alive_sensors(int argc, char **argv)
 {
 	int i;
 
-	sensors_params = (sensor_parameters_t *)calloc(number_of_sensors, sizeof(sensor_parameters_t));
+	sensors_params = (sensor_parameters_t *) calloc(number_of_sensors, sizeof(sensor_parameters_t));
 	carmen_test_alloc(sensors_params);
 
-	sensors_data = (sensor_data_t *)calloc(number_of_sensors, sizeof(sensor_data_t));
+	sensors_data = (sensor_data_t *) calloc(number_of_sensors, sizeof(sensor_data_t));
 	carmen_test_alloc(sensors_data);
 
 	carmen_param_t param_list[] =
@@ -528,17 +530,17 @@ get_alive_sensors(int argc, char **argv)
 
 		sensors_params[i].unsafe_height_above_ground = sensors_params[0].unsafe_height_above_ground;
 
-		sensors_data[i].ray_position_in_the_floor = (carmen_vector_2D_t**)calloc(number_of_threads ,sizeof(carmen_vector_2D_t*));
-		sensors_data[i].maxed = (int**)calloc(number_of_threads ,sizeof(int*));
-		sensors_data[i].obstacle_height = (double**)calloc(number_of_threads ,sizeof(double*));
-		sensors_data[i].occupancy_log_odds_of_each_ray_target = (double**)calloc(number_of_threads ,sizeof(double*));
+		sensors_data[i].ray_position_in_the_floor = (carmen_vector_2D_t **)  calloc(number_of_threads, sizeof(carmen_vector_2D_t*));
+		sensors_data[i].maxed = (int **) calloc(number_of_threads, sizeof(int*));
+		sensors_data[i].obstacle_height = (double **) calloc(number_of_threads, sizeof(double*));
+		sensors_data[i].occupancy_log_odds_of_each_ray_target = (double **) calloc(number_of_threads, sizeof(double*));
 		sensors_data[i].point_cloud_index = 0;
 		sensors_data[i].points = NULL;
-		sensors_data[i].ray_origin_in_the_floor = (carmen_vector_2D_t**)calloc(number_of_threads ,sizeof(carmen_vector_2D_t*));;
-		sensors_data[i].ray_size_in_the_floor = (double**)calloc(number_of_threads ,sizeof(double*));
-		sensors_data[i].processed_intensity = (double**)calloc(number_of_threads ,sizeof(double*));
-		sensors_data[i].ray_hit_the_robot = (int**)calloc(number_of_threads ,sizeof(int*));
-		sensors_data[i].ray_that_hit_the_nearest_target = (int*)calloc(number_of_threads ,sizeof(int));
+		sensors_data[i].ray_origin_in_the_floor = (carmen_vector_2D_t **) calloc(number_of_threads, sizeof(carmen_vector_2D_t*));;
+		sensors_data[i].ray_size_in_the_floor = (double **) calloc(number_of_threads, sizeof(double*));
+		sensors_data[i].processed_intensity = (double **) calloc(number_of_threads, sizeof(double*));
+		sensors_data[i].ray_hit_the_robot = (int **) calloc(number_of_threads, sizeof(int*));
+		sensors_data[i].ray_that_hit_the_nearest_target = (int *) calloc(number_of_threads, sizeof(int));
 
 		sensors_params[i].name = NULL;
 		sensors_params[i].ray_order = NULL;
@@ -572,7 +574,7 @@ generates_ray_order(int size)
 {
 	int i;
 
-	int *ray_order = (int *)malloc(size * sizeof(int));
+	int *ray_order = (int *) malloc(size * sizeof(int));
 	carmen_test_alloc(ray_order);
 
 	for (i = 0; i < size; i++)
@@ -617,9 +619,9 @@ get_sensors_param(int argc, char **argv)
 
 		carmen_param_t param_list[] =
 		{
-				{sensors_params[0].name, (char*)"vertical_resolution", CARMEN_PARAM_INT, &sensors_params[0].vertical_resolution, 0, NULL},
-				{(char *)"mapper", (char*)"velodyne_range_max", CARMEN_PARAM_DOUBLE, &sensors_params[0].range_max, 0, NULL},
-				{sensors_params[0].name, (char*)"time_spent_by_each_scan", CARMEN_PARAM_DOUBLE, &sensors_params[0].time_spent_by_each_scan, 0, NULL},
+				{sensors_params[0].name, (char *) "vertical_resolution", CARMEN_PARAM_INT, &sensors_params[0].vertical_resolution, 0, NULL},
+				{(char *) "mapper", (char *) "velodyne_range_max", CARMEN_PARAM_DOUBLE, &sensors_params[0].range_max, 0, NULL},
+				{sensors_params[0].name, (char *) "time_spent_by_each_scan", CARMEN_PARAM_DOUBLE, &sensors_params[0].time_spent_by_each_scan, 0, NULL},
 
 		};
 
@@ -664,9 +666,9 @@ get_sensors_param(int argc, char **argv)
 
 		carmen_param_t param_list[] =
 		{
-				{(char*)"sick", (char*)"vertical_resolution", CARMEN_PARAM_INT, &sensors_params[1].vertical_resolution, 0, NULL},
-				{(char *)"mapper", (char*)"velodyne_range_max", CARMEN_PARAM_DOUBLE, &sensors_params[1].range_max, 0, NULL},
-				{(char*)"sick", (char*)"time_spent_by_each_scan", CARMEN_PARAM_DOUBLE, &sensors_params[1].time_spent_by_each_scan, 0, NULL},
+				{(char *) "sick", (char *) "vertical_resolution", CARMEN_PARAM_INT, &sensors_params[1].vertical_resolution, 0, NULL},
+				{(char *) "mapper", (char *) "velodyne_range_max", CARMEN_PARAM_DOUBLE, &sensors_params[1].range_max, 0, NULL},
+				{(char *) "sick", (char *) "time_spent_by_each_scan", CARMEN_PARAM_DOUBLE, &sensors_params[1].time_spent_by_each_scan, 0, NULL},
 		};
 
 		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));

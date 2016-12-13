@@ -101,7 +101,7 @@ get_velocity_supersampling_motion_commands_vector(PARAMS *params, unsigned int s
 double
 car_steering_model(double steering_effort, double atan_current_curvature, double v, fann_type *steering_ann_input, PARAMS *params)
 {
-	steering_effort *= (1.0 / (1.0 + (params->current_velocity * params->current_velocity) / CAR_MODEL_GAIN)); // boa
+	//steering_effort *= (1.0 / (1.0 + (params->current_velocity * params->current_velocity) / CAR_MODEL_GAIN)); // boa
 	steering_effort = carmen_clamp(-100.0, steering_effort, 100.0);
 
 	// TODO fazer funcao aterar a proxima curvatura tambem

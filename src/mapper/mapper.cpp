@@ -533,7 +533,7 @@ build_sensor_point_cloud(spherical_point_cloud **points, unsigned char **intensi
 		*point_cloud_index = 0;
 
 	if ((*points)[*point_cloud_index].num_points != num_points)
-		intensity[*point_cloud_index] = (unsigned char *)realloc((void *)intensity[*point_cloud_index], num_points * sizeof(unsigned char));
+		intensity[*point_cloud_index] = (unsigned char *) realloc((void *) intensity[*point_cloud_index], num_points * sizeof(unsigned char));
 
 	carmen_alloc_spherical_point_cloud(*points, num_points, *point_cloud_index);
 }
@@ -562,7 +562,6 @@ mapper_velodyne_partial_scan(int sensor_number, carmen_velodyne_partial_scan_mes
 	sensors_data[sensor_number].current_timestamp = velodyne_message->timestamp;
 
 	build_sensor_point_cloud(&sensors_data[sensor_number].points, sensors_data[sensor_number].intensity, &sensors_data[sensor_number].point_cloud_index, num_points, NUM_VELODYNE_POINT_CLOUDS);
-
 
 	carmen_velodyne_partial_scan_update_points(velodyne_message, sensors_params[sensor_number].vertical_resolution,
 			&sensors_data[sensor_number].points[sensors_data[sensor_number].point_cloud_index], sensors_data[sensor_number].intensity[sensors_data[sensor_number].point_cloud_index],

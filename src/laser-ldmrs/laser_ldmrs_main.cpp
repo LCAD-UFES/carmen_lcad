@@ -105,7 +105,7 @@ carmen_laser_ldmrs_read_parameters(int argc, char **argv)
  **********************************************************/
 
 
-static void
+void
 carmen_laser_ldmrs_objects_build_message(vpLaserObjectData *objectData, carmen_laser_ldmrs_objects_message *message)
 {
 
@@ -236,7 +236,7 @@ main(int argc, char **argv)
 		switch (dataType)
 		{
 			case vpSickLDMRS::MeasuredData:
-				carmen_laser_ldmrs_copy_laser_scan_to_message(laserscan, &message);
+				carmen_laser_ldmrs_copy_laser_scan_to_message(&message, laserscan);
 				if (laserscan[0].getNumPoints() > 0)
 					carmen_laser_publish_ldmrs(&message);
 				break;
