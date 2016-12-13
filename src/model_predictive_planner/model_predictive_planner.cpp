@@ -729,7 +729,8 @@ limit_maximum_centripetal_acceleration(double &target_v, vector<carmen_ackerman_
 		if (fabs(path[i].phi) > 0.001)
 		{
 			double radius_of_curvature = L / fabs(tan(path[i].phi));
-			double centripetal_acceleration = (path[i].v * path[i].v) / radius_of_curvature;
+//			double centripetal_acceleration = (path[i].v * path[i].v) / radius_of_curvature;
+			double centripetal_acceleration = (target_v * target_v) / radius_of_curvature;
 			if (centripetal_acceleration > max_centripetal_acceleration)
 				max_centripetal_acceleration = centripetal_acceleration;
 		}

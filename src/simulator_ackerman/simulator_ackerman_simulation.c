@@ -13,6 +13,8 @@
 #include "simulator_ackerman_simulation.h"
 #include "objects_ackerman.h"
 
+#define PLOT_VELOCITY
+
 #ifdef __USE_RL_CONTROL
 
 double rl_control_throttle;
@@ -289,9 +291,6 @@ compute_new_velocity_with_ann(carmen_simulator_ackerman_config_t *simulator_conf
 		//printf("%lf %lf \n", throttle_command, brakes_command);
 		carmen_libpid_velocity_PID_controler(&throttle_command, &brakes_command, &gear_command,
 				simulator_config->target_v, simulator_config->v, simulator_config->delta_t);
-//		#ifdef PLOT
-//			pid_plot_velocity(simulator_config->target_v, simulator_config->v, 15.0, "vel");
-//		#endif
 //	}
 
 #endif
@@ -722,6 +721,10 @@ carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulat
 
 	//v   = compute_new_velocity_with_ann(simulator_config);
 	phi = compute_new_phi_with_ann(simulator_config);// + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.05));
+
+#ifdef PLOT_VELOCITY
+	pid_plot_velocity(simulator_config->v, simulator_config->target_v, 15.0, "vel");
+#endif
 
 	phi = carmen_clamp(-simulator_config->max_phi, phi, simulator_config->max_phi);
 	simulator_config->phi = phi;

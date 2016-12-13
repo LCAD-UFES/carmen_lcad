@@ -162,31 +162,8 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 
 	if (ok_to_publish)
 	{
-<<<<<<< HEAD
-//		printf("Running Mapper\n");
-
-		int aux = -1;
-		for (int i = 0; i < NUM_VELODYNE_POINT_CLOUDS; i++)
-		{
-			if (sensors_data[0].points_timestamp[i] == globalpos_message->timestamp)
-			{
-				aux = sensors_data[0].point_cloud_index;
-				sensors_data[0].point_cloud_index = i;
-				run_mapper(&sensors_params[0], &sensors_data[0], r_matrix_car_to_global);
-				publish_map(globalpos_message->timestamp);
-				sensors_data[0].point_cloud_index = aux;
-				break;
-			}
-		}
-		//aux = sensors_data[1].point_cloud_index;
-		sensors_data[1].point_cloud_index = 0;
-		run_mapper(&sensors_params[1], &sensors_data[1], r_matrix_car_to_global);
-		publish_map(globalpos_message->timestamp);
-//		sensors_data[1].point_cloud_index = 0;
-=======
 		if (sensors_params[0].alive)
 			include_sensor_data_into_map(0, globalpos_message);
->>>>>>> cdd893c26942e5c2ce0dd44b55460caa53d4c893
 	}
 }
 

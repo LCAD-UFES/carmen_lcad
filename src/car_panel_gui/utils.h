@@ -36,7 +36,9 @@ public:
 
 	static void getDigitsFromValue(float value, int *hundred, int *dozen, int *unit, int *floatPoint)
 	{
-		int intValue = (int) floor(value + 0.05);
+		value = fabs(value);
+
+		int intValue = (int) floor(value);
 
 		(*floatPoint) = getFirstDigit(value);
 		(*unit) = intValue % 10;
@@ -47,9 +49,9 @@ public:
 private:
 	static int getFirstDigit(float value)
 	{
-		int intValue = (int) floor(value + 0.05);
+		float intValue = floor(value);
 
-		return ((int) (10.0 * (value - (float) intValue)) % 10);
+		return ((int) (10.0 * (value - intValue)) % 10);
 	}
 };
 
