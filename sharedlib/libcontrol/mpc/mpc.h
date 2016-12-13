@@ -22,6 +22,7 @@ using namespace std;
 
 #define DELTA_T 0.025 					// 0.025 40 Htz
 #define PREDICTION_HORIZON	0.4 		//Must be DELTA_T multiple
+#define VELOCITY_PREDICTION_HORIZON	0.8 //Must be DELTA_T multiple
 #define POSITION_PREDICTION_HORIZON	1.2 //Must be DELTA_T multiple
 #define CAR_MODEL_GAIN 200.0
 #define CONTROL_OUTPUT_GAIN 0.0
@@ -110,6 +111,9 @@ plot_velocity(EFFORT_SPLINE_DESCRIPTOR *descriptors, double current_velocity, PA
 
 void
 plot_phi(EFFORT_SPLINE_DESCRIPTOR *descriptors, double current_phi, PARAMS *params, double prediction_horizon);
+
+void
+plot_position(EFFORT_SPLINE_DESCRIPTOR *descriptors, double current_y, double current_x, PARAMS *params);
 
 
 #endif // MPC_H

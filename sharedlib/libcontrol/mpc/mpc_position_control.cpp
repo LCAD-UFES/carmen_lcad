@@ -1,42 +1,7 @@
 #include "mpc.h"
 
 
-FILE *gnuplot_save;
-bool save_plot = false;
-
-
 using namespace std;
-
-
-unsigned int
-get_motion_timed_index_to_motion_command_vector(PARAMS* p)
-{
-	double motion_commands_vector_time = p->motion_commands_vector[0].time;
-	unsigned int j = 0;
-	while ((motion_commands_vector_time	< p->time_elapsed_since_last_motion_command) &&
-		   (j < p->motion_commands_vector_size))
-	{
-		j++;
-		motion_commands_vector_time += p->motion_commands_vector[j].time;
-	}
-
-	return j;
-}
-
-
-double
-car_model(double steering_effort, double atan_current_curvature, double v, fann_type *steering_ann_input, PARAMS *param)
-{
-//	steering_effort = steering_effort * (1.0 / (1.0 + param->v / 7.0));
-//	steering_effort *= (1.0 / (1.0 + (param->v * param->v) / 100.0)); // boa
-//	steering_effort = carmen_clamp(-100.0, steering_effort, 100.0);
-	double phi = carmen_libcarneuralmodel_compute_new_phi_from_effort(steering_effort, atan_current_curvature, steering_ann_input,
-			param->steering_ann, v, param->understeer_coeficient, param->distance_rear_axles, 2.0 * param->max_phi);
-//	phi = 1.0 * phi;// - 0.01;
-//	phi *= (1.0 / (1.0 + v / 10.0));
-
-	return (phi);
-}
 
 
 double
@@ -107,7 +72,7 @@ get_pose_vector_from_spline_descriptors_old(EFFORT_SPLINE_DESCRIPTOR *descriptor
 
 	for (unsigned int i = 0; i < effort_vector.size(); i++)
 	{
-		double phi = car_model(effort_vector[i], atan_current_curvature, velocity_vector[i], steering_ann_input, param);
+		double phi = car_steering_model(effort_vector[i], atan_current_curvature, velocity_vector[i], steering_ann_input, param);
 		//phi_vector.push_back(phi + param->dk);
 		atan_current_curvature = carmen_get_curvature_from_phi(phi, param->current_velocity, param->understeer_coeficient, param->distance_rear_axles);
 
@@ -134,6 +99,7 @@ get_pose_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, P
 
 	vector<double> effort_vector = get_effort_vector_from_spline_descriptors(descriptors, POSITION_PREDICTION_HORIZON);
 
+	param->optimized_path.phi.clear();
 	param->optimized_path.x.clear();
 	param->optimized_path.y.clear();
 
@@ -144,12 +110,10 @@ get_pose_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, P
 
 	carmen_ackerman_traj_point_t pose;
 
-	//printf("====%d %d %d %d\n", effort_vector.size(), param->path.x.size(), param->path.y.size(), param->path.v.size());
-
 	int max = effort_vector.size() - 1;
 	for (int i = 0; i < max; i++)
 	{
-		phi = car_model(effort_vector[i], atan_current_curvature, param->path.v[i], steering_ann_input, param);
+		phi = car_steering_model(effort_vector[i], atan_current_curvature, param->path.v[i], steering_ann_input, param);
 		//phi_vector.push_back(phi + param->dk);
 		atan_current_curvature = carmen_get_curvature_from_phi(phi, param->current_velocity, param->understeer_coeficient, param->distance_rear_axles);
 
@@ -343,7 +307,7 @@ get_optimized_effort_postion(PARAMS *par, EFFORT_SPLINE_DESCRIPTOR seed)
 
 		status = gsl_multimin_test_gradient(s->gradient, 1e-3);
 
-	} while ((status == GSL_CONTINUE) && (iter < 30));
+	} while ((status == GSL_CONTINUE) && (iter < 60));
 	//printf("iter = %ld status %d\n", iter, status);
 
 	seed.k1 = carmen_clamp(-100.0, gsl_vector_get(s->x, 0), 100.0);
@@ -357,9 +321,10 @@ get_optimized_effort_postion(PARAMS *par, EFFORT_SPLINE_DESCRIPTOR seed)
 	return (seed);
 }
 
+/*
 
 void
-plot_position(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double understeer_coeficient, double distance_between_front_and_rear_axles, double effort)
+plot_position2(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double understeer_coeficient, double distance_between_front_and_rear_axles, double effort)
 {
 	#define PAST_SIZE 300
 	static list<double> cphi_vector;
@@ -452,6 +417,7 @@ plot_position(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *p, double v, double unders
 
 	fflush(gnuplot_pipe);
 }
+*/
 
 
 bool
@@ -549,14 +515,15 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC_position_control(double at
 	double effort = seed.k1;
 
 	// Calcula o dk do proximo ciclo
-	double Cxk = car_model(effort, atan_current_curvature, param.current_velocity, param.steering_ann_input, &param);
+	double Cxk = car_steering_model(effort, atan_current_curvature, param.current_velocity, param.steering_ann_input, &param);
 	param.dk = yp - Cxk;
 	param.dk = 0.0;
 	param.previous_k1 = effort;
 
 #ifdef PLOT
 	plot_phi(&seed, yp, &param, POSITION_PREDICTION_HORIZON);
-	//plot_position(&seed, &param, v, robot_config->understeer_coeficient, robot_config->distance_between_front_and_rear_axles, effort);
+	//plot_position(&seed, global_pos.globalpos.x, global_pos.globalpos.y, &param);
+	//plot_position2(&seed, &param, v, robot_config->understeer_coeficient, robot_config->distance_between_front_and_rear_axles, effort);
 #endif
 
 	carmen_clamp(-100.0, effort, 100.0);

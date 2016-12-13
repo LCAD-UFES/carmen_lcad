@@ -12,7 +12,7 @@ get_velocity_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptor
 	fann_type velocity_ann_input[NUM_VELOCITY_ANN_INPUTS];
 	memcpy(velocity_ann_input, params->velocity_ann_input, NUM_VELOCITY_ANN_INPUTS * sizeof(fann_type));
 
-	vector<double> effort_vector = get_effort_vector_from_spline_descriptors(descriptors, PREDICTION_HORIZON);
+	vector<double> effort_vector = get_effort_vector_from_spline_descriptors(descriptors, VELOCITY_PREDICTION_HORIZON);
 
 	params->optimized_path.v.clear();
 
@@ -37,7 +37,7 @@ get_velocity_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptor
 		current_velocity = velocity;
 
 		//printf("%lf %lf\n", throttle_effort, brake_effort);
-		printf("D %lf P %lf\n", params->path.v[i], velocity);
+		//printf("D %lf P %lf\n", params->path.v[i], velocity);
 	}
 
 	return (velocity_eror_sum);
@@ -284,7 +284,7 @@ carmen_libmpc_compute_velocity_effort(double *throttle_command, double *brake_co
 	if (!init_mpc(params, velocity_descriptors, current_velocity, time_of_last_motion_command, robot_config))
 		return;
 
-	params.path = get_motion_commands_vector(current_motion_command_vector, nun_motion_commands, time_of_last_motion_command, PREDICTION_HORIZON);
+	params.path = get_motion_commands_vector(current_motion_command_vector, nun_motion_commands, time_of_last_motion_command, VELOCITY_PREDICTION_HORIZON);
 	velocity_descriptors = get_optimized_effort(&params, velocity_descriptors, get_velocity_vector_from_spline_descriptors);
 
 	*gear_command = *gear_command;
@@ -303,7 +303,7 @@ carmen_libmpc_compute_velocity_effort(double *throttle_command, double *brake_co
 	params.velocity_error_dk = current_velocity - velocity;
 
 
-	#ifdef PLOT
-		plot_velocity(&velocity_descriptors, current_velocity, &params, PREDICTION_HORIZON);
-	#endif
+//	#ifdef PLOT
+//		plot_velocity(&velocity_descriptors, current_velocity, &params, PREDICTION_HORIZON);
+//	#endif
 }

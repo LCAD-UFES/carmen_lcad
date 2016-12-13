@@ -62,6 +62,7 @@ typedef struct
 	double XGV_v_and_phi_timestamp;
 
 	unsigned int use_mpc;
+	unsigned int use_rlpid;
 } ford_escape_hybrid_config_t, *ford_escape_hybrid_config_p;
 
 #ifdef __cplusplus

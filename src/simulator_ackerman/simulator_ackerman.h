@@ -113,6 +113,7 @@ typedef struct
 
 	int initialize_neural_networks;
 	unsigned int use_mpc;
+	unsigned int use_rlpid;
 
 } carmen_simulator_ackerman_config_t, *carmen_simulator_ackerman_config_p;
 

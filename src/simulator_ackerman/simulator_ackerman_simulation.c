@@ -289,8 +289,8 @@ compute_new_velocity_with_ann(carmen_simulator_ackerman_config_t *simulator_conf
 //	else
 //	{
 		//printf("%lf %lf \n", throttle_command, brakes_command);
-		carmen_libpid_velocity_PID_controler(&throttle_command, &brakes_command, &gear_command,
-				simulator_config->target_v, simulator_config->v, simulator_config->delta_t);
+//		carmen_libpid_velocity_PID_controler(&throttle_command, &brakes_command, &gear_command,
+//				simulator_config->target_v, simulator_config->v, simulator_config->delta_t);
 //	}
 
 #endif
@@ -606,7 +606,6 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 							simulator_config->current_motion_command_vector, simulator_config->nun_motion_commands,
 							simulator_config->v, simulator_config->phi, simulator_config->time_of_last_command, &simulator_config->robot_config,
 							simulator_config->initialize_neural_networks);
-
 //		//POSITION CONTROL
 //		steering_effort = carmen_libmpc_get_optimized_steering_effort_using_MPC_position_control(atan_current_curvature,
 //							simulator_config->current_motion_command_vector, simulator_config->nun_motion_commands,
@@ -615,13 +614,14 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 	}
 	else
 	{
-		//printf("PID %lf %lf %lf %lf %lf\n", carmen_get_time(), simulator_config->target_phi, simulator_config->phi, steering_effort/200, simulator_config->v);
-
+	if (simulator_config->use_rlpid)
+	{	//RL_PID
+		steering_effort = carmen_librlpid_compute_effort(atan_current_curvature, atan_desired_curvature, simulator_config->delta_t);
+	}
+	else
+	{   // PID
 		steering_effort = carmen_libpid_steering_PID_controler(atan_desired_curvature, atan_current_curvature, simulator_config->delta_t);
-
-		//RL_PID
-		//steering_effort = carmen_librlpid_compute_effort(atan_current_curvature, atan_desired_curvature, simulator_config->delta_t);
-
+	}
 #ifdef PLOT
 		pid_plot_phi(simulator_config->target_phi, simulator_config->phi, 0.55, "phi");
 #endif
@@ -722,9 +722,9 @@ carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulat
 	//v   = compute_new_velocity_with_ann(simulator_config);
 	phi = compute_new_phi_with_ann(simulator_config);// + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.05));
 
-#ifdef PLOT_VELOCITY
-	pid_plot_velocity(simulator_config->v, simulator_config->target_v, 15.0, "vel");
-#endif
+//#ifdef PLOT_VELOCITY
+//	pid_plot_velocity(simulator_config->v, simulator_config->target_v, 15.0, "vel");
+//#endif
 
 	phi = carmen_clamp(-simulator_config->max_phi, phi, simulator_config->max_phi);
 	simulator_config->phi = phi;
