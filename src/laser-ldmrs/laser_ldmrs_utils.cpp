@@ -78,7 +78,7 @@ carmen_laser_ldmrs_convert_laser_scan_to_partial_velodyne_message(vpLaserScan la
 
 
 void
-carmen_laser_ldmrs_copy_laser_scan_to_message(vpLaserScan laserscan[4], carmen_laser_ldmrs_message *message)
+carmen_laser_ldmrs_copy_laser_scan_to_message(carmen_laser_ldmrs_message *message, vpLaserScan laserscan[4])
 {
 	message->scan_number = laserscan[0].getMeasurementId();
 	message->scan_start_time = laserscan[0].getStartTimestamp();
@@ -151,7 +151,7 @@ carmen_laser_ldmrs_copy_laser_scan_to_message(vpLaserScan laserscan[4], carmen_l
 
 
 void
-carmen_laser_ldmrs_copy_message_to_laser_scan(carmen_laser_ldmrs_message *message, vpLaserScan laserscan[4])
+carmen_laser_ldmrs_copy_message_to_laser_scan(vpLaserScan laserscan[4], carmen_laser_ldmrs_message *message)
 {
 	laserscan[0].setMeasurementId(message->scan_number);
 	laserscan[0].setStartTimestamp(message->scan_start_time);
@@ -162,31 +162,29 @@ carmen_laser_ldmrs_copy_message_to_laser_scan(carmen_laser_ldmrs_message *messag
 
 	laserscan[0].setNumPoints(message->scan_points);
 
-	if(laserscan[0].getNumPoints() == 0) {
+	if (laserscan[0].getNumPoints() == 0)
 		return;
-	}
 
 	int num_of_points = laserscan[0].getNumPoints();
 
 	int j = 0;
 	double reference_v_angle = 0;
-	for(int i = 0; i < num_of_points; i++)
+	for (int i = 0; i < num_of_points; i++)
 	{
 		vpScanPoint pt(message->arraypoints[i].radial_distance,
 				message->arraypoints[i].horizontal_angle,
 				message->arraypoints[i].vertical_angle,
 				message->arraypoints[i].flags);
 
-
-		if((pt.getVAngle() != reference_v_angle))
+		if ((pt.getVAngle() != reference_v_angle))
 		{
 			reference_v_angle = pt.getVAngle();
 			j++;
 		}
 
-		if(j == 1)
+		if (j == 1)
 			laserscan[0].getScanPoints().push_back(pt);
-		else if(j == 2)
+		else if (j == 2)
 			laserscan[1].getScanPoints().push_back(pt);
 		else if (j == 3)
 			laserscan[2].getScanPoints().push_back(pt);
@@ -194,6 +192,3 @@ carmen_laser_ldmrs_copy_message_to_laser_scan(carmen_laser_ldmrs_message *messag
 			laserscan[3].getScanPoints().push_back(pt);
 	}
 }
-
-
-
