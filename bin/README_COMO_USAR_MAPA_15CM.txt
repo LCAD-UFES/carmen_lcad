@@ -16,6 +16,6 @@ COMO USAR MAPA DE 15CM
 
 2- Modifique no process-xxx.ini o caminho do mapa que queria executar
 
-	../data/map_voltadaufes-xxxxxxxx por ../data/map_voltadaufes-xxxxxxxx-15cm  
+	EX: ../data/map_voltadaufes-xxxxxxxx por ../data/map_voltadaufes-xxxxxxxx-15cm  
 
 
