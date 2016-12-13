@@ -298,7 +298,7 @@ build_map_using_velodyne(sensor_parameters_t *sensor_params, sensor_data_t *sens
 		//set_map_equal_offline_map(&map);
 		//add_offline_map_over_unknown(&map);
 
-		if(decay_to_offline_map)
+		if (decay_to_offline_map)
 			map_decay_to_offline_map(&map);
 
 		// @@@ Alberto: Mapa padrao Lucas -> colocar DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS ao inves de UPDATE_CELLS_CROSSED_BY_RAYS

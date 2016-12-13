@@ -32,9 +32,9 @@ get_effort_in_time_from_spline(EFFORT_SPLINE_DESCRIPTOR *descriptors, double tim
 
 
 vector<double>
-get_effort_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors)
+get_effort_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, double prediction_horizon)
 {
-	double x[4] = { 0.0, PREDICTION_HORIZON / 3.0, 2.0 * PREDICTION_HORIZON / 3.0, PREDICTION_HORIZON };
+	double x[4] = { 0.0, prediction_horizon / 3.0, 2.0 * prediction_horizon / 3.0, prediction_horizon };
 	double y[4] = { descriptors->k1, descriptors->k2, descriptors->k3, descriptors->k4 };
 
 	gsl_interp_accel *acc = gsl_interp_accel_alloc();
@@ -44,7 +44,7 @@ get_effort_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors)
 	gsl_spline_init(phi_effort_spline, x, y, 4);
 
 	vector<double> effort_vector;
-	for (double t = 0.0; t < PREDICTION_HORIZON; t += DELTA_T)
+	for (double t = 0.0; t < prediction_horizon; t += DELTA_T)
 		effort_vector.push_back(gsl_spline_eval(phi_effort_spline, t, acc));
 		//effort_vector.push_back(carmen_clamp(-100.0, gsl_spline_eval(phi_effort_spline, t, acc), 100.0));
 
@@ -99,11 +99,12 @@ get_velocity_supersampling_motion_commands_vector(PARAMS *params, unsigned int s
 
 
 double
-car_model(double steering_effort, double atan_current_curvature, double v, fann_type *steering_ann_input, PARAMS *params)
+car_steering_model(double steering_effort, double atan_current_curvature, double v, fann_type *steering_ann_input, PARAMS *params)
 {
 	steering_effort *= (1.0 / (1.0 + (params->current_velocity * params->current_velocity) / CAR_MODEL_GAIN)); // boa
 	steering_effort = carmen_clamp(-100.0, steering_effort, 100.0);
 
+	// TODO fazer funcao aterar a proxima curvatura tambem
 	double phi = carmen_libcarneuralmodel_compute_new_phi_from_effort(steering_effort, atan_current_curvature, steering_ann_input,
 			params->steering_ann, v, params->understeer_coeficient, params->distance_rear_axles, 2.0 * params->max_phi);
 //	phi = 1.0 * phi;// - 0.01;
@@ -119,18 +120,15 @@ get_phi_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, PA
 	fann_type steering_ann_input[NUM_STEERING_ANN_INPUTS];
 	memcpy(steering_ann_input, params->steering_ann_input, NUM_STEERING_ANN_INPUTS * sizeof(fann_type));
 
-	vector<double> effort_vector = get_effort_vector_from_spline_descriptors(descriptors);
+	vector<double> effort_vector = get_effort_vector_from_spline_descriptors(descriptors, PREDICTION_HORIZON);
 	vector<double> velocity_vector = get_velocity_supersampling_motion_commands_vector(params, effort_vector.size());
 	vector<double> phi_vector;
 	double atan_current_curvature = params->atan_current_curvature;
 
 	for (unsigned int i = 0; i < effort_vector.size(); i++)
 	{
-//		double phi = car_model(effort_vector[i], atan_current_curvature, params->v, steering_ann_input, params);
-		double phi = car_model(effort_vector[i], atan_current_curvature, velocity_vector[i], steering_ann_input, params);
-//		phi = phi + params->dk;
+		double phi = car_steering_model(effort_vector[i], atan_current_curvature, velocity_vector[i], steering_ann_input, params);
 
-//		phi_vector.push_back(phi);
 		phi_vector.push_back(phi + params->dk);
 
 		atan_current_curvature = carmen_get_curvature_from_phi(phi, params->current_velocity, params->understeer_coeficient, params->distance_rear_axles);
@@ -361,7 +359,7 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *params, double v, double unde
 	}
 	// Dados futuros
 	vector<double> phi_vector = get_phi_vector_from_spline_descriptors(seed, params);
-	vector<double> future_effort_vector = get_effort_vector_from_spline_descriptors(seed);
+	vector<double> future_effort_vector = get_effort_vector_from_spline_descriptors(seed, PREDICTION_HORIZON);
 
 	double delta_t = DELTA_T;
 	double phi_vector_time = 0.0;
@@ -647,13 +645,11 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 					robot_config, initialize_neural_networks))
 		return (0.0);
 
-	//get_motion_commands_vector(current_motion_command_vector, nun_motion_commands, time_of_last_motion_command);
-
 	//seed = get_optimized_effort(&params, seed); // TODO essa funcao vai aqui ou depois do car_model???
 	double effort = seed.k1;
 
 	// Calcula o dk do proximo ciclo
-	double Cxk = car_model(effort, atan_current_curvature, params.current_velocity, params.steering_ann_input, &params);
+	double Cxk = car_steering_model(effort, atan_current_curvature, params.current_velocity, params.steering_ann_input, &params);
 	params.dk = yp - Cxk;
 	params.previous_k1 = effort;
 

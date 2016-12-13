@@ -3,6 +3,8 @@
 #include <carmen/polar_point.h>
 #include <carmen/moving_objects3_interface.h>
 
+#include "moving_objects3_utils.h"
+
 int NUM_SPHERES = 6; // TODO: ler do param daemon
 const int REDRAW_UPDATE_PERIOD = 40;
 const int MAP_VIEWER_SIZE = 600; // pixels
@@ -21,6 +23,7 @@ int velodyne_on_ground_window_id;
 int one_dimension_window_id;
 
 carmen_velodyne_projected_on_ground_message velodyne_on_ground_message;
+carmen_moving_objects3_particles_message particles_message;
 
 double last_velodyne_on_ground_angles[NUM_POINTS_PER_VELODYNE];
 double last_velodyne_on_ground_ranges[NUM_POINTS_PER_VELODYNE];
@@ -134,12 +137,59 @@ draw_velodyne_points(double *ranges, double *angles, double *intensities, int nu
 
 
 void
+draw_particles(carmen_moving_objects3_particles_message particles_message)
+{
+	for (int i = 0; i < particles_message.num_particles; i++)
+	{
+		rectangle_points rect[3];
+
+		generate_rectangles_points(particles_message.particles[i], rect, rect+1, rect+2);
+
+		// draw inside car rectangle
+		glBegin(GL_LINE_LOOP);
+		glColor3f(0.0, 0.0, 0.9);
+
+		glVertex2f(rect[0].p1.x * pixels_per_meter_x, rect[0].p1.y * pixels_per_meter_y);
+		glVertex2f(rect[0].p2.x * pixels_per_meter_x, rect[0].p2.y * pixels_per_meter_y);
+		glVertex2f(rect[0].p3.x * pixels_per_meter_x, rect[0].p3.y * pixels_per_meter_y);
+		glVertex2f(rect[0].p4.x * pixels_per_meter_x, rect[0].p4.y * pixels_per_meter_y);
+
+		glEnd();
+
+
+		// draw car surface rectangle
+		glBegin(GL_LINE_LOOP);
+		glColor3f(0.0, 1.0, 0.0);
+
+		glVertex2f(rect[1].p1.x * pixels_per_meter_x, rect[1].p1.y * pixels_per_meter_y);
+		glVertex2f(rect[1].p2.x * pixels_per_meter_x, rect[1].p2.y * pixels_per_meter_y);
+		glVertex2f(rect[1].p3.x * pixels_per_meter_x, rect[1].p3.y * pixels_per_meter_y);
+		glVertex2f(rect[1].p4.x * pixels_per_meter_x, rect[1].p4.y * pixels_per_meter_y);
+
+		glEnd();
+
+		// draw car surface rectangle
+		glBegin(GL_LINE_LOOP);
+		glColor3f(1.0, 0.0, 0.0);
+
+		glVertex2f(rect[2].p3.x * pixels_per_meter_x, rect[2].p3.y * pixels_per_meter_y);
+		glVertex2f(rect[2].p2.x * pixels_per_meter_x, rect[2].p2.y * pixels_per_meter_y);
+		glVertex2f(rect[2].p1.x * pixels_per_meter_x, rect[2].p1.y * pixels_per_meter_y);
+		glVertex2f(rect[2].p4.x * pixels_per_meter_x, rect[2].p4.y * pixels_per_meter_y);
+
+		glEnd();
+	}
+}
+
+
+void
 draw_velodyne_on_ground()
 {
 //	draw_spheres();
 	draw_circle(pow(2, NUM_SPHERES), 0, 0, 0, 0, 0);
 //	draw_velodyne_points(last_velodyne_on_ground_ranges, last_velodyne_on_ground_angles, last_velodyne_on_ground_intensities, velodyne_on_ground_message.num_rays);
 	draw_velodyne_points(current_velodyne_on_ground_ranges, current_velodyne_on_ground_angles, current_velodyne_on_ground_intensities, velodyne_on_ground_message.num_rays);
+	draw_particles(particles_message);
 	draw_car_centralized();
 }
 
@@ -359,12 +409,24 @@ moving_objects3_velodyne_on_ground_message_handler()
 
 
 void
+moving_objects3_particles_message_handler()
+{
+
+}
+
+
+void
 subcribe_messages()
 {
 	carmen_subscribe_velodyne_projected_message(
 			&velodyne_on_ground_message,
 			(carmen_handler_t) moving_objects3_velodyne_on_ground_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_subscribe_moving_objects3_particles_message(
+				&particles_message,
+				(carmen_handler_t) moving_objects3_particles_message_handler,
+				CARMEN_SUBSCRIBE_LATEST);
 }
 
 

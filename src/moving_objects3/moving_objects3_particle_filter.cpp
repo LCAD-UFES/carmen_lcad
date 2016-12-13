@@ -1,5 +1,7 @@
 #include "moving_objects3_particle_filter.h"
 
+#include <vector>
+#include "math.h"
 
 moving_objects3_particle_t
 sample_motion_model(moving_objects3_particle_t particle_t_1, double delta_time)
@@ -38,6 +40,7 @@ measurement_model(moving_objects3_particle_t particle_t, carmen_velodyne_project
 	return 1.0;
 }
 
+
 //todo checar se é assim mesmo
 double
 get_particle_weight(double cost)
@@ -47,6 +50,7 @@ get_particle_weight(double cost)
 
 	return n*exp(-cost/(variance));
 }
+
 
 std::vector<moving_objects3_particle_t>
 algorithm_particle_filter(std::vector<moving_objects3_particle_t> particle_set_t_1,
@@ -65,7 +69,7 @@ algorithm_particle_filter(std::vector<moving_objects3_particle_t> particle_set_t
 		// Motion Model
 		particle_t = sample_motion_model((*it), delta_time);
 
-		// Measurement Model
+		// Measurement Model -> RANSAC
 		cost = measurement_model(particle_t, velodyne_projected_on_ground);
 
 		// Weighing particles

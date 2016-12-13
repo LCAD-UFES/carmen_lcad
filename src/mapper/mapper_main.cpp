@@ -109,6 +109,26 @@ publish_map(double timestamp)
 {
 	mapper_publish_map(timestamp);
 }
+
+
+void
+include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalpos_message* globalpos_message)
+{
+	int aux = -1;
+	for (int i = 0; i < NUM_VELODYNE_POINT_CLOUDS; i++)
+	{
+		if (sensors_data[sensor_number].points_timestamp[i] == globalpos_message->timestamp)
+		{
+			aux = sensors_data[sensor_number].point_cloud_index;
+			sensors_data[sensor_number].point_cloud_index = i;
+			run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
+			publish_map(globalpos_message->timestamp);
+			sensors_data[sensor_number].point_cloud_index = aux;
+			break;
+		}
+	}
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -142,6 +162,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 
 	if (ok_to_publish)
 	{
+<<<<<<< HEAD
 //		printf("Running Mapper\n");
 
 		int aux = -1;
@@ -162,12 +183,11 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		run_mapper(&sensors_params[1], &sensors_data[1], r_matrix_car_to_global);
 		publish_map(globalpos_message->timestamp);
 //		sensors_data[1].point_cloud_index = 0;
+=======
+		if (sensors_params[0].alive)
+			include_sensor_data_into_map(0, globalpos_message);
+>>>>>>> cdd893c26942e5c2ce0dd44b55460caa53d4c893
 	}
-
-//	static double previous_timestamp = 0.0;
-//	double t = carmen_get_time();
-//	printf("%lf\n", t - previous_timestamp);
-//	previous_timestamp = t;
 }
 
 
@@ -217,7 +237,9 @@ velodyne_variable_scan_message_handler2(carmen_velodyne_variable_scan_message *m
 static void
 velodyne_variable_scan_message_handler3(carmen_velodyne_variable_scan_message *message)
 {
-	mapper_velodyne_variable_scan(3, message);
+	//sensors_params[3].log_odds.log_odds_free = sensors_params[3].log_odds.log_odds_occ = sensors_params[3].log_odds.log_odds_l0 = -10.0;
+	if (mapper_velodyne_variable_scan(3, message))
+		publish_map(message->timestamp);
 }
 
 
@@ -481,7 +503,6 @@ get_alive_sensors(int argc, char **argv)
 			{(char*)"mapper", (char*)"stereo_velodyne8_locc", CARMEN_PARAM_DOUBLE, &sensors_params[8].log_odds.log_odds_occ, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_velodyne9_locc", CARMEN_PARAM_DOUBLE, &sensors_params[9].log_odds.log_odds_occ, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_mapping_locc", CARMEN_PARAM_DOUBLE, &sensors_params[STEREO_MAPPING_SENSOR_INDEX].log_odds.log_odds_occ, 0, NULL},
-
 
 			{(char*)"mapper", (char*)"velodyne_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[0].log_odds.log_odds_free, 0, NULL},
 			{(char*)"mapper", (char*)"stereo_velodyne1_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_free, 0, NULL},

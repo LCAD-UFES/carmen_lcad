@@ -6,6 +6,7 @@
 extern "C" {
 #endif
 
+#include <carmen/moving_objects3_particle_filter.h>
 
 typedef struct
 {
@@ -17,8 +18,20 @@ typedef struct
 	char *host;
 } carmen_velodyne_projected_on_ground_message;
 
-#define CARMEN_VELODYNE_PROJECTED_MESSAGE_NAME "carmen_fast_polar_slam_velodyne_projected_on_ground_message"
+#define CARMEN_VELODYNE_PROJECTED_MESSAGE_NAME "carmen_velodyne_projected_on_ground_message"
 #define CARMEN_VELODYNE_PROJECTED_MESSAGE_FMT "{int,<{double}:1>,<{double}:1>,<{double}:1>,double,string}"
+
+
+typedef struct
+{
+	int num_particles;
+	moving_objects3_particle_t *particles;
+	double timestamp;
+	char *host;
+} carmen_moving_objects3_particles_message;
+
+#define CARMEN_MOVING_OBJECTS3_PARTICLES_MESSAGE_NAME "carmen_moving_objects3_particles_message"
+#define CARMEN_MOVING_OBJECTS3_PARTICLES_MESSAGE_FMT "{int,<{{double,double,double},double,{double,double,double,double},double}:1>,double,string}"
 
 
 #ifdef __cplusplus
