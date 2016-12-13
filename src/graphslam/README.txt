@@ -47,7 +47,7 @@ mapper_velodyne_range_max_factor 		4.0
 Para limpar o mapa use os programas
 	bin/build_complete_map -map_path <path do diretorio do mapa> -map_resolution 0.2 -map_type m
 	bin/map_editor <path do diretorio do mapa>/complete_map.map
-	bin/complete_map_to_block_map -map_path <path do diretorio do mapa> -map_resolution 0.2 -block_size_in_meters 150.0
+	bin/complete_map_to_block_map -map_path <path do diretorio do mapa> -map_resolution 0.2 -block_size_in_meters 210.0
 	Exclua o complete_map.map após finalizar antes de subir para o git
 17.O process já constroe o rndf(rddf) usando o ./rddf_build ../data/rndf/rndf.kml
 	Após criar o mapa, renomear o arquivo ../data/rndf/rndf.kml para ../data/rndf/rddf-log_voltadaufes-<data do log>.kml
