@@ -96,7 +96,7 @@ get_velocity_at_next_annotation(const carmen_behavior_selector_goal_list_message
 			|| (last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK))
 		v = carmen_fmin(3.0, goal_list_msg.goal_list->v);
 	else if (last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)
-		v = carmen_fmin(3.0, goal_list_msg.goal_list->v);
+		v = carmen_fmin(1.0, goal_list_msg.goal_list->v);
 	else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
 			&& (last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_5))
 		v = carmen_fmin(5.0 / 3.6, goal_list_msg.goal_list->v);
