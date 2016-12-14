@@ -1,12 +1,24 @@
-
 #ifndef _CARMEN_MOVING_OBJECTS3_MESSAGES_H_
 #define _CARMEN_MOVING_OBJECTS3_MESSAGES_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
-#include <carmen/moving_objects3_particle_filter.h>
+typedef struct
+{
+	double width;	// object width
+	double length;	// object length
+	double c_x;		// anchor point x
+	double c_y;		// anchor point y
+} geometric_parameters;
+
+
+typedef struct
+{
+	carmen_point_t pose;	// object pose (x, y, theta)
+	double velocity;		// object velocity
+	geometric_parameters geometry; // geomeric parameters
+	double weight;			// particle weight
+} moving_objects3_particle_t;
+
 
 typedef struct
 {
@@ -33,10 +45,6 @@ typedef struct
 #define CARMEN_MOVING_OBJECTS3_PARTICLES_MESSAGE_NAME "carmen_moving_objects3_particles_message"
 #define CARMEN_MOVING_OBJECTS3_PARTICLES_MESSAGE_FMT "{int,<{{double,double,double},double,{double,double,double,double},double}:1>,double,string}"
 
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif
 

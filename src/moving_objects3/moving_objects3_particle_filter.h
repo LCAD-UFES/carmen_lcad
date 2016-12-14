@@ -1,26 +1,21 @@
 #include <carmen/carmen.h>
+#include <vector>
+
+#include "moving_objects3_messages.h"
+#include "moving_objects3_utils.h"
+#include "polar_point.h"
+#include "math.h"
 
 #ifndef _MOVING_OBJECTS3_PARTICLE_FILTER_H_
 #define _MOVING_OBJECTS3_PARTICLE_FILTER_H_
 
 #define NUM_OF_PARTICLES 50
-#define MAX_ACCELERATION 1.0
-#define MAX_ANGULAR_VELOCITY 0.25
+#define MAX_ACCELERATION 3.0
+#define MAX_ANGULAR_VELOCITY 0.55
 
-typedef struct
-{
-	double width;	// object width
-	double length;	// object length
-	double c_x;		// anchor point x
-	double c_y;		// anchor point y
-} geometric_parameters;
-
-typedef struct
-{
-	carmen_point_t pose;	// object pose (x, y, theta)
-	double velocity;		// object velocity
-	geometric_parameters geometry; // geomeric parameters
-	double weight;			// particle weight
-} moving_objects3_particle_t;
+std::vector<moving_objects3_particle_t>
+algorithm_particle_filter(std::vector<moving_objects3_particle_t> particle_set_t_1,
+		carmen_velodyne_projected_on_ground_message velodyne_projected_on_ground,
+		double delta_time);
 
 #endif

@@ -503,3 +503,11 @@ src/stehs_planner/stehs_planner.o
 bin/stehs_planner
 bin/visual_car_tracking
 src/visual_car_tracking/visual_car_tracking
+src/moving_objects3/moving_objects3
+src/moving_objects3/moving_objects3_viewer
+bin/moving_objects3
+bin/moving_objects3_viewer
+src/polar_slam/fast_polar_slam
+src/polar_slam/fast_polar_slam_viewer
+bin/fast_polar_slam
+bin/fast_polar_slam_viewer

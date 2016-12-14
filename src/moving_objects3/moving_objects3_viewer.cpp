@@ -7,7 +7,7 @@
 
 int NUM_SPHERES = 6; // TODO: ler do param daemon
 const int REDRAW_UPDATE_PERIOD = 40;
-const int MAP_VIEWER_SIZE = 600; // pixels
+const int MAP_VIEWER_SIZE = 768; // pixels
 const int NUM_POINTS_PER_VELODYNE = 36000;
 const int ONE_DIMENSIONAL_PLOT_WIDTH = 900; // pixels
 const int ONE_DIMENSIONAL_PLOT_HEIGHT = 200; // pixels
@@ -143,7 +143,10 @@ draw_particles(carmen_moving_objects3_particles_message particles_message)
 	{
 		rectangle_points rect[3];
 
-		generate_rectangles_points(particles_message.particles[i], rect, rect+1, rect+2);
+		generate_rectangles_points(particles_message.particles[i].pose,
+				particles_message.particles[i].geometry.width,
+				particles_message.particles[i].geometry.length,
+				rect, rect+1, rect+2);
 
 		// draw inside car rectangle
 		glBegin(GL_LINE_LOOP);
