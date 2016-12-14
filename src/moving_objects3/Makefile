@@ -23,7 +23,7 @@ PUBLIC_BINARIES = moving_objects3 moving_objects3_viewer
 TARGETS = libtf_util.a moving_objects3 moving_objects3_viewer
 
 libtf_util.a: tf_util.o
-moving_objects3: tf_util.o moving_objects3_main.o moving_objects3_interface.o moving_objects3_utils.o polar_point.o 
+moving_objects3: tf_util.o moving_objects3_main.o moving_objects3_interface.o moving_objects3_utils.o moving_objects3_particle_filter.o polar_point.o 
 moving_objects3_viewer: moving_objects3_viewer.o polar_point.o moving_objects3_interface.o moving_objects3_utils.o
 
 include ../Makefile.rules
