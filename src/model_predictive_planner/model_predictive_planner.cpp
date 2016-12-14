@@ -738,7 +738,7 @@ limit_maximum_centripetal_acceleration(double &target_v, vector<carmen_ackerman_
 
 	if (max_centripetal_acceleration > GlobalState::robot_max_centripetal_acceleration)
 	{
-		reduction_factor += 0.2 * ((GlobalState::robot_max_centripetal_acceleration / max_centripetal_acceleration) - reduction_factor);
+		reduction_factor += 0.1 * ((GlobalState::robot_max_centripetal_acceleration / max_centripetal_acceleration) - reduction_factor);
 		target_v *= reduction_factor;
 //		printf("redution %lf, target_v %lf\n", reduction_factor, target_v);
 	}
@@ -872,7 +872,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		}
 //		printf("\nGoal_in_lane: %d detail_size: %ld complete_size: %ld \n",goal_in_lane, detailed_lane.size(), complete_foward_lane.size());
 
-		limit_maximum_centripetal_acceleration(target_v, complete_foward_lane);
+		limit_maximum_centripetal_acceleration(target_v, detailed_lane);
 	}
 
 	// Aberto: @@@ Esta funcao escreve no phi de detailed_lane //REDUZINDO DE 13 para 0.25 a velocidade

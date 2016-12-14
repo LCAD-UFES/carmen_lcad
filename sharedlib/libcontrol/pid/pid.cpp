@@ -170,14 +170,9 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 
 	u_t = carmen_clamp(-100.0, u_t, 100.0);
 
-//	fprintf(stdout, "STEERING (cc, dc, e, i, d, s, v, t): %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
+//	fprintf(stdout, "STEERING (cc, dc, e, i, d, s, t): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
 //		atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t,
-//		*steering_command, current_velocity, carmen_get_time());
-//	fflush(stdout);
-
-
-//	fprintf(stdout, "STEERING (cc, dc, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf\n",
-//			atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t, *u_t);
+//		u_t, carmen_get_time());
 //	fflush(stdout);
 
 	return u_t;
@@ -314,9 +309,10 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 //		integral_t, derivative_t, carmen_get_time());
 //	fflush(stdout);
 
-//	fprintf(stdout, "VELOCITY (st, cv, dv, e, t, b): %d, %lf, %lf, %lf, %lf, %lf\n",
+//	fprintf(stdout, "VELOCITY (st, cv, dv, e, t, b, i, d, ts): %d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
 //			g_velocity_PID_controler_state, current_velocity, desired_velocity, error_t,
-//			*throttle_command, *brakes_command);
+//			*throttle_command, *brakes_command,
+//			integral_t, derivative_t, carmen_get_time());
 //	fflush(stdout);
 
 }

@@ -133,7 +133,7 @@ get_distance_to_act_on_annotation(double current_v, double annotation_v, double 
 
 	if (current_v > annotation_v)
 	{
-		double a = -get_robot_config()->maximum_acceleration_forward;
+		double a = -get_robot_config()->maximum_acceleration_forward * 2.0;
 		double t = (annotation_v - current_v) / a;
 //		double distance = current_v * t + 0.5 * a * t * t;
 		double distance = annotation_v * t + (current_v - annotation_v) * (t / 2.0);
@@ -180,10 +180,10 @@ set_goal_velocity_according_to_annotation(const carmen_behavior_selector_goal_li
 	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, velocity_at_next_annotation,
 			distance_to_annotation);
 	double distance_to_goal = carmen_distance_ackerman_traj(&current_robot_pose_v_and_phi, goal_list_msg.goal_list);
-	printf("ca %d, daann %.1lf, dann %.1lf, v %.1lf, vg %.1lf\n", clearing_annotation,
-			distance_to_act_on_annotation, distance_to_annotation, current_robot_pose_v_and_phi.v,
-			get_velocity_at_goal(current_robot_pose_v_and_phi, velocity_at_next_annotation,
-				distance_to_goal, distance_to_annotation));
+//	printf("ca %d, daann %.1lf, dann %.1lf, v %.1lf, vg %.1lf\n", clearing_annotation,
+//			distance_to_act_on_annotation, distance_to_annotation, current_robot_pose_v_and_phi.v,
+//			get_velocity_at_goal(current_robot_pose_v_and_phi, velocity_at_next_annotation,
+//				distance_to_goal, distance_to_annotation));
 	if (last_rddf_annotation_message_valid &&
 		(clearing_annotation ||
 		 (distance_to_annotation < distance_to_act_on_annotation) ||

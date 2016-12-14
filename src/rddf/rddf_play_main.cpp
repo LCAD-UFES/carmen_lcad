@@ -206,11 +206,6 @@ carmen_check_for_annotations(double x, double y, double theta __attribute__((unu
 		if (dist < 300.0)// TODO: Alberto: Isso depende da velocidade do carro... Quando a velocidade eh maior que 60Km/h este valor esta ruim...
 			annotations_to_publish.push_back(i);
 	}
-
-	printf("Num annotations: %ld\n", annotations_to_publish.size());
-
-	for (int i = 0; i < annotations_to_publish.size(); i++)
-		printf("\t%lf %lf\n", annotation_queue[annotations_to_publish[i]].annotation_point.x, annotation_queue[annotations_to_publish[i]].annotation_point.y);
 }
 
 
