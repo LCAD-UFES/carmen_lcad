@@ -173,6 +173,12 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 //	fprintf(stdout, "STEERING (cc, dc, e, i, d, s, v, t): %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
 //		atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t,
 //		*steering_command, current_velocity, carmen_get_time());
+//	fflush(stdout);
+
+
+//	fprintf(stdout, "STEERING (cc, dc, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf\n",
+//			atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t, *u_t);
+//	fflush(stdout);
 
 	return u_t;
 }
@@ -291,8 +297,8 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 		if (desired_velocity >= 0.0)
 			g_velocity_PID_controler_state = STOP_CAR;
 	}
-
 	error_t_1 = error_t;
+
 	// Anti windup
 	if ((*throttle_command < 0.0) || (*throttle_command > 100.0) ||
 	    (*brakes_command < g_brake_gap) || (*brakes_command > 100.0))
@@ -301,10 +307,16 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 
 	*throttle_command = carmen_clamp(0.0, *throttle_command, 100.0);
 	*brakes_command = carmen_clamp(g_brake_gap, *brakes_command, 100.0);
+
 //	fprintf(stdout, "VELOCITY (st, cv, dv, e, t, b, i, d, ts): %d, %lf, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
 //		g_velocity_PID_controler_state, current_velocity, desired_velocity, error_t,
 //		*throttle_command, *brakes_command,
 //		integral_t, derivative_t, carmen_get_time());
+//	fflush(stdout);
+
+//	fprintf(stdout, "VELOCITY (st, cv, dv, e, t, b): %d, %lf, %lf, %lf, %lf, %lf\n",
+//			g_velocity_PID_controler_state, current_velocity, desired_velocity, error_t,
+//			*throttle_command, *brakes_command);
 //	fflush(stdout);
 
 }
@@ -312,7 +324,7 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //												//
-// Inicializations										//
+// Inicializations								//
 //												//
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -345,11 +357,4 @@ carmen_libpid_read_PID_parameters(int argc, char *argv[])
 
 	num_items = sizeof(param_list) / sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
-}
-
-
-void
-printa_test()
-{
-	printf("------------------------------------------------------\nFOIIIIIIIII\n------------------------------------------------------");
 }

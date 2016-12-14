@@ -55,7 +55,7 @@ carmen_libcarneuralmodel_compute_new_phi_from_effort(double steering_effort, dou
 {
 	fann_type *steering_ann_output;
 
-	carmen_libcarneuralmodel_build_steering_ann_input(steering_ann_input, steering_effort, atan_current_curvature);
+	carmen_libcarneuralmodel_build_steering_ann_input(steering_ann_input, carmen_clamp(-100, steering_effort, 100), atan_current_curvature);
 
 	steering_ann_output = fann_run(steering_ann, steering_ann_input);
 
@@ -100,7 +100,7 @@ carmen_libcarneuralmodel_compute_new_velocity_from_efforts(fann_type *velocity_a
 {
 	fann_type *velocity_ann_output;
 
-	carmen_libcarneuralmodel_build_velocity_ann_input(velocity_ann_input, throttle_effort, brake_effort, current_velocity);
+	carmen_libcarneuralmodel_build_velocity_ann_input(velocity_ann_input, carmen_clamp(-100, throttle_effort, 100), carmen_clamp(-100, brake_effort, 100), current_velocity);
 
 	velocity_ann_output = fann_run(velocity_ann, velocity_ann_input);
 

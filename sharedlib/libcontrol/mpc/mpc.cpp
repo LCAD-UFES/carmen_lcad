@@ -5,11 +5,6 @@
 using namespace std;
 
 
-//FILE *gnuplot_save;
-FILE *gnuplot_save_total;
-bool save_and_plot = false;
-
-
 double
 get_effort_in_time_from_spline(EFFORT_SPLINE_DESCRIPTOR *descriptors, double time)
 {
@@ -101,7 +96,7 @@ get_velocity_supersampling_motion_commands_vector(PARAMS *params, unsigned int s
 double
 car_steering_model(double steering_effort, double atan_current_curvature, double v, fann_type *steering_ann_input, PARAMS *params)
 {
-	steering_effort *= (1.0 / (1.0 + (params->current_velocity * params->current_velocity) / CAR_MODEL_GAIN)); // boa
+	//steering_effort *= (1.0 / (1.0 + (params->current_velocity * params->current_velocity) / CAR_MODEL_GAIN)); // boa
 	steering_effort = carmen_clamp(-100.0, steering_effort, 100.0);
 
 	// TODO fazer funcao aterar a proxima curvatura tambem
@@ -123,11 +118,11 @@ get_phi_vector_from_spline_descriptors(EFFORT_SPLINE_DESCRIPTOR *descriptors, PA
 	vector<double> effort_vector = get_effort_vector_from_spline_descriptors(descriptors, PREDICTION_HORIZON);
 	vector<double> velocity_vector = get_velocity_supersampling_motion_commands_vector(params, effort_vector.size());
 	vector<double> phi_vector;
-	double atan_current_curvature = params->atan_current_curvature;
+	double phi, atan_current_curvature = params->atan_current_curvature;
 
 	for (unsigned int i = 0; i < effort_vector.size(); i++)
 	{
-		double phi = car_steering_model(effort_vector[i], atan_current_curvature, velocity_vector[i], steering_ann_input, params);
+		phi = car_steering_model(effort_vector[i], atan_current_curvature, velocity_vector[i], steering_ann_input, params);
 
 		phi_vector.push_back(phi + params->dk);
 
@@ -334,9 +329,6 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *params, double v, double unde
 	timestamp_vector.push_front(t - first_timestamp);
 	effort_vector.push_front(effort);
 
-	if (save_and_plot)
-			fprintf(gnuplot_save_total, "%lf %lf %lf %lf %lf\n", timestamp_vector.front(), cphi_vector.front(), dphi_vector.front(), effort_vector.front()/200, params->current_velocity);
-
 	while (cphi_vector.size() > PAST_SIZE)
 	{
 		cphi_vector.pop_back();
@@ -354,8 +346,6 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *params, double v, double unde
 		 it_cphi++, it_dphi++, it_timestamp++, it_effort++)
 	{
 		fprintf(gnuplot_data_file, "%lf %lf %lf %lf %d %d\n", *it_timestamp - timestamp_vector.back(), *it_cphi, *it_dphi, *it_effort, 1, 2); //1-red 2-green 3-blue 4-magenta 5-lightblue 6-yellow 7-black 8-orange 9-grey
-		//if (save_and_plot)
-				//fprintf(gnuplot_save, "%lf %lf %lf %lf %d %d\n", *it_timestamp - timestamp_vector.back(), *it_cphi, *it_dphi, 	*it_effort, 1, 2);
 	}
 	// Dados futuros
 	vector<double> phi_vector = get_phi_vector_from_spline_descriptors(seed, params);
@@ -369,9 +359,6 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *params, double v, double unde
 	for (unsigned int i = 0; i < phi_vector.size(); i++)
 	{
 		phi_vector_time += delta_t;
-
-		if (save_and_plot)
-				//fprintf(gnuplot_save, "%lf %lf %lf %lf %d %d\n", begin_predition_time + phi_vector_time, phi_vector[i], params->motion_commands_vector[timed_index_to_motion_command].phi, future_effort_vector[i], 8, 2);
 
 		fprintf(gnuplot_data_file, "%lf %lf %lf %lf %d %d\n",
 				begin_predition_time + phi_vector_time, phi_vector[i], params->motion_commands_vector[timed_index_to_motion_command].phi,
@@ -390,13 +377,10 @@ plot_state(EFFORT_SPLINE_DESCRIPTOR *seed, PARAMS *params, double v, double unde
 //	for (; timed_index_to_motion_command < params->motion_commands_vector_size; timed_index_to_motion_command++)
 //	{
 //		begin_predition_time += params->motion_commands_vector[timed_index_to_motion_command].time;
-//		//if (save_and_plot)
-//			//fprintf(gnuplot_save, "%lf %lf %lf %lf %d %d\n", time, 0.0, params->motion_commands_vector[timed_index_to_motion_command].phi, 0.0, 8, 2);
-//
 //	}
 	fclose(gnuplot_data_file);
 
-	fprintf(gnuplot_pipe, "unset arrow\nset arrow from %lf, %lf to %lf, %lf nohead\n", begin_predition_time, -60.0, begin_predition_time, 60.0);
+	fprintf(gnuplot_pipe, "unset arrow\nset arrow from %lf, graph 0 to %lf, graph 1 nohead\n", begin_predition_time, begin_predition_time);
 
 	fprintf(gnuplot_pipe, "plot "
 			"'./gnuplot_data.txt' using 1:2:5 with lines linecolor variable title 'cphi' axes x1y2,"
@@ -447,8 +431,8 @@ open_file_to_save_plot(bool total)
 	sprintf(aux, "%d", timeinfo->tm_sec);
 	strcat (name, aux);
 
-	if (total)
-		gnuplot_save_total = fopen(name, "w");
+//	if (total)
+//		gnuplot_save_total = fopen(name, "w");
 	//else
 		//gnuplot_save = fopen(name, "w");
 
@@ -600,8 +584,6 @@ init_mpc(bool &first_time, PARAMS &params, EFFORT_SPLINE_DESCRIPTOR &seed, doubl
 		params.previous_k1 = 0.0;
 		first_time = false;
 
-		if (save_and_plot)
-			open_file_to_save_plot(true);
 	}
 
 	if (current_motion_command_vector == NULL)
@@ -663,9 +645,9 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 
 	seed = get_optimized_effort(&params, seed);
 
-//	#ifdef PLOT
-//		plot_state(&seed, &params, v, robot_config->understeer_coeficient, robot_config->distance_between_front_and_rear_axles, effort);
-//	#endif
+	#ifdef PLOT
+		plot_state(&seed, &params, v, robot_config->understeer_coeficient, robot_config->distance_between_front_and_rear_axles, effort);
+	#endif
 
 	carmen_clamp(-100.0, effort, 100.0);
 	return (effort);
