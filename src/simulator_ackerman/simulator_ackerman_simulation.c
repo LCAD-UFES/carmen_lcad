@@ -722,9 +722,9 @@ carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulat
 	//v   = compute_new_velocity_with_ann(simulator_config);
 	phi = compute_new_phi_with_ann(simulator_config);// + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.05));
 
-//#ifdef PLOT_VELOCITY
-//	pid_plot_velocity(simulator_config->v, simulator_config->target_v, 15.0, "vel");
-//#endif
+#ifdef PLOT_VELOCITY
+	pid_plot_velocity(simulator_config->v, simulator_config->target_v, 15.0, "vel");
+#endif
 
 	phi = carmen_clamp(-simulator_config->max_phi, phi, simulator_config->max_phi);
 	simulator_config->phi = phi;

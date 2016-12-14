@@ -367,7 +367,7 @@ add_points_to_goal_list_interval(carmen_ackerman_path_point_t p1, carmen_ackerma
 
 
 bool
-copy_starting_nearest_point_of_zero(Pose *goal_pose, vector<carmen_ackerman_path_point_t> &detailed_lane, vector<carmen_ackerman_path_point_t> &complete_foward_lane, vector<carmen_ackerman_path_point_t> &temp_detail)
+make_detailed_lane_start_at_car_pose(vector<carmen_ackerman_path_point_t> &detailed_lane, vector<carmen_ackerman_path_point_t> &complete_foward_lane, vector<carmen_ackerman_path_point_t> temp_detail, Pose *goal_pose)
 {
 	detailed_lane.clear();
 	complete_foward_lane.clear();
@@ -457,7 +457,7 @@ build_detailed_rddf_lane(Pose *goal_pose, vector<carmen_ackerman_path_point_t> *
 			add_points_to_goal_list_interval(lane_in_local_pose->at(i), lane_in_local_pose->at(i+1), temp_detail);
 
 		temp_detail.push_back(lane_in_local_pose->back());
-		goal_in_lane = copy_starting_nearest_point_of_zero(goal_pose, detailed_lane, complete_foward_lane, temp_detail);
+		goal_in_lane = make_detailed_lane_start_at_car_pose(detailed_lane, complete_foward_lane, temp_detail, goal_pose);
 	}
 	else
 	{
