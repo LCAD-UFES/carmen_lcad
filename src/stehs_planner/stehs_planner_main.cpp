@@ -1,9 +1,39 @@
 #include "stehs_planner.hpp"
-
+#include "stehs_planner_messages.h"
+#include <carmen/robot_ackerman_interface.h>
 
 StehsPlanner stehs_planner;
 
 double localizer_pose_timestamp;
+
+
+static void
+define_path_message()
+{
+	IPC_RETURN_TYPE err;
+	err = IPC_defineMsg(RRT_PATH_NAME, IPC_VARIABLE_LENGTH,
+			RRT_PATH_FMT);
+	carmen_test_ipc_exit(err, "Could not define", RRT_PATH_NAME);
+}
+
+
+void
+publish_rrt_path_message(rrt_path_message *msg)
+{
+	static int firsttime = 1;
+	IPC_RETURN_TYPE err;
+
+	if (firsttime)
+	{
+		define_path_message();
+		firsttime = 0;
+	}
+
+	err = IPC_publishData(RRT_PATH_NAME, msg);
+	carmen_test_ipc(err, "Could not publish",
+			RRT_PATH_NAME);
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
@@ -23,7 +53,7 @@ stehs_planner_publish_plan_tree_message()
 	msg.timestamp = localizer_pose_timestamp;
 	msg.last_goal = 0; //GlobalState::last_goal ? 1 : 0;
 
-	State &goal = stehs_planner.state_list.back(); // coloca o ultimo estado como goal
+	carmen_ackerman_path_point_t &goal = stehs_planner.state_list.back(); // coloca o ultimo estado como goal
 	msg.goal.x = goal.x;
 	msg.goal.y = goal.y;
 	msg.goal.theta = goal.theta;
@@ -62,8 +92,37 @@ stehs_planner_publish_plan_tree_message()
 
 	}
 
-	Publisher_Util::publish_rrt_path_message(&msg);
+	publish_rrt_path_message(&msg);
 	free(msg.path);
+}
+
+
+void
+publish_model_predictive_planner_motion_commands()
+{
+	carmen_ackerman_motion_command_t* commands =
+			(carmen_ackerman_motion_command_t*) (malloc(stehs_planner.state_list.size() * sizeof(carmen_ackerman_motion_command_t)));
+	int i = 0;
+	for (std::list<carmen_ackerman_path_point_t>::iterator it = stehs_planner.state_list.begin();	it != stehs_planner.state_list.end(); ++it)
+	{
+		commands[i].v = it->v;
+		commands[i].phi = it->phi;
+		commands[i].time = it->time;
+		commands[i].x = it->x;
+		commands[i].y = it->y;
+		commands[i].theta = it->theta;
+
+		i++;
+	}
+
+	int num_commands = stehs_planner.state_list.size();
+
+	if (stehs_planner.use_obstacle_avoider)
+		carmen_robot_ackerman_publish_motion_command(commands, num_commands, localizer_pose_timestamp);
+	else
+		carmen_base_ackerman_publish_motion_command(commands, num_commands, localizer_pose_timestamp);
+
+	free(commands);
 }
 
 
@@ -90,7 +149,7 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 //	printf("GLOBAL POS x: %f y: %f theta: %f v: %f phi: %f\n", stehs_planner.start.x, stehs_planner.start.y,
 //			stehs_planner.start.theta, stehs_planner.start.v, stehs_planner.start.phi);
 
-	if(stehs_planner.lane_ready && stehs_planner.distance_map_ready && stehs_planner.goal_ready)
+	if (stehs_planner.lane_ready && stehs_planner.distance_map_ready && stehs_planner.goal_ready)
 	{
 		stehs_planner.lane_ready = stehs_planner.distance_map_ready = stehs_planner.goal_ready = false;
 		double time = carmen_get_time();
@@ -98,7 +157,19 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 		stehs_planner.GeneratePath();
 		printf("Tempo %f Ncirc %ld Nstate %ld\n", carmen_get_time() - time, stehs_planner.circle_path.size(),
 				stehs_planner.state_list.size());
+		if (!stehs_planner.state_list.empty())
+		{
+			if (stehs_planner.use_mpc)
+			{
+				publish_model_predictive_planner_motion_commands();
+			}
+			else
+			{
+				stehs_planner_publish_plan_tree_message();
+			}
+		}
 	}
+
 	// chamar funcao principal aqui
 }
 
@@ -289,8 +360,8 @@ read_parameters(int argc, char **argv)
 
 		{(char *) "rrt",	(char *) "show_debug_info",								CARMEN_PARAM_ONOFF,	 &stehs_planner.show_debug_info,												1, NULL},
 		{(char *) "rrt",	(char *) "cheat",										CARMEN_PARAM_ONOFF,	 &stehs_planner.cheat,														1, NULL},
-		//{(char *) "rrt",	(char *) "use_obstacle_avoider", 						CARMEN_PARAM_ONOFF,	 &stehs_planner.use_obstacle_avoider, 												1, NULL},
-		//{(char *) "rrt",	(char *) "use_mpc",										CARMEN_PARAM_ONOFF,	 &stehs_planner.use_mpc, 															0, NULL},
+		{(char *) "rrt",	(char *) "use_obstacle_avoider", 						CARMEN_PARAM_ONOFF,	 &stehs_planner.use_obstacle_avoider, 												1, NULL},
+		{(char *) "rrt",	(char *) "use_mpc",										CARMEN_PARAM_ONOFF,	 &stehs_planner.use_mpc, 															0, NULL},
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));

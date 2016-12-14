@@ -57,6 +57,9 @@ public:
     unsigned int cheat;
     bool lane_ready, distance_map_ready, goal_ready;
 
+    unsigned int use_mpc;
+    unsigned int use_obstacle_avoider;
+
     // circle path
     std::list<CircleNode> circle_path;
 

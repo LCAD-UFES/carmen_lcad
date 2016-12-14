@@ -509,7 +509,7 @@ StehsPlanner::BuildStateList(StateNodePtr node)
 		path_point.v      = node->state.v    ;
 		path_point.phi    = node->state.phi  ;
 		path_point.time = node->step_size;
-		state_list.push_front(node->state);
+		state_list.push_front(path_point);
 		node = node->parent;
 	}
 }
@@ -538,6 +538,8 @@ StehsPlanner::GetNextState(StateNodePtr current_state, double a, double w, doubl
     StateNodePtr next_state = new StateNode(*current_state);
     double target_phi = current_state->state.phi + w * step_size;
     double target_v = current_state->state.v + a * step_size;
+    if(target_v > goal.v)
+    	target_v = goal.v;
 
     target_phi = carmen_clamp(-robot_config.max_phi, target_phi, robot_config.max_phi);
 
@@ -600,8 +602,8 @@ StehsPlanner::Expand(
         double k)
 {
     // the car acceleration
-    double a[2] = {/*-1.0,*/ 0.0, 1.0};
-    double w[3] = {-0.05, 0.0, 0.05}; //TODO ler velocidade angular do volante do carmen.ini
+    double a[3] = {-1.0, 0.0, 1.0};
+    double w[3] = {-0.1, 0.0, 0.1}; //TODO ler velocidade angular do volante do carmen.ini
 
     double step_size = k * UpdateStep(current_state);
 
@@ -610,7 +612,7 @@ StehsPlanner::Expand(
     	step_size = 0.2;
 
     // the acceleration loop
-    for (int i = 0; i < 2; ++i)
+    for (int i = 0; i < 3; ++i)
     {
         // the steering angle acceleration
         for (int j = 0; j < 3; ++j)
@@ -626,7 +628,7 @@ StehsPlanner::Expand(
             {
                 open_set.push(next_state);
 
-                ShowState(next_state, imgem);
+                //ShowState(next_state, imgem);
             }
             else
             {
@@ -696,7 +698,7 @@ StehsPlanner::HeuristicSearch()
     double k = 1.0;
     int cont = 0;
 
-	imgem = ShowCirclePath(closed_set);
+	//imgem = ShowCirclePath(closed_set);
 
     while (!open_set.empty())
     {
@@ -717,7 +719,7 @@ StehsPlanner::HeuristicSearch()
                 delete tmp;
             }
 
-            printf("Nstate %ld cont %d\n", state_list.size(), cont);
+            //printf("Nstate %ld cont %d\n", state_list.size(), cont);
             //printf("Sucesso!!\n");
             break;
 
@@ -728,7 +730,7 @@ StehsPlanner::HeuristicSearch()
 
         //printf("Nstate %d\n", cont);
 
-        printf("h %lf f %lf T %ld\n", current->h, current->f, open_set.size());
+        //printf("h %lf f %lf T %ld\n", current->h, current->f, open_set.size());
 
         if (current->h < RGOAL)
         {
@@ -741,7 +743,7 @@ StehsPlanner::HeuristicSearch()
 
         if (open_set.empty())
         {
-        	printf("Open set empty!\n");
+        	//printf("Open set empty!\n");
 
             k *= 0.5;
 
@@ -771,9 +773,9 @@ StehsPlanner::HeuristicSearch()
 void
 StehsPlanner::GeneratePath()
 {
-	printf("Inicio space exploration\n");
+	//printf("Inicio space exploration\n");
 	RDDFSpaceExploration();
-	printf("Fim space exploration\n");
+	//printf("Fim space exploration\n");
 	if (!circle_path.empty())
 	{
 		HeuristicSearch();
@@ -948,8 +950,8 @@ void StehsPlanner::ShowCirclePath() {
 
     }
 
-    std::list<State>::iterator its = state_list.begin();
-    std::list<State>::iterator ends = state_list.end();
+    std::list<carmen_ackerman_path_point_t>::iterator its = state_list.begin();
+    std::list<carmen_ackerman_path_point_t>::iterator ends = state_list.end();
 
     while (its != ends)
     {
