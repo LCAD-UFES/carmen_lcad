@@ -605,8 +605,8 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 
 	if (target_v < 0.0)
 		target_v = 0.0;
-	params.optimize_time = OPTIMIZE_DISTANCE;
-//	params.optimize_time = OPTIMIZE_TIME;
+//	params.optimize_time = OPTIMIZE_DISTANCE;
+	params.optimize_time = OPTIMIZE_TIME;
 
 	if (params.optimize_time == OPTIMIZE_DISTANCE)
 	{
