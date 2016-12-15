@@ -7,7 +7,7 @@
 #include <prob_motion_model.h>
 #include <prob_measurement_model.h>
 
-#include "moving_objects3_interface.h"
+#include <carmen/moving_objects3_interface.h>
 #include "moving_objects3_particle_filter.h"
 
 using namespace std;
@@ -28,7 +28,11 @@ PolarSlamParams polar_slam_params;
 OdometryMotionModelParams odometry_model_params;
 BeanRangeFinderMeasurementModelParams laser_model_params;
 
+// particle filter
 carmen_moving_objects3_particles_message particles_message;
+std::vector<moving_objects3_particle_t> particle_set;
+
+double previous_timestamp;
 
 void
 arrange_velodyne_vertical_angles_to_true_position(carmen_velodyne_partial_scan_message *velodyne_message)
@@ -54,6 +58,28 @@ arrange_velodyne_vertical_angles_to_true_position(carmen_velodyne_partial_scan_m
 }
 
 
+void
+build_particles_message(carmen_moving_objects3_particles_message *particles_message,
+		std::vector<moving_objects3_particle_t> particle_set)
+{
+	particles_message->num_particles = NUM_OF_PARTICLES;
+
+	if(particles_message->particles == NULL)
+		particles_message->particles = (moving_objects3_particle_t*) malloc(particles_message->num_particles * sizeof(moving_objects3_particle_t));
+
+	for(int i = 0; i < particles_message->num_particles; i++)
+	{
+		particles_message->particles[i].pose.x = particle_set[i].pose.x;
+		particles_message->particles[i].pose.y = particle_set[i].pose.y;
+		particles_message->particles[i].pose.theta = particle_set[i].pose.theta;
+		particles_message->particles[i].geometry.length = particle_set[i].geometry.length;
+		particles_message->particles[i].geometry.width = particle_set[i].geometry.width;
+	}
+
+	particles_message->host = carmen_get_host();
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
 // Publishers                                                                                //
@@ -74,6 +100,8 @@ generate_2D_map_from_velodyne_pointcloud(carmen_velodyne_partial_scan_message *v
 		-6.6700001, -5.3299999, -4.0, -2.6700001, -1.33, 0.0, 1.33, 2.6700001, 4.0,
 		5.3299999, 6.6700001, 8.0, 9.3299999, 10.67
 	};
+
+	double delta_time = velodyne_message->timestamp - previous_timestamp;
 
 	arrange_velodyne_vertical_angles_to_true_position(velodyne_message);
 
@@ -153,32 +181,41 @@ generate_2D_map_from_velodyne_pointcloud(carmen_velodyne_partial_scan_message *v
 
 	carmen_publish_velodyne_projected_message(&message);
 
-	free(message.angles);
-	free(message.ranges);
-	free(message.intensity);
+
 
 	static int first = 1;
 
-	if(first == 1)
+	if (first == 1)
 	{
-		particles_message.num_particles = NUM_OF_PARTICLES;
-
-		particles_message.particles = (moving_objects3_particle_t*) malloc(particles_message.num_particles * sizeof(moving_objects3_particle_t));
-
-		for(int i = 0; i < particles_message.num_particles; i++)
+		for(int i = 0; i < NUM_OF_PARTICLES; i++)
 		{
-			particles_message.particles[i].pose.x = carmen_uniform_random(-35.0, 35.0);
-			particles_message.particles[i].pose.y = carmen_uniform_random(-35.0, 35.0);
-			particles_message.particles[i].pose.theta = carmen_uniform_random(-M_PI, M_PI);
-			particles_message.particles[i].geometry.length = 4.5;
-			particles_message.particles[i].geometry.width = 1.60;
+			moving_objects3_particle_t particle;
+			particle.pose.x = carmen_uniform_random(-15.0, 15.0);
+			particle.pose.y = carmen_uniform_random(-1.0, 1.0);
+			particle.pose.theta = carmen_uniform_random(-M_PI/6, M_PI/6);
+			particle.geometry.length = 4.5;
+			particle.geometry.width = 1.60;
+			particle.velocity = 0.0;
+
+			particle_set.push_back(particle);
 		}
 		first = 0;
+		delta_time = 0.05;
 	}
-	particles_message.host = carmen_get_host();
-	particles_message.timestamp = velodyne_message->timestamp;
+	else
+	{
+		particle_set = algorithm_particle_filter(particle_set, message, delta_time);
+	}
+
+	build_particles_message(&particles_message, particle_set);
+
+	previous_timestamp = particles_message.timestamp = velodyne_message->timestamp;
 
 	carmen_publish_moving_objects3_particles_message(&particles_message);
+
+	free(message.angles);
+	free(message.ranges);
+	free(message.intensity);
 
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////

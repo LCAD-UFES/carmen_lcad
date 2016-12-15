@@ -66,19 +66,48 @@ transform_rectangle(rectangle_points rect, double x, double y, double theta)
 
 
 void
-generate_rectangles_points(moving_objects3_particle_t particle, rectangle_points* r1, rectangle_points* r2, rectangle_points* r3)
+generate_rectangles_points(carmen_point_t pose, double width, double length, rectangle_points* r1, rectangle_points* r2, rectangle_points* r3)
 {
 	rectangle_points temp;
 
 	// generate inside car rectangle
-	temp = generate_rectangle(particle.geometry.width, particle.geometry.length);
-	*r1 = transform_rectangle(temp, particle.pose.x, particle.pose.y, particle.pose.theta);
+	temp = generate_rectangle(width, length);
+	*r1 = transform_rectangle(temp, pose.x, pose.y, pose.theta);
 
 	// generate car surface rectangle
-	temp = generate_rectangle(particle.geometry.width + 0.2, particle.geometry.length + 0.2);
-	*r2 = transform_rectangle(temp, particle.pose.x, particle.pose.y, particle.pose.theta);
+	temp = generate_rectangle(width + 0.2, length + 0.2);
+	*r2 = transform_rectangle(temp, pose.x, pose.y, pose.theta);
 
 	// generate car surface rectangle
-	temp = generate_rectangle(particle.geometry.width + 1.2, particle.geometry.length + 1.2);
-	*r3 = transform_rectangle(temp, particle.pose.x, particle.pose.y, particle.pose.theta);
+	temp = generate_rectangle(width + 1.2, length + 1.2);
+	*r3 = transform_rectangle(temp, pose.x, pose.y, pose.theta);
+}
+
+
+int
+ccw(carmen_vector_2D_t A, carmen_vector_2D_t B, carmen_vector_2D_t C)
+{
+	return (C.y-A.y)*(B.x-A.x) > (B.y-A.y)*(C.x-A.x);
+}
+
+
+int
+intersect(carmen_vector_2D_t A, carmen_vector_2D_t B, carmen_vector_2D_t C, carmen_vector_2D_t D)
+{
+	return ccw(A,C,D) != ccw(B,C,D) && ccw(A,B,C) != ccw(A,B,D);
+}
+
+
+// return 1 if ray intersect given rectangle, 0 otherwise
+int
+check_ray_intersection(carmen_vector_2D_t end_point, rectangle_points rect)
+{
+	carmen_vector_2D_t origin;
+	origin.x = 0.0;
+	origin.y = 0.0;
+
+	return intersect(origin, end_point, rect.p1, rect.p2) ||
+			intersect(origin, end_point, rect.p2, rect.p3) ||
+			intersect(origin, end_point, rect.p3, rect.p4) ||
+			intersect(origin, end_point, rect.p4, rect.p1);
 }

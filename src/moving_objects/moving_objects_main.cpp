@@ -74,8 +74,8 @@ int number_of_threads = 1;
 
 
 #ifdef AJUSTE
-double sigma = 5.0;			// desvio padrão dos pesos das partículas (0.1 funciona apenas no baseline)
-double alpha_1 = 0.5; 		// desvio padrão da velocidade padrão 0.2
+double sigma = 3.0;			// desvio padrão dos pesos das partículas (0.1 funciona apenas no baseline)
+double alpha_1 = 2.0; 		// desvio padrão da velocidade padrão 0.2
 double alpha_2 = 0.12; 		// desvio padrão de theta padrão 0.01
 FILE * parametro;
 static int cont = 0;
@@ -301,45 +301,53 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 #ifdef AJUSTE
 	// todo modificações para testar os parâmetros primeira mensagem
 
-	char filename[256];
+	if (cont == 0)
+	{
+		char filename[256];
 
+		sprintf(filename,"parametros/%d_%02d_sig-%.2f_alf1-%.2f_alf2-%.2f.txt",rodada,cont+1,sigma,alpha_1,alpha_2);
+		parametro = fopen(filename,"w");
+		cont++;
+	}
+
+	fflush(parametro);
 	if (velodyne_message->timestamp == 1379356494.718246)
 	{
 		if(parametro != NULL){
 			fclose(parametro);
 		}
+		printf("Fim!\n");
 
-		if (alpha_2 < 0.18)
-		{
-			if (cont > 0)
-				alpha_2 += 0.03;
-		}
-		else
-		{
-			alpha_2 = 0.12;
-//			if(alpha_1 < 2.0)
-//			{
-//				alpha_1 += 0.5;
-//			}
-//			else
-//			{
-//				alpha_1 = 0.5;
-				sigma += 2.0;
-
-				if(sigma > 9.0)
-				{
-					sigma = 5.0;
-					rodada++;
-					cont = 0;
-				}
-
-//			}
-		}
+		rodada++;
+		cont = 0;
+//		if (alpha_2 < 0.18)
+//		{
+//			if (cont > 0)
+//				alpha_2 += 0.03;
+//		}
+//		else
+//		{
+//			alpha_2 = 0.12;
+////			if(alpha_1 < 2.0)
+////			{
+////				alpha_1 += 0.5;
+////			}
+////			else
+////			{
+////				alpha_1 = 0.5;
+//				sigma += 2.0;
+//
+//				if(sigma > 9.0)
+//				{
+//					sigma = 5.0;
+//					rodada++;
+//					cont = 0;
+//				}
+//
+////			}
+//		}
 
 		//sprintf(filename,"parametros/final-22.txt",cont+16,sigma,alpha_1,alpha_2);
-		sprintf(filename,"parametros/%d_%02d_sig-%.2f_alf1-%.2f_alf2-%.2f.txt",rodada,cont+1,sigma,alpha_1,alpha_2);
-		parametro = fopen(filename,"w");
-		cont++;
 	}
 #endif
 
