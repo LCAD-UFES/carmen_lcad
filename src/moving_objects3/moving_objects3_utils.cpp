@@ -75,11 +75,11 @@ generate_rectangles_points(carmen_point_t pose, double width, double length, rec
 	*r1 = transform_rectangle(temp, pose.x, pose.y, pose.theta);
 
 	// generate car surface rectangle
-	temp = generate_rectangle(width + 0.2, length + 0.2);
+	temp = generate_rectangle(width + 0.5, length + 0.5);
 	*r2 = transform_rectangle(temp, pose.x, pose.y, pose.theta);
 
 	// generate car surface rectangle
-	temp = generate_rectangle(width + 1.2, length + 1.2);
+	temp = generate_rectangle(width + 1.5, length + 1.5);
 	*r3 = transform_rectangle(temp, pose.x, pose.y, pose.theta);
 }
 

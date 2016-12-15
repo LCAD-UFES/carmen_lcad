@@ -64,7 +64,7 @@ carmen_robot_ackerman_config_t car_config;
 int offline_map_published = 0;
 carmen_map_t lane_map_g = {{0, 0, 0, "", NULL, 0, 0}, NULL, NULL};
 carmen_compact_map_t compacted_lane_map_g = {0, NULL, NULL, NULL, {0, 0, 0, "", NULL, 0, 0}};
-const double LANE_SIZE_FORWARD = 50.0;
+const double LANE_SIZE_FORWARD = 75.0;
 const double LANE_SIZE_BACKWARD = 20.0;
 
 //void

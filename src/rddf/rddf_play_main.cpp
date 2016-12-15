@@ -203,7 +203,7 @@ carmen_check_for_annotations(double x, double y, double theta __attribute__((unu
 		// TODO: criar uma forma de buscar somente as anotacoes na mao correta
 		// *******************************************************************
 
-		if (dist < 120.0)// TODO: Alberto: Isso depende da velocidade do carro... Quando a velocidade eh maior que 60Km/h este valor esta ruim...
+		if (dist < 300.0)// TODO: Alberto: Isso depende da velocidade do carro... Quando a velocidade eh maior que 60Km/h este valor esta ruim...
 			annotations_to_publish.push_back(i);
 	}
 }
@@ -268,7 +268,7 @@ set_annotations()
 	{
 		find_nearest_pose_and_dist(annotations_to_publish[i], &nearest_pose, &nearest_pose_dist);
 
-		if ((nearest_pose >= 0) && (annotation_is_forward_from_robot(robot_pose, annotations_to_publish[i])))
+		if ((nearest_pose >= 0) && nearest_pose_dist < 10.0 && (annotation_is_forward_from_robot(robot_pose, annotations_to_publish[i])))
 			annotations[nearest_pose] = annotation_queue[annotations_to_publish[i]].annotation_type;
 	}
 }

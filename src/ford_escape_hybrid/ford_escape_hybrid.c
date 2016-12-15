@@ -480,6 +480,7 @@ clear_current_motion_command_vector(carmen_ackerman_motion_command_p current_mot
 		current_motion_command_vector[i].phi = 0.0;
 }
 
+
 void
 print_values_to_train_simulator(double atan_desired_curvature, double atan_current_curvature, double delta_t, double steering_effort)
 {
@@ -638,7 +639,7 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 
 			//printf("PID %lf %lf %lf %lf %lf\n", carmen_get_time(), -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), ford_escape_hybrid_config->filtered_phi, g_steering_command/200, ford_escape_hybrid_config->filtered_v);
 
-			pid_plot_phi(ford_escape_hybrid_config->filtered_phi, -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), 0.6, "phi");
+//			pid_plot_phi(ford_escape_hybrid_config->filtered_phi, -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), 0.6, "phi");
 		}
 
 		previous_gear_command = g_gear_command;
@@ -648,6 +649,8 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 		//carmen_ford_escape_hybrid_velocity_PID_controler
 		carmen_libpid_velocity_PID_controler(&g_throttle_command, &g_brakes_command, &g_gear_command,
 			g_desired_velocity, ford_escape_hybrid_config->filtered_v, delta_t);
+
+		pid_plot_velocity(ford_escape_hybrid_config->filtered_v, g_desired_velocity, 15.0, "vel");
 
 		if (previous_gear_command != g_gear_command)
 			publish_ford_escape_gear_command(XGV_CCU);

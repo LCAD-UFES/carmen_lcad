@@ -1,7 +1,7 @@
 include ../Makefile.conf
 
 MODULE_NAME = Moving Objects
-MODULE_COMMENT = Moving objects using 1-D approach
+MODULE_COMMENT = Moving objects tracking using virtual scan
 
 LINK = g++
 

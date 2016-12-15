@@ -133,7 +133,7 @@ get_distance_to_act_on_annotation(double current_v, double annotation_v, double 
 
 	if (current_v > annotation_v)
 	{
-		double a = -get_robot_config()->maximum_acceleration_forward;
+		double a = -get_robot_config()->maximum_acceleration_forward * 2.0;
 		double t = (annotation_v - current_v) / a;
 //		double distance = current_v * t + 0.5 * a * t * t;
 		double distance = annotation_v * t + (current_v - annotation_v) * (t / 2.0);
@@ -149,20 +149,23 @@ get_distance_to_act_on_annotation(double current_v, double annotation_v, double 
 
 double
 get_velocity_at_goal(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
-		double velocity_at_next_annotation,	double distance_to_goal)
+		double velocity_at_next_annotation,	double distance_to_goal, double distance_to_annotation)
 {
-	// https://www.wolframalpha.com/input/?i=solve+s%3Dg*(g-v)%2Fa%2B(v-g)*(g-v)%2F(2*a)+for+g	double v0 = current_robot_pose_v_and_phi.v;
+	// https://www.wolframalpha.com/input/?i=solve+s%3Dg*(g-v)%2Fa%2B(v-g)*((g-v)%2F(2*a)))+for+a
+	// https://www.wolframalpha.com/input/?i=solve+s%3Dg*(g-v)%2Fa%2B(v-g)*(g-v)%2F(2*a)+for+g
 
 	double v0 = current_robot_pose_v_and_phi.v;
 	double dg = distance_to_goal;
-	double a = -get_robot_config()->maximum_acceleration_forward / 1.5;
+	double da = distance_to_annotation;
+	double va = velocity_at_next_annotation;
+	double a = (va * va - v0 * v0) / (2.0 * da);
+//	double a = -get_robot_config()->maximum_acceleration_forward;
 	double sqrt_val = 2.0 * a * dg + v0 * v0;
-	double vg = velocity_at_next_annotation;
 	if (sqrt_val > 0.0)
-		vg = sqrt(sqrt_val);
-	if (vg < velocity_at_next_annotation)
-		vg = velocity_at_next_annotation;
-	return (vg);
+		va = sqrt(sqrt_val);
+	if (va < velocity_at_next_annotation)
+		va = velocity_at_next_annotation;
+	return (va);
 }
 
 
@@ -179,7 +182,8 @@ set_goal_velocity_according_to_annotation(const carmen_behavior_selector_goal_li
 	double distance_to_goal = carmen_distance_ackerman_traj(&current_robot_pose_v_and_phi, goal_list_msg.goal_list);
 //	printf("ca %d, daann %.1lf, dann %.1lf, v %.1lf, vg %.1lf\n", clearing_annotation,
 //			distance_to_act_on_annotation, distance_to_annotation, current_robot_pose_v_and_phi.v,
-//			get_velocity_at_goal(current_robot_pose_v_and_phi, velocity_at_next_annotation, distance_to_goal));
+//			get_velocity_at_goal(current_robot_pose_v_and_phi, velocity_at_next_annotation,
+//				distance_to_goal, distance_to_annotation));
 	if (last_rddf_annotation_message_valid &&
 		(clearing_annotation ||
 		 (distance_to_annotation < distance_to_act_on_annotation) ||
@@ -187,7 +191,8 @@ set_goal_velocity_according_to_annotation(const carmen_behavior_selector_goal_li
 					&& annotation_is_forward(get_robot_pose(), last_rddf_annotation_message.annotation_point))))
 	{
 		clearing_annotation = true;
-		goal_list_msg.goal_list->v = get_velocity_at_goal(current_robot_pose_v_and_phi, velocity_at_next_annotation, distance_to_goal);
+		goal_list_msg.goal_list->v = get_velocity_at_goal(current_robot_pose_v_and_phi, velocity_at_next_annotation,
+				distance_to_goal, distance_to_annotation);
 		if (!annotation_is_forward(get_robot_pose(), last_rddf_annotation_message.annotation_point))
 			clearing_annotation = false;
 	}
