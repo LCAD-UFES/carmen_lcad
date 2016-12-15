@@ -35,10 +35,10 @@ sample_motion_model(moving_objects3_particle_t particle_t_1, double delta_time)
 double
 get_ray_cost(carmen_vector_2D_t end_point, rectangle_points r_a, rectangle_points r_b, rectangle_points r_c)
 {
-	const double c_occ = 0.5;
-	const double c_b = 1.0;
+	const double c_occ = 0.3;
+	const double c_b = 0.9;
 	const double c_s = 0.0;
-	const double c_p = 0.9;
+	const double c_p = 0.8;
 
 	int intersect_a, intersect_b, intersect_c;
 
@@ -64,6 +64,7 @@ get_probability(double cost, double sigma)
 	double p_x, variance;
 	variance = sigma*sigma;
 
+	//p_x = (1.0/(sigma*sqrt(2*M_PI))) * exp(-0.5 *(cost)*(cost)/(variance));
 	p_x = exp(-(cost)*(cost)/(variance));
 
 	return p_x;
@@ -73,7 +74,8 @@ get_probability(double cost, double sigma)
 double
 get_sigma_from_cost(double cost)
 {
-	return 3.0; //1/cost;
+	(void) cost;
+	return 3.0;
 }
 
 
@@ -112,7 +114,8 @@ measurement_model(moving_objects3_particle_t particle_t, carmen_velodyne_project
 void
 normalize_weights(std::vector<moving_objects3_particle_t> &particle_set, double total_weight)
 {
-	double inv_total_weight = 1/total_weight;
+	double inv_total_weight = 1.0/total_weight;
+
 	std::vector<moving_objects3_particle_t>::iterator it = particle_set.begin();
 	std::vector<moving_objects3_particle_t>::iterator end = particle_set.end();
 
@@ -127,15 +130,16 @@ std::vector<moving_objects3_particle_t>
 resample(std::vector<moving_objects3_particle_t> particle_set_t)
 {
 	std::vector<moving_objects3_particle_t> particle_set;
-	double inv_num_particles = 1/NUM_OF_PARTICLES;
+	double inv_num_particles = 1.0/NUM_OF_PARTICLES;
+
 	double r = carmen_uniform_random(0.0,inv_num_particles);
 	double c = particle_set_t[0].weight;
-
+	double U;
 	int i = 0;
 
 	for (int m = 0; m < NUM_OF_PARTICLES; m++)
 	{
-		double U = r + (m) * inv_num_particles;
+		U = r + (m * inv_num_particles);
 		while (U > c)
 		{
 			i++;

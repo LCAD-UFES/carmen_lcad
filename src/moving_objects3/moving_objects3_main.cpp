@@ -190,12 +190,12 @@ generate_2D_map_from_velodyne_pointcloud(carmen_velodyne_partial_scan_message *v
 		for(int i = 0; i < NUM_OF_PARTICLES; i++)
 		{
 			moving_objects3_particle_t particle;
-			particle.pose.x = carmen_uniform_random(-15.0, 15.0);
-			particle.pose.y = carmen_uniform_random(-1.0, 1.0);
-			particle.pose.theta = carmen_uniform_random(-M_PI/6, M_PI/6);
+			particle.pose.x = carmen_uniform_random(-10.0, 10.0);
+			particle.pose.y = carmen_uniform_random(-3.0, 3.0);
+			particle.pose.theta = carmen_uniform_random(-M_PI/4.0, M_PI/4.0);
 			particle.geometry.length = 4.5;
 			particle.geometry.width = 1.60;
-			particle.velocity = 0.0;
+			particle.velocity = carmen_uniform_random(0.0, 1.0);
 
 			particle_set.push_back(particle);
 		}
