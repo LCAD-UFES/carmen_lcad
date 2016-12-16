@@ -42,7 +42,7 @@ ifndef NO_GRAPHICS
 IFLAGS += `$(GTK_CONFIG) --cflags` 
 LFLAGS += -lparam_interface -lipc -lglobal -lglobal_graphics \
 	`$(GTK_CONFIG) --libs` 
-SOURCES += v_disparity_view.c
+SOURCES += v_disparity_view.cpp
 PUBLIC_BINARIES += v_disparity_view
 TARGETS += v_disparity_view
 endif

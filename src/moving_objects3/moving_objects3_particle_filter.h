@@ -9,9 +9,9 @@
 #ifndef _MOVING_OBJECTS3_PARTICLE_FILTER_H_
 #define _MOVING_OBJECTS3_PARTICLE_FILTER_H_
 
-#define NUM_OF_PARTICLES 50
-#define MAX_ACCELERATION 3.0
-#define MAX_ANGULAR_VELOCITY 0.55
+#define NUM_OF_PARTICLES 150
+#define MAX_ACCELERATION 2.0
+#define MAX_ANGULAR_VELOCITY 0.35
 
 std::vector<moving_objects3_particle_t>
 algorithm_particle_filter(std::vector<moving_objects3_particle_t> particle_set_t_1,

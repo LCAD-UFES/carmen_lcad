@@ -503,6 +503,7 @@ src/stehs_planner/stehs_planner.o
 bin/stehs_planner
 bin/visual_car_tracking
 src/visual_car_tracking/visual_car_tracking
+/* .cproject
 src/moving_objects3/moving_objects3
 src/moving_objects3/moving_objects3_viewer
 bin/moving_objects3

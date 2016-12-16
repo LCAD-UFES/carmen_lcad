@@ -4,6 +4,7 @@
 #include "v_disparity_GPU.h"
 #endif
 
+#include <vector>
 
 v_disparity get_v_disparity_instance(stereo_util stereo_util_instance, int stereo_disparity)
 {
@@ -119,7 +120,11 @@ cvLineSegment *find_hough_lines(const IplImage *image, int *n_lines, v_disparity
 	IplImage *ch1_image = cvCloneImage(image);
 
 	/* Morphological skeleton of the image */
+#if CV_MAJOR_VERSION == 2
 	cv::Mat img(ch1_image);
+#elif CV_MAJOR_VERSION == 3
+	cv::Mat img = cv::cvarrToMat(ch1_image);
+#endif
 	cv::threshold(img, img, 127, 255, cv::THRESH_BINARY);
 	cv::Mat skel(img.size(), CV_8UC1, cv::Scalar(0));
 	cv::Mat temp(img.size(), CV_8UC1, cv::Scalar(0));
@@ -143,7 +148,7 @@ cvLineSegment *find_hough_lines(const IplImage *image, int *n_lines, v_disparity
 
 
 	/*  Apply Hough transform to find lines */
-	cv::vector<cv::Vec4i> lines;
+	std::vector<cv::Vec4i> lines;
 
 	cv::HoughLinesP(skel, lines, 1, CV_PI/360.0, 60, 45, 10);
 
