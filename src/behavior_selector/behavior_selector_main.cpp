@@ -45,42 +45,6 @@ annotation_is_forward(carmen_ackerman_traj_point_t robot_pose, carmen_vector_3D_
 }
 
 
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                           //
-// Publishers                                                                                //
-//                                                                                           //
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-
-void
-publish_current_state()
-{
-	IPC_RETURN_TYPE err;
-	carmen_behavior_selector_state_message msg;
-	carmen_behavior_selector_state_t current_state;
-	carmen_behavior_selector_algorithm_t following_lane_planner;
-	carmen_behavior_selector_algorithm_t parking_planner;
-	carmen_behavior_selector_goal_source_t current_goal_source;
-
-	behavior_selector_get_state(&current_state, &following_lane_planner, &parking_planner, &current_goal_source);
-
-	msg.timestamp = carmen_get_time();
-	msg.host = carmen_get_host();
-
-	msg.algorithm = get_current_algorithm();
-	msg.state = current_state;
-
-	msg.following_lane_algorithm = following_lane_planner;
-	msg.parking_algorithm = parking_planner;
-
-	msg.goal_source = current_goal_source;
-
-	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME, &msg);
-	carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME);
-}
-
-
 double
 get_velocity_at_next_annotation(const carmen_behavior_selector_goal_list_message goal_list_msg)
 {
@@ -124,48 +88,49 @@ get_velocity_at_next_annotation(const carmen_behavior_selector_goal_list_message
 
 
 double
-get_distance_to_act_on_annotation(double current_v, double annotation_v, double distance_to_annotation)
+get_distance_to_act_on_annotation(double v0, double va, double distance_to_annotation)
 {
-	// v = v0 + a*t
+	// va = v0 + a * t
 	// a*t = v - v0
-	// t = (v - v0) / a
-	// s = vo*t + 0.5 * a*t*t
+	// t = (va - v0) / a
+	// da = va * t + 0.5 * a * t * t
 
-	if (current_v > annotation_v)
-	{
-		double a = -get_robot_config()->maximum_acceleration_forward * 2.0;
-		double t = (annotation_v - current_v) / a;
-//		double distance = current_v * t + 0.5 * a * t * t;
-		double distance = annotation_v * t + (current_v - annotation_v) * (t / 2.0);
+	double a = -get_robot_config()->maximum_acceleration_forward;
+	double t = (va - v0) / a;
+	double daa = v0 * t + 0.5 * a * t * t;
 
-		return (distance);// + 3.0 * get_robot_config()->distance_between_front_and_rear_axles);
-	}
+	//printf("t %.2lf, v0 %.1lf, va %.1lf, a %.2lf, tt %.2lf, daa %.1lf, da %.1lf\n", carmen_get_time(), v0, va, a, t, daa, distance_to_annotation);
+	if (v0 > va)
+		return (daa);// + 3.0 * get_robot_config()->distance_between_front_and_rear_axles);
 	else
-	{
 		return (distance_to_annotation);
-	}
 }
 
 
 double
-get_velocity_at_goal(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
-		double velocity_at_next_annotation,	double distance_to_goal, double distance_to_annotation)
+get_velocity_at_goal(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double va, double dg, double da)
 {
 	// https://www.wolframalpha.com/input/?i=solve+s%3Dg*(g-v)%2Fa%2B(v-g)*((g-v)%2F(2*a)))+for+a
-	// https://www.wolframalpha.com/input/?i=solve+s%3Dg*(g-v)%2Fa%2B(v-g)*(g-v)%2F(2*a)+for+g
+	// https://www.wolframalpha.com/input/?i=solve+s%3Dv*((g-v)%2Fa)%2B0.5*a*((g-v)%2Fa)%5E2+for+g
 
 	double v0 = current_robot_pose_v_and_phi.v;
-	double dg = distance_to_goal;
-	double da = distance_to_annotation;
-	double va = velocity_at_next_annotation;
-	double a = (va * va - v0 * v0) / (2.0 * da);
 //	double a = -get_robot_config()->maximum_acceleration_forward;
+	double a = (va * va - v0 * v0) / (2.0 * da);
 	double sqrt_val = 2.0 * a * dg + v0 * v0;
+	double vg = va;
 	if (sqrt_val > 0.0)
-		va = sqrt(sqrt_val);
-	if (va < velocity_at_next_annotation)
-		va = velocity_at_next_annotation;
-	return (va);
+		vg = sqrt(sqrt_val);
+	if (vg < va)
+		vg = va;
+
+	static double first_time = 0.0;
+	double t = carmen_get_time();
+	if (first_time == 0.0)
+		first_time = t;
+	//printf("t %.3lf, v0 %.1lf, va %.1lf, a %.3lf, vg %.2lf, dg %.1lf, da %.1lf\n", t - first_time, v0, va, a, vg, dg, da);
+	printf("t %.3lf, v0 %.1lf, a %.3lf, vg %.2lf, dg %.1lf, tt %.3lf\n", t - first_time, v0, a, vg, dg, (vg - v0) / a);
+
+	return (vg);
 }
 
 
@@ -198,6 +163,42 @@ set_goal_velocity_according_to_annotation(const carmen_behavior_selector_goal_li
 	}
 	else
 		goal_list_msg.goal_list->v = 15.28;
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Publishers                                                                                //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void
+publish_current_state()
+{
+	IPC_RETURN_TYPE err;
+	carmen_behavior_selector_state_message msg;
+	carmen_behavior_selector_state_t current_state;
+	carmen_behavior_selector_algorithm_t following_lane_planner;
+	carmen_behavior_selector_algorithm_t parking_planner;
+	carmen_behavior_selector_goal_source_t current_goal_source;
+
+	behavior_selector_get_state(&current_state, &following_lane_planner, &parking_planner, &current_goal_source);
+
+	msg.timestamp = carmen_get_time();
+	msg.host = carmen_get_host();
+
+	msg.algorithm = get_current_algorithm();
+	msg.state = current_state;
+
+	msg.following_lane_algorithm = following_lane_planner;
+	msg.parking_algorithm = parking_planner;
+
+	msg.goal_source = current_goal_source;
+
+	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME, &msg);
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME);
 }
 
 
@@ -250,9 +251,8 @@ void
 behavior_selector_publish_periodic_messages()
 {
 	publish_current_state();
-	publish_goal_list();
+//	publish_goal_list();
 }
-
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -326,8 +326,9 @@ rddf_handler(carmen_rddf_road_profile_message *rddf_msg)
 		IPC_RETURN_TYPE err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, &msg);
 		carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME);
 	}
-	publish_goal_list();
+//	publish_goal_list();
 }
+
 
 static void
 path_planner_road_profile_handler(carmen_path_planner_road_profile_message *rddf_msg)
