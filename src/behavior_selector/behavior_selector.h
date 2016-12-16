@@ -15,11 +15,11 @@ void change_distance_between_waypoints_and_goals(double dist_between_waypoints, 
 
 void behavior_selector_initialize(carmen_robot_ackerman_config_t config, double dist_between_waypoints,
 		double change_goal_dist, carmen_behavior_selector_algorithm_t f_planner, carmen_behavior_selector_algorithm_t p_planner,
-		double distance_to_remove_annotation_goal);
+		double distance_to_remove_annotation_goal,int rddf_num_poses_ahead_min, int rddf_num_poses_ahead_limited_by_map);
 
 void behavior_selector_update_robot_pose(carmen_ackerman_traj_point_t robot_pose, int *state_updated);
 
-void behavior_selector_update_rddf(carmen_rddf_road_profile_message *rddf_msg);
+void behavior_selector_update_rddf(carmen_rddf_road_profile_message *rddf_msg, int rddf_num_poses_by_velocity);
 
 void behavior_selector_update_map(carmen_map_t *map, int *goal_list_updated);
 
@@ -49,6 +49,8 @@ void behavior_selector_get_goal_list(carmen_ackerman_traj_point_t **goal_list_ou
 carmen_ackerman_traj_point_t get_robot_pose();
 double get_max_v();
 carmen_robot_ackerman_config_t *get_robot_config();
+
+carmen_rddf_road_profile_message *get_last_rddf_message();
 
 // TODO: retirar as duas funcoes deste contexto de lib e deixa-las apenas visiveis (static) no behavior_selector_main.cpp
 void publish_goal_list();
