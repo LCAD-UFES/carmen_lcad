@@ -188,6 +188,12 @@ void lane_analysis_handler(carmen_bumblebee_basic_stereoimage_message * stereo_i
 	cv::resize(image, image, Size(640,480));
 
 	fnumber++;
+
+//	if(fnumber>100)
+//	{
+//		exit(0);
+//	}
+
 	if (!image.empty()) {
 		cout << "frame: " << fnumber << endl;
 		// run ELAS
