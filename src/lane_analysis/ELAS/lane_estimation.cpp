@@ -141,6 +141,7 @@ void ELAS::lane_position_estimation(const pre_processed * _pre_processed, const 
 
 	// write the output
 	if (HOUGH_ONLY) {
+		
 		vector<HoughLine> finalHoughs = kalmanState->_hough.toVetorDeHoughs(_cfg->roi, _cfg->ipm);
 		for (unsigned int i = 0; i < y_output.size(); i++) {
 			_out_lane_position->left.push_back(Point2d(finalHoughs[LANE_LEFT].getX(y_output[i]), y_output[i]));

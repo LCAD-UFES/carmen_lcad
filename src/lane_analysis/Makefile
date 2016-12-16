@@ -6,6 +6,7 @@ MODULE_COMMENT = Ego-Lane Analysis System - ELAS
 
 
 LINK = g++
+CFLAGS +=
 CXXFLAGS += -Wall -std=gnu++11
 
 LFLAGS += -lparam_interface -lipc -lglobal -llocalize_ackerman_interface -lmap_server_interface -lbumblebee_basic_interface

@@ -57,7 +57,7 @@ vector<Point2d> ParticleHough::getSplinePoints(const HoughDoMeio &hough, int roi
 	vector<Point2d> pontosSpline;
 	if (pontosParticula.size() >= 2) {
 		std::vector<double> x, y;
-		for (Point2d p : pontosParticula) {
+		for (const Point2d &p : pontosParticula) {
 			y.push_back(p.x);
 			x.push_back(p.y);
 		}
@@ -430,16 +430,16 @@ vector<double> ParticleFilterHough::calculaErrosConfianca(const HoughDoMeio &hou
 		double razaoVariacaoLargura = ((hough.largura - particles[i].laneWidth) / mapaProbabilistico.rows);
 		for (int p = 0; p < mapaProbabilistico.rows; p++) {
 			// esquerda
-			for (int i = 0 + shift; i < tamanhoBusca + shift; i++) {
-				Point paraAvaliar = Point((int)esqSpline[p].x + i, (int)esqSpline[p].y);
-				if (areaImagem.contains(paraAvaliar)) {
-					if (dirSpline[p].y > alturaConfiavel) total += (int)mapaProbabilistico.at<double>(paraAvaliar);
+			if(areaImagem.contains(esqSpline[p])){
+				for (int i = 0 + shift; i < tamanhoBusca + shift; i++) {
+					Point paraAvaliar = Point((int)esqSpline[p].x + i, (int)esqSpline[p].y);
+					if (esqSpline[p].y > alturaConfiavel) total += (int)mapaProbabilistico.at<double>(paraAvaliar);
 				}
 			}
 			// direita
-			for (int i = 0 + shift; i < tamanhoBusca + shift; i++) {
-				Point paraAvaliar = Point((int)dirSpline[p].x - i, (int)dirSpline[p].y);
-				if (areaImagem.contains(paraAvaliar)) {
+			if(areaImagem.contains(dirSpline[p])){
+				for (int i = 0 + shift; i < tamanhoBusca + shift; i++) {
+					Point paraAvaliar = Point((int)dirSpline[p].x - i, (int)dirSpline[p].y);
 					if (dirSpline[p].y > alturaConfiavel) total += (int)mapaProbabilistico.at<double>(paraAvaliar);
 				}
 			}

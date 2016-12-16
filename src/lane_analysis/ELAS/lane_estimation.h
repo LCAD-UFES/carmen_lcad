@@ -16,7 +16,7 @@
 
 #define DISPLAY_PARTICLE_FILTER false
 
-#define HOUGH_ONLY false
+#define HOUGH_ONLY true 
 #define BUFFER_HOUGHS_SIZE 10
 #define BUFFER_MIN_LENGTH 50
 #define NUM_PARTICLES 500

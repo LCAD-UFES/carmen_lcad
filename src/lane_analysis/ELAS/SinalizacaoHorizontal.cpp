@@ -73,7 +73,8 @@ void SinalizacaoHorizontal::templateMatching(const Mat1b &inGrayRoiIPM, const Ma
 		}
 
 		// template matching
-		string templateDirectory = "/dados/berriel/MEGA/projects/lane-research/data/images/templates/";
+		string carmenHomeDirectory = getenv("CARMEN_HOME");
+		string templateDirectory = carmenHomeDirectory + "/src/lane_analysis/data/images/templates/";
 		
 		Mat1b faixaPedestre = imread(templateDirectory + "faixa-pedestre.png", IMREAD_GRAYSCALE);
 		Mat1b seta = imread(templateDirectory + "seta-frente.png", IMREAD_GRAYSCALE);
@@ -446,8 +447,10 @@ SinalizacaoHorizontal::TemplateSinalizacao SinalizacaoHorizontal::matchTemplates
 		minMaxLoc(methodHistograma, &min, &max, &minIdx, &maxIdx);
 		outIdx = minIdx;
 	}
+	string carmenHomeDirectory = getenv("CARMEN_HOME");
+	string templateDirectory = carmenHomeDirectory + "/src/lane_analysis/data/images/templates/none.png";
 
-	return (max > threshold) ? templates[outIdx.x] : TemplateSinalizacao(ROAD_SIGN::NONE, imread("/dados/berriel/MEGA/projects/lane-research/data/images/templates/none.png", IMREAD_GRAYSCALE));
+	return (max > threshold) ? templates[outIdx.x] : TemplateSinalizacao(ROAD_SIGN::NONE, imread(templateDirectory, IMREAD_GRAYSCALE));
 }
 
 bool SinalizacaoHorizontal::eFaixaDePedestre(const Blob &_blob) {
