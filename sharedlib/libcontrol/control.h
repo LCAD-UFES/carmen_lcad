@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 
-//#define PLOT
+#define PLOT
 //#define PRINT
 //#define SAVE
 
