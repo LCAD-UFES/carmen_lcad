@@ -37,7 +37,7 @@ publish_heartbeats(void *clientData,
 	(void)clientData;
 	(void)currentTime;
 	(void)scheduledTime;
-	carmen_publish_heartbeat((char*)"laser_ldmrs");
+	carmen_publish_heartbeat((char *) "laser_ldmrs");
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -88,9 +88,9 @@ carmen_laser_ldmrs_read_parameters(int argc, char **argv)
 
 	carmen_param_t param_list[] =
 	{
-			{(char*)"laser_ldmrs", 	(char*)	"address", 	CARMEN_PARAM_STRING, &laser_ldmrs_address, 0, NULL},
-			{(char*)"laser_ldmrs", 	(char*)	"port", 	CARMEN_PARAM_STRING, &laser_ldmrs_port, 0, NULL},
-			{(char*)"robot", 		(char*) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &axle_distance, 0, NULL}
+			{(char *) "laser_ldmrs", 	(char*)	"address", 	CARMEN_PARAM_STRING, &laser_ldmrs_address, 0, NULL},
+			{(char *) "laser_ldmrs", 	(char*)	"port", 	CARMEN_PARAM_STRING, &laser_ldmrs_port, 0, NULL},
+			{(char *) "robot", 			(char*) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &axle_distance, 0, NULL}
 	};
 
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
@@ -236,11 +236,13 @@ main(int argc, char **argv)
 		switch (dataType)
 		{
 			case vpSickLDMRS::MeasuredData:
+				message.timestamp = carmen_get_time();
 				carmen_laser_ldmrs_copy_laser_scan_to_message(&message, laserscan);
 				if (laserscan[0].getNumPoints() > 0)
 					carmen_laser_publish_ldmrs(&message);
 				break;
 			case vpSickLDMRS::ObjectData:
+				objectsDataMessage.timestamp = carmen_get_time();
 				carmen_laser_ldmrs_objects_data_build_message(&objectData, &objectsDataMessage);
 				//carmen_laser_ldmrs_objects_build_message(&objectData, &objectsMessage);
 				if (objectData.getNumObjects() > 0)

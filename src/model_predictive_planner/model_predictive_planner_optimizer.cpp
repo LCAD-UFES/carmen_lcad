@@ -30,8 +30,8 @@ compute_a_and_t_from_s(double s, double target_v,
 		ObjectiveFunctionParams *params)
 {
 	// https://www.wolframalpha.com/input/?i=solve+s%3Dv*x%2B0.5*a*x%5E2
-	tcp_seed.tt = (2.0 * s) / (target_v + target_td.v_i);
-	double a = (target_v - target_td.v_i) / tcp_seed.tt;
+	double a = (target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * s);
+	tcp_seed.tt = (target_v - target_td.v_i) / a;
 	if (a > GlobalState::robot_config.maximum_acceleration_forward)
 	{
 		a = GlobalState::robot_config.maximum_acceleration_forward;

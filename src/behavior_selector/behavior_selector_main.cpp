@@ -99,7 +99,7 @@ get_distance_to_act_on_annotation(double v0, double va, double distance_to_annot
 	// t = (va - v0) / a
 	// da = va * t + 0.5 * a * t * t
 
-	double a = -get_robot_config()->maximum_acceleration_forward;
+	double a = -get_robot_config()->maximum_acceleration_forward * 1.5;
 	double t = (va - v0) / a;
 	double daa = v0 * t + 0.5 * a * t * t;
 

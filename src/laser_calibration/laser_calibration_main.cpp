@@ -204,7 +204,7 @@ get_sensors_param(int argc, char **argv)
 
 		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 		init_velodyne_points(&sensors_data.points, &sensors_data.intensity, &sensors_data.robot_pose, &sensors_data.robot_velocity, &sensors_data.robot_timestamp, &sensors_data.robot_phi);
-		sensors_params.sensor_to_board_matrix = create_rotation_matrix(sensors_params.pose.orientation);
+		sensors_params.sensor_to_support_matrix = create_rotation_matrix(sensors_params.pose.orientation);
 		sensors_data.point_cloud_index = 0;
 		carmen_prob_models_alloc_sensor_data(&sensors_data, sensors_params.vertical_resolution);
 

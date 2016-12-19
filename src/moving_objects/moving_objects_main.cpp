@@ -668,7 +668,7 @@ get_sensors_param(int argc, char **argv)
 		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 		init_velodyne_points(&spherical_sensor_data[0].points, &spherical_sensor_data[0].intensity, &spherical_sensor_data[0].robot_pose,
 				&spherical_sensor_data[0].robot_velocity, &spherical_sensor_data[0].robot_timestamp, &spherical_sensor_data[0].robot_phi);
-		spherical_sensor_params[0].sensor_to_board_matrix = create_rotation_matrix(spherical_sensor_params[0].pose.orientation);
+		spherical_sensor_params[0].sensor_to_support_matrix = create_rotation_matrix(spherical_sensor_params[0].pose.orientation);
 		spherical_sensor_data[0].point_cloud_index = 0;
 		carmen_prob_models_alloc_sensor_data(&spherical_sensor_data[0], spherical_sensor_params[0].vertical_resolution, number_of_threads);
 
@@ -742,7 +742,7 @@ get_sensors_param(int argc, char **argv)
 
 			init_velodyne_points(&spherical_sensor_data[i].points, &spherical_sensor_data[i].intensity, &spherical_sensor_data[i].robot_pose,
 					&spherical_sensor_data[i].robot_velocity, &spherical_sensor_data[i].robot_timestamp, &spherical_sensor_data[i].robot_phi);
-			spherical_sensor_params[i].sensor_to_board_matrix = create_rotation_matrix(spherical_sensor_params[i].pose.orientation);
+			spherical_sensor_params[i].sensor_to_support_matrix = create_rotation_matrix(spherical_sensor_params[i].pose.orientation);
 			spherical_sensor_data[i].point_cloud_index = 0;
 			carmen_prob_models_alloc_sensor_data(&spherical_sensor_data[i], spherical_sensor_params[i].vertical_resolution, number_of_threads);
 
@@ -855,7 +855,7 @@ get_alive_sensors(int argc, char **argv)
 
 		spherical_sensor_params[i].name = NULL;
 		spherical_sensor_params[i].ray_order = NULL;
-		spherical_sensor_params[i].sensor_to_board_matrix = NULL;
+		spherical_sensor_params[i].sensor_to_support_matrix = NULL;
 		spherical_sensor_params[i].vertical_correction = NULL;
 		spherical_sensor_params[i].vertical_resolution = 0;
 

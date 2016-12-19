@@ -154,7 +154,7 @@ carmen_velodyne_partial_scan_update_points(carmen_velodyne_partial_scan_message 
 		for (j = 0; j < vertical_resolution; j++)
 		{
 			float angle = carmen_degrees_to_radians(velodyne_message->partial_scan[i].angle);
-			float range = velodyne_message->partial_scan[i].distance[ray_order[j]] / 500.0;
+			float range = (float) (velodyne_message->partial_scan[i].distance[ray_order[j]]) / 500.0;
 
 			if (range <= 0.0)  // @@@ Aparentemente o Velodyne diz range zero quando de range_max
 				range = range_max;
@@ -166,6 +166,7 @@ carmen_velodyne_partial_scan_update_points(carmen_velodyne_partial_scan_message 
 		}
 	}
 }
+
 
 void
 carmen_velodyne_variable_scan_update_points(carmen_velodyne_variable_scan_message *message,
@@ -180,7 +181,7 @@ carmen_velodyne_variable_scan_update_points(carmen_velodyne_variable_scan_messag
 		for (j = 0; j < vertical_resolution; j++)
 		{
 			float angle = carmen_degrees_to_radians(message->partial_scan[i].angle);
-			float range = message->partial_scan[i].distance[ray_order[j]] / 500.0;
+			float range = (float) (message->partial_scan[i].distance[ray_order[j]]) / 500.0;
 
 			if (range <= 0.0)  // @@@ Aparentemente o Velodyne diz range zero quando de range_max
 				range = range_max;
@@ -192,6 +193,3 @@ carmen_velodyne_variable_scan_update_points(carmen_velodyne_variable_scan_messag
 		}
 	}
 }
-
-
-

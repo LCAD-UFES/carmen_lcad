@@ -23,9 +23,6 @@ extern int update_and_merge_with_snapshot_map;
 extern int decay_to_offline_map;
 extern int create_map_sum_and_count;
 
-extern carmen_pose_3D_t sensor_board_1_pose;
-extern rotation_matrix *board_to_car_matrix;
-
 extern sensor_parameters_t *sensors_params;
 extern sensor_data_t *sensors_data;
 extern int number_of_sensors;
@@ -179,7 +176,8 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 	double v = sensor_data->robot_velocity[point_cloud_index].x;
 	double phi = sensor_data->robot_phi[point_cloud_index];
 
-	double dt = 1.0 / (1808.0 * 12.0);
+	double dt = sensor_params->time_spent_by_each_scan;
+	double dt1 = sensor_data->points_timestamp[point_cloud_index] - sensor_data->robot_timestamp[point_cloud_index];
 	carmen_pose_3D_t robot_interpolated_position = sensor_data->robot_pose[point_cloud_index];
 	int i = 0;
 
@@ -190,15 +188,23 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 	{
 		i = j * sensor_params->vertical_resolution;
 		double dt2 = j * dt;
-		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(sensor_data->robot_pose[point_cloud_index], dt2, v, phi, car_config.distance_between_front_and_rear_axles);
+		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(sensor_data->robot_pose[point_cloud_index],
+				dt1 + dt2, v, phi, car_config.distance_between_front_and_rear_axles);
 		r_matrix_robot_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
 
 		change_sensor_rear_range_max(sensor_params, v_zt.sphere_points[i].horizontal_angle);
 
-		carmen_prob_models_compute_relevant_map_coordinates(sensor_data, sensor_params, i, robot_interpolated_position.position, sensor_board_1_pose,
-				r_matrix_robot_to_global, board_to_car_matrix, robot_wheel_radius, x_origin, y_origin, &car_config, robot_near_bump_or_barrier, tid);
+		carmen_prob_models_compute_relevant_map_coordinates(sensor_data, sensor_params, i, robot_interpolated_position.position,
+				sensor_params->sensor_support_pose, r_matrix_robot_to_global, sensor_params->support_to_car_matrix,
+				robot_wheel_radius, x_origin, y_origin, &car_config, robot_near_bump_or_barrier, tid);
 
-//		fprintf(plot_data, "%lf ", v_zt.sphere_points[i].horizontal_angle);
+//		fprintf(plot_data, "%lf %lf %lf",
+//				sensor_data->ray_origin_in_the_floor[tid][1].x,
+//				sensor_data->ray_origin_in_the_floor[tid][1].y,
+//				sensor_data->ray_size_in_the_floor[tid][1]);
+//		fprintf(plot_data, "%lf %lf %d",
+//				sensor_data->ray_position_in_the_floor[tid][0].x,
+//				sensor_data->ray_position_in_the_floor[tid][0].y, 1);
 		carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data, sensor_params, i, highest_sensor, safe_range_above_sensors,
 				robot_near_bump_or_barrier, tid);
 
@@ -227,7 +233,62 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 //	fprintf(plot_data, "\n");
 //	fclose(plot_data);
 //	system("cp plot_data.dat plot_data2.dat");
-	//printf("\n###############################################################\n");
+}
+
+FILE *plot_data;
+
+static void
+update_cells_in_the_laser_ldmrs_perceptual_field(carmen_map_t *snapshot_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data,
+		rotation_matrix *r_matrix_robot_to_global, int point_cloud_index, int update_cells_crossed_by_rays __attribute__ ((unused)),
+		int build_snapshot_map __attribute__ ((unused)))
+{
+	int tid = omp_get_thread_num();
+	spherical_point_cloud v_zt = sensor_data->points[point_cloud_index];
+	int N = v_zt.num_points / sensor_params->vertical_resolution;
+
+	double v = sensor_data->robot_velocity[point_cloud_index].x;
+	double phi = sensor_data->robot_phi[point_cloud_index];
+
+	double dt = sensor_params->time_spent_by_each_scan;
+	double dt1 = sensor_data->points_timestamp[point_cloud_index] - sensor_data->robot_timestamp[point_cloud_index];
+	carmen_pose_3D_t robot_interpolated_position = sensor_data->robot_pose[point_cloud_index];
+	int i = 0;
+
+	plot_data = fopen("plot_data.dat", "a");
+	// Ray-trace the grid
+	#pragma omp for
+	for (int j = 0; j < N; j += 1)
+	{
+		i = j * sensor_params->vertical_resolution;
+		double dt2 = j * dt;
+		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(sensor_data->robot_pose[point_cloud_index],
+				dt1 + dt2, v, phi, car_config.distance_between_front_and_rear_axles);
+		r_matrix_robot_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
+
+		carmen_prob_models_compute_relevant_map_coordinates(sensor_data, sensor_params, i, robot_interpolated_position.position,
+				sensor_params->sensor_support_pose, r_matrix_robot_to_global, sensor_params->support_to_car_matrix,
+				robot_wheel_radius, x_origin, y_origin, &car_config, robot_near_bump_or_barrier, tid);
+
+//		fprintf(plot_data, "%lf %lf %lf",
+//				sensor_data->ray_position_in_the_floor[tid][1].x,
+//				sensor_data->ray_position_in_the_floor[tid][1].y,
+//				sensor_data->ray_size_in_the_floor[tid][1]);
+//		fprintf(plot_data, "%lf %lf %d",
+//				sensor_data->ray_position_in_the_floor[tid][0].x,
+//				sensor_data->ray_position_in_the_floor[tid][0].y, 1);
+//		carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data, sensor_params, i, highest_sensor, safe_range_above_sensors,
+//				robot_near_bump_or_barrier, tid);
+//
+//		if (update_cells_crossed_by_rays == UPDATE_CELLS_CROSSED_BY_RAYS)
+//			carmen_prob_models_update_cells_crossed_by_ray(snapshot_map, sensor_params, sensor_data, tid);
+
+		carmen_prob_models_set_log_odds_of_cells_hit_by_rays(snapshot_map, sensor_params, sensor_data, tid);
+
+//		fprintf(plot_data, "\n");
+	}
+	fprintf(plot_data, "dt %lf, dt1 %lf\n", dt, dt1);
+	fclose(plot_data);
+	system("cp plot_data.dat plot_data2.dat");
 }
 
 
@@ -279,15 +340,19 @@ map_decay_to_offline_map(carmen_map_t *current_map)
 }
 
 
-static void
-build_map_using_velodyne(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global)
+int
+run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global)
 {
 	//int N = 4;
 	static carmen_map_t **snapshot_map;
 	static int first = 1;
+
+	if (!globalpos_initialized)
+		return (0);
+
 	if (first)
 	{
-		snapshot_map = (carmen_map_t **)calloc(number_of_threads, sizeof(carmen_map_t *));
+		snapshot_map = (carmen_map_t **) calloc(number_of_threads, sizeof(carmen_map_t *));
 		first = 0;
 	}
 
@@ -301,11 +366,21 @@ build_map_using_velodyne(sensor_parameters_t *sensor_params, sensor_data_t *sens
 		if (decay_to_offline_map)
 			map_decay_to_offline_map(&map);
 
-		// @@@ Alberto: Mapa padrao Lucas -> colocar DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS ao inves de UPDATE_CELLS_CROSSED_BY_RAYS
-		//update_cells_in_the_velodyne_perceptual_field(&map, snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
-		update_cells_in_the_velodyne_perceptual_field(snapshot_map[tid], sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
-		carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map, number_of_threads);
+		if (sensor_params->sensor_type == LASER_LDMRS)
+		{
+			update_cells_in_the_laser_ldmrs_perceptual_field(snapshot_map[tid], sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
+			carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map, number_of_threads);
+		}
+		else // Velodyne and others
+		{
+			// @@@ Alberto: Mapa padrao Lucas -> colocar DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS ao inves de UPDATE_CELLS_CROSSED_BY_RAYS
+			//update_cells_in_the_velodyne_perceptual_field(&map, snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
+			update_cells_in_the_velodyne_perceptual_field(snapshot_map[tid], sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
+			carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map, number_of_threads);
+		}
 	}
+
+	return (1);
 }
 
 
@@ -462,24 +537,6 @@ mapper_change_map_origin_to_another_map_block(carmen_position_t *map_origin)
 		//	variance_occupancy_map.config.y_origin = y_origin;
 	}
 
-}
-
-
-int
-run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global)
-{
-	//carmen_point_t world_pose;
-	//carmen_position_t map_origin;
-
-	if (!globalpos_initialized)
-		return (0);
-
-	//world_pose = globalpos_history[last_globalpos].globalpos;
-	//carmen_grid_mapping_get_map_origin(&world_pose, &map_origin.x, &map_origin.y);
-
-	build_map_using_velodyne(sensor_params, sensor_data, r_matrix_robot_to_global);
-	
-	return (1);
 }
 
 

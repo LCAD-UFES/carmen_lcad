@@ -501,6 +501,7 @@ carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(carmen_map_t *map, 
 	}
 }
 
+
 void
 carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id)
 {
@@ -522,6 +523,23 @@ carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sen
 					map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] = probability_from_log_odds;
 			}
 		}
+	}
+}
+
+
+void
+carmen_prob_models_set_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id)
+{
+	int i;
+	cell_coords_t cell_hit_by_ray;
+
+	for (i = 0; i < sensor_params->vertical_resolution; i++)
+	{
+		cell_hit_by_ray.x = (sensor_data->ray_position_in_the_floor[thread_id][i].x / map->config.resolution);
+		cell_hit_by_ray.y = (sensor_data->ray_position_in_the_floor[thread_id][i].y / map->config.resolution);
+
+		if (map_grid_is_valid(map, cell_hit_by_ray.x, cell_hit_by_ray.y) && !sensor_data->maxed[thread_id][i])
+			map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] = sensor_params->log_odds.log_odds_occ;
 	}
 }
 
@@ -1279,7 +1297,7 @@ carmen_prob_models_ray_hit_the_robot(double distance_between_rear_robot_and_rear
 
 
 int
-get_ray_origin_a_target_b_and_target_height(double *ax, double *ay, double *bx, double *by, float *obstacle_z, int *ray_hit_the_car,carmen_sphere_coord_t sphere_point,
+get_ray_origin_a_target_b_and_target_height(double *ax, double *ay, double *bx, double *by, float *obstacle_z, int *ray_hit_the_car, carmen_sphere_coord_t sphere_point,
 		carmen_vector_3D_t robot_position, carmen_vector_3D_t sensor_robot_reference, carmen_pose_3D_t sensor_pose, carmen_pose_3D_t sensor_board_pose,
 		rotation_matrix *sensor_to_board_matrix, double range_max, rotation_matrix *r_matrix_robot_to_global,
 		rotation_matrix* board_to_robot_matrix, double robot_wheel_radius, double x_origin, double y_origin, carmen_robot_ackerman_config_t *car_config)
@@ -1332,7 +1350,7 @@ carmen_prob_models_compute_relevant_map_coordinates(sensor_data_t *sensor_data, 
 	for (i = 0; i < sensor_params->vertical_resolution; i++)
 	{
 		sensor_data->maxed[thread_id][i] = get_ray_origin_a_target_b_and_target_height(&ax, &ay, &bx, &by, &obstacle_z, &sensor_data->ray_hit_the_robot[thread_id][i], sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index + i],
-				robot_position,	sensor_params->sensor_robot_reference, sensor_params->pose, sensor_board_pose, sensor_params->sensor_to_board_matrix, 
+				robot_position,	sensor_params->sensor_robot_reference, sensor_params->pose, sensor_board_pose, sensor_params->sensor_to_support_matrix, 
 				sensor_params->current_range_max, r_matrix_robot_to_global, board_to_robot_matrix, robot_wheel_radius, x_origin, y_origin, car_config);
 
 		sensor_data->ray_position_in_the_floor[thread_id][i].x = bx;

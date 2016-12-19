@@ -71,9 +71,18 @@ typedef struct log_odds_param
 } log_odds_param;
 
 
+typedef enum
+{
+	VELODYNE,
+	CAMERA,
+	LASER_LDMRS
+} SENSOR_TYPE;
+
+
 typedef struct _sensor_parameters
 {
 	int alive;
+	SENSOR_TYPE sensor_type;
 	double range_max, range_max_factor, current_range_max;
 	double height;
 	log_odds_param log_odds;
@@ -97,9 +106,11 @@ typedef struct _sensor_parameters
 	double angular_offset;
 	double time_spent_by_each_scan;
 
-	carmen_vector_3D_t sensor_robot_reference;
 	carmen_pose_3D_t pose;
-	rotation_matrix *sensor_to_board_matrix;
+	carmen_pose_3D_t sensor_support_pose;
+	rotation_matrix *sensor_to_support_matrix;
+	rotation_matrix *support_to_car_matrix;
+	carmen_vector_3D_t sensor_robot_reference;
 } sensor_parameters_t;
 
 
@@ -208,6 +219,7 @@ void carmen_prob_models_update_log_odds_of_cells_hit_by_rays(carmen_map_t *map, 
 void carmen_prob_models_update_log_odds_of_nearest_target(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id);
 void carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(carmen_map_t *map, carmen_map_t *sum_occupancy_map, carmen_map_t *count_occupancy_map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id);
 void carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id);
+void carmen_prob_models_set_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id);
 void carmen_prob_models_update_cells_crossed_by_ray(carmen_map_t *map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id);
 void carmen_prob_models_update_sum_and_count_cells_crossed_by_ray(carmen_map_t *map, carmen_map_t *sum_occupancy_map, carmen_map_t *count_occupancy_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id);
 void carmen_prob_models_create_compact_map(carmen_compact_map_t *cmap, carmen_map_t *map, double value);
