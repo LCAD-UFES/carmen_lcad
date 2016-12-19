@@ -893,7 +893,7 @@ carmen_laser_ldmrs_message_handler(carmen_laser_ldmrs_message* laser_message)
 }
 
 //object
-static void
+void
 carmen_laser_ldmrs_objects_message_handler(carmen_laser_ldmrs_objects_message* laser_message)
 {
     ldmrs_initialized = 1;
