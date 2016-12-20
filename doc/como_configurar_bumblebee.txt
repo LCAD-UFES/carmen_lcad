@@ -1,0 +1,47 @@
+Configurar bumblebee para não ajustar automaticamente (brilho, gain, shutter...)
+
+Com objetivo de usar a bumblebee com parâmetros fixos, o codigo do driver carmen, foi alterado para sempre carregar o channel 1 e não o canal 0 (Default) a alteração foi feita no código :
+$CARMEN_HOME/sharedlib/libbee/pgr-stereo-examples-libdc-2.0.2/pgrlibdcstereo/pgr_stereocam.cpp
+
+na linha:
+// load the factory defaults -this is channel 1- can be auto-everthing or fixed parameters, Currently defined using flycap
+		err = dc1394_memory_load( stereoCamera->camera, 1 );
+
+Atualmente, para usar a câmera com parâmetros default, é necessário carregar essa configuração para o channel 1. Assim como para usar parametros fixos, salvar no channel 1.
+
+Para configurar siga os passos:
+
+1 - Feche o drive carmen da bumbeblee e rode o programa flycap
+	flycap
+2 - Escolha  na lista que o flycap mostrará a camera que deseja configurar
+3 - Vá no icone de configuração (engrenagem) 
+4 - Na janela que irá aparecer, Configure como desejar os parâmetros (lembre-se de desmarcar a opção AUTO ao lado dos parâmetros).
+5 - Após concluir, vá na aba Advanced Camera Settings. Escolha o channel 1 e salve as configurações.
+6 - Feche o programa.
+
+Para salvar as configurações default ou o channel 2 para o channel 1.
+
+1 - Feche o drive carmen da bumbeblee e rode o programa flycap
+	flycap
+2 - Escolha  na lista que o flycap mostrará a camera que deseja configurar
+3 - Vá no icone de configuração (engrenagem) 
+5 - Vá na aba Advanced Camera Settings. Escolha o channel 0 (Default) ou 2, clique em restaurar.
+6 - Escolha agora o channel 1 clique em salvar para salvar as configurações de outro channel no channel 1.
+6 - Feche o programa.
+
+
+Caso o frame rate do channel Default caia para 8:
+1 - Feche o drive carmen da bumbeblee e rode o programa flycap
+	flycap
+2 - Escolha  na lista que o flycap mostrará a camera que deseja configurar
+3 - Vá no icone de configuração (engrenagem) 
+5 - Vá na aba Advanced Camera Settings. Escolha o channel 0 (Default), clique em restaurar.
+6 - Feche o flycap
+7 - Rode o central e o driver carmen flycap:
+	cd $CARMEN_HOME/bin
+	./bumblebee_basic_flycap -camera_id <id da camera que quer configurar>
+    Obs: este driver irá escrever nas configurações da camêra e retornará os parâmetros defaults com o frame rate de 16fps
+8 - Feche todos os programas e verifique no flycap se nas configurações, o parâmetro frame rate, voltou a 16fps, e faça os passos para salvar as configurações no channel 1.
+
+
+
