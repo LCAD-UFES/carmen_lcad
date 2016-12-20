@@ -8,7 +8,7 @@
 using namespace g2o;
 
 carmen_localize_ackerman_globalpos_message globalpos;
-
+bool go_active = false;
 
 double
 dist(double x1, double y1, double x2, double y2)
@@ -161,9 +161,140 @@ rddf_handler(carmen_rddf_road_profile_message *rddf)
 }
 
 
+carmen_behavior_selector_road_profile_message *lane;
+
 void
-carmen_localize_ackerman_handler()
+lane_message_handler(carmen_behavior_selector_road_profile_message *message)
 {
+	lane = message;
+}
+
+
+static void
+navigator_ackerman_go_message_handler()
+{
+	go_active = true;
+}
+
+
+static void
+navigator_ackerman_stop_message_handler()
+{
+	go_active = false;
+}
+
+
+static void
+signal_handler(int sig)
+{
+	printf("Signal %d received, exiting program ...\n", sig);
+
+	exit(1);
+}
+
+void
+localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
+{
+	if (!go_active || msg == NULL || lane == NULL || lane->number_of_poses < 10)
+		return;
+
+	int num_motion_commands=0.0, size = lane->number_of_poses - 1;
+	double distance=0.0, previous_dist=0.0, desired_v=0.0;
+	carmen_ackerman_motion_command_t *motion_commands;
+
+	int i=0;
+
+//	for (i=0.0; i < size; i++)
+//	{
+//		printf("%lf\n", lane->poses[i].x);
+//	}
+
+//	printf("%lf %lf %lf %lf\n", lane->poses[i].x, lane->poses[i].y, msg->globalpos.x, msg->globalpos.y);
+//
+//	for (i=0; i < size; i++)
+//	{
+//		distance = dist(msg->globalpos.x, msg->globalpos.y, lane->poses[i].x, lane->poses[i].y);
+//
+//		if (distance < previous_dist)
+//		{
+//			break;
+//		}
+//		else
+//		{
+//			previous_dist = distance;
+//		}
+//	}
+//
+//	printf("%d\n", i);
+
+	i = 1;
+	num_motion_commands = size - i;
+	motion_commands = new carmen_ackerman_motion_command_t[num_motion_commands];
+	for (int j=0.0; i < size; i++, j++)
+	{
+		if (msg->v < lane->poses->v)
+			desired_v = msg->v + 0.2;
+		else
+			desired_v = lane->poses->v;
+
+		distance = dist(lane->poses[i].x, lane->poses[i].y, lane->poses[i+1].x, lane->poses[i+1].y);
+
+		motion_commands[j].time = distance / desired_v;
+		motion_commands[j].v = desired_v;
+		motion_commands[j].phi = lane->poses[i].phi;
+		motion_commands[j].x = lane->poses[i].x;
+		motion_commands[j].y = lane->poses[i].y;
+		motion_commands[j].theta = lane->poses[i].theta;
+	}
+
+	carmen_robot_ackerman_publish_motion_command(motion_commands, num_motion_commands, msg->timestamp);
+	delete(motion_commands);
+}
+
+
+void
+register_handlers()
+{
+	signal(SIGINT, signal_handler);
+
+	//carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_rddf_subscribe_road_profile_message(NULL, (carmen_handler_t) rddf_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	//carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) behaviour_selector_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	//carmen_obstacle_distance_mapper_subscribe_message(NULL,	(carmen_handler_t) carmen_obstacle_distance_mapper_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_subscribe_message(
+    		(char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME,
+			(char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT,
+    		NULL, sizeof (carmen_behavior_selector_road_profile_message),
+			(carmen_handler_t) lane_message_handler,
+			CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_subscribe_message(
+		(char *) CARMEN_NAVIGATOR_ACKERMAN_GO_NAME,
+		(char *) CARMEN_DEFAULT_MESSAGE_FMT,
+		NULL, sizeof(carmen_navigator_ackerman_go_message),
+		(carmen_handler_t)navigator_ackerman_go_message_handler,
+		CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_subscribe_message(
+		(char *) CARMEN_NAVIGATOR_ACKERMAN_STOP_NAME,
+		(char *) CARMEN_DEFAULT_MESSAGE_FMT,
+		NULL, sizeof(carmen_navigator_ackerman_stop_message),
+		(carmen_handler_t)navigator_ackerman_stop_message_handler,
+		CARMEN_SUBSCRIBE_LATEST);
+}
+
+
+void
+define_messages()
+{
+	IPC_RETURN_TYPE err;
+
+	err = IPC_defineMsg(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME, IPC_VARIABLE_LENGTH,
+			CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME);
 }
 
 
@@ -171,12 +302,13 @@ int
 main(int argc, char **argv)
 {
 	carmen_ipc_initialize(argc, argv);
+	//carmen_param_check_version(argv[0]);
 
-	carmen_rddf_subscribe_road_profile_message(NULL, (carmen_handler_t) rddf_handler, CARMEN_SUBSCRIBE_LATEST);
-	carmen_localize_ackerman_subscribe_globalpos_message(&globalpos, (carmen_handler_t) carmen_localize_ackerman_handler, CARMEN_SUBSCRIBE_LATEST);
+	define_messages();
+
+	register_handlers();
 
 	carmen_ipc_dispatch();
+
 	return 0;
 }
-
-
