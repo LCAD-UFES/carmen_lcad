@@ -711,6 +711,82 @@ limit_maximum_centripetal_acceleration_old(vector<carmen_ackerman_path_point_t> 
 }
 
 
+double
+get_intermediate_speed(double current_robot_pose_v, double v_goal, double dist_to_goal, double dist_to_curve)
+{
+	// https://www.wolframalpha.com/input/?i=solve+s%3Dg*(g-v)%2Fa%2B(v-g)*((g-v)%2F(2*a)))+for+a
+	// https://www.wolframalpha.com/input/?i=solve+s%3Dv*((g-v)%2Fa)%2B0.5*a*((g-v)%2Fa)%5E2+for+g
+
+	if (dist_to_goal > dist_to_curve)
+		return v_goal;
+
+	double v0 = current_robot_pose_v;
+	double a = (v_goal * v_goal - v0 * v0) / (2.0 * dist_to_curve);
+	double sqrt_val = 2.0 * a * dist_to_goal + v0 * v0;
+	double vg = v_goal;
+	if (sqrt_val > 0.0)
+		vg = sqrt(sqrt_val);
+	if (vg < v_goal)
+		vg = v_goal;
+
+	static double first_time = 0.0;
+	double t = carmen_get_time();
+	if (first_time == 0.0)
+		first_time = t;
+	//printf("t %.3lf, v0 %.1lf, va %.1lf, a %.3lf, vg %.2lf, dg %.1lf, da %.1lf\n", t - first_time, v0, va, a, vg, dg, da);
+//	printf("t %.3lf, v0 %.1lf, a %.3lf, vg %.2lf, dg %.1lf, tt %.3lf\n", t - first_time, v0, a, vg, dg, (vg - v0) / a);
+
+	return (vg);
+}
+
+
+void
+limit_maximum_centripetal_acceleration_with_distance(double &target_v, double current_v, carmen_ackerman_path_point_t goal, vector<carmen_ackerman_path_point_t> &path)
+{
+	double desired_v = 0.0;
+	double max_centripetal_acceleration = 0.0;
+	double dist_walked = 0.0;
+	double dist_to_max_curvature = 0.0;
+	double dist_to_goal = 0.0;
+
+	Command v_and_phi;
+	double L = GlobalState::robot_config.distance_between_front_and_rear_axles;
+
+	for (unsigned int i = 0; (i < path.size() - 1) && (path.size() != 0); i += 1)
+	{
+		double delta_theta = path[i + 1].theta - path[i].theta;
+		double l = dist(path[i], path[i + 1]);
+		path[i].phi = L * atan(delta_theta / l);
+		dist_walked += l;
+		if (path[i].x == goal.x && path[i].y == goal.y)
+			dist_to_goal = dist_walked;
+
+		if (fabs(path[i].phi) > 0.001)
+		{
+			double radius_of_curvature = L / fabs(tan(path[i].phi));
+			double centripetal_acceleration = (target_v * target_v) / radius_of_curvature;
+			if (centripetal_acceleration > max_centripetal_acceleration)
+			{
+				dist_to_max_curvature = dist_walked;
+				v_and_phi.phi = path[i].phi;
+				max_centripetal_acceleration = centripetal_acceleration;
+			}
+		}
+	}
+
+	if (max_centripetal_acceleration > GlobalState::robot_max_centripetal_acceleration)
+	{
+		double radius_of_curvature = L / fabs(tan(v_and_phi.phi));
+		desired_v = sqrt(GlobalState::robot_max_centripetal_acceleration * radius_of_curvature);
+		if (target_v > desired_v)
+			target_v = get_intermediate_speed(current_v, desired_v, dist_to_goal, dist_to_max_curvature);
+	}
+
+	//printf("desired_v: %lf target_v %lf current_v: %lf\t dist_to_goal: %lf dist_to_max %lf\n", desired_v, target_v, current_v, dist_to_goal, dist_to_max_curvature);
+
+}
+
+
 void
 limit_maximum_centripetal_acceleration(double &target_v, vector<carmen_ackerman_path_point_t> &path)
 {
@@ -867,8 +943,9 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 //		printf("\nGoal_in_lane: %d detail_size: %ld complete_size: %ld \n",goal_in_lane, detailed_lane.size(), complete_foward_lane.size());
 	}
 	// VINICIUS: @@@ Para Usar a lane alem do goal, passe para a funcao abaixo a complete_foward_lane ao inves da detailed_lane
+	limit_maximum_centripetal_acceleration_with_distance(target_v, lastOdometryVector[0].v, detailed_lane.back(), complete_foward_lane);
 	// Aberto: @@@ Esta funcao escreve no phi de detailed_lane //REDUZINDO DE 13 para 0.25 a velocidade
-	limit_maximum_centripetal_acceleration(target_v, detailed_lane);
+	//limit_maximum_centripetal_acceleration(target_v, complete_foward_lane);
 
 /***************************************
  * Funcao para extrair dados para artigo
