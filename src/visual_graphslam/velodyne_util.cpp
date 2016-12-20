@@ -179,7 +179,7 @@ carmen_vector_3D_t
 get_global_point_from_velodyne_point(carmen_sphere_coord_t sphere_point, sensor_parameters_t *velodyne_params, rotation_matrix *r_matrix_car_to_global, carmen_vector_3D_t robot_position)
 {
 	carmen_vector_3D_t point_position_in_the_robot = carmen_get_sensor_sphere_point_in_robot_cartesian_reference(sphere_point, velodyne_params->pose, sensor_board_1_pose,
-			velodyne_params->sensor_to_board_matrix, sensor_board_1_to_car_matrix);
+			velodyne_params->sensor_to_support_matrix, sensor_board_1_to_car_matrix);
 
 	carmen_vector_3D_t global_point_position_in_the_world = carmen_change_sensor_reference(robot_position, point_position_in_the_robot, r_matrix_car_to_global);
 
@@ -191,7 +191,7 @@ int
 point_is_valid(carmen_sphere_coord_t sphere_point, sensor_parameters_t *velodyne_params)
 {
 	carmen_vector_3D_t point_position_in_the_robot = carmen_get_sensor_sphere_point_in_robot_cartesian_reference(sphere_point, velodyne_params->pose, sensor_board_1_pose,
-			velodyne_params->sensor_to_board_matrix, sensor_board_1_to_car_matrix);
+			velodyne_params->sensor_to_support_matrix, sensor_board_1_to_car_matrix);
 
 	double range = sphere_point.length;
 

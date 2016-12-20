@@ -30,8 +30,8 @@ compute_a_and_t_from_s(double s, double target_v,
 		ObjectiveFunctionParams *params)
 {
 	// https://www.wolframalpha.com/input/?i=solve+s%3Dv*x%2B0.5*a*x%5E2
-	tcp_seed.tt = (2.0 * s) / (target_v + target_td.v_i);
-	double a = (target_v - target_td.v_i) / tcp_seed.tt;
+	double a = (target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * s);
+	tcp_seed.tt = (target_v - target_td.v_i) / a;
 	if (a > GlobalState::robot_config.maximum_acceleration_forward)
 	{
 		a = GlobalState::robot_config.maximum_acceleration_forward;
@@ -605,8 +605,8 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 
 	if (target_v < 0.0)
 		target_v = 0.0;
-	params.optimize_time = OPTIMIZE_DISTANCE;
-//	params.optimize_time = OPTIMIZE_TIME;
+//	params.optimize_time = OPTIMIZE_DISTANCE;
+	params.optimize_time = OPTIMIZE_TIME;
 
 	if (params.optimize_time == OPTIMIZE_DISTANCE)
 	{
@@ -921,6 +921,9 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 	// Atencao: params.suitable_acceleration deve ser preenchido na funcao acima para que nao seja alterado no inicio da otimizacao abaixo
 //	if (tcp_complete.valid)
 		tcp_complete = optimized_lane_trajectory_control_parameters(tcp_complete, target_td, target_v, params);
+
+//	printf("t %.3lf, v0 %.1lf, a %.3lf, vg %.2lf, dg %.1lf, tt %.3lf\n",
+//			carmen_get_time(), target_td.v_i, tcp_complete.a, target_v, tcp_complete.s, tcp_complete.tt);
 
 	return (tcp_complete);
 }

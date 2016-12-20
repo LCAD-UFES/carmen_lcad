@@ -46,7 +46,6 @@ carmen_laser_publish_ldmrs(carmen_laser_ldmrs_message *message)
 	IPC_RETURN_TYPE err;
 
 	message->host = carmen_get_host();
-	message->timestamp = carmen_get_time();
 
 	err = IPC_publishData(CARMEN_LASER_LDMRS_NAME, (carmen_laser_ldmrs_message *)message);
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_LASER_LDMRS_NAME);
@@ -110,7 +109,6 @@ carmen_laser_publish_ldmrs_objects_data(carmen_laser_ldmrs_objects_data_message 
 	IPC_RETURN_TYPE err;
 
 	message->host = carmen_get_host();
-	message->timestamp = carmen_get_time();
 
 	err = IPC_publishData(CARMEN_LASER_LDMRS_OBJECTS_DATA_NAME, (carmen_laser_ldmrs_objects_data_message *)message);
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_LASER_LDMRS_OBJECTS_DATA_NAME);

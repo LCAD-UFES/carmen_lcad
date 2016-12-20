@@ -1665,7 +1665,6 @@ carmen_alloc_spherical_point_cloud(spherical_point_cloud *velodyne_points, int n
 
 		velodyne_points[spherical_point_cloud_index].sphere_points = (carmen_sphere_coord_t *) realloc((void *) (velodyne_points[spherical_point_cloud_index].sphere_points), num_points * sizeof(carmen_sphere_coord_t));
 		carmen_test_alloc(velodyne_points[spherical_point_cloud_index].sphere_points);
-
 	}
 }
 

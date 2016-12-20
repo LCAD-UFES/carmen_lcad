@@ -242,7 +242,7 @@ get_alive_sensors(int argc, char **argv)
 
 		sensors_params[i].name = NULL;
 		sensors_params[i].ray_order = NULL;
-		sensors_params[i].sensor_to_board_matrix = NULL;
+		sensors_params[i].sensor_to_support_matrix = NULL;
 		sensors_params[i].vertical_correction = NULL;
 		sensors_params[i].vertical_resolution = 0;
 
@@ -296,7 +296,7 @@ get_sensors_param(int argc, char **argv)
 
 		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 		init_velodyne_points(&sensors_data[0].points, &sensors_data[0].intensity, &sensors_data[0].robot_pose, &sensors_data[0].robot_velocity, &sensors_data[0].robot_timestamp, &sensors_data[0].robot_phi, &sensors_data[0].points_timestamp);
-		sensors_params[0].sensor_to_board_matrix = create_rotation_matrix(sensors_params[0].pose.orientation);
+		sensors_params[0].sensor_to_support_matrix = create_rotation_matrix(sensors_params[0].pose.orientation);
 		sensors_data[0].point_cloud_index = 0;
 		carmen_prob_models_alloc_sensor_data(&sensors_data[0], sensors_params[0].vertical_resolution, number_of_threads);
 

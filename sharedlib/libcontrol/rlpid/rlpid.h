@@ -1,5 +1,5 @@
-#ifndef RLPID_H
-#define RLPID_H
+#ifndef RLPIDVEL_H
+#define RLPIDVEL_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -13,7 +13,8 @@ extern "C" {
 #define neural_network_size (1000)
 #define PI (3.141592653589793)
 
-typedef struct {
+typedef struct
+{
 	double alfa_weight_coef;       //alfa
 	double beta_weight_coef;       //beta
 	double learning_rate_center;   //Eta mi
@@ -24,21 +25,20 @@ typedef struct {
 	double critic_learning_rate;   //alfa_c
 } intelligent_control_params;
 
-typedef struct {
-	double past_td_error;
-	double past_sigma_critical_deviation;
-	double past_critic_value; //V(t)
-	double past_future_critic_value; //V(t+1)
-	double past_reinforcement_signal; // r(t)
-	double past_U[3]; //The size of the vector is 3, because "u" uses U(t-2) in equation, this means that you need store the past value of U
-	double past_error[3]; //You need the last 3 values of e =>t(t), e(t-1) and e(t-2)
-	double past_error_order[3]; //e(t), Delta(e) and Delta^2(e)
-	double past_pid_params[3]; //K ->The parameters Kp,Ki and Kd respectvely
-	double past_recomended_pid_params[3]; //K' ->The new recomended params of Kp,Ki and Kd respectvely
-} past_variables;
+typedef struct
+{
+	double sigma_critical_deviation;
+	double critic_value; //V(t)
+	double U[3]; //The size of the vector is 3, because "u" uses U(t-2) in equation, this means that you need store the past value of U
+	double error[3]; //You need the last 3 values of e =>t(t), e(t-1) and e(t-2)
+	double error_order[3]; //e(t), Delta(e) and Delta^2(e)
+	double pid_params[3]; //K ->The parameters Kp,Ki and Kd respectvely
+	double recomended_pid_params[3]; //K' ->The new recomended params of Kp,Ki and Kd respectvely
 
+} rl_variables;
 
-typedef struct {
+typedef struct
+{
 	double center_vector[3];
 	double width_scalar_sigma;
 	double phi_value;
@@ -46,6 +46,21 @@ typedef struct {
 	double w_neuron_weight[3];
 	double v_neuron_weight;
 } rbf_neuron;
+
+typedef struct
+{
+	intelligent_control_params params;
+	rl_variables variables;
+	rl_variables pv; // Past variables
+	double td_error;
+	double future_critic_value; //V(t+1)
+	double reinforcement_signal; // r(t)
+	double best_pid[3];
+	double total_error_quadratico;
+	rbf_neuron network[neural_network_size]; //The size is defined at .h file
+} rl_data;
+
+
 
 void
 carmen_librlpid_exporta_pesos();
@@ -56,11 +71,12 @@ carmen_librlpid_compute_effort_signal(double current_phi, double desired_phi, do
 	double max_phi);
 
 
-double carmen_librlpid_compute_effort(double current_curvature, double desired_curvature, double delta_t);
+double
+carmen_librlpid_compute_effort(double current_curvature, double desired_curvature, double delta_t);
 
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // RLPID_H
+#endif // RLPIDVEL_H

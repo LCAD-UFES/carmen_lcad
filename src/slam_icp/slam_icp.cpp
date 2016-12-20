@@ -374,7 +374,7 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 	velodyne_params.delta_difference_mean = carmen_velodyne_get_delta_difference_mean();
 	velodyne_params.delta_difference_stddev = carmen_velodyne_get_delta_difference_stddev();
 
-	velodyne_params.sensor_to_board_matrix = create_rotation_matrix(velodyne_params.pose.orientation);
+	velodyne_params.sensor_to_support_matrix = create_rotation_matrix(velodyne_params.pose.orientation);
 	velodyne_params.current_range_max = velodyne_params.range_max;
 
 	velodyne_params.sensor_robot_reference = carmen_change_sensor_reference(sensor_board_1_pose.position, velodyne_params.pose.position, sensor_board_1_to_car_matrix);

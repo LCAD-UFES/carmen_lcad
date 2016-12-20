@@ -57,10 +57,6 @@ double obstacle_probability_threshold = 0.5;
 
 int use_simulator_pose = 0;
 
-rotation_matrix *board_to_car_matrix = NULL;
-
-rotation_matrix *bullbar_to_car_matrix = NULL;
-
 double highest_sensor = 0.0;
 
 int merge_with_offline_map;
@@ -81,7 +77,7 @@ sensor_data_t *sensors_data;
 int number_of_sensors;
 
 carmen_pose_3D_t velodyne_pose;
-carmen_pose_3D_t sick_pose;
+carmen_pose_3D_t laser_ldmrs_pose;
 
 char *map_path;
 
@@ -112,20 +108,57 @@ publish_map(double timestamp)
 
 
 void
-include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalpos_message* globalpos_message)
+include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalpos_message *globalpos_message)
 {
-	int aux = -1;
-	for (int i = 0; i < NUM_VELODYNE_POINT_CLOUDS; i++)
+	int i, old_point_cloud_index = -1;
+	int nearest_global_pos;
+	double nearest_time = globalpos_message->timestamp;
+	double old_globalpos_timestamp;
+	carmen_pose_3D_t old_robot_position;
+
+	for (i = 0; i < NUM_VELODYNE_POINT_CLOUDS; i++)
 	{
-		if (sensors_data[sensor_number].points_timestamp[i] == globalpos_message->timestamp)
+		double time_difference = fabs(sensors_data[sensor_number].points_timestamp[i] - globalpos_message->timestamp);
+		if (time_difference == 0.0)
 		{
-			aux = sensors_data[sensor_number].point_cloud_index;
+			old_point_cloud_index = sensors_data[sensor_number].point_cloud_index;
 			sensors_data[sensor_number].point_cloud_index = i;
+			old_globalpos_timestamp = sensors_data[sensor_number].robot_timestamp[i];
+			old_robot_position = sensors_data[sensor_number].robot_pose[i];
+			sensors_data[sensor_number].robot_pose[i] = globalpos_message->pose;
+			sensors_data[sensor_number].robot_timestamp[i] = globalpos_message->timestamp;
+
 			run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
+
 			publish_map(globalpos_message->timestamp);
-			sensors_data[sensor_number].point_cloud_index = aux;
+			sensors_data[sensor_number].robot_pose[i] = old_robot_position;
+			sensors_data[sensor_number].robot_timestamp[i] = old_globalpos_timestamp;
+			sensors_data[sensor_number].point_cloud_index = old_point_cloud_index;
 			break;
 		}
+		else if (time_difference < nearest_time)
+		{
+			nearest_global_pos = i;
+			nearest_time = time_difference;
+		}
+	}
+
+	if (i == NUM_VELODYNE_POINT_CLOUDS)
+	{
+		i = nearest_global_pos;
+		old_point_cloud_index = sensors_data[sensor_number].point_cloud_index;
+		sensors_data[sensor_number].point_cloud_index = i;
+		old_globalpos_timestamp = sensors_data[sensor_number].robot_timestamp[i];
+		old_robot_position = sensors_data[sensor_number].robot_pose[i];
+		sensors_data[sensor_number].robot_pose[i] = globalpos_message->pose;
+		sensors_data[sensor_number].robot_timestamp[i] = globalpos_message->timestamp;
+
+		run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
+
+		publish_map(globalpos_message->timestamp);
+		sensors_data[sensor_number].robot_pose[i] = old_robot_position;
+		sensors_data[sensor_number].robot_timestamp[i] = old_globalpos_timestamp;
+		sensors_data[sensor_number].point_cloud_index = old_point_cloud_index;
 	}
 }
 
@@ -143,7 +176,6 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 static void
 carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *globalpos_message)
 {
-
 	double distance_to_annotation;
 
 	if (visual_odometry_is_global_pos)
@@ -164,6 +196,8 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 	{
 		if (sensors_params[0].alive)
 			include_sensor_data_into_map(0, globalpos_message);
+		if (sensors_params[1].alive)
+			include_sensor_data_into_map(1, globalpos_message);
 	}
 }
 
@@ -186,21 +220,67 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 }
 
 
+static void
+laser_ldrms_message_handler(carmen_laser_ldmrs_message *laser)
+{
+//	FILE *f = fopen("scan.txt", "w");
+//	fprintf(f, "%d %f %f %d %f %f %d \n",
+//			laser->scan_number,
+//			laser->scan_start_time,
+//			laser->scan_end_time,
+//			laser->angle_ticks_per_rotation,
+//			laser->start_angle,
+//			laser->end_angle,
+//			laser->scan_points);
+
+//	for (int i = 0; i < laser->scan_points; i++)
+//	{
+//		fprintf(f, "%f %f %f %d \n",
+//					laser->arraypoints[i].horizontal_angle,
+//					laser->arraypoints[i].vertical_angle,
+//					laser->arraypoints[i].radial_distance,
+//					laser->arraypoints[i].flags);
+//	}
+//	fflush(f);
+//	fclose(f);
+//
+//	FILE *f1 = fopen("scan1.txt", "w");
+//	for (int i = 0; i < laser->scan_points; i++)
+//	{
+//		double distance = laser->arraypoints[i].radial_distance;
+//		double angle = laser->arraypoints[i].horizontal_angle;
+//		fprintf(f1, "%f %f %f \n",
+//					cos(carmen_degrees_to_radians(angle)) * distance,
+//					sin(carmen_degrees_to_radians(angle)) * distance,
+//					distance);
+//	}
+//	fflush(f1);
+//	fclose(f1);
+
+	carmen_velodyne_partial_scan_message partial_scan_message = carmen_laser_ldmrs_convert_laser_scan_to_partial_velodyne_message(laser, laser->timestamp);
+
+//	FILE *f2 = fopen("scan2.txt", "w");
+//	for (int i = 0; i < partial_scan_message.number_of_32_laser_shots; i++)
+//	{
+//		double distance = (double) partial_scan_message.partial_scan[i].distance[1] / 500.0;
+//		double angle = partial_scan_message.partial_scan[i].angle;
+//		fprintf(f2, "%f %f %f \n",
+//					cos(carmen_degrees_to_radians(angle)) * distance,
+//					sin(carmen_degrees_to_radians(angle)) * distance,
+//					distance);
+//	}
+//	fflush(f2);
+//	fclose(f2);
+
+	mapper_velodyne_partial_scan(1, &partial_scan_message);
+	free(partial_scan_message.partial_scan);
+}
+
+
 void
 velodyne_variable_scan_message_handler1(carmen_velodyne_variable_scan_message *message)
 {
 	mapper_velodyne_variable_scan(1, message);
-}
-
-
-static void
-laser_ldrms_message_handler(carmen_laser_ldmrs_message* msg)
-{
-	vpLaserScan laserscan[4];
-	carmen_laser_ldmrs_copy_message_to_laser_scan(laserscan, msg);
-	carmen_velodyne_partial_scan_message partial_scan_message = carmen_laser_ldmrs_convert_laser_scan_to_partial_velodyne_message(laserscan, msg->timestamp);
-
-	mapper_velodyne_partial_scan(1, &partial_scan_message);
 }
 
 
@@ -343,8 +423,8 @@ ultrasonic_sensor_message_handler(carmen_ultrasonic_sonar_sensor_message *messag
 	tf::Matrix3x3(world_to_ultrasonic_sensor_r2.getRotation()).getEulerYPR(yaw, pitch, roll);
 	Xt_r2.theta = yaw;
 
-	for (i=0 ; i<180 ; i++)
-			range[i] = (double) message->sensor[2];
+	for (i = 0; i < 180 ;i++)
+		range[i] = (double) message->sensor[2];
 
 	mapper_update_grid_map(Xt_r2, range, &ultrasonic_sensor_params);
 
@@ -356,8 +436,8 @@ ultrasonic_sensor_message_handler(carmen_ultrasonic_sonar_sensor_message *messag
 	tf::Matrix3x3(world_to_ultrasonic_sensor_l2.getRotation()).getEulerYPR(yaw, pitch, roll);
 	Xt_l2.theta = yaw;
 
-	for (i=0 ; i<180 ; i++)
-			range[i] = (double) message->sensor[1];
+	for (i = 0; i < 180 ;i++)
+		range[i] = (double) message->sensor[1];
 
 	mapper_update_grid_map(Xt_l2, range, &ultrasonic_sensor_params);
 
@@ -369,8 +449,8 @@ ultrasonic_sensor_message_handler(carmen_ultrasonic_sonar_sensor_message *messag
 	tf::Matrix3x3(world_to_ultrasonic_sensor_l1.getRotation()).getEulerYPR(yaw, pitch, roll);
 	Xt_l1.theta = yaw;
 
-	for (i=0 ; i<180 ; i++)
-			range[i] = (double) message->sensor[0];
+	for (i = 0; i < 180; i++)
+		range[i] = (double) message->sensor[0];
 
 	mapper_update_grid_map(Xt_l1, range, &ultrasonic_sensor_params);
 
@@ -424,7 +504,7 @@ init_velodyne_points(spherical_point_cloud **velodyne_points_out, unsigned char 
 	carmen_vector_3D_t *robot_velocity = (carmen_vector_3D_t *)calloc(NUM_VELODYNE_POINT_CLOUDS, sizeof(carmen_vector_3D_t));
 	spherical_point_cloud *velodyne_points = (spherical_point_cloud *)malloc(NUM_VELODYNE_POINT_CLOUDS * sizeof(spherical_point_cloud));
 	double *robot_timestamp = (double *)calloc(NUM_VELODYNE_POINT_CLOUDS, sizeof(double));
-	*intencity = (unsigned char **)calloc(NUM_VELODYNE_POINT_CLOUDS, sizeof(unsigned char*));
+	*intencity = (unsigned char **)calloc(NUM_VELODYNE_POINT_CLOUDS, sizeof(unsigned char *));
 	*robot_phi_out = (double *)calloc(NUM_VELODYNE_POINT_CLOUDS, sizeof(double));
 	*points_timestamp_out = (double *)calloc(NUM_VELODYNE_POINT_CLOUDS, sizeof(double));
 
@@ -457,67 +537,72 @@ get_alive_sensors(int argc, char **argv)
 
 	carmen_param_t param_list[] =
 	{
-			{(char*)"mapper", (char*)"velodyne", CARMEN_PARAM_ONOFF, &sensors_params[0].alive, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne1", CARMEN_PARAM_ONOFF, &sensors_params[1].alive, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne2", CARMEN_PARAM_ONOFF, &sensors_params[2].alive, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne3", CARMEN_PARAM_ONOFF, &sensors_params[3].alive, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne4", CARMEN_PARAM_ONOFF, &sensors_params[4].alive, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne5", CARMEN_PARAM_ONOFF, &sensors_params[5].alive, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne6", CARMEN_PARAM_ONOFF, &sensors_params[6].alive, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne7", CARMEN_PARAM_ONOFF, &sensors_params[7].alive, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne8", CARMEN_PARAM_ONOFF, &sensors_params[8].alive, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne9", CARMEN_PARAM_ONOFF, &sensors_params[9].alive, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_mapping", CARMEN_PARAM_ONOFF, &sensors_params[STEREO_MAPPING_SENSOR_INDEX].alive, 0, NULL},
+			{(char *) "mapper", (char *) "velodyne", CARMEN_PARAM_ONOFF, &sensors_params[0].alive, 0, NULL},
+			{(char *) "mapper", (char *) "laser_ldmrs", CARMEN_PARAM_ONOFF, &sensors_params[1].alive, 0, NULL},
+//			{(char *) "mapper", (char *) "stereo_velodyne1", CARMEN_PARAM_ONOFF, &sensors_params[1].alive, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne2", CARMEN_PARAM_ONOFF, &sensors_params[2].alive, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne3", CARMEN_PARAM_ONOFF, &sensors_params[3].alive, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne4", CARMEN_PARAM_ONOFF, &sensors_params[4].alive, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne5", CARMEN_PARAM_ONOFF, &sensors_params[5].alive, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne6", CARMEN_PARAM_ONOFF, &sensors_params[6].alive, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne7", CARMEN_PARAM_ONOFF, &sensors_params[7].alive, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne8", CARMEN_PARAM_ONOFF, &sensors_params[8].alive, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne9", CARMEN_PARAM_ONOFF, &sensors_params[9].alive, 0, NULL},
+//			{(char *) "mapper", (char *) "stereo_mapping", CARMEN_PARAM_ONOFF, &sensors_params[STEREO_MAPPING_SENSOR_INDEX].alive, 0, NULL},
 
-			{(char*)"mapper", (char*)"velodyne_locc", CARMEN_PARAM_DOUBLE, &sensors_params[0].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne1_locc", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne2_locc", CARMEN_PARAM_DOUBLE, &sensors_params[2].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne3_locc", CARMEN_PARAM_DOUBLE, &sensors_params[3].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne4_locc", CARMEN_PARAM_DOUBLE, &sensors_params[4].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne5_locc", CARMEN_PARAM_DOUBLE, &sensors_params[5].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne6_locc", CARMEN_PARAM_DOUBLE, &sensors_params[6].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne7_locc", CARMEN_PARAM_DOUBLE, &sensors_params[7].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne8_locc", CARMEN_PARAM_DOUBLE, &sensors_params[8].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne9_locc", CARMEN_PARAM_DOUBLE, &sensors_params[9].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_mapping_locc", CARMEN_PARAM_DOUBLE, &sensors_params[STEREO_MAPPING_SENSOR_INDEX].log_odds.log_odds_occ, 0, NULL},
+			{(char *) "mapper", (char *) "velodyne_locc", CARMEN_PARAM_DOUBLE, &sensors_params[0].log_odds.log_odds_occ, 0, NULL},
+			{(char *) "mapper", (char *) "laser_ldmrs_locc", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_occ, 0, NULL},
+//			{(char *) "mapper", (char *) "stereo_velodyne1_locc", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_occ, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne2_locc", CARMEN_PARAM_DOUBLE, &sensors_params[2].log_odds.log_odds_occ, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne3_locc", CARMEN_PARAM_DOUBLE, &sensors_params[3].log_odds.log_odds_occ, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne4_locc", CARMEN_PARAM_DOUBLE, &sensors_params[4].log_odds.log_odds_occ, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne5_locc", CARMEN_PARAM_DOUBLE, &sensors_params[5].log_odds.log_odds_occ, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne6_locc", CARMEN_PARAM_DOUBLE, &sensors_params[6].log_odds.log_odds_occ, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne7_locc", CARMEN_PARAM_DOUBLE, &sensors_params[7].log_odds.log_odds_occ, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne8_locc", CARMEN_PARAM_DOUBLE, &sensors_params[8].log_odds.log_odds_occ, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne9_locc", CARMEN_PARAM_DOUBLE, &sensors_params[9].log_odds.log_odds_occ, 0, NULL},
+//			{(char *) "mapper", (char *) "stereo_mapping_locc", CARMEN_PARAM_DOUBLE, &sensors_params[STEREO_MAPPING_SENSOR_INDEX].log_odds.log_odds_occ, 0, NULL},
 
-			{(char*)"mapper", (char*)"velodyne_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[0].log_odds.log_odds_free, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne1_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_free, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne2_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[2].log_odds.log_odds_free, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne3_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[3].log_odds.log_odds_free, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne4_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[4].log_odds.log_odds_free, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne5_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[5].log_odds.log_odds_free, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne6_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[6].log_odds.log_odds_free, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne7_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[7].log_odds.log_odds_free, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne8_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[8].log_odds.log_odds_free, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne9_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[9].log_odds.log_odds_free, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_mapping_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[STEREO_MAPPING_SENSOR_INDEX].log_odds.log_odds_free, 0, NULL},
+			{(char *) "mapper", (char *) "velodyne_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[0].log_odds.log_odds_free, 0, NULL},
+			{(char *) "mapper", (char *) "laser_ldmrs_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_free, 0, NULL},
+//			{(char *) "mapper", (char *) "stereo_velodyne1_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_free, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne2_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[2].log_odds.log_odds_free, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne3_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[3].log_odds.log_odds_free, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne4_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[4].log_odds.log_odds_free, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne5_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[5].log_odds.log_odds_free, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne6_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[6].log_odds.log_odds_free, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne7_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[7].log_odds.log_odds_free, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne8_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[8].log_odds.log_odds_free, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne9_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[9].log_odds.log_odds_free, 0, NULL},
+//			{(char *) "mapper", (char *) "stereo_mapping_lfree", CARMEN_PARAM_DOUBLE, &sensors_params[STEREO_MAPPING_SENSOR_INDEX].log_odds.log_odds_free, 0, NULL},
 
-			{(char*)"mapper", (char*)"velodyne_l0", CARMEN_PARAM_DOUBLE, &sensors_params[0].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne1_l0", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne2_l0", CARMEN_PARAM_DOUBLE, &sensors_params[2].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne3_l0", CARMEN_PARAM_DOUBLE, &sensors_params[3].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne4_l0", CARMEN_PARAM_DOUBLE, &sensors_params[4].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne5_l0", CARMEN_PARAM_DOUBLE, &sensors_params[5].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne6_l0", CARMEN_PARAM_DOUBLE, &sensors_params[6].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne7_l0", CARMEN_PARAM_DOUBLE, &sensors_params[7].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne8_l0", CARMEN_PARAM_DOUBLE, &sensors_params[8].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne9_l0", CARMEN_PARAM_DOUBLE, &sensors_params[9].log_odds.log_odds_l0, 0, NULL},
+			{(char *) "mapper", (char *) "velodyne_l0", CARMEN_PARAM_DOUBLE, &sensors_params[0].log_odds.log_odds_l0, 0, NULL},
+			{(char *) "mapper", (char *) "laser_ldmrs_l0", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_l0, 0, NULL},
+//			{(char *) "mapper", (char *) "stereo_velodyne1_l0", CARMEN_PARAM_DOUBLE, &sensors_params[1].log_odds.log_odds_l0, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne2_l0", CARMEN_PARAM_DOUBLE, &sensors_params[2].log_odds.log_odds_l0, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne3_l0", CARMEN_PARAM_DOUBLE, &sensors_params[3].log_odds.log_odds_l0, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne4_l0", CARMEN_PARAM_DOUBLE, &sensors_params[4].log_odds.log_odds_l0, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne5_l0", CARMEN_PARAM_DOUBLE, &sensors_params[5].log_odds.log_odds_l0, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne6_l0", CARMEN_PARAM_DOUBLE, &sensors_params[6].log_odds.log_odds_l0, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne7_l0", CARMEN_PARAM_DOUBLE, &sensors_params[7].log_odds.log_odds_l0, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne8_l0", CARMEN_PARAM_DOUBLE, &sensors_params[8].log_odds.log_odds_l0, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne9_l0", CARMEN_PARAM_DOUBLE, &sensors_params[9].log_odds.log_odds_l0, 0, NULL},
 
-			{(char*)"mapper", (char*)"velodyne_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[0].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne1_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[1].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne2_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[2].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne3_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[3].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne4_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[4].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne5_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[5].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne6_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[6].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne7_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[7].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne8_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[8].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"mapper", (char*)"stereo_velodyne9_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[9].unexpeted_delta_range_sigma, 0, NULL},
+			{(char *) "mapper", (char *) "velodyne_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[0].unexpeted_delta_range_sigma, 0, NULL},
+			{(char *) "mapper", (char *) "laser_ldmrs_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[1].unexpeted_delta_range_sigma, 0, NULL},
+//			{(char *) "mapper", (char *) "stereo_velodyne1_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[1].unexpeted_delta_range_sigma, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne2_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[2].unexpeted_delta_range_sigma, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne3_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[3].unexpeted_delta_range_sigma, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne4_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[4].unexpeted_delta_range_sigma, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne5_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[5].unexpeted_delta_range_sigma, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne6_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[6].unexpeted_delta_range_sigma, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne7_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[7].unexpeted_delta_range_sigma, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne8_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[8].unexpeted_delta_range_sigma, 0, NULL},
+			{(char *) "mapper", (char *) "stereo_velodyne9_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &sensors_params[9].unexpeted_delta_range_sigma, 0, NULL},
 
-			{(char*)"mapper", (char*)"unsafe_height_above_ground", CARMEN_PARAM_DOUBLE, &sensors_params[0].unsafe_height_above_ground, 0, NULL},
+			{(char *) "mapper", (char *) "unsafe_height_above_ground", CARMEN_PARAM_DOUBLE, &sensors_params[0].unsafe_height_above_ground, 0, NULL},
 
-			{(char*)"mapper",  (char*)"velodyne_range_max_factor", CARMEN_PARAM_DOUBLE, &sensors_params[0].range_max_factor, 0, NULL}
+			{(char *) "mapper",  (char *) "velodyne_range_max_factor", CARMEN_PARAM_DOUBLE, &sensors_params[0].range_max_factor, 0, NULL}
 
 
 	};
@@ -525,9 +610,6 @@ get_alive_sensors(int argc, char **argv)
 
 	for (i = 0; i < number_of_sensors; i++)
 	{
-		if (i == STEREO_MAPPING_SENSOR_INDEX)
-			continue;
-
 		sensors_params[i].unsafe_height_above_ground = sensors_params[0].unsafe_height_above_ground;
 
 		sensors_data[i].ray_position_in_the_floor = (carmen_vector_2D_t **)  calloc(number_of_threads, sizeof(carmen_vector_2D_t*));
@@ -536,7 +618,7 @@ get_alive_sensors(int argc, char **argv)
 		sensors_data[i].occupancy_log_odds_of_each_ray_target = (double **) calloc(number_of_threads, sizeof(double*));
 		sensors_data[i].point_cloud_index = 0;
 		sensors_data[i].points = NULL;
-		sensors_data[i].ray_origin_in_the_floor = (carmen_vector_2D_t **) calloc(number_of_threads, sizeof(carmen_vector_2D_t*));;
+		sensors_data[i].ray_origin_in_the_floor = (carmen_vector_2D_t **) calloc(number_of_threads, sizeof(carmen_vector_2D_t*));
 		sensors_data[i].ray_size_in_the_floor = (double **) calloc(number_of_threads, sizeof(double*));
 		sensors_data[i].processed_intensity = (double **) calloc(number_of_threads, sizeof(double*));
 		sensors_data[i].ray_hit_the_robot = (int **) calloc(number_of_threads, sizeof(int*));
@@ -544,7 +626,7 @@ get_alive_sensors(int argc, char **argv)
 
 		sensors_params[i].name = NULL;
 		sensors_params[i].ray_order = NULL;
-		sensors_params[i].sensor_to_board_matrix = NULL;
+		sensors_params[i].sensor_to_support_matrix = NULL;
 		sensors_params[i].vertical_correction = NULL;
 		sensors_params[i].vertical_resolution = 0;
 
@@ -562,7 +644,7 @@ get_alive_sensors(int argc, char **argv)
 
 		if (sensors_params[i].alive)
 		{
-			sensors_params[i].name = (char *)calloc(strlen(param_list[i].variable) + 1, sizeof(char));
+			sensors_params[i].name = (char *) calloc(strlen(param_list[i].variable) + 1, sizeof(char));
 			strcpy(sensors_params[i].name, param_list[i].variable);
 		}
 	}
@@ -603,15 +685,18 @@ get_sensors_param(int argc, char **argv)
 	//velodyne
 
 	sensors_params[0].pose = velodyne_pose;
-	sensors_params[0].sensor_robot_reference = carmen_change_sensor_reference(sensor_board_1_pose.position, sensors_params[0].pose.position, board_to_car_matrix);
-
+	sensors_params[0].sensor_support_pose = sensor_board_1_pose;
+	sensors_params[0].support_to_car_matrix = create_rotation_matrix(sensors_params[0].sensor_support_pose.orientation);
+	sensors_params[0].sensor_robot_reference = carmen_change_sensor_reference(
+			sensors_params[0].sensor_support_pose.position, sensors_params[0].pose.position, sensors_params[0].support_to_car_matrix);
 	sensors_params[0].height = sensors_params[0].sensor_robot_reference.z + robot_wheel_radius;
 
 	if (sensors_params[0].height > highest_sensor)
 		highest_sensor = sensors_params[0].height;
 
-	if (sensors_params[0].alive && !strcmp(sensors_params[0].name,"velodyne"))
+	if (sensors_params[0].alive && !strcmp(sensors_params[0].name, "velodyne"))
 	{
+		sensors_params[0].sensor_type = VELODYNE;
 		sensors_params[0].ray_order = carmen_velodyne_get_ray_order();
 		sensors_params[0].vertical_correction = carmen_velodyne_get_vertical_correction();
 		sensors_params[0].delta_difference_mean = carmen_velodyne_get_delta_difference_mean();
@@ -619,15 +704,15 @@ get_sensors_param(int argc, char **argv)
 
 		carmen_param_t param_list[] =
 		{
-				{sensors_params[0].name, (char *) "vertical_resolution", CARMEN_PARAM_INT, &sensors_params[0].vertical_resolution, 0, NULL},
-				{(char *) "mapper", (char *) "velodyne_range_max", CARMEN_PARAM_DOUBLE, &sensors_params[0].range_max, 0, NULL},
-				{sensors_params[0].name, (char *) "time_spent_by_each_scan", CARMEN_PARAM_DOUBLE, &sensors_params[0].time_spent_by_each_scan, 0, NULL},
-
+			{sensors_params[0].name, (char *) "vertical_resolution", CARMEN_PARAM_INT, &sensors_params[0].vertical_resolution, 0, NULL},
+			{(char *) "mapper", (char *) "velodyne_range_max", CARMEN_PARAM_DOUBLE, &sensors_params[0].range_max, 0, NULL},
+			{sensors_params[0].name, (char *) "time_spent_by_each_scan", CARMEN_PARAM_DOUBLE, &sensors_params[0].time_spent_by_each_scan, 0, NULL},
 		};
 
 		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 		init_velodyne_points(&sensors_data[0].points, &sensors_data[0].intensity, &sensors_data[0].robot_pose, &sensors_data[0].robot_velocity, &sensors_data[0].robot_timestamp, &sensors_data[0].robot_phi, &sensors_data[0].points_timestamp);
-		sensors_params[0].sensor_to_board_matrix = create_rotation_matrix(sensors_params[0].pose.orientation);
+		sensors_params[0].sensor_to_support_matrix = create_rotation_matrix(sensors_params[0].pose.orientation);
+		sensors_params[0].current_range_max = sensors_params[0].range_max;
 		sensors_data[0].point_cloud_index = 0;
 		carmen_prob_models_alloc_sensor_data(&sensors_data[0], sensors_params[0].vertical_resolution, number_of_threads);
 
@@ -640,62 +725,58 @@ get_sensors_param(int argc, char **argv)
 //		fclose(f);
 	}
 
-
-	//sick
-	sensors_params[1].pose = sick_pose;
-	sensors_params[1].sensor_robot_reference = carmen_change_sensor_reference(front_bullbar.position, sensors_params[0].pose.position, bullbar_to_car_matrix);
-
-	sensors_params[1].height = sensors_params[0].sensor_robot_reference.z + robot_wheel_radius;
-
-	if (sensors_params[1].height > highest_sensor)
-		highest_sensor = sensors_params[0].height;
-
-	if (sensors_params[1].alive)
+	if (sensors_params[1].alive && !strcmp(sensors_params[1].name, "laser_ldmrs"))
 	{
-		int ray_order[32] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31};
+		sensors_params[1].sensor_type = LASER_LDMRS;
+		sensors_params[1].pose = laser_ldmrs_pose;
+		sensors_params[1].sensor_support_pose = front_bullbar;
+		sensors_params[1].support_to_car_matrix = create_rotation_matrix(sensors_params[1].sensor_support_pose.orientation);
+		sensors_params[1].sensor_robot_reference = carmen_change_sensor_reference(
+				sensors_params[1].sensor_support_pose.position, sensors_params[1].pose.position, sensors_params[1].support_to_car_matrix);
+		sensors_params[1].height = sensors_params[1].sensor_robot_reference.z + robot_wheel_radius;
+
+		if (sensors_params[1].height > highest_sensor)
+			highest_sensor = sensors_params[1].height;
+
+		static int ray_order[4] = {0, 1, 2, 3};
 		sensors_params[1].ray_order = ray_order;
 
-		double vertical_correction[32] = {-1.2, -0.4, 0.4, 1.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+		static double vertical_correction[4] = {-1.2, -0.4, 0.4, 1.2};
 		sensors_params[1].vertical_correction = vertical_correction;
 
-		double delta_difference_mean[32] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+		static double delta_difference_mean[4] = {0, 0, 0, 0};
 		sensors_params[1].delta_difference_mean = delta_difference_mean;
 
-		double delta_difference_stddev[32] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+		static double delta_difference_stddev[4] = {0, 0, 0, 0};
 		sensors_params[1].delta_difference_stddev = delta_difference_stddev;
 
 		carmen_param_t param_list[] =
 		{
-				{(char *) "sick", (char *) "vertical_resolution", CARMEN_PARAM_INT, &sensors_params[1].vertical_resolution, 0, NULL},
-				{(char *) "mapper", (char *) "velodyne_range_max", CARMEN_PARAM_DOUBLE, &sensors_params[1].range_max, 0, NULL},
-				{(char *) "sick", (char *) "time_spent_by_each_scan", CARMEN_PARAM_DOUBLE, &sensors_params[1].time_spent_by_each_scan, 0, NULL},
+			{(char *) "laser_ldmrs", (char *) "vertical_resolution", CARMEN_PARAM_INT, &sensors_params[1].vertical_resolution, 0, NULL},
+			{(char *) "laser_ldmrs", (char *) "range_max", CARMEN_PARAM_DOUBLE, &sensors_params[1].range_max, 0, NULL},
+			{(char *) "laser_ldmrs", (char *) "time_spent_by_each_scan", CARMEN_PARAM_DOUBLE, &sensors_params[1].time_spent_by_each_scan, 0, NULL},
 		};
 
 		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 		init_velodyne_points(&sensors_data[1].points, &sensors_data[1].intensity, &sensors_data[1].robot_pose, &sensors_data[1].robot_velocity, &sensors_data[1].robot_timestamp, &sensors_data[1].robot_phi, &sensors_data[1].points_timestamp);
-		sensors_params[1].sensor_to_board_matrix = create_rotation_matrix(sensors_params[1].pose.orientation);
+		sensors_params[1].sensor_to_support_matrix = create_rotation_matrix(sensors_params[1].pose.orientation);
+		sensors_params[1].current_range_max = sensors_params[1].range_max;
 		sensors_data[1].point_cloud_index = 0;
 		carmen_prob_models_alloc_sensor_data(&sensors_data[1], sensors_params[1].vertical_resolution, number_of_threads);
 
 		sensors_params[1].remission_calibration = NULL;//(double *) calloc(256 * sensors_params[0].vertical_resolution, sizeof(double));
-//		FILE *f = fopen("../data/remission_calibration.txt", "r");
-//		for (i = 0; i < 256 * sensors_params[0].vertical_resolution; i++)
-//		{
-//			fscanf(f, "%lf", &sensors_params[0].remission_calibration[i]);
-//		}
-//		fclose(f);
 	}
 
 	for (i = 2; i < number_of_sensors; i++)
 	{
-		if (i == STEREO_MAPPING_SENSOR_INDEX)
-			continue;
-
 		if (sensors_params[i].alive)
 		{
+			sensors_params[1].sensor_type = CAMERA;
 			sensors_params[i].pose = get_stereo_velodyne_pose_3D(argc, argv, i);
-
-			sensors_params[i].sensor_robot_reference = carmen_change_sensor_reference(sensor_board_1_pose.position, sensors_params[i].pose.position, board_to_car_matrix);
+			sensors_params[i].sensor_support_pose = sensor_board_1_pose;
+			sensors_params[i].support_to_car_matrix = create_rotation_matrix(sensors_params[i].sensor_support_pose.orientation);
+			sensors_params[i].sensor_robot_reference = carmen_change_sensor_reference(
+					sensors_params[i].sensor_support_pose.position, sensors_params[i].pose.position, sensors_params[i].support_to_car_matrix);
 			sensors_params[i].height = sensors_params[i].sensor_robot_reference.z + robot_wheel_radius;
 
 			if (sensors_params[i].height > highest_sensor)
@@ -708,15 +789,14 @@ get_sensors_param(int argc, char **argv)
 
 			carmen_param_t param_list[] =
 			{
-					{sensors_params[i].name, (char*) "vertical_resolution", CARMEN_PARAM_INT, &sensors_params[i].vertical_resolution, 0, NULL},
-					{sensors_params[i].name, (char*) "horizontal_resolution", CARMEN_PARAM_INT, &horizontal_resolution, 0, NULL},
-					{sensors_params[i].name, (char*) "flipped", CARMEN_PARAM_ONOFF, &flipped, 0, NULL},
-					{sensors_params[i].name, (char*) "range_max", CARMEN_PARAM_DOUBLE, &sensors_params[i].range_max, 0, NULL},
-					{sensors_params[i].name, (char*) "vertical_roi_ini", CARMEN_PARAM_INT, &stereo_velodyne_vertical_roi_ini, 0, NULL },
-					{sensors_params[i].name, (char*) "vertical_roi_end", CARMEN_PARAM_INT, &stereo_velodyne_vertical_roi_end, 0, NULL },
-					{sensors_params[i].name, (char*) "horizontal_roi_ini", CARMEN_PARAM_INT, &stereo_velodyne_horizontal_roi_ini, 0, NULL },
-					{sensors_params[i].name, (char*) "horizontal_roi_end", CARMEN_PARAM_INT, &stereo_velodyne_horizontal_roi_end, 0, NULL }
-
+				{sensors_params[i].name, (char *) "vertical_resolution", CARMEN_PARAM_INT, &sensors_params[i].vertical_resolution, 0, NULL},
+				{sensors_params[i].name, (char *) "horizontal_resolution", CARMEN_PARAM_INT, &horizontal_resolution, 0, NULL},
+				{sensors_params[i].name, (char *) "flipped", CARMEN_PARAM_ONOFF, &flipped, 0, NULL},
+				{sensors_params[i].name, (char *) "range_max", CARMEN_PARAM_DOUBLE, &sensors_params[i].range_max, 0, NULL},
+				{sensors_params[i].name, (char *) "vertical_roi_ini", CARMEN_PARAM_INT, &stereo_velodyne_vertical_roi_ini, 0, NULL },
+				{sensors_params[i].name, (char *) "vertical_roi_end", CARMEN_PARAM_INT, &stereo_velodyne_vertical_roi_end, 0, NULL },
+				{sensors_params[i].name, (char *) "horizontal_roi_ini", CARMEN_PARAM_INT, &stereo_velodyne_horizontal_roi_ini, 0, NULL },
+				{sensors_params[i].name, (char *) "horizontal_roi_end", CARMEN_PARAM_INT, &stereo_velodyne_horizontal_roi_end, 0, NULL }
 			};
 
 			carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
@@ -741,7 +821,8 @@ get_sensors_param(int argc, char **argv)
 			sensors_params[i].ray_order = generates_ray_order(sensors_params[i].vertical_resolution);
 			sensors_params[i].vertical_correction = get_stereo_velodyne_correction(flipped, i, sensors_params[i].vertical_resolution, roi_ini, roi_end, 0, 0);
 			init_velodyne_points(&sensors_data[i].points, &sensors_data[i].intensity, &sensors_data[i].robot_pose, &sensors_data[i].robot_velocity,  &sensors_data[i].robot_timestamp, &sensors_data[i].robot_phi, &sensors_data[i].points_timestamp);
-			sensors_params[i].sensor_to_board_matrix = create_rotation_matrix(sensors_params[i].pose.orientation);
+			sensors_params[i].sensor_to_support_matrix = create_rotation_matrix(sensors_params[i].pose.orientation);
+			sensors_params[i].current_range_max = sensors_params[i].range_max;
 			sensors_data[i].point_cloud_index = 0;
 			carmen_prob_models_alloc_sensor_data(&sensors_data[i], sensors_params[i].vertical_resolution, number_of_threads);
 
@@ -766,84 +847,80 @@ read_parameters(int argc, char **argv,
 	double map_resolution, map_width, map_height;
 	carmen_param_t param_list[] =
 	{
-			{(char*)"robot",  (char*)"distance_between_front_car_and_front_wheels", 	CARMEN_PARAM_DOUBLE, &(p_car_config->distance_between_front_car_and_front_wheels), 1, NULL},
-			{(char*)"robot",  (char*)"distance_between_front_and_rear_axles",		CARMEN_PARAM_DOUBLE, &(p_car_config->distance_between_front_and_rear_axles), 1, NULL},
-			{(char*)"robot",  (char*)"distance_between_rear_car_and_rear_wheels",		CARMEN_PARAM_DOUBLE, &(p_car_config->distance_between_rear_car_and_rear_wheels), 1, NULL},
-			{(char*)"robot",  (char*)"distance_between_rear_wheels",			CARMEN_PARAM_DOUBLE, &(p_car_config->distance_between_rear_wheels), 1, NULL},
+			{(char *) "robot",  (char *) "distance_between_front_car_and_front_wheels", 	CARMEN_PARAM_DOUBLE, &(p_car_config->distance_between_front_car_and_front_wheels), 1, NULL},
+			{(char *) "robot",  (char *) "distance_between_front_and_rear_axles",		CARMEN_PARAM_DOUBLE, &(p_car_config->distance_between_front_and_rear_axles), 1, NULL},
+			{(char *) "robot",  (char *) "distance_between_rear_car_and_rear_wheels",		CARMEN_PARAM_DOUBLE, &(p_car_config->distance_between_rear_car_and_rear_wheels), 1, NULL},
+			{(char *) "robot",  (char *) "distance_between_rear_wheels",			CARMEN_PARAM_DOUBLE, &(p_car_config->distance_between_rear_wheels), 1, NULL},
+			{(char *) "robot",  (char *) "length", CARMEN_PARAM_DOUBLE, &p_car_config->length, 0, NULL},
+			{(char *) "robot",  (char *) "width", CARMEN_PARAM_DOUBLE, &p_car_config->width, 0, NULL},
+			{(char *) "robot",  (char *) "vertical_displacement_from_center", CARMEN_PARAM_DOUBLE, &robot_vertical_displacement_from_center, 0, NULL},
+			{(char *) "robot",  (char *) "wheel_radius", CARMEN_PARAM_DOUBLE, &(robot_wheel_radius), 0, NULL},
 
-			{(char*)"sensor_board_1",  (char*)"x", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.x),	0, NULL},
-			{(char*)"sensor_board_1",  (char*)"y", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.y),	0, NULL},
-			{(char*)"sensor_board_1",  (char*)"z", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.z),	0, NULL},
-			{(char*)"sensor_board_1",  (char*)"roll", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.roll),0, NULL},
-			{(char*)"sensor_board_1",  (char*)"pitch", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.pitch),0, NULL},
-			{(char*)"sensor_board_1",  (char*)"yaw", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.yaw),	0, NULL},
+			{(char *) "sensor_board_1",  (char *) "x", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.x),	0, NULL},
+			{(char *) "sensor_board_1",  (char *) "y", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.y),	0, NULL},
+			{(char *) "sensor_board_1",  (char *) "z", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.z),	0, NULL},
+			{(char *) "sensor_board_1",  (char *) "roll", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.roll),0, NULL},
+			{(char *) "sensor_board_1",  (char *) "pitch", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.pitch),0, NULL},
+			{(char *) "sensor_board_1",  (char *) "yaw", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.yaw),	0, NULL},
 
-			{(char*)"velodyne",  (char*)"x", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.x), 0, NULL},
-			{(char*)"velodyne",  (char*)"y", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.y), 0, NULL},
-			{(char*)"velodyne",  (char*)"z", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.z), 0, NULL},
-			{(char*)"velodyne",  (char*)"roll", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.roll), 0, NULL},
-			{(char*)"velodyne",  (char*)"pitch", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.pitch), 0, NULL},
-			{(char*)"velodyne",  (char*)"yaw", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.yaw), 0, NULL},
+			{(char *) "front_bullbar",  (char *) "x", CARMEN_PARAM_DOUBLE, &(front_bullbar.position.x),	0, NULL},
+			{(char *) "front_bullbar",  (char *) "y", CARMEN_PARAM_DOUBLE, &(front_bullbar.position.y),	0, NULL},
+			{(char *) "front_bullbar",  (char *) "z", CARMEN_PARAM_DOUBLE, &(front_bullbar.position.z),	0, NULL},
+			{(char *) "front_bullbar",  (char *) "roll", CARMEN_PARAM_DOUBLE, &(front_bullbar.orientation.roll),0, NULL},
+			{(char *) "front_bullbar",  (char *) "pitch", CARMEN_PARAM_DOUBLE, &(front_bullbar.orientation.pitch),0, NULL},
+			{(char *) "front_bullbar",  (char *) "yaw", CARMEN_PARAM_DOUBLE, &(front_bullbar.orientation.yaw),	0, NULL},
 
-			{(char*)"front_bullbar",  (char*)"x", CARMEN_PARAM_DOUBLE, &(front_bullbar.position.x),	0, NULL},
-			{(char*)"front_bullbar",  (char*)"y", CARMEN_PARAM_DOUBLE, &(front_bullbar.position.y),	0, NULL},
-			{(char*)"front_bullbar",  (char*)"z", CARMEN_PARAM_DOUBLE, &(front_bullbar.position.z),	0, NULL},
-			{(char*)"front_bullbar",  (char*)"roll", CARMEN_PARAM_DOUBLE, &(front_bullbar.orientation.roll),0, NULL},
-			{(char*)"front_bullbar",  (char*)"pitch", CARMEN_PARAM_DOUBLE, &(front_bullbar.orientation.pitch),0, NULL},
-			{(char*)"front_bullbar",  (char*)"yaw", CARMEN_PARAM_DOUBLE, &(front_bullbar.orientation.yaw),	0, NULL},
+			{(char *) "velodyne",  (char *) "x", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.x), 0, NULL},
+			{(char *) "velodyne",  (char *) "y", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.y), 0, NULL},
+			{(char *) "velodyne",  (char *) "z", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.z), 0, NULL},
+			{(char *) "velodyne",  (char *) "roll", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.roll), 0, NULL},
+			{(char *) "velodyne",  (char *) "pitch", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.pitch), 0, NULL},
+			{(char *) "velodyne",  (char *) "yaw", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.yaw), 0, NULL},
 
+			{(char *) "laser_ldmrs",  (char *) "x", CARMEN_PARAM_DOUBLE, &(laser_ldmrs_pose.position.x), 0, NULL},
+			{(char *) "laser_ldmrs",  (char *) "y", CARMEN_PARAM_DOUBLE, &(laser_ldmrs_pose.position.y), 0, NULL},
+			{(char *) "laser_ldmrs",  (char *) "z", CARMEN_PARAM_DOUBLE, &(laser_ldmrs_pose.position.z), 0, NULL},
+			{(char *) "laser_ldmrs",  (char *) "roll", CARMEN_PARAM_DOUBLE, &(laser_ldmrs_pose.orientation.roll), 0, NULL},
+			{(char *) "laser_ldmrs",  (char *) "pitch", CARMEN_PARAM_DOUBLE, &(laser_ldmrs_pose.orientation.pitch), 0, NULL},
+			{(char *) "laser_ldmrs",  (char *) "yaw", CARMEN_PARAM_DOUBLE, &(laser_ldmrs_pose.orientation.yaw), 0, NULL},
 
-			{(char*)"sick",  (char*)"x", CARMEN_PARAM_DOUBLE, &(sick_pose.position.x), 0, NULL},
-			{(char*)"sick",  (char*)"y", CARMEN_PARAM_DOUBLE, &(sick_pose.position.y), 0, NULL},
-			{(char*)"sick",  (char*)"z", CARMEN_PARAM_DOUBLE, &(sick_pose.position.z), 0, NULL},
-			{(char*)"sick",  (char*)"roll", CARMEN_PARAM_DOUBLE, &(sick_pose.orientation.roll), 0, NULL},
-			{(char*)"sick",  (char*)"pitch", CARMEN_PARAM_DOUBLE, &(sick_pose.orientation.pitch), 0, NULL},
-			{(char*)"sick",  (char*)"yaw", CARMEN_PARAM_DOUBLE, &(sick_pose.orientation.yaw), 0, NULL},
+			{(char *) "mapper",  (char *) "number_of_sensors", CARMEN_PARAM_INT, &number_of_sensors, 0, NULL},
+			{(char *) "mapper",  (char *) "safe_range_above_sensors", CARMEN_PARAM_DOUBLE, &safe_range_above_sensors, 0, NULL},
 
+			{(char *) "mapper",  (char *) "map_grid_res", CARMEN_PARAM_DOUBLE, &map_resolution, 0, NULL},
+			{(char *) "mapper",  (char *) "map_width", CARMEN_PARAM_DOUBLE, &map_width, 0, NULL},
+			{(char *) "mapper",  (char *) "map_height", CARMEN_PARAM_DOUBLE, &map_height, 0, NULL},
 
-			{(char*)"robot",  (char*)"wheel_radius", CARMEN_PARAM_DOUBLE, &(robot_wheel_radius), 0, NULL},
-			{(char*)"mapper",  (char*)"number_of_sensors", CARMEN_PARAM_INT, &number_of_sensors, 0, NULL},
-			{(char*)"mapper",  (char*)"safe_range_above_sensors", CARMEN_PARAM_DOUBLE, &safe_range_above_sensors, 0, NULL},
+			{(char *) "mapper",  (char *) "moving_objects_raw_map", CARMEN_PARAM_ONOFF, &publish_moving_objects_raw_map, 0, NULL},
 
-			{(char*)"robot",  (char*)"length", CARMEN_PARAM_DOUBLE, &p_car_config->length, 0, NULL},
-			{(char*)"robot",  (char*)"width", CARMEN_PARAM_DOUBLE, &p_car_config->width, 0, NULL},
-			{(char*)"robot",  (char*)"vertical_displacement_from_center", CARMEN_PARAM_DOUBLE, &robot_vertical_displacement_from_center, 0, NULL},
+			{(char *) "mapper",  (char *) "build_snapshot_map", CARMEN_PARAM_ONOFF, &build_snapshot_map, 0, NULL},
+			{(char *) "mapper",  (char *) "merge_with_offline_map", CARMEN_PARAM_ONOFF, &merge_with_offline_map, 0, NULL},
+			{(char *) "mapper",  (char *) "update_and_merge_with_mapper_saved_maps", CARMEN_PARAM_ONOFF, &update_and_merge_with_mapper_saved_maps, 0, NULL},
+			{(char *) "mapper",  (char *) "update_cells_below_car", CARMEN_PARAM_ONOFF, &update_cells_below_car, 0, NULL},
+			{(char *) "mapper",  (char *) "decay_to_offline_map", CARMEN_PARAM_ONOFF, &decay_to_offline_map, 0, NULL},
+			{(char *) "mapper",  (char *) "create_map_sum_and_count", CARMEN_PARAM_ONOFF, &create_map_sum_and_count, 0, NULL},
 
-			{(char*)"mapper",  (char*)"map_grid_res", CARMEN_PARAM_DOUBLE, &map_resolution, 0, NULL},
-			{(char*)"mapper",  (char*)"map_width", CARMEN_PARAM_DOUBLE, &map_width, 0, NULL},
-			{(char*)"mapper",  (char*)"map_height", CARMEN_PARAM_DOUBLE, &map_height, 0, NULL},
+			{(char *) "mapper",  (char *) "update_and_merge_with_snapshot_map", CARMEN_PARAM_ONOFF, &update_and_merge_with_snapshot_map, 0, NULL},
+			{(char *) "mapper",  (char *) "number_of_threads", CARMEN_PARAM_INT, &number_of_threads, 0, NULL},
 
-			{(char*)"mapper", (char*)"moving_objects_raw_map", CARMEN_PARAM_ONOFF, &publish_moving_objects_raw_map, 0, NULL},
-
-			{(char*)"mapper",  (char*)"build_snapshot_map", CARMEN_PARAM_ONOFF, &build_snapshot_map, 0, NULL},
-			{(char*)"mapper",  (char*)"merge_with_offline_map", CARMEN_PARAM_ONOFF, &merge_with_offline_map, 0, NULL},
-			{(char*)"mapper",  (char*)"update_and_merge_with_mapper_saved_maps", CARMEN_PARAM_ONOFF, &update_and_merge_with_mapper_saved_maps, 0, NULL},
-			{(char*)"mapper",  (char*)"update_cells_below_car", CARMEN_PARAM_ONOFF, &update_cells_below_car, 0, NULL},
-			{(char*)"mapper",  (char*)"decay_to_offline_map", CARMEN_PARAM_ONOFF, &decay_to_offline_map, 0, NULL},
-			{(char*)"mapper",  (char*)"create_map_sum_and_count", CARMEN_PARAM_ONOFF, &create_map_sum_and_count, 0, NULL},
-
-			{(char*)"mapper",  (char*)"update_and_merge_with_snapshot_map", CARMEN_PARAM_ONOFF, &update_and_merge_with_snapshot_map, 0, NULL},
-			{(char*)"mapper",  (char*)"number_of_threads", CARMEN_PARAM_INT, &number_of_threads, 0, NULL},
-
-
-			{(char*)"commandline",  (char*)"map_path", CARMEN_PARAM_STRING, &map_path, 0, NULL},
+			{(char *) "commandline",  (char *) "map_path", CARMEN_PARAM_STRING, &map_path, 0, NULL},
 
 			{(char *) "visual_odometry", (char *) "is_global_pos", CARMEN_PARAM_ONOFF, &visual_odometry_is_global_pos, 0, NULL},
 
-			{(char *)"grid_mapping", (char *)"ultrasonic_sensor_sampling_step", CARMEN_PARAM_INT, &ultrasonic_sensor_params.sampling_step, 0, NULL},
-			{(char *)"grid_mapping", (char *)"ultrasonic_sensor_num_beams", CARMEN_PARAM_INT, &ultrasonic_sensor_params.laser_beams, 0, NULL},
-			{(char *)"grid_mapping", (char *)"ultrasonic_sensor_fov_range", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.fov_range, 0, NULL},
-			{(char *)"grid_mapping", (char *)"ultrasonic_sensor_max_range", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.range_max, 0, NULL},
-			{(char *)"grid_mapping", (char *)"ultrasonic_sensor_lambda_short", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.lambda_short, 0, NULL},
-			{(char *)"grid_mapping", (char *)"ultrasonic_sensor_sigma_zhit", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.sigma_zhit, 0, NULL},
-			{(char *)"grid_mapping", (char *)"ultrasonic_sensor_zhit", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.zhit, 0, NULL},
-			{(char *)"grid_mapping", (char *)"ultrasonic_sensor_zmax", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.zmax, 0, NULL},
-			{(char *)"grid_mapping", (char *)"ultrasonic_sensor_zrand", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.zrand, 0, NULL},
-			{(char *)"grid_mapping", (char *)"ultrasonic_sensor_zshort", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.zshort, 0, NULL},
+			{(char *) "grid_mapping", (char *) "ultrasonic_sensor_sampling_step", CARMEN_PARAM_INT, &ultrasonic_sensor_params.sampling_step, 0, NULL},
+			{(char *) "grid_mapping", (char *) "ultrasonic_sensor_num_beams", CARMEN_PARAM_INT, &ultrasonic_sensor_params.laser_beams, 0, NULL},
+			{(char *) "grid_mapping", (char *) "ultrasonic_sensor_fov_range", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.fov_range, 0, NULL},
+			{(char *) "grid_mapping", (char *) "ultrasonic_sensor_max_range", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.range_max, 0, NULL},
+			{(char *) "grid_mapping", (char *) "ultrasonic_sensor_lambda_short", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.lambda_short, 0, NULL},
+			{(char *) "grid_mapping", (char *) "ultrasonic_sensor_sigma_zhit", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.sigma_zhit, 0, NULL},
+			{(char *) "grid_mapping", (char *) "ultrasonic_sensor_zhit", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.zhit, 0, NULL},
+			{(char *) "grid_mapping", (char *) "ultrasonic_sensor_zmax", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.zmax, 0, NULL},
+			{(char *) "grid_mapping", (char *) "ultrasonic_sensor_zrand", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.zrand, 0, NULL},
+			{(char *) "grid_mapping", (char *) "ultrasonic_sensor_zshort", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.zshort, 0, NULL},
 
-			{(char *)"grid_mapping", (char *)"map_locc", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.log_odds.log_odds_occ, 0, NULL},
-			{(char *)"grid_mapping", (char *)"map_lfree", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.log_odds.log_odds_free, 0, NULL},
-			{(char *)"grid_mapping", (char *)"map_l0", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.log_odds.log_odds_l0, 0, NULL},
+			{(char *) "grid_mapping", (char *) "map_locc", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.log_odds.log_odds_occ, 0, NULL},
+			{(char *) "grid_mapping", (char *) "map_lfree", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.log_odds.log_odds_free, 0, NULL},
+			{(char *) "grid_mapping", (char *) "map_l0", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.log_odds.log_odds_l0, 0, NULL},
 
 			{(char *) "ultrasonic_sensor_r1", (char *) "x", 	CARMEN_PARAM_DOUBLE, &(ultrasonic_sensor_r1_g.position.x), 0, NULL},
 			{(char *) "ultrasonic_sensor_r1", (char *) "y", 	CARMEN_PARAM_DOUBLE, &(ultrasonic_sensor_r1_g.position.y), 0, NULL},
@@ -873,18 +950,19 @@ read_parameters(int argc, char **argv,
 			{(char *) "ultrasonic_sensor_l1", (char *) "pitch", CARMEN_PARAM_DOUBLE, &(ultrasonic_sensor_l1_g.orientation.pitch), 0, NULL},
 			{(char *) "ultrasonic_sensor_l1", (char *) "roll", 	CARMEN_PARAM_DOUBLE, &(ultrasonic_sensor_l1_g.orientation.roll), 0, NULL},
 
-			{(char *)"rrt",	(char *)"obstacle_cost_distance",	CARMEN_PARAM_DOUBLE,	&obstacle_cost_distance,	1, NULL},
-			{(char *)"rrt",	(char *)"obstacle_probability_threshold",	CARMEN_PARAM_DOUBLE,	&obstacle_probability_threshold,	1, NULL}
+			{(char *) "rrt",	(char *) "obstacle_cost_distance",	CARMEN_PARAM_DOUBLE,	&obstacle_cost_distance,	1, NULL},
+			{(char *) "rrt",	(char *) "obstacle_probability_threshold",	CARMEN_PARAM_DOUBLE,	&obstacle_probability_threshold,	1, NULL}
 
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 
+	ultrasonic_sensor_params.current_range_max = ultrasonic_sensor_params.range_max;
 
 	if (map_width != map_height)
 		carmen_die("Wrong map size: width (%f) must be equal to height (%f).", map_width, map_height);
 
-	if ( (((int)map_width) % 3) != 0)
+	if ((((int) map_width) % 3) != 0)
 		carmen_die("Wrong map size: width (%f) and height (%f) must be multiple of 3.", map_width, map_height);
 
 	map_config->x_size = round(map_width / map_resolution);
@@ -892,9 +970,6 @@ read_parameters(int argc, char **argv,
 	map_config->resolution = map_resolution;
 
 	carmen_grid_mapping_init_parameters(map_resolution, map_width);
-
-	board_to_car_matrix = create_rotation_matrix(sensor_board_1_pose.orientation);
-	bullbar_to_car_matrix = create_rotation_matrix(front_bullbar.orientation);
 
 	get_alive_sensors(argc, argv);
 

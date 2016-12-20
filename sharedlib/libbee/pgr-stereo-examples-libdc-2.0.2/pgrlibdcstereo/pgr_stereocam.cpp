@@ -330,7 +330,7 @@ setStereoVideoCapture( PGRStereoCamera_t* stereoCamera, bool is_legacy_firewire 
 	case BUMBLEBEEXB3:
 		// Bumblebee3 transmits stereo images in Format 7
 
-		// load the factory defaults - this is auto-everything
+		// load the factory defaults -this is channel 1- can be auto-everthing or fixed parameters, Currently defined using flycap
 		err = dc1394_memory_load( stereoCamera->camera, 1 );
 		if ( err != DC1394_SUCCESS )
 		{
