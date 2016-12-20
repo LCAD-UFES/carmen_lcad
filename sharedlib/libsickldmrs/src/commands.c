@@ -173,9 +173,10 @@ sickldmrs_save_config(struct sickldmrs_device *dev, int timeo)
  * (sections 5.3.4 and 5.4, pages 16 and 18-19)
  */
 int
-sickldmrs_config_network(struct sickldmrs_device *dev,
-    const char *addr, const char *mask, const char *gateway, uint16_t port,
-    int timeo)
+sickldmrs_config_network(struct sickldmrs_device *dev  __attribute__ ((unused)),
+    const char *addr  __attribute__ ((unused)), const char *mask  __attribute__ ((unused)),
+	const char *gateway  __attribute__ ((unused)), uint16_t port  __attribute__ ((unused)),
+    int timeo  __attribute__ ((unused)))
 {
 	return -1;
 }
@@ -197,7 +198,7 @@ sickldmrs_config_scan(struct sickldmrs_device *dev,
 	cmd.value = start/M_PI*180*32;
 	if (end < start)
 		return -EINVAL;
-	if (cmd.value < -1919 || cmd.value > 1600)
+	if ((int) cmd.value < -1919 || cmd.value > 1600)
 		return -EINVAL;
 	cmd.value = htole32(cmd.value);
 	ret = sickldmrs_send_command(dev, &cmd, sizeof(cmd), timeo);
@@ -205,7 +206,7 @@ sickldmrs_config_scan(struct sickldmrs_device *dev,
 		return ret;
 	cmd.param_index = SLDMRS_PARAM_END_ANGLE;
 	cmd.value = end/M_PI*180*32;
-	if (cmd.value < -1919 || cmd.value > 1600)
+	if ((int) cmd.value < -1919 || cmd.value > 1600)
 		return -EINVAL;
 	cmd.value = htole32(cmd.value);
 	return sickldmrs_send_command(dev, &cmd, sizeof(cmd), timeo);
@@ -276,8 +277,8 @@ sickldmrs_start_measure(struct sickldmrs_device *dev, bool start, int timeo)
  * (section 5.3.9 and 5.3.10, pp 17-18)
  */
 int
-sickldmrs_settime(struct sickldmrs_device *dev,
-    const struct timespec *ts, int timeo)
+sickldmrs_settime(struct sickldmrs_device *dev __attribute__ ((unused)),
+    const struct timespec *ts __attribute__ ((unused)), int timeo __attribute__ ((unused)))
 {
 	return -1;
 }

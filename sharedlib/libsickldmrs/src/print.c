@@ -87,3 +87,21 @@ sickldmrs_print_scan(struct sickldmrs_scan *scan)
 	}
 }
 
+/**
+ * print to stdout some informations about a scan
+ */
+void
+sickldmrs_print_scan2(struct sickldmrs_scan *scan)
+{
+	printf("\nscan no %d", scan->scan_number);
+	printf(" %d points\n%s\n", scan->scan_points, scan_flags(scan->flags));
+	printf(" %.3lf..%.3lf\n", scan->start_angle, scan->end_angle);
+
+	printf(" %lu.%09lus..%lu.%09lus\n",
+	    scan->scan_start_time.tv_sec, scan->scan_start_time.tv_nsec,
+	    scan->scan_end_time.tv_sec, scan->scan_end_time.tv_nsec);
+	printf(" position %.3lf %.3lf %.3lf %.3lf %.3lf %.3lf\n",
+	    scan->mount_yaw, scan->mount_pitch, scan->mount_roll,
+	    scan->mount_x, scan->mount_y, scan->mount_z);
+}
+

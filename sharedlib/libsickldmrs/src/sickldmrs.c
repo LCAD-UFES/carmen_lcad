@@ -307,7 +307,7 @@ sickldmrs_recv_reply(struct sickldmrs_device *dev, struct sickldmrs_header *h)
  * receive and decode error and warning messages (section 6 pp 27-30)
  */
 static int
-sickldmrs_recv_error(struct sickldmrs_device *dev, struct sickldmrs_header *h)
+sickldmrs_recv_error(struct sickldmrs_device *dev, struct sickldmrs_header *h __attribute__ ((unused)))
 {
 	struct sickldmrs_error e;
 	ssize_t len;
@@ -461,7 +461,7 @@ sickldmrs_msg_wait(int s, void *data, size_t len, int timeo)
 	}
 
 	/* paranoid check ... */
-	if (nbytes < len) {
+	if ((unsigned int) nbytes < len) {
 		warnx("%s: recv: incomplete frame", __func__);
 	}
 	return nbytes;
@@ -484,9 +484,10 @@ sickldmrs_receive_frame(struct sickldmrs_device *dev, int timeo)
 		return -1;
 	}
 	/* header values are sent as big endian */
-	if (be32toh(h.magic_word) != SLDMRS_MAGIC_WORD) {
-		warnx("%s: bad magic word %04x %04x", __func__,
-		    h.magic_word, be32toh(h.magic_word));
+	if (be32toh(h.magic_word) != SLDMRS_MAGIC_WORD)
+	{
+		if (dev->debug)
+			warnx("%s: bad magic word %04x %04x", __func__, h.magic_word, be32toh(h.magic_word));
 		return -1;
 	}
 	/* convert remaining header fields to host endianness */
@@ -495,8 +496,7 @@ sickldmrs_receive_frame(struct sickldmrs_device *dev, int timeo)
 	h.ntp_time = be64toh(h.ntp_time);
 
 	if (dev->debug)
-		printf("-- %s: frame 0x%04x len %d\n", __func__,
-	    h.data_type, h.msg_size);
+		printf("-- %s: frame 0x%04x len %d\n", __func__, h.data_type, h.msg_size);
 	switch (h.data_type) {
 	case SLDMRS_COMMAND:
 		warnx("%s: unexpected command frame", __func__);

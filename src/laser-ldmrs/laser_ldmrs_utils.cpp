@@ -133,7 +133,7 @@ carmen_laser_ldmrs_convert_laser_scan_to_partial_velodyne_message(carmen_laser_l
 
 
 void
-carmen_laser_ldmrs_copy_laser_scan_to_message(carmen_laser_ldmrs_message *message, vpLaserScan laserscan[4])
+carmen_laser_ldmrs_copy_laser_scan_to_message_old(carmen_laser_ldmrs_message *message, vpLaserScan laserscan[4])
 {
 	message->scan_number = laserscan[0].getMeasurementId();
 	message->scan_start_time = laserscan[0].getStartTimestamp();
@@ -203,6 +203,81 @@ carmen_laser_ldmrs_copy_laser_scan_to_message(carmen_laser_ldmrs_message *messag
 		message->arraypoints[i + sizeLayer1 + sizeLayer2 + sizeLayer3].flags = pointsInLayer4[i].getFlags();
 	}
 }
+
+
+//void
+//carmen_laser_ldmrs_copy_laser_scan_to_message(carmen_laser_ldmrs_message *message, struct sickldmrs_scan *scan laserscan)
+//{
+//	/*
+//	message->scan_number = laserscan[0].getMeasurementId();
+//	message->scan_start_time = laserscan[0].getStartTimestamp();
+//	message->scan_end_time = laserscan[0].getEndTimestamp();
+//	message->angle_ticks_per_rotation = laserscan[0].getNumSteps();
+//	message->start_angle = laserscan[0].getStartAngle();
+//	message->end_angle = laserscan[0].getStopAngle();
+//
+//	if (laserscan[0].getNumPoints() == 0)
+//		return;
+//
+//	int num_of_points = laserscan[0].getNumPoints();
+//
+//	std::vector<vpScanPoint> pointsInLayer1 = laserscan[0].getScanPoints();
+//	std::vector<vpScanPoint> pointsInLayer2 = laserscan[1].getScanPoints();
+//	std::vector<vpScanPoint> pointsInLayer3 = laserscan[2].getScanPoints();
+//	std::vector<vpScanPoint> pointsInLayer4 = laserscan[3].getScanPoints();
+//
+//	int sizeLayer1 = pointsInLayer1.size();
+//	int sizeLayer2 = pointsInLayer2.size();
+//	int sizeLayer3 = pointsInLayer3.size();
+//	int sizeLayer4 = pointsInLayer4.size();
+//
+//	if (num_of_points > (sizeLayer1 + sizeLayer2 + sizeLayer3 + sizeLayer4))
+//	{
+//		num_of_points = sizeLayer1 + sizeLayer2 + sizeLayer3 + sizeLayer4;
+//	}
+//
+//	if (message->scan_points != num_of_points)
+//	{
+//		message->scan_points = num_of_points;
+//		message->arraypoints = (carmen_laser_ldmrs_point *) realloc(message->arraypoints, message->scan_points * sizeof(carmen_laser_ldmrs_point));
+//		carmen_test_alloc(message->arraypoints);
+//	}
+//
+//	int i;
+//	for (i = 0; i < sizeLayer1; i++)
+//	{
+//		message->arraypoints[i].horizontal_angle = pointsInLayer1[i].getHAngle();
+//		message->arraypoints[i].vertical_angle = pointsInLayer1[i].getVAngle();
+//		message->arraypoints[i].radial_distance = pointsInLayer1[i].getRadialDist();
+//		message->arraypoints[i].flags = pointsInLayer1[i].getFlags();
+//	}
+//
+//	for (i = 0; i < sizeLayer2; i++)
+//	{
+//		message->arraypoints[i + sizeLayer1].horizontal_angle = pointsInLayer2[i].getHAngle();
+//		message->arraypoints[i + sizeLayer1].vertical_angle = pointsInLayer2[i].getVAngle();
+//		message->arraypoints[i + sizeLayer1].radial_distance = pointsInLayer2[i].getRadialDist();
+//		message->arraypoints[i + sizeLayer1].flags = pointsInLayer2[i].getFlags();
+//	}
+//
+//	for (i = 0; i < sizeLayer3; i++)
+//	{
+//		message->arraypoints[i + sizeLayer1 + sizeLayer2].horizontal_angle = pointsInLayer3[i].getHAngle();
+//		message->arraypoints[i + sizeLayer1 + sizeLayer2].vertical_angle = pointsInLayer3[i].getVAngle();
+//		message->arraypoints[i + sizeLayer1 + sizeLayer2].radial_distance = pointsInLayer3[i].getRadialDist();
+//		message->arraypoints[i + sizeLayer1 + sizeLayer2].flags = pointsInLayer3[i].getFlags();
+//
+//	}
+//
+//	for (i = 0; i < sizeLayer4; i++)
+//	{
+//		message->arraypoints[i + sizeLayer1 + sizeLayer2 + sizeLayer3].horizontal_angle = pointsInLayer4[i].getHAngle();
+//		message->arraypoints[i + sizeLayer1 + sizeLayer2 + sizeLayer3].vertical_angle = pointsInLayer4[i].getVAngle();
+//		message->arraypoints[i + sizeLayer1 + sizeLayer2 + sizeLayer3].radial_distance = pointsInLayer4[i].getRadialDist();
+//		message->arraypoints[i + sizeLayer1 + sizeLayer2 + sizeLayer3].flags = pointsInLayer4[i].getFlags();
+//	}
+//	*/
+//}
 
 
 void

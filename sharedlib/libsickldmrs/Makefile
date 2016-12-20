@@ -8,14 +8,16 @@ LINK = g++
 LFLAGS += -lrt
 IFLAGS += -Iinclude
 
-SOURCES = src/commands.c src/print.c src/sickldmrs.c test/sickldmrstest.c
-TARGETS = sickldmrstest libsickldmrs.a 
+SOURCES = src/commands.c src/print.c src/sickldmrs.c test/sickldmrstest.c test/sickldmrstest_new.c
+TARGETS = sickldmrstest sickldmrstest_new libsickldmrs.a 
 
 ifndef NO_PYTHON
 TARGETS += libsickldmrs.so.1
 endif
 
 sickldmrstest: test/sickldmrstest.o libsickldmrs.a
+
+sickldmrstest_new: test/sickldmrstest_new.o libsickldmrs.a
 
 libsickldmrs.a: src/commands.o src/print.o src/sickldmrs.o
 
