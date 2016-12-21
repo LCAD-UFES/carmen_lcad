@@ -133,7 +133,7 @@ carmen_laser_ldmrs_convert_laser_scan_to_partial_velodyne_message(carmen_laser_l
 
 
 void
-carmen_laser_ldmrs_copy_laser_scan_to_message_old(carmen_laser_ldmrs_message *message, vpLaserScan laserscan[4])
+carmen_laser_ldmrs_copy_laser_scan_to_message(carmen_laser_ldmrs_message *message, vpLaserScan laserscan[4])
 {
 	message->scan_number = laserscan[0].getMeasurementId();
 	message->scan_start_time = laserscan[0].getStartTimestamp();
@@ -206,19 +206,22 @@ carmen_laser_ldmrs_copy_laser_scan_to_message_old(carmen_laser_ldmrs_message *me
 
 
 void
-carmen_laser_ldmrs_copy_laser_scan_to_message(carmen_laser_ldmrs_message *message, struct sickldmrs_scan *scan)
+carmen_laser_ldmrs_new_copy_laser_scan_to_message(carmen_laser_ldmrs_new_message *message, struct sickldmrs_scan *scan)
 {
 	message->scan_number = scan->scan_number;
-	message->scan_start_time = scan->scan_start_time.tv_nsec/1e9 + scan->scan_start_time.tv_sec;
-	message->scan_end_time = scan->scan_end_time.tv_nsec/1e9 + scan->scan_end_time.tv_sec;
+	message->scanner_status = scan->scanner_status;
+	message->sync_phase_offset = scan->sync_phase_offset;
+	message->scan_start_time = (double) scan->scan_start_time.tv_nsec / 1000000000.0 + (double) scan->scan_start_time.tv_sec;
+	message->scan_end_time = (double) scan->scan_end_time.tv_nsec / 1000000000.0 + (double) scan->scan_end_time.tv_sec;
 	message->angle_ticks_per_rotation = scan->angle_ticks_per_rotation;
 	message->start_angle = scan->start_angle;
 	message->end_angle = scan->end_angle;
+	message->flags = scan->flags;
 
 	if (message->scan_points != scan->scan_points)
 	{
 		message->scan_points = scan->scan_points;
-		message->arraypoints = (carmen_laser_ldmrs_point *) realloc(message->arraypoints, message->scan_points * sizeof(carmen_laser_ldmrs_point));
+		message->arraypoints = (carmen_laser_ldmrs_new_point *) realloc(message->arraypoints, message->scan_points * sizeof(carmen_laser_ldmrs_new_point));
 		carmen_test_alloc(message->arraypoints);
 	}
 
@@ -227,7 +230,8 @@ carmen_laser_ldmrs_copy_laser_scan_to_message(carmen_laser_ldmrs_message *messag
 		message->arraypoints[i].horizontal_angle = scan->points[i].horizontal_angle;
 		message->arraypoints[i].radial_distance = scan->points[i].radial_distance;
 		message->arraypoints[i].flags = scan->points[i].flags;
-
+		message->arraypoints[i].echo = scan->points[i].echo;
+		message->arraypoints[i].layer = scan->points[i].layer;
 		switch (scan->points[i].layer)
 		{
 			case 0:
@@ -243,7 +247,6 @@ carmen_laser_ldmrs_copy_laser_scan_to_message(carmen_laser_ldmrs_message *messag
 				message->arraypoints[i].vertical_angle = 0.020944;
 				break;
 		}
-
 	}
 }
 

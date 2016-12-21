@@ -467,6 +467,49 @@ char *carmen_string_to_laser_ldmrs_message(char *string,
 	return current_pos;
 }
 
+char *carmen_string_to_laser_ldmrs_new_message(char *string,
+		carmen_laser_ldmrs_new_message *laser)
+{
+	char *current_pos = string;
+	int i, num_readings;
+
+	if (strncmp(current_pos, "LASER_LDMRS_NEW", 11) == 0)
+		current_pos += 15;
+
+	laser->scan_number = CLF_READ_INT(&current_pos);
+	laser->scanner_status = CLF_READ_INT(&current_pos);
+	laser->sync_phase_offset = CLF_READ_INT(&current_pos);
+	laser->scan_start_time = CLF_READ_DOUBLE(&current_pos);
+	laser->scan_end_time = CLF_READ_DOUBLE(&current_pos);
+	laser->angle_ticks_per_rotation = CLF_READ_INT(&current_pos);
+	laser->start_angle = CLF_READ_DOUBLE(&current_pos);
+	laser->end_angle = CLF_READ_DOUBLE(&current_pos);
+	num_readings = CLF_READ_INT(&current_pos);
+	laser->flags = CLF_READ_INT(&current_pos);
+
+	if (laser->scan_points != num_readings)
+	{
+		laser->scan_points = num_readings;
+		laser->arraypoints = (carmen_laser_ldmrs_new_point *)realloc(laser->arraypoints, laser->scan_points * sizeof(carmen_laser_ldmrs_new_point));
+		carmen_test_alloc(laser->arraypoints);
+	}
+
+	for (i = 0; i < laser->scan_points; i++)
+	{
+	    laser->arraypoints[i].horizontal_angle = CLF_READ_DOUBLE(&current_pos);
+	    laser->arraypoints[i].vertical_angle = CLF_READ_DOUBLE(&current_pos);
+	    laser->arraypoints[i].radial_distance = CLF_READ_DOUBLE(&current_pos);
+	    laser->arraypoints[i].layer = CLF_READ_INT(&current_pos);
+	    laser->arraypoints[i].echo = CLF_READ_INT(&current_pos);
+	    laser->arraypoints[i].flags = CLF_READ_INT(&current_pos);
+	}
+
+	laser->timestamp = CLF_READ_DOUBLE(&current_pos);
+	copy_host_string(&laser->host, &current_pos);
+
+	return current_pos;
+}
+
 char *carmen_string_to_laser_ldmrs_objects_message(char *string,
 		carmen_laser_ldmrs_objects_message *laserObjects)
 {

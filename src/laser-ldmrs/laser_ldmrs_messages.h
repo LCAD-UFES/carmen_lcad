@@ -15,6 +15,36 @@ http://www.cs.cmu.edu/~ipc/
 extern "C" {
 #endif
 
+
+typedef struct {
+	float horizontal_angle;
+	float vertical_angle;
+	float radial_distance;
+	uint8_t layer;
+	uint8_t echo;
+	uint8_t flags;
+} carmen_laser_ldmrs_new_point;
+
+typedef struct {
+	uint16_t scan_number;
+	uint16_t scanner_status;
+	uint16_t sync_phase_offset;
+	double scan_start_time;
+	double scan_end_time;
+	uint16_t angle_ticks_per_rotation;
+	float start_angle;
+	float end_angle;
+	uint16_t scan_points;
+	uint16_t flags;
+	carmen_laser_ldmrs_new_point *arraypoints;
+	double timestamp;
+	char *host;
+} carmen_laser_ldmrs_new_message;
+
+#define      CARMEN_LASER_LDMRS_NEW_NAME       "carmen_laser_ldmrs_new"
+#define      CARMEN_LASER_LDMRS_NEW_FMT        "{short,short,short,double,double,short,float,float,short,short,<{float,float,float,ubyte,ubyte,ubyte}:9>,double,string}"
+
+
 typedef struct {
 	double horizontal_angle;
 	double vertical_angle;
@@ -32,9 +62,13 @@ typedef struct {
 	double end_angle;
 	uint16_t scan_points;
 	carmen_laser_ldmrs_point *arraypoints;
-	double timestamp; 		/* !!! mandatory !!! */
-	char *host; 			/* !!! mandatory !!! */
+	double timestamp;
+	char *host;
 } carmen_laser_ldmrs_message;
+
+#define      CARMEN_LASER_LDMRS_NAME       "carmen_laser_ldmrs"
+#define      CARMEN_LASER_LDMRS_FMT        "{short,double,double,short,double,double,short,<{double,double,double,short}:7>,double,string}"
+
 
 typedef struct {
 	unsigned short id;
@@ -53,6 +87,9 @@ typedef struct {
 	double timestamp;
 	char *host;
 } carmen_laser_ldmrs_objects_message;
+
+#define		 CARMEN_LASER_LDMRS_OBJECTS_NAME "carmen_laser_ldmrs_objects"
+#define		 CARMEN_LASER_LDMRS_OBJECTS_FMT  "{short,<{short,double,double,double,double,double,double,short}:1>,double,string}"
 
 
 typedef struct {
@@ -90,18 +127,7 @@ typedef struct {
 	char *host;
 } carmen_laser_ldmrs_objects_data_message;
 
-/* The message's name, will be used for message registration in IPC Central module */
-#define      CARMEN_LASER_LDMRS_NAME       "carmen_laser_ldmrs"
-
-/* The message's format, will be used for message data marshalling (serialization) for network socket transport. */
-#define      CARMEN_LASER_LDMRS_FMT        "{short,double,double,short,double,double,short,<{double,double,double,short}:7>,double,string}"
-
-#define		 CARMEN_LASER_LDMRS_OBJECTS_NAME "carmen_laser_ldmrs_objects"
-
-#define		 CARMEN_LASER_LDMRS_OBJECTS_FMT  "{short,<{short,double,double,double,double,double,double,short}:1>,double,string}"
-
 #define		 CARMEN_LASER_LDMRS_OBJECTS_DATA_NAME "carmen_laser_ldmrs_objects_data"
-
 #define		 CARMEN_LASER_LDMRS_OBJECTS_DATA_FMT  "{short,<{short,short,short,double,double,double,double,double,double,double,double,double,double,double,double,double,double,double,double,double,double,double,double,double,short}:1>,double,string}"
 
 

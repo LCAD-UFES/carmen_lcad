@@ -80,7 +80,7 @@ carmen_laser_ldmrs_read_parameters(int argc, char **argv)
 int
 main(int argc, char **argv)
 {
-	static carmen_laser_ldmrs_message message;
+	static carmen_laser_ldmrs_new_message message;
 	struct sickldmrs_device *dev;
 	char *address, *port;
 	int rc;
@@ -113,7 +113,7 @@ main(int argc, char **argv)
 	signal(SIGINT, shutdown_module);
 	signal(SIGTERM, shutdown_module);
 	carmen_laser_ldmrs_read_parameters(argc, argv);
-	carmen_laser_define_ldmrs_messages();
+	carmen_laser_define_ldmrs_new_messages();
 
 	while (!done)
 	{
@@ -122,15 +122,12 @@ main(int argc, char **argv)
 			continue;
 		if (dev->scan != NULL && dev->scan->scan_number != last_frame)
 		{
-//			printf("passei\n");
-//			sickldmrs_print_scan2(dev->scan);
-//			last_frame = dev->scan->scan_number;
+			last_frame = dev->scan->scan_number;
 
 			message.timestamp = carmen_get_time();
-			carmen_laser_ldmrs_copy_laser_scan_to_message(&message, dev->scan);
+			carmen_laser_ldmrs_new_copy_laser_scan_to_message(&message, dev->scan);
 			if (dev->scan->scan_points > 0)
-				carmen_laser_publish_ldmrs(&message);
-			break;
+				carmen_laser_publish_ldmrs_new(&message);
 		}
 	}
 	sickldmrs_end(dev);
