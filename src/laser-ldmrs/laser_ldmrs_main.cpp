@@ -140,9 +140,7 @@ main(int argc, char **argv)
 		if (dev->scan != NULL && dev->scan->scan_number != last_frame)
 		{
 			last_frame = dev->scan->scan_number;
-
 			message.timestamp = carmen_get_time();
-			printf("%lf\n", message.timestamp);
 			carmen_laser_ldmrs_new_copy_laser_scan_to_message(&message, dev->scan);
 			if (dev->scan->scan_points > 0)
 				carmen_laser_publish_ldmrs_new(&message);
