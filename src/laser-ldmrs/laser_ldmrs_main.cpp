@@ -77,37 +77,54 @@ carmen_laser_ldmrs_read_parameters(int argc, char **argv)
 }
 
 
+struct sickldmrs_device *
+setup_ldmrs_laser(char *address, char *port)
+{
+	int rc;
+	struct sickldmrs_device *dev;
+
+	dev = sickldmrs_init(address, port, true);
+
+	if (dev == NULL)
+	{
+		printf("Could not initialize the Sick LDMRS Lidar\n");
+		exit(2);
+	}
+
+	dev->debug = 1;
+	if ((rc = sickldmrs_get_status(dev, -1)) < 0)
+		errx(2, "sickldmrs_get_status: %s\n", strerror(-rc));
+
+	if ((rc = sickldmrs_config_output(dev, 0x00ee, -1)) < 0)
+		errx(2, "sickldmrs_config_output: %s\n", strerror(rc));
+
+	/* scan frequency -> 25 Hz */
+	if ((rc = sickldmrs_set_parameter(dev, SLDMRS_PARAM_SCAN_FREQUENCY, 6400, -1)) < 0)
+		errx(2, "sickldmrs_set_parameter: %s", strerror(rc));
+
+	if ((rc = sickldmrs_get_parameter(dev, SLDMRS_PARAM_SCAN_FREQUENCY, -1)) < 0)
+		errx(2, "sickldmrs_get_parameter: %s", strerror(rc));
+
+	usleep(40000);
+	dev->priv->done = 1;
+	dev->debug = 0;
+
+	return (dev);
+}
+
+
 int
 main(int argc, char **argv)
 {
 	static carmen_laser_ldmrs_new_message message;
 	struct sickldmrs_device *dev;
 	char *address, *port;
-	int rc;
 
 	address = argv[1];
 	port = argv[2];
 
-	// setup laser
-	dev = sickldmrs_init(address, port, true);
-	if (dev == NULL)
-		exit(2);
-	dev->debug = 1;
-	if ((rc = sickldmrs_get_status(dev, -1)) < 0)
-		errx(2, "sickldmrs_get_status: %s\n", strerror(-rc));
-	if ((rc = sickldmrs_config_output(dev, 0x00ee, -1)) < 0)
-		errx(2, "sickldmrs_config_output: %s\n", strerror(rc));
-	/* scan frequency -> 25 Hz */
-	if ((rc = sickldmrs_set_parameter(dev, SLDMRS_PARAM_SCAN_FREQUENCY, 6400, -1)) < 0)
-		errx(2, "sickldmrs_set_parameter: %s", strerror(rc));
-	if ((rc = sickldmrs_get_parameter(dev, SLDMRS_PARAM_SCAN_FREQUENCY, -1)) < 0)
-		errx(2, "sickldmrs_get_parameter: %s", strerror(rc));
+	dev = setup_ldmrs_laser(address, port);
 
-	usleep(400000);
-	dev->priv->done = 1;
-	dev->debug = 0;
-
-	// setup carmen_lcad
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 	signal(SIGINT, shutdown_module);
@@ -125,6 +142,7 @@ main(int argc, char **argv)
 			last_frame = dev->scan->scan_number;
 
 			message.timestamp = carmen_get_time();
+			printf("%lf\n", message.timestamp);
 			carmen_laser_ldmrs_new_copy_laser_scan_to_message(&message, dev->scan);
 			if (dev->scan->scan_points > 0)
 				carmen_laser_publish_ldmrs_new(&message);
