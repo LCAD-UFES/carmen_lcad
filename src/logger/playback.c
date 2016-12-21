@@ -59,6 +59,7 @@ carmen_simulator_ackerman_truepos_message truepos_ackerman;
 carmen_robot_ackerman_laser_message laser_ackerman1, laser_ackerman2, laser_ackerman3, laser_ackerman4, laser_ackerman5;
 carmen_laser_laser_message rawlaser1, rawlaser2, rawlaser3, rawlaser4, rawlaser5;
 carmen_laser_ldmrs_message laser_ldmrs;
+carmen_laser_ldmrs_new_message laser_ldmrs_new;
 carmen_laser_ldmrs_objects_message laser_ldmrs_objects;
 carmen_laser_ldmrs_objects_data_message laser_ldmrs_objects_data;
 
@@ -303,6 +304,7 @@ typedef struct {
 logger_callback_t logger_callbacks[] =
 	{
 		{"LASER_LDMRS", CARMEN_LASER_LDMRS_NAME, (converter_func) carmen_string_to_laser_ldmrs_message, &laser_ldmrs, 0},
+		{"LASER_LDMRS_NEW", CARMEN_LASER_LDMRS_NEW_NAME, (converter_func) carmen_string_to_laser_ldmrs_new_message, &laser_ldmrs_new, 0},
 		{"LASER_LDMRS_OBJECTS", CARMEN_LASER_LDMRS_OBJECTS_NAME, (converter_func) carmen_string_to_laser_ldmrs_objects_message, &laser_ldmrs_objects, 0},
 		{"LASER_LDMRS_OBJECTS_DATA", CARMEN_LASER_LDMRS_OBJECTS_DATA_NAME, (converter_func) carmen_string_to_laser_ldmrs_objects_data_message, &laser_ldmrs_objects_data, 0},
 		{"RAWLASER1", CARMEN_LASER_FRONTLASER_NAME, (converter_func) carmen_string_to_laser_laser_message, &rawlaser1, 0},
@@ -635,6 +637,7 @@ int main(int argc, char **argv)
 	memset(&laser_ackerman4, 0, sizeof(laser_ackerman4));
 	memset(&laser_ackerman5, 0, sizeof(laser_ackerman5));
 	memset(&laser_ldmrs, 0, sizeof(laser_ldmrs));
+	memset(&laser_ldmrs_new, 0, sizeof(laser_ldmrs_new));
 	memset(&laser_ldmrs_objects, 0, sizeof(laser_ldmrs_objects));
 	memset(&laser_ldmrs_objects_data, 0, sizeof(laser_ldmrs_objects_data));
 	memset(&rawlaser1, 0, sizeof(rawlaser1));

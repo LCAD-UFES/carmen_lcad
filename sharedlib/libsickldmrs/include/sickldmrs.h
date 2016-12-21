@@ -216,6 +216,7 @@ extern int sickldmrs_settime(struct sickldmrs_device *,
 extern int sickldmrs_config_output(struct sickldmrs_device *, uint16_t, int);
 
 extern void sickldmrs_print_scan(struct sickldmrs_scan *);
+extern void sickldmrs_print_scan2(struct sickldmrs_scan *);
 
 #ifdef __cplusplus
 }

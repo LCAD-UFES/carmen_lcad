@@ -24,7 +24,7 @@ void draw_all(carmen_fused_odometry_message* odometry_message, int odometrySize,
 
 void reset_camera();
 void draw_stereo_point_cloud(point_cloud *stereo_point_cloud, int stereo_point_cloud_size);
-void draw_laser_points(point_cloud *laser_points, point_cloud *laser_points_car, int laser_size);
+void draw_laser_points(point_cloud *laser_points, int laser_size);
 void draw_laser_points_vbo(point_cloud *laser_points, int laser_size);
 void draw_laser_mesh(point_cloud *laser_readings, int laser_size);
 void draw_moving_objects_point_clouds (point_cloud *moving_objects_point_clouds, int cloud_size, carmen_vector_3D_t offset);

@@ -229,6 +229,13 @@ void laser_ldmrs_handler(carmen_laser_ldmrs_message *laser)
 				    carmen_get_time() - logger_starttime);
 }
 
+void laser_ldmrs_new_handler(carmen_laser_ldmrs_new_message *laser)
+{
+  //fprintf(stderr, "1");
+  carmen_logwrite_write_laser_ldmrs_new(laser, 1, outfile,
+				    carmen_get_time() - logger_starttime);
+}
+
 void laser_ldmrs_objects_handler(carmen_laser_ldmrs_objects_message *laser)
 {
   //fprintf(stderr, "1");
@@ -582,6 +589,9 @@ int main(int argc, char **argv)
 					  CARMEN_SUBSCRIBE_ALL);
     carmen_laser_subscribe_ldmrs_message(NULL, (carmen_handler_t)
 					  laser_ldmrs_handler,
+					  CARMEN_SUBSCRIBE_ALL);
+    carmen_laser_subscribe_ldmrs_new_message(NULL, (carmen_handler_t)
+					  laser_ldmrs_new_handler,
 					  CARMEN_SUBSCRIBE_ALL);
     carmen_laser_subscribe_ldmrs_objects_message(NULL, (carmen_handler_t)
 					  laser_ldmrs_objects_handler,

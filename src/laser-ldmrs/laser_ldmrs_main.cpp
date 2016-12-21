@@ -2,22 +2,29 @@
 	---   Skeleton Module Application ---
  **********************************************************/
 #include <err.h>
+#include <errno.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <stdint.h>
+#include <sickldmrs-private.h>
 #include <sickldmrs.h>
-#include <vpLaserScan.h>
+
+#include <sickldmrs.h>
 #include <carmen/carmen.h>
 #include <carmen/laser_ldmrs_interface.h>
-#include <carmen/base_ackerman_interface.h>
 #include <carmen/stereo_velodyne_interface.h>
 
 #include "laser_ldmrs_utils.h"
 
+volatile int done = 0;
+static int last_frame = -1;
+
 static char *laser_ldmrs_port = 0;
 static char *laser_ldmrs_address = 0;
 static double axle_distance = 0.0;
-
-static carmen_base_ackerman_odometry_message odometry_message;
-vpSickLDMRS laser;
-
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -27,18 +34,6 @@ vpSickLDMRS laser;
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-
-
-void
-publish_heartbeats(void *clientData,
-		   unsigned long currentTime,
-		   unsigned long scheduledTime)
-{
-	(void)clientData;
-	(void)currentTime;
-	(void)scheduledTime;
-	carmen_publish_heartbeat((char *) "laser_ldmrs");
-}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -48,35 +43,17 @@ publish_heartbeats(void *clientData,
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-
-static void
-base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *odometry_message)
-{
-
-	short velocity_cms = (short) (odometry_message->v * 100.0);
-	short phi_mrad = (short) (odometry_message->phi * 1000);
-	short yaw_rate = (short) (odometry_message->v * tan(odometry_message->phi) / axle_distance) * 10000;
-
-	laser.sendEgoMotionData(velocity_cms, phi_mrad, yaw_rate);
-}
-
-
 static void
 shutdown_module(int signo)
 {
-	if (signo == SIGINT)
+	if ((signo == SIGINT) || (signo == SIGTERM))
 	{
 		carmen_ipc_disconnect();
 		printf("laser_ldmrs: disconnected.\n");
-		exit(0);
+		done++;
 	}
-
-	if (signo == SIGTERM)
-	{
-		carmen_ipc_disconnect();
-		printf("laser_ldmrs: disconnected.\n");
-		exit(0);
-	}
+	usleep(400000);
+	exit(0);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -100,161 +77,76 @@ carmen_laser_ldmrs_read_parameters(int argc, char **argv)
 }
 
 
-/*********************************************************
-		   --- Build messages ---
- **********************************************************/
-
-
-void
-carmen_laser_ldmrs_objects_build_message(vpLaserObjectData *objectData, carmen_laser_ldmrs_objects_message *message)
+struct sickldmrs_device *
+setup_ldmrs_laser(char *address, char *port)
 {
+	int rc;
+	struct sickldmrs_device *dev;
 
-	std::vector<vpObject> objectsList = objectData->getObjectList();
+	dev = sickldmrs_init(address, port, true);
 
-	if(objectData->getNumObjects() == 0) {
-		return;
-	}
-
-	if(message->num_objects != objectData->getNumObjects()) {
-		message->num_objects = objectData->getNumObjects();
-		message->objects_list = (carmen_laser_ldmrs_object *) realloc(message->objects_list, message->num_objects * sizeof(carmen_laser_ldmrs_object));
-		carmen_test_alloc(message->objects_list);
-	}
-
-	for(int i = 0; i < message->num_objects; i++)
+	if (dev == NULL)
 	{
-
-		message->objects_list[i].id = objectsList[i].getObjectId();
-		message->objects_list[i].x = 0.01 * (objectsList[i].getObjectBoxCenter().x_pos);
-		message->objects_list[i].y = 0.01 * (objectsList[i].getObjectBoxCenter().y_pos);
-
-		int xv = objectsList[i].getAbsoluteVelocity().x_pos;
-		int yv = objectsList[i].getAbsoluteVelocity().y_pos;
-		double velocity = 0.01 * sqrt(xv*xv + yv*yv);
-		message->objects_list[i].velocity = velocity;
-		message->objects_list[i].orientation = (((double) objectsList[i].getObjectBoxOrientation())/32.0)*M_PI/180;
-		message->objects_list[i].lenght = 0.01 * objectsList[i].getObjectBoxSize().x_size;
-		message->objects_list[i].width = 0.01 * objectsList[i].getObjectBoxSize().y_size;
-
-		message->objects_list[i].classId = objectsList[i].getClassification();
-	}
-}
-
-
-static void
-carmen_laser_ldmrs_objects_data_build_message(vpLaserObjectData *objectData, carmen_laser_ldmrs_objects_data_message *message)
-{
-
-	std::vector<vpObject> objectsList = objectData->getObjectList();
-
-	if(objectData->getNumObjects() == 0) {
-		return;
+		printf("Could not initialize the Sick LDMRS Lidar\n");
+		exit(2);
 	}
 
-	if(message->num_objects != objectData->getNumObjects()) {
-		message->num_objects = objectData->getNumObjects();
-		message->objects_data_list = (carmen_laser_ldmrs_object_data *) realloc(message->objects_data_list, message->num_objects * sizeof(carmen_laser_ldmrs_object_data));
-		carmen_test_alloc(message->objects_data_list);
-	}
+	dev->debug = 1;
+	if ((rc = sickldmrs_get_status(dev, -1)) < 0)
+		errx(2, "sickldmrs_get_status: %s\n", strerror(-rc));
 
-	for(int i = 0; i < message->num_objects; i++)
-	{
-		message->objects_data_list[i].object_id = objectsList[i].getObjectId();
-		message->objects_data_list[i].object_age = objectsList[i].getObjectAge();
-		message->objects_data_list[i].object_prediction_age = objectsList[i].getObjectPredictionAge();
-		message->objects_data_list[i].reference_point_x = 0.01 * (double) objectsList[i].getReferencePoint().x_pos;
-		message->objects_data_list[i].reference_point_y = 0.01 * (double) objectsList[i].getReferencePoint().y_pos;;
-		message->objects_data_list[i].reference_point_sigma_x = 0.01 * (double) objectsList[i].getReferencePointSigma().x_pos;
-		message->objects_data_list[i].reference_point_sigma_y = 0.01 * (double) objectsList[i].getReferencePointSigma().y_pos;;
-		message->objects_data_list[i].closest_point_x = 0.01 * (double) objectsList[i].getClosestPoint().x_pos;
-		message->objects_data_list[i].closest_point_y = 0.01 * (double) objectsList[i].getClosestPoint().y_pos;;
-		message->objects_data_list[i].bounding_box_center_x = 0.01 * (double) objectsList[i].getBoundingBoxCenter().x_pos;
-		message->objects_data_list[i].bounding_box_center_y = 0.01 * (double) objectsList[i].getBoundingBoxCenter().y_pos;
-		message->objects_data_list[i].bounding_box_length = 0.01 * (double) objectsList[i].getBoundingBoxSize().y_size;
-		message->objects_data_list[i].bounding_box_width = 0.01 * (double) objectsList[i].getBoundingBoxSize().x_size;
-		message->objects_data_list[i].object_box_center_x = 0.01 * (double) objectsList[i].getObjectBoxCenter().x_pos;
-		message->objects_data_list[i].object_box_center_y = 0.01 * (double) objectsList[i].getObjectBoxCenter().y_pos;
-		message->objects_data_list[i].object_box_lenght = 0.01 * (double) objectsList[i].getObjectBoxSize().y_size;
-		message->objects_data_list[i].object_box_width = 0.01 * (double) objectsList[i].getObjectBoxSize().x_size;
-		message->objects_data_list[i].object_box_orientation = carmen_normalize_theta(((double) objectsList[i].getObjectBoxOrientation()/32.0) * M_PI/180.0) ;
-		message->objects_data_list[i].abs_velocity_x = 0.01 * (double) objectsList[i].getAbsoluteVelocity().x_pos;
-		message->objects_data_list[i].abs_velocity_y = 0.01 * (double) objectsList[i].getAbsoluteVelocity().y_pos;
-		message->objects_data_list[i].abs_velocity_sigma_x = 0.01 * (double) objectsList[i].getAbsoluteVelocitySigma().x_size;
-		message->objects_data_list[i].abs_velocity_sigma_y = 0.01 * (double) objectsList[i].getAbsoluteVelocitySigma().y_size;
-		message->objects_data_list[i].relative_velocity_x = 0.01 * (double) objectsList[i].getRelativeVelocity().x_pos;
-		message->objects_data_list[i].relative_velocity_y = 0.01 * (double) objectsList[i].getRelativeVelocity().y_pos;
-		message->objects_data_list[i].class_id = objectsList[i].getClassification();
-	}
+	if ((rc = sickldmrs_config_output(dev, 0x00ee, -1)) < 0)
+		errx(2, "sickldmrs_config_output: %s\n", strerror(rc));
+
+	/* scan frequency -> 25 Hz */
+	if ((rc = sickldmrs_set_parameter(dev, SLDMRS_PARAM_SCAN_FREQUENCY, 6400, -1)) < 0)
+		errx(2, "sickldmrs_set_parameter: %s", strerror(rc));
+
+	if ((rc = sickldmrs_get_parameter(dev, SLDMRS_PARAM_SCAN_FREQUENCY, -1)) < 0)
+		errx(2, "sickldmrs_get_parameter: %s", strerror(rc));
+
+	usleep(40000);
+	dev->priv->done = 1;
+	dev->debug = 0;
+
+	return (dev);
 }
 
 
 int
 main(int argc, char **argv)
 {
-	static carmen_laser_ldmrs_message message;
-	static carmen_laser_ldmrs_objects_message objectsMessage;
-	static carmen_laser_ldmrs_objects_data_message objectsDataMessage;
-	unsigned short dataType;
+	static carmen_laser_ldmrs_new_message message;
+	struct sickldmrs_device *dev;
+	char *address, *port;
 
-	message.scan_points = 0;
+	address = argv[1];
+	port = argv[2];
 
-	// Connect to IPC Server
+	dev = setup_ldmrs_laser(address, port);
+
 	carmen_ipc_initialize(argc, argv);
-
-	// Check the param server version
 	carmen_param_check_version(argv[0]);
-
-	// Register shutdown cleaner handler
 	signal(SIGINT, shutdown_module);
 	signal(SIGTERM, shutdown_module);
-
-	// Read application specific parameters (Optional)
 	carmen_laser_ldmrs_read_parameters(argc, argv);
+	carmen_laser_define_ldmrs_new_messages();
 
-	// Define published messages by your module
-	carmen_laser_define_ldmrs_messages();
-
-	carmen_ipc_addPeriodicTimer(10, publish_heartbeats, NULL);
-
-	// setup laser
-	laser.setIpAddress(laser_ldmrs_address);
-	laser.setPort(atoi(laser_ldmrs_port));
-	laser.setup();
-
-	memset(&odometry_message, 0, sizeof(carmen_base_ackerman_odometry_message));
-	// Subscribe to odometry messages
-	carmen_base_ackerman_subscribe_odometry_message(&odometry_message,
-	    		(carmen_handler_t) base_ackerman_odometry_message_handler, CARMEN_SUBSCRIBE_LATEST);
-
-	for ( ; ; )
+	while (!done)
 	{
-		vpLaserObjectData objectData;
-		vpLaserScan laserscan[4];
-
-		dataType = laser.readData(laserscan, &objectData);
-
-		switch (dataType)
+		int rv = sickldmrs_receive_frame(dev, -1);
+		if (rv != 0 && errno == ETIMEDOUT)
+			continue;
+		if (dev->scan != NULL && dev->scan->scan_number != last_frame)
 		{
-			case vpSickLDMRS::MeasuredData:
-				message.timestamp = carmen_get_time();
-				carmen_laser_ldmrs_copy_laser_scan_to_message(&message, laserscan);
-				if (laserscan[0].getNumPoints() > 0)
-					carmen_laser_publish_ldmrs(&message);
-				break;
-			case vpSickLDMRS::ObjectData:
-				objectsDataMessage.timestamp = carmen_get_time();
-				carmen_laser_ldmrs_objects_data_build_message(&objectData, &objectsDataMessage);
-				//carmen_laser_ldmrs_objects_build_message(&objectData, &objectsMessage);
-				if (objectData.getNumObjects() > 0)
-					carmen_laser_publish_ldmrs_objects_data(&objectsDataMessage);
-				break;
-			case 0:
-				carmen_ipc_sleep((1.0 / 12.5) / 10.0);
-			default:
-				break;
+			last_frame = dev->scan->scan_number;
+			message.timestamp = carmen_get_time();
+			carmen_laser_ldmrs_new_copy_laser_scan_to_message(&message, dev->scan);
+			if (dev->scan->scan_points > 0)
+				carmen_laser_publish_ldmrs_new(&message);
 		}
-
 	}
-
+	sickldmrs_end(dev);
+	printf("bye\n");
 	return 0;
 }

@@ -27,13 +27,13 @@ volatile int done = 0;
 static int last_frame = -1;
 
 static void
-interrupt(int sig)
+interrupt(int sig __attribute__ ((unused)))
 {
 	done++;
 }
 
 int
-main(int argc, char *argv[])
+main(int argc __attribute__ ((unused)), char *argv[])
 {
 	struct sickldmrs_device *dev;
 	char *address, *port;

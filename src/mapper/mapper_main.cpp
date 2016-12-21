@@ -277,6 +277,15 @@ laser_ldrms_message_handler(carmen_laser_ldmrs_message *laser)
 }
 
 
+static void
+laser_ldrms_new_message_handler(carmen_laser_ldmrs_new_message *laser)
+{
+	carmen_velodyne_partial_scan_message partial_scan_message = carmen_laser_ldmrs_new_convert_laser_scan_to_partial_velodyne_message(laser, laser->timestamp);
+	mapper_velodyne_partial_scan(1, &partial_scan_message);
+	free(partial_scan_message.partial_scan);
+}
+
+
 void
 velodyne_variable_scan_message_handler1(carmen_velodyne_variable_scan_message *message)
 {
@@ -1001,11 +1010,9 @@ subscribe_to_ipc_messages()
 
 	if (sensors_params[1].alive)
 	{
-//		carmen_stereo_velodyne_subscribe_scan_message(1, NULL,
-//				(carmen_handler_t)velodyne_variable_scan_message_handler1,
-//				CARMEN_SUBSCRIBE_LATEST);
-
 		carmen_laser_subscribe_ldmrs_message(NULL, (carmen_handler_t) laser_ldrms_message_handler,
+				CARMEN_SUBSCRIBE_LATEST);
+		carmen_laser_subscribe_ldmrs_new_message(NULL, (carmen_handler_t) laser_ldrms_new_message_handler,
 				CARMEN_SUBSCRIBE_LATEST);
 	}
 

@@ -1295,10 +1295,8 @@ draw_stereo_point_cloud (point_cloud *stereo_point_cloud, int stereo_point_cloud
 }
 
 void
-draw_laser_points (point_cloud *laser_points, point_cloud *laser_points_car, int laser_size)
+draw_laser_points(point_cloud *laser_points, int laser_size)
 {
-    laser_points_car = laser_points_car;
-
     glBegin (GL_POINTS);
 
     //glColor3d(0.0,0.0,1.0);

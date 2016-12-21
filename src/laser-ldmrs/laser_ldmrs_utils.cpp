@@ -132,6 +132,32 @@ carmen_laser_ldmrs_convert_laser_scan_to_partial_velodyne_message(carmen_laser_l
 }
 
 
+carmen_velodyne_partial_scan_message
+carmen_laser_ldmrs_new_convert_laser_scan_to_partial_velodyne_message(carmen_laser_ldmrs_new_message *msg, double laserscan_timestamp)
+{
+	carmen_velodyne_partial_scan_message velodyne_message;
+
+	double half_a_degree = carmen_degrees_to_radians(0.5);
+	int number_of_shots = (int) ceil((msg->start_angle - msg->end_angle) / half_a_degree);
+
+	velodyne_message.number_of_32_laser_shots = number_of_shots;
+	velodyne_message.partial_scan = (carmen_velodyne_32_laser_shot *) calloc (velodyne_message.number_of_32_laser_shots, sizeof(carmen_velodyne_32_laser_shot));
+	velodyne_message.timestamp = laserscan_timestamp;
+	velodyne_message.host = carmen_get_host();
+
+	for (int i = 0; i < msg->scan_points; i++)
+	{
+		int index = round((msg->arraypoints[i].horizontal_angle - msg->end_angle) / half_a_degree);
+		int layer = msg->arraypoints[i].layer;
+		velodyne_message.partial_scan[index].distance[layer] = (unsigned short) (round(msg->arraypoints[i].radial_distance * 500.0));
+		velodyne_message.partial_scan[index].intensity[layer] = 255;
+		velodyne_message.partial_scan[index].angle = -carmen_radians_to_degrees(msg->arraypoints[i].horizontal_angle);
+	}
+
+	return (velodyne_message);
+}
+
+
 void
 carmen_laser_ldmrs_copy_laser_scan_to_message(carmen_laser_ldmrs_message *message, vpLaserScan laserscan[4])
 {
@@ -201,6 +227,52 @@ carmen_laser_ldmrs_copy_laser_scan_to_message(carmen_laser_ldmrs_message *messag
 		message->arraypoints[i + sizeLayer1 + sizeLayer2 + sizeLayer3].vertical_angle = pointsInLayer4[i].getVAngle();
 		message->arraypoints[i + sizeLayer1 + sizeLayer2 + sizeLayer3].radial_distance = pointsInLayer4[i].getRadialDist();
 		message->arraypoints[i + sizeLayer1 + sizeLayer2 + sizeLayer3].flags = pointsInLayer4[i].getFlags();
+	}
+}
+
+
+void
+carmen_laser_ldmrs_new_copy_laser_scan_to_message(carmen_laser_ldmrs_new_message *message, struct sickldmrs_scan *scan)
+{
+	message->scan_number = scan->scan_number;
+	message->scanner_status = scan->scanner_status;
+	message->sync_phase_offset = scan->sync_phase_offset;
+	message->scan_start_time = (double) scan->scan_start_time.tv_nsec / 1000000000.0 + (double) scan->scan_start_time.tv_sec;
+	message->scan_end_time = (double) scan->scan_end_time.tv_nsec / 1000000000.0 + (double) scan->scan_end_time.tv_sec;
+	message->angle_ticks_per_rotation = scan->angle_ticks_per_rotation;
+	message->start_angle = scan->start_angle;
+	message->end_angle = scan->end_angle;
+	message->flags = scan->flags;
+
+	if (message->scan_points != scan->scan_points)
+	{
+		message->scan_points = scan->scan_points;
+		message->arraypoints = (carmen_laser_ldmrs_new_point *) realloc(message->arraypoints, message->scan_points * sizeof(carmen_laser_ldmrs_new_point));
+		carmen_test_alloc(message->arraypoints);
+	}
+
+	for (int i = 0; i < message->scan_points; i++)
+	{
+		message->arraypoints[i].horizontal_angle = scan->points[i].horizontal_angle;
+		message->arraypoints[i].radial_distance = scan->points[i].radial_distance;
+		message->arraypoints[i].flags = scan->points[i].flags;
+		message->arraypoints[i].echo = scan->points[i].echo;
+		message->arraypoints[i].layer = scan->points[i].layer;
+		switch (scan->points[i].layer)
+		{
+			case 0:
+				message->arraypoints[i].vertical_angle = -0.020944;
+				break;
+			case 1:
+				message->arraypoints[i].vertical_angle = -0.00698132;
+				break;
+			case 2:
+				message->arraypoints[i].vertical_angle = 0.00698132;
+				break;
+			case 3:
+				message->arraypoints[i].vertical_angle = 0.020944;
+				break;
+		}
 	}
 }
 
