@@ -17,7 +17,7 @@
 #include <carmen/laser_ldmrs_interface.h>
 #include <carmen/stereo_velodyne_interface.h>
 
-//#include "laser_ldmrs_utils.h"
+#include "laser_ldmrs_utils.h"
 
 volatile int done = 0;
 static int last_frame = -1;
@@ -25,8 +25,6 @@ static int last_frame = -1;
 static char *laser_ldmrs_port = 0;
 static char *laser_ldmrs_address = 0;
 static double axle_distance = 0.0;
-
-static carmen_base_ackerman_odometry_message odometry_message;
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -129,7 +127,7 @@ main(int argc, char **argv)
 //			last_frame = dev->scan->scan_number;
 
 			message.timestamp = carmen_get_time();
-//			carmen_laser_ldmrs_copy_laser_scan_to_message(&message, dev->scan);
+			carmen_laser_ldmrs_copy_laser_scan_to_message(&message, dev->scan);
 			if (dev->scan->scan_points > 0)
 				carmen_laser_publish_ldmrs(&message);
 			break;

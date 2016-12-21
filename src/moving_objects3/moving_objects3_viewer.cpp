@@ -70,11 +70,9 @@ draw_car_centralized()
 void
 draw_spheres()
 {
-	draw_circle(pow(2, NUM_SPHERES), 0, 0, 0, 0, 0);
-
 	for (int i = 0; i < NUM_SPHERES; i++)
 	{
-		draw_circle(pow(2, i + 1), 0, 0, 0, 0, 0);
+		draw_circle(10*(i+1), 0, 0, 0.6, 0.6, 0.6);
 	}
 }
 
@@ -188,8 +186,8 @@ draw_particles(carmen_moving_objects3_particles_message particles_message)
 void
 draw_velodyne_on_ground()
 {
-//	draw_spheres();
-	draw_circle(pow(2, NUM_SPHERES), 0, 0, 0, 0, 0);
+	draw_spheres();
+	draw_circle(60.0, 0, 0, 0, 0, 0);
 //	draw_velodyne_points(last_velodyne_on_ground_ranges, last_velodyne_on_ground_angles, last_velodyne_on_ground_intensities, velodyne_on_ground_message.num_rays);
 	draw_velodyne_points(current_velodyne_on_ground_ranges, current_velodyne_on_ground_angles, current_velodyne_on_ground_intensities, velodyne_on_ground_message.num_rays);
 	draw_particles(particles_message);

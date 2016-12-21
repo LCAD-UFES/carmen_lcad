@@ -1,7 +1,7 @@
 include $(CARMEN_HOME)/src/Makefile.conf
 
-MODULE_NAME = SICK LD-MRS Library
-MODULE_COMMENT = SICK LD-MRS Library
+MODULE_NAME = SICK LD-MRS Library 2
+MODULE_COMMENT = SICK LD-MRS Library Using Object Orientation
 
 LINK = g++
 
