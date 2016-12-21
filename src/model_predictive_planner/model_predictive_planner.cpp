@@ -921,7 +921,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 
 	if (goal_is_behide_car(localizer_pose, &goalPoseVector[0]))
 	{
-		printf("goal is behide the car\n");
+//		printf("goal is behide the car\n");
 		return;
 	}
 
