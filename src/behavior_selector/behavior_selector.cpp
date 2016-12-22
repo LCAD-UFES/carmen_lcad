@@ -132,12 +132,12 @@ copy_rddf_message(carmen_rddf_road_profile_message *rddf_msg)
 	}
 
 	last_rddf_message->timestamp = rddf_msg->timestamp;
-	for(int i = 0; i < carmen_rddf_num_poses_ahead; i++)
+	for (int i = 0; i < carmen_rddf_num_poses_ahead; i++)
 	{
 		last_rddf_message->poses[i] = rddf_msg->poses[i];
 		last_rddf_message->annotations[i] = rddf_msg->annotations[i];
 	}
-	for(int i = 0; i < last_rddf_message->number_of_poses_back; i++)
+	for (int i = 0; i < last_rddf_message->number_of_poses_back; i++)
 		last_rddf_message->poses_back[i] = rddf_msg->poses_back[i];
 }
 
@@ -510,10 +510,11 @@ get_last_rddf_message()
 	return last_rddf_message;
 }
 
+
 void
 behavior_selector_update_rddf(carmen_rddf_road_profile_message *rddf_msg, int rddf_num_poses_by_velocity)
 {
-	if(rddf_num_poses_by_velocity)
+	if (rddf_num_poses_by_velocity)
 		copy_rddf_message(rddf_msg);
 	else
 		copy_rddf_message_old(rddf_msg);

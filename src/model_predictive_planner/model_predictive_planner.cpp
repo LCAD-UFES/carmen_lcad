@@ -943,7 +943,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 //		printf("\nGoal_in_lane: %d detail_size: %ld complete_size: %ld \n",goal_in_lane, detailed_lane.size(), complete_foward_lane.size());
 	}
 	// VINICIUS: @@@ Para Usar a lane alem do goal, passe para a funcao abaixo a complete_foward_lane ao inves da detailed_lane
-	limit_maximum_centripetal_acceleration_with_distance(target_v, lastOdometryVector[0].v, detailed_lane.back(), complete_foward_lane);
+//	limit_maximum_centripetal_acceleration_with_distance(target_v, lastOdometryVector[0].v, detailed_lane.back(), complete_foward_lane);
 	// Aberto: @@@ Esta funcao escreve no phi de detailed_lane //REDUZINDO DE 13 para 0.25 a velocidade
 	//limit_maximum_centripetal_acceleration(target_v, complete_foward_lane);
 

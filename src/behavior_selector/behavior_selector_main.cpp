@@ -34,6 +34,9 @@ int param_rddf_num_poses_ahead_limited_by_map;
 int param_rddf_num_poses_ahead_min;
 int param_rddf_num_poses_by_car_velocity = 1;
 
+carmen_behavior_selector_road_profile_message road_profile_message;
+double robot_max_centripetal_acceleration = 1.5;
+
 
 int
 annotation_is_forward(carmen_ackerman_traj_point_t robot_pose, carmen_vector_3D_t annotation_point)
@@ -112,12 +115,11 @@ get_distance_to_act_on_annotation(double v0, double va, double distance_to_annot
 
 
 double
-get_velocity_at_goal(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double va, double dg, double da)
+get_velocity_at_goal(double v0, double va, double dg, double da)
 {
 	// https://www.wolframalpha.com/input/?i=solve+s%3Dg*(g-v)%2Fa%2B(v-g)*((g-v)%2F(2*a)))+for+a
 	// https://www.wolframalpha.com/input/?i=solve+s%3Dv*((g-v)%2Fa)%2B0.5*a*((g-v)%2Fa)%5E2+for+g
 
-	double v0 = current_robot_pose_v_and_phi.v;
 //	double a = -get_robot_config()->maximum_acceleration_forward;
 	double a = (va * va - v0 * v0) / (2.0 * da);
 	double sqrt_val = 2.0 * a * dg + v0 * v0;
@@ -160,13 +162,62 @@ set_goal_velocity_according_to_annotation(const carmen_behavior_selector_goal_li
 					&& annotation_is_forward(get_robot_pose(), last_rddf_annotation_message.annotation_point))))
 	{
 		clearing_annotation = true;
-		goal_list_msg.goal_list->v = get_velocity_at_goal(current_robot_pose_v_and_phi, velocity_at_next_annotation,
+		goal_list_msg.goal_list->v = get_velocity_at_goal(current_robot_pose_v_and_phi.v, velocity_at_next_annotation,
 				distance_to_goal, distance_to_annotation);
 		if (!annotation_is_forward(get_robot_pose(), last_rddf_annotation_message.annotation_point))
 			clearing_annotation = false;
 	}
 	else
 		goal_list_msg.goal_list->v = 15.28;
+}
+
+
+void
+limit_maximum_velocity_according_to_centripetal_acceleration(double &target_v, double current_v, carmen_ackerman_traj_point_t *goal,
+		carmen_ackerman_traj_point_t *path, int number_of_poses)
+{
+	if (number_of_poses == 0)
+		return;
+
+	double desired_v = 0.0;
+	double max_centripetal_acceleration = 0.0;
+	double dist_walked = 0.0;
+	double dist_to_max_curvature = 0.0;
+	double dist_to_goal = 0.0;
+
+	double phi = 0.0;
+	double L = get_robot_config()->distance_between_front_and_rear_axles;
+
+	for (int i = 0; (i < number_of_poses - 1); i += 1)
+	{
+		double delta_theta = path[i + 1].theta - path[i].theta;
+		double l = DIST2D(path[i], path[i + 1]);
+		l = (l < 0.01)? 0.01: l;
+		path[i].phi = L * atan(delta_theta / l);
+		dist_walked += l;
+		if (path[i].x == goal->x && path[i].y == goal->y)
+			dist_to_goal = dist_walked;
+
+		if (fabs(path[i].phi) > 0.001)
+		{
+			double radius_of_curvature = L / fabs(tan(path[i].phi));
+			double centripetal_acceleration = (target_v * target_v) / radius_of_curvature;
+			if (centripetal_acceleration > max_centripetal_acceleration)
+			{
+				dist_to_max_curvature = dist_walked;
+				phi = path[i].phi;
+				max_centripetal_acceleration = centripetal_acceleration;
+			}
+		}
+	}
+
+	if (max_centripetal_acceleration > robot_max_centripetal_acceleration)
+	{
+		double radius_of_curvature = L / fabs(tan(phi));
+		desired_v = sqrt(robot_max_centripetal_acceleration * radius_of_curvature);
+		if (target_v > desired_v)
+			target_v = get_velocity_at_goal(current_v, desired_v, dist_to_goal, dist_to_max_curvature);
+	}
 }
 
 
@@ -207,42 +258,57 @@ publish_current_state()
 
 
 void
-build_and_publish_behavior_selector_road_profile_message()
+publish_behavior_selector_road_profile_message(carmen_rddf_road_profile_message *rddf_msg)
 {
-	carmen_behavior_selector_road_profile_message msg;
-
-	carmen_rddf_road_profile_message *last_rddf_resized;
-	last_rddf_resized = get_last_rddf_message();
-	msg.number_of_poses = last_rddf_resized->number_of_poses;
-
-	msg.poses = (carmen_ackerman_traj_point_t*) malloc(sizeof(carmen_ackerman_traj_point_t) * msg.number_of_poses);
-	msg.annotations = (int*) malloc(sizeof(int) * msg.number_of_poses);
-
-	if (last_rddf_resized->number_of_poses_back > 0)
+	if (param_rddf_num_poses_by_car_velocity && (get_last_rddf_message() != NULL))
 	{
-		msg.number_of_poses_back = last_rddf_resized->number_of_poses_back;
-		msg.poses_back = (carmen_ackerman_traj_point_t*) malloc(sizeof(carmen_ackerman_traj_point_t) * msg.number_of_poses_back);
+		carmen_rddf_road_profile_message *last_rddf_resized;
 
-		for(int j = 0; j < last_rddf_resized->number_of_poses_back; j++)
-			msg.poses_back[j] = last_rddf_resized->poses_back[j];
+		last_rddf_resized = get_last_rddf_message();
+		road_profile_message.number_of_poses = last_rddf_resized->number_of_poses;
+
+		road_profile_message.poses = (carmen_ackerman_traj_point_t *) realloc(road_profile_message.poses, sizeof(carmen_ackerman_traj_point_t) * road_profile_message.number_of_poses);
+		road_profile_message.annotations = (int *) malloc(sizeof(int) * road_profile_message.number_of_poses);
+
+		if (last_rddf_resized->number_of_poses_back > 0)
+		{
+			road_profile_message.number_of_poses_back = last_rddf_resized->number_of_poses_back;
+			road_profile_message.poses_back = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * road_profile_message.number_of_poses_back);
+
+			for (int j = 0; j < last_rddf_resized->number_of_poses_back; j++)
+				road_profile_message.poses_back[j] = last_rddf_resized->poses_back[j];
+		}
+
+		for (int i = 0; i < last_rddf_resized->number_of_poses; i++)
+		{
+			road_profile_message.annotations[i] = last_rddf_resized->annotations[i];
+			road_profile_message.poses[i] = last_rddf_resized->poses[i];
+		}
+
+		road_profile_message.timestamp = carmen_get_time();
+		road_profile_message.host = carmen_get_host();
+
+		IPC_RETURN_TYPE err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, &road_profile_message);
+		carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME);
+
+		free(road_profile_message.annotations);
+		free(road_profile_message.poses_back);
 	}
-
-	for(int i = 0; i < last_rddf_resized->number_of_poses; i++)
+	else
 	{
-		msg.annotations[i] = last_rddf_resized->annotations[i];
-		msg.poses[i] = last_rddf_resized->poses[i];
+		road_profile_message.annotations = rddf_msg->annotations;
+		road_profile_message.number_of_poses = rddf_msg->number_of_poses;
+		road_profile_message.number_of_poses_back = rddf_msg->number_of_poses_back;
+		road_profile_message.poses = (carmen_ackerman_traj_point_t *) realloc(road_profile_message.poses, sizeof(carmen_ackerman_traj_point_t) * road_profile_message.number_of_poses);
+		for (int i = 0; i < rddf_msg->number_of_poses; i++)
+			road_profile_message.poses[i] = rddf_msg->poses[i];
+		road_profile_message.poses_back = rddf_msg->poses_back;
+		road_profile_message.timestamp = carmen_get_time();
+		road_profile_message.host = carmen_get_host();
+
+		IPC_RETURN_TYPE err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, &road_profile_message);
+		carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME);
 	}
-
-	msg.timestamp = carmen_get_time();
-	msg.host = carmen_get_host();
-
-	IPC_RETURN_TYPE err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, &msg);
-	carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME);
-
-	free(msg.annotations);
-	free(msg.poses);
-	free(msg.poses_back);
-
 }
 
 
@@ -270,6 +336,10 @@ publish_goal_list()
 	}
 
 	set_goal_velocity_according_to_annotation(goal_list_msg);
+
+	carmen_ackerman_traj_point_t current_robot_pose_v_and_phi = get_robot_pose();
+	limit_maximum_velocity_according_to_centripetal_acceleration(goal_list_msg.goal_list->v, current_robot_pose_v_and_phi.v,
+			goal_list_msg.goal_list, road_profile_message.poses, road_profile_message.number_of_poses);
 
 	if (obstacle_avoider_active_recently)
 		goal_list_msg.goal_list->v = carmen_fmin(2.5, goal_list_msg.goal_list->v);
@@ -357,25 +427,7 @@ rddf_handler(carmen_rddf_road_profile_message *rddf_msg)
 	last_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
 
 	if (goal_list_road_profile_message == CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL)
-	{
-		if (param_rddf_num_poses_by_car_velocity && (get_last_rddf_message() != NULL))
-			build_and_publish_behavior_selector_road_profile_message();
-		else
-		{
-			carmen_behavior_selector_road_profile_message msg;
-			msg.annotations = rddf_msg->annotations;
-			msg.number_of_poses = rddf_msg->number_of_poses;
-			msg.number_of_poses_back = rddf_msg->number_of_poses_back;
-			msg.poses = rddf_msg->poses;
-			msg.poses_back = rddf_msg->poses_back;
-			msg.timestamp = carmen_get_time();
-			msg.host = carmen_get_host();
-
-			IPC_RETURN_TYPE err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, &msg);
-			carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME);
-		}
-	}
-//	publish_goal_list();
+		publish_behavior_selector_road_profile_message(rddf_msg);
 }
 
 
@@ -404,21 +456,6 @@ path_planner_road_profile_handler(carmen_path_planner_road_profile_message *rddf
 	}
 	publish_goal_list();
 }
-
-
-//static void
-//grid_mapping_handler(carmen_grid_mapping_message *msg)
-//{
-//	carmen_map_t map;
-//	int goal_list_updated;
-//
-//	map.complete_map = msg->complete_map;
-//	map.config = msg->config;
-//
-//	behavior_selector_update_map(&map, &goal_list_updated);
-//
-//	necessary_maps_available = 1;
-//}
 
 
 static void
@@ -551,10 +588,6 @@ register_handlers()
 			NULL, (carmen_handler_t) localize_globalpos_handler,
 			CARMEN_SUBSCRIBE_LATEST);
 
-//	carmen_grid_mapping_subscribe_message(
-//			NULL, (carmen_handler_t) grid_mapping_handler,
-//			CARMEN_SUBSCRIBE_LATEST);
-//
 	carmen_map_server_subscribe_compact_cost_map(
 			NULL, (carmen_handler_t) map_server_compact_cost_map_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
@@ -645,6 +678,7 @@ read_parameters(int argc, char **argv)
 			{(char *) "robot", (char *) "width", CARMEN_PARAM_DOUBLE, &robot_config.width, 0, NULL},
 			{(char *) "robot", (char *) "maximum_acceleration_forward", CARMEN_PARAM_DOUBLE, &robot_config.maximum_acceleration_forward, 1, NULL},
 			{(char *) "robot", (char *) "maximum_deceleration_forward", CARMEN_PARAM_DOUBLE, &robot_config.maximum_deceleration_forward, 1, NULL},
+			{(char *) "robot", (char *) "max_centripetal_acceleration", CARMEN_PARAM_DOUBLE, &robot_max_centripetal_acceleration, 1, NULL},
 			{(char *) "robot", (char *) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &robot_config.distance_between_front_and_rear_axles, 1, NULL},
 			{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &robot_config.distance_between_rear_car_and_rear_wheels, 1, NULL}, 			
 			{(char *) "behavior_selector", (char *) "distance_between_waypoints", CARMEN_PARAM_DOUBLE, &distance_between_waypoints, 1, NULL},
@@ -694,6 +728,7 @@ main(int argc, char **argv)
 	register_handlers();
 
 	memset(&last_rddf_annotation_message, 0, sizeof(last_rddf_annotation_message));
+	memset(&road_profile_message, 0, sizeof(carmen_behavior_selector_road_profile_message));
 
 	carmen_ipc_dispatch();
 
