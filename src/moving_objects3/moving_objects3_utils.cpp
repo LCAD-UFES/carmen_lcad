@@ -66,7 +66,9 @@ transform_rectangle(rectangle_points rect, double x, double y, double theta)
 
 
 void
-generate_rectangles_points(carmen_point_t pose, double width, double length, rectangle_points* r1, rectangle_points* r2, rectangle_points* r3)
+generate_rectangles_points(carmen_point_t pose, double width, double length,
+		rectangle_points* r1, rectangle_points* r2, rectangle_points* r3,
+		double surface_width)
 {
 	rectangle_points temp;
 
@@ -75,10 +77,10 @@ generate_rectangles_points(carmen_point_t pose, double width, double length, rec
 	*r1 = transform_rectangle(temp, pose.x, pose.y, pose.theta);
 
 	// generate car surface rectangle
-	temp = generate_rectangle(width + 0.25, length + 0.25);
+	temp = generate_rectangle(width + surface_width, length + surface_width);
 	*r2 = transform_rectangle(temp, pose.x, pose.y, pose.theta);
 
-	// generate car surface rectangle
+	// generate free space rectangle
 	temp = generate_rectangle(width + 1.25, length + 1.25);
 	*r3 = transform_rectangle(temp, pose.x, pose.y, pose.theta);
 }

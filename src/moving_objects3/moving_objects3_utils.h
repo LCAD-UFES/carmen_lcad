@@ -18,8 +18,12 @@ typedef struct
 	carmen_vector_2D_t p4;
 } rectangle_points;
 
-void generate_rectangles_points(carmen_point_t pose, double width, double length, rectangle_points* r1, rectangle_points* r2, rectangle_points* r3);
+void
+generate_rectangles_points(carmen_point_t pose, double width, double length,
+		rectangle_points* r1, rectangle_points* r2, rectangle_points* r3,
+		double surface_width);
 
-int check_ray_intersection(carmen_vector_2D_t end_point, rectangle_points rect);
+int
+check_ray_intersection(carmen_vector_2D_t end_point, rectangle_points rect);
 
 #endif /* SRC_MOVING_OBJECTS3_MOVING_OBJECTS3_UTILS_H_ */

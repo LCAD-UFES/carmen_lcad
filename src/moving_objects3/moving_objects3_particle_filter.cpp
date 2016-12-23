@@ -75,7 +75,7 @@ double
 get_sigma_from_cost(double cost)
 {
 	(void) cost;
-	return 3.0;
+	return 1.0;
 }
 
 
@@ -89,7 +89,9 @@ get_particle_weight(moving_objects3_particle_t particle_t, carmen_velodyne_proje
 
 	carmen_vector_2D_t end_point;
 
-	generate_rectangles_points(particle_t.pose, particle_t.geometry.width, particle_t.geometry.length, &r_c, &r_b, &r_a);
+	generate_rectangles_points(particle_t.pose, particle_t.geometry.width, particle_t.geometry.length,
+			&r_c, &r_b, &r_a,
+			2.25);
 
 	for (int i = 0; i < velodyne_projected_on_ground.num_rays; i++)
 	{
