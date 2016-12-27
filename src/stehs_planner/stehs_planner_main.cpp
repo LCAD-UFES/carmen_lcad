@@ -1,6 +1,7 @@
 #include "stehs_planner.hpp"
 #include "stehs_planner_messages.h"
 #include <carmen/robot_ackerman_interface.h>
+#include <carmen/base_ackerman_interface.h>
 
 StehsPlanner stehs_planner;
 
@@ -45,7 +46,7 @@ publish_rrt_path_message(rrt_path_message *msg)
 void
 stehs_planner_publish_plan_tree_message()
 {
-	int i = 0;
+
 	rrt_path_message msg;
 	std::list<carmen_ackerman_path_point_t>::iterator it,next, end = stehs_planner.state_list.end();
 
@@ -65,7 +66,8 @@ stehs_planner_publish_plan_tree_message()
 	next = it;
 	next++;
 
-	for (; next != end; it++, i++, next++)
+	int i = 0;
+	for (; next != end; it++, next++)
 	{
 		msg.path[i].p1.x     = it->x;
 		msg.path[i].p1.y     = it->y;
@@ -89,7 +91,7 @@ stehs_planner_publish_plan_tree_message()
 //				msg.path[i].p1.x, msg.path[i].p1.y, msg.path[i].p1.theta, msg.path[i].p1.v, msg.path[i].p1.phi,
 //				msg.path[i].p2.x, msg.path[i].p2.y, msg.path[i].p2.theta, msg.path[i].p2.v, msg.path[i].p2.phi,
 //				msg.path[i].v,  msg.path[i].phi,  msg.path[i].time);
-
+		i++;
 	}
 
 	publish_rrt_path_message(&msg);
@@ -152,11 +154,11 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	if (stehs_planner.lane_ready && stehs_planner.distance_map_ready && stehs_planner.goal_ready)
 	{
 		stehs_planner.lane_ready = stehs_planner.distance_map_ready = stehs_planner.goal_ready = false;
-		double time = carmen_get_time();
+//		double time = carmen_get_time();
 		//stehs_planner.RDDFSpaceExploration();
 		stehs_planner.GeneratePath();
-		printf("Tempo %f Ncirc %ld Nstate %ld\n", carmen_get_time() - time, stehs_planner.circle_path.size(),
-				stehs_planner.state_list.size());
+//		printf("Tempo %f Ncirc %ld Nstate %ld\n", carmen_get_time() - time, stehs_planner.circle_path.size(),
+//				stehs_planner.state_list.size());
 		if (!stehs_planner.state_list.empty())
 		{
 			if (stehs_planner.use_mpc)
@@ -165,6 +167,7 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 			}
 			else
 			{
+				publish_model_predictive_planner_motion_commands();
 				stehs_planner_publish_plan_tree_message();
 			}
 		}

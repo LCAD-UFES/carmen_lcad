@@ -19,6 +19,8 @@ StehsPlanner::StehsPlanner():
     // creates a new opencv window
     cv::namedWindow("CirclePath", cv::WINDOW_AUTOSIZE);
 
+    std::cout<<"OpenCV Version used:"<<CV_MAJOR_VERSION<<"."<<CV_MINOR_VERSION<<std::endl;
+
 }
 
 // destructor
@@ -786,7 +788,7 @@ StehsPlanner::GeneratePath()
 		printf("Não foi possível encontrar um caminho válido.\n");
 	}
 
-//	ShowCirclePath();
+	ShowCirclePath();
 }
 
 
