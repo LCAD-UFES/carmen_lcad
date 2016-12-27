@@ -484,6 +484,7 @@ src/utilities/list_camera_ids/util_list_camera_ids
 src/utilities/publish_pose/util_publish_pose
 src/utilities/publish_pose/util_publish_initial_pose
 src/utilities/split_log/util_split_log
+src/vehicle_tracker/build_*
 src/visual_graphslam/visual_gen_data_to_plot
 src/visual_graphslam/visual_grab_data
 src/visual_graphslam/visual_graphslam
