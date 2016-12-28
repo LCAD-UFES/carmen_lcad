@@ -53,42 +53,42 @@ annotation_is_forward(carmen_ackerman_traj_point_t robot_pose, carmen_vector_3D_
 
 
 double
-get_velocity_at_next_annotation(const carmen_behavior_selector_goal_list_message goal_list_msg)
+get_velocity_at_next_annotation(double goal_v)
 {
-	double v = goal_list_msg.goal_list->v;
-
 	if (!last_rddf_annotation_message_valid)
-		return (v);
+		return (goal_v);
+
+	double v = goal_v;
 
 	if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
 			&& (last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_0))
 		v = 0.0;
 	else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BUMP)
 			|| (last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK))
-		v = carmen_fmin(3.0, goal_list_msg.goal_list->v);
+		v = carmen_fmin(3.0, goal_v);
 	else if (last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)
-		v = carmen_fmin(1.0, goal_list_msg.goal_list->v);
+		v = carmen_fmin(1.0, goal_v);
 	else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
 			&& (last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_5))
-		v = carmen_fmin(5.0 / 3.6, goal_list_msg.goal_list->v);
+		v = carmen_fmin(5.0 / 3.6, goal_v);
 	else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
 			&& (last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_10))
-		v = carmen_fmin(10.0 / 3.6, goal_list_msg.goal_list->v);
+		v = carmen_fmin(10.0 / 3.6, goal_v);
 	else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
 			&& (last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_15))
-		v = carmen_fmin(15.0 / 3.6, goal_list_msg.goal_list->v);
+		v = carmen_fmin(15.0 / 3.6, goal_v);
 	else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
 			&& (last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_20))
-		v = carmen_fmin(20.0 / 3.6, goal_list_msg.goal_list->v);
+		v = carmen_fmin(20.0 / 3.6, goal_v);
 	else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
 			&& (last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_30))
-		v = carmen_fmin(30.0 / 3.6, goal_list_msg.goal_list->v);
+		v = carmen_fmin(30.0 / 3.6, goal_v);
 	else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
 			&& (last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_40))
-		v = carmen_fmin(40.0 / 3.6, goal_list_msg.goal_list->v);
+		v = carmen_fmin(40.0 / 3.6, goal_v);
 	else if ((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
 			&& (last_rddf_annotation_message.annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_60))
-		v = carmen_fmin(60.0 / 3.6, goal_list_msg.goal_list->v);
+		v = carmen_fmin(60.0 / 3.6, goal_v);
 
 	return (v);
 }
@@ -120,7 +120,7 @@ get_velocity_at_goal(double v0, double va, double dg, double da)
 	// https://www.wolframalpha.com/input/?i=solve+s%3Dg*(g-v)%2Fa%2B(v-g)*((g-v)%2F(2*a)))+for+a
 	// https://www.wolframalpha.com/input/?i=solve+s%3Dv*((g-v)%2Fa)%2B0.5*a*((g-v)%2Fa)%5E2+for+g
 
-//	double a = -get_robot_config()->maximum_acceleration_forward;
+//	double a = -get_robot_config()->maximum_acceleration_forward * 2.5;
 	double a = (va * va - v0 * v0) / (2.0 * da);
 	double sqrt_val = 2.0 * a * dg + v0 * v0;
 	double vg = va;
@@ -129,10 +129,10 @@ get_velocity_at_goal(double v0, double va, double dg, double da)
 	if (vg < va)
 		vg = va;
 
-	static double first_time = 0.0;
-	double t = carmen_get_time();
-	if (first_time == 0.0)
-		first_time = t;
+//	static double first_time = 0.0;
+//	double t = carmen_get_time();
+//	if (first_time == 0.0)
+//		first_time = t;
 	//printf("t %.3lf, v0 %.1lf, va %.1lf, a %.3lf, vg %.2lf, dg %.1lf, da %.1lf\n", t - first_time, v0, va, a, vg, dg, da);
 //	printf("t %.3lf, v0 %.1lf, a %.3lf, vg %.2lf, dg %.1lf, tt %.3lf\n", t - first_time, v0, a, vg, dg, (vg - v0) / a);
 
@@ -141,16 +141,16 @@ get_velocity_at_goal(double v0, double va, double dg, double da)
 
 
 void
-set_goal_velocity_according_to_annotation(const carmen_behavior_selector_goal_list_message& goal_list_msg)
+set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal)
 {
 	static bool clearing_annotation = false;
 
 	carmen_ackerman_traj_point_t current_robot_pose_v_and_phi = get_robot_pose();
 	double distance_to_annotation = DIST2D(last_rddf_annotation_message.annotation_point, get_robot_pose());
-	double velocity_at_next_annotation = get_velocity_at_next_annotation(goal_list_msg);
+	double velocity_at_next_annotation = get_velocity_at_next_annotation(goal->v);
 	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, velocity_at_next_annotation,
 			distance_to_annotation);
-	double distance_to_goal = carmen_distance_ackerman_traj(&current_robot_pose_v_and_phi, goal_list_msg.goal_list);
+	double distance_to_goal = carmen_distance_ackerman_traj(&current_robot_pose_v_and_phi, goal);
 //	printf("ca %d, daann %.1lf, dann %.1lf, v %.1lf, vg %.1lf\n", clearing_annotation,
 //			distance_to_act_on_annotation, distance_to_annotation, current_robot_pose_v_and_phi.v,
 //			get_velocity_at_goal(current_robot_pose_v_and_phi, velocity_at_next_annotation,
@@ -162,13 +162,13 @@ set_goal_velocity_according_to_annotation(const carmen_behavior_selector_goal_li
 					&& annotation_is_forward(get_robot_pose(), last_rddf_annotation_message.annotation_point))))
 	{
 		clearing_annotation = true;
-		goal_list_msg.goal_list->v = get_velocity_at_goal(current_robot_pose_v_and_phi.v, velocity_at_next_annotation,
+		goal->v = get_velocity_at_goal(current_robot_pose_v_and_phi.v, velocity_at_next_annotation,
 				distance_to_goal, distance_to_annotation);
 		if (!annotation_is_forward(get_robot_pose(), last_rddf_annotation_message.annotation_point))
 			clearing_annotation = false;
 	}
 	else
-		goal_list_msg.goal_list->v = 15.28;
+		goal->v = 15.28;
 }
 
 
@@ -183,9 +183,7 @@ limit_maximum_velocity_according_to_centripetal_acceleration(double &target_v, d
 	double max_centripetal_acceleration = 0.0;
 	double dist_walked = 0.0;
 	double dist_to_max_curvature = 0.0;
-	double dist_to_goal = 0.0;
-
-	double phi = 0.0;
+	double max_path_phi = 0.0;
 	double L = get_robot_config()->distance_between_front_and_rear_axles;
 
 	for (int i = 0; (i < number_of_poses - 1); i += 1)
@@ -195,8 +193,6 @@ limit_maximum_velocity_according_to_centripetal_acceleration(double &target_v, d
 		l = (l < 0.01)? 0.01: l;
 		path[i].phi = L * atan(delta_theta / l);
 		dist_walked += l;
-		if (path[i].x == goal->x && path[i].y == goal->y)
-			dist_to_goal = dist_walked;
 
 		if (fabs(path[i].phi) > 0.001)
 		{
@@ -205,7 +201,7 @@ limit_maximum_velocity_according_to_centripetal_acceleration(double &target_v, d
 			if (centripetal_acceleration > max_centripetal_acceleration)
 			{
 				dist_to_max_curvature = dist_walked;
-				phi = path[i].phi;
+				max_path_phi = path[i].phi;
 				max_centripetal_acceleration = centripetal_acceleration;
 			}
 		}
@@ -213,10 +209,16 @@ limit_maximum_velocity_according_to_centripetal_acceleration(double &target_v, d
 
 	if (max_centripetal_acceleration > robot_max_centripetal_acceleration)
 	{
-		double radius_of_curvature = L / fabs(tan(phi));
+		double radius_of_curvature = L / fabs(tan(max_path_phi));
 		desired_v = sqrt(robot_max_centripetal_acceleration * radius_of_curvature);
-		if (target_v > desired_v)
-			target_v = get_velocity_at_goal(current_v, desired_v, dist_to_goal, dist_to_max_curvature);
+		if (desired_v < target_v)
+		{
+			carmen_ackerman_traj_point_t current_robot_pose_v_and_phi = get_robot_pose();
+			double dist_to_goal = carmen_distance_ackerman_traj(&current_robot_pose_v_and_phi, goal);
+			double velocity_at_goal = get_velocity_at_goal(current_v, desired_v, dist_to_goal, dist_to_max_curvature);
+			if (velocity_at_goal < target_v)
+				target_v = velocity_at_goal;
+		}
 	}
 }
 
@@ -335,14 +337,18 @@ publish_goal_list()
 		goal_list_msg.size -= goal_list_index;
 	}
 
-	set_goal_velocity_according_to_annotation(goal_list_msg);
+	carmen_ackerman_traj_point_t *goal = &(goal_list_msg.goal_list[0]);
 
-	carmen_ackerman_traj_point_t current_robot_pose_v_and_phi = get_robot_pose();
-	limit_maximum_velocity_according_to_centripetal_acceleration(goal_list_msg.goal_list->v, current_robot_pose_v_and_phi.v,
-			goal_list_msg.goal_list, road_profile_message.poses, road_profile_message.number_of_poses);
+	set_goal_velocity_according_to_annotation(goal);
+	printf("v %lf, va %lf, ", get_robot_pose().v, goal->v);
+
+	limit_maximum_velocity_according_to_centripetal_acceleration(goal->v, get_robot_pose().v,
+			goal, road_profile_message.poses, road_profile_message.number_of_poses);
+	printf("vc %lf, ", goal->v);
 
 	if (obstacle_avoider_active_recently)
-		goal_list_msg.goal_list->v = carmen_fmin(2.5, goal_list_msg.goal_list->v);
+		goal->v = carmen_fmin(2.5, goal->v);
+	printf("vo %lf\n", goal->v);
 
 	if (goal_list_msg.size > 0)
 	{
