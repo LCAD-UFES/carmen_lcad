@@ -340,15 +340,15 @@ publish_goal_list()
 	carmen_ackerman_traj_point_t *goal = &(goal_list_msg.goal_list[0]);
 
 	set_goal_velocity_according_to_annotation(goal);
-	printf("v %lf, va %lf, ", get_robot_pose().v, goal->v);
+//	printf("v %lf, va %lf, ", get_robot_pose().v, goal->v);
 
 	limit_maximum_velocity_according_to_centripetal_acceleration(goal->v, get_robot_pose().v,
 			goal, road_profile_message.poses, road_profile_message.number_of_poses);
-	printf("vc %lf, ", goal->v);
+//	printf("vc %lf, ", goal->v);
 
 	if (obstacle_avoider_active_recently)
 		goal->v = carmen_fmin(2.5, goal->v);
-	printf("vo %lf\n", goal->v);
+//	printf("vo %lf\n", goal->v);
 
 	if (goal_list_msg.size > 0)
 	{
