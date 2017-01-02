@@ -1070,10 +1070,9 @@ get_sensors_param(int argc, char **argv)
 
 		carmen_param_t param_list[] =
 		{
-				{spherical_sensor_params[0].name, (char*)"vertical_resolution", CARMEN_PARAM_INT, &spherical_sensor_params[0].vertical_resolution, 0, NULL},
-				{(char *)"localize_ackerman", (char*)"velodyne_range_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].range_max, 0, NULL},
-				{spherical_sensor_params[0].name, (char*)"time_spent_by_each_scan", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].time_spent_by_each_scan, 0, NULL},
-
+			{spherical_sensor_params[0].name, 	(char *)"vertical_resolution", 		CARMEN_PARAM_INT, &spherical_sensor_params[0].vertical_resolution, 0, NULL},
+			{(char *)"localize_ackerman", 		(char *)"velodyne_range_max", 		CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].range_max, 0, NULL},
+			{spherical_sensor_params[0].name, 	(char *)"time_spent_by_each_scan", 	CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].time_spent_by_each_scan, 0, NULL},
 		};
 
 		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
@@ -1115,15 +1114,14 @@ get_sensors_param(int argc, char **argv)
 
 			carmen_param_t param_list[] =
 			{
-					{spherical_sensor_params[i].name, (char*) "vertical_resolution", CARMEN_PARAM_INT, &spherical_sensor_params[i].vertical_resolution, 0, NULL},
-					{spherical_sensor_params[i].name, (char*) "horizontal_resolution", CARMEN_PARAM_INT, &horizontal_resolution, 0, NULL},
-					{spherical_sensor_params[i].name, (char*) "flipped", CARMEN_PARAM_ONOFF, &flipped, 0, NULL},
-					{spherical_sensor_params[i].name, (char*) "range_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[i].range_max, 0, NULL},
-					{spherical_sensor_params[i].name, (char*) "vertical_roi_ini", CARMEN_PARAM_INT, &stereo_velodyne_vertical_roi_ini, 0, NULL },
-					{spherical_sensor_params[i].name, (char*) "vertical_roi_end", CARMEN_PARAM_INT, &stereo_velodyne_vertical_roi_end, 0, NULL },
-					{spherical_sensor_params[i].name, (char*) "horizontal_roi_ini", CARMEN_PARAM_INT, &stereo_velodyne_horizontal_roi_ini, 0, NULL },
-					{spherical_sensor_params[i].name, (char*) "horizontal_roi_end", CARMEN_PARAM_INT, &stereo_velodyne_horizontal_roi_end, 0, NULL }
-
+				{spherical_sensor_params[i].name, (char *) "vertical_resolution", CARMEN_PARAM_INT, &spherical_sensor_params[i].vertical_resolution, 0, NULL},
+				{spherical_sensor_params[i].name, (char *) "horizontal_resolution", CARMEN_PARAM_INT, &horizontal_resolution, 0, NULL},
+				{spherical_sensor_params[i].name, (char *) "flipped", CARMEN_PARAM_ONOFF, &flipped, 0, NULL},
+				{spherical_sensor_params[i].name, (char *) "range_max", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[i].range_max, 0, NULL},
+				{spherical_sensor_params[i].name, (char *) "vertical_roi_ini", CARMEN_PARAM_INT, &stereo_velodyne_vertical_roi_ini, 0, NULL },
+				{spherical_sensor_params[i].name, (char *) "vertical_roi_end", CARMEN_PARAM_INT, &stereo_velodyne_vertical_roi_end, 0, NULL },
+				{spherical_sensor_params[i].name, (char *) "horizontal_roi_ini", CARMEN_PARAM_INT, &stereo_velodyne_horizontal_roi_ini, 0, NULL },
+				{spherical_sensor_params[i].name, (char *) "horizontal_roi_end", CARMEN_PARAM_INT, &stereo_velodyne_horizontal_roi_end, 0, NULL }
 			};
 
 			carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
@@ -1175,7 +1173,7 @@ get_sensors_param(int argc, char **argv)
 static void 
 read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, ProbabilisticMapParams *p_map_params)
 {
-	double integrate_angle_deg;
+	double integrate_angle_deg, map_width, map_height;
 
 	integrate_angle_deg = 1.0;
 
@@ -1254,6 +1252,8 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 			{(char *)"mapper", (char*)"map_log_odds_bias", CARMEN_PARAM_INT, &p_map_params->log_odds_bias, 0, NULL},
 			{(char *)"mapper", (char*)"map_grid_res", CARMEN_PARAM_DOUBLE, &p_map_params->grid_res, 0, NULL},
 			{(char *)"mapper", (char*)"map_range_factor", CARMEN_PARAM_DOUBLE, &p_map_params->range_factor, 0, NULL},
+			{(char *) "map_server", (char*) "map_width", CARMEN_PARAM_DOUBLE, &map_width, 0, NULL},
+			{(char *) "map_server", (char*) "map_height", CARMEN_PARAM_DOUBLE, &map_height, 0, NULL},
 	};
 
 	//p_map_params->grid_res = 0.1;
@@ -1268,8 +1268,8 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 
 	get_sensors_param(argc, argv);
 
-	p_map_params->width = 2 * max_range;
-	p_map_params->height = 2 * max_range;
+	p_map_params->width = map_width;
+	p_map_params->height = map_height;
 	p_map_params->grid_sx = p_map_params->width /  p_map_params->grid_res;
 	p_map_params->grid_sy = p_map_params->height /  p_map_params->grid_res;
 	p_map_params->grid_size = p_map_params->grid_sx * p_map_params->grid_sy;
@@ -1277,8 +1277,8 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 	carmen_map_config_t main_map_config;
 
 	main_map_config.resolution = p_map_params->grid_res;
-	main_map_config.x_size = 60.0 / p_map_params->grid_res;
-	main_map_config.y_size = 60.0 / p_map_params->grid_res;
+	main_map_config.x_size = map_width / p_map_params->grid_res;
+	main_map_config.y_size = map_height / p_map_params->grid_res;
 
 	localalize_using_map_initialize(&main_map_config);
 

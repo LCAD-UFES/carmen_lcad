@@ -619,7 +619,7 @@ pearson_correlation_correction(carmen_localize_ackerman_map_t *global_map, carme
 
 	double weight = sum_diff / sqrt(sum_global_diff_sqr * sum_local_diff_sqr);
 
-	if(isnan(weight) || weight < 0.0)
+	if (isnan(weight) || weight < 0.0)
 	{
 		weight = 0.0;
 	}

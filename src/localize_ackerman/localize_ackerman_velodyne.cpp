@@ -242,20 +242,24 @@ compute_laser_rays_from_velodyne_and_create_a_local_map(sensor_parameters_t *vel
 	spherical_point_cloud v_zt = velodyne_data->points[point_cloud_index];
 	int N = v_zt.num_points / velodyne_params->vertical_resolution;
 
-	double dt = 1.0 / (1808.0 * 12.0);
+	double dt = velodyne_params->time_spent_by_each_scan;
+	double dt1 = -(double) N * dt;
 	carmen_pose_3D_t robot_interpolated_position = *robot_pose;
 
 	// Ray-trace the grid
 	int jump = filter->param->jump_size;
-	for (int k = 0; k < N; k += jump)
+	for (int j = 0; j < N; j += jump)
 	{
-		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(*robot_pose, (double) k * dt, robot_velocity->x, phi, car_config.distance_between_front_and_rear_axles);
+		double dt2 = j * dt;
+		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(*robot_pose, dt1 + dt2, robot_velocity->x, phi,
+				car_config.distance_between_front_and_rear_axles);
 		r_matrix_car_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
 
-		carmen_prob_models_compute_relevant_map_coordinates(velodyne_data, velodyne_params, k * velodyne_params->vertical_resolution, robot_interpolated_position.position, sensor_board_1_pose,
-				r_matrix_car_to_global, sensor_board_1_to_car_matrix, robot_wheel_radius, x_origin, y_origin, &car_config, 0, 0);
+		carmen_prob_models_compute_relevant_map_coordinates(velodyne_data, velodyne_params, j * velodyne_params->vertical_resolution,
+				robot_interpolated_position.position, sensor_board_1_pose, r_matrix_car_to_global, sensor_board_1_to_car_matrix,
+				robot_wheel_radius, x_origin, y_origin, &car_config, 0, 0);
 
-		carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(velodyne_data, velodyne_params, k * velodyne_params->vertical_resolution, highest_sensor, safe_range_above_sensors, 0, 0);
+		carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(velodyne_data, velodyne_params, j * velodyne_params->vertical_resolution, highest_sensor, safe_range_above_sensors, 0, 0);
 
 		carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(&local_map, velodyne_params, velodyne_data, 0);
 

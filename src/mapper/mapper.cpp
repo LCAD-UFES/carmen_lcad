@@ -177,7 +177,7 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 	double phi = sensor_data->robot_phi[point_cloud_index];
 
 	double dt = sensor_params->time_spent_by_each_scan;
-	double dt1 = sensor_data->points_timestamp[point_cloud_index] - sensor_data->robot_timestamp[point_cloud_index];
+	double dt1 = sensor_data->points_timestamp[point_cloud_index] - sensor_data->robot_timestamp[point_cloud_index] - (double) N * dt;
 	carmen_pose_3D_t robot_interpolated_position = sensor_data->robot_pose[point_cloud_index];
 	int i = 0;
 
@@ -250,11 +250,11 @@ update_cells_in_the_laser_ldmrs_perceptual_field(carmen_map_t *snapshot_map, sen
 	double phi = sensor_data->robot_phi[point_cloud_index];
 
 	double dt = sensor_params->time_spent_by_each_scan;
-	double dt1 = sensor_data->points_timestamp[point_cloud_index] - sensor_data->robot_timestamp[point_cloud_index];
+	double dt1 = sensor_data->points_timestamp[point_cloud_index] - sensor_data->robot_timestamp[point_cloud_index] - (double) N * dt;
 	carmen_pose_3D_t robot_interpolated_position = sensor_data->robot_pose[point_cloud_index];
 	int i = 0;
 
-	plot_data = fopen("plot_data.dat", "a");
+//	plot_data = fopen("plot_data.dat", "a");
 	// Ray-trace the grid
 	#pragma omp for
 	for (int j = 0; j < N; j += 1)
@@ -286,9 +286,9 @@ update_cells_in_the_laser_ldmrs_perceptual_field(carmen_map_t *snapshot_map, sen
 
 //		fprintf(plot_data, "\n");
 	}
-	fprintf(plot_data, "dt %lf, dt1 %lf\n", dt, dt1);
-	fclose(plot_data);
-	system("cp plot_data.dat plot_data2.dat");
+//	fprintf(plot_data, "dt %lf, dt1 %lf\n", dt, dt1);
+//	fclose(plot_data);
+//	system("cp plot_data.dat plot_data2.dat");
 }
 
 
@@ -328,7 +328,7 @@ map_decay_to_offline_map(carmen_map_t *current_map)
 			if (current_map->map[xi][yi] >= 0.0)
 			{
 				//current_map->map[xi][yi] = (50.0 * current_map->map[xi][yi] + offline_map.map[xi][yi]) / 51.0;
-				current_map->map[xi][yi] = (10.0 * current_map->map[xi][yi] + offline_map.map[xi][yi]) / 11.0;
+				current_map->map[xi][yi] = (1.0 * current_map->map[xi][yi] + offline_map.map[xi][yi]) / 2.0;
 				//current_map->map[xi][yi] = carmen_prob_models_log_odds_to_probabilistic((get_log_odds(current_map->map[xi][yi]) + get_log_odds(offline_map.map[xi][yi])) / 2.0);
 				//if (fabs(current_map->map[xi][yi] - 0.5) < 0.1)
 				//	current_map->map[xi][yi] = -1.0;

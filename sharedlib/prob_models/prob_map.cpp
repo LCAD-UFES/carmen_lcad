@@ -538,7 +538,9 @@ carmen_prob_models_set_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sensor_
 		cell_hit_by_ray.x = (sensor_data->ray_position_in_the_floor[thread_id][i].x / map->config.resolution);
 		cell_hit_by_ray.y = (sensor_data->ray_position_in_the_floor[thread_id][i].y / map->config.resolution);
 
-		if (map_grid_is_valid(map, cell_hit_by_ray.x, cell_hit_by_ray.y) && !sensor_data->maxed[thread_id][i])
+		if (map_grid_is_valid(map, cell_hit_by_ray.x, cell_hit_by_ray.y) && !sensor_data->maxed[thread_id][i] &&
+//			(sensor_data->obstacle_height[thread_id][i] > -3.0) && (sensor_data->obstacle_height[thread_id][i] < 2.0) &&
+			(sensor_data->ray_size_in_the_floor[thread_id][i] > 25.0))
 			map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] = sensor_params->log_odds.log_odds_occ;
 	}
 }
