@@ -5,9 +5,9 @@
 
 #include "moving_objects3_utils.h"
 
-int NUM_SPHERES = 6; // TODO: ler do param daemon
+int NUM_SPHERES = 12; // TODO: ler do param daemon
 const int REDRAW_UPDATE_PERIOD = 40;
-const int MAP_VIEWER_SIZE = 720; // pixels
+const int MAP_VIEWER_SIZE = 750; // pixels
 const int NUM_POINTS_PER_VELODYNE = 36000;
 const int ONE_DIMENSIONAL_PLOT_WIDTH = 900; // pixels
 const int ONE_DIMENSIONAL_PLOT_HEIGHT = 200; // pixels
@@ -72,7 +72,7 @@ draw_spheres()
 {
 	for (int i = 0; i < NUM_SPHERES; i++)
 	{
-		draw_circle(10*(i+1), 0, 0, 0.88, 0.88, 0.88);
+		draw_circle(5*(i+1), 0, 0, 0.88, 0.88, 0.88);
 	}
 }
 
@@ -144,7 +144,7 @@ draw_particles(carmen_moving_objects3_particles_message particles_message)
 		generate_rectangles_points(particles_message.particles[i].pose,
 				particles_message.particles[i].geometry.width,
 				particles_message.particles[i].geometry.length,
-				rect, rect+1, rect+2, 2.25);
+				rect, rect+1, rect+2, 0.25);
 
 		// draw inside car rectangle
 		glBegin(GL_LINE_LOOP);
@@ -434,8 +434,8 @@ subcribe_messages()
 void
 initialize_module(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused)))
 {
-	pixels_per_meter_x = ((double) MAP_VIEWER_SIZE) / (2 * pow(2.0, NUM_SPHERES));
-	pixels_per_meter_y = ((double) MAP_VIEWER_SIZE) / (2 * pow(2.0, NUM_SPHERES));
+	pixels_per_meter_x = ((double) MAP_VIEWER_SIZE) / (150);
+	pixels_per_meter_y = ((double) MAP_VIEWER_SIZE) / (150);
 }
 
 
@@ -443,7 +443,7 @@ int
 main(int argc, char **argv)
 {
 	initialize_ipc(argc, argv);
-	read_parameters(argc, argv);
+//	read_parameters(argc, argv);
 	initialize_module(argc, argv);
 	initialize_viewer(argc, argv);
 	subcribe_messages();
