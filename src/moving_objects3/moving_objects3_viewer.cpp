@@ -7,14 +7,13 @@
 
 int NUM_SPHERES = 12; // TODO: ler do param daemon
 const int REDRAW_UPDATE_PERIOD = 40;
-const int MAP_VIEWER_SIZE = 750; // pixels
-const int NUM_POINTS_PER_VELODYNE = 36000;
+const int MAP_VIEWER_SIZE = 600; // pixels
 const int ONE_DIMENSIONAL_PLOT_WIDTH = 900; // pixels
 const int ONE_DIMENSIONAL_PLOT_HEIGHT = 200; // pixels
 
 const int show_velodyne_on_ground_window = 1;
 int show_laser_rays = 0;
-const int show_one_dimension_window = 1;
+const int show_one_dimension_window = 0;
 
 double pixels_per_meter_x;
 double pixels_per_meter_y;
@@ -24,15 +23,11 @@ int one_dimension_window_id;
 
 carmen_velodyne_projected_on_ground_message velodyne_on_ground_message;
 carmen_moving_objects3_particles_message particles_message;
+carmen_moving_objects3_virtual_scan_message virtual_scan_message;
 
-double last_velodyne_on_ground_angles[NUM_POINTS_PER_VELODYNE];
-double last_velodyne_on_ground_ranges[NUM_POINTS_PER_VELODYNE];
-double last_velodyne_on_ground_intensities[NUM_POINTS_PER_VELODYNE];
-
-double current_velodyne_on_ground_angles[NUM_POINTS_PER_VELODYNE];
-double current_velodyne_on_ground_ranges[NUM_POINTS_PER_VELODYNE];
-double current_velodyne_on_ground_intensities[NUM_POINTS_PER_VELODYNE];
-
+int num_of_rays = 0;
+double *current_virtual_scan;
+double *last_virtual_scan;
 
 void
 draw_circle(double radius, double x_center, double y_center, double r, double g, double b)
@@ -74,63 +69,6 @@ draw_spheres()
 	{
 		draw_circle(5*(i+1), 0, 0, 0.88, 0.88, 0.88);
 	}
-}
-
-
-void
-draw_velodyne_points(double *ranges, double *angles, double *intensities, int num_points)
-{
-	int i;
-	double x;
-	double y;
-
-	if ((ranges == NULL) || (angles == NULL))
-		return;
-
-	glBegin(GL_POINTS);
-
-	for(i = 0; i < num_points; i++)
-	{
-		transform_polar_coordinates_to_cartesian_coordinates(ranges[i], angles[i], &x, &y);
-
-		double pixel_x = (x * pixels_per_meter_x);
-		double pixel_y = (y * pixels_per_meter_y);
-
-
-		// quanto maior a possibilidade de ser obstáculo mais preto é o ponto
-		double red = 1.0 - intensities[i];
-		double green = 1.0 - intensities[i];
-		double blue = 1.0 - intensities[i];
-
-		glColor3f(red, green, blue);
-		glVertex2f(pixel_x, pixel_y);
-	}
-
-	glEnd();
-
-	if(show_laser_rays)
-	{
-		for(i = 0; i < num_points; i++)
-		{
-			transform_polar_coordinates_to_cartesian_coordinates(ranges[i], angles[i], &x, &y);
-
-			double pixel_x = (x * pixels_per_meter_x);
-			double pixel_y = (y * pixels_per_meter_y);
-
-
-			// quanto maior a possibilidade de ser obstáculo mais preto é o ponto
-			double red = 0.5;
-			double green = 0.5;
-			double blue = 0.0;
-
-			glBegin(GL_LINES);
-			glColor3f(red, green, blue);
-			glVertex2f(0.0, 0.0);
-			glVertex2f(pixel_x, pixel_y);
-			glEnd();
-		}
-	}
-
 }
 
 
@@ -184,12 +122,62 @@ draw_particles(carmen_moving_objects3_particles_message particles_message)
 
 
 void
+draw_virtual_scan(double *virtual_scan, int num_of_rays)
+{
+	int i;
+	double x;
+	double y;
+
+	double virtual_scan_resolution = carmen_degrees_to_radians(360.0/num_of_rays);
+
+	glBegin(GL_POINTS);
+	for (i = 0; i < num_of_rays; i++)
+	{
+		// compute angle
+		double angle = (((double) i) * virtual_scan_resolution) - carmen_degrees_to_radians(180.0);
+		transform_polar_coordinates_to_cartesian_coordinates(virtual_scan[i], angle, &x, &y);
+
+		double pixel_x = (x * pixels_per_meter_x);
+		double pixel_y = (y * pixels_per_meter_y);
+
+		glColor3f(0.0, 0.0, 0.0);
+		glVertex2f(pixel_x, pixel_y);
+	}
+	glEnd();
+
+	if(show_laser_rays)
+	{
+		for(i = 0; i < num_of_rays; i++)
+		{
+			// compute angle
+			double angle = (((double) i) * virtual_scan_resolution) - carmen_degrees_to_radians(180.0);
+			transform_polar_coordinates_to_cartesian_coordinates(virtual_scan[i], angle, &x, &y);
+
+			double pixel_x = (x * pixels_per_meter_x);
+			double pixel_y = (y * pixels_per_meter_y);
+
+			// quanto maior a possibilidade de ser obstáculo mais preto é o ponto
+			double red = 0.5;
+			double green = 0.6;
+			double blue = 0.0;
+
+			glBegin(GL_LINES);
+			glColor3f(red, green, blue);
+			glVertex2f(0.0, 0.0);
+			glVertex2f(pixel_x, pixel_y);
+			glEnd();
+		}
+	}
+}
+
+
+void
 draw_velodyne_on_ground()
 {
-	draw_spheres();
-	draw_circle(60.0, 0, 0, 0, 0, 0);
-//	draw_velodyne_points(last_velodyne_on_ground_ranges, last_velodyne_on_ground_angles, last_velodyne_on_ground_intensities, velodyne_on_ground_message.num_rays);
-	draw_velodyne_points(current_velodyne_on_ground_ranges, current_velodyne_on_ground_angles, current_velodyne_on_ground_intensities, velodyne_on_ground_message.num_rays);
+//	draw_spheres();
+	draw_circle(50.0, 0, 0, 0, 0, 0);
+	//draw_virtual_scan(last_virtual_scan, num_of_rays);
+	draw_virtual_scan(current_virtual_scan, num_of_rays);
 	draw_particles(particles_message);
 	draw_car_centralized();
 }
@@ -262,10 +250,7 @@ handle_one_dimension_view_display()
 	glLoadIdentity();
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	int i;
-//	char y_label[64];
-	double px, py, jmp;
-	double MAX_RANGE = 50.0;
+	double jmp;
 
 	jmp = ONE_DIMENSIONAL_PLOT_HEIGHT;
 
@@ -276,22 +261,6 @@ handle_one_dimension_view_display()
 	glVertex2f(-ONE_DIMENSIONAL_PLOT_WIDTH / 2, 2 * jmp);
 	glVertex2f(ONE_DIMENSIONAL_PLOT_WIDTH / 2, 2 * jmp);
 	glEnd();
-
-	for (i = 0; i < velodyne_on_ground_message.num_rays; i++)
-	{
-		px = (current_velodyne_on_ground_angles[i] / M_PI) * (ONE_DIMENSIONAL_PLOT_WIDTH / 2 - 40);
-		py = (current_velodyne_on_ground_ranges[i] / MAX_RANGE) * jmp;
-
-		// draw measurement
-		glBegin(GL_LINES);
-		glColor3f(0.0, 0.0, 1.0);
-		glVertex2f(px, 0);
-		glVertex2f(px, py);
-		glEnd();
-
-//		sprintf(y_label, "%.2lf", current_velodyne_on_ground_ranges[i]);
-//		write_text(px, py, y_label);
-	}
 
 	glutSwapBuffers();
 }
@@ -337,7 +306,7 @@ initialize_viewer(int argc, char **argv)
 	{
 		glutInitWindowSize(MAP_VIEWER_SIZE, MAP_VIEWER_SIZE);
 		glutInitWindowPosition(0, 0);
-		velodyne_on_ground_window_id = glutCreateWindow("Velodyne on ground");
+		velodyne_on_ground_window_id = glutCreateWindow("Virtual scan");
 		glutReshapeFunc(handle_velodyne_on_ground_resize);
 		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 		glutDisplayFunc(handle_velodyne_on_ground_display);
@@ -394,22 +363,6 @@ initialize_ipc(int argc, char **argv)
 
 
 void
-moving_objects3_velodyne_on_ground_message_handler()
-{
-	if (velodyne_on_ground_message.num_rays > 0)
-	{
-		memcpy(last_velodyne_on_ground_angles, current_velodyne_on_ground_angles, velodyne_on_ground_message.num_rays * sizeof(double));
-		memcpy(last_velodyne_on_ground_ranges, current_velodyne_on_ground_ranges, velodyne_on_ground_message.num_rays * sizeof(double));
-		memcpy(last_velodyne_on_ground_intensities, current_velodyne_on_ground_intensities, velodyne_on_ground_message.num_rays * sizeof(double));
-
-		memcpy(current_velodyne_on_ground_angles, velodyne_on_ground_message.angles, velodyne_on_ground_message.num_rays * sizeof(double));
-		memcpy(current_velodyne_on_ground_ranges, velodyne_on_ground_message.ranges, velodyne_on_ground_message.num_rays * sizeof(double));
-		memcpy(current_velodyne_on_ground_intensities, velodyne_on_ground_message.intensity, velodyne_on_ground_message.num_rays * sizeof(double));
-	}
-}
-
-
-void
 moving_objects3_particles_message_handler()
 {
 
@@ -417,25 +370,41 @@ moving_objects3_particles_message_handler()
 
 
 void
+moving_objects3_virtual_scan_handler()
+{
+	if (num_of_rays != virtual_scan_message.num_rays)
+	{
+		num_of_rays = virtual_scan_message.num_rays;
+		last_virtual_scan = (double *) realloc(last_virtual_scan, num_of_rays * sizeof(double));
+		current_virtual_scan = (double *) realloc(current_virtual_scan, num_of_rays * sizeof(double));
+	}
+
+	memcpy(last_virtual_scan, current_virtual_scan, num_of_rays * sizeof(double));
+	memcpy(current_virtual_scan, virtual_scan_message.virtual_scan, num_of_rays * sizeof(double));
+
+}
+
+
+void
 subcribe_messages()
 {
-	carmen_subscribe_velodyne_projected_message(
-			&velodyne_on_ground_message,
-			(carmen_handler_t) moving_objects3_velodyne_on_ground_message_handler,
-			CARMEN_SUBSCRIBE_LATEST);
-
 	carmen_subscribe_moving_objects3_particles_message(
-				&particles_message,
-				(carmen_handler_t) moving_objects3_particles_message_handler,
-				CARMEN_SUBSCRIBE_LATEST);
+		&particles_message,
+		(carmen_handler_t) moving_objects3_particles_message_handler,
+		CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_subscribe_moving_objects3_virtual_scan_message(
+		&virtual_scan_message,
+		(carmen_handler_t) moving_objects3_virtual_scan_handler,
+		CARMEN_SUBSCRIBE_LATEST);
 }
 
 
 void
 initialize_module(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused)))
 {
-	pixels_per_meter_x = ((double) MAP_VIEWER_SIZE) / (150);
-	pixels_per_meter_y = ((double) MAP_VIEWER_SIZE) / (150);
+	pixels_per_meter_x = ((double) MAP_VIEWER_SIZE) / (100);
+	pixels_per_meter_y = ((double) MAP_VIEWER_SIZE) / (100);
 }
 
 
