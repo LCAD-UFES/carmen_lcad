@@ -908,67 +908,67 @@ get_alive_sensors(int argc, char **argv)
 
 	carmen_param_t param_list[] =
 	{
-			{(char*)"localize_ackerman", (char*)"velodyne", CARMEN_PARAM_ONOFF, &spherical_sensor_params[0].alive, 0, NULL},
-//			{(char*)"localize_ackerman", (char*)"stereo_velodyne1", CARMEN_PARAM_ONOFF, &spherical_sensor_params[1].alive, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne2", CARMEN_PARAM_ONOFF, &spherical_sensor_params[2].alive, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne3", CARMEN_PARAM_ONOFF, &spherical_sensor_params[3].alive, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne4", CARMEN_PARAM_ONOFF, &spherical_sensor_params[4].alive, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne5", CARMEN_PARAM_ONOFF, &spherical_sensor_params[5].alive, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne6", CARMEN_PARAM_ONOFF, &spherical_sensor_params[6].alive, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne7", CARMEN_PARAM_ONOFF, &spherical_sensor_params[7].alive, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne8", CARMEN_PARAM_ONOFF, &spherical_sensor_params[8].alive, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne9", CARMEN_PARAM_ONOFF, &spherical_sensor_params[9].alive, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "velodyne", CARMEN_PARAM_ONOFF, &spherical_sensor_params[0].alive, 0, NULL},
+//			{(char *) "localize_ackerman", (char *) "stereo_velodyne1", CARMEN_PARAM_ONOFF, &spherical_sensor_params[1].alive, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne2", CARMEN_PARAM_ONOFF, &spherical_sensor_params[2].alive, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne3", CARMEN_PARAM_ONOFF, &spherical_sensor_params[3].alive, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne4", CARMEN_PARAM_ONOFF, &spherical_sensor_params[4].alive, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne5", CARMEN_PARAM_ONOFF, &spherical_sensor_params[5].alive, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne6", CARMEN_PARAM_ONOFF, &spherical_sensor_params[6].alive, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne7", CARMEN_PARAM_ONOFF, &spherical_sensor_params[7].alive, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne8", CARMEN_PARAM_ONOFF, &spherical_sensor_params[8].alive, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne9", CARMEN_PARAM_ONOFF, &spherical_sensor_params[9].alive, 0, NULL},
 
-			{(char*)"localize_ackerman", (char*)"velodyne_locc", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].log_odds.log_odds_occ, 0, NULL},
-//			{(char*)"localize_ackerman", (char*)"stereo_velodyne1_locc", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[1].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne2_locc", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[2].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne3_locc", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[3].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne4_locc", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[4].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne5_locc", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[5].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne6_locc", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[6].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne7_locc", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[7].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne8_locc", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[8].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne9_locc", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[9].log_odds.log_odds_occ, 0, NULL},
-
-
-			{(char*)"localize_ackerman", (char*)"velodyne_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].log_odds.log_odds_free, 0, NULL},
-//			{(char*)"localize_ackerman", (char*)"stereo_velodyne1_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[1].log_odds.log_odds_free, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne2_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[2].log_odds.log_odds_free, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne3_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[3].log_odds.log_odds_free, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne4_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[4].log_odds.log_odds_free, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne5_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[5].log_odds.log_odds_free, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne6_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[6].log_odds.log_odds_free, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne7_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[7].log_odds.log_odds_free, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne8_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[8].log_odds.log_odds_free, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne9_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[9].log_odds.log_odds_free, 0, NULL},
-
-			{(char*)"localize_ackerman", (char*)"velodyne_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].log_odds.log_odds_l0, 0, NULL},
-//			{(char*)"localize_ackerman", (char*)"stereo_velodyne1_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[1].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne2_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[2].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne3_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[3].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne4_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[4].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne5_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[5].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne6_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[6].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne7_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[7].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne8_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[8].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne9_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[9].log_odds.log_odds_l0, 0, NULL},
-
-			{(char*)"localize_ackerman", (char*)"velodyne_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].unexpeted_delta_range_sigma, 0, NULL},
-//			{(char*)"localize_ackerman", (char*)"stereo_velodyne1_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[1].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne2_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[2].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne3_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[3].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne4_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[4].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne5_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[5].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne6_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[6].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne7_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[7].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne8_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[8].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne9_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[9].unexpeted_delta_range_sigma, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "velodyne_locc", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].log_odds.log_odds_occ, 0, NULL},
+//			{(char *) "localize_ackerman", (char *) "stereo_velodyne1_locc", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[1].log_odds.log_odds_occ, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne2_locc", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[2].log_odds.log_odds_occ, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne3_locc", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[3].log_odds.log_odds_occ, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne4_locc", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[4].log_odds.log_odds_occ, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne5_locc", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[5].log_odds.log_odds_occ, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne6_locc", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[6].log_odds.log_odds_occ, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne7_locc", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[7].log_odds.log_odds_occ, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne8_locc", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[8].log_odds.log_odds_occ, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne9_locc", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[9].log_odds.log_odds_occ, 0, NULL},
 
 
-			{(char*)"localize_ackerman", (char*)"unsafe_height_above_ground", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].unsafe_height_above_ground, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "velodyne_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].log_odds.log_odds_free, 0, NULL},
+//			{(char *) "localize_ackerman", (char *) "stereo_velodyne1_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[1].log_odds.log_odds_free, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne2_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[2].log_odds.log_odds_free, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne3_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[3].log_odds.log_odds_free, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne4_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[4].log_odds.log_odds_free, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne5_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[5].log_odds.log_odds_free, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne6_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[6].log_odds.log_odds_free, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne7_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[7].log_odds.log_odds_free, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne8_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[8].log_odds.log_odds_free, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne9_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[9].log_odds.log_odds_free, 0, NULL},
+
+			{(char *) "localize_ackerman", (char *) "velodyne_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].log_odds.log_odds_l0, 0, NULL},
+//			{(char *) "localize_ackerman", (char *) "stereo_velodyne1_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[1].log_odds.log_odds_l0, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne2_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[2].log_odds.log_odds_l0, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne3_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[3].log_odds.log_odds_l0, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne4_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[4].log_odds.log_odds_l0, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne5_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[5].log_odds.log_odds_l0, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne6_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[6].log_odds.log_odds_l0, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne7_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[7].log_odds.log_odds_l0, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne8_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[8].log_odds.log_odds_l0, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne9_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[9].log_odds.log_odds_l0, 0, NULL},
+
+			{(char *) "localize_ackerman", (char *) "velodyne_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].unexpeted_delta_range_sigma, 0, NULL},
+//			{(char *) "localize_ackerman", (char *) "stereo_velodyne1_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[1].unexpeted_delta_range_sigma, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne2_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[2].unexpeted_delta_range_sigma, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne3_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[3].unexpeted_delta_range_sigma, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne4_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[4].unexpeted_delta_range_sigma, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne5_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[5].unexpeted_delta_range_sigma, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne6_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[6].unexpeted_delta_range_sigma, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne7_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[7].unexpeted_delta_range_sigma, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne8_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[8].unexpeted_delta_range_sigma, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "stereo_velodyne9_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[9].unexpeted_delta_range_sigma, 0, NULL},
 
 
-			{(char*)"localize_ackerman",  (char*)"velodyne_range_max_factor", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].range_max_factor, 0, NULL}
+			{(char *) "localize_ackerman", (char *) "unsafe_height_above_ground", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].unsafe_height_above_ground, 0, NULL},
+
+
+			{(char *) "localize_ackerman",  (char *) "velodyne_range_max_factor", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].range_max_factor, 0, NULL}
 
 
 	};
@@ -1070,9 +1070,9 @@ get_sensors_param(int argc, char **argv)
 
 		carmen_param_t param_list[] =
 		{
-			{spherical_sensor_params[0].name, 	(char *)"vertical_resolution", 		CARMEN_PARAM_INT, &spherical_sensor_params[0].vertical_resolution, 0, NULL},
-			{(char *)"localize_ackerman", 		(char *)"velodyne_range_max", 		CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].range_max, 0, NULL},
-			{spherical_sensor_params[0].name, 	(char *)"time_spent_by_each_scan", 	CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].time_spent_by_each_scan, 0, NULL},
+			{spherical_sensor_params[0].name, 	(char *) "vertical_resolution", 		CARMEN_PARAM_INT, &spherical_sensor_params[0].vertical_resolution, 0, NULL},
+			{(char *) "localize_ackerman", 		(char *) "velodyne_range_max", 		CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].range_max, 0, NULL},
+			{spherical_sensor_params[0].name, 	(char *) "time_spent_by_each_scan", 	CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].time_spent_by_each_scan, 0, NULL},
 		};
 
 		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
@@ -1185,73 +1185,73 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 			{(char *) "localize_ackerman", 	(char *) "phi_noise_velocity", CARMEN_PARAM_DOUBLE, &param->phi_noise_velocity, 0, NULL},
 			{(char *) "localize_ackerman", 	(char *) "use_velocity_prediction", CARMEN_PARAM_ONOFF, &param->use_velocity_prediction, 0, NULL},
 
-			{(char *)"robot", (char*)"frontlaser_offset", CARMEN_PARAM_DOUBLE, &param->front_laser_offset, 0, NULL},
-			{(char *)"robot", (char*)"rearlaser_offset", CARMEN_PARAM_DOUBLE, &param->rear_laser_offset, 0, NULL},
-			{(char *)"robot", (char*)"length", CARMEN_PARAM_DOUBLE, &car_config.length, 0, NULL},
-			{(char *)"robot", (char*)"width", CARMEN_PARAM_DOUBLE, &car_config.width, 0, NULL},
-			{(char *)"robot", (char*)"distance_between_rear_car_and_rear_wheels",	CARMEN_PARAM_DOUBLE, &car_config.distance_between_rear_car_and_rear_wheels, 1, NULL},
-			{(char *)"robot",  (char*)"distance_between_front_and_rear_axles",		CARMEN_PARAM_DOUBLE, &car_config.distance_between_front_and_rear_axles, 1, NULL},
+			{(char *) "robot", (char *) "frontlaser_offset", CARMEN_PARAM_DOUBLE, &param->front_laser_offset, 0, NULL},
+			{(char *) "robot", (char *) "rearlaser_offset", CARMEN_PARAM_DOUBLE, &param->rear_laser_offset, 0, NULL},
+			{(char *) "robot", (char *) "length", CARMEN_PARAM_DOUBLE, &car_config.length, 0, NULL},
+			{(char *) "robot", (char *) "width", CARMEN_PARAM_DOUBLE, &car_config.width, 0, NULL},
+			{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels",	CARMEN_PARAM_DOUBLE, &car_config.distance_between_rear_car_and_rear_wheels, 1, NULL},
+			{(char *) "robot",  (char *) "distance_between_front_and_rear_axles",		CARMEN_PARAM_DOUBLE, &car_config.distance_between_front_and_rear_axles, 1, NULL},
 
-			{(char *)"robot", (char*)"wheel_radius", CARMEN_PARAM_DOUBLE, &robot_wheel_radius, 0, NULL},
+			{(char *) "robot", (char *) "wheel_radius", CARMEN_PARAM_DOUBLE, &robot_wheel_radius, 0, NULL},
 
-			{(char *)"localize", (char*)"use_rear_laser", CARMEN_PARAM_ONOFF, &param->use_rear_laser, 0, NULL},
-			{(char *)"localize", (char*)"num_particles", CARMEN_PARAM_INT, &param->num_particles, 0, NULL},
-			{(char *)"localize", (char*)"laser_max_range", CARMEN_PARAM_DOUBLE, &param->max_range, 1, NULL},
-			{(char *)"localize", (char*)"min_wall_prob", CARMEN_PARAM_DOUBLE, &param->min_wall_prob, 0, NULL},
-			{(char *)"localize", (char*)"outlier_fraction", CARMEN_PARAM_DOUBLE, &param->outlier_fraction, 0, NULL},
-			{(char *)"localize", (char*)"update_distance", CARMEN_PARAM_DOUBLE, &param->update_distance, 0, NULL},
-			{(char *)"localize", (char*)"integrate_angle_deg", CARMEN_PARAM_DOUBLE, &integrate_angle_deg, 0, NULL},
-			{(char *)"localize", (char*)"do_scanmatching", CARMEN_PARAM_ONOFF, &param->do_scanmatching, 1, NULL},
-			{(char *)"localize", (char*)"constrain_to_map", CARMEN_PARAM_ONOFF, &param->constrain_to_map, 1, NULL},
+			{(char *) "localize", (char *) "use_rear_laser", CARMEN_PARAM_ONOFF, &param->use_rear_laser, 0, NULL},
+			{(char *) "localize", (char *) "num_particles", CARMEN_PARAM_INT, &param->num_particles, 0, NULL},
+			{(char *) "localize", (char *) "laser_max_range", CARMEN_PARAM_DOUBLE, &param->max_range, 1, NULL},
+			{(char *) "localize", (char *) "min_wall_prob", CARMEN_PARAM_DOUBLE, &param->min_wall_prob, 0, NULL},
+			{(char *) "localize", (char *) "outlier_fraction", CARMEN_PARAM_DOUBLE, &param->outlier_fraction, 0, NULL},
+			{(char *) "localize", (char *) "update_distance", CARMEN_PARAM_DOUBLE, &param->update_distance, 0, NULL},
+			{(char *) "localize", (char *) "integrate_angle_deg", CARMEN_PARAM_DOUBLE, &integrate_angle_deg, 0, NULL},
+			{(char *) "localize", (char *) "do_scanmatching", CARMEN_PARAM_ONOFF, &param->do_scanmatching, 1, NULL},
+			{(char *) "localize", (char *) "constrain_to_map", CARMEN_PARAM_ONOFF, &param->constrain_to_map, 1, NULL},
 #ifdef OLD_MOTION_MODEL
-			{(char *)"localize", (char*)"odom_a1", CARMEN_PARAM_DOUBLE, &param->odom_a1, 1, NULL},
-			{(char *)"localize", (char*)"odom_a2", CARMEN_PARAM_DOUBLE, &param->odom_a2, 1, NULL},
-			{(char *)"localize", (char*)"odom_a3", CARMEN_PARAM_DOUBLE, &param->odom_a3, 1, NULL},
-			{(char *)"localize", (char*)"odom_a4", CARMEN_PARAM_DOUBLE, &param->odom_a4, 1, NULL},
+			{(char *) "localize", (char *) "odom_a1", CARMEN_PARAM_DOUBLE, &param->odom_a1, 1, NULL},
+			{(char *) "localize", (char *) "odom_a2", CARMEN_PARAM_DOUBLE, &param->odom_a2, 1, NULL},
+			{(char *) "localize", (char *) "odom_a3", CARMEN_PARAM_DOUBLE, &param->odom_a3, 1, NULL},
+			{(char *) "localize", (char *) "odom_a4", CARMEN_PARAM_DOUBLE, &param->odom_a4, 1, NULL},
 #endif
-			{(char *)"localize", (char*)"occupied_prob", CARMEN_PARAM_DOUBLE, &param->occupied_prob, 0, NULL},
-			{(char *)"localize", (char*)"lmap_std", CARMEN_PARAM_DOUBLE, &param->lmap_std, 0, NULL},
-			{(char *)"localize", (char*)"global_lmap_std", CARMEN_PARAM_DOUBLE, &param->global_lmap_std, 0, NULL},
-			{(char *)"localize", (char*)"global_evidence_weight", CARMEN_PARAM_DOUBLE, &param->global_evidence_weight, 0, NULL},
-			{(char *)"localize", (char*)"global_distance_threshold", CARMEN_PARAM_DOUBLE, &param->global_distance_threshold, 1, NULL},
-			{(char *)"localize", (char*)"global_test_samples", CARMEN_PARAM_INT, &param->global_test_samples, 1, NULL},
-			{(char *)"localize", (char*)"use_sensor", CARMEN_PARAM_ONOFF, &param->use_sensor, 0, NULL},
-			{(char *)"localize", (char*)"tracking_beam_minlikelihood", CARMEN_PARAM_DOUBLE, &param->tracking_beam_minlikelihood, 0, NULL},
-			{(char *)"localize", (char*)"global_beam_minlikelihood", CARMEN_PARAM_DOUBLE, &param->global_beam_minlikelihood, 0, NULL},
+			{(char *) "localize", (char *) "occupied_prob", CARMEN_PARAM_DOUBLE, &param->occupied_prob, 0, NULL},
+			{(char *) "localize", (char *) "lmap_std", CARMEN_PARAM_DOUBLE, &param->lmap_std, 0, NULL},
+			{(char *) "localize", (char *) "global_lmap_std", CARMEN_PARAM_DOUBLE, &param->global_lmap_std, 0, NULL},
+			{(char *) "localize", (char *) "global_evidence_weight", CARMEN_PARAM_DOUBLE, &param->global_evidence_weight, 0, NULL},
+			{(char *) "localize", (char *) "global_distance_threshold", CARMEN_PARAM_DOUBLE, &param->global_distance_threshold, 1, NULL},
+			{(char *) "localize", (char *) "global_test_samples", CARMEN_PARAM_INT, &param->global_test_samples, 1, NULL},
+			{(char *) "localize", (char *) "use_sensor", CARMEN_PARAM_ONOFF, &param->use_sensor, 0, NULL},
+			{(char *) "localize", (char *) "tracking_beam_minlikelihood", CARMEN_PARAM_DOUBLE, &param->tracking_beam_minlikelihood, 0, NULL},
+			{(char *) "localize", (char *) "global_beam_minlikelihood", CARMEN_PARAM_DOUBLE, &param->global_beam_minlikelihood, 0, NULL},
 
-			{(char *)"sensor_board_1", (char*)"x", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.x),	0, NULL},
-			{(char *)"sensor_board_1", (char*)"y", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.y),	0, NULL},
-			{(char *)"sensor_board_1", (char*)"z", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.z),	0, NULL},
-			{(char *)"sensor_board_1", (char*)"roll", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.roll),0, NULL},
-			{(char *)"sensor_board_1", (char*)"pitch", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.pitch),0, NULL},
-			{(char *)"sensor_board_1", (char*)"yaw", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.yaw),	0, NULL},
+			{(char *) "sensor_board_1", (char *) "x", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.x),	0, NULL},
+			{(char *) "sensor_board_1", (char *) "y", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.y),	0, NULL},
+			{(char *) "sensor_board_1", (char *) "z", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.z),	0, NULL},
+			{(char *) "sensor_board_1", (char *) "roll", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.roll),0, NULL},
+			{(char *) "sensor_board_1", (char *) "pitch", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.pitch),0, NULL},
+			{(char *) "sensor_board_1", (char *) "yaw", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.yaw),	0, NULL},
 
-			{(char *)"velodyne", (char*)"x", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.x), 0, NULL},
-			{(char *)"velodyne", (char*)"y", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.y), 0, NULL},
-			{(char *)"velodyne", (char*)"z", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.z), 0, NULL},
-			{(char *)"velodyne", (char*)"roll", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.roll), 0, NULL},
-			{(char *)"velodyne", (char*)"pitch", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.pitch), 0, NULL},
-			{(char *)"velodyne", (char*)"yaw", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.yaw), 0, NULL},
+			{(char *) "velodyne", (char *) "x", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.x), 0, NULL},
+			{(char *) "velodyne", (char *) "y", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.y), 0, NULL},
+			{(char *) "velodyne", (char *) "z", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.z), 0, NULL},
+			{(char *) "velodyne", (char *) "roll", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.roll), 0, NULL},
+			{(char *) "velodyne", (char *) "pitch", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.pitch), 0, NULL},
+			{(char *) "velodyne", (char *) "yaw", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.yaw), 0, NULL},
 
-			{(char *)"localize_ackerman",  (char*)"number_of_sensors", CARMEN_PARAM_INT, &number_of_sensors, 0, NULL},
-			{(char *)"localize_ackerman", (char*)"safe_range_above_sensors", CARMEN_PARAM_DOUBLE, &safe_range_above_sensors, 0, NULL},
-			{(char *)"localize_ackerman", (char*)"correction_type", CARMEN_PARAM_INT, &param->correction_type, 0, NULL},
+			{(char *) "localize_ackerman",  (char *) "number_of_sensors", CARMEN_PARAM_INT, &number_of_sensors, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "safe_range_above_sensors", CARMEN_PARAM_DOUBLE, &safe_range_above_sensors, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "correction_type", CARMEN_PARAM_INT, &param->correction_type, 0, NULL},
 
-			{(char *)"localize_ackerman", (char*)"swarm_max_particle_velocity", CARMEN_PARAM_DOUBLE, &param->swarm_max_particle_velocity, 0, NULL},
-			{(char *)"localize_ackerman", (char*)"swarm_max_particle_angular_velocity", CARMEN_PARAM_DOUBLE, &param->swarm_max_particle_angular_velocity, 0, NULL},
-			{(char *)"localize_ackerman", (char*)"max_particle_displacement", CARMEN_PARAM_DOUBLE, &param->max_particle_displacement, 0, NULL},
-			{(char *)"localize_ackerman", (char*)"max_particle_angular_displacement", CARMEN_PARAM_DOUBLE, &param->max_particle_angular_displacement, 0, NULL},
-			{(char *)"localize_ackerman", (char*)"de_crossover_rate", CARMEN_PARAM_DOUBLE, &param->de_crossover_rate, 0, NULL},
-			{(char *)"localize_ackerman", (char*)"de_mutation_rate", CARMEN_PARAM_DOUBLE, &param->de_mutation_rate, 0, NULL},
-			{(char *)"localize_ackerman", (char*)"de_num_iteration", CARMEN_PARAM_INT, &param->de_num_iteration, 0, NULL},
-			{(char *)"localize_ackerman", (char*)"swarm_num_iteration", CARMEN_PARAM_INT, &param->swarm_num_iteration, 0, NULL},
-			{(char *)"localize_ackerman", (char*)"jump_size", CARMEN_PARAM_INT, &param->jump_size, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "swarm_max_particle_velocity", CARMEN_PARAM_DOUBLE, &param->swarm_max_particle_velocity, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "swarm_max_particle_angular_velocity", CARMEN_PARAM_DOUBLE, &param->swarm_max_particle_angular_velocity, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "max_particle_displacement", CARMEN_PARAM_DOUBLE, &param->max_particle_displacement, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "max_particle_angular_displacement", CARMEN_PARAM_DOUBLE, &param->max_particle_angular_displacement, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "de_crossover_rate", CARMEN_PARAM_DOUBLE, &param->de_crossover_rate, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "de_mutation_rate", CARMEN_PARAM_DOUBLE, &param->de_mutation_rate, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "de_num_iteration", CARMEN_PARAM_INT, &param->de_num_iteration, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "swarm_num_iteration", CARMEN_PARAM_INT, &param->swarm_num_iteration, 0, NULL},
+			{(char *) "localize_ackerman", (char *) "jump_size", CARMEN_PARAM_INT, &param->jump_size, 0, NULL},
 
-			{(char *)"mapper", (char*)"map_log_odds_max", CARMEN_PARAM_INT, &p_map_params->log_odds_max, 0, NULL},
-			{(char *)"mapper", (char*)"map_log_odds_min", CARMEN_PARAM_INT, &p_map_params->log_odds_min, 0, NULL},
-			{(char *)"mapper", (char*)"map_log_odds_bias", CARMEN_PARAM_INT, &p_map_params->log_odds_bias, 0, NULL},
-			{(char *)"mapper", (char*)"map_grid_res", CARMEN_PARAM_DOUBLE, &p_map_params->grid_res, 0, NULL},
-			{(char *)"mapper", (char*)"map_range_factor", CARMEN_PARAM_DOUBLE, &p_map_params->range_factor, 0, NULL},
+			{(char *) "mapper", (char *) "map_log_odds_max", CARMEN_PARAM_INT, &p_map_params->log_odds_max, 0, NULL},
+			{(char *) "mapper", (char *) "map_log_odds_min", CARMEN_PARAM_INT, &p_map_params->log_odds_min, 0, NULL},
+			{(char *) "mapper", (char *) "map_log_odds_bias", CARMEN_PARAM_INT, &p_map_params->log_odds_bias, 0, NULL},
+			{(char *) "mapper", (char *) "map_grid_res", CARMEN_PARAM_DOUBLE, &p_map_params->grid_res, 0, NULL},
+			{(char *) "mapper", (char *) "map_range_factor", CARMEN_PARAM_DOUBLE, &p_map_params->range_factor, 0, NULL},
 			{(char *) "map_server", (char*) "map_width", CARMEN_PARAM_DOUBLE, &map_width, 0, NULL},
 			{(char *) "map_server", (char*) "map_height", CARMEN_PARAM_DOUBLE, &map_height, 0, NULL},
 	};
@@ -1285,15 +1285,15 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 	localize_ackerman_velodyne_laser_read_parameters(argc, argv);
 
 	param->xy_uncertainty_due_to_grid_resolution = (p_map_params->grid_res / 2.0) * (p_map_params->grid_res / 2.0);
-	param->yaw_uncertainty_due_to_grid_resolution = asin((p_map_params->grid_res / 8.0) / max_range) * asin((p_map_params->grid_res / 8.0) / max_range);
+	param->yaw_uncertainty_due_to_grid_resolution = asin((p_map_params->grid_res / 0.1) / max_range) * asin((p_map_params->grid_res / 0.1) / max_range);
 	
 	carmen_param_allow_unfound_variables(1);
 
 	carmen_param_t param_optional_list[] = 
 	{
-			{(char *)"localize_ackerman", (char*)"use_raw_laser", CARMEN_PARAM_ONOFF, &use_raw_laser, 0, NULL},
-			{(char *)"commandline", (char*)"mapping_mode", CARMEN_PARAM_ONOFF, &mapping_mode, 0, NULL},
-			{(char *)"commandline", (char*)"velodyne_viewer", CARMEN_PARAM_ONOFF, &velodyne_viewer, 0, NULL}
+			{(char *) "localize_ackerman", (char *) "use_raw_laser", CARMEN_PARAM_ONOFF, &use_raw_laser, 0, NULL},
+			{(char *) "commandline", (char *) "mapping_mode", CARMEN_PARAM_ONOFF, &mapping_mode, 0, NULL},
+			{(char *) "commandline", (char *) "velodyne_viewer", CARMEN_PARAM_ONOFF, &velodyne_viewer, 0, NULL}
 	};
 
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));

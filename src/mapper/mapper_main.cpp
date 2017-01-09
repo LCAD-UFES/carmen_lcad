@@ -130,7 +130,8 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 
 			run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
 
-			publish_map(globalpos_message->timestamp);
+			if (sensors_params[sensor_number].sensor_type == VELODYNE)
+				publish_map(globalpos_message->timestamp);
 			sensors_data[sensor_number].robot_pose[i] = old_robot_position;
 			sensors_data[sensor_number].robot_timestamp[i] = old_globalpos_timestamp;
 			sensors_data[sensor_number].point_cloud_index = old_point_cloud_index;
@@ -155,7 +156,8 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 
 		run_mapper(&sensors_params[sensor_number], &sensors_data[sensor_number], r_matrix_car_to_global);
 
-		publish_map(globalpos_message->timestamp);
+		if (sensors_params[sensor_number].sensor_type == VELODYNE)
+			publish_map(globalpos_message->timestamp);
 		sensors_data[sensor_number].robot_pose[i] = old_robot_position;
 		sensors_data[sensor_number].robot_timestamp[i] = old_globalpos_timestamp;
 		sensors_data[sensor_number].point_cloud_index = old_point_cloud_index;

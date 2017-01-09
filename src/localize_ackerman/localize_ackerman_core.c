@@ -65,7 +65,7 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 						filter->param->velocity_noise_velocity * v * v +
 						filter->param->velocity_noise_phi * phi * phi);
 		phi_step = phi + carmen_gaussian_random(0.0,
-				filter->param->phi_noise_phi +
+				filter->param->phi_noise_phi * phi * phi +
 				filter->param->phi_noise_velocity * v * v );
 		phi_step = carmen_clamp(-M_PI/4.0, phi_step, M_PI/4.0);
 
@@ -122,8 +122,6 @@ void carmen_localize_ackerman_incorporate_odometry(carmen_localize_ackerman_part
 
 		filter->particles[i].theta = carmen_normalize_theta(filter->particles[i].theta+turn);
 	}
-
-	/* keep track of the last odometry */
 }
 
 

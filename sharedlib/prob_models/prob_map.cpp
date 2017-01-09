@@ -6,8 +6,6 @@
 
 #define MAX_LOG_ODDS_POSSIBLE	37.0
 
-#define	DISCOUNT_RAY_19	0
-
 
 static ProbabilisticMapParams map_params;
 
@@ -533,14 +531,14 @@ carmen_prob_models_set_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sensor_
 	int i;
 	cell_coords_t cell_hit_by_ray;
 
-	for (i = 0; i < sensor_params->vertical_resolution; i++)
+	for (i = 1; i < sensor_params->vertical_resolution; i++)
 	{
 		cell_hit_by_ray.x = (sensor_data->ray_position_in_the_floor[thread_id][i].x / map->config.resolution);
 		cell_hit_by_ray.y = (sensor_data->ray_position_in_the_floor[thread_id][i].y / map->config.resolution);
 
 		if (map_grid_is_valid(map, cell_hit_by_ray.x, cell_hit_by_ray.y) && !sensor_data->maxed[thread_id][i] &&
 //			(sensor_data->obstacle_height[thread_id][i] > -3.0) && (sensor_data->obstacle_height[thread_id][i] < 2.0) &&
-			(sensor_data->ray_size_in_the_floor[thread_id][i] > 25.0))
+			(sensor_data->ray_size_in_the_floor[thread_id][i] > 15.0))
 			map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] = sensor_params->log_odds.log_odds_occ;
 	}
 }
@@ -949,12 +947,6 @@ carmen_prob_models_compute_expected_delta_ray(double ray_length, int ray_index, 
 {
 	double expected_delta_ray, alpha_plus_theta, theta, ray_size_on_the_floor, beta;
 	
-#if (DISCOUNT_RAY_19 == 1)
-	// Tratamento do raio que falta/apagado
-	if ((ray_index - 1) == 19)
-		theta = carmen_degrees_to_radians(vertical_correction[ray_index] - vertical_correction[ray_index-2]);
-	else
-#endif
 	theta = carmen_degrees_to_radians(vertical_correction[ray_index] - vertical_correction[ray_index-1]);
 	alpha_plus_theta = carmen_degrees_to_radians(vertical_correction[ray_index] + 90.0);	
 	ray_size_on_the_floor = sqrt((sensor_height * sensor_height + ray_length * ray_length) - (2.0 * sensor_height * ray_length * cos(alpha_plus_theta)));
@@ -981,35 +973,28 @@ get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, senso
 	double sigma;
 
 	previous_ray_index = ray_index - 1;
-#if (DISCOUNT_RAY_19 == 1)
-	// Tratamento do raio que falta/apagado
-	if (previous_ray_index == 19)
-		previous_ray_index = 18;
-#endif
 	if (previous_ray_index < 0)
 		return (sensor_params->log_odds.log_odds_l0);
 
 //	fprintf(plot_data, " > ri %d  pm %d  cm %d  ap %lf  ac %lf ", ray_index, sensor_data->maxed[thread_id][previous_ray_index], sensor_data->maxed[thread_id][ray_index],
 //			sensor_params->vertical_correction[previous_ray_index], sensor_params->vertical_correction[ray_index]);
 
-//	if (sensor_data->maxed[thread_id][previous_ray_index] || sensor_data->maxed[thread_id][ray_index])
+	if (sensor_data->maxed[thread_id][previous_ray_index] || sensor_data->maxed[thread_id][ray_index])
+		return (sensor_params->log_odds.log_odds_l0);
+//	if (sensor_data->maxed[thread_id][ray_index])
 //		return (sensor_params->log_odds.log_odds_l0);
-	if (sensor_data->maxed[thread_id][ray_index])
+
+	if (sensor_data->ray_hit_the_robot[thread_id][previous_ray_index] || sensor_data->ray_hit_the_robot[thread_id][ray_index])
 		return (sensor_params->log_odds.log_odds_l0);
 
-	if (sensor_data->ray_hit_the_robot[thread_id][previous_ray_index] ||
-		sensor_data->ray_hit_the_robot[thread_id][ray_index])
-		return (sensor_params->log_odds.log_odds_l0);
-
-	if ((sensor_data->obstacle_height[thread_id][previous_ray_index] < -2.0) ||
-		(sensor_data->obstacle_height[thread_id][ray_index] < -2.0))
+	if ((sensor_data->obstacle_height[thread_id][previous_ray_index] < -2.0) || (sensor_data->obstacle_height[thread_id][ray_index] < -2.0))
 		return (sensor_params->log_odds.log_odds_l0);
 
 	ray_length = sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index + ray_index].length;
 
-	if (sensor_data->maxed[thread_id][previous_ray_index])
-		ray_size1 = sensor_params->height / tan(-carmen_degrees_to_radians(sensor_params->vertical_correction[previous_ray_index]));
-	else
+//	if (sensor_data->maxed[thread_id][previous_ray_index])
+//		ray_size1 = sensor_params->height / tan(-carmen_degrees_to_radians(sensor_params->vertical_correction[previous_ray_index]));
+//	else
 		ray_size1 = sensor_data->ray_size_in_the_floor[thread_id][previous_ray_index];
 	ray_size2 = sensor_data->ray_size_in_the_floor[thread_id][ray_index];
 
@@ -1074,11 +1059,6 @@ get_log_odds_via_unexpeted_delta_range_jose(sensor_parameters_t *sensor_params, 
 //	double log_odds;
 
 	previous_ray_index = ray_index - 1;
-#if (DISCOUNT_RAY_19 == 1)
-	// Tratamento do raio que falta/apagado
-	if (previous_ray_index == 19)
-		previous_ray_index = 18;
-#endif
 	if (previous_ray_index < 0)
 		return (sensor_params->log_odds.log_odds_l0);
 
@@ -1129,11 +1109,6 @@ get_log_odds_via_unexpeted_delta_range_reverse(sensor_parameters_t *sensor_param
 	double two_times_sigma;
 
 	next_ray_index = ray_index + 1;
-#if (DISCOUNT_RAY_19 == 1)
-	// Tratamento do raio que falta/apagado
-	if (next_ray_index == 19)
-		next_ray_index = 20;
-#endif
 	if (next_ray_index >= 31)
 		return (sensor_params->log_odds.log_odds_l0);
 

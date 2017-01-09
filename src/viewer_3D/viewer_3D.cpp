@@ -734,7 +734,8 @@ get_laser_reading_position_car_reference(double angle, double range)
 carmen_vector_3D_t
 get_world_position(carmen_vector_3D_t position, int graphSize, carmen_pose_3D_t* sceneGraph[], int fromIndex)
 {
-	for (int i = fromIndex; i < graphSize; i++) {
+	for (int i = fromIndex; i < graphSize; i++)
+	{
 		carmen_pose_3D_t* parent = sceneGraph[i];
 		
 		rotation_matrix* local_rotation = create_rotation_matrix(parent->orientation);
@@ -857,7 +858,9 @@ carmen_ldmrs_draw_dispatcher(carmen_laser_ldmrs_message* laser_message, int pare
         point_cloud[last_ldmrs_position].points = (carmen_vector_3D_t*) malloc (num_points * sizeof (carmen_vector_3D_t));
         point_cloud[last_ldmrs_position].point_color = (carmen_vector_3D_t*) malloc (num_points * sizeof (carmen_vector_3D_t));
         point_cloud[last_ldmrs_position].num_points = num_points;
-    } else {
+    }
+    else
+    {
     	free(point_cloud[last_ldmrs_position].points);
     	free(point_cloud[last_ldmrs_position].point_color);
 
