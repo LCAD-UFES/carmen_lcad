@@ -46,6 +46,17 @@ typedef struct
 #define CARMEN_MOVING_OBJECTS3_PARTICLES_MESSAGE_FMT "{int,<{{double,double,double},double,{double,double,double,double},double}:1>,double,string}"
 
 
+typedef struct
+{
+	int num_rays;
+	double *virtual_scan;
+	double timestamp;
+	char *host;
+} carmen_moving_objects3_virtual_scan_message;
+
+#define CARMEN_MOVING_OBJECTS3_VIRTUAL_SCAN_MESSAGE_NAME "carmen_moving_objects3_virtual_scan_message"
+#define CARMEN_MOVING_OBJECTS3_VIRTUAL_SCAN_MESSAGE_FMT "{int,<{double}:1>,double,string}"
+
 #endif
 
 // @}
