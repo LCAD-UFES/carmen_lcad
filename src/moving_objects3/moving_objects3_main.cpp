@@ -92,7 +92,7 @@ generate_virtual_scan(double *virtual_scan, carmen_velodyne_partial_scan_message
 	double MAX_RANGE = range_max;
 	double MIN_RANGE = 3.0;
 
-	double virtual_scan_resolution = carmen_degrees_to_radians(360.0/NUM_OF_RAYS);
+	double inv_scan_resolution = NUM_OF_RAYS/(2*M_PI);
 
 	for (i = 0; i < velodyne_message->number_of_32_laser_shots; i++)
 	{
@@ -101,9 +101,7 @@ generate_virtual_scan(double *virtual_scan, carmen_velodyne_partial_scan_message
 		min_ground_range = MAX_RANGE;
 
 		// find index of virtual scan
-		index = (int) ((hor_angle + carmen_degrees_to_radians(180.0)) / virtual_scan_resolution);
-
-		virtual_scan[index] = MAX_RANGE;
+		index = (int) ( (hor_angle + M_PI) * inv_scan_resolution );
 
 		// for (j = 0; j < (32 - 1); j++)
 		for (j = 0; j < 23; j++) // the 22nd angle is the 0.0. The next angles are higher (trees, etc)
@@ -142,6 +140,7 @@ generate_virtual_scan(double *virtual_scan, carmen_velodyne_partial_scan_message
 				}
 			}
 		}
+
 		virtual_scan[index] = min_ground_range;
 	}
 }
@@ -206,6 +205,10 @@ void
 carmen_velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
 	double virtual_scan[NUM_OF_RAYS];
+	for (int i = 0; i < NUM_OF_RAYS; i++)
+	{
+		virtual_scan[i] = range_max;
+	}
 	generate_virtual_scan(virtual_scan, velodyne_message);
 	publish_virtual_scan_message(virtual_scan, velodyne_message->timestamp, NUM_OF_RAYS);
 }

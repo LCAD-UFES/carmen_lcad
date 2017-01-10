@@ -29,6 +29,10 @@ int num_of_rays = 0;
 double *current_virtual_scan;
 double *last_virtual_scan;
 
+double rotate_y=0;
+double rotate_x=0;
+double zoom=1.0;
+
 void
 draw_circle(double radius, double x_center, double y_center, double r, double g, double b)
 {
@@ -122,43 +126,30 @@ draw_particles(carmen_moving_objects3_particles_message particles_message)
 
 
 void
-draw_virtual_scan(double *virtual_scan, int num_of_rays)
+draw_virtual_scan(double *current_virtual_scan, double *last_virtual_scan, int num_of_rays)
 {
 	int i;
 	double x;
 	double y;
 
-	double virtual_scan_resolution = carmen_degrees_to_radians(360.0/num_of_rays);
+	double r = 0.0, g = 0.0, b  = 0.0;
 
-	glBegin(GL_POINTS);
-	for (i = 0; i < num_of_rays; i++)
-	{
-		// compute angle
-		double angle = (((double) i) * virtual_scan_resolution) - carmen_degrees_to_radians(180.0);
-		transform_polar_coordinates_to_cartesian_coordinates(virtual_scan[i], angle, &x, &y);
-
-		double pixel_x = (x * pixels_per_meter_x);
-		double pixel_y = (y * pixels_per_meter_y);
-
-		glColor3f(0.0, 0.0, 0.0);
-		glVertex2f(pixel_x, pixel_y);
-	}
-	glEnd();
+	double virtual_scan_resolution = (2*M_PI)/num_of_rays;
 
 	if(show_laser_rays)
 	{
 		for(i = 0; i < num_of_rays; i++)
 		{
 			// compute angle
-			double angle = (((double) i) * virtual_scan_resolution) - carmen_degrees_to_radians(180.0);
-			transform_polar_coordinates_to_cartesian_coordinates(virtual_scan[i], angle, &x, &y);
+			double angle = (((double) i) * virtual_scan_resolution) - M_PI;
+			transform_polar_coordinates_to_cartesian_coordinates(current_virtual_scan[i], angle, &x, &y);
 
 			double pixel_x = (x * pixels_per_meter_x);
 			double pixel_y = (y * pixels_per_meter_y);
 
 			// quanto maior a possibilidade de ser obstáculo mais preto é o ponto
-			double red = 0.5;
-			double green = 0.6;
+			double red = 0.88;
+			double green = 0.88;
 			double blue = 0.0;
 
 			glBegin(GL_LINES);
@@ -168,6 +159,44 @@ draw_virtual_scan(double *virtual_scan, int num_of_rays)
 			glEnd();
 		}
 	}
+
+	glPointSize(2.0);
+	glBegin(GL_POINTS);
+	for (i = 0; i < num_of_rays; i++)
+	{
+		// compute angle
+		double angle = (((double) i) * virtual_scan_resolution) - M_PI;
+		transform_polar_coordinates_to_cartesian_coordinates(current_virtual_scan[i], angle, &x, &y);
+
+		double pixel_x = (x * pixels_per_meter_x);
+		double pixel_y = (y * pixels_per_meter_y);
+
+		if ((last_virtual_scan[i] == 0.0 || last_virtual_scan[i] == 50.0) &&
+				(current_virtual_scan[i] != 0 || current_virtual_scan[i] != 50.0))
+		{
+			r = 1.0;
+			g = 0.0;
+			b = 0.0;
+		}
+
+		if ( current_virtual_scan[i] > last_virtual_scan[i] )
+		{
+			r = 1.0;
+			g = 1.0;
+			b = 1.0;
+
+			transform_polar_coordinates_to_cartesian_coordinates(last_virtual_scan[i], angle, &x, &y);
+			double lp_x = (x * pixels_per_meter_x);
+			double lp_y = (y * pixels_per_meter_y);
+
+			glColor3f(0.0, 1.0, 0.0);
+			glVertex2f(lp_x, lp_y);
+		}
+
+		glColor3f(r, g, b);
+		glVertex2f(pixel_x, pixel_y);
+	}
+	glEnd();
 }
 
 
@@ -177,7 +206,7 @@ draw_velodyne_on_ground()
 //	draw_spheres();
 	draw_circle(50.0, 0, 0, 0, 0, 0);
 	//draw_virtual_scan(last_virtual_scan, num_of_rays);
-	draw_virtual_scan(current_virtual_scan, num_of_rays);
+	draw_virtual_scan(current_virtual_scan, last_virtual_scan, num_of_rays);
 	draw_particles(particles_message);
 	draw_car_centralized();
 }
@@ -190,6 +219,12 @@ handle_velodyne_on_ground_display()
 	glLoadIdentity();
 
 	glClear(GL_COLOR_BUFFER_BIT);
+
+	glRotatef( rotate_x, 1.0, 0.0, 0.0 );
+	glRotatef( rotate_y, 0.0, 1.0, 0.0 );
+
+	glScalef(zoom, zoom, 1.0f);
+
 	draw_velodyne_on_ground();
 
 	glutSwapBuffers();
@@ -292,6 +327,38 @@ keyboard_handler(unsigned char key, int x, int y)
 	{
 		show_laser_rays = show_laser_rays ? 0 : 1;
 	}
+
+	if(key == '-')
+	{
+		if(zoom > 0)
+			zoom -= 0.25;
+	}
+
+	if(key == '=')
+	{
+		zoom += 0.25;
+	}
+}
+
+
+void
+handle_mouse( int button, int state, int x, int y)
+{
+	(void) x;
+	(void) y;
+	(void) state;
+
+	if (button == 3)
+	{
+		zoom += 0.0625;
+	}
+	else if (button == 4)
+	{
+		if(zoom > 0)
+			zoom -= 0.0625;
+	}
+
+    glutPostRedisplay();
 }
 
 
@@ -308,8 +375,9 @@ initialize_viewer(int argc, char **argv)
 		glutInitWindowPosition(0, 0);
 		velodyne_on_ground_window_id = glutCreateWindow("Virtual scan");
 		glutReshapeFunc(handle_velodyne_on_ground_resize);
-		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		glClearColor(0.26f, 0.26f, 0.26f, 1.0f);
 		glutDisplayFunc(handle_velodyne_on_ground_display);
+		glutMouseFunc(handle_mouse);
 		glutKeyboardFunc(keyboard_handler);
 	}
 
