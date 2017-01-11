@@ -1384,13 +1384,11 @@ carmen_localize_ackerman_function_velodyne_evaluation(
 			norm_global_map = norm_global_map + norm_global_remission_map;
 			w = (inner_product) / (sqrt(norm_local_map) * sqrt(norm_global_map));
 			w = 1.0 - (w > min_weight ? w : min_weight);
-			w =exp(-w*w*100.0);
+			w = exp(-w * w * 100.0);
 			break;
 	}
 
-
 	return w;
-
 }
 
 

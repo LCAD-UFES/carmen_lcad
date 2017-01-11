@@ -302,20 +302,19 @@ draw_single_map(carmen_map_t map)
 
 
 static void
-draw_map_VBO(map_drawer* m_drawer, carmen_vector_3D_t offset)
+draw_map_VBO(map_drawer *m_drawer, carmen_vector_3D_t offset)
 {
 	//printf("Offset2 x:% lf, y:% lf, z:% lf\n", offset.x, offset.y, offset.z);
 
 	glPushMatrix();
 
-		
 		glEnableVertexAttribArray(0);
 		glEnableVertexAttribArray(2);	
 
 		glColor3d(1.0, 0.0, 0.0);
 
 		int i;
-		for(i=0; i<m_drawer->max_num_maps; i++)
+		for (i = 0; i < m_drawer->max_num_maps; i++)
 		{	
 			glPushMatrix();
 				
@@ -326,8 +325,8 @@ draw_map_VBO(map_drawer* m_drawer, carmen_vector_3D_t offset)
 				glTranslated(offset_x, offset_y, offset_z);
 
 				glBindBuffer(GL_ARRAY_BUFFER, m_drawer->vertex_buffer_ids[i]);
-				glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)0);		
-				glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(3*sizeof(float)));
+				glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) 0);
+				glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float)));
 				glDrawArrays(GL_QUADS, 0, m_drawer->buffer_sizes[i]);
 				
 			glPopMatrix();
@@ -346,7 +345,8 @@ static void
 draw_map_not_VBO(map_drawer* m_drawer, carmen_vector_3D_t offset)
 {	
 	int i;
-	for(i=0; i<m_drawer->max_num_maps; i++)
+
+	for (i = 0; i < m_drawer->max_num_maps; i++)
 	{
 		glPushMatrix();
 
@@ -364,13 +364,13 @@ draw_map_not_VBO(map_drawer* m_drawer, carmen_vector_3D_t offset)
 
 
 void
-draw_map(map_drawer* m_drawer, carmen_vector_3D_t offset)
+draw_map(map_drawer *m_drawer, carmen_vector_3D_t offset)
 {
 	glPushMatrix();
 	
 		int drawVBO = 1;
 
-		if(drawVBO)
+		if (drawVBO)
 		{
 			draw_map_VBO(m_drawer, offset);
 		}
@@ -381,5 +381,3 @@ draw_map(map_drawer* m_drawer, carmen_vector_3D_t offset)
 
 	glPopMatrix();
 }
-
-

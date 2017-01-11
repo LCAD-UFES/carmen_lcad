@@ -5,7 +5,12 @@
 extern "C" {
 #endif
 
-typedef struct rotation_matrix rotation_matrix;
+struct _rotation_matrix
+{
+	double matrix[9];
+};
+
+typedef struct _rotation_matrix rotation_matrix;
 
 double *get_pointer_from_rotation_matrix(rotation_matrix *matrix);
 

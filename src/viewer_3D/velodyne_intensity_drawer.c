@@ -143,7 +143,8 @@ normalize_intensity(point_cloud pcloud)
 }
 
 void
-velodyne_intensity_drawer_add_velodyne_message(velodyne_intensity_drawer* v_drawer, carmen_velodyne_partial_scan_message* velodyne_message, carmen_pose_3D_t car_fused_pose, carmen_vector_3D_t car_fused_velocity, double car_fused_time)
+velodyne_intensity_drawer_add_velodyne_message(velodyne_intensity_drawer *v_drawer, carmen_velodyne_partial_scan_message *velodyne_message,
+		carmen_pose_3D_t car_fused_pose, carmen_vector_3D_t car_fused_velocity, double car_fused_time)
 {
 	static double vertical_correction[32] = { -30.67, -9.3299999, -29.33, -8.0, -28.0, -6.6700001, -26.67, -5.3299999, -25.33, -4.0,
 	-24.0, -2.6700001, -22.67, -1.33, -21.33, 0.0, -20.0, 1.33, -18.67, 2.6700001, -17.33, 4.0, -16.0, 5.3299999, -14.67, 6.6700001,

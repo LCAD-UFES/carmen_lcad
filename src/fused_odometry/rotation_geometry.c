@@ -2,15 +2,6 @@
 
 #include "rotation_geometry.h"
 
-struct rotation_matrix
-{
-	double* matrix;
-};
-
-double *get_pointer_from_rotation_matrix(rotation_matrix *matrix)
-{
-	return matrix->matrix;
-}
 
 //	Let roll = r, pitch = p, yaw = y
 //
@@ -22,10 +13,10 @@ double *get_pointer_from_rotation_matrix(rotation_matrix *matrix)
 //	| 		-sin(p)		 			sin(r)*cos(p)								cos(r)*cos(p)			|
 //
 
-rotation_matrix* create_rotation_matrix(carmen_orientation_3D_t orientation)
+rotation_matrix *
+create_rotation_matrix(carmen_orientation_3D_t orientation)
 {
-	rotation_matrix* r_matrix = malloc(sizeof(rotation_matrix));
-	r_matrix->matrix = malloc(9*sizeof(double));
+	rotation_matrix *r_matrix = malloc(sizeof(rotation_matrix));
 	
 	double sinRoll 	= sin(orientation.roll);
 	double cosRoll	= cos(orientation.roll);
@@ -44,17 +35,15 @@ rotation_matrix* create_rotation_matrix(carmen_orientation_3D_t orientation)
 	r_matrix->matrix[2 + 3*1] = sinRoll*cosPitch;
 	r_matrix->matrix[2 + 3*2] = cosRoll*cosPitch;
 
-	return r_matrix;	
+	return (r_matrix);
 }
 
 
-rotation_matrix* compute_rotation_matrix(rotation_matrix *r_matrix, carmen_orientation_3D_t orientation)
+rotation_matrix *
+compute_rotation_matrix(rotation_matrix *r_matrix, carmen_orientation_3D_t orientation)
 {
 	if (!r_matrix)
-	{
 		r_matrix = (rotation_matrix *) malloc(sizeof(rotation_matrix));
-		r_matrix->matrix = (double *) malloc(9*sizeof(double));
-	}
 	
 	double sinRoll 	= sin(orientation.roll);
 	double cosRoll	= cos(orientation.roll);
@@ -73,13 +62,14 @@ rotation_matrix* compute_rotation_matrix(rotation_matrix *r_matrix, carmen_orien
 	r_matrix->matrix[2 + 3*1] = sinRoll*cosPitch;
 	r_matrix->matrix[2 + 3*2] = cosRoll*cosPitch;
 
-	return r_matrix;	
+	return (r_matrix);
 }
 
-rotation_matrix* create_rotation_matrix_inverse(carmen_orientation_3D_t orientation)
+
+rotation_matrix *
+create_rotation_matrix_inverse(carmen_orientation_3D_t orientation)
 {
-	rotation_matrix* r_matrix = malloc(sizeof(rotation_matrix));
-	r_matrix->matrix = malloc(9*sizeof(double));
+	rotation_matrix *r_matrix = malloc(sizeof(rotation_matrix));
 	
 	double sinRoll 	= sin(orientation.roll);
 	double cosRoll	= cos(orientation.roll);
@@ -101,10 +91,11 @@ rotation_matrix* create_rotation_matrix_inverse(carmen_orientation_3D_t orientat
 	return r_matrix;	
 }
 
-rotation_matrix* create_rotation_matrix_from_matrix(double matrix[3][3])
+
+rotation_matrix *
+create_rotation_matrix_from_matrix(double matrix[3][3])
 {
-	rotation_matrix* r_matrix = malloc(sizeof(rotation_matrix));
-	r_matrix->matrix = malloc(9*sizeof(double));
+	rotation_matrix *r_matrix = malloc(sizeof(rotation_matrix));
 		
 	r_matrix->matrix[0 + 3*0] = matrix[0][0];
 	r_matrix->matrix[1 + 3*0] = matrix[1][0];
@@ -116,13 +107,14 @@ rotation_matrix* create_rotation_matrix_from_matrix(double matrix[3][3])
 	r_matrix->matrix[1 + 3*2] = matrix[1][2];
 	r_matrix->matrix[2 + 3*2] = matrix[2][2];
 
-	return r_matrix;	
+	return (r_matrix);
 }
 
-rotation_matrix* create_rotation_matrix_from_matrix_inverse(double matrix[3][3])
+
+rotation_matrix *
+create_rotation_matrix_from_matrix_inverse(double matrix[3][3])
 {
-	rotation_matrix* r_matrix = malloc(sizeof(rotation_matrix));
-	r_matrix->matrix = malloc(9*sizeof(double));
+	rotation_matrix *r_matrix = malloc(sizeof(rotation_matrix));
 		
 	r_matrix->matrix[0 + 3*0] = matrix[0][0];
 	r_matrix->matrix[1 + 3*0] = matrix[0][1];
@@ -134,13 +126,14 @@ rotation_matrix* create_rotation_matrix_from_matrix_inverse(double matrix[3][3])
 	r_matrix->matrix[1 + 3*2] = matrix[2][1];
 	r_matrix->matrix[2 + 3*2] = matrix[2][2];
 
-	return r_matrix;	
+	return (r_matrix);
 }
 
-rotation_matrix* create_rotation_matrix_from_vector(double* matrix)
+
+rotation_matrix *
+create_rotation_matrix_from_vector(double *matrix)
 {
-	rotation_matrix* r_matrix = malloc(sizeof(rotation_matrix));
-	r_matrix->matrix = malloc(9*sizeof(double));
+	rotation_matrix *r_matrix = malloc(sizeof(rotation_matrix));
 		
 	r_matrix->matrix[0 + 3*0] = matrix[0 + 3*0];
 	r_matrix->matrix[1 + 3*0] = matrix[1 + 3*0];
@@ -152,13 +145,14 @@ rotation_matrix* create_rotation_matrix_from_vector(double* matrix)
 	r_matrix->matrix[1 + 3*2] = matrix[1 + 3*2];
 	r_matrix->matrix[2 + 3*2] = matrix[2 + 3*2];
 
-	return r_matrix;	
+	return (r_matrix);
 }
 
-rotation_matrix* create_rotation_matrix_from_vector_inverse(double* matrix)
+
+rotation_matrix *
+create_rotation_matrix_from_vector_inverse(double *matrix)
 {
 	rotation_matrix* r_matrix = malloc(sizeof(rotation_matrix));
-	r_matrix->matrix = malloc(9*sizeof(double));
 		
 	r_matrix->matrix[0 + 3*0] = matrix[0 + 3*0];
 	r_matrix->matrix[1 + 3*0] = matrix[0 + 3*1];
@@ -170,18 +164,19 @@ rotation_matrix* create_rotation_matrix_from_vector_inverse(double* matrix)
 	r_matrix->matrix[1 + 3*2] = matrix[2 + 3*1];
 	r_matrix->matrix[2 + 3*2] = matrix[2 + 3*2];
 
-	return r_matrix;	
+	return (r_matrix);
 }
 
-rotation_matrix* create_rotation_matrix_from_quaternions(carmen_quaternion_t quat)
+
+rotation_matrix *
+create_rotation_matrix_from_quaternions(carmen_quaternion_t quat)
 {
 	double q0 = quat.q0;
 	double q1 = quat.q1;
 	double q2 = quat.q2;
 	double q3 = quat.q3;
 
-	rotation_matrix* r_matrix = malloc(sizeof(rotation_matrix));
-	r_matrix->matrix = malloc(9*sizeof(double));
+	rotation_matrix *r_matrix = malloc(sizeof(rotation_matrix));
 		
 	r_matrix->matrix[0 + 3*0] = q0*q0 + q1*q1 - q2*q2 - q3*q3;
 	r_matrix->matrix[0 + 3*1] = 2*(q1*q2 - q0*q3);
@@ -193,13 +188,14 @@ rotation_matrix* create_rotation_matrix_from_quaternions(carmen_quaternion_t qua
 	r_matrix->matrix[2 + 3*1] = 2*(q0*q1 + q2*q3);
 	r_matrix->matrix[2 + 3*2] = q0*q0 - q1*q1 - q2*q2 + q3*q3;
 
-	return r_matrix;	
+	return (r_matrix);
 }
 
-rotation_matrix* transpose_matrix(rotation_matrix* matrix_original)
+
+rotation_matrix *
+transpose_matrix(rotation_matrix *matrix_original)
 {
-	rotation_matrix* matrix_transpose = malloc(sizeof(rotation_matrix));
-	matrix_transpose->matrix = malloc(9*sizeof(double));
+	rotation_matrix *matrix_transpose = malloc(sizeof(rotation_matrix));
 
 	matrix_transpose->matrix[0 + 3*0] = matrix_original->matrix[0 + 3*0];
 	matrix_transpose->matrix[0 + 3*1] = matrix_original->matrix[1 + 3*0];
@@ -211,16 +207,19 @@ rotation_matrix* transpose_matrix(rotation_matrix* matrix_original)
 	matrix_transpose->matrix[2 + 3*1] = matrix_original->matrix[1 + 3*2];
 	matrix_transpose->matrix[2 + 3*2] = matrix_original->matrix[2 + 3*2];
 
-	return matrix_transpose;
+	return (matrix_transpose);
 }
 
-void destroy_rotation_matrix(rotation_matrix* r_matrix)
+
+void
+destroy_rotation_matrix(rotation_matrix *r_matrix)
 {
-	free(r_matrix->matrix);
 	free(r_matrix);
 }
 
-carmen_vector_3D_t multiply_matrix_vector(rotation_matrix* r_matrix, carmen_vector_3D_t vector)
+
+carmen_vector_3D_t
+multiply_matrix_vector(rotation_matrix *r_matrix, carmen_vector_3D_t vector)
 {
 	carmen_vector_3D_t result;	
 	
@@ -228,19 +227,20 @@ carmen_vector_3D_t multiply_matrix_vector(rotation_matrix* r_matrix, carmen_vect
 	result.y = r_matrix->matrix[1 + 3*0]*vector.x + r_matrix->matrix[1 + 3*1]*vector.y + r_matrix->matrix[1 + 3*2]*vector.z;
 	result.z = r_matrix->matrix[2 + 3*0]*vector.x + r_matrix->matrix[2 + 3*1]*vector.y + r_matrix->matrix[2 + 3*2]*vector.z;
 	
-	return result;
+	return (result);
 }
 
-rotation_matrix* multiply_matrix_matrix(rotation_matrix* matrix_1, rotation_matrix* matrix_2)
+
+rotation_matrix *
+multiply_matrix_matrix(rotation_matrix *matrix_1, rotation_matrix *matrix_2)
 {
-	rotation_matrix* result = malloc(sizeof(rotation_matrix));
-	result->matrix = malloc(9*sizeof(double));
+	rotation_matrix *result = malloc(sizeof(rotation_matrix));
 
-	int i,j,k;
+	int i, j, k;
 
-	for(i=0; i<3; i++)
+	for (i = 0; i < 3; i++)
 	{
-		for(j=0; j<3; j++)
+		for (j = 0; j < 3; j++)
 		{
 			result->matrix[i + 3*j] = 0.0;
 
@@ -251,13 +251,14 @@ rotation_matrix* multiply_matrix_matrix(rotation_matrix* matrix_1, rotation_matr
 		}
 	}
 
-	return result;
+	return (result);
 }
 
 
 // The roll, pitch and yaw angles returned by this function are in the convetion
 // that first rotates by yaw, then by pitch and then by roll, with the frame of reference rotating with the object
-carmen_orientation_3D_t get_angles_from_rotation_matrix(rotation_matrix* r_matrix)
+carmen_orientation_3D_t
+get_angles_from_rotation_matrix(rotation_matrix *r_matrix)
 {
 	carmen_orientation_3D_t angles;
 
@@ -265,10 +266,12 @@ carmen_orientation_3D_t get_angles_from_rotation_matrix(rotation_matrix* r_matri
 	angles.pitch = 	-asin(r_matrix->matrix[2 + 3*0]);
 	angles.yaw = 	atan2(r_matrix->matrix[1 + 3*0], r_matrix->matrix[0 + 3*0]);
 
-	return angles;
+	return (angles);
 }
 
-carmen_vector_3D_t add_vectors(carmen_vector_3D_t v1, carmen_vector_3D_t v2)
+
+carmen_vector_3D_t
+add_vectors(carmen_vector_3D_t v1, carmen_vector_3D_t v2)
 {
 	carmen_vector_3D_t result;
 
@@ -276,10 +279,12 @@ carmen_vector_3D_t add_vectors(carmen_vector_3D_t v1, carmen_vector_3D_t v2)
 	result.y = v1.y + v2.y;
 	result.z = v1.z + v2.z;
 
-	return result;
+	return (result);
 }
 
-carmen_vector_3D_t sub_vectors(carmen_vector_3D_t v1, carmen_vector_3D_t v2)
+
+carmen_vector_3D_t
+sub_vectors(carmen_vector_3D_t v1, carmen_vector_3D_t v2)
 {
 	carmen_vector_3D_t result;
 
@@ -287,7 +292,7 @@ carmen_vector_3D_t sub_vectors(carmen_vector_3D_t v1, carmen_vector_3D_t v2)
 	result.y = v1.y - v2.y;
 	result.z = v1.z - v2.z;
 
-	return result;
+	return (result);
 }
 
 
@@ -297,7 +302,7 @@ carmen_change_sensor_reference(carmen_vector_3D_t position, carmen_vector_3D_t r
 	carmen_vector_3D_t new_reference = multiply_matrix_vector(transformation_matrix, reference);
 	carmen_vector_3D_t point = add_vectors(new_reference, position);
 
-	return point;
+	return (point);
 }
 
 
@@ -312,7 +317,7 @@ carmen_get_interpolated_robot_position_at_time(carmen_pose_3D_t robot_pose, carm
 	displacement_robot_reference.y = robot_velocity.y * dt;
 	displacement_robot_reference.z = robot_velocity.z * dt;
 
-	return carmen_change_sensor_reference(robot_pose.position, displacement_robot_reference, r_matrix_robot_to_global);
+	return (carmen_change_sensor_reference(robot_pose.position, displacement_robot_reference, r_matrix_robot_to_global));
 }
 
 
@@ -332,7 +337,7 @@ carmen_ackerman_interpolated_robot_position_at_time(carmen_pose_3D_t robot_pose,
 		pose.position.y = pose.position.y + ds * sin(pose.orientation.yaw);
 		pose.orientation.yaw = carmen_normalize_theta(pose.orientation.yaw + ds * (tan(phi) / distance_between_front_and_rear_axles));
 	}
-	return pose;
+	return (pose);
 }
 
 
@@ -349,5 +354,5 @@ carmen_get_sensor_sphere_point_in_robot_cartesian_reference(carmen_sphere_coord_
 	board_reference = carmen_change_sensor_reference(sensor_pose.position, sensor_reference, sensor_to_board_matrix);
 	car_reference = carmen_change_sensor_reference(sensor_board_pose.position, board_reference, board_to_car_matrix);
 
-	return car_reference;
+	return (car_reference);
 }

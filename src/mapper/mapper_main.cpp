@@ -69,7 +69,7 @@ int create_map_sum_and_count;
 
 
 carmen_pose_3D_t sensor_board_1_pose;
-carmen_pose_3D_t front_bullbar;
+carmen_pose_3D_t front_bullbar_pose;
 
 sensor_parameters_t *sensors_params;
 sensor_parameters_t ultrasonic_sensor_params;
@@ -740,7 +740,7 @@ get_sensors_param(int argc, char **argv)
 	{
 		sensors_params[1].sensor_type = LASER_LDMRS;
 		sensors_params[1].pose = laser_ldmrs_pose;
-		sensors_params[1].sensor_support_pose = front_bullbar;
+		sensors_params[1].sensor_support_pose = front_bullbar_pose;
 		sensors_params[1].support_to_car_matrix = create_rotation_matrix(sensors_params[1].sensor_support_pose.orientation);
 		sensors_params[1].sensor_robot_reference = carmen_change_sensor_reference(
 				sensors_params[1].sensor_support_pose.position, sensors_params[1].pose.position, sensors_params[1].support_to_car_matrix);
@@ -874,12 +874,12 @@ read_parameters(int argc, char **argv,
 			{(char *) "sensor_board_1",  (char *) "pitch", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.pitch),0, NULL},
 			{(char *) "sensor_board_1",  (char *) "yaw", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.orientation.yaw),	0, NULL},
 
-			{(char *) "front_bullbar",  (char *) "x", CARMEN_PARAM_DOUBLE, &(front_bullbar.position.x),	0, NULL},
-			{(char *) "front_bullbar",  (char *) "y", CARMEN_PARAM_DOUBLE, &(front_bullbar.position.y),	0, NULL},
-			{(char *) "front_bullbar",  (char *) "z", CARMEN_PARAM_DOUBLE, &(front_bullbar.position.z),	0, NULL},
-			{(char *) "front_bullbar",  (char *) "roll", CARMEN_PARAM_DOUBLE, &(front_bullbar.orientation.roll),0, NULL},
-			{(char *) "front_bullbar",  (char *) "pitch", CARMEN_PARAM_DOUBLE, &(front_bullbar.orientation.pitch),0, NULL},
-			{(char *) "front_bullbar",  (char *) "yaw", CARMEN_PARAM_DOUBLE, &(front_bullbar.orientation.yaw),	0, NULL},
+			{(char *) "front_bullbar",  (char *) "x", CARMEN_PARAM_DOUBLE, &(front_bullbar_pose.position.x),	0, NULL},
+			{(char *) "front_bullbar",  (char *) "y", CARMEN_PARAM_DOUBLE, &(front_bullbar_pose.position.y),	0, NULL},
+			{(char *) "front_bullbar",  (char *) "z", CARMEN_PARAM_DOUBLE, &(front_bullbar_pose.position.z),	0, NULL},
+			{(char *) "front_bullbar",  (char *) "roll", CARMEN_PARAM_DOUBLE, &(front_bullbar_pose.orientation.roll),0, NULL},
+			{(char *) "front_bullbar",  (char *) "pitch", CARMEN_PARAM_DOUBLE, &(front_bullbar_pose.orientation.pitch),0, NULL},
+			{(char *) "front_bullbar",  (char *) "yaw", CARMEN_PARAM_DOUBLE, &(front_bullbar_pose.orientation.yaw),	0, NULL},
 
 			{(char *) "velodyne",  (char *) "x", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.x), 0, NULL},
 			{(char *) "velodyne",  (char *) "y", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.y), 0, NULL},
