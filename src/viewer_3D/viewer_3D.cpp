@@ -942,47 +942,6 @@ carmen_ldmrs_draw_dispatcher(carmen_laser_ldmrs_message* laser_message, int pare
 }
 
 
-void
-carmen_ldmrs_new_draw_dispatcher_old(carmen_laser_ldmrs_new_message *laser_message, int parentsSize, carmen_pose_3D_t **parents, point_cloud *point_cloud, int* current_ldmrs_position)
-{
-	// circular list of points history
-    *current_ldmrs_position = (*current_ldmrs_position + 1) % ldmrs_size;
-	int last_ldmrs_position = *current_ldmrs_position;
-
-    int num_points = laser_message->scan_points;
-
-    if (point_cloud[last_ldmrs_position].points == NULL || point_cloud[last_ldmrs_position].point_color == NULL)
-    {
-        point_cloud[last_ldmrs_position].points = (carmen_vector_3D_t *) malloc (num_points * sizeof (carmen_vector_3D_t));
-        point_cloud[last_ldmrs_position].point_color = (carmen_vector_3D_t *) malloc (num_points * sizeof (carmen_vector_3D_t));
-        point_cloud[last_ldmrs_position].num_points = num_points;
-    }
-    else
-    {
-    	free(point_cloud[last_ldmrs_position].points);
-    	free(point_cloud[last_ldmrs_position].point_color);
-
-    	point_cloud[last_ldmrs_position].points = (carmen_vector_3D_t *) malloc (num_points * sizeof (carmen_vector_3D_t));
-		point_cloud[last_ldmrs_position].point_color = (carmen_vector_3D_t *) malloc (num_points * sizeof (carmen_vector_3D_t));
-    }
-
-    point_cloud[last_ldmrs_position].num_points = num_points;
-    point_cloud[last_ldmrs_position].car_position = car_fused_pose.position;
-    point_cloud[last_ldmrs_position].timestamp = laser_message->timestamp;
-
-    int j = 0;
-    double hAngle, vAngle, range;
-    for (int i = 0; i < num_points; i++)
-    {
-        hAngle = laser_message->arraypoints[i].horizontal_angle;
-        vAngle = laser_message->arraypoints[i].vertical_angle;
-        range = laser_message->arraypoints[i].radial_distance;
-        carmen_ldmrs_add_point_cloud(point_cloud, last_ldmrs_position, parentsSize, parents, hAngle, vAngle, range, &j);
-    }
-    add_point_cloud(ldmrs_drawer, point_cloud[last_ldmrs_position]);
-}
-
-
 static void
 carmen_laser_ldmrs_message_handler(carmen_laser_ldmrs_message* laser_message)
 {

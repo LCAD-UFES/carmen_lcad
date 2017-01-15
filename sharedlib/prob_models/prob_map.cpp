@@ -531,7 +531,7 @@ carmen_prob_models_set_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sensor_
 	int i;
 	cell_coords_t cell_hit_by_ray;
 
-	for (i = 0; i < sensor_params->vertical_resolution; i++)
+	for (i = 1; i < sensor_params->vertical_resolution; i++)
 	{
 		cell_hit_by_ray.x = (sensor_data->ray_position_in_the_floor[thread_id][i].x / map->config.resolution);
 		cell_hit_by_ray.y = (sensor_data->ray_position_in_the_floor[thread_id][i].y / map->config.resolution);

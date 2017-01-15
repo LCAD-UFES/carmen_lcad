@@ -70,6 +70,11 @@ carmen_laser_ldmrs_convert_laser_scan_to_partial_velodyne_message(carmen_laser_l
 
 	double half_a_degree = carmen_degrees_to_radians(0.5);
 	int number_of_shots = (int) ((largest_angle - smallest_angle) / half_a_degree);
+	if (number_of_shots <= 0)
+	{
+		velodyne_message.number_of_32_laser_shots = 0;
+		return (velodyne_message);
+	}
 
 	velodyne_message.number_of_32_laser_shots = number_of_shots;
 	velodyne_message.partial_scan = (carmen_velodyne_32_laser_shot *) calloc (velodyne_message.number_of_32_laser_shots, sizeof(carmen_velodyne_32_laser_shot));
@@ -139,6 +144,11 @@ carmen_laser_ldmrs_new_convert_laser_scan_to_partial_velodyne_message(carmen_las
 
 	double delta_angle = carmen_degrees_to_radians(0.25);
 	int number_of_shots = (int) ceil((msg->start_angle - msg->end_angle) / delta_angle);
+	if (number_of_shots <= 0)
+	{
+		velodyne_message.number_of_32_laser_shots = 0;
+		return (velodyne_message);
+	}
 
 	velodyne_message.number_of_32_laser_shots = number_of_shots;
 	velodyne_message.partial_scan = (carmen_velodyne_32_laser_shot *) calloc (velodyne_message.number_of_32_laser_shots, sizeof(carmen_velodyne_32_laser_shot));

@@ -195,10 +195,10 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		robot_near_bump_or_barrier = 0;
 
 	if (ok_to_publish)
-	{
-		if (sensors_params[0].alive)
+	{	// A ordem é importante
+		if (sensors_params[VELODYNE].alive)
 			include_sensor_data_into_map(0, globalpos_message);
-		if (sensors_params[1].alive)
+		if (sensors_params[LASER_LDMRS].alive && !robot_near_bump_or_barrier)
 			include_sensor_data_into_map(1, globalpos_message);
 	}
 }
@@ -274,8 +274,11 @@ laser_ldrms_message_handler(carmen_laser_ldmrs_message *laser)
 //	fflush(f2);
 //	fclose(f2);
 
-	mapper_velodyne_partial_scan(1, &partial_scan_message);
-	free(partial_scan_message.partial_scan);
+	if (partial_scan_message.number_of_32_laser_shots > 0)
+	{
+		mapper_velodyne_partial_scan(1, &partial_scan_message);
+		free(partial_scan_message.partial_scan);
+	}
 }
 
 
@@ -283,8 +286,11 @@ static void
 laser_ldrms_new_message_handler(carmen_laser_ldmrs_new_message *laser)
 {
 	carmen_velodyne_partial_scan_message partial_scan_message = carmen_laser_ldmrs_new_convert_laser_scan_to_partial_velodyne_message(laser, laser->timestamp);
-	mapper_velodyne_partial_scan(1, &partial_scan_message);
-	free(partial_scan_message.partial_scan);
+	if (partial_scan_message.number_of_32_laser_shots > 0)
+	{
+		mapper_velodyne_partial_scan(1, &partial_scan_message);
+		free(partial_scan_message.partial_scan);
+	}
 }
 
 

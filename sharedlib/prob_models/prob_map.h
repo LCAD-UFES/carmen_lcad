@@ -72,10 +72,10 @@ typedef struct log_odds_param
 
 
 typedef enum
-{
-	VELODYNE,
-	CAMERA,
-	LASER_LDMRS
+{	// A ordem da numeração é importante
+	VELODYNE = 0,
+	LASER_LDMRS = 1,
+	CAMERA = 2
 } SENSOR_TYPE;
 
 

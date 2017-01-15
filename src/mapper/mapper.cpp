@@ -184,9 +184,9 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 //	plot_data = fopen("plot_data.dat", "w");
 	// Ray-trace the grid
 	carmen_pose_3D_t robot_pose = sensor_data->robot_pose[point_cloud_index];
-	robot_pose.position.z = 0.0;
-	robot_pose.orientation.pitch = 0.0;
-	robot_pose.orientation.roll = 0.0;
+//	robot_pose.position.z = 0.0;
+//	robot_pose.orientation.pitch = 0.0;
+//	robot_pose.orientation.roll = 0.0;
 
 	for (int j = 0; j < N; j += 1)
 	{
