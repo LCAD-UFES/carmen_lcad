@@ -405,8 +405,6 @@ localize_ackerman_handler(carmen_localize_ackerman_globalpos_message* localize_a
 
     if (last_localize_ackerman_trail >= localize_ackerman_size)
         last_localize_ackerman_trail -= localize_ackerman_size;
-
-    printf("zero_z %d\n", zero_z_flag);
 }
 
 
@@ -587,7 +585,7 @@ create_point_colors_intensity(double intensity)
 }
 
 
-void
+int
 compute_velodyne_points(point_cloud *velodyne_points, carmen_velodyne_partial_scan_message *velodyne_message,
 		double *vertical_correction, int vertical_size,
 		rotation_matrix *velodyne_to_board_matrix, rotation_matrix *board_to_car_matrix,
@@ -598,6 +596,7 @@ compute_velodyne_points(point_cloud *velodyne_points, carmen_velodyne_partial_sc
 
 	double dt = velodyne_message->timestamp - car_fused_time - velodyne_message->number_of_32_laser_shots * time_spent_by_each_scan;
 	int i;
+	int range_max_points = 0;
 	for (i = 0; i < velodyne_message->number_of_32_laser_shots; i++, dt += time_spent_by_each_scan)
 	{
 		car_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(car_fused_pose, dt, car_fused_velocity.x, car_phi,
@@ -606,17 +605,24 @@ compute_velodyne_points(point_cloud *velodyne_points, carmen_velodyne_partial_sc
 		int j;
 		for (j = 0; j < vertical_size; j++)
 		{
+			if (velodyne_message->partial_scan[i].distance[j] == 0)
+			{
+				range_max_points++;
+				continue;
+			}
 			carmen_vector_3D_t point_position = get_velodyne_point_car_reference(-carmen_degrees_to_radians(velodyne_message->partial_scan[i].angle),
-					carmen_degrees_to_radians(vertical_correction[j]), velodyne_message->partial_scan[i].distance[j] / 500.0,
+					carmen_degrees_to_radians(vertical_correction[j]), (double) velodyne_message->partial_scan[i].distance[j] / 500.0,
 					velodyne_to_board_matrix, board_to_car_matrix, velodyne_pose_position, sensor_board_1_pose_position);
 			carmen_vector_3D_t point_global_position = get_point_position_global_reference(car_interpolated_position.position, point_position,
 					&r_matrix_car_to_global);
-			velodyne_points->points[i * (vertical_size) + j] = point_global_position;
-			velodyne_points->point_color[i * (vertical_size) + j] = create_point_colors_height(point_global_position,
+			velodyne_points->points[i * (vertical_size) + j - range_max_points] = point_global_position;
+			velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_height(point_global_position,
 					car_interpolated_position.position);
-//			velodyne_points->point_color[i * (vertical_size) + j] = create_point_colors_intensity(velodyne_message->partial_scan[i].intensity[j]);
+//			velodyne_points->point_color[i * (vertical_size) + j - range_max_points] = create_point_colors_intensity(velodyne_message->partial_scan[i].intensity[j]);
 		}
 	}
+
+	return (range_max_points);
 }
 
 
@@ -664,8 +670,9 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
     rotation_matrix* velodyne_to_board_matrix = create_rotation_matrix(velodyne_pose.orientation);
     rotation_matrix* board_to_car_matrix = create_rotation_matrix(sensor_board_1_pose.orientation);
 
-	compute_velodyne_points(&velodyne_points[last_velodyne_position], velodyne_message, vertical_correction, 32,
+	int range_max_points = compute_velodyne_points(&velodyne_points[last_velodyne_position], velodyne_message, vertical_correction, 32,
 			velodyne_to_board_matrix, board_to_car_matrix, velodyne_pose.position, sensor_board_1_pose.position);
+	velodyne_points[last_velodyne_position].num_points -= range_max_points;
 
 	destroy_rotation_matrix(velodyne_to_board_matrix);
     destroy_rotation_matrix(board_to_car_matrix);
@@ -734,8 +741,9 @@ carmen_ldmrs_new_draw_dispatcher(carmen_laser_ldmrs_new_message *laser_message,
     rotation_matrix *ldmrs_to_front_bulbar_rotation_matrix = create_rotation_matrix(laser_ldmrs_pose.orientation);
     rotation_matrix *front_bulbar_to_car_rotation_matrix = create_rotation_matrix(front_bullbar_pose.orientation);
 
-	compute_velodyne_points(&point_cloud[last_ldmrs_position], &partial_scan_message, vertical_correction, 4,
+    int range_max_points = compute_velodyne_points(&point_cloud[last_ldmrs_position], &partial_scan_message, vertical_correction, 4,
 			ldmrs_to_front_bulbar_rotation_matrix, front_bulbar_to_car_rotation_matrix, laser_ldmrs_pose.position, front_bullbar_pose.position);
+    point_cloud[last_ldmrs_position].num_points -= range_max_points;
 
 	free(partial_scan_message.partial_scan);
 	destroy_rotation_matrix(ldmrs_to_front_bulbar_rotation_matrix);
@@ -875,7 +883,7 @@ generate_octomap_file(point_cloud current_reading, carmen_fused_odometry_message
 static void
 carmen_ldmrs_add_point_cloud(point_cloud* point_cloud, int last_ldmrs_position, int parentsSize, carmen_pose_3D_t** parents, double hAngle, double vAngle, double range, int *j)
 {
-    if (range >= 0.0 && range <= 200.0)
+    if (range > 0.0 && range <= 200.0)
     {
     	point_cloud[last_ldmrs_position].points[(*j)] = get_ldmrs_reading_position_from_reference(hAngle, vAngle, range, parentsSize, parents);
 
@@ -1390,7 +1398,7 @@ mapper_message_handler(carmen_mapper_map_message *message)
         first_map_origin.z = 0.0;
     }
 
-//    if (draw_map_flag && (time_since_last_draw < 1.0 / 30.0))
+    if (draw_map_flag)// && (time_since_last_draw < 1.0 / 30.0))
     {
         add_map_message(m_drawer, message);
     }

@@ -183,12 +183,16 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 
 //	plot_data = fopen("plot_data.dat", "w");
 	// Ray-trace the grid
-	#pragma omp for
+	carmen_pose_3D_t robot_pose = sensor_data->robot_pose[point_cloud_index];
+	robot_pose.position.z = 0.0;
+	robot_pose.orientation.pitch = 0.0;
+	robot_pose.orientation.roll = 0.0;
+
 	for (int j = 0; j < N; j += 1)
 	{
 		i = j * sensor_params->vertical_resolution;
 		double dt2 = j * dt;
-		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(sensor_data->robot_pose[point_cloud_index],
+		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(robot_pose,
 				dt1 + dt2, v, phi, car_config.distance_between_front_and_rear_axles);
 		r_matrix_robot_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
 
@@ -255,13 +259,16 @@ update_cells_in_the_laser_ldmrs_perceptual_field(carmen_map_t *snapshot_map, sen
 	int i = 0;
 
 //	plot_data = fopen("plot_data.dat", "a");
-	// Ray-trace the grid
-	#pragma omp for
+	carmen_pose_3D_t robot_pose = sensor_data->robot_pose[point_cloud_index];
+	robot_pose.position.z = 0.0;
+	robot_pose.orientation.pitch = 0.0;
+	robot_pose.orientation.roll = 0.0;
+
 	for (int j = 0; j < N; j += 1)
 	{
 		i = j * sensor_params->vertical_resolution;
 		double dt2 = j * dt;
-		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(sensor_data->robot_pose[point_cloud_index],
+		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(robot_pose,
 				dt1 + dt2, v, phi, car_config.distance_between_front_and_rear_axles);
 		r_matrix_robot_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
 

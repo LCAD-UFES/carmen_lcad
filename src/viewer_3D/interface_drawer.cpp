@@ -313,6 +313,7 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y) {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
                     set_flag_viewer_3D(1, i_drawer->butt[i].state);
+                    set_flag_viewer_3D(13, i_drawer->butt[i].state);
                 } else if (i_drawer->butt[i].code == 15) // SICK Rays
                 {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);

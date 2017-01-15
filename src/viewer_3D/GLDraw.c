@@ -1283,7 +1283,7 @@ draw_stereo_point_cloud (point_cloud *stereo_point_cloud, int stereo_point_cloud
     for (i = 0; i < stereo_point_cloud_size; i++)
     {
         int j;
-        for (j = 10; j < stereo_point_cloud[i].num_points - 10; j++)
+        for (j = 0; j < stereo_point_cloud[i].num_points; j++)
         {
             glColor3d (stereo_point_cloud[i].point_color[j].x, stereo_point_cloud[i].point_color[j].y, stereo_point_cloud[i].point_color[j].z);
             glVertex3d (stereo_point_cloud[i].points[j].x, stereo_point_cloud[i].points[j].y, stereo_point_cloud[i].points[j].z);
@@ -1305,14 +1305,14 @@ draw_laser_points(point_cloud *laser_points, int laser_size)
     for (i = 0; i < laser_size; i++)
     {
         int j;
-        for (j = 10; j < laser_points[i].num_points - 10; j++)
+        for (j = 0; j < laser_points[i].num_points; j++)
         {
-            set_laser_point_color (laser_points[i].points[j].x, laser_points[i].points[j].y, laser_points[i].points[j].z - laser_points[i].car_position.z);
-            glVertex3d (laser_points[i].points[j].x, laser_points[i].points[j].y, laser_points[i].points[j].z);
+            set_laser_point_color(laser_points[i].points[j].x, laser_points[i].points[j].y, laser_points[i].points[j].z);
+            glVertex3d(laser_points[i].points[j].x, laser_points[i].points[j].y, laser_points[i].points[j].z);
         }
     }
 
-    glEnd ();
+    glEnd();
 }
 
 void
@@ -1365,7 +1365,7 @@ draw_velodyne_points (point_cloud *velodyne_points, int cloud_size)
         int j;
         for (j = 0; j < velodyne_points[i].num_points; j++)
         {
-            set_laser_point_color (velodyne_points[i].points[j].x, velodyne_points[i].points[j].y, velodyne_points[i].points[j].z - velodyne_points[i].car_position.z);
+            set_laser_point_color (velodyne_points[i].points[j].x, velodyne_points[i].points[j].y, velodyne_points[i].points[j].z);
             glVertex3d (velodyne_points[i].points[j].x, velodyne_points[i].points[j].y, velodyne_points[i].points[j].z);
         }
     }

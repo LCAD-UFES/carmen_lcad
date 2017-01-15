@@ -531,14 +531,14 @@ carmen_prob_models_set_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sensor_
 	int i;
 	cell_coords_t cell_hit_by_ray;
 
-	for (i = 1; i < sensor_params->vertical_resolution; i++)
+	for (i = 0; i < sensor_params->vertical_resolution; i++)
 	{
 		cell_hit_by_ray.x = (sensor_data->ray_position_in_the_floor[thread_id][i].x / map->config.resolution);
 		cell_hit_by_ray.y = (sensor_data->ray_position_in_the_floor[thread_id][i].y / map->config.resolution);
 
-		if (map_grid_is_valid(map, cell_hit_by_ray.x, cell_hit_by_ray.y) && !sensor_data->maxed[thread_id][i] &&
-//			(sensor_data->obstacle_height[thread_id][i] > -3.0) && (sensor_data->obstacle_height[thread_id][i] < 2.0) &&
-			(sensor_data->ray_size_in_the_floor[thread_id][i] > 15.0))
+		if (map_grid_is_valid(map, cell_hit_by_ray.x, cell_hit_by_ray.y) && !sensor_data->maxed[thread_id][i])// &&
+//			(sensor_data->obstacle_height[thread_id][i] > 0.0) && (sensor_data->obstacle_height[thread_id][i] < 4.0) &&
+//			(sensor_data->ray_size_in_the_floor[thread_id][i] > 13.0))
 			map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] = sensor_params->log_odds.log_odds_occ;
 	}
 }
@@ -958,6 +958,17 @@ carmen_prob_models_compute_expected_delta_ray(double ray_length, int ray_index, 
 }
 
 
+double
+carmen_prob_models_compute_expected_delta_ray(double h, double r1, double theta)
+{
+	double a = r1 * sin(acos(h / r1));
+	double alpha = asin(a / r1);
+	double expected_delta_ray = ((sin(alpha + theta) * h) / sin(carmen_degrees_to_radians(90.0) + alpha + theta)) - a;
+
+	return (expected_delta_ray);
+}
+
+
 //extern FILE *plot_data;
 
 double
@@ -967,9 +978,8 @@ get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, senso
 	int previous_ray_index;
 	double ray_size1, ray_size2, delta_ray, expected_delta_ray; //, expected_delta_ray_old;
 	double log_odds;
-	double ray_length;
 	double obstacle_evidence, p_obstacle;
-	double p_0;
+//	double p_0;
 	double sigma;
 
 	previous_ray_index = ray_index - 1;
@@ -990,7 +1000,8 @@ get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, senso
 	if ((sensor_data->obstacle_height[thread_id][previous_ray_index] < -2.0) || (sensor_data->obstacle_height[thread_id][ray_index] < -2.0))
 		return (sensor_params->log_odds.log_odds_l0);
 
-	ray_length = sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index + ray_index].length;
+//	double ray_length = sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index + ray_index].length;
+	double previous_ray_length = sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index + previous_ray_index].length;
 
 //	if (sensor_data->maxed[thread_id][previous_ray_index])
 //		ray_size1 = sensor_params->height / tan(-carmen_degrees_to_radians(sensor_params->vertical_correction[previous_ray_index]));
@@ -999,9 +1010,11 @@ get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, senso
 	ray_size2 = sensor_data->ray_size_in_the_floor[thread_id][ray_index];
 
 	delta_ray = ray_size2 - ray_size1;
-	expected_delta_ray = carmen_prob_models_compute_expected_delta_ray(ray_length, ray_index, sensor_params->vertical_correction, sensor_params->height);
+	expected_delta_ray = carmen_prob_models_compute_expected_delta_ray(sensor_params->height, previous_ray_length,
+			carmen_degrees_to_radians(sensor_params->vertical_correction[ray_index] - sensor_params->vertical_correction[previous_ray_index]));
+//	expected_delta_ray = carmen_prob_models_compute_expected_delta_ray(ray_length, ray_index, sensor_params->vertical_correction, sensor_params->height);
 //	expected_delta_ray_old = carmen_prob_models_compute_expected_delta_ray_old(ray_size1, ray_index, sensor_params->vertical_correction, sensor_params->height);
-
+//	printf("r1 %lf, r2 %lf, dr %lf, edr %lf\n", ray_size1, ray_size2, delta_ray, expected_delta_ray);
 	obstacle_evidence = (expected_delta_ray - delta_ray) / expected_delta_ray;
 	
 	// Testa se tem um obstaculo com um buraco em baixo
@@ -1015,7 +1028,8 @@ get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, senso
 	{
 		if (delta_ray > expected_delta_ray) // @@@ Alberto: nao trata buraco?
 			return (sensor_params->log_odds.log_odds_free);
-		sigma = -sensor_params->unexpeted_delta_range_sigma;
+//		sigma = -sensor_params->unexpeted_delta_range_sigma;
+		sigma = sensor_params->unexpeted_delta_range_sigma / 3.0;
 	}
 	else
 	{
@@ -1033,8 +1047,10 @@ get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, senso
 	//two_times_sigma = 2*a*a;
 	//plot [0:1] (1.0 / exp(-x / (2*a*a)) - 1.0) / (1.0 / exp(-1.0 / (2*a*a)) - 1.0)
 
-	p_0 = (1.0 / exp(1.0 / sigma) - 1.0);
-	p_obstacle = (1.0 / exp(obstacle_evidence / sigma) - 1.0) / p_0;
+//	p_0 = (1.0 / exp(1.0 / sigma) - 1.0);
+//	p_obstacle = (1.0 / exp(obstacle_evidence / sigma) - 1.0) / p_0;
+
+	p_obstacle = exp(-((1.0 - obstacle_evidence) * (1.0 - obstacle_evidence)) / sigma);
 
 	if (p_obstacle >= 1.0)
 		log_odds = MAX_LOG_ODDS_POSSIBLE;

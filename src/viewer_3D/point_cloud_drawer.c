@@ -28,7 +28,7 @@ point_cloud_drawer* create_point_cloud_drawer(int max_size)
 	drawer->buffer_sizes = malloc((drawer->num_buffers) * sizeof(int));
 
 	int i;
-	for(i=0; i<drawer->num_buffers; i++)
+	for (i = 0; i<drawer->num_buffers; i++)
 	{
 		drawer->buffer_sizes[i] = 0;
 	}
@@ -44,7 +44,7 @@ static float* create_colors(point_cloud pcloud)
 	float* colors = malloc(3 * pcloud.num_points * sizeof(float));
 
 	int i;
-	for(i = 0; i < pcloud.num_points; i++)
+	for (i = 0; i < pcloud.num_points; i++)
 	{
 		//double x = pcloud.points[i].x;
 		//double y = pcloud.points[i].y;
@@ -85,7 +85,7 @@ void add_point_cloud(point_cloud_drawer* drawer, point_cloud pcloud)
 	glBindBuffer(GL_ARRAY_BUFFER, drawer->vertex_buffer_ids[drawer->next_buffer]);
 	glBufferData(GL_ARRAY_BUFFER, pcloud.num_points * sizeof(carmen_vector_3D_t), pcloud.points, GL_STATIC_DRAW);
 
-	float* colors = create_colors(pcloud);
+	float *colors = create_colors(pcloud);
 
 	glBindBuffer(GL_ARRAY_BUFFER, drawer->color_buffer_ids[drawer->next_buffer]);
 	glBufferData(GL_ARRAY_BUFFER, 3 * pcloud.num_points * sizeof(float), colors, GL_STATIC_DRAW);
@@ -105,7 +105,7 @@ void draw_point_cloud(point_cloud_drawer* drawer)
 	glEnableVertexAttribArray(3);	
 
 	int i;
-	for(i=0; i<drawer->num_buffers; i++)
+	for (i = 0; i < drawer->num_buffers; i++)
 	{
 		glBindBuffer(GL_ARRAY_BUFFER, drawer->vertex_buffer_ids[i]);
 		glVertexAttribPointer(0, 3, GL_DOUBLE, GL_FALSE, 0, 0);
@@ -117,7 +117,7 @@ void draw_point_cloud(point_cloud_drawer* drawer)
 	glDisableVertexAttribArray(3);
 	glDisableVertexAttribArray(0);
 
-	glBindBuffer(GL_ARRAY_BUFFER,0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 
