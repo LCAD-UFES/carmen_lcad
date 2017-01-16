@@ -144,15 +144,14 @@ carmen_velodyne_partial_scan_update_points(carmen_velodyne_partial_scan_message 
 		int vertical_resolution, spherical_point_cloud *points, unsigned char *intensity,
 		int *ray_order, double *vertical_correction, float range_max, double timestamp)
 {
-	int i, j;
-
 	points->timestamp = timestamp;
-	for (i = 0; i < velodyne_message->number_of_32_laser_shots; i++)
+
+	for (int i = 0; i < velodyne_message->number_of_32_laser_shots; i++)
 	{
-		for (j = 0; j < vertical_resolution; j++)
+		for (int j = 0; j < vertical_resolution; j++)
 		{
-			float angle = carmen_degrees_to_radians(velodyne_message->partial_scan[i].angle);
-			float range = (float) (velodyne_message->partial_scan[i].distance[ray_order[j]]) / 500.0;
+			double angle = carmen_degrees_to_radians(velodyne_message->partial_scan[i].angle);
+			double range = (double) (velodyne_message->partial_scan[i].distance[ray_order[j]]) / 500.0;
 
 			if (range <= 0.0)  // @@@ Aparentemente o Velodyne diz range zero quando de range_max
 				range = range_max;
@@ -167,21 +166,52 @@ carmen_velodyne_partial_scan_update_points(carmen_velodyne_partial_scan_message 
 
 
 void
+carmen_velodyne_partial_scan_update_points_with_remission_check(carmen_velodyne_partial_scan_message *velodyne_message,
+		int vertical_resolution, spherical_point_cloud *points, unsigned char *intensity,
+		int *ray_order, double *vertical_correction, float range_max, double timestamp, int use_remission)
+{
+	points->timestamp = timestamp;
+
+	for (int i = 0; i < velodyne_message->number_of_32_laser_shots; i++)
+	{
+		for (int j = 0; j < vertical_resolution; j++)
+		{
+			double angle = carmen_degrees_to_radians(velodyne_message->partial_scan[i].angle);
+			double range = (double) (velodyne_message->partial_scan[i].distance[ray_order[j]]) / 500.0;
+
+			if (range <= 0.0)  // @@@ Aparentemente o Velodyne diz range zero quando de range_max
+				range = range_max;
+
+			points->sphere_points[i * vertical_resolution + j].horizontal_angle = carmen_normalize_theta(-angle);
+			points->sphere_points[i * vertical_resolution + j].vertical_angle = carmen_degrees_to_radians(vertical_correction[j]);
+			points->sphere_points[i * vertical_resolution + j].length = range;
+		}
+	}
+
+	if (use_remission)
+	{
+		for (int i = 0; i < velodyne_message->number_of_32_laser_shots; i++)
+			for (int j = 0; j < vertical_resolution; j++)
+				intensity[i * vertical_resolution + j] = velodyne_message->partial_scan[i].intensity[ray_order[j]];
+	}
+}
+
+
+void
 carmen_velodyne_variable_scan_update_points(carmen_velodyne_variable_scan_message *message,
 		int vertical_resolution, spherical_point_cloud *points, unsigned char *intensity,
 		int *ray_order, double *vertical_correction, float range_max, double timestamp)
 {
-	int i, j;
-
 	points->timestamp = timestamp;
-	for (i = 0; i < message->number_of_shots; i++)
-	{
-		for (j = 0; j < vertical_resolution; j++)
-		{
-			float angle = carmen_degrees_to_radians(message->partial_scan[i].angle);
-			float range = (float) (message->partial_scan[i].distance[ray_order[j]]) / 500.0;
 
-			if (range <= 0.0)  // @@@ Aparentemente o Velodyne diz range zero quando de range_max
+	for (int i = 0; i < message->number_of_shots; i++)
+	{
+		for (int j = 0; j < vertical_resolution; j++)
+		{
+			double angle = carmen_degrees_to_radians(message->partial_scan[i].angle);
+			double range = (double) (message->partial_scan[i].distance[ray_order[j]]) / 500.0;
+
+			if (range <= 0.0)  // O Velodyne diz range zero quando ocorre range_max
 				range = range_max;
 
 			intensity[i * vertical_resolution + j] = message->partial_scan[i].intensity[j];

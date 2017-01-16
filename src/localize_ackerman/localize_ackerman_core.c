@@ -299,7 +299,7 @@ carmen_localize_ackerman_incorporate_laser(carmen_localize_ackerman_particle_fil
 
 
 static void
-carmen_localize_ackerman_resample_velodyne(carmen_localize_ackerman_particle_filter_p filter)
+velodyne_resample(carmen_localize_ackerman_particle_filter_p filter)
 {
 	static double *cumulative_sum = NULL;
 	static carmen_localize_ackerman_particle_p temp_particles = NULL;
@@ -1392,8 +1392,7 @@ carmen_localize_ackerman_function_velodyne_evaluation(
 
 
 void
-carmen_localize_ackerman_run_with_velodyne_correction(
-		carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_p localize_map,
+carmen_localize_ackerman_velodyne_correction(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_p localize_map,
 		carmen_compact_map_t *local_map, carmen_compact_map_t *local_mean_remission_map,
 		carmen_compact_map_t *local_variance_remission_map  __attribute__ ((unused)),
 		carmen_localize_ackerman_binary_map_t *binary_map __attribute__ ((unused)))
@@ -1607,7 +1606,7 @@ void swarm(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ac
 
 	swarm_initialize(filter);
 
-	carmen_localize_ackerman_run_with_velodyne_correction(filter, map, local_map,
+	carmen_localize_ackerman_velodyne_correction(filter, map, local_map,
 								local_mean_remission_map, local_variance_remission_map, binary_map);
 	swarm_get_best_particle(filter);
 
@@ -1615,7 +1614,7 @@ void swarm(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ac
 	{
 		calc_new_lbest_swarm_paticles_position(filter, fused_odometry);// map, local_map,
 //				local_mean_remission_map, local_variance_remission_map);
-		carmen_localize_ackerman_run_with_velodyne_correction(filter, map, local_map,
+		carmen_localize_ackerman_velodyne_correction(filter, map, local_map,
 						local_mean_remission_map, local_variance_remission_map, binary_map);
 		swarm_get_best_particle(filter);
 	}
@@ -1780,7 +1779,7 @@ void de(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_acker
 
 	swarm_initialize(filter);
 
-	carmen_localize_ackerman_run_with_velodyne_correction(filter, map, local_map,
+	carmen_localize_ackerman_velodyne_correction(filter, map, local_map,
 			local_mean_remission_map, local_variance_remission_map, binary_map);
 	swarm_get_best_particle(filter);
 
@@ -1788,7 +1787,7 @@ void de(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_acker
 	{
 		calc_new_de_particle(filter, fused_odometry, map, local_map,
 				local_mean_remission_map, local_variance_remission_map);
-		carmen_localize_ackerman_run_with_velodyne_correction(filter, map, local_map,
+		carmen_localize_ackerman_velodyne_correction(filter, map, local_map,
 				local_mean_remission_map, local_variance_remission_map, binary_map);
 		swarm_get_best_particle(filter);
 	}
@@ -1797,7 +1796,8 @@ void de(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_acker
 }
 
 
-void hade(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_p map,
+void
+hade(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_p map,
 		carmen_compact_map_t *local_map, carmen_compact_map_t *local_mean_remission_map,
 		carmen_compact_map_t *local_variance_remission_map, carmen_fused_odometry_message *fused_odometry, carmen_localize_ackerman_binary_map_t *binary_map)
 {
@@ -1805,7 +1805,7 @@ void hade(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ack
 
 	swarm_initialize(filter);
 
-	carmen_localize_ackerman_run_with_velodyne_correction(filter, map, local_map,
+	carmen_localize_ackerman_velodyne_correction(filter, map, local_map,
 			local_mean_remission_map, local_variance_remission_map, binary_map);
 	swarm_get_best_particle(filter);
 
@@ -1819,12 +1819,10 @@ void hade(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ack
 }
 
 
-
-
 void
-carmen_localize_ackerman_run_with_velodyne_prediction(
-		carmen_localize_ackerman_particle_filter_p filter, carmen_base_ackerman_odometry_message *odometry,
-		carmen_fused_odometry_message *fused_odometry  __attribute__ ((unused)), int use_velocity_prediction  __attribute__ ((unused)), double velodyne_timestamp, double distance_between_front_and_rear_axles)
+carmen_localize_ackerman_velodyne_prediction(carmen_localize_ackerman_particle_filter_p filter, carmen_base_ackerman_odometry_message *odometry,
+		carmen_fused_odometry_message *fused_odometry  __attribute__ ((unused)), int use_velocity_prediction  __attribute__ ((unused)),
+		double velodyne_timestamp, double distance_between_front_and_rear_axles)
 {
 
 	if (!filter->initialized)
@@ -1842,26 +1840,22 @@ carmen_localize_ackerman_run_with_velodyne_prediction(
 }
 
 
-
-
 void
-carmen_localize_ackerman_run_with_velodyne_resample(carmen_localize_ackerman_particle_filter_p filter)
+carmen_localize_ackerman_velodyne_resample(carmen_localize_ackerman_particle_filter_p filter)
 {
 	/* check if it is time to resample */
 	if (filter->distance_travelled >= filter->param->update_distance)
 	{
-		carmen_localize_ackerman_resample_velodyne(filter);
+		velodyne_resample(filter);
 		filter->distance_travelled = 0;
 		filter->initialized = 1;
 	}
 }
 
 
-void carmen_localize_ackerman_laser_scan_gd(int num_readings, double *range,
-		double angular_resolution,
-		double first_beam_angle,
-		carmen_point_p laser_pos, double forward_offset,
-		carmen_localize_ackerman_map_p map, int laser_skip)
+void
+carmen_localize_ackerman_laser_scan_gd(int num_readings, double *range, double angular_resolution, double first_beam_angle,
+		carmen_point_p laser_pos, double forward_offset, carmen_localize_ackerman_map_p map, int laser_skip)
 {
 	double grad_x, grad_y, grad_theta, range_x, range_y, theta;
 	int x_l, y_l, count = 0, i;

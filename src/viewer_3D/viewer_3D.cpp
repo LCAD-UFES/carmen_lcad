@@ -1668,7 +1668,7 @@ init_particle_trail(void)
 static void
 init_flags(void)
 {
-    draw_particles_flag = 1;
+    draw_particles_flag = 0;
     draw_points_flag = 0;
     draw_velodyne_flag = 2;
     draw_stereo_cloud_flag = 1;
@@ -1676,9 +1676,9 @@ init_flags(void)
     draw_rays_flag = 0;
     draw_map_image_flag = 0;
     weight_type_flag = 2;
-    draw_gps_flag = 1;
-    draw_odometry_flag = 1;
-    draw_xsens_gps_flag = 1;
+    draw_gps_flag = 0;
+    draw_odometry_flag = 0;
+    draw_xsens_gps_flag = 0;
     follow_car_flag = 1;
     draw_map_flag = 0;
     zero_z_flag = 1;

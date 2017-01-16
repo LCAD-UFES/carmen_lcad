@@ -4,12 +4,12 @@
 #define NUM_VELODYNE_POINT_CLOUDS	5
 
 
-int localize_ackerman_velodyne_partial_scan(carmen_velodyne_partial_scan_message *velodyne_message, sensor_parameters_t *velodyne_params, sensor_data_t *velodyne_data,
-					carmen_vector_3D_t *robot_velocity, double phi);
+int localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(carmen_velodyne_partial_scan_message *velodyne_message, sensor_parameters_t *velodyne_params,
+		sensor_data_t *velodyne_data, double v, double phi);
 
 int
-localize_ackerman_velodyne_variable_scan(carmen_velodyne_variable_scan_message *message, sensor_parameters_t *velodyne_params, sensor_data_t *velodyne_data,
-				carmen_vector_3D_t *robot_velocity);
+localize_ackerman_velodyne_variable_scan_build_instanteneous_maps(carmen_velodyne_variable_scan_message *message, sensor_parameters_t *velodyne_params,
+		sensor_data_t *velodyne_data, double v, double phi);
 
 
 void localize_ackerman_velodyne_publish_frontlaser(double timestamp, double *laser_ranges);

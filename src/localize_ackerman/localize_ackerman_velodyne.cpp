@@ -191,7 +191,6 @@ localize_ackerman_velodyne_publish_frontlaser(double timestamp, double *laser_ra
 }
 
 
-
 static void
 build_sensor_point_cloud(spherical_point_cloud **points, unsigned char **intensity, int *point_cloud_index, int num_points, int max_point_buffer)
 {
@@ -200,7 +199,22 @@ build_sensor_point_cloud(spherical_point_cloud **points, unsigned char **intensi
 		*point_cloud_index = 0;
 
 	if ((*points)[*point_cloud_index].num_points != num_points)
-		intensity[*point_cloud_index] = (unsigned char *)realloc((void *)intensity[*point_cloud_index], num_points * sizeof(unsigned char));
+		intensity[*point_cloud_index] = (unsigned char *) realloc((void *) intensity[*point_cloud_index], num_points * sizeof(unsigned char));
+
+	carmen_alloc_spherical_point_cloud(*points, num_points, *point_cloud_index);
+}
+
+
+static void
+build_sensor_point_cloud(spherical_point_cloud **points, unsigned char **intensity, int *point_cloud_index, int num_points, int max_point_buffer,
+		int use_remission)
+{
+	(*point_cloud_index)++;
+	if ((*point_cloud_index) >= max_point_buffer)
+		*point_cloud_index = 0;
+
+	if ((*points)[*point_cloud_index].num_points != num_points && use_remission)
+		intensity[*point_cloud_index] = (unsigned char *) realloc((void *) intensity[*point_cloud_index], num_points * sizeof(unsigned char));
 
 	carmen_alloc_spherical_point_cloud(*points, num_points, *point_cloud_index);
 }
@@ -235,9 +249,9 @@ save_local_map()
 
 
 static void
-compute_laser_rays_from_velodyne_and_create_a_local_map(sensor_parameters_t *velodyne_params, sensor_data_t *velodyne_data, rotation_matrix *r_matrix_car_to_global,
-				 carmen_pose_3D_t *robot_pose, carmen_vector_3D_t *robot_velocity,
-				 double x_origin, double y_origin, int point_cloud_index, double phi)
+compute_laser_rays_from_velodyne_and_create_a_local_map(sensor_parameters_t *velodyne_params, sensor_data_t *velodyne_data,
+		rotation_matrix *r_matrix_car_to_global, carmen_pose_3D_t *robot_pose, double x_origin, double y_origin, int point_cloud_index,
+		double v, double phi, int use_remission)
 {
 	spherical_point_cloud v_zt = velodyne_data->points[point_cloud_index];
 	int N = v_zt.num_points / velodyne_params->vertical_resolution;
@@ -251,7 +265,45 @@ compute_laser_rays_from_velodyne_and_create_a_local_map(sensor_parameters_t *vel
 	for (int j = 0; j < N; j += jump)
 	{
 		double dt2 = j * dt;
-		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(*robot_pose, dt1 + dt2, robot_velocity->x, phi,
+		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(*robot_pose, dt1 + dt2, v, phi,
+				car_config.distance_between_front_and_rear_axles);
+		r_matrix_car_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
+
+		carmen_prob_models_compute_relevant_map_coordinates_with_remission_check(velodyne_data, velodyne_params,
+				j * velodyne_params->vertical_resolution, robot_interpolated_position.position,
+				sensor_board_1_pose, r_matrix_car_to_global, sensor_board_1_to_car_matrix,
+				robot_wheel_radius, x_origin, y_origin, &car_config, 0, 0, use_remission);
+
+		carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(velodyne_data, velodyne_params,
+				j * velodyne_params->vertical_resolution, highest_sensor, safe_range_above_sensors, 0, 0);
+
+		carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(&local_map, velodyne_params, velodyne_data, 0);
+
+		if (use_remission)
+			carmen_prob_models_update_intensity_of_cells_hit_by_rays(&local_sum_remission_map, &local_sum_sqr_remission_map,
+					&local_count_remission_map, velodyne_params, velodyne_data, highest_sensor, safe_range_above_sensors, NULL, 0);
+	}
+}
+
+
+static void
+compute_laser_rays_from_velodyne_and_create_a_local_map(sensor_parameters_t *velodyne_params, sensor_data_t *velodyne_data,
+		rotation_matrix *r_matrix_car_to_global, carmen_pose_3D_t *robot_pose, double x_origin, double y_origin, int point_cloud_index,
+		double v, double phi)
+{
+	spherical_point_cloud v_zt = velodyne_data->points[point_cloud_index];
+	int N = v_zt.num_points / velodyne_params->vertical_resolution;
+
+	double dt = velodyne_params->time_spent_by_each_scan;
+	double dt1 = -(double) N * dt;
+	carmen_pose_3D_t robot_interpolated_position = *robot_pose;
+
+	// Ray-trace the grid
+	int jump = filter->param->jump_size;
+	for (int j = 0; j < N; j += jump)
+	{
+		double dt2 = j * dt;
+		robot_interpolated_position = carmen_ackerman_interpolated_robot_position_at_time(*robot_pose, dt1 + dt2, v, phi,
 				car_config.distance_between_front_and_rear_axles);
 		r_matrix_car_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
 
@@ -259,11 +311,13 @@ compute_laser_rays_from_velodyne_and_create_a_local_map(sensor_parameters_t *vel
 				robot_interpolated_position.position, sensor_board_1_pose, r_matrix_car_to_global, sensor_board_1_to_car_matrix,
 				robot_wheel_radius, x_origin, y_origin, &car_config, 0, 0);
 
-		carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(velodyne_data, velodyne_params, j * velodyne_params->vertical_resolution, highest_sensor, safe_range_above_sensors, 0, 0);
+		carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(velodyne_data, velodyne_params,
+				j * velodyne_params->vertical_resolution, highest_sensor, safe_range_above_sensors, 0, 0);
 
 		carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(&local_map, velodyne_params, velodyne_data, 0);
 
-		carmen_prob_models_update_intensity_of_cells_hit_by_rays(&local_sum_remission_map, &local_sum_sqr_remission_map, &local_count_remission_map, velodyne_params, velodyne_data, highest_sensor, safe_range_above_sensors, NULL, 0);
+		carmen_prob_models_update_intensity_of_cells_hit_by_rays(&local_sum_remission_map, &local_sum_sqr_remission_map,
+				&local_count_remission_map, velodyne_params, velodyne_data, highest_sensor, safe_range_above_sensors, NULL, 0);
 	}
 }
 
@@ -457,10 +511,9 @@ debug_remission_map_velodyne(carmen_velodyne_partial_scan_message *velodyne_mess
 }
 
 
-// Computes local_compacted_map and local_compacted_mean_remission_map maps
 int
-localize_ackerman_velodyne_partial_scan(carmen_velodyne_partial_scan_message *velodyne_message, sensor_parameters_t *velodyne_params, sensor_data_t *velodyne_data,
-					carmen_vector_3D_t *robot_velocity, double phi)
+localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(carmen_velodyne_partial_scan_message *velodyne_message,
+		sensor_parameters_t *velodyne_params, sensor_data_t *velodyne_data, double v, double phi)
 {
 	static rotation_matrix *r_matrix_car_to_global = NULL;
 	static int velodyne_message_id;
@@ -477,16 +530,13 @@ localize_ackerman_velodyne_partial_scan(carmen_velodyne_partial_scan_message *ve
 	
 	velodyne_data->current_timestamp = velodyne_message->timestamp;
 
-	build_sensor_point_cloud(&(velodyne_data->points), velodyne_data->intensity, &(velodyne_data->point_cloud_index), num_points, NUM_VELODYNE_POINT_CLOUDS);
+	build_sensor_point_cloud(&(velodyne_data->points), velodyne_data->intensity, &(velodyne_data->point_cloud_index), num_points,
+			NUM_VELODYNE_POINT_CLOUDS, velodyne_params->use_remission);
 
-	carmen_velodyne_partial_scan_update_points(velodyne_message,
-			velodyne_params->vertical_resolution,
-			&(velodyne_data->points[velodyne_data->point_cloud_index]),
-			velodyne_data->intensity[velodyne_data->point_cloud_index],
-			velodyne_params->ray_order,
-			velodyne_params->vertical_correction,
-			velodyne_params->range_max,
-			velodyne_message->timestamp);
+	carmen_velodyne_partial_scan_update_points_with_remission_check(velodyne_message, velodyne_params->vertical_resolution,
+			&(velodyne_data->points[velodyne_data->point_cloud_index]), velodyne_data->intensity[velodyne_data->point_cloud_index],
+			velodyne_params->ray_order,	velodyne_params->vertical_correction, velodyne_params->range_max, velodyne_message->timestamp,
+			velodyne_params->use_remission);
 
 	//if (velodyne_viewer)
 		//debug_remission_map_velodyne(velodyne_message, velodyne_params);
@@ -504,27 +554,22 @@ localize_ackerman_velodyne_partial_scan(carmen_velodyne_partial_scan_message *ve
 
 		current_point_cloud_index =  velodyne_data->point_cloud_index;
 
-		compute_laser_rays_from_velodyne_and_create_a_local_map(velodyne_params, velodyne_data, r_matrix_car_to_global, &local_pose, robot_velocity, 0.0, 0.0, current_point_cloud_index, phi);
-
-		carmen_prob_models_calc_mean_and_variance_remission_map(&local_mean_remission_map, &local_variance_remission_map,
-							&local_sum_remission_map, &local_sum_sqr_remission_map, &local_count_remission_map);
-
+		compute_laser_rays_from_velodyne_and_create_a_local_map(velodyne_params, velodyne_data, r_matrix_car_to_global, &local_pose,
+				0.0, 0.0, current_point_cloud_index, v, phi, velodyne_params->use_remission);
 		carmen_prob_models_free_compact_map(&local_compacted_map);
-		carmen_prob_models_free_compact_map(&local_compacted_mean_remission_map);
-//		carmen_prob_models_free_compact_map(&local_compacted_variance_remission_map);
-
-		// Build local_compacted_map from local_map computed by compute_laser_rays_from_velodyne_and_create_a_local_map()
 		carmen_prob_models_create_compact_map(&local_compacted_map, &local_map, -1.0);
-		carmen_prob_models_create_compact_map(&local_compacted_mean_remission_map, &local_mean_remission_map, -1.0);
-//		carmen_prob_models_create_compact_map(&local_compacted_variance_remission_map, &local_variance_remission_map, -1.0);
-
-		// Clear maps for next point cloud
 		carmen_prob_models_clear_carmen_map_using_compact_map(&local_map, &local_compacted_map, -1.0);
-		carmen_prob_models_clear_carmen_map_using_compact_map(&local_mean_remission_map, &local_compacted_mean_remission_map, -1.0);
-//		carmen_prob_models_clear_carmen_map_using_compact_map(&local_variance_remission_map, &local_compacted_variance_remission_map, -1.0);
-		carmen_prob_models_clear_carmen_map_using_compact_map(&local_sum_remission_map, &local_compacted_mean_remission_map, -1.0);
-//		carmen_prob_models_clear_carmen_map_using_compact_map(&local_sum_sqr_remission_map, &local_compacted_variance_remission_map, -1.0);
-		carmen_prob_models_clear_carmen_map_using_compact_map(&local_count_remission_map, &local_compacted_mean_remission_map, -1.0);
+
+		if (velodyne_params->use_remission)
+		{
+			carmen_prob_models_calc_mean_and_variance_remission_map(&local_mean_remission_map, &local_variance_remission_map,
+								&local_sum_remission_map, &local_sum_sqr_remission_map, &local_count_remission_map);
+			carmen_prob_models_free_compact_map(&local_compacted_mean_remission_map);
+			carmen_prob_models_create_compact_map(&local_compacted_mean_remission_map, &local_mean_remission_map, -1.0);
+			carmen_prob_models_clear_carmen_map_using_compact_map(&local_mean_remission_map, &local_compacted_mean_remission_map, -1.0);
+			carmen_prob_models_clear_carmen_map_using_compact_map(&local_sum_remission_map, &local_compacted_mean_remission_map, -1.0);
+			carmen_prob_models_clear_carmen_map_using_compact_map(&local_count_remission_map, &local_compacted_mean_remission_map, -1.0);
+		}
 
 		if (velodyne_message_id > 1000000)
 			velodyne_message_id = 0;
@@ -540,8 +585,8 @@ localize_ackerman_velodyne_partial_scan(carmen_velodyne_partial_scan_message *ve
 
 
 int
-localize_ackerman_velodyne_variable_scan(carmen_velodyne_variable_scan_message *message, sensor_parameters_t *velodyne_params, sensor_data_t *velodyne_data,
-					carmen_vector_3D_t *robot_velocity)
+localize_ackerman_velodyne_variable_scan_build_instanteneous_maps(carmen_velodyne_variable_scan_message *message,
+		sensor_parameters_t *velodyne_params, sensor_data_t *velodyne_data, double v, double phi)
 {
 	static rotation_matrix *r_matrix_car_to_global = NULL;
 	static int message_id;
@@ -559,16 +604,12 @@ localize_ackerman_velodyne_variable_scan(carmen_velodyne_variable_scan_message *
 
 	velodyne_data->current_timestamp = message->timestamp;
 
-	build_sensor_point_cloud(&(velodyne_data->points), velodyne_data->intensity, &(velodyne_data->point_cloud_index), num_points, NUM_VELODYNE_POINT_CLOUDS);
+	build_sensor_point_cloud(&(velodyne_data->points), velodyne_data->intensity, &(velodyne_data->point_cloud_index), num_points,
+			NUM_VELODYNE_POINT_CLOUDS);
 
-	carmen_velodyne_variable_scan_update_points(message,
-			velodyne_params->vertical_resolution,
-			&(velodyne_data->points[velodyne_data->point_cloud_index]),
-			velodyne_data->intensity[velodyne_data->point_cloud_index],
-			velodyne_params->ray_order,
-			velodyne_params->vertical_correction,
-			velodyne_params->range_max,
-			message->timestamp);
+	carmen_velodyne_variable_scan_update_points(message, velodyne_params->vertical_resolution,
+			&(velodyne_data->points[velodyne_data->point_cloud_index]),	velodyne_data->intensity[velodyne_data->point_cloud_index],
+			velodyne_params->ray_order,	velodyne_params->vertical_correction, velodyne_params->range_max, message->timestamp);
 
 	if (message_id >= 0)
 	{
@@ -583,7 +624,8 @@ localize_ackerman_velodyne_variable_scan(carmen_velodyne_variable_scan_message *
 
 		current_point_cloud_index =  velodyne_data->point_cloud_index;
 
-		compute_laser_rays_from_velodyne_and_create_a_local_map(velodyne_params, velodyne_data, r_matrix_car_to_global, &local_pose, robot_velocity, 0.0, 0.0, current_point_cloud_index, 0.0);
+		compute_laser_rays_from_velodyne_and_create_a_local_map(velodyne_params, velodyne_data, r_matrix_car_to_global, &local_pose,
+				0.0, 0.0, current_point_cloud_index, v, phi);
 
 //		carmen_prob_models_free_compact_map(&local_compacted_map);
 //		carmen_prob_models_create_compact_map(&local_compacted_map, &local_map);

@@ -111,6 +111,8 @@ typedef struct _sensor_parameters
 	rotation_matrix *sensor_to_support_matrix;
 	rotation_matrix *support_to_car_matrix;
 	carmen_vector_3D_t sensor_robot_reference;
+
+	int use_remission;
 } sensor_parameters_t;
 
 
@@ -211,6 +213,12 @@ carmen_prob_models_compute_relevant_map_coordinates(sensor_data_t *sensor_data, 
 		carmen_vector_3D_t robot_position, carmen_pose_3D_t sensor_board_pose, rotation_matrix *r_matrix_robot_to_global, rotation_matrix *board_to_robot_matrix,
 		double robot_wheel_radius, double x_origin, double y_origin, carmen_robot_ackerman_config_t *car_config,
 		int overwrite_blind_spots_around_the_robot, int thread_id);
+
+void
+carmen_prob_models_compute_relevant_map_coordinates_with_remission_check(sensor_data_t *sensor_data, sensor_parameters_t *sensor_params, int scan_index,
+		carmen_vector_3D_t robot_position, carmen_pose_3D_t sensor_board_pose, rotation_matrix *r_matrix_robot_to_global, rotation_matrix *board_to_robot_matrix,
+		double robot_wheel_radius, double x_origin, double y_origin, carmen_robot_ackerman_config_t *car_config,
+		int overwrite_blind_spots_around_the_robot, int thread_id, int use_remission);
 
 void carmen_prob_models_updade_cells_bellow_robot(carmen_point_t pose, carmen_map_t *map, double prob, carmen_robot_ackerman_config_t *car_config);
 void carmen_prob_models_alloc_sensor_data(sensor_data_t *sensor_data, int vertical_resolution, int number_of_threads);

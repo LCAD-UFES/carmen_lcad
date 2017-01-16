@@ -332,9 +332,7 @@ carmen_localize_ackerman_initialize_particles_uniform(carmen_localize_ackerman_p
 
 void
 carmen_localize_ackerman_initialize_particles_gaussians(carmen_localize_ackerman_particle_filter_p filter,
-		int num_modes,
-		carmen_point_t *mean,
-		carmen_point_t *std)
+		int num_modes, carmen_point_t *mean, carmen_point_t *std)
 {
 	int i, j, each, start, end;
 	double x, y, theta;

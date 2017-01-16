@@ -309,12 +309,12 @@ void carmen_localize_ackerman_summarize_velodyne(carmen_localize_ackerman_partic
 
 
 void
-carmen_localize_ackerman_run_with_velodyne_prediction(
+carmen_localize_ackerman_velodyne_prediction(
 		carmen_localize_ackerman_particle_filter_p filter, carmen_base_ackerman_odometry_message *odometry,
 		carmen_fused_odometry_message *fused_odometry, int use_velocity_prediction, double velodyne_timestamp, double distance_between_front_and_rear_axles);
 
 void
-carmen_localize_ackerman_run_with_velodyne_correction(
+carmen_localize_ackerman_velodyne_correction(
 		carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_p map,
 		carmen_compact_map_t *local_map, carmen_compact_map_t *local_mean_remission_map,
 		carmen_compact_map_t *local_variance_remission_map  __attribute__ ((unused)),
@@ -322,7 +322,7 @@ carmen_localize_ackerman_run_with_velodyne_correction(
 
 
 void
-carmen_localize_ackerman_run_with_velodyne_resample(carmen_localize_ackerman_particle_filter_p filter);
+carmen_localize_ackerman_velodyne_resample(carmen_localize_ackerman_particle_filter_p filter);
 
 cell_coords_t
 calc_global_cell_coordinate(cell_coords_t *local, carmen_map_config_t *local_map_config,

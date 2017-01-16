@@ -54,6 +54,11 @@ carmen_velodyne_partial_scan_update_points(carmen_velodyne_partial_scan_message 
 		int vertical_resolution, spherical_point_cloud *points, unsigned char *intensity,
 		int *ray_order, double *vertical_correction, float range_max, double timestamp);
 
+void
+carmen_velodyne_partial_scan_update_points_with_remission_check(carmen_velodyne_partial_scan_message *velodyne_message,
+		int vertical_resolution, spherical_point_cloud *points, unsigned char *intensity,
+		int *ray_order, double *vertical_correction, float range_max, double timestamp, int use_remission);
+
 
 double
 carmen_velodyne_estimate_shot_time(double sensor_last_timestamp, double sensor_timestamp, int shot_index, int number_of_shots);

@@ -1387,6 +1387,66 @@ carmen_prob_models_compute_relevant_map_coordinates(sensor_data_t *sensor_data, 
 
 
 void
+carmen_prob_models_compute_relevant_map_coordinates_with_remission_check(sensor_data_t *sensor_data, sensor_parameters_t *sensor_params, int scan_index,
+		carmen_vector_3D_t robot_position, carmen_pose_3D_t sensor_board_pose, rotation_matrix *r_matrix_robot_to_global, rotation_matrix *board_to_robot_matrix,
+		double robot_wheel_radius, double x_origin, double y_origin, carmen_robot_ackerman_config_t *car_config,
+		int overwrite_blind_spots_around_the_robot, int thread_id, int use_remission)
+{
+	int i;
+	double ax, ay, bx, by;
+	float obstacle_z;
+	double closest_ray = 10000.0;
+	carmen_vector_2D_t ray_origin = {0.0, 0.0};
+	bool first = true;
+
+	for (i = 0; i < sensor_params->vertical_resolution; i++)
+	{
+		sensor_data->maxed[thread_id][i] = get_ray_origin_a_target_b_and_target_height(&ax, &ay, &bx, &by, &obstacle_z, &sensor_data->ray_hit_the_robot[thread_id][i], sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index + i],
+				robot_position,	sensor_params->sensor_robot_reference, sensor_params->pose, sensor_board_pose, sensor_params->sensor_to_support_matrix,
+				sensor_params->current_range_max, r_matrix_robot_to_global, board_to_robot_matrix, robot_wheel_radius, x_origin, y_origin, car_config);
+
+		sensor_data->ray_position_in_the_floor[thread_id][i].x = bx;
+		sensor_data->ray_position_in_the_floor[thread_id][i].y = by;
+		sensor_data->ray_size_in_the_floor[thread_id][i] = sqrt((ax - bx) * (ax - bx) + (ay - by) * (ay - by));
+		sensor_data->obstacle_height[thread_id][i] = obstacle_z;
+		if (use_remission)
+			sensor_data->processed_intensity[thread_id][i] = (double) (sensor_data->intensity[sensor_data->point_cloud_index][scan_index + i]) / 255.0;
+
+		if (first)
+		{
+			ray_origin.x = ax;
+			ray_origin.y = ay;
+			first = false;
+		}
+
+		if (!sensor_data->ray_hit_the_robot[thread_id][i])
+		{
+			if (sensor_data->ray_size_in_the_floor[thread_id][i] < closest_ray)
+			{
+				ray_origin.x = bx;
+				ray_origin.y = by;
+				closest_ray = sensor_data->ray_size_in_the_floor[thread_id][i];
+			}
+		}
+	}
+
+	for (i = 0; i < sensor_params->vertical_resolution; i++)
+	{
+		if (overwrite_blind_spots_around_the_robot)
+		{
+			sensor_data->ray_origin_in_the_floor[thread_id][i].x = ax;
+			sensor_data->ray_origin_in_the_floor[thread_id][i].y = ay;
+		}
+		else
+		{
+			sensor_data->ray_origin_in_the_floor[thread_id][i].x = ray_origin.x;
+			sensor_data->ray_origin_in_the_floor[thread_id][i].y = ray_origin.y;
+		}
+	}
+}
+
+
+void
 init_carmen_map(const ProbabilisticMapParams *params, carmen_map_t *carmen_map)
 {
 	int i;
