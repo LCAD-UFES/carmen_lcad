@@ -55,7 +55,7 @@ priority_queue_init(int max_elements)
 {
 	priority_queue_p result;
 
-	result = (priority_queue_p)calloc(1, sizeof(priority_queue_t));
+	result = (priority_queue_p) calloc(1, sizeof(priority_queue_t));
 	carmen_test_alloc(result);
 	result->num_elements = 0;
 	result->max_elements = max_elements;
@@ -136,78 +136,63 @@ priority_queue_free(priority_queue_p queue)
 	free(queue);
 }
 
-/* initialize memory necessary for holding temporary sensor weights */
 
 static void
 initialize_temp_weights(carmen_localize_ackerman_particle_filter_p filter)
 {
 	int i;
 
-	filter->temp_weights = (double **)calloc(filter->param->num_particles,
-			sizeof(double *));
+	filter->temp_weights = (double **) calloc(filter->param->num_particles, sizeof(double *));
 	carmen_test_alloc(filter->temp_weights);
-	for(i = 0; i < filter->param->num_particles; i++) {
-		filter->temp_weights[i] = (double *)calloc(MAX_BEAMS_PER_SCAN, sizeof(double));
+	for (i = 0; i < filter->param->num_particles; i++)
+	{
+		filter->temp_weights[i] = (double *) calloc(MAX_BEAMS_PER_SCAN, sizeof(double));
 		carmen_test_alloc(filter->temp_weights[i]);
 	}
 }
 
-/* resize memory for temporary sensor weights */
 
 static void
 realloc_temp_weights(carmen_localize_ackerman_particle_filter_p filter, int num_particles)
 {
 	int i;
 
-	for(i = 0; i < filter->param->num_particles; i++)
+	for (i = 0; i < filter->param->num_particles; i++)
 		free(filter->temp_weights[i]);
-	filter->temp_weights = (double **)realloc(filter->temp_weights,
-			num_particles * sizeof(double *));
+
+	filter->temp_weights = (double **) realloc(filter->temp_weights, num_particles * sizeof(double *));
 	carmen_test_alloc(filter->temp_weights);
-	for(i = 0; i < num_particles; i++) {
+	for (i = 0; i < num_particles; i++)
+	{
 		filter->temp_weights[i] = (double *)calloc(MAX_BEAMS_PER_SCAN, sizeof(double));
 		carmen_test_alloc(filter->temp_weights[i]);
 	}
 }
 
-/* allocate memory for a new particle filter */
 
 carmen_localize_ackerman_particle_filter_p
 carmen_localize_ackerman_particle_filter_new(carmen_localize_ackerman_param_p param)
 {
 	carmen_localize_ackerman_particle_filter_p filter;
 
-	/* allocate the particle filter */
 	carmen_set_random_seed(time(NULL));
 
-	filter =
-			(carmen_localize_ackerman_particle_filter_p)
-			calloc(1, sizeof(carmen_localize_ackerman_particle_filter_t));
+	filter = (carmen_localize_ackerman_particle_filter_p) calloc(1, sizeof(carmen_localize_ackerman_particle_filter_t));
 	carmen_test_alloc(filter);
 
-	/* set the parameters */
 	filter->param = param;
 
-	/* allocate the initial particle set */
-	filter->particles =
-			(carmen_localize_ackerman_particle_p)calloc(filter->param->num_particles,
-					sizeof(carmen_localize_ackerman_particle_t));
+	filter->particles = (carmen_localize_ackerman_particle_p) calloc(filter->param->num_particles, sizeof(carmen_localize_ackerman_particle_t));
 	carmen_test_alloc(filter->particles);
 
-	filter->swarm_pbest =
-				(carmen_localize_ackerman_particle_p)calloc(filter->param->num_particles,
-						sizeof(carmen_localize_ackerman_particle_t));
-		carmen_test_alloc(filter->swarm_pbest);
+	filter->swarm_pbest = (carmen_localize_ackerman_particle_p) calloc(filter->param->num_particles, sizeof(carmen_localize_ackerman_particle_t));
+	carmen_test_alloc(filter->swarm_pbest);
 
-	filter->swarm_velocity =
-			(carmen_localize_ackerman_particle_p)calloc(filter->param->num_particles,
-					sizeof(carmen_localize_ackerman_particle_t));
+	filter->swarm_velocity = (carmen_localize_ackerman_particle_p) calloc(filter->param->num_particles, sizeof(carmen_localize_ackerman_particle_t));
 	carmen_test_alloc(filter->swarm_velocity);
 
-	/* initialize the temporary weights */
 	initialize_temp_weights(filter);
 
-	/* filter has not been initialized */
 	filter->initialized = 0;
 	filter->first_odometry = 1;
 	filter->global_mode = 0;
@@ -217,6 +202,7 @@ carmen_localize_ackerman_particle_filter_new(carmen_localize_ackerman_param_p pa
 
 	return filter;
 }
+
 
 void
 carmen_localize_ackerman_initialize_particles_uniform(carmen_localize_ackerman_particle_filter_p filter,
@@ -233,9 +219,9 @@ carmen_localize_ackerman_initialize_particles_uniform(carmen_localize_ackerman_p
 
 
 	/* compute the correct laser_skip */
-	if (filter->param->laser_skip <= 0) {
-		filter->param->laser_skip =
-				floor(filter->param->integrate_angle / laser->config.angular_resolution);
+	if (filter->param->laser_skip <= 0)
+	{
+		filter->param->laser_skip = floor(filter->param->integrate_angle / laser->config.angular_resolution);
 	}
 
 	fprintf(stderr, "\rDoing global localization... (%.1f%% complete)", 0.0);
@@ -344,7 +330,6 @@ carmen_localize_ackerman_initialize_particles_uniform(carmen_localize_ackerman_p
 }
 
 
-/* initialize particles from a gaussian distribution */
 void
 carmen_localize_ackerman_initialize_particles_gaussians(carmen_localize_ackerman_particle_filter_p filter,
 		int num_modes,
@@ -356,7 +341,7 @@ carmen_localize_ackerman_initialize_particles_gaussians(carmen_localize_ackerman
 
 	each = (int) floor(filter->param->num_particles / (double) num_modes);
 
-	for(i = 0; i < num_modes; i++)
+	for (i = 0; i < num_modes; i++)
 	{
 		start = i * each;
 
@@ -365,7 +350,7 @@ carmen_localize_ackerman_initialize_particles_gaussians(carmen_localize_ackerman
 		else
 			end = (i + 1) * each;
 
-		for(j = start; j < end; j++)
+		for (j = start; j < end; j++)
 		{
 			x = carmen_gaussian_random(mean[i].x, std[i].x);
 			y = carmen_gaussian_random(mean[i].y, std[i].y);

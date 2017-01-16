@@ -120,7 +120,7 @@ build_map_using_velodyne(sensor_parameters_t *sensor_params, sensor_data_t *sens
 
 
 void
-localalize_using_map_change_map_origin_to_another_map_block(carmen_position_t *map_origin)
+localize_using_map_change_map_origin_to_another_map_block(carmen_position_t *map_origin)
 {
 	static int first_time = 1;
 
@@ -167,7 +167,7 @@ localalize_using_map_change_map_origin_to_another_map_block(carmen_position_t *m
 
 
 //void
-//localalize_using_map_change_map_origin(double map_displacement_x, double map_displacement_y)
+//localize_using_map_change_map_origin(double map_displacement_x, double map_displacement_y)
 //{
 //	static int first_time = 1;
 //
@@ -216,7 +216,7 @@ localalize_using_map_change_map_origin_to_another_map_block(carmen_position_t *m
 
 
 static int
-run_localalize_using_map(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global)
+run_localize_using_map(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global)
 {
 	static carmen_point_t world_pose;
 	static int first = 1;
@@ -234,9 +234,7 @@ run_localalize_using_map(sensor_parameters_t *sensor_params, sensor_data_t *sens
 		return 0;
 	}
 
-
-
-//	localalize_using_map_change_map_origin((robot_pose.position.x - world_pose.x), (robot_pose.position.y - world_pose.y));
+//	localize_using_map_change_map_origin((robot_pose.position.x - world_pose.x), (robot_pose.position.y - world_pose.y));
 
 	world_pose.x = robot_pose.position.x;
 	world_pose.y = robot_pose.position.y;
@@ -244,7 +242,7 @@ run_localalize_using_map(sensor_parameters_t *sensor_params, sensor_data_t *sens
 
 	carmen_grid_mapping_get_map_origin(&world_pose, &map_origin.x, &map_origin.y);
 
-	localalize_using_map_change_map_origin_to_another_map_block(&map_origin);
+	localize_using_map_change_map_origin_to_another_map_block(&map_origin);
 
 	build_map_using_velodyne(sensor_params, sensor_data, r_matrix_robot_to_global);
 	return 1;
@@ -266,7 +264,7 @@ build_sensor_point_cloud(spherical_point_cloud **points, unsigned char **intensi
 
 
 int
-localalize_using_map_velodyne_partial_scan(carmen_velodyne_partial_scan_message *velodyne_message)
+localize_using_map_velodyne_partial_scan(carmen_velodyne_partial_scan_message *velodyne_message)
 {
 	static int velodyne_message_id;
 	static IplImage *img_gray = NULL;
@@ -306,7 +304,7 @@ localalize_using_map_velodyne_partial_scan(carmen_velodyne_partial_scan_message 
 
 	if (velodyne_message_id >= 0)
 	{
-		ok_to_publish = run_localalize_using_map(&spherical_sensor_params[0], &spherical_sensor_data[0], r_matrix_car_to_global);
+		ok_to_publish = run_localize_using_map(&spherical_sensor_params[0], &spherical_sensor_data[0], r_matrix_car_to_global);
 
 		if (velodyne_message_id > 1000000)
 			velodyne_message_id = 0;
@@ -368,7 +366,7 @@ localalize_using_map_velodyne_partial_scan(carmen_velodyne_partial_scan_message 
 
 
 int
-localalize_using_map_velodyne_variable_scan(int sensor_number, carmen_velodyne_variable_scan_message *message)
+localize_using_map_velodyne_variable_scan(int sensor_number, carmen_velodyne_variable_scan_message *message)
 {
 	static int message_id;
 	int ok_to_publish;
@@ -405,7 +403,7 @@ localalize_using_map_velodyne_variable_scan(int sensor_number, carmen_velodyne_v
 
 	if (message_id >= 0)
 	{
-		ok_to_publish = run_localalize_using_map(&spherical_sensor_params[sensor_number], &spherical_sensor_data[sensor_number], r_matrix_car_to_global);
+		ok_to_publish = run_localize_using_map(&spherical_sensor_params[sensor_number], &spherical_sensor_data[sensor_number], r_matrix_car_to_global);
 
 		if (message_id > 1000000)
 			message_id = 0;
@@ -418,9 +416,8 @@ localalize_using_map_velodyne_variable_scan(int sensor_number, carmen_velodyne_v
 
 
 void
-localalize_using_map_set_robot_pose_into_the_map(double v, double phi, double timestamp)
+localize_using_map_set_robot_pose_into_the_map(double v, double phi, double timestamp)
 {
-
 	static double last_timestamp = timestamp;
 
 	globalpos_initialized = 1;
@@ -430,12 +427,11 @@ localalize_using_map_set_robot_pose_into_the_map(double v, double phi, double ti
 	r_matrix_car_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_pose.orientation);
 
 	last_timestamp = timestamp;
-
 }
 
 
 void
-localalize_using_map_initialize(carmen_map_config_t *main_map_config)
+localize_using_map_initialize(carmen_map_config_t *main_map_config)
 {
 	map_config = *main_map_config;
 	
@@ -455,5 +451,4 @@ localalize_using_map_initialize(carmen_map_config_t *main_map_config)
 
 
 	carmen_grid_mapping_get_map_origin(&pose, &g_map_origin.x, &g_map_origin.y);
-
 }

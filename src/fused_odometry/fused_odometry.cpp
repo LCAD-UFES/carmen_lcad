@@ -157,7 +157,6 @@ sample_motion_model_simple(carmen_fused_odometry_particle x_t_1, carmen_fused_od
 }
 
 
-
 static void 
 resample(carmen_fused_odometry_particle *xt)
 {		

@@ -1283,7 +1283,6 @@ calc_map_mean(carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *
 	robot_position.x = particle->x;
 	robot_position.y = particle->y;
 
-
 	for (i = 0; i < local_map->number_of_known_points_on_the_map; i++)
 	{
 		local.x = local_map->coord_x[i];
@@ -1291,26 +1290,26 @@ calc_map_mean(carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *
 		global = calc_global_cell_coordinate(&local, &local_map->config, &robot_position, sin_theta, cos_theta);
 
 		if (global.x >= 0 && global.y >= 0 && global.x < global_map->config.x_size && global.y < global_map->config.y_size)
+		{
 			if (global_map->carmen_map.map[global.x][global.y] >= 0.0)
 			{
 				map_mean += local_map->value[i] + global_map->carmen_map.map[global.x][global.y];
 			}
+		}
 	}
 
-	return  map_mean / (2.0 * local_map->number_of_known_points_on_the_map);
+	return (map_mean / (2.0 * local_map->number_of_known_points_on_the_map));
 }
 
 
 void
 correlation_correction(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_map)
 {
-
 	double map_mean = calc_map_mean(global_map, local_map, &filter->particles[0]);
 	double min_weight = 0.00001;
 	double w;
 	
-	int i;
-	for (i = 0; i < filter->param->num_particles; i++)
+	for (int i = 0; i < filter->param->num_particles; i++)
 	{
 		w = pearson_correlation_correction(global_map, local_map, &(filter->particles[i]), map_mean);
 		w = 1.0 - w > min_weight ? w : min_weight;

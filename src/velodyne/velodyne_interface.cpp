@@ -114,12 +114,10 @@ carmen_velodyne_define_messages()
 {
 	IPC_RETURN_TYPE err;
 
-	err = IPC_defineMsg(CARMEN_VELODYNE_PARTIAL_SCAN_MESSAGE_NAME, IPC_VARIABLE_LENGTH,
-			CARMEN_VELODYNE_PARTIAL_SCAN_MESSAGE_FMT);
+	err = IPC_defineMsg(CARMEN_VELODYNE_PARTIAL_SCAN_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_VELODYNE_PARTIAL_SCAN_MESSAGE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_VELODYNE_PARTIAL_SCAN_MESSAGE_NAME);
 
-	err = IPC_defineMsg(CARMEN_VELODYNE_GPS_MESSAGE_NAME, IPC_VARIABLE_LENGTH,
-			CARMEN_VELODYNE_GPS_MESSAGE_FMT);
+	err = IPC_defineMsg(CARMEN_VELODYNE_GPS_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_VELODYNE_GPS_MESSAGE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_VELODYNE_GPS_MESSAGE_NAME);
 
 	err = IPC_defineMsg(CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_VELODYNE_VARIABLE_SCAN_MESSAGE_FMT);
@@ -130,7 +128,7 @@ carmen_velodyne_define_messages()
 carmen_pose_3D_t
 get_velodyne_pose_in_relation_to_car(int argc, char** argv)
 {		
-	return get_velodyne_pose_in_relation_to_car_helper(argc, argv);
+	return (get_velodyne_pose_in_relation_to_car_helper(argc, argv));
 }
 
 
