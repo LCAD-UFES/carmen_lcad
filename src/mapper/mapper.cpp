@@ -73,19 +73,6 @@ change_sensor_rear_range_max(sensor_parameters_t *sensor_params, double angle)
 		sensor_params->current_range_max = sensor_params->range_max;
 }
 
-// Inicio do teste: moving_objects - Eduardo
-void
-publish_frontlaser(double timestamp)
-{
-	IPC_RETURN_TYPE err = IPC_OK;
-
-	//carmen_simulator_ackerman_calc_laser_msg(&flaser, simulator_config, 0);
-
-	flaser.timestamp = timestamp;
-	err = IPC_publishData(CARMEN_LASER_FRONTLASER_NAME, &flaser);
-	carmen_test_ipc(err, "Could not publish laser_frontlaser_message",
-			CARMEN_LASER_FRONTLASER_NAME);
-}
 
 void
 build_front_laser_message_from_velodyne_point_cloud(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, spherical_point_cloud v_zt, int i)
@@ -124,51 +111,11 @@ build_front_laser_message_from_velodyne_point_cloud(sensor_parameters_t *sensor_
 
 }
 
-//teste: fim
-
-int
-get_nearest_timestamp_index(double *robot_timestamp, spherical_point_cloud *points, int cindex)
-{
-	int index_nearest_timestamp = 0;
-	double timestamp_diff = 10.0;
-	int j = cindex;
-
-	for (int i = 0; i < NUM_VELODYNE_POINT_CLOUDS; i++)
-	{
-		double diff = fabs(robot_timestamp[j] - points[i].timestamp);
-		//printf("diff = %lf, rt = %lf, vt = %lf\n", robot_timestamp[j] - points[i].timestamp, robot_timestamp[j], points[i].timestamp);
-		if (diff < timestamp_diff)
-		{
-			timestamp_diff = diff;
-			index_nearest_timestamp = i;
-		}
-	}
-//
-//	if (timestamp_diff != 0.0)
-//	{
-//		j = ((cindex - 1) < 0)? NUM_VELODYNE_POINT_CLOUDS - 1: cindex - 1;
-//		for (int i = 0; i < NUM_VELODYNE_POINT_CLOUDS; i++)
-//		{
-//			double diff = fabs(robot_timestamp[j] - points[i].timestamp);
-//			//printf("diff = %lf, rt = %lf, vt = %lf\n", robot_timestamp[j] - points[i].timestamp, robot_timestamp[j], points[i].timestamp);
-//			if (diff < timestamp_diff)
-//			{
-//				timestamp_diff = diff;
-//				index_nearest_timestamp = i;
-//			}
-//		}
-//	}
-
-	//printf("time diff = %lf, index = %d, cindex = %d\n", timestamp_diff, index_nearest_timestamp, cindex);
-
-	return (index_nearest_timestamp);
-}
-
 //FILE *plot_data;
 
 static void
-update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data,
-		rotation_matrix *r_matrix_robot_to_global, int point_cloud_index, int update_cells_crossed_by_rays,
+update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *log_odds_snapshot_map, sensor_parameters_t *sensor_params,
+		sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global, int point_cloud_index, int update_cells_crossed_by_rays,
 		int build_snapshot_map __attribute__ ((unused)))
 {
 	int tid = omp_get_thread_num();
@@ -216,16 +163,16 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 
 		if (update_cells_crossed_by_rays == UPDATE_CELLS_CROSSED_BY_RAYS)
 		{
-			if (create_map_sum_and_count)
-				carmen_prob_models_update_sum_and_count_cells_crossed_by_ray(snapshot_map, &sum_occupancy_map, &count_occupancy_map, sensor_params, sensor_data, tid);
+			if (create_map_sum_and_count) // @@@ Alberto: A funcao abaixo nao esta funcionando direito pois mistura maps probabilisiticos com maps log odds
+				carmen_prob_models_update_sum_and_count_cells_crossed_by_ray(log_odds_snapshot_map, &sum_occupancy_map, &count_occupancy_map, sensor_params, sensor_data, tid);
 			else
-				carmen_prob_models_update_cells_crossed_by_ray(snapshot_map, sensor_params, sensor_data, tid);
+				carmen_prob_models_update_log_odds_of_cells_crossed_by_ray(log_odds_snapshot_map, sensor_params, sensor_data, tid);
 		}
 		// carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(map, sensor_params, sensor_data);
-		if (create_map_sum_and_count)
-			carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(snapshot_map, &sum_occupancy_map, &count_occupancy_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid);
+		if (create_map_sum_and_count) // @@@ Alberto: A funcao abaixo nao esta funcionando direito pois mistura maps probabilisiticos com maps log odds
+			carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(log_odds_snapshot_map, &sum_occupancy_map, &count_occupancy_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid);
 		else
-			carmen_prob_models_update_log_odds_of_cells_hit_by_rays(snapshot_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid);
+			carmen_prob_models_update_log_odds_of_cells_hit_by_rays(log_odds_snapshot_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid);
 
 		if (update_and_merge_with_mapper_saved_maps && use_remission)
 			carmen_prob_models_update_intensity_of_cells_hit_by_rays(&sum_remission_map, &sum_sqr_remission_map, &count_remission_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, NULL, tid);
@@ -244,7 +191,7 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 //FILE *plot_data;
 
 static void
-update_cells_in_the_laser_ldmrs_perceptual_field(carmen_map_t *snapshot_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data,
+update_log_odds_of_cells_in_the_laser_ldmrs_perceptual_field(carmen_map_t *log_odds_snapshot_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data,
 		rotation_matrix *r_matrix_robot_to_global, int point_cloud_index, int update_cells_crossed_by_rays __attribute__ ((unused)),
 		int build_snapshot_map __attribute__ ((unused)))
 {
@@ -291,7 +238,7 @@ update_cells_in_the_laser_ldmrs_perceptual_field(carmen_map_t *snapshot_map, sen
 //		if (update_cells_crossed_by_rays == UPDATE_CELLS_CROSSED_BY_RAYS)
 //			carmen_prob_models_update_cells_crossed_by_ray(snapshot_map, sensor_params, sensor_data, tid);
 
-		carmen_prob_models_set_log_odds_of_cells_hit_by_rays(snapshot_map, sensor_params, sensor_data, tid);
+		carmen_prob_models_set_log_odds_of_cells_hit_by_rays(log_odds_snapshot_map, sensor_params, sensor_data, tid);
 
 //		fprintf(plot_data, "\n");
 	}
@@ -347,7 +294,7 @@ int
 run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global)
 {
 	//int N = 4;
-	static carmen_map_t *snapshot_map;
+	static carmen_map_t *log_odds_snapshot_map;
 	static int first = 1;
 
 	if (!globalpos_initialized)
@@ -355,13 +302,13 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 
 	if (first)
 	{
-		snapshot_map = (carmen_map_t *) calloc(1, sizeof(carmen_map_t));
+		log_odds_snapshot_map = (carmen_map_t *) calloc(1, sizeof(carmen_map_t));
 		first = 0;
 	}
 
 #pragma omp parallel num_threads(number_of_threads)
 	{
-		snapshot_map = carmen_prob_models_check_if_new_snapshot_map_allocation_is_needed(snapshot_map, &map);
+		log_odds_snapshot_map = carmen_prob_models_check_if_new_log_odds_snapshot_map_allocation_is_needed(log_odds_snapshot_map, &map);
 		//set_map_equal_offline_map(&map);
 		//add_offline_map_over_unknown(&map);
 
@@ -370,15 +317,16 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 
 		if (sensor_params->sensor_type == LASER_LDMRS)
 		{
-			update_cells_in_the_laser_ldmrs_perceptual_field(snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
-//			carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map);
+			update_log_odds_of_cells_in_the_laser_ldmrs_perceptual_field(log_odds_snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
+			carmen_prob_models_overwrite_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(&map, log_odds_snapshot_map);
 		}
 		else // Velodyne and others
 		{
 			// @@@ Alberto: Mapa padrao Lucas -> colocar DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS ao inves de UPDATE_CELLS_CROSSED_BY_RAYS
-			//update_cells_in_the_velodyne_perceptual_field(&map, snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
-			update_cells_in_the_velodyne_perceptual_field(snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
-			carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map);
+			update_log_odds_of_cells_in_the_velodyne_perceptual_field(log_odds_snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global,
+					sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
+			carmen_prob_models_update_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(&map, log_odds_snapshot_map);
+//			carmen_grid_mapping_save_map((char *) "test.map", &map);
 		}
 	}
 
@@ -548,7 +496,7 @@ mapper_change_map_origin_to_another_map_block(carmen_position_t *map_origin)
 
 int
 run_snapshot_mapper()
-{
+{	// Esta funcao nao esta funcionando direito pois mistura mapas log odds com mapas probabilisticos...
 	int i;
 	int current_point_cloud_index;//, before_point_cloud_index;
 	static rotation_matrix *r_matrix_robot_to_global = NULL;
@@ -569,7 +517,7 @@ run_snapshot_mapper()
 //		carmen_prob_models_overwrite_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map);
 
 		r_matrix_robot_to_global = compute_rotation_matrix(r_matrix_robot_to_global, sensors_data[0].robot_pose[current_point_cloud_index].orientation);
-		update_cells_in_the_velodyne_perceptual_field(snapshot_map, &sensors_params[0], &sensors_data[0], r_matrix_robot_to_global, current_point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, 0);
+		update_log_odds_of_cells_in_the_velodyne_perceptual_field(snapshot_map, &sensors_params[0], &sensors_data[0], r_matrix_robot_to_global, current_point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, 0);
 		carmen_prob_models_overwrite_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map);
 	}
 
@@ -579,7 +527,7 @@ run_snapshot_mapper()
 		{
 			current_point_cloud_index =  sensors_data[i].point_cloud_index;
 			r_matrix_robot_to_global = compute_rotation_matrix(r_matrix_robot_to_global, sensors_data[i].robot_pose[current_point_cloud_index].orientation);
-			update_cells_in_the_velodyne_perceptual_field(snapshot_map, &sensors_params[i], &sensors_data[i], r_matrix_robot_to_global, current_point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, 0);
+			update_log_odds_of_cells_in_the_velodyne_perceptual_field(snapshot_map, &sensors_params[i], &sensors_data[i], r_matrix_robot_to_global, current_point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, 0);
 			carmen_prob_models_overwrite_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map);
 		}
 	}
@@ -674,7 +622,6 @@ int
 mapper_velodyne_variable_scan(int sensor_number, carmen_velodyne_variable_scan_message *message)
 {
 	static int message_id;
-
 
 	int num_points = message->number_of_shots * sensors_params[sensor_number].vertical_resolution;
 

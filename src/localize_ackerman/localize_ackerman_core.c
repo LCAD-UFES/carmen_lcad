@@ -1320,7 +1320,8 @@ correlation_correction(carmen_localize_ackerman_particle_filter_p filter, carmen
 
 
 void
-localize_map_correlation_correction(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_t *localize_map, carmen_compact_map_t *local_map)
+localize_map_correlation_correction(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_t *localize_map,
+		carmen_compact_map_t *local_map)
 {
 	for (int i = 0; i < filter->param->num_particles; i++)
 		filter->particles[i].weight = map_particle_correction(localize_map, local_map, &(filter->particles[i]));

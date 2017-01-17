@@ -224,6 +224,7 @@ void carmen_prob_models_updade_cells_bellow_robot(carmen_point_t pose, carmen_ma
 void carmen_prob_models_alloc_sensor_data(sensor_data_t *sensor_data, int vertical_resolution, int number_of_threads);
 void carmen_prob_models_log_odds_occupancy_grid_mapping(carmen_map_t *map, int xi, int yi, double inverse_sensor_model_value, ProbabilisticMapParams map_params);
 void carmen_prob_models_update_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id);
+void carmen_prob_models_update_log_odds_of_cells_crossed_by_ray(carmen_map_t *log_odds_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id);
 void carmen_prob_models_update_log_odds_of_nearest_target(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id);
 void carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(carmen_map_t *map, carmen_map_t *sum_occupancy_map, carmen_map_t *count_occupancy_map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id);
 void carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id);
@@ -240,8 +241,11 @@ void carmen_prob_models_uncompress_compact_map(carmen_map_t *map, carmen_compact
 int carmen_prob_models_ray_hit_the_robot(double distance_between_rear_robot_and_rear_wheels , double robot_length, double robot_width, double x, double y);
 
 carmen_map_t *carmen_prob_models_check_if_new_snapshot_map_allocation_is_needed(carmen_map_t *snapshot_map, carmen_map_t *current_map);
+carmen_map_t *carmen_prob_models_check_if_new_log_odds_snapshot_map_allocation_is_needed(carmen_map_t *log_odds_snapshot_map, carmen_map_t *current_map);
 void carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(carmen_map_t *current_map, carmen_map_t *snapshot_map);
+void carmen_prob_models_update_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(carmen_map_t *current_map, carmen_map_t *log_odds_snapshot_map);
 void carmen_prob_models_overwrite_current_map_with_snapshot_map_and_clear_snapshot_map(carmen_map_t *current_map, carmen_map_t *snapshot_map);
+void carmen_prob_models_overwrite_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(carmen_map_t *current_log_odds_map, carmen_map_t *log_odds_snapshot_map);
 
 void
 carmen_prob_models_update_intensity_of_cells_hit_by_rays(carmen_map_t *sum_remission_map,

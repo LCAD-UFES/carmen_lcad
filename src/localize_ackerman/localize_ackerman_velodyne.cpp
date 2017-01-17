@@ -1,4 +1,5 @@
 #include <carmen/carmen.h>
+#include <carmen/grid_mapping.h>
 #include <prob_measurement_model.h>
 #include <prob_map.h>
 #include "localize_ackerman_velodyne.h"
@@ -556,6 +557,7 @@ localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(carmen_velodyne
 
 		compute_laser_rays_from_velodyne_and_create_a_local_map(velodyne_params, velodyne_data, r_matrix_car_to_global, &local_pose,
 				0.0, 0.0, current_point_cloud_index, v, phi, velodyne_params->use_remission);
+//		carmen_grid_mapping_save_map((char *) "test.map", &local_map);
 		carmen_prob_models_free_compact_map(&local_compacted_map);
 		carmen_prob_models_create_compact_map(&local_compacted_map, &local_map, -1.0);
 		carmen_prob_models_clear_carmen_map_using_compact_map(&local_map, &local_compacted_map, -1.0);

@@ -375,15 +375,28 @@ carmen_prob_models_log_odds_occupancy_grid_mapping(carmen_map_t *map, int xi, in
 
 
 void
-carmen_prob_models_log_odds_occupancy_grid_mapping(carmen_map_t *map, int i, double inverse_sensor_model_value)
+carmen_prob_models_log_odds_occupancy_grid_mapping(carmen_map_t *map, int i, double inverse_sensor_model_log_odds_value)
 {
 	double lt_i;
 
 	lt_i = get_log_odds(map->complete_map[i]);
 
-	lt_i = lt_i + inverse_sensor_model_value;
+	lt_i = lt_i + inverse_sensor_model_log_odds_value;
 
 	map->complete_map[i] = carmen_prob_models_log_odds_to_probabilistic(lt_i);
+}
+
+
+void
+carmen_prob_models_occupancy_grid_mapping_log_odds_only(carmen_map_t *log_odds_map, int xi, int yi, double inverse_sensor_model_log_odds_value)
+{
+	double lt_i;
+
+	lt_i = log_odds_map->map[xi][yi];
+
+	lt_i = lt_i + inverse_sensor_model_log_odds_value;
+
+	log_odds_map->map[xi][yi] = lt_i;
 }
 
 
@@ -418,41 +431,43 @@ carmen_prob_models_update_log_odds_of_nearest_target(carmen_map_t *map,  sensor_
 	}
 }
 
+
 void
-carmen_prob_models_update_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id)
+carmen_prob_models_update_log_odds_of_cells_hit_by_rays(carmen_map_t *log_odds_map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id)
 {
 	int i;
 	cell_coords_t cell_hit_by_ray, cell_hit_by_nearest_ray;
 	double log_odds_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target = 0.0;
 
-	cell_hit_by_nearest_ray.x = (sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].x / map->config.resolution);
-	cell_hit_by_nearest_ray.y = (sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].y / map->config.resolution);
+	cell_hit_by_nearest_ray.x = (sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].x / log_odds_map->config.resolution);
+	cell_hit_by_nearest_ray.y = (sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].y / log_odds_map->config.resolution);
 
-	if (map_grid_is_valid(map, cell_hit_by_nearest_ray.x, cell_hit_by_nearest_ray.y))
-		log_odds_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target = map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y];
+	if (map_grid_is_valid(log_odds_map, cell_hit_by_nearest_ray.x, cell_hit_by_nearest_ray.y))
+		log_odds_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target = log_odds_map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y];
 		
 	for (i = 0; i < sensor_params->vertical_resolution; i++)
 	{
 		if (i != sensor_data->ray_that_hit_the_nearest_target[thread_id])
 		{
-			cell_hit_by_ray.x = (sensor_data->ray_position_in_the_floor[thread_id][i].x / map->config.resolution);
-			cell_hit_by_ray.y = (sensor_data->ray_position_in_the_floor[thread_id][i].y / map->config.resolution);
-			if (map_grid_is_valid(map, cell_hit_by_ray.x, cell_hit_by_ray.y))
+			cell_hit_by_ray.x = (sensor_data->ray_position_in_the_floor[thread_id][i].x / log_odds_map->config.resolution);
+			cell_hit_by_ray.y = (sensor_data->ray_position_in_the_floor[thread_id][i].y / log_odds_map->config.resolution);
+			if (map_grid_is_valid(log_odds_map, cell_hit_by_ray.x, cell_hit_by_ray.y))
 				if (sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] != sensor_params->log_odds.log_odds_l0)
-					carmen_prob_models_log_odds_occupancy_grid_mapping(map, cell_hit_by_ray.x, cell_hit_by_ray.y, sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i]);
+					carmen_prob_models_occupancy_grid_mapping_log_odds_only(log_odds_map, cell_hit_by_ray.x, cell_hit_by_ray.y, sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i]);
 		}
 	}
 
-	if (map_grid_is_valid(map, cell_hit_by_nearest_ray.x, cell_hit_by_nearest_ray.y))
+	if (map_grid_is_valid(log_odds_map, cell_hit_by_nearest_ray.x, cell_hit_by_nearest_ray.y))
 	{
-		map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y] = log_odds_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target;
+		log_odds_map->map[cell_hit_by_nearest_ray.x][cell_hit_by_nearest_ray.y] = log_odds_of_the_cell_hit_by_the_ray_that_hit_the_nearest_target;
 
 		if (!sensor_data->maxed[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]] &&
 			!sensor_data->ray_hit_the_robot[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]] &&
 			!(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]], highest_sensor, safe_range_above_sensors)))
-			carmen_prob_models_log_odds_occupancy_grid_mapping(map, cell_hit_by_nearest_ray.x, cell_hit_by_nearest_ray.y, 2.0 * sensor_params->log_odds.log_odds_occ);
+			carmen_prob_models_occupancy_grid_mapping_log_odds_only(log_odds_map, cell_hit_by_nearest_ray.x, cell_hit_by_nearest_ray.y, 2.0 * sensor_params->log_odds.log_odds_occ);
 	}
 }
+
 
 void
 carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(carmen_map_t *map, carmen_map_t *sum_occupancy_map, carmen_map_t *count_occupancy_map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id)
@@ -539,20 +554,20 @@ carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sen
 
 
 void
-carmen_prob_models_set_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id)
+carmen_prob_models_set_log_odds_of_cells_hit_by_rays(carmen_map_t *log_odds_map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id)
 {
 	int i;
 	cell_coords_t cell_hit_by_ray;
 
 	for (i = 1; i < sensor_params->vertical_resolution; i++)
 	{
-		cell_hit_by_ray.x = (sensor_data->ray_position_in_the_floor[thread_id][i].x / map->config.resolution);
-		cell_hit_by_ray.y = (sensor_data->ray_position_in_the_floor[thread_id][i].y / map->config.resolution);
+		cell_hit_by_ray.x = (sensor_data->ray_position_in_the_floor[thread_id][i].x / log_odds_map->config.resolution);
+		cell_hit_by_ray.y = (sensor_data->ray_position_in_the_floor[thread_id][i].y / log_odds_map->config.resolution);
 
-		if (map_grid_is_valid(map, cell_hit_by_ray.x, cell_hit_by_ray.y) && !sensor_data->maxed[thread_id][i])// &&
+		if (map_grid_is_valid(log_odds_map, cell_hit_by_ray.x, cell_hit_by_ray.y) && !sensor_data->maxed[thread_id][i])// &&
 //			(sensor_data->obstacle_height[thread_id][i] > 0.0) && (sensor_data->obstacle_height[thread_id][i] < 4.0) &&
 //			(sensor_data->ray_size_in_the_floor[thread_id][i] > 13.0))
-			map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] = sensor_params->log_odds.log_odds_occ;
+			log_odds_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] = sensor_params->log_odds.log_odds_occ;
 	}
 }
 
@@ -608,6 +623,23 @@ carmen_prob_models_check_if_new_snapshot_map_allocation_is_needed(carmen_map_t *
 		snapshot_map = carmen_map_interface_create_new_empty_map(&(current_map->config));
 	}
 	return (snapshot_map);
+}
+
+
+carmen_map_t *
+carmen_prob_models_check_if_new_log_odds_snapshot_map_allocation_is_needed(carmen_map_t *log_odds_snapshot_map, carmen_map_t *current_map)
+{
+	if (log_odds_snapshot_map == NULL)
+	{
+		log_odds_snapshot_map = carmen_map_interface_create_new_empty_log_odds_map(&(current_map->config));
+	}
+	else if ((log_odds_snapshot_map->config.x_size != current_map->config.x_size) ||
+		 (log_odds_snapshot_map->config.y_size != current_map->config.y_size))
+	{
+		carmen_map_destroy(&log_odds_snapshot_map);
+		log_odds_snapshot_map = carmen_map_interface_create_new_empty_log_odds_map(&(current_map->config));
+	}
+	return (log_odds_snapshot_map);
 }
 
 
@@ -715,15 +747,15 @@ carmen_prob_models_update_cells_crossed_by_ray(carmen_map_t *map, sensor_paramet
 	dy = (double) (b.y - a.y);
 	dr = sqrt(dx * dx + dy * dy);
 
-	step_count = (int)floor(dr / 1.0) + 2;
-	dx /= (step_count - 1);
-	dy /= (step_count - 1);
+	step_count = (int) round(dr);
+	dx /= (double) (step_count - 1);
+	dy /= (double) (step_count - 1);
 
 	// Walk the line and update the grid
 	for (j = 0; j < step_count - 1; j++)
 	{
-		nx = (int) (a.x + dx * (double) j + 0.5);
-		ny = (int) (a.y + dy * (double) j + 0.5);
+		nx = (int) round(a.x + dx * (double) j);
+		ny = (int) round(a.y + dy * (double) j);
 
 		if (map_grid_is_valid(map, nx, ny) && !((nx == b.x) && (ny == b.y)))
 		{
@@ -738,6 +770,56 @@ carmen_prob_models_update_cells_crossed_by_ray(carmen_map_t *map, sensor_paramet
 		}
 	}
 }
+
+
+void
+carmen_prob_models_update_log_odds_of_cells_crossed_by_ray(carmen_map_t *log_odds_map, sensor_parameters_t *sensor_params,
+		sensor_data_t *sensor_data, int thread_id)
+{
+	int j;
+	cell_coords_t a, b;
+	double dx, dy, dr;
+	int step_count;
+	int nx, ny;
+//	int ray_start_occupied = 0;
+
+//	if (sensor_data->maxed[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]])
+//		return;
+
+	a.x = (sensor_data->ray_origin_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].x / log_odds_map->config.resolution);
+	a.y = (sensor_data->ray_origin_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].y / log_odds_map->config.resolution);
+	b.x = (sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].x / log_odds_map->config.resolution);
+	b.y = (sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].y / log_odds_map->config.resolution);
+
+	// Compute line parameters
+	dx = (double) (b.x - a.x);
+	dy = (double) (b.y - a.y);
+	dr = sqrt(dx * dx + dy * dy);
+
+	step_count = (int) round(dr);
+	dx /= (double) (step_count - 1);
+	dy /= (double) (step_count - 1);
+
+	// Walk the line and update the grid
+	for (j = 0; j < step_count - 1; j++)
+	{
+		nx = (int) round(a.x + dx * (double) j);
+		ny = (int) round(a.y + dy * (double) j);
+
+		if (map_grid_is_valid(log_odds_map, nx, ny) && !((nx == b.x) && (ny == b.y)))
+		{
+//			if ((j < 8) && (map->map[nx][ny] > 0.85)) // Alberto: estes numeros sao bem ad hoc...
+//				ray_start_occupied = 1;
+//			if (ray_start_occupied && (log_odds_map->log_odds_map[nx][ny] <= 0.85))
+//				ray_start_occupied = 0;
+//			if (ray_start_occupied == 0)
+			carmen_prob_models_occupancy_grid_mapping_log_odds_only(log_odds_map, nx, ny, sensor_params->log_odds.log_odds_free);
+			if (log_odds_map->map[nx][ny] >= sensor_params->log_odds.log_odds_l0)
+				break;	// do not cross obstacles until they are cleared
+		}
+	}
+}
+
 
 void
 carmen_prob_models_update_sum_and_count_cells_crossed_by_ray(carmen_map_t *map, carmen_map_t *sum_occupancy_map, carmen_map_t *count_occupancy_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id)
@@ -762,15 +844,15 @@ carmen_prob_models_update_sum_and_count_cells_crossed_by_ray(carmen_map_t *map, 
 	dy = (double) (b.y - a.y);
 	dr = sqrt(dx * dx + dy * dy);
 
-	step_count = (int)floor(dr / 1.0) + 2;
-	dx /= (step_count - 1);
-	dy /= (step_count - 1);
+	step_count = (int) round(dr);
+	dx /= (double) step_count;
+	dy /= (double) step_count;
 
 	// Walk the line and update the grid
 	for (j = 0; j < step_count - 1; j++)
 	{
-		nx = (int) (a.x + dx * (double) j + 0.5);
-		ny = (int) (a.y + dy * (double) j + 0.5);
+		nx = (int) round(a.x + dx * (double) j);
+		ny = (int) round(a.y + dy * (double) j);
 
 		if (map_grid_is_valid(map, nx, ny) && !((nx == b.x) && (ny == b.y)))
 		{
@@ -1560,12 +1642,8 @@ carmen_update_cells_below_robot(carmen_map_t *map, carmen_point_t xt)
 	double r, dx, dy, dr;
 	double ax, ay, bx, by, px, py;
 	int step_count;
-	double step_size;
 	int nx, ny;
 	int angle;
-
-	// Make sure we hit every grid cell
-	step_size = map_params.grid_res;
 
 	ax = xt.x;
 	ay = xt.y;
@@ -1596,25 +1674,22 @@ carmen_update_cells_below_robot(carmen_map_t *map, carmen_point_t xt)
 		dy = by - ay;
 		dr = sqrt(dx * dx + dy * dy);
 
-		step_count = (int) floor(dr / step_size) + 2;
-		dx /= (step_count - 1);
-		dy /= (step_count - 1);
+		step_count = (int) round(dr);
+		dx /= (double) step_count;
+		dy /= (double) step_count;
 
 		// Walk the line and update the grid
-		for (j = 0; j < step_count; j++)
+		for (j = 0; j < step_count - 1; j++)
 		{
-			px = ax + dx * j;
-			py = ay + dy * j;
+			px = ax + dx * (double) j;
+			py = ay + dy * (double) j;
 
 			nx = map_to_grid_x(map, px);
 			ny = map_to_grid_y(map, py);
 
 			if (map_grid_is_valid(map, nx, ny))
-			{
 				set_image_map_cell(map, nx, ny, 0.0); // free the cell
-			}
 		}
-
 	}
 }
 
@@ -1748,9 +1823,9 @@ ray_cast_between_coordinates(double ax, double ay, double bx, double by, const P
 			occ = get_image_map_cell(map, nx, ny);
 			if (color == PMC_UNKNOWN_AREA)
 			{
-				if (occ == (int)PMC_UNKNOWN_AREA)
+				if (occ == (int) PMC_UNKNOWN_AREA)
 					break;
-				else if (occ < (int)PMC_OBSTACLE_COLOR_LIMIT) // found an obstacle
+				else if (occ < (int) PMC_OBSTACLE_COLOR_LIMIT) // found an obstacle
 					return map_params.range_max;
 			}
 			else
@@ -1758,7 +1833,7 @@ ray_cast_between_coordinates(double ax, double ay, double bx, double by, const P
 				if (color != PMC_WHITE)
 					set_image_map_cell(map, nx, ny, (int)color);
 
-				if (occ < (int)PMC_OBSTACLE_COLOR_LIMIT) // found an obstacle
+				if (occ < (int) PMC_OBSTACLE_COLOR_LIMIT) // found an obstacle
 					break;
 			}
 		}
@@ -1803,7 +1878,7 @@ ray_cast_between_coordinates(double ax, double ay, double bx, double by, carmen_
 	dy /= step_count;
 
 	// Just to keep the compiler happy ...
-	occ = (int)PMC_UNKNOWN_AREA;
+	occ = (int) PMC_UNKNOWN_AREA;
 
 	// Walk the line (ray)
 	px = py = 0; // Just to keep the compiler happy ...
@@ -1853,7 +1928,7 @@ ray_cast_unknown_between_coordinates(double ax, double ay, double bx, double by,
 	dy /= step_count;
 
 	// Just to keep the compiler happy ...
-	occ = (int)PMC_UNKNOWN_AREA;
+	occ = (int) PMC_UNKNOWN_AREA;
 
 	// Walk the line (ray)
 	px = py = 0; // Just to keep the compiler happy ...
@@ -1868,9 +1943,9 @@ ray_cast_unknown_between_coordinates(double ax, double ay, double bx, double by,
 		if (map_grid_is_valid(nx, ny))
 		{
 			occ = get_image_map_cell(map, nx, ny);
-			if (occ == (int)PMC_UNKNOWN_AREA)
+			if (occ == (int) PMC_UNKNOWN_AREA)
 				break;
-			else if (occ < (int)PMC_OBSTACLE_COLOR_LIMIT) // found an obstacle
+			else if (occ < (int) PMC_OBSTACLE_COLOR_LIMIT) // found an obstacle
 				return -1;
 		}
 		else
@@ -2128,16 +2203,11 @@ update_cells_above_robot(const ProbabilisticMap *map, carmen_point_t xt,
 	double r, dx, dy, dr;
 	double ax, ay, bx, by, px, py;
 	int step_count;
-	double step_size;
 	int nx, ny;
 	int angle;
 
-	// Make sure we hit every grid cell
-	step_size = map_params.grid_res;
-
 	ax = xt.x;
 	ay = xt.y;
-
 
 	if (robot_length > robot_width)
 		r = robot_length;
@@ -2147,7 +2217,6 @@ update_cells_above_robot(const ProbabilisticMap *map, carmen_point_t xt,
 	// Ray-trace the grid
 	for (angle = 0; angle < 360; angle++)
 	{
-
 		// Calculate the actual coords
 		bx = r * cos(carmen_degrees_to_radians(angle)) + ax;
 		by = r * sin(carmen_degrees_to_radians(angle)) + ay;
@@ -2157,25 +2226,22 @@ update_cells_above_robot(const ProbabilisticMap *map, carmen_point_t xt,
 		dy = by - ay;
 		dr = sqrt(dx * dx + dy * dy);
 
-		step_count = (int)floor(dr / step_size) + 2;
-		dx /= (step_count - 1);
-		dy /= (step_count - 1);
+		step_count = (int) round(dr);
+		dx /= (double) step_count;
+		dy /= (double) step_count;
 
 		// Walk the line and update the grid
-		for (j = 0; j < step_count; j++)
+		for (j = 0; j < step_count - 1; j++)
 		{
-			px = ax + dx * j;
-			py = ay + dy * j;
+			px = ax + dx * (double) j;
+			py = ay + dy * (double) j;
 
 			nx = map_to_grid_x(px);
 			ny = map_to_grid_y(py);
 
 			if (map_grid_is_valid(nx, ny))
-			{
 				set_image_map_cell(map, nx, ny, (int)color);
-			}
 		}
-
 	}
 }
 
@@ -2215,7 +2281,6 @@ carmen_update_cells_in_the_laser_perceptual_field(carmen_map_t *map, carmen_poin
 	double r, dx, dy, dr;
 	double ax, ay, bx, by, px, py;
 	int step_count;
-	double step_size;
 	int nx, ny;
 	int maxed;
 	double angle;
@@ -2223,9 +2288,6 @@ carmen_update_cells_in_the_laser_perceptual_field(carmen_map_t *map, carmen_poin
 
 	start_angle = laser_params->start_angle;
 	angle_step = laser_params->fov_range / (double) (laser_params->laser_beams - 1);
-
-	// Make sure we hit every grid cell
-	step_size = map->config.resolution;
 
 	ax = xt.x;
 	ay = xt.y;
@@ -2257,15 +2319,15 @@ carmen_update_cells_in_the_laser_perceptual_field(carmen_map_t *map, carmen_poin
 		dy = by - ay;
 		dr = sqrt(dx * dx + dy * dy);
 
-		step_count = (int)floor(dr / step_size) + 2;
-		dx /= (step_count - 1);
-		dy /= (step_count - 1);
+		step_count = (int) round(dr);
+		dx /= (double) step_count;
+		dy /= (double) step_count;
 
 		// Walk the line and update the grid
-		for (j = 0; j < step_count; j++)
+		for (j = 0; j < step_count - 1; j++)
 		{
-			px = ax + dx * j;
-			py = ay + dy * j;
+			px = ax + dx * (double) j;
+			py = ay + dy * (double) j;
 
 			nx = map_to_grid_x(map, px);
 			ny = map_to_grid_y(map, py);
@@ -2285,8 +2347,8 @@ carmen_update_cells_in_the_laser_perceptual_field(carmen_map_t *map, carmen_poin
 		// was not maxed out (a "miss" returns the max range value)
 		if (!maxed)
 		{
-			px = ax + dx * step_count;
-			py = ay + dy * step_count;
+			px = ax + dx * (double) step_count;
+			py = ay + dy * (double) step_count;
 
 			nx = map_to_grid_x(map, px);
 			ny = map_to_grid_y(map, py);
@@ -2465,7 +2527,7 @@ copy_probabilistic_map_to_image_buffer(ProbabilisticMapParams map_config, Probab
 
 void
 carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(carmen_map_t *current_map, carmen_map_t *snapshot_map)
-{
+{	// Os dois mapas tem que ser probabilisiticos
 	#pragma omp for
 	for (int i = 0; i < current_map->config.x_size * current_map->config.y_size; i++)
 	{
@@ -2478,8 +2540,39 @@ carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(c
 
 
 void
+carmen_prob_models_update_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(carmen_map_t *current_map,
+		carmen_map_t *log_odds_snapshot_map)
+{	// O current_map eh probabilistico e o snapshot_map log_odds
+	#pragma omp for
+	for (int i = 0; i < current_map->config.x_size * current_map->config.y_size; i++)
+	{
+		if (log_odds_snapshot_map->complete_map[i] != 0.0)
+			carmen_prob_models_log_odds_occupancy_grid_mapping(current_map, i, log_odds_snapshot_map->complete_map[i]);
+
+		log_odds_snapshot_map->complete_map[i] = 0.0;
+	}
+}
+
+
+void
+carmen_prob_models_overwrite_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(carmen_map_t *current_map,
+		carmen_map_t *log_odds_snapshot_map)
+{	// O current_map eh probabilistico e o snapshot_map log_odds
+	#pragma omp for
+	for (int i = 0; i < current_map->config.x_size * current_map->config.y_size; i++)
+	{
+		if (log_odds_snapshot_map->complete_map[i] != 0.0)
+			current_map->complete_map[i] = carmen_prob_models_log_odds_to_probabilistic(log_odds_snapshot_map->complete_map[i]);
+
+		log_odds_snapshot_map->complete_map[i] = 0.0;
+	}
+}
+
+
+void
 carmen_prob_models_overwrite_current_map_with_snapshot_map_and_clear_snapshot_map(carmen_map_t *current_map, carmen_map_t *snapshot_map)
-{
+{	// @@@ Alberto: Se o snapshot_map for de log_odds esta funcao esta errada: log_odds podem ser menores que zero e iguais a -1
+	// Para esta funcao funcionar os dois mapas tem que ser probabilisticos
 	int xi, yi;
 	
 	for (xi = 0; xi < current_map->config.x_size; xi++)

@@ -1102,3 +1102,26 @@ carmen_map_interface_create_new_empty_map(carmen_map_config_t *reference_config)
 	}
 	return (new_empty_map);
 }
+
+
+carmen_map_t *
+carmen_map_interface_create_new_empty_log_odds_map(carmen_map_config_t *reference_config)
+{
+	int i;
+	carmen_map_t *new_empty_map;
+
+	new_empty_map = (carmen_map_t *) calloc(1, sizeof(carmen_map_t));
+	new_empty_map->config = *reference_config;
+
+	// This line initializes the maps with zeros!
+	new_empty_map->complete_map = (double *) calloc(new_empty_map->config.x_size * new_empty_map->config.y_size, sizeof(double));
+	carmen_test_alloc(new_empty_map->complete_map);
+
+	new_empty_map->map = (double **) malloc(sizeof(double *) * new_empty_map->config.x_size);
+	carmen_test_alloc(new_empty_map->map);
+
+	for (i = 0; i < new_empty_map->config.x_size; i++)
+		new_empty_map->map[i] = &(new_empty_map->complete_map[i * new_empty_map->config.y_size]);
+
+	return (new_empty_map);
+}

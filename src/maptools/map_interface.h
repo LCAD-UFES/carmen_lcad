@@ -118,6 +118,7 @@ void carmen_map_interface_set_superimposed_map(carmen_map_p map);
 carmen_map_p carmen_map_interface_get_superimposed_map();
 
 carmen_map_t *carmen_map_interface_create_new_empty_map(carmen_map_config_t *reference_config);
+carmen_map_t *carmen_map_interface_create_new_empty_log_odds_map(carmen_map_config_t *reference_config);
 
 #ifdef __cplusplus
 }
