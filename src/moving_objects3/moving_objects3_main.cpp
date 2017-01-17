@@ -1,9 +1,12 @@
 #include <vector>
 
 #include <carmen/carmen.h>
+
 #include <carmen/laser_interface.h>
 #include <carmen/fused_odometry_interface.h>
 #include <carmen/localize_ackerman_interface.h>
+#include <carmen/mapper_interface.h>
+
 #include <prob_motion_model.h>
 #include <prob_measurement_model.h>
 
@@ -16,6 +19,8 @@ using namespace std;
 
 double range_max = 70.0;
 
+int use_map = 1;
+
 // particle filter
 carmen_moving_objects3_particles_message particles_message;
 std::vector<moving_objects3_particle_t> particle_set;
@@ -25,6 +30,8 @@ carmen_velodyne_projected_on_ground_message current_message;
 carmen_velodyne_projected_on_ground_message previous_message;
 
 double previous_timestamp;
+
+carmen_point_t globalpos;
 
 void
 arrange_velodyne_vertical_angles_to_true_position(carmen_velodyne_partial_scan_message *velodyne_message)
@@ -147,6 +154,50 @@ generate_virtual_scan(double *virtual_scan, carmen_velodyne_partial_scan_message
 
 
 void
+generate_virtual_scan_from_map(double *virtual_scan, carmen_mapper_map_message *map_message)
+{
+	int i, j, index;
+	double x, y, range, angle, delta_x, delta_y;
+	double inv_scan_resolution = NUM_OF_RAYS/(2*M_PI);
+
+	for (i = 0; i < map_message->config.x_size; i++)
+	{
+		for (j = 0; j < map_message->config.y_size; j++)
+		{
+			index = j + i * map_message->config.y_size;
+			if (map_message->complete_map[index] > 0.5)
+			{
+				// find x and y
+				x = i * map_message->config.resolution + map_message->config.x_origin;
+				y = j * map_message->config.resolution + map_message->config.y_origin;
+
+				// find range and angle
+				delta_x = x - globalpos.x;
+				delta_y = y - globalpos.y;
+
+				range = sqrt(delta_x*delta_x + delta_y*delta_y);
+				angle = atan2(delta_y, delta_x);
+
+				index = (int) ( (angle + M_PI) * inv_scan_resolution );
+
+				virtual_scan[index] = virtual_scan[index] > range ? range : virtual_scan[index];
+
+			}
+
+		}
+	}
+}
+
+
+void
+scan_differencing(double *current_virtual_scan, double *last_virtual_scan)
+{
+	(void) current_virtual_scan;
+	(void) last_virtual_scan;
+}
+
+
+void
 build_message_from_virtual_scan(carmen_velodyne_projected_on_ground_message *message, double *virtual_scan, double timestamp)
 {
 
@@ -215,6 +266,28 @@ carmen_velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 
 
 void
+carmen_mapper_handler(carmen_mapper_map_message *map_message)
+{
+	double virtual_scan[NUM_OF_RAYS];
+	for (int i = 0; i < NUM_OF_RAYS; i++)
+	{
+		virtual_scan[i] = range_max;
+	}
+	generate_virtual_scan_from_map(virtual_scan, map_message);
+	publish_virtual_scan_message(virtual_scan, map_message->timestamp, NUM_OF_RAYS);
+}
+
+
+void
+carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *globalpos_message)
+{
+	globalpos.theta = globalpos_message->globalpos.theta;
+	globalpos.x = globalpos_message->globalpos.x;
+	globalpos.y = globalpos_message->globalpos.y;
+}
+
+
+void
 shutdown_module(int signo)
 {
 	if (signo == SIGINT)
@@ -231,9 +304,23 @@ shutdown_module(int signo)
 void
 subscribe_messages()
 {
-	carmen_velodyne_subscribe_partial_scan_message(NULL,
-			(carmen_handler_t) carmen_velodyne_handler,
+	if (use_map)
+	{
+		carmen_mapper_subscribe_message(NULL,
+				(carmen_handler_t) carmen_mapper_handler,
+				CARMEN_SUBSCRIBE_LATEST);
+	}
+	else
+	{
+		carmen_velodyne_subscribe_partial_scan_message(NULL,
+				(carmen_handler_t) carmen_velodyne_handler,
+				CARMEN_SUBSCRIBE_LATEST);
+	}
+
+	carmen_localize_ackerman_subscribe_globalpos_message(NULL,
+			(carmen_handler_t) carmen_localize_ackerman_globalpos_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
+
 }
 
 
@@ -259,6 +346,12 @@ define_messages()
 int
 main(int argc, char **argv)
 {
+
+	if (argc > 1)
+	{
+		use_map = atoi(argv[1]);
+	}
+
 	carmen_ipc_initialize(argc, argv);
 	signal(SIGINT, shutdown_module);
 

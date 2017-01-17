@@ -2,6 +2,7 @@
 #include <carmen/carmen.h>
 #include <carmen/polar_point.h>
 #include <carmen/moving_objects3_interface.h>
+#include <carmen/map_server_interface.h>
 
 #include "moving_objects3_utils.h"
 
@@ -24,6 +25,8 @@ int one_dimension_window_id;
 carmen_velodyne_projected_on_ground_message velodyne_on_ground_message;
 carmen_moving_objects3_particles_message particles_message;
 carmen_moving_objects3_virtual_scan_message virtual_scan_message;
+
+carmen_map_server_offline_map_message map_message;
 
 int num_of_rays = 0;
 double *current_virtual_scan;
@@ -201,11 +204,51 @@ draw_virtual_scan(double *current_virtual_scan, double *last_virtual_scan, int n
 
 
 void
+draw_offline_map(carmen_map_server_offline_map_message map_message)
+{
+	int i,j, index;
+	double r = 0.0, g = 0.0, b  = 0.0;
+
+	double xc = map_message.config.x_size * map_message.config.resolution * pixels_per_meter_x * 0.5;
+	double yc = map_message.config.y_size * map_message.config.resolution * pixels_per_meter_y * 0.5;
+
+	glBegin(GL_POINTS);
+	for (i = 0; i < map_message.config.x_size; i++)
+	{
+		for (j = 0; j < map_message.config.y_size; j++)
+		{
+			index = j + i * map_message.config.y_size;
+			if (map_message.complete_map[index] > 0.5)
+			{
+				r = 0.6;
+				g = 0.6;
+				b = 0.6;
+			}
+			else
+			{
+				r = 0.0;
+				g = 0.0;
+				b = 0.0;
+			}
+
+			double pixel_x = (i * map_message.config.resolution * pixels_per_meter_x - xc);
+			double pixel_y = (j * map_message.config.resolution * pixels_per_meter_y - yc);
+
+			glColor3f(r, g, b);
+			glVertex2f(pixel_x, pixel_y);
+		}
+	}
+	glEnd();
+}
+
+
+void
 draw_velodyne_on_ground()
 {
 //	draw_spheres();
 	draw_circle(50.0, 0, 0, 0, 0, 0);
 	//draw_virtual_scan(last_virtual_scan, num_of_rays);
+//	draw_offline_map(map_message);
 	draw_virtual_scan(current_virtual_scan, last_virtual_scan, num_of_rays);
 	draw_particles(particles_message);
 	draw_car_centralized();
@@ -454,6 +497,13 @@ moving_objects3_virtual_scan_handler()
 
 
 void
+moving_objects3_offline_map_handler()
+{
+
+}
+
+
+void
 subcribe_messages()
 {
 	carmen_subscribe_moving_objects3_particles_message(
@@ -464,6 +514,11 @@ subcribe_messages()
 	carmen_subscribe_moving_objects3_virtual_scan_message(
 		&virtual_scan_message,
 		(carmen_handler_t) moving_objects3_virtual_scan_handler,
+		CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_map_server_subscribe_offline_map(
+		&map_message,
+		(carmen_handler_t) moving_objects3_offline_map_handler,
 		CARMEN_SUBSCRIBE_LATEST);
 }
 
