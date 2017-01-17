@@ -100,6 +100,27 @@ carmen_prob_models_log_odds_to_probabilistic(double lt_i)
 
 
 double
+carmen_prob_models_to_probabilistic_log_odds(double p_mi)
+{
+	double lt_i;
+	static double min_log_odds_as_probability = carmen_prob_models_log_odds_to_probabilistic(-MAX_LOG_ODDS_POSSIBLE);
+	static double max_log_odds_as_probability = carmen_prob_models_log_odds_to_probabilistic(MAX_LOG_ODDS_POSSIBLE);
+
+	if (p_mi < 0.0) // unknown
+		p_mi = 0.5;
+
+	if (p_mi < min_log_odds_as_probability)
+		lt_i = -MAX_LOG_ODDS_POSSIBLE;
+	else if (p_mi < max_log_odds_as_probability)
+		lt_i = logl((long double) p_mi / (1.0L - (long double) p_mi));
+	else
+		lt_i = MAX_LOG_ODDS_POSSIBLE;
+
+	return (lt_i);
+}
+
+
+double
 get_log_odds(double p_mi)
 {
 	double lt_i;

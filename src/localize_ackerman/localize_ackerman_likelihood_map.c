@@ -176,8 +176,8 @@ carmen_localize_ackerman_create_stretched_probability_map(double **prob, carmen_
 }
 
 
-void
-carmen_localize_ackerman_create_stretched_likelihood_map(double **prob, carmen_localize_ackerman_map_p lmap, double std, double min_likelihood)
+static void
+carmen_localize_ackerman_create_stretched_log_likelihood_map(double **prob, carmen_localize_ackerman_map_p lmap, double std, double min_likelihood)
 {
 	double max;
 
@@ -190,10 +190,17 @@ carmen_localize_ackerman_create_stretched_likelihood_map(double **prob, carmen_l
 	{
 		for (int y = 0; y < lmap->config.y_size; y++)
 		{	// Alberto: @@@ Precisa de uma referencia para o codigo abaixo
-			prob[x][y] /= max;
-			prob[x][y] = log(min_likelihood + (1.0 - min_likelihood) * prob[x][y]);
+			double cell_prob = prob[x][y] / max;
+			if (cell_prob < min_likelihood)
+				cell_prob = min_likelihood;
+			prob[x][y] = carmen_prob_models_to_probabilistic_log_odds(cell_prob);
 		}
 	}
+//	carmen_map_t temp_map;
+//	temp_map.config = lmap->config;
+//	temp_map.map = prob;
+//	temp_map.complete_map = prob[0];
+//	carmen_grid_mapping_save_map((char *) "test.map", &temp_map);
 }
 
 
@@ -353,7 +360,7 @@ carmen_to_localize_ackerman_map(carmen_map_p cmap,
 
 	if (distance_map == NULL)
 	{
-		distance_map =  (carmen_prob_models_distance_map *)calloc(1, sizeof(carmen_prob_models_distance_map));
+		distance_map =  (carmen_prob_models_distance_map *) calloc(1, sizeof(carmen_prob_models_distance_map));
 		carmen_prob_models_initialize_distance_map(distance_map, cmap);
 	}
 
@@ -372,8 +379,8 @@ carmen_to_localize_ackerman_map(carmen_map_p cmap,
 //	create_likelihood_map(lmap, lmap->prob, param->lmap_std); 
 //	create_likelihood_map(lmap, lmap->gprob, param->global_lmap_std); 
 
-	carmen_localize_ackerman_create_stretched_likelihood_map(lmap->prob, lmap, param->lmap_std, param->tracking_beam_minlikelihood);
-	carmen_localize_ackerman_create_stretched_likelihood_map(lmap->gprob, lmap, param->global_lmap_std, param->global_beam_minlikelihood);
+	carmen_localize_ackerman_create_stretched_log_likelihood_map(lmap->prob, lmap, param->lmap_std, param->tracking_beam_minlikelihood);
+	carmen_localize_ackerman_create_stretched_log_likelihood_map(lmap->gprob, lmap, param->global_lmap_std, param->global_beam_minlikelihood);
 }
 
 
@@ -473,9 +480,3 @@ void carmen_localize_ackerman_write_likelihood_map_to_ppm(char *filename,
 		}
 	fclose(fp);
 }
-
-
-
-
-
-

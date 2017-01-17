@@ -1375,6 +1375,11 @@ subscribe_to_ipc_message()
 		if (spherical_sensor_params[9].alive)
 			carmen_stereo_velodyne_subscribe_scan_message(9, NULL, (carmen_handler_t) velodyne_variable_scan_message_handler9, CARMEN_SUBSCRIBE_LATEST);
 	}
+	else
+	{
+		if (spherical_sensor_params[0].alive)
+			carmen_velodyne_subscribe_partial_scan_message(NULL, (carmen_handler_t) velodyne_partial_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	}
 }
 
 

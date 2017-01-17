@@ -178,6 +178,7 @@ double get_log_odds_map_cell(const carmen_map_t *map, int x, int y);
 void set_log_odds_map_cell(carmen_map_t *map, int x, int y, double lt_i);
 double get_log_odds(double p_mi);
 double carmen_prob_models_log_odds_to_probabilistic(double lt_i);
+double carmen_prob_models_to_probabilistic_log_odds(double p_mi);
 void set_image_map_cell(const ProbabilisticMap *map, int x, int y, int value);
 double grid_to_map_x(int x);
 double grid_to_map_y(int y);

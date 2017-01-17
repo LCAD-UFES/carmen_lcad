@@ -381,6 +381,11 @@ publish_a_new_offline_map_if_robot_moved_to_another_block(carmen_point_t *pose, 
 			carmen_prob_models_calc_mean_and_variance_remission_map(current_mean_remission_map, current_variance_remission_map, current_sum_remission_map, current_sum_sqr_remission_map, current_count_remission_map);
 
 		carmen_to_localize_ackerman_map(current_map, current_mean_remission_map, current_variance_remission_map, &localize_map, &localize_param);
+//		carmen_map_t temp_map;
+//		temp_map.config = localize_map.config;
+//		temp_map.complete_map = localize_map.complete_prob;
+//		temp_map.map = localize_map.prob;
+//		carmen_grid_mapping_save_map((char *) "test.map", &temp_map);
 
 		strcpy(current_map->config.origin, "from_param_daemon");
 		carmen_map_server_publish_offline_map_message(current_map, timestamp);

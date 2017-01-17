@@ -51,8 +51,6 @@ void carmen_localize_ackerman_create_distance_map(carmen_localize_ackerman_map_p
 
 double carmen_localize_ackerman_create_stretched_probability_map(double **prob, carmen_localize_ackerman_map_p lmap, double std);
 
-void carmen_localize_ackerman_create_stretched_likelihood_map(double **prob, carmen_localize_ackerman_map_p lmap, double std, double min_likelihood);
-
 void carmen_localize_ackerman_initialize_localize_map(carmen_localize_ackerman_map_p lmap,	carmen_map_p cmap);
 
 void carmen_to_localize_ackerman_map(carmen_map_p cmap, carmen_map_p mean_remission_map,

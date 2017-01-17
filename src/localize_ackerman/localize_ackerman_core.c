@@ -334,7 +334,7 @@ velodyne_resample(carmen_localize_ackerman_particle_filter_p filter)
 	}
 
 	/* choose random starting position for low-variance walk */
-	position = carmen_uniform_random(0, weight_sum);
+	position = carmen_uniform_random(0.0, weight_sum);
 	step_size = weight_sum / (double) filter->param->num_particles;
 	which_particle = 0;
 
@@ -390,7 +390,6 @@ carmen_localize_ackerman_resample(carmen_localize_ackerman_particle_filter_p fil
 
 		num_particles = filter->param->num_particles;
 	}
-
 
 	weight_sum = 0.0;
 	max_weight = filter->particles[0].weight;
@@ -892,7 +891,7 @@ hausdoff_distance_correction(carmen_localize_ackerman_particle_filter_p filter, 
 static double
 map_particle_correction(carmen_localize_ackerman_map_t *localize_map, carmen_compact_map_t *local_map, carmen_localize_ackerman_particle_t *particle)
 {
-	cell_coords_t local, global;
+	cell_coords_t local_cell, global_cell;
 	double particle_weight = 0.0;
 	carmen_vector_2D_t robot_position;
 
@@ -907,14 +906,14 @@ map_particle_correction(carmen_localize_ackerman_map_t *localize_map, carmen_com
 
 	for (int i = 0; i < local_map->number_of_known_points_on_the_map; i++)
 	{
-		local.x = local_map->coord_x[i];
-		local.y = local_map->coord_y[i];
+		local_cell.x = local_map->coord_x[i];
+		local_cell.y = local_map->coord_y[i];
 
-		global = calc_global_cell_coordinate_fast(&local, map_center_x, map_center_y,
+		global_cell = calc_global_cell_coordinate_fast(&local_cell, map_center_x, map_center_y,
 					robot_position_in_the_map_x, robot_position_in_the_map_y, sin_theta, cos_theta);
 
-		if (global.x >= 0 && global.y >= 0 && global.x < localize_map->config.x_size && global.y < localize_map->config.y_size)
-			particle_weight += localize_map->prob[global.x][global.y];
+		if (global_cell.x >= 0 && global_cell.y >= 0 && global_cell.x < localize_map->config.x_size && global_cell.y < localize_map->config.y_size)
+			particle_weight += localize_map->prob[global_cell.x][global_cell.y];
 	}
 
 	return particle_weight;
@@ -1406,6 +1405,11 @@ carmen_localize_ackerman_velodyne_correction(carmen_localize_ackerman_particle_f
 		case 0:
 			// The localize_map used in this function must be in log likelihood
 			localize_map_correlation_correction(filter, localize_map, local_map);
+//			carmen_map_t temp_map;
+//			temp_map.config = localize_map->config;
+//			temp_map.complete_map = localize_map->complete_prob;
+//			temp_map.map = localize_map->prob;
+//			carmen_grid_mapping_save_map((char *) "test.map", &temp_map);
 			break;
 
 		case 1:
