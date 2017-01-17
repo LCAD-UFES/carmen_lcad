@@ -645,18 +645,18 @@ static void
 build_map_using_velodyne(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global)
 {
 	//int N = 4;
-	static carmen_map_t **snapshot_map;
+	static carmen_map_t *snapshot_map;
 	static int first = 1;
 	if (first)
 	{
-		snapshot_map = (carmen_map_t **)calloc(number_of_threads, sizeof(carmen_map_t *));
+		snapshot_map = (carmen_map_t *) calloc(1, sizeof(carmen_map_t));
 		first = 0;
 	}
 
 #pragma omp parallel num_threads(number_of_threads)
 	{
 		int tid = omp_get_thread_num();
-		snapshot_map[tid] = carmen_prob_models_check_if_new_snapshot_map_allocation_is_needed(snapshot_map[tid], &map);
+		snapshot_map = carmen_prob_models_check_if_new_snapshot_map_allocation_is_needed(snapshot_map, &map);
 		//set_map_equal_offline_map(&map);
 		//add_offline_map_over_unknown(&map);
 
@@ -665,8 +665,8 @@ build_map_using_velodyne(sensor_parameters_t *sensor_params, sensor_data_t *sens
 
 		// @@@ Alberto: Mapa padrao Lucas -> colocar DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS ao inves de UPDATE_CELLS_CROSSED_BY_RAYS
 		//update_cells_in_the_velodyne_perceptual_field(&map, snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
-		update_cells_in_the_velodyne_perceptual_field(snapshot_map[tid], sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
-		carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map, number_of_threads);
+		update_cells_in_the_velodyne_perceptual_field(snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
+		carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map);
 	}
 }
 
@@ -868,7 +868,7 @@ run_snapshot_moving_objects2()
 //		carmen_prob_models_overwrite_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map);
 
 		r_matrix_robot_to_global = compute_rotation_matrix(r_matrix_robot_to_global, sensors_data[0].robot_pose[current_point_cloud_index].orientation);
-		update_cells_in_the_velodyne_perceptual_field( snapshot_map, &sensors_params[0], &sensors_data[0], r_matrix_robot_to_global, current_point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, 0);
+		update_cells_in_the_velodyne_perceptual_field(snapshot_map, &sensors_params[0], &sensors_data[0], r_matrix_robot_to_global, current_point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, 0);
 		carmen_prob_models_overwrite_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map);
 	}
 

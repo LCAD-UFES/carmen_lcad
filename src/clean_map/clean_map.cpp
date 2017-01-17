@@ -601,41 +601,6 @@ map_decay_to_offline_map(carmen_map_t *current_map)
 }
 
 
-//static void
-//build_map_using_velodyne(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotation_matrix *r_matrix_robot_to_global)
-//{
-//	//int N = 4;
-//	static carmen_map_t **snapshot_map;
-//	static int first = 1;
-//	if (first)
-//	{
-//		snapshot_map = (carmen_map_t **)calloc(number_of_threads, sizeof(carmen_map_t *));
-//		first = 0;
-//	}
-//
-//#pragma omp parallel num_threads(number_of_threads)
-//	{
-//		int tid = omp_get_thread_num();
-//		snapshot_map[tid] = carmen_prob_models_check_if_new_snapshot_map_allocation_is_needed(snapshot_map[tid], &map);
-		//set_map_equal_offline_map(&map);
-		//add_offline_map_over_unknown(&map);
-
-//		if(decay_to_offline_map)
-//			map_decay_to_offline_map(&map);
-
-		// @@@ Alberto: Mapa padrao Lucas -> colocar DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS ao inves de UPDATE_CELLS_CROSSED_BY_RAYS
-		//update_cells_in_the_velodyne_perceptual_field(&map, snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
-//		update_cells_in_the_velodyne_perceptual_field(snapshot_map[tid], sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
-		//#####################################################
-
-//		segment_remission_map(&localize_map.carmen_mean_remission_map, &localize_map.carmen_map);
-
-		//#####################################################
-//		carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(&map, snapshot_map, number_of_threads);
-//	}
-//}
-
-
 void
 initialize_first_map_block_origin(carmen_map_t *current_carmen_map, carmen_position_t *map_origin, char map_type)
 {

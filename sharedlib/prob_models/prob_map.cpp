@@ -375,6 +375,19 @@ carmen_prob_models_log_odds_occupancy_grid_mapping(carmen_map_t *map, int xi, in
 
 
 void
+carmen_prob_models_log_odds_occupancy_grid_mapping(carmen_map_t *map, int i, double inverse_sensor_model_value)
+{
+	double lt_i;
+
+	lt_i = get_log_odds(map->complete_map[i]);
+
+	lt_i = lt_i + inverse_sensor_model_value;
+
+	map->complete_map[i] = carmen_prob_models_log_odds_to_probabilistic(lt_i);
+}
+
+
+void
 carmen_prob_models_clean_carmen_map(carmen_map_t *map)
 {
 	int i;
@@ -599,10 +612,9 @@ carmen_prob_models_check_if_new_snapshot_map_allocation_is_needed(carmen_map_t *
 
 
 void
-carmen_prob_models_update_intensity_of_cells_hit_by_rays(carmen_map_t *sum_remission_map,
-		carmen_map_t *sum_sqr_remission_map, carmen_map_t *count_remission_map,
-		sensor_parameters_t *sensor_params,
-		sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, cell_coords_t *map_cells_hit_by_each_rays, int thread_id)
+carmen_prob_models_update_intensity_of_cells_hit_by_rays(carmen_map_t *sum_remission_map, carmen_map_t *sum_sqr_remission_map,
+		carmen_map_t *count_remission_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor,
+		double safe_range_above_sensors, cell_coords_t *map_cells_hit_by_each_rays, int thread_id)
 {
 	int i;
 
@@ -2450,25 +2462,17 @@ copy_probabilistic_map_to_image_buffer(ProbabilisticMapParams map_config, Probab
 	}
 }
 
+
 void
-carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(carmen_map_t *current_map, carmen_map_t **snapshot_map, int num_of_threads)
+carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(carmen_map_t *current_map, carmen_map_t *snapshot_map)
 {
-	int xi, yi;
-
 	#pragma omp for
-	for (xi = 0; xi < current_map->config.x_size; xi++)
+	for (int i = 0; i < current_map->config.x_size * current_map->config.y_size; i++)
 	{
-		for (yi = 0; yi < current_map->config.y_size; yi++)
-		{
-			//int i = 0;
-			for (int i = 0; i < num_of_threads; i++)
-			{
-				if (snapshot_map[i]->map[xi][yi] > 0.0)
-					carmen_prob_models_log_odds_occupancy_grid_mapping(current_map, xi, yi, get_log_odds(snapshot_map[i]->map[xi][yi]));
+		if (snapshot_map->complete_map[i] > 0.0)
+			carmen_prob_models_log_odds_occupancy_grid_mapping(current_map, i, get_log_odds(snapshot_map->complete_map[i]));
 
-				snapshot_map[i]->map[xi][yi] = -1.0;
-			}
-		}
+		snapshot_map->complete_map[i] = -1.0;
 	}
 }
 

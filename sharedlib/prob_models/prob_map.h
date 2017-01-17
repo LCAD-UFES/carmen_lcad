@@ -240,7 +240,7 @@ void carmen_prob_models_uncompress_compact_map(carmen_map_t *map, carmen_compact
 int carmen_prob_models_ray_hit_the_robot(double distance_between_rear_robot_and_rear_wheels , double robot_length, double robot_width, double x, double y);
 
 carmen_map_t *carmen_prob_models_check_if_new_snapshot_map_allocation_is_needed(carmen_map_t *snapshot_map, carmen_map_t *current_map);
-void carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(carmen_map_t *current_map, carmen_map_t **snapshot_map, int num_of_threads);
+void carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(carmen_map_t *current_map, carmen_map_t *snapshot_map);
 void carmen_prob_models_overwrite_current_map_with_snapshot_map_and_clear_snapshot_map(carmen_map_t *current_map, carmen_map_t *snapshot_map);
 
 void
