@@ -1392,7 +1392,7 @@ carmen_prob_models_ray_hit_the_robot(double distance_between_rear_robot_and_rear
 
 	carmen_vector_2D_t car_corners[2];
 	car_corners[0].y = -robot_width / 2;
-	car_corners[0].x = -(distance_between_rear_robot_and_rear_wheels + 3.5);
+	car_corners[0].x = -(distance_between_rear_robot_and_rear_wheels + 3.5); // @@@ Alberto: Tem que melhorar esta funcao para evitar este + 3.5
 	car_corners[1].y = (robot_width / 2);
 	car_corners[1].x = robot_length - distance_between_rear_robot_and_rear_wheels;
 
