@@ -5,7 +5,7 @@
 int main(int argc, char *argv[])
 {
 	QApplication app(argc, argv);
-	VehicleTrackerGUI w;
+	VehicleTrackerGUI w(argc, argv);
 	w.show();
 
 	return app.exec();

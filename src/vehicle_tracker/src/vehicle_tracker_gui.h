@@ -2,6 +2,7 @@
 #define VEHICLE_TRACKER_GUI_H
 
 #include "display.h"
+#include "virtual_scan.h"
 
 #include <QMainWindow>
 
@@ -19,7 +20,7 @@ class VehicleTrackerGUI : public QMainWindow
 	QGraphicsScene scene;
 
 public:
-    explicit VehicleTrackerGUI(QWidget *parent = 0);
+	explicit VehicleTrackerGUI(int argc, char **argv, QWidget *parent = 0);
 
 	/** \brief Class destructor. */
 	~VehicleTrackerGUI();
@@ -31,6 +32,8 @@ private:
     Ui::VehicleTrackerGUI *ui;
 
 	g2d::Display display;
+
+	VirtualScan *scan;
 };
 
 #endif // VEHICLE_TRACKER_GUI_H

@@ -13,10 +13,41 @@ bool is_inside(const g2d::Point &point, const g2d::Polygon &polygon)
 	return (side == CGAL::ON_BOUNDED_SIDE);
 }
 
-VehicleTrackerGUI::VehicleTrackerGUI(QWidget *parent) :
+std::string relation(const g2d::Point &point, const g2d::Polygon &rect)
+{
+	CGAL::Bounded_side side = CGAL::bounded_side_2(
+		rect.vertices_begin(),
+		rect.vertices_end(),
+		point,
+		g2d::Kernel()
+	);
+
+	if (side == CGAL::ON_BOUNDED_SIDE)
+		return "inside";
+
+	if (side == CGAL::ON_BOUNDARY)
+		return "on";
+
+	g2d::Point center = g2d::centroid(rect);
+	g2d::Field d_center = (center - CGAL::ORIGIN).squared_length();
+	g2d::Field d_point = (point - CGAL::ORIGIN).squared_length();
+
+	if (d_point < d_center)
+		return "before";
+
+	return "after";
+}
+
+void relation_message(const g2d::Point &point, const g2d::Polygon &rect)
+{
+	std::cout << "Point [" << point << "] is " << relation(point, rect) << " the rectangle [" << rect << "]" << std::endl;
+}
+
+VehicleTrackerGUI::VehicleTrackerGUI(int argc, char **argv, QWidget *parent) :
 	QMainWindow(parent),
 	ui(new Ui::VehicleTrackerGUI),
-	display(&scene)
+	display(&scene),
+	scan(new VirtualScan(argc, argv, &display, this))
 {
 	ui->setupUi(this);
 
@@ -24,17 +55,8 @@ VehicleTrackerGUI::VehicleTrackerGUI(QWidget *parent) :
 	ui->graphicsView->setScene(&scene);
 	ui->graphicsView->scale(1, -1);
 
-	const g2d::Point &point = display.point(0.5, 2);
-	display.point(0.7, 2);
-	const g2d::Polygon rect = display.rectangle(0.5, 2, 0.5, 2, 0.7);
-	display.circle(0, 0, 6);
-
-	std::cout << display.canvas.points.size() << std::endl;
-
-	std::cout << "Point " << point << " is " << (is_inside(point, rect) ? "inside" : "outside") << " rectangle " << rect << std::endl;
-
-	//display.canvas.points.at(1) = g2d::Point(0, 0);
-	//display.points.modelChanged();
+	display.circle(0, 0, 60);
+	display.rectangle(0, 0, 4.87, 1.85, 0.0);
 }
 
 VehicleTrackerGUI::~VehicleTrackerGUI()

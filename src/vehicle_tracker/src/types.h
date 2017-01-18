@@ -10,7 +10,6 @@
 #include <CGAL/MP_Float.h>
 #include <CGAL/Polygon_2.h>
 
-#include <list>
 #include <vector>
 
 namespace g2d
@@ -53,13 +52,21 @@ typedef Kernel::Circle_2 Circle;
 typedef std::vector<Circle> Circles;
 
 /** \brief 2D polygon type. */
-typedef CGAL::Polygon_2<Kernel, std::list< Point> > Polygon;
+typedef CGAL::Polygon_2<Kernel, std::vector< Point> > Polygon;
+
+/** \brief Circular buffer of polygon vertices. */
+typedef Polygon::Vertex_circulator Vertices;
 
 /** \brief Sequence of polygons. */
 typedef std::vector<Polygon> Polygons;
 
 /** \brief 2D affine transform type. */
 typedef CGAL::Aff_transformation_2<Kernel> Affine;
+
+/**
+ * @brief Returns the centroid point of the given polygon.
+ */
+Point centroid(Polygon polygon);
 
 }
 

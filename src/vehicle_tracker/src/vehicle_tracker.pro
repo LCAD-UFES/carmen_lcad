@@ -4,25 +4,36 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = vehicle_tracker
 TEMPLATE = app
 
-
-SOURCES += main.cpp\
-        vehicle_tracker_gui.cpp \
+SOURCES += \
+	main.cpp \
+	vehicle_tracker_gui.cpp \
     canvas.cpp \
-    display.cpp
+    display.cpp \
+    types.cpp \
+    virtual_scan.cpp
 
-HEADERS  += vehicle_tracker_gui.h \
+HEADERS += \
+	vehicle_tracker_gui.h \
     canvas.h \
     types.h \
     display.h \
-    CircleGraphicsItem.h
+    CircleGraphicsItem.h \
+    virtual_scan.h
 
-FORMS    += vehicle_tracker_gui.ui
+INCLUDEPATH += \
+	$(CARMEN_HOME)/include
 
-unix:!macx: LIBS += -lCGAL_Qt5 -lCGAL -lCGAL_Core -lgmp
+FORMS += vehicle_tracker_gui.ui
+
+LIBS += \
+	-lCGAL_Qt5 -lCGAL -lCGAL_Core -lgmp \
+	-L$(CARMEN_HOME)/lib -lvirtual_scan_interface -lvelodyne_interface -lparam_interface -lipc -lglobal \
+	-L$(CARMEN_HOME)/sharedlib/libtf/src -ltf \
+	-lboost_signals -lboost_system
