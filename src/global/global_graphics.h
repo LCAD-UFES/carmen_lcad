@@ -42,6 +42,7 @@ extern "C" {
 #define CARMEN_GRAPHICS_ROTATE          	4
 #define CARMEN_GRAPHICS_BLACK_AND_WHITE 	8
 #define CARMEN_GRAPHICS_ENHANCE_CONTRAST	16
+#define CARMEN_GRAPHICS_GRAYSCALE			32
 
   typedef struct {
     int fd;

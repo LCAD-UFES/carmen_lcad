@@ -732,7 +732,10 @@ convert_particles_log_weights_to_prob(carmen_localize_ackerman_particle_filter_p
 	double max_weight = get_particle_max_weight(filter);
 
 	for (int i = 0; i < filter->param->num_particles; i++)
+	{
 		filter->particles[i].weight = exp(filter->particles[i].weight - max_weight);
+//		printf("p %.15lf\n", filter->particles[i].weight);
+	}
 }
 
 
@@ -892,7 +895,6 @@ static double
 map_particle_correction(carmen_localize_ackerman_map_t *localize_map, carmen_compact_map_t *local_map, carmen_localize_ackerman_particle_t *particle)
 {
 	cell_coords_t local_cell, global_cell;
-	double particle_weight = 0.0;
 	carmen_vector_2D_t robot_position;
 
 	double sin_theta = sin(particle->theta);
@@ -904,6 +906,7 @@ map_particle_correction(carmen_localize_ackerman_map_t *localize_map, carmen_com
 	double robot_position_in_the_map_x = robot_position.x / local_map->config.resolution;
 	double robot_position_in_the_map_y = robot_position.y / local_map->config.resolution;
 
+	double particle_weight = 0.0;
 	for (int i = 0; i < local_map->number_of_known_points_on_the_map; i++)
 	{
 		local_cell.x = local_map->coord_x[i];

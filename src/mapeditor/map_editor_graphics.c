@@ -55,6 +55,9 @@ static GdkFont *place_font;
 static int current_place = -1;
 static GtkUIManager *ui_manager;
 
+extern int grayscale;
+
+
 void create_cursors(void)
 {
   static GdkColor color1={0,0xFFFF,0xFFFF,0xFFFF};
@@ -300,7 +303,7 @@ redraw(void)
 
   if(tmp_pixmap == NULL) {
     setup_colors();
-    image_data = carmen_graphics_convert_to_image(map, 0);
+    image_data = carmen_graphics_convert_to_image(map, grayscale);
     map_pixmap = generate_pixmap(image_data, &(map->config), mult);
 
     tmp_pixmap = gdk_pixmap_new(drawing_area->window,

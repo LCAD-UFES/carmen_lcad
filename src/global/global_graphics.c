@@ -263,6 +263,7 @@ unsigned char *carmen_graphics_convert_to_image(carmen_map_p map, int flags)
   int rotate = flags & CARMEN_GRAPHICS_ROTATE;
   int black_and_white = flags & CARMEN_GRAPHICS_BLACK_AND_WHITE;
   int enhance_contrast = flags & CARMEN_GRAPHICS_ENHANCE_CONTRAST;
+  int grayscale = flags & CARMEN_GRAPHICS_GRAYSCALE;
 
   if (map == NULL) {
     carmen_warn("carmen_graphics_convert_to_image was passed NULL map.\n");
@@ -274,14 +275,13 @@ unsigned char *carmen_graphics_convert_to_image(carmen_map_p map, int flags)
   image_data = (unsigned char *)calloc(x_size*y_size*3, sizeof(unsigned char));
   carmen_test_alloc(image_data);
 
-  if (rescale) {
+  if (rescale || grayscale) {
     max_val = -MAXDOUBLE;
     min_val = MAXDOUBLE;
     data_ptr = map->complete_map;
     for (index = 0; index < map->config.x_size*map->config.y_size; index++) {
       max_val = carmen_fmax(max_val, *data_ptr);
-      if (*data_ptr >= 0)
-	min_val = carmen_fmin(min_val, *data_ptr);
+      min_val = carmen_fmin(min_val, *data_ptr);
       data_ptr++;
     }
   }
@@ -296,7 +296,12 @@ unsigned char *carmen_graphics_convert_to_image(carmen_map_p map, int flags)
 		  value = *(data_ptr++);
 		  if (rotate)
 			  image_ptr = image_data+y_index*x_size*3+x_index;
-		  if (value < 0 && value > -1.5) {
+		  if (grayscale) {
+			  value = (value - min_val) / (max_val - min_val);
+			  for (index = 0; index < 3; index++)
+				  *(image_ptr++) = value * 255;
+		  }
+		  else if (value < 0 && value > -1.5) {
 			  if (black_and_white) {
 				  *(image_ptr++) = 255;
 				  *(image_ptr++) = 255;

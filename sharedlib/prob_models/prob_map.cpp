@@ -100,7 +100,7 @@ carmen_prob_models_log_odds_to_probabilistic(double lt_i)
 
 
 double
-carmen_prob_models_to_probabilistic_log_odds(double p_mi)
+carmen_prob_models_probabilistic_to_log_odds(double p_mi)
 {
 	double lt_i;
 	static double min_log_odds_as_probability = carmen_prob_models_log_odds_to_probabilistic(-MAX_LOG_ODDS_POSSIBLE);

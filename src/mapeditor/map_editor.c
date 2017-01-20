@@ -98,6 +98,7 @@ double brush_size;
 double line_size;
 int filled;
 int move_enable;
+int grayscale = 0;
 
 double fuzzyness;
 
@@ -122,9 +123,12 @@ main(int argc, char ** argv)
 
   saveas_binary = -1;
   
-  if(argc >= 2) {    
+  if (argc >= 2) {
     if (map_open(argv[1], 0) < 0)
       exit(-1);
+    if (argc == 3)
+    	if (strcmp(argv[2], "-grayscale") == 0)
+    		grayscale = CARMEN_GRAPHICS_GRAYSCALE;
   }
 
   brush_size = 1.5;
