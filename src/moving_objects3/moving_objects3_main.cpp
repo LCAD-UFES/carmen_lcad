@@ -6,6 +6,7 @@
 #include <carmen/fused_odometry_interface.h>
 #include <carmen/localize_ackerman_interface.h>
 #include <carmen/mapper_interface.h>
+#include <carmen/virtual_scan_interface.h>
 
 #include <prob_motion_model.h>
 #include <prob_measurement_model.h>
@@ -19,7 +20,7 @@ using namespace std;
 
 double range_max = 70.0;
 
-int use_map = 1;
+int scan_type = 2;
 
 // particle filter
 carmen_moving_objects3_particles_message particles_message;
@@ -190,6 +191,24 @@ generate_virtual_scan_from_map(double *virtual_scan, carmen_mapper_map_message *
 
 
 void
+generate_virtual_scan_from_message(double *virtual_scan, carmen_virtual_scan_message *message)
+{
+	int i, index;
+	double inv_scan_resolution = NUM_OF_RAYS/(2*M_PI);
+
+	for (i = 0; i < message->num_rays; i++)
+	{
+		if (message->intensity[i] > 0.0)
+		{
+			index = (int) ( (message->angles[i] + M_PI) * inv_scan_resolution );
+			virtual_scan[index] = virtual_scan[index] > message->ranges[i] ? message->ranges[i] : virtual_scan[index];
+		}
+	}
+
+}
+
+
+void
 scan_differencing(double *current_virtual_scan, double *last_virtual_scan)
 {
 	(void) current_virtual_scan;
@@ -279,6 +298,19 @@ carmen_mapper_handler(carmen_mapper_map_message *map_message)
 
 
 void
+carmen_virtual_scan_handler(carmen_virtual_scan_message *message)
+{
+	double virtual_scan[NUM_OF_RAYS];
+	for (int i = 0; i < NUM_OF_RAYS; i++)
+	{
+		virtual_scan[i] = range_max;
+	}
+	generate_virtual_scan_from_message(virtual_scan, message);
+	publish_virtual_scan_message(virtual_scan, message->timestamp, NUM_OF_RAYS);
+}
+
+
+void
 carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *globalpos_message)
 {
 	globalpos.theta = globalpos_message->globalpos.theta;
@@ -304,17 +336,26 @@ shutdown_module(int signo)
 void
 subscribe_messages()
 {
-	if (use_map)
+	switch (scan_type)
 	{
-		carmen_mapper_subscribe_message(NULL,
-				(carmen_handler_t) carmen_mapper_handler,
-				CARMEN_SUBSCRIBE_LATEST);
-	}
-	else
-	{
-		carmen_velodyne_subscribe_partial_scan_message(NULL,
-				(carmen_handler_t) carmen_velodyne_handler,
-				CARMEN_SUBSCRIBE_LATEST);
+		case 0:
+			carmen_velodyne_subscribe_partial_scan_message(NULL,
+					(carmen_handler_t) carmen_velodyne_handler,
+					CARMEN_SUBSCRIBE_LATEST);
+			break;
+		case 1:
+			carmen_mapper_subscribe_message(NULL,
+					(carmen_handler_t) carmen_mapper_handler,
+					CARMEN_SUBSCRIBE_LATEST);
+			break;
+		case 2:
+			carmen_virtual_scan_subscribe_message(NULL,
+					(carmen_handler_t) carmen_virtual_scan_handler,
+					CARMEN_SUBSCRIBE_LATEST);
+			break;
+		default:
+			break;
+
 	}
 
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL,
@@ -349,7 +390,7 @@ main(int argc, char **argv)
 
 	if (argc > 1)
 	{
-		use_map = atoi(argv[1]);
+		scan_type = atoi(argv[1]);
 	}
 
 	carmen_ipc_initialize(argc, argv);
