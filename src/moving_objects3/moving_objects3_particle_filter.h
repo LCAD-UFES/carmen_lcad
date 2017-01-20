@@ -18,4 +18,9 @@ algorithm_particle_filter(std::vector<moving_objects3_particle_t> particle_set_t
 		carmen_velodyne_projected_on_ground_message velodyne_projected_on_ground,
 		double delta_time);
 
+std::vector<moving_objects3_particle_t>
+scaling_series_particle_filter(std::vector<moving_objects3_particle_t> particle_set_t_1,
+		double *virtual_scan, int num_of_rays,
+		double delta_time);
+
 #endif

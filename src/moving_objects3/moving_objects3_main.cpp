@@ -34,6 +34,8 @@ double previous_timestamp;
 
 carmen_point_t globalpos;
 
+carmen_map_server_offline_map_message offline_map_message;
+
 void
 arrange_velodyne_vertical_angles_to_true_position(carmen_velodyne_partial_scan_message *velodyne_message)
 {
@@ -64,10 +66,9 @@ build_particles_message(carmen_moving_objects3_particles_message *particles_mess
 {
 	particles_message->num_particles = NUM_OF_PARTICLES;
 
-	if(particles_message->particles == NULL)
-		particles_message->particles = (moving_objects3_particle_t*) malloc(particles_message->num_particles * sizeof(moving_objects3_particle_t));
+	particles_message->particles = (moving_objects3_particle_t*) malloc(particles_message->num_particles * sizeof(moving_objects3_particle_t));
 
-	for(int i = 0; i < particles_message->num_particles; i++)
+	for (int i = 0; i < particles_message->num_particles; i++)
 	{
 		particles_message->particles[i].pose.x = particle_set[i].pose.x;
 		particles_message->particles[i].pose.y = particle_set[i].pose.y;
@@ -177,7 +178,7 @@ generate_virtual_scan_from_map(double *virtual_scan, carmen_mapper_map_message *
 				delta_y = y - globalpos.y;
 
 				range = sqrt(delta_x*delta_x + delta_y*delta_y);
-				angle = atan2(delta_y, delta_x);
+				angle = carmen_normalize_theta(atan2(delta_y, delta_x) - globalpos.theta);
 
 				index = (int) ( (angle + M_PI) * inv_scan_resolution );
 
@@ -185,6 +186,36 @@ generate_virtual_scan_from_map(double *virtual_scan, carmen_mapper_map_message *
 
 			}
 
+		}
+	}
+}
+
+
+void
+generate_virtual_scan_from_compact_map(double *virtual_scan, carmen_map_server_compact_cost_map_message *compact_map_message)
+{
+	int i, index;
+	double x, y, range, angle, delta_x, delta_y;
+	double inv_scan_resolution = NUM_OF_RAYS/(2*M_PI);
+
+	for (i = 0; i < compact_map_message->size; i++)
+	{
+		if (compact_map_message->value[i] > 0.5)
+		{
+			// find x and y
+			x = compact_map_message->coord_x[i] * compact_map_message->config.resolution + compact_map_message->config.x_origin;
+			y = compact_map_message->coord_y[i] * compact_map_message->config.resolution + compact_map_message->config.y_origin;
+
+			// find range and angle
+			delta_x = x - globalpos.x;
+			delta_y = y - globalpos.y;
+
+			range = sqrt(delta_x*delta_x + delta_y*delta_y);
+			angle = carmen_normalize_theta(atan2(delta_y, delta_x) - globalpos.theta);
+
+			index = (int) ( (angle + M_PI) * inv_scan_resolution );
+
+			virtual_scan[index] = virtual_scan[index] > range ? range : virtual_scan[index];
 		}
 	}
 }
@@ -242,6 +273,16 @@ build_message_from_virtual_scan(carmen_velodyne_projected_on_ground_message *mes
 }
 
 
+void
+remove_static_points(double *virtual_scan, double *offline_virtual_scan, int num_of_rays)
+{
+	for (int i = 0; i < num_of_rays; i++)
+	{
+		virtual_scan[i] = virtual_scan[i] < (offline_virtual_scan[i] - 1.0) ? virtual_scan[i] : range_max;
+	}
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
 // Publishers                                                                                //
@@ -274,13 +315,52 @@ publish_virtual_scan_message(double *virtual_scan, double timestamp, int num_of_
 void
 carmen_velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
+	static int first = 1;
+	carmen_moving_objects3_particles_message particles_message;
+
 	double virtual_scan[NUM_OF_RAYS];
+	double offline_virtual_scan[NUM_OF_RAYS];
 	for (int i = 0; i < NUM_OF_RAYS; i++)
 	{
-		virtual_scan[i] = range_max;
+		offline_virtual_scan[i] = virtual_scan[i] = range_max;
 	}
 	generate_virtual_scan(virtual_scan, velodyne_message);
+
+	// remove points in offline map
+	generate_virtual_scan_from_map(offline_virtual_scan, &offline_map_message);
+	remove_static_points(virtual_scan, offline_virtual_scan, NUM_OF_RAYS);
+
+	double delta_time = 0.0;
+	if (first)
+	{
+		for (int i = 0; i < NUM_OF_PARTICLES; i++)
+		{
+			moving_objects3_particle_t particle;
+			particle.geometry.length = 4.5;
+			particle.geometry.width = 1.6;
+			particle.pose.theta = carmen_uniform_random(-M_PI, M_PI);
+			particle.pose.x = carmen_uniform_random(-30, 30);
+			particle.pose.y = carmen_uniform_random(-30, 30);
+			particle.velocity = 0.0;
+			particle.weight = 1.0;
+
+			particle_set.push_back(particle);
+		}
+		first = 0;
+	}
+	else
+	{
+		delta_time = velodyne_message->timestamp - previous_timestamp;
+		particle_set = scaling_series_particle_filter(particle_set, virtual_scan, NUM_OF_RAYS, delta_time);
+	}
+
+	previous_timestamp = velodyne_message->timestamp;
+
+
+	build_particles_message(&particles_message, particle_set);
+
 	publish_virtual_scan_message(virtual_scan, velodyne_message->timestamp, NUM_OF_RAYS);
+	carmen_publish_moving_objects3_particles_message(&particles_message);
 }
 
 
@@ -288,12 +368,32 @@ void
 carmen_mapper_handler(carmen_mapper_map_message *map_message)
 {
 	double virtual_scan[NUM_OF_RAYS];
+	double offline_virtual_scan[NUM_OF_RAYS];
+	for (int i = 0; i < NUM_OF_RAYS; i++)
+	{
+		offline_virtual_scan[i] = virtual_scan[i] = range_max;
+	}
+
+	generate_virtual_scan_from_map(virtual_scan, map_message);
+
+	// remove points in offline map
+	generate_virtual_scan_from_map(offline_virtual_scan, &offline_map_message);
+	remove_static_points(virtual_scan, offline_virtual_scan, NUM_OF_RAYS);
+
+	publish_virtual_scan_message(virtual_scan, map_message->timestamp, NUM_OF_RAYS);
+}
+
+
+void
+carmen_compact_map_handler(carmen_map_server_compact_cost_map_message *compact_map_message)
+{
+	double virtual_scan[NUM_OF_RAYS];
 	for (int i = 0; i < NUM_OF_RAYS; i++)
 	{
 		virtual_scan[i] = range_max;
 	}
-	generate_virtual_scan_from_map(virtual_scan, map_message);
-	publish_virtual_scan_message(virtual_scan, map_message->timestamp, NUM_OF_RAYS);
+	generate_virtual_scan_from_compact_map(virtual_scan, compact_map_message);
+	publish_virtual_scan_message(virtual_scan, compact_map_message->timestamp, NUM_OF_RAYS);
 }
 
 
@@ -307,6 +407,13 @@ carmen_virtual_scan_handler(carmen_virtual_scan_message *message)
 	}
 	generate_virtual_scan_from_message(virtual_scan, message);
 	publish_virtual_scan_message(virtual_scan, message->timestamp, NUM_OF_RAYS);
+}
+
+
+void
+carmen_offline_map_handler()
+{
+
 }
 
 
@@ -353,10 +460,19 @@ subscribe_messages()
 					(carmen_handler_t) carmen_virtual_scan_handler,
 					CARMEN_SUBSCRIBE_LATEST);
 			break;
+		case 3:
+			carmen_map_server_subscribe_compact_cost_map(NULL,
+					(carmen_handler_t) carmen_compact_map_handler,
+					CARMEN_SUBSCRIBE_LATEST);
+			break;
 		default:
 			break;
 
 	}
+
+	carmen_map_server_subscribe_offline_map(&offline_map_message,
+			(carmen_handler_t) carmen_offline_map_handler,
+			CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL,
 			(carmen_handler_t) carmen_localize_ackerman_globalpos_message_handler,

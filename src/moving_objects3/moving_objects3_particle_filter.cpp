@@ -81,7 +81,7 @@ get_sigma_from_cost(double cost)
 
 //TODO incluir a parte S_t-1que considera a geometria
 double
-get_particle_weight(moving_objects3_particle_t particle_t, carmen_velodyne_projected_on_ground_message velodyne_projected_on_ground)
+get_particle_weight(moving_objects3_particle_t particle_t, double *virtual_scan, int num_of_rays)
 {
 	double probability = 0.0;
 	double cost,sigma;
@@ -93,9 +93,13 @@ get_particle_weight(moving_objects3_particle_t particle_t, carmen_velodyne_proje
 			&r_c, &r_b, &r_a,
 			0.25);
 
-	for (int i = 0; i < velodyne_projected_on_ground.num_rays; i++)
+	double angular_resolution = 2*M_PI / num_of_rays;
+	double angle;
+
+	for (int i = 0; i < num_of_rays; i++)
 	{
-		transform_polar_coordinates_to_cartesian_coordinates(velodyne_projected_on_ground.ranges[i], velodyne_projected_on_ground.angles[i], &end_point.x, &end_point.y);
+		angle = (i * angular_resolution) - M_PI;
+		transform_polar_coordinates_to_cartesian_coordinates(virtual_scan[i], angle, &end_point.x, &end_point.y);
 		cost = get_ray_cost(end_point, r_a, r_b, r_c);
 		sigma = get_sigma_from_cost(cost);
 		probability += get_probability(cost, sigma);
@@ -155,7 +159,7 @@ resample(std::vector<moving_objects3_particle_t> particle_set_t)
 
 std::vector<moving_objects3_particle_t>
 algorithm_particle_filter(std::vector<moving_objects3_particle_t> particle_set_t_1,
-		carmen_velodyne_projected_on_ground_message velodyne_projected_on_ground,
+		double *virtual_scan, int num_of_rays,
 		double delta_time)
 {
 	std::vector<moving_objects3_particle_t> particle_set_t;
@@ -174,7 +178,7 @@ algorithm_particle_filter(std::vector<moving_objects3_particle_t> particle_set_t
 		// cost = measurement_model(particle_t, velodyne_projected_on_ground);
 
 		// Weighing particles
-		particle_t.weight = get_particle_weight(particle_t, velodyne_projected_on_ground);
+		particle_t.weight = get_particle_weight(particle_t, virtual_scan, num_of_rays);
 		total_weight += particle_t.weight;
 
 		particle_set_t.push_back(particle_t);
@@ -192,7 +196,7 @@ algorithm_particle_filter(std::vector<moving_objects3_particle_t> particle_set_t
 
 std::vector<moving_objects3_particle_t>
 scaling_series_particle_filter(std::vector<moving_objects3_particle_t> particle_set_t_1,
-		carmen_velodyne_projected_on_ground_message velodyne_projected_on_ground,
+		double *virtual_scan, int num_of_rays,
 		double delta_time)
 {
 	std::vector<moving_objects3_particle_t> particle_set_t;
@@ -211,7 +215,7 @@ scaling_series_particle_filter(std::vector<moving_objects3_particle_t> particle_
 		// cost = measurement_model(particle_t, velodyne_projected_on_ground);
 
 		// Weighing particles
-		particle_t.weight = get_particle_weight(particle_t, velodyne_projected_on_ground);
+		particle_t.weight = get_particle_weight(particle_t, virtual_scan, num_of_rays);
 		total_weight += particle_t.weight;
 
 		particle_set_t.push_back(particle_t);
