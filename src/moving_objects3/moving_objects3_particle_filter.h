@@ -15,12 +15,15 @@
 
 std::vector<moving_objects3_particle_t>
 algorithm_particle_filter(std::vector<moving_objects3_particle_t> particle_set_t_1,
-		carmen_velodyne_projected_on_ground_message velodyne_projected_on_ground,
+		double *virtual_scan, int num_of_rays,
 		double delta_time);
 
 std::vector<moving_objects3_particle_t>
 scaling_series_particle_filter(std::vector<moving_objects3_particle_t> particle_set_t_1,
 		double *virtual_scan, int num_of_rays,
 		double delta_time);
+
+std::vector<moving_objects3_particle_t>
+importance_sampling(double *virtual_scan, int num_of_rays, int num_of_particles);
 
 #endif

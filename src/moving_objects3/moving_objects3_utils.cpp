@@ -113,3 +113,12 @@ check_ray_intersection(carmen_vector_2D_t end_point, rectangle_points rect)
 			intersect(origin, end_point, rect.p3, rect.p4) ||
 			intersect(origin, end_point, rect.p4, rect.p1);
 }
+
+
+double
+euclidean_distance(double x1, double y1, double x2, double y2)
+{
+	double dist = sqrt( (x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2) );
+
+	return dist;
+}

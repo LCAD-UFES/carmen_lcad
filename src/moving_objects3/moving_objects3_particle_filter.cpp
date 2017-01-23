@@ -93,6 +93,11 @@ get_particle_weight(moving_objects3_particle_t particle_t, double *virtual_scan,
 			&r_c, &r_b, &r_a,
 			0.25);
 
+	if (euclidean_distance(0.0,0.0,particle_t.pose.x,particle_t.pose.y) < 7.0)
+	{
+		return 0.0;
+	}
+
 	double angular_resolution = 2*M_PI / num_of_rays;
 	double angle;
 
@@ -104,7 +109,7 @@ get_particle_weight(moving_objects3_particle_t particle_t, double *virtual_scan,
 		sigma = get_sigma_from_cost(cost);
 		probability += get_probability(cost, sigma);
 	}
-	return probability;
+	return probability/num_of_rays;
 }
 
 
@@ -182,6 +187,45 @@ algorithm_particle_filter(std::vector<moving_objects3_particle_t> particle_set_t
 		total_weight += particle_t.weight;
 
 		particle_set_t.push_back(particle_t);
+	}
+
+	// normalize particles weight
+	normalize_weights(particle_set_t, total_weight);
+
+	// resample
+	particle_set_t = resample(particle_set_t);
+
+	return particle_set_t;
+}
+
+
+std::vector<moving_objects3_particle_t>
+importance_sampling(double *virtual_scan, int num_of_rays, int num_of_particles)
+{
+	std::vector<moving_objects3_particle_t> particle_set_t;
+
+	double total_weight = 0.0;
+
+	for (int i = 0; i < num_of_particles; )
+	{
+		moving_objects3_particle_t particle_t;
+
+		particle_t.geometry.length = 4.5;
+		particle_t.geometry.width = 1.6;
+		particle_t.pose.theta = carmen_uniform_random(-M_PI, M_PI);
+		particle_t.pose.x = carmen_uniform_random(-50,50);
+		particle_t.pose.y = carmen_uniform_random(-50,50);
+		particle_t.velocity = carmen_uniform_random(-25,25);
+
+		// Weighing particles
+		particle_t.weight = get_particle_weight(particle_t, virtual_scan, num_of_rays);
+		total_weight += particle_t.weight;
+
+		if (particle_t.weight > 0.1)
+		{
+			particle_set_t.push_back(particle_t);
+			i++;
+		}
 	}
 
 	// normalize particles weight

@@ -333,25 +333,13 @@ carmen_velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 	double delta_time = 0.0;
 	if (first)
 	{
-		for (int i = 0; i < NUM_OF_PARTICLES; i++)
-		{
-			moving_objects3_particle_t particle;
-			particle.geometry.length = 4.5;
-			particle.geometry.width = 1.6;
-			particle.pose.theta = carmen_uniform_random(-M_PI, M_PI);
-			particle.pose.x = carmen_uniform_random(-30, 30);
-			particle.pose.y = carmen_uniform_random(-30, 30);
-			particle.velocity = 0.0;
-			particle.weight = 1.0;
-
-			particle_set.push_back(particle);
-		}
+		particle_set = importance_sampling(virtual_scan, NUM_OF_RAYS, NUM_OF_PARTICLES);
 		first = 0;
 	}
 	else
 	{
 		delta_time = velodyne_message->timestamp - previous_timestamp;
-		particle_set = scaling_series_particle_filter(particle_set, virtual_scan, NUM_OF_RAYS, delta_time);
+		particle_set = algorithm_particle_filter(particle_set, virtual_scan, NUM_OF_RAYS, delta_time);
 	}
 
 	previous_timestamp = velodyne_message->timestamp;

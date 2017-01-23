@@ -26,4 +26,7 @@ generate_rectangles_points(carmen_point_t pose, double width, double length,
 int
 check_ray_intersection(carmen_vector_2D_t end_point, rectangle_points rect);
 
+double
+euclidean_distance(double x1, double y1, double x2, double y2);
+
 #endif /* SRC_MOVING_OBJECTS3_MOVING_OBJECTS3_UTILS_H_ */
