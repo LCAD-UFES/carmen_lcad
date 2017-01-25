@@ -9,9 +9,15 @@
 #ifndef _MOVING_OBJECTS3_PARTICLE_FILTER_H_
 #define _MOVING_OBJECTS3_PARTICLE_FILTER_H_
 
-#define NUM_OF_PARTICLES 100
+#define NUM_OF_PARTICLES 10
 #define MAX_ACCELERATION 4.0
 #define MAX_ANGULAR_VELOCITY 0.35
+
+typedef struct
+{
+	int index;
+	std::vector<moving_objects3_particle_t> particles;
+} track_info;
 
 std::vector<moving_objects3_particle_t>
 algorithm_particle_filter(std::vector<moving_objects3_particle_t> particle_set_t_1,
@@ -24,6 +30,6 @@ scaling_series_particle_filter(std::vector<moving_objects3_particle_t> particle_
 		double delta_time);
 
 std::vector<moving_objects3_particle_t>
-importance_sampling(double *virtual_scan, int num_of_rays, int num_of_particles);
+importance_sampling(double *virtual_scan, int num_of_rays, int index, int num_of_particles);
 
 #endif
