@@ -24,7 +24,8 @@ int scan_type = 2;
 
 // particle filter
 carmen_moving_objects3_particles_message particles_message;
-std::vector<moving_objects3_particle_t> particle_set;
+
+std::vector<track_info> objects_tracks;
 
 //
 carmen_velodyne_projected_on_ground_message current_message;
@@ -62,19 +63,23 @@ arrange_velodyne_vertical_angles_to_true_position(carmen_velodyne_partial_scan_m
 
 void
 build_particles_message(carmen_moving_objects3_particles_message *particles_message,
-		std::vector<moving_objects3_particle_t> particle_set)
+		std::vector<track_info> objects_tracks)
 {
-	particles_message->num_particles = NUM_OF_PARTICLES;
+	particles_message->num_particles = objects_tracks.size() * NUM_OF_PARTICLES;
 
 	particles_message->particles = (moving_objects3_particle_t*) malloc(particles_message->num_particles * sizeof(moving_objects3_particle_t));
 
-	for (int i = 0; i < particles_message->num_particles; i++)
+	for (unsigned int i = 0; i < objects_tracks.size(); i++)
 	{
-		particles_message->particles[i].pose.x = particle_set[i].pose.x;
-		particles_message->particles[i].pose.y = particle_set[i].pose.y;
-		particles_message->particles[i].pose.theta = particle_set[i].pose.theta;
-		particles_message->particles[i].geometry.length = particle_set[i].geometry.length;
-		particles_message->particles[i].geometry.width = particle_set[i].geometry.width;
+		for (int j = 0; j < NUM_OF_PARTICLES; j++)
+		{
+			int index = i+j*objects_tracks.size();
+			particles_message->particles[index].pose.x = objects_tracks[i].particles[j].pose.x;
+			particles_message->particles[index].pose.y = objects_tracks[i].particles[j].pose.y;
+			particles_message->particles[index].pose.theta = objects_tracks[i].particles[j].pose.theta;
+			particles_message->particles[index].geometry.length = objects_tracks[i].particles[j].geometry.length;
+			particles_message->particles[index].geometry.width = objects_tracks[i].particles[j].geometry.width;
+		}
 	}
 
 	particles_message->host = carmen_get_host();
@@ -240,10 +245,23 @@ generate_virtual_scan_from_message(double *virtual_scan, carmen_virtual_scan_mes
 
 
 void
-scan_differencing(double *current_virtual_scan, double *last_virtual_scan)
+scan_differencing(double *current_virtual_scan, double *last_virtual_scan, int num_of_rays)
 {
-	(void) current_virtual_scan;
-	(void) last_virtual_scan;
+	int ind = 0;
+	for (int i = 0; i < num_of_rays; i++)
+	{
+		track_info track_t;
+		if ( current_virtual_scan[i] > last_virtual_scan[i] )
+		{
+			if (ind + 5 < i)
+			{
+				track_t.index = i;
+				objects_tracks.push_back(track_t);
+			}
+			ind = i;
+		}
+	}
+
 }
 
 
@@ -315,10 +333,11 @@ publish_virtual_scan_message(double *virtual_scan, double timestamp, int num_of_
 void
 carmen_velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 {
-	static int first = 1;
+	static int frames = 0;
 	carmen_moving_objects3_particles_message particles_message;
 
 	double virtual_scan[NUM_OF_RAYS];
+	static double last_virtual_scan[NUM_OF_RAYS];
 	double offline_virtual_scan[NUM_OF_RAYS];
 	for (int i = 0; i < NUM_OF_RAYS; i++)
 	{
@@ -331,24 +350,36 @@ carmen_velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 	remove_static_points(virtual_scan, offline_virtual_scan, NUM_OF_RAYS);
 
 	double delta_time = 0.0;
-	if (first)
+	if (frames == 1)
 	{
-		particle_set = importance_sampling(virtual_scan, NUM_OF_RAYS, NUM_OF_PARTICLES);
-		first = 0;
+		scan_differencing(virtual_scan, last_virtual_scan, NUM_OF_RAYS);
+
+		printf("size %ld\n", objects_tracks.size());
+		for (unsigned int i = 0; i < objects_tracks.size(); i++)
+		{
+			objects_tracks[i].particles = importance_sampling(virtual_scan, NUM_OF_RAYS, objects_tracks[i].index, NUM_OF_PARTICLES);
+		}
 	}
-	else
+	if (frames > 1)
 	{
 		delta_time = velodyne_message->timestamp - previous_timestamp;
-		particle_set = algorithm_particle_filter(particle_set, virtual_scan, NUM_OF_RAYS, delta_time);
+		for (unsigned int i = 0; i < objects_tracks.size(); i++)
+		{
+			objects_tracks[i].particles = algorithm_particle_filter(objects_tracks[i].particles, virtual_scan, NUM_OF_RAYS, delta_time);
+		}
 	}
 
+	frames++;
+
+	publish_virtual_scan_message(virtual_scan, velodyne_message->timestamp, NUM_OF_RAYS);
+
+	memcpy(last_virtual_scan, virtual_scan, NUM_OF_RAYS * sizeof(double));
 	previous_timestamp = velodyne_message->timestamp;
 
 
-	build_particles_message(&particles_message, particle_set);
-
-	publish_virtual_scan_message(virtual_scan, velodyne_message->timestamp, NUM_OF_RAYS);
+	build_particles_message(&particles_message, objects_tracks);
 	carmen_publish_moving_objects3_particles_message(&particles_message);
+	free (particles_message.particles);
 }
 
 

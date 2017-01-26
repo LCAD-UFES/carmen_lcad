@@ -200,11 +200,17 @@ algorithm_particle_filter(std::vector<moving_objects3_particle_t> particle_set_t
 
 
 std::vector<moving_objects3_particle_t>
-importance_sampling(double *virtual_scan, int num_of_rays, int num_of_particles)
+importance_sampling(double *virtual_scan, int num_of_rays, int index, int num_of_particles)
 {
 	std::vector<moving_objects3_particle_t> particle_set_t;
 
 	double total_weight = 0.0;
+
+	double angular_resolution = 2*M_PI / num_of_rays;
+	double angle, x, y;
+
+	angle = (index * angular_resolution) - M_PI;
+	transform_polar_coordinates_to_cartesian_coordinates(virtual_scan[index], angle, &x, &y);
 
 	for (int i = 0; i < num_of_particles; )
 	{
@@ -213,19 +219,19 @@ importance_sampling(double *virtual_scan, int num_of_rays, int num_of_particles)
 		particle_t.geometry.length = 4.5;
 		particle_t.geometry.width = 1.6;
 		particle_t.pose.theta = carmen_uniform_random(-M_PI, M_PI);
-		particle_t.pose.x = carmen_uniform_random(-50,50);
-		particle_t.pose.y = carmen_uniform_random(-50,50);
-		particle_t.velocity = carmen_uniform_random(-25,25);
+		particle_t.pose.x = x + carmen_uniform_random(-1.5,1.5);
+		particle_t.pose.y = y + carmen_uniform_random(-1.5,1.5);
+		particle_t.velocity = carmen_uniform_random(-5,5);
 
 		// Weighing particles
 		particle_t.weight = get_particle_weight(particle_t, virtual_scan, num_of_rays);
 		total_weight += particle_t.weight;
 
-		if (particle_t.weight > 0.1)
-		{
+//		if (particle_t.weight > 0.1)
+//		{
 			particle_set_t.push_back(particle_t);
 			i++;
-		}
+//		}
 	}
 
 	// normalize particles weight
