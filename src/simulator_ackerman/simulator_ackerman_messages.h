@@ -67,12 +67,14 @@ typedef struct {
 typedef struct {
   carmen_point_t truepose;
   carmen_point_t odometrypose;
+  double v;
+  double phi;
   double timestamp;
   char *host;
 } carmen_simulator_ackerman_truepos_message;
 
 #define      CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_NAME       "carmen_simulator_ackerman_truepos"
-#define      CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_FMT        "{{double,double,double},{double,double,double},double,string}"
+#define      CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_FMT        "{{double,double,double},{double,double,double},double,double,double,string}"
 
 typedef struct {
   char *other_central;

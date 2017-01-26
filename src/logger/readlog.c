@@ -307,6 +307,8 @@ char *carmen_string_to_simulator_ackerman_truepos_message(char *string,
 	truepos->odometrypose.x = CLF_READ_DOUBLE(&current_pos);
 	truepos->odometrypose.y = CLF_READ_DOUBLE(&current_pos);
 	truepos->odometrypose.theta = CLF_READ_DOUBLE(&current_pos);
+	truepos->v = CLF_READ_DOUBLE(&current_pos);
+	truepos->phi = CLF_READ_DOUBLE(&current_pos);
 	truepos->timestamp = CLF_READ_DOUBLE(&current_pos);
 	copy_host_string(&truepos->host, &current_pos);
 	return current_pos;

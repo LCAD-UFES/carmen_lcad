@@ -47,7 +47,7 @@ public:
 
 	static bool	  following_path; // true if the path is being followed
 
-	static int	  cheat; // if true the algorithm will use the true pose, otherwise will use the localize pose
+	static int	  use_truepos; // if true the algorithm will use the true pose, otherwise will use the localize pose
 
 	static double obstacle_threshold;
 	static bool ford_escape_online;

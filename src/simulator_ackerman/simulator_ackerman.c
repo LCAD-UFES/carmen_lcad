@@ -318,6 +318,8 @@ truepos_query_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 	response.host = carmen_get_host();
 	response.truepose = simulator_config->true_pose;
 	response.odometrypose = simulator_config->odom_pose;
+	response.v = simulator_config->v;
+	response.phi = simulator_config->phi;
 
 	err = IPC_respondData(msgRef, CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_NAME, &response);
 	carmen_test_ipc(err, "Could not respond", CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_NAME);
@@ -382,18 +384,20 @@ static void
 publish_truepos(double timestamp)
 {
 	IPC_RETURN_TYPE err = IPC_OK;
-	static carmen_simulator_ackerman_truepos_message position;
+	static carmen_simulator_ackerman_truepos_message truepos;
 	static int first = 1;
 	if (first)
 	{
-		position.host = carmen_get_host();
+		truepos.host = carmen_get_host();
 		first = 0;
 	}
 
-	position.truepose = simulator_config->true_pose;
-	position.odometrypose = simulator_config->odom_pose;
-	position.timestamp = timestamp;
-	err = IPC_publishData(CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_NAME, &position);
+	truepos.truepose = simulator_config->true_pose;
+	truepos.odometrypose = simulator_config->odom_pose;
+	truepos.v = simulator_config->v;
+	truepos.phi = simulator_config->phi;
+	truepos.timestamp = timestamp;
+	err = IPC_publishData(CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_NAME, &truepos);
 	carmen_test_ipc(err, "Could not publish simualator_truepos_message",
 			CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_NAME);
 }

@@ -12,7 +12,7 @@ LFLAGS += $(INTERFACE_LIBS) -lglobal -lipc -lmap_interface -lparam_interface  \
 	-lmapper_interface -lrddf_interface -lnavigator_ackerman_interface \
 	-llocalize_ackerman_interface -lmap_server_interface -lcollision_detection -lmotion_planner_interface \
 	-lobstacle_avoider_interface -lgrid_mapping -lmap_io -lmap_util \
-	-lprob_models -lrotation_geometry
+	-lprob_models -lrotation_geometry -lsimulator_ackerman_interface
 
 IFLAGS += -I/usr/include/eigen3 
 IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ -I/usr/local/include/g2o/

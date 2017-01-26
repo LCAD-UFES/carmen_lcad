@@ -398,7 +398,7 @@ register_handlers()
 {
 	signal(SIGINT, signal_handler);
 
-	if (!GlobalState::cheat)
+	if (!GlobalState::use_truepos)
 		carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	else
 		carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t) simulator_ackerman_truepos_message_handler, CARMEN_SUBSCRIBE_LATEST);
@@ -465,14 +465,14 @@ read_parameters(int argc, char **argv)
 	GlobalState::param_max_vel = GlobalState::robot_config.max_vel;
 
 	//initialize default parameters values
-	GlobalState::cheat = 0;
+	GlobalState::use_truepos = 0;
 
 	GlobalState::timeout = 0.8;
 	GlobalState::distance_interval = 1.5;
 	GlobalState::plan_time = 0.08;
 
 	carmen_param_t optional_param_list[] = {
-			{(char *)"rrt",	(char *)"cheat",				CARMEN_PARAM_ONOFF,		&GlobalState::cheat,				1, NULL},
+			{(char *)"rrt",	(char *)"cheat",				CARMEN_PARAM_ONOFF,		&GlobalState::use_truepos,				1, NULL},
 			{(char *)"rrt",	(char *)"show_debug_info",		CARMEN_PARAM_ONOFF,		&GlobalState::show_debug_info,		1, NULL},
 	};
 
@@ -513,7 +513,7 @@ main(int argc, char **argv)
 	printf("===============RRT Parameters===============\n");
 	printf("Timeout: %f s\n", GlobalState::timeout);
 	printf("Max distance interval %f m\n", GlobalState::distance_interval);
-	printf("Use pose from simulator: %s\n", GlobalState::cheat ? "Yes" : "No");
+	printf("Use pose from simulator: %s\n", GlobalState::use_truepos ? "Yes" : "No");
 
 	carmen_ipc_dispatch();
 

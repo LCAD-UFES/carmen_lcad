@@ -37,6 +37,8 @@ int param_rddf_num_poses_by_car_velocity = 1;
 carmen_behavior_selector_road_profile_message road_profile_message;
 double robot_max_centripetal_acceleration = 1.5;
 
+int use_truepos = 0;
+
 
 int
 annotation_is_forward(carmen_ackerman_traj_point_t robot_pose, carmen_vector_3D_t annotation_point)
@@ -373,32 +375,16 @@ behavior_selector_publish_periodic_messages()
 	publish_current_state();
 //	publish_goal_list();
 }
-///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                           //
-// Handlers                                                                                  //
-//                                                                                           //
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-
-static void
-localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
+void
+select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
 	int update_state;
 	static double last_time_obstacle_avoider_detected_obstacle = 0.0;
-	carmen_ackerman_traj_point_t current_robot_pose_v_and_phi;
 
 	if (!necessary_maps_available)
 		return;
-
-	current_robot_pose_v_and_phi.x = msg->globalpos.x;
-	current_robot_pose_v_and_phi.y = msg->globalpos.y;
-	current_robot_pose_v_and_phi.theta = msg->globalpos.theta;
-	current_robot_pose_v_and_phi.v = msg->v;
-	current_robot_pose_v_and_phi.phi = msg->phi;
 
 	if (fabs(current_robot_pose_v_and_phi.v) < param_distance_interval)
 		change_distance_between_waypoints_and_goals(param_distance_between_waypoints, param_change_goal_distance);
@@ -416,10 +402,49 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	}
 	else
 	{
-		if ((msg->timestamp - last_time_obstacle_avoider_detected_obstacle) > 2.0)
+		if ((timestamp - last_time_obstacle_avoider_detected_obstacle) > 2.0)
 			obstacle_avoider_active_recently = false;
 	}
 	publish_goal_list();
+}
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Handlers                                                                                  //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+static void
+localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
+{
+	carmen_ackerman_traj_point_t current_robot_pose_v_and_phi;
+
+	current_robot_pose_v_and_phi.x = msg->globalpos.x;
+	current_robot_pose_v_and_phi.y = msg->globalpos.y;
+	current_robot_pose_v_and_phi.theta = msg->globalpos.theta;
+	current_robot_pose_v_and_phi.v = msg->v;
+	current_robot_pose_v_and_phi.phi = msg->phi;
+
+	select_behaviour(current_robot_pose_v_and_phi, msg->timestamp);
+}
+
+
+static void
+simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_message *msg)
+{
+	carmen_ackerman_traj_point_t current_robot_pose_v_and_phi;
+
+	current_robot_pose_v_and_phi.x = msg->truepose.x;
+	current_robot_pose_v_and_phi.y = msg->truepose.y;
+	current_robot_pose_v_and_phi.theta = msg->truepose.theta;
+	current_robot_pose_v_and_phi.v = msg->v;
+	current_robot_pose_v_and_phi.phi = msg->phi;
+
+	select_behaviour(current_robot_pose_v_and_phi, msg->timestamp);
 }
 
 
@@ -590,9 +615,10 @@ register_handlers()
 			NULL,(carmen_handler_t)rddf_handler,
 			CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_localize_ackerman_subscribe_globalpos_message(
-			NULL, (carmen_handler_t) localize_globalpos_handler,
-			CARMEN_SUBSCRIBE_LATEST);
+	if (!use_truepos)
+		carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_globalpos_handler, CARMEN_SUBSCRIBE_LATEST);
+	else
+		carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t) simulator_ackerman_truepos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_map_server_subscribe_compact_cost_map(
 			NULL, (carmen_handler_t) map_server_compact_cost_map_message_handler,
@@ -696,6 +722,7 @@ read_parameters(int argc, char **argv)
 			{(char *) "behavior_selector", (char *) "rddf_num_poses_ahead_limit", CARMEN_PARAM_INT, &param_rddf_num_poses_ahead_limited_by_map, 0, NULL},
 			{(char *) "behavior_selector", (char *) "rddf_num_poses_ahead_min", CARMEN_PARAM_INT, &param_rddf_num_poses_ahead_min, 0, NULL},
 			{(char *) "behavior_selector", (char *) "rddf_num_poses_by_car_velocity", CARMEN_PARAM_ONOFF, &param_rddf_num_poses_by_car_velocity, 0, NULL},
+			{(char *) "behavior_selector", (char *) "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL},
 			{(char *) "rrt",   (char *) "distance_interval", CARMEN_PARAM_DOUBLE, &param_distance_interval, 1, NULL}
 	};
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list)/sizeof(param_list[0]));

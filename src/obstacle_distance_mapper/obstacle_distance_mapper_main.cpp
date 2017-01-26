@@ -87,7 +87,6 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 static void
 simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_message *msg)
 {
-
 	g_robot_position = msg->truepose;
 }
 

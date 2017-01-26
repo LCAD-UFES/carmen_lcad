@@ -457,6 +457,9 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 static void
 simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_message *msg)
 {
+	GlobalState::last_odometry.v = msg->v;
+	GlobalState::last_odometry.phi = msg->phi;
+
 	Pose pose = Util::convert_to_pose(msg->truepose);
 	GlobalState::set_robot_pose(pose, msg->timestamp);
 
@@ -591,12 +594,13 @@ register_handlers()
 {
 	signal(SIGINT, signal_handler);
 
-	if (!GlobalState::cheat)
+	if (!GlobalState::use_truepos)
+	{
 		carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
+		carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) base_ackerman_odometry_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	}
 	else
 		carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t) simulator_ackerman_truepos_message_handler, CARMEN_SUBSCRIBE_LATEST);
-
-	carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) base_ackerman_odometry_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) behavior_selector_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
@@ -677,10 +681,10 @@ read_parameters(int argc, char **argv)
 	GlobalState::param_max_vel = GlobalState::robot_config.max_v;
 
 	//initialize default parameters values
-	GlobalState::cheat = 0;
+	GlobalState::use_truepos = 0;
 
 	carmen_param_t optional_param_list[] = {
-			{(char *)"rrt",	(char *)"cheat",				CARMEN_PARAM_ONOFF,		&GlobalState::cheat,				1, NULL},
+			{(char *)"rrt",	(char *)"cheat",				CARMEN_PARAM_ONOFF,		&GlobalState::use_truepos,				1, NULL},
 			{(char *)"rrt",	(char *)"show_debug_info",		CARMEN_PARAM_ONOFF,		&GlobalState::show_debug_info,		1, NULL},
 	};
 

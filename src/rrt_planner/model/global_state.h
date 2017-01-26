@@ -61,7 +61,7 @@ public:
 	static double timeout; // timeout in seconds
 	static double plan_time; // time in seconds that the planner will respond if a path was found
 
-	static int	  cheat; // if true the algorithm will use the true pose, otherwise will use the localize pose
+	static int	  use_truepos; // if true the algorithm will use the true pose, otherwise will use the localize pose
 
 	static double obstacle_threshold;
 

@@ -120,11 +120,11 @@ void carmen_logwrite_write_visual_odometry(carmen_visual_odometry_pose6d_message
 void carmen_logwrite_write_ackerman_truepos(carmen_simulator_ackerman_truepos_message *truepos,
 		carmen_FILE *outfile, double timestamp)
 {
-
-	carmen_fprintf(outfile, "TRUEPOS_ACK %f %f %f %f %f %f %f %s %f\n",
+	carmen_fprintf(outfile, "TRUEPOS_ACK %f %f %f %f %f %f %f %f %f %s %f\n",
 			truepos->truepose.x, truepos->truepose.y,
 			truepos->truepose.theta,  truepos->odometrypose.x,
 			truepos->odometrypose.y, truepos->odometrypose.theta,
+			truepos->v, truepos->phi,
 			truepos->timestamp, truepos->host, timestamp);
 }
 

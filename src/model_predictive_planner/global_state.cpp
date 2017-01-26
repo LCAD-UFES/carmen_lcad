@@ -40,7 +40,7 @@ bool GlobalState::cost_map_initialized 	= false;
 bool GlobalState::use_obstacle_avoider = true;
 bool GlobalState::use_mpc = false;
 
-int    GlobalState::cheat 				= 0;
+int    GlobalState::use_truepos 				= 0;
 bool   GlobalState::following_path		= false;
 
 double GlobalState::obstacle_threshold	= 0.5;
