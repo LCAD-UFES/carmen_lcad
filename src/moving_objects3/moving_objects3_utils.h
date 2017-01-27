@@ -18,6 +18,12 @@ typedef struct
 	carmen_vector_2D_t p4;
 } rectangle_points;
 
+rectangle_points
+generate_rectangle(double width, double length);
+
+rectangle_points
+transform_rectangle(rectangle_points rect, double x, double y, double theta);
+
 void
 generate_rectangles_points(carmen_point_t pose, double width, double length,
 		rectangle_points* r1, rectangle_points* r2, rectangle_points* r3,

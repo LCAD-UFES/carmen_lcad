@@ -93,11 +93,6 @@ get_particle_weight(moving_objects3_particle_t particle_t, double *virtual_scan,
 			&r_c, &r_b, &r_a,
 			0.25);
 
-	if (euclidean_distance(0.0,0.0,particle_t.pose.x,particle_t.pose.y) < 7.0)
-	{
-		return 0.0;
-	}
-
 	double angular_resolution = 2*M_PI / num_of_rays;
 	double angle;
 
@@ -183,7 +178,7 @@ algorithm_particle_filter(std::vector<moving_objects3_particle_t> particle_set_t
 		// cost = measurement_model(particle_t, velodyne_projected_on_ground);
 
 		// Weighing particles
-		particle_t.weight = get_particle_weight(particle_t, virtual_scan, num_of_rays);
+		particle_t.weight = get_particle_weight(particle_t, virtual_scan, num_of_rays) * NUM_OF_PARTICLES;
 		total_weight += particle_t.weight;
 
 		particle_set_t.push_back(particle_t);
@@ -212,7 +207,7 @@ importance_sampling(double *virtual_scan, int num_of_rays, int index, int num_of
 	angle = (index * angular_resolution) - M_PI;
 	transform_polar_coordinates_to_cartesian_coordinates(virtual_scan[index], angle, &x, &y);
 
-	for (int i = 0; i < num_of_particles; )
+	for (int i = 0; i < num_of_particles; i++)
 	{
 		moving_objects3_particle_t particle_t;
 
@@ -224,14 +219,11 @@ importance_sampling(double *virtual_scan, int num_of_rays, int index, int num_of
 		particle_t.velocity = carmen_uniform_random(-5,5);
 
 		// Weighing particles
-		particle_t.weight = get_particle_weight(particle_t, virtual_scan, num_of_rays);
+		particle_t.weight = get_particle_weight(particle_t, virtual_scan, num_of_rays) * NUM_OF_PARTICLES;
 		total_weight += particle_t.weight;
 
-//		if (particle_t.weight > 0.1)
-//		{
-			particle_set_t.push_back(particle_t);
-			i++;
-//		}
+		particle_set_t.push_back(particle_t);
+		i++;
 	}
 
 	// normalize particles weight

@@ -1,18 +1,4 @@
-#include <vector>
-
-#include <carmen/carmen.h>
-
-#include <carmen/laser_interface.h>
-#include <carmen/fused_odometry_interface.h>
-#include <carmen/localize_ackerman_interface.h>
-#include <carmen/mapper_interface.h>
-#include <carmen/virtual_scan_interface.h>
-
-#include <prob_motion_model.h>
-#include <prob_measurement_model.h>
-
-#include <carmen/moving_objects3_interface.h>
-#include "moving_objects3_particle_filter.h"
+#include "moving_objects3.h"
 
 #define NUM_OF_RAYS 1080
 
@@ -25,7 +11,7 @@ int scan_type = 2;
 // particle filter
 carmen_moving_objects3_particles_message particles_message;
 
-std::vector<track_info> objects_tracks;
+std::vector<moving_object_data> moving_objects_list;
 
 //
 carmen_velodyne_projected_on_ground_message current_message;
@@ -63,26 +49,38 @@ arrange_velodyne_vertical_angles_to_true_position(carmen_velodyne_partial_scan_m
 
 void
 build_particles_message(carmen_moving_objects3_particles_message *particles_message,
-		std::vector<track_info> objects_tracks)
+		std::vector<moving_object_data> &moving_objects_list)
 {
-	particles_message->num_particles = objects_tracks.size() * NUM_OF_PARTICLES;
+	particles_message->num_particles = moving_objects_list.size();
 
-	particles_message->particles = (moving_objects3_particle_t*) malloc(particles_message->num_particles * sizeof(moving_objects3_particle_t));
+	particles_message->particles = (moving_objects3_particle_t*)
+			malloc(particles_message->num_particles * sizeof(moving_objects3_particle_t));
 
-	for (unsigned int i = 0; i < objects_tracks.size(); i++)
+	for (unsigned int i = 0; i < moving_objects_list.size(); i++)
 	{
-		for (int j = 0; j < NUM_OF_PARTICLES; j++)
-		{
-			int index = i+j*objects_tracks.size();
-			particles_message->particles[index].pose.x = objects_tracks[i].particles[j].pose.x;
-			particles_message->particles[index].pose.y = objects_tracks[i].particles[j].pose.y;
-			particles_message->particles[index].pose.theta = objects_tracks[i].particles[j].pose.theta;
-			particles_message->particles[index].geometry.length = objects_tracks[i].particles[j].geometry.length;
-			particles_message->particles[index].geometry.width = objects_tracks[i].particles[j].geometry.width;
-		}
+		particles_message->particles[i].pose.x = moving_objects_list[i].best_particle.pose.x;
+		particles_message->particles[i].pose.y = moving_objects_list[i].best_particle.pose.y;
+		particles_message->particles[i].pose.theta = moving_objects_list[i].best_particle.pose.theta;
+		particles_message->particles[i].geometry.length = moving_objects_list[i].best_particle.geometry.length;
+		particles_message->particles[i].geometry.width = moving_objects_list[i].best_particle.geometry.width;
 	}
 
 	particles_message->host = carmen_get_host();
+}
+
+
+moving_objects3_particle_t
+find_best_particle(std::vector<moving_objects3_particle_t> particle_set)
+{
+	moving_objects3_particle_t best_particle = particle_set[0];
+	for (unsigned int i = 0; i < particle_set.size(); i++)
+	{
+		if (particle_set[i].weight > best_particle.weight)
+		{
+			best_particle = particle_set[i];
+		}
+	}
+	return best_particle;
 }
 
 
@@ -244,21 +242,65 @@ generate_virtual_scan_from_message(double *virtual_scan, carmen_virtual_scan_mes
 }
 
 
+// checks if environment change correspond to a new object
+int
+is_new_object(int virtual_scan_index, double range, std::vector<moving_object_data> &moving_objects_list)
+{
+	carmen_vector_2D_t displacement;
+
+	if (moving_objects_list.size() < 1)
+	{
+		return (1);
+	}
+
+	// find ray displacement
+	double angular_resolution = 2*M_PI / NUM_OF_RAYS;
+	double angle;
+	angle = (virtual_scan_index * angular_resolution) - M_PI;
+	transform_polar_coordinates_to_cartesian_coordinates(range, angle, &displacement.x, &displacement.y);
+
+	// particle rectangle
+	rectangle_points best_particle_rect;
+
+	for (unsigned int i = 0; i < moving_objects_list.size(); i++)
+	{
+		if (moving_objects_list[i].tracking_state != STARTING)
+		{
+			// generate rectangle
+			best_particle_rect = generate_rectangle(moving_objects_list[i].best_particle.geometry.width + 1.25,
+					moving_objects_list[i].best_particle.geometry.length + 1.25);
+			best_particle_rect = transform_rectangle(best_particle_rect,
+					moving_objects_list[i].best_particle.pose.x,
+					moving_objects_list[i].best_particle.pose.y,
+					moving_objects_list[i].best_particle.pose.theta);
+
+			if (check_ray_intersection(displacement, best_particle_rect))
+			{
+				return (0);
+			}
+		}
+	}
+
+	return (1);
+}
+
+
 void
 scan_differencing(double *current_virtual_scan, double *last_virtual_scan, int num_of_rays)
 {
-	int ind = 0;
-	for (int i = 0; i < num_of_rays; i++)
+
+	for (int i = 0; i < num_of_rays; i += 10)
 	{
-		track_info track_t;
+		moving_object_data object;
 		if ( current_virtual_scan[i] > last_virtual_scan[i] )
 		{
-			if (ind + 5 < i)
+			object.virtual_scan_index = i;
+			object.tracking_state = STARTING;
+
+			if (is_new_object(i, current_virtual_scan[i], moving_objects_list))
 			{
-				track_t.index = i;
-				objects_tracks.push_back(track_t);
+				moving_objects_list.push_back(object);
 			}
-			ind = i;
 		}
 	}
 
@@ -350,26 +392,44 @@ carmen_velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 	remove_static_points(virtual_scan, offline_virtual_scan, NUM_OF_RAYS);
 
 	double delta_time = 0.0;
-	if (frames == 1)
-	{
-		scan_differencing(virtual_scan, last_virtual_scan, NUM_OF_RAYS);
 
-		printf("size %ld\n", objects_tracks.size());
-		for (unsigned int i = 0; i < objects_tracks.size(); i++)
-		{
-			objects_tracks[i].particles = importance_sampling(virtual_scan, NUM_OF_RAYS, objects_tracks[i].index, NUM_OF_PARTICLES);
-		}
-	}
-	if (frames > 1)
+	if (frames >= 1)
 	{
 		delta_time = velodyne_message->timestamp - previous_timestamp;
-		for (unsigned int i = 0; i < objects_tracks.size(); i++)
+		// do the scan differencing and find objects
+		scan_differencing(virtual_scan, last_virtual_scan, NUM_OF_RAYS);
+
+		for (unsigned int i = 0; i < moving_objects_list.size(); i++)
 		{
-			objects_tracks[i].particles = algorithm_particle_filter(objects_tracks[i].particles, virtual_scan, NUM_OF_RAYS, delta_time);
+			switch (moving_objects_list[i].tracking_state)
+			{
+				case STARTING:
+				{
+					moving_objects_list[i].particle_set = importance_sampling(virtual_scan, NUM_OF_RAYS, moving_objects_list[i].virtual_scan_index, NUM_OF_PARTICLES);
+					moving_objects_list[i].best_particle = find_best_particle(moving_objects_list[i].particle_set);
+					moving_objects_list[i].tracking_state = TRACKING;
+					break;
+				}
+				case TRACKING:
+				{
+					moving_objects_list[i].particle_set = algorithm_particle_filter(moving_objects_list[i].particle_set, virtual_scan, NUM_OF_RAYS, delta_time);
+					moving_objects_list[i].best_particle = find_best_particle(moving_objects_list[i].particle_set);
+					break;
+				}
+				case ENDING:
+				{
+					break;
+				}
+				default:
+				{
+					break;
+				}
+
+			}
 		}
 	}
 
-	frames++;
+	frames ++;
 
 	publish_virtual_scan_message(virtual_scan, velodyne_message->timestamp, NUM_OF_RAYS);
 
@@ -377,7 +437,7 @@ carmen_velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 	previous_timestamp = velodyne_message->timestamp;
 
 
-	build_particles_message(&particles_message, objects_tracks);
+	build_particles_message(&particles_message, moving_objects_list);
 	carmen_publish_moving_objects3_particles_message(&particles_message);
 	free (particles_message.particles);
 }
