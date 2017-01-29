@@ -53,6 +53,8 @@ char *carmen_annotation_filename = NULL;
 vector<carmen_rddf_add_annotation_message> annotation_queue;
 vector<int> annotations_to_publish;
 
+int use_truepos = 0;
+
 
 static void
 carmen_rddf_play_shutdown_module(int signo)
@@ -329,6 +331,31 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 
 
 static void
+simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_message *msg)
+{
+	robot_pose = msg->truepose;
+	carmen_rddf_pose_initialized = 1;
+
+	carmen_rddf_num_poses_ahead = carmen_rddf_play_find_nearest_poses_ahead(
+			robot_pose.x,
+			robot_pose.y,
+			robot_pose.theta,
+			msg->timestamp,
+			carmen_rddf_poses_ahead,
+			carmen_rddf_poses_back,
+			&carmen_rddf_num_poses_back,
+			carmen_rddf_num_poses_ahead_max,
+			annotations
+	);
+
+	annotations_to_publish.clear();
+	carmen_check_for_annotations(robot_pose.x, robot_pose.y, robot_pose.theta);
+
+	carmen_rddf_play_publish_rddf();
+}
+
+
+static void
 carmen_rddf_play_nearest_waypoint_message_handler(carmen_rddf_nearest_waypoint_message *rddf_nearest_waypoint_message)
 {
 	carmen_rddf_nearest_waypoint_to_end_point = rddf_nearest_waypoint_message->point;
@@ -392,9 +419,10 @@ carmen_rddf_play_end_point_message_handler(carmen_rddf_end_point_message *rddf_e
 void
 carmen_rddf_play_subscribe_messages()
 {
-	carmen_localize_ackerman_subscribe_globalpos_message(NULL,
-			(carmen_handler_t) localize_globalpos_handler,
-			CARMEN_SUBSCRIBE_LATEST);
+	if (!use_truepos)
+		carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_globalpos_handler, CARMEN_SUBSCRIBE_LATEST);
+	else
+		carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t) simulator_ackerman_truepos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_rddf_subscribe_nearest_waypoint_message(NULL,
 			(carmen_handler_t) carmen_rddf_play_nearest_waypoint_message_handler,
@@ -467,7 +495,8 @@ carmen_rddf_play_get_parameters(int argc, char** argv)
 	carmen_param_t param_list[] =
 	{
 		{(char *) "rddf", (char *) "num_poses_ahead", CARMEN_PARAM_INT, &carmen_rddf_num_poses_ahead_max, 0, NULL},
-		{(char *) "rddf", (char *) "loop", CARMEN_PARAM_ONOFF, &carmen_rddf_perform_loop, 0, NULL}
+		{(char *) "rddf", (char *) "loop", CARMEN_PARAM_ONOFF, &carmen_rddf_perform_loop, 0, NULL},
+		{(char *) "behavior_selector", (char *) "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL}
 	};
 
 	int num_items = sizeof(param_list) / sizeof(param_list[0]);

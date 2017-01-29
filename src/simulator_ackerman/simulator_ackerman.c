@@ -55,6 +55,8 @@ static int publish_laser_flag = 0;
 
 static int necessary_maps_available = 0;
 
+static int use_truepos = 0;
+
 
 static void
 carmen_destroy_simulator_map(carmen_map_t *map)
@@ -225,10 +227,20 @@ localize_initialize_message_handler(carmen_localize_ackerman_initialize_message 
 		simulator_config->true_pose.y = init_msg->mean[0].y;
 		simulator_config->true_pose.theta = init_msg->mean[0].theta;
 		simulator_config->odom_pose.theta = init_msg->mean[0].theta;
-		simulator_config->v = 0;
-		simulator_config->phi = 0;
-		simulator_config->target_v = 0;
-		simulator_config->target_phi = 0;
+		if (!use_truepos)
+		{
+			simulator_config->v = 0;
+			simulator_config->phi = 0;
+			simulator_config->target_v = 0;
+			simulator_config->target_phi = 0;
+		}
+		else
+		{
+			simulator_config->v = simulator_config->global_pos.v;
+			simulator_config->phi = simulator_config->global_pos.phi;
+			simulator_config->target_v = simulator_config->global_pos.v;
+			simulator_config->target_phi = simulator_config->global_pos.phi;
+		}
 		simulator_config->current_motion_command_vector = NULL;
 		simulator_config->nun_motion_commands = 0;
 		simulator_config->current_motion_command_vector_index = 0;
@@ -536,13 +548,16 @@ simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
 	carmen_simulator_ackerman_recalc_pos(simulator_config);
 	carmen_simulator_ackerman_update_objects(simulator_config);
 	
-	publish_odometry(timestamp);
+	if (!use_truepos)
+	{
+		publish_odometry(timestamp);
+		carmen_simulator_ackerman_update_objects(simulator_config);
+		publish_objects(timestamp);
+	}
 	publish_truepos(timestamp);
-	carmen_simulator_ackerman_update_objects(simulator_config);
-	publish_objects(timestamp);
 
 	static unsigned int counter = 0;
-	if (publish_laser_flag && ((counter % 2) == 0))
+	if (publish_laser_flag && ((counter % 2) == 0) && !use_truepos)
 	{
 		publish_frontlaser(timestamp);
 		publish_rearlaser(timestamp);
@@ -760,7 +775,8 @@ read_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *conf
 			{"robot", "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &(config->distance_between_rear_car_and_rear_wheels), 0, NULL},
 			{"simulator_ackerman", "publish_laser", CARMEN_PARAM_ONOFF, &publish_laser_flag, 0, NULL},
 			{"rrt",   "use_mpc",                    CARMEN_PARAM_ONOFF, &(config->use_mpc), 0, NULL},
-			{"rrt",   "use_rlpid",                  CARMEN_PARAM_ONOFF, &(config->use_rlpid), 0, NULL}
+			{"rrt",   "use_rlpid",                  CARMEN_PARAM_ONOFF, &(config->use_rlpid), 0, NULL},
+			{"behavior_selector",  "use_truepos", 	CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL}
 	};
 
 

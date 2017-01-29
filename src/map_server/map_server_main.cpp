@@ -67,6 +67,9 @@ carmen_compact_map_t compacted_lane_map_g = {0, NULL, NULL, NULL, {0, 0, 0, "", 
 double LANE_SIZE_FORWARD = 75.0;
 const double LANE_SIZE_BACKWARD = 20.0;
 
+int use_truepos = 0;
+
+
 //void
 //download_map_handler(carmen_download_map_message *message){
 //
@@ -101,7 +104,8 @@ const double LANE_SIZE_BACKWARD = 20.0;
 //}
 
 void
-read_google_maps_image(carmen_map_t* current_google_map,double x_origin, double y_origin){
+read_google_maps_image(carmen_map_t* current_google_map,double x_origin, double y_origin)
+{
 
 	char full_image_path[100];
 //	static int count = 0;
@@ -158,7 +162,8 @@ read_google_maps_image(carmen_map_t* current_google_map,double x_origin, double 
 			}
 		}
 	}
-	else{
+	else
+	{
 //		printf("error in %s\n", full_image_path);
 	}
 
@@ -422,6 +427,30 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 
 
 static void
+simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_message *msg)
+{
+	static int first_time = 1;
+	carmen_point_t pose;
+
+	pose = msg->truepose;
+
+	//TODO:
+	pose_g = pose;
+
+	publish_a_new_offline_map_if_robot_moved_to_another_block(&pose, msg->timestamp);
+
+	// Force offline map publication when the first pose is received
+	if (first_time)
+	{
+		if (current_map->complete_map != NULL)
+			carmen_map_server_publish_offline_map_message(current_map, msg->timestamp);
+
+		first_time = 0;
+	}
+}
+
+
+static void
 localize_ackerman_initialize_message(carmen_localize_ackerman_initialize_message *msg)
 {
 	publish_a_new_offline_map_if_robot_moved_to_another_block(msg->mean, msg->timestamp);
@@ -599,6 +628,7 @@ read_map_server_parameters(int argc, char **argv)
 			{"map_server", "map_height", CARMEN_PARAM_DOUBLE, &map_height, 0, NULL},
 			{"map_server", "time_interval_for_map_change", CARMEN_PARAM_DOUBLE, &time_interval_for_map_change, 0, NULL},
 			{"map_server", "publish_google_map", CARMEN_PARAM_ONOFF, &publish_google_map, 1, NULL},
+			{"behavior_selector", "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL}
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
@@ -660,9 +690,10 @@ register_handlers()
 {
 	IPC_RETURN_TYPE err;
 
-	carmen_localize_ackerman_subscribe_globalpos_message(
-			NULL, (carmen_handler_t) localize_globalpos_handler,
-			CARMEN_SUBSCRIBE_LATEST);
+	if (!use_truepos)
+		carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_globalpos_handler, CARMEN_SUBSCRIBE_LATEST);
+	else
+		carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t) simulator_ackerman_truepos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	err = IPC_subscribe(CARMEN_MAP_SERVER_REQUEST_CURRENT_OFFLINE_MAP_NAME, map_request_handler, NULL);
 	carmen_test_ipc(err, "Could not subscribe", CARMEN_MAP_SERVER_REQUEST_CURRENT_OFFLINE_MAP_NAME);
