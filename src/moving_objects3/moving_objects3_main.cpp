@@ -264,21 +264,40 @@ is_new_object(int virtual_scan_index, double range, std::vector<moving_object_da
 
 	for (unsigned int i = 0; i < moving_objects_list.size(); i++)
 	{
-		if (moving_objects_list[i].tracking_state != STARTING)
-		{
-			// generate rectangle
-			best_particle_rect = generate_rectangle(moving_objects_list[i].best_particle.geometry.width + 1.25,
-					moving_objects_list[i].best_particle.geometry.length + 1.25);
-			best_particle_rect = transform_rectangle(best_particle_rect,
-					moving_objects_list[i].best_particle.pose.x,
-					moving_objects_list[i].best_particle.pose.y,
-					moving_objects_list[i].best_particle.pose.theta);
+		// generate rectangle
+		best_particle_rect = generate_rectangle(moving_objects_list[i].best_particle.geometry.width + 1.25,
+				moving_objects_list[i].best_particle.geometry.length + 1.25);
+		best_particle_rect = transform_rectangle(best_particle_rect,
+				moving_objects_list[i].best_particle.pose.x,
+				moving_objects_list[i].best_particle.pose.y,
+				moving_objects_list[i].best_particle.pose.theta);
 
-			if (check_ray_intersection(displacement, best_particle_rect))
-			{
-				return (0);
-			}
+		if (check_ray_intersection(displacement, best_particle_rect))
+		{
+			return (0);
 		}
+	}
+
+	return (1);
+}
+
+
+int
+is_valid_object(int virtual_scan_index, double range)
+{
+	carmen_vector_2D_t displacement;
+
+	// find ray displacement
+	double angular_resolution = 2*M_PI / NUM_OF_RAYS;
+	double angle;
+	angle = (virtual_scan_index * angular_resolution) - M_PI;
+	transform_polar_coordinates_to_cartesian_coordinates(range, angle, &displacement.x, &displacement.y);
+
+	double distance = euclidean_distance(0.0, 0.0, displacement.x, displacement.y);
+
+	if ( distance > 33.0 || distance < 4.5 )
+	{
+		return (0);
 	}
 
 	return (1);
@@ -297,8 +316,10 @@ scan_differencing(double *current_virtual_scan, double *last_virtual_scan, int n
 			object.virtual_scan_index = i;
 			object.tracking_state = STARTING;
 
-			if (is_new_object(i, current_virtual_scan[i], moving_objects_list))
+			if (is_new_object(i, current_virtual_scan[i], moving_objects_list) && is_valid_object(i, current_virtual_scan[i]))
 			{
+				object.particle_set = importance_sampling(current_virtual_scan, NUM_OF_RAYS, object.virtual_scan_index, NUM_OF_PARTICLES);
+				object.best_particle = find_best_particle(object.particle_set);
 				moving_objects_list.push_back(object);
 			}
 		}
@@ -342,6 +363,17 @@ remove_static_points(double *virtual_scan, double *offline_virtual_scan, int num
 	}
 }
 
+
+void
+descontinue_track(std::vector<moving_object_data> &moving_objects_list, moving_object_data object, int index)
+{
+	double distance = euclidean_distance(0.0, 0.0, object.best_particle.pose.x, object.best_particle.pose.y);
+
+	if (distance > 50 || distance < 4.5 || object.best_particle.weight < 0.01)
+	{
+		moving_objects_list.erase (moving_objects_list.begin()+index);
+	}
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
@@ -405,8 +437,6 @@ carmen_velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 			{
 				case STARTING:
 				{
-					moving_objects_list[i].particle_set = importance_sampling(virtual_scan, NUM_OF_RAYS, moving_objects_list[i].virtual_scan_index, NUM_OF_PARTICLES);
-					moving_objects_list[i].best_particle = find_best_particle(moving_objects_list[i].particle_set);
 					moving_objects_list[i].tracking_state = TRACKING;
 					break;
 				}
@@ -414,6 +444,7 @@ carmen_velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 				{
 					moving_objects_list[i].particle_set = algorithm_particle_filter(moving_objects_list[i].particle_set, virtual_scan, NUM_OF_RAYS, delta_time);
 					moving_objects_list[i].best_particle = find_best_particle(moving_objects_list[i].particle_set);
+					descontinue_track(moving_objects_list, moving_objects_list[i], i);
 					break;
 				}
 				case ENDING:
@@ -479,13 +510,70 @@ carmen_compact_map_handler(carmen_map_server_compact_cost_map_message *compact_m
 void
 carmen_virtual_scan_handler(carmen_virtual_scan_message *message)
 {
+	static int frames = 0;
+	carmen_moving_objects3_particles_message particles_message;
+
 	double virtual_scan[NUM_OF_RAYS];
+	static double last_virtual_scan[NUM_OF_RAYS];
+	double offline_virtual_scan[NUM_OF_RAYS];
 	for (int i = 0; i < NUM_OF_RAYS; i++)
 	{
-		virtual_scan[i] = range_max;
+		offline_virtual_scan[i] = virtual_scan[i] = range_max;
 	}
 	generate_virtual_scan_from_message(virtual_scan, message);
+
+	// remove points in offline map
+	generate_virtual_scan_from_map(offline_virtual_scan, &offline_map_message);
+	remove_static_points(virtual_scan, offline_virtual_scan, NUM_OF_RAYS);
+
+	double delta_time = 0.0;
+
+	if (frames >= 1)
+	{
+		delta_time = message->timestamp - previous_timestamp;
+		// do the scan differencing and find objects
+		scan_differencing(virtual_scan, last_virtual_scan, NUM_OF_RAYS);
+
+		for (unsigned int i = 0; i < moving_objects_list.size(); i++)
+		{
+			switch (moving_objects_list[i].tracking_state)
+			{
+				case STARTING:
+				{
+					moving_objects_list[i].tracking_state = TRACKING;
+					break;
+				}
+				case TRACKING:
+				{
+					moving_objects_list[i].particle_set = algorithm_particle_filter(moving_objects_list[i].particle_set, virtual_scan, NUM_OF_RAYS, delta_time);
+					moving_objects_list[i].best_particle = find_best_particle(moving_objects_list[i].particle_set);
+					descontinue_track(moving_objects_list, moving_objects_list[i], i);
+					break;
+				}
+				case ENDING:
+				{
+					break;
+				}
+				default:
+				{
+					break;
+				}
+
+			}
+		}
+	}
+
+	frames ++;
+
 	publish_virtual_scan_message(virtual_scan, message->timestamp, NUM_OF_RAYS);
+
+	memcpy(last_virtual_scan, virtual_scan, NUM_OF_RAYS * sizeof(double));
+	previous_timestamp = message->timestamp;
+
+
+	build_particles_message(&particles_message, moving_objects_list);
+	carmen_publish_moving_objects3_particles_message(&particles_message);
+	free (particles_message.particles);
 }
 
 
