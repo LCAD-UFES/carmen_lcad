@@ -317,54 +317,39 @@ publish_behavior_selector_road_profile_message(carmen_rddf_road_profile_message 
 
 
 void
-publish_goal_list()
+set_goal_velocity(carmen_ackerman_traj_point_t *goal)
 {
-	IPC_RETURN_TYPE err;
-	carmen_behavior_selector_goal_list_message goal_list_msg;
-	carmen_ackerman_traj_point_t *goal_list;
-	int goal_list_size;
-	int goal_list_index;
-	double goal_list_time;
-
-	behavior_selector_get_goal_list(&goal_list, &goal_list_size, &goal_list_index, &goal_list_time);
-
-	goal_list_msg.timestamp = goal_list_time;
-	goal_list_msg.host = carmen_get_host();
-	goal_list_msg.goal_list = goal_list;
-	goal_list_msg.size = goal_list_size;
-
-	if (goal_list_msg.size > 0)
-	{
-		goal_list_msg.goal_list += goal_list_index;
-		goal_list_msg.size -= goal_list_index;
-	}
-
-	carmen_ackerman_traj_point_t *goal = &(goal_list_msg.goal_list[0]);
-
 	set_goal_velocity_according_to_annotation(goal);
-//	printf("v %lf, va %lf, ", get_robot_pose().v, goal->v);
-
-	limit_maximum_velocity_according_to_centripetal_acceleration(goal->v, get_robot_pose().v,
-			goal, road_profile_message.poses, road_profile_message.number_of_poses);
-//	printf("vc %lf, ", goal->v);
-
+	//	printf("v %lf, va %lf, ", get_robot_pose().v, goal->v);
+	limit_maximum_velocity_according_to_centripetal_acceleration(goal->v, get_robot_pose().v, goal, road_profile_message.poses,
+			road_profile_message.number_of_poses);
+	//	printf("vc %lf, ", goal->v);
 	if (obstacle_avoider_active_recently)
 		goal->v = carmen_fmin(2.5, goal->v);
-//	printf("vo %lf\n", goal->v);
+	//	printf("vo %lf\n", goal->v);
+}
 
-	if (goal_list_msg.size > 0)
+
+void
+publish_goal_list(carmen_ackerman_traj_point_t *goal_list, int goal_list_size, double timestamp)
+{
+	carmen_behavior_selector_goal_list_message goal_list_msg;
+	goal_list_msg.goal_list = goal_list;
+	goal_list_msg.size = goal_list_size;
+	goal_list_msg.timestamp = timestamp;
+	goal_list_msg.host = carmen_get_host();
+
+	IPC_RETURN_TYPE err;
+	if (goal_list_road_profile_message == last_road_profile_message)
 	{
-		if (goal_list_road_profile_message == last_road_profile_message)
-		{
-			err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME, &goal_list_msg);
-			carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME);
-		}
+		err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME, &goal_list_msg);
+		carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME);
+	}
 
-		if (last_road_profile_message == CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL)
-		{
-			err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME, &goal_list_msg);
-			carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME);
-		}
+	if (last_road_profile_message == CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL)
+	{
+		err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME, &goal_list_msg);
+		carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME);
 	}
 }
 
@@ -373,7 +358,6 @@ void
 behavior_selector_publish_periodic_messages()
 {
 	publish_current_state();
-//	publish_goal_list();
 }
 
 
@@ -392,6 +376,7 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 		change_distance_between_waypoints_and_goals(4.0 * fabs(current_robot_pose_v_and_phi.v), 4.0 * fabs(current_robot_pose_v_and_phi.v));
 
 	behavior_selector_update_robot_pose(current_robot_pose_v_and_phi, &update_state);
+
 	if (update_state)
 		publish_current_state();
 
@@ -405,7 +390,22 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 		if ((timestamp - last_time_obstacle_avoider_detected_obstacle) > 2.0)
 			obstacle_avoider_active_recently = false;
 	}
-	publish_goal_list();
+
+	carmen_ackerman_traj_point_t *goal_list;
+	int goal_list_size;
+	int goal_list_index;
+	double goal_list_time;
+	behavior_selector_get_goal_list(&goal_list, &goal_list_size, &goal_list_index, &goal_list_time);
+
+	if (goal_list_size > 0)
+	{
+		goal_list += goal_list_index;
+		goal_list_size -= goal_list_index;
+		carmen_ackerman_traj_point_t *goal = &(goal_list[0]);
+		set_goal_velocity(goal);
+
+		publish_goal_list(goal_list, goal_list_size, goal_list_time);
+	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -485,7 +485,7 @@ path_planner_road_profile_handler(carmen_path_planner_road_profile_message *rddf
 		IPC_RETURN_TYPE err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, &msg);
 		carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME);
 	}
-	publish_goal_list();
+//	publish_goal_list();
 }
 
 

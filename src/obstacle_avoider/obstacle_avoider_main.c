@@ -20,7 +20,6 @@ static double carmen_robot_ackerman_motion_command_time_of_last_update = -1.0;
 static double last_motion_command_total_time = 0.0;
 
 static char *robot_ackerman_host;
-static carmen_running_average_t odometry_average;
 
 static int ackerman_collision_avoidance;
 static double robot_sensor_timeout;
@@ -28,6 +27,8 @@ static double command_timeout;
 
 static carmen_behavior_selector_algorithm_t current_algorithm = CARMEN_BEHAVIOR_SELECTOR_GRADIENT;
 static carmen_behavior_selector_state_t current_state = BEHAVIOR_SELECTOR_PARKING;
+
+static int use_truepos = 0;
 
 
 //static void
@@ -188,14 +189,14 @@ check_message_absence_timeout_timer_handler(void)
 	if ((carmen_robot_ackerman_sensor_time_of_last_update >= 0) &&
 	    (carmen_get_time() - carmen_robot_ackerman_sensor_time_of_last_update) > robot_sensor_timeout)
 	{
-		carmen_verbose("Sensor timed out. Stopping robot.\n");
+		printf("Sensor timed out. Stopping robot.\n");
 		publish_base_ackerman_motion_command_message_to_stop_robot("Sensor Timeout");
 	}
 
 	if ((carmen_robot_ackerman_motion_command_time_of_last_update >= 0) &&
 	    ((carmen_get_time() - carmen_robot_ackerman_motion_command_time_of_last_update) - last_motion_command_total_time) > command_timeout)
 	{
-		carmen_verbose("Command timed out. Stopping robot.\n");
+		printf("Command timed out. Stopping robot.\n");
 		publish_base_ackerman_motion_command_message_to_stop_robot("Command Timeout");
 	}
 }
@@ -254,6 +255,26 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	pose.x = msg->globalpos.x;
 	pose.y = msg->globalpos.y;
 	pose.theta = msg->globalpos.theta;
+	pose.v = msg->v;
+	pose.phi = msg->phi;
+
+	add_pose_to_pose_vector(pose);
+
+	carmen_robot_ackerman_sensor_time_of_last_update = carmen_get_time();
+}
+
+
+static void
+simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_message *msg)
+{
+	carmen_ackerman_traj_point_t pose;
+
+	if (!necessary_maps_available)
+		return;
+
+	pose.x = msg->truepose.x;
+	pose.y = msg->truepose.y;
+	pose.theta = msg->truepose.theta;
 	pose.v = msg->v;
 	pose.phi = msg->phi;
 
@@ -342,7 +363,12 @@ initialize_ipc(void)
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_ROBOT_ACKERMAN_MOTION_COMMAND_NAME);
 
 	carmen_robot_ackerman_subscribe_motion_command(NULL, (carmen_handler_t) robot_ackerman_motion_command_message_handler, CARMEN_SUBSCRIBE_LATEST);
-	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	if (!use_truepos)
+		carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	else
+		carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t) simulator_ackerman_truepos_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
 	//carmen_grid_mapping_subscribe_message(NULL, (carmen_handler_t) grid_mapping_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_map_server_subscribe_compact_cost_map(NULL, (carmen_handler_t) map_server_compact_cost_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) behavior_selector_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
@@ -377,7 +403,8 @@ read_parameters(int argc, char **argv)
 			{"robot", "command_timeout", CARMEN_PARAM_DOUBLE, &command_timeout, 1, NULL},
 			{"robot", "collision_avoidance", CARMEN_PARAM_ONOFF, &ackerman_collision_avoidance, 1, NULL},
 			{"robot", "collision_avoidance_frequency", CARMEN_PARAM_DOUBLE,	&carmen_robot_ackerman_collision_avoidance_frequency, 1, NULL},
-			{"robot", "interpolate_odometry", CARMEN_PARAM_ONOFF, &carmen_robot_ackerman_config.interpolate_odometry, 1, NULL}
+			{"robot", "interpolate_odometry", CARMEN_PARAM_ONOFF, &carmen_robot_ackerman_config.interpolate_odometry, 1, NULL},
+			{"behavior_selector", "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL}
 	};
 
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
@@ -391,7 +418,6 @@ double
 carmen_obstacle_avoider_initialize(int argc, char **argv)
 {
 	robot_ackerman_host = carmen_get_host();
-	carmen_running_average_clear(&odometry_average);
 
 	initialize_map_vector(NUM_MAPS);
 
