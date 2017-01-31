@@ -68,7 +68,6 @@ get_alive_sensors(int argc, char **argv)
 	carmen_param_t param_list[] =
 	{
 			{(char*)"localize_ackerman", (char*)"velodyne", CARMEN_PARAM_ONOFF, &spherical_sensor_params[0].alive, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne1", CARMEN_PARAM_ONOFF, &spherical_sensor_params[1].alive, 0, NULL},
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne2", CARMEN_PARAM_ONOFF, &spherical_sensor_params[2].alive, 0, NULL},
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne3", CARMEN_PARAM_ONOFF, &spherical_sensor_params[3].alive, 0, NULL},
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne4", CARMEN_PARAM_ONOFF, &spherical_sensor_params[4].alive, 0, NULL},
@@ -79,7 +78,6 @@ get_alive_sensors(int argc, char **argv)
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne9", CARMEN_PARAM_ONOFF, &spherical_sensor_params[9].alive, 0, NULL},
 
 			{(char*)"localize_ackerman", (char*)"velodyne_locc", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].log_odds.log_odds_occ, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne1_locc", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[1].log_odds.log_odds_occ, 0, NULL},
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne2_locc", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[2].log_odds.log_odds_occ, 0, NULL},
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne3_locc", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[3].log_odds.log_odds_occ, 0, NULL},
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne4_locc", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[4].log_odds.log_odds_occ, 0, NULL},
@@ -91,7 +89,6 @@ get_alive_sensors(int argc, char **argv)
 
 
 			{(char*)"localize_ackerman", (char*)"velodyne_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].log_odds.log_odds_free, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne1_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[1].log_odds.log_odds_free, 0, NULL},
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne2_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[2].log_odds.log_odds_free, 0, NULL},
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne3_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[3].log_odds.log_odds_free, 0, NULL},
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne4_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[4].log_odds.log_odds_free, 0, NULL},
@@ -102,7 +99,6 @@ get_alive_sensors(int argc, char **argv)
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne9_lfree", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[9].log_odds.log_odds_free, 0, NULL},
 
 			{(char*)"localize_ackerman", (char*)"velodyne_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].log_odds.log_odds_l0, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne1_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[1].log_odds.log_odds_l0, 0, NULL},
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne2_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[2].log_odds.log_odds_l0, 0, NULL},
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne3_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[3].log_odds.log_odds_l0, 0, NULL},
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne4_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[4].log_odds.log_odds_l0, 0, NULL},
@@ -113,7 +109,6 @@ get_alive_sensors(int argc, char **argv)
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne9_l0", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[9].log_odds.log_odds_l0, 0, NULL},
 
 			{(char*)"localize_ackerman", (char*)"velodyne_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[0].unexpeted_delta_range_sigma, 0, NULL},
-			{(char*)"localize_ackerman", (char*)"stereo_velodyne1_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[1].unexpeted_delta_range_sigma, 0, NULL},
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne2_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[2].unexpeted_delta_range_sigma, 0, NULL},
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne3_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[3].unexpeted_delta_range_sigma, 0, NULL},
 			{(char*)"localize_ackerman", (char*)"stereo_velodyne4_unexpeted_delta_range_sigma", CARMEN_PARAM_DOUBLE, &spherical_sensor_params[4].unexpeted_delta_range_sigma, 0, NULL},
