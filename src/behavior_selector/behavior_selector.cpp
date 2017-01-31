@@ -78,13 +78,11 @@ compute_max_rddf_num_poses_ahead(carmen_ackerman_traj_point_t current_pose)
 	int num_poses_ahead_by_velocity = carmen_rddf_num_poses_ahead_min;
 	//	s = vf*vf - v0*v0 / 2*a;
 	double common_goal_v = 3.0;
-	double a = 0.0;
 	double distance = 0.0;
 
 	if (common_goal_v < current_pose.v)
 	{
-		a = -robot_config.maximum_acceleration_forward * 2.0;
-		distance = ((common_goal_v * common_goal_v) - (current_pose.v * current_pose.v))/(2 * a);
+		distance = current_pose.v * 6.5;
 		if (distance > 0)
 			num_poses_ahead_by_velocity = (distance / 0.5) + 1;
 	}
@@ -577,7 +575,7 @@ get_last_rddf_message()
 
 
 void
-behavior_selector_update_rddf(carmen_rddf_road_profile_message *rddf_msg, int rddf_num_poses_by_velocity, double timestamp)
+behavior_selector_update_rddf(carmen_rddf_road_profile_message *rddf_msg, int rddf_num_poses_by_velocity, double timestamp __attribute__ ((unused)))
 {
 	if (rddf_num_poses_by_velocity)
 		copy_rddf_message(rddf_msg);
