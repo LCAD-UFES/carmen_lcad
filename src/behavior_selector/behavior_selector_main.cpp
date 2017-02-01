@@ -362,24 +362,16 @@ behavior_selector_publish_periodic_messages()
 
 
 void
-select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+set_behaviours_parameters(const carmen_ackerman_traj_point_t& current_robot_pose_v_and_phi, double timestamp)
 {
-	int update_state;
-	static double last_time_obstacle_avoider_detected_obstacle = 0.0;
-
-	if (!necessary_maps_available)
-		return;
-
 	if (fabs(current_robot_pose_v_and_phi.v) < param_distance_interval)
 		change_distance_between_waypoints_and_goals(param_distance_between_waypoints, param_change_goal_distance);
 	else
 		change_distance_between_waypoints_and_goals(4.0 * fabs(current_robot_pose_v_and_phi.v), 4.0 * fabs(current_robot_pose_v_and_phi.v));
 
-	behavior_selector_update_robot_pose(current_robot_pose_v_and_phi, &update_state);
+	behavior_selector_update_robot_pose(current_robot_pose_v_and_phi);
 
-	if (update_state)
-		publish_current_state();
-
+	static double last_time_obstacle_avoider_detected_obstacle = 0.0;
 	if (last_obstacle_avoider_robot_hit_obstacle_message.robot_will_hit_obstacle)
 	{
 		obstacle_avoider_active_recently = true;
@@ -390,21 +382,30 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 		if ((timestamp - last_time_obstacle_avoider_detected_obstacle) > 2.0)
 			obstacle_avoider_active_recently = false;
 	}
+}
 
-	carmen_ackerman_traj_point_t *goal_list;
+
+void
+select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+{
+	if (!necessary_maps_available)
+		return;
+
+	set_behaviours_parameters(current_robot_pose_v_and_phi, timestamp);
+
+	int state_updated = update_goal_list(timestamp);
+	if (state_updated)
+		publish_current_state();
+
 	int goal_list_size;
-	int goal_list_index;
-	double goal_list_time;
-	behavior_selector_get_goal_list(&goal_list, &goal_list_size, &goal_list_index, &goal_list_time);
+	carmen_ackerman_traj_point_t *goal_list = behavior_selector_get_goal_list(&goal_list_size);
 
 	if (goal_list_size > 0)
 	{
-		goal_list += goal_list_index;
-		goal_list_size -= goal_list_index;
-		carmen_ackerman_traj_point_t *goal = &(goal_list[0]);
-		set_goal_velocity(goal);
+		carmen_ackerman_traj_point_t *first_goal = &(goal_list[0]);
+		set_goal_velocity(first_goal);
 
-		publish_goal_list(goal_list, goal_list_size, goal_list_time);
+		publish_goal_list(goal_list, goal_list_size, carmen_get_time());
 	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -454,7 +455,7 @@ rddf_handler(carmen_rddf_road_profile_message *rddf_msg)
 	if (!necessary_maps_available)
 		return;
 
-	behavior_selector_update_rddf(rddf_msg, param_rddf_num_poses_by_car_velocity);
+	behavior_selector_update_rddf(rddf_msg, param_rddf_num_poses_by_car_velocity, rddf_msg->timestamp);
 	last_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
 
 	if (goal_list_road_profile_message == CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL)
@@ -468,7 +469,7 @@ path_planner_road_profile_handler(carmen_path_planner_road_profile_message *rddf
 	if (!necessary_maps_available)
 		return;
 
-	behavior_selector_update_rddf((carmen_rddf_road_profile_message *) rddf_msg, false);
+	behavior_selector_update_rddf((carmen_rddf_road_profile_message *) rddf_msg, 0, rddf_msg->timestamp);
 	last_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_PATH_PLANNER_GOAL;
 
 	if (goal_list_road_profile_message == CARMEN_BEHAVIOR_SELECTOR_PATH_PLANNER_GOAL)
@@ -494,7 +495,6 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 {
 	static carmen_compact_map_t *compact_cost_map = NULL;
 	static carmen_map_t cost_map;
-	int goal_list_updated;
 
 	if (compact_cost_map == NULL)
 	{
@@ -515,7 +515,7 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 
 	cost_map.config = message->config;
 
-	behavior_selector_update_map(&cost_map, &goal_list_updated);
+	behavior_selector_update_map(&cost_map);
 
 	necessary_maps_available = 1;
 }

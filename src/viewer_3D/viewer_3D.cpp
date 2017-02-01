@@ -1671,7 +1671,7 @@ init_flags(void)
     draw_particles_flag = 0;
     draw_points_flag = 0;
     draw_velodyne_flag = 2;
-    draw_stereo_cloud_flag = 1;
+    draw_stereo_cloud_flag = 0;
     draw_car_flag = 1;
     draw_rays_flag = 0;
     draw_map_image_flag = 0;
@@ -2206,7 +2206,8 @@ draw_loop(window *w)
 
         if (draw_stereo_cloud_flag)
         {
-            draw_stereo_point_cloud(stereo_point_cloud, stereo_point_cloud_size);
+//            draw_stereo_point_cloud(stereo_point_cloud, stereo_point_cloud_size);
+            draw_variable_velodyne(var_v_drawer);
         }
 
         if (draw_points_flag == 1)
@@ -2410,7 +2411,8 @@ draw_loop2(window *w)
 
         if (draw_stereo_cloud_flag)
         {
-            draw_stereo_point_cloud(stereo_point_cloud, stereo_point_cloud_size);
+//            draw_stereo_point_cloud(stereo_point_cloud, stereo_point_cloud_size);
+            draw_variable_velodyne(var_v_drawer);
         }
 
         if (draw_points_flag == 1)
