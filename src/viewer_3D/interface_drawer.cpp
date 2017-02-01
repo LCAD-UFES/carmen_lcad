@@ -272,12 +272,14 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y) {
                     set_flag_viewer_3D(2, i_drawer->butt[i].state);
                 } else if (i_drawer->butt[i].code == 11) // variable velodyne
                 {
-                    if (i_drawer->butt[i].state == 0)
-                        i_drawer->butt[i].state = 4;
-                    else
-                        i_drawer->butt[i].state = 0;
+//                    if (i_drawer->butt[i].state == 0)
+//                        i_drawer->butt[i].state = 4;
+//                    else
+//                        i_drawer->butt[i].state = 0;
 
-                    set_flag_viewer_3D(2, i_drawer->butt[i].state);
+                	i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+                    set_flag_viewer_3D(3, i_drawer->butt[i].state);
                 } else if (i_drawer->butt[i].code == 12) // MAP
                 {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
