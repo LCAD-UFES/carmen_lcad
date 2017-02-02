@@ -470,8 +470,8 @@ carmen_prob_models_update_log_odds_of_cells_hit_by_rays(carmen_map_t *log_odds_m
 	{
 		if (i != sensor_data->ray_that_hit_the_nearest_target[thread_id])
 		{
-			cell_hit_by_ray.x = (sensor_data->ray_position_in_the_floor[thread_id][i].x / log_odds_map->config.resolution);
-			cell_hit_by_ray.y = (sensor_data->ray_position_in_the_floor[thread_id][i].y / log_odds_map->config.resolution);
+			cell_hit_by_ray.x = round(sensor_data->ray_position_in_the_floor[thread_id][i].x / log_odds_map->config.resolution);
+			cell_hit_by_ray.y = round(sensor_data->ray_position_in_the_floor[thread_id][i].y / log_odds_map->config.resolution);
 			if (map_grid_is_valid(log_odds_map, cell_hit_by_ray.x, cell_hit_by_ray.y))
 				if (sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] != sensor_params->log_odds.log_odds_l0)
 					carmen_prob_models_occupancy_grid_mapping_log_odds_only(log_odds_map, cell_hit_by_ray.x, cell_hit_by_ray.y, sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i]);
@@ -507,8 +507,8 @@ carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(carmen_map_t *map, 
 	{
 		if (i != sensor_data->ray_that_hit_the_nearest_target[thread_id])
 		{
-			cell_hit_by_ray.x = (sensor_data->ray_position_in_the_floor[thread_id][i].x / map->config.resolution);
-			cell_hit_by_ray.y = (sensor_data->ray_position_in_the_floor[thread_id][i].y / map->config.resolution);
+			cell_hit_by_ray.x = round(sensor_data->ray_position_in_the_floor[thread_id][i].x / map->config.resolution);
+			cell_hit_by_ray.y = round(sensor_data->ray_position_in_the_floor[thread_id][i].y / map->config.resolution);
 			if (map_grid_is_valid(map, cell_hit_by_ray.x, cell_hit_by_ray.y))
 				if (sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] > sensor_params->log_odds.log_odds_l0)
 				{
@@ -560,8 +560,8 @@ carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sen
 	{
 		if (sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] > sensor_params->log_odds.log_odds_l0)
 		{
-			cell_hit_by_ray.x = (sensor_data->ray_position_in_the_floor[thread_id][i].x / map->config.resolution);
-			cell_hit_by_ray.y = (sensor_data->ray_position_in_the_floor[thread_id][i].y / map->config.resolution);
+			cell_hit_by_ray.x = round(sensor_data->ray_position_in_the_floor[thread_id][i].x / map->config.resolution);
+			cell_hit_by_ray.y = round(sensor_data->ray_position_in_the_floor[thread_id][i].y / map->config.resolution);
 
 			if (map_grid_is_valid(map, cell_hit_by_ray.x, cell_hit_by_ray.y))
 			{
@@ -582,8 +582,8 @@ carmen_prob_models_set_log_odds_of_cells_hit_by_rays(carmen_map_t *log_odds_map,
 
 	for (i = 1; i < sensor_params->vertical_resolution; i++)
 	{
-		cell_hit_by_ray.x = (sensor_data->ray_position_in_the_floor[thread_id][i].x / log_odds_map->config.resolution);
-		cell_hit_by_ray.y = (sensor_data->ray_position_in_the_floor[thread_id][i].y / log_odds_map->config.resolution);
+		cell_hit_by_ray.x = round(sensor_data->ray_position_in_the_floor[thread_id][i].x / log_odds_map->config.resolution);
+		cell_hit_by_ray.y = round(sensor_data->ray_position_in_the_floor[thread_id][i].y / log_odds_map->config.resolution);
 
 		if (map_grid_is_valid(log_odds_map, cell_hit_by_ray.x, cell_hit_by_ray.y) && !sensor_data->maxed[thread_id][i])// &&
 //			(sensor_data->obstacle_height[thread_id][i] > 0.0) && (sensor_data->obstacle_height[thread_id][i] < 4.0) &&
@@ -600,8 +600,8 @@ update_intensity_of_cells(carmen_map_t *sum_remission_map,
 {
 	cell_coords_t cell_hit_by_ray;
 
-	cell_hit_by_ray.x = (sensor_data->ray_position_in_the_floor[thread_id][ray].x / sum_remission_map->config.resolution);
-	cell_hit_by_ray.y = (sensor_data->ray_position_in_the_floor[thread_id][ray].y / sum_remission_map->config.resolution);
+	cell_hit_by_ray.x = round(sensor_data->ray_position_in_the_floor[thread_id][ray].x / sum_remission_map->config.resolution);
+	cell_hit_by_ray.y = round(sensor_data->ray_position_in_the_floor[thread_id][ray].y / sum_remission_map->config.resolution);
 
 	if (map_grid_is_valid(sum_remission_map, cell_hit_by_ray.x, cell_hit_by_ray.y) &&
 			!sensor_data->maxed[thread_id][ray] && !sensor_data->ray_hit_the_robot[thread_id][ray] &&
@@ -704,8 +704,8 @@ carmen_prob_models_update_intensity_of_cells_hit_by_rays_for_calibration(carmen_
 			if (i != j)
 				update_intensity_of_cells(&sum_remission_map[j], &sum_sqr_remission_map[j], &count_remission_map[j], sensor_data, highest_sensor, safe_range_above_sensors, i, NULL, thread_id);
 		}
-		cell_hit_by_ray.x = (sensor_data->ray_position_in_the_floor[thread_id][j].x / sum_remission_map->config.resolution);
-		cell_hit_by_ray.y = (sensor_data->ray_position_in_the_floor[thread_id][j].y / sum_remission_map->config.resolution);
+		cell_hit_by_ray.x = round(sensor_data->ray_position_in_the_floor[thread_id][j].x / sum_remission_map->config.resolution);
+		cell_hit_by_ray.y = round(sensor_data->ray_position_in_the_floor[thread_id][j].y / sum_remission_map->config.resolution);
 
 		if (map_grid_is_valid(sum_remission_map, cell_hit_by_ray.x, cell_hit_by_ray.y) &&
 				!sensor_data->maxed[thread_id][j] && !sensor_data->ray_hit_the_robot[thread_id][j] &&

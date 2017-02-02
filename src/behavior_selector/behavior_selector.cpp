@@ -210,7 +210,7 @@ update_moving_object_velocity()
 		if (delta_t > 0.01)
 			v = distance / delta_t;
 
-		printf("d %lf, dt %lf, v %lf\n", distance, delta_t, v);
+//		printf("d %lf, dt %lf, v %lf\n", distance, delta_t, v);
 		moving_object[i].pose.v = v;
 	}
 }

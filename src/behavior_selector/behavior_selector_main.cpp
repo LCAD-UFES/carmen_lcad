@@ -325,7 +325,7 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal)
 	if (moving_object_in_front())
 	{
 		goal->v = get_moving_object_in_front_v();
-		printf("mov %lf\n\n", goal->v);
+//		printf("mov %lf\n\n", goal->v);
 	}
 
 //	printf("gva %lf  ", goal->v);
