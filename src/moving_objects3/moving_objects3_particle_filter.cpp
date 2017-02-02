@@ -28,6 +28,10 @@ sample_motion_model(moving_objects3_particle_t particle_t_1, double delta_time)
 	particle_t.geometry.length = particle_t_1.geometry.length;
 	particle_t.geometry.width = particle_t_1.geometry.width;
 
+	particle_t.geometry.c_x += carmen_uniform_random(-0.5,0.5);
+	particle_t.geometry.c_y += carmen_uniform_random(-0.5,0.5);
+	particle_t.geometry.length += carmen_uniform_random(-0.25,0.25);
+	particle_t.geometry.width = 0.35 * particle_t.geometry.length;
 	return particle_t;
 }
 
@@ -35,10 +39,10 @@ sample_motion_model(moving_objects3_particle_t particle_t_1, double delta_time)
 double
 get_ray_cost(carmen_vector_2D_t end_point, rectangle_points r_a, rectangle_points r_b, rectangle_points r_c)
 {
-	const double c_occ = 1.0;
-	const double c_b = 2.0;
+	const double c_occ = 10.0;
+	const double c_b = 20.0;
 	const double c_s = 0.0;
-	const double c_p = 1.6;
+	const double c_p = 16.0;
 
 	int intersect_a, intersect_b, intersect_c;
 
@@ -64,8 +68,8 @@ get_probability(double cost, double sigma)
 	double p_x, variance;
 	variance = sigma*sigma;
 
-	p_x = (1.0/(sigma*sqrt(2*M_PI))) * exp(-0.5 *(cost)*(cost)/(variance));
-	//p_x = exp(-(cost)*(cost)/(variance));
+	//p_x = (1.0/(sigma*sqrt(2*M_PI))) * exp(-0.5 *(cost)*(cost)/(variance));
+	p_x = exp(-(cost)*(cost)/(variance));
 
 	return p_x;
 }
@@ -178,7 +182,7 @@ algorithm_particle_filter(std::vector<moving_objects3_particle_t> particle_set_t
 		// cost = measurement_model(particle_t, velodyne_projected_on_ground);
 
 		// Weighing particles
-		particle_t.weight = get_particle_weight(particle_t, virtual_scan, num_of_rays) * NUM_OF_PARTICLES;
+		particle_t.weight = get_particle_weight(particle_t, virtual_scan, num_of_rays);
 		total_weight += particle_t.weight;
 
 		particle_set_t.push_back(particle_t);
@@ -217,9 +221,14 @@ importance_sampling(double *virtual_scan, int num_of_rays, int index, int num_of
 		particle_t.pose.x = x + carmen_uniform_random(-1.5,1.5);
 		particle_t.pose.y = y + carmen_uniform_random(-1.5,1.5);
 		particle_t.velocity = carmen_uniform_random(-5,5);
+		particle_t.geometry.c_x = particle_t.pose.x;
+		particle_t.geometry.c_y = particle_t.pose.y;
+		particle_t.geometry.length = carmen_uniform_random(4.0,8.0);
+		particle_t.geometry.width = 0.35 * particle_t.geometry.length;
+
 
 		// Weighing particles
-		particle_t.weight = get_particle_weight(particle_t, virtual_scan, num_of_rays) * NUM_OF_PARTICLES;
+		particle_t.weight = get_particle_weight(particle_t, virtual_scan, num_of_rays);
 		total_weight += particle_t.weight;
 
 		particle_set_t.push_back(particle_t);

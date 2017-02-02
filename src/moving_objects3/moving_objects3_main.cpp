@@ -372,6 +372,32 @@ descontinue_track(std::vector<moving_object_data> &moving_objects_list, moving_o
 	if (distance > 50 || distance < 4.5 || object.best_particle.weight < 0.01)
 	{
 		moving_objects_list.erase (moving_objects_list.begin()+index);
+		return;
+	}
+
+	carmen_vector_2D_t displacement;
+
+	displacement.x = object.best_particle.pose.x;
+	displacement.y = object.best_particle.pose.y;
+
+	// particle rectangle
+	rectangle_points best_particle_rect;
+
+	for (unsigned int i = 0; i < moving_objects_list.size(); i++)
+	{
+		// generate rectangle
+		best_particle_rect = generate_rectangle(moving_objects_list[i].best_particle.geometry.width + 1.25,
+				moving_objects_list[i].best_particle.geometry.length + 1.25);
+		best_particle_rect = transform_rectangle(best_particle_rect,
+				moving_objects_list[i].best_particle.pose.x,
+				moving_objects_list[i].best_particle.pose.y,
+				moving_objects_list[i].best_particle.pose.theta);
+
+		if (check_ray_intersection(displacement, best_particle_rect))
+		{
+			moving_objects_list.erase (moving_objects_list.begin()+index);
+			return;
+		}
 	}
 }
 
