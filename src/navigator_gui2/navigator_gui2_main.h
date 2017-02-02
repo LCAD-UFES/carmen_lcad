@@ -24,6 +24,8 @@ typedef struct
 	int    edit_rddf_goals;
 	int	   use_ackerman;
 	int	   use_exploration;
+	char   *map;
+	char   *superimposed_map;
 } carmen_navigator_panel_config_t;
 
 void navigator_update_robot(carmen_world_point_p robot);

@@ -49,9 +49,6 @@ extern "C" {
     double goal_theta_tolerance;
     int dont_integrate_odometry;
     int plan_to_nearest_free_point;
-    char *navigator_map;
-    int superimpose_map;
-    char *superimposed_map;
     char *navigator_planning_method;
   } carmen_navigator_config_t;
 

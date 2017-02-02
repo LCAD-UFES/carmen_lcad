@@ -15,8 +15,8 @@ LFLAGS += $(INTERFACE_LIBS) -lglobal -lipc \
 CFLAGS += #-pg 
 CXXFLAGS += -std=c++0x #-pg 
 
-MODULE_NAME = NAVIGATOR ACKERMAN
-MODULE_COMMENT = The motion planner!
+MODULE_NAME = NAVIGATOR A*
+MODULE_COMMENT = The motion A* planner!
 
 SOURCES = navigator_astar.cpp conventional_ackerman.c conventional_astar_ackerman.cpp rs.cpp FH/fh.cpp FH/fib.cpp MessageControl.cpp navigator_ackerman_ipc.c \
 	navigator_astar_interface.c trajectory_ackerman.c navigator_precomputed_cost_ackerman.c
