@@ -110,7 +110,10 @@ copy_rddf_message(carmen_rddf_road_profile_message *rddf_msg)
 		last_rddf_message->number_of_poses_back = 0;
 	}
 
-	 carmen_rddf_num_poses_ahead = compute_max_rddf_num_poses_ahead(robot_pose);
+	 if ((rddf_msg->number_of_poses < carmen_rddf_num_poses_ahead_min) && (rddf_msg->number_of_poses > 0))
+		 carmen_rddf_num_poses_ahead = rddf_msg->number_of_poses;
+	 else
+		 carmen_rddf_num_poses_ahead = compute_max_rddf_num_poses_ahead(robot_pose);
 
 	if (last_rddf_message->number_of_poses != carmen_rddf_num_poses_ahead)
 	{
