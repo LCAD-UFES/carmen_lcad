@@ -352,8 +352,6 @@ read_parameters(int argc, char **argv)
 			{"navigator", "smooth_path", CARMEN_PARAM_ONOFF, &nav_config.smooth_path, 1, NULL},
 			{"navigator", "dont_integrate_odometry", CARMEN_PARAM_ONOFF, &nav_config.dont_integrate_odometry, 1, NULL},
 			{"navigator", "plan_to_nearest_free_point", CARMEN_PARAM_ONOFF,	&nav_config.plan_to_nearest_free_point, 1, NULL},
-			{"navigator", "map", CARMEN_PARAM_STRING, &nav_config.navigator_map, 0, NULL},
-			{"navigator", "superimposed_map", CARMEN_PARAM_STRING, &nav_config.superimposed_map, 0, NULL},
 			{"navigator_astar", "path_interval", CARMEN_PARAM_DOUBLE, &astar_config.path_interval, 1, NULL},
 			{"navigator_astar", "state_map_resolution", CARMEN_PARAM_INT, &astar_config.state_map_resolution, 1, NULL},
 			{"navigator_astar", "state_map_theta_resolution", CARMEN_PARAM_INT, &astar_config.state_map_theta_resolution, 1, NULL},

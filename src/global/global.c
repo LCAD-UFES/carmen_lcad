@@ -1187,7 +1187,7 @@ char *carmen_new_string(const char *fmt, ...)
 
 void carmen_print_version(void)
 {
-  fprintf(stderr, "CARMEN - Carnegie Mellon Robot Navigation Toolkit - ");
+  fprintf(stderr, "CARMEN-LCAD - Carnegie Mellon Robot Navigation Toolkit - LCAD ");
   fprintf(stderr, "Version %d.%d.%d\n\n", CARMEN_MAJOR_VERSION,
 	  CARMEN_MINOR_VERSION, CARMEN_REVISION);
 }

@@ -259,7 +259,6 @@ checkArguments(int argc, char *argv[])
 
 	if (argc > 1)
 	{
-		carmen_ipc_initialize(argc, argv);
 		carmen_param_check_version(argv[0]);
 
 		initializeComponents();

@@ -129,7 +129,27 @@ namespace View
 			GtkCheckMenuItem* menuSimulatorShowTruePosition;
 			GtkCheckMenuItem* menuSimulator_ShowObjects;
 			GtkCheckMenuItem* menuGoals_EditRddfGoals;
-
+			GtkCheckMenuItem* menuMaps_Map;
+			GtkCheckMenuItem* menuMaps_OfflineMap;
+			GtkCheckMenuItem* menuMaps_Utility;
+			GtkCheckMenuItem* menuMaps_Costs;
+			GtkCheckMenuItem* menuMaps_Likelihood;
+			GtkCheckMenuItem* menuMaps_GlobalLikelihood;
+			GtkCheckMenuItem* menuMaps_Lane;
+			GtkCheckMenuItem* menuMaps_CompleteMap;
+			GtkCheckMenuItem* menuMaps_RemissionMap;
+			GtkCheckMenuItem* menuMaps_MovingObjects;
+			GtkCheckMenuItem* menuSuperimposedMaps_None;
+			GtkCheckMenuItem* menuSuperimposedMaps_Map;
+			GtkCheckMenuItem* menuSuperimposedMaps_OfflineMap;
+			GtkCheckMenuItem* menuSuperimposedMaps_Utility;
+			GtkCheckMenuItem* menuSuperimposedMaps_Costs;
+			GtkCheckMenuItem* menuSuperimposedMaps_Likelihood;
+			GtkCheckMenuItem* menuSuperimposedMaps_GlobalLikelihood;
+			GtkCheckMenuItem* menuSuperimposedMaps_Lane;
+			GtkCheckMenuItem* menuSuperimposedMaps_CompleteMap;
+			GtkCheckMenuItem* menuSuperimposedMaps_RemissionMap;
+			GtkCheckMenuItem* menuSuperimposedMaps_MovingObjects;
 		};
 
 		Controls controls_;

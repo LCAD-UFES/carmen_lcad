@@ -434,6 +434,7 @@ int main(int argc, char **argv)
     carmen_warn("\nUnrecognized action %s\n", argv[1]);
     main_usage(argv[0]);
   }
+  IPC_dispatch();
 
   return 0;
 }
