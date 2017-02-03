@@ -416,10 +416,10 @@ main(int argc, char **argv)
   carmen_dynamic_object_detector_define_messages();
 
   /* Subscribe to sensor and filter messages */
-  carmen_mapper_subscribe_message(NULL, (carmen_handler_t)carmen_grid_mapping_handler, CARMEN_SUBSCRIBE_LATEST);
+  carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) carmen_grid_mapping_handler, CARMEN_SUBSCRIBE_LATEST);
   
   /* Subscribe to car positioning messages */
-  carmen_localize_ackerman_subscribe_globalpos_message(NULL,(carmen_handler_t)carmen_localize_ackerman_handler, CARMEN_SUBSCRIBE_LATEST);
+  carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) carmen_localize_ackerman_handler, CARMEN_SUBSCRIBE_LATEST);
 
   /* Loop forever waiting for messages */
   carmen_ipc_dispatch();

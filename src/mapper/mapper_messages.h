@@ -43,6 +43,18 @@ typedef struct
 #define CARMEN_MAPPER_COMPACT_MAP_MESSAGE_FMT		"{<int:4>, <int:4>, <double:4>, int, {int, int, double, [byte:64], string, double, double}, double, string}"
 
 
+typedef struct
+{
+	int num_positions;
+	carmen_position_t *positions;
+	double timestamp;
+	char *host;
+} carmen_mapper_virtual_laser_message;
+
+#define CARMEN_MAPPER_VIRTUAL_LASER_MESSAGE_NAME	"carmen_mapper_virtual_laser_message"
+#define CARMEN_MAPPER_VIRTUAL_LASER_MESSAGE_FMT		"{int,<{double,double}:1>, double, string}"
+
+
 #ifdef __cplusplus
 }
 #endif

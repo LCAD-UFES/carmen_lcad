@@ -11,8 +11,11 @@ extern "C"
 void carmen_mapper_copy_map_from_message(carmen_map_t *current_map, carmen_mapper_map_message *online_map_message);
 
 void
-carmen_mapper_subscribe_message(carmen_mapper_map_message *message,
+carmen_mapper_subscribe_map_message(carmen_mapper_map_message *message,
 			       carmen_handler_t handler, carmen_subscribe_t subscribe_how);
+
+void
+carmen_mapper_subscribe_virtual_laser_message(carmen_mapper_virtual_laser_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how);
 
 void
 carmen_mapper_moving_objects_raw_map_subscribe_message(carmen_mapper_map_message *message,
@@ -26,13 +29,25 @@ void
 carmen_mapper_unsubscribe_message(carmen_handler_t handler);
 
 void
+carmen_mapper_unsubscribe_virtual_laser_message(carmen_handler_t handler);
+
+void
 carmen_mapper_moving_objects_raw_map_unsubscribe_message(carmen_handler_t handler);
 
 void
 carmen_mapper_define_messages();
 
 void
-carmen_mapper_publish_message(carmen_map_t *carmen_map, double timestamp);
+carmen_mapper_define_map_message();
+
+void
+carmen_mapper_define_virtual_laser_message();
+
+void
+carmen_mapper_publish_map_message(carmen_map_t *carmen_map, double timestamp);
+
+void
+carmen_mapper_publish_virtual_laser_message(carmen_mapper_virtual_laser_message *virtual_laser_message);
 
 void
 carmen_mapper_moving_objects_raw_map_publish_message(carmen_map_t *carmen_map, double timestamp);

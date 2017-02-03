@@ -934,7 +934,7 @@ main(int argc, char **argv)
 	carmen_test_alloc(cost_map);
 
 	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
-	carmen_mapper_subscribe_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_map_server_subscribe_cost_map(NULL, (carmen_handler_t) cost_map_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_rddf_subscribe_waypoints_around_end_point_message(NULL,

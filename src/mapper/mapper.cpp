@@ -63,6 +63,8 @@ double x_origin, y_origin; // map origin in meters
 
 static carmen_laser_laser_message flaser; // moving_objects
 
+carmen_mapper_virtual_laser_message virtual_laser_message;
+
 
 static void
 change_sensor_rear_range_max(sensor_parameters_t *sensor_params, double angle)
@@ -137,6 +139,9 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *log_odds
 //	robot_pose.orientation.pitch = 0.0;
 //	robot_pose.orientation.roll = 0.0;
 
+//	virtual_laser_message.num_positions = N;
+//	virtual_laser_message.positions = (carmen_position_t *) realloc(virtual_laser_message.positions, virtual_laser_message.num_positions * sizeof(carmen_position_t));
+
 	for (int j = 0; j < N; j += 1)
 	{
 		i = j * sensor_params->vertical_resolution;
@@ -160,6 +165,9 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *log_odds
 //				sensor_data->ray_position_in_the_floor[tid][0].y, 1);
 		carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data, sensor_params, i, highest_sensor, safe_range_above_sensors,
 				robot_near_bump_or_barrier, tid);
+
+//		virtual_laser_message.positions[j].x = sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].x + x_origin;
+//		virtual_laser_message.positions[j].y = sensor_data->ray_position_in_the_floor[thread_id][sensor_data->ray_that_hit_the_nearest_target[thread_id]].y + y_origin;
 
 		if (update_cells_crossed_by_rays == UPDATE_CELLS_CROSSED_BY_RAYS)
 		{
@@ -213,6 +221,9 @@ update_log_odds_of_cells_in_the_laser_ldmrs_perceptual_field(carmen_map_t *log_o
 	robot_pose.orientation.pitch = 0.0;
 	robot_pose.orientation.roll = 0.0;
 
+//	virtual_laser_message.num_positions += N;
+//	virtual_laser_message.positions = (carmen_position_t *) realloc(virtual_laser_message.positions, virtual_laser_message.num_positions * sizeof(carmen_position_t));
+
 	for (int j = 0; j < N; j += 1)
 	{
 		i = j * sensor_params->vertical_resolution;
@@ -237,6 +248,9 @@ update_log_odds_of_cells_in_the_laser_ldmrs_perceptual_field(carmen_map_t *log_o
 //
 //		if (update_cells_crossed_by_rays == UPDATE_CELLS_CROSSED_BY_RAYS)
 //			carmen_prob_models_update_cells_crossed_by_ray(snapshot_map, sensor_params, sensor_data, tid);
+
+//		virtual_laser_message.positions[j].x = sensor_data->ray_origin_in_the_floor[thread_id][i].x + x_origin;
+//		virtual_laser_message.positions[j].y = sensor_data->ray_origin_in_the_floor[thread_id][i].y + y_origin;
 
 		carmen_prob_models_set_log_odds_of_cells_hit_by_rays(log_odds_snapshot_map, sensor_params, sensor_data, tid);
 
@@ -687,7 +701,7 @@ mapper_publish_map(double timestamp)
 		run_snapshot_mapper();
 	}
 
-	carmen_mapper_publish_message(&map, timestamp);
+	carmen_mapper_publish_map_message(&map, timestamp);
 }
 
 
@@ -771,6 +785,9 @@ mapper_initialize(carmen_map_config_t *main_map_config, carmen_robot_ackerman_co
 	globalpos_initialized = 0; // Only considered initialized when first message is received
 
 	globalpos_history = (carmen_localize_ackerman_globalpos_message *) calloc(GLOBAL_POS_QUEUE_SIZE, sizeof(carmen_localize_ackerman_globalpos_message));
+
+	memset(&virtual_laser_message, 0, sizeof(carmen_mapper_virtual_laser_message));
+	virtual_laser_message.host = carmen_get_host();
 
 	last_globalpos = 0;
 }

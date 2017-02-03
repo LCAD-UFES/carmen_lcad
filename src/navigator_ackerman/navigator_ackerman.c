@@ -406,7 +406,7 @@ main(int argc, char **argv)
 
 	signal(SIGINT, navigator_shutdown);
 
-	carmen_mapper_subscribe_message(NULL, (carmen_handler_t) mapper_map_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_map_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) goal_list_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) state_handler, CARMEN_SUBSCRIBE_LATEST);
 
