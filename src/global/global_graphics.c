@@ -264,6 +264,7 @@ unsigned char *carmen_graphics_convert_to_image(carmen_map_p map, int flags)
   int black_and_white = flags & CARMEN_GRAPHICS_BLACK_AND_WHITE;
   int enhance_contrast = flags & CARMEN_GRAPHICS_ENHANCE_CONTRAST;
   int grayscale = flags & CARMEN_GRAPHICS_GRAYSCALE;
+  int remove_minus_one = flags & CARMEN_GRAPHICS_REMOVE_MINUS_ONE;
 
   if (map == NULL) {
     carmen_warn("carmen_graphics_convert_to_image was passed NULL map.\n");
@@ -335,12 +336,18 @@ unsigned char *carmen_graphics_convert_to_image(carmen_map_p map, int flags)
 			  }
 		  }
 		  else {
+			  if (remove_minus_one)
+			  {
+				  min_val = 0.0;
+				  if (value == -1.0)
+					  value = 0.0;
+			  }
 			  if (rescale)
 				  value = (value - min_val) / (max_val - min_val);
 			  if (!invert)
 				  value = 1 - value;
 			  if (enhance_contrast)
-				  value = carmen_clamp(0.0, value * 10.0, 1.0);
+				  value = carmen_clamp(0.0, value * 3.0, 1.0);
 			  for (index = 0; index < 3; index++)
 				  *(image_ptr++) = value * 255;
 		  }

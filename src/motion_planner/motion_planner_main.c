@@ -199,7 +199,7 @@ register_handlers()
 
 	carmen_subscribe_message(CARMEN_NAVIGATOR_ACKERMAN_STOP_NAME, CARMEN_DEFAULT_MESSAGE_FMT, NULL, sizeof(carmen_default_message), stop_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_mapper_subscribe_message(NULL, (carmen_handler_t) map_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) map_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 

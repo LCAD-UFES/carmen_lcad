@@ -817,7 +817,7 @@ main(int argc, char **argv)
 		carmen_map_server_publish_localize_map_message(&localize_map);
 
 		if (publish_grid_mapping_map_at_startup)
-			carmen_mapper_publish_message(current_map, timestamp);
+			carmen_mapper_publish_map_message(current_map, timestamp);
 	}
 	else
 	{

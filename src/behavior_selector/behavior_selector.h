@@ -69,6 +69,8 @@ carmen_rddf_road_profile_message *get_last_rddf_message();
 void publish_goal_list();
 void publish_current_state();
 
-int update_goal_list(double timestamp);
+int behaviou_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_point_t current_pose, double timestamp);
+double get_moving_object_in_front_v();
+int moving_object_in_front();
 
 #endif /* BEHAVIOR_SELECTOR_H_ */

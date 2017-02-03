@@ -1339,7 +1339,7 @@ gps_xyz_message_handler(carmen_gps_xyz_message *gps_xyz_raw_message)
 }
 
 static void
-mapper_message_handler(carmen_mapper_map_message *message)
+mapper_map_message_handler(carmen_mapper_map_message *message)
 {
 //    double time_since_last_draw = carmen_get_time() - lastDisplayTime;
 
@@ -2609,8 +2609,8 @@ subscribe_ipc_messages(void)
                                                       (carmen_handler_t) sick_variable_scan_message_handler,
                                                       CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_mapper_subscribe_message(NULL,
-                                          (carmen_handler_t) mapper_message_handler,
+    carmen_mapper_subscribe_map_message(NULL,
+                                          (carmen_handler_t) mapper_map_message_handler,
                                           CARMEN_SUBSCRIBE_LATEST);
 
     carmen_navigator_ackerman_subscribe_plan_message(NULL,

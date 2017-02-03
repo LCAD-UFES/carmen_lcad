@@ -792,8 +792,6 @@ read_parameters(int argc, char *argv[],
 			{"navigator",		"map_update_radius",		CARMEN_PARAM_INT,    &(nav_config->map_update_radius),			1, NULL},
 			{"navigator",		"goal_size",			CARMEN_PARAM_DOUBLE, &(nav_config->goal_size),				1, NULL},
 			{"navigator",		"goal_theta_tolerance",		CARMEN_PARAM_DOUBLE, &(nav_config->goal_theta_tolerance),		1, NULL},
-			{"navigator",		"map",				CARMEN_PARAM_STRING, &(nav_config->navigator_map),			0, NULL},
-			{"navigator",		"superimposed_map",		CARMEN_PARAM_STRING, &(nav_config->superimposed_map),			0, NULL},
 			{"navigator_panel", 	"initial_map_zoom",		CARMEN_PARAM_DOUBLE, &(navigator_panel_config->initial_map_zoom),	1, NULL},
 			{"navigator_panel", 	"track_robot",			CARMEN_PARAM_ONOFF,  &(navigator_panel_config->track_robot),		1, NULL},
 			{"navigator_panel", 	"draw_waypoints",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->draw_waypoints),		1, NULL},
@@ -936,7 +934,7 @@ main(int argc, char **argv)
 	carmen_test_alloc(cost_map);
 
 	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
-	carmen_mapper_subscribe_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_map_server_subscribe_cost_map(NULL, (carmen_handler_t) cost_map_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_rddf_subscribe_waypoints_around_end_point_message(NULL,

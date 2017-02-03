@@ -1,4 +1,5 @@
 #include <GL/glut.h>
+#include <carmen/carmen.h>
 #include "car_panel.h"
 
 car_panel *car_panel_gl = NULL;
@@ -21,6 +22,7 @@ reshape_gui(int w, int h)
 int
 main(int argc, char *argv[])
 {
+	carmen_ipc_initialize(argc, argv);
 
 	car_panel_gl = car_panel::get_instance(argc, argv);
 

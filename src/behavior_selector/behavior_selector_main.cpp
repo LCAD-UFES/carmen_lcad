@@ -169,17 +169,15 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal)
 		if (!annotation_is_forward(get_robot_pose(), last_rddf_annotation_message.annotation_point))
 			clearing_annotation = false;
 	}
-	else
-		goal->v = 15.28;
 }
 
 
-void
-limit_maximum_velocity_according_to_centripetal_acceleration(double &target_v, double current_v, carmen_ackerman_traj_point_t *goal,
+double
+limit_maximum_velocity_according_to_centripetal_acceleration(double target_v, double current_v, carmen_ackerman_traj_point_t *goal,
 		carmen_ackerman_traj_point_t *path, int number_of_poses)
 {
 	if (number_of_poses == 0)
-		return;
+		return (target_v);
 
 	double desired_v = 0.0;
 	double max_centripetal_acceleration = 0.0;
@@ -209,6 +207,7 @@ limit_maximum_velocity_according_to_centripetal_acceleration(double &target_v, d
 		}
 	}
 
+	double limited_target_v = target_v;
 	if (max_centripetal_acceleration > robot_max_centripetal_acceleration)
 	{
 		double radius_of_curvature = L / fabs(tan(max_path_phi));
@@ -219,9 +218,11 @@ limit_maximum_velocity_according_to_centripetal_acceleration(double &target_v, d
 			double dist_to_goal = carmen_distance_ackerman_traj(&current_robot_pose_v_and_phi, goal);
 			double velocity_at_goal = get_velocity_at_goal(current_v, desired_v, dist_to_goal, dist_to_max_curvature);
 			if (velocity_at_goal < target_v)
-				target_v = velocity_at_goal;
+				limited_target_v = velocity_at_goal;
 		}
 	}
+
+	return (limited_target_v);
 }
 
 
@@ -319,14 +320,24 @@ publish_behavior_selector_road_profile_message(carmen_rddf_road_profile_message 
 void
 set_goal_velocity(carmen_ackerman_traj_point_t *goal)
 {
+	goal->v = 15.28; // Esta linha faz com que o behaviour_selector ignore as velocidades no rddf
+
+	if (moving_object_in_front())
+	{
+		goal->v = get_moving_object_in_front_v();
+//		printf("mov %lf\n\n", goal->v);
+	}
+
+//	printf("gva %lf  ", goal->v);
+	goal->v = limit_maximum_velocity_according_to_centripetal_acceleration(goal->v, get_robot_pose().v, goal,
+			road_profile_message.poses, road_profile_message.number_of_poses);
+//	printf("gvdlc %lf  ", goal->v);
+
 	set_goal_velocity_according_to_annotation(goal);
-	//	printf("v %lf, va %lf, ", get_robot_pose().v, goal->v);
-	limit_maximum_velocity_according_to_centripetal_acceleration(goal->v, get_robot_pose().v, goal, road_profile_message.poses,
-			road_profile_message.number_of_poses);
-	//	printf("vc %lf, ", goal->v);
+//	printf("gvda %lf\n", goal->v);
+
 	if (obstacle_avoider_active_recently)
 		goal->v = carmen_fmin(2.5, goal->v);
-	//	printf("vo %lf\n", goal->v);
 }
 
 
@@ -393,7 +404,7 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 
 	set_behaviours_parameters(current_robot_pose_v_and_phi, timestamp);
 
-	int state_updated = update_goal_list(timestamp);
+	int state_updated = behaviou_selector_fill_goal_list(get_last_rddf_message(), get_robot_pose(), timestamp);
 	if (state_updated)
 		publish_current_state();
 

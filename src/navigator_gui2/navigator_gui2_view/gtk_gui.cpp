@@ -172,6 +172,52 @@ namespace View
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSimulator_ShowObjects), nav_panel_config->show_simulator_objects);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuGoals_EditRddfGoals), nav_panel_config->edit_rddf_goals);
 
+		if (strcmp(nav_panel_config->superimposed_map, "None") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_None), true);
+		else if (strcmp(nav_panel_config->superimposed_map, "Map") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_Map), true);
+		else if (strcmp(nav_panel_config->superimposed_map, "Offline Map") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_OfflineMap), true);
+		else if (strcmp(nav_panel_config->superimposed_map, "Utility") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_Utility), true);
+		else if (strcmp(nav_panel_config->superimposed_map, "Costs") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_Costs), true);
+		else if (strcmp(nav_panel_config->superimposed_map, "Likelihood") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_Likelihood), true);
+		else if (strcmp(nav_panel_config->superimposed_map, "Global Likelihood") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_GlobalLikelihood), true);
+		else if (strcmp(nav_panel_config->superimposed_map, "Lane") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_Lane), true);
+		else if (strcmp(nav_panel_config->superimposed_map, "Remission Map") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_RemissionMap), true);
+		else if (strcmp(nav_panel_config->superimposed_map, "Moving Objects") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_MovingObjects), true);
+		else
+			carmen_die("Unknown superimpose_map named \"%s\" set as parameter in the carmen ini file. Exiting...\n", nav_panel_config->superimposed_map);
+
+		if (strcmp(nav_panel_config->map, "Map") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuMaps_Map), true);
+		else if (strcmp(nav_panel_config->map, "Offline Map") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuMaps_OfflineMap), true);
+		else if (strcmp(nav_panel_config->map, "Utility") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuMaps_Utility), true);
+		else if (strcmp(nav_panel_config->map, "Costs") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuMaps_Costs), true);
+		else if (strcmp(nav_panel_config->map, "Likelihood") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuMaps_Likelihood), true);
+		else if (strcmp(nav_panel_config->map, "Global Likelihood") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuMaps_GlobalLikelihood), true);
+		else if (strcmp(nav_panel_config->map, "Lane") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuMaps_Lane), true);
+		else if (strcmp(nav_panel_config->map, "Complete Map") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuMaps_CompleteMap), true);
+		else if (strcmp(nav_panel_config->map, "Remission Map") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuMaps_RemissionMap), true);
+		else if (strcmp(nav_panel_config->map, "Moving Objects") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuMaps_MovingObjects), true);
+		else
+			carmen_die("Unknown map named \"%s\" set as parameter in the carmen ini file. Exiting...\n", nav_panel_config->map);
+
 		if (nav_panel_config->show_particles || nav_panel_config->show_gaussians)
 		{
 			carmen_localize_ackerman_subscribe_particle_message(&particle_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
@@ -254,9 +300,33 @@ namespace View
 		controls_.menuDisplay_ShowLateralOffset = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowLateralOffset" ));
 		controls_.menuDisplay_ShowMotionPath = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowMotionPath" ));
 		controls_.menuDisplay_ShowParticles = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowParticles" ));
+
 		controls_.menuSimulatorShowTruePosition = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSimulatorShowTruePosition" ));
 		controls_.menuSimulator_ShowObjects = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSimulator_ShowObjects" ));
+
 		controls_.menuGoals_EditRddfGoals = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuGoals_EditRddfGoals" ));
+
+		controls_.menuSuperimposedMaps_None = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSuperimposedMaps_None" ));
+		controls_.menuSuperimposedMaps_Map = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSuperimposedMaps_Map" ));
+		controls_.menuSuperimposedMaps_OfflineMap = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSuperimposedMaps_OfflineMap" ));
+		controls_.menuSuperimposedMaps_Utility = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSuperimposedMaps_Utility" ));
+		controls_.menuSuperimposedMaps_Costs = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSuperimposedMaps_Costs" ));
+		controls_.menuSuperimposedMaps_Likelihood = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSuperimposedMaps_Likelihood" ));
+		controls_.menuSuperimposedMaps_GlobalLikelihood = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSuperimposedMaps_GlobalLikelihood" ));
+		controls_.menuSuperimposedMaps_Lane = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSuperimposedMaps_Lane" ));
+		controls_.menuSuperimposedMaps_RemissionMap = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSuperimposedMaps_RemissionMap" ));
+		controls_.menuSuperimposedMaps_MovingObjects = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSuperimposedMaps_MovingObjects" ));
+
+		controls_.menuMaps_Map = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_Map" ));
+		controls_.menuMaps_OfflineMap = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_OfflineMap" ));
+		controls_.menuMaps_Utility = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_Utility" ));
+		controls_.menuMaps_Costs = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_Costs" ));
+		controls_.menuMaps_Likelihood = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_Likelihood" ));
+		controls_.menuMaps_GlobalLikelihood = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_GlobalLikelihood" ));
+		controls_.menuMaps_Lane = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_Lane" ));
+		controls_.menuMaps_CompleteMap = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_CompleteMap" ));
+		controls_.menuMaps_RemissionMap = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_RemissionMap" ));
+		controls_.menuMaps_MovingObjects = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_MovingObjects" ));
 
 		controls_.comboGoalSource = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboGoalSource" ));
 		controls_.comboState = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboState" ));
@@ -338,6 +408,54 @@ namespace View
 
 		is_filming = 0;
 		filming_timeout = 0;
+
+		if (strcmp(nav_panel_config->superimposed_map, "None") == 0)
+			; // Do nothing
+		else if (strcmp(nav_panel_config->superimposed_map, "Map") == 0)
+			navigator_get_map(CARMEN_NAVIGATOR_MAP_v, 1);
+		else if (strcmp(nav_panel_config->superimposed_map, "Offline Map") == 0)
+			navigator_get_map(CARMEN_OFFLINE_MAP_v, 1);
+		else if (strcmp(nav_panel_config->superimposed_map, "Utility") == 0)
+			navigator_get_map(CARMEN_NAVIGATOR_UTILITY_v, 1);
+		else if (strcmp(nav_panel_config->superimposed_map, "Costs") == 0)
+			navigator_get_map(CARMEN_COST_MAP_v, 1);
+		else if (strcmp(nav_panel_config->superimposed_map, "Likelihood") == 0)
+			navigator_get_map(CARMEN_LOCALIZE_LMAP_v, 1);
+		else if (strcmp(nav_panel_config->superimposed_map, "Global Likelihood") == 0)
+			navigator_get_map(CARMEN_LOCALIZE_GMAP_v, 1);
+		else if (strcmp(nav_panel_config->superimposed_map, "Lane") == 0)
+			navigator_get_map(CARMEN_LANE_MAP_v, 1);
+		else if (strcmp(nav_panel_config->superimposed_map, "Complete Map") == 0)
+			navigator_get_map(CARMEN_COMPLETE_MAP_v, 1);
+		else if (strcmp(nav_panel_config->superimposed_map, "Remission Map") == 0)
+			navigator_get_map(CARMEN_REMISSION_MAP_v, 1);
+		else if (strcmp(nav_panel_config->superimposed_map, "Moving Objects") == 0)
+			navigator_get_map(CARMEN_MOVING_OBJECTS_MAP_v, 1);
+		else
+			carmen_die("Unknown superimpose_map named \"%s\" set as parameter in the carmen ini file. Exiting...\n", nav_panel_config->superimposed_map);
+
+		if (strcmp(nav_panel_config->map, "Map") == 0)
+			navigator_get_map(CARMEN_NAVIGATOR_MAP_v, 0);
+		else if (strcmp(nav_panel_config->map, "Offline Map") == 0)
+			navigator_get_map(CARMEN_OFFLINE_MAP_v, 0);
+		else if (strcmp(nav_panel_config->map, "Utility") == 0)
+			navigator_get_map(CARMEN_NAVIGATOR_UTILITY_v, 0);
+		else if (strcmp(nav_panel_config->map, "Costs") == 0)
+			navigator_get_map(CARMEN_COST_MAP_v, 0);
+		else if (strcmp(nav_panel_config->map, "Likelihood") == 0)
+			navigator_get_map(CARMEN_LOCALIZE_LMAP_v, 0);
+		else if (strcmp(nav_panel_config->map, "Global Likelihood") == 0)
+			navigator_get_map(CARMEN_LOCALIZE_GMAP_v, 0);
+		else if (strcmp(nav_panel_config->map, "Lane") == 0)
+			navigator_get_map(CARMEN_LANE_MAP_v, 0);
+		else if (strcmp(nav_panel_config->map, "Complete Map") == 0)
+			navigator_get_map(CARMEN_COMPLETE_MAP_v, 0);
+		else if (strcmp(nav_panel_config->map, "Remission Map") == 0)
+			navigator_get_map(CARMEN_REMISSION_MAP_v, 0);
+		else if (strcmp(nav_panel_config->map, "Moving Objects") == 0)
+			navigator_get_map(CARMEN_MOVING_OBJECTS_MAP_v, 0);
+		else
+			carmen_die("Unknown map named \"%s\" set as parameter in the carmen ini file. Exiting...\n", nav_panel_config->map);
 	}
 
 	void
@@ -695,7 +813,11 @@ namespace View
 
 		case CARMEN_REMISSION_MAP_v:
 			strcpy(name, "Remission Map");
-			flags = CARMEN_GRAPHICS_RESCALE | CARMEN_GRAPHICS_INVERT ;
+			flags = CARMEN_GRAPHICS_REMOVE_MINUS_ONE | CARMEN_GRAPHICS_RESCALE | CARMEN_GRAPHICS_INVERT | CARMEN_GRAPHICS_ENHANCE_CONTRAST;
+			break;
+
+		case CARMEN_MOVING_OBJECTS_MAP_v:
+			strcpy(name, "Moving Objects");
 			break;
 
 		default:

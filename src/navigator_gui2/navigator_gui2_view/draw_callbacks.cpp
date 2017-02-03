@@ -7,7 +7,7 @@ namespace View
 GtkGui *global_gui = NULL;
 int superimposed_is_set = 0;
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 gboolean on_drawArea_idle(void *data)
 {
 	GtkGui *gui = static_cast<GtkGui*>(data);
@@ -22,7 +22,7 @@ gboolean on_drawArea_idle(void *data)
 	return TRUE;
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_drawingArea_realize (GtkWidget *widget, GtkGui *gui)
 {
 	GdkGLContext  *glcontext  = gtk_widget_get_gl_context (widget);
@@ -33,7 +33,7 @@ void on_drawingArea_realize (GtkWidget *widget, GtkGui *gui)
 	gdk_gl_drawable_gl_end (gldrawable);
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 gboolean on_drawingArea_expose_event (GtkWidget       *widget,
                              	     GdkEventExpose  *event __attribute__((unused)),
                                    GtkGui 	 *gui)
@@ -60,7 +60,7 @@ gboolean on_drawingArea_expose_event (GtkWidget       *widget,
 	return TRUE;
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_drawingAreaCarPanel_realize (GtkWidget *widget, GtkGui *gui)
 {
 	GdkGLContext  *glcontext  = gtk_widget_get_gl_context (widget);
@@ -71,7 +71,7 @@ void on_drawingAreaCarPanel_realize (GtkWidget *widget, GtkGui *gui)
 	gdk_gl_drawable_gl_end (gldrawable);
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 gboolean on_drawingAreaCarPanel_expose_event (GtkWidget       *widget,
                              	     GdkEventExpose  *event __attribute__((unused)),
                                    GtkGui 	 *gui)
@@ -98,13 +98,13 @@ gboolean on_drawingAreaCarPanel_expose_event (GtkWidget       *widget,
 	return TRUE;
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_mainWindow_realize (GtkWidget *widget, GtkGui *gui)
 {
 	global_gui = gui;
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_activeMenuQuit(GtkWidget *widget __attribute__((unused)),
 					   GdkEvent *event __attribute__((unused)),
 					   GtkGui* data	__attribute__((unused)))
@@ -112,7 +112,7 @@ void on_activeMenuQuit(GtkWidget *widget __attribute__((unused)),
 	gtk_main_quit();
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuMaps_Map_toggled (GtkCheckMenuItem* togglebutton,
 		GtkGui* gui __attribute__ ((unused)))
 {
@@ -123,7 +123,7 @@ void on_menuMaps_Map_toggled (GtkCheckMenuItem* togglebutton,
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuMaps_OfflineMap_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
@@ -134,7 +134,7 @@ void on_menuMaps_OfflineMap_toggled (GtkCheckMenuItem* togglebutton __attribute_
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuMaps_Utility_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
@@ -145,7 +145,7 @@ void on_menuMaps_Utility_toggled (GtkCheckMenuItem* togglebutton __attribute__ (
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuMaps_Costs_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
@@ -156,7 +156,7 @@ void on_menuMaps_Costs_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((u
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuMaps_Likelihood_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
@@ -167,7 +167,7 @@ void on_menuMaps_Likelihood_toggled (GtkCheckMenuItem* togglebutton __attribute_
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuMaps_GlobalLikelihood_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
@@ -178,7 +178,7 @@ void on_menuMaps_GlobalLikelihood_toggled (GtkCheckMenuItem* togglebutton __attr
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuMaps_Lane_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
@@ -189,7 +189,7 @@ void on_menuMaps_Lane_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((un
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuMaps_CompleteMap_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
@@ -200,7 +200,7 @@ void on_menuMaps_CompleteMap_toggled (GtkCheckMenuItem* togglebutton __attribute
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuMaps_RemissionMap_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
@@ -211,7 +211,7 @@ void on_menuMaps_RemissionMap_toggled (GtkCheckMenuItem* togglebutton __attribut
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuSuperimposedMaps_RemissionMap_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
@@ -223,7 +223,7 @@ void on_menuSuperimposedMaps_RemissionMap_toggled (GtkCheckMenuItem* togglebutto
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuMaps_MovingObjects_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
@@ -234,7 +234,7 @@ void on_menuMaps_MovingObjects_toggled (GtkCheckMenuItem* togglebutton __attribu
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuSuperimposedMaps_None_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
@@ -246,7 +246,7 @@ void on_menuSuperimposedMaps_None_toggled (GtkCheckMenuItem* togglebutton __attr
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuSuperimposedMaps_Map_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
@@ -258,7 +258,7 @@ void on_menuSuperimposedMaps_Map_toggled (GtkCheckMenuItem* togglebutton __attri
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuSuperimposedMaps_OfflineMap_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
@@ -270,7 +270,7 @@ void on_menuSuperimposedMaps_OfflineMap_toggled (GtkCheckMenuItem* togglebutton 
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuSuperimposedMaps_Utility_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
@@ -282,7 +282,7 @@ void on_menuSuperimposedMaps_Utility_toggled (GtkCheckMenuItem* togglebutton __a
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuSuperimposedMaps_Costs_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
@@ -294,7 +294,7 @@ void on_menuSuperimposedMaps_Costs_toggled (GtkCheckMenuItem* togglebutton __att
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuSuperimposedMaps_Likelihood_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
@@ -306,7 +306,7 @@ void on_menuSuperimposedMaps_Likelihood_toggled (GtkCheckMenuItem* togglebutton 
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuSuperimposedMaps_GlobalLikelihood_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
@@ -318,7 +318,7 @@ void on_menuSuperimposedMaps_GlobalLikelihood_toggled (GtkCheckMenuItem* toggleb
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuSuperimposedMaps_Lane_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
@@ -330,7 +330,7 @@ void on_menuSuperimposedMaps_Lane_toggled (GtkCheckMenuItem* togglebutton __attr
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuSuperimposedMaps_MovingObjects_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
@@ -342,7 +342,7 @@ void on_menuSuperimposedMaps_MovingObjects_toggled (GtkCheckMenuItem* togglebutt
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuDisplay_TrackRobot_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
@@ -354,35 +354,35 @@ void on_menuDisplay_TrackRobot_toggled (GtkCheckMenuItem* togglebutton __attribu
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuDisplay_ShowLateralOffset_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
 	/*global_gui->nav_panel_config->xxx = Alberto: esta faltando este estado... */ gtk_check_menu_item_get_active(togglebutton);
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuDisplay_DrawPath_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
 	global_gui->nav_panel_config->draw_path = gtk_check_menu_item_get_active(togglebutton);
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuDisplay_DrawWaipoints_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
 	global_gui->nav_panel_config->draw_waypoints = gtk_check_menu_item_get_active(togglebutton);
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuDisplay_DrawRobotWaipoints_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
 	global_gui->nav_panel_config->draw_robot_waypoints = gtk_check_menu_item_get_active(togglebutton);
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuDisplay_ShowParticles_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
@@ -400,21 +400,21 @@ void on_menuDisplay_ShowParticles_toggled (GtkCheckMenuItem* togglebutton __attr
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuDisplay_ShowFusedOdometry_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
 	global_gui->nav_panel_config->show_fused_odometry = gtk_check_menu_item_get_active(togglebutton);
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuDisplay_ShowGaussians_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
 	global_gui->nav_panel_config->show_gaussians = gtk_check_menu_item_get_active(togglebutton);
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuDisplay_ShowLaserData_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
@@ -426,7 +426,7 @@ void on_menuDisplay_ShowLaserData_toggled (GtkCheckMenuItem* togglebutton __attr
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuDisplay_ShowMotionPath_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
@@ -442,7 +442,7 @@ void on_menuDisplay_ShowMotionPath_toggled (GtkCheckMenuItem* togglebutton __att
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuDisplay_ShowCommandPath_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
@@ -459,7 +459,7 @@ void on_menuDisplay_ShowCommandPath_toggled (GtkCheckMenuItem* togglebutton __at
 
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuGoals_EditRddfGoals_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
@@ -472,28 +472,28 @@ void on_menuGoals_EditRddfGoals_toggled (GtkCheckMenuItem* togglebutton __attrib
 		global_gui->save_rddf_to_file((char*) "rddf_edited.kml");
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuDisplay_ShowDynamicObjects_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
 	global_gui->nav_panel_config->show_dynamic_objects = gtk_check_menu_item_get_active(togglebutton);
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuSimulatorShowTruePosition_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
 	global_gui->nav_panel_config->show_true_pos = gtk_check_menu_item_get_active(togglebutton);
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuSimulator_ShowObjects_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
 	global_gui->nav_panel_config->show_simulator_objects = gtk_check_menu_item_get_active(togglebutton);
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuSimulator_ClearObjects_activate(GtkWidget *widget __attribute__((unused)),
 					   GdkEvent *event __attribute__((unused)),
 					   GtkGui* data	__attribute__((unused)))
@@ -501,7 +501,7 @@ void on_menuSimulator_ClearObjects_activate(GtkWidget *widget __attribute__((unu
 	carmen_simulator_ackerman_clear_objects();
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuSimulator_AddPerson_activate(GtkWidget *widget __attribute__((unused)),
 					   GdkEvent *event __attribute__((unused)),
 					   GtkGui* gui)
@@ -510,7 +510,7 @@ void on_menuSimulator_AddPerson_activate(GtkWidget *widget __attribute__((unused
 	global_gui->placement_status = PLACING_PERSON;
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuStartLocation_GlobalLocalization_activate(GtkWidget *widget __attribute__((unused)),
 					   GdkEvent *event __attribute__((unused)),
 					   GtkGui* data	__attribute__((unused)))
@@ -520,7 +520,7 @@ void on_menuStartLocation_GlobalLocalization_activate(GtkWidget *widget __attrib
 	return;
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuHelp_About_activate(GtkWidget *widget __attribute__((unused)),
 					   GdkEvent *event __attribute__((unused)),
 					   GtkGui* data	__attribute__((unused)))
@@ -528,7 +528,7 @@ void on_menuHelp_About_activate(GtkWidget *widget __attribute__((unused)),
 	printf("on_menuHelp_About_activate\n");
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_comboGoalSource_changed(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
@@ -536,7 +536,7 @@ void on_comboGoalSource_changed(GtkWidget *widget __attribute__((unused)),
 		carmen_behavior_selector_set_goal_source((carmen_behavior_selector_goal_source_t)global_gui->get_goal_source_code(gtk_combo_box_get_active_text((GtkComboBox*)global_gui->controls_.comboGoalSource)));
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_comboState_changed(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
@@ -544,7 +544,7 @@ void on_comboState_changed(GtkWidget *widget __attribute__((unused)),
 		carmen_behavior_selector_set_state((carmen_behavior_selector_state_t)global_gui->get_state_code(gtk_combo_box_get_active_text((GtkComboBox*)global_gui->controls_.comboState)));
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_comboFollowLane_changed(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
@@ -552,7 +552,7 @@ void on_comboFollowLane_changed(GtkWidget *widget __attribute__((unused)),
 		navigator_set_algorithm((carmen_behavior_selector_algorithm_t)global_gui->get_algorithm_code(gtk_combo_box_get_active_text((GtkComboBox*)global_gui->controls_.comboFollowLane)), BEHAVIOR_SELECTOR_FOLLOWING_LANE);
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_comboParking_changed(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
@@ -560,38 +560,38 @@ void on_comboParking_changed(GtkWidget *widget __attribute__((unused)),
 		navigator_set_algorithm((carmen_behavior_selector_algorithm_t)global_gui->get_algorithm_code(gtk_combo_box_get_active_text((GtkComboBox*)global_gui->controls_.comboParking)), BEHAVIOR_SELECTOR_PARKING);
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuCarPanel_fused_odometry_message(GtkRadioMenuItem *togglebutton, GtkGui *gui)
 {
 	global_gui->car_panel_gl->set_type_message(0);
 
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuCarPanel_robot_ackerman_message(GtkRadioMenuItem *togglebutton, GtkGui *gui)
 {
 	global_gui->car_panel_gl->set_type_message(1);
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuCarPanel_base_ackerman_motion_message(GtkRadioMenuItem *togglebutton, GtkGui *gui)
 {
 	global_gui->car_panel_gl->set_type_message(2);
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuCarPanel_base_ackerman_odometry_message(GtkRadioMenuItem *togglebutton, GtkGui *gui)
 {
 	global_gui->car_panel_gl->set_type_message(3);
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_menuCarPanel_localize_ackerman_globalpos_message(GtkRadioMenuItem *togglebutton, GtkGui *gui)
 {
 	global_gui->car_panel_gl->set_type_message(4);
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_buttonPlaceRobot_clicked(GtkWidget *widget __attribute__((unused)), GtkGui* gui)
 {
 	global_gui->change_cursor(&carmen_red, &carmen_black);
@@ -600,7 +600,7 @@ void on_buttonPlaceRobot_clicked(GtkWidget *widget __attribute__((unused)), GtkG
 	gtk_toggle_button_set_active((GtkToggleButton *) widget, false);
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_buttonPlaceGoal_clicked(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
@@ -610,7 +610,7 @@ void on_buttonPlaceGoal_clicked(GtkWidget *widget __attribute__((unused)),
 	gtk_toggle_button_set_active((GtkToggleButton *) widget, false);
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_buttonRemoveGoal_clicked(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
@@ -630,7 +630,7 @@ void on_buttonRemoveGoal_clicked(GtkWidget *widget __attribute__((unused)),
 	gtk_toggle_button_set_active((GtkToggleButton *) widget, false);
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_buttonClearGoals_clicked(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
@@ -666,7 +666,7 @@ void on_buttonClearGoals_clicked(GtkWidget *widget __attribute__((unused)),
 	gtk_toggle_button_set_active((GtkToggleButton *) widget, false);
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_buttonGo_clicked(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
@@ -700,7 +700,7 @@ void on_buttonGo_clicked(GtkWidget *widget __attribute__((unused)),
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_buttonPlaceFinalGoal_clicked(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
@@ -713,7 +713,7 @@ void on_buttonPlaceFinalGoal_clicked(GtkWidget *widget __attribute__((unused)),
 	gtk_toggle_button_set_active((GtkToggleButton *) widget, false);
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_buttonPlaceSimulator_clicked(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
@@ -724,7 +724,7 @@ void on_buttonPlaceSimulator_clicked(GtkWidget *widget __attribute__((unused)),
 }
 
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 gint motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *world_point,
 		GdkEventMotion *event __attribute__ ((unused)))
 {
@@ -765,7 +765,7 @@ gint motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *world_poin
 	return TRUE;
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_buttonZoomIn_clicked(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
@@ -789,7 +789,7 @@ void on_buttonZoomIn_clicked(GtkWidget *widget __attribute__((unused)),
 }
 
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void on_buttonZoomOut_clicked(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
@@ -811,7 +811,7 @@ void on_buttonZoomOut_clicked(GtkWidget *widget __attribute__((unused)),
 	}
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 int button_release_handler(GtkMapViewer		   *the_map_view,
 		carmen_world_point_t *world_point,
 		GdkEventButton	   *event __attribute__ ((unused)))
@@ -878,7 +878,7 @@ int button_release_handler(GtkMapViewer		   *the_map_view,
 	return TRUE;
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 int keyboard_press_handler(GtkMapViewer *the_map_view,
 		GdkEventKey	   *event)
 {
@@ -946,7 +946,7 @@ int keyboard_press_handler(GtkMapViewer *the_map_view,
 	return FALSE;
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 int button_press_handler(GtkMapViewer		*the_map_view __attribute__ ((unused)),
 		carmen_world_point_p world_point __attribute__ ((unused)),
 		GdkEventButton		*event __attribute__ ((unused)))
@@ -959,7 +959,7 @@ int button_press_handler(GtkMapViewer		*the_map_view __attribute__ ((unused)),
 	return TRUE;
 }
 
-extern "C" G_MODULE_EXPORT
+//extern "C" G_MODULE_EXPORT
 void draw_robot_objects(GtkMapViewer *the_map_view)
 {
 	//  int colour;

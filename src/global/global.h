@@ -75,7 +75,7 @@ extern "C" {
 #endif
 
 #define CARMEN_MAJOR_VERSION 0
-#define CARMEN_MINOR_VERSION 7
+#define CARMEN_MINOR_VERSION 8
 #define CARMEN_REVISION 0
 
 /* Useful macros */

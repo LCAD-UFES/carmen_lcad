@@ -350,7 +350,7 @@ navigator_get_map(carmen_navigator_map_t type, int is_superimposed)
 	{
 	case CARMEN_NONE_v:
 		navigator_get_empty_map();
-		navigator_get_map(map_type, 0);
+//		navigator_get_map(map_type, 0);
 		break;
 	case CARMEN_LOCALIZE_LMAP_v:
 		navigator_get_localize_map(is_superimposed);
@@ -1072,33 +1072,32 @@ read_parameters(int argc, char *argv[],
 	int num_items;
 
 	carmen_param_t param_list[] = {
-			{(char *) "robot",		(char *) "length",			CARMEN_PARAM_DOUBLE, &(robot_config->length),				0, NULL},
-			{(char *) "robot",		(char *) "width",			CARMEN_PARAM_DOUBLE, &(robot_config->width),				0, NULL},
-			{(char *) "robot",		(char *) "acceleration",			CARMEN_PARAM_DOUBLE, &(robot_config->acceleration),			1, NULL},
-			{(char *) "robot",		(char *) "rectangular",			CARMEN_PARAM_ONOFF,  &(robot_config->rectangular),			1, NULL},
-			{(char *) "navigator",	(char *) "map_update_radius",		CARMEN_PARAM_INT,    &(nav_config->map_update_radius),			1, NULL},
-			{(char *) "navigator",	(char *) "goal_size",			CARMEN_PARAM_DOUBLE, &(nav_config->goal_size),				1, NULL},
-			{(char *) "navigator",	(char *) "goal_theta_tolerance",		CARMEN_PARAM_DOUBLE, &(nav_config->goal_theta_tolerance),		1, NULL},
-			{(char *) "navigator",	(char *) "map",				CARMEN_PARAM_STRING, &(nav_config->navigator_map),			0, NULL},
-			{(char *) "navigator",	(char *) "superimposed_map",		CARMEN_PARAM_STRING, &(nav_config->superimposed_map),			0, NULL},
-			{(char *) "navigator_panel", (char *) "initial_map_zoom",		CARMEN_PARAM_DOUBLE, &(navigator_panel_config->initial_map_zoom),	1, NULL},
-			{(char *) "navigator_panel", (char *) "track_robot",			CARMEN_PARAM_ONOFF,  &(navigator_panel_config->track_robot),		1, NULL},
-			{(char *) "navigator_panel", (char *) "draw_waypoints",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->draw_waypoints),		1, NULL},
-			{(char *) "navigator_panel", (char *) "draw_robot_waypoints",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->draw_robot_waypoints),	1, NULL},
-			{(char *) "navigator_panel", (char *) "show_particles",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_particles),		1, NULL},
-			{(char *) "navigator_panel", (char *) "show_gaussians",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_gaussians),		1, NULL},
-			{(char *) "navigator_panel", (char *) "show_laser",			CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_lasers),		1, NULL},
-			{(char *) "navigator_panel", (char *) "show_simulator_objects", 	CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_simulator_objects), 1, NULL},
-			{(char *) "navigator_panel", (char *) "show_true_pos",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_true_pos),		1, NULL},
-			{(char *) "navigator_panel", (char *) "show_tracked_objects",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_tracked_objects),	1, NULL},
-			{(char *) "navigator_panel", (char *) "show_command_path",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_command_path),	1, NULL},
-			{(char *) "navigator_panel", (char *) "show_motion_path",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_motion_path),	1, NULL},
-			{(char *) "navigator_panel", (char *) "draw_path",			CARMEN_PARAM_ONOFF,  &(navigator_panel_config->draw_path),		1, NULL},
-			{(char *) "navigator_panel", (char *) "use_ackerman",			CARMEN_PARAM_ONOFF,  &(navigator_panel_config->use_ackerman),		1, NULL},
-			{(char *) "navigator_panel", (char *) "localize_std_x",			CARMEN_PARAM_DOUBLE, &localize_std.x,								1, NULL},
-			{(char *) "navigator_panel", (char *) "localize_std_y",			CARMEN_PARAM_DOUBLE, &localize_std.y,								1, NULL},
-			{(char *) "navigator_panel", (char *) "localize_std_theta",		CARMEN_PARAM_DOUBLE, &localize_std.theta,							1, NULL},
-
+		{(char *) "robot",		(char *) "length",			CARMEN_PARAM_DOUBLE, &(robot_config->length),				0, NULL},
+		{(char *) "robot",		(char *) "width",			CARMEN_PARAM_DOUBLE, &(robot_config->width),				0, NULL},
+		{(char *) "robot",		(char *) "acceleration",			CARMEN_PARAM_DOUBLE, &(robot_config->acceleration),			1, NULL},
+		{(char *) "robot",		(char *) "rectangular",			CARMEN_PARAM_ONOFF,  &(robot_config->rectangular),			1, NULL},
+		{(char *) "navigator",	(char *) "map_update_radius",		CARMEN_PARAM_INT,    &(nav_config->map_update_radius),			1, NULL},
+		{(char *) "navigator",	(char *) "goal_size",			CARMEN_PARAM_DOUBLE, &(nav_config->goal_size),				1, NULL},
+		{(char *) "navigator",	(char *) "goal_theta_tolerance",		CARMEN_PARAM_DOUBLE, &(nav_config->goal_theta_tolerance),		1, NULL},
+		{(char *) "navigator_panel", (char *) "initial_map_zoom",		CARMEN_PARAM_DOUBLE, &(navigator_panel_config->initial_map_zoom),	1, NULL},
+		{(char *) "navigator_panel", (char *) "track_robot",			CARMEN_PARAM_ONOFF,  &(navigator_panel_config->track_robot),		1, NULL},
+		{(char *) "navigator_panel", (char *) "draw_waypoints",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->draw_waypoints),		1, NULL},
+		{(char *) "navigator_panel", (char *) "draw_robot_waypoints",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->draw_robot_waypoints),	1, NULL},
+		{(char *) "navigator_panel", (char *) "show_particles",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_particles),		1, NULL},
+		{(char *) "navigator_panel", (char *) "show_gaussians",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_gaussians),		1, NULL},
+		{(char *) "navigator_panel", (char *) "show_laser",			CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_lasers),		1, NULL},
+		{(char *) "navigator_panel", (char *) "show_simulator_objects", 	CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_simulator_objects), 1, NULL},
+		{(char *) "navigator_panel", (char *) "show_true_pos",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_true_pos),		1, NULL},
+		{(char *) "navigator_panel", (char *) "show_tracked_objects",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_tracked_objects),	1, NULL},
+		{(char *) "navigator_panel", (char *) "show_command_path",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_command_path),	1, NULL},
+		{(char *) "navigator_panel", (char *) "show_motion_path",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_motion_path),	1, NULL},
+		{(char *) "navigator_panel", (char *) "draw_path",			CARMEN_PARAM_ONOFF,  &(navigator_panel_config->draw_path),		1, NULL},
+		{(char *) "navigator_panel", (char *) "use_ackerman",			CARMEN_PARAM_ONOFF,  &(navigator_panel_config->use_ackerman),		1, NULL},
+		{(char *) "navigator_panel", (char *) "localize_std_x",			CARMEN_PARAM_DOUBLE, &localize_std.x,								1, NULL},
+		{(char *) "navigator_panel", (char *) "localize_std_y",			CARMEN_PARAM_DOUBLE, &localize_std.y,								1, NULL},
+		{(char *) "navigator_panel", (char *) "localize_std_theta",		CARMEN_PARAM_DOUBLE, &localize_std.theta,							1, NULL},
+		{(char *) "navigator_panel", (char *) "map",					CARMEN_PARAM_STRING, &(navigator_panel_config->map),				0, NULL},
+		{(char *) "navigator_panel", (char *) "superimposed_map",		CARMEN_PARAM_STRING, &(navigator_panel_config->superimposed_map),	0, NULL},
 	};
 
 	num_items = sizeof(param_list) / sizeof(param_list[0]);
@@ -1135,7 +1134,7 @@ main(int argc, char *argv[])
 	carmen_navigator_ackerman_status_message	  status_ackerman;
 
 	carmen_localize_ackerman_globalpos_message globalpos;
-	carmen_navigator_ackerman_plan_message	 *plan;
+//	carmen_navigator_ackerman_plan_message	 *plan;
 	IPC_RETURN_TYPE err;
 
 	carmen_ipc_initialize(argc, argv);
@@ -1232,7 +1231,7 @@ main(int argc, char *argv[])
 	carmen_test_alloc(lane_map);
 
 	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
-	carmen_mapper_subscribe_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
 //	carmen_grid_mapping_moving_objects_raw_map_subscribe_message(NULL, (carmen_handler_t) grid_mapping_moving_objects_raw_map_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_moving_objects_map_subscribe_message(NULL, (carmen_handler_t) grid_mapping_moving_objects_raw_map_handler, CARMEN_SUBSCRIBE_LATEST);
 
@@ -1257,18 +1256,18 @@ main(int argc, char *argv[])
 			(carmen_handler_t) show_offline_map_handler,
 			CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_navigator_ackerman_query_plan((carmen_navigator_ackerman_plan_message **)&plan);
+//	carmen_navigator_ackerman_query_plan((carmen_navigator_ackerman_plan_message **)&plan);
 
 #ifdef USE_DOT
 	initialize_dynamics();
 #endif
 
-	if (plan && (plan->path_length > 0))
-	{
-		gui->navigator_graphics_update_plan(plan->path, plan->path_length);
-		free(plan->path);
-		free(plan);
-	}
+//	if (plan && (plan->path_length > 0))
+//	{
+//		gui->navigator_graphics_update_plan(plan->path, plan->path_length);
+//		free(plan->path);
+//		free(plan);
+//	}
 
 	gui->navigator_graphics_start(map_path);
 

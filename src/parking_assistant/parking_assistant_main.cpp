@@ -205,7 +205,7 @@ step_point_reached(carmen_point_t p, carmen_point_t step_point)
 **********************************************************/
 
 static void
-carmen_mapper_message_handler(carmen_mapper_map_message *message)
+carmen_mapper_map_message_handler(carmen_mapper_map_message *message)
 {
 
     carmen_localize_ackerman_globalpos_message car;
@@ -375,8 +375,8 @@ carmen_subscribe_to_relevant_messages()
             (carmen_handler_t)carmen_localize_ackerman_globalpos_message_handler,
             CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_mapper_subscribe_message(NULL,
-            (carmen_handler_t)carmen_mapper_message_handler,
+    carmen_mapper_subscribe_map_message(NULL,
+            (carmen_handler_t) carmen_mapper_map_message_handler,
             CARMEN_SUBSCRIBE_LATEST);
 }
 

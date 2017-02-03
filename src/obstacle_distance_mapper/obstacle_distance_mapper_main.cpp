@@ -178,7 +178,7 @@ register_handlers()
 			(carmen_handler_t) localize_ackerman_globalpos_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_mapper_subscribe_message(NULL,
+	carmen_mapper_subscribe_map_message(NULL,
 			(carmen_handler_t) carmen_mapper_map_handler,
 			CARMEN_SUBSCRIBE_LATEST);
 
