@@ -102,9 +102,9 @@ carmen_mapper_define_virtual_laser_message()
 {
 	IPC_RETURN_TYPE err;
 
-	err = IPC_defineMsg(CARMEN_MAPPER_COMPACT_MAP_MESSAGE_NAME, IPC_VARIABLE_LENGTH,
-	CARMEN_MAPPER_COMPACT_MAP_MESSAGE_FMT);
-	carmen_test_ipc_exit(err, "Could not define", CARMEN_MAPPER_COMPACT_MAP_MESSAGE_NAME);
+	err = IPC_defineMsg(CARMEN_MAPPER_VIRTUAL_LASER_MESSAGE_NAME, IPC_VARIABLE_LENGTH,
+			CARMEN_MAPPER_VIRTUAL_LASER_MESSAGE_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_MAPPER_VIRTUAL_LASER_MESSAGE_NAME);
 }
 
 
@@ -114,7 +114,7 @@ carmen_mapper_define_map_message()
 	IPC_RETURN_TYPE err;
 
 	err = IPC_defineMsg(CARMEN_MAPPER_MAP_MESSAGE_NAME, IPC_VARIABLE_LENGTH,
-	CARMEN_MAPPER_MAP_MESSAGE_FMT);
+			CARMEN_MAPPER_MAP_MESSAGE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_MAPPER_MAP_MESSAGE_NAME);
 }
 
@@ -127,7 +127,7 @@ carmen_mapper_define_messages()
 	carmen_mapper_define_map_message();
 
 	err = IPC_defineMsg(CARMEN_MAPPER_MAP_MOVING_OBJECTS_RAW_MAP_MESSAGE_NAME, IPC_VARIABLE_LENGTH,
-	CARMEN_MAPPER_MAP_MESSAGE_FMT);
+			CARMEN_MAPPER_MAP_MESSAGE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_MAPPER_MAP_MOVING_OBJECTS_RAW_MAP_MESSAGE_NAME);
 
 	carmen_mapper_define_virtual_laser_message();
@@ -135,11 +135,13 @@ carmen_mapper_define_messages()
 
 
 void
-carmen_mapper_publish_virtual_laser_message(carmen_mapper_virtual_laser_message *virtual_laser_message)
+carmen_mapper_publish_virtual_laser_message(carmen_mapper_virtual_laser_message *virtual_laser_message, double timestamp)
 {
 	IPC_RETURN_TYPE err;
 
-	err = IPC_publishData(CARMEN_MAPPER_VIRTUAL_LASER_MESSAGE_NAME, &virtual_laser_message);
+	virtual_laser_message->timestamp = timestamp;
+
+	err = IPC_publishData(CARMEN_MAPPER_VIRTUAL_LASER_MESSAGE_NAME, virtual_laser_message);
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_MAPPER_VIRTUAL_LASER_MESSAGE_NAME);
 }
 

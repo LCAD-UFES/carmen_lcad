@@ -126,6 +126,7 @@ namespace View
 			GtkCheckMenuItem* menuDisplay_ShowMotionPath;
 			GtkCheckMenuItem* menuDisplay_ShowCommandPath;
 			GtkCheckMenuItem* menuDisplay_ShowDynamicObjects;
+			GtkCheckMenuItem* menuDisplay_ShowDynamicPoints;
 			GtkCheckMenuItem* menuSimulatorShowTruePosition;
 			GtkCheckMenuItem* menuSimulator_ShowObjects;
 			GtkCheckMenuItem* menuGoals_EditRddfGoals;
@@ -343,10 +344,10 @@ namespace View
 		void draw_simulated_robot(GtkMapViewer *the_map_view);
 		void draw_simulated_objects(GtkMapViewer *the_map_view);
 		void draw_moving_objects(GtkMapViewer *the_map_view);
+		void draw_moving_points(GtkMapViewer *the_map_view);
 		void draw_placing_animation(GtkMapViewer *the_map_view);
 		void draw_path(carmen_world_point_t *path, int num_path_points, GdkColor path_colour, GdkColor robot_color, GtkMapViewer *the_map_view);
 		void draw_road_velocity_control(GtkMapViewer *the_map_view);
-		void draw_dynamic_objects(GtkMapViewer *the_map_view);
 		void draw_path_vector(GtkMapViewer *the_map_view);
 		void draw_robot_shape(GtkMapViewer *the_map_view, carmen_world_point_t *location, int filled, GdkColor *colour);
 		void draw_orientation_mark(GtkMapViewer *the_map_view, carmen_world_point_t *robot_pose);

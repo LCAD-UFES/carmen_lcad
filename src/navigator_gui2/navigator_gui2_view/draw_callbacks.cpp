@@ -480,6 +480,13 @@ void on_menuDisplay_ShowDynamicObjects_toggled (GtkCheckMenuItem* togglebutton _
 }
 
 //extern "C" G_MODULE_EXPORT
+void on_menuDisplay_ShowDynamicPoints_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
+		GtkGui* gui __attribute__ ((unused)))
+{
+	global_gui->nav_panel_config->show_dynamic_points = gtk_check_menu_item_get_active(togglebutton);
+}
+
+//extern "C" G_MODULE_EXPORT
 void on_menuSimulatorShowTruePosition_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
@@ -732,14 +739,14 @@ gint motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *world_poin
 	carmen_map_point_t point;
 	carmen_map_t *the_map;
 
-
-	if (the_map_view == NULL || the_map_view->internal_map == NULL)
+	if (global_gui == NULL || the_map_view == NULL || the_map_view->internal_map == NULL)
 		return TRUE;
 
 	the_map = the_map_view->internal_map;
 
 	global_gui->world_point_to_global_world_point(world_point);
-	carmen_world_to_map(world_point, &point);
+	if (carmen_world_to_map(world_point, &point) == -1)
+		return TRUE;
 
 	sprintf(buffer, "Grid Cell: %d, %d  (%.1f m, %.1f m)", point.x, point.y,
 			world_point->pose.x, world_point->pose.y);
@@ -965,10 +972,8 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 	//  int colour;
 	double pixel_size;
 
-	if (the_map_view->internal_map == NULL)
-	{
+	if ((global_gui == NULL) || (the_map_view->internal_map == NULL))
 		return;
-	}
 
 	pixel_size = 1 / the_map_view->rescale_size *
 			the_map_view->internal_map->config.resolution;
@@ -980,7 +985,6 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 	 * Draw robot features
 	 */
 	global_gui->draw_parking_assistant_goal(the_map_view);
-
 
 	if (global_gui->received_robot_pose())
 	{
@@ -1073,6 +1077,11 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 	if (global_gui->nav_panel_config->show_dynamic_objects)
 	{
 		global_gui->draw_moving_objects(the_map_view);
+	}
+
+	if (global_gui->nav_panel_config->show_dynamic_points)
+	{
+		global_gui->draw_moving_points(the_map_view);
 	}
 
 	global_gui->draw_path_vector(the_map_view);

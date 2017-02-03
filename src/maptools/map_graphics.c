@@ -641,8 +641,7 @@ void carmen_map_graphics_draw_point(GtkMapViewer *map_view, GdkColor *colour,
 
 	world_to_screen(world_point, &point, map_view);
 
-	gdk_draw_point(map_view->drawing_pixmap, map_view->drawing_gc,
-			point.x, point.y);
+	gdk_draw_point(map_view->drawing_pixmap, map_view->drawing_gc, point.x, point.y);
 }
 
 void carmen_map_graphics_draw_circle(GtkMapViewer *map_view, GdkColor *colour, 

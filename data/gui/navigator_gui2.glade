@@ -513,6 +513,16 @@
                         <signal name="toggled" handler="on_menuDisplay_ShowDynamicObjects_toggled" swapped="no"/>
                       </object>
                     </child>
+                    <child>
+                      <object class="GtkCheckMenuItem" id="menuDisplay_ShowDynamicPoints">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="label" translatable="yes">Dynamic Points</property>
+                        <property name="use_underline">True</property>
+                        <signal name="toggled" handler="on_menuDisplay_ShowDynamicPoints_toggled" swapped="no"/>
+                      </object>
+                    </child>
                   </object>
                 </child>
               </object>

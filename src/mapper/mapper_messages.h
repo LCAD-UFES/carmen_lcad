@@ -40,7 +40,7 @@ typedef struct
 } carmen_mapper_compact_map_message;
 
 #define CARMEN_MAPPER_COMPACT_MAP_MESSAGE_NAME	"carmen_mapper_compact_map_message"
-#define CARMEN_MAPPER_COMPACT_MAP_MESSAGE_FMT		"{<int:4>, <int:4>, <double:4>, int, {int, int, double, [byte:64], string, double, double}, double, string}"
+#define CARMEN_MAPPER_COMPACT_MAP_MESSAGE_FMT	"{<int:4>, <int:4>, <double:4>, int, {int, int, double, [byte:64], string, double, double}, double, string}"
 
 
 typedef struct

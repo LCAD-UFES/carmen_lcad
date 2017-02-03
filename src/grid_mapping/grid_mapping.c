@@ -107,8 +107,8 @@ carmen_grid_mapping_init_parameters(double resolution, double size)
 		map_buffer[i]->map = NULL;
 		map_buffer[i]->config.map_name = NULL;
 	}
-
 }
+
 
 void
 carmen_grid_mapping_init_global_map_parameters(double resolution, double size)

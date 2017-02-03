@@ -18,6 +18,7 @@ typedef struct
 	int	   show_motion_path;
 	int	   show_command_path;
 	int	   show_dynamic_objects;
+	int	   show_dynamic_points;
 	int	   show_simulator_objects;
 	int	   show_true_pos;
 	int	   show_tracked_objects;

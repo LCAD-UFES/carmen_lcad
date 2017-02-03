@@ -53,6 +53,13 @@ moving_objects_tracking_t *moving_objects_tracking;
 int current_num_point_clouds;
 int previous_num_point_clouds = 0;
 
+// moving points
+carmen_mapper_virtual_laser_message virtual_laser_message;
+
+//
+carmen_navigator_ackerman_status_message status_ackerman;
+
+
 void
 navigator_status_handler(carmen_navigator_ackerman_status_message *msg)
 {
@@ -861,7 +868,7 @@ handle_ipc(gpointer			*data __attribute__ ((unused)),
 {
 	carmen_ipc_sleep(0.01);
 
-	carmen_graphics_update_ipc_callbacks((GdkInputFunction)handle_ipc);
+	carmen_graphics_update_ipc_callbacks((GdkInputFunction) handle_ipc);
 
 	return 1;
 }
@@ -1128,107 +1135,30 @@ read_parameters(int argc, char *argv[],
 	carmen_param_install_params(argc, argv, param_cmd_list, num_items);
 }
 
-int
-main(int argc, char *argv[])
-{
-	carmen_navigator_ackerman_status_message	  status_ackerman;
 
-	carmen_localize_ackerman_globalpos_message globalpos;
-//	carmen_navigator_ackerman_plan_message	 *plan;
+void
+subscribe_ipc_messages()
+{
 	IPC_RETURN_TYPE err;
 
-	carmen_ipc_initialize(argc, argv);
-	carmen_param_check_version(argv[0]);
-
-	signal(SIGINT, nav_shutdown);
-
-	read_parameters(argc, argv, &robot_config, &car_config, &nav_config, &nav_panel_config);
-
-	carmen_grid_mapping_init_parameters(0.2, 150);
-
-	// Esta incializacao evita que o valgrind reclame de varias variaveis nao inicializadas
-	static View::GtkGui _gui(argc, argv);
-	gui = &_gui;
-//	gui->GtkGui(argc, argv);
-//	gui = new View::GtkGui(argc, argv);
-
-	carmen_navigator_ackerman_subscribe_status_message(
-			(carmen_navigator_ackerman_status_message *)&status_ackerman,
-			(carmen_handler_t)navigator_ackerman_status_handler,
-			CARMEN_SUBSCRIBE_LATEST);
-
-	carmen_behavior_selector_subscribe_goal_list_message(
-			NULL, (carmen_handler_t)navigator_goal_list_message,
-			CARMEN_SUBSCRIBE_LATEST);
-
-	carmen_navigator_ackerman_subscribe_plan_message(
-			NULL,
-			(carmen_handler_t)navigator_plan_handler,
-			CARMEN_SUBSCRIBE_LATEST);
-
-	carmen_localize_ackerman_subscribe_globalpos_message(
-			NULL,
-			(carmen_handler_t)globalpos_ack_handler,
-			CARMEN_SUBSCRIBE_LATEST);
-
-	carmen_simulator_ackerman_subscribe_truepos_message(
-			NULL,
-			(carmen_handler_t)truepos_handler,
-			CARMEN_SUBSCRIBE_LATEST);
-
-	carmen_simulator_ackerman_subscribe_objects_message(
-			NULL,
-			(carmen_handler_t)objects_handler,
-			CARMEN_SUBSCRIBE_LATEST);
-
-	carmen_behavior_selector_subscribe_current_state_message(
-			NULL,
-			(carmen_handler_t) state_handler,
-			CARMEN_SUBSCRIBE_LATEST);
-
-	carmen_navigator_ackerman_subscribe_plan_tree_message(
-			NULL,
-			(carmen_handler_t)plan_tree_handler,
-			CARMEN_SUBSCRIBE_LATEST);
-
-	carmen_fused_odometry_subscribe_fused_odometry_message(
-			NULL,
-			(carmen_handler_t)fused_odometry_handler,
-			CARMEN_SUBSCRIBE_LATEST);
-
-	carmen_base_ackerman_subscribe_odometry_message(
-			NULL,
-			(carmen_handler_t)odometry_handler,
-			CARMEN_SUBSCRIBE_LATEST);
-
-	carmen_navigator_gui_subscribe_path_message(
-			NULL,
-			(carmen_handler_t) path_handler,
-			CARMEN_SUBSCRIBE_LATEST);
+	carmen_navigator_ackerman_subscribe_status_message((carmen_navigator_ackerman_status_message *) (&status_ackerman),
+			(carmen_handler_t) (navigator_ackerman_status_handler), CARMEN_SUBSCRIBE_LATEST);
+	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) (navigator_goal_list_message), CARMEN_SUBSCRIBE_LATEST);
+	carmen_navigator_ackerman_subscribe_plan_message(NULL, (carmen_handler_t) (navigator_plan_handler), CARMEN_SUBSCRIBE_LATEST);
+	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) (globalpos_ack_handler), CARMEN_SUBSCRIBE_LATEST);
+	carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t) (truepos_handler), CARMEN_SUBSCRIBE_LATEST);
+	carmen_simulator_ackerman_subscribe_objects_message(NULL, (carmen_handler_t) (objects_handler), CARMEN_SUBSCRIBE_LATEST);
+	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) (state_handler), CARMEN_SUBSCRIBE_LATEST);
+	carmen_navigator_ackerman_subscribe_plan_tree_message(NULL, (carmen_handler_t) (plan_tree_handler), CARMEN_SUBSCRIBE_LATEST);
+	carmen_fused_odometry_subscribe_fused_odometry_message(NULL, (carmen_handler_t) (fused_odometry_handler), CARMEN_SUBSCRIBE_LATEST);
+	carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) (odometry_handler), CARMEN_SUBSCRIBE_LATEST);
+	carmen_navigator_gui_subscribe_path_message(NULL, (carmen_handler_t) (path_handler), CARMEN_SUBSCRIBE_LATEST);
 
 	err = IPC_defineMsg(CARMEN_NAVIGATOR_ACKERMAN_DISPLAY_CONFIG_NAME, IPC_VARIABLE_LENGTH, CARMEN_NAVIGATOR_ACKERMAN_DISPLAY_CONFIG_FMT);
 	carmen_test_ipc_exit(err, "Could not define message", CARMEN_NAVIGATOR_ACKERMAN_DISPLAY_CONFIG_NAME);
 
 	err = IPC_subscribe(CARMEN_NAVIGATOR_ACKERMAN_DISPLAY_CONFIG_NAME, display_config_handler, NULL);
 	carmen_test_ipc_exit(err, "Could not subscribe message", CARMEN_NAVIGATOR_ACKERMAN_DISPLAY_CONFIG_NAME);
-
-	gui->navigator_graphics_initialize(argc, argv, &globalpos, &robot_config, &car_config, &nav_config, &nav_panel_config);
-	carmen_graphics_update_ipc_callbacks((GdkInputFunction)handle_ipc);
-
-
-	is_graphics_up = 1;
-
-	map = (carmen_map_t *)calloc(1, sizeof(carmen_map_t));
-	carmen_test_alloc(map);
-
-	offline_map = (carmen_map_t *)calloc(1, sizeof(carmen_map_t));
-	carmen_test_alloc(offline_map);
-
-	cost_map = (carmen_map_t *)calloc(1, sizeof(carmen_map_t));
-	carmen_test_alloc(cost_map);
-
-	lane_map = (carmen_map_t *)calloc(1, sizeof(carmen_map_t));
-	carmen_test_alloc(lane_map);
 
 	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
@@ -1244,34 +1174,74 @@ main(int argc, char *argv[])
 
 	carmen_map_server_subscribe_localize_map_message(NULL, (carmen_handler_t) localize_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_rddf_subscribe_waypoints_around_end_point_message(NULL,
-			(carmen_handler_t)navigator_rddf_waypoints_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_rddf_subscribe_waypoints_around_end_point_message(NULL, (carmen_handler_t)navigator_rddf_waypoints_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	err = IPC_defineMsg(CARMEN_RDDF_END_POINT_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_RDDF_END_POINT_MESSAGE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_RDDF_END_POINT_MESSAGE_NAME);
 
-
 	carmen_parking_assistant_subscribe_goal(NULL, (carmen_handler_t) carmen_parking_assistant_goal_handler, CARMEN_SUBSCRIBE_LATEST);
-	carmen_navigator_gui2_subscribe_show_offline_map_message(NULL,
-			(carmen_handler_t) show_offline_map_handler,
-			CARMEN_SUBSCRIBE_LATEST);
+	carmen_navigator_gui2_subscribe_show_offline_map_message(NULL, (carmen_handler_t) show_offline_map_handler, CARMEN_SUBSCRIBE_LATEST);
+}
 
-//	carmen_navigator_ackerman_query_plan((carmen_navigator_ackerman_plan_message **)&plan);
+
+void
+init_navigator_gui_variables(int argc, char* argv[])
+{
+	carmen_localize_ackerman_globalpos_message globalpos;
+	gui->navigator_graphics_initialize(argc, argv, &globalpos, &robot_config, &car_config, &nav_config, &nav_panel_config);
+
+	carmen_graphics_update_ipc_callbacks((GdkInputFunction) (handle_ipc));
+
+	is_graphics_up = 1;
+
+	map = (carmen_map_t*) (calloc(1, sizeof(carmen_map_t)));
+	carmen_test_alloc(map);
+	offline_map = (carmen_map_t*) (calloc(1, sizeof(carmen_map_t)));
+	carmen_test_alloc(offline_map);
+	cost_map = (carmen_map_t*) (calloc(1, sizeof(carmen_map_t)));
+	carmen_test_alloc(cost_map);
+	lane_map = (carmen_map_t*) (calloc(1, sizeof(carmen_map_t)));
+	carmen_test_alloc(lane_map);
+
+	memset(&virtual_laser_message, 0, sizeof(carmen_mapper_virtual_laser_message));
+}
+
+
+int
+main(int argc, char *argv[])
+{
+	carmen_ipc_initialize(argc, argv);
+	carmen_param_check_version(argv[0]);
+	signal(SIGINT, nav_shutdown);
+
+	read_parameters(argc, argv, &robot_config, &car_config, &nav_config, &nav_panel_config);
+	carmen_grid_mapping_init_parameters(0.2, 150);
+
+	// Esta incializacao evita que o valgrind reclame de varias variaveis nao inicializadas
+	static View::GtkGui _gui(argc, argv);
+	gui = &_gui;
+//	gui->GtkGui(argc, argv);
+//	gui = new View::GtkGui(argc, argv);
+
+	init_navigator_gui_variables(argc, argv);
+
+	subscribe_ipc_messages();
+
+	carmen_navigator_ackerman_plan_message *plan;
+	carmen_navigator_ackerman_query_plan((carmen_navigator_ackerman_plan_message **) &plan);
+
+	if (plan && (plan->path_length > 0))
+	{
+		gui->navigator_graphics_update_plan(plan->path, plan->path_length);
+		free(plan->path);
+		free(plan);
+	}
 
 #ifdef USE_DOT
 	initialize_dynamics();
 #endif
 
-//	if (plan && (plan->path_length > 0))
-//	{
-//		gui->navigator_graphics_update_plan(plan->path, plan->path_length);
-//		free(plan->path);
-//		free(plan);
-//	}
-
 	gui->navigator_graphics_start(map_path);
 
 	return 0;
 }
-
-

@@ -143,7 +143,7 @@ namespace View
 	{
 		controls_.map_view = carmen_map_graphics_new_viewer(460, 400, nav_panel_config->initial_map_zoom);
 
-		if(controls_.map_view != NULL)
+		if (controls_.map_view != NULL)
 		{
 			carmen_map_graphics_add_motion_event (controls_.map_view, (carmen_graphics_mapview_callback_t)motion_handler);
 			carmen_map_graphics_add_button_release_event (controls_.map_view, (carmen_graphics_mapview_callback_t)button_release_handler);
@@ -168,6 +168,7 @@ namespace View
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowCommandPath), nav_panel_config->show_command_path);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowMotionPath), nav_panel_config->show_motion_path);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowDynamicObjects), nav_panel_config->show_dynamic_objects);
+		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowDynamicPoints), nav_panel_config->show_dynamic_points);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSimulatorShowTruePosition), nav_panel_config->show_true_pos);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSimulator_ShowObjects), nav_panel_config->show_simulator_objects);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuGoals_EditRddfGoals), nav_panel_config->edit_rddf_goals);
@@ -294,6 +295,7 @@ namespace View
 		controls_.menuDisplay_DrawWaipoints = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_DrawWaipoints" ));
 		controls_.menuDisplay_ShowCommandPath = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowCommandPath" ));
 		controls_.menuDisplay_ShowDynamicObjects = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowDynamicObjects" ));
+		controls_.menuDisplay_ShowDynamicPoints = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowDynamicPoints" ));
 		controls_.menuDisplay_ShowFusedOdometry = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowFusedOdometry" ));
 		controls_.menuDisplay_ShowGaussians = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowGaussians" ));
 		controls_.menuDisplay_ShowLaserData = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowLaserData" ));
@@ -1886,11 +1888,8 @@ namespace View
 		mean.pose.y		= globalpos->globalpos.y;
 		mean.pose.theta = globalpos->globalpos.theta;
 
-		carmen_map_graphics_draw_ellipse
-		(the_map_view, &carmen_black, &mean,
-				carmen_square(globalpos->globalpos_std.x),
-				globalpos->globalpos_xy_cov,
-				carmen_square(globalpos->globalpos_std.y), 4);
+		carmen_map_graphics_draw_ellipse(the_map_view, &carmen_black, &mean, carmen_square(globalpos->globalpos_std.x),
+				globalpos->globalpos_xy_cov, carmen_square(globalpos->globalpos_std.y), 4);
 	}
 
 	void
@@ -2155,7 +2154,6 @@ namespace View
 		int index;
 		moving_objects_tracking_t* moving_objects_tracking;
 
-
 		if (nav_panel_config->show_dynamic_objects)
 		{
 			//particle.map = the_map_view->internal_map;
@@ -2202,6 +2200,26 @@ namespace View
 //							&particle, circle_size);
 				}
 			}
+		}
+	}
+
+	void
+	GtkGui::draw_moving_points(GtkMapViewer *the_map_view)
+	{
+		int index;
+
+		if (nav_panel_config->show_dynamic_points)
+		{
+////			if (moving_points_list)
+//			{
+//				for (index = 0; index < moving_points_list->length; index++)
+//				{
+//					carmen_world_point_t world_point;
+//					GdkColor *colour = &carmen_red;
+//
+//					carmen_map_graphics_draw_point(the_map_view, colour, &world_point);
+//				}
+//			}
 		}
 	}
 

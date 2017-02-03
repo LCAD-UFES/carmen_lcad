@@ -876,18 +876,13 @@ carmen_map_to_world(carmen_map_point_p carmen_map_point,
 }
 
 carmen_inline int 
-carmen_world_to_map(carmen_world_point_p world_point, 
-		carmen_map_point_p carmen_map_point)
+carmen_world_to_map(carmen_world_point_p world_point, carmen_map_point_p carmen_map_point)
 {
-	if(!world_point || !carmen_map_point || !world_point->map) {
+	if (!world_point || !carmen_map_point || !world_point->map)
 		return -1;
-	}
 
-
-	int x =
-			carmen_round((world_point->pose.x - world_point->map->config.x_origin) / world_point->map->config.resolution);
-	int y =
-			carmen_round((world_point->pose.y - world_point->map->config.y_origin) / world_point->map->config.resolution);
+	int x = carmen_round((world_point->pose.x - world_point->map->config.x_origin) / world_point->map->config.resolution);
+	int y = carmen_round((world_point->pose.y - world_point->map->config.y_origin) / world_point->map->config.resolution);
 
 	carmen_map_point->x = x;
 	carmen_map_point->y = y;
@@ -898,8 +893,7 @@ carmen_world_to_map(carmen_world_point_p world_point,
 }
 
 carmen_inline int 
-carmen_map_to_trajectory(carmen_map_point_p carmen_map_point, 
-		carmen_traj_point_p traj_point)
+carmen_map_to_trajectory(carmen_map_point_p carmen_map_point, carmen_traj_point_p traj_point)
 {
 	double x = carmen_map_point->x * carmen_map_point->map->config.resolution;
 	double y = carmen_map_point->y * carmen_map_point->map->config.resolution;

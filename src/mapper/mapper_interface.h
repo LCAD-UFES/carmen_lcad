@@ -47,7 +47,7 @@ void
 carmen_mapper_publish_map_message(carmen_map_t *carmen_map, double timestamp);
 
 void
-carmen_mapper_publish_virtual_laser_message(carmen_mapper_virtual_laser_message *virtual_laser_message);
+carmen_mapper_publish_virtual_laser_message(carmen_mapper_virtual_laser_message *virtual_laser_message, double timestamp);
 
 void
 carmen_mapper_moving_objects_raw_map_publish_message(carmen_map_t *carmen_map, double timestamp);
