@@ -879,17 +879,20 @@ carmen_inline int
 carmen_world_to_map(carmen_world_point_p world_point, carmen_map_point_p carmen_map_point)
 {
 	if (!world_point || !carmen_map_point || !world_point->map)
-		return -1;
+		return (-1);
 
 	int x = carmen_round((world_point->pose.x - world_point->map->config.x_origin) / world_point->map->config.resolution);
 	int y = carmen_round((world_point->pose.y - world_point->map->config.y_origin) / world_point->map->config.resolution);
+
+	if (x < 0 || x >= world_point->map->config.x_size || y < 0 || y >= world_point->map->config.y_size)
+		return (-1);
 
 	carmen_map_point->x = x;
 	carmen_map_point->y = y;
 
 	carmen_map_point->map = world_point->map;
 
-	return 0;
+	return (0);
 }
 
 carmen_inline int 

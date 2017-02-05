@@ -484,6 +484,15 @@ void on_menuDisplay_ShowDynamicPoints_toggled (GtkCheckMenuItem* togglebutton __
 		GtkGui* gui __attribute__ ((unused)))
 {
 	global_gui->nav_panel_config->show_dynamic_points = gtk_check_menu_item_get_active(togglebutton);
+
+	if (global_gui->nav_panel_config->show_dynamic_points)
+	{
+		carmen_mapper_subscribe_virtual_laser_message(&global_gui->virtual_laser_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+	}
+	else
+	{
+		carmen_mapper_subscribe_virtual_laser_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
+	}
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -1081,7 +1090,7 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 
 	if (global_gui->nav_panel_config->show_dynamic_points)
 	{
-		global_gui->draw_moving_points(the_map_view);
+		global_gui->draw_moving_points(the_map_view, pixel_size);
 	}
 
 	global_gui->draw_path_vector(the_map_view);

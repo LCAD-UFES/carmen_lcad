@@ -238,6 +238,11 @@ namespace View
 		{
 			carmen_obstacle_avoider_subscribe_motion_planner_path_message(&motion_path_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
 		}
+
+		if (nav_panel_config->show_dynamic_points)
+		{
+			carmen_mapper_subscribe_virtual_laser_message(&virtual_laser_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+		}
 	}
 
 	void GtkGui::navigator_graphics_initialize(int argc, char **argv, carmen_localize_ackerman_globalpos_message *msg,
@@ -1839,9 +1844,7 @@ namespace View
 		static GdkColor *color_gradient = build_color_gradient();
 
 		if (!nav_panel_config->show_particles)
-		{
 			return;
-		}
 
 		if (particle_msg.particles != NULL)
 		{
@@ -1909,8 +1912,7 @@ namespace View
 
 		particle = robot;
 
-		for (index = 0; index < sensor_msg.num_readings;
-				index += sensor_msg.laser_skip)
+		for (index = 0; index < sensor_msg.num_readings; index += sensor_msg.laser_skip)
 		{
 			// finale: doesn't this assume a 180 fov?
 			// angle = sensor_msg.pose.theta - M_PI_2 +
@@ -1919,10 +1921,8 @@ namespace View
 					index / (double)(sensor_msg.num_readings - 1) * sensor_msg.config.fov;
 
 
-			particle.pose.x = sensor_msg.pose.x + sensor_msg.range[index] *
-					cos(angle);
-			particle.pose.y = sensor_msg.pose.y + sensor_msg.range[index] *
-					sin(angle);
+			particle.pose.x = sensor_msg.pose.x + sensor_msg.range[index] * cos(angle);
+			particle.pose.y = sensor_msg.pose.y + sensor_msg.range[index] * sin(angle);
 
 			if (sensor_msg.mask[index])
 			{
@@ -2204,22 +2204,21 @@ namespace View
 	}
 
 	void
-	GtkGui::draw_moving_points(GtkMapViewer *the_map_view)
+	GtkGui::draw_moving_points(GtkMapViewer *the_map_view, double pixel_size)
 	{
-		int index;
-
 		if (nav_panel_config->show_dynamic_points)
 		{
-////			if (moving_points_list)
-//			{
-//				for (index = 0; index < moving_points_list->length; index++)
-//				{
-//					carmen_world_point_t world_point;
-//					GdkColor *colour = &carmen_red;
-//
-//					carmen_map_graphics_draw_point(the_map_view, colour, &world_point);
-//				}
-//			}
+			for (int i = 0; i < virtual_laser_msg.num_positions; i++)
+			{
+				carmen_world_point_t world_point;
+				world_point.pose.x = virtual_laser_msg.positions[i].x;
+				world_point.pose.y = virtual_laser_msg.positions[i].y;
+				world_point.pose.theta = 0.0;
+				world_point.map = the_map_view->internal_map;
+
+//				carmen_map_graphics_draw_point(the_map_view, &carmen_red, &world_point);
+				carmen_map_graphics_draw_circle(the_map_view, &carmen_red, TRUE, &world_point, pixel_size * 2.0);
+			}
 		}
 	}
 

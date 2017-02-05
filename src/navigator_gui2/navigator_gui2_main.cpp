@@ -53,9 +53,6 @@ moving_objects_tracking_t *moving_objects_tracking;
 int current_num_point_clouds;
 int previous_num_point_clouds = 0;
 
-// moving points
-carmen_mapper_virtual_laser_message virtual_laser_message;
-
 //
 carmen_navigator_ackerman_status_message status_ackerman;
 
@@ -1202,8 +1199,6 @@ init_navigator_gui_variables(int argc, char* argv[])
 	carmen_test_alloc(cost_map);
 	lane_map = (carmen_map_t*) (calloc(1, sizeof(carmen_map_t)));
 	carmen_test_alloc(lane_map);
-
-	memset(&virtual_laser_message, 0, sizeof(carmen_mapper_virtual_laser_message));
 }
 
 
@@ -1224,18 +1219,7 @@ main(int argc, char *argv[])
 //	gui = new View::GtkGui(argc, argv);
 
 	init_navigator_gui_variables(argc, argv);
-
 	subscribe_ipc_messages();
-
-	carmen_navigator_ackerman_plan_message *plan;
-	carmen_navigator_ackerman_query_plan((carmen_navigator_ackerman_plan_message **) &plan);
-
-	if (plan && (plan->path_length > 0))
-	{
-		gui->navigator_graphics_update_plan(plan->path, plan->path_length);
-		free(plan->path);
-		free(plan);
-	}
 
 #ifdef USE_DOT
 	initialize_dynamics();

@@ -165,30 +165,37 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *log_odds
 		carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data, sensor_params, i, highest_sensor, safe_range_above_sensors,
 				robot_near_bump_or_barrier, tid);
 
-		if (!sensor_data->maxed[tid][sensor_data->ray_that_hit_the_nearest_target[tid]])
+//		int ray_thnt = sensor_data->ray_that_hit_the_nearest_target[tid];
+		for (int k = 0; k < sensor_params->vertical_resolution; k++)
 		{
-			cell_coords_t cell_hit_by_ray;
-			cell_hit_by_ray.x = round(sensor_data->ray_position_in_the_floor[tid][sensor_data->ray_that_hit_the_nearest_target[tid]].x / log_odds_snapshot_map->config.resolution);
-			cell_hit_by_ray.y = round(sensor_data->ray_position_in_the_floor[tid][sensor_data->ray_that_hit_the_nearest_target[tid]].y / log_odds_snapshot_map->config.resolution);
-			if (map_grid_is_valid(log_odds_snapshot_map, cell_hit_by_ray.x, cell_hit_by_ray.y) &&
-				log_odds_snapshot_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] < 0.0)
+			if (!sensor_data->maxed[tid][k])
 			{
-				virtual_laser_message.positions[j].x = sensor_data->ray_position_in_the_floor[tid][sensor_data->ray_that_hit_the_nearest_target[tid]].x + x_origin;
-				virtual_laser_message.positions[j].y = sensor_data->ray_position_in_the_floor[tid][sensor_data->ray_that_hit_the_nearest_target[tid]].y + y_origin;
-				virtual_laser_message.num_positions += 1;
+				cell_coords_t cell_hit_by_ray;
+				double x = sensor_data->ray_position_in_the_floor[tid][k].x;
+				double y = sensor_data->ray_position_in_the_floor[tid][k].y;
+				cell_hit_by_ray.x = round(x / log_odds_snapshot_map->config.resolution);
+				cell_hit_by_ray.y = round(y / log_odds_snapshot_map->config.resolution);
+				if (map_grid_is_valid(log_odds_snapshot_map, cell_hit_by_ray.x, cell_hit_by_ray.y) &&
+					(sensor_data->occupancy_log_odds_of_each_ray_target[tid][k] > sensor_params->log_odds.log_odds_occ / 3.0) &&
+					(offline_map.map[cell_hit_by_ray.x][cell_hit_by_ray.y] <= 0.5))
+				{
+					virtual_laser_message.positions[virtual_laser_message.num_positions].x = x + x_origin;
+					virtual_laser_message.positions[virtual_laser_message.num_positions].y = y + y_origin;
+					virtual_laser_message.num_positions += 1;
+				}
 			}
 		}
 
 		if (update_cells_crossed_by_rays == UPDATE_CELLS_CROSSED_BY_RAYS)
 		{
-			if (create_map_sum_and_count) // @@@ Alberto: A funcao abaixo nao esta funcionando direito pois mistura maps probabilisiticos com maps log odds
-				carmen_prob_models_update_sum_and_count_cells_crossed_by_ray(log_odds_snapshot_map, &sum_occupancy_map, &count_occupancy_map, sensor_params, sensor_data, tid);
+			if (create_map_sum_and_count)
+				carmen_prob_models_update_sum_and_count_cells_crossed_by_ray(&map, &sum_occupancy_map, &count_occupancy_map, sensor_params, sensor_data, tid);
 			else
-				carmen_prob_models_update_log_odds_of_cells_crossed_by_ray(log_odds_snapshot_map, sensor_params, sensor_data, tid);
+				carmen_prob_models_update_cells_crossed_by_ray(&map, sensor_params, sensor_data, tid);
 		}
 		// carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(map, sensor_params, sensor_data);
-		if (create_map_sum_and_count) // @@@ Alberto: A funcao abaixo nao esta funcionando direito pois mistura maps probabilisiticos com maps log odds
-			carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(log_odds_snapshot_map, &sum_occupancy_map, &count_occupancy_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid);
+		if (create_map_sum_and_count)
+			carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(&map, &sum_occupancy_map, &count_occupancy_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid);
 		else
 			carmen_prob_models_update_log_odds_of_cells_hit_by_rays(log_odds_snapshot_map, sensor_params, sensor_data, highest_sensor, safe_range_above_sensors, tid);
 
@@ -264,10 +271,10 @@ update_log_odds_of_cells_in_the_laser_ldmrs_perceptual_field(carmen_map_t *log_o
 				cell_hit_by_ray.x = round(sensor_data->ray_position_in_the_floor[tid][k].x / log_odds_snapshot_map->config.resolution);
 				cell_hit_by_ray.y = round(sensor_data->ray_position_in_the_floor[tid][k].y / log_odds_snapshot_map->config.resolution);
 				if (map_grid_is_valid(log_odds_snapshot_map, cell_hit_by_ray.x, cell_hit_by_ray.y) &&
-					log_odds_snapshot_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] < 0.0)
+					offline_map.map[cell_hit_by_ray.x][cell_hit_by_ray.y] < 0.5)
 				{
-					virtual_laser_message.positions[j].x = sensor_data->ray_position_in_the_floor[tid][k].x + x_origin;
-					virtual_laser_message.positions[j].y = sensor_data->ray_position_in_the_floor[tid][k].y + y_origin;
+					virtual_laser_message.positions[virtual_laser_message.num_positions].x = sensor_data->ray_position_in_the_floor[tid][k].x + x_origin;
+					virtual_laser_message.positions[virtual_laser_message.num_positions].y = sensor_data->ray_position_in_the_floor[tid][k].y + y_origin;
 					virtual_laser_message.num_positions += 1;
 				}
 			}
@@ -317,7 +324,7 @@ map_decay_to_offline_map(carmen_map_t *current_map)
 		if (current_map->complete_map[i] >= 0.0)
 		{
 			//current_map->complete_map[i] = (50.0 * current_map->complete_map[i] + offline_map.complete_map[i]) / 51.0;
-			current_map->complete_map[i] = (10.0 * current_map->complete_map[i] + offline_map.complete_map[i]) / 11.0;
+			current_map->complete_map[i] = (3.0 * current_map->complete_map[i] + offline_map.complete_map[i]) / 4.0;
 		}
 		else
 			current_map->complete_map[i] = offline_map.complete_map[i];
@@ -353,14 +360,16 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 		if (sensor_params->sensor_type == LASER_LDMRS)
 		{
 			update_log_odds_of_cells_in_the_laser_ldmrs_perceptual_field(log_odds_snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
-			carmen_prob_models_overwrite_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(&map, log_odds_snapshot_map);
+			carmen_prob_models_overwrite_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(&map, log_odds_snapshot_map,
+					sensor_params->log_odds.log_odds_l0);
 		}
 		else // Velodyne and others
 		{
 			// @@@ Alberto: Mapa padrao Lucas -> colocar DO_NOT_UPDATE_CELLS_CROSSED_BY_RAYS ao inves de UPDATE_CELLS_CROSSED_BY_RAYS
 			update_log_odds_of_cells_in_the_velodyne_perceptual_field(log_odds_snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global,
 					sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
-			carmen_prob_models_update_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(&map, log_odds_snapshot_map);
+			carmen_prob_models_update_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(&map, log_odds_snapshot_map,
+					sensor_params->log_odds.log_odds_l0);
 //			carmen_grid_mapping_save_map((char *) "test.map", &map);
 		}
 	}

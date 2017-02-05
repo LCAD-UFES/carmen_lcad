@@ -251,6 +251,8 @@ namespace View
 		carmen_world_point_t *motion_path;
 		int motion_path_size;
 
+		carmen_mapper_virtual_laser_message virtual_laser_msg;
+
 		carmen_robot_ackerman_road_velocity_control_message road_velocity_control;
 
 		carmen_rddf_waypoint* near_rddf_point;
@@ -344,7 +346,7 @@ namespace View
 		void draw_simulated_robot(GtkMapViewer *the_map_view);
 		void draw_simulated_objects(GtkMapViewer *the_map_view);
 		void draw_moving_objects(GtkMapViewer *the_map_view);
-		void draw_moving_points(GtkMapViewer *the_map_view);
+		void draw_moving_points(GtkMapViewer *the_map_view, double pixel_size);
 		void draw_placing_animation(GtkMapViewer *the_map_view);
 		void draw_path(carmen_world_point_t *path, int num_path_points, GdkColor path_colour, GdkColor robot_color, GtkMapViewer *the_map_view);
 		void draw_road_velocity_control(GtkMapViewer *the_map_view);

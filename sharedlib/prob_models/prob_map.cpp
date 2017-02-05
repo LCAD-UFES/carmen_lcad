@@ -765,12 +765,12 @@ carmen_prob_models_update_cells_crossed_by_ray(carmen_map_t *map, sensor_paramet
 	dy = (double) (b.y - a.y);
 	dr = sqrt(dx * dx + dy * dy);
 
+	dx /= dr;
+	dy /= dr;
 	step_count = (int) round(dr);
-	dx /= (double) (step_count - 1);
-	dy /= (double) (step_count - 1);
 
 	// Walk the line and update the grid
-	for (j = 0; j < step_count - 1; j++)
+	for (j = 0; j < step_count - 2; j++)
 	{
 		nx = (int) round(a.x + dx * (double) j);
 		ny = (int) round(a.y + dy * (double) j);
@@ -814,12 +814,12 @@ carmen_prob_models_update_log_odds_of_cells_crossed_by_ray(carmen_map_t *log_odd
 	dy = (double) (b.y - a.y);
 	dr = sqrt(dx * dx + dy * dy);
 
+	dx /= dr;
+	dy /= dr;
 	step_count = (int) round(dr);
-	dx /= (double) (step_count - 1);
-	dy /= (double) (step_count - 1);
 
 	// Walk the line and update the grid
-	for (j = 0; j < step_count - 1; j++)
+	for (j = 0; j < step_count - 2; j++)
 	{
 		nx = (int) round(a.x + dx * (double) j);
 		ny = (int) round(a.y + dy * (double) j);
@@ -862,12 +862,12 @@ carmen_prob_models_update_sum_and_count_cells_crossed_by_ray(carmen_map_t *map, 
 	dy = (double) (b.y - a.y);
 	dr = sqrt(dx * dx + dy * dy);
 
+	dx /= dr;
+	dy /= dr;
 	step_count = (int) round(dr);
-	dx /= (double) step_count;
-	dy /= (double) step_count;
 
 	// Walk the line and update the grid
-	for (j = 0; j < step_count - 1; j++)
+	for (j = 0; j < step_count - 2; j++)
 	{
 		nx = (int) round(a.x + dx * (double) j);
 		ny = (int) round(a.y + dy * (double) j);
@@ -1342,7 +1342,8 @@ carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data
 				}
 			}
 		}
-		if ((sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] > sensor_params->log_odds.log_odds_l0) && (min_ray_size > sensor_data->ray_size_in_the_floor[thread_id][i]))
+		if ((sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i] > sensor_params->log_odds.log_odds_l0) &&
+			(min_ray_size > sensor_data->ray_size_in_the_floor[thread_id][i]))
 		{
 			min_ray_size = sensor_data->ray_size_in_the_floor[thread_id][i];
 			min_ray_size_index = i;
@@ -1690,12 +1691,12 @@ carmen_update_cells_below_robot(carmen_map_t *map, carmen_point_t xt)
 		dy = by - ay;
 		dr = sqrt(dx * dx + dy * dy);
 
+		dx /= dr;
+		dy /= dr;
 		step_count = (int) round(dr);
-		dx /= (double) step_count;
-		dy /= (double) step_count;
 
 		// Walk the line and update the grid
-		for (j = 0; j < step_count - 1; j++)
+		for (j = 0; j < step_count - 2; j++)
 		{
 			px = ax + dx * (double) j;
 			py = ay + dy * (double) j;
@@ -2242,12 +2243,12 @@ update_cells_above_robot(const ProbabilisticMap *map, carmen_point_t xt,
 		dy = by - ay;
 		dr = sqrt(dx * dx + dy * dy);
 
+		dx /= dr;
+		dy /= dr;
 		step_count = (int) round(dr);
-		dx /= (double) step_count;
-		dy /= (double) step_count;
 
 		// Walk the line and update the grid
-		for (j = 0; j < step_count - 1; j++)
+		for (j = 0; j < step_count - 2; j++)
 		{
 			px = ax + dx * (double) j;
 			py = ay + dy * (double) j;
@@ -2335,12 +2336,12 @@ carmen_update_cells_in_the_laser_perceptual_field(carmen_map_t *map, carmen_poin
 		dy = by - ay;
 		dr = sqrt(dx * dx + dy * dy);
 
+		dx /= dr;
+		dy /= dr;
 		step_count = (int) round(dr);
-		dx /= (double) step_count;
-		dy /= (double) step_count;
 
 		// Walk the line and update the grid
-		for (j = 0; j < step_count - 1; j++)
+		for (j = 0; j < step_count - 2; j++)
 		{
 			px = ax + dx * (double) j;
 			py = ay + dy * (double) j;
@@ -2557,30 +2558,30 @@ carmen_prob_models_update_current_map_with_snapshot_map_and_clear_snapshot_map(c
 
 void
 carmen_prob_models_update_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(carmen_map_t *current_map,
-		carmen_map_t *log_odds_snapshot_map)
+		carmen_map_t *log_odds_snapshot_map, double log_odds_l0)
 {	// O current_map eh probabilistico e o snapshot_map log_odds
 	#pragma omp for
 	for (int i = 0; i < current_map->config.x_size * current_map->config.y_size; i++)
 	{
-		if (log_odds_snapshot_map->complete_map[i] != 0.0)
+		if (log_odds_snapshot_map->complete_map[i] != log_odds_l0)
 			carmen_prob_models_log_odds_occupancy_grid_mapping(current_map, i, log_odds_snapshot_map->complete_map[i]);
 
-		log_odds_snapshot_map->complete_map[i] = 0.0;
+		log_odds_snapshot_map->complete_map[i] = log_odds_l0;
 	}
 }
 
 
 void
 carmen_prob_models_overwrite_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(carmen_map_t *current_map,
-		carmen_map_t *log_odds_snapshot_map)
+		carmen_map_t *log_odds_snapshot_map, double log_odds_l0)
 {	// O current_map eh probabilistico e o snapshot_map log_odds
 	#pragma omp for
 	for (int i = 0; i < current_map->config.x_size * current_map->config.y_size; i++)
 	{
-		if (log_odds_snapshot_map->complete_map[i] != 0.0)
+		if (log_odds_snapshot_map->complete_map[i] != log_odds_l0)
 			current_map->complete_map[i] = carmen_prob_models_log_odds_to_probabilistic(log_odds_snapshot_map->complete_map[i]);
 
-		log_odds_snapshot_map->complete_map[i] = 0.0;
+		log_odds_snapshot_map->complete_map[i] = log_odds_l0;
 	}
 }
 
