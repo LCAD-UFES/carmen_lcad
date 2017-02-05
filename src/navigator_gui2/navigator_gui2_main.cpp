@@ -750,8 +750,6 @@ localize_map_update_handler(carmen_map_server_localize_map_message* message)
 		}
 	}
 
-
-
 	if (gui->navigator_graphics_update_map() &&
 		is_graphics_up && map_type == CARMEN_REMISSION_MAP_v)
 	{

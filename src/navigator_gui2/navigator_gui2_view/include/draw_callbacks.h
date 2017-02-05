@@ -78,47 +78,46 @@ extern "C" G_MODULE_EXPORT
 void on_menuMaps_CompleteMap_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
-void on_menuSuperimposedMaps_None_toggled (GtkCheckMenuItem* togglebutton  ,
-		GtkGui* gui  );
+void on_menuMaps_RemissionMap_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
-void on_menuSuperimposedMaps_Map_toggled (GtkCheckMenuItem* togglebutton  ,
-		GtkGui* gui  );
+void on_menuSuperimposedMaps_None_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
-void on_menuSuperimposedMaps_OfflineMap_toggled (GtkCheckMenuItem* togglebutton  ,
-		GtkGui* gui  );
+void on_menuSuperimposedMaps_Map_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
-void on_menuSuperimposedMaps_Utility_toggled (GtkCheckMenuItem* togglebutton  ,
-		GtkGui* gui  );
+void on_menuSuperimposedMaps_OfflineMap_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
-void on_menuSuperimposedMaps_Costs_toggled (GtkCheckMenuItem* togglebutton  ,
-		GtkGui* gui  );
+void on_menuSuperimposedMaps_Utility_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
-void on_menuSuperimposedMaps_Likelihood_toggled (GtkCheckMenuItem* togglebutton  ,
-		GtkGui* gui  );
+void on_menuSuperimposedMaps_Costs_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
-void on_menuSuperimposedMaps_GlobalLikelihood_toggled (GtkCheckMenuItem* togglebutton  ,
-		GtkGui* gui  );
+void on_menuSuperimposedMaps_Likelihood_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
-void on_menuSuperimposedMaps_Lane_toggled (GtkCheckMenuItem* togglebutton  ,
-		GtkGui* gui  );
+void on_menuSuperimposedMaps_GlobalLikelihood_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
-void on_buttonZoomIn_clicked(GtkWidget *widget __attribute__((unused)),
-					   GtkGui* gui);
+void on_menuSuperimposedMaps_Lane_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);
+
+extern "C" G_MODULE_EXPORT
+void on_menuSuperimposedMaps_RemissionMap_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);
+
+extern "C" G_MODULE_EXPORT
+void on_menuSuperimposedMaps_MovingObjects_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);
+
+extern "C" G_MODULE_EXPORT
+void on_buttonZoomIn_clicked(GtkWidget *widget __attribute__((unused)), GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
 void on_buttonZoomOut_clicked(GtkWidget *widget __attribute__((unused)), GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
-gint motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *world_point,
-		GdkEventMotion *event  );
+gint motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *world_point, GdkEventMotion *event);
 
 extern "C" G_MODULE_EXPORT
 int button_release_handler(GtkMapViewer		   *the_map_view,
@@ -138,60 +137,60 @@ extern "C" G_MODULE_EXPORT
 void draw_robot_objects(GtkMapViewer *the_map_view);
 
 extern "C" G_MODULE_EXPORT
-void on_menuDisplay_TrackRobot_toggled (GtkCheckMenuItem* togglebutton ,
-		GtkGui* gui );
+void on_menuDisplay_TrackRobot_toggled (GtkCheckMenuItem* togglebutton,
+		GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
 void on_menuDisplay_DrawPath_toggled (GtkCheckMenuItem* togglebutton,
 		GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
-void on_menuDisplay_DrawWaipoints_toggled (GtkCheckMenuItem* togglebutton ,
-		GtkGui* gui );
+void on_menuDisplay_DrawWaipoints_toggled (GtkCheckMenuItem* togglebutton,
+		GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
-void on_menuDisplay_DrawRobotWaipoints_toggled (GtkCheckMenuItem* togglebutton ,
-		GtkGui* gui );
+void on_menuDisplay_DrawRobotWaipoints_toggled (GtkCheckMenuItem* togglebutton,
+		GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
-void on_menuDisplay_ShowLateralOffset_toggled (GtkCheckMenuItem* togglebutton ,
-		GtkGui* gui );
+void on_menuDisplay_ShowLateralOffset_toggled (GtkCheckMenuItem* togglebutton,
+		GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
-void on_menuDisplay_ShowParticles_toggled (GtkCheckMenuItem* togglebutton ,
-		GtkGui* gui );
+void on_menuDisplay_ShowParticles_toggled (GtkCheckMenuItem* togglebutton,
+		GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
-void on_menuDisplay_ShowFusedOdometry_toggled (GtkCheckMenuItem* togglebutton ,
-		GtkGui* gui );
+void on_menuDisplay_ShowFusedOdometry_toggled (GtkCheckMenuItem* togglebutton,
+		GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
-void on_menuDisplay_ShowGaussians_toggled (GtkCheckMenuItem* togglebutton ,
-		GtkGui* gui );
+void on_menuDisplay_ShowGaussians_toggled (GtkCheckMenuItem* togglebutton,
+		GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
-void on_menuDisplay_ShowLaserData_toggled (GtkCheckMenuItem* togglebutton ,
-		GtkGui* gui );
+void on_menuDisplay_ShowLaserData_toggled (GtkCheckMenuItem* togglebutton,
+		GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
-void on_menuDisplay_ShowMotionPath_toggled (GtkCheckMenuItem* togglebutton ,
-		GtkGui* gui );
+void on_menuDisplay_ShowMotionPath_toggled (GtkCheckMenuItem* togglebutton,
+		GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
-void on_menuDisplay_ShowCommandPath_toggled (GtkCheckMenuItem* togglebutton ,
-		GtkGui* gui );
+void on_menuDisplay_ShowCommandPath_toggled (GtkCheckMenuItem* togglebutton,
+		GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
 void on_menuGoals_EditRddfGoals_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)));
 
 extern "C" G_MODULE_EXPORT
-void on_menuDisplay_ShowDynamicObjects_toggled (GtkCheckMenuItem* togglebutton ,
-		GtkGui* gui );
+void on_menuDisplay_ShowDynamicObjects_toggled (GtkCheckMenuItem* togglebutton,
+		GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
-void on_menuDisplay_ShowDynamicPoints_toggled (GtkCheckMenuItem* togglebutton ,
-		GtkGui* gui );
+void on_menuDisplay_ShowDynamicPoints_toggled (GtkCheckMenuItem* togglebutton,
+		GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
 void on_menuSimulatorShowTruePosition_toggled (GtkCheckMenuItem* togglebutton,

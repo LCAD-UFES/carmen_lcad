@@ -763,71 +763,65 @@ namespace View
 		do_redraw();
 	}
 
+	int	 flags = 0;
+
 	void
 	GtkGui::navigator_graphics_display_map(carmen_map_t *new_map, carmen_navigator_map_t type)
 	{
-		char name[100];
-		int	 flags = 0;
-
 		display = type;
 
 		switch (type)
 		{
 		case CARMEN_NAVIGATOR_MAP_v:
-			strcpy(name, "Map");
+			flags = 0;
 			break;
 
 		case CARMEN_NAVIGATOR_ENTROPY_v:
-			strcpy(name, "Entropy");
 			flags = CARMEN_GRAPHICS_RESCALE;
 			break;
 
 		case CARMEN_NAVIGATOR_COST_v:
-			strcpy(name, "Costs");
 			flags = CARMEN_GRAPHICS_RESCALE;
 			break;
 
 		case CARMEN_NAVIGATOR_UTILITY_v:
-			strcpy(name, "Utility");
 			flags = CARMEN_GRAPHICS_RESCALE | CARMEN_GRAPHICS_INVERT;
 			break;
 
 		case CARMEN_LOCALIZE_LMAP_v:
-			strcpy(name, "Likelihood Map");
 			flags = CARMEN_GRAPHICS_RESCALE;
 			break;
 
 		case CARMEN_LOCALIZE_GMAP_v:
-			strcpy(name, "Global Likelihood Map");
 			flags = CARMEN_GRAPHICS_RESCALE;
 			break;
 
 		case CARMEN_LANE_MAP_v:
-			strcpy(name, "Lane");
+			flags = 0;
 			break;
 
 		case CARMEN_COST_MAP_v:
-			strcpy(name, "Cost");
+			flags = 0;
 			break;
 
 		case CARMEN_OFFLINE_MAP_v:
-			strcpy(name, "Offline Map");
+			flags = 0;
 			break;
 
 		case CARMEN_COMPLETE_MAP_v:
-			strcpy(name, "Complete Map");
+			flags = 0;
 			break;
 
 		case CARMEN_REMISSION_MAP_v:
-			strcpy(name, "Remission Map");
 			flags = CARMEN_GRAPHICS_REMOVE_MINUS_ONE | CARMEN_GRAPHICS_RESCALE | CARMEN_GRAPHICS_INVERT | CARMEN_GRAPHICS_ENHANCE_CONTRAST;
 			break;
 
 		case CARMEN_MOVING_OBJECTS_MAP_v:
-			strcpy(name, "Moving Objects");
+			flags = 0;
 			break;
 
 		default:
+			flags = 0;
 			return;
 		}
 
@@ -854,7 +848,7 @@ namespace View
 		char buffer[1024];
 		memset(buffer, 0, 1024);
 
-		carmen_map_graphics_add_map(this->controls_.map_view, new_map, 0);
+		carmen_map_graphics_add_map(this->controls_.map_view, new_map, flags);
 
 		if (people)
 			people->length = 0;

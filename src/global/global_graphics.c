@@ -289,7 +289,7 @@ unsigned char *carmen_graphics_convert_to_image(carmen_map_p map, int flags)
 
   if (max_val < 0)
     rescale = 0;
-  
+
   image_ptr = image_data;
   data_ptr = map->complete_map;
   for (x_index = 0; x_index < x_size; x_index++) {

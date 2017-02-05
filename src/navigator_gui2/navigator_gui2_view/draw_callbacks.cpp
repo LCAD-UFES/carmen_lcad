@@ -212,18 +212,6 @@ void on_menuMaps_RemissionMap_toggled (GtkCheckMenuItem* togglebutton __attribut
 }
 
 //extern "C" G_MODULE_EXPORT
-void on_menuSuperimposedMaps_RemissionMap_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
-		GtkGui* gui)
-{
-	if(gtk_check_menu_item_get_active(togglebutton))
-	{
-		superimposed_is_set = 1;
-		navigator_get_map(CARMEN_REMISSION_MAP_v, superimposed_is_set);
-		carmen_map_graphics_redraw_superimposed(global_gui->controls_.map_view);
-	}
-}
-
-//extern "C" G_MODULE_EXPORT
 void on_menuMaps_MovingObjects_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
@@ -326,6 +314,18 @@ void on_menuSuperimposedMaps_Lane_toggled (GtkCheckMenuItem* togglebutton __attr
 	{
 		superimposed_is_set = 1;
 		navigator_get_map(CARMEN_LANE_MAP_v, superimposed_is_set);
+		carmen_map_graphics_redraw_superimposed(global_gui->controls_.map_view);
+	}
+}
+
+//extern "C" G_MODULE_EXPORT
+void on_menuSuperimposedMaps_RemissionMap_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
+		GtkGui* gui)
+{
+	if(gtk_check_menu_item_get_active(togglebutton))
+	{
+		superimposed_is_set = 1;
+		navigator_get_map(CARMEN_REMISSION_MAP_v, superimposed_is_set);
 		carmen_map_graphics_redraw_superimposed(global_gui->controls_.map_view);
 	}
 }
