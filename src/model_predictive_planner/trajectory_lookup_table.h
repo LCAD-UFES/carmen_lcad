@@ -13,7 +13,7 @@
 #include "model/global_state.h"
 
 
-#define N_DIST			15				// Number of Distances traveled in polar coordinates
+#define N_DIST			21	//15 or 21	// Number of Distances traveled in polar coordinates
 #define FIRST_DIST		2.3				// First Distance, or scale factor of its geometric progression (Wikipedia)
 #define RATIO_DIST		1.18			// Ratio (Wikipedia) of the Distance geometric progression
 #define ZERO_DIST_I		-1				// Index of zero Distance traveled
