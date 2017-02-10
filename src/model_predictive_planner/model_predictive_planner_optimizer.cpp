@@ -321,7 +321,7 @@ double
 compute_proximity_to_obstacles_using_distance_map(vector<carmen_ackerman_path_point_t> path)
 {
 	double proximity_to_obstacles_for_path = 0.0;
-	double circle_radius = (GlobalState::robot_config.width + 1.6) / 2.0; // metade da largura do carro + um espacco de guarda
+	double circle_radius = (GlobalState::robot_config.width + 1.0) / 2.0; // metade da largura do carro + um espacco de guarda
 	carmen_point_t localizer = {GlobalState::localizer_pose->x, GlobalState::localizer_pose->y, GlobalState::localizer_pose->theta};
 	for (unsigned int i = 0; i < path.size(); i += 1)
 	{
@@ -461,7 +461,7 @@ my_g(const gsl_vector *x, void *params)
 	}
 	else
 	{
-		w1 = 2.0; w2 = 15.0; w3 = 15.0; w4 = 2.0; w5 = 10.0;
+		w1 = 10.0; w2 = 5.0; w3 = 5.0; w4 = 1.5; w5 = 10.0;
 		result = sqrt(
 				w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
@@ -469,7 +469,6 @@ my_g(const gsl_vector *x, void *params)
 				w4 * path_to_lane_distance + // já é quandrática
 				w5 * proximity_to_obstacles); // já é quandrática
 	}
-
 
 	//printf("s %lf, tdc %.2lf, tdd %.2f, a %.2lf\n", tcp.s, td.dist, my_params->target_td->dist, tcp.a);
 	return (result);
@@ -614,11 +613,12 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 	}
 	else
 	{
+//		double a = (target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * target_td.dist);
+//		double tt = (target_v - target_td.v_i) / a;
 		double a = (target_v - target_td.v_i) / tcp_seed.tt;
 		double tt;
 
-
-		if (a == 0) //avoid div by zero and plan v = 0 e vi = 0
+		if (a == 0.0) //avoid div by zero and plan v = 0 e vi = 0
 		{
 			tt = tcp_seed.tt;
 
@@ -648,10 +648,10 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 			}
 		}
 
-		if (tt > 10.0)
-			tt = 10.0;
-		else if (tt < 2.0)
-			tt = 2.0;
+		if (tt > 15.0)
+			tt = 15.0;
+		else if (tt < 0.5)
+			tt = 0.5;
 
 		params.suitable_tt = tcp_seed.tt = tt;
 		params.suitable_acceleration = tcp_seed.a = a;
@@ -760,7 +760,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	gsl_multimin_fdfminimizer *s = gsl_multimin_fdfminimizer_alloc(T, 4);
 
 	// int gsl_multimin_fdfminimizer_set (gsl_multimin_fdfminimizer * s, gsl_multimin_function_fdf * fdf, const gsl_vector * x, double step_size, double tol)
-	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.01, 0.1);
+	gsl_multimin_fdfminimizer_set(s, &my_func, x, 0.005, 0.1);
 
 	size_t iter = 0;
 	int status;
@@ -790,7 +790,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 
 	} while (/*(s->f > MAX_LANE_DIST) &&*/ (status == GSL_CONTINUE) && (iter < 50));
 
-//	printf("iter = %ld\n", iter);
+	printf("iter = %ld\n", iter);
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
@@ -800,8 +800,8 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 		tcp.valid = false;
 	}
 
-//	printf("plan_cost = %lf\n", params.plan_cost);
-	if (params.plan_cost > 3.6)
+	printf("plan_cost = %lf\n", params.plan_cost);
+	if (params.plan_cost > 2.0)
 	{
 //		printf(">>>>>>>>>>>>>> plan_cost > 3.6\n");
 		tcp.valid = false;
@@ -888,7 +888,7 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 	//		system("pkill gnuplot");
 	//	}
 
-//	printf("Iteracoes: %lu \n", iter);
+	printf("Iteracoes: %lu \n", iter);
 	return (tcp);
 }
 
@@ -922,8 +922,8 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 //	if (tcp_complete.valid)
 		tcp_complete = optimized_lane_trajectory_control_parameters(tcp_complete, target_td, target_v, params);
 
-//	printf("t %.3lf, v0 %.1lf, a %.3lf, vg %.2lf, dg %.1lf, tt %.3lf\n",
-//			carmen_get_time(), target_td.v_i, tcp_complete.a, target_v, tcp_complete.s, tcp_complete.tt);
+	printf("t %.3lf, v0 %.1lf, a %.3lf, vg %.2lf, dg %.1lf, tt %.3lf\n",
+			carmen_get_time(), target_td.v_i, tcp_complete.a, target_v, tcp_complete.s, tcp_complete.tt);
 
 	return (tcp_complete);
 }

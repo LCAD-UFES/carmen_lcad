@@ -12,7 +12,7 @@ LFLAGS += $(INTERFACE_LIBS) -lglobal -lipc -lmap_interface -lparam_interface  \
 	-lmapper_interface -lrddf_interface -lnavigator_ackerman_interface \
 	-llocalize_ackerman_interface -lmap_server_interface -lcollision_detection -lmotion_planner_interface \
 	-lobstacle_avoider_interface -lgrid_mapping -lmap_io -lmap_util \
-	-lprob_models -lrotation_geometry -lsimulator_ackerman_interface
+	-lprob_models -lrotation_geometry -lsimulator_ackerman_interface -lobstacle_distance_mapper_interface
 
 IFLAGS += -I/usr/include/eigen3 
 IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ -I/usr/local/include/g2o/
@@ -25,6 +25,17 @@ PUBLIC_LIBRARIES =  libbehavior_selector_interface.a
 PUBLIC_BINARIES = behavior_selector
 
 TARGETS =  behavior_selector libbehavior_selector_interface.a
+
+# If you set graphics support in configure.
+ifndef NO_GRAPHICS
+#Carmen Global Graphic Library and Gtk+2 Graphics Libraries
+LFLAGS += -lglobal_graphics
+IFLAGS += `pkg-config --cflags gtk+-2.0 gmodule-export-2.0`
+IFLAGS += `pkg-config --cflags gtkglext-1.0`
+LFLAGS += `pkg-config --libs gtk+-2.0 gmodule-export-2.0`
+LFLAGS += `pkg-config --libs gtkglext-1.0`
+
+endif
 
 behavior_selector: behavior_selector_main.o behavior_selector.o libbehavior_selector_interface.a
 

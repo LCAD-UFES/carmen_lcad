@@ -578,7 +578,7 @@ path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> path)
 	if (proximity_to_obstacles_for_path > 0.0)
 	{
 		printf("---------- PATH HIT OBSTACLE!!!!\n");
-		return (true);
+		return (false);
 	}
 	else
 		return (false);

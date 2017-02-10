@@ -7,6 +7,8 @@
 #include <prob_map.h>
 #include <carmen/map_server_interface.h>
 #include <carmen/obstacle_avoider_interface.h>
+#include <carmen/obstacle_distance_mapper_interface.h>
+
 #include "g2o/types/slam2d/se2.h"
 
 #include "behavior_selector.h"
@@ -320,7 +322,7 @@ publish_behavior_selector_road_profile_message(carmen_rddf_road_profile_message 
 void
 set_goal_velocity(carmen_ackerman_traj_point_t *goal)
 {
-	goal->v = 15.28; // Esta linha faz com que o behaviour_selector ignore as velocidades no rddf
+	goal->v = 18.28; // Esta linha faz com que o behaviour_selector ignore as velocidades no rddf
 
 	if (moving_object_in_front())
 	{
@@ -502,31 +504,9 @@ path_planner_road_profile_handler(carmen_path_planner_road_profile_message *rddf
 
 
 static void
-map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_message *message)
+carmen_obstacle_distance_mapper_message_handler(carmen_obstacle_distance_mapper_message *message)
 {
-	static carmen_compact_map_t *compact_cost_map = NULL;
-	static carmen_map_t cost_map;
-
-	if (compact_cost_map == NULL)
-	{
-		carmen_grid_mapping_create_new_map(&cost_map, message->config.x_size, message->config.y_size, message->config.resolution);
-		memset(cost_map.complete_map, 0, cost_map.config.x_size * cost_map.config.y_size * sizeof(double));
-
-		compact_cost_map = (carmen_compact_map_t*) (calloc(1, sizeof(carmen_compact_map_t)));
-		carmen_cpy_compact_cost_message_to_compact_map(compact_cost_map, message);
-		carmen_prob_models_uncompress_compact_map(&cost_map, compact_cost_map);
-	}
-	else
-	{
-		carmen_prob_models_clear_carmen_map_using_compact_map(&cost_map, compact_cost_map, 0.0);
-		carmen_prob_models_free_compact_map(compact_cost_map);
-		carmen_cpy_compact_cost_message_to_compact_map(compact_cost_map, message);
-		carmen_prob_models_uncompress_compact_map(&cost_map, compact_cost_map);
-	}
-
-	cost_map.config = message->config;
-
-	behavior_selector_update_map(&cost_map);
+	behavior_selector_update_map(message);
 
 	necessary_maps_available = 1;
 }
@@ -631,9 +611,7 @@ register_handlers()
 	else
 		carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t) simulator_ackerman_truepos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_map_server_subscribe_compact_cost_map(
-			NULL, (carmen_handler_t) map_server_compact_cost_map_message_handler,
-			CARMEN_SUBSCRIBE_LATEST);
+	carmen_obstacle_distance_mapper_subscribe_message(NULL, (carmen_handler_t) carmen_obstacle_distance_mapper_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	// esse handler eh subscribe_all porque todas as anotacoes precisam ser recebidas!
 	carmen_rddf_subscribe_annotation_message(NULL,
@@ -709,7 +687,6 @@ static void
 read_parameters(int argc, char **argv)
 {
 	carmen_robot_ackerman_config_t robot_config;
-	//	carmen_map_t map;
 	double distance_between_waypoints, change_goal_distance, distance_to_remove_annotation_goal;
 	carmen_behavior_selector_algorithm_t parking_planner, following_lane_planner;
 
@@ -724,6 +701,7 @@ read_parameters(int argc, char **argv)
 			{(char *) "robot", (char *) "max_centripetal_acceleration", CARMEN_PARAM_DOUBLE, &robot_max_centripetal_acceleration, 1, NULL},
 			{(char *) "robot", (char *) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &robot_config.distance_between_front_and_rear_axles, 1, NULL},
 			{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &robot_config.distance_between_rear_car_and_rear_wheels, 1, NULL}, 			
+			{(char *) "robot", (char *) "distance_between_front_car_and_front_wheels", CARMEN_PARAM_DOUBLE, &robot_config.distance_between_front_car_and_front_wheels, 1, NULL},
 			{(char *) "behavior_selector", (char *) "distance_between_waypoints", CARMEN_PARAM_DOUBLE, &distance_between_waypoints, 1, NULL},
 			{(char *) "behavior_selector", (char *) "change_goal_distance", CARMEN_PARAM_DOUBLE, &change_goal_distance, 1, NULL},
 			{(char *) "behavior_selector", (char *) "following_lane_planner", CARMEN_PARAM_INT, &following_lane_planner, 1, NULL},

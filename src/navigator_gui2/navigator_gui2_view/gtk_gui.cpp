@@ -2211,7 +2211,7 @@ namespace View
 				world_point.map = the_map_view->internal_map;
 
 //				carmen_map_graphics_draw_point(the_map_view, &carmen_red, &world_point);
-				carmen_map_graphics_draw_circle(the_map_view, &carmen_red, TRUE, &world_point, pixel_size * 2.0);
+				carmen_map_graphics_draw_circle(the_map_view, &carmen_colors[(int) virtual_laser_msg.colors[i]], TRUE, &world_point, pixel_size * 2.0);
 			}
 		}
 	}

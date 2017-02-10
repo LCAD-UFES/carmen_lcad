@@ -5,8 +5,8 @@ MODULE_NAME = RRT Planner
 MODULE_COMMENT = Rapidly-exploring Random Trees Planner
 
 LINK = g++
-CFLAGS += -pg
-CXXFLAGS += -std=c++0x -pg 
+CFLAGS += 
+CXXFLAGS += -std=c++0x
 
 # Application specific include directories.
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models

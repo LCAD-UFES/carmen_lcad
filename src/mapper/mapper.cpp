@@ -114,6 +114,53 @@ build_front_laser_message_from_velodyne_point_cloud(sensor_parameters_t *sensor_
 
 }
 
+
+void
+build_moving_points_vector_ldmrs(int tid, sensor_parameters_t* sensor_params, sensor_data_t* sensor_data, carmen_map_t* log_odds_snapshot_map)
+{
+	for (int k = 1; k < sensor_params->vertical_resolution; k++)    // @@@ Alberto: mudar este 1 para 0 quando o LDMRS estiver ajustado
+	{
+		if (!sensor_data->maxed[tid][k])
+		{
+			cell_coords_t cell_hit_by_ray;
+			cell_hit_by_ray.x = round(sensor_data->ray_position_in_the_floor[tid][k].x / log_odds_snapshot_map->config.resolution);
+			cell_hit_by_ray.y = round(sensor_data->ray_position_in_the_floor[tid][k].y / log_odds_snapshot_map->config.resolution);
+			if (map_grid_is_valid(log_odds_snapshot_map, cell_hit_by_ray.x, cell_hit_by_ray.y) && offline_map.map[cell_hit_by_ray.x][cell_hit_by_ray.y] < 0.5)
+			{
+				virtual_laser_message.positions[virtual_laser_message.num_positions].x = sensor_data->ray_position_in_the_floor[tid][k].x + x_origin;
+				virtual_laser_message.positions[virtual_laser_message.num_positions].y = sensor_data->ray_position_in_the_floor[tid][k].y + y_origin;
+				virtual_laser_message.num_positions += 1;
+			}
+		}
+	}
+}
+
+
+void
+build_moving_points_vetor_velodyne(int tid, sensor_parameters_t* sensor_params, sensor_data_t* sensor_data, carmen_map_t* log_odds_snapshot_map)
+{
+	//		int ray_thnt = sensor_data->ray_that_hit_the_nearest_target[tid];
+	for (int k = 0; k < sensor_params->vertical_resolution; k++)
+	{
+		if (!sensor_data->maxed[tid][k])
+		{
+			cell_coords_t cell_hit_by_ray;
+			double x = sensor_data->ray_position_in_the_floor[tid][k].x;
+			double y = sensor_data->ray_position_in_the_floor[tid][k].y;
+			cell_hit_by_ray.x = round(x / log_odds_snapshot_map->config.resolution);
+			cell_hit_by_ray.y = round(y / log_odds_snapshot_map->config.resolution);
+			if (map_grid_is_valid(log_odds_snapshot_map, cell_hit_by_ray.x, cell_hit_by_ray.y)
+					&& (sensor_data->occupancy_log_odds_of_each_ray_target[tid][k] > sensor_params->log_odds.log_odds_occ / 3.0)
+					&& (offline_map.map[cell_hit_by_ray.x][cell_hit_by_ray.y] <= 0.5))
+			{
+				virtual_laser_message.positions[virtual_laser_message.num_positions].x = x + x_origin;
+				virtual_laser_message.positions[virtual_laser_message.num_positions].y = y + y_origin;
+				virtual_laser_message.num_positions += 1;
+			}
+		}
+	}
+}
+
 //FILE *plot_data;
 
 static void
@@ -166,25 +213,7 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *log_odds
 				robot_near_bump_or_barrier, tid);
 
 //		int ray_thnt = sensor_data->ray_that_hit_the_nearest_target[tid];
-		for (int k = 0; k < sensor_params->vertical_resolution; k++)
-		{
-			if (!sensor_data->maxed[tid][k])
-			{
-				cell_coords_t cell_hit_by_ray;
-				double x = sensor_data->ray_position_in_the_floor[tid][k].x;
-				double y = sensor_data->ray_position_in_the_floor[tid][k].y;
-				cell_hit_by_ray.x = round(x / log_odds_snapshot_map->config.resolution);
-				cell_hit_by_ray.y = round(y / log_odds_snapshot_map->config.resolution);
-				if (map_grid_is_valid(log_odds_snapshot_map, cell_hit_by_ray.x, cell_hit_by_ray.y) &&
-					(sensor_data->occupancy_log_odds_of_each_ray_target[tid][k] > sensor_params->log_odds.log_odds_occ / 3.0) &&
-					(offline_map.map[cell_hit_by_ray.x][cell_hit_by_ray.y] <= 0.5))
-				{
-					virtual_laser_message.positions[virtual_laser_message.num_positions].x = x + x_origin;
-					virtual_laser_message.positions[virtual_laser_message.num_positions].y = y + y_origin;
-					virtual_laser_message.num_positions += 1;
-				}
-			}
-		}
+//		build_moving_points_vetor_velodyne(tid, sensor_params, sensor_data, log_odds_snapshot_map);
 
 		if (update_cells_crossed_by_rays == UPDATE_CELLS_CROSSED_BY_RAYS)
 		{
@@ -263,22 +292,7 @@ update_log_odds_of_cells_in_the_laser_ldmrs_perceptual_field(carmen_map_t *log_o
 //		if (update_cells_crossed_by_rays == UPDATE_CELLS_CROSSED_BY_RAYS)
 //			carmen_prob_models_update_cells_crossed_by_ray(snapshot_map, sensor_params, sensor_data, tid);
 
-		for (int k = 1; k < sensor_params->vertical_resolution; k++)  // @@@ Alberto: mudar este 1 para 0 quando o LDMRS estiver ajustado
-		{
-			if (!sensor_data->maxed[tid][k])
-			{
-				cell_coords_t cell_hit_by_ray;
-				cell_hit_by_ray.x = round(sensor_data->ray_position_in_the_floor[tid][k].x / log_odds_snapshot_map->config.resolution);
-				cell_hit_by_ray.y = round(sensor_data->ray_position_in_the_floor[tid][k].y / log_odds_snapshot_map->config.resolution);
-				if (map_grid_is_valid(log_odds_snapshot_map, cell_hit_by_ray.x, cell_hit_by_ray.y) &&
-					offline_map.map[cell_hit_by_ray.x][cell_hit_by_ray.y] < 0.5)
-				{
-					virtual_laser_message.positions[virtual_laser_message.num_positions].x = sensor_data->ray_position_in_the_floor[tid][k].x + x_origin;
-					virtual_laser_message.positions[virtual_laser_message.num_positions].y = sensor_data->ray_position_in_the_floor[tid][k].y + y_origin;
-					virtual_laser_message.num_positions += 1;
-				}
-			}
-		}
+//		build_moving_points_vector_ldmrs(tid, sensor_params, sensor_data, log_odds_snapshot_map);
 
 		carmen_prob_models_set_log_odds_of_cells_hit_by_rays(log_odds_snapshot_map, sensor_params, sensor_data, tid);
 
@@ -732,7 +746,7 @@ mapper_publish_map(double timestamp)
 	}
 
 	carmen_mapper_publish_map_message(&map, timestamp);
-	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, timestamp);
+//	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, timestamp);
 //	printf("n = %d\n", virtual_laser_message.num_positions);
 }
 
@@ -820,6 +834,7 @@ mapper_initialize(carmen_map_config_t *main_map_config, carmen_robot_ackerman_co
 
 	memset(&virtual_laser_message, 0, sizeof(carmen_mapper_virtual_laser_message));
 	virtual_laser_message.positions = (carmen_position_t *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(carmen_position_t));
+	virtual_laser_message.colors = (char *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(char));
 	virtual_laser_message.host = carmen_get_host();
 
 	last_globalpos = 0;

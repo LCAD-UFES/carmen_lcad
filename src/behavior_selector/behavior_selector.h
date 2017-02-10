@@ -21,7 +21,7 @@ struct _moving_object
 
 typedef struct _moving_object MOVING_OBJECT;
 
-#define MOVING_OBJECT_HISTORY_SIZE 20
+#define MOVING_OBJECT_HISTORY_SIZE 10
 
 
 void change_distance_between_waypoints_and_goals(double dist_between_waypoints, double change_goal_dist);
@@ -34,7 +34,7 @@ void behavior_selector_update_robot_pose(carmen_ackerman_traj_point_t robot_pose
 
 void behavior_selector_update_rddf(carmen_rddf_road_profile_message *rddf_msg, int rddf_num_poses_by_velocity, double timestamp);
 
-void behavior_selector_update_map(carmen_map_t *map);
+void behavior_selector_update_map(carmen_obstacle_distance_mapper_message *map);
 
 void behavior_selector_publish_periodic_messages();
 

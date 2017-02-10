@@ -48,6 +48,9 @@ GdkColor carmen_red, carmen_blue, carmen_white, carmen_yellow, carmen_green,
   carmen_light_blue, carmen_black, carmen_orange, carmen_grey, 
   carmen_light_grey, carmen_purple;
 
+GdkColor carmen_colors[11];
+
+
 void carmen_graphics_update_ipc_callbacks(GdkInputFunction callback_Func) 
 {
   fd_set *open_fds;
@@ -130,6 +133,18 @@ carmen_graphics_setup_colors(void)
   _add_color(&carmen_grey, "ivory4");
   _add_color(&carmen_light_grey, "grey79");
   _add_color(&carmen_purple, "purple");
+
+  carmen_colors[CARMEN_RED] = carmen_red;
+  carmen_colors[CARMEN_BLUE] = carmen_blue;
+  carmen_colors[CARMEN_WHITE] = carmen_white;
+  carmen_colors[CARMEN_YELLOW] = carmen_yellow;
+  carmen_colors[CARMEN_GREEN] = carmen_green;
+  carmen_colors[CARMEN_LIGHT_BLUE] = carmen_light_blue;
+  carmen_colors[CARMEN_BLACK] = carmen_black;
+  carmen_colors[CARMEN_ORANGE] = carmen_orange;
+  carmen_colors[CARMEN_GREY] = carmen_light_grey;
+  carmen_colors[CARMEN_LIGHT_GREY] = carmen_red;
+  carmen_colors[CARMEN_PURPLE] = carmen_purple;
 }
 
 GdkColor carmen_graphics_add_color(char *name) 

@@ -46,25 +46,6 @@ to_world_pose(carmen_point_t map_pose, carmen_map_config_t *map_config)
 }
 
 
-int 
-trajectory_pose_hit_obstacle(carmen_ackerman_traj_point_t trajectory_pose, carmen_map_t *map, carmen_robot_ackerman_config_t *car_config) 
-{
-	carmen_point_t pose;
-
-	if (map == NULL)
-	{
-		printf("map == NULL in trajectory_pose_hit_obstacle()\n");
-		return (1);
-	}
-
-	pose.x = trajectory_pose.x;
-	pose.y = trajectory_pose.y;
-	pose.theta = trajectory_pose.theta;
-
-	return (pose_hit_obstacle(pose, map, car_config));
-}
-
-
 int
 colision_detection_is_valid_position(int x, int y, carmen_map_t *map)
 {
@@ -367,8 +348,10 @@ pose_hit_obstacle_ultrasonic(carmen_point_t pose, carmen_map_t *map, carmen_robo
 	return 0;
 }
 
-inline carmen_point_t
-carmen_collision_detection_move_path_point_to_world_coordinates(const carmen_point_t point, carmen_point_t *localizer_pose, double displacement)
+
+//inline carmen_point_t
+carmen_point_t
+carmen_collision_detection_displace_point_according_to_car_orientation(const carmen_point_t point, carmen_point_t *localizer_pose, double displacement)
 {
 	carmen_point_t path_point_in_map_coords;
 	double coss, sine;
@@ -382,6 +365,20 @@ carmen_collision_detection_move_path_point_to_world_coordinates(const carmen_poi
 	path_point_in_map_coords.y = (localizer_pose->y + x_disp * sine + y_disp * coss);
 
 	return (path_point_in_map_coords);
+}
+
+
+carmen_point_t
+carmen_collision_detection_displace_car_pose_according_to_car_orientation(carmen_ackerman_traj_point_t *car_pose, double displacement)
+{
+	carmen_point_t displaced_car_pose;
+	double coss, sine;
+
+	sincos(car_pose->theta, &sine, &coss);
+	displaced_car_pose.x = car_pose->x + displacement * coss;
+	displaced_car_pose.y = car_pose->y + displacement * sine;
+
+	return (displaced_car_pose);
 }
 
 
@@ -469,17 +466,86 @@ carmen_obstacle_avoider_distance_from_global_point_to_obstacle(carmen_point_t *g
 //}
 
 
+void
+get_initial_displacement_and_displacement_inc(double *initial_displacement, double *displacement_inc, double circle_radius, double number_of_point,
+		carmen_robot_ackerman_config_t *robot_config)
+{
+//	double circle_radius = (robot_config.width + 0.4) / 2.0; // metade da largura do carro + um espacco de guarda
+	double car_lenght = robot_config->distance_between_front_and_rear_axles + robot_config->distance_between_rear_car_and_rear_wheels +
+			robot_config->distance_between_front_car_and_front_wheels - 2.0 * (circle_radius - 0.2);
+	*displacement_inc = car_lenght / number_of_point;
+	*initial_displacement = (circle_radius - 0.2) - robot_config->distance_between_rear_car_and_rear_wheels;
+}
+
+
 double
 carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(carmen_point_t *localizer_pose, carmen_point_t point_to_check,
-		carmen_robot_ackerman_config_t robot_config,
-		carmen_obstacle_distance_mapper_message *distance_map, double circle_radius)
+		carmen_robot_ackerman_config_t robot_config, carmen_obstacle_distance_mapper_message *distance_map, double circle_radius)
+{
+	double initial_displacement, displacement_inc;
+	double number_of_point = 5.0;
+	get_initial_displacement_and_displacement_inc(&initial_displacement, &displacement_inc, circle_radius, number_of_point, &robot_config);
+
+	double proximity_to_obstacles = 0.0;
+	for (double i = 0; i < number_of_point; i += 1.0)
+	{
+		double displacement = initial_displacement + i * displacement_inc;
+		carmen_point_t displaced_point = carmen_collision_detection_displace_point_according_to_car_orientation(point_to_check, localizer_pose, displacement);
+		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
+		//distance equals to -1.0 when the coordinates are outside of map
+		if (distance != -1.0)
+		{
+			double delta = distance - circle_radius;
+			if (delta < 0.0)
+				proximity_to_obstacles += delta * delta;
+		}
+	}
+
+	return (proximity_to_obstacles);
+}
+
+
+int
+trajectory_pose_hit_obstacle(carmen_ackerman_traj_point_t trajectory_pose, double circle_radius,
+		carmen_obstacle_distance_mapper_message *distance_map, carmen_robot_ackerman_config_t *robot_config)
+{
+	if (distance_map == NULL)
+	{
+		printf("distance_map == NULL in trajectory_pose_hit_obstacle()\n");
+		return (1);
+	}
+
+	double initial_displacement, displacement_inc;
+	double number_of_point = 5.0;
+	get_initial_displacement_and_displacement_inc(&initial_displacement, &displacement_inc, circle_radius, number_of_point, robot_config);
+
+	for (double i = 0; i < number_of_point; i += 1.0)
+	{
+		double displacement = initial_displacement + i * displacement_inc;
+		carmen_point_t displaced_point = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&trajectory_pose, displacement);
+		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
+		//distance equals to -1.0 when the coordinates are outside of map
+		if (distance != -1.0)
+		{
+			if (distance < circle_radius)
+				return (1);
+		}
+		else
+			return (2);
+	}
+
+	return (0);
+}
+
+
+double
+carmen_obstacle_avoider_compute_closest_car_distance_to_colliding_point(carmen_ackerman_traj_point_t *car_pose, carmen_position_t point_to_check,
+		carmen_robot_ackerman_config_t robot_config, double circle_radius)
 {
 	int number_of_point = 4;
 	double displacement_inc = robot_config.distance_between_front_and_rear_axles / (number_of_point - 2);
 	double displacement = 0.0;
-	double proximity_to_obstacles = 0.0;
-//	double circle_radius = (robot_config.width + 0.4) / 2.0; // metade da largura do carro + um espacco de guarda
-	carmen_point_t point_in_map_coords;
+	double proximity_to_colliding_point = circle_radius;
 
 	for (int i = -1; i < number_of_point; i++)
 	{
@@ -491,16 +557,16 @@ carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(carmen_point_t
 		if (i == number_of_point - 1)
 			displacement = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
 
-		point_in_map_coords = carmen_collision_detection_move_path_point_to_world_coordinates(point_to_check, localizer_pose, displacement);
-		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&point_in_map_coords, distance_map);
-		//distance equals to -1.0 when the coordinates are outside of map
-		if(distance != -1.0)
+		carmen_point_t displaced_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(car_pose, displacement);
+		double distance = sqrt((displaced_car_pose.x - point_to_check.x) * (displaced_car_pose.x - point_to_check.x) +
+							   (displaced_car_pose.y - point_to_check.y) * (displaced_car_pose.y - point_to_check.y));
+		double delta = distance - circle_radius;
+		if (delta < 0.0)
 		{
-			double delta = distance - circle_radius;
-			if (delta < 0.0)
-				proximity_to_obstacles += delta * delta;
+			if (-delta < proximity_to_colliding_point)
+				proximity_to_colliding_point = -delta;
 		}
 	}
 
-	return (proximity_to_obstacles);
+	return (proximity_to_colliding_point);
 }

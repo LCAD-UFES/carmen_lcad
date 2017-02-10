@@ -55,6 +55,24 @@ extern "C" {
     carmen_green, carmen_light_blue, carmen_black, carmen_orange, 
     carmen_grey, carmen_light_grey, carmen_purple;
 
+  enum
+  {
+	  CARMEN_RED = 0,
+	  CARMEN_BLUE = 1,
+	  CARMEN_WHITE = 2,
+	  CARMEN_YELLOW = 3,
+	  CARMEN_GREEN = 4,
+	  CARMEN_LIGHT_BLUE = 5,
+	  CARMEN_BLACK = 6,
+	  CARMEN_ORANGE = 7,
+	  CARMEN_GREY = 8,
+	  CARMEN_LIGHT_GREY = 9,
+	  CARMEN_PURPLE = 10,
+  };
+
+  extern GdkColor carmen_colors[11];
+
+
   void carmen_graphics_update_ipc_callbacks(GdkInputFunction callback_Func);
 
   GdkColor carmen_graphics_add_color(char *name);

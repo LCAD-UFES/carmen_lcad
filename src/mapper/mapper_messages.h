@@ -47,12 +47,13 @@ typedef struct
 {
 	int num_positions;
 	carmen_position_t *positions;
+	char *colors;
 	double timestamp;
 	char *host;
 } carmen_mapper_virtual_laser_message;
 
 #define CARMEN_MAPPER_VIRTUAL_LASER_MESSAGE_NAME	"carmen_mapper_virtual_laser_message"
-#define CARMEN_MAPPER_VIRTUAL_LASER_MESSAGE_FMT		"{int,<{double,double}:1>, double, string}"
+#define CARMEN_MAPPER_VIRTUAL_LASER_MESSAGE_FMT		"{int,<{double,double}:1>, <byte:1>, double, string}"
 
 
 #ifdef __cplusplus
