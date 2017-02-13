@@ -22,6 +22,8 @@
 
 bool use_obstacles = true;
 
+//extern carmen_mapper_virtual_laser_message virtual_laser_message;
+
 
 void
 compute_a_and_t_from_s(double s, double target_v,
@@ -328,6 +330,8 @@ compute_proximity_to_obstacles_using_distance_map(vector<carmen_ackerman_path_po
 		carmen_point_t point_to_check = {path[i].x, path[i].y, path[i].theta};
 		proximity_to_obstacles_for_path += carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&localizer,
 				point_to_check, GlobalState::robot_config, GlobalState::distance_map, circle_radius);
+//		carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
+//		getchar();
 	}
 	return (proximity_to_obstacles_for_path);
 }
@@ -448,7 +452,7 @@ my_g(const gsl_vector *x, void *params)
 			(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 0.2) +
 			(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2));
 
-	double w1, w2, w3, w4, w5, result;
+	double w1, w2, w3, w4, w5, w6, result;
 	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
 	{
 		w1 = 10.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 10.0;
@@ -461,13 +465,14 @@ my_g(const gsl_vector *x, void *params)
 	}
 	else
 	{
-		w1 = 10.0; w2 = 5.0; w3 = 5.0; w4 = 1.5; w5 = 10.0;
+		w1 = 10.0; w2 = 55.0; w3 = 5.0; w4 = 1.5; w5 = 10.0; w6 = 0.005;
 		result = sqrt(
 				w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
 				w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
 				w4 * path_to_lane_distance + // já é quandrática
-				w5 * proximity_to_obstacles); // já é quandrática
+				w5 * proximity_to_obstacles + // já é quandrática
+				w6 * tcp.sf * tcp.sf);
 	}
 
 	//printf("s %lf, tdc %.2lf, tdd %.2f, a %.2lf\n", tcp.s, td.dist, my_params->target_td->dist, tcp.a);
@@ -915,6 +920,8 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 	ObjectiveFunctionParams params;
 	params.detailed_lane = detailed_lane;
 	params.use_lane = use_lane;
+
+//	virtual_laser_message.num_positions = 0;
 
 	tcp_complete = get_optimized_trajectory_control_parameters(tcp_seed, target_td, target_v, params, has_previous_good_tcp);
 

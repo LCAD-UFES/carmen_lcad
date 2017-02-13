@@ -698,6 +698,8 @@ read_parameters(int argc, char **argv)
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 }
 
+//extern carmen_mapper_virtual_laser_message virtual_laser_message;
+//#define MAX_VIRTUAL_LASER_SAMPLES 10000
 
 int
 main(int argc, char **argv)
@@ -712,6 +714,11 @@ main(int argc, char **argv)
 
 	g_trajectory_lookup_table = new TrajectoryLookupTable(update_lookup_table);
 	memset((void *) &tree, 0, sizeof(Tree));
+
+//	memset(&virtual_laser_message, 0, sizeof(carmen_mapper_virtual_laser_message));
+//	virtual_laser_message.positions = (carmen_position_t *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(carmen_position_t));
+//	virtual_laser_message.colors = (char *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(char));
+//	virtual_laser_message.host = carmen_get_host();
 
 	carmen_ipc_dispatch();
 }

@@ -294,6 +294,7 @@ behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_
 	// Map annotations handling
 	double distance_to_annotation = DIST2D(last_rddf_annotation_message.annotation_point, *GlobalState::localize_pose);
 	if (((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
+		 (last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) ||
 		 (last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)) &&
 		(distance_to_annotation < 30.0))
 		GlobalState::robot_config.max_vel = 1.0;

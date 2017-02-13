@@ -281,10 +281,10 @@ get_the_point_nearest_to_the_trajectory(int *point_in_trajectory_is,
 		carmen_ackerman_traj_point_t center_of_the_car_front_axel)
 {
 
-#define	WITHIN_THE_TRAJECTORY		0
-#define	CURRENT_ROBOT_POSITION		1
-#define	BEFORE_CURRENT_ROBOT_POSITION	2
-#define	BEYOND_WAYPOINT			3
+#define	POINT_WITHIN_SEGMENT		0
+#define	SEGMENT_TOO_SHORT		1
+#define	POINT_BEFORE_SEGMENT	2
+#define	POINT_AFTER_SEGMENT			3
 
 	// Return minimum distance between line segment vw and point p
 	// http://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
@@ -312,7 +312,7 @@ get_the_point_nearest_to_the_trajectory(int *point_in_trajectory_is,
 	l2 = dist2(v, w); // i.e. |w-v|^2 // NAO TROQUE POR carmen_ackerman_traj_distance2(&v, &w) pois nao sei se ee a mesma coisa.
 	if (l2 < 0.1)	  // v ~== w case // @@@ Alberto: Checar isso
 	{
-		*point_in_trajectory_is = CURRENT_ROBOT_POSITION;
+		*point_in_trajectory_is = SEGMENT_TOO_SHORT;
 		return (v);
 	}
 
@@ -323,19 +323,19 @@ get_the_point_nearest_to_the_trajectory(int *point_in_trajectory_is,
 
 	if (t < 0.0) 	// p beyond the v end of the segment
 	{
-		*point_in_trajectory_is = BEFORE_CURRENT_ROBOT_POSITION;
+		*point_in_trajectory_is = POINT_BEFORE_SEGMENT;
 		return (v);
 	}
 	if (t > 1.0)	// p beyond the w end of the segment
 	{
-		*point_in_trajectory_is = BEYOND_WAYPOINT;
+		*point_in_trajectory_is = POINT_AFTER_SEGMENT;
 		return (w);
 	}
 
 	// Projection falls on the segment
 	p.x = v.x + t * (w.x - v.x);
 	p.y = v.y + t * (w.y - v.y);
-	*point_in_trajectory_is = WITHIN_THE_TRAJECTORY;
+	*point_in_trajectory_is = POINT_WITHIN_SEGMENT;
 
 	return (p);
 }
@@ -563,7 +563,7 @@ motion_planner_compute_trajectory_old(carmen_ackerman_motion_command_p next_moti
 		{
 			point_in_trajectory = get_the_point_nearest_to_the_trajectory(&point_in_trajectory_is, current_robot_position, trajectory[trajectory_index], center_of_the_car_front_axel);
 
-			if (point_in_trajectory_is == WITHIN_THE_TRAJECTORY)
+			if (point_in_trajectory_is == POINT_WITHIN_SEGMENT)
 			{
 				next_motion_commands_vector[motion_command_index].time = get_motion_command_time(current_robot_position);
 				next_motion_commands_vector[motion_command_index].phi = current_robot_position.phi = get_motion_command_phi(current_robot_position.phi, next_motion_commands_vector[motion_command_index].time, current_robot_position, center_of_the_car_front_axel, point_in_trajectory);
@@ -573,19 +573,19 @@ motion_planner_compute_trajectory_old(carmen_ackerman_motion_command_p next_moti
 				motion_command_index++;
 			}
 
-			if (point_in_trajectory_is == BEYOND_WAYPOINT)
+			if (point_in_trajectory_is == POINT_AFTER_SEGMENT)
 			{	// No movimento simulado em predict_new_robot_position(), ou no proprio plano, o eixo dianteiro do carro ultrapassou o waypoint trajectory[trajectory_index]
 				trajectory_index++;
 				break;
 			}
 
-			if (point_in_trajectory_is == CURRENT_ROBOT_POSITION)
+			if (point_in_trajectory_is == SEGMENT_TOO_SHORT)
 			{	// No movimento simulado em predict_new_robot_position(), ou no proprio plano, o carro (eixo traseiro) alcanccou exatamente o waypoint trajectory[trajectory_index]
 				trajectory_index++;
 				break;
 			}
 
-			if (point_in_trajectory_is == BEFORE_CURRENT_ROBOT_POSITION)
+			if (point_in_trajectory_is == POINT_BEFORE_SEGMENT)
 			{	// No movimento simulado em predict_new_robot_position(), ou no proprio plano, o carro (eixo traseiro) ultrapassou o waypoint trajectory[trajectory_index]
 				trajectory_index++;
 				break;

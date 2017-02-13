@@ -34,7 +34,6 @@ IFLAGS += `pkg-config --cflags gtk+-2.0 gmodule-export-2.0`
 IFLAGS += `pkg-config --cflags gtkglext-1.0`
 LFLAGS += `pkg-config --libs gtk+-2.0 gmodule-export-2.0`
 LFLAGS += `pkg-config --libs gtkglext-1.0`
-
 endif
 
 behavior_selector: behavior_selector_main.o behavior_selector.o libbehavior_selector_interface.a
