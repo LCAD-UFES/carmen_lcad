@@ -503,8 +503,13 @@ carmen_velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 void
 carmen_mapper_handler(carmen_mapper_map_message *map_message)
 {
+	static int frames = 0;
+	carmen_moving_objects3_particles_message particles_message;
+
 	double virtual_scan[NUM_OF_RAYS];
+	static double last_virtual_scan[NUM_OF_RAYS];
 	double offline_virtual_scan[NUM_OF_RAYS];
+
 	for (int i = 0; i < NUM_OF_RAYS; i++)
 	{
 		offline_virtual_scan[i] = virtual_scan[i] = range_max;
@@ -516,7 +521,54 @@ carmen_mapper_handler(carmen_mapper_map_message *map_message)
 	generate_virtual_scan_from_map(offline_virtual_scan, &offline_map_message);
 	remove_static_points(virtual_scan, offline_virtual_scan, NUM_OF_RAYS);
 
+	double delta_time = 0.0;
+
+	if (frames >= 1)
+	{
+		delta_time = map_message->timestamp - previous_timestamp;
+		// do the scan differencing and find objects
+		scan_differencing(virtual_scan, last_virtual_scan, NUM_OF_RAYS);
+
+		for (unsigned int i = 0; i < moving_objects_list.size(); i++)
+		{
+			switch (moving_objects_list[i].tracking_state)
+			{
+				case STARTING:
+				{
+					moving_objects_list[i].tracking_state = TRACKING;
+					break;
+				}
+				case TRACKING:
+				{
+					moving_objects_list[i].particle_set = algorithm_particle_filter(moving_objects_list[i].particle_set, virtual_scan, NUM_OF_RAYS, delta_time);
+					moving_objects_list[i].best_particle = find_best_particle(moving_objects_list[i].particle_set);
+					descontinue_track(moving_objects_list, moving_objects_list[i], i);
+					break;
+				}
+				case ENDING:
+				{
+					break;
+				}
+				default:
+				{
+					break;
+				}
+
+			}
+		}
+	}
+
+	frames ++;
+
 	publish_virtual_scan_message(virtual_scan, map_message->timestamp, NUM_OF_RAYS);
+
+	memcpy(last_virtual_scan, virtual_scan, NUM_OF_RAYS * sizeof(double));
+	previous_timestamp = map_message->timestamp;
+
+
+	build_particles_message(&particles_message, moving_objects_list);
+	carmen_publish_moving_objects3_particles_message(&particles_message);
+	free (particles_message.particles);
 }
 
 
@@ -644,7 +696,7 @@ subscribe_messages()
 					CARMEN_SUBSCRIBE_LATEST);
 			break;
 		case 1:
-			carmen_mapper_subscribe_message(NULL,
+			carmen_mapper_subscribe_map_message(NULL,
 					(carmen_handler_t) carmen_mapper_handler,
 					CARMEN_SUBSCRIBE_LATEST);
 			break;
