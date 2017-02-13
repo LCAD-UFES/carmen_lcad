@@ -9,9 +9,11 @@
 #mapper_decay_to_offline_map			off
 #mapper_update_and_merge_with_mapper_saved_maps	on
 #mapper_build_snapshot_map			off
-#mapper_velodyne_range_max		 	50.0
+#mapper_velodyne_range_max		 	70.0
 #mapper_velodyne_range_max_factor 		4.0
 #mapper_create_map_sum_and_count		off
+#mapper_use_remission				on
+#mapper_laser_ldmrs 				off
 
 
 2- Altere o caminho do mapa no process-volta_da_ufes_playback_viewer_3D.ini
