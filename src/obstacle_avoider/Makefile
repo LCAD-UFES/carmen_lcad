@@ -28,6 +28,16 @@ PUBLIC_BINARIES = obstacle_avoider obstacle_avoider_test
 
 TARGETS = libcarmodel libvoice.a libobstacle_avoider.a obstacle_avoider libobstacle_avoider_interface.a libcollision_detection.a obstacle_avoider_test
 
+# If you set graphics support in configure.
+ifndef NO_GRAPHICS
+#Carmen Global Graphic Library and Gtk+2 Graphics Libraries
+LFLAGS += -lglobal_graphics
+IFLAGS += `pkg-config --cflags gtk+-2.0 gmodule-export-2.0`
+IFLAGS += `pkg-config --cflags gtkglext-1.0`
+LFLAGS += `pkg-config --libs gtk+-2.0 gmodule-export-2.0`
+LFLAGS += `pkg-config --libs gtkglext-1.0`
+endif
+
 PUBLIC_LIBRARIES_SO = libobstacle_avoider_interface.so
 
 libcarmodel:

@@ -65,11 +65,7 @@ carmen_robot_ackerman_config_t *get_robot_config();
 
 carmen_rddf_road_profile_message *get_last_rddf_message();
 
-// TODO: retirar as duas funcoes deste contexto de lib e deixa-las apenas visiveis (static) no behavior_selector_main.cpp
-void publish_goal_list();
-void publish_current_state();
-
-int behaviou_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_point_t current_pose, double timestamp);
+int behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_point_t current_pose, double timestamp);
 double get_moving_object_in_front_v();
 int moving_object_in_front();
 

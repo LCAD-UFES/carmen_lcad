@@ -8,6 +8,7 @@
 #include <carmen/map_server_interface.h>
 #include <carmen/obstacle_avoider_interface.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
+#include <carmen/global_graphics.h>
 
 #include "g2o/types/slam2d/se2.h"
 
@@ -40,6 +41,7 @@ carmen_behavior_selector_road_profile_message road_profile_message;
 double robot_max_centripetal_acceleration = 1.5;
 
 int use_truepos = 0;
+extern carmen_mapper_virtual_laser_message virtual_laser_message;
 
 
 int
@@ -145,16 +147,15 @@ get_velocity_at_goal(double v0, double va, double dg, double da)
 
 
 void
-set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal)
+set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
 {
 	static bool clearing_annotation = false;
 
-	carmen_ackerman_traj_point_t current_robot_pose_v_and_phi = get_robot_pose();
-	double distance_to_annotation = DIST2D(last_rddf_annotation_message.annotation_point, get_robot_pose());
+	double distance_to_annotation = DIST2D_P(&last_rddf_annotation_message.annotation_point, current_robot_pose_v_and_phi);
 	double velocity_at_next_annotation = get_velocity_at_next_annotation(goal->v);
-	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, velocity_at_next_annotation,
+	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi->v, velocity_at_next_annotation,
 			distance_to_annotation);
-	double distance_to_goal = carmen_distance_ackerman_traj(&current_robot_pose_v_and_phi, goal);
+	double distance_to_goal = carmen_distance_ackerman_traj(current_robot_pose_v_and_phi, goal);
 //	printf("ca %d, daann %.1lf, dann %.1lf, v %.1lf, vg %.1lf\n", clearing_annotation,
 //			distance_to_act_on_annotation, distance_to_annotation, current_robot_pose_v_and_phi.v,
 //			get_velocity_at_goal(current_robot_pose_v_and_phi, velocity_at_next_annotation,
@@ -162,11 +163,12 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal)
 	if (last_rddf_annotation_message_valid &&
 		(clearing_annotation ||
 		 (distance_to_annotation < distance_to_act_on_annotation) ||
-		 ((distance_to_annotation < distance_to_goal + get_robot_config()->distance_between_front_and_rear_axles)
-					&& annotation_is_forward(get_robot_pose(), last_rddf_annotation_message.annotation_point))))
+		 ((distance_to_annotation < (distance_to_goal +
+				 get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels)) &&
+		  annotation_is_forward(get_robot_pose(), last_rddf_annotation_message.annotation_point))))
 	{
 		clearing_annotation = true;
-		goal->v = get_velocity_at_goal(current_robot_pose_v_and_phi.v, velocity_at_next_annotation,
+		goal->v = get_velocity_at_goal(current_robot_pose_v_and_phi->v, velocity_at_next_annotation,
 				distance_to_goal, distance_to_annotation);
 		if (!annotation_is_forward(get_robot_pose(), last_rddf_annotation_message.annotation_point))
 			clearing_annotation = false;
@@ -226,6 +228,175 @@ limit_maximum_velocity_according_to_centripetal_acceleration(double target_v, do
 
 	return (limited_target_v);
 }
+
+
+void
+set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
+{
+	goal->v = 18.28; // Esta linha faz com que o behaviour_selector ignore as velocidades no rddf
+
+	if (moving_object_in_front())
+	{ 	// um carro de tamanho para cada 10 milhas/h (4.4705 m/s) -> ver "The DARPA Urban Challenge" book, pg. 36.
+		double min_dist_according_to_car_v = get_robot_config()->length * (current_robot_pose_v_and_phi->v / 4.4704) +
+				get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels;
+		double desired_distance = carmen_fmax(1.5 * min_dist_according_to_car_v, 10.0);
+		double distance = carmen_distance_ackerman_traj(goal, current_robot_pose_v_and_phi);
+		double moving_obj_v = get_moving_object_in_front_v();
+		// ver "The DARPA Urban Challenge" book, pg. 36.
+		double Kgap = 1.8;
+		goal->v = moving_obj_v + Kgap * (distance - desired_distance);
+		if (goal->v < 0.0)
+			goal->v = 0.0;
+//		printf("mov %lf, gv %lf, dist %lf, d_dist %lf\n", moving_obj_v, goal->v, distance, desired_distance);
+	}
+
+//	printf("gva %lf  \n\n", goal->v);
+	goal->v = limit_maximum_velocity_according_to_centripetal_acceleration(goal->v, get_robot_pose().v, goal,
+			road_profile_message.poses, road_profile_message.number_of_poses);
+//	printf("gvdlc %lf  ", goal->v);
+
+	set_goal_velocity_according_to_annotation(goal, current_robot_pose_v_and_phi);
+//	printf("gvda %lf\n", goal->v);
+
+	if (obstacle_avoider_active_recently)
+		goal->v = carmen_fmin(2.5, goal->v);
+
+//	printf("gvf %lf\n", goal->v);
+}
+
+
+void
+set_behaviours_parameters(const carmen_ackerman_traj_point_t& current_robot_pose_v_and_phi, double timestamp)
+{
+	if (fabs(current_robot_pose_v_and_phi.v) < param_distance_interval)
+		change_distance_between_waypoints_and_goals(param_distance_between_waypoints, param_change_goal_distance);
+	else
+		change_distance_between_waypoints_and_goals(4.0 * fabs(current_robot_pose_v_and_phi.v), 4.0 * fabs(current_robot_pose_v_and_phi.v));
+
+	behavior_selector_update_robot_pose(current_robot_pose_v_and_phi);
+
+	static double last_time_obstacle_avoider_detected_obstacle = 0.0;
+	if (last_obstacle_avoider_robot_hit_obstacle_message.robot_will_hit_obstacle)
+	{
+		obstacle_avoider_active_recently = true;
+		last_time_obstacle_avoider_detected_obstacle = last_obstacle_avoider_robot_hit_obstacle_message.timestamp;
+	}
+	else
+	{
+		if ((timestamp - last_time_obstacle_avoider_detected_obstacle) > 2.0)
+			obstacle_avoider_active_recently = false;
+	}
+}
+
+
+static double
+dist2(carmen_ackerman_traj_point_t v, carmen_ackerman_traj_point_t w)
+{
+	return (carmen_square(v.x - w.x) + carmen_square(v.y - w.y));
+}
+
+
+static carmen_ackerman_traj_point_t
+get_the_point_nearest_to_the_trajectory(int *point_in_trajectory_is,
+		carmen_ackerman_traj_point_t v,
+		carmen_ackerman_traj_point_t w,
+		carmen_ackerman_traj_point_t p)
+{
+
+#define	POINT_WITHIN_SEGMENT		0
+#define	SEGMENT_TOO_SHORT			1
+#define	POINT_BEFORE_SEGMENT		2
+#define	POINT_AFTER_SEGMENT			3
+
+	// Return minimum distance between line segment vw and point p
+	// http://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
+	double l2, t;
+
+	l2 = dist2(v, w); // i.e. |w-v|^2 // NAO TROQUE POR carmen_ackerman_traj_distance2(&v, &w) pois nao sei se ee a mesma coisa.
+	if (l2 < 0.1)	  // v ~== w case // @@@ Alberto: Checar isso
+	{
+		*point_in_trajectory_is = SEGMENT_TOO_SHORT;
+		return (v);
+	}
+
+	// Consider the line extending the segment, parameterized as v + t (w - v).
+	// We find the projection of point p onto the line.
+	// It falls where t = [(p-v) . (w-v)] / |w-v|^2
+	t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+
+	if (t < 0.0) 	// p beyond the v end of the segment
+	{
+		*point_in_trajectory_is = POINT_BEFORE_SEGMENT;
+		return (v);
+	}
+	if (t > 1.0)	// p beyond the w end of the segment
+	{
+		*point_in_trajectory_is = POINT_AFTER_SEGMENT;
+		return (w);
+	}
+
+	// Projection falls on the segment
+	p = v; // Copy other elements, like theta, etc.
+	p.x = v.x + t * (w.x - v.x);
+	p.y = v.y + t * (w.y - v.y);
+	*point_in_trajectory_is = POINT_WITHIN_SEGMENT;
+
+	return (p);
+}
+
+
+carmen_ackerman_traj_point_t *
+compute_simulated_objects(carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi, double timestamp)
+{
+	static carmen_ackerman_traj_point_t previous_pose, previous_pose_moved;
+	static double previous_timestamp = 0.0;
+
+	if (!necessary_maps_available)
+		return (NULL);
+
+	carmen_rddf_road_profile_message *rddf = get_last_rddf_message();
+	if (rddf == NULL)
+		return (NULL);
+
+	int i;
+	for (i = 0; i < rddf->number_of_poses; i++)
+		if (carmen_distance_ackerman_traj(&rddf->poses[i], current_robot_pose_v_and_phi) > 60.0)
+			break;
+	if (i == rddf->number_of_poses)
+		return (NULL);
+
+	if ((current_robot_pose_v_and_phi->v < 0.2) || (carmen_distance_ackerman_traj(&previous_pose, current_robot_pose_v_and_phi) > 60.0))
+	{
+		previous_pose = rddf->poses[i];
+		previous_timestamp = timestamp;
+	}
+
+	double desired_v = (30.0 / 3.6);
+	double delta_t = timestamp - previous_timestamp;
+	double dx = desired_v * delta_t * cos(previous_pose.theta);
+	double dy = desired_v * delta_t * sin(previous_pose.theta);
+	carmen_ackerman_traj_point_t aux;
+	aux.x = previous_pose.x + dx;
+	aux.y = previous_pose.y + dy;
+
+	int point_is;
+	for (i = 0; i < rddf->number_of_poses - 1; i++)
+	{
+		previous_pose_moved = get_the_point_nearest_to_the_trajectory(&point_is, rddf->poses[i], rddf->poses[i + 1], aux);
+		if (point_is == POINT_WITHIN_SEGMENT)
+			break;
+	}
+	if (i != (rddf->number_of_poses - 1))
+	{
+		previous_pose = previous_pose_moved;
+		previous_timestamp = timestamp;
+
+		return (&previous_pose_moved);
+	}
+
+	return (NULL);
+}
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -320,30 +491,6 @@ publish_behavior_selector_road_profile_message(carmen_rddf_road_profile_message 
 
 
 void
-set_goal_velocity(carmen_ackerman_traj_point_t *goal)
-{
-	goal->v = 18.28; // Esta linha faz com que o behaviour_selector ignore as velocidades no rddf
-
-	if (moving_object_in_front())
-	{
-		goal->v = get_moving_object_in_front_v();
-//		printf("mov %lf\n\n", goal->v);
-	}
-
-//	printf("gva %lf  ", goal->v);
-	goal->v = limit_maximum_velocity_according_to_centripetal_acceleration(goal->v, get_robot_pose().v, goal,
-			road_profile_message.poses, road_profile_message.number_of_poses);
-//	printf("gvdlc %lf  ", goal->v);
-
-	set_goal_velocity_according_to_annotation(goal);
-//	printf("gvda %lf\n", goal->v);
-
-	if (obstacle_avoider_active_recently)
-		goal->v = carmen_fmin(2.5, goal->v);
-}
-
-
-void
 publish_goal_list(carmen_ackerman_traj_point_t *goal_list, int goal_list_size, double timestamp)
 {
 	carmen_behavior_selector_goal_list_message goal_list_msg;
@@ -368,34 +515,23 @@ publish_goal_list(carmen_ackerman_traj_point_t *goal_list, int goal_list_size, d
 
 
 void
-behavior_selector_publish_periodic_messages()
+publish_object(carmen_ackerman_traj_point_t *object_pose)
 {
-	publish_current_state();
+	virtual_laser_message.num_positions = 1;
+	virtual_laser_message.positions[0].x = object_pose->x;
+	virtual_laser_message.positions[0].y = object_pose->y;
+	virtual_laser_message.colors[0] = CARMEN_PURPLE;
+	virtual_laser_message.host = carmen_get_host();
+	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
 }
 
 
 void
-set_behaviours_parameters(const carmen_ackerman_traj_point_t& current_robot_pose_v_and_phi, double timestamp)
+behavior_selector_publish_periodic_messages()
 {
-	if (fabs(current_robot_pose_v_and_phi.v) < param_distance_interval)
-		change_distance_between_waypoints_and_goals(param_distance_between_waypoints, param_change_goal_distance);
-	else
-		change_distance_between_waypoints_and_goals(4.0 * fabs(current_robot_pose_v_and_phi.v), 4.0 * fabs(current_robot_pose_v_and_phi.v));
-
-	behavior_selector_update_robot_pose(current_robot_pose_v_and_phi);
-
-	static double last_time_obstacle_avoider_detected_obstacle = 0.0;
-	if (last_obstacle_avoider_robot_hit_obstacle_message.robot_will_hit_obstacle)
-	{
-		obstacle_avoider_active_recently = true;
-		last_time_obstacle_avoider_detected_obstacle = last_obstacle_avoider_robot_hit_obstacle_message.timestamp;
-	}
-	else
-	{
-		if ((timestamp - last_time_obstacle_avoider_detected_obstacle) > 2.0)
-			obstacle_avoider_active_recently = false;
-	}
+	publish_current_state();
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 void
@@ -406,7 +542,7 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 
 	set_behaviours_parameters(current_robot_pose_v_and_phi, timestamp);
 
-	int state_updated = behaviou_selector_fill_goal_list(get_last_rddf_message(), get_robot_pose(), timestamp);
+	int state_updated = behaviour_selector_fill_goal_list(get_last_rddf_message(), get_robot_pose(), timestamp);
 	if (state_updated)
 		publish_current_state();
 
@@ -416,12 +552,15 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	if (goal_list_size > 0)
 	{
 		carmen_ackerman_traj_point_t *first_goal = &(goal_list[0]);
-		set_goal_velocity(first_goal);
+		set_goal_velocity(first_goal, &current_robot_pose_v_and_phi);
 
 		publish_goal_list(goal_list, goal_list_size, carmen_get_time());
 	}
+
+//	carmen_ackerman_traj_point_t *simulated_object_pose = compute_simulated_objects(&current_robot_pose_v_and_phi, timestamp);
+//	if (simulated_object_pose)
+//		publish_object(simulated_object_pose);
 }
-///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 

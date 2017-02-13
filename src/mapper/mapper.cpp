@@ -4,6 +4,7 @@
 #include <prob_map.h>
 #include <carmen/grid_mapping.h>
 #include <carmen/mapper_interface.h>
+#include <carmen/global_graphics.h>
 #include <omp.h>
 
 #include "mapper.h"
@@ -65,6 +66,13 @@ double x_origin, y_origin; // map origin in meters
 static carmen_laser_laser_message flaser; // moving_objects
 
 carmen_mapper_virtual_laser_message virtual_laser_message;
+
+
+carmen_map_t *
+get_the_map()
+{
+	return (&map);
+}
 
 
 static void
@@ -187,7 +195,7 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *log_odds
 //	robot_pose.orientation.pitch = 0.0;
 //	robot_pose.orientation.roll = 0.0;
 
-	virtual_laser_message.num_positions = 0;
+//	virtual_laser_message.num_positions = 0;
 	for (int j = 0; j < N; j += 1)
 	{
 		i = j * sensor_params->vertical_resolution;
@@ -737,6 +745,24 @@ mapper_merge_online_map_with_offline_map(carmen_map_t *offline_map)
 
 
 void
+add_virtual_laser_points(carmen_map_t *map, carmen_mapper_virtual_laser_message *virtual_laser_message)
+{
+	for (int i = 0; i < virtual_laser_message->num_positions; i++)
+	{
+		if (virtual_laser_message->colors[i] == CARMEN_PURPLE)
+		{
+			int x = round((virtual_laser_message->positions[i].x - map->config.x_origin) / map->config.resolution);
+			int y = round((virtual_laser_message->positions[i].y - map->config.y_origin) / map->config.resolution);
+
+			if (x >= 0 && x < map->config.x_size && y >= 0 && y < map->config.y_size)
+				map->map[x][y] = 1.0;
+		}
+	}
+	virtual_laser_message->num_positions = 0;
+}
+
+
+void
 mapper_publish_map(double timestamp)
 {
 	if (build_snapshot_map)
@@ -745,6 +771,7 @@ mapper_publish_map(double timestamp)
 		run_snapshot_mapper();
 	}
 
+	add_virtual_laser_points(&map, &virtual_laser_message);
 	carmen_mapper_publish_map_message(&map, timestamp);
 //	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, timestamp);
 //	printf("n = %d\n", virtual_laser_message.num_positions);
@@ -833,9 +860,9 @@ mapper_initialize(carmen_map_config_t *main_map_config, carmen_robot_ackerman_co
 	globalpos_history = (carmen_localize_ackerman_globalpos_message *) calloc(GLOBAL_POS_QUEUE_SIZE, sizeof(carmen_localize_ackerman_globalpos_message));
 
 	memset(&virtual_laser_message, 0, sizeof(carmen_mapper_virtual_laser_message));
-	virtual_laser_message.positions = (carmen_position_t *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(carmen_position_t));
-	virtual_laser_message.colors = (char *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(char));
-	virtual_laser_message.host = carmen_get_host();
+//	virtual_laser_message.positions = (carmen_position_t *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(carmen_position_t));
+//	virtual_laser_message.colors = (char *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(char));
+//	virtual_laser_message.host = carmen_get_host();
 
 	last_globalpos = 0;
 }

@@ -36,12 +36,13 @@
 static void redraw (GtkMapViewer *map_view, int map_changed, 
 		int viewport_changed);
 
-static carmen_inline void world_to_screen(carmen_world_point_t *wp, carmen_point_t *p,
+static carmen_inline int world_to_screen(carmen_world_point_t *wp, carmen_point_t *p,
 		GtkMapViewer *map_view)
 {
 	carmen_map_point_t mp;
 
-	carmen_world_to_map(wp, &mp);
+	if (carmen_world_to_map(wp, &mp) == -1)
+		return (-1);
 
 	mp.y = map_view->internal_map->config.y_size - mp.y;
 
@@ -50,6 +51,8 @@ static carmen_inline void world_to_screen(carmen_world_point_t *wp, carmen_point
 
 	p->x -= map_view->x_scroll_adj->value;
 	p->y -= map_view->y_scroll_adj->value;
+
+	return (1);
 }
 
 static carmen_inline void screen_to_map(carmen_point_t *p, carmen_map_point_t *mp,
@@ -81,7 +84,9 @@ void carmen_map_graphics_adjust_scrollbars(GtkMapViewer *map_view,
 	carmen_point_t screen;
 	GtkAdjustment *x_scroll_adj, *y_scroll_adj;
 
-	world_to_screen(new_centre, &screen, map_view);
+	if (world_to_screen(new_centre, &screen, map_view) == -1)
+		return;
+
 	x_scroll_adj = map_view->x_scroll_adj;
 	y_scroll_adj = map_view->y_scroll_adj;
 
@@ -639,7 +644,8 @@ void carmen_map_graphics_draw_point(GtkMapViewer *map_view, GdkColor *colour,
 	if (world_point->map == NULL)
 		return;
 
-	world_to_screen(world_point, &point, map_view);
+	if (world_to_screen(world_point, &point, map_view) == -1)
+		return;
 
 	gdk_draw_point(map_view->drawing_pixmap, map_view->drawing_gc, point.x, point.y);
 }
@@ -657,7 +663,8 @@ void carmen_map_graphics_draw_circle(GtkMapViewer *map_view, GdkColor *colour,
 	if (world_point->map == NULL)
 		return;
 
-	world_to_screen(world_point, &point, map_view);
+	if (world_to_screen(world_point, &point, map_view) == -1)
+		return;
 
 	radius /= (map_view->internal_map->config.resolution/map_view->rescale_size);
 
@@ -690,7 +697,8 @@ void carmen_map_graphics_draw_arc(GtkMapViewer *map_view, GdkColor *colour,
 	if (world_point->map == NULL)
 		return;
 
-	world_to_screen(world_point, &point, map_view);
+	if (world_to_screen(world_point, &point, map_view) == -1)
+		return;
 
 	radius /= (map_view->internal_map->config.resolution/map_view->rescale_size);
 	rect.x = point.x - radius;
@@ -712,8 +720,10 @@ void carmen_map_graphics_draw_line(GtkMapViewer *map_view, GdkColor *colour,
 	if (start->map == NULL || end->map == NULL)
 		return;
 
-	world_to_screen(start, &p1, map_view);
-	world_to_screen(end, &p2, map_view);
+	if (world_to_screen(start, &p1, map_view) == -1)
+		return;
+	if (world_to_screen(end, &p2, map_view) == -1)
+		return;
 
 	gdk_gc_set_foreground(map_view->drawing_gc, colour);
 
@@ -744,7 +754,8 @@ void carmen_map_graphics_draw_polygon(GtkMapViewer *map_view, GdkColor *colour,
 	}
 
 	for (i = 0; i < num_points; i++) {
-		world_to_screen(points+i, &p1, map_view);
+		if (world_to_screen(points+i, &p1, map_view) == -1)
+			return;
 		poly[i].x = p1.x;
 		poly[i].y = p1.y;
 	}
@@ -766,8 +777,10 @@ carmen_map_graphics_draw_rectangle(GtkMapViewer *map_view, GdkColor *colour,
 	if (start->map == NULL || end->map == NULL)
 		return;
 
-	world_to_screen(start, &p1, map_view);
-	world_to_screen(end, &p2, map_view);
+	if (world_to_screen(start, &p1, map_view) == -1)
+		return;
+	if (world_to_screen(end, &p2, map_view) == -1)
+		return;
 
 	width = abs(p1.x-p2.x);
 	height = abs(p1.y-p2.y);
@@ -858,7 +871,8 @@ carmen_map_graphics_draw_ellipse(GtkMapViewer *map_view, GdkColor *colour,
 		point.pose.y = xi * eigvec1y + yi * eigvec2y + mean->pose.y;
 		point.map = map_view->internal_map;
 
-		world_to_screen(&point, &p1, map_view);
+		if (world_to_screen(&point, &p1, map_view) == -1)
+			return;
 
 		poly[i].x = p1.x;
 		poly[i].y = p1.y;

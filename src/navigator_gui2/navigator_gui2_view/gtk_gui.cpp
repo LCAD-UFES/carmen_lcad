@@ -2202,7 +2202,8 @@ namespace View
 	{
 		if (nav_panel_config->show_dynamic_points)
 		{
-			for (int i = 0; i < virtual_laser_msg.num_positions; i++)
+			int i;
+			for (i = 0; i < virtual_laser_msg.num_positions; i++)
 			{
 				carmen_world_point_t world_point;
 				world_point.pose.x = virtual_laser_msg.positions[i].x;
@@ -2210,9 +2211,10 @@ namespace View
 				world_point.pose.theta = 0.0;
 				world_point.map = the_map_view->internal_map;
 
-//				carmen_map_graphics_draw_point(the_map_view, &carmen_red, &world_point);
 				carmen_map_graphics_draw_circle(the_map_view, &carmen_colors[(int) virtual_laser_msg.colors[i]], TRUE, &world_point, pixel_size * 2.0);
 			}
+			if (i != 0)
+				display_needs_updating = 1;
 		}
 	}
 

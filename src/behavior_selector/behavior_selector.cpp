@@ -128,7 +128,7 @@ copy_rddf_message(carmen_rddf_road_profile_message *rddf_msg)
 	//Now the rddf is number of posses variable with the velocity
 	if (!last_rddf_message)
 	{
-		last_rddf_message = (carmen_rddf_road_profile_message*)malloc(sizeof(carmen_rddf_road_profile_message));
+		last_rddf_message = (carmen_rddf_road_profile_message *) malloc(sizeof(carmen_rddf_road_profile_message));
 		last_rddf_message->number_of_poses = 0;
 		last_rddf_message->poses = NULL;
 		last_rddf_message->annotations = NULL;
@@ -217,20 +217,21 @@ update_moving_object_velocity()
 		double v = -1.0; // invalid v
 		if (moving_object[i].valid && moving_object[i + 1].valid)
 		{
-			double distance = carmen_distance_ackerman_traj(&moving_object[i].pose, &moving_object[i + 1].pose);
+			double dist = carmen_distance_ackerman_traj(&moving_object[i].pose, &moving_object[i + 1].pose);
 			// distance in the direction of the robot: https://en.wikipedia.org/wiki/Vector_projection
 			double angle = atan2(moving_object[i].pose.y - moving_object[i + 1].pose.y, moving_object[i].pose.x - moving_object[i + 1].pose.x);
-			distance = distance * cos(angle - robot_pose.theta);
+			double distance = dist * cos(angle - robot_pose.theta);
 			double delta_t = moving_object[i].timestamp - moving_object[i + 1].timestamp;
 			if (delta_t > 0.01 && delta_t < 0.2)
 				v = distance / delta_t;
 			if (v > 60.0)
 				v = -1.0;
-			if (v > 0.0)
+			if (v > -0.00001)
 			{
 				average_v += v;
 				count += 1.0;
 			}
+//			printf("i %d, v %lf, d %lf, df %lf, dtheta %lf, dt %lf\n", i, v, dist, distance, angle - robot_pose.theta, delta_t);
 		}
 		moving_object[i].pose.v = v;
 	}
@@ -263,7 +264,7 @@ get_moving_object_in_front_v()
 	double count = 0.0;
 	for (int i = MOVING_OBJECT_HISTORY_SIZE - 2; i >= 0 ; i--)
 	{
-		if (moving_object[i].valid && (moving_object[i].pose.v > 0.0))
+		if (moving_object[i].valid && (moving_object[i].pose.v > -0.0001))
 		{
 			average_v += moving_object[i].pose.v;
 			count += 1.0;
@@ -338,7 +339,7 @@ add_goal_to_goal_list(int &goal_index, carmen_ackerman_traj_point_t &current_pos
 
 
 int
-behaviou_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_point_t current_pose, double timestamp)
+behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_point_t current_pose, double timestamp)
 {
 	double distance_to_last_obstacle = 10000.0;
 	int last_obstacle_index = -1;
@@ -356,7 +357,7 @@ behaviou_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_
 	shift_moving_object_history();
 	int goal_index = 0;
 //	virtual_laser_message.num_positions = 0;
-	double circle_radius = (robot_config.width - 0.0) / 2.0; // metade da largura do carro + um espacco de guarda
+	double circle_radius = (robot_config.width - 0.0) / 2.0; // @@@ Alberto: metade da largura do carro + um espacco de guarda (ver valor certo)
 	for (int rddf_pose_index = 0; rddf_pose_index < rddf->number_of_poses && goal_index < GOAL_LIST_SIZE; rddf_pose_index++)
 	{
 		double distance_from_car_to_rddf_point = carmen_distance_ackerman_traj(&current_pose, &rddf->poses[rddf_pose_index]);
@@ -379,8 +380,9 @@ behaviou_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_
 
 		if (moving_object_in_front_index != -1) // -> Adiciona um waypoint na ultima posicao livre se a posicao atual colide com um objeto movel.
 		{
-			add_goal_to_goal_list(goal_index, current_pose, last_obstacle_free_waypoint_index - 5, rddf);
-			moving_object_in_front_detected = 1;
+			if (goal_index == 0)
+				moving_object_in_front_detected = 1;
+			add_goal_to_goal_list(goal_index, current_pose, last_obstacle_free_waypoint_index, rddf);
 			break;
 		}
 //		else if (rddf_pose_hit_obstacle)
@@ -400,7 +402,8 @@ behaviou_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_
 			add_goal_to_goal_list(goal_index, current_pose, rddf_pose_index, rddf);
 		}
 		else if (((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_BUMP) || // -> Adiciona um waypoint na ultima posicao livre se a posicao atual contem uma das anotacoes especificadas
-				  (rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_BARRIER)) &&
+				  (rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_BARRIER) ||
+				  (rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK)) &&
 				 (distance_to_last_obstacle_free_waypoint > 1.5) && // e se ela esta a mais de 1.5 metros da ultima posicao livre de obstaculo
 				 rddf_pose_hit_obstacle) // e se ela colidiu com obstaculo.
 		{	// Ou seja, se a anotacao estiver em cima de um obstaculo, adiciona um waypoint na posicao anterior mais proxima da anotacao que estiver livre.

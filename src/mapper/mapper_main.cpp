@@ -26,8 +26,9 @@
 
 #include "message_interpolation.cpp"
 
+
 carmen_map_t offline_map;
-// TODO: essa variavel eh definida como externa dentro da lib do mapper. Corrigir!
+// TODO: @@@ Alberto: essa variavel eh definida como externa dentro da lib do mapper. Corrigir!
 carmen_localize_ackerman_globalpos_message *globalpos_history;
 int last_globalpos;
 
@@ -93,6 +94,8 @@ int number_of_threads = 1;
 rotation_matrix *r_matrix_car_to_global = NULL;
 
 int use_truepos = 0;
+
+extern carmen_mapper_virtual_laser_message virtual_laser_message;
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -209,7 +212,7 @@ true_pos_message_handler(carmen_simulator_ackerman_truepos_message *pose)
 {
 	if (offline_map_available)
 	{
-		mapper_merge_online_map_with_offline_map(&offline_map);
+		map_decay_to_offline_map(get_the_map());
 		publish_map(pose->timestamp);
 	}
 }
@@ -1053,6 +1056,8 @@ subscribe_to_ipc_messages()
 
 	// esse handler eh subscribe_all porque todas as anotacoes precisam ser recebidas!
 	carmen_rddf_subscribe_annotation_message(NULL, (carmen_handler_t) rddf_annotation_message_handler, CARMEN_SUBSCRIBE_ALL);
+
+	carmen_mapper_subscribe_virtual_laser_message(&virtual_laser_message, NULL, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -1117,8 +1122,6 @@ void initialize_transforms()
 	ultrasonic_sensor_l1_to_car_pose.setRotation(tf::Quaternion(ultrasonic_sensor_l1_g.orientation.yaw, ultrasonic_sensor_l1_g.orientation.pitch, ultrasonic_sensor_l1_g.orientation.roll));
 	tf::StampedTransform ultrasonic_sensor_l1_to_car_transform(ultrasonic_sensor_l1_to_car_pose, tf::Time(0), "/car", "/ultrasonic_sensor_l1");
 	tf_transformer.setTransform(ultrasonic_sensor_l1_to_car_transform, "ultrasonic_sensor_l1_to_car_transform");
-
-
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
 

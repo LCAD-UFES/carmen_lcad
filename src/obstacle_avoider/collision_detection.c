@@ -1,10 +1,13 @@
 #define _GNU_SOURCE
 #include <carmen/carmen.h>
+#include <carmen/global_graphics.h>
+#include <carmen/mapper_messages.h>
 #include "collision_detection.h"
 #include "obstacle_avoider_messages.h"
 #include <math.h>
 #define SECURITY_VELOCITY_PERCENT 0.5
 
+//carmen_mapper_virtual_laser_message virtual_laser_message;
 
 
 carmen_point_t
@@ -351,7 +354,7 @@ pose_hit_obstacle_ultrasonic(carmen_point_t pose, carmen_map_t *map, carmen_robo
 
 //inline carmen_point_t
 carmen_point_t
-carmen_collision_detection_displace_point_according_to_car_orientation(const carmen_point_t point, carmen_point_t *localizer_pose, double displacement)
+carmen_collision_detection_displace_point_in_car_coordinate_frame(const carmen_point_t point, carmen_point_t *localizer_pose, double displacement)
 {
 	carmen_point_t path_point_in_map_coords;
 	double coss, sine;
@@ -431,8 +434,17 @@ carmen_obstacle_avoider_distance_from_global_point_to_obstacle(carmen_point_t *g
 	if (index < 0 || index >= distance_map->size)
 		return (-1.0);
 
-	double dx = (double) distance_map->complete_x_offset[index] + (double) x_map_cell - global_point_in_map_coords.x;
-	double dy = (double) distance_map->complete_y_offset[index] + (double) y_map_cell - global_point_in_map_coords.y;
+	double dx = ((double) distance_map->complete_x_offset[index] + (double) x_map_cell) - global_point_in_map_coords.x;
+	double dy = ((double) distance_map->complete_y_offset[index] + (double) y_map_cell) - global_point_in_map_coords.y;
+
+//	virtual_laser_message.positions[virtual_laser_message.num_positions].x = global_point->x + dx * distance_map->config.resolution;
+//	virtual_laser_message.positions[virtual_laser_message.num_positions].y = global_point->y + dy * distance_map->config.resolution;
+//	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_RED;
+//	virtual_laser_message.num_positions++;
+//	virtual_laser_message.positions[virtual_laser_message.num_positions].x = global_point->x;
+//	virtual_laser_message.positions[virtual_laser_message.num_positions].y = global_point->y;
+//	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_YELLOW;
+//	virtual_laser_message.num_positions++;
 
 	double distance_in_map_coordinates = sqrt(dx * dx + dy * dy);
 	double distance = distance_in_map_coordinates * distance_map->config.resolution;
@@ -490,7 +502,7 @@ carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(carmen_point_t
 	for (double i = 0; i < number_of_point; i += 1.0)
 	{
 		double displacement = initial_displacement + i * displacement_inc;
-		carmen_point_t displaced_point = carmen_collision_detection_displace_point_according_to_car_orientation(point_to_check, localizer_pose, displacement);
+		carmen_point_t displaced_point = carmen_collision_detection_displace_point_in_car_coordinate_frame(point_to_check, localizer_pose, displacement);
 		double distance = carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&displaced_point, distance_map);
 		//distance equals to -1.0 when the coordinates are outside of map
 		if (distance != -1.0)
