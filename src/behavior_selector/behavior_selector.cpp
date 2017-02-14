@@ -233,6 +233,23 @@ update_moving_object_velocity()
 			}
 //			printf("i %d, v %lf, d %lf, df %lf, dtheta %lf, dt %lf\n", i, v, dist, distance, angle - robot_pose.theta, delta_t);
 		}
+//		if (moving_object[i].valid && moving_object[i + 1].valid)
+//		{
+//			double dist1 = carmen_distance_ackerman_traj(&moving_object[i].car_pose, &moving_object[i].pose);
+//			double dist2 = carmen_distance_ackerman_traj(&moving_object[i + 1].car_pose, &moving_object[i + 1].pose);
+//			double distance = dist1 - dist2;
+//			double delta_t = moving_object[i].timestamp - moving_object[i + 1].timestamp;
+//			if (delta_t > 0.01 && delta_t < 0.2)
+//				v = moving_object[i].car_pose.v + distance / delta_t;
+//			if (v > 60.0)
+//				v = -1.0;
+//			if (v > -0.00001)
+//			{
+//				average_v += v;
+//				count += 1.0;
+//			}
+////			printf("i %d, v %lf, d %lf, df %lf, dtheta %lf, dt %lf\n", i, v, dist, distance, angle - robot_pose.theta, delta_t);
+//		}
 		moving_object[i].pose.v = v;
 	}
 
@@ -242,18 +259,6 @@ update_moving_object_velocity()
 //	printf("id %d, v %lf, av %lf\n", moving_object[0].index, moving_object[0].pose.v, average_v);
 //	printf("\n");
 //	fflush(stdout);
-}
-
-
-int
-get_moving_object_in_front_index()
-{
-	for (int i = 0; i < 1 ; i++)
-	{
-		if (moving_object[i].valid && (moving_object[i].pose.v > 0.2))
-			return (moving_object[i].index);
-	}
-	return (-1);
 }
 
 
@@ -279,7 +284,8 @@ get_moving_object_in_front_v()
 
 
 static int
-detect_moving_object_in_front(carmen_rddf_road_profile_message *rddf, int goal_index, int rddf_pose_index, double timestamp)
+detect_moving_object_in_front(carmen_rddf_road_profile_message *rddf, int goal_index, int rddf_pose_index,
+		carmen_ackerman_traj_point_t car_pose, double timestamp)
 {
 	moving_object[0].valid = false;
 	moving_object[0].index = -1;
@@ -307,13 +313,11 @@ detect_moving_object_in_front(carmen_rddf_road_profile_message *rddf, int goal_i
 		moving_object[0].valid = true;
 		moving_object[0].pose.x = obstacle.x;
 		moving_object[0].pose.y = obstacle.y;
+		moving_object[0].car_pose = car_pose;
 		moving_object[0].index = goal_index;
 		moving_object[0].timestamp = timestamp;
 
 		update_moving_object_velocity();
-//		int moving_object_in_front_index = get_moving_object_in_front_index();
-//
-//		return (moving_object_in_front_index);
 		return (1);
 	}
 
@@ -363,7 +367,7 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen
 		double distance_from_car_to_rddf_point = carmen_distance_ackerman_traj(&current_pose, &rddf->poses[rddf_pose_index]);
 		int rddf_pose_hit_obstacle = trajectory_pose_hit_obstacle(rddf->poses[rddf_pose_index], circle_radius, current_map, &robot_config);
 
-		int moving_object_in_front_index = detect_moving_object_in_front(rddf, goal_index, rddf_pose_index, timestamp);
+		int moving_object_in_front_index = detect_moving_object_in_front(rddf, goal_index, rddf_pose_index, current_pose, timestamp);
 		if (rddf_pose_hit_obstacle || (moving_object_in_front_index != -1))
 		{
 			last_obstacle_index = rddf_pose_index;

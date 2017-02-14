@@ -16,12 +16,13 @@ struct _moving_object
 	bool valid;
 	int index;
 	carmen_ackerman_traj_point_t pose;
+	carmen_ackerman_traj_point_t car_pose;
 	double timestamp;
 };
 
 typedef struct _moving_object MOVING_OBJECT;
 
-#define MOVING_OBJECT_HISTORY_SIZE 10
+#define MOVING_OBJECT_HISTORY_SIZE 40
 
 
 void change_distance_between_waypoints_and_goals(double dist_between_waypoints, double change_goal_dist);

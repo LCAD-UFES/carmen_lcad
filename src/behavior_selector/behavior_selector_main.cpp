@@ -242,9 +242,13 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 		double desired_distance = carmen_fmax(1.5 * min_dist_according_to_car_v, 10.0);
 		double distance = carmen_distance_ackerman_traj(goal, current_robot_pose_v_and_phi);
 		double moving_obj_v = get_moving_object_in_front_v();
+		FILE *caco = fopen("caco.txt", "a");
 		// ver "The DARPA Urban Challenge" book, pg. 36.
-		double Kgap = 1.8;
-		goal->v = moving_obj_v + Kgap * (distance - desired_distance);
+		double Kgap = 0.2;
+		goal->v = goal->v + 1.0 * ((moving_obj_v + Kgap * (distance - desired_distance)) - goal->v);
+		fprintf(caco, "%lf %lf %lf\n", moving_obj_v, goal->v, current_robot_pose_v_and_phi->v);
+		fflush(caco);
+		fclose(caco);
 		if (goal->v < 0.0)
 			goal->v = 0.0;
 //		printf("mov %lf, gv %lf, dist %lf, d_dist %lf\n", moving_obj_v, goal->v, distance, desired_distance);
@@ -557,9 +561,9 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 		publish_goal_list(goal_list, goal_list_size, carmen_get_time());
 	}
 
-	carmen_ackerman_traj_point_t *simulated_object_pose = compute_simulated_objects(&current_robot_pose_v_and_phi, timestamp);
-	if (simulated_object_pose)
-		publish_object(simulated_object_pose);
+//	carmen_ackerman_traj_point_t *simulated_object_pose = compute_simulated_objects(&current_robot_pose_v_and_phi, timestamp);
+//	if (simulated_object_pose)
+//		publish_object(simulated_object_pose);
 }
 
 
