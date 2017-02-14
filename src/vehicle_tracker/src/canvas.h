@@ -83,4 +83,4 @@ struct Canvas
 
 }
 
-#endif // SCENE_H
+#endif

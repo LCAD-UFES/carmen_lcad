@@ -1,28 +1,61 @@
-#ifndef CARMEN_IPC_H
-#define CARMEN_IPC_H
+#ifndef VIRTUALSCAN_H
+#define VIRTUALSCAN_H
 
-#include "display.h"
+#include "types.h"
 
-#include <QObject>
-#include <QTimer>
+#include <carmen/carmen.h>
+#include <carmen/localize_ackerman_messages.h>
+#include <carmen/virtual_scan_messages.h>
 
-class VirtualScan : public QObject
+#include <vector>
+
+struct VirtualScan
 {
-	Q_OBJECT
+	/** @brief Center of this virtual scan in the global reference frame. */
+	g2d::Point center;
 
-	g2d::Display *display;
+	/** @brief Orientation angle of this virtual scan in the global reference frame. */
+	g2d::Field angle;
 
-	QTimer *timer;
+	/** @brief Cartesian representation of virtual scan rays relative to the center coordinates. */
+	std::vector<g2d::Point> cartesian;
 
-public:
-	explicit VirtualScan(int argc, char **argv, g2d::Display *display, QObject *parent = 0);
+	/** @brief Radial representation of virtual scan rays relative to the center coordinates. */
+	std::vector<g2d::Point> polar;
 
-	virtual ~VirtualScan();
+	/**
+	 * @brief Deafult constructor.
+	 */
+	VirtualScan();
 
-signals:
+	/**
+	 * @brief Create a new virtual scan object from a set of CARMEM messages.
+	 *
+	 * @param globalpos Global position message.
+	 *
+	 * @param virtual_scan Virtual scan message.
+	 */
+	VirtualScan(carmen_localize_ackerman_globalpos_message *globalpos, carmen_virtual_scan_message *virtual_scan);
 
-public slots:
-	void retrieve();
+	/**
+	 * @brief Compute a difference scan as the set of points in `b` not found in `a`, with center displacement taken in account.
+	 */
+	VirtualScan(const VirtualScan &a, const VirtualScan &b);
+
+	/**
+	 * @brief Add the given cartesian point to this virtual scan.
+	 */
+	void append(const g2d::Point &p);
+
+	/**
+	 * @brief Add the given polar point to this virtual scan.
+	 */
+	void append(g2d::Field t, g2d::Field d);
+
+	/**
+	 * @brief Return the number of points in the scan.
+	 */
+	size_t size() const;
 };
 
-#endif // CARMEN_IPC_H
+#endif

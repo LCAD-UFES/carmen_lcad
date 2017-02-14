@@ -43,11 +43,11 @@ void relation_message(const g2d::Point &point, const g2d::Polygon &rect)
 	std::cout << "Point [" << point << "] is " << relation(point, rect) << " the rectangle [" << rect << "]" << std::endl;
 }
 
-VehicleTrackerGUI::VehicleTrackerGUI(int argc, char **argv, QWidget *parent) :
+VehicleTrackerGUI::VehicleTrackerGUI(QWidget *parent) :
 	QMainWindow(parent),
 	ui(new Ui::VehicleTrackerGUI),
 	display(&scene),
-	scan(new VirtualScan(argc, argv, &display, this))
+	scan(new DifferenceScanner(&display, this))
 {
 	ui->setupUi(this);
 

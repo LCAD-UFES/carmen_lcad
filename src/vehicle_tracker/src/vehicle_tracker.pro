@@ -17,6 +17,8 @@ SOURCES += \
     canvas.cpp \
     display.cpp \
     types.cpp \
+    carmen_gateway.cpp \
+    difference_scanner.cpp \
     virtual_scan.cpp
 
 HEADERS += \
@@ -25,6 +27,8 @@ HEADERS += \
     types.h \
     display.h \
     CircleGraphicsItem.h \
+    carmen_gateway.h \
+    difference_scanner.h \
     virtual_scan.h
 
 INCLUDEPATH += \
@@ -34,6 +38,6 @@ FORMS += vehicle_tracker_gui.ui
 
 LIBS += \
 	-lCGAL_Qt5 -lCGAL -lCGAL_Core -lgmp \
-	-L$(CARMEN_HOME)/lib -lvirtual_scan_interface -lvelodyne_interface -lparam_interface -lipc -lglobal \
+	-L$(CARMEN_HOME)/lib -llocalize_ackerman_interface -lvirtual_scan_interface -lvelodyne_interface -lparam_interface -lipc -lglobal \
 	-L$(CARMEN_HOME)/sharedlib/libtf/src -ltf \
 	-lboost_signals -lboost_system
