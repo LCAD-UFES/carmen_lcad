@@ -298,7 +298,7 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 {
 	goal->v = 18.28; // Esta linha faz com que o behaviour_selector ignore as velocidades no rddf
 
-	goal->v = set_goal_velocity_according_to_moving_obstacle(goal, current_robot_pose_v_and_phi);
+//	goal->v = set_goal_velocity_according_to_moving_obstacle(goal, current_robot_pose_v_and_phi);
 
 //	printf("gva %lf  ", goal->v);
 	goal->v = limit_maximum_velocity_according_to_centripetal_acceleration(goal->v, get_robot_pose().v, goal,
@@ -424,7 +424,7 @@ compute_simulated_objects(carmen_ackerman_traj_point_t *current_robot_pose_v_and
 		previous_timestamp = timestamp;
 	}
 
-	double desired_v = (30.0 / 3.6);
+	double desired_v = (20.0 / 3.6);
 	double delta_t = timestamp - previous_timestamp;
 	double dx = desired_v * delta_t * cos(previous_pose.theta);
 	double dy = desired_v * delta_t * sin(previous_pose.theta);
@@ -611,9 +611,9 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	}
 
 	// @@@ Alberto: colocar um parametro para ativar ou desativar isso.
-	carmen_ackerman_traj_point_t *simulated_object_pose = compute_simulated_objects(&current_robot_pose_v_and_phi, timestamp);
-	if (simulated_object_pose)
-		publish_object(simulated_object_pose);
+//	carmen_ackerman_traj_point_t *simulated_object_pose = compute_simulated_objects(&current_robot_pose_v_and_phi, timestamp);
+//	if (simulated_object_pose)
+//		publish_object(simulated_object_pose);
 }
 
 
