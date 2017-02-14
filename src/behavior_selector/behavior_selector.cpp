@@ -51,6 +51,9 @@ int moving_object_in_front_detected = 0;
 #define MAX_VIRTUAL_LASER_SAMPLES 10000
 carmen_mapper_virtual_laser_message virtual_laser_message;
 
+SampleFilter filter;
+SampleFilter filter2;
+
 
 carmen_behavior_selector_algorithm_t
 get_current_algorithm()
@@ -279,6 +282,7 @@ get_moving_object_in_front_v()
 	if (count > 0.0)
 		average_v /= count;
 
+//	return (SampleFilter_get(&filter));
 	return (average_v);
 }
 
@@ -318,6 +322,7 @@ detect_moving_object_in_front(carmen_rddf_road_profile_message *rddf, int goal_i
 		moving_object[0].timestamp = timestamp;
 
 		update_moving_object_velocity();
+		SampleFilter_put(&filter, moving_object[0].pose.v);
 		return (1);
 	}
 
@@ -627,4 +632,7 @@ behavior_selector_initialize(carmen_robot_ackerman_config_t config, double dist_
 	virtual_laser_message.positions = (carmen_position_t *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(carmen_position_t));
 	virtual_laser_message.colors = (char *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(char));
 	virtual_laser_message.host = carmen_get_host();
+
+	SampleFilter_init(&filter);
+	SampleFilter_init(&filter2);
 }

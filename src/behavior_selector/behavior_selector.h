@@ -10,6 +10,7 @@
 
 #include <carmen/carmen.h>
 #include <carmen/rddf_messages.h>
+#include "SampleFilter.h"
 
 struct _moving_object
 {

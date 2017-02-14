@@ -405,8 +405,8 @@ carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(carmen_point
 	if (index < 0 || index >= distance_map->size)
 		return (cell);
 
-	cell.x = (double) distance_map->complete_x_offset[index] + (double) x_map_cell;
-	cell.y = (double) distance_map->complete_y_offset[index] + (double) y_map_cell;
+	cell.x = (double) distance_map->complete_x_offset[index] + (double) global_point_in_map_coords.x;
+	cell.y = (double) distance_map->complete_y_offset[index] + (double) global_point_in_map_coords.y;
 
 	// convert to global coordinates system
 	cell.x = distance_map->config.x_origin + cell.x * distance_map->config.resolution;

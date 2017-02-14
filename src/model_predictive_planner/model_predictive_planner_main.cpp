@@ -383,7 +383,6 @@ build_and_follow_path(double timestamp)
 		}
 		else
 		{
-
 			vector<carmen_ackerman_path_point_t> path = compute_plan(&tree);
 			if (tree.num_paths > 0 && path.size() > 0)
 			{
@@ -516,6 +515,7 @@ behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_
 	goal_pose.theta = carmen_normalize_theta(msg->goal_list->theta);
 
 	GlobalState::robot_config.max_v = fmin(msg->goal_list->v, GlobalState::param_max_vel);
+	printf("v %lf\n", GlobalState::robot_config.max_v);
 
 	GlobalState::set_goal_pose(goal_pose);
 }

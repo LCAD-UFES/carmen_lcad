@@ -795,7 +795,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 
 	} while (/*(s->f > MAX_LANE_DIST) &&*/ (status == GSL_CONTINUE) && (iter < 50));
 
-	printf("iter = %ld\n", iter);
+//	printf("iter = %ld\n", iter);
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
@@ -805,7 +805,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 		tcp.valid = false;
 	}
 
-	printf("plan_cost = %lf\n", params.plan_cost);
+//	printf("plan_cost = %lf\n", params.plan_cost);
 	if (params.plan_cost > 2.0)
 	{
 //		printf(">>>>>>>>>>>>>> plan_cost > 3.6\n");
@@ -893,7 +893,7 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 	//		system("pkill gnuplot");
 	//	}
 
-	printf("Iteracoes: %lu \n", iter);
+//	printf("Iteracoes: %lu \n", iter);
 	return (tcp);
 }
 
@@ -929,8 +929,8 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 //	if (tcp_complete.valid)
 		tcp_complete = optimized_lane_trajectory_control_parameters(tcp_complete, target_td, target_v, params);
 
-	printf("t %.3lf, v0 %.1lf, a %.3lf, vg %.2lf, dg %.1lf, tt %.3lf\n",
-			carmen_get_time(), target_td.v_i, tcp_complete.a, target_v, tcp_complete.s, tcp_complete.tt);
+//	printf("t %.3lf, v0 %.1lf, a %.3lf, vg %.2lf, dg %.1lf, tt %.3lf\n",
+//			carmen_get_time(), target_td.v_i, tcp_complete.a, target_v, tcp_complete.s, tcp_complete.tt);
 
 	return (tcp_complete);
 }
