@@ -20,7 +20,7 @@ sampling frequency: 20 Hz
 
 */
 
-#define SAMPLEFILTER_TAP_NUM 73
+#define SAMPLEFILTER_TAP_NUM 20
 
 typedef struct {
   double history[SAMPLEFILTER_TAP_NUM];

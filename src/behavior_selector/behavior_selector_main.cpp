@@ -231,45 +231,88 @@ limit_maximum_velocity_according_to_centripetal_acceleration(double target_v, do
 
 extern SampleFilter filter2;
 
+
+double
+set_goal_velocity_according_to_moving_obstacle_old(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
+{
+	if (moving_object_in_front())
+	{
+		// um carro de tamanho para cada 10 milhas/h (4.4705 m/s) -> ver "The DARPA Urban Challenge" book, pg. 36.
+		double min_dist_according_to_car_v = get_robot_config()->length * (current_robot_pose_v_and_phi->v / 4.4704)
+				+ get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels;
+		double desired_distance = carmen_fmax(1.5 * min_dist_according_to_car_v, 10.0);
+		double distance = carmen_distance_ackerman_traj(goal, current_robot_pose_v_and_phi);
+		double moving_obj_v = get_moving_object_in_front_v();
+//		FILE* caco = fopen("caco.txt", "a");
+		// ver "The DARPA Urban Challenge" book, pg. 36.
+		double Kgap = 1.0;
+		goal->v = moving_obj_v + Kgap * (distance - desired_distance);
+		//		SampleFilter_put(&filter2, goal->v);
+		//		goal->v = SampleFilter_get(&filter2);
+//		fprintf(caco, "%lf %lf %lf\n", moving_obj_v, goal->v, current_robot_pose_v_and_phi->v);
+//		fflush(caco);
+//		fclose(caco);
+		if (goal->v < 0.0)
+			goal->v = 0.0;
+		//		printf("mov %lf, gv %lf, dist %lf, d_dist %lf\n", moving_obj_v, goal->v, distance, desired_distance);
+	}
+
+	return (goal->v);
+}
+
+
+double
+set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
+{
+	if (moving_object_in_front())
+	{
+		// um carro de tamanho para cada 10 milhas/h (4.4705 m/s) -> ver "The DARPA Urban Challenge" book, pg. 36.
+		double min_dist_according_to_car_v = get_robot_config()->length * (current_robot_pose_v_and_phi->v / 4.4704)
+				+ get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels;
+		double desired_distance = carmen_fmax(1.5 * min_dist_according_to_car_v, 10.0);
+
+		double distance = carmen_distance_ackerman_traj(goal, current_robot_pose_v_and_phi);
+		SampleFilter_put(&filter2, distance);
+		distance = SampleFilter_get(&filter2);
+
+		//if (distance <= desired_distance)
+		{
+			goal->v = (goal->v / desired_distance) * (distance - 8.0);
+		}
+//		double moving_obj_v = get_moving_object_in_front_v();
+//		FILE* caco = fopen("caco.txt", "a");
+//		fprintf(caco, "%lf %lf %lf %lf %lf\n", moving_obj_v, goal->v, current_robot_pose_v_and_phi->v, distance, desired_distance);
+//		fflush(caco);
+//		fclose(caco);
+		if (goal->v < 0.0)
+			goal->v = 0.0;
+		//		printf("mov %lf, gv %lf, dist %lf, d_dist %lf\n", moving_obj_v, goal->v, distance, desired_distance);
+	}
+
+	return (goal->v);
+}
+
+
 void
 set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
 {
 	goal->v = 18.28; // Esta linha faz com que o behaviour_selector ignore as velocidades no rddf
 
-	if (moving_object_in_front())
-	{ 	// um carro de tamanho para cada 10 milhas/h (4.4705 m/s) -> ver "The DARPA Urban Challenge" book, pg. 36.
-		double min_dist_according_to_car_v = get_robot_config()->length * (current_robot_pose_v_and_phi->v / 4.4704) +
-				get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels;
-		double desired_distance = carmen_fmax(1.5 * min_dist_according_to_car_v, 10.0);
-		double distance = carmen_distance_ackerman_traj(goal, current_robot_pose_v_and_phi);
-		double moving_obj_v = get_moving_object_in_front_v();
-		FILE *caco = fopen("caco.txt", "a");
-		// ver "The DARPA Urban Challenge" book, pg. 36.
-		double Kgap = 1.0;
-		goal->v = moving_obj_v + Kgap * (distance - desired_distance);
-//		SampleFilter_put(&filter2, goal->v);
-//		goal->v = SampleFilter_get(&filter2);
-		fprintf(caco, "%lf %lf %lf\n", moving_obj_v, goal->v, current_robot_pose_v_and_phi->v);
-		fflush(caco);
-		fclose(caco);
-		if (goal->v < 0.0)
-			goal->v = 0.0;
-//		printf("mov %lf, gv %lf, dist %lf, d_dist %lf\n", moving_obj_v, goal->v, distance, desired_distance);
-	}
+	goal->v = set_goal_velocity_according_to_moving_obstacle(goal, current_robot_pose_v_and_phi);
 
-	printf("gva %lf  ", goal->v);
+//	printf("gva %lf  ", goal->v);
 	goal->v = limit_maximum_velocity_according_to_centripetal_acceleration(goal->v, get_robot_pose().v, goal,
 			road_profile_message.poses, road_profile_message.number_of_poses);
-	printf("gvdlc %lf  ", goal->v);
+//	printf("gvdlc %lf  ", goal->v);
 
 	set_goal_velocity_according_to_annotation(goal, current_robot_pose_v_and_phi);
-	printf("gvda %lf\n", goal->v);
+//	printf("gvda %lf\n", goal->v);
 
 	if (obstacle_avoider_active_recently)
 		goal->v = carmen_fmin(2.5, goal->v);
 
 	if (!moving_object_in_front())
-		SampleFilter_put(&filter2, goal->v);
+		SampleFilter_put(&filter2, carmen_distance_ackerman_traj(goal, current_robot_pose_v_and_phi));
 
 //	printf("gvf %lf\n", goal->v);
 }
@@ -567,6 +610,7 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 		publish_goal_list(goal_list, goal_list_size, carmen_get_time());
 	}
 
+	// @@@ Alberto: colocar um parametro para ativar ou desativar isso.
 	carmen_ackerman_traj_point_t *simulated_object_pose = compute_simulated_objects(&current_robot_pose_v_and_phi, timestamp);
 	if (simulated_object_pose)
 		publish_object(simulated_object_pose);
@@ -872,8 +916,6 @@ read_parameters(int argc, char **argv)
 			{(char *) "commandline", (char *) "activate_tracking", CARMEN_PARAM_ONOFF, &activate_tracking, 0, NULL}
 	};
 	carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
-
-	printf("activate_tracking %d\n", activate_tracking);
 
 	param_distance_between_waypoints = distance_between_waypoints;
 	param_change_goal_distance = change_goal_distance;
