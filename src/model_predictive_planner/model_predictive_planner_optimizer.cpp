@@ -57,6 +57,7 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 {
 	TrajectoryLookupTable::TrajectoryControlParameters tcp;
 
+	tcp.shift_knots = params->tcp_seed->shift_knots;
 	if (x->size == 4)
 	{
 		tcp.has_k1 = true;
@@ -660,7 +661,7 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 
 		params.suitable_tt = tcp_seed.tt = tt;
 		params.suitable_acceleration = tcp_seed.a = a;
-	//	printf("a %lf, tt %lf\n", a, tt);
+		printf("a %lf, tt %lf\n", a, tt);
 	}
 }
 
@@ -694,7 +695,10 @@ get_missing_k1(const TrajectoryLookupTable::TrajectoryDimensions& target_td,
 	const gsl_interp_type* type = gsl_interp_cspline;
 	gsl_spline* phi_spline = gsl_spline_alloc(type, 3);
 	gsl_spline_init(phi_spline, knots_x, knots_y, 3);
-	tcp_seed.k1 = gsl_spline_eval(phi_spline, tcp_seed.tt / 4.0, acc);
+	if (tcp_seed.shift_knots)
+		tcp_seed.k1 = gsl_spline_eval(phi_spline, 3.0 * (tcp_seed.tt / 4.0), acc);
+	else
+		tcp_seed.k1 = gsl_spline_eval(phi_spline, tcp_seed.tt / 4.0, acc);
 	tcp_seed.has_k1 = true;
 	gsl_spline_free(phi_spline);
 	gsl_interp_accel_free(acc);
@@ -746,9 +750,6 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 	my_func.fdf = my_gdf;
 	my_func.params = &params;
 
-	if (!tcp_seed.has_k1)
-		get_missing_k1(target_td, tcp_seed);
-
 	/* Starting point, x */
 	gsl_vector *x = gsl_vector_alloc(4);
 	gsl_vector_set(x, 0, tcp_seed.k1);
@@ -795,7 +796,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 
 	} while (/*(s->f > MAX_LANE_DIST) &&*/ (status == GSL_CONTINUE) && (iter < 50));
 
-//	printf("iter = %ld\n", iter);
+	printf("iter = %ld\n", iter);
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
@@ -805,7 +806,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 		tcp.valid = false;
 	}
 
-//	printf("plan_cost = %lf\n", params.plan_cost);
+	printf("plan_cost = %lf\n", params.plan_cost);
 	if (params.plan_cost > 2.0)
 	{
 //		printf(">>>>>>>>>>>>>> plan_cost > 3.6\n");
@@ -893,7 +894,7 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 	//		system("pkill gnuplot");
 	//	}
 
-//	printf("Iteracoes: %lu \n", iter);
+	printf("Iteracoes: %lu \n", iter);
 	return (tcp);
 }
 
@@ -911,6 +912,46 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 }
 
 
+void
+shift_k1(TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed, const TrajectoryLookupTable::TrajectoryDimensions target_td)
+{
+	double knots_x[4] = { 0.0, tcp_seed.tt / 4.0, tcp_seed.tt / 2.0, tcp_seed.tt };
+	double knots_y[4];
+	knots_y[0] = target_td.phi_i;
+	knots_y[1] = tcp_seed.k1;
+	knots_y[2] = tcp_seed.k2;
+	knots_y[3] = tcp_seed.k3;
+	gsl_interp_accel* acc = gsl_interp_accel_alloc();
+	const gsl_interp_type* type = gsl_interp_cspline;
+	gsl_spline* phi_spline = gsl_spline_alloc(type, 4);
+	gsl_spline_init(phi_spline, knots_x, knots_y, 4);
+	tcp_seed.k1 = gsl_spline_eval(phi_spline, 3.0 * (tcp_seed.tt / 4.0), acc);
+
+	gsl_spline_free(phi_spline);
+	gsl_interp_accel_free(acc);
+}
+
+
+void
+un_shift_k1(TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed, const TrajectoryLookupTable::TrajectoryDimensions target_td)
+{
+	double knots_x[4] = { 0.0, tcp_seed.tt / 2.0, 3.0 * (tcp_seed.tt / 4.0), tcp_seed.tt };
+	double knots_y[4];
+	knots_y[0] = target_td.phi_i;
+	knots_y[1] = tcp_seed.k2;
+	knots_y[2] = tcp_seed.k1;
+	knots_y[3] = tcp_seed.k3;
+	gsl_interp_accel* acc = gsl_interp_accel_alloc();
+	const gsl_interp_type* type = gsl_interp_cspline;
+	gsl_spline* phi_spline = gsl_spline_alloc(type, 4);
+	gsl_spline_init(phi_spline, knots_x, knots_y, 4);
+	tcp_seed.k1 = gsl_spline_eval(phi_spline, tcp_seed.tt / 4.0, acc);
+
+	gsl_spline_free(phi_spline);
+	gsl_interp_accel_free(acc);
+}
+
+
 TrajectoryLookupTable::TrajectoryControlParameters
 get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
 		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, vector<carmen_ackerman_path_point_t> detailed_lane,
@@ -924,6 +965,27 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 //	virtual_laser_message.num_positions = 0;
 
 	tcp_complete = get_optimized_trajectory_control_parameters(tcp_seed, target_td, target_v, params, has_previous_good_tcp);
+
+	if (!tcp_seed.has_k1)
+		get_missing_k1(target_td, tcp_seed);
+
+	if (((target_td.v_i > (15.0 / 3.6)) && (target_td.dist < 15.0)) ||
+		((target_td.v_i < (5.0 / 3.6)) && (target_td.dist < 10.0)))
+	{
+		if (!tcp_complete.shift_knots)
+		{
+			shift_k1(tcp_complete, target_td);
+			tcp_complete.shift_knots = true;
+		}
+	}
+	else
+	{
+		if (tcp_complete.shift_knots)
+		{
+			un_shift_k1(tcp_complete, target_td);
+			tcp_complete.shift_knots = false;
+		}
+	}
 
 	// Atencao: params.suitable_acceleration deve ser preenchido na funcao acima para que nao seja alterado no inicio da otimizacao abaixo
 //	if (tcp_complete.valid)
