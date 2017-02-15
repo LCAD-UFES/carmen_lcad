@@ -20,11 +20,15 @@
 //#define DEBUG_LANE
 
 
+TrajectoryLookupTable::TrajectoryControlParameters_old trajectory_lookup_table_old[N_DIST][N_THETA][N_D_YAW][N_I_PHI][N_I_V];
 TrajectoryLookupTable::TrajectoryControlParameters trajectory_lookup_table[N_DIST][N_THETA][N_D_YAW][N_I_PHI][N_I_V];
 
 
 TrajectoryLookupTable::TrajectoryLookupTable(int update_lookup_table)
 {
+	load_trajectory_lookup_table_old();
+	save_trajectory_lookup_table();
+
 	if (!load_trajectory_lookup_table())
 		build_trajectory_lookup_table();
 
@@ -268,6 +272,7 @@ init_trajectory_lookup_table()
 	tcp.k2 = 0.0;
 	tcp.k3 = 0.0;
 	tcp.has_k1 = false;
+	tcp.shift_knots = false;
 	tcp.a = 0.0;
 	tcp.vf = 0.0;
 	tcp.sf = 0.0;
@@ -297,6 +302,47 @@ save_trajectory_lookup_table()
 						fwrite((const void *) &(trajectory_lookup_table[i][j][k][l][m]),
 								sizeof(TrajectoryLookupTable::TrajectoryControlParameters), 1, tlt_f);
 	fclose(tlt_f);
+}
+
+
+bool
+TrajectoryLookupTable::load_trajectory_lookup_table_old()
+{
+	struct stat buffer;
+
+	if (stat("trajectory_lookup_table.bin", &buffer) == 0)
+	{
+		FILE *tlt_f;
+
+		tlt_f = fopen("trajectory_lookup_table.bin", "r");
+
+		for (int i = 0; i < N_DIST; i++)
+			for (int j = 0; j < N_THETA; j++)
+				for (int k = 0; k < N_D_YAW; k++)
+					for (int l = 0; l < N_I_PHI; l++)
+						for (int m = 0; m < N_I_V; m++)
+						{
+							fread((void *) &(trajectory_lookup_table_old[i][j][k][l][m]),
+									sizeof(TrajectoryLookupTable::TrajectoryControlParameters_old), 1, tlt_f);
+							trajectory_lookup_table[i][j][k][l][m].valid = trajectory_lookup_table_old[i][j][k][l][m].valid;
+							trajectory_lookup_table[i][j][k][l][m].tt = trajectory_lookup_table_old[i][j][k][l][m].tt;
+							trajectory_lookup_table[i][j][k][l][m].k2 = trajectory_lookup_table_old[i][j][k][l][m].k2;
+							trajectory_lookup_table[i][j][k][l][m].k3 = trajectory_lookup_table_old[i][j][k][l][m].k3;
+							trajectory_lookup_table[i][j][k][l][m].k1 = trajectory_lookup_table_old[i][j][k][l][m].k1;
+							trajectory_lookup_table[i][j][k][l][m].has_k1 = trajectory_lookup_table_old[i][j][k][l][m].has_k1;
+							trajectory_lookup_table[i][j][k][l][m].a = trajectory_lookup_table_old[i][j][k][l][m].a;
+							trajectory_lookup_table[i][j][k][l][m].vf = trajectory_lookup_table_old[i][j][k][l][m].vf;
+							trajectory_lookup_table[i][j][k][l][m].sf = trajectory_lookup_table_old[i][j][k][l][m].sf;
+							trajectory_lookup_table[i][j][k][l][m].s = trajectory_lookup_table_old[i][j][k][l][m].s;
+
+							trajectory_lookup_table[i][j][k][l][m].shift_knots = false;
+						}
+		fclose(tlt_f);
+
+		return (true);
+	}
+	else
+		return (false);
 }
 
 

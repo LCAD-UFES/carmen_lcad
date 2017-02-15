@@ -83,6 +83,20 @@ class TrajectoryLookupTable
 {
 public:
 
+	struct TrajectoryControlParameters_old
+	{
+		bool valid;
+		double tt;
+		double k2;
+		double k3;
+		double k1;
+		bool has_k1;
+		double a;
+		double vf;
+		double sf;
+		double s;
+	};
+
 	struct TrajectoryControlParameters
 	{
 		bool valid;
@@ -91,6 +105,7 @@ public:
 		double k3;
 		double k1;
 		bool has_k1;
+		bool shift_knots;
 		double a;
 		double vf;
 		double sf;
