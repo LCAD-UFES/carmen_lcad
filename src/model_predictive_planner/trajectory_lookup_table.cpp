@@ -26,8 +26,9 @@ TrajectoryLookupTable::TrajectoryControlParameters trajectory_lookup_table[N_DIS
 
 TrajectoryLookupTable::TrajectoryLookupTable(int update_lookup_table)
 {
-	load_trajectory_lookup_table_old();
-	save_trajectory_lookup_table();
+	// Codigo para gerar nova tabela a partir de uma tabela velha quando de mudancas na estrutura da seed. Quando usar, rodar o model_predictive_planner no seu diretorio.
+//	load_trajectory_lookup_table_old();
+//	save_trajectory_lookup_table();
 
 	if (!load_trajectory_lookup_table())
 		build_trajectory_lookup_table();

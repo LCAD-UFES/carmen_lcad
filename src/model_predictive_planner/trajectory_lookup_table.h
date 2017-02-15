@@ -145,6 +145,7 @@ public:
 
 	TrajectoryLookupTable(int update_lookup_table);
 
+	bool load_trajectory_lookup_table_old();
 	bool load_trajectory_lookup_table();
 	void build_trajectory_lookup_table();
 	void evaluate_trajectory_lookup_table();
