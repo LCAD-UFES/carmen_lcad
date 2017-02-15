@@ -4,6 +4,7 @@
 #include <carmen/path_planner_messages.h>
 #include <carmen/rddf_interface.h>
 #include <carmen/grid_mapping.h>
+#include <carmen/udatmo.h>
 #include <prob_map.h>
 #include <carmen/map_server_interface.h>
 #include <carmen/obstacle_avoider_interface.h>
@@ -235,14 +236,14 @@ extern SampleFilter filter2;
 double
 set_goal_velocity_according_to_moving_obstacle_old(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
 {
-	if (moving_object_in_front())
+	if (udatmo_obstacle_detected())
 	{
 		// um carro de tamanho para cada 10 milhas/h (4.4705 m/s) -> ver "The DARPA Urban Challenge" book, pg. 36.
 		double min_dist_according_to_car_v = get_robot_config()->length * (current_robot_pose_v_and_phi->v / 4.4704)
 				+ get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels;
 		double desired_distance = carmen_fmax(1.5 * min_dist_according_to_car_v, 10.0);
 		double distance = carmen_distance_ackerman_traj(goal, current_robot_pose_v_and_phi);
-		double moving_obj_v = get_moving_object_in_front_v();
+		double moving_obj_v = udatmo_speed_front();
 //		FILE* caco = fopen("caco.txt", "a");
 		// ver "The DARPA Urban Challenge" book, pg. 36.
 		double Kgap = 1.0;
@@ -264,7 +265,7 @@ set_goal_velocity_according_to_moving_obstacle_old(carmen_ackerman_traj_point_t 
 double
 set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
 {
-	if (moving_object_in_front())
+	if (udatmo_obstacle_detected())
 	{
 		// um carro de tamanho para cada 10 milhas/h (4.4705 m/s) -> ver "The DARPA Urban Challenge" book, pg. 36.
 		double min_dist_according_to_car_v = get_robot_config()->length * (current_robot_pose_v_and_phi->v / 4.4704)
@@ -311,7 +312,7 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 	if (obstacle_avoider_active_recently)
 		goal->v = carmen_fmin(2.5, goal->v);
 
-	if (!moving_object_in_front())
+	if (!udatmo_obstacle_detected())
 		SampleFilter_put(&filter2, carmen_distance_ackerman_traj(goal, current_robot_pose_v_and_phi));
 
 //	printf("gvf %lf\n", goal->v);
@@ -893,7 +894,7 @@ read_parameters(int argc, char **argv)
 			{(char *) "robot", (char *) "maximum_deceleration_forward", CARMEN_PARAM_DOUBLE, &robot_config.maximum_deceleration_forward, 1, NULL},
 			{(char *) "robot", (char *) "max_centripetal_acceleration", CARMEN_PARAM_DOUBLE, &robot_max_centripetal_acceleration, 1, NULL},
 			{(char *) "robot", (char *) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &robot_config.distance_between_front_and_rear_axles, 1, NULL},
-			{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &robot_config.distance_between_rear_car_and_rear_wheels, 1, NULL}, 			
+			{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &robot_config.distance_between_rear_car_and_rear_wheels, 1, NULL},
 			{(char *) "robot", (char *) "distance_between_front_car_and_front_wheels", CARMEN_PARAM_DOUBLE, &robot_config.distance_between_front_car_and_front_wheels, 1, NULL},
 			{(char *) "behavior_selector", (char *) "distance_between_waypoints", CARMEN_PARAM_DOUBLE, &distance_between_waypoints, 1, NULL},
 			{(char *) "behavior_selector", (char *) "change_goal_distance", CARMEN_PARAM_DOUBLE, &change_goal_distance, 1, NULL},

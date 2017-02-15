@@ -12,18 +12,18 @@
 #include <carmen/rddf_messages.h>
 #include "SampleFilter.h"
 
-struct _moving_object
-{
-	bool valid;
-	int index;
-	carmen_ackerman_traj_point_t pose;
-	carmen_ackerman_traj_point_t car_pose;
-	double timestamp;
-};
-
-typedef struct _moving_object MOVING_OBJECT;
-
-#define MOVING_OBJECT_HISTORY_SIZE 40
+// struct _moving_object
+// {
+// 	bool valid;
+// 	int index;
+// 	carmen_ackerman_traj_point_t pose;
+// 	carmen_ackerman_traj_point_t car_pose;
+// 	double timestamp;
+// };
+//
+// typedef struct _moving_object MOVING_OBJECT;
+//
+// #define MOVING_OBJECT_HISTORY_SIZE 40
 
 
 void change_distance_between_waypoints_and_goals(double dist_between_waypoints, double change_goal_dist);
@@ -68,8 +68,8 @@ carmen_robot_ackerman_config_t *get_robot_config();
 carmen_rddf_road_profile_message *get_last_rddf_message();
 
 int behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_point_t current_pose, double timestamp);
-double get_moving_object_in_front_v();
-int moving_object_in_front();
+// double get_moving_object_in_front_v();
+// int moving_object_in_front();
 double distance_between_waypoints_and_goals();
 
 #endif /* BEHAVIOR_SELECTOR_H_ */
