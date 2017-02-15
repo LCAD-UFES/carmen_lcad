@@ -8,6 +8,7 @@
 #include <carmen/collision_detection.h>
 #include <carmen/motion_planner_interface.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
+#include <carmen/udatmo.h>
 #include <carmen/global_graphics.h>
 #include "behavior_selector.h"
 #include "behavior_selector_messages.h"
@@ -45,13 +46,13 @@ int carmen_rddf_num_poses_ahead_limited_by_map = 150;
 double dist_to_reduce_speed = 15.0;
 double speed_around_annotation = 1.0;
 
-MOVING_OBJECT moving_object[MOVING_OBJECT_HISTORY_SIZE];
-int moving_object_in_front_detected = 0;
+//MOVING_OBJECT moving_object[MOVING_OBJECT_HISTORY_SIZE];
+//int moving_object_in_front_detected = 0;
 
 #define MAX_VIRTUAL_LASER_SAMPLES 10000
 carmen_mapper_virtual_laser_message virtual_laser_message;
 
-SampleFilter filter;
+//SampleFilter filter;
 SampleFilter filter2;
 
 
@@ -202,139 +203,139 @@ copy_rddf_message_old(carmen_rddf_road_profile_message *rddf_msg)
 }
 
 
-void
-shift_moving_object_history()
-{
-	for (int i = MOVING_OBJECT_HISTORY_SIZE - 2; i >= 0 ; i--)
-		moving_object[i + 1] = moving_object[i];
-}
+// void
+// shift_moving_object_history()
+// {
+// 	for (int i = MOVING_OBJECT_HISTORY_SIZE - 2; i >= 0 ; i--)
+// 		moving_object[i + 1] = moving_object[i];
+// }
 
 
-void
-update_moving_object_velocity()
-{
-	double average_v = 0.0;
-	double count = 0.0;
-	for (int i = MOVING_OBJECT_HISTORY_SIZE - 2; i >= 0 ; i--)
-	{
-		double v = -1.0; // invalid v
-		if (moving_object[i].valid && moving_object[i + 1].valid)
-		{
-			double dist = carmen_distance_ackerman_traj(&moving_object[i].pose, &moving_object[i + 1].pose);
-			// distance in the direction of the robot: https://en.wikipedia.org/wiki/Vector_projection
-			double angle = atan2(moving_object[i].pose.y - moving_object[i + 1].pose.y, moving_object[i].pose.x - moving_object[i + 1].pose.x);
-			double distance = dist * cos(angle - robot_pose.theta);
-			double delta_t = moving_object[i].timestamp - moving_object[i + 1].timestamp;
-			if (delta_t > 0.01 && delta_t < 0.2)
-				v = distance / delta_t;
-			if (v > 60.0)
-				v = -1.0;
-			if (v > -0.00001)
-			{
-				average_v += v;
-				count += 1.0;
-			}
-//			printf("i %d, v %lf, d %lf, df %lf, dtheta %lf, dt %lf\n", i, v, dist, distance, angle - robot_pose.theta, delta_t);
-		}
-//		if (moving_object[i].valid && moving_object[i + 1].valid)
-//		{
-//			double dist1 = carmen_distance_ackerman_traj(&moving_object[i].car_pose, &moving_object[i].pose);
-//			double dist2 = carmen_distance_ackerman_traj(&moving_object[i + 1].car_pose, &moving_object[i + 1].pose);
-//			double distance = dist1 - dist2;
-//			double delta_t = moving_object[i].timestamp - moving_object[i + 1].timestamp;
-//			if (delta_t > 0.01 && delta_t < 0.2)
-//				v = moving_object[i].car_pose.v + distance / delta_t;
-//			if (v > 60.0)
-//				v = -1.0;
-//			if (v > -0.00001)
-//			{
-//				average_v += v;
-//				count += 1.0;
-//			}
-////			printf("i %d, v %lf, d %lf, df %lf, dtheta %lf, dt %lf\n", i, v, dist, distance, angle - robot_pose.theta, delta_t);
-//		}
-		moving_object[i].pose.v = v;
-	}
-
-	if (count > 0.0)
-		average_v /= count;
-
-//	printf("id %d, v %lf, av %lf\n", moving_object[0].index, moving_object[0].pose.v, average_v);
-//	printf("\n");
-//	fflush(stdout);
-}
-
-
-double
-get_moving_object_in_front_v()
-{
-	double average_v = 0.0;
-	double count = 0.0;
-	for (int i = MOVING_OBJECT_HISTORY_SIZE - 2; i >= 0 ; i--)
-	{
-		if (moving_object[i].valid && (moving_object[i].pose.v > -0.0001))
-		{
-			average_v += moving_object[i].pose.v;
-			count += 1.0;
-		}
-	}
-
-	if (count > 0.0)
-		average_v /= count;
-
-//	return (SampleFilter_get(&filter));
-	return (average_v);
-}
-
-
-static int
-detect_moving_object_in_front(carmen_rddf_road_profile_message *rddf, int goal_index, int rddf_pose_index,
-		carmen_ackerman_traj_point_t car_pose, double timestamp)
-{
-	moving_object[0].valid = false;
-	moving_object[0].index = -1;
-	moving_object[0].timestamp = 0.0;
-	double circle_radius = (robot_config.width + 0.0) / 2.0; // metade da largura do carro + um espacco de guarda
-
-	if (carmen_distance_ackerman_traj(&rddf->poses[rddf_pose_index], &robot_pose) < robot_config.distance_between_front_and_rear_axles + 1.5)
-		return (-1);
-
-	double disp = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
-	carmen_point_t front_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&rddf->poses[rddf_pose_index], disp);
-	carmen_position_t obstacle = carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(&front_car_pose, current_map);
-	double distance = sqrt((front_car_pose.x - obstacle.x) * (front_car_pose.x - obstacle.x) +
-			(front_car_pose.y - obstacle.y) * (front_car_pose.y - obstacle.y));
-
-//	virtual_laser_message.positions[virtual_laser_message.num_positions] = obstacle;
-//	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_RED;
-//	virtual_laser_message.num_positions++;
-//	virtual_laser_message.positions[virtual_laser_message.num_positions].x = front_car_pose.x;
-//	virtual_laser_message.positions[virtual_laser_message.num_positions].y = front_car_pose.y;
-//	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_YELLOW;
-//	virtual_laser_message.num_positions++;
-	if (distance < circle_radius)
-	{
-		moving_object[0].valid = true;
-		moving_object[0].pose.x = obstacle.x;
-		moving_object[0].pose.y = obstacle.y;
-		moving_object[0].car_pose = car_pose;
-		moving_object[0].index = goal_index;
-		moving_object[0].timestamp = timestamp;
-
-		update_moving_object_velocity();
-		SampleFilter_put(&filter, moving_object[0].pose.v);
-		return (1);
-	}
-
-	return (-1);
-}
-
-
-int
-moving_object_in_front()
-{
-	return (moving_object_in_front_detected);
-}
+// void
+// update_moving_object_velocity()
+// {
+// 	double average_v = 0.0;
+// 	double count = 0.0;
+// 	for (int i = MOVING_OBJECT_HISTORY_SIZE - 2; i >= 0 ; i--)
+// 	{
+// 		double v = -1.0; // invalid v
+// 		if (moving_object[i].valid && moving_object[i + 1].valid)
+// 		{
+// 			double dist = carmen_distance_ackerman_traj(&moving_object[i].pose, &moving_object[i + 1].pose);
+// 			// distance in the direction of the robot: https://en.wikipedia.org/wiki/Vector_projection
+// 			double angle = atan2(moving_object[i].pose.y - moving_object[i + 1].pose.y, moving_object[i].pose.x - moving_object[i + 1].pose.x);
+// 			double distance = dist * cos(angle - robot_pose.theta);
+// 			double delta_t = moving_object[i].timestamp - moving_object[i + 1].timestamp;
+// 			if (delta_t > 0.01 && delta_t < 0.2)
+// 				v = distance / delta_t;
+// 			if (v > 60.0)
+// 				v = -1.0;
+// 			if (v > -0.00001)
+// 			{
+// 				average_v += v;
+// 				count += 1.0;
+// 			}
+// //			printf("i %d, v %lf, d %lf, df %lf, dtheta %lf, dt %lf\n", i, v, dist, distance, angle - robot_pose.theta, delta_t);
+// 		}
+// //		if (moving_object[i].valid && moving_object[i + 1].valid)
+// //		{
+// //			double dist1 = carmen_distance_ackerman_traj(&moving_object[i].car_pose, &moving_object[i].pose);
+// //			double dist2 = carmen_distance_ackerman_traj(&moving_object[i + 1].car_pose, &moving_object[i + 1].pose);
+// //			double distance = dist1 - dist2;
+// //			double delta_t = moving_object[i].timestamp - moving_object[i + 1].timestamp;
+// //			if (delta_t > 0.01 && delta_t < 0.2)
+// //				v = moving_object[i].car_pose.v + distance / delta_t;
+// //			if (v > 60.0)
+// //				v = -1.0;
+// //			if (v > -0.00001)
+// //			{
+// //				average_v += v;
+// //				count += 1.0;
+// //			}
+// ////			printf("i %d, v %lf, d %lf, df %lf, dtheta %lf, dt %lf\n", i, v, dist, distance, angle - robot_pose.theta, delta_t);
+// //		}
+// 		moving_object[i].pose.v = v;
+// 	}
+//
+// 	if (count > 0.0)
+// 		average_v /= count;
+//
+// //	printf("id %d, v %lf, av %lf\n", moving_object[0].index, moving_object[0].pose.v, average_v);
+// //	printf("\n");
+// //	fflush(stdout);
+// }
+//
+//
+// double
+// get_moving_object_in_front_v()
+// {
+// 	double average_v = 0.0;
+// 	double count = 0.0;
+// 	for (int i = MOVING_OBJECT_HISTORY_SIZE - 2; i >= 0 ; i--)
+// 	{
+// 		if (moving_object[i].valid && (moving_object[i].pose.v > -0.0001))
+// 		{
+// 			average_v += moving_object[i].pose.v;
+// 			count += 1.0;
+// 		}
+// 	}
+//
+// 	if (count > 0.0)
+// 		average_v /= count;
+//
+// //	return (SampleFilter_get(&filter));
+// 	return (average_v);
+// }
+//
+//
+// static int
+// detect_moving_object_in_front(carmen_rddf_road_profile_message *rddf, int goal_index, int rddf_pose_index,
+// 		carmen_ackerman_traj_point_t car_pose, double timestamp)
+// {
+// 	moving_object[0].valid = false;
+// 	moving_object[0].index = -1;
+// 	moving_object[0].timestamp = 0.0;
+// 	double circle_radius = (robot_config.width + 0.0) / 2.0; // metade da largura do carro + um espacco de guarda
+//
+// 	if (carmen_distance_ackerman_traj(&rddf->poses[rddf_pose_index], &robot_pose) < robot_config.distance_between_front_and_rear_axles + 1.5)
+// 		return (-1);
+//
+// 	double disp = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
+// 	carmen_point_t front_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&rddf->poses[rddf_pose_index], disp);
+// 	carmen_position_t obstacle = carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(&front_car_pose, current_map);
+// 	double distance = sqrt((front_car_pose.x - obstacle.x) * (front_car_pose.x - obstacle.x) +
+// 			(front_car_pose.y - obstacle.y) * (front_car_pose.y - obstacle.y));
+//
+// //	virtual_laser_message.positions[virtual_laser_message.num_positions] = obstacle;
+// //	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_RED;
+// //	virtual_laser_message.num_positions++;
+// //	virtual_laser_message.positions[virtual_laser_message.num_positions].x = front_car_pose.x;
+// //	virtual_laser_message.positions[virtual_laser_message.num_positions].y = front_car_pose.y;
+// //	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_YELLOW;
+// //	virtual_laser_message.num_positions++;
+// 	if (distance < circle_radius)
+// 	{
+// 		moving_object[0].valid = true;
+// 		moving_object[0].pose.x = obstacle.x;
+// 		moving_object[0].pose.y = obstacle.y;
+// 		moving_object[0].car_pose = car_pose;
+// 		moving_object[0].index = goal_index;
+// 		moving_object[0].timestamp = timestamp;
+//
+// 		update_moving_object_velocity();
+// 		SampleFilter_put(&filter, moving_object[0].pose.v);
+// 		return (1);
+// 	}
+//
+// 	return (-1);
+// }
+//
+//
+// int
+// moving_object_in_front()
+// {
+// 	return (moving_object_in_front_detected);
+// }
 
 
 void
@@ -354,16 +355,15 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen
 	int last_obstacle_index = -1;
 
 	int last_obstacle_free_waypoint_index = -1;
-	carmen_ackerman_traj_point_t robot_pose = current_pose;
 
 	goal_list_index = 0;
 	goal_list_size = 0;
-	moving_object_in_front_detected = 0;
+	udatmo_clear_detected();
 
 	if (rddf == NULL)
 		return (0);
 
-	shift_moving_object_history();
+	udatmo_shift_history();
 	int goal_index = 0;
 //	virtual_laser_message.num_positions = 0;
 	double circle_radius = (robot_config.width - 0.0) / 2.0; // @@@ Alberto: metade da largura do carro + um espacco de guarda (ver valor certo)
@@ -372,7 +372,7 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen
 		double distance_from_car_to_rddf_point = carmen_distance_ackerman_traj(&current_pose, &rddf->poses[rddf_pose_index]);
 		int rddf_pose_hit_obstacle = trajectory_pose_hit_obstacle(rddf->poses[rddf_pose_index], circle_radius, current_map, &robot_config);
 
-		int moving_object_in_front_index = detect_moving_object_in_front(rddf, goal_index, rddf_pose_index, current_pose, timestamp);
+		int moving_object_in_front_index = udatmo_detect_obstacles(current_map, rddf, goal_index, rddf_pose_index, current_pose, robot_pose, timestamp);
 		if (rddf_pose_hit_obstacle || (moving_object_in_front_index != -1))
 		{
 			last_obstacle_index = rddf_pose_index;
@@ -384,13 +384,13 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen
 		if (last_obstacle_index != -1)
 			distance_to_last_obstacle = carmen_distance_ackerman_traj(&rddf->poses[last_obstacle_index], &rddf->poses[rddf_pose_index]);
 
-		double distance_to_annotation = carmen_distance_ackerman_traj(&robot_pose, &rddf->poses[rddf_pose_index]);
-		double distance_to_last_obstacle_free_waypoint = carmen_distance_ackerman_traj(&robot_pose, &rddf->poses[last_obstacle_free_waypoint_index]);
+		double distance_to_annotation = carmen_distance_ackerman_traj(&current_pose, &rddf->poses[rddf_pose_index]);
+		double distance_to_last_obstacle_free_waypoint = carmen_distance_ackerman_traj(&current_pose, &rddf->poses[last_obstacle_free_waypoint_index]);
 
 		if (moving_object_in_front_index != -1) // -> Adiciona um waypoint na ultima posicao livre se a posicao atual colide com um objeto movel.
 		{
-			if (goal_index == 0)
-				moving_object_in_front_detected = 1;
+			//if (goal_index == 0)
+			//	moving_object_in_front_detected = 1;
 			add_goal_to_goal_list(goal_index, current_pose, last_obstacle_free_waypoint_index, rddf);
 			break;
 		}
@@ -625,6 +625,8 @@ behavior_selector_initialize(carmen_robot_ackerman_config_t config, double dist_
 		carmen_behavior_selector_algorithm_t f_planner, carmen_behavior_selector_algorithm_t p_planner,
 		double dist_to_remove_annotation_goal, int rddf_num_poses_ahead_min, int rddf_num_poses_ahead_limited_by_map)
 {
+	udatmo_init(config);
+
 	robot_config = config;
 	distance_between_waypoints = dist_between_waypoints;
 	change_goal_distance = change_goal_dist;
@@ -633,13 +635,13 @@ behavior_selector_initialize(carmen_robot_ackerman_config_t config, double dist_
 	distance_to_remove_annotation_goal = dist_to_remove_annotation_goal;
 	carmen_rddf_num_poses_ahead_min = rddf_num_poses_ahead_min;
 	carmen_rddf_num_poses_ahead_limited_by_map = rddf_num_poses_ahead_limited_by_map;
-	memset(moving_object, 0, sizeof(MOVING_OBJECT) * MOVING_OBJECT_HISTORY_SIZE);
+	//memset(moving_object, 0, sizeof(MOVING_OBJECT) * MOVING_OBJECT_HISTORY_SIZE);
 
 	memset(&virtual_laser_message, 0, sizeof(carmen_mapper_virtual_laser_message));
 	virtual_laser_message.positions = (carmen_position_t *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(carmen_position_t));
 	virtual_laser_message.colors = (char *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(char));
 	virtual_laser_message.host = carmen_get_host();
 
-	SampleFilter_init(&filter);
+	//SampleFilter_init(&filter);
 	SampleFilter_init(&filter2);
 }

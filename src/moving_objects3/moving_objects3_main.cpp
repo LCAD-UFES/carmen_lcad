@@ -575,13 +575,72 @@ carmen_mapper_handler(carmen_mapper_map_message *map_message)
 void
 carmen_compact_map_handler(carmen_map_server_compact_cost_map_message *compact_map_message)
 {
+	static int frames = 0;
+	carmen_moving_objects3_particles_message particles_message;
+
 	double virtual_scan[NUM_OF_RAYS];
+	static double last_virtual_scan[NUM_OF_RAYS];
+	double offline_virtual_scan[NUM_OF_RAYS];
+
 	for (int i = 0; i < NUM_OF_RAYS; i++)
 	{
-		virtual_scan[i] = range_max;
+		offline_virtual_scan[i] = virtual_scan[i] = range_max;
 	}
+
 	generate_virtual_scan_from_compact_map(virtual_scan, compact_map_message);
+
+	// remove points in offline map
+	generate_virtual_scan_from_map(offline_virtual_scan, &offline_map_message);
+	remove_static_points(virtual_scan, offline_virtual_scan, NUM_OF_RAYS);
+
+	double delta_time = 0.0;
+
+	if (frames >= 1)
+	{
+		delta_time = compact_map_message->timestamp - previous_timestamp;
+		// do the scan differencing and find objects
+		scan_differencing(virtual_scan, last_virtual_scan, NUM_OF_RAYS);
+
+		for (unsigned int i = 0; i < moving_objects_list.size(); i++)
+		{
+			switch (moving_objects_list[i].tracking_state)
+			{
+				case STARTING:
+				{
+					moving_objects_list[i].tracking_state = TRACKING;
+					break;
+				}
+				case TRACKING:
+				{
+					moving_objects_list[i].particle_set = algorithm_particle_filter(moving_objects_list[i].particle_set, virtual_scan, NUM_OF_RAYS, delta_time);
+					moving_objects_list[i].best_particle = find_best_particle(moving_objects_list[i].particle_set);
+					descontinue_track(moving_objects_list, moving_objects_list[i], i);
+					break;
+				}
+				case ENDING:
+				{
+					break;
+				}
+				default:
+				{
+					break;
+				}
+
+			}
+		}
+	}
+
+	frames ++;
+
 	publish_virtual_scan_message(virtual_scan, compact_map_message->timestamp, NUM_OF_RAYS);
+
+	memcpy(last_virtual_scan, virtual_scan, NUM_OF_RAYS * sizeof(double));
+	previous_timestamp = compact_map_message->timestamp;
+
+
+	build_particles_message(&particles_message, moving_objects_list);
+	carmen_publish_moving_objects3_particles_message(&particles_message);
+	free (particles_message.particles);
 }
 
 

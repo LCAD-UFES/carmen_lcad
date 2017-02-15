@@ -52,7 +52,7 @@ typedef Kernel::Circle_2 Circle;
 typedef std::vector<Circle> Circles;
 
 /** \brief 2D polygon type. */
-typedef CGAL::Polygon_2<Kernel, std::vector< Point> > Polygon;
+typedef CGAL::Polygon_2<Kernel, std::vector<Point> > Polygon;
 
 /** \brief Circular buffer of polygon vertices. */
 typedef Polygon::Vertex_circulator Vertices;
@@ -67,6 +67,17 @@ typedef CGAL::Aff_transformation_2<Kernel> Affine;
  * @brief Returns the centroid point of the given polygon.
  */
 Point centroid(Polygon polygon);
+
+/**
+ * @brief Returns the distance between two points.
+ */
+Field distance(const Point &a, const Point &b);
+
+/**
+ * @brief Returns the squared distance between two points.
+ */
+Field distance2(const Point &a, const Point &b);
+
 
 }
 
