@@ -739,7 +739,7 @@ simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 			const gsl_interp_type *type = gsl_interp_cspline;
 			phi_spline = gsl_spline_alloc(type, 4);
 			gsl_spline_init(phi_spline, knots_x, knots_y, 4);
-			printf("ENTREI!!!\n\n");
+//			printf("ENTREI!!!\n\n");
 		}
 		else
 		{

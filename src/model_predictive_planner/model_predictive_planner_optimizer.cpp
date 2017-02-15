@@ -661,7 +661,7 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 
 		params.suitable_tt = tcp_seed.tt = tt;
 		params.suitable_acceleration = tcp_seed.a = a;
-		printf("a %lf, tt %lf\n", a, tt);
+//		printf("a %lf, tt %lf\n", a, tt);
 	}
 }
 
@@ -796,7 +796,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 
 	} while (/*(s->f > MAX_LANE_DIST) &&*/ (status == GSL_CONTINUE) && (iter < 50));
 
-	printf("iter = %ld\n", iter);
+//	printf("iter = %ld\n", iter);
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
@@ -806,7 +806,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 		tcp.valid = false;
 	}
 
-	printf("plan_cost = %lf\n", params.plan_cost);
+//	printf("plan_cost = %lf\n", params.plan_cost);
 	if (params.plan_cost > 2.0)
 	{
 //		printf(">>>>>>>>>>>>>> plan_cost > 3.6\n");
@@ -894,7 +894,7 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 	//		system("pkill gnuplot");
 	//	}
 
-	printf("Iteracoes: %lu \n", iter);
+//	printf("Iteracoes: %lu \n", iter);
 	return (tcp);
 }
 
