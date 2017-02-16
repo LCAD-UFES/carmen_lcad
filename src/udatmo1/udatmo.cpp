@@ -35,11 +35,10 @@ int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_message *curren
 							carmen_rddf_road_profile_message *rddf,
 							int goal_index,
 							int rddf_pose_index,
-							carmen_ackerman_traj_point_t car_pose,
 							carmen_ackerman_traj_point_t robot_pose,
 							double timestamp)
 {
-	int index = detector->detect(current_map, rddf, goal_index, rddf_pose_index, car_pose, robot_pose, timestamp);
+	int index = detector->detect(current_map, rddf, goal_index, rddf_pose_index, robot_pose, timestamp);
 
 	return (index);
 }

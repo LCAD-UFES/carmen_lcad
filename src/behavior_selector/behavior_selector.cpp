@@ -203,141 +203,6 @@ copy_rddf_message_old(carmen_rddf_road_profile_message *rddf_msg)
 }
 
 
-// void
-// shift_moving_object_history()
-// {
-// 	for (int i = MOVING_OBJECT_HISTORY_SIZE - 2; i >= 0 ; i--)
-// 		moving_object[i + 1] = moving_object[i];
-// }
-
-
-// void
-// update_moving_object_velocity()
-// {
-// 	double average_v = 0.0;
-// 	double count = 0.0;
-// 	for (int i = MOVING_OBJECT_HISTORY_SIZE - 2; i >= 0 ; i--)
-// 	{
-// 		double v = -1.0; // invalid v
-// 		if (moving_object[i].valid && moving_object[i + 1].valid)
-// 		{
-// 			double dist = carmen_distance_ackerman_traj(&moving_object[i].pose, &moving_object[i + 1].pose);
-// 			// distance in the direction of the robot: https://en.wikipedia.org/wiki/Vector_projection
-// 			double angle = atan2(moving_object[i].pose.y - moving_object[i + 1].pose.y, moving_object[i].pose.x - moving_object[i + 1].pose.x);
-// 			double distance = dist * cos(angle - robot_pose.theta);
-// 			double delta_t = moving_object[i].timestamp - moving_object[i + 1].timestamp;
-// 			if (delta_t > 0.01 && delta_t < 0.2)
-// 				v = distance / delta_t;
-// 			if (v > 60.0)
-// 				v = -1.0;
-// 			if (v > -0.00001)
-// 			{
-// 				average_v += v;
-// 				count += 1.0;
-// 			}
-// //			printf("i %d, v %lf, d %lf, df %lf, dtheta %lf, dt %lf\n", i, v, dist, distance, angle - robot_pose.theta, delta_t);
-// 		}
-// //		if (moving_object[i].valid && moving_object[i + 1].valid)
-// //		{
-// //			double dist1 = carmen_distance_ackerman_traj(&moving_object[i].car_pose, &moving_object[i].pose);
-// //			double dist2 = carmen_distance_ackerman_traj(&moving_object[i + 1].car_pose, &moving_object[i + 1].pose);
-// //			double distance = dist1 - dist2;
-// //			double delta_t = moving_object[i].timestamp - moving_object[i + 1].timestamp;
-// //			if (delta_t > 0.01 && delta_t < 0.2)
-// //				v = moving_object[i].car_pose.v + distance / delta_t;
-// //			if (v > 60.0)
-// //				v = -1.0;
-// //			if (v > -0.00001)
-// //			{
-// //				average_v += v;
-// //				count += 1.0;
-// //			}
-// ////			printf("i %d, v %lf, d %lf, df %lf, dtheta %lf, dt %lf\n", i, v, dist, distance, angle - robot_pose.theta, delta_t);
-// //		}
-// 		moving_object[i].pose.v = v;
-// 	}
-//
-// 	if (count > 0.0)
-// 		average_v /= count;
-//
-// //	printf("id %d, v %lf, av %lf\n", moving_object[0].index, moving_object[0].pose.v, average_v);
-// //	printf("\n");
-// //	fflush(stdout);
-// }
-//
-//
-// double
-// get_moving_object_in_front_v()
-// {
-// 	double average_v = 0.0;
-// 	double count = 0.0;
-// 	for (int i = MOVING_OBJECT_HISTORY_SIZE - 2; i >= 0 ; i--)
-// 	{
-// 		if (moving_object[i].valid && (moving_object[i].pose.v > -0.0001))
-// 		{
-// 			average_v += moving_object[i].pose.v;
-// 			count += 1.0;
-// 		}
-// 	}
-//
-// 	if (count > 0.0)
-// 		average_v /= count;
-//
-// //	return (SampleFilter_get(&filter));
-// 	return (average_v);
-// }
-//
-//
-// static int
-// detect_moving_object_in_front(carmen_rddf_road_profile_message *rddf, int goal_index, int rddf_pose_index,
-// 		carmen_ackerman_traj_point_t car_pose, double timestamp)
-// {
-// 	moving_object[0].valid = false;
-// 	moving_object[0].index = -1;
-// 	moving_object[0].timestamp = 0.0;
-// 	double circle_radius = (robot_config.width + 0.0) / 2.0; // metade da largura do carro + um espacco de guarda
-//
-// 	if (carmen_distance_ackerman_traj(&rddf->poses[rddf_pose_index], &robot_pose) < robot_config.distance_between_front_and_rear_axles + 1.5)
-// 		return (-1);
-//
-// 	double disp = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
-// 	carmen_point_t front_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&rddf->poses[rddf_pose_index], disp);
-// 	carmen_position_t obstacle = carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(&front_car_pose, current_map);
-// 	double distance = sqrt((front_car_pose.x - obstacle.x) * (front_car_pose.x - obstacle.x) +
-// 			(front_car_pose.y - obstacle.y) * (front_car_pose.y - obstacle.y));
-//
-// //	virtual_laser_message.positions[virtual_laser_message.num_positions] = obstacle;
-// //	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_RED;
-// //	virtual_laser_message.num_positions++;
-// //	virtual_laser_message.positions[virtual_laser_message.num_positions].x = front_car_pose.x;
-// //	virtual_laser_message.positions[virtual_laser_message.num_positions].y = front_car_pose.y;
-// //	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_YELLOW;
-// //	virtual_laser_message.num_positions++;
-// 	if (distance < circle_radius)
-// 	{
-// 		moving_object[0].valid = true;
-// 		moving_object[0].pose.x = obstacle.x;
-// 		moving_object[0].pose.y = obstacle.y;
-// 		moving_object[0].car_pose = car_pose;
-// 		moving_object[0].index = goal_index;
-// 		moving_object[0].timestamp = timestamp;
-//
-// 		update_moving_object_velocity();
-// 		SampleFilter_put(&filter, moving_object[0].pose.v);
-// 		return (1);
-// 	}
-//
-// 	return (-1);
-// }
-//
-//
-// int
-// moving_object_in_front()
-// {
-// 	return (moving_object_in_front_detected);
-// }
-
-
 void
 add_goal_to_goal_list(int &goal_index, carmen_ackerman_traj_point_t &current_pose, int rddf_pose_index, carmen_rddf_road_profile_message *rddf)
 {
@@ -349,7 +214,33 @@ add_goal_to_goal_list(int &goal_index, carmen_ackerman_traj_point_t &current_pos
 
 
 int
-behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen_ackerman_traj_point_t current_pose, double timestamp)
+get_parameters_for_filling_in_goal_list(int &moving_object_in_front_index, int &last_obstacle_index, int &last_obstacle_free_waypoint_index,
+		double &distance_from_car_to_rddf_point, double &distance_to_last_obstacle, double &distance_to_annotation,
+		double &distance_to_last_obstacle_free_waypoint,
+		carmen_rddf_road_profile_message *rddf, int rddf_pose_index, int goal_index, double circle_radius, double timestamp)
+{
+	int rddf_pose_hit_obstacle = trajectory_pose_hit_obstacle(rddf->poses[rddf_pose_index], circle_radius, current_map, &robot_config);
+
+	moving_object_in_front_index = udatmo_detect_obstacle_index(current_map, rddf, goal_index, rddf_pose_index, robot_pose, timestamp);
+
+	if (rddf_pose_hit_obstacle || (moving_object_in_front_index != -1))
+		last_obstacle_index = rddf_pose_index;
+	else
+		last_obstacle_free_waypoint_index = rddf_pose_index;
+
+	distance_from_car_to_rddf_point = carmen_distance_ackerman_traj(&robot_pose, &rddf->poses[rddf_pose_index]);
+
+	if (last_obstacle_index != -1)
+		distance_to_last_obstacle = carmen_distance_ackerman_traj(&rddf->poses[last_obstacle_index], &rddf->poses[rddf_pose_index]);
+
+	distance_to_annotation = carmen_distance_ackerman_traj(&robot_pose, &rddf->poses[rddf_pose_index]);
+	distance_to_last_obstacle_free_waypoint = carmen_distance_ackerman_traj(&robot_pose, &rddf->poses[last_obstacle_free_waypoint_index]);
+
+	return (rddf_pose_hit_obstacle);
+}
+
+int
+behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double timestamp)
 {
 	double distance_to_last_obstacle = 10000.0;
 	int last_obstacle_index = -1;
@@ -369,32 +260,22 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen
 	double circle_radius = (robot_config.width - 0.0) / 2.0; // @@@ Alberto: metade da largura do carro + um espacco de guarda (ver valor certo)
 	for (int rddf_pose_index = 0; rddf_pose_index < rddf->number_of_poses && goal_index < GOAL_LIST_SIZE; rddf_pose_index++)
 	{
-		double distance_from_car_to_rddf_point = carmen_distance_ackerman_traj(&current_pose, &rddf->poses[rddf_pose_index]);
-		int rddf_pose_hit_obstacle = trajectory_pose_hit_obstacle(rddf->poses[rddf_pose_index], circle_radius, current_map, &robot_config);
+		double distance_from_car_to_rddf_point, distance_to_annotation, distance_to_last_obstacle_free_waypoint;
+		int rddf_pose_hit_obstacle, moving_object_in_front_index;
 
-		int moving_object_in_front_index = udatmo_detect_obstacle_index(current_map, rddf, goal_index, rddf_pose_index, current_pose, robot_pose, timestamp);
-		if (rddf_pose_hit_obstacle || (moving_object_in_front_index != -1))
-		{
-			last_obstacle_index = rddf_pose_index;
-//			printf("i %d, h %d\n", rddf_pose_index, moving_object_in_front_index);
-		}
-		else
-			last_obstacle_free_waypoint_index = rddf_pose_index;
-
-		if (last_obstacle_index != -1)
-			distance_to_last_obstacle = carmen_distance_ackerman_traj(&rddf->poses[last_obstacle_index], &rddf->poses[rddf_pose_index]);
-
-		double distance_to_annotation = carmen_distance_ackerman_traj(&current_pose, &rddf->poses[rddf_pose_index]);
-		double distance_to_last_obstacle_free_waypoint = carmen_distance_ackerman_traj(&current_pose, &rddf->poses[last_obstacle_free_waypoint_index]);
+		rddf_pose_hit_obstacle = get_parameters_for_filling_in_goal_list(moving_object_in_front_index, last_obstacle_index, last_obstacle_free_waypoint_index,
+				distance_from_car_to_rddf_point, distance_to_last_obstacle, distance_to_annotation, distance_to_last_obstacle_free_waypoint,
+				rddf, rddf_pose_index, goal_index, circle_radius, timestamp);
 
 		if (moving_object_in_front_index != -1) // -> Adiciona um waypoint na ultima posicao livre se a posicao atual colide com um objeto movel.
 		{
-			add_goal_to_goal_list(goal_index, current_pose, last_obstacle_free_waypoint_index, rddf);
+			add_goal_to_goal_list(goal_index, robot_pose, last_obstacle_free_waypoint_index, rddf);
+			static int xx = 0;
 			break;
 		}
 //		else if (rddf_pose_hit_obstacle)
 //		{
-//			add_goal_to_goal_list(goal_index, current_pose, last_obstacle_free_waypoint_index, rddf);
+//			add_goal_to_goal_list(goal_index, robot_pose, last_obstacle_free_waypoint_index, rddf);
 //			break;
 //		}
 		else if (((distance_from_car_to_rddf_point >= distance_between_waypoints) && // -> Adiciona um waypoint na posicao atual se ela esta numa distancia apropriada
@@ -406,7 +287,7 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen
 				  (distance_to_annotation > distance_to_remove_annotation_goal) && // e se ela esta a uma distancia apropriada da anotacao
 				  !rddf_pose_hit_obstacle)) // e se ela nao colide com um obstaculo.
 		{
-			add_goal_to_goal_list(goal_index, current_pose, rddf_pose_index, rddf);
+			add_goal_to_goal_list(goal_index, robot_pose, rddf_pose_index, rddf);
 		}
 		else if (((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_BUMP) || // -> Adiciona um waypoint na ultima posicao livre se a posicao atual contem uma das anotacoes especificadas
 				  (rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_BARRIER) ||
@@ -414,11 +295,11 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen
 				 (distance_to_last_obstacle_free_waypoint > 1.5) && // e se ela esta a mais de 1.5 metros da ultima posicao livre de obstaculo
 				 rddf_pose_hit_obstacle) // e se ela colidiu com obstaculo.
 		{	// Ou seja, se a anotacao estiver em cima de um obstaculo, adiciona um waypoint na posicao anterior mais proxima da anotacao que estiver livre.
-			add_goal_to_goal_list(goal_index, current_pose, last_obstacle_free_waypoint_index, rddf);
+			add_goal_to_goal_list(goal_index, robot_pose, last_obstacle_free_waypoint_index, rddf);
 		}
 		else if ((rddf_pose_hit_obstacle == 2) && (goal_index == 0)) // Goal ideal esta fora do mapa
 		{
-			add_goal_to_goal_list(goal_index, current_pose, last_obstacle_free_waypoint_index, rddf);
+			add_goal_to_goal_list(goal_index, robot_pose, last_obstacle_free_waypoint_index, rddf);
 			break;
 		}
 	}

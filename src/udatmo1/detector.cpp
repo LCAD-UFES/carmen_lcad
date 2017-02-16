@@ -74,8 +74,7 @@ Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
 				 carmen_rddf_road_profile_message *rddf,
 				 int goal_index,
 				 int rddf_pose_index,
-				 carmen_ackerman_traj_point_t &car_pose,
-				 carmen_ackerman_traj_point_t &robot_pose,
+				 carmen_ackerman_traj_point_t robot_pose,
 				 double timestamp)
 {
 	moving_object[0].valid = false;
@@ -108,7 +107,7 @@ Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
 		moving_object[0].valid = true;
 		moving_object[0].pose.x = obstacle.x;
 		moving_object[0].pose.y = obstacle.y;
-		moving_object[0].car_pose = car_pose;
+		moving_object[0].car_pose = robot_pose;
 		moving_object[0].index = goal_index;
 		moving_object[0].timestamp = timestamp;
 
@@ -124,6 +123,7 @@ Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
 	}
 
 	set_detected(false);
+
 	return (-1);
 }
 

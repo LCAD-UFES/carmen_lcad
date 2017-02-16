@@ -50,8 +50,7 @@ public:
 				carmen_rddf_road_profile_message *rddf,
 				int goal_index,
 				int rddf_pose_index,
-				carmen_ackerman_traj_point_t &car_pose,
-				carmen_ackerman_traj_point_t &robot_pose,
+				carmen_ackerman_traj_point_t robot_pose,
 				double timestamp);
 
 	/**
