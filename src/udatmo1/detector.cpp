@@ -1,8 +1,11 @@
 #include "detector.h"
 
 #include <carmen/collision_detection.h>
+#include <carmen/global_graphics.h>
 
 #include <cmath>
+
+extern carmen_mapper_virtual_laser_message virtual_laser_message;
 
 namespace udatmo
 {
@@ -82,21 +85,40 @@ Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
 	moving_object[0].timestamp = 0.0;
 	double circle_radius = (robot_config.width + 0.0) / 2.0; // metade da largura do carro + um espacco de guarda
 
-	if (carmen_distance_ackerman_traj(&rddf->poses[rddf_pose_index], &robot_pose) < robot_config.distance_between_front_and_rear_axles + 1.5)
-	{
-		set_detected(false);
-		return (-1);
-	}
+	double distance = carmen_distance_ackerman_traj(&(rddf->poses[rddf_pose_index]), &robot_pose);
+
+//	static int xx = 0;
+//	if (xx == rddf_pose_index)
+//	{
+//		virtual_laser_message.positions[1].x = rddf->poses[rddf_pose_index].x;
+//		virtual_laser_message.positions[1].y = rddf->poses[rddf_pose_index].y;
+//		virtual_laser_message.colors[1] = CARMEN_RED;
+//		virtual_laser_message.positions[2].x = robot_pose.x;
+//		virtual_laser_message.positions[2].y = robot_pose.y;
+//		virtual_laser_message.colors[2] = CARMEN_GREEN;
+//	}
+//	if (rddf_pose_index == rddf->number_of_poses - 1)
+//	{
+//		xx++;
+//		if (xx == rddf->number_of_poses)
+//			xx = 0;
+//	}
+//
+//	if (distance < robot_config.distance_between_front_and_rear_axles + 1.5)
+//	{
+//		set_detected(false);
+//		printf("## distance %lf, aqui 0, %d\n", distance, rddf_pose_index);
+//		return (-1);
+//	}
 
 	double disp = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
 	carmen_point_t front_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&rddf->poses[rddf_pose_index], disp);
 	carmen_position_t obstacle = carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(&front_car_pose, current_map);
-	double distance = sqrt((front_car_pose.x - obstacle.x) * (front_car_pose.x - obstacle.x) +
+	distance = sqrt((front_car_pose.x - obstacle.x) * (front_car_pose.x - obstacle.x) +
 						   (front_car_pose.y - obstacle.y) * (front_car_pose.y - obstacle.y));
 
-//	virtual_laser_message.positions[virtual_laser_message.num_positions] = obstacle;
-//	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_RED;
-//	virtual_laser_message.num_positions++;
+//	printf("distance %lf, ", distance);
+
 //	virtual_laser_message.positions[virtual_laser_message.num_positions].x = front_car_pose.x;
 //	virtual_laser_message.positions[virtual_laser_message.num_positions].y = front_car_pose.y;
 //	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_YELLOW;
@@ -119,11 +141,13 @@ Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
 		else
 			set_detected(false);
 
+//		printf("aqui 2, %d\n", rddf_pose_index);
 		return (rddf_pose_index);
 	}
 
 	set_detected(false);
 
+//	printf("aqui 3, %d\n", rddf_pose_index);
 	return (-1);
 }
 

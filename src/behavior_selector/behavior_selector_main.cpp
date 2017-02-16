@@ -572,7 +572,7 @@ publish_goal_list(carmen_ackerman_traj_point_t *goal_list, int goal_list_size, d
 void
 publish_object(carmen_ackerman_traj_point_t *object_pose)
 {
-	virtual_laser_message.num_positions = 1;
+	virtual_laser_message.num_positions = 3;
 	virtual_laser_message.positions[0].x = object_pose->x;
 	virtual_laser_message.positions[0].y = object_pose->y;
 	virtual_laser_message.colors[0] = CARMEN_PURPLE;

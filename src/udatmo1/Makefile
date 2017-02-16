@@ -29,6 +29,16 @@ PUBLIC_LIBRARIES = \
 TARGETS = \
 	libudatmo.a
 
+# If you set graphics support in configure.
+ifndef NO_GRAPHICS
+#Carmen Global Graphic Library and Gtk+2 Graphics Libraries
+LFLAGS += -lglobal_graphics
+IFLAGS += `pkg-config --cflags gtk+-2.0 gmodule-export-2.0`
+IFLAGS += `pkg-config --cflags gtkglext-1.0`
+LFLAGS += `pkg-config --libs gtk+-2.0 gmodule-export-2.0`
+LFLAGS += `pkg-config --libs gtkglext-1.0`
+endif
+
 libudatmo.a: detector.o sample_filter.o udatmo.o
 #udatmo: detector.o sample_filter.o ...
 
