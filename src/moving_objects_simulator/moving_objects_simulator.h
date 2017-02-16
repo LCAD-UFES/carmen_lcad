@@ -7,6 +7,9 @@
 #include <carmen/localize_ackerman_messages.h>
 #include <carmen/moving_objects_messages.h>
 #include <carmen/moving_objects_interface.h>
+#include <carmen/map_server_interface.h>
+#include <carmen/global_graphics.h>
+
 #include <vector>
 #include <map>
 

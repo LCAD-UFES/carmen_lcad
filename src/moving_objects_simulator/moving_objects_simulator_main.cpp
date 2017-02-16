@@ -233,6 +233,8 @@ publish_moving_objects_by_id()
 	int num_of_objects = 0;
 	int i = 0;
 
+	carmen_mapper_virtual_laser_message virtual_laser_message;
+
 	std::map<int,moving_objects_by_id_t>::iterator it;
 	for(it = moving_objects_by_id_map.begin(); it != moving_objects_by_id_map.end(); it++)
 	{
@@ -246,10 +248,16 @@ publish_moving_objects_by_id()
 		return;
 	}
 
-	// alocação da mensagem
+	// alocação da mensagem da moving objects point clouds
 	moving_objects_point_clouds_message.num_point_clouds = num_of_objects;
 	moving_objects_point_clouds_message.point_clouds = (t_point_cloud_struct *) (malloc(moving_objects_point_clouds_message.num_point_clouds * sizeof(t_point_cloud_struct)));
 	carmen_test_alloc(moving_objects_point_clouds_message.point_clouds);
+
+	// alocação da mensagem do virtual laser
+	virtual_laser_message.num_positions = num_of_objects;
+	virtual_laser_message.colors = (char *) (malloc(virtual_laser_message.num_positions * sizeof(char)));
+	virtual_laser_message.positions = (carmen_position_t *) (malloc(virtual_laser_message.num_positions * sizeof(carmen_position_t)));
+
 
 	for(it = moving_objects_by_id_map.begin(); it != moving_objects_by_id_map.end(); it++)
 	{
@@ -306,14 +314,27 @@ publish_moving_objects_by_id()
 
 			moving_objects_point_clouds_message.timestamp = carmen_get_time();
 
+			// preenche a mensagem com o virtual laser
+			virtual_laser_message.colors[i] = CARMEN_PURPLE;
+			virtual_laser_message.positions[i].x = moving_objects_point_clouds_message.point_clouds[i].object_pose.x;
+			virtual_laser_message.positions[i].y = moving_objects_point_clouds_message.point_clouds[i].object_pose.y;
+
 			it->second.index++;
 			i++;
 		}
 	}
 
+
 	carmen_moving_objects_point_clouds_publish_message(&moving_objects_point_clouds_message);
 
 	free(moving_objects_point_clouds_message.point_clouds);
+
+	// publish virtual laser message
+	virtual_laser_message.host = carmen_get_host();
+	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
+
+	free(virtual_laser_message.colors);
+	free(virtual_laser_message.positions);
 
 	return;
 }

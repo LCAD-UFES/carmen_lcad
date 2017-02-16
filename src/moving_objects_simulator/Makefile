@@ -13,7 +13,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_p
 
 # Required default libraries to comunicate with Carmen Core.
 LFLAGS += -lparam_interface -lipc -lglobal \
--llocalize_ackerman_interface -lmoving_objects_interface \
+-llocalize_ackerman_interface -lmoving_objects_interface -lmap_server_interface -lmapper_interface \
 
 # C++11 flag
 CFLAGS += -Wall
@@ -32,6 +32,16 @@ PUBLIC_BINARIES = moving_objects_simulator
 
 TARGETS = moving_objects_simulator
 PUBLIC_LIBRARIES_SO = 
+
+# If you set graphics support in configure.
+ifndef NO_GRAPHICS
+#Carmen Global Graphic Library and Gtk+2 Graphics Libraries
+LFLAGS += -lglobal_graphics
+IFLAGS += `pkg-config --cflags gtk+-2.0 gmodule-export-2.0`
+IFLAGS += `pkg-config --cflags gtkglext-1.0`
+LFLAGS += `pkg-config --libs gtk+-2.0 gmodule-export-2.0`
+LFLAGS += `pkg-config --libs gtkglext-1.0`
+endif
 
 moving_objects_simulator:	moving_objects_simulator_main.o moving_objects_simulator.o
 # rules

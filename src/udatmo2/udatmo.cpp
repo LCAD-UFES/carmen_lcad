@@ -18,7 +18,7 @@ void udatmo_init(const carmen_robot_ackerman_config_t robot_config)
 
 int udatmo_obstacle_detected(void)
 {
-	return (detector->detected ? 1 : -1);
+	return (detector->detected);
 }
 
 void udatmo_clear_detected(void)
@@ -31,7 +31,7 @@ void udatmo_shift_history(void)
 	detector->shift();
 }
 
-int udatmo_detect_obstacles(carmen_obstacle_distance_mapper_message *current_map,
+int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_message *current_map,
 							carmen_rddf_road_profile_message *rddf,
 							int goal_index,
 							int rddf_pose_index,
@@ -39,9 +39,9 @@ int udatmo_detect_obstacles(carmen_obstacle_distance_mapper_message *current_map
 							carmen_ackerman_traj_point_t robot_pose,
 							double timestamp)
 {
-	detector->detect(current_map, rddf, goal_index, rddf_pose_index, car_pose, robot_pose, timestamp);
+	int index = detector->detect(current_map, rddf, goal_index, rddf_pose_index, car_pose, robot_pose, timestamp);
 
-	return udatmo_obstacle_detected();
+	return (index);
 }
 
 double udatmo_speed_front(void)

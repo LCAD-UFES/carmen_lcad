@@ -13,6 +13,7 @@ Detector::Detector(const carmen_robot_ackerman_config_t &robot_config)
 	memset(moving_object, 0, sizeof(Obstacle) * MOVING_OBJECT_HISTORY_SIZE);
 }
 
+
 void
 Detector::update_moving_object_velocity(carmen_ackerman_traj_point_t &robot_pose)
 {
@@ -67,7 +68,8 @@ Detector::update_moving_object_velocity(carmen_ackerman_traj_point_t &robot_pose
 //	fflush(stdout);
 }
 
-bool
+
+int
 Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
 				 carmen_rddf_road_profile_message *rddf,
 				 int goal_index,
@@ -82,15 +84,16 @@ Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
 	double circle_radius = (robot_config.width + 0.0) / 2.0; // metade da largura do carro + um espacco de guarda
 
 	if (carmen_distance_ackerman_traj(&rddf->poses[rddf_pose_index], &robot_pose) < robot_config.distance_between_front_and_rear_axles + 1.5)
-		return set_detected(false);
+	{
+		set_detected(false);
+		return (-1);
+	}
 
 	double disp = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
 	carmen_point_t front_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&rddf->poses[rddf_pose_index], disp);
 	carmen_position_t obstacle = carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(&front_car_pose, current_map);
-	double distance = sqrt(
-		(front_car_pose.x - obstacle.x) * (front_car_pose.x - obstacle.x) +
-		(front_car_pose.y - obstacle.y) * (front_car_pose.y - obstacle.y)
-	);
+	double distance = sqrt((front_car_pose.x - obstacle.x) * (front_car_pose.x - obstacle.x) +
+						   (front_car_pose.y - obstacle.y) * (front_car_pose.y - obstacle.y));
 
 //	virtual_laser_message.positions[virtual_laser_message.num_positions] = obstacle;
 //	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_RED;
@@ -111,11 +114,19 @@ Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
 
 		update_moving_object_velocity(robot_pose);
 		speed += moving_object[0].pose.v;
-		return set_detected(true);
+
+		if (goal_index == 0)
+			set_detected(true);
+		else
+			set_detected(false);
+
+		return (rddf_pose_index);
 	}
 
-	return set_detected(false);
+	set_detected(false);
+	return (-1);
 }
+
 
 void
 Detector::shift()
@@ -123,6 +134,7 @@ Detector::shift()
 	for (int i = MOVING_OBJECT_HISTORY_SIZE - 2; i >= 0 ; i--)
 		moving_object[i + 1] = moving_object[i];
 }
+
 
 double
 Detector::speed_front()
