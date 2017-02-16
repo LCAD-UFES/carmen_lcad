@@ -46,7 +46,7 @@ public:
 	/**
 	 * @brief Perform moving obstacle detection in the front of the car.
 	 */
-	bool detect(carmen_obstacle_distance_mapper_message *current_map,
+	int detect(carmen_obstacle_distance_mapper_message *current_map,
 				carmen_rddf_road_profile_message *rddf,
 				int goal_index,
 				int rddf_pose_index,
