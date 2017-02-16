@@ -324,7 +324,7 @@ double
 compute_proximity_to_obstacles_using_distance_map(vector<carmen_ackerman_path_point_t> path)
 {
 	double proximity_to_obstacles_for_path = 0.0;
-	double circle_radius = (GlobalState::robot_config.width + 1.0) / 2.0; // metade da largura do carro + um espacco de guarda
+	double circle_radius = (GlobalState::robot_config.width + 1.5) / 2.0; // metade da largura do carro + um espacco de guarda
 	carmen_point_t localizer = {GlobalState::localizer_pose->x, GlobalState::localizer_pose->y, GlobalState::localizer_pose->theta};
 	for (unsigned int i = 0; i < path.size(); i += 1)
 	{
@@ -969,7 +969,7 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 	if (!tcp_seed.has_k1)
 		get_missing_k1(target_td, tcp_seed);
 
-	if (((target_td.v_i > (15.0 / 3.6)) && (target_td.dist < 15.0)) ||
+	if (((target_td.v_i > (18.0 / 3.6)) && (target_td.dist < 20.0)) ||
 		((target_td.v_i < (5.0 / 3.6)) && (target_td.dist < 10.0)))
 	{
 		if (!tcp_complete.shift_knots)

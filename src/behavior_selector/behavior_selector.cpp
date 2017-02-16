@@ -358,12 +358,12 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen
 
 	goal_list_index = 0;
 	goal_list_size = 0;
-//	udatmo_clear_detected();
+	udatmo_clear_detected();
 
 	if (rddf == NULL)
 		return (0);
 
-//	udatmo_shift_history();
+	udatmo_shift_history();
 	int goal_index = 0;
 //	virtual_laser_message.num_positions = 0;
 	double circle_radius = (robot_config.width - 0.0) / 2.0; // @@@ Alberto: metade da largura do carro + um espacco de guarda (ver valor certo)
@@ -372,7 +372,7 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen
 		double distance_from_car_to_rddf_point = carmen_distance_ackerman_traj(&current_pose, &rddf->poses[rddf_pose_index]);
 		int rddf_pose_hit_obstacle = trajectory_pose_hit_obstacle(rddf->poses[rddf_pose_index], circle_radius, current_map, &robot_config);
 
-		int moving_object_in_front_index = -1;//udatmo_detect_obstacles(current_map, rddf, goal_index, rddf_pose_index, current_pose, robot_pose, timestamp);
+		int moving_object_in_front_index = udatmo_detect_obstacle_index(current_map, rddf, goal_index, rddf_pose_index, current_pose, robot_pose, timestamp);
 		if (rddf_pose_hit_obstacle || (moving_object_in_front_index != -1))
 		{
 			last_obstacle_index = rddf_pose_index;
@@ -389,8 +389,6 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, carmen
 
 		if (moving_object_in_front_index != -1) // -> Adiciona um waypoint na ultima posicao livre se a posicao atual colide com um objeto movel.
 		{
-			//if (goal_index == 0)
-			//	moving_object_in_front_detected = 1;
 			add_goal_to_goal_list(goal_index, current_pose, last_obstacle_free_waypoint_index, rddf);
 			break;
 		}

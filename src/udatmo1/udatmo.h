@@ -18,7 +18,7 @@ void udatmo_clear_detected(void);
 
 void udatmo_shift_history(void);
 
-int udatmo_detect_obstacles(carmen_obstacle_distance_mapper_message *current_map,
+int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_message *current_map,
 							carmen_rddf_road_profile_message *rddf,
 							int goal_index,
 							int rddf_pose_index,

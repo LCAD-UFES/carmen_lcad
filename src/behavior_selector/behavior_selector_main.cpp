@@ -234,7 +234,7 @@ extern SampleFilter filter2;
 
 
 double
-set_goal_velocity_according_to_moving_obstacle_old(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
+set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
 {
 	if (udatmo_obstacle_detected())
 	{
@@ -255,7 +255,7 @@ set_goal_velocity_according_to_moving_obstacle_old(carmen_ackerman_traj_point_t 
 //		fclose(caco);
 		if (goal->v < 0.0)
 			goal->v = 0.0;
-		//		printf("mov %lf, gv %lf, dist %lf, d_dist %lf\n", moving_obj_v, goal->v, distance, desired_distance);
+//		printf("mov %lf, gv %lf, dist %lf, d_dist %lf\n", moving_obj_v, goal->v, distance, desired_distance);
 	}
 
 	return (goal->v);
@@ -263,7 +263,7 @@ set_goal_velocity_according_to_moving_obstacle_old(carmen_ackerman_traj_point_t 
 
 
 double
-set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
+set_goal_velocity_according_to_moving_obstacle_new(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
 {
 	if (udatmo_obstacle_detected())
 	{
@@ -299,7 +299,7 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 {
 	goal->v = 18.28; // Esta linha faz com que o behaviour_selector ignore as velocidades no rddf
 
-//	goal->v = set_goal_velocity_according_to_moving_obstacle(goal, current_robot_pose_v_and_phi);
+	goal->v = set_goal_velocity_according_to_moving_obstacle(goal, current_robot_pose_v_and_phi);
 
 //	printf("gva %lf  ", goal->v);
 	goal->v = limit_maximum_velocity_according_to_centripetal_acceleration(goal->v, get_robot_pose().v, goal,
@@ -417,7 +417,7 @@ compute_simulated_objects(carmen_ackerman_traj_point_t *current_robot_pose_v_and
 		if (carmen_distance_ackerman_traj(&rddf->poses[i], current_robot_pose_v_and_phi) > 60.0)
 			break;
 	if (i == rddf->number_of_poses)
-		return (NULL);
+		i--;
 
 	if ((current_robot_pose_v_and_phi->v < 0.2) || (carmen_distance_ackerman_traj(&previous_pose, current_robot_pose_v_and_phi) > 60.0))
 	{
