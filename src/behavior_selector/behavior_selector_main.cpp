@@ -236,27 +236,28 @@ extern SampleFilter filter2;
 double
 set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
 {
+	// um carro de tamanho para cada 10 milhas/h (4.4705 m/s) -> ver "The DARPA Urban Challenge" book, pg. 36.
+	double min_dist_according_to_car_v = get_robot_config()->length * (current_robot_pose_v_and_phi->v / 4.4704)
+			+ get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels;
+	double desired_distance = carmen_fmax(1.8 * min_dist_according_to_car_v, 10.0);
+	double distance = carmen_distance_ackerman_traj(goal, current_robot_pose_v_and_phi);
+	double moving_obj_v = udatmo_speed_front();
+
 	if (udatmo_obstacle_detected())
 	{
-		// um carro de tamanho para cada 10 milhas/h (4.4705 m/s) -> ver "The DARPA Urban Challenge" book, pg. 36.
-		double min_dist_according_to_car_v = get_robot_config()->length * (current_robot_pose_v_and_phi->v / 4.4704)
-				+ get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels;
-		double desired_distance = carmen_fmax(1.5 * min_dist_according_to_car_v, 10.0);
-		double distance = carmen_distance_ackerman_traj(goal, current_robot_pose_v_and_phi);
-		double moving_obj_v = udatmo_speed_front();
-//		FILE* caco = fopen("caco.txt", "a");
 		// ver "The DARPA Urban Challenge" book, pg. 36.
 		double Kgap = 1.0;
 		goal->v = moving_obj_v + Kgap * (distance - desired_distance);
 		//		SampleFilter_put(&filter2, goal->v);
 		//		goal->v = SampleFilter_get(&filter2);
-//		fprintf(caco, "%lf %lf %lf\n", moving_obj_v, goal->v, current_robot_pose_v_and_phi->v);
-//		fflush(caco);
-//		fclose(caco);
 		if (goal->v < 0.0)
 			goal->v = 0.0;
 //		printf("mov %lf, gv %lf, dist %lf, d_dist %lf\n", moving_obj_v, goal->v, distance, desired_distance);
 	}
+	FILE* caco = fopen("caco.txt", "a");
+	fprintf(caco, "%lf %lf %lf %lf %lf\n", moving_obj_v, goal->v, current_robot_pose_v_and_phi->v, distance, desired_distance);
+	fflush(caco);
+	fclose(caco);
 
 	return (goal->v);
 }
@@ -612,9 +613,9 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	}
 
 	// @@@ Alberto: colocar um parametro para ativar ou desativar isso.
-//	carmen_ackerman_traj_point_t *simulated_object_pose = compute_simulated_objects(&current_robot_pose_v_and_phi, timestamp);
-//	if (simulated_object_pose)
-//		publish_object(simulated_object_pose);
+	carmen_ackerman_traj_point_t *simulated_object_pose = compute_simulated_objects(&current_robot_pose_v_and_phi, timestamp);
+	if (simulated_object_pose)
+		publish_object(simulated_object_pose);
 }
 
 
