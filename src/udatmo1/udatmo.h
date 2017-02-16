@@ -1,5 +1,5 @@
-#ifndef MUDATMO_H
-#define MUDATMO_H
+#ifndef UDATMO_H
+#define UDATMO_H
 
 #ifdef __cplusplus
 extern "C"
