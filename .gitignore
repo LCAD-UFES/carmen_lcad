@@ -516,3 +516,4 @@ bin/fast_polar_slam_viewer
 src/virtual_scan/virtual_scan
 bin/virtual_scan
 src/carmen_log_to_dataset/carmen_log_to_dataset
+src/utilities/dataset_creator/dataset_creator
