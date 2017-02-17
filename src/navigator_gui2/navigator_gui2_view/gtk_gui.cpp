@@ -76,6 +76,22 @@ compute_particle_weight_color(carmen_localize_ackerman_particle_ipc_t *particles
 }
 
 
+bool
+valid_carmen_ackerman_traj_point(carmen_ackerman_traj_point_t world_point, carmen_map_t *map)
+{
+	if (!map)
+		return (false);
+
+	int x = carmen_round((world_point.x - map->config.x_origin) / map->config.resolution);
+	int y = carmen_round((world_point.y - map->config.y_origin) / map->config.resolution);
+
+	if (x < 0 || x >= map->config.x_size || y < 0 || y >= map->config.y_size)
+		return (false);
+
+	return (true);
+}
+
+
 namespace View
 {
 	GtkGui::GtkGui(int argc, char *argv[])
@@ -500,7 +516,7 @@ namespace View
 	void
 	GtkGui::set_distance_traveled(carmen_point_t robot_pose, double velocity)
 	{
-		char buffer[255];
+		char buffer[2048];
 		static bool first_time = true;
 		static double dist_traveled;
 		static carmen_point_t previous_robot_pose;
@@ -529,7 +545,7 @@ namespace View
 			carmen_world_point_p new_goal,
 			int					autonomous)
 	{
-		char   buffer[255];
+		char   buffer[2048];
 		double robot_distance = 0.0, goal_distance = 0.0;
 		carmen_world_point_t new_robot_w;
 		static int previous_width = 0, previous_height = 0;
@@ -633,7 +649,7 @@ namespace View
 	}
 
 	void
-	GtkGui::navigator_graphics_update_goal_list(carmen_ackerman_traj_point_t* goal_list, int size)
+	GtkGui::navigator_graphics_update_goal_list(carmen_ackerman_traj_point_t *goal_list, int size)
 	{
 //		int RDDF_MAX_SIZE = 10000;
 		int i;
@@ -647,10 +663,20 @@ namespace View
 
 		for (i = 0; i < size; i++)
 		{
-			this->navigator_goal_list[i].pose.x = goal_list[i].x;
-			this->navigator_goal_list[i].pose.y = goal_list[i].y;
-			this->navigator_goal_list[i].pose.theta = goal_list[i].theta;
-			this->navigator_goal_list[i].map = this->controls_.map_view->internal_map;
+			if (valid_carmen_ackerman_traj_point(goal_list[i], this->controls_.map_view->internal_map))
+			{
+				this->navigator_goal_list[i].pose.x = goal_list[i].x;
+				this->navigator_goal_list[i].pose.y = goal_list[i].y;
+				this->navigator_goal_list[i].pose.theta = goal_list[i].theta;
+				this->navigator_goal_list[i].map = this->controls_.map_view->internal_map;
+			}
+			else
+			{
+				free(this->navigator_goal_list);
+				this->navigator_goal_list = NULL;
+				this->goal_list_size = 0;
+				return;
+			}
 		}
 
 //		if (this->edited_rddf_goal_list == NULL)
@@ -845,8 +871,8 @@ namespace View
 	void
 	GtkGui::navigator_graphics_change_map(carmen_map_p new_map)
 	{
-		char buffer[1024];
-		memset(buffer, 0, 1024);
+		char buffer[2048];
+		memset(buffer, 0, 2048);
 
 		carmen_map_graphics_add_map(this->controls_.map_view, new_map, flags);
 
@@ -1039,7 +1065,7 @@ namespace View
 	void
 	GtkGui::navigator_graphics_update_fused_odometry(carmen_point_t fused_odometry_pose)
 	{
-		char buffer[256];
+		char buffer[2048];
 
 		fused_odometry_position.map = this->controls_.map_view->internal_map;
 		fused_odometry_position.pose = fused_odometry_pose;

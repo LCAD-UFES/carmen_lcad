@@ -6,7 +6,6 @@
  */
 
 #include <carmen/collision_detection.h>
-#include <carmen/motion_planner_interface.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
 #include <carmen/udatmo.h>
 #include <carmen/global_graphics.h>
@@ -32,14 +31,9 @@ static carmen_behavior_selector_algorithm_t following_lane_planner;
 static carmen_behavior_selector_algorithm_t parking_planner;
 static double distance_to_remove_annotation_goal = 3.0;
 
-static carmen_rddf_road_profile_message *last_rddf_message = NULL;
 int position_of_next_annotation = 0;
 int num_poses_with_annotations = 0;
 int poses_with_annotations[MAX_ANNOTATIONS];
-
-int carmen_rddf_num_poses_ahead = 100;
-int carmen_rddf_num_poses_ahead_min = 40;
-int carmen_rddf_num_poses_ahead_limited_by_map = 150;
 
 
 // filipe:: TODO: colocar no carmen.ini
@@ -102,107 +96,6 @@ change_state(int rddf_annotation)
 }
 
 
-int
-compute_max_rddf_num_poses_ahead(carmen_ackerman_traj_point_t current_pose)
-{
-	int num_poses_ahead_by_velocity = carmen_rddf_num_poses_ahead_min;
-	//	s = vf*vf - v0*v0 / 2*a;
-	double common_goal_v = 3.0;
-	double distance = 0.0;
-
-	if (common_goal_v < current_pose.v)
-	{
-		distance = current_pose.v * 6.5;
-		if (distance > 0)
-			num_poses_ahead_by_velocity = (distance / 0.5) + 1;
-	}
-	if (num_poses_ahead_by_velocity < carmen_rddf_num_poses_ahead_min)
-		num_poses_ahead_by_velocity = carmen_rddf_num_poses_ahead_min;
-	else if (num_poses_ahead_by_velocity > carmen_rddf_num_poses_ahead_limited_by_map)
-		num_poses_ahead_by_velocity = carmen_rddf_num_poses_ahead_limited_by_map;
-
-//	printf("\n current_v: %lf distance: %lf a: %lf num_poses: %d \n", current_pose.v, distance, a, num_poses_ahead_by_velocity);
-	return num_poses_ahead_by_velocity;
-}
-
-
-static void
-copy_rddf_message(carmen_rddf_road_profile_message *rddf_msg)
-{
-	//Now the rddf is number of posses variable with the velocity
-	if (!last_rddf_message)
-	{
-		last_rddf_message = (carmen_rddf_road_profile_message *) malloc(sizeof(carmen_rddf_road_profile_message));
-		last_rddf_message->number_of_poses = 0;
-		last_rddf_message->poses = NULL;
-		last_rddf_message->annotations = NULL;
-		last_rddf_message->poses_back = NULL;
-		last_rddf_message->number_of_poses_back = 0;
-	}
-
-	 if ((rddf_msg->number_of_poses < carmen_rddf_num_poses_ahead_min) && (rddf_msg->number_of_poses > 0))
-		 carmen_rddf_num_poses_ahead = rddf_msg->number_of_poses;
-	 else
-		 carmen_rddf_num_poses_ahead = compute_max_rddf_num_poses_ahead(robot_pose);
-
-	if (last_rddf_message->number_of_poses != carmen_rddf_num_poses_ahead)
-	{
-		last_rddf_message->number_of_poses = carmen_rddf_num_poses_ahead;
-
-		free(last_rddf_message->poses);
-		free(last_rddf_message->annotations);
-		free(last_rddf_message->poses_back);
-
-		last_rddf_message->poses = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * last_rddf_message->number_of_poses);
-		last_rddf_message->annotations = (int *) malloc(sizeof(int) * last_rddf_message->number_of_poses);
-
-		if (rddf_msg->number_of_poses_back > 0)
-		{
-			last_rddf_message->number_of_poses_back = carmen_rddf_num_poses_ahead;
-			last_rddf_message->poses_back = (carmen_ackerman_traj_point_t*) malloc(sizeof(carmen_ackerman_traj_point_t) * last_rddf_message->number_of_poses_back);
-		}
-	}
-
-	last_rddf_message->timestamp = rddf_msg->timestamp;
-	for (int i = 0; i < carmen_rddf_num_poses_ahead; i++)
-	{
-		last_rddf_message->poses[i] = rddf_msg->poses[i];
-		last_rddf_message->annotations[i] = rddf_msg->annotations[i];
-	}
-	for (int i = 0; i < last_rddf_message->number_of_poses_back; i++)
-		last_rddf_message->poses_back[i] = rddf_msg->poses_back[i];
-}
-
-
-static void
-copy_rddf_message_old(carmen_rddf_road_profile_message *rddf_msg)
-{
-	if (!last_rddf_message)
-	{
-		last_rddf_message = (carmen_rddf_road_profile_message*)malloc(sizeof(carmen_rddf_road_profile_message));
-		last_rddf_message->number_of_poses = 0;
-		last_rddf_message->poses = NULL;
-		last_rddf_message->annotations = NULL;
-	}
-
-	if (last_rddf_message->number_of_poses != rddf_msg->number_of_poses)
-	{
-		last_rddf_message->number_of_poses = rddf_msg->number_of_poses;
-
-		free(last_rddf_message->poses);
-		free(last_rddf_message->annotations);
-
-		last_rddf_message->poses = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * last_rddf_message->number_of_poses);
-		last_rddf_message->annotations = (int *) malloc(sizeof(int) * last_rddf_message->number_of_poses);
-	}
-
-	last_rddf_message->timestamp = rddf_msg->timestamp;
-
-	memcpy(last_rddf_message->poses, rddf_msg->poses, sizeof(carmen_ackerman_traj_point_t) * last_rddf_message->number_of_poses);
-	memcpy(last_rddf_message->annotations, rddf_msg->annotations, sizeof(int) * last_rddf_message->number_of_poses);
-}
-
-
 void
 add_goal_to_goal_list(int &goal_index, carmen_ackerman_traj_point_t &current_goal, int rddf_pose_index, carmen_rddf_road_profile_message *rddf)
 {
@@ -228,6 +121,9 @@ get_parameters_for_filling_in_goal_list(int &moving_object_in_front_index, int &
 		last_obstacle_index = rddf_pose_index;
 	else
 		last_obstacle_free_waypoint_index = rddf_pose_index;
+
+	if (rddf_pose_index == 0)
+		last_obstacle_free_waypoint_index = 0;
 
 	distance_from_car_to_rddf_point = carmen_distance_ackerman_traj(&current_goal, &rddf->poses[rddf_pose_index]);
 
@@ -299,7 +195,7 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double
 		{	// Ou seja, se a anotacao estiver em cima de um obstaculo, adiciona um waypoint na posicao anterior mais proxima da anotacao que estiver livre.
 			add_goal_to_goal_list(goal_index, current_goal, last_obstacle_free_waypoint_index, rddf);
 		}
-		else if ((rddf_pose_hit_obstacle == 2) && (goal_index == 0)) // Goal ideal esta fora do mapa
+		else if ((rddf_pose_hit_obstacle == 2) && (goal_index == 0) && (rddf_pose_index > 10)) // Goal ideal esta fora do mapa
 		{
 			add_goal_to_goal_list(goal_index, current_goal, last_obstacle_free_waypoint_index, rddf);
 			break;
@@ -459,26 +355,6 @@ get_robot_config()
 }
 
 
-carmen_rddf_road_profile_message *
-get_last_rddf_message()
-{
-	return last_rddf_message;
-}
-
-
-void
-behavior_selector_update_rddf(carmen_rddf_road_profile_message *rddf_msg, int rddf_num_poses_by_velocity, double timestamp __attribute__ ((unused)))
-{
-	if (rddf_num_poses_by_velocity)
-		copy_rddf_message(rddf_msg);
-	else
-		copy_rddf_message_old(rddf_msg);
-
-	if ((get_current_algorithm() == CARMEN_BEHAVIOR_SELECTOR_RDDF) && (last_rddf_message) && (last_rddf_message->number_of_poses > 0))
-		carmen_motion_planner_publish_path_message(last_rddf_message->poses, last_rddf_message->number_of_poses, CARMEN_BEHAVIOR_SELECTOR_RDDF);
-}
-
-
 void
 behavior_selector_update_map(carmen_obstacle_distance_mapper_message *map)
 {
@@ -503,8 +379,7 @@ distance_between_waypoints_and_goals()
 
 void
 behavior_selector_initialize(carmen_robot_ackerman_config_t config, double dist_between_waypoints, double change_goal_dist,
-		carmen_behavior_selector_algorithm_t f_planner, carmen_behavior_selector_algorithm_t p_planner,
-		double dist_to_remove_annotation_goal, int rddf_num_poses_ahead_min, int rddf_num_poses_ahead_limited_by_map)
+		carmen_behavior_selector_algorithm_t f_planner, carmen_behavior_selector_algorithm_t p_planner)
 {
 	udatmo_init(config);
 
@@ -513,9 +388,6 @@ behavior_selector_initialize(carmen_robot_ackerman_config_t config, double dist_
 	change_goal_distance = change_goal_dist;
 	parking_planner = p_planner;
 	following_lane_planner = f_planner;
-	distance_to_remove_annotation_goal = dist_to_remove_annotation_goal;
-	carmen_rddf_num_poses_ahead_min = rddf_num_poses_ahead_min;
-	carmen_rddf_num_poses_ahead_limited_by_map = rddf_num_poses_ahead_limited_by_map;
 	//memset(moving_object, 0, sizeof(MOVING_OBJECT) * MOVING_OBJECT_HISTORY_SIZE);
 
 	memset(&virtual_laser_message, 0, sizeof(carmen_mapper_virtual_laser_message));
