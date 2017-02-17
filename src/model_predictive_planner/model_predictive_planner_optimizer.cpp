@@ -487,8 +487,8 @@ my_g(const gsl_vector *x, void *params)
 				w6 * tcp.sf * tcp.sf);
 	}
 
-	printf("result %lf sf %.2lf, tdc %.2lf, tdd %.2f, a %.2lf delta_V %.2lf \n", result, tcp.sf, td.dist,
-			my_params->target_td->dist, tcp.a, (my_params->target_v - tcp.vf) * (my_params->target_v - tcp.vf));
+//	printf("result %lf sf %.2lf, tdc %.2lf, tdd %.2f, a %.2lf delta_V %.2lf \n", result, tcp.sf, td.dist,
+//			my_params->target_td->dist, tcp.a, (my_params->target_v - tcp.vf) * (my_params->target_v - tcp.vf));
 	return (result);
 }
 
@@ -599,8 +599,8 @@ my_h(const gsl_vector *x, void *params)
 			w6 * tcp.sf * tcp.sf);// +
 //			w7 * (my_params->target_v - tcp.vf) * (my_params->target_v - tcp.vf));
 
-	printf("TT and A: result %lf sf %.2lf, tdc %.2lf, tdd %.2f, a %.2lf delta_V %.2lf \n", result, tcp.sf, td.dist,
-			my_params->target_td->dist, tcp.a, (my_params->target_v - tcp.vf) * (my_params->target_v - tcp.vf));
+//	printf("TT and A: result %lf sf %.2lf, tdc %.2lf, tdd %.2f, a %.2lf delta_V %.2lf \n", result, tcp.sf, td.dist,
+//			my_params->target_td->dist, tcp.a, (my_params->target_v - tcp.vf) * (my_params->target_v - tcp.vf));
 	return (result);
 }
 
