@@ -25,12 +25,8 @@ class Detector
 	/** @brief Current map of distances between detected obstacles and plane coordinates. */
 	carmen_obstacle_distance_mapper_message *current_map;
 
-	/** @brief Current vehicle pose, speed and phi as estimated by the localization module. */
-	carmen_ackerman_traj_point_t current_pose;
-
-	// TODO: Confirm this attribute can be fused with current_pose
+	/** @brief Current robot pose, speed and phi as estimated by the localization module. */
 	carmen_ackerman_traj_point_t robot_pose;
-
 
 	/** @brief Latest RDDF information. */
 	carmen_rddf_road_profile_message rddf;

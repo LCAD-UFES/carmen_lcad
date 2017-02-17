@@ -93,7 +93,7 @@ Detector::detect()
 
 		if (distance < circle_radius)
 		{
-			Obstacle observed(goal_index, obstacle, current_pose, rddf.timestamp);
+			Obstacle observed(goal_index, obstacle, robot_pose, rddf.timestamp);
 			front_obstacle.push_front(observed);
 			while (front_obstacle.size() > MOVING_OBJECT_HISTORY_SIZE)
 				front_obstacle.pop_back();
@@ -158,9 +158,9 @@ Detector::compute_num_poses_ahead()
 	int num_poses_ahead = min_poses_ahead;
 	double common_goal_v = 3.0;
 
-	if (common_goal_v < current_pose.v)
+	if (common_goal_v < robot_pose.v)
 	{
-		double distance = current_pose.v * 6.5;
+		double distance = robot_pose.v * 6.5;
 		if (distance > 0)
 			num_poses_ahead = (distance / 0.5) + 1;
 	}
@@ -185,14 +185,14 @@ Detector::update(carmen_obstacle_distance_mapper_message *map)
 void
 Detector::update(carmen_localize_ackerman_globalpos_message *msg)
 {
-	current_pose.x = msg->globalpos.x;
-	current_pose.y = msg->globalpos.y;
-	current_pose.theta = msg->globalpos.theta;
-	current_pose.v = msg->v;
-	current_pose.phi = msg->phi;
+	robot_pose.x = msg->globalpos.x;
+	robot_pose.y = msg->globalpos.y;
+	robot_pose.theta = msg->globalpos.theta;
+	robot_pose.v = msg->v;
+	robot_pose.phi = msg->phi;
 
-	// TODO: confirm this attribute is the same as current_pose
-	robot_pose = current_pose;
+	// TODO: check if this the best place to call this function, if all dependencies are met.
+	detect();
 }
 
 
@@ -220,9 +220,6 @@ Detector::update(carmen_rddf_road_profile_message *rddf_msg)
 	memcpy(rddf.poses, rddf_msg->poses, sizeof(carmen_ackerman_traj_point_t) * rddf.number_of_poses);
 	memcpy(rddf.poses_back, rddf_msg->poses_back, sizeof(carmen_ackerman_traj_point_t) * rddf.number_of_poses_back);
 	memcpy(rddf.annotations, rddf_msg->annotations, sizeof(int) * rddf.number_of_poses);
-
-	// TODO: check if this the best place to call this function, if all dependencies are met.
-	detect();
 }
 
 } // namespace udatmo
