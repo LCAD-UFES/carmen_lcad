@@ -515,6 +515,10 @@ compute_simulated_objects(carmen_ackerman_traj_point_t *current_robot_pose_v_and
 	static carmen_ackerman_traj_point_t previous_pose, previous_pose_moved;
 	static double previous_timestamp = 0.0;
 
+//	static double initial_time = 0.0;
+//	if (initial_time == 0.0)
+//		initial_time = carmen_get_time();
+
 	if (!necessary_maps_available)
 		return (NULL);
 
@@ -535,7 +539,12 @@ compute_simulated_objects(carmen_ackerman_traj_point_t *current_robot_pose_v_and
 		previous_timestamp = timestamp;
 	}
 
-	double desired_v = (20.0 / 3.6);
+	double desired_v;
+//	if ((carmen_get_time() - initial_time) > 10.0)
+//		desired_v = 0.0;
+//	else
+		desired_v = (20.0 / 3.6);
+
 	double delta_t = timestamp - previous_timestamp;
 	double dx = desired_v * delta_t * cos(previous_pose.theta);
 	double dy = desired_v * delta_t * sin(previous_pose.theta);
@@ -735,9 +744,9 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	}
 
 	// @@@ Alberto: colocar um parametro para ativar ou desativar isso.
-//	carmen_ackerman_traj_point_t *simulated_object_pose = compute_simulated_objects(&current_robot_pose_v_and_phi, timestamp);
-//	if (simulated_object_pose)
-//		publish_object(simulated_object_pose);
+	carmen_ackerman_traj_point_t *simulated_object_pose = compute_simulated_objects(&current_robot_pose_v_and_phi, timestamp);
+	if (simulated_object_pose)
+		publish_object(simulated_object_pose);
 }
 
 

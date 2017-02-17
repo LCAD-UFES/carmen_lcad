@@ -138,6 +138,37 @@ get_parameters_for_filling_in_goal_list(int &moving_object_in_front_index, int &
 
 
 int
+move_goal_back_according_to_car_v(int last_obstacle_free_waypoint_index, carmen_rddf_road_profile_message *rddf,
+		carmen_ackerman_traj_point_t robot_pose)
+{
+	int i;
+
+	if (robot_pose.v > 4.0)
+		return (last_obstacle_free_waypoint_index);
+	else
+	{
+//		printf("entrei\n");
+		double safe_distance = robot_config.distance_between_front_and_rear_axles +
+				robot_config.distance_between_front_car_and_front_wheels + 4.0;
+		for (i = last_obstacle_free_waypoint_index; i > 0; i--)
+		{
+			double distance = udatmo_get_moving_obstacle_distance(&(rddf->poses[i])); //DIST2D(robot_pose, rddf->poses[i]);
+//			printf("  i %d, d %lf, sd %lf\n", i, distance, safe_distance);
+			if (distance > safe_distance)
+			{
+//				printf("# i %d, d %lf, sd %lf\n", i, distance, safe_distance);
+				break;
+			}
+		}
+	}
+	if (i > 0)
+		return (i);
+	else
+		return (last_obstacle_free_waypoint_index);
+}
+
+
+int
 behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double timestamp)
 {
 	double distance_to_last_obstacle = 10000.0;
@@ -168,7 +199,8 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double
 
 		if (moving_object_in_front_index != -1) // -> Adiciona um waypoint na ultima posicao livre se a posicao atual colide com um objeto movel.
 		{
-			add_goal_to_goal_list(goal_index, current_goal, last_obstacle_free_waypoint_index, rddf);
+			int moving_obstacle_waypoint = move_goal_back_according_to_car_v(last_obstacle_free_waypoint_index, rddf, robot_pose);
+			add_goal_to_goal_list(goal_index, current_goal, moving_obstacle_waypoint, rddf);
 			break;
 		}
 //		else if (rddf_pose_hit_obstacle)
