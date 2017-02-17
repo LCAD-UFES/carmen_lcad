@@ -577,7 +577,7 @@ carmen_prob_models_set_log_odds_of_cells_hit_by_rays(carmen_map_t *log_odds_map,
 	int i;
 	cell_coords_t cell_hit_by_ray;
 
-	for (i = 1; i < sensor_params->vertical_resolution; i++)  // @@@ Alberto: mudar este 1 para 0 quando o LDMRS estiver ajustado
+	for (i = 0; i < sensor_params->vertical_resolution; i++)
 	{
 		cell_hit_by_ray.x = round(sensor_data->ray_position_in_the_floor[thread_id][i].x / log_odds_map->config.resolution);
 		cell_hit_by_ray.y = round(sensor_data->ray_position_in_the_floor[thread_id][i].y / log_odds_map->config.resolution);

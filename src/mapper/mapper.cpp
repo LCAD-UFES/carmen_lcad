@@ -126,7 +126,7 @@ build_front_laser_message_from_velodyne_point_cloud(sensor_parameters_t *sensor_
 void
 build_moving_points_vector_ldmrs(int tid, sensor_parameters_t* sensor_params, sensor_data_t* sensor_data, carmen_map_t* log_odds_snapshot_map)
 {
-	for (int k = 1; k < sensor_params->vertical_resolution; k++)    // @@@ Alberto: mudar este 1 para 0 quando o LDMRS estiver ajustado
+	for (int k = 0; k < sensor_params->vertical_resolution; k++)
 	{
 		if (!sensor_data->maxed[tid][k])
 		{
