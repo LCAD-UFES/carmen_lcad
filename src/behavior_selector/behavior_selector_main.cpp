@@ -307,7 +307,7 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 			road_profile_message.poses, road_profile_message.number_of_poses);
 //	printf("gvdlc %lf  ", goal->v);
 
-//	set_goal_velocity_according_to_annotation(goal, current_robot_pose_v_and_phi);
+	set_goal_velocity_according_to_annotation(goal, current_robot_pose_v_and_phi);
 //	printf("gvda %lf\n", goal->v);
 
 	if (obstacle_avoider_active_recently)
@@ -613,9 +613,9 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	}
 
 	// @@@ Alberto: colocar um parametro para ativar ou desativar isso.
-	carmen_ackerman_traj_point_t *simulated_object_pose = compute_simulated_objects(&current_robot_pose_v_and_phi, timestamp);
-	if (simulated_object_pose)
-		publish_object(simulated_object_pose);
+//	carmen_ackerman_traj_point_t *simulated_object_pose = compute_simulated_objects(&current_robot_pose_v_and_phi, timestamp);
+//	if (simulated_object_pose)
+//		publish_object(simulated_object_pose);
 }
 
 
