@@ -9,27 +9,36 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
 LINK = g++
 
 LFLAGS += \
+	-lcollision_detection \
+	-llocalize_ackerman_interface \
+	-lobstacle_distance_mapper_interface \
+	-lrddf_interface \
 	-lparam_interface -lipc -lglobal \
 	-L$(CARMEN_HOME)/sharedlib/libtf/src -ltf
 
 SOURCES = \
 	detector.cpp \
 	sample_filter.cpp \
-	udatmo.cpp
+	udatmo_interface.cpp \
+	udatmo_main.cpp \
+	udatmo_memory.c \
+	udatmo_node.cpp
 
 PUBLIC_INCLUDES = \
-	udatmo.h
+	udatmo_interface.h \
+	udatmo_messages.h
 
 PUBLIC_LIBRARIES = \
-	libudatmo.a
+	libudatmo_interface.a
 
-#PUBLIC_BINARIES = \
-#	udatmo
+PUBLIC_BINARIES = \
+	udatmo
 
 TARGETS = \
-	libudatmo.a
+	libudatmo_interface.a \
+	udatmo
 
-libudatmo.a: detector.o sample_filter.o udatmo.o
-#udatmo: detector.o sample_filter.o ...
+libudatmo_interface.a: udatmo_interface.o
+udatmo: detector.o sample_filter.o udatmo_interface.o udatmo_main.o udatmo_memory.o udatmo_node.o
 
 include ../Makefile.rules
