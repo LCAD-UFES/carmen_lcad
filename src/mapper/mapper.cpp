@@ -758,7 +758,7 @@ add_virtual_laser_points(carmen_map_t *map, carmen_mapper_virtual_laser_message 
 				map->map[x][y] = 1.0;
 		}
 	}
-	virtual_laser_message->num_positions = 0;
+//	virtual_laser_message->num_positions = 0;
 }
 
 

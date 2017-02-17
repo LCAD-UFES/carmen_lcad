@@ -263,7 +263,7 @@ navigator_get_grid_mapping(int is_superimposed)
 {
 	if ((map == NULL) || (map->complete_map == NULL))
 	{
-		map = get_empty_map();
+		return; //map = get_empty_map();
 	}
 
 	if (!is_superimposed)

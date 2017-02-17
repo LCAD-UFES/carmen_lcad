@@ -307,7 +307,7 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 			road_profile_message.poses, road_profile_message.number_of_poses);
 //	printf("gvdlc %lf  ", goal->v);
 
-	set_goal_velocity_according_to_annotation(goal, current_robot_pose_v_and_phi);
+//	set_goal_velocity_according_to_annotation(goal, current_robot_pose_v_and_phi);
 //	printf("gvda %lf\n", goal->v);
 
 	if (obstacle_avoider_active_recently)

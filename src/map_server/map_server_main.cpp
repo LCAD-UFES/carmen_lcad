@@ -333,7 +333,7 @@ build_lane_map(carmen_rddf_road_profile_message *message, carmen_map_t *lane_map
 
 
 void
-publish_compressed_map()
+publish_compressed_lane_map()
 {
 	if ((compacted_lane_map_g.coord_x != NULL) && ((compacted_lane_map_g.coord_y != NULL)) && ((compacted_lane_map_g.value != NULL)))
 	{
@@ -396,7 +396,7 @@ publish_a_new_offline_map_if_robot_moved_to_another_block(carmen_point_t *pose, 
 		carmen_map_server_publish_offline_map_message(current_map, timestamp);
 		offline_map_published = 1;
 		construct_compressed_lane_map();
-		publish_compressed_map();
+		publish_compressed_lane_map();
 		carmen_map_server_publish_localize_map_message(&localize_map);
 	}
 }
@@ -544,7 +544,7 @@ rddf_message_handler(carmen_behavior_selector_road_profile_message *message)
 		if ((distance_without_lane_map > distance_to_update_lane_map) || (offline_map_published))
 		{
 			construct_compressed_lane_map();
-			publish_compressed_map();
+			publish_compressed_lane_map();
 			pose_in_last_publish = pose_g;
 			offline_map_published = 0;
 		}

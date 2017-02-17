@@ -104,12 +104,12 @@ Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
 //			xx = 0;
 //	}
 //
-//	if (distance < robot_config.distance_between_front_and_rear_axles + 1.5)
-//	{
-//		set_detected(false);
+	if (distance < robot_config.distance_between_front_and_rear_axles + 1.5)
+	{
+		set_detected(false);
 //		printf("## distance %lf, aqui 0, %d\n", distance, rddf_pose_index);
-//		return (-1);
-//	}
+		return (-1);
+	}
 
 	double disp = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
 	carmen_point_t front_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&rddf->poses[rddf_pose_index], disp);
