@@ -236,15 +236,19 @@ extern SampleFilter filter2;
 double
 set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
 {
+	double car_pose_to_car_front = get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels;
 	// um carro de tamanho para cada 10 milhas/h (4.4705 m/s) -> ver "The DARPA Urban Challenge" book, pg. 36.
-	double min_dist_according_to_car_v = get_robot_config()->length * (current_robot_pose_v_and_phi->v / 4.4704)
-			+ get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels;
+	double min_dist_according_to_car_v = get_robot_config()->length * (current_robot_pose_v_and_phi->v / 4.4704) + car_pose_to_car_front;
 	double desired_distance = carmen_fmax(1.8 * min_dist_according_to_car_v, 10.0);
-	double distance = carmen_distance_ackerman_traj(goal, current_robot_pose_v_and_phi);
-	double moving_obj_v = udatmo_speed_front();
 
+	double distance = 0.0;
+	double moving_obj_v = 0.0;
 	if (udatmo_obstacle_detected())
 	{
+//		distance = DIST2D(udatmo_get_moving_obstacle_position(), *current_robot_pose_v_and_phi) - car_pose_to_car_front;
+		distance = udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi) - car_pose_to_car_front;
+		moving_obj_v = udatmo_speed_front();
+
 		// ver "The DARPA Urban Challenge" book, pg. 36.
 		double Kgap = 1.0;
 		goal->v = moving_obj_v + Kgap * (distance - desired_distance);

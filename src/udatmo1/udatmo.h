@@ -27,6 +27,11 @@ int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_message *curren
 
 double udatmo_speed_front(void);
 
+carmen_ackerman_traj_point_t udatmo_get_moving_obstacle_position(void);
+
+double udatmo_get_moving_obstacle_distance(carmen_ackerman_traj_point_t *robot_pose);
+
+
 #ifdef __cplusplus
 }
 #endif

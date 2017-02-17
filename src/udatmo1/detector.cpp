@@ -181,4 +181,31 @@ Detector::speed_front()
 	return (average_v);
 }
 
+
+carmen_ackerman_traj_point_t
+Detector::get_moving_obstacle_position()
+{
+	return (moving_object[0].pose);
+}
+
+
+double
+Detector::get_moving_obstacle_distance(carmen_ackerman_traj_point_t *robot_pose)
+{
+	double average_v = 0.0;
+	double count = 0.0;
+	for (int i = 0; i < MOVING_OBJECT_HISTORY_SIZE && i < 20; i++)
+	{
+		if (moving_object[i].valid)
+		{
+			average_v += DIST2D(*robot_pose, moving_object[i].pose);
+			count += 1.0;
+		}
+	}
+
+	if (count > 0.0)
+		average_v /= count;
+
+	return (average_v);
+}
 } // namespace udatmo
