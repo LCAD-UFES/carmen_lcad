@@ -8,11 +8,23 @@
 namespace udatmo
 {
 
+Detector &getDetector() {
+	static Detector *detector = NULL;
+	if (detector == NULL)
+		detector = new Detector();
+
+	return *detector;
+}
+
 Detector::Detector()
 {
 	memset(&robot_config, 0, sizeof(carmen_robot_ackerman_config_t));
+	memset(&robot_pose, 0, sizeof(carmen_ackerman_traj_point_t));
 	memset(&rddf, 0, sizeof(carmen_rddf_road_profile_message));
+
 	current_map = NULL;
+
+	robot_pose.v = nan("");
 }
 
 
@@ -23,17 +35,17 @@ Detector::speed_front()
 	double count = 0.0;
 	for (int i = front_obstacle.size() - 2; i >= 0 ; i--)
 	{
-		if (front_obstacle[i].pose.v > -0.0001)
-		{
-			average_v += front_obstacle[i].pose.v;
-			count += 1.0;
-		}
+		double v = front_obstacle[i].pose.v;
+		if (v <= -0.0001)
+			continue;
+
+		average_v += v;
+		count += 1.0;
 	}
 
 	if (count > 0.0)
 		average_v /= count;
 
-//	return speed();
 	return (average_v);
 }
 
@@ -73,12 +85,15 @@ Detector::update_moving_object_velocity()
 }
 
 
-void
+Obstacles
 Detector::detect()
 {
-	int goal_index = 0; // TODO: verify whether / how to increment goal_index, and if negative, remove it.
+	Obstacles obstacles(rddf.timestamp);
+	if (isnan(robot_pose.v) || current_map == NULL || rddf.number_of_poses == 0)
+		return obstacles;
+
 	double circle_radius = (robot_config.width + 0.0) / 2.0; // metade da largura do carro + um espacco de guarda
-	for (int rddf_pose_index = 0; rddf_pose_index < rddf.number_of_poses && goal_index < GOAL_LIST_SIZE; rddf_pose_index++)
+	for (int rddf_pose_index = 0; rddf_pose_index < rddf.number_of_poses; rddf_pose_index++)
 	{
 		if (carmen_distance_ackerman_traj(&rddf.poses[rddf_pose_index], &robot_pose) < robot_config.distance_between_front_and_rear_axles + 1.5)
 			continue;
@@ -93,40 +108,24 @@ Detector::detect()
 
 		if (distance < circle_radius)
 		{
-			Obstacle observed(goal_index, obstacle, robot_pose, rddf.timestamp);
+			Observation observed(obstacle, rddf.timestamp);
 			front_obstacle.push_front(observed);
 			while (front_obstacle.size() > MOVING_OBJECT_HISTORY_SIZE)
 				front_obstacle.pop_back();
 
 			update_moving_object_velocity();
-			speed += observed.pose.v;
-			publish(rddf_pose_index);
-			return;
+
+			carmen_datmo_moving_obstacle &front_obstacle = obstacles[0];
+			front_obstacle.rddf_index = rddf_pose_index;
+			front_obstacle.x = observed.pose.x;
+			front_obstacle.y = observed.pose.y;
+			front_obstacle.theta = observed.pose.theta;
+			front_obstacle.v = speed_front();
+			return obstacles;
 		}
 	}
 
-	publish(-1);
-}
-
-
-void
-Detector::publish(int rddf_index)
-{
-	static carmen_udatmo_moving_obstacles_message *message = NULL;
-	if (message == NULL)
-		message = carmen_udatmo_new_moving_obstacles_message(1);
-
-	message->timestamp = rddf.timestamp;
-
-	Obstacle &front_observed = front_obstacle[0];
-	carmen_datmo_moving_obstacle &front_obstacle = message->obstacles[0];
-	front_obstacle.rddf_index = rddf_index;
-	front_obstacle.x = front_observed.pose.x;
-	front_obstacle.y = front_observed.pose.y;
-	front_obstacle.theta = front_observed.pose.theta;
-	front_obstacle.v = speed_front();
-
-	carmen_udatmo_publish_moving_obstacles_message(message);
+	return obstacles;
 }
 
 
@@ -176,13 +175,6 @@ Detector::compute_num_poses_ahead()
 
 
 void
-Detector::update(carmen_obstacle_distance_mapper_message *map)
-{
-	current_map = map;
-}
-
-
-void
 Detector::update(carmen_localize_ackerman_globalpos_message *msg)
 {
 	robot_pose.x = msg->globalpos.x;
@@ -190,9 +182,13 @@ Detector::update(carmen_localize_ackerman_globalpos_message *msg)
 	robot_pose.theta = msg->globalpos.theta;
 	robot_pose.v = msg->v;
 	robot_pose.phi = msg->phi;
+}
 
-	// TODO: check if this the best place to call this function, if all dependencies are met.
-	detect();
+
+void
+Detector::update(carmen_obstacle_distance_mapper_message *map)
+{
+	current_map = map;
 }
 
 

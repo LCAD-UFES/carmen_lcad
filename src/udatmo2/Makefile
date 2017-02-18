@@ -18,27 +18,35 @@ LFLAGS += \
 
 SOURCES = \
 	detector.cpp \
-	sample_filter.cpp \
+	obstacles.cpp \
+	udatmo_detector.cpp \
 	udatmo_interface.cpp \
+	udatmo_logger.cpp \
 	udatmo_main.cpp \
-	udatmo_memory.c \
-	udatmo_node.cpp
+	udatmo_memory.c
 
 PUBLIC_INCLUDES = \
+	udatmo_detector.h \
 	udatmo_interface.h \
 	udatmo_messages.h
 
 PUBLIC_LIBRARIES = \
+	libudatmo_detector.a \
 	libudatmo_interface.a
 
 PUBLIC_BINARIES = \
-	udatmo
+	udatmo \
+	udatmo_logger
 
 TARGETS = \
+	libudatmo_detector.a \
 	libudatmo_interface.a \
-	udatmo
+	udatmo \
+	udatmo_logger
 
+libudatmo_detector.a: detector.o obstacles.o udatmo_detector.o udatmo_interface.o
 libudatmo_interface.a: udatmo_interface.o
-udatmo: detector.o sample_filter.o udatmo_interface.o udatmo_main.o udatmo_memory.o udatmo_node.o
+udatmo: detector.o obstacles.o udatmo_detector.o udatmo_interface.o udatmo_main.o udatmo_memory.o
+udatmo_logger: udatmo_logger.o udatmo_interface.o
 
 include ../Makefile.rules
