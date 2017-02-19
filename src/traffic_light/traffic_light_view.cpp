@@ -1,12 +1,21 @@
 /* Carmen includes */
+#include <stdio.h>
+#include <iostream>
+#include <iomanip>
+#include <string>
+
 #include <carmen/carmen_graphics.h>
 #include <carmen/traffic_light_interface.h>
 #include <carmen/traffic_light_messages.h>
 
+#include <opencv2/core/core.hpp>        // Basic OpenCV structures (cv::Mat, Scalar)
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
-//#include <opencv2/legacy/legacy.hpp>
-#include <opencv/cv.h>
-#include "opencv2/imgproc/imgproc.hpp"
+
+using namespace std;
+using namespace cv;
+
 
 /* Image show */
 static GtkWidget *drawing_area;
@@ -21,22 +30,22 @@ static int window_view_height;
 static int window_view_width;
 /* Camera Index */
 static int camera;
-carmen_traffic_light_message traffic_light_message;
+
 
 static void
 shutdown_traffic_light_view(int x)
 {
-    /* release memory */
     cvReleaseImage(&right_image);
 
-    /* exit module */
     if (x == SIGINT)
     {
         carmen_verbose("Disconnecting Traffic Light View Service.\n");
         carmen_ipc_disconnect();
+
         exit(1);
     }
 }
+
 
 static void
 redraw_viewer(void)
@@ -45,7 +54,6 @@ redraw_viewer(void)
    
     if (src_buffer)
     {
-
         gdk_draw_pixbuf(drawing_area->window,
                         drawing_area->style->fg_gc[GTK_WIDGET_STATE(drawing_area)],
                         GDK_PIXBUF(src_buffer), 0, 0, 0, 0,
@@ -55,13 +63,16 @@ redraw_viewer(void)
     }
 }
 
+
 static gint
 expose_event(GtkWidget *widget __attribute__((unused)),
              GdkEventExpose *event __attribute__((unused)))
 {
     redraw_viewer();
-    return 1;
+
+    return (1);
 }
+
 
 static gint
 key_press_event(GtkWidget *widget __attribute__((unused)), GdkEventKey *key)
@@ -73,47 +84,130 @@ key_press_event(GtkWidget *widget __attribute__((unused)), GdkEventKey *key)
         shutdown_traffic_light_view(SIGINT);
 
     if (key->state || key->keyval > 255)
-        return 1;
+        return (1);
 
-    return 1;
+    return (1);
 }
+
 
 static gint
-key_release_event(GtkWidget *widget __attribute__((unused)),
-                  GdkEventButton *key __attribute__((unused)))
+key_release_event(GtkWidget *widget __attribute__((unused)), GdkEventButton *key __attribute__((unused)))
 {
-    return 1;
+    return (1);
 }
+
+
+void
+add_traffic_light_information_to_image(cv::Mat &image, carmen_traffic_light_message *message)
+{
+	ostringstream myStream;
+
+	myStream << fixed << setprecision(1) << message->distance << flush;
+	string text;
+	if (message->distance <= 200.0 && message->distance != -1.0)
+		text = "Distance " + myStream.str() + " meters";
+	else
+		text = "Distance greater than 200 meters";
+
+	if (image.cols > 900)
+		putText(image, text, cv::Point(20, 900), FONT_HERSHEY_COMPLEX, 1, Scalar(100, 255, 100), 2, 8);
+	else
+		putText(image, text, cv::Point(20, 400), FONT_HERSHEY_COMPLEX, 1, Scalar(100, 255, 100), 2, 8);
+
+	int num_red = 0;
+	for (int i = 0; i < message->num_traffic_lights; i++)
+	{
+		if (message->traffic_lights[i].color == TRAFFIC_LIGHT_RED)
+			num_red++;
+
+		CvPoint p1, p2;
+		p1.x = message->traffic_lights[i].x1;
+		p1.y = message->traffic_lights[i].y1;
+		p2.x = message->traffic_lights[i].x2;
+		p2.y = message->traffic_lights[i].y2;
+		if (message->traffic_lights[i].color == TRAFFIC_LIGHT_RED)
+			cv::rectangle(image, p1, p2, CV_RGB(0, 0, 255), 3, 10, 0);
+		else if (message->traffic_lights[i].color == TRAFFIC_LIGHT_GREEN)
+			cv::rectangle(image, p1, p2, CV_RGB(0, 255, 0), 3, 10, 0);
+		else // yellow
+			cv::rectangle(image, p1, p2, CV_RGB(0, 255, 255), 3, 10, 0);
+	}
+
+	if (message->num_traffic_lights > 0)
+	{
+		if (num_red > 0) // @@@ Alberto: Isso eh pessimista e nao trata amarelo
+			circle(image, Point(50, 130), 50, Scalar(255, 0, 0), -1, 8);
+		else
+			circle(image, Point(50, 130), 50, Scalar(0, 255, 0), -1, 8);
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Publishers                                                                                //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+// none...
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Handlers                                                                                  //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+static void
+carmen_traffic_light_message_handler(carmen_traffic_light_message *message)
+{
+    cv::Mat image(image_height, image_width, CV_8UC3);
+    printf("image_height %d, image_width %d, size %d\n", image_height, image_width, message->traffic_light_image_size);
+	memcpy(image.data, message->traffic_light_image, message->traffic_light_image_size);
+
+	add_traffic_light_information_to_image(image, message);
+
+	cv::Mat resized_image;
+	resized_image.create(window_view_height, window_view_width, CV_8UC3);
+	cv::Size size(window_view_width, window_view_height);
+
+#if CV_MAJOR_VERSION == 2
+	resize(image, resized_image, size);
+#elif CV_MAJOR_VERSION == 3
+	cv::resize(image, resized_image, size);
+#endif
+    src_buffer = gdk_pixbuf_new_from_data(resized_image.data, GDK_COLORSPACE_RGB,
+         FALSE, 8, window_view_width, window_view_height, window_view_width * 3, NULL, NULL);
+
+    redraw_viewer();
+}
+
 
 static gint
 updateIPC(gpointer *data __attribute__((unused)))
 {
     carmen_ipc_sleep(0.01);
     carmen_graphics_update_ipc_callbacks((GdkInputFunction) updateIPC);
-    return 1;
+
+    return (1);
 }
-
-static void
-traffic_light_message_handler(carmen_traffic_light_message *message)
-{
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	    cv::Mat image;
-	    image.create(image_height, image_width, CV_8UC3);
-	    image.data = (uchar *) message->traffic_light_image;
-	    cv::Mat resized_image ;
-	    resized_image.create(window_view_height,window_view_width,CV_8UC3);
-	    cv::Size size(window_view_width,window_view_height);
-#if CV_MAJOR_VERSION == 2
-	    resize(image, resized_image, size);
-#elif CV_MAJOR_VERSION == 3
-	    cv::resize(image, resized_image, size);
-#endif
-    src_buffer = gdk_pixbuf_new_from_data(resized_image.data, GDK_COLORSPACE_RGB,
-         FALSE, 8, window_view_width, window_view_height, window_view_width * 3, NULL, NULL);
-    redraw_viewer();
 
-}
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                              //
+// Initializations                                                                              //
+//                                                                                              //
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 static void
 start_graphics(int argc, char *argv[])
@@ -133,12 +227,9 @@ start_graphics(int argc, char *argv[])
 
     gtk_container_add(GTK_CONTAINER(main_window), drawing_area);
 
-    gtk_signal_connect(GTK_OBJECT(drawing_area), "expose_event",
-                       (GtkSignalFunc) expose_event, NULL);
-    gtk_signal_connect(GTK_OBJECT(main_window), "key_press_event",
-                       (GtkSignalFunc) key_press_event, NULL);
-    gtk_signal_connect(GTK_OBJECT(main_window), "key_release_event",
-                       (GtkSignalFunc) key_release_event, NULL);
+    gtk_signal_connect(GTK_OBJECT(drawing_area), "expose_event", (GtkSignalFunc) expose_event, NULL);
+    gtk_signal_connect(GTK_OBJECT(main_window), "key_press_event", (GtkSignalFunc) key_press_event, NULL);
+    gtk_signal_connect(GTK_OBJECT(main_window), "key_release_event", (GtkSignalFunc) key_release_event, NULL);
 
     gtk_widget_add_events(drawing_area,
                           GDK_EXPOSURE_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK
@@ -151,6 +242,7 @@ start_graphics(int argc, char *argv[])
 
     gtk_main();
 }
+
 
 static int
 read_parameters(int argc, char **argv)
@@ -166,42 +258,35 @@ read_parameters(int argc, char **argv)
 
     sprintf(bumblebee_string, "%s%d", "bumblebee_basic", camera);
 
-    carmen_param_t param_list[] = {
-        { (char*) bumblebee_string,(char*) "width", CARMEN_PARAM_INT, &image_width, 0, NULL},
-        { (char*) bumblebee_string,(char*) "height", CARMEN_PARAM_INT, &image_height, 0, NULL},
-        { (char*) "traffic_light_viewer",(char*) "width", CARMEN_PARAM_INT, &window_view_width, 0, NULL},
-        { (char*) "traffic_light_viewer",(char*) "height", CARMEN_PARAM_INT, &window_view_height, 0, NULL}
+    carmen_param_t param_list[] =
+    {
+        { (char*) bumblebee_string,(char *) "width", CARMEN_PARAM_INT, &image_width, 0, NULL},
+        { (char*) bumblebee_string,(char *) "height", CARMEN_PARAM_INT, &image_height, 0, NULL},
+        { (char*) "traffic_light_viewer",(char *) "width", CARMEN_PARAM_INT, &window_view_width, 0, NULL},
+        { (char*) "traffic_light_viewer",(char *) "height", CARMEN_PARAM_INT, &window_view_height, 0, NULL}
     };
 
     num_items = sizeof (param_list) / sizeof (param_list[0]);
     carmen_param_install_params(argc, argv, param_list, num_items);
-    return 0;
+
+    return (0);
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
+
 
 int
 main(int argc, char **argv)
 {
-    /* Connect to IPC Server */
     carmen_ipc_initialize(argc, argv);
-
-    /* Check the param server version */
     carmen_param_check_version(argv[0]);
-
-    /* Register shutdown cleaner handler */
     signal(SIGINT, shutdown_traffic_light_view);
-
-    /* Initialize all the relevant parameters */
     read_parameters(argc, argv);
 
-    /* Allocate my own structures */
     right_image = cvCreateImage(cvSize(image_width, image_height), IPL_DEPTH_8U, 3);
-//        init_traffic_light_viewer();
 
-    /* Subscribe to Traffic Light Services */
-    carmen_traffic_light_subscribe(camera, NULL, (carmen_handler_t) traffic_light_message_handler, CARMEN_SUBSCRIBE_LATEST);
+    carmen_traffic_light_subscribe(camera, NULL, (carmen_handler_t) carmen_traffic_light_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-    /* Start the graphics windows */
     start_graphics(argc, argv);
 
-    return 0;
+    return (0);
 }

@@ -61,8 +61,7 @@ carmen_traffic_light_unsubscribe(int camera, carmen_handler_t handler)
 }
 
 IPC_RETURN_TYPE
-carmen_traffic_light_publish_message(int camera,
-        carmen_traffic_light_message *message)
+carmen_traffic_light_publish_message(int camera, carmen_traffic_light_message *message)
 {
     IPC_RETURN_TYPE err;
 

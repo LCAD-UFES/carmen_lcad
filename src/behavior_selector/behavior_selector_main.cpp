@@ -748,6 +748,7 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 //	if (simulated_object_pose)
 //		publish_object(simulated_object_pose);
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
