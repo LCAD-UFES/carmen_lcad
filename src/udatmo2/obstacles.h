@@ -12,14 +12,14 @@ namespace udatmo
 
 class Obstacles
 {
-	std::vector<carmen_datmo_moving_obstacle> obstacles_;
+	std::vector<carmen_udatmo_moving_obstacle> obstacles_;
 
 public:
 	double timestamp;
 
 	Obstacles(double timestamp);
 
-	carmen_datmo_moving_obstacle &operator [] (int index);
+	carmen_udatmo_moving_obstacle &operator [] (int index);
 
 	size_t size() const;
 };
