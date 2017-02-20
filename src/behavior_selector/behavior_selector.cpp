@@ -107,15 +107,12 @@ add_goal_to_goal_list(int &goal_index, carmen_ackerman_traj_point_t &current_goa
 
 
 int
-get_parameters_for_filling_in_goal_list(int &moving_object_in_front_index, int &last_obstacle_index, int &last_obstacle_free_waypoint_index,
+get_parameters_for_filling_in_goal_list(int moving_object_in_front_index, int &last_obstacle_index, int &last_obstacle_free_waypoint_index,
 		double &distance_from_car_to_rddf_point, double &distance_to_last_obstacle, double &distance_to_annotation,
 		double &distance_to_last_obstacle_free_waypoint,
-		carmen_rddf_road_profile_message *rddf, int rddf_pose_index, carmen_ackerman_traj_point_t current_goal, double circle_radius,
-		const carmen_udatmo_moving_obstacle &moving_obstacle_in_front)
+		carmen_rddf_road_profile_message *rddf, int rddf_pose_index, carmen_ackerman_traj_point_t current_goal, double circle_radius)
 {
 	int rddf_pose_hit_obstacle = trajectory_pose_hit_obstacle(rddf->poses[rddf_pose_index], circle_radius, current_map, &robot_config);
-
-	moving_object_in_front_index = (moving_obstacle_in_front.rddf_index == rddf_pose_index ? rddf_pose_index : -1);
 
 	if (rddf_pose_hit_obstacle || (moving_object_in_front_index != -1))
 		last_obstacle_index = rddf_pose_index;
@@ -183,7 +180,7 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf)
 		return (0);
 
 	carmen_udatmo_moving_obstacles_message *moving_obstacles = carmen_udatmo_detect_moving_obstacles();
-	const carmen_udatmo_moving_obstacle &moving_obstacle_in_front = moving_obstacles->obstacles[0];
+	int front_obstacle_rddf_index = moving_obstacles->obstacles[0].rddf_index;
 
 	int goal_index = 0;
 	carmen_ackerman_traj_point_t current_goal = robot_pose;
@@ -192,12 +189,13 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf)
 	for (int rddf_pose_index = 0; rddf_pose_index < rddf->number_of_poses && goal_index < GOAL_LIST_SIZE; rddf_pose_index++)
 	{
 		double distance_from_car_to_rddf_point, distance_to_annotation, distance_to_last_obstacle_free_waypoint;
-		int rddf_pose_hit_obstacle, moving_object_in_front_index;
+		int rddf_pose_hit_obstacle = -1;
 
+		int moving_object_in_front_index = (front_obstacle_rddf_index == rddf_pose_index ? rddf_pose_index : -1);
 		rddf_pose_hit_obstacle = get_parameters_for_filling_in_goal_list(
 			moving_object_in_front_index, last_obstacle_index, last_obstacle_free_waypoint_index,
 			distance_from_car_to_rddf_point, distance_to_last_obstacle, distance_to_annotation, distance_to_last_obstacle_free_waypoint,
-			rddf, rddf_pose_index, current_goal, circle_radius, moving_obstacle_in_front
+			rddf, rddf_pose_index, current_goal, circle_radius
 		);
 
 		if (moving_object_in_front_index != -1) // -> Adiciona um waypoint na ultima posicao livre se a posicao atual colide com um objeto movel.

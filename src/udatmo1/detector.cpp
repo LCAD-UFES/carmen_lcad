@@ -90,6 +90,8 @@ Detector::update_moving_object_velocity(carmen_ackerman_traj_point_t &robot_pose
 carmen_udatmo_moving_obstacles_message *
 Detector::detect()
 {
+	detected = false;
+
 	int n = message.num_obstacles;
 	memset(message.obstacles, 0, sizeof(carmen_udatmo_moving_obstacle) * n);
 	message.timestamp = rddf.timestamp;
@@ -105,7 +107,7 @@ Detector::detect()
 
 	for (int rddf_pose_index = 0; rddf_pose_index < rddf.number_of_poses; rddf_pose_index++)
 	{
-		if (detect(rddf_pose_index))
+		if (detect(rddf_pose_index) != -1)
 		{
 			front_obstacle.rddf_index = rddf_pose_index;
 			front_obstacle.x = moving_object[0].pose.x;
