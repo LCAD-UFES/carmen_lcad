@@ -7,28 +7,28 @@
  * Roy, Sebastian Thrun, Dirk Haehnel, Cyrill Stachniss,
  * and Jared Glover
  *
- * CARMEN is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public 
- * License as published by the Free Software Foundation; 
+ * CARMEN is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation;
  * either version 2 of the License, or (at your option)
  * any later version.
  *
  * CARMEN is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied 
+ * but WITHOUT ANY WARRANTY; without even the implied
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- * PURPOSE.  See the GNU General Public License for more 
+ * PURPOSE.  See the GNU General Public License for more
  * details.
  *
- * You should have received a copy of the GNU General 
+ * You should have received a copy of the GNU General
  * Public License along with CARMEN; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, 
+ * Free Software Foundation, Inc., 59 Temple Place,
  * Suite 330, Boston, MA  02111-1307 USA
  *
  ********************************************************/
 
 #include <carmen/carmen.h>
 #include <carmen/map_server_interface.h>
-#include <pid.h>
+#include <control.h>
 
 #include "simulator_ackerman.h"
 #include "simulator_ackerman_simulation.h"
@@ -154,7 +154,7 @@ motion_command_handler(carmen_base_ackerman_motion_command_message *motion_comma
 
 
 static void
-set_object_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, 
+set_object_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 		void *clientData __attribute__ ((unused)))
 {
 	carmen_simulator_ackerman_set_object_message msg;
@@ -162,7 +162,7 @@ set_object_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 
 	if (!necessary_maps_available)
 		return;
-    
+
 	formatter = IPC_msgInstanceFormatter(msgRef);
 	IPC_unmarshallData(formatter, callData, &msg, sizeof(carmen_simulator_ackerman_set_object_message));
 	IPC_freeByteArray(callData);
@@ -172,7 +172,7 @@ set_object_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 
 
 static void
-set_truepose_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, 
+set_truepose_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 		void *clientData __attribute__ ((unused)))
 {
 	carmen_simulator_ackerman_set_truepose_message msg;
@@ -180,7 +180,7 @@ set_truepose_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 
 	if (!necessary_maps_available)
 		return;
-    
+
 	formatter = IPC_msgInstanceFormatter(msgRef);
 	IPC_unmarshallData(formatter, callData, &msg,
 			sizeof(carmen_simulator_ackerman_set_truepose_message));
@@ -196,8 +196,8 @@ set_truepose_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 }
 
 
-static void 
-clear_objects_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, 
+static void
+clear_objects_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 		void *clientData __attribute__ ((unused)))
 {
 	carmen_simulator_ackerman_clear_objects_message msg;
@@ -205,7 +205,7 @@ clear_objects_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 
 	if (!necessary_maps_available)
 		return;
-    
+
 	formatter = IPC_msgInstanceFormatter(msgRef);
 	IPC_unmarshallData(formatter, callData, &msg,
 			sizeof(carmen_default_message));
@@ -215,13 +215,13 @@ clear_objects_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 }
 
 
-static void 
+static void
 localize_initialize_message_handler(carmen_localize_ackerman_initialize_message *init_msg)
 {
 	if (!necessary_maps_available)
 		return;
-    
-	if (init_msg->distribution == CARMEN_INITIALIZE_GAUSSIAN) 
+
+	if (init_msg->distribution == CARMEN_INITIALIZE_GAUSSIAN)
 	{
 		simulator_config->true_pose.x = init_msg->mean[0].x;
 		simulator_config->true_pose.y = init_msg->mean[0].y;
@@ -250,7 +250,7 @@ localize_initialize_message_handler(carmen_localize_ackerman_initialize_message 
 
 
 void
-map_update_handler(carmen_map_t *new_map) 
+map_update_handler(carmen_map_t *new_map)
 {
 	carmen_map_p map_ptr;
 	int map_x, map_y;
@@ -285,7 +285,7 @@ map_update_handler(carmen_map_t *new_map)
 }
 
 
-void 
+void
 grid_mapping_handler(carmen_map_server_offline_map_message *new_gridmap)
 {
 //	printf("teste\n");
@@ -298,8 +298,8 @@ grid_mapping_handler(carmen_map_server_offline_map_message *new_gridmap)
 }
 
 
-void 
-offline_map_update_handler(carmen_map_server_offline_map_message *offline_map_message) 
+void
+offline_map_update_handler(carmen_map_server_offline_map_message *offline_map_message)
 {
 	carmen_map_server_copy_offline_map_from_message(&(simulator_config->map), offline_map_message);
 	necessary_maps_available = 1;
@@ -313,8 +313,8 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 }
 
 
-static void 
-truepos_query_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, 
+static void
+truepos_query_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 		void *clientData __attribute__ ((unused)))
 {
 	IPC_RETURN_TYPE err;
@@ -322,7 +322,7 @@ truepos_query_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 
 	if (!necessary_maps_available)
 		return;
-    
+
 	IPC_msgInstanceFormatter(msgRef);
 	IPC_freeByteArray(callData);
 
@@ -339,10 +339,10 @@ truepos_query_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 
 
 /* handles ctrl+c */
-static void 
+static void
 shutdown_module(int x)
 {
-	if (x == SIGINT) 
+	if (x == SIGINT)
 	{
 		carmen_ipc_disconnect();
 		carmen_warn("\nDisconnected.\n");
@@ -384,7 +384,7 @@ publish_odometry(double timestamp)
 
 	odometry.v = simulator_config->v;
 	odometry.phi = simulator_config->phi;
-	
+
 	odometry.timestamp = timestamp;
 	err = IPC_publishData(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, &odometry);
 	carmen_test_ipc(err, "Could not publish base_odometry_message",
@@ -443,7 +443,7 @@ publish_frontlaser(double timestamp)
 	static int first = 1;
 	static carmen_laser_laser_message flaser;
 
-	if (!simulator_config->use_front_laser) 
+	if (!simulator_config->use_front_laser)
 		return;
 
 	if (first)
@@ -531,7 +531,7 @@ simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
 	}
 
 	simulator_config->delta_t = timestamp - last_timestamp;
-	
+
 	if (!simulator_config->sync_mode)
 	{
 		delta_time = timestamp - simulator_config->time_of_last_command;
@@ -547,7 +547,7 @@ simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
 
 	carmen_simulator_ackerman_recalc_pos(simulator_config);
 	carmen_simulator_ackerman_update_objects(simulator_config);
-	
+
 	if (!use_truepos)
 	{
 		publish_odometry(timestamp);
@@ -585,8 +585,8 @@ simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-void 
-fill_laser_config_data(carmen_simulator_ackerman_laser_config_t *lasercfg) 
+void
+fill_laser_config_data(carmen_simulator_ackerman_laser_config_t *lasercfg)
 {
 	lasercfg->num_lasers = 1 + carmen_round(lasercfg->fov / lasercfg->angular_resolution);
 	lasercfg->start_angle = -0.5*lasercfg->fov;
@@ -653,7 +653,7 @@ subscribe_to_relevant_messages()
 	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_base_ackerman_subscribe_motion_command(NULL, (carmen_handler_t) motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
-	
+
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 #ifdef __USE_RL_CONTROL
@@ -666,7 +666,7 @@ subscribe_to_relevant_messages()
 }
 
 
-static int 
+static int
 initialize_ipc(void)
 {
 	IPC_RETURN_TYPE err;
@@ -742,12 +742,12 @@ initialize_ipc(void)
 }
 
 
-static void 
+static void
 read_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *config)
 {
 	int num_items;
 
-	carmen_param_t param_list[]= 
+	carmen_param_t param_list[]=
 	{
 			{"simulator", "time", CARMEN_PARAM_DOUBLE, &(config->real_time), 1, NULL},
 			{"simulator", "sync_mode", CARMEN_PARAM_ONOFF, &(config->sync_mode), 1, NULL},
@@ -795,7 +795,7 @@ read_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *conf
 	sprintf(rearlaser_fov_string, "laser%d_fov", config->rear_laser_config.id);
 	sprintf(rearlaser_res_string, "laser%d_resolution", config->rear_laser_config.id);
 
-	carmen_param_t param_list_front_laser[] = 
+	carmen_param_t param_list_front_laser[] =
 	{
 			{"simulator", "frontlaser_maxrange", CARMEN_PARAM_DOUBLE, &(config->front_laser_config.max_range), 1, NULL},
 			{"robot", "frontlaser_offset", CARMEN_PARAM_DOUBLE, &(config->front_laser_config.offset), 1, NULL},
@@ -808,7 +808,7 @@ read_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *conf
 			{"simulator", "laser_sensor_variance", CARMEN_PARAM_DOUBLE, &(config->front_laser_config.variance), 1, NULL}
 	};
 
-	carmen_param_t param_list_rear_laser[] = 
+	carmen_param_t param_list_rear_laser[] =
 	{
 			{"simulator", "rearlaser_maxrange", CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.max_range), 1, NULL},
 			{"robot", "rearlaser_offset", CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.offset), 1, NULL},
@@ -821,7 +821,7 @@ read_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *conf
 			{"simulator", "laser_sensor_variance", CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.variance), 1, NULL}
 	};
 
-	if (config->use_front_laser) 
+	if (config->use_front_laser)
 	{
 		num_items = sizeof(param_list_front_laser)/
 				sizeof(param_list_front_laser[0]);
@@ -834,7 +834,7 @@ read_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *conf
 				carmen_degrees_to_radians(config->front_laser_config.fov);
 	}
 
-	if (config->use_rear_laser) 
+	if (config->use_rear_laser)
 	{
 		num_items = sizeof(param_list_rear_laser)/
 				sizeof(param_list_rear_laser[0]);
@@ -867,7 +867,7 @@ read_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *conf
 }
 
 
-int 
+int
 main(int argc, char **argv)
 {
 	carmen_ipc_initialize(argc, argv);
@@ -885,7 +885,7 @@ main(int argc, char **argv)
 	read_parameters(argc, argv, &simulator_conf);
 	//carmen_ford_escape_hybrid_read_pid_parameters(argc, argv);
 	carmen_libpid_read_PID_parameters(argc, argv);
-	
+
 	carmen_simulator_ackerman_initialize_object_model(argc, argv);
 
 	signal(SIGINT, shutdown_module);
