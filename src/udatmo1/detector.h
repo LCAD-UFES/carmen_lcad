@@ -72,6 +72,11 @@ public:
 	carmen_udatmo_moving_obstacles_message *detect();
 
 	/**
+	 * @brief Setup detector parameters.
+	 */
+	void setup(const carmen_robot_ackerman_config_t &robot_config, int min_poses_ahead, int max_poses_ahead);
+
+	/**
 	 * @brief Setup detector parameters through the CARMEN parameter server.
 	 */
 	void setup(int argc, char *argv[]);

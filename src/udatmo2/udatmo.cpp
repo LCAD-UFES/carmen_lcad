@@ -6,6 +6,16 @@
 using udatmo::getDetector;
 using udatmo::Obstacles;
 
+void carmen_udatmo_init(carmen_robot_ackerman_config_t *robot_config, int min_poses_ahead, int max_poses_ahead)
+{
+	getDetector().setup(*robot_config, min_poses_ahead, max_poses_ahead);
+}
+
+void carmen_udatmo_setup(int argc, char *argv[])
+{
+	getDetector().setup(argc, argv);
+}
+
 static carmen_udatmo_moving_obstacles_message *carmen_udatmo_detector_message(void)
 {
 	static carmen_udatmo_moving_obstacles_message *message = NULL;
@@ -45,11 +55,6 @@ double carmen_udatmo_front_obstacle_distance(carmen_ackerman_traj_point_t *robot
 	double dx = robot_pose->x - obstacle.x;
 	double dy = robot_pose->y - obstacle.y;
 	return sqrt(dx*dx + dy*dy);
-}
-
-void carmen_udatmo_setup(int argc, char *argv[])
-{
-	getDetector().setup(argc, argv);
 }
 
 void carmen_udatmo_update_distance_map(carmen_obstacle_distance_mapper_message *message)

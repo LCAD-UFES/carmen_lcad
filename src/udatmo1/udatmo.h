@@ -12,6 +12,8 @@ extern "C"
 #include <carmen/localize_ackerman_messages.h>
 #include <carmen/rddf_messages.h>
 
+void carmen_udatmo_init(carmen_robot_ackerman_config_t *robot_config, int min_poses_ahead, int max_poses_ahead);
+
 void carmen_udatmo_setup(int argc, char *argv[]);
 
 carmen_udatmo_moving_obstacles_message *carmen_udatmo_detect_moving_obstacles(void);

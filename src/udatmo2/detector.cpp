@@ -130,6 +130,15 @@ Detector::detect()
 
 
 void
+Detector::setup(const carmen_robot_ackerman_config_t &robot_config, int min_poses_ahead, int max_poses_ahead)
+{
+	this->robot_config = robot_config;
+	this->min_poses_ahead = min_poses_ahead;
+	this->max_poses_ahead = max_poses_ahead;
+}
+
+
+void
 Detector::setup(int argc, char *argv[])
 {
 	carmen_param_t param_list[] =

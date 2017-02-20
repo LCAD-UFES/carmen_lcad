@@ -1067,7 +1067,7 @@ read_parameters(int argc, char **argv)
 	else
 		goal_list_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
 
-	carmen_udatmo_setup(argc, argv);
+	carmen_udatmo_init(&robot_config, param_rddf_num_poses_ahead_min, param_rddf_num_poses_ahead_limited_by_map);
 }
 
 
