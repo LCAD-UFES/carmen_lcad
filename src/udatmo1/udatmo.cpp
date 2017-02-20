@@ -4,56 +4,68 @@
 
 #include <stdexcept>
 
-using udatmo::Detector;
+using udatmo::getDetector;
 
-static Detector *detector = NULL;
-
-void udatmo_init(const carmen_robot_ackerman_config_t robot_config)
+void carmen_udatmo_setup(int argc, char *argv[])
 {
-	if (detector != NULL)
-		throw std::runtime_error("uDATMO module already initialized");
-
-	detector = new Detector(robot_config);
+	getDetector().setup(argc, argv);
 }
 
-int udatmo_obstacle_detected(void)
+int carmen_udatmo_front_obstacle_detected(void)
 {
-	return (detector->detected);
+	return (getDetector().detected);
 }
 
-void udatmo_clear_detected(void)
+carmen_udatmo_moving_obstacles_message *carmen_udatmo_detect_moving_obstacles(void)
 {
-	detector->detected = false;
+	return getDetector().detect();
 }
 
-void udatmo_shift_history(void)
+double carmen_udatmo_front_obstacle_speed(void)
 {
-	detector->shift();
-}
-
-int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_message *current_map,
-							carmen_rddf_road_profile_message *rddf,
-							int goal_index,
-							int rddf_pose_index,
-							carmen_ackerman_traj_point_t robot_pose,
-							double timestamp)
-{
-	int index = detector->detect(current_map, rddf, goal_index, rddf_pose_index, robot_pose, timestamp);
-
-	return (index);
-}
-
-double udatmo_speed_front(void)
-{
-	return detector->speed_front();
+	return getDetector().speed_front();
 }
 
 carmen_ackerman_traj_point_t udatmo_get_moving_obstacle_position(void)
 {
-	return detector->get_moving_obstacle_position();
+	return getDetector().get_moving_obstacle_position();
 }
 
-double udatmo_get_moving_obstacle_distance(carmen_ackerman_traj_point_t *robot_pose)
+double carmen_udatmo_front_obstacle_distance(carmen_ackerman_traj_point_t *robot_pose)
 {
-	return detector->get_moving_obstacle_distance(robot_pose);
+	return getDetector().get_moving_obstacle_distance(robot_pose);
+}
+
+void carmen_udatmo_update_distance_map(carmen_obstacle_distance_mapper_message *message)
+{
+	getDetector().update(message);
+}
+
+void carmen_udatmo_update_robot_pose_with_globalpos(carmen_localize_ackerman_globalpos_message *message)
+{
+	carmen_ackerman_traj_point_t robot_pose;
+	robot_pose.x = message->globalpos.x;
+	robot_pose.y = message->globalpos.y;
+	robot_pose.theta = message->globalpos.theta;
+	robot_pose.v = message->v;
+	robot_pose.phi = message->phi;
+
+	getDetector().update(robot_pose);
+}
+
+void carmen_udatmo_update_robot_pose_with_truepos(carmen_simulator_ackerman_truepos_message *message)
+{
+	carmen_ackerman_traj_point_t robot_pose;
+	robot_pose.x = message->truepose.x;
+	robot_pose.y = message->truepose.y;
+	robot_pose.theta = message->truepose.theta;
+	robot_pose.v = message->v;
+	robot_pose.phi = message->phi;
+
+	getDetector().update(robot_pose);
+}
+
+void carmen_udatmo_update_rddf(carmen_rddf_road_profile_message *message)
+{
+	getDetector().update(message);
 }
