@@ -110,12 +110,12 @@ int
 get_parameters_for_filling_in_goal_list(int &moving_object_in_front_index, int &last_obstacle_index, int &last_obstacle_free_waypoint_index,
 		double &distance_from_car_to_rddf_point, double &distance_to_last_obstacle, double &distance_to_annotation,
 		double &distance_to_last_obstacle_free_waypoint,
-		carmen_rddf_road_profile_message *rddf, int rddf_pose_index, int goal_index, carmen_ackerman_traj_point_t current_goal,
-		double circle_radius, double timestamp)
+		carmen_rddf_road_profile_message *rddf, int rddf_pose_index, carmen_ackerman_traj_point_t current_goal, double circle_radius,
+		const carmen_udatmo_moving_obstacle &moving_obstacle_in_front)
 {
 	int rddf_pose_hit_obstacle = trajectory_pose_hit_obstacle(rddf->poses[rddf_pose_index], circle_radius, current_map, &robot_config);
 
-	moving_object_in_front_index = udatmo_detect_obstacle_index(current_map, rddf, goal_index, rddf_pose_index, robot_pose, timestamp);
+	moving_object_in_front_index = (moving_obstacle_in_front.rddf_index == rddf_pose_index ? rddf_pose_index : -1);
 
 	if (rddf_pose_hit_obstacle || (moving_object_in_front_index != -1))
 		last_obstacle_index = rddf_pose_index;
@@ -152,7 +152,7 @@ move_goal_back_according_to_car_v(int last_obstacle_free_waypoint_index, carmen_
 				robot_config.distance_between_front_car_and_front_wheels + 4.0;
 		for (i = last_obstacle_free_waypoint_index; i > 0; i--)
 		{
-			double distance = udatmo_get_moving_obstacle_distance(&(rddf->poses[i])); //DIST2D(robot_pose, rddf->poses[i]);
+			double distance = carmen_udatmo_front_obstacle_distance(&(rddf->poses[i])); //DIST2D(robot_pose, rddf->poses[i]);
 //			printf("  i %d, d %lf, sd %lf\n", i, distance, safe_distance);
 			if (distance > safe_distance)
 			{
@@ -169,7 +169,7 @@ move_goal_back_according_to_car_v(int last_obstacle_free_waypoint_index, carmen_
 
 
 int
-behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double timestamp)
+behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf)
 {
 	double distance_to_last_obstacle = 10000.0;
 	int last_obstacle_index = -1;
@@ -178,12 +178,13 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double
 
 	goal_list_index = 0;
 	goal_list_size = 0;
-	udatmo_clear_detected();
 
 	if (rddf == NULL)
 		return (0);
 
-	udatmo_shift_history();
+	carmen_udatmo_moving_obstacles_message *moving_obstacles = carmen_udatmo_detect_moving_obstacles();
+	const carmen_udatmo_moving_obstacle &moving_obstacle_in_front = moving_obstacles->obstacles[0];
+
 	int goal_index = 0;
 	carmen_ackerman_traj_point_t current_goal = robot_pose;
 //	virtual_laser_message.num_positions = 0;
@@ -193,9 +194,11 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double
 		double distance_from_car_to_rddf_point, distance_to_annotation, distance_to_last_obstacle_free_waypoint;
 		int rddf_pose_hit_obstacle, moving_object_in_front_index;
 
-		rddf_pose_hit_obstacle = get_parameters_for_filling_in_goal_list(moving_object_in_front_index, last_obstacle_index, last_obstacle_free_waypoint_index,
-				distance_from_car_to_rddf_point, distance_to_last_obstacle, distance_to_annotation, distance_to_last_obstacle_free_waypoint,
-				rddf, rddf_pose_index, goal_index, current_goal, circle_radius, timestamp);
+		rddf_pose_hit_obstacle = get_parameters_for_filling_in_goal_list(
+			moving_object_in_front_index, last_obstacle_index, last_obstacle_free_waypoint_index,
+			distance_from_car_to_rddf_point, distance_to_last_obstacle, distance_to_annotation, distance_to_last_obstacle_free_waypoint,
+			rddf, rddf_pose_index, current_goal, circle_radius, moving_obstacle_in_front
+		);
 
 		if (moving_object_in_front_index != -1) // -> Adiciona um waypoint na ultima posicao livre se a posicao atual colide com um objeto movel.
 		{
@@ -413,8 +416,6 @@ void
 behavior_selector_initialize(carmen_robot_ackerman_config_t config, double dist_between_waypoints, double change_goal_dist,
 		carmen_behavior_selector_algorithm_t f_planner, carmen_behavior_selector_algorithm_t p_planner)
 {
-	udatmo_init(config);
-
 	robot_config = config;
 	distance_between_waypoints = dist_between_waypoints;
 	change_goal_distance = change_goal_dist;
