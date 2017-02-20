@@ -17,26 +17,35 @@ using namespace std;
 using namespace cv;
 
 
-/* Image show */
+// Image show
 static GtkWidget *drawing_area;
 static GdkPixbuf *src_buffer;
 
-static IplImage *right_image = NULL;
-
-// Parameters //
+// Parameters
 static int image_width;
 static int image_height;
 static int window_view_height;
 static int window_view_width;
-/* Camera Index */
+
+// Camera Index
 static int camera;
+
+// Image vector
+#define IMAGE_VECTOR_SIZE 10
+
+typedef struct
+{
+	unsigned char *traffic_light_image;
+	double timestamp;
+} image_vector_t;
+
+image_vector_t image_vector[IMAGE_VECTOR_SIZE];
+int image_vector_index = 0;
 
 
 static void
 shutdown_traffic_light_view(int x)
 {
-    cvReleaseImage(&right_image);
-
     if (x == SIGINT)
     {
         carmen_verbose("Disconnecting Traffic Light View Service.\n");
@@ -50,8 +59,6 @@ shutdown_traffic_light_view(int x)
 static void
 redraw_viewer(void)
 {
-   // flush_gdk_buffers();
-   
     if (src_buffer)
     {
         gdk_draw_pixbuf(drawing_area->window,
@@ -65,11 +72,8 @@ redraw_viewer(void)
 
 
 static gint
-expose_event(GtkWidget *widget __attribute__((unused)),
-             GdkEventExpose *event __attribute__((unused)))
+expose_event(GtkWidget *widget __attribute__((unused)), GdkEventExpose *event __attribute__((unused)))
 {
-    redraw_viewer();
-
     return (1);
 }
 
@@ -77,10 +81,10 @@ expose_event(GtkWidget *widget __attribute__((unused)),
 static gint
 key_press_event(GtkWidget *widget __attribute__((unused)), GdkEventKey *key)
 {
-    if (toupper(key->keyval) == 'C' && (key->state & GDK_CONTROL_MASK))
+    if (toupper(key->keyval) == 'C')// && (key->state & GDK_CONTROL_MASK))
         shutdown_traffic_light_view(SIGINT);
 
-    if (toupper(key->keyval) == 'Q' && (key->state & GDK_CONTROL_MASK))
+    if (toupper(key->keyval) == 'Q')// && (key->state & GDK_CONTROL_MASK))
         shutdown_traffic_light_view(SIGINT);
 
     if (key->state || key->keyval > 255)
@@ -142,6 +146,29 @@ add_traffic_light_information_to_image(cv::Mat &image, carmen_traffic_light_mess
 	}
 }
 
+
+unsigned char *
+get_nearest_image(carmen_traffic_light_message *message)
+{
+	int nearest_image_index = 0;
+	double smalest_difference = message->timestamp;
+
+    for (int i = 0; i < IMAGE_VECTOR_SIZE; i++)
+    {
+    	double difference = fabs(image_vector[i].timestamp - message->timestamp);
+		if (difference < smalest_difference)
+		{
+			nearest_image_index = i;
+			smalest_difference = difference;
+		}
+    }
+
+    if (image_vector[nearest_image_index].timestamp != 0.0)
+    	return (image_vector[nearest_image_index].traffic_light_image);
+    else
+    	return (NULL);
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -168,9 +195,12 @@ add_traffic_light_information_to_image(cv::Mat &image, carmen_traffic_light_mess
 static void
 carmen_traffic_light_message_handler(carmen_traffic_light_message *message)
 {
+    unsigned char *nearest_image = get_nearest_image(message);
+    if (nearest_image == NULL)
+    	return;
+
     cv::Mat image(image_height, image_width, CV_8UC3);
-    printf("image_height %d, image_width %d, size %d\n", image_height, image_width, message->traffic_light_image_size);
-	memcpy(image.data, message->traffic_light_image, message->traffic_light_image_size);
+	memcpy(image.data, nearest_image, 3 * image_height * image_width);
 
 	add_traffic_light_information_to_image(image, message);
 
@@ -187,6 +217,18 @@ carmen_traffic_light_message_handler(carmen_traffic_light_message *message)
          FALSE, 8, window_view_width, window_view_height, window_view_width * 3, NULL, NULL);
 
     redraw_viewer();
+}
+
+
+void
+carmen_bumblebee_basic_stereoimage_message_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image)
+{
+	memcpy(image_vector[image_vector_index].traffic_light_image, stereo_image->raw_right, 3 * image_height * image_width);
+	image_vector[image_vector_index].timestamp = stereo_image->timestamp;
+
+	image_vector_index++;
+	if (image_vector_index >= IMAGE_VECTOR_SIZE)
+		image_vector_index = 0;
 }
 
 
@@ -282,9 +324,13 @@ main(int argc, char **argv)
     signal(SIGINT, shutdown_traffic_light_view);
     read_parameters(argc, argv);
 
-    right_image = cvCreateImage(cvSize(image_width, image_height), IPL_DEPTH_8U, 3);
-
     carmen_traffic_light_subscribe(camera, NULL, (carmen_handler_t) carmen_traffic_light_message_handler, CARMEN_SUBSCRIBE_LATEST);
+    carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) carmen_bumblebee_basic_stereoimage_message_handler,
+    		CARMEN_SUBSCRIBE_LATEST);
+
+    memset(image_vector, 0, IMAGE_VECTOR_SIZE * sizeof(image_vector_t));
+    for (int i = 0; i < IMAGE_VECTOR_SIZE; i++)
+		image_vector[i].traffic_light_image = (unsigned char *) malloc(3 * image_height * image_width * sizeof(unsigned char));
 
     start_graphics(argc, argv);
 

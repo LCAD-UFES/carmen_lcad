@@ -4,7 +4,8 @@ MODULE_NAME = TRAFFIC_LIGHT
 MODULE_COMMENT = Mapping, Detection and Inference State of Traffic Lights
 
 LINK = g++
-CXXFLAGS += -std=c++0x
+CXXFLAGS += -std=c++0x # -g -pg
+CFLAGS += -Wall # -g -pg
 
 IFLAGS +=  -std=c++11 -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
 IFLAGS += `pkg-config --cflags opencv`
@@ -15,12 +16,6 @@ LFLAGS += -lglobal -lparam_interface -lipc -lGL -lGLU -lglut \
 	 -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
 	 -lboost_thread-mt -lrt -lboost_signals -lboost_system \
 	  -L/usr/local/share/OpenCV/3rdparty/lib `pkg-config --libs opencv`
-
-CFLAGS += -W -Wall 
-CFLAGS += -O4 
-CXXFLAGS += -std=c++0x
-
-#SUBDIRS = traffic_light_view
 
 SOURCES = traffic_light_main.cpp traffic_light_interface.cpp traffic_light.cpp mapping_traffic_light_main.cpp log_generate_images.cpp
 

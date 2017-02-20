@@ -25,52 +25,7 @@ carmen_localize_ackerman_globalpos_message localize_message;
 carmen_mapping_traffic_light_message mapping_traffic_light_message;
 int count = 0;
 
-/**
- * Method to initialize the message
- * @return nothing
- */
-void
-carmen_mapping_traffic_light_algorithm_initialization()
-{
-    mapping_traffic_light_message.position.x = 0.0;
-    mapping_traffic_light_message.position.y = 0.0;
-    mapping_traffic_light_message.position.z = 0.0;
 
-    mapping_traffic_light_message.has_signals = 0;
-    mapping_traffic_light_message.distance = 0.0;
-
-    mapping_traffic_light_message.host = carmen_get_host();
-    mapping_traffic_light_message.timestamp = carmen_get_time();
-}
-
-/**
- * Reading parameters of initialize
- * @param argc argc of terminal
- * @param argv argv of terminal
- * @return success 
- */
-static int
-read_parameters(int argc, char **argv)
-{
-    int num_items;
-
-    if (argc != 1)
-    {
-        printf("Usage: %s", argv[0]);
-        exit(0);
-    }
-
-    carmen_param_t param_list[] = {};
-
-    num_items = sizeof (param_list) / sizeof (param_list[0]);
-    carmen_param_install_params(argc, argv, param_list, num_items);
-
-    return 0;
-}
-
-/**
- * Method to calculate the distance of traffic light
- */
 void
 calculate_distance()
 {
@@ -109,10 +64,7 @@ calculate_distance()
     carmen_mapping_traffic_light_publish_message(&mapping_traffic_light_message);
 }
 
-/**
- * Method for compute if have traffic light
- * @param stereo_image
- */
+
 void
 compute_mapping_traffic_light()
 {
@@ -120,70 +72,72 @@ compute_mapping_traffic_light()
         calculate_distance();
 }
 
-int
-has_annotation(carmen_rddf_annotation_message msg)
-{
-    for (uint i = 0; i < positions.size(); i++)
-    {
-        if ((positions.at(i).annotation_point.x == msg.annotation_point.x) &&
-            (positions.at(i).annotation_point.y == msg.annotation_point.y) &&
-            (positions.at(i).annotation_point.z == msg.annotation_point.z) &&
-            (positions.at(i).annotation_code == msg.annotation_code))
-        {
-            return 1;
-        }
-    }
-    return 0;
-}
 
-/**
- * Method for add one annotation 
- * @param annotation_message Message of rddf
- */
 void
-annotation_handler(carmen_rddf_annotation_message *msg)
+carmen_rddf_annotation_message_handler(carmen_rddf_annotation_message *msg)
 {
     carmen_rddf_add_annotation_message message = *msg;
     positions.push_back(message);
 }
 
-/**
- * Method for mapping the traffic light
- * @param localize_message Message of localize_ackerman
- */
+
 void
-mapping_traffic_light_handler(carmen_localize_ackerman_globalpos_message *msg)
+carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
     localize_message = *msg;
     new_message_localize = 1;
     compute_mapping_traffic_light();
 }
 
-/**
- * Subscribe messages of localize_ackerman
- */
+
 void
 subscribe_messages()
 {
-    carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) mapping_traffic_light_handler, CARMEN_SUBSCRIBE_LATEST);
-    carmen_rddf_subscribe_annotation_message(NULL, (carmen_handler_t) annotation_handler, CARMEN_SUBSCRIBE_ALL);
-
-
+    carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) carmen_localize_ackerman_globalpos_message_handler,
+    		CARMEN_SUBSCRIBE_LATEST);
+    carmen_rddf_subscribe_annotation_message(NULL, (carmen_handler_t) carmen_rddf_annotation_message_handler, CARMEN_SUBSCRIBE_ALL);
 }
 
-/**
- * Main of program
- * @param argc
- * @param argv
- * @return 
- */
+
+void
+carmen_mapping_traffic_light_algorithm_initialization()
+{
+    mapping_traffic_light_message.position.x = 0.0;
+    mapping_traffic_light_message.position.y = 0.0;
+    mapping_traffic_light_message.position.z = 0.0;
+
+    mapping_traffic_light_message.has_signals = 0;
+    mapping_traffic_light_message.distance = 0.0;
+
+    mapping_traffic_light_message.host = carmen_get_host();
+    mapping_traffic_light_message.timestamp = carmen_get_time();
+}
+
+
+static int
+read_parameters(int argc, char **argv)
+{
+    int num_items;
+
+    if (argc != 1)
+    {
+        printf("Usage: %s", argv[0]);
+        exit(0);
+    }
+
+    carmen_param_t param_list[] = {};
+
+    num_items = sizeof (param_list) / sizeof (param_list[0]);
+    carmen_param_install_params(argc, argv, param_list, num_items);
+
+    return 0;
+}
+
+
 int
 main(int argc, char **argv)
 {
-    /* connect to IPC server */
-
     carmen_ipc_initialize(argc, argv);
-
     carmen_param_check_version(argv[0]);
 
     if ((argc != 1))
@@ -194,14 +148,11 @@ main(int argc, char **argv)
     read_parameters(argc, argv);
 
     carmen_mapping_traffic_light_define_messages();
-
-    /* Subscribe messages of localize*/
     subscribe_messages();
 
     carmen_mapping_traffic_light_algorithm_initialization();
 
-    /* Loop forever waiting for messages */
     carmen_ipc_dispatch();
 
-    return EXIT_SUCCESS;
+    return (EXIT_SUCCESS);
 }

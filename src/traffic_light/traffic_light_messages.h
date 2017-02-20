@@ -30,14 +30,12 @@ typedef struct
 	int num_traffic_lights;
 	carmen_traffic_light *traffic_lights;
 	double distance;
-	int traffic_light_image_size; /* image_width * image_height * 3 */
-	unsigned char *traffic_light_image;
 	double timestamp;
 	char *host;
 } carmen_traffic_light_message;
 
 #define      CARMEN_TRAFFIC_LIGHT_NAME       "carmen_traffic_light_message"
-#define      CARMEN_TRAFFIC_LIGHT_FMT        "{int, <{int, int, int, int, int}:1>, double, int, <ubyte:4>, double, string}"
+#define      CARMEN_TRAFFIC_LIGHT_FMT        "{int, <{int, int, int, int, int}:1>, double, double, string}"
 
 
 typedef struct

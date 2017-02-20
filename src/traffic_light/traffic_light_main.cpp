@@ -34,22 +34,58 @@ typedef normalized_function<dec_funct_type> funct_type;
 funct_type trained_svm;
 string svm_train_name = getenv("CARMEN_HOME")+ (string) "/data/traffic_light/svm.dat";
 
-//Carmen
+//Camera
 static int camera;
 static int image_width;
 static int image_height;
-static int infinite = 9999.0;
 
 //Haar Cascade
 string ts_cascade_name = getenv("CARMEN_HOME")+ (string) "/data/traffic_light/data.xml";
 CascadeClassifier ts_cascade;
 
-//Messages
-carmen_mapping_traffic_light_message mapping_traffic_light_message;
-
+//Dection infraestructure
 #define MAX_TRAFFIC_LIGHTS_IN_IMAGE 10
 static int num = 0;
 static carmen_traffic_light traffic_lights_detected[MAX_TRAFFIC_LIGHTS_IN_IMAGE];
+
+//Localization infraestruture
+carmen_localize_ackerman_globalpos_message last_localize_message;
+static bool has_localize_message = false;
+
+//Annotations infraestructure
+std::vector<carmen_rddf_annotation_message> last_annotation_messages;
+static double infinite = 9999.0;
+
+
+double
+compute_distance_to_the_traffic_light()
+{
+    double nearest_traffic_light_distance = infinite;
+
+    for (std::vector<carmen_rddf_annotation_message>::iterator it = last_annotation_messages.begin(); it != last_annotation_messages.end(); ++it)
+    {
+    	if (it.base()->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT)
+    	{
+    		double distance = sqrt(pow(last_localize_message.globalpos.x - it.base()->annotation_point.x, 2) +
+							pow(last_localize_message.globalpos.y - it.base()->annotation_point.y, 2));
+    		if (distance < nearest_traffic_light_distance)
+    		{
+    			bool orientation_ok = fabs(carmen_radians_to_degrees(last_localize_message.globalpos.theta - it.base()->annotation_orientation)) < 10.0 ? 1 : 0;
+    			bool behind = fabs(carmen_normalize_theta((atan2(last_localize_message.globalpos.y - it.base()->annotation_point.y,
+															last_localize_message.globalpos.x - it.base()->annotation_point.x) - M_PI -
+													 	 	last_localize_message.globalpos.theta))) > M_PI_2;
+
+				if (distance <= 200.0 && orientation_ok && behind == false)
+	    			nearest_traffic_light_distance = distance;
+    		}
+    	}
+    }
+
+    while (last_annotation_messages.size() > 100)
+    	last_annotation_messages.erase(last_annotation_messages.begin());
+
+    return (nearest_traffic_light_distance);
+}
 
 
 sample_type
@@ -131,7 +167,7 @@ add_traffic_light_to_message(carmen_traffic_light_message *traffic_light_message
 }
 
 
-cv::Mat
+void
 detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *traffic_light_message,
 		carmen_bumblebee_basic_stereoimage_message *stereo_image)
 {
@@ -166,8 +202,6 @@ detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *tr
 			// @@@ Alberto: e o amarelo?
 		}
 	}
-
-	return (frame);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -196,40 +230,60 @@ publish_traffic_lights(carmen_traffic_light_message *traffic_light_message)
 
 
 void
-carmen_mapping_traffic_light_message_handler(carmen_mapping_traffic_light_message *msg)
-{
-    mapping_traffic_light_message = *msg;
-}
-
-
-void
 carmen_bumblebee_basic_stereoimage_message_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image)
 {
 	carmen_traffic_light_message traffic_light_message;
 	cv::Mat image;
+	double nearest_traffic_light_distance = infinite;
 
-    traffic_light_message.traffic_light_image_size = image_height * image_width * 3;
+	if (has_localize_message)
+		nearest_traffic_light_distance = compute_distance_to_the_traffic_light();
+
     traffic_light_message.traffic_lights = traffic_lights_detected;
     traffic_light_message.host = carmen_get_host();
 
-	if (mapping_traffic_light_message.distance < 200.0 && mapping_traffic_light_message.distance != -1.0)
+	if (nearest_traffic_light_distance < 200.0 && nearest_traffic_light_distance != -1.0)
 	{
-        traffic_light_message.distance = mapping_traffic_light_message.distance;
-
-        image = detect_traffic_lights_and_recognize_their_state(&traffic_light_message, stereo_image);
-
-        traffic_light_message.traffic_light_image = image.data;
+        traffic_light_message.distance = nearest_traffic_light_distance;
+        detect_traffic_lights_and_recognize_their_state(&traffic_light_message, stereo_image);
         traffic_light_message.timestamp = stereo_image->timestamp;
     }
     else
     {
         traffic_light_message.distance = infinite;
         traffic_light_message.num_traffic_lights = 0;
-        traffic_light_message.traffic_light_image = stereo_image->raw_right;
         traffic_light_message.timestamp = stereo_image->timestamp;
     }
 
     publish_traffic_lights(&traffic_light_message);
+}
+
+
+void
+carmen_rddf_annotation_message_handler(carmen_rddf_annotation_message *msg)
+{
+	last_annotation_messages.push_back(*msg);
+}
+
+
+void
+carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
+{
+    last_localize_message = *msg;
+    has_localize_message = true;
+}
+
+
+static void
+shutdown_traffic_light(int x)
+{
+    if (x == SIGINT)
+    {
+        carmen_verbose("Disconnecting Traffic Light.\n");
+        carmen_ipc_disconnect();
+
+        exit(1);
+    }
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -243,11 +297,8 @@ carmen_bumblebee_basic_stereoimage_message_handler(carmen_bumblebee_basic_stereo
 
 
 void
-traffic_light_algorithm_initialization()
+traffic_light_module_initialization()
 {
-	memset(&mapping_traffic_light_message, 0, sizeof(mapping_traffic_light_message));
-	mapping_traffic_light_message.distance = -1.0;
-
     //Read the haar cascade trained
     ts_cascade.load(ts_cascade_name);
 
@@ -279,11 +330,13 @@ read_parameters(int argc, char **argv)
 
 
 void
-subscribe_camera_mapping_traffic_light_messages()
+subscribe_to_relevant_messages()
 {
-    carmen_mapping_traffic_light_subscribe(NULL, (carmen_handler_t) carmen_mapping_traffic_light_message_handler, CARMEN_SUBSCRIBE_LATEST);
     carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) carmen_bumblebee_basic_stereoimage_message_handler,
     		CARMEN_SUBSCRIBE_LATEST);
+    carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) carmen_localize_ackerman_globalpos_message_handler,
+    		CARMEN_SUBSCRIBE_LATEST);
+    carmen_rddf_subscribe_annotation_message(NULL, (carmen_handler_t) carmen_rddf_annotation_message_handler, CARMEN_SUBSCRIBE_ALL);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -302,9 +355,11 @@ main(int argc, char **argv)
 
     read_parameters(argc, argv);
     carmen_traffic_light_define_messages(camera);
-    subscribe_camera_mapping_traffic_light_messages();
 
-    traffic_light_algorithm_initialization();
+    signal(SIGINT, shutdown_traffic_light);
+    subscribe_to_relevant_messages();
+
+    traffic_light_module_initialization();
 
     carmen_ipc_dispatch();
 
