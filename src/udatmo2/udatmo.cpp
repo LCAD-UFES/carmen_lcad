@@ -1,50 +1,87 @@
 #include "udatmo.h"
 
 #include "detector.h"
+#include "udatmo_interface.h"
 
-#include <stdexcept>
+using udatmo::getDetector;
+using udatmo::Obstacles;
 
-using udatmo::Detector;
-
-static Detector *detector = NULL;
-
-void udatmo_init(const carmen_robot_ackerman_config_t robot_config)
+static carmen_udatmo_moving_obstacles_message *carmen_udatmo_detector_message(void)
 {
-	if (detector != NULL)
-		throw std::runtime_error("uDATMO module already initialized");
+	static carmen_udatmo_moving_obstacles_message *message = NULL;
+	if (message == NULL)
+		message = carmen_udatmo_new_moving_obstacles_message(NUM_OBSTACLES);
 
-	detector = new Detector(robot_config);
+	return message;
 }
 
-int udatmo_obstacle_detected(void)
+carmen_udatmo_moving_obstacles_message *carmen_udatmo_detect_moving_obstacles(void)
 {
-	return (detector->detected);
+	Obstacles obstacles = getDetector().detect();
+	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_detector_message();
+	memcpy(message->obstacles, &(obstacles[0]), NUM_OBSTACLES * sizeof(carmen_udatmo_moving_obstacle));
+	message->timestamp = obstacles.timestamp;
+
+	return message;
 }
 
-void udatmo_clear_detected(void)
+int carmen_udatmo_front_obstacle_detected(void)
 {
-	detector->detected = false;
+	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_detector_message();
+	return (message->obstacles[0].rddf_index != -1);
 }
 
-void udatmo_shift_history(void)
+double carmen_udatmo_front_obstacle_speed(void)
 {
-	detector->shift();
+	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_detector_message();
+	return message->obstacles[0].v;
 }
 
-int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_message *current_map,
-							carmen_rddf_road_profile_message *rddf,
-							int goal_index,
-							int rddf_pose_index,
-							carmen_ackerman_traj_point_t car_pose,
-							carmen_ackerman_traj_point_t robot_pose,
-							double timestamp)
+double carmen_udatmo_front_obstacle_distance(carmen_ackerman_traj_point_t *robot_pose)
 {
-	int index = detector->detect(current_map, rddf, goal_index, rddf_pose_index, car_pose, robot_pose, timestamp);
+	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_detector_message();
+	const carmen_udatmo_moving_obstacle obstacle = message->obstacles[0];
 
-	return (index);
+	double dx = robot_pose->x - obstacle.x;
+	double dy = robot_pose->y - obstacle.y;
+	return sqrt(dx*dx + dy*dy);
 }
 
-double udatmo_speed_front(void)
+void carmen_udatmo_setup(int argc, char *argv[])
 {
-	return detector->speed_front();
+	getDetector().setup(argc, argv);
+}
+
+void carmen_udatmo_update_distance_map(carmen_obstacle_distance_mapper_message *message)
+{
+	getDetector().update(message);
+}
+
+void carmen_udatmo_update_robot_pose_with_globalpos(carmen_localize_ackerman_globalpos_message *message)
+{
+	carmen_ackerman_traj_point_t robot_pose;
+	robot_pose.x = message->globalpos.x;
+	robot_pose.y = message->globalpos.y;
+	robot_pose.theta = message->globalpos.theta;
+	robot_pose.v = message->v;
+	robot_pose.phi = message->phi;
+
+	getDetector().update(robot_pose);
+}
+
+void carmen_udatmo_update_robot_pose_with_truepos(carmen_simulator_ackerman_truepos_message *message)
+{
+	carmen_ackerman_traj_point_t robot_pose;
+	robot_pose.x = message->truepose.x;
+	robot_pose.y = message->truepose.y;
+	robot_pose.theta = message->truepose.theta;
+	robot_pose.v = message->v;
+	robot_pose.phi = message->phi;
+
+	getDetector().update(robot_pose);
+}
+
+void carmen_udatmo_update_rddf(carmen_rddf_road_profile_message *message)
+{
+	getDetector().update(message);
 }

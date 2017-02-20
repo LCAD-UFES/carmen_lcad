@@ -70,7 +70,7 @@ public:
 	/**
 	 * @brief Update the current global position.
 	 */
-	void update(carmen_localize_ackerman_globalpos_message *msg);
+	void update(const carmen_ackerman_traj_point_t &robot_pose);
 
 	/**
 	 * @brief Update the current distance map.

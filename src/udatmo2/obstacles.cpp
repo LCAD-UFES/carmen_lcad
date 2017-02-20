@@ -11,13 +11,13 @@ Obstacles::Obstacles(double timestamp):
 	this->timestamp = timestamp;
 	for (int i = 0; i < NUM_OBSTACLES; i++)
 	{
-		carmen_datmo_moving_obstacle &obstacle = obstacles_[0];
-		memset(&obstacle, 0, sizeof(carmen_datmo_moving_obstacle));
+		carmen_udatmo_moving_obstacle &obstacle = obstacles_[0];
+		memset(&obstacle, 0, sizeof(carmen_udatmo_moving_obstacle));
 		obstacle.rddf_index = -1;
 	}
 }
 
-carmen_datmo_moving_obstacle &Obstacles::operator [] (int index)
+carmen_udatmo_moving_obstacle &Obstacles::operator [] (int index)
 {
 	return obstacles_[index];
 }

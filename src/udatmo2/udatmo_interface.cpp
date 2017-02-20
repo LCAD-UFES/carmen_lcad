@@ -34,8 +34,8 @@ void carmen_udatmo_init_moving_obstacles_message(carmen_udatmo_moving_obstacles_
 	message->timestamp = 0;
 	message->num_obstacles = size;
 
-	int bytes = sizeof(carmen_datmo_moving_obstacle) * size;
-	message->obstacles = (carmen_datmo_moving_obstacle*) malloc(bytes);
+	int bytes = sizeof(carmen_udatmo_moving_obstacle) * size;
+	message->obstacles = (carmen_udatmo_moving_obstacle*) malloc(bytes);
 	memset(message->obstacles, 0, bytes);
 }
 

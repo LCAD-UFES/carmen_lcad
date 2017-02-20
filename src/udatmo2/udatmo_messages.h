@@ -22,7 +22,7 @@ typedef struct
 
 	double v;
 }
-carmen_datmo_moving_obstacle;
+carmen_udatmo_moving_obstacle;
 
 
 typedef struct
@@ -37,14 +37,14 @@ typedef struct
 	int num_obstacles;
 
 	/** @brief Array of moving obstacles. */
-	carmen_datmo_moving_obstacle *obstacles;
+	carmen_udatmo_moving_obstacle *obstacles;
 }
 carmen_udatmo_moving_obstacles_message;
 
 
 #define CARMEN_UDATMO_MOVING_OBSTACLES_MESSAGE_NAME "carmen_udatmo_moving_obstacles_message"
 
-#define CARMEN_UDATMO_MOVING_OBSTACLES_MESSAGE_FMT "{string, double, int, <{double, double, double, double}:1>}"
+#define CARMEN_UDATMO_MOVING_OBSTACLES_MESSAGE_FMT "{string, double, int, <{int, double, double, double, double}:1>}"
 
 
 #ifdef __cplusplus

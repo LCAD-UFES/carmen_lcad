@@ -115,7 +115,7 @@ Detector::detect()
 
 			update_moving_object_velocity();
 
-			carmen_datmo_moving_obstacle &front_obstacle = obstacles[0];
+			carmen_udatmo_moving_obstacle &front_obstacle = obstacles[0];
 			front_obstacle.rddf_index = rddf_pose_index;
 			front_obstacle.x = observed.pose.x;
 			front_obstacle.y = observed.pose.y;
@@ -175,13 +175,9 @@ Detector::compute_num_poses_ahead()
 
 
 void
-Detector::update(carmen_localize_ackerman_globalpos_message *msg)
+Detector::update(const carmen_ackerman_traj_point_t &robot_pose)
 {
-	robot_pose.x = msg->globalpos.x;
-	robot_pose.y = msg->globalpos.y;
-	robot_pose.theta = msg->globalpos.theta;
-	robot_pose.v = msg->v;
-	robot_pose.phi = msg->phi;
+	this->robot_pose = robot_pose;
 }
 
 

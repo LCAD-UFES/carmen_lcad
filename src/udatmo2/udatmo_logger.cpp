@@ -4,7 +4,7 @@
 
 static void print_message(carmen_udatmo_moving_obstacles_message *message)
 {
-	carmen_datmo_moving_obstacle *obstacle = message->obstacles;
+	carmen_udatmo_moving_obstacle *obstacle = message->obstacles;
 	printf("From host \"%s\" at time %.2f:", message->host, message->timestamp);
 	for (int i = 0, n = message->num_obstacles; i < n; i++, obstacle++)
 		printf("  Obstacle #%d: RDDF index %d, position (%f, %f, %f), speed %f m/s",
