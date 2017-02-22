@@ -242,7 +242,7 @@ carmen_rddf_play_copy_kml(kmldom::PlacemarkPtr waypoint, carmen_fused_odometry_m
 		if (waypoint_description.compare("") != 0)
 		{
 			if (waypoint_description.compare("human intervention") == 0)
-				(*waypoint_annotation) = RDDF_ANNOTATION_HUMAN_INTERVENTION;
+				(*waypoint_annotation) = RDDF_ANNOTATION_TYPE_HUMAN_INTERVENTION;
 			else
 				exit(printf("Error: Unknown description annotation: \"%s\"\n", waypoint_description.c_str()));
 		}
