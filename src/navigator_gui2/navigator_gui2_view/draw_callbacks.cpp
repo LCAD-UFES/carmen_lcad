@@ -116,7 +116,7 @@ void on_activeMenuQuit(GtkWidget *widget __attribute__((unused)),
 void on_menuMaps_Map_toggled (GtkCheckMenuItem* togglebutton,
 		GtkGui* gui __attribute__ ((unused)))
 {
-	if(gtk_check_menu_item_get_active(togglebutton))
+	if (gtk_check_menu_item_get_active(togglebutton))
 	{
 		superimposed_is_set = 0;
 		navigator_get_map(CARMEN_NAVIGATOR_MAP_v, superimposed_is_set);
@@ -127,7 +127,7 @@ void on_menuMaps_Map_toggled (GtkCheckMenuItem* togglebutton,
 void on_menuMaps_OfflineMap_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
-	if(gtk_check_menu_item_get_active(togglebutton))
+	if (gtk_check_menu_item_get_active(togglebutton))
 	{
 		superimposed_is_set = 0;
 		navigator_get_map(CARMEN_OFFLINE_MAP_v, superimposed_is_set);
@@ -138,7 +138,7 @@ void on_menuMaps_OfflineMap_toggled (GtkCheckMenuItem* togglebutton __attribute_
 void on_menuMaps_Utility_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
-	if(gtk_check_menu_item_get_active(togglebutton))
+	if (gtk_check_menu_item_get_active(togglebutton))
 	{
 		superimposed_is_set = 0;
 		navigator_get_map(CARMEN_NAVIGATOR_UTILITY_v, superimposed_is_set);
@@ -149,7 +149,7 @@ void on_menuMaps_Utility_toggled (GtkCheckMenuItem* togglebutton __attribute__ (
 void on_menuMaps_Costs_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
-	if(gtk_check_menu_item_get_active(togglebutton))
+	if (gtk_check_menu_item_get_active(togglebutton))
 	{
 		superimposed_is_set = 0;
 		navigator_get_map(CARMEN_COST_MAP_v, superimposed_is_set);
@@ -160,7 +160,7 @@ void on_menuMaps_Costs_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((u
 void on_menuMaps_Likelihood_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
-	if(gtk_check_menu_item_get_active(togglebutton))
+	if (gtk_check_menu_item_get_active(togglebutton))
 	{
 		superimposed_is_set = 0;
 		navigator_get_map(CARMEN_LOCALIZE_LMAP_v, superimposed_is_set);
@@ -171,7 +171,7 @@ void on_menuMaps_Likelihood_toggled (GtkCheckMenuItem* togglebutton __attribute_
 void on_menuMaps_GlobalLikelihood_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
-	if(gtk_check_menu_item_get_active(togglebutton))
+	if (gtk_check_menu_item_get_active(togglebutton))
 	{
 		superimposed_is_set = 0;
 		navigator_get_map(CARMEN_LOCALIZE_GMAP_v, superimposed_is_set);
@@ -182,7 +182,7 @@ void on_menuMaps_GlobalLikelihood_toggled (GtkCheckMenuItem* togglebutton __attr
 void on_menuMaps_Lane_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
-	if(gtk_check_menu_item_get_active(togglebutton))
+	if (gtk_check_menu_item_get_active(togglebutton))
 	{
 		superimposed_is_set = 0;
 		navigator_get_map(CARMEN_LANE_MAP_v, superimposed_is_set);
@@ -193,7 +193,7 @@ void on_menuMaps_Lane_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((un
 void on_menuMaps_CompleteMap_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
-	if(gtk_check_menu_item_get_active(togglebutton))
+	if (gtk_check_menu_item_get_active(togglebutton))
 	{
 		superimposed_is_set = 0;
 		navigator_get_map(CARMEN_COMPLETE_MAP_v, superimposed_is_set);
@@ -204,7 +204,7 @@ void on_menuMaps_CompleteMap_toggled (GtkCheckMenuItem* togglebutton __attribute
 void on_menuMaps_RemissionMap_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
-	if(gtk_check_menu_item_get_active(togglebutton))
+	if (gtk_check_menu_item_get_active(togglebutton))
 	{
 		superimposed_is_set = 0;
 		navigator_get_map(CARMEN_REMISSION_MAP_v, superimposed_is_set);
@@ -215,7 +215,7 @@ void on_menuMaps_RemissionMap_toggled (GtkCheckMenuItem* togglebutton __attribut
 void on_menuMaps_MovingObjects_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
-	if(gtk_check_menu_item_get_active(togglebutton))
+	if (gtk_check_menu_item_get_active(togglebutton))
 	{
 		superimposed_is_set = 0;
 		navigator_get_map(CARMEN_MOVING_OBJECTS_MAP_v, superimposed_is_set);
@@ -226,7 +226,7 @@ void on_menuMaps_MovingObjects_toggled (GtkCheckMenuItem* togglebutton __attribu
 void on_menuSuperimposedMaps_None_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
-	if(gtk_check_menu_item_get_active(togglebutton))
+	if (gtk_check_menu_item_get_active(togglebutton))
 	{
 		superimposed_is_set = 1;
 		navigator_get_map(CARMEN_NONE_v, superimposed_is_set);
@@ -238,7 +238,7 @@ void on_menuSuperimposedMaps_None_toggled (GtkCheckMenuItem* togglebutton __attr
 void on_menuSuperimposedMaps_Map_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
-	if(gtk_check_menu_item_get_active(togglebutton))
+	if (gtk_check_menu_item_get_active(togglebutton))
 	{
 		superimposed_is_set = 1;
 		navigator_get_map(CARMEN_NAVIGATOR_MAP_v, superimposed_is_set);
@@ -250,7 +250,7 @@ void on_menuSuperimposedMaps_Map_toggled (GtkCheckMenuItem* togglebutton __attri
 void on_menuSuperimposedMaps_OfflineMap_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
-	if(gtk_check_menu_item_get_active(togglebutton))
+	if (gtk_check_menu_item_get_active(togglebutton))
 	{
 		superimposed_is_set = 1;
 		navigator_get_map(CARMEN_OFFLINE_MAP_v, superimposed_is_set);
@@ -262,7 +262,7 @@ void on_menuSuperimposedMaps_OfflineMap_toggled (GtkCheckMenuItem* togglebutton 
 void on_menuSuperimposedMaps_Utility_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
-	if(gtk_check_menu_item_get_active(togglebutton))
+	if (gtk_check_menu_item_get_active(togglebutton))
 	{
 		superimposed_is_set = 1;
 		navigator_get_map(CARMEN_NAVIGATOR_UTILITY_v, superimposed_is_set);
@@ -274,7 +274,7 @@ void on_menuSuperimposedMaps_Utility_toggled (GtkCheckMenuItem* togglebutton __a
 void on_menuSuperimposedMaps_Costs_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
-	if(gtk_check_menu_item_get_active(togglebutton))
+	if (gtk_check_menu_item_get_active(togglebutton))
 	{
 		superimposed_is_set = 1;
 		navigator_get_map(CARMEN_COST_MAP_v, superimposed_is_set);
@@ -286,7 +286,7 @@ void on_menuSuperimposedMaps_Costs_toggled (GtkCheckMenuItem* togglebutton __att
 void on_menuSuperimposedMaps_Likelihood_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
-	if(gtk_check_menu_item_get_active(togglebutton))
+	if (gtk_check_menu_item_get_active(togglebutton))
 	{
 		superimposed_is_set = 1;
 		navigator_get_map(CARMEN_LOCALIZE_LMAP_v, superimposed_is_set);
@@ -298,7 +298,7 @@ void on_menuSuperimposedMaps_Likelihood_toggled (GtkCheckMenuItem* togglebutton 
 void on_menuSuperimposedMaps_GlobalLikelihood_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
-	if(gtk_check_menu_item_get_active(togglebutton))
+	if (gtk_check_menu_item_get_active(togglebutton))
 	{
 		superimposed_is_set = 1;
 		navigator_get_map(CARMEN_LOCALIZE_GMAP_v, superimposed_is_set);
@@ -310,7 +310,7 @@ void on_menuSuperimposedMaps_GlobalLikelihood_toggled (GtkCheckMenuItem* toggleb
 void on_menuSuperimposedMaps_Lane_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
-	if(gtk_check_menu_item_get_active(togglebutton))
+	if (gtk_check_menu_item_get_active(togglebutton))
 	{
 		superimposed_is_set = 1;
 		navigator_get_map(CARMEN_LANE_MAP_v, superimposed_is_set);
@@ -322,7 +322,7 @@ void on_menuSuperimposedMaps_Lane_toggled (GtkCheckMenuItem* togglebutton __attr
 void on_menuSuperimposedMaps_RemissionMap_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
-	if(gtk_check_menu_item_get_active(togglebutton))
+	if (gtk_check_menu_item_get_active(togglebutton))
 	{
 		superimposed_is_set = 1;
 		navigator_get_map(CARMEN_REMISSION_MAP_v, superimposed_is_set);
@@ -334,7 +334,7 @@ void on_menuSuperimposedMaps_RemissionMap_toggled (GtkCheckMenuItem* togglebutto
 void on_menuSuperimposedMaps_MovingObjects_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui)
 {
-	if(gtk_check_menu_item_get_active(togglebutton))
+	if (gtk_check_menu_item_get_active(togglebutton))
 	{
 		superimposed_is_set = 1;
 		navigator_get_map(CARMEN_MOVING_OBJECTS_MAP_v, superimposed_is_set);
@@ -349,9 +349,7 @@ void on_menuDisplay_TrackRobot_toggled (GtkCheckMenuItem* togglebutton __attribu
 	global_gui->nav_panel_config->track_robot = gtk_check_menu_item_get_active(togglebutton);
 
 	if (global_gui->robot.map && global_gui->nav_panel_config->track_robot)
-	{
 		carmen_map_graphics_adjust_scrollbars(global_gui->controls_.map_view, &global_gui->robot);
-	}
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -388,16 +386,10 @@ void on_menuDisplay_ShowParticles_toggled (GtkCheckMenuItem* togglebutton __attr
 {
 	global_gui->nav_panel_config->show_particles = gtk_check_menu_item_get_active(togglebutton);
 
-	if ((global_gui->nav_panel_config->show_particles == 1) &&
-			!global_gui->nav_panel_config->show_gaussians)
-	{
+	if ((global_gui->nav_panel_config->show_particles == 1) && !global_gui->nav_panel_config->show_gaussians)
 		carmen_localize_ackerman_subscribe_particle_message(&global_gui->particle_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
-	}
-	else if (!global_gui->nav_panel_config->show_particles &&
-			!global_gui->nav_panel_config->show_gaussians)
-	{
+	else if (!global_gui->nav_panel_config->show_particles && !global_gui->nav_panel_config->show_gaussians)
 		carmen_localize_ackerman_subscribe_particle_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
-	}
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -421,9 +413,7 @@ void on_menuDisplay_ShowLaserData_toggled (GtkCheckMenuItem* togglebutton __attr
 	global_gui->nav_panel_config->show_lasers = gtk_check_menu_item_get_active(togglebutton);
 
 	if (global_gui->nav_panel_config->show_lasers)
-	{
 		carmen_localize_ackerman_subscribe_sensor_message(&global_gui->sensor_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
-	}
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -433,13 +423,9 @@ void on_menuDisplay_ShowMotionPath_toggled (GtkCheckMenuItem* togglebutton __att
 	global_gui->nav_panel_config->show_motion_path = gtk_check_menu_item_get_active(togglebutton);
 
 	if (global_gui->nav_panel_config->show_motion_path)
-	{
 		carmen_obstacle_avoider_subscribe_motion_planner_path_message(&global_gui->motion_path_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
-	}
 	else
-	{
 		carmen_obstacle_avoider_subscribe_motion_planner_path_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
-	}
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -449,14 +435,9 @@ void on_menuDisplay_ShowCommandPath_toggled (GtkCheckMenuItem* togglebutton __at
 	global_gui->nav_panel_config->show_command_path = gtk_check_menu_item_get_active(togglebutton);
 
 	if (global_gui->nav_panel_config->show_command_path)
-	{
 		carmen_obstacle_avoider_subscribe_path_message(&global_gui->obstacle_avoider_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
-	}
 	else
-	{
 		carmen_obstacle_avoider_subscribe_path_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
-	}
-
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -486,13 +467,21 @@ void on_menuDisplay_ShowDynamicPoints_toggled (GtkCheckMenuItem* togglebutton __
 	global_gui->nav_panel_config->show_dynamic_points = gtk_check_menu_item_get_active(togglebutton);
 
 	if (global_gui->nav_panel_config->show_dynamic_points)
-	{
 		carmen_mapper_subscribe_virtual_laser_message(&global_gui->virtual_laser_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
-	}
 	else
-	{
 		carmen_mapper_subscribe_virtual_laser_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
-	}
+}
+
+//extern "C" G_MODULE_EXPORT
+void on_menuDisplay_ShowAnnotations_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
+		GtkGui* gui __attribute__ ((unused)))
+{
+	global_gui->nav_panel_config->show_annotations = gtk_check_menu_item_get_active(togglebutton);
+
+	if (global_gui->nav_panel_config->show_annotations)
+		carmen_rddf_subscribe_annotation_message(&global_gui->rddf_annotation_msg, NULL, CARMEN_SUBSCRIBE_ALL);
+	else
+		carmen_rddf_subscribe_annotation_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -548,7 +537,7 @@ void on_menuHelp_About_activate(GtkWidget *widget __attribute__((unused)),
 void on_comboGoalSource_changed(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
-	if(global_gui)
+	if (global_gui)
 		carmen_behavior_selector_set_goal_source((carmen_behavior_selector_goal_source_t)global_gui->get_goal_source_code(gtk_combo_box_get_active_text((GtkComboBox*)global_gui->controls_.comboGoalSource)));
 }
 
@@ -556,7 +545,7 @@ void on_comboGoalSource_changed(GtkWidget *widget __attribute__((unused)),
 void on_comboState_changed(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
-	if(global_gui)
+	if (global_gui)
 		carmen_behavior_selector_set_state((carmen_behavior_selector_state_t)global_gui->get_state_code(gtk_combo_box_get_active_text((GtkComboBox*)global_gui->controls_.comboState)));
 }
 
@@ -564,7 +553,7 @@ void on_comboState_changed(GtkWidget *widget __attribute__((unused)),
 void on_comboFollowLane_changed(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
-	if(global_gui)
+	if (global_gui)
 		navigator_set_algorithm((carmen_behavior_selector_algorithm_t)global_gui->get_algorithm_code(gtk_combo_box_get_active_text((GtkComboBox*)global_gui->controls_.comboFollowLane)), BEHAVIOR_SELECTOR_FOLLOWING_LANE);
 }
 
@@ -572,7 +561,7 @@ void on_comboFollowLane_changed(GtkWidget *widget __attribute__((unused)),
 void on_comboParking_changed(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
-	if(global_gui)
+	if (global_gui)
 		navigator_set_algorithm((carmen_behavior_selector_algorithm_t)global_gui->get_algorithm_code(gtk_combo_box_get_active_text((GtkComboBox*)global_gui->controls_.comboParking)), BEHAVIOR_SELECTOR_PARKING);
 }
 
@@ -710,7 +699,7 @@ void on_buttonGo_clicked(GtkWidget *widget __attribute__((unused)),
 //		global_gui->ignore_click = 0;
 //	}
 
-	if(global_gui->global_view)
+	if (global_gui->global_view)
 	{
 		global_gui->global_view = 0;
 	}
@@ -840,55 +829,55 @@ int button_release_handler(GtkMapViewer		   *the_map_view,
 		return TRUE;
 
 	rtr = global_gui->placing_robot_action(the_map_view, world_point, event);
-	if(rtr)
+	if (rtr)
 		return TRUE;
 
 	rtr = global_gui->placing_goal_action(the_map_view, world_point, event);
-	if(rtr)
+	if (rtr)
 		return TRUE;
 
 	rtr = global_gui->placing_person_action(the_map_view, world_point);
-	if(rtr)
+	if (rtr)
 		return TRUE;
 
 	rtr = global_gui->placing_simulator_action(the_map_view, world_point);
-	if(rtr)
+	if (rtr)
 		return TRUE;
 
 	rtr = global_gui->orienting_robot_action(the_map_view, world_point, event);
-	if(rtr)
+	if (rtr)
 		return TRUE;
 
 	rtr = global_gui->orienting_goal_action(the_map_view, world_point);
-	if(rtr)
+	if (rtr)
 		return TRUE;
 
 	rtr = global_gui->orienting_person_action(the_map_view, world_point);
-	if(rtr)
+	if (rtr)
 		return TRUE;
 
 	rtr = global_gui->orienting_simulator_action(the_map_view, world_point);
-	if(rtr)
+	if (rtr)
 		return TRUE;
 
 	rtr = global_gui->selecting_final_region_action(the_map_view, world_point);
-	if(rtr)
+	if (rtr)
 		return TRUE;
 
 	rtr = global_gui->placing_final_goal_action(the_map_view, world_point);
-	if(rtr)
+	if (rtr)
 		return TRUE;
 
 	rtr = global_gui->orienting_final_goal_action(the_map_view, world_point);
-	if(rtr)
+	if (rtr)
 		return TRUE;
 
 	rtr = global_gui->selecting_near_waypoint_action(the_map_view, world_point);
-	if(rtr)
+	if (rtr)
 		return TRUE;
 
 	rtr = global_gui->select_near_rddf_point(the_map_view, world_point);
-	if(rtr)
+	if (rtr)
 		return TRUE;
 
 	return TRUE;
@@ -984,8 +973,7 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 	if ((global_gui == NULL) || (the_map_view->internal_map == NULL))
 		return;
 
-	pixel_size = 1 / the_map_view->rescale_size *
-			the_map_view->internal_map->config.resolution;
+	pixel_size = 1.0 / the_map_view->rescale_size * the_map_view->internal_map->config.resolution;
 
 	if (global_gui->nav_panel_config->show_fused_odometry)
 		global_gui->draw_fused_odometry_pose(the_map_view);
@@ -997,13 +985,13 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 
 	if (global_gui->received_robot_pose())
 	{
-		if(global_gui->nav_panel_config->show_particles)
+		if (global_gui->nav_panel_config->show_particles)
 			global_gui->draw_particles(the_map_view, pixel_size);
 
-		if(global_gui->nav_panel_config->show_gaussians)
+		if (global_gui->nav_panel_config->show_gaussians)
 			global_gui->draw_gaussians(the_map_view);
 
-		if(global_gui->nav_panel_config->show_lasers)
+		if (global_gui->nav_panel_config->show_lasers)
 			global_gui->draw_lasers(the_map_view, pixel_size);
 
 		global_gui->draw_robot(the_map_view);
@@ -1013,10 +1001,10 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 
 	global_gui->draw_goal_list(the_map_view, global_gui->goal);
 
-	if(global_gui->nav_panel_config->show_true_pos)
+	if (global_gui->nav_panel_config->show_true_pos)
 		global_gui->draw_simulated_robot(the_map_view);
 
-	if(global_gui->nav_panel_config->show_simulator_objects)
+	if (global_gui->nav_panel_config->show_simulator_objects)
 		global_gui->draw_simulated_objects(the_map_view);
 
 	//do some animation when the user is placing something (like robot or goal)
@@ -1091,6 +1079,11 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 	if (global_gui->nav_panel_config->show_dynamic_points)
 	{
 		global_gui->draw_moving_points(the_map_view, pixel_size);
+	}
+
+	if (global_gui->nav_panel_config->show_annotations)
+	{
+		global_gui->draw_annotations(the_map_view, pixel_size);
 	}
 
 	global_gui->draw_path_vector(the_map_view);

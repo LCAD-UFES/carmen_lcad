@@ -91,6 +91,53 @@ valid_carmen_ackerman_traj_point(carmen_ackerman_traj_point_t world_point, carme
 	return (true);
 }
 
+GdkImage *
+func()
+{
+	static GdkImage *image = NULL;
+	static int x_size;
+	static int y_size;
+
+	if (image == NULL)
+	{
+		GError *error = NULL;
+		int x_index, y_index;
+		int rowstride, n_channels;
+		guchar *pixels, *p;
+		GdkPixbuf *pixbuf = NULL;
+		char *filename = (char *) "/home/alberto/robotics/code/carmen_lcad/data/gui/annotation_images/traffic_sign_40_15.png";
+		if (!carmen_file_exists(filename))
+			carmen_die("Image file %s does not exist.\n", filename);
+
+		pixbuf = gdk_pixbuf_new_from_file(filename, &error);
+		if (pixbuf == NULL)
+			carmen_die("Couldn't open %s for reading\n", filename);
+
+		n_channels = gdk_pixbuf_get_n_channels(pixbuf);
+//		if (n_channels != 3)
+//			carmen_die("File has alpha channel. carmen_pixbuf_to_map failed\n");
+
+		x_size = gdk_pixbuf_get_width(pixbuf);
+		y_size = gdk_pixbuf_get_height(pixbuf);
+		image = gdk_image_new(GDK_IMAGE_FASTEST, gdk_visual_get_system(), x_size, y_size);
+
+		rowstride = gdk_pixbuf_get_rowstride(pixbuf);
+		pixels = gdk_pixbuf_get_pixels(pixbuf);
+
+		for (x_index = 0; x_index < x_size; x_index++)
+			for (y_index = 0; y_index < x_size; y_index++)
+			{
+				unsigned char r, g, b;
+				p = pixels + y_index * rowstride + x_index * n_channels;
+				r = p[0];
+				g = p[1];
+				b = p[2];
+				gdk_image_put_pixel(image, x_index, y_index, b | g << 8 | r << 16);
+			}
+	}
+	return (image);
+}
+
 
 namespace View
 {
@@ -185,6 +232,7 @@ namespace View
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowMotionPath), nav_panel_config->show_motion_path);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowDynamicObjects), nav_panel_config->show_dynamic_objects);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowDynamicPoints), nav_panel_config->show_dynamic_points);
+		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowAnnotations), nav_panel_config->show_annotations);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSimulatorShowTruePosition), nav_panel_config->show_true_pos);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSimulator_ShowObjects), nav_panel_config->show_simulator_objects);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuGoals_EditRddfGoals), nav_panel_config->edit_rddf_goals);
@@ -236,29 +284,22 @@ namespace View
 			carmen_die("Unknown map named \"%s\" set as parameter in the carmen ini file. Exiting...\n", nav_panel_config->map);
 
 		if (nav_panel_config->show_particles || nav_panel_config->show_gaussians)
-		{
 			carmen_localize_ackerman_subscribe_particle_message(&particle_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
-		}
 
 		if (nav_panel_config->show_lasers)
-		{
 			carmen_localize_ackerman_subscribe_sensor_message(&sensor_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
-		}
 
 		if (nav_panel_config->show_command_path)
-		{
 			carmen_obstacle_avoider_subscribe_path_message(&obstacle_avoider_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
-		}
 
 		if (nav_panel_config->show_motion_path)
-		{
 			carmen_obstacle_avoider_subscribe_motion_planner_path_message(&motion_path_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
-		}
 
 		if (nav_panel_config->show_dynamic_points)
-		{
 			carmen_mapper_subscribe_virtual_laser_message(&virtual_laser_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
-		}
+
+		if (nav_panel_config->show_annotations)
+			carmen_rddf_subscribe_annotation_message(&rddf_annotation_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
 	}
 
 	void GtkGui::navigator_graphics_initialize(int argc, char **argv, carmen_localize_ackerman_globalpos_message *msg,
@@ -317,6 +358,7 @@ namespace View
 		controls_.menuDisplay_ShowCommandPath = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowCommandPath" ));
 		controls_.menuDisplay_ShowDynamicObjects = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowDynamicObjects" ));
 		controls_.menuDisplay_ShowDynamicPoints = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowDynamicPoints" ));
+		controls_.menuDisplay_ShowAnnotations = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowAnnotations" ));
 		controls_.menuDisplay_ShowFusedOdometry = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowFusedOdometry" ));
 		controls_.menuDisplay_ShowGaussians = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowGaussians" ));
 		controls_.menuDisplay_ShowLaserData = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowLaserData" ));
@@ -2240,6 +2282,36 @@ namespace View
 				carmen_map_graphics_draw_circle(the_map_view, &carmen_colors[(int) virtual_laser_msg.colors[i]], TRUE, &world_point, pixel_size * 2.0);
 			}
 			if (i != 0)
+				display_needs_updating = 1;
+		}
+	}
+
+	void
+	GtkGui::draw_annotations(GtkMapViewer *the_map_view, double pixel_size)
+	{
+		if (nav_panel_config->show_annotations)
+		{
+//			int i;
+//			for (i = 0; i < virtual_laser_msg.num_positions; i++)
+//			{
+//				carmen_world_point_t world_point;
+//				world_point.pose.x = virtual_laser_msg.positions[i].x;
+//				world_point.pose.y = virtual_laser_msg.positions[i].y;
+//				world_point.pose.theta = 0.0;
+//				world_point.map = the_map_view->internal_map;
+//
+//				carmen_map_graphics_draw_circle(the_map_view, &carmen_colors[(int) virtual_laser_msg.colors[i]], TRUE, &world_point, pixel_size * 2.0);
+//			}
+
+			carmen_world_point_t world_point;
+			world_point.pose.x = virtual_laser_msg.positions[0].x;
+			world_point.pose.y = virtual_laser_msg.positions[0].y;
+			world_point.pose.theta = 0.0;
+			world_point.map = the_map_view->internal_map;
+
+			carmen_map_graphics_draw_image(the_map_view, func(), &world_point, 15, 15);
+
+//			if (i != 0)
 				display_needs_updating = 1;
 		}
 	}

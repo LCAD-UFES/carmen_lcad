@@ -45,6 +45,10 @@ CascadeClassifier ts_cascade;
 
 //Dection infraestructure
 #define MAX_TRAFFIC_LIGHTS_IN_IMAGE 10
+//Ver valores abaixo no arquivo height_in_pixels_x_distance.ods
+#define TRAFFIC_LIGHT_HEIGHT 		1.0
+#define FOCAL_DISTANCE 				1500.0
+#define DISTANCE_CORRECTION 		6.0
 static int num = 0;
 static carmen_traffic_light traffic_lights_detected[MAX_TRAFFIC_LIGHTS_IN_IMAGE];
 
@@ -75,7 +79,7 @@ compute_distance_to_the_traffic_light()
 															last_localize_message.globalpos.x - it.base()->annotation_point.x) - M_PI -
 													 	 	last_localize_message.globalpos.theta))) > M_PI_2;
 
-				if (distance <= 200.0 && orientation_ok && behind == false)
+				if (distance <= MAX_TRAFFIC_LIGHT_DISTANCE && orientation_ok && behind == false)
 	    			nearest_traffic_light_distance = distance;
     		}
     	}
@@ -136,7 +140,7 @@ detect_traffic_lights(const cv::Mat frame)
 
 	//-- Detect traffic lights
 	std::vector<Rect> semaphores;
-	ts_cascade.detectMultiScale(frame_gray, semaphores, 1.03, 3, 0, Size(5, 10), Size(200, 400));
+	ts_cascade.detectMultiScale(frame_gray, semaphores, 1.05, 4, 0, Size(5, 12), Size(60, 150));
 
 	return (semaphores);
 }
@@ -179,28 +183,37 @@ detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *tr
 //	imshow("Display window", frame);
 //	waitKey(1);
 
-	std::vector<Rect> traffic_light_rectangles = detect_traffic_lights(frame);
-
-	if (traffic_light_message->distance < 200.0 && traffic_light_message->distance != -1.0)
+	if (traffic_light_message->distance < MAX_TRAFFIC_LIGHT_DISTANCE && traffic_light_message->distance != -1.0)
 	{
-		traffic_light_message->num_traffic_lights = traffic_light_rectangles.size();
+		// Traffic lights detection
+		std::vector<Rect> traffic_light_rectangles = detect_traffic_lights(frame);
 
+		int num_traffic_lights_accepted = 0;
+		double expected_traffic_light_height = TRAFFIC_LIGHT_HEIGHT * FOCAL_DISTANCE / (traffic_light_message->distance + DISTANCE_CORRECTION);
 		for (size_t i = 0; i < traffic_light_rectangles.size() && i < MAX_TRAFFIC_LIGHTS_IN_IMAGE; i++)
 		{
-			CvPoint p1, p2;
-			p1.x = traffic_light_rectangles[i].x + image_width / 4;
-			p1.y = traffic_light_rectangles[i].y;
-			p2.x = p1.x + traffic_light_rectangles[i].width;
-			p2.y = p1.y + traffic_light_rectangles[i].height;
+			double percentual_difference = fabs(1.0 - traffic_light_rectangles[i].height / expected_traffic_light_height);
+			if (percentual_difference < 0.25)
+			{
+				CvPoint p1, p2;
+				p1.x = traffic_light_rectangles[i].x + image_width / 4;
+				p1.y = traffic_light_rectangles[i].y;
+				p2.x = p1.x + traffic_light_rectangles[i].width;
+				p2.y = p1.y + traffic_light_rectangles[i].height;
 
-			sample_type traffic_light_image_in_svm_format = get_traffic_light_image_in_svm_format(frame, p1, p2);
+				sample_type traffic_light_image_in_svm_format = get_traffic_light_image_in_svm_format(frame, p1, p2);
 
-			if (trained_svm(traffic_light_image_in_svm_format) >= 0)
-				add_traffic_light_to_message(traffic_light_message, TRAFFIC_LIGHT_RED, p1, p2, i);
-			else if (trained_svm(traffic_light_image_in_svm_format) < 0)
-				add_traffic_light_to_message(traffic_light_message, TRAFFIC_LIGHT_GREEN, p1, p2, i);
-			// @@@ Alberto: e o amarelo?
+				// Traffic lights state recognition
+				if (trained_svm(traffic_light_image_in_svm_format) >= 0)
+					add_traffic_light_to_message(traffic_light_message, TRAFFIC_LIGHT_RED, p1, p2, i);
+				else if (trained_svm(traffic_light_image_in_svm_format) < 0)
+					add_traffic_light_to_message(traffic_light_message, TRAFFIC_LIGHT_GREEN, p1, p2, i);
+				// @@@ Alberto: E o amarelo? E a regeicao de deteccoes?
+
+				num_traffic_lights_accepted++;
+			}
 		}
+		traffic_light_message->num_traffic_lights = num_traffic_lights_accepted;
 	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -242,7 +255,7 @@ carmen_bumblebee_basic_stereoimage_message_handler(carmen_bumblebee_basic_stereo
     traffic_light_message.traffic_lights = traffic_lights_detected;
     traffic_light_message.host = carmen_get_host();
 
-	if (nearest_traffic_light_distance < 200.0 && nearest_traffic_light_distance != -1.0)
+	if (nearest_traffic_light_distance < MAX_TRAFFIC_LIGHT_DISTANCE && nearest_traffic_light_distance != -1.0)
 	{
         traffic_light_message.distance = nearest_traffic_light_distance;
         detect_traffic_lights_and_recognize_their_state(&traffic_light_message, stereo_image);
