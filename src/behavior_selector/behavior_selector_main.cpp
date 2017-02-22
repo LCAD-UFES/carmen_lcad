@@ -363,10 +363,10 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 			goal->v = 0.0;
 //		printf("mov %lf, gv %lf, dist %lf, d_dist %lf\n", moving_obj_v, goal->v, distance, desired_distance);
 	}
-	FILE* caco = fopen("caco.txt", "a");
-	fprintf(caco, "%lf %lf %lf %lf %lf\n", moving_obj_v, goal->v, current_robot_pose_v_and_phi->v, distance, desired_distance);
-	fflush(caco);
-	fclose(caco);
+//	FILE* caco = fopen("caco.txt", "a");
+//	fprintf(caco, "%lf %lf %lf %lf %lf\n", moving_obj_v, goal->v, current_robot_pose_v_and_phi->v, distance, desired_distance);
+//	fflush(caco);
+//	fclose(caco);
 
 	return (goal->v);
 }
@@ -744,9 +744,9 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	}
 
 	// @@@ Alberto: colocar um parametro para ativar ou desativar isso.
-//	carmen_ackerman_traj_point_t *simulated_object_pose = compute_simulated_objects(&current_robot_pose_v_and_phi, timestamp);
-//	if (simulated_object_pose)
-//		publish_object(simulated_object_pose);
+	carmen_ackerman_traj_point_t *simulated_object_pose = compute_simulated_objects(&current_robot_pose_v_and_phi, timestamp);
+	if (simulated_object_pose)
+		publish_object(simulated_object_pose);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 

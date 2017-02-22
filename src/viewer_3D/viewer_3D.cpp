@@ -2800,15 +2800,21 @@ set_flag_viewer_3D(int flag_num, int value)
         {
             if (value == 0)
             {
-                carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN), RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN, RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_BUMP);
+                carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation,
+                		rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN),
+						RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN, RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_BUMP);
             }
             else if (value == 20)
             {
-                carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN), RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN, RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_SPEED_20);
+                carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation,
+                		rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN),
+						RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN, RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_SPEED_20);
             }
             else if (value == 30)
             {
-                carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN), RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN, RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_SPEED_30);
+                carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation,
+                		rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN),
+						RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN, RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_SPEED_30);
             }
         }
         break;

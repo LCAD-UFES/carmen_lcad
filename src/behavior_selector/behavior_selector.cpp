@@ -80,15 +80,15 @@ change_state(int rddf_annotation)
 
 	switch(rddf_annotation)
 	{
-	case RDDF_ANNOTATION_NONE:
+	case RDDF_ANNOTATION_TYPE_NONE:
 		current_state = BEHAVIOR_SELECTOR_FOLLOWING_LANE;
 		break;
 
-	case RDDF_ANNOTATION_END_POINT_AREA:
+	case RDDF_ANNOTATION_TYPE_END_POINT_AREA:
 		current_state = BEHAVIOR_SELECTOR_PARKING;
 		break;
 
-	case RDDF_ANNOTATION_HUMAN_INTERVENTION:
+	case RDDF_ANNOTATION_TYPE_HUMAN_INTERVENTION:
 		current_state = BEHAVIOR_SELECTOR_HUMAN_INTERVENTION;
 		carmen_navigator_ackerman_stop();
 		break;

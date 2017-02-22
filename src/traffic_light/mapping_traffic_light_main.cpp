@@ -42,7 +42,7 @@ calculate_distance()
                                                     localize_message.globalpos.x - it.base()->annotation_point.x) - M_PI
                                              - localize_message.globalpos.theta))) > M_PI_2;
 
-        if (distance <= 200.0 && orientation == 1 && behind == 0)
+        if (distance <= MAX_TRAFFIC_LIGHT_DISTANCE && orientation == 1 && behind == 0)
         {
 
             mapping_traffic_light_message.distance = distance;

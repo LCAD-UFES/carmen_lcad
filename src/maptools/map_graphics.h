@@ -115,6 +115,10 @@ void carmen_map_graphics_draw_circle(GtkMapViewer *map_view, GdkColor *colour,
 				     carmen_world_point_p world_point, 
 				     double radius);
 
+void carmen_map_graphics_draw_image(GtkMapViewer *map_view, GdkImage *image,
+					 carmen_world_point_p world_point,
+					 int x_size, int y_size);
+
 void carmen_map_graphics_draw_rectangle(GtkMapViewer *map_view, 
 					GdkColor *colour, 
 					int filled, carmen_world_point_p start,

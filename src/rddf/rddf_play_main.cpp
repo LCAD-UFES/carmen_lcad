@@ -115,13 +115,13 @@ carmen_rddf_play_adjust_poses_ahead_and_add_end_point_to_list(carmen_ackerman_tr
 
 	poses_ahead[position_nearest_waypoint].x = carmen_rddf_nearest_waypoint_to_end_point.x;
 	poses_ahead[position_nearest_waypoint].y = carmen_rddf_nearest_waypoint_to_end_point.y;
-	rddf_annotations[position_nearest_waypoint] = RDDF_ANNOTATION_NONE;
+	rddf_annotations[position_nearest_waypoint] = RDDF_ANNOTATION_TYPE_NONE;
 
 	poses_ahead[position_end_point].x = carmen_rddf_end_point.x;
 	poses_ahead[position_end_point].y = carmen_rddf_end_point.y;
 	poses_ahead[position_end_point].theta = carmen_rddf_end_point.theta;
 	poses_ahead[position_end_point].v = 0.0;
-	rddf_annotations[position_end_point] = RDDF_ANNOTATION_END_POINT_AREA;
+	rddf_annotations[position_end_point] = RDDF_ANNOTATION_TYPE_END_POINT_AREA;
 
 	return (position_end_point + 1);
 }
@@ -139,7 +139,7 @@ carmen_rddf_play_check_if_end_point_is_reachable(carmen_ackerman_traj_point_t *p
 			poses_ahead[0].y = carmen_rddf_end_point.y;
 			poses_ahead[0].theta = carmen_rddf_end_point.theta;
 			poses_ahead[0].v = 0.0;
-			rddf_annotations[0] = RDDF_ANNOTATION_END_POINT_AREA;
+			rddf_annotations[0] = RDDF_ANNOTATION_TYPE_END_POINT_AREA;
 
 			return 1;
 		}
@@ -169,7 +169,7 @@ clear_annotations(int *rddf_annotations, int num_annotations)
 	int i;
 
 	for(i = 0; i < num_annotations; i++)
-		rddf_annotations[i] = RDDF_ANNOTATION_NONE;
+		rddf_annotations[i] = RDDF_ANNOTATION_TYPE_NONE;
 }
 
 
@@ -177,7 +177,7 @@ void
 clear_annotations()
 {
 	for (int i = 0; i < carmen_rddf_num_poses_ahead; i++)
-		annotations[i] = RDDF_ANNOTATION_NONE;
+		annotations[i] = RDDF_ANNOTATION_TYPE_NONE;
 }
 
 

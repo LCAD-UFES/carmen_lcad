@@ -127,6 +127,7 @@ namespace View
 			GtkCheckMenuItem* menuDisplay_ShowCommandPath;
 			GtkCheckMenuItem* menuDisplay_ShowDynamicObjects;
 			GtkCheckMenuItem* menuDisplay_ShowDynamicPoints;
+			GtkCheckMenuItem* menuDisplay_ShowAnnotations;
 			GtkCheckMenuItem* menuSimulatorShowTruePosition;
 			GtkCheckMenuItem* menuSimulator_ShowObjects;
 			GtkCheckMenuItem* menuGoals_EditRddfGoals;
@@ -253,6 +254,10 @@ namespace View
 
 		carmen_mapper_virtual_laser_message virtual_laser_msg;
 
+		carmen_rddf_annotation_message rddf_annotation_msg;
+
+		GdkImage *annotation_image[MAX_TYPE][MAX_CODE];
+
 		carmen_robot_ackerman_road_velocity_control_message road_velocity_control;
 
 		carmen_rddf_waypoint* near_rddf_point;
@@ -347,6 +352,7 @@ namespace View
 		void draw_simulated_objects(GtkMapViewer *the_map_view);
 		void draw_moving_objects(GtkMapViewer *the_map_view);
 		void draw_moving_points(GtkMapViewer *the_map_view, double pixel_size);
+		void draw_annotations(GtkMapViewer *the_map_view, double pixel_size);
 		void draw_placing_animation(GtkMapViewer *the_map_view);
 		void draw_path(carmen_world_point_t *path, int num_path_points, GdkColor path_colour, GdkColor robot_color, GtkMapViewer *the_map_view);
 		void draw_road_velocity_control(GtkMapViewer *the_map_view);
@@ -367,6 +373,8 @@ namespace View
 
 		void save_rddf_to_file(char *rddf_filename);
 		void load_rddf_from_file(char *rddf_filename);
+
+		void load_annotations_images();
 	};
 }
 
