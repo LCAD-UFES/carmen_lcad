@@ -27,6 +27,7 @@ int start_pos = 0;
 carmen_point_t initial_pose, actual_pose;
 
 #define MIN_DIST 10.0
+#define MAX_DIST 30.0
 #define PUBLISH_BY_ID
 
 void
@@ -75,7 +76,7 @@ update_publishing_flag()
 
 			dist = euclidean_distance(actual_pose.x, actual_pose.y, x_pos, y_pos);
 
-			if(dist < MIN_DIST && it->second.publishing == 0)
+			if ( (dist < MAX_DIST) && (dist > MIN_DIST) && (it->second.publishing == 0) )
 			{
 				it->second.publishing = 1;
 				it->second.index = 0;
@@ -85,6 +86,19 @@ update_publishing_flag()
 	}
 
 }
+
+
+void
+reset_objects_list()
+{
+	std::map<int,moving_objects_by_id_t>::iterator it;
+	for(it = moving_objects_by_id_map.begin(); it != moving_objects_by_id_map.end(); it++)
+	{
+		it->second.publishing = 0;
+		it->second.index = 0;
+	}
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
@@ -112,6 +126,7 @@ localize_ackerman_init_handler(carmen_localize_ackerman_initialize_message *loca
 	{
 		initial_pose.x = localize_ackerman_init_message->mean[0].x;
 		initial_pose.y = localize_ackerman_init_message->mean[0].y;
+		reset_objects_list();
 	}
 	else
 		return;

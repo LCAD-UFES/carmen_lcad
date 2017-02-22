@@ -348,11 +348,11 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 
 	double distance = 0.0;
 	double moving_obj_v = 0.0;
-	if (udatmo_obstacle_detected())
+	if (carmen_udatmo_front_obstacle_detected())
 	{
 //		distance = DIST2D(udatmo_get_moving_obstacle_position(), *current_robot_pose_v_and_phi) - car_pose_to_car_front;
-		distance = udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi) - car_pose_to_car_front;
-		moving_obj_v = udatmo_speed_front();
+		distance = carmen_udatmo_front_obstacle_distance(current_robot_pose_v_and_phi) - car_pose_to_car_front;
+		moving_obj_v = carmen_udatmo_front_obstacle_speed();
 
 		// ver "The DARPA Urban Challenge" book, pg. 36.
 		double Kgap = 1.0;
@@ -375,7 +375,7 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 double
 set_goal_velocity_according_to_moving_obstacle_new(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
 {
-	if (udatmo_obstacle_detected())
+	if (carmen_udatmo_front_obstacle_detected())
 	{
 		// um carro de tamanho para cada 10 milhas/h (4.4705 m/s) -> ver "The DARPA Urban Challenge" book, pg. 36.
 		double min_dist_according_to_car_v = get_robot_config()->length * (current_robot_pose_v_and_phi->v / 4.4704)
@@ -422,7 +422,7 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 	if (obstacle_avoider_active_recently)
 		goal->v = carmen_fmin(2.5, goal->v);
 
-	if (!udatmo_obstacle_detected())
+	if (!carmen_udatmo_front_obstacle_detected())
 		SampleFilter_put(&filter2, carmen_distance_ackerman_traj(goal, current_robot_pose_v_and_phi));
 
 //	printf("gvf %lf\n", goal->v);
@@ -728,7 +728,7 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 
 	set_behaviours_parameters(current_robot_pose_v_and_phi, timestamp);
 
-	int state_updated = behaviour_selector_fill_goal_list(last_rddf_message, timestamp);
+	int state_updated = behaviour_selector_fill_goal_list(last_rddf_message);
 	if (state_updated)
 		publish_current_state();
 
@@ -770,6 +770,7 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	current_robot_pose_v_and_phi.v = msg->v;
 	current_robot_pose_v_and_phi.phi = msg->phi;
 
+	carmen_udatmo_update_robot_pose_with_globalpos(msg);
 	select_behaviour(current_robot_pose_v_and_phi, msg->timestamp);
 }
 
@@ -785,6 +786,7 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	current_robot_pose_v_and_phi.v = msg->v;
 	current_robot_pose_v_and_phi.phi = msg->phi;
 
+	carmen_udatmo_update_robot_pose_with_truepos(msg);
 	select_behaviour(current_robot_pose_v_and_phi, msg->timestamp);
 }
 
@@ -792,6 +794,8 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 static void
 rddf_handler(carmen_rddf_road_profile_message *rddf_msg)
 {
+	carmen_udatmo_update_rddf(rddf_msg);
+
 	if (!necessary_maps_available)
 		return;
 
@@ -833,6 +837,8 @@ path_planner_road_profile_handler(carmen_path_planner_road_profile_message *rddf
 static void
 carmen_obstacle_distance_mapper_message_handler(carmen_obstacle_distance_mapper_message *message)
 {
+	carmen_udatmo_update_distance_map(message);
+
 	behavior_selector_update_map(message);
 
 	necessary_maps_available = 1;
@@ -1060,6 +1066,8 @@ read_parameters(int argc, char **argv)
 		goal_list_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_PATH_PLANNER_GOAL;
 	else
 		goal_list_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
+
+	carmen_udatmo_init(&robot_config, param_rddf_num_poses_ahead_min, param_rddf_num_poses_ahead_limited_by_map);
 }
 
 

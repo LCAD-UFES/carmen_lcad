@@ -63,6 +63,11 @@ public:
 	Obstacles detect();
 
 	/**
+	 * @brief Setup detector parameters.
+	 */
+	void setup(const carmen_robot_ackerman_config_t &robot_config, int min_poses_ahead, int max_poses_ahead);
+
+	/**
 	 * @brief Setup detector parameters through the CARMEN parameter server.
 	 */
 	void setup(int argc, char *argv[]);
@@ -70,7 +75,7 @@ public:
 	/**
 	 * @brief Update the current global position.
 	 */
-	void update(carmen_localize_ackerman_globalpos_message *msg);
+	void update(const carmen_ackerman_traj_point_t &robot_pose);
 
 	/**
 	 * @brief Update the current distance map.
