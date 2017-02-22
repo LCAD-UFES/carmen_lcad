@@ -50,8 +50,9 @@ static int carmen_rddf_pose_initialized = 0;
 static int already_reached_nearest_waypoint_to_end_point = 0;
 
 char *carmen_annotation_filename = NULL;
-vector<carmen_rddf_add_annotation_message> annotation_queue;
+vector<carmen_annotation_t> annotation_queue;
 vector<int> annotations_to_publish;
+carmen_rddf_annotation_message annotation_queue_message;
 
 int use_truepos = 0;
 
@@ -212,12 +213,12 @@ carmen_check_for_annotations(double x, double y, double theta __attribute__((unu
 
 
 void
-find_nearest_pose_and_dist(int annotation_id, int *nearest_pose_out, double *nearest_pose_dist_out)
+find_nearest_annotation_and_dist(int annotation_id, int *nearest_pose_out, double *nearest_pose_dist_out)
 {
 	int nearest_pose;
 	double min_distance_to_annotation;
 	double distance_to_annotation;
-	carmen_rddf_add_annotation_message annotation;
+	carmen_annotation_t annotation;
 
 	nearest_pose = -1;
 	min_distance_to_annotation = DBL_MAX;
@@ -244,7 +245,7 @@ int
 annotation_is_forward_from_robot(carmen_point_t pose, int annotation_id)
 {
 	carmen_vector_3D_t annotation_point;
-	carmen_rddf_add_annotation_message annotation;
+	carmen_annotation_t annotation;
 
 	annotation = annotation_queue[annotation_id];
 	annotation_point = annotation.annotation_point;
@@ -268,7 +269,7 @@ set_annotations()
 
 	for (uint i = 0; i < annotations_to_publish.size(); i++)
 	{
-		find_nearest_pose_and_dist(annotations_to_publish[i], &nearest_pose, &nearest_pose_dist);
+		find_nearest_annotation_and_dist(annotations_to_publish[i], &nearest_pose, &nearest_pose_dist);
 
 		if ((nearest_pose >= 0) && nearest_pose_dist < 10.0 && (annotation_is_forward_from_robot(robot_pose, annotations_to_publish[i])))
 			annotations[nearest_pose] = annotation_queue[annotations_to_publish[i]].annotation_type;
@@ -276,8 +277,31 @@ set_annotations()
 }
 
 
+void
+carmen_rddf_play_publish_annotation_queue()
+{
+	IPC_RETURN_TYPE err;
+
+	if (annotation_queue_message.annotations == NULL || annotation_queue_message.num_annotations == 0)
+		annotation_queue_message.annotations = (carmen_annotation_t*) calloc (annotations_to_publish.size(), sizeof(carmen_annotation_t));
+	else if (annotation_queue_message.num_annotations != (int) annotations_to_publish.size())
+		annotation_queue_message.annotations = (carmen_annotation_t*) realloc (annotation_queue_message.annotations, annotations_to_publish.size() * sizeof(carmen_annotation_t));
+
+	annotation_queue_message.num_annotations = annotations_to_publish.size();
+
+	for (size_t i = 0; i < annotations_to_publish.size(); i++)
+		memcpy(&(annotation_queue_message.annotations[i]), &(annotation_queue[annotations_to_publish[i]]), sizeof(carmen_annotation_t));
+
+	annotation_queue_message.host = carmen_get_host();
+	annotation_queue_message.timestamp = carmen_get_time();
+
+	err = IPC_publishData(CARMEN_RDDF_ANNOTATION_MESSAGE_NAME, &annotation_queue_message);
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_ANNOTATION_MESSAGE_FMT);
+}
+
+
 static void
-carmen_rddf_play_publish_rddf()
+carmen_rddf_play_publish_rddf_and_annotations()
 {
 	// so publica rddfs quando a pose do robo ja estiver setada
 	if ((carmen_rddf_num_poses_ahead > 0) && (carmen_rddf_num_poses_back > 0))
@@ -292,15 +316,7 @@ carmen_rddf_play_publish_rddf()
 			carmen_rddf_num_poses_back,
 			annotations);
 
-		/* publica as anotacoes */
-		IPC_RETURN_TYPE err;
-
-		for (size_t i = 0; i < annotations_to_publish.size(); i++)
-		{
-			annotation_queue[annotations_to_publish[i]].timestamp = carmen_get_time();
-			err = IPC_publishData(CARMEN_RDDF_ANNOTATION_MESSAGE_NAME, &annotation_queue[annotations_to_publish[i]]);
-			carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_ANNOTATION_MESSAGE_FMT);
-		}
+		carmen_rddf_play_publish_annotation_queue();
 	}
 }
 
@@ -326,7 +342,7 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	annotations_to_publish.clear();
 	carmen_check_for_annotations(robot_pose.x, robot_pose.y, robot_pose.theta);
 
-	carmen_rddf_play_publish_rddf();
+	carmen_rddf_play_publish_rddf_and_annotations();
 }
 
 
@@ -351,7 +367,7 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	annotations_to_publish.clear();
 	carmen_check_for_annotations(robot_pose.x, robot_pose.y, robot_pose.theta);
 
-	carmen_rddf_play_publish_rddf();
+	carmen_rddf_play_publish_rddf_and_annotations();
 }
 
 
@@ -468,21 +484,20 @@ carmen_rddf_play_load_annotation_file()
 
 	while(!feof(f))
 	{
-		carmen_rddf_annotation_message message;
-		message.annotation_description = (char *) calloc (64, sizeof(char));
+		carmen_annotation_t annotation;
+		annotation.annotation_description = (char *) calloc (64, sizeof(char));
 
 		fscanf(f, "%s\t%d\t%d\t%lf\t%lf\t%lf\t%lf\n",
-			message.annotation_description,
-			&message.annotation_type,
-			&message.annotation_code,
-			&message.annotation_orientation,
-			&message.annotation_point.x,
-			&message.annotation_point.y,
-			&message.annotation_point.z
+			annotation.annotation_description,
+			&annotation.annotation_type,
+			&annotation.annotation_code,
+			&annotation.annotation_orientation,
+			&annotation.annotation_point.x,
+			&annotation.annotation_point.y,
+			&annotation.annotation_point.z
 		);
 
-		message.host = carmen_get_host();
-		annotation_queue.push_back(message);
+		annotation_queue.push_back(annotation);
 	}
 
 	fclose(f);
@@ -510,6 +525,7 @@ carmen_rddf_play_initialize(void)
 	carmen_rddf_poses_ahead = (carmen_ackerman_traj_point_t *) calloc (carmen_rddf_num_poses_ahead_max, sizeof(carmen_ackerman_traj_point_t));
 	carmen_rddf_poses_back = (carmen_ackerman_traj_point_t *) calloc (carmen_rddf_num_poses_ahead_max, sizeof(carmen_ackerman_traj_point_t));
 	annotations = (int *) calloc (carmen_rddf_num_poses_ahead_max, sizeof(int));
+	memset(&annotation_queue_message, 0, sizeof(annotation_queue_message));
 
 	carmen_test_alloc(carmen_rddf_poses_ahead);
 	carmen_test_alloc(annotations);
