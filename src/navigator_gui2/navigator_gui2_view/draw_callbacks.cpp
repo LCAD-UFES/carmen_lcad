@@ -19,6 +19,7 @@ gboolean on_drawArea_idle(void *data)
 
 	gtk_widget_draw(global_gui->controls_.drawArea, NULL);
 	gtk_widget_draw(global_gui->controls_.drawAreaCarPanel, NULL);
+
 	return TRUE;
 }
 
@@ -84,9 +85,6 @@ gboolean on_drawingAreaCarPanel_expose_event (GtkWidget       *widget,
 		printf ("error in gdk_gl_drawable_gl_begin\n");
 		return FALSE;
 	}
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	global_gui->draw_gl_components_car_panel();
 
 	if (gdk_gl_drawable_is_double_buffered (gldrawable))
 		gdk_gl_drawable_swap_buffers (gldrawable);
@@ -479,7 +477,10 @@ void on_menuDisplay_ShowAnnotations_toggled (GtkCheckMenuItem* togglebutton __at
 	global_gui->nav_panel_config->show_annotations = gtk_check_menu_item_get_active(togglebutton);
 
 	if (global_gui->nav_panel_config->show_annotations)
+	{
+		global_gui->load_annotations_images();
 		carmen_rddf_subscribe_annotation_message(&global_gui->rddf_annotation_msg, NULL, CARMEN_SUBSCRIBE_ALL);
+	}
 	else
 		carmen_rddf_subscribe_annotation_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
 }
@@ -967,8 +968,13 @@ int button_press_handler(GtkMapViewer		*the_map_view __attribute__ ((unused)),
 //extern "C" G_MODULE_EXPORT
 void draw_robot_objects(GtkMapViewer *the_map_view)
 {
-	//  int colour;
 	double pixel_size;
+	static double last_timestamp = 0.0;
+
+	double timestamp = carmen_get_time();
+	bool update_now = false;
+	if ((timestamp - last_timestamp) > 0.1)
+		update_now = true;
 
 	if ((global_gui == NULL) || (the_map_view->internal_map == NULL))
 		return;
@@ -1072,18 +1078,18 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 		global_gui->draw_path(global_gui->path, global_gui->num_path_points, global_gui->path_colour, carmen_black, the_map_view);
 
 	if (global_gui->nav_panel_config->show_dynamic_objects)
-	{
 		global_gui->draw_moving_objects(the_map_view);
-	}
 
 	if (global_gui->nav_panel_config->show_dynamic_points)
-	{
 		global_gui->draw_moving_points(the_map_view, pixel_size);
-	}
 
 	if (global_gui->nav_panel_config->show_annotations)
-	{
 		global_gui->draw_annotations(the_map_view, pixel_size);
+
+	if (update_now)
+	{
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		global_gui->draw_gl_components_car_panel();
 	}
 
 	global_gui->draw_path_vector(the_map_view);

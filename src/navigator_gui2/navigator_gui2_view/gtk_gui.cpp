@@ -299,7 +299,10 @@ namespace View
 			carmen_mapper_subscribe_virtual_laser_message(&virtual_laser_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
 
 		if (nav_panel_config->show_annotations)
+		{
+			load_annotations_images();
 			carmen_rddf_subscribe_annotation_message(&rddf_annotation_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+		}
 	}
 
 	void GtkGui::navigator_graphics_initialize(int argc, char **argv, carmen_localize_ackerman_globalpos_message *msg,
@@ -2287,33 +2290,38 @@ namespace View
 	}
 
 	void
+	GtkGui::load_annotations_images()
+	{
+
+	}
+
+	void
 	GtkGui::draw_annotations(GtkMapViewer *the_map_view, double pixel_size)
 	{
-		if (nav_panel_config->show_annotations)
-		{
-//			int i;
-//			for (i = 0; i < virtual_laser_msg.num_positions; i++)
-//			{
-//				carmen_world_point_t world_point;
-//				world_point.pose.x = virtual_laser_msg.positions[i].x;
-//				world_point.pose.y = virtual_laser_msg.positions[i].y;
-//				world_point.pose.theta = 0.0;
-//				world_point.map = the_map_view->internal_map;
-//
-//				carmen_map_graphics_draw_circle(the_map_view, &carmen_colors[(int) virtual_laser_msg.colors[i]], TRUE, &world_point, pixel_size * 2.0);
-//			}
+		carmen_world_point_t world_point;
+		world_point.pose.x = rddf_annotation_msg.annotation_point.x;
+		world_point.pose.y = rddf_annotation_msg.annotation_point.y;
+		world_point.pose.theta = rddf_annotation_msg.annotation_orientation;
+		world_point.map = the_map_view->internal_map;
+//		printf("x %lf, y %lf, theta %lf\n", world_point.pose.x, world_point.pose.y, world_point.pose.theta);
 
-			carmen_world_point_t world_point;
-			world_point.pose.x = virtual_laser_msg.positions[0].x;
-			world_point.pose.y = virtual_laser_msg.positions[0].y;
-			world_point.pose.theta = 0.0;
-			world_point.map = the_map_view->internal_map;
+		carmen_world_point_t start, end;
+		double theta = world_point.pose.theta + M_PI / 2.0;
+		start.pose.x = world_point.pose.x + 10.0 * cos(theta);
+		start.pose.y = world_point.pose.y + 10.0 * sin(theta);
 
-			carmen_map_graphics_draw_image(the_map_view, func(), &world_point, 15, 15);
+		theta = world_point.pose.theta - M_PI / 2.0;
+		end.pose.x = world_point.pose.x + 10.0 * cos(theta);
+		end.pose.y = world_point.pose.y + 10.0 * sin(theta);
 
-//			if (i != 0)
-				display_needs_updating = 1;
-		}
+		start.map = end.map = world_point.map;
+		start.pose.theta = end.pose.theta = world_point.pose.theta;
+
+		carmen_map_graphics_draw_line(the_map_view, &carmen_grey, &start, &end);
+
+		carmen_map_graphics_draw_image(the_map_view, func(), &end, 15, 15);
+
+		display_needs_updating = 1;
 	}
 
 	void

@@ -256,6 +256,8 @@ namespace View
 
 		carmen_rddf_annotation_message rddf_annotation_msg;
 
+		GdkImage *annotation_image[MAX_TYPE][MAX_CODE];
+
 		carmen_robot_ackerman_road_velocity_control_message road_velocity_control;
 
 		carmen_rddf_waypoint* near_rddf_point;
@@ -371,6 +373,8 @@ namespace View
 
 		void save_rddf_to_file(char *rddf_filename);
 		void load_rddf_from_file(char *rddf_filename);
+
+		void load_annotations_images();
 	};
 }
 

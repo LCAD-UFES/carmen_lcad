@@ -664,6 +664,9 @@ void carmen_map_graphics_draw_image(GtkMapViewer *map_view, GdkImage *image, car
 	if (world_to_screen(world_point, &point, map_view) == -1)
 		return;
 
+	if (image == NULL)
+		return;
+
 	rect.x = carmen_round(point.x);
 	rect.y = carmen_round(point.y);
 
