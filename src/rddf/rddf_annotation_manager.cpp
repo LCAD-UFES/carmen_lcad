@@ -8,6 +8,8 @@ using namespace std;
 
 static char *annotation_filename;
 vector<carmen_rddf_add_annotation_message> annotation_queue;
+carmen_rddf_annotation_message annotation_queue_message;
+
 
 void
 carmen_annotation_manager_shutdown_module(int signo)
@@ -22,10 +24,32 @@ carmen_annotation_manager_shutdown_module(int signo)
 
 
 void
-publish_new_annotation(carmen_rddf_add_annotation_message new_annotation)
+publish_annotation_queue(vector<carmen_rddf_add_annotation_message> &annotations_to_publish)
 {
-	// to interface updates
-	carmen_rddf_publish_annotation_message(new_annotation.annotation_point, new_annotation.annotation_orientation, new_annotation.annotation_description, new_annotation.annotation_type, new_annotation.annotation_code);
+	IPC_RETURN_TYPE err;
+
+	if (annotation_queue_message.annotations == NULL || annotation_queue_message.num_annotations == 0)
+		annotation_queue_message.annotations = (carmen_annotation_t*) calloc (annotations_to_publish.size(), sizeof(carmen_annotation_t));
+	else if (annotation_queue_message.num_annotations != (int) annotations_to_publish.size())
+		annotation_queue_message.annotations = (carmen_annotation_t*) realloc (annotation_queue_message.annotations, annotations_to_publish.size() * sizeof(carmen_annotation_t));
+
+	annotation_queue_message.num_annotations = annotations_to_publish.size();
+
+	for (size_t i = 0; i < annotations_to_publish.size(); i++)
+	{
+		annotation_queue_message.annotations[i].annotation_code = annotations_to_publish[i].annotation_code;
+		strcpy(annotation_queue_message.annotations[i].annotation_description, annotations_to_publish[i].annotation_description);
+		annotation_queue_message.annotations[i].annotation_orientation = annotations_to_publish[i].annotation_orientation;
+		annotation_queue_message.annotations[i].annotation_point = annotations_to_publish[i].annotation_point;
+		annotation_queue_message.annotations[i].annotation_type = annotations_to_publish[i].annotation_type;
+	}
+
+	annotation_queue_message.host = carmen_get_host();
+	annotation_queue_message.timestamp = carmen_get_time();
+
+	err = IPC_publishData(CARMEN_RDDF_ANNOTATION_MESSAGE_NAME, &annotation_queue_message);
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_ANNOTATION_MESSAGE_FMT);
+
 }
 
 
@@ -90,7 +114,7 @@ carmen_rddf_add_annotation_handler(carmen_rddf_add_annotation_message *message)
 	if (!annotation_already_added(new_annotation) && is_a_valid_point(new_annotation))
 	{
 		annotation_queue.push_back(new_annotation);
-		publish_new_annotation(new_annotation);
+		publish_annotation_queue(annotation_queue);
 	}
 	else
 	{
@@ -152,6 +176,8 @@ carmen_annotation_manager_subscribe_messages()
 void
 carmen_annotation_manager_initialize()
 {
+	memset(&annotation_queue_message, 0, sizeof(annotation_queue_message));
+
 	// save the annotation file every second to avoid data loss
 	carmen_ipc_addPeriodicTimer(1.0, (TIMER_HANDLER_TYPE) carmen_annotation_manager_timer_handler,
 			annotation_filename);
