@@ -6,8 +6,9 @@
 
 using namespace std;
 
+
 static char *annotation_filename;
-vector<carmen_rddf_add_annotation_message> annotation_queue;
+vector<carmen_annotation_t> annotation_queue;
 carmen_rddf_annotation_message annotation_queue_message;
 
 
@@ -24,7 +25,7 @@ carmen_annotation_manager_shutdown_module(int signo)
 
 
 void
-publish_annotation_queue(vector<carmen_rddf_add_annotation_message> &annotations_to_publish)
+publish_annotation_queue(vector<carmen_annotation_t> &annotations_to_publish)
 {
 	IPC_RETURN_TYPE err;
 
@@ -38,7 +39,11 @@ publish_annotation_queue(vector<carmen_rddf_add_annotation_message> &annotations
 	for (size_t i = 0; i < annotations_to_publish.size(); i++)
 	{
 		annotation_queue_message.annotations[i].annotation_code = annotations_to_publish[i].annotation_code;
-		strcpy(annotation_queue_message.annotations[i].annotation_description, annotations_to_publish[i].annotation_description);
+		// it's ok copy the pointer here
+		//if (annotation_queue_message.annotations[i].annotation_description == NULL)
+			//annotation_queue_message.annotations[i].annotation_description = (char *) calloc (strlen(annotations_to_publish[i].annotation_description) + 1, sizeof(char));
+		//strcpy(annotation_queue_message.annotations[i].annotation_description, annotations_to_publish[i].annotation_description);
+		annotation_queue_message.annotations[i].annotation_description = annotations_to_publish[i].annotation_description;
 		annotation_queue_message.annotations[i].annotation_orientation = annotations_to_publish[i].annotation_orientation;
 		annotation_queue_message.annotations[i].annotation_point = annotations_to_publish[i].annotation_point;
 		annotation_queue_message.annotations[i].annotation_type = annotations_to_publish[i].annotation_type;
@@ -54,7 +59,7 @@ publish_annotation_queue(vector<carmen_rddf_add_annotation_message> &annotations
 
 
 int
-is_a_valid_point(carmen_rddf_add_annotation_message a)
+is_a_valid_point(carmen_annotation_t a)
 {
 	// Tiago disse que quando o ponto clicado esta no infinito, ele retorna 0.0
 	if ((a.annotation_point.x == 0.0) && (a.annotation_point.y == 0.0) && (a.annotation_point.z == 0.0))
@@ -65,7 +70,7 @@ is_a_valid_point(carmen_rddf_add_annotation_message a)
 
 
 int
-is_the_same_point(carmen_rddf_add_annotation_message a, carmen_rddf_add_annotation_message b)
+is_the_same_point(carmen_annotation_t a, carmen_annotation_t b)
 {
 	double delta_x, delta_y, delta_z, dist;
 
@@ -82,7 +87,7 @@ is_the_same_point(carmen_rddf_add_annotation_message a, carmen_rddf_add_annotati
 
 
 int
-annotation_already_added(carmen_rddf_add_annotation_message new_annotation)
+annotation_already_added(carmen_annotation_t new_annotation)
 {
 	uint i;
 
@@ -97,18 +102,13 @@ annotation_already_added(carmen_rddf_add_annotation_message new_annotation)
 void
 carmen_rddf_add_annotation_handler(carmen_rddf_add_annotation_message *message)
 {
-	carmen_rddf_add_annotation_message new_annotation;
+	carmen_annotation_t new_annotation;
 
 	new_annotation.annotation_type = message->annotation_type;
 	new_annotation.annotation_orientation = message->annotation_orientation;
 	new_annotation.annotation_code = message->annotation_code;
 	new_annotation.annotation_point = message->annotation_point;
-	new_annotation.timestamp = message->timestamp;
-
-	new_annotation.host = (char *) calloc(strlen(message->host), sizeof (char));
-	new_annotation.annotation_description = (char *) calloc(strlen(message->annotation_description), sizeof (char));
-
-	strcpy(new_annotation.host, message->host);
+	new_annotation.annotation_description = (char *) calloc (strlen(message->annotation_description) + 1, sizeof(char));
 	strcpy(new_annotation.annotation_description, message->annotation_description);
 
 	if (!annotation_already_added(new_annotation) && is_a_valid_point(new_annotation))
@@ -118,7 +118,6 @@ carmen_rddf_add_annotation_handler(carmen_rddf_add_annotation_message *message)
 	}
 	else
 	{
-		free(new_annotation.host);
 		free(new_annotation.annotation_description);
 	}
 }
@@ -129,7 +128,6 @@ carmen_annotation_manager_timer_handler(char *annotation_filename)
 {
 	uint i;
 	FILE *f;
-    IPC_RETURN_TYPE err;
 
 	f = fopen(annotation_filename, "w");
 
@@ -154,12 +152,9 @@ carmen_annotation_manager_timer_handler(char *annotation_filename)
 				annotation_queue[i].annotation_point.y,
 				annotation_queue[i].annotation_point.z
 		);
-
-		annotation_queue[i].timestamp = carmen_get_time() + i;
-		err = IPC_publishData(CARMEN_RDDF_ANNOTATION_MESSAGE_NAME, &(annotation_queue[i]));
-		carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_ANNOTATION_MESSAGE_FMT);
 	}
 
+	publish_annotation_queue(annotation_queue);
 	fclose(f);
 }
 
@@ -194,10 +189,10 @@ carmen_annotation_manager_load_annotations()
 	{
 		while (!feof(f))
 		{
-			carmen_rddf_add_annotation_message message;
-			message.annotation_description = (char *) calloc(64, sizeof (char));
+			carmen_annotation_t message;
+			message.annotation_description = (char *) calloc(128, sizeof (char));
 
-			fscanf(f, "%s\t%d\t%d\t%lf\t%lf\t%lf\t%lf\n",
+			int n = fscanf(f, "%s\t%d\t%d\t%lf\t%lf\t%lf\t%lf\n",
 					message.annotation_description,
 					&message.annotation_type,
 					&message.annotation_code,
@@ -207,10 +202,10 @@ carmen_annotation_manager_load_annotations()
 					&message.annotation_point.z
 			);
 
-			message.host = carmen_get_host();
-			message.timestamp = carmen_get_time();
+			if (n != 7)
+				break;
+
 			annotation_queue.push_back(message);
-			//publish_new_annotation(message);
 		}
 
 		fclose(f);

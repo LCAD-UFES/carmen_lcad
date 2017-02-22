@@ -282,15 +282,31 @@ carmen_rddf_play_publish_annotation_queue()
 {
 	IPC_RETURN_TYPE err;
 
+	// *************************************************************************************************************************************
+	// TODO: corrigir o mem leak que acontece quando annotations_to_publish.size() eh positivo, depois vira 0, e depois volta a ser positivo.
+	// *************************************************************************************************************************************
+
 	if (annotation_queue_message.annotations == NULL || annotation_queue_message.num_annotations == 0)
+	{
 		annotation_queue_message.annotations = (carmen_annotation_t*) calloc (annotations_to_publish.size(), sizeof(carmen_annotation_t));
+
+		if (annotation_queue_message.annotations)
+			exit(printf("Allocation error in carmen_rddf_play_publish_annotation_queue()::1\n"));
+	}
 	else if (annotation_queue_message.num_annotations != (int) annotations_to_publish.size())
+	{
 		annotation_queue_message.annotations = (carmen_annotation_t*) realloc (annotation_queue_message.annotations, annotations_to_publish.size() * sizeof(carmen_annotation_t));
+
+		if (annotation_queue_message.annotations)
+			exit(printf("Allocation error in carmen_rddf_play_publish_annotation_queue()::2\n"));
+	}
 
 	annotation_queue_message.num_annotations = annotations_to_publish.size();
 
 	for (size_t i = 0; i < annotations_to_publish.size(); i++)
+	{
 		memcpy(&(annotation_queue_message.annotations[i]), &(annotation_queue[annotations_to_publish[i]]), sizeof(carmen_annotation_t));
+	}
 
 	annotation_queue_message.host = carmen_get_host();
 	annotation_queue_message.timestamp = carmen_get_time();
@@ -485,7 +501,7 @@ carmen_rddf_play_load_annotation_file()
 	while(!feof(f))
 	{
 		carmen_annotation_t annotation;
-		annotation.annotation_description = (char *) calloc (64, sizeof(char));
+		annotation.annotation_description = (char *) calloc (128, sizeof(char));
 
 		fscanf(f, "%s\t%d\t%d\t%lf\t%lf\t%lf\t%lf\n",
 			annotation.annotation_description,
