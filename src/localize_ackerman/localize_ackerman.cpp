@@ -109,8 +109,8 @@ carmen_pose_3D_t velodyne_pose;
 cell_coords_t **map_cells_hit_by_each_rays = NULL;
 
 carmen_point_t g_std;
-int g_reinitiaze_particles = 10;
-int number_of_threads = 10;
+int g_reinitiaze_particles = 15000;
+int number_of_threads = 1;
 
 static int
 get_fused_odometry_index_by_timestamp(double timestamp)
@@ -314,7 +314,7 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 	if (g_reinitiaze_particles)
 	{
 		g_reinitiaze_particles--;
-		return;
+//		return;
 	}
 		
 	globalpos.timestamp = timestamp;
@@ -706,7 +706,7 @@ carmen_localize_ackerman_initialize_message_handler(carmen_localize_ackerman_ini
 			initialize_msg->num_modes, initialize_msg->mean, initialize_msg->std);
 
 		g_std = initialize_msg->std[0];
-		g_reinitiaze_particles = 10;
+		g_reinitiaze_particles = 1000;
 
 		filter->last_timestamp = initialize_msg->timestamp;
 

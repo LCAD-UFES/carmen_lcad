@@ -733,8 +733,9 @@ convert_particles_log_weights_to_prob(carmen_localize_ackerman_particle_filter_p
 
 	for (int i = 0; i < filter->param->num_particles; i++)
 	{
-		filter->particles[i].weight = exp(filter->particles[i].weight - max_weight);
-//		printf("p %.15lf\n", filter->particles[i].weight);
+		double weight = filter->particles[i].weight;
+		filter->particles[i].weight = exp(weight - max_weight);
+//		printf("%04d, p %.15lf, mw %lf, w %lf\n", i, filter->particles[i].weight, max_weight, weight);
 	}
 }
 
@@ -1393,6 +1394,7 @@ carmen_localize_ackerman_function_velodyne_evaluation(
 	return w;
 }
 
+#include <carmen/moving_objects_interface.h>
 
 void
 carmen_localize_ackerman_velodyne_correction(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_p localize_map,
@@ -1408,6 +1410,30 @@ carmen_localize_ackerman_velodyne_correction(carmen_localize_ackerman_particle_f
 		case 0:
 			// The localize_map used in this function must be in log likelihood
 			localize_map_correlation_correction(filter, localize_map, local_map);
+
+			// para ver este mapa no navigator_gui2 coloque CARMEN_GRAPHICS_LOG_ODDS | CARMEN_GRAPHICS_INVERT na linha 930 de gtk_gui.cpp
+//			carmen_moving_objects_map_message moving_objects_map_message;
+//			moving_objects_map_message.complete_map = localize_map->complete_prob;
+//			moving_objects_map_message.size = localize_map->config.x_size * localize_map->config.y_size;
+//			moving_objects_map_message.config = localize_map->config;
+//			moving_objects_map_message.timestamp = carmen_get_time();
+//			moving_objects_map_message.host = carmen_get_host();
+//			carmen_moving_objects_map_publish_message(&moving_objects_map_message);
+
+//			carmen_moving_objects_map_message moving_objects_map_message;
+//			carmen_map_t temp_map;
+//			carmen_grid_mapping_create_new_map(&temp_map, local_map->config.x_size, local_map->config.y_size, local_map->config.resolution);
+//			memset(temp_map.complete_map, 0, temp_map.config.x_size * temp_map.config.y_size * sizeof(double));
+//			carmen_prob_models_uncompress_compact_map(&temp_map, local_map);
+//			moving_objects_map_message.complete_map = temp_map.complete_map;
+//			moving_objects_map_message.size = temp_map.config.x_size * temp_map.config.y_size;
+//			moving_objects_map_message.config = temp_map.config;
+//			moving_objects_map_message.timestamp = carmen_get_time();
+//			moving_objects_map_message.host = carmen_get_host();
+//			carmen_moving_objects_map_publish_message(&moving_objects_map_message);
+//			free(temp_map.complete_map);
+//			free(temp_map.map);
+
 //			carmen_map_t temp_map;
 //			temp_map.config = localize_map->config;
 //			temp_map.complete_map = localize_map->complete_prob;

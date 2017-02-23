@@ -73,8 +73,7 @@ typedef struct {
   double odom_a1, odom_a2, odom_a3, odom_a4;
 #endif
   double occupied_prob;
-  double lmap_std;
-  double global_lmap_std, global_evidence_weight, global_distance_threshold;
+  double global_evidence_weight, global_distance_threshold;
   int global_test_samples;
   int use_sensor;
 
@@ -95,8 +94,13 @@ typedef struct {
   double phi_noise_velocity;
   int use_velocity_prediction;
 
+  double lmap_std;
   double tracking_beam_minlikelihood;
+  double tracking_beam_maxlikelihood;
+
+  double global_lmap_std;
   double global_beam_minlikelihood;
+  double global_beam_maxlikelihood;
   
   double xy_uncertainty_due_to_grid_resolution;
   double yaw_uncertainty_due_to_grid_resolution;

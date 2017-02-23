@@ -83,9 +83,7 @@ navigator_status_handler(carmen_navigator_ackerman_status_message *msg)
 		gui->navigator_graphics_update_display(NULL, &last_goal, msg->autonomous);
 	}
 	else
-	{
 		gui->navigator_graphics_update_display(NULL, NULL, msg->autonomous);
-	}
 }
 
 
@@ -103,9 +101,7 @@ navigator_ackerman_status_handler(carmen_navigator_ackerman_status_message *msg)
 	autonomous = msg->autonomous;
 
 	if (!is_graphics_up)
-	{
 		return;
-	}
 
 	if (msg->goal_set)
 	{
@@ -116,9 +112,7 @@ navigator_ackerman_status_handler(carmen_navigator_ackerman_status_message *msg)
 		gui->navigator_graphics_update_display(NULL, &last_goal, msg->autonomous);
 	}
 	else
-	{
 		gui->navigator_graphics_update_display(NULL, NULL, msg->autonomous);
-	}
 }
 
 
@@ -396,9 +390,7 @@ copy_grid_mapping_to_map(carmen_mapper_map_message *grid_map)
 	map->map = (double **)calloc(grid_map->config.x_size, sizeof(double *));
 
 	for (i = 0; i < map->config.x_size; i++)
-	{
 		map->map[i] = map->complete_map + i * map->config.y_size;
-	}
 
 	return map;
 }
@@ -419,9 +411,7 @@ copy_grid_mapping_to_map2(carmen_moving_objects_map_message *grid_map)
 	map->map = (double **)calloc(grid_map->config.x_size, sizeof(double *));
 
 	for (i = 0; i < map->config.x_size; i++)
-	{
 		map->map[i] = map->complete_map + i * map->config.y_size;
-	}
 
 	return map;
 }
@@ -484,11 +474,8 @@ offline_map_update_handler(carmen_mapper_map_message *new_map)
 		gui->navigator_graphics_redraw_superimposed();
 	}
 
-	if (gui->navigator_graphics_update_map() &&
-			is_graphics_up && map_type == CARMEN_OFFLINE_MAP_v)
-	{
+	if (gui->navigator_graphics_update_map() && is_graphics_up && map_type == CARMEN_OFFLINE_MAP_v)
 		gui->navigator_graphics_change_map(offline_map);
-	}
 }
 
 
@@ -520,12 +507,8 @@ mapper_handler(carmen_mapper_map_message *message)
 		gui->navigator_graphics_redraw_superimposed();
 	}
 
-	if (gui->navigator_graphics_update_map() &&
-			is_graphics_up &&
-			map_type == CARMEN_NAVIGATOR_MAP_v)
-	{
+	if (gui->navigator_graphics_update_map() && is_graphics_up && map_type == CARMEN_NAVIGATOR_MAP_v)
 		gui->navigator_graphics_change_map(map);
-	}
 }
 
 
@@ -557,12 +540,8 @@ grid_mapping_moving_objects_raw_map_handler(carmen_moving_objects_map_message *m
 		gui->navigator_graphics_redraw_superimposed();
 	}
 
-	if (gui->navigator_graphics_update_map() &&
-			is_graphics_up &&
-			map_type == CARMEN_MOVING_OBJECTS_MAP_v)
-	{
+	if (gui->navigator_graphics_update_map() && is_graphics_up && map_type == CARMEN_MOVING_OBJECTS_MAP_v)
 		gui->navigator_graphics_change_map(moving_objects_map);
-	}
 }
 
 
@@ -606,9 +585,7 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 	if (gui->navigator_graphics_update_map() && map_type == CARMEN_COST_MAP_v)
 	{
 		if (is_graphics_up)
-		{
 			gui->navigator_graphics_change_map(cost_map);
-		}
 	}
 }
 
@@ -648,9 +625,7 @@ map_server_compact_lane_map_message_handler(carmen_map_server_compact_lane_map_m
 	if (gui->navigator_graphics_update_map() && map_type == CARMEN_LANE_MAP_v)
 	{
 		if (is_graphics_up)
-		{
 			gui->navigator_graphics_change_map(lane_map);
-		}
 	}
 }
 
@@ -779,10 +754,7 @@ navigator_stop_moving(void)
 		carmen_verbose("Said stop\n");
 	}
 	else
-	{
 		carmen_verbose("Could not say stop\n");
-	}
-
 }
 
 
@@ -796,10 +768,7 @@ navigator_start_moving(void)
 		IPC_listen(50);
 	}
 	else
-	{
 		carmen_verbose("could not say go!\n");
-	}
-
 }
 
 
@@ -842,18 +811,12 @@ globalpos_ack_handler(carmen_localize_ackerman_globalpos_message *msg)
 	new_robot.r_vel = msg->phi;
 
 	if (!is_graphics_up)
-	{
 		return;
-	}
 
 	if (goal_set)
-	{
 		gui->navigator_graphics_update_display(&new_robot, &last_goal, autonomous);
-	}
 	else
-	{
 		gui->navigator_graphics_update_display(&new_robot, NULL, autonomous);
-	}
 }
 
 
@@ -867,8 +830,7 @@ truepos_handler(carmen_simulator_ackerman_truepos_message *msg)
 static void
 objects_handler(carmen_simulator_ackerman_objects_message *msg)
 {
-	gui->navigator_graphics_update_simulator_objects
-	(msg->num_objects, msg->objects_list);
+	gui->navigator_graphics_update_simulator_objects(msg->num_objects, msg->objects_list);
 }
 
 // handler da mensagem do moving_objects
@@ -882,8 +844,7 @@ init_moving_objects_tracking(int c_num_point_clouds, int p_num_point_clouds)
 //		moving_objects_tracking = (moving_objects_tracking_t*) malloc
 //				(c_num_point_clouds * sizeof(moving_objects_tracking_t));
 	}
-	moving_objects_tracking = (moving_objects_tracking_t*) malloc
-			(c_num_point_clouds * sizeof(moving_objects_tracking_t));
+	moving_objects_tracking = (moving_objects_tracking_t*) malloc(c_num_point_clouds * sizeof(moving_objects_tracking_t));
 }
 
 static void
@@ -893,9 +854,7 @@ carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_c
 
 	last_moving_objects_point_clouds++;
 	if (last_moving_objects_point_clouds >= moving_objects_point_clouds_size)
-	{
 		last_moving_objects_point_clouds = 0;
-	}
 
 	current_num_point_clouds = moving_objects_point_clouds_message->num_point_clouds;
 
@@ -965,7 +924,6 @@ odometry_handler(carmen_base_ackerman_odometry_message *msg)
 {
 	last_phi = msg->phi;
 	last_v = msg->v;
-
 }
 
 
@@ -978,29 +936,20 @@ display_config_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 	carmen_navigator_ackerman_display_config_message msg;
 
 	formatter = IPC_msgInstanceFormatter(msgRef);
-	err = IPC_unmarshallData(formatter, callData, &msg,
-			sizeof(carmen_navigator_ackerman_display_config_message));
+	err = IPC_unmarshallData(formatter, callData, &msg, sizeof(carmen_navigator_ackerman_display_config_message));
 	IPC_freeByteArray(callData);
 
-	carmen_test_ipc_return(err, "Could not unmarshall",
-			IPC_msgInstanceName(msgRef));
+	carmen_test_ipc_return(err, "Could not unmarshall", IPC_msgInstanceName(msgRef));
 
 	if (msg.reset_all_to_defaults)
-	{
 		gui->navigator_graphics_reset();
-	}
 	else
-	{
-		gui->navigator_graphics_display_config
-		(msg.attribute, msg.value, msg.status_message);
-	}
+		gui->navigator_graphics_display_config(msg.attribute, msg.value, msg.status_message);
 
 	free(msg.attribute);
 
 	if (msg.status_message)
-	{
 		free(msg.status_message);
-	}
 }
 
 

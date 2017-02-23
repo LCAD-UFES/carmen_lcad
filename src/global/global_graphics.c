@@ -280,6 +280,7 @@ unsigned char *carmen_graphics_convert_to_image(carmen_map_p map, int flags)
   int enhance_contrast = flags & CARMEN_GRAPHICS_ENHANCE_CONTRAST;
   int grayscale = flags & CARMEN_GRAPHICS_GRAYSCALE;
   int remove_minus_one = flags & CARMEN_GRAPHICS_REMOVE_MINUS_ONE;
+  int log_odds = flags & CARMEN_GRAPHICS_LOG_ODDS;
 
   if (map == NULL) {
     carmen_warn("carmen_graphics_convert_to_image was passed NULL map.\n");
@@ -316,6 +317,13 @@ unsigned char *carmen_graphics_convert_to_image(carmen_map_p map, int flags)
 			  value = (value - min_val) / (max_val - min_val);
 			  for (index = 0; index < 3; index++)
 				  *(image_ptr++) = value * 255;
+		  }
+		  else if (log_odds) {
+			  double p = 1.0L - (1.0L / (1.0L + expl((long double) value)));
+			  if (invert)
+				  p = 1.0 - p;
+			  for (index = 0; index < 3; index++)
+				  *(image_ptr++) = p * 255;
 		  }
 		  else if (value < 0 && value > -1.5) {
 			  if (black_and_white) {
