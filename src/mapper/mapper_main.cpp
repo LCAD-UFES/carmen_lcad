@@ -179,18 +179,23 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 static void
 carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *globalpos_message)
 {
-	double distance_to_annotation;
-
 	if (visual_odometry_is_global_pos)
 		interpolator.AddMessageToInterpolationList(globalpos_message);
 	else
 		mapper_set_robot_pose_into_the_map(globalpos_message, update_cells_below_car);
 
 	// Map annotations handling
-	distance_to_annotation = DIST2D(last_rddf_annotation_message.annotation_point, globalpos_history[last_globalpos].pose.position);
-	if (((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
-		 (last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)) &&
-		(distance_to_annotation < 35.0))
+	double distance_to_nearest_annotation = 1000.0;
+	for (int i = 0; i < last_rddf_annotation_message.num_annotations; i++)
+	{
+		double distance_to_annotation = DIST2D(last_rddf_annotation_message.annotations[i].annotation_point,
+				globalpos_history[last_globalpos].pose.position);
+		if (((last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
+			 (last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)) &&
+			 (distance_to_annotation < distance_to_nearest_annotation))
+			distance_to_nearest_annotation = distance_to_annotation;
+	}
+	if (distance_to_nearest_annotation < 35.0)
 		robot_near_bump_or_barrier = 1;
 	else
 		robot_near_bump_or_barrier = 0;
@@ -481,11 +486,7 @@ ultrasonic_sensor_message_handler(carmen_ultrasonic_sonar_sensor_message *messag
 static void
 rddf_annotation_message_handler(carmen_rddf_annotation_message *message)
 {
-	double distance_to_last_annotation = DIST2D(last_rddf_annotation_message.annotation_point, globalpos_history[last_globalpos].pose.position);
-	double distance_to_new_annotation = DIST2D(message->annotation_point, globalpos_history[last_globalpos].pose.position);
-
-	if (distance_to_new_annotation < distance_to_last_annotation)
-		last_rddf_annotation_message = *message; // TODO: tratar isso direito
+	last_rddf_annotation_message = *message;
 }
 
 

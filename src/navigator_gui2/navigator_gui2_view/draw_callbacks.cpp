@@ -477,10 +477,7 @@ void on_menuDisplay_ShowAnnotations_toggled (GtkCheckMenuItem* togglebutton __at
 	global_gui->nav_panel_config->show_annotations = gtk_check_menu_item_get_active(togglebutton);
 
 	if (global_gui->nav_panel_config->show_annotations)
-	{
-		global_gui->load_annotations_images();
 		carmen_rddf_subscribe_annotation_message(&global_gui->rddf_annotation_msg, NULL, CARMEN_SUBSCRIBE_ALL);
-	}
 	else
 		carmen_rddf_subscribe_annotation_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
 }

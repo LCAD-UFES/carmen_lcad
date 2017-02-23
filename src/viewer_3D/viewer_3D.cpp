@@ -294,7 +294,7 @@ get_position_offset(void)
 static void
 rddf_annotation_handler(carmen_rddf_annotation_message *msg)
 {
-	for (int i = 0; i < annotations.size(); i++)
+	for (unsigned int i = 0; i < annotations.size(); i++)
 		if (annotations[i].annotation_description)
 			free(annotations[i].annotation_description);
 
@@ -2801,20 +2801,20 @@ set_flag_viewer_3D(int flag_num, int value)
             if (value == 0)
             {
                 carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation,
-                		rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN),
-						RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN, RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_BUMP);
+                		rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_BUMP),
+						RDDF_ANNOTATION_TYPE_BUMP, RDDF_ANNOTATION_CODE_NONE);
             }
             else if (value == 20)
             {
                 carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation,
                 		rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN),
-						RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN, RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_SPEED_20);
+						RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN, RDDF_ANNOTATION_CODE_SPEED_LIMIT_20);
             }
             else if (value == 30)
             {
                 carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation,
                 		rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN),
-						RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN, RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_SPEED_30);
+						RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN, RDDF_ANNOTATION_CODE_SPEED_LIMIT_30);
             }
         }
         break;

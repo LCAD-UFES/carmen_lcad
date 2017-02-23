@@ -206,7 +206,7 @@ carmen_check_for_annotations(double x, double y, double theta __attribute__((unu
 		// TODO: criar uma forma de buscar somente as anotacoes na mao correta
 		// *******************************************************************
 
-		if (dist < 300.0)// TODO: Alberto: Isso depende da velocidade do carro... Quando a velocidade eh maior que 60Km/h este valor esta ruim...
+		if (dist < 300.0)
 			annotations_to_publish.push_back(i);
 	}
 }
@@ -282,31 +282,29 @@ carmen_rddf_play_publish_annotation_queue()
 {
 	IPC_RETURN_TYPE err;
 
-	// *************************************************************************************************************************************
-	// TODO: corrigir o mem leak que acontece quando annotations_to_publish.size() eh positivo, depois vira 0, e depois volta a ser positivo.
-	// *************************************************************************************************************************************
-
-	if (annotation_queue_message.annotations == NULL || annotation_queue_message.num_annotations == 0)
+	if (annotations_to_publish.size() == 0)
 	{
-		annotation_queue_message.annotations = (carmen_annotation_t*) calloc (annotations_to_publish.size(), sizeof(carmen_annotation_t));
+		return;
+	}
+	else if (annotation_queue_message.annotations == NULL)
+	{
+		annotation_queue_message.annotations = (carmen_annotation_t *) calloc(annotations_to_publish.size(), sizeof(carmen_annotation_t));
 
-		if (annotation_queue_message.annotations)
+		if (!annotation_queue_message.annotations)
 			exit(printf("Allocation error in carmen_rddf_play_publish_annotation_queue()::1\n"));
 	}
 	else if (annotation_queue_message.num_annotations != (int) annotations_to_publish.size())
 	{
-		annotation_queue_message.annotations = (carmen_annotation_t*) realloc (annotation_queue_message.annotations, annotations_to_publish.size() * sizeof(carmen_annotation_t));
+		annotation_queue_message.annotations = (carmen_annotation_t *) realloc(annotation_queue_message.annotations, annotations_to_publish.size() * sizeof(carmen_annotation_t));
 
-		if (annotation_queue_message.annotations)
+		if (!annotation_queue_message.annotations)
 			exit(printf("Allocation error in carmen_rddf_play_publish_annotation_queue()::2\n"));
 	}
 
 	annotation_queue_message.num_annotations = annotations_to_publish.size();
 
 	for (size_t i = 0; i < annotations_to_publish.size(); i++)
-	{
 		memcpy(&(annotation_queue_message.annotations[i]), &(annotation_queue[annotations_to_publish[i]]), sizeof(carmen_annotation_t));
-	}
 
 	annotation_queue_message.host = carmen_get_host();
 	annotation_queue_message.timestamp = carmen_get_time();

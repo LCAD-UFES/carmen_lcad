@@ -146,20 +146,6 @@ path_handler (carmen_navigator_gui_path_message *msg)
 	gui->navigator_graphics_update_path(msg->path, msg->path_length, msg->path_id);
 }
 
-
-static carmen_map_t *
-get_empty_map()
-{
-	carmen_map_t *empty_map;
-
-	empty_map = (carmen_map_t *) malloc(sizeof(carmen_map_t));
-	carmen_test_alloc(empty_map);
-
-	carmen_grid_mapping_initialize_map(empty_map, 10, 1.0);
-
-	return (empty_map);
-}
-
 static void
 navigator_get_empty_map()
 {
@@ -172,9 +158,7 @@ static void
 navigator_get_lane_map(int is_superimposed)
 {
 	if ((lane_map == NULL) || (lane_map->complete_map == NULL))
-	{
-		lane_map = get_empty_map();
-	}
+		return;
 
 	if (!is_superimposed)
 	{
@@ -192,9 +176,7 @@ static void
 navigator_get_cost_map(int is_superimposed)
 {
 	if ((cost_map == NULL) || (cost_map->complete_map == NULL))
-	{
-		cost_map = get_empty_map();
-	}
+		return;
 
 	if (!is_superimposed)
 	{
@@ -241,9 +223,7 @@ static void
 navigator_get_offline_map(int is_superimposed)
 {
 	if ((offline_map == NULL) || (offline_map->complete_map == NULL))
-	{
-		offline_map = get_empty_map();
-	}
+		return;
 
 	if (!is_superimposed)
 	{
@@ -262,9 +242,7 @@ static void
 navigator_get_grid_mapping(int is_superimposed)
 {
 	if ((map == NULL) || (map->complete_map == NULL))
-	{
-		return; //map = get_empty_map();
-	}
+		return;
 
 	if (!is_superimposed)
 	{
@@ -283,9 +261,7 @@ static void
 navigator_get_grid_mapping_moving_objects_map(int is_superimposed)
 {
 	if ((moving_objects_map == NULL) || (moving_objects_map->complete_map == NULL))
-	{
-		moving_objects_map = get_empty_map();
-	}
+		return;
 
 	if (!is_superimposed)
 	{
@@ -304,9 +280,7 @@ static void
 navigator_get_localize_map(int is_superimposed)
 {
 	if ((localize_map == NULL) || (localize_map->complete_map == NULL))
-	{
-		localize_map = get_empty_map();
-	}
+		return;
 
 	if (!is_superimposed)
 	{
@@ -325,9 +299,7 @@ static void
 navigator_get_remission_map(int is_superimposed)
 {
 	if ((remission_map == NULL) || (remission_map->complete_map == NULL))
-	{
-		remission_map = get_empty_map();
-	}
+		return;
 
 	if (!is_superimposed)
 	{
@@ -731,9 +703,7 @@ localize_map_update_handler(carmen_map_server_localize_map_message* message)
 	if (gui->navigator_graphics_update_map() && map_type == CARMEN_LOCALIZE_LMAP_v)
 	{
 		if (is_graphics_up)
-		{
 			gui->navigator_graphics_change_map(localize_map);
-		}
 	}
 
 	if (superimposedmap_type == CARMEN_REMISSION_MAP_v)
@@ -745,16 +715,7 @@ localize_map_update_handler(carmen_map_server_localize_map_message* message)
 	if (gui->navigator_graphics_update_map() && map_type == CARMEN_REMISSION_MAP_v)
 	{
 		if (is_graphics_up)
-		{
 			gui->navigator_graphics_change_map(remission_map);
-		}
-	}
-
-	if (gui->navigator_graphics_update_map() &&
-		is_graphics_up && map_type == CARMEN_REMISSION_MAP_v)
-	{
-		gui->navigator_graphics_display_map(&localize_all_maps.carmen_mean_remission_map, CARMEN_REMISSION_MAP_v);
-		//gui->navigator_graphics_change_map(&localize_all_maps.carmen_mean_remission_map);
 	}
 }
 
@@ -1094,6 +1055,7 @@ read_parameters(int argc, char *argv[],
 		{(char *) "navigator_panel", (char *) "show_command_path",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_command_path),	1, NULL},
 		{(char *) "navigator_panel", (char *) "show_motion_path",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_motion_path),	1, NULL},
 		{(char *) "navigator_panel", (char *) "show_dynamic_points",	CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_dynamic_points),	1, NULL},
+		{(char *) "navigator_panel", (char *) "show_annotations",		CARMEN_PARAM_ONOFF,  &(navigator_panel_config->show_annotations),	1, NULL},
 		{(char *) "navigator_panel", (char *) "use_ackerman",			CARMEN_PARAM_ONOFF,  &(navigator_panel_config->use_ackerman),		1, NULL},
 		{(char *) "navigator_panel", (char *) "localize_std_x",			CARMEN_PARAM_DOUBLE, &localize_std.x,								1, NULL},
 		{(char *) "navigator_panel", (char *) "localize_std_y",			CARMEN_PARAM_DOUBLE, &localize_std.y,								1, NULL},

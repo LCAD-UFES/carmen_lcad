@@ -4,6 +4,7 @@
 #include <prob_map.h>
 #include <carmen/grid_mapping.h>
 #include <carmen/mapper_interface.h>
+#include <carmen/rddf_messages.h>
 #include <carmen/global_graphics.h>
 #include <omp.h>
 
@@ -64,6 +65,8 @@ carmen_map_config_t map_config;
 double x_origin, y_origin; // map origin in meters
 
 static carmen_laser_laser_message flaser; // moving_objects
+
+extern carmen_rddf_annotation_message last_rddf_annotation_message;
 
 carmen_mapper_virtual_laser_message virtual_laser_message;
 
@@ -858,6 +861,8 @@ mapper_initialize(carmen_map_config_t *main_map_config, carmen_robot_ackerman_co
 	globalpos_initialized = 0; // Only considered initialized when first message is received
 
 	globalpos_history = (carmen_localize_ackerman_globalpos_message *) calloc(GLOBAL_POS_QUEUE_SIZE, sizeof(carmen_localize_ackerman_globalpos_message));
+
+	memset(&last_rddf_annotation_message, 0, sizeof(last_rddf_annotation_message));
 
 	memset(&virtual_laser_message, 0, sizeof(carmen_mapper_virtual_laser_message));
 //	virtual_laser_message.positions = (carmen_position_t *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(carmen_position_t));

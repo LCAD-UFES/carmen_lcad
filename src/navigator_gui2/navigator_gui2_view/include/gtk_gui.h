@@ -256,7 +256,7 @@ namespace View
 
 		carmen_rddf_annotation_message rddf_annotation_msg;
 
-		GdkImage *annotation_image[MAX_TYPE][MAX_CODE];
+		GdkImage *annotation_image[NUM_RDDF_ANNOTATION_TYPES][NUM_RDDF_ANNOTATION_CODES];
 
 		carmen_robot_ackerman_road_velocity_control_message road_velocity_control;
 
