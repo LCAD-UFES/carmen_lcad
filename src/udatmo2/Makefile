@@ -16,14 +16,24 @@ LFLAGS += \
 	-lparam_interface -lipc -lglobal \
 	-L$(CARMEN_HOME)/sharedlib/libtf/src -ltf
 
+ifeq ("$(CARMEN_LOGGING)","ON")
+CFLAGS += -DBOOST_LOG_DYN_LINK -DCARMEN_LOGGING_ON
+CXXFLAGS += -DBOOST_LOG_DYN_LINK -DCARMEN_LOGGING_ON
+LFLAGS += \
+	-lboost_log_setup \
+	-lboost_log \
+	-lboost_thread \
+	-lboost_system
+endif
+
 SOURCES = \
 	detector.cpp \
-	obstacles.cpp \
+	obstacle.cpp \
 	udatmo.cpp \
 	udatmo_interface.cpp \
 	udatmo_logger.cpp \
 	udatmo_main.cpp \
-	udatmo_memory.c
+	primitives.cpp
 
 PUBLIC_INCLUDES = \
 	udatmo.h \
@@ -44,9 +54,9 @@ TARGETS = \
 	udatmo \
 	udatmo_logger
 
-libudatmo.a: detector.o obstacles.o udatmo.o udatmo_interface.o udatmo_memory.o
+libudatmo.a: detector.o obstacle.o udatmo.o udatmo_interface.o primitives.o
 libudatmo_interface.a: udatmo_interface.o
-udatmo: detector.o obstacles.o udatmo.o udatmo_interface.o udatmo_main.o udatmo_memory.o
+udatmo: detector.o obstacle.o udatmo.o udatmo_interface.o udatmo_main.o primitives.o
 udatmo_logger: udatmo_logger.o udatmo_interface.o
 
 include ../Makefile.rules

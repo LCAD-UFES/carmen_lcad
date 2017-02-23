@@ -1,6 +1,6 @@
 #include "udatmo_interface.h"
 
-#include "udatmo_memory.h"
+#include "primitives.h"
 
 
 carmen_udatmo_moving_obstacles_message *carmen_udatmo_new_moving_obstacles_message(size_t size)

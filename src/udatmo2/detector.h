@@ -1,20 +1,11 @@
 #ifndef UDATMO_DETECTOR_H
 #define UDATMO_DETECTOR_H
 
-#include "obstacles.h"
-#include "observation.h"
-#include "udatmo_messages.h"
+#include "obstacle.h"
 
 #include <carmen/carmen.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
 #include <carmen/rddf_messages.h>
-
-#include <deque>
-#include <vector>
-
-#define GOAL_LIST_SIZE 1000
-
-#define MOVING_OBJECT_HISTORY_SIZE 40
 
 namespace udatmo
 {
@@ -23,6 +14,12 @@ class Detector
 {
 	/** @brief System configuration settings. */
 	carmen_robot_ackerman_config_t robot_config;
+
+	/** @brief Minimum number of hypothetical poses to consider ahead of the current one. */
+	int min_poses_ahead;
+
+	/** @brief Maximum number of hypothetical poses to consider ahead of the current one. */
+	int max_poses_ahead;
 
 	/** @brief Current robot pose, speed and phi as estimated by the localization module. */
 	carmen_ackerman_traj_point_t robot_pose;
@@ -33,23 +30,21 @@ class Detector
 	/** @brief Latest RDDF information. */
 	carmen_rddf_road_profile_message rddf;
 
-	/** @brief Minimum number of hypothetical poses to consider ahead of the current one. */
-	int min_poses_ahead;
+	/** @brief Sequence of observed obstacles. */
+	Observations observations;
 
-	/** @brief Maximum number of hypothetical poses to consider ahead of the current one. */
-	int max_poses_ahead;
-
-	/** @brief History of the front moving obstacle. */
-	std::deque<Observation> front_obstacle;
-
-	int compute_num_poses_ahead();
-
-	double speed_front();
+	/** @brief Sequence of detected obstacles. */
+	Obstacles obstacles;
 
 	/**
-	 * @brief Update obstacle speed estimates across its history.
+	 * @brief Update the observations sequence.
 	 */
-	void update_moving_object_velocity();
+	void observate();
+
+	/**
+	 * @brief Compute the number of RDDF poses ahead of the robot that must be considered.
+	 */
+	int posesAhead() const;
 
 public:
 	/**
@@ -58,19 +53,19 @@ public:
 	Detector();
 
 	/**
-	 * @brief Perform moving obstacle detection in the front of the car.
+	 * @brief Perform moving obstacle detection.
 	 */
-	Obstacles detect();
-
-	/**
-	 * @brief Setup detector parameters.
-	 */
-	void setup(const carmen_robot_ackerman_config_t &robot_config, int min_poses_ahead, int max_poses_ahead);
+	const Obstacles &detect();
 
 	/**
 	 * @brief Setup detector parameters through the CARMEN parameter server.
 	 */
 	void setup(int argc, char *argv[]);
+
+	/**
+	 * @brief Setup detector parameters.
+	 */
+	void setup(const carmen_robot_ackerman_config_t &robot_config, int min_poses_ahead, int max_poses_ahead);
 
 	/**
 	 * @brief Update the current global position.

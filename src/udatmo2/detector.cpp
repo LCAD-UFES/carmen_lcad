@@ -1,9 +1,15 @@
 #include "detector.h"
 
+#include "logging.h"
+#include "primitives.h"
 #include "udatmo_interface.h"
-#include "udatmo_memory.h"
+
 #include <carmen/collision_detection.h>
+
+#include <algorithm>
+#include <cassert>
 #include <cmath>
+#include <iostream>
 
 namespace udatmo
 {
@@ -11,135 +17,113 @@ namespace udatmo
 Detector &getDetector() {
 	static Detector *detector = NULL;
 	if (detector == NULL)
+	{
+		CARMEN_LOG_TO_FILE("udatmo.log");
 		detector = new Detector();
+	}
 
 	return *detector;
 }
 
-Detector::Detector()
+
+Detector::Detector():
+	min_poses_ahead(0),
+	max_poses_ahead(0),
+	current_map(NULL)
 {
 	memset(&robot_config, 0, sizeof(carmen_robot_ackerman_config_t));
 	memset(&robot_pose, 0, sizeof(carmen_ackerman_traj_point_t));
 	memset(&rddf, 0, sizeof(carmen_rddf_road_profile_message));
 
-	current_map = NULL;
-
 	robot_pose.v = nan("");
 }
 
 
-double
-Detector::speed_front()
+void Detector::observate()
 {
-	double average_v = 0.0;
-	double count = 0.0;
-	for (int i = front_obstacle.size() - 2; i >= 0 ; i--)
+	double near = robot_config.distance_between_front_and_rear_axles + 1.5;
+	double front = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
+	double within = robot_config.width / 2.0;
+
+	CARMEN_LOG(trace, "Observation start");
+
+	observations.clear();
+	for (int i = 0, n = rddf.number_of_poses; i < n; i++)
 	{
-		double v = front_obstacle[i].pose.v;
-		if (v <= -0.0001)
+		if (distance(rddf.poses[i], robot_pose) < near)
 			continue;
 
-		average_v += v;
-		count += 1.0;
-	}
-
-	if (count > 0.0)
-		average_v /= count;
-
-	return (average_v);
-}
-
-
-void
-Detector::update_moving_object_velocity()
-{
-	// TODO: determine if the speed really has to be recalculated for the entire
-	// history every time a new observation is added.
-
-	double average_v = 0.0;
-	double count = 0.0;
-	for (int i = front_obstacle.size() - 2; i >= 0 ; i--)
-	{
-		double dist = carmen_distance_ackerman_traj(&front_obstacle[i].pose, &front_obstacle[i + 1].pose);
-		// distance in the direction of the robot: https://en.wikipedia.org/wiki/Vector_projection
-		double angle = atan2(front_obstacle[i].pose.y - front_obstacle[i + 1].pose.y, front_obstacle[i].pose.x - front_obstacle[i + 1].pose.x);
-		double distance = dist * cos(angle - robot_pose.theta);
-		double delta_t = front_obstacle[i].timestamp - front_obstacle[i + 1].timestamp;
-
-		double v = -1.0; // invalid v
-		if (delta_t > 0.01 && delta_t < 0.2)
-			v = distance / delta_t;
-		if (v > 60.0)
-			v = -1.0;
-		if (v > -0.00001)
+		carmen_point_t front_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&rddf.poses[i], front);
+		carmen_position_t position = carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(&front_car_pose, current_map);
+		if (distance(position, front_car_pose) < within)
 		{
-			average_v += v;
-			count += 1.0;
-		}
+			observations.push_back(Observation(i, position, rddf.timestamp));
+			CARMEN_LOG(trace,
+				"Observation"
+				<< ": t = " << rddf.timestamp
+				<< ", position = (" << position.x << ", " << position.y << ")"
+				<< ", rddf = " << i
+			);
 
-		front_obstacle[i].pose.v = v;
+			break;
+		}
 	}
 
-	if (count > 0.0)
-		average_v /= count;
+	CARMEN_LOG(trace, "Observations total: " << observations.size());
 }
 
 
-Obstacles
-Detector::detect()
+struct assign
 {
-	Obstacles obstacles(rddf.timestamp);
+	const carmen_ackerman_traj_point_t &robot_pose_;
+
+	Observations &observations_;
+
+	assign(const carmen_ackerman_traj_point_t &robot_pose, Observations &observations):
+		robot_pose_(robot_pose),
+		observations_(observations)
+	{
+		// Nothing to do.
+	}
+
+	bool operator () (Obstacle &obstacle)
+	{
+		obstacle.update(robot_pose_, observations_);
+		return !obstacle.valid();
+	}
+};
+
+const Obstacles &Detector::detect()
+{
+	CARMEN_LOG(trace, "Obstacle update start");
+
 	if (isnan(robot_pose.v) || current_map == NULL || rddf.number_of_poses == 0)
-		return obstacles;
-
-	double circle_radius = (robot_config.width + 0.0) / 2.0; // metade da largura do carro + um espacco de guarda
-	for (int rddf_pose_index = 0; rddf_pose_index < rddf.number_of_poses; rddf_pose_index++)
 	{
-		if (carmen_distance_ackerman_traj(&rddf.poses[rddf_pose_index], &robot_pose) < robot_config.distance_between_front_and_rear_axles + 1.5)
-			continue;
-
-		double disp = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
-		carmen_point_t front_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&rddf.poses[rddf_pose_index], disp);
-		carmen_position_t obstacle = carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(&front_car_pose, current_map);
-		double distance = sqrt(
-			(front_car_pose.x - obstacle.x) * (front_car_pose.x - obstacle.x) +
-			(front_car_pose.y - obstacle.y) * (front_car_pose.y - obstacle.y)
-		);
-
-		if (distance < circle_radius)
-		{
-			Observation observed(obstacle, rddf.timestamp);
-			front_obstacle.push_front(observed);
-			while (front_obstacle.size() > MOVING_OBJECT_HISTORY_SIZE)
-				front_obstacle.pop_back();
-
-			update_moving_object_velocity();
-
-			carmen_udatmo_moving_obstacle &front_obstacle = obstacles[0];
-			front_obstacle.rddf_index = rddf_pose_index;
-			front_obstacle.x = observed.pose.x;
-			front_obstacle.y = observed.pose.y;
-			front_obstacle.theta = observed.pose.theta;
-			front_obstacle.v = speed_front();
-			return obstacles;
-		}
+		CARMEN_LOG(trace, "Obstacle update aborted (preconditions not met)");
+		return obstacles;
 	}
+
+	// Check the map for obstacle points in the focus regions.
+	observate();
+
+	// Update current moving obstacles with the observations, removing stale cases.
+	Obstacles::iterator n = obstacles.end();
+	Obstacles::iterator i = std::remove_if(obstacles.begin(), n, assign(robot_pose, observations));
+	obstacles.erase(i, n);
+
+	CARMEN_LOG(trace, "Observations not assigned: " << observations.size());
+
+	// Instantiate new moving obstacles from observations not associated to current obstacles.
+	for (Observations::iterator i = observations.begin(), n = observations.end(); i != n; ++i)
+		obstacles.push_back(Obstacle(robot_pose, *i));
+
+	CARMEN_LOG(trace, "Obstacles total: " << obstacles.size());
 
 	return obstacles;
 }
 
 
-void
-Detector::setup(const carmen_robot_ackerman_config_t &robot_config, int min_poses_ahead, int max_poses_ahead)
-{
-	this->robot_config = robot_config;
-	this->min_poses_ahead = min_poses_ahead;
-	this->max_poses_ahead = max_poses_ahead;
-}
-
-
-void
-Detector::setup(int argc, char *argv[])
+void Detector::setup(int argc, char *argv[])
 {
 	carmen_param_t param_list[] =
 	{
@@ -160,8 +144,27 @@ Detector::setup(int argc, char *argv[])
 }
 
 
-int
-Detector::compute_num_poses_ahead()
+void Detector::setup(const carmen_robot_ackerman_config_t &robot_config, int min_poses_ahead, int max_poses_ahead)
+{
+	this->robot_config = robot_config;
+	this->min_poses_ahead = min_poses_ahead;
+	this->max_poses_ahead = max_poses_ahead;
+}
+
+
+void Detector::update(const carmen_ackerman_traj_point_t &robot_pose)
+{
+	this->robot_pose = robot_pose;
+}
+
+
+void Detector::update(carmen_obstacle_distance_mapper_message *map)
+{
+	current_map = map;
+}
+
+
+int Detector::posesAhead() const
 {
 	int num_poses_ahead = min_poses_ahead;
 	double common_goal_v = 3.0;
@@ -183,26 +186,11 @@ Detector::compute_num_poses_ahead()
 }
 
 
-void
-Detector::update(const carmen_ackerman_traj_point_t &robot_pose)
-{
-	this->robot_pose = robot_pose;
-}
-
-
-void
-Detector::update(carmen_obstacle_distance_mapper_message *map)
-{
-	current_map = map;
-}
-
-
-void
-Detector::update(carmen_rddf_road_profile_message *rddf_msg)
+void Detector::update(carmen_rddf_road_profile_message *rddf_msg)
 {
 	int num_poses_ahead = rddf_msg->number_of_poses;
 	if (!(0 < num_poses_ahead && num_poses_ahead < min_poses_ahead))
-		num_poses_ahead = compute_num_poses_ahead();
+		num_poses_ahead = posesAhead();
 
 	if (rddf.number_of_poses != num_poses_ahead)
 	{

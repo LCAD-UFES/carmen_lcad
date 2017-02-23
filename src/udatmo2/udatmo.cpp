@@ -2,9 +2,14 @@
 
 #include "detector.h"
 #include "udatmo_interface.h"
+#include "primitives.h"
 
-using udatmo::getDetector;
+using udatmo::Obstacle;
 using udatmo::Obstacles;
+using udatmo::distance;
+using udatmo::getDetector;
+
+#define NUM_OBSTACLES 1
 
 void carmen_udatmo_init(carmen_robot_ackerman_config_t *robot_config, int min_poses_ahead, int max_poses_ahead)
 {
@@ -25,12 +30,50 @@ static carmen_udatmo_moving_obstacles_message *carmen_udatmo_detector_message(vo
 	return message;
 }
 
+static void carmen_udatmo_resize_moving_obstacles_message(carmen_udatmo_moving_obstacles_message *message, int size)
+{
+	if (message->num_obstacles == size)
+		return;
+
+	message->num_obstacles = size;
+	RESIZE(message->obstacles, carmen_udatmo_moving_obstacle, size);
+}
+
+static void carmen_udatmo_set_moving_obstacles_message(carmen_udatmo_moving_obstacles_message *message, const Obstacles &obstacles)
+{
+	int n = obstacles.size();
+	carmen_udatmo_resize_moving_obstacles_message(message, n);
+	for (int i = 0; i < n; i++)
+	{
+		carmen_udatmo_moving_obstacle &entry = message->obstacles[i];
+		const Obstacle &obstacle = obstacles[i];
+		entry.rddf_index = obstacle.index;
+		entry.x = obstacle.pose.x;
+		entry.y = obstacle.pose.y;
+		entry.theta = obstacle.pose.theta;
+		entry.v = obstacle.pose.v;
+	}
+}
+
+static void carmen_udatmo_reset_moving_obstacles_message(carmen_udatmo_moving_obstacles_message *message)
+{
+	carmen_udatmo_resize_moving_obstacles_message(message, NUM_OBSTACLES);
+	for (int i = 0; i < NUM_OBSTACLES; i++)
+	{
+		memset(message->obstacles + i, 0, sizeof(carmen_udatmo_moving_obstacle));
+		message->obstacles[0].rddf_index = -1;
+	}
+}
+
 carmen_udatmo_moving_obstacles_message *carmen_udatmo_detect_moving_obstacles(void)
 {
-	Obstacles obstacles = getDetector().detect();
 	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_detector_message();
-	memcpy(message->obstacles, &(obstacles[0]), NUM_OBSTACLES * sizeof(carmen_udatmo_moving_obstacle));
-	message->timestamp = obstacles.timestamp;
+
+	const Obstacles &obstacles = getDetector().detect();
+	if (obstacles.size() > 0)
+		carmen_udatmo_set_moving_obstacles_message(message, obstacles);
+	else
+		carmen_udatmo_reset_moving_obstacles_message(message);
 
 	return message;
 }
@@ -50,11 +93,9 @@ double carmen_udatmo_front_obstacle_speed(void)
 double carmen_udatmo_front_obstacle_distance(carmen_ackerman_traj_point_t *robot_pose)
 {
 	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_detector_message();
-	const carmen_udatmo_moving_obstacle obstacle = message->obstacles[0];
+	const carmen_udatmo_moving_obstacle &obstacle = message->obstacles[0];
 
-	double dx = robot_pose->x - obstacle.x;
-	double dy = robot_pose->y - obstacle.y;
-	return sqrt(dx*dx + dy*dy);
+	return distance(*robot_pose, obstacle);
 }
 
 void carmen_udatmo_update_distance_map(carmen_obstacle_distance_mapper_message *message)

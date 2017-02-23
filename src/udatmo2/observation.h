@@ -1,33 +1,63 @@
-#ifndef DATOMIC_MOVING_OBJECT
-#define DATOMIC_MOVING_OBJECT
+#ifndef UDATMO_OBSERVATION_H
+#define UDATMO_OBSERVATION_H
+
+#include "primitives.h"
 
 #include <carmen/carmen.h>
+
+#include <vector>
 
 namespace udatmo
 {
 
+/**
+ * @brief A single observation of a mobile obstacle.
+ */
 struct Observation
 {
-	carmen_ackerman_traj_point_t pose;
+	/** @brief RDDF index of the obstacle. */
+	int index;
 
+	/** @brief Pose where the obstacle was observed. */
+	carmen_position_t position;
+
+	/** @brief Time when the obstacle was observed. */
 	double timestamp;
 
+	/**
+	 * @brief Default constructor.
+	 */
 	Observation()
 	{
-		memset(&pose, 0, sizeof(carmen_ackerman_traj_point_t));
-		timestamp = 0;
+		index = -1;
+		position.x = 0.0;
+		position.y = 0.0;
+		timestamp = -1;
 	}
 
-	Observation(carmen_position_t obstacle, double timestamp)
+	/**
+	 * @brief Create a new mobile obstacle observation.
+	 */
+	Observation(int index, carmen_position_t position, double timestamp)
 	{
-		pose.x = obstacle.x;
-		pose.y = obstacle.y;
-		pose.theta = 0;
-		pose.v = 0;
-		pose.phi = 0;
+		this->index = index;
+		this->position = position;
 		this->timestamp = timestamp;
 	}
 };
+
+inline double angle(const Observation &a, const Observation &b)
+{
+	return angle(a.position, b.position);
+}
+
+inline double distance(const Observation &a, const Observation &b)
+{
+	return distance(a.position, b.position);
+}
+
+/** @brief Sequence of observations. */
+typedef std::vector<Observation> Observations;
 
 } // namespace udatmo
 
