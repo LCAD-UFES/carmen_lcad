@@ -263,6 +263,8 @@ namespace View
 		carmen_rddf_waypoint* near_rddf_point;
 		int near_rddf_point_index;
 
+		bool freeze_status;
+
 		car_panel *car_panel_gl;
 
 		void ConfigureMenu();

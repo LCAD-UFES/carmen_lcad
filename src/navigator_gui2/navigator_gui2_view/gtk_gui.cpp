@@ -711,18 +711,21 @@ namespace View
 			display_needs_updating = 1;
 		}
 
-		sprintf(buffer, "Robot: %5.1f m, %5.1f m, %6.2f", robot.pose.x,
-				robot.pose.y, carmen_radians_to_degrees(robot.pose.theta));
-		gtk_label_set_text(GTK_LABEL(this->controls_.labelRobot), buffer);
+		if (!freeze_status)
+		{
+			sprintf(buffer, "Robot: %5.1f, %5.1f, %2.3f (%3.2f)", robot.pose.x,
+					robot.pose.y, robot.pose.theta, carmen_radians_to_degrees(robot.pose.theta));
+			gtk_label_set_text(GTK_LABEL(this->controls_.labelRobot), buffer);
 
-		sprintf(buffer, "Velocity: %5.1f km/h (%5.1f m/s), %5.1f %s", robot_traj.t_vel * 3.6, robot_traj.t_vel,
-				carmen_radians_to_degrees(robot_traj.r_vel), (nav_panel_config->use_ackerman ? "deg" : "deg/s"));
-		gtk_label_set_text(GTK_LABEL(this->controls_.labelVelocity), buffer);
+			sprintf(buffer, "Velocity: %5.1f km/h (%5.1f m/s), %5.1f %s", robot_traj.t_vel * 3.6, robot_traj.t_vel,
+					carmen_radians_to_degrees(robot_traj.r_vel), (nav_panel_config->use_ackerman ? "deg" : "deg/s"));
+			gtk_label_set_text(GTK_LABEL(this->controls_.labelVelocity), buffer);
 
-		sprintf(buffer, "Goal: %.1f m, %.1f m", goal.pose.x, goal.pose.y);
-		gtk_label_set_text(GTK_LABEL(this->controls_.labelGoal), buffer);
+			sprintf(buffer, "Goal: %.1f, %.1f", goal.pose.x, goal.pose.y);
+			gtk_label_set_text(GTK_LABEL(this->controls_.labelGoal), buffer);
 
-		set_distance_traveled(robot.pose, robot_traj.t_vel);
+			set_distance_traveled(robot.pose, robot_traj.t_vel);
+		}
 
 		last_navigator_update = carmen_get_time();
 

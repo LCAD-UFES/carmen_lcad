@@ -744,14 +744,17 @@ gint motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *world_poin
 	if (carmen_world_to_map(world_point, &point) == -1)
 		return TRUE;
 
-	sprintf(buffer, "Grid Cell: %d, %d  (%.1f m, %.1f m)", point.x, point.y,
-			world_point->pose.x, world_point->pose.y);
-	gtk_label_set_text(GTK_LABEL(global_gui->controls_.labelGridCell), buffer);
-
-	if (the_map != NULL)
+	if (!global_gui->freeze_status)
 	{
-		sprintf(buffer, "Value: %.2f", the_map->map[point.x][point.y]);
-		gtk_label_set_text(GTK_LABEL(global_gui->controls_.labelValue), buffer);
+		sprintf(buffer, "Grid Cell: %d, %d  (%.1f, %.1f)", point.x, point.y,
+				world_point->pose.x, world_point->pose.y);
+		gtk_label_set_text(GTK_LABEL(global_gui->controls_.labelGridCell), buffer);
+
+		if (the_map != NULL)
+		{
+			sprintf(buffer, "Value: %.2f", the_map->map[point.x][point.y]);
+			gtk_label_set_text(GTK_LABEL(global_gui->controls_.labelValue), buffer);
+		}
 	}
 
 	if ((global_gui->placement_status == ORIENTING_ROBOT) ||
@@ -885,10 +888,10 @@ int button_release_handler(GtkMapViewer		   *the_map_view,
 int keyboard_press_handler(GtkMapViewer *the_map_view,
 		GdkEventKey	   *event)
 {
-	double resolution = the_map_view->internal_map->config.resolution;
-
 	if (global_gui->placement_status == EDITING_NEAR_RDDF && global_gui->near_rddf_point != NULL)
 	{
+		double resolution = the_map_view->internal_map->config.resolution;
+
 		switch (event->keyval)
 		{
 			case GDK_Up:
@@ -939,11 +942,27 @@ int keyboard_press_handler(GtkMapViewer *the_map_view,
 				global_gui->release_near_rddf_point();
 				break;
 
+			case GDK_c:
+				global_gui->freeze_status = (global_gui->freeze_status)? false: true;
+				break;
+
 			default:
 				return FALSE;
 		}
 //
 //		global_gui->near_rddf_point
+	}
+	else
+	{
+		switch (event->keyval)
+		{
+			case GDK_c:
+				global_gui->freeze_status = (global_gui->freeze_status)? false: true;
+				break;
+
+			default:
+				return FALSE;
+		}
 	}
 
 	return FALSE;

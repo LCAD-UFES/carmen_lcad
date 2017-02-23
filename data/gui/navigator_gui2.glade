@@ -844,6 +844,7 @@
                                 <property name="homogeneous">True</property>
                                 <child>
                                   <object class="GtkLabel" id="labelOrigin">
+                                    <property name="selectable">True</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="xalign">0</property>
@@ -858,6 +859,7 @@
                                 </child>
                                 <child>
                                   <object class="GtkLabel" id="labelRobot">
+                                    <property name="selectable">True</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="xalign">0</property>
@@ -873,6 +875,7 @@
                                 </child>
                                 <child>
                                   <object class="GtkLabel" id="labelFusedOdometry">
+                                    <property name="selectable">True</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="xalign">0</property>
@@ -887,6 +890,7 @@
                                 </child>
                                 <child>
                                   <object class="GtkLabel" id="labelVelocity">
+                                    <property name="selectable">True</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="xalign">0</property>
@@ -901,6 +905,7 @@
                                 </child>
                                 <child>
                                   <object class="GtkLabel" id="labelGoal">
+                                    <property name="selectable">True</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="xalign">0</property>
@@ -915,6 +920,7 @@
                                 </child>
                                 <child>
                                   <object class="GtkLabel" id="labelGridCell">
+                                    <property name="selectable">True</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="xalign">0</property>
@@ -943,6 +949,7 @@
                                 </child>
                                 <child>
                                   <object class="GtkLabel" id="labelDistTraveled">
+                                    <property name="selectable">True</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">False</property>
                                     <property name="xalign">0</property>
