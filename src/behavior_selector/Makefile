@@ -8,7 +8,8 @@ CFLAGS += -std=c99
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
 
-LFLAGS += $(INTERFACE_LIBS) -lglobal -lipc -lmap_interface -lparam_interface  \
+LFLAGS += \
+	$(INTERFACE_LIBS) -lglobal -lipc -lmap_interface -lparam_interface  \
 	-lmapper_interface -lrddf_interface -lnavigator_ackerman_interface \
 	-llocalize_ackerman_interface -lmap_server_interface -lcollision_detection -lmotion_planner_interface \
 	-lobstacle_avoider_interface -lgrid_mapping -lmap_io -lmap_util \
@@ -17,6 +18,15 @@ LFLAGS += $(INTERFACE_LIBS) -lglobal -lipc -lmap_interface -lparam_interface  \
 
 IFLAGS += -I/usr/include/eigen3
 IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ -I/usr/local/include/g2o/
+
+ifeq ("$(CARMEN_LOGGING)","ON")
+CFLAGS += -DBOOST_LOG_DYN_LINK
+LFLAGS += \
+	-lboost_log_setup \
+	-lboost_log \
+	-lboost_thread \
+	-lboost_system
+endif
 
 SOURCES = behavior_selector_interface.c behavior_selector_main.cpp behavior_selector.cpp SampleFilter.cpp
 
