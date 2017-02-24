@@ -195,14 +195,14 @@ void Detector::update(carmen_rddf_road_profile_message *rddf_msg)
 	if (rddf.number_of_poses != num_poses_ahead)
 	{
 		rddf.number_of_poses = num_poses_ahead;
-		RESIZE(rddf.poses, carmen_ackerman_traj_point_t, rddf.number_of_poses);
-		RESIZE(rddf.annotations, int, rddf.number_of_poses);
+		resize(rddf.poses, rddf.number_of_poses);
+		resize(rddf.annotations, rddf.number_of_poses);
 	}
 
 	if (rddf_msg->number_of_poses_back > 0)
 	{
 		rddf.number_of_poses_back = num_poses_ahead;
-		RESIZE(rddf.poses_back, carmen_ackerman_traj_point_t, rddf.number_of_poses_back);
+		resize(rddf.poses_back, rddf.number_of_poses_back);
 	}
 
 	rddf.timestamp = rddf_msg->timestamp;

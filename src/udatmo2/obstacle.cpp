@@ -77,12 +77,14 @@ void Obstacle::update(const carmen_ackerman_traj_point_t &robot_pose)
 	double count = 0.0;
 	for (int i = observations.size() - 2; i >= 0 ; i--)
 	{
-		const Observation &o1 = observations[i];
-		const Observation &o2 = observations[i + 1];
+		// Observations are inserted at the front of the sequence,
+		// so o1 is "older" (i.e. smaller timestamp) than o2.
+		const Observation &o1 = observations[i + 1];
+		const Observation &o2 = observations[i];
 
 		// distance in the direction of the robot: https://en.wikipedia.org/wiki/Vector_projection
 		double d = distance(o1, o2) * cos(angle(o1, o2) - robot_pose.theta);
-		double t = o1.timestamp - o2.timestamp;
+		double t = o2.timestamp - o1.timestamp;
 
 		double vt = -1.0; // invalid v
 		if (0.01 < t && t < 0.2)

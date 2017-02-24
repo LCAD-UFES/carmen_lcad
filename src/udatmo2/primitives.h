@@ -5,12 +5,6 @@
 #include <cmath>
 #include <cstdlib>
 
-#define CREATE(TYPE) (TYPE*) malloc(sizeof(TYPE))
-
-#define RESIZE(BUFFER, TYPE, N) BUFFER = (TYPE*) udatmo::resize(BUFFER, sizeof(TYPE) * N)
-
-#define DELETE(BUFFER) if (BUFFER != NULL) do {free(BUFFER); BUFFER = NULL;} while (0)
-
 namespace udatmo
 {
 
@@ -19,7 +13,7 @@ namespace udatmo
  */
 inline double angle(double x1, double y1, double x2, double y2)
 {
-	return atan2(y1 - y2, x1 - x2);
+	return atan2(y2 - y1, x2 - x1);
 }
 
 /**
@@ -61,6 +55,28 @@ template<class T> T truncate(const T &value, const T &a, const T &b)
 }
 
 /**
+ * @brief Create a buffer of given type and size (counted in units of the given type).
+ */
+template<class T> T *create(int count = 1)
+{
+	return (T*) malloc(sizeof(T) * count);
+}
+
+/**
+ * @brief Deallocate the given buffer, setting the pointer variable to `NULL`.
+ *
+ * If the pointer is already null then nothing is done.
+ */
+template<class T> void destroy(T *&buffer)
+{
+	if (buffer != NULL)
+	{
+		free(buffer);
+		buffer = NULL;
+	}
+}
+
+/**
  * @brief Resize the given buffer.
  *
  * This function differs from the standard `realloc()` function in that its return
@@ -70,7 +86,22 @@ template<class T> T truncate(const T &value, const T &a, const T &b)
  *
  * @return Pointer to the (possibly resized) buffer.
  */
-void *resize(void *buffer, size_t size);
+template<class T> void resize(T *&buffer, int size)
+{
+	if (buffer == NULL && size > 0)
+		buffer = create<T>(size);
+	else if (size == 0)
+	{
+		if (buffer != NULL)
+			destroy(buffer);
+	}
+	else
+	{
+		T *resized = (T*) realloc(buffer, sizeof(T) * size);
+		if (resized != NULL)
+			buffer = resized;
+	}
+}
 
 };
 

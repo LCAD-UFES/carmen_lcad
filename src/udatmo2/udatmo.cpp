@@ -1,11 +1,12 @@
 #include "udatmo.h"
 
 #include "detector.h"
-#include "udatmo_interface.h"
 #include "primitives.h"
+#include "udatmo_interface.h"
 
 using udatmo::Obstacle;
 using udatmo::Obstacles;
+using udatmo::resize;
 using udatmo::distance;
 using udatmo::getDetector;
 
@@ -36,7 +37,7 @@ static void carmen_udatmo_resize_moving_obstacles_message(carmen_udatmo_moving_o
 		return;
 
 	message->num_obstacles = size;
-	RESIZE(message->obstacles, carmen_udatmo_moving_obstacle, size);
+	resize(message->obstacles, size);
 }
 
 static void carmen_udatmo_set_moving_obstacles_message(carmen_udatmo_moving_obstacles_message *message, const Obstacles &obstacles)

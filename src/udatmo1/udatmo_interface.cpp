@@ -1,5 +1,7 @@
 #include "udatmo_interface.h"
 
+#include <carmen/global_graphics.h>
+
 #include "udatmo_memory.h"
 
 
@@ -71,4 +73,37 @@ void carmen_udatmo_subscribe_moving_obstacles_message(carmen_udatmo_moving_obsta
 void carmen_udatmo_unsubscribe_moving_obstacles_message(carmen_handler_t handler)
 {
 	carmen_unsubscribe_message((char*) CARMEN_UDATMO_MOVING_OBSTACLES_MESSAGE_NAME, handler);
+}
+
+
+void carmen_udatmo_fill_virtual_laser_message(carmen_udatmo_moving_obstacles_message *message, int offset, carmen_mapper_virtual_laser_message *out)
+{
+	int n = message->num_obstacles;
+	carmen_udatmo_moving_obstacle *obstacles = message->obstacles;
+	if (n == 0 || obstacles[0].rddf_index == -1)
+		return;
+
+	for (int i = 0; i < n; i++)
+	{
+		int k = i + offset;
+		out->colors[k] = CARMEN_BLUE;
+		out->positions[k].x = obstacles[i].x;
+		out->positions[k].y = obstacles[i].y;
+	}
+}
+
+
+void carmen_udatmo_display_moving_obstacles_message(carmen_udatmo_moving_obstacles_message *message)
+{
+	static carmen_mapper_virtual_laser_message out = {0, NULL, NULL, 0, NULL};
+
+	int n = message->num_obstacles;
+
+	out.host = carmen_get_host();
+	RESIZE(out.positions, carmen_position_t, n);
+	RESIZE(out.colors, char, n);
+	out.num_positions = n;
+
+	carmen_udatmo_fill_virtual_laser_message(message, 0, &out);
+	carmen_mapper_publish_virtual_laser_message(&out, carmen_get_time());
 }
