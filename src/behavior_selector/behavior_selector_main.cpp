@@ -388,7 +388,7 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 	{
 //		distance = DIST2D(udatmo_get_moving_obstacle_position(), *current_robot_pose_v_and_phi) - car_pose_to_car_front;
 		distance = carmen_udatmo_front_obstacle_distance(current_robot_pose_v_and_phi) - car_pose_to_car_front;
-		moving_obj_v = carmen_udatmo_front_obstacle_speed();
+		moving_obj_v = carmen_udatmo_front_obstacle_speed(current_robot_pose_v_and_phi);
 
 		// ver "The DARPA Urban Challenge" book, pg. 36.
 		double Kgap = 1.0;
