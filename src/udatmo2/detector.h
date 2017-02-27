@@ -36,6 +36,9 @@ class Detector
 	/** @brief Sequence of detected obstacles. */
 	Obstacles obstacles;
 
+	/** @brief Sequence of tracking obstacles. */
+	Obstacles tracking;
+
 	/**
 	 * @brief Update the observations sequence.
 	 */

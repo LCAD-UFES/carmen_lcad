@@ -15,7 +15,7 @@ namespace udatmo
 class Obstacle
 {
 	/** @brief Sequence of observations relating to this moving obstacle. */
-	std::deque<Observation> observations;
+	std::deque<Observation> track;
 
 	/** @brief Number of missed observations of this moving obstacle. */
 	int misses;
@@ -23,14 +23,16 @@ class Obstacle
 	/**
 	 * @brief Add an observation to this moving obstacle.
 	 */
-	void update(const Observation &observation);
+	void updateLocation(const Observation &observation);
 
 	/**
-	 * @brief Update estimates of direction and speed in the direction of the robot.
+	 * @brief Update estimates of direction and speed of movement.
 	 */
-	void update(const carmen_ackerman_traj_point_t &robot_pose);
+	void updateMovement();
 
 public:
+	enum Status {DETECTED, TRACKING, DROP};
+
 	/** @brief RDDF index of the obstacle. */
 	int index;
 
@@ -47,11 +49,11 @@ public:
 	/**
 	 * @brief Update this moving obstacle according to the given observation sequence.
 	 */
-	void update(const carmen_ackerman_traj_point_t &robot_pose, Observations &observations);
+	void update(const carmen_ackerman_traj_point_t &robot_pose, Observations &observed);
 
 	double timestamp() const;
 
-	bool valid() const;
+	Status status() const;
 };
 
 /** @brief Sequence of moving obstacles. */

@@ -1,12 +1,45 @@
 #ifndef CARMEN_UDATMO_PRIMITIVES_H
 #define CARMEN_UDATMO_PRIMITIVES_H
 
+#include <carmen/carmen.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <iostream>
+
+
+std::ostream &operator << (std::ostream &out, const carmen_position_t &position);
+
+
+std::ostream &operator << (std::ostream &out, const carmen_point_t &pose);
+
+
+std::ostream &operator << (std::ostream &out, const carmen_ackerman_traj_point_t &pose);
+
 
 namespace udatmo
 {
+
+
+template<class P, class Q> P relative_xy(const P &a, const Q &b)
+{
+	P t = a;
+	t.x -= b.x;
+	t.y -= b.y;
+	return t;
+}
+
+
+template<class P, class Q> P relative_xyt(const P &a, const Q &b)
+{
+	P t = a;
+	t.x -= b.x;
+	t.y -= b.y;
+	t.theta -= b.theta;
+	return t;
+}
+
 
 /**
  * @brief Compute the slope angle of the segment between points `(x1, y1)` and `(x2, y2)`.

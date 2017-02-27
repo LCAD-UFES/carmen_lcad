@@ -40,6 +40,7 @@ endif
 SOURCES = \
 	detector.cpp \
 	obstacle.cpp \
+	primitives.cpp \
 	udatmo.cpp \
 	udatmo_interface.cpp \
 	udatmo_logger.cpp \
@@ -64,9 +65,9 @@ TARGETS = \
 	udatmo \
 	udatmo_logger
 
-libudatmo.a: detector.o obstacle.o udatmo.o udatmo_interface.o
+libudatmo.a: detector.o obstacle.o primitives.o udatmo.o udatmo_interface.o
 libudatmo_interface.a: udatmo_interface.o
-udatmo: detector.o obstacle.o udatmo.o udatmo_interface.o udatmo_main.o
+udatmo: detector.o obstacle.o primitives.o udatmo.o udatmo_interface.o udatmo_main.o
 udatmo_logger: udatmo_logger.o udatmo_interface.o
 
 include ../Makefile.rules

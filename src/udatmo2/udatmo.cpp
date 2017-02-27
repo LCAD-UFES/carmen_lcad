@@ -85,10 +85,13 @@ int carmen_udatmo_front_obstacle_detected(void)
 	return (message->obstacles[0].rddf_index != -1);
 }
 
-double carmen_udatmo_front_obstacle_speed(void)
+double carmen_udatmo_front_obstacle_speed(carmen_ackerman_traj_point_t *robot_pose)
 {
 	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_detector_message();
-	return message->obstacles[0].v;
+	const carmen_udatmo_moving_obstacle &obstacle = message->obstacles[0];
+
+	// distance in the direction of the robot: https://en.wikipedia.org/wiki/Vector_projection
+	return obstacle.v * cos(obstacle.theta - robot_pose->theta);
 }
 
 double carmen_udatmo_front_obstacle_distance(carmen_ackerman_traj_point_t *robot_pose)

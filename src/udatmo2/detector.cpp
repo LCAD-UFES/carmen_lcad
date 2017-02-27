@@ -60,8 +60,9 @@ void Detector::observate()
 			observations.push_back(Observation(i, position, rddf.timestamp));
 			CARMEN_LOG(trace,
 				"Observation"
-				<< ": t = " << rddf.timestamp
-				<< ", position = (" << position.x << ", " << position.y << ")"
+				<< ": t = " << rddf.timestamp - carmen_ipc_initialize_time()
+				<< ", position = " << relative_xy(position, robot_pose)
+				<< ", distance = " << distance(position, robot_pose)
 				<< ", rddf = " << i
 			);
 
@@ -79,17 +80,28 @@ struct assign
 
 	Observations &observations_;
 
-	assign(const carmen_ackerman_traj_point_t &robot_pose, Observations &observations):
+	Obstacles &tracking_;
+
+	assign(const carmen_ackerman_traj_point_t &robot_pose, Observations &observations, Obstacles &tracking):
 		robot_pose_(robot_pose),
-		observations_(observations)
+		observations_(observations),
+		tracking_(tracking)
 	{
-		// Nothing to do.
+		tracking_.clear();
 	}
 
 	bool operator () (Obstacle &obstacle)
 	{
 		obstacle.update(robot_pose_, observations_);
-		return !obstacle.valid();
+
+		Obstacle::Status status = obstacle.status();
+		if (status == Obstacle::DROP)
+			return true;
+
+		if (status == Obstacle::TRACKING)
+			tracking_.push_back(obstacle);
+
+		return false;
 	}
 };
 
@@ -108,7 +120,7 @@ const Obstacles &Detector::detect()
 
 	// Update current moving obstacles with the observations, removing stale cases.
 	Obstacles::iterator n = obstacles.end();
-	Obstacles::iterator i = std::remove_if(obstacles.begin(), n, assign(robot_pose, observations));
+	Obstacles::iterator i = std::remove_if(obstacles.begin(), n, assign(robot_pose, observations, tracking));
 	obstacles.erase(i, n);
 
 	CARMEN_LOG(trace, "Observations not assigned: " << observations.size());
@@ -118,8 +130,9 @@ const Obstacles &Detector::detect()
 		obstacles.push_back(Obstacle(robot_pose, *i));
 
 	CARMEN_LOG(trace, "Obstacles total: " << obstacles.size());
+	CARMEN_LOG(trace, "Tracking total: " << tracking.size());
 
-	return obstacles;
+	return tracking;
 }
 
 
@@ -155,6 +168,7 @@ void Detector::setup(const carmen_robot_ackerman_config_t &robot_config, int min
 void Detector::update(const carmen_ackerman_traj_point_t &robot_pose)
 {
 	this->robot_pose = robot_pose;
+	CARMEN_LOG(trace, "Robot pose = " << robot_pose);
 }
 
 
@@ -210,5 +224,6 @@ void Detector::update(carmen_rddf_road_profile_message *rddf_msg)
 	memcpy(rddf.poses_back, rddf_msg->poses_back, sizeof(carmen_ackerman_traj_point_t) * rddf.number_of_poses_back);
 	memcpy(rddf.annotations, rddf_msg->annotations, sizeof(int) * rddf.number_of_poses);
 }
+
 
 } // namespace udatmo
