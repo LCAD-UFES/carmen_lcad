@@ -1,5 +1,5 @@
-#ifndef UDATMO_DETECTOR_H
-#define UDATMO_DETECTOR_H
+#ifndef UDATMO_DATMO_H
+#define UDATMO_DATMO_H
 
 #include "obstacle.h"
 
@@ -7,10 +7,12 @@
 #include <carmen/obstacle_distance_mapper_interface.h>
 #include <carmen/rddf_messages.h>
 
+
 namespace udatmo
 {
 
-class Detector
+
+class DATMO
 {
 	/** @brief System configuration settings. */
 	carmen_robot_ackerman_config_t robot_config;
@@ -40,9 +42,19 @@ class Detector
 	Obstacles tracking;
 
 	/**
-	 * @brief Update the observations sequence.
+	 * @brief Scan the current input for moving obstacle observations.
 	 */
-	void observate();
+	void detect();
+
+	/**
+	 * @brief Dispose of an obstacle as appropriate given its current status.
+	 *
+	 * The obstacle is added to the tracking sequence if its status is `TRACKING`,
+	 * dropped if it's `DROPPED`, and kept in the obstacle list otherwise.
+	 *
+	 * @return Whether the given obstacle should be dropped.
+	 */
+	bool handle(Obstacle &obstacle);
 
 	/**
 	 * @brief Compute the number of RDDF poses ahead of the robot that must be considered.
@@ -53,20 +65,20 @@ public:
 	/**
 	 * @brief Default constructor.
 	 */
-	Detector();
+	DATMO();
 
 	/**
 	 * @brief Perform moving obstacle detection.
 	 */
-	const Obstacles &detect();
+	const Obstacles &track();
 
 	/**
-	 * @brief Setup detector parameters through the CARMEN parameter server.
+	 * @brief Setup DATMO parameters through the CARMEN parameter server.
 	 */
 	void setup(int argc, char *argv[]);
 
 	/**
-	 * @brief Setup detector parameters.
+	 * @brief Setup DATMO parameters.
 	 */
 	void setup(const carmen_robot_ackerman_config_t &robot_config, int min_poses_ahead, int max_poses_ahead);
 
@@ -86,11 +98,14 @@ public:
 	void update(carmen_rddf_road_profile_message *rddf);
 };
 
+
 /**
- * @brief Return a reference to a singleton detector instance.
+ * @brief Return a reference to a singleton DATMO instance.
  */
-Detector &getDetector();
+DATMO &getDATMO();
+
 
 } // namespace udatmo
+
 
 #endif

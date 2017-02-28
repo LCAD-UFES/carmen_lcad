@@ -38,16 +38,16 @@ LFLAGS += `pkg-config --libs gtkglext-1.0`
 endif
 
 SOURCES = \
-	detector.cpp \
+	datmo.cpp \
 	obstacle.cpp \
 	primitives.cpp \
-	udatmo.cpp \
+	udatmo_api.cpp \
 	udatmo_interface.cpp \
 	udatmo_logger.cpp \
 	udatmo_main.cpp
 
 PUBLIC_INCLUDES = \
-	udatmo.h \
+	udatmo_api.h \
 	udatmo_interface.h \
 	udatmo_messages.h
 
@@ -65,9 +65,9 @@ TARGETS = \
 	udatmo \
 	udatmo_logger
 
-libudatmo.a: detector.o obstacle.o primitives.o udatmo.o udatmo_interface.o
+libudatmo.a: datmo.o obstacle.o primitives.o udatmo_api.o udatmo_interface.o
 libudatmo_interface.a: udatmo_interface.o
-udatmo: detector.o obstacle.o primitives.o udatmo.o udatmo_interface.o udatmo_main.o
+udatmo: datmo.o obstacle.o primitives.o udatmo_api.o udatmo_interface.o udatmo_main.o
 udatmo_logger: udatmo_logger.o udatmo_interface.o
 
 include ../Makefile.rules

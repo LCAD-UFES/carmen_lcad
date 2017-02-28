@@ -1,6 +1,6 @@
-#include "udatmo.h"
+#include "udatmo_api.h"
 
-#include "detector.h"
+#include "datmo.h"
 #include "primitives.h"
 #include "udatmo_interface.h"
 
@@ -8,21 +8,25 @@ using udatmo::Obstacle;
 using udatmo::Obstacles;
 using udatmo::resize;
 using udatmo::distance;
-using udatmo::getDetector;
+using udatmo::getDATMO;
+
 
 #define NUM_OBSTACLES 1
 
+
 void carmen_udatmo_init(carmen_robot_ackerman_config_t *robot_config, int min_poses_ahead, int max_poses_ahead)
 {
-	getDetector().setup(*robot_config, min_poses_ahead, max_poses_ahead);
+	getDATMO().setup(*robot_config, min_poses_ahead, max_poses_ahead);
 }
+
 
 void carmen_udatmo_setup(int argc, char *argv[])
 {
-	getDetector().setup(argc, argv);
+	getDATMO().setup(argc, argv);
 }
 
-static carmen_udatmo_moving_obstacles_message *carmen_udatmo_detector_message(void)
+
+static carmen_udatmo_moving_obstacles_message *carmen_udatmo_datmo_message(void)
 {
 	static carmen_udatmo_moving_obstacles_message *message = NULL;
 	if (message == NULL)
@@ -68,9 +72,9 @@ static void carmen_udatmo_reset_moving_obstacles_message(carmen_udatmo_moving_ob
 
 carmen_udatmo_moving_obstacles_message *carmen_udatmo_detect_moving_obstacles(void)
 {
-	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_detector_message();
+	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_datmo_message();
 
-	const Obstacles &obstacles = getDetector().detect();
+	const Obstacles &obstacles = getDATMO().track();
 	if (obstacles.size() > 0)
 		carmen_udatmo_set_moving_obstacles_message(message, obstacles);
 	else
@@ -79,33 +83,38 @@ carmen_udatmo_moving_obstacles_message *carmen_udatmo_detect_moving_obstacles(vo
 	return message;
 }
 
+
 int carmen_udatmo_front_obstacle_detected(void)
 {
-	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_detector_message();
+	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_datmo_message();
 	return (message->obstacles[0].rddf_index != -1);
 }
 
+
 double carmen_udatmo_front_obstacle_speed(carmen_ackerman_traj_point_t *robot_pose)
 {
-	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_detector_message();
+	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_datmo_message();
 	const carmen_udatmo_moving_obstacle &obstacle = message->obstacles[0];
 
 	// distance in the direction of the robot: https://en.wikipedia.org/wiki/Vector_projection
 	return obstacle.v * cos(obstacle.theta - robot_pose->theta);
 }
 
+
 double carmen_udatmo_front_obstacle_distance(carmen_ackerman_traj_point_t *robot_pose)
 {
-	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_detector_message();
+	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_datmo_message();
 	const carmen_udatmo_moving_obstacle &obstacle = message->obstacles[0];
 
 	return distance(*robot_pose, obstacle);
 }
 
+
 void carmen_udatmo_update_distance_map(carmen_obstacle_distance_mapper_message *message)
 {
-	getDetector().update(message);
+	getDATMO().update(message);
 }
+
 
 void carmen_udatmo_update_robot_pose_with_globalpos(carmen_localize_ackerman_globalpos_message *message)
 {
@@ -116,8 +125,9 @@ void carmen_udatmo_update_robot_pose_with_globalpos(carmen_localize_ackerman_glo
 	robot_pose.v = message->v;
 	robot_pose.phi = message->phi;
 
-	getDetector().update(robot_pose);
+	getDATMO().update(robot_pose);
 }
+
 
 void carmen_udatmo_update_robot_pose_with_truepos(carmen_simulator_ackerman_truepos_message *message)
 {
@@ -128,10 +138,11 @@ void carmen_udatmo_update_robot_pose_with_truepos(carmen_simulator_ackerman_true
 	robot_pose.v = message->v;
 	robot_pose.phi = message->phi;
 
-	getDetector().update(robot_pose);
+	getDATMO().update(robot_pose);
 }
+
 
 void carmen_udatmo_update_rddf(carmen_rddf_road_profile_message *message)
 {
-	getDetector().update(message);
+	getDATMO().update(message);
 }

@@ -4,7 +4,7 @@
 #include <carmen/path_planner_messages.h>
 #include <carmen/rddf_interface.h>
 #include <carmen/grid_mapping.h>
-#include <carmen/udatmo.h>
+#include <carmen/udatmo_api.h>
 #include <carmen/udatmo_interface.h>
 #include <prob_map.h>
 #include <carmen/map_server_interface.h>

@@ -7,7 +7,7 @@
 
 #include <carmen/collision_detection.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
-#include <carmen/udatmo.h>
+#include <carmen/udatmo_api.h>
 #include <carmen/global_graphics.h>
 #include "behavior_selector.h"
 #include "behavior_selector_messages.h"

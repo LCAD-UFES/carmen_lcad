@@ -1,32 +1,35 @@
-#include "detector.h"
+#include "datmo.h"
 
 #include "logging.h"
 #include "primitives.h"
-#include "udatmo_interface.h"
 
 #include <carmen/collision_detection.h>
+
+#include <boost/bind.hpp>
 
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <iostream>
 
+
 namespace udatmo
 {
 
-Detector &getDetector() {
-	static Detector *detector = NULL;
-	if (detector == NULL)
+
+DATMO &getDATMO() {
+	static DATMO *datmo = NULL;
+	if (datmo == NULL)
 	{
 		CARMEN_LOG_TO_FILE("udatmo.log");
-		detector = new Detector();
+		datmo = new DATMO();
 	}
 
-	return *detector;
+	return *datmo;
 }
 
 
-Detector::Detector():
+DATMO::DATMO():
 	min_poses_ahead(0),
 	max_poses_ahead(0),
 	current_map(NULL)
@@ -39,7 +42,7 @@ Detector::Detector():
 }
 
 
-void Detector::observate()
+void DATMO::detect()
 {
 	double near = robot_config.distance_between_front_and_rear_axles + 1.5;
 	double front = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
@@ -74,38 +77,22 @@ void Detector::observate()
 }
 
 
-struct assign
+bool DATMO::handle(Obstacle &obstacle)
 {
-	const carmen_ackerman_traj_point_t &robot_pose_;
+	obstacle.update(robot_pose, observations);
 
-	Observations &observations_;
+	Obstacle::Status status = obstacle.status();
+	if (status == Obstacle::DROP)
+		return true;
 
-	Obstacles &tracking_;
+	if (status == Obstacle::TRACKING)
+		tracking.push_back(obstacle);
 
-	assign(const carmen_ackerman_traj_point_t &robot_pose, Observations &observations, Obstacles &tracking):
-		robot_pose_(robot_pose),
-		observations_(observations),
-		tracking_(tracking)
-	{
-		tracking_.clear();
-	}
+	return false;
+}
 
-	bool operator () (Obstacle &obstacle)
-	{
-		obstacle.update(robot_pose_, observations_);
 
-		Obstacle::Status status = obstacle.status();
-		if (status == Obstacle::DROP)
-			return true;
-
-		if (status == Obstacle::TRACKING)
-			tracking_.push_back(obstacle);
-
-		return false;
-	}
-};
-
-const Obstacles &Detector::detect()
+const Obstacles &DATMO::track()
 {
 	CARMEN_LOG(trace, "Obstacle update start");
 
@@ -116,11 +103,11 @@ const Obstacles &Detector::detect()
 	}
 
 	// Check the map for obstacle points in the focus regions.
-	observate();
+	detect();
 
 	// Update current moving obstacles with the observations, removing stale cases.
 	Obstacles::iterator n = obstacles.end();
-	Obstacles::iterator i = std::remove_if(obstacles.begin(), n, assign(robot_pose, observations, tracking));
+	Obstacles::iterator i = std::remove_if(obstacles.begin(), n, boost::bind(&DATMO::handle, this, _1));
 	obstacles.erase(i, n);
 
 	CARMEN_LOG(trace, "Observations not assigned: " << observations.size());
@@ -136,7 +123,7 @@ const Obstacles &Detector::detect()
 }
 
 
-void Detector::setup(int argc, char *argv[])
+void DATMO::setup(int argc, char *argv[])
 {
 	carmen_param_t param_list[] =
 	{
@@ -157,7 +144,7 @@ void Detector::setup(int argc, char *argv[])
 }
 
 
-void Detector::setup(const carmen_robot_ackerman_config_t &robot_config, int min_poses_ahead, int max_poses_ahead)
+void DATMO::setup(const carmen_robot_ackerman_config_t &robot_config, int min_poses_ahead, int max_poses_ahead)
 {
 	this->robot_config = robot_config;
 	this->min_poses_ahead = min_poses_ahead;
@@ -165,20 +152,20 @@ void Detector::setup(const carmen_robot_ackerman_config_t &robot_config, int min
 }
 
 
-void Detector::update(const carmen_ackerman_traj_point_t &robot_pose)
+void DATMO::update(const carmen_ackerman_traj_point_t &robot_pose)
 {
 	this->robot_pose = robot_pose;
 	CARMEN_LOG(trace, "Robot pose = " << robot_pose);
 }
 
 
-void Detector::update(carmen_obstacle_distance_mapper_message *map)
+void DATMO::update(carmen_obstacle_distance_mapper_message *map)
 {
 	current_map = map;
 }
 
 
-int Detector::posesAhead() const
+int DATMO::posesAhead() const
 {
 	int num_poses_ahead = min_poses_ahead;
 	double common_goal_v = 3.0;
@@ -200,7 +187,7 @@ int Detector::posesAhead() const
 }
 
 
-void Detector::update(carmen_rddf_road_profile_message *rddf_msg)
+void DATMO::update(carmen_rddf_road_profile_message *rddf_msg)
 {
 	int num_poses_ahead = rddf_msg->number_of_poses;
 	if (!(0 < num_poses_ahead && num_poses_ahead < min_poses_ahead))
