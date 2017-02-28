@@ -42,36 +42,58 @@ DATMO::DATMO():
 }
 
 
-void DATMO::detect()
+void DATMO::detect(carmen_ackerman_traj_point_t *poses, int n)
 {
+	double width = robot_config.width;
+	double lanes[] = {0, 1.5 * width, -1.5 * width};
 	double near = robot_config.distance_between_front_and_rear_axles + 1.5;
 	double front = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
-	double within = robot_config.width / 2.0;
+	double within = width / 2.0;
 
 	CARMEN_LOG(trace, "Observation start");
 
-	observations.clear();
-	for (int i = 0, n = rddf.number_of_poses; i < n; i++)
+	for (int l = 0; l < 3; l++)
 	{
-		if (distance(rddf.poses[i], robot_pose) < near)
-			continue;
-
-		carmen_point_t front_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&rddf.poses[i], front);
-		carmen_position_t position = carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(&front_car_pose, current_map);
-		if (distance(position, front_car_pose) < within)
+		for (int i = 0; i < n; i++)
 		{
-			observations.push_back(Observation(i, position, rddf.timestamp));
-			CARMEN_LOG(trace,
-				"Observation"
-				<< ": t = " << rddf.timestamp - carmen_ipc_initialize_time()
-				<< ", position = " << relative_xy(position, robot_pose)
-				<< ", distance = " << distance(position, robot_pose)
-				<< ", rddf = " << i
-			);
+			carmen_ackerman_traj_point_t pose = poses[i];
 
-			break;
+			// Displaces the pose sideways according to the lane currently being scanned.
+			double lane = lanes[l];
+			double theta = pose.theta;
+			pose.x += lane * sin(theta); // Trigonometric functions are inverted on purpose, to
+			pose.y += lane * cos(theta); // compute a displacement sideways to the pose direction.
+
+			// Avoid using poses that overlap with the robot's current pose.
+			if (lane == 0 && distance(pose, robot_pose) < near)
+				continue;
+
+			carmen_point_t front_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&pose, front);
+			carmen_position_t position = carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(&front_car_pose, current_map);
+			if (distance(position, front_car_pose) < within)
+			{
+				observations.push_back(Observation(i, position, rddf.timestamp));
+				CARMEN_LOG(trace,
+					"Observation"
+					<< ": t = " << rddf.timestamp - carmen_ipc_initialize_time()
+					<< ", position = " << relative_xy(position, robot_pose)
+					<< ", distance = " << distance(position, robot_pose)
+					<< ", rddf = " << i
+				);
+
+				break;
+			}
 		}
 	}
+}
+
+
+void DATMO::detect()
+{
+	observations.clear();
+
+	detect(rddf.poses, rddf.number_of_poses);
+	detect(rddf.poses_back, rddf.number_of_poses_back);
 
 	CARMEN_LOG(trace, "Observations total: " << observations.size());
 }
@@ -105,7 +127,8 @@ const Obstacles &DATMO::track()
 	// Check the map for obstacle points in the focus regions.
 	detect();
 
-	// Update current moving obstacles with the observations, removing stale cases.
+	// Update current moving obstacles with observations, remove stale cases.
+	tracking.clear();
 	Obstacles::iterator n = obstacles.end();
 	Obstacles::iterator i = std::remove_if(obstacles.begin(), n, boost::bind(&DATMO::handle, this, _1));
 	obstacles.erase(i, n);

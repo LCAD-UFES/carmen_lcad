@@ -42,6 +42,11 @@ class DATMO
 	Obstacles tracking;
 
 	/**
+	 * @brief Scan the given pose array for moving obstacle observations.
+	 */
+	void detect(carmen_ackerman_traj_point_t *poses, int n);
+
+	/**
 	 * @brief Scan the current input for moving obstacle observations.
 	 */
 	void detect();
