@@ -12,21 +12,42 @@ LFLAGS += \
 	-lcollision_detection \
 	-llocalize_ackerman_interface \
 	-lobstacle_distance_mapper_interface \
+	-lmapper_interface \
 	-lrddf_interface \
 	-lparam_interface -lipc -lglobal \
 	-L$(CARMEN_HOME)/sharedlib/libtf/src -ltf
 
+# Add logging dependencies as required
+ifeq ("$(CARMEN_LOGGING)","ON")
+CXXFLAGS += -DBOOST_LOG_DYN_LINK -DCARMEN_LOGGING_ON
+LFLAGS += \
+	-lboost_log_setup \
+	-lboost_log \
+	-lboost_thread \
+	-lboost_system
+endif
+
+# If you set graphics support in configure.
+ifndef NO_GRAPHICS
+#Carmen Global Graphic Library and Gtk+2 Graphics Libraries
+LFLAGS += -lglobal_graphics
+IFLAGS += `pkg-config --cflags gtk+-2.0 gmodule-export-2.0`
+IFLAGS += `pkg-config --cflags gtkglext-1.0`
+LFLAGS += `pkg-config --libs gtk+-2.0 gmodule-export-2.0`
+LFLAGS += `pkg-config --libs gtkglext-1.0`
+endif
+
 SOURCES = \
-	detector.cpp \
-	obstacles.cpp \
-	udatmo.cpp \
+	datmo.cpp \
+	obstacle.cpp \
+	primitives.cpp \
+	udatmo_api.cpp \
 	udatmo_interface.cpp \
 	udatmo_logger.cpp \
-	udatmo_main.cpp \
-	udatmo_memory.c
+	udatmo_main.cpp
 
 PUBLIC_INCLUDES = \
-	udatmo.h \
+	udatmo_api.h \
 	udatmo_interface.h \
 	udatmo_messages.h
 
@@ -44,9 +65,9 @@ TARGETS = \
 	udatmo \
 	udatmo_logger
 
-libudatmo.a: detector.o obstacles.o udatmo.o udatmo_interface.o udatmo_memory.o
+libudatmo.a: datmo.o obstacle.o primitives.o udatmo_api.o udatmo_interface.o
 libudatmo_interface.a: udatmo_interface.o
-udatmo: detector.o obstacles.o udatmo.o udatmo_interface.o udatmo_main.o udatmo_memory.o
+udatmo: datmo.o obstacle.o primitives.o udatmo_api.o udatmo_interface.o udatmo_main.o
 udatmo_logger: udatmo_logger.o udatmo_interface.o
 
 include ../Makefile.rules

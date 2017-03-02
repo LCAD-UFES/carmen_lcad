@@ -22,7 +22,7 @@ int carmen_udatmo_front_obstacle_detected(void);
 
 double carmen_udatmo_front_obstacle_distance(carmen_ackerman_traj_point_t *robot_pose);
 
-double carmen_udatmo_front_obstacle_speed(void);
+double carmen_udatmo_front_obstacle_speed(carmen_ackerman_traj_point_t *robot_pose);
 
 void carmen_udatmo_update_distance_map(carmen_obstacle_distance_mapper_message *message);
 

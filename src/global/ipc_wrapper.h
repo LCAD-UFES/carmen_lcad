@@ -7,21 +7,21 @@
  * Roy, Sebastian Thrun, Dirk Haehnel, Cyrill Stachniss,
  * and Jared Glover
  *
- * CARMEN is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public 
- * License as published by the Free Software Foundation; 
+ * CARMEN is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation;
  * either version 2 of the License, or (at your option)
  * any later version.
  *
  * CARMEN is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied 
+ * but WITHOUT ANY WARRANTY; without even the implied
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- * PURPOSE.  See the GNU General Public License for more 
+ * PURPOSE.  See the GNU General Public License for more
  * details.
  *
- * You should have received a copy of the GNU General 
+ * You should have received a copy of the GNU General
  * Public License along with CARMEN; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, 
+ * Free Software Foundation, Inc., 59 Temple Place,
  * Suite 330, Boston, MA  02111-1307 USA
  *
  ********************************************************/
@@ -46,56 +46,59 @@
 extern "C" {
 #endif
 
-typedef enum {CARMEN_UNSUBSCRIBE, 
-	      CARMEN_SUBSCRIBE_LATEST, 
+typedef enum {CARMEN_UNSUBSCRIBE,
+	      CARMEN_SUBSCRIBE_LATEST,
 	      CARMEN_SUBSCRIBE_ALL} carmen_subscribe_t;
 
 typedef void (*carmen_handler_t)(void *);
 
 extern MSG_INSTANCE current_msgRef;
 
-  /** carmen_subscribe_message - generic IPC subscribe function.  It attaches 
+  /** carmen_subscribe_message - generic IPC subscribe function.  It attaches
      a callback and a memory destination to a particular IPC message. **/
-void 
-carmen_subscribe_message(char *message_name, char *message_fmt, 
-			 void *message_mem, int message_size, 
+void
+carmen_subscribe_message(char *message_name, char *message_fmt,
+			 void *message_mem, int message_size,
 			 carmen_handler_t handler, carmen_subscribe_t subscribe_how);
 
   /** carmen_unsubscribe_message - Generic IPC unsubscribe message function. **/
 void
 carmen_unsubscribe_message(char *message_name, carmen_handler_t handler);
 
-void 
+void
 carmen_ipc_subscribe_fd(int fd, carmen_handler_t handler);
 
-void 
+void
 carmen_ipc_unsubscribe_fd(int fd, carmen_handler_t handler);
 
-int 
+int
 carmen_ipc_connect_locked(char *module_name);
 
 int
 carmen_ipc_connect(char *module_name);
 
-int 
+int
 carmen_ipc_connect_long(char *module_name, char *host, int port);
 
 void
 carmen_ipc_initialize_locked(int argc, char **argv);
 
-void 
+void
 carmen_ipc_initialize_locked_with_name(int argc, char **argv, char *name);
 
-void 
+void
 carmen_ipc_initialize(int argc, char **argv);
 
-void 
+double
+carmen_ipc_initialize_time(void);
+
+void
 carmen_ipc_dispatch(void);
 
-void 
+void
 carmen_ipc_sleep(double timeout);
 
-void 
+void
 carmen_ipc_disconnect(void);
 
 void

@@ -7,7 +7,7 @@
 
 #include <carmen/collision_detection.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
-#include <carmen/udatmo.h>
+#include <carmen/udatmo_api.h>
 #include <carmen/global_graphics.h>
 #include "behavior_selector.h"
 #include "behavior_selector_messages.h"
@@ -45,6 +45,9 @@ double speed_around_annotation = 1.0;
 
 #define MAX_VIRTUAL_LASER_SAMPLES 10000
 carmen_mapper_virtual_laser_message virtual_laser_message;
+
+
+carmen_udatmo_moving_obstacles_message *moving_obstacles = NULL;
 
 //SampleFilter filter;
 SampleFilter filter2;
@@ -179,7 +182,7 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf)
 	if (rddf == NULL)
 		return (0);
 
-	carmen_udatmo_moving_obstacles_message *moving_obstacles = carmen_udatmo_detect_moving_obstacles();
+	moving_obstacles = carmen_udatmo_detect_moving_obstacles();
 	int front_obstacle_rddf_index = moving_obstacles->obstacles[0].rddf_index;
 
 	int goal_index = 0;
