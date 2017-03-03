@@ -7,6 +7,8 @@
 #include <carmen/obstacle_distance_mapper_interface.h>
 #include <carmen/rddf_messages.h>
 
+#include <opencv2/opencv.hpp>
+
 
 namespace udatmo
 {
@@ -38,8 +40,10 @@ class DATMO
 	/** @brief Sequence of detected obstacles. */
 	Obstacles obstacles;
 
-	/** @brief Sequence of tracking obstacles. */
-	Obstacles tracking;
+	/**
+	 * @brief Assign observation `j` either to an existing or new moving obstacle.
+	 */
+	void assign(int j, const cv::Mat assignments, Obstacles &recognized);
 
 	/**
 	 * @brief Scan the given pose array for moving obstacle observations.
@@ -52,14 +56,9 @@ class DATMO
 	void detect();
 
 	/**
-	 * @brief Dispose of an obstacle as appropriate given its current status.
-	 *
-	 * The obstacle is added to the tracking sequence if its status is `TRACKING`,
-	 * dropped if it's `DROPPED`, and kept in the obstacle list otherwise.
-	 *
-	 * @return Whether the given obstacle should be dropped.
+	 * @brief Compute the distances between known obstacles and latest observations.
 	 */
-	bool handle(Obstacle &obstacle);
+	cv::Mat distances() const;
 
 	/**
 	 * @brief Compute the number of RDDF poses ahead of the robot that must be considered.

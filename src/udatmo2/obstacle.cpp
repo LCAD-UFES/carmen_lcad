@@ -21,9 +21,9 @@ Obstacle::Obstacle():
 }
 
 
-Obstacle::Obstacle(const carmen_ackerman_traj_point_t &robot_pose, Observation &observation)
+Obstacle::Obstacle(const carmen_ackerman_traj_point_t &robot_pose, const Observation &observation)
 {
-	updateLocation(observation);
+	update(observation);
 	pose.theta = robot_pose.theta;
 	pose.v = robot_pose.v;
 	pose.phi = 0;
@@ -49,8 +49,7 @@ void Obstacle::update(const carmen_ackerman_traj_point_t &robot_pose, Observatio
 		Observation &observation = *i;
 		if (distance(pose, observation.position) <= r)
 		{
-			updateLocation(observation);
-			updateMovement();
+			update(observation);
 			observations.erase(i);
 			return;
 		}
@@ -68,7 +67,7 @@ void Obstacle::update(const carmen_ackerman_traj_point_t &robot_pose, Observatio
 }
 
 
-void Obstacle::updateLocation(const Observation &observation)
+void Obstacle::update(const Observation &observation)
 {
 	misses = 0;
 
@@ -84,6 +83,7 @@ void Obstacle::updateLocation(const Observation &observation)
 	index = observation.index;
 	pose.x = position.x;
 	pose.y = position.y;
+	updateMovement();
 }
 
 

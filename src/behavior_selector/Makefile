@@ -5,22 +5,42 @@ MODULE_COMMENT = Change path planner algorithms and speed limits
 
 LINK=g++
 CFLAGS += -std=c99
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
+
+IFLAGS += \
+	-I$(CARMEN_HOME)/sharedlib/prob_models \
+	-I/usr/include/eigen3 \
+	-I/usr/include/suitesparse \
+	-I/usr/include/eigen3 \
+	-I/usr/local/include/EXTERNAL/csparse/ \
+	-I/usr/local/include/g2o/
 
 LFLAGS += \
-	$(INTERFACE_LIBS) -lglobal -lipc -lmap_interface -lparam_interface  \
-	-lmapper_interface -lrddf_interface -lnavigator_ackerman_interface \
-	-llocalize_ackerman_interface -lmap_server_interface -lcollision_detection -lmotion_planner_interface \
-	-lobstacle_avoider_interface -lgrid_mapping -lmap_io -lmap_util \
-	-lprob_models -lrotation_geometry -lsimulator_ackerman_interface -lobstacle_distance_mapper_interface \
-	-ludatmo
-
-IFLAGS += -I/usr/include/eigen3
-IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ -I/usr/local/include/g2o/
+	-L$(CARMEN_HOME)/sharedlib/prob_models \
+	$(INTERFACE_LIBS) \
+	-lglobal -lipc \
+	-lmap_interface \
+	-lparam_interface  \
+	-lmapper_interface \
+	-lrddf_interface \
+	-lnavigator_ackerman_interface \
+	-llocalize_ackerman_interface \
+	-lmap_server_interface \
+	-lcollision_detection \
+	-lmotion_planner_interface \
+	-lobstacle_avoider_interface \
+	-lgrid_mapping \
+	-lmap_io \
+	-lmap_util \
+	-lprob_models \
+	-lrotation_geometry \
+	-lsimulator_ackerman_interface \
+	-lobstacle_distance_mapper_interface \
+	-ludatmo \
+	`pkg-config --libs opencv`
 
 ifeq ("$(CARMEN_LOGGING)","ON")
-CFLAGS += -DBOOST_LOG_DYN_LINK
+CFLAGS += \
+	-DBOOST_LOG_DYN_LINK
 LFLAGS += \
 	-lboost_log_setup \
 	-lboost_log \
@@ -28,23 +48,36 @@ LFLAGS += \
 	-lboost_system
 endif
 
-SOURCES = behavior_selector_interface.c behavior_selector_main.cpp behavior_selector.cpp SampleFilter.cpp
+SOURCES = \
+	behavior_selector_interface.c \
+	behavior_selector_main.cpp \
+	behavior_selector.cpp \
+	SampleFilter.cpp
 
-PUBLIC_INCLUDES =  behavior_selector_interface.h behavior_selector_messages.h
-PUBLIC_LIBRARIES =  libbehavior_selector_interface.a
+PUBLIC_INCLUDES = \
+	behavior_selector_interface.h \
+	behavior_selector_messages.h
 
-PUBLIC_BINARIES = behavior_selector
+PUBLIC_LIBRARIES = \
+	libbehavior_selector_interface.a
 
-TARGETS =  behavior_selector libbehavior_selector_interface.a
+PUBLIC_BINARIES = \
+	behavior_selector
+
+TARGETS = \
+	behavior_selector \
+	libbehavior_selector_interface.a
 
 # If you set graphics support in configure.
 ifndef NO_GRAPHICS
 #Carmen Global Graphic Library and Gtk+2 Graphics Libraries
-LFLAGS += -lglobal_graphics
-IFLAGS += `pkg-config --cflags gtk+-2.0 gmodule-export-2.0`
-IFLAGS += `pkg-config --cflags gtkglext-1.0`
-LFLAGS += `pkg-config --libs gtk+-2.0 gmodule-export-2.0`
-LFLAGS += `pkg-config --libs gtkglext-1.0`
+IFLAGS += \
+	`pkg-config --cflags gtk+-2.0 gmodule-export-2.0` \
+	`pkg-config --cflags gtkglext-1.0`
+LFLAGS += \
+	-lglobal_graphics \
+	`pkg-config --libs gtk+-2.0 gmodule-export-2.0` \
+	`pkg-config --libs gtkglext-1.0`
 endif
 
 behavior_selector: behavior_selector_main.o behavior_selector.o SampleFilter.o libbehavior_selector_interface.a

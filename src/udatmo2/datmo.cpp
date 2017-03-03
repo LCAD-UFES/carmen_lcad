@@ -1,6 +1,7 @@
 #include "datmo.h"
 
 #include "logging.h"
+#include "munkres.h"
 #include "primitives.h"
 
 #include <carmen/collision_detection.h>
@@ -54,12 +55,12 @@ void DATMO::detect(carmen_ackerman_traj_point_t *poses, int n)
 
 	for (int l = 0; l < 3; l++)
 	{
+		double lane = lanes[l];
 		for (int i = 0; i < n; i++)
 		{
 			carmen_ackerman_traj_point_t pose = poses[i];
 
 			// Displaces the pose sideways according to the lane currently being scanned.
-			double lane = lanes[l];
 			double theta = pose.theta;
 			pose.x += lane * sin(theta); // Trigonometric functions are inverted on purpose, to
 			pose.y += lane * cos(theta); // compute a displacement sideways to the pose direction.
@@ -99,23 +100,25 @@ void DATMO::detect()
 }
 
 
-bool DATMO::handle(Obstacle &obstacle)
+cv::Mat DATMO::distances() const
 {
-	obstacle.update(robot_pose, observations);
+	int rows = obstacles.size();
+	int cols = observations.size();
+	cv::Mat distances(rows, cols, CV_64F);
+	for (int i = 0; i < rows; i++)
+		for (int j = 0; j < cols; j++)
+			distances.at<double>(i, j) = distance(obstacles[i].pose, observations[j].position);
 
-	Obstacle::Status status = obstacle.status();
-	if (status == Obstacle::DROP)
-		return true;
+	CARMEN_LOG(trace, "Distances: " << distances);
 
-	if (status == Obstacle::TRACKING)
-		tracking.push_back(obstacle);
-
-	return false;
+	return distances;
 }
 
 
 const Obstacles &DATMO::track()
 {
+	static const double MAX_DISTANCE = 360.0;
+
 	CARMEN_LOG(trace, "Obstacle update start");
 
 	if (isnan(robot_pose.v) || current_map == NULL || rddf.number_of_poses == 0)
@@ -127,22 +130,81 @@ const Obstacles &DATMO::track()
 	// Check the map for obstacle points in the focus regions.
 	detect();
 
-	// Update current moving obstacles with observations, remove stale cases.
-	tracking.clear();
-	Obstacles::iterator n = obstacles.end();
-	Obstacles::iterator i = std::remove_if(obstacles.begin(), n, boost::bind(&DATMO::handle, this, _1));
-	obstacles.erase(i, n);
+	if (obstacles.size() == 0)
+	{
+		CARMEN_LOG(trace, "No known obstacles, convert " << observations.size() << " observations to obstacles");
+		for (Observations::const_iterator i = observations.begin(), n = observations.end(); i != n; ++i)
+			obstacles.push_back(Obstacle(robot_pose, *i));
 
-	CARMEN_LOG(trace, "Observations not assigned: " << observations.size());
+		return obstacles;
+	}
 
-	// Instantiate new moving obstacles from observations not associated to current obstacles.
-	for (Observations::iterator i = observations.begin(), n = observations.end(); i != n; ++i)
-		obstacles.push_back(Obstacle(robot_pose, *i));
+	if (observations.size() == 0)
+	{
+		CARMEN_LOG(trace, "No observations found");
+		obstacles.clear();
+		return obstacles;
+	}
 
-	CARMEN_LOG(trace, "Obstacles total: " << obstacles.size());
-	CARMEN_LOG(trace, "Tracking total: " << tracking.size());
+	cv::Mat assignments = munkres(distances(), MAX_DISTANCE);
 
-	return tracking;
+	CARMEN_LOG(trace, "Assignments: " << assignments);
+
+	Obstacles recognized;
+	recognized.reserve(obstacles.size());
+	for (int j = 0, n = observations.size(); j < n; j++)
+		assign(j, assignments, recognized);
+
+	obstacles = recognized;
+	return obstacles;
+
+// 	// Check the map for obstacle points in the focus regions.
+// 	detect();
+//
+// 	// Update current moving obstacles with observations, remove stale cases.
+// 	tracking.clear();
+// 	Obstacles::iterator n = obstacles.end();
+// 	Obstacles::iterator i = std::remove_if(obstacles.begin(), n, boost::bind(&DATMO::handle, this, _1));
+// 	obstacles.erase(i, n);
+//
+// 	CARMEN_LOG(trace, "Observations not assigned: " << observations.size());
+//
+// 	// Instantiate new moving obstacles from observations not associated to current obstacles.
+// 	for (Observations::iterator i = observations.begin(), n = observations.end(); i != n; ++i)
+// 		obstacles.push_back(Obstacle(robot_pose, *i));
+//
+// 	CARMEN_LOG(trace, "Obstacles total: " << obstacles.size());
+// 	CARMEN_LOG(trace, "Tracking total: " << tracking.size());
+//
+// 	return tracking;
+}
+
+
+void DATMO::assign(int j, const cv::Mat assignments, Obstacles &recognized)
+{
+	int rows = obstacles.size();
+	for (int i = 0; i < rows; i++)
+	{
+		if (assignments.at<int>(i, j) == STAR)
+		{
+			CARMEN_LOG(trace, "Obstacle #" << i << " updated with observation #" << j);
+			Obstacle &obstacle = obstacles[i];
+			obstacle.update(observations[j]);
+			recognized.push_back(obstacle);
+			return;
+		}
+	}
+
+	// Add new moving obstacles.
+	int side = assignments.rows;
+	for (int i = rows; i < side; i++)
+	{
+		if (assignments.at<int>(i, j) == STAR)
+		{
+			recognized.push_back(Obstacle(robot_pose, observations[j]));
+			return;
+		}
+	}
 }
 
 

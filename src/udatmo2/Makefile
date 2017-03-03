@@ -5,8 +5,11 @@ MODULE_COMMENT = Minimalist module for Detection And Tracking of Mobile Obstacle
 
 CFLAGS += -Wall -std=c99
 CXXFLAGS += -Wall -std=c++98
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models
 LINK = g++
+
+IFLAGS += \
+	-I$(CARMEN_HOME)/sharedlib/prob_models \
+	`pkg-config --cflags opencv`
 
 LFLAGS += \
 	-lcollision_detection \
@@ -15,7 +18,8 @@ LFLAGS += \
 	-lmapper_interface \
 	-lrddf_interface \
 	-lparam_interface -lipc -lglobal \
-	-L$(CARMEN_HOME)/sharedlib/libtf/src -ltf
+	-L$(CARMEN_HOME)/sharedlib/libtf/src -ltf \
+	`pkg-config --libs opencv`
 
 # Add logging dependencies as required
 ifeq ("$(CARMEN_LOGGING)","ON")
@@ -30,15 +34,18 @@ endif
 # If you set graphics support in configure.
 ifndef NO_GRAPHICS
 #Carmen Global Graphic Library and Gtk+2 Graphics Libraries
-LFLAGS += -lglobal_graphics
-IFLAGS += `pkg-config --cflags gtk+-2.0 gmodule-export-2.0`
-IFLAGS += `pkg-config --cflags gtkglext-1.0`
-LFLAGS += `pkg-config --libs gtk+-2.0 gmodule-export-2.0`
-LFLAGS += `pkg-config --libs gtkglext-1.0`
+IFLAGS += \
+	`pkg-config --cflags gtk+-2.0 gmodule-export-2.0` \
+	`pkg-config --cflags gtkglext-1.0`
+LFLAGS += \
+	-lglobal_graphics \
+	`pkg-config --libs gtk+-2.0 gmodule-export-2.0` \
+	`pkg-config --libs gtkglext-1.0`
 endif
 
 SOURCES = \
 	datmo.cpp \
+	munkres.cpp \
 	obstacle.cpp \
 	primitives.cpp \
 	udatmo_api.cpp \
@@ -65,9 +72,9 @@ TARGETS = \
 	udatmo \
 	udatmo_logger
 
-libudatmo.a: datmo.o obstacle.o primitives.o udatmo_api.o udatmo_interface.o
+libudatmo.a: datmo.o munkres.o obstacle.o primitives.o udatmo_api.o udatmo_interface.o
 libudatmo_interface.a: udatmo_interface.o
-udatmo: datmo.o obstacle.o primitives.o udatmo_api.o udatmo_interface.o udatmo_main.o
+udatmo: datmo.o munkres.o obstacle.o primitives.o udatmo_api.o udatmo_interface.o udatmo_main.o
 udatmo_logger: udatmo_logger.o udatmo_interface.o
 
 include ../Makefile.rules

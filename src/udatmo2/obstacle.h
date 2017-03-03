@@ -21,11 +21,6 @@ class Obstacle
 	int misses;
 
 	/**
-	 * @brief Add an observation to this moving obstacle.
-	 */
-	void updateLocation(const Observation &observation);
-
-	/**
 	 * @brief Update estimates of direction and speed of movement.
 	 */
 	void updateMovement();
@@ -44,12 +39,17 @@ public:
 	 */
 	Obstacle();
 
-	Obstacle(const carmen_ackerman_traj_point_t &robot_pose, Observation &observation);
+	Obstacle(const carmen_ackerman_traj_point_t &robot_pose, const Observation &observation);
 
 	/**
 	 * @brief Update this moving obstacle according to the given observation sequence.
 	 */
 	void update(const carmen_ackerman_traj_point_t &robot_pose, Observations &observed);
+
+	/**
+	 * @brief Add an observation to this moving obstacle.
+	 */
+	void update(const Observation &observation);
 
 	double timestamp() const;
 
