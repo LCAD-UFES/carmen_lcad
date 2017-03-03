@@ -4,7 +4,8 @@
 #include <carmen/path_planner_messages.h>
 #include <carmen/rddf_interface.h>
 #include <carmen/grid_mapping.h>
-#include <carmen/udatmo.h>
+#include <carmen/udatmo_api.h>
+#include <carmen/udatmo_interface.h>
 #include <prob_map.h>
 #include <carmen/map_server_interface.h>
 #include <carmen/obstacle_avoider_interface.h>
@@ -16,6 +17,9 @@
 
 #include "behavior_selector.h"
 #include "behavior_selector_messages.h"
+
+// Comment or uncomment this definition to control whether simulated moving obstacles are created.
+//#define SIMULATE_MOVING_OBSTACLE
 
 using namespace g2o;
 
@@ -45,6 +49,7 @@ double robot_max_centripetal_acceleration = 1.5;
 
 int use_truepos = 0;
 extern carmen_mapper_virtual_laser_message virtual_laser_message;
+extern carmen_udatmo_moving_obstacles_message *moving_obstacles;
 
 static carmen_rddf_road_profile_message *last_rddf_message = NULL;
 
@@ -383,7 +388,7 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 	{
 //		distance = DIST2D(udatmo_get_moving_obstacle_position(), *current_robot_pose_v_and_phi) - car_pose_to_car_front;
 		distance = carmen_udatmo_front_obstacle_distance(current_robot_pose_v_and_phi) - car_pose_to_car_front;
-		moving_obj_v = carmen_udatmo_front_obstacle_speed();
+		moving_obj_v = carmen_udatmo_front_obstacle_speed(current_robot_pose_v_and_phi);
 
 		// ver "The DARPA Urban Challenge" book, pg. 36.
 		double Kgap = 1.0;
@@ -734,7 +739,14 @@ behavior_selector_motion_planner_publish_path_message(carmen_rddf_road_profile_m
 void
 publish_object(carmen_ackerman_traj_point_t *object_pose)
 {
-	virtual_laser_message.num_positions = 3;
+	if (moving_obstacles == NULL)
+		virtual_laser_message.num_positions = 3;
+	else
+	{
+		virtual_laser_message.num_positions = 1 + moving_obstacles->num_obstacles;
+		carmen_udatmo_fill_virtual_laser_message(moving_obstacles, 1, &virtual_laser_message);
+	}
+
 	virtual_laser_message.positions[0].x = object_pose->x;
 	virtual_laser_message.positions[0].y = object_pose->y;
 	virtual_laser_message.colors[0] = CARMEN_PURPLE;
@@ -774,10 +786,16 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 		publish_goal_list(goal_list, goal_list_size, carmen_get_time());
 	}
 
+// Control whether simulated moving obstacles are created by (un)commenting the
+// definition of the macro below at the top of this file.
+#ifdef SIMULATE_MOVING_OBSTACLE
 	// @@@ Alberto: colocar um parametro para ativar ou desativar isso.
-//	carmen_ackerman_traj_point_t *simulated_object_pose = compute_simulated_objects(&current_robot_pose_v_and_phi, timestamp);
-//	if (simulated_object_pose)
-//		publish_object(simulated_object_pose);
+	carmen_ackerman_traj_point_t *simulated_object_pose = compute_simulated_objects(&current_robot_pose_v_and_phi, timestamp);
+	if (simulated_object_pose)
+		publish_object(simulated_object_pose);
+#else
+	carmen_udatmo_display_moving_obstacles_message(moving_obstacles);
+#endif
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 

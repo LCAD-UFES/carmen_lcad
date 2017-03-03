@@ -1,4 +1,4 @@
-#include "udatmo.h"
+#include "udatmo_api.h"
 
 #include "detector.h"
 
@@ -26,7 +26,7 @@ carmen_udatmo_moving_obstacles_message *carmen_udatmo_detect_moving_obstacles(vo
 	return getDetector().detect();
 }
 
-double carmen_udatmo_front_obstacle_speed(void)
+double carmen_udatmo_front_obstacle_speed(carmen_ackerman_traj_point_t * /*robot_pose*/)
 {
 	return getDetector().speed_front();
 }
