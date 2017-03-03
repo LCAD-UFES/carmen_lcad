@@ -9,35 +9,39 @@ extern "C"
 {
 #endif
 
-//    typedef enum
-//    {
-//        RDDF_ANNOTATION_NONE = 0,
-//        RDDF_ANNOTATION_END_POINT_AREA = 1,
-//        RDDF_ANNOTATION_HUMAN_INTERVENTION = 2
-//    } RDDF_ANNOTATION;
+	#define NUM_RDDF_ANNOTATION_TYPES				11
 
-	#define RDDF_ANNOTATION_NONE 0
-	#define RDDF_ANNOTATION_END_POINT_AREA 1
-	#define RDDF_ANNOTATION_HUMAN_INTERVENTION 2
-    #define RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK 3
-    #define RDDF_ANNOTATION_TYPE_STOP 4
-    #define RDDF_ANNOTATION_TYPE_BARRIER 5
-    #define RDDF_ANNOTATION_TYPE_BUMP 6
-    #define RDDF_ANNOTATION_TYPE_SPEED_LIMIT 7
-	#define RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT 8
-	#define RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN 9
+	#define RDDF_ANNOTATION_TYPE_NONE 				0
+	#define RDDF_ANNOTATION_TYPE_END_POINT_AREA 	1
+	#define RDDF_ANNOTATION_TYPE_HUMAN_INTERVENTION 2
+    #define RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK 	3
+    #define RDDF_ANNOTATION_TYPE_STOP 				4
+    #define RDDF_ANNOTATION_TYPE_BARRIER 			5
+    #define RDDF_ANNOTATION_TYPE_BUMP 				6
+    #define RDDF_ANNOTATION_TYPE_SPEED_LIMIT 		7
+	#define RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT 		8
+	#define RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN 		9
+	#define RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP	10
 
-    #define RDDF_ANNOTATION_CODE_SPEED_LIMIT_0 1
-    #define RDDF_ANNOTATION_CODE_SPEED_LIMIT_5 2
-    #define RDDF_ANNOTATION_CODE_SPEED_LIMIT_10 3
-    #define RDDF_ANNOTATION_CODE_SPEED_LIMIT_15 4
-    #define RDDF_ANNOTATION_CODE_SPEED_LIMIT_20 5
-    #define RDDF_ANNOTATION_CODE_SPEED_LIMIT_30 6
-    #define RDDF_ANNOTATION_CODE_SPEED_LIMIT_40 7
-    #define RDDF_ANNOTATION_CODE_SPEED_LIMIT_60 8
-    #define RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_BUMP 9
-	#define RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_SPEED_20 10
-	#define RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_SPEED_30 11
+
+	#define NUM_RDDF_ANNOTATION_CODES					15
+
+	#define RDDF_ANNOTATION_CODE_NONE		 			0
+	#define RDDF_ANNOTATION_CODE_SPEED_LIMIT_0 			1
+    #define RDDF_ANNOTATION_CODE_SPEED_LIMIT_5 			2
+    #define RDDF_ANNOTATION_CODE_SPEED_LIMIT_10 		3
+    #define RDDF_ANNOTATION_CODE_SPEED_LIMIT_15 		4
+    #define RDDF_ANNOTATION_CODE_SPEED_LIMIT_20 		5
+    #define RDDF_ANNOTATION_CODE_SPEED_LIMIT_30 		6
+    #define RDDF_ANNOTATION_CODE_SPEED_LIMIT_40 		7
+	#define RDDF_ANNOTATION_CODE_SPEED_LIMIT_60 		8
+	#define RDDF_ANNOTATION_CODE_SPEED_LIMIT_80 		9
+	#define RDDF_ANNOTATION_CODE_SPEED_LIMIT_100 		10
+	#define RDDF_ANNOTATION_CODE_SPEED_LIMIT_110 		11
+	#define RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED 		12
+	#define RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN 	13
+	#define RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_YELLOW 	14
+
 
     typedef struct
     {
@@ -92,7 +96,7 @@ extern "C"
 	#define CARMEN_RDDF_NEAREST_WAYPOINT_CONFIRMATION_MESSAGE_NAME "carmen_rddf_nearest_waypoint_confirmation_message"
 	#define CARMEN_RDDF_NEAREST_WAYPOINT_CONFIRMATION_MESSAGE_FMT "{int, {double, double, double}, int, double, string}"
 
-
+    // TODO: update this message to use carmen_annotation_t.
     typedef struct
 	{
 		carmen_vector_3D_t annotation_point;
@@ -107,10 +111,32 @@ extern "C"
     #define CARMEN_RDDF_ADD_ANNOTATION_MESSAGE_NAME "carmen_rddf_add_annotation_message"
     #define CARMEN_RDDF_ADD_ANNOTATION_MESSAGE_FMT "{{double,double,double},double,string,int,int,double,string}"
 
+	/*
 	typedef carmen_rddf_add_annotation_message carmen_rddf_annotation_message;
 
 	#define CARMEN_RDDF_ANNOTATION_MESSAGE_NAME "carmen_rddf_annotation_message"
 	#define CARMEN_RDDF_ANNOTATION_MESSAGE_FMT "{{double,double,double},double,string,int,int,double,string}"
+	 */
+
+    typedef struct
+    {
+		carmen_vector_3D_t annotation_point;
+		double annotation_orientation;
+		char *annotation_description;
+		int annotation_type;
+		int annotation_code;
+    } carmen_annotation_t;
+
+    typedef struct
+	{
+    	int num_annotations;
+    	carmen_annotation_t *annotations;
+		double timestamp;
+		char *host;
+	} carmen_rddf_annotation_message;
+
+	#define CARMEN_RDDF_ANNOTATION_MESSAGE_NAME "carmen_rddf_annotation_message"
+	#define CARMEN_RDDF_ANNOTATION_MESSAGE_FMT "{int, <{{double,double,double},double,string,int,int}:1>,double,string}"
 
 #ifdef __cplusplus
 }

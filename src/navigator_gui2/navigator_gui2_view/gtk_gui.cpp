@@ -91,6 +91,44 @@ valid_carmen_ackerman_traj_point(carmen_ackerman_traj_point_t world_point, carme
 	return (true);
 }
 
+GdkImage *
+get_annotation_image(char *filename)
+{
+	if (!carmen_file_exists(filename))
+		carmen_die("Image file %s does not exist.\n", filename);
+
+	GError *error = NULL;
+	GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file(filename, &error);
+	if (pixbuf == NULL)
+		carmen_die("Couldn't open %s for reading\n", filename);
+
+	int n_channels = gdk_pixbuf_get_n_channels(pixbuf);
+//		if (n_channels != 3)
+//			carmen_die("File has alpha channel. carmen_pixbuf_to_map failed\n");
+
+	int x_size = gdk_pixbuf_get_width(pixbuf);
+	int y_size = gdk_pixbuf_get_height(pixbuf);
+	GdkImage *image = gdk_image_new(GDK_IMAGE_FASTEST, gdk_visual_get_system(), x_size, y_size);
+
+	int rowstride = gdk_pixbuf_get_rowstride(pixbuf);
+	guchar *pixels = gdk_pixbuf_get_pixels(pixbuf);
+
+	for (int x_index = 0; x_index < x_size; x_index++)
+	{
+		for (int y_index = 0; y_index < x_size; y_index++)
+		{
+			unsigned char r, g, b;
+			guchar *p = pixels + y_index * rowstride + x_index * n_channels;
+			r = p[0];
+			g = p[1];
+			b = p[2];
+			gdk_image_put_pixel(image, x_index, y_index, b | g << 8 | r << 16);
+		}
+	}
+
+	return (image);
+}
+
 
 namespace View
 {
@@ -185,6 +223,7 @@ namespace View
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowMotionPath), nav_panel_config->show_motion_path);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowDynamicObjects), nav_panel_config->show_dynamic_objects);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowDynamicPoints), nav_panel_config->show_dynamic_points);
+		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuDisplay_ShowAnnotations), nav_panel_config->show_annotations);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSimulatorShowTruePosition), nav_panel_config->show_true_pos);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSimulator_ShowObjects), nav_panel_config->show_simulator_objects);
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuGoals_EditRddfGoals), nav_panel_config->edit_rddf_goals);
@@ -236,29 +275,22 @@ namespace View
 			carmen_die("Unknown map named \"%s\" set as parameter in the carmen ini file. Exiting...\n", nav_panel_config->map);
 
 		if (nav_panel_config->show_particles || nav_panel_config->show_gaussians)
-		{
 			carmen_localize_ackerman_subscribe_particle_message(&particle_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
-		}
 
 		if (nav_panel_config->show_lasers)
-		{
 			carmen_localize_ackerman_subscribe_sensor_message(&sensor_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
-		}
 
 		if (nav_panel_config->show_command_path)
-		{
 			carmen_obstacle_avoider_subscribe_path_message(&obstacle_avoider_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
-		}
 
 		if (nav_panel_config->show_motion_path)
-		{
 			carmen_obstacle_avoider_subscribe_motion_planner_path_message(&motion_path_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
-		}
 
 		if (nav_panel_config->show_dynamic_points)
-		{
 			carmen_mapper_subscribe_virtual_laser_message(&virtual_laser_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
-		}
+
+		if (nav_panel_config->show_annotations)
+			carmen_rddf_subscribe_annotation_message(&rddf_annotation_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
 	}
 
 	void GtkGui::navigator_graphics_initialize(int argc, char **argv, carmen_localize_ackerman_globalpos_message *msg,
@@ -268,7 +300,7 @@ namespace View
 		GdkGLConfig *glconfig;
 		GtkBuilder  *builder;
 		GError      *error = NULL;
-		char *carmen_home_path, glade_path[1000];
+		char *carmen_home_path, glade_path[1000], annotation_image_filename[1000];
 
 		gtk_init(&argc, &argv);
 		gtk_gl_init(&argc, &argv);
@@ -299,11 +331,59 @@ namespace View
 		}
 
 		sprintf(glade_path, "%s/data/gui/navigator_gui2.glade", carmen_home_path);
-		if( ! gtk_builder_add_from_file(builder, glade_path, &error ) )
+		if (!gtk_builder_add_from_file(builder, glade_path, &error))
 		{
-			g_warning( "%s", error->message );
-			g_free( error );
+			g_warning("%s", error->message);
+			g_free(error);
 		}
+
+		for (int i = 0; i < NUM_RDDF_ANNOTATION_TYPES; i++)
+			for (int j = 0; j < NUM_RDDF_ANNOTATION_CODES; j++)
+				annotation_image[i][j] = NULL;
+
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/end_point_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_END_POINT_AREA][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/intervention3_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_HUMAN_INTERVENTION][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/pedestrian_2_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/stop_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_STOP][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/barrier_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_BARRIER][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/bump_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_BUMP][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_light_neutral_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_light_red_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT][RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_light_green_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT][RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_light_yellow_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT][RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_YELLOW] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_light_stop_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
+
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_5_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_SPEED_LIMIT][RDDF_ANNOTATION_CODE_SPEED_LIMIT_5] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_10_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_SPEED_LIMIT][RDDF_ANNOTATION_CODE_SPEED_LIMIT_10] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_15_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_SPEED_LIMIT][RDDF_ANNOTATION_CODE_SPEED_LIMIT_15] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_20_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_SPEED_LIMIT][RDDF_ANNOTATION_CODE_SPEED_LIMIT_20] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_30_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_SPEED_LIMIT][RDDF_ANNOTATION_CODE_SPEED_LIMIT_30] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_40_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_SPEED_LIMIT][RDDF_ANNOTATION_CODE_SPEED_LIMIT_40] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_60_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_SPEED_LIMIT][RDDF_ANNOTATION_CODE_SPEED_LIMIT_60] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_80_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_SPEED_LIMIT][RDDF_ANNOTATION_CODE_SPEED_LIMIT_80] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_100_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_SPEED_LIMIT][RDDF_ANNOTATION_CODE_SPEED_LIMIT_100] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_110_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_SPEED_LIMIT][RDDF_ANNOTATION_CODE_SPEED_LIMIT_110] = get_annotation_image(annotation_image_filename);
 
 		controls_.main_window  = GTK_WIDGET(gtk_builder_get_object(builder, "mainWindow" ));
 		controls_.drawArea = GTK_WIDGET(gtk_builder_get_object(builder, "drawingArea"));
@@ -317,6 +397,7 @@ namespace View
 		controls_.menuDisplay_ShowCommandPath = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowCommandPath" ));
 		controls_.menuDisplay_ShowDynamicObjects = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowDynamicObjects" ));
 		controls_.menuDisplay_ShowDynamicPoints = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowDynamicPoints" ));
+		controls_.menuDisplay_ShowAnnotations = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowAnnotations" ));
 		controls_.menuDisplay_ShowFusedOdometry = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowFusedOdometry" ));
 		controls_.menuDisplay_ShowGaussians = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowGaussians" ));
 		controls_.menuDisplay_ShowLaserData = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuDisplay_ShowLaserData" ));
@@ -630,18 +711,21 @@ namespace View
 			display_needs_updating = 1;
 		}
 
-		sprintf(buffer, "Robot: %5.1f m, %5.1f m, %6.2f", robot.pose.x,
-				robot.pose.y, carmen_radians_to_degrees(robot.pose.theta));
-		gtk_label_set_text(GTK_LABEL(this->controls_.labelRobot), buffer);
+		if (!freeze_status)
+		{
+			sprintf(buffer, "Robot: %5.1f, %5.1f, %2.3f (%3.2f)", robot.pose.x,
+					robot.pose.y, robot.pose.theta, carmen_radians_to_degrees(robot.pose.theta));
+			gtk_label_set_text(GTK_LABEL(this->controls_.labelRobot), buffer);
 
-		sprintf(buffer, "Velocity: %5.1f km/h (%5.1f m/s), %5.1f %s", robot_traj.t_vel * 3.6, robot_traj.t_vel,
-				carmen_radians_to_degrees(robot_traj.r_vel), (nav_panel_config->use_ackerman ? "deg" : "deg/s"));
-		gtk_label_set_text(GTK_LABEL(this->controls_.labelVelocity), buffer);
+			sprintf(buffer, "Velocity: %5.1f km/h (%5.1f m/s), %5.1f %s", robot_traj.t_vel * 3.6, robot_traj.t_vel,
+					carmen_radians_to_degrees(robot_traj.r_vel), (nav_panel_config->use_ackerman ? "deg" : "deg/s"));
+			gtk_label_set_text(GTK_LABEL(this->controls_.labelVelocity), buffer);
 
-		sprintf(buffer, "Goal: %.1f m, %.1f m", goal.pose.x, goal.pose.y);
-		gtk_label_set_text(GTK_LABEL(this->controls_.labelGoal), buffer);
+			sprintf(buffer, "Goal: %.1f, %.1f", goal.pose.x, goal.pose.y);
+			gtk_label_set_text(GTK_LABEL(this->controls_.labelGoal), buffer);
 
-		set_distance_traveled(robot.pose, robot_traj.t_vel);
+			set_distance_traveled(robot.pose, robot_traj.t_vel);
+		}
 
 		last_navigator_update = carmen_get_time();
 
@@ -815,11 +899,11 @@ namespace View
 			break;
 
 		case CARMEN_LOCALIZE_LMAP_v:
-			flags = CARMEN_GRAPHICS_RESCALE;
+			flags = CARMEN_GRAPHICS_LOG_ODDS | CARMEN_GRAPHICS_INVERT;
 			break;
 
 		case CARMEN_LOCALIZE_GMAP_v:
-			flags = CARMEN_GRAPHICS_RESCALE;
+			flags = CARMEN_GRAPHICS_LOG_ODDS | CARMEN_GRAPHICS_INVERT;
 			break;
 
 		case CARMEN_LANE_MAP_v:
@@ -843,7 +927,7 @@ namespace View
 			break;
 
 		case CARMEN_MOVING_OBJECTS_MAP_v:
-			flags = 0;
+			flags = 0; // CARMEN_GRAPHICS_LOG_ODDS | CARMEN_GRAPHICS_INVERT;
 			break;
 
 		default:
@@ -1099,7 +1183,8 @@ namespace View
 		if (strcmp(goal_source_name, "User Goal") == 0)
 		{
 			return 0;
-		} else if(strcmp(goal_source_name, "Rddf Goal") == 0)
+		}
+		else if(strcmp(goal_source_name, "Rddf Goal") == 0)
 		{
 			return 1;
 		}
@@ -1334,6 +1419,7 @@ namespace View
 	GtkGui::navigator_graphics_start(char *path)
 	{
 		this->map_path = path;
+
 		gtk_main();
 	}
 
@@ -2047,6 +2133,7 @@ namespace View
 
 		//draw goal list set by the interface
 		if (!behavior_selector_active || goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
+		{
 			if ((queuePoints != NULL) && (queuePoints->begin != NULL))
 			{
 				pointers *lista;
@@ -2081,10 +2168,10 @@ namespace View
 					}
 				}
 			}
-
+		}
 
 		//draw navigator goal list
-		for(i = 0; i < goal_list_size; i++)
+		for (i = 0; i < goal_list_size; i++)
 		{
 			draw_robot_shape(the_map_view, &navigator_goal_list[i], TRUE, &goal_colour);
 			draw_robot_shape(the_map_view, &navigator_goal_list[i], FALSE, &carmen_black);
@@ -2245,6 +2332,40 @@ namespace View
 	}
 
 	void
+	GtkGui::draw_annotations(GtkMapViewer *the_map_view, double pixel_size)
+	{
+		carmen_world_point_t world_point;
+
+		for (int i = 0; i < rddf_annotation_msg.num_annotations; i++)
+		{
+			world_point.pose.x = rddf_annotation_msg.annotations[i].annotation_point.x;
+			world_point.pose.y = rddf_annotation_msg.annotations[i].annotation_point.y;
+			world_point.pose.theta = rddf_annotation_msg.annotations[i].annotation_orientation;
+			world_point.map = the_map_view->internal_map;
+//			printf("x %lf, y %lf, theta %lf\n", world_point.pose.x, world_point.pose.y, world_point.pose.theta);
+
+			carmen_world_point_t start, end;
+			double theta = world_point.pose.theta + M_PI / 2.0;
+			start.pose.x = world_point.pose.x + 10.0 * cos(theta);
+			start.pose.y = world_point.pose.y + 10.0 * sin(theta);
+
+			theta = world_point.pose.theta - M_PI / 2.0;
+			end.pose.x = world_point.pose.x + 10.0 * cos(theta);
+			end.pose.y = world_point.pose.y + 10.0 * sin(theta);
+
+			start.map = end.map = world_point.map;
+			start.pose.theta = end.pose.theta = world_point.pose.theta;
+
+			carmen_map_graphics_draw_line(the_map_view, &carmen_grey, &start, &end);
+
+			GdkImage *image = annotation_image[rddf_annotation_msg.annotations[i].annotation_type][rddf_annotation_msg.annotations[i].annotation_code];
+			carmen_map_graphics_draw_image(the_map_view, image, &end, gdk_image_get_width(image), gdk_image_get_height(image));
+		}
+
+		display_needs_updating = 1;
+	}
+
+	void
 	GtkGui::draw_placing_animation(GtkMapViewer *the_map_view)
 	{
 		GdkColor *colour = &carmen_black;
@@ -2320,11 +2441,7 @@ namespace View
 
 		if (path == NULL)
 			return;
-		else if (path->map == NULL)
-			return;
 
-
-		//print_pose(path, "@@@");
 		for (index = 1; index < num_path_points; index++)
 		{
 			//print_pose(path + index, "@");

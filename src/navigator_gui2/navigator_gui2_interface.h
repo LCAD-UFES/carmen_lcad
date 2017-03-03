@@ -16,12 +16,6 @@ void carmen_navigator_gui_subscribe_path_message(carmen_navigator_gui_path_messa
 		carmen_handler_t handler,
 		carmen_subscribe_t subscribe_how);
 
-void carmen_navigator_gui2_publish_show_offline_map_message(carmen_navigator_gui2_show_offline_map_message *msg);
-
-void carmen_navigator_gui2_subscribe_show_offline_map_message(carmen_navigator_gui2_show_offline_map_message *msg,
-		carmen_handler_t handler,
-		carmen_subscribe_t subscribe_how);
-
 #ifdef __cplusplus
 }
 #endif

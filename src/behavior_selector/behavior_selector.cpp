@@ -7,7 +7,7 @@
 
 #include <carmen/collision_detection.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
-#include <carmen/udatmo.h>
+#include <carmen/udatmo_api.h>
 #include <carmen/global_graphics.h>
 #include "behavior_selector.h"
 #include "behavior_selector_messages.h"
@@ -46,6 +46,9 @@ double speed_around_annotation = 1.0;
 #define MAX_VIRTUAL_LASER_SAMPLES 10000
 carmen_mapper_virtual_laser_message virtual_laser_message;
 
+
+carmen_udatmo_moving_obstacles_message *moving_obstacles = NULL;
+
 //SampleFilter filter;
 SampleFilter filter2;
 
@@ -80,15 +83,15 @@ change_state(int rddf_annotation)
 
 	switch(rddf_annotation)
 	{
-	case RDDF_ANNOTATION_NONE:
+	case RDDF_ANNOTATION_TYPE_NONE:
 		current_state = BEHAVIOR_SELECTOR_FOLLOWING_LANE;
 		break;
 
-	case RDDF_ANNOTATION_END_POINT_AREA:
+	case RDDF_ANNOTATION_TYPE_END_POINT_AREA:
 		current_state = BEHAVIOR_SELECTOR_PARKING;
 		break;
 
-	case RDDF_ANNOTATION_HUMAN_INTERVENTION:
+	case RDDF_ANNOTATION_TYPE_HUMAN_INTERVENTION:
 		current_state = BEHAVIOR_SELECTOR_HUMAN_INTERVENTION;
 		carmen_navigator_ackerman_stop();
 		break;
@@ -179,7 +182,7 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf)
 	if (rddf == NULL)
 		return (0);
 
-	carmen_udatmo_moving_obstacles_message *moving_obstacles = carmen_udatmo_detect_moving_obstacles();
+	moving_obstacles = carmen_udatmo_detect_moving_obstacles();
 	int front_obstacle_rddf_index = moving_obstacles->obstacles[0].rddf_index;
 
 	int goal_index = 0;

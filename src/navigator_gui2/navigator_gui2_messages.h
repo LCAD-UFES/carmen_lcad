@@ -14,10 +14,6 @@ extern "C"
 {
 #endif
 
-/* Define your messages here */
-#define CARMEN_NAVIGATOR_GUI2_SHOW_OFFLINE_MAP_NAME               "carmen_navigator_gui2_show_offline_map"
-typedef carmen_default_message carmen_navigator_gui2_show_offline_map_message;
-
 #ifdef __cplusplus
 }
 #endif

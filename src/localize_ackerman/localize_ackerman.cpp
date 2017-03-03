@@ -110,7 +110,9 @@ cell_coords_t **map_cells_hit_by_each_rays = NULL;
 
 carmen_point_t g_std;
 int g_reinitiaze_particles = 10;
-int number_of_threads = 10;
+int number_of_threads = 1;
+bool global_localization_requested = false;
+
 
 static int
 get_fused_odometry_index_by_timestamp(double timestamp)
@@ -311,10 +313,13 @@ publish_particles_name(carmen_localize_ackerman_particle_filter_p filter, carmen
 static void
 publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double phi, double timestamp)
 {
+	if (!global_localization_requested)
+		return;
+
 	if (g_reinitiaze_particles)
 	{
 		g_reinitiaze_particles--;
-		return;
+//		return;
 	}
 		
 	globalpos.timestamp = timestamp;
@@ -455,14 +460,14 @@ publish_globalpos_on_mapping_mode(carmen_fused_odometry_message *msg, double tim
 
 static void
 velodyne_variable_scan_localize(carmen_velodyne_variable_scan_message *message, int sensor)
-{
+{	// For cameras and other sensors (not Velodyne)
 	int odometry_index, fused_odometry_index;
 	int velodyne_initilized;
 
 	odometry_index = get_base_ackerman_odometry_index_by_timestamp(message->timestamp);
 	fused_odometry_index = get_fused_odometry_index_by_timestamp(message->timestamp);
 
-	if (!necessary_maps_available || base_ackerman_odometry_index < 0)
+	if (!necessary_maps_available || !global_localization_requested || base_ackerman_odometry_index < 0)
 		return;
 
 	if (mapping_mode)
@@ -498,6 +503,9 @@ velodyne_variable_scan_localize(carmen_velodyne_variable_scan_message *message, 
 //		publish_particles_correction(filter, &summary, message->timestamp);
 		publish_particles(filter, &summary, message->timestamp);
 	}
+
+	if (g_reinitiaze_particles)
+		carmen_localize_ackerman_initialize_particles_gaussians(filter, 1, &(summary.mean), &g_std);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -512,7 +520,7 @@ velodyne_variable_scan_localize(carmen_velodyne_variable_scan_message *message, 
 
 static void
 velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velodyne_message)
-{	// Partial scan because ??? (Lauro knows). Used by Velodyne.
+{	// Used by Velodyne.
 	int odometry_index, fused_odometry_index;
 	int velodyne_initilized;
 
@@ -525,7 +533,7 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 		return;
 	}
 
-	if (!necessary_maps_available)
+	if (!necessary_maps_available || !global_localization_requested || base_ackerman_odometry_index < 0)
 		return;
 
 	velodyne_initilized = localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(velodyne_message, &spherical_sensor_params[0], 
@@ -540,6 +548,11 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	carmen_localize_ackerman_velodyne_correction(filter,
 			&localize_map, &local_compacted_map, &local_compacted_mean_remission_map, &local_compacted_variance_remission_map, &binary_map);
 
+//	if (filter->initialized)
+//	{
+//		carmen_localize_ackerman_summarize_velodyne(filter, &summary);
+//		publish_particles(filter, &summary, velodyne_message->timestamp);
+//	}
 	// if (fabs(base_ackerman_odometry_vector[odometry_index].v) > 0.2)
 	{
 		carmen_localize_ackerman_velodyne_resample(filter);
@@ -627,7 +640,8 @@ robot_ackerman_frontlaser_handler(carmen_robot_ackerman_laser_message *flaser)
 	if (!necessary_maps_available)
 		return;
 
-	carmen_localize_ackerman_run(filter, &localize_map, flaser, filter->param->front_laser_offset, 0, &base_ackerman_odometry_vector[base_ackerman_odometry_index], car_config.distance_between_front_and_rear_axles);
+	carmen_localize_ackerman_run(filter, &localize_map, flaser, filter->param->front_laser_offset, 0,
+			&base_ackerman_odometry_vector[base_ackerman_odometry_index], car_config.distance_between_front_and_rear_axles);
 
 	if (filter->initialized)
 	{
@@ -718,6 +732,8 @@ carmen_localize_ackerman_initialize_message_handler(carmen_localize_ackerman_ini
 		carmen_localize_ackerman_initialize_particles_uniform(filter, &front_laser, &localize_map);
 		publish_particles(filter, &summary, initialize_msg->timestamp);
 	}
+
+	global_localization_requested = true;
 }
 
 
@@ -784,19 +800,22 @@ map_query_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, void *clientData __a
 
 	response.config = localize_map.config;
 
-	if (msg.map_is_global_likelihood) {
+	if (msg.map_is_global_likelihood)
+	{
 		response.map_is_global_likelihood = 1;
-		response.data = (unsigned char *)localize_map.complete_gprob;
-		response.size = localize_map.config.x_size*localize_map.config.y_size*sizeof(float);
-	} else {
+		response.data = (unsigned char *) localize_map.complete_gprob;
+		response.size = localize_map.config.x_size * localize_map.config.y_size * sizeof(double);
+	}
+	else
+	{
 		response.map_is_global_likelihood = 0;
-		response.data = (unsigned char *)localize_map.complete_prob;
-		response.size = localize_map.config.x_size*localize_map.config.y_size*sizeof(float);
+		response.data = (unsigned char *) localize_map.complete_prob;
+		response.size = localize_map.config.x_size * localize_map.config.y_size * sizeof(double);
 	}
 
 #ifndef NO_ZLIB
-	compress_buf_size = response.size*1.01+12;
-	compressed_map = (unsigned char *)calloc(compress_buf_size, sizeof(unsigned char));
+	compress_buf_size = response.size * 1.01 + 12;
+	compressed_map = (unsigned char *) calloc(compress_buf_size, sizeof(unsigned char));
 	carmen_test_alloc(compressed_map);
 	compress_return = carmen_compress(
 			(unsigned char *)compressed_map,
@@ -1064,9 +1083,8 @@ get_sensors_param(int argc, char **argv, int correction_type)
 //		fclose(f);
 
 		if (max_range < spherical_sensor_params[0].range_max)
-		{
 			max_range = spherical_sensor_params[0].range_max;
-		}
+
 		spherical_sensor_params[0].current_range_max = spherical_sensor_params[0].range_max;
 	}
 
@@ -1184,14 +1202,16 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 		{(char *) "localize", (char *) "odom_a4", CARMEN_PARAM_DOUBLE, &param->odom_a4, 1, NULL},
 #endif
 		{(char *) "localize", (char *) "occupied_prob", CARMEN_PARAM_DOUBLE, &param->occupied_prob, 0, NULL},
-		{(char *) "localize", (char *) "lmap_std", CARMEN_PARAM_DOUBLE, &param->lmap_std, 0, NULL},
-		{(char *) "localize", (char *) "global_lmap_std", CARMEN_PARAM_DOUBLE, &param->global_lmap_std, 0, NULL},
 		{(char *) "localize", (char *) "global_evidence_weight", CARMEN_PARAM_DOUBLE, &param->global_evidence_weight, 0, NULL},
 		{(char *) "localize", (char *) "global_distance_threshold", CARMEN_PARAM_DOUBLE, &param->global_distance_threshold, 1, NULL},
 		{(char *) "localize", (char *) "global_test_samples", CARMEN_PARAM_INT, &param->global_test_samples, 1, NULL},
 		{(char *) "localize", (char *) "use_sensor", CARMEN_PARAM_ONOFF, &param->use_sensor, 0, NULL},
+		{(char *) "localize", (char *) "lmap_std", CARMEN_PARAM_DOUBLE, &param->lmap_std, 0, NULL},
+		{(char *) "localize", (char *) "global_lmap_std", CARMEN_PARAM_DOUBLE, &param->global_lmap_std, 0, NULL},
 		{(char *) "localize", (char *) "tracking_beam_minlikelihood", CARMEN_PARAM_DOUBLE, &param->tracking_beam_minlikelihood, 0, NULL},
+		{(char *) "localize", (char *) "tracking_beam_maxlikelihood", CARMEN_PARAM_DOUBLE, &param->tracking_beam_maxlikelihood, 0, NULL},
 		{(char *) "localize", (char *) "global_beam_minlikelihood", CARMEN_PARAM_DOUBLE, &param->global_beam_minlikelihood, 0, NULL},
+		{(char *) "localize", (char *) "global_beam_maxlikelihood", CARMEN_PARAM_DOUBLE, &param->global_beam_maxlikelihood, 0, NULL},
 
 		{(char *) "sensor_board_1", (char *) "x", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.x),	0, NULL},
 		{(char *) "sensor_board_1", (char *) "y", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.y),	0, NULL},
@@ -1257,7 +1277,7 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 	localize_ackerman_velodyne_laser_read_parameters(argc, argv);
 
 	param->xy_uncertainty_due_to_grid_resolution = (p_map_params->grid_res / 2.0) * (p_map_params->grid_res / 2.0);
-	param->yaw_uncertainty_due_to_grid_resolution = asin((p_map_params->grid_res / 0.1) / max_range) * asin((p_map_params->grid_res / 0.1) / max_range);
+	param->yaw_uncertainty_due_to_grid_resolution = asin((p_map_params->grid_res / 0.2) / max_range) * asin((p_map_params->grid_res / 0.2) / max_range);
 	
 	carmen_param_allow_unfound_variables(1);
 
@@ -1458,7 +1478,7 @@ main(int argc, char **argv)
 #endif
 
 	/* Allocate memory for the particle filter */
-	filter = carmen_localize_ackerman_particle_filter_new(&param);
+	filter = carmen_localize_ackerman_particle_filter_initialize(&param);
 
 	init_localize_map();
 	init_local_maps(map_params);

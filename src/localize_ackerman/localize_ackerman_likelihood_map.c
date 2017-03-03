@@ -191,11 +191,11 @@ carmen_localize_ackerman_create_stretched_log_likelihood_map(double **prob, carm
 	{
 		for (int y = 0; y < lmap->config.y_size; y++)
 		{	// Alberto: @@@ Precisa de uma referencia para o codigo abaixo
-			double cell_prob = prob[x][y] / max;
+			double cell_prob = (prob[x][y] / max) * max_likelihood;
 			if (cell_prob < min_likelihood)
 				cell_prob = min_likelihood;
-			else if (cell_prob > max_likelihood)
-				cell_prob = max_likelihood;
+//			else if (cell_prob > max_likelihood)
+//				cell_prob = max_likelihood;
 
 			prob[x][y] = carmen_prob_models_probabilistic_to_log_odds(cell_prob);
 		}
@@ -384,9 +384,9 @@ carmen_to_localize_ackerman_map(carmen_map_p cmap,
 //	create_likelihood_map(lmap, lmap->gprob, param->global_lmap_std); 
 
 	carmen_localize_ackerman_create_stretched_log_likelihood_map(lmap->prob, lmap, param->lmap_std, param->tracking_beam_minlikelihood,
-			0.98);
+			param->tracking_beam_maxlikelihood);
 	carmen_localize_ackerman_create_stretched_log_likelihood_map(lmap->gprob, lmap, param->global_lmap_std, param->global_beam_minlikelihood,
-			0.98);
+			param->global_beam_maxlikelihood);
 }
 
 

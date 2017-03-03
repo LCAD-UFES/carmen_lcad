@@ -68,7 +68,7 @@ typedef struct {
 	double *complete_map;
 	//double *complete_distance;
 	double *complete_prob;
-	//double *complete_gprob;
+	double *complete_gprob;
 	//short int *complete_x_offset;
 	//short int *complete_y_offset;
 	double timestamp;
@@ -77,6 +77,6 @@ typedef struct {
 
 #define CARMEN_MAP_SERVER_LOCALIZE_MAP_NAME		"carmen_map_server_localize_map_name"
 //#define CARMEN_MAP_SERVER_LOCALIZE_MAP_FMT		"{{int, int, double, [byte:64], string, double, double}, int, <double:2>, <double:2>, <double:2>, <double:2>, <double:2>, <double:2>, <short:2>, <short:2>, double, string}"
-#define CARMEN_MAP_SERVER_LOCALIZE_MAP_FMT		"{{int, int, double, [byte:64], string, double, double}, int, <double:2>, <double:2>, <double:2>, double, string}"
+#define CARMEN_MAP_SERVER_LOCALIZE_MAP_FMT		"{{int, int, double, [byte:64], string, double, double}, int, <double:2>, <double:2>, <double:2>, <double:2>, double, string}"
 
 #endif /* MAP_SERVER_MESSAGES_H_ */

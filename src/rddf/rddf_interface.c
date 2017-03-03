@@ -264,16 +264,13 @@ carmen_rddf_publish_add_annotation_message(carmen_vector_3D_t annotation_point, 
 }
 
 void
-carmen_rddf_publish_annotation_message(carmen_vector_3D_t annotation_point, double orientation, char *annotation_description, int annotation_type, int annotation_code)
+carmen_rddf_publish_annotation_message(carmen_annotation_t *annotations, int num_annotations)
 {
     IPC_RETURN_TYPE err;
     carmen_rddf_annotation_message rddf_annotation_message;
 
-    rddf_annotation_message.annotation_point = annotation_point;
-    rddf_annotation_message.annotation_orientation = orientation;
-    rddf_annotation_message.annotation_description = annotation_description;
-    rddf_annotation_message.annotation_type = annotation_type;
-    rddf_annotation_message.annotation_code = annotation_code;
+    rddf_annotation_message.num_annotations = num_annotations;
+    rddf_annotation_message.annotations = annotations;
     rddf_annotation_message.timestamp = carmen_get_time();
     rddf_annotation_message.host = carmen_get_host();
 

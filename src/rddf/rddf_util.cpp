@@ -235,14 +235,14 @@ carmen_rddf_play_copy_kml(kmldom::PlacemarkPtr waypoint, carmen_fused_odometry_m
 		message->velocity.y = 0;
 		message->velocity.z = 0;
 
-		(*waypoint_annotation) = RDDF_ANNOTATION_NONE;
+		(*waypoint_annotation) = RDDF_ANNOTATION_TYPE_NONE;
 
 		waypoint_description = waypoint->get_description();
 
 		if (waypoint_description.compare("") != 0)
 		{
 			if (waypoint_description.compare("human intervention") == 0)
-				(*waypoint_annotation) = RDDF_ANNOTATION_HUMAN_INTERVENTION;
+				(*waypoint_annotation) = RDDF_ANNOTATION_TYPE_HUMAN_INTERVENTION;
 			else
 				exit(printf("Error: Unknown description annotation: \"%s\"\n", waypoint_description.c_str()));
 		}

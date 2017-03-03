@@ -104,14 +104,19 @@ key_release_event(GtkWidget *widget __attribute__((unused)), GdkEventButton *key
 void
 add_traffic_light_information_to_image(cv::Mat &image, carmen_traffic_light_message *message)
 {
-	ostringstream myStream;
-
-	myStream << fixed << setprecision(1) << message->distance << flush;
 	string text;
-	if (message->distance <= 200.0 && message->distance != -1.0)
-		text = "Distance " + myStream.str() + " meters";
+	if (message->distance <= MAX_TRAFFIC_LIGHT_DISTANCE && message->distance != -1.0)
+	{
+		ostringstream distance_str;
+		distance_str << fixed << setprecision(1) << message->distance << flush;
+		text = "Distance to stop point: " + distance_str.str() + " meters";
+	}
 	else
-		text = "Distance greater than 200 meters";
+	{
+		ostringstream distance_str;
+		distance_str << fixed << setprecision(1) << MAX_TRAFFIC_LIGHT_DISTANCE << flush;
+		text = "Distance to stop point greater than " + distance_str.str() + " meters";
+	}
 
 	if (image.cols > 900)
 		putText(image, text, cv::Point(20, 900), FONT_HERSHEY_COMPLEX, 1, Scalar(100, 255, 100), 2, 8);
@@ -121,6 +126,11 @@ add_traffic_light_information_to_image(cv::Mat &image, carmen_traffic_light_mess
 	int num_red = 0;
 	for (int i = 0; i < message->num_traffic_lights; i++)
 	{
+		FILE *cacof = fopen("caco.txt", "a");
+		fprintf(cacof, "%lf %d\n", message->distance, message->traffic_lights[i].y2 - message->traffic_lights[i].y1);
+		fflush(cacof);
+		fclose(cacof);
+
 		if (message->traffic_lights[i].color == TRAFFIC_LIGHT_RED)
 			num_red++;
 
@@ -302,10 +312,10 @@ read_parameters(int argc, char **argv)
 
     carmen_param_t param_list[] =
     {
-        { (char*) bumblebee_string,(char *) "width", CARMEN_PARAM_INT, &image_width, 0, NULL},
-        { (char*) bumblebee_string,(char *) "height", CARMEN_PARAM_INT, &image_height, 0, NULL},
-        { (char*) "traffic_light_viewer",(char *) "width", CARMEN_PARAM_INT, &window_view_width, 0, NULL},
-        { (char*) "traffic_light_viewer",(char *) "height", CARMEN_PARAM_INT, &window_view_height, 0, NULL}
+        { (char *) bumblebee_string, (char *) "width", CARMEN_PARAM_INT, &image_width, 0, NULL},
+        { (char *) bumblebee_string, (char *) "height", CARMEN_PARAM_INT, &image_height, 0, NULL},
+        { (char *) "traffic_light_viewer", (char *) "width", CARMEN_PARAM_INT, &window_view_width, 0, NULL},
+        { (char *) "traffic_light_viewer", (char *) "height", CARMEN_PARAM_INT, &window_view_height, 0, NULL}
     };
 
     num_items = sizeof (param_list) / sizeof (param_list[0]);

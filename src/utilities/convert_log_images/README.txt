@@ -9,5 +9,5 @@ grep BUMB log.txt > log_filtrado.txt
 O programa vai mostrar as imagens na tela a medida que o log for convertido. 
 Se elas estiverem esquisitas é sinal de que alguma coisa esta errada.
 
- 
+
 

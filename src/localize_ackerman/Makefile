@@ -17,7 +17,7 @@ LFLAGS += -lgrid_mapping -lmapper_interface -lglobal -lparam_interface -lmap_io 
 	  -lrobot_ackerman_interface -lobstacle_avoider_interface -lipc -lmap_server_interface \
 	  -lfused_odometry_interface -lvelodyne_interface -lrotation_geometry -lprob_models -lgl_plotter \
 	  -lGLEW -lGL -lGLU -lglut -lX11 -lmap_interface -lbase_ackerman_interface \
-	  -lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface
+	  -lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface -lmoving_objects_interface
 
 LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 

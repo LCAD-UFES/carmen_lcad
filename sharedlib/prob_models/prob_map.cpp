@@ -161,7 +161,7 @@ count_number_of_known_point_on_the_map(carmen_map_t *map, double value)
 			count++;
 	}
 
-	return count;
+	return (count);
 }
 
 
@@ -199,9 +199,8 @@ carmen_prob_models_create_compact_map(carmen_compact_map_t *cmap, carmen_map_t *
 			k++;
 		}
 	}
-
-	return;
 }
+
 
 void
 carmen_prob_models_initialize_cost_map(carmen_map_t *cost_map, carmen_map_t *map, double resolution)
@@ -547,7 +546,7 @@ carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(carmen_map_t *map, 
 
 
 void
-carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id)
+carmen_prob_models_get_maximum_probability_of_cells_hit_by_rays(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id)
 {
 	int i;
 	cell_coords_t cell_hit_by_ray;
@@ -563,7 +562,7 @@ carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sen
 			if (map_grid_is_valid(map, cell_hit_by_ray.x, cell_hit_by_ray.y))
 			{
 				probability_from_log_odds = carmen_prob_models_log_odds_to_probabilistic(sensor_data->occupancy_log_odds_of_each_ray_target[thread_id][i]);
-				if (map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] < probability_from_log_odds)
+				if (probability_from_log_odds > 0.7 && map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] < probability_from_log_odds)
 					map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] = probability_from_log_odds;
 			}
 		}

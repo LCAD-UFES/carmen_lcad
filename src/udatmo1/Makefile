@@ -17,10 +17,10 @@ SOURCES = \
 	sample_filter.cpp \
 	udatmo_interface.cpp \
 	udatmo_memory.c \
-	udatmo.cpp
+	udatmo_api.cpp
 
 PUBLIC_INCLUDES = \
-	udatmo.h
+	udatmo_api.h
 
 PUBLIC_LIBRARIES = \
 	libudatmo.a
@@ -41,7 +41,7 @@ LFLAGS += `pkg-config --libs gtk+-2.0 gmodule-export-2.0`
 LFLAGS += `pkg-config --libs gtkglext-1.0`
 endif
 
-libudatmo.a: detector.o sample_filter.o udatmo.o udatmo_interface.o udatmo_memory.o
+libudatmo.a: detector.o sample_filter.o udatmo_api.o udatmo_interface.o udatmo_memory.o
 #udatmo: detector.o sample_filter.o ...
 
 include ../Makefile.rules
