@@ -29,7 +29,7 @@ static carmen_navigator_config_t nav_config;
 static carmen_navigator_panel_config_t nav_panel_config;
 static carmen_navigator_map_t map_type = CARMEN_NAVIGATOR_MAP_v;
 static carmen_navigator_map_t superimposedmap_type = CARMEN_NONE_v;
-static carmen_map_p map = NULL, cost_map = NULL, offline_map = NULL, localize_map = NULL,
+static carmen_map_p map = NULL, cost_map = NULL, offline_map = NULL, likelihood_map = NULL, global_likelihood_map = NULL,
 		complete_map = NULL, moving_objects_map = NULL, lane_map = NULL, remission_map = NULL;
 carmen_localize_ackerman_map_t localize_all_maps;
 int first_localize_map_message_received = 1;
@@ -149,38 +149,20 @@ navigator_get_empty_map()
 
 
 static void
-navigator_get_lane_map(int is_superimposed)
+navigator_get_specific_map(int is_superimposed, carmen_map_t *specific_map, carmen_navigator_map_t type)
 {
-	if ((lane_map == NULL) || (lane_map->complete_map == NULL))
+	if ((specific_map == NULL) || (specific_map->complete_map == NULL))
 		return;
 
 	if (!is_superimposed)
 	{
-		gui->navigator_graphics_display_map(lane_map, CARMEN_LANE_MAP_v);
-		map_type = CARMEN_LANE_MAP_v;
+		gui->navigator_graphics_display_map(specific_map, type);
+		map_type = type;
 	}
 	else
 	{
-		superimposedmap_type = CARMEN_LANE_MAP_v;
-		carmen_map_interface_set_superimposed_map(lane_map);
-	}
-}
-
-static void
-navigator_get_cost_map(int is_superimposed)
-{
-	if ((cost_map == NULL) || (cost_map->complete_map == NULL))
-		return;
-
-	if (!is_superimposed)
-	{
-		gui->navigator_graphics_display_map(cost_map, CARMEN_COST_MAP_v);
-		map_type = CARMEN_COST_MAP_v;
-	}
-	else
-	{
-		superimposedmap_type = CARMEN_COST_MAP_v;
-		carmen_map_interface_set_superimposed_map(cost_map);
+		superimposedmap_type = type;
+		carmen_map_interface_set_superimposed_map(specific_map);
 	}
 }
 
@@ -213,166 +195,48 @@ navigator_get_complete_map(int is_superimposed)
 }
 
 
-static void
-navigator_get_offline_map(int is_superimposed)
-{
-	if ((offline_map == NULL) || (offline_map->complete_map == NULL))
-		return;
-
-	if (!is_superimposed)
-	{
-		gui->navigator_graphics_display_map(offline_map, CARMEN_OFFLINE_MAP_v);
-		map_type = CARMEN_OFFLINE_MAP_v;
-	}
-	else
-	{
-		superimposedmap_type = CARMEN_OFFLINE_MAP_v;
-		carmen_map_interface_set_superimposed_map(offline_map);
-	}
-}
-
-
-static void
-navigator_get_grid_mapping(int is_superimposed)
-{
-	if ((map == NULL) || (map->complete_map == NULL))
-		return;
-
-	if (!is_superimposed)
-	{
-		gui->navigator_graphics_display_map(map, CARMEN_NAVIGATOR_MAP_v);
-		map_type = CARMEN_NAVIGATOR_MAP_v;
-	}
-	else
-	{
-		superimposedmap_type = CARMEN_NAVIGATOR_MAP_v;
-		carmen_map_interface_set_superimposed_map(map);
-	}
-}
-
-
-static void
-navigator_get_grid_mapping_moving_objects_map(int is_superimposed)
-{
-	if ((moving_objects_map == NULL) || (moving_objects_map->complete_map == NULL))
-		return;
-
-	if (!is_superimposed)
-	{
-		gui->navigator_graphics_display_map(moving_objects_map, CARMEN_MOVING_OBJECTS_MAP_v);
-		map_type = CARMEN_MOVING_OBJECTS_MAP_v;
-	}
-	else
-	{
-		superimposedmap_type = CARMEN_MOVING_OBJECTS_MAP_v;
-		carmen_map_interface_set_superimposed_map(moving_objects_map);
-	}
-}
-
-
-static void
-navigator_get_localize_map(int is_superimposed)
-{
-	if ((localize_map == NULL) || (localize_map->complete_map == NULL))
-		return;
-
-	if (!is_superimposed)
-	{
-		gui->navigator_graphics_display_map(localize_map, CARMEN_LOCALIZE_LMAP_v);
-		map_type = CARMEN_LOCALIZE_LMAP_v;
-	}
-	else
-	{
-		superimposedmap_type = CARMEN_LOCALIZE_LMAP_v;
-		carmen_map_interface_set_superimposed_map(localize_map);
-	}
-}
-
-
-static void
-navigator_get_remission_map(int is_superimposed)
-{
-	if ((remission_map == NULL) || (remission_map->complete_map == NULL))
-		return;
-
-	if (!is_superimposed)
-	{
-		gui->navigator_graphics_display_map(remission_map, CARMEN_REMISSION_MAP_v);
-		map_type = CARMEN_REMISSION_MAP_v;
-	}
-	else
-	{
-		superimposedmap_type = CARMEN_REMISSION_MAP_v;
-		carmen_map_interface_set_superimposed_map(remission_map);
-	}
-}
-
-
 void
 navigator_get_map(carmen_navigator_map_t type, int is_superimposed)
 {
-	if (is_superimposed)
-		superimposedmap_type = type;
-	else
-		map_type = type;
-
 	switch (type)
 	{
 	case CARMEN_NONE_v:
 		navigator_get_empty_map();
-//		navigator_get_map(map_type, 0);
 		break;
 	case CARMEN_LOCALIZE_LMAP_v:
-		navigator_get_localize_map(is_superimposed);
+		navigator_get_specific_map(is_superimposed, likelihood_map, CARMEN_LOCALIZE_LMAP_v);
 		break;
 	case CARMEN_LOCALIZE_GMAP_v:
-		navigator_get_localize_map(is_superimposed);
+		navigator_get_specific_map(is_superimposed, global_likelihood_map, CARMEN_LOCALIZE_GMAP_v);
 		break;
 	case CARMEN_LANE_MAP_v:
-		navigator_get_lane_map(is_superimposed);
+		navigator_get_specific_map(is_superimposed, lane_map, CARMEN_LANE_MAP_v);
 		break;
 	case CARMEN_COST_MAP_v:
-		navigator_get_cost_map(is_superimposed);
+		navigator_get_specific_map(is_superimposed, cost_map, CARMEN_COST_MAP_v);
 		break;
 	case CARMEN_NAVIGATOR_MAP_v:
-		navigator_get_grid_mapping(is_superimposed);
+		navigator_get_specific_map(is_superimposed, map, CARMEN_NAVIGATOR_MAP_v);
 		break;
 	case CARMEN_OFFLINE_MAP_v:
-		navigator_get_offline_map(is_superimposed);
+		navigator_get_specific_map(is_superimposed, offline_map, CARMEN_OFFLINE_MAP_v);
 		break;
 	case CARMEN_COMPLETE_MAP_v:
 		navigator_get_complete_map(is_superimposed);
 		break;
 	case CARMEN_REMISSION_MAP_v:
-		navigator_get_remission_map(is_superimposed);
+		navigator_get_specific_map(is_superimposed, remission_map, CARMEN_REMISSION_MAP_v);
 		break;
 	case CARMEN_MOVING_OBJECTS_MAP_v:
-		navigator_get_grid_mapping_moving_objects_map(is_superimposed);
+		navigator_get_specific_map(is_superimposed, moving_objects_map, CARMEN_MOVING_OBJECTS_MAP_v);
 		break;
 
 	default:
-		navigator_get_grid_mapping(is_superimposed);
+		navigator_get_specific_map(is_superimposed, map, CARMEN_NAVIGATOR_MAP_v);
 		break;
 	}
 }
 
-
-/*
-static void map_update_handler(carmen_map_t *new_map)
-{
-	//if (strcmp(new_map->config.origin, nav_config.navigator_map) == 0)
-	if (navigator_graphics_update_map())
-	{
-		carmen_map_destroy(&map);
-		map = carmen_map_clone(new_map);
-
-		if (is_graphics_up)
-		{
-			navigator_graphics_change_map(map);
-		}
-	}
-}
- */
 
 static carmen_map_t*
 copy_grid_mapping_to_map(carmen_mapper_map_message *grid_map)
@@ -395,6 +259,7 @@ copy_grid_mapping_to_map(carmen_mapper_map_message *grid_map)
 	return map;
 }
 
+
 static carmen_map_t*
 copy_grid_mapping_to_map2(carmen_moving_objects_map_message *grid_map)
 {
@@ -416,6 +281,7 @@ copy_grid_mapping_to_map2(carmen_moving_objects_map_message *grid_map)
 	return map;
 }
 
+
 static void
 clone_grid_mapping_to_map(carmen_mapper_map_message *grid_map, carmen_map_t *map)
 {
@@ -424,6 +290,7 @@ clone_grid_mapping_to_map(carmen_mapper_map_message *grid_map, carmen_map_t *map
 	memcpy(map->complete_map, grid_map->complete_map, sizeof(double) * grid_map->size);
 }
 
+
 static void
 clone_grid_mapping_to_map2(carmen_moving_objects_map_message *grid_map, carmen_map_t *map)
 {
@@ -431,6 +298,7 @@ clone_grid_mapping_to_map2(carmen_moving_objects_map_message *grid_map, carmen_m
 
 	memcpy(map->complete_map, grid_map->complete_map, sizeof(double) * grid_map->size);
 }
+
 
 carmen_map_t*
 navigator_get_complete_map_map_pointer()
@@ -445,6 +313,7 @@ navigator_get_complete_map_map_pointer()
 	return complete_map;
 }
 
+
 carmen_map_t*
 navigator_get_offline_map_pointer()
 {
@@ -452,6 +321,7 @@ navigator_get_offline_map_pointer()
 
 	return offline_map;
 }
+
 
 static void
 offline_map_update_handler(carmen_mapper_map_message *new_map)
@@ -631,10 +501,8 @@ map_server_compact_lane_map_message_handler(carmen_map_server_compact_lane_map_m
 
 
 static void
-localize_map_update_handler(carmen_map_server_localize_map_message* message)
+localize_map_update_handler(carmen_map_server_localize_map_message *message)
 {
-	int i;
-
 	if (first_localize_map_message_received)
 	{
 		memset(&localize_all_maps, 0, sizeof(localize_all_maps));
@@ -644,17 +512,18 @@ localize_map_update_handler(carmen_map_server_localize_map_message* message)
 
 	carmen_map_server_localize_map_message_to_localize_map(message, &localize_all_maps);
 
-	for (i = 0; i < message->size; i++)
+	if (likelihood_map == NULL)
 	{
-		localize_all_maps.complete_prob[i] = exp(localize_all_maps.complete_prob[i]);
-		//localize_all_maps.complete_gprob[i] = exp(localize_all_maps.complete_gprob[i]);
+		likelihood_map = (carmen_map_t *) calloc(1, sizeof(carmen_map_t));
+		carmen_test_alloc(likelihood_map);
+		carmen_grid_mapping_initialize_map(likelihood_map, localize_all_maps.config.x_size, localize_all_maps.config.resolution);
 	}
 
-	if (localize_map == NULL)
+	if (global_likelihood_map == NULL)
 	{
-		localize_map = (carmen_map_t *) calloc(1, sizeof(carmen_map_t));
-		carmen_test_alloc(localize_map);
-		carmen_grid_mapping_initialize_map(localize_map, localize_all_maps.config.x_size, localize_all_maps.config.resolution);
+		global_likelihood_map = (carmen_map_t *) calloc(1, sizeof(carmen_map_t));
+		carmen_test_alloc(global_likelihood_map);
+		carmen_grid_mapping_initialize_map(global_likelihood_map, localize_all_maps.config.x_size, localize_all_maps.config.resolution);
 	}
 
 	if (remission_map == NULL)
@@ -664,32 +533,27 @@ localize_map_update_handler(carmen_map_server_localize_map_message* message)
 		carmen_grid_mapping_initialize_map(remission_map, localize_all_maps.config.x_size, localize_all_maps.config.resolution);
 	}
 
-	remission_map->config = localize_map->config = localize_all_maps.config = message->config;
+	remission_map->config = likelihood_map->config = global_likelihood_map->config = localize_all_maps.config = message->config;
 	localize_all_maps.carmen_mean_remission_map.config = localize_all_maps.config;
-	memcpy(localize_map->complete_map, localize_all_maps.complete_prob, localize_all_maps.config.x_size * localize_all_maps.config.y_size * sizeof(double));
+	memcpy(likelihood_map->complete_map, localize_all_maps.complete_prob, localize_all_maps.config.x_size * localize_all_maps.config.y_size * sizeof(double));
+	memcpy(global_likelihood_map->complete_map, localize_all_maps.complete_gprob, localize_all_maps.config.x_size * localize_all_maps.config.y_size * sizeof(double));
 	memcpy(remission_map->complete_map, localize_all_maps.carmen_mean_remission_map.complete_map, localize_all_maps.config.x_size * localize_all_maps.config.y_size * sizeof(double));
 
 	if (superimposedmap_type == CARMEN_LOCALIZE_LMAP_v)
-	{
-		carmen_map_interface_set_superimposed_map(localize_map);
-		gui->navigator_graphics_redraw_superimposed();
-	}
-
-	if (gui->navigator_graphics_update_map() && map_type == CARMEN_LOCALIZE_LMAP_v)
-	{
-		if (is_graphics_up)
-			gui->navigator_graphics_change_map(localize_map);
-	}
-
-	if (superimposedmap_type == CARMEN_REMISSION_MAP_v)
-	{
+		carmen_map_interface_set_superimposed_map(likelihood_map);
+	else if (superimposedmap_type == CARMEN_LOCALIZE_GMAP_v)
+		carmen_map_interface_set_superimposed_map(global_likelihood_map);
+	else if (superimposedmap_type == CARMEN_REMISSION_MAP_v)
 		carmen_map_interface_set_superimposed_map(remission_map);
-		gui->navigator_graphics_redraw_superimposed();
-	}
+	gui->navigator_graphics_redraw_superimposed();
 
-	if (gui->navigator_graphics_update_map() && map_type == CARMEN_REMISSION_MAP_v)
+	if (gui->navigator_graphics_update_map() && is_graphics_up)
 	{
-		if (is_graphics_up)
+		if (map_type == CARMEN_LOCALIZE_LMAP_v)
+			gui->navigator_graphics_change_map(likelihood_map);
+		else if (map_type == CARMEN_LOCALIZE_GMAP_v)
+			gui->navigator_graphics_change_map(global_likelihood_map);
+		else if (map_type == CARMEN_REMISSION_MAP_v)
 			gui->navigator_graphics_change_map(remission_map);
 	}
 }
@@ -723,6 +587,7 @@ navigator_set_goal(double x, double y, double theta)
 	carmen_navigator_ackerman_set_goal(x, y, theta);
 	IPC_listen(50);
 }
+
 
 void
 navigator_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, carmen_behavior_selector_state_t state)
@@ -847,6 +712,7 @@ init_moving_objects_tracking(int c_num_point_clouds, int p_num_point_clouds)
 	moving_objects_tracking = (moving_objects_tracking_t*) malloc(c_num_point_clouds * sizeof(moving_objects_tracking_t));
 }
 
+
 static void
 carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_clouds_message *moving_objects_point_clouds_message)
 {
@@ -881,21 +747,20 @@ carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_c
 	gui->navigator_graphics_update_moving_objects(current_num_point_clouds, moving_objects_tracking);
 }
 
+
 static void
 plan_tree_handler(carmen_navigator_ackerman_plan_tree_message *msg)
 {
 	gui->navigator_graphics_update_plan_tree(msg->p1, msg->p2, msg->mask, msg->num_edges, msg->paths, msg->path_size, msg->num_path);
 }
 
-static void carmen_parking_assistant_goal_handler(carmen_parking_assistant_goal_message *msg)
+
+static void
+carmen_parking_assistant_goal_handler(carmen_parking_assistant_goal_message *msg)
 {
 	gui->navigator_graphics_update_parking_assistant_goal(msg->pose);
 }
 
-static void show_offline_map_handler(carmen_navigator_gui2_show_offline_map_message *msg __attribute__ ((unused)))
-{
-	navigator_get_offline_map(0);
-}
 
 static void
 fused_odometry_handler(carmen_fused_odometry_message *msg)
@@ -953,26 +818,6 @@ display_config_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 }
 
 
-/*
-void
-get_initial_map()
-{
-	if(!carmen_map_server_get_current_offline_map(offline_map))
-		carmen_map_get_gridmap(offline_map);
-
-	if (offline_map->map == NULL)
-	{
-		exit(0);
-	}
-
-	if (is_graphics_up)
-	{
-		navigator_graphics_change_map(offline_map);
-	}
-}
- */
-
-
 static void
 read_parameters(int argc, char *argv[],
 		carmen_robot_config_t *robot_config,
@@ -982,14 +827,15 @@ read_parameters(int argc, char *argv[],
 {
 	int num_items;
 
-	carmen_param_t param_list[] = {
-		{(char *) "robot",		(char *) "length",			CARMEN_PARAM_DOUBLE, &(robot_config->length),				0, NULL},
-		{(char *) "robot",		(char *) "width",			CARMEN_PARAM_DOUBLE, &(robot_config->width),				0, NULL},
-		{(char *) "robot",		(char *) "acceleration",	CARMEN_PARAM_DOUBLE, &(robot_config->acceleration),			1, NULL},
-		{(char *) "robot",		(char *) "rectangular",		CARMEN_PARAM_ONOFF,  &(robot_config->rectangular),			1, NULL},
-		{(char *) "navigator",	(char *) "map_update_radius",		CARMEN_PARAM_INT,    &(nav_config->map_update_radius),		1, NULL},
-		{(char *) "navigator",	(char *) "goal_size",				CARMEN_PARAM_DOUBLE, &(nav_config->goal_size),				1, NULL},
-		{(char *) "navigator",	(char *) "goal_theta_tolerance",	CARMEN_PARAM_DOUBLE, &(nav_config->goal_theta_tolerance),	1, NULL},
+	carmen_param_t param_list[] =
+	{
+		{(char *) "robot",			 (char *) "length",			CARMEN_PARAM_DOUBLE, &(robot_config->length),				0, NULL},
+		{(char *) "robot",			 (char *) "width",			CARMEN_PARAM_DOUBLE, &(robot_config->width),				0, NULL},
+		{(char *) "robot",			 (char *) "acceleration",	CARMEN_PARAM_DOUBLE, &(robot_config->acceleration),			1, NULL},
+		{(char *) "robot",			 (char *) "rectangular",		CARMEN_PARAM_ONOFF,  &(robot_config->rectangular),			1, NULL},
+		{(char *) "navigator",		 (char *) "map_update_radius",		CARMEN_PARAM_INT,    &(nav_config->map_update_radius),		1, NULL},
+		{(char *) "navigator",		 (char *) "goal_size",				CARMEN_PARAM_DOUBLE, &(nav_config->goal_size),				1, NULL},
+		{(char *) "navigator",		 (char *) "goal_theta_tolerance",	CARMEN_PARAM_DOUBLE, &(nav_config->goal_theta_tolerance),	1, NULL},
 		{(char *) "navigator_panel", (char *) "initial_map_zoom",		CARMEN_PARAM_DOUBLE, &(navigator_panel_config->initial_map_zoom),	1, NULL},
 		{(char *) "navigator_panel", (char *) "track_robot",			CARMEN_PARAM_ONOFF,  &(navigator_panel_config->track_robot),		1, NULL},
 		{(char *) "navigator_panel", (char *) "draw_path",				CARMEN_PARAM_ONOFF,  &(navigator_panel_config->draw_path),			1, NULL},
@@ -1017,21 +863,23 @@ read_parameters(int argc, char *argv[],
 
 	carmen_param_install_params(argc, argv, param_list, num_items);
 
+	localize_std.theta = carmen_degrees_to_radians(localize_std.theta);
 	robot_config->rectangular = 1;
 
 	carmen_param_t param_ackerman_list[] =
 	{
-			{(char *) "robot", (char *) "distance_between_front_and_rear_axles",		CARMEN_PARAM_DOUBLE, &(car_config->distance_between_front_and_rear_axles),	 1, NULL},
-			{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels",		CARMEN_PARAM_DOUBLE, &(car_config->distance_between_rear_car_and_rear_wheels),	 1, NULL},
-			{(char *) "robot", (char *) "distance_between_rear_wheels",			CARMEN_PARAM_DOUBLE, &(car_config->distance_between_rear_wheels),				 1, NULL}
+		{(char *) "robot", (char *) "distance_between_front_and_rear_axles",		CARMEN_PARAM_DOUBLE, &(car_config->distance_between_front_and_rear_axles),	 1, NULL},
+		{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels",	CARMEN_PARAM_DOUBLE, &(car_config->distance_between_rear_car_and_rear_wheels),	 1, NULL},
+		{(char *) "robot", (char *) "distance_between_rear_wheels",					CARMEN_PARAM_DOUBLE, &(car_config->distance_between_rear_wheels),				 1, NULL}
 	};
 
 	num_items = sizeof(param_ackerman_list) / sizeof(param_ackerman_list[0]);
 
 	carmen_param_install_params(argc, argv, param_ackerman_list, num_items);
 
-	carmen_param_t param_cmd_list[] = {
-			{(char *) "commandline", (char *) "map_path", CARMEN_PARAM_STRING, &map_path, 0, NULL},
+	carmen_param_t param_cmd_list[] =
+	{
+		{(char *) "commandline", (char *) "map_path", CARMEN_PARAM_STRING, &map_path, 0, NULL},
 	};
 
 	num_items = sizeof(param_cmd_list) / sizeof(param_cmd_list[0]);
@@ -1068,25 +916,24 @@ subscribe_ipc_messages()
 
 	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
+
 //	carmen_grid_mapping_moving_objects_raw_map_subscribe_message(NULL, (carmen_handler_t) grid_mapping_moving_objects_raw_map_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_moving_objects_map_subscribe_message(NULL, (carmen_handler_t) grid_mapping_moving_objects_raw_map_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-//	carmen_map_server_subscribe_lane_map(NULL, (carmen_handler_t) lane_map_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_map_server_subscribe_compact_lane_map(NULL, (carmen_handler_t) map_server_compact_lane_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_map_server_subscribe_compact_cost_map(NULL, (carmen_handler_t) map_server_compact_cost_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_map_server_subscribe_localize_map_message(NULL, (carmen_handler_t) localize_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_rddf_subscribe_waypoints_around_end_point_message(NULL, (carmen_handler_t)navigator_rddf_waypoints_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_rddf_subscribe_waypoints_around_end_point_message(NULL, (carmen_handler_t) navigator_rddf_waypoints_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	err = IPC_defineMsg(CARMEN_RDDF_END_POINT_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_RDDF_END_POINT_MESSAGE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_RDDF_END_POINT_MESSAGE_NAME);
 
 	carmen_parking_assistant_subscribe_goal(NULL, (carmen_handler_t) carmen_parking_assistant_goal_handler, CARMEN_SUBSCRIBE_LATEST);
-	carmen_navigator_gui2_subscribe_show_offline_map_message(NULL, (carmen_handler_t) show_offline_map_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 

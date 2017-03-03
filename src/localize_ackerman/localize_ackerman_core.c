@@ -313,8 +313,10 @@ velodyne_resample(carmen_localize_ackerman_particle_filter_p filter)
 	// alloc vectors if necessary
 	if (num_particles != filter->param->num_particles)
 	{
-		free(temp_particles);
-		free(cumulative_sum);
+		if (temp_particles != NULL)
+			free(temp_particles);
+		if (cumulative_sum != NULL)
+			free(cumulative_sum);
 
 		/* Allocate memory necessary for resampling */
 		cumulative_sum = (double *) calloc(filter->param->num_particles, sizeof(double));
@@ -341,19 +343,18 @@ velodyne_resample(carmen_localize_ackerman_particle_filter_p filter)
 	/* draw num_particles random samples */
 	for (i = 0; i < filter->param->num_particles; i++)
 	{
-		position += step_size;
+		while (position > cumulative_sum[which_particle])
+			which_particle++;
 
+		temp_particles[i] = filter->particles[which_particle];
+		temp_particles[i].weight = 0.5; // reinitialize for the next cycle
+
+		position += step_size;
 		if (position > weight_sum)
 		{
 			position -= weight_sum;
 			which_particle = 0;
 		}
-
-		while (position > cumulative_sum[which_particle])
-			which_particle++;
-
-		temp_particles[i] = filter->particles[which_particle];
-		temp_particles[i].weight = 1.0;
 	}
 
 	/* Switch particle pointers */
@@ -400,7 +401,7 @@ carmen_localize_ackerman_resample(carmen_localize_ackerman_particle_filter_p fil
 			max_weight = filter->particles[i].weight;
 	}
 
-	for(i = 0; i < filter->param->num_particles; i++)
+	for (i = 0; i < filter->param->num_particles; i++)
 	{
 		//change log weights to probabilities weights
 		filter->particles[i].weight = exp(filter->particles[i].weight - max_weight);
@@ -430,7 +431,7 @@ carmen_localize_ackerman_resample(carmen_localize_ackerman_particle_filter_p fil
 			which_particle++;
 
 		temp_particles[i] = filter->particles[which_particle];
-		temp_particles[i].weight = 0.0;
+		temp_particles[i].weight = 0.5;
 	}
 
 	/* Switch particle pointers */
@@ -489,7 +490,8 @@ void carmen_localize_ackerman_run(carmen_localize_ackerman_particle_filter_p fil
 }
 
 
-void carmen_localize_ackerman_run_with_raw_laser(
+void
+carmen_localize_ackerman_run_with_raw_laser(
 		carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_p map,
 		carmen_laser_laser_message *laser, carmen_base_ackerman_odometry_message *odometry,
 		double forward_offset, double distance_between_front_and_rear_axles)
@@ -499,13 +501,9 @@ void carmen_localize_ackerman_run_with_raw_laser(
 
 	/* Prediction */
 	if (filter->param->use_velocity_prediction)
-	{
 		carmen_localize_ackerman_incorporate_velocity_odometry(filter, odometry->v, odometry->phi, distance_between_front_and_rear_axles, laser->timestamp - filter->last_timestamp);
-	}
 	else
-	{
 		carmen_localize_ackerman_incorporate_odometry(filter, odometry->v, odometry->phi, distance_between_front_and_rear_axles, laser->timestamp - filter->last_timestamp);
-	}
 
 	filter->last_timestamp = laser->timestamp;
 	/* Correction */
@@ -617,11 +615,9 @@ pearson_correlation_correction(carmen_localize_ackerman_map_t *global_map, carme
 	double weight = sum_diff / sqrt(sum_global_diff_sqr * sum_local_diff_sqr);
 
 	if (isnan(weight) || weight < 0.0)
-	{
 		weight = 0.0;
-	}
 
-	return weight;
+	return (weight);
 }
 
 
@@ -701,12 +697,10 @@ cosine_correlation_correction_with_likelihood_map(carmen_localize_ackerman_map_t
 
 	double weight = sum / (sqrt(sum_local) * sqrt(sum_global));
 
-	if(isnan(weight) || weight < 0.0)
-	{
+	if (isnan(weight) || weight < 0.0)
 		weight = 0.0;
-	}
 
-	return weight;
+	return (weight);
 }
 
 
@@ -727,14 +721,15 @@ get_particle_max_weight(carmen_localize_ackerman_particle_filter_p filter)
 
 
 static void
-convert_particles_log_weights_to_prob(carmen_localize_ackerman_particle_filter_p filter)
+convert_particles_log_odd_weights_to_prob(carmen_localize_ackerman_particle_filter_p filter)
 {
 	double max_weight = get_particle_max_weight(filter);
 
 	for (int i = 0; i < filter->param->num_particles; i++)
 	{
 		double weight = filter->particles[i].weight;
-		filter->particles[i].weight = exp(weight - max_weight);
+//		filter->particles[i].weight = exp(weight - max_weight);
+		filter->particles[i].weight = carmen_prob_models_log_odds_to_probabilistic(weight - max_weight);
 //		printf("%04d, p %.15lf, mw %lf, w %lf\n", i, filter->particles[i].weight, max_weight, weight);
 	}
 }
@@ -874,7 +869,6 @@ hausdoff_distance(carmen_map_t *global_map, carmen_compact_map_t *local_map, car
 }
 
 
-
 void
 hausdoff_distance_correction(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_map)
 {
@@ -888,15 +882,18 @@ hausdoff_distance_correction(carmen_localize_ackerman_particle_filter_p filter, 
 	}
 
 	 get_particle_max_weight(filter);
-	 convert_particles_log_weights_to_prob(filter);
+	 convert_particles_log_odd_weights_to_prob(filter);
 }
 
 
 static double
-map_particle_correction(carmen_localize_ackerman_map_t *localize_map, carmen_compact_map_t *local_map, carmen_localize_ackerman_particle_t *particle)
+map_particle_correction(carmen_localize_ackerman_map_t *localize_map, carmen_compact_map_t *local_map,
+		carmen_localize_ackerman_particle_filter_p filter, int particle_index)
 {
 	cell_coords_t local_cell, global_cell;
 	carmen_vector_2D_t robot_position;
+
+	carmen_localize_ackerman_particle_t *particle = &(filter->particles[particle_index]);
 
 	double sin_theta = sin(particle->theta);
 	double cos_theta = cos(particle->theta);
@@ -907,6 +904,7 @@ map_particle_correction(carmen_localize_ackerman_map_t *localize_map, carmen_com
 	double robot_position_in_the_map_x = robot_position.x / local_map->config.resolution;
 	double robot_position_in_the_map_y = robot_position.y / local_map->config.resolution;
 
+	double small_log_odds = log(filter->param->tracking_beam_minlikelihood / (1.0 - filter->param->tracking_beam_minlikelihood));
 	double particle_weight = 0.0;
 	for (int i = 0; i < local_map->number_of_known_points_on_the_map; i++)
 	{
@@ -918,10 +916,67 @@ map_particle_correction(carmen_localize_ackerman_map_t *localize_map, carmen_com
 
 		if (global_cell.x >= 0 && global_cell.y >= 0 && global_cell.x < localize_map->config.x_size && global_cell.y < localize_map->config.y_size)
 			particle_weight += localize_map->prob[global_cell.x][global_cell.y];
+		else
+			particle_weight += small_log_odds;
 	}
 
-	return particle_weight;
+	return (particle_weight);
 }
+
+
+static void
+compute_particles_weights_with_outlier_rejection(carmen_localize_ackerman_map_t *localize_map, carmen_compact_map_t *local_map,
+		carmen_localize_ackerman_particle_filter_p filter)
+{
+	double small_log_odds = log(filter->param->tracking_beam_minlikelihood / (1.0 - filter->param->tracking_beam_minlikelihood));
+	double map_center_x = (double) local_map->config.x_size * 0.5;
+	double map_center_y = (double) local_map->config.y_size * 0.5;
+
+	int *count = NULL;
+	int num_readings = local_map->number_of_known_points_on_the_map;
+	if (num_readings > 0)
+		count = (int *) calloc(num_readings, sizeof(int));
+
+	for (int i = 0; i < filter->param->num_particles; i++)
+	{
+		carmen_localize_ackerman_particle_t *particle = &(filter->particles[i]);
+
+		double sin_theta = sin(particle->theta);
+		double cos_theta = cos(particle->theta);
+		double robot_position_in_the_map_x = (particle->x - localize_map->config.x_origin) / local_map->config.resolution;
+		double robot_position_in_the_map_y = (particle->y - localize_map->config.y_origin) / local_map->config.resolution;
+
+		particle->weight = 0.0;
+		for (int laser_reading = 0; laser_reading < num_readings; laser_reading++)
+		{
+			cell_coords_t local_cell;
+			local_cell.x = local_map->coord_x[laser_reading];
+			local_cell.y = local_map->coord_y[laser_reading];
+
+			cell_coords_t global_cell = calc_global_cell_coordinate_fast(&local_cell, map_center_x, map_center_y,
+						robot_position_in_the_map_x, robot_position_in_the_map_y, sin_theta, cos_theta);
+
+			if (global_cell.x >= 0 && global_cell.y >= 0 && global_cell.x < localize_map->config.x_size && global_cell.y < localize_map->config.y_size)
+				filter->temp_weights[i][laser_reading] = localize_map->prob[global_cell.x][global_cell.y];
+			else
+				filter->temp_weights[i][laser_reading] = small_log_odds;
+
+			if (filter->temp_weights[i][laser_reading] <= small_log_odds)
+				count[laser_reading] += 1;
+		}
+	}
+
+	for (int laser_reading = 0; laser_reading < num_readings; laser_reading++)
+	{
+		if (((double) count[laser_reading] / (double) filter->param->num_particles) < filter->param->outlier_fraction)
+			for (int i = 0; i < filter->param->num_particles; i++)
+				filter->particles[i].weight += filter->temp_weights[i][laser_reading];
+	}
+
+	if (num_readings > 0)
+		free(count);
+}
+
 
 static void
 cosine_correction_with_remission_map_and_log_likelihood(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_mean_remission_map, carmen_compact_map_t *local_map)
@@ -935,7 +990,7 @@ cosine_correction_with_remission_map_and_log_likelihood(carmen_localize_ackerman
 
 	for (i = 0; i < filter->param->num_particles; i++)
 	{
-		w2 = map_particle_correction(global_map, local_map, &(filter->particles[i]));
+		w2 = map_particle_correction(global_map, local_map, filter, i);
 		inner_product_between_maps(&inner_product_remission, &norm_local_remission_map, &norm_global_remission_map, &global_map->carmen_mean_remission_map, local_mean_remission_map, &(filter->particles[i]));
 		//inner_product_between_maps(&inner_product, &norm_local_map, &norm_global_map, &global_map->carmen_map, local_map, &(filter->particles[i]));
 		inner_product = inner_product + inner_product_remission;
@@ -945,7 +1000,7 @@ cosine_correction_with_remission_map_and_log_likelihood(carmen_localize_ackerman
 		w = 1.0 - (w > min_weight ? w : min_weight);
 		filter->particles[i].weight = w2 + (-(w * w) * 100.0);
 	}
-	convert_particles_log_weights_to_prob(filter);
+	convert_particles_log_odd_weights_to_prob(filter);
 }
 
 
@@ -970,7 +1025,7 @@ cosine_correction_with_remission_map_and_grid_map(carmen_localize_ackerman_parti
 		w = 1.0 - (w > min_weight ? w : min_weight);
 		filter->particles[i].weight = (-(w * w) * 100.0);
 	}
-	convert_particles_log_weights_to_prob(filter);
+	convert_particles_log_odd_weights_to_prob(filter);
 }
 
 
@@ -1044,7 +1099,7 @@ cosine_correction_with_remission_map(carmen_localize_ackerman_particle_filter_p 
 		w = 1.0 - (w > min_weight ? w : min_weight);
 		filter->particles[i].weight = (-(w * w) * 100.0);
 	}
-	convert_particles_log_weights_to_prob(filter);
+	convert_particles_log_odd_weights_to_prob(filter);
 }
 
 
@@ -1169,7 +1224,7 @@ mutual_information_correction(carmen_localize_ackerman_particle_filter_p filter,
 
 		filter->particles[i].weight = (-(w * w * 100.0));
 	}
-	convert_particles_log_weights_to_prob(filter);
+	convert_particles_log_odd_weights_to_prob(filter);
 }
 
 double
@@ -1249,7 +1304,7 @@ hamming_distance_between_remission_maps(carmen_localize_ackerman_particle_filter
 //		w = 1.0 - w;
 		filter->particles[i].weight = ((-(w * w) * 100.0));
 	}
-	convert_particles_log_weights_to_prob(filter);
+	convert_particles_log_odd_weights_to_prob(filter);
 }
 
 
@@ -1318,7 +1373,7 @@ correlation_correction(carmen_localize_ackerman_particle_filter_p filter, carmen
 		w = 1.0 - w > min_weight ? w : min_weight;
 		filter->particles[i].weight = - w * w * 6;
 	}
-	convert_particles_log_weights_to_prob(filter);
+	convert_particles_log_odd_weights_to_prob(filter);
 }
 
 
@@ -1326,10 +1381,34 @@ void
 localize_map_correlation_correction(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_t *localize_map,
 		carmen_compact_map_t *local_map)
 {
-	for (int i = 0; i < filter->param->num_particles; i++)
-		filter->particles[i].weight = map_particle_correction(localize_map, local_map, &(filter->particles[i]));
+//	static int vezes = 0;
 
-	convert_particles_log_weights_to_prob(filter);
+//	FILE *p = fopen("p.txt", "a");
+//	fprintf(p, "vezes %d, number_of_known_points_on_the_map %d\n", vezes++, local_map->number_of_known_points_on_the_map);
+//	fprintf(p, "ox %lf, oy %lf, sx %d, sy %d\n",
+//			localize_map->config.x_origin, localize_map->config.y_origin, localize_map->config.x_size, localize_map->config.y_size);
+	for (int i = 0; i < filter->param->num_particles; i++)
+	{
+//		if (vezes == 3)
+//			vezes = 3;
+		filter->particles[i].weight = map_particle_correction(localize_map, local_map, filter, i);
+//		fprintf(p, "%d, w %lf,  x %lf, y %lf, theta %lf\n", i,
+//				filter->particles[i].weight, filter->particles[i].x, filter->particles[i].y, filter->particles[i].theta);
+	}
+//	fprintf(p, "\n");
+//	fclose(p);
+
+	convert_particles_log_odd_weights_to_prob(filter);
+}
+
+
+void
+localize_map_correlation_correction_with_outlier_rejection(carmen_localize_ackerman_particle_filter_p filter,
+		carmen_localize_ackerman_map_t *localize_map, carmen_compact_map_t *local_map)
+{
+	compute_particles_weights_with_outlier_rejection(localize_map, local_map, filter);
+
+	convert_particles_log_odd_weights_to_prob(filter);
 }
 
 
@@ -1350,7 +1429,7 @@ carmen_localize_ackerman_function_velodyne_evaluation(
 	switch (filter->param->correction_type)
 	{
 		case 0:
-			w = map_particle_correction(map, local_map, &(filter->particles[i]));
+			w = map_particle_correction(map, local_map, filter, i);
 			//w = exp(w);
 			break;
 		case 1:
@@ -1408,9 +1487,9 @@ carmen_localize_ackerman_velodyne_correction(carmen_localize_ackerman_particle_f
 	switch (filter->param->correction_type)
 	{
 		case 0:
-			// The localize_map used in this function must be in log likelihood
-			localize_map_correlation_correction(filter, localize_map, local_map);
-
+			// The localize_map used in this function must be in log_odds and the local_map in probabilities
+//			localize_map_correlation_correction(filter, localize_map, local_map);
+			localize_map_correlation_correction_with_outlier_rejection(filter, localize_map, local_map);
 			// para ver este mapa no navigator_gui2 coloque CARMEN_GRAPHICS_LOG_ODDS | CARMEN_GRAPHICS_INVERT na linha 930 de gtk_gui.cpp
 //			carmen_moving_objects_map_message moving_objects_map_message;
 //			moving_objects_map_message.complete_map = localize_map->complete_prob;
@@ -1863,13 +1942,10 @@ carmen_localize_ackerman_velodyne_prediction(carmen_localize_ackerman_particle_f
 		return;
 
 	if (filter->param->use_velocity_prediction)
-	{
 		carmen_localize_ackerman_incorporate_velocity_odometry(filter, odometry->v, odometry->phi, distance_between_front_and_rear_axles, velodyne_timestamp - filter->last_timestamp);
-	}
 	else
-	{
 		carmen_localize_ackerman_incorporate_odometry(filter, odometry->v, odometry->phi, distance_between_front_and_rear_axles, velodyne_timestamp - filter->last_timestamp);
-	}
+
 	filter->last_timestamp = velodyne_timestamp;
 }
 
@@ -1881,7 +1957,7 @@ carmen_localize_ackerman_velodyne_resample(carmen_localize_ackerman_particle_fil
 	if (filter->distance_travelled >= filter->param->update_distance)
 	{
 		velodyne_resample(filter);
-		filter->distance_travelled = 0;
+		filter->distance_travelled = 0.0;
 		filter->initialized = 1;
 	}
 }

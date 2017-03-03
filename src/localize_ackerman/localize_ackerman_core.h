@@ -54,7 +54,7 @@ extern "C" {
 
 
 #define      SMALL_PROB        0.01
-#define      MAX_BEAMS_PER_SCAN   1024
+#define      MAX_BEAMS_PER_SCAN   10000
 
 /* #define      LOCALIZECORE_TRACKING_MINLIKELIHOOD        (0.5) */
 /* #define      LOCALIZECORE_GLOBAL_MINLIKELIHOOD          (0.9) */
@@ -157,7 +157,7 @@ typedef struct
 
 /** Create (allocate memory for) a new particle filter **/
 carmen_localize_ackerman_particle_filter_p 
-carmen_localize_ackerman_particle_filter_new(carmen_localize_ackerman_param_p param);
+carmen_localize_ackerman_particle_filter_initialize(carmen_localize_ackerman_param_p param);
 
 /** Creates a distribution of particles over the map based on the given observation 
  *

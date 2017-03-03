@@ -899,11 +899,11 @@ namespace View
 			break;
 
 		case CARMEN_LOCALIZE_LMAP_v:
-			flags = CARMEN_GRAPHICS_RESCALE;
+			flags = CARMEN_GRAPHICS_LOG_ODDS | CARMEN_GRAPHICS_INVERT;
 			break;
 
 		case CARMEN_LOCALIZE_GMAP_v:
-			flags = CARMEN_GRAPHICS_RESCALE;
+			flags = CARMEN_GRAPHICS_LOG_ODDS | CARMEN_GRAPHICS_INVERT;
 			break;
 
 		case CARMEN_LANE_MAP_v:
@@ -927,7 +927,7 @@ namespace View
 			break;
 
 		case CARMEN_MOVING_OBJECTS_MAP_v:
-			flags = 0;
+			flags = 0; // CARMEN_GRAPHICS_LOG_ODDS | CARMEN_GRAPHICS_INVERT;
 			break;
 
 		default:

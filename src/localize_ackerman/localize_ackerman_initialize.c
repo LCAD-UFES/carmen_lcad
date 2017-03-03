@@ -171,7 +171,7 @@ realloc_temp_weights(carmen_localize_ackerman_particle_filter_p filter, int num_
 
 
 carmen_localize_ackerman_particle_filter_p
-carmen_localize_ackerman_particle_filter_new(carmen_localize_ackerman_param_p param)
+carmen_localize_ackerman_particle_filter_initialize(carmen_localize_ackerman_param_p param)
 {
 	carmen_localize_ackerman_particle_filter_p filter;
 
@@ -220,9 +220,7 @@ carmen_localize_ackerman_initialize_particles_uniform(carmen_localize_ackerman_p
 
 	/* compute the correct laser_skip */
 	if (filter->param->laser_skip <= 0)
-	{
 		filter->param->laser_skip = floor(filter->param->integrate_angle / laser->config.angular_resolution);
-	}
 
 	fprintf(stderr, "\rDoing global localization... (%.1f%% complete)", 0.0);
 	filter->initialized = 0;
@@ -357,8 +355,21 @@ carmen_localize_ackerman_initialize_particles_gaussians(carmen_localize_ackerman
 			filter->particles[j].x = x;
 			filter->particles[j].y = y;
 			filter->particles[j].theta = theta;
-			filter->particles[j].weight = 0.0;
+			filter->particles[j].weight = 0.5;
 		}
+	}
+
+	// Add mean of each mode to the pool
+	for (i = 0; i < num_modes; i++)
+	{
+		x = mean[i].x;
+		y = mean[i].y;
+		theta = carmen_normalize_theta(mean[i].theta);
+
+		filter->particles[i].x = x;
+		filter->particles[i].y = y;
+		filter->particles[i].theta = theta;
+		filter->particles[i].weight = 0.5;
 	}
 
 	filter->initialized = 1;
