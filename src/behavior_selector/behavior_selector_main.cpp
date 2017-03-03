@@ -290,7 +290,8 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, ca
 			current_robot_pose_v_and_phi);
 	if (nearest_velocity_related_annotation != NULL)
 	{
-		double distance_to_annotation = DIST2D_P(&nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi);
+		double distance_to_annotation = DIST2D_P(&nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi) -
+				(get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels);
 		double velocity_at_next_annotation = get_velocity_at_next_annotation(nearest_velocity_related_annotation, goal->v);
 		double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi->v, velocity_at_next_annotation,
 				distance_to_annotation);
