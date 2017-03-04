@@ -1079,6 +1079,84 @@ carmen_prob_models_compute_expected_delta_ray(double h, double r1, double theta)
 }
 
 
+double
+get_log_odds_via_unexpeted_delta_range_old(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int ray_index, int scan_index,
+		bool reduce_sensitivity, int thread_id)
+{
+	int previous_ray_index;
+	double ray_size1, ray_size2, delta_ray, expected_delta_ray; //, expected_delta_ray_old;
+	double log_odds;
+	double ray_length;
+	double obstacle_evidence, p_obstacle;
+	double p_0;
+	double sigma;
+
+	previous_ray_index = ray_index - 1;
+#if (DISCOUNT_RAY_19 == 1)
+	// Tratamento do raio que falta/apagado
+	if (previous_ray_index == 19)
+		previous_ray_index = 18;
+#endif
+	if (previous_ray_index < 0)
+		return (sensor_params->log_odds.log_odds_l0);
+
+	if (sensor_data->maxed[thread_id][previous_ray_index] || sensor_data->maxed[thread_id][ray_index])
+		return (sensor_params->log_odds.log_odds_l0);
+
+	if (sensor_data->ray_hit_the_robot[thread_id][previous_ray_index] || sensor_data->ray_hit_the_robot[thread_id][ray_index])
+		return (sensor_params->log_odds.log_odds_l0);
+
+	if ((sensor_data->obstacle_height[thread_id][previous_ray_index] < -2.0) || (sensor_data->obstacle_height[thread_id][ray_index] < -2.0))
+		return (sensor_params->log_odds.log_odds_l0);
+
+	ray_length = sensor_data->points[sensor_data->point_cloud_index].sphere_points[scan_index + ray_index].length;
+
+	ray_size1 = sensor_data->ray_size_in_the_floor[thread_id][previous_ray_index];
+	ray_size2 = sensor_data->ray_size_in_the_floor[thread_id][ray_index];
+
+	delta_ray = ray_size2 - ray_size1;
+	expected_delta_ray = carmen_prob_models_compute_expected_delta_ray(ray_length, ray_index, sensor_params->vertical_correction, sensor_params->height);
+//	expected_delta_ray_old = carmen_prob_models_compute_expected_delta_ray_old(ray_size1, ray_index, sensor_params->vertical_correction, sensor_params->height);
+
+	obstacle_evidence = (expected_delta_ray - delta_ray) / expected_delta_ray;
+
+//	printf("%lf %lf %lf %lf\n", sensor_data->range[ray_index], expected_delta_ray, expected_delta_ray_old, obstacle_evidence);
+
+	// Testa se tem um obstaculo com um buraco em baixo
+	obstacle_evidence = (obstacle_evidence > 1.0)? 1.0: obstacle_evidence;
+
+	if (reduce_sensitivity)
+	{
+		if (delta_ray > expected_delta_ray) // @@@ Alberto: nao trata buraco?
+			return (sensor_params->log_odds.log_odds_free);
+		sigma = -sensor_params->unexpeted_delta_range_sigma;
+	}
+	else
+	{
+		if (delta_ray > expected_delta_ray) // @@@ Alberto: nao trata buraco?
+			return (sensor_params->log_odds.log_odds_l0);
+//		two_times_sigma = (2.0 * sensor_params->unexpeted_delta_range_sigma * sensor_params->unexpeted_delta_range_sigma);
+		sigma = sensor_params->unexpeted_delta_range_sigma;
+	}
+
+	// valor da exponencial com evidencia zero (antigo)
+	//	p_0 = exp(-1.0 / two_times_sigma);
+	//	p_obstacle = (exp(-((obstacle_evidence - 1.0) * (obstacle_evidence - 1.0)) / two_times_sigma) - p_0) / (1.0 - p_0);
+
+	//a bom é entre [0.1 e 1.0]
+	//two_times_sigma = 2*a*a;
+	//plot [0:1] (1.0 / exp(-x / (2*a*a)) - 1.0) / (1.0 / exp(-1.0 / (2*a*a)) - 1.0)
+
+	p_0 = (1.0 / exp(1.0 / sigma) - 1.0);
+	p_obstacle = (1.0 / exp(obstacle_evidence / sigma) - 1.0) / p_0;
+
+//	printf("%lf\n", p_obstacle);
+	log_odds = log(p_obstacle / (1.0 - p_obstacle));
+
+	return (log_odds);
+}
+
+
 //extern FILE *plot_data;
 
 double

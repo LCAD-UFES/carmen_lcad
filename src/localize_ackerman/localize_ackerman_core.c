@@ -1499,19 +1499,19 @@ carmen_localize_ackerman_velodyne_correction(carmen_localize_ackerman_particle_f
 //			moving_objects_map_message.host = carmen_get_host();
 //			carmen_moving_objects_map_publish_message(&moving_objects_map_message);
 
-//			carmen_moving_objects_map_message moving_objects_map_message;
-//			carmen_map_t temp_map;
-//			carmen_grid_mapping_create_new_map(&temp_map, local_map->config.x_size, local_map->config.y_size, local_map->config.resolution);
-//			memset(temp_map.complete_map, 0, temp_map.config.x_size * temp_map.config.y_size * sizeof(double));
-//			carmen_prob_models_uncompress_compact_map(&temp_map, local_map);
-//			moving_objects_map_message.complete_map = temp_map.complete_map;
-//			moving_objects_map_message.size = temp_map.config.x_size * temp_map.config.y_size;
-//			moving_objects_map_message.config = temp_map.config;
-//			moving_objects_map_message.timestamp = carmen_get_time();
-//			moving_objects_map_message.host = carmen_get_host();
-//			carmen_moving_objects_map_publish_message(&moving_objects_map_message);
-//			free(temp_map.complete_map);
-//			free(temp_map.map);
+			carmen_moving_objects_map_message moving_objects_map_message;
+			carmen_map_t temp_map;
+			carmen_grid_mapping_create_new_map(&temp_map, local_map->config.x_size, local_map->config.y_size, local_map->config.resolution);
+			memset(temp_map.complete_map, 0, temp_map.config.x_size * temp_map.config.y_size * sizeof(double));
+			carmen_prob_models_uncompress_compact_map(&temp_map, local_map);
+			moving_objects_map_message.complete_map = temp_map.complete_map;
+			moving_objects_map_message.size = temp_map.config.x_size * temp_map.config.y_size;
+			moving_objects_map_message.config = temp_map.config;
+			moving_objects_map_message.timestamp = carmen_get_time();
+			moving_objects_map_message.host = carmen_get_host();
+			carmen_moving_objects_map_publish_message(&moving_objects_map_message);
+			free(temp_map.complete_map);
+			free(temp_map.map);
 
 //			carmen_map_t temp_map;
 //			temp_map.config = localize_map->config;
