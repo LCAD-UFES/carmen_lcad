@@ -21,6 +21,9 @@
 // Comment or uncomment this definition to control whether simulated moving obstacles are created.
 //#define SIMULATE_MOVING_OBSTACLE
 
+// Comment or uncomment this definition to control whether moving obstacles are displayed.
+#define DISPLAY_MOVING_OBSTACLES
+
 using namespace g2o;
 
 static int necessary_maps_available = 0;
@@ -740,6 +743,7 @@ behavior_selector_motion_planner_publish_path_message(carmen_rddf_road_profile_m
 void
 publish_object(carmen_ackerman_traj_point_t *object_pose)
 {
+#ifdef DISPLAY_MOVING_OBSTACLES
 	if (moving_obstacles == NULL)
 		virtual_laser_message.num_positions = 3;
 	else
@@ -747,6 +751,9 @@ publish_object(carmen_ackerman_traj_point_t *object_pose)
 		virtual_laser_message.num_positions = 1 + moving_obstacles->num_obstacles;
 		carmen_udatmo_fill_virtual_laser_message(moving_obstacles, 1, &virtual_laser_message);
 	}
+#else
+	virtual_laser_message.num_positions = 3;
+#endif
 
 	virtual_laser_message.positions[0].x = object_pose->x;
 	virtual_laser_message.positions[0].y = object_pose->y;
@@ -794,7 +801,7 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	carmen_ackerman_traj_point_t *simulated_object_pose = compute_simulated_objects(&current_robot_pose_v_and_phi, timestamp);
 	if (simulated_object_pose)
 		publish_object(simulated_object_pose);
-#else
+#elif defined DISPLAY_MOVING_OBSTACLES
 	carmen_udatmo_display_moving_obstacles_message(moving_obstacles);
 #endif
 }
