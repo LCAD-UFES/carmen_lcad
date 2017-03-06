@@ -17,17 +17,12 @@ class Obstacle
 	/** @brief Sequence of observations relating to this moving obstacle. */
 	std::deque<Observation> track;
 
-	/** @brief Number of missed observations of this moving obstacle. */
-	int misses;
-
 	/**
 	 * @brief Update estimates of direction and speed of movement.
 	 */
 	void updateMovement();
 
 public:
-	enum Status {DETECTED, TRACKING, DROP};
-
 	/** @brief RDDF index of the obstacle. */
 	int index;
 
@@ -39,21 +34,25 @@ public:
 	 */
 	Obstacle();
 
-	Obstacle(const carmen_ackerman_traj_point_t &robot_pose, const Observation &observation);
-
 	/**
-	 * @brief Update this moving obstacle according to the given observation sequence.
+	 * @brief Create a new moving obstacle from the given observation.
 	 */
-	void update(const carmen_ackerman_traj_point_t &robot_pose, Observations &observed);
+	Obstacle(const Observation &observation);
 
 	/**
 	 * @brief Add an observation to this moving obstacle.
 	 */
 	void update(const Observation &observation);
 
+	/**
+	 * @brief Rteurn the timestamp associated with this moving obstacle.
+	 */
 	double timestamp() const;
 
-	Status status() const;
+	/**
+	 * @brief Whether this obstacle contains enough observations for tracking.
+	 */
+	bool tracking() const;
 };
 
 /** @brief Sequence of moving obstacles. */

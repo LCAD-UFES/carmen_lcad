@@ -40,6 +40,10 @@ class DATMO
 	/** @brief Sequence of detected obstacles. */
 	Obstacles obstacles;
 
+	/** @brief Sequence of tracking obstacles. */
+	Obstacles tracking;
+
+
 	/**
 	 * @brief Assign observation `j` either to an existing or new moving obstacle.
 	 */

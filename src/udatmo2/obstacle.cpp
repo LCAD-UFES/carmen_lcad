@@ -21,59 +21,26 @@ Obstacle::Obstacle():
 }
 
 
-Obstacle::Obstacle(const carmen_ackerman_traj_point_t &robot_pose, const Observation &observation)
+Obstacle::Obstacle(const Observation &observation)
 {
 	update(observation);
-	pose.theta = robot_pose.theta;
-	pose.v = robot_pose.v;
+	pose.theta = 0;
+	pose.v = 0;
 	pose.phi = 0;
-
-	CARMEN_LOG(trace, "New Obstacle pose = " << relative_xyt(pose, robot_pose) << ", o = " << track.size());
-}
-
-
-void Obstacle::update(const carmen_ackerman_traj_point_t &robot_pose, Observations &observations)
-{
-	if (track.size() == 0)
-		return;
-
-	const Observation &o1 = track.front();
-	const Observation &o2 = observations.front();
-	double t = truncate(o2.timestamp - o1.timestamp, 0.01, 0.2);
-	double r = (pose.v + robot_pose.v) * t + 0.1;
-
-	CARMEN_LOG(trace, "Obstacle pose = " << relative_xyt(pose, robot_pose) << ", dt = " << t << ", r = " << r << ", o = " << track.size());
-
-	for (Observations::iterator i = observations.begin(), n = observations.end(); i != n; ++i)
-	{
-		Observation &observation = *i;
-		if (distance(pose, observation.position) <= r)
-		{
-			update(observation);
-			observations.erase(i);
-			return;
-		}
-	}
-
-	// If no observation found, tentatively
-	// updates position based on current estimates.
-	pose.x += pose.v * t * cos(pose.theta);
-	pose.y += pose.v * t * sin(pose.theta);
-
-	if (track.size() > 1)
-		track.pop_back();
-
-	misses++;
 }
 
 
 void Obstacle::update(const Observation &observation)
 {
-	misses = 0;
-
 	// Only add observation to track if it's reasonably apart from latest observation.
 	if (track.size() > 0 && distance(observation, track.front()) < 0.01)
+	{
+		// Also, if this obstacle is tracking, remove oldest observation.
+		if (track.size() > 1)
+			track.pop_back();
+
 		return;
+	}
 
 	track.push_front(observation);
 	while (track.size() > MOVING_OBSTACLES_OBSERVATIONS)
@@ -132,15 +99,9 @@ double Obstacle::timestamp() const
 }
 
 
-Obstacle::Status Obstacle::status() const
+bool Obstacle::tracking() const
 {
-	if (misses > 2)
-		return DROP;
-
-	if (track.size() <= 1)
-		return DETECTED;
-
-	return TRACKING;
+	return (track.size() > 1);
 }
 
 
