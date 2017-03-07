@@ -156,32 +156,13 @@ const Obstacles &DATMO::track()
 		assign(j, assignments, recognized);
 
 	obstacles = recognized;
-	return obstacles;
-
-// 	// Check the map for obstacle points in the focus regions.
-// 	detect();
-//
-// 	// Update current moving obstacles with observations, remove stale cases.
-// 	tracking.clear();
-// 	Obstacles::iterator n = obstacles.end();
-// 	Obstacles::iterator i = std::remove_if(obstacles.begin(), n, boost::bind(&DATMO::handle, this, _1));
-// 	obstacles.erase(i, n);
-//
-// 	CARMEN_LOG(trace, "Observations not assigned: " << observations.size());
-//
-// 	// Instantiate new moving obstacles from observations not associated to current obstacles.
-// 	for (Observations::iterator i = observations.begin(), n = observations.end(); i != n; ++i)
-// 		obstacles.push_back(Obstacle(robot_pose, *i));
-//
-// 	CARMEN_LOG(trace, "Obstacles total: " << obstacles.size());
-// 	CARMEN_LOG(trace, "Tracking total: " << tracking.size());
-//
-// 	return tracking;
+	return tracking;
 }
 
 
 void DATMO::assign(int j, const cv::Mat assignments, Obstacles &recognized)
 {
+	tracking.clear();
 	int rows = obstacles.size();
 	for (int i = 0; i < rows; i++)
 	{
@@ -190,6 +171,9 @@ void DATMO::assign(int j, const cv::Mat assignments, Obstacles &recognized)
 			CARMEN_LOG(trace, "Obstacle #" << i << " updated with observation #" << j);
 			Obstacle &obstacle = obstacles[i];
 			obstacle.update(observations[j]);
+			if (obstacle.tracking())
+				tracking.push_back(obstacle);
+
 			recognized.push_back(obstacle);
 			return;
 		}
@@ -201,7 +185,7 @@ void DATMO::assign(int j, const cv::Mat assignments, Obstacles &recognized)
 	{
 		if (assignments.at<int>(i, j) == STAR)
 		{
-			recognized.push_back(Obstacle(robot_pose, observations[j]));
+			recognized.push_back(Obstacle(observations[j]));
 			return;
 		}
 	}
