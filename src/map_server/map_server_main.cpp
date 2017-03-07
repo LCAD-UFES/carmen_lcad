@@ -599,6 +599,7 @@ read_localize_parameters(int argc, char **argv)
 			{"localize", "global_distance_threshold", CARMEN_PARAM_DOUBLE, &localize_param.global_distance_threshold, 1, NULL},
 			{"localize", "global_test_samples", CARMEN_PARAM_INT, &localize_param.global_test_samples, 1, NULL},
 			{"localize", "use_sensor", CARMEN_PARAM_ONOFF, &localize_param.use_sensor, 0, NULL},
+			{"localize", "use_log_odds", CARMEN_PARAM_ONOFF, &localize_param.use_log_odds, 0, NULL},
 			{"localize", "lmap_std", CARMEN_PARAM_DOUBLE, &localize_param.lmap_std, 0, NULL},
 			{"localize", "tracking_beam_minlikelihood", CARMEN_PARAM_DOUBLE, &localize_param.tracking_beam_minlikelihood, 0, NULL},
 			{"localize", "tracking_beam_maxlikelihood", CARMEN_PARAM_DOUBLE, &localize_param.tracking_beam_maxlikelihood, 0, NULL},

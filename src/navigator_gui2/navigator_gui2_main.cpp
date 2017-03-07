@@ -151,19 +151,18 @@ navigator_get_empty_map()
 static void
 navigator_get_specific_map(int is_superimposed, carmen_map_t *specific_map, carmen_navigator_map_t type)
 {
+	if (!is_superimposed)
+		map_type = type;
+	else
+		superimposedmap_type = type;
+
 	if ((specific_map == NULL) || (specific_map->complete_map == NULL))
 		return;
 
 	if (!is_superimposed)
-	{
 		gui->navigator_graphics_display_map(specific_map, type);
-		map_type = type;
-	}
 	else
-	{
-		superimposedmap_type = type;
 		carmen_map_interface_set_superimposed_map(specific_map);
-	}
 }
 
 

@@ -333,7 +333,7 @@ carmen_localize_ackerman_initialize_particles_gaussians(carmen_localize_ackerman
 		int num_modes, carmen_point_t *mean, carmen_point_t *std)
 {
 	int i, j, each, start, end;
-	double x, y, theta;
+	double x, y, theta, phi_bias;
 
 	each = (int) floor(filter->param->num_particles / (double) num_modes);
 
@@ -351,10 +351,12 @@ carmen_localize_ackerman_initialize_particles_gaussians(carmen_localize_ackerman
 			x = carmen_gaussian_random(mean[i].x, std[i].x);
 			y = carmen_gaussian_random(mean[i].y, std[i].y);
 			theta = carmen_normalize_theta(carmen_gaussian_random(mean[i].theta, std[i].theta));
+			phi_bias = carmen_gaussian_random(0.0, filter->param->phi_bias_std);
 
 			filter->particles[j].x = x;
 			filter->particles[j].y = y;
 			filter->particles[j].theta = theta;
+			filter->particles[j].phi_bias = phi_bias;
 			filter->particles[j].weight = 0.5;
 		}
 	}
@@ -370,6 +372,7 @@ carmen_localize_ackerman_initialize_particles_gaussians(carmen_localize_ackerman
 		filter->particles[i].y = y;
 		filter->particles[i].theta = theta;
 		filter->particles[i].weight = 0.5;
+		filter->particles[i].phi_bias = 0.0;
 	}
 
 	filter->initialized = 1;

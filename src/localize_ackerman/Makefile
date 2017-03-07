@@ -45,6 +45,19 @@ TARGETS = libprob_models.a libgl_plotter.a localize_ackerman liblocalize_ackerma
 		liblocalize_ackerman_core.a liblocalize_ackerman_motion.a model_learn_ackerman/model_learner_ackerman \
 		localize_ackerman_particle_viewer		
 
+# If you set graphics support in configure.
+ifndef NO_GRAPHICS
+#Carmen Global Graphic Library and Gtk+2 Graphics Libraries
+IFLAGS += \
+	`pkg-config --cflags gtk+-2.0 gmodule-export-2.0` \
+	`pkg-config --cflags gtkglext-1.0`
+LFLAGS += \
+	-lglobal_graphics \
+	`pkg-config --libs gtk+-2.0 gmodule-export-2.0` \
+	`pkg-config --libs gtkglext-1.0`
+endif
+
+
 PUBLIC_LIBRARIES_SO = liblocalize_ackerman_interface.so
 ifndef NO_PYTHON
 TARGETS += liblocalize_ackerman_interface.so.1

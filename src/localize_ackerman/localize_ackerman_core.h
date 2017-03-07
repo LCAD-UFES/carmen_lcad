@@ -94,6 +94,8 @@ typedef struct {
   double phi_noise_velocity;
   int use_velocity_prediction;
 
+  int use_log_odds;
+  double phi_bias_std;
   double lmap_std;
   double tracking_beam_minlikelihood;
   double tracking_beam_maxlikelihood;
@@ -111,7 +113,7 @@ typedef struct {
 } carmen_localize_ackerman_param_t, *carmen_localize_ackerman_param_p;
 
 typedef struct {
-  double x, y, theta;
+  double x, y, theta, phi_bias;
   double weight;
 } carmen_localize_ackerman_particle_t, *carmen_localize_ackerman_particle_p;
 
@@ -150,7 +152,7 @@ typedef struct
 	int *rand_position;
 	int *binary_map;
 	int map_size;
-}carmen_localize_ackerman_binary_map_t, *carmen_localize_ackerman_binary_map_p;
+} carmen_localize_ackerman_binary_map_t, *carmen_localize_ackerman_binary_map_p;
 
 #include "localize_ackerman_likelihood_map.h"
 

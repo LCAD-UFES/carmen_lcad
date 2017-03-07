@@ -720,6 +720,7 @@ carmen_localize_ackerman_initialize_message_handler(carmen_localize_ackerman_ini
 			initialize_msg->num_modes, initialize_msg->mean, initialize_msg->std);
 
 		g_std = initialize_msg->std[0];
+//		g_std = {0.0, 0.0, 0.0};
 		g_reinitiaze_particles = 10;
 
 		filter->last_timestamp = initialize_msg->timestamp;
@@ -1206,8 +1207,10 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 		{(char *) "localize", (char *) "global_distance_threshold", CARMEN_PARAM_DOUBLE, &param->global_distance_threshold, 1, NULL},
 		{(char *) "localize", (char *) "global_test_samples", CARMEN_PARAM_INT, &param->global_test_samples, 1, NULL},
 		{(char *) "localize", (char *) "use_sensor", CARMEN_PARAM_ONOFF, &param->use_sensor, 0, NULL},
+		{(char *) "localize", (char *) "phi_bias_std", CARMEN_PARAM_DOUBLE, &param->phi_bias_std, 0, NULL},
 		{(char *) "localize", (char *) "lmap_std", CARMEN_PARAM_DOUBLE, &param->lmap_std, 0, NULL},
 		{(char *) "localize", (char *) "global_lmap_std", CARMEN_PARAM_DOUBLE, &param->global_lmap_std, 0, NULL},
+		{(char *) "localize", (char *) "use_log_odds", CARMEN_PARAM_ONOFF, &param->use_log_odds, 0, NULL},
 		{(char *) "localize", (char *) "tracking_beam_minlikelihood", CARMEN_PARAM_DOUBLE, &param->tracking_beam_minlikelihood, 0, NULL},
 		{(char *) "localize", (char *) "tracking_beam_maxlikelihood", CARMEN_PARAM_DOUBLE, &param->tracking_beam_maxlikelihood, 0, NULL},
 		{(char *) "localize", (char *) "global_beam_minlikelihood", CARMEN_PARAM_DOUBLE, &param->global_beam_minlikelihood, 0, NULL},
@@ -1276,8 +1279,10 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 
 	localize_ackerman_velodyne_laser_read_parameters(argc, argv);
 
+//	param->xy_uncertainty_due_to_grid_resolution = (p_map_params->grid_res) * (p_map_params->grid_res);
+	param->yaw_uncertainty_due_to_grid_resolution = asin((p_map_params->grid_res / 2.0) / max_range) * asin((p_map_params->grid_res / 2.0) / max_range);
 	param->xy_uncertainty_due_to_grid_resolution = (p_map_params->grid_res / 2.0) * (p_map_params->grid_res / 2.0);
-	param->yaw_uncertainty_due_to_grid_resolution = asin((p_map_params->grid_res / 0.2) / max_range) * asin((p_map_params->grid_res / 0.2) / max_range);
+//	param->yaw_uncertainty_due_to_grid_resolution = asin((p_map_params->grid_res / 0.2) / max_range) * asin((p_map_params->grid_res / 0.2) / max_range);
 	
 	carmen_param_allow_unfound_variables(1);
 
