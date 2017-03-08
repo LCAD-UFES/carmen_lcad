@@ -43,22 +43,27 @@ static int image_height;
 string ts_cascade_name = getenv("CARMEN_HOME")+ (string) "/data/traffic_light/data.xml";
 CascadeClassifier ts_cascade;
 
-//Dection infraestructure
+// Dection infrastructure
 #define MAX_TRAFFIC_LIGHTS_IN_IMAGE 10
-//Ver valores abaixo no arquivo height_in_pixels_x_distance.ods
+// Ver valores abaixo no arquivo height_in_pixels_x_distance.ods
 #define TRAFFIC_LIGHT_HEIGHT 		1.0
 #define FOCAL_DISTANCE 				1500.0
 #define DISTANCE_CORRECTION 		6.0
 static int num = 0;
 static carmen_traffic_light traffic_lights_detected[MAX_TRAFFIC_LIGHTS_IN_IMAGE];
 
-//Localization infraestruture
+// Localization infrastructure
 carmen_localize_ackerman_globalpos_message last_localize_message;
 static bool has_localize_message = false;
 
-//Annotations infraestructure
-std::vector<carmen_rddf_annotation_message> last_annotation_messages;
+// Annotations infrastructure
+carmen_rddf_annotation_message last_annotation_message;
 static double infinite = 9999.0;
+
+// Database generation infrastructure
+static int generate_database = 0;
+static char *database_path;
+carmen_vector_3D_t nearest_traffic_light_pose;
 
 
 double
@@ -66,27 +71,27 @@ compute_distance_to_the_traffic_light()
 {
     double nearest_traffic_light_distance = infinite;
 
-    for (std::vector<carmen_rddf_annotation_message>::iterator it = last_annotation_messages.begin(); it != last_annotation_messages.end(); ++it)
+    for (int i = 0; i < last_annotation_message.num_annotations; i++)
     {
-    	if (it.base()->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT)
+    	if (last_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT)
     	{
-    		double distance = sqrt(pow(last_localize_message.globalpos.x - it.base()->annotation_point.x, 2) +
-							pow(last_localize_message.globalpos.y - it.base()->annotation_point.y, 2));
+    		double distance = sqrt(pow(last_localize_message.globalpos.x - last_annotation_message.annotations[i].annotation_point.x, 2) +
+							pow(last_localize_message.globalpos.y - last_annotation_message.annotations[i].annotation_point.y, 2));
     		if (distance < nearest_traffic_light_distance)
     		{
-    			bool orientation_ok = fabs(carmen_radians_to_degrees(last_localize_message.globalpos.theta - it.base()->annotation_orientation)) < 10.0 ? 1 : 0;
-    			bool behind = fabs(carmen_normalize_theta((atan2(last_localize_message.globalpos.y - it.base()->annotation_point.y,
-															last_localize_message.globalpos.x - it.base()->annotation_point.x) - M_PI -
+    			bool orientation_ok = fabs(carmen_radians_to_degrees(last_localize_message.globalpos.theta - last_annotation_message.annotations[i].annotation_orientation)) < 10.0 ? 1 : 0;
+    			bool behind = fabs(carmen_normalize_theta((atan2(last_localize_message.globalpos.y - last_annotation_message.annotations[i].annotation_point.y,
+															last_localize_message.globalpos.x - last_annotation_message.annotations[i].annotation_point.x) - M_PI -
 													 	 	last_localize_message.globalpos.theta))) > M_PI_2;
 
 				if (distance <= MAX_TRAFFIC_LIGHT_DISTANCE && orientation_ok && behind == false)
+				{
 	    			nearest_traffic_light_distance = distance;
+	    			nearest_traffic_light_pose = last_annotation_message.annotations[i].annotation_point;
+				}
     		}
     	}
     }
-
-    while (last_annotation_messages.size() > 100)
-    	last_annotation_messages.erase(last_annotation_messages.begin());
 
     return (nearest_traffic_light_distance);
 }
@@ -216,6 +221,69 @@ detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *tr
 		traffic_light_message->num_traffic_lights = num_traffic_lights_accepted;
 	}
 }
+
+
+Mat*
+bumblebee_to_opencv(carmen_bumblebee_basic_stereoimage_message *stereo_image)
+{
+	static Mat *m = NULL;
+
+	// constructing Mat objects is really time consuming, so I alloc it just once.
+	if (m == NULL)
+		m = new cv::Mat(image_height, image_width, CV_8UC3);
+
+	memcpy(m->data, stereo_image->raw_right, stereo_image->image_size);
+	cv::cvtColor(*m, *m, CV_BGR2RGB);
+
+	return m;
+}
+
+
+void
+save_image_and_detections(carmen_traffic_light_message traffic_light_message, carmen_bumblebee_basic_stereoimage_message *stereo_image)
+{
+	static int counter = 0;
+
+	for (int i = 0; i < traffic_light_message.num_traffic_lights; i ++)
+	{
+		const char *filename;
+
+		if (traffic_light_message.traffic_lights[i].color == TRAFFIC_LIGHT_RED)
+			filename = "red.txt";
+		else if (traffic_light_message.traffic_lights[i].color == TRAFFIC_LIGHT_GREEN)
+			filename = "green.txt";
+		else if (traffic_light_message.traffic_lights[i].color == TRAFFIC_LIGHT_YELLOW)
+			filename = "yellow.txt";
+		else if (traffic_light_message.traffic_lights[i].color == TRAFFIC_LIGHT_OFF)
+			filename = "off.txt";
+
+		static char image_name[1024];
+		static char file_name_with_dir[2048];
+
+		sprintf(image_name, "%s/img/image_%04d_%lf_%lf_%lf.png",
+				database_path, counter, stereo_image->timestamp,
+				nearest_traffic_light_pose.x, nearest_traffic_light_pose.y);
+
+		sprintf(file_name_with_dir, "%s/%s", database_path, filename);
+
+		FILE *database_file = fopen(file_name_with_dir, "a");
+
+		if (database_file == NULL)
+			exit(printf("Error: Unable to open the output file '%s'\n", file_name_with_dir));
+
+		Mat *m = bumblebee_to_opencv(stereo_image);
+		imwrite(image_name, *m);
+
+		fprintf(database_file, "%s %d %d %d %d\n", image_name,
+				traffic_light_message.traffic_lights[i].x1,
+				traffic_light_message.traffic_lights[i].y1,
+				traffic_light_message.traffic_lights[i].x2,
+				traffic_light_message.traffic_lights[i].y2);
+
+		fclose(database_file);
+		counter++;
+	}
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -259,6 +327,10 @@ carmen_bumblebee_basic_stereoimage_message_handler(carmen_bumblebee_basic_stereo
 	{
         traffic_light_message.distance = nearest_traffic_light_distance;
         detect_traffic_lights_and_recognize_their_state(&traffic_light_message, stereo_image);
+
+        if (generate_database)
+        	save_image_and_detections(traffic_light_message, stereo_image);
+
         traffic_light_message.timestamp = stereo_image->timestamp;
     }
     else
@@ -275,7 +347,7 @@ carmen_bumblebee_basic_stereoimage_message_handler(carmen_bumblebee_basic_stereo
 void
 carmen_rddf_annotation_message_handler(carmen_rddf_annotation_message *msg)
 {
-	last_annotation_messages.push_back(*msg);
+	last_annotation_message = *msg;
 }
 
 
@@ -338,6 +410,16 @@ read_parameters(int argc, char **argv)
     num_items = sizeof (param_list) / sizeof (param_list[0]);
     carmen_param_install_params(argc, argv, param_list, num_items);
 
+	carmen_param_t param_list2[] =
+	{
+		{(char *) "commandline",	 (char *) "generate_database",	CARMEN_PARAM_ONOFF, 	&generate_database,	 1, NULL},
+		// Curiosamente eh necessario passar o endereco do (char*). Sem isso a leitura do parametro nao funciona. O carmen
+		// deve alocar espaco para a string internamente.
+		{(char *) "commandline",	 (char *) "database_path",		CARMEN_PARAM_STRING, 	&database_path,	 1, NULL},
+	};
+	carmen_param_install_params(argc, argv, param_list2, sizeof(param_list2) / sizeof(param_list2[0]));
+
+	printf("command_line params: %d %s\n", generate_database, database_path);
     return (0);
 }
 
@@ -360,7 +442,7 @@ main(int argc, char **argv)
     carmen_ipc_initialize(argc, argv);
     carmen_param_check_version(argv[0]);
 
-    if ((argc != 2))
+    if ((argc < 2))
         carmen_die("%s: Wrong number of parameters. Traffic Light requires 1 parameters and received %d parameter(s). \n"
         		   "Usage:\n %s <camera_number>\n", argv[0], argc - 1, argv[0]);
 
