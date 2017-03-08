@@ -97,6 +97,7 @@ int use_truepos = 0;
 
 extern carmen_mapper_virtual_laser_message virtual_laser_message;
 
+extern carmen_moving_objects_point_clouds_message moving_objects_message;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
@@ -494,6 +495,13 @@ static void
 carmen_mapper_virtual_laser_message_handler(carmen_mapper_virtual_laser_message *message)
 {
 	virtual_laser_message = *message;
+}
+
+
+static void
+carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_clouds_message *moving_objects_point_clouds_message)
+{
+	moving_objects_message = *moving_objects_point_clouds_message;
 }
 
 
@@ -1066,6 +1074,10 @@ subscribe_to_ipc_messages()
 	carmen_rddf_subscribe_annotation_message(NULL, (carmen_handler_t) rddf_annotation_message_handler, CARMEN_SUBSCRIBE_ALL);
 
 	carmen_mapper_subscribe_virtual_laser_message(NULL, (carmen_handler_t) carmen_mapper_virtual_laser_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	// draw moving objects
+	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
 }
 
 

@@ -345,8 +345,8 @@ publish_moving_objects_by_id()
 	free(moving_objects_point_clouds_message.point_clouds);
 
 	// publish virtual laser message
-	virtual_laser_message.host = carmen_get_host();
-	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
+//	virtual_laser_message.host = carmen_get_host();
+//	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
 
 	free(virtual_laser_message.colors);
 	free(virtual_laser_message.positions);
