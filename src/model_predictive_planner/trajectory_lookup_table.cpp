@@ -772,7 +772,7 @@ simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 	if (command.v < 0.0)
 	{
 		tcp.valid = false;
-		printf("Warning: invalid velocity tcp in simulate_car_from_parameters()\n");
+		//printf("Warning: invalid velocity tcp in simulate_car_from_parameters()\n");
 		path.clear();
 		return (path);
 	}
