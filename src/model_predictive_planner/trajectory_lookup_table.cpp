@@ -768,6 +768,15 @@ simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 
 	double distance_traveled = compute_path_via_simulation(robot_state, command, path, tcp, phi_spline, acc, v0, i_phi, delta_t);
 
+	//TODO Fazer mais testes quanto ao impacto desse tratamento
+	if (command.v < 0.0)
+	{
+		tcp.valid = false;
+		printf("Warning: invalid velocity tcp in simulate_car_from_parameters()\n");
+		path.clear();
+		return (path);
+	}
+
 	gsl_spline_free(phi_spline);
 	gsl_interp_accel_free(acc);
 	td.dist = sqrt(robot_state.x * robot_state.x + robot_state.y * robot_state.y);

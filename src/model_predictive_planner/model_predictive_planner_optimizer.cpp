@@ -461,7 +461,7 @@ my_g(const gsl_vector *x, void *params)
 	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->phi_i, false);
 
 	double path_to_lane_distance = 0.0;
-	if (my_params->use_lane && (my_params->detailed_lane.size() > 0))
+	if (my_params->use_lane && (my_params->detailed_lane.size() > 0) && (path.size() > 0))
 	{
 		if (path.size() != my_params->path_size)
 		{
@@ -474,7 +474,7 @@ my_g(const gsl_vector *x, void *params)
 
 	double proximity_to_obstacles = 0.0;
 
-	if (use_obstacles && GlobalState::distance_map != NULL)
+	if (use_obstacles && GlobalState::distance_map != NULL && path.size() > 0)
 		proximity_to_obstacles = compute_proximity_to_obstacles_using_distance_map(path);
 
 	my_params->tcp_seed->vf = tcp.vf;
@@ -584,7 +584,7 @@ my_h(const gsl_vector *x, void *params)
 	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->phi_i, false);
 
 	double path_to_lane_distance = 0.0;
-	if (my_params->use_lane && (my_params->detailed_lane.size() > 0))
+	if (my_params->use_lane && (my_params->detailed_lane.size() > 0) && (path.size() > 0))
 	{
 		if (path.size() != my_params->path_size)
 		{
@@ -597,7 +597,7 @@ my_h(const gsl_vector *x, void *params)
 
 	double proximity_to_obstacles = 0.0;
 
-	if (use_obstacles && GlobalState::distance_map != NULL)
+	if (use_obstacles && GlobalState::distance_map != NULL && (path.size() > 0))
 		proximity_to_obstacles = compute_proximity_to_obstacles_using_distance_map(path);
 
 	my_params->tcp_seed->vf = tcp.vf;
@@ -621,8 +621,9 @@ my_h(const gsl_vector *x, void *params)
 	}
 	else
 	{
-		w1 = 10.0; w2 = 55.0; w3 = 5.0; w4 = 1.5; w5 = 10.0; w6 = 0.005;
-//		w7 = (my_params->target_td->v_i > 0.2 ? 2.0 : 0.0);
+		w1 = 10.0; w2 = 15.0; w3 = 30.0; w4 = 5.0; w5 = 10.0; w6 = 0.0005;
+		double w7;
+		w7 = 0.1;//(my_params->target_td->v_i > 0.2 ? 2.0 : 0.0);
 		result = sqrt(
 				w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
@@ -631,9 +632,18 @@ my_h(const gsl_vector *x, void *params)
 				w5 * proximity_to_obstacles + // já é quandrática
 				w6 * tcp.sf * tcp.sf); //+
 //				w7 * (my_params->target_v - tcp.vf) * (my_params->target_v - tcp.vf));
+		printf("--------\nW1: %0.2lf W2: %0.2lf W3: %0.2lf W4: %0.2lf W5: %0.2lf W6: %0.2lf W7: %0.2lf\n",
+				(w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index),
+				(w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index),
+				(w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index),
+				(w4 * path_to_lane_distance), // já é quandrática
+				(w5 * proximity_to_obstacles), // já é quandrática
+				(w6 * tcp.sf * tcp.sf),
+				(w7 * (my_params->target_v - tcp.vf) * (my_params->target_v - tcp.vf)));
 	}
-//	printf("NEW result %.2lf s %.2lf sf %.2lf, tdc %.2lf, tdd %.2f, a %lf v_i %.2lf v_f %.2lf vt %.2lf TT %lf \n", result, tcp.s, tcp.sf,
-//			td.dist,my_params->target_td->dist, tcp.a, my_params->target_td->v_i, tcp.vf, my_params->target_v, tcp.tt);
+
+	printf("NEW result %.2lf s %.2lf sf %.2lf, tdc %.2lf, tdd %.2f, a %lf v_i %.2lf v_f %.2lf vt %.2lf TT %lf\n--------\n", result, tcp.s, tcp.sf,
+			td.dist,my_params->target_td->dist, tcp.a, my_params->target_td->v_i, tcp.vf, my_params->target_v, tcp.tt);
 	return (result);
 }
 
@@ -749,16 +759,6 @@ compute_suitable_acceleration(double tt, TrajectoryLookupTable::TrajectoryDimens
 		return (a);
 	}
 }
-
-
-//void
-//estimate_piramidal_profile()
-//{
-//TODO modo para fazer profile piramide INCOMPLETO
-//		double estimate_vf = sqrt((target_td.dist / 2.0) * GlobalState::robot_config.maximum_acceleration_forward);
-//		a = (estimate_vf - target_td.v_i) / tcp_seed.tt;
-//		params.optimize_time = false;
-//}
 
 
 void
@@ -1069,7 +1069,7 @@ optimized_lane_trajectory_control_parameters_new(TrajectoryLookupTable::Trajecto
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
-	if (tcp.tt < 0.2 || s->f > 150.0)
+	if (tcp.tt < 0.2 || s->f > 20.0)
 	{
 	//	printf("Plano invalido>>>>>>>>>>>>>> tt: %lf s->f %lf\n",tcp.tt, s->f);
 		tcp.valid = false;
@@ -1220,6 +1220,30 @@ un_shift_k1(TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed, const 
 	gsl_interp_accel_free(acc);
 }
 
+void verify_shift_option_for_k1(
+		TrajectoryLookupTable::TrajectoryControlParameters& tcp_seed,
+		const TrajectoryLookupTable::TrajectoryDimensions& target_td,
+		TrajectoryLookupTable::TrajectoryControlParameters& tcp_complete)
+{
+	if (!tcp_seed.has_k1)
+		get_missing_k1(target_td, tcp_seed);
+
+	if (((target_td.v_i > (18.0 / 3.6)) && (target_td.dist < 20.0))
+			|| ((target_td.v_i < (5.0 / 3.6)) && (target_td.dist < 10.0)))
+	{
+		if (!tcp_complete.shift_knots) {
+			shift_k1(tcp_complete, target_td);
+			tcp_complete.shift_knots = true;
+		}
+	} else
+	{
+		if (tcp_complete.shift_knots)
+		{
+			un_shift_k1(tcp_complete, target_td);
+			tcp_complete.shift_knots = false;
+		}
+	}
+}
 
 TrajectoryLookupTable::TrajectoryControlParameters
 get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
@@ -1237,26 +1261,7 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 
 	tcp_complete = get_optimized_trajectory_control_parameters(tcp_seed, target_td, target_v, params, has_previous_good_tcp);
 
-	if (!tcp_seed.has_k1)
-		get_missing_k1(target_td, tcp_seed);
-
-	if (((target_td.v_i > (18.0 / 3.6)) && (target_td.dist < 20.0)) ||
-		((target_td.v_i < (5.0 / 3.6)) && (target_td.dist < 10.0)))
-	{
-		if (!tcp_complete.shift_knots)
-		{
-			shift_k1(tcp_complete, target_td);
-			tcp_complete.shift_knots = true;
-		}
-	}
-	else
-	{
-		if (tcp_complete.shift_knots)
-		{
-			un_shift_k1(tcp_complete, target_td);
-			tcp_complete.shift_knots = false;
-		}
-	}
+	verify_shift_option_for_k1(tcp_seed, target_td, tcp_complete);
 	// Atencao: params.suitable_acceleration deve ser preenchido na funcao acima para que nao seja alterado no inicio da otimizacao abaixo
 //	if (tcp_complete.valid)
 
