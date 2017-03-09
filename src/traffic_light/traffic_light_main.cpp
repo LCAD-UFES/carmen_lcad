@@ -244,25 +244,14 @@ save_image_and_detections(carmen_traffic_light_message traffic_light_message, ca
 {
 	static int counter = 0;
 
-	for (int i = 0; i < traffic_light_message.num_traffic_lights; i ++)
+	if (traffic_light_message.num_traffic_lights == 0)
 	{
-		const char *filename;
-
-		if (traffic_light_message.traffic_lights[i].color == TRAFFIC_LIGHT_RED)
-			filename = "red.txt";
-		else if (traffic_light_message.traffic_lights[i].color == TRAFFIC_LIGHT_GREEN)
-			filename = "green.txt";
-		else if (traffic_light_message.traffic_lights[i].color == TRAFFIC_LIGHT_YELLOW)
-			filename = "yellow.txt";
-		else if (traffic_light_message.traffic_lights[i].color == TRAFFIC_LIGHT_OFF)
-			filename = "off.txt";
-
+		const char *filename = "negatives.txt";
 		static char image_name[1024];
 		static char file_name_with_dir[2048];
 
-		sprintf(image_name, "%s/img/image_%04d_%lf_%lf_%lf.png",
-				database_path, counter, stereo_image->timestamp,
-				nearest_traffic_light_pose.x, nearest_traffic_light_pose.y);
+		sprintf(image_name, "%s/img/image_%04d_%lf.png",
+				database_path, counter, stereo_image->timestamp);
 
 		sprintf(file_name_with_dir, "%s/%s", database_path, filename);
 
@@ -274,15 +263,53 @@ save_image_and_detections(carmen_traffic_light_message traffic_light_message, ca
 		Mat *m = bumblebee_to_opencv(stereo_image);
 		imwrite(image_name, *m);
 
-		fprintf(database_file, "%s %d %d %d %d\n", image_name,
-				traffic_light_message.traffic_lights[i].x1,
-				traffic_light_message.traffic_lights[i].y1,
-				traffic_light_message.traffic_lights[i].x2,
-				traffic_light_message.traffic_lights[i].y2);
+		fprintf(database_file, "%s\n", image_name);
 
 		fclose(database_file);
-		counter++;
 	}
+
+	else
+	{
+		for (int i = 0; i < traffic_light_message.num_traffic_lights; i ++)
+		{
+			const char *filename;
+
+			if (traffic_light_message.traffic_lights[i].color == TRAFFIC_LIGHT_RED)
+				filename = "red.txt";
+			else if (traffic_light_message.traffic_lights[i].color == TRAFFIC_LIGHT_GREEN)
+				filename = "green.txt";
+			else if (traffic_light_message.traffic_lights[i].color == TRAFFIC_LIGHT_YELLOW)
+				filename = "yellow.txt";
+			else if (traffic_light_message.traffic_lights[i].color == TRAFFIC_LIGHT_OFF)
+				filename = "off.txt";
+
+			static char image_name[1024];
+			static char file_name_with_dir[2048];
+
+			sprintf(image_name, "%s/img/image_%04d_%lf_%lf_%lf.png",
+					database_path, counter, stereo_image->timestamp,
+					nearest_traffic_light_pose.x, nearest_traffic_light_pose.y);
+
+			sprintf(file_name_with_dir, "%s/%s", database_path, filename);
+
+			FILE *database_file = fopen(file_name_with_dir, "a");
+
+			if (database_file == NULL)
+				exit(printf("Error: Unable to open the output file '%s'\n", file_name_with_dir));
+
+			Mat *m = bumblebee_to_opencv(stereo_image);
+			imwrite(image_name, *m);
+
+			fprintf(database_file, "%s %d %d %d %d\n", image_name,
+					traffic_light_message.traffic_lights[i].x1,
+					traffic_light_message.traffic_lights[i].y1,
+					traffic_light_message.traffic_lights[i].x2,
+					traffic_light_message.traffic_lights[i].y2);
+
+			fclose(database_file);
+		}
+	}
+	counter++;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
