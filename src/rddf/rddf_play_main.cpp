@@ -53,7 +53,12 @@ static int already_reached_nearest_waypoint_to_end_point = 0;
 
 char *carmen_annotation_filename = NULL;
 vector<carmen_annotation_t> annotation_queue;
-vector<int> annotations_to_publish;
+typedef struct
+{
+	carmen_annotation_t annotation;
+	size_t index;
+} annotation_and_index;
+vector<annotation_and_index> annotations_to_publish;
 carmen_rddf_annotation_message annotation_queue_message;
 
 static int use_truepos = 0;
@@ -212,7 +217,19 @@ carmen_check_for_annotations(double x, double y, double theta __attribute__((unu
 		// *******************************************************************
 
 		if (dist < 300.0)
-			annotations_to_publish.push_back(i);
+		{
+			annotation_and_index annotation_i = {annotation_queue[i], i};
+
+			if ((annotation_queue[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT) &&
+					(traffic_lights->num_traffic_lights > 0) &&
+					(traffic_lights->traffic_light_annotation_distance < MAX_TRAFFIC_LIGHT_DISTANCE))
+			{
+				annotation_i.annotation.annotation_code = traffic_lights->traffic_lights[0].color;
+				annotations_to_publish.push_back(annotation_i);
+			}
+			else
+				annotations_to_publish.push_back(annotation_i);
+		}
 	}
 }
 
@@ -274,10 +291,10 @@ set_annotations()
 
 	for (uint i = 0; i < annotations_to_publish.size(); i++)
 	{
-		find_nearest_annotation_and_dist(annotations_to_publish[i], &nearest_pose, &nearest_pose_dist);
+		find_nearest_annotation_and_dist(annotations_to_publish[i].index, &nearest_pose, &nearest_pose_dist);
 
-		if ((nearest_pose >= 0) && nearest_pose_dist < 10.0 && (annotation_is_forward_from_robot(robot_pose, annotations_to_publish[i])))
-			annotations[nearest_pose] = annotation_queue[annotations_to_publish[i]].annotation_type;
+		if ((nearest_pose >= 0) && nearest_pose_dist < 10.0 && (annotation_is_forward_from_robot(robot_pose, annotations_to_publish[i].index)))
+			annotations[nearest_pose] = annotation_queue[annotations_to_publish[i].index].annotation_type;
 	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -318,7 +335,7 @@ carmen_rddf_play_publish_annotation_queue()
 	annotation_queue_message.num_annotations = annotations_to_publish.size();
 
 	for (size_t i = 0; i < annotations_to_publish.size(); i++)
-		memcpy(&(annotation_queue_message.annotations[i]), &(annotation_queue[annotations_to_publish[i]]), sizeof(carmen_annotation_t));
+		memcpy(&(annotation_queue_message.annotations[i]), &(annotations_to_publish[i].annotation), sizeof(carmen_annotation_t));
 
 	annotation_queue_message.host = carmen_get_host();
 	annotation_queue_message.timestamp = carmen_get_time();

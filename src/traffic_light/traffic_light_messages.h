@@ -14,11 +14,6 @@ extern "C"
 
 #define MAX_TRAFFIC_LIGHT_DISTANCE	100.0
 
-#define TRAFFIC_LIGHT_GREEN 0
-#define TRAFFIC_LIGHT_RED 1
-#define TRAFFIC_LIGHT_YELLOW 2
-#define TRAFFIC_LIGHT_OFF 3
-
 typedef struct
 {
     int x1;

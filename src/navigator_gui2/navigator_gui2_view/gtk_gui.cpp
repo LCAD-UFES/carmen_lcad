@@ -361,6 +361,8 @@ namespace View
 		annotation_image[RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT][RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN] = get_annotation_image(annotation_image_filename);
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_light_yellow_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT][RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_YELLOW] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_light_neutral_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT][RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_OFF] = get_annotation_image(annotation_image_filename);
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_light_stop_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
 

@@ -7,6 +7,7 @@
 #include <carmen/carmen_graphics.h>
 #include <carmen/traffic_light_interface.h>
 #include <carmen/traffic_light_messages.h>
+#include <carmen/rddf_messages.h>
 
 #include <opencv2/core/core.hpp>        // Basic OpenCV structures (cv::Mat, Scalar)
 #include <opencv2/highgui/highgui.hpp>
@@ -131,7 +132,7 @@ add_traffic_light_information_to_image(cv::Mat &image, carmen_traffic_light_mess
 		fflush(cacof);
 		fclose(cacof);
 
-		if (message->traffic_lights[i].color == TRAFFIC_LIGHT_RED)
+		if (message->traffic_lights[i].color == RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED)
 			num_red++;
 
 		CvPoint p1, p2;
@@ -139,9 +140,9 @@ add_traffic_light_information_to_image(cv::Mat &image, carmen_traffic_light_mess
 		p1.y = message->traffic_lights[i].y1;
 		p2.x = message->traffic_lights[i].x2;
 		p2.y = message->traffic_lights[i].y2;
-		if (message->traffic_lights[i].color == TRAFFIC_LIGHT_RED)
+		if (message->traffic_lights[i].color == RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED)
 			cv::rectangle(image, p1, p2, CV_RGB(0, 0, 255), 3, 10, 0);
-		else if (message->traffic_lights[i].color == TRAFFIC_LIGHT_GREEN)
+		else if (message->traffic_lights[i].color == RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN)
 			cv::rectangle(image, p1, p2, CV_RGB(0, 255, 0), 3, 10, 0);
 		else // yellow
 			cv::rectangle(image, p1, p2, CV_RGB(0, 255, 255), 3, 10, 0);

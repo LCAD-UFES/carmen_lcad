@@ -49,7 +49,6 @@ CascadeClassifier ts_cascade;
 #define TRAFFIC_LIGHT_HEIGHT 		1.0
 #define FOCAL_DISTANCE 				1500.0
 #define DISTANCE_CORRECTION 		6.0
-static int num = 0;
 static carmen_traffic_light traffic_lights_detected[MAX_TRAFFIC_LIGHTS_IN_IMAGE];
 
 // Localization infrastructure
@@ -162,17 +161,6 @@ add_traffic_light_to_message(carmen_traffic_light_message *traffic_light_message
 	traffic_light.x2 = p2.x;
 	traffic_light.y2 = p2.y;
 	traffic_light_message->traffic_lights[i] = traffic_light;
-
-	// @@@ Alberto: pra que o codigo abaixo?
-	num++;
-	ofstream out;
-	out.open("saida.txt", std::fstream::out | std::fstream::app);
-	if (traffic_light.color == TRAFFIC_LIGHT_RED)
-		out << traffic_light_message->traffic_light_annotation_distance << " " << num << " 1 0" << endl;
-	else if (traffic_light.color == TRAFFIC_LIGHT_GREEN)
-		out << traffic_light_message->traffic_light_annotation_distance << " " << num << " 0 1" << endl;
-	// @@@ Alberto: e o amarelo?
-	out.close();
 }
 
 
@@ -210,10 +198,10 @@ detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *tr
 
 				// Traffic lights state recognition
 				if (trained_svm(traffic_light_image_in_svm_format) >= 0)
-					add_traffic_light_to_message(traffic_light_message, TRAFFIC_LIGHT_RED, p1, p2, i);
+					add_traffic_light_to_message(traffic_light_message, RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED, p1, p2, i);
 				else if (trained_svm(traffic_light_image_in_svm_format) < 0)
-					add_traffic_light_to_message(traffic_light_message, TRAFFIC_LIGHT_GREEN, p1, p2, i);
-				// @@@ Alberto: E o amarelo? E a regeicao de deteccoes?
+					add_traffic_light_to_message(traffic_light_message, RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN, p1, p2, i);
+				// @@@ Alberto: E o amarelo? E a rejeicao de deteccoes?
 
 				num_traffic_lights_accepted++;
 			}
@@ -274,13 +262,13 @@ save_image_and_detections(carmen_traffic_light_message traffic_light_message, ca
 		{
 			const char *filename;
 
-			if (traffic_light_message.traffic_lights[i].color == TRAFFIC_LIGHT_RED)
+			if (traffic_light_message.traffic_lights[i].color == RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED)
 				filename = "red.txt";
-			else if (traffic_light_message.traffic_lights[i].color == TRAFFIC_LIGHT_GREEN)
+			else if (traffic_light_message.traffic_lights[i].color == RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN)
 				filename = "green.txt";
-			else if (traffic_light_message.traffic_lights[i].color == TRAFFIC_LIGHT_YELLOW)
+			else if (traffic_light_message.traffic_lights[i].color == RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_YELLOW)
 				filename = "yellow.txt";
-			else if (traffic_light_message.traffic_lights[i].color == TRAFFIC_LIGHT_OFF)
+			else if (traffic_light_message.traffic_lights[i].color == RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_OFF)
 				filename = "off.txt";
 
 			static char image_name[1024];
