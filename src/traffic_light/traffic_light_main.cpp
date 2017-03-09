@@ -168,9 +168,9 @@ add_traffic_light_to_message(carmen_traffic_light_message *traffic_light_message
 	ofstream out;
 	out.open("saida.txt", std::fstream::out | std::fstream::app);
 	if (traffic_light.color == TRAFFIC_LIGHT_RED)
-		out << traffic_light_message->distance << " " << num << " 1 0" << endl;
+		out << traffic_light_message->traffic_light_annotation_distance << " " << num << " 1 0" << endl;
 	else if (traffic_light.color == TRAFFIC_LIGHT_GREEN)
-		out << traffic_light_message->distance << " " << num << " 0 1" << endl;
+		out << traffic_light_message->traffic_light_annotation_distance << " " << num << " 0 1" << endl;
 	// @@@ Alberto: e o amarelo?
 	out.close();
 }
@@ -188,13 +188,13 @@ detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *tr
 //	imshow("Display window", frame);
 //	waitKey(1);
 
-	if (traffic_light_message->distance < MAX_TRAFFIC_LIGHT_DISTANCE && traffic_light_message->distance != -1.0)
+	if (traffic_light_message->traffic_light_annotation_distance < MAX_TRAFFIC_LIGHT_DISTANCE && traffic_light_message->traffic_light_annotation_distance != -1.0)
 	{
 		// Traffic lights detection
 		std::vector<Rect> traffic_light_rectangles = detect_traffic_lights(frame);
 
 		int num_traffic_lights_accepted = 0;
-		double expected_traffic_light_height = TRAFFIC_LIGHT_HEIGHT * FOCAL_DISTANCE / (traffic_light_message->distance + DISTANCE_CORRECTION);
+		double expected_traffic_light_height = TRAFFIC_LIGHT_HEIGHT * FOCAL_DISTANCE / (traffic_light_message->traffic_light_annotation_distance + DISTANCE_CORRECTION);
 		for (size_t i = 0; i < traffic_light_rectangles.size() && i < MAX_TRAFFIC_LIGHTS_IN_IMAGE; i++)
 		{
 			double percentual_difference = fabs(1.0 - traffic_light_rectangles[i].height / expected_traffic_light_height);
@@ -325,7 +325,7 @@ carmen_bumblebee_basic_stereoimage_message_handler(carmen_bumblebee_basic_stereo
 
 	if (nearest_traffic_light_distance < MAX_TRAFFIC_LIGHT_DISTANCE && nearest_traffic_light_distance != -1.0)
 	{
-        traffic_light_message.distance = nearest_traffic_light_distance;
+        traffic_light_message.traffic_light_annotation_distance = nearest_traffic_light_distance;
         detect_traffic_lights_and_recognize_their_state(&traffic_light_message, stereo_image);
 
         if (generate_database)
@@ -335,7 +335,7 @@ carmen_bumblebee_basic_stereoimage_message_handler(carmen_bumblebee_basic_stereo
     }
     else
     {
-        traffic_light_message.distance = infinite;
+        traffic_light_message.traffic_light_annotation_distance = infinite;
         traffic_light_message.num_traffic_lights = 0;
         traffic_light_message.timestamp = stereo_image->timestamp;
     }
@@ -417,6 +417,7 @@ read_parameters(int argc, char **argv)
 		// deve alocar espaco para a string internamente.
 		{(char *) "commandline",	 (char *) "database_path",		CARMEN_PARAM_STRING, 	&database_path,	 1, NULL},
 	};
+	carmen_param_allow_unfound_variables(true);
 	carmen_param_install_params(argc, argv, param_list2, sizeof(param_list2) / sizeof(param_list2[0]));
 
 	printf("command_line params: %d %s\n", generate_database, database_path);

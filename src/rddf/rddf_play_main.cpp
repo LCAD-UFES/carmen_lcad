@@ -11,6 +11,8 @@ using namespace std;
 #include <carmen/velodyne_interface.h>
 #include <carmen/fused_odometry_interface.h>
 #include <carmen/carmen_gps_wrapper.h>
+#include <carmen/traffic_light_interface.h>
+#include <carmen/traffic_light_messages.h>
 
 #include "rddf_interface.h"
 #include "rddf_messages.h"
@@ -54,7 +56,10 @@ vector<carmen_annotation_t> annotation_queue;
 vector<int> annotations_to_publish;
 carmen_rddf_annotation_message annotation_queue_message;
 
-int use_truepos = 0;
+static int use_truepos = 0;
+
+static int traffic_lights_camera = 3;
+carmen_traffic_light_message *traffic_lights = NULL;
 
 
 static void
@@ -275,6 +280,15 @@ set_annotations()
 			annotations[nearest_pose] = annotation_queue[annotations_to_publish[i]].annotation_type;
 	}
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Publishers                                                                                //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 void
@@ -333,6 +347,39 @@ carmen_rddf_play_publish_rddf_and_annotations()
 		carmen_rddf_play_publish_annotation_queue();
 	}
 }
+
+
+void
+carmen_rddf_publish_road_profile_around_end_point(carmen_ackerman_traj_point_t *poses_around_end_point, int num_poses_acquired)
+{
+	carmen_rddf_publish_road_profile_around_end_point_message(poses_around_end_point, num_poses_acquired);
+}
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void
+carmen_rddf_play_find_and_publish_poses_around_end_point(double x, double y, double yaw, int num_poses_desired, double timestamp)
+{
+	int num_poses_acquired = 0;
+	carmen_ackerman_traj_point_t *poses_around_end_point;
+
+	poses_around_end_point = (carmen_ackerman_traj_point_t *) calloc (num_poses_desired, sizeof(carmen_ackerman_traj_point_t));
+	carmen_test_alloc(poses_around_end_point);
+
+	num_poses_acquired = carmen_find_poses_around(x, y, yaw, timestamp, poses_around_end_point, num_poses_desired);
+	carmen_rddf_publish_road_profile_around_end_point(poses_around_end_point, num_poses_acquired);
+
+	free(poses_around_end_point);
+}
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Handlers                                                                                  //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 static void
@@ -397,22 +444,6 @@ carmen_rddf_play_nearest_waypoint_message_handler(carmen_rddf_nearest_waypoint_m
 
 
 void
-carmen_rddf_play_find_and_publish_poses_around_end_point(double x, double y, double yaw, int num_poses_desired, double timestamp)
-{
-	int num_poses_acquired = 0;
-	carmen_ackerman_traj_point_t *poses_around_end_point;
-
-	poses_around_end_point = (carmen_ackerman_traj_point_t *) calloc (num_poses_desired, sizeof(carmen_ackerman_traj_point_t));
-	carmen_test_alloc(poses_around_end_point);
-
-	num_poses_acquired = carmen_find_poses_around(x, y, yaw, timestamp, poses_around_end_point, num_poses_desired);
-	carmen_rddf_publish_road_profile_around_end_point_message(poses_around_end_point, num_poses_acquired);
-
-	free(poses_around_end_point);
-}
-
-
-void
 carmen_rddf_play_end_point_message_handler(carmen_rddf_end_point_message *rddf_end_point_message)
 {
 	if (rddf_end_point_message->number_of_poses > 1)
@@ -446,6 +477,22 @@ carmen_rddf_play_end_point_message_handler(carmen_rddf_end_point_message *rddf_e
 }
 
 
+static void
+carmen_traffic_light_message_handler(carmen_traffic_light_message *message)
+{
+	traffic_lights = message;
+}
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                              //
+// Initializations                                                                              //
+//                                                                                              //
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 void
 carmen_rddf_play_subscribe_messages()
 {
@@ -461,6 +508,8 @@ carmen_rddf_play_subscribe_messages()
 	carmen_rddf_subscribe_end_point_message(NULL,
 			(carmen_handler_t) carmen_rddf_play_end_point_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_traffic_light_subscribe(traffic_lights_camera, NULL, (carmen_handler_t) carmen_traffic_light_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -555,15 +604,25 @@ main(int argc, char **argv)
 	setlocale(LC_ALL, "C");
 
 	if (argc < 2)
-		exit(printf("Error: Use %s <rddf> <annotations>\n", argv[0]));
+		exit(printf("Error: Use %s <rddf> <annotations> <traffic_lights_camera>\n", argv[0]));
 
 	carmen_rddf_filename = argv[1];
 
-	/* annotations file are not mandatory */
-	if (argc == 3)
-		carmen_annotation_filename = argv[2];
-	else
+	if (argc == 2)
+	{
 		carmen_annotation_filename = NULL;
+		traffic_lights_camera = 3;
+	}
+	else if (argc == 3)
+	{
+		carmen_annotation_filename = argv[2];
+		traffic_lights_camera = 3;
+	}
+	else if (argc == 4)
+	{
+		carmen_annotation_filename = argv[2];
+		traffic_lights_camera = atoi(argv[3]);
+	}
 
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);

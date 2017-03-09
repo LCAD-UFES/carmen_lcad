@@ -105,10 +105,10 @@ void
 add_traffic_light_information_to_image(cv::Mat &image, carmen_traffic_light_message *message)
 {
 	string text;
-	if (message->distance <= MAX_TRAFFIC_LIGHT_DISTANCE && message->distance != -1.0)
+	if (message->traffic_light_annotation_distance <= MAX_TRAFFIC_LIGHT_DISTANCE && message->traffic_light_annotation_distance != -1.0)
 	{
 		ostringstream distance_str;
-		distance_str << fixed << setprecision(1) << message->distance << flush;
+		distance_str << fixed << setprecision(1) << message->traffic_light_annotation_distance << flush;
 		text = "Distance to stop point: " + distance_str.str() + " meters";
 	}
 	else
@@ -127,7 +127,7 @@ add_traffic_light_information_to_image(cv::Mat &image, carmen_traffic_light_mess
 	for (int i = 0; i < message->num_traffic_lights; i++)
 	{
 		FILE *cacof = fopen("caco.txt", "a");
-		fprintf(cacof, "%lf %d\n", message->distance, message->traffic_lights[i].y2 - message->traffic_lights[i].y1);
+		fprintf(cacof, "%lf %d\n", message->traffic_light_annotation_distance, message->traffic_lights[i].y2 - message->traffic_lights[i].y1);
 		fflush(cacof);
 		fclose(cacof);
 
