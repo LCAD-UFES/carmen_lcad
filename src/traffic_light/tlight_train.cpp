@@ -141,12 +141,12 @@ main(int argc, char **argv)
 		{
 			net.Forward(tlight, &prediction, &confidence);
 			printf("Net pred: %d Expected: %d Confidence: %lf %s\n",
-					status, prediction, confidence, (status == prediction) ? (" ") : ("*"));
+					prediction, status, confidence, (status == prediction) ? (" ") : ("*"));
 			imshow("tligtht", *tlight);
 			waitKey(0);
 		}
-
-		net.Train(tlight, status);
+		else
+			net.Train(tlight, status);
 	}
 
 	return 0;
