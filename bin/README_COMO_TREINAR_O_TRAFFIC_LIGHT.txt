@@ -10,6 +10,8 @@ dentro da traffic_light_db/ crie a pasta img
 	mkdir $CARMEN_HOME/bin/traffic_light_db/img
 Rode o extrator do BD
 	./traffic_light 3 -generate_database on -database_path $CARMEN_HOME/bin/traffic_light_db
+Toque o log até o final
+
 Esse modo do traffic light irá gerar três arquivos txt: 
 green.txt - Ground Truth com o caminho das imagens com semaforo verde
 red.txt - Ground Truth com o caminho das imagens com semaforo vermelho
