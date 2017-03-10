@@ -52,6 +52,8 @@ carmen_udatmo_moving_obstacles_message *moving_obstacles = NULL;
 //SampleFilter filter;
 SampleFilter filter2;
 
+extern carmen_rddf_annotation_message last_rddf_annotation_message;
+
 
 carmen_behavior_selector_algorithm_t
 get_current_algorithm()
@@ -185,6 +187,34 @@ move_goal_back_according_to_car_v(int last_obstacle_free_waypoint_index, carmen_
 }
 
 
+bool
+red_traffic_light_ahead()
+{
+	static double last_red_timestamp = 0.0;
+//	int nearest_annotation_index = -1;
+//	double distance_to_nearest_annotation = 1000.0;
+	for (int i = 0; i < last_rddf_annotation_message.num_annotations; i++)
+	{
+//		double distance_to_annotation = DIST2D_P(&last_rddf_annotation_message.annotations[i].annotation_point, current_robot_pose_v_and_phi);
+		if ((last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT) &&
+			(last_rddf_annotation_message.annotations[i].annotation_code == RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN)) //&&
+//			 (distance_to_annotation < distance_to_nearest_annotation))
+		{
+			return (false);
+		}
+		else
+		{
+			last_red_timestamp = carmen_get_time();
+		}
+	}
+
+	if (carmen_get_time() - last_red_timestamp < 2.0)
+		return (true);
+
+	return (false);
+}
+
+
 int
 behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf)
 {
@@ -242,8 +272,19 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf)
 			add_goal_to_goal_list(goal_index, current_goal, rddf_pose_index, rddf,
 					-(robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels));
 		}
+		else if ((((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_STOP) || // -> Adiciona um waypoint na posicao atual se ela contem uma das anotacoes especificadas
+				   ((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) &&
+				     red_traffic_light_ahead())) &&
+				  !rddf_pose_hit_obstacle)) // e se ela nao colide com um obstaculo.
+		{
+			add_goal_to_goal_list(goal_index, current_goal, rddf_pose_index, rddf,
+					-(robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels));
+			break;
+		}
 		else if (((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_BUMP) || // -> Adiciona um waypoint na ultima posicao livre se a posicao atual contem uma das anotacoes especificadas
 				  (rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_BARRIER) ||
+				  (rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_STOP) ||
+				  (rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) ||
 				  (rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK)) &&
 				 (distance_to_last_obstacle_free_waypoint > 1.5) && // e se ela esta a mais de 1.5 metros da ultima posicao livre de obstaculo
 				 rddf_pose_hit_obstacle) // e se ela colidiu com obstaculo.

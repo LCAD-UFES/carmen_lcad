@@ -70,5 +70,6 @@ int behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf);
 // double get_moving_object_in_front_v();
 // int moving_object_in_front();
 double distance_between_waypoints_and_goals();
+bool red_traffic_light_ahead();
 
 #endif /* BEHAVIOR_SELECTOR_H_ */

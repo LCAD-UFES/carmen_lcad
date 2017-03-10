@@ -1021,7 +1021,12 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 
 	global_gui->draw_plan_tree(the_map_view, pixel_size);
 
-	global_gui->draw_goal_list(the_map_view, global_gui->goal);
+	carmen_world_point_t temp_goal;
+	temp_goal.pose.x = global_gui->goal.x;
+	temp_goal.pose.y = global_gui->goal.y;
+	temp_goal.pose.theta = global_gui->goal.theta;
+	temp_goal.map = the_map_view->internal_map;
+	global_gui->draw_goal_list(the_map_view, temp_goal);
 
 	if (global_gui->nav_panel_config->show_true_pos)
 		global_gui->draw_simulated_robot(the_map_view);

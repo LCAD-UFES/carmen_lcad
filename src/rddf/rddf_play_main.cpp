@@ -202,7 +202,7 @@ carmen_rddf_play_find_nearest_poses_ahead(double x, double y, double yaw, double
 
 
 void
-carmen_check_for_annotations(double x, double y, double theta __attribute__((unused)))
+carmen_check_for_annotations_old(double x, double y, __attribute__ ((unused)) double theta)
 {
 	double dx, dy, dist;
 
@@ -212,15 +212,12 @@ carmen_check_for_annotations(double x, double y, double theta __attribute__((unu
 		dy = annotation_queue[i].annotation_point.y - y;
 		dist = sqrt(pow(dx, 2) + pow(dy, 2));
 
-		// *******************************************************************
-		// TODO: criar uma forma de buscar somente as anotacoes na mao correta
-		// *******************************************************************
-
 		if (dist < 300.0)
 		{
 			annotation_and_index annotation_i = {annotation_queue[i], i};
 
 			if ((annotation_queue[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT) &&
+					(traffic_lights != NULL) &&
 					(traffic_lights->num_traffic_lights > 0) &&
 					(traffic_lights->traffic_light_annotation_distance < MAX_TRAFFIC_LIGHT_DISTANCE))
 			{
@@ -230,6 +227,64 @@ carmen_check_for_annotations(double x, double y, double theta __attribute__((unu
 			else
 				annotations_to_publish.push_back(annotation_i);
 		}
+	}
+}
+
+
+void
+add_annotation(double x, double y, double theta, size_t i)
+{
+	double dx = annotation_queue[i].annotation_point.x - x;
+	double dy = annotation_queue[i].annotation_point.y - y;
+	double dist = sqrt(pow(dx, 2) + pow(dy, 2));
+	double angle_to_annotation = carmen_radians_to_degrees(fabs(carmen_normalize_theta(theta - annotation_queue[i].annotation_orientation)));
+	bool orientation_ok = angle_to_annotation < 60.0 ? true : false;
+
+	if (orientation_ok)
+	{
+		if ((annotation_queue[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT) ||
+			(annotation_queue[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP))
+		{
+			if (dist < MAX_TRAFFIC_LIGHT_DISTANCE)
+			{
+				if ((annotation_queue[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT) &&
+					(traffic_lights != NULL) &&
+					(traffic_lights->num_traffic_lights > 0))
+				{
+					annotation_and_index annotation_i = {annotation_queue[i], i};
+					annotation_i.annotation.annotation_code = traffic_lights->traffic_lights[0].color;
+					annotations_to_publish.push_back(annotation_i);
+				}
+				else
+				{
+					annotation_and_index annotation_i = {annotation_queue[i], i};
+					annotations_to_publish.push_back(annotation_i);
+				}
+			}
+		}
+		else if (dist < 20.0)
+		{
+			annotation_and_index annotation_i = {annotation_queue[i], i};
+			annotations_to_publish.push_back(annotation_i);
+		}
+	}
+}
+
+
+void
+carmen_check_for_annotations(carmen_point_t robot_pose,
+		carmen_ackerman_traj_point_t *carmen_rddf_poses_ahead, carmen_ackerman_traj_point_t *carmen_rddf_poses_back,
+		int carmen_rddf_num_poses_ahead, int carmen_rddf_num_poses_back)
+{
+	for (size_t i = 0; i < annotation_queue.size(); i++)
+	{
+		add_annotation(robot_pose.x, robot_pose.y, robot_pose.theta, i);
+
+		for (int i = 0; i < carmen_rddf_num_poses_ahead; i++)
+			add_annotation(carmen_rddf_poses_ahead[i].x, carmen_rddf_poses_ahead[i].y, carmen_rddf_poses_ahead[i].theta, i);
+
+		for (int i = 0; i < carmen_rddf_num_poses_back; i++)
+			add_annotation(carmen_rddf_poses_back[i].x, carmen_rddf_poses_back[i].y, carmen_rddf_poses_back[i].theta, i);
 	}
 }
 
@@ -418,7 +473,9 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	);
 
 	annotations_to_publish.clear();
-	carmen_check_for_annotations(robot_pose.x, robot_pose.y, robot_pose.theta);
+//	carmen_check_for_annotations_old(robot_pose.x, robot_pose.y, robot_pose.theta);
+	carmen_check_for_annotations(robot_pose, carmen_rddf_poses_ahead, carmen_rddf_poses_back,
+			carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back);
 
 	carmen_rddf_play_publish_rddf_and_annotations();
 }
@@ -443,7 +500,9 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	);
 
 	annotations_to_publish.clear();
-	carmen_check_for_annotations(robot_pose.x, robot_pose.y, robot_pose.theta);
+//	carmen_check_for_annotations_old(robot_pose.x, robot_pose.y, robot_pose.theta);
+	carmen_check_for_annotations(robot_pose, carmen_rddf_poses_ahead, carmen_rddf_poses_back,
+			carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back);
 
 	carmen_rddf_play_publish_rddf_and_annotations();
 }

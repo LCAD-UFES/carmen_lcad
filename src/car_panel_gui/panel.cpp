@@ -1,6 +1,8 @@
 #include "panel.h"
 
 
+static int use_truepos_local = 0;
+
 void 
 displayLights(void)
 {
@@ -191,6 +193,18 @@ localize_ackerman_globalpos_handler(carmen_localize_ackerman_globalpos_message *
 
 
 void
+simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_message *simulator_ackerman_truepos)
+{
+	if (handler_message == localize_ackerman_globalpos_t)
+	{
+		angleSteering = carmen_radians_to_degrees(simulator_ackerman_truepos->phi) * angleTireToSteering;
+		speedometer->update(simulator_ackerman_truepos->v);
+		accelerator->update(simulator_ackerman_truepos->v, simulator_ackerman_truepos->timestamp);
+	}
+}
+
+
+void
 subscribe_messages(int msg_type, double interval)
 {
 	switch (msg_type)
@@ -198,27 +212,30 @@ subscribe_messages(int msg_type, double interval)
 		case 0:
 			handler_message = fused_odometry_t;
 			accelerator = new withoutTime(interval);
-			carmen_fused_odometry_subscribe_fused_odometry_message(NULL, (carmen_handler_t)fused_dometry_handler, CARMEN_SUBSCRIBE_LATEST);
+			carmen_fused_odometry_subscribe_fused_odometry_message(NULL, (carmen_handler_t) fused_dometry_handler, CARMEN_SUBSCRIBE_LATEST);
 			break;
 		case 1:
 			handler_message = robot_ackerman_motion_command_t;
 			accelerator = new withoutTime(interval);
-			carmen_robot_ackerman_subscribe_motion_command(NULL, (carmen_handler_t)robot_ackerman_motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
+			carmen_robot_ackerman_subscribe_motion_command(NULL, (carmen_handler_t) robot_ackerman_motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
 			break;
 		case 2:
 			handler_message = base_ackerman_motion_command_t;
 			accelerator = new withoutTime(interval);
-			carmen_base_ackerman_subscribe_motion_command(NULL, (carmen_handler_t)base_ackerman_motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
+			carmen_base_ackerman_subscribe_motion_command(NULL, (carmen_handler_t) base_ackerman_motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
 			break;
 		case 3:
 			handler_message = base_ackerman_odometry_t;
 			accelerator = new withoutTime(interval);
-			carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t)base_ackerman_odometry_handler, CARMEN_SUBSCRIBE_LATEST);
+			carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) base_ackerman_odometry_handler, CARMEN_SUBSCRIBE_LATEST);
 			break;
 		case 4:
 			handler_message = localize_ackerman_globalpos_t;
 			accelerator = new withoutTime(interval);
-			carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t)localize_ackerman_globalpos_handler, CARMEN_SUBSCRIBE_LATEST);
+			if (!use_truepos_local)
+				carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_handler, CARMEN_SUBSCRIBE_LATEST);
+			else
+				carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t) simulator_ackerman_truepos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 			break;
 	}
 }
@@ -260,6 +277,12 @@ checkArguments(int argc, char *argv[])
 	if (argc > 1)
 	{
 		carmen_param_check_version(argv[0]);
+		carmen_param_t param_list[] =
+		{
+			{(char *) "behavior_selector", (char *) "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos_local, 0, NULL}
+		};
+
+		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 
 		initializeComponents();
 		for (i = 1; i < argc; i++)

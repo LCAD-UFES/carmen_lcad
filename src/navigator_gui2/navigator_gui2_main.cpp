@@ -38,7 +38,7 @@ static int	  is_graphics_up = 0;
 
 
 static double last_v = 0, last_phi = 0;
-static carmen_world_point_t last_goal;
+static carmen_ackerman_traj_point_t last_goal;
 static int goal_set = 0, autonomous = 0;
 
 static char *map_path = NULL;
@@ -53,39 +53,6 @@ moving_objects_tracking_t *moving_objects_tracking;
 int current_num_point_clouds;
 int previous_num_point_clouds = 0;
 
-//
-carmen_navigator_ackerman_status_message status_ackerman;
-
-
-void
-navigator_status_handler(carmen_navigator_ackerman_status_message *msg)
-{
-	carmen_verbose("Got Status message: Robot %.1f %.1f %.2f Goal: %.0f %.0f\n",
-			msg->robot.x, msg->robot.y, msg->robot.theta,
-			msg->goal.x, msg->goal.y);
-
-	last_navigator_status = msg->timestamp;
-
-	last_goal.map = map;
-	goal_set = msg->goal_set;
-	autonomous = msg->autonomous;
-
-
-	if (!is_graphics_up)
-		return;
-
-	if (msg->goal_set)
-	{
-		last_goal.pose.x = msg->goal.x;
-		last_goal.pose.y = msg->goal.y;
-		last_goal.pose.theta = msg->goal.theta;
-
-		gui->navigator_graphics_update_display(NULL, &last_goal, msg->autonomous);
-	}
-	else
-		gui->navigator_graphics_update_display(NULL, NULL, msg->autonomous);
-}
-
 
 static void
 navigator_ackerman_status_handler(carmen_navigator_ackerman_status_message *msg)
@@ -96,7 +63,6 @@ navigator_ackerman_status_handler(carmen_navigator_ackerman_status_message *msg)
 
 	last_navigator_status = msg->timestamp;
 
-	last_goal.map = map;
 	goal_set = msg->goal_set;
 	autonomous = msg->autonomous;
 
@@ -105,9 +71,7 @@ navigator_ackerman_status_handler(carmen_navigator_ackerman_status_message *msg)
 
 	if (msg->goal_set)
 	{
-		last_goal.pose.x = msg->goal.x;
-		last_goal.pose.y = msg->goal.y;
-		last_goal.pose.theta = msg->goal.theta;
+		last_goal = msg->goal;
 
 		gui->navigator_graphics_update_display(NULL, &last_goal, msg->autonomous);
 	}
@@ -894,8 +858,7 @@ subscribe_ipc_messages()
 {
 	IPC_RETURN_TYPE err;
 
-	carmen_navigator_ackerman_subscribe_status_message((carmen_navigator_ackerman_status_message *) (&status_ackerman),
-			(carmen_handler_t) (navigator_ackerman_status_handler), CARMEN_SUBSCRIBE_LATEST);
+	carmen_navigator_ackerman_subscribe_status_message(NULL, (carmen_handler_t) (navigator_ackerman_status_handler), CARMEN_SUBSCRIBE_LATEST);
 	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) (navigator_goal_list_message), CARMEN_SUBSCRIBE_LATEST);
 	carmen_navigator_ackerman_subscribe_plan_message(NULL, (carmen_handler_t) (navigator_plan_handler), CARMEN_SUBSCRIBE_LATEST);
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) (globalpos_ack_handler), CARMEN_SUBSCRIBE_LATEST);

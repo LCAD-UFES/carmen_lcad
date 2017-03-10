@@ -189,9 +189,7 @@ void
 publish_navigator_ackerman_status_message()
 {
 	if (!GlobalState::localizer_pose)
-	{
 		return;
-	}
 
 	IPC_RETURN_TYPE err = IPC_OK;
 
@@ -215,12 +213,16 @@ publish_navigator_ackerman_status_message()
 		msg.goal.x = GlobalState::goal_pose->x;
 		msg.goal.y = GlobalState::goal_pose->y;
 		msg.goal.theta = GlobalState::goal_pose->theta;
+		msg.goal.v = GlobalState::robot_config.max_v;
+		msg.goal.phi = 0.0; // @@@ Alberto: terie que preencher isso...
 	}
 	else
 	{
-		msg.goal.theta = 0;
-		msg.goal.y	   = 0;
-		msg.goal.x	   = 0;
+		msg.goal.theta = 0.0;
+		msg.goal.y	   = 0.0;
+		msg.goal.x	   = 0.0;
+		msg.goal.v 	   = 0.0;
+		msg.goal.phi = 0.0; // @@@ Alberto: terie que preencher isso...
 	}
 
 	msg.host		= carmen_get_host();
@@ -377,7 +379,7 @@ build_and_follow_path(double timestamp)
 	{
 		double distance_to_goal = sqrt(pow(GlobalState::goal_pose->x - GlobalState::localizer_pose->x, 2) + pow(GlobalState::goal_pose->y - GlobalState::localizer_pose->y, 2));
 		// achieve the goal!
-		if (distance_to_goal < 1.0 && GlobalState::robot_config.max_v < 0.5 && GlobalState::last_odometry.v < 0.5)
+		if (distance_to_goal < 1.0 && GlobalState::robot_config.max_v < 0.1 && GlobalState::last_odometry.v < 0.1)
 		{
 			publish_path_follower_single_motion_command(0.0, 0.0, timestamp);
 		}
@@ -412,7 +414,7 @@ build_and_follow_path_new(double timestamp)
 	{
 		double distance_to_goal = sqrt(pow(GlobalState::goal_pose->x - GlobalState::localizer_pose->x, 2) + pow(GlobalState::goal_pose->y - GlobalState::localizer_pose->y, 2));
 		// achieve the goal!
-		if (distance_to_goal < 1.0 && GlobalState::robot_config.max_v < 0.5 && GlobalState::last_odometry.v < 0.5)
+		if (distance_to_goal < 1.0 && GlobalState::robot_config.max_v < 0.1 && GlobalState::last_odometry.v < 0.1)
 		{
 			publish_model_predictive_planner_single_motion_command(0.0, 0.0, timestamp);
 		}

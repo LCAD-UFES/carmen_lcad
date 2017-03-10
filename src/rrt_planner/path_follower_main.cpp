@@ -182,7 +182,7 @@ build_and_follow_path(carmen_point_t point, double pose_timestamp)
 	if (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT)
 	{
 		publish_navigator_ackerman_plan_message(follower.get_path());
-		publish_navigator_ackerman_status_message();
+//		publish_navigator_ackerman_status_message();
 	}
 }
 
