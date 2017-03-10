@@ -729,7 +729,7 @@ namespace View
 					carmen_radians_to_degrees(robot_traj.r_vel), (nav_panel_config->use_ackerman ? "deg" : "deg/s"));
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelVelocity), buffer);
 
-			sprintf(buffer, "Goal: %.2f, %.2f, (%.2lf Km/h)", goal.x, goal.y, goal.v);
+			sprintf(buffer, "Goal: %.2f, %.2f, (%.2lf Km/h)", goal.x, goal.y, 3.6 * goal.v);
 			gtk_label_set_text(GTK_LABEL(this->controls_.labelGoal), buffer);
 
 			set_distance_traveled(robot.pose, robot_traj.t_vel);

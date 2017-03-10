@@ -12,7 +12,7 @@ extern "C"
 {
 #endif
 
-#define MAX_TRAFFIC_LIGHT_DISTANCE	70.0 //100.0
+#define MAX_TRAFFIC_LIGHT_DISTANCE	100.0
 
 typedef struct
 {

@@ -12,6 +12,7 @@
 #include <carmen/obstacle_distance_mapper_interface.h>
 #include <carmen/motion_planner_interface.h>
 #include <carmen/global_graphics.h>
+#include <carmen/navigator_ackerman_interface.h>
 
 #include "g2o/types/slam2d/se2.h"
 
@@ -778,6 +779,27 @@ behavior_selector_publish_periodic_messages()
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
+bool
+should_stop_the_car(carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
+{
+	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
+				current_robot_pose_v_and_phi);
+
+	if (nearest_velocity_related_annotation == NULL)
+		return (false);
+
+	double distance_to_annotation = DIST2D_P(&nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi) -
+			(get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels);
+
+	if ((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) &&
+		(distance_to_annotation < 1.0) &&
+		(current_robot_pose_v_and_phi->v < 0.1))
+		return (true);
+	else
+		return (false);
+}
+
+
 void
 select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
@@ -798,7 +820,13 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 		carmen_ackerman_traj_point_t *first_goal = &(goal_list[0]);
 		set_goal_velocity(first_goal, &current_robot_pose_v_and_phi);
 
-		publish_goal_list(goal_list, goal_list_size, carmen_get_time());
+		if (should_stop_the_car(&current_robot_pose_v_and_phi))
+		{
+			printf("mandou parar!\n");
+			carmen_navigator_ackerman_stop();
+		}
+		else
+			publish_goal_list(goal_list, goal_list_size, carmen_get_time());
 	}
 
 // Control whether simulated moving obstacles are created by (un)commenting the
