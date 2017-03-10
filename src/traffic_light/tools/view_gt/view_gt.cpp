@@ -152,6 +152,7 @@ main(int argc, char** argv)
 
                 iKey = waitKey(1500);
 
+                //key 27 ESC
                 if (iKey == 27)
                 {
                     image.release();
