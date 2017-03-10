@@ -234,12 +234,13 @@ save_image_and_detections(carmen_traffic_light_message traffic_light_message, ca
 
 	if (traffic_light_message.num_traffic_lights == 0)
 	{
-		const char *filename = "negatives.txt";
+		const char *filename = "undetected.txt";
 		static char image_name[1024];
 		static char file_name_with_dir[2048];
 
-		sprintf(image_name, "%s/img/image_%04d_%lf.png",
-				database_path, counter, stereo_image->timestamp);
+		sprintf(image_name, "%s/img/image_%04d_%lf_%lf_%lf.png",
+				database_path, counter, stereo_image->timestamp,
+				nearest_traffic_light_pose.x, nearest_traffic_light_pose.y);
 
 		sprintf(file_name_with_dir, "%s/%s", database_path, filename);
 
