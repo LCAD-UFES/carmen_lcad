@@ -1,19 +1,14 @@
-/***************objectmarker.cpp******************
+/*************************************************
 
-Objectmarker for marking the objects to be detected  from positive samples and then creating the 
-description file for positive images.
+Program to generate databases for trainning the
+  trafficl light recognitin system
 
-compile this code and run with two arguments, first one the name of the descriptor file and the second one 
-the address of the directory in which the positive images are located
+Execution:
+  ./generate_gt input_ImageList.txt"
 
-while running this code, each image in the given directory will open up. Now mark the edges of the object using the mouse buttons
-  then press then press "SPACE" to save the selected region, or any other key to discard it. Then use "B" to move to next image. the program automatically
-  quits at the end. press ESC at anytime to quit.
 
- *the key B was chosen  to move to the next image because it is closer to SPACE key and nothing else.....
+ *************************************************/
 
-author: achu_wilson@rediffmail.com
- */
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/legacy/legacy.hpp>
@@ -138,12 +133,10 @@ main(int argc, char** argv)
 		string line;
 		getline(input, line);
 
+		cout << "Loading image :" << line << endl;
+
 		while (!input.eof())
 		{
-			numOfRec = 0;
-
-			cerr << "Loading image :" << line << endl;
-
 			image = imread(line, 1);
 
 			if (!image.empty())
