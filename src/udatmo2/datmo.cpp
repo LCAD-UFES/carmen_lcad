@@ -35,9 +35,9 @@ DATMO::DATMO():
 	max_poses_ahead(0),
 	current_map(NULL)
 {
-	memset(&robot_config, 0, sizeof(carmen_robot_ackerman_config_t));
-	memset(&robot_pose, 0, sizeof(carmen_ackerman_traj_point_t));
-	memset(&rddf, 0, sizeof(carmen_rddf_road_profile_message));
+	clear(robot_config);
+	clear(robot_pose);
+	clear(rddf);
 
 	robot_pose.v = nan("");
 }
@@ -50,8 +50,6 @@ void DATMO::detect(carmen_ackerman_traj_point_t *poses, int n)
 	double near = robot_config.distance_between_front_and_rear_axles + 1.5;
 	double front = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
 	double within = width / 2.0;
-
-	CARMEN_LOG(trace, "Observation start");
 
 	for (int l = 0; l < 3; l++)
 	{
@@ -91,6 +89,8 @@ void DATMO::detect(carmen_ackerman_traj_point_t *poses, int n)
 
 void DATMO::detect()
 {
+	CARMEN_LOG(trace, "Observation start");
+
 	observations.clear();
 
 	detect(rddf.poses, rddf.number_of_poses);
@@ -121,48 +121,48 @@ const Obstacles &DATMO::track()
 
 	CARMEN_LOG(trace, "Obstacle update start");
 
+	tracking.clear(); // Clear the list of tracking obstacles ahead of new detection cycle.
 	if (isnan(robot_pose.v) || current_map == NULL || rddf.number_of_poses == 0)
 	{
 		CARMEN_LOG(trace, "Obstacle update aborted (preconditions not met)");
-		return obstacles;
+		return tracking;
 	}
 
-	// Check the map for obstacle points in the focus regions.
-	detect();
-
+	detect(); // Check the map for obstacle points in the focus regions.
 	if (obstacles.size() == 0)
 	{
 		CARMEN_LOG(trace, "No known obstacles, convert " << observations.size() << " observations to obstacles");
 		for (Observations::const_iterator i = observations.begin(), n = observations.end(); i != n; ++i)
-			obstacles.push_back(Obstacle(robot_pose, *i));
+			obstacles.push_back(Obstacle(*i));
 
-		return obstacles;
+		return tracking;
 	}
-
-	if (observations.size() == 0)
+	else if (observations.size() == 0)
 	{
 		CARMEN_LOG(trace, "No observations found");
 		obstacles.clear();
-		return obstacles;
+		return tracking;
 	}
 
 	cv::Mat assignments = munkres(distances(), MAX_DISTANCE);
-
 	CARMEN_LOG(trace, "Assignments: " << assignments);
 
-	Obstacles recognized;
-	recognized.reserve(obstacles.size());
+	Obstacles assigned;
+	assigned.reserve(obstacles.size());
 	for (int j = 0, n = observations.size(); j < n; j++)
-		assign(j, assignments, recognized);
+		assign(j, assignments, assigned);
 
-	obstacles = recognized;
+	obstacles = assigned;
+
+	CARMEN_LOG(trace, "Obstacles found: " << obstacles.size());
+	CARMEN_LOG(trace, "Obstacles tracked: " << tracking.size());
+
 	return tracking;
 }
 
 
-void DATMO::assign(int j, const cv::Mat assignments, Obstacles &recognized)
+void DATMO::assign(int j, const cv::Mat assignments, Obstacles &assigned)
 {
-	tracking.clear();
 	int rows = obstacles.size();
 	for (int i = 0; i < rows; i++)
 	{
@@ -171,10 +171,10 @@ void DATMO::assign(int j, const cv::Mat assignments, Obstacles &recognized)
 			CARMEN_LOG(trace, "Obstacle #" << i << " updated with observation #" << j);
 			Obstacle &obstacle = obstacles[i];
 			obstacle.update(observations[j]);
-			if (obstacle.tracking())
+			if (obstacle.pose.v > 0)
 				tracking.push_back(obstacle);
 
-			recognized.push_back(obstacle);
+			assigned.push_back(obstacle);
 			return;
 		}
 	}
@@ -185,7 +185,7 @@ void DATMO::assign(int j, const cv::Mat assignments, Obstacles &recognized)
 	{
 		if (assignments.at<int>(i, j) == STAR)
 		{
-			recognized.push_back(Obstacle(observations[j]));
+			assigned.push_back(Obstacle(observations[j]));
 			return;
 		}
 	}

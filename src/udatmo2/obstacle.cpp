@@ -33,23 +33,18 @@ Obstacle::Obstacle(const Observation &observation)
 void Obstacle::update(const Observation &observation)
 {
 	// Only add observation to track if it's reasonably apart from latest observation.
-	if (track.size() > 0 && distance(observation, track.front()) < 0.01)
-	{
-		// Also, if this obstacle is tracking, remove oldest observation.
-		if (track.size() > 1)
-			track.pop_back();
-
+	if (track.size() > 0 && distance(observation, track.front()) <= 0)
 		return;
-	}
 
 	track.push_front(observation);
 	while (track.size() > MOVING_OBSTACLES_OBSERVATIONS)
 		track.pop_back();
 
-	const carmen_position_t &position = observation.position;
+	CARMEN_LOG(trace, "Obstacle track size: " << track.size());
+
 	index = observation.index;
-	pose.x = position.x;
-	pose.y = position.y;
+	pose.x = observation.position.x;
+	pose.y = observation.position.y;
 	updateMovement();
 }
 
@@ -96,12 +91,6 @@ void Obstacle::updateMovement()
 double Obstacle::timestamp() const
 {
 	return (track.size() > 0 ? track[0].timestamp : -1);
-}
-
-
-bool Obstacle::tracking() const
-{
-	return (track.size() > 1);
 }
 
 

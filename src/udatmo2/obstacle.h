@@ -48,11 +48,6 @@ public:
 	 * @brief Rteurn the timestamp associated with this moving obstacle.
 	 */
 	double timestamp() const;
-
-	/**
-	 * @brief Whether this obstacle contains enough observations for tracking.
-	 */
-	bool tracking() const;
 };
 
 /** @brief Sequence of moving obstacles. */
