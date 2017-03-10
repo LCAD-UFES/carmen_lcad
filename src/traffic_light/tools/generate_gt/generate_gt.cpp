@@ -170,7 +170,7 @@ main(int argc, char** argv)
 
 					case 103:                     // G key 103 Save added rectangles to GREEN file
 						//cout << "AAAAAA" << iKey << endl;
-						if (!add_on)
+						if (!add_on || (roi_x0 != 0 && roi_x1 != 0 && roi_y0 != 0 && roi_y1 != 0))
 						{
 							add_on = add_new_rectangle(strPostfix, line);
 						}
@@ -184,7 +184,7 @@ main(int argc, char** argv)
 						break;
 
 					case 121:                      // Y  key 121 Save added rectangles to YELOW file
-						if (!add_on)
+						if (!add_on || (roi_x0 != 0 && roi_x1 != 0 && roi_y0 != 0 && roi_y1 != 0))
 						{
 							add_on = add_new_rectangle(strPostfix, line);
 						}
@@ -198,7 +198,7 @@ main(int argc, char** argv)
 						break;
 
 					case 114:                      // R key 114 Save added rectangles to RED file
-						if (!add_on)
+						if (!add_on || (roi_x0 != 0 && roi_x1 != 0 && roi_y0 != 0 && roi_y1 != 0))
 						{
 							add_on = add_new_rectangle(strPostfix, line);
 						}
@@ -212,7 +212,7 @@ main(int argc, char** argv)
 						break;
 
 					case 111:                       // O key 111 Save added rectangles to OFF file
-						if (!add_on)
+						if (!add_on || (roi_x0 != 0 && roi_x1 != 0 && roi_y0 != 0 && roi_y1 != 0))
 						{
 							add_on = add_new_rectangle(strPostfix, line);
 						}
