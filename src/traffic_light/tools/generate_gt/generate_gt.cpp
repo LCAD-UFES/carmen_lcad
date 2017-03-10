@@ -19,10 +19,8 @@ author: achu_wilson@rediffmail.com
 #include <opencv2/legacy/legacy.hpp>
 
 
-// for filelisting
 #include <stdio.h>
 #include <sys/io.h>
-// for fileoutput
 #include <string>
 #include <fstream>
 #include <sstream>
@@ -41,7 +39,7 @@ int roi_x1 = 0;
 int roi_y1 = 0;
 int numOfRec = 0;
 int startDraw = 0;
-string window_name = "<SPACE>add, <B>save and <N>load next <ESC>exit";
+string window_name = "<SPACE>add, <G>green, <Y>Yellow, <R>Red, <O>Off, <N>next <ESC>exit";
 
 string
 IntToString(int num)
@@ -53,7 +51,7 @@ IntToString(int num)
 	 * the buffer (makes sure the output is put into the stream)
 	 */
 	return (myStream.str()); //returns the string form of the stringstream object
-};
+}
 
 void
 on_mouse(int event, int x, int y, int flag, void *param)
@@ -86,28 +84,20 @@ on_mouse(int event, int x, int y, int flag, void *param)
 
 }
 
-bool add_new_rectangle(string& strPostfix, string line) {
-	cout << "Adicionou " << numOfRec << " " << roi_x0 << " " << roi_y0 << " " << roi_x1 << " " << roi_y1 << endl;
-	if (roi_x0 < roi_x1 && roi_y0 < roi_y1) {
-		//printf("   %d. rect x=%d\ty=%d\twidth=%d\theight=%d\n", numOfRec, roi_x0, roi_y0, roi_x1 - roi_x0, roi_y1 - roi_y0);
-		cout << "   " << numOfRec << ". rect \t x= " << roi_x0 << "\t y = "
-				<< roi_y0 << "\t width = " << roi_x1 << "\theight = " << roi_y1
-				<< endl;
-		// append rectangle coord to previous line content
-		strPostfix += line + " " + IntToString(roi_x0) + " " + IntToString(roi_y0)
-				+ " " + IntToString(roi_x1) + " " + IntToString(roi_y1) + "\n";
+bool
+add_new_rectangle(string& strPostfix, string line)
+{
+	if (roi_x0 < roi_x1 && roi_y0 < roi_y1)
+	{
+		strPostfix += line + " " + IntToString(roi_x0) + " " + IntToString(roi_y0) + " " + IntToString(roi_x1) + " " + IntToString(roi_y1) + "\n";
 		roi_x0 = 0.0;
 		roi_x1 = 0.0;
 		roi_y0 = 0.0;
 		roi_y1 = 0.0;
-
-	} else //(roi_x0>roi_x1 && roi_y0>roi_y1)
+	}
+	else
 	{
 		cout << " There is no rectangle drawn!" << endl;
-		//cout << "    " << numOfRec << ". rect \t x= " << roi_x1 << "\t y = "
-			//	<< roi_y1 << "\t width = " << roi_x0 << "\theight = " << roi_y0
-			//	<< endl;
-		// append rectangle coord to previous line content
 		return false;
 	}
 	return true;
@@ -117,17 +107,15 @@ int
 main(int argc, char** argv)
 {
 	int iKey = 0;
-	//string strPrefix;
-	string strPostfix;
+	string strPostfix = "";
 	string input_file;
-	string output_file;
 	ifstream input;
 	ofstream green, yellow, red, off;
 	bool add_on = false;
 
 	if (argc != 2)
 	{
-		cerr << argv[0] << " input_info.txt" << endl;
+		cerr << argv[0] << " input_ImageList.txt" << endl;
 		return -1;
 	}
 
@@ -149,11 +137,10 @@ main(int argc, char** argv)
 	{
 		string line;
 		getline(input, line);
+
 		while (!input.eof())
 		{
 			numOfRec = 0;
-
-			strPostfix = "";
 
 			cerr << "Loading image :" << line << endl;
 
@@ -161,7 +148,6 @@ main(int argc, char** argv)
 
 			if (!image.empty())
 			{
-				//    work on current image
 				iKey = -1;
 				while ((iKey != 110 && iKey != 78))
 				{
@@ -172,69 +158,75 @@ main(int argc, char** argv)
 
 					switch (iKey)
 					{
-					//    <ESC>=27      exit program
-					case 27:
+
+					case 27:                      // ESC -> key 27 Exit program
 						image.release();
 						destroyWindow(window_name);
 						return EXIT_SUCCESS;
-						//    <Space>=32    add rectangle to current image
-					case 32:
+
+					case 32:                      // SPACE key 32 Add image name and rectangle position to string
 						add_on = add_new_rectangle(strPostfix, line);
 						break;
-						//  <G>=103 save added rectangles to green file
-					case 103:
-						if (numOfRec > 0)
-						{
-							if (!strPostfix.empty())
-							{
-								cout << "Saving " << line << strPostfix << endl;
-								green << line << strPostfix << endl;
-								strPostfix.clear();
-							}
-						}
-						break;
 
-						//    <R>=114        save added rectangles to red file
-					case 114:
+					case 103:                     // G key 103 Save added rectangles to GREEN file
+						//cout << "AAAAAA" << iKey << endl;
 						if (!add_on)
 						{
 							add_on = add_new_rectangle(strPostfix, line);
 						}
 						if (!strPostfix.empty())
 						{
-							cout << "Saving " << strPostfix << endl;
-							red << strPostfix;
+							cout << "Saving to green_gt.txt  " << strPostfix << endl;
+							green << strPostfix;
+							green.flush();
 							strPostfix.clear();
 						}
 						break;
 
-						//    <Y>=121        save added rectangles to yellow file
-					case 121:
-						if (numOfRec > 0)
+					case 121:                      // Y  key 121 Save added rectangles to YELOW file
+						if (!add_on)
 						{
-							if (!strPostfix.empty())
-							{
-								cout << "Saving " << line << strPostfix << endl;
-								yellow << line << strPostfix << endl;
-								strPostfix.clear();
-							}
+							add_on = add_new_rectangle(strPostfix, line);
+						}
+						if (!strPostfix.empty())
+						{
+							cout << "Saving to yellow_gt.txt  " << strPostfix << endl;
+							yellow << strPostfix;
+							yellow.flush();
+							strPostfix.clear();
 						}
 						break;
-						//    <O>=111        save added rectangles to off file
-					case 111:
-						if (numOfRec > 0)
+
+					case 114:                      // R key 114 Save added rectangles to RED file
+						if (!add_on)
 						{
-							if (!strPostfix.empty())
-							{
-								cout << "Saving " << line << strPostfix << endl;
-								off << line << strPostfix << endl;
-								strPostfix.clear();
-							}
+							add_on = add_new_rectangle(strPostfix, line);
+						}
+						if (!strPostfix.empty())
+						{
+							cout << "Saving to red_gt.txt  " << strPostfix << endl;
+							red << strPostfix;
+							red.flush();
+							strPostfix.clear();
+						}
+						break;
+
+					case 111:                       // O key 111 Save added rectangles to OFF file
+						if (!add_on)
+						{
+							add_on = add_new_rectangle(strPostfix, line);
+						}
+						if (!strPostfix.empty())
+						{
+							cout << "Saving to off_gt.txt  " << strPostfix << endl;
+							off << strPostfix;
+							off.flush();
+							strPostfix.clear();
 						}
 						break;
 					}
 					//Go to NEXT image without annotation
-					if ((iKey == 113 || iKey == 121 || iKey == 114 || iKey == 111) && add_on)
+					if ((iKey == 103 || iKey == 121 || iKey == 114 || iKey == 111) )
 					{
 						add_on = false;
 						break;
@@ -242,12 +234,16 @@ main(int argc, char** argv)
 				}
 				image.~Mat();
 			}
-
-
+			else
+			{
+				cerr <<
+				"------------------------------------------------------------------------------------------" << endl <<
+				"Failed! COLD NOT OPEN IMAGE: " << line << endl <<
+				"------------------------------------------------------------------------------------------" << "\n\n\n";
+			}
 			getline(input, line);
 		}
 	}
-
 	else
 	{
 		cerr << "Failed to open: " << input_file << endl;
