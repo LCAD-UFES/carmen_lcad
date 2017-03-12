@@ -36,6 +36,7 @@ displayLights(void)
 void 
 displaySteering(void)
 {	
+//	printf("%f\n", angleSteering);
 	steering->draw(angleSteering);
 }
 

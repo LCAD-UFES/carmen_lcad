@@ -27,11 +27,12 @@ void copy_grid_mapping_to_map_vector(carmen_mapper_map_message *grid_map, int po
 void copy_cost_map_to_map_vector(carmen_map_t *cost_map, int position);
 double get_last_motion_command_total_time(carmen_ackerman_motion_command_p motion_command_vector, int num_motion_commands);
 int obstacle_avoider(carmen_ackerman_motion_command_t *motion_commands_vector, int num_motion_commands, carmen_robot_ackerman_config_t *carmen_robot_ackerman_config);
-void publish_base_ackerman_motion_command_message_to_stop_robot(char *reason);
+void publish_base_ackerman_motion_command_message_to_stop_robot();
 void add_map_to_map_vector(carmen_mapper_map_message *message);
 void add_cost_map_to_map_vector(carmen_map_t *cost_map);
 void initialize_map_vector(int number_of_maps);
 void add_pose_to_pose_vector(carmen_ackerman_traj_point_t pose);
+carmen_ackerman_traj_point_t get_current_pose();
 
 #ifdef __cplusplus
 }

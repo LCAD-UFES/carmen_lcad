@@ -107,28 +107,26 @@ publish_navigator_ackerman_plan_message_with_motion_planner_path(carmen_ackerman
 
 
 void
-publish_base_ackerman_motion_command_message_to_stop_robot(char *reason)
+publish_base_ackerman_motion_command_message_to_stop_robot()
 {
 	int i;
 	int j;
 
 	for (i = 0; i < NUM_MOTION_COMMANDS_VECTORS; i++)
 	{
-		for (j = 0; j < NUM_MOTION_COMMANDS_PER_VECTOR; j++)
+		for (j = 0; j < 2; j++)
 		{
 			motion_commands_vector[i][j].v = 0.0;
 			motion_commands_vector[i][j].time = 1.0;
-			motion_commands_vector[i][j].phi = 0.0;
+			motion_commands_vector[i][j].phi = get_current_pose().phi;
 		}
-		num_motion_commands_in_vector[i] = NUM_MOTION_COMMANDS_PER_VECTOR - 1;
+		num_motion_commands_in_vector[i] = 2;
 		timestamp_of_motion_commands_vector[i] = carmen_get_time();
 	}
 
 	current_motion_command_vetor = 0;
 	carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands_vector[current_motion_command_vetor],
 			num_motion_commands_in_vector[current_motion_command_vetor], timestamp_of_motion_commands_vector[current_motion_command_vetor]);
-
-	carmen_verbose("Robot stopped due to %s\n", reason);
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -188,17 +186,11 @@ check_message_absence_timeout_timer_handler(void)
 
 	if ((carmen_robot_ackerman_sensor_time_of_last_update >= 0) &&
 	    (carmen_get_time() - carmen_robot_ackerman_sensor_time_of_last_update) > robot_sensor_timeout)
-	{
-		printf("Sensor timed out. Stopping robot.\n");
-		publish_base_ackerman_motion_command_message_to_stop_robot("Sensor Timeout");
-	}
+		publish_base_ackerman_motion_command_message_to_stop_robot();
 
 	if ((carmen_robot_ackerman_motion_command_time_of_last_update >= 0) &&
 	    ((carmen_get_time() - carmen_robot_ackerman_motion_command_time_of_last_update) - last_motion_command_total_time) > command_timeout)
-	{
-		printf("Command timed out. Stopping robot.\n");
-		publish_base_ackerman_motion_command_message_to_stop_robot("Command Timeout");
-	}
+		publish_base_ackerman_motion_command_message_to_stop_robot();
 }
 
 
@@ -335,7 +327,7 @@ behavior_selector_state_message_handler(carmen_behavior_selector_state_message *
 void
 shutdown_obstacle_avoider(int signo __attribute__ ((unused)))
 {
-	publish_base_ackerman_motion_command_message_to_stop_robot("carmen_robot_ackerman_shutdown");
+	publish_base_ackerman_motion_command_message_to_stop_robot();
 	carmen_ipc_disconnect();
 
 	exit(0);

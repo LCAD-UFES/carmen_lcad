@@ -618,15 +618,9 @@ void on_buttonRemoveGoal_clicked(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
 	if (!global_gui->behavior_selector_active || global_gui->goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
-	{
 		global_gui->execute_decrement_point();
-
-		//change_cursor(&carmen_yellow, &carmen_black);
-	}
 	else
-	{
 		carmen_behavior_selector_remove_goal();
-	}
 
 	global_gui->placement_status = PLACING_GOAL;
 
@@ -662,9 +656,7 @@ void on_buttonClearGoals_clicked(GtkWidget *widget __attribute__((unused)),
 			}
 		}
 		else
-		{
 			carmen_behavior_selector_clear_goal_list();
-		}
 
 	gtk_toggle_button_set_active((GtkToggleButton *) widget, false);
 }
@@ -674,32 +666,46 @@ void on_buttonGo_clicked(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
 	GtkWidget *label;
+	GdkColor color;
 
-//	TODO: o que eh isso de ignore click?
-//	if (!global_gui->ignore_click)
-//	{
-		if (GTK_TOGGLE_BUTTON(global_gui->controls_.buttonGo)->active)
-		{
+	if (GTK_TOGGLE_BUTTON(global_gui->controls_.buttonGo)->active)
+	{
+		gdk_color_parse ("gray", &color);
+		gtk_widget_modify_bg(GTK_WIDGET(global_gui->controls_.buttonGo), GTK_STATE_PRELIGHT, &color);
 
-			label = GTK_BIN(global_gui->controls_.buttonGo)->child;
-			gtk_label_set_text(GTK_LABEL(label), "Stop");
-			navigator_start_moving();
-		}
-		else
-		{
-			label = GTK_BIN(global_gui->controls_.buttonGo)->child;
-			gtk_label_set_text(GTK_LABEL(label), "Go");
-			navigator_stop_moving();
-		}
-//	}
-//	else
-//	{
-//		global_gui->ignore_click = 0;
-//	}
+		label = GTK_BIN(global_gui->controls_.buttonGo)->child;
+		gtk_label_set_text(GTK_LABEL(label), "Stop");
+		navigator_start_moving();
+	}
+	else
+	{
+		gdk_color_parse ("red", &color);
+		gtk_widget_modify_bg(GTK_WIDGET(global_gui->controls_.buttonGo), GTK_STATE_PRELIGHT, &color);
+
+		label = GTK_BIN(global_gui->controls_.buttonGo)->child;
+		gtk_label_set_text(GTK_LABEL(label), "Go");
+		navigator_stop_moving();
+	}
 
 	if (global_gui->global_view)
-	{
 		global_gui->global_view = 0;
+}
+
+//extern "C" G_MODULE_EXPORT
+void on_buttonGo_entered(GtkWidget *widget __attribute__((unused)),
+					   GtkGui* gui)
+{
+	GdkColor color;
+
+	if (GTK_TOGGLE_BUTTON(global_gui->controls_.buttonGo)->active)
+	{
+		gdk_color_parse ("gray", &color);
+		gtk_widget_modify_bg(GTK_WIDGET(global_gui->controls_.buttonGo), GTK_STATE_PRELIGHT, &color);
+	}
+	else
+	{
+		gdk_color_parse ("red", &color);
+		gtk_widget_modify_bg(GTK_WIDGET(global_gui->controls_.buttonGo), GTK_STATE_PRELIGHT, &color);
 	}
 }
 

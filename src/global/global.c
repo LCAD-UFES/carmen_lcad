@@ -430,8 +430,7 @@ char *carmen_get_host(void)
 
 carmen_default_message *carmen_default_message_create(void)
 {
-  if (static_message.host == NULL)
-    static_message.host = carmen_get_host();
+  static_message.host = carmen_get_host();
   static_message.timestamp = carmen_get_time();
 
   return &static_message;

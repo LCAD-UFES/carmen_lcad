@@ -52,7 +52,7 @@ static int carmen_rddf_pose_initialized = 0;
 static int already_reached_nearest_waypoint_to_end_point = 0;
 
 char *carmen_annotation_filename = NULL;
-vector<carmen_annotation_t> annotation_queue;
+vector<carmen_annotation_t> annotation_read_from_file;
 typedef struct
 {
 	carmen_annotation_t annotation;
@@ -201,73 +201,55 @@ carmen_rddf_play_find_nearest_poses_ahead(double x, double y, double yaw, double
 }
 
 
-void
-carmen_check_for_annotations_old(double x, double y, __attribute__ ((unused)) double theta)
+bool
+add_annotation(double x, double y, double theta, size_t annotation_index)
 {
-	double dx, dy, dist;
+	double dx = annotation_read_from_file[annotation_index].annotation_point.x - x;
+	double dy = annotation_read_from_file[annotation_index].annotation_point.y - y;
+	double dist = sqrt(pow(dx, 2) + pow(dy, 2));
 
-	for (size_t i = 0; i < annotation_queue.size(); i++)
+	if (annotation_read_from_file[annotation_index].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT)
 	{
-		dx = annotation_queue[i].annotation_point.x - x;
-		dy = annotation_queue[i].annotation_point.y - y;
-		dist = sqrt(pow(dx, 2) + pow(dy, 2));
+		double angle_to_annotation = carmen_radians_to_degrees(fabs(carmen_normalize_theta(theta - annotation_read_from_file[annotation_index].annotation_orientation)));
+		bool orientation_ok = angle_to_annotation < 70.0 ? true : false;
 
-		if (dist < 300.0)
+		if ((dist < MAX_TRAFFIC_LIGHT_DISTANCE) && orientation_ok)
 		{
-			annotation_and_index annotation_i = {annotation_queue[i], i};
-
-			if ((annotation_queue[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT) &&
-					(traffic_lights != NULL) &&
-					(traffic_lights->num_traffic_lights > 0) &&
-					(traffic_lights->traffic_light_annotation_distance < MAX_TRAFFIC_LIGHT_DISTANCE))
+			if ((traffic_lights != NULL) &&
+				(traffic_lights->num_traffic_lights > 0)) // @@@ Alberto: deveria verificar a maioria...
 			{
+				annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
 				annotation_i.annotation.annotation_code = traffic_lights->traffic_lights[0].color;
 				annotations_to_publish.push_back(annotation_i);
 			}
 			else
-				annotations_to_publish.push_back(annotation_i);
-		}
-	}
-}
-
-
-void
-add_annotation(double x, double y, double theta, size_t i)
-{
-	double dx = annotation_queue[i].annotation_point.x - x;
-	double dy = annotation_queue[i].annotation_point.y - y;
-	double dist = sqrt(pow(dx, 2) + pow(dy, 2));
-	double angle_to_annotation = carmen_radians_to_degrees(fabs(carmen_normalize_theta(theta - annotation_queue[i].annotation_orientation)));
-	bool orientation_ok = angle_to_annotation < 60.0 ? true : false;
-
-	if (orientation_ok)
-	{
-		if ((annotation_queue[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT) ||
-			(annotation_queue[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP))
-		{
-			if (dist < MAX_TRAFFIC_LIGHT_DISTANCE)
 			{
-				if ((annotation_queue[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT) &&
-					(traffic_lights != NULL) &&
-					(traffic_lights->num_traffic_lights > 0))
-				{
-					annotation_and_index annotation_i = {annotation_queue[i], i};
-					annotation_i.annotation.annotation_code = traffic_lights->traffic_lights[0].color;
-					annotations_to_publish.push_back(annotation_i);
-				}
-				else
-				{
-					annotation_and_index annotation_i = {annotation_queue[i], i};
-					annotations_to_publish.push_back(annotation_i);
-				}
+				annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
+				annotations_to_publish.push_back(annotation_i);
 			}
-		}
-		else if (dist < 20.0)
-		{
-			annotation_and_index annotation_i = {annotation_queue[i], i};
-			annotations_to_publish.push_back(annotation_i);
+			return (true);
 		}
 	}
+	else if (annotation_read_from_file[annotation_index].annotation_type == RDDF_ANNOTATION_TYPE_STOP)
+	{
+		double angle_to_annotation = carmen_radians_to_degrees(fabs(carmen_normalize_theta(theta - annotation_read_from_file[annotation_index].annotation_orientation)));
+		bool orientation_ok = angle_to_annotation < 15.0 ? true : false;
+
+		if ((dist < 20.0) && orientation_ok)
+		{
+			annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
+			annotations_to_publish.push_back(annotation_i);
+			return (true);
+		}
+	}
+	else if (dist < 20.0)
+	{
+		annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
+		annotations_to_publish.push_back(annotation_i);
+		return (true);
+	}
+
+	return (false);
 }
 
 
@@ -276,15 +258,26 @@ carmen_check_for_annotations(carmen_point_t robot_pose,
 		carmen_ackerman_traj_point_t *carmen_rddf_poses_ahead, carmen_ackerman_traj_point_t *carmen_rddf_poses_back,
 		int carmen_rddf_num_poses_ahead, int carmen_rddf_num_poses_back)
 {
-	for (size_t i = 0; i < annotation_queue.size(); i++)
+	for (size_t annotation_index = 0; annotation_index < annotation_read_from_file.size(); annotation_index++)
 	{
-		add_annotation(robot_pose.x, robot_pose.y, robot_pose.theta, i);
+		if (add_annotation(robot_pose.x, robot_pose.y, robot_pose.theta, annotation_index))
+			continue;
 
-		for (int i = 0; i < carmen_rddf_num_poses_ahead; i++)
-			add_annotation(carmen_rddf_poses_ahead[i].x, carmen_rddf_poses_ahead[i].y, carmen_rddf_poses_ahead[i].theta, i);
-
-		for (int i = 0; i < carmen_rddf_num_poses_back; i++)
-			add_annotation(carmen_rddf_poses_back[i].x, carmen_rddf_poses_back[i].y, carmen_rddf_poses_back[i].theta, i);
+		bool added = false;
+		for (int j = 0; j < carmen_rddf_num_poses_ahead; j++)
+		{
+			if (add_annotation(carmen_rddf_poses_ahead[j].x, carmen_rddf_poses_ahead[j].y, carmen_rddf_poses_ahead[j].theta, annotation_index))
+			{
+				added = true;
+				break;
+			}
+		}
+		if (!added)
+		{
+			for (int j = 0; j < carmen_rddf_num_poses_back; j++)
+				if (add_annotation(carmen_rddf_poses_back[j].x, carmen_rddf_poses_back[j].y, carmen_rddf_poses_back[j].theta, annotation_index))
+					break;
+		}
 	}
 }
 
@@ -300,7 +293,7 @@ find_nearest_annotation_and_dist(int annotation_id, int *nearest_pose_out, doubl
 	nearest_pose = -1;
 	min_distance_to_annotation = DBL_MAX;
 
-	annotation = annotation_queue[annotation_id];
+	annotation = annotation_read_from_file[annotation_id];
 
 	for (int i = 0; i < carmen_rddf_num_poses_ahead; i++)
 	{
@@ -324,7 +317,7 @@ annotation_is_forward_from_robot(carmen_point_t pose, int annotation_id)
 	carmen_vector_3D_t annotation_point;
 	carmen_annotation_t annotation;
 
-	annotation = annotation_queue[annotation_id];
+	annotation = annotation_read_from_file[annotation_id];
 	annotation_point = annotation.annotation_point;
 
 	SE2 robot_pose_mat(pose.x, pose.y, pose.theta);
@@ -349,7 +342,7 @@ set_annotations()
 		find_nearest_annotation_and_dist(annotations_to_publish[i].index, &nearest_pose, &nearest_pose_dist);
 
 		if ((nearest_pose >= 0) && nearest_pose_dist < 10.0 && (annotation_is_forward_from_robot(robot_pose, annotations_to_publish[i].index)))
-			annotations[nearest_pose] = annotation_queue[annotations_to_publish[i].index].annotation_type;
+			annotations[nearest_pose] = annotation_read_from_file[annotations_to_publish[i].index].annotation_type;
 	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -473,7 +466,6 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	);
 
 	annotations_to_publish.clear();
-//	carmen_check_for_annotations_old(robot_pose.x, robot_pose.y, robot_pose.theta);
 	carmen_check_for_annotations(robot_pose, carmen_rddf_poses_ahead, carmen_rddf_poses_back,
 			carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back);
 
@@ -500,7 +492,6 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	);
 
 	annotations_to_publish.clear();
-//	carmen_check_for_annotations_old(robot_pose.x, robot_pose.y, robot_pose.theta);
 	carmen_check_for_annotations(robot_pose, carmen_rddf_poses_ahead, carmen_rddf_poses_back,
 			carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back);
 
@@ -636,7 +627,7 @@ carmen_rddf_play_load_annotation_file()
 			&annotation.annotation_point.z
 		);
 
-		annotation_queue.push_back(annotation);
+		annotation_read_from_file.push_back(annotation);
 	}
 
 	fclose(f);

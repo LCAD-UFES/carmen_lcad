@@ -8,7 +8,7 @@ using namespace std;
 
 
 static char *annotation_filename;
-vector<carmen_annotation_t> annotation_queue;
+vector<carmen_annotation_t> annotation_read_from_file;
 carmen_rddf_annotation_message annotation_queue_message;
 
 
@@ -91,8 +91,8 @@ annotation_already_added(carmen_annotation_t new_annotation)
 {
 	uint i;
 
-	for (i = 0; i < annotation_queue.size(); i++)
-		if (is_the_same_point(new_annotation, annotation_queue[i]))
+	for (i = 0; i < annotation_read_from_file.size(); i++)
+		if (is_the_same_point(new_annotation, annotation_read_from_file[i]))
 			return 1;
 
 	return 0;
@@ -113,8 +113,8 @@ carmen_rddf_add_annotation_handler(carmen_rddf_add_annotation_message *message)
 
 	if (!annotation_already_added(new_annotation) && is_a_valid_point(new_annotation))
 	{
-		annotation_queue.push_back(new_annotation);
-		publish_annotation_queue(annotation_queue);
+		annotation_read_from_file.push_back(new_annotation);
+		publish_annotation_queue(annotation_read_from_file);
 	}
 	else
 	{
@@ -134,27 +134,27 @@ carmen_annotation_manager_timer_handler(char *annotation_filename)
 	if (f == NULL)
 		exit(printf("Unable to open the file '%s'\n", annotation_filename));
 
-	printf("annotation_queue.size(): %ld\n", annotation_queue.size());
+	printf("annotation_queue.size(): %ld\n", annotation_read_from_file.size());
 
-	for (i = 0; i < annotation_queue.size(); i++)
+	for (i = 0; i < annotation_read_from_file.size(); i++)
 	{
-		char *description = rddf_get_annotation_description_by_type(annotation_queue[i].annotation_type);
+		char *description = rddf_get_annotation_description_by_type(annotation_read_from_file[i].annotation_type);
 
 		if (strlen(description) <= 0)
 			continue;
 
 		fprintf(f, "%s\t%d\t%d\t%lf\t%lf\t%lf\t%lf\n",
 				description,
-				annotation_queue[i].annotation_type,
-				annotation_queue[i].annotation_code,
-				annotation_queue[i].annotation_orientation,
-				annotation_queue[i].annotation_point.x,
-				annotation_queue[i].annotation_point.y,
-				annotation_queue[i].annotation_point.z
+				annotation_read_from_file[i].annotation_type,
+				annotation_read_from_file[i].annotation_code,
+				annotation_read_from_file[i].annotation_orientation,
+				annotation_read_from_file[i].annotation_point.x,
+				annotation_read_from_file[i].annotation_point.y,
+				annotation_read_from_file[i].annotation_point.z
 		);
 	}
 
-	publish_annotation_queue(annotation_queue);
+	publish_annotation_queue(annotation_read_from_file);
 	fclose(f);
 }
 
@@ -205,13 +205,13 @@ carmen_annotation_manager_load_annotations()
 			if (n != 7)
 				break;
 
-			annotation_queue.push_back(message);
+			annotation_read_from_file.push_back(message);
 		}
 
 		fclose(f);
 	}
 
-	printf("Num annotations load: %ld\n", annotation_queue.size());
+	printf("Num annotations load: %ld\n", annotation_read_from_file.size());
 }
 
 

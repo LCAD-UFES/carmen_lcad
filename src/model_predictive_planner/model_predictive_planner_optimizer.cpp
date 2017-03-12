@@ -488,6 +488,8 @@ my_g(const gsl_vector *x, void *params)
 	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
 	{
 		w1 = 10.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 10.0;
+		if (td.dist < 10.0)
+			w2 *= exp(td.dist - 10.0);
 		result = (
 				w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
@@ -498,6 +500,8 @@ my_g(const gsl_vector *x, void *params)
 	else
 	{
 		w1 = 10.0; w2 = 55.0; w3 = 5.0; w4 = 1.5; w5 = 20.0; w6 = 0.005;
+		if (td.dist < 10.0)
+			w2 *= exp(td.dist - 10.0);
 		result = sqrt(
 				w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
@@ -611,6 +615,8 @@ my_h(const gsl_vector *x, void *params)
 	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
 	{
 		w1 = 10.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 10.0; w6 = 0.005;
+		if (td.dist < 10.0)
+			w2 *= exp(td.dist - 10.0);
 		result = (
 				//w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
@@ -624,6 +630,8 @@ my_h(const gsl_vector *x, void *params)
 		w1 = 10.0; w2 = 15.0; w3 = 30.0; w4 = 5.0; w5 = 10.0; w6 = 0.0005;
 		double w7;
 		w7 = 0.1;//(my_params->target_td->v_i > 0.2 ? 2.0 : 0.0);
+		if (td.dist < 10.0)
+			w2 *= exp(td.dist - 10.0);
 		result = sqrt(
 				w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
@@ -827,6 +835,82 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 
 		if (tt > 15.0)
 			tt = 15.0;
+//		else if (tt < 0.5)
+//			tt = 0.5;
+
+		params.suitable_tt = tcp_seed.tt = tt;
+		params.suitable_acceleration = tcp_seed.a = a;
+		//printf("SUITABLE a %lf, tt %lf\n", a, tt);
+	}
+}
+
+
+void
+compute_suitable_acceleration_and_tt_new(ObjectiveFunctionParams &params,
+		TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed,
+		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v)
+{
+	// (i) S = Vo*t + 1/2*a*t^2
+	// (ii) dS/dt = Vo + a*t
+	// dS/dt = 0 => máximo ou mínimo de S => 0 = Vo + a*t; a*t = -Vo; (iii) a = -Vo/t; (iv) t = -Vo/a
+	// Se "a" é negativa, dS/dt = 0 é um máximo de S
+	// Logo, como S = target_td.dist, "a" e "t" tem que ser tais em (iii) e (iv) que permitam que
+	// target_td.dist seja alcançada.
+	//
+	// O valor de maxS pode ser computado substituindo (iv) em (i):
+	// maxS = Vo*-Vo/a + 1/2*a*(-Vo/a)^2 = -Vo^2/a + 1/2*Vo^2/a = -1/2*Vo^2/a
+	//
+	// Se estou co velocidade vi e quero chagar a vt, sendo que vt < vi, a eh negativo. O tempo, tt, para
+	// ir de vi a vt pode ser derivado de dS/dt = Vo + a*t -> vt = vi + a*tt; a*tt = vt - vi; tt = (vt - vi) / a
+
+	if (target_v < 0.0)
+		target_v = 0.0;
+//	params.optimize_time = OPTIMIZE_DISTANCE;
+	params.optimize_time = OPTIMIZE_TIME;
+
+	if (params.optimize_time == OPTIMIZE_DISTANCE)
+	{
+		compute_a_and_t_from_s(tcp_seed.s, target_v, target_td, tcp_seed, &params);
+	}
+	else
+	{
+//		double a = (target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * target_td.dist);
+//		double tt = (target_v - target_td.v_i) / a;
+		double a = (target_v - target_td.v_i) / tcp_seed.tt;
+		double tt;
+
+		if (fabs(a) < 0.005)
+		{
+			tt = tcp_seed.tt;
+
+			if (target_td.v_i == 0.0)
+				params.optimize_time = OPTIMIZE_ACCELERATION;
+			else
+				params.optimize_time = OPTIMIZE_TIME;
+		}
+		else
+			tt = (target_v - target_td.v_i) / a;
+
+
+		if (a > 0.0)
+		{
+			params.optimize_time = OPTIMIZE_TIME;
+			if (a > GlobalState::robot_config.maximum_acceleration_forward)
+				a = GlobalState::robot_config.maximum_acceleration_forward;
+		}
+
+		if ((a < 0.0) && (fabs(a) >= 0.005))
+		{
+			params.optimize_time = OPTIMIZE_ACCELERATION;
+			if (a < -GlobalState::robot_config.maximum_deceleration_forward)
+			{
+				a = -GlobalState::robot_config.maximum_deceleration_forward;
+				tt = (target_v - target_td.v_i) / a;
+			}
+		}
+
+		if (tt > 15.0)
+			tt = 15.0;
 		else if (tt < 0.5)
 			tt = 0.5;
 
@@ -879,7 +963,7 @@ get_missing_k1(const TrajectoryLookupTable::TrajectoryDimensions& target_td,
 void
 print_tcp(TrajectoryLookupTable::TrajectoryControlParameters tcp)
 {
-	printf("v %d, tt %1.2lf, a %1.2lf, h_k1 %d, k1 %1.2lf, k2 %1.2lf, k3 %1.2lf, vf %2.2lf\n",
+	printf("v %d, tt %1.4lf, a %1.4lf, h_k1 %d, k1 %1.4lf, k2 %1.4lf, k3 %1.4lf, vf %2.4lf\n",
 			tcp.valid, tcp.tt, tcp.a, tcp.has_k1, tcp.k1, tcp.k2, tcp.k3, tcp.vf);
 }
 
@@ -887,7 +971,7 @@ print_tcp(TrajectoryLookupTable::TrajectoryControlParameters tcp)
 void
 print_td(TrajectoryLookupTable::TrajectoryDimensions td)
 {
-	printf("dist %2.2lf, theta %1.2lf, d_yaw %1.2lf, phi_i %1.2lf, v_i %2.2lf\n",
+	printf("dist %2.4lf, theta %1.4lf, d_yaw %1.4lf, phi_i %1.4lf, v_i %2.4lf\n",
 			td.dist, td.theta, td.d_yaw, td.phi_i, td.v_i);
 }
 
@@ -1250,7 +1334,7 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, vector<carmen_ackerman_path_point_t> detailed_lane,
 		bool use_lane, bool has_previous_good_tcp)
 {
-	TrajectoryLookupTable::TrajectoryControlParameters tcp_complete;
+	TrajectoryLookupTable::TrajectoryControlParameters tcp_complete, tcp_copy;
 	ObjectiveFunctionParams params;
 	params.detailed_lane = detailed_lane;
 	params.use_lane = use_lane;
@@ -1259,7 +1343,7 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 
 //	virtual_laser_message.num_positions = 0;
 
-	tcp_complete = get_optimized_trajectory_control_parameters(tcp_seed, target_td, target_v, params, has_previous_good_tcp);
+	tcp_copy = tcp_complete = get_optimized_trajectory_control_parameters(tcp_seed, target_td, target_v, params, has_previous_good_tcp);
 
 	verify_shift_option_for_k1(tcp_seed, target_td, tcp_complete);
 	// Atencao: params.suitable_acceleration deve ser preenchido na funcao acima para que nao seja alterado no inicio da otimizacao abaixo
@@ -1270,6 +1354,12 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 	else
 		tcp_complete = optimized_lane_trajectory_control_parameters(tcp_complete, target_td, target_v, params);
 
+//	if (target_td.dist < 2.0)
+//	{
+//		tcp_complete.k1 = tcp_copy.k1;
+//		tcp_complete.k2 = tcp_copy.k2;
+//		tcp_complete.k3 = tcp_copy.k3;
+//	}
 //	print_tcp(tcp_complete);
 //	print_td(target_td);
 //	printf("t %.3lf, v0 %.1lf, a %.3lf, vg %.2lf, dg %.1lf, tt %.3lf\n",

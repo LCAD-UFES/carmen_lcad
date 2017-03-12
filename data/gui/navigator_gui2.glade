@@ -1405,6 +1405,7 @@
                                             <property name="receives_default">True</property>
                                             <property name="use_action_appearance">False</property>
                                             <signal name="clicked" handler="on_buttonGo_clicked" swapped="no"/>
+                                            <signal name="enter" handler="on_buttonGo_entered" swapped="no"/>
                                           </object>
                                           <packing>
                                             <property name="expand">True</property>

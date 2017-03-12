@@ -381,7 +381,7 @@ build_and_follow_path(double timestamp)
 		// achieve the goal!
 		if (distance_to_goal < 1.0 && GlobalState::robot_config.max_v < 0.1 && GlobalState::last_odometry.v < 0.1)
 		{
-			publish_path_follower_single_motion_command(0.0, 0.0, timestamp);
+			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
 		}
 		else
 		{
@@ -433,6 +433,7 @@ build_and_follow_path_new(double timestamp)
 		publish_navigator_ackerman_status_message();
 	}
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -589,6 +590,14 @@ signal_handler(int sig)
 	exit(1);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                              //
+// Initializations                                                                              //
+//                                                                                              //
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 void

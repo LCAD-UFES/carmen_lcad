@@ -457,7 +457,11 @@ namespace View
 
 		controls_.buttonSyncMode = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "buttonSyncMode" ));
 		controls_.buttonNextTick = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "buttonNextTick" ));
+
 		controls_.buttonGo = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "buttonGo" ));
+		GdkColor color;
+		gdk_color_parse ("red", &color);
+		gtk_widget_modify_bg(GTK_WIDGET(controls_.buttonGo), GTK_STATE_NORMAL, &color);
 
 		carmen_graphics_setup_colors();
 		robot_colour  = DEFAULT_ROBOT_COLOUR;
@@ -642,24 +646,6 @@ namespace View
 		int	   autonomous_change = 0;
 		int	   update_map_change = 0;
 		double adjust_distance;
-
-//		if (!autonomous &&
-//				gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(this->controls_.buttonGo)))
-//		{
-//			//TODO: ignore_click = 1;
-//			gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(this->controls_.buttonGo), 0);
-//			label_autonomy_button((char *) "Go");
-//			autonomous_change = 1;
-//		}
-//
-//		if (autonomous &&
-//				!gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(this->controls_.buttonGo)))
-//		{
-//			//TODO: ignore_click = 1;
-//			gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(this->controls_.buttonGo), 1);
-//			label_autonomy_button((char *) "Stop");
-//			autonomous_change = 1;
-//		}
 
 		if (!this->controls_.map_view->internal_map)
 		{
@@ -2802,5 +2788,31 @@ namespace View
 	{
 		car_panel_gl->set_view(500, 250);
 		car_panel_gl->draw();
+	}
+
+	void
+	GtkGui::navigator_graphics_go_message_received()
+	{
+		GdkColor color;
+
+		gdk_color_parse ("gray", &color);
+		gtk_widget_modify_bg(GTK_WIDGET(this->controls_.buttonGo), GTK_STATE_PRELIGHT, &color);
+
+		gtk_toggle_button_set_active(this->controls_.buttonGo, true);
+		GtkWidget *label = GTK_BIN(this->controls_.buttonGo)->child;
+		gtk_label_set_text(GTK_LABEL(label), "Stop");
+	}
+
+	void
+	GtkGui::navigator_graphics_stop_message_received()
+	{
+		GdkColor color;
+
+		gdk_color_parse ("red", &color);
+		gtk_widget_modify_bg(GTK_WIDGET(this->controls_.buttonGo), GTK_STATE_PRELIGHT, &color);
+
+		gtk_toggle_button_set_active(this->controls_.buttonGo, false);
+		GtkWidget *label = GTK_BIN(this->controls_.buttonGo)->child;
+		gtk_label_set_text(GTK_LABEL(label), "Go");
 	}
 }

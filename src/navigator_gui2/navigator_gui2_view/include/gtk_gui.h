@@ -209,8 +209,6 @@ namespace View
 		carmen_rddf_waypoint *edited_rddf_goal_list;
 		int edited_rddf_goal_size;
 
-		int ignore_click;
-
 		carmen_traj_point_t	 robot_traj;
 		carmen_world_point_t	 robot;
 		carmen_ackerman_traj_point_t	 goal;
@@ -377,6 +375,9 @@ namespace View
 		void load_rddf_from_file(char *rddf_filename);
 
 		void load_annotations_images();
+
+		void navigator_graphics_go_message_received();
+		void navigator_graphics_stop_message_received();
 	};
 }
 

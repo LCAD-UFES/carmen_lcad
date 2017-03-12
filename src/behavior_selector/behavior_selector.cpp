@@ -54,6 +54,8 @@ SampleFilter filter2;
 
 extern carmen_rddf_annotation_message last_rddf_annotation_message;
 
+extern bool wait_start_moving;
+
 
 carmen_behavior_selector_algorithm_t
 get_current_algorithm()
@@ -272,10 +274,9 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf)
 			add_goal_to_goal_list(goal_index, current_goal, rddf_pose_index, rddf,
 					-(robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels));
 		}
-		else if ((((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_STOP) || // -> Adiciona um waypoint na posicao atual se ela contem uma das anotacoes especificadas
-				   ((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) &&
-				     red_traffic_light_ahead())) &&
-				  !rddf_pose_hit_obstacle)) // e se ela nao colide com um obstaculo.
+		else if ((((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_STOP) && !wait_start_moving) || // -> Adiciona um waypoint na posicao atual se ela contem uma das anotacoes especificadas
+				  ((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) && !wait_start_moving && red_traffic_light_ahead())) &&
+				  !rddf_pose_hit_obstacle) // e se ela nao colide com um obstaculo.
 		{
 			add_goal_to_goal_list(goal_index, current_goal, rddf_pose_index, rddf,
 					-(robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels));
@@ -283,8 +284,8 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf)
 		}
 		else if (((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_BUMP) || // -> Adiciona um waypoint na ultima posicao livre se a posicao atual contem uma das anotacoes especificadas
 				  (rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_BARRIER) ||
-				  (rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_STOP) ||
-				  (rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) ||
+				  ((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_STOP) && !wait_start_moving) ||
+				  ((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) && !wait_start_moving) ||
 				  (rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK)) &&
 				 (distance_to_last_obstacle_free_waypoint > 1.5) && // e se ela esta a mais de 1.5 metros da ultima posicao livre de obstaculo
 				 rddf_pose_hit_obstacle) // e se ela colidiu com obstaculo.

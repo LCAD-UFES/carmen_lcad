@@ -52,59 +52,9 @@ static int last_moving_objects_point_clouds;
 moving_objects_tracking_t *moving_objects_tracking;
 int current_num_point_clouds;
 int previous_num_point_clouds = 0;
-
-
 static void
-navigator_ackerman_status_handler(carmen_navigator_ackerman_status_message *msg)
-{
-	carmen_verbose("Got Status message: Robot %.1f %.1f %.2f Goal: %.0f %.0f\n",
-			msg->robot.x, msg->robot.y, msg->robot.theta,
-			msg->goal.x, msg->goal.y);
-
-	last_navigator_status = msg->timestamp;
-
-	goal_set = msg->goal_set;
-	autonomous = msg->autonomous;
-
-	if (!is_graphics_up)
-		return;
-
-	if (msg->goal_set)
-	{
-		last_goal = msg->goal;
-
-		gui->navigator_graphics_update_display(NULL, &last_goal, msg->autonomous);
-	}
-	else
-		gui->navigator_graphics_update_display(NULL, NULL, msg->autonomous);
-}
 
 
-static void
-navigator_goal_list_message(carmen_behavior_selector_goal_list_message *goals)
-{
-	gui->navigator_graphics_update_goal_list(goals->goal_list, goals->size);
-}
-
-static void
-navigator_rddf_waypoints_handler(carmen_rddf_waypoints_around_end_point_message *waypoints)
-{
-	gui->navigator_graphics_update_waypoint_list(waypoints->poses, waypoints->number_of_poses);
-}
-
-static void
-navigator_plan_handler(carmen_navigator_ackerman_plan_message *plan)
-{
-	gui->navigator_graphics_update_plan(plan->path, plan->path_length);
-}
-
-static void
-path_handler (carmen_navigator_gui_path_message *msg)
-{
-	gui->navigator_graphics_update_path(msg->path, msg->path_length, msg->path_id);
-}
-
-static void
 navigator_get_empty_map()
 {
 	superimposedmap_type = CARMEN_NONE_v;
@@ -286,30 +236,111 @@ navigator_get_offline_map_pointer()
 }
 
 
-static void
-offline_map_update_handler(carmen_mapper_map_message *new_map)
+void
+init_moving_objects_tracking(int c_num_point_clouds, int p_num_point_clouds)
 {
-	if (new_map->size <= 0)
-		return;
-
-	if (offline_map && (new_map->config.x_size != offline_map->config.x_size || new_map->config.y_size != offline_map->config.y_size))
-		carmen_map_destroy(&offline_map);
-
-	if (offline_map)
-		clone_grid_mapping_to_map(new_map, offline_map);
-	else
-		offline_map = copy_grid_mapping_to_map(new_map);
-
-
-	if (superimposedmap_type == CARMEN_OFFLINE_MAP_v)
+	if (c_num_point_clouds != p_num_point_clouds)
 	{
-		carmen_map_interface_set_superimposed_map(offline_map);
-		gui->navigator_graphics_redraw_superimposed();
+		free(moving_objects_tracking);
+//		moving_objects_tracking = (moving_objects_tracking_t*) malloc
+//				(c_num_point_clouds * sizeof(moving_objects_tracking_t));
 	}
-
-	if (gui->navigator_graphics_update_map() && is_graphics_up && map_type == CARMEN_OFFLINE_MAP_v)
-		gui->navigator_graphics_change_map(offline_map);
+	moving_objects_tracking = (moving_objects_tracking_t*) malloc(c_num_point_clouds * sizeof(moving_objects_tracking_t));
 }
+
+
+void
+navigator_unset_goal(double x, double y)
+{
+	carmen_navigator_ackerman_unset_goal(x, y);
+}
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Publishers                                                                                //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void
+navigator_update_robot(carmen_world_point_p robot)
+{
+	if (robot == NULL)
+	{
+		carmen_localize_ackerman_initialize_uniform_command();
+//		IPC_listen(50);
+	}
+	else
+	{
+		carmen_verbose("Set robot position to %d %d %f\n",
+				carmen_round(robot->pose.x),
+				carmen_round(robot->pose.y),
+				carmen_radians_to_degrees(robot->pose.theta));
+
+		carmen_localize_ackerman_initialize_gaussian_command(robot->pose, localize_std);
+//		IPC_listen(50);
+	}
+}
+
+
+void
+navigator_set_goal_by_place(carmen_place_p place)
+{
+	carmen_navigator_ackerman_set_goal_place(place->name);
+}
+
+
+void
+navigator_stop_moving(void)
+{
+	if (!carmen_navigator_ackerman_stop())
+	{
+//		IPC_listen(50);
+		carmen_verbose("Said stop\n");
+	}
+	else
+		carmen_verbose("Could not say stop\n");
+}
+
+
+void
+navigator_start_moving(void)
+{
+
+	if (!carmen_navigator_ackerman_go())
+	{
+		carmen_verbose("Said go!\n");
+//		IPC_listen(50);
+	}
+	else
+		carmen_verbose("could not say go!\n");
+}
+
+
+void
+navigator_set_goal(double x, double y, double theta)
+{
+	carmen_verbose("Set goal to %.1f %.1f\n", x, y);
+	carmen_navigator_ackerman_set_goal(x, y, theta);
+//	IPC_listen(50);
+}
+
+
+void
+navigator_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, carmen_behavior_selector_state_t state)
+{
+	carmen_behavior_selector_set_algorithm(algorithm, state);
+}
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Handlers                                                                                  //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 static void
@@ -346,35 +377,28 @@ mapper_handler(carmen_mapper_map_message *message)
 
 
 static void
-grid_mapping_moving_objects_raw_map_handler(carmen_moving_objects_map_message *message)
+offline_map_update_handler(carmen_mapper_map_message *new_map)
 {
-	static double last_time_stamp = 0.0;
-
-	if (message->size <= 0)
+	if (new_map->size <= 0)
 		return;
 
-	// @@@ Alberto: codigo adicionado para atualizar o mapa a uma taxa maxima de 10Hz
-	if ((carmen_get_time() - last_time_stamp) > 0.1)
-		last_time_stamp = carmen_get_time();
+	if (offline_map && (new_map->config.x_size != offline_map->config.x_size || new_map->config.y_size != offline_map->config.y_size))
+		carmen_map_destroy(&offline_map);
+
+	if (offline_map)
+		clone_grid_mapping_to_map(new_map, offline_map);
 	else
-		return;
+		offline_map = copy_grid_mapping_to_map(new_map);
 
-	if (moving_objects_map && (message->config.x_size != moving_objects_map->config.x_size || message->config.y_size != moving_objects_map->config.y_size))
-		carmen_map_destroy(&moving_objects_map);
 
-	if (moving_objects_map)
-		clone_grid_mapping_to_map2(message, moving_objects_map);//funcao replicada
-	else
-		moving_objects_map = copy_grid_mapping_to_map2(message);//funcao replicada
-
-	if (superimposedmap_type == CARMEN_MOVING_OBJECTS_MAP_v)
+	if (superimposedmap_type == CARMEN_OFFLINE_MAP_v)
 	{
-		carmen_map_interface_set_superimposed_map(moving_objects_map);
+		carmen_map_interface_set_superimposed_map(offline_map);
 		gui->navigator_graphics_redraw_superimposed();
 	}
 
-	if (gui->navigator_graphics_update_map() && is_graphics_up && map_type == CARMEN_MOVING_OBJECTS_MAP_v)
-		gui->navigator_graphics_change_map(moving_objects_map);
+	if (gui->navigator_graphics_update_map() && is_graphics_up && map_type == CARMEN_OFFLINE_MAP_v)
+		gui->navigator_graphics_change_map(offline_map);
 }
 
 
@@ -522,108 +546,36 @@ localize_map_update_handler(carmen_map_server_localize_map_message *message)
 }
 
 
-void
-navigator_update_robot(carmen_world_point_p robot)
-{
-	if (robot == NULL)
-	{
-		carmen_localize_ackerman_initialize_uniform_command();
-		IPC_listen(50);
-	}
-	else
-	{
-		carmen_verbose("Set robot position to %d %d %f\n",
-				carmen_round(robot->pose.x),
-				carmen_round(robot->pose.y),
-				carmen_radians_to_degrees(robot->pose.theta));
-
-		carmen_localize_ackerman_initialize_gaussian_command(robot->pose, localize_std);
-		IPC_listen(50);
-	}
-}
-
-
-void
-navigator_set_goal(double x, double y, double theta)
-{
-	carmen_verbose("Set goal to %.1f %.1f\n", x, y);
-	carmen_navigator_ackerman_set_goal(x, y, theta);
-	IPC_listen(50);
-}
-
-
-void
-navigator_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, carmen_behavior_selector_state_t state)
-{
-	carmen_behavior_selector_set_algorithm(algorithm, state);
-}
-
-
-void
-navigator_unset_goal(double x, double y)
-{
-	carmen_navigator_ackerman_unset_goal(x, y);
-}
-
-
-void
-navigator_set_goal_by_place(carmen_place_p place)
-{
-	carmen_navigator_ackerman_set_goal_place(place->name);
-}
-
-
-void
-navigator_stop_moving(void)
-{
-	if (!carmen_navigator_ackerman_stop())
-	{
-		IPC_listen(50);
-		carmen_verbose("Said stop\n");
-	}
-	else
-		carmen_verbose("Could not say stop\n");
-}
-
-
-void
-navigator_start_moving(void)
-{
-
-	if (!carmen_navigator_ackerman_go())
-	{
-		carmen_verbose("Said go!\n");
-		IPC_listen(50);
-	}
-	else
-		carmen_verbose("could not say go!\n");
-}
-
-
 static void
-nav_shutdown(int signo __attribute__ ((unused)))
+grid_mapping_moving_objects_raw_map_handler(carmen_moving_objects_map_message *message)
 {
-	static int done = 0;
+	static double last_time_stamp = 0.0;
 
-	if (!done)
+	if (message->size <= 0)
+		return;
+
+	// @@@ Alberto: codigo adicionado para atualizar o mapa a uma taxa maxima de 10Hz
+	if ((carmen_get_time() - last_time_stamp) > 0.1)
+		last_time_stamp = carmen_get_time();
+	else
+		return;
+
+	if (moving_objects_map && (message->config.x_size != moving_objects_map->config.x_size || message->config.y_size != moving_objects_map->config.y_size))
+		carmen_map_destroy(&moving_objects_map);
+
+	if (moving_objects_map)
+		clone_grid_mapping_to_map2(message, moving_objects_map);//funcao replicada
+	else
+		moving_objects_map = copy_grid_mapping_to_map2(message);//funcao replicada
+
+	if (superimposedmap_type == CARMEN_MOVING_OBJECTS_MAP_v)
 	{
-		done = 1;
-		carmen_ipc_disconnect();
-		exit(1);
+		carmen_map_interface_set_superimposed_map(moving_objects_map);
+		gui->navigator_graphics_redraw_superimposed();
 	}
-}
 
-
-static gint
-handle_ipc(gpointer			*data __attribute__ ((unused)),
-		gint				 source __attribute__ ((unused)),
-		GdkInputCondition condition __attribute__ ((unused)))
-{
-	carmen_ipc_sleep(0.01);
-
-	carmen_graphics_update_ipc_callbacks((GdkInputFunction) handle_ipc);
-
-	return 1;
+	if (gui->navigator_graphics_update_map() && is_graphics_up && map_type == CARMEN_MOVING_OBJECTS_MAP_v)
+		gui->navigator_graphics_change_map(moving_objects_map);
 }
 
 
@@ -656,23 +608,64 @@ truepos_handler(carmen_simulator_ackerman_truepos_message *msg)
 
 
 static void
+navigator_ackerman_status_handler(carmen_navigator_ackerman_status_message *msg)
+{
+	carmen_verbose("Got Status message: Robot %.1f %.1f %.2f Goal: %.0f %.0f\n",
+			msg->robot.x, msg->robot.y, msg->robot.theta,
+			msg->goal.x, msg->goal.y);
+
+	last_navigator_status = msg->timestamp;
+
+	goal_set = msg->goal_set;
+	autonomous = msg->autonomous;
+
+	if (!is_graphics_up)
+		return;
+
+	if (msg->goal_set)
+	{
+		last_goal = msg->goal;
+
+		gui->navigator_graphics_update_display(NULL, &last_goal, msg->autonomous);
+	}
+	else
+		gui->navigator_graphics_update_display(NULL, NULL, msg->autonomous);
+}
+
+
+static void
+navigator_goal_list_message(carmen_behavior_selector_goal_list_message *goals)
+{
+	gui->navigator_graphics_update_goal_list(goals->goal_list, goals->size);
+}
+
+
+static void
+navigator_rddf_waypoints_handler(carmen_rddf_waypoints_around_end_point_message *waypoints)
+{
+	gui->navigator_graphics_update_waypoint_list(waypoints->poses, waypoints->number_of_poses);
+}
+
+
+static void
+navigator_plan_handler(carmen_navigator_ackerman_plan_message *plan)
+{
+	gui->navigator_graphics_update_plan(plan->path, plan->path_length);
+}
+
+
+static void
+path_handler (carmen_navigator_gui_path_message *msg)
+{
+	gui->navigator_graphics_update_path(msg->path, msg->path_length, msg->path_id);
+}
+
+
+
+static void
 objects_handler(carmen_simulator_ackerman_objects_message *msg)
 {
 	gui->navigator_graphics_update_simulator_objects(msg->num_objects, msg->objects_list);
-}
-
-// handler da mensagem do moving_objects
-
-void
-init_moving_objects_tracking(int c_num_point_clouds, int p_num_point_clouds)
-{
-	if (c_num_point_clouds != p_num_point_clouds)
-	{
-		free(moving_objects_tracking);
-//		moving_objects_tracking = (moving_objects_tracking_t*) malloc
-//				(c_num_point_clouds * sizeof(moving_objects_tracking_t));
-	}
-	moving_objects_tracking = (moving_objects_tracking_t*) malloc(c_num_point_clouds * sizeof(moving_objects_tracking_t));
 }
 
 
@@ -779,6 +772,56 @@ display_config_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 	if (msg.status_message)
 		free(msg.status_message);
 }
+
+
+void
+navigator_ackerman_go_message_handler()
+{
+	gui->navigator_graphics_go_message_received();
+}
+
+
+void
+navigator_ackerman_stop_message_handler()
+{
+	gui->navigator_graphics_stop_message_received();
+}
+
+
+static void
+nav_shutdown(int signo __attribute__ ((unused)))
+{
+	static int done = 0;
+
+	if (!done)
+	{
+		done = 1;
+		carmen_ipc_disconnect();
+		exit(1);
+	}
+}
+
+
+static gint
+handle_ipc(gpointer			*data __attribute__ ((unused)),
+		gint				 source __attribute__ ((unused)),
+		GdkInputCondition condition __attribute__ ((unused)))
+{
+	carmen_ipc_sleep(0.01);
+
+	carmen_graphics_update_ipc_callbacks((GdkInputFunction) handle_ipc);
+
+	return 1;
+}
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                              //
+// Initializations                                                                              //
+//                                                                                              //
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 static void
@@ -896,6 +939,20 @@ subscribe_ipc_messages()
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_RDDF_END_POINT_MESSAGE_NAME);
 
 	carmen_parking_assistant_subscribe_goal(NULL, (carmen_handler_t) carmen_parking_assistant_goal_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_subscribe_message(
+			(char *) CARMEN_NAVIGATOR_ACKERMAN_GO_NAME,
+			(char *) CARMEN_DEFAULT_MESSAGE_FMT,
+			NULL, sizeof(carmen_navigator_ackerman_go_message),
+			(carmen_handler_t) navigator_ackerman_go_message_handler,
+			CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_subscribe_message(
+			(char *) CARMEN_NAVIGATOR_ACKERMAN_STOP_NAME,
+			(char *) CARMEN_DEFAULT_MESSAGE_FMT,
+			NULL, sizeof(carmen_navigator_ackerman_stop_message),
+			(carmen_handler_t) navigator_ackerman_stop_message_handler,
+			CARMEN_SUBSCRIBE_LATEST);
 }
 
 
