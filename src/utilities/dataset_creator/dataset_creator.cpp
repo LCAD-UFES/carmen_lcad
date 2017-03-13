@@ -67,7 +67,7 @@ save_images(char *filename)
 {
 	FILE *f = fopen(filename, "w");
 
-	for (int i = 0; i < image_files.size(); i++)
+	for (unsigned int i = 0; i < image_files.size(); i++)
 	{
 		fprintf(f, "%s %d %d %d %d\n", image_files[i].c_str(),
 			boxes[i].x, boxes[i].y, boxes[i].width, boxes[i].height);
@@ -80,6 +80,8 @@ save_images(char *filename)
 void
 mouse_callback(int event, int x, int y, int flag, void *param)
 {
+	(void)flag;
+	(void)param;
 	if (x < 0) x = 0;
 	if (x >= current_image.cols) x = current_image.cols - 1;
 	if (y < 0) y = 0;
@@ -137,14 +139,16 @@ mouse_callback(int event, int x, int y, int flag, void *param)
 int
 main(int argc, char **argv)
 {
-	if (argc < 3)
+	if (argc < 4)
 	{
-		printf("Use %s <input-file> <output-file>\n", argv[0]);
+		printf("Use %s <input-file> <output-file> <index>\n", argv[0]);
 		exit(-1);
 	}
 
 	current_id = 0;
 	read_image_list(argv[1]);
+	current_id = atoi(argv[3]);
+
 	namedWindow("img");
 	setMouseCallback("img", mouse_callback, NULL);
 
@@ -156,32 +160,67 @@ main(int argc, char **argv)
 
 	output_filename = argv[2];
 
+	int prev = 0;
+
 	while (1)
 	{
 		printf("Current image: %d\n", current_id);
 		current_image = imread(image_files[current_id]);
 		char c = draw_box(current_image, boxes[current_id], Scalar(0, 0, 255));
 
-		if (c == 'n')
+		switch (c)
 		{
+		case 'n':
 			current_id++;
-
-			if (current_id >= image_files.size())
+			if (current_id >= (int)image_files.size())
 				current_id = 0;
-		}
-		else if (c == 'p')
-		{
-			current_id--;
+			break;
 
+		case 'p':
+			current_id--;
 			if (current_id < 0)
 				current_id = image_files.size() - 1;
-		}
-		else if (c == 'c')
-		{
-			int prev = current_id - 1;
-			if (prev < 0) prev = image_files.size() - 1;
+			break;
 
-			boxes[current_id] = boxes[prev];
+		case 'c':
+			prev = current_id - 1;
+			if (prev < 0) prev = image_files.size() - 1;
+				boxes[current_id] = boxes[prev];
+			break;
+
+		case 'w':
+			boxes[current_id].y -= 1;
+			break;
+
+		case 's':
+			boxes[current_id].y += 1;
+			break;
+
+		case 'a':
+			boxes[current_id].x -= 1;
+			break;
+
+		case 'd':
+			boxes[current_id].x += 1;
+			break;
+
+		case (char)82: //up
+			boxes[current_id].height += 1;
+			boxes[current_id].y -= 1;
+			break;
+
+		case (char)81: //left
+			boxes[current_id].width -= 1;
+			break;
+
+		case (char)84: //down
+			boxes[current_id].height -= 1;
+			boxes[current_id].y += 1;
+			break;
+
+		case (char)83: //right
+			boxes[current_id].width += 1;
+			break;
 		}
 
 		save_images(output_filename);
