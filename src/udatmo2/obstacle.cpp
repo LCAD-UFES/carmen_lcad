@@ -15,8 +15,8 @@ Obstacle::Obstacle():
 {
 	pose.x = 0;
 	pose.y = 0;
-	pose.theta = 0;
-	pose.v = 0;
+	pose.theta = nan("");
+	pose.v = nan("");
 	pose.phi = 0;
 }
 
@@ -24,22 +24,19 @@ Obstacle::Obstacle():
 Obstacle::Obstacle(const Observation &observation)
 {
 	update(observation);
-	pose.theta = 0;
-	pose.v = 0;
+	pose.theta = nan("");
+	pose.v = nan("");
 	pose.phi = 0;
 }
 
 
 void Obstacle::update(const Observation &observation)
 {
-	// Only add observation to track if it's reasonably apart from latest observation.
-	if (track.size() > 0 && distance(observation, track.front()) <= 0)
-		return;
-
-	track.push_front(observation);
-	while (track.size() > MOVING_OBSTACLES_OBSERVATIONS)
+	// If necessary, remove oldest observation to make room for the latest one.
+	while (track.size() >= MOVING_OBSTACLES_OBSERVATIONS)
 		track.pop_back();
 
+	track.push_front(observation);
 	CARMEN_LOG(trace, "Obstacle track size: " << track.size());
 
 	index = observation.index;
@@ -61,30 +58,24 @@ void Obstacle::updateMovement()
 		const Observation &o1 = track[i + 1];
 		const Observation &o2 = track[i];
 
-		double vt = 0.0; // invalid v
+		double dt = o2.timestamp - o1.timestamp;
+		if (dt < 0.00001)
+			continue;
 
-		double t = o2.timestamp - o1.timestamp;
-		if (0.01 < t && t < 0.2)
-			vt = distance(o1, o2) / t;
-
-		if (vt > 60.0)
-			vt = 0.0;
-
-		if (vt > 0.01)
-		{
-			v += vt;
-			theta += angle(o1, o2);
-			count += 1.0;
-		}
+		v += distance(o1, o2) / dt;
+		theta += angle(o1, o2);
+		count += 1.0;
 	}
-
-	CARMEN_LOG(trace, "Estimated speed (over " << count << " readings): " << v / count);
 
 	if (count > 0)
 	{
 		pose.theta = theta / count;
 		pose.v = v / count;
 	}
+	else
+		pose.v = 0;
+
+	CARMEN_LOG(trace, "Obstacle estimates over " << count << " pairing(s): v = " << pose.v << ", theta = " << pose.theta);
 }
 
 
