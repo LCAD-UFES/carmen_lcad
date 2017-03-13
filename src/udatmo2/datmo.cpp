@@ -36,9 +36,11 @@ DATMO::DATMO():
 	current_map(NULL)
 {
 	clear(robot_config);
+	clear(origin);
 	clear(robot_pose);
 	clear(rddf);
 
+	origin.x = nan("");
 	robot_pose.v = nan("");
 }
 
@@ -75,7 +77,7 @@ void DATMO::detect(carmen_ackerman_traj_point_t *poses, int n)
 				CARMEN_LOG(trace,
 					"Observation"
 					<< ": t = " << rddf.timestamp - carmen_ipc_initialize_time()
-					<< ", position = " << relative_xy(position, robot_pose)
+					<< ", position = " << relative_xy(position, origin)
 					<< ", distance = " << distance(position, robot_pose)
 					<< ", rddf = " << i
 				);
@@ -117,7 +119,7 @@ cv::Mat DATMO::distances() const
 
 const Obstacles &DATMO::track()
 {
-	static const double MAX_DISTANCE = 360.0;
+	static const double MAX_DISTANCE = 20.0;
 
 	CARMEN_LOG(trace, "Obstacle update start");
 
@@ -171,7 +173,7 @@ void DATMO::assign(int j, const cv::Mat assignments, Obstacles &assigned)
 			CARMEN_LOG(trace, "Obstacle #" << i << " updated with observation #" << j);
 			Obstacle &obstacle = obstacles[i];
 			obstacle.update(observations[j]);
-			if (obstacle.pose.v > 0)
+			if (obstacle.pose.v > 0.01)
 				tracking.push_back(obstacle);
 
 			assigned.push_back(obstacle);
@@ -224,7 +226,10 @@ void DATMO::setup(const carmen_robot_ackerman_config_t &robot_config, int min_po
 void DATMO::update(const carmen_ackerman_traj_point_t &robot_pose)
 {
 	this->robot_pose = robot_pose;
-	CARMEN_LOG(trace, "Robot pose = " << robot_pose);
+	if (isnan(origin.x))
+		origin = robot_pose;
+
+	CARMEN_LOG(trace, "Robot pose = " << relative_xyt(robot_pose, origin));
 }
 
 

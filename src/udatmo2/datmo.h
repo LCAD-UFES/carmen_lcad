@@ -25,6 +25,9 @@ class DATMO
 	/** @brief Maximum number of hypothetical poses to consider ahead of the current one. */
 	int max_poses_ahead;
 
+	/** @brief First robot pose, speed and phi as estimated by the localization module. */
+	carmen_ackerman_traj_point_t origin;
+
 	/** @brief Current robot pose, speed and phi as estimated by the localization module. */
 	carmen_ackerman_traj_point_t robot_pose;
 
