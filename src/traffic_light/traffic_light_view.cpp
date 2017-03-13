@@ -127,10 +127,10 @@ add_traffic_light_information_to_image(cv::Mat &image, carmen_traffic_light_mess
 	int num_red = 0;
 	for (int i = 0; i < message->num_traffic_lights; i++)
 	{
-		FILE *cacof = fopen("caco.txt", "a");
-		fprintf(cacof, "%lf %d\n", message->traffic_light_annotation_distance, message->traffic_lights[i].y2 - message->traffic_lights[i].y1);
-		fflush(cacof);
-		fclose(cacof);
+//		FILE *cacof = fopen("caco.txt", "a");
+//		fprintf(cacof, "%lf %d\n", message->traffic_light_annotation_distance, message->traffic_lights[i].y2 - message->traffic_lights[i].y1);
+//		fflush(cacof);
+//		fclose(cacof);
 
 		if (message->traffic_lights[i].color == RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED)
 			num_red++;

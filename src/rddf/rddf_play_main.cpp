@@ -47,7 +47,6 @@ static int carmen_rddf_num_poses_ahead = 0;
 static int carmen_rddf_num_poses_back = 0;
 static int *annotations;
 
-static carmen_point_t robot_pose;
 static int carmen_rddf_pose_initialized = 0;
 static int already_reached_nearest_waypoint_to_end_point = 0;
 
@@ -65,6 +64,8 @@ static int use_truepos = 0;
 
 static int traffic_lights_camera = 3;
 carmen_traffic_light_message *traffic_lights = NULL;
+
+deque<carmen_rddf_dynamic_annotation_message> dynamic_annotation_messages;
 
 
 static void
@@ -218,8 +219,16 @@ add_annotation(double x, double y, double theta, size_t annotation_index)
 			if ((traffic_lights != NULL) &&
 				(traffic_lights->num_traffic_lights > 0)) // @@@ Alberto: deveria verificar a maioria...
 			{
+				int num_red = 0;
+				for (int i = 0; i < traffic_lights->num_traffic_lights; i++)
+					if (traffic_lights->traffic_lights[i].color == RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED)
+						num_red++;
+
 				annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
-				annotation_i.annotation.annotation_code = traffic_lights->traffic_lights[0].color;
+				if (num_red > 0)
+					annotation_i.annotation.annotation_code = RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED;
+				else
+					annotation_i.annotation.annotation_code = traffic_lights->traffic_lights[0].color;
 				annotations_to_publish.push_back(annotation_i);
 			}
 			else
@@ -256,7 +265,7 @@ add_annotation(double x, double y, double theta, size_t annotation_index)
 void
 carmen_check_for_annotations(carmen_point_t robot_pose,
 		carmen_ackerman_traj_point_t *carmen_rddf_poses_ahead, carmen_ackerman_traj_point_t *carmen_rddf_poses_back,
-		int carmen_rddf_num_poses_ahead, int carmen_rddf_num_poses_back)
+		int carmen_rddf_num_poses_ahead, int carmen_rddf_num_poses_back, double timestamp)
 {
 	for (size_t annotation_index = 0; annotation_index < annotation_read_from_file.size(); annotation_index++)
 	{
@@ -264,6 +273,18 @@ carmen_check_for_annotations(carmen_point_t robot_pose,
 			continue;
 
 		bool added = false;
+		for (size_t j = 0; j < dynamic_annotation_messages.size(); j++)
+		{
+			if ((dynamic_annotation_messages[j].timestamp - timestamp) < 2.0)
+			{
+				if (add_annotation(dynamic_annotation_messages[j].annotation_point.x, dynamic_annotation_messages[j].annotation_point.y, dynamic_annotation_messages[j].annotation_orientation, annotation_index))
+				{
+					added = true;
+					break;
+				}
+			}
+		}
+
 		for (int j = 0; j < carmen_rddf_num_poses_ahead; j++)
 		{
 			if (add_annotation(carmen_rddf_poses_ahead[j].x, carmen_rddf_poses_ahead[j].y, carmen_rddf_poses_ahead[j].theta, annotation_index))
@@ -272,6 +293,7 @@ carmen_check_for_annotations(carmen_point_t robot_pose,
 				break;
 			}
 		}
+
 		if (!added)
 		{
 			for (int j = 0; j < carmen_rddf_num_poses_back; j++)
@@ -332,7 +354,7 @@ annotation_is_forward_from_robot(carmen_point_t pose, int annotation_id)
 
 
 void
-set_annotations()
+set_annotations(carmen_point_t robot_pose)
 {
 	int nearest_pose;
 	double nearest_pose_dist;
@@ -394,13 +416,13 @@ carmen_rddf_play_publish_annotation_queue()
 
 
 static void
-carmen_rddf_play_publish_rddf_and_annotations()
+carmen_rddf_play_publish_rddf_and_annotations(carmen_point_t robot_pose)
 {
 	// so publica rddfs quando a pose do robo ja estiver setada
 	if ((carmen_rddf_num_poses_ahead > 0) && (carmen_rddf_num_poses_back > 0))
 	{
 		clear_annotations();
-		set_annotations();
+		set_annotations(robot_pose);
 
 		carmen_rddf_publish_road_profile_message(
 			carmen_rddf_poses_ahead,
@@ -450,7 +472,7 @@ carmen_rddf_play_find_and_publish_poses_around_end_point(double x, double y, dou
 static void
 localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
-	robot_pose = msg->globalpos;
+	carmen_point_t robot_pose = msg->globalpos;
 	carmen_rddf_pose_initialized = 1;
 
 	carmen_rddf_num_poses_ahead = carmen_rddf_play_find_nearest_poses_ahead(
@@ -467,16 +489,16 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 
 	annotations_to_publish.clear();
 	carmen_check_for_annotations(robot_pose, carmen_rddf_poses_ahead, carmen_rddf_poses_back,
-			carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back);
+			carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back, msg->timestamp);
 
-	carmen_rddf_play_publish_rddf_and_annotations();
+	carmen_rddf_play_publish_rddf_and_annotations(robot_pose);
 }
 
 
 static void
 simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_message *msg)
 {
-	robot_pose = msg->truepose;
+	carmen_point_t robot_pose = msg->truepose;
 	carmen_rddf_pose_initialized = 1;
 
 	carmen_rddf_num_poses_ahead = carmen_rddf_play_find_nearest_poses_ahead(
@@ -493,21 +515,21 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 
 	annotations_to_publish.clear();
 	carmen_check_for_annotations(robot_pose, carmen_rddf_poses_ahead, carmen_rddf_poses_back,
-			carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back);
+			carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back, msg->timestamp);
 
-	carmen_rddf_play_publish_rddf_and_annotations();
+	carmen_rddf_play_publish_rddf_and_annotations(robot_pose);
 }
 
 
-static void
-carmen_rddf_play_nearest_waypoint_message_handler(carmen_rddf_nearest_waypoint_message *rddf_nearest_waypoint_message)
-{
-	carmen_rddf_nearest_waypoint_to_end_point = rddf_nearest_waypoint_message->point;
-	carmen_rddf_nearest_waypoint_is_set = 1;
-
-	carmen_rddf_publish_nearest_waypoint_confirmation_message(rddf_nearest_waypoint_message->point);
-	already_reached_nearest_waypoint_to_end_point = 0;
-}
+//static void
+//carmen_rddf_play_nearest_waypoint_message_handler(carmen_rddf_nearest_waypoint_message *rddf_nearest_waypoint_message)
+//{
+//	carmen_rddf_nearest_waypoint_to_end_point = rddf_nearest_waypoint_message->point;
+//	carmen_rddf_nearest_waypoint_is_set = 1;
+//
+//	carmen_rddf_publish_nearest_waypoint_confirmation_message(rddf_nearest_waypoint_message->point);
+//	already_reached_nearest_waypoint_to_end_point = 0;
+//}
 
 
 void
@@ -549,6 +571,15 @@ carmen_traffic_light_message_handler(carmen_traffic_light_message *message)
 {
 	traffic_lights = message;
 }
+
+
+static void
+carmen_rddf_dynamic_annotation_message_handler(carmen_rddf_dynamic_annotation_message *message)
+{
+	dynamic_annotation_messages.push_front(*message);
+	if (dynamic_annotation_messages.size() > 10)
+		dynamic_annotation_messages.pop_back();
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -568,15 +599,17 @@ carmen_rddf_play_subscribe_messages()
 	else
 		carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t) simulator_ackerman_truepos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_rddf_subscribe_nearest_waypoint_message(NULL,
-			(carmen_handler_t) carmen_rddf_play_nearest_waypoint_message_handler,
-			CARMEN_SUBSCRIBE_LATEST);
+//	carmen_rddf_subscribe_nearest_waypoint_message(NULL,
+//			(carmen_handler_t) carmen_rddf_play_nearest_waypoint_message_handler,
+//			CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_rddf_subscribe_end_point_message(NULL,
 			(carmen_handler_t) carmen_rddf_play_end_point_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
 
     carmen_traffic_light_subscribe(traffic_lights_camera, NULL, (carmen_handler_t) carmen_traffic_light_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_rddf_subscribe_dynamic_annotation_message(NULL, (carmen_handler_t) carmen_rddf_dynamic_annotation_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
