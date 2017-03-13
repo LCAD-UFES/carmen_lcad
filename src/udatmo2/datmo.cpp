@@ -75,7 +75,7 @@ void DATMO::detect(carmen_ackerman_traj_point_t *poses, int n)
 			{
 				observations.push_back(Observation(i, position, rddf.timestamp));
 				CARMEN_LOG(trace,
-					"Observation"
+					"Observation l = " << l
 					<< ": t = " << rddf.timestamp - carmen_ipc_initialize_time()
 					<< ", position = " << relative_xy(position, origin)
 					<< ", distance = " << distance(position, robot_pose)
@@ -91,11 +91,14 @@ void DATMO::detect(carmen_ackerman_traj_point_t *poses, int n)
 
 void DATMO::detect()
 {
-	CARMEN_LOG(trace, "Observation start");
-
 	observations.clear();
 
+	CARMEN_LOG(trace, "Observations front");
+
 	detect(rddf.poses, rddf.number_of_poses);
+
+	CARMEN_LOG(trace, "Observations back");
+
 	detect(rddf.poses_back, rddf.number_of_poses_back);
 
 	CARMEN_LOG(trace, "Observations total: " << observations.size());
