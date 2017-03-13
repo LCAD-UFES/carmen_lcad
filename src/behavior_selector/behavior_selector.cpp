@@ -12,15 +12,14 @@
 #include "behavior_selector.h"
 #include "behavior_selector_messages.h"
 
-#define GOAL_LIST_SIZE 1000
-#define MAX_ANNOTATIONS 50
+#define MAX_GOAL_LIST_SIZE 1000
 
 static carmen_robot_ackerman_config_t robot_config;
 static double distance_between_waypoints = 5;
 static carmen_ackerman_traj_point_t robot_pose;
 static int robot_initialized = 0;
-static carmen_ackerman_traj_point_t goal_list[GOAL_LIST_SIZE];
-static int annotations[GOAL_LIST_SIZE];
+static carmen_ackerman_traj_point_t goal_list[MAX_GOAL_LIST_SIZE];
+static int annotations[MAX_GOAL_LIST_SIZE];
 static int goal_list_index = 0;
 static int goal_list_size = 0;
 static carmen_obstacle_distance_mapper_message *current_map = NULL;
@@ -32,8 +31,6 @@ static carmen_behavior_selector_algorithm_t parking_planner;
 static double distance_to_remove_annotation_goal = 3.0;
 
 int position_of_next_annotation = 0;
-int num_poses_with_annotations = 0;
-int poses_with_annotations[MAX_ANNOTATIONS];
 
 
 // filipe:: TODO: colocar no carmen.ini
@@ -217,8 +214,15 @@ red_traffic_light_ahead()
 }
 
 
+bool
+recent_moving_object_near_this_rddf_pose(carmen_ackerman_traj_point_t pose __attribute__ ((unused)), carmen_udatmo_moving_obstacles_message *moving_obstacles __attribute__ ((unused)))
+{
+	return (false);
+}
+
+
 int
-behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf)
+behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double timestamp)
 {
 	double distance_to_last_obstacle = 10000.0;
 	int last_obstacle_index = -1;
@@ -238,7 +242,7 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf)
 	carmen_ackerman_traj_point_t current_goal = robot_pose;
 //	virtual_laser_message.num_positions = 0;
 	double circle_radius = (robot_config.width - 0.0) / 2.0; // @@@ Alberto: metade da largura do carro + um espacco de guarda (ver valor certo)
-	for (int rddf_pose_index = 0; rddf_pose_index < rddf->number_of_poses && goal_index < GOAL_LIST_SIZE; rddf_pose_index++)
+	for (int rddf_pose_index = 0; rddf_pose_index < rddf->number_of_poses && goal_index < MAX_GOAL_LIST_SIZE; rddf_pose_index++)
 	{
 		double distance_from_car_to_rddf_point, distance_to_annotation, distance_to_last_obstacle_free_waypoint;
 		int rddf_pose_hit_obstacle = -1;
@@ -252,6 +256,18 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf)
 		{
 			int moving_obstacle_waypoint = move_goal_back_according_to_car_v(last_obstacle_free_waypoint_index, rddf, robot_pose);
 			add_goal_to_goal_list(goal_index, current_goal, moving_obstacle_waypoint, rddf);
+			break;
+		}
+		else if (rddf_pose_hit_obstacle && recent_moving_object_near_this_rddf_pose(rddf->poses[rddf_pose_index], moving_obstacles))
+		{
+			add_goal_to_goal_list(goal_index, current_goal, last_obstacle_free_waypoint_index, rddf,
+					-(robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels));
+			carmen_vector_3D_t annotation_point;
+			annotation_point.x = rddf->poses[rddf_pose_index].x;
+			annotation_point.y = rddf->poses[rddf_pose_index].y;
+			annotation_point.z = 0.0;
+			publish_dynamic_annotation(annotation_point, rddf->poses[rddf_pose_index].theta, (char *) "",
+					RDDF_ANNOTATION_TYPE_DYNAMIC, RDDF_ANNOTATION_CODE_DYNAMIC_STOP, timestamp);
 			break;
 		}
 //		else if (rddf_pose_hit_obstacle)

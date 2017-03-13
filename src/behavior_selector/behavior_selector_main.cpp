@@ -789,6 +789,15 @@ behavior_selector_motion_planner_publish_path_message(carmen_rddf_road_profile_m
 
 
 void
+publish_dynamic_annotation(carmen_vector_3D_t annotation_point, double orientation, char *annotation_description,
+		int annotation_type, int annotation_code, double timestamp)
+{
+	carmen_rddf_publish_dynamic_annotation_message(annotation_point, orientation, annotation_description, annotation_type,
+			annotation_code, timestamp);
+}
+
+
+void
 publish_object(carmen_ackerman_traj_point_t *object_pose)
 {
 #ifdef DISPLAY_MOVING_OBSTACLES
@@ -885,7 +894,7 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 
 	set_behaviours_parameters(current_robot_pose_v_and_phi, timestamp);
 
-	int state_updated = behaviour_selector_fill_goal_list(last_rddf_message);
+	int state_updated = behaviour_selector_fill_goal_list(last_rddf_message, timestamp);
 	if (state_updated)
 		publish_current_state();
 
