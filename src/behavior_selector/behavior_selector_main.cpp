@@ -894,7 +894,7 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 
 	set_behaviours_parameters(current_robot_pose_v_and_phi, timestamp);
 
-	int state_updated = behaviour_selector_fill_goal_list(last_rddf_message);
+	int state_updated = behaviour_selector_fill_goal_list(last_rddf_message, timestamp);
 	if (state_updated)
 		publish_current_state();
 

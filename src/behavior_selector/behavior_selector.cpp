@@ -214,8 +214,15 @@ red_traffic_light_ahead()
 }
 
 
+bool
+recent_moving_object_near_this_rddf_pose(carmen_ackerman_traj_point_t pose __attribute__ ((unused)), carmen_udatmo_moving_obstacles_message *moving_obstacles __attribute__ ((unused)))
+{
+	return (false);
+}
+
+
 int
-behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf)
+behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double timestamp)
 {
 	double distance_to_last_obstacle = 10000.0;
 	int last_obstacle_index = -1;
@@ -251,7 +258,7 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf)
 			add_goal_to_goal_list(goal_index, current_goal, moving_obstacle_waypoint, rddf);
 			break;
 		}
-		else if (rddf_pose_hit_obstacle && recent_moving_object_near_this_rddf_pose())
+		else if (rddf_pose_hit_obstacle && recent_moving_object_near_this_rddf_pose(rddf->poses[rddf_pose_index], moving_obstacles))
 		{
 			add_goal_to_goal_list(goal_index, current_goal, last_obstacle_free_waypoint_index, rddf,
 					-(robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels));
@@ -259,8 +266,8 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf)
 			annotation_point.x = rddf->poses[rddf_pose_index].x;
 			annotation_point.y = rddf->poses[rddf_pose_index].y;
 			annotation_point.z = 0.0;
-//			publish_dynamic_annotation(annotation_point, rddf->poses[rddf_pose_index].theta, "",
-//					int annotation_type, int annotation_code, double timestamp);
+			publish_dynamic_annotation(annotation_point, rddf->poses[rddf_pose_index].theta, (char *) "",
+					RDDF_ANNOTATION_TYPE_DYNAMIC, RDDF_ANNOTATION_CODE_DYNAMIC_STOP, timestamp);
 			break;
 		}
 //		else if (rddf_pose_hit_obstacle)
