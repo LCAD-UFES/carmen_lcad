@@ -2,6 +2,7 @@
 #define MAPPER_H_
 
 #include <tf.h>
+#include <carmen/moving_objects_interface.h>
 
 //#define	MINIMUM_VELODYNE_DISTANCE 0.75
 #define	MINIMUM_HEIGHT_DIFFERENCE 	0.07

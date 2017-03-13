@@ -44,7 +44,7 @@ Arrow *arrowLeft;
 Arrow *arrowRight;
 Lights *lights;
 Speedometer *speedometer;
-Accelerator *accelerator;
+Accelerator *accelerator = NULL;
 
 handler_message_t handler_message;
 

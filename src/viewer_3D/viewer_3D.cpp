@@ -185,7 +185,7 @@ static double xsens_yaw_bias;
 double orientation;
 static carmen_vector_3D_t annotation_point;
 static carmen_vector_3D_t annotation_point_world;
-static std::vector<carmen_rddf_annotation_message> annotations;
+static std::vector<carmen_annotation_t> annotations;
 
 static int point_size = 1; //size of line in OpenGL, it's read of ini
 
@@ -294,11 +294,28 @@ get_position_offset(void)
 static void
 rddf_annotation_handler(carmen_rddf_annotation_message *msg)
 {
-	if (!has_annotation(*msg, annotations))
+	for (unsigned int i = 0; i < annotations.size(); i++)
+		if (annotations[i].annotation_description)
+			free(annotations[i].annotation_description);
+
+	annotations.clear();
+
+	for (int i = 0; i < msg->num_annotations; i++)
 	{
-		//annotation_drawer = addAnnotation(*msg, annotation_drawer);
-		annotations.push_back(*msg);
+		carmen_annotation_t annotation;
+
+		memcpy(&annotation, &(msg->annotations[i]), sizeof(carmen_annotation_t));
+		annotation.annotation_description = (char *) calloc (strlen(msg->annotations[i].annotation_description) + 1, sizeof(char));
+		strcpy(annotation.annotation_description, msg->annotations[i].annotation_description);
+
+		annotations.push_back(annotation);
 	}
+
+//	if (!has_annotation(*msg, annotations))
+//	{
+//		//annotation_drawer = addAnnotation(*msg, annotation_drawer);
+//		annotations.push_back(*msg);
+//	}
 }
 
 
@@ -2655,6 +2672,7 @@ check_annotation_equal_zero()
     return 0;
 }
 
+
 int
 distance_near(carmen_vector_3D_t annotation_pose, carmen_vector_3D_t delete_pose)
 {
@@ -2663,29 +2681,28 @@ distance_near(carmen_vector_3D_t annotation_pose, carmen_vector_3D_t delete_pose
                  (annotation_pose.z - delete_pose.z) * (annotation_pose.z - delete_pose.z)));
 }
 
-carmen_rddf_annotation_message
-get_near_message_to_delete()
-{
-    if (annotations.size() == 1)
-    {
-        return annotations.at(0);
-    }
-    else
-    {
-        int menor = 999999;
-        int pos = 0;
+// DELETE
+//carmen_annotation_t
+//find_nearest_annotation()
+//{
+//	double d;
+//	double smallest_distance = DBL_MAX;
+//	int index = 0;
+//
+//	for (uint i = 0; i < annotations.size(); i++)
+//	{
+//		d = distance_near(annotations[i].annotation_point, annotation_point_world);
+//
+//		if (d <= smallest_distance)
+//		{
+//			smallest_distance = d;
+//			index = i;
+//		}
+//	}
+//
+//	return (annotations[index]);
+//}
 
-        for (uint i = 0; i < annotations.size(); i++)
-        {
-            if (distance_near(annotations.at(i).annotation_point, annotation_point_world) <= menor)
-            {
-                menor = distance_near(annotations.at(i).annotation_point, annotation_point_world);
-                pos = i;
-            }
-        }
-        return (annotations.at(pos));
-    }
-}
 
 void
 set_flag_viewer_3D(int flag_num, int value)
@@ -2773,10 +2790,9 @@ set_flag_viewer_3D(int flag_num, int value)
         break;
 
     case 20:
+
         if (!check_annotation_equal_zero())
-        {
             carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT), RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT, 0);
-        }
         break;
 
     case 21:
@@ -2784,15 +2800,21 @@ set_flag_viewer_3D(int flag_num, int value)
         {
             if (value == 0)
             {
-                carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN), RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN, RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_BUMP);
+                carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation,
+                		rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_BUMP),
+						RDDF_ANNOTATION_TYPE_BUMP, RDDF_ANNOTATION_CODE_NONE);
             }
             else if (value == 20)
             {
-                carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN), RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN, RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_SPEED_20);
+                carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation,
+                		rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN),
+						RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN, RDDF_ANNOTATION_CODE_SPEED_LIMIT_20);
             }
             else if (value == 30)
             {
-                carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation, rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN), RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN, RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_SPEED_30);
+                carmen_rddf_publish_add_annotation_message(annotation_point_world, orientation,
+                		rddf_get_annotation_description_by_type(RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN),
+						RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN, RDDF_ANNOTATION_CODE_SPEED_LIMIT_30);
             }
         }
         break;

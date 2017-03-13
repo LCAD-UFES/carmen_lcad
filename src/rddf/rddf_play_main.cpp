@@ -11,6 +11,8 @@ using namespace std;
 #include <carmen/velodyne_interface.h>
 #include <carmen/fused_odometry_interface.h>
 #include <carmen/carmen_gps_wrapper.h>
+#include <carmen/traffic_light_interface.h>
+#include <carmen/traffic_light_messages.h>
 
 #include "rddf_interface.h"
 #include "rddf_messages.h"
@@ -50,10 +52,19 @@ static int carmen_rddf_pose_initialized = 0;
 static int already_reached_nearest_waypoint_to_end_point = 0;
 
 char *carmen_annotation_filename = NULL;
-vector<carmen_rddf_add_annotation_message> annotation_queue;
-vector<int> annotations_to_publish;
+vector<carmen_annotation_t> annotation_read_from_file;
+typedef struct
+{
+	carmen_annotation_t annotation;
+	size_t index;
+} annotation_and_index;
+vector<annotation_and_index> annotations_to_publish;
+carmen_rddf_annotation_message annotation_queue_message;
 
-int use_truepos = 0;
+static int use_truepos = 0;
+
+static int traffic_lights_camera = 3;
+carmen_traffic_light_message *traffic_lights = NULL;
 
 
 static void
@@ -114,13 +125,13 @@ carmen_rddf_play_adjust_poses_ahead_and_add_end_point_to_list(carmen_ackerman_tr
 
 	poses_ahead[position_nearest_waypoint].x = carmen_rddf_nearest_waypoint_to_end_point.x;
 	poses_ahead[position_nearest_waypoint].y = carmen_rddf_nearest_waypoint_to_end_point.y;
-	rddf_annotations[position_nearest_waypoint] = RDDF_ANNOTATION_NONE;
+	rddf_annotations[position_nearest_waypoint] = RDDF_ANNOTATION_TYPE_NONE;
 
 	poses_ahead[position_end_point].x = carmen_rddf_end_point.x;
 	poses_ahead[position_end_point].y = carmen_rddf_end_point.y;
 	poses_ahead[position_end_point].theta = carmen_rddf_end_point.theta;
 	poses_ahead[position_end_point].v = 0.0;
-	rddf_annotations[position_end_point] = RDDF_ANNOTATION_END_POINT_AREA;
+	rddf_annotations[position_end_point] = RDDF_ANNOTATION_TYPE_END_POINT_AREA;
 
 	return (position_end_point + 1);
 }
@@ -138,7 +149,7 @@ carmen_rddf_play_check_if_end_point_is_reachable(carmen_ackerman_traj_point_t *p
 			poses_ahead[0].y = carmen_rddf_end_point.y;
 			poses_ahead[0].theta = carmen_rddf_end_point.theta;
 			poses_ahead[0].v = 0.0;
-			rddf_annotations[0] = RDDF_ANNOTATION_END_POINT_AREA;
+			rddf_annotations[0] = RDDF_ANNOTATION_TYPE_END_POINT_AREA;
 
 			return 1;
 		}
@@ -168,7 +179,7 @@ clear_annotations(int *rddf_annotations, int num_annotations)
 	int i;
 
 	for(i = 0; i < num_annotations; i++)
-		rddf_annotations[i] = RDDF_ANNOTATION_NONE;
+		rddf_annotations[i] = RDDF_ANNOTATION_TYPE_NONE;
 }
 
 
@@ -176,7 +187,7 @@ void
 clear_annotations()
 {
 	for (int i = 0; i < carmen_rddf_num_poses_ahead; i++)
-		annotations[i] = RDDF_ANNOTATION_NONE;
+		annotations[i] = RDDF_ANNOTATION_TYPE_NONE;
 }
 
 
@@ -190,39 +201,99 @@ carmen_rddf_play_find_nearest_poses_ahead(double x, double y, double yaw, double
 }
 
 
-void
-carmen_check_for_annotations(double x, double y, double theta __attribute__((unused)))
+bool
+add_annotation(double x, double y, double theta, size_t annotation_index)
 {
-	double dx, dy, dist;
+	double dx = annotation_read_from_file[annotation_index].annotation_point.x - x;
+	double dy = annotation_read_from_file[annotation_index].annotation_point.y - y;
+	double dist = sqrt(pow(dx, 2) + pow(dy, 2));
 
-	for (size_t i = 0; i < annotation_queue.size(); i++)
+	if (annotation_read_from_file[annotation_index].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT)
 	{
-		dx = annotation_queue[i].annotation_point.x - x;
-		dy = annotation_queue[i].annotation_point.y - y;
-		dist = sqrt(pow(dx, 2) + pow(dy, 2));
+		double angle_to_annotation = carmen_radians_to_degrees(fabs(carmen_normalize_theta(theta - annotation_read_from_file[annotation_index].annotation_orientation)));
+		bool orientation_ok = angle_to_annotation < 70.0 ? true : false;
 
-		// *******************************************************************
-		// TODO: criar uma forma de buscar somente as anotacoes na mao correta
-		// *******************************************************************
+		if ((dist < MAX_TRAFFIC_LIGHT_DISTANCE) && orientation_ok)
+		{
+			if ((traffic_lights != NULL) &&
+				(traffic_lights->num_traffic_lights > 0)) // @@@ Alberto: deveria verificar a maioria...
+			{
+				annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
+				annotation_i.annotation.annotation_code = traffic_lights->traffic_lights[0].color;
+				annotations_to_publish.push_back(annotation_i);
+			}
+			else
+			{
+				annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
+				annotations_to_publish.push_back(annotation_i);
+			}
+			return (true);
+		}
+	}
+	else if (annotation_read_from_file[annotation_index].annotation_type == RDDF_ANNOTATION_TYPE_STOP)
+	{
+		double angle_to_annotation = carmen_radians_to_degrees(fabs(carmen_normalize_theta(theta - annotation_read_from_file[annotation_index].annotation_orientation)));
+		bool orientation_ok = angle_to_annotation < 15.0 ? true : false;
 
-		if (dist < 300.0)// TODO: Alberto: Isso depende da velocidade do carro... Quando a velocidade eh maior que 60Km/h este valor esta ruim...
-			annotations_to_publish.push_back(i);
+		if ((dist < 20.0) && orientation_ok)
+		{
+			annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
+			annotations_to_publish.push_back(annotation_i);
+			return (true);
+		}
+	}
+	else if (dist < 20.0)
+	{
+		annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
+		annotations_to_publish.push_back(annotation_i);
+		return (true);
+	}
+
+	return (false);
+}
+
+
+void
+carmen_check_for_annotations(carmen_point_t robot_pose,
+		carmen_ackerman_traj_point_t *carmen_rddf_poses_ahead, carmen_ackerman_traj_point_t *carmen_rddf_poses_back,
+		int carmen_rddf_num_poses_ahead, int carmen_rddf_num_poses_back)
+{
+	for (size_t annotation_index = 0; annotation_index < annotation_read_from_file.size(); annotation_index++)
+	{
+		if (add_annotation(robot_pose.x, robot_pose.y, robot_pose.theta, annotation_index))
+			continue;
+
+		bool added = false;
+		for (int j = 0; j < carmen_rddf_num_poses_ahead; j++)
+		{
+			if (add_annotation(carmen_rddf_poses_ahead[j].x, carmen_rddf_poses_ahead[j].y, carmen_rddf_poses_ahead[j].theta, annotation_index))
+			{
+				added = true;
+				break;
+			}
+		}
+		if (!added)
+		{
+			for (int j = 0; j < carmen_rddf_num_poses_back; j++)
+				if (add_annotation(carmen_rddf_poses_back[j].x, carmen_rddf_poses_back[j].y, carmen_rddf_poses_back[j].theta, annotation_index))
+					break;
+		}
 	}
 }
 
 
 void
-find_nearest_pose_and_dist(int annotation_id, int *nearest_pose_out, double *nearest_pose_dist_out)
+find_nearest_annotation_and_dist(int annotation_id, int *nearest_pose_out, double *nearest_pose_dist_out)
 {
 	int nearest_pose;
 	double min_distance_to_annotation;
 	double distance_to_annotation;
-	carmen_rddf_add_annotation_message annotation;
+	carmen_annotation_t annotation;
 
 	nearest_pose = -1;
 	min_distance_to_annotation = DBL_MAX;
 
-	annotation = annotation_queue[annotation_id];
+	annotation = annotation_read_from_file[annotation_id];
 
 	for (int i = 0; i < carmen_rddf_num_poses_ahead; i++)
 	{
@@ -244,9 +315,9 @@ int
 annotation_is_forward_from_robot(carmen_point_t pose, int annotation_id)
 {
 	carmen_vector_3D_t annotation_point;
-	carmen_rddf_add_annotation_message annotation;
+	carmen_annotation_t annotation;
 
-	annotation = annotation_queue[annotation_id];
+	annotation = annotation_read_from_file[annotation_id];
 	annotation_point = annotation.annotation_point;
 
 	SE2 robot_pose_mat(pose.x, pose.y, pose.theta);
@@ -268,16 +339,62 @@ set_annotations()
 
 	for (uint i = 0; i < annotations_to_publish.size(); i++)
 	{
-		find_nearest_pose_and_dist(annotations_to_publish[i], &nearest_pose, &nearest_pose_dist);
+		find_nearest_annotation_and_dist(annotations_to_publish[i].index, &nearest_pose, &nearest_pose_dist);
 
-		if ((nearest_pose >= 0) && nearest_pose_dist < 10.0 && (annotation_is_forward_from_robot(robot_pose, annotations_to_publish[i])))
-			annotations[nearest_pose] = annotation_queue[annotations_to_publish[i]].annotation_type;
+		if ((nearest_pose >= 0) && nearest_pose_dist < 10.0 && (annotation_is_forward_from_robot(robot_pose, annotations_to_publish[i].index)))
+			annotations[nearest_pose] = annotation_read_from_file[annotations_to_publish[i].index].annotation_type;
 	}
+}
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Publishers                                                                                //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void
+carmen_rddf_play_publish_annotation_queue()
+{
+	IPC_RETURN_TYPE err;
+
+	if (annotations_to_publish.size() == 0)
+	{
+		return;
+	}
+	else if (annotation_queue_message.annotations == NULL)
+	{
+		annotation_queue_message.annotations = (carmen_annotation_t *) calloc(annotations_to_publish.size(), sizeof(carmen_annotation_t));
+
+		if (!annotation_queue_message.annotations)
+			exit(printf("Allocation error in carmen_rddf_play_publish_annotation_queue()::1\n"));
+	}
+	else if (annotation_queue_message.num_annotations != (int) annotations_to_publish.size())
+	{
+		annotation_queue_message.annotations = (carmen_annotation_t *) realloc(annotation_queue_message.annotations, annotations_to_publish.size() * sizeof(carmen_annotation_t));
+
+		if (!annotation_queue_message.annotations)
+			exit(printf("Allocation error in carmen_rddf_play_publish_annotation_queue()::2\n"));
+	}
+
+	annotation_queue_message.num_annotations = annotations_to_publish.size();
+
+	for (size_t i = 0; i < annotations_to_publish.size(); i++)
+		memcpy(&(annotation_queue_message.annotations[i]), &(annotations_to_publish[i].annotation), sizeof(carmen_annotation_t));
+
+	annotation_queue_message.host = carmen_get_host();
+	annotation_queue_message.timestamp = carmen_get_time();
+
+	err = IPC_publishData(CARMEN_RDDF_ANNOTATION_MESSAGE_NAME, &annotation_queue_message);
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_ANNOTATION_MESSAGE_FMT);
 }
 
 
 static void
-carmen_rddf_play_publish_rddf()
+carmen_rddf_play_publish_rddf_and_annotations()
 {
 	// so publica rddfs quando a pose do robo ja estiver setada
 	if ((carmen_rddf_num_poses_ahead > 0) && (carmen_rddf_num_poses_back > 0))
@@ -292,17 +409,42 @@ carmen_rddf_play_publish_rddf()
 			carmen_rddf_num_poses_back,
 			annotations);
 
-		/* publica as anotacoes */
-		IPC_RETURN_TYPE err;
-
-		for (size_t i = 0; i < annotations_to_publish.size(); i++)
-		{
-			annotation_queue[annotations_to_publish[i]].timestamp = carmen_get_time();
-			err = IPC_publishData(CARMEN_RDDF_ANNOTATION_MESSAGE_NAME, &annotation_queue[annotations_to_publish[i]]);
-			carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_ANNOTATION_MESSAGE_FMT);
-		}
+		carmen_rddf_play_publish_annotation_queue();
 	}
 }
+
+
+void
+carmen_rddf_publish_road_profile_around_end_point(carmen_ackerman_traj_point_t *poses_around_end_point, int num_poses_acquired)
+{
+	carmen_rddf_publish_road_profile_around_end_point_message(poses_around_end_point, num_poses_acquired);
+}
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void
+carmen_rddf_play_find_and_publish_poses_around_end_point(double x, double y, double yaw, int num_poses_desired, double timestamp)
+{
+	int num_poses_acquired = 0;
+	carmen_ackerman_traj_point_t *poses_around_end_point;
+
+	poses_around_end_point = (carmen_ackerman_traj_point_t *) calloc (num_poses_desired, sizeof(carmen_ackerman_traj_point_t));
+	carmen_test_alloc(poses_around_end_point);
+
+	num_poses_acquired = carmen_find_poses_around(x, y, yaw, timestamp, poses_around_end_point, num_poses_desired);
+	carmen_rddf_publish_road_profile_around_end_point(poses_around_end_point, num_poses_acquired);
+
+	free(poses_around_end_point);
+}
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Handlers                                                                                  //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 static void
@@ -324,9 +466,10 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	);
 
 	annotations_to_publish.clear();
-	carmen_check_for_annotations(robot_pose.x, robot_pose.y, robot_pose.theta);
+	carmen_check_for_annotations(robot_pose, carmen_rddf_poses_ahead, carmen_rddf_poses_back,
+			carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back);
 
-	carmen_rddf_play_publish_rddf();
+	carmen_rddf_play_publish_rddf_and_annotations();
 }
 
 
@@ -349,9 +492,10 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	);
 
 	annotations_to_publish.clear();
-	carmen_check_for_annotations(robot_pose.x, robot_pose.y, robot_pose.theta);
+	carmen_check_for_annotations(robot_pose, carmen_rddf_poses_ahead, carmen_rddf_poses_back,
+			carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back);
 
-	carmen_rddf_play_publish_rddf();
+	carmen_rddf_play_publish_rddf_and_annotations();
 }
 
 
@@ -363,22 +507,6 @@ carmen_rddf_play_nearest_waypoint_message_handler(carmen_rddf_nearest_waypoint_m
 
 	carmen_rddf_publish_nearest_waypoint_confirmation_message(rddf_nearest_waypoint_message->point);
 	already_reached_nearest_waypoint_to_end_point = 0;
-}
-
-
-void
-carmen_rddf_play_find_and_publish_poses_around_end_point(double x, double y, double yaw, int num_poses_desired, double timestamp)
-{
-	int num_poses_acquired = 0;
-	carmen_ackerman_traj_point_t *poses_around_end_point;
-
-	poses_around_end_point = (carmen_ackerman_traj_point_t *) calloc (num_poses_desired, sizeof(carmen_ackerman_traj_point_t));
-	carmen_test_alloc(poses_around_end_point);
-
-	num_poses_acquired = carmen_find_poses_around(x, y, yaw, timestamp, poses_around_end_point, num_poses_desired);
-	carmen_rddf_publish_road_profile_around_end_point_message(poses_around_end_point, num_poses_acquired);
-
-	free(poses_around_end_point);
 }
 
 
@@ -416,6 +544,22 @@ carmen_rddf_play_end_point_message_handler(carmen_rddf_end_point_message *rddf_e
 }
 
 
+static void
+carmen_traffic_light_message_handler(carmen_traffic_light_message *message)
+{
+	traffic_lights = message;
+}
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                              //
+// Initializations                                                                              //
+//                                                                                              //
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 void
 carmen_rddf_play_subscribe_messages()
 {
@@ -431,6 +575,8 @@ carmen_rddf_play_subscribe_messages()
 	carmen_rddf_subscribe_end_point_message(NULL,
 			(carmen_handler_t) carmen_rddf_play_end_point_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_traffic_light_subscribe(traffic_lights_camera, NULL, (carmen_handler_t) carmen_traffic_light_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -468,21 +614,20 @@ carmen_rddf_play_load_annotation_file()
 
 	while(!feof(f))
 	{
-		carmen_rddf_annotation_message message;
-		message.annotation_description = (char *) calloc (64, sizeof(char));
+		carmen_annotation_t annotation;
+		annotation.annotation_description = (char *) calloc (128, sizeof(char));
 
 		fscanf(f, "%s\t%d\t%d\t%lf\t%lf\t%lf\t%lf\n",
-			message.annotation_description,
-			&message.annotation_type,
-			&message.annotation_code,
-			&message.annotation_orientation,
-			&message.annotation_point.x,
-			&message.annotation_point.y,
-			&message.annotation_point.z
+			annotation.annotation_description,
+			&annotation.annotation_type,
+			&annotation.annotation_code,
+			&annotation.annotation_orientation,
+			&annotation.annotation_point.x,
+			&annotation.annotation_point.y,
+			&annotation.annotation_point.z
 		);
 
-		message.host = carmen_get_host();
-		annotation_queue.push_back(message);
+		annotation_read_from_file.push_back(annotation);
 	}
 
 	fclose(f);
@@ -510,6 +655,7 @@ carmen_rddf_play_initialize(void)
 	carmen_rddf_poses_ahead = (carmen_ackerman_traj_point_t *) calloc (carmen_rddf_num_poses_ahead_max, sizeof(carmen_ackerman_traj_point_t));
 	carmen_rddf_poses_back = (carmen_ackerman_traj_point_t *) calloc (carmen_rddf_num_poses_ahead_max, sizeof(carmen_ackerman_traj_point_t));
 	annotations = (int *) calloc (carmen_rddf_num_poses_ahead_max, sizeof(int));
+	memset(&annotation_queue_message, 0, sizeof(annotation_queue_message));
 
 	carmen_test_alloc(carmen_rddf_poses_ahead);
 	carmen_test_alloc(annotations);
@@ -525,15 +671,25 @@ main(int argc, char **argv)
 	setlocale(LC_ALL, "C");
 
 	if (argc < 2)
-		exit(printf("Error: Use %s <rddf> <annotations>\n", argv[0]));
+		exit(printf("Error: Use %s <rddf> <annotations> <traffic_lights_camera>\n", argv[0]));
 
 	carmen_rddf_filename = argv[1];
 
-	/* annotations file are not mandatory */
-	if (argc == 3)
-		carmen_annotation_filename = argv[2];
-	else
+	if (argc == 2)
+	{
 		carmen_annotation_filename = NULL;
+		traffic_lights_camera = 3;
+	}
+	else if (argc == 3)
+	{
+		carmen_annotation_filename = argv[2];
+		traffic_lights_camera = 3;
+	}
+	else if (argc == 4)
+	{
+		carmen_annotation_filename = argv[2];
+		traffic_lights_camera = atoi(argv[3]);
+	}
 
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);

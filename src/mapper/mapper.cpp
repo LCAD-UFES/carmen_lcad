@@ -4,6 +4,7 @@
 #include <prob_map.h>
 #include <carmen/grid_mapping.h>
 #include <carmen/mapper_interface.h>
+#include <carmen/rddf_messages.h>
 #include <carmen/global_graphics.h>
 #include <omp.h>
 
@@ -65,8 +66,11 @@ double x_origin, y_origin; // map origin in meters
 
 static carmen_laser_laser_message flaser; // moving_objects
 
+extern carmen_rddf_annotation_message last_rddf_annotation_message;
+
 carmen_mapper_virtual_laser_message virtual_laser_message;
 
+carmen_moving_objects_point_clouds_message moving_objects_message;
 
 carmen_map_t *
 get_the_map()
@@ -250,6 +254,34 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *log_odds
 //	system("cp plot_data.dat plot_data2.dat");
 }
 
+
+double
+get_acceleration(double v, double timestamp)
+{
+	static double a = 0.0;
+	static double previous_v = 0.0;
+	static double previous_timestamp = 0.0;
+
+	if (previous_timestamp == 0.0)
+	{
+		previous_timestamp = timestamp;
+		return (0.0);
+	}
+
+	double dt = timestamp - previous_timestamp;
+	if (dt < 0.01)
+		return (a);
+
+	double current_a = (v - previous_v) / dt;
+
+	a = a + 0.2 * (current_a - a); // para suaviar um pouco
+
+	previous_v = v;
+	previous_timestamp = timestamp;
+
+	return (a);
+}
+
 //FILE *plot_data;
 
 static void
@@ -263,6 +295,10 @@ update_log_odds_of_cells_in_the_laser_ldmrs_perceptual_field(carmen_map_t *log_o
 
 	double v = sensor_data->robot_velocity[point_cloud_index].x;
 	double phi = sensor_data->robot_phi[point_cloud_index];
+
+	double a = get_acceleration(v, sensor_data->robot_timestamp[point_cloud_index]);
+	if (a < -sensor_params->cutoff_negative_acceleration)
+		return;
 
 	double dt = sensor_params->time_spent_by_each_scan;
 	double dt1 = sensor_data->points_timestamp[point_cloud_index] - sensor_data->robot_timestamp[point_cloud_index] - (double) N * dt;
@@ -763,6 +799,128 @@ add_virtual_laser_points(carmen_map_t *map, carmen_mapper_virtual_laser_message 
 
 
 void
+draw_line(carmen_map_t *map, double x_1, double y_1, double x_2, double y_2)
+{
+
+	int x1 = round((x_1 - map->config.x_origin) / map->config.resolution);
+	int y1 = round((y_1 - map->config.y_origin) / map->config.resolution);
+	int x2 = round((x_2 - map->config.x_origin) / map->config.resolution);
+	int y2 = round((y_2 - map->config.y_origin) / map->config.resolution);
+
+	int w = x2 - x1;
+	int h = y2 - y1;
+	int dx1 = 0, dy1 = 0, dx2 = 0, dy2 = 0;
+
+	if (w<0)
+		dx1 = -1;
+	else
+		if (w>0)
+			dx1 = 1;
+	if (h<0)
+		dy1 = -1;
+	else
+		if (h>0)
+			dy1 = 1;
+	if (w<0)
+		dx2 = -1;
+	else
+		if (w>0)
+			dx2 = 1;
+
+	int longest = abs(w) ;
+	int shortest = abs(h) ;
+	if (!(longest>shortest))
+	{
+		longest = abs(h) ;
+		shortest = abs(w) ;
+		if (h<0)
+			dy2 = -1;
+		else
+			if (h>0)
+				dy2 = 1;
+		dx2 = 0 ;
+	}
+	int numerator = longest >> 1 ;
+	for (int i=0;i<=longest;i++)
+	{
+		if (x1 >= 0 && x1 < map->config.x_size && y1 >= 0 && y1 < map->config.y_size)
+			map->map[x1][y1] = 1.0;
+
+		numerator += shortest ;
+		if (!(numerator<longest))
+		{
+			numerator -= longest ;
+			x1 += dx1 ;
+			y1 += dy1 ;
+		}
+		else
+		{
+			x1 += dx2 ;
+			y1 += dy2 ;
+		}
+	}
+}
+
+
+double
+x_coord(double length2, double width2, double theta, double x)
+{
+	return length2 * cos(theta) - width2 *sin(theta) + x;
+}
+
+
+double
+y_coord(double length2, double width2, double theta, double y)
+{
+	return length2 * sin(theta) + width2 *cos(theta) + y;
+}
+
+
+void
+draw_rectangle(carmen_map_t *map, double x, double y, double length, double width, double theta)
+{
+	carmen_vector_2D_t p1, p2, p3, p4;
+	double length2 = length/2.0;
+	double width2 = width/2.0;
+
+	p1.x = x_coord(-length2, width2, theta, x);
+	p1.y = y_coord(-length2, width2, theta, y);
+	p2.x = x_coord(-length2, -width2, theta, x);
+	p2.y = y_coord(-length2, -width2, theta, y);
+	p3.x = x_coord(length2, -width2, theta, x);
+	p3.y = y_coord(length2, -width2, theta, y);
+	p4.x = x_coord(length2, width2, theta, x);
+	p4.y = y_coord(length2, width2, theta, y);
+
+	draw_line(map, p1.x, p1.y, p2.x, p2.y);
+	draw_line(map, p2.x, p2.y, p3.x, p3.y);
+	draw_line(map, p3.x, p3.y, p4.x, p4.y);
+	draw_line(map, p4.x, p4.y, p1.x, p1.y);
+
+}
+
+
+void
+add_moving_objects(carmen_map_t *map, carmen_moving_objects_point_clouds_message *moving_objects_message)
+{
+	for (int i = 0; i < moving_objects_message->num_point_clouds; i++)
+	{
+//		int x = round((moving_objects_message->point_clouds[i].object_pose.x - map->config.x_origin) / map->config.resolution);
+//		int y = round((moving_objects_message->point_clouds[i].object_pose.y - map->config.y_origin) / map->config.resolution);
+//
+//		if (x >= 0 && x < map->config.x_size && y >= 0 && y < map->config.y_size)
+//			map->map[x][y] = 1.0;
+		draw_rectangle(map,
+				moving_objects_message->point_clouds[i].object_pose.x,
+				moving_objects_message->point_clouds[i].object_pose.y,
+				moving_objects_message->point_clouds[i].length,
+				moving_objects_message->point_clouds[i].width,
+				carmen_normalize_theta(moving_objects_message->point_clouds[i].orientation));
+	}
+}
+
+
+void
 mapper_publish_map(double timestamp)
 {
 	if (build_snapshot_map)
@@ -772,6 +930,9 @@ mapper_publish_map(double timestamp)
 	}
 
 	add_virtual_laser_points(&map, &virtual_laser_message);
+
+	add_moving_objects(&map, &moving_objects_message);
+
 	carmen_mapper_publish_map_message(&map, timestamp);
 //	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, timestamp);
 //	printf("n = %d\n", virtual_laser_message.num_positions);
@@ -858,6 +1019,8 @@ mapper_initialize(carmen_map_config_t *main_map_config, carmen_robot_ackerman_co
 	globalpos_initialized = 0; // Only considered initialized when first message is received
 
 	globalpos_history = (carmen_localize_ackerman_globalpos_message *) calloc(GLOBAL_POS_QUEUE_SIZE, sizeof(carmen_localize_ackerman_globalpos_message));
+
+	memset(&last_rddf_annotation_message, 0, sizeof(last_rddf_annotation_message));
 
 	memset(&virtual_laser_message, 0, sizeof(carmen_mapper_virtual_laser_message));
 //	virtual_laser_message.positions = (carmen_position_t *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(carmen_position_t));

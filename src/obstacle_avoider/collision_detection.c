@@ -484,9 +484,9 @@ get_initial_displacement_and_displacement_inc(double *initial_displacement, doub
 {
 //	double circle_radius = (robot_config.width + 0.4) / 2.0; // metade da largura do carro + um espacco de guarda
 	double car_lenght = robot_config->distance_between_front_and_rear_axles + robot_config->distance_between_rear_car_and_rear_wheels +
-			robot_config->distance_between_front_car_and_front_wheels - 2.0 * (circle_radius - 0.2);
+			robot_config->distance_between_front_car_and_front_wheels + 0.3 - 2.0 * circle_radius;
 	*displacement_inc = car_lenght / number_of_point;
-	*initial_displacement = (circle_radius - 0.2) - robot_config->distance_between_rear_car_and_rear_wheels;
+	*initial_displacement = circle_radius - (robot_config->distance_between_rear_car_and_rear_wheels + 0.3);
 }
 
 

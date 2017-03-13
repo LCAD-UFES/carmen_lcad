@@ -130,6 +130,8 @@ bin/tracker
 bin/tracker_main
 bin/traffic_light
 bin/traffic_light_view
+bin/udatmo
+bin/udatmo_logger
 bin/ultrasonic
 bin/ultrasonic_viewer
 bin/v_disparity_view
@@ -480,6 +482,8 @@ src/path_planner/libnavigator_astar_interface.so.1
 src/path_planner/navigator_precomputed_cost_ackerman
 src/path_planner/path_planner
 src/path_planner/startgoal_simulator
+src/udatmo2/udatmo
+src/udatmo2/udatmo_logger
 src/utilities/list_camera_ids/util_list_camera_ids
 src/utilities/publish_pose/util_publish_pose
 src/utilities/publish_pose/util_publish_initial_pose

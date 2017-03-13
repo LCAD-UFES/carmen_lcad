@@ -14,31 +14,6 @@ struct AnnotationDrawer
     // std::vector<carmen_rddf_annotation_message> annotations;
 };
 
-int
-has_annotation(carmen_rddf_annotation_message msg, std::vector<carmen_rddf_annotation_message> annotations)
-{
-    for (uint i = 0; i < annotations.size(); i++)
-    {
-        if (annotations.at(i).annotation_code == msg.annotation_code &&
-            annotations.at(i).annotation_description == msg.annotation_description &&
-            annotations.at(i).annotation_point.x == msg.annotation_point.x &&
-            annotations.at(i).annotation_point.y == msg.annotation_point.y &&
-            annotations.at(i).annotation_point.z == msg.annotation_point.z)
-        {
-            return 1;
-        }
-    }
-    return 0;
-}
-
-//AnnotationDrawer*
-//addAnnotation(carmen_rddf_annotation_message msg, AnnotationDrawer *annotationDrawer) {
-//    if (!has_annotation(msg, annotationDrawer->annotations)) {
-//        annotationDrawer->annotations.push_back(msg);
-//    }
-//    return annotationDrawer;
-//}
-
 AnnotationDrawer*
 createAnnotationDrawer(int argc, char** argv)
 {
@@ -65,14 +40,15 @@ distance(carmen_vector_3D_t annotation_pose, carmen_vector_3D_t car_pose)
 }
 
 void
-draw_annotations(std::vector<carmen_rddf_annotation_message> annotations, carmen_vector_3D_t car_pose, carmen_vector_3D_t offset)
+draw_annotations(std::vector<carmen_annotation_t> annotations, carmen_vector_3D_t car_pose, carmen_vector_3D_t offset)
 {
-    for (std::vector<carmen_rddf_annotation_message>::iterator it = annotations.begin(); it != annotations.end(); ++it)
+    for (uint i = 0; i < annotations.size(); i++)
     {
         carmen_vector_3D_t point_annotation;
-        point_annotation.x = it.base()->annotation_point.x - offset.x;
-        point_annotation.y = it.base()->annotation_point.y - offset.y;
-        point_annotation.z = it.base()->annotation_point.z; // - offset.z;
+
+        point_annotation.x = annotations[i].annotation_point.x - offset.x;
+        point_annotation.y = annotations[i].annotation_point.y - offset.y;
+        point_annotation.z = annotations[i].annotation_point.z;
 
         if (distance(point_annotation, car_pose) < 1000)
         {

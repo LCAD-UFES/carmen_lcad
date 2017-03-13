@@ -10,8 +10,6 @@ struct Obstacle
 {
 	bool valid;
 
-	int index;
-
 	carmen_ackerman_traj_point_t pose;
 
 	carmen_ackerman_traj_point_t car_pose;

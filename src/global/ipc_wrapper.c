@@ -7,21 +7,21 @@
  * Roy, Sebastian Thrun, Dirk Haehnel, Cyrill Stachniss,
  * and Jared Glover
  *
- * CARMEN is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public 
- * License as published by the Free Software Foundation; 
+ * CARMEN is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation;
  * either version 2 of the License, or (at your option)
  * any later version.
  *
  * CARMEN is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied 
+ * but WITHOUT ANY WARRANTY; without even the implied
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
- * PURPOSE.  See the GNU General Public License for more 
+ * PURPOSE.  See the GNU General Public License for more
  * details.
  *
- * You should have received a copy of the GNU General 
+ * You should have received a copy of the GNU General
  * Public License along with CARMEN; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, 
+ * Free Software Foundation, Inc., 59 Temple Place,
  * Suite 330, Boston, MA  02111-1307 USA
  *
  ********************************************************/
@@ -87,7 +87,7 @@ static int index_length = 0;
 
 MSG_INSTANCE current_msgRef;
 
-int 
+int
 carmen_ipc_connect_locked(char *module_name)
 {
   IPC_RETURN_TYPE err;
@@ -118,7 +118,7 @@ carmen_ipc_connect_locked(char *module_name)
   /* check to see if non-unique module name is already connected */
   ierr = IPC_isModuleConnected(module_name);
   if(ierr == 1)
-    carmen_die("Error: module %s already connected to IPC network.\n", 
+    carmen_die("Error: module %s already connected to IPC network.\n",
 	    module_name);
 
   /* disconnect and reconnect with non-unique name */
@@ -139,12 +139,12 @@ carmen_ipc_connect_locked(char *module_name)
   /* Set local message queue capacity */
   err = IPC_setCapacity(1);
   carmen_test_ipc_exit(err, "I had problems setting the IPC capacity. This is a "
-		    "very strange error and should never happen.\n", 
+		    "very strange error and should never happen.\n",
 		    "IPC_setCapacity");
   return 0;
 }
 
-int 
+int
 carmen_ipc_connect(char *module_name)
 {
   IPC_RETURN_TYPE err;
@@ -174,12 +174,12 @@ carmen_ipc_connect(char *module_name)
   /* Set local message queue capacity */
   err = IPC_setCapacity(1);
   carmen_test_ipc_exit(err, "I had problems setting the IPC capacity. This is a "
-		    "very strange error and should never happen.\n", 
+		    "very strange error and should never happen.\n",
 		    "IPC_setCapacity");
   return 0;
 }
 
-int 
+int
 carmen_ipc_connect_long(char *module_name, char *host, int port)
 {
   IPC_RETURN_TYPE err;
@@ -213,11 +213,11 @@ void carmen_write_formatter_message(char *message_name, char *message_fmt,
 {
   int temp;
 
-  message_index = 
+  message_index =
     (carmen_blogfile_index_p)realloc(message_index,
 				  sizeof(carmen_blogfile_index_t) *
 				  (index_length + 1));
-  message_index[index_length].message_name = 
+  message_index[index_length].message_name =
     (char *)calloc(strlen(message_name) + 1, 1);
   carmen_test_alloc(message_index[index_length].message_name);
   strcpy(message_index[index_length].message_name, message_name);
@@ -254,7 +254,7 @@ void carmen_write_data_message(BYTE_ARRAY callData, int data_length,
   carmen_fwrite(&temp, sizeof(int), 1, outfile);
   /* write the message id */
   i = 0;
-  while(i < index_length && 
+  while(i < index_length &&
 	strcmp(message_name, message_index[i].message_name))
     i++;
   if(i == index_length)
@@ -271,7 +271,7 @@ void carmen_write_data_message(BYTE_ARRAY callData, int data_length,
 }
 
 static void
-carmen_generic_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, 
+carmen_generic_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 		       void *clientData)
 {
   IPC_RETURN_TYPE err = IPC_OK;
@@ -283,7 +283,7 @@ carmen_generic_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
   current_msgRef = msgRef;
   /* NEW LOGGER BEGIN */
   if(outfile != NULL)
-    carmen_write_data_message(callData, IPC_dataLength(msgRef), 
+    carmen_write_data_message(callData, IPC_dataLength(msgRef),
 			      mark->message_name);
   /* NEW LOGGER END */
 
@@ -293,12 +293,12 @@ carmen_generic_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
     if(mark->callback[i].context == context) {
       if(mark->callback[i].data) {
 	formatter = IPC_msgInstanceFormatter(msgRef);
-	if(!mark->callback[i].first) 
+	if(!mark->callback[i].first)
 	  IPC_freeDataElements(formatter, mark->callback[i].data);
-	err = IPC_unmarshallData(IPC_msgInstanceFormatter(msgRef), callData, 
-				 mark->callback[i].data, 
+	err = IPC_unmarshallData(IPC_msgInstanceFormatter(msgRef), callData,
+				 mark->callback[i].data,
 				 mark->callback[i].message_size);
-	
+
 	mark->callback[i].first = 0;
       }
       n = mark->num_callbacks;
@@ -311,7 +311,7 @@ carmen_generic_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
       i++;
   }
   IPC_freeByteArray(callData);
-  carmen_test_ipc_return(err, "Could not unmarshall", 
+  carmen_test_ipc_return(err, "Could not unmarshall",
 		      IPC_msgInstanceName(msgRef));
 }
 
@@ -368,10 +368,10 @@ carmen_disable_handlers(void)
 
 /* NEW LOGGER END */
 
-void 
-carmen_subscribe_message(char *message_name, char *message_fmt, 
-			 void *message_mem, int message_size, 
-			 carmen_handler_t handler, 
+void
+carmen_subscribe_message(char *message_name, char *message_fmt,
+			 void *message_mem, int message_size,
+			 carmen_handler_t handler,
 			 carmen_subscribe_t subscribe_how)
 {
   IPC_RETURN_TYPE err = IPC_OK;
@@ -387,7 +387,7 @@ carmen_subscribe_message(char *message_name, char *message_fmt,
   mark = message_list;
   while(mark != NULL && strcmp(message_name, mark->message_name))
     mark = mark->next;
-  
+
   /* if no match, add message name to the list */
   if(mark == NULL) {
     mark = (carmen_message_list_p)calloc(1, sizeof(carmen_message_list_t));
@@ -413,7 +413,7 @@ carmen_subscribe_message(char *message_name, char *message_fmt,
     i++;
   if(i == mark->num_callbacks) {
     mark->num_callbacks++;
-    mark->callback = (carmen_callback_p)realloc(mark->callback, 
+    mark->callback = (carmen_callback_p)realloc(mark->callback,
 					     mark->num_callbacks *
 					     sizeof(carmen_callback_t));
     carmen_test_alloc(mark->callback);
@@ -464,12 +464,12 @@ carmen_unsubscribe_message(char *message_name, carmen_handler_t handler)
 
   /* look for the appropriate handler */
   context = IPC_getContext();
-  i = 0; 
+  i = 0;
   while(i < mark->num_callbacks && (mark->callback[i].handler != handler ||
 				    mark->callback[i].context != context))
     i++;
   if(i != mark->num_callbacks) {
-    memmove(mark->callback + i, mark->callback + i + 1, 
+    memmove(mark->callback + i, mark->callback + i + 1,
 	   (mark->num_callbacks - i - 1) * sizeof(carmen_callback_t));
     mark->num_callbacks--;
     if(mark->num_callbacks == 0)
@@ -481,6 +481,8 @@ carmen_unsubscribe_message(char *message_name, carmen_handler_t handler)
 	     " matching callback for %s\n", message_name);
 }
 
+static double initialize_time = 0;
+
 void carmen_ipc_initialize(int argc, char **argv)
 {
   int err, i;
@@ -488,6 +490,7 @@ void carmen_ipc_initialize(int argc, char **argv)
   err = carmen_ipc_connect(argv[0]);
   if(err < 0)
     exit(1);
+
   for(i = 1; i < argc; i++) {
     if(strcmp(argv[i], "-fast") == 0)
       carmen_set_blogfile_fast();
@@ -500,6 +503,14 @@ void carmen_ipc_initialize(int argc, char **argv)
     else if(strcmp(argv[i], "-no_handlers") == 0)
       carmen_disable_handlers();
   }
+
+  initialize_time = carmen_get_time();
+}
+
+double
+carmen_ipc_initialize_time(void)
+{
+	return initialize_time;
 }
 
 void carmen_ipc_initialize_locked(int argc, char **argv)
@@ -550,7 +561,7 @@ double carmen_blogfile_handle_one_message(void)
   unsigned char buffer[10000], message_name[256];
   double current_time, timestamp;
   carmen_message_list_p mark;
-  
+
   err = carmen_fread(&message_id, sizeof(int), 1, infile);
   if(err != 1)
     return -1;
@@ -565,16 +576,16 @@ double carmen_blogfile_handle_one_message(void)
     strncpy((char *)message_name, (const char *)(buffer + sizeof(int)),
 	    message_name_length);
     message_name[message_name_length] = '\0';
-    message_index = 
+    message_index =
       (carmen_blogfile_index_p)realloc(message_index,
 				   sizeof(carmen_blogfile_index_t) *
 				   (index_length + 1));
-    message_index[index_length].message_name = 
+    message_index[index_length].message_name =
       (char *)calloc(message_name_length + 1, 1);
     carmen_test_alloc(message_index[index_length].message_name);
-    strcpy(message_index[index_length].message_name, 
+    strcpy(message_index[index_length].message_name,
 	   (const char *)message_name);
-    message_index[index_length].formatter = 
+    message_index[index_length].formatter =
       IPC_msgFormatter((const char *)message_name);
     index_length++;
     carmen_test_alloc(message_index);
@@ -584,7 +595,7 @@ double carmen_blogfile_handle_one_message(void)
     message_id = *((int *)buffer);
     strcpy((char *)message_name, message_index[message_id].message_name);
     data_length = *((int *)(buffer + sizeof(int)));
-    timestamp = *((double *)(buffer + sizeof(int) + 
+    timestamp = *((double *)(buffer + sizeof(int) +
 			     sizeof(int) + data_length));
 
     if(!blogfile_fast) {
@@ -592,19 +603,19 @@ double carmen_blogfile_handle_one_message(void)
       if(timestamp > current_time)
 	usleep((timestamp - current_time) * 1e6);
     }
-    
+
     mark = message_list;
     while(mark != NULL && strcmp((char *)message_name, mark->message_name))
       mark = mark->next;
-    
+
     if(mark != NULL) {
       i = 0;
       while(i < mark->num_callbacks) {
 	if(mark->callback[i].data) {
-	  if(!mark->callback[i].first) 
-	    IPC_freeDataElements(message_index[message_id].formatter, 
+	  if(!mark->callback[i].first)
+	    IPC_freeDataElements(message_index[message_id].formatter,
 				 mark->callback[i].data);
-	  IPC_unmarshallData(message_index[message_id].formatter, 
+	  IPC_unmarshallData(message_index[message_id].formatter,
 			     buffer + sizeof(int) + sizeof(int),
 			     mark->callback[i].data,
 			     mark->callback[i].message_size);
@@ -646,7 +657,7 @@ void carmen_ipc_sleep(double timeout)
   else {
     do {
       timestamp = carmen_blogfile_handle_one_message();
-    } while(!carmen_feof(infile) && timestamp != -1 && 
+    } while(!carmen_feof(infile) && timestamp != -1 &&
 	    timestamp - current_time < timeout);
   }
 }
@@ -667,7 +678,7 @@ void carmen_ipc_addPeriodicTimer(double interval, TIMER_HANDLER_TYPE handler,
     carmen_die("Error: carmen_ipc_addPeriodicTimer not supported from logfiles.\n");
 }
 
-void carmen_test_ipc(IPC_RETURN_TYPE err, const char *err_msg, 
+void carmen_test_ipc(IPC_RETURN_TYPE err, const char *err_msg,
 		     const char *ipc_msg)
 {
   if(err == IPC_OK)
@@ -718,7 +729,7 @@ void carmen_ipc_subscribe_fd(int fd, carmen_handler_t handler)
   mark = fd_list;
   while(mark != NULL && fd != mark->fd)
     mark = mark->next;
-  
+
   /* if no match, add message name to the list */
   if(mark == NULL) {
     mark = (carmen_fd_list_p)calloc(1, sizeof(carmen_fd_list_t));
@@ -738,7 +749,7 @@ void carmen_ipc_subscribe_fd(int fd, carmen_handler_t handler)
     i++;
   if(i == mark->num_callbacks) {
     mark->num_callbacks++;
-    mark->callback = (carmen_fd_callback_p)realloc(mark->callback, 
+    mark->callback = (carmen_fd_callback_p)realloc(mark->callback,
 						mark->num_callbacks *
 						sizeof(carmen_fd_callback_t));
     carmen_test_alloc(mark->callback);
@@ -770,12 +781,12 @@ void carmen_ipc_unsubscribe_fd(int fd, carmen_handler_t handler)
 
   /* look for the appropriate handler */
   context = IPC_getContext();
-  i = 0; 
+  i = 0;
   while(i < mark->num_callbacks && (mark->callback[i].handler != handler ||
 				    mark->callback[i].context != context))
     i++;
   if(i != mark->num_callbacks) {
-    memmove(mark->callback + i, mark->callback + i + 1, 
+    memmove(mark->callback + i, mark->callback + i + 1,
 	   (mark->num_callbacks - i - 1) * sizeof(carmen_fd_callback_t));
     mark->num_callbacks--;
     if(mark->num_callbacks == 0)
@@ -791,16 +802,16 @@ void carmen_publish_heartbeat(char *module_name)
 {
   carmen_heartbeat_message msg;
   IPC_RETURN_TYPE err;
-  
+
   msg.module_name = carmen_new_string(module_name);
   msg.pid = getpid();
   msg.hostname = carmen_get_host();
   msg.timestamp = carmen_get_time();
-  
+
   err = IPC_defineMsg(CARMEN_HEARTBEAT_NAME, IPC_VARIABLE_LENGTH,
 		      CARMEN_HEARTBEAT_FMT);
-  carmen_test_ipc_exit(err, "Could not define", CARMEN_HEARTBEAT_NAME);  
-  
+  carmen_test_ipc_exit(err, "Could not define", CARMEN_HEARTBEAT_NAME);
+
   err = IPC_publishData(CARMEN_HEARTBEAT_NAME, &msg);
   carmen_test_ipc_exit(err, "Could not publish",
 		       CARMEN_HEARTBEAT_NAME);
@@ -814,7 +825,7 @@ carmen_subscribe_heartbeat_message(carmen_heartbeat_message *heartbeat,
 				   carmen_subscribe_t subscribe_how)
 {
   carmen_subscribe_message(CARMEN_HEARTBEAT_NAME, CARMEN_HEARTBEAT_FMT,
-                           heartbeat, sizeof(carmen_heartbeat_message), 
+                           heartbeat, sizeof(carmen_heartbeat_message),
 			   handler, subscribe_how);
 }
 

@@ -127,6 +127,7 @@ namespace View
 			GtkCheckMenuItem* menuDisplay_ShowCommandPath;
 			GtkCheckMenuItem* menuDisplay_ShowDynamicObjects;
 			GtkCheckMenuItem* menuDisplay_ShowDynamicPoints;
+			GtkCheckMenuItem* menuDisplay_ShowAnnotations;
 			GtkCheckMenuItem* menuSimulatorShowTruePosition;
 			GtkCheckMenuItem* menuSimulator_ShowObjects;
 			GtkCheckMenuItem* menuGoals_EditRddfGoals;
@@ -208,11 +209,9 @@ namespace View
 		carmen_rddf_waypoint *edited_rddf_goal_list;
 		int edited_rddf_goal_size;
 
-		int ignore_click;
-
 		carmen_traj_point_t	 robot_traj;
 		carmen_world_point_t	 robot;
-		carmen_world_point_t	 goal;
+		carmen_ackerman_traj_point_t	 goal;
 
 		double last_navigator_update;
 		GdkColor RedBlueGradient[GRADIENT_COLORS];
@@ -253,10 +252,16 @@ namespace View
 
 		carmen_mapper_virtual_laser_message virtual_laser_msg;
 
+		carmen_rddf_annotation_message rddf_annotation_msg;
+
+		GdkImage *annotation_image[NUM_RDDF_ANNOTATION_TYPES][NUM_RDDF_ANNOTATION_CODES];
+
 		carmen_robot_ackerman_road_velocity_control_message road_velocity_control;
 
 		carmen_rddf_waypoint* near_rddf_point;
 		int near_rddf_point_index;
+
+		bool freeze_status;
 
 		car_panel *car_panel_gl;
 
@@ -282,7 +287,7 @@ namespace View
 						carmen_navigator_config_t *nav_conf_param, carmen_navigator_panel_config_t *nav_panel_conf_param);
 
 		int navigator_graphics_update_map();
-		void navigator_graphics_update_display(carmen_traj_point_p	new_robot, carmen_world_point_p new_goal, int autonomous);
+		void navigator_graphics_update_display(carmen_traj_point_p	new_robot, carmen_ackerman_traj_point_t *new_goal, int autonomous);
 		void set_distance_traveled(carmen_point_t robot_pose, double velocity);
 		void navigator_graphics_update_goal_list(carmen_ackerman_traj_point_t* goal_list, int size);
 		void navigator_graphics_update_waypoint_list(carmen_ackerman_traj_point_t* waypoint_list, int size);
@@ -347,6 +352,7 @@ namespace View
 		void draw_simulated_objects(GtkMapViewer *the_map_view);
 		void draw_moving_objects(GtkMapViewer *the_map_view);
 		void draw_moving_points(GtkMapViewer *the_map_view, double pixel_size);
+		void draw_annotations(GtkMapViewer *the_map_view, double pixel_size);
 		void draw_placing_animation(GtkMapViewer *the_map_view);
 		void draw_path(carmen_world_point_t *path, int num_path_points, GdkColor path_colour, GdkColor robot_color, GtkMapViewer *the_map_view);
 		void draw_road_velocity_control(GtkMapViewer *the_map_view);
@@ -367,6 +373,11 @@ namespace View
 
 		void save_rddf_to_file(char *rddf_filename);
 		void load_rddf_from_file(char *rddf_filename);
+
+		void load_annotations_images();
+
+		void navigator_graphics_go_message_received();
+		void navigator_graphics_stop_message_received();
 	};
 }
 

@@ -17,7 +17,7 @@ LFLAGS += -lgrid_mapping -lmapper_interface -lglobal -lparam_interface -lmap_io 
 	  -lrobot_ackerman_interface -lobstacle_avoider_interface -lipc -lmap_server_interface \
 	  -lfused_odometry_interface -lvelodyne_interface -lrotation_geometry -lprob_models -lgl_plotter \
 	  -lGLEW -lGL -lGLU -lglut -lX11 -lmap_interface -lbase_ackerman_interface \
-	  -lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface
+	  -lstereo_velodyne -lstereo_velodyne_interface -lstereo_interface -lmoving_objects_interface
 
 LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
 
@@ -44,6 +44,19 @@ MAN_PAGES =
 TARGETS = libprob_models.a libgl_plotter.a localize_ackerman liblocalize_ackerman_interface.a \
 		liblocalize_ackerman_core.a liblocalize_ackerman_motion.a model_learn_ackerman/model_learner_ackerman \
 		localize_ackerman_particle_viewer		
+
+# If you set graphics support in configure.
+ifndef NO_GRAPHICS
+#Carmen Global Graphic Library and Gtk+2 Graphics Libraries
+IFLAGS += \
+	`pkg-config --cflags gtk+-2.0 gmodule-export-2.0` \
+	`pkg-config --cflags gtkglext-1.0`
+LFLAGS += \
+	-lglobal_graphics \
+	`pkg-config --libs gtk+-2.0 gmodule-export-2.0` \
+	`pkg-config --libs gtkglext-1.0`
+endif
+
 
 PUBLIC_LIBRARIES_SO = liblocalize_ackerman_interface.so
 ifndef NO_PYTHON

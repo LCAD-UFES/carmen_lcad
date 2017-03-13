@@ -650,7 +650,33 @@ void carmen_map_graphics_draw_point(GtkMapViewer *map_view, GdkColor *colour,
 	gdk_draw_point(map_view->drawing_pixmap, map_view->drawing_gc, point.x, point.y);
 }
 
-void carmen_map_graphics_draw_circle(GtkMapViewer *map_view, GdkColor *colour, 
+void carmen_map_graphics_draw_image(GtkMapViewer *map_view, GdkImage *image, carmen_world_point_p world_point,
+		int x_size, int y_size)
+{
+	GdkRectangle rect;
+	carmen_point_t point;
+
+//	gdk_gc_set_foreground(map_view->drawing_gc, colour);
+
+	if (world_point->map == NULL)
+		return;
+
+	if (world_to_screen(world_point, &point, map_view) == -1)
+		return;
+
+	if (image == NULL)
+		return;
+
+	rect.x = carmen_round(point.x);
+	rect.y = carmen_round(point.y);
+
+	rect.width = x_size;
+	rect.height = y_size;
+
+	gdk_draw_image(map_view->drawing_pixmap, map_view->drawing_gc, image, 0, 0, rect.x - x_size/2, rect.y - y_size/2, x_size, y_size);
+}
+
+void carmen_map_graphics_draw_circle(GtkMapViewer *map_view, GdkColor *colour,
 		int filled,
 		carmen_world_point_p world_point,
 		double radius)
@@ -796,7 +822,7 @@ carmen_map_graphics_draw_rectangle(GtkMapViewer *map_view, GdkColor *colour,
 void 
 carmen_map_graphics_draw_string(GtkMapViewer *map_view, GdkColor *colour, 
 		GdkFont *font, int x, int y,
-		const char *string __attribute__ ((unused)))
+		const char *string)
 {
 	gdk_gc_set_foreground (map_view->drawing_gc, colour);
 	gdk_draw_string (map_view->drawing_pixmap, font, map_view->drawing_gc,

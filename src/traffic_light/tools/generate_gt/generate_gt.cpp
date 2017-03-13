@@ -1,28 +1,21 @@
-/***************objectmarker.cpp******************
+/*************************************************
 
-Objectmarker for marking the objects to be detected  from positive samples and then creating the 
-description file for positive images.
+Program to generate databases for trainning the
+  trafficl light recognitin system
 
-compile this code and run with two arguments, first one the name of the descriptor file and the second one 
-the address of the directory in which the positive images are located
+Execution:
+  ./generate_gt input_ImageList.txt"
 
-while running this code, each image in the given directory will open up. Now mark the edges of the object using the mouse buttons
-  then press then press "SPACE" to save the selected region, or any other key to discard it. Then use "B" to move to next image. the program automatically
-  quits at the end. press ESC at anytime to quit.
 
- *the key B was chosen  to move to the next image because it is closer to SPACE key and nothing else.....
+ *************************************************/
 
-author: achu_wilson@rediffmail.com
- */
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/legacy/legacy.hpp>
 
 
-// for filelisting
 #include <stdio.h>
 #include <sys/io.h>
-// for fileoutput
 #include <string>
 #include <fstream>
 #include <sstream>
@@ -41,170 +34,222 @@ int roi_x1 = 0;
 int roi_y1 = 0;
 int numOfRec = 0;
 int startDraw = 0;
-string window_name = "<SPACE>add, <B>save and <N>load next <ESC>exit";
+string window_name = "<SPACE>add, <G>green, <Y>Yellow, <R>Red, <O>Off, <N>next <ESC>exit";
 
 string
 IntToString(int num)
 {
-    ostringstream myStream; //creates an ostringstream object
-    myStream << num << flush;
-    /*
-     * outputs the number into the string stream and then flushes
-     * the buffer (makes sure the output is put into the stream)
-     */
-    return (myStream.str()); //returns the string form of the stringstream object
-};
+	ostringstream myStream; //creates an ostringstream object
+	myStream << num << flush;
+	/*
+	 * outputs the number into the string stream and then flushes
+	 * the buffer (makes sure the output is put into the stream)
+	 */
+	return (myStream.str()); //returns the string form of the stringstream object
+}
 
 void
 on_mouse(int event, int x, int y, int flag, void *param)
 {
-    flag = flag;
-    param = param;
-    if (event == CV_EVENT_LBUTTONDOWN)
-    {
-        if (!startDraw)
-        {
-            roi_x0 = x;
-            roi_y0 = y;
-            startDraw = 1;
-        }
-        else
-        {
-            roi_x1 = x;
-            roi_y1 = y;
-            startDraw = 0;
-        }
-    }
-    if (event == CV_EVENT_MOUSEMOVE && startDraw)
-    {
-        //redraw ROI selection
-        image2 = image.clone();
-        rectangle(image2, cvPoint(roi_x0, roi_y0), cvPoint(x, y), CV_RGB(255, 0, 255), 1);
-        imshow(window_name, image2);
-        image2.~Mat();
-    }
+	flag = flag;
+	param = param;
+	if (event == CV_EVENT_LBUTTONDOWN)
+	{
+		if (!startDraw)
+		{
+			roi_x0 = x;
+			roi_y0 = y;
+			startDraw = 1;
+		}
+		else
+		{
+			roi_x1 = x;
+			roi_y1 = y;
+			startDraw = 0;
+		}
+	}
+	if (event == CV_EVENT_MOUSEMOVE && startDraw)
+	{
+		//redraw ROI selection
+		image2 = image.clone();
+		rectangle(image2, cvPoint(roi_x0, roi_y0), cvPoint(x, y), CV_RGB(255, 0, 255), 1);
+		imshow(window_name, image2);
+		image2.~Mat();
+	}
 
+}
+
+bool
+add_new_rectangle(string& strPostfix, string line)
+{
+	if (roi_x0 < roi_x1 && roi_y0 < roi_y1)
+	{
+		strPostfix += line + " " + IntToString(roi_x0) + " " + IntToString(roi_y0) + " " + IntToString(roi_x1) + " " + IntToString(roi_y1) + "\n";
+		roi_x0 = 0.0;
+		roi_x1 = 0.0;
+		roi_y0 = 0.0;
+		roi_y1 = 0.0;
+	}
+	else
+	{
+		cout << " There is no rectangle drawn!" << endl;
+		return false;
+	}
+	return true;
 }
 
 int
 main(int argc, char** argv)
 {
-    int iKey = 0;
-    //string strPrefix;
-    string strPostfix;
-    string input_file;
-    string output_file;
-    ifstream input;
-    ofstream output;
-    
-    if (argc != 3)
-    {
-        cerr << argv[0] << " output_info.txt input_info.txt" << endl;
-        return -1;
-    }
+	int iKey = 0;
+	string strPostfix = "";
+	string input_file;
+	ifstream input;
+	ofstream green, yellow, red, off;
+	bool add_on = false;
 
-    input_file = argv[2];
-    output_file = argv[1];
+	if (argc != 2)
+	{
+		cerr << argv[0] << " input_ImageList.txt" << endl;
+		return -1;
+	}
 
-    cerr << "Opening input_file with names of images" << endl;
-    input.open(input_file.c_str());
-    cerr << "Done." << endl;
+	input_file = argv[1];
 
-    namedWindow(window_name, 1);
-    setMouseCallback(window_name, on_mouse, NULL);
+	cerr << "Opening input_file with names of images" << endl;
+	input.open(input_file.c_str());
+	cerr << "Done." << endl;
 
-    output.open(output_file.c_str(), ofstream::out | ofstream::app);
+	namedWindow(window_name, 1);
+	setMouseCallback(window_name, on_mouse, NULL);
 
-    if (output.is_open() && input.is_open())
-    {
-        string line;
-        getline(input, line);
-        while (!input.eof())
-        {
-            numOfRec = 0;
+	green.open("green_gt.txt", ofstream::out | ofstream::app);
+	yellow.open("yellow_gt.txt", ofstream::out | ofstream::app);
+	red.open("red_gt.txt", ofstream::out | ofstream::app);
+	off.open("off_gt.txt", ofstream::out | ofstream::app);
 
-            strPostfix = "";
+	if (green.is_open() && yellow.is_open() && red.is_open() && off.is_open() && input.is_open())
+	{
+		string line;
+		getline(input, line);
 
-            cerr << "Loading image :" << line << endl;
+		cout << "Loading image :" << line << endl;
 
-            image = imread(line, 1);
+		while (!input.eof())
+		{
+			image = imread(line, 1);
 
-            if (!image.empty())
-            {
-                //    work on current image
-                iKey = -1;
-                while ((iKey != 110 && iKey != 78))
-                {
-                    imshow(window_name, image);
+			if (!image.empty())
+			{
+				iKey = -1;
+				while ((iKey != 110 && iKey != 78))
+				{
+					imshow(window_name, image);
 
-                    // used cvWaitKey returns:                   
-                    //    <ESC>=27      exit program
-                    //    <Space>=32    add rectangle to current image
-                    //    <B>=66        save added rectangles 
-                    //    <N>=75        show next image
-                    //  any other key clears rectangle drawing only
-                    iKey = waitKey(0);
+					//  any other key clears rectangle drawing only
+					iKey = waitKey(0);
 
-                    switch (iKey)
-                    {
+					switch (iKey)
+					{
 
-                    case 27:
-                        image.release();
-                        destroyWindow(window_name);
-                        return EXIT_SUCCESS;
-                    case 32:
-                        numOfRec++;
-                        cout << "Adicionou " << numOfRec << " " << roi_x0 << " " << roi_y0 << " " << roi_x1 << " " << roi_y1 << endl;
-                        if (roi_x0 < roi_x1 && roi_y0 < roi_y1)
-                        {
+					case 27:                      // ESC -> key 27 Exit program
+						image.release();
+						destroyWindow(window_name);
+						return EXIT_SUCCESS;
 
-                            //printf("   %d. rect x=%d\ty=%d\twidth=%d\theight=%d\n", numOfRec, roi_x0, roi_y0, roi_x1 - roi_x0, roi_y1 - roi_y0);
-                            cout << "   " << numOfRec << ". rect \t x= " << roi_x0 << "\t y = " << roi_y0 << "\t width = " << roi_x1 << "\theight = " << roi_y1 << endl;
-                            // append rectangle coord to previous line content
-                            strPostfix += " " + IntToString(roi_x0) + " " + IntToString(roi_y0) + " " + IntToString(roi_x1) + " " + IntToString(roi_y1);
+					case 32:                      // SPACE key 32 Add image name and rectangle position to string
+						add_on = add_new_rectangle(strPostfix, line);
+						break;
 
-                        }
-                        else //(roi_x0>roi_x1 && roi_y0>roi_y1)
-                        {
-                            cout << " Size equals 0" << endl;
-                            cout << "    " << numOfRec << ". rect \t x= " << roi_x1 << "\t y = " << roi_y1 << "\t width = " << roi_x0 << "\theight = " << roi_y0 << endl;
-                            // append rectangle coord to previous line content
-                            strPostfix += " " + IntToString(roi_x1) + " " + IntToString(roi_y1) + " " + IntToString(roi_x0 - roi_x1) + " " + IntToString(roi_y0 - roi_y1);
-                        }
-                        break;
-                    case 66:
-                    case 98:
-                        if (numOfRec > 0)
-                        {
-                            if (!strPostfix.empty())
-                            {
-                                cout << "Saving " << line << strPostfix << endl;
-                                output << line << strPostfix << endl;
-                                strPostfix.clear();
-                            }
-                        }
-                        break;
-                    }
-                }
-                image.~Mat();                
-            }
+					case 103:                     // G key 103 Save added rectangles to GREEN file
+						//cout << "AAAAAA" << iKey << endl;
+						if (!add_on || (roi_x0 != 0 && roi_x1 != 0 && roi_y0 != 0 && roi_y1 != 0))
+						{
+							add_on = add_new_rectangle(strPostfix, line);
+						}
+						if (!strPostfix.empty())
+						{
+							cout << "Saving to green_gt.txt  " << strPostfix << endl;
+							green << strPostfix;
+							green.flush();
+							strPostfix.clear();
+						}
+						break;
 
-            
-            getline(input, line);
-        }
-    }
+					case 121:                      // Y  key 121 Save added rectangles to YELOW file
+						if (!add_on || (roi_x0 != 0 && roi_x1 != 0 && roi_y0 != 0 && roi_y1 != 0))
+						{
+							add_on = add_new_rectangle(strPostfix, line);
+						}
+						if (!strPostfix.empty())
+						{
+							cout << "Saving to yellow_gt.txt  " << strPostfix << endl;
+							yellow << strPostfix;
+							yellow.flush();
+							strPostfix.clear();
+						}
+						break;
 
-    else
-    {
-        cerr << "Failed to open: " << input_file << endl;
-    }
+					case 114:                      // R key 114 Save added rectangles to RED file
+						if (!add_on || (roi_x0 != 0 && roi_x1 != 0 && roi_y0 != 0 && roi_y1 != 0))
+						{
+							add_on = add_new_rectangle(strPostfix, line);
+						}
+						if (!strPostfix.empty())
+						{
+							cout << "Saving to red_gt.txt  " << strPostfix << endl;
+							red << strPostfix;
+							red.flush();
+							strPostfix.clear();
+						}
+						break;
 
+					case 111:                       // O key 111 Save added rectangles to OFF file
+						if (!add_on || (roi_x0 != 0 && roi_x1 != 0 && roi_y0 != 0 && roi_y1 != 0))
+						{
+							add_on = add_new_rectangle(strPostfix, line);
+						}
+						if (!strPostfix.empty())
+						{
+							cout << "Saving to off_gt.txt  " << strPostfix << endl;
+							off << strPostfix;
+							off.flush();
+							strPostfix.clear();
+						}
+						break;
+					}
+					//Go to NEXT image without annotation
+					if ((iKey == 103 || iKey == 121 || iKey == 114 || iKey == 111) )
+					{
+						add_on = false;
+						break;
+					}
+				}
+				image.~Mat();
+			}
+			else
+			{
+				cerr <<
+				"------------------------------------------------------------------------------------------" << endl <<
+				"Failed! COLD NOT OPEN IMAGE: " << line << endl <<
+				"------------------------------------------------------------------------------------------" << "\n\n\n";
+			}
+			getline(input, line);
+		}
+	}
+	else
+	{
+		cerr << "Failed to open: " << input_file << endl;
+	}
 
-    image.~Mat();
-    image2.~Mat();
-    input.close();
-    output.close();
-    destroyWindow(window_name);
+	image.~Mat();
+	image2.~Mat();
+	input.close();
+	green.close();
+	red.close();
+	yellow.close();
+	off.close();
+	destroyWindow(window_name);
 
-    return EXIT_SUCCESS;
+	return EXIT_SUCCESS;
 }

@@ -10,7 +10,7 @@ CFLAGS += -Wall -g
 LFLAGS += -lparam_interface -lipc -lglobal -lrddf_interface \
 	-lcarmen_gps_wrapper  -llocalize_ackerman_interface \
 	-lkinect_interface \
-	-lobstacle_avoider_interface -lrobot_ackerman_interface -lsimulator_ackerman_interface \
+	-lobstacle_avoider_interface -lrobot_ackerman_interface -lsimulator_ackerman_interface -ltraffic_light_interface \
 	`pkg-config --libs opencv`
 LFLAGS += -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine
 

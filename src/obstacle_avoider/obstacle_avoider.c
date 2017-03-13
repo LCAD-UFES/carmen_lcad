@@ -37,6 +37,13 @@ add_cost_map_to_map_vector(carmen_map_t *cost_map)
 }
 
 
+carmen_ackerman_traj_point_t
+get_current_pose()
+{
+	return(pose_vector[current_pose]);
+}
+
+
 void
 add_pose_to_pose_vector(carmen_ackerman_traj_point_t pose)
 {
@@ -255,6 +262,7 @@ obstacle_avoider(carmen_ackerman_motion_command_t *motion_commands_vector, int n
 	
 	if (map_vector[map_index] != NULL)
 	{
+		int iter = 0;
 		do
 		{
 			hit_obstacle = 0;
@@ -273,7 +281,8 @@ obstacle_avoider(carmen_ackerman_motion_command_t *motion_commands_vector, int n
 					break;
 				}
 			}
-		} while (hit_obstacle && (fabs(motion_commands_vector[0].v) > 0.001));
+			iter++;
+		} while (hit_obstacle && (fabs(motion_commands_vector[0].v) > 0.001) && (iter < 500));
 	}
 	else
 	{

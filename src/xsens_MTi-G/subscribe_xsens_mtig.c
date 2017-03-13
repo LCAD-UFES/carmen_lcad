@@ -48,13 +48,13 @@ static void xsens_xyz_message_handler(carmen_xsens_xyz_message *xsens_xyz_messag
 void 
 car_odometry_message_handler(carmen_base_ackerman_odometry_message *car_odometry_message)
 {
-	static FILE *caco = NULL;
-	
-	if (caco == NULL)
-		caco = fopen("caco.txt", "w");
-	printf("%lf %lf\n", xsens_phi, car_odometry_message->phi);
-	fprintf(caco, "%lf %lf\n", xsens_phi, car_odometry_message->phi);
-	fflush(caco);
+//	static FILE *caco = NULL;
+//	
+//	if (caco == NULL)
+//		caco = fopen("caco.txt", "w");
+//	printf("%lf %lf\n", xsens_phi, car_odometry_message->phi);
+//	fprintf(caco, "%lf %lf\n", xsens_phi, car_odometry_message->phi);
+//	fflush(caco);
 }
 
 

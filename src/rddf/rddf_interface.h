@@ -36,7 +36,7 @@ extern "C"
     void carmen_rddf_publish_nearest_waypoint_confirmation_message(carmen_point_t point);
     void carmen_rddf_publish_road_profile_around_end_point_message(carmen_ackerman_traj_point_t *poses_around_end_point, int num_poses);
     void carmen_rddf_publish_add_annotation_message(carmen_vector_3D_t annotation_point, double orientation, char *annotation_description, int annotation_type, int annotation_code);
-    void carmen_rddf_publish_annotation_message(carmen_vector_3D_t annotation_point, double orientation, char *annotation_description, int annotation_type, int annotation_code);
+    void carmen_rddf_publish_annotation_message(carmen_annotation_t *annotations, int num_annotations);
 
 #ifdef __cplusplus
 }

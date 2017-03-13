@@ -7,6 +7,7 @@
 #include <carmen/carmen_graphics.h>
 #include <carmen/traffic_light_interface.h>
 #include <carmen/traffic_light_messages.h>
+#include <carmen/rddf_messages.h>
 
 #include <opencv2/core/core.hpp>        // Basic OpenCV structures (cv::Mat, Scalar)
 #include <opencv2/highgui/highgui.hpp>
@@ -104,14 +105,19 @@ key_release_event(GtkWidget *widget __attribute__((unused)), GdkEventButton *key
 void
 add_traffic_light_information_to_image(cv::Mat &image, carmen_traffic_light_message *message)
 {
-	ostringstream myStream;
-
-	myStream << fixed << setprecision(1) << message->distance << flush;
 	string text;
-	if (message->distance <= 200.0 && message->distance != -1.0)
-		text = "Distance " + myStream.str() + " meters";
+	if (message->traffic_light_annotation_distance <= MAX_TRAFFIC_LIGHT_DISTANCE && message->traffic_light_annotation_distance != -1.0)
+	{
+		ostringstream distance_str;
+		distance_str << fixed << setprecision(1) << message->traffic_light_annotation_distance << flush;
+		text = "Distance to stop point: " + distance_str.str() + " meters";
+	}
 	else
-		text = "Distance greater than 200 meters";
+	{
+		ostringstream distance_str;
+		distance_str << fixed << setprecision(1) << MAX_TRAFFIC_LIGHT_DISTANCE << flush;
+		text = "Distance to stop point greater than " + distance_str.str() + " meters";
+	}
 
 	if (image.cols > 900)
 		putText(image, text, cv::Point(20, 900), FONT_HERSHEY_COMPLEX, 1, Scalar(100, 255, 100), 2, 8);
@@ -121,7 +127,12 @@ add_traffic_light_information_to_image(cv::Mat &image, carmen_traffic_light_mess
 	int num_red = 0;
 	for (int i = 0; i < message->num_traffic_lights; i++)
 	{
-		if (message->traffic_lights[i].color == TRAFFIC_LIGHT_RED)
+		FILE *cacof = fopen("caco.txt", "a");
+		fprintf(cacof, "%lf %d\n", message->traffic_light_annotation_distance, message->traffic_lights[i].y2 - message->traffic_lights[i].y1);
+		fflush(cacof);
+		fclose(cacof);
+
+		if (message->traffic_lights[i].color == RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED)
 			num_red++;
 
 		CvPoint p1, p2;
@@ -129,9 +140,9 @@ add_traffic_light_information_to_image(cv::Mat &image, carmen_traffic_light_mess
 		p1.y = message->traffic_lights[i].y1;
 		p2.x = message->traffic_lights[i].x2;
 		p2.y = message->traffic_lights[i].y2;
-		if (message->traffic_lights[i].color == TRAFFIC_LIGHT_RED)
+		if (message->traffic_lights[i].color == RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED)
 			cv::rectangle(image, p1, p2, CV_RGB(0, 0, 255), 3, 10, 0);
-		else if (message->traffic_lights[i].color == TRAFFIC_LIGHT_GREEN)
+		else if (message->traffic_lights[i].color == RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN)
 			cv::rectangle(image, p1, p2, CV_RGB(0, 255, 0), 3, 10, 0);
 		else // yellow
 			cv::rectangle(image, p1, p2, CV_RGB(0, 255, 255), 3, 10, 0);
@@ -302,10 +313,10 @@ read_parameters(int argc, char **argv)
 
     carmen_param_t param_list[] =
     {
-        { (char*) bumblebee_string,(char *) "width", CARMEN_PARAM_INT, &image_width, 0, NULL},
-        { (char*) bumblebee_string,(char *) "height", CARMEN_PARAM_INT, &image_height, 0, NULL},
-        { (char*) "traffic_light_viewer",(char *) "width", CARMEN_PARAM_INT, &window_view_width, 0, NULL},
-        { (char*) "traffic_light_viewer",(char *) "height", CARMEN_PARAM_INT, &window_view_height, 0, NULL}
+        { (char *) bumblebee_string, (char *) "width", CARMEN_PARAM_INT, &image_width, 0, NULL},
+        { (char *) bumblebee_string, (char *) "height", CARMEN_PARAM_INT, &image_height, 0, NULL},
+        { (char *) "traffic_light_viewer", (char *) "width", CARMEN_PARAM_INT, &window_view_width, 0, NULL},
+        { (char *) "traffic_light_viewer", (char *) "height", CARMEN_PARAM_INT, &window_view_height, 0, NULL}
     };
 
     num_items = sizeof (param_list) / sizeof (param_list[0]);

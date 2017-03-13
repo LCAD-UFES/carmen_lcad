@@ -37,8 +37,9 @@ Caso o frame rate do channel Default caia para 8:
 3 - Vá no icone de configuração (engrenagem) 
 5 - Vá na aba Advanced Camera Settings. Escolha o channel 0 (Default), clique em restaurar.
 6 - Feche o flycap
-7 - Rode o central e o driver carmen flycap:
-	cd $CARMEN_HOME/bin
+7 - Rode o central, param_daemon e o driver carmen flycap (em terminais diferentes):
+	./central
+	./param_daemon ../src/carmen-ford-escape.ini
 	./bumblebee_basic_flycap -camera_id <id da camera que quer configurar>
     Obs: este driver irá escrever nas configurações da camêra e retornará os parâmetros defaults com o frame rate de 16fps
 8 - Feche todos os programas e verifique no flycap se nas configurações, o parâmetro frame rate, voltou a 16fps, e faça os passos para salvar as configurações no channel 1.

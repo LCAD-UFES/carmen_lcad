@@ -78,6 +78,9 @@ extern "C" G_MODULE_EXPORT
 void on_menuMaps_CompleteMap_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
+void on_menuMaps_MovingObjects_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);
+
+extern "C" G_MODULE_EXPORT
 void on_menuMaps_RemissionMap_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
@@ -193,6 +196,10 @@ void on_menuDisplay_ShowDynamicPoints_toggled (GtkCheckMenuItem* togglebutton,
 		GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
+void on_menuDisplay_ShowAnnotations_toggled (GtkCheckMenuItem* togglebutton,
+		GtkGui* gui);
+
+extern "C" G_MODULE_EXPORT
 void on_menuSimulatorShowTruePosition_toggled (GtkCheckMenuItem* togglebutton,
 		GtkGui* gui);
 
@@ -246,6 +253,9 @@ void on_buttonClearGoals_clicked(GtkWidget *widget, GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
 void on_buttonGo_clicked(GtkWidget *widget, GtkGui* gui);
+
+extern "C" G_MODULE_EXPORT
+void on_buttonGo_entered(GtkWidget *widget, GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
 void on_buttonPlaceFinalGoal_clicked(GtkWidget *widget, GtkGui* gui);

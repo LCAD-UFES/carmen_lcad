@@ -113,6 +113,8 @@ typedef struct _sensor_parameters
 	carmen_vector_3D_t sensor_robot_reference;
 
 	int use_remission;
+
+	double cutoff_negative_acceleration;
 } sensor_parameters_t;
 
 
@@ -228,7 +230,7 @@ void carmen_prob_models_update_log_odds_of_cells_hit_by_rays(carmen_map_t *map, 
 void carmen_prob_models_update_log_odds_of_cells_crossed_by_ray(carmen_map_t *log_odds_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id);
 void carmen_prob_models_update_log_odds_of_nearest_target(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id);
 void carmen_prob_models_update_sum_and_count_of_cells_hit_by_rays(carmen_map_t *map, carmen_map_t *sum_occupancy_map, carmen_map_t *count_occupancy_map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id);
-void carmen_prob_models_upgrade_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id);
+void carmen_prob_models_get_maximum_probability_of_cells_hit_by_rays(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id);
 void carmen_prob_models_set_log_odds_of_cells_hit_by_rays(carmen_map_t *map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id);
 void carmen_prob_models_update_cells_crossed_by_ray(carmen_map_t *map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id);
 void carmen_prob_models_update_sum_and_count_cells_crossed_by_ray(carmen_map_t *map, carmen_map_t *sum_occupancy_map, carmen_map_t *count_occupancy_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id);

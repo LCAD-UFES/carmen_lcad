@@ -171,7 +171,7 @@ realloc_temp_weights(carmen_localize_ackerman_particle_filter_p filter, int num_
 
 
 carmen_localize_ackerman_particle_filter_p
-carmen_localize_ackerman_particle_filter_new(carmen_localize_ackerman_param_p param)
+carmen_localize_ackerman_particle_filter_initialize(carmen_localize_ackerman_param_p param)
 {
 	carmen_localize_ackerman_particle_filter_p filter;
 
@@ -220,9 +220,7 @@ carmen_localize_ackerman_initialize_particles_uniform(carmen_localize_ackerman_p
 
 	/* compute the correct laser_skip */
 	if (filter->param->laser_skip <= 0)
-	{
 		filter->param->laser_skip = floor(filter->param->integrate_angle / laser->config.angular_resolution);
-	}
 
 	fprintf(stderr, "\rDoing global localization... (%.1f%% complete)", 0.0);
 	filter->initialized = 0;
@@ -335,7 +333,7 @@ carmen_localize_ackerman_initialize_particles_gaussians(carmen_localize_ackerman
 		int num_modes, carmen_point_t *mean, carmen_point_t *std)
 {
 	int i, j, each, start, end;
-	double x, y, theta;
+	double x, y, theta, phi_bias;
 
 	each = (int) floor(filter->param->num_particles / (double) num_modes);
 
@@ -353,12 +351,28 @@ carmen_localize_ackerman_initialize_particles_gaussians(carmen_localize_ackerman
 			x = carmen_gaussian_random(mean[i].x, std[i].x);
 			y = carmen_gaussian_random(mean[i].y, std[i].y);
 			theta = carmen_normalize_theta(carmen_gaussian_random(mean[i].theta, std[i].theta));
+			phi_bias = carmen_gaussian_random(0.0, filter->param->phi_bias_std);
 
 			filter->particles[j].x = x;
 			filter->particles[j].y = y;
 			filter->particles[j].theta = theta;
-			filter->particles[j].weight = 0.0;
+			filter->particles[j].phi_bias = phi_bias;
+			filter->particles[j].weight = 0.5;
 		}
+	}
+
+	// Add mean of each mode to the pool
+	for (i = 0; i < num_modes; i++)
+	{
+		x = mean[i].x;
+		y = mean[i].y;
+		theta = carmen_normalize_theta(mean[i].theta);
+
+		filter->particles[i].x = x;
+		filter->particles[i].y = y;
+		filter->particles[i].theta = theta;
+		filter->particles[i].weight = 0.5;
+		filter->particles[i].phi_bias = 0.0;
 	}
 
 	filter->initialized = 1;

@@ -15,17 +15,20 @@ LFLAGS += -lglobal -lparam_interface -lipc -lGL -lGLU -lglut \
 	  -L$(CARMEN_HOME)/sharedlib/libtf/src \
 	 -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
 	 -lboost_thread-mt -lrt -lboost_signals -lboost_system \
-	  -L/usr/local/share/OpenCV/3rdparty/lib `pkg-config --libs opencv`
+	  -L/usr/local/share/OpenCV/3rdparty/lib `pkg-config --libs opencv` -lwnn
 
-SOURCES = traffic_light_main.cpp traffic_light_interface.cpp traffic_light.cpp mapping_traffic_light_main.cpp log_generate_images.cpp
+#SOURCES = traffic_light_main.cpp traffic_light_interface.cpp traffic_light.cpp mapping_traffic_light_main.cpp log_generate_images.cpp
+SOURCES = traffic_light_main.cpp traffic_light_interface.cpp traffic_light.cpp log_generate_images.cpp tlight_train.cpp 
 
 PUBLIC_INCLUDES = traffic_light_interface.h traffic_light_messages.h traffic_light.h
 
 PUBLIC_LIBRARIES = libtraffic_light_interface.a 
 
-PUBLIC_BINARIES = traffic_light mapping_traffic_light log_generate_images
+#PUBLIC_BINARIES = traffic_light mapping_traffic_light log_generate_images
+PUBLIC_BINARIES = traffic_light log_generate_images
 
-TARGETS = libtraffic_light_interface.a  traffic_light mapping_traffic_light log_generate_images
+#TARGETS = libtraffic_light_interface.a  traffic_light mapping_traffic_light log_generate_images
+TARGETS = libtraffic_light_interface.a  traffic_light log_generate_images tlight_train
 
 PUBLIC_LIBRARIES_SO = libtraffic_light_interface.so
 
@@ -42,13 +45,15 @@ PUBLIC_BINARIES += traffic_light_view
 TARGETS += traffic_light_view
 endif
 
+tlight_train: tlight_train.o 
+
 libtraffic_light_interface.a:		traffic_light_interface.o traffic_light.o
 
 libtraffic_light_interface.so.1:	traffic_light_interface.o traffic_light.o
 
 traffic_light:				traffic_light_main.o libtraffic_light_interface.a
 
-mapping_traffic_light:			mapping_traffic_light_main.o libtraffic_light_interface.a
+#mapping_traffic_light:			mapping_traffic_light_main.o libtraffic_light_interface.a
 
 log_generate_images:			log_generate_images.o
 

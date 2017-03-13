@@ -12,9 +12,7 @@ extern "C"
 {
 #endif
 
-#define TRAFFIC_LIGHT_GREEN 0
-#define TRAFFIC_LIGHT_RED 1
-#define TRAFFIC_LIGHT_YELLOW 2
+#define MAX_TRAFFIC_LIGHT_DISTANCE	100.0
 
 typedef struct
 {
@@ -29,7 +27,7 @@ typedef struct
 {
 	int num_traffic_lights;
 	carmen_traffic_light *traffic_lights;
-	double distance;
+	double traffic_light_annotation_distance;
 	double timestamp;
 	char *host;
 } carmen_traffic_light_message;
@@ -42,7 +40,7 @@ typedef struct
 {
 	short has_signals;
 	carmen_vector_3D_t position;
-	double distance;
+	double traffic_light_annotation_distance;
 	double timestamp;
 	char *host;
 } carmen_mapping_traffic_light_message;

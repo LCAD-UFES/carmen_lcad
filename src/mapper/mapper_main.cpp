@@ -97,6 +97,7 @@ int use_truepos = 0;
 
 extern carmen_mapper_virtual_laser_message virtual_laser_message;
 
+extern carmen_moving_objects_point_clouds_message moving_objects_message;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
@@ -179,18 +180,23 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 static void
 carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *globalpos_message)
 {
-	double distance_to_annotation;
-
 	if (visual_odometry_is_global_pos)
 		interpolator.AddMessageToInterpolationList(globalpos_message);
 	else
 		mapper_set_robot_pose_into_the_map(globalpos_message, update_cells_below_car);
 
 	// Map annotations handling
-	distance_to_annotation = DIST2D(last_rddf_annotation_message.annotation_point, globalpos_history[last_globalpos].pose.position);
-	if (((last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
-		 (last_rddf_annotation_message.annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)) &&
-		(distance_to_annotation < 35.0))
+	double distance_to_nearest_annotation = 1000.0;
+	for (int i = 0; i < last_rddf_annotation_message.num_annotations; i++)
+	{
+		double distance_to_annotation = DIST2D(last_rddf_annotation_message.annotations[i].annotation_point,
+				globalpos_history[last_globalpos].pose.position);
+		if (((last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
+			 (last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)) &&
+			 (distance_to_annotation < distance_to_nearest_annotation))
+			distance_to_nearest_annotation = distance_to_annotation;
+	}
+	if (distance_to_nearest_annotation < 35.0)
 		robot_near_bump_or_barrier = 1;
 	else
 		robot_near_bump_or_barrier = 0;
@@ -481,11 +487,7 @@ ultrasonic_sensor_message_handler(carmen_ultrasonic_sonar_sensor_message *messag
 static void
 rddf_annotation_message_handler(carmen_rddf_annotation_message *message)
 {
-	double distance_to_last_annotation = DIST2D(last_rddf_annotation_message.annotation_point, globalpos_history[last_globalpos].pose.position);
-	double distance_to_new_annotation = DIST2D(message->annotation_point, globalpos_history[last_globalpos].pose.position);
-
-	if (distance_to_new_annotation < distance_to_last_annotation)
-		last_rddf_annotation_message = *message; // TODO: tratar isso direito
+	last_rddf_annotation_message = *message;
 }
 
 
@@ -493,6 +495,13 @@ static void
 carmen_mapper_virtual_laser_message_handler(carmen_mapper_virtual_laser_message *message)
 {
 	virtual_laser_message = *message;
+}
+
+
+static void
+carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_clouds_message *moving_objects_point_clouds_message)
+{
+	moving_objects_message = *moving_objects_point_clouds_message;
 }
 
 
@@ -782,6 +791,7 @@ get_sensors_param(int argc, char **argv)
 			{(char *) "laser_ldmrs", (char *) "vertical_resolution", CARMEN_PARAM_INT, &sensors_params[1].vertical_resolution, 0, NULL},
 			{(char *) "laser_ldmrs", (char *) "range_max", CARMEN_PARAM_DOUBLE, &sensors_params[1].range_max, 0, NULL},
 			{(char *) "laser_ldmrs", (char *) "time_spent_by_each_scan", CARMEN_PARAM_DOUBLE, &sensors_params[1].time_spent_by_each_scan, 0, NULL},
+			{(char *) "laser_ldmrs", (char *) "cutoff_negative_acceleration", CARMEN_PARAM_DOUBLE, &sensors_params[1].cutoff_negative_acceleration, 0, NULL},
 		};
 
 		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
@@ -798,7 +808,7 @@ get_sensors_param(int argc, char **argv)
 	{
 		if (sensors_params[i].alive)
 		{
-			sensors_params[1].sensor_type = CAMERA;
+			sensors_params[i].sensor_type = CAMERA;
 			sensors_params[i].pose = get_stereo_velodyne_pose_3D(argc, argv, i);
 			sensors_params[i].sensor_support_pose = sensor_board_1_pose;
 			sensors_params[i].support_to_car_matrix = create_rotation_matrix(sensors_params[i].sensor_support_pose.orientation);
@@ -1065,6 +1075,10 @@ subscribe_to_ipc_messages()
 	carmen_rddf_subscribe_annotation_message(NULL, (carmen_handler_t) rddf_annotation_message_handler, CARMEN_SUBSCRIBE_ALL);
 
 	carmen_mapper_subscribe_virtual_laser_message(NULL, (carmen_handler_t) carmen_mapper_virtual_laser_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	// draw moving objects
+	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
 }
 
 

@@ -393,8 +393,17 @@ carmen_get_time(void)
 
 char *carmen_get_host(void)
 {
+  // The return value of getenv() is a pointer to a static buffer, whose contents
+  // may be changed by later calls. Therefore it's safer to create a copy of
+  // the returned string.
+  //
+  // See: http://www.cplusplus.com/reference/cstdlib/getenv/
+  //
+  // "The pointer returned [by a getenv() call] points to an internal memory block,
+  // whose content or validity may be altered by further calls to getenv
+  // (but not by other library functions)."
+  static char hostname[1024];
   FILE *bin_host;
-  char hostname[1024];
 
   if (getenv("HOST") == NULL) {
     if (getenv("HOSTNAME") != NULL)
@@ -414,14 +423,14 @@ char *carmen_get_host(void)
     }
   }
 
-  return getenv("HOST");
+  strcpy(hostname, getenv("HOST"));
+  return hostname;
 }
 
 
 carmen_default_message *carmen_default_message_create(void)
 {
-  if (static_message.host == NULL)
-    static_message.host = carmen_get_host();
+  static_message.host = carmen_get_host();
   static_message.timestamp = carmen_get_time();
 
   return &static_message;
@@ -671,8 +680,8 @@ carmen_inline double
 carmen_distance_traj(carmen_traj_point_p p1, carmen_traj_point_p p2)
 {
 	long double sqr_ld, sqrt_ld;
-	
-	sqr_ld = (long double) (p1->x - p2->x) * (long double) (p1->x - p2->x) + 
+
+	sqr_ld = (long double) (p1->x - p2->x) * (long double) (p1->x - p2->x) +
   	         (long double) (p1->y - p2->y) * (long double) (p1->y - p2->y);
 	sqrt_ld = sqrtl(sqr_ld);
 
@@ -1670,9 +1679,9 @@ carmen_alloc_spherical_point_cloud(spherical_point_cloud *velodyne_points, int n
 
 
 void
-carmen_add_bias_and_multiplier_to_v_and_phi(double *odometry_v, double *odometry_phi, double raw_v, double raw_phi, 
+carmen_add_bias_and_multiplier_to_v_and_phi(double *odometry_v, double *odometry_phi, double raw_v, double raw_phi,
 					    double v_bias, double v_multiplier, double phi_bias, double phi_multiplier)
-{	
+{
 	*odometry_v = raw_v * v_multiplier + v_bias;
 	*odometry_phi = raw_phi * phi_multiplier + phi_bias;
 }
