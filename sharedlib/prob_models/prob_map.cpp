@@ -584,7 +584,7 @@ carmen_prob_models_set_log_odds_of_cells_hit_by_rays(carmen_map_t *log_odds_map,
 		if (map_grid_is_valid(log_odds_map, cell_hit_by_ray.x, cell_hit_by_ray.y) && !sensor_data->maxed[thread_id][i])// &&
 //			(sensor_data->obstacle_height[thread_id][i] > 0.0) && (sensor_data->obstacle_height[thread_id][i] < 4.0) &&
 //			(sensor_data->ray_size_in_the_floor[thread_id][i] > 13.0))
-			log_odds_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] = sensor_params->log_odds.log_odds_occ;
+			carmen_prob_models_occupancy_grid_mapping_log_odds_only(log_odds_map, cell_hit_by_ray.x, cell_hit_by_ray.y, 2.0 * sensor_params->log_odds.log_odds_occ);
 	}
 }
 

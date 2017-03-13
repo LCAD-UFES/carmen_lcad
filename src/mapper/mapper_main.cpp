@@ -791,6 +791,7 @@ get_sensors_param(int argc, char **argv)
 			{(char *) "laser_ldmrs", (char *) "vertical_resolution", CARMEN_PARAM_INT, &sensors_params[1].vertical_resolution, 0, NULL},
 			{(char *) "laser_ldmrs", (char *) "range_max", CARMEN_PARAM_DOUBLE, &sensors_params[1].range_max, 0, NULL},
 			{(char *) "laser_ldmrs", (char *) "time_spent_by_each_scan", CARMEN_PARAM_DOUBLE, &sensors_params[1].time_spent_by_each_scan, 0, NULL},
+			{(char *) "laser_ldmrs", (char *) "cutoff_negative_acceleration", CARMEN_PARAM_DOUBLE, &sensors_params[1].cutoff_negative_acceleration, 0, NULL},
 		};
 
 		carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
@@ -807,7 +808,7 @@ get_sensors_param(int argc, char **argv)
 	{
 		if (sensors_params[i].alive)
 		{
-			sensors_params[1].sensor_type = CAMERA;
+			sensors_params[i].sensor_type = CAMERA;
 			sensors_params[i].pose = get_stereo_velodyne_pose_3D(argc, argv, i);
 			sensors_params[i].sensor_support_pose = sensor_board_1_pose;
 			sensors_params[i].support_to_car_matrix = create_rotation_matrix(sensors_params[i].sensor_support_pose.orientation);

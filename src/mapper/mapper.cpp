@@ -254,6 +254,34 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *log_odds
 //	system("cp plot_data.dat plot_data2.dat");
 }
 
+
+double
+get_acceleration(double v, double timestamp)
+{
+	static double a = 0.0;
+	static double previous_v = 0.0;
+	static double previous_timestamp = 0.0;
+
+	if (previous_timestamp == 0.0)
+	{
+		previous_timestamp = timestamp;
+		return (0.0);
+	}
+
+	double dt = timestamp - previous_timestamp;
+	if (dt < 0.01)
+		return (a);
+
+	double current_a = (v - previous_v) / dt;
+
+	a = a + 0.2 * (current_a - a); // para suaviar um pouco
+
+	previous_v = v;
+	previous_timestamp = timestamp;
+
+	return (a);
+}
+
 //FILE *plot_data;
 
 static void
@@ -267,6 +295,10 @@ update_log_odds_of_cells_in_the_laser_ldmrs_perceptual_field(carmen_map_t *log_o
 
 	double v = sensor_data->robot_velocity[point_cloud_index].x;
 	double phi = sensor_data->robot_phi[point_cloud_index];
+
+	double a = get_acceleration(v, sensor_data->robot_timestamp[point_cloud_index]);
+	if (a < -sensor_params->cutoff_negative_acceleration)
+		return;
 
 	double dt = sensor_params->time_spent_by_each_scan;
 	double dt1 = sensor_data->points_timestamp[point_cloud_index] - sensor_data->robot_timestamp[point_cloud_index] - (double) N * dt;
