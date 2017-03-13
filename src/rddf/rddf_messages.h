@@ -9,7 +9,7 @@ extern "C"
 {
 #endif
 
-	#define NUM_RDDF_ANNOTATION_TYPES				11
+	#define NUM_RDDF_ANNOTATION_TYPES				12
 
 	#define RDDF_ANNOTATION_TYPE_NONE 				0
 	#define RDDF_ANNOTATION_TYPE_END_POINT_AREA 	1
@@ -22,9 +22,10 @@ extern "C"
 	#define RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT 		8
 	#define RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN 		9
 	#define RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP	10
+	#define RDDF_ANNOTATION_TYPE_DYNAMIC			11
 
 
-	#define NUM_RDDF_ANNOTATION_CODES						18
+	#define NUM_RDDF_ANNOTATION_CODES						19
 
 	#define RDDF_ANNOTATION_CODE_NONE		 				0
 
@@ -47,13 +48,15 @@ extern "C"
 	#define RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_RIGHT 	16
 	#define RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_LEFT		17
 
+	#define RDDF_ANNOTATION_CODE_DYNAMIC_STOP				18
+
     typedef struct
     {
         int number_of_poses;
         int number_of_poses_back;
         carmen_ackerman_traj_point_t *poses;
         carmen_ackerman_traj_point_t *poses_back;
-        // int *signals_annotations;
+        // int *signals_annotations; // annotation code aqui e type abaixo? (ou vice-versa?)
         int *annotations;
         double timestamp;
         char *host;
@@ -77,12 +80,6 @@ extern "C"
 	#define CARMEN_RDDF_END_POINT_MESSAGE_FMT "{int, {double, double, double}, double, string}"
 
 
-    typedef carmen_rddf_end_point_message carmen_rddf_nearest_waypoint_message;
-
-	#define CARMEN_RDDF_NEAREST_WAYPOINT_MESSAGE_NAME "carmen_rddf_nearest_waypoint_message"
-	#define CARMEN_RDDF_NEAREST_WAYPOINT_MESSAGE_FMT "{int, {double, double, double}, int, double, string}"
-
-
     typedef struct
     {
         int number_of_poses;
@@ -94,11 +91,6 @@ extern "C"
 	#define CARMEN_RDDF_WAYPOINTS_AROUND_END_POINT_MESSAGE_NAME "carmen_rddf_waypoints_around_end_point_message"
 	#define CARMEN_RDDF_WAYPOINTS_AROUND_END_POINT_MESSAGE_FMT "{int, <{double,double,double,double,double}:1>, double, string}"
 
-
-    typedef carmen_rddf_end_point_message carmen_rddf_nearest_waypoint_confirmation_message;
-
-	#define CARMEN_RDDF_NEAREST_WAYPOINT_CONFIRMATION_MESSAGE_NAME "carmen_rddf_nearest_waypoint_confirmation_message"
-	#define CARMEN_RDDF_NEAREST_WAYPOINT_CONFIRMATION_MESSAGE_FMT "{int, {double, double, double}, int, double, string}"
 
     // TODO: update this message to use carmen_annotation_t.
     typedef struct
@@ -115,12 +107,12 @@ extern "C"
     #define CARMEN_RDDF_ADD_ANNOTATION_MESSAGE_NAME "carmen_rddf_add_annotation_message"
     #define CARMEN_RDDF_ADD_ANNOTATION_MESSAGE_FMT "{{double,double,double},double,string,int,int,double,string}"
 
-	/*
-	typedef carmen_rddf_add_annotation_message carmen_rddf_annotation_message;
 
-	#define CARMEN_RDDF_ANNOTATION_MESSAGE_NAME "carmen_rddf_annotation_message"
-	#define CARMEN_RDDF_ANNOTATION_MESSAGE_FMT "{{double,double,double},double,string,int,int,double,string}"
-	 */
+	typedef carmen_rddf_add_annotation_message carmen_rddf_dynamic_annotation_message;
+
+	#define CARMEN_RDDF_DYNAMIC_ANNOTATION_MESSAGE_NAME "carmen_rddf_annotation_message"
+	#define CARMEN_RDDF_DYNAMIC_ANNOTATION_MESSAGE_FMT "{{double,double,double},double,string,int,int,double,string}"
+
 
     typedef struct
     {
