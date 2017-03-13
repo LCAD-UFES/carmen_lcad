@@ -1028,12 +1028,8 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	best_otcp =	get_shorter_path(shorter_path, (lastOdometryVector.size() * goalPoseVector.size()), paths, otcps);
 
 	if (shorter_path >= 0)
-		put_shorter_path_in_front(paths, shorter_path);
-	else
-		paths.clear();
-
-	if (has_valid_path)
 	{
+		put_shorter_path_in_front(paths, shorter_path);
 		previous_good_tcp = best_otcp;
 		last_timestamp = carmen_get_time();
 
@@ -1043,9 +1039,13 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 //		filter_path(detailed_lane);
 //		paths.push_back(detailed_lane);
 	}
-	else if ((carmen_get_time() - last_timestamp) > 0.5)
-		previous_good_tcp.valid = false;
+	else
+	{
+		if ((carmen_get_time() - last_timestamp) > 0.5)
+			previous_good_tcp.valid = false;
 
+		paths.clear();
+	}
 }
 
 

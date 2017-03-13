@@ -165,10 +165,10 @@ obstacle_avoider_timer_handler()
 		carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands_vector[motion_command_vetor],
 				num_motion_commands_in_vector[motion_command_vetor], timestamp_of_motion_commands_vector[motion_command_vetor]);
 
+		carmen_obstacle_avoider_publish_robot_hit_obstacle_message(robot_hit_obstacle);
 		// Apenas para visualizacao (path vermelho) e para informar ao pipeline acima sobre a deteccao de obstaculos (ou nao)
 		if (ackerman_collision_avoidance && ((carmen_get_time() - time_of_last_call) > 0.2))
 		{
-			carmen_obstacle_avoider_publish_robot_hit_obstacle_message(robot_hit_obstacle);
 			robot_hit_obstacle = 0;
 			publish_navigator_ackerman_plan_message_with_obstacle_avoider_path(motion_commands_vector[motion_command_vetor],
 					num_motion_commands_in_vector[motion_command_vetor], timestamp_of_motion_commands_vector[motion_command_vetor]);

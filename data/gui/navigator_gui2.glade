@@ -565,6 +565,7 @@
                         <property name="use_action_appearance">False</property>
                         <property name="label" translatable="yes">Robot Ackerman</property>
                         <property name="use_underline">True</property>
+                        <property name="group">menuCarPanel_robot_ackerman_message</property>
                         <signal name="toggled" handler="on_menuCarPanel_robot_ackerman_message" swapped="yes"/>
                       </object>
                     </child>

@@ -67,7 +67,8 @@ void on_drawingAreaCarPanel_realize (GtkWidget *widget, GtkGui *gui)
 	GdkGLContext  *glcontext  = gtk_widget_get_gl_context (widget);
 	GdkGLDrawable *gldrawable = gtk_widget_get_gl_drawable (widget);
 
-	if (!gdk_gl_drawable_gl_begin (gldrawable, glcontext)) return;
+	if (!gdk_gl_drawable_gl_begin (gldrawable, glcontext))
+		return;
 
 	gdk_gl_drawable_gl_end (gldrawable);
 }

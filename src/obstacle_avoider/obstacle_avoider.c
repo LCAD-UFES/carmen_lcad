@@ -262,6 +262,7 @@ obstacle_avoider(carmen_ackerman_motion_command_t *motion_commands_vector, int n
 	
 	if (map_vector[map_index] != NULL)
 	{
+		int iter = 0;
 		do
 		{
 			hit_obstacle = 0;
@@ -280,7 +281,8 @@ obstacle_avoider(carmen_ackerman_motion_command_t *motion_commands_vector, int n
 					break;
 				}
 			}
-		} while (hit_obstacle && (fabs(motion_commands_vector[0].v) > 0.001));
+			iter++;
+		} while (hit_obstacle && (fabs(motion_commands_vector[0].v) > 0.001) && (iter < 500));
 	}
 	else
 	{

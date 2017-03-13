@@ -213,9 +213,9 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, double goal_v)
 		v = carmen_fmin(60.0 / 3.6, goal_v);
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP)
 			&& red_traffic_light_ahead())
-		v = 0.1;
+		v = 0.5;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP)
-		v = 0.1;
+		v = 0.5;
 
 	return (v);
 }

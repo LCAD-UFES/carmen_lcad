@@ -117,7 +117,7 @@ void
 Speedometer::update(float speed)
 {
     // conversion to km/h
-    this->speed = fabs(speed * KMH_MS);
+    this->speed = this->speed + 0.05 * (fabs(speed * KMH_MS) - this->speed); // para suavisar a visualizacao
 
     Utils::getDigitsFromValue(this->speed, &hundredSpeed, &dozenSpeed, &unitSpeed, &floatPointSpeed);
 

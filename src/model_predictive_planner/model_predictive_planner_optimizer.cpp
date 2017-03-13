@@ -835,8 +835,8 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 
 		if (tt > 15.0)
 			tt = 15.0;
-//		else if (tt < 0.5)
-//			tt = 0.5;
+		else if (tt < 0.15)
+			tt = 0.15;
 
 		params.suitable_tt = tcp_seed.tt = tt;
 		params.suitable_acceleration = tcp_seed.a = a;
@@ -1312,14 +1312,16 @@ void verify_shift_option_for_k1(
 	if (!tcp_seed.has_k1)
 		get_missing_k1(target_td, tcp_seed);
 
-	if (((target_td.v_i > (18.0 / 3.6)) && (target_td.dist < 20.0))
-			|| ((target_td.v_i < (5.0 / 3.6)) && (target_td.dist < 10.0)))
+	if (((target_td.v_i > (18.0 / 3.6)) && (target_td.dist < 20.0))	||
+		((target_td.v_i < (5.0 / 3.6)) && (target_td.dist < 10.0)))
 	{
-		if (!tcp_complete.shift_knots) {
+		if (!tcp_complete.shift_knots)
+		{
 			shift_k1(tcp_complete, target_td);
 			tcp_complete.shift_knots = true;
 		}
-	} else
+	}
+	else
 	{
 		if (tcp_complete.shift_knots)
 		{

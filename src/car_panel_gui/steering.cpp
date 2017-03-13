@@ -77,8 +77,12 @@ Steering::drawSymbol(void)
 
 
 void
-Steering::draw(float angle)
+Steering::draw(float new_angle)
 {
+	static double angle = 0.0;
+
+	angle = angle + 0.05 * (new_angle - angle); // para suavisar a visualizacao
+
     glRotatef(angle, 0, 0, 1);
 
     glColor3f(0.0f, 0.0f, 1.0f);

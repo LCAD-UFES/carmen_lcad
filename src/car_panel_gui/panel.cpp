@@ -208,35 +208,66 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 void
 subscribe_messages(int msg_type, double interval)
 {
+	static bool not_subscribed_to_fused_odometry = true;
+	static bool not_subscribed_to_robot_ackerman = true;
+	static bool not_subscribed_to_motion_command = true;
+	static bool not_subscribed_to_odometry = true;
+	static bool not_subscribed_to_globalpos = true;
+
 	switch (msg_type)
 	{
 		case 0:
 			handler_message = fused_odometry_t;
-			accelerator = new withoutTime(interval);
-			carmen_fused_odometry_subscribe_fused_odometry_message(NULL, (carmen_handler_t) fused_dometry_handler, CARMEN_SUBSCRIBE_LATEST);
+			if (accelerator == NULL)
+				accelerator = new withoutTime(interval);
+			if (not_subscribed_to_fused_odometry)
+			{
+				carmen_fused_odometry_subscribe_fused_odometry_message(NULL, (carmen_handler_t) fused_dometry_handler, CARMEN_SUBSCRIBE_LATEST);
+				not_subscribed_to_fused_odometry = false;
+			}
 			break;
 		case 1:
 			handler_message = robot_ackerman_motion_command_t;
-			accelerator = new withoutTime(interval);
-			carmen_robot_ackerman_subscribe_motion_command(NULL, (carmen_handler_t) robot_ackerman_motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
+			if (accelerator == NULL)
+				accelerator = new withoutTime(interval);
+			if (not_subscribed_to_robot_ackerman)
+			{
+				carmen_robot_ackerman_subscribe_motion_command(NULL, (carmen_handler_t) robot_ackerman_motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
+				not_subscribed_to_robot_ackerman = false;
+			}
 			break;
 		case 2:
 			handler_message = base_ackerman_motion_command_t;
-			accelerator = new withoutTime(interval);
-			carmen_base_ackerman_subscribe_motion_command(NULL, (carmen_handler_t) base_ackerman_motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
+			if (accelerator == NULL)
+				accelerator = new withoutTime(interval);
+			if (not_subscribed_to_motion_command)
+			{
+				carmen_base_ackerman_subscribe_motion_command(NULL, (carmen_handler_t) base_ackerman_motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
+				not_subscribed_to_motion_command = false;
+			}
 			break;
 		case 3:
 			handler_message = base_ackerman_odometry_t;
-			accelerator = new withoutTime(interval);
-			carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) base_ackerman_odometry_handler, CARMEN_SUBSCRIBE_LATEST);
+			if (accelerator == NULL)
+				accelerator = new withoutTime(interval);
+			if (not_subscribed_to_odometry)
+			{
+				carmen_base_ackerman_subscribe_odometry_message(NULL, (carmen_handler_t) base_ackerman_odometry_handler, CARMEN_SUBSCRIBE_LATEST);
+				not_subscribed_to_odometry = false;
+			}
 			break;
 		case 4:
 			handler_message = localize_ackerman_globalpos_t;
-			accelerator = new withoutTime(interval);
-			if (!use_truepos_local)
-				carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_handler, CARMEN_SUBSCRIBE_LATEST);
-			else
-				carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t) simulator_ackerman_truepos_message_handler, CARMEN_SUBSCRIBE_LATEST);
+			if (accelerator == NULL)
+				accelerator = new withoutTime(interval);
+			if (not_subscribed_to_globalpos)
+			{
+				if (!use_truepos_local)
+					carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_handler, CARMEN_SUBSCRIBE_LATEST);
+				else
+					carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t) simulator_ackerman_truepos_message_handler, CARMEN_SUBSCRIBE_LATEST);
+				not_subscribed_to_globalpos = false;
+			}
 			break;
 	}
 }
