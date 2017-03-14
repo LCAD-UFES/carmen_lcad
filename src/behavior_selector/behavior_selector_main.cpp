@@ -20,7 +20,7 @@
 #include "behavior_selector_messages.h"
 
 // Comment or uncomment this definition to control whether simulated moving obstacles are created.
-//#define SIMULATE_MOVING_OBSTACLE
+#define SIMULATE_MOVING_OBSTACLE
 
 // Comment or uncomment this definition to control whether moving obstacles are displayed.
 #define DISPLAY_MOVING_OBSTACLES
@@ -428,23 +428,27 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 	double moving_obj_v = 0.0;
 	if (carmen_udatmo_front_obstacle_detected())
 	{
+		moving_obj_v = carmen_udatmo_front_obstacle_speed(current_robot_pose_v_and_phi);
 //		distance = DIST2D(udatmo_get_moving_obstacle_position(), *current_robot_pose_v_and_phi) - car_pose_to_car_front;
 		distance = carmen_udatmo_front_obstacle_distance(current_robot_pose_v_and_phi) - car_pose_to_car_front;
-		moving_obj_v = carmen_udatmo_front_obstacle_speed(current_robot_pose_v_and_phi);
+		if (distance <= DIST2D_P(current_robot_pose_v_and_phi, goal))
+		{
+			// ver "The DARPA Urban Challenge" book, pg. 36.
+			double Kgap = 1.0;
+			double new_goal_v = moving_obj_v + Kgap * (distance - desired_distance);
+			//		SampleFilter_put(&filter2, goal->v);
+			//		goal->v = SampleFilter_get(&filter2);
+			if (new_goal_v < 0.0)
+				new_goal_v = 0.0;
 
-		// ver "The DARPA Urban Challenge" book, pg. 36.
-		double Kgap = 1.0;
-		goal->v = moving_obj_v + Kgap * (distance - desired_distance);
-		//		SampleFilter_put(&filter2, goal->v);
-		//		goal->v = SampleFilter_get(&filter2);
-		if (goal->v < 0.0)
-			goal->v = 0.0;
+			goal->v = carmen_fmin(new_goal_v, goal->v);
+		}
 //		printf("mov %lf, gv %lf, dist %lf, d_dist %lf\n", moving_obj_v, goal->v, distance, desired_distance);
 	}
-//	FILE* caco = fopen("caco.txt", "a");
-//	fprintf(caco, "%lf %lf %lf %lf %lf\n", moving_obj_v, goal->v, current_robot_pose_v_and_phi->v, distance, desired_distance);
-//	fflush(caco);
-//	fclose(caco);
+	FILE* caco = fopen("caco.txt", "a");
+	fprintf(caco, "%lf %lf %lf %lf %lf\n", moving_obj_v, goal->v, current_robot_pose_v_and_phi->v, distance, desired_distance);
+	fflush(caco);
+	fclose(caco);
 
 	return (goal->v);
 }
@@ -603,6 +607,7 @@ compute_simulated_objects(carmen_ackerman_traj_point_t *current_robot_pose_v_and
 	static carmen_ackerman_traj_point_t previous_pose, previous_pose_moved;
 	static double previous_timestamp = 0.0;
 
+//  Codigo para fazer parar o objeto movel depois de algum tempo
 //	static double initial_time = 0.0;
 //	if (initial_time == 0.0)
 //		initial_time = carmen_get_time();
@@ -628,6 +633,7 @@ compute_simulated_objects(carmen_ackerman_traj_point_t *current_robot_pose_v_and
 	}
 
 	double desired_v;
+//  Codigo para fazer parar o objeto movel depois de algum tempo
 //	if ((carmen_get_time() - initial_time) > 10.0)
 //		desired_v = 0.0;
 //	else
