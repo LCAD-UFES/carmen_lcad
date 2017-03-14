@@ -219,9 +219,17 @@ build_trajectory_trapezoidal_phi()
 	double delta_t, t;
 	int i;
 	
-	delta_t = (t1 + t2 + t3) / (double) (NUM_MOTION_COMMANDS_PER_VECTOR - 2);
+	double t0 = 1.0;
+	delta_t = (t0 + t1 + t2 + t3) / (double) (NUM_MOTION_COMMANDS_PER_VECTOR - 2);
+
+	for (i = 0, t = 0.0; t < t0; t += delta_t, i++)
+	{
+		motion_commands_vector[i].v = max_v;
+		motion_commands_vector[i].phi = 0.0;
+		motion_commands_vector[i].time = delta_t;
+	}
 	
-	for (i = 0, t = 0.0; t < t1; t += delta_t, i++)
+	for (t = 0.0; t < t1; t += delta_t, i++)
 	{
 		motion_commands_vector[i].v = max_v;
 		motion_commands_vector[i].phi = t * (max_phi / t1);
@@ -367,28 +375,28 @@ define_messages()
 			CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME);
 }
 
-static void
-select_wave_form()
-{
-	switch (wave_form)
-	{
-	case 0:
-		v_function = sinusoidal_function2;
-		phi_function = sinusoidal_function2;
-		break;
-	case 1:
-		v_function = quadratic_function;
-		phi_function = quadratic_function2;
-		break;
-	case 2:
-		v_function = quadratic_function;
-		phi_function = quadratic_function3;
-		break;
-	default:
-		v_function = identity_function;
-		phi_function = identity_function;
-	}
-}
+//static void
+//select_wave_form()
+//{
+//	switch (wave_form)
+//	{
+//	case 0:
+//		v_function = sinusoidal_function2;
+//		phi_function = sinusoidal_function2;
+//		break;
+//	case 1:
+//		v_function = quadratic_function;
+//		phi_function = quadratic_function2;
+//		break;
+//	case 2:
+//		v_function = quadratic_function;
+//		phi_function = quadratic_function3;
+//		break;
+//	default:
+//		v_function = identity_function;
+//		phi_function = identity_function;
+//	}
+//}
 
 int
 main(int argc, char **argv) //./ford_escape_hybrid_train_base -max_v 5.0 -max_phi 5.0 -timer_period 1.0 -t1 4.0 -t2 2.0 -t3 4.0

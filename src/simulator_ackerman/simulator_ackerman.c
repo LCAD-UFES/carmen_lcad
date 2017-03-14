@@ -150,7 +150,7 @@ motion_command_handler(carmen_base_ackerman_motion_command_message *motion_comma
 static void
 motion_command_handler(carmen_base_ackerman_motion_command_message *motion_command_message)
 {
-	int num_motion_commands, i;
+	int num_motion_commands;
 
 	if (!necessary_maps_available)
 		return;
