@@ -32,10 +32,6 @@ Obstacle::Obstacle(const Observation &observation)
 
 void Obstacle::update(const Observation &observation)
 {
-	// If necessary, remove oldest observation to make room for the latest one.
-	while (track.size() >= MOVING_OBSTACLES_OBSERVATIONS)
-		track.pop_back();
-
 	track.push_front(observation);
 	CARMEN_LOG(trace, "Obstacle track size: " << track.size());
 
@@ -48,34 +44,35 @@ void Obstacle::update(const Observation &observation)
 
 void Obstacle::updateMovement()
 {
-	double v = 0.0;
-	double theta = 0.0;
-	double count = 0.0;
-	for (int i = track.size() - 2; i >= 0 ; i--)
+	static double l = 0.9;
+
+	// Observations are inserted at the front of the sequence,
+	// so o1 is "older" (i.e. smaller timestamp) than o2.
+	const Observation &o1 = track.back();
+	const Observation &o2 = track.front();
+
+	// Abort update if time difference is too low.
+	double dt = o2.timestamp - o1.timestamp;
+	if (dt <= 0)
+		return;
+
+	// Remove oldest observation if time difference crosses threshold.
+	if (dt >= 1.0)
+		track.pop_back();
+
+	double vt = distance(o1, o2) / dt;
+	double theta = angle(o1, o2);
+
+	if (isnan(pose.v))
 	{
-		// Observations are inserted at the front of the sequence,
-		// so o1 is "older" (i.e. smaller timestamp) than o2.
-		const Observation &o1 = track[i + 1];
-		const Observation &o2 = track[i];
-
-		double dt = o2.timestamp - o1.timestamp;
-		if (dt < 0.00001)
-			continue;
-
-		v += distance(o1, o2) / dt;
-		theta += angle(o1, o2);
-		count += 1.0;
-	}
-
-	if (count > 0)
-	{
-		pose.theta = theta / count;
-		pose.v = v / count;
+		pose.v = vt;
+		pose.theta = theta;
 	}
 	else
-		pose.v = 0;
-
-	CARMEN_LOG(trace, "Obstacle estimates over " << count << " pairing(s): v = " << pose.v << ", theta = " << pose.theta);
+	{
+		pose.v     = l * pose.v     + (1.0 - l) * vt;
+		pose.theta = l * pose.theta + (1.0 - l) * theta;
+	}
 }
 
 
