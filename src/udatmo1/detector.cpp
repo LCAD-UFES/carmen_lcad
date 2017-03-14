@@ -111,8 +111,8 @@ Detector::detect()
 		{
 			front_obstacle.rddf_index = rddf_pose_index;
 			front_obstacle.x = moving_object[0].pose.x;
-			front_obstacle.y = moving_object[0].pose.x;
-			front_obstacle.v = moving_object[0].pose.x;
+			front_obstacle.y = moving_object[0].pose.y;
+			front_obstacle.v = moving_object[0].pose.v;
 			return &message;
 		}
 	}

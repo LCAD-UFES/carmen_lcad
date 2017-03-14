@@ -48,9 +48,9 @@ static int use_robot = 1;
 
 static carmen_localize_ackerman_initialize_message init_msg;
 
-static int current_motion_command_vetor = 0;
-static carmen_ackerman_motion_command_t motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS][NUM_MOTION_COMMANDS_PER_VECTOR];
-static int nun_motion_commands[NUM_MOTION_COMMANDS_VECTORS];
+//static int current_motion_command_vetor = 0;
+//static carmen_ackerman_motion_command_t motion_commands_vector[NUM_MOTION_COMMANDS_VECTORS][NUM_MOTION_COMMANDS_PER_VECTOR];
+//static int nun_motion_commands[NUM_MOTION_COMMANDS_VECTORS];
 static int publish_laser_flag = 0;
 
 static int necessary_maps_available = 0;
@@ -116,7 +116,7 @@ apply_system_latencies(carmen_ackerman_motion_command_p current_motion_command_v
 //                                                                                              //
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-
+/*
 static void
 motion_command_handler(carmen_base_ackerman_motion_command_message *motion_command_message)
 {
@@ -140,6 +140,30 @@ motion_command_handler(carmen_base_ackerman_motion_command_message *motion_comma
 
 	simulator_config->current_motion_command_vector = motion_commands_vector[(NUM_MOTION_COMMANDS_VECTORS + current_motion_command_vetor - 1) % NUM_MOTION_COMMANDS_VECTORS];
 	simulator_config->nun_motion_commands = nun_motion_commands[(NUM_MOTION_COMMANDS_VECTORS + current_motion_command_vetor - 1) % NUM_MOTION_COMMANDS_VECTORS];
+	simulator_config->time_of_last_command = motion_command_message->timestamp;
+
+	if (simulator_config->use_mpc)
+		simulator_config->nun_motion_commands = apply_system_latencies(simulator_config->current_motion_command_vector, simulator_config->nun_motion_commands);
+}
+*/
+
+static void
+motion_command_handler(carmen_base_ackerman_motion_command_message *motion_command_message)
+{
+	int num_motion_commands, i;
+
+	if (!necessary_maps_available)
+		return;
+
+//	printf("delay %lf\n", carmen_get_time() - motion_command_message->timestamp);
+
+	if (motion_command_message->num_motion_commands < NUM_MOTION_COMMANDS_PER_VECTOR)
+		num_motion_commands = motion_command_message->num_motion_commands;
+	else
+		num_motion_commands = NUM_MOTION_COMMANDS_PER_VECTOR;
+
+	simulator_config->current_motion_command_vector = motion_command_message->motion_command;
+	simulator_config->nun_motion_commands = num_motion_commands;
 	simulator_config->time_of_last_command = motion_command_message->timestamp;
 
 	if (simulator_config->use_mpc)
@@ -874,7 +898,7 @@ main(int argc, char **argv)
 	// Init relevant data strutures
 	memset(&simulator_conf, 0, sizeof(carmen_simulator_ackerman_config_t));
 	simulator_config = &simulator_conf;
-	memset(nun_motion_commands, 0, NUM_MOTION_COMMANDS_VECTORS);
+	//memset(nun_motion_commands, 0, NUM_MOTION_COMMANDS_VECTORS);
 
 	read_parameters(argc, argv, &simulator_conf);
 	//carmen_ford_escape_hybrid_read_pid_parameters(argc, argv);

@@ -622,7 +622,7 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 			steering_effort = carmen_libpid_steering_PID_controler(atan_desired_curvature, atan_current_curvature, simulator_config->delta_t);
 		}
 		#ifdef PLOT
-				pid_plot_phi(simulator_config->target_phi, simulator_config->phi, 0.55, "phi");
+				pid_plot_phi(simulator_config->phi, simulator_config->target_phi, 0.55, "phi");
 		#endif
 	}
 

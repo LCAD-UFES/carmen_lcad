@@ -83,6 +83,7 @@ quadratic_function3(double phi, double w, double t)
 		return phi;
 }
 
+
 double
 identity_function(double phi, double w, double t)
 {
@@ -213,7 +214,7 @@ build_trajectory_stop_smooth_trajectory()
 
 
 void
-build_trajectory_stop_smooth_trajectory_phi()
+build_trajectory_trapezoidal_phi()
 {
 	double delta_t, t;
 	int i;
@@ -222,14 +223,14 @@ build_trajectory_stop_smooth_trajectory_phi()
 	
 	for (i = 0, t = 0.0; t < t1; t += delta_t, i++)
 	{
-		motion_commands_vector[i].v = 0.0;
+		motion_commands_vector[i].v = max_v;
 		motion_commands_vector[i].phi = t * (max_phi / t1);
 		motion_commands_vector[i].time = delta_t;
 	}	
 	
 	for (t = 0.0; t < t2; t += delta_t, i++)
 	{
-		motion_commands_vector[i].v = 0.0;
+		motion_commands_vector[i].v = max_v;
 		motion_commands_vector[i].phi = max_phi;
 		motion_commands_vector[i].time = delta_t;
 	}	
@@ -237,7 +238,7 @@ build_trajectory_stop_smooth_trajectory_phi()
 	for (t = 0.0; t <= (t3 + delta_t); t += delta_t, i++)
 	{
 		//3 * exp(-((10 - x) * (10 - x)) / (4 * 4))
-		motion_commands_vector[i].v = 0.0;
+		motion_commands_vector[i].v = max_v;
 		motion_commands_vector[i].phi = max_phi - t * (max_phi / t3);
 		motion_commands_vector[i].time = delta_t;
 	}
@@ -253,14 +254,14 @@ timer_handler()
 	
 	if (first_time)
 	{
-		build_trajectory_stop_smooth_trajectory_phi();
+		build_trajectory_trapezoidal_phi();
 		first_time = 0;
 	}
 }
 
 
 void
-timer_handler_old()
+timer_handler_general()
 {
 	static int first_time = 1;
 	static double initial_t;
@@ -390,7 +391,7 @@ select_wave_form()
 }
 
 int
-main(int argc, char **argv)
+main(int argc, char **argv) //./ford_escape_hybrid_train_base -max_v 5.0 -max_phi 5.0 -timer_period 1.0 -t1 4.0 -t2 2.0 -t3 4.0
 {
 	signal(SIGINT, signal_handler);
 
@@ -401,11 +402,12 @@ main(int argc, char **argv)
 
 	read_parameters(argc, argv);
 
-	select_wave_form();
+	//select_wave_form();
 
 	carmen_ipc_addPeriodicTimer(timer_period, timer_handler, NULL);
-	//carmen_ipc_addPeriodicTimer(timer_period, phi_handler, NULL);
+	//carmen_ipc_addPeriodicTimer(timer_period, timer_handler_general, NULL);
 	//carmen_ipc_addPeriodicTimer(4.0, vel_handler, NULL);
+
 	carmen_ipc_dispatch();
 
 	return 0;

@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 
-//#define PLOT    		// Plot Phi
+#define PLOT    		// Plot Phi
 //#define PLOT_VELOCITY
 //#define PRINT			// Print Debug
 //#define SAVE			// Save Ploted Values

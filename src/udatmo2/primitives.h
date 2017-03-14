@@ -88,11 +88,70 @@ template<class T> T truncate(const T &value, const T &a, const T &b)
 }
 
 /**
- * @brief Create a buffer of given type and size (counted in units of the given type).
+ * @brief Create a buffer of given type.
  */
-template<class T> T *create(int count = 1)
+template<class T> T *create()
+{
+	return (T*) malloc(sizeof(T));
+}
+
+/**
+ * @brief Create a buffer of given type.
+ *
+ * @param init If `true`, the buffer is initialized to all zeros before return.
+ */
+template<class T> T *create(bool init)
+{
+	size_t size = sizeof(T);
+	return (T*) (init ? calloc(1, size) : malloc(size));
+}
+
+/**
+ * @brief Create a buffer of given type and size (counted in units of the given type).
+ *
+ * @param count Size of the number, in units of parameter type `T`.
+ */
+template<class T> T *create(int count)
 {
 	return (T*) malloc(sizeof(T) * count);
+}
+
+/**
+ * @brief Create a buffer of given type and size (counted in units of the given type).
+ *
+ * @param count Size of the number, in units of parameter type `T`.
+ * @param init If `true`, the buffer is initialized to all zeros before return.
+ */
+template<class T> T *create(int count, bool init)
+{
+	size_t size = count * sizeof(T);
+	return (T*) (init ? calloc(1, size) : malloc(size));
+}
+
+/**
+ * @brief Clear contents of given buffer.
+ */
+template<class T> void clear(T *buffer)
+{
+	memset(buffer, 0, sizeof(T));
+}
+
+/**
+ * @brief Clear contents of given buffer.
+ *
+ * @param size Size of the buffer, in units of type `T`.
+ */
+template<class T> void clear(T *buffer, size_t size)
+{
+	memset(buffer, 0, sizeof(T) * size);
+}
+
+/**
+ * @brief Clear contents of given buffer.
+ */
+template<class T> void clear(T &buffer)
+{
+	memset(&buffer, 0, sizeof(T));
 }
 
 /**
