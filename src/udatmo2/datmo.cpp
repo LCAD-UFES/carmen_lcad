@@ -173,13 +173,13 @@ void DATMO::assign(int j, const cv::Mat assignments, Obstacles &assigned)
 	{
 		if (assignments.at<int>(i, j) == STAR)
 		{
-			CARMEN_LOG(trace, "Obstacle #" << i << " updated with observation #" << j);
 			Obstacle &obstacle = obstacles[i];
 			obstacle.update(observations[j]);
 			if (obstacle.pose.v > 0.01)
 				tracking.push_back(obstacle);
 
 			assigned.push_back(obstacle);
+			CARMEN_LOG(trace, "Obstacle #" << i << ", observation #" << j << ", v=" << obstacle.pose.v << ", theta=" << obstacle.pose.theta);
 			return;
 		}
 	}
