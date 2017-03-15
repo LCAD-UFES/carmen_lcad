@@ -393,6 +393,9 @@ namespace View
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_110_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_SPEED_LIMIT][RDDF_ANNOTATION_CODE_SPEED_LIMIT_110] = get_annotation_image(annotation_image_filename);
 
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/dynamic_stop_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_DYNAMIC][RDDF_ANNOTATION_CODE_DYNAMIC_STOP] = get_annotation_image(annotation_image_filename);
+
 		controls_.main_window  = GTK_WIDGET(gtk_builder_get_object(builder, "mainWindow" ));
 		controls_.drawArea = GTK_WIDGET(gtk_builder_get_object(builder, "drawingArea"));
 		controls_.drawAreaCarPanel = GTK_WIDGET(gtk_builder_get_object(builder, "drawingAreaCarPanel"));

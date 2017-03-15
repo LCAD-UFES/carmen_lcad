@@ -273,18 +273,6 @@ carmen_check_for_annotations(carmen_point_t robot_pose,
 			continue;
 
 		bool added = false;
-		for (size_t j = 0; j < dynamic_annotation_messages.size(); j++)
-		{
-			if ((dynamic_annotation_messages[j].timestamp - timestamp) < 2.0)
-			{
-				if (add_annotation(dynamic_annotation_messages[j].annotation_point.x, dynamic_annotation_messages[j].annotation_point.y, dynamic_annotation_messages[j].annotation_orientation, annotation_index))
-				{
-					added = true;
-					break;
-				}
-			}
-		}
-
 		for (int j = 0; j < carmen_rddf_num_poses_ahead; j++)
 		{
 			if (add_annotation(carmen_rddf_poses_ahead[j].x, carmen_rddf_poses_ahead[j].y, carmen_rddf_poses_ahead[j].theta, annotation_index))
@@ -301,21 +289,33 @@ carmen_check_for_annotations(carmen_point_t robot_pose,
 					break;
 		}
 	}
+
+	for (size_t j = 0; j < dynamic_annotation_messages.size(); j++)
+	{
+		if ((dynamic_annotation_messages[j].timestamp - timestamp) < 2.0)
+		{
+			carmen_annotation_t annotation;
+			annotation.annotation_type = dynamic_annotation_messages[j].annotation_type;
+			annotation.annotation_code = dynamic_annotation_messages[j].annotation_code;
+			annotation.annotation_point = dynamic_annotation_messages[j].annotation_point;
+			annotation.annotation_description = dynamic_annotation_messages[j].annotation_description;
+			annotation.annotation_orientation = dynamic_annotation_messages[j].annotation_orientation;
+			annotation_and_index annotation_i = {annotation, 0};
+			annotations_to_publish.push_back(annotation_i);
+		}
+	}
 }
 
 
 void
-find_nearest_annotation_and_dist(int annotation_id, int *nearest_pose_out, double *nearest_pose_dist_out)
+find_nearest_waypoint_and_dist(carmen_annotation_t annotation, int *nearest_pose_out, double *nearest_pose_dist_out)
 {
 	int nearest_pose;
 	double min_distance_to_annotation;
 	double distance_to_annotation;
-	carmen_annotation_t annotation;
 
 	nearest_pose = -1;
 	min_distance_to_annotation = DBL_MAX;
-
-	annotation = annotation_read_from_file[annotation_id];
 
 	for (int i = 0; i < carmen_rddf_num_poses_ahead; i++)
 	{
@@ -334,12 +334,10 @@ find_nearest_annotation_and_dist(int annotation_id, int *nearest_pose_out, doubl
 
 
 int
-annotation_is_forward_from_robot(carmen_point_t pose, int annotation_id)
+annotation_is_forward_from_robot(carmen_point_t pose, carmen_annotation_t annotation)
 {
 	carmen_vector_3D_t annotation_point;
-	carmen_annotation_t annotation;
 
-	annotation = annotation_read_from_file[annotation_id];
 	annotation_point = annotation.annotation_point;
 
 	SE2 robot_pose_mat(pose.x, pose.y, pose.theta);
@@ -361,10 +359,10 @@ set_annotations(carmen_point_t robot_pose)
 
 	for (uint i = 0; i < annotations_to_publish.size(); i++)
 	{
-		find_nearest_annotation_and_dist(annotations_to_publish[i].index, &nearest_pose, &nearest_pose_dist);
+		find_nearest_waypoint_and_dist(annotations_to_publish[i].annotation, &nearest_pose, &nearest_pose_dist);
 
-		if ((nearest_pose >= 0) && nearest_pose_dist < 10.0 && (annotation_is_forward_from_robot(robot_pose, annotations_to_publish[i].index)))
-			annotations[nearest_pose] = annotation_read_from_file[annotations_to_publish[i].index].annotation_type;
+		if ((nearest_pose >= 0) && nearest_pose_dist < 10.0 && (annotation_is_forward_from_robot(robot_pose, annotations_to_publish[i].annotation)))
+			annotations[nearest_pose] = annotations_to_publish[i].annotation.annotation_type;
 	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////

@@ -159,7 +159,7 @@ carmen_rddf_publish_end_point_message(int number_of_poses, carmen_point_t point)
     rddf_end_point_message.host = carmen_get_host();
 
     err = IPC_publishData(CARMEN_RDDF_END_POINT_MESSAGE_NAME, &rddf_end_point_message);
-    carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_END_POINT_MESSAGE_FMT);
+    carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_END_POINT_MESSAGE_NAME);
 }
 
 void
@@ -178,7 +178,7 @@ carmen_rddf_publish_road_profile_message(carmen_ackerman_traj_point_t *poses_ahe
     rddf_road_profile_message.host = carmen_get_host();
 
     err = IPC_publishData(CARMEN_RDDF_ROAD_PROFILE_MESSAGE_NAME, &rddf_road_profile_message);
-    carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_ROAD_PROFILE_MESSAGE_FMT);
+    carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_ROAD_PROFILE_MESSAGE_NAME);
 }
 
 void
@@ -193,7 +193,7 @@ carmen_rddf_publish_road_profile_around_end_point_message(carmen_ackerman_traj_p
     rddf_road_profile_around_end_point_message.host = carmen_get_host();
 
     err = IPC_publishData(CARMEN_RDDF_WAYPOINTS_AROUND_END_POINT_MESSAGE_NAME, &rddf_road_profile_around_end_point_message);
-    carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_WAYPOINTS_AROUND_END_POINT_MESSAGE_FMT);
+    carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_WAYPOINTS_AROUND_END_POINT_MESSAGE_NAME);
 }
 
 void
@@ -211,7 +211,7 @@ carmen_rddf_publish_add_annotation_message(carmen_vector_3D_t annotation_point, 
     rddf_add_annotation_message.host = carmen_get_host();
 
     err = IPC_publishData(CARMEN_RDDF_ADD_ANNOTATION_MESSAGE_NAME, &rddf_add_annotation_message);
-    carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_ADD_ANNOTATION_MESSAGE_FMT);
+    carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_ADD_ANNOTATION_MESSAGE_NAME);
 }
 
 void
@@ -230,7 +230,7 @@ carmen_rddf_publish_dynamic_annotation_message(carmen_vector_3D_t annotation_poi
     rddf_dynamic_annotation_message.host = carmen_get_host();
 
     err = IPC_publishData(CARMEN_RDDF_DYNAMIC_ANNOTATION_MESSAGE_NAME, &rddf_dynamic_annotation_message);
-    carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_DYNAMIC_ANNOTATION_MESSAGE_FMT);
+    carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_DYNAMIC_ANNOTATION_MESSAGE_NAME);
 }
 
 void
@@ -245,6 +245,6 @@ carmen_rddf_publish_annotation_message(carmen_annotation_t *annotations, int num
     rddf_annotation_message.host = carmen_get_host();
 
     err = IPC_publishData(CARMEN_RDDF_ANNOTATION_MESSAGE_NAME, &rddf_annotation_message);
-    carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_ANNOTATION_MESSAGE_FMT);
+    carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_ANNOTATION_MESSAGE_NAME);
 }
 

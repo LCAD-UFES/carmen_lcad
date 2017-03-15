@@ -110,7 +110,7 @@ extern "C"
 
 	typedef carmen_rddf_add_annotation_message carmen_rddf_dynamic_annotation_message;
 
-	#define CARMEN_RDDF_DYNAMIC_ANNOTATION_MESSAGE_NAME "carmen_rddf_annotation_message"
+	#define CARMEN_RDDF_DYNAMIC_ANNOTATION_MESSAGE_NAME "carmen_rddf_dynamic_annotation_message"
 	#define CARMEN_RDDF_DYNAMIC_ANNOTATION_MESSAGE_FMT "{{double,double,double},double,string,int,int,double,string}"
 
 

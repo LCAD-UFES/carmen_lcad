@@ -148,6 +148,7 @@ Detector::detect(int rddf_pose_index)
 //
 	if (distance < robot_config.distance_between_front_and_rear_axles + 1.5)
 	{
+		// Ignorado pois muito proximo do carro
 		set_detected(false);
 //		printf("## distance %lf, aqui 0, %d\n", distance, rddf_pose_index);
 		return (-1);
@@ -177,15 +178,20 @@ Detector::detect(int rddf_pose_index)
 		update_moving_object_velocity(robot_pose);
 		speed += moving_object[0].pose.v;
 
-		set_detected(true);
-
-//		printf("aqui 2, %d\n", rddf_pose_index);
-		return (rddf_pose_index);
+		if (fabs(moving_object[0].pose.v) > 0.1)
+		{
+			set_detected(true);
+			return (rddf_pose_index);
+		}
+		else
+		{
+			set_detected(false);
+			return (-1);
+		}
 	}
 
 	set_detected(false);
 
-//	printf("aqui 3, %d\n", rddf_pose_index);
 	return (-1);
 }
 
@@ -317,20 +323,20 @@ Detector::get_moving_obstacle_position()
 double
 Detector::get_moving_obstacle_distance(carmen_ackerman_traj_point_t *robot_pose)
 {
-	double average_v = 0.0;
+	double average_distance = 0.0;
 	double count = 0.0;
 	for (int i = 0; i < MOVING_OBJECT_HISTORY_SIZE && i < 20; i++)
 	{
 		if (moving_object[i].valid)
 		{
-			average_v += DIST2D(*robot_pose, moving_object[i].pose);
+			average_distance += DIST2D(*robot_pose, moving_object[i].pose);
 			count += 1.0;
 		}
 	}
 
 	if (count > 0.0)
-		average_v /= count;
+		average_distance /= count;
 
-	return (average_v);
+	return (average_distance);
 }
 } // namespace udatmo
