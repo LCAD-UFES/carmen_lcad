@@ -45,14 +45,41 @@ double speed_around_annotation = 1.0;
 carmen_mapper_virtual_laser_message virtual_laser_message;
 
 
-carmen_udatmo_moving_obstacles_message *moving_obstacles = NULL;
-
 //SampleFilter filter;
 SampleFilter filter2;
 
 extern carmen_rddf_annotation_message last_rddf_annotation_message;
 
 extern bool wait_start_moving;
+
+// Information on front moving obstacle.
+struct moving_obstacle_ahead_t
+{
+	bool found;
+
+	carmen_ackerman_traj_point_t pose;
+
+	double timestamp;
+};
+
+static struct moving_obstacle_ahead_t moving_obstacle_ahead = {false, {0, 0, 0, 0, 0}, 0};
+
+bool is_moving_obstacle_ahead()
+{
+	return moving_obstacle_ahead.found;
+}
+
+static void moving_obstacle_ahead_reset(void)
+{
+	moving_obstacle_ahead.found = false;
+}
+
+static void moving_obstacle_ahead_set_pose(const carmen_ackerman_traj_point_t &pose)
+{
+	moving_obstacle_ahead.found = true;
+	moving_obstacle_ahead.pose = pose;
+	moving_obstacle_ahead.timestamp = carmen_get_time();
+}
 
 
 carmen_behavior_selector_algorithm_t
@@ -216,34 +243,14 @@ red_traffic_light_ahead()
 
 
 bool
-recent_moving_object_near_this_rddf_pose(carmen_ackerman_traj_point_t pose, int goal_index, double timestamp)
+recent_moving_object_near_this_rddf_pose(carmen_ackerman_traj_point_t pose)
 {
-	static carmen_ackerman_traj_point_t moving_obstacle_pose;
-	static bool valid_moving_obstacle_pose = false;
-	static double last_moving_obstacle_detection_timestamp = 0.0;
-	static bool recent_moving_object_near_this_rddf_pose_detected = false;
-
-	if (carmen_udatmo_front_obstacle_detected(goal_index))
-	{
-		moving_obstacle_pose = udatmo_get_moving_obstacle_position();
-		valid_moving_obstacle_pose = true;
-		last_moving_obstacle_detection_timestamp = timestamp;
-	}
-
-	if (valid_moving_obstacle_pose && ((timestamp - last_moving_obstacle_detection_timestamp) < 1.0) && (DIST2D(pose, moving_obstacle_pose) < 2.0))
-		recent_moving_object_near_this_rddf_pose_detected = true;
-
-	if ((DIST2D(pose, moving_obstacle_pose) < 2.0) && recent_moving_object_near_this_rddf_pose_detected)
-		return (true);
-	else
-		recent_moving_object_near_this_rddf_pose_detected = false;
-
-	return (false);
+	return (!moving_obstacle_ahead.found && DIST2D(pose, moving_obstacle_ahead.pose) < 2.0);
 }
 
 
 int
-behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, bool *goal_in_front_is_a_moving_obstacle, double timestamp)
+behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double timestamp)
 {
 	double distance_to_last_obstacle = 10000.0;
 	int last_obstacle_index = -1;
@@ -256,8 +263,9 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, bool *
 	if (rddf == NULL)
 		return (0);
 
-	moving_obstacles = carmen_udatmo_detect_moving_obstacles();
+	carmen_udatmo_moving_obstacles_message *moving_obstacles = carmen_udatmo_detect_moving_obstacles();
 	int front_obstacle_rddf_index = moving_obstacles->obstacles[0].rddf_index;
+	moving_obstacle_ahead_reset();
 
 	int goal_index = 0;
 	carmen_ackerman_traj_point_t current_goal = robot_pose;
@@ -273,15 +281,15 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, bool *
 				last_obstacle_free_waypoint_index, distance_from_car_to_rddf_point, distance_to_last_obstacle, distance_to_annotation,
 				distance_to_last_obstacle_free_waypoint, rddf, rddf_pose_index, current_goal, circle_radius);
 
-		if (moving_object_in_front_index != -1 && carmen_udatmo_front_obstacle_detected(goal_index)) // -> Adiciona um waypoint na ultima posicao livre se a posicao atual colide com um objeto movel.
+		if (goal_index == 0 && moving_object_in_front_index != -1) // -> Adiciona um waypoint se a posicao atual colide com um objeto movel.
 		{
 			int moving_obstacle_waypoint = move_goal_back_according_to_car_v(last_obstacle_free_waypoint_index, rddf, robot_pose);
 			add_goal_to_goal_list(goal_index, current_goal, moving_obstacle_waypoint, rddf);
-			*goal_in_front_is_a_moving_obstacle = true;
+			moving_obstacle_ahead_set_pose(rddf->poses[rddf_pose_index]);
 			printf("mo detec \n");
 			break;
 		}
-		else if (rddf_pose_hit_obstacle && recent_moving_object_near_this_rddf_pose(rddf->poses[rddf_pose_index], goal_index, timestamp))
+		else if (rddf_pose_hit_obstacle && recent_moving_object_near_this_rddf_pose(rddf->poses[rddf_pose_index]))
 		{
 			add_goal_to_goal_list(goal_index, current_goal, last_obstacle_free_waypoint_index, rddf,
 					-(robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels));

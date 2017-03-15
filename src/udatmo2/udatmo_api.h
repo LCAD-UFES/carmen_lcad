@@ -23,6 +23,9 @@ void carmen_udatmo_setup(int argc, char *argv[]);
 carmen_udatmo_moving_obstacles_message *carmen_udatmo_detect_moving_obstacles(void);
 
 
+carmen_udatmo_moving_obstacles_message *carmen_udatmo_get_moving_obstacles(void);
+
+
 int carmen_udatmo_front_obstacle_detected(void);
 
 
@@ -30,6 +33,8 @@ double carmen_udatmo_front_obstacle_speed(carmen_ackerman_traj_point_t *robot_po
 
 
 double carmen_udatmo_front_obstacle_distance(carmen_ackerman_traj_point_t *robot_pose);
+
+carmen_ackerman_traj_point_t carmen_udatmo_front_obstacle_position(void);
 
 
 void carmen_udatmo_update_distance_map(carmen_obstacle_distance_mapper_message *message);
