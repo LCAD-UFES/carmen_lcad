@@ -53,7 +53,8 @@ void DATMO::detect(carmen_ackerman_traj_point_t *poses, int n)
 	double front = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
 	double within = width / 2.0;
 
-	for (int l = 0; l < 3; l++)
+// 	for (int l = 0; l < 3; l++)
+	int l = 0;
 	{
 		double lane = lanes[l];
 		for (int i = 0; i < n; i++)
@@ -97,9 +98,9 @@ void DATMO::detect()
 
 	detect(rddf.poses, rddf.number_of_poses);
 
-	CARMEN_LOG(trace, "Observations back");
-
-	detect(rddf.poses_back, rddf.number_of_poses_back);
+// 	CARMEN_LOG(trace, "Observations back");
+//
+// 	detect(rddf.poses_back, rddf.number_of_poses_back);
 
 	CARMEN_LOG(trace, "Observations total: " << observations.size());
 }
