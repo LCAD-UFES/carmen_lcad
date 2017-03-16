@@ -16,6 +16,7 @@
 #endif
 #include <stdio.h>
 #include <dlib/svm.h>
+#include "tlight_vgram.h"
 
 #define WIDTH 9
 #define HEIGHT 20
@@ -33,6 +34,9 @@ typedef decision_function<kernel_type> dec_funct_type;
 typedef normalized_function<dec_funct_type> funct_type;
 funct_type trained_svm;
 string svm_train_name = getenv("CARMEN_HOME")+ (string) "/data/traffic_light/svm.dat";
+
+//Vgram
+TLightVgRam *net;
 
 //Camera
 static int camera;
@@ -194,14 +198,32 @@ detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *tr
 				p2.x = p1.x + traffic_light_rectangles[i].width;
 				p2.y = p1.y + traffic_light_rectangles[i].height;
 
-				sample_type traffic_light_image_in_svm_format = get_traffic_light_image_in_svm_format(frame, p1, p2);
+				// FILIPE
+				const int USE_VGRAM = 1;
 
-				// Traffic lights state recognition
-				if (trained_svm(traffic_light_image_in_svm_format) >= 0)
-					add_traffic_light_to_message(traffic_light_message, RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED, p1, p2, i);
-				else if (trained_svm(traffic_light_image_in_svm_format) < 0)
-					add_traffic_light_to_message(traffic_light_message, RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN, p1, p2, i);
-				// @@@ Alberto: E o amarelo? E a rejeicao de deteccoes?
+				if (USE_VGRAM)
+				{
+					int label = 0;
+					double confidence = 0; // not implemented yet!
+
+					cv::cvtColor(frame, frame, CV_BGR2RGB);
+					// TODO: colocar o 40x20 no ini
+					net->Forward(preproc_image(frame, traffic_light_rectangles[i], 20, 40), &label, &confidence);
+
+					int traffic_light_status = label + RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED;
+					add_traffic_light_to_message(traffic_light_message, traffic_light_status, p1, p2, num_traffic_lights_accepted);
+				}
+				else
+				{
+					sample_type traffic_light_image_in_svm_format = get_traffic_light_image_in_svm_format(frame, p1, p2);
+
+					// Traffic lights state recognition
+					if (trained_svm(traffic_light_image_in_svm_format) >= 0)
+						add_traffic_light_to_message(traffic_light_message, RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED, p1, p2, num_traffic_lights_accepted);
+					else if (trained_svm(traffic_light_image_in_svm_format) < 0)
+						add_traffic_light_to_message(traffic_light_message, RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN, p1, p2, num_traffic_lights_accepted);
+					// @@@ Alberto: E o amarelo? E a rejeicao de deteccoes?
+				}
 
 				num_traffic_lights_accepted++;
 			}
@@ -406,6 +428,9 @@ traffic_light_module_initialization()
     //Read the svm trained
     ifstream fin(svm_train_name.c_str(), ios::binary);
     deserialize(trained_svm, fin);
+
+    //Read the vgram trained
+    net = new TLightVgRam("trained_net_UseGreenAsHighAndDiscardBlue.txt");
 }
 
 
