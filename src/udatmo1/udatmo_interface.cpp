@@ -1,6 +1,7 @@
 #include "udatmo_interface.h"
 
 #include <carmen/global_graphics.h>
+#include <carmen/moving_objects_interface.h>
 
 #include "udatmo_memory.h"
 
@@ -93,17 +94,38 @@ void carmen_udatmo_fill_virtual_laser_message(carmen_udatmo_moving_obstacles_mes
 }
 
 
-void carmen_udatmo_display_moving_obstacles_message(carmen_udatmo_moving_obstacles_message *message)
+void carmen_udatmo_display_moving_obstacles_message(carmen_udatmo_moving_obstacles_message *message, carmen_robot_ackerman_config_t *robot_config)
 {
-	static carmen_mapper_virtual_laser_message out = {0, NULL, NULL, 0, NULL};
-
 	int n = message->num_obstacles;
+	carmen_udatmo_moving_obstacle *obstacle = message->obstacles;
+	if (n == 0 || obstacle->rddf_index == -1)
+		return;
 
-	out.host = carmen_get_host();
-	RESIZE(out.positions, carmen_position_t, n);
-	RESIZE(out.colors, char, n);
-	out.num_positions = n;
+	static carmen_moving_objects_point_clouds_message *out = NULL;
+	if (out == NULL)
+	{
+		out = CREATE(carmen_moving_objects_point_clouds_message);
+		memset(out, 0, sizeof(carmen_moving_objects_point_clouds_message));
+	}
 
-	carmen_udatmo_fill_virtual_laser_message(message, 0, &out);
-	carmen_mapper_publish_virtual_laser_message(&out, carmen_get_time());
+	out->timestamp = carmen_get_time();
+	out->host = carmen_get_host();
+	RESIZE(out->point_clouds, t_point_cloud_struct, n);
+	out->num_point_clouds = n;
+
+	t_point_cloud_struct *point = out->point_clouds;
+	double length = robot_config->length;
+	double width = robot_config->width;
+
+	for (int i = 0; i < n; i++, point++, obstacle++)
+	{
+		memset(point, 0, sizeof(t_point_cloud_struct));
+		point->object_pose.x = obstacle->x;
+		point->object_pose.y = obstacle->y;
+		point->orientation = obstacle->theta;
+		point->length = length;
+		point->width = width;
+	}
+
+	carmen_moving_objects_point_clouds_publish_message(out);
 }
