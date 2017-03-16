@@ -1,0 +1,347 @@
+    1  ls
+    2  ifconfig
+    3  sudo vi /etc/wpa_supplicant/wpa_supplicant.conf
+    4  cat /etc/wpa_supplicant/wpa_supplicant.conf
+    5  sudo cat /etc/wpa_supplicant/wpa_supplicant.conf
+    6  sudo apt-get install wireless-tools
+    7  sudo iwlist wlan0 scan essid lcad00
+    8  sudo nano /etc/wpa_supplicant/wpa_supplicant.conf
+    9  sudo gedit /etc/wpa_supplicant/wpa_supplicant.conf
+   10  sudo vim /etc/wpa_supplicant/wpa_supplicant.conf
+   11  sudo apt-get install gedit
+   12  sudo vi /etc/wpa_supplicant/wpa_supplicant.conf
+   13  sudo vi /etc/network/interfaces
+   14  sudo cp /etc/network/interfaces /etc/network/interfaces_orig
+   15  sudo vi /etc/network/interfaces
+   16  sudo cat > /etc/network/interfaces
+   17  sudo vi /etc/network/interfaces
+   18  sudo vi /etc/wpa_supplicant/wpa_supplicant.conf
+   19  ifconfig
+   20  sudo vi /etc/wpa_supplicant/wpa_supplicant.conf
+   21  gcc
+   22  sudo apt-get update
+   23  sudo apt-get install gedit
+   24  gedit
+   25  sudo apt-get install can-utils
+   26  cd /usr/bin
+   27  sudo ./raspi-config 
+   28  sudo apt-get update
+   29  sudo reboot
+   30  sudo gedit /boot/config.txt&
+   31  sudo reboot
+   32  sudo /sbin/ip link set can0 up type can bitrate 500000
+   33  sudo gedit /boot/config.txt&
+   34  sudo reboot
+   35  sudo /sbin/ip link set can0 up type can bitrate 500000
+   36  sudo gedit /boot/config.txt&
+   37  sudo /sbin/ip link set can0 up type can bitrate 500000
+   38  dmesg
+   39  dmesg | grep can
+   40  dmesg | grep 2835
+   41  sudo /sbin/ip link set can0 up type can bitrate 500000
+   42  dmesg | grep 2835
+   43  sudo gedit /boot/config.txt&
+   44  sudo /sbin/ip link set can0 up type can bitrate 500000
+   45  sudo /sbin/ip link set can0 up type can bitrate 250000
+   46  sudo gedit /boot/config.txt&
+   47  sudo apt-get upgrade
+   48  sudo reboot
+   49  sudo /sbin/ip link set can0 up type can bitrate 250000
+   50  sudo gedit /boot/config.txt&
+   51  dmesg | grep 2835
+   52  dmesg | grep can
+   53  sudo /sbin/ip link set can0 up type can bitrate 250000
+   54  sudo ./raspi-config 
+   55  cd /usr/bin 
+   56  sudo ./raspi-config 
+   57  sudo reboot
+   58  sudo /sbin/ip link set can0 up type can bitrate 250000
+   59  dmesg | grep spi
+   60  dmesg | grep can
+   61  sudo gedit /boot/config.txt&
+   62  dmesg | grep bcm
+   63  sudo /sbin/ip link set can0 up type can bitrate 250000
+   64  dmesg 
+   65  sudo /sbin/ip link set can0 up type can bitrate 250000
+   66  dmesg 
+   67  uname -a
+   68  ip -d -s link show can0
+   69  ip -s link show can0
+   70  sudo reboot
+   71  cansend can0 123#dead
+   72  cansend can0 123#aabb
+   73  cansend can0 123#1234
+   74  cansend can0 124#1234
+   75  cansend can0 125#1234
+   76  sudo /sbin/ip link set can0 up type can bitrate 250000
+   77  ./cansend can0 7DF#0201050000000000
+   78  sudo apt-get install can-utils
+   79  cansend can0 7DF#0201050000000000
+   80  sudo /sbin/ip link set can0 up type can bitrate 500000
+   81  /sbin/ifconfig can0 down
+   82  sudo /sbin/ifconfig can0 down
+   83  sudo /sbin/ip link set can0 up type can bitrate 500000
+   84  sudo /sbin/ifconfig can0 down
+   85  sudo su
+   86  sudo /sbin/ip link set can0 up type can bitrate 500000
+   87  candump any,0:0,#FFFFFFFF
+   88  sudo gedit /boot/config.txt&
+   89  reboot
+   90  cansend can0 123#dead
+   91  sudo /sbin/ip link set can0 up type can bitrate 500000
+   92  candump any,0:0,#FFFFFFFF
+   93  sudo /sbin/ifconfig can0 down
+   94  sudo /sbin/ip link set can0 up type can bitrate 250000
+   95  candump any,0:0,#FFFFFFFF
+   96  sudo gedit /boot/config.txt&
+   97  cansend can0 123#dead
+   98  sudo gedit /boot/config.txt&
+   99  history > can_history.txt
+  100  ls
+  101  cat can_history.txt 
+  102  sudo /sbin/ip link set can0 up type can bitrate 500000
+  103  candump any,0:0,#FFFFFFFF
+  104  sudo /sbin/ifconfig can0 down
+  105  sudo /sbin/ip link set can0 up type can bitrate 250000
+  106  candump any,0:0,#FFFFFFFF
+  107  history
+  108  sudo /sbin/ifconfig can0 down
+  109  /sbin/ip link set can0 type can bitrate 250000 loopback on
+  110  sudo /sbin/ip link set can0 type can bitrate 250000 loopback on
+  111  /sbin/ifconfig can0 up
+  112  sudo /sbin/ifconfig can0 up
+  113  candump any,0:0,#FFFFFFFF
+  114  history > can_history.txt 
+  115  more can_history.txt 
+  116  sudo gedit /boot/config.txt&
+  117  cat can_history.txt 
+  118  sudo /sbin/ifconfig can0 up
+  119  cansend can0 7DF#0201050000000000
+  120  sudo gedit /boot/config.txt&
+  121  sudo /sbin/ifconfig can0 down
+  122  sudo /sbin/ip link set can0 up type can bitrate 500000
+  123  dmesg
+  124  cansniffer -?
+  125  cansniffer 
+  126  cansniffer can0
+  127  sudo /sbin/ip link set can0 up type can bitrate 500000
+  128  candump any,0:0,#FFFFFFFF
+  129  sudo /sbin/ip link set can0 up type can bitrate 500000
+  130  candump any,0:0,#FFFFFFFF
+  131  sudo gedit /boot/config.txt&
+  132  sudo /sbin/ip link set can0 up type can bitrate 500000
+  133  candump any,0:0,#FFFFFFFF
+  134  cansniffer -?
+  135  sudo /sbin/ip link set can0 up type can bitrate 500000
+  136  candump any,0:0,#FFFFFFFF
+  137  cansniffer can0
+  138  sudo /sbin/ip link set can0 up type can bitrate 500000
+  139  sudo /sbin/ifconfig can0 down
+  140  sudo /sbin/ip link set can0 up type can bitrate 500000
+  141  cansniffer can0
+  142  cansniffer -?
+  143  cansniffer can0 -c
+  144  cansniffer -?
+  145  cansniffer can0 -c -t 100
+  146  cansniffer can0 -c
+  147  cansniffer can0 -c -t 1000
+  148  sudo /sbin/ifconfig can0 down
+  149  sudo /sbin/ip link set can0 up type can bitrate 500000
+  150  cansniffer can0 -c -t 100
+  151  cansniffer can0 -c -t 2
+  152  cansniffer can0 -c -t 4
+  153  cansniffer -?
+  154  cansniffer can0 -c -t 4
+  155  cansniffer can0 -c -t 4 -f 000200
+  156  cansniffer can0 -c -t 4 -f 80
+  157  cansniffer can0 -c -t 4 
+  158  sudo /sbin/ifconfig can0 down
+  159  sudo /sbin/ip link set can0 up type can bitrate 500000
+  160  cansniffer can0 -c -t 4 
+  161  sudo /sbin/ifconfig can0 down
+  162  sudo /sbin/ip link set can0 up type can bitrate 500000
+  163  cansniffer can0 -c -t 4 
+  164  cansniffer can0 -c -t 1000
+  165  sudo /sbin/ip link set can0 up type can bitrate 500000
+  166  cansniffer can0 -c -t 1000
+  167  sudo /sbin/ip link set can1 up type can bitrate 500000
+  168  sudo gedit /boot/config.txt&
+  169  sudo /sbin/ip link set can0 up type can bitrate 500000
+  170  sudo /sbin/ip link set can1 up type can bitrate 500000
+  171  cansniffer can0 -c -t 1000
+  172  sudo /sbin/ifconfig can0 down
+  173  sudo /sbin/ifconfig can1 down
+  174  sudo /sbin/ip link set can0 up type can bitrate 500000
+  175  cansniffer can0 -c -t 1000
+  176  sudo /sbin/ifconfig can0 down
+  177  sudo /sbin/ifconfig can1 down
+  178  sudo /sbin/ip link set can0 up type can bitrate 500000
+  179  cansniffer can0 -c -t 1000
+  180  sudo gedit /boot/config.txt&
+  181  sudo /sbin/ip link set can0 up type can bitrate 500000
+  182  cansniffer can0 -c -t 1000
+  183  cansniffer can1 -c -t 1000
+  184  sudo /sbin/ifconfig can1 down
+  185  cansniffer can0 -c -t 1000
+  186  sudo /sbin/ifconfig can0 down
+  187  cansniffer can0 -c -t 1000
+  188  dmesg
+  189  sudo /sbin/ip link set can0 up type can bitrate 500000
+  190  dmesg
+  191  sudo /sbin/ip link set can1 up type can bitrate 500000
+  192  dmesg
+  193  cansniffer can0 -c -t 1000
+  194  dmesg
+  195  sudo /sbin/ip link set can0 up type can bitrate 500000
+  196  cansniffer can0 -c -t 1000
+  197  sudo gedit /boot/config.txt&
+  198  dmesg
+  199  sudo /sbin/ip link set can0 up type can bitrate 500000
+  200  cansniffer can0 -c -t 1000
+  201  sudo /sbin/ip link set can1 up type can bitrate 500000
+  202  cansniffer can0 -c -t 1000
+  203  sudo gedit /boot/config.txt&
+  204  cansniffer can0 -c -t 1000
+  205  sudo /sbin/ip link set can1 up type can bitrate 500000
+  206  sudo /sbin/ip link set can0 up type can bitrate 500000
+  207  cansniffer can0 -c -t 1000
+  208  sudo gedit /boot/config.txt&
+  209  dmesg
+  210  sudo /sbin/ip link set can0 up type can bitrate 500000
+  211  cansniffer can0 -c -t 1000
+  212  dmesg
+  213  sudo /sbin/ip link set can1 up type can bitrate 500000
+  214  cansniffer can0 -c -t 1000
+  215  cansniffer can1 -c -t 1000
+  216  cansniffer any -c -t 1000
+  217  sudo /sbin/ip link set can1 up type can bitrate 500000
+  218  cansniffer any -c -t 1000
+  219  ls
+  220  sudo su
+  221  cansniffer can1 -c 
+  222  cansniffer can2 -c 
+  223  cansniffer can0 -c 
+  224  history
+  225  history | grep gedit
+  226  cat >> can_commands.txt 
+  227  sudo gedit /boot/config.txt&
+  228  cat /boot/config.txt
+  229  sudo reboot
+  230  sudo su
+  231  ./set.bat 
+  232  ./rules.bat 
+  233  cansniffer can0 -c 
+  234  cansniffer can1 -c 
+  235  ls
+  236  gedit rules.bat&
+  237  sudo su
+  238  cansniffer can0 -c 
+  239  cansniffer can0 -c -t 200
+  240  candump -?
+  241  candump can0,600:1FFFFC00
+  242  candump can0,500:1FFFFF00
+  243  candump can0,500:1FFFFFF0
+  244  cansniffer can0 -c -t 200
+  245  ls
+  246  exit
+  247  sudo su
+  248  passwd
+  249  sudo su
+  250  passwd
+  251  ifconfig
+  252  ping 192.168.0.1
+  253  ssh car01@192.168.0.1
+  254  ifconfig
+  255  ifdown eth0
+  256  sudo ifdown eth0
+  257  ifconfig
+  258  sudo su
+  259  ifconfig
+  260  sudo su
+  261  exit
+  262  cansniffer can0 -c -t 200
+  263  cansniffer can1 -c -t 200
+  264  cat ./rules.bat 
+  265  gedit rules.bat&
+  266  cangw -F
+  267  sudo su
+  268  ifconfig
+  269  ./rules.bat 
+  270  sudo ./rules.bat 
+  271  ./set.bat 
+  272  cansniffer can0 -c -t 200
+  273  cansniffer can1 -c -t 200
+  274  cansniffer can1 -c -t 200
+  275  history | grep nedit
+  276  history | grep gedit
+  277  vi /boot/config.txt
+  278  cansniffer can1 -c -t 200
+  279  cansniffer can0 -c -t 200
+  280  exit
+  281  sudo su
+  282  cansniffer can0 -c -t 200
+  283  cansniffer can1 -c -t 200
+  284  cansniffer can0 -c -t 200
+  285  cansniffer can1 -c -t 200
+  286  cansniffer can0 -c -t 200
+  287  cansniffer can1 -c -t 200
+  288  nano rules.bat 
+  289  cat rules.bat 
+  290  exit
+  291  cansniffer can0 -c -t 200
+  292  candump can0,400:1FFFFF00
+  293  candump can0,400:1FFFFFC0
+  294  candump can0,4F0:1FFFFFC0
+  295  candump can0,4F0:1FFFFFE0
+  296  candump can0,4C0:1FFFFFC0
+  297  candump can0,480:1FFFFFC0
+  298  candump can0,4F0:1FFFFFC0
+  299  candump can1,4F0:1FFFFFC0
+  300  candump can1,480:1FFFFFC0
+  301  candump can1,480:1FFFFF80
+  302  candump can1,400:1FFFFF80
+  303  candump can1,400:1FFFFFC0
+  304  candump can1,440:1FFFFFC0
+  305  candump can1,400:1FFFFFC0
+  306  candump can1,420:1FFFFFE0
+  307  candump can1,430:1FFFFFF0
+  308  candump can1,420:1FFFFFF0
+  309  candump can1,428:1FFFFFF8
+  310  candump can1,420:1FFFFFF8
+  311  candump can1,420:1FFFFFFC
+  312  candump can1,42C:1FFFFFFC
+  313  candump can1,428:1FFFFFFC
+  314  candump can1,420:1FFFFFFC
+  315  candump can1,423:1FFFFFFC
+  316  candump can1,420:1FFFFFF8
+  317  candump can1,425:1FFFFFFF
+  318  candump can1,422:1FFFFFFF
+  319  candump can1,425:1FFFFFFF
+  320  candump can1,425:1FFFF000
+  321  candump can0,425:1FFFF000
+  322  candump can0,425:1FFFFFFF
+  323  candump can1,425:1FFFFFFF
+  324  ls /bin/bash 
+  325  cansniffer can0 -c -t 200
+  326  candump can0,425:1FFFFFFF
+  327  sudo su
+  328  chromium-browser 
+  329  sudo apt-get install libcanberra-gtk-module
+  330  chromium-browser 
+  331  sudo raspi-config 
+  332  echo $LC_*
+  333* 
+  334  chromium-browser 
+  335  export LC_ALL=en_us.UTF-8
+  336  export LC_ALL=en_US.UTF-8
+  337  export LC_ALL=pt_BR.UTF-8
+  338  sudo raspi-config 
+  339  chromium-browser 
+  340  export LC_ALL=C
+  341  killall chromium-browser 
+  342  chromium-browser 
+  343  sudo raspi-config 
+  344  chromium-browser 
+  345  nano /boot/config.txt 
+  346  ls
+  347  history > can_history2.txt
