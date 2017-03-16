@@ -30,9 +30,8 @@ int roi_x0 = 0;
 int roi_y0 = 0;
 int roi_x1 = 0;
 int roi_y1 = 0;
-int numOfRec = 0;
 int startDraw = 0;
-string window_name = "<SPACE>Add  <G>Green  <Y>Yellow  <R>Red  <O>Off  <N>Next <B>Back  <ESC>Exit";
+string window_name = "<SPACE>Add  <G>Green  <Y>Yellow  <R>Red  <O>Off  <N>Next  <B>Back  <ESC>Exit";
 
 
 string
@@ -48,6 +47,8 @@ IntToString(int num)
 void
 draw_rectangle(int x0, int y0, int x1, int y1)
 {
+	//cout << x0 << " " << y0 << " " << x1 << " " << y1 << endl;
+
 	image2 = image.clone();
 	rectangle(image2, cvPoint(x0, y0), cvPoint(x1, y1), CV_RGB(255, 0, 255), 1);
 	imshow(window_name, image2);
@@ -87,6 +88,7 @@ on_mouse(int event, int x, int y, int flag, void *param)
 	}
 }
 
+
 bool
 add_new_rectangle(string& strPostfix, string line)
 {
@@ -107,15 +109,57 @@ add_new_rectangle(string& strPostfix, string line)
 }
 
 
+void
+could_not_open_error_message(string type, string name)
+{
+	cerr << "\n" <<
+	"------------------------------------------------------------------------------------------" << endl <<
+	"Failed! COLD NOT OPEN " << type << ": " << name << endl <<
+	"------------------------------------------------------------------------------------------" << "\n\n";
+}
+
+
+void
+write_marked_images_to_file(vector<string> images, string file_name)
+{
+	ofstream file;
+	file.open(file_name.c_str(), ofstream::out | ofstream::out);
+
+	for (unsigned int i = 0; i < images.size(); i++)
+	{
+		file << images[i];
+	}
+
+	file.close();
+}
+
+
+void
+aply_rectangles_to_file(bool &first_rect_drawn, string &str, vector<string> &images_vector, string image_name, string file_name)
+{
+	if (!first_rect_drawn || (roi_x0 != 0 && roi_x1 != 0 && roi_y0 != 0 && roi_y1 != 0))
+	{
+		first_rect_drawn = add_new_rectangle(str, image_name);
+	}
+	if (!str.empty())
+	{
+		cout << "Saving to " << file_name << str << endl;
+		images_vector.push_back(str);
+		write_marked_images_to_file(images_vector, "red_gt.txt");
+		str.clear();
+	}
+}
+
+
 int
 main(int argc, char** argv)
 {
-	int iKey = 0, i;
-	string s, input_file, strPostfix = "";
-	vector<string> strings;
+	int iKey = -1, i;
+	string s, line, image_name, input_file, strPostfix = "";
+	vector<string> strings, input_images, red_images, yellow_images, green_images, off_images;
 	ifstream input;
 	ofstream green, yellow, red, off;
-	bool add_on = false;
+	bool first_rect_drawn = false;
 
 	if (argc != 2)
 	{
@@ -125,21 +169,14 @@ main(int argc, char** argv)
 
 	input_file = argv[1];
 
-	cerr << "Opening input_file with names of images" << endl;
 	input.open(input_file.c_str());
-	cerr << "Done." << endl;
 
 	namedWindow(window_name, 1);
 	setMouseCallback(window_name, on_mouse, NULL);
 
-	green.open("green_gt.txt", ofstream::out | ofstream::app);
-	yellow.open("yellow_gt.txt", ofstream::out | ofstream::app);
-	red.open("red_gt.txt", ofstream::out | ofstream::app);
-	off.open("off_gt.txt", ofstream::out | ofstream::app);
 
-	if (green.is_open() && yellow.is_open() && red.is_open() && off.is_open() && input.is_open())
+	if (input.is_open())
 	{
-		string line;
 		getline(input, line);
 
 		while (!input.eof())
@@ -150,103 +187,111 @@ main(int argc, char** argv)
 				//cout << "Pose: " << s << endl;
 				strings.push_back(s);
 			}
-
-			cout << "Loading image :" << strings.at(0) << endl;
-			image = imread(strings.at(0), 1);
+			image_name = strings[0];
+			cout << "Loading image :" << image_name << endl;
+			image = imread(image_name, 1);
 
 
 			if (!image.empty())
 			{
+				input_images.push_back(strings[0]);
+
 				if (i > 1) // So the image is already marked and the rectangle should be drawn
 				{
-					roi_x0 = atoi(strings.at(1).c_str());
-					roi_x1 = atoi(strings.at(2).c_str());
-					roi_y0 = atoi(strings.at(3).c_str());
-					roi_y1 = atoi(strings.at(4).c_str());
+					roi_x0 = atoi(strings[1].c_str());
+					roi_y0 = atoi(strings[2].c_str());
+					roi_x1 = atoi(strings[3].c_str());
+					roi_y1 = atoi(strings[4].c_str());
 
 					draw_rectangle(roi_x0, roi_y0, roi_x1, roi_y1);
 				}
+				else
+				{
+					imshow(window_name, image);
+				}
 
 				iKey = -1;
-				while ((iKey != 110 && iKey != 78))
-				{
-					//imshow(window_name, image);
 
+				while (iKey != 110) // && iKey != 78) 78 ????
+				{
 					//  any other key clears rectangle drawing only
 					iKey = waitKey(0);
-
 					switch (iKey)
 					{
 
-					case 27:                      // ESC -> key 27 Exit program
-						image.release();
-						destroyWindow(window_name);
-						return EXIT_SUCCESS;
-
 					case 32:                      // SPACE key 32 Add image name and rectangle position to string
-						add_on = add_new_rectangle(strPostfix, line);
+						first_rect_drawn = add_new_rectangle(strPostfix, line);
 						break;
 
-					case 103:                     // G key 103 Save added rectangles to GREEN file
-						if (!add_on || (roi_x0 != 0 && roi_x1 != 0 && roi_y0 != 0 && roi_y1 != 0))
+					case 114:                      // R key 114 Save added rectangles to RED file
+						if (!first_rect_drawn || (roi_x0 != 0 && roi_x1 != 0 && roi_y0 != 0 && roi_y1 != 0))
 						{
-							add_on = add_new_rectangle(strPostfix, line);
+							first_rect_drawn = add_new_rectangle(strPostfix, line);
 						}
 						if (!strPostfix.empty())
 						{
-							cout << "Saving to green_gt.txt  " << strPostfix << endl;
-							green << strPostfix;
-							green.flush();
+							cout << "Saving to red_gt.txt  " << strPostfix << endl;
+							//red << strPostfix;
+							//red.flush();
+
+							red_images.push_back(strPostfix);
+							write_marked_images_to_file(red_images, "red_gt.txt");
 							strPostfix.clear();
 						}
 						break;
 
 					case 121:                      // Y  key 121 Save added rectangles to YELOW file
-						if (!add_on || (roi_x0 != 0 && roi_x1 != 0 && roi_y0 != 0 && roi_y1 != 0))
+						if (!first_rect_drawn || (roi_x0 != 0 && roi_x1 != 0 && roi_y0 != 0 && roi_y1 != 0))
 						{
-							add_on = add_new_rectangle(strPostfix, line);
+							first_rect_drawn = add_new_rectangle(strPostfix, line);
 						}
 						if (!strPostfix.empty())
 						{
 							cout << "Saving to yellow_gt.txt  " << strPostfix << endl;
-							yellow << strPostfix;
-							yellow.flush();
+							yellow_images.push_back(strPostfix);
+							write_marked_images_to_file(red_images, "yellow_gt.txt");
 							strPostfix.clear();
 						}
 						break;
 
-					case 114:                      // R key 114 Save added rectangles to RED file
-						if (!add_on || (roi_x0 != 0 && roi_x1 != 0 && roi_y0 != 0 && roi_y1 != 0))
+					case 103:                     // G key 103 Save added rectangles to GREEN file
+						if (!first_rect_drawn || (roi_x0 != 0 && roi_x1 != 0 && roi_y0 != 0 && roi_y1 != 0))
 						{
-							add_on = add_new_rectangle(strPostfix, line);
+							first_rect_drawn = add_new_rectangle(strPostfix, line);
 						}
 						if (!strPostfix.empty())
 						{
-							cout << "Saving to red_gt.txt  " << strPostfix << endl;
-							red << strPostfix;
-							red.flush();
+							cout << "Saving to green_gt.txt  " << strPostfix << endl;
+							green_images.push_back(strPostfix);
+							write_marked_images_to_file(red_images, "green_gt.txt");
 							strPostfix.clear();
 						}
 						break;
 
 					case 111:                       // O key 111 Save added rectangles to OFF file
-						if (!add_on || (roi_x0 != 0 && roi_x1 != 0 && roi_y0 != 0 && roi_y1 != 0))
+						if (!first_rect_drawn || (roi_x0 != 0 && roi_x1 != 0 && roi_y0 != 0 && roi_y1 != 0))
 						{
-							add_on = add_new_rectangle(strPostfix, line);
+							first_rect_drawn = add_new_rectangle(strPostfix, line);
 						}
 						if (!strPostfix.empty())
 						{
 							cout << "Saving to off_gt.txt  " << strPostfix << endl;
-							off << strPostfix;
-							off.flush();
+							off_images.push_back(strPostfix);
+							write_marked_images_to_file(red_images, "off_gt.txt");
 							strPostfix.clear();
 						}
 						break;
+
+					case 27:                      // ESC -> key 27 Exit program
+						image.release();
+						destroyWindow(window_name);
+						cout << "PROGRAM EXITED BY PRESSING <ESC> KEY!" << "\n\n";
+						return EXIT_SUCCESS;
 					}
-					//Go to NEXT image without annotation
-					if ((iKey == 103 || iKey == 121 || iKey == 114 || iKey == 111) )
+					//cout << "IKEY " << iKey << endl;
+					if ((iKey == 103 || iKey == 121 || iKey == 114 || iKey == 111) && first_rect_drawn == true)
 					{
-						add_on = false;
+						first_rect_drawn = false;
 						break;
 					}
 				}
@@ -254,17 +299,16 @@ main(int argc, char** argv)
 			}
 			else
 			{
-				cerr <<
-				"------------------------------------------------------------------------------------------" << endl <<
-				"Failed! COLD NOT OPEN IMAGE: " << line << endl <<
-				"------------------------------------------------------------------------------------------" << "\n\n\n";
+				could_not_open_error_message("IMAGE", line);
 			}
+			strings.clear();
+			strPostfix.empty();
 			getline(input, line);
 		}
 	}
 	else
 	{
-		cerr << "Failed to open: " << input_file << endl;
+		could_not_open_error_message("FILE", input_file);
 	}
 
 	image.~Mat();
