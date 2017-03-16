@@ -26,15 +26,6 @@ void carmen_udatmo_setup(int argc, char *argv[])
 }
 
 
-static carmen_udatmo_moving_obstacles_message *carmen_udatmo_datmo_message(void)
-{
-	static carmen_udatmo_moving_obstacles_message *message = NULL;
-	if (message == NULL)
-		message = carmen_udatmo_new_moving_obstacles_message(NUM_OBSTACLES);
-
-	return message;
-}
-
 static void carmen_udatmo_resize_moving_obstacles_message(carmen_udatmo_moving_obstacles_message *message, int size)
 {
 	if (message->num_obstacles == size)
@@ -70,9 +61,20 @@ static void carmen_udatmo_reset_moving_obstacles_message(carmen_udatmo_moving_ob
 	}
 }
 
+
+carmen_udatmo_moving_obstacles_message *carmen_udatmo_get_moving_obstacles(void)
+{
+	static carmen_udatmo_moving_obstacles_message *message = NULL;
+	if (message == NULL)
+		message = carmen_udatmo_new_moving_obstacles_message(NUM_OBSTACLES);
+
+	return message;
+}
+
+
 carmen_udatmo_moving_obstacles_message *carmen_udatmo_detect_moving_obstacles(void)
 {
-	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_datmo_message();
+	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_get_moving_obstacles();
 
 	const Obstacles &obstacles = getDATMO().track();
 	if (obstacles.size() > 0)
@@ -86,14 +88,14 @@ carmen_udatmo_moving_obstacles_message *carmen_udatmo_detect_moving_obstacles(vo
 
 int carmen_udatmo_front_obstacle_detected(void)
 {
-	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_datmo_message();
+	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_get_moving_obstacles();
 	return (message->obstacles[0].rddf_index != -1);
 }
 
 
 double carmen_udatmo_front_obstacle_speed(carmen_ackerman_traj_point_t *robot_pose)
 {
-	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_datmo_message();
+	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_get_moving_obstacles();
 	const carmen_udatmo_moving_obstacle &obstacle = message->obstacles[0];
 
 	// distance in the direction of the robot: https://en.wikipedia.org/wiki/Vector_projection
@@ -103,10 +105,24 @@ double carmen_udatmo_front_obstacle_speed(carmen_ackerman_traj_point_t *robot_po
 
 double carmen_udatmo_front_obstacle_distance(carmen_ackerman_traj_point_t *robot_pose)
 {
-	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_datmo_message();
+	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_get_moving_obstacles();
 	const carmen_udatmo_moving_obstacle &obstacle = message->obstacles[0];
 
 	return distance(*robot_pose, obstacle);
+}
+
+
+carmen_ackerman_traj_point_t carmen_udatmo_front_obstacle_position(void)
+{
+	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_get_moving_obstacles();
+	const carmen_udatmo_moving_obstacle &obstacle = message->obstacles[0];
+	carmen_ackerman_traj_point_t pose;
+	pose.x = obstacle.x;
+	pose.y = obstacle.y;
+	pose.theta = obstacle.theta;
+	pose.v = obstacle.v;
+	pose.phi = 0;
+	return pose;
 }
 
 

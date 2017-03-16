@@ -37,9 +37,6 @@ class Detector
 	/** @brief History of the front moving obstacle. */
 	Obstacle moving_object[MOVING_OBJECT_HISTORY_SIZE];
 
-	/** @brief Message describing detected moving obstacles. */
-	carmen_udatmo_moving_obstacles_message message;
-
 	int compute_num_poses_ahead();
 
 	/**
@@ -56,6 +53,9 @@ class Detector
 	int detect(int rddf_pose_index);
 
 public:
+	/** @brief Message describing detected moving obstacles. */
+	carmen_udatmo_moving_obstacles_message message;
+
 	/** @brief Result of last detection operation. */
 	bool detected;
 
