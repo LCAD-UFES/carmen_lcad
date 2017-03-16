@@ -1,0 +1,4 @@
+cangw -A -s can1 -d can1 -f 80:1FFFFFFF
+cangw -A -s can1 -d can1 -f 82:1FFFFFFF
+cangw -A -s can1 -d can0 -f 500:1FFFFFFF
+cangw -A -s can1 -d can0 -f 170:1FFFFFFF

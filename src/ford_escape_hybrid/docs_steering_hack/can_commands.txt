@@ -1,0 +1,4 @@
+sudo /sbin/ifconfig can1 down
+sudo /sbin/ip link set can0 up type can bitrate 500000
+sudo gedit /boot/config.txt
+modprobe can-gw
