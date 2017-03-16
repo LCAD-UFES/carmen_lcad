@@ -16,12 +16,9 @@ void carmen_udatmo_setup(int argc, char *argv[])
 	getDetector().setup(argc, argv);
 }
 
-int carmen_udatmo_front_obstacle_detected(int goal_index)
+int carmen_udatmo_front_obstacle_detected(void)
 {
-	if (goal_index == 0)
-		return (getDetector().detected);
-	else
-		return (false);
+	return (getDetector().detected);
 }
 
 carmen_udatmo_moving_obstacles_message *carmen_udatmo_detect_moving_obstacles(void)
@@ -29,12 +26,17 @@ carmen_udatmo_moving_obstacles_message *carmen_udatmo_detect_moving_obstacles(vo
 	return getDetector().detect();
 }
 
-double carmen_udatmo_front_obstacle_speed()
+carmen_udatmo_moving_obstacles_message *carmen_udatmo_get_moving_obstacles(void)
+{
+	return &(getDetector().message);
+}
+
+double carmen_udatmo_front_obstacle_speed(carmen_ackerman_traj_point_t* /*robot_pose*/)
 {
 	return getDetector().speed_front();
 }
 
-carmen_ackerman_traj_point_t udatmo_get_moving_obstacle_position(void)
+carmen_ackerman_traj_point_t carmen_udatmo_front_obstacle_position(void)
 {
 	return getDetector().get_moving_obstacle_position();
 }

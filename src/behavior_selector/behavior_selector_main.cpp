@@ -417,8 +417,7 @@ extern SampleFilter filter2;
 
 
 double
-set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi,
-		bool goal_in_front_is_a_moving_obstacle)
+set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
 {
 	double car_pose_to_car_front = get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels;
 	// um carro de tamanho para cada 10 milhas/h (4.4705 m/s) -> ver "The DARPA Urban Challenge" book, pg. 36.
@@ -427,23 +426,23 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 
 	double distance = 0.0;
 	double moving_obj_v = 0.0;
-	if (carmen_udatmo_front_obstacle_detected(0))
+	if (is_moving_obstacle_ahead())
 	{
-		moving_obj_v = carmen_udatmo_front_obstacle_speed();
+		carmen_ackerman_traj_point_t robot_pose = get_robot_pose();
+		moving_obj_v = carmen_udatmo_front_obstacle_speed(&robot_pose);
 //		distance = DIST2D(udatmo_get_moving_obstacle_position(), *current_robot_pose_v_and_phi) - car_pose_to_car_front;
 		distance = carmen_udatmo_front_obstacle_distance(current_robot_pose_v_and_phi) - car_pose_to_car_front;
-		if (goal_in_front_is_a_moving_obstacle)
-		{
-			// ver "The DARPA Urban Challenge" book, pg. 36.
-			double Kgap = 1.0;
-			double new_goal_v = moving_obj_v + Kgap * (distance - desired_distance);
-			//		SampleFilter_put(&filter2, goal->v);
-			//		goal->v = SampleFilter_get(&filter2);
-			if (new_goal_v < 0.0)
-				new_goal_v = 0.0;
 
-			goal->v = carmen_fmin(new_goal_v, goal->v);
-		}
+		// ver "The DARPA Urban Challenge" book, pg. 36.
+		double Kgap = 1.0;
+		double new_goal_v = moving_obj_v + Kgap * (distance - desired_distance);
+		//		SampleFilter_put(&filter2, goal->v);
+		//		goal->v = SampleFilter_get(&filter2);
+		if (new_goal_v < 0.0)
+			new_goal_v = 0.0;
+
+		goal->v = carmen_fmin(new_goal_v, goal->v);
+
 //		printf("mov %lf, gv %lf, dist %lf, d_dist %lf\n", moving_obj_v, goal->v, distance, desired_distance);
 	}
 	FILE* caco = fopen("caco.txt", "a");
@@ -458,7 +457,7 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 double
 set_goal_velocity_according_to_moving_obstacle_new(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
 {
-	if (carmen_udatmo_front_obstacle_detected(0))
+	if (is_moving_obstacle_ahead())
 	{
 		// um carro de tamanho para cada 10 milhas/h (4.4705 m/s) -> ver "The DARPA Urban Challenge" book, pg. 36.
 		double min_dist_according_to_car_v = get_robot_config()->length * (current_robot_pose_v_and_phi->v / 4.4704)
@@ -488,12 +487,11 @@ set_goal_velocity_according_to_moving_obstacle_new(carmen_ackerman_traj_point_t 
 
 
 void
-set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi,
-		bool goal_in_front_is_a_moving_obstacle)
+set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
 {
 	goal->v = 18.28; // Esta linha faz com que o behaviour_selector ignore as velocidades no rddf
 
-	goal->v = set_goal_velocity_according_to_moving_obstacle(goal, current_robot_pose_v_and_phi, goal_in_front_is_a_moving_obstacle);
+	goal->v = set_goal_velocity_according_to_moving_obstacle(goal, current_robot_pose_v_and_phi);
 
 //	printf("gva %lf  ", goal->v);
 	goal->v = limit_maximum_velocity_according_to_centripetal_acceleration(goal->v, get_robot_pose().v, goal,
@@ -506,7 +504,7 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 	if (obstacle_avoider_active_recently)
 		goal->v = carmen_fmin(2.5, goal->v);
 
-	if (!carmen_udatmo_front_obstacle_detected(0))
+	if (!is_moving_obstacle_ahead())
 		SampleFilter_put(&filter2, carmen_distance_ackerman_traj(goal, current_robot_pose_v_and_phi));
 
 //	printf("gvf %lf\n", goal->v);
@@ -604,67 +602,56 @@ get_the_point_nearest_to_the_trajectory(int *point_in_trajectory_is,
 
 
 carmen_ackerman_traj_point_t *
-compute_simulated_objects(carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi, double timestamp)
+compute_simulated_objects(double timestamp)
 {
-	static carmen_ackerman_traj_point_t previous_pose, previous_pose_moved;
-	static double previous_timestamp = 0.0;
-
-//  Codigo para fazer parar o objeto movel depois de algum tempo
-	static double initial_time = 0.0;
-	if (initial_time == 0.0)
-		initial_time = carmen_get_time();
-
 	if (!necessary_maps_available)
-		return (NULL);
+		return NULL;
 
 	carmen_rddf_road_profile_message *rddf = last_rddf_message;
 	if (rddf == NULL)
-		return (NULL);
+		return NULL;
 
-	int i;
-	for (i = 0; i < rddf->number_of_poses; i++)
-		if (carmen_distance_ackerman_traj(&rddf->poses[i], current_robot_pose_v_and_phi) > 60.0)
-			break;
-	if (i == rddf->number_of_poses)
-		i--;
+	static carmen_ackerman_traj_point_t previous_pose = {0, 0, 0, 0, 0};
+	static double previous_timestamp = 0.0;
+	static double initial_time = 0.0; // Simulation start time.
 
-	if (((carmen_get_time() - initial_time) < 10.0) &&
-		((current_robot_pose_v_and_phi->v < 0.2) || (carmen_distance_ackerman_traj(&previous_pose, current_robot_pose_v_and_phi) > 60.0)))
+	if (initial_time == 0.0)
 	{
-		previous_pose = rddf->poses[i];
+		previous_pose = rddf->poses[rddf->number_of_poses - 1];
 		previous_timestamp = timestamp;
+		initial_time = timestamp;
+		return &previous_pose;
 	}
 
-	double desired_v;
-//  Codigo para fazer parar o objeto movel depois de algum tempo
-	if ((carmen_get_time() - initial_time) > 10.0)
-		desired_v = 0.0;
-	else
-		desired_v = (20.0 / 3.6);
+	// Period of time (counted from initial_time)
+	// during which the obstacle is stopped.
+	static double stop_t0 = 60, stop_tn = 90;
 
-	double delta_t = timestamp - previous_timestamp;
-	double dx = desired_v * delta_t * cos(previous_pose.theta);
-	double dy = desired_v * delta_t * sin(previous_pose.theta);
-	carmen_ackerman_traj_point_t aux;
-	aux.x = previous_pose.x + dx;
-	aux.y = previous_pose.y + dy;
+	double v = (20.0 / 3.6);
+	double t = timestamp - initial_time;
+	if (stop_t0 <= t && t <= stop_tn)
+		v = 0;
 
-	int point_is;
-	for (i = 0; i < rddf->number_of_poses - 1; i++)
+	double dt = timestamp - previous_timestamp;
+	double dx = v * dt * cos(previous_pose.theta);
+	double dy = v * dt * sin(previous_pose.theta);
+
+	carmen_ackerman_traj_point_t pose_ahead;
+	pose_ahead.x = previous_pose.x + dx;
+	pose_ahead.y = previous_pose.y + dy;
+
+	static carmen_ackerman_traj_point_t next_pose = {0, 0, 0, 0, 0};
+	for (int i = 0, n = rddf->number_of_poses - 1; i < n; i++)
 	{
-		previous_pose_moved = get_the_point_nearest_to_the_trajectory(&point_is, rddf->poses[i], rddf->poses[i + 1], aux);
-		if (point_is == POINT_WITHIN_SEGMENT)
+		int status;
+		next_pose = get_the_point_nearest_to_the_trajectory(&status, rddf->poses[i], rddf->poses[i + 1], pose_ahead);
+		if (status == POINT_WITHIN_SEGMENT)
 			break;
 	}
-	if (i != (rddf->number_of_poses - 1))
-	{
-		previous_pose = previous_pose_moved;
-		previous_timestamp = timestamp;
 
-		return (&previous_pose_moved);
-	}
-
-	return (NULL);
+	previous_pose = next_pose;
+	previous_timestamp = timestamp;
+	return &next_pose;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -810,6 +797,7 @@ void
 publish_object(carmen_ackerman_traj_point_t *object_pose)
 {
 #ifdef DISPLAY_MOVING_OBSTACLES
+	carmen_udatmo_moving_obstacles_message *moving_obstacles = carmen_udatmo_get_moving_obstacles();
 	if (moving_obstacles == NULL)
 		virtual_laser_message.num_positions = 3;
 	else
@@ -903,8 +891,7 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 
 	set_behaviours_parameters(current_robot_pose_v_and_phi, timestamp);
 
-	bool goal_in_front_is_a_moving_obstacle = false;
-	int state_updated = behaviour_selector_fill_goal_list(last_rddf_message, &goal_in_front_is_a_moving_obstacle, timestamp);
+	int state_updated = behaviour_selector_fill_goal_list(last_rddf_message, timestamp);
 	if (state_updated)
 		publish_current_state();
 
@@ -914,7 +901,7 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	if (goal_list_size > 0)
 	{
 		carmen_ackerman_traj_point_t *first_goal = &(goal_list[0]);
-		set_goal_velocity(first_goal, &current_robot_pose_v_and_phi, goal_in_front_is_a_moving_obstacle);
+		set_goal_velocity(first_goal, &current_robot_pose_v_and_phi);
 
 		if (should_stop_the_car(&current_robot_pose_v_and_phi) && autonomous)
 			carmen_navigator_ackerman_stop();
@@ -930,10 +917,11 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 // definition of the macro below at the top of this file.
 #ifdef SIMULATE_MOVING_OBSTACLE
 	// @@@ Alberto: colocar um parametro para ativar ou desativar isso.
-	carmen_ackerman_traj_point_t *simulated_object_pose = compute_simulated_objects(&current_robot_pose_v_and_phi, timestamp);
+	carmen_ackerman_traj_point_t *simulated_object_pose = compute_simulated_objects(timestamp);
 	if (simulated_object_pose)
 		publish_object(simulated_object_pose);
 #elif defined DISPLAY_MOVING_OBSTACLES
+	carmen_udatmo_moving_obstacles_message *moving_obstacles = carmen_udatmo_get_moving_obstacles();
 	carmen_udatmo_display_moving_obstacles_message(moving_obstacles);
 #endif
 }
