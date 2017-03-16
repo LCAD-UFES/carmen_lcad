@@ -20,6 +20,7 @@
 
 #define WIDTH 9
 #define HEIGHT 20
+const int USE_VGRAM = 1;
 
 using namespace dlib;
 using namespace cv;
@@ -175,6 +176,9 @@ detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *tr
     cv::Mat frame(image_height, image_width, CV_8UC3);
 	memcpy(frame.data, stereo_image->raw_right, stereo_image->image_size);
 
+	if (USE_VGRAM)
+		cv::cvtColor(frame, frame, CV_BGR2RGB);
+
 //	cv::cvtColor(frame, frame, CV_BGR2RGB);
 //	namedWindow("Display window", WINDOW_AUTOSIZE);
 //	imshow("Display window", frame);
@@ -199,16 +203,23 @@ detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *tr
 				p2.y = p1.y + traffic_light_rectangles[i].height;
 
 				// FILIPE
-				const int USE_VGRAM = 1;
-
 				if (USE_VGRAM)
 				{
 					int label = 0;
 					double confidence = 0; // not implemented yet!
 
-					cv::cvtColor(frame, frame, CV_BGR2RGB);
+					Rect r = traffic_light_rectangles[i];
+					r.x += image_width / 4;
+
 					// TODO: colocar o 40x20 no ini
-					net->Forward(preproc_image(frame, traffic_light_rectangles[i], 20, 40), &label, &confidence);
+					Mat *preproc = preproc_image(frame, r, 20, 40);
+					net->Forward(preproc, &label, &confidence);
+
+					// visualizacao para debug. retirar quando nao for mais necessario.
+					Mat zoom(preproc->size() * 5, frame.type());
+					resize(*preproc, zoom, zoom.size());
+					imshow("preproc", zoom);
+					waitKey(1);
 
 					int traffic_light_status = label + RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED;
 					add_traffic_light_to_message(traffic_light_message, traffic_light_status, p1, p2, num_traffic_lights_accepted);

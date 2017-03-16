@@ -327,6 +327,7 @@ preproc_image(Mat &img, Rect img_roi, int TLIGHT_COLS, int TLIGHT_ROWS)
 
 			//if ((r < 100 && g < 100) || (b > 100 && g < 150))
 			if ((r < 100 && g < 100) || (b > 150 && g < 150))
+			//if ((r < 50 && g < 50))
 			{
 				roi.data[3 * (i * roi.cols + j)+0]=0;
 				roi.data[3 * (i * roi.cols + j)+1]=0;
