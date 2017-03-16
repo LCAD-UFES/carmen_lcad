@@ -20,7 +20,7 @@
 #include "behavior_selector_messages.h"
 
 // Comment or uncomment this definition to control whether simulated moving obstacles are created.
-//#define SIMULATE_MOVING_OBSTACLE
+#define SIMULATE_MOVING_OBSTACLE
 
 // Comment or uncomment this definition to control whether moving obstacles are displayed.
 #define DISPLAY_MOVING_OBSTACLES
