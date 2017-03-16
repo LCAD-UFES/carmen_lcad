@@ -46,20 +46,18 @@ void Obstacle::updateMovement()
 {
 	static double l = 0.9;
 
-	// Observations are inserted at the front of the sequence,
-	// so o1 is "older" (i.e. smaller timestamp) than o2.
-	const Observation &o1 = track.back();
+	// Latest observation (higher timestamp).
 	const Observation &o2 = track.front();
 
-	// Abort update if time difference is too low.
-	double dt = o2.timestamp - o1.timestamp;
-	if (dt <= 0)
-		return;
-
-	// Remove oldest observation if time difference crosses threshold.
-	if (dt >= 1.0)
+	// Drop previous observations until the time difference threshold is reached.
+	for (double t2 = o2.timestamp; t2 - track.back().timestamp > 1.0;)
 		track.pop_back();
 
+	// Previous observation (lower timestamp).
+	const Observation &o1 = track.back();
+
+	// Compute speed and angle between observations.
+	double dt = o2.timestamp - o1.timestamp;
 	double vt = distance(o1, o2) / dt;
 	double theta = angle(o1, o2);
 
