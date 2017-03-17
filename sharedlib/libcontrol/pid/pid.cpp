@@ -193,6 +193,7 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 
 	u_t = carmen_clamp(-100.0, u_t, 100.0);
 
+<<<<<<< HEAD
 	fprintf(stdout, "STEERING (cc, dc, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
 		atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t, u_t, t);
 	fflush(stdout);
@@ -262,6 +263,10 @@ carmen_libpid_steering_PID_controler_new(double atan_desired_curvature, double a
 
 	fprintf(stdout, "STEERING (cc, dc, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
 		atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t, u_t, t - initial_t);
+=======
+	fprintf(stdout, "STEERING (cc, dc, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf\n",
+		atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t, u_t);
+>>>>>>> 8ca28aad09f172d30961fd716d24197b5a44ea91
 	fflush(stdout);
 
 	return u_t;

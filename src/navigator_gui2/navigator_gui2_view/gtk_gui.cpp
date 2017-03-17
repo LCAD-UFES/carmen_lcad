@@ -2278,8 +2278,8 @@ namespace View
 					location->pose.y = moving_objects_tracking->moving_objects_pose.position.y;// + fused_odometry_position.pose.y ;
 					location->map = the_map_view->internal_map;
 
-					width2 = moving_objects_tracking->model_features.geometry.width / 2.0;
-					length2 = moving_objects_tracking->model_features.geometry.length / 2.0;
+					width2 = moving_objects_tracking->width / 2.0;
+					length2 = moving_objects_tracking->length / 2.0;
 
 					wp[0].pose.x = x_coord(-length2, width2, location);
 					wp[0].pose.y = y_coord(-length2, width2, location);

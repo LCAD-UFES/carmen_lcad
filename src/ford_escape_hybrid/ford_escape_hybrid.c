@@ -142,9 +142,9 @@ set_wrench_efforts_desired_v_and_curvature()
 	if (i < ford_escape_hybrid_config->nun_motion_commands)
 	{
 		v = ford_escape_hybrid_config->current_motion_command_vector[i].v;
-		if (!ford_escape_hybrid_config->use_mpc)
-			phi = (1.0 + v / (6.94 / 0.3)) * ford_escape_hybrid_config->current_motion_command_vector[i].phi;
-		else
+//		if (!ford_escape_hybrid_config->use_mpc)
+//			phi = (1.0 + v / (6.94 / 0.3)) * ford_escape_hybrid_config->current_motion_command_vector[i].phi;
+//		else
 			phi = ford_escape_hybrid_config->current_motion_command_vector[i].phi;
 	}
 	else
