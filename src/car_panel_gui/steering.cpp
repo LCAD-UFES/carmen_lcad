@@ -81,7 +81,7 @@ Steering::draw(float new_angle)
 {
 	static double angle = 0.0;
 
-	angle = angle + 0.05 * (new_angle - angle); // para suavisar a visualizacao
+	angle = angle + 0.5 * (new_angle - angle); // para suavisar a visualizacao
 
     glRotatef(angle, 0, 0, 1);
 
