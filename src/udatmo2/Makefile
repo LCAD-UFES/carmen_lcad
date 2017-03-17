@@ -16,6 +16,7 @@ LFLAGS += \
 	-llocalize_ackerman_interface \
 	-lobstacle_distance_mapper_interface \
 	-lmapper_interface \
+	-lmoving_objects_interface \
 	-lrddf_interface \
 	-lparam_interface -lipc -lglobal \
 	-L$(CARMEN_HOME)/sharedlib/libtf/src -ltf \

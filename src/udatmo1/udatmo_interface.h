@@ -52,7 +52,7 @@ void carmen_udatmo_fill_virtual_laser_message(carmen_udatmo_moving_obstacles_mes
  *
  * Moving obstacles are displayed by creating a virtual laser message then publishing it.
  */
-void carmen_udatmo_display_moving_obstacles_message(carmen_udatmo_moving_obstacles_message *message);
+void carmen_udatmo_display_moving_obstacles_message(carmen_udatmo_moving_obstacles_message *message, carmen_robot_ackerman_config_t *robot_config);
 
 
 #ifdef __cplusplus

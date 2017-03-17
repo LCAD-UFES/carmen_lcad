@@ -20,7 +20,7 @@
 #include "behavior_selector_messages.h"
 
 // Comment or uncomment this definition to control whether simulated moving obstacles are created.
-//#define SIMULATE_MOVING_OBSTACLE
+#define SIMULATE_MOVING_OBSTACLE
 
 // Comment or uncomment this definition to control whether moving obstacles are displayed.
 #define DISPLAY_MOVING_OBSTACLES
@@ -796,19 +796,7 @@ publish_dynamic_annotation(carmen_vector_3D_t annotation_point, double orientati
 void
 publish_object(carmen_ackerman_traj_point_t *object_pose)
 {
-#ifdef DISPLAY_MOVING_OBSTACLES
-	carmen_udatmo_moving_obstacles_message *moving_obstacles = carmen_udatmo_get_moving_obstacles();
-	if (moving_obstacles == NULL)
-		virtual_laser_message.num_positions = 3;
-	else
-	{
-		virtual_laser_message.num_positions = 1 + moving_obstacles->num_obstacles;
-		carmen_udatmo_fill_virtual_laser_message(moving_obstacles, 1, &virtual_laser_message);
-	}
-#else
 	virtual_laser_message.num_positions = 3;
-#endif
-
 	virtual_laser_message.positions[0].x = object_pose->x;
 	virtual_laser_message.positions[0].y = object_pose->y;
 	virtual_laser_message.colors[0] = CARMEN_PURPLE;
@@ -920,9 +908,11 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	carmen_ackerman_traj_point_t *simulated_object_pose = compute_simulated_objects(timestamp);
 	if (simulated_object_pose)
 		publish_object(simulated_object_pose);
-#elif defined DISPLAY_MOVING_OBSTACLES
+#endif
+
+#ifdef DISPLAY_MOVING_OBSTACLES
 	carmen_udatmo_moving_obstacles_message *moving_obstacles = carmen_udatmo_get_moving_obstacles();
-	carmen_udatmo_display_moving_obstacles_message(moving_obstacles);
+	carmen_udatmo_display_moving_obstacles_message(moving_obstacles, get_robot_config());
 #endif
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////

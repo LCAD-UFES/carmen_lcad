@@ -253,8 +253,14 @@ add_annotation(double x, double y, double theta, size_t annotation_index)
 	}
 	else if (dist < 20.0)
 	{
-		annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
-		annotations_to_publish.push_back(annotation_i);
+		double angle_to_annotation = carmen_radians_to_degrees(fabs(carmen_normalize_theta(theta - annotation_read_from_file[annotation_index].annotation_orientation)));
+		bool orientation_ok = angle_to_annotation < 70.0 ? true : false;
+
+		if (orientation_ok)
+		{
+			annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
+			annotations_to_publish.push_back(annotation_i);
+		}
 		return (true);
 	}
 

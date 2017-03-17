@@ -905,17 +905,13 @@ add_moving_objects(carmen_map_t *map, carmen_moving_objects_point_clouds_message
 {
 	for (int i = 0; i < moving_objects_message->num_point_clouds; i++)
 	{
-//		int x = round((moving_objects_message->point_clouds[i].object_pose.x - map->config.x_origin) / map->config.resolution);
-//		int y = round((moving_objects_message->point_clouds[i].object_pose.y - map->config.y_origin) / map->config.resolution);
-//
-//		if (x >= 0 && x < map->config.x_size && y >= 0 && y < map->config.y_size)
-//			map->map[x][y] = 1.0;
-		draw_rectangle(map,
-				moving_objects_message->point_clouds[i].object_pose.x,
-				moving_objects_message->point_clouds[i].object_pose.y,
-				moving_objects_message->point_clouds[i].length,
-				moving_objects_message->point_clouds[i].width,
-				carmen_normalize_theta(moving_objects_message->point_clouds[i].orientation));
+		if (moving_objects_message->point_clouds[i].point_size)
+			draw_rectangle(map,
+					moving_objects_message->point_clouds[i].object_pose.x,
+					moving_objects_message->point_clouds[i].object_pose.y,
+					moving_objects_message->point_clouds[i].length,
+					moving_objects_message->point_clouds[i].width,
+					carmen_normalize_theta(moving_objects_message->point_clouds[i].orientation));
 	}
 }
 
