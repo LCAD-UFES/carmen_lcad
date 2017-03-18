@@ -12,6 +12,7 @@
 #include <opencv2/core/core.hpp>        // Basic OpenCV structures (cv::Mat, Scalar)
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <algorithm>
 
 
 using namespace std;
@@ -125,6 +126,8 @@ add_traffic_light_information_to_image(cv::Mat &image, carmen_traffic_light_mess
 		putText(image, text, cv::Point(20, 400), FONT_HERSHEY_COMPLEX, 1, Scalar(100, 255, 100), 2, 8);
 
 	int num_red = 0;
+	vector<int> votes(4, 0 /* init with zero */);
+
 	for (int i = 0; i < message->num_traffic_lights; i++)
 	{
 //		FILE *cacof = fopen("caco.txt", "a");
@@ -132,28 +135,47 @@ add_traffic_light_information_to_image(cv::Mat &image, carmen_traffic_light_mess
 //		fflush(cacof);
 //		fclose(cacof);
 
+		int color_id = message->traffic_lights[i].color - RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED;
+		votes[color_id]++;
+
 		if (message->traffic_lights[i].color == RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED)
 			num_red++;
 
 		CvPoint p1, p2;
+
 		p1.x = message->traffic_lights[i].x1;
 		p1.y = message->traffic_lights[i].y1;
 		p2.x = message->traffic_lights[i].x2;
 		p2.y = message->traffic_lights[i].y2;
+
 		if (message->traffic_lights[i].color == RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED)
 			cv::rectangle(image, p1, p2, CV_RGB(0, 0, 255), 3, 10, 0);
 		else if (message->traffic_lights[i].color == RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN)
 			cv::rectangle(image, p1, p2, CV_RGB(0, 255, 0), 3, 10, 0);
-		else // yellow
-			cv::rectangle(image, p1, p2, CV_RGB(0, 255, 255), 3, 10, 0);
+		else if (message->traffic_lights[i].color == RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_YELLOW)
+			cv::rectangle(image, p1, p2, CV_RGB(255, 255, 0), 3, 10, 0);
+		else // off
+			cv::rectangle(image, p1, p2, CV_RGB(0, 0, 0), 3, 10, 0);
 	}
 
 	if (message->num_traffic_lights > 0)
 	{
-		if (num_red > 0) // @@@ Alberto: Isso eh pessimista e nao trata amarelo
+		// Cplusplusian way of getting the argmax
+		// - max_element returns an iterator pointing to the argmax
+		// - distance returns the difference [in vector indices units]
+		// between the begin() iterator and the iterator returned by the max_element function
+		// TODO: add a conservative criteria (select red, yellow, and off, instead of green) in
+		// case of draws (it requires writing an argmax function instead of using the C++ian way)
+		int most_voted = std::distance(votes.begin(), std::max_element(votes.begin(), votes.end()));
+
+		if (most_voted == 0)
 			circle(image, Point(50, 130), 50, Scalar(255, 0, 0), -1, 8);
-		else
+		else if (most_voted == 1)
 			circle(image, Point(50, 130), 50, Scalar(0, 255, 0), -1, 8);
+		else if (most_voted == 2)
+			circle(image, Point(50, 130), 50, Scalar(255, 255, 0), -1, 8);
+		else
+			circle(image, Point(50, 130), 50, Scalar(0, 0, 0), -1, 8);
 	}
 }
 

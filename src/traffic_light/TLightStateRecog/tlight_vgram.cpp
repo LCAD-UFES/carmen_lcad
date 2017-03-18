@@ -1,5 +1,5 @@
 
-#include "tlight_vgram.h"
+#include <carmen/tlight_vgram.h>
 #include <opencv/highgui.h>
 
 
@@ -162,8 +162,10 @@ TLightVgRam::InitNeurons()
 //
 //fclose(f);
 
-TLightVgRam::TLightVgRam(const char *filename)
+TLightVgRam::TLightVgRam()
 {
+	const char *filename = get_complete_filename("trained_net_UseGreenAsHighAndDiscardBlue.txt");
+
 	FILE *f = fopen(filename, "r");
 
 	if (f == NULL)
@@ -246,7 +248,10 @@ TLightVgRam::Forward(Mat *tlight, int *status, double *confidence)
 	}
 
 	*status = winners[rand() % winners.size()];
-	*confidence = 1.0;
+
+	// TODO
+	if (confidence)
+		*confidence = 1.0;
 }
 
 
