@@ -19,6 +19,8 @@ gboolean on_drawArea_idle(void *data)
 
 	gtk_widget_draw(global_gui->controls_.drawArea, NULL);
 	gtk_widget_draw(global_gui->controls_.drawAreaCarPanel, NULL);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	global_gui->draw_gl_components_car_panel();
 
 	return TRUE;
 }
@@ -86,6 +88,9 @@ gboolean on_drawingAreaCarPanel_expose_event (GtkWidget       *widget,
 		printf ("error in gdk_gl_drawable_gl_begin\n");
 		return FALSE;
 	}
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	global_gui->draw_gl_components_car_panel();
 
 	if (gdk_gl_drawable_is_double_buffered (gldrawable))
 		gdk_gl_drawable_swap_buffers (gldrawable);
@@ -666,25 +671,25 @@ void on_buttonClearGoals_clicked(GtkWidget *widget __attribute__((unused)),
 void on_buttonGo_clicked(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
-	GtkWidget *label;
-	GdkColor color;
+//	GtkWidget *label;
+//	GdkColor color;
 
 	if (GTK_TOGGLE_BUTTON(global_gui->controls_.buttonGo)->active)
 	{
-		gdk_color_parse ("gray", &color);
-		gtk_widget_modify_bg(GTK_WIDGET(global_gui->controls_.buttonGo), GTK_STATE_PRELIGHT, &color);
-
-		label = GTK_BIN(global_gui->controls_.buttonGo)->child;
-		gtk_label_set_text(GTK_LABEL(label), "Stop");
+//		gdk_color_parse ("gray", &color);
+//		gtk_widget_modify_bg(GTK_WIDGET(global_gui->controls_.buttonGo), GTK_STATE_PRELIGHT, &color);
+//
+//		label = GTK_BIN(global_gui->controls_.buttonGo)->child;
+//		gtk_label_set_text(GTK_LABEL(label), "Stop");
 		navigator_start_moving();
 	}
 	else
 	{
-		gdk_color_parse ("red", &color);
-		gtk_widget_modify_bg(GTK_WIDGET(global_gui->controls_.buttonGo), GTK_STATE_PRELIGHT, &color);
-
-		label = GTK_BIN(global_gui->controls_.buttonGo)->child;
-		gtk_label_set_text(GTK_LABEL(label), "Go");
+//		gdk_color_parse ("red", &color);
+//		gtk_widget_modify_bg(GTK_WIDGET(global_gui->controls_.buttonGo), GTK_STATE_PRELIGHT, &color);
+//
+//		label = GTK_BIN(global_gui->controls_.buttonGo)->child;
+//		gtk_label_set_text(GTK_LABEL(label), "Go");
 		navigator_stop_moving();
 	}
 
@@ -992,12 +997,6 @@ int button_press_handler(GtkMapViewer		*the_map_view __attribute__ ((unused)),
 void draw_robot_objects(GtkMapViewer *the_map_view)
 {
 	double pixel_size;
-	static double last_timestamp = 0.0;
-
-	double timestamp = carmen_get_time();
-	bool update_now = false;
-	if ((timestamp - last_timestamp) > 0.1)
-		update_now = true;
 
 	if ((global_gui == NULL) || (the_map_view->internal_map == NULL))
 		return;
@@ -1113,12 +1112,6 @@ void draw_robot_objects(GtkMapViewer *the_map_view)
 
 	if (global_gui->nav_panel_config->show_annotations)
 		global_gui->draw_annotations(the_map_view, pixel_size);
-
-	if (update_now)
-	{
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		global_gui->draw_gl_components_car_panel();
-	}
 
 	global_gui->draw_path_vector(the_map_view);
 }

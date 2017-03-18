@@ -2798,7 +2798,7 @@ namespace View
 	{
 		GdkColor color;
 
-		gdk_color_parse ("gray", &color);
+		gdk_color_parse("grey", &color);
 		gtk_widget_modify_bg(GTK_WIDGET(this->controls_.buttonGo), GTK_STATE_PRELIGHT, &color);
 
 		gtk_toggle_button_set_active(this->controls_.buttonGo, true);

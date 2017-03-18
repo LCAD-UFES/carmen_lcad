@@ -270,7 +270,7 @@ navigator_update_robot(carmen_world_point_p robot)
 	if (robot == NULL)
 	{
 		carmen_localize_ackerman_initialize_uniform_command();
-//		IPC_listen(50);
+		IPC_listen(50);
 	}
 	else
 	{
@@ -280,7 +280,7 @@ navigator_update_robot(carmen_world_point_p robot)
 				carmen_radians_to_degrees(robot->pose.theta));
 
 		carmen_localize_ackerman_initialize_gaussian_command(robot->pose, localize_std);
-//		IPC_listen(50);
+		IPC_listen(50);
 	}
 }
 
@@ -297,7 +297,7 @@ navigator_stop_moving(void)
 {
 	if (!carmen_navigator_ackerman_stop())
 	{
-//		IPC_listen(50);
+		IPC_listen(50);
 		carmen_verbose("Said stop\n");
 	}
 	else
@@ -312,7 +312,7 @@ navigator_start_moving(void)
 	if (!carmen_navigator_ackerman_go())
 	{
 		carmen_verbose("Said go!\n");
-//		IPC_listen(50);
+		IPC_listen(50);
 	}
 	else
 		carmen_verbose("could not say go!\n");
@@ -324,7 +324,7 @@ navigator_set_goal(double x, double y, double theta)
 {
 	carmen_verbose("Set goal to %.1f %.1f\n", x, y);
 	carmen_navigator_ackerman_set_goal(x, y, theta);
-//	IPC_listen(50);
+	IPC_listen(50);
 }
 
 
