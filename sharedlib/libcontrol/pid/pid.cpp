@@ -149,14 +149,10 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 	static double 	integral_t_1 = 0.0;
 	static double 	u_t = 0.0;			// u(t)	-> actuation in time t
 	static double	previous_t = 0.0;
-#define DERIVATIVE_HISTORY_SIZE 5
-	static double	previous_derivatives[DERIVATIVE_HISTORY_SIZE];
 
 	if (previous_t == 0.0)
 	{
 		previous_t = carmen_get_time();
-		for (int i = 0; i < DERIVATIVE_HISTORY_SIZE; i++)
-			previous_derivatives[i] = 0.0;
 		return (0.0);
 	}
 	double t = carmen_get_time();
@@ -170,13 +166,7 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 	integral_t = integral_t + error_t * delta_t;
 
 //	double derivative_t = (error_t - error_t_1) / delta_t;
-	for (int i = DERIVATIVE_HISTORY_SIZE - 2; i >= 0; i--)
-		previous_derivatives[i + 1] = previous_derivatives[i];
-	previous_derivatives[0] = (error_t - error_t_1) / delta_t;
-	double derivative_t = 0.0;
-	for (int i = 0; i < DERIVATIVE_HISTORY_SIZE; i++)
-		derivative_t += previous_derivatives[i];
-	derivative_t /= (double) DERIVATIVE_HISTORY_SIZE;
+	double derivative_t = (error_t - error_t_1) / delta_t;
 
 	u_t = g_steering_Kp * error_t +
 		g_steering_Ki * integral_t +
@@ -193,7 +183,6 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 
 	u_t = carmen_clamp(-100.0, u_t, 100.0);
 
-<<<<<<< HEAD
 	fprintf(stdout, "STEERING (cc, dc, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
 		atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t, u_t, t);
 	fflush(stdout);
@@ -211,7 +200,7 @@ carmen_libpid_steering_PID_controler_new(double atan_desired_curvature, double a
 	static double 	integral_t_1 = 0.0;
 	static double 	u_t = 0.0;			// u(t)	-> actuation in time t
 	static double	previous_t = 0.0;
-#define DERIVATIVE_HISTORY_SIZE 5
+#define DERIVATIVE_HISTORY_SIZE 3
 	static double	previous_derivatives[DERIVATIVE_HISTORY_SIZE];
 	static double	initial_t = 0.0;
 
@@ -263,10 +252,6 @@ carmen_libpid_steering_PID_controler_new(double atan_desired_curvature, double a
 
 	fprintf(stdout, "STEERING (cc, dc, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
 		atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t, u_t, t - initial_t);
-=======
-	fprintf(stdout, "STEERING (cc, dc, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf\n",
-		atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t, u_t);
->>>>>>> 8ca28aad09f172d30961fd716d24197b5a44ea91
 	fflush(stdout);
 
 	return u_t;

@@ -219,7 +219,7 @@ build_trajectory_trapezoidal_phi()
 	double delta_t, t;
 	int i;
 	
-	double t0 = 1.0;
+	double t0 = 2.0;
 	delta_t = (t0 + t1 + t2 + t3) / (double) (NUM_MOTION_COMMANDS_PER_VECTOR - 2);
 
 	for (i = 0, t = 0.0; t < t0; t += delta_t, i++)
