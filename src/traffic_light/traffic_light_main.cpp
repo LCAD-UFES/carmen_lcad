@@ -16,7 +16,8 @@
 #endif
 #include <stdio.h>
 #include <dlib/svm.h>
-#include "tlight_vgram.h"
+#include <carmen/tlight_state_recog.h>
+#include <carmen/tlight_factory.h>
 
 #define WIDTH 9
 #define HEIGHT 20
@@ -36,8 +37,7 @@ typedef normalized_function<dec_funct_type> funct_type;
 funct_type trained_svm;
 string svm_train_name = getenv("CARMEN_HOME")+ (string) "/data/traffic_light/svm.dat";
 
-//Vgram
-TLightVgRam *net;
+TLightRecogInterface *recognizer;
 
 //Camera
 static int camera;
@@ -206,20 +206,20 @@ detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *tr
 				if (USE_VGRAM)
 				{
 					int label = 0;
-					double confidence = 0; // not implemented yet!
 
 					Rect r = traffic_light_rectangles[i];
 					r.x += image_width / 4;
 
 					// TODO: colocar o 40x20 no ini
-					Mat *preproc = preproc_image(frame, r, 20, 40);
-					net->Forward(preproc, &label, &confidence);
+					//Mat *preproc = preproc_image(frame, r, 20, 40);
+					//net->Forward(preproc, &label, &confidence);
+					label = recognizer->run(frame, r);
 
 					// visualizacao para debug. retirar quando nao for mais necessario.
-					Mat zoom(preproc->size() * 5, frame.type());
-					resize(*preproc, zoom, zoom.size());
-					imshow("preproc", zoom);
-					waitKey(1);
+					//Mat zoom(preproc->size() * 5, frame.type());
+					//resize(*preproc, zoom, zoom.size());
+					//imshow("preproc", zoom);
+					//waitKey(1);
 
 					int traffic_light_status = label + RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED;
 					add_traffic_light_to_message(traffic_light_message, traffic_light_status, p1, p2, num_traffic_lights_accepted);
@@ -440,8 +440,7 @@ traffic_light_module_initialization()
     ifstream fin(svm_train_name.c_str(), ios::binary);
     deserialize(trained_svm, fin);
 
-    //Read the vgram trained
-    net = new TLightVgRam("trained_net_UseGreenAsHighAndDiscardBlue.txt");
+    recognizer = TLightStateRecogFactory::build("vgram");
 }
 
 
@@ -508,8 +507,6 @@ main(int argc, char **argv)
     subscribe_to_relevant_messages();
 
     traffic_light_module_initialization();
-
     carmen_ipc_dispatch();
-
     return (EXIT_SUCCESS);
 }
