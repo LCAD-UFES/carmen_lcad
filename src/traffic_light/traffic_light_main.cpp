@@ -184,7 +184,8 @@ detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *tr
 //	imshow("Display window", frame);
 //	waitKey(1);
 
-	if (traffic_light_message->traffic_light_annotation_distance < MAX_TRAFFIC_LIGHT_DISTANCE && traffic_light_message->traffic_light_annotation_distance != -1.0)
+	if (traffic_light_message->traffic_light_annotation_distance < MAX_TRAFFIC_LIGHT_DISTANCE &&
+			traffic_light_message->traffic_light_annotation_distance != -1.0)
 	{
 		// Traffic lights detection
 		std::vector<Rect> traffic_light_rectangles = detect_traffic_lights(frame);
@@ -440,7 +441,7 @@ traffic_light_module_initialization()
     ifstream fin(svm_train_name.c_str(), ios::binary);
     deserialize(trained_svm, fin);
 
-    recognizer = TLightStateRecogFactory::build("vgram");
+    recognizer = TLightStateRecogFactory::build("mlp");
 }
 
 
