@@ -27,21 +27,24 @@ vector<GTData> search_traffic_signals_gt(vector<GTData> gt, string name);
 vector<GTData>
 TSD_readGTData(string aGTFile);
 
+string negatives_file;
+
 void
 haar_create_samples_and_training(char *samples, char *training);
 
 int
 main(int argc, char** argv)
 {
-
-    if (argc != 5)
+    if (argc != 6)
     {
-        cerr << argv[0] << " train.txt gt_train.txt samples.txt training.txt" << endl;
+        cerr << argv[0] << " train.txt negatives.txt gt_train.txt samples.txt training.txt" << endl;
+//        cerr << argv[0] << " train.txt gt_train.txt samples.txt training.txt" << endl;
         return EXIT_FAILURE;
     }
 
     string pos_file = argv[1]; //"train.txt";
-    string gt_file = argv[2]; //"gt.txt";
+    negatives_file = argv[2]; //"negatives.txt";
+    string gt_file = argv[3]; //"gt.txt";
 
     vector<GTData> gt = TSD_readGTData(gt_file);
 
@@ -71,7 +74,7 @@ main(int argc, char** argv)
 
                 if (i == 0)
                 {
-                    sprintf(newline, "../database_g/%s %d %d %d %d %d", aux.at(i).name.c_str(), (int) aux.size(), aux.at(i).leftCol,
+                    sprintf(newline, "%s %d %d %d %d %d", aux.at(i).name.c_str(), (int) aux.size(), aux.at(i).leftCol,
                                 aux.at(i).topRow, (aux.at(i).rightCol - aux.at(i).leftCol), (aux.at(i).bottomRow - aux.at(i).topRow));
                     //test_full/
                 } else
@@ -96,7 +99,7 @@ main(int argc, char** argv)
         {
         }
         cerr << "File of positives samples created" << endl;
-        haar_create_samples_and_training(argv[3], argv[4]);
+        haar_create_samples_and_training(argv[4], argv[5]);
         cerr << "End of create samples and training" << endl;
     }
 }
@@ -141,7 +144,8 @@ haar_create_samples_and_training(char *samples, char *training)
 //        {
 //        }
 
-        string training = "opencv_traincascade -data data/ -vec vectorfile.vec  -bg negatives.txt ";
+        string training;
+        training = "opencv_traincascade -data data/ -vec vectorfile.vec -bg " + negatives_file;
 
         while (!haar_training.eof())
         {

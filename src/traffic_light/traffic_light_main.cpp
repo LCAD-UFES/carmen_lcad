@@ -67,6 +67,8 @@ static double infinite = 9999.0;
 // Database generation infrastructure
 static int generate_database = 0;
 static char *database_path;
+static int counter_db = 0;
+
 carmen_vector_3D_t nearest_traffic_light_pose;
 
 
@@ -261,9 +263,37 @@ bumblebee_to_opencv(carmen_bumblebee_basic_stereoimage_message *stereo_image)
 
 
 void
+save_image_without_traffic_lights(carmen_bumblebee_basic_stereoimage_message *stereo_image)
+{
+	const char *filename = "negatives.txt";
+	static char image_name[1024];
+	static char file_name_with_dir[2048];
+
+	sprintf(image_name, "%s/img/image_%04d_%lf.png",
+			database_path, counter_db, stereo_image->timestamp);
+
+	sprintf(file_name_with_dir, "%s/%s", database_path, filename);
+
+	FILE *database_file = fopen(file_name_with_dir, "a");
+
+	if (database_file == NULL)
+		exit(printf("Error: Unable to open the output file '%s'\n", file_name_with_dir));
+
+	Mat *m = bumblebee_to_opencv(stereo_image);
+	imwrite(image_name, *m);
+
+	fprintf(database_file, "%s\n", image_name);
+
+	fclose(database_file);
+
+	counter_db++;
+}
+
+
+void
 save_image_and_detections(carmen_traffic_light_message traffic_light_message, carmen_bumblebee_basic_stereoimage_message *stereo_image)
 {
-	static int counter = 0;
+//	static int counter = 0;
 
 	if (traffic_light_message.num_traffic_lights == 0)
 	{
@@ -272,7 +302,7 @@ save_image_and_detections(carmen_traffic_light_message traffic_light_message, ca
 		static char file_name_with_dir[2048];
 
 		sprintf(image_name, "%s/img/image_%04d_%lf_%lf_%lf.png",
-				database_path, counter, stereo_image->timestamp,
+				database_path, counter_db, stereo_image->timestamp,
 				nearest_traffic_light_pose.x, nearest_traffic_light_pose.y);
 
 		sprintf(file_name_with_dir, "%s/%s", database_path, filename);
@@ -309,7 +339,7 @@ save_image_and_detections(carmen_traffic_light_message traffic_light_message, ca
 			static char file_name_with_dir[2048];
 
 			sprintf(image_name, "%s/img/image_%04d_%lf_%lf_%lf.png",
-					database_path, counter, stereo_image->timestamp,
+					database_path, counter_db, stereo_image->timestamp,
 					nearest_traffic_light_pose.x, nearest_traffic_light_pose.y);
 
 			sprintf(file_name_with_dir, "%s/%s", database_path, filename);
@@ -331,7 +361,7 @@ save_image_and_detections(carmen_traffic_light_message traffic_light_message, ca
 			fclose(database_file);
 		}
 	}
-	counter++;
+	counter_db++;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -384,6 +414,8 @@ carmen_bumblebee_basic_stereoimage_message_handler(carmen_bumblebee_basic_stereo
     }
     else
     {
+    	if (generate_database && (nearest_traffic_light_distance > 100.0))
+    	save_image_without_traffic_lights(stereo_image);
         traffic_light_message.traffic_light_annotation_distance = infinite;
         traffic_light_message.num_traffic_lights = 0;
         traffic_light_message.timestamp = stereo_image->timestamp;

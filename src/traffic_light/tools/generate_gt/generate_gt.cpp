@@ -291,6 +291,7 @@ main(int argc, char** argv)
 					case 27:                      // ESC -> key 27 Exit program
 						image.release();
 						destroyWindow(window_name);
+						input.close();
 						cout << "\nPROGRAM EXITED BY PRESSING <ESC> KEY!" << "\n\n";
 						return EXIT_SUCCESS;
 					}
