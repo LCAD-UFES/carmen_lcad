@@ -61,7 +61,7 @@ main(int argc, char** argv)
         while (!file.eof())
         {
             string aux = image;
-            image = "../database_g/" + image;
+//            image = "../database_g/" + image;
 //            printf("%s\n", image.c_str());
             frame = cvLoadImageM(image.c_str(), 1);
 
@@ -148,7 +148,7 @@ detectAndDisplay(Mat frame, string image, char *verbose, string aux)
     {
         imshow(window_name + image, frame);
     }
-	imwrite("../result_database_g/" + aux, frame);
+	imwrite("result_db/" + aux, frame);
     string result = newline;
     //imwrite("image/" + image, frame);
     return result;
