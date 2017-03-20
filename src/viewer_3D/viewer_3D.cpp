@@ -305,8 +305,13 @@ rddf_annotation_handler(carmen_rddf_annotation_message *msg)
 		carmen_annotation_t annotation;
 
 		memcpy(&annotation, &(msg->annotations[i]), sizeof(carmen_annotation_t));
-		annotation.annotation_description = (char *) calloc (strlen(msg->annotations[i].annotation_description) + 1, sizeof(char));
-		strcpy(annotation.annotation_description, msg->annotations[i].annotation_description);
+		if (msg->annotations[i].annotation_description)
+		{
+			annotation.annotation_description = (char *) calloc (strlen(msg->annotations[i].annotation_description) + 1, sizeof(char));
+			strcpy(annotation.annotation_description, msg->annotations[i].annotation_description);
+		}
+		else
+			annotation.annotation_description = (char *) " ";
 
 		annotations.push_back(annotation);
 	}

@@ -4,8 +4,8 @@
 #include <carmen/path_planner_messages.h>
 #include <carmen/rddf_interface.h>
 #include <carmen/grid_mapping.h>
-#include <carmen/udatmo_api.h>
-#include <carmen/udatmo_interface.h>
+#include <carmen/udatmo.h>
+#include <carmen/udatmo_messages.h>
 #include <prob_map.h>
 #include <carmen/map_server_interface.h>
 #include <carmen/obstacle_avoider_interface.h>
@@ -426,12 +426,11 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 
 	double distance = 0.0;
 	double moving_obj_v = 0.0;
-	if (is_moving_obstacle_ahead())
+	if (udatmo_obstacle_detected())
 	{
-		carmen_ackerman_traj_point_t robot_pose = get_robot_pose();
-		moving_obj_v = carmen_udatmo_front_obstacle_speed(&robot_pose);
 //		distance = DIST2D(udatmo_get_moving_obstacle_position(), *current_robot_pose_v_and_phi) - car_pose_to_car_front;
-		distance = carmen_udatmo_front_obstacle_distance(current_robot_pose_v_and_phi) - car_pose_to_car_front;
+		distance = udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi) - car_pose_to_car_front;
+		moving_obj_v = udatmo_speed_front();
 
 		// ver "The DARPA Urban Challenge" book, pg. 36.
 		double Kgap = 1.0;
@@ -457,7 +456,7 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 double
 set_goal_velocity_according_to_moving_obstacle_new(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
 {
-	if (is_moving_obstacle_ahead())
+	if (udatmo_obstacle_detected())
 	{
 		// um carro de tamanho para cada 10 milhas/h (4.4705 m/s) -> ver "The DARPA Urban Challenge" book, pg. 36.
 		double min_dist_according_to_car_v = get_robot_config()->length * (current_robot_pose_v_and_phi->v / 4.4704)
@@ -504,7 +503,7 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 	if (obstacle_avoider_active_recently)
 		goal->v = carmen_fmin(2.5, goal->v);
 
-	if (!is_moving_obstacle_ahead())
+	if (!udatmo_obstacle_detected())
 		SampleFilter_put(&filter2, carmen_distance_ackerman_traj(goal, current_robot_pose_v_and_phi));
 
 //	printf("gvf %lf\n", goal->v);
@@ -605,11 +604,11 @@ carmen_ackerman_traj_point_t *
 compute_simulated_objects(double timestamp)
 {
 	if (!necessary_maps_available)
-		return NULL;
+		return (NULL);
 
 	carmen_rddf_road_profile_message *rddf = last_rddf_message;
 	if (rddf == NULL)
-		return NULL;
+		return (NULL);
 
 	static carmen_ackerman_traj_point_t previous_pose = {0, 0, 0, 0, 0};
 	static double previous_timestamp = 0.0;
@@ -909,11 +908,6 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	if (simulated_object_pose)
 		publish_object(simulated_object_pose);
 #endif
-
-#ifdef DISPLAY_MOVING_OBSTACLES
-	carmen_udatmo_moving_obstacles_message *moving_obstacles = carmen_udatmo_get_moving_obstacles();
-	carmen_udatmo_display_moving_obstacles_message(moving_obstacles, get_robot_config());
-#endif
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -937,7 +931,6 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	current_robot_pose_v_and_phi.v = msg->v;
 	current_robot_pose_v_and_phi.phi = msg->phi;
 
-	carmen_udatmo_update_robot_pose_with_globalpos(msg);
 	select_behaviour(current_robot_pose_v_and_phi, msg->timestamp);
 }
 
@@ -953,7 +946,6 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	current_robot_pose_v_and_phi.v = msg->v;
 	current_robot_pose_v_and_phi.phi = msg->phi;
 
-	carmen_udatmo_update_robot_pose_with_truepos(msg);
 	select_behaviour(current_robot_pose_v_and_phi, msg->timestamp);
 }
 
@@ -961,8 +953,6 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 static void
 rddf_handler(carmen_rddf_road_profile_message *rddf_msg)
 {
-	carmen_udatmo_update_rddf(rddf_msg);
-
 	if (!necessary_maps_available)
 		return;
 
@@ -1004,8 +994,6 @@ path_planner_road_profile_handler(carmen_path_planner_road_profile_message *rddf
 static void
 carmen_obstacle_distance_mapper_message_handler(carmen_obstacle_distance_mapper_message *message)
 {
-	carmen_udatmo_update_distance_map(message);
-
 	behavior_selector_update_map(message);
 
 	necessary_maps_available = 1;
@@ -1243,8 +1231,6 @@ read_parameters(int argc, char **argv)
 		goal_list_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_PATH_PLANNER_GOAL;
 	else
 		goal_list_road_profile_message = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
-
-	carmen_udatmo_init(&robot_config, param_rddf_num_poses_ahead_min, param_rddf_num_poses_ahead_limited_by_map);
 }
 
 

@@ -298,7 +298,7 @@ carmen_check_for_annotations(carmen_point_t robot_pose,
 
 	for (size_t j = 0; j < dynamic_annotation_messages.size(); j++)
 	{
-		if ((dynamic_annotation_messages[j].timestamp - timestamp) < 2.0)
+		if (fabs(dynamic_annotation_messages[j].timestamp - timestamp) < 2.0)
 		{
 			carmen_annotation_t annotation;
 			annotation.annotation_type = dynamic_annotation_messages[j].annotation_type;
@@ -309,6 +309,8 @@ carmen_check_for_annotations(carmen_point_t robot_pose,
 			annotation_and_index annotation_i = {annotation, 0};
 			annotations_to_publish.push_back(annotation_i);
 		}
+		else
+			dynamic_annotation_messages.erase(dynamic_annotation_messages.begin() + j);
 	}
 }
 
@@ -581,7 +583,7 @@ static void
 carmen_rddf_dynamic_annotation_message_handler(carmen_rddf_dynamic_annotation_message *message)
 {
 	dynamic_annotation_messages.push_front(*message);
-	if (dynamic_annotation_messages.size() > 10)
+	if (dynamic_annotation_messages.size() > 30)
 		dynamic_annotation_messages.pop_back();
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -652,7 +654,7 @@ carmen_rddf_play_load_annotation_file()
 	while(!feof(f))
 	{
 		carmen_annotation_t annotation;
-		annotation.annotation_description = (char *) calloc (128, sizeof(char));
+		annotation.annotation_description = (char *) calloc (1024, sizeof(char));
 
 		fscanf(f, "%s\t%d\t%d\t%lf\t%lf\t%lf\t%lf\n",
 			annotation.annotation_description,
