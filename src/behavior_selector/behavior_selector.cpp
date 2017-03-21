@@ -51,25 +51,7 @@ SampleFilter filter2;
 extern carmen_rddf_annotation_message last_rddf_annotation_message;
 
 extern bool wait_start_moving;
-
-// Information on front moving obstacle.
-struct moving_obstacle_ahead_t
-{
-	bool found;
-
-	carmen_ackerman_traj_point_t pose;
-
-	double timestamp;
-};
-
-static struct moving_obstacle_ahead_t moving_obstacle_ahead = {false, {0, 0, 0, 0, 0}, 0};
-
-static void moving_obstacle_ahead_set_pose(const carmen_ackerman_traj_point_t &pose)
-{
-	moving_obstacle_ahead.found = true;
-	moving_obstacle_ahead.pose = pose;
-	moving_obstacle_ahead.timestamp = carmen_get_time();
-}
+extern bool autonomous;
 
 
 carmen_behavior_selector_algorithm_t
@@ -236,9 +218,15 @@ red_traffic_light_ahead()
 
 
 bool
-recent_moving_object_near_this_rddf_pose(carmen_ackerman_traj_point_t pose)
+recent_moving_object_near_this_rddf_pose(carmen_ackerman_traj_point_t pose, carmen_ackerman_traj_point_t moving_obstacle_pose,
+		double last_moving_obstacle_detection_timestamp, double timestamp)
 {
-	return (!moving_obstacle_ahead.found && DIST2D(pose, moving_obstacle_ahead.pose) < 2.0);
+	printf("dist rddf-mo %lf\n", DIST2D(pose, moving_obstacle_pose));
+	if (((fabs(timestamp - last_moving_obstacle_detection_timestamp)) < 2.0) &&
+			(DIST2D(pose, moving_obstacle_pose) < 15.0))
+		return (true);
+	else
+		return (false);
 }
 
 
@@ -275,28 +263,21 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double
 		{
 			int moving_obstacle_waypoint = move_goal_back_according_to_car_v(last_obstacle_free_waypoint_index, rddf, robot_pose);
 			add_goal_to_goal_list(goal_index, current_goal, moving_obstacle_waypoint, rddf);
-			moving_obstacle_ahead_set_pose(rddf->poses[rddf_pose_index]);
-			printf("mo detec \n");
+
+			if (autonomous && (goal_index == 1) && (udatmo_speed_front() < 0.1))
+			{
+				carmen_vector_3D_t annotation_point;
+				annotation_point.x = rddf->poses[rddf_pose_index].x;
+				annotation_point.y = rddf->poses[rddf_pose_index].y;
+				annotation_point.z = 0.0;
+				publish_dynamic_annotation(annotation_point, rddf->poses[rddf_pose_index].theta, (char *) "RDDF_ANNOTATION_TYPE_DYNAMIC",
+						RDDF_ANNOTATION_TYPE_DYNAMIC, RDDF_ANNOTATION_CODE_DYNAMIC_STOP, timestamp);
+			}
+
+			if (!autonomous && (udatmo_speed_front() > 0.1))
+				carmen_navigator_ackerman_go();
 			break;
 		}
-		else if (rddf_pose_hit_obstacle && recent_moving_object_near_this_rddf_pose(rddf->poses[rddf_pose_index]))
-		{
-			add_goal_to_goal_list(goal_index, current_goal, last_obstacle_free_waypoint_index, rddf,
-					-(robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels));
-			carmen_vector_3D_t annotation_point;
-			annotation_point.x = rddf->poses[rddf_pose_index].x;
-			annotation_point.y = rddf->poses[rddf_pose_index].y;
-			annotation_point.z = 0.0;
-			publish_dynamic_annotation(annotation_point, rddf->poses[rddf_pose_index].theta, (char *) "RDDF_ANNOTATION_TYPE_DYNAMIC",
-					RDDF_ANNOTATION_TYPE_DYNAMIC, RDDF_ANNOTATION_CODE_DYNAMIC_STOP, timestamp);
-			printf("should show annotation\n");
-			break;
-		}
-//		else if (rddf_pose_hit_obstacle)
-//		{
-//			add_goal_to_goal_list(goal_index, current_goal, last_obstacle_free_waypoint_index, rddf);
-//			break;
-//		}
 		else if (((distance_from_car_to_rddf_point >= distance_between_waypoints) && // -> Adiciona um waypoint na posicao atual se ela esta numa distancia apropriada
 				  (distance_to_last_obstacle >= 15.0) && // e se ela esta pelo menos 15.0 metros aa frente de um obstaculo
 				  !rddf_pose_hit_obstacle)) // e se ela nao colide com um obstaculo.

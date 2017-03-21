@@ -20,7 +20,7 @@
 #include "behavior_selector_messages.h"
 
 // Comment or uncomment this definition to control whether simulated moving obstacles are created.
-//#define SIMULATE_MOVING_OBSTACLE
+#define SIMULATE_MOVING_OBSTACLE
 
 // Comment or uncomment this definition to control whether moving obstacles are displayed.
 #define DISPLAY_MOVING_OBSTACLES
@@ -57,7 +57,7 @@ extern carmen_udatmo_moving_obstacles_message *moving_obstacles;
 
 static carmen_rddf_road_profile_message *last_rddf_message = NULL;
 
-static int autonomous = 0;
+bool autonomous = false;
 bool wait_start_moving = false;
 static double last_not_autonomous_timestamp = 0.0;
 
@@ -216,6 +216,9 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, double goal_v)
 		v = 0.5;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP)
 		v = 0.5;
+	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&
+			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_DYNAMIC_STOP))
+		v = 0.0;
 
 	return (v);
 }
@@ -255,7 +258,9 @@ get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotatio
 			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BARRIER) ||
 			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) ||
 			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_STOP) && !wait_start_moving) ||
-			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP && !wait_start_moving)) ||
+			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) && !wait_start_moving) ||
+			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&
+			  (annotation_message.annotations[i].annotation_code == RDDF_ANNOTATION_CODE_DYNAMIC_STOP) && !wait_start_moving) ||
 			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BUMP)) &&
 			 (distance_to_annotation < distance_to_nearest_annotation))
 		{
@@ -417,16 +422,21 @@ extern SampleFilter filter2;
 
 
 double
-set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
+set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi,
+		double timestamp)
 {
 	double car_pose_to_car_front = get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels;
 	// um carro de tamanho para cada 10 milhas/h (4.4705 m/s) -> ver "The DARPA Urban Challenge" book, pg. 36.
 	double min_dist_according_to_car_v = get_robot_config()->length * (current_robot_pose_v_and_phi->v / 4.4704) + car_pose_to_car_front;
-	double desired_distance = carmen_fmax(1.8 * min_dist_according_to_car_v, 10.0);
+	double desired_distance = carmen_fmax(1.8 * min_dist_according_to_car_v, car_pose_to_car_front + 2.5);
+
+	static double last_obstacle_detected_timestamp = 0.0;
+	if (udatmo_obstacle_detected())
+		last_obstacle_detected_timestamp = timestamp;
 
 	double distance = 0.0;
 	double moving_obj_v = 0.0;
-	if (udatmo_obstacle_detected())
+	if (fabs(timestamp - last_obstacle_detected_timestamp) < 10.0)
 	{
 //		distance = DIST2D(udatmo_get_moving_obstacle_position(), *current_robot_pose_v_and_phi) - car_pose_to_car_front;
 		distance = udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi) - car_pose_to_car_front;
@@ -486,11 +496,11 @@ set_goal_velocity_according_to_moving_obstacle_new(carmen_ackerman_traj_point_t 
 
 
 void
-set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
+set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi, double timestamp)
 {
 	goal->v = 18.28; // Esta linha faz com que o behaviour_selector ignore as velocidades no rddf
 
-	goal->v = set_goal_velocity_according_to_moving_obstacle(goal, current_robot_pose_v_and_phi);
+	goal->v = set_goal_velocity_according_to_moving_obstacle(goal, current_robot_pose_v_and_phi, timestamp);
 
 //	printf("gva %lf  ", goal->v);
 	goal->v = limit_maximum_velocity_according_to_centripetal_acceleration(goal->v, get_robot_pose().v, goal,
@@ -624,12 +634,14 @@ compute_simulated_objects(double timestamp)
 
 	// Period of time (counted from initial_time)
 	// during which the obstacle is stopped.
-	static double stop_t0 = 60, stop_tn = 90;
+	static double stop_t0 = 30, stop_tn = 60;
 
 	double v = (20.0 / 3.6);
 	double t = timestamp - initial_time;
 	if (stop_t0 <= t && t <= stop_tn)
 		v = 0;
+	else if (t > stop_tn)
+		initial_time = timestamp;
 
 	double dt = timestamp - previous_timestamp;
 	double dx = v * dt * cos(previous_pose.theta);
@@ -828,7 +840,9 @@ should_stop_the_car(carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
 			(get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels);
 
 	if (((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) ||
-		 (nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP)) &&
+		 (nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) ||
+		 ((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&
+		  (nearest_velocity_related_annotation->annotation_code == RDDF_ANNOTATION_CODE_DYNAMIC_STOP))) &&
 		!wait_start_moving &&
 		(distance_to_annotation < 1.0) &&
 		(fabs(current_robot_pose_v_and_phi->v) < 0.1))
@@ -888,7 +902,7 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	if (goal_list_size > 0)
 	{
 		carmen_ackerman_traj_point_t *first_goal = &(goal_list[0]);
-		set_goal_velocity(first_goal, &current_robot_pose_v_and_phi);
+		set_goal_velocity(first_goal, &current_robot_pose_v_and_phi, timestamp);
 
 		if (should_stop_the_car(&current_robot_pose_v_and_phi) && autonomous)
 			carmen_navigator_ackerman_stop();
@@ -1063,7 +1077,7 @@ remove_goal_handler()
 static void
 carmen_navigator_ackerman_status_message_handler(carmen_navigator_ackerman_status_message *msg)
 {
-	autonomous = msg->autonomous;
+	autonomous = (msg->autonomous == 1)? true: false;
 }
 
 
