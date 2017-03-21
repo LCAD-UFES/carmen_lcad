@@ -1,10 +1,10 @@
 #include "datmo.h"
 
-#include "logging.h"
 #include "munkres.h"
 #include "primitives.h"
 
 #include <carmen/collision_detection.h>
+#include <carmen/cpp_debug_log.h>
 
 #include <boost/bind.hpp>
 
@@ -21,10 +21,7 @@ namespace udatmo
 DATMO &getDATMO() {
 	static DATMO *datmo = NULL;
 	if (datmo == NULL)
-	{
-		CARMEN_LOG_TO_FILE("udatmo.log");
 		datmo = new DATMO();
-	}
 
 	return *datmo;
 }

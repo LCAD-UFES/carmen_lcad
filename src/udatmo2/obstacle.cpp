@@ -1,6 +1,6 @@
 #include "obstacle.h"
 
-#include "logging.h"
+#include <carmen/cpp_debug_log.h>
 
 
 #define MOVING_OBSTACLES_OBSERVATIONS 40
