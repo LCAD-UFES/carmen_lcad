@@ -1,5 +1,6 @@
 
 #include <carmen/carmen.h>
+#include <carmen/cpp_debug_log.h>
 #include <carmen/rddf_messages.h>
 #include <carmen/path_planner_messages.h>
 #include <carmen/rddf_interface.h>
@@ -251,7 +252,8 @@ get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotatio
 	for (int i = 0; i < annotation_message.num_annotations; i++)
 	{
 		double distance_to_annotation = DIST2D_P(&annotation_message.annotations[i].annotation_point, current_robot_pose_v_and_phi);
-		if (((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) ||
+		if (((annotation_message.annotations[i].annotation_code == RDDF_ANNOTATION_CODE_DYNAMIC_STOP) ||
+			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) ||
 			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BARRIER) ||
 			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) ||
 			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_STOP) && !wait_start_moving) ||
@@ -828,6 +830,12 @@ should_stop_the_car(carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
 	double distance_to_annotation = DIST2D_P(&nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi) -
 			(get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels);
 
+	if (nearest_velocity_related_annotation->annotation_code == RDDF_ANNOTATION_CODE_DYNAMIC_STOP)
+	{
+		CARMEN_LOG(trace, "Should stop the car on account of stopped obstacle up front");
+		return true;
+	}
+
 	if (((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) ||
 		 (nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP)) &&
 		!wait_start_moving &&
@@ -870,6 +878,13 @@ stopped_at_green_traffic_light(carmen_ackerman_traj_point_t *current_robot_pose_
 		return (false);
 }
 
+bool stopped_on_account_of_moving_obstacle(carmen_ackerman_traj_point_t &pose)
+{
+	if (should_stop_the_car(&pose))
+		return false;
+
+	return (pose.v == 0 && is_moving_obstacle_ahead());
+}
 
 void
 select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
@@ -894,7 +909,8 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 		if (should_stop_the_car(&current_robot_pose_v_and_phi) && autonomous)
 			carmen_navigator_ackerman_stop();
 
-		if (stopped_at_green_traffic_light(&current_robot_pose_v_and_phi) && !autonomous)
+		if (stopped_on_account_of_moving_obstacle(current_robot_pose_v_and_phi) ||
+			(stopped_at_green_traffic_light(&current_robot_pose_v_and_phi) && !autonomous))
 			carmen_navigator_ackerman_go();
 
 		publish_goal_list(goal_list, goal_list_size, carmen_get_time());
@@ -1019,9 +1035,29 @@ obstacle_avoider_robot_hit_obstacle_message_handler(carmen_obstacle_avoider_robo
 }
 
 
+static std::ostream &operator << (std::ostream &out, const carmen_rddf_annotation_message *message)
+{
+	out << "RDDF {annotations={";
+	for (int i = 0, n = message->num_annotations; i < n;)
+	{
+		carmen_annotation_t annotation = message->annotations[i];
+		out << '(' << annotation.annotation_type << ", " << annotation.annotation_code << ')';
+
+		if (++i >= n)
+			break;
+
+		out << ", ";
+	}
+
+	out << "}, timestamp=" << (message->timestamp - carmen_ipc_initialize_time());
+
+	return out;
+}
+
 static void
 rddf_annotation_message_handler(carmen_rddf_annotation_message *message)
 {
+	CARMEN_LOG(trace, message);
 	last_rddf_annotation_message = *message;
 	last_rddf_annotation_message_valid = true;
 }
@@ -1251,6 +1287,8 @@ read_parameters(int argc, char **argv)
 int
 main(int argc, char **argv)
 {
+	CARMEN_LOG_TO_FILE("behavior_selector.log");
+
 	signal(SIGINT, signal_handler);
 	carmen_ipc_initialize(argc, argv);
 	define_messages();
