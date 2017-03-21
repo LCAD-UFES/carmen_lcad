@@ -628,8 +628,8 @@ my_h(const gsl_vector *x, void *params)
 	else
 	{
 		w1 = 10.0; w2 = 15.0; w3 = 30.0; w4 = 5.0; w5 = 10.0; w6 = 0.0005;
-		double w7;
-		w7 = 0.1;//(my_params->target_td->v_i > 0.2 ? 2.0 : 0.0);
+//		double w7;
+//		w7 = 0.1;//(my_params->target_td->v_i > 0.2 ? 2.0 : 0.0);
 		if (td.dist < 10.0)
 			w2 *= exp(td.dist - 10.0);
 		result = sqrt(
@@ -640,18 +640,18 @@ my_h(const gsl_vector *x, void *params)
 				w5 * proximity_to_obstacles + // já é quandrática
 				w6 * tcp.sf * tcp.sf); //+
 //				w7 * (my_params->target_v - tcp.vf) * (my_params->target_v - tcp.vf));
-		printf("--------\nW1: %0.2lf W2: %0.2lf W3: %0.2lf W4: %0.2lf W5: %0.2lf W6: %0.2lf W7: %0.2lf\n",
-				(w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index),
-				(w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index),
-				(w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index),
-				(w4 * path_to_lane_distance), // já é quandrática
-				(w5 * proximity_to_obstacles), // já é quandrática
-				(w6 * tcp.sf * tcp.sf),
-				(w7 * (my_params->target_v - tcp.vf) * (my_params->target_v - tcp.vf)));
+//		printf("--------\nW1: %0.2lf W2: %0.2lf W3: %0.2lf W4: %0.2lf W5: %0.2lf W6: %0.2lf W7: %0.2lf\n",
+//				(w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index),
+//				(w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index),
+//				(w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index),
+//				(w4 * path_to_lane_distance), // já é quandrática
+//				(w5 * proximity_to_obstacles), // já é quandrática
+//				(w6 * tcp.sf * tcp.sf),
+//				(w7 * (my_params->target_v - tcp.vf) * (my_params->target_v - tcp.vf)));
 	}
 
-	printf("NEW result %.2lf s %.2lf sf %.2lf, tdc %.2lf, tdd %.2f, a %lf v_i %.2lf v_f %.2lf vt %.2lf TT %lf\n--------\n", result, tcp.s, tcp.sf,
-			td.dist,my_params->target_td->dist, tcp.a, my_params->target_td->v_i, tcp.vf, my_params->target_v, tcp.tt);
+//	printf("NEW result %.2lf s %.2lf sf %.2lf, tdc %.2lf, tdd %.2f, a %lf v_i %.2lf v_f %.2lf vt %.2lf TT %lf\n--------\n", result, tcp.s, tcp.sf,
+//			td.dist,my_params->target_td->dist, tcp.a, my_params->target_td->v_i, tcp.vf, my_params->target_v, tcp.tt);
 	return (result);
 }
 
@@ -963,8 +963,8 @@ get_missing_k1(const TrajectoryLookupTable::TrajectoryDimensions& target_td,
 void
 print_tcp(TrajectoryLookupTable::TrajectoryControlParameters tcp)
 {
-	printf("v %d, tt %1.4lf, a %1.4lf, h_k1 %d, k1 %1.4lf, k2 %1.4lf, k3 %1.4lf, vf %2.4lf\n",
-			tcp.valid, tcp.tt, tcp.a, tcp.has_k1, tcp.k1, tcp.k2, tcp.k3, tcp.vf);
+	printf("v %d, tt %1.4lf, a %1.4lf, h_k1 %d, k1 %1.4lf, k2 %1.4lf, k3 %1.4lf, vf %2.4lf, sf %2.2lf \n",
+			tcp.valid, tcp.tt, tcp.a, tcp.has_k1, tcp.k1, tcp.k2, tcp.k3, tcp.vf, tcp.sf);
 }
 
 
@@ -1051,7 +1051,8 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 
 	} while (/*(s->f > MAX_LANE_DIST) &&*/ (status == GSL_CONTINUE) && (iter < 50));
 
-//	printf("iter = %ld\n", iter);
+//	static int xx = 0;
+//	printf("iter = %02ld, %d\n", iter, xx++);
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 

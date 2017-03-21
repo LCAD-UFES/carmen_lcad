@@ -355,8 +355,8 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, ca
 			  annotation_is_forward(get_robot_pose(), nearest_velocity_related_annotation->annotation_point))))
 		{
 			clearing_annotation = true;
-			goal->v = get_velocity_at_goal(current_robot_pose_v_and_phi->v, velocity_at_next_annotation,
-					distance_to_goal, distance_to_annotation);
+			goal->v = carmen_fmin(get_velocity_at_goal(current_robot_pose_v_and_phi->v, velocity_at_next_annotation,
+					distance_to_goal, distance_to_annotation), goal->v);
 			if (!annotation_is_forward(get_robot_pose(), nearest_velocity_related_annotation->annotation_point))
 				clearing_annotation = false;
 		}
@@ -415,7 +415,7 @@ limit_maximum_velocity_according_to_centripetal_acceleration(double target_v, do
 		}
 	}
 
-	return (limited_target_v);
+	return (carmen_fmin(limited_target_v, goal->v));
 }
 
 extern SampleFilter filter2;
@@ -634,7 +634,7 @@ compute_simulated_objects(double timestamp)
 
 	// Period of time (counted from initial_time)
 	// during which the obstacle is stopped.
-	static double stop_t0 = 30, stop_tn = 60;
+	static double stop_t0 = 15, stop_tn = 40;
 
 	double v = (20.0 / 3.6);
 	double t = timestamp - initial_time;
@@ -844,7 +844,7 @@ should_stop_the_car(carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
 		 ((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&
 		  (nearest_velocity_related_annotation->annotation_code == RDDF_ANNOTATION_CODE_DYNAMIC_STOP))) &&
 		!wait_start_moving &&
-		(distance_to_annotation < 1.0) &&
+		(distance_to_annotation < 1.5) &&
 		(fabs(current_robot_pose_v_and_phi->v) < 0.1))
 		return (true);
 	else
