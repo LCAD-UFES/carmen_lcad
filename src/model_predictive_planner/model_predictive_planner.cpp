@@ -135,7 +135,7 @@ plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_p
 		first_time = false;
 
 		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
-		fprintf(gnuplot_pipeMP, "set xrange [0:40]\n");
+		fprintf(gnuplot_pipeMP, "set xrange [0:20]\n");
 		fprintf(gnuplot_pipeMP, "set yrange [-10:10]\n");
 //		fprintf(gnuplot_pipe, "set y2range [-0.55:0.55]\n");
 		fprintf(gnuplot_pipeMP, "set xlabel 'senconds'\n");
@@ -912,7 +912,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	static double last_timestamp = 0.0;
 	bool goal_in_lane = false;
 
-	if (first_time)
+	if (first_time || !GlobalState::following_path)
 	{
 		previous_good_tcp.valid = false;
 		first_time = false;

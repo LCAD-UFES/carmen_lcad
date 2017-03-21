@@ -416,7 +416,7 @@ build_and_follow_path_new(double timestamp)
 		// achieve the goal!
 		if (distance_to_goal < 1.0 && GlobalState::robot_config.max_v < 0.1 && GlobalState::last_odometry.v < 0.1)
 		{
-			publish_model_predictive_planner_single_motion_command(0.0, 0.0, timestamp);
+			publish_model_predictive_planner_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
 		}
 		else
 		{
