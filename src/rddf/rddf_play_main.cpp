@@ -298,7 +298,7 @@ carmen_check_for_annotations(carmen_point_t robot_pose,
 
 	for (size_t j = 0; j < dynamic_annotation_messages.size(); j++)
 	{
-		if ((dynamic_annotation_messages[j].timestamp - timestamp) < 2.0)
+		if ((timestamp - dynamic_annotation_messages[j].timestamp) < 2.0)
 		{
 			carmen_annotation_t annotation;
 			annotation.annotation_type = dynamic_annotation_messages[j].annotation_type;
@@ -389,7 +389,12 @@ carmen_rddf_play_publish_annotation_queue()
 
 	if (annotations_to_publish.size() == 0)
 	{
-		return;
+		annotation_and_index annotation_i;
+		memset(&annotation_i, 0, sizeof(annotation_and_index));
+		carmen_annotation_t &annotation = annotation_i.annotation;
+		annotation.annotation_type = RDDF_ANNOTATION_TYPE_NONE;
+		annotation.annotation_code = RDDF_ANNOTATION_CODE_NONE;
+		annotations_to_publish.push_back(annotation_i);
 	}
 	else if (annotation_queue_message.annotations == NULL)
 	{
@@ -580,6 +585,19 @@ carmen_traffic_light_message_handler(carmen_traffic_light_message *message)
 static void
 carmen_rddf_dynamic_annotation_message_handler(carmen_rddf_dynamic_annotation_message *message)
 {
+	// Avoid reinserting the same annotation over and over.
+	for (int i = 0, n = dynamic_annotation_messages.size(); i < n; i++)
+	{
+		carmen_rddf_dynamic_annotation_message &stored = dynamic_annotation_messages[i];
+		if (stored.annotation_type == message->annotation_type &&
+			stored.annotation_code == message->annotation_code &&
+			DIST2D(stored.annotation_point, message->annotation_point) == 0)
+		{
+			stored = *message;
+			return;
+		}
+	}
+
 	dynamic_annotation_messages.push_front(*message);
 	if (dynamic_annotation_messages.size() > 10)
 		dynamic_annotation_messages.pop_back();
