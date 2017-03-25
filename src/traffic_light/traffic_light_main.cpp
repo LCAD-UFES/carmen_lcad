@@ -484,7 +484,7 @@ subscribe_to_relevant_messages()
     		CARMEN_SUBSCRIBE_LATEST);
     carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) carmen_localize_ackerman_globalpos_message_handler,
     		CARMEN_SUBSCRIBE_LATEST);
-    carmen_rddf_subscribe_annotation_message(NULL, (carmen_handler_t) carmen_rddf_annotation_message_handler, CARMEN_SUBSCRIBE_ALL);
+    carmen_rddf_subscribe_annotation_message(NULL, (carmen_handler_t) carmen_rddf_annotation_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 

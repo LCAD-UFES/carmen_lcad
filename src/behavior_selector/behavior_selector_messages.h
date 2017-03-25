@@ -8,12 +8,50 @@
 #ifndef BEHAVIOR_SELECTOR_MESSAGES_H_
 #define BEHAVIOR_SELECTOR_MESSAGES_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <carmen/carmen.h>
 
 typedef enum
 {
 	BEHAVIOR_SELECTOR_FOLLOWING_LANE, BEHAVIOR_SELECTOR_PARKING, BEHAVIOR_SELECTOR_HUMAN_INTERVENTION
 } carmen_behavior_selector_state_t;
+
+
+typedef enum
+{
+	Initializing,
+	Stopped,
+	Free_Running,
+	Following_Moving_Object,
+	Stopping_Behind_Moving_Object,
+	Stopped_Behind_Moving_Object_S0,
+	Stopped_Behind_Moving_Object_S1,
+	Stopped_Behind_Moving_Object_S2,
+	Stopping_At_Red_Traffic_Light,
+	Stopped_At_Red_Traffic_light_S0,
+	Stopped_At_Red_Traffic_light_S1,
+	Stopped_At_Red_Traffic_light_S2,
+	Stopping_At_Stop_Sign,
+	Stopped_At_Stop_Sign_S0,
+	Stopped_At_Stop_Sign_S1
+} carmen_behavior_selector_low_level_state_t;
+
+typedef enum
+{
+	none = 0,
+	stopped,
+	free_running,
+	following_moving_object,
+	stopping_behind_moving_object,
+	stopped_behind_moving_object,
+	stopping_at_red_light,
+	stopped_at_red_light,
+	stopping_at_stop_sign,
+	stopped_at_stop_sign,
+} carmen_behavior_selector_operation_mode_t;
 
 
 typedef struct {
@@ -74,20 +112,24 @@ typedef struct {
 
 
 typedef struct {
-	carmen_behavior_selector_algorithm_t algorithm;//current algorithm
-	carmen_behavior_selector_state_t state;//current state
+	carmen_behavior_selector_algorithm_t algorithm;
+	carmen_behavior_selector_state_t state;
 
 	carmen_behavior_selector_algorithm_t following_lane_algorithm;
 	carmen_behavior_selector_algorithm_t parking_algorithm;
 
 	carmen_behavior_selector_goal_source_t goal_source;
 
+	carmen_behavior_selector_low_level_state_t low_level_state;
+	carmen_behavior_selector_operation_mode_t behaviour_seletor_mode;
+
+
 	double timestamp;
 	char *host;
 } carmen_behavior_selector_state_message;
 
 #define		CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME		"carmen_behavior_selector_current_state_name"
-#define		CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_FMT		"{int, int, int, int, int, double, string}"
+#define		CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_FMT		"{int, int, int, int, int, int, int, double, string}"
 
 typedef struct {
 	carmen_point_t goal;
@@ -123,5 +165,8 @@ typedef struct
 #define CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME "carmen_behavior_selector_road_profile_message"
 #define CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT "{int, int, <{double, double, double, double, double}:1>, <{double, double, double, double, double}:2>, <int:1>, double, string}"
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* BEHAVIOR_SELECTOR_MESSAGES_H_ */

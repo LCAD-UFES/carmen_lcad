@@ -180,3 +180,26 @@ carmen_behavior_selector_set_algorithm(carmen_behavior_selector_algorithm_t algo
 	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_SET_ALGOTITHM_NAME, &msg);
 	carmen_test_ipc(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_SET_ALGOTITHM_NAME);
 }
+
+
+char *
+get_low_level_state_name(carmen_behavior_selector_low_level_state_t state)
+{
+	if (state == Initializing) 		return ((char *) "Initializing");
+	if (state == Stopped) 			return ((char *) "Stopped");
+	if (state == Free_Running) 		return ((char *) "Free_Running");
+	if (state == Following_Moving_Object) 			return ((char *) "Following_Moving_Object");
+	if (state == Stopping_Behind_Moving_Object) 	return ((char *) "Stopping_Behind_Moving_Object");
+	if (state == Stopped_Behind_Moving_Object_S0) 	return ((char *) "Stopped_Behind_Moving_Object_S0");
+	if (state == Stopped_Behind_Moving_Object_S1) 	return ((char *) "Stopped_Behind_Moving_Object_S1");
+	if (state == Stopped_Behind_Moving_Object_S2) 	return ((char *) "Stopped_Behind_Moving_Object_S2");
+	if (state == Stopping_At_Red_Traffic_Light)     return ((char *) "Stopping_At_Red_Traffic_Light");
+	if (state == Stopped_At_Red_Traffic_light_S0) 	return ((char *) "Stopped_At_Red_Traffic_light_S0");
+	if (state == Stopped_At_Red_Traffic_light_S1) 	return ((char *) "Stopped_At_Red_Traffic_light_S1");
+	if (state == Stopped_At_Red_Traffic_light_S2) 	return ((char *) "Stopped_At_Red_Traffic_light_S2");
+	if (state == Stopping_At_Stop_Sign) 			return ((char *) "Stopping_At_Stop_Sign");
+	if (state == Stopped_At_Stop_Sign_S0) 			return ((char *) "Stopped_At_Stop_Sign_S0");
+	if (state == Stopped_At_Stop_Sign_S1) 			return ((char *) "Stopped_At_Stop_Sign_S1");
+
+	return ((char *) " ");
+}

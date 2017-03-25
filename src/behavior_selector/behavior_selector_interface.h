@@ -37,6 +37,8 @@ void carmen_behavior_selector_clear_goal_list();
 
 void carmen_behavior_selector_remove_goal();
 
+char *get_low_level_state_name(carmen_behavior_selector_low_level_state_t state);
+
 #ifdef __cplusplus
 }
 #endif

@@ -12,6 +12,10 @@
 #include <carmen/rddf_messages.h>
 #include "SampleFilter.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // struct _moving_object
 // {
 // 	bool valid;
@@ -70,14 +74,17 @@ int behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, do
 // double get_moving_object_in_front_v();
 // int moving_object_in_front();
 double distance_between_waypoints_and_goals();
-bool red_traffic_light_ahead();
+bool red_traffic_light_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp);
 
 void publish_dynamic_annotation(carmen_vector_3D_t annotation_point, double orientation, char *annotation_description,
 		int annotation_type, int annotation_code, double timestamp);
-
 /**
  * @brief Report whether the first goal is a moving obstacle.
  */
 bool is_moving_obstacle_ahead();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* BEHAVIOR_SELECTOR_H_ */

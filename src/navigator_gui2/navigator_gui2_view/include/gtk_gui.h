@@ -108,7 +108,8 @@ namespace View
 			GtkLabel *labelGoal;
 			GtkLabel *labelGridCell;
 			GtkLabel *labelValue;
-			GtkLabel *distTraveled;
+			GtkLabel *labelDistTraveled;
+			GtkLabel *labelLowLevelState;
 
 			GtkToggleButton* buttonSyncMode;
 			GtkToggleButton* buttonNextTick;

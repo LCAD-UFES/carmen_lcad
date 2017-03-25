@@ -13,6 +13,7 @@
 #include <carmen/motion_planner_interface.h>
 #include <carmen/global_graphics.h>
 #include <carmen/navigator_ackerman_interface.h>
+#include <carmen/collision_detection.h>
 
 #include "g2o/types/slam2d/se2.h"
 
@@ -20,7 +21,7 @@
 #include "behavior_selector_messages.h"
 
 // Comment or uncomment this definition to control whether simulated moving obstacles are created.
-//#define SIMULATE_MOVING_OBSTACLE
+#define SIMULATE_MOVING_OBSTACLE
 
 // Comment or uncomment this definition to control whether moving obstacles are displayed.
 #define DISPLAY_MOVING_OBSTACLES
@@ -60,6 +61,8 @@ static carmen_rddf_road_profile_message *last_rddf_message = NULL;
 bool autonomous = false;
 bool wait_start_moving = false;
 static double last_not_autonomous_timestamp = 0.0;
+
+carmen_behavior_selector_state_message behavior_selector_state_message;
 
 
 int
@@ -178,7 +181,8 @@ annotation_is_forward(carmen_ackerman_traj_point_t robot_pose, carmen_vector_3D_
 
 
 double
-get_velocity_at_next_annotation(carmen_annotation_t *annotation, double goal_v)
+get_velocity_at_next_annotation(carmen_annotation_t *annotation, double goal_v, carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
+		double timestamp)
 {
 	double v = goal_v;
 
@@ -212,7 +216,7 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, double goal_v)
 			&& (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_60))
 		v = carmen_fmin(60.0 / 3.6, goal_v);
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP)
-			&& red_traffic_light_ahead())
+			&& red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp))
 		v = 0.5;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP)
 		v = 0.5;
@@ -328,7 +332,8 @@ get_velocity_at_goal(double v0, double va, double dg, double da)
 
 
 double
-set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
+set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi,
+		double timestamp)
 {
 	static bool clearing_annotation = false;
 
@@ -338,7 +343,7 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, ca
 	{
 		double distance_to_annotation = DIST2D_P(&nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi) -
 				(get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels);
-		double velocity_at_next_annotation = get_velocity_at_next_annotation(nearest_velocity_related_annotation, goal->v);
+		double velocity_at_next_annotation = get_velocity_at_next_annotation(nearest_velocity_related_annotation, goal->v, *current_robot_pose_v_and_phi, timestamp);
 		double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi->v, velocity_at_next_annotation,
 				distance_to_annotation);
 		double distance_to_goal = carmen_distance_ackerman_traj(current_robot_pose_v_and_phi, goal);
@@ -454,8 +459,9 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 
 //		printf("mov %lf, gv %lf, dist %lf, d_dist %lf\n", moving_obj_v, goal->v, distance, desired_distance);
 	}
-	FILE* caco = fopen("caco.txt", "a");
-	fprintf(caco, "%lf %lf %lf %lf %lf\n", moving_obj_v, goal->v, current_robot_pose_v_and_phi->v, distance, desired_distance);
+	FILE *caco = fopen("caco.txt", "a");
+	fprintf(caco, "%lf %lf %lf %lf %lf %d ", moving_obj_v, goal->v, current_robot_pose_v_and_phi->v, distance, desired_distance,
+			behavior_selector_state_message.low_level_state);
 	fflush(caco);
 	fclose(caco);
 
@@ -507,9 +513,8 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 			road_profile_message.poses, road_profile_message.number_of_poses);
 //	printf("gvdlc %lf  ", goal->v);
 
-	goal->v = set_goal_velocity_according_to_annotation(goal, current_robot_pose_v_and_phi);
+	goal->v = set_goal_velocity_according_to_annotation(goal, current_robot_pose_v_and_phi, timestamp);
 //	printf("gvda %lf\n", goal->v);
-
 	if (obstacle_avoider_active_recently)
 		goal->v = carmen_fmin(2.5, goal->v);
 
@@ -634,14 +639,14 @@ compute_simulated_objects(double timestamp)
 
 	// Period of time (counted from initial_time)
 	// during which the obstacle is stopped.
-	static double stop_t0 = 15, stop_tn = 40;
+	static double stop_t0 = 25, stop_tn = 50;
 
 	double v = (20.0 / 3.6);
 	double t = timestamp - initial_time;
 	if (stop_t0 <= t && t <= stop_tn)
 		v = 0;
-	else if (t > stop_tn)
-		initial_time = timestamp;
+//	else if (t > stop_tn)
+//		initial_time = timestamp;
 
 	double dt = timestamp - previous_timestamp;
 	double dx = v * dt * cos(previous_pose.theta);
@@ -696,14 +701,18 @@ publish_goal_list(carmen_ackerman_traj_point_t *goal_list, int goal_list_size, d
 		err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME, &goal_list_msg);
 		carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_RDDF_NAME);
 	}
+
+	FILE *caco = fopen("caco.txt", "a");
+	fprintf(caco, "%lf\n", goal_list->v);
+	fflush(caco);
+	fclose(caco);
 }
 
 
 void
-publish_current_state()
+publish_current_state(carmen_behavior_selector_state_message msg)
 {
 	IPC_RETURN_TYPE err;
-	carmen_behavior_selector_state_message msg;
 	carmen_behavior_selector_state_t current_state;
 	carmen_behavior_selector_algorithm_t following_lane_planner;
 	carmen_behavior_selector_algorithm_t parking_planner;
@@ -814,13 +823,6 @@ publish_object(carmen_ackerman_traj_point_t *object_pose)
 	virtual_laser_message.host = carmen_get_host();
 	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
 }
-
-
-void
-behavior_selector_publish_periodic_messages()
-{
-	publish_current_state();
-}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -884,6 +886,304 @@ stopped_at_green_traffic_light(carmen_ackerman_traj_point_t *current_robot_pose_
 }
 
 
+bool
+stop_sign_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
+				&current_robot_pose_v_and_phi, wait_start_moving);
+
+	if (nearest_velocity_related_annotation == NULL)
+		return (false);
+
+	double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi) -
+			(get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels);
+
+	if ((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) &&
+		get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.5, distance_to_annotation) < distance_to_annotation)
+		return (true);
+	else
+		return (false);
+}
+
+
+double
+stop_sign_distance(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
+				&current_robot_pose_v_and_phi, wait_start_moving);
+
+	if (nearest_velocity_related_annotation == NULL)
+		return (1000.0);
+
+	double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi) -
+			(get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels);
+
+	if ((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) &&
+		get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.5, distance_to_annotation) < distance_to_annotation)
+		return (distance_to_annotation);
+	else
+		return (1000.0);
+}
+
+
+
+double
+distance_to_red_traffic_light(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+{
+	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
+				&current_robot_pose_v_and_phi, wait_start_moving);
+
+	if (nearest_velocity_related_annotation == NULL)
+		return (1000.0);
+
+	if (red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp) && (nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP))
+		return (DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi) -
+				(get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels));
+	else
+		return (1000.0);
+}
+
+
+void
+clear_state_output(carmen_behavior_selector_state_message *decision_making_state_msg)
+{
+    decision_making_state_msg->behaviour_seletor_mode = none;
+}
+
+
+int
+perform_state_action(carmen_behavior_selector_state_message *decision_making_state_msg, carmen_ackerman_traj_point_t *goal,
+		double timestamp)
+{
+	carmen_vector_3D_t annotation_point;
+	carmen_point_t new_car_pose;
+
+	switch (decision_making_state_msg->low_level_state)
+	{
+		case Initializing:
+			break;
+		case Stopped:
+			break;
+		case Free_Running:
+			break;
+		case Following_Moving_Object:
+			break;
+		case Stopping_Behind_Moving_Object:
+			new_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(goal,
+					get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels);
+			annotation_point.x = new_car_pose.x;
+			annotation_point.y = new_car_pose.y;
+			annotation_point.z = 0.0;
+			publish_dynamic_annotation(annotation_point, goal->theta, (char *) "RDDF_ANNOTATION_TYPE_DYNAMIC",
+					RDDF_ANNOTATION_TYPE_DYNAMIC, RDDF_ANNOTATION_CODE_DYNAMIC_STOP, timestamp);
+			break;
+		case Stopped_Behind_Moving_Object_S0:
+			carmen_navigator_ackerman_stop();
+
+			new_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(goal,
+					get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels);
+			annotation_point.x = new_car_pose.x;
+			annotation_point.y = new_car_pose.y;
+			annotation_point.z = 0.0;
+			publish_dynamic_annotation(annotation_point, goal->theta, (char *) "RDDF_ANNOTATION_TYPE_DYNAMIC",
+					RDDF_ANNOTATION_TYPE_DYNAMIC, RDDF_ANNOTATION_CODE_DYNAMIC_STOP, timestamp);
+			break;
+		case Stopped_Behind_Moving_Object_S1:
+			new_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(goal,
+					get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels);
+			annotation_point.x = new_car_pose.x;
+			annotation_point.y = new_car_pose.y;
+			annotation_point.z = 0.0;
+			publish_dynamic_annotation(annotation_point, goal->theta, (char *) "RDDF_ANNOTATION_TYPE_DYNAMIC",
+					RDDF_ANNOTATION_TYPE_DYNAMIC, RDDF_ANNOTATION_CODE_DYNAMIC_STOP, timestamp);
+			break;
+		case Stopped_Behind_Moving_Object_S2:
+			carmen_navigator_ackerman_go();
+			break;
+		case Stopping_At_Red_Traffic_Light:
+			break;
+		case Stopped_At_Red_Traffic_light_S0:
+			carmen_navigator_ackerman_stop();
+			break;
+		case Stopped_At_Red_Traffic_light_S1:
+			break;
+		case Stopped_At_Red_Traffic_light_S2:
+			carmen_navigator_ackerman_go();
+			break;
+		case Stopping_At_Stop_Sign:
+			break;
+		case Stopped_At_Stop_Sign_S0:
+			carmen_navigator_ackerman_stop();
+			break;
+		case Stopped_At_Stop_Sign_S1:
+			break;
+		default:
+			printf("Error: Unknown state in perform_state_action()\n");
+			return (1);
+	}
+
+	return (0);
+}
+
+
+int
+perform_state_transition(carmen_behavior_selector_state_message *decision_making_state_msg,
+		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+{
+	switch (decision_making_state_msg->low_level_state)
+	{
+		case Initializing:
+			decision_making_state_msg->low_level_state = Stopped;
+			break;
+		case Stopped:
+			if (!autonomous)
+				decision_making_state_msg->low_level_state = Stopped;
+			else
+				decision_making_state_msg->low_level_state = Free_Running;
+			break;
+		case Free_Running:
+			if (udatmo_obstacle_detected())
+				decision_making_state_msg->low_level_state = Following_Moving_Object;
+			else if (red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp))
+				decision_making_state_msg->low_level_state = Stopping_At_Red_Traffic_Light;
+			else if (stop_sign_ahead(current_robot_pose_v_and_phi))
+				decision_making_state_msg->low_level_state = Stopping_At_Stop_Sign;
+			break;
+		case Following_Moving_Object:
+			if (red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp) &&
+				(distance_to_red_traffic_light(current_robot_pose_v_and_phi, timestamp) < udatmo_get_moving_obstacle_distance(&current_robot_pose_v_and_phi)))
+				decision_making_state_msg->low_level_state = Stopping_At_Red_Traffic_Light;
+			else if (stop_sign_ahead(current_robot_pose_v_and_phi) &&
+					 (stop_sign_distance(current_robot_pose_v_and_phi) < udatmo_get_moving_obstacle_distance(&current_robot_pose_v_and_phi)))
+				decision_making_state_msg->low_level_state = Stopping_At_Stop_Sign;
+			else if (udatmo_speed_front() < 0.5)
+				decision_making_state_msg->low_level_state = Stopping_Behind_Moving_Object;
+			else if (!udatmo_obstacle_detected())
+				decision_making_state_msg->low_level_state = Free_Running;
+			break;
+		case Stopping_Behind_Moving_Object:
+			if (current_robot_pose_v_and_phi.v < 0.1)
+				decision_making_state_msg->low_level_state = Stopped_Behind_Moving_Object_S0;
+			else if (udatmo_speed_front() > 0.1)
+				decision_making_state_msg->low_level_state = Following_Moving_Object;
+			break;
+		case Stopped_Behind_Moving_Object_S0:
+			decision_making_state_msg->low_level_state = Stopped_Behind_Moving_Object_S1;
+			break;
+		case Stopped_Behind_Moving_Object_S1:
+			if (udatmo_speed_front() > 0.1) // @@@ Alberto: ou objeto desapareceu da frente da IARA (fazer funcao para checar isso)
+				decision_making_state_msg->low_level_state = Stopped_Behind_Moving_Object_S2;
+			break;
+		case Stopped_Behind_Moving_Object_S2:
+			if (current_robot_pose_v_and_phi.v > 0.2)
+				decision_making_state_msg->low_level_state = Following_Moving_Object;
+			break;
+		case Stopping_At_Red_Traffic_Light:
+			if ((current_robot_pose_v_and_phi.v < 0.1) && (distance_to_red_traffic_light(current_robot_pose_v_and_phi, timestamp) < 2.0))
+				decision_making_state_msg->low_level_state = Stopped_At_Red_Traffic_light_S0;
+			else if (!red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp))
+				decision_making_state_msg->low_level_state = Free_Running;
+			break;
+		case Stopped_At_Red_Traffic_light_S0:
+			decision_making_state_msg->low_level_state = Stopped_At_Red_Traffic_light_S1;
+			break;
+		case Stopped_At_Red_Traffic_light_S1:
+			if (!red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp))
+				decision_making_state_msg->low_level_state = Stopped_At_Red_Traffic_light_S2;
+			break;
+		case Stopped_At_Red_Traffic_light_S2:
+			if (current_robot_pose_v_and_phi.v > 0.2)
+				decision_making_state_msg->low_level_state = Free_Running;
+			break;
+		case Stopping_At_Stop_Sign:
+			if (current_robot_pose_v_and_phi.v < 0.1)
+				decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S0;
+			break;
+		case Stopped_At_Stop_Sign_S0:
+			decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S1;
+			break;
+		case Stopped_At_Stop_Sign_S1:
+			if (autonomous)
+				decision_making_state_msg->low_level_state = Free_Running;
+			break;
+		default:
+			printf("Error: Unknown state in perform_state_transition()\n");
+			return (2);
+	}
+	return (0);
+}
+
+
+int
+generate_state_output(carmen_behavior_selector_state_message *decision_making_state_msg)
+{
+	clear_state_output(decision_making_state_msg);
+
+	switch (decision_making_state_msg->low_level_state)
+	{
+		case Initializing:
+			break;
+		case Stopped:
+			break;
+		case Free_Running:
+			break;
+		case Following_Moving_Object:
+			decision_making_state_msg->behaviour_seletor_mode = following_moving_object;
+			break;
+		case Stopping_Behind_Moving_Object:
+			break;
+		case Stopped_Behind_Moving_Object_S0:
+			break;
+		case Stopped_Behind_Moving_Object_S1:
+			break;
+		case Stopped_Behind_Moving_Object_S2:
+			break;
+		case Stopping_At_Red_Traffic_Light:
+			break;
+		case Stopped_At_Red_Traffic_light_S0:
+			break;
+		case Stopped_At_Red_Traffic_light_S1:
+			break;
+		case Stopped_At_Red_Traffic_light_S2:
+			break;
+		case Stopping_At_Stop_Sign:
+			break;
+		case Stopped_At_Stop_Sign_S0:
+			break;
+		case Stopped_At_Stop_Sign_S1:
+			break;
+		default:
+			printf("Error: Unknown state in generate_state_output()\n");
+			return (3);
+	}
+	return (0);
+}
+
+
+int
+run_decision_making_state_machine(carmen_behavior_selector_state_message *decision_making_state_msg,
+		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, carmen_ackerman_traj_point_t *goal,
+		double timestamp)
+{
+	int error;
+
+	error = perform_state_transition(decision_making_state_msg, current_robot_pose_v_and_phi, timestamp);
+	if (error != 0)
+		return (error);
+
+	error = perform_state_action(decision_making_state_msg, goal, timestamp);
+	if (error != 0)
+		return (error);
+
+	error = generate_state_output(decision_making_state_msg);
+	if (error != 0)
+		return (error);
+
+	return (0);
+}
+
+
+
 void
 select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
@@ -892,23 +1192,26 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 
 	set_behaviours_parameters(current_robot_pose_v_and_phi, timestamp);
 
-	int state_updated = behaviour_selector_fill_goal_list(last_rddf_message, timestamp);
-	if (state_updated)
-		publish_current_state();
+	behaviour_selector_fill_goal_list(last_rddf_message, timestamp);
 
 	int goal_list_size;
 	carmen_ackerman_traj_point_t *goal_list = behavior_selector_get_goal_list(&goal_list_size);
+	carmen_ackerman_traj_point_t *first_goal = &(goal_list[0]);
+
+	int error = run_decision_making_state_machine(&behavior_selector_state_message, current_robot_pose_v_and_phi, first_goal, timestamp);
+	if (error != 0)
+		carmen_die("State machine error code %d\n", error);
+//	printf("%s\n", get_low_level_state_name(behavior_selector_state_message.low_level_state));
 
 	if (goal_list_size > 0)
 	{
-		carmen_ackerman_traj_point_t *first_goal = &(goal_list[0]);
 		set_goal_velocity(first_goal, &current_robot_pose_v_and_phi, timestamp);
 
-		if (should_stop_the_car(&current_robot_pose_v_and_phi) && autonomous)
-			carmen_navigator_ackerman_stop();
-
-		if (stopped_at_green_traffic_light(&current_robot_pose_v_and_phi) && !autonomous)
-			carmen_navigator_ackerman_go();
+//		if (should_stop_the_car(&current_robot_pose_v_and_phi) && autonomous)
+//			carmen_navigator_ackerman_stop();
+//
+//		if (stopped_at_green_traffic_light(&current_robot_pose_v_and_phi) && !autonomous)
+//			carmen_navigator_ackerman_go();
 
 		publish_goal_list(goal_list, goal_list_size, carmen_get_time());
 	}
@@ -922,6 +1225,7 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	if (simulated_object_pose)
 		publish_object(simulated_object_pose);
 #endif
+	publish_current_state(behavior_selector_state_message);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1033,23 +1337,20 @@ static void
 set_algorith_handler(carmen_behavior_selector_set_algorithm_message *msg)
 {
 	behavior_selector_set_algorithm(msg->algorithm, msg->state);
-	publish_current_state();
 }
 
 
 static void
 set_goal_source_handler(carmen_behavior_selector_set_goal_source_message *msg)
 {
-	if (behavior_selector_set_goal_source(msg->goal_source))
-		publish_current_state();
+	behavior_selector_set_goal_source(msg->goal_source);
 }
 
 
 static void
 set_state_handler(carmen_behavior_selector_set_state_message *msg)
 {
-	if (behavior_selector_set_state(msg->state))
-		publish_current_state();
+	behavior_selector_set_state(msg->state);
 }
 
 
@@ -1117,10 +1418,7 @@ register_handlers()
 
 	carmen_obstacle_distance_mapper_subscribe_message(NULL, (carmen_handler_t) carmen_obstacle_distance_mapper_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	// esse handler eh subscribe_all porque todas as anotacoes precisam ser recebidas!
-	carmen_rddf_subscribe_annotation_message(NULL,
-			(carmen_handler_t) rddf_annotation_message_handler,
-			CARMEN_SUBSCRIBE_ALL);
+	carmen_rddf_subscribe_annotation_message(NULL, (carmen_handler_t) rddf_annotation_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	// **************************************************
 	// filipe:: TODO: criar funcoes de subscribe no interfaces!
@@ -1162,8 +1460,6 @@ register_handlers()
 			(carmen_handler_t)remove_goal_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_navigator_ackerman_subscribe_status_message(NULL, (carmen_handler_t) carmen_navigator_ackerman_status_message_handler, CARMEN_SUBSCRIBE_LATEST);
-
-	carmen_ipc_addPeriodicTimer(1, (TIMER_HANDLER_TYPE) behavior_selector_publish_periodic_messages, NULL);
 }
 
 
@@ -1260,6 +1556,7 @@ main(int argc, char **argv)
 
 	memset(&last_rddf_annotation_message, 0, sizeof(last_rddf_annotation_message));
 	memset(&road_profile_message, 0, sizeof(carmen_behavior_selector_road_profile_message));
+	memset(&behavior_selector_state_message, 0, sizeof(carmen_behavior_selector_state_message));
 
 	carmen_ipc_dispatch();
 

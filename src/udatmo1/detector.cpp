@@ -44,9 +44,6 @@ Detector::update_moving_object_velocity(carmen_ackerman_traj_point_t &robot_pose
 		}
 		moving_object[i].pose.v = v;
 	}
-
-	if (count > 0.0)
-		average_v /= count;
 }
 
 
@@ -58,9 +55,12 @@ Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
 				 carmen_ackerman_traj_point_t robot_pose,
 				 double timestamp)
 {
-	moving_object[0].valid = false;
-	moving_object[0].index = -1;
-	moving_object[0].timestamp = 0.0;
+	static bool obstacle_already_detected = false;
+
+//	printf("w %d, i %d\n", obstacle_already_detected, rddf_pose_index);
+	if (rddf_pose_index == 0)
+		obstacle_already_detected = false;
+
 	double circle_radius = (robot_config.width + 0.0) / 2.0; // metade da largura do carro + um espacco de guarda
 
 	double distance = carmen_distance_ackerman_traj(&(rddf->poses[rddf_pose_index]), &robot_pose);
@@ -68,6 +68,10 @@ Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
 	double disp = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
 	if (distance < disp)
 	{
+		moving_object[0].valid = false;
+		moving_object[0].index = -1;
+		moving_object[0].timestamp = 0.0;
+
 		set_detected(false);
 //		printf("## distance %lf, aqui 0, %d\n", distance, rddf_pose_index);
 		return (-1);
@@ -80,8 +84,10 @@ Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
 
 //	printf("distance %lf, ", distance);
 
-	if (distance < circle_radius)
+	if (!obstacle_already_detected && (distance < circle_radius))
 	{
+		obstacle_already_detected = true;
+
 		moving_object[0].valid = true;
 		moving_object[0].pose.x = obstacle.x;
 		moving_object[0].pose.y = obstacle.y;
@@ -92,13 +98,23 @@ Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
 		update_moving_object_velocity(robot_pose);
 		speed += moving_object[0].pose.v;
 
-		if ((goal_index == 0) && (speed_front() > 0.1))
+		if ((goal_index == 0) && (speed_front() > 0.01))
 			set_detected(true);
 		else
 			set_detected(false);
 
 //		printf("aqui 2, %d\n", rddf_pose_index);
-		return (rddf_pose_index);
+
+		if (speed_front() > 0.01)
+			return (rddf_pose_index);
+		else
+			return (-1);
+	}
+	else if (!obstacle_already_detected)
+	{
+		moving_object[0].valid = false;
+		moving_object[0].index = -1;
+		moving_object[0].timestamp = 0.0;
 	}
 
 	set_detected(false);
@@ -111,7 +127,7 @@ Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
 void
 Detector::shift()
 {
-	for (int i = MOVING_OBJECT_HISTORY_SIZE - 2; i >= 0 ; i--)
+	for (int i = MOVING_OBJECT_HISTORY_SIZE - 2; i >= 0; i--)
 		moving_object[i + 1] = moving_object[i];
 }
 
@@ -121,7 +137,7 @@ Detector::speed_front()
 {
 	double average_v = 0.0;
 	double count = 0.0;
-	for (int i = MOVING_OBJECT_HISTORY_SIZE - 2; i >= 0 ; i--)
+	for (int i = MOVING_OBJECT_HISTORY_SIZE - 2; i >= 0; i--)
 	{
 		if (moving_object[i].valid && (moving_object[i].pose.v > -0.0001))
 		{
@@ -148,20 +164,20 @@ Detector::get_moving_obstacle_position()
 double
 Detector::get_moving_obstacle_distance(carmen_ackerman_traj_point_t *robot_pose)
 {
-	double average_v = 0.0;
+	double average_dist = 0.0;
 	double count = 0.0;
 	for (int i = 0; i < MOVING_OBJECT_HISTORY_SIZE && i < 20; i++)
 	{
 		if (moving_object[i].valid)
 		{
-			average_v += DIST2D(*robot_pose, moving_object[i].pose);
+			average_dist += DIST2D(*robot_pose, moving_object[i].pose);
 			count += 1.0;
 		}
 	}
 
 	if (count > 0.0)
-		average_v /= count;
+		average_dist /= count;
 
-	return (average_v);
+	return (average_dist);
 }
 } // namespace udatmo

@@ -1071,8 +1071,7 @@ subscribe_to_ipc_messages()
 	if (visual_odometry_is_global_pos)
 		carmen_subscribe_to_ultrasonic_relevant_messages();
 
-	// esse handler eh subscribe_all porque todas as anotacoes precisam ser recebidas!
-	carmen_rddf_subscribe_annotation_message(NULL, (carmen_handler_t) rddf_annotation_message_handler, CARMEN_SUBSCRIBE_ALL);
+	carmen_rddf_subscribe_annotation_message(NULL, (carmen_handler_t) rddf_annotation_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_mapper_subscribe_virtual_laser_message(NULL, (carmen_handler_t) carmen_mapper_virtual_laser_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
