@@ -478,11 +478,8 @@ namespace View
 
 		nav_panel_config = nav_panel_conf_param;
 
-		if ((nav_panel_config->initial_map_zoom < 1.0) ||
-				(nav_panel_config->initial_map_zoom > 100.0))
-		{
+		if ((nav_panel_config->initial_map_zoom < 1.0) || (nav_panel_config->initial_map_zoom > 100.0))
 			nav_panel_config->initial_map_zoom = 100.0;
-		}
 
 		this->ConfigureMenu();
 		this->ConfigureMapViewer();
@@ -647,14 +644,10 @@ namespace View
 		carmen_world_point_t new_robot_w;
 		static int previous_width = 0, previous_height = 0;
 		double	   delta_angle;
-		int	   autonomous_change = 0;
-		int	   update_map_change = 0;
 		double adjust_distance;
 
 		if (!this->controls_.map_view->internal_map)
-		{
 			return;
-		}
 
 		adjust_distance = carmen_fmax
 				(this->controls_.map_view->internal_map->config.x_size / (double)this->controls_.map_view->port_size_x,
@@ -666,9 +659,7 @@ namespace View
 
 
 		if (new_robot)
-		{
 			robot_traj = *new_robot;
-		}
 
 		new_robot_w.pose.x	   = robot_traj.x;
 		new_robot_w.pose.y	   = robot_traj.y;
@@ -681,9 +672,7 @@ namespace View
 				((robot_distance > adjust_distance) ||
 						(previous_width != this->controls_.map_view->image_widget->allocation.width) ||
 						(previous_height != this->controls_.map_view->image_widget->allocation.height)))
-		{
 			carmen_map_graphics_adjust_scrollbars(this->controls_.map_view, &robot);
-		}
 
 		robot_distance = carmen_distance_world(&new_robot_w, &robot);
 		delta_angle	   = carmen_normalize_theta(new_robot_w.pose.theta - robot.pose.theta);
@@ -696,18 +685,13 @@ namespace View
 			goal = *new_goal;
 		}
 		else
-		{
 			goal_distance = 0.0;
-		}
 
 		previous_width	= this->controls_.map_view->image_widget->allocation.width;
 		previous_height = this->controls_.map_view->image_widget->allocation.height;
 
-		if (autonomous_change || update_map_change || (robot_distance > 1.0) || (goal_distance > 1.0) ||
-				(fabs(delta_angle) > carmen_degrees_to_radians(0.01)))
-		{
+		if ((robot_distance > 1.0) || (goal_distance > 1.0) || (fabs(delta_angle) > carmen_degrees_to_radians(0.01)))
 			display_needs_updating = 1;
-		}
 
 		if (!freeze_status)
 		{
@@ -1179,13 +1163,9 @@ namespace View
 	GtkGui::get_goal_source_code(char* goal_source_name)
 	{
 		if (strcmp(goal_source_name, "User Goal") == 0)
-		{
 			return 0;
-		}
 		else if(strcmp(goal_source_name, "Rddf Goal") == 0)
-		{
 			return 1;
-		}
 
 		return -1;
 	}
@@ -1893,20 +1873,21 @@ namespace View
 	void
 	GtkGui::update_point(pointers *reached)
 	{
-		queuePoints->curr = reached->next;
-		navigator_set_goal(queuePoints->curr->point.pose.x, queuePoints->curr->point.pose.y, queuePoints->curr->point.pose.theta);
-
-		pointers *point = queuePoints->begin;
-		queuePoints->begin = point->next;
-		free(point);
-
-		navigator_start_moving();
+//		queuePoints->curr = reached->next;
+//		navigator_set_goal(queuePoints->curr->point.pose.x, queuePoints->curr->point.pose.y, queuePoints->curr->point.pose.theta);
+//
+//		pointers *point = queuePoints->begin;
+//		queuePoints->begin = point->next;
+//		free(point);
+//
+//		navigator_start_moving();
 	}
 
 	int
 	GtkGui::received_robot_pose(void)
 	{
 		if (!behavior_selector_active || goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
+		{
 			if ((queuePoints != NULL) && (queuePoints->begin != NULL) && (GTK_TOGGLE_BUTTON(controls_.buttonGo)->active))
 			{
 				pointers *reached = queuePoints->curr;
@@ -1914,11 +1895,10 @@ namespace View
 				if ((reached != NULL) && (reached->next != NULL))
 				{
 					if (carmen_distance(&queuePoints->curr->point.pose, &robot.pose) < 0.5) // 0.5 m // @@@ Alberto: Isso deveria ser controlado pelo navigator, nao pela interface
-					{
 						update_point(reached);
-					}
 				}
 			}
+		}
 
 		return (robot.map != NULL);
 	}

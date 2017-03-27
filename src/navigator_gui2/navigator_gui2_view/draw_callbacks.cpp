@@ -671,27 +671,10 @@ void on_buttonClearGoals_clicked(GtkWidget *widget __attribute__((unused)),
 void on_buttonGo_clicked(GtkWidget *widget __attribute__((unused)),
 					   GtkGui* gui)
 {
-//	GtkWidget *label;
-//	GdkColor color;
-
 	if (GTK_TOGGLE_BUTTON(global_gui->controls_.buttonGo)->active)
-	{
-//		gdk_color_parse ("gray", &color);
-//		gtk_widget_modify_bg(GTK_WIDGET(global_gui->controls_.buttonGo), GTK_STATE_PRELIGHT, &color);
-//
-//		label = GTK_BIN(global_gui->controls_.buttonGo)->child;
-//		gtk_label_set_text(GTK_LABEL(label), "Stop");
 		navigator_start_moving();
-	}
 	else
-	{
-//		gdk_color_parse ("red", &color);
-//		gtk_widget_modify_bg(GTK_WIDGET(global_gui->controls_.buttonGo), GTK_STATE_PRELIGHT, &color);
-//
-//		label = GTK_BIN(global_gui->controls_.buttonGo)->child;
-//		gtk_label_set_text(GTK_LABEL(label), "Go");
 		navigator_stop_moving();
-	}
 
 	if (global_gui->global_view)
 		global_gui->global_view = 0;

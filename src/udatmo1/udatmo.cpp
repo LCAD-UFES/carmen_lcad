@@ -53,7 +53,7 @@ carmen_ackerman_traj_point_t udatmo_get_moving_obstacle_position(void)
 	return detector->get_moving_obstacle_position();
 }
 
-double udatmo_get_moving_obstacle_distance(carmen_ackerman_traj_point_t *robot_pose)
+double udatmo_get_moving_obstacle_distance(carmen_ackerman_traj_point_t robot_pose)
 {
 	return detector->get_moving_obstacle_distance(robot_pose);
 }

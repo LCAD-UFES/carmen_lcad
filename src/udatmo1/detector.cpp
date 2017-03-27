@@ -162,7 +162,7 @@ Detector::get_moving_obstacle_position()
 
 
 double
-Detector::get_moving_obstacle_distance(carmen_ackerman_traj_point_t *robot_pose)
+Detector::get_moving_obstacle_distance(carmen_ackerman_traj_point_t robot_pose)
 {
 	double average_dist = 0.0;
 	double count = 0.0;
@@ -170,7 +170,7 @@ Detector::get_moving_obstacle_distance(carmen_ackerman_traj_point_t *robot_pose)
 	{
 		if (moving_object[i].valid)
 		{
-			average_dist += DIST2D(*robot_pose, moving_object[i].pose);
+			average_dist += DIST2D(robot_pose, moving_object[i].pose);
 			count += 1.0;
 		}
 	}

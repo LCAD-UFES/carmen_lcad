@@ -61,7 +61,7 @@ public:
 	double speed_front();
 
 	carmen_ackerman_traj_point_t get_moving_obstacle_position(void);
-	double get_moving_obstacle_distance(carmen_ackerman_traj_point_t *robot_pose);
+	double get_moving_obstacle_distance(carmen_ackerman_traj_point_t robot_pose);
 };
 
 } // namespace udatmo

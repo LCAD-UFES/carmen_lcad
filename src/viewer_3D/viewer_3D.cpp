@@ -311,7 +311,10 @@ rddf_annotation_handler(carmen_rddf_annotation_message *msg)
 			strcpy(annotation.annotation_description, msg->annotations[i].annotation_description);
 		}
 		else
-			annotation.annotation_description = (char *) " ";
+		{
+			annotation.annotation_description = (char *) calloc (strlen((char *) " ") + 1, sizeof(char));
+			strcpy(annotation.annotation_description, (char *) " ");
+		}
 
 		annotations.push_back(annotation);
 	}

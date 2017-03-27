@@ -22,6 +22,12 @@ typedef enum
 
 typedef enum
 {
+	FREE_RUN_GOAL, MOVING_OBSTACLE_GOAL, OBSTACLE_GOAL, DYNAMIC_ANNOTATION_GOAL, ANNOTATION_GOAL
+} carmen_behavior_selector_goal_type_t;
+
+
+typedef enum
+{
 	Initializing,
 	Stopped,
 	Free_Running,

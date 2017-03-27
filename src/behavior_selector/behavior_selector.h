@@ -63,6 +63,7 @@ void behavior_selector_get_state(carmen_behavior_selector_state_t *current_state
 		carmen_behavior_selector_algorithm_t *parking_planner_out, carmen_behavior_selector_goal_source_t *current_goal_source_out);
 
 carmen_ackerman_traj_point_t *behavior_selector_get_goal_list(int *goal_list_size_out);
+int *behavior_selector_get_goal_type();
 
 carmen_ackerman_traj_point_t get_robot_pose();
 double get_max_v();
