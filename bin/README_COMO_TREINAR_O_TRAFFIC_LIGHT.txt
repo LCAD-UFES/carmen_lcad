@@ -1,4 +1,5 @@
-SE JA TIVER FEIITO ISSO ANTES SEMPRE APAGUE O CONTEUDO DAS PASTAS CRIADAS PARA FAZER NOVAMENTE
+SE JA TIVER FEIITO ISSO ANTES SEMPRE APAGUE OU MOVA O CONTEUDO DAS PASTAS CRIADAS PARA FAZER NOVAMENTE
+
 Se já tem um dataset contendo os arquivos necessários para o Viola-Jones, pule para: *TREINAMENTO*
 
 Modifique o process-volta_da_ufes_playback_viewer_3D.ini para tocar o log que deseja extrair as imagens
