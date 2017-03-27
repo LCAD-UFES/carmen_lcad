@@ -416,7 +416,8 @@ carmen_bumblebee_basic_stereoimage_message_handler(carmen_bumblebee_basic_stereo
     else
     {
     	if (generate_database && (nearest_traffic_light_distance > 100.0))
-    	save_image_without_traffic_lights(stereo_image);
+    		save_image_without_traffic_lights(stereo_image);
+
         traffic_light_message.traffic_light_annotation_distance = infinite;
         traffic_light_message.num_traffic_lights = 0;
         traffic_light_message.timestamp = stereo_image->timestamp;
