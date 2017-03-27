@@ -456,7 +456,8 @@ namespace View
 		controls_.labelGoal = GTK_LABEL(gtk_builder_get_object(builder, "labelGoal" ));
 		controls_.labelGridCell = GTK_LABEL(gtk_builder_get_object(builder, "labelGridCell" ));
 		controls_.labelValue = GTK_LABEL(gtk_builder_get_object(builder, "labelValue" ));
-		controls_.distTraveled = GTK_LABEL(gtk_builder_get_object(builder, "labelDistTraveled" ));
+		controls_.labelDistTraveled = GTK_LABEL(gtk_builder_get_object(builder, "labelDistTraveled" ));
+		controls_.labelLowLevelState = GTK_LABEL(gtk_builder_get_object(builder, "labelLowLevelState" ));
 
 		controls_.buttonSyncMode = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "buttonSyncMode" ));
 		controls_.buttonNextTick = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "buttonNextTick" ));
@@ -632,8 +633,8 @@ namespace View
 			}
 		}
 
-		sprintf(buffer, "Dist Traveled: %'.3lf (Km)", dist_traveled / 1000.0);
-		gtk_label_set_text(GTK_LABEL(this->controls_.distTraveled), buffer);
+		sprintf(buffer, "Dist. Traveled: %'.3lf (Km)", dist_traveled / 1000.0);
+		gtk_label_set_text(GTK_LABEL(this->controls_.labelDistTraveled), buffer);
 	}
 
 	void
@@ -1220,9 +1221,7 @@ namespace View
 			gtk_combo_box_set_active((GtkComboBox*)this->controls_.comboParking, msg.parking_algorithm);
 
 		if((int)msg.goal_source != get_goal_source_code(gtk_combo_box_get_active_text((GtkComboBox*)this->controls_.comboGoalSource)))
-		{
 			gtk_combo_box_set_active((GtkComboBox*)this->controls_.comboGoalSource, msg.goal_source);
-		}
 
 		//TODO: pode ter erro na conversao pra gtkwidget
 		if (msg.goal_source == CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
@@ -1232,6 +1231,11 @@ namespace View
 
 		if((int)msg.state != get_state_code(gtk_combo_box_get_active_text((GtkComboBox*)this->controls_.comboState)))
 			gtk_combo_box_set_active((GtkComboBox*)this->controls_.comboState, msg.state);
+
+		char buffer[2048];
+		strcpy(buffer, "Low Level State: ");
+		strcat(buffer, get_low_level_state_name(msg.low_level_state));
+		gtk_label_set_text(GTK_LABEL(this->controls_.labelLowLevelState), buffer);
 	}
 
 	void

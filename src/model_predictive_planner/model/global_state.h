@@ -54,6 +54,7 @@ public:
 	static carmen_ford_escape_status_message ford_escape_status;
 	static int current_algorithm;//which algorithm is running, define at carmen_navigator_ackerman_algorithm_t
 	static int behavior_selector_state;
+	static int behavior_selector_low_level_state;
 
 	static bool use_obstacle_avoider;
 	static bool use_mpc;

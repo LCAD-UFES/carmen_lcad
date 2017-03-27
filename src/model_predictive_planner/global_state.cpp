@@ -50,6 +50,7 @@ carmen_ford_escape_status_message GlobalState::ford_escape_status;
 
 int GlobalState::current_algorithm = CARMEN_BEHAVIOR_SELECTOR_RRT;
 int GlobalState::behavior_selector_state = BEHAVIOR_SELECTOR_FOLLOWING_LANE;
+int GlobalState::behavior_selector_low_level_state = Initializing;
 
 int GlobalState::publish_tree = 1;
 int GlobalState::reuse_last_path = 0;

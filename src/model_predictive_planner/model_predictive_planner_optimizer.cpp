@@ -976,6 +976,14 @@ print_td(TrajectoryLookupTable::TrajectoryDimensions td)
 }
 
 
+void
+print_td(TrajectoryLookupTable::TrajectoryDimensions td, double target_v)
+{
+	printf("dist %2.4lf, theta %1.4lf, d_yaw %1.4lf, phi_i %1.4lf, v_i %2.4lf, t_v %2.4lf\n",
+			td.dist, td.theta, td.d_yaw, td.phi_i, td.v_i, target_v);
+}
+
+
 TrajectoryLookupTable::TrajectoryControlParameters
 optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed,
 		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, ObjectiveFunctionParams params)
@@ -1364,7 +1372,7 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 //		tcp_complete.k3 = tcp_copy.k3;
 //	}
 //	print_tcp(tcp_complete);
-//	print_td(target_td);
+//	print_td(target_td, target_v);
 //	printf("t %.3lf, v0 %.1lf, a %.3lf, vg %.2lf, dg %.1lf, tt %.3lf\n",
 //			carmen_get_time(), target_td.v_i, tcp_complete.a, target_v, tcp_complete.s, tcp_complete.tt);
 
