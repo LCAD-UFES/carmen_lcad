@@ -5,7 +5,8 @@ LINK=g++
 IFLAGS += -I$CARMEN_HOME/include
 
 LFLAGS += -lipc -lglobal -lglobal_graphics -lmulticentral -lparam_interface -lstdc++ \
-		-llocalize_ackerman_interface -lbumblebee_basic_interface -ldc1394 -lrddf_interface
+		-llocalize_ackerman_interface -lbumblebee_basic_interface -ldc1394 -lrddf_interface \
+		-ltraffic_light_interface
 #		`pkg-config --libs opencv` -lflycapture \
 #		-lGL -lGLU -lglut -ltime_profile \
 #		`pkg-config --libs opencv` \
@@ -30,7 +31,7 @@ SOURCES = multicentral_bridge_traffic_light.c test_bridge_bumblebee.c
 
 #PUBLIC_LIBRARIES = 
 
-#PUBLIC_BINARIES =  
+PUBLIC_BINARIES = bridge_traffic_light
 
 TARGETS = bridge_traffic_light test_bridge_bumblebee
 
