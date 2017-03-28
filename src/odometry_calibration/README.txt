@@ -19,6 +19,66 @@ robot_phi_multiplier				1.109900
 robot_phi_bias					-0.003390
 robot_v_multiplier				1.021018
 
+---------praca------------
+bias v: 1.003211 0.000000 bias phi: 1.093834 -0.003157 initial angle: -2.754635
+Fitness (MSE): -1.029459
+Fitness (SQRT(MSE)): 1.014623
+--------------------------
+
+---------ponte------------1228
+bias v: 0.995581 -0.000000 bias phi: 1.008126 -0.003212 initial angle: 0.730014
+Fitness (MSE): -14.278659
+Fitness (SQRT(MSE)): 3.778711
+--------------------------
+
+---------ponte------------1208
+bias v: 0.973102 -0.000000 bias phi: 0.774490 -0.002003 initial angle: -2.711343
+Fitness (MSE): -37.309864
+Fitness (SQRT(MSE)): 6.108180
+
+bias v: 0.973049 -0.000000 bias phi: 0.774100 -0.002003 initial angle: -2.710927
+Fitness (MSE): -37.236513
+Fitness (SQRT(MSE)): 6.102173
+
+
+bias v: 0.973049 -0.000000 bias phi: 0.774100 -0.002003 initial angle: -2.710927
+Fitness (MSE): -37.236513
+Fitness (SQRT(MSE)): 6.102173
+
+--------------------
 bias v: 1.021018 -0.000000 bias phi: 1.109900 -0.003390 initial angle: 0.797249
 Fitness (MSE): -12.613491
 Fitness (SQRT(MSE)): 3.551548
+
+
+bias v: 0.941128 -0.000000 bias phi: 0.893987 -0.001730 initial angle: -0.150506
+Fitness (MSE): -70.501351
+Fitness (SQRT(MSE)): 8.396508
+thomas@thomas-XPS:~/carmen_lcad/src/odometry_calibration$ 
+
+
+bias v: 0.977105 0.000000 bias phi: 0.990515 -0.001933 initial angle: 0.288941
+Fitness (MSE): -60.637982
+Fitness (SQRT(MSE)): 7.787039
+
+
+bias v: 0.974839 -0.000000 bias phi: 0.982536 -0.001915 initial angle: 0.253621  
+Fitness (MSE): -60.024483
+Fitness (SQRT(MSE)): 7.747547
+
+
+bias v: 0.967690 -0.000000 bias phi: 0.961846 -0.001870 initial angle: 0.157233
+Fitness (MSE): -59.654002
+Fitness (SQRT(MSE)): 7.723600
+
+
+
+bias v: 0.970045 -0.000000 bias phi: 0.968945 -0.001886 initial angle: 0.189910
+Fitness (MSE): -59.605144
+Fitness (SQRT(MSE)): 7.720437 sem...
+
+
+bias v: 0.969521 0.000000 bias phi: 0.967416 -0.001882 initial angle: 0.182882 4
+Fitness (MSE): -59.601204
+Fitness (SQRT(MSE)): 7.720182
+

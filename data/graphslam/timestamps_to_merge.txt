@@ -1,0 +1,22 @@
+-------log_ponte-20161208 + log_ponte-20170220-2------------
+
+bias v: 1.000611 0.000000 bias phi: 1.070004 -0.003970 initial angle: -2.759460
+Fitness (MSE): -1.120341
+Fitness (SQRT(MSE)): 1.058462
+
+
+1- antes do pedagio
+	log_ponte-20161208 : 98000
+	log_ponte-20170220-2 : 208000 218000 
+
+
+2- depois do pedagio
+	log_ponte-20161208 : 144000
+	log_ponte-20170220-2 : 248000-250000
+
+
+3- final do log_ponte-20161208
+	log_ponte-20161208 : 
+	log_ponte-20170220-2 : 318000 ... 329000 333000
+
+	
