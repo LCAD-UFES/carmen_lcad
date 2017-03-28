@@ -281,12 +281,12 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double
 					-(robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels));
 			break;
 		}
-		else if (rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_DYNAMIC)
-		{
-			goal_type[goal_index] = DYNAMIC_ANNOTATION_GOAL;
-			add_goal_to_goal_list(goal_index, current_goal, rddf_pose_index, rddf);
-			break;
-		}
+//		else if (rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_DYNAMIC)
+//		{
+//			goal_type[goal_index] = DYNAMIC_ANNOTATION_GOAL;
+//			add_goal_to_goal_list(goal_index, current_goal, rddf_pose_index, rddf);
+//			break;
+//		}
 		else if ((((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_BUMP) || // -> Adiciona um waypoint na posicao atual se ela contem uma das anotacoes especificadas
 				   (rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_BARRIER) ||
 				   (rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK)) &&
