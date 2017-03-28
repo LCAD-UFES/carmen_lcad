@@ -208,11 +208,10 @@ move_goal_back_according_to_car_v(int last_obstacle_free_waypoint_index, carmen_
 		return (last_obstacle_free_waypoint_index);
 	else
 	{
-		double safe_distance = robot_config.distance_between_front_and_rear_axles +
-				robot_config.distance_between_front_car_and_front_wheels + 4.0;
+		double safe_distance = 3.0;
 		for (i = last_obstacle_free_waypoint_index; i > 0; i--)
 		{
-			double distance = udatmo_get_moving_obstacle_distance(rddf->poses[i]);
+			double distance = udatmo_get_moving_obstacle_distance(rddf->poses[i], &robot_config);
 			if (distance > safe_distance)
 				break;
 		}
@@ -285,8 +284,8 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double
 		else if (rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_DYNAMIC)
 		{
 			goal_type[goal_index] = DYNAMIC_ANNOTATION_GOAL;
-			add_goal_to_goal_list(goal_index, current_goal, rddf_pose_index, rddf,
-					-(robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels));
+			add_goal_to_goal_list(goal_index, current_goal, rddf_pose_index, rddf);
+			break;
 		}
 		else if ((((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_BUMP) || // -> Adiciona um waypoint na posicao atual se ela contem uma das anotacoes especificadas
 				   (rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_BARRIER) ||

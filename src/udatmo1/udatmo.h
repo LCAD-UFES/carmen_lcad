@@ -12,7 +12,7 @@ extern "C"
 
 void udatmo_init(const carmen_robot_ackerman_config_t robot_config);
 
-int udatmo_obstacle_detected(void);
+bool udatmo_obstacle_detected(double timestamp);
 
 void udatmo_clear_detected(void);
 
@@ -29,7 +29,7 @@ double udatmo_speed_front(void);
 
 carmen_ackerman_traj_point_t udatmo_get_moving_obstacle_position(void);
 
-double udatmo_get_moving_obstacle_distance(carmen_ackerman_traj_point_t robot_pose);
+double udatmo_get_moving_obstacle_distance(carmen_ackerman_traj_point_t robot_pose, carmen_robot_ackerman_config_t *robot_config);
 
 
 #ifdef __cplusplus

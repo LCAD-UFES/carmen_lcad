@@ -16,9 +16,17 @@ void udatmo_init(const carmen_robot_ackerman_config_t robot_config)
 	detector = new Detector(robot_config);
 }
 
-int udatmo_obstacle_detected(void)
+bool udatmo_obstacle_detected(double timestamp)
 {
-	return (detector->detected);
+	static double last_obstacle_detected_timestamp = 0.0;
+
+	if (detector->detected)
+		last_obstacle_detected_timestamp = timestamp;
+
+	if (fabs(timestamp - last_obstacle_detected_timestamp) < 10.0)
+		return (true);
+	else
+		return (false);
 }
 
 void udatmo_clear_detected(void)
@@ -53,7 +61,9 @@ carmen_ackerman_traj_point_t udatmo_get_moving_obstacle_position(void)
 	return detector->get_moving_obstacle_position();
 }
 
-double udatmo_get_moving_obstacle_distance(carmen_ackerman_traj_point_t robot_pose)
+double udatmo_get_moving_obstacle_distance(carmen_ackerman_traj_point_t robot_pose, carmen_robot_ackerman_config_t *robot_config)
 {
-	return detector->get_moving_obstacle_distance(robot_pose);
+	double distance = detector->get_moving_obstacle_distance(robot_pose) - (robot_config->distance_between_front_and_rear_axles + robot_config->distance_between_front_car_and_front_wheels);
+
+	return (distance);
 }

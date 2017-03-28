@@ -658,7 +658,7 @@ void on_buttonClearGoals_clicked(GtkWidget *widget __attribute__((unused)),
 				//navigator_unset_goal(item->pt.posiX, item->pt.posiY);
 				free(item);
 				navigator_set_goal(-1, -1, 0);
-				navigator_stop_moving();
+//				navigator_stop_moving();
 			}
 		}
 		else

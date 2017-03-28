@@ -296,6 +296,26 @@ get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotatio
 }
 
 
+double
+distance_to_moving_obstacle_annotation(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
+				&current_robot_pose_v_and_phi, wait_start_moving);
+
+	if (nearest_velocity_related_annotation == NULL)
+		return (1000.0);
+
+	double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi) -
+			(get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels);
+
+	if ((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&
+		(nearest_velocity_related_annotation->annotation_code == RDDF_ANNOTATION_CODE_DYNAMIC_STOP))
+		return (distance_to_annotation);
+	else
+		return (1000.0);
+}
+
+
 carmen_annotation_t *
 get_nearest_traffic_light_annotation(carmen_rddf_annotation_message annotation_message,
 		carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
@@ -454,7 +474,7 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 	double desired_distance = carmen_fmax(1.8 * min_dist_according_to_car_v, car_pose_to_car_front + 2.5);
 
 	static double last_obstacle_detected_timestamp = 0.0;
-	if (udatmo_obstacle_detected())
+	if (udatmo_obstacle_detected(timestamp))
 		last_obstacle_detected_timestamp = timestamp;
 
 	double distance = 0.0;
@@ -462,7 +482,7 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 	if (fabs(timestamp - last_obstacle_detected_timestamp) < 10.0)
 	{
 //		distance = DIST2D(udatmo_get_moving_obstacle_position(), *current_robot_pose_v_and_phi) - car_pose_to_car_front;
-		distance = udatmo_get_moving_obstacle_distance(*current_robot_pose_v_and_phi) - car_pose_to_car_front;
+		distance = udatmo_get_moving_obstacle_distance(*current_robot_pose_v_and_phi, get_robot_config());
 		moving_obj_v = udatmo_speed_front();
 
 		// ver "The DARPA Urban Challenge" book, pg. 36.
@@ -508,7 +528,7 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 	if (obstacle_avoider_active_recently)
 		goal->v = carmen_fmin(2.5, goal->v);
 
-	if (!udatmo_obstacle_detected())
+	if (!udatmo_obstacle_detected(timestamp))
 		SampleFilter_put(&filter2, carmen_distance_ackerman_traj(goal, current_robot_pose_v_and_phi));
 
 //	printf("gvf %lf\n", goal->v);
@@ -629,7 +649,7 @@ compute_simulated_objects(double timestamp)
 
 	// Period of time (counted from initial_time)
 	// during which the obstacle is stopped.
-	static double stop_t0 = 8, stop_tn = 50;
+	static double stop_t0 = 30, stop_tn = 50;
 
 	double v = (20.0 / 3.6);
 	double t = timestamp - initial_time;
@@ -693,7 +713,7 @@ publish_goal_list(carmen_ackerman_traj_point_t *goal_list, int goal_list_size, d
 	}
 
 	FILE *caco = fopen("caco.txt", "a");
-	fprintf(caco, "%lf\n", goal_list->v);
+	fprintf(caco, "%lf %lf\n", goal_list->v, distance_to_moving_obstacle_annotation(get_robot_pose()));
 	fflush(caco);
 	fclose(caco);
 }
@@ -980,8 +1000,7 @@ perform_state_action(carmen_behavior_selector_state_message *decision_making_sta
 		case Following_Moving_Object:
 			break;
 		case Stopping_Behind_Moving_Object:
-			new_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(goal,
-					get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels);
+			new_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(goal, 0.0);
 			annotation_point.x = new_car_pose.x;
 			annotation_point.y = new_car_pose.y;
 			annotation_point.z = 0.0;
@@ -991,8 +1010,7 @@ perform_state_action(carmen_behavior_selector_state_message *decision_making_sta
 		case Stopped_Behind_Moving_Object_S0:
 			carmen_navigator_ackerman_stop();
 
-			new_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(goal,
-					get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels);
+			new_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(goal, 0.0);
 			annotation_point.x = new_car_pose.x;
 			annotation_point.y = new_car_pose.y;
 			annotation_point.z = 0.0;
@@ -1000,13 +1018,6 @@ perform_state_action(carmen_behavior_selector_state_message *decision_making_sta
 					RDDF_ANNOTATION_TYPE_DYNAMIC, RDDF_ANNOTATION_CODE_DYNAMIC_STOP, timestamp);
 			break;
 		case Stopped_Behind_Moving_Object_S1:
-			new_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(goal,
-					get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels);
-			annotation_point.x = new_car_pose.x;
-			annotation_point.y = new_car_pose.y;
-			annotation_point.z = 0.0;
-			publish_dynamic_annotation(annotation_point, goal->theta, (char *) "RDDF_ANNOTATION_TYPE_DYNAMIC",
-					RDDF_ANNOTATION_TYPE_DYNAMIC, RDDF_ANNOTATION_CODE_DYNAMIC_STOP, timestamp);
 			break;
 		case Stopped_Behind_Moving_Object_S2:
 			carmen_navigator_ackerman_go();
@@ -1039,7 +1050,7 @@ perform_state_action(carmen_behavior_selector_state_message *decision_making_sta
 
 int
 perform_state_transition(carmen_behavior_selector_state_message *decision_making_state_msg,
-		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, int goal_type, double timestamp)
 {
 	switch (decision_making_state_msg->low_level_state)
 	{
@@ -1053,7 +1064,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 				decision_making_state_msg->low_level_state = Free_Running;
 			break;
 		case Free_Running:
-			if (udatmo_obstacle_detected())
+			if (udatmo_obstacle_detected(timestamp))
 				decision_making_state_msg->low_level_state = Following_Moving_Object;
 			else if (red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp))
 				decision_making_state_msg->low_level_state = Stopping_At_Red_Traffic_Light;
@@ -1062,44 +1073,58 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 			break;
 		case Following_Moving_Object:
 			if (red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp) &&
-				(distance_to_red_traffic_light(current_robot_pose_v_and_phi, timestamp) < udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi)))
+				(distance_to_red_traffic_light(current_robot_pose_v_and_phi, timestamp) < udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi, get_robot_config())))
 				decision_making_state_msg->low_level_state = Stopping_At_Red_Traffic_Light;
 			else if (stop_sign_ahead(current_robot_pose_v_and_phi) &&
-					 (stop_sign_distance(current_robot_pose_v_and_phi) < udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi)))
+					 (stop_sign_distance(current_robot_pose_v_and_phi) < udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi, get_robot_config())))
 				decision_making_state_msg->low_level_state = Stopping_At_Stop_Sign;
-			else if (!udatmo_obstacle_detected())
+			else if (!udatmo_obstacle_detected(timestamp))
 				decision_making_state_msg->low_level_state = Free_Running;
 			else if (udatmo_speed_front() < 0.5)
 				decision_making_state_msg->low_level_state = Stopping_Behind_Moving_Object;
 			break;
 		case Stopping_Behind_Moving_Object:
-			if ((current_robot_pose_v_and_phi.v < 0.1) && (udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi) < 2.0))
+			if ((current_robot_pose_v_and_phi.v < 0.1) && (distance_to_moving_obstacle_annotation(current_robot_pose_v_and_phi) < 2.0))
 				decision_making_state_msg->low_level_state = Stopped_Behind_Moving_Object_S0;
 			else if (red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp) &&
-				(distance_to_red_traffic_light(current_robot_pose_v_and_phi, timestamp) < udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi)))
+				(distance_to_red_traffic_light(current_robot_pose_v_and_phi, timestamp) < udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi, get_robot_config())))
 				decision_making_state_msg->low_level_state = Stopping_At_Red_Traffic_Light;
 			else if (stop_sign_ahead(current_robot_pose_v_and_phi) &&
-					 (stop_sign_distance(current_robot_pose_v_and_phi) < udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi)))
+					 (stop_sign_distance(current_robot_pose_v_and_phi) < udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi, get_robot_config())))
 				decision_making_state_msg->low_level_state = Stopping_At_Stop_Sign;
 			else if (udatmo_speed_front() > 0.5)
 				decision_making_state_msg->low_level_state = Following_Moving_Object;
-			else if (!udatmo_obstacle_detected())
+			else if ((goal_type != MOVING_OBSTACLE_GOAL) && (goal_type != OBSTACLE_GOAL) && (goal_type != DYNAMIC_ANNOTATION_GOAL))
 				decision_making_state_msg->low_level_state = Free_Running;
 			break;
 		case Stopped_Behind_Moving_Object_S0:
 			decision_making_state_msg->low_level_state = Stopped_Behind_Moving_Object_S1;
 			break;
 		case Stopped_Behind_Moving_Object_S1:
-			if ((udatmo_speed_front() > 0.1) || autonomous) // @@@ Alberto: ou objeto desapareceu da frente da IARA (fazer funcao para checar isso)
-				decision_making_state_msg->low_level_state = Stopped_Behind_Moving_Object_S2;
+			{
+				static int steps = 0;
+
+				if (steps > 3)
+				{
+					if ((udatmo_speed_front() > 0.3) || autonomous) // @@@ Alberto: ou objeto desapareceu da frente da IARA (fazer funcao para checar isso)
+					{
+						decision_making_state_msg->low_level_state = Stopped_Behind_Moving_Object_S2;
+						steps = 0;
+					}
+				}
+				steps++;
+			}
+
 			break;
 		case Stopped_Behind_Moving_Object_S2:
 			if (current_robot_pose_v_and_phi.v > 0.5)
 				decision_making_state_msg->low_level_state = Following_Moving_Object;
+			else if (udatmo_speed_front() < 0.1)
+				decision_making_state_msg->low_level_state = Stopped_Behind_Moving_Object_S0;
 			break;
 		case Stopping_At_Red_Traffic_Light:
-			if (udatmo_obstacle_detected() &&
-				(udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi) < distance_to_red_traffic_light(current_robot_pose_v_and_phi, timestamp)))
+			if (udatmo_obstacle_detected(timestamp) &&
+				(udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi, get_robot_config()) < distance_to_red_traffic_light(current_robot_pose_v_and_phi, timestamp)))
 				decision_making_state_msg->low_level_state = Following_Moving_Object;
 			else if ((current_robot_pose_v_and_phi.v < 0.1) && (distance_to_red_traffic_light(current_robot_pose_v_and_phi, timestamp) < 2.0))
 				decision_making_state_msg->low_level_state = Stopped_At_Red_Traffic_light_S0;
@@ -1110,16 +1135,27 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 			decision_making_state_msg->low_level_state = Stopped_At_Red_Traffic_light_S1;
 			break;
 		case Stopped_At_Red_Traffic_light_S1:
-			if (!red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp) || autonomous)
-				decision_making_state_msg->low_level_state = Stopped_At_Red_Traffic_light_S2;
+			{
+				static int steps2 = 0;
+
+				if (steps2 > 3)
+				{
+					if (!red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp) || autonomous)
+					{
+						decision_making_state_msg->low_level_state = Stopped_At_Red_Traffic_light_S2;
+						steps2 = 0;
+					}
+				}
+				steps2++;
+			}
 			break;
 		case Stopped_At_Red_Traffic_light_S2:
 			if (autonomous && (current_robot_pose_v_and_phi.v > 0.5))
 				decision_making_state_msg->low_level_state = Free_Running;
 			break;
 		case Stopping_At_Stop_Sign:
-			if (udatmo_obstacle_detected() &&
-				(udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi) < stop_sign_distance(current_robot_pose_v_and_phi)))
+			if (udatmo_obstacle_detected(timestamp) &&
+				(udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi, get_robot_config()) < stop_sign_distance(current_robot_pose_v_and_phi)))
 				decision_making_state_msg->low_level_state = Following_Moving_Object;
 			else if ((current_robot_pose_v_and_phi.v < 0.1) && (stop_sign_distance(current_robot_pose_v_and_phi) < 2.0))
 				decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S0;
@@ -1187,12 +1223,12 @@ generate_state_output(carmen_behavior_selector_state_message *decision_making_st
 
 int
 run_decision_making_state_machine(carmen_behavior_selector_state_message *decision_making_state_msg,
-		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, carmen_ackerman_traj_point_t *goal,
+		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, carmen_ackerman_traj_point_t *goal, int goal_type,
 		double timestamp)
 {
 	int error;
 
-	error = perform_state_transition(decision_making_state_msg, current_robot_pose_v_and_phi, timestamp);
+	error = perform_state_transition(decision_making_state_msg, current_robot_pose_v_and_phi, goal_type, timestamp);
 	if (error != 0)
 		return (error);
 
@@ -1224,7 +1260,8 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	carmen_ackerman_traj_point_t *first_goal = &(goal_list[0]);
 	int *goal_type = behavior_selector_get_goal_type();
 
-	int error = run_decision_making_state_machine(&behavior_selector_state_message, current_robot_pose_v_and_phi, first_goal, timestamp);
+	int error = run_decision_making_state_machine(&behavior_selector_state_message, current_robot_pose_v_and_phi,
+			first_goal, goal_type[0], timestamp);
 	if (error != 0)
 		carmen_die("State machine error code %d\n", error);
 //	printf("%s\n", get_low_level_state_name(behavior_selector_state_message.low_level_state));

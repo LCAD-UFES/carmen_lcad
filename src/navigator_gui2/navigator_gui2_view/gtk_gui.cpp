@@ -2684,7 +2684,7 @@ namespace View
 
 			if (itemAux == NULL)
 			{
-				navigator_stop_moving();
+//				navigator_stop_moving();
 				queuePoints->begin = NULL;
 				queuePoints->curr  = NULL;
 				queuePoints->end   = NULL;
