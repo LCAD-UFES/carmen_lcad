@@ -21,7 +21,7 @@
 #include "behavior_selector_messages.h"
 
 // Comment or uncomment this definition to control whether simulated moving obstacles are created.
-#define SIMULATE_MOVING_OBSTACLE
+//#define SIMULATE_MOVING_OBSTACLE
 
 // Comment or uncomment this definition to control whether moving obstacles are displayed.
 #define DISPLAY_MOVING_OBSTACLES
@@ -983,8 +983,8 @@ clear_state_output(carmen_behavior_selector_state_message *decision_making_state
 
 
 int
-perform_state_action(carmen_behavior_selector_state_message *decision_making_state_msg, carmen_ackerman_traj_point_t *goal,
-		double timestamp)
+perform_state_action(carmen_behavior_selector_state_message *decision_making_state_msg, carmen_ackerman_traj_point_t *goal __attribute__ ((unused)),
+		double timestamp __attribute__ ((unused)))
 {
 //	carmen_vector_3D_t annotation_point;
 //	carmen_point_t new_car_pose;
@@ -1050,7 +1050,7 @@ perform_state_action(carmen_behavior_selector_state_message *decision_making_sta
 
 int
 perform_state_transition(carmen_behavior_selector_state_message *decision_making_state_msg,
-		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, int goal_type, double timestamp)
+		carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, int goal_type __attribute__ ((unused)), double timestamp)
 {
 	switch (decision_making_state_msg->low_level_state)
 	{

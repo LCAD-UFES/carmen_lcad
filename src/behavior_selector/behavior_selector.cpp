@@ -270,8 +270,10 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double
 //			static int xx = 0;
 //			printf("xx %d\n", xx++);
 			goal_type[goal_index] = MOVING_OBSTACLE_GOAL;
-			int moving_obstacle_waypoint = move_goal_back_according_to_car_v(last_obstacle_free_waypoint_index, rddf, robot_pose);
-			add_goal_to_goal_list(goal_index, current_goal, moving_obstacle_waypoint, rddf);
+//			int moving_obstacle_waypoint = move_goal_back_according_to_car_v(last_obstacle_free_waypoint_index, rddf, robot_pose);
+//			add_goal_to_goal_list(goal_index, current_goal, moving_obstacle_waypoint, rddf);
+			add_goal_to_goal_list(goal_index, current_goal, last_obstacle_free_waypoint_index, rddf,
+					-(robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels));
 			break;
 		}
 		else if (rddf_pose_hit_obstacle)

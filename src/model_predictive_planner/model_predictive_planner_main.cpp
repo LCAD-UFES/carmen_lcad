@@ -378,8 +378,8 @@ build_and_follow_path(double timestamp)
 	if (GlobalState::goal_pose && (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT))
 	{
 		double distance_to_goal = sqrt(pow(GlobalState::goal_pose->x - GlobalState::localizer_pose->x, 2) + pow(GlobalState::goal_pose->y - GlobalState::localizer_pose->y, 2));
-		// achieve the goal!
-		if (distance_to_goal < 1.0 && GlobalState::robot_config.max_v < 0.1 && GlobalState::last_odometry.v < 0.1)
+		// goal achieved!
+		if (distance_to_goal < 1.0 && GlobalState::robot_config.max_v < 0.1 && GlobalState::last_odometry.v < 0.25)
 		{
 			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
 		}
@@ -420,8 +420,8 @@ build_and_follow_path_new(double timestamp)
 	if (GlobalState::goal_pose && (GlobalState::current_algorithm == CARMEN_BEHAVIOR_SELECTOR_RRT))
 	{
 		double distance_to_goal = sqrt(pow(GlobalState::goal_pose->x - GlobalState::localizer_pose->x, 2) + pow(GlobalState::goal_pose->y - GlobalState::localizer_pose->y, 2));
-		// achieve the goal!
-		if (distance_to_goal < 1.0 && GlobalState::robot_config.max_v < 0.1 && GlobalState::last_odometry.v < 0.1)
+		// goal achieved!
+		if (distance_to_goal < 1.0 && GlobalState::robot_config.max_v < 0.1 && GlobalState::last_odometry.v < 0.25)
 		{
 			publish_model_predictive_planner_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
 		}
