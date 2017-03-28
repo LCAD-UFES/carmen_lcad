@@ -35,10 +35,28 @@
 #include <carmen/bumblebee_basic_messages.h>
 #include <carmen/rddf_interface.h>
 #include <carmen/rddf_messages.h>
+#include <carmen/traffic_light_interface.h>
+#include <carmen/traffic_light_messages.h>
 
 IPC_CONTEXT_PTR car02_context;
 IPC_CONTEXT_PTR car01_context;
 IPC_CONTEXT_PTR current_context;
+
+
+void
+print_frequency_tests(char* host, double total_time, int vezes)
+{
+	if (vezes == 100)
+	{
+		printf("TO RECEBENDO O LOCALIZE TBM!! A %lf hz !!\n",(vezes/(carmen_get_time()-total_time)));
+		printf("Host %s\n", host);
+		total_time = carmen_get_time();
+		vezes = 0;
+	}
+	else
+		vezes++;
+}
+
 
 void
 publish_rddf_annotation_copy(carmen_rddf_annotation_message *rddf_annotation_message)
@@ -49,23 +67,24 @@ publish_rddf_annotation_copy(carmen_rddf_annotation_message *rddf_annotation_mes
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_ANNOTATION_MESSAGE_NAME);
 }
 
+
+static void
+carmen_traffic_light_message_handler(carmen_traffic_light_message *message)
+{
+	if (IPC_getContext() != car02_context)
+			return;
+
+	IPC_setContext(car01_context);
+	carmen_traffic_light_publish_message(3, message);
+	IPC_setContext(car02_context);
+}
+
+
 void
 carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
 	if (IPC_getContext() != car01_context)
 		return;
-
-	static double total_time = 0.0;
-	static int vezes = 0;
-	if (vezes == 100)
-	{
-		printf("TO RECEBENDO O LOCALIZE TBM!! A %lf hz !!\n",(vezes/(carmen_get_time()-total_time)));
-		printf("Host %s\n", msg->host);
-		total_time = carmen_get_time();
-		vezes = 0;
-	}
-	else
-		vezes++;
 
 	IPC_setContext(car02_context);
 	carmen_localize_ackerman_publish_globalpos_message(msg);
@@ -91,6 +110,8 @@ void multicentral_subscribe_messages(void)
 			(carmen_handler_t) carmen_localize_ackerman_globalpos_message_handler,CARMEN_SUBSCRIBE_LATEST);
 	 carmen_rddf_subscribe_annotation_message(NULL,
 			(carmen_handler_t) carmen_rddf_annotation_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	 carmen_traffic_light_subscribe(3, NULL,
+			 (carmen_handler_t) carmen_traffic_light_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 }
 
@@ -142,6 +163,8 @@ int main(int argc, char **argv)
 	  current_context = IPC_getContext();
 	  IPC_setContext(car02_context);
 	  register_message();
+	  IPC_setContext(car01_context);
+	  carmen_traffic_light_define_messages(3);
 	  IPC_setContext(current_context);
 
   }
