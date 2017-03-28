@@ -80,6 +80,7 @@ bin/motion_planner
 bin/moving_objects
 bin/multimap_matching
 bin/multimap_optimization
+bin/bridge_traffic_light
 bin/poses_before.g2o
 bin/run_icp_for_loop_closure
 bin/mvog
@@ -296,6 +297,8 @@ src/moving_objects/libmoving_objects_interface.a
 src/motion_planner/motion_planner
 src/moving_objects/moving_objects
 src/mvog_package/mvog
+src/multicentral_bridge/bridge_traffic_light
+src/multicentral_bridge/test_bridge_bumblebee
 src/navigator_ackerman/navigator_ackerman
 src/navigator_ackerman/navigator_ackerman_test
 src/navigator_ackerman/navigator_precomputed_cost_ackerman
