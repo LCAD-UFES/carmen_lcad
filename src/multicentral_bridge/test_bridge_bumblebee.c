@@ -57,27 +57,31 @@ publish_rddf_annotation_copy(carmen_rddf_annotation_message *rddf_annotation_mes
 void
 carmen_bumblebee_basic_stereoimage_message_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image)
 {
-	printf("Entrei no Handler da bumblebee\n");
+//	printf("Entrei no Handler da bumblebee\n");
 	if (IPC_getContext() != car01_context)
 			return;
-	printf("To no contexto certo\n");
-
-	static double total_time1 = 0.0;
-		static int vezes1 = 0;
-		if (vezes1 == 100)
-		{
-			printf("BUMBLEBEE A %lf hz!!\n",(vezes1/(carmen_get_time() - total_time1)));
-			printf("Host %s\n",stereo_image->host);
-			total_time1 = carmen_get_time();
-			vezes1 = 0;
-		}
-		else
-			vezes1++;
+//	printf("To no contexto certo\n");
 //
-		IPC_setContext(car02_context);
-		carmen_bumblebee_basic_publish_message(3, stereo_image);
-		printf("Publiquei\n");
-		IPC_setContext(car01_context);
+//	static double total_time1 = 0.0;
+//	static int vezes1 = 0;
+//	if (vezes1 == 100)
+//	{
+//		printf("BUMBLEBEE A %lf hz!!\n",(vezes1/(carmen_get_time() - total_time1)));
+//		printf("Host %s\n",stereo_image->host);
+//		total_time1 = carmen_get_time();
+//		vezes1 = 0;
+//	}
+//	else
+//		vezes1++;
+
+	IPC_RETURN_TYPE ipc_erro_msg;
+	ipc_erro_msg = IPC_setContext(car02_context);
+	printf("IPC_erro: %d\n", ipc_erro_msg);
+	ipc_erro_msg = carmen_bumblebee_basic_publish_message(3, stereo_image);
+//	printf("IPC_erro Bumblebee: %d\n", ipc_erro_msg);
+//	printf("Publiquei\n");
+	ipc_erro_msg = IPC_setContext(car01_context);
+//	printf("IPC_erro2: %d\n", ipc_erro_msg);
 }
 
 

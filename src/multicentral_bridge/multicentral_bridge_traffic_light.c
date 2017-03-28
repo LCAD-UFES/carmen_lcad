@@ -1,4 +1,4 @@
- /*********************************************************
+/*********************************************************
  *
  * This source code is part of the Carnegie Mellon Robot
  * Navigation Toolkit (CARMEN)
@@ -43,19 +43,11 @@ IPC_CONTEXT_PTR car01_context;
 IPC_CONTEXT_PTR current_context;
 
 
-void
-print_frequency_tests(char* host, double total_time, int vezes)
-{
-	if (vezes == 100)
-	{
-		printf("TO RECEBENDO O LOCALIZE TBM!! A %lf hz !!\n",(vezes/(carmen_get_time()-total_time)));
-		printf("Host %s\n", host);
-		total_time = carmen_get_time();
-		vezes = 0;
-	}
-	else
-		vezes++;
-}
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Publishers                                                                                //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 void
@@ -67,12 +59,20 @@ publish_rddf_annotation_copy(carmen_rddf_annotation_message *rddf_annotation_mes
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_RDDF_ANNOTATION_MESSAGE_NAME);
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Handlers                                                                                  //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
 
 static void
 carmen_traffic_light_message_handler(carmen_traffic_light_message *message)
 {
 	if (IPC_getContext() != car02_context)
-			return;
+		return;
 
 	IPC_setContext(car01_context);
 	carmen_traffic_light_publish_message(3, message);
@@ -104,22 +104,14 @@ carmen_rddf_annotation_message_handler(carmen_rddf_annotation_message *msg)
 }
 
 
-void multicentral_subscribe_messages(void)
-{
-	carmen_localize_ackerman_subscribe_globalpos_message(NULL,
-			(carmen_handler_t) carmen_localize_ackerman_globalpos_message_handler,CARMEN_SUBSCRIBE_LATEST);
-	 carmen_rddf_subscribe_annotation_message(NULL,
-			(carmen_handler_t) carmen_rddf_annotation_message_handler, CARMEN_SUBSCRIBE_LATEST);
-	 carmen_traffic_light_subscribe(3, NULL,
-			 (carmen_handler_t) carmen_traffic_light_message_handler, CARMEN_SUBSCRIBE_LATEST);
-
-}
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-void test_ipc_exit_handler(void)
-{
-  fprintf(stderr, "Central died.\n");
-}
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                              //
+// Initializations                                                                              //
+//                                                                                              //
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 void
@@ -130,52 +122,72 @@ register_message()
 }
 
 
+void multicentral_subscribe_messages(void)
+{
+	carmen_localize_ackerman_subscribe_globalpos_message(NULL,
+			(carmen_handler_t) carmen_localize_ackerman_globalpos_message_handler,CARMEN_SUBSCRIBE_LATEST);
+	carmen_rddf_subscribe_annotation_message(NULL,
+			(carmen_handler_t) carmen_rddf_annotation_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_traffic_light_subscribe(3, NULL,
+			(carmen_handler_t) carmen_traffic_light_message_handler, CARMEN_SUBSCRIBE_LATEST);
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+void test_ipc_exit_handler(void)
+{
+	fprintf(stderr, "Central died.\n");
+}
+
+
 int main(int argc, char **argv)
 {
-  carmen_centrallist_p centrallist;
+	carmen_centrallist_p centrallist;
 
-  /* set this if it is OK for the program to run without connections
+	/* set this if it is OK for the program to run without connections
      to any centrals */
-  carmen_multicentral_allow_zero_centrals(1);
+	carmen_multicentral_allow_zero_centrals(1);
 
-  /* connect to all IPC servers */
-  centrallist = carmen_multicentral_initialize(argc, argv, 
-					       test_ipc_exit_handler);
+	/* connect to all IPC servers */
+	centrallist = carmen_multicentral_initialize(argc, argv, test_ipc_exit_handler);
 
-  /* start thread that monitors connections to centrals */
-  carmen_multicentral_start_central_check(centrallist);
+	/* start thread that monitors connections to centrals */
+	carmen_multicentral_start_central_check(centrallist);
 
-  /* subscribe to messages from each central */
-  carmen_multicentral_subscribe_messages(centrallist, 
-					 multicentral_subscribe_messages);
-  if (centrallist->num_centrals > 0)
-  {
-	  if (strcmp(centrallist->central[0].host, "car02") == 0)
-	  {
-		  car02_context = centrallist->central[0].context;
-		  car01_context = centrallist->central[1].context;
-	  }
-	  else
-	  {
-		  car02_context = centrallist->central[1].context;
-		  car01_context = centrallist->central[0].context;
-	  }
-	  current_context = IPC_getContext();
-	  IPC_setContext(car02_context);
-	  register_message();
-	  IPC_setContext(car01_context);
-	  carmen_traffic_light_define_messages(3);
-	  IPC_setContext(current_context);
+	/* subscribe to messages from each central */
+	carmen_multicentral_subscribe_messages(centrallist, multicentral_subscribe_messages);
 
-  }
+	if (centrallist->num_centrals > 0)
+	{
+		if (strcmp(centrallist->central[0].host, "car02") == 0)
+		{
+			car02_context = centrallist->central[0].context;
+			car01_context = centrallist->central[1].context;
+		}
+		else
+		{
+			car02_context = centrallist->central[1].context;
+			car01_context = centrallist->central[0].context;
+		}
 
-  do {
-    /* handle IPC messages across all centrals */
-    carmen_multicentral_ipc_sleep(centrallist, 0.1);
+		current_context = IPC_getContext();
+		IPC_setContext(car02_context);
+		register_message();
+		IPC_setContext(car01_context);
+		carmen_traffic_light_define_messages(3);
+		IPC_setContext(current_context);
+	}
 
-    /* attempt to reconnect any missing centrals */
-    carmen_multicentral_reconnect_centrals(centrallist, NULL,
-					   multicentral_subscribe_messages);
-  } while(1);
-  return 0;
+	do {
+		/* handle IPC messages across all centrals */
+		carmen_multicentral_ipc_sleep(centrallist, 0.1);
+
+		/* attempt to reconnect any missing centrals */
+		carmen_multicentral_reconnect_centrals(centrallist, NULL,
+				multicentral_subscribe_messages);
+	} while(1);
+	return 0;
 }
