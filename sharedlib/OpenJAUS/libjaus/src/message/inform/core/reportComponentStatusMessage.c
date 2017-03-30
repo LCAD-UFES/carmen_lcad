@@ -1,1 +1,1 @@
-/home/car01/carmen_lcad/sharedlib/OpenJAUS/ojTorc/src/reportComponentStatusMessage.c
+../../../../../ojTorc/src/reportComponentStatusMessage.c
