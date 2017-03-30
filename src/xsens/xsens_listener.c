@@ -8,9 +8,10 @@ carmen_xsens_global_euler_message xsens_euler_global;
 carmen_xsens_global_quat_message xsens_quat_global;
 
 
-void xsens_euler_message_handler()
+void
+xsens_euler_message_handler()
 {
-    fprintf(stderr, "Message #%d:\n", xsens_euler_global.m_count);
+//    fprintf(stderr, "Message #%d:\n", xsens_euler_global.m_count);
     printf("\tAcceleration\nX: %f \t Y: %f \t Z: %f\n", xsens_euler_global.m_acc.x, xsens_euler_global.m_acc.y, xsens_euler_global.m_acc.z);
     printf("\tGyro\nX: %f \t Y: %f \t Z: %f\n", xsens_euler_global.m_gyr.x, xsens_euler_global.m_gyr.y, xsens_euler_global.m_gyr.z);
     printf("\tMagnetism\nX: %f \t Y: %f \t Z: %f\n", xsens_euler_global.m_mag.x, xsens_euler_global.m_mag.y, xsens_euler_global.m_mag.z);
@@ -20,26 +21,31 @@ void xsens_euler_message_handler()
     printf("Pitch: %f \t Roll: %f \t Yaw: %f \n", xsens_euler_global.euler_data.m_pitch, xsens_euler_global.euler_data.m_roll, xsens_euler_global.euler_data.m_yaw);
     
     printf("\n");
+
+    fflush(stdout);
 }
 
 
-void xsens_quat_message_handler(){
-
-    fprintf(stderr, "Message #%d:\n", xsens_quat_global.m_count);
+void
+xsens_quat_message_handler()
+{
+//    fprintf(stderr, "Message #%d:\n", xsens_quat_global.m_count);
     printf("\tAcceleration\nX: %f \t Y: %f \t Z: %f\n", xsens_quat_global.m_acc.x, xsens_quat_global.m_acc.y, xsens_quat_global.m_acc.z);
     printf("\tGyro\nX: %f \t Y: %f \t Z: %f\n", xsens_quat_global.m_gyr.x, xsens_quat_global.m_gyr.y, xsens_quat_global.m_gyr.z);
     printf("\tMagnetism\nX: %f \t Y: %f \t Z: %f\n", xsens_quat_global.m_mag.x, xsens_quat_global.m_mag.y, xsens_quat_global.m_mag.z);
     printf("Temperature: %f \nTimestamp: %f \nHost: %s\n", xsens_quat_global.m_temp, xsens_quat_global.timestamp, xsens_quat_global.host);
 
     printf(" == Quaterion Data == \n");
-    printf("Q0: %f \t Q1: %f \t Q2: %f \t Q3: %f \n", xsens_quat_global.quat_data.m_data[0], xsens_quat_global.quat_data.m_data[1],
-                                                          xsens_quat_global.quat_data.m_data[2], xsens_quat_global.quat_data.m_data[3]);
+    printf("Q0: %f \t Q1: %f \t Q2: %f \t Q3: %f \n", xsens_quat_global.quat_data.m_data[0], xsens_quat_global.quat_data.m_data[1],                                                         xsens_quat_global.quat_data.m_data[2], xsens_quat_global.quat_data.m_data[3]);
+
+    fflush(stdout);
 }
 
 
-void xsens_matrix_message_handler(){
-
-    fprintf(stderr, "Message #%d:\n", xsens_matrix_global.m_count);
+void
+xsens_matrix_message_handler()
+{
+//    fprintf(stderr, "Message #%d:\n", xsens_matrix_global.m_count);
     printf("\tAcceleration\nX: %f \t Y: %f \t Z: %f\n", xsens_matrix_global.m_acc.x, xsens_matrix_global.m_acc.y, xsens_matrix_global.m_acc.z);
     printf("\tGyro\nX: %f \t Y: %f \t Z: %f\n", xsens_matrix_global.m_gyr.x, xsens_matrix_global.m_gyr.y, xsens_matrix_global.m_gyr.z);
     printf("\tMagnetism\nX: %f \t Y: %f \t Z: %f\n", xsens_matrix_global.m_mag.x, xsens_matrix_global.m_mag.y, xsens_matrix_global.m_mag.z);
@@ -53,18 +59,23 @@ void xsens_matrix_message_handler(){
     printf("[%f]\t[%f]\t[%f]\n", xsens_matrix_global.matrix_data.m_data[2][0], xsens_matrix_global.matrix_data.m_data[2][1],
                                     xsens_matrix_global.matrix_data.m_data[2][2]);
 
+    fflush(stdout);
 }
 
-void shutdown_catcher(int x)
+
+void
+shutdown_catcher(int x)
 {
-    if(x == SIGINT) {
+    if (x == SIGINT)
+    {
         carmen_verbose("Disconnecting from IPC network.\n");
         exit(1);
     }
 }
 
 
-int main(int argc, char **argv) 
+int
+main(int argc, char **argv)
 { 
     /* initialize carmen */
     carmen_randomize(&argc, &argv);
@@ -91,9 +102,8 @@ int main(int argc, char **argv)
 					    (carmen_handler_t) xsens_quat_message_handler,
 					    CARMEN_SUBSCRIBE_LATEST);
 
-
     /* Loop forever */
     carmen_ipc_dispatch();
 
-return 0;
+    return (0);
 }

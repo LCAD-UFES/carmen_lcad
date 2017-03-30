@@ -248,15 +248,13 @@ int main(int argc, char **argv)
     // register_ipc_messages();
     carmen_xsens_define_messages();
 
-    while(1){
-    getDataFromXsens(cmt3, packet, mode, settings, g_data);
-    publish_xsens_global(g_data, /*mode,*/ settings);
-    sleep(0.1);
+    while (1)
+    {
+		getDataFromXsens(cmt3, packet, mode, settings, g_data);
+		publish_xsens_global(g_data, /*mode,*/ settings);
+		usleep(10000);
     }
 
-    /* Loop forever */
-    carmen_ipc_dispatch();
-
-    return 0;
+    return (0);
 }
 
