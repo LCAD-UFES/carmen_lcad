@@ -15,9 +15,10 @@ Entao publica para a car01 a mensagem do traffic_light.
 Para usar a ponte do traffic_light:
 Na primeira maquina(car01) rode o central e o process
 	./central
-	./proccontrol process-ida-ate-a-ponte.ini
+	./proccontrol process-ida-ate-a-ponte-pid.ini
 Abra um novo terminal, acesse a segunda maquina(car02) via SSH com interface (-Y) e rode o process do traffic_light
 	ssh -Y car02@192.168.0.108
+	cd carmen_lcad/bin
 	./central &
 	./proccontrol process-multicentral_bridge_traffic_light.ini
 

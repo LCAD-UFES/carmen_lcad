@@ -43,6 +43,8 @@
 extern "C" {
 #endif
 
+#define	XGV_MANUAL_OVERRIDE_FLAG	0x10000
+
 typedef struct {
   double g_XGV_velocity;
   double g_XGV_atan_curvature;
@@ -56,7 +58,7 @@ typedef struct {
   double g_XGV_steering;
   double g_XGV_brakes;
 
-  unsigned short int g_XGV_component_status;
+  unsigned int g_XGV_component_status;
 
   int g_XGV_main_propulsion;
   int g_XGV_main_fuel_supply;

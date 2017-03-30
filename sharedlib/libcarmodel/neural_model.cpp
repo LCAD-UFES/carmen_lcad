@@ -134,7 +134,7 @@ carmen_libcarneuralmodel_compute_new_phi_with_ann(double v, double current_phi, 
 	atan_desired_curvature = carmen_get_curvature_from_phi(desired_phi, v, understeer_coeficient, distance_between_front_and_rear_axles);
 
 	//PID
-	steering_effort = carmen_libpid_steering_PID_controler(atan_desired_curvature, atan_current_curvature, time);
+	steering_effort = carmen_libpid_steering_PID_controler(atan_desired_curvature, atan_current_curvature, time, 0);
 
 	//RL_PID
 	//steering_effort = carmen_librlpid_compute_new_phi_with_ann (current_phi, desired_phi, /*next_desired_phi*/desired_phi, steering_ann_input,
@@ -169,7 +169,7 @@ carmen_libcarneuralmodel_compute_new_velocity_with_ann(double desired_v, double 
 		carmen_libcarneuralmodel_init_velocity_ann_input(velocity_ann_input);
 	}
 
-	carmen_libpid_velocity_PID_controler(&throttle_command, &brakes_command, &gear_command, desired_v, v, time);
+	carmen_libpid_velocity_PID_controler(&throttle_command, &brakes_command, &gear_command, desired_v, v, time, 0);
 
 	if (gear_command == 129) // marcha reh
 	{

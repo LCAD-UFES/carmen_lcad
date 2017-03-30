@@ -214,7 +214,7 @@ publish_car_status()
 //	        Steering initialization waiting F: initialized, T: user must init
 //	        on user input* steering manually or press OK
 	msg.g_XGV_component_status = g_XGV_component_status;
-//	printf("g_XGV_component_status = 0x%x\n", g_XGV_component_status);
+//	printf("g_XGV_turn_signal = 0x%x\n", g_XGV_turn_signal);
 	msg.timestamp = carmen_get_time();
 	msg.host = carmen_get_host();
 
@@ -527,13 +527,15 @@ torc_report_curvature_message_handler_old(OjCmpt XGV_CCU __attribute__ ((unused)
 
 		set_wrench_efforts_desired_v_and_curvature();
 		delta_t = get_steering_delta_t();
-		g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature, -atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t);
+		g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
+				-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t,
+				g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
 
 		previous_gear_command = g_gear_command;
 
 		delta_t = get_velocity_delta_t();
 		carmen_libpid_velocity_PID_controler(&g_throttle_command, &g_brakes_command, &g_gear_command,
-			g_desired_velocity, ford_escape_hybrid_config->filtered_v, delta_t);
+			g_desired_velocity, ford_escape_hybrid_config->filtered_v, delta_t, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
 
 		if (previous_gear_command != g_gear_command)
 			publish_ford_escape_gear_command(XGV_CCU);
@@ -631,7 +633,9 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 			}
 			else
 			{   // PID
-				g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature, -atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t);
+				g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
+						-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t,
+						g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
 			}
 			#ifdef PLOT
 					pid_plot_phi(-get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), ford_escape_hybrid_config->filtered_phi, 0.55, "phi");
@@ -644,7 +648,8 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 		delta_t = get_velocity_delta_t();
 
 		// PID VELOCITY
-		carmen_libpid_velocity_PID_controler(&g_throttle_command, &g_brakes_command, &g_gear_command, g_desired_velocity, ford_escape_hybrid_config->filtered_v, delta_t);
+		carmen_libpid_velocity_PID_controler(&g_throttle_command, &g_brakes_command, &g_gear_command, g_desired_velocity,
+				ford_escape_hybrid_config->filtered_v, delta_t, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
 
 		#ifdef PLOT_VELOCITY
 			pid_plot_velocity(ford_escape_hybrid_config->filtered_v, g_desired_velocity, 15.0, "vel");
@@ -713,7 +718,8 @@ torc_report_curvature_message_handler_new(OjCmpt XGV_CCU __attribute__ ((unused)
 //				g_steering_command = carmen_librlpid_compute_effort(-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), g_atan_desired_curvature, delta_t);
 //			}
 
-			g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature, -g_XGV_atan_curvature, delta_t);
+			g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature, -g_XGV_atan_curvature, delta_t,
+					g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
 #ifdef PLOT
 			pid_plot_phi(ford_escape_hybrid_config->filtered_phi, -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), 0.6, "phi");
 #endif
@@ -725,7 +731,7 @@ torc_report_curvature_message_handler_new(OjCmpt XGV_CCU __attribute__ ((unused)
 
 		// VELOCITY PID CONTROL
 		carmen_libpid_velocity_PID_controler(&g_throttle_command, &g_brakes_command, &g_gear_command,
-			g_desired_velocity, ford_escape_hybrid_config->filtered_v, delta_t);
+			g_desired_velocity, ford_escape_hybrid_config->filtered_v, delta_t, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
 
 		if (previous_gear_command != g_gear_command)
 			publish_ford_escape_gear_command(XGV_CCU);
@@ -1005,7 +1011,7 @@ initialize_structures()
 static void
 default_signals_command()
 {
-	g_turn_signal_command = 3; // TODO: usar #define
+	g_turn_signal_command = 0; // TODO: usar #define
 	g_horn_status_command = 0; // TODO: usar #define
 	g_headlights_status_command = 1; // TODO: usar #define
 	publish_ford_escape_turn_horn_and_headlight_signals(XGV_CCU);

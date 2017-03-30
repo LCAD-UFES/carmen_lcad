@@ -108,12 +108,12 @@
 
 // Inform Class
 #include "inform/core/reportComponentAuthorityMessage.h"
-#include "inform/core/reportComponentStatusMessage.h"
 #include "inform/core/reportTimeMessage.h"
 #include "inform/core/reportComponentControlMessage.h"
 #include "inform/communications/reportDataLinkStatusMessage.h"
 #include "inform/communications/reportSelectedDataLinkStatusMessage.h"
 #include "inform/communications/reportHeartbeatPulseMessage.h"
+#include "inform/core/reportComponentStatusMessage.h"
 #include "inform/environment/reportImageMessage.h"
 #include "inform/environment/reportCameraPoseMessage.h"
 #include "inform/environment/reportCameraCountMessage.h"

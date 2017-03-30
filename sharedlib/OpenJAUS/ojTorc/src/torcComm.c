@@ -464,6 +464,7 @@ add_xgv_ccu_component_service_messages(OjCmpt XGV_CCU, int xgv_ccu_component_id)
 	ojCmptAddServiceInputMessage(XGV_CCU, xgv_ccu_component_id, JAUS_REPORT_WRENCH_EFFORT, 0xFF);
 	ojCmptAddServiceInputMessage(XGV_CCU, xgv_ccu_component_id, JAUS_REPORT_DISCRETE_DEVICES, 0xFF);
 	ojCmptAddServiceInputMessage(XGV_CCU, xgv_ccu_component_id, JAUS_REPORT_SIGNALS, 0xFF);
+	ojCmptAddServiceInputMessage(XGV_CCU, xgv_ccu_component_id, JAUS_REPORT_COMPONENT_STATUS, 0xFF);
 	ojCmptAddServiceInputMessage(XGV_CCU, xgv_ccu_component_id, JAUS_REPORT_ERROR_COUNT, 0xFF);
 	ojCmptAddServiceOutputMessage(XGV_CCU, xgv_ccu_component_id, JAUS_SET_WRENCH_EFFORT, 0xFF);
 	ojCmptAddServiceOutputMessage(XGV_CCU, xgv_ccu_component_id, JAUS_RESUME, 0xFF);
