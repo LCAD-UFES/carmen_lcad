@@ -95,7 +95,7 @@ void carmen_udatmo_display_moving_obstacles_message(carmen_udatmo_moving_obstacl
 
 	out->timestamp = carmen_get_time();
 	out->host = carmen_get_host();
-	resize(out->point_clouds, n);
+	resize(n, out->point_clouds);
 	out->num_point_clouds = n;
 
 	t_point_cloud_struct *point = out->point_clouds;
@@ -104,6 +104,9 @@ void carmen_udatmo_display_moving_obstacles_message(carmen_udatmo_moving_obstacl
 
 	for (int i = 0; i < n; i++, point++, obstacle++)
 	{
+		if (obstacle->rddf_index == -1)
+			continue;
+
 		clear(point);
 		point->object_pose.x = obstacle->x;
 		point->object_pose.y = obstacle->y;

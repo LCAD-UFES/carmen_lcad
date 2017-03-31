@@ -32,6 +32,7 @@ DATMO::DATMO():
 	max_poses_ahead(0),
 	current_map(NULL)
 {
+	clear(current_grid);
 	clear(robot_config);
 	clear(origin);
 	clear(robot_pose);
@@ -39,6 +40,31 @@ DATMO::DATMO():
 
 	origin.x = nan("");
 	robot_pose.v = nan("");
+}
+
+
+bool DATMO::traversable(const carmen_position_t &position) const
+{
+	double x0 = current_grid.config.x_origin;
+	double y0 = current_grid.config.y_origin;
+	double s = current_grid.config.resolution;
+
+	int x = (position.x - x0) / s;
+	int y = (position.y - y0) / s;
+
+	int xn = current_grid.config.x_size;
+	int yn = current_grid.config.x_size;
+
+	if (0 <= x && x < xn && 0 <= y && y < yn)
+	{
+		double o = current_grid.map[x][y];
+		CARMEN_LOG(trace, "Occupancy at position " << relative_xy(position, origin) << ": " << o);
+		return (o < 0.5);
+	}
+
+	CARMEN_LOG(trace, "Position " << relative_xy(position, origin) << " not in current offline map");
+
+	return false;
 }
 
 
@@ -50,9 +76,10 @@ void DATMO::detect(carmen_ackerman_traj_point_t *poses, int n)
 	double front = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
 	double within = width / 2.0;
 
-// 	for (int l = 0; l < 3; l++)
-	int l = 0;
+	for (int l = 0; l < 3; l++)
 	{
+		CARMEN_LOG(trace, "Lane " << l);
+
 		double lane = lanes[l];
 		for (int i = 0; i < n; i++)
 		{
@@ -69,9 +96,9 @@ void DATMO::detect(carmen_ackerman_traj_point_t *poses, int n)
 
 			carmen_point_t front_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&pose, front);
 			carmen_position_t position = carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(&front_car_pose, current_map);
-			if (distance(position, front_car_pose) < within)
+			if (distance(position, front_car_pose) < within && traversable(position))
 			{
-				observations.push_back(Observation(i, position, rddf.timestamp));
+				observations.push_back(Observation(i, l, position, rddf.timestamp));
 				CARMEN_LOG(trace,
 					"Observation l = " << l
 					<< ": t = " << rddf.timestamp - carmen_ipc_initialize_time()
@@ -240,6 +267,22 @@ void DATMO::update(carmen_obstacle_distance_mapper_message *map)
 }
 
 
+void DATMO::update(carmen_mapper_map_message *grid)
+{
+	int size = grid->size;
+
+	current_grid.config = grid->config;
+	copy(true, size, grid->complete_map, current_grid.complete_map);
+	resize(current_grid.config.x_size, current_grid.map);
+
+	double **map = current_grid.map;
+	double *complete_map = current_grid.complete_map;
+	int y_size = current_grid.config.y_size;
+	for(int i = 0, n = current_grid.config.x_size; i < n; i++)
+		map[i] = complete_map + i * y_size;
+}
+
+
 int DATMO::posesAhead() const
 {
 	int num_poses_ahead = min_poses_ahead;
@@ -271,14 +314,14 @@ void DATMO::update(carmen_rddf_road_profile_message *rddf_msg)
 	if (rddf.number_of_poses != num_poses_ahead)
 	{
 		rddf.number_of_poses = num_poses_ahead;
-		resize(rddf.poses, rddf.number_of_poses);
-		resize(rddf.annotations, rddf.number_of_poses);
+		resize(rddf.number_of_poses, rddf.poses);
+		resize(rddf.number_of_poses, rddf.annotations);
 	}
 
 	if (rddf_msg->number_of_poses_back > 0)
 	{
 		rddf.number_of_poses_back = num_poses_ahead;
-		resize(rddf.poses_back, rddf.number_of_poses_back);
+		resize(rddf.number_of_poses_back, rddf.poses_back);
 	}
 
 	rddf.timestamp = rddf_msg->timestamp;

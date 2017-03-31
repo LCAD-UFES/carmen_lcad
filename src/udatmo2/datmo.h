@@ -4,6 +4,8 @@
 #include "obstacle.h"
 
 #include <carmen/carmen.h>
+#include <carmen/map.h>
+#include <carmen/mapper_messages.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
 #include <carmen/rddf_messages.h>
 
@@ -34,6 +36,9 @@ class DATMO
 	/** @brief Current map of distances between detected obstacles and plane coordinates. */
 	carmen_obstacle_distance_mapper_message *current_map;
 
+	/** @brief Current grid of static occupancies ("offline map"). */
+	carmen_map_t current_grid;
+
 	/** @brief Latest RDDF information. */
 	carmen_rddf_road_profile_message rddf;
 
@@ -45,7 +50,6 @@ class DATMO
 
 	/** @brief Sequence of tracking obstacles. */
 	Obstacles tracking;
-
 
 	/**
 	 * @brief Assign observation `j` either to an existing or new moving obstacle.
@@ -61,6 +65,11 @@ class DATMO
 	 * @brief Scan the current input for moving obstacle observations.
 	 */
 	void detect();
+
+	/**
+	 * @brief Check whether a given position is traversable in the offline map.
+	 */
+	bool traversable(const carmen_position_t &position) const;
 
 	/**
 	 * @brief Compute the distances between known obstacles and latest observations.
@@ -102,6 +111,11 @@ public:
 	 * @brief Update the current distance map.
 	 */
 	void update(carmen_obstacle_distance_mapper_message *map);
+
+	/**
+	 * @brief Update the current offline map.
+	 */
+	void update(carmen_mapper_map_message *grid);
 
 	/**
 	 * @brief Update the state of the RDDF encapsulated in this object.

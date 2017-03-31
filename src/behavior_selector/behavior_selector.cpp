@@ -264,8 +264,8 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double
 	if (rddf == NULL)
 		return (0);
 
-	carmen_udatmo_moving_obstacles_message *moving_obstacles = carmen_udatmo_detect_moving_obstacles();
-	int front_obstacle_rddf_index = moving_obstacles->obstacles[0].rddf_index;
+	const carmen_udatmo_moving_obstacle *front_obstacle = carmen_udatmo_detect_front_moving_obstacle();
+	int front_obstacle_rddf_index = front_obstacle->rddf_index;
 	moving_obstacle_ahead_reset();
 
 	int goal_index = 0;

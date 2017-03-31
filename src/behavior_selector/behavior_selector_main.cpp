@@ -617,9 +617,12 @@ compute_simulated_objects(double timestamp)
 	static double previous_timestamp = 0.0;
 	static double initial_time = 0.0; // Simulation start time.
 
+	carmen_ackerman_traj_point_t *poses = rddf->poses;
+	int l = rddf->number_of_poses - 1;
+
 	if (initial_time == 0.0)
 	{
-		previous_pose = rddf->poses[rddf->number_of_poses - 1];
+		previous_pose = poses[l];
 		previous_timestamp = timestamp;
 		initial_time = timestamp;
 		return &previous_pose;
@@ -635,20 +638,30 @@ compute_simulated_objects(double timestamp)
 		v = 0;
 
 	double dt = timestamp - previous_timestamp;
-	double dx = v * dt * cos(previous_pose.theta);
-	double dy = v * dt * sin(previous_pose.theta);
+	double ds = v * dt;
 
-	carmen_ackerman_traj_point_t pose_ahead;
-	pose_ahead.x = previous_pose.x + dx;
-	pose_ahead.y = previous_pose.y + dy;
+	carmen_ackerman_traj_point_t pose_ahead = previous_pose;
+	pose_ahead.x += ds * cos(previous_pose.theta);
+	pose_ahead.y += ds * sin(previous_pose.theta);
 
 	static carmen_ackerman_traj_point_t next_pose = {0, 0, 0, 0, 0};
-	for (int i = 0, n = rddf->number_of_poses - 1; i < n; i++)
+	for (int i = 0; i < l; i++)
 	{
 		int status;
-		next_pose = get_the_point_nearest_to_the_trajectory(&status, rddf->poses[i], rddf->poses[i + 1], pose_ahead);
-		if (status == POINT_WITHIN_SEGMENT)
-			break;
+		next_pose = get_the_point_nearest_to_the_trajectory(&status, poses[i], poses[i + 1], pose_ahead);
+		if (status != POINT_WITHIN_SEGMENT)
+			continue;
+
+		double dp = DIST2D(previous_pose, next_pose);
+		if (dp < ds) // Correct obstacle position to ensure constant speed
+		{
+			double d = ds - dp;
+			double o = next_pose.theta;
+			next_pose.x += d * cos(o);
+			next_pose.y += d * sin(o);
+		}
+
+		break;
 	}
 
 	previous_pose = next_pose;
@@ -1035,6 +1048,7 @@ obstacle_avoider_robot_hit_obstacle_message_handler(carmen_obstacle_avoider_robo
 }
 
 
+#ifdef CARMEN_CPP_DEBUG_LOG_ON
 static std::ostream &operator << (std::ostream &out, const carmen_rddf_annotation_message *message)
 {
 	out << "RDDF {annotations={";
@@ -1049,10 +1063,11 @@ static std::ostream &operator << (std::ostream &out, const carmen_rddf_annotatio
 		out << ", ";
 	}
 
-	out << "}, timestamp=" << (message->timestamp - carmen_ipc_initialize_time());
+	out << "}, timestamp=" << (message->timestamp - carmen_ipc_initialize_time()) << "}";
 
 	return out;
 }
+#endif
 
 static void
 rddf_annotation_message_handler(carmen_rddf_annotation_message *message)
@@ -1112,6 +1127,13 @@ static void
 carmen_navigator_ackerman_status_message_handler(carmen_navigator_ackerman_status_message *msg)
 {
 	autonomous = msg->autonomous;
+}
+
+
+static void
+carmen_offline_map_message_handler(carmen_mapper_map_message *message)
+{
+	carmen_udatmo_update_offline_map(message);
 }
 
 
@@ -1196,6 +1218,8 @@ register_handlers()
 			(carmen_handler_t)remove_goal_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_navigator_ackerman_subscribe_status_message(NULL, (carmen_handler_t) carmen_navigator_ackerman_status_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) carmen_offline_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_ipc_addPeriodicTimer(1, (TIMER_HANDLER_TYPE) behavior_selector_publish_periodic_messages, NULL);
 }

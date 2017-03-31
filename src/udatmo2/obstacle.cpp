@@ -74,6 +74,12 @@ void Obstacle::updateMovement()
 }
 
 
+int Obstacle::lane() const
+{
+	return (track.size() > 0 ? track[0].lane : -1);
+}
+
+
 double Obstacle::timestamp() const
 {
 	return (track.size() > 0 ? track[0].timestamp : -1);

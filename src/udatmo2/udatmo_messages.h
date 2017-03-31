@@ -14,6 +14,8 @@ typedef struct
 {
 	int rddf_index;
 
+	int rddf_lane;
+
 	double x;
 
 	double y;
