@@ -396,7 +396,8 @@ carmen_rddf_play_publish_annotation_queue()
 		annotation.annotation_code = RDDF_ANNOTATION_CODE_NONE;
 		annotations_to_publish.push_back(annotation_i);
 	}
-	else if (annotation_queue_message.annotations == NULL)
+
+	if (annotation_queue_message.annotations == NULL)
 	{
 		annotation_queue_message.annotations = (carmen_annotation_t *) calloc(annotations_to_publish.size(), sizeof(carmen_annotation_t));
 
