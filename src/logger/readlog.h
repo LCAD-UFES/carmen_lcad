@@ -59,6 +59,7 @@ extern "C" {
 
 #define CLF_READ_DOUBLE(str) strtod(*(str), (str))
 #define CLF_READ_INT(str) (int)strtol(*(str), (str), 10)
+#define CLF_READ_UNSIGNED_INT(str) (int)strtoul(*(str), (str), 10)
 #define CLF_READ_CHAR(str) (char) ( ( (*str)++)[0] )
 void CLF_READ_STRING(char *dst, char **string);
 
@@ -180,6 +181,8 @@ char *carmen_string_to_gps_gphdt_message(char *string,
 					 carmen_gps_gphdt_message *gps_msg);
 
 char* carmen_string_to_bumblebee_basic_stereoimage_message(char* string, carmen_bumblebee_basic_stereoimage_message* msg);
+
+char* carmen_string_to_ford_escape_estatus_message(char* string, carmen_ford_escape_status_message* msg);
 
 char* carmen_string_and_file_to_bumblebee_basic_stereoimage_message(char* string, carmen_bumblebee_basic_stereoimage_message* msg);
 
