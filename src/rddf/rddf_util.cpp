@@ -99,6 +99,20 @@ carmen_rddf_play_save_waypoints(char *carmen_rddf_filename)
 	kml_file.close();
 }
 
+void
+carmen_rddf_play_save_waypoints_with_txt(char *carmen_rddf_filename)
+{
+	ofstream kml_file(carmen_rddf_filename, ios::out);
+
+	if (!kml_file.is_open())
+		carmen_die("Error opening KML file.");
+
+	std::string xml = kmldom::SerializePretty(kml);
+	kml_file << xml;
+
+	kml_file.close();
+}
+
 
 void
 carmen_rddf_play_add_waypoint(double latitude, double longitude)
@@ -184,6 +198,7 @@ carmen_rddf_play_open_kml(const char *filename, placemark_vector_t *placemark_ve
 		carmen_die("Error reading KML file.");
 
 	kml_file = kmlengine::KmlFile::CreateFromParse(kml, &errors);
+
 	if (!kml_file)
 		carmen_die("Error parsing KML file.");
 
