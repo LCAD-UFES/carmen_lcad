@@ -23,7 +23,7 @@ bool udatmo_obstacle_detected(double timestamp)
 	if (detector->detected)
 		last_obstacle_detected_timestamp = timestamp;
 
-	if (fabs(timestamp - last_obstacle_detected_timestamp) < 10.0)
+	if (fabs(timestamp - last_obstacle_detected_timestamp) < 3.0)
 		return (true);
 	else
 		return (false);

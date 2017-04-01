@@ -238,10 +238,10 @@ compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<carmen_
 	{
 		if (my_params->path_point_nearest_to_lane.at(i) < path.size())
 		{
-//			distance = ortho_dist(move_to_front_axle(path.at(my_params->path_point_nearest_to_lane.at(i))),
-//										 my_params->detailed_lane.at(i));
-			distance = dist(path.at(my_params->path_point_nearest_to_lane.at(i)),
+			distance = dist(move_to_front_axle(path.at(my_params->path_point_nearest_to_lane.at(i))),
 										 my_params->detailed_lane.at(i));
+//			distance = dist(path.at(my_params->path_point_nearest_to_lane.at(i)),
+//										 my_params->detailed_lane.at(i));
 			total_points += 1.0;
 		}
 		else
@@ -268,8 +268,8 @@ compute_path_points_nearest_to_lane(ObjectiveFunctionParams *param, vector<carme
 
 		for (unsigned int j = index; j < path.size(); j++)
 		{
-//			distance = dist(move_to_front_axle(path.at(j)), param->detailed_lane.at(i));
-			distance = dist(path.at(j), param->detailed_lane.at(i));
+			distance = dist(move_to_front_axle(path.at(j)), param->detailed_lane.at(i));
+//			distance = dist(path.at(j), param->detailed_lane.at(i));
 
 			if (distance < min_dist)
 			{
@@ -488,8 +488,8 @@ my_g(const gsl_vector *x, void *params)
 	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
 	{
 		w1 = 10.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 10.0;
-		if (td.dist < 10.0)
-			w2 *= exp(td.dist - 10.0);
+		if (td.dist < 7.0)
+			w2 *= exp(td.dist - 7.0);
 		result = (
 				w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
@@ -500,8 +500,8 @@ my_g(const gsl_vector *x, void *params)
 	else
 	{
 		w1 = 10.0; w2 = 55.0; w3 = 5.0; w4 = 1.5; w5 = 20.0; w6 = 0.005;
-		if (td.dist < 10.0)
-			w2 *= exp(td.dist - 10.0);
+		if (td.dist < 7.0)
+			w2 *= exp(td.dist - 7.0);
 		result = sqrt(
 				w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
@@ -615,8 +615,8 @@ my_h(const gsl_vector *x, void *params)
 	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
 	{
 		w1 = 10.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 10.0; w6 = 0.005;
-		if (td.dist < 10.0)
-			w2 *= exp(td.dist - 10.0);
+		if (td.dist < 7.0)
+			w2 *= exp(td.dist - 7.0);
 		result = (
 				//w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
@@ -630,8 +630,8 @@ my_h(const gsl_vector *x, void *params)
 		w1 = 10.0; w2 = 15.0; w3 = 30.0; w4 = 5.0; w5 = 10.0; w6 = 0.0005;
 //		double w7;
 //		w7 = 0.1;//(my_params->target_td->v_i > 0.2 ? 2.0 : 0.0);
-		if (td.dist < 10.0)
-			w2 *= exp(td.dist - 10.0);
+		if (td.dist < 7.0)
+			w2 *= exp(td.dist - 7.0);
 		result = sqrt(
 				w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
@@ -1340,6 +1340,17 @@ void verify_shift_option_for_k1(
 	}
 }
 
+
+vector<carmen_ackerman_path_point_t>
+move_detailed_lane_to_front_axle(vector<carmen_ackerman_path_point_t> &detailed_lane)
+{
+	for (unsigned int i = 0; i < detailed_lane.size(); i++)
+		detailed_lane[i] = (move_to_front_axle(detailed_lane[i]));
+
+	return (detailed_lane);
+}
+
+
 TrajectoryLookupTable::TrajectoryControlParameters
 get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
 		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, vector<carmen_ackerman_path_point_t> detailed_lane,
@@ -1347,7 +1358,7 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 {
 	TrajectoryLookupTable::TrajectoryControlParameters tcp_complete, tcp_copy;
 	ObjectiveFunctionParams params;
-	params.detailed_lane = detailed_lane;
+	params.detailed_lane = move_detailed_lane_to_front_axle(detailed_lane);
 	params.use_lane = use_lane;
 
 	bool optmize_time_and_acc = false;

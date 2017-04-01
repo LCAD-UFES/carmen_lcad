@@ -725,7 +725,7 @@ namespace View
 
 		this->goal_list_size = size;
 
-		this->navigator_goal_list = (carmen_world_point_t*) malloc(sizeof(carmen_world_point_t) * goal_list_size);
+		this->navigator_goal_list = (carmen_world_point_t *) malloc(sizeof(carmen_world_point_t) * goal_list_size);
 
 		for (i = 0; i < size; i++)
 		{
@@ -738,10 +738,8 @@ namespace View
 			}
 			else
 			{
-				free(this->navigator_goal_list);
-				this->navigator_goal_list = NULL;
-				this->goal_list_size = 0;
-				return;
+				this->goal_list_size = i;
+				break;
 			}
 		}
 

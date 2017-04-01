@@ -373,6 +373,9 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, ca
 {
 	static bool clearing_annotation = false;
 
+	if (!autonomous)
+		clearing_annotation = false;
+
 	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
 			current_robot_pose_v_and_phi, wait_start_moving);
 	if (nearest_velocity_related_annotation != NULL)
@@ -473,13 +476,9 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 	double min_dist_according_to_car_v = get_robot_config()->length * (current_robot_pose_v_and_phi->v / 4.4704) + car_pose_to_car_front;
 	double desired_distance = carmen_fmax(1.8 * min_dist_according_to_car_v, car_pose_to_car_front + 2.5);
 
-	static double last_obstacle_detected_timestamp = 0.0;
-	if (udatmo_obstacle_detected(timestamp))
-		last_obstacle_detected_timestamp = timestamp;
-
 	double distance = 0.0;
 	double moving_obj_v = 0.0;
-	if (fabs(timestamp - last_obstacle_detected_timestamp) < 10.0)
+	if (udatmo_obstacle_detected(timestamp))
 	{
 //		distance = DIST2D(udatmo_get_moving_obstacle_position(), *current_robot_pose_v_and_phi) - car_pose_to_car_front;
 		distance = udatmo_get_moving_obstacle_distance(*current_robot_pose_v_and_phi, get_robot_config());
@@ -826,74 +825,23 @@ publish_dynamic_annotation(carmen_vector_3D_t annotation_point, double orientati
 void
 publish_object(carmen_ackerman_traj_point_t *object_pose)
 {
-	virtual_laser_message.num_positions = 3;
+	virtual_laser_message.num_positions = 2;
+
 	virtual_laser_message.positions[0].x = object_pose->x;
 	virtual_laser_message.positions[0].y = object_pose->y;
 	virtual_laser_message.colors[0] = CARMEN_PURPLE;
+
+	object_pose->x += 1.5 * cos(object_pose->theta + M_PI / 2.0);
+	object_pose->y += 1.5 * sin(object_pose->theta + M_PI / 2.0);
+	virtual_laser_message.positions[1].x = object_pose->x;
+	virtual_laser_message.positions[1].y = object_pose->y;
+	virtual_laser_message.colors[1] = CARMEN_PURPLE;
+
 	virtual_laser_message.host = carmen_get_host();
+
 	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
-
-
-bool
-should_stop_the_car(carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
-{
-	if (wait_start_moving)
-		return (false);
-
-	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
-				current_robot_pose_v_and_phi, wait_start_moving);
-
-	if (nearest_velocity_related_annotation == NULL)
-		return (false);
-
-	double distance_to_annotation = DIST2D_P(&nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi) -
-			(get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels);
-
-	if (((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) ||
-		 (nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) ||
-		 ((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&
-		  (nearest_velocity_related_annotation->annotation_code == RDDF_ANNOTATION_CODE_DYNAMIC_STOP))) &&
-		!wait_start_moving &&
-		(distance_to_annotation < 1.5) &&
-		(fabs(current_robot_pose_v_and_phi->v) < 0.1))
-		return (true);
-	else
-		return (false);
-}
-
-
-bool
-stopped_at_green_traffic_light(carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
-{
-	if (!wait_start_moving)
-		return (false);
-
-	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
-				current_robot_pose_v_and_phi, false);
-	if (nearest_velocity_related_annotation == NULL)
-		return (false);
-	double distance_to_annotation = DIST2D_P(&nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi) -
-			(get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels);
-
-	carmen_annotation_t *nearest_traffic_light = get_nearest_traffic_light_annotation(last_rddf_annotation_message,
-				current_robot_pose_v_and_phi);
-	if (nearest_traffic_light == NULL)
-		return (false);
-	double distance_to_traffic_light = DIST2D_P(&nearest_traffic_light->annotation_point, current_robot_pose_v_and_phi) -
-			(get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels);
-
-	if ((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) &&
-		(nearest_traffic_light->annotation_code == RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN) &&
-		wait_start_moving &&
-		(distance_to_annotation < 2.0) &&
-		(distance_to_traffic_light < 30.0) &&
-		(fabs(current_robot_pose_v_and_phi->v) < 0.1))
-		return (true);
-	else
-		return (false);
-}
 
 
 bool
@@ -917,7 +865,7 @@ stop_sign_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
 
 
 double
-stop_sign_distance(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+distance_to_stop_sign(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
 {
 	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
 				&current_robot_pose_v_and_phi, wait_start_moving);
@@ -967,9 +915,12 @@ distance_to_red_traffic_light(carmen_ackerman_traj_point_t current_robot_pose_v_
 	if (nearest_velocity_related_annotation == NULL)
 		return (1000.0);
 
-	if (red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp) && (nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP))
-		return (DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi) -
-				(get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels));
+	double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi) -
+			(get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels);
+
+	if (red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp) &&
+		(nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP))
+		return (distance_to_annotation);
 	else
 		return (1000.0);
 }
@@ -1159,7 +1110,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 //			if (udatmo_obstacle_detected(timestamp) &&
 //				(udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi, get_robot_config()) < stop_sign_distance(current_robot_pose_v_and_phi)))
 //				decision_making_state_msg->low_level_state = Following_Moving_Object;
-			if ((current_robot_pose_v_and_phi.v < 0.1) && (stop_sign_distance(current_robot_pose_v_and_phi) < 2.0))
+			if ((current_robot_pose_v_and_phi.v < 0.1) && (distance_to_stop_sign(current_robot_pose_v_and_phi) < 2.0))
 				decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S0;
 			break;
 		case Stopped_At_Stop_Sign_S0:
@@ -1246,7 +1197,6 @@ run_decision_making_state_machine(carmen_behavior_selector_state_message *decisi
 }
 
 
-
 void
 select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
@@ -1266,15 +1216,13 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 			first_goal, goal_type[0], timestamp);
 	if (error != 0)
 		carmen_die("State machine error code %d\n", error);
-//	printf("%s\n", get_low_level_state_name(behavior_selector_state_message.low_level_state));
 
 	if (goal_list_size > 0)
 	{
 		set_goal_velocity(first_goal, &current_robot_pose_v_and_phi, goal_type[0], timestamp);
 
-		publish_goal_list(goal_list, goal_list_size, carmen_get_time());
+		publish_goal_list(goal_list, goal_list_size, timestamp);
 	}
-//	printf("w %d, a %d, ss %d\n", wait_start_moving, autonomous, should_stop_the_car(&current_robot_pose_v_and_phi));
 
 // Control whether simulated moving obstacles are created by (un)commenting the
 // definition of the macro below at the top of this file.
