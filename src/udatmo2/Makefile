@@ -23,8 +23,10 @@ LFLAGS += \
 	`pkg-config --libs opencv`
 
 # Add logging dependencies as required
-ifeq ("$(CARMEN_LOGGING)","ON")
-CXXFLAGS += -DBOOST_LOG_DYN_LINK -DCARMEN_LOGGING_ON
+ifeq ("$(CARMEN_CPP_DEBUG_LOG)","ON")
+CXXFLAGS += \
+	-DBOOST_LOG_DYN_LINK \
+	-DCARMEN_CPP_DEBUG_LOG_ON
 LFLAGS += \
 	-lboost_log_setup \
 	-lboost_log \

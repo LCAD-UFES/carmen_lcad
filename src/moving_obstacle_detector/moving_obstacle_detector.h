@@ -25,6 +25,8 @@ typedef struct
 	int color;
 	int age;
 	int associated;
+	double velocity;
+	double orientation;
 } moving_obstacle_t;
 
 typedef struct

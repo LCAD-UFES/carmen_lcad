@@ -178,7 +178,7 @@ template<class T> void destroy(T *&buffer)
  *
  * @return Pointer to the (possibly resized) buffer.
  */
-template<class T> void resize(T *&buffer, int size)
+template<class T> void resize(int size, T *&buffer)
 {
 	if (buffer == NULL && size > 0)
 		buffer = create<T>(size);
@@ -193,6 +193,26 @@ template<class T> void resize(T *&buffer, int size)
 		if (resized != NULL)
 			buffer = resized;
 	}
+}
+
+/**
+ * @brief Copy the first `n` entries of the input buffer to the output buffer,
+ * optionally resizing it.
+ */
+template<class T> void copy(bool fit, int n, const T *inputs, T *&outputs)
+{
+	if (fit)
+		resize(n, outputs);
+
+	memcpy(outputs, inputs, sizeof(T) * n);
+}
+
+/**
+ * @brief Copy the first `n` entries of the input buffer to the output buffer.
+ */
+template<class T> void copy(int n, const T *inputs, T *&outputs)
+{
+	copy(false, n, inputs, outputs);
 }
 
 };

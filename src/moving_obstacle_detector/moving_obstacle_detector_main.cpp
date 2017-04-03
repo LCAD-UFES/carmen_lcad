@@ -31,7 +31,7 @@ carmen_behavior_selector_road_profile_message *road_profile_message;
 #define HISTORY_SIZE 40
 #define MAX_ASSOCIATION_DISTANCE 2.77
 
-#define USE_OPEN_CV
+//#define USE_OPEN_CV
 
 void
 subtract_map(char *subtracted_map, char *current_map, char *previous_map, carmen_map_config_t current_config)

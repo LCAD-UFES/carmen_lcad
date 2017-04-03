@@ -23,6 +23,9 @@ void carmen_udatmo_setup(int argc, char *argv[]);
 carmen_udatmo_moving_obstacles_message *carmen_udatmo_detect_moving_obstacles(void);
 
 
+carmen_udatmo_moving_obstacle *carmen_udatmo_detect_front_moving_obstacle(void);
+
+
 carmen_udatmo_moving_obstacles_message *carmen_udatmo_get_moving_obstacles(void);
 
 
@@ -34,6 +37,7 @@ double carmen_udatmo_front_obstacle_speed(carmen_ackerman_traj_point_t *robot_po
 
 double carmen_udatmo_front_obstacle_distance(carmen_ackerman_traj_point_t *robot_pose);
 
+
 carmen_ackerman_traj_point_t carmen_udatmo_front_obstacle_position(void);
 
 
@@ -44,6 +48,9 @@ void carmen_udatmo_update_robot_pose_with_globalpos(carmen_localize_ackerman_glo
 
 
 void carmen_udatmo_update_robot_pose_with_truepos(carmen_simulator_ackerman_truepos_message *message);
+
+
+void carmen_udatmo_update_offline_map(carmen_mapper_map_message *grid);
 
 
 void carmen_udatmo_update_rddf(carmen_rddf_road_profile_message *message);

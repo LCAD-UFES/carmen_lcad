@@ -45,6 +45,11 @@ public:
 	void update(const Observation &observation);
 
 	/**
+	 * @brief Return the current lane index for this obstacle.
+	 */
+	int lane() const;
+
+	/**
 	 * @brief Rteurn the timestamp associated with this moving obstacle.
 	 */
 	double timestamp() const;

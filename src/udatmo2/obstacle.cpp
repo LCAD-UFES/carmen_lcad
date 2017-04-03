@@ -1,6 +1,6 @@
 #include "obstacle.h"
 
-#include "logging.h"
+#include <carmen/cpp_debug_log.h>
 
 
 #define MOVING_OBSTACLES_OBSERVATIONS 40
@@ -71,6 +71,12 @@ void Obstacle::updateMovement()
 		pose.v     = l * pose.v     + (1.0 - l) * vt;
 		pose.theta = l * pose.theta + (1.0 - l) * theta;
 	}
+}
+
+
+int Obstacle::lane() const
+{
+	return (track.size() > 0 ? track[0].lane : -1);
 }
 
 
