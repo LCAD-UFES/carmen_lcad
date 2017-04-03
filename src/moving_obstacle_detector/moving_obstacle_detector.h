@@ -22,6 +22,7 @@ typedef struct
 typedef struct
 {
 	std::deque<moving_obstacle_observation_t> observations;
+	unsigned int id;
 	int color;
 	int age;
 	int associated;

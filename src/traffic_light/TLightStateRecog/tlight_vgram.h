@@ -3,7 +3,10 @@
 #define _TLIGHT_VGRAM_H_
 
 #include <vector>
-#include <opencv/cv.h>
+#include <map>
+#include <opencv2/core/core.hpp>        // Basic OpenCV structures (cv::Mat, Scalar)
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include <wnn/VgRamNeuron.h>
 #include <carmen/tlight_state_recog.h>
 

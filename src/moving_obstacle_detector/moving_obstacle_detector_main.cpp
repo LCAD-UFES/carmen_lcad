@@ -31,7 +31,7 @@ carmen_behavior_selector_road_profile_message *road_profile_message;
 #define HISTORY_SIZE 40
 #define MAX_ASSOCIATION_DISTANCE 2.77
 
-//#define USE_OPEN_CV
+#define USE_OPEN_CV
 
 void
 subtract_map(char *subtracted_map, char *current_map, char *previous_map, carmen_map_config_t current_config)
@@ -200,6 +200,7 @@ detect_obstacles(char *subtracted_map, char *current_map, carmen_map_config_t co
 {
 	int i, j, index;
 	int map_size = config.x_size * config.y_size;
+	static int current_id = 0;
 
 	// copy the current map because it will be modified
 	char *map = (char *) malloc(map_size * sizeof(char));
@@ -244,7 +245,9 @@ detect_obstacles(char *subtracted_map, char *current_map, carmen_map_config_t co
 				else
 				{
 					moving_obstacle_t obstacle;
-					obstacle.color = index % 10;
+					obstacle.id = current_id;
+					obstacle.color = current_id % 10;
+					current_id++;
 					obstacle.associated = 0;
 					obstacle.age = 0;
 					obstacle.observations.push_front(observation);
@@ -288,6 +291,105 @@ remove_obstacles(double timestamp)
 			++iter;
 		}
 	}
+}
+
+
+void
+plot_obstacles()
+{
+	static bool first_time = true;
+	static FILE *gnuplot_pipeMP;
+
+	if (first_time)
+	{
+		first_time = false;
+
+		gnuplot_pipeMP = popen("gnuplot", "w");
+		fprintf(gnuplot_pipeMP, "set size ratio -1\n");
+		fprintf(gnuplot_pipeMP, "set key outside\n");
+		fprintf(gnuplot_pipeMP, "set xlabel 'x'\n");
+		fprintf(gnuplot_pipeMP, "set ylabel 'y'\n");
+	}
+
+	FILE *gnuplot_tracked_points = fopen("gnuplot_tracked_points.txt", "w");
+
+	double x_plot, y_plot;
+	double first_x = 7757859.3;
+	double first_y = -363559.8;
+
+	for (unsigned int j = 0; j < moving_obstacle_list.size(); j++)
+	{
+		for (unsigned int i = 0; i < moving_obstacle_list[j].observations.size(); i++)
+		{
+			x_plot = moving_obstacle_list[j].observations[i].centroid.x - first_x;
+			y_plot = moving_obstacle_list[j].observations[i].centroid.y - first_y;
+			fprintf(gnuplot_tracked_points, "%lf %lf\n", x_plot, y_plot);
+		}
+	}
+
+	fclose(gnuplot_tracked_points);
+
+	fprintf(gnuplot_pipeMP, "plot "
+			"'./gnuplot_tracked_points.txt' using 1:2 title 'tracked_points'\n");
+
+	fflush(gnuplot_pipeMP);
+}
+
+
+void
+show_tracks(char *map, carmen_map_config_t config)
+{
+	unsigned int size = config.x_size * config.y_size;
+	unsigned char *map_char = (unsigned char *) malloc (3*size * sizeof(unsigned char));
+	unsigned int width = config.x_size;
+	unsigned int height = config.y_size;
+
+	for (unsigned int i = 0; i < size; ++i)
+	{
+		// get the current row
+		unsigned int row = (height - 1) - i % height;
+		// get the current col
+		unsigned int col = i / height;
+		// get the current index
+		unsigned int index = row * width + col;
+
+		map_char[3*index] = (1 - map[i]) * 255;
+		map_char[3*index + 1] = (1 - map[i]) * 255;
+		map_char[3*index + 2] = (1 - map[i]) * 255;
+	}
+
+
+	// create a new opencv image
+	cv::Mat img(width, height, CV_8UC3, map_char);
+	cv::Mat dst;
+
+	int x, y;
+		for (unsigned int i = 0; i < moving_obstacle_list.size(); i++)
+		{
+			for (unsigned int j = 0; j < moving_obstacle_list[i].observations.size(); j++)
+			{
+				x = (moving_obstacle_list[i].observations[j].centroid.x - config.x_origin) / config.resolution;
+				y = (moving_obstacle_list[i].observations[j].centroid.y - config.y_origin) / config.resolution;
+
+				if (x >= 0 && x < config.x_size && y >= 0 && y < config.y_size)
+				{
+					// get the current row
+					unsigned int row = (height - 1) - y;
+					// get the current col
+					unsigned int col = x;
+
+					cv::circle(img, cv::Point(col, row), 3, cv::Scalar(0, 0, 255), 1);
+
+				}
+			}
+		}
+
+	cv::resize(img, dst, cv::Size(600,600));
+
+	cv::imshow("Map", dst);
+	cv::waitKey(1);
+
+	free (map_char);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -414,7 +516,7 @@ carmen_compact_cost_map_handler(carmen_map_server_compact_cost_map_message *comp
 	}
 
 	#ifdef USE_OPEN_CV
-	show_map(current_map, compact_map_message->config);
+	//show_map(current_map, compact_map_message->config);
 	#endif
 
 	if (first == 0)
@@ -437,6 +539,10 @@ carmen_compact_cost_map_handler(carmen_map_server_compact_cost_map_message *comp
 
 		free(subtracted_map);
 	}
+
+	#ifdef USE_OPEN_CV
+		show_tracks(current_map, current_config);
+	#endif
 
 	memcpy(previous_map, current_map, map_size * sizeof(char));
 	previous_config = current_config;
