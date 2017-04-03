@@ -451,10 +451,10 @@ void on_menuGoals_EditRddfGoals_toggled (GtkCheckMenuItem* togglebutton __attrib
 	global_gui->nav_panel_config->edit_rddf_goals = gtk_check_menu_item_get_active(togglebutton);
 
 	if (global_gui->nav_panel_config->edit_rddf_goals)
-		global_gui->load_rddf_from_file((char*) "rddf_edited.kml");
+		global_gui->load_rddf_from_file((char *) "rddf_edited.txt");
 
 	if (!global_gui->nav_panel_config->edit_rddf_goals)
-		global_gui->save_rddf_to_file((char*) "rddf_edited.kml");
+		global_gui->save_rddf_to_file((char *) "rddf_edited.txt");
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -885,7 +885,7 @@ int keyboard_press_handler(GtkMapViewer *the_map_view,
 {
 	if (global_gui->placement_status == EDITING_NEAR_RDDF && global_gui->near_rddf_point != NULL)
 	{
-		double resolution = the_map_view->internal_map->config.resolution;
+		double resolution = the_map_view->internal_map->config.resolution / 2.0;
 
 		switch (event->keyval)
 		{
@@ -906,12 +906,12 @@ int keyboard_press_handler(GtkMapViewer *the_map_view,
 				break;
 
 			case GDK_a:
-				global_gui->near_rddf_point->pose.theta += carmen_degrees_to_radians(1.0);
+				global_gui->near_rddf_point->pose.theta += carmen_degrees_to_radians(0.5);
 				global_gui->near_rddf_point->pose.theta = carmen_normalize_theta(global_gui->near_rddf_point->pose.theta);
 				break;
 
 			case GDK_s:
-				global_gui->near_rddf_point->pose.theta -= carmen_degrees_to_radians(1.0);
+				global_gui->near_rddf_point->pose.theta -= carmen_degrees_to_radians(0.5);
 				global_gui->near_rddf_point->pose.theta = carmen_normalize_theta(global_gui->near_rddf_point->pose.theta);
 				break;
 

@@ -316,35 +316,72 @@ carmen_rddf_waypoint *
 carmen_rddf_play_load_rddf_from_file(char *rddf_filename, int *out_waypoint_vector_size)
 {
 	unsigned int i, n;
-	int annotation = 0;
 	carmen_fused_odometry_message message;
-	placemark_vector_t placemark_vector;
 
-	carmen_rddf_play_open_kml(rddf_filename, &placemark_vector);
-	carmen_rddf_waypoint *waypoint_vector = (carmen_rddf_waypoint *) calloc (sizeof(carmen_rddf_waypoint), placemark_vector.size());
-
-	n = 0;
-
-	for (i = 0; i < placemark_vector.size(); i++)
+	if (strcmp(rddf_filename + (strlen(rddf_filename) - 3), "kml") == 0)
 	{
-		if (carmen_rddf_play_copy_kml(placemark_vector[i], &message, &annotation))
+		int annotation = 0;
+		placemark_vector_t placemark_vector;
+
+		carmen_rddf_play_open_kml(rddf_filename, &placemark_vector);
+		carmen_rddf_waypoint *waypoint_vector = (carmen_rddf_waypoint *) calloc (sizeof(carmen_rddf_waypoint), placemark_vector.size());
+
+		n = 0;
+
+		for (i = 0; i < placemark_vector.size(); i++)
 		{
-			waypoint_vector[n].timestamp = message.timestamp;
-			waypoint_vector[n].pose.x = message.pose.position.x;
-			waypoint_vector[n].pose.y = message.pose.position.y;
-			waypoint_vector[n].pose.theta = message.pose.orientation.yaw;
-			waypoint_vector[n].driver_velocity = message.velocity.x;
+			if (carmen_rddf_play_copy_kml(placemark_vector[i], &message, &annotation))
+			{
+				waypoint_vector[n].timestamp = message.timestamp;
+				waypoint_vector[n].pose.x = message.pose.position.x;
+				waypoint_vector[n].pose.y = message.pose.position.y;
+				waypoint_vector[n].pose.theta = message.pose.orientation.yaw;
+				waypoint_vector[n].driver_velocity = message.velocity.x;
 
-			// TODO: aparentemente esse valor nao esta sendo salvo no rddf. No rddf_build, ele
-			// esta sendo inicializado com o robot_max_velocity do carmen.ini.
-			waypoint_vector[n].max_velocity = 2.0;
+				// TODO: aparentemente esse valor nao esta sendo salvo no rddf. No rddf_build, ele
+				// esta sendo inicializado com o robot_max_velocity do carmen.ini.
+				waypoint_vector[n].max_velocity = 2.0;
 
-			n++;
+				n++;
+			}
 		}
-	}
 
-	(*out_waypoint_vector_size) = n;
-	return waypoint_vector;
+		*out_waypoint_vector_size = n;
+		return (waypoint_vector);
+	}
+	else
+	{
+		vector<carmen_fused_odometry_message> messages;
+		FILE *fptr = fopen(rddf_filename, "r");
+
+		while (!feof(fptr))
+		{
+			memset(&message, 0, sizeof(message));
+
+			fscanf(fptr, "%lf %lf %lf %lf %lf %lf\n",
+				&(message.pose.position.x), &(message.pose.position.y),
+				&(message.pose.orientation.yaw), &(message.velocity.x), &(message.phi),
+				&(message.timestamp));
+
+			messages.push_back(message);
+		}
+		fclose(fptr);
+
+		carmen_rddf_waypoint *waypoint_vector = (carmen_rddf_waypoint *) calloc (sizeof(carmen_rddf_waypoint), messages.size());
+		for (i = 0; i < messages.size(); i++)
+		{
+			waypoint_vector[i].timestamp = messages[i].timestamp;
+			waypoint_vector[i].pose.x = messages[i].pose.position.x;
+			waypoint_vector[i].pose.y = messages[i].pose.position.y;
+			waypoint_vector[i].pose.theta = messages[i].pose.orientation.yaw;
+			waypoint_vector[i].driver_velocity = messages[i].velocity.x;
+			waypoint_vector[i].max_velocity = messages[i].velocity.x;
+			waypoint_vector[i].phi = messages[i].phi;
+		}
+
+		*out_waypoint_vector_size = messages.size();
+		return (waypoint_vector);
+	}
 }
 
 
@@ -352,23 +389,36 @@ void
 carmen_rddf_play_save_rddf_to_file(char *rddf_filename, carmen_rddf_waypoint *waypoint_vector, int size)
 {
 	int i;
-	double latitude, longitude, altitude;
-	double x, y, theta;
-
-	carmen_rddf_play_open_kml();
-
-	for (i = 0; i < size; i++)
+	if (strcmp(rddf_filename + (strlen(rddf_filename) - 3), "kml") == 0)
 	{
-		x = waypoint_vector[i].pose.x;
-		y = waypoint_vector[i].pose.y;
-		theta = waypoint_vector[i].pose.theta;
+		double latitude, longitude, altitude;
+		double x, y, theta;
 
-		carmen_Utm_Gdc3(-y, x, 0.0, 24, 0.0, &latitude, &longitude, &altitude);
-		carmen_rddf_play_add_waypoint(latitude, longitude);
-		carmen_rddf_play_add_waypoint_speed(latitude, longitude, waypoint_vector[i].max_velocity, waypoint_vector[i].driver_velocity, theta, (double) waypoint_vector[i].timestamp);
+		carmen_rddf_play_open_kml();
+
+		for (i = 0; i < size; i++)
+		{
+			x = waypoint_vector[i].pose.x;
+			y = waypoint_vector[i].pose.y;
+			theta = waypoint_vector[i].pose.theta;
+
+			carmen_Utm_Gdc3(-y, x, 0.0, 24, 0.0, &latitude, &longitude, &altitude);
+			carmen_rddf_play_add_waypoint(latitude, longitude);
+			carmen_rddf_play_add_waypoint_speed(latitude, longitude, waypoint_vector[i].max_velocity, waypoint_vector[i].driver_velocity, theta, (double) waypoint_vector[i].timestamp);
+		}
+
+		carmen_rddf_play_save_waypoints(rddf_filename);
 	}
-
-	carmen_rddf_play_save_waypoints(rddf_filename);
+	else
+	{
+		FILE *fptr = fopen(rddf_filename, "w");
+		for (i = 0; i < size; i++)
+		{
+			fprintf(fptr, "%lf %lf %lf %lf %lf %lf\n",
+					waypoint_vector[i].pose.x, waypoint_vector[i].pose.y,
+					waypoint_vector[i].pose.theta, waypoint_vector[i].driver_velocity, waypoint_vector[i].phi,
+					waypoint_vector[i].timestamp);
+		}
+		fclose(fptr);
+	}
 }
-
-

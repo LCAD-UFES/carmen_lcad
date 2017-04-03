@@ -1,8 +1,8 @@
-1- Copie o arquivo com o rddf para o bin (tem que ser para o rddf_edited.kml)
- cp ../data/rndf/rndf_log_voltadaufes-20160707.kml rddf_edited.kml
+1- Copie o arquivo com o rddf para o bin (tem que ser para o rddf_edited.txt)
+ cp ../data/rndf/rddf-log_voltadaufes-20160513.txt rddf_edited.txt
  
 2- Na interface do navigator_gui2 selecione Goals->Edit Rddf Goals
- - Isso vai abrir o arquivo rddf_edited.kml e exibi-lo em vermelho no navigator_gui2
+ - Isso vai abrir o arquivo rddf_edited.txt e exibi-lo em vermelho no navigator_gui2
  
 3- Ajuste o mapa para ver claramente a pose do RDDF que voce quer editar 
  - Voce pode colocar o robo em algum ponto do mapa para trocar a regiao de interesse
@@ -27,5 +27,12 @@ para desmarcar o que estiver editando
 
 5- Para salvar a qualquer momento deselecione Goals->Edit Rddf Goals
  - Se nao quiser salvar, mate o navigator_gui2
+
+6- Para usar o novo rddf
+ - Copie-o para o lugar desejado
+ cp rddf_edited.txt ../data/rndf/rddf-log_voltadaufes-20160513.txt
+
+ - Nao se esqueca de remover os indices do rddf anterior
+ rm ../data/rndf/rddf-log_voltadaufes-20160513.txt.*
 
 

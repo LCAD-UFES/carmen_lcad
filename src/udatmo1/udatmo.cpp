@@ -62,8 +62,18 @@ int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_message *curren
 	if (index != -1)
 		return (index);
 
+	bool near_barrier = false;
+	for (int i = 0; i < rddf->number_of_poses; i++)
+	{
+		if (rddf->annotations[i] == RDDF_ANNOTATION_TYPE_BARRIER)
+		{
+			near_barrier = true;
+			break;
+		}
+	}
+
 	int index_left = detector_left->detect(current_map, rddf, goal_index, rddf_pose_index, robot_pose, 1.7 / 2.0, timestamp);
-	if (index_left != -1 && detector_left->detected)
+	if ((index_left != -1) && detector_left->detected && !near_barrier)
 	{
 		detector->copy_state(detector_left);
 		for (int i = 0; i < 5; i++)
@@ -85,9 +95,21 @@ int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_message *curren
 	}
 
 	int index_right = detector_right->detect(current_map, rddf, goal_index, rddf_pose_index, robot_pose, -1.7 / 2.0, timestamp);
-	if (index_right != -1 && detector_right->detected)
+	if ((index_right != -1) && detector_right->detected && !near_barrier)
 	{
 		detector->copy_state(detector_right);
+		for (int i = 0; i < 5; i++)
+		{
+			virtual_laser_message.positions[virtual_laser_message.num_positions].x = detector->moving_object[i].pose.x;
+			virtual_laser_message.positions[virtual_laser_message.num_positions].y = detector->moving_object[i].pose.y;
+			virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_RED;
+			virtual_laser_message.num_positions++;
+
+			virtual_laser_message.positions[virtual_laser_message.num_positions].x = rddf->poses[detector->moving_object[i].rddf_pose_index].x;
+			virtual_laser_message.positions[virtual_laser_message.num_positions].y = rddf->poses[detector->moving_object[i].rddf_pose_index].y;
+			virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_GREEN;
+			virtual_laser_message.num_positions++;
+		}
 		return (index_right);
 	}
 
