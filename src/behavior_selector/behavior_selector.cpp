@@ -22,7 +22,6 @@ static int robot_initialized = 0;
 static carmen_ackerman_traj_point_t goal_list[GOAL_LIST_SIZE];
 static int goal_type[GOAL_LIST_SIZE];
 static int annotations[GOAL_LIST_SIZE];
-static int goal_list_index = 0;
 static int goal_list_size = 0;
 static carmen_obstacle_distance_mapper_message *current_map = NULL;
 static carmen_behavior_selector_state_t current_state = BEHAVIOR_SELECTOR_FOLLOWING_LANE;
@@ -220,7 +219,6 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double
 	double distance_to_last_obstacle = 10000.0;
 	int last_obstacle_index = -1;
 
-	goal_list_index = 0;
 	goal_list_size = 0;
 	udatmo_clear_detected();
 
@@ -249,8 +247,10 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double
 		{
 			goal_type[goal_index] = MOVING_OBSTACLE_GOAL;
 			double distance_to_free_waypoint = DIST2D(rddf->poses[0], rddf->poses[last_obstacle_free_waypoint_index]);
+			double reduction_factor = (robot_pose.v > 1.0)? 1.0 / robot_pose.v: 1.0;
 			if (distance_to_free_waypoint >= distance_car_pose_car_front)
-				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, last_obstacle_free_waypoint_index, rddf, -distance_car_pose_car_front);
+				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, last_obstacle_free_waypoint_index, rddf,
+						-distance_car_pose_car_front * reduction_factor);
 			else
 				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, 0, rddf);
 			break;
@@ -259,8 +259,10 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double
 		{
 			goal_type[goal_index] = OBSTACLE_GOAL;
 			double distance_to_free_waypoint = DIST2D(rddf->poses[0], rddf->poses[last_obstacle_free_waypoint_index]);
+			double reduction_factor = (robot_pose.v > 1.0)? 1.0 / robot_pose.v: 1.0;
 			if (distance_to_free_waypoint >= distance_car_pose_car_front)
-				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, last_obstacle_free_waypoint_index, rddf, -distance_car_pose_car_front);
+				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, last_obstacle_free_waypoint_index, rddf,
+						-distance_car_pose_car_front * reduction_factor);
 			else
 				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, 0, rddf);
 			break;
@@ -358,10 +360,8 @@ carmen_ackerman_traj_point_t *
 behavior_selector_get_goal_list(int *goal_list_size_out)
 {
 	*goal_list_size_out = goal_list_size;
-	*goal_list_size_out -= goal_list_index;
 
 	carmen_ackerman_traj_point_t *goal_list_out = goal_list;
-	goal_list_out += goal_list_index;
 
 	return (goal_list_out);
 }
@@ -382,7 +382,6 @@ behavior_selector_set_goal_source(carmen_behavior_selector_goal_source_t goal_so
 
 	current_goal_source = goal_source;
 
-	goal_list_index = 0;
 	goal_list_size = 0;
 
 	return (1);
@@ -402,7 +401,6 @@ behavior_selector_add_goal(carmen_point_t goal)
 void
 behavior_selector_clear_goal_list()
 {
-	goal_list_index = 0;
 	goal_list_size = 0;
 }
 
@@ -439,11 +437,7 @@ void
 behavior_selector_update_robot_pose(carmen_ackerman_traj_point_t pose)
 {
 	if (carmen_distance_ackerman_traj(&robot_pose, &pose) > 2.5 && current_goal_source != CARMEN_BEHAVIOR_SELECTOR_USER_GOAL)
-	{
-		//provavelmente o robo foi reposicionado
-		goal_list_size = 0;
-		goal_list_index = 0;
-	}
+		goal_list_size = 0; //provavelmente o robo foi reposicionado
 
 	robot_pose = pose;
 	robot_initialized = 1;

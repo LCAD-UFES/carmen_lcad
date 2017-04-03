@@ -53,6 +53,7 @@ Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
 				 int goal_index,
 				 int rddf_pose_index,
 				 carmen_ackerman_traj_point_t robot_pose,
+				 double displacement,
 				 double timestamp)
 {
 	static bool obstacle_already_detected = false;
@@ -70,6 +71,7 @@ Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
 	{
 		moving_object[0].valid = false;
 		moving_object[0].index = -1;
+		moving_object[0].rddf_pose_index = -1;
 		moving_object[0].timestamp = 0.0;
 
 		set_detected(false);
@@ -78,9 +80,18 @@ Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
 	}
 
 	carmen_point_t front_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&rddf->poses[rddf_pose_index], disp);
+	if (displacement > 0.0)
+	{
+		front_car_pose.x = front_car_pose.x + displacement * cos(rddf->poses[rddf_pose_index].theta + M_PI / 2.0);
+		front_car_pose.y = front_car_pose.y + displacement * sin(rddf->poses[rddf_pose_index].theta + M_PI / 2.0);
+	}
+	else if (displacement < 0.0)
+	{
+		front_car_pose.x = front_car_pose.x - displacement * cos(rddf->poses[rddf_pose_index].theta - M_PI / 2.0);
+		front_car_pose.y = front_car_pose.y - displacement * sin(rddf->poses[rddf_pose_index].theta - M_PI / 2.0);
+	}
 	carmen_position_t obstacle = carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(&front_car_pose, current_map);
-	distance = sqrt((front_car_pose.x - obstacle.x) * (front_car_pose.x - obstacle.x) +
-						   (front_car_pose.y - obstacle.y) * (front_car_pose.y - obstacle.y));
+	distance = DIST2D(front_car_pose, obstacle);
 
 //	printf("distance %lf, ", distance);
 
@@ -93,19 +104,20 @@ Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
 		moving_object[0].pose.y = obstacle.y;
 		moving_object[0].car_pose = robot_pose;
 		moving_object[0].index = goal_index;
+		moving_object[0].rddf_pose_index = rddf_pose_index;
 		moving_object[0].timestamp = timestamp;
 
 		update_moving_object_velocity(robot_pose);
 		speed += moving_object[0].pose.v;
 
-		if ((goal_index == 0) && (speed_front() > 0.01))
+		if ((goal_index == 0) && (speed_front() > 0.05))
 			set_detected(true);
 		else
 			set_detected(false);
 
 //		printf("aqui 2, %d\n", rddf_pose_index);
 
-		if (speed_front() > 0.01)
+		if (speed_front() > 0.05)
 			return (rddf_pose_index);
 		else
 			return (-1);
@@ -114,6 +126,7 @@ Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
 	{
 		moving_object[0].valid = false;
 		moving_object[0].index = -1;
+		moving_object[0].rddf_pose_index = -1;
 		moving_object[0].timestamp = 0.0;
 	}
 
@@ -121,6 +134,28 @@ Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
 
 //	printf("aqui 3, %d\n", rddf_pose_index);
 	return (-1);
+}
+
+
+int
+Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
+				 carmen_rddf_road_profile_message *rddf,
+				 int goal_index,
+				 int rddf_pose_index,
+				 carmen_ackerman_traj_point_t robot_pose,
+				 double timestamp)
+{
+	return (Detector::detect(current_map, rddf, goal_index, rddf_pose_index, robot_pose, 0.0, timestamp));
+}
+
+
+void
+Detector::copy_state(Detector *detector)
+{
+	for (int i = 0; i < MOVING_OBJECT_HISTORY_SIZE; i++)
+		moving_object[i] = detector->moving_object[i];
+
+	detected = detector->detected;
 }
 
 
@@ -177,6 +212,8 @@ Detector::get_moving_obstacle_distance(carmen_ackerman_traj_point_t robot_pose)
 
 	if (count > 0.0)
 		average_dist /= count;
+	else
+		average_dist = 1000.0;
 
 	return (average_dist);
 }

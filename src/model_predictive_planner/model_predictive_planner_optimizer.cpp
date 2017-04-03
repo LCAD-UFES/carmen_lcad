@@ -1313,8 +1313,9 @@ un_shift_k1(TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed, const 
 	gsl_interp_accel_free(acc);
 }
 
-void verify_shift_option_for_k1(
-		TrajectoryLookupTable::TrajectoryControlParameters& tcp_seed,
+
+void
+verify_shift_option_for_k1(TrajectoryLookupTable::TrajectoryControlParameters& tcp_seed,
 		const TrajectoryLookupTable::TrajectoryDimensions& target_td,
 		TrajectoryLookupTable::TrajectoryControlParameters& tcp_complete)
 {

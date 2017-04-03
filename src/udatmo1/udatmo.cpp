@@ -3,10 +3,15 @@
 #include "detector.h"
 
 #include <stdexcept>
+#include <carmen/global_graphics.h>
+
+extern carmen_mapper_virtual_laser_message virtual_laser_message;
 
 using udatmo::Detector;
 
 static Detector *detector = NULL;
+static Detector *detector_left = NULL;
+static Detector *detector_right = NULL;
 
 void udatmo_init(const carmen_robot_ackerman_config_t robot_config)
 {
@@ -14,6 +19,8 @@ void udatmo_init(const carmen_robot_ackerman_config_t robot_config)
 		throw std::runtime_error("uDATMO module already initialized");
 
 	detector = new Detector(robot_config);
+	detector_left = new Detector(robot_config);
+	detector_right = new Detector(robot_config);
 }
 
 bool udatmo_obstacle_detected(double timestamp)
@@ -32,11 +39,15 @@ bool udatmo_obstacle_detected(double timestamp)
 void udatmo_clear_detected(void)
 {
 	detector->detected = false;
+	detector_left->detected = false;
+	detector_right->detected = false;
 }
 
 void udatmo_shift_history(void)
 {
 	detector->shift();
+	detector_left->shift();
+	detector_right->shift();
 }
 
 int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_message *current_map,
@@ -46,9 +57,41 @@ int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_message *curren
 							carmen_ackerman_traj_point_t robot_pose,
 							double timestamp)
 {
-	int index = detector->detect(current_map, rddf, goal_index, rddf_pose_index, robot_pose, timestamp);
+	int index = detector->detect(current_map, rddf, goal_index, rddf_pose_index, robot_pose, 0.0, timestamp);
 
-	return (index);
+	if (index != -1)
+		return (index);
+
+	int index_left = detector_left->detect(current_map, rddf, goal_index, rddf_pose_index, robot_pose, 1.7 / 2.0, timestamp);
+	if (index_left != -1 && detector_left->detected)
+	{
+		detector->copy_state(detector_left);
+		for (int i = 0; i < 5; i++)
+		{
+			virtual_laser_message.positions[virtual_laser_message.num_positions].x = detector->moving_object[i].pose.x;
+			virtual_laser_message.positions[virtual_laser_message.num_positions].y = detector->moving_object[i].pose.y;
+			virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_RED;
+			virtual_laser_message.num_positions++;
+
+			virtual_laser_message.positions[virtual_laser_message.num_positions].x = rddf->poses[detector->moving_object[i].rddf_pose_index].x;
+			virtual_laser_message.positions[virtual_laser_message.num_positions].y = rddf->poses[detector->moving_object[i].rddf_pose_index].y;
+			virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_GREEN;
+			virtual_laser_message.num_positions++;
+//			printf("x %.2lf, y %.2lf, rx %.2lf, ry %.2lf, rt %.4lf, idx %d\n", detector->moving_object[i].pose.x, detector->moving_object[i].pose.y,
+//					rddf->poses[detector->moving_object[i].rddf_pose_index].x, rddf->poses[detector->moving_object[i].rddf_pose_index].y,
+//					rddf->poses[index_left].theta, detector->moving_object[i].rddf_pose_index);
+		}
+		return (index_left);
+	}
+
+	int index_right = detector_right->detect(current_map, rddf, goal_index, rddf_pose_index, robot_pose, -1.7 / 2.0, timestamp);
+	if (index_right != -1 && detector_right->detected)
+	{
+		detector->copy_state(detector_right);
+		return (index_right);
+	}
+
+	return (-1);
 }
 
 double udatmo_speed_front(void)

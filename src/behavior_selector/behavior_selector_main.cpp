@@ -22,6 +22,7 @@
 
 // Comment or uncomment this definition to control whether simulated moving obstacles are created.
 //#define SIMULATE_MOVING_OBSTACLE
+//#define SIMULATE_LATERAL_MOVING_OBSTACLE
 
 // Comment or uncomment this definition to control whether moving obstacles are displayed.
 #define DISPLAY_MOVING_OBSTACLES
@@ -54,7 +55,6 @@ double robot_max_centripetal_acceleration = 1.5;
 
 int use_truepos = 0;
 extern carmen_mapper_virtual_laser_message virtual_laser_message;
-extern carmen_udatmo_moving_obstacles_message *moving_obstacles;
 
 static carmen_rddf_road_profile_message *last_rddf_message = NULL;
 
@@ -485,7 +485,7 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 		moving_obj_v = udatmo_speed_front();
 
 		// ver "The DARPA Urban Challenge" book, pg. 36.
-		double Kgap = 1.0;
+		double Kgap = 0.2;
 		double new_goal_v = moving_obj_v + Kgap * (distance - desired_distance);
 		//		SampleFilter_put(&filter2, goal->v);
 		//		goal->v = SampleFilter_get(&filter2);
@@ -678,6 +678,72 @@ compute_simulated_objects(double timestamp)
 	previous_timestamp = timestamp;
 	return &next_pose;
 }
+
+
+carmen_ackerman_traj_point_t *
+compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+{
+	if (!necessary_maps_available)
+		return (NULL);
+
+	carmen_rddf_road_profile_message *rddf = last_rddf_message;
+	if (rddf == NULL)
+		return (NULL);
+
+	static carmen_ackerman_traj_point_t previous_pose = {0, 0, 0, 0, 0};
+	static carmen_ackerman_traj_point_t returned_pose = {0, 0, 0, 0, 0};
+	static double previous_timestamp = 0.0;
+	static double initial_time = 0.0; // Simulation start time.
+	static double disp = 2.5;
+
+	if (initial_time == 0.0)
+	{
+		returned_pose = previous_pose = rddf->poses[10];
+		returned_pose.x = previous_pose.x + disp * cos(previous_pose.theta + M_PI / 2.0);
+		returned_pose.y = previous_pose.y + disp * sin(previous_pose.theta + M_PI / 2.0);
+
+		previous_timestamp = timestamp;
+		initial_time = timestamp;
+
+		return (&returned_pose);
+	}
+
+	static double stop_t0 = 15;
+
+	static double v;
+	double t = timestamp - initial_time;
+	if (stop_t0 <= t && disp > 0.0)
+		disp -= 0.03;
+	else if (t < stop_t0)
+		v = current_robot_pose_v_and_phi.v + 0.5;
+
+//	else if (t > stop_tn)
+//		initial_time = timestamp;
+
+	double dt = timestamp - previous_timestamp;
+	double dx = v * dt * cos(previous_pose.theta);
+	double dy = v * dt * sin(previous_pose.theta);
+
+	carmen_ackerman_traj_point_t pose_ahead;
+	pose_ahead.x = previous_pose.x + dx;
+	pose_ahead.y = previous_pose.y + dy;
+
+	static carmen_ackerman_traj_point_t next_pose = {0, 0, 0, 0, 0};
+	for (int i = 0, n = rddf->number_of_poses - 1; i < n; i++)
+	{
+		int status;
+		next_pose = get_the_point_nearest_to_the_trajectory(&status, rddf->poses[i], rddf->poses[i + 1], pose_ahead);
+		if (status == POINT_WITHIN_SEGMENT)
+			break;
+	}
+
+	returned_pose = previous_pose = next_pose;
+	returned_pose.x = previous_pose.x + disp * cos(previous_pose.theta + M_PI / 2.0);
+	returned_pose.y = previous_pose.y + disp * sin(previous_pose.theta + M_PI / 2.0);
+	previous_timestamp = timestamp;
+
+	return (&returned_pose);
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -823,23 +889,21 @@ publish_dynamic_annotation(carmen_vector_3D_t annotation_point, double orientati
 
 
 void
-publish_object(carmen_ackerman_traj_point_t *object_pose)
+add_simulated_object(carmen_ackerman_traj_point_t *object_pose)
 {
-	virtual_laser_message.num_positions = 2;
+	virtual_laser_message.positions[virtual_laser_message.num_positions].x = object_pose->x;
+	virtual_laser_message.positions[virtual_laser_message.num_positions].y = object_pose->y;
+	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_PURPLE;
+	virtual_laser_message.num_positions++;
+}
 
-	virtual_laser_message.positions[0].x = object_pose->x;
-	virtual_laser_message.positions[0].y = object_pose->y;
-	virtual_laser_message.colors[0] = CARMEN_PURPLE;
 
-	object_pose->x += 1.5 * cos(object_pose->theta + M_PI / 2.0);
-	object_pose->y += 1.5 * sin(object_pose->theta + M_PI / 2.0);
-	virtual_laser_message.positions[1].x = object_pose->x;
-	virtual_laser_message.positions[1].y = object_pose->y;
-	virtual_laser_message.colors[1] = CARMEN_PURPLE;
-
+void
+publish_objects()
+{
 	virtual_laser_message.host = carmen_get_host();
-
 	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
+	virtual_laser_message.num_positions = 0;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -847,6 +911,8 @@ publish_object(carmen_ackerman_traj_point_t *object_pose)
 bool
 stop_sign_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
 {
+	current_robot_pose_v_and_phi = displace_pose_to_car_front(current_robot_pose_v_and_phi, 0.0);
+
 	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
 				&current_robot_pose_v_and_phi, wait_start_moving);
 
@@ -886,6 +952,8 @@ distance_to_stop_sign(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
 bool
 red_traffic_light_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
+	current_robot_pose_v_and_phi = displace_pose_to_car_front(current_robot_pose_v_and_phi, 0.0);
+
 	// @@@ Alberto: Melhorar para usar a get_distance_to_act_on_annotation() e tratar sinal amarelo
 	static double last_red_timestamp = 0.0;
 	for (int i = 0; i < last_rddf_annotation_message.num_annotations; i++)
@@ -1220,18 +1288,25 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	if (goal_list_size > 0)
 	{
 		set_goal_velocity(first_goal, &current_robot_pose_v_and_phi, goal_type[0], timestamp);
-
 		publish_goal_list(goal_list, goal_list_size, timestamp);
 	}
 
 // Control whether simulated moving obstacles are created by (un)commenting the
 // definition of the macro below at the top of this file.
 #ifdef SIMULATE_MOVING_OBSTACLE
-	// @@@ Alberto: colocar um parametro para ativar ou desativar isso.
 	carmen_ackerman_traj_point_t *simulated_object_pose = compute_simulated_objects(timestamp);
 	if (simulated_object_pose)
-		publish_object(simulated_object_pose);
+		add_simulated_object(simulated_object_pose);
 #endif
+#ifdef SIMULATE_LATERAL_MOVING_OBSTACLE
+	carmen_ackerman_traj_point_t *simulated_object_pose2 = compute_simulated_lateral_objects(current_robot_pose_v_and_phi, timestamp);
+	if (simulated_object_pose2)
+		add_simulated_object(simulated_object_pose2);
+#endif
+
+	if (virtual_laser_message.num_positions > 0)
+		publish_objects();
+
 	publish_current_state(behavior_selector_state_message);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
