@@ -46,7 +46,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "jaus.h"
-#include "reportComponentStatusMessage.h"
 
 static const int commandCode = JAUS_REPORT_COMPONENT_STATUS;
 static const int maxDataSizeBytes = 5;
@@ -94,7 +93,6 @@ static JausBoolean dataFromBuffer(ReportComponentStatusMessage message, unsigned
 			return JAUS_FALSE;
 		message->primaryStatusCode = tempByte;
 		index += JAUS_BYTE_SIZE_BYTES;
-		
 		if (!jausUnsignedIntegerFromBuffer(&tempInteger, buffer+index, bufferSizeBytes-index))
 			return JAUS_FALSE;
 		message->secondaryStatusCode = tempInteger;

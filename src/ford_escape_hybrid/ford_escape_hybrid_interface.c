@@ -35,7 +35,7 @@ carmen_ford_escape_subscribe_status_message(carmen_ford_escape_status_message *m
 			       carmen_subscribe_t subscribe_how)
 {
   carmen_subscribe_message(CARMEN_FORD_ESCAPE_STATUS_NAME,
-		  	  	  	  	  CARMEN_FORD_ESCAPE_STATUS_FMT,
+		  	  	  	  	   CARMEN_FORD_ESCAPE_STATUS_FMT,
                            message, sizeof(carmen_ford_escape_status_message),
                            handler, subscribe_how);
 }

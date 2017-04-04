@@ -289,7 +289,7 @@ compute_new_velocity_with_ann(carmen_simulator_ackerman_config_t *simulator_conf
 //	{
 		//printf("%lf %lf \n", throttle_command, brakes_command);
 //		carmen_libpid_velocity_PID_controler(&throttle_command, &brakes_command, &gear_command,
-//				simulator_config->target_v, simulator_config->v, simulator_config->delta_t);
+//				simulator_config->target_v, simulator_config->v, simulator_config->delta_t, 0);
 //	}
 
 #endif
@@ -551,7 +551,7 @@ compute_new_phi_with_ann_old(carmen_simulator_ackerman_config_t *simulator_confi
 	atan_desired_curvature = atan(compute_curvature2(simulator_config->target_phi, simulator_config));
 
 	carmen_ford_escape_hybrid_steering_PID_controler(&steering_command,
-		atan_desired_curvature, atan_current_curvature, simulator_config->delta_t);
+		atan_desired_curvature, atan_current_curvature, simulator_config->delta_t, 0);
 
 	build_steering_ann_input(steering_ann_input, steering_command, atan_current_curvature);
 	steering_ann_output = fann_run(steering_ann, steering_ann_input);
@@ -619,7 +619,7 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 		}
 		else
 		{   // PID
-			steering_effort = carmen_libpid_steering_PID_controler(atan_desired_curvature, atan_current_curvature, simulator_config->delta_t);
+			steering_effort = carmen_libpid_steering_PID_controler(atan_desired_curvature, atan_current_curvature, simulator_config->delta_t, 0);
 		}
 		#ifdef PLOT
 				pid_plot_phi(simulator_config->phi, simulator_config->target_phi, 0.55, "phi");

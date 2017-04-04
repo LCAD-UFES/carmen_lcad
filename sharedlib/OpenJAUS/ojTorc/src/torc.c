@@ -298,6 +298,25 @@ report_error_count_message_handler(OjCmpt XGV_CCU, JausMessage error_message)
 }
 
 
+static void
+torc_report_component_status_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), JausMessage component_status_message)
+{
+	ReportComponentStatusMessage reportComponentStatus;
+	reportComponentStatus = reportComponentStatusMessageFromJausMessage(component_status_message);
+
+	if (reportComponentStatus)
+	{
+		// bits 0-15: reserved, bits 16-31: see page 62 of ByWire XGV User Manual, Version 1.5.
+		g_XGV_component_status = reportComponentStatus->secondaryStatusCode;
+		reportComponentStatusMessageDestroy(reportComponentStatus);
+	}
+	else
+	{
+//		carmen_warn("In torc_report_component_status_message_handler(): Error unpacking %s message.\n", jausMessageCommandCodeString(component_status_message));
+	}
+}
+
+
 void
 register_xgv_ccu_messages_callbacks(OjCmpt XGV_CCU)
 {
@@ -308,4 +327,5 @@ register_xgv_ccu_messages_callbacks(OjCmpt XGV_CCU)
 	ojCmptSetMessageCallback(XGV_CCU, JAUS_REPORT_WHEELS_SPEED, report_wheels_speed_message_handler);
 	ojCmptSetMessageCallback(XGV_CCU, JAUS_REPORT_SIGNALS, report_signals_message_handler);
 	ojCmptSetMessageCallback(XGV_CCU, JAUS_REPORT_ERROR_COUNT, report_error_count_message_handler);
+	ojCmptSetMessageCallback(XGV_CCU, JAUS_REPORT_COMPONENT_STATUS, torc_report_component_status_message_handler);
 }

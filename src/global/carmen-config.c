@@ -56,7 +56,6 @@ print_libs(int mode __attribute__ ((unused)), int graphics)
   if (mode & 4) {
     printf("-lmap_interface -lmap_io -lmap_util -llocalize_interface "
 	   "-lnavigator_interface ");
-    printf("-lz ");
   }
 
   if (graphics) {

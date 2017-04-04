@@ -130,7 +130,7 @@ int g_XGV_parking_brake = 0;
 int g_XGV_gear = 128; // Neutral
 int g_XGV_num_errors = 0;
 JausInteger g_XGV_error[MAX_ERRORS];
-unsigned short int g_XGV_component_status = 0;
+unsigned int g_XGV_component_status = 0;
 
 
 void
@@ -243,6 +243,8 @@ print_interface()
 		if (g_XGV_headlights_status & 0x10)
 			strcat(temp, ", Fog lights = On");
 	}
+	strcat(temp, ", g_XGV_component_status = ");
+	sprintf(temp + strlen(temp), "%d", g_XGV_component_status);
 	mvprintw(row++, col, "%s", temp);
 	
 	get_errors_descriptions();

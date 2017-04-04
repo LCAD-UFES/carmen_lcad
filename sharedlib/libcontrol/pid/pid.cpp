@@ -141,7 +141,8 @@ pid_plot_velocity(double current_vel, double desired_vel, double y_range, char* 
 
 
 double
-carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_current_curvature, double delta_t_old __attribute__ ((unused)))
+carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_current_curvature, double delta_t_old __attribute__ ((unused)),
+		int manual_override)
 {
 	// http://en.wikipedia.org/wiki/PID_controller -> Discrete implementation
 	static double 	error_t_1 = 0.0;	// error in time t-1
@@ -163,7 +164,10 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 
 	double error_t = atan_desired_curvature - atan_current_curvature;
 
-	integral_t = integral_t + error_t * delta_t;
+	if (manual_override == 0)
+		integral_t = integral_t + error_t * delta_t;
+	else
+		integral_t = integral_t_1 = 0.0;
 
 //	double derivative_t = (error_t - error_t_1) / delta_t;
 	double derivative_t = (error_t - error_t_1) / delta_t;
@@ -183,9 +187,9 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 
 	u_t = carmen_clamp(-100.0, u_t, 100.0);
 
-	fprintf(stdout, "STEERING (cc, dc, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
-		atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t, u_t, t);
-	fflush(stdout);
+//	fprintf(stdout, "STEERING (cc, dc, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
+//		atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t, u_t, t);
+//	fflush(stdout);
 
 	return u_t;
 }
@@ -202,11 +206,11 @@ carmen_libpid_steering_PID_controler_new(double atan_desired_curvature, double a
 	static double	previous_t = 0.0;
 #define DERIVATIVE_HISTORY_SIZE 3
 	static double	previous_derivatives[DERIVATIVE_HISTORY_SIZE];
-	static double	initial_t = 0.0;
+//	static double	initial_t = 0.0;
 
 	if (previous_t == 0.0)
 	{
-		initial_t = previous_t = carmen_get_time();
+//		initial_t = previous_t = carmen_get_time();
 		for (int i = 0; i < DERIVATIVE_HISTORY_SIZE; i++)
 			previous_derivatives[i] = 0.0;
 		return (0.0);
@@ -250,9 +254,9 @@ carmen_libpid_steering_PID_controler_new(double atan_desired_curvature, double a
 
 	u_t = carmen_clamp(-100.0, u_t, 100.0);
 
-	fprintf(stdout, "STEERING (cc, dc, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
-		atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t, u_t, t - initial_t);
-	fflush(stdout);
+//	fprintf(stdout, "STEERING (cc, dc, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
+//		atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t, u_t, t - initial_t);
+//	fflush(stdout);
 
 	return u_t;
 }
@@ -260,7 +264,8 @@ carmen_libpid_steering_PID_controler_new(double atan_desired_curvature, double a
 
 void
 carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_command, int *gear_command,
-										double desired_velocity, double current_velocity, double delta_t_old __attribute__ ((unused)))
+										double desired_velocity, double current_velocity, double delta_t_old __attribute__ ((unused)),
+										int manual_override)
 {
 	// http://en.wikipedia.org/wiki/PID_controller -> Discrete implementation
 	static double 	error_t_1 = 0.0;	// error in time t-1
@@ -284,7 +289,11 @@ carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_co
 	}
 
 	double error_t = desired_velocity - current_velocity;
-	integral_t = integral_t + error_t * delta_t;
+	if (manual_override == 0)
+		integral_t = integral_t + error_t * delta_t;
+	else
+		integral_t = 0.0;
+
 	double derivative_t = (error_t - error_t_1) / delta_t;
 
 	if (g_velocity_PID_controler_state == STOP_CAR)

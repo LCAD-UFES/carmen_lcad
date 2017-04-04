@@ -275,7 +275,7 @@ char *carmen_string_to_visual_odometry_message(char *string,
 {
 	char *current_pos = string;
 
-	if (strncmp(current_pos, "VISUAL_ODOMETRY ", 17) == 0)
+	if (strncmp(current_pos, "VISUAL_ODOMETRY ", 16) == 0)
 		current_pos = carmen_next_word(current_pos);
 
 	odometry->pose_6d.x = CLF_READ_DOUBLE(&current_pos);
@@ -299,7 +299,6 @@ char *carmen_string_to_simulator_ackerman_truepos_message(char *string,
 
 	if (strncmp(current_pos, "TRUEPOS_ACK ", 12) == 0)
 		current_pos = carmen_next_word(current_pos);
-
 
 	truepos->truepose.x = CLF_READ_DOUBLE(&current_pos);
 	truepos->truepose.y = CLF_READ_DOUBLE(&current_pos);
@@ -475,7 +474,7 @@ char *carmen_string_to_laser_ldmrs_new_message(char *string,
 	char *current_pos = string;
 	int i, num_readings;
 
-	if (strncmp(current_pos, "LASER_LDMRS_NEW", 11) == 0)
+	if (strncmp(current_pos, "LASER_LDMRS_NEW", 15) == 0)
 		current_pos += 15;
 
 	laser->scan_number = CLF_READ_INT(&current_pos);
@@ -880,7 +879,7 @@ char *carmen_string_to_robot_ackerman_follow_trajectory_message(char *string, ca
 {
 	char *current_pos = string;
 
-	if (strncmp(current_pos, "FOLLOWTRAJECTORY_ACK", 17) == 0)
+	if (strncmp(current_pos, "FOLLOWTRAJECTORY_ACK", 20) == 0)
 		current_pos = carmen_next_word(current_pos);
 
 	msg->robot_position.x = CLF_READ_DOUBLE(&current_pos);
@@ -1057,9 +1056,8 @@ char* carmen_string_to_xsens_euler_message(char* string, carmen_xsens_global_eul
 char* carmen_string_to_xsens_quat_message(char* string, carmen_xsens_global_quat_message* msg)
 {
 	char* current_pos = string;
-	if (strncmp(current_pos, "XSENS_QUAT ", 11) == 0){
+	if (strncmp(current_pos, "XSENS_QUAT ", 11) == 0)
 		current_pos = carmen_next_word(current_pos);
-	}
 
 	msg->m_acc.x = CLF_READ_DOUBLE(&current_pos);
 	msg->m_acc.y = CLF_READ_DOUBLE(&current_pos);
@@ -1091,9 +1089,8 @@ char* carmen_string_to_xsens_quat_message(char* string, carmen_xsens_global_quat
 char* carmen_string_to_xsens_matrix_message(char* string, carmen_xsens_global_matrix_message* msg)
 {
 	char* current_pos = string;
-	if (strncmp(current_pos, "XSENS_MATRIX ", 13) == 0){
+	if (strncmp(current_pos, "XSENS_MATRIX ", 13) == 0)
 		current_pos = carmen_next_word(current_pos);
-	}
 
 	msg->m_acc.x = CLF_READ_DOUBLE(&current_pos);
 	msg->m_acc.y = CLF_READ_DOUBLE(&current_pos);
@@ -1132,9 +1129,8 @@ char* carmen_string_to_xsens_matrix_message(char* string, carmen_xsens_global_ma
 char* carmen_string_to_xsens_mtig_message(char* string, carmen_xsens_mtig_message* msg)
 {
 	char* current_pos = string;
-	if (strncmp(current_pos, "XSENS_MTIG ", 11) == 0){
+	if (strncmp(current_pos, "XSENS_MTIG ", 11) == 0)
 		current_pos = carmen_next_word(current_pos);
-	}
 
 	msg->quat.q0 = CLF_READ_DOUBLE(&current_pos);
 	msg->quat.q1 = CLF_READ_DOUBLE(&current_pos);
@@ -1272,8 +1268,8 @@ char* carmen_string_and_file_to_velodyne_partial_scan_message(char* string, carm
 	int i;
 	char *current_pos = string;
 
-	if (strncmp(current_pos, "VELODYNE_PARTIAL_SCAN_IN_FILE", 30) == 0)
-		current_pos += 30;
+	if (strncmp(current_pos, "VELODYNE_PARTIAL_SCAN_IN_FILE", 29) == 0)
+		current_pos += 29;
 
 	static char path[1024];
 
@@ -1320,8 +1316,8 @@ char* carmen_string_to_variable_velodyne_scan_message(char* string, carmen_velod
 	int number_of_shots;
 	unsigned char hi, lo, first, second, third, fourth;
 
-	if (strncmp(current_pos, "VARIABLE_VELODYNE_SCAN", 23) == 0)
-		current_pos += 23;
+	if (strncmp(current_pos, "VARIABLE_VELODYNE_SCAN", 22) == 0)
+		current_pos += 22;
 
 	number_of_shots = CLF_READ_INT(&current_pos);
 	shot_size = CLF_READ_INT(&current_pos);
@@ -1426,6 +1422,35 @@ char* carmen_string_to_velodyne_gps_message(char* string, carmen_velodyne_gps_me
 	msg->magnetic_variation_direction = CLF_READ_DOUBLE(&current_pos);
 	current_pos = carmen_next_word(current_pos);
 	msg->mode_indication = CLF_READ_CHAR(&current_pos);
+
+	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
+	copy_host_string(&msg->host, &current_pos);
+
+	return current_pos;
+}
+
+
+char* carmen_string_to_ford_escape_estatus_message(char* string, carmen_ford_escape_status_message* msg)
+{
+	char *current_pos = string;
+
+	if (strncmp(current_pos, "FORD_ESCAPE_STATUS", 18) == 0)
+		current_pos += 18;
+
+	msg->g_XGV_throttle = CLF_READ_DOUBLE(&current_pos);
+	msg->g_XGV_steering = CLF_READ_DOUBLE(&current_pos);
+	msg->g_XGV_brakes = CLF_READ_DOUBLE(&current_pos);
+
+	msg->g_XGV_component_status = CLF_READ_UNSIGNED_INT(&current_pos);
+
+	msg->g_XGV_main_propulsion = CLF_READ_INT(&current_pos);
+	msg->g_XGV_main_fuel_supply = CLF_READ_INT(&current_pos);
+	msg->g_XGV_parking_brake = CLF_READ_INT(&current_pos);
+	msg->g_XGV_gear = CLF_READ_INT(&current_pos);
+
+	msg->g_XGV_turn_signal = CLF_READ_INT(&current_pos);
+	msg->g_XGV_horn_status = CLF_READ_INT(&current_pos);
+	msg->g_XGV_headlights_status = CLF_READ_INT(&current_pos);
 
 	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
 	copy_host_string(&msg->host, &current_pos);

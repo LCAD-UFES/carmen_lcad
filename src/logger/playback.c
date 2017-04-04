@@ -86,6 +86,9 @@ carmen_web_cam_message web_cam_message;
 carmen_base_ackerman_motion_command_message ackerman_motion_message;
 carmen_ultrasonic_sonar_sensor_message ultrasonic_message;
 
+carmen_ford_escape_status_message ford_escape_status;
+
+
 void print_playback_status(void)
 {
 	char str[100];
@@ -162,7 +165,7 @@ void playback_command_handler(carmen_playback_command_message *command)
 	}
 }
 
-void register_ipc_messages(void)
+void define_ipc_messages(void)
 {
 	IPC_RETURN_TYPE err;
 
@@ -265,6 +268,9 @@ void register_ipc_messages(void)
 	err = IPC_defineMsg(CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME, IPC_VARIABLE_LENGTH, CARMEN_BASE_ACKERMAN_MOTION_COMMAND_FMT);
 	carmen_test_ipc_exit(err, "Could not define message", CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME);
 
+	err = IPC_defineMsg(CARMEN_FORD_ESCAPE_STATUS_NAME, IPC_VARIABLE_LENGTH, CARMEN_FORD_ESCAPE_STATUS_FMT);
+	carmen_test_ipc_exit(err, "Could not define message", CARMEN_FORD_ESCAPE_STATUS_NAME);
+
 	carmen_subscribe_message(CARMEN_PLAYBACK_COMMAND_NAME,
 			CARMEN_PLAYBACK_COMMAND_FMT,
 			NULL, sizeof(carmen_playback_command_message),
@@ -356,9 +362,12 @@ logger_callback_t logger_callbacks[] =
 		{"BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE6", CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE6_NAME, (converter_func) carmen_string_and_file_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage6, 0},
 		{"BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE7", CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE7_NAME, (converter_func) carmen_string_and_file_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage7, 0},
 		{"BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE8", CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE8_NAME, (converter_func) carmen_string_and_file_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage8, 0},
-		{"BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE9", CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE9_NAME, (converter_func) carmen_string_and_file_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage9, 0},		{"WEB_CAM_IMAGE", CARMEN_WEB_CAM_MESSAGE_NAME, (converter_func) carmen_string_to_web_cam_message, &web_cam_message, 0},
+		{"BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE9", CARMEN_BUMBLEBEE_BASIC_STEREOIMAGE9_NAME, (converter_func) carmen_string_and_file_to_bumblebee_basic_stereoimage_message, &bumblebee_basic_stereoimage9, 0},
+		{"WEB_CAM_IMAGE", CARMEN_WEB_CAM_MESSAGE_NAME, (converter_func) carmen_string_to_web_cam_message, &web_cam_message, 0},
 		{"BASEMOTION_ACK", CARMEN_BASE_ACKERMAN_MOTION_COMMAND_NAME, (converter_func) carmen_string_to_base_ackerman_motion_message, &ackerman_motion_message, 0},
 		{"ULTRASONIC_SONAR_SENSOR", CARMEN_ULTRASONIC_SONAR_SENSOR_NAME, (converter_func) carmen_string_to_ultrasonic_message, &ultrasonic_message, 0},
+
+		{"FORD_ESCAPE_STATUS", CARMEN_FORD_ESCAPE_STATUS_NAME, (converter_func) carmen_string_to_ford_escape_estatus_message, &ford_escape_status, 0},
 	};
 
 int read_message(int message_num, int publish, int no_wait)
@@ -671,11 +680,12 @@ int main(int argc, char **argv)
 	memset(&web_cam_message, 0, sizeof(web_cam_message));
 	memset(&ackerman_motion_message, 0, sizeof(ackerman_motion_message));
 	memset(&ultrasonic_message, 0, sizeof(ultrasonic_message));
+	memset(&ford_escape_status, 0, sizeof(ford_escape_status));
 
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 
-	register_ipc_messages ();
+	define_ipc_messages ();
 	read_parameters (argc, argv);
 	carmen_playback_define_messages ();
 	signal(SIGINT, shutdown_playback_module);

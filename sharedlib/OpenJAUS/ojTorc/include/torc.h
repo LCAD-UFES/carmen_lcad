@@ -128,7 +128,7 @@ extern int g_XGV_parking_brake;
 extern int g_XGV_gear;
 extern JausInteger g_XGV_error[MAX_ERRORS];
 extern int g_XGV_num_errors;
-extern unsigned short int g_XGV_component_status;
+extern unsigned int g_XGV_component_status;
 
 
 // Prototypes

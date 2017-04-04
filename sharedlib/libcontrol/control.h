@@ -37,12 +37,12 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC_position_control(double at
 		carmen_localize_ackerman_globalpos_message global_pos, int initialize_neural_networks);
 
 double
-carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_current_curvature, double delta_t);
+carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_current_curvature, double delta_t, int manual_override);
 
 
 void
 carmen_libpid_velocity_PID_controler(double *throttle_command, double *brakes_command, int *gear_command,
-											double desired_velocity, double current_velocity, double delta_t);
+											double desired_velocity, double current_velocity, double delta_t, int manual_override);
 
 
 void
