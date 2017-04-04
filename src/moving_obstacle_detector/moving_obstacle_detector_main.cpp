@@ -512,7 +512,7 @@ carmen_compact_cost_map_handler(carmen_map_server_compact_cost_map_message *comp
 	for (int i = 0; i < compact_map_message->size; i++)
 	{
 		int index = compact_map_message->coord_y[i] + compact_map_message->coord_x[i] * compact_map_message->config.y_size;
-		current_map[index] = compact_map_message->value[i] > 0.67 ? 1 : 0;
+		current_map[index] = compact_map_message->value[i] > 0.99 ? 1 : 0;
 	}
 
 	#ifdef USE_OPEN_CV
