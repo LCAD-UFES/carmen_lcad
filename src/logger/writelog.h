@@ -53,6 +53,7 @@
 #include <carmen/velodyne_messages.h>
 #include <carmen/visual_odometry_messages.h>
 #include <carmen/base_ackerman_messages.h>
+#include <carmen/ford_escape_hybrid_messages.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -246,6 +247,11 @@ void carmen_logwrite_write_laser_ldmrs_objects(carmen_laser_ldmrs_objects_messag
 void carmen_logwrite_write_laser_ldmrs_objects_data(carmen_laser_ldmrs_objects_data_message *laser,
 		int laser_num, carmen_FILE *outfile,
 		double timestamp);
+
+void carmen_logwrite_write_ford_escape_status_message(carmen_ford_escape_status_message *msg,
+		carmen_FILE *outfile,
+		double timestamp);
+
 #ifdef __cplusplus
 }
 #endif

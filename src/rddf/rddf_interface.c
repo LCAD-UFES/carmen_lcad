@@ -163,7 +163,7 @@ carmen_rddf_publish_end_point_message(int number_of_poses, carmen_point_t point)
 }
 
 void
-carmen_rddf_publish_road_profile_message(carmen_ackerman_traj_point_t *poses_ahead, carmen_ackerman_traj_point_t *poses_back, int num_poses, int num_poses_back, int *annotations)
+carmen_rddf_publish_road_profile_message(carmen_ackerman_traj_point_t *poses_ahead, carmen_ackerman_traj_point_t *poses_back, int num_poses, int num_poses_back, int *annotations, int * annotations_codes)
 {
     IPC_RETURN_TYPE err;
     carmen_rddf_road_profile_message rddf_road_profile_message;
@@ -173,7 +173,7 @@ carmen_rddf_publish_road_profile_message(carmen_ackerman_traj_point_t *poses_ahe
     rddf_road_profile_message.number_of_poses = num_poses;
     rddf_road_profile_message.number_of_poses_back = num_poses_back;
     rddf_road_profile_message.annotations = annotations;
-    // rddf_road_profile_message.signals_annotations = annotations;
+    rddf_road_profile_message.annotations_codes = annotations_codes;
     rddf_road_profile_message.timestamp = carmen_get_time();
     rddf_road_profile_message.host = carmen_get_host();
 

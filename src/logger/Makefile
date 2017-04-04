@@ -10,7 +10,7 @@ INTERFACE_LIBS = -llaser_interface -llaser_ldmrs_interface \
 		 -lpantilt_interface -limu_interface -lkinect_interface \
 		 -lbumblebee_basic_interface -lxsens_interface -lvelodyne_interface \
 		 -lxsens_mtig_interface -lweb_cam_interface -lrobot_ackerman_interface \
-		 -lvisual_odometry_interface -lultrasonic_filter_interface
+		 -lvisual_odometry_interface -lultrasonic_filter_interface -lford_escape_hybrid_interface
 endif
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/

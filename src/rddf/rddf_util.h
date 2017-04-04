@@ -13,6 +13,7 @@
 typedef struct
 {
 	carmen_point_t pose;
+	double phi;
 	double max_velocity;
 	double timestamp;
 	double driver_velocity;

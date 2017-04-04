@@ -59,6 +59,7 @@ static int log_web_cam = 1;
 static int log_bumblebee_frames_to_save = 1;
 static int log_bumblebee_save_to_file = 0;
 static int log_velodyne_save_to_file = 0;
+static int log_ford_escape_status = 0;
 
 void get_logger_params(int argc, char** argv) {
 
@@ -85,6 +86,7 @@ void get_logger_params(int argc, char** argv) {
     {"logger", "sonar",       		CARMEN_PARAM_ONOFF, &log_sonar, 0, NULL},
     {"logger", "velodyne_save_to_file",	CARMEN_PARAM_ONOFF, &log_velodyne_save_to_file, 0, NULL},
     {"logger", "bumblebee_save_to_file", CARMEN_PARAM_ONOFF, &log_bumblebee_save_to_file, 0, NULL},
+    {"logger", "ford_escape_status", CARMEN_PARAM_ONOFF, &log_ford_escape_status, 0, NULL},
   };
 
   num_items = sizeof(param_list)/sizeof(param_list[0]);
@@ -471,8 +473,14 @@ carmen_web_cam_message_handler(carmen_web_cam_message *message)
 	carmen_logwrite_write_web_cam_message(message, outfile, carmen_get_time() - logger_starttime);
 }
 
+void
+ford_escape_status_message_handler(carmen_ford_escape_status_message *message)
+{
+	carmen_logwrite_write_ford_escape_status_message(message, outfile, carmen_get_time() - logger_starttime);
+}
 
-void register_ipc_messages(void)
+void
+register_ipc_messages(void)
 {
   carmen_subscribe_message(CARMEN_LOGGER_SYNC_NAME, CARMEN_LOGGER_SYNC_FMT,
 			   NULL, sizeof(carmen_logger_sync_message),
@@ -778,6 +786,13 @@ int main(int argc, char **argv)
   {
 	  carmen_ultrasonic_sonar_sensor_subscribe(NULL,
 		 (carmen_handler_t) ultrasonic_sonar_sensor_handler,
+		 CARMEN_SUBSCRIBE_ALL);
+  }
+
+  if (log_ford_escape_status)
+  {
+	  carmen_ford_escape_subscribe_status_message(NULL,
+		 (carmen_handler_t) ford_escape_status_message_handler,
 		 CARMEN_SUBSCRIBE_ALL);
   }
 

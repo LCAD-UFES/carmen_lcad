@@ -12,6 +12,8 @@ struct Obstacle
 
 	int index;
 
+	int rddf_pose_index;
+
 	carmen_ackerman_traj_point_t pose;
 
 	carmen_ackerman_traj_point_t car_pose;

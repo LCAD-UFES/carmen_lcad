@@ -609,6 +609,17 @@ void carmen_logwrite_write_robot_ackerman_vector_move(carmen_robot_ackerman_vect
 			msg->distance, msg->theta, msg->timestamp, msg->host, timestamp);
 }
 
+void carmen_logwrite_write_ford_escape_status_message(carmen_ford_escape_status_message *msg,
+		carmen_FILE *outfile,
+		double timestamp)
+{
+	carmen_fprintf(outfile, "FORD_ESCAPE_STATUS %lf %lf %lf %u %d %d %d %d %d %d %d %lf %s %lf\n",
+			msg->g_XGV_throttle, msg->g_XGV_steering, msg->g_XGV_brakes, msg->g_XGV_component_status,
+			msg->g_XGV_main_propulsion, msg->g_XGV_main_fuel_supply, msg->g_XGV_parking_brake, msg->g_XGV_gear,
+			msg->g_XGV_turn_signal, msg->g_XGV_horn_status, msg->g_XGV_headlights_status,
+			msg->timestamp, msg->host, timestamp);
+}
+
 void carmen_logwrite_write_robot_ackerman_velocity(carmen_robot_ackerman_velocity_message *msg,
 		carmen_FILE *outfile,
 		double timestamp)

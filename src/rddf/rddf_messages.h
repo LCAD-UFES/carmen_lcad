@@ -58,13 +58,14 @@ extern "C"
         carmen_ackerman_traj_point_t *poses_back;
         // int *signals_annotations; // annotation code aqui e type abaixo? (ou vice-versa?)
         int *annotations;
+        int *annotations_codes;
         double timestamp;
         char *host;
     } carmen_rddf_road_profile_message;
 
 	#define CARMEN_RDDF_ROAD_PROFILE_MESSAGE_NAME "carmen_rddf_road_profile_message"
 	// #define CARMEN_RDDF_ROAD_PROFILE_MESSAGE_FMT "{int, int, <{double, double, double, double, double}:1>, <{double, double, double, double, double}:2>, <int:1>, <int:1>, double, string}"
-	#define CARMEN_RDDF_ROAD_PROFILE_MESSAGE_FMT "{int, int, <{double, double, double, double, double}:1>, <{double, double, double, double, double}:2>, <int:1>, double, string}"
+	#define CARMEN_RDDF_ROAD_PROFILE_MESSAGE_FMT "{int, int, <{double, double, double, double, double}:1>, <{double, double, double, double, double}:2>, <int:1>, <int:1>, double, string}"
 
 
     typedef struct

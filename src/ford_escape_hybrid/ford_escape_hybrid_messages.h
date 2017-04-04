@@ -46,14 +46,6 @@ extern "C" {
 #define	XGV_MANUAL_OVERRIDE_FLAG	0x10000
 
 typedef struct {
-  double g_XGV_velocity;
-  double g_XGV_atan_curvature;
-
-  double g_XGV_right_front_wheel_speed;
-  double g_XGV_left_front_wheel_speed;
-  double g_XGV_right_rear_wheel_speed;
-  double g_XGV_left_rear_wheel_speed;
-
   double g_XGV_throttle;
   double g_XGV_steering;
   double g_XGV_brakes;
@@ -74,7 +66,7 @@ typedef struct {
 } carmen_ford_escape_status_message;
 
 #define CARMEN_FORD_ESCAPE_STATUS_NAME "carmen_ford_escape_status"
-#define CARMEN_FORD_ESCAPE_STATUS_FMT  "{double,double,double,double,double,double,double,double,double, ushort,int,int,int,int,int,int,int,double,string}"
+#define CARMEN_FORD_ESCAPE_STATUS_FMT  "{double,double,double,int,int,int,int,int,int,int,int,double,string}"
 
 
 typedef struct {
