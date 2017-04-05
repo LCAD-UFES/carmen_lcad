@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <deque>
+#include <queue>
 
 typedef struct
 {

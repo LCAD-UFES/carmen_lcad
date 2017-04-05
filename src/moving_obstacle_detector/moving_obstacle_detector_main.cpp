@@ -29,7 +29,7 @@ std::vector<moving_obstacle_t> moving_obstacle_list;
 carmen_behavior_selector_road_profile_message *road_profile_message;
 
 #define HISTORY_SIZE 40
-#define MAX_ASSOCIATION_DISTANCE 2.77
+#define MAX_ASSOCIATION_DISTANCE 2.00
 
 #define USE_OPEN_CV
 
@@ -101,6 +101,54 @@ flood_fill(char *map, carmen_map_config_t *config, moving_obstacle_observation_t
 			flood_fill(map, config, observation, i + 1, j - 1);
 			flood_fill(map, config, observation, i + 1, j + 1);
 			flood_fill(map, config, observation, i - 1, j + 1);
+		}
+	}
+}
+
+
+void
+fast_flood_fill(char *map, carmen_map_config_t *config, moving_obstacle_observation_t *observation, int i, int j)
+{
+	std::queue<cell_coords_t> cell_queue;
+
+	cell_coords_t cell;
+	cell.x = i;
+	cell.y = j;
+
+	static const int di[8] = {0, 1, 1, 1, 0, -1, -1, -1}; // relative neighbor i coordinates
+	static const int dj[8] = {-1, -1, 0, 1, 1, 1, 0, -1}; // relative neighbor j coordinates
+
+	cell_queue.push(cell);
+
+	while (!cell_queue.empty())
+	{
+		cell = cell_queue.front();
+		cell_queue.pop();
+		i = cell.x;
+		j = cell.y;
+		int index = j + i * config->y_size;
+
+		if (map[index] == 1)
+		{
+			map[index] = 0;
+
+			carmen_position_t cell_position;
+			cell_position.x = i * config->resolution + config->x_origin;
+			cell_position.y = j * config->resolution + config->y_origin;
+			observation->cell_vector.push_back(cell_position);
+
+			for (int k = 0; k < 8; k++)
+			{
+				int ni = i + di[k];
+				int nj = j + dj[k];
+
+				if (ni >= 0 && nj >= 0 && ni < config->x_size && nj < config->y_size)
+				{
+					cell.x = ni;
+					cell.y = nj;
+					cell_queue.push(cell);
+				}
+			}
 		}
 	}
 }
@@ -217,14 +265,14 @@ detect_obstacles(char *subtracted_map, char *current_map, carmen_map_config_t co
 			position.x = i * config.resolution + config.x_origin;
 			position.y = j * config.resolution + config.y_origin;
 
-			if (distace_to_lane(position) > 7.0)
+			if (distace_to_lane(position) > 4.0)
 				continue;
 
 			moving_obstacle_observation_t observation;
 
-			flood_fill(map, &config, &observation, i, j);
+			fast_flood_fill(map, &config, &observation, i, j);
 
-			if (observation.cell_vector.size() > 0 && observation.cell_vector.size() < 500)
+			if (observation.cell_vector.size() > 10 && observation.cell_vector.size() < 500)
 			{
 				//observation.centroid = position;
 
@@ -282,7 +330,7 @@ remove_obstacles(double timestamp)
 		dist = distance(globalposition, iter->observations[0].centroid);
 		timediff = timestamp - iter->observations[0].timestamp;
 
-		if(dist > 70 || (iter->age > 0 && iter->associated == 0) || timediff > 0.3)
+		if(dist > 70 || (iter->age > 2 && iter->associated == 0) || timediff > 0.3)
 		{
 			iter = moving_obstacle_list.erase(iter);
 		}
@@ -336,6 +384,37 @@ plot_obstacles()
 }
 
 
+cv::Scalar
+compute_color(int color)
+{
+	switch (color)
+	{
+		case CARMEN_RED:
+			return cv::Scalar(0,0,255);
+		case CARMEN_BLUE:
+			return cv::Scalar(255,0,0);
+		case CARMEN_WHITE:
+			return cv::Scalar(255,0,127);
+		case CARMEN_YELLOW:
+			return cv::Scalar(0,127,127);
+		case CARMEN_GREEN:
+			return cv::Scalar(0,127,0);
+		case CARMEN_LIGHT_BLUE:
+			return cv::Scalar(255,255,0);
+		case CARMEN_BLACK:
+			return cv::Scalar(0,0,0);
+		case CARMEN_ORANGE:
+			return cv::Scalar(0,127,255);
+		case CARMEN_GREY:
+			return cv::Scalar(66,66,66);
+		case CARMEN_LIGHT_GREY:
+			return cv::Scalar(127,127,127);
+		default:
+			return cv::Scalar(0,0,0);
+	}
+}
+
+
 void
 show_tracks(char *map, carmen_map_config_t config)
 {
@@ -363,9 +442,13 @@ show_tracks(char *map, carmen_map_config_t config)
 	cv::Mat img(width, height, CV_8UC3, map_char);
 	cv::Mat dst;
 
+
+	cv::Scalar color;
+
 	int x, y;
 		for (unsigned int i = 0; i < moving_obstacle_list.size(); i++)
 		{
+			color = compute_color(moving_obstacle_list[i].color);
 			for (unsigned int j = 0; j < moving_obstacle_list[i].observations.size(); j++)
 			{
 				x = (moving_obstacle_list[i].observations[j].centroid.x - config.x_origin) / config.resolution;
@@ -378,7 +461,7 @@ show_tracks(char *map, carmen_map_config_t config)
 					// get the current col
 					unsigned int col = x;
 
-					cv::circle(img, cv::Point(col, row), 3, cv::Scalar(0, 0, 255), 1);
+					cv::circle(img, cv::Point(col, row), 3, color, 1);
 
 				}
 			}
@@ -512,7 +595,7 @@ carmen_compact_cost_map_handler(carmen_map_server_compact_cost_map_message *comp
 	for (int i = 0; i < compact_map_message->size; i++)
 	{
 		int index = compact_map_message->coord_y[i] + compact_map_message->coord_x[i] * compact_map_message->config.y_size;
-		current_map[index] = compact_map_message->value[i] > 0.99 ? 1 : 0;
+		current_map[index] = compact_map_message->value[i] > 0.67 ? 1 : 0;
 	}
 
 	#ifdef USE_OPEN_CV
@@ -535,7 +618,7 @@ carmen_compact_cost_map_handler(carmen_map_server_compact_cost_map_message *comp
 			//show_map(subtracted_map, compact_map_message->config);
 		#endif
 
-		publish_moving_obstacles();
+//		publish_moving_obstacles();
 
 		free(subtracted_map);
 	}
