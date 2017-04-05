@@ -6,6 +6,7 @@
 
 using udatmo::Obstacle;
 using udatmo::Obstacles;
+using udatmo::clear;
 using udatmo::resize;
 using udatmo::distance;
 using udatmo::getDATMO;
@@ -14,9 +15,9 @@ using udatmo::getDATMO;
 #define NUM_OBSTACLES 1
 
 
-void carmen_udatmo_init(carmen_robot_ackerman_config_t *robot_config, int min_poses_ahead, int max_poses_ahead)
+void carmen_udatmo_init(const carmen_robot_ackerman_config_t *robot_config)
 {
-	getDATMO().setup(*robot_config, min_poses_ahead, max_poses_ahead);
+	getDATMO().setup(*robot_config);
 }
 
 
@@ -32,7 +33,7 @@ static void carmen_udatmo_resize_moving_obstacles_message(carmen_udatmo_moving_o
 		return;
 
 	message->num_obstacles = size;
-	resize(message->obstacles, size);
+	resize(size, message->obstacles);
 }
 
 static void carmen_udatmo_set_moving_obstacles_message(carmen_udatmo_moving_obstacles_message *message, const Obstacles &obstacles)
@@ -44,6 +45,7 @@ static void carmen_udatmo_set_moving_obstacles_message(carmen_udatmo_moving_obst
 		carmen_udatmo_moving_obstacle &entry = message->obstacles[i];
 		const Obstacle &obstacle = obstacles[i];
 		entry.rddf_index = obstacle.index;
+		entry.rddf_lane = obstacle.lane();
 		entry.x = obstacle.pose.x;
 		entry.y = obstacle.pose.y;
 		entry.theta = obstacle.pose.theta;
@@ -56,8 +58,11 @@ static void carmen_udatmo_reset_moving_obstacles_message(carmen_udatmo_moving_ob
 	carmen_udatmo_resize_moving_obstacles_message(message, NUM_OBSTACLES);
 	for (int i = 0; i < NUM_OBSTACLES; i++)
 	{
-		memset(message->obstacles + i, 0, sizeof(carmen_udatmo_moving_obstacle));
-		message->obstacles[0].rddf_index = -1;
+		carmen_udatmo_moving_obstacle &obstacle = message->obstacles[i];
+
+		clear(obstacle);
+		obstacle.rddf_index = -1;
+		obstacle.rddf_lane = -1;
 	}
 }
 
@@ -86,50 +91,70 @@ carmen_udatmo_moving_obstacles_message *carmen_udatmo_detect_moving_obstacles(vo
 }
 
 
+carmen_udatmo_moving_obstacle *carmen_udatmo_find_front_moving_obstacle(const carmen_udatmo_moving_obstacles_message *message)
+{
+	static carmen_udatmo_moving_obstacle dummy = {-1, -1, 0, 0, 0, 0};
+
+	for (carmen_udatmo_moving_obstacle *o = message->obstacles, *n = o + message->num_obstacles; o != n; ++o)
+		if (o->rddf_lane == 0)
+			return o;
+
+	return &dummy;
+}
+
+
+carmen_udatmo_moving_obstacle *carmen_udatmo_detect_front_moving_obstacle(void)
+{
+	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_detect_moving_obstacles();
+	return carmen_udatmo_find_front_moving_obstacle(message);
+}
+
+
 int carmen_udatmo_front_obstacle_detected(void)
 {
 	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_get_moving_obstacles();
-	return (message->obstacles[0].rddf_index != -1);
+	carmen_udatmo_moving_obstacle* obstacle = carmen_udatmo_find_front_moving_obstacle(message);
+	return (obstacle->rddf_index != -1);
 }
 
 
 double carmen_udatmo_front_obstacle_speed(carmen_ackerman_traj_point_t *robot_pose)
 {
 	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_get_moving_obstacles();
-	const carmen_udatmo_moving_obstacle &obstacle = message->obstacles[0];
+	carmen_udatmo_moving_obstacle* obstacle = carmen_udatmo_find_front_moving_obstacle(message);
 
 	// distance in the direction of the robot: https://en.wikipedia.org/wiki/Vector_projection
-	return obstacle.v * cos(obstacle.theta - robot_pose->theta);
+	return obstacle->v * cos(obstacle->theta - robot_pose->theta);
 }
 
 
 double carmen_udatmo_front_obstacle_distance(carmen_ackerman_traj_point_t *robot_pose)
 {
 	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_get_moving_obstacles();
-	const carmen_udatmo_moving_obstacle &obstacle = message->obstacles[0];
-
-	return distance(*robot_pose, obstacle);
+	carmen_udatmo_moving_obstacle* obstacle = carmen_udatmo_find_front_moving_obstacle(message);
+	return distance(*robot_pose, *obstacle);
 }
 
 
 carmen_ackerman_traj_point_t carmen_udatmo_front_obstacle_position(void)
 {
 	carmen_udatmo_moving_obstacles_message *message = carmen_udatmo_get_moving_obstacles();
-	const carmen_udatmo_moving_obstacle &obstacle = message->obstacles[0];
+	carmen_udatmo_moving_obstacle* obstacle = carmen_udatmo_find_front_moving_obstacle(message);
 	carmen_ackerman_traj_point_t pose;
-	pose.x = obstacle.x;
-	pose.y = obstacle.y;
-	pose.theta = obstacle.theta;
-	pose.v = obstacle.v;
+	pose.x = obstacle->x;
+	pose.y = obstacle->y;
+	pose.theta = obstacle->theta;
+	pose.v = obstacle->v;
 	pose.phi = 0;
 	return pose;
 }
 
 
-void carmen_udatmo_update_distance_map(carmen_obstacle_distance_mapper_message *message)
+void carmen_udatmo_update_robot_pose(const carmen_ackerman_traj_point_t *robot_pose)
 {
-	getDATMO().update(message);
+	getDATMO().update(*robot_pose);
 }
+
 
 
 void carmen_udatmo_update_robot_pose_with_globalpos(carmen_localize_ackerman_globalpos_message *message)
@@ -155,6 +180,18 @@ void carmen_udatmo_update_robot_pose_with_truepos(carmen_simulator_ackerman_true
 	robot_pose.phi = message->phi;
 
 	getDATMO().update(robot_pose);
+}
+
+
+void carmen_udatmo_update_distance_map(carmen_obstacle_distance_mapper_message *message)
+{
+	getDATMO().update(message);
+}
+
+
+void carmen_udatmo_update_offline_map(carmen_mapper_map_message *grid)
+{
+	getDATMO().update(grid);
 }
 
 

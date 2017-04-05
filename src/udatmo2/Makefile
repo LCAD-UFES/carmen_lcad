@@ -23,8 +23,10 @@ LFLAGS += \
 	`pkg-config --libs opencv`
 
 # Add logging dependencies as required
-ifeq ("$(CARMEN_LOGGING)","ON")
-CXXFLAGS += -DBOOST_LOG_DYN_LINK -DCARMEN_LOGGING_ON
+ifeq ("$(CARMEN_CPP_DEBUG_LOG)","ON")
+CXXFLAGS += \
+	-DBOOST_LOG_DYN_LINK \
+	-DCARMEN_CPP_DEBUG_LOG_ON
 LFLAGS += \
 	-lboost_log_setup \
 	-lboost_log \
@@ -49,12 +51,14 @@ SOURCES = \
 	munkres.cpp \
 	obstacle.cpp \
 	primitives.cpp \
+	udatmo.cpp \
 	udatmo_api.cpp \
 	udatmo_interface.cpp \
 	udatmo_logger.cpp \
 	udatmo_main.cpp
 
 PUBLIC_INCLUDES = \
+	udatmo.h \
 	udatmo_api.h \
 	udatmo_interface.h \
 	udatmo_messages.h
@@ -73,7 +77,7 @@ TARGETS = \
 	udatmo \
 	udatmo_logger
 
-libudatmo.a: datmo.o munkres.o obstacle.o primitives.o udatmo_api.o udatmo_interface.o
+libudatmo.a: datmo.o munkres.o obstacle.o primitives.o udatmo.o udatmo_api.o udatmo_interface.o
 libudatmo_interface.a: udatmo_interface.o
 udatmo: datmo.o munkres.o obstacle.o primitives.o udatmo_api.o udatmo_interface.o udatmo_main.o
 udatmo_logger: udatmo_logger.o udatmo_interface.o

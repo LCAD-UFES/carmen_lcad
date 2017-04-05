@@ -36,12 +36,15 @@ LFLAGS += \
 	-lsimulator_ackerman_interface \
 	-lobstacle_distance_mapper_interface \
 	-ludatmo \
+	-lmap_server_interface \
 	-lmoving_objects_interface \
 	`pkg-config --libs opencv`
 
-ifeq ("$(CARMEN_LOGGING)","ON")
-CFLAGS += \
-	-DBOOST_LOG_DYN_LINK
+# Add logging dependencies as required
+ifeq ("$(CARMEN_CPP_DEBUG_LOG)","ON")
+CXXFLAGS += \
+	-DBOOST_LOG_DYN_LINK \
+	-DCARMEN_CPP_DEBUG_LOG_ON
 LFLAGS += \
 	-lboost_log_setup \
 	-lboost_log \
