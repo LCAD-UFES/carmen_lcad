@@ -29,7 +29,8 @@ using namespace std;
 
 
 static void
-build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t *map, carmen_prob_models_distance_map *distance_map, double distance_for_zero_cost_in_pixels)
+build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t *map, carmen_prob_models_distance_map *distance_map,
+		double distance_for_zero_cost)
 {
 	carmen_prob_models_initialize_cost_map(cost_map, map, map->config.resolution);
 
@@ -39,7 +40,7 @@ build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t *map, carmen_prob_m
 		for (int y = 0; y < distance_map->config.y_size; y++)
 		{
 			double distance = distance_map->distance[x][y] * resolution;
-			cost_map->map[x][y] = (distance > distance_for_zero_cost_in_pixels)? 0.0: 1.0 - (distance / distance_for_zero_cost_in_pixels);
+			cost_map->map[x][y] = (distance > distance_for_zero_cost)? 0.0: 1.0 - (distance / distance_for_zero_cost);
 		}
 	}
 }
@@ -64,6 +65,14 @@ obstacle_distance_mapper_publish_distance_map(double timestamp)
 //	else
 		carmen_prob_models_create_distance_map(&distance_map, &map, obstacle_probability_threshold);
 
+	FILE *caco = fopen("caco.txt", "w");
+	for (int i = 0; i < distance_map.config.x_size * distance_map.config.y_size; i++)
+	{
+		fprintf(caco, "%d ", distance_map.complete_x_offset[i]);
+		if (i % 20)
+			fprintf(caco, "\n");
+	}
+	fclose(caco);
 	carmen_obstacle_distance_mapper_publish_distance_map_message(&distance_map, timestamp);
 }
 

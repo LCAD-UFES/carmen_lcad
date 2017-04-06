@@ -1,6 +1,7 @@
 #include <carmen/carmen.h>
 #include <carmen/grid_mapping.h>
 #include <prob_map.h>
+#include <carmen/obstacle_distance_mapper_interface.h>
 #include "obstacle_avoider_messages.h"
 #include "obstacle_avoider_interface.h"
 #include "obstacle_avoider.h"
@@ -276,32 +277,41 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 }
 
 
+//static void
+//map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_message *message)
+//{
+//	static carmen_compact_map_t *compact_cost_map = NULL;
+//	static carmen_map_t cost_map;
+//
+//	if (compact_cost_map == NULL)
+//	{
+//		carmen_grid_mapping_create_new_map(&cost_map, message->config.x_size, message->config.y_size, message->config.resolution);
+//		memset(cost_map.complete_map, 0, cost_map.config.x_size * cost_map.config.y_size * sizeof(double));
+//
+//		compact_cost_map = (carmen_compact_map_t*) (calloc(1, sizeof(carmen_compact_map_t)));
+//		carmen_cpy_compact_cost_message_to_compact_map(compact_cost_map, message);
+//		carmen_prob_models_uncompress_compact_map(&cost_map, compact_cost_map);
+//	}
+//	else
+//	{
+//		carmen_prob_models_clear_carmen_map_using_compact_map(&cost_map, compact_cost_map, 0.0);
+//		carmen_prob_models_free_compact_map(compact_cost_map);
+//		carmen_cpy_compact_cost_message_to_compact_map(compact_cost_map, message);
+//		carmen_prob_models_uncompress_compact_map(&cost_map, compact_cost_map);
+//	}
+//
+//	cost_map.config = message->config;
+//
+//	add_cost_map_to_map_vector(&cost_map);
+//
+//	necessary_maps_available = 1;
+//}
+
+
 static void
-map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_message *message)
+carmen_obstacle_distance_mapper_message_handler(carmen_obstacle_distance_mapper_message *message)
 {
-	static carmen_compact_map_t *compact_cost_map = NULL;
-	static carmen_map_t cost_map;
-
-	if (compact_cost_map == NULL)
-	{
-		carmen_grid_mapping_create_new_map(&cost_map, message->config.x_size, message->config.y_size, message->config.resolution);
-		memset(cost_map.complete_map, 0, cost_map.config.x_size * cost_map.config.y_size * sizeof(double));
-
-		compact_cost_map = (carmen_compact_map_t*) (calloc(1, sizeof(carmen_compact_map_t)));
-		carmen_cpy_compact_cost_message_to_compact_map(compact_cost_map, message);
-		carmen_prob_models_uncompress_compact_map(&cost_map, compact_cost_map);
-	}
-	else
-	{
-		carmen_prob_models_clear_carmen_map_using_compact_map(&cost_map, compact_cost_map, 0.0);
-		carmen_prob_models_free_compact_map(compact_cost_map);
-		carmen_cpy_compact_cost_message_to_compact_map(compact_cost_map, message);
-		carmen_prob_models_uncompress_compact_map(&cost_map, compact_cost_map);
-	}
-
-	cost_map.config = message->config;
-
-	add_cost_map_to_map_vector(&cost_map);
+	obstacle_avoider_update_map(message);
 
 	necessary_maps_available = 1;
 }
@@ -361,11 +371,13 @@ initialize_ipc(void)
 	else
 		carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t) simulator_ackerman_truepos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	//carmen_grid_mapping_subscribe_message(NULL, (carmen_handler_t) grid_mapping_message_handler, CARMEN_SUBSCRIBE_LATEST);
-	carmen_map_server_subscribe_compact_cost_map(NULL, (carmen_handler_t) map_server_compact_cost_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+//	carmen_grid_mapping_subscribe_message(NULL, (carmen_handler_t) grid_mapping_message_handler, CARMEN_SUBSCRIBE_LATEST);
+//	carmen_map_server_subscribe_compact_cost_map(NULL, (carmen_handler_t) map_server_compact_cost_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_obstacle_distance_mapper_subscribe_message(NULL, (carmen_handler_t) carmen_obstacle_distance_mapper_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) behavior_selector_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	return 0;
+	return (err);
 }
 
 
@@ -376,6 +388,7 @@ read_parameters(int argc, char **argv)
 
 	carmen_param_t param_list[] =
 	{
+			{"obstacle_avoider", "obstacles_safe_distance", CARMEN_PARAM_DOUBLE,	&carmen_robot_ackerman_config.obstacle_avoider_obstacles_safe_distance, 1, NULL},
 			{"robot", "max_velocity", CARMEN_PARAM_DOUBLE,	&carmen_robot_ackerman_config.max_v, 1, NULL},
 			{"robot", "max_steering_angle", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.max_phi, 1, NULL},
 			{"robot", "min_approach_dist", CARMEN_PARAM_DOUBLE,	&carmen_robot_ackerman_config.approach_dist, 1, NULL},
@@ -419,7 +432,7 @@ carmen_obstacle_avoider_initialize(int argc, char **argv)
 	if (read_parameters(argc, argv) < 0)
 		carmen_die("Could not read the parameters properly in carmen_obstacle_avoider_initialize()");
 
-	if (initialize_ipc() < 0)
+	if (initialize_ipc() != IPC_OK)
 		carmen_die("Error: could not connect to IPC Server in carmen_obstacle_avoider_initialize()\n");
 
 	return (carmen_robot_ackerman_collision_avoidance_frequency);

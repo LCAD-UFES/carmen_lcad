@@ -8,7 +8,7 @@ extern "C" {
 #include <carmen/carmen.h>
 #include "prob_measurement_model.h"
 
-#define      HUGE_DISTANCE     32000
+#define      HUGE_DISTANCE     10
 
 typedef enum _ProbabilisticMapColor
 {

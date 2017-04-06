@@ -304,7 +304,7 @@ double
 compute_proximity_to_obstacles_using_distance_map(vector<carmen_ackerman_path_point_t> path)
 {
 	double proximity_to_obstacles_for_path = 0.0;
-	double circle_radius = (GlobalState::robot_config.width + 1.7) / 2.0; // metade da largura do carro + um espacco de guarda
+	double circle_radius = GlobalState::robot_config.model_predictive_planner_obstacles_safe_distance; // metade da largura do carro + um espacco de guarda
 	carmen_point_t localizer = {GlobalState::localizer_pose->x, GlobalState::localizer_pose->y, GlobalState::localizer_pose->theta};
 	for (unsigned int i = 0; i < path.size(); i += 1)
 	{
