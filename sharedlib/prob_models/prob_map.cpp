@@ -244,7 +244,7 @@ carmen_prob_models_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t 
 {
 	cost_map->config.resolution = resolution;
 	carmen_prob_models_initialize_cost_map(cost_map, map, resolution);
-	carmen_prob_models_convert_to_linear_distance_to_obstacles_map(cost_map, map, obstacle_probability_threshold, obstacle_cost_distance, 0);
+	carmen_prob_models_convert_obstacles_map_to_cost_map(cost_map, map, obstacle_probability_threshold, obstacle_cost_distance, 0);
 }
 
 
@@ -334,7 +334,7 @@ dt(float *f, int n)
 /* dt of 2d function using squared distance */
 // http://cs.brown.edu/~pff/dt/
 void
-carmen_prob_models_convert_to_linear_distance_to_obstacles_map(carmen_map_t *cost_map, carmen_map_t *map, double occupancy_threshold,
+carmen_prob_models_convert_obstacles_map_to_cost_map(carmen_map_t *cost_map, carmen_map_t *map, double occupancy_threshold,
 		double distance_for_zero_cost_in_meters, int invert_map)
 {
 	int width = cost_map->config.x_size;

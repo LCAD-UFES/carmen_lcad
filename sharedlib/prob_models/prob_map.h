@@ -262,7 +262,7 @@ carmen_prob_models_update_intensity_of_cells_hit_by_rays_for_calibration(carmen_
 
 void carmen_prob_models_clean_carmen_map(carmen_map_t *map);
 
-void carmen_prob_models_convert_to_linear_distance_to_obstacles_map(carmen_map_t *cost_map, carmen_map_t *map, double occupancy_threshold,
+void carmen_prob_models_convert_obstacles_map_to_cost_map(carmen_map_t *cost_map, carmen_map_t *map, double occupancy_threshold,
 		double distance_for_zero_cost_in_meters, int invert_map);
 
 void carmen_prob_models_initialize_cost_map(carmen_map_t *cost_map, carmen_map_t *map, double resolution);

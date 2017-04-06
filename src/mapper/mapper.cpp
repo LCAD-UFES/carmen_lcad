@@ -35,7 +35,6 @@ extern char *map_path;
 extern int publish_moving_objects_raw_map;
 
 extern int robot_near_bump_or_barrier;
-extern double obstacle_cost_distance, obstacle_probability_threshold;
 extern int ok_to_publish;
 extern int number_of_threads;
 

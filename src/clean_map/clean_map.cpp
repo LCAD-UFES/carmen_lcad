@@ -41,7 +41,6 @@ extern char *map_path;
 extern int publish_moving_objects_raw_map;
 
 extern int robot_near_bump_or_barrier;
-extern double obstacle_cost_distance, obstacle_probability_threshold;
 extern int ok_to_publish;
 extern int number_of_threads;
 
@@ -73,15 +72,6 @@ double x_origin, y_origin; // map origin in meters
 
 static carmen_laser_laser_message flaser; // moving_objects
 
-
-static void
-change_sensor_rear_range_max(sensor_parameters_t *sensor_params, double angle)
-{
-	if ((angle > M_PI / 2.0) || (angle < -M_PI / 2.0))
-		sensor_params->current_range_max = sensor_params->range_max / sensor_params->range_max_factor;
-	else
-		sensor_params->current_range_max = sensor_params->range_max;
-}
 
 // Inicio do teste: moving_objects - Eduardo
 void
