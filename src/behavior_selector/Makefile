@@ -36,6 +36,7 @@ LFLAGS += \
 	-lsimulator_ackerman_interface \
 	-lobstacle_distance_mapper_interface \
 	-ludatmo \
+	-lmap_server_interface \
 	-lmoving_objects_interface \
 	`pkg-config --libs opencv`
 

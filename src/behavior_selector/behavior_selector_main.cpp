@@ -1,5 +1,6 @@
 
 #include <carmen/carmen.h>
+#include <carmen/cpp_debug_log.h>
 #include <carmen/rddf_messages.h>
 #include <carmen/path_planner_messages.h>
 #include <carmen/rddf_interface.h>
@@ -1631,6 +1632,8 @@ main(int argc, char **argv)
 {
 	signal(SIGINT, signal_handler);
 	carmen_ipc_initialize(argc, argv);
+	CARMEN_LOG_TO_FILE("behavior_selector.log");
+
 	define_messages();
 	read_parameters(argc, argv);
 

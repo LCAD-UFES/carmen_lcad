@@ -15,9 +15,9 @@ using udatmo::getDATMO;
 #define NUM_OBSTACLES 1
 
 
-void carmen_udatmo_init(carmen_robot_ackerman_config_t *robot_config, int min_poses_ahead, int max_poses_ahead)
+void carmen_udatmo_init(const carmen_robot_ackerman_config_t *robot_config)
 {
-	getDATMO().setup(*robot_config, min_poses_ahead, max_poses_ahead);
+	getDATMO().setup(*robot_config);
 }
 
 
@@ -91,7 +91,11 @@ carmen_udatmo_moving_obstacles_message *carmen_udatmo_detect_moving_obstacles(vo
 }
 
 
+<<<<<<< HEAD
 static carmen_udatmo_moving_obstacle *carmen_udatmo_find_front_moving_obstacle(carmen_udatmo_moving_obstacles_message *message)
+=======
+carmen_udatmo_moving_obstacle *carmen_udatmo_find_front_moving_obstacle(const carmen_udatmo_moving_obstacles_message *message)
+>>>>>>> fbecc5bd0dd0d608b656ea796e3a54fe696aab19
 {
 	static carmen_udatmo_moving_obstacle dummy = {-1, -1, 0, 0, 0, 0};
 
@@ -150,10 +154,11 @@ carmen_ackerman_traj_point_t carmen_udatmo_front_obstacle_position(void)
 }
 
 
-void carmen_udatmo_update_distance_map(carmen_obstacle_distance_mapper_message *message)
+void carmen_udatmo_update_robot_pose(const carmen_ackerman_traj_point_t *robot_pose)
 {
-	getDATMO().update(message);
+	getDATMO().update(*robot_pose);
 }
+
 
 
 void carmen_udatmo_update_robot_pose_with_globalpos(carmen_localize_ackerman_globalpos_message *message)
@@ -182,6 +187,15 @@ void carmen_udatmo_update_robot_pose_with_truepos(carmen_simulator_ackerman_true
 }
 
 
+<<<<<<< HEAD
+=======
+void carmen_udatmo_update_distance_map(carmen_obstacle_distance_mapper_message *message)
+{
+	getDATMO().update(message);
+}
+
+
+>>>>>>> fbecc5bd0dd0d608b656ea796e3a54fe696aab19
 void carmen_udatmo_update_offline_map(carmen_mapper_map_message *grid)
 {
 	getDATMO().update(grid);

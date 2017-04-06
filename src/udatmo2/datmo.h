@@ -18,9 +18,6 @@ namespace udatmo
 
 class DATMO
 {
-	/** @brief System configuration settings. */
-	carmen_robot_ackerman_config_t robot_config;
-
 	/** @brief Minimum number of hypothetical poses to consider ahead of the current one. */
 	int min_poses_ahead;
 
@@ -29,9 +26,6 @@ class DATMO
 
 	/** @brief First robot pose, speed and phi as estimated by the localization module. */
 	carmen_ackerman_traj_point_t origin;
-
-	/** @brief Current robot pose, speed and phi as estimated by the localization module. */
-	carmen_ackerman_traj_point_t robot_pose;
 
 	/** @brief Current map of distances between detected obstacles and plane coordinates. */
 	carmen_obstacle_distance_mapper_message *current_map;
@@ -82,6 +76,12 @@ class DATMO
 	int posesAhead() const;
 
 public:
+	/** @brief Current robot pose, speed and phi as estimated by the localization module. */
+	carmen_ackerman_traj_point_t robot_pose;
+
+	/** @brief System configuration settings. */
+	carmen_robot_ackerman_config_t robot_config;
+
 	/**
 	 * @brief Default constructor.
 	 */
@@ -100,7 +100,7 @@ public:
 	/**
 	 * @brief Setup DATMO parameters.
 	 */
-	void setup(const carmen_robot_ackerman_config_t &robot_config, int min_poses_ahead, int max_poses_ahead);
+	void setup(const carmen_robot_ackerman_config_t &robot_config);
 
 	/**
 	 * @brief Update the current global position.

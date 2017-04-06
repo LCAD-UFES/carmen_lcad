@@ -122,9 +122,9 @@ void DATMO::detect()
 
 	detect(rddf.poses, rddf.number_of_poses);
 
-// 	CARMEN_LOG(trace, "Observations back");
-//
-// 	detect(rddf.poses_back, rddf.number_of_poses_back);
+	CARMEN_LOG(trace, "Observations back");
+
+	detect(rddf.poses_back, rddf.number_of_poses_back);
 
 	CARMEN_LOG(trace, "Observations total: " << observations.size());
 }
@@ -243,11 +243,14 @@ void DATMO::setup(int argc, char *argv[])
 }
 
 
-void DATMO::setup(const carmen_robot_ackerman_config_t &robot_config, int min_poses_ahead, int max_poses_ahead)
+void DATMO::setup(const carmen_robot_ackerman_config_t &robot_config)
 {
+	// TODO: set the robot configuration via the parameter interface.
 	this->robot_config = robot_config;
-	this->min_poses_ahead = min_poses_ahead;
-	this->max_poses_ahead = max_poses_ahead;
+
+	carmen_param_set_module("behavior_selector");
+	carmen_param_get_int("rddf_num_poses_ahead_min", &min_poses_ahead, NULL);
+	carmen_param_get_int("rddf_num_poses_ahead_limit", &max_poses_ahead, NULL);
 }
 
 
