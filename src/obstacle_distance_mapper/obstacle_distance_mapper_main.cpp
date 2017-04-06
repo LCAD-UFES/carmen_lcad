@@ -16,9 +16,10 @@
 double obstacle_probability_threshold 	= 0.5;
 double obstacle_cost_distance 			= 1.0;
 
-carmen_map_t 						 map;
-carmen_map_t 						 cost_map;
-carmen_prob_models_distance_map 	 distance_map;
+carmen_map_t 						map;
+carmen_prob_models_distance_map 	distance_map;
+carmen_map_t 						cost_map;
+carmen_compact_map_t 				compacted_cost_map;
 
 carmen_point_t g_goal_position;
 carmen_point_t g_robot_position;
@@ -27,8 +28,9 @@ carmen_point_t goal_list_message;
 using namespace std;
 
 
-void
-carmen_mapper_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t *map, carmen_prob_models_distance_map *distance_map, double distance_for_zero_cost_in_pixels)
+static void
+build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t *map, carmen_prob_models_distance_map *distance_map,
+		double distance_for_zero_cost)
 {
 	carmen_prob_models_initialize_cost_map(cost_map, map, map->config.resolution);
 
@@ -38,10 +40,11 @@ carmen_mapper_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t *map,
 		for (int y = 0; y < distance_map->config.y_size; y++)
 		{
 			double distance = distance_map->distance[x][y] * resolution;
-			cost_map->map[x][y] = (distance > distance_for_zero_cost_in_pixels)? 0.0: 1.0 - (distance / distance_for_zero_cost_in_pixels);
+			cost_map->map[x][y] = (distance > distance_for_zero_cost)? 0.0: 1.0 - (distance / distance_for_zero_cost);
 		}
 	}
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -50,8 +53,9 @@ carmen_mapper_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t *map,
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-void
-mapper_publish_distance_map(double timestamp, double obstacle_probability_threshold)
+
+static void
+obstacle_distance_mapper_publish_distance_map(double timestamp)
 {
 	if (distance_map.complete_distance == NULL)
 		carmen_prob_models_initialize_distance_map(&distance_map, &map);
@@ -61,11 +65,32 @@ mapper_publish_distance_map(double timestamp, double obstacle_probability_thresh
 //	else
 		carmen_prob_models_create_distance_map(&distance_map, &map, obstacle_probability_threshold);
 
+	FILE *caco = fopen("caco.txt", "w");
+	for (int i = 0; i < distance_map.config.x_size * distance_map.config.y_size; i++)
+	{
+		fprintf(caco, "%d ", distance_map.complete_x_offset[i]);
+		if (i % 20)
+			fprintf(caco, "\n");
+	}
+	fclose(caco);
 	carmen_obstacle_distance_mapper_publish_distance_map_message(&distance_map, timestamp);
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////
 
+static void
+obstacle_distance_mapper_publish_compact_cost_map(double timestamp)
+{
+	build_obstacle_cost_map(&cost_map, &map, &distance_map, obstacle_cost_distance);
+	carmen_prob_models_create_compact_map(&compacted_cost_map, &cost_map, 0.0);
+
+	if (compacted_cost_map.number_of_known_points_on_the_map > 0)
+	{
+		carmen_map_server_publish_compact_cost_map_message(&compacted_cost_map,	timestamp);
+		carmen_prob_models_clear_carmen_map_using_compact_map(&cost_map, &compacted_cost_map, 0.0);
+		carmen_prob_models_free_compact_map(&compacted_cost_map);
+	}
+}
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -76,10 +101,22 @@ mapper_publish_distance_map(double timestamp, double obstacle_probability_thresh
 
 
 static void
+carmen_mapper_map_message_handler(carmen_mapper_map_message *msg)
+{
+	carmen_mapper_copy_map_from_message(&map, msg);
+
+	obstacle_distance_mapper_publish_distance_map(msg->timestamp);
+	obstacle_distance_mapper_publish_compact_cost_map(msg->timestamp);
+	//	static double last_timestamp = 0.0;
+	//	double timestamp = carmen_get_time();
+	//	printf("delta_t %lf\n", (1/(timestamp - last_timestamp)));
+	//	last_timestamp = timestamp;
+}
+
+
+static void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
-	//printf("tempo da localizacao: %lf\n", msg->timestamp);
-
 	g_robot_position = msg->globalpos;
 }
 
@@ -89,6 +126,7 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 {
 	g_robot_position = msg->truepose;
 }
+
 
 static void
 navigator_ackerman_set_goal_message_handler(carmen_navigator_ackerman_set_goal_message *msg)
@@ -103,10 +141,10 @@ navigator_ackerman_set_goal_message_handler(carmen_navigator_ackerman_set_goal_m
 	g_goal_position.theta = msg->theta;
 }
 
+
 static void
 behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_message *msg)
 {
-
 	if ((msg->size <= 0) || !msg->goal_list)
 	{
 		printf("Empty goal list\n");
@@ -116,57 +154,46 @@ behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_
 	g_goal_position.x = msg->goal_list->x;
 	g_goal_position.y = msg->goal_list->y;
 	g_goal_position.theta = carmen_normalize_theta(msg->goal_list->theta);
-
 }
 
 
-void
+static void
 lane_message_handler(carmen_behavior_selector_road_profile_message *message)
 {
-//	printf("RDDF NUM POSES: %d \n", message->number_of_poses);
 	int size = message->number_of_poses;
+
 	if (0 < size)
 	{
 		goal_list_message.x = message->poses[size-1].x;
 		goal_list_message.y = message->poses[size-1].y;
 		goal_list_message.theta = message->poses[size-1].theta;
-
-//		printf("RDDF %d: x  = %lf, y = %lf , theta = %lf\n", i, message->poses[i].x, message->poses[i].y, message->poses[i].theta);
-//		getchar();
 	}
 }
 
 
-void
-carmen_mapper_map_handler(carmen_mapper_map_message *msg)
+static void
+shutdown_module(int signo)
 {
-	carmen_compact_map_t compacted_cost_map;
-
-	carmen_mapper_copy_map_from_message(&map, msg);
-	mapper_publish_distance_map(msg->timestamp, obstacle_probability_threshold);
-	carmen_mapper_build_obstacle_cost_map(&cost_map, &map, &distance_map, obstacle_cost_distance);
-	carmen_prob_models_create_compact_map(&compacted_cost_map, &cost_map, 0.0);
-
-	if (compacted_cost_map.number_of_known_points_on_the_map > 0)
+	if (signo == SIGINT)
 	{
-		carmen_map_server_publish_compact_cost_map_message(&compacted_cost_map,	msg->timestamp);
-		carmen_prob_models_clear_carmen_map_using_compact_map(&cost_map, &compacted_cost_map, 0.0);
-		carmen_prob_models_free_compact_map(&compacted_cost_map);
+		carmen_ipc_disconnect();
+		printf("obstacle_distance_mapper: disconnected.\n");
+
+		exit(0);
 	}
-
-//	static double last_timestamp = 0.0;
-//	double timestamp = carmen_get_time();
-//	printf("delta_t %lf\n", (1/(timestamp - last_timestamp)));
-//	last_timestamp = timestamp;
 }
-
 ////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//Subscribers
-//
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Initialization                                                                            //
+//                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-void
+
+static void
 register_handlers()
 {
 
@@ -179,7 +206,7 @@ register_handlers()
 			CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_mapper_subscribe_map_message(NULL,
-			(carmen_handler_t) carmen_mapper_map_handler,
+			(carmen_handler_t) carmen_mapper_map_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_behavior_selector_subscribe_goal_list_message(NULL,
@@ -190,7 +217,7 @@ register_handlers()
 			(char *)CARMEN_NAVIGATOR_ACKERMAN_SET_GOAL_NAME,
 			(char *)CARMEN_NAVIGATOR_ACKERMAN_SET_GOAL_FMT,
 			NULL, sizeof(carmen_navigator_ackerman_set_goal_message),
-			(carmen_handler_t)navigator_ackerman_set_goal_message_handler,
+			(carmen_handler_t) navigator_ackerman_set_goal_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
 
 	 carmen_subscribe_message(
@@ -201,20 +228,6 @@ register_handlers()
 
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-void 
-shutdown_module(int signo)
-{
-  if (signo == SIGINT)
-  {
-    carmen_ipc_disconnect();
-    printf("obstacle_distance_mapper: disconnected.\n");
-
-    exit(0);
-  }
-}
-
 
 static int
 read_parameters(int argc, char **argv)
@@ -223,37 +236,30 @@ read_parameters(int argc, char **argv)
 
 	carmen_param_t param_list[] =
 	{
-			{(char *)"rrt",	(char *)"obstacle_cost_distance",	CARMEN_PARAM_DOUBLE,	&obstacle_cost_distance,	1, NULL},
-			{(char *)"rrt",	(char *)"obstacle_probability_threshold",	CARMEN_PARAM_DOUBLE,	&obstacle_probability_threshold,	1, NULL}
+			{(char *) "rrt",	(char *) "obstacle_cost_distance",			CARMEN_PARAM_DOUBLE,	&obstacle_cost_distance,			1, NULL},
+			{(char *) "rrt",	(char *) "obstacle_probability_threshold",	CARMEN_PARAM_DOUBLE,	&obstacle_probability_threshold,	1, NULL}
 	};
 
-	num_items = sizeof(param_list)/sizeof(param_list[0]);
+	num_items = sizeof(param_list) / sizeof(param_list[0]);
 	carmen_param_install_params(argc, argv, param_list, num_items);
 
 	return 0;
 }
+////////////////////////////////////////////////////////////////////////////////////////////////
 
-  
+
 int 
 main(int argc, char **argv) 
 {
-  /* Connect to IPC Server */
-  carmen_ipc_initialize(argc, argv);
+	carmen_ipc_initialize(argc, argv);
+	carmen_param_check_version(argv[0]);
 
-  /* Check the param server version */
-  carmen_param_check_version(argv[0]);
+	signal(SIGINT, shutdown_module);
+	register_handlers();
 
-  /* Register shutdown cleaner handler */
-  signal(SIGINT, shutdown_module);
+	read_parameters(argc, argv);
 
-  /* Subscribe desired messages */
-  register_handlers();
+	carmen_ipc_dispatch();
 
-  /* Read parameters */
-  read_parameters(argc, argv);
-
-  /* Loop forever waiting for messages */
-  carmen_ipc_dispatch();
-
-  return (0);
+	return (0);
 }

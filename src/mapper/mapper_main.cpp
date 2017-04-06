@@ -53,9 +53,6 @@ static carmen_pose_3D_t ultrasonic_sensor_l2_g;
 double safe_range_above_sensors;
 double robot_wheel_radius;
 
-double obstacle_cost_distance = 1.0;
-double obstacle_probability_threshold = 0.5;
-
 int use_simulator_pose = 0;
 
 double highest_sensor = 0.0;
@@ -987,9 +984,6 @@ read_parameters(int argc, char **argv,
 		{(char *) "ultrasonic_sensor_l1", (char *) "yaw", 	CARMEN_PARAM_DOUBLE, &(ultrasonic_sensor_l1_g.orientation.yaw), 0, NULL},
 		{(char *) "ultrasonic_sensor_l1", (char *) "pitch", CARMEN_PARAM_DOUBLE, &(ultrasonic_sensor_l1_g.orientation.pitch), 0, NULL},
 		{(char *) "ultrasonic_sensor_l1", (char *) "roll", 	CARMEN_PARAM_DOUBLE, &(ultrasonic_sensor_l1_g.orientation.roll), 0, NULL},
-
-		{(char *) "rrt", (char *) "obstacle_cost_distance",	CARMEN_PARAM_DOUBLE,	&obstacle_cost_distance, 1, NULL},
-		{(char *) "rrt", (char *) "obstacle_probability_threshold",	CARMEN_PARAM_DOUBLE,	&obstacle_probability_threshold, 1, NULL},
 
 		{(char *) "behavior_selector", (char *) "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL}
 	};

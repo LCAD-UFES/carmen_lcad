@@ -15,7 +15,6 @@ double GlobalState::localizer_pose_timestamp = 0;
 
 Command GlobalState::last_odometry;
 
-int GlobalState::show_debug_info;
 Pose *GlobalState::goal_pose  = NULL;
 bool GlobalState::last_goal = true;
 
