@@ -17,12 +17,15 @@
 
 carmen_point_t globalpos;
 double range_max = 70.0;
+int rddf_ready = 0;
 
 char *current_map;
 char *previous_map;
+char *offline_map;
 
 carmen_map_config_t current_config;
 carmen_map_config_t previous_config;
+carmen_map_config_t offline_config;
 
 std::vector<moving_obstacle_t> moving_obstacle_list;
 
@@ -32,6 +35,7 @@ carmen_behavior_selector_road_profile_message *road_profile_message;
 #define MAX_ASSOCIATION_DISTANCE 2.00
 
 #define USE_OPEN_CV
+
 
 void
 subtract_map(char *subtracted_map, char *current_map, char *previous_map, carmen_map_config_t current_config)
@@ -46,7 +50,7 @@ subtract_map(char *subtracted_map, char *current_map, char *previous_map, carmen
 
 
 void
-show_map(char *map, carmen_map_config_t config)
+show_map(char *map, int map_id, carmen_map_config_t config)
 {
 	unsigned int size = config.x_size * config.y_size;
 	unsigned char *map_char = (unsigned char *) malloc (size * sizeof(unsigned char));
@@ -71,7 +75,10 @@ show_map(char *map, carmen_map_config_t config)
 
 	cv::resize(img, dst, cv::Size(600,600));
 
-	cv::imshow("Map", dst);
+	char map_name[10];
+	sprintf(map_name, "Map %d", map_id);
+
+	cv::imshow(map_name, dst);
 	cv::waitKey(1);
 
 	free (map_char);
@@ -274,8 +281,6 @@ detect_obstacles(char *subtracted_map, char *current_map, carmen_map_config_t co
 
 			if (observation.cell_vector.size() > 10 && observation.cell_vector.size() < 500)
 			{
-				//observation.centroid = position;
-
 				compute_centroid(&observation);
 				int val = associate_observations(observation);
 				observation.timestamp = timestamp;
@@ -330,7 +335,7 @@ remove_obstacles(double timestamp)
 		dist = distance(globalposition, iter->observations[0].centroid);
 		timediff = timestamp - iter->observations[0].timestamp;
 
-		if(dist > 70 || (iter->age > 2 && iter->associated == 0) || timediff > 0.3)
+		if(dist > 70 || (iter->age > 2 && iter->associated == 0) || timediff > 0.8)
 		{
 			iter = moving_obstacle_list.erase(iter);
 		}
@@ -416,7 +421,7 @@ compute_color(int color)
 
 
 void
-show_tracks(char *map, carmen_map_config_t config)
+show_tracks(char *map, int map_id, carmen_map_config_t config)
 {
 	unsigned int size = config.x_size * config.y_size;
 	unsigned char *map_char = (unsigned char *) malloc (3*size * sizeof(unsigned char));
@@ -446,34 +451,43 @@ show_tracks(char *map, carmen_map_config_t config)
 	cv::Scalar color;
 
 	int x, y;
-		for (unsigned int i = 0; i < moving_obstacle_list.size(); i++)
+	for (unsigned int i = 0; i < moving_obstacle_list.size(); i++)
+	{
+		color = compute_color(moving_obstacle_list[i].color);
+		for (unsigned int j = 0; j < moving_obstacle_list[i].observations.size(); j++)
 		{
-			color = compute_color(moving_obstacle_list[i].color);
-			for (unsigned int j = 0; j < moving_obstacle_list[i].observations.size(); j++)
+			x = (moving_obstacle_list[i].observations[j].centroid.x - config.x_origin) / config.resolution;
+			y = (moving_obstacle_list[i].observations[j].centroid.y - config.y_origin) / config.resolution;
+
+			if (x >= 0 && x < config.x_size && y >= 0 && y < config.y_size)
 			{
-				x = (moving_obstacle_list[i].observations[j].centroid.x - config.x_origin) / config.resolution;
-				y = (moving_obstacle_list[i].observations[j].centroid.y - config.y_origin) / config.resolution;
+				// get the current row
+				unsigned int row = (height - 1) - y;
+				// get the current col
+				unsigned int col = x;
 
-				if (x >= 0 && x < config.x_size && y >= 0 && y < config.y_size)
-				{
-					// get the current row
-					unsigned int row = (height - 1) - y;
-					// get the current col
-					unsigned int col = x;
+				cv::circle(img, cv::Point(col, row), 4, color, 1);
 
-					cv::circle(img, cv::Point(col, row), 3, color, 1);
-
-				}
 			}
 		}
+	}
+
+	x = (globalpos.x - config.x_origin) / config.resolution;
+	y = (height - 1) - ((globalpos.y - config.y_origin) / config.resolution);
+
+	cv::circle(img, cv::Point(x, y), 6, cv::Scalar(255, 0, 255), -1);
 
 	cv::resize(img, dst, cv::Size(600,600));
 
-	cv::imshow("Map", dst);
+	char map_name[10];
+	sprintf(map_name, "Map %d", map_id);
+
+	cv::imshow(map_name, dst);
 	cv::waitKey(1);
 
 	free (map_char);
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
@@ -575,6 +589,55 @@ publish_moving_obstacles()
 
 
 void
+carmen_map_handler(carmen_mapper_map_message *map_message)
+{
+	static int first_map = 1;
+
+	int map_size = map_message->size;
+
+	if (first_map == 1)
+	{
+		current_map = (char *) malloc(map_size * sizeof(char));
+		previous_map = (char *) malloc(map_size * sizeof(char));
+	}
+
+	memset(current_map, 0, map_size * sizeof(char));
+	current_config = map_message->config;
+
+	for (int i = 0; i < map_size; i++)
+	{
+		current_map[i] = map_message->complete_map[i] > 0.5 ? 1 : 0;
+	}
+
+	if (!rddf_ready)
+		return;
+
+	if (first_map == 0)
+	{
+		char *subtracted_map = (char *) malloc(map_size * sizeof(char));
+
+		if (current_config.x_origin == previous_config.x_origin && current_config.y_origin == previous_config.y_origin)
+		{
+			subtract_map(subtracted_map, current_map, previous_map, current_config);
+			detect_obstacles(subtracted_map, current_map, current_config, map_message->timestamp);
+		}
+
+		remove_obstacles(map_message->timestamp);
+		free(subtracted_map);
+	}
+
+	#ifdef USE_OPEN_CV
+		show_tracks(current_map, 1, current_config);
+	#endif
+
+	memcpy(previous_map, current_map, map_size * sizeof(char));
+	previous_config = current_config;
+
+	first_map = 0;
+}
+
+
+void
 carmen_compact_cost_map_handler(carmen_map_server_compact_cost_map_message *compact_map_message)
 {
 
@@ -595,12 +658,22 @@ carmen_compact_cost_map_handler(carmen_map_server_compact_cost_map_message *comp
 	for (int i = 0; i < compact_map_message->size; i++)
 	{
 		int index = compact_map_message->coord_y[i] + compact_map_message->coord_x[i] * compact_map_message->config.y_size;
-		current_map[index] = compact_map_message->value[i] > 0.67 ? 1 : 0;
+		current_map[index] = compact_map_message->value[i] > 0.5 ? 1 : 0;
 	}
 
+//	if (current_config.x_origin == offline_config.x_origin && current_config.y_origin == offline_config.y_origin)
+//	{
+//		subtract_map(current_map, current_map, offline_map, current_config);
+//	}
+
+
 	#ifdef USE_OPEN_CV
-	//show_map(current_map, compact_map_message->config);
+//		show_map(current_map, 2, compact_map_message->config);
+//		show_map(offline_map, 1, offline_config);
 	#endif
+
+	if (!rddf_ready)
+		return;
 
 	if (first == 0)
 	{
@@ -615,7 +688,7 @@ carmen_compact_cost_map_handler(carmen_map_server_compact_cost_map_message *comp
 		remove_obstacles(compact_map_message->timestamp);
 
 		#ifdef USE_OPEN_CV
-			//show_map(subtracted_map, compact_map_message->config);
+			//show_map(subtracted_map, 3, compact_map_message->config);
 		#endif
 
 //		publish_moving_obstacles();
@@ -624,7 +697,7 @@ carmen_compact_cost_map_handler(carmen_map_server_compact_cost_map_message *comp
 	}
 
 	#ifdef USE_OPEN_CV
-		show_tracks(current_map, current_config);
+		show_tracks(current_map, 1, current_config);
 	#endif
 
 	memcpy(previous_map, current_map, map_size * sizeof(char));
@@ -632,6 +705,28 @@ carmen_compact_cost_map_handler(carmen_map_server_compact_cost_map_message *comp
 
 	first = 0;
 
+}
+
+
+void
+carmen_map_server_offline_map_message_handler(carmen_map_server_offline_map_message *offline_map_message)
+{
+	static int first_map = 1;
+
+	int map_size = offline_map_message->size;
+
+	if (first_map)
+	{
+		offline_map = (char *) malloc(map_size * sizeof(char));
+		first_map = 0;
+	}
+
+	for (int i = 0; i < map_size; i++)
+	{
+		offline_map[i] = offline_map_message->complete_map[i] > 0.5 ? 1 : 0;
+	}
+
+	offline_config = offline_map_message->config;
 }
 
 
@@ -648,6 +743,7 @@ void
 carmen_lane_message_handler(carmen_behavior_selector_road_profile_message *message)
 {
 	road_profile_message = message;
+	rddf_ready = 1;
 }
 
 
@@ -674,8 +770,16 @@ shutdown_module(int signo)
 void
 subscribe_messages()
 {
-	carmen_map_server_subscribe_compact_cost_map(NULL,
-		(carmen_handler_t) carmen_compact_cost_map_handler,
+//	carmen_map_server_subscribe_compact_cost_map(NULL,
+//		(carmen_handler_t) carmen_compact_cost_map_handler,
+//		CARMEN_SUBSCRIBE_LATEST);
+
+//	carmen_map_server_subscribe_offline_map(NULL,
+//		(carmen_handler_t) carmen_map_server_offline_map_message_handler,
+//		CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_mapper_subscribe_map_message(NULL,
+		(carmen_handler_t) carmen_map_handler,
 		CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL,
@@ -706,7 +810,9 @@ main(int argc, char **argv)
 {
 
 #ifdef USE_OPEN_CV
-	cv::namedWindow("Map", cv::WINDOW_AUTOSIZE);
+	cv::namedWindow("Map 1", cv::WINDOW_AUTOSIZE);
+//	cv::namedWindow("Map 2", cv::WINDOW_AUTOSIZE);
+//	cv::namedWindow("Map 3", cv::WINDOW_AUTOSIZE);
 	std::cout<<"OpenCV Version used:"<<CV_MAJOR_VERSION<<"."<<CV_MINOR_VERSION<<std::endl;
 #endif
 	carmen_ipc_initialize(argc, argv);
