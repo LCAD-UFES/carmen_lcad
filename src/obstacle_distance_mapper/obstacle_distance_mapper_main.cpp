@@ -16,10 +16,11 @@
 double obstacle_probability_threshold 	= 0.5;
 double obstacle_cost_distance 			= 1.0;
 
-carmen_map_t 						map;
-carmen_prob_models_distance_map 	distance_map;
-carmen_map_t 						cost_map;
-carmen_compact_map_t 				compacted_cost_map;
+carmen_map_t 										map;
+carmen_prob_models_distance_map 					distance_map;
+carmen_obstacle_distance_mapper_compact_map_message compact_distance_map;
+carmen_map_t 										cost_map;
+carmen_compact_map_t 								compacted_cost_map;
 
 carmen_point_t g_goal_position;
 carmen_point_t g_robot_position;
@@ -29,10 +30,10 @@ using namespace std;
 
 
 static void
-build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t *map, carmen_prob_models_distance_map *distance_map,
+build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_config_t config, carmen_prob_models_distance_map *distance_map,
 		double distance_for_zero_cost)
 {
-	carmen_prob_models_initialize_cost_map(cost_map, map, map->config.resolution);
+	carmen_prob_models_initialize_cost_map(cost_map, config, config.resolution);
 
 	double resolution = distance_map->config.resolution;
 	for (int x = 0; x < distance_map->config.x_size; x++)
@@ -55,32 +56,57 @@ build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t *map, carmen_prob_m
 
 
 static void
-obstacle_distance_mapper_publish_distance_map(double timestamp)
+obstacle_distance_mapper_publish_distance_map(carmen_mapper_map_message *map_message)
 {
 	if (distance_map.complete_distance == NULL)
-		carmen_prob_models_initialize_distance_map(&distance_map, &map);
+		carmen_prob_models_initialize_distance_map(&distance_map, map_message->config);
 
-//	if ((g_goal_position.x != 0.0) && (g_goal_position.y != 0.0))
-//		carmen_prob_models_create_masked_distance_map(&distance_map, &map, obstacle_probability_threshold, &g_robot_position, &g_goal_position);
-//	else
-		carmen_prob_models_create_distance_map(&distance_map, &map, obstacle_probability_threshold);
+	carmen_map_t occupancy_map;
+	occupancy_map.config = map_message->config;
+	occupancy_map.complete_map = map_message->complete_map;
 
-	FILE *caco = fopen("caco.txt", "w");
-	for (int i = 0; i < distance_map.config.x_size * distance_map.config.y_size; i++)
-	{
-		fprintf(caco, "%d ", distance_map.complete_x_offset[i]);
-		if (i % 20)
-			fprintf(caco, "\n");
-	}
-	fclose(caco);
-	carmen_obstacle_distance_mapper_publish_distance_map_message(&distance_map, timestamp);
+	static double **occupancy_map_map = NULL;
+	if (!occupancy_map_map)
+		occupancy_map_map = (double **) malloc(occupancy_map.config.x_size * sizeof(double *));
+	occupancy_map.map = occupancy_map_map;
+
+	for (int i = 0; i < occupancy_map.config.x_size; i++)
+		occupancy_map.map[i] = occupancy_map.complete_map + i * occupancy_map.config.y_size;
+
+	carmen_prob_models_create_distance_map(&distance_map, &occupancy_map, obstacle_probability_threshold);
+
+	carmen_obstacle_distance_mapper_publish_distance_map_message(&distance_map, map_message->timestamp);
+}
+
+
+static void
+obstacle_distance_mapper_publish_compact_distance_map(carmen_mapper_map_message *map_message)
+{
+	if (distance_map.complete_distance == NULL)
+		carmen_prob_models_initialize_distance_map(&distance_map, map_message->config);
+
+	carmen_map_t occupancy_map;
+	occupancy_map.config = map_message->config;
+	occupancy_map.complete_map = map_message->complete_map;
+
+	static double **occupancy_map_map = NULL;
+	if (!occupancy_map_map)
+		occupancy_map_map = (double **) malloc(occupancy_map.config.x_size * sizeof(double *));
+	occupancy_map.map = occupancy_map_map;
+
+	for (int i = 0; i < occupancy_map.config.x_size; i++)
+		occupancy_map.map[i] = occupancy_map.complete_map + i * occupancy_map.config.y_size;
+
+	carmen_prob_models_create_distance_map(&distance_map, &occupancy_map, obstacle_probability_threshold);
+
+	carmen_obstacle_distance_mapper_publish_distance_map_message(&distance_map, map_message->timestamp);
 }
 
 
 static void
 obstacle_distance_mapper_publish_compact_cost_map(double timestamp)
 {
-	build_obstacle_cost_map(&cost_map, &map, &distance_map, obstacle_cost_distance);
+	build_obstacle_cost_map(&cost_map, distance_map.config, &distance_map, obstacle_cost_distance);
 	carmen_prob_models_create_compact_map(&compacted_cost_map, &cost_map, 0.0);
 
 	if (compacted_cost_map.number_of_known_points_on_the_map > 0)
@@ -103,10 +129,10 @@ obstacle_distance_mapper_publish_compact_cost_map(double timestamp)
 static void
 carmen_mapper_map_message_handler(carmen_mapper_map_message *msg)
 {
-	carmen_mapper_copy_map_from_message(&map, msg);
-
-	obstacle_distance_mapper_publish_distance_map(msg->timestamp);
+//	obstacle_distance_mapper_publish_distance_map(msg);
+	obstacle_distance_mapper_publish_compact_distance_map(msg);
 	obstacle_distance_mapper_publish_compact_cost_map(msg->timestamp);
+
 	//	static double last_timestamp = 0.0;
 	//	double timestamp = carmen_get_time();
 	//	printf("delta_t %lf\n", (1/(timestamp - last_timestamp)));

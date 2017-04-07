@@ -309,7 +309,7 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 
 
 static void
-carmen_obstacle_distance_mapper_message_handler(carmen_obstacle_distance_mapper_message *message)
+carmen_obstacle_distance_mapper_message_handler(carmen_obstacle_distance_mapper_map_message *message)
 {
 	obstacle_avoider_update_map(message);
 

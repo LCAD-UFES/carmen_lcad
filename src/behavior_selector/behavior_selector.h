@@ -39,7 +39,7 @@ void behavior_selector_update_robot_pose(carmen_ackerman_traj_point_t robot_pose
 
 void behavior_selector_update_rddf(carmen_rddf_road_profile_message *rddf_msg, int rddf_num_poses_by_velocity, double timestamp);
 
-void behavior_selector_update_map(carmen_obstacle_distance_mapper_message *map);
+void behavior_selector_update_map(carmen_obstacle_distance_mapper_map_message *map);
 
 void behavior_selector_publish_periodic_messages();
 

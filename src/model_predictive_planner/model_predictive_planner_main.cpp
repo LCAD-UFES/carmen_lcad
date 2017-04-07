@@ -541,7 +541,7 @@ behavior_selector_state_message_handler(carmen_behavior_selector_state_message *
 
 
 static void
-carmen_obstacle_distance_mapper_message_handler(carmen_obstacle_distance_mapper_message *message)
+carmen_obstacle_distance_mapper_map_message_handler(carmen_obstacle_distance_mapper_map_message *message)
 {
 	GlobalState::distance_map = message;
 }
@@ -652,7 +652,7 @@ register_handlers()
 			CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_obstacle_distance_mapper_subscribe_message(NULL,
-			(carmen_handler_t) carmen_obstacle_distance_mapper_message_handler, CARMEN_SUBSCRIBE_LATEST);
+			(carmen_handler_t) carmen_obstacle_distance_mapper_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 

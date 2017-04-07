@@ -12,7 +12,7 @@ static carmen_ackerman_traj_point_t pose_vector[NUM_POSES];
 
 static carmen_ackerman_traj_point_t trajectory_vector_of_points[MAX_TRAJECTORY_VECTOR_OF_POINTS_SIZE];
 
-static carmen_obstacle_distance_mapper_message *obstacle_distance_map = NULL;
+static carmen_obstacle_distance_mapper_map_message *obstacle_distance_map = NULL;
 
 
 void
@@ -40,7 +40,7 @@ add_cost_map_to_map_vector(carmen_map_t *cost_map)
 
 
 void
-obstacle_avoider_update_map(carmen_obstacle_distance_mapper_message *map)
+obstacle_avoider_update_map(carmen_obstacle_distance_mapper_map_message *map)
 {
 	obstacle_distance_map = map;
 }
@@ -280,7 +280,7 @@ obstacle_avoider(carmen_ackerman_motion_command_t *motion_commands_vector, int n
 			{
 //				if (obstacle_avoider_pose_hit_obstacle(to_carmen_point_t(&(trajectory_vector_of_points[i])), map_vector[map_index], carmen_robot_ackerman_config))
 //				trajectory_pose_hit_obstacle(carmen_ackerman_traj_point_t trajectory_pose, double circle_radius,
-//						carmen_obstacle_distance_mapper_message *distance_map, carmen_robot_ackerman_config_t *robot_config)
+//						carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman_config_t *robot_config)
 				if (trajectory_pose_hit_obstacle(trajectory_vector_of_points[i], carmen_robot_ackerman_config->obstacle_avoider_obstacles_safe_distance,
 						obstacle_distance_map, carmen_robot_ackerman_config))
 				{

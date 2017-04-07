@@ -386,7 +386,7 @@ carmen_collision_detection_displace_car_pose_according_to_car_orientation(carmen
 
 
 carmen_position_t
-carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(carmen_point_t *global_point, carmen_obstacle_distance_mapper_message *distance_map)
+carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(carmen_point_t *global_point, carmen_obstacle_distance_mapper_map_message *distance_map)
 {
 	carmen_point_t global_point_in_map_coords;
 	carmen_position_t cell;
@@ -417,7 +417,7 @@ carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(carmen_point
 
 
 double
-carmen_obstacle_avoider_distance_from_global_point_to_obstacle(carmen_point_t *global_point, carmen_obstacle_distance_mapper_message *distance_map)
+carmen_obstacle_avoider_distance_from_global_point_to_obstacle(carmen_point_t *global_point, carmen_obstacle_distance_mapper_map_message *distance_map)
 {
 	carmen_point_t global_point_in_map_coords;
 
@@ -492,7 +492,7 @@ get_initial_displacement_and_displacement_inc(double *initial_displacement, doub
 
 double
 carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(carmen_point_t *localizer_pose, carmen_point_t point_to_check,
-		carmen_robot_ackerman_config_t robot_config, carmen_obstacle_distance_mapper_message *distance_map, double circle_radius)
+		carmen_robot_ackerman_config_t robot_config, carmen_obstacle_distance_mapper_map_message *distance_map, double circle_radius)
 {
 	double initial_displacement, displacement_inc;
 	double number_of_point = 5.0;
@@ -519,7 +519,7 @@ carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(carmen_point_t
 
 int
 trajectory_pose_hit_obstacle(carmen_ackerman_traj_point_t trajectory_pose, double circle_radius,
-		carmen_obstacle_distance_mapper_message *distance_map, carmen_robot_ackerman_config_t *robot_config)
+		carmen_obstacle_distance_mapper_map_message *distance_map, carmen_robot_ackerman_config_t *robot_config)
 {
 	if (distance_map == NULL)
 	{

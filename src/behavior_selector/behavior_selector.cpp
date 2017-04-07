@@ -23,7 +23,7 @@ static carmen_ackerman_traj_point_t goal_list[GOAL_LIST_SIZE];
 static int goal_type[GOAL_LIST_SIZE];
 static int annotations[GOAL_LIST_SIZE];
 static int goal_list_size = 0;
-static carmen_obstacle_distance_mapper_message *current_map = NULL;
+static carmen_obstacle_distance_mapper_map_message *current_map = NULL;
 static carmen_behavior_selector_state_t current_state = BEHAVIOR_SELECTOR_FOLLOWING_LANE;
 static carmen_behavior_selector_goal_source_t current_goal_source = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
 static double change_goal_distance = 8.0; // @@@ Alberto: acho que nao usa... deletar?
@@ -466,7 +466,7 @@ get_robot_config()
 
 
 void
-behavior_selector_update_map(carmen_obstacle_distance_mapper_message *map)
+behavior_selector_update_map(carmen_obstacle_distance_mapper_map_message *map)
 {
 	current_map = map;
 }

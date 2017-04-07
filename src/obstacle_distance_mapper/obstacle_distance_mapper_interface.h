@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-void carmen_obstacle_distance_mapper_subscribe_message(carmen_obstacle_distance_mapper_message *message,
+void carmen_obstacle_distance_mapper_subscribe_message(carmen_obstacle_distance_mapper_map_message *message,
 			       carmen_handler_t handler,
 			       carmen_subscribe_t subscribe_how);
 

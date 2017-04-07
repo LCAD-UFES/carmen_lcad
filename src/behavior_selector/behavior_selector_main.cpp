@@ -1392,7 +1392,7 @@ path_planner_road_profile_handler(carmen_path_planner_road_profile_message *rddf
 
 
 static void
-carmen_obstacle_distance_mapper_message_handler(carmen_obstacle_distance_mapper_message *message)
+carmen_obstacle_distance_mapper_message_handler(carmen_obstacle_distance_mapper_map_message *message)
 {
 	behavior_selector_update_map(message);
 

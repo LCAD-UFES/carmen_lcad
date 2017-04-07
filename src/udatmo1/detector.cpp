@@ -48,7 +48,7 @@ Detector::update_moving_object_velocity(carmen_ackerman_traj_point_t &robot_pose
 
 
 int
-Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
+Detector::detect(carmen_obstacle_distance_mapper_map_message *current_map,
 				 carmen_rddf_road_profile_message *rddf,
 				 int goal_index,
 				 int rddf_pose_index,
@@ -138,7 +138,7 @@ Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
 
 
 int
-Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
+Detector::detect(carmen_obstacle_distance_mapper_map_message *current_map,
 				 carmen_rddf_road_profile_message *rddf,
 				 int goal_index,
 				 int rddf_pose_index,
