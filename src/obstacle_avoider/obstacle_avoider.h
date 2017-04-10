@@ -33,7 +33,8 @@ void add_cost_map_to_map_vector(carmen_map_t *cost_map);
 void initialize_map_vector(int number_of_maps);
 void add_pose_to_pose_vector(carmen_ackerman_traj_point_t pose);
 carmen_ackerman_traj_point_t get_current_pose();
-void obstacle_avoider_update_map(carmen_obstacle_distance_mapper_message *map);
+void obstacle_avoider_update_map(carmen_obstacle_distance_mapper_map_message *map);
+carmen_obstacle_distance_mapper_map_message *get_current_map();
 
 #ifdef __cplusplus
 }

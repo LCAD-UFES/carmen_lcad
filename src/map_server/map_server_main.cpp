@@ -294,9 +294,9 @@ add_lane_to_the_map(carmen_map_t *lane_map, carmen_rddf_road_profile_message *me
 static void
 build_lane_map(carmen_rddf_road_profile_message *message, carmen_map_t *lane_map)
 {
-	double lane_width = 1.65;
+	double lane_width = 1.65; // TODO: @@@ Alberto: ler isso do carmen ini: deve ser usado o model_predictive_planner_obstacles_safe_distance
 
-	carmen_prob_models_initialize_cost_map(lane_map, current_map, current_map->config.resolution);
+	carmen_prob_models_initialize_cost_map(lane_map, current_map->config, current_map->config.resolution);
 	memset(lane_map->complete_map, 0, lane_map->config.x_size * lane_map->config.y_size * sizeof(double));
 
 	add_lane_to_the_map(lane_map, message, 1.0);

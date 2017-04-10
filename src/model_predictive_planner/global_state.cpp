@@ -32,7 +32,7 @@ double GlobalState::time_to_change_gears = 1.0;
 
 carmen_map_t GlobalState::cost_map;
 
-carmen_obstacle_distance_mapper_message *GlobalState::distance_map = NULL;
+carmen_obstacle_distance_mapper_map_message *GlobalState::distance_map = NULL;
 
 bool GlobalState::cost_map_initialized 	= false;
 

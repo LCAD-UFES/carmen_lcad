@@ -23,7 +23,7 @@ static carmen_ackerman_traj_point_t goal_list[GOAL_LIST_SIZE];
 static int goal_type[GOAL_LIST_SIZE];
 static int annotations[GOAL_LIST_SIZE];
 static int goal_list_size = 0;
-static carmen_obstacle_distance_mapper_message *current_map = NULL;
+static carmen_obstacle_distance_mapper_map_message *current_map = NULL;
 static carmen_behavior_selector_state_t current_state = BEHAVIOR_SELECTOR_FOLLOWING_LANE;
 static carmen_behavior_selector_goal_source_t current_goal_source = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
 static double change_goal_distance = 8.0; // @@@ Alberto: acho que nao usa... deletar?
@@ -44,10 +44,8 @@ double speed_around_annotation = 1.0;
 #define MAX_VIRTUAL_LASER_SAMPLES 10000
 carmen_mapper_virtual_laser_message virtual_laser_message;
 
-
 //SampleFilter filter;
 SampleFilter filter2;
-
 
 extern bool wait_start_moving;
 extern bool autonomous;
@@ -164,7 +162,7 @@ try_avoiding_obstacle(int rddf_pose_index, double circle_radius, carmen_rddf_roa
 		}
 	}
 
-	return rddf_pose_hit_obstacle;
+	return (rddf_pose_hit_obstacle);
 }
 
 
@@ -213,6 +211,70 @@ recent_moving_object_near_this_rddf_pose(carmen_ackerman_traj_point_t pose, carm
 }
 
 
+void
+clear_cells_below_robot(carmen_ackerman_traj_point_t pose)
+{
+	double delta_vertical_x, delta_vertical_y, delta_horizontal_x, delta_horizontal_y;
+	carmen_point_t vertical_pose, horizontal_pose[2];
+	int vertical_size, horizontal_size;
+
+	if (current_map == NULL)
+		return;
+
+	vertical_size = ceil((robot_config.length) / current_map->config.resolution);
+	horizontal_size = ceil(robot_config.model_predictive_planner_obstacles_safe_distance / current_map->config.resolution);
+
+	delta_vertical_x = cos(pose.theta);
+	delta_vertical_y = sin(pose.theta);
+
+	delta_horizontal_x = cos(M_PI/2 - pose.theta);
+	delta_horizontal_y = sin(M_PI/2 - pose.theta);
+
+	vertical_pose.theta = pose.theta;
+	vertical_pose.x = (pose.x - current_map->config.x_origin) / current_map->config.resolution;
+	vertical_pose.y = (pose.y - current_map->config.y_origin) / current_map->config.resolution;
+
+	vertical_pose.x -= robot_config.distance_between_rear_car_and_rear_wheels / current_map->config.resolution * cos(vertical_pose.theta);
+	vertical_pose.y -= robot_config.distance_between_rear_car_and_rear_wheels / current_map->config.resolution * sin(vertical_pose.theta);
+
+	for (int v = 0; v <= vertical_size; v++)
+	{
+		horizontal_pose[0] = vertical_pose;
+		horizontal_pose[1] = vertical_pose;
+
+		for (int h = 0; h <= horizontal_size; h++)
+		{
+			for (int i = 0; i < 2; i++)
+			{
+				if (horizontal_pose[i].x >= 0 && horizontal_pose[i].x < current_map->config.x_size &&
+						horizontal_pose[i].y >= 0 && horizontal_pose[i].y < current_map->config.y_size)
+				{
+					current_map->complete_x_offset[(int) horizontal_pose[i].x * current_map->config.y_size + (int) horizontal_pose[i].y] = DISTANCE_MAP_HUGE_DISTANCE;
+					current_map->complete_y_offset[(int) horizontal_pose[i].x * current_map->config.y_size + (int) horizontal_pose[i].y] = DISTANCE_MAP_HUGE_DISTANCE;
+				}
+			}
+
+			horizontal_pose[0].x = horizontal_pose[0].x - delta_horizontal_x;
+			horizontal_pose[0].y = horizontal_pose[0].y + delta_horizontal_y;
+
+			horizontal_pose[1].x = horizontal_pose[1].x + delta_horizontal_x;
+			horizontal_pose[1].y = horizontal_pose[1].y - delta_horizontal_y;
+		}
+
+		vertical_pose.x = vertical_pose.x + delta_vertical_x;
+		vertical_pose.y = vertical_pose.y + delta_vertical_y;
+	}
+}
+
+
+void
+clear_lane_ahead_in_distance_map(int current_goal_rddf_index, int rddf_pose_index, carmen_rddf_road_profile_message *rddf)
+{
+	for (int i = current_goal_rddf_index; i < rddf_pose_index; i++)
+		clear_cells_below_robot(rddf->poses[i]);
+}
+
+
 int
 behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double timestamp)
 {
@@ -232,27 +294,45 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double
 //	virtual_laser_message.num_positions = 0;
 //	printf("v %lf\n", udatmo_speed_front());
 	int last_obstacle_free_waypoint_index = 0;
-	double circle_radius = (robot_config.width + 0.5) / 2.0; // @@@ Alberto: metade da largura do carro + um espacco de guarda (ver valor certo)
+	double circle_radius = robot_config.obstacle_avoider_obstacles_safe_distance;
 	double distance_car_pose_car_front = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
 	for (int rddf_pose_index = 0; rddf_pose_index < rddf->number_of_poses && goal_index < GOAL_LIST_SIZE; rddf_pose_index++)
 	{
 		double distance_from_car_to_rddf_point, distance_to_annotation, distance_to_last_obstacle_free_waypoint;
 		int rddf_pose_hit_obstacle, moving_object_in_front_index;
 
-		rddf_pose_hit_obstacle = get_parameters_for_filling_in_goal_list(moving_object_in_front_index, last_obstacle_index, last_obstacle_free_waypoint_index,
-				distance_from_car_to_rddf_point, distance_to_last_obstacle, distance_to_annotation, distance_to_last_obstacle_free_waypoint,
+		rddf_pose_hit_obstacle = get_parameters_for_filling_in_goal_list(moving_object_in_front_index, last_obstacle_index,
+				last_obstacle_free_waypoint_index, distance_from_car_to_rddf_point, distance_to_last_obstacle, distance_to_annotation,
+				distance_to_last_obstacle_free_waypoint,
 				rddf, rddf_pose_index, goal_index, current_goal, current_goal_rddf_index, circle_radius, timestamp);
 
 		if (moving_object_in_front_index != -1) // -> Adiciona um waypoint na ultima posicao livre se a posicao atual colide com um objeto movel.
 		{
-			goal_type[goal_index] = MOVING_OBSTACLE_GOAL;
-			double distance_to_free_waypoint = DIST2D(rddf->poses[0], rddf->poses[last_obstacle_free_waypoint_index]);
 			double reduction_factor = (robot_pose.v > 1.0)? 1.0 / robot_pose.v: 1.0;
-			if (distance_to_free_waypoint >= distance_car_pose_car_front)
-				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, last_obstacle_free_waypoint_index, rddf,
-						-distance_car_pose_car_front * reduction_factor);
+			if ((robot_pose.v > udatmo_speed_front() + 1.0) && (distance_from_car_to_rddf_point / robot_pose.v) > 1.0)
+			{
+				goal_type[goal_index] = MOVING_OBSTACLE_GOAL;
+				double distance_to_free_waypoint = DIST2D(rddf->poses[0], rddf->poses[last_obstacle_free_waypoint_index]);
+				if (distance_to_free_waypoint >= distance_car_pose_car_front)
+					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, last_obstacle_free_waypoint_index, rddf,
+							-distance_car_pose_car_front * reduction_factor);
+				else
+					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, 0, rddf);
+			}
 			else
-				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, 0, rddf);
+			{
+				goal_type[goal_index] = MOVING_OBSTACLE_GOAL2;
+				distance_from_car_to_rddf_point = 0;
+				for (rddf_pose_index = current_goal_rddf_index; rddf_pose_index < rddf->number_of_poses - 1; rddf_pose_index++)
+				{
+					distance_from_car_to_rddf_point += DIST2D(rddf->poses[rddf_pose_index], rddf->poses[rddf_pose_index + 1]);
+					if (distance_from_car_to_rddf_point > (distance_between_waypoints - distance_car_pose_car_front))
+						break;
+				}
+				clear_lane_ahead_in_distance_map(current_goal_rddf_index, rddf_pose_index, rddf);
+				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf,
+						-distance_car_pose_car_front * reduction_factor);
+			}
 			break;
 		}
 		else if (rddf_pose_hit_obstacle)
@@ -466,7 +546,7 @@ get_robot_config()
 
 
 void
-behavior_selector_update_map(carmen_obstacle_distance_mapper_message *map)
+behavior_selector_update_map(carmen_obstacle_distance_mapper_map_message *map)
 {
 	current_map = map;
 }

@@ -324,7 +324,7 @@ class CGSmoother {
 
         // PUBLIC ATTRIBUTES
         carmen_robot_ackerman_config_t robot_config;
-        carmen_obstacle_distance_mapper_message *distance_map;
+        carmen_obstacle_distance_mapper_map_message *distance_map;
 
         // PUBLIC METHODS
 
