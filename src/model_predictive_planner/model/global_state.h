@@ -42,7 +42,7 @@ public:
 	static bool last_path_received_is_empty;
 
 	static carmen_map_t cost_map;
-	static carmen_obstacle_distance_mapper_message *distance_map;
+	static carmen_obstacle_distance_mapper_map_message *distance_map;
 	static bool cost_map_initialized;
 
 	static bool	  following_path; // true if the path is being followed

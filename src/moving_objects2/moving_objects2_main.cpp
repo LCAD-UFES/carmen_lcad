@@ -36,7 +36,6 @@ int last_globalpos;
 double safe_range_above_sensors;
 double robot_wheel_radius;
 
-double obstacle_cost_distance = 1.0;
 double obstacle_probability_threshold = 0.5;
 
 int use_simulator_pose = 0;

@@ -48,37 +48,22 @@ Detector::update_moving_object_velocity(carmen_ackerman_traj_point_t &robot_pose
 
 
 int
-Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
+Detector::detect(carmen_obstacle_distance_mapper_map_message *current_map,
 				 carmen_rddf_road_profile_message *rddf,
 				 int goal_index,
 				 int rddf_pose_index,
 				 carmen_ackerman_traj_point_t robot_pose,
+				 double circle_radius,
 				 double displacement,
 				 double timestamp)
 {
-	static bool obstacle_already_detected = false;
-
 //	printf("w %d, i %d\n", obstacle_already_detected, rddf_pose_index);
 	if (rddf_pose_index == 0)
 		obstacle_already_detected = false;
 
-	double circle_radius = (robot_config.width + 0.0) / 2.0; // metade da largura do carro + um espacco de guarda
-
 	double distance = carmen_distance_ackerman_traj(&(rddf->poses[rddf_pose_index]), &robot_pose);
 
 	double disp = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
-	if (distance < disp)
-	{
-		moving_object[0].valid = false;
-		moving_object[0].index = -1;
-		moving_object[0].rddf_pose_index = -1;
-		moving_object[0].timestamp = 0.0;
-
-		set_detected(false);
-//		printf("## distance %lf, aqui 0, %d\n", distance, rddf_pose_index);
-		return (-1);
-	}
-
 	carmen_point_t front_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&rddf->poses[rddf_pose_index], disp);
 	if (displacement > 0.0)
 	{
@@ -95,7 +80,18 @@ Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
 
 //	printf("distance %lf, ", distance);
 
-	if (!obstacle_already_detected && (distance < circle_radius))
+	if (!obstacle_already_detected && (distance < circle_radius) && (rddf_pose_index <= 1))
+	{	// Obstaculo fixo ao lado, ja que nao faz sentido detectar em cima do carro
+		obstacle_already_detected = true;
+
+		moving_object[0].valid = false;
+		moving_object[0].index = -1;
+		moving_object[0].rddf_pose_index = -1;
+		moving_object[0].timestamp = 0.0;
+
+		set_detected(false);
+	}
+	else if (!obstacle_already_detected && (distance < circle_radius))
 	{
 		obstacle_already_detected = true;
 
@@ -129,6 +125,13 @@ Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
 		moving_object[0].rddf_pose_index = -1;
 		moving_object[0].timestamp = 0.0;
 	}
+	else if (obstacle_already_detected)
+	{
+		if (moving_object[0].valid && (speed_front() > 0.05))
+			return (moving_object[0].rddf_pose_index);
+		else
+			return (-1);
+	}
 
 	set_detected(false);
 
@@ -138,14 +141,15 @@ Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
 
 
 int
-Detector::detect(carmen_obstacle_distance_mapper_message *current_map,
+Detector::detect(carmen_obstacle_distance_mapper_map_message *current_map,
 				 carmen_rddf_road_profile_message *rddf,
 				 int goal_index,
 				 int rddf_pose_index,
 				 carmen_ackerman_traj_point_t robot_pose,
+				 double circle_radius,
 				 double timestamp)
 {
-	return (Detector::detect(current_map, rddf, goal_index, rddf_pose_index, robot_pose, 0.0, timestamp));
+	return (Detector::detect(current_map, rddf, goal_index, rddf_pose_index, robot_pose, circle_radius, 0.0, timestamp));
 }
 
 

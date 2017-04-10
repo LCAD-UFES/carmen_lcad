@@ -15,7 +15,6 @@ double GlobalState::localizer_pose_timestamp = 0;
 
 Command GlobalState::last_odometry;
 
-int GlobalState::show_debug_info;
 Pose *GlobalState::goal_pose  = NULL;
 bool GlobalState::last_goal = true;
 
@@ -33,7 +32,7 @@ double GlobalState::time_to_change_gears = 1.0;
 
 carmen_map_t GlobalState::cost_map;
 
-carmen_obstacle_distance_mapper_message *GlobalState::distance_map = NULL;
+carmen_obstacle_distance_mapper_map_message *GlobalState::distance_map = NULL;
 
 bool GlobalState::cost_map_initialized 	= false;
 

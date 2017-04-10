@@ -22,7 +22,7 @@ private:
 	carmen_robot_ackerman_config_t *robot_conf_g;
 	carmen_planner_path_t path;
 	AstarAckerman astarAckeman;
-	carmen_obstacle_distance_mapper_message *distanceMap = NULL;
+	carmen_obstacle_distance_mapper_map_message *distanceMap = NULL;
 
 
 public:
@@ -39,7 +39,7 @@ public:
 	void carmen_planner_ackerman_regenerate_trajectory();
 	int carmen_planner_ackerman_update_robot(carmen_ackerman_traj_point_p new_position, carmen_robot_ackerman_config_t *robot_conf);
 	void carmen_planner_ackerman_set_cost_map(carmen_map_t *new_map);
-	int carmen_planner_ackerman_setDistanceMap(carmen_obstacle_distance_mapper_message *newDistanceMap);
+	int carmen_planner_ackerman_setDistanceMap(carmen_obstacle_distance_mapper_map_message *newDistanceMap);
 
 	int	carmen_planner_ackerman_update_goal(carmen_ackerman_traj_point_t *goal);
 	void carmen_planner_ackerman_get_status(carmen_planner_status_p status);

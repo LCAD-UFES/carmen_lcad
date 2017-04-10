@@ -39,9 +39,6 @@ static int visual_odometry_is_global_pos = 0;
 double safe_range_above_sensors;
 double robot_wheel_radius;
 
-double obstacle_cost_distance = 1.0;
-double obstacle_probability_threshold = 0.5;
-
 int use_simulator_pose = 0;
 
 rotation_matrix *board_to_car_matrix = NULL;
@@ -79,11 +76,7 @@ int number_of_threads = 1;
 
 rotation_matrix *r_matrix_car_to_global = NULL;
 
-
 carmen_localize_ackerman_map_t localize_map;
-
-
-
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -619,10 +612,6 @@ read_parameters(int argc, char **argv,
 			{(char *)"grid_mapping", (char *)"map_locc", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.log_odds.log_odds_occ, 0, NULL},
 			{(char *)"grid_mapping", (char *)"map_lfree", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.log_odds.log_odds_free, 0, NULL},
 			{(char *)"grid_mapping", (char *)"map_l0", CARMEN_PARAM_DOUBLE, &ultrasonic_sensor_params.log_odds.log_odds_l0, 0, NULL},
-
-			{(char *)"rrt",	(char *)"obstacle_cost_distance",	CARMEN_PARAM_DOUBLE,	&obstacle_cost_distance,	1, NULL},
-			{(char *)"rrt",	(char *)"obstacle_probability_threshold",	CARMEN_PARAM_DOUBLE,	&obstacle_probability_threshold,	1, NULL}
-
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));

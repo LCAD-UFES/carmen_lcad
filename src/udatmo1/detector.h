@@ -15,9 +15,6 @@ namespace udatmo
 
 class Detector
 {
-	/** @brief System configuration settings. */
-	carmen_robot_ackerman_config_t robot_config;
-
 	/**
 	 * @brief Update obstacle speed estimates across its history.
 	 */
@@ -30,11 +27,16 @@ class Detector
 	}
 
 public:
+	/** @brief System configuration settings. */
+	carmen_robot_ackerman_config_t robot_config;
+
 	/** @brief Result of last detection operation. */
 	bool detected;
 
 	/** @brief History of the front moving obstacle. */
 	Obstacle moving_object[MOVING_OBJECT_HISTORY_SIZE];
+
+	bool obstacle_already_detected;
 
 	SampleFilter speed;
 
@@ -46,18 +48,20 @@ public:
 	/**
 	 * @brief Perform moving obstacle detection in the front of the car.
 	 */
-	int detect(carmen_obstacle_distance_mapper_message *current_map,
+	int detect(carmen_obstacle_distance_mapper_map_message *current_map,
 				carmen_rddf_road_profile_message *rddf,
 				int goal_index,
 				int rddf_pose_index,
 				carmen_ackerman_traj_point_t robot_pose,
+				double circle_radius,
 				double timestamp);
 
-	int detect(carmen_obstacle_distance_mapper_message *current_map,
+	int detect(carmen_obstacle_distance_mapper_map_message *current_map,
 				carmen_rddf_road_profile_message *rddf,
 				int goal_index,
 				int rddf_pose_index,
 				carmen_ackerman_traj_point_t robot_pose,
+				double circle_radius,
 				double displacement,
 				double timestamp);
 

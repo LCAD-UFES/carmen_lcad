@@ -300,62 +300,11 @@ move_path_point_to_map_coordinates(const carmen_ackerman_path_point_t point, dou
 }
 
 
-//double
-//distance_from_traj_point_to_obstacle(carmen_ackerman_path_point_t point, double displacement, double min_dist)
-//{
-//	// Move path point to map coordinates
-//	carmen_ackerman_path_point_t path_point_in_map_coords =	move_path_point_to_map_coordinates(point, displacement);
-//	int x_map_cell = (int) round(path_point_in_map_coords.x);
-//	int y_map_cell = (int) round(path_point_in_map_coords.y);
-//
-//	// Os mapas de carmen sao orientados a colunas, logo a equacao eh como abaixo
-//	int index = y_map_cell + GlobalState::distance_map->config.y_size * x_map_cell;
-//	if (index < 0 || index >= GlobalState::distance_map->size)
-//		return (min_dist);
-//
-//	double dx = (double) GlobalState::distance_map->complete_x_offset[index] + (double) x_map_cell - path_point_in_map_coords.x;
-//	double dy = (double) GlobalState::distance_map->complete_y_offset[index] + (double) y_map_cell - path_point_in_map_coords.y;
-//
-//	double distance_in_map_coordinates = sqrt(dx * dx + dy * dy);
-//	double distance = distance_in_map_coordinates * GlobalState::distance_map->config.resolution;
-//
-//	return (distance);
-//}
-
-
-//double
-//compute_distance_to_closest_obstacles(carmen_ackerman_path_point_t path_pose, double circle_radius)
-//{
-//	int number_of_point = 4;
-//	double displacement_inc = GlobalState::robot_config.distance_between_front_and_rear_axles / (number_of_point - 2);
-//	double displacement = 0.0;
-//	double proximity_to_obstacles = 0.0;
-//
-//	for (int i = -1; i < number_of_point; i++)
-//	{
-//		displacement = displacement_inc * i;
-//
-//		if (i < 0)
-//			displacement = -GlobalState::robot_config.distance_between_rear_car_and_rear_wheels;
-//
-//		if (i == number_of_point - 1)
-//			displacement = GlobalState::robot_config.distance_between_front_and_rear_axles + GlobalState::robot_config.distance_between_front_car_and_front_wheels;
-//
-//		double distance = distance_from_traj_point_to_obstacle(path_pose, displacement, circle_radius);
-//		double delta = distance - circle_radius;
-//		if (delta < 0.0)
-//			proximity_to_obstacles += delta * delta;
-//	}
-//
-//	return (proximity_to_obstacles);
-//}
-
-
 double
 compute_proximity_to_obstacles_using_distance_map(vector<carmen_ackerman_path_point_t> path)
 {
 	double proximity_to_obstacles_for_path = 0.0;
-	double circle_radius = (GlobalState::robot_config.width + 1.7) / 2.0; // metade da largura do carro + um espacco de guarda
+	double circle_radius = GlobalState::robot_config.model_predictive_planner_obstacles_safe_distance; // metade da largura do carro + um espacco de guarda
 	carmen_point_t localizer = {GlobalState::localizer_pose->x, GlobalState::localizer_pose->y, GlobalState::localizer_pose->theta};
 	for (unsigned int i = 0; i < path.size(); i += 1)
 	{

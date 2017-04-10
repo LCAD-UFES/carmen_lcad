@@ -47,13 +47,12 @@ void subscribe_bumblebee_basic_messages(int camera_organization)
 }
 
 
-
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	if ((argc != 2))
-		carmen_die(
-				"%s: Wrong number of parameters. This module requires 1 parameter and received %d parameter(s). \nUsage:\n %s <camera_number>",
-				argv[0], argc - 1, argv[0], argv[0]);
+		carmen_die("%s: Wrong number of parameters. This module requires 1 parameter and received %d parameter(s). \nUsage:\n %s <camera_number>",
+				argv[0], argc - 1, argv[0]);
 
 	/* defining the camera to be used */
 	camera = atoi(argv[1]);

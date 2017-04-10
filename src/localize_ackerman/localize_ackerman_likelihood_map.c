@@ -366,7 +366,7 @@ carmen_to_localize_ackerman_map(carmen_map_p cmap,
 	if (distance_map == NULL)
 	{
 		distance_map =  (carmen_prob_models_distance_map *) calloc(1, sizeof(carmen_prob_models_distance_map));
-		carmen_prob_models_initialize_distance_map(distance_map, cmap);
+		carmen_prob_models_initialize_distance_map(distance_map, cmap->config);
 	}
 
 	/*add remission map into localize map*/

@@ -181,13 +181,13 @@ carmen_prob_models_create_compact_map(carmen_compact_map_t *cmap, carmen_map_t *
 
 	if (map->config.map_name != NULL)
 	{
-		cmap->config.map_name = (char *)calloc(strlen(map->config.map_name) + 1, sizeof(char));
+		cmap->config.map_name = (char *) calloc(strlen(map->config.map_name) + 1, sizeof(char));
 		strcpy(cmap->config.map_name, map->config.map_name);
 	}
 
-	cmap->coord_x = (int *)calloc(cmap->number_of_known_points_on_the_map, sizeof(int));
-	cmap->coord_y = (int *)calloc(cmap->number_of_known_points_on_the_map, sizeof(int));
-	cmap->value = (double *)calloc(cmap->number_of_known_points_on_the_map, sizeof(double));
+	cmap->coord_x = (int *) malloc(cmap->number_of_known_points_on_the_map * sizeof(int));
+	cmap->coord_y = (int *) malloc(cmap->number_of_known_points_on_the_map * sizeof(int));
+	cmap->value = (double *) malloc(cmap->number_of_known_points_on_the_map * sizeof(double));
 
 	for (i = 0, k = 0; i < number_of_cells; i++)
 	{
@@ -203,14 +203,14 @@ carmen_prob_models_create_compact_map(carmen_compact_map_t *cmap, carmen_map_t *
 
 
 void
-carmen_prob_models_initialize_cost_map(carmen_map_t *cost_map, carmen_map_t *map, double resolution)
+carmen_prob_models_initialize_cost_map(carmen_map_t *cost_map, carmen_map_config_t config, double resolution)
 {
 	cost_map->config.resolution = resolution;
-	cost_map->config.x_origin = map->config.x_origin;
-	cost_map->config.y_origin = map->config.y_origin;
+	cost_map->config.x_origin = config.x_origin;
+	cost_map->config.y_origin = config.y_origin;
 
-	if (((cost_map->config.x_size * cost_map->config.resolution) != (map->config.x_size * map->config.resolution)) ||
-		((cost_map->config.y_size * cost_map->config.resolution) != (map->config.y_size * map->config.resolution)))
+	if (((cost_map->config.x_size * cost_map->config.resolution) != (config.x_size * config.resolution)) ||
+		((cost_map->config.y_size * cost_map->config.resolution) != (config.y_size * config.resolution)))
 	{
 		if (cost_map->complete_map != NULL)
 			free(cost_map->complete_map);
@@ -221,10 +221,10 @@ carmen_prob_models_initialize_cost_map(carmen_map_t *cost_map, carmen_map_t *map
 		cost_map->complete_map = NULL;
 		cost_map->map = NULL;
 
-		cost_map->config = map->config;
+		cost_map->config = config;
 		cost_map->config.resolution = resolution;
-		cost_map->config.x_size = (map->config.x_size * map->config.resolution) / cost_map->config.resolution;
-		cost_map->config.y_size = (map->config.y_size * map->config.resolution) / cost_map->config.resolution;
+		cost_map->config.x_size = (config.x_size * config.resolution) / cost_map->config.resolution;
+		cost_map->config.y_size = (config.y_size * config.resolution) / cost_map->config.resolution;
 	}
 
 	if (cost_map->complete_map == NULL)
@@ -243,8 +243,8 @@ void
 carmen_prob_models_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t *map, double resolution, double obstacle_cost_distance, double obstacle_probability_threshold)
 {
 	cost_map->config.resolution = resolution;
-	carmen_prob_models_initialize_cost_map(cost_map, map, resolution);
-	carmen_prob_models_convert_to_linear_distance_to_obstacles_map(cost_map, map, obstacle_probability_threshold, obstacle_cost_distance, 0);
+	carmen_prob_models_initialize_cost_map(cost_map, map->config, resolution);
+	carmen_prob_models_convert_obstacles_map_to_cost_map(cost_map, map, obstacle_probability_threshold, obstacle_cost_distance, 0);
 }
 
 
@@ -334,7 +334,7 @@ dt(float *f, int n)
 /* dt of 2d function using squared distance */
 // http://cs.brown.edu/~pff/dt/
 void
-carmen_prob_models_convert_to_linear_distance_to_obstacles_map(carmen_map_t *cost_map, carmen_map_t *map, double occupancy_threshold,
+carmen_prob_models_convert_obstacles_map_to_cost_map(carmen_map_t *cost_map, carmen_map_t *map, double occupancy_threshold,
 		double distance_for_zero_cost_in_meters, int invert_map)
 {
 	int width = cost_map->config.x_size;
@@ -2703,14 +2703,14 @@ compute_intermediate_pixel_distance(int x, int y,
 
 
 void
-carmen_prob_models_initialize_distance_map(carmen_prob_models_distance_map *lmap, carmen_map_p cmap)
+carmen_prob_models_initialize_distance_map(carmen_prob_models_distance_map *lmap, carmen_map_config_t config)
 {
 	int i;
 
 	if (lmap->complete_distance == NULL)
 	{
 		/* copy map parameters from carmen map */
-		lmap->config = cmap->config;
+		lmap->config = config;
 
 		/* allocate distance map */
 		lmap->complete_distance = (double *) calloc(
@@ -2739,7 +2739,7 @@ carmen_prob_models_initialize_distance_map(carmen_prob_models_distance_map *lmap
 	else
 	{
 		/* copy map parameters from carmen map */
-		lmap->config = cmap->config;
+		lmap->config = config;
 
 		memset(lmap->complete_distance, 0,
 				lmap->config.x_size * lmap->config.y_size * sizeof(double));
@@ -2770,9 +2770,9 @@ initialize_distance_measurements(int x_size, int y_size,
 	int x, y;
 
 	int total_size = x_size * y_size;
-	std::fill_n(lmap->complete_distance, total_size, HUGE_DISTANCE);
-	std::fill_n(lmap->complete_x_offset, total_size, HUGE_DISTANCE);
-	std::fill_n(lmap->complete_y_offset, total_size, HUGE_DISTANCE);
+	std::fill_n(lmap->complete_distance, total_size, DISTANCE_MAP_HUGE_DISTANCE);
+	std::fill_n(lmap->complete_x_offset, total_size, DISTANCE_MAP_HUGE_DISTANCE);
+	std::fill_n(lmap->complete_y_offset, total_size, DISTANCE_MAP_HUGE_DISTANCE);
 
 	for (x = 0; x < x_size; x++)
 	{
@@ -2781,21 +2781,17 @@ initialize_distance_measurements(int x_size, int y_size,
 			if (cmap_map[x][y] > minimum_occupied_prob)
 			{
 				distance[x][y] = 0.0;
-				x_offset[x][y] = 0.0;
-				y_offset[x][y] = 0.0;
+				x_offset[x][y] = 0;
+				y_offset[x][y] = 0;
 			}
 		}
 	}
 }
 
 
-/* compute minimum distance to all occupied cells */
 void
-carmen_prob_models_create_distance_map(carmen_prob_models_distance_map *lmap, carmen_map_p map,
-		double minimum_occupied_prob)
+carmen_prob_models_create_distance_map(carmen_prob_models_distance_map *lmap, carmen_map_p map, double minimum_occupied_prob)
 {
-//	double time2 = carmen_get_time();
-
 	int x, y;
 
 	lmap->config = map->config;
@@ -2823,8 +2819,6 @@ carmen_prob_models_create_distance_map(carmen_prob_models_distance_map *lmap, ca
 	for (x = x_size - 2; x >= 1; x--)
 		for (y = y_size - 2; y >= 1; y--)
 			compute_intermediate_pixel_distance(x, y, distance, x_offset, y_offset);
-
-//	uyprintf("time2: %lf \n", (carmen_get_time()-time2));
 }
 
 
