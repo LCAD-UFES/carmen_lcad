@@ -45,6 +45,7 @@ static carmen_ackerman_traj_point_t *carmen_rddf_poses_ahead = NULL;
 static carmen_ackerman_traj_point_t *carmen_rddf_poses_back = NULL;
 static int carmen_rddf_num_poses_ahead = 0;
 static int carmen_rddf_num_poses_back = 0;
+static int *annotations_codes;
 static int *annotations;
 
 static int carmen_rddf_pose_initialized = 0;
@@ -180,7 +181,10 @@ clear_annotations(int *rddf_annotations, int num_annotations)
 	int i;
 
 	for(i = 0; i < num_annotations; i++)
+	{
 		rddf_annotations[i] = RDDF_ANNOTATION_TYPE_NONE;
+		annotations_codes[i] = RDDF_ANNOTATION_CODE_NONE;
+	}
 }
 
 
@@ -188,7 +192,10 @@ void
 clear_annotations()
 {
 	for (int i = 0; i < carmen_rddf_num_poses_ahead; i++)
+	{
 		annotations[i] = RDDF_ANNOTATION_TYPE_NONE;
+		annotations_codes[i] = RDDF_ANNOTATION_CODE_NONE;
+	}
 }
 
 
@@ -370,7 +377,10 @@ set_annotations(carmen_point_t robot_pose)
 		find_nearest_waypoint_and_dist(annotations_to_publish[i].annotation, &nearest_pose, &nearest_pose_dist);
 
 		if ((nearest_pose >= 0) && nearest_pose_dist < 10.0 && (annotation_is_forward_from_robot(robot_pose, annotations_to_publish[i].annotation)))
+		{
 			annotations[nearest_pose] = annotations_to_publish[i].annotation.annotation_type;
+			annotations_codes[nearest_pose] = annotations_to_publish[i].annotation.annotation_code;
+		}
 	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -441,7 +451,8 @@ carmen_rddf_play_publish_rddf_and_annotations(carmen_point_t robot_pose)
 			carmen_rddf_poses_back,
 			carmen_rddf_num_poses_ahead,
 			carmen_rddf_num_poses_back,
-			annotations);
+			annotations,
+			annotations_codes);
 
 		carmen_rddf_play_publish_annotation_queue();
 	}
@@ -647,15 +658,37 @@ carmen_rddf_play_load_index(char *rddf_filename)
 
 	if (!carmen_rddf_index_exists(rddf_filename))
 	{
-		carmen_rddf_play_open_kml(rddf_filename, &placemark_vector);
-
-		for (unsigned int i = 0; i < placemark_vector.size(); i++)
+		if (strcmp(rddf_filename + (strlen(rddf_filename) - 3), "kml") == 0)
 		{
-			if (carmen_rddf_play_copy_kml(placemark_vector[i], &message, &annotation))
-				carmen_rddf_index_add(&message, 0, 0, annotation);
-		}
+			carmen_rddf_play_open_kml(rddf_filename, &placemark_vector);
 
-		carmen_rddf_index_save(rddf_filename);
+			for (unsigned int i = 0; i < placemark_vector.size(); i++)
+			{
+				if (carmen_rddf_play_copy_kml(placemark_vector[i], &message, &annotation))
+					carmen_rddf_index_add(&message, 0, 0, annotation);
+			}
+
+			carmen_rddf_index_save(rddf_filename);
+		}
+		else
+		{
+			FILE *fptr = fopen(rddf_filename, "r");
+
+			while (!feof(fptr))
+			{
+				memset(&message, 0, sizeof(message));
+
+				fscanf(fptr, "%lf %lf %lf %lf %lf %lf\n",
+					&(message.pose.position.x), &(message.pose.position.y),
+					&(message.pose.orientation.yaw), &(message.velocity.x), &(message.phi),
+					&(message.timestamp));
+
+				carmen_rddf_index_add(&message, 0, 0, 0);
+			}
+
+			carmen_rddf_index_save(rddf_filename);
+			fclose(fptr);
+		}
 	}
 
 	carmen_rddf_load_index(rddf_filename);
@@ -713,6 +746,7 @@ carmen_rddf_play_initialize(void)
 	carmen_rddf_poses_ahead = (carmen_ackerman_traj_point_t *) calloc (carmen_rddf_num_poses_ahead_max, sizeof(carmen_ackerman_traj_point_t));
 	carmen_rddf_poses_back = (carmen_ackerman_traj_point_t *) calloc (carmen_rddf_num_poses_ahead_max, sizeof(carmen_ackerman_traj_point_t));
 	annotations = (int *) calloc (carmen_rddf_num_poses_ahead_max, sizeof(int));
+	annotations_codes = (int *) calloc (carmen_rddf_num_poses_ahead_max, sizeof(int));
 	memset(&annotation_queue_message, 0, sizeof(annotation_queue_message));
 
 	carmen_test_alloc(carmen_rddf_poses_ahead);

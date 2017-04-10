@@ -180,40 +180,37 @@ publish_car_status()
 	IPC_RETURN_TYPE err = IPC_OK;
 	carmen_ford_escape_status_message msg;
 
-	msg.g_XGV_velocity = g_XGV_velocity;
-	msg.g_XGV_atan_curvature = g_XGV_atan_curvature;
-	msg.g_XGV_brakes = g_XGV_brakes;
-	msg.g_XGV_gear = g_XGV_gear;
-	msg.g_XGV_headlights_status = g_XGV_headlights_status;
-	msg.g_XGV_horn_status = g_XGV_horn_status;
-	msg.g_XGV_right_front_wheel_speed = g_XGV_right_front_wheel_speed;
-	msg.g_XGV_left_front_wheel_speed = g_XGV_left_front_wheel_speed;
-	msg.g_XGV_right_rear_wheel_speed = g_XGV_right_rear_wheel_speed;
-	msg.g_XGV_left_rear_wheel_speed = g_XGV_left_rear_wheel_speed;
-	msg.g_XGV_main_fuel_supply = g_XGV_main_fuel_supply;
-	msg.g_XGV_main_propulsion = g_XGV_main_propulsion;
-	msg.g_XGV_parking_brake = g_XGV_parking_brake;
-	msg.g_XGV_steering = g_XGV_steering;
 	msg.g_XGV_throttle = g_XGV_throttle;
-	msg.g_XGV_turn_signal = g_XGV_turn_signal;
+	msg.g_XGV_steering = g_XGV_steering;
+	msg.g_XGV_brakes = g_XGV_brakes;
 
-//	g_XGV_component_status bit Interpretation F: disengaged, T: engaged (see page 62 of ByWire XGV User Manual, Version 1.5)
-//	0 (16) Manual override
-//	1 (17) SafeStop pause relay F: run, T: pause
-//	2 (18) SafeStop stop relay F: run, T: stop
-//	3-4 (19-20) SafeStop link status 7 (23) Partial mode override: speed 0: no link, 1: bypass, 2: link good
-//	5 (21) External E-Stop button F: run, T: stop
-//	6 (22) Partial mode override: F: computer control, T: manual
-//	       steering control
-//	               F: computer control, T: manual
-//	              control
-//	8 (24) Door/Liftgate pause F: run, T: pause
-//	9 (25) Error-caused pause* F: run, T: pause
-//	10 (26) Emergency manual override* F: disengaged, T: engaged
-//	11 (27) Steering needs initialization* F: initialized, T: uninitialized
-//	        Steering initialization waiting F: initialized, T: user must init
-//	        on user input* steering manually or press OK
+	//	g_XGV_component_status bit Interpretation F: disengaged, T: engaged (see page 62 of ByWire XGV User Manual, Version 1.5)
+	//	0 (16) Manual override
+	//	1 (17) SafeStop pause relay F: run, T: pause
+	//	2 (18) SafeStop stop relay F: run, T: stop
+	//	3-4 (19-20) SafeStop link status 7 (23) Partial mode override: speed 0: no link, 1: bypass, 2: link good
+	//	5 (21) External E-Stop button F: run, T: stop
+	//	6 (22) Partial mode override: F: computer control, T: manual
+	//	       steering control
+	//	               F: computer control, T: manual
+	//	              control
+	//	8 (24) Door/Liftgate pause F: run, T: pause
+	//	9 (25) Error-caused pause* F: run, T: pause
+	//	10 (26) Emergency manual override* F: disengaged, T: engaged
+	//	11 (27) Steering needs initialization* F: initialized, T: uninitialized
+	//	        Steering initialization waiting F: initialized, T: user must init
+	//	        on user input* steering manually or press OK
 	msg.g_XGV_component_status = g_XGV_component_status;
+
+	msg.g_XGV_main_propulsion = g_XGV_main_propulsion;
+	msg.g_XGV_main_fuel_supply = g_XGV_main_fuel_supply;
+	msg.g_XGV_parking_brake = g_XGV_parking_brake;
+	msg.g_XGV_gear = g_XGV_gear;
+
+	msg.g_XGV_turn_signal = g_XGV_turn_signal;
+	msg.g_XGV_horn_status = g_XGV_horn_status;
+	msg.g_XGV_headlights_status = g_XGV_headlights_status;
+
 //	printf("g_XGV_turn_signal = 0x%x\n", g_XGV_turn_signal);
 	msg.timestamp = carmen_get_time();
 	msg.host = carmen_get_host();

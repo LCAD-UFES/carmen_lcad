@@ -8,6 +8,7 @@
 static char *carmen_rddf_filename;
 static double carmen_rddf_min_distance_between_waypoints;
 static double carmen_rddf_max_velocity;
+FILE *fptr;
 
 
 static void
@@ -27,8 +28,8 @@ static void
 carmen_rddf_build_get_parameters (int argc, char** argv)
 {
 	carmen_param_t param_list[] = {
-			{(char *)"rddf", (char *)"min_distance_between_waypoints", CARMEN_PARAM_DOUBLE, &carmen_rddf_min_distance_between_waypoints, 1, NULL},
-			{(char *)"robot", (char *)"max_velocity", CARMEN_PARAM_DOUBLE, &carmen_rddf_max_velocity, 1, NULL},
+			{(char *)"rddf", (char *) "min_distance_between_waypoints", CARMEN_PARAM_DOUBLE, &carmen_rddf_min_distance_between_waypoints, 1, NULL},
+			{(char *)"robot", (char *) "max_velocity", CARMEN_PARAM_DOUBLE, &carmen_rddf_max_velocity, 1, NULL},
 	};
 
 	int num_items = sizeof(param_list) / sizeof(param_list[0]);
@@ -39,13 +40,12 @@ carmen_rddf_build_get_parameters (int argc, char** argv)
 static void
 localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
-	double latitude, longitude, altitude, distance;
-	carmen_point_t current_waypoint;
-	static carmen_point_t last_waypoint;
+	double distance;
+	carmen_localize_ackerman_globalpos_message current_pose;
+	static carmen_localize_ackerman_globalpos_message last_pose;
 	static int first_time = 1;
 
-	current_waypoint.x = -msg->globalpos.y;
-	current_waypoint.y = msg->globalpos.x;
+	current_pose = (*msg);
 
 	if (first_time)
 	{
@@ -53,31 +53,19 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 		first_time = 0;
 	}
 	else
-	{
-		distance = carmen_distance(&current_waypoint, &last_waypoint);
-	}
+		distance = DIST2D(current_pose.globalpos, last_pose.globalpos);
 
 	if (distance < carmen_rddf_min_distance_between_waypoints)
 		return;
 
-	last_waypoint = current_waypoint;
+	last_pose = current_pose;
 
-	carmen_Utm_Gdc3(last_waypoint.x, last_waypoint.y, 0, 24, 0, &latitude, &longitude, &altitude);
-
-	carmen_rddf_play_add_waypoint(latitude, longitude);
-
-	carmen_rddf_play_add_waypoint_speed(latitude, longitude,
-			carmen_rddf_max_velocity,
-			msg->v,
-			msg->globalpos.theta,
+	fptr = fopen(carmen_rddf_filename, "a");
+	fprintf(fptr, "%lf %lf %lf %lf %lf %lf\n",
+			msg->globalpos.x, msg->globalpos.y,
+			msg->globalpos.theta, msg->v, msg->phi,
 			msg->timestamp);
-}
-
-
-void
-carmen_rddf_timer_handler(char *carmen_rddf_filename)
-{
-	carmen_rddf_play_save_waypoints(carmen_rddf_filename);
+	fclose(fptr);
 }
 
 
@@ -92,6 +80,10 @@ main (int argc, char **argv)
 	setlocale(LC_ALL, "C");
 	signal(SIGINT, carmen_rddf_build_shutdown_module);
 
+	// just to clean the file
+	fptr = fopen(carmen_rddf_filename, "w");
+	fclose(fptr);
+
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 	carmen_rddf_build_get_parameters(argc, argv);
@@ -100,9 +92,6 @@ main (int argc, char **argv)
 	carmen_localize_ackerman_subscribe_globalpos_message(
 			NULL, (carmen_handler_t) localize_globalpos_handler,
 			CARMEN_SUBSCRIBE_ALL);
-
-	carmen_ipc_addPeriodicTimer(1.0, (TIMER_HANDLER_TYPE) carmen_rddf_timer_handler,
-			carmen_rddf_filename);
 
 	carmen_ipc_dispatch();
 	return (0);

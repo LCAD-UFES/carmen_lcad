@@ -8,7 +8,8 @@ extern "C" {
 #include <carmen/carmen.h>
 #include "prob_measurement_model.h"
 
-#define      HUGE_DISTANCE     32000
+#define      DISTANCE_MAP_HUGE_DISTANCE     10
+#define      HUGE_DISTANCE     				32000
 
 typedef enum _ProbabilisticMapColor
 {
@@ -153,6 +154,7 @@ typedef struct
 	double **distance;
 } carmen_prob_models_distance_map;
 
+
 void init_carmen_map(const ProbabilisticMapParams *params, carmen_map_t *carmen_map);
 void init_probabilistic_grid_map_model(ProbabilisticMapParams *params, carmen_map_t *carmen_map);
 void init_probabilistic_map(ProbabilisticMapParams *params, carmen_map_t *carmen_map, ProbabilisticMap *map, int num_particles);
@@ -262,10 +264,10 @@ carmen_prob_models_update_intensity_of_cells_hit_by_rays_for_calibration(carmen_
 
 void carmen_prob_models_clean_carmen_map(carmen_map_t *map);
 
-void carmen_prob_models_convert_to_linear_distance_to_obstacles_map(carmen_map_t *cost_map, carmen_map_t *map, double occupancy_threshold,
+void carmen_prob_models_convert_obstacles_map_to_cost_map(carmen_map_t *cost_map, carmen_map_t *map, double occupancy_threshold,
 		double distance_for_zero_cost_in_meters, int invert_map);
 
-void carmen_prob_models_initialize_cost_map(carmen_map_t *cost_map, carmen_map_t *map, double resolution);
+void carmen_prob_models_initialize_cost_map(carmen_map_t *cost_map, carmen_map_config_t config, double resolution);
 
 void carmen_prob_models_build_obstacle_cost_map(carmen_map_t *cost_map, carmen_map_t *map, double resolution, double obstacle_cost_distance, double occupancy_threshold);
 
@@ -278,7 +280,7 @@ int is_inside_ellipse(int dx, int dy, double i_minor, double i_major, double cos
 void carmen_prob_models_create_masked_distance_map(carmen_prob_models_distance_map *lmap, carmen_map_p map,
 		double minimum_occupied_prob, carmen_point_p robot_position, carmen_point_p goal_position);
 
-void carmen_prob_models_initialize_distance_map(carmen_prob_models_distance_map *lmap, carmen_map_p cmap);
+void carmen_prob_models_initialize_distance_map(carmen_prob_models_distance_map *lmap, carmen_map_config_t config);
 
 #ifdef __cplusplus
 }

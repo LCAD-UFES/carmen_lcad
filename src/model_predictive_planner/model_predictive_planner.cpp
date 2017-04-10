@@ -230,6 +230,7 @@ move_poses_back_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_roa
 
 			poses_back.push_back(local_reference_lane_point);
 
+			// Assim que achar uma pose para tras, adiciona todas poses para frente
 			if (local_reference_lane_point.x <= 0)
 			{
 				for (int j = (poses_back.size() - 1); j >= 0 ; j--)
@@ -242,7 +243,8 @@ move_poses_back_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_roa
 
 
 bool
-move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_selector_road_profile_message *goal_list_message, vector<carmen_ackerman_path_point_t> *lane_in_local_pose)
+move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_selector_road_profile_message *goal_list_message,
+		vector<carmen_ackerman_path_point_t> *lane_in_local_pose)
 {
 	bool goal_in_lane = false;
 
@@ -254,179 +256,90 @@ move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_select
 	move_poses_back_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
 	move_poses_foward_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
 
-	return goal_in_lane;
-}
-
-
-bool
-move_lane_to_robot_reference_system_old(Pose *localizer_pose, carmen_behavior_selector_road_profile_message *goal_list_message,
-		Pose *goal_pose, vector<carmen_ackerman_path_point_t> *lane_in_local_pose)
-{
-	double last_dist = DBL_MAX;
-	double dist = 0.0;
-	SE2 robot_pose(localizer_pose->x, localizer_pose->y, localizer_pose->theta);
-	SE2 goal_in_world_reference(goal_pose->x, goal_pose->y, goal_pose->theta);
-	SE2 goal_in_car_reference = robot_pose.inverse() * goal_in_world_reference;
-	double goal_x = goal_in_car_reference[0];
-	double goal_y = goal_in_car_reference[1];
-
-	if ((goal_list_message->number_of_poses < 2 || goal_list_message->number_of_poses > 250))
-		return false;
-
-	vector<carmen_ackerman_path_point_t> poses_back;
-	carmen_ackerman_path_point_t local_reference_lane_point;
-
-	if ((goal_list_message->number_of_poses_back > 2))
-	{
-		for (int i = 0; i < goal_list_message->number_of_poses_back; i++)
-		{
-			SE2 lane_back_in_world_reference(goal_list_message->poses_back[i].x, goal_list_message->poses_back[i].y, goal_list_message->poses_back[i].theta);
-			SE2 lane_back_in_car_reference = robot_pose.inverse() * lane_back_in_world_reference;
-
-			local_reference_lane_point = {lane_back_in_car_reference[0], lane_back_in_car_reference[1], lane_back_in_car_reference[2],
-					goal_list_message->poses_back[i].v, goal_list_message->poses_back[i].phi, 0.0};
-
-			poses_back.push_back(local_reference_lane_point);
-
-			if (local_reference_lane_point.x <= 0)
-			{
-				for (int j = (poses_back.size() - 1); j >= 0 ; j--)
-					lane_in_local_pose->push_back(poses_back.at(j));
-				break;
-			}
-		}
-	}
-
-	int index = 0;
-	if (goal_list_message->poses[0].x == goal_list_message->poses[1].x && goal_list_message->poses[0].y == goal_list_message->poses[1].y)
-		index = 1;
-
-	for (int k = index; k < goal_list_message->number_of_poses; k++)
-	{
-		SE2 lane_in_world_reference(goal_list_message->poses[k].x, goal_list_message->poses[k].y, goal_list_message->poses[k].theta);
-		SE2 lane_in_car_reference = robot_pose.inverse() * lane_in_world_reference;
-
-
-		local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2],
-				goal_list_message->poses[k].v, goal_list_message->poses[k].phi, 0.0};
-
-		lane_in_local_pose->push_back(local_reference_lane_point);
-		dist = sqrt((carmen_square(local_reference_lane_point.x - goal_x) + carmen_square(local_reference_lane_point.y - goal_y)));
-
-		if ((dist < 0.4))
-			return true;
-
-		if (last_dist < dist)
-			return false;
-		last_dist = dist;
-	}
-	return false;
+	return (goal_in_lane);
 }
 
 
 void
-add_points_to_goal_list_interval(carmen_ackerman_path_point_t p1, carmen_ackerman_path_point_t p2, vector<carmen_ackerman_path_point_t> &detailed_lane)
+add_points_to_goal_list_interval(carmen_ackerman_path_point_t p1, carmen_ackerman_path_point_t p2,
+		vector<carmen_ackerman_path_point_t> &detailed_lane)
 {
 	double delta_x, delta_y, delta_theta, distance;
 	int i;
-	static bool first = true;
 
 	distance = sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
 
 	double distance_between_goals = 0.1;
 	int num_points = distance / distance_between_goals;
+	if (num_points > 10) // Safeguard
+		num_points = 10;
 
 	delta_x = (p2.x - p1.x) / num_points;
 	delta_y = (p2.y - p1.y) / num_points;
-	delta_theta = carmen_normalize_theta((p2.theta - p1.theta)) / num_points;
+	delta_theta = carmen_normalize_theta((p2.theta - p1.theta) / (double) num_points);
 
 	carmen_ackerman_path_point_t new_point = {p1.x, p1.y, p1.theta, p1.v, p1.phi, 0.0};
 
-
 	for (i = 0; i < num_points; i++)
 	{
-		new_point.x = p1.x + i * delta_x;
-		new_point.y = p1.y + i * delta_y;
-		new_point.theta = carmen_normalize_theta(p1.theta + i * delta_theta);
+		new_point.x = p1.x + (double) i * delta_x;
+		new_point.y = p1.y + (double) i * delta_y;
+		new_point.theta = carmen_normalize_theta(p1.theta + (double) i * delta_theta);
 
-		if (new_point.x == 0.0 && first)
-			first = false;
-		if (new_point.x > 0.0)
-		{
-			if (first)
-			{
-				// Insert the first pose (car pose) to path_planner lane
-				carmen_ackerman_path_point_t first_point = {0.0, 0.0, 0.0, p1.v, p1.phi, 0.0};
-				detailed_lane.push_back(first_point);
-				first = false;
-			}
-
-			detailed_lane.push_back(new_point);
-		}
-
+		detailed_lane.push_back(new_point);
 	}
 }
 
 
 bool
-make_detailed_lane_start_at_car_pose(vector<carmen_ackerman_path_point_t> &detailed_lane, vector<carmen_ackerman_path_point_t> &complete_foward_lane, vector<carmen_ackerman_path_point_t> temp_detail, Pose *goal_pose)
+make_detailed_lane_start_at_car_pose(vector<carmen_ackerman_path_point_t> &detailed_lane,
+		vector<carmen_ackerman_path_point_t> temp_detail, Pose *goal_pose)
 {
-	detailed_lane.clear();
-	complete_foward_lane.clear();
-	double last_dist = DBL_MAX;
-	double dist = 0.0;
+	carmen_ackerman_path_point_t car_pose = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+
 	SE2 robot_pose(GlobalState::localizer_pose->x, GlobalState::localizer_pose->y, GlobalState::localizer_pose->theta);
 	SE2 goal_in_world_reference(goal_pose->x, goal_pose->y, goal_pose->theta);
 	SE2 goal_in_car_reference = robot_pose.inverse() * goal_in_world_reference;
-	double goal_x = goal_in_car_reference[0];
-	double goal_y = goal_in_car_reference[1];
-	bool goal_in_lane = false;
+	carmen_ackerman_path_point_t goal = {goal_in_car_reference[0], goal_in_car_reference[1], goal_in_car_reference[2], 0.0, 0.0, 0.0};
 
-	for (unsigned int i = 1; i < temp_detail.size(); i++)
+	unsigned int nearest_i_to_car = 0, nearest_i_to_goal = 0;
+	double dist, nearest_distance_to_car, nearest_distance_to_goal;
+	nearest_distance_to_car = nearest_distance_to_goal = DBL_MAX;
+	for (unsigned int i = 0; i < temp_detail.size(); i++)
 	{
-		if (temp_detail.at(i).x > 0.0)
-		{	//check the nearest pose from 0
-			double distance1 = sqrt((carmen_square(temp_detail.at(i-1).x - 0.0) + carmen_square(temp_detail.at(i-1).y - 0.0)));
-			double distance2 = sqrt((carmen_square(temp_detail.at(i).x - 0.0) + carmen_square(temp_detail.at(i).y - 0.0)));
-			if ((distance1 < distance2))
-				i--;
+		dist = DIST2D(temp_detail.at(i), car_pose);
+		if (dist < nearest_distance_to_car)
+		{
+			nearest_distance_to_car = dist;
+			nearest_i_to_car = i;
+		}
 
-			for (unsigned int j = i; j < temp_detail.size(); j++)
-			{
-				if (!goal_in_lane)
-				{
-					detailed_lane.push_back(temp_detail.at(j));
-
-					dist = sqrt((carmen_square(temp_detail.at(j).x - goal_x) + carmen_square(temp_detail.at(j).y - goal_y)));
-
-					if ((dist < 0.05))
-						goal_in_lane = true;
-
-					if (last_dist < dist)
-						goal_in_lane = true;
-					last_dist = dist;
-				}
-
-				complete_foward_lane.push_back(temp_detail.at(j));
-			}
-			break;
+		dist = DIST2D(temp_detail.at(i), goal);
+		if (dist < nearest_distance_to_goal)
+		{
+			nearest_distance_to_goal = dist;
+			nearest_i_to_goal = i;
 		}
 	}
-//	printf("\nGoal_in_lane: %d Goal_X: %lf Detailed_X: %lf \t Goal_Y: %lf Detailed_Y: %lf \n", goal_in_lane, goal_x, detailed_lane.back().x,
+
+	for (unsigned int j = nearest_i_to_car; j < nearest_i_to_goal; j++)
+		detailed_lane.push_back(temp_detail.at(j));
+
+	//	printf("\nGoal_in_lane: %d Goal_X: %lf Detailed_X: %lf \t Goal_Y: %lf Detailed_Y: %lf \n", goal_in_lane, goal_x, detailed_lane.back().x,
 //			goal_y, detailed_lane.back().y);
-	return goal_in_lane;
+	return (true);
 }
 
 
 bool
 build_detailed_path_lane(vector<carmen_ackerman_path_point_t> *lane_in_local_pose, vector<carmen_ackerman_path_point_t> &detailed_lane)
 {
-	if (lane_in_local_pose->size() > 2 && lane_in_local_pose->size() < 200)
+	if (lane_in_local_pose->size() > 2 && lane_in_local_pose->size() < 500)
 	{
 		for (unsigned int i = 0; i < (lane_in_local_pose->size() - 1); i++)
 		{
 			add_points_to_goal_list_interval(lane_in_local_pose->at(i), lane_in_local_pose->at(i+1), detailed_lane);
-			if (detailed_lane.size() > 250)
+			if (detailed_lane.size() > 1000)
 			{
 				detailed_lane.clear();
 				return false;
@@ -446,8 +359,8 @@ build_detailed_path_lane(vector<carmen_ackerman_path_point_t> *lane_in_local_pos
 
 
 bool
-build_detailed_rddf_lane(Pose *goal_pose, vector<carmen_ackerman_path_point_t> *lane_in_local_pose, vector<carmen_ackerman_path_point_t> &detailed_lane,
-		vector<carmen_ackerman_path_point_t> &complete_foward_lane)
+build_detailed_rddf_lane(Pose *goal_pose, vector<carmen_ackerman_path_point_t> *lane_in_local_pose,
+		vector<carmen_ackerman_path_point_t> &detailed_lane)
 {
 	bool goal_in_lane = false;
 	if (lane_in_local_pose->size() > 2)
@@ -457,7 +370,7 @@ build_detailed_rddf_lane(Pose *goal_pose, vector<carmen_ackerman_path_point_t> *
 			add_points_to_goal_list_interval(lane_in_local_pose->at(i), lane_in_local_pose->at(i+1), temp_detail);
 
 		temp_detail.push_back(lane_in_local_pose->back());
-		goal_in_lane = make_detailed_lane_start_at_car_pose(detailed_lane, complete_foward_lane, temp_detail, goal_pose);
+		goal_in_lane = make_detailed_lane_start_at_car_pose(detailed_lane, temp_detail, goal_pose);
 	}
 	else
 	{
@@ -465,7 +378,8 @@ build_detailed_rddf_lane(Pose *goal_pose, vector<carmen_ackerman_path_point_t> *
 			printf(KGRN "+++++++++++++ ERRO MENSAGEM DA LANE POSES !!!!\n" RESET);
 		return (false);
 	}
-	return goal_in_lane;
+
+	return (goal_in_lane);
 }
 
 
@@ -558,7 +472,7 @@ bool
 path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> path)
 {
 	double proximity_to_obstacles_for_path = 0.0;
-	double circle_radius = (GlobalState::robot_config.width + 0.4) / 2.0; // metade da largura do carro + um espacco de guarda
+	double circle_radius = GlobalState::robot_config.obstacle_avoider_obstacles_safe_distance; // metade da largura do carro + um espacco de guarda
 	carmen_point_t localizer = {GlobalState::localizer_pose->x, GlobalState::localizer_pose->y, GlobalState::localizer_pose->theta};
 
 	for (unsigned int i = 0; i < path.size(); i += 1)
@@ -679,38 +593,6 @@ get_tcp_from_td(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
 }
 
 
-void
-limit_maximum_centripetal_acceleration_old(vector<carmen_ackerman_path_point_t> &path)
-{
-
-	double max_centripetal_acceleration = 0.0;
-
-	for (unsigned int i = 0; i < path.size(); i += 1)
-	{
-		if (fabs(path[i].phi) > 0.001)
-		{
-			double radius_of_curvature = GlobalState::robot_config.distance_between_front_and_rear_axles / fabs(tan(path[i].phi));
-			double centripetal_acceleration = (path[i].v * path[i].v) / radius_of_curvature;
-			if (centripetal_acceleration > max_centripetal_acceleration)
-				max_centripetal_acceleration = centripetal_acceleration;
-		}
-	}
-
-//	printf("max_c_a = %lf\n", max_centripetal_acceleration);
-
-	if (max_centripetal_acceleration > GlobalState::robot_max_centripetal_acceleration)
-	{
-		double reduction_factor = GlobalState::robot_max_centripetal_acceleration / max_centripetal_acceleration;
-
-		for (unsigned int i = 0; i < path.size(); i += 1)
-		{
-			path[i].v *= reduction_factor;
-			path[i].time *= 1.0 / reduction_factor;
-		}
-	}
-}
-
-
 double
 get_intermediate_speed(double current_robot_pose_v, double v_goal, double dist_to_goal, double dist_to_curve)
 {
@@ -740,85 +622,6 @@ get_intermediate_speed(double current_robot_pose_v, double v_goal, double dist_t
 }
 
 
-void
-limit_maximum_centripetal_acceleration_with_distance(double &target_v, double current_v, carmen_ackerman_path_point_t goal, vector<carmen_ackerman_path_point_t> &path)
-{
-	double desired_v = 0.0;
-	double max_centripetal_acceleration = 0.0;
-	double dist_walked = 0.0;
-	double dist_to_max_curvature = 0.0;
-	double dist_to_goal = 0.0;
-
-	Command v_and_phi;
-	double L = GlobalState::robot_config.distance_between_front_and_rear_axles;
-
-	for (unsigned int i = 0; (i < path.size() - 1) && (path.size() != 0); i += 1)
-	{
-		double delta_theta = path[i + 1].theta - path[i].theta;
-		double l = dist(path[i], path[i + 1]);
-		path[i].phi = L * atan(delta_theta / l);
-		dist_walked += l;
-		if (path[i].x == goal.x && path[i].y == goal.y)
-			dist_to_goal = dist_walked;
-
-		if (fabs(path[i].phi) > 0.001)
-		{
-			double radius_of_curvature = L / fabs(tan(path[i].phi));
-			double centripetal_acceleration = (target_v * target_v) / radius_of_curvature;
-			if (centripetal_acceleration > max_centripetal_acceleration)
-			{
-				dist_to_max_curvature = dist_walked;
-				v_and_phi.phi = path[i].phi;
-				max_centripetal_acceleration = centripetal_acceleration;
-			}
-		}
-	}
-
-	if (max_centripetal_acceleration > GlobalState::robot_max_centripetal_acceleration)
-	{
-		double radius_of_curvature = L / fabs(tan(v_and_phi.phi));
-		desired_v = sqrt(GlobalState::robot_max_centripetal_acceleration * radius_of_curvature);
-		if (target_v > desired_v)
-			target_v = get_intermediate_speed(current_v, desired_v, dist_to_goal, dist_to_max_curvature);
-	}
-
-	//printf("desired_v: %lf target_v %lf current_v: %lf\t dist_to_goal: %lf dist_to_max %lf\n", desired_v, target_v, current_v, dist_to_goal, dist_to_max_curvature);
-
-}
-
-
-void
-limit_maximum_centripetal_acceleration(double &target_v, vector<carmen_ackerman_path_point_t> &path)
-{
-	double max_centripetal_acceleration = 0.0;
-	static double reduction_factor = 0.0;
-
-	for (unsigned int i = 0; (i < path.size() - 1) && (path.size() != 0); i += 1)
-	{
-		double L = GlobalState::robot_config.distance_between_front_and_rear_axles;
-		double delta_theta = path[i + 1].theta - path[i].theta;
-		double l = dist(path[i], path[i + 1]);
-		path[i].phi = L * atan(delta_theta / l);
-
-		if (fabs(path[i].phi) > 0.001)
-		{
-			double radius_of_curvature = L / fabs(tan(path[i].phi));
-//			double centripetal_acceleration = (path[i].v * path[i].v) / radius_of_curvature;
-			double centripetal_acceleration = (target_v * target_v) / radius_of_curvature;
-			if (centripetal_acceleration > max_centripetal_acceleration)
-				max_centripetal_acceleration = centripetal_acceleration;
-		}
-	}
-
-	if (max_centripetal_acceleration > GlobalState::robot_max_centripetal_acceleration)
-	{
-		reduction_factor += 0.1 * ((GlobalState::robot_max_centripetal_acceleration / max_centripetal_acceleration) - reduction_factor);
-		target_v *= reduction_factor;
-//		printf("redution %lf, target_v %lf\n", reduction_factor, target_v);
-	}
-}
-
-
 bool
 get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 		vector<carmen_ackerman_path_point_t> &path_local,
@@ -841,8 +644,6 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 		return (false);
 
 	move_path_to_current_robot_pose(path, localizer_pose);
-
-//	limit_maximum_centripetal_acceleration_old(path);
 
 //	if (GlobalState::use_mpc)
 //		apply_system_latencies(path);
@@ -905,7 +706,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		Pose *localizer_pose, vector<vector<carmen_ackerman_path_point_t> > &paths,
 		carmen_behavior_selector_road_profile_message *goal_list_message)
 {
-	vector<carmen_ackerman_path_point_t> lane_in_local_pose, detailed_lane, complete_foward_lane;
+	vector<carmen_ackerman_path_point_t> lane_in_local_pose, detailed_lane;
 	static TrajectoryLookupTable::TrajectoryControlParameters previous_good_tcp;
 	vector<TrajectoryLookupTable::TrajectoryControlParameters> otcps;
 	static bool first_time = true;
@@ -930,22 +731,14 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	if (GlobalState::use_path_planner || GlobalState::use_tracker_goal_and_lane)
 	{
 		build_detailed_path_lane(&lane_in_local_pose, detailed_lane);
-		complete_foward_lane = detailed_lane;
 	}
 	else
 	{
-		goal_in_lane = build_detailed_rddf_lane(&goalPoseVector[0], &lane_in_local_pose, detailed_lane, complete_foward_lane);
+		goal_in_lane = build_detailed_rddf_lane(&goalPoseVector[0], &lane_in_local_pose, detailed_lane);
 		if (!goal_in_lane)
-		{
 			detailed_lane.clear();
-			complete_foward_lane.clear();
-		}
-//		printf("\nGoal_in_lane: %d detail_size: %ld complete_size: %ld \n",goal_in_lane, detailed_lane.size(), complete_foward_lane.size());
+//		printf("\nGoal_in_lane: %d detail_size: %ld \n",goal_in_lane, detailed_lane.size());
 	}
-	// VINICIUS: @@@ Para Usar a lane alem do goal, passe para a funcao abaixo a complete_foward_lane ao inves da detailed_lane
-//	limit_maximum_centripetal_acceleration_with_distance(target_v, lastOdometryVector[0].v, detailed_lane.back(), complete_foward_lane);
-	// Aberto: @@@ Esta funcao escreve no phi de detailed_lane //REDUZINDO DE 13 para 0.25 a velocidade
-	//limit_maximum_centripetal_acceleration(target_v, complete_foward_lane);
 
 /***************************************
  * Funcao para extrair dados para artigo
@@ -1002,7 +795,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 
 				//TODO Gnuplot
 				if (plot_to_debug)
-					plot_state(path_local,detailed_lane,pathSeed);
+					plot_state(path_local, detailed_lane, pathSeed);
 
 				paths[j + i * lastOdometryVector.size()] = path;
 				otcps[j + i * lastOdometryVector.size()] = otcp;

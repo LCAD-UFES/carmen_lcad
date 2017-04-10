@@ -81,7 +81,7 @@ MessageControl::carmen_planner_ackerman_set_cost_map(carmen_map_t *new_map)
 
 
 int
-MessageControl::carmen_planner_ackerman_setDistanceMap(carmen_obstacle_distance_mapper_message *newDistanceMap)
+MessageControl::carmen_planner_ackerman_setDistanceMap(carmen_obstacle_distance_mapper_map_message *newDistanceMap)
 {
 	this->astarAckeman.distanceMap = newDistanceMap;
 

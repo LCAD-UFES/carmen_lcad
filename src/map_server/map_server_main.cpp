@@ -64,13 +64,11 @@ carmen_robot_ackerman_config_t car_config;
 int offline_map_published = 0;
 carmen_map_t lane_map_g = {{0, 0, 0, "", NULL, 0, 0}, NULL, NULL};
 carmen_compact_map_t compacted_lane_map_g = {0, NULL, NULL, NULL, {0, 0, 0, "", NULL, 0, 0}};
-double LANE_SIZE_FORWARD = 75.0;
-const double LANE_SIZE_BACKWARD = 20.0;
 
 int use_truepos = 0;
 
 
-//void
+//static void
 //download_map_handler(carmen_download_map_message *message){
 //
 //	if (message != NULL){
@@ -102,84 +100,84 @@ int use_truepos = 0;
 //			printf("error\n");
 //		}
 //}
+//
+//static void
+//read_google_maps_image(carmen_map_t* current_google_map,double x_origin, double y_origin)
+//{
+//
+//	char full_image_path[100];
+////	static int count = 0;
+//
+//	sprintf(full_image_path, "%s/%c%d_%d.bmp", google_maps_data_location, 'm', (int)x_origin, (int)y_origin);
+//
+//	IplImage* img = cvLoadImage(full_image_path, CV_LOAD_IMAGE_COLOR);
+//	if (img == NULL)
+//		return;
+////	sprintf(full_image_path, "%s/%c%d.bmp", google_maps_data_location, 'a', count);
+////	cvSaveImage(full_image_path,img,0);
+////	count++;
+//	IplImage* img_gray = cvCreateImage(cvSize(img->width, img->height), IPL_DEPTH_8U, 1);
+////	IplImage* img_gray2 = cvCreateImage(cvSize(img->width, img->height), IPL_DEPTH_8U, 1);
+//
+//	cvCvtColor(img, img_gray, CV_RGB2GRAY);
+////	cvSmooth(img_gray, img_gray, CV_GAUSSIAN, 7, 7, 7, 7);
+////	cvEqualizeHist(img_gray, img_gray);
+//	//
+//	//cvShowImage("1", img_gray2);
+////	cvCanny(img_gray2, img_gray, 0, 255, 3);
+////	cvShowImage("1", img_gray);
+////	cvWaitKey(33);
+//
+////	printf("x_size: %d y_size: %d\n", current_google_map->config.x_size, current_google_map->config.y_size);
+//
+//	if (img != NULL)
+//	{
+//	//	printf("success in %s\n", full_image_path);
+//
+//		int i, j;
+//
+//		if (current_google_map->complete_map == NULL || current_google_map->map == NULL){
+//
+//			carmen_grid_mapping_initialize_map(current_google_map, img->width, 0.3);
+//			current_google_map->config.map_name = "google_maps";
+//			strcpy(current_google_map->config.origin, "from_google");
+//		}
+//
+//		current_google_map->config.x_origin = x_origin;
+//		current_google_map->config.y_origin = y_origin;
+//
+//		printf("x_size: %d\n",current_google_map->config.y_size);
+//
+//		for (i = 0; i < current_google_map->config.y_size; i++)
+//		{
+//			for (j = 0; j < current_google_map->config.x_size; j++)
+//			{
+//				current_google_map->map[current_google_map->config.y_size - i - 1][current_google_map->config.x_size - j - 1] = (unsigned char)img_gray->imageData[i * img_gray->widthStep + j];
+//				current_google_map->map[current_google_map->config.y_size - i - 1][current_google_map->config.x_size - j - 1] /= 255.0;
+//				//current_google_map->map[current_google_map->config.y_size - i - 1][current_google_map->config.x_size - j - 1] = 1.0 - current_google_map->map[current_google_map->config.y_size - i - 1][current_google_map->config.x_size - j - 1];
+//				//current_google_map->map[current_google_map->config.y_size - i - 1][current_google_map->config.x_size - j - 1] -= 1.0;
+//
+//			}
+//		}
+//	}
+//	else
+//	{
+////		printf("error in %s\n", full_image_path);
+//	}
+//
+//	cvReleaseImage(&img);
+//	cvReleaseImage(&img_gray);
+//}
 
-void
-read_google_maps_image(carmen_map_t* current_google_map,double x_origin, double y_origin)
-{
 
-	char full_image_path[100];
-//	static int count = 0;
-
-	sprintf(full_image_path, "%s/%c%d_%d.bmp", google_maps_data_location, 'm', (int)x_origin, (int)y_origin);
-
-	IplImage* img = cvLoadImage(full_image_path, CV_LOAD_IMAGE_COLOR);
-	if (img == NULL)
-		return;
-//	sprintf(full_image_path, "%s/%c%d.bmp", google_maps_data_location, 'a', count);
-//	cvSaveImage(full_image_path,img,0);
-//	count++;
-	IplImage* img_gray = cvCreateImage(cvSize(img->width, img->height), IPL_DEPTH_8U, 1);
-//	IplImage* img_gray2 = cvCreateImage(cvSize(img->width, img->height), IPL_DEPTH_8U, 1);
-
-	cvCvtColor(img, img_gray, CV_RGB2GRAY);
-//	cvSmooth(img_gray, img_gray, CV_GAUSSIAN, 7, 7, 7, 7);
-//	cvEqualizeHist(img_gray, img_gray);
-	//
-	//cvShowImage("1", img_gray2);
-//	cvCanny(img_gray2, img_gray, 0, 255, 3);
-//	cvShowImage("1", img_gray);
-//	cvWaitKey(33);
-
-//	printf("x_size: %d y_size: %d\n", current_google_map->config.x_size, current_google_map->config.y_size);
-
-	if (img != NULL)
-	{
-	//	printf("success in %s\n", full_image_path);
-
-		int i, j;
-
-		if (current_google_map->complete_map == NULL || current_google_map->map == NULL){
-
-			carmen_grid_mapping_initialize_map(current_google_map, img->width, 0.3);
-			current_google_map->config.map_name = "google_maps";
-			strcpy(current_google_map->config.origin, "from_google");
-		}
-
-		current_google_map->config.x_origin = x_origin;
-		current_google_map->config.y_origin = y_origin;
-
-		printf("x_size: %d\n",current_google_map->config.y_size);
-
-		for (i = 0; i < current_google_map->config.y_size; i++)
-		{
-			for (j = 0; j < current_google_map->config.x_size; j++)
-			{
-				current_google_map->map[current_google_map->config.y_size - i - 1][current_google_map->config.x_size - j - 1] = (unsigned char)img_gray->imageData[i * img_gray->widthStep + j];
-				current_google_map->map[current_google_map->config.y_size - i - 1][current_google_map->config.x_size - j - 1] /= 255.0;
-				//current_google_map->map[current_google_map->config.y_size - i - 1][current_google_map->config.x_size - j - 1] = 1.0 - current_google_map->map[current_google_map->config.y_size - i - 1][current_google_map->config.x_size - j - 1];
-				//current_google_map->map[current_google_map->config.y_size - i - 1][current_google_map->config.x_size - j - 1] -= 1.0;
-
-			}
-		}
-	}
-	else
-	{
-//		printf("error in %s\n", full_image_path);
-	}
-
-	cvReleaseImage(&img);
-	cvReleaseImage(&img_gray);
-}
-
-
-int
+static int
 is_valid_position(int x, int y, carmen_map_config_t map_config)
 {
 	return (x >= 0 && x < map_config.x_size && y >= 0 && y < map_config.y_size);
 }
 
 
-void
+static void
 to_map_pose(double x, double y, carmen_map_config_t *map_config, double *xout, double *yout)
 {
 	*xout = round((x - map_config->x_origin) / map_config->resolution);
@@ -232,7 +230,7 @@ to_map_pose(double x, double y, carmen_map_config_t *map_config, double *xout, d
 //	return lane_points_on_map;
 //}
 
-void
+static void
 add_points_interval_to_the_map(carmen_map_t *lane_map, double lane_probability, carmen_ackerman_traj_point_t p1, carmen_ackerman_traj_point_t p2)
 {
 //	std::vector<carmen_vector_2D_t> lane_points_on_map;
@@ -241,16 +239,16 @@ add_points_interval_to_the_map(carmen_map_t *lane_map, double lane_probability, 
 	double distance_p1p2_map;
 	int i, distance;
 
-	p1.x += (car_config.distance_between_front_and_rear_axles * cos(p1.theta));
-	p1.y += (car_config.distance_between_front_and_rear_axles * sin(p1.theta));
-
-	p2.x += (car_config.distance_between_front_and_rear_axles * cos(p2.theta));
-	p2.y += (car_config.distance_between_front_and_rear_axles * sin(p2.theta));
+	// Desloca para o eixo dianteiro do carro: era necessario para o rrt planner, mas nao para o mpp
+//	p1.x += (car_config.distance_between_front_and_rear_axles * cos(p1.theta));
+//	p1.y += (car_config.distance_between_front_and_rear_axles * sin(p1.theta));
+//
+//	p2.x += (car_config.distance_between_front_and_rear_axles * cos(p2.theta));
+//	p2.y += (car_config.distance_between_front_and_rear_axles * sin(p2.theta));
 
 	to_map_pose(p1.x, p1.y, &(lane_map->config), &(p1_map.x), &(p1_map.y));
 	to_map_pose(p2.x, p2.y, &(lane_map->config), &(p2_map.x), &(p2_map.y));
 
-	// TODO: check if the map->config copy isn't slowing down the program
 	if (!is_valid_position(p1_map.x, p1_map.y, lane_map->config) || !is_valid_position(p2_map.x, p2_map.y, lane_map->config))
 		return;
 
@@ -261,10 +259,10 @@ add_points_interval_to_the_map(carmen_map_t *lane_map, double lane_probability, 
 	delta_y = sin(theta);
 	distance = ceil(distance_p1p2_map);
 
-	for(i = 0; i < distance * 5.0; i++)
+	for(i = 0; i < distance * 2.0; i++)
 	{
-		p1_map.x += (delta_x / 5.0);
-		p1_map.y += (delta_y / 5.0);
+		p1_map.x += (delta_x / 2.0);
+		p1_map.y += (delta_y / 2.0);
 
 		int x = (int) round(p1_map.x);
 		int y = (int) round(p1_map.y);
@@ -275,81 +273,44 @@ add_points_interval_to_the_map(carmen_map_t *lane_map, double lane_probability, 
 }
 
 
-
 // TODO: refactor! eu copiei as linhas que fazem a lane para frente para fazer a criacao da lane para tras (com pequenas alteracoes).
-void
+static void
 add_lane_to_the_map(carmen_map_t *lane_map, carmen_rddf_road_profile_message *message, double lane_probability)
 {
 	int i;
-	double dist_rddf_to_pose;
 
 	// foward direction
 	for (i = 0; i < (message->number_of_poses - 1); i++)
-	{
-
-		// TODO: check if any globalpos has been received
-		// (in the beginning pose_g have crazy values).
-		dist_rddf_to_pose = sqrt(pow(pose_g.x - message->poses[i + 1].x, 2) +
-								pow(pose_g.y - message->poses[i + 1].y, 2));
-
-		if (dist_rddf_to_pose >= LANE_SIZE_FORWARD)
-			break;
-
 		add_points_interval_to_the_map(lane_map, lane_probability, message->poses[i], message->poses[i + 1]);
-	}
 
 	// backward direction
 	for (i = 0; i < (message->number_of_poses_back - 1); i++)
-	{
-		// TODO: check if any globalpos has been received
-		// (in the beginning pose_g have crazy values).
-		dist_rddf_to_pose = sqrt(
-				pow(pose_g.x - message->poses_back[i + 1].x, 2) +
-				pow(pose_g.y - message->poses_back[i + 1].y, 2));
-
-		if (dist_rddf_to_pose >= LANE_SIZE_BACKWARD)
-			break;
-
 		add_points_interval_to_the_map(lane_map, lane_probability, message->poses_back[i], message->poses_back[i + 1]);
-	}
 
 	add_points_interval_to_the_map(lane_map, lane_probability, message->poses[0], message->poses_back[0]); //todo verificar se é necessario mesmo (conectar a parte de tras com a da frente)
 }
 
 
-void
-build_lane_map(carmen_rddf_road_profile_message *message, carmen_map_t *lane_map, double resolution)
+static void
+build_lane_map(carmen_rddf_road_profile_message *message, carmen_map_t *lane_map)
 {
-	double lane_width = 1.3;
-	carmen_map_t *map = current_map;
+	double lane_width = 1.65;
 
-	carmen_prob_models_initialize_cost_map(lane_map, map, resolution);
+	carmen_prob_models_initialize_cost_map(lane_map, current_map->config, current_map->config.resolution);
 	memset(lane_map->complete_map, 0, lane_map->config.x_size * lane_map->config.y_size * sizeof(double));
 
 	add_lane_to_the_map(lane_map, message, 1.0);
 
-	carmen_prob_models_convert_to_linear_distance_to_obstacles_map(lane_map, lane_map, 0.4, lane_width, 1);
+	carmen_prob_models_convert_obstacles_map_to_cost_map(lane_map, lane_map, 0.5, lane_width, 1);
 }
 
 
-void
-publish_compressed_lane_map()
-{
-	if ((compacted_lane_map_g.coord_x != NULL) && ((compacted_lane_map_g.coord_y != NULL)) && ((compacted_lane_map_g.value != NULL)))
-	{
-		// Nota: o tempo que da mensagem eh o tempo do rddf usado para construir o mapa. Nao sei se eh a melhor opcao
-		double timestamp = rddf_message->timestamp;
-		carmen_map_server_publish_compact_lane_map_message(&compacted_lane_map_g, timestamp);
-	}
-}
-
-
-void
+static void
 construct_compressed_lane_map()
 {
 	if (rddf_message != NULL)
 	{
-		build_lane_map(rddf_message, &lane_map_g, 0.2);
+		build_lane_map(rddf_message, &lane_map_g);
 
 		// Nota: o compacted map deve ser desalocado e alocado novamente sempre que o lane map eh construido porque
 		// o numero de celulas do mapa que fazem parte da lane sempre vai mudar
@@ -357,6 +318,25 @@ construct_compressed_lane_map()
 			carmen_prob_models_free_compact_map(&compacted_lane_map_g);
 
 		carmen_prob_models_create_compact_map(&compacted_lane_map_g, &lane_map_g, 1.0);
+	}
+}
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Publishers                                                                                //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+static void
+publish_compressed_lane_map()
+{
+	if ((compacted_lane_map_g.coord_x != NULL) && ((compacted_lane_map_g.coord_y != NULL)) && ((compacted_lane_map_g.value != NULL)))
+	{
+		// Nota: o timestamp da mensagem eh o tempo do rddf usado para construir o mapa. Nao sei se eh a melhor opcao...
+		carmen_map_server_publish_compact_lane_map_message(&compacted_lane_map_g, rddf_message->timestamp);
 	}
 }
 
@@ -400,6 +380,57 @@ publish_a_new_offline_map_if_robot_moved_to_another_block(carmen_point_t *pose, 
 		carmen_map_server_publish_localize_map_message(&localize_map);
 	}
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+static void
+alloc_rddf_global_data(carmen_behavior_selector_road_profile_message *message)
+{
+	rddf_message = (carmen_rddf_road_profile_message *) calloc (1, sizeof(carmen_rddf_road_profile_message));
+
+	rddf_message->annotations = (int *) calloc (message->number_of_poses, sizeof(int));
+	rddf_message->poses = (carmen_ackerman_traj_point_t *) calloc (message->number_of_poses, sizeof(carmen_ackerman_traj_point_t));
+	rddf_message->number_of_poses = message->number_of_poses;
+
+	rddf_message->poses_back = (carmen_ackerman_traj_point_t *) calloc (message->number_of_poses_back, sizeof(carmen_ackerman_traj_point_t));
+	rddf_message->number_of_poses_back = message->number_of_poses_back;
+}
+
+
+static void
+realloc_rddf_global_data(carmen_behavior_selector_road_profile_message *message)
+{
+	if (message->number_of_poses != rddf_message->number_of_poses)
+	{
+		rddf_message->annotations = (int *) realloc (rddf_message->annotations, message->number_of_poses * sizeof(int));
+		rddf_message->poses = (carmen_ackerman_traj_point_t *) realloc (rddf_message->poses, message->number_of_poses * sizeof(carmen_ackerman_traj_point_t));
+	}
+
+	if (message->number_of_poses_back != rddf_message->number_of_poses_back)
+	{
+		rddf_message->poses_back = (carmen_ackerman_traj_point_t *) realloc (rddf_message->poses_back, message->number_of_poses_back * sizeof(carmen_ackerman_traj_point_t));
+	}
+
+	rddf_message->number_of_poses = message->number_of_poses;
+	rddf_message->number_of_poses_back = message->number_of_poses_back;
+}
+
+
+static void
+copy_local_rddf_to_global_rddf(carmen_behavior_selector_road_profile_message *message)
+{
+	memcpy(rddf_message->annotations, message->annotations, message->number_of_poses * sizeof(int));
+	memcpy(rddf_message->poses, message->poses, message->number_of_poses * sizeof(carmen_ackerman_traj_point_t));
+	memcpy(rddf_message->poses_back, message->poses_back, message->number_of_poses_back * sizeof(carmen_ackerman_traj_point_t));
+}
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Handlers                                                                                  //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 static void
@@ -451,52 +482,9 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 
 
 static void
-localize_ackerman_initialize_message(carmen_localize_ackerman_initialize_message *msg)
+localize_ackerman_initialize_message_handler(carmen_localize_ackerman_initialize_message *msg)
 {
 	publish_a_new_offline_map_if_robot_moved_to_another_block(msg->mean, msg->timestamp);
-}
-
-
-void
-alloc_rddf_global_data(carmen_behavior_selector_road_profile_message *message)
-{
-	rddf_message = (carmen_rddf_road_profile_message *) calloc (1, sizeof(carmen_rddf_road_profile_message));
-
-	rddf_message->annotations = (int *) calloc (message->number_of_poses, sizeof(int));
-	rddf_message->poses = (carmen_ackerman_traj_point_t *) calloc (message->number_of_poses, sizeof(carmen_ackerman_traj_point_t));
-	rddf_message->number_of_poses = message->number_of_poses;
-
-	rddf_message->poses_back = (carmen_ackerman_traj_point_t *) calloc (message->number_of_poses_back, sizeof(carmen_ackerman_traj_point_t));
-	rddf_message->number_of_poses_back = message->number_of_poses_back;
-}
-
-
-void
-realloc_rddf_global_data(carmen_behavior_selector_road_profile_message *message)
-{
-	if (message->number_of_poses != rddf_message->number_of_poses)
-	{
-		rddf_message->annotations = (int *) realloc (rddf_message->annotations, message->number_of_poses * sizeof(int));
-		rddf_message->poses = (carmen_ackerman_traj_point_t *) realloc (rddf_message->poses, message->number_of_poses * sizeof(carmen_ackerman_traj_point_t));
-	}
-
-
-	if (message->number_of_poses_back != rddf_message->number_of_poses_back)
-	{
-		rddf_message->poses_back = (carmen_ackerman_traj_point_t *) realloc (rddf_message->poses_back, message->number_of_poses_back * sizeof(carmen_ackerman_traj_point_t));
-	}
-
-	rddf_message->number_of_poses = message->number_of_poses;
-	rddf_message->number_of_poses_back = message->number_of_poses_back;
-}
-
-
-void
-copy_local_rddf_to_global_rddf(carmen_behavior_selector_road_profile_message *message)
-{
-	memcpy(rddf_message->annotations, message->annotations, message->number_of_poses * sizeof(int));
-	memcpy(rddf_message->poses, message->poses, message->number_of_poses * sizeof(carmen_ackerman_traj_point_t));
-	memcpy(rddf_message->poses_back, message->poses_back, message->number_of_poses_back * sizeof(carmen_ackerman_traj_point_t));
 }
 
 
@@ -530,8 +518,6 @@ rddf_message_handler(carmen_behavior_selector_road_profile_message *message)
 		else if ((message->number_of_poses != rddf_message->number_of_poses) ||
 				(message->number_of_poses_back != rddf_message->number_of_poses_back))
 			realloc_rddf_global_data(message);
-
-		LANE_SIZE_FORWARD = rddf_message->number_of_poses;
 
 		copy_local_rddf_to_global_rddf(message);
 
@@ -572,6 +558,15 @@ map_request_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData, void *clientData _
 		carmen_test_ipc(err, "Could not respond", CARMEN_MAP_SERVER_CURRENT_OFFLINE_MAP_NAME);
 	}
 }
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Initialization                                                                            //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 static void
@@ -631,7 +626,7 @@ read_map_server_parameters(int argc, char **argv)
 			{"map_server", "map_height", CARMEN_PARAM_DOUBLE, &map_height, 0, NULL},
 			{"map_server", "time_interval_for_map_change", CARMEN_PARAM_DOUBLE, &time_interval_for_map_change, 0, NULL},
 			{"map_server", "publish_google_map", CARMEN_PARAM_ONOFF, &publish_google_map, 1, NULL},
-			{"behavior_selector", "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL}
+			{"behavior_selector", "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL},
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
@@ -704,7 +699,7 @@ register_handlers()
 	IPC_setMsgQueueLength(CARMEN_MAP_SERVER_REQUEST_CURRENT_OFFLINE_MAP_NAME, 100);
 
 	carmen_localize_ackerman_subscribe_initialize_message(NULL,
-			(carmen_handler_t) localize_ackerman_initialize_message, CARMEN_SUBSCRIBE_LATEST);
+			(carmen_handler_t) localize_ackerman_initialize_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
     carmen_subscribe_message(CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT,
                              NULL, sizeof (carmen_behavior_selector_road_profile_message), (carmen_handler_t) rddf_message_handler, CARMEN_SUBSCRIBE_LATEST);
@@ -769,6 +764,7 @@ initialize_structures(void)
 //	current_google_map->complete_map = NULL;
 //	current_google_map->map = NULL;
 }
+////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 int 

@@ -18,7 +18,7 @@ void udatmo_clear_detected(void);
 
 void udatmo_shift_history(void);
 
-int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_message *current_map,
+int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_map_message *current_map,
 							carmen_rddf_road_profile_message *rddf,
 							int goal_index,
 							int rddf_pose_index,
@@ -26,6 +26,9 @@ int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_message *curren
 							double timestamp);
 
 double udatmo_speed_front(void);
+double udatmo_speed_left(void);
+double udatmo_speed_right(void);
+double udatmo_speed_center(void);
 
 carmen_ackerman_traj_point_t udatmo_get_moving_obstacle_position(void);
 
