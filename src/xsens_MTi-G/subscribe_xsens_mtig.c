@@ -46,7 +46,7 @@ static void xsens_xyz_message_handler(carmen_xsens_xyz_message *xsens_xyz_messag
 
 
 void 
-car_odometry_message_handler(carmen_base_ackerman_odometry_message *car_odometry_message)
+car_odometry_message_handler(carmen_base_ackerman_odometry_message *car_odometry_message __attribute__ ((unused)))
 {
 //	static FILE *caco = NULL;
 //	

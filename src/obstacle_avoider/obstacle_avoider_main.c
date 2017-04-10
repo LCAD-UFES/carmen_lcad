@@ -31,6 +31,8 @@ static carmen_behavior_selector_state_t current_state = BEHAVIOR_SELECTOR_PARKIN
 
 static int use_truepos = 0;
 
+static double last_behaviour_selector_compact_lane_contents_message_timestamp = 0.0;
+
 
 //static void
 //consume_motion_command_time(int motion_command_vetor)
@@ -308,12 +310,55 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 //}
 
 
+//static void
+//carmen_obstacle_distance_mapper_message_handler(carmen_obstacle_distance_mapper_map_message *message)
+//{
+//	obstacle_avoider_update_map(message);
+//
+//	necessary_maps_available = 1;
+//}
+
+
 static void
-carmen_obstacle_distance_mapper_message_handler(carmen_obstacle_distance_mapper_map_message *message)
+carmen_obstacle_distance_mapper_compact_map_message_handler(carmen_obstacle_distance_mapper_compact_map_message *message)
 {
-	obstacle_avoider_update_map(message);
+	static carmen_obstacle_distance_mapper_compact_map_message *compact_distance_map = NULL;
+	static carmen_obstacle_distance_mapper_map_message distance_map;
+
+	if (compact_distance_map == NULL)
+	{
+		carmen_obstacle_distance_mapper_create_new_map(&distance_map, message->config, message->host, message->timestamp);
+		compact_distance_map = (carmen_obstacle_distance_mapper_compact_map_message *) (calloc(1, sizeof(carmen_obstacle_distance_mapper_compact_map_message)));
+		carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_distance_map, message);
+		carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, message);
+	}
+	else
+	{
+		carmen_obstacle_distance_mapper_clear_distance_map_message_using_compact_map(&distance_map, compact_distance_map, DISTANCE_MAP_HUGE_DISTANCE);
+		carmen_obstacle_distance_mapper_free_compact_distance_map(compact_distance_map);
+		carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_distance_map, message);
+		carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, message);
+	}
+
+	obstacle_avoider_update_map(&distance_map);
 
 	necessary_maps_available = 1;
+}
+
+
+static void
+carmen_obstacle_distance_mapper_compact_lane_contents_message_handler(carmen_obstacle_distance_mapper_compact_map_message *message)
+{
+	if ((message->timestamp - last_behaviour_selector_compact_lane_contents_message_timestamp) > 0.5)
+		carmen_obstacle_distance_mapper_overwrite_distance_map_message_with_compact_distance_map(get_current_map(), message);
+}
+
+
+static void
+carmen_behaviour_selector_compact_lane_contents_message_handler(carmen_obstacle_distance_mapper_compact_map_message *message)
+{
+	carmen_obstacle_distance_mapper_overwrite_distance_map_message_with_compact_distance_map(get_current_map(), message);
+	last_behaviour_selector_compact_lane_contents_message_timestamp = message->timestamp;
 }
 
 
@@ -373,7 +418,10 @@ initialize_ipc(void)
 
 //	carmen_grid_mapping_subscribe_message(NULL, (carmen_handler_t) grid_mapping_message_handler, CARMEN_SUBSCRIBE_LATEST);
 //	carmen_map_server_subscribe_compact_cost_map(NULL, (carmen_handler_t) map_server_compact_cost_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
-	carmen_obstacle_distance_mapper_subscribe_message(NULL, (carmen_handler_t) carmen_obstacle_distance_mapper_message_handler, CARMEN_SUBSCRIBE_LATEST);
+//	carmen_obstacle_distance_mapper_subscribe_message(NULL, (carmen_handler_t) carmen_obstacle_distance_mapper_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_obstacle_distance_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) carmen_obstacle_distance_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_obstacle_distance_mapper_subscribe_compact_lane_contents_message(NULL, (carmen_handler_t) carmen_obstacle_distance_mapper_compact_lane_contents_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_behaviour_selector_subscribe_compact_lane_contents_message(NULL, (carmen_handler_t) carmen_behaviour_selector_compact_lane_contents_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_behavior_selector_subscribe_current_state_message(NULL, (carmen_handler_t) behavior_selector_state_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
@@ -400,6 +448,7 @@ read_parameters(int argc, char **argv)
 			{"robot", "reaction_time", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.reaction_time, 0, NULL},
 			{"robot", "distance_between_rear_wheels", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.distance_between_rear_wheels, 1,NULL},
 			{"robot", "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.distance_between_front_and_rear_axles, 1, NULL},
+			{"robot", "distance_between_front_car_and_front_wheels", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.distance_between_front_car_and_front_wheels, 1, NULL},
 			{"robot", "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.distance_between_rear_car_and_rear_wheels, 1, NULL},
 			{"robot", "maximum_steering_command_rate", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.maximum_steering_command_rate, 1, NULL},
 			{"robot", "understeer_coeficient", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.understeer_coeficient, 1, NULL},

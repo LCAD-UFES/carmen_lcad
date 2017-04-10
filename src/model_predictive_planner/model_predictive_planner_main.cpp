@@ -540,10 +540,42 @@ behavior_selector_state_message_handler(carmen_behavior_selector_state_message *
 }
 
 
+//static void
+//carmen_obstacle_distance_mapper_map_message_handler(carmen_obstacle_distance_mapper_map_message *message)
+//{
+//	GlobalState::distance_map = message;
+//}
+
+
 static void
-carmen_obstacle_distance_mapper_map_message_handler(carmen_obstacle_distance_mapper_map_message *message)
+carmen_obstacle_distance_mapper_compact_map_message_handler(carmen_obstacle_distance_mapper_compact_map_message *message)
 {
-	GlobalState::distance_map = message;
+	static carmen_obstacle_distance_mapper_compact_map_message *compact_distance_map = NULL;
+	static carmen_obstacle_distance_mapper_map_message distance_map;
+
+	if (compact_distance_map == NULL)
+	{
+		carmen_obstacle_distance_mapper_create_new_map(&distance_map, message->config, message->host, message->timestamp);
+		compact_distance_map = (carmen_obstacle_distance_mapper_compact_map_message *) (calloc(1, sizeof(carmen_obstacle_distance_mapper_compact_map_message)));
+		carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_distance_map, message);
+		carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, message);
+	}
+	else
+	{
+		carmen_obstacle_distance_mapper_clear_distance_map_message_using_compact_map(&distance_map, compact_distance_map, DISTANCE_MAP_HUGE_DISTANCE);
+		carmen_obstacle_distance_mapper_free_compact_distance_map(compact_distance_map);
+		carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_distance_map, message);
+		carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, message);
+	}
+
+	GlobalState::distance_map = &distance_map;
+}
+
+
+static void
+carmen_behaviour_selector_compact_lane_contents_message_handler(carmen_obstacle_distance_mapper_compact_map_message *message)
+{
+	carmen_obstacle_distance_mapper_overwrite_distance_map_message_with_compact_distance_map(GlobalState::distance_map, message);
 }
 
 
@@ -651,8 +683,14 @@ register_handlers()
 			(carmen_handler_t)navigator_ackerman_set_goal_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_obstacle_distance_mapper_subscribe_message(NULL,
-			(carmen_handler_t) carmen_obstacle_distance_mapper_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+//	carmen_obstacle_distance_mapper_subscribe_message(NULL,
+//			(carmen_handler_t) carmen_obstacle_distance_mapper_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_obstacle_distance_mapper_subscribe_compact_map_message(NULL,
+			(carmen_handler_t) carmen_obstacle_distance_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_behaviour_selector_subscribe_compact_lane_contents_message(NULL,
+			(carmen_handler_t) carmen_behaviour_selector_compact_lane_contents_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 

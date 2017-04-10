@@ -46,6 +46,13 @@ obstacle_avoider_update_map(carmen_obstacle_distance_mapper_map_message *map)
 }
 
 
+carmen_obstacle_distance_mapper_map_message *
+get_current_map()
+{
+	return (obstacle_distance_map);
+}
+
+
 carmen_ackerman_traj_point_t
 get_current_pose()
 {

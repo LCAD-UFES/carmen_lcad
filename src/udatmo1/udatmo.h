@@ -26,6 +26,9 @@ int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_map_message *cu
 							double timestamp);
 
 double udatmo_speed_front(void);
+double udatmo_speed_left(void);
+double udatmo_speed_right(void);
+double udatmo_speed_center(void);
 
 carmen_ackerman_traj_point_t udatmo_get_moving_obstacle_position(void);
 

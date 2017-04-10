@@ -34,6 +34,11 @@ typedef struct
 #define CARMEN_OBSTACLE_DISTANCE_MAPPER_COMPACT_MAP_MESSAGE_NAME	"carmen_obstacle_distance_mapper_compact_map_message"
 #define CARMEN_OBSTACLE_DISTANCE_MAPPER_COMPACT_MAP_MESSAGE_FMT		"{{int, int, double, [byte:64], string, double, double}, int, <short:2>, <short:2>, <byte:2>, <byte:2>, double, string}"
 
+#define CARMEN_OBSTACLE_DISTANCE_MAPPER_COMPACT_LANE_CONTENTS_MESSAGE_NAME	"carmen_obstacle_distance_mapper_compact_lane_contents_message"
+#define CARMEN_OBSTACLE_DISTANCE_MAPPER_COMPACT_LANE_CONTENTS_MESSAGE_FMT	"{{int, int, double, [byte:64], string, double, double}, int, <short:2>, <short:2>, <byte:2>, <byte:2>, double, string}"
+
+#define CARMEN_BEHAVIOUR_SELECTOR_COMPACT_LANE_CONTENTS_MESSAGE_NAME	"carmen_behaviour_selector_compact_lane_contents_message"
+#define CARMEN_BEHAVIOUR_SELECTOR_COMPACT_LANE_CONTENTS_MESSAGE_FMT		"{{int, int, double, [byte:64], string, double, double}, int, <short:2>, <short:2>, <byte:2>, <byte:2>, double, string}"
 
 #ifdef __cplusplus
 }

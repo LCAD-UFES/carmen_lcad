@@ -281,7 +281,6 @@ carmen_cpy_compact_cost_message_to_compact_map(carmen_compact_map_t* compact_cos
 	memcpy(compact_cost_map->value, message->value,	message->size * sizeof(double));
 
 	compact_cost_map->number_of_known_points_on_the_map = message->size;
-
 }
 
 

@@ -181,13 +181,13 @@ carmen_prob_models_create_compact_map(carmen_compact_map_t *cmap, carmen_map_t *
 
 	if (map->config.map_name != NULL)
 	{
-		cmap->config.map_name = (char *)calloc(strlen(map->config.map_name) + 1, sizeof(char));
+		cmap->config.map_name = (char *) calloc(strlen(map->config.map_name) + 1, sizeof(char));
 		strcpy(cmap->config.map_name, map->config.map_name);
 	}
 
-	cmap->coord_x = (int *)calloc(cmap->number_of_known_points_on_the_map, sizeof(int));
-	cmap->coord_y = (int *)calloc(cmap->number_of_known_points_on_the_map, sizeof(int));
-	cmap->value = (double *)calloc(cmap->number_of_known_points_on_the_map, sizeof(double));
+	cmap->coord_x = (int *) malloc(cmap->number_of_known_points_on_the_map * sizeof(int));
+	cmap->coord_y = (int *) malloc(cmap->number_of_known_points_on_the_map * sizeof(int));
+	cmap->value = (double *) malloc(cmap->number_of_known_points_on_the_map * sizeof(double));
 
 	for (i = 0, k = 0; i < number_of_cells; i++)
 	{
