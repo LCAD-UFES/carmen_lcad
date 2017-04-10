@@ -309,7 +309,7 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double
 		if (moving_object_in_front_index != -1) // -> Adiciona um waypoint na ultima posicao livre se a posicao atual colide com um objeto movel.
 		{
 			double reduction_factor = (robot_pose.v > 1.0)? 1.0 / robot_pose.v: 1.0;
-			if (robot_pose.v > udatmo_speed_front() + 1.0)
+			if ((robot_pose.v > udatmo_speed_front() + 1.0) && (distance_from_car_to_rddf_point / robot_pose.v) > 1.0)
 			{
 				goal_type[goal_index] = MOVING_OBSTACLE_GOAL;
 				double distance_to_free_waypoint = DIST2D(rddf->poses[0], rddf->poses[last_obstacle_free_waypoint_index]);
