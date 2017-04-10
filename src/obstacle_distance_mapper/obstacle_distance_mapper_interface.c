@@ -245,6 +245,26 @@ carmen_obstacle_distance_mapper_overwrite_distance_map_message_with_compact_dist
 }
 
 
+void
+carmen_obstacle_distance_mapper_overwrite_distance_map_with_compact_distance_map(carmen_prob_models_distance_map *map,
+		carmen_obstacle_distance_mapper_compact_map_message *cmap)
+{
+	for (int i = 0; i < cmap->size; i++)
+	{
+		cell_coords_t map_cell = carmen_obstacle_distance_mapper_get_map_cell_from_configs(map->config, cmap->config,
+				cmap->coord_x[i], cmap->coord_y[i]);
+		if ((map_cell.x >= 0) && (map_cell.x < map->config.x_size) && (map_cell.y >= 0) && (map_cell.y < map->config.y_size))
+		{
+			int index = map_cell.y + map->config.y_size * map_cell.x;
+			map->complete_x_offset[index] = cmap->x_offset[i];
+			map->complete_y_offset[index] = cmap->y_offset[i];
+			map->complete_distance[index] = sqrt((double) cmap->x_offset[i] * (double) cmap->x_offset[i] +
+					(double) cmap->y_offset[i] * (double) cmap->y_offset[i]);
+		}
+	}
+}
+
+
 static int
 count_number_of_known_point_on_the_map(carmen_prob_models_distance_map *map, int value)
 {
