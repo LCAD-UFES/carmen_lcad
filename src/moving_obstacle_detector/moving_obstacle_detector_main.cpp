@@ -23,6 +23,10 @@ char *current_map;
 char *previous_map;
 char *offline_map;
 
+double previous_time;
+double current_time;
+double MAX_ASSOCIATION_DISTANCE = 2.00;
+
 carmen_map_config_t current_config;
 carmen_map_config_t previous_config;
 carmen_map_config_t offline_config;
@@ -32,7 +36,6 @@ std::vector<moving_obstacle_t> moving_obstacle_list;
 carmen_behavior_selector_road_profile_message *road_profile_message;
 
 #define HISTORY_SIZE 40
-#define MAX_ASSOCIATION_DISTANCE 2.00
 
 #define USE_OPEN_CV
 
@@ -279,7 +282,7 @@ detect_obstacles(char *subtracted_map, char *current_map, carmen_map_config_t co
 
 			fast_flood_fill(map, &config, &observation, i, j);
 
-			if (observation.cell_vector.size() > 10 && observation.cell_vector.size() < 500)
+			if (observation.cell_vector.size() > 5 && observation.cell_vector.size() < 500)
 			{
 				compute_centroid(&observation);
 				int val = associate_observations(observation);
@@ -595,6 +598,11 @@ carmen_map_handler(carmen_mapper_map_message *map_message)
 
 	int map_size = map_message->size;
 
+	current_time = map_message->timestamp;
+	double delta_time = current_time - previous_time;
+
+	MAX_ASSOCIATION_DISTANCE = 4.0 * 20.0 * delta_time;
+
 	if (first_map == 1)
 	{
 		current_map = (char *) malloc(map_size * sizeof(char));
@@ -632,6 +640,7 @@ carmen_map_handler(carmen_mapper_map_message *map_message)
 
 	memcpy(previous_map, current_map, map_size * sizeof(char));
 	previous_config = current_config;
+	previous_time = current_time;
 
 	first_map = 0;
 }
