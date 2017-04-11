@@ -19,6 +19,7 @@ string ts_cascade_name = "data_g.xml";
 CascadeClassifier ts_cascade;
 string window_name = "Capture - Traffic Sign detection. Image: ";
 RNG rng(12345);
+int cont = 0;
 
 string
 detectAndDisplay(Mat frame, string image, char *verbose, string aux);
@@ -148,8 +149,11 @@ detectAndDisplay(Mat frame, string image, char *verbose, string aux)
     {
         imshow(window_name + image, frame);
     }
-	imwrite("result_db/" + aux, frame);
+    static char image_name[256];
+    sprintf(image_name, "result_db/%04d.png",cont);
+	imwrite(image_name, frame);
+	cont++;
     string result = newline;
-    //imwrite("image/" + image, frame);
+//    imwrite("result_db/image/" + image, frame);
     return result;
 }
