@@ -7,6 +7,9 @@
 #include <carmen/behavior_selector_interface.h>
 #include <carmen/localize_ackerman_interface.h>
 #include <carmen/mapper_interface.h>
+#include <carmen/obstacle_distance_mapper_interface.h>
+#include <carmen/moving_objects_messages.h>
+#include <carmen/moving_objects_interface.h>
 #include <carmen/global_graphics.h>
 
 // open cv
@@ -23,10 +26,6 @@ char *current_map;
 char *previous_map;
 char *offline_map;
 
-double previous_time;
-double current_time;
-double MAX_ASSOCIATION_DISTANCE = 2.00;
-
 carmen_map_config_t current_config;
 carmen_map_config_t previous_config;
 carmen_map_config_t offline_config;
@@ -35,9 +34,10 @@ std::vector<moving_obstacle_t> moving_obstacle_list;
 
 carmen_behavior_selector_road_profile_message *road_profile_message;
 
-#define HISTORY_SIZE 40
+#define HISTORY_SIZE 20
+#define MAX_ASSOCIATION_DISTANCE 3.0
 
-#define USE_OPEN_CV
+//#define USE_OPEN_CV
 
 
 void
@@ -164,6 +164,13 @@ fast_flood_fill(char *map, carmen_map_config_t *config, moving_obstacle_observat
 }
 
 
+double
+distance(carmen_position_t p1, carmen_position_t p2)
+{
+	return sqrt( pow( (p2.x - p1.x), 2) + pow( (p2.y - p1.y), 2));
+}
+
+
 void
 compute_centroid(moving_obstacle_observation_t *observation)
 {
@@ -181,11 +188,29 @@ compute_centroid(moving_obstacle_observation_t *observation)
 }
 
 
-double
-distance(carmen_position_t p1, carmen_position_t p2)
+void
+compute_velocity_and_orientation(moving_obstacle_t *obstacle)
 {
-	return sqrt( pow( (p2.x - p1.x), 2) + pow( (p2.y - p1.y), 2));
+	double sum_dist = 0;
+	double sum_time = 0;
+	double sum_delta_x = 0;
+	double sum_delta_y = 0;
+
+	for (unsigned int i = 1; i < obstacle->observations.size(); i++)
+	{
+		sum_dist += distance(obstacle->observations[i].centroid,obstacle->observations[i-1].centroid);
+		sum_time += obstacle->observations[i-1].timestamp - obstacle->observations[i].timestamp;
+
+		sum_delta_x += obstacle->observations[i-1].centroid.x - obstacle->observations[i].centroid.x;
+		sum_delta_y += obstacle->observations[i-1].centroid.y - obstacle->observations[i].centroid.y;
+	}
+
+	obstacle->velocity = sum_dist / sum_time;
+	obstacle->orientation = atan2(sum_delta_y, sum_delta_x);
+
 }
+
+
 
 
 int
@@ -248,6 +273,18 @@ distace_to_lane(carmen_position_t position)
 		}
 	}
 
+	for (int i = 0; i < road_profile_message->number_of_poses_back; i++)
+	{
+		rddf_pos.x = road_profile_message->poses_back[i].x;
+		rddf_pos.y = road_profile_message->poses_back[i].y;
+
+		dist = distance(position, rddf_pos);
+		if (dist < min_dist)
+		{
+			min_dist = dist;
+		}
+	}
+
 	return min_dist;
 
 }
@@ -297,6 +334,8 @@ detect_obstacles(char *subtracted_map, char *current_map, carmen_map_config_t co
 					{
 						moving_obstacle_list[val].observations.pop_back();
 					}
+					compute_velocity_and_orientation(&moving_obstacle_list[val]);
+					//printf("id: %d, v: %f, theta: %f\n", moving_obstacle_list[val].id, moving_obstacle_list[val].velocity, moving_obstacle_list[val].orientation);
 				}
 				else
 				{
@@ -307,10 +346,6 @@ detect_obstacles(char *subtracted_map, char *current_map, carmen_map_config_t co
 					obstacle.associated = 0;
 					obstacle.age = 0;
 					obstacle.observations.push_front(observation);
-					if (obstacle.observations.size() > HISTORY_SIZE)
-					{
-						obstacle.observations.pop_back();
-					}
 					moving_obstacle_list.push_back(obstacle);
 				}
 			}
@@ -318,6 +353,30 @@ detect_obstacles(char *subtracted_map, char *current_map, carmen_map_config_t co
 	}
 
 	free(map);
+}
+
+
+void
+translate_maps(char *previous_map, carmen_map_config_t previous_config, carmen_map_config_t current_config)
+{
+	int i, j, new_index, old_index;
+	cell_coords_t map_cell;
+
+	for (i = 0; i < previous_config.x_size; i++)
+	{
+		for (j = 0; j < previous_config.y_size; j++)
+		{
+			old_index = j + i * previous_config.y_size;
+			map_cell = carmen_obstacle_distance_mapper_get_map_cell_from_configs(current_config, previous_config, i, j);
+			if (map_cell.x >= 0 && map_cell.x < current_config.x_size &&
+					map_cell.y >= 0 && map_cell.y < current_config.y_size)
+			{
+				new_index = map_cell.y + map_cell.x * current_config.y_size;
+				previous_map[new_index] = previous_map[old_index];
+			}
+		}
+	}
+
 }
 
 
@@ -338,7 +397,7 @@ remove_obstacles(double timestamp)
 		dist = distance(globalposition, iter->observations[0].centroid);
 		timediff = timestamp - iter->observations[0].timestamp;
 
-		if(dist > 70 || (iter->age > 2 && iter->associated == 0) || timediff > 0.8)
+		if(dist > 70 || (iter->age > 4 && iter->associated == 0) || timediff > 0.8)
 		{
 			iter = moving_obstacle_list.erase(iter);
 		}
@@ -547,6 +606,47 @@ publish_subtracted_points(char *subtracted_map, carmen_map_config_t config)
 
 
 void
+publish_moving_objects(double timestamp)
+{
+	carmen_moving_objects_point_clouds_message moving_objects_point_clouds_message;
+	moving_objects_point_clouds_message.num_point_clouds = moving_obstacle_list.size();
+	moving_objects_point_clouds_message.point_clouds = (t_point_cloud_struct *) (malloc(moving_objects_point_clouds_message.num_point_clouds * sizeof(t_point_cloud_struct)));
+
+	for (int i = 0; i < moving_objects_point_clouds_message.num_point_clouds; i++)
+	{
+		moving_objects_point_clouds_message.point_clouds[i].r = 1.0;
+		moving_objects_point_clouds_message.point_clouds[i].g = 1.0;
+		moving_objects_point_clouds_message.point_clouds[i].b = 1.0;
+		moving_objects_point_clouds_message.point_clouds[i].point_size = 0;
+		moving_objects_point_clouds_message.point_clouds[i].linear_velocity = moving_obstacle_list[i].velocity;
+		moving_objects_point_clouds_message.point_clouds[i].orientation = carmen_normalize_theta(moving_obstacle_list[i].orientation);
+		moving_objects_point_clouds_message.point_clouds[i].object_pose.x = moving_obstacle_list[i].observations.front().centroid.x;
+		moving_objects_point_clouds_message.point_clouds[i].object_pose.y = moving_obstacle_list[i].observations.front().centroid.y;
+		moving_objects_point_clouds_message.point_clouds[i].object_pose.z = 0.0;
+		moving_objects_point_clouds_message.point_clouds[i].height = 1.4;
+		moving_objects_point_clouds_message.point_clouds[i].length = 4.4;
+		moving_objects_point_clouds_message.point_clouds[i].width = 1.8;
+		moving_objects_point_clouds_message.point_clouds[i].geometric_model = 0;
+		moving_objects_point_clouds_message.point_clouds[i].model_features.geometry.height = 1.4;
+		moving_objects_point_clouds_message.point_clouds[i].model_features.geometry.length = 4.4;
+		moving_objects_point_clouds_message.point_clouds[i].model_features.geometry.width = 1.8;
+		moving_objects_point_clouds_message.point_clouds[i].model_features.red = 1.0;
+		moving_objects_point_clouds_message.point_clouds[i].model_features.green = 0.0;
+		moving_objects_point_clouds_message.point_clouds[i].model_features.blue = 0.8;
+		moving_objects_point_clouds_message.point_clouds[i].model_features.model_name = (char *) "car";
+		moving_objects_point_clouds_message.point_clouds[i].num_associated = moving_obstacle_list[i].id;
+
+	}
+
+	moving_objects_point_clouds_message.timestamp = timestamp;
+	moving_objects_point_clouds_message.host = carmen_get_host();
+
+	carmen_moving_objects_point_clouds_publish_message(&moving_objects_point_clouds_message);
+	free(moving_objects_point_clouds_message.point_clouds);
+}
+
+
+void
 publish_moving_obstacles()
 {
 	int num_points = 0, k = 0;
@@ -598,11 +698,6 @@ carmen_map_handler(carmen_mapper_map_message *map_message)
 
 	int map_size = map_message->size;
 
-	current_time = map_message->timestamp;
-	double delta_time = current_time - previous_time;
-
-	MAX_ASSOCIATION_DISTANCE = 4.0 * 20.0 * delta_time;
-
 	if (first_map == 1)
 	{
 		current_map = (char *) malloc(map_size * sizeof(char));
@@ -627,12 +722,18 @@ carmen_map_handler(carmen_mapper_map_message *map_message)
 		if (current_config.x_origin == previous_config.x_origin && current_config.y_origin == previous_config.y_origin)
 		{
 			subtract_map(subtracted_map, current_map, previous_map, current_config);
-			detect_obstacles(subtracted_map, current_map, current_config, map_message->timestamp);
 		}
-
+		else
+		{
+			translate_maps(previous_map, previous_config, current_config);
+			subtract_map(subtracted_map, current_map, previous_map, current_config);
+		}
+		detect_obstacles(subtracted_map, current_map, current_config, map_message->timestamp);
 		remove_obstacles(map_message->timestamp);
 		free(subtracted_map);
 	}
+
+	publish_moving_objects(map_message->timestamp);
 
 	#ifdef USE_OPEN_CV
 		show_tracks(current_map, 1, current_config);
@@ -640,7 +741,6 @@ carmen_map_handler(carmen_mapper_map_message *map_message)
 
 	memcpy(previous_map, current_map, map_size * sizeof(char));
 	previous_config = current_config;
-	previous_time = current_time;
 
 	first_map = 0;
 }
@@ -700,7 +800,7 @@ carmen_compact_cost_map_handler(carmen_map_server_compact_cost_map_message *comp
 			//show_map(subtracted_map, 3, compact_map_message->config);
 		#endif
 
-//		publish_moving_obstacles();
+		publish_moving_obstacles();
 
 		free(subtracted_map);
 	}
