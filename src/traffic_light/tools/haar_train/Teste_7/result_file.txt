@@ -1,0 +1,16 @@
+True Positive = 513, False Positives = 34, False Negatives = 128
+Precision: 0.937843, Recall: 0.800312
+End of calculation of precision and recall
+
+0.937843
+0.800312
+513
+128
+34
+
+Analise das imagens 
+FP.txt 
+34 -> dessas, 23 são não marcadas - logo Verdadeiro FP é: 11
+FN.txt
+Verificar se os 2 semaforos estavam marcados (provavelmente problema por ter dividido Treino e teste de forma aleatoria)
+TP.txt

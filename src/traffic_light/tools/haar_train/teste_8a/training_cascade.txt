@@ -1,0 +1,1 @@
+-w 10 -h 22 -numPos 1200 -numNeg 1101 -minHitRate 0.999 -weightTrimRate 0.95 -maxFalseAlarmRate 0.5 -numStages 22 -mode ALL -featureType LBP -precalcValBufSize 16384 -precalcIdxBufSize 16384 -acceptanceRatioBreakValue 10e-5

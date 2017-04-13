@@ -1,0 +1,23 @@
+Rodando o treinamento:
+./training ../../../../bin/traffic_light_db_70/Viola-Jones_files/train.txt ../../../../bin/traffic_light_db_70/Viola-Jones_files/gt_train.txt samples.txt training_cas.txt
+O training gera o positive_samples.txt e pega o negatives de dentro da pasta
+(modificar para passar negatives.txt como parâmetro)
+Parametros usados:
+numPositives 2187 numNegatives 2002 
+Treinando com HAAR
+create_samples
+-w 9 -h 20 -num 2187
+training_cascade
+-w 9 -h 20 -minHitRate 0.999 -maxFalseAlarmRate 0.5
+
+Treinando com LBP
+create_samples
+-w 9 -h 20 -num 2187
+training_cascade
+-w 9 -h 20 -minHitRate 0.999 -maxFalseAlarmRate 0.5 -featureType LBP
+
+Rodando teste:
+./testing ../../../../bin/traffic_light_db_70/Viola-Jones_files/test.txt 0 result.txt
+
+Rodando resultado (compara teste com ground_truth):
+./result result_file.txt ../../../../bin/traffic_light_db_70/Viola-Jones_files/gt_test.txt ../../../../bin/traffic_light_db_70/Viola-Jones_files/test.txt result.txt

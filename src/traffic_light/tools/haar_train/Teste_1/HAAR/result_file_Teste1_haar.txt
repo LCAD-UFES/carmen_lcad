@@ -1,0 +1,10 @@
+Calculation of precision and recall
+True Positive = 545, False Positives = 407, False Negatives = 96
+Precision: 0.572479, Recall: 0.850234
+End of calculation of precision and recall
+
+0.572479
+0.850234
+545
+96
+407

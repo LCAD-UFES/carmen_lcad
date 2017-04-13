@@ -1,0 +1,1 @@
+-w 9 -h 21 -num 2052 -maxxangle 0.0 -maxyangle 0.0 -maxzangle 0.0
