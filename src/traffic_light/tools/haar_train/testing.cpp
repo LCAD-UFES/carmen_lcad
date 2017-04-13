@@ -149,10 +149,14 @@ detectAndDisplay(Mat frame, string image, char *verbose, string aux)
     {
         imshow(window_name + image, frame);
     }
+<<<<<<< HEAD
     static char image_name[256];
     sprintf(image_name, "result_db/%04d.png",cont);
 	imwrite(image_name, frame);
 	cont++;
+=======
+	imwrite("result_db/" + aux, frame);
+>>>>>>> 60d8dc46dc31d1cf8d68a999ac94cb6da6f33eb5
     string result = newline;
 //    imwrite("result_db/image/" + image, frame);
     return result;
