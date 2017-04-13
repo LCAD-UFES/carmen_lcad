@@ -8,7 +8,7 @@
 
 using namespace hyper;
 
-const std::string StampedSICK::base_sick_path = "tmp/sick/sick";
+const std::string StampedSICK::base_sick_path = "/dados/tmp/sick/sick";
 
 // set the mirror mask
 const uint16_t StampedSICK::MIRROR_MASK = 0x1 << 3;

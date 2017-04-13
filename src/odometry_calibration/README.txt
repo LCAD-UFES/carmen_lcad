@@ -19,6 +19,30 @@ robot_phi_multiplier				1.109900
 robot_phi_bias					-0.003390
 robot_v_multiplier				1.021018
 
+--------guarapari-split2--------------- verificar
+bias v: 0.976859 0.000000 bias phi: 0.500000 -0.001350 initial angle: 2.619321
+Fitness (MSE): -272.956184
+Fitness (SQRT(MSE)): 16.521386
+---------------------------------------
+
+--------guarapari-split3---------------
+bias v: 0.989939 0.000000 bias phi: 0.976104 -0.002454 initial angle: 1.277144
+Fitness (MSE): -61.158948
+Fitness (SQRT(MSE)): 7.820419
+---------------------------------------
+
+--------guarapari-split4---------------
+bias v: 0.986904 -0.000000 bias phi: 0.999119 -0.002401 initial angle: 2.953716
+Fitness (MSE): -40.331249
+Fitness (SQRT(MSE)): 6.350689
+--------------------------------------
+
+--------guarapari-completo------------------
+bias v: 0.901984 -0.000000 bias phi: 0.500000 -0.001356 initial angle: -1.147907
+Fitness (MSE): -1767.096363
+Fitness (SQRT(MSE)): 42.036845
+---------------------------
+
 ---------praca------------
 bias v: 1.003211 0.000000 bias phi: 1.093834 -0.003157 initial angle: -2.754635
 Fitness (MSE): -1.029459

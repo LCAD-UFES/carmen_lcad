@@ -816,7 +816,7 @@ void GrabData::BuildLidarMeasuresMT() {
     float lfd = LIDAR_ODOMETRY_MIN_DISTANCE;
 
     // the base path
-    std::string path("tmp/lgm/");
+    std::string path("/dados/tmp/lgm/");
 
     bool is_sick = (point_cloud_lidar_messages == &sick_messages);
 
@@ -906,7 +906,7 @@ void GrabData::BuildLidarMeasuresMT() {
                         current->seq_id = next->id;
 
                         // save the acculated cloud
-                        StampedLidar::SavePointCloud(path, current_index, *current_cloud);
+                        // StampedLidar::SavePointCloud(path, current_index, *current_cloud);
 
                     } else {
 
@@ -1548,8 +1548,8 @@ bool GrabData::ParseLogFile(const std::string &input_filename) {
             // build a new GPS orientation message
             msg = new StampedGPSOrientation(msg_id);
 
-        } else if ("LASER_LDMRS_NEW" == tag) {
-
+        } else if (false) { //"LASER_LDMRS_NEW" == tag) {
+	
             // build a new sick message
             msg = new StampedSICK(msg_id);
 

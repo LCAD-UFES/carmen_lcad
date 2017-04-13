@@ -541,3 +541,8 @@ bin/multimap_optimization_merge
 sharedlib/alglib/test
 sharedlib/libsickldmrs/sickldmrstest_new
 src/ford_escape_hybrid/ford_escape_hybrid_tune_pid
+src/traffic_light/tlight_evaluate_train
+src/traffic_light/tlight_train
+bin/rddf_convert_from_kml_to_txt
+src/hypergraphsclam/parser
+src/hypergraphsclam/hypergraphsclam.cpp

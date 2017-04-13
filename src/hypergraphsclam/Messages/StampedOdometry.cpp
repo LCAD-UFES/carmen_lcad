@@ -28,8 +28,8 @@ bool StampedOdometry::FromCarmenLog(std::stringstream &ss) {
 
     }
 
-    v *= 1.000611;
-    phi = phi * 1.07004 - 0.003390;
+    v *= 0.976350;
+    phi = phi * 0.50000 - 0.001324;
 
     return true;
 

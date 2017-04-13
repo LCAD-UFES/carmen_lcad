@@ -31,9 +31,9 @@
 #include <cmath>
 #include <map>
 
-#define ODOMETRY_XX_VAR 0.1
-#define ODOMETRY_YY_VAR 0.1
-#define ODOMETRY_HH_VAR 0.009
+#define ODOMETRY_XX_VAR 1.5
+#define ODOMETRY_YY_VAR 1.5
+#define ODOMETRY_HH_VAR 0.04
 
 #define SICK_ICP_XX_VAR 0.5
 #define SICK_ICP_YY_VAR 0.5
@@ -43,9 +43,9 @@
 #define SICK_LOOP_ICP_YY_VAR 0.8
 #define SICK_LOOP_ICP_HH_VAR M_PI_4
 
-#define VELODYNE_ICP_XX_VAR 0.5
-#define VELODYNE_ICP_YY_VAR 0.5
-#define VELODYNE_ICP_HH_VAR 0.01
+#define VELODYNE_ICP_XX_VAR 1.5
+#define VELODYNE_ICP_YY_VAR 1.5
+#define VELODYNE_ICP_HH_VAR 0.04
 
 #define VELODYNE_LOOP_ICP_XX_VAR 1.5
 #define VELODYNE_LOOP_ICP_YY_VAR 1.5
@@ -55,13 +55,13 @@
 #define CURVATURE_CONSTRAINT_YY_VAR 20.0
 #define CURVATURE_CONSTRAINT_HH_VAR 20.0
 
-#define GPS_POSE_STD_MULTIPLIER 25.0
-#define GPS_POSE_HH_STD M_PI * 1000.0
+#define GPS_POSE_STD_MULTIPLIER 20.0
+#define GPS_POSE_HH_STD M_PI * 200.0
 
 #define SICK_VERTEX_OFFSET_ID 0
 #define VELODYNE_VERTEX_OFFSET_ID 1
 
-#define OPTIMIZER_ITERATIONS 30
+#define OPTIMIZER_ITERATIONS 300
 
 g2o::SparseOptimizer*
 initialize_optimizer() {
@@ -162,6 +162,9 @@ load_hypergraph_to_optimizer(
     // it's the information matrix
     // in this case the odometry information matrix
     Eigen::Matrix3d odom_information(cov.inverse());
+
+    // the special odom matrix
+    Eigen::Matrix3d special_odom_information(Eigen::Matrix3d::Identity() * 1e09);
 
     // reset the matrix to the icp covariance matrix
     cov.data()[0] = std::pow(SICK_ICP_XX_VAR, 2);
@@ -285,8 +288,18 @@ load_hypergraph_to_optimizer(
             // set the measure
             edge->setMeasurement(g2o::SE2(x, y, theta));
 
-            // set the info
-            edge->setInformation(odom_information);
+            // take care of gps messages with same timestamps
+            if (0.0 == x && 0.0 == y && 0.0 == theta) {
+
+                // set the special info
+                edge->setInformation(special_odom_information);
+
+            } else {
+            
+                // set the info
+                edge->setInformation(odom_information);
+            
+            }
 
             if (!optimizer->addEdge(edge)) {
 

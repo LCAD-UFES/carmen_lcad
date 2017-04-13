@@ -158,7 +158,7 @@ main(int argc, char **argv)
 				// check if succeded
 				system(("cp " + strs[1] + " " + new_filename).c_str());
 
-				strs[1] = new_filename;
+				strs[1] = "/dados/" + new_filename;
 				partition_size += fileSize(new_filename);
 			}
 
