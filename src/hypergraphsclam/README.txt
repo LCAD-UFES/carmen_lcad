@@ -43,20 +43,20 @@ Verifique se no seu computador tem as seguintes pastas, caso não tenha criei:
 8. Modifique o process-volta_da_ufes_playback_viewer_3D_map_generation.ini para que ele faça playback de seu log:
 		./playback [seu log]
 
-9. Modifique o carmen-ford-escape.ini para ativar a criacao de mapas, comente o treixo acima e descomente o de baixo.
+9. Modifique o carmen-ford-escape.ini para ativar a criacao de mapas, comente o trecho dos parâmetros acima e descomente o de baixo.
 
 ## Use the parameters below for building maps
-#mapper_update_and_merge_with_snapshot_map	off
-#mapper_global_map 							off
-#mapper_merge_with_offline_map 				off
-#mapper_decay_to_offline_map				off
-#mapper_update_and_merge_with_mapper_saved_maps	on
-#mapper_build_snapshot_map					off
-#mapper_velodyne_range_max		 			70.0
-#mapper_velodyne_range_max_factor 			4.0
-#mapper_create_map_sum_and_count			off
-#mapper_use_remission						on
-#mapper_laser_ldmrs 						off
+mapper_update_and_merge_with_snapshot_map	off
+mapper_global_map 							off
+mapper_merge_with_offline_map 				off
+mapper_decay_to_offline_map				off
+mapper_update_and_merge_with_mapper_saved_maps	on
+mapper_build_snapshot_map					off
+mapper_velodyne_range_max		 			70.0
+mapper_velodyne_range_max_factor 			4.0
+mapper_create_map_sum_and_count			off
+mapper_use_remission						on
+mapper_laser_ldmrs 						off
 
 
 10. iniciar o ./proccontrol process-volta_da_ufes_playback_viewer_3D_map_generation.ini
