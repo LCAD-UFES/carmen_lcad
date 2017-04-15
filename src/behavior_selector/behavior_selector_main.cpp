@@ -38,6 +38,8 @@ double param_distance_between_waypoints;
 double param_change_goal_distance;
 double param_distance_interval;
 
+double map_width;
+
 carmen_obstacle_avoider_robot_will_hit_obstacle_message last_obstacle_avoider_robot_hit_obstacle_message;
 carmen_rddf_annotation_message last_rddf_annotation_message;
 bool last_rddf_annotation_message_valid = false;
@@ -66,6 +68,7 @@ carmen_behavior_selector_state_message behavior_selector_state_message;
 
 static carmen_obstacle_distance_mapper_map_message distance_map;
 static carmen_obstacle_distance_mapper_compact_map_message *compact_distance_map = NULL;
+static carmen_obstacle_distance_mapper_compact_map_message *compact_lane_contents = NULL;
 
 
 int
@@ -477,27 +480,27 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 	double car_pose_to_car_front = get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels;
 	// um carro de tamanho para cada 10 milhas/h (4.4705 m/s) -> ver "The DARPA Urban Challenge" book, pg. 36.
 	double min_dist_according_to_car_v = get_robot_config()->length * (current_robot_pose_v_and_phi->v / 4.4704) + car_pose_to_car_front;
-	double desired_distance = carmen_fmax(1.8 * min_dist_according_to_car_v, car_pose_to_car_front + 2.5);
+	double desired_distance = carmen_fmax(1.4 * min_dist_according_to_car_v, car_pose_to_car_front + 2.5);
 
 	double distance = 0.0;
 	double moving_obj_v = udatmo_speed_front();
 	if (udatmo_obstacle_detected(timestamp))// && (current_robot_pose_v_and_phi->v > moving_obj_v))
 	{
-//		distance = DIST2D(udatmo_get_moving_obstacle_position(), *current_robot_pose_v_and_phi) - car_pose_to_car_front;
 		distance = udatmo_get_moving_obstacle_distance(*current_robot_pose_v_and_phi, get_robot_config());
 
 		// ver "The DARPA Urban Challenge" book, pg. 36.
-		double Kgap = 0.2;
+		double Kgap = 0.15;
 		double new_goal_v = moving_obj_v + Kgap * (distance - desired_distance);
-		//		SampleFilter_put(&filter2, goal->v);
-		//		goal->v = SampleFilter_get(&filter2);
+		SampleFilter_put(&filter2, new_goal_v);
+		new_goal_v = SampleFilter_get(&filter2);
 		if (new_goal_v < 0.0)
 			new_goal_v = 0.0;
 
 		goal->v = carmen_fmin(new_goal_v, goal->v);
-
-//		printf("mov %lf, gv %lf, dist %lf, d_dist %lf\n", moving_obj_v, goal->v, distance, desired_distance);
 	}
+	else
+		SampleFilter_put(&filter2, moving_obj_v);
+
 	FILE *caco = fopen("caco.txt", "a");
 	fprintf(caco, "%lf %lf %lf %lf %lf %d %d %d %lf %lf %lf %d ", moving_obj_v, goal->v, current_robot_pose_v_and_phi->v, distance, desired_distance,
 			behavior_selector_state_message.low_level_state, autonomous, goal_type,
@@ -529,9 +532,6 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 //	printf("gvda %lf\n", goal->v);
 	if (obstacle_avoider_active_recently)
 		goal->v = carmen_fmin(2.5, goal->v);
-
-	if (!udatmo_obstacle_detected(timestamp))
-		SampleFilter_put(&filter2, carmen_distance_ackerman_traj(goal, current_robot_pose_v_and_phi));
 
 //	printf("gvf %lf\n", goal->v);
 }
@@ -712,13 +712,13 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	}
 
 	static double stop_t0 = 15;
-	static double stop_t1 = 35;
+	static double stop_t1 = 15;
 
 	static double v;
 	double t = timestamp - initial_time;
 	if (stop_t0 <= t && disp > 0.0)
 		disp -= 0.03;
-	else if (t < stop_t1)
+	if (t < stop_t1)
 		v = current_robot_pose_v_and_phi.v + 0.5;
 
 //	else if (t > stop_tn)
@@ -737,7 +737,7 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	{
 		int status;
 		next_pose = get_the_point_nearest_to_the_trajectory(&status, rddf->poses[i], rddf->poses[i + 1], pose_ahead);
-		if (status == POINT_WITHIN_SEGMENT)
+		if ((status == POINT_WITHIN_SEGMENT) || (status == POINT_BEFORE_SEGMENT))
 			break;
 	}
 
@@ -751,13 +751,13 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 
 
 void
-clear_cells_in_compact_distance_map_with_moving_obstacles(carmen_obstacle_distance_mapper_compact_map_message *compact_distance_map)
+clear_moving_obstacles_from_compact_lane_map(carmen_obstacle_distance_mapper_compact_map_message *compact_lane_contents)
 {
-	for (int i = 0; i < compact_distance_map->size; i++)
+	for (int i = 0; i < compact_lane_contents->size; i++)
 	{
-		int index = compact_distance_map->coord_y[i] + compact_distance_map->config.y_size * compact_distance_map->coord_x[i];
-		compact_distance_map->x_offset[i] = distance_map.complete_x_offset[index];
-		compact_distance_map->y_offset[i] = distance_map.complete_y_offset[index];
+		int index = compact_lane_contents->coord_y[i] + compact_lane_contents->config.y_size * compact_lane_contents->coord_x[i];
+		compact_lane_contents->x_offset[i] = distance_map.complete_x_offset[index];
+		compact_lane_contents->y_offset[i] = distance_map.complete_y_offset[index];
 	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -801,15 +801,15 @@ publish_goal_list(carmen_ackerman_traj_point_t *goal_list, int goal_list_size, d
 
 
 void
-publish_output_lane_map(carmen_obstacle_distance_mapper_compact_map_message *compact_distance_map, double timestamp)
+publish_updatet_lane_contents(double timestamp)
 {
-	carmen_obstacle_distance_mapper_compact_map_message compact_distance_map_cpy;
-	carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(&compact_distance_map_cpy, compact_distance_map);
-	clear_cells_in_compact_distance_map_with_moving_obstacles(&compact_distance_map_cpy);
+	carmen_obstacle_distance_mapper_compact_map_message compact_lane_contents_cpy;
+	carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(&compact_lane_contents_cpy, compact_lane_contents);
+	clear_moving_obstacles_from_compact_lane_map(&compact_lane_contents_cpy);
 
-	carmen_behaviour_selector_publish_compact_lane_contents_message(&compact_distance_map_cpy, timestamp);
+	carmen_behaviour_selector_publish_compact_lane_contents_message(&compact_lane_contents_cpy, timestamp);
 
-	carmen_obstacle_distance_mapper_free_compact_distance_map(&compact_distance_map_cpy);
+	carmen_obstacle_distance_mapper_free_compact_distance_map(&compact_lane_contents_cpy);
 }
 
 
@@ -922,6 +922,17 @@ add_simulated_object(carmen_ackerman_traj_point_t *object_pose)
 {
 	virtual_laser_message.positions[virtual_laser_message.num_positions].x = object_pose->x;
 	virtual_laser_message.positions[virtual_laser_message.num_positions].y = object_pose->y;
+	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_PURPLE;
+	virtual_laser_message.num_positions++;
+
+	double disp = 0.5;
+	virtual_laser_message.positions[virtual_laser_message.num_positions].x = object_pose->x + disp * cos(object_pose->theta + M_PI / 2.0);
+	virtual_laser_message.positions[virtual_laser_message.num_positions].y = object_pose->y + disp * sin(object_pose->theta + M_PI / 2.0);
+	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_PURPLE;
+	virtual_laser_message.num_positions++;
+
+	virtual_laser_message.positions[virtual_laser_message.num_positions].x = object_pose->x + disp * cos(object_pose->theta - M_PI / 2.0);
+	virtual_laser_message.positions[virtual_laser_message.num_positions].y = object_pose->y + disp * sin(object_pose->theta - M_PI / 2.0);
 	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_PURPLE;
 	virtual_laser_message.num_positions++;
 }
@@ -1300,7 +1311,7 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	if (!necessary_maps_available || !last_rddf_message)
 		return;
 
-	carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, compact_distance_map);
+	carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, compact_lane_contents);
 
 	set_behaviours_parameters(current_robot_pose_v_and_phi, timestamp);
 
@@ -1322,7 +1333,7 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 		publish_goal_list(goal_list, goal_list_size, timestamp);
 	}
 
-	publish_output_lane_map(compact_distance_map, timestamp);
+	publish_updatet_lane_contents(timestamp);
 
 // Control whether simulated moving obstacles are created by (un)commenting the
 // definition of the macro below at the top of this file.
@@ -1436,9 +1447,11 @@ path_planner_road_profile_handler(carmen_path_planner_road_profile_message *rddf
 static void
 carmen_obstacle_distance_mapper_compact_map_message_handler(carmen_obstacle_distance_mapper_compact_map_message *message)
 {
+	if (!necessary_maps_available)
+		return;
+
 	if (compact_distance_map == NULL)
 	{
-		carmen_obstacle_distance_mapper_create_new_map(&distance_map, message->config, message->host, message->timestamp);
 		compact_distance_map = (carmen_obstacle_distance_mapper_compact_map_message *) (calloc(1, sizeof(carmen_obstacle_distance_mapper_compact_map_message)));
 		carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_distance_map, message);
 		carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, message);
@@ -1448,6 +1461,26 @@ carmen_obstacle_distance_mapper_compact_map_message_handler(carmen_obstacle_dist
 		carmen_obstacle_distance_mapper_clear_distance_map_message_using_compact_map(&distance_map, compact_distance_map, DISTANCE_MAP_HUGE_DISTANCE);
 		carmen_obstacle_distance_mapper_free_compact_distance_map(compact_distance_map);
 		carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_distance_map, message);
+		carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, message);
+	}
+}
+
+
+static void
+carmen_obstacle_distance_mapper_compact_lane_contents_message_handler(carmen_obstacle_distance_mapper_compact_map_message *message)
+{
+	if (compact_lane_contents == NULL)
+	{
+		carmen_obstacle_distance_mapper_create_new_map(&distance_map, message->config, message->host, message->timestamp);
+		compact_lane_contents = (carmen_obstacle_distance_mapper_compact_map_message *) (calloc(1, sizeof(carmen_obstacle_distance_mapper_compact_map_message)));
+		carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_lane_contents, message);
+		carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, message);
+	}
+	else
+	{
+		carmen_obstacle_distance_mapper_clear_distance_map_message_using_compact_map(&distance_map, compact_lane_contents, DISTANCE_MAP_HUGE_DISTANCE);
+		carmen_obstacle_distance_mapper_free_compact_distance_map(compact_lane_contents);
+		carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_lane_contents, message);
 		carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, message);
 	}
 
@@ -1556,8 +1589,8 @@ register_handlers()
 		carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t) simulator_ackerman_truepos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 //	carmen_obstacle_distance_mapper_subscribe_message(NULL, (carmen_handler_t) carmen_obstacle_distance_mapper_message_handler, CARMEN_SUBSCRIBE_LATEST);
-//	carmen_obstacle_distance_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) carmen_obstacle_distance_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
-	carmen_obstacle_distance_mapper_subscribe_compact_lane_contents_message(NULL, (carmen_handler_t) carmen_obstacle_distance_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_obstacle_distance_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) carmen_obstacle_distance_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_obstacle_distance_mapper_subscribe_compact_lane_contents_message(NULL, (carmen_handler_t) carmen_obstacle_distance_mapper_compact_lane_contents_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_rddf_subscribe_annotation_message(NULL, (carmen_handler_t) rddf_annotation_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
@@ -1664,6 +1697,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "rrt",   			   (char *) "distance_interval", CARMEN_PARAM_DOUBLE, &param_distance_interval, 1, NULL},
 		{(char *) "obstacle_avoider", 		  (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.obstacle_avoider_obstacles_safe_distance, 	1, NULL},
 		{(char *) "model_predictive_planner", (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.model_predictive_planner_obstacles_safe_distance, 	1, NULL},
+		{(char *) "grid_mapping",      (char *) "map_width", CARMEN_PARAM_DOUBLE, &map_width, 	1, NULL},
 	};
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list)/sizeof(param_list[0]));
 

@@ -148,7 +148,7 @@ obstacle_distance_mapper_publish_distance_map(carmen_mapper_map_message *map_mes
 
 
 static void
-obstacle_distance_mapper_publish_compact_distance_map(carmen_mapper_map_message *map_message)
+obstacle_distance_mapper_publish_compact_distance_and_compact_lane_contents_maps(carmen_mapper_map_message *map_message)
 {
 	build_distance_map(map_message);
 	compact_lane_contents = clear_lane_in_distance_map();
@@ -229,7 +229,7 @@ static void
 carmen_mapper_map_message_handler(carmen_mapper_map_message *msg)
 {
 //	obstacle_distance_mapper_publish_distance_map(msg);
-	obstacle_distance_mapper_publish_compact_distance_map(msg);
+	obstacle_distance_mapper_publish_compact_distance_and_compact_lane_contents_maps(msg);
 //	obstacle_distance_mapper_publish_compact_cost_map(msg->timestamp, &compact_distance_map);
 	obstacle_distance_mapper_publish_compact_cost_map(msg->timestamp);
 
