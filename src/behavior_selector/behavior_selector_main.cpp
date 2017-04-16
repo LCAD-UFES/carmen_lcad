@@ -489,7 +489,7 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 		distance = udatmo_get_moving_obstacle_distance(*current_robot_pose_v_and_phi, get_robot_config());
 
 		// ver "The DARPA Urban Challenge" book, pg. 36.
-		double Kgap = 0.15;
+		double Kgap = 0.2;
 		double new_goal_v = moving_obj_v + Kgap * (distance - desired_distance);
 		SampleFilter_put(&filter2, new_goal_v);
 		new_goal_v = SampleFilter_get(&filter2);
@@ -519,7 +519,7 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 	if (goal_type == OBSTACLE_GOAL)
 		goal->v = 0.0;
 	else
-		goal->v = 18.28; // Esta linha faz com que o behaviour_selector ignore as velocidades no rddf
+		goal->v = get_max_v();
 
 	goal->v = set_goal_velocity_according_to_moving_obstacle(goal, current_robot_pose_v_and_phi, goal_type, timestamp);
 
@@ -651,9 +651,9 @@ compute_simulated_objects(double timestamp)
 
 	// Period of time (counted from initial_time)
 	// during which the obstacle is stopped.
-	static double stop_t0 = 30, stop_tn = 50;
+	static double stop_t0 = 50, stop_tn = 70;
 
-	double v = (20.0 / 3.6);
+	double v = (30.0 / 3.6);
 	double t = timestamp - initial_time;
 	if (stop_t0 <= t && t <= stop_tn)
 		v = 0;
@@ -925,7 +925,7 @@ add_simulated_object(carmen_ackerman_traj_point_t *object_pose)
 	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_PURPLE;
 	virtual_laser_message.num_positions++;
 
-	double disp = 0.5;
+	double disp = 0.3;
 	virtual_laser_message.positions[virtual_laser_message.num_positions].x = object_pose->x + disp * cos(object_pose->theta + M_PI / 2.0);
 	virtual_laser_message.positions[virtual_laser_message.num_positions].y = object_pose->y + disp * sin(object_pose->theta + M_PI / 2.0);
 	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_PURPLE;
