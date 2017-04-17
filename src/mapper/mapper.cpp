@@ -295,8 +295,15 @@ update_log_odds_of_cells_in_the_laser_ldmrs_perceptual_field(carmen_map_t *log_o
 	double v = sensor_data->robot_velocity[point_cloud_index].x;
 	double phi = sensor_data->robot_phi[point_cloud_index];
 
+	// O codigo abaixo tenta nao registrar o LDMRS no mapa quando de freiadas
+	static double blind_timestamp = 0.0;
 	double a = get_acceleration(v, sensor_data->robot_timestamp[point_cloud_index]);
 	if (a < -sensor_params->cutoff_negative_acceleration)
+	{
+		blind_timestamp = sensor_data->points_timestamp[point_cloud_index];
+		return;
+	}
+	if ((sensor_data->points_timestamp[point_cloud_index] - blind_timestamp) < 1.5)
 		return;
 
 	double dt = sensor_params->time_spent_by_each_scan;

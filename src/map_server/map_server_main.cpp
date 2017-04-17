@@ -67,6 +67,9 @@ carmen_compact_map_t compacted_lane_map_g = {0, NULL, NULL, NULL, {0, 0, 0, "", 
 
 int use_truepos = 0;
 
+double lane_width = 1.65;
+
+
 
 //static void
 //download_map_handler(carmen_download_map_message *message){
@@ -294,8 +297,6 @@ add_lane_to_the_map(carmen_map_t *lane_map, carmen_rddf_road_profile_message *me
 static void
 build_lane_map(carmen_rddf_road_profile_message *message, carmen_map_t *lane_map)
 {
-	double lane_width = 1.65; // TODO: @@@ Alberto: ler isso do carmen ini: deve ser usado o model_predictive_planner_obstacles_safe_distance
-
 	carmen_prob_models_initialize_cost_map(lane_map, current_map->config, current_map->config.resolution);
 	memset(lane_map->complete_map, 0, lane_map->config.x_size * lane_map->config.y_size * sizeof(double));
 
@@ -620,13 +621,14 @@ static void
 read_map_server_parameters(int argc, char **argv)
 {
 	carmen_param_t param_list[] = {
-			{"map_server", "initial_waiting_time", CARMEN_PARAM_DOUBLE, &initial_waiting_time, 0, NULL},
-			{"map_server", "map_grid_res", CARMEN_PARAM_DOUBLE, &map_grid_res, 0, NULL},
-			{"map_server", "map_width", CARMEN_PARAM_DOUBLE, &map_width, 0, NULL},
-			{"map_server", "map_height", CARMEN_PARAM_DOUBLE, &map_height, 0, NULL},
-			{"map_server", "time_interval_for_map_change", CARMEN_PARAM_DOUBLE, &time_interval_for_map_change, 0, NULL},
-			{"map_server", "publish_google_map", CARMEN_PARAM_ONOFF, &publish_google_map, 1, NULL},
-			{"behavior_selector", "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL},
+		{"map_server", "initial_waiting_time", 					CARMEN_PARAM_DOUBLE, &initial_waiting_time, 0, NULL},
+		{"map_server", "map_grid_res", 							CARMEN_PARAM_DOUBLE, &map_grid_res, 0, NULL},
+		{"map_server", "map_width", 							CARMEN_PARAM_DOUBLE, &map_width, 0, NULL},
+		{"map_server", "map_height", 							CARMEN_PARAM_DOUBLE, &map_height, 0, NULL},
+		{"map_server", "time_interval_for_map_change", 			CARMEN_PARAM_DOUBLE, &time_interval_for_map_change, 0, NULL},
+		{"map_server", "publish_google_map", 					CARMEN_PARAM_ONOFF, &publish_google_map, 1, NULL},
+		{"behavior_selector", "use_truepos", 					CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL},
+		{"model_predictive_planner", "obstacles_safe_distance",	CARMEN_PARAM_DOUBLE, &lane_width, 1, NULL},
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
