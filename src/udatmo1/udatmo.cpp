@@ -66,6 +66,7 @@ int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_map_message *cu
 
 	if (index != -1)
 		return (index);
+//	return (-1);
 
 //	bool near_barrier = false;
 //	for (int i = 0; i < rddf->number_of_poses; i++)
@@ -84,7 +85,7 @@ int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_map_message *cu
 			detector->robot_config.model_predictive_planner_obstacles_safe_distance,
 			-detector->robot_config.model_predictive_planner_obstacles_safe_distance, timestamp);
 	int index_center = detector_center->detect(current_map, rddf, goal_index, rddf_pose_index, robot_pose,
-			detector->robot_config.model_predictive_planner_obstacles_safe_distance + 0.5,
+			detector->robot_config.model_predictive_planner_obstacles_safe_distance + 0.4,
 			0.0, timestamp);
 
 	if ((index_center != -1) && (index_left != -1))// && !near_barrier)
