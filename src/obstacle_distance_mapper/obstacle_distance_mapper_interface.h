@@ -47,6 +47,9 @@ void carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(car
 void carmen_obstacle_distance_mapper_overwrite_distance_map_message_with_compact_distance_map(carmen_obstacle_distance_mapper_map_message *map,
 		carmen_obstacle_distance_mapper_compact_map_message *cmap);
 
+void carmen_obstacle_distance_mapper_overwrite_distance_map_with_compact_distance_map(carmen_prob_models_distance_map *map,
+		carmen_obstacle_distance_mapper_compact_map_message *cmap);
+
 void carmen_obstacle_distance_mapper_create_compact_distance_map(carmen_obstacle_distance_mapper_compact_map_message *cmap,
 		carmen_prob_models_distance_map *map, int value);
 

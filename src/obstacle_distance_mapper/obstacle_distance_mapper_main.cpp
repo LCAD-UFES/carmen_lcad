@@ -23,6 +23,7 @@ carmen_obstacle_distance_mapper_compact_map_message compact_lane_contents;
 carmen_map_t 										cost_map;
 carmen_compact_map_t 								compacted_cost_map;
 carmen_map_server_compact_lane_map_message			*compact_lane_map = NULL;
+carmen_obstacle_distance_mapper_compact_map_message *behaviour_selector_compact_lane_contents_message = NULL;
 
 carmen_point_t g_goal_position;
 carmen_point_t g_robot_position;
@@ -147,7 +148,7 @@ obstacle_distance_mapper_publish_distance_map(carmen_mapper_map_message *map_mes
 
 
 static void
-obstacle_distance_mapper_publish_compact_distance_map(carmen_mapper_map_message *map_message)
+obstacle_distance_mapper_publish_compact_distance_and_compact_lane_contents_maps(carmen_mapper_map_message *map_message)
 {
 	build_distance_map(map_message);
 	compact_lane_contents = clear_lane_in_distance_map();
@@ -200,6 +201,10 @@ obstacle_distance_mapper_publish_compact_cost_map_test_mode(double timestamp, ca
 void
 obstacle_distance_mapper_publish_compact_cost_map(double timestamp)
 {
+	if (behaviour_selector_compact_lane_contents_message != NULL)
+		carmen_obstacle_distance_mapper_overwrite_distance_map_with_compact_distance_map(&distance_map,
+				behaviour_selector_compact_lane_contents_message);
+
 	build_obstacle_cost_map(&cost_map, distance_map.config, &distance_map, obstacle_cost_distance);
 	carmen_prob_models_create_compact_map(&compacted_cost_map, &cost_map, 0.0);
 
@@ -224,7 +229,7 @@ static void
 carmen_mapper_map_message_handler(carmen_mapper_map_message *msg)
 {
 //	obstacle_distance_mapper_publish_distance_map(msg);
-	obstacle_distance_mapper_publish_compact_distance_map(msg);
+	obstacle_distance_mapper_publish_compact_distance_and_compact_lane_contents_maps(msg);
 //	obstacle_distance_mapper_publish_compact_cost_map(msg->timestamp, &compact_distance_map);
 	obstacle_distance_mapper_publish_compact_cost_map(msg->timestamp);
 
@@ -241,6 +246,13 @@ static void
 map_server_compact_lane_map_message_handler(carmen_map_server_compact_lane_map_message *message)
 {
 	compact_lane_map = message;
+}
+
+
+static void
+carmen_behaviour_selector_compact_lane_contents_message_handler(carmen_obstacle_distance_mapper_compact_map_message *message)
+{
+	behaviour_selector_compact_lane_contents_message = message;
 }
 
 
@@ -269,8 +281,12 @@ shutdown_module(int signo)
 static void
 register_handlers()
 {
-	carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) carmen_mapper_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
-	carmen_map_server_subscribe_compact_lane_map(NULL, (carmen_handler_t) map_server_compact_lane_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_mapper_subscribe_map_message(NULL,
+			(carmen_handler_t) carmen_mapper_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_map_server_subscribe_compact_lane_map(NULL,
+			(carmen_handler_t) map_server_compact_lane_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_behaviour_selector_subscribe_compact_lane_contents_message(NULL,
+			(carmen_handler_t) carmen_behaviour_selector_compact_lane_contents_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 
