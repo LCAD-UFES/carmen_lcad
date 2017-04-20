@@ -35,7 +35,7 @@ std::vector<moving_obstacle_t> moving_obstacle_list;
 carmen_behavior_selector_road_profile_message *road_profile_message;
 
 #define HISTORY_SIZE 20
-#define MAX_ASSOCIATION_DISTANCE 3.0
+#define MAX_ASSOCIATION_DISTANCE 2.5
 
 //#define USE_OPEN_CV
 
@@ -215,7 +215,7 @@ compute_velocity_and_orientation(moving_obstacle_t *obstacle)
 void
 predict_position(moving_obstacle_t *obstacle, double timestamp)
 {
-	carmen_position_t position = obstacle->position;
+	carmen_position_t position = obstacle->observations.front().centroid;
 
 	double delta_t = timestamp - obstacle->observations.front().timestamp;
 
@@ -342,7 +342,7 @@ detect_obstacles(char *subtracted_map, char *current_map, carmen_map_config_t co
 				int val = associate_observations(observation);
 				observation.timestamp = timestamp;
 
-				if (val >= 0 && distance(moving_obstacle_list[val].observations.front().centroid, observation.centroid) <= MAX_ASSOCIATION_DISTANCE)
+				if (val >= 0 && distance(moving_obstacle_list[val].position, observation.centroid) <= MAX_ASSOCIATION_DISTANCE)
 				{
 					moving_obstacle_list[val].observations.push_front(observation);
 					moving_obstacle_list[val].associated = 1;
@@ -417,7 +417,7 @@ remove_obstacles(double timestamp)
 		dist = distance(globalposition, iter->observations[0].centroid);
 		timediff = timestamp - iter->observations[0].timestamp;
 
-		if(dist > 70.0 || (iter->age > 4 && iter->associated == 0) || timediff > 0.8)
+		if(dist > 70.0 || (iter->age > 1 && iter->associated == 0) || timediff > 0.10)
 		{
 			iter = moving_obstacle_list.erase(iter);
 		}

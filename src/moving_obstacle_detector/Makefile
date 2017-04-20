@@ -19,7 +19,7 @@ SOURCES = moving_obstacle_detector_main.cpp
 
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES = 
-PUBLIC_BINARIES = 
+PUBLIC_BINARIES = moving_obstacle_detector
 
 # If you set graphics support in configure.
 ifndef NO_GRAPHICS
