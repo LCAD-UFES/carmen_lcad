@@ -490,24 +490,19 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 	double min_dist_according_to_car_v = get_robot_config()->length * (current_robot_pose_v_and_phi->v / 4.4704) + car_pose_to_car_front;
 	double desired_distance = carmen_fmax(1.4 * min_dist_according_to_car_v, car_pose_to_car_front + 2.5);
 
-	double distance = 0.0;
+	double distance = udatmo_get_moving_obstacle_distance(*current_robot_pose_v_and_phi, get_robot_config());
 	double moving_obj_v = udatmo_speed_front();
+
+	// ver "The DARPA Urban Challenge" book, pg. 36.
+	double Kgap = 0.1;
+	double new_goal_v = moving_obj_v + Kgap * (distance - desired_distance);
+	SampleFilter_put(&filter2, new_goal_v);
+	new_goal_v = SampleFilter_get(&filter2);
+	if (new_goal_v < 0.0)
+		new_goal_v = 0.0;
+
 	if ((goal_type == MOVING_OBSTACLE_GOAL1) || (goal_type == MOVING_OBSTACLE_GOAL2))//udatmo_obstacle_detected(timestamp))// && (current_robot_pose_v_and_phi->v > moving_obj_v))
-	{
-		distance = udatmo_get_moving_obstacle_distance(*current_robot_pose_v_and_phi, get_robot_config());
-
-		// ver "The DARPA Urban Challenge" book, pg. 36.
-		double Kgap = 0.2;
-		double new_goal_v = moving_obj_v + Kgap * (distance - desired_distance);
-		SampleFilter_put(&filter2, new_goal_v);
-		new_goal_v = SampleFilter_get(&filter2);
-		if (new_goal_v < 0.0)
-			new_goal_v = 0.0;
-
 		goal->v = carmen_fmin(new_goal_v, goal->v);
-	}
-	else
-		SampleFilter_put(&filter2, moving_obj_v);
 
 	FILE *caco = fopen("caco.txt", "a");
 	fprintf(caco, "%lf %lf %lf %lf %lf %d %d %d %lf %lf %lf %d ", moving_obj_v, goal->v, current_robot_pose_v_and_phi->v, distance, desired_distance,
