@@ -191,10 +191,10 @@ compute_centroid(moving_obstacle_observation_t *observation)
 void
 compute_velocity_and_orientation(moving_obstacle_t *obstacle)
 {
-	double sum_dist = 0;
-	double sum_time = 0;
-	double sum_delta_x = 0;
-	double sum_delta_y = 0;
+	double sum_dist = 0.0;
+	double sum_time = 0.0;
+	double sum_delta_x = 0.0;
+	double sum_delta_y = 0.0;
 
 	for (unsigned int i = 1; i < obstacle->observations.size(); i++)
 	{
@@ -205,12 +205,23 @@ compute_velocity_and_orientation(moving_obstacle_t *obstacle)
 		sum_delta_y += obstacle->observations[i-1].centroid.y - obstacle->observations[i].centroid.y;
 	}
 
-	obstacle->velocity = sum_dist / sum_time;
-	obstacle->orientation = atan2(sum_delta_y, sum_delta_x);
+	if (sum_time != 0.0)
+		obstacle->velocity = sum_dist / sum_time;
+	obstacle->orientation = globalpos.theta; //atan2(sum_delta_y, sum_delta_x);
 
 }
 
 
+void
+predict_position(moving_obstacle_t *obstacle, double timestamp)
+{
+	carmen_position_t position = obstacle->position;
+
+	double delta_t = timestamp - obstacle->observations.front().timestamp;
+
+	obstacle->position.x = position.x + delta_t * obstacle->velocity * cos(obstacle->orientation);
+	obstacle->position.y = position.y + delta_t * obstacle->velocity * sin(obstacle->orientation);
+}
 
 
 int
@@ -239,7 +250,7 @@ associate_observations(moving_obstacle_observation_t observation)
 
 		for (i = 0; i < size; i++)
 		{
-			distance_array[i].distance = distance(moving_obstacle_list[i].observations.front().centroid, observation.centroid);
+			distance_array[i].distance = distance(moving_obstacle_list[i].position, observation.centroid);
 			distance_array[i].index = i;
 		}
 
@@ -301,6 +312,12 @@ detect_obstacles(char *subtracted_map, char *current_map, carmen_map_config_t co
 	char *map = (char *) malloc(map_size * sizeof(char));
 	memcpy(map, current_map, map_size * sizeof(char));
 
+	// predict objects locations based on velocity
+	for (unsigned int i = 0; i < moving_obstacle_list.size(); i++)
+	{
+		predict_position( &moving_obstacle_list[i], timestamp);
+	}
+
 	for (index = 0; index < map_size; index++)
 	{
 		if (subtracted_map[index] == 1)
@@ -334,8 +351,8 @@ detect_obstacles(char *subtracted_map, char *current_map, carmen_map_config_t co
 					{
 						moving_obstacle_list[val].observations.pop_back();
 					}
+					moving_obstacle_list[val].position = observation.centroid;
 					compute_velocity_and_orientation(&moving_obstacle_list[val]);
-					//printf("id: %d, v: %f, theta: %f\n", moving_obstacle_list[val].id, moving_obstacle_list[val].velocity, moving_obstacle_list[val].orientation);
 				}
 				else
 				{
@@ -346,6 +363,9 @@ detect_obstacles(char *subtracted_map, char *current_map, carmen_map_config_t co
 					obstacle.associated = 0;
 					obstacle.age = 0;
 					obstacle.observations.push_front(observation);
+					obstacle.velocity = 2.0;
+					obstacle.orientation = globalpos.theta;
+					obstacle.position = observation.centroid;
 					moving_obstacle_list.push_back(obstacle);
 				}
 			}
@@ -397,7 +417,7 @@ remove_obstacles(double timestamp)
 		dist = distance(globalposition, iter->observations[0].centroid);
 		timediff = timestamp - iter->observations[0].timestamp;
 
-		if(dist > 70 || (iter->age > 4 && iter->associated == 0) || timediff > 0.8)
+		if(dist > 70.0 || (iter->age > 4 && iter->associated == 0) || timediff > 0.8)
 		{
 			iter = moving_obstacle_list.erase(iter);
 		}
@@ -620,16 +640,16 @@ publish_moving_objects(double timestamp)
 		moving_objects_point_clouds_message.point_clouds[i].point_size = 0;
 		moving_objects_point_clouds_message.point_clouds[i].linear_velocity = moving_obstacle_list[i].velocity;
 		moving_objects_point_clouds_message.point_clouds[i].orientation = carmen_normalize_theta(moving_obstacle_list[i].orientation);
-		moving_objects_point_clouds_message.point_clouds[i].object_pose.x = moving_obstacle_list[i].observations.front().centroid.x;
-		moving_objects_point_clouds_message.point_clouds[i].object_pose.y = moving_obstacle_list[i].observations.front().centroid.y;
+		moving_objects_point_clouds_message.point_clouds[i].object_pose.x = moving_obstacle_list[i].position.x;
+		moving_objects_point_clouds_message.point_clouds[i].object_pose.y = moving_obstacle_list[i].position.y;
 		moving_objects_point_clouds_message.point_clouds[i].object_pose.z = 0.0;
-		moving_objects_point_clouds_message.point_clouds[i].height = 1.4;
-		moving_objects_point_clouds_message.point_clouds[i].length = 4.4;
-		moving_objects_point_clouds_message.point_clouds[i].width = 1.8;
+		moving_objects_point_clouds_message.point_clouds[i].height = 1.6;
+		moving_objects_point_clouds_message.point_clouds[i].length = 1.6;
+		moving_objects_point_clouds_message.point_clouds[i].width = 1.6;
 		moving_objects_point_clouds_message.point_clouds[i].geometric_model = 0;
-		moving_objects_point_clouds_message.point_clouds[i].model_features.geometry.height = 1.4;
-		moving_objects_point_clouds_message.point_clouds[i].model_features.geometry.length = 4.4;
-		moving_objects_point_clouds_message.point_clouds[i].model_features.geometry.width = 1.8;
+		moving_objects_point_clouds_message.point_clouds[i].model_features.geometry.height = 1.6;
+		moving_objects_point_clouds_message.point_clouds[i].model_features.geometry.length = 1.6;
+		moving_objects_point_clouds_message.point_clouds[i].model_features.geometry.width = 1.6;
 		moving_objects_point_clouds_message.point_clouds[i].model_features.red = 1.0;
 		moving_objects_point_clouds_message.point_clouds[i].model_features.green = 0.0;
 		moving_objects_point_clouds_message.point_clouds[i].model_features.blue = 0.8;
@@ -709,7 +729,7 @@ carmen_map_handler(carmen_mapper_map_message *map_message)
 
 	for (int i = 0; i < map_size; i++)
 	{
-		current_map[i] = map_message->complete_map[i] > 0.5 ? 1 : 0;
+		current_map[i] = map_message->complete_map[i] > 0.35 ? 1 : 0;
 	}
 
 	if (!rddf_ready)

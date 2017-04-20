@@ -27,6 +27,7 @@ typedef struct
 	int color;
 	int age;
 	int associated;
+	carmen_position_t position;
 	double velocity;
 	double orientation;
 } moving_obstacle_t;
