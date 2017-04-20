@@ -160,6 +160,7 @@ Detector::copy_state(Detector *detector)
 		moving_object[i] = detector->moving_object[i];
 
 	detected = detector->detected;
+	obstacle_already_detected = detector->obstacle_already_detected;
 }
 
 

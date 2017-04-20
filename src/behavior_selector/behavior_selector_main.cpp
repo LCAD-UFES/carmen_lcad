@@ -436,10 +436,18 @@ limit_maximum_velocity_according_to_centripetal_acceleration(double target_v, do
 	{
 		double delta_theta = carmen_normalize_theta(path[i + 1].theta - path[i].theta);
 		double l = DIST2D(path[i], path[i + 1]);
-		l = (l < 0.01)? 0.01: l;
-		path[i].phi = L * atan(delta_theta / l);
 		dist_walked += l;
+		if (l < 0.01)
+		{
+			path[i].phi = 0.0;
+			continue;
+		}
+		path[i].phi = L * atan(delta_theta / l);
+	}
 
+	for (int i = 1; i < (number_of_poses - 1); i++)
+	{
+		path[i].phi = (path[i].phi + path[i - 1].phi + path[i + 1].phi) / 3.0;
 		if (fabs(path[i].phi) > 0.001)
 		{
 			double radius_of_curvature = L / fabs(tan(path[i].phi));
@@ -468,7 +476,7 @@ limit_maximum_velocity_according_to_centripetal_acceleration(double target_v, do
 		}
 	}
 
-	return (carmen_fmin(limited_target_v, goal->v));
+	return (carmen_fmin(limited_target_v, target_v));
 }
 
 extern SampleFilter filter2;
@@ -485,7 +493,7 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 
 	double distance = 0.0;
 	double moving_obj_v = udatmo_speed_front();
-	if (udatmo_obstacle_detected(timestamp))// && (current_robot_pose_v_and_phi->v > moving_obj_v))
+	if ((goal_type == MOVING_OBSTACLE_GOAL1) || (goal_type == MOVING_OBSTACLE_GOAL2))//udatmo_obstacle_detected(timestamp))// && (current_robot_pose_v_and_phi->v > moving_obj_v))
 	{
 		distance = udatmo_get_moving_obstacle_distance(*current_robot_pose_v_and_phi, get_robot_config());
 
@@ -521,6 +529,8 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 		goal->v = 0.0;
 	else
 		goal->v = get_max_v();
+
+//	printf("gv %lf  ", goal->v);
 
 	goal->v = set_goal_velocity_according_to_moving_obstacle(goal, current_robot_pose_v_and_phi, goal_type, timestamp);
 
@@ -703,8 +713,8 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	if (initial_time == 0.0)
 	{
 		returned_pose = previous_pose = rddf->poses[0];
-		returned_pose.x = previous_pose.x + disp * cos(previous_pose.theta + M_PI / 2.0);
-		returned_pose.y = previous_pose.y + disp * sin(previous_pose.theta + M_PI / 2.0);
+		returned_pose.x = previous_pose.x + disp * cos(previous_pose.theta - M_PI / 2.0);
+		returned_pose.y = previous_pose.y + disp * sin(previous_pose.theta - M_PI / 2.0);
 
 		previous_timestamp = timestamp;
 		initial_time = timestamp;
@@ -743,8 +753,8 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	}
 
 	returned_pose = previous_pose = next_pose;
-	returned_pose.x = previous_pose.x + disp * cos(previous_pose.theta + M_PI / 2.0);
-	returned_pose.y = previous_pose.y + disp * sin(previous_pose.theta + M_PI / 2.0);
+	returned_pose.x = previous_pose.x + disp * cos(previous_pose.theta - M_PI / 2.0);
+	returned_pose.y = previous_pose.y + disp * sin(previous_pose.theta - M_PI / 2.0);
 	previous_timestamp = timestamp;
 
 	return (&returned_pose);
@@ -1675,7 +1685,7 @@ read_parameters(int argc, char **argv)
 
 	carmen_param_t param_list[] =
 	{
-		{(char *) "robot", (char *) "max_v", CARMEN_PARAM_DOUBLE, &robot_config.max_v, 1, NULL},
+		{(char *) "robot", (char *) "max_velocity", CARMEN_PARAM_DOUBLE, &robot_config.max_v, 1, NULL},
 		{(char *) "robot", (char *) "max_steering_angle", CARMEN_PARAM_DOUBLE, &robot_config.max_phi, 1, NULL},
 		{(char *) "robot", (char *) "length", CARMEN_PARAM_DOUBLE, &robot_config.length, 0, NULL},
 		{(char *) "robot", (char *) "width", CARMEN_PARAM_DOUBLE, &robot_config.width, 0, NULL},
