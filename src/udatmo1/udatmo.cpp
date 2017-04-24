@@ -56,14 +56,17 @@ void udatmo_shift_history(void)
 
 bool objects_coinside(Detector *detector1, Detector *detector2)
 {
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < 3; i++)
 	{
-		for (int j = 0; j < 5; j++)
+		for (int j = 0; j < 3; j++)
 		{
-			int k = i + j - 5 / 2;
+			int k = i + j - 3 / 2;
 			if ((k < 0) || (k > MOVING_OBJECT_HISTORY_SIZE - 1))
 				continue;
-			double distance = DIST2D(detector1->moving_object[i].pose, detector2->moving_object[k].pose);
+
+			double distance = 2.0;
+			if (detector1->moving_object[i].valid && detector2->moving_object[k].valid)
+				distance = DIST2D(detector1->moving_object[i].pose, detector2->moving_object[k].pose);
 
 			if (distance < 1.0)
 				return (true);
@@ -80,22 +83,34 @@ int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_map_message *cu
 							double timestamp)
 {
 	int index = detector->detect(current_map, rddf, goal_index, rddf_pose_index, robot_pose,
-			detector->robot_config.obstacle_avoider_obstacles_safe_distance, 0.0, timestamp);
+			detector->robot_config.behaviour_selector_obstacles_safe_distance, 0.0, timestamp);
 	int index_left = detector_left->detect(current_map, rddf, goal_index, rddf_pose_index, robot_pose,
-			detector->robot_config.model_predictive_planner_obstacles_safe_distance,
-			detector->robot_config.width, timestamp);
+			detector->robot_config.behaviour_selector_obstacles_safe_distance,
+			(detector->robot_config.width - 0.3), timestamp);
 	int index_right = detector_right->detect(current_map, rddf, goal_index, rddf_pose_index, robot_pose,
-			detector->robot_config.model_predictive_planner_obstacles_safe_distance,
-			-detector->robot_config.width, timestamp);
+			detector->robot_config.behaviour_selector_obstacles_safe_distance,
+			-(detector->robot_config.width - 0.3), timestamp);
 	int index_center = detector_center->detect(current_map, rddf, goal_index, rddf_pose_index, robot_pose,
-			detector->robot_config.model_predictive_planner_obstacles_safe_distance + 0.4,
+			detector->robot_config.model_predictive_planner_obstacles_safe_distance,
 			0.0, timestamp);
 
-	if ((index_center != -1) && (index_left != -1) && objects_coinside(detector_center, detector_left))
+	if ((index_center != -1) && (index_left != -1) && objects_coinside(detector_center, detector_left) && (goal_index == 0))
 	{
 		if (index == -1)
 		{
 			detector->copy_state(detector_left);
+			for (int i = 0; i < 5; i++)
+			{
+				virtual_laser_message.positions[virtual_laser_message.num_positions].x = detector->moving_object[i].pose.x;
+				virtual_laser_message.positions[virtual_laser_message.num_positions].y = detector->moving_object[i].pose.y;
+				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_ORANGE;
+				virtual_laser_message.num_positions++;
+
+				virtual_laser_message.positions[virtual_laser_message.num_positions].x = detector->moving_object[i].rddf_front_car_pose.x;
+				virtual_laser_message.positions[virtual_laser_message.num_positions].y = detector->moving_object[i].rddf_front_car_pose.y;
+				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_BLUE;
+				virtual_laser_message.num_positions++;
+			}
 			return (index_left);
 		}
 		else
@@ -123,11 +138,23 @@ int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_map_message *cu
 		}
 	}
 
-	if ((index_center != -1) && (index_right != -1) && objects_coinside(detector_center, detector_right))
+	if ((index_center != -1) && (index_right != -1) && objects_coinside(detector_center, detector_right) && (goal_index == 0))
 	{
 		if (index == -1)
 		{
 			detector->copy_state(detector_right);
+			for (int i = 0; i < 5; i++)
+			{
+				virtual_laser_message.positions[virtual_laser_message.num_positions].x = detector->moving_object[i].pose.x;
+				virtual_laser_message.positions[virtual_laser_message.num_positions].y = detector->moving_object[i].pose.y;
+				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_ORANGE;
+				virtual_laser_message.num_positions++;
+
+				virtual_laser_message.positions[virtual_laser_message.num_positions].x = detector->moving_object[i].rddf_front_car_pose.x;
+				virtual_laser_message.positions[virtual_laser_message.num_positions].y = detector->moving_object[i].rddf_front_car_pose.y;
+				virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_GREEN;
+				virtual_laser_message.num_positions++;
+			}
 			return (index_right);
 		}
 		else

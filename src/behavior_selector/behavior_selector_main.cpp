@@ -658,7 +658,7 @@ compute_simulated_objects(double timestamp)
 	// during which the obstacle is stopped.
 	static double stop_t0 = 50, stop_tn = 70;
 
-	double v = (30.0 / 3.6);
+	double v = (20.0 / 3.6);
 	double t = timestamp - initial_time;
 	if (stop_t0 <= t && t <= stop_tn)
 		v = 0;
@@ -1353,7 +1353,7 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 		add_simulated_object(simulated_object_pose2);
 #endif
 
-	if (virtual_laser_message.num_positions > 0)
+	if (virtual_laser_message.num_positions >= 0)
 		publish_objects();
 
 	publish_current_state(behavior_selector_state_message);
@@ -1699,6 +1699,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "behavior_selector", (char *) "rddf_num_poses_ahead_min", CARMEN_PARAM_INT, &param_rddf_num_poses_ahead_min, 0, NULL},
 		{(char *) "behavior_selector", (char *) "rddf_num_poses_by_car_velocity", CARMEN_PARAM_ONOFF, &param_rddf_num_poses_by_car_velocity, 0, NULL},
 		{(char *) "behavior_selector", (char *) "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL},
+		{(char *) "behavior_selector", (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_obstacles_safe_distance, 0, NULL},
 		{(char *) "rrt",   			   (char *) "distance_interval", CARMEN_PARAM_DOUBLE, &param_distance_interval, 1, NULL},
 		{(char *) "obstacle_avoider", 		  (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.obstacle_avoider_obstacles_safe_distance, 	1, NULL},
 		{(char *) "model_predictive_planner", (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.model_predictive_planner_obstacles_safe_distance, 	1, NULL},
