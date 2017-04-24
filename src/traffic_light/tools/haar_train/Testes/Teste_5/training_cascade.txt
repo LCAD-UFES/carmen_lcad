@@ -1,0 +1,3 @@
+-numPos 2077 -numNeg 1101 -w 10 -h 20 -minHitRate 0.999 -maxFalseAlarmRate 0.5 -featureType LBP -precalcValBufSize 2048 -precalcIdxBufSize 2048
+
+
