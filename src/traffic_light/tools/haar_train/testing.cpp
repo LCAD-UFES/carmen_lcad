@@ -129,7 +129,7 @@ detectAndDisplay(Mat frame, string image, char *verbose, string aux)
 
 //    half_image.convertTo(frame_gray, CV_8U);
     //-- Detect traffic lights  
-    ts_cascade.detectMultiScale(frame_gray, semaphores, 1.05, 3, 0, Size(5, 20), Size(200, 400));
+    ts_cascade.detectMultiScale(frame_gray, semaphores, 1.03, 6, 0, Size(5, 12), Size(60, 150));
 
     for (size_t i = 0; i < semaphores.size(); i++)
     {
@@ -149,14 +149,10 @@ detectAndDisplay(Mat frame, string image, char *verbose, string aux)
     {
         imshow(window_name + image, frame);
     }
-<<<<<<< HEAD
     static char image_name[256];
     sprintf(image_name, "result_db/%04d.png",cont);
 	imwrite(image_name, frame);
 	cont++;
-=======
-	imwrite("result_db/" + aux, frame);
->>>>>>> 60d8dc46dc31d1cf8d68a999ac94cb6da6f33eb5
     string result = newline;
 //    imwrite("result_db/image/" + image, frame);
     return result;

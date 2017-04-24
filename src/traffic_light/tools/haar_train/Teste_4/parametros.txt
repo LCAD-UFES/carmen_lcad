@@ -1,8 +1,0 @@
-Create Samples command opencv_createsamples
-	 -info positives_samples.txt -vec vectorfile.vec -w 10 -h 20 -num 2187 
-
-Training command opencv_traincascade:
- -data data/ -vec vectorfile.vec  -bg negatives.txt -numPos 2077 -numNeg 1099 -w 10 -h 20 -minHitRate 0.999 -maxFalseAlarmRate 0.5 -featureType LBP -precalcValBufSize 2048 -precalcIdxBufSize 2048
-
-
-

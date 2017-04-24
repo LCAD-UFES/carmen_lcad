@@ -1,1 +1,0 @@
--w 10 -h 24 -num 1356 -maxxangle 0.0 -maxyangle 0.0 -maxzangle 0.0
