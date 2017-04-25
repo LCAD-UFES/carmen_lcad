@@ -124,7 +124,7 @@ draw_path(trajectory_drawer* t_drawer, carmen_vector_3D_t offset)
 			for(i=0; i<t_drawer->path_size; i++)
 			{				
 				//printf("x:% lf y:% lf z:% lf\n", t_drawer->path[i].x, t_drawer->path[i].y, t_drawer->path[i].z);
-				glVertex3d(t_drawer->path[i].x - offset.x, t_drawer->path[i].y - offset.y, t_drawer->path[i].z - offset.z);				
+				glVertex3d(t_drawer->path[i].x - offset.x, t_drawer->path[i].y - offset.y, t_drawer->path[i].z);
 			}
 		
 		glEnd();

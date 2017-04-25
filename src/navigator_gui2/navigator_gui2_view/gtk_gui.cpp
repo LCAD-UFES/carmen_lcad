@@ -130,6 +130,18 @@ get_annotation_image(char *filename)
 }
 
 
+bool
+well_behaved_origin_string(carmen_map_config_t config)
+{
+	for (unsigned int i = 0; i < sizeof(config.origin); i++)
+	{
+		if (!(isprint(config.origin[i]) || (config.origin[i] == '\0')))
+			return (false);
+	}
+	return (true);
+}
+
+
 namespace View
 {
 	GtkGui::GtkGui(int argc, char *argv[])
@@ -275,7 +287,7 @@ namespace View
 			carmen_die("Unknown map named \"%s\" set as parameter in the carmen ini file. Exiting...\n", nav_panel_config->map);
 
 		if (nav_panel_config->show_particles || nav_panel_config->show_gaussians)
-			carmen_localize_ackerman_subscribe_particle_message(&particle_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+			carmen_localize_ackerman_subscribe_particle_correction_message(&particle_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
 
 		if (nav_panel_config->show_lasers)
 			carmen_localize_ackerman_subscribe_sensor_message(&sensor_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
@@ -943,14 +955,17 @@ namespace View
 		if (people)
 			people->length = 0;
 
-		if (new_map->config.map_name != NULL)
+		if (!this->freeze_status)
 		{
-			sprintf(buffer, "Status: %s", carmen_extract_filename(new_map->config.map_name));
-			gtk_label_set_text(GTK_LABEL(this->controls_.labelStatusMap), buffer);
-		}
+			if (well_behaved_origin_string(new_map->config))
+			{
+				sprintf(buffer, "Status: %s", new_map->config.origin);
+				gtk_label_set_text(GTK_LABEL(this->controls_.labelStatusMap), buffer);
+			}
 
-		sprintf(buffer, "Origin: (%ld, %ld)", (long int) new_map->config.x_origin, (long int) new_map->config.y_origin);
-		gtk_label_set_text(GTK_LABEL(this->controls_.labelOrigin), buffer);
+			sprintf(buffer, "Origin: (%ld, %ld)", (long int) new_map->config.x_origin, (long int) new_map->config.y_origin);
+			gtk_label_set_text(GTK_LABEL(this->controls_.labelOrigin), buffer);
+		}
 	}
 
 

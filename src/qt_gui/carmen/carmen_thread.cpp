@@ -260,7 +260,7 @@ void Carmen_Thread::register_handlers() {
 			(carmen_handler_t)truepos_handler_diff,
 			CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_localize_ackerman_subscribe_particle_message(
+	carmen_localize_ackerman_subscribe_particle_correction_message(
 			NULL,
 			(carmen_handler_t)particle_handler,
 			CARMEN_SUBSCRIBE_LATEST);

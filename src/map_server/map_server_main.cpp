@@ -67,7 +67,7 @@ carmen_compact_map_t compacted_lane_map_g = {0, NULL, NULL, NULL, {0, 0, 0, "", 
 
 int use_truepos = 0;
 
-double lane_width = 1.65;
+double lane_width = 0.0;
 
 
 

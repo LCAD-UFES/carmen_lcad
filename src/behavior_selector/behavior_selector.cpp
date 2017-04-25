@@ -174,9 +174,9 @@ get_parameters_for_filling_in_goal_list(int &moving_object_in_front_index, int &
 		double &distance_to_last_obstacle_free_waypoint,
 		carmen_rddf_road_profile_message *rddf, int rddf_pose_index, int goal_index,
 		carmen_ackerman_traj_point_t current_goal, int current_goal_rddf_index,
-		double circle_radius, double timestamp)
+		double timestamp)
 {
-	int rddf_pose_hit_obstacle = try_avoiding_obstacle(rddf_pose_index, circle_radius, rddf);
+	int rddf_pose_hit_obstacle = try_avoiding_obstacle(rddf_pose_index, robot_config.obstacle_avoider_obstacles_safe_distance, rddf);
 
 	moving_object_in_front_index = udatmo_detect_obstacle_index(current_map, rddf, goal_index, rddf_pose_index, robot_pose, timestamp);
 
@@ -296,7 +296,6 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double
 //	virtual_laser_message.num_positions = 0;
 //	printf("v %lf\n", udatmo_speed_front());
 	int last_obstacle_free_waypoint_index = 0;
-	double circle_radius = robot_config.obstacle_avoider_obstacles_safe_distance;
 	double distance_car_pose_car_front = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
 	for (int rddf_pose_index = 0; rddf_pose_index < rddf->number_of_poses && goal_index < GOAL_LIST_SIZE; rddf_pose_index++)
 	{
@@ -306,7 +305,7 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double
 		rddf_pose_hit_obstacle = get_parameters_for_filling_in_goal_list(moving_object_in_front_index, last_obstacle_index,
 				last_obstacle_free_waypoint_index, distance_from_car_to_rddf_point, distance_to_last_obstacle, distance_to_annotation,
 				distance_to_last_obstacle_free_waypoint,
-				rddf, rddf_pose_index, goal_index, current_goal, current_goal_rddf_index, circle_radius, timestamp);
+				rddf, rddf_pose_index, goal_index, current_goal, current_goal_rddf_index, timestamp);
 
 		static double moving_obstacle_trasition = 0.0;
 		if (moving_object_in_front_index != -1) // -> Adiciona um waypoint na ultima posicao livre se a posicao atual colide com um objeto movel.
