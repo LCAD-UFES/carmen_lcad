@@ -292,7 +292,7 @@ publish_particles_name(carmen_localize_ackerman_particle_filter_p filter, carmen
 	pmsg.timestamp = timestamp;
 	pmsg.host = carmen_get_host();
 	pmsg.globalpos = summary->mean;
-	pmsg.globalpos_std = summary->mean;
+	pmsg.globalpos_std = summary->std;
 	pmsg.num_particles = filter->param->num_particles;
 	pmsg.particles = (carmen_localize_ackerman_particle_ipc_p) filter->particles;
 
@@ -356,25 +356,18 @@ publish_globalpos(carmen_localize_ackerman_summary_p summary, double v, double p
 }
 
 
-static void
-publish_particles(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_summary_p summary, double timestamp)
+void
+publish_particles_prediction(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_summary_p summary, double timestamp)
 {
-	publish_particles_name(filter, summary, (char *) CARMEN_LOCALIZE_ACKERMAN_PARTICLE_NAME, timestamp);
+	publish_particles_name(filter, summary, (char *) CARMEN_LOCALIZE_ACKERMAN_PARTICLE_PREDICTION_NAME, timestamp);
 }
 
 
-//void
-//publish_particles_prediction(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_summary_p summary, double timestamp)
-//{
-//	publish_particles_name(filter, summary, (char *) CARMEN_LOCALIZE_ACKERMAN_PARTICLE_PREDICTION_NAME, timestamp);
-//}
-//
-//
-//void
-//publish_particles_correction(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_summary_p summary, double timestamp)
-//{
-//	publish_particles_name(filter, summary, (char *) CARMEN_LOCALIZE_ACKERMAN_PARTICLE_CORRECTION_NAME, timestamp);
-//}
+void
+publish_particles_correction(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_summary_p summary, double timestamp)
+{
+	publish_particles_name(filter, summary, (char *) CARMEN_LOCALIZE_ACKERMAN_PARTICLE_CORRECTION_NAME, timestamp);
+}
 
 
 static void
@@ -500,8 +493,7 @@ velodyne_variable_scan_localize(carmen_velodyne_variable_scan_message *message, 
 
 		publish_globalpos(&summary, base_ackerman_odometry_vector[odometry_index].v,
 				base_ackerman_odometry_vector[odometry_index].phi, message->timestamp);
-//		publish_particles_correction(filter, &summary, message->timestamp);
-		publish_particles(filter, &summary, message->timestamp);
+		publish_particles_correction(filter, &summary, message->timestamp);
 	}
 
 	if (g_reinitiaze_particles)
@@ -548,11 +540,11 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	carmen_localize_ackerman_velodyne_correction(filter,
 			&localize_map, &local_compacted_map, &local_compacted_mean_remission_map, &local_compacted_variance_remission_map, &binary_map);
 
-//	if (filter->initialized)
-//	{
-//		carmen_localize_ackerman_summarize_velodyne(filter, &summary);
-//		publish_particles(filter, &summary, velodyne_message->timestamp);
-//	}
+	if (filter->initialized)
+	{
+		carmen_localize_ackerman_summarize_velodyne(filter, &summary);
+		publish_particles_prediction(filter, &summary, velodyne_message->timestamp);
+	}
 	// if (fabs(base_ackerman_odometry_vector[odometry_index].v) > 0.2)
 	{
 		carmen_localize_ackerman_velodyne_resample(filter);
@@ -563,7 +555,7 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 		carmen_localize_ackerman_summarize_velodyne(filter, &summary);
 		publish_globalpos(&summary, base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi,
 				velodyne_message->timestamp);
-		publish_particles(filter, &summary, velodyne_message->timestamp);
+		publish_particles_correction(filter, &summary, velodyne_message->timestamp);
 	}
 
 	if (g_reinitiaze_particles)
@@ -650,7 +642,7 @@ robot_ackerman_frontlaser_handler(carmen_robot_ackerman_laser_message *flaser)
 				flaser->config.angular_resolution,
 				flaser->config.start_angle, 0);
 		publish_globalpos(&summary, flaser->v, flaser->phi, flaser->timestamp);
-		publish_particles(filter, &summary, flaser->timestamp);
+		publish_particles_correction(filter, &summary, flaser->timestamp);
 		publish_sensor(filter, &summary, flaser->num_readings, flaser->range, flaser->config, 1, flaser->timestamp);
 	}
 }
@@ -679,7 +671,7 @@ raw_laser_handler(carmen_laser_laser_message *laser)
 				laser->config.start_angle, 0);
 		publish_globalpos(&summary, base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi,
 				laser->timestamp);
-		publish_particles(filter, &summary, laser->timestamp);
+		publish_particles_correction(filter, &summary, laser->timestamp);
 		publish_sensor(filter, &summary, laser->num_readings, laser->range, laser->config, 1, laser->timestamp);
 	}
 }
@@ -731,7 +723,7 @@ carmen_localize_ackerman_initialize_message_handler(carmen_localize_ackerman_ini
 	{
 		//todo pode dar problema aqui se o mapa nao estiver inicializado
 		carmen_localize_ackerman_initialize_particles_uniform(filter, &front_laser, &localize_map);
-		publish_particles(filter, &summary, initialize_msg->timestamp);
+		publish_particles_correction(filter, &summary, initialize_msg->timestamp);
 	}
 
 	global_localization_requested = true;
@@ -1280,7 +1272,7 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 	localize_ackerman_velodyne_laser_read_parameters(argc, argv);
 
 //	param->xy_uncertainty_due_to_grid_resolution = (p_map_params->grid_res) * (p_map_params->grid_res);
-	param->yaw_uncertainty_due_to_grid_resolution = asin((p_map_params->grid_res / 2.0) / max_range) * asin((p_map_params->grid_res / 2.0) / max_range);
+	param->yaw_uncertainty_due_to_grid_resolution = asin((p_map_params->grid_res / 0.5) / max_range) * asin((p_map_params->grid_res / 0.5) / max_range);
 	param->xy_uncertainty_due_to_grid_resolution = (p_map_params->grid_res / 2.0) * (p_map_params->grid_res / 2.0);
 //	param->yaw_uncertainty_due_to_grid_resolution = asin((p_map_params->grid_res / 0.2) / max_range) * asin((p_map_params->grid_res / 0.2) / max_range);
 	

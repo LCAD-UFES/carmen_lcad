@@ -391,9 +391,6 @@ carmen_position_t
 carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(carmen_point_t *global_point, carmen_obstacle_distance_mapper_map_message *distance_map)
 {
 	carmen_point_t global_point_in_map_coords;
-	carmen_position_t cell;
-	cell.x = -1.0;
-	cell.x = -1.0;
 	// Move global path point coordinates to map coordinates
 	global_point_in_map_coords.x = (global_point->x - distance_map->config.x_origin) / distance_map->config.resolution;
 	global_point_in_map_coords.y = (global_point->y - distance_map->config.y_origin) / distance_map->config.resolution;
@@ -402,6 +399,9 @@ carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(carmen_point
 	int x_map_cell = (int) round(global_point_in_map_coords.x);
 	int y_map_cell = (int) round(global_point_in_map_coords.y);
 
+	carmen_position_t cell;
+	cell.x = -1.0;
+	cell.y = -1.0;
 	// Os mapas de carmen sao orientados a colunas, logo a equacao eh como abaixo
 	int index = y_map_cell + distance_map->config.y_size * x_map_cell;
 	if (index < 0 || index >= distance_map->size)

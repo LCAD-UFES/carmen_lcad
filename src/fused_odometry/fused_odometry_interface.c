@@ -20,7 +20,7 @@ carmen_fused_odometry_unsubscribe_fused_odometry_message(carmen_handler_t handle
 
 
 void
-carmen_fused_odometry_subscribe_fused_odometry_particle_message(	carmen_fused_odometry_particle_message *fused_odometry_particle_message,
+carmen_fused_odometry_subscribe_fused_odometry_particle_message(carmen_fused_odometry_particle_message *fused_odometry_particle_message,
 									carmen_handler_t handler,
 									carmen_subscribe_t subscribe_how)
 {

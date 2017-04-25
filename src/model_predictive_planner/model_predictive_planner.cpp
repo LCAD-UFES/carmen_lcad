@@ -611,11 +611,11 @@ get_intermediate_speed(double current_robot_pose_v, double v_goal, double dist_t
 	if (vg < v_goal)
 		vg = v_goal;
 
-	static double first_time = 0.0;
-	double t = carmen_get_time();
-	if (first_time == 0.0)
-		first_time = t;
-	//printf("t %.3lf, v0 %.1lf, va %.1lf, a %.3lf, vg %.2lf, dg %.1lf, da %.1lf\n", t - first_time, v0, va, a, vg, dg, da);
+//	static double first_time = 0.0;
+//	double t = carmen_get_time();
+//	if (first_time == 0.0)
+//		first_time = t;
+//	printf("t %.3lf, v0 %.1lf, va %.1lf, a %.3lf, vg %.2lf, dg %.1lf, da %.1lf\n", t - first_time, v0, va, a, vg, dg, da);
 //	printf("t %.3lf, v0 %.1lf, a %.3lf, vg %.2lf, dg %.1lf, tt %.3lf\n", t - first_time, v0, a, vg, dg, (vg - v0) / a);
 
 	return (vg);
@@ -717,7 +717,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	{
 		previous_good_tcp.valid = false;
 		first_time = false;
-		last_timestamp = carmen_get_time();
+		last_timestamp = goal_list_message->timestamp;
 	}
 
 	if (goal_is_behide_car(localizer_pose, &goalPoseVector[0]))
@@ -824,7 +824,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	{
 		put_shorter_path_in_front(paths, shorter_path);
 		previous_good_tcp = best_otcp;
-		last_timestamp = carmen_get_time();
+		last_timestamp = goal_list_message->timestamp;
 
 		// Mostra a detailed_lane como um plano nas interfaces
 //		move_path_to_current_robot_pose(detailed_lane, localizer_pose);
@@ -834,7 +834,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	}
 	else
 	{
-		if ((carmen_get_time() - last_timestamp) > 0.5)
+		if ((goal_list_message->timestamp - last_timestamp) > 0.5)
 			previous_good_tcp.valid = false;
 
 		paths.clear();
