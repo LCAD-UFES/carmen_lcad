@@ -239,21 +239,51 @@ draw_box (double length_x, double length_y, double length_z)
 }
 
 void
-draw_particles (carmen_vector_3D_t* particles_pos, double* particles_weight, int num_particles)
+draw_particles (carmen_vector_3D_t *particles_pos, double *particles_weight, int num_particles, int color)
 {
-    double minWeight = 1.0;
-    double maxWeight = 0.0;
+    int i;
+    double minWeight;
+    double maxWeight;
 
-    minWeight = 0.0;
-    maxWeight = 1.0;
+    if ((particles_weight == NULL) || (num_particles == 0))
+    	return;
+
+    maxWeight = minWeight = particles_weight[0];
+    for (i = 1; i < num_particles; i++)
+    {
+    	int weight = particles_weight[i];
+    	if (weight > maxWeight)
+    		maxWeight = weight;
+    	if (weight < minWeight)
+    		minWeight = weight;
+    }
     double diff = maxWeight - minWeight;
 
     glBegin (GL_POINTS);
 
-    int i;
     for (i = 0; i < num_particles; i++)
     {
-        glColor3f ((maxWeight - particles_weight[i]) / diff, (particles_weight[i] - minWeight) / diff, 0.0);
+    	if (color == 0)
+    	{
+    		if (diff != 0.0)
+    			glColor3f (0.0, (maxWeight - particles_weight[i]) / diff, ((particles_weight[i] - minWeight) / diff) / 2.0 + 0.5);
+    		else
+    			glColor3f (0.0, 0.0, 1.0);
+    	}
+    	else if (color == 1)
+    	{
+    		if (diff != 0.0)
+    			glColor3f (0.0, ((particles_weight[i] - minWeight) / diff) / 2.0 + 0.5, ((maxWeight - particles_weight[i]) / diff) / 2.0);
+    		else
+    			glColor3f (0.0, 1.0, 0.0);
+    	}
+    	else if (color == 2)
+    	{
+    		if (diff != 0.0)
+    			glColor3f (((particles_weight[i] - minWeight) / diff) / 2.0 + 0.5, 0.0, ((maxWeight - particles_weight[i]) / diff) / 2.0);
+    		else
+    			glColor3f (1.0, 0.0, 0.0);
+    	}
         glVertex3f (particles_pos[i].x, particles_pos[i].y, particles_pos[i].z);
     }
 

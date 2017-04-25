@@ -982,10 +982,17 @@
                             </child>
                             <child type="label">
                               <object class="GtkLabel" id="labelStatusMap">
+                                <property name="selectable">True</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
+                                <property name="xalign">0</property>
+                                <property name="xpad">5</property>
                                 <property name="label" translatable="yes">Status</property>
                               </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                              </packing>
                             </child>
                           </object>
                         </child>

@@ -828,12 +828,12 @@ static void switch_localize_display(GtkAction *action,
 		if ((nav_panel_config->show_particles == 1) &&
 				!nav_panel_config->show_gaussians)
 		{
-			carmen_localize_ackerman_subscribe_particle_message(&particle_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+			carmen_localize_ackerman_subscribe_particle_correction_message(&particle_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
 		}
 		else if (!nav_panel_config->show_particles &&
 				!nav_panel_config->show_gaussians)
 		{
-			carmen_localize_ackerman_subscribe_particle_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
+			carmen_localize_ackerman_subscribe_particle_correction_message(NULL, NULL, CARMEN_UNSUBSCRIBE);
 		}
 	}
 	else if (strcmp(name, "ShowFusedOdometry") == 0)
@@ -1279,7 +1279,7 @@ static GtkWidget *get_main_menu(void)
 
 	if (nav_panel_config->show_particles || nav_panel_config->show_gaussians)
 	{
-		carmen_localize_ackerman_subscribe_particle_message(&particle_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
+		carmen_localize_ackerman_subscribe_particle_correction_message(&particle_msg, NULL, CARMEN_SUBSCRIBE_LATEST);
 	}
 
 	if (nav_panel_config->show_lasers)

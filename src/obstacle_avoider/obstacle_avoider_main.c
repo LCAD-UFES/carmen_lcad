@@ -30,6 +30,7 @@ static carmen_behavior_selector_algorithm_t current_algorithm = CARMEN_BEHAVIOR_
 static carmen_behavior_selector_state_t current_state = BEHAVIOR_SELECTOR_PARKING;
 
 static int use_truepos = 0;
+static int log_mode = 0;
 
 static double last_behaviour_selector_compact_lane_contents_message_timestamp = 0.0;
 
@@ -168,8 +169,10 @@ obstacle_avoider_timer_handler()
 		carmen_obstacle_avoider_publish_base_ackerman_motion_command(motion_commands_vector[motion_command_vetor],
 				num_motion_commands_in_vector[motion_command_vetor], timestamp_of_motion_commands_vector[motion_command_vetor]);
 
+		//  Para informar ao pipeline acima sobre a deteccao de obstaculos (ou nao)
 		carmen_obstacle_avoider_publish_robot_hit_obstacle_message(robot_hit_obstacle);
-		// Apenas para visualizacao (path vermelho) e para informar ao pipeline acima sobre a deteccao de obstaculos (ou nao)
+
+		// Apenas para visualizacao (path vermelho)
 		if (ackerman_collision_avoidance && ((carmen_get_time() - time_of_last_call) > 0.2))
 		{
 			robot_hit_obstacle = 0;
@@ -185,6 +188,9 @@ void
 check_message_absence_timeout_timer_handler(void)
 {
 	if (current_algorithm != CARMEN_BEHAVIOR_SELECTOR_RRT)
+		return;
+
+	if (log_mode)
 		return;
 
 	if ((carmen_robot_ackerman_sensor_time_of_last_update >= 0) &&
@@ -228,8 +234,8 @@ robot_ackerman_motion_command_message_handler(carmen_robot_ackerman_motion_comma
 	// Apenas para a visualizacao da mensagem recebida (path verde)
 	if (ackerman_collision_avoidance && ((carmen_get_time() - time_of_last_call) > 0.2))
 	{
-//		publish_navigator_ackerman_plan_message_with_motion_planner_path(next_motion_command_vector,
-//				num_motion_commands, motion_command_message->timestamp);
+		publish_navigator_ackerman_plan_message_with_motion_planner_path(next_motion_command_vector,
+				num_motion_commands, motion_command_message->timestamp);
 		time_of_last_call = carmen_get_time();
 	}
 
@@ -255,7 +261,7 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 
 	add_pose_to_pose_vector(pose);
 
-	carmen_robot_ackerman_sensor_time_of_last_update = carmen_get_time();
+	carmen_robot_ackerman_sensor_time_of_last_update = msg->timestamp;
 }
 
 
@@ -275,7 +281,7 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 
 	add_pose_to_pose_vector(pose);
 
-	carmen_robot_ackerman_sensor_time_of_last_update = carmen_get_time();
+	carmen_robot_ackerman_sensor_time_of_last_update = msg->timestamp;
 }
 
 
@@ -436,29 +442,30 @@ read_parameters(int argc, char **argv)
 
 	carmen_param_t param_list[] =
 	{
-			{"obstacle_avoider", "obstacles_safe_distance", CARMEN_PARAM_DOUBLE,	&carmen_robot_ackerman_config.obstacle_avoider_obstacles_safe_distance, 1, NULL},
-			{"robot", "max_velocity", CARMEN_PARAM_DOUBLE,	&carmen_robot_ackerman_config.max_v, 1, NULL},
-			{"robot", "max_steering_angle", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.max_phi, 1, NULL},
-			{"robot", "min_approach_dist", CARMEN_PARAM_DOUBLE,	&carmen_robot_ackerman_config.approach_dist, 1, NULL},
-			{"robot", "min_side_dist", CARMEN_PARAM_DOUBLE,	&carmen_robot_ackerman_config.side_dist, 1, NULL},
-			{"robot", "length", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.length, 0, NULL},
-			{"robot", "width", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.width, 0, NULL},
-			{"robot", "maximum_acceleration_forward", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.maximum_acceleration_forward, 1, NULL},
-			{"robot", "maximum_deceleration_forward", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.maximum_deceleration_forward, 1, NULL},
-			{"robot", "reaction_time", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.reaction_time, 0, NULL},
-			{"robot", "distance_between_rear_wheels", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.distance_between_rear_wheels, 1,NULL},
-			{"robot", "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.distance_between_front_and_rear_axles, 1, NULL},
-			{"robot", "distance_between_front_car_and_front_wheels", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.distance_between_front_car_and_front_wheels, 1, NULL},
-			{"robot", "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.distance_between_rear_car_and_rear_wheels, 1, NULL},
-			{"robot", "maximum_steering_command_rate", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.maximum_steering_command_rate, 1, NULL},
-			{"robot", "understeer_coeficient", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.understeer_coeficient, 1, NULL},
-			{"robot", "allow_rear_motion", CARMEN_PARAM_ONOFF, &carmen_robot_ackerman_config.allow_rear_motion, 1, NULL},
-			{"robot", "sensor_timeout", CARMEN_PARAM_DOUBLE, &robot_sensor_timeout, 1, NULL},
-			{"robot", "command_timeout", CARMEN_PARAM_DOUBLE, &command_timeout, 1, NULL},
-			{"robot", "collision_avoidance", CARMEN_PARAM_ONOFF, &ackerman_collision_avoidance, 1, NULL},
-			{"robot", "collision_avoidance_frequency", CARMEN_PARAM_DOUBLE,	&carmen_robot_ackerman_collision_avoidance_frequency, 1, NULL},
-			{"robot", "interpolate_odometry", CARMEN_PARAM_ONOFF, &carmen_robot_ackerman_config.interpolate_odometry, 1, NULL},
-			{"behavior_selector", "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL}
+		{"obstacle_avoider", "obstacles_safe_distance", CARMEN_PARAM_DOUBLE,	&carmen_robot_ackerman_config.obstacle_avoider_obstacles_safe_distance, 1, NULL},
+		{"robot", "max_velocity", CARMEN_PARAM_DOUBLE,	&carmen_robot_ackerman_config.max_v, 1, NULL},
+		{"robot", "max_steering_angle", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.max_phi, 1, NULL},
+		{"robot", "min_approach_dist", CARMEN_PARAM_DOUBLE,	&carmen_robot_ackerman_config.approach_dist, 1, NULL},
+		{"robot", "min_side_dist", CARMEN_PARAM_DOUBLE,	&carmen_robot_ackerman_config.side_dist, 1, NULL},
+		{"robot", "length", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.length, 0, NULL},
+		{"robot", "width", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.width, 0, NULL},
+		{"robot", "maximum_acceleration_forward", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.maximum_acceleration_forward, 1, NULL},
+		{"robot", "maximum_deceleration_forward", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.maximum_deceleration_forward, 1, NULL},
+		{"robot", "reaction_time", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.reaction_time, 0, NULL},
+		{"robot", "distance_between_rear_wheels", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.distance_between_rear_wheels, 1,NULL},
+		{"robot", "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.distance_between_front_and_rear_axles, 1, NULL},
+		{"robot", "distance_between_front_car_and_front_wheels", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.distance_between_front_car_and_front_wheels, 1, NULL},
+		{"robot", "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.distance_between_rear_car_and_rear_wheels, 1, NULL},
+		{"robot", "maximum_steering_command_rate", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.maximum_steering_command_rate, 1, NULL},
+		{"robot", "understeer_coeficient", CARMEN_PARAM_DOUBLE, &carmen_robot_ackerman_config.understeer_coeficient, 1, NULL},
+		{"robot", "allow_rear_motion", CARMEN_PARAM_ONOFF, &carmen_robot_ackerman_config.allow_rear_motion, 1, NULL},
+		{"robot", "sensor_timeout", CARMEN_PARAM_DOUBLE, &robot_sensor_timeout, 1, NULL},
+		{"robot", "command_timeout", CARMEN_PARAM_DOUBLE, &command_timeout, 1, NULL},
+		{"robot", "collision_avoidance", CARMEN_PARAM_ONOFF, &ackerman_collision_avoidance, 1, NULL},
+		{"robot", "collision_avoidance_frequency", CARMEN_PARAM_DOUBLE,	&carmen_robot_ackerman_collision_avoidance_frequency, 1, NULL},
+		{"robot", "interpolate_odometry", CARMEN_PARAM_ONOFF, &carmen_robot_ackerman_config.interpolate_odometry, 1, NULL},
+		{"behavior_selector", "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL},
+		{"rrt", "log_mode", CARMEN_PARAM_ONOFF,	&log_mode, 1, NULL},
 	};
 
 	num_items = sizeof(param_list)/sizeof(param_list[0]);

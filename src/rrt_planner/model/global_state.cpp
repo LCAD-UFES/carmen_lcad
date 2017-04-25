@@ -65,12 +65,13 @@ double GlobalState::obstacle_cost_distance = 1.5; // distancia para zero custo (
 
 RRT_Node *GlobalState::goal_node = NULL;
 
+int GlobalState::log_mode = 0;
+
+
 void GlobalState::set_goal_pose(Pose goal_pose)
 {
 	if (!GlobalState::goal_pose)
-	{
 		GlobalState::goal_pose = new Pose();
-	}
 
 	*GlobalState::goal_pose = goal_pose;
 }
@@ -78,9 +79,7 @@ void GlobalState::set_goal_pose(Pose goal_pose)
 void GlobalState::set_robot_pose(Pose robot_pose, double timestamp)
 {
 	if (!GlobalState::localize_pose)
-	{
 		GlobalState::localize_pose = new Pose();
-	}
 
 	*GlobalState::localize_pose = robot_pose;
 	localizer_pose_timestamp = timestamp;
@@ -96,9 +95,11 @@ GlobalState::predict_initial_robot_state(carmen_point_t robot_current_position, 
 	Pose pose = Util::convert_to_pose(robot_current_position);
 
 	GlobalState::rrt_planner_timestamp = carmen_get_time();// + GlobalState::plan_time;
-	// Para testar tocando log
-	// delta_t = GlobalState::plan_time;
-	delta_t = GlobalState::rrt_planner_timestamp - robot_current_position_timestamp;
+	if (!GlobalState::log_mode)
+		delta_t = GlobalState::rrt_planner_timestamp - robot_current_position_timestamp;
+	else
+		delta_t = 0.05;
+
 	initial_robot_pose.v_and_phi = GlobalState::last_odometry;
 	initial_robot_pose.pose = pose;
 	initial_robot_pose = Ackerman::predict_next_pose_during_main_rrt_planning(initial_robot_pose, initial_robot_pose.v_and_phi, delta_t);
@@ -116,9 +117,10 @@ GlobalState::estimate_initial_robot_state()
 	double delta_t;
 	
 	GlobalState::rrt_planner_timestamp = carmen_get_time();
-	// Para testar tocando log
-	// delta_t = 0.1;
-	delta_t = GlobalState::rrt_planner_timestamp - GlobalState::localizer_pose_timestamp;
+	if (!GlobalState::log_mode)
+		delta_t = GlobalState::rrt_planner_timestamp - GlobalState::localizer_pose_timestamp;
+	else
+		delta_t = 0.05;
 
 	initial_robot_pose.pose = *GlobalState::localize_pose;
 	initial_robot_pose.v_and_phi = GlobalState::last_odometry;
