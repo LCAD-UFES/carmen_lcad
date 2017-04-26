@@ -39,21 +39,21 @@ void shutdown_module(int signo)
 }
 
 
-static int read_parameters(int argc, char **argv)
-{
-//	int num_items;
+//static int read_parameters(int argc, char **argv)
+//{
+////	int num_items;
+////
+////	carmen_param_t param_list[] =
+////	{
+////      {"zed_camera_sensor", (char*)"quality", CARMEN_PARAM_INT, &zed_camera_sensor_quality, 0, NULL},
+////      {"zed_camera_sensor", (char*)"fps", CARMEN_PARAM_DOUBLE, &zed_camera_sensor_fps, 0, NULL}
+////	};
+////
+////	num_items = sizeof(param_list)/sizeof(param_list[0]);
+////	carmen_param_install_params(argc, argv, param_list, num_items);
 //
-//	carmen_param_t param_list[] =
-//	{
-//      {"zed_camera_sensor", (char*)"quality", CARMEN_PARAM_INT, &zed_camera_sensor_quality, 0, NULL},
-//      {"zed_camera_sensor", (char*)"fps", CARMEN_PARAM_DOUBLE, &zed_camera_sensor_fps, 0, NULL}
-//	};
-//
-//	num_items = sizeof(param_list)/sizeof(param_list[0]);
-//	carmen_param_install_params(argc, argv, param_list, num_items);
-
-	return 0;
-}
+//	return 0;
+//}
 
 
 int
