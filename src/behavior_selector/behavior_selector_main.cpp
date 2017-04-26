@@ -505,8 +505,8 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 		goal->v = carmen_fmin(new_goal_v, goal->v);
 
 	FILE *caco = fopen("caco.txt", "a");
-	fprintf(caco, "%lf %lf %lf %lf %lf %d %d %d %lf %lf %lf %d ", moving_obj_v, goal->v, current_robot_pose_v_and_phi->v, distance, desired_distance,
-			behavior_selector_state_message.low_level_state, autonomous, goal_type,
+	fprintf(caco, "%lf %lf %lf %lf %lf %d %d %d %lf %lf %lf %d ", moving_obj_v, goal->v, current_robot_pose_v_and_phi->v, distance,
+			desired_distance, behavior_selector_state_message.low_level_state, autonomous, goal_type,
 			udatmo_speed_left(), udatmo_speed_right(), udatmo_speed_center(), udatmo_obstacle_detected(timestamp));
 	fflush(caco);
 	fclose(caco);

@@ -91,7 +91,7 @@ int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_map_message *cu
 			detector->robot_config.behaviour_selector_obstacles_safe_distance,
 			-(detector->robot_config.width - 0.3), timestamp);
 	int index_center = detector_center->detect(current_map, rddf, goal_index, rddf_pose_index, robot_pose,
-			detector->robot_config.model_predictive_planner_obstacles_safe_distance,
+			detector->robot_config.behaviour_selector_obstacles_safe_distance,
 			0.0, timestamp);
 
 	if ((index_center != -1) && (index_left != -1) && objects_coinside(detector_center, detector_left) && (goal_index == 0))

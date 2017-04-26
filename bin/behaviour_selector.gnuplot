@@ -151,5 +151,5 @@ set fontpath
 set psdir
 set fit noerrorvariables
 GNUTERM = "wxt"
-plot "caco.txt" u 3 w l t "car_v", "caco.txt" u 4 w l t "moving_obj_dist", "caco.txt" u 5 w l t "desired_dist", "caco.txt" u 2 w l t "goal->v", "caco.txt" u 1 w l t "moving_obj_v", "caco.txt" u 6 w l t "state", "caco.txt" u 7 w l t "autonomous", "caco.txt" u 8 w l t "v annot"
+plot [][0:70] "caco.txt" u 3 w l t "car_v", "caco.txt" u 4 w l t "moving_obj_dist", "caco.txt" u 5 w l t "desired_dist", "caco.txt" u 2 w l t "goal->v", "caco.txt" u 1 w l t "moving_obj_v", "caco.txt" u 6 w l t "state", "caco.txt" u 8 w l t "goal type", "caco.txt" u 13 w l t "final goal->v"
 #    EOF
