@@ -35,9 +35,8 @@ void shutdown_module(int signo)
 {
 	if(signo == SIGINT)
 	{
-		printf("zed_camera_sensor: disconnected.\n");
 		stop_required = 1;
-		carmen_ipc_disconnect();
+		printf("zed_camera_sensor: disconnected.\n");
 		exit(0);
 	}
 }

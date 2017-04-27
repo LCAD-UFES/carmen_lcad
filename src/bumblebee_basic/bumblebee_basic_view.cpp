@@ -156,7 +156,6 @@ update_fps(carmen_bumblebee_basic_stereoimage_message* image_msg)
     disp_fps++;
 
     last_message = *image_msg;
-    printf("last_message: %lf\n", last_message.timestamp);
 }
 
 
@@ -225,8 +224,11 @@ main(int argc, char **argv)
     sprintf(window_name, "bb%d", camera);
 
     // Just to open an initial window
-    imshow(window_name, Mat::zeros(Size(BUMBLEBEE_BASIC_VIEW_MAX_WINDOW_WIDTH * 2, 480), CV_8UC3));
-    waitKey(1);
+    for (int i = 0; i < 10; i++)
+    {
+		imshow(window_name, Mat::zeros(Size(BUMBLEBEE_BASIC_VIEW_MAX_WINDOW_WIDTH * 2, 480), CV_8UC3));
+		waitKey(2);
+    }
 
     carmen_ipc_initialize(argc, argv);
 
