@@ -79,6 +79,8 @@ public:
 
 	static RRT_Node *goal_node; //the node that represents goal pose on the graph or NULL
 
+	static int log_mode;
+
 	static void set_goal_pose(Pose goal_pose);
 
 	static void set_robot_pose(Pose robot_pose, double timestamp);

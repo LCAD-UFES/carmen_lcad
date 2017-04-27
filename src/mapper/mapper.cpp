@@ -303,7 +303,7 @@ update_log_odds_of_cells_in_the_laser_ldmrs_perceptual_field(carmen_map_t *log_o
 		blind_timestamp = sensor_data->points_timestamp[point_cloud_index];
 		return;
 	}
-	if ((sensor_data->points_timestamp[point_cloud_index] - blind_timestamp) < 1.5)
+	if ((sensor_data->points_timestamp[point_cloud_index] - blind_timestamp) < 1.0)
 		return;
 
 	double dt = sensor_params->time_spent_by_each_scan;

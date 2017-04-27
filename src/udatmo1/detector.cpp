@@ -61,8 +61,6 @@ Detector::detect(carmen_obstacle_distance_mapper_map_message *current_map,
 	if (rddf_pose_index == 0)
 		obstacle_already_detected = false;
 
-	double distance = carmen_distance_ackerman_traj(&(rddf->poses[rddf_pose_index]), &robot_pose);
-
 	double disp = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
 	carmen_point_t front_car_pose = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&rddf->poses[rddf_pose_index], disp);
 	if (displacement > 0.0)
@@ -76,11 +74,12 @@ Detector::detect(carmen_obstacle_distance_mapper_map_message *current_map,
 		front_car_pose.y = front_car_pose.y - displacement * sin(rddf->poses[rddf_pose_index].theta - M_PI / 2.0);
 	}
 	carmen_position_t obstacle = carmen_obstacle_avoider_get_nearest_obstacle_cell_from_global_point(&front_car_pose, current_map);
-	distance = DIST2D(front_car_pose, obstacle);
+	double distance = DIST2D(front_car_pose, obstacle);
 
 //	printf("distance %lf, ", distance);
 
-	if (!obstacle_already_detected && (distance < circle_radius) && (rddf_pose_index <= 1))
+	if (!obstacle_already_detected && (distance < circle_radius) && false)
+//		(DIST2D(robot_pose, rddf->poses[rddf_pose_index]) < disp))
 	{	// Obstaculo fixo ao lado, ja que nao faz sentido detectar em cima do carro
 		obstacle_already_detected = true;
 
@@ -99,6 +98,7 @@ Detector::detect(carmen_obstacle_distance_mapper_map_message *current_map,
 		moving_object[0].pose.x = obstacle.x;
 		moving_object[0].pose.y = obstacle.y;
 		moving_object[0].car_pose = robot_pose;
+		moving_object[0].rddf_front_car_pose = front_car_pose;
 		moving_object[0].index = goal_index;
 		moving_object[0].rddf_pose_index = rddf_pose_index;
 		moving_object[0].timestamp = timestamp;
