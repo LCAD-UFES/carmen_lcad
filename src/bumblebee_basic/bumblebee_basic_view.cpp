@@ -173,7 +173,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* msg)
 
     Mat concat, bgr;
     Mat src_image_left(Size(msg->width, msg->height), CV_8UC3, msg->raw_left);
-    Mat src_image_right(Size(msg->width, msg->height), CV_8UC3, msg->raw_left);
+    Mat src_image_right(Size(msg->width, msg->height), CV_8UC3, msg->raw_right);
 
     update_fps(msg);
 

@@ -122,6 +122,9 @@ main(int argc, char **argv)
         Mat frame;
         cap >> frame;
 
+        Mat rgb;
+        cvtColor(frame, rgb, CV_BGR2RGB);
+
 		Mat left, right, left_rgb, right_rgb;
 		left = frame(Rect(0, 0, frame.cols / 2, frame.rows));
 		right = frame(Rect(frame.cols / 2, 0, frame.cols / 2, frame.rows));
