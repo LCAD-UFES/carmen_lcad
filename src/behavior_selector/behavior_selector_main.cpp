@@ -724,7 +724,7 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	if (stop_t0 <= t && disp > 0.0)
 		disp -= 0.03;
 	if (t < stop_t1)
-		v = current_robot_pose_v_and_phi.v + 0.5;
+		v = current_robot_pose_v_and_phi.v + 0.9;
 
 //	else if (t > stop_tn)
 //		initial_time = timestamp;
