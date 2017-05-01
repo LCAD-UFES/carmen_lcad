@@ -1346,13 +1346,13 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 	else
 		tcp_complete = optimized_lane_trajectory_control_parameters(tcp_complete, target_td, target_v, params);
 
-	if (tcp_complete.valid)
-	{
-		double dist = get_path_to_lane_distance(target_td, tcp_complete, &params);
-//		printf("dist %lf\n", dist);
-		if (dist > GlobalState::max_square_distance_to_lane)
-			tcp_complete.valid = false;
-	}
+//	if (tcp_complete.valid)
+//	{
+//		double dist = get_path_to_lane_distance(target_td, tcp_complete, &params);
+////		printf("dist %lf\n", dist);
+//		if (dist > GlobalState::max_square_distance_to_lane)
+//			tcp_complete.valid = false;
+//	}
 
 //	if (target_td.dist < 2.0)
 //	{
