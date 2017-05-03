@@ -30,7 +30,7 @@
 #include <carmen/carmen_stdio.h>
 #include <carmen/readlog.h>
 #include <ctype.h>
-
+#include <opencv/highgui.h>
 
 #define HEX_TO_BYTE(hi, lo) (hi << 4 | lo)
 #define HEX_TO_SHORT(fourth, third, second, first) ( fourth << 12 | (third << 8 | (second << 4 | first)))
@@ -379,7 +379,7 @@ char *carmen_string_to_laser_laser_message_orig(char *string,
 		carmen_laser_guess_angle_increment(laser->num_readings);
 	laser->config.maximum_range = 80.0;
 	laser->config.accuracy = 0.01;
-	laser->config.remission_mode = 0;
+	laser->config.remission_mode = (carmen_laser_remission_type_t) 0;
 
 	return current_pos;
 }
@@ -396,13 +396,13 @@ char *carmen_string_to_laser_laser_message(char *string,
 		laser->id = -1;
 	}
 
-	laser->config.laser_type = CLF_READ_INT(&current_pos);
+	laser->config.laser_type = (carmen_laser_laser_type_t) CLF_READ_INT(&current_pos);
 	laser->config.start_angle = CLF_READ_DOUBLE(&current_pos);
 	laser->config.fov = CLF_READ_DOUBLE(&current_pos);
 	laser->config.angular_resolution = CLF_READ_DOUBLE(&current_pos);
 	laser->config.maximum_range = CLF_READ_DOUBLE(&current_pos);
 	laser->config.accuracy = CLF_READ_DOUBLE(&current_pos);
-	laser->config.remission_mode = CLF_READ_INT(&current_pos);
+	laser->config.remission_mode = (carmen_laser_remission_type_t) CLF_READ_INT(&current_pos);
 
 	num_readings = CLF_READ_INT(&current_pos);
 	if(laser->num_readings != num_readings) {
@@ -613,13 +613,13 @@ char *carmen_string_to_robot_ackerman_laser_message(char *string,
 		laser->id = -1;
 	}
 
-	laser->config.laser_type = CLF_READ_INT(&current_pos);
+	laser->config.laser_type = (carmen_laser_laser_type_t) CLF_READ_INT(&current_pos);
 	laser->config.start_angle = CLF_READ_DOUBLE(&current_pos);
 	laser->config.fov = CLF_READ_DOUBLE(&current_pos);
 	laser->config.angular_resolution = CLF_READ_DOUBLE(&current_pos);
 	laser->config.maximum_range = CLF_READ_DOUBLE(&current_pos);
 	laser->config.accuracy = CLF_READ_DOUBLE(&current_pos);
-	laser->config.remission_mode = CLF_READ_INT(&current_pos);
+	laser->config.remission_mode = (carmen_laser_remission_type_t) CLF_READ_INT(&current_pos);
 
 	num_readings = CLF_READ_INT(&current_pos);
 	if(laser->num_readings != num_readings) {
@@ -1553,12 +1553,30 @@ char* carmen_string_and_file_to_bumblebee_basic_stereoimage_message(char* string
 	if(msg->raw_right == NULL)
 		msg->raw_right = (unsigned char*) malloc (msg->image_size * sizeof(unsigned char));
 
-	FILE *image_file = fopen(path, "rb");
+	if (strcmp("png", path + strlen(path) - 3) == 0) // ZED Camera
+	{
+		cv::Mat img = cv::imread(path);
+		cv::Mat left = img(cv::Rect(0, 0, img.cols / 2, img.rows)).clone();
+		cv::Mat right = img(cv::Rect(img.cols / 2, 0, img.cols / 2, img.rows)).clone();
 
-    fread(msg->raw_left, msg->image_size, sizeof(unsigned char), image_file);
-    fread(msg->raw_right, msg->image_size, sizeof(unsigned char), image_file);
+		// DEBUG:
+		//cv::imshow("img", img);
+		//cv::imshow("left", left);
+		//cv::imshow("right", right);
+		//cv::waitKey(10);
 
-    fclose(image_file);
+		memcpy(msg->raw_left, left.data, sizeof(unsigned char) * msg->image_size);
+		memcpy(msg->raw_right, right.data, sizeof(unsigned char) * msg->image_size);
+	}
+	else
+	{
+		FILE *image_file = fopen(path, "rb");
+
+		fread(msg->raw_left, msg->image_size, sizeof(unsigned char), image_file);
+		fread(msg->raw_right, msg->image_size, sizeof(unsigned char), image_file);
+
+		fclose(image_file);
+	}
 
 	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
 	copy_host_string(&msg->host, &current_pos);
