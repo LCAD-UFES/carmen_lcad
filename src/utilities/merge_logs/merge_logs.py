@@ -40,8 +40,11 @@ if __name__ == "__main__":
 		while (t2 < t1):
 			s2 = f2.readline()
 			splt_s2 = s2.rsplit(' ')
-			t2 = int(splt_s2[len(splt_s2) - 3])
+			t2 = decimal.Decimal(splt_s2[len(splt_s2) - 3])
 			l2 += 1
+
+		last_t1 = t1
+		last_t2 = t2
 
 		# loop principal
 		while (s1 != '') and (s2 != ''):
@@ -61,10 +64,12 @@ if __name__ == "__main__":
 
 			if t1 < t2:
 				g.write(s1)
+				last_t1 = t1
 				s1 = f1.readline()
 				l1 += 1
 			else:
 				g.write(s2)
+				last_t2 = t2
 				s2 = f2.readline()
 				l2 += 1
 
