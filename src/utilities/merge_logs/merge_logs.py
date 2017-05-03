@@ -43,8 +43,8 @@ if __name__ == "__main__":
 			t2 = decimal.Decimal(splt_s2[len(splt_s2) - 3])
 			l2 += 1
 
-		last_t1 = t1
-		last_t2 = t2
+		first_t1 = t1
+		first_relative_t1 = decimal.Decimal(splt_s1[len(splt_s1) - 1])
 
 		# loop principal
 		while (s1 != '') and (s2 != ''):
@@ -64,12 +64,14 @@ if __name__ == "__main__":
 
 			if t1 < t2:
 				g.write(s1)
-				last_t1 = t1
 				s1 = f1.readline()
 				l1 += 1
 			else:
-				g.write(s2)
-				last_t2 = t2
+				splt_s2 = splt_s2[:len(splt_s2)-1]
+				splt_s2.append(str(t2 - first_t1 + first_relative_t1))
+				# join the splitted line using space as separator
+				line = ' '.join(splt_s2) 
+				g.write(line + '\n')
 				s2 = f2.readline()
 				l2 += 1
 
