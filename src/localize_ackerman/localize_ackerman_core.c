@@ -46,7 +46,7 @@ void
 carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_particle_filter_p filter,
 		double v, double phi, double distance_between_front_and_rear_axles, double dt)
 {
-	double v_stept, phi_step;
+	double v_step, phi_step;
 	carmen_pose_3D_t robot_pose;
 
 	if (fabs(dt) > 3.0) // Possivelmente reposicionamento do robo na interface
@@ -62,21 +62,21 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 			robot_pose.position.y = filter->particles[i].y;
 			robot_pose.orientation.yaw = filter->particles[i].theta;
 
-			v_stept = v + carmen_gaussian_random(0.0,
+			v_step = v + carmen_gaussian_random(0.0,
 					fabs(filter->param->velocity_noise_velocity * v) +
 					fabs(filter->param->velocity_noise_phi * phi));
 
 			if (fabs(v) > 0.05)
 			{
 				filter->particles[i].phi_bias += carmen_gaussian_random(0.0, filter->param->phi_bias_std);
-				filter->particles[i].phi_bias = carmen_clamp(-0.0175, filter->particles[i].phi_bias, 0.0175);
+				filter->particles[i].phi_bias = carmen_clamp(-0.0175 / 2.0, filter->particles[i].phi_bias, 0.0175 / 2.0);
 			}
 			phi_step = phi + filter->particles[i].phi_bias + carmen_gaussian_random(0.0,
 					fabs(filter->param->phi_noise_phi * phi) +
 					fabs(filter->param->phi_noise_velocity * v));
 			phi_step = carmen_clamp(-M_PI/4.0, phi_step, M_PI/4.0);
 
-			robot_pose = carmen_ackerman_interpolated_robot_position_at_time(robot_pose, dt, v_stept, phi_step, distance_between_front_and_rear_axles);
+			robot_pose = carmen_ackerman_interpolated_robot_position_at_time(robot_pose, dt, v_step, phi_step, distance_between_front_and_rear_axles);
 
 			filter->particles[i].x = robot_pose.position.x + carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
 			filter->particles[i].y = robot_pose.position.y + carmen_gaussian_random(0.0, filter->param->xy_uncertainty_due_to_grid_resolution);
@@ -89,10 +89,10 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 			robot_pose.position.y = filter->particles[i].y;
 			robot_pose.orientation.yaw = filter->particles[i].theta;
 
-			v_stept = v;
+			v_step = v;
 			phi_step = phi + filter->particles[i].phi_bias;
 
-			robot_pose = carmen_ackerman_interpolated_robot_position_at_time(robot_pose, dt, v_stept, phi_step, distance_between_front_and_rear_axles);
+			robot_pose = carmen_ackerman_interpolated_robot_position_at_time(robot_pose, dt, v_step, phi_step, distance_between_front_and_rear_axles);
 
 			filter->particles[i].x = robot_pose.position.x;
 			filter->particles[i].y = robot_pose.position.y;

@@ -490,28 +490,23 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 	double min_dist_according_to_car_v = get_robot_config()->length * (current_robot_pose_v_and_phi->v / 4.4704) + car_pose_to_car_front;
 	double desired_distance = carmen_fmax(1.4 * min_dist_according_to_car_v, car_pose_to_car_front + 2.5);
 
-	double distance = 0.0;
+	double distance = udatmo_get_moving_obstacle_distance(*current_robot_pose_v_and_phi, get_robot_config());
 	double moving_obj_v = udatmo_speed_front();
+
+	// ver "The DARPA Urban Challenge" book, pg. 36.
+	double Kgap = 0.1;
+	double new_goal_v = moving_obj_v + Kgap * (distance - desired_distance);
+	SampleFilter_put(&filter2, new_goal_v);
+	new_goal_v = SampleFilter_get(&filter2);
+	if (new_goal_v < 0.0)
+		new_goal_v = 0.0;
+
 	if ((goal_type == MOVING_OBSTACLE_GOAL1) || (goal_type == MOVING_OBSTACLE_GOAL2))//udatmo_obstacle_detected(timestamp))// && (current_robot_pose_v_and_phi->v > moving_obj_v))
-	{
-		distance = udatmo_get_moving_obstacle_distance(*current_robot_pose_v_and_phi, get_robot_config());
-
-		// ver "The DARPA Urban Challenge" book, pg. 36.
-		double Kgap = 0.2;
-		double new_goal_v = moving_obj_v + Kgap * (distance - desired_distance);
-		SampleFilter_put(&filter2, new_goal_v);
-		new_goal_v = SampleFilter_get(&filter2);
-		if (new_goal_v < 0.0)
-			new_goal_v = 0.0;
-
 		goal->v = carmen_fmin(new_goal_v, goal->v);
-	}
-	else
-		SampleFilter_put(&filter2, moving_obj_v);
 
 	FILE *caco = fopen("caco.txt", "a");
-	fprintf(caco, "%lf %lf %lf %lf %lf %d %d %d %lf %lf %lf %d ", moving_obj_v, goal->v, current_robot_pose_v_and_phi->v, distance, desired_distance,
-			behavior_selector_state_message.low_level_state, autonomous, goal_type,
+	fprintf(caco, "%lf %lf %lf %lf %lf %d %d %d %lf %lf %lf %d ", moving_obj_v, goal->v, current_robot_pose_v_and_phi->v, distance,
+			desired_distance, behavior_selector_state_message.low_level_state, autonomous, goal_type,
 			udatmo_speed_left(), udatmo_speed_right(), udatmo_speed_center(), udatmo_obstacle_detected(timestamp));
 	fflush(caco);
 	fclose(caco);
@@ -663,7 +658,7 @@ compute_simulated_objects(double timestamp)
 	// during which the obstacle is stopped.
 	static double stop_t0 = 50, stop_tn = 70;
 
-	double v = (30.0 / 3.6);
+	double v = (20.0 / 3.6);
 	double t = timestamp - initial_time;
 	if (stop_t0 <= t && t <= stop_tn)
 		v = 0;
@@ -729,7 +724,7 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	if (stop_t0 <= t && disp > 0.0)
 		disp -= 0.03;
 	if (t < stop_t1)
-		v = current_robot_pose_v_and_phi.v + 0.5;
+		v = current_robot_pose_v_and_phi.v + 0.9;
 
 //	else if (t > stop_tn)
 //		initial_time = timestamp;
@@ -1358,7 +1353,7 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 		add_simulated_object(simulated_object_pose2);
 #endif
 
-	if (virtual_laser_message.num_positions > 0)
+	if (virtual_laser_message.num_positions >= 0)
 		publish_objects();
 
 	publish_current_state(behavior_selector_state_message);
@@ -1704,6 +1699,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "behavior_selector", (char *) "rddf_num_poses_ahead_min", CARMEN_PARAM_INT, &param_rddf_num_poses_ahead_min, 0, NULL},
 		{(char *) "behavior_selector", (char *) "rddf_num_poses_by_car_velocity", CARMEN_PARAM_ONOFF, &param_rddf_num_poses_by_car_velocity, 0, NULL},
 		{(char *) "behavior_selector", (char *) "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL},
+		{(char *) "behavior_selector", (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_obstacles_safe_distance, 0, NULL},
 		{(char *) "rrt",   			   (char *) "distance_interval", CARMEN_PARAM_DOUBLE, &param_distance_interval, 1, NULL},
 		{(char *) "obstacle_avoider", 		  (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.obstacle_avoider_obstacles_safe_distance, 	1, NULL},
 		{(char *) "model_predictive_planner", (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.model_predictive_planner_obstacles_safe_distance, 	1, NULL},

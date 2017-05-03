@@ -120,9 +120,17 @@ static int next_xsens_xyz_trail;
 static int xsens_xyz_initialized;
 static int gps_fix_flag;
 
-static carmen_vector_3D_t* particles_pos;
-static double* particles_weight;
-static int num_particles;
+static carmen_vector_3D_t *fused_odometry_particles_pos;
+static double *fused_odometry_particles_weight;
+static int num_fused_odometry_particles;
+
+static carmen_vector_3D_t *localizer_prediction_particles_pos;
+static double *localizer_prediction_particles_weight;
+static int num_localizer_prediction_particles;
+
+static carmen_vector_3D_t *localizer_correction_particles_pos;
+static double *localizer_correction_particles_weight;
+static int num_localizer_correction_particles;
 
 static carmen_pose_3D_t xsens_pose;
 static carmen_pose_3D_t laser_pose;
@@ -328,33 +336,13 @@ rddf_annotation_handler(carmen_rddf_annotation_message *msg)
 
 
 static void
-carmen_fused_odometry_message_handler(carmen_fused_odometry_particle_message* odometry_message)
+carmen_fused_odometry_message_handler(carmen_fused_odometry_particle_message *odometry_message)
 {
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // !!! Filipe: Eu comentei as linhas abaixo porque o alberto
-    // !!! pediu para que o carro fosse desenhado a partir do
-    // !!! localize e nao do fused odometry. Eu nao apaguei o
-    // !!! codigo pro caso de ele querer que volte pro fused odometry
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    //	car_fused_pose = odometry_message->pose;
     xsens_yaw_bias = odometry_message->xsens_yaw_bias;
 
-    //car_fused_velocity = odometry_message->velocity;
-    //car_fused_time = odometry_message->timestamp;
     gps_position_at_turn_on = odometry_message->gps_position_at_turn_on;
     odometry_initialized = 1;
 
-    //	car_fused_pose.position = sub_vectors(car_fused_pose.position, get_position_offset());
-    //
-    //	if(zero_z_flag)
-    //	{
-    //		car_fused_pose.position.z = 0.0;
-    //		car_fused_pose.orientation.pitch = 0.0;
-    //		car_fused_pose.orientation.roll = 0.0;
-    //	}
-
-    //	odometry_trail[last_odometry_trail] = car_fused_pose.position;
     odometry_message->pose.position.z = 0.0;
     odometry_trail[last_odometry_trail] = odometry_message->pose.position;
     odometry_trail[last_odometry_trail] = sub_vectors(odometry_trail[last_odometry_trail], get_position_offset());
@@ -363,28 +351,84 @@ carmen_fused_odometry_message_handler(carmen_fused_odometry_particle_message* od
 
     if (last_odometry_trail >= odometry_size)
         last_odometry_trail -= odometry_size;
+}
 
-    if (draw_particles_flag)
+
+static void
+carmen_fused_odometry_particle_message_handler(carmen_fused_odometry_particle_message *odometry_message)
+{
+    if (odometry_initialized && draw_particles_flag)
     {
         if (weight_type_flag == 2 || odometry_message->weight_type == weight_type_flag)
         {
-            if (odometry_message->num_particles > num_particles)
+            if (odometry_message->num_particles > num_fused_odometry_particles)
             {
-                particles_pos = (carmen_vector_3D_t*) realloc(particles_pos, odometry_message->num_particles * sizeof (carmen_vector_3D_t));
-                particles_weight = (double*) realloc(particles_weight, odometry_message->num_particles * sizeof (double));
+                fused_odometry_particles_pos = (carmen_vector_3D_t *) realloc(fused_odometry_particles_pos,
+                		odometry_message->num_particles * sizeof (carmen_vector_3D_t));
+                fused_odometry_particles_weight = (double *) realloc(fused_odometry_particles_weight,
+                		odometry_message->num_particles * sizeof (double));
             }
-            num_particles = odometry_message->num_particles;
+            num_fused_odometry_particles = odometry_message->num_particles;
 
-            int i;
-            for (i = 0; i < num_particles; i++)
+            for (int i = 0; i < num_fused_odometry_particles; i++)
             {
-                particles_pos[i] = sub_vectors(odometry_message->particle_pos[i], get_position_offset());
-                particles_weight[i] = odometry_message->weights[i];
+                fused_odometry_particles_pos[i] = sub_vectors(odometry_message->particle_pos[i], get_position_offset());
+                fused_odometry_particles_weight[i] = odometry_message->weights[i];
 
                 if (zero_z_flag)
-                    particles_pos[i].z = 0.0;
+                    fused_odometry_particles_pos[i].z = 0.0;
             }
         }
+    }
+}
+
+
+static void
+carmen_localize_ackerman_particle_prediction_handler(carmen_localize_ackerman_particle_message *message)
+{
+    if (odometry_initialized && draw_particles_flag)
+    {
+		if (message->num_particles > num_localizer_prediction_particles)
+		{
+			localizer_prediction_particles_pos = (carmen_vector_3D_t *) realloc(localizer_prediction_particles_pos, message->num_particles * sizeof (carmen_vector_3D_t));
+			localizer_prediction_particles_weight = (double *) realloc(localizer_prediction_particles_weight, message->num_particles * sizeof (double));
+		}
+		num_localizer_prediction_particles = message->num_particles;
+
+		for (int i = 0; i < num_localizer_prediction_particles; i++)
+		{
+			carmen_vector_3D_t particle = {message->particles[i].x, message->particles[i].y, 0.0};
+			localizer_prediction_particles_pos[i] = sub_vectors(particle, get_position_offset());
+			localizer_prediction_particles_weight[i] = message->particles[i].weight;
+
+            if (zero_z_flag)
+                localizer_prediction_particles_pos[i].z = 0.0;
+		}
+    }
+}
+
+
+static void
+carmen_localize_ackerman_particle_correction_handler(carmen_localize_ackerman_particle_message *message)
+{
+    if (odometry_initialized && draw_particles_flag)
+    {
+		if (message->num_particles > num_localizer_correction_particles)
+		{
+			localizer_correction_particles_pos = (carmen_vector_3D_t *) realloc(localizer_correction_particles_pos, message->num_particles * sizeof (carmen_vector_3D_t));
+			localizer_correction_particles_weight = (double *) realloc(localizer_correction_particles_weight, message->num_particles * sizeof (double));
+		}
+		num_localizer_correction_particles = message->num_particles;
+
+		for (int i = 0; i < num_localizer_correction_particles; i++)
+		{
+			carmen_vector_3D_t particle = {message->particles[i].x, message->particles[i].y, 0.0};
+			localizer_correction_particles_pos[i] = sub_vectors(particle, get_position_offset());
+			localizer_correction_particles_weight[i] = message->particles[i].weight;
+
+            if (zero_z_flag)
+                localizer_correction_particles_pos[i].z = 0.0;
+		}
     }
 }
 
@@ -1685,9 +1729,17 @@ init_localize_ackerman_trail(void)
 static void
 init_particle_trail(void)
 {
-    particles_pos = NULL;
-    particles_weight = NULL;
-    num_particles = 0;
+    fused_odometry_particles_pos = NULL;
+    fused_odometry_particles_weight = NULL;
+    num_fused_odometry_particles = 0;
+
+    localizer_prediction_particles_pos = NULL;
+    localizer_prediction_particles_weight = NULL;
+    num_localizer_prediction_particles = 0;
+
+    localizer_correction_particles_pos = NULL;
+    localizer_correction_particles_weight = NULL;
+    num_localizer_correction_particles = 0;
 }
 
 static void
@@ -2097,8 +2149,13 @@ destroy_stuff()
     free(gps_trail);
     free(gps_nr);
     free(xsens_xyz_trail);
-    free(particles_pos);
-    free(particles_weight);
+
+    free(fused_odometry_particles_pos);
+    free(fused_odometry_particles_weight);
+    free(localizer_prediction_particles_pos);
+    free(localizer_prediction_particles_weight);
+    free(localizer_correction_particles_pos);
+    free(localizer_correction_particles_weight);
 
     free(moving_objects_tracking);
     free(ldmrs_objects_tracking);
@@ -2329,7 +2386,9 @@ draw_loop(window *w)
 
         if (draw_particles_flag)
         {
-            draw_particles(particles_pos, particles_weight, num_particles);
+            draw_particles(fused_odometry_particles_pos, fused_odometry_particles_weight, num_fused_odometry_particles, 0);
+            draw_particles(localizer_prediction_particles_pos, localizer_prediction_particles_weight, num_localizer_prediction_particles, 1);
+            draw_particles(localizer_correction_particles_pos, localizer_correction_particles_weight, num_localizer_correction_particles, 2);
         }
 
         if (draw_map_flag)
@@ -2513,7 +2572,9 @@ draw_loop2(window *w)
 
         if (draw_particles_flag)
         {
-            draw_particles(particles_pos, particles_weight, num_particles);
+            draw_particles(fused_odometry_particles_pos, fused_odometry_particles_weight, num_fused_odometry_particles, 0);
+            draw_particles(localizer_prediction_particles_pos, localizer_prediction_particles_weight, num_localizer_prediction_particles, 1);
+            draw_particles(localizer_correction_particles_pos, localizer_correction_particles_weight, num_localizer_correction_particles, 2);
         }
 
         if (draw_map_flag)
@@ -2571,8 +2632,12 @@ static void
 subscribe_ipc_messages(void)
 {
     carmen_rddf_define_messages();
+
+    carmen_fused_odometry_subscribe_fused_odometry_message(NULL,
+																(carmen_handler_t) carmen_fused_odometry_message_handler,
+																CARMEN_SUBSCRIBE_LATEST);
     carmen_fused_odometry_subscribe_fused_odometry_particle_message(NULL,
-                                                                    (carmen_handler_t) carmen_fused_odometry_message_handler,
+                                                                    (carmen_handler_t) carmen_fused_odometry_particle_message_handler,
                                                                     CARMEN_SUBSCRIBE_LATEST);
     // subscribe na mensagem de cada laser definido na config
     for (int i = 1; i <= num_laser_devices; i++) {
@@ -2668,7 +2733,13 @@ subscribe_ipc_messages(void)
 #ifdef TEST_LANE_ANALYSIS
 	carmen_elas_lane_analysis_subscribe(NULL, (carmen_handler_t) lane_analysis_handler, CARMEN_SUBSCRIBE_LATEST);
 #endif
+
+	carmen_localize_ackerman_subscribe_particle_prediction_message(NULL,
+			(carmen_handler_t) carmen_localize_ackerman_particle_prediction_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_localize_ackerman_subscribe_particle_correction_message(NULL,
+			(carmen_handler_t) carmen_localize_ackerman_particle_correction_handler, CARMEN_SUBSCRIBE_LATEST);
 }
+
 
 int
 check_annotation_equal_zero()

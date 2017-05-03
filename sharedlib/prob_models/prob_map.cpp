@@ -571,7 +571,7 @@ carmen_prob_models_get_maximum_probability_of_cells_hit_by_rays(carmen_map_t *ma
 
 
 void
-carmen_prob_models_set_log_odds_of_cells_hit_by_rays(carmen_map_t *log_odds_map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id)
+carmen_prob_models_update_log_odds_of_cells_hit_by_ldmrs_rays(carmen_map_t *log_odds_map,  sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, int thread_id)
 {
 	int i;
 	cell_coords_t cell_hit_by_ray;
@@ -584,7 +584,7 @@ carmen_prob_models_set_log_odds_of_cells_hit_by_rays(carmen_map_t *log_odds_map,
 		if (map_grid_is_valid(log_odds_map, cell_hit_by_ray.x, cell_hit_by_ray.y) && !sensor_data->maxed[thread_id][i])// &&
 //			(sensor_data->obstacle_height[thread_id][i] > 0.0) && (sensor_data->obstacle_height[thread_id][i] < 4.0) &&
 //			(sensor_data->ray_size_in_the_floor[thread_id][i] > 13.0))
-			carmen_prob_models_occupancy_grid_mapping_log_odds_only(log_odds_map, cell_hit_by_ray.x, cell_hit_by_ray.y, 2.0 * sensor_params->log_odds.log_odds_occ);
+			carmen_prob_models_occupancy_grid_mapping_log_odds_only(log_odds_map, cell_hit_by_ray.x, cell_hit_by_ray.y, sensor_params->log_odds.log_odds_occ);
 	}
 }
 
@@ -2644,6 +2644,34 @@ carmen_prob_models_update_current_map_with_log_odds_snapshot_map_and_clear_snaps
 			carmen_prob_models_log_odds_occupancy_grid_mapping(current_map, i, log_odds_snapshot_map->complete_map[i]);
 
 		log_odds_snapshot_map->complete_map[i] = log_odds_l0;
+	}
+}
+
+
+void
+carmen_prob_models_clear_cells_hit_by_single_ray(carmen_map_t *log_odds_snapshot_map, double log_odds_occ, double log_odds_l0)
+{
+	int width = log_odds_snapshot_map->config.x_size;
+	int height = log_odds_snapshot_map->config.y_size;
+	double **map = log_odds_snapshot_map->map;
+
+	for (int x = 1; x < width - 1; x++)
+	{
+		for (int y = 1; y < height - 1; y++)
+		{
+			if (map[x][y] == log_odds_occ)
+			{
+				if ((map[x-1][y-1] == log_odds_l0) &&
+					(map[x-1][y] == log_odds_l0) &&
+					(map[x-1][y+1] == log_odds_l0) &&
+					(map[x][y-1] == log_odds_l0) &&
+					(map[x][y+1] == log_odds_l0) &&
+					(map[x+1][y-1] == log_odds_l0) &&
+					(map[x+1][y] == log_odds_l0) &&
+					(map[x+1][y+1] == log_odds_l0))
+					map[x][y] = log_odds_l0;
+			}
+		}
 	}
 }
 

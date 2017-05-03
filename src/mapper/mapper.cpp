@@ -273,7 +273,7 @@ get_acceleration(double v, double timestamp)
 
 	double current_a = (v - previous_v) / dt;
 
-	a = a + 0.2 * (current_a - a); // para suaviar um pouco
+	a = a + 0.5 * (current_a - a); // para suaviar um pouco
 
 	previous_v = v;
 	previous_timestamp = timestamp;
@@ -303,7 +303,7 @@ update_log_odds_of_cells_in_the_laser_ldmrs_perceptual_field(carmen_map_t *log_o
 		blind_timestamp = sensor_data->points_timestamp[point_cloud_index];
 		return;
 	}
-	if ((sensor_data->points_timestamp[point_cloud_index] - blind_timestamp) < 1.5)
+	if ((sensor_data->points_timestamp[point_cloud_index] - blind_timestamp) < 0.5)
 		return;
 
 	double dt = sensor_params->time_spent_by_each_scan;
@@ -344,7 +344,7 @@ update_log_odds_of_cells_in_the_laser_ldmrs_perceptual_field(carmen_map_t *log_o
 
 //		build_moving_points_vector_ldmrs(tid, sensor_params, sensor_data, log_odds_snapshot_map);
 
-		carmen_prob_models_set_log_odds_of_cells_hit_by_rays(log_odds_snapshot_map, sensor_params, sensor_data, tid);
+		carmen_prob_models_update_log_odds_of_cells_hit_by_ldmrs_rays(log_odds_snapshot_map, sensor_params, sensor_data, tid);
 
 //		fprintf(plot_data, "\n");
 	}
@@ -424,6 +424,8 @@ run_mapper(sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, rotat
 		if (sensor_params->sensor_type == LASER_LDMRS)
 		{
 			update_log_odds_of_cells_in_the_laser_ldmrs_perceptual_field(log_odds_snapshot_map, sensor_params, sensor_data, r_matrix_robot_to_global, sensor_data->point_cloud_index, UPDATE_CELLS_CROSSED_BY_RAYS, update_and_merge_with_snapshot_map);
+			carmen_prob_models_clear_cells_hit_by_single_ray(log_odds_snapshot_map, sensor_params->log_odds.log_odds_occ,
+					sensor_params->log_odds.log_odds_l0);
 			carmen_prob_models_overwrite_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(&map, log_odds_snapshot_map,
 					sensor_params->log_odds.log_odds_l0);
 		}

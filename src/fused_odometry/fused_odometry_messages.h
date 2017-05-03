@@ -10,15 +10,15 @@ typedef struct
 {
 
 	carmen_pose_3D_t 	pose;
-	double			xsens_yaw_bias;
+	double				xsens_yaw_bias;
 	carmen_vector_3D_t 	velocity;
 	carmen_orientation_3D_t angular_velocity;
-	double 			phi;
+	double 				phi;
 	
 	carmen_vector_3D_t	gps_position_at_turn_on;
 
-	double 			timestamp;
-	char 			*host;
+	double 				timestamp;
+	char 				*host;
 } carmen_fused_odometry_message;
   
 #define      CARMEN_FUSED_ODOMETRY_NAME			"carmen_fused_odometry_message"
@@ -28,21 +28,21 @@ typedef struct
 {
 
 	carmen_pose_3D_t 	pose;
-	double			xsens_yaw_bias;
+	double				xsens_yaw_bias;
 	carmen_vector_3D_t 	velocity;
 	carmen_orientation_3D_t angular_velocity;
-	double 			phi;
+	double 				phi;
 	
 	carmen_vector_3D_t	gps_position_at_turn_on;
 
-	int 			num_particles;
+	int 				num_particles;
 	carmen_vector_3D_t 	*particle_pos;
 
-	double 			*weights;
-	int 			weight_type;	// 0-gps 1-imu
+	double 				*weights;
+	int 				weight_type;	// 0-gps 1-imu
 
-	double 			timestamp;
-	char 			*host;
+	double 				timestamp;
+	char 				*host;
 } carmen_fused_odometry_particle_message;
   
 #define      CARMEN_FUSED_ODOMETRY_PARTICLE_NAME	"carmen_fused_odometry_particle_message"

@@ -43,6 +43,8 @@ extern carmen_fused_odometry_control ut;
 
 static double fused_odometry_frequency;
 
+static int publish_particles = 0;
+
 
 static carmen_fused_odometry_particle_message 
 compute_new_average_state(carmen_fused_odometry_particle *xt)
@@ -157,7 +159,7 @@ publish_fused_odometry(void)
 
 	// printf("yaw = %+2.3lf, bias = %+2.3lf\n", fused_odometry_particle_message.pose.orientation.yaw, fused_odometry_particle_message.xsens_yaw_bias);
 	
-	if (!kalman_filter)
+	if (!kalman_filter && publish_particles)
 	{
 		if (fused_odometry_particle_message.num_particles > 200) // @@@ Alberto: Por alguma razao, o ipc trava depois de um tempo se o numero de particulas for maior que 500... Parece ser problema de thread no ipc...
 			fused_odometry_particle_message.num_particles = 200;
@@ -365,6 +367,8 @@ initialize_carmen_parameters(int argc, char** argv, carmen_fused_odometry_parame
 		{(char *) "fused_odometry", 	(char *) "xsens_yaw_std_error", CARMEN_PARAM_DOUBLE, &fused_odometry_parameters->xsens_yaw_std_error, 0, NULL},	
 
 		{(char *) "fused_odometry", 	(char *) "kalman_filter", CARMEN_PARAM_ONOFF, &kalman_filter, 0, NULL},
+
+		{(char *) "fused_odometry", 	(char *) "publish_particles", CARMEN_PARAM_ONOFF, &publish_particles, 0, NULL},
 
 		{(char *) "robot", 	    	(char *) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &fused_odometry_parameters->axis_distance, 0, NULL},
 	};

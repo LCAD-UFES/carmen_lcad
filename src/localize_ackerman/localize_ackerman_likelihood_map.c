@@ -185,7 +185,7 @@ carmen_localize_ackerman_create_stretched_log_likelihood_map(double **prob, carm
 	/* Compute the probability of each cell given the standard deviation,
     	   or "fuzziness" of the likelihood map */
 	max = carmen_localize_ackerman_create_stretched_probability_map(prob, lmap, std);
-
+	double **carmen_map = lmap->carmen_map.map;
 	/* Correct the map so most likely reading has probability 1 */
 	for (int x = 0; x < lmap->config.x_size; x++)
 	{
@@ -196,9 +196,19 @@ carmen_localize_ackerman_create_stretched_log_likelihood_map(double **prob, carm
 				cell_prob = min_likelihood;
 
 			if (use_log_odds)
-				prob[x][y] = carmen_prob_models_probabilistic_to_log_odds(cell_prob);
+			{
+				if (carmen_map[x][y] != -1.0)
+					prob[x][y] = carmen_prob_models_probabilistic_to_log_odds(cell_prob);
+				else
+					prob[x][y] = carmen_prob_models_probabilistic_to_log_odds(0.5);
+			}
 			else
-				prob[x][y] = log(cell_prob);
+			{
+				if (carmen_map[x][y] != -1.0)
+					prob[x][y] = log(cell_prob);
+				else
+					prob[x][y] = log(0.5);
+			}
 		}
 	}
 //	carmen_map_t temp_map;
