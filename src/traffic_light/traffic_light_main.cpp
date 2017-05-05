@@ -52,8 +52,13 @@ CascadeClassifier ts_cascade;
 #define MAX_TRAFFIC_LIGHTS_IN_IMAGE 10
 // Ver valores abaixo no arquivo height_in_pixels_x_distance.ods
 #define TRAFFIC_LIGHT_HEIGHT 		1.0
-#define FOCAL_DISTANCE 				1500.0
 #define DISTANCE_CORRECTION 		6.0
+static double focal_distance = 0;
+static int roi_x = 0;
+static int roi_y = 0;
+static int roi_w = 0;
+static int roi_h = 0;
+
 static carmen_traffic_light traffic_lights_detected[MAX_TRAFFIC_LIGHTS_IN_IMAGE];
 
 // Localization infrastructure
@@ -131,53 +136,25 @@ std::vector<Rect>
 detect_traffic_lights(const cv::Mat frame)
 {
 	// Parametros da Bumblebee
-	// Rect ROI(Point(image_width / 4, 0), Point((image_width / 4) * 3, image_height / 2));
-	// Parametros da Zed
-	Rect ROI(Point(image_width / 4, image_height / 4), Point((image_width / 4) * 3, image_height - image_height / 4));
+	Rect ROI(roi_x, roi_y, roi_w, roi_h);
 	cv::Mat half_image;
 	cv::Mat(frame, ROI).copyTo(half_image);
 
-//	cv::cvtColor(half_image, half_image, CV_BGR2RGB);
-//	namedWindow("Display window", WINDOW_AUTOSIZE);
-	Mat bola = frame;
-	//cv::rectangle(bola, ROI, Scalar(0,0,255), 8);
-	//Mat res(Size(bola.cols / 4, bola.rows / 4), bola.type());
-	//resize(bola, res, res.size());
-	//imshow("Display window", bola);
-	//waitKey(1);
-
 	cv::Mat frame_gray;
 	cvtColor(half_image, frame_gray, CV_BGR2GRAY);
-	//equalizeHist(frame_gray, frame_gray);
 
-//	namedWindow("Display window", WINDOW_AUTOSIZE);
-	Mat res(Size(frame_gray.cols / 2, frame_gray.rows / 2), frame_gray.type());
-	resize(frame_gray, res, res.size());
-	imshow("Display window", res);
-	waitKey(1);
+//	Descomente para visualizar o ROI
+//	Mat bola = frame.clone();
+//	cv::rectangle(bola, ROI, Scalar(0,0,255), 6);
+//	Mat res(Size(bola.cols / 2, bola.rows / 2), bola.type());
+//	resize(bola, res, res.size());
+//	imshow("Display window", res);
+//	waitKey(1);
 
 	//-- Detect traffic lights
 	std::vector<Rect> semaphores;
-	// largura 22 altura 51
-	ts_cascade.detectMultiScale(frame_gray, semaphores, 1.05, 1, 0, Size(5, 12), Size(60, 150));
+	ts_cascade.detectMultiScale(frame_gray, semaphores, 1.05, 3, 0, Size(5, 12), Size(60, 150));
 
-	if (semaphores.size() > 0)
-	{
-		for (int i = 0; i < semaphores.size(); i++)
-		{
-			cv::Rect bkp = semaphores[i];
-			bkp.x += image_width / 4;
-			bkp.y += image_height / 4;
-			cv::rectangle(bola, bkp, Scalar(0,0,255), 6);
-		}
-
-		Mat resb(Size(bola.cols / 4, bola.rows / 4), bola.type());
-		resize(bola, resb, resb.size());
-		imshow("detection", resb);
-		waitKey(1);
-	}
-
-	printf("num sems: %ld\n", semaphores.size());
 	return (semaphores);
 }
 
@@ -206,11 +183,6 @@ detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *tr
 	if (USE_VGRAM)
 		cv::cvtColor(frame, frame, CV_BGR2RGB);
 
-//	cv::cvtColor(frame, frame, CV_BGR2RGB);
-//	namedWindow("Display window", WINDOW_AUTOSIZE);
-//	imshow("Display window", frame);
-//	waitKey(1);
-
 	if (traffic_light_message->traffic_light_annotation_distance < MAX_TRAFFIC_LIGHT_DISTANCE &&
 			traffic_light_message->traffic_light_annotation_distance != -1.0)
 	{
@@ -218,15 +190,15 @@ detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *tr
 		std::vector<Rect> traffic_light_rectangles = detect_traffic_lights(frame);
 
 		int num_traffic_lights_accepted = 0;
-		double expected_traffic_light_height = TRAFFIC_LIGHT_HEIGHT * FOCAL_DISTANCE / (traffic_light_message->traffic_light_annotation_distance + DISTANCE_CORRECTION);
+		double expected_traffic_light_height = TRAFFIC_LIGHT_HEIGHT * focal_distance / (traffic_light_message->traffic_light_annotation_distance + DISTANCE_CORRECTION);
 		for (size_t i = 0; i < traffic_light_rectangles.size() && i < MAX_TRAFFIC_LIGHTS_IN_IMAGE; i++)
 		{
 			double percentual_difference = fabs(1.0 - traffic_light_rectangles[i].height / expected_traffic_light_height);
 			if (1 || percentual_difference < 0.25)
 			{
 				CvPoint p1, p2;
-				p1.x = traffic_light_rectangles[i].x + image_width / 4;
-				p1.y = traffic_light_rectangles[i].y;
+				p1.x = traffic_light_rectangles[i].x + roi_x;
+				p1.y = traffic_light_rectangles[i].y + roi_y;
 				p2.x = p1.x + traffic_light_rectangles[i].width;
 				p2.y = p1.y + traffic_light_rectangles[i].height;
 
@@ -236,19 +208,10 @@ detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *tr
 					int label = 0;
 
 					Rect r = traffic_light_rectangles[i];
-					r.x += image_width / 4;
+					r.x += roi_x;
+					r.y += roi_y;
 
-					// TODO: colocar o 40x20 no ini
-					//Mat *preproc = preproc_image(frame, r, 20, 40);
-					//net->Forward(preproc, &label, &confidence);
 					label = recognizer->run(frame, r);
-
-					// visualizacao para debug. retirar quando nao for mais necessario.
-					//Mat zoom(preproc->size() * 5, frame.type());
-					//resize(*preproc, zoom, zoom.size());
-					//imshow("preproc", zoom);
-					//waitKey(1);
-
 					int traffic_light_status = label + RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED;
 					add_traffic_light_to_message(traffic_light_message, traffic_light_status, p1, p2, num_traffic_lights_accepted);
 				}
@@ -483,7 +446,12 @@ read_parameters(int argc, char **argv)
     carmen_param_t param_list[] =
     {
         { bumblebee_string, (char*) "width", CARMEN_PARAM_INT, &image_width, 0, NULL},
-        { bumblebee_string, (char*) "height", CARMEN_PARAM_INT, &image_height, 0, NULL}
+        { bumblebee_string, (char*) "height", CARMEN_PARAM_INT, &image_height, 0, NULL},
+        { bumblebee_string, (char*) "tlight_roi_x", CARMEN_PARAM_INT, &roi_x, 0, NULL},
+        { bumblebee_string, (char*) "tlight_roi_y", CARMEN_PARAM_INT, &roi_y, 0, NULL},
+        { bumblebee_string, (char*) "tlight_roi_w", CARMEN_PARAM_INT, &roi_w, 0, NULL},
+        { bumblebee_string, (char*) "tlight_roi_h", CARMEN_PARAM_INT, &roi_h, 0, NULL},
+        { bumblebee_string, (char*) "tlight_focal_dist", CARMEN_PARAM_DOUBLE, &focal_distance, 0, NULL}
     };
 
     num_items = sizeof (param_list) / sizeof (param_list[0]);
