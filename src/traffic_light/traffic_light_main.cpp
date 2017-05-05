@@ -130,27 +130,54 @@ get_traffic_light_image_in_svm_format(cv::Mat frame, CvPoint p1, CvPoint p2)
 std::vector<Rect>
 detect_traffic_lights(const cv::Mat frame)
 {
-	Rect ROI(Point(image_width / 4, 0), Point(image_width / 4 * 3, image_height / 2));
+	// Parametros da Bumblebee
+	// Rect ROI(Point(image_width / 4, 0), Point((image_width / 4) * 3, image_height / 2));
+	// Parametros da Zed
+	Rect ROI(Point(image_width / 4, image_height / 4), Point((image_width / 4) * 3, image_height - image_height / 4));
 	cv::Mat half_image;
 	cv::Mat(frame, ROI).copyTo(half_image);
 
 //	cv::cvtColor(half_image, half_image, CV_BGR2RGB);
 //	namedWindow("Display window", WINDOW_AUTOSIZE);
-//	imshow("Display window", half_image);
-//	waitKey(1);
+	Mat bola = frame;
+	//cv::rectangle(bola, ROI, Scalar(0,0,255), 8);
+	//Mat res(Size(bola.cols / 4, bola.rows / 4), bola.type());
+	//resize(bola, res, res.size());
+	//imshow("Display window", bola);
+	//waitKey(1);
 
 	cv::Mat frame_gray;
 	cvtColor(half_image, frame_gray, CV_BGR2GRAY);
-	equalizeHist(frame_gray, frame_gray);
+	//equalizeHist(frame_gray, frame_gray);
 
 //	namedWindow("Display window", WINDOW_AUTOSIZE);
-//	imshow("Display window", frame_gray);
-//	waitKey(1);
+	Mat res(Size(frame_gray.cols / 2, frame_gray.rows / 2), frame_gray.type());
+	resize(frame_gray, res, res.size());
+	imshow("Display window", res);
+	waitKey(1);
 
 	//-- Detect traffic lights
 	std::vector<Rect> semaphores;
-	ts_cascade.detectMultiScale(frame_gray, semaphores, 1.05, 4, 0, Size(5, 12), Size(60, 150));
+	// largura 22 altura 51
+	ts_cascade.detectMultiScale(frame_gray, semaphores, 1.05, 1, 0, Size(5, 12), Size(60, 150));
 
+	if (semaphores.size() > 0)
+	{
+		for (int i = 0; i < semaphores.size(); i++)
+		{
+			cv::Rect bkp = semaphores[i];
+			bkp.x += image_width / 4;
+			bkp.y += image_height / 4;
+			cv::rectangle(bola, bkp, Scalar(0,0,255), 6);
+		}
+
+		Mat resb(Size(bola.cols / 4, bola.rows / 4), bola.type());
+		resize(bola, resb, resb.size());
+		imshow("detection", resb);
+		waitKey(1);
+	}
+
+	printf("num sems: %ld\n", semaphores.size());
 	return (semaphores);
 }
 
@@ -195,7 +222,7 @@ detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *tr
 		for (size_t i = 0; i < traffic_light_rectangles.size() && i < MAX_TRAFFIC_LIGHTS_IN_IMAGE; i++)
 		{
 			double percentual_difference = fabs(1.0 - traffic_light_rectangles[i].height / expected_traffic_light_height);
-			if (percentual_difference < 0.25)
+			if (1 || percentual_difference < 0.25)
 			{
 				CvPoint p1, p2;
 				p1.x = traffic_light_rectangles[i].x + image_width / 4;
