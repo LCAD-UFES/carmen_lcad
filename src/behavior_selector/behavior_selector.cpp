@@ -270,9 +270,19 @@ clear_cells_below_robot(carmen_ackerman_traj_point_t pose)
 
 
 void
-clear_lane_ahead_in_distance_map(int current_goal_rddf_index, int rddf_pose_index, carmen_rddf_road_profile_message *rddf)
+clear_lane_ahead_in_distance_map(int current_goal_rddf_index, int ideal_rddf_pose_index, carmen_rddf_road_profile_message *rddf)
 {
-	for (int i = current_goal_rddf_index + 1; i < rddf_pose_index; i++)
+	int begin = current_goal_rddf_index;
+	while ((DIST2D(rddf->poses[begin], rddf->poses[current_goal_rddf_index]) < robot_config.model_predictive_planner_obstacles_safe_distance) &&
+		   (begin > 0))
+		begin--;
+
+	int end = ideal_rddf_pose_index;
+	while ((DIST2D(rddf->poses[end], rddf->poses[ideal_rddf_pose_index]) < robot_config.model_predictive_planner_obstacles_safe_distance) &&
+		   (end < rddf->number_of_poses))
+		end++;
+
+	for (int i = begin; i < end; i++)
 		clear_cells_below_robot(rddf->poses[i]);
 }
 

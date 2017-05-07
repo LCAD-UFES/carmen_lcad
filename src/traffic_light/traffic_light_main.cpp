@@ -51,8 +51,8 @@ CascadeClassifier ts_cascade;
 // Dection infrastructure
 #define MAX_TRAFFIC_LIGHTS_IN_IMAGE 10
 // Ver valores abaixo no arquivo height_in_pixels_x_distance.ods
-#define TRAFFIC_LIGHT_HEIGHT 		1.0
-#define DISTANCE_CORRECTION 		20.0
+
+static double dist_correction = 20.0;
 static double focal_distance = 0;
 static int roi_x = 0;
 static int roi_y = 0;
@@ -190,10 +190,10 @@ detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *tr
 		std::vector<Rect> traffic_light_rectangles = detect_traffic_lights(frame);
 
 		int num_traffic_lights_accepted = 0;
-		double expected_traffic_light_height = TRAFFIC_LIGHT_HEIGHT * focal_distance / (traffic_light_message->traffic_light_annotation_distance + DISTANCE_CORRECTION);
+		double expected_traffic_light_height = 1.0 * focal_distance / (traffic_light_message->traffic_light_annotation_distance + dist_correction);
 		for (size_t i = 0; i < traffic_light_rectangles.size() && i < MAX_TRAFFIC_LIGHTS_IN_IMAGE; i++)
 		{
-			printf("%lf %d\n", traffic_light_message->traffic_light_annotation_distance, traffic_light_rectangles[i].height);
+//			printf("%lf %d\n", traffic_light_message->traffic_light_annotation_distance, traffic_light_rectangles[i].height);
 			double percentual_difference = fabs(1.0 - traffic_light_rectangles[i].height / expected_traffic_light_height);
 			if (percentual_difference < 0.55)
 			{
@@ -452,7 +452,8 @@ read_parameters(int argc, char **argv)
         { bumblebee_string, (char*) "tlight_roi_y", CARMEN_PARAM_INT, &roi_y, 0, NULL},
         { bumblebee_string, (char*) "tlight_roi_w", CARMEN_PARAM_INT, &roi_w, 0, NULL},
         { bumblebee_string, (char*) "tlight_roi_h", CARMEN_PARAM_INT, &roi_h, 0, NULL},
-        { bumblebee_string, (char*) "tlight_focal_dist", CARMEN_PARAM_DOUBLE, &focal_distance, 0, NULL}
+        { bumblebee_string, (char*) "tlight_focal_dist", CARMEN_PARAM_DOUBLE, &focal_distance, 0, NULL},
+        { bumblebee_string, (char*) "tlight_dist_correction", CARMEN_PARAM_DOUBLE, &dist_correction, 0, NULL}
     };
 
     num_items = sizeof (param_list) / sizeof (param_list[0]);

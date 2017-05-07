@@ -355,7 +355,8 @@ get_velocity_at_goal(double v0, double va, double dg, double da)
 
 //	double a = -get_robot_config()->maximum_acceleration_forward * 2.5;
 	double a = (va * va - v0 * v0) / (2.0 * da);
-	double sqrt_val = 2.0 * a * dg + v0 * v0;
+	// TODO: @@@ Alberto: nao deveria ser 2.0 ao inves de 1.0 abaixo? Com 2.0 freia esponencialmente nos quebra molas...
+	double sqrt_val = 1.0 * a * dg + v0 * v0;
 	double vg = va;
 	if (sqrt_val > 0.0)
 		vg = sqrt(sqrt_val);
