@@ -213,7 +213,7 @@ recent_moving_object_near_this_rddf_pose(carmen_ackerman_traj_point_t pose, carm
 }
 
 
-void
+static void
 clear_cells_below_robot(carmen_ackerman_traj_point_t pose)
 {
 	double delta_vertical_x, delta_vertical_y, delta_horizontal_x, delta_horizontal_y;

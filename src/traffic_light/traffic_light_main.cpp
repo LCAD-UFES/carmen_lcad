@@ -52,7 +52,7 @@ CascadeClassifier ts_cascade;
 #define MAX_TRAFFIC_LIGHTS_IN_IMAGE 10
 // Ver valores abaixo no arquivo height_in_pixels_x_distance.ods
 #define TRAFFIC_LIGHT_HEIGHT 		1.0
-#define DISTANCE_CORRECTION 		6.0
+#define DISTANCE_CORRECTION 		20.0
 static double focal_distance = 0;
 static int roi_x = 0;
 static int roi_y = 0;
@@ -193,8 +193,9 @@ detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *tr
 		double expected_traffic_light_height = TRAFFIC_LIGHT_HEIGHT * focal_distance / (traffic_light_message->traffic_light_annotation_distance + DISTANCE_CORRECTION);
 		for (size_t i = 0; i < traffic_light_rectangles.size() && i < MAX_TRAFFIC_LIGHTS_IN_IMAGE; i++)
 		{
+			printf("%lf %d\n", traffic_light_message->traffic_light_annotation_distance, traffic_light_rectangles[i].height);
 			double percentual_difference = fabs(1.0 - traffic_light_rectangles[i].height / expected_traffic_light_height);
-			if (1 || percentual_difference < 0.25)
+			if (percentual_difference < 0.55)
 			{
 				CvPoint p1, p2;
 				p1.x = traffic_light_rectangles[i].x + roi_x;

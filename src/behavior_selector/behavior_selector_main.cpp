@@ -238,12 +238,12 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_ackerman
 		v = 60.0 / 3.6;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP)
 			&& red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp))
-		v = 0.1;
+		v = 0.07;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP)
-		v = 0.1;
+		v = 0.08;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&
 			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_DYNAMIC_STOP))
-		v = 0.1;
+		v = 0.09;
 
 	return (v);
 }
@@ -258,7 +258,7 @@ get_distance_to_act_on_annotation(double v0, double va, double distance_to_annot
 	// t = (va - v0) / a
 	// da = va * t + 0.5 * a * t * t
 
-	double a = -get_robot_config()->maximum_acceleration_forward * 2.5;
+	double a = -get_robot_config()->maximum_acceleration_forward * 2.0;
 	double t = (va - v0) / a;
 	double daa = v0 * t + 0.5 * a * t * t;
 
@@ -392,26 +392,27 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, ca
 		double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi->v, velocity_at_next_annotation,
 				distance_to_annotation);
 		double distance_to_goal = carmen_distance_ackerman_traj(current_robot_pose_v_and_phi, goal);
-//		printf("ca %d, daann %.1lf, dann %.1lf, v %.1lf, vg %.1lf\n", clearing_annotation,
+//		printf("ca %d, daann %.1lf, dann %.1lf, v %.1lf, vg %.1lf, aif %d\n", clearing_annotation,
 //				distance_to_act_on_annotation, distance_to_annotation, current_robot_pose_v_and_phi->v,
 //				get_velocity_at_goal(current_robot_pose_v_and_phi->v, velocity_at_next_annotation,
-//					distance_to_goal, distance_to_annotation));
+//					distance_to_goal, distance_to_annotation),
+//				annotation_is_forward(get_robot_pose(), nearest_velocity_related_annotation->annotation_point));
 		if (last_rddf_annotation_message_valid &&
 			(clearing_annotation ||
-			 (distance_to_annotation < distance_to_act_on_annotation) ||
-			 ((distance_to_annotation < (distance_to_goal +
+			 (((distance_to_annotation < distance_to_act_on_annotation) ||
+			   (distance_to_annotation < (distance_to_goal +
 					 get_robot_config()->distance_between_front_and_rear_axles +
-					 get_robot_config()->distance_between_front_car_and_front_wheels)) &&
-			  annotation_is_forward(get_robot_pose(), nearest_velocity_related_annotation->annotation_point))))
+					 get_robot_config()->distance_between_front_car_and_front_wheels))) &&
+			   annotation_is_forward(get_robot_pose(), nearest_velocity_related_annotation->annotation_point))))
 		{
 			clearing_annotation = true;
 			goal->v = carmen_fmin(get_velocity_at_goal(current_robot_pose_v_and_phi->v, velocity_at_next_annotation,
 					distance_to_goal, distance_to_annotation), goal->v);
-
-			carmen_ackerman_traj_point_t displaced_robot_pose = displace_pose_to_car_front(get_robot_pose(), 1.0);
-			if (!annotation_is_forward(displaced_robot_pose, nearest_velocity_related_annotation->annotation_point))
-				clearing_annotation = false;
 		}
+
+		carmen_ackerman_traj_point_t displaced_robot_pose = displace_pose_to_car_front(get_robot_pose(), 1.0);
+		if (!annotation_is_forward(displaced_robot_pose, nearest_velocity_related_annotation->annotation_point))
+			clearing_annotation = false;
 	}
 	return (goal->v);
 }
@@ -1191,7 +1192,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 //			if (udatmo_obstacle_detected(timestamp) &&
 //				(udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi, get_robot_config()) < distance_to_red_traffic_light(current_robot_pose_v_and_phi, timestamp)))
 //				decision_making_state_msg->low_level_state = Following_Moving_Object;
-			if ((current_robot_pose_v_and_phi.v < 0.1) && (distance_to_red_traffic_light(current_robot_pose_v_and_phi, timestamp) < 2.0))
+			if ((current_robot_pose_v_and_phi.v < 0.15) && (distance_to_red_traffic_light(current_robot_pose_v_and_phi, timestamp) < 2.0))
 				decision_making_state_msg->low_level_state = Stopped_At_Red_Traffic_light_S0;
 			else if (!red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp))
 				decision_making_state_msg->low_level_state = Free_Running;
@@ -1223,7 +1224,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 //			if (udatmo_obstacle_detected(timestamp) &&
 //				(udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi, get_robot_config()) < stop_sign_distance(current_robot_pose_v_and_phi)))
 //				decision_making_state_msg->low_level_state = Following_Moving_Object;
-			if ((current_robot_pose_v_and_phi.v < 0.1) && (distance_to_stop_sign(current_robot_pose_v_and_phi) < 2.0))
+			if ((current_robot_pose_v_and_phi.v < 0.15) && (distance_to_stop_sign(current_robot_pose_v_and_phi) < 2.0))
 				decision_making_state_msg->low_level_state = Stopped_At_Stop_Sign_S0;
 			break;
 		case Stopped_At_Stop_Sign_S0:
