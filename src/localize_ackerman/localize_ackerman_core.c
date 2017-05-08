@@ -51,7 +51,12 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 
 	if (fabs(dt) > 3.0) // Possivelmente reposicionamento do robo na interface
 		return;
-		
+
+	FILE *caco = fopen("caco_gpos.txt", "a");
+	fprintf(caco, "%lf ", dt);
+	fflush(caco);
+	fclose(caco);
+
 	filter->distance_travelled += fabs(v * dt);
 
 	for (int i = 0; i < filter->param->num_particles; i++)
