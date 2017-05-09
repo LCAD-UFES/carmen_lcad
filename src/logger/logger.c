@@ -684,7 +684,7 @@ int main(int argc, char **argv)
 
 	carmen_bumblebee_basic_subscribe_stereoimage(4, NULL,
 			(carmen_handler_t) bumblebee4_basic_stereoimage_handler,
-			CARMEN_SUBSCRIBE_ALL);
+			CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_bumblebee_basic_subscribe_stereoimage(5, NULL,
 			(carmen_handler_t) bumblebee5_basic_stereoimage_handler,

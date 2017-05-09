@@ -51,7 +51,12 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 
 	if (fabs(dt) > 3.0) // Possivelmente reposicionamento do robo na interface
 		return;
-		
+
+	FILE *caco = fopen("caco_gpos.txt", "a");
+	fprintf(caco, "%lf ", dt);
+	fflush(caco);
+	fclose(caco);
+
 	filter->distance_travelled += fabs(v * dt);
 
 	for (int i = 0; i < filter->param->num_particles; i++)
@@ -554,23 +559,19 @@ calc_global_cell_coordinate(cell_coords_t *local, carmen_map_config_t *local_map
 }
 
 
-cell_coords_t
-calc_global_cell_coordinate_fast(cell_coords_t *local,
+inline void
+calc_global_cell_coordinate_fast(cell_coords_t *global, cell_coords_t local,
 		double map_center_x, double map_center_y,
 		double robot_position_in_the_map_x, double robot_position_in_the_map_y,
 		double sin_theta, double cos_theta)
 {
-	cell_coords_t global;
-
-	double dx = (double) local->x - map_center_x;
-	double dy = (double) local->y - map_center_y;
+	double dx = (double) local.x - map_center_x;
+	double dy = (double) local.y - map_center_y;
 	double dxg = dx * cos_theta - dy * sin_theta;
 	double dyg = dx * sin_theta + dy * cos_theta;
 
-	global.x = (int) round(dxg + robot_position_in_the_map_x);
-	global.y = (int) round(dyg + robot_position_in_the_map_y);
-
-	return (global);
+	global->x = (int) round(dxg + robot_position_in_the_map_x);
+	global->y = (int) round(dyg + robot_position_in_the_map_y);
 }
 
 
@@ -944,7 +945,7 @@ map_particle_correction(carmen_localize_ackerman_map_t *localize_map, carmen_com
 		local_cell.x = local_map->coord_x[i];
 		local_cell.y = local_map->coord_y[i];
 
-		global_cell = calc_global_cell_coordinate_fast(&local_cell, map_center_x, map_center_y,
+		calc_global_cell_coordinate_fast(&global_cell, local_cell, map_center_x, map_center_y,
 					robot_position_in_the_map_x, robot_position_in_the_map_y, sin_theta, cos_theta);
 
 		if (global_cell.x >= 0 && global_cell.y >= 0 && global_cell.x < localize_map->config.x_size && global_cell.y < localize_map->config.y_size)
@@ -1002,7 +1003,8 @@ compute_particles_weights_with_outlier_rejection(carmen_localize_ackerman_map_t 
 			local_cell.x = local_map->coord_x[laser_reading];
 			local_cell.y = local_map->coord_y[laser_reading];
 
-			cell_coords_t global_cell = calc_global_cell_coordinate_fast(&local_cell, map_center_x, map_center_y,
+			cell_coords_t global_cell;
+			calc_global_cell_coordinate_fast(&global_cell, local_cell, map_center_x, map_center_y,
 						robot_position_in_the_map_x, robot_position_in_the_map_y, sin_theta, cos_theta);
 
 			if (global_cell.x >= 0 && global_cell.y >= 0 && global_cell.x < localize_map->config.x_size && global_cell.y < localize_map->config.y_size)

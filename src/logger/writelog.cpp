@@ -27,6 +27,7 @@
  ********************************************************/
 
 #include <carmen/carmen.h>
+#include <opencv/highgui.h>
 
 //byte numbers
 #define GET_LOW_ORDER_NIBBLE(x) (int_to_nibble_hex[x & 0xf])
@@ -1036,17 +1037,41 @@ void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(carmen_bumblebee_b
 
 	if ((frame_number % frequency) == 0)
 	{
-		sprintf(path, "%s/%lf.bb%d.image", subdir, msg->timestamp, bumblebee_num);
+		if (bumblebee_num == 4) // ZED Camera
+		{
+//			  int width;                    /**<The x dimension of the image in pixels. */
+//			  int height;                   /**<The y dimension of the image in pixels. */
+//			  int image_size;              /**<width*height*bytes_per_pixel. */
+//			  int isRectified;
+//			  unsigned char *raw_left;
+//			  unsigned char *raw_right;
+//			  double timestamp;
+//			  char *host;
 
-		FILE *image_file = fopen(path, "wb");
+			sprintf(path, "%s/%lf.bb%d.png", subdir, msg->timestamp, bumblebee_num);
 
-		fwrite(msg->raw_left, msg->image_size, sizeof(unsigned char), image_file);
-		fwrite(msg->raw_right, msg->image_size, sizeof(unsigned char), image_file);
+			cv::Mat dest;
+			cv::Mat left = cv::Mat(cv::Size(msg->width, msg->height), CV_8UC3, msg->raw_left);
+			cv::Mat right = cv::Mat(cv::Size(msg->width, msg->height), CV_8UC3, msg->raw_right);
 
-		fclose(image_file);
+			cv::hconcat(left, right, dest);
+			cv::imwrite(path, dest);
+		}
+		else
+		{
+			sprintf(path, "%s/%lf.bb%d.image", subdir, msg->timestamp, bumblebee_num);
+
+			FILE *image_file = fopen(path, "wb");
+
+			fwrite(msg->raw_left, msg->image_size, sizeof(unsigned char), image_file);
+			fwrite(msg->raw_right, msg->image_size, sizeof(unsigned char), image_file);
+
+			fclose(image_file);
+		}
 
 		carmen_fprintf(outfile, "BUMBLEBEE_BASIC_STEREOIMAGE_IN_FILE%d %s %d %d %d %d ", bumblebee_num, path,
 				msg->width, msg->height, msg->image_size, msg->isRectified);
+
 		carmen_fprintf(outfile, "%f %s %f\n", msg->timestamp, msg->host, timestamp);
 
 		frame_number = 0;

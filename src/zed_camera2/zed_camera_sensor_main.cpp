@@ -35,9 +35,8 @@ void shutdown_module(int signo)
 {
 	if(signo == SIGINT)
 	{
-		printf("zed_camera_sensor: disconnected.\n");
 		stop_required = 1;
-		carmen_ipc_disconnect();
+		printf("zed_camera_sensor: disconnected.\n");
 		exit(0);
 	}
 }
@@ -122,6 +121,9 @@ main(int argc, char **argv)
 	{
         Mat frame;
         cap >> frame;
+
+        Mat rgb;
+        cvtColor(frame, rgb, CV_BGR2RGB);
 
 		Mat left, right, left_rgb, right_rgb;
 		left = frame(Rect(0, 0, frame.cols / 2, frame.rows));

@@ -338,11 +338,12 @@ read_parameters(int argc, char **argv)
         { (char *) bumblebee_string, (char *) "width", CARMEN_PARAM_INT, &image_width, 0, NULL},
         { (char *) bumblebee_string, (char *) "height", CARMEN_PARAM_INT, &image_height, 0, NULL},
         { (char *) "traffic_light_viewer", (char *) "width", CARMEN_PARAM_INT, &window_view_width, 0, NULL},
-        { (char *) "traffic_light_viewer", (char *) "height", CARMEN_PARAM_INT, &window_view_height, 0, NULL}
     };
 
     num_items = sizeof (param_list) / sizeof (param_list[0]);
     carmen_param_install_params(argc, argv, param_list, num_items);
+
+   	window_view_height = round((double) window_view_width * ((double) image_height / (double) image_width));
 
     return (0);
 }
