@@ -22,6 +22,9 @@
 
 //CNN to recognize traffic_light given an image
 const int USE_SQUEEZEENET = 0;
+const int GPU_MODE = 1;
+const int DEVICE_ID = 0;
+
 string str_prototxt = getenv("CARMEN_HOME")+ (string) "/data/traffic_light/squeezenet/deploy.prototxt";
 string str_caffemodel = getenv("CARMEN_HOME")+ (string) "/data/traffic_light/squeezenet/squeezenet_manual_p3_iter_170000.caffemodel";
 SqueezeNet* squeezenet_classify = NULL;
@@ -489,7 +492,7 @@ traffic_light_module_initialization()
     recognizer = TLightStateRecogFactory::build("mlp");
 
     if (USE_SQUEEZEENET)
-    	squeezenet_classify = new SqueezeNet(str_prototxt, str_caffemodel, 1, 0);
+    	squeezenet_classify = new SqueezeNet(str_prototxt, str_caffemodel, GPU_MODE, DEVICE_ID);
 }
 
 
