@@ -20,13 +20,13 @@
 #include <carmen/tlight_state_recog.h>
 #include <carmen/tlight_factory.h>
 
-//CNN to recognize traffic_light given an image
-const int USE_SQUEEZEENET = 0;
-const int GPU_MODE = 1;
-const int DEVICE_ID = 0;
+int use_squeezenet = 1;
+int gpu_mode = 1;
+int gpu_device_id = 0;
 
+//CNN to recognize traffic_light given an image
 string str_prototxt = getenv("CARMEN_HOME")+ (string) "/data/traffic_light/squeezenet/deploy.prototxt";
-string str_caffemodel = getenv("CARMEN_HOME")+ (string) "/data/traffic_light/squeezenet/squeezenet_manual_p3_iter_170000.caffemodel";
+string str_caffemodel = getenv("CARMEN_HOME")+ (string) "/data/traffic_light/squeezenet/train_squeezenet_trainval_manual_p2__iter_3817.caffemodel";
 SqueezeNet* squeezenet_classify = NULL;
 
 #define WIDTH 9
@@ -209,7 +209,7 @@ detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *tr
     cv::Mat frame(image_height, image_width, CV_8UC3);
 	memcpy(frame.data, stereo_image->raw_right, stereo_image->image_size);
 
-	if (USE_VGRAM || USE_SQUEEZEENET)
+	if (USE_VGRAM)
 		cv::cvtColor(frame, frame, CV_BGR2RGB);
 
 	if (traffic_light_message->traffic_light_annotation_distance < MAX_TRAFFIC_LIGHT_DISTANCE &&
@@ -217,7 +217,7 @@ detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *tr
 	{
 		int num_traffic_lights_accepted;
 
-		if (USE_SQUEEZEENET)
+		if (use_squeezenet)
 		{
 			// Parametros da Bumblebee
 			Rect ROI(roi_x, roi_y, roi_w, roi_h);
@@ -491,8 +491,8 @@ traffic_light_module_initialization()
 
     recognizer = TLightStateRecogFactory::build("mlp");
 
-    if (USE_SQUEEZEENET)
-    	squeezenet_classify = new SqueezeNet(str_prototxt, str_caffemodel, GPU_MODE, DEVICE_ID);
+    if (use_squeezenet)
+    	squeezenet_classify = new SqueezeNet(str_prototxt, str_caffemodel, gpu_mode, gpu_device_id);
 }
 
 
@@ -513,7 +513,11 @@ read_parameters(int argc, char **argv)
         { bumblebee_string, (char*) "tlight_roi_w", CARMEN_PARAM_INT, &roi_w, 0, NULL},
         { bumblebee_string, (char*) "tlight_roi_h", CARMEN_PARAM_INT, &roi_h, 0, NULL},
         { bumblebee_string, (char*) "tlight_focal_dist", CARMEN_PARAM_DOUBLE, &focal_distance, 0, NULL},
-        { bumblebee_string, (char*) "tlight_dist_correction", CARMEN_PARAM_DOUBLE, &dist_correction, 0, NULL}
+        { bumblebee_string, (char*) "tlight_dist_correction", CARMEN_PARAM_DOUBLE, &dist_correction, 0, NULL},
+		{(char *) "traffic_light", (char *) "use_squeezenet", CARMEN_PARAM_ONOFF, &use_squeezenet, 0, NULL},
+		{(char *) "traffic_light", (char *) "gpu_mode", CARMEN_PARAM_ONOFF, &gpu_mode, 0, NULL},
+		{(char *) "traffic_light", (char *) "gpu_device_id", CARMEN_PARAM_INT, &gpu_device_id, 0, NULL}
+
     };
 
     num_items = sizeof (param_list) / sizeof (param_list[0]);

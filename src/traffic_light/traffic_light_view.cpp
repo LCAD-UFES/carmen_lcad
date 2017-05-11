@@ -14,6 +14,10 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <algorithm>
 
+static int roi_x = 0;
+static int roi_y = 0;
+static int roi_w = 0;
+static int roi_h = 0;
 
 using namespace std;
 using namespace cv;
@@ -106,6 +110,9 @@ key_release_event(GtkWidget *widget __attribute__((unused)), GdkEventButton *key
 void
 add_traffic_light_information_to_image(cv::Mat &image, carmen_traffic_light_message *message)
 {
+	Rect ROI(roi_x, roi_y, roi_w, roi_h);
+	cv::rectangle(image,ROI,Scalar(255,0,0),2);
+
 	string text;
 	if (message->traffic_light_annotation_distance <= MAX_TRAFFIC_LIGHT_DISTANCE && message->traffic_light_annotation_distance != -1.0)
 	{
@@ -338,6 +345,10 @@ read_parameters(int argc, char **argv)
         { (char *) bumblebee_string, (char *) "width", CARMEN_PARAM_INT, &image_width, 0, NULL},
         { (char *) bumblebee_string, (char *) "height", CARMEN_PARAM_INT, &image_height, 0, NULL},
         { (char *) "traffic_light_viewer", (char *) "width", CARMEN_PARAM_INT, &window_view_width, 0, NULL},
+		{ bumblebee_string, (char*) "tlight_roi_x", CARMEN_PARAM_INT, &roi_x, 0, NULL},
+		{ bumblebee_string, (char*) "tlight_roi_y", CARMEN_PARAM_INT, &roi_y, 0, NULL},
+		{ bumblebee_string, (char*) "tlight_roi_w", CARMEN_PARAM_INT, &roi_w, 0, NULL},
+		{ bumblebee_string, (char*) "tlight_roi_h", CARMEN_PARAM_INT, &roi_h, 0, NULL}
     };
 
     num_items = sizeof (param_list) / sizeof (param_list[0]);
