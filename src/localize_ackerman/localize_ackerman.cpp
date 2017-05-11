@@ -556,20 +556,20 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 		publish_globalpos(&summary, base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi,
 				velodyne_message->timestamp);
 
-		static bool ft = true;
-		static double init_t = 0.0;
-		if (ft)
-		{
-			init_t = globalpos.timestamp;
-			ft = false;
-		}
-
-		FILE *caco = fopen("caco_gpos.txt", "a");
-		fprintf(caco, "%lf %lf %lf %lf %lf\n", globalpos.timestamp - init_t, velodyne_message->timestamp - init_t,
-				base_ackerman_odometry_vector[odometry_index].timestamp - init_t,
-				base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi);
-		fflush(caco);
-		fclose(caco);
+//		static bool ft = true;
+//		static double init_t = 0.0;
+//		if (ft)
+//		{
+//			init_t = globalpos.timestamp;
+//			ft = false;
+//		}
+//
+//		FILE *caco = fopen("caco_gpos.txt", "a");
+//		fprintf(caco, "%lf %lf %lf %lf %lf\n", globalpos.timestamp - init_t, velodyne_message->timestamp - init_t,
+//				base_ackerman_odometry_vector[odometry_index].timestamp - init_t,
+//				base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi);
+//		fflush(caco);
+//		fclose(caco);
 
 		publish_particles_correction(filter, &summary, velodyne_message->timestamp);
 	}
@@ -1289,7 +1289,7 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 
 //	param->xy_uncertainty_due_to_grid_resolution = (p_map_params->grid_res) * (p_map_params->grid_res);
 	param->yaw_uncertainty_due_to_grid_resolution = asin((p_map_params->grid_res / 0.5) / max_range) * asin((p_map_params->grid_res / 0.5) / max_range);
-	param->xy_uncertainty_due_to_grid_resolution = (p_map_params->grid_res / 1.0) * (p_map_params->grid_res / 1.0);
+	param->xy_uncertainty_due_to_grid_resolution = (p_map_params->grid_res / 2.0) * (p_map_params->grid_res / 2.0);
 //	param->yaw_uncertainty_due_to_grid_resolution = asin((p_map_params->grid_res / 0.2) / max_range) * asin((p_map_params->grid_res / 0.2) / max_range);
 	
 	carmen_param_allow_unfound_variables(1);
