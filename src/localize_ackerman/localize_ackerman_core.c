@@ -52,10 +52,10 @@ carmen_localize_ackerman_incorporate_velocity_odometry(carmen_localize_ackerman_
 	if (fabs(dt) > 3.0) // Possivelmente reposicionamento do robo na interface
 		return;
 
-	FILE *caco = fopen("caco_gpos.txt", "a");
-	fprintf(caco, "%lf ", dt);
-	fflush(caco);
-	fclose(caco);
+//	FILE *caco = fopen("caco_gpos.txt", "a");
+//	fprintf(caco, "%lf ", dt);
+//	fflush(caco);
+//	fclose(caco);
 
 	filter->distance_travelled += fabs(v * dt);
 
@@ -1012,7 +1012,7 @@ compute_particles_weights_with_outlier_rejection(carmen_localize_ackerman_map_t 
 			else
 				filter->temp_weights[i][laser_reading] = small_log_odds;
 
-			if (filter->temp_weights[i][laser_reading] <= small_log_odds)
+			if (filter->temp_weights[i][laser_reading] <= small_log_odds) // Provavelmente bateu no vazio
 				count[laser_reading] += 1;
 
 //			virtual_laser_message.positions[laser_reading].x = global_cell.x * localize_map->config.resolution + localize_map->config.x_origin;
