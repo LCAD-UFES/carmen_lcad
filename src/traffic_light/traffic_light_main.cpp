@@ -14,7 +14,13 @@
 #if CV_MAJOR_VERSION == 2
 #include <opencv2/contrib/detection_based_tracker.hpp>
 #endif
+
+
+//USE_CAFFE IS DEFINED IN MAKEFILE IF CAFFE_HOME ENV. VARIABLE IS SET
+#ifdef USE_CAFFE
 #include "squeezenet_tlight.h"
+#endif
+
 #include <stdio.h>
 #include <dlib/svm.h>
 #include <carmen/tlight_state_recog.h>
@@ -27,7 +33,10 @@ int gpu_device_id = 0;
 //CNN to recognize traffic_light given an image
 string str_prototxt = getenv("CARMEN_HOME")+ (string) "/data/traffic_light/squeezenet/deploy.prototxt";
 string str_caffemodel = getenv("CARMEN_HOME")+ (string) "/data/traffic_light/squeezenet/train_squeezenet_trainval_manual_p2__iter_3817.caffemodel";
+
+#ifdef USE_CAFFE
 SqueezeNet* squeezenet_classify = NULL;
+#endif
 
 #define WIDTH 9
 #define HEIGHT 20
@@ -217,6 +226,7 @@ detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *tr
 	{
 		int num_traffic_lights_accepted;
 
+#ifdef USE_CAFFE
 		if (use_squeezenet)
 		{
 			// Parametros da Bumblebee
@@ -225,8 +235,8 @@ detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *tr
 			cv::Mat(frame, ROI).copyTo(half_image);
 
 			int net_prediction = squeezenet_classify->Predict(half_image);
-//			cv::imshow("Half_frame",half_image);
-//			waitKey(1);
+			//			cv::imshow("Half_frame",half_image);
+			//			waitKey(1);
 			int label = map_net_class_to_annotation_code(net_prediction);
 			int traffic_light_status = label + RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED;
 
@@ -239,6 +249,7 @@ detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *tr
 			num_traffic_lights_accepted = 1;
 		}
 		else
+#endif
 		{
 			// Traffic lights detection
 			num_traffic_lights_accepted = 0;
@@ -460,8 +471,10 @@ shutdown_traffic_light(int x)
 {
     if (x == SIGINT)
     {
+#ifdef USE_CAFFE
     	if (squeezenet_classify != NULL)
     		delete squeezenet_classify;
+#endif
         carmen_verbose("Disconnecting Traffic Light.\n");
         carmen_ipc_disconnect();
 
@@ -491,8 +504,11 @@ traffic_light_module_initialization()
 
     recognizer = TLightStateRecogFactory::build("mlp");
 
+#ifdef USE_CAFFE
     if (use_squeezenet)
     	squeezenet_classify = new SqueezeNet(str_prototxt, str_caffemodel, gpu_mode, gpu_device_id);
+#endif
+
 }
 
 
