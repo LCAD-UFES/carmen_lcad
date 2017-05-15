@@ -2,8 +2,8 @@ include ../Makefile.conf
 
 SUBDIRS = model_learn_ackerman
 
-CFLAGS += -std=c99 -O3 -march=corei7-avx -msse4
-LFLAGS += -O3 -march=corei7-avx -msse4
+CFLAGS += -std=c99 -O3
+LFLAGS += -O3
 
 LINK = g++
 
