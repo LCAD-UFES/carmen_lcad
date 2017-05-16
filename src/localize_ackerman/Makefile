@@ -2,15 +2,16 @@ include ../Makefile.conf
 
 SUBDIRS = model_learn_ackerman
 
-CFLAGS += -std=c99
+CFLAGS += -std=c99 -O3
+LFLAGS += -O3
 
 LINK = g++
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/gl_plotter 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_plotter
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -fopenmp
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -fopenmp
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ 
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 
 
 LFLAGS += -lgrid_mapping -lmapper_interface -lglobal -lparam_interface -lmap_io -lmap_util -llaser_interface \

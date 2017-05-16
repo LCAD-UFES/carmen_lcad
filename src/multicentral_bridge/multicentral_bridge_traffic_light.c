@@ -41,7 +41,7 @@
 IPC_CONTEXT_PTR car02_context;
 IPC_CONTEXT_PTR car01_context;
 IPC_CONTEXT_PTR current_context;
-
+int camera_id = 4;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
@@ -75,7 +75,7 @@ carmen_traffic_light_message_handler(carmen_traffic_light_message *message)
 		return;
 
 	IPC_setContext(car01_context);
-	carmen_traffic_light_publish_message(3, message);
+	carmen_traffic_light_publish_message(camera_id, message);
 	IPC_setContext(car02_context);
 }
 
@@ -128,7 +128,7 @@ void multicentral_subscribe_messages(void)
 			(carmen_handler_t) carmen_localize_ackerman_globalpos_message_handler,CARMEN_SUBSCRIBE_LATEST);
 	carmen_rddf_subscribe_annotation_message(NULL,
 			(carmen_handler_t) carmen_rddf_annotation_message_handler, CARMEN_SUBSCRIBE_LATEST);
-	carmen_traffic_light_subscribe(3, NULL,
+	carmen_traffic_light_subscribe(camera_id, NULL,
 			(carmen_handler_t) carmen_traffic_light_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
@@ -162,7 +162,7 @@ int main(int argc, char **argv)
 
 	if (centrallist->num_centrals > 0)
 	{
-		if (strcmp(centrallist->central[0].host, "car02") == 0)
+		if (strcmp(centrallist->central[0].host, "alberto-Inspiron-7559") == 0)
 		{
 			car02_context = centrallist->central[0].context;
 			car01_context = centrallist->central[1].context;
@@ -177,7 +177,7 @@ int main(int argc, char **argv)
 		IPC_setContext(car02_context);
 		register_message();
 		IPC_setContext(car01_context);
-		carmen_traffic_light_define_messages(3);
+		carmen_traffic_light_define_messages(camera_id);
 		IPC_setContext(current_context);
 	}
 

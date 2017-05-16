@@ -234,12 +234,13 @@ compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<carmen_
 	double total_distance = 0.0;
 	double total_points = 0.0;
 
-	for (unsigned int i = 0; i < my_params->detailed_lane.size(); i += 3)
+	for (unsigned int i = 0; i < path.size(); i += 3)
 	{
-		if (my_params->path_point_nearest_to_lane.at(i) < path.size())
+		if ((i < my_params->path_point_nearest_to_lane.size()) &&
+			(my_params->path_point_nearest_to_lane.at(i) < my_params->detailed_lane.size()))
 		{
-			distance = dist(move_to_front_axle(path.at(my_params->path_point_nearest_to_lane.at(i))),
-										 my_params->detailed_lane.at(i));
+			distance = dist(move_to_front_axle(path.at(i)),
+										 my_params->detailed_lane.at(my_params->path_point_nearest_to_lane.at(i)));
 //			distance = dist(path.at(my_params->path_point_nearest_to_lane.at(i)),
 //										 my_params->detailed_lane.at(i));
 			total_points += 1.0;
@@ -256,25 +257,29 @@ compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<carmen_
 void
 compute_path_points_nearest_to_lane(ObjectiveFunctionParams *param, vector<carmen_ackerman_path_point_t> &path)
 {
-	double distance = 0.0;
-	double min_dist;
-	int index = 0;
 	param->path_point_nearest_to_lane.clear();
 	param->path_size = path.size();
-	for (unsigned int i = 0; i < param->detailed_lane.size(); i++)
+	for (unsigned int j = 0; j < path.size(); j++)
 	{
-		// consider the first point as the nearest one
-		min_dist = dist(path.at(index), param->detailed_lane.at(i));
+		// TODO: Alberto @@@ tratar disso quando estivermos dando reh tambem
+		if (path.at(j).v < 0.0)
+			continue;
 
-		for (unsigned int j = index; j < path.size(); j++)
+		carmen_ackerman_path_point_t front_axle = move_to_front_axle(path.at(j));
+
+		// consider the first point as the nearest one
+		unsigned int index = 0;
+		double min_dist = dist(front_axle, param->detailed_lane.at(index));
+
+		for (unsigned int i = 1; i < param->detailed_lane.size(); i++)
 		{
-			distance = dist(move_to_front_axle(path.at(j)), param->detailed_lane.at(i));
+			double distance = dist(front_axle, param->detailed_lane.at(i));
 //			distance = dist(path.at(j), param->detailed_lane.at(i));
 
 			if (distance < min_dist)
 			{
 				min_dist = distance;
-				index = j;
+				index = i;
 			}
 		}
 		param->path_point_nearest_to_lane.push_back(index);
@@ -1301,6 +1306,21 @@ move_detailed_lane_to_front_axle(vector<carmen_ackerman_path_point_t> &detailed_
 }
 
 
+double
+get_path_to_lane_distance(TrajectoryLookupTable::TrajectoryDimensions td,
+		TrajectoryLookupTable::TrajectoryControlParameters tcp, ObjectiveFunctionParams *my_params)
+{
+	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->phi_i, false);
+	double path_to_lane_distance = 0.0;
+	if (my_params->use_lane && (my_params->detailed_lane.size() > 0) && (path.size() > 0))
+	{
+		compute_path_points_nearest_to_lane(my_params, path);
+		path_to_lane_distance = compute_path_to_lane_distance(my_params, path);
+	}
+	return (path_to_lane_distance);
+}
+
+
 TrajectoryLookupTable::TrajectoryControlParameters
 get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryControlParameters tcp_seed,
 		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v, vector<carmen_ackerman_path_point_t> detailed_lane,
@@ -1325,6 +1345,14 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 		tcp_complete = optimized_lane_trajectory_control_parameters_new(tcp_complete, target_td, target_v, params);
 	else
 		tcp_complete = optimized_lane_trajectory_control_parameters(tcp_complete, target_td, target_v, params);
+
+	if (tcp_complete.valid)
+	{
+		double dist = get_path_to_lane_distance(target_td, tcp_complete, &params);
+//		printf("dist %lf %d\n", dist, (int) params.detailed_lane.size());
+		if (dist > GlobalState::max_square_distance_to_lane)
+			tcp_complete.valid = false;
+	}
 
 //	if (target_td.dist < 2.0)
 //	{
