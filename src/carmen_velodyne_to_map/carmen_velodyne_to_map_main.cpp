@@ -71,11 +71,15 @@ velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 	char map_filename[256];
 	char timestamps_filename[256];
 
+	double CAR_HEIGHT = 0.28 + 1.394 + 0.48;
+
 	double map_resolution = 0.2;
 	double x_min = -50.0;
 	double y_min = -50.0;
 	double x_max = 50.0;
 	double y_max = 50.0;
+	double z_min = -CAR_HEIGHT;//-13.7;
+	double z_max = 0.0;//11.0;
 
 	int width = (x_max - x_min)/map_resolution;
 	int height = (y_max - y_min)/map_resolution;
@@ -99,17 +103,17 @@ velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 	cv::Mat *map = NULL;
 	map = new cv::Mat(cv::Size(width, height), CV_8UC3);
 
+
 	for(int i = 0; i < velodyne_message->number_of_32_laser_shots; i++)
 	{
-		for(int j = 0; j < 32; j++)
+		for(int j = 0; j < 23; j++)
 		{
 			carmen_vector_3D_t point_3d;
-
 			carmen_sphere_coord_t sphere_point;
 			double hangle = carmen_normalize_theta(carmen_degrees_to_radians(velodyne_message->partial_scan[i].angle));
 			double vangle = carmen_normalize_theta(carmen_degrees_to_radians(sorted_vertical_angles[j]));
 			double range = velodyne_message->partial_scan[i].distance[j] / 500.0;
-			//float intensity = (float)velodyne_message->partial_scan[i].intensity[j] / 255.0;
+			float intensity = (float)velodyne_message->partial_scan[i].intensity[j] / 255.0;
 
 			sphere_point.horizontal_angle = -hangle;
 			sphere_point.vertical_angle = vangle;
@@ -120,24 +124,23 @@ velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 			if (point_3d.x >= x_min && point_3d.x < x_max
 					&& point_3d.y >= y_min && point_3d.y < y_max)
 			{
-				int x = (point_3d.x + x_max)/map_resolution;
-				int y = (point_3d.y + y_max)/map_resolution;
+				int x = (point_3d.x - x_min)/map_resolution;
+				int y = (point_3d.y - y_min)/map_resolution;
 
 				cv::Vec3b color = map->at<cv::Vec3b>(x, y);
-				color[0] = 256 * ((point_3d.z + 1.8)/10.0) ;
-				color[1] = 256 - 256 * ((point_3d.z + 1.8)/10.0);
-				color[2] += 10;
+				double k = (point_3d.z - z_min)/(z_max - z_min);
+
+				color[0] = k * 0 + (1 - k) * 255;
+				color[1] = 255 * intensity * 0.75 * range;
+				color[2] = k * 255 + (1 - k) * 0;
 
 				map->at<cv::Vec3b>(x, y) = color;
 			}
 
-//			data[0] = (float) point_3d.x;
-//			data[1] = (float) point_3d.y;
-//			data[2] = (float) point_3d.z;
-//			data[3] = intensity;
-
 		}
 	}
+
+//	printf("z_min = %lf z_max = %lf\n", z_min, z_max);
 
 	cv::imwrite(map_filename, *map);
 
