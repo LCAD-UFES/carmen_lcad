@@ -2,8 +2,8 @@
 #include <cstdio>
 #include <carmen/carmen.h>
 #include <carmen/bumblebee_basic_interface.h>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 using namespace std;
 using namespace cv;

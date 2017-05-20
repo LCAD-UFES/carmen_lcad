@@ -37,7 +37,7 @@ carmen_behavior_selector_road_profile_message *road_profile_message;
 #define HISTORY_SIZE 20
 #define MAX_ASSOCIATION_DISTANCE 2.5
 
-//#define USE_OPEN_CV
+#define USE_OPEN_CV
 
 
 void
@@ -85,6 +85,46 @@ show_map(char *map, int map_id, carmen_map_config_t config)
 	cv::waitKey(1);
 
 	free (map_char);
+}
+
+
+void
+dilate_map(char *current_map, carmen_map_config_t *config)
+{
+	int i, j, index;
+	int map_size = config->x_size * config->y_size;
+
+	char *map = (char *) malloc(map_size * sizeof(char));
+	memcpy(map, current_map, map_size * sizeof(char));
+
+	for (i = 1; i < (config->x_size - 1); i++)
+	{
+		for (j = 1; j < (config->y_size - 1); j++)
+		{
+			index = j + i * previous_config.y_size;
+			if (map[index] == 1)
+			{
+				index = (j - 1) + (i - 1) * previous_config.y_size;
+				current_map[index] = 1;
+				index = (j - 1) + (i) * previous_config.y_size;
+				current_map[index] = 1;
+				index = (j - 1) + (i + 1) * previous_config.y_size;
+				current_map[index] = 1;
+
+				index = (j) + (i - 1) * previous_config.y_size;
+				current_map[index] = 1;
+				index = (j) + (i + 1) * previous_config.y_size;
+				current_map[index] = 1;
+
+				index = (j + 1) + (i - 1) * previous_config.y_size;
+				current_map[index] = 1;
+				index = (j + 1) + (i) * previous_config.y_size;
+				current_map[index] = 1;
+				index = (j + 1) + (i + 1) * previous_config.y_size;
+				current_map[index] = 1;
+			}
+		}
+	}
 }
 
 
@@ -191,22 +231,28 @@ compute_centroid(moving_obstacle_observation_t *observation)
 void
 compute_velocity_and_orientation(moving_obstacle_t *obstacle)
 {
-	double sum_dist = 0.0;
-	double sum_time = 0.0;
-	double sum_delta_x = 0.0;
-	double sum_delta_y = 0.0;
+	double delta_dist = 0.0;
+	double delta_time = 0.0;
+	double velocity = 0.0;
+	double sum_velocity = 0.0;
+	int num = 0;
 
 	for (unsigned int i = 1; i < obstacle->observations.size(); i++)
 	{
-		sum_dist += distance(obstacle->observations[i].centroid,obstacle->observations[i-1].centroid);
-		sum_time += obstacle->observations[i-1].timestamp - obstacle->observations[i].timestamp;
+		delta_dist = distance(obstacle->observations[i].centroid,obstacle->observations[i-1].centroid);
+		delta_time = obstacle->observations[i-1].timestamp - obstacle->observations[i].timestamp;
 
-		sum_delta_x += obstacle->observations[i-1].centroid.x - obstacle->observations[i].centroid.x;
-		sum_delta_y += obstacle->observations[i-1].centroid.y - obstacle->observations[i].centroid.y;
+		if (delta_time > 0.0)
+			velocity = delta_dist / delta_time;
+		if (velocity < 35.0)
+		{
+			sum_velocity += velocity;
+			num++;
+		}
 	}
 
-	if (sum_time != 0.0)
-		obstacle->velocity = sum_dist / sum_time;
+	if (num != 0)
+		obstacle->velocity = sum_velocity / (double) num;
 	obstacle->orientation = globalpos.theta; //atan2(sum_delta_y, sum_delta_x);
 
 }
@@ -267,7 +313,7 @@ associate_observations(moving_obstacle_observation_t observation)
 
 
 double
-distace_to_lane(carmen_position_t position)
+distance_to_lane(carmen_position_t position)
 {
 	double min_dist = DBL_MAX;
 	double dist;
@@ -329,14 +375,14 @@ detect_obstacles(char *subtracted_map, char *current_map, carmen_map_config_t co
 			position.x = i * config.resolution + config.x_origin;
 			position.y = j * config.resolution + config.y_origin;
 
-			if (distace_to_lane(position) > 4.0)
+			if (distance_to_lane(position) > 4.0)
 				continue;
 
 			moving_obstacle_observation_t observation;
 
 			fast_flood_fill(map, &config, &observation, i, j);
 
-			if (observation.cell_vector.size() > 5 && observation.cell_vector.size() < 500)
+			if (observation.cell_vector.size() > 16 && observation.cell_vector.size() < 500)
 			{
 				compute_centroid(&observation);
 				int val = associate_observations(observation);
@@ -363,7 +409,7 @@ detect_obstacles(char *subtracted_map, char *current_map, carmen_map_config_t co
 					obstacle.associated = 0;
 					obstacle.age = 0;
 					obstacle.observations.push_front(observation);
-					obstacle.velocity = 2.0;
+					obstacle.velocity = 4.0;
 					obstacle.orientation = globalpos.theta;
 					obstacle.position = observation.centroid;
 					moving_obstacle_list.push_back(obstacle);
@@ -414,10 +460,10 @@ remove_obstacles(double timestamp)
 	std::vector<moving_obstacle_t>::iterator iter = moving_obstacle_list.begin();
 	while (iter != moving_obstacle_list.end())
 	{
-		dist = distance(globalposition, iter->observations[0].centroid);
+		dist = distance(globalposition, iter->position);
 		timediff = timestamp - iter->observations[0].timestamp;
 
-		if(dist > 70.0 || (iter->age > 1 && iter->associated == 0) || timediff > 0.10)
+		if(dist > 70.0 || (iter->age > 1 && iter->associated == 0) || timediff > 0.3)
 		{
 			iter = moving_obstacle_list.erase(iter);
 		}
@@ -731,6 +777,8 @@ carmen_map_handler(carmen_mapper_map_message *map_message)
 	{
 		current_map[i] = map_message->complete_map[i] > 0.35 ? 1 : 0;
 	}
+
+	dilate_map(current_map, &current_config);
 
 	if (!rddf_ready)
 		return;
