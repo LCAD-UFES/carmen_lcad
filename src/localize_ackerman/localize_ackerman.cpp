@@ -555,6 +555,22 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 		carmen_localize_ackerman_summarize_velodyne(filter, &summary);
 		publish_globalpos(&summary, base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi,
 				velodyne_message->timestamp);
+
+//		static bool ft = true;
+//		static double init_t = 0.0;
+//		if (ft)
+//		{
+//			init_t = globalpos.timestamp;
+//			ft = false;
+//		}
+//
+//		FILE *caco = fopen("caco_gpos.txt", "a");
+//		fprintf(caco, "%lf %lf %lf %lf %lf\n", globalpos.timestamp - init_t, velodyne_message->timestamp - init_t,
+//				base_ackerman_odometry_vector[odometry_index].timestamp - init_t,
+//				base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi);
+//		fflush(caco);
+//		fclose(caco);
+
 		publish_particles_correction(filter, &summary, velodyne_message->timestamp);
 	}
 

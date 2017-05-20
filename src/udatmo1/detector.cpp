@@ -20,8 +20,7 @@ Detector::Detector(const carmen_robot_ackerman_config_t &robot_config)
 void
 Detector::update_moving_object_velocity(carmen_ackerman_traj_point_t &robot_pose)
 {
-	double average_v = 0.0;
-	double count = 0.0;
+	int count = 0;
 	for (int i = MOVING_OBJECT_HISTORY_SIZE - 2; i >= 0 ; i--)
 	{
 		double v = -1.0; // invalid v
@@ -34,13 +33,11 @@ Detector::update_moving_object_velocity(carmen_ackerman_traj_point_t &robot_pose
 			double delta_t = moving_object[i].timestamp - moving_object[i + 1].timestamp;
 			if (delta_t > 0.01 && delta_t < 0.2)
 				v = distance / delta_t;
-			if (v > 60.0)
+
+			if (v > (145.0 / 3.6))
 				v = -1.0;
-			if (v > -0.00001)
-			{
-				average_v += v;
-				count += 1.0;
-			}
+			else
+				count++;
 		}
 		moving_object[i].pose.v = v;
 	}

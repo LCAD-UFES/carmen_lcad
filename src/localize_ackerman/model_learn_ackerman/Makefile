@@ -7,7 +7,7 @@ LINK = $(CXX)
 
 CFLAGS += 
 IFLAGS += 
-LFLAGS += -lreadlog -lkinect_interface -lglobal -lparam_interface -lipc 
+LFLAGS += -lreadlog -lkinect_interface -lglobal -lparam_interface -lipc `pkg-config --libs opencv`
 
 MODULE_NAME = MODEL-LEARN ACKERMAN
 MODULE_COMMENT = A program for learning motion models.

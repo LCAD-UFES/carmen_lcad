@@ -1,6 +1,6 @@
 include ../Makefile.conf
 
-ifdef FOR_XAVIER 
+ifdef FOR_XAVIER  
 INTERFACE_LIBS = -lxavier_interface -lparam_interface
 else
 INTERFACE_LIBS = -llaser_interface -llaser_ldmrs_interface \
@@ -17,13 +17,13 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 LFLAGS += $(INTERFACE_LIBS) -lparam_interface \
 	  -lglobal -lipc -lrotation_geometry
-LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system
+LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system `pkg-config --libs opencv`
 
 MODULE_NAME = LOGGER
 MODULE_COMMENT = Modules for logging, displaying, and playing back data.
 
 SOURCES = logger.c playback_interface.c playback.c \
-	  writelog.c readlog.c log_timestamp_repair.c \
+	  writelog.cpp readlog.cpp log_timestamp_repair.c \
 	  logger_interface.c #log_splitter.cpp
 
 PUBLIC_INCLUDES = logger.h logger_messages.h playback_messages.h \
