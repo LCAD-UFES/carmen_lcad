@@ -4,7 +4,6 @@
 
 // OpenCV
 #include <opencv2/core/core.hpp>
-#include <opencv2/legacy/legacy.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
 
@@ -130,11 +129,17 @@ velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 				cv::Vec3b color = map->at<cv::Vec3b>(x, y);
 				double k = (point_3d.z - z_min)/(z_max - z_min);
 
-				color[0] = k * 0 + (1 - k) * 255;
-				color[1] = 255 * intensity * 0.75 * range;
-				color[2] = k * 255 + (1 - k) * 0;
+				if (k < 0.0)
+					k = 0.0;
 
-				map->at<cv::Vec3b>(x, y) = color;
+				if (color[2] <= k * 255)
+				{
+					color[0] = k * 0 + (1 - k) * 255;
+					color[1] = 255 * intensity * 10;
+					color[2] = k * 255 + (1 - k) * 0;
+
+					map->at<cv::Vec3b>(x, y) = color;
+				}
 			}
 
 		}
