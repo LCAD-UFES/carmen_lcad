@@ -14,10 +14,29 @@
 #if CV_MAJOR_VERSION == 2
 #include <opencv2/contrib/detection_based_tracker.hpp>
 #endif
+
+
+//USE_CAFFE IS DEFINED IN MAKEFILE IF CAFFE_HOME ENV. VARIABLE IS SET
+#ifdef USE_CAFFE
+#include "squeezenet_tlight.h"
+#endif
+
 #include <stdio.h>
 #include <dlib/svm.h>
 #include <carmen/tlight_state_recog.h>
 #include <carmen/tlight_factory.h>
+
+int use_squeezenet = 1;
+int gpu_mode = 1;
+int gpu_device_id = 0;
+
+//CNN to recognize traffic_light given an image
+string str_prototxt = getenv("CARMEN_HOME")+ (string) "/data/traffic_light/squeezenet/deploy.prototxt";
+string str_caffemodel = getenv("CARMEN_HOME")+ (string) "/data/traffic_light/squeezenet/train_squeezenet_trainval_manual_p2__iter_3817.caffemodel";
+
+#ifdef USE_CAFFE
+SqueezeNet* squeezenet_classify = NULL;
+#endif
 
 #define WIDTH 9
 #define HEIGHT 20
@@ -51,9 +70,14 @@ CascadeClassifier ts_cascade;
 // Dection infrastructure
 #define MAX_TRAFFIC_LIGHTS_IN_IMAGE 10
 // Ver valores abaixo no arquivo height_in_pixels_x_distance.ods
-#define TRAFFIC_LIGHT_HEIGHT 		1.0
-#define FOCAL_DISTANCE 				1500.0
-#define DISTANCE_CORRECTION 		6.0
+
+static double dist_correction = 20.0;
+static double focal_distance = 0;
+static int roi_x = 0;
+static int roi_y = 0;
+static int roi_w = 0;
+static int roi_h = 0;
+
 static carmen_traffic_light traffic_lights_detected[MAX_TRAFFIC_LIGHTS_IN_IMAGE];
 
 // Localization infrastructure
@@ -131,53 +155,25 @@ std::vector<Rect>
 detect_traffic_lights(const cv::Mat frame)
 {
 	// Parametros da Bumblebee
-	// Rect ROI(Point(image_width / 4, 0), Point((image_width / 4) * 3, image_height / 2));
-	// Parametros da Zed
-	Rect ROI(Point(image_width / 4, image_height / 4), Point((image_width / 4) * 3, image_height - image_height / 4));
+	Rect ROI(roi_x, roi_y, roi_w, roi_h);
 	cv::Mat half_image;
 	cv::Mat(frame, ROI).copyTo(half_image);
 
-//	cv::cvtColor(half_image, half_image, CV_BGR2RGB);
-//	namedWindow("Display window", WINDOW_AUTOSIZE);
-	Mat bola = frame;
-	//cv::rectangle(bola, ROI, Scalar(0,0,255), 8);
-	//Mat res(Size(bola.cols / 4, bola.rows / 4), bola.type());
-	//resize(bola, res, res.size());
-	//imshow("Display window", bola);
-	//waitKey(1);
-
 	cv::Mat frame_gray;
 	cvtColor(half_image, frame_gray, CV_BGR2GRAY);
-	//equalizeHist(frame_gray, frame_gray);
 
-//	namedWindow("Display window", WINDOW_AUTOSIZE);
-	Mat res(Size(frame_gray.cols / 2, frame_gray.rows / 2), frame_gray.type());
-	resize(frame_gray, res, res.size());
-	imshow("Display window", res);
-	waitKey(1);
+//	Descomente para visualizar o ROI
+//	Mat bola = frame.clone();
+//	cv::rectangle(bola, ROI, Scalar(0,0,255), 6);
+//	Mat res(Size(bola.cols / 2, bola.rows / 2), bola.type());
+//	resize(bola, res, res.size());
+//	imshow("Display window", res);
+//	waitKey(1);
 
 	//-- Detect traffic lights
 	std::vector<Rect> semaphores;
-	// largura 22 altura 51
-	ts_cascade.detectMultiScale(frame_gray, semaphores, 1.05, 1, 0, Size(5, 12), Size(60, 150));
+	ts_cascade.detectMultiScale(frame_gray, semaphores, 1.05, 3, 0, Size(5, 12), Size(60, 150));
 
-	if (semaphores.size() > 0)
-	{
-		for (int i = 0; i < semaphores.size(); i++)
-		{
-			cv::Rect bkp = semaphores[i];
-			bkp.x += image_width / 4;
-			bkp.y += image_height / 4;
-			cv::rectangle(bola, bkp, Scalar(0,0,255), 6);
-		}
-
-		Mat resb(Size(bola.cols / 4, bola.rows / 4), bola.type());
-		resize(bola, resb, resb.size());
-		imshow("detection", resb);
-		waitKey(1);
-	}
-
-	printf("num sems: %ld\n", semaphores.size());
 	return (semaphores);
 }
 
@@ -196,6 +192,25 @@ add_traffic_light_to_message(carmen_traffic_light_message *traffic_light_message
 }
 
 
+int
+map_net_class_to_annotation_code(int prediction)
+{
+	/**annotation_code | Net_Class
+	 * 	red = 0,			1
+	 * 	green = 1			2
+	 * 	yellow = 2			0 none
+	 * 	off = 3				0 none
+	 */
+	int label;
+	if (prediction == 0)
+		label = 3;
+	else if (prediction == 1)
+		label = 0;
+	else
+		label = 1;
+	return label;
+}
+
 void
 detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *traffic_light_message,
 		carmen_bumblebee_basic_stereoimage_message *stereo_image)
@@ -206,65 +221,80 @@ detect_traffic_lights_and_recognize_their_state(carmen_traffic_light_message *tr
 	if (USE_VGRAM)
 		cv::cvtColor(frame, frame, CV_BGR2RGB);
 
-//	cv::cvtColor(frame, frame, CV_BGR2RGB);
-//	namedWindow("Display window", WINDOW_AUTOSIZE);
-//	imshow("Display window", frame);
-//	waitKey(1);
-
 	if (traffic_light_message->traffic_light_annotation_distance < MAX_TRAFFIC_LIGHT_DISTANCE &&
 			traffic_light_message->traffic_light_annotation_distance != -1.0)
 	{
-		// Traffic lights detection
-		std::vector<Rect> traffic_light_rectangles = detect_traffic_lights(frame);
+		int num_traffic_lights_accepted;
 
-		int num_traffic_lights_accepted = 0;
-		double expected_traffic_light_height = TRAFFIC_LIGHT_HEIGHT * FOCAL_DISTANCE / (traffic_light_message->traffic_light_annotation_distance + DISTANCE_CORRECTION);
-		for (size_t i = 0; i < traffic_light_rectangles.size() && i < MAX_TRAFFIC_LIGHTS_IN_IMAGE; i++)
+#ifdef USE_CAFFE
+		if (use_squeezenet)
 		{
-			double percentual_difference = fabs(1.0 - traffic_light_rectangles[i].height / expected_traffic_light_height);
-			if (1 || percentual_difference < 0.25)
+			// Parametros da Bumblebee
+			Rect ROI(roi_x, roi_y, roi_w, roi_h);
+			cv::Mat half_image;
+			cv::Mat(frame, ROI).copyTo(half_image);
+
+			int net_prediction = squeezenet_classify->Predict(half_image);
+			//			cv::imshow("Half_frame",half_image);
+			//			waitKey(1);
+			int label = map_net_class_to_annotation_code(net_prediction);
+			int traffic_light_status = label + RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED;
+
+			//Just to keep things working - this mode does not detect position
+			CvPoint p1, p2;
+			p1.x = 0; p1.y = 1;
+			p2.x = 1; p2.y = 2;
+
+			add_traffic_light_to_message(traffic_light_message, traffic_light_status, p1, p2, 0);
+			num_traffic_lights_accepted = 1;
+		}
+		else
+#endif
+		{
+			// Traffic lights detection
+			num_traffic_lights_accepted = 0;
+			std::vector<Rect> traffic_light_rectangles = detect_traffic_lights(frame);
+
+			double expected_traffic_light_height = 1.0 * focal_distance / (traffic_light_message->traffic_light_annotation_distance + dist_correction);
+			for (size_t i = 0; i < traffic_light_rectangles.size() && i < MAX_TRAFFIC_LIGHTS_IN_IMAGE; i++)
 			{
-				CvPoint p1, p2;
-				p1.x = traffic_light_rectangles[i].x + image_width / 4;
-				p1.y = traffic_light_rectangles[i].y;
-				p2.x = p1.x + traffic_light_rectangles[i].width;
-				p2.y = p1.y + traffic_light_rectangles[i].height;
-
-				// FILIPE
-				if (USE_VGRAM)
+				//			printf("%lf %d\n", traffic_light_message->traffic_light_annotation_distance, traffic_light_rectangles[i].height);
+				double percentual_difference = fabs(1.0 - traffic_light_rectangles[i].height / expected_traffic_light_height);
+				if (percentual_difference < 0.55)
 				{
-					int label = 0;
+					CvPoint p1, p2;
+					p1.x = traffic_light_rectangles[i].x + roi_x;
+					p1.y = traffic_light_rectangles[i].y + roi_y;
+					p2.x = p1.x + traffic_light_rectangles[i].width;
+					p2.y = p1.y + traffic_light_rectangles[i].height;
 
-					Rect r = traffic_light_rectangles[i];
-					r.x += image_width / 4;
+					// FILIPE
+					if (USE_VGRAM)
+					{
+						int label = 0;
 
-					// TODO: colocar o 40x20 no ini
-					//Mat *preproc = preproc_image(frame, r, 20, 40);
-					//net->Forward(preproc, &label, &confidence);
-					label = recognizer->run(frame, r);
+						Rect r = traffic_light_rectangles[i];
+						r.x += roi_x;
+						r.y += roi_y;
 
-					// visualizacao para debug. retirar quando nao for mais necessario.
-					//Mat zoom(preproc->size() * 5, frame.type());
-					//resize(*preproc, zoom, zoom.size());
-					//imshow("preproc", zoom);
-					//waitKey(1);
+						label = recognizer->run(frame, r);
+						int traffic_light_status = label + RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED;
+						add_traffic_light_to_message(traffic_light_message, traffic_light_status, p1, p2, num_traffic_lights_accepted);
+					}
+					else
+					{
+						sample_type traffic_light_image_in_svm_format = get_traffic_light_image_in_svm_format(frame, p1, p2);
 
-					int traffic_light_status = label + RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED;
-					add_traffic_light_to_message(traffic_light_message, traffic_light_status, p1, p2, num_traffic_lights_accepted);
+						// Traffic lights state recognition
+						if (trained_svm(traffic_light_image_in_svm_format) >= 0)
+							add_traffic_light_to_message(traffic_light_message, RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED, p1, p2, num_traffic_lights_accepted);
+						else if (trained_svm(traffic_light_image_in_svm_format) < 0)
+							add_traffic_light_to_message(traffic_light_message, RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN, p1, p2, num_traffic_lights_accepted);
+						// @@@ Alberto: E o amarelo? E a rejeicao de deteccoes?
+					}
+
+					num_traffic_lights_accepted++;
 				}
-				else
-				{
-					sample_type traffic_light_image_in_svm_format = get_traffic_light_image_in_svm_format(frame, p1, p2);
-
-					// Traffic lights state recognition
-					if (trained_svm(traffic_light_image_in_svm_format) >= 0)
-						add_traffic_light_to_message(traffic_light_message, RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_RED, p1, p2, num_traffic_lights_accepted);
-					else if (trained_svm(traffic_light_image_in_svm_format) < 0)
-						add_traffic_light_to_message(traffic_light_message, RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN, p1, p2, num_traffic_lights_accepted);
-					// @@@ Alberto: E o amarelo? E a rejeicao de deteccoes?
-				}
-
-				num_traffic_lights_accepted++;
 			}
 		}
 		traffic_light_message->num_traffic_lights = num_traffic_lights_accepted;
@@ -441,6 +471,10 @@ shutdown_traffic_light(int x)
 {
     if (x == SIGINT)
     {
+#ifdef USE_CAFFE
+    	if (squeezenet_classify != NULL)
+    		delete squeezenet_classify;
+#endif
         carmen_verbose("Disconnecting Traffic Light.\n");
         carmen_ipc_disconnect();
 
@@ -469,6 +503,12 @@ traffic_light_module_initialization()
     deserialize(trained_svm, fin);
 
     recognizer = TLightStateRecogFactory::build("mlp");
+
+#ifdef USE_CAFFE
+    if (use_squeezenet)
+    	squeezenet_classify = new SqueezeNet(str_prototxt, str_caffemodel, gpu_mode, gpu_device_id);
+#endif
+
 }
 
 
@@ -483,7 +523,17 @@ read_parameters(int argc, char **argv)
     carmen_param_t param_list[] =
     {
         { bumblebee_string, (char*) "width", CARMEN_PARAM_INT, &image_width, 0, NULL},
-        { bumblebee_string, (char*) "height", CARMEN_PARAM_INT, &image_height, 0, NULL}
+        { bumblebee_string, (char*) "height", CARMEN_PARAM_INT, &image_height, 0, NULL},
+        { bumblebee_string, (char*) "tlight_roi_x", CARMEN_PARAM_INT, &roi_x, 0, NULL},
+        { bumblebee_string, (char*) "tlight_roi_y", CARMEN_PARAM_INT, &roi_y, 0, NULL},
+        { bumblebee_string, (char*) "tlight_roi_w", CARMEN_PARAM_INT, &roi_w, 0, NULL},
+        { bumblebee_string, (char*) "tlight_roi_h", CARMEN_PARAM_INT, &roi_h, 0, NULL},
+        { bumblebee_string, (char*) "tlight_focal_dist", CARMEN_PARAM_DOUBLE, &focal_distance, 0, NULL},
+        { bumblebee_string, (char*) "tlight_dist_correction", CARMEN_PARAM_DOUBLE, &dist_correction, 0, NULL},
+		{(char *) "traffic_light", (char *) "use_squeezenet", CARMEN_PARAM_ONOFF, &use_squeezenet, 0, NULL},
+		{(char *) "traffic_light", (char *) "gpu_mode", CARMEN_PARAM_ONOFF, &gpu_mode, 0, NULL},
+		{(char *) "traffic_light", (char *) "gpu_device_id", CARMEN_PARAM_INT, &gpu_device_id, 0, NULL}
+
     };
 
     num_items = sizeof (param_list) / sizeof (param_list[0]);
