@@ -72,11 +72,11 @@ velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 
 	double CAR_HEIGHT = 0.28 + 1.394 + 0.48;
 
-	double map_resolution = 0.2;
-	double x_min = -50.0;
-	double y_min = -50.0;
-	double x_max = 50.0;
-	double y_max = 50.0;
+	double map_resolution = 0.05;
+	double x_min = -30.0;
+	double x_max = 30.0;
+	double y_min = -15.0;
+	double y_max = 15.0;
 	double z_min = -CAR_HEIGHT;//-13.7;
 	double z_max = 0.0;//11.0;
 
@@ -126,7 +126,7 @@ velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 				int x = (point_3d.x - x_min)/map_resolution;
 				int y = (point_3d.y - y_min)/map_resolution;
 
-				cv::Vec3b color = map->at<cv::Vec3b>(x, y);
+				cv::Vec3b color = map->at<cv::Vec3b>(height - y, x);
 				double k = (point_3d.z - z_min)/(z_max - z_min);
 
 				if (k < 0.0)
@@ -138,7 +138,7 @@ velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 					color[1] = 255 * intensity * 10;
 					color[2] = k * 255 + (1 - k) * 0;
 
-					map->at<cv::Vec3b>(x, y) = color;
+					map->at<cv::Vec3b>(height - y, x) = color;
 				}
 			}
 
