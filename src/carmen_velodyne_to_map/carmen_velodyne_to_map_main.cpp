@@ -97,7 +97,7 @@ velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 
 	// write velodyne
 	_mkdir("/dados/dataset/map");
-	sprintf(map_filename, "/dados/dataset/map/%08d.png", velodyne_number);
+	sprintf(map_filename, "/dados/dataset/map/%lf.png", velodyne_message->timestamp);
 
 	cv::Mat *map = NULL;
 	map = new cv::Mat(cv::Size(width, height), CV_8UC3);
@@ -126,7 +126,7 @@ velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 				int x = (point_3d.x - x_min)/map_resolution;
 				int y = (point_3d.y - y_min)/map_resolution;
 
-				cv::Vec3b color = map->at<cv::Vec3b>(height - y, x);
+				cv::Vec3b color = map->at<cv::Vec3b>(height - y - 1, x);
 				double k = (point_3d.z - z_min)/(z_max - z_min);
 
 				if (k < 0.0)
@@ -138,7 +138,7 @@ velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 					color[1] = 255 * intensity * 10;
 					color[2] = k * 255 + (1 - k) * 0;
 
-					map->at<cv::Vec3b>(height - y, x) = color;
+					map->at<cv::Vec3b>(height - y - 1, x) = color;
 				}
 			}
 
@@ -150,7 +150,7 @@ velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 	cv::imwrite(map_filename, *map);
 
 	// write timestamps file
-	sprintf(timestamps_filename, "/dados/dataset/map/timestamps.txt");
+	sprintf(timestamps_filename, "/dados/dataset/timestamps.txt");
 
 	if(velodyne_number == 0)
 		timestamps = fopen(timestamps_filename, "w");

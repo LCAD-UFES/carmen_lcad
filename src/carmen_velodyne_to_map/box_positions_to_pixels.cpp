@@ -164,6 +164,8 @@ generate_boundign_box(FILE * out_file, double length, double width, double theta
 	yb = h - (min_y - y_min)/map_resolution;
 
 	fprintf(out_file, "%.2f %.2f %.2f %.2f ", xt, yt, xb, yb);
+
+	(void) w;
 }
 
 
@@ -179,7 +181,7 @@ write_files()
 	output_file = fopen(filename, "w");
 	carmen_vector_2D_t obj_pos;
 
-	printf("tam: %d\n", object_list.size());
+	printf("tam: %ld\n", object_list.size());
 
 	for (unsigned int i = 0; i < object_list.size(); i++)
 	{
@@ -191,9 +193,14 @@ write_files()
 			output_file = fopen(filename, "w");
 		}
 		fprintf(output_file, "%s 0.00 0 0.00 ", object_list[i].tipo);
+
 		obj_pos.x = object_list[i].pos_x_obj - object_list[i].pos_x_iara;
 		obj_pos.y = object_list[i].pos_y_obj - object_list[i].pos_y_iara;
-		generate_boundign_box(output_file, object_list[i].length, object_list[i].width, object_list[i].orientation_obj, obj_pos);
+		obj_pos = rotate_point(obj_pos, -object_list[i].orientation_iara);
+
+		obj_pos.x = obj_pos.x - 0.572;
+
+		generate_boundign_box(output_file, object_list[i].length, object_list[i].width, object_list[i].orientation_obj - object_list[i].orientation_iara, obj_pos);
 		fprintf(output_file, "0.00 0.00 0.00 0.00 0.00 0.00 0\n");
 	}
 
