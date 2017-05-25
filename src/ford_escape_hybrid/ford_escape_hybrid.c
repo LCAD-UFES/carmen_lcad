@@ -184,7 +184,11 @@ publish_car_status()
 	msg.g_XGV_steering = g_XGV_steering;
 	msg.g_XGV_brakes = g_XGV_brakes;
 
-	//	g_XGV_component_status bit Interpretation F: disengaged, T: engaged (see page 62 of ByWire XGV User Manual, Version 1.5)
+	//	g_XGV_component_status bit Interpretation F: disengaged, T: engaged
+	//  See page 62 of ByWire XGV User Manual, Version 1.5
+	//  Note que está errado no manual: este campo da mensagem tem 32 bits e não 16 como diz o manual
+	//  Os primeiros 16 bits não são usados
+	//  ordem do campo e (bit)
 	//	0 (16) Manual override
 	//	1 (17) SafeStop pause relay F: run, T: pause
 	//	2 (18) SafeStop stop relay F: run, T: stop
