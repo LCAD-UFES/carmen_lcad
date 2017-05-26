@@ -75,7 +75,7 @@ pid_plot_phi(double current_phi, double desired_phi, double y_range, char* title
 	}
 
 
-	FILE *gnuplot_data_file = fopen("gnuplot_data.txt", "w");
+	FILE *gnuplot_data_file = fopen("gnuplot_phi_data.txt", "w");
 
 	for (itc = cphi.begin(), itd = dphi.begin(), itt = timestamp.begin(); itc != cphi.end(); itc++, itd++, itt++)
 		fprintf(gnuplot_data_file, "%lf %lf %lf\n", *itt - timestamp.back(), *itc, *itd);
@@ -84,7 +84,7 @@ pid_plot_phi(double current_phi, double desired_phi, double y_range, char* title
 
 
 	fprintf(gnuplot_pipe, "plot "
-			"'./gnuplot_data.txt' using 1:2 with lines title 'C%s', './gnuplot_data.txt' using 1:3 with lines title 'D%s'\n", title, title);
+			"'./gnuplot_phi_data.txt' using 1:2 with lines title 'C%s', './gnuplot_phi_data.txt' using 1:3 with lines title 'D%s'\n", title, title);
 
 	fflush(gnuplot_pipe);
 }

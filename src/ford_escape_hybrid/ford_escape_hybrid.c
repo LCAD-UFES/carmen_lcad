@@ -639,7 +639,7 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 						g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
 			}
 			#ifdef PLOT
-					pid_plot_phi(-get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), ford_escape_hybrid_config->filtered_phi, 0.55, "phi");
+					pid_plot_phi(ford_escape_hybrid_config->filtered_phi, -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), 0.55, "phi");
 			#endif
 
 		}
