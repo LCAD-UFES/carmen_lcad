@@ -5,6 +5,10 @@
 // OpenCV
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
+
+FILE* timestamps;
 
 
 static void _mkdir(const char *dir)
@@ -68,7 +72,6 @@ velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 
 	static int velodyne_number = 0;
 	char map_filename[256];
-	char timestamps_filename[256];
 
 	double CAR_HEIGHT = 0.28 + 1.394 + 0.48;
 
@@ -83,8 +86,6 @@ velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 	int width = (x_max - x_min)/map_resolution;
 	int height = (y_max - y_min)/map_resolution;
 
-	FILE* timestamps;
-
 	const static double sorted_vertical_angles[32] =
 	{
 		-30.67, -29.33, -28.0, -26.67, -25.33, -24.0, -22.67, -21.33, -20.0,
@@ -96,11 +97,17 @@ velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 	arrange_velodyne_vertical_angles_to_true_position(velodyne_message);
 
 	// write velodyne
-	_mkdir("/dados/dataset/map");
+
+	if (velodyne_number == 0)
+	{
+		_mkdir("/dados/dataset/map");
+	}
+
 	sprintf(map_filename, "/dados/dataset/map/%lf.png", velodyne_message->timestamp);
 
-	cv::Mat *map = NULL;
-	map = new cv::Mat(cv::Size(width, height), CV_8UC3);
+	cv::Mat map;
+	map = cv::Mat(cv::Size(width, height), CV_8UC3);
+	map = cv::Mat::zeros(height, width, CV_8UC3);
 
 
 	for(int i = 0; i < velodyne_message->number_of_32_laser_shots; i++)
@@ -126,7 +133,7 @@ velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 				int x = (point_3d.x - x_min)/map_resolution;
 				int y = (point_3d.y - y_min)/map_resolution;
 
-				cv::Vec3b color = map->at<cv::Vec3b>(height - y - 1, x);
+				cv::Vec3b color = map.at<cv::Vec3b>(height - y - 1, x);
 				double k = (point_3d.z - z_min)/(z_max - z_min);
 
 				if (k < 0.0)
@@ -138,27 +145,18 @@ velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 					color[1] = 255 * intensity * 10;
 					color[2] = k * 255 + (1 - k) * 0;
 
-					map->at<cv::Vec3b>(height - y - 1, x) = color;
+					map.at<cv::Vec3b>(height - y - 1, x) = color;
 				}
 			}
 
 		}
 	}
 
-//	printf("z_min = %lf z_max = %lf\n", z_min, z_max);
-
-	cv::imwrite(map_filename, *map);
-
-	// write timestamps file
-	sprintf(timestamps_filename, "/dados/dataset/timestamps.txt");
-
-	if(velodyne_number == 0)
-		timestamps = fopen(timestamps_filename, "w");
-	else
-		timestamps = fopen(timestamps_filename, "a+");
+	cv::imwrite(map_filename, map);
+	map.release();
 
 	fprintf(timestamps, "%lf\n", velodyne_message->timestamp);
-	fclose(timestamps);
+	fflush(timestamps);
 
 	velodyne_number++;
 }
@@ -193,6 +191,10 @@ main(int argc, char **argv)
 {
 	carmen_ipc_initialize(argc, argv);
 	signal(SIGINT, shutdown_module);
+
+	char timestamps_filename[256];
+	sprintf(timestamps_filename, "/dados/dataset/timestamps.txt");
+	timestamps = fopen(timestamps_filename, "w");
 
 	subscribe_messages();
 	carmen_ipc_dispatch();
