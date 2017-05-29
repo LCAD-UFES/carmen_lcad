@@ -19,7 +19,7 @@ main(int argc, char **argv)
 
 	if (argc < 2)
 	{
-		printf("Usage: %s timestamps.txt\n", argv[0]);
+		printf("Usage: %s <timestamps.txt>\n", argv[0]);
 		return (1);
 	}
 
@@ -30,7 +30,7 @@ main(int argc, char **argv)
 
 	double timestamp;
 
-	FILE *timestamps = fopen("/dados/dataset/timestamps.txt","r");
+	FILE *timestamps = fopen(argv[1],"r");
 
 	cv::namedWindow( "Display window", cv::WINDOW_AUTOSIZE );// Create a window for display.
 	double xt, yt, xb, yb;
@@ -47,6 +47,12 @@ main(int argc, char **argv)
 		labels = fopen(labelname, "r");
 		cv::Mat image;
 		image = cv::imread(imagename, CV_LOAD_IMAGE_COLOR);   // open image
+
+		if (image.empty())
+		{
+			printf("Failed to open image %s\n", imagename);
+			continue;
+		}
 
 		if (labels)
 		{
@@ -65,5 +71,6 @@ main(int argc, char **argv)
 
 	}
 
+	fclose(timestamps);
 	return (0);
 }
