@@ -53,14 +53,15 @@ main(int argc, char **argv)
 			while (!feof(labels))
 			{
 				fscanf(labels, "%s 0.00 0 0.00 %lf %lf %lf %lf 0.00 0.00 0.00 0.00 0.00 0.00 0\n", classe, &xt, &yt, &xb, &yb);
-				cv::rectangle(image, cv::Point(xt,yt), cv::Point(xb,yb), cv::Scalar(0,255,0), 3);
+				cv::rectangle(image, cv::Point(xt,yt), cv::Point(xb,yb), cv::Scalar(0,255,0), 2);
+				cv::putText(image, classe, cv::Point(xt,yt-2), cv::FONT_HERSHEY_PLAIN, 2, cvScalar(0,255,0), 1);
 			}
 
 			fclose(labels);
 		}
 
 		cv::imshow( "Display window", image );                   // Show our image inside it.
-		cv::waitKey(0);
+		cv::waitKey(50);
 
 	}
 

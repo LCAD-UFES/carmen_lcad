@@ -132,8 +132,8 @@ generate_boundign_box(FILE * out_file, double length, double width, double theta
 	double map_resolution = 0.05;
 	double x_min = -30.0;
 	double x_max = 30.0;
-	double y_min = -15.0;
-	double y_max = 15.0;
+	double y_min = -8.0;
+	double y_max = 22.0;
 
 	int w = (x_max - x_min)/map_resolution;
 	int h = (y_max - y_min)/map_resolution;
@@ -185,6 +185,9 @@ write_files()
 
 	for (unsigned int i = 0; i < object_list.size(); i++)
 	{
+		if (strcmp(object_list[i].tipo,"Car") != 0){
+			continue;
+		}
 		if (current_timestamp != object_list[i].timestamp)
 		{
 			current_timestamp = object_list[i].timestamp;
@@ -196,11 +199,11 @@ write_files()
 
 		obj_pos.x = object_list[i].pos_x_obj - object_list[i].pos_x_iara;
 		obj_pos.y = object_list[i].pos_y_obj - object_list[i].pos_y_iara;
-		obj_pos = rotate_point(obj_pos, -object_list[i].orientation_iara);
+		obj_pos = rotate_point(obj_pos, carmen_normalize_theta(-object_list[i].orientation_iara));
 
 		obj_pos.x = obj_pos.x - 0.572;
 
-		generate_boundign_box(output_file, object_list[i].length, object_list[i].width, object_list[i].orientation_obj - object_list[i].orientation_iara, obj_pos);
+		generate_boundign_box(output_file, object_list[i].length, object_list[i].width, carmen_normalize_theta(object_list[i].orientation_obj - object_list[i].orientation_iara), obj_pos);
 		fprintf(output_file, "0.00 0.00 0.00 0.00 0.00 0.00 0\n");
 	}
 

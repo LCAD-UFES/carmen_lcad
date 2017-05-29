@@ -78,8 +78,8 @@ velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
 	double map_resolution = 0.05;
 	double x_min = -30.0;
 	double x_max = 30.0;
-	double y_min = -15.0;
-	double y_max = 15.0;
+	double y_min = -8.0;
+	double y_max = 22.0;
 	double z_min = -CAR_HEIGHT;//-13.7;
 	double z_max = 0.0;//11.0;
 
