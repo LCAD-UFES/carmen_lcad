@@ -184,7 +184,11 @@ publish_car_status()
 	msg.g_XGV_steering = g_XGV_steering;
 	msg.g_XGV_brakes = g_XGV_brakes;
 
-	//	g_XGV_component_status bit Interpretation F: disengaged, T: engaged (see page 62 of ByWire XGV User Manual, Version 1.5)
+	//	g_XGV_component_status bit Interpretation F: disengaged, T: engaged
+	//  See page 62 of ByWire XGV User Manual, Version 1.5
+	//  Note que está errado no manual: este campo da mensagem tem 32 bits e não 16 como diz o manual
+	//  Os primeiros 16 bits não são usados
+	//  ordem do campo e (bit)
 	//	0 (16) Manual override
 	//	1 (17) SafeStop pause relay F: run, T: pause
 	//	2 (18) SafeStop stop relay F: run, T: stop
@@ -630,12 +634,16 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 			}
 			else
 			{   // PID
-				g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
-						-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t,
-						g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
+				//g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
+				//		-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t,
+				//		g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
+
+				g_steering_command = carmen_libpid_steering_PID_controler_FUZZY(g_atan_desired_curvature,
+						-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)),
+						delta_t, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG, ford_escape_hybrid_config->filtered_v);
 			}
 			#ifdef PLOT
-					pid_plot_phi(-get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), ford_escape_hybrid_config->filtered_phi, 0.55, "phi");
+					pid_plot_phi(ford_escape_hybrid_config->filtered_phi, -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), 0.55, "phi");
 			#endif
 
 		}

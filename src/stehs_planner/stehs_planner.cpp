@@ -613,6 +613,8 @@ StehsPlanner::Expand(
     if(step_size < 0.2)
     	step_size = 0.2;
 
+    printf ("Step %lf\n", step_size);
+
     // the acceleration loop
     for (int i = 0; i < 3; ++i)
     {
@@ -660,7 +662,8 @@ StehsPlanner::GoalExpand(StateNodePtr current, StateNodePtr &goal_node,
 void
 StehsPlanner::SetSwap(
         std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set,
-        std::vector<StateNodePtr> &closed_set) {
+        std::vector<StateNodePtr> &closed_set)
+{
 
 	std::vector<StateNodePtr> outputvec(open_set.size());
 
@@ -788,7 +791,7 @@ StehsPlanner::GeneratePath()
 		printf("Não foi possível encontrar um caminho válido.\n");
 	}
 
-	ShowCirclePath();
+	//ShowCirclePath();
 }
 
 

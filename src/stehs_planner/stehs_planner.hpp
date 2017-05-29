@@ -44,7 +44,7 @@ public:
 
     //
     State goal;
-    carmen_obstacle_distance_mapper_message *distance_map;
+    carmen_obstacle_distance_mapper_map_message *distance_map;
 
     carmen_behavior_selector_road_profile_message *goal_list_message;
 
