@@ -68,6 +68,7 @@ public:
 	static int use_tracker_goal_and_lane;
 
 	static double obstacle_cost_distance;
+	static int reverse_driving;
 
 	static double max_square_distance_to_lane;
 

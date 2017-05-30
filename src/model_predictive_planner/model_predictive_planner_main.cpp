@@ -734,7 +734,8 @@ read_parameters(int argc, char **argv)
 		{(char *) "robot", 	(char *) "max_centripetal_acceleration",				CARMEN_PARAM_DOUBLE, &GlobalState::robot_max_centripetal_acceleration,							1, NULL},
 		{(char *) "rddf",   (char *) "source_tracker", 								CARMEN_PARAM_ONOFF,  &GlobalState::use_tracker_goal_and_lane,									0, NULL},
 		{(char *) "behavior_selector", (char *) "goal_source_path_planner", 		CARMEN_PARAM_ONOFF,  &GlobalState::use_path_planner, 											0, NULL},
-		{(char *) "behavior_selector", (char *) "use_truepos", 						CARMEN_PARAM_ONOFF,  &GlobalState::use_truepos, 												0, NULL}
+		{(char *) "behavior_selector", (char *) "use_truepos", 						CARMEN_PARAM_ONOFF,  &GlobalState::use_truepos, 												0, NULL},
+		{(char *) "behavior_selector", (char *) "reverse_driving", 					CARMEN_PARAM_ONOFF,  &GlobalState::reverse_driving, 											0, NULL}
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));

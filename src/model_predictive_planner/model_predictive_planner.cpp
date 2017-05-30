@@ -212,6 +212,29 @@ move_poses_foward_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_r
 
 
 void
+reverse_driving_move_poses_back_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_road_profile_message *goal_list_message,
+		vector<carmen_ackerman_path_point_t> *lane_in_local_pose)
+{
+	carmen_ackerman_path_point_t local_reference_lane_point;
+	int index = 0;
+	if (goal_list_message->poses_back[0].x == goal_list_message->poses_back[1].x && goal_list_message->poses_back[0].y == goal_list_message->poses_back[1].y)
+		index = 1;
+
+	for (int k = index; k < goal_list_message->number_of_poses_back; k++)
+	{
+		SE2 lane_in_world_reference(goal_list_message->poses_back[k].x, goal_list_message->poses_back[k].y, goal_list_message->poses_back[k].theta);
+		SE2 lane_in_car_reference = robot_pose.inverse() * lane_in_world_reference;
+
+
+		local_reference_lane_point = {lane_in_car_reference[0], lane_in_car_reference[1], lane_in_car_reference[2],
+				goal_list_message->poses_back[k].v, goal_list_message->poses_back[k].phi, 0.0};
+
+		lane_in_local_pose->push_back(local_reference_lane_point);
+	}
+}
+
+
+void
 move_poses_back_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_road_profile_message *goal_list_message,
 		vector<carmen_ackerman_path_point_t> *lane_in_local_pose)
 {
@@ -242,19 +265,63 @@ move_poses_back_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_roa
 }
 
 
+void
+reverse_driving_move_poses_foward_to_local_reference(SE2 &robot_pose, carmen_behavior_selector_road_profile_message *goal_list_message,
+		vector<carmen_ackerman_path_point_t> *lane_in_local_pose)
+{
+	vector<carmen_ackerman_path_point_t> poses_foward;
+	carmen_ackerman_path_point_t local_reference_lane_point;
+
+	if ((goal_list_message->number_of_poses > 2))
+	{
+		for (int i = 0; i < goal_list_message->number_of_poses; i++)
+		{
+			SE2 lane_back_in_world_reference(goal_list_message->poses[i].x, goal_list_message->poses[i].y, goal_list_message->poses[i].theta);
+			SE2 lane_back_in_car_reference = robot_pose.inverse() * lane_back_in_world_reference;
+
+			local_reference_lane_point = {lane_back_in_car_reference[0], lane_back_in_car_reference[1], lane_back_in_car_reference[2],
+					goal_list_message->poses[i].v, goal_list_message->poses[i].phi, 0.0};
+
+			poses_foward.push_back(local_reference_lane_point);
+
+			// Assim que achar uma pose para frente, adiciona todas poses para tras
+			if (local_reference_lane_point.x >= 0.0)
+			{
+				for (int j = (poses_foward.size() - 1); j >= 0 ; j--)
+					lane_in_local_pose->push_back(poses_foward.at(j));
+				break;
+			}
+		}
+	}
+}
+
+
 bool
 move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_selector_road_profile_message *goal_list_message,
 		vector<carmen_ackerman_path_point_t> *lane_in_local_pose)
 {
 	bool goal_in_lane = false;
 
-	if ((goal_list_message->number_of_poses < 2 || goal_list_message->number_of_poses > 250))
-		return false;
-
 	SE2 robot_pose(localizer_pose->x, localizer_pose->y, localizer_pose->theta);
 
-	move_poses_back_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
-	move_poses_foward_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
+	//Considera poses_back da lane como a lane de referencia para calcular plano de reh
+	if (GlobalState::reverse_driving)
+	{
+		if ((goal_list_message->number_of_poses_back < 2 || goal_list_message->number_of_poses_back > 250))
+					return false;
+
+		reverse_driving_move_poses_foward_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
+		reverse_driving_move_poses_back_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
+	}
+	else
+	{
+		if ((goal_list_message->number_of_poses < 2 || goal_list_message->number_of_poses > 250))
+			return false;
+
+		//calcula primeiro as poses back para depois as poses foward, para manter a ordem a partir da pose local do carro
+		move_poses_back_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
+		move_poses_foward_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
+	}
 
 	return (goal_in_lane);
 }
@@ -687,7 +754,7 @@ goal_pose_vector_too_different(Pose goal_pose, Pose localizer_pose)
 
 bool
 goal_is_behide_car(Pose *localizer_pose, Pose *goal_pose)
-{//funcao tem que ser melhorada. Usar coordenadas polares pode ser melhor.
+{//funcao tem que ser melhorada.
 	SE2 robot_pose(localizer_pose->x, localizer_pose->y, localizer_pose->theta);
 	SE2 goal_in_world_reference(goal_pose->x, goal_pose->y, goal_pose->theta);
 	SE2 goal_in_car_reference = robot_pose.inverse() * goal_in_world_reference;
@@ -720,7 +787,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		last_timestamp = goal_list_message->timestamp;
 	}
 
-	if (goal_is_behide_car(localizer_pose, &goalPoseVector[0]))
+	if (!GlobalState::reverse_driving && goal_is_behide_car(localizer_pose, &goalPoseVector[0]))
 	{
 //		printf("goal is behide the car\n");
 		return;
@@ -728,7 +795,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 
 	move_lane_to_robot_reference_system(localizer_pose, goal_list_message, &lane_in_local_pose);
 
-	if (GlobalState::use_path_planner || GlobalState::use_tracker_goal_and_lane)
+	if ((GlobalState::use_path_planner || GlobalState::use_tracker_goal_and_lane))
 	{
 		build_detailed_path_lane(&lane_in_local_pose, detailed_lane);
 	}
@@ -737,8 +804,9 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		goal_in_lane = build_detailed_rddf_lane(&goalPoseVector[0], &lane_in_local_pose, detailed_lane);
 		if (!goal_in_lane)
 			detailed_lane.clear();
-//		printf("\nGoal_in_lane: %d detail_size: %ld \n",goal_in_lane, detailed_lane.size());
+		//		printf("\nGoal_in_lane: %d detail_size: %ld \n",goal_in_lane, detailed_lane.size());
 	}
+
 
 /***************************************
  * Funcao para extrair dados para artigo
