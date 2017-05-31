@@ -245,7 +245,7 @@ carmen_libpid_steering_PID_controler_FUZZY(double atan_desired_curvature, double
 		kd = g_steering_Kd + factor * 50.65;
 	}
 
-	//printf("v %lf kp %lf ki %lf kd %lf\n", v, kp, ki, kd);
+//	printf("v %lf kp %lf ki %lf kd %lf\n", v, kp, ki, kd);
 
 	u_t = (kp * error_t)  +  (ki * integral_t)  +  (kd * derivative_t);
 
