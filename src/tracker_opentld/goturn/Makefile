@@ -10,7 +10,7 @@ LINK = g++
 CFLAGS += -Wall
 CXXFLAGS += -Wall -Wno-ignored-qualifiers
 IFLAGS += -I $(CUDA_HOME)/targets/x86_64-linux/include -I. -I $(CAFFE_HOME)/include -I $(CAFFE_HOME)/build/include \
-		  -I $(CAFFE_HOME)/build/src `pkg-config --cflags opencv` -I /usr/local/cuda-7.5/include/ \
+		  -I $(CAFFE_HOME)/build/src `pkg-config --cflags opencv` -I /usr/local/cuda/include/ \
 		  # -lcudnn -lcublas \
 		  # -D CPU_ONLY 
 		  
@@ -37,7 +37,7 @@ LFLAGS += -lboost_system -lboost_filesystem -lboost_regex `pkg-config --libs ope
 
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath\
 		-lboost_thread-mt -lrt -lboost_signals -lboost_system \
-		-L/usr/local/cuda-7.5/lib64/ -lcublas
+		-L/usr/local/cuda/lib64/ -lcublas
 
 SOURCES = goturn_main.cpp \
 		  gui.cpp \
