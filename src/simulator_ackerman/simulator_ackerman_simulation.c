@@ -601,15 +601,15 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 
 	if (simulator_config->use_mpc)
 	{
-//		steering_effort = carmen_libmpc_get_optimized_steering_effort_using_MPC(atan_current_curvature,
-//							simulator_config->current_motion_command_vector, simulator_config->nun_motion_commands,
-//							simulator_config->v, simulator_config->phi, simulator_config->time_of_last_command, &simulator_config->robot_config,
-//							simulator_config->initialize_neural_networks);
-//		//POSITION CONTROL
-		steering_effort = carmen_libmpc_get_optimized_steering_effort_using_MPC_position_control(atan_current_curvature,
+		steering_effort = carmen_libmpc_get_optimized_steering_effort_using_MPC(atan_current_curvature,
 							simulator_config->current_motion_command_vector, simulator_config->nun_motion_commands,
 							simulator_config->v, simulator_config->phi, simulator_config->time_of_last_command, &simulator_config->robot_config,
-							simulator_config->global_pos, simulator_config->initialize_neural_networks);
+							simulator_config->initialize_neural_networks);
+//		//POSITION CONTROL
+//		steering_effort = carmen_libmpc_get_optimized_steering_effort_using_MPC_position_control(atan_current_curvature,
+//							simulator_config->current_motion_command_vector, simulator_config->nun_motion_commands,
+//							simulator_config->v, simulator_config->phi, simulator_config->time_of_last_command, &simulator_config->robot_config,
+//							simulator_config->global_pos, simulator_config->initialize_neural_networks);
 	}
 	else
 	{
