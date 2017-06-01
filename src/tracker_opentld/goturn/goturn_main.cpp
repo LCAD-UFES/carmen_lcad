@@ -2491,7 +2491,7 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 
 
 static void
-carmen_obstacle_distance_mapper_message_handler(carmen_obstacle_distance_mapper_message *message)
+carmen_obstacle_distance_mapper_message_handler(carmen_obstacle_distance_mapper_map_message *message)
 {
 	path_smoother.distance_map = message;
 }
