@@ -200,6 +200,7 @@ get_motion_commands_vector(carmen_ackerman_motion_command_p current_motion_comma
 	double time_interval = 0.0;
 	double total_time = 0.0;
 
+	// Removes the elapsed time from the motion commands vector
 	while ((sum_of_motion_commands_vector_time < elapsed_time) && (j < nun_motion_commands)) // TODO Tratar se sair por j <nun_motion_commands
 	{
 		sum_of_motion_commands_vector_time += current_motion_command_vector[j].time;
@@ -208,6 +209,7 @@ get_motion_commands_vector(carmen_ackerman_motion_command_p current_motion_comma
 	sum_of_motion_commands_vector_time -= current_motion_command_vector[j].time;
 	current_motion_command_vector[j].time -= (elapsed_time - sum_of_motion_commands_vector_time);
 
+	// Build motion command vector with DELTA_T time interval
 	while (total_time < prediction_horizon)
 	{
 		commands.x.push_back(get_point_aproximating_by_line(0.0, current_motion_command_vector[j].x, current_motion_command_vector[j].time, current_motion_command_vector[j+1].x, time_interval));
