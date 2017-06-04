@@ -26,7 +26,7 @@
 using namespace g2o;
 
 int print_to_debug = 0;
-int plot_to_debug = 0;
+int plot_to_debug = 1;
 
 //-----------Funcoes para extrair dados do Experimento------------------------
 double
