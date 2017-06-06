@@ -75,7 +75,7 @@ pid_plot_phi(double current_phi, double desired_phi, double y_range, char* title
 	}
 
 
-	FILE *gnuplot_data_file = fopen("gnuplot_data.txt", "w");
+	FILE *gnuplot_data_file = fopen("gnuplot_phi_data.txt", "w");
 
 	for (itc = cphi.begin(), itd = dphi.begin(), itt = timestamp.begin(); itc != cphi.end(); itc++, itd++, itt++)
 		fprintf(gnuplot_data_file, "%lf %lf %lf\n", *itt - timestamp.back(), *itc, *itd);
@@ -84,7 +84,7 @@ pid_plot_phi(double current_phi, double desired_phi, double y_range, char* title
 
 
 	fprintf(gnuplot_pipe, "plot "
-			"'./gnuplot_data.txt' using 1:2 with lines title 'C%s', './gnuplot_data.txt' using 1:3 with lines title 'D%s'\n", title, title);
+			"'./gnuplot_phi_data.txt' using 1:2 with lines title 'C%s', './gnuplot_phi_data.txt' using 1:3 with lines title 'D%s'\n", title, title);
 
 	fflush(gnuplot_pipe);
 }
@@ -173,8 +173,81 @@ carmen_libpid_steering_PID_controler(double atan_desired_curvature, double atan_
 	double derivative_t = (error_t - error_t_1) / delta_t;
 
 	u_t = g_steering_Kp * error_t +
-		g_steering_Ki * integral_t +
-		g_steering_Kd * derivative_t;
+		  g_steering_Ki * integral_t +
+		  g_steering_Kd * derivative_t;
+
+	error_t_1 = error_t;
+
+	// Anti windup
+	if ((u_t < -100.0) || (u_t > 100.0))
+		integral_t = integral_t_1;
+	integral_t_1 = integral_t;
+
+	previous_t = t;
+
+	u_t = carmen_clamp(-100.0, u_t, 100.0);
+
+//	fprintf(stdout, "STEERING (cc, dc, e, i, d, s): %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
+//		atan_current_curvature, atan_desired_curvature, error_t, integral_t, derivative_t, u_t, t);
+//	fflush(stdout);
+
+	return u_t;
+}
+
+
+double
+carmen_libpid_steering_PID_controler_FUZZY(double atan_desired_curvature, double atan_current_curvature, double delta_t_old __attribute__ ((unused)),
+		int manual_override, double v)
+{
+	static double 	error_t_1 = 0.0;	// error in time t-1
+	static double 	integral_t = 0.0;
+	static double 	integral_t_1 = 0.0;
+	static double 	u_t = 0.0;			// u(t)	-> actuation in time t
+	static double	previous_t = 0.0;
+	double factor = 0.0, kp = 0.0, ki = 0.0, kd = 0.0;
+
+	if (previous_t == 0.0)
+	{
+		previous_t = carmen_get_time();
+		return (0.0);
+	}
+	double t = carmen_get_time();
+	double delta_t = t - previous_t;
+
+	if (delta_t < (0.7 * (1.0 / 40.0)))
+		return (u_t);
+
+	double error_t = atan_desired_curvature - atan_current_curvature;
+
+	if (manual_override == 0)
+		integral_t = integral_t + error_t * delta_t;
+	else
+		integral_t = integral_t_1 = 0.0;
+
+	double derivative_t = (error_t - error_t_1) / delta_t;
+
+	////////////////  FUZZY  ////////////////
+	//1480.9  -  689.4   =  791.5
+	//6985.4  -  2008.7  =  4976.7
+	//81.45   -  30.8    =  50.65
+	if (v < 4.17) //4.17 = 15 km/h
+	{
+		kp = g_steering_Kp;
+		ki = g_steering_Ki;
+		kd = g_steering_Kd;
+	}
+	else
+	{
+		factor = carmen_clamp(0.0, ((v - 4.17) / 4.17), 1.0);
+
+		kp = g_steering_Kp + factor * 791.5;
+		ki = g_steering_Ki + factor * 4976.7;
+		kd = g_steering_Kd + factor * 50.65;
+	}
+
+//	printf("v %lf kp %lf ki %lf kd %lf\n", v, kp, ki, kd);
+
+	u_t = (kp * error_t)  +  (ki * integral_t)  +  (kd * derivative_t);
 
 	error_t_1 = error_t;
 
