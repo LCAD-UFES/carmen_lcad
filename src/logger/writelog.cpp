@@ -27,7 +27,7 @@
  ********************************************************/
 
 #include <carmen/carmen.h>
-#include <opencv/highgui.h>
+#include <opencv2/highgui/highgui.hpp>
 
 //byte numbers
 #define GET_LOW_ORDER_NIBBLE(x) (int_to_nibble_hex[x & 0xf])

@@ -1,8 +1,6 @@
 
 #include <carmen/tlight_vgram.h>
-#include <opencv2/core/core.hpp>        // Basic OpenCV structures (cv::Mat, Scalar)
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv/highgui.h>
 
 
 void
