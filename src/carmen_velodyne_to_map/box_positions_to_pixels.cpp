@@ -185,6 +185,11 @@ write_files()
 
 	for (unsigned int i = 0; i < object_list.size(); i++)
 	{
+		if (strcmp(object_list[i].tipo,"Bus") == 0 || strcmp(object_list[i].tipo,"Truck") == 0){
+			printf("%s\n",object_list[i].tipo);
+			strcpy(object_list[i].tipo,"Car");
+		}
+
 		if (strcmp(object_list[i].tipo,"Car") != 0){
 			continue;
 		}
