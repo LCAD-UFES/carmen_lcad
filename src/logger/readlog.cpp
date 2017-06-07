@@ -30,7 +30,7 @@
 #include <carmen/carmen_stdio.h>
 #include <carmen/readlog.h>
 #include <ctype.h>
-#include <opencv/highgui.h>
+#include <opencv2/highgui/highgui.hpp>
 
 #define HEX_TO_BYTE(hi, lo) (hi << 4 | lo)
 #define HEX_TO_SHORT(fourth, third, second, first) ( fourth << 12 | (third << 8 | (second << 4 | first)))
