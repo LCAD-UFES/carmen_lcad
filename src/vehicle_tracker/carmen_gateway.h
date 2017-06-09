@@ -23,6 +23,13 @@ void carmen_gateway_spin(double s = 0.01);
 carmen_localize_ackerman_globalpos_message *carmen_get_globalpos();
 
 /**
+ * @brief Get the latest offline map from the CARMEN network.
+ *
+ * @return Pointer to an offline map message. May be `NULL`.
+ */
+carmen_mapper_map_message *carmen_get_offline_map();
+
+/**
  * @brief Get the latest virtual scan reading from the CARMEN network.
  *
  * @return Pointer to a virtual scan message. May be `NULL`.

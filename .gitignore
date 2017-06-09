@@ -43,7 +43,7 @@ bin/dynamic_object_detector
 bin/ford_escape_hybrid
 bin/ford_escape_hybrid_test
 bin/ford_escape_hybrid_test_curves
-bin/ford_escape_hybrid_train_base
+bin/ford_escape_hybrid_tune_pid
 bin/fused_odometry
 bin/gmon.out
 bin/gps_nmea
@@ -212,7 +212,7 @@ src/dynamic_object_detector/dynamic_object_detector
 src/ford_escape_hybrid/ford_escape_hybrid
 src/ford_escape_hybrid/ford_escape_hybrid_test
 src/ford_escape_hybrid/ford_escape_hybrid_test_curves
-src/ford_escape_hybrid/ford_escape_hybrid_train_base
+src/ford_escape_hybrid/ford_escape_hybrid_tune_pid
 src/fused_odometry/fused_odometry
 src/fused_odometry/tf_test
 src/global/global_test

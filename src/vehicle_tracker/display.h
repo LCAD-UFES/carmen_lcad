@@ -4,7 +4,7 @@
 #include "canvas.h"
 #include "types.h"
 
-#include<boost/shared_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include "CircleGraphicsItem.h"
 #include <CGAL/Qt/PointsGraphicsItem.h>
@@ -35,9 +35,8 @@ typedef std::vector<PolygonGraphicsItemPtr> PolygonsGraphicsItem;
 
 }
 
-class Display
+struct Display
 {
-public:
 	/*
 	 * Attributes
 	 */
@@ -52,6 +51,8 @@ public:
 
 	Qt::PolygonsGraphicsItem polygons;
 
+	QPen pen;
+
 	/*
 	 * Constructors
 	 */
@@ -62,11 +63,15 @@ public:
 	 * Methods
 	 */
 
-	Circle &circle(Field x, Field y, Field r2);
+	Circle &circle(Field x, Field y, Field r);
 
 	Point &point(Field x, Field y);
 
+	Polygon &polygon(const Points &points);
+
 	Polygon &rectangle(Field x, Field y, Field w_2, Field h_2, Field t);
+
+	void clear();
 
 	void update();
 };

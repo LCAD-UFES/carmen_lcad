@@ -72,6 +72,15 @@ struct Canvas
 	Point &point(Field x, Field y);
 
 	/**
+	 * @brief Draws a polygon of vertexes given by a sequence of points.
+	 *
+	 * The drawn polygon is appended to this object's `polygons` sequence.
+	 *
+	 * \return A reference to the drawn polygon.
+	 */
+	Polygon &polygon(const Points &points);
+
+	/**
 	 * \brief Draws a rectangle of center `(x, y)`, half-width `w_2`, half-height `h_2`, and counter-clockwise rotation `t` around it center.
 	 *
 	 * The drawn rectangle is appended to this object's `polygons` sequence.

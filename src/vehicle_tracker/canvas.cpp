@@ -15,6 +15,12 @@ Point &Canvas::point(Field x, Field y)
 	return points.back();
 }
 
+Polygon &Canvas::polygon(const Points &points)
+{
+	polygons.emplace_back(points.begin(), points.end());
+	return polygons.back();
+}
+
 Polygon &Canvas::rectangle(Field x, Field y, Field w_2, Field h_2, Field t)
 {
 	Affine T = Affine(CGAL::TRANSLATION, Vector(x, y)) * Affine(CGAL::ROTATION, sin(t), cos(t));

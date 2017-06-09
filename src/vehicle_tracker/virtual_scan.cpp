@@ -13,7 +13,7 @@ VirtualScan::VirtualScan(carmen_localize_ackerman_globalpos_message *globalpos, 
 {
 	if (globalpos != NULL)
 	{
-		carmen_point_t &pose = globalpos->odometrypos;
+		carmen_point_t &pose = globalpos->globalpos;
 		center = g2d::Point(pose.x, pose.y);
 		angle = pose.theta;
 	}
@@ -28,7 +28,7 @@ VirtualScan::VirtualScan(carmen_localize_ackerman_globalpos_message *globalpos, 
 	double *t = virtual_scan->angles;
 	double *d = virtual_scan->ranges;
 	for (int i = 0; i < n; i++, t++, d++)
-		append(*t, *d);
+		append(*t + angle, *d);
 }
 
 VirtualScan::VirtualScan(const VirtualScan &a, const VirtualScan &b):
