@@ -35,7 +35,7 @@ static string window_name;
 static cv::Mat *img0 = 0;
 static cv::Mat *img1 = 0;
 static cv::Point clicked_point;
-static CvRect *bb;
+static cv::Rect *bb;
 static int drag = 0;
 
 static void mouseHandler(int event, int x, int y, int flags, void *param)
@@ -74,7 +74,7 @@ static void mouseHandler(int event, int x, int y, int flags, void *param)
 
 // TODO: member of Gui
 // --> problem: callback function mouseHandler as member!
-int getBBFromUser(cv::Mat *img, CvRect &rect, string windowName)
+int getBBFromUser(cv::Mat *img, cv::Rect &rect, string windowName)
 {
 	window_name = windowName;
     rect = cvRect(-1, -1, -1, -1);
