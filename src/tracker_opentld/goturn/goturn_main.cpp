@@ -19,9 +19,9 @@
 #include <carmen/rddf_messages.h>
 
 // OpenCV
-#include <opencv2/core/core.hpp>
-#include <opencv2/legacy/legacy.hpp>
+#include <opencv/cv.h>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include <locale.h>
 
 #include "Smoother/Helpers/wrap2pi.hpp"
@@ -554,10 +554,10 @@ compute_target_3d_position(std::vector<carmen_vector_3D_t> points_inside_box)
 void
 bounding_box_interface(char c, Mat* img)
 {
+	cv::Rect rect;
 	switch (c)
 	{
 		case 'r':
-			CvRect rect;
 
 			if (getBBFromUser(img, rect, window_name) == 0)
 				return;

@@ -28,7 +28,7 @@
 #define CONJUGATE_GRADIENT_PATH_SMOOTHER_HPP
 
 #include <vector>
-
+#include <limits>
 #include "Entities/State2D.hpp"
 #include "Entities/Vector2DArray.hpp"
 #include "Entities/GridCellIndex.hpp"
