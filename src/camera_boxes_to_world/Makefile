@@ -10,7 +10,10 @@ CXXFLAGS += -Wall
 
 IFLAGS += 
 LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lparam_interface `pkg-config --libs opencv` \
-          -lvelodyne_camera_calibration
+          -lvelodyne_camera_calibration \
+          -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lrt \
+          -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
+		  -lboost_thread-mt -lboost_signals -lboost_system
 
 SOURCES = camera_boxes_to_world.cpp show_boxes.cpp
 
