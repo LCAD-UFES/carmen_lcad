@@ -24,7 +24,7 @@ static void drawBox(double length_x, double length_y, double length_z);
 
 CarDrawer* createCarDrawer(int argc, char** argv)
 {	
-	CarDrawer* carDrawer = malloc(sizeof(CarDrawer));
+	CarDrawer* carDrawer = (CarDrawer*)malloc(sizeof(CarDrawer));
 
 	carDrawer->carModel = glmReadOBJ("ford_escape_model.obj");
 	glmUnitize(carDrawer->carModel);

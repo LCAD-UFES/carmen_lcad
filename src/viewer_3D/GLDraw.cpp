@@ -25,6 +25,7 @@ static carmen_pose_3D_t camera_pose;
 static carmen_pose_3D_t camera_offset;
 
 static unsigned int map_image_texture_id;
+static unsigned int localize_image_texture_id;
 
 static unsigned int laser_buffer_id;
 static double *laser_pos_buffer;
@@ -60,6 +61,8 @@ initGl ()
     glEnable (GL_COLOR_MATERIAL);
 
     map_image_texture_id = create_texture ();
+
+    localize_image_texture_id = create_texture2 ();
 
     glGenBuffers (1, &laser_buffer_id);
     glBindBuffer (GL_ARRAY_BUFFER, laser_buffer_id);
@@ -582,7 +585,7 @@ draw_number_associated(double x, double y, int associated, char *model_type)
 
 	len = 15;
     //  Allocate memory for a string of the specified size
-    text = malloc(len * sizeof(char));
+    text = (char*)malloc(len * sizeof(char));
 
     snprintf(text, len, "%d %s", associated, model_type);
 
@@ -614,7 +617,7 @@ draw_linear_velocity(double x, double y, double linear_velocity, double height)
 
 	len = 10;
     //  Allocate memory for a string of the specified size
-    text = malloc(len * sizeof(char));
+    text = (char*)malloc(len * sizeof(char));
 
     snprintf(text, 10, "%.2f", linear_velocity);
 
@@ -1513,6 +1516,32 @@ draw_map_image (carmen_vector_3D_t gps_position_at_turn_on, carmen_vector_3D_t m
     glVertex3d (square_size / 2.0, square_size / 2.0, 0.0f);
     glTexCoord2f (tex_coord_min.x, tex_coord_min.y);
     glVertex3d (-square_size / 2.0, square_size / 2.0, 0.0f);
+    glEnd ();
+    glPopMatrix ();
+    glDisable (GL_TEXTURE_2D);
+}
+
+void
+draw_localize_image (carmen_vector_3D_t gps_position_at_turn_on, carmen_pose_3D_t pose, char *image, int width, int height)
+{
+    int square_size = 10;
+    double z = pose.position.z;
+    double dx = pose.position.x - gps_position_at_turn_on.x;
+    double dy = pose.position.y - gps_position_at_turn_on.y;
+
+    glTranslated (dx, dy, z);
+    glRotated (carmen_radians_to_degrees(pose.orientation.yaw-M_PI/2.0), 0.0, 0.0, 1.0);
+    glColor3d (1.0, 1.0, 1.0);
+    glEnable (GL_TEXTURE_2D);
+    glPushMatrix ();
+    glBindTexture(GL_TEXTURE_2D, localize_image_texture_id);
+    glTexImage2D (GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+    glBegin (GL_QUADS);
+    glNormal3d(1, 0, 0);
+    glTexCoord2f (0.0f, 1.0f); glVertex3d (-square_size / 2.0, 0.0f, 0.0f);
+    glTexCoord2f (1.0f, 1.0f); glVertex3d (square_size / 2.0, 0.0f, 0.0f);
+    glTexCoord2f (1.0f, 0.0f); glVertex3d (square_size / 2.0, 0.0f, square_size / 2.0);
+    glTexCoord2f (0.0f, 0.0f); glVertex3d (-square_size / 2.0, 0.0f, square_size / 2.0);
     glEnd ();
     glPopMatrix ();
     glDisable (GL_TEXTURE_2D);

@@ -21,6 +21,8 @@
 #include <GL/glew.h>
 #include <iostream>
 #include <vector>
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
 
 #include "viewer_3D.h"
 
@@ -204,6 +206,7 @@ static int draw_stereo_cloud_flag;
 static int draw_car_flag;
 static int draw_rays_flag;
 static int draw_map_image_flag;
+static int draw_localize_image_flag;
 static int weight_type_flag;
 static int draw_gps_flag;
 static int draw_odometry_flag;
@@ -217,7 +220,6 @@ static int draw_localize_ackerman_flag;
 static int draw_annotation_flag;
 static int draw_moving_objects_flag;
 static int draw_gps_axis_flag;
-
 
 static int follow_car_flag;
 static int zero_z_flag;
@@ -251,8 +253,11 @@ void init_stuff(int argc, char** argv);
 void destroy_stuff();
 
 static carmen_download_map_message download_map_message;
-int first_download_map_have_been_aquired = 0;
+static int first_download_map_have_been_aquired = 0;
 static int new_map_has_been_received = 0;
+
+static carmen_localize_neural_imagepos_message localize_imagepos_message;
+static int localize_imagepos_initialized = 0;
 
 static int stereo_velodyne_vertical_resolution;
 static int stereo_velodyne_flipped;
@@ -1490,6 +1495,22 @@ carmen_download_map_handler(carmen_download_map_message *message)
 
     new_map_has_been_received = 1;
 }
+
+static void
+carmen_localize_neural_handler(carmen_localize_neural_imagepos_message *message)
+{
+//	printf("%lf %lf %lf\n", message->pose.position.x, message->pose.position.y, message->pose.orientation.yaw);
+
+    if (!localize_imagepos_initialized)
+    {
+    	localize_imagepos_initialized = 1;
+    	localize_imagepos_message = *message;
+        localize_imagepos_message.image_data = (char*) malloc(message->size * sizeof(char));
+    }
+    localize_imagepos_message.pose = message->pose;
+    memcpy(localize_imagepos_message.image_data, message->image_data, message->size * sizeof(char));
+}
+
 #ifdef TEST_LANE_ANALYSIS
 static void lane_analysis_handler(carmen_elas_lane_analysis_message * message) {
 	carmen_vector_3D_t position_offset = get_position_offset();
@@ -1752,6 +1773,7 @@ init_flags(void)
     draw_car_flag = 1;
     draw_rays_flag = 0;
     draw_map_image_flag = 0;
+    draw_localize_image_flag = 0;
     weight_type_flag = 2;
     draw_gps_flag = 0;
     draw_odometry_flag = 0;
@@ -2436,6 +2458,15 @@ draw_loop(window *w)
             }
         }
 
+        if (draw_localize_image_flag && localize_imagepos_initialized)
+        {
+                draw_localize_image(get_position_offset(),
+                		localize_imagepos_message.pose,
+						localize_imagepos_message.image_data,
+						localize_imagepos_message.width,
+						localize_imagepos_message.height
+						);
+        }
 
         if (!gps_fix_flag)
         {
@@ -2452,7 +2483,7 @@ draw_loop(window *w)
 
 
 void
-draw_loop2(window *w)
+draw_loop_for_picking(window *w)
 {
     w = w;
     lastDisplayTime = carmen_get_time();
@@ -2689,6 +2720,10 @@ subscribe_ipc_messages(void)
 
     carmen_download_map_subscribe_message(NULL,
                                           (carmen_handler_t) carmen_download_map_handler,
+                                          CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_localize_neural_subscribe_imagepos_message(NULL,
+                                          (carmen_handler_t) carmen_localize_neural_handler,
                                           CARMEN_SUBSCRIBE_LATEST);
 
     carmen_stereo_velodyne_subscribe_scan_message(camera, NULL,
@@ -2973,6 +3008,9 @@ set_flag_viewer_3D(int flag_num, int value)
     case 29:
     	draw_gps_axis_flag = value;
     	break;
+    case 30:
+    	draw_localize_image_flag = value;
+        break;
     }
 }
 
@@ -3011,7 +3049,7 @@ picking(int ev_x, int ev_y)
     glLoadIdentity();
     glMultMatrixf(modelview);
 
-    draw_loop2(w);
+    draw_loop_for_picking(w);
 
     glPopMatrix();
     glFlush();

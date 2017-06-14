@@ -25,7 +25,7 @@ struct velodyne_intensity_drawer
 
 velodyne_intensity_drawer* create_velodyne_intensity_drawer(carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t sensor_board_pose)
 {
-	velodyne_intensity_drawer* v_drawer = malloc(sizeof(velodyne_intensity_drawer));
+	velodyne_intensity_drawer* v_drawer = (velodyne_intensity_drawer*)malloc(sizeof(velodyne_intensity_drawer));
 
 	v_drawer->pcloud_drawer = create_point_cloud_drawer(10000);
 	
@@ -163,8 +163,8 @@ velodyne_intensity_drawer_add_velodyne_message(velodyne_intensity_drawer *v_draw
 
 	if(num_points > velodyne_points.num_points)
 	{
-		velodyne_points.points = realloc(velodyne_points.points, num_points*sizeof(carmen_vector_3D_t));
-		velodyne_points.point_color = realloc(velodyne_points.point_color, num_points*sizeof(carmen_vector_3D_t));
+		velodyne_points.points = (carmen_vector_3D_t*)realloc(velodyne_points.points, num_points*sizeof(carmen_vector_3D_t));
+		velodyne_points.point_color = (carmen_vector_3D_t*)realloc(velodyne_points.point_color, num_points*sizeof(carmen_vector_3D_t));
 	}
 	velodyne_points.num_points = num_points;
 	velodyne_points.car_position = car_fused_pose.position;

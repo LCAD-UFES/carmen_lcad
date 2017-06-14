@@ -38,7 +38,7 @@ interface_drawer*
 create_interface_drawer(void) {
     interface_drawer* i_drawer = (interface_drawer*) malloc(sizeof (interface_drawer));
 
-    i_drawer->num_buttons = 48;
+    i_drawer->num_buttons = 56;
     i_drawer->butt = (button*) malloc(i_drawer->num_buttons * sizeof (button));
 
     init_buttons(i_drawer);
@@ -83,20 +83,27 @@ init_buttons(interface_drawer* i_drawer) {
             i_drawer->butt[i].visible = 0;
         } else if (i < 32) {
             i_drawer->butt[i].x = 80 + (i - 24) * 120;
-            i_drawer->butt[i].y = 60;
+            i_drawer->butt[i].y = 120;
             i_drawer->butt[i].width = 100;
             i_drawer->butt[i].height = 20;
 
             i_drawer->butt[i].visible = 0;
         } else if (i < 40) {
             i_drawer->butt[i].x = 80 + (i - 32) * 120;
-            i_drawer->butt[i].y = 90;
+            i_drawer->butt[i].y = 60;
             i_drawer->butt[i].width = 100;
             i_drawer->butt[i].height = 20;
 
             i_drawer->butt[i].visible = 0;
         } else if (i < 48) {
             i_drawer->butt[i].x = 80 + (i - 40) * 120;
+            i_drawer->butt[i].y = 90;
+            i_drawer->butt[i].width = 100;
+            i_drawer->butt[i].height = 20;
+
+            i_drawer->butt[i].visible = 0;
+        } else if (i < 56) {
+            i_drawer->butt[i].x = 80 + (i - 48) * 120;
             i_drawer->butt[i].y = 90;
             i_drawer->butt[i].width = 100;
             i_drawer->butt[i].height = 20;
@@ -116,6 +123,7 @@ init_buttons(interface_drawer* i_drawer) {
     i_drawer->butt[5].text = "Follow Car";
     i_drawer->butt[6].text = "GPS";
     i_drawer->butt[7].text = "Google Image";
+
     i_drawer->butt[8].text = "Velodyne 360";
     i_drawer->butt[9].text = "Velodyne VBO";
     i_drawer->butt[10].text = "Velodyne";
@@ -124,6 +132,7 @@ init_buttons(interface_drawer* i_drawer) {
     i_drawer->butt[13].text = "Annotation";
     i_drawer->butt[14].text = "SICK";
     i_drawer->butt[15].text = "SICK Rays";
+
     i_drawer->butt[16].text = "XSENS Axis";
     i_drawer->butt[17].text = "Global Pos";
     i_drawer->butt[18].text = "Intensity Vldyn";
@@ -132,33 +141,43 @@ init_buttons(interface_drawer* i_drawer) {
     i_drawer->butt[21].text = "Trajectory Plan";
     i_drawer->butt[22].text = "Moving Objects";
     i_drawer->butt[23].text = "GPS Axis";
+
+    i_drawer->butt[24].text = "Neural Localizer";
+    i_drawer->butt[25].text = "Empty";
+    i_drawer->butt[26].text = "Empty";
+    i_drawer->butt[27].text = "Empty";
+    i_drawer->butt[28].text = "Empty";
+    i_drawer->butt[29].text = "Empty";
+    i_drawer->butt[30].text = "Empty";
+    i_drawer->butt[31].text = "Empty";
+
     //Annotations
-    i_drawer->butt[24].text = "Traffic Light";
-    i_drawer->butt[25].text = "Traffic Signal";
-    i_drawer->butt[26].text = "Pedestrian Track";
-    i_drawer->butt[27].text = "Stop";
-    i_drawer->butt[28].text = "Barrier";
-    i_drawer->butt[29].text = "Bump";
-    i_drawer->butt[30].text = "Speed";
-    i_drawer->butt[31].text = "Delete";
+    i_drawer->butt[32].text = "Traffic Light";
+    i_drawer->butt[33].text = "Traffic Signal";
+    i_drawer->butt[34].text = "Pedestrian Track";
+    i_drawer->butt[35].text = "Stop";
+    i_drawer->butt[36].text = "Barrier";
+    i_drawer->butt[37].text = "Bump";
+    i_drawer->butt[38].text = "Speed";
+    i_drawer->butt[39].text = "Delete";
     //Speed Annotations
-    i_drawer->butt[32].text = "0 km/h";
-    i_drawer->butt[33].text = "5 km/h";
-    i_drawer->butt[34].text = "10 km/h";
-    i_drawer->butt[35].text = "15 km/h";
-    i_drawer->butt[36].text = "20 km/h";
-    i_drawer->butt[37].text = "30 km/h";
-    i_drawer->butt[38].text = "40 km/h";
-    i_drawer->butt[39].text = "60 km/h";
+    i_drawer->butt[40].text = "0 km/h";
+    i_drawer->butt[41].text = "5 km/h";
+    i_drawer->butt[42].text = "10 km/h";
+    i_drawer->butt[43].text = "15 km/h";
+    i_drawer->butt[44].text = "20 km/h";
+    i_drawer->butt[45].text = "30 km/h";
+    i_drawer->butt[46].text = "40 km/h";
+    i_drawer->butt[47].text = "60 km/h";
     //Traffic Signals Annotations
-    i_drawer->butt[40].text = "Bump";
-    i_drawer->butt[41].text = "20 km/h";
-    i_drawer->butt[42].text = "30 km/h";
-    i_drawer->butt[43].text = "Empty";
-    i_drawer->butt[44].text = "Empty";
-    i_drawer->butt[45].text = "Empty";
-    i_drawer->butt[46].text = "Empty";
-    i_drawer->butt[47].text = "Empty";
+    i_drawer->butt[48].text = "Bump";
+    i_drawer->butt[49].text = "20 km/h";
+    i_drawer->butt[50].text = "30 km/h";
+    i_drawer->butt[51].text = "Empty";
+    i_drawer->butt[52].text = "Empty";
+    i_drawer->butt[53].text = "Empty";
+    i_drawer->butt[54].text = "Empty";
+    i_drawer->butt[55].text = "Empty";
 
 }
 
@@ -200,14 +219,14 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y) {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
                     int j;
-                    for (j = 1; j < 24; j++) {
+                    for (j = 1; j < 32; j++) {
                         i_drawer->butt[j].visible = !i_drawer->butt[j].visible;
                     }
 
                     if (i_drawer->butt[13].state) {
                         i_drawer->butt[13].state = !(i_drawer->butt[13].state);
                         set_flag_viewer_3D(19, i_drawer->butt[13].state);
-                        for (j = 24; j < 48; j++) {
+                        for (j = 32; j < 56; j++) {
                             i_drawer->butt[j].visible = 0;
                         }
                     }
@@ -292,21 +311,21 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y) {
                     set_flag_viewer_3D(19, i_drawer->butt[i].state);
 
 
-                    if (i_drawer->butt[30].state == 1) {
-                        for (int j = 32; j < 40; j++) {
-                            i_drawer->butt[j].visible = 0;
-                        }
-                    }
-                    if (i_drawer->butt[25].state == 1) {
+                    if (i_drawer->butt[38].state == 1) {
                         for (int j = 40; j < 48; j++) {
                             i_drawer->butt[j].visible = 0;
                         }
                     }
+                    if (i_drawer->butt[37].state == 1) {
+                        for (int j = 48; j < 56; j++) {
+                            i_drawer->butt[j].visible = 0;
+                        }
+                    }
 
-                    for (int j = 24; j < 32; j++) {
+                    for (int j = 32; j < 40; j++) {
                         i_drawer->butt[j].visible = i_drawer->butt[i].state;
                     }
-                    for (int j = 1; j < 24; j++) {
+                    for (int j = 1; j < 32; j++) {
                         i_drawer->butt[j].visible = !i_drawer->butt[i].state;
                     }
 
@@ -364,108 +383,113 @@ handle_mouse_left_click(interface_drawer* i_drawer, int x, int y) {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
                     set_flag_viewer_3D(29, i_drawer->butt[i].state);
-                }else if (i_drawer->butt[i].code == 24) // Traffic Light
+                } else if (i_drawer->butt[i].code == 24) // Localize Neural
+                {
+                    i_drawer->butt[i].state = !(i_drawer->butt[i].state);
+
+                    set_flag_viewer_3D(30, i_drawer->butt[i].state);
+                }else if (i_drawer->butt[i].code == 32) // Traffic Light
                 {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
                     set_flag_viewer_3D(20, i_drawer->butt[i].state);
-                } else if (i_drawer->butt[i].code == 25) // Traffic Signal
+                } else if (i_drawer->butt[i].code == 33) // Traffic Signal
                 {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-                    for (int j = 40; j < 48; j++) {
+                    for (int j = 48; j < 56; j++) {
                         i_drawer->butt[j].visible = i_drawer->butt[i].state;
                     }
-                    for (int j = 32; j < 40; j++) {
+                    for (int j = 40; j < 48; j++) {
                         i_drawer->butt[j].visible = 0;
                     }
-                } else if (i_drawer->butt[i].code == 26) // Pedestrian Track
+                } else if (i_drawer->butt[i].code == 34) // Pedestrian Track
                 {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
                     set_flag_viewer_3D(22, i_drawer->butt[i].state);
-                } else if (i_drawer->butt[i].code == 27) // Stop
+                } else if (i_drawer->butt[i].code == 35) // Stop
                 {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
                     set_flag_viewer_3D(23, i_drawer->butt[i].state);
-                } else if (i_drawer->butt[i].code == 28) // Barrier
+                } else if (i_drawer->butt[i].code == 36) // Barrier
                 {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
                     set_flag_viewer_3D(24, i_drawer->butt[i].state);
-                } else if (i_drawer->butt[i].code == 29) // Bump
+                } else if (i_drawer->butt[i].code == 37) // Bump
                 {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
                     set_flag_viewer_3D(25, i_drawer->butt[i].state);
-                } else if (i_drawer->butt[i].code == 30) // Speed
+                } else if (i_drawer->butt[i].code == 38) // Speed
                 {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
-                    for (int j = 32; j < 40; j++) {
+                    for (int j = 40; j < 48; j++) {
                         i_drawer->butt[j].visible = i_drawer->butt[i].state;
                     }
-                    for (int j = 40; j < 48; j++) {
+                    for (int j = 48; j < 56; j++) {
                         i_drawer->butt[j].visible = 0;
                     }
-                } else if (i_drawer->butt[i].code == 31) // Delete Annotation
+                } else if (i_drawer->butt[i].code == 39) // Delete Annotation
                 {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
                     set_flag_viewer_3D(27, i_drawer->butt[i].state);
                 }
-                else if (i_drawer->butt[i].code == 32) // Speed 0
+                else if (i_drawer->butt[i].code == 40) // Speed 0
                 {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
                     set_flag_viewer_3D(26, 0);
-                } else if (i_drawer->butt[i].code == 33) // Speed 5
+                } else if (i_drawer->butt[i].code == 41) // Speed 5
                 {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
                     set_flag_viewer_3D(26, 5);
-                } else if (i_drawer->butt[i].code == 34) // Speed 10
+                } else if (i_drawer->butt[i].code == 42) // Speed 10
                 {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
                     set_flag_viewer_3D(26, 10);
-                } else if (i_drawer->butt[i].code == 35) // Speed 15
+                } else if (i_drawer->butt[i].code == 43) // Speed 15
                 {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
                     set_flag_viewer_3D(26, 15);
-                } else if (i_drawer->butt[i].code == 36) // Speed 20
+                } else if (i_drawer->butt[i].code == 44) // Speed 20
                 {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
                     set_flag_viewer_3D(26, 20);
-                } else if (i_drawer->butt[i].code == 37) // Speed 30
+                } else if (i_drawer->butt[i].code == 45) // Speed 30
                 {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
                     set_flag_viewer_3D(26, 30);
-                } else if (i_drawer->butt[i].code == 38) // Speed 40
+                } else if (i_drawer->butt[i].code == 46) // Speed 40
                 {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
                     set_flag_viewer_3D(26, 40);
-                } else if (i_drawer->butt[i].code == 39) // Speed 60
+                } else if (i_drawer->butt[i].code == 47) // Speed 60
                 {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
                     set_flag_viewer_3D(26, 60);
-                } else if (i_drawer->butt[i].code == 40) // Bump Traffic Signal
+                } else if (i_drawer->butt[i].code == 48) // Bump Traffic Signal
                 {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
                     set_flag_viewer_3D(21, 0);
-                } else if (i_drawer->butt[i].code == 41) // Speed 20 Traffic Signal
+                } else if (i_drawer->butt[i].code == 49) // Speed 20 Traffic Signal
                 {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 
                     set_flag_viewer_3D(21, 20);
-                } else if (i_drawer->butt[i].code == 42) // Speed 30 Traffic Signal
+                } else if (i_drawer->butt[i].code == 50) // Speed 30 Traffic Signal
                 {
                     i_drawer->butt[i].state = !(i_drawer->butt[i].state);
 

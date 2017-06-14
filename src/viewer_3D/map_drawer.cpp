@@ -23,15 +23,15 @@ struct map_drawer
 map_drawer*
 create_map_drawer(void)
 {
-	map_drawer* m_drawer = malloc(sizeof(map_drawer));
+	map_drawer* m_drawer = (map_drawer*)malloc(sizeof(map_drawer));
 		
 	m_drawer->max_num_maps = 1;
 	m_drawer->next_map = 0;
 
-	m_drawer->maps = malloc(m_drawer->max_num_maps * sizeof(carmen_map_t));
-	m_drawer->vertex_buffer_ids = malloc((m_drawer->max_num_maps) * sizeof(GLuint));
-	m_drawer->color_buffer_ids = malloc((m_drawer->max_num_maps) * sizeof(GLuint));
-	m_drawer->buffer_sizes = malloc((m_drawer->max_num_maps) * sizeof(int));
+	m_drawer->maps = (carmen_map_t*)malloc(m_drawer->max_num_maps * sizeof(carmen_map_t));
+	m_drawer->vertex_buffer_ids = (GLuint*)malloc((m_drawer->max_num_maps) * sizeof(GLuint));
+	m_drawer->color_buffer_ids = (GLuint*)malloc((m_drawer->max_num_maps) * sizeof(GLuint));
+	m_drawer->buffer_sizes = (int*)malloc((m_drawer->max_num_maps) * sizeof(int));
 
 	int i;
 	for(i=0; i < m_drawer->max_num_maps; i++)
@@ -154,7 +154,7 @@ static float* create_vertex_data(carmen_map_t map)
 {
 	int total_size = getTotalObstacles(map);
 
-	float* vd = malloc( total_size * 6 * 4 * 2 * 3 * sizeof(float));
+	float* vd = (float*)malloc( total_size * 6 * 4 * 2 * 3 * sizeof(float));
 
 	double resolution = map.config.resolution;
 	int pos = 0;

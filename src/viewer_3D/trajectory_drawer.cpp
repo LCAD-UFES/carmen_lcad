@@ -26,7 +26,7 @@ struct trajectory_drawer
 trajectory_drawer*
 create_trajectory_drawer(double r, double g, double b)
 {
-	trajectory_drawer* t_drawer = malloc(sizeof(trajectory_drawer));
+	trajectory_drawer* t_drawer = (trajectory_drawer*)malloc(sizeof(trajectory_drawer));
 		
 	t_drawer->path = NULL;
 	t_drawer->path_size = 0;
@@ -53,7 +53,7 @@ destroy_trajectory_drawer(trajectory_drawer* t_drawer)
 void
 add_trajectory_message(trajectory_drawer* t_drawer, carmen_navigator_ackerman_plan_message *message)
 {
-	t_drawer->path = realloc(t_drawer->path, message->path_length * sizeof(carmen_vector_3D_t));
+	t_drawer->path = (carmen_vector_3D_t*)realloc(t_drawer->path, message->path_length * sizeof(carmen_vector_3D_t));
 	t_drawer->path_size = message->path_length;
 
 	int i;
@@ -68,7 +68,7 @@ add_trajectory_message(trajectory_drawer* t_drawer, carmen_navigator_ackerman_pl
 void
 add_goal_list_message(trajectory_drawer* t_drawer, carmen_behavior_selector_goal_list_message *message)
 {
-	t_drawer->goals = realloc(t_drawer->goals, message->size * sizeof(carmen_pose_3D_t));
+	t_drawer->goals = (carmen_pose_3D_t*)realloc(t_drawer->goals, message->size * sizeof(carmen_pose_3D_t));
 	t_drawer->goals_size = message->size;
 
 	int i;
