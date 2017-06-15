@@ -1522,9 +1522,8 @@ draw_map_image (carmen_vector_3D_t gps_position_at_turn_on, carmen_vector_3D_t m
 }
 
 void
-draw_localize_image (carmen_vector_3D_t gps_position_at_turn_on, carmen_pose_3D_t pose, char *image, int width, int height)
+draw_localize_image (carmen_vector_3D_t gps_position_at_turn_on, carmen_pose_3D_t pose, char *image, int width, int height, int square_size)
 {
-    int square_size = 10;
     double z = pose.position.z;
     double dx = pose.position.x - gps_position_at_turn_on.x;
     double dy = pose.position.y - gps_position_at_turn_on.y;

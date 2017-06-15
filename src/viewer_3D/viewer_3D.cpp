@@ -57,6 +57,7 @@ static int velodyne_size;
 static int odometry_size;
 static int gps_size;
 static int localize_ackerman_size;
+static int camera_square_size;
 
 static point_cloud *stereo_point_cloud;
 static int last_stereo_point_cloud;
@@ -1908,6 +1909,7 @@ init_stuff(int argc, char** argv)
             {(char*) "viewer_3D", (char*) "background_green", CARMEN_PARAM_DOUBLE, &b_green, 0, NULL},
             {(char*) "viewer_3D", (char*) "background_blue", CARMEN_PARAM_DOUBLE, &b_blue, 0, NULL},
             {(char*) "viewer_3D", (char*) "point_size", CARMEN_PARAM_INT, &point_size, 0, NULL},
+            {(char*) "viewer_3D", (char*) "camera_square_size", CARMEN_PARAM_INT, &camera_square_size, 0, NULL},
 
             {(char*) "sensor_board_1", (char*) "x", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.x), 0, NULL},
             {(char*) "sensor_board_1", (char*) "y", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.y), 0, NULL},
@@ -2464,7 +2466,8 @@ draw_loop(window *w)
                 		localize_imagepos_message.pose,
 						localize_imagepos_message.image_data,
 						localize_imagepos_message.width,
-						localize_imagepos_message.height
+						localize_imagepos_message.height,
+						camera_square_size
 						);
         }
 
