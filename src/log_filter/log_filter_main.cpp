@@ -35,6 +35,7 @@ static char* fused_odometry_output_filename = (char*)"fused_odometry.txt";
 static char* image_pose_filename = (char*)"image_pose.txt";
 static char* car_odometry_output_filename = (char*)"car_odometry.txt";
 static char* globalpos_output_filename = (char*)"globalpos.txt";
+static char* imagepos_output_filename = (char*)"imagepos.txt";
 static FILE* gps_gpgga_output_file = NULL;
 static FILE* gps_xyz_output_file = NULL;
 static FILE* fused_odometry_output_file = NULL;
@@ -914,7 +915,7 @@ initialize_module_args(int argc, char **argv)
 			else if (!strcmp(argv[3], "with_image_pose"))
 			{
 				carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) image_pose_handler, CARMEN_SUBSCRIBE_LATEST);
-				image_pose_output_file = fopen(image_pose_output_filename, "w");
+				image_pose_output_file = fopen(imagepos_output_filename, "w");
 				fprintf(image_pose_output_file, "image x y z w p q r\n");
 			}
 		}
