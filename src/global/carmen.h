@@ -93,11 +93,6 @@ extern "C" {
 #include <carmen/laser_ldmrs_interface.h>
 #endif
 
-#ifndef COMPILE_WITHOUT_CAMERA_SUPPORT
-#include <carmen/camera_messages.h>
-#include <carmen/camera_interface.h>
-#endif
-
 #ifndef COMPILE_WITHOUT_LASER_SUPPORT
 #include <carmen/keyctrl.h>
 #endif
@@ -193,6 +188,8 @@ extern "C" {
 #include <carmen/ultrasonic_filter_interface.h>
 #endif
 
+#include <carmen/localize_neural_messages.h>
+#include <carmen/localize_neural_interface.h>
 #ifdef __cplusplus
 }
 #endif

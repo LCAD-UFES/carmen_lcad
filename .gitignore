@@ -529,3 +529,4 @@ src/zed_camera2/zed_camera_main
 bin/dataset_creator
 src/traffic_light/tlight_evaluate_train
 src/traffic_light/tlight_train
+src/global/carmen-config.c

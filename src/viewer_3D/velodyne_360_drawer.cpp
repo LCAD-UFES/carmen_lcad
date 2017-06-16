@@ -35,7 +35,7 @@ double velodyne_360_drawer_get_angle_current (velodyne_360_drawer* v_drawer, int
 
 velodyne_360_drawer* create_velodyne_360_drawer(carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t sensor_board_pose)
 {
-	velodyne_360_drawer* v_drawer = malloc(sizeof(velodyne_360_drawer));
+	velodyne_360_drawer* v_drawer = (velodyne_360_drawer*)malloc(sizeof(velodyne_360_drawer));
 
 	v_drawer->points_current = NULL;
 	v_drawer->angles_current = NULL;
@@ -103,8 +103,8 @@ void add_velodyne_message(velodyne_360_drawer* v_drawer, carmen_velodyne_partial
 	int num_points = velodyne_message->number_of_32_laser_shots*32;
 
 	v_drawer->num_points_current = num_points;
-	v_drawer->points_current = realloc(v_drawer->points_current, num_points*sizeof(carmen_vector_3D_t));
-	v_drawer->angles_current = realloc(v_drawer->angles_current, num_points*sizeof(double));
+	v_drawer->points_current = (carmen_vector_3D_t*)realloc(v_drawer->points_current, num_points*sizeof(carmen_vector_3D_t));
+	v_drawer->angles_current = (double*)realloc(v_drawer->angles_current, num_points*sizeof(double));
 
 	rotation_matrix* velodyne_to_board_matrix = create_rotation_matrix(v_drawer->velodyne_pose.orientation);
 	rotation_matrix* board_to_car_matrix = create_rotation_matrix(v_drawer->sensor_board_pose.orientation);

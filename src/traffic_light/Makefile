@@ -16,11 +16,12 @@ IFLAGS +=  -std=c++11 -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/
 LFLAGS += -lglobal -lparam_interface -lipc -lGL -lGLU -lglut \
 	 -ltime_profile -lbumblebee_basic_interface -lstereo_interface -ltf \
 	 -llocalize_ackerman_interface -lrddf_interface \
-	  -L$(CARMEN_HOME)/sharedlib/libtf/src \
+	 -L$(CARMEN_HOME)/sharedlib/libtf/src \
 	 -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
 	 -lboost_thread-mt -lrt -lboost_signals -lboost_system \
-	  -L/usr/local/share/OpenCV/3rdparty/lib `pkg-config --libs opencv` \
-	  -lwnn -ldlib -lblas
+	 -lwnn -ldlib -lblas
+IFLAGS += `pkg-config opencv --cflags`
+LFLAGS += `pkg-config opencv --libs`
 
 #SOURCES = traffic_light_main.cpp traffic_light_interface.cpp traffic_light.cpp mapping_traffic_light_main.cpp log_generate_images.cpp
 SOURCES = traffic_light_main.cpp traffic_light_interface.cpp traffic_light.cpp log_generate_images.cpp #tlight_train.cpp tlight_evaluate_train.cpp 
@@ -52,7 +53,7 @@ endif
 
 ifdef CAFFE_HOME
 IFLAGS += -I $(CAFFE_HOME)/include -I $(CAFFE_HOME)/build/src/ -I /usr/local/cuda/include
-LFLAGS += -L $(CAFFE_HOME)/build/lib -lcaffe \
+LFLAGS += -L $(CAFFE_HOME)/lib -lcaffe \
 		-L /usr/local/cuda/lib64 -lglog -lprotobuf -L/usr/local/lib
 SOURCES += squeezenet_tlight.cpp
 PUBLIC_INCLUDES += squeezenet_tlight.h

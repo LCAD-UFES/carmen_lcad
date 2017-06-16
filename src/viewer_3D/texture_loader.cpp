@@ -4,6 +4,11 @@
 
 #include <carmen/carmen_gps_wrapper.h>
 
+#include <opencv2/core/core_c.h>
+#include <opencv2/imgproc/imgproc_c.h>
+#include <opencv2/highgui/highgui_c.h>
+#include <opencv2/imgcodecs/imgcodecs_c.h>
+
 static IplImage* ipl_image = NULL;
 
 static char *map_image = NULL; //[3 * TEXTURE_SIZE * TEXTURE_SIZE];
@@ -144,3 +149,16 @@ int create_texture(void)
 	return texture;
 }
 
+unsigned int create_texture2(void)
+{
+	unsigned int texture_id;
+    glGenTextures( 1, &texture_id );
+	glBindTexture(GL_TEXTURE_2D, texture_id);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+	return texture_id;
+}

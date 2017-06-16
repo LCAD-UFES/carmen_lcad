@@ -32,11 +32,14 @@ static char* output_dir_name;
 static char* gps_gpgga_output_filename = (char*)"gps.txt";
 static char* gps_xyz_output_filename = (char*)"gps_xyz.csv";
 static char* fused_odometry_output_filename = (char*)"fused_odometry.txt";
+static char* image_pose_filename = (char*)"image_pose.txt";
 static char* car_odometry_output_filename = (char*)"car_odometry.txt";
 static char* globalpos_output_filename = (char*)"globalpos.txt";
+static char* imagepos_output_filename = (char*)"imagepos.txt";
 static FILE* gps_gpgga_output_file = NULL;
 static FILE* gps_xyz_output_file = NULL;
 static FILE* fused_odometry_output_file = NULL;
+static FILE* image_pose_output_file = NULL;
 static FILE* car_odometry_output_file = NULL;
 static FILE* globalpos_output_file = NULL;
 static long message_index = 0;
@@ -363,28 +366,28 @@ save_globalpos_metadata_to_file(carmen_bumblebee_basic_stereoimage_message *ster
 
 
 void
-save_fused_odometry_metadata_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int camera)
+save_image_pose_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int camera)
 {
-	int nearest_fused_odometry_message_index = -1;
+	int nearest_message_index = -1;
 	char *left_img_filename, *right_img_filename;
 	static double global_x = 0.0, global_y = 0.0;
 
 	if (stereo_image != NULL)
 	{
-		nearest_fused_odometry_message_index = find_nearest_fused_odometry_message(stereo_image->timestamp);
-		if (nearest_fused_odometry_message_index >= 0)
+		nearest_message_index = find_nearest_globalpos_message(stereo_image->timestamp);
+		if (nearest_message_index >= 0)
 		{
 			create_stereo_filename_from_timestamp(stereo_image->timestamp, &left_img_filename, &right_img_filename, camera);
 
-			if (fused_odometry_output_file != NULL)
+			if (image_pose_output_file != NULL)
 			{
-				double x = fused_odometry_message_buffer[nearest_fused_odometry_message_index].pose.position.x;
-				double y = fused_odometry_message_buffer[nearest_fused_odometry_message_index].pose.position.y;
-				double z = fused_odometry_message_buffer[nearest_fused_odometry_message_index].pose.position.z;
+				double x = globalpos_message_buffer[nearest_message_index].pose.position.x;
+				double y = globalpos_message_buffer[nearest_message_index].pose.position.y;
+				double z = globalpos_message_buffer[nearest_message_index].pose.position.z;
 
-				double roll = fused_odometry_message_buffer[nearest_fused_odometry_message_index].pose.orientation.roll;
-				double pitch = fused_odometry_message_buffer[nearest_fused_odometry_message_index].pose.orientation.pitch;
-				double yaw = fused_odometry_message_buffer[nearest_fused_odometry_message_index].pose.orientation.yaw;
+				double roll = globalpos_message_buffer[nearest_message_index].pose.orientation.roll;
+				double pitch = globalpos_message_buffer[nearest_message_index].pose.orientation.pitch;
+				double yaw = globalpos_message_buffer[nearest_message_index].pose.orientation.yaw;
 
 				tf::Quaternion q = tf::createQuaternionFromRPY(roll, pitch, yaw);
 
@@ -395,7 +398,7 @@ save_fused_odometry_metadata_to_file(carmen_bumblebee_basic_stereoimage_message 
 				x += -global_x;
 				y += -global_y;
 
-				fprintf(fused_odometry_output_file, "%s/%s %.6lf %.6lf %.6lf %.6lf %.6lf %.6lf %.6lf\n",
+				fprintf(image_pose_output_file, "%s/%s %.6lf %.6lf %.6lf %.6lf %.6lf %.6lf %.6lf\n",
 						(char*)"images",left_img_filename,
 						x, y, z,
 						q.getW(), //W
@@ -403,7 +406,10 @@ save_fused_odometry_metadata_to_file(carmen_bumblebee_basic_stereoimage_message 
 						q.getY(), //Q -> pitch
 						q.getZ() //R -> yaw
 				);
-				fflush(fused_odometry_output_file);
+				fflush(image_pose_output_file);
+				double roll2, pitch2, yaw2;
+				tf::Matrix3x3(q).getRPY(roll2, pitch2, yaw2);
+				printf("%.6lf %.6lf %.6lf %.6lf %.6lf %.6lf (%.6lf %.6lf %.6lf)\n", x, y, z, roll, pitch, yaw, roll-roll2, pitch-pitch2, yaw-yaw2);
 			}
 		}
 	}
@@ -463,7 +469,7 @@ bumblebee_basic_handler_2(carmen_bumblebee_basic_stereoimage_message *stereo_ima
 void
 bumblebee_basic_handler_3(carmen_bumblebee_basic_stereoimage_message *stereo_image)
 {
-	save_fused_odometry_metadata_to_file(stereo_image, 3);
+	save_image_pose_to_file(stereo_image, 3);
 	save_image_to_file(stereo_image, 3);
 }
 
@@ -499,7 +505,7 @@ bumblebee_basic_handler_7(carmen_bumblebee_basic_stereoimage_message *stereo_ima
 void
 bumblebee_basic_handler_8(carmen_bumblebee_basic_stereoimage_message *stereo_image)
 {
-	save_fused_odometry_metadata_to_file(stereo_image, 8);
+	save_image_pose_to_file(stereo_image, 8);
 	save_globalpos_metadata_to_file(stereo_image, 8);
 	save_odom_metadata_to_file(stereo_image, 8);
 	save_gps_metadata_to_file(stereo_image, 8);
@@ -594,6 +600,13 @@ gps_gpgga_handler(carmen_gps_gpgga_message *gps_gpgga_message)
 	}
 }
 
+void
+image_pose_handler(carmen_localize_ackerman_globalpos_message *message)
+{
+	globalpos_message_buffer[globalpos_message_index] = *message;
+	globalpos_message_index = (globalpos_message_index + 1) % 100;
+}
+
 
 void
 fused_odometry_handler(carmen_fused_odometry_message *fused_odometry_message)
@@ -617,6 +630,8 @@ shutdown_module(int signo)
 			fclose(gps_xyz_output_file);
 		if (fused_odometry_output_file != NULL)
 			fclose(fused_odometry_output_file);
+		if (image_pose_output_file != NULL)
+			fclose(image_pose_output_file);
 		if (car_odometry_output_file != NULL)
 			fclose(car_odometry_output_file);
 		if (globalpos_output_file != NULL)
@@ -897,11 +912,11 @@ initialize_module_args(int argc, char **argv)
 				globalpos_output_file = fopen(globalpos_output_filename, "w");
 				fprintf(globalpos_output_file, "x, y, theta, v, timestamp, left_img, right_img\n");
 			}
-			else if (!strcmp(argv[3], "with_fusedodom"))
+			else if (!strcmp(argv[3], "with_image_pose"))
 			{
-				carmen_fused_odometry_subscribe_fused_odometry_message(NULL, (carmen_handler_t) fused_odometry_handler, CARMEN_SUBSCRIBE_LATEST);
-				fused_odometry_output_file = fopen(fused_odometry_output_filename, "w");
-				fprintf(fused_odometry_output_file, "image x y z w p q r\n");
+				carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) image_pose_handler, CARMEN_SUBSCRIBE_LATEST);
+				image_pose_output_file = fopen(imagepos_output_filename, "w");
+				fprintf(image_pose_output_file, "image x y z w p q r\n");
 			}
 		}
 

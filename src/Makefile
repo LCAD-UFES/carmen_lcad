@@ -5,7 +5,7 @@ include Makefile.conf
 PACKAGES = ipc global param_daemon proccontrol robot_ackerman_gui laser-new  	\
 	   obstacle_avoider simulator_ackerman localize_ackerman robot_ackerman \
 	   maptools mapeditor logger dynamic_object_detector \
-	   navigator_ackerman joystick pantilt laser gps gps_xyz imu camera  	\
+	   navigator_ackerman joystick pantilt laser gps gps_xyz imu localize_neural  	\
 	   fused_odometry moving_objects bumblebee_basic laser-ldmrs viewer_3D 		\
 	   stereo road_finding v_disparity stereo_mapping grid_mapping 		\
 	   visual_odometry_package2 stereo_point_cloud xsens xsens_MTi-G	\
@@ -13,12 +13,12 @@ PACKAGES = ipc global param_daemon proccontrol robot_ackerman_gui laser-new  	\
 	   download_map parking_assistant navigator_astar 			\
 	   tracker navigator_spline navigator_gui navigator_gui2		\
 	   mapper obstacle_distance_mapper map_server car_panel_gui		\
-	   web_cam v_disparity stereo_velodyne motion_planner udatmo1 behavior_selector \
+	   v_disparity stereo_velodyne motion_planner udatmo1 behavior_selector \
 	   base_ackerman driving_playback ford_escape_hybrid			\
 	   path_interpolator_planner kinect ultrasonic 		\
 	   odometry_calibration utilities visual_tracker	\
 	   visual_car_tracking model_predictive_planner utilities \
-	   moving_objects_simulator zed_camera2 #traffic_light tracker_opentld
+	   moving_objects_simulator zed_camera2 traffic_light #tracker_opentld
 
 ifndef NO_CPP
 PACKAGES += carmenpp

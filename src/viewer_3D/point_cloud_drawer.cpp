@@ -19,13 +19,13 @@ struct point_cloud_drawer
 
 point_cloud_drawer* create_point_cloud_drawer(int max_size)
 {
-	point_cloud_drawer* drawer = malloc(sizeof(point_cloud_drawer));
+	point_cloud_drawer* drawer = (point_cloud_drawer*)malloc(sizeof(point_cloud_drawer));
 
 	drawer->num_buffers = max_size;
 	drawer->next_buffer = 0;
-	drawer->vertex_buffer_ids = malloc((drawer->num_buffers) * sizeof(GLuint));
-	drawer->color_buffer_ids = malloc((drawer->num_buffers) * sizeof(GLuint));
-	drawer->buffer_sizes = malloc((drawer->num_buffers) * sizeof(int));
+	drawer->vertex_buffer_ids = (GLuint*)malloc((drawer->num_buffers) * sizeof(GLuint));
+	drawer->color_buffer_ids = (GLuint*)malloc((drawer->num_buffers) * sizeof(GLuint));
+	drawer->buffer_sizes = (int*)malloc((drawer->num_buffers) * sizeof(int));
 
 	int i;
 	for (i = 0; i<drawer->num_buffers; i++)
@@ -41,7 +41,7 @@ point_cloud_drawer* create_point_cloud_drawer(int max_size)
 
 static float* create_colors(point_cloud pcloud)
 {
-	float* colors = malloc(3 * pcloud.num_points * sizeof(float));
+	float* colors = (float*)malloc(3 * pcloud.num_points * sizeof(float));
 
 	int i;
 	for (i = 0; i < pcloud.num_points; i++)
