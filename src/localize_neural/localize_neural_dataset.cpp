@@ -388,7 +388,7 @@ void initialize_transformations()
 	transformer.setTransform(car_to_board_transform, "car_to_board_transform");
 
 	// camera pose with respect to the board
-	board_to_camera_pose.setOrigin(tf::Vector3(camera_pose_g.position.x, camera_pose_g.position.y, camera_pose_g.position.z));
+	board_to_camera_pose.setOrigin(tf::Vector3(camera_pose_g.position.x + 5.0, camera_pose_g.position.y, camera_pose_g.position.z));
 	board_to_camera_pose.setRotation(tf::Quaternion(camera_pose_g.orientation.yaw, camera_pose_g.orientation.pitch, camera_pose_g.orientation.roll)); 				// yaw, pitch, roll
 	tf::StampedTransform board_to_camera_transform(board_to_camera_pose, tf::Time(0), "/board", "/camera");
 	transformer.setTransform(board_to_camera_transform, "board_to_camera_transform");

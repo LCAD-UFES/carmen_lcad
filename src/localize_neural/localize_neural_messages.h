@@ -23,7 +23,8 @@ typedef struct
 	char 				*host;
 } carmen_localize_neural_imagepos_message;
 
-#define CARMEN_LOCALIZE_NEURAL_IMAGEPOS_NAME "carmen_localize_neural_imagepos_message"
+#define CARMEN_LOCALIZE_NEURAL_IMAGEPOS_KEYFRAME_NAME "carmen_localize_neural_imagepos_keyframe_message"
+#define CARMEN_LOCALIZE_NEURAL_IMAGEPOS_CURFRAME_NAME "carmen_localize_neural_imagepos_curframe_message"
 #define CARMEN_LOCALIZE_NEURAL_IMAGEPOS_FMT "{int, int, int, <{char}:3>, {{double,double,double},{double,double,double}}, double, string}"
 
 #ifdef __cplusplus
