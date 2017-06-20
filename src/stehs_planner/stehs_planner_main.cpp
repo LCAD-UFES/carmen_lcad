@@ -151,6 +151,9 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 //	printf("GLOBAL POS x: %f y: %f theta: %f v: %f phi: %f\n", stehs_planner.start.x, stehs_planner.start.y,
 //			stehs_planner.start.theta, stehs_planner.start.v, stehs_planner.start.phi);
 
+//	std::cout << "lane " << stehs_planner.lane_ready << std::endl;
+//	std::cout << "Map " << stehs_planner.distance_map_ready << std::endl;
+//	std::cout << "goal " << stehs_planner.goal_ready << std::endl;
 	if (stehs_planner.lane_ready && stehs_planner.distance_map_ready && stehs_planner.goal_ready)
 	{
 		stehs_planner.lane_ready = stehs_planner.distance_map_ready = stehs_planner.goal_ready = false;
@@ -241,14 +244,42 @@ behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_
 	//GlobalState::set_goal_pose(goal_pose);   // Criar uma flag para verificar se chegou goal ou não?
 }
 
-
+/*
 static void
-carmen_obstacle_distance_mapper_message_handler(carmen_obstacle_distance_mapper_message *message)
+carmen_obstacle_distance_mapper_message_handler(carmen_obstacle_distance_mapper_map_message *message)
 {
 	stehs_planner.distance_map = message;
 
 	stehs_planner.distance_map_ready = true;
 }
+*/
+
+static void
+carmen_obstacle_distance_mapper_compact_map_message_handler(carmen_obstacle_distance_mapper_compact_map_message *message)
+{
+	static carmen_obstacle_distance_mapper_compact_map_message *compact_distance_map = NULL;
+	static carmen_obstacle_distance_mapper_map_message distance_map;
+
+	if (compact_distance_map == NULL)
+	{
+		carmen_obstacle_distance_mapper_create_new_map(&distance_map, message->config, message->host, message->timestamp);
+		compact_distance_map = (carmen_obstacle_distance_mapper_compact_map_message *) (calloc(1, sizeof(carmen_obstacle_distance_mapper_compact_map_message)));
+		carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_distance_map, message);
+		carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, message);
+	}
+	else
+	{
+		carmen_obstacle_distance_mapper_clear_distance_map_message_using_compact_map(&distance_map, compact_distance_map, DISTANCE_MAP_HUGE_DISTANCE);
+		carmen_obstacle_distance_mapper_free_compact_distance_map(compact_distance_map);
+		carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_distance_map, message);
+		carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, message);
+	}
+
+	stehs_planner.distance_map = &distance_map;
+
+	stehs_planner.distance_map_ready = true;
+}
+
 
 
 static void
@@ -313,7 +344,9 @@ register_handlers()
 
 	carmen_behavior_selector_subscribe_goal_list_message(NULL, (carmen_handler_t) behaviour_selector_goal_list_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_obstacle_distance_mapper_subscribe_message(NULL,	(carmen_handler_t) carmen_obstacle_distance_mapper_message_handler, CARMEN_SUBSCRIBE_LATEST);
+//	carmen_obstacle_distance_mapper_subscribe_message(NULL,	(carmen_handler_t) carmen_obstacle_distance_mapper_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_obstacle_distance_mapper_subscribe_compact_map_message(NULL, (carmen_handler_t) carmen_obstacle_distance_mapper_compact_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
     carmen_subscribe_message((char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, (char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT,
     		NULL, sizeof (carmen_behavior_selector_road_profile_message), (carmen_handler_t) lane_message_handler, CARMEN_SUBSCRIBE_LATEST);

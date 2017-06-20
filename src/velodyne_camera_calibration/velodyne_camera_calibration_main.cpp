@@ -1,6 +1,7 @@
 
 #include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #include <carmen/carmen.h>
 #include <carmen/bumblebee_basic_interface.h>

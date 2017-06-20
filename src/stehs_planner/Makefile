@@ -13,9 +13,9 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcarmodel
 
-LFLAGS += 	-lgrid_mapping -lmap_io -lmap_util -lmap_interface -lparam_interface -lipc -lglobal -lmap_interface  -lprob_models -llocalize_ackerman_interface -lsimulator_ackerman_interface \
+LFLAGS += 	-lgrid_mapping -lmap_io -lmap_util -lmap_interface -lparam_interface -lipc -lglobal -lmap_interface  -lprob_models -lobstacle_distance_mapper_interface -llocalize_ackerman_interface -lsimulator_ackerman_interface \
 		-lrobot_ackerman_interface -lbase_ackerman_interface \
-		-lnavigator_ackerman_interface -lobstacle_avoider_interface -lmapper_interface -lobstacle_distance_mapper_interface -lrrt_planner_interface \
+		-lnavigator_ackerman_interface -lobstacle_avoider_interface -lmapper_interface -lrrt_planner_interface \
 		-lmap_server_interface -lbehavior_selector_interface \
 		-lrddf_interface -lmotion_planner_interface -lnavigator_gui_interface -llocalize_ackerman_core \
 		-lcollision_detection -lm -lford_escape_hybrid_interface `pkg-config --cflags opencv` `pkg-config --libs opencv` -lcarmodel

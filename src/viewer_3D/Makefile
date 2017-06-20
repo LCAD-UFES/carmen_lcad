@@ -1,18 +1,26 @@
 include ../Makefile.conf
 
+LINK = g++
+
+CFLAGS += -std=c99 
+CXXFLAGS += -Wno-write-strings
+
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libsickldmrs2/include
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libsickldmrs2 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 LFLAGS += 	-lglobal -ljpeg -lipc -lparam_interface -lGLEW -lGL -lGLU -lglut -lX11 -llaser_interface \
 		-lfused_odometry_interface -lgps_xyz_interface -lxsens_interface -lstereo_point_cloud_interface -lglm -lrotation_geometry\
-		-lcurl `pkg-config --libs opencv` \
+		-lcurl  \
 		-lvelodyne_interface -lcarmen_gps_wrapper -lm -ldownload_map -lstereo_velodyne_interface -lstereo_velodyne \
 		-lstereo_interface -lmapper_interface -lnavigator_ackerman_interface -lbehavior_selector_interface \
 		-llocalize_ackerman_interface -lobstacle_avoider_interface -lmotion_planner_interface -lrddf_interface \
-		-lmoving_objects_interface -lgps_nmea_interface -llaser_ldmrs_utils -llaser_ldmrs_interface #-llane_analysis_interface
+		-lmoving_objects_interface -lgps_nmea_interface -llaser_ldmrs_utils -llaser_ldmrs_interface -llocalize_neural_interface #-llane_analysis_interface
 		
 LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system -ljpeg
+
+IFLAGS += `pkg-config --cflags opencv`
+LFLAGS += `pkg-config --libs opencv`
 
 # Application specific include directories.
 IFLAGS += -I/usr/include/eigen3 -I/usr/local/include/pcl-1.7/  -I/usr/include/vtk-5.8/
@@ -23,7 +31,7 @@ SUBDIRS += glm
 MODULE_NAME = viewer_3D
 MODULE_COMMENT = This module implements a viewer_3D filter for fusing IMU and GPS data.
 
-SOURCES = viewer_3D.cpp Window.c GLDraw.c xsens_viewer.c draw_car.c point_cloud_drawer.c variable_velodyne_drawer.cpp velodyne_360_drawer.c interface_drawer.cpp map_drawer.c download_map.c texture_loader.c trajectory_drawer.c velodyne_intensity_drawer.c annotation_drawer.cpp #lane_analysis_drawer.cpp
+SOURCES = viewer_3D.cpp Window.cpp GLDraw.cpp xsens_viewer.cpp draw_car.cpp point_cloud_drawer.cpp variable_velodyne_drawer.cpp velodyne_360_drawer.cpp interface_drawer.cpp map_drawer.cpp download_map.cpp texture_loader.cpp trajectory_drawer.cpp velodyne_intensity_drawer.cpp annotation_drawer.cpp #lane_analysis_drawer.cpp
 PUBLIC_INCLUDES = velodyne_360_drawer.h
 
 PUBLIC_LIBRARIES = libvelodyne_360_drawer.a

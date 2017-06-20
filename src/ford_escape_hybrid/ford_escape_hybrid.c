@@ -184,7 +184,11 @@ publish_car_status()
 	msg.g_XGV_steering = g_XGV_steering;
 	msg.g_XGV_brakes = g_XGV_brakes;
 
-	//	g_XGV_component_status bit Interpretation F: disengaged, T: engaged (see page 62 of ByWire XGV User Manual, Version 1.5)
+	//	g_XGV_component_status bit Interpretation F: disengaged, T: engaged
+	//  See page 62 of ByWire XGV User Manual, Version 1.5
+	//  Note que está errado no manual: este campo da mensagem tem 32 bits e não 16 como diz o manual
+	//  Os primeiros 16 bits não são usados
+	//  ordem do campo e (bit)
 	//	0 (16) Manual override
 	//	1 (17) SafeStop pause relay F: run, T: pause
 	//	2 (18) SafeStop stop relay F: run, T: stop
@@ -582,6 +586,7 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 			if (g_go_state == 0)
 				clear_current_motion_command_vector(ford_escape_hybrid_config->current_motion_command_vector, ford_escape_hybrid_config->nun_motion_commands);
 
+			// TODO Tentar usar o phi cru direto da tork pra ver raw_phi
 			g_steering_command = -carmen_libmpc_get_optimized_steering_effort_using_MPC(
 					atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)),
 					ford_escape_hybrid_config->current_motion_command_vector, ford_escape_hybrid_config->nun_motion_commands,
@@ -625,20 +630,32 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 		else
 		{
 			if (ford_escape_hybrid_config->use_rlpid)
-			{	//RL_PID
+			{
+				// RL_PID
 				g_steering_command = carmen_librlpid_compute_effort(-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), g_atan_desired_curvature, delta_t);
 			}
 			else
 			{   // PID
-				g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
-						-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t,
-						g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
+				//g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature,
+				//		-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t,
+				//		g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
+
+				// FUZZY
+				// TODO Tentar usar o angulo direto da torc pra ver se melhora g_XGV_atan_curvature
+				g_steering_command = carmen_libpid_steering_PID_controler_FUZZY(g_atan_desired_curvature,
+						-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)),
+						delta_t, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG, ford_escape_hybrid_config->filtered_v);
 			}
 			#ifdef PLOT
-					pid_plot_phi(-get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), ford_escape_hybrid_config->filtered_phi, 0.55, "phi");
+					pid_plot_phi(ford_escape_hybrid_config->filtered_phi, -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), 0.55, "phi");
 			#endif
-
 		}
+
+		//Printf para testar a diferença das curvaturas original e modificada
+		//printf(cc %lf cc2 %lf\n", g_XGV_atan_curvature, -atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)));
+
+		//	fprintf(stdout, "(cc dc s v t) %lf %lf %lf %lf %lf\n", -atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), g_atan_desired_curvature, g_steering_command, ford_escape_hybrid_config->filtered_v, carmen_get_time());
+		//	fflush(stdout);
 
 		previous_gear_command = g_gear_command;
 
@@ -655,84 +672,6 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 		if (previous_gear_command != g_gear_command)
 			publish_ford_escape_gear_command(XGV_CCU);
 			
-		publish_ford_escape_throttle_and_brakes_command(XGV_CCU);
-
-		reportCurvatureMessageDestroy(reportCurvature);
-	}
-	else
-	{
-		carmen_warn("In torc_report_curvature_message_handler(): Error unpacking %s message.\n", jausMessageCommandCodeString(curvature_message));
-	}
-}
-
-
-void
-torc_report_curvature_message_handler_new(OjCmpt XGV_CCU __attribute__ ((unused)), JausMessage curvature_message)
-{
-	ReportCurvatureMessage reportCurvature;
-	double raw_phi;
-	double delta_t;
-	int previous_gear_command;
-
-	reportCurvature = reportCurvatureMessageFromJausMessage(curvature_message);
-	if (reportCurvature)
-	{
-		g_XGV_atan_curvature = reportCurvature->atanOfCurrentCurvature; // @@@ Alberto: a curvatura do carro vem ao contrario de carmen
-		//g_XGV_atan_curvature += get_curvature_from_phi(carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.05)), ford_escape_hybrid_config);
-
-		ford_escape_hybrid_config->XGV_v_and_phi_timestamp = carmen_get_time();
-
-		raw_phi = get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config);
-		carmen_add_bias_and_multiplier_to_v_and_phi(&(ford_escape_hybrid_config->filtered_v), &(ford_escape_hybrid_config->filtered_phi),
-						    g_XGV_velocity, raw_phi, 0.0, v_multiplier, phi_bias, phi_multiplier);
-
-		set_wrench_efforts_desired_v_and_curvature();
-		delta_t = get_steering_delta_t();
-
-		if (ford_escape_hybrid_config->use_mpc)
-		{
-			carmen_robot_ackerman_config_t robot_config;
-			robot_config.understeer_coeficient = ford_escape_hybrid_config->understeer_coeficient2;
-			robot_config.distance_between_front_and_rear_axles = ford_escape_hybrid_config->distance_between_front_and_rear_axles;
-			robot_config.max_phi = ford_escape_hybrid_config->max_phi;
-
-			if (g_go_state == 0)
-				clear_current_motion_command_vector(ford_escape_hybrid_config->current_motion_command_vector, ford_escape_hybrid_config->nun_motion_commands);
-
-			g_steering_command = -carmen_libmpc_get_optimized_steering_effort_using_MPC(
-					atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)),
-					ford_escape_hybrid_config->current_motion_command_vector, ford_escape_hybrid_config->nun_motion_commands,
-					ford_escape_hybrid_config->filtered_v, ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config->time_of_last_command,
-					&robot_config, 0);
-
-			//print_values_to_train_simulator(g_atan_desired_curvature, -atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), delta_t, g_steering_command);
-		}
-		else
-		{
-			// RL_PID
-//			if (ford_escape_hybrid_config->nun_motion_commands > 0)
-//			{
-//				g_steering_command = carmen_librlpid_compute_effort(-atan(get_curvature_from_phi(ford_escape_hybrid_config->filtered_phi, ford_escape_hybrid_config)), g_atan_desired_curvature, delta_t);
-//			}
-
-			g_steering_command = carmen_libpid_steering_PID_controler(g_atan_desired_curvature, -g_XGV_atan_curvature, delta_t,
-					g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
-#ifdef PLOT
-			pid_plot_phi(ford_escape_hybrid_config->filtered_phi, -get_phi_from_curvature(g_atan_desired_curvature, ford_escape_hybrid_config), 0.6, "phi");
-#endif
-		}
-
-		previous_gear_command = g_gear_command;
-
-		delta_t = get_velocity_delta_t();
-
-		// VELOCITY PID CONTROL
-		carmen_libpid_velocity_PID_controler(&g_throttle_command, &g_brakes_command, &g_gear_command,
-			g_desired_velocity, ford_escape_hybrid_config->filtered_v, delta_t, g_XGV_component_status & XGV_MANUAL_OVERRIDE_FLAG);
-
-		if (previous_gear_command != g_gear_command)
-			publish_ford_escape_gear_command(XGV_CCU);
-
 		publish_ford_escape_throttle_and_brakes_command(XGV_CCU);
 
 		reportCurvatureMessageDestroy(reportCurvature);

@@ -619,7 +619,9 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 		}
 		else
 		{   // PID
-			steering_effort = carmen_libpid_steering_PID_controler(atan_desired_curvature, atan_current_curvature, simulator_config->delta_t, 0);
+			//steering_effort = carmen_libpid_steering_PID_controler(atan_desired_curvature, atan_current_curvature, simulator_config->delta_t, 0);
+
+			steering_effort = carmen_libpid_steering_PID_controler_FUZZY(atan_desired_curvature, atan_current_curvature, simulator_config->delta_t, 0, simulator_config->v);
 		}
 		#ifdef PLOT
 				pid_plot_phi(simulator_config->phi, simulator_config->target_phi, 0.55, "phi");
