@@ -13,7 +13,8 @@ LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lpara
           -lvelodyne_camera_calibration \
           -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lrt \
           -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
-		  -lboost_thread-mt -lboost_signals -lboost_system
+		  -lboost_thread-mt -lboost_signals -lboost_system \
+		  -lcamera_boxes_to_world
 
 SOURCES = camera_boxes_to_world.cpp show_boxes.cpp
 
