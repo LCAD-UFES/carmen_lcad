@@ -1,6 +1,6 @@
 
 #include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/highgui/highgui.hpp>
 
 #include <carmen/carmen.h>
 #include <carmen/bumblebee_basic_interface.h>
@@ -121,7 +121,7 @@ std::vector<carmen_velodyne_points_in_cam_t>
 carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_partial_scan_message *velodyne_message,
 		int image_width, int image_height)
 		{
-	vector<carmen_velodyne_points_in_cam_t> laser_points_in_camera;
+	std::vector<carmen_velodyne_points_in_cam_t> laser_points_in_camera;
 
 	for (int i = 0; i < 32; i++)
 	{
@@ -208,7 +208,7 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle(carmen_
 {
 
 	double robot_wheel_radius =  0.28;//parametro do carmen-ford-escape.ini
-	vector<carmen_velodyne_points_in_cam_t> laser_points_in_camera;
+	std::vector<carmen_velodyne_points_in_cam_t> laser_points_in_camera;
 
 	for (int j = 0; j < velodyne_message->number_of_32_laser_shots; j++)
 	{
@@ -304,7 +304,7 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_dis
 {
 
 	double robot_wheel_radius =  0.28;//parametro do carmen-ford-escape.ini
-	vector<carmen_velodyne_points_in_cam_with_obstacle_t> laser_points_in_camera;
+	std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> laser_points_in_camera;
 
 	for (int j = 0; j < velodyne_message->number_of_32_laser_shots; j++)
 	{
@@ -401,7 +401,7 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_angles(carmen_ve
 		carmen_bumblebee_basic_stereoimage_message *bumblebee_message)
 		{
 
-	vector<carmen_velodyne_points_in_cam_with_angle_t> laser_points_in_camera;
+	std::vector<carmen_velodyne_points_in_cam_with_angle_t> laser_points_in_camera;
 
 	for (int i = 0; i < 32; i++)
 	{

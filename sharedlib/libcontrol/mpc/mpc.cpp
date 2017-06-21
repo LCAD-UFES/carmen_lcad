@@ -596,6 +596,10 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 		plot_state(&seed, &params, v, robot_config->understeer_coeficient, robot_config->distance_between_front_and_rear_axles, effort);
 	#endif
 
+//	double atan_desired_curvature = carmen_get_curvature_from_phi(params.motion_commands_vector[get_motion_timed_index_to_motion_command(&params)].phi, v, params.understeer_coeficient, params.distance_rear_axles);
+//		fprintf(stdout, "(cc, dc, s, t) %lf %lf %lf %lf\n", atan_current_curvature, atan_desired_curvature, effort, carmen_get_time());
+//	fflush(stdout);
+
 	carmen_clamp(-100.0, effort, 100.0);
 	return (effort);
 }

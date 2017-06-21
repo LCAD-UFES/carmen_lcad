@@ -4,8 +4,6 @@
 #include <carmen/carmen.h>
 #include <carmen/lane_analysis_interface.h>
 
-#include <opencv2/opencv.hpp>
-
 #include "viewer_3D.h"
 
 #include <GL/glew.h>

@@ -166,7 +166,7 @@ count_number_of_known_point_on_the_map(carmen_map_t *map, double value)
 
 
 void
-carmen_prob_models_create_compact_map(carmen_compact_map_t *cmap, carmen_map_t *map, double value)
+carmen_prob_models_create_compact_map_old(carmen_compact_map_t *cmap, carmen_map_t *map, double value)
 {
 	int i, k, N;
 	int number_of_cells = map->config.x_size * map->config.y_size;
@@ -199,6 +199,38 @@ carmen_prob_models_create_compact_map(carmen_compact_map_t *cmap, carmen_map_t *
 			k++;
 		}
 	}
+}
+
+
+void
+carmen_prob_models_create_compact_map(carmen_compact_map_t *cmap, carmen_map_t *map, double value)
+{
+	int i, k;
+	int number_of_cells = map->config.x_size * map->config.y_size;
+
+	cmap->config = map->config;
+
+	if (map->config.map_name != NULL)
+	{
+		cmap->config.map_name = (char *) calloc(strlen(map->config.map_name) + 1, sizeof(char));
+		strcpy(cmap->config.map_name, map->config.map_name);
+	}
+
+	cmap->coord_x = (int *) malloc(number_of_cells * sizeof(int));
+	cmap->coord_y = (int *) malloc(number_of_cells * sizeof(int));
+	cmap->value = (double *) malloc(number_of_cells * sizeof(double));
+
+	for (i = 0, k = 0; i < number_of_cells; i++)
+	{
+		if (map->complete_map[i] != value)
+		{
+			cmap->coord_x[k] = i / map->config.x_size;
+			cmap->coord_y[k] = i % map->config.y_size;
+			cmap->value[k] = map->complete_map[i];
+			k++;
+		}
+	}
+	cmap->number_of_known_points_on_the_map = k;
 }
 
 

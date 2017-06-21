@@ -21,6 +21,8 @@
 #include <GL/glew.h>
 #include <iostream>
 #include <vector>
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
 
 #include "viewer_3D.h"
 
@@ -55,6 +57,7 @@ static int velodyne_size;
 static int odometry_size;
 static int gps_size;
 static int localize_ackerman_size;
+static int camera_square_size;
 
 static point_cloud *stereo_point_cloud;
 static int last_stereo_point_cloud;
@@ -204,6 +207,7 @@ static int draw_stereo_cloud_flag;
 static int draw_car_flag;
 static int draw_rays_flag;
 static int draw_map_image_flag;
+static int draw_localize_image_flag;
 static int weight_type_flag;
 static int draw_gps_flag;
 static int draw_odometry_flag;
@@ -217,7 +221,6 @@ static int draw_localize_ackerman_flag;
 static int draw_annotation_flag;
 static int draw_moving_objects_flag;
 static int draw_gps_axis_flag;
-
 
 static int follow_car_flag;
 static int zero_z_flag;
@@ -251,8 +254,13 @@ void init_stuff(int argc, char** argv);
 void destroy_stuff();
 
 static carmen_download_map_message download_map_message;
-int first_download_map_have_been_aquired = 0;
+static int first_download_map_have_been_aquired = 0;
 static int new_map_has_been_received = 0;
+
+static carmen_localize_neural_imagepos_message localize_imagepos_base_message;
+static carmen_localize_neural_imagepos_message localize_imagepos_curr_message;
+static int localize_imagepos_base_initialized = 0;
+static int localize_imagepos_curr_initialized = 0;
 
 static int stereo_velodyne_vertical_resolution;
 static int stereo_velodyne_flipped;
@@ -1490,6 +1498,33 @@ carmen_download_map_handler(carmen_download_map_message *message)
 
     new_map_has_been_received = 1;
 }
+
+static void
+carmen_localize_neural_base_message_handler(carmen_localize_neural_imagepos_message *message)
+{
+    if (!localize_imagepos_base_initialized)
+    {
+    	localize_imagepos_base_initialized = 1;
+    	localize_imagepos_base_message = *message;
+        localize_imagepos_base_message.image_data = (char*) malloc(message->size * sizeof(char));
+    }
+    localize_imagepos_base_message.pose = message->pose;
+    memcpy(localize_imagepos_base_message.image_data, message->image_data, message->size * sizeof(char));
+}
+
+static void
+carmen_localize_neural_curr_message_handler(carmen_localize_neural_imagepos_message *message)
+{
+    if (!localize_imagepos_curr_initialized)
+    {
+    	localize_imagepos_curr_initialized = 1;
+    	localize_imagepos_curr_message = *message;
+        localize_imagepos_curr_message.image_data = (char*) malloc(message->size * sizeof(char));
+    }
+    localize_imagepos_curr_message.pose = message->pose;
+    memcpy(localize_imagepos_curr_message.image_data, message->image_data, message->size * sizeof(char));
+}
+
 #ifdef TEST_LANE_ANALYSIS
 static void lane_analysis_handler(carmen_elas_lane_analysis_message * message) {
 	carmen_vector_3D_t position_offset = get_position_offset();
@@ -1752,6 +1787,7 @@ init_flags(void)
     draw_car_flag = 1;
     draw_rays_flag = 0;
     draw_map_image_flag = 0;
+    draw_localize_image_flag = 0;
     weight_type_flag = 2;
     draw_gps_flag = 0;
     draw_odometry_flag = 0;
@@ -1886,6 +1922,7 @@ init_stuff(int argc, char** argv)
             {(char*) "viewer_3D", (char*) "background_green", CARMEN_PARAM_DOUBLE, &b_green, 0, NULL},
             {(char*) "viewer_3D", (char*) "background_blue", CARMEN_PARAM_DOUBLE, &b_blue, 0, NULL},
             {(char*) "viewer_3D", (char*) "point_size", CARMEN_PARAM_INT, &point_size, 0, NULL},
+            {(char*) "viewer_3D", (char*) "camera_square_size", CARMEN_PARAM_INT, &camera_square_size, 0, NULL},
 
             {(char*) "sensor_board_1", (char*) "x", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.x), 0, NULL},
             {(char*) "sensor_board_1", (char*) "y", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.y), 0, NULL},
@@ -2436,6 +2473,29 @@ draw_loop(window *w)
             }
         }
 
+        if (draw_localize_image_flag && localize_imagepos_base_initialized)
+        {
+                draw_localize_image(true,
+                		get_position_offset(),
+                		localize_imagepos_base_message.pose,
+						localize_imagepos_base_message.image_data,
+						localize_imagepos_base_message.width,
+						localize_imagepos_base_message.height,
+						camera_square_size
+						);
+        }
+
+        if (draw_localize_image_flag && localize_imagepos_curr_initialized)
+        {
+                draw_localize_image(false,
+                		get_position_offset(),
+                		localize_imagepos_curr_message.pose,
+						localize_imagepos_curr_message.image_data,
+						localize_imagepos_curr_message.width,
+						localize_imagepos_curr_message.height,
+						camera_square_size
+						);
+        }
 
         if (!gps_fix_flag)
         {
@@ -2452,7 +2512,7 @@ draw_loop(window *w)
 
 
 void
-draw_loop2(window *w)
+draw_loop_for_picking(window *w)
 {
     w = w;
     lastDisplayTime = carmen_get_time();
@@ -2689,6 +2749,14 @@ subscribe_ipc_messages(void)
 
     carmen_download_map_subscribe_message(NULL,
                                           (carmen_handler_t) carmen_download_map_handler,
+                                          CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_localize_neural_subscribe_imagepos_keyframe_message(NULL,
+                                          (carmen_handler_t) carmen_localize_neural_base_message_handler,
+                                          CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_localize_neural_subscribe_imagepos_curframe_message(NULL,
+                                          (carmen_handler_t) carmen_localize_neural_curr_message_handler,
                                           CARMEN_SUBSCRIBE_LATEST);
 
     carmen_stereo_velodyne_subscribe_scan_message(camera, NULL,
@@ -2973,6 +3041,9 @@ set_flag_viewer_3D(int flag_num, int value)
     case 29:
     	draw_gps_axis_flag = value;
     	break;
+    case 30:
+    	draw_localize_image_flag = value;
+        break;
     }
 }
 
@@ -3011,7 +3082,7 @@ picking(int ev_x, int ev_y)
     glLoadIdentity();
     glMultMatrixf(modelview);
 
-    draw_loop2(w);
+    draw_loop_for_picking(w);
 
     glPopMatrix();
     glFlush();

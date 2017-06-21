@@ -43,7 +43,7 @@ bin/dynamic_object_detector
 bin/ford_escape_hybrid
 bin/ford_escape_hybrid_test
 bin/ford_escape_hybrid_test_curves
-bin/ford_escape_hybrid_train_base
+bin/ford_escape_hybrid_tune_pid
 bin/fused_odometry
 bin/gmon.out
 bin/gps_nmea
@@ -212,7 +212,7 @@ src/dynamic_object_detector/dynamic_object_detector
 src/ford_escape_hybrid/ford_escape_hybrid
 src/ford_escape_hybrid/ford_escape_hybrid_test
 src/ford_escape_hybrid/ford_escape_hybrid_test_curves
-src/ford_escape_hybrid/ford_escape_hybrid_train_base
+src/ford_escape_hybrid/ford_escape_hybrid_tune_pid
 src/fused_odometry/fused_odometry
 src/fused_odometry/tf_test
 src/global/global_test
@@ -524,6 +524,7 @@ src/virtual_scan/virtual_scan
 bin/virtual_scan
 src/carmen_log_to_dataset/carmen_log_to_dataset
 src/utilities/dataset_creator/dataset_creator
+<<<<<<< HEAD
 data/split_map_*
 data/mapper_teste2_*
 data/dir_split_map_*
@@ -535,14 +536,17 @@ src/hypergraphslam/parser
 src/tracker_opentld/goturn/tracker.caffemodel
 src/utilities/convert_log_images/to_png_new_log
 src/utilities/convert_log_images/to_png_old_log
-bin/dataset_creator
 bin/ford_escape_hybrid_tune_pid
 bin/multimap_optimization_merge
 sharedlib/alglib/test
 sharedlib/libsickldmrs/sickldmrstest_new
 src/ford_escape_hybrid/ford_escape_hybrid_tune_pid
-src/traffic_light/tlight_evaluate_train
-src/traffic_light/tlight_train
 bin/rddf_convert_from_kml_to_txt
 src/hypergraphsclam/parser
 src/hypergraphsclam/hypergraphsclam.cpp
+src/zed_camera/zed_camera_sensor_viewer
+src/zed_camera2/zed_camera_main
+bin/dataset_creator
+src/traffic_light/tlight_evaluate_train
+src/traffic_light/tlight_train
+src/global/carmen-config.c

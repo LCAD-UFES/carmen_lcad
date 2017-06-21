@@ -135,7 +135,7 @@ plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_p
 		first_time = false;
 
 		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
-		fprintf(gnuplot_pipeMP, "set xrange [0:20]\n");
+		fprintf(gnuplot_pipeMP, "set xrange [0:70]\n");
 		fprintf(gnuplot_pipeMP, "set yrange [-10:10]\n");
 //		fprintf(gnuplot_pipe, "set y2range [-0.55:0.55]\n");
 		fprintf(gnuplot_pipeMP, "set xlabel 'senconds'\n");
@@ -384,7 +384,7 @@ build_detailed_rddf_lane(Pose *goal_pose, vector<carmen_ackerman_path_point_t> *
 
 
 void
-filter_path(vector<carmen_ackerman_path_point_t> &path)
+filter_path_old(vector<carmen_ackerman_path_point_t> &path)
 {
 	unsigned int i;
 
@@ -409,6 +409,62 @@ filter_path(vector<carmen_ackerman_path_point_t> &path)
 			if ((i + 1) < path.size())
 				path[i].time += path[i + 1].time;
 		for (i = 1; i < path.size(); i += 2)
+			path.erase(path.begin() + i);
+	}
+}
+
+
+void
+filter_path(vector<carmen_ackerman_path_point_t> &path)
+{
+	if (path.size() < 1)
+		return;
+
+	unsigned int i, count;
+	double path_time;
+
+	path_time = 0.0;
+	count = 0;
+	for (i = 0; (i < path.size()) && (path_time < 0.6); i += 2)
+	{
+		if ((i + 1) < path.size())
+		{
+			path[i].time += path[i + 1].time;
+			path_time += path[i].time;
+			count++;
+		}
+	}
+	for (i = 1; (i < path.size()) && (i < (count + 1)); i += 2)
+		path.erase(path.begin() + i);
+
+	path_time = 0.0;
+	count = 0;
+	for (i = 0; (i < path.size()) && (path_time < 0.6); i += 2)
+	{
+		if ((i + 1) < path.size())
+		{
+			path[i].time += path[i + 1].time;
+			path_time += path[i].time;
+			count++;
+		}
+	}
+	for (i = 1; (i < path.size()) && (i < (count + 1)); i += 2)
+		path.erase(path.begin() + i);
+
+	if (GlobalState::ford_escape_online)
+	{
+		path_time = 0.0;
+		count = 0;
+		for (i = 0; (i < path.size()) && (path_time < 0.6); i += 2)
+		{
+			if ((i + 1) < path.size())
+			{
+				path[i].time += path[i + 1].time;
+				path_time += path[i].time;
+				count++;
+			}
+		}
+		for (i = 1; (i < path.size()) && (i < (count + 1)); i += 2)
 			path.erase(path.begin() + i);
 	}
 }
