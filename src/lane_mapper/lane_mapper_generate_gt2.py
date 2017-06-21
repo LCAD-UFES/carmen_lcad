@@ -4,7 +4,6 @@ The paths are then expanded in all points according to the cubic Bezier curve al
 The road lane map is generated for all points within the lane width, setting the x- and y-pixel distances to the center of the lane. 
 '''
 
-
 from xml.dom import minidom
 import numpy as np
 import cv2
@@ -16,19 +15,8 @@ STROKE_INCREMENT = 0.05     # Line width increment  (in subpixels) to set the di
 MAX_INTENSITY = 255.0       # Maximum color intensity of pixel on the line center 
 MIN_INTENSITY = 25.0        # Minimum color intensity of pixel on the line border
 SHIFT = 16                  # Number of bits used for the fractionary part of a pixel coordinate 
-MM_PER_PIXEL = 200.0        # Pixel length in millimetersfrom xml.dom import minidom
-import numpy as np
-import cv2
-import struct
-
-# Global definitions
-BEZIER_INCREMENT = 0.001    # Line length increment (from 0.000 to 1.000) to set cubic Bezier curve points  
-STROKE_INCREMENT = 0.05     # Line width increment  (in subpixels) to set the distance from the pixel to the line center 
-MAX_INTENSITY = 255.0       # Maximum color intensity of pixel on the line center 
-MIN_INTENSITY = 25.0        # Minimum color intensity of pixel on the line border
-SHIFT = 16                  # Number of bits used for the fractionary part of a pixel coordinate 
 MM_PER_PIXEL = 200.0        # Pixel length in millimeters
-SQRT2DIV2 = sqrt(2.0) * 0.5
+SQRT2DIV2 = (2.0 ** 0.5) * 0.5
 
 class road:
     def __init__(self):
@@ -46,6 +34,7 @@ def svg_d_get_bezier_points(d):
     points = [] # list of (x,y)
     last_abs_point_i = 0
     errors = 0
+    n_ms = 0
     for p in d.split(' '):    
         if len(p) == 1:
             if p == 'm' or p == 'M' or p == 'c' or p == 'C' or p == 'l' or p == 'L' or p == 'h' or p == 'H' or p == 'v' or p == 'V':
@@ -57,10 +46,22 @@ def svg_d_get_bezier_points(d):
         else:  
             if letter == 'm' or letter == 'M': # Move cursor to (x,y), lowercase = relative coordinates, uppercase = absolute coordinates
                 pt = p.split(',')
-                if len(pt) == 2:
-                    points.append((float(pt[0]), float(pt[1])))
+                if n_ms > 0: # In case we have more than 1 (m or M)
+                    points.append(points[len(points) - 1]) # Repeat last point just to fake the Bezier algorithm
+                    if letter == 'm':
+                        # calculate absolute point
+                        delta = pt
+                        points.append((float(delta[0]) + points[len(points) - 1][0], float(delta[1]) + points[len(points) - 1][1]))
+                    else:
+                        points.append((float(pt[0]), float(pt[1])))
+                    points.append(points[len(points) - 1]) # Repeat new point just to fake the Bezier algorithm
+                    last_abs_point_i = len(points) - 1
                 else:
-                    errors += 1             
+                    if len(pt) == 2:
+                        points.append((float(pt[0]), float(pt[1])))
+                        n_ms += 1
+                    else:
+                        errors += 1             
             elif letter == 'c': # Cubic Bezier curve, lowercase = relative coordinates
                 count += 1   
                 delta = p.split(',')
@@ -89,8 +90,8 @@ def svg_d_get_bezier_points(d):
                     pt[0] = float(delta[0]) + points[last_abs_point_i][0]
                     pt[1] = float(delta[1]) + points[last_abs_point_i][1]
                     points.append((float(pt[0]), float(pt[1])))
-                    last_abs_point_i = len(points) - 1
                     points.append(points[len(points) - 1]) # Repeat new point just to fake the Bezier algorithm
+                    last_abs_point_i = len(points) - 1
                 else:
                     errors += 1             
             elif letter == 'L': # Draw straight line to next point (x,y), uppercase = absolute coordinates
@@ -98,8 +99,8 @@ def svg_d_get_bezier_points(d):
                 if len(pt) == 2:                
                     points.append(points[len(points) - 1]) # Repeat last point just to fake the Bezier algorithm
                     points.append((float(pt[0]), float(pt[1])))
-                    last_abs_point_i = len(points) - 1
                     points.append(points[len(points) - 1]) # Repeat new point just to fake the Bezier algorithm
+                    last_abs_point_i = len(points) - 1
                 else:
                     errors += 1             
             else:
@@ -124,8 +125,10 @@ def svg_get_paths(svg_file):
             s = style.split(':')
             if s[0] == 'stroke-width':
                 stroke_width = float(s[1]) 
-                break;
-        paths.append((points, stroke_width))
+            if s[0] == 'stroke': # this filed has the stroke color
+                # stroke-color codes the lane marking according to readme.txt
+                stroke_color = s[1]
+        paths.append((points, stroke_width, stroke_color))
     doc.unlink()
     return width, height, paths
 
@@ -170,7 +173,7 @@ def get_bezier(width, height, points):
     btan2 = []
     btan2.append(btan[0])
     for i in range(1, len(btan)): # len(btan) = len(btan2)-1
-        btan2.append(btan[i-1] + btan[i]) / 2.0
+        btan2.append((btan[i-1] + btan[i]) / 2.0)
     btan2.append(btan[len(btan)-1]) 
     return bx, by, btan2
 

@@ -27,6 +27,7 @@ def svg_d_get_bezier_points(d):
     points = [] # list of (x,y)
     last_abs_point_i = 0
     errors = 0
+    n_ms = 0
     for p in d.split(' '):    
         if len(p) == 1:
             if p == 'm' or p == 'M' or p == 'c' or p == 'C' or p == 'l' or p == 'L' or p == 'h' or p == 'H' or p == 'v' or p == 'V':
@@ -38,10 +39,22 @@ def svg_d_get_bezier_points(d):
         else:  
             if letter == 'm' or letter == 'M': # Move cursor to (x,y), lowercase = relative coordinates, uppercase = absolute coordinates
                 pt = p.split(',')
-                if len(pt) == 2:
-                    points.append((float(pt[0]), float(pt[1])))
+                if n_ms > 0: # In case we have more than 1 (m or M)
+                    points.append(points[len(points) - 1]) # Repeat last point just to fake the Bezier algorithm
+                    if letter == 'm':
+                        # calculate absolute point
+                        delta = pt
+                        points.append((float(delta[0]) + points[len(points) - 1][0], float(delta[1]) + points[len(points) - 1][1]))
+                    else:
+                        points.append((float(pt[0]), float(pt[1])))
+                    points.append(points[len(points) - 1]) # Repeat new point just to fake the Bezier algorithm
+                    last_abs_point_i = len(points) - 1
                 else:
-                    errors += 1             
+                    if len(pt) == 2:
+                        points.append((float(pt[0]), float(pt[1])))
+                        n_ms += 1
+                    else:
+                        errors += 1             
             elif letter == 'c': # Cubic Bezier curve, lowercase = relative coordinates
                 count += 1   
                 delta = p.split(',')
@@ -70,8 +83,8 @@ def svg_d_get_bezier_points(d):
                     pt[0] = float(delta[0]) + points[last_abs_point_i][0]
                     pt[1] = float(delta[1]) + points[last_abs_point_i][1]
                     points.append((float(pt[0]), float(pt[1])))
-                    last_abs_point_i = len(points) - 1
                     points.append(points[len(points) - 1]) # Repeat new point just to fake the Bezier algorithm
+                    last_abs_point_i = len(points) - 1
                 else:
                     errors += 1             
             elif letter == 'L': # Draw straight line to next point (x,y), uppercase = absolute coordinates
@@ -79,8 +92,8 @@ def svg_d_get_bezier_points(d):
                 if len(pt) == 2:                
                     points.append(points[len(points) - 1]) # Repeat last point just to fake the Bezier algorithm
                     points.append((float(pt[0]), float(pt[1])))
-                    last_abs_point_i = len(points) - 1
                     points.append(points[len(points) - 1]) # Repeat new point just to fake the Bezier algorithm
+                    last_abs_point_i = len(points) - 1
                 else:
                     errors += 1             
             else:
@@ -105,8 +118,10 @@ def svg_get_paths(svg_file):
             s = style.split(':')
             if s[0] == 'stroke-width':
                 stroke_width = float(s[1]) 
-                break;
-        paths.append((points, stroke_width))
+            if s[0] == 'stroke': # this filed has the stroke color
+                # stroke-color codes the lane marking according to readme.txt
+                stroke_color = s[1]
+        paths.append((points, stroke_width, stroke_color))
     doc.unlink()
     return width, height, paths
 
@@ -140,30 +155,42 @@ def get_bezier(width, height, points):
             y = getPt(ym, yn, j)      
             bx.append(x)
             by.append(y)        
-            # para calcular o angulo eu preciso lembrar de acertar a coordenada y
-            # isso eh feito fazendo a altura da imagem menos a coordenada y
             if len(bx) > 1:
                 x1 = x
-                y1 = height - y
+                y1 = height - y # Y axis origin is upside down
                 x0 = bx[-2]
-                y0 = height - by[-2]
+                y0 = height - by[-2] # Y axis origin is upside down
                 t = np.arctan2(y1 - y0 , x1 - x0)
                 btan.append(t)
             j += BEZIER_INCREMENT
-    print len(bx), len(btan)
-    return bx, by, btan
+    btan2 = []
+    btan2.append(btan[0])
+    for i in range(1, len(btan)): # len(btan) = len(btan2)-1
+        btan2.append((btan[i-1] + btan[i]) / 2.0)
+    btan2.append(btan[len(btan)-1]) 
+    return bx, by, btan2
+#     #print len(bx), len(btan)
+#     return bx, by, btan
 
-def get_lane_from_bezier(img, bx, by, btan, stroke_width): 
-    for i in range(1, len(by)):
-        if i == 1:
-            atan0 = btan[0]
-            atan1 = (btan[0] + btan[1]) / 2
-        elif i == (len(by)-1):
-            atan0 = (btan[i-2] + btan[i-1]) / 2
-            atan1 = btan[i-1]
-        else:
-            atan0 = (btan[i-2] + btan[i-1]) / 2
-            atan1 = (btan[i-1] + btan[i]) / 2
+def get_lane_from_bezier(img, bx, by, btan, stroke_width, stroke_color):
+    MAX_R = int(stroke_color[1:3], 16)
+    MAX_G = int(stroke_color[3:5], 16)
+    MAX_B = int(stroke_color[5:8], 16)
+#     for i in range(1, len(by)):
+#         if i == 1:
+#             atan0 = btan[0]
+#             atan1 = (btan[0] + btan[1]) / 2
+#         elif i == (len(by)-1):
+#             atan0 = (btan[i-2] + btan[i-1]) / 2
+#             atan1 = btan[i-1]
+#         else:
+#             atan0 = (btan[i-2] + btan[i-1]) / 2
+#             atan1 = (btan[i-1] + btan[i]) / 2
+
+    for i in range(1, len(bx)):
+        atan0 = btan[i-1]
+        atan1 = btan[i]
+    
         vert = np.zeros((4,2),np.int32)
         vert[0, 0] = round(bx[i-1] * 2**SHIFT)
         vert[0, 1] = round(by[i-1] * 2**SHIFT)
@@ -173,22 +200,42 @@ def get_lane_from_bezier(img, bx, by, btan, stroke_width):
         k = stroke_width / 2
         while k >= 0.0:
             v = MAX_INTENSITY - (MAX_INTENSITY - MIN_INTENSITY) * k / (stroke_width / 2)
+            r = MAX_R - (MAX_R - MIN_INTENSITY) * k / (stroke_width / 2)
+            g = MAX_G - (MAX_G - MIN_INTENSITY) * k / (stroke_width / 2)
+            b = MAX_B - (MAX_B - MIN_INTENSITY) * k / (stroke_width / 2)
             mm = round(k * MM_PER_PIXEL)
             vert[1, 0] = round((bx[i-1] + (k * np.sin(atan0))) * 2**SHIFT)
             vert[1, 1] = round((by[i-1] + (k * np.cos(atan0))) * 2**SHIFT)
             vert[2, 0] = round((bx[i]   + (k * np.sin(atan1))) * 2**SHIFT)
             vert[2, 1] = round((by[i]   + (k * np.cos(atan1))) * 2**SHIFT)
-            cv2.fillConvexPoly(img, vert, color=(v, 0, 0), lineType=8, shift=SHIFT)      
+            #cv2.fillConvexPoly(img, vert, color=(b, g, r), lineType=8, shift=SHIFT)      
+            cv2.fillConvexPoly(img, vert, color=(v, 0, 0), lineType=8, shift=SHIFT)
             vert[1, 0] = round((bx[i-1] - (k * np.sin(atan0))) * 2**SHIFT)
             vert[1, 1] = round((by[i-1] - (k * np.cos(atan0))) * 2**SHIFT)
             vert[2, 0] = round((bx[i]   - (k * np.sin(atan1))) * 2**SHIFT)
             vert[2, 1] = round((by[i]   - (k * np.cos(atan1))) * 2**SHIFT)
-            cv2.fillConvexPoly(img, vert, color=(v, 0, 0), lineType=8, shift=SHIFT) 
+            #cv2.fillConvexPoly(img, vert, color=(b, g, r), lineType=8, shift=SHIFT) 
+            cv2.fillConvexPoly(img, vert, color=(v, 0, 0), lineType=8, shift=SHIFT)
             k -= STROKE_INCREMENT
     return img
 
+def get_lane_marking_by_color_code(stroke_color):
+    if stroke_color == '#ff0000':
+        l_marking = 'single_line'
+        r_marking = 'single_line' 
+    elif stroke_color == '#ff007f':
+        l_marking = 'broken_line'
+        r_marking = 'single_line' 
+    elif stroke_color == '#7f00ff':
+        l_marking = 'single_line'
+        r_marking = 'broken_line' 
+    elif stroke_color == '#0000ff':
+        l_marking = 'broken_line'
+        r_marking = 'broken_line' 
+    return l_marking, r_marking
+
 if __name__ == "__main__":
-    svg_file =  'i7705600_-338380.00.svg'
+    svg_file =  'i7705600_-338450.00.svg'
     print 'Processing SVG file: ', svg_file
     cv2.namedWindow("original")
     cv2.namedWindow("median_blur")
@@ -196,14 +243,15 @@ if __name__ == "__main__":
     img = np.zeros((height, width, 3), np.uint8)
     for path in paths:
         bx, by, btan = get_bezier(width, height, path[0])
-        img = get_lane_from_bezier(img, bx, by, btan, path[1])
+        img = get_lane_from_bezier(img, bx, by, btan, path[1], path[2])
+        print get_lane_marking_by_color_code(path[2])
         img2 = cv2.medianBlur(img, 5)
     cv2.imshow("original", img)
     cv2.imshow("median_blur", img2)
     cv2.waitKey(0)
-    road_file = open('r' + svg_file[1:-3] + 'map', 'wb')
-    for i in range(height):
-        for j in range(width):
-            distance_center = int(MM_PER_PIXEL * (MAX_INTENSITY - img[i, j, 0]) * (path[1] / 2.0) / (MAX_INTENSITY - MIN_INTENSITY))
-            map = struct.pack('hhhbb', distance_center, 0,0,0,0)
-            road_file.write(map)
+#     road_file = open('r' + svg_file[1:-3] + 'map', 'wb')
+#     for i in range(height):
+#         for j in range(width):
+#             distance_center = int(MM_PER_PIXEL * (MAX_INTENSITY - img[i, j, 0]) * (path[1] / 2.0) / (MAX_INTENSITY - MIN_INTENSITY))
+#             map = struct.pack('hhhbb', distance_center, 0,0,0,0)
+#             road_file.write(map)
