@@ -257,8 +257,10 @@ static carmen_download_map_message download_map_message;
 static int first_download_map_have_been_aquired = 0;
 static int new_map_has_been_received = 0;
 
-static carmen_localize_neural_imagepos_message localize_imagepos_message;
-static int localize_imagepos_initialized = 0;
+static carmen_localize_neural_imagepos_message localize_imagepos_base_message;
+static carmen_localize_neural_imagepos_message localize_imagepos_curr_message;
+static int localize_imagepos_base_initialized = 0;
+static int localize_imagepos_curr_initialized = 0;
 
 static int stereo_velodyne_vertical_resolution;
 static int stereo_velodyne_flipped;
@@ -1498,18 +1500,29 @@ carmen_download_map_handler(carmen_download_map_message *message)
 }
 
 static void
-carmen_localize_neural_handler(carmen_localize_neural_imagepos_message *message)
+carmen_localize_neural_base_message_handler(carmen_localize_neural_imagepos_message *message)
 {
-//	printf("%lf %lf %lf\n", message->pose.position.x, message->pose.position.y, message->pose.orientation.yaw);
-
-    if (!localize_imagepos_initialized)
+    if (!localize_imagepos_base_initialized)
     {
-    	localize_imagepos_initialized = 1;
-    	localize_imagepos_message = *message;
-        localize_imagepos_message.image_data = (char*) malloc(message->size * sizeof(char));
+    	localize_imagepos_base_initialized = 1;
+    	localize_imagepos_base_message = *message;
+        localize_imagepos_base_message.image_data = (char*) malloc(message->size * sizeof(char));
     }
-    localize_imagepos_message.pose = message->pose;
-    memcpy(localize_imagepos_message.image_data, message->image_data, message->size * sizeof(char));
+    localize_imagepos_base_message.pose = message->pose;
+    memcpy(localize_imagepos_base_message.image_data, message->image_data, message->size * sizeof(char));
+}
+
+static void
+carmen_localize_neural_curr_message_handler(carmen_localize_neural_imagepos_message *message)
+{
+    if (!localize_imagepos_curr_initialized)
+    {
+    	localize_imagepos_curr_initialized = 1;
+    	localize_imagepos_curr_message = *message;
+        localize_imagepos_curr_message.image_data = (char*) malloc(message->size * sizeof(char));
+    }
+    localize_imagepos_curr_message.pose = message->pose;
+    memcpy(localize_imagepos_curr_message.image_data, message->image_data, message->size * sizeof(char));
 }
 
 #ifdef TEST_LANE_ANALYSIS
@@ -2460,13 +2473,26 @@ draw_loop(window *w)
             }
         }
 
-        if (draw_localize_image_flag && localize_imagepos_initialized)
+        if (draw_localize_image_flag && localize_imagepos_base_initialized)
         {
-                draw_localize_image(get_position_offset(),
-                		localize_imagepos_message.pose,
-						localize_imagepos_message.image_data,
-						localize_imagepos_message.width,
-						localize_imagepos_message.height,
+                draw_localize_image(true,
+                		get_position_offset(),
+                		localize_imagepos_base_message.pose,
+						localize_imagepos_base_message.image_data,
+						localize_imagepos_base_message.width,
+						localize_imagepos_base_message.height,
+						camera_square_size
+						);
+        }
+
+        if (draw_localize_image_flag && localize_imagepos_curr_initialized)
+        {
+                draw_localize_image(false,
+                		get_position_offset(),
+                		localize_imagepos_curr_message.pose,
+						localize_imagepos_curr_message.image_data,
+						localize_imagepos_curr_message.width,
+						localize_imagepos_curr_message.height,
 						camera_square_size
 						);
         }
@@ -2725,8 +2751,12 @@ subscribe_ipc_messages(void)
                                           (carmen_handler_t) carmen_download_map_handler,
                                           CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_localize_neural_subscribe_imagepos_message(NULL,
-                                          (carmen_handler_t) carmen_localize_neural_handler,
+    carmen_localize_neural_subscribe_imagepos_keyframe_message(NULL,
+                                          (carmen_handler_t) carmen_localize_neural_base_message_handler,
+                                          CARMEN_SUBSCRIBE_LATEST);
+
+    carmen_localize_neural_subscribe_imagepos_curframe_message(NULL,
+                                          (carmen_handler_t) carmen_localize_neural_curr_message_handler,
                                           CARMEN_SUBSCRIBE_LATEST);
 
     carmen_stereo_velodyne_subscribe_scan_message(camera, NULL,

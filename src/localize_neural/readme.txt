@@ -6,7 +6,7 @@
 1.5 mkdir 20140418
 1.6 ./localize_neural_dataset 8 20140418
 1.7 mkdir -p /dados/ufes
-1.8 mv image_pose.txt /dados/ufes/deltapos-20140418.txt
+1.8 mv image_pose.txt /dados/ufes/imagepos-20140418.txt
 1.9 mv 20140418 /dados/ufes
 
 2.0 Play the same log to see the groundtruth images and poses exported

@@ -25,7 +25,8 @@ static carmen_pose_3D_t camera_pose;
 static carmen_pose_3D_t camera_offset;
 
 static unsigned int map_image_texture_id;
-static unsigned int localize_image_texture_id;
+static unsigned int localize_image_base_texture_id;
+static unsigned int localize_image_curr_texture_id;
 
 static unsigned int laser_buffer_id;
 static double *laser_pos_buffer;
@@ -62,7 +63,8 @@ initGl ()
 
     map_image_texture_id = create_texture ();
 
-    localize_image_texture_id = create_texture2 ();
+    localize_image_base_texture_id = create_texture2 ();
+    localize_image_curr_texture_id = create_texture2 ();
 
     glGenBuffers (1, &laser_buffer_id);
     glBindBuffer (GL_ARRAY_BUFFER, laser_buffer_id);
@@ -1522,18 +1524,22 @@ draw_map_image (carmen_vector_3D_t gps_position_at_turn_on, carmen_vector_3D_t m
 }
 
 void
-draw_localize_image (carmen_vector_3D_t gps_position_at_turn_on, carmen_pose_3D_t pose, char *image, int width, int height, int square_size)
+draw_localize_image (bool draw_image_base, carmen_vector_3D_t gps_position_at_turn_on, carmen_pose_3D_t pose, char *image, int width, int height, int square_size)
 {
     double z = pose.position.z;
     double dx = pose.position.x - gps_position_at_turn_on.x;
     double dy = pose.position.y - gps_position_at_turn_on.y;
 
+    glPushMatrix ();
     glTranslated (dx, dy, z);
     glRotated (carmen_radians_to_degrees(pose.orientation.yaw-M_PI/2.0), 0.0, 0.0, 1.0);
     glColor3d (1.0, 1.0, 1.0);
     glEnable (GL_TEXTURE_2D);
     glPushMatrix ();
-    glBindTexture(GL_TEXTURE_2D, localize_image_texture_id);
+    if (draw_image_base)
+    	glBindTexture(GL_TEXTURE_2D, localize_image_base_texture_id);
+    else
+    	glBindTexture(GL_TEXTURE_2D, localize_image_curr_texture_id);
     glTexImage2D (GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
     glBegin (GL_QUADS);
     glNormal3d(1, 0, 0);
@@ -1544,4 +1550,5 @@ draw_localize_image (carmen_vector_3D_t gps_position_at_turn_on, carmen_pose_3D_
     glEnd ();
     glPopMatrix ();
     glDisable (GL_TEXTURE_2D);
+    glPopMatrix ();
 }
