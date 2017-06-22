@@ -42,17 +42,17 @@ int main()
 	double timestamp;
 	char imagename[256];
 	char labelname[256];
+	char objectname[256];
 
 	cv::Mat image;
 	cv::Mat object;
 
 	double xt, yt, xb, yb;
 	char classe[10];
+	int count;
 
 	_mkdir("/dados/dataset/objects");
 	_mkdir("/dados/dataset/objects/images");
-
-	cv::namedWindow("Display window", cv::WINDOW_AUTOSIZE);// Create a window for display.
 
 	setlocale(LC_ALL, "C");
 
@@ -79,32 +79,35 @@ int main()
 
 		if (labels)
 		{
+			count = 1;
 			while (!feof(labels))
 			{
 				fscanf(labels, "%s 0.00 0 0.00 %lf %lf %lf %lf 0.00 0.00 0.00 0.00 0.00 0.00 0\n", classe, &xt, &yt, &xb, &yb);
 				//printf("Xt: %lf   Yt: %lf   Xb: %lf   Yb: %lf   Largura: %lf   Altura: %lf\n",xt,yt,xb,yb,yb-yt,xb-xt);
 
-				cv::Rect rec(xt,yt,xb-xt,yb-yt);
+				cv::Rect roi(xt,yt,xb-xt,yb-yt);
+				//printf("Timestamp: %lf\nX: %d   Y: %d   Largura: %d   Altura: %d\n",timestamp,roi.x,roi.y,roi.width,roi.height);
 
-				//printf("X: %d   Y: %d   Largura: %d   Altura: %d\n",rec.x,rec.y,rec.width,rec.height);
+				if (0 <= roi.x && 0 <= roi.width && roi.x + roi.width <= image.cols && 0 <= roi.y && 0 <= roi.height && roi.y + roi.height <= image.rows)
+				{
+					sprintf(objectname,"/dados/dataset/objects/images/%lf.%03d-%s.png", timestamp,count,classe);
+					cv::imwrite(objectname, image(roi));
+					count++;
 
-				//cv::Mat object = image(rec);
-
-				//cv::imshow("Display window", object);                   // Show our image inside it.
-				//cv::waitKey(5000);
-
-
-				cv::rectangle(image, cv::Point(xt,yt), cv::Point(xb,yb), cv::Scalar(0,255,0), 2);
-				cv::putText(image, classe, cv::Point(xt,yt-2), cv::FONT_HERSHEY_PLAIN, 2, cvScalar(0,255,0), 1);
+					//printf("Objeto gerado com sucesso!!!\n");
+				}
+				else
+				{
+					printf("The bounding box is out of map\n");
+				}
 			}
 
 			fclose(labels);
 		}
 		else
+		{
 			printf("Failed to open label %s\n", labelname);
-
-		cv::imshow("Display window", image);                   // Show our image inside it.
-		cv::waitKey(50);
+		}
 	}
 
 	closedir(dir);
