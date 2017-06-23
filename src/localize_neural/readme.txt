@@ -14,3 +14,6 @@
 2.2 ln -s ../src/localize_neural/process-mapper.ini .
 2.3 ./proccontrol process-mapper.ini
 2.4 From Viewer3D options menu, select Localize Neural to show the TV
+
+3.0 Run localize_neural_dataset.py script to build the ground thruth data for the train/test/validation datasets exported above
+3.1 python localize_neural_dataset.py
