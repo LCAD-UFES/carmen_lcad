@@ -34,6 +34,7 @@ vector<pair<string, double> > current_frames_array;
 
 carmen_fused_odometry_message fused_odometry_message;
 
+//#define SYNC_WITH_VELODYNE = 1
 
 void
 transform_deltapos(carmen_pose_3D_t &finalpos, const carmen_pose_3D_t &keypos, const carmen_point_t &deltapos)
@@ -107,49 +108,20 @@ load_delta_poses(char *filename)
 int
 find_more_synchronized_pose(const vector<pair<carmen_point_t, double> > &poses, double timestamp)
 {
-	uint i;
-	int index_min_time_diff;
-	double min_time_diff, time_diff;
+	int nearest_index = -1;
+	double shortest_interval = MAXDOUBLE;
 
-	min_time_diff = DBL_MAX;
-	index_min_time_diff = -1;
-
-	for (i = 0; i < poses.size(); i++)
+	for (uint i = 0; i < poses.size(); i++)
 	{
-		time_diff = timestamp - poses[i].second;
-
-		if ((time_diff < min_time_diff) && (time_diff > 0))
+		double delta_t = timestamp - poses[i].second;
+		if ((delta_t >= 0) && (delta_t < shortest_interval))
 		{
-			min_time_diff = time_diff;
-			index_min_time_diff = i;
+			shortest_interval = delta_t;
+			nearest_index = i;
 		}
 	}
 
-	return index_min_time_diff;
-}
-
-
-vector<int>
-find_all_synchronized_pose(const vector<pair<carmen_point_t, double> > &poses, double timestamp)
-{
-	uint i;
-	vector<int> index_min_time_diff;
-	double min_time_diff, time_diff;
-
-	min_time_diff = DBL_MAX;
-
-	for (i = 0; i < poses.size(); i++)
-	{
-		time_diff = timestamp - poses[i].second;
-
-		if ((time_diff <= min_time_diff) && (time_diff > 0))
-		{
-			min_time_diff = time_diff;
-			index_min_time_diff.push_back(i);
-		}
-	}
-
-	return index_min_time_diff;
+	return nearest_index;
 }
 
 
@@ -298,30 +270,11 @@ carmen_bumblebee_basic_stereoimage_message_handler(carmen_bumblebee_basic_stereo
 
 	tf::Matrix3x3(orientation).getRPY(global_pose.orientation.roll, global_pose.orientation.pitch, global_pose.orientation.yaw);
 
+	#ifndef SYNC_WITH_VELODYNE
 	publish_globalpos_message(global_pose, message->timestamp);
+	#endif
 	publish_imagepos_curframe_message(current_pose, message->timestamp, current_frame);
 	publish_imagepos_keyframe_message(key_pose, message->timestamp, key_frame);
-}
-
-
-void
-carmen_bumblebee_basic_stereoimage_message_handler_all(carmen_bumblebee_basic_stereoimage_message *message)
-{
-	vector<int> indices = find_all_synchronized_pose(current_delta_poses_array, message->timestamp);
-
-	for (unsigned int i=0; i < indices.size(); i++)
-	{
-		int index = indices[i];
-		carmen_pose_3D_t key_pose = key_poses_array[index].first;
-		carmen_pose_3D_t current_pose = key_pose; //copy z
-		carmen_point_t delta_pose = current_delta_poses_array[index].first;
-		transform_deltapos(current_pose, key_pose, delta_pose);
-		string key_frame = key_frames_array[index].first;
-		string current_frame = current_frames_array[index].first;
-
-		publish_imagepos_curframe_message(current_pose, message->timestamp, current_frame);
-		publish_imagepos_keyframe_message(key_pose, message->timestamp, key_frame);
-	}
 }
 
 
@@ -338,7 +291,7 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	}
 	else
 	{
-		printf("dt<0\n");
+		carmen_die("dt<0\n");
 	}
 	publish_globalpos_message(velodyne_pose, velodyne_message->timestamp);
 }
@@ -404,8 +357,7 @@ read_camera_parameters(int argc, char **argv)
 
 	if (argc < 3)
 	{
-		printf("\nUsage: %s <log> <camera_id> \n", argv[0]);
-		exit(-1);
+		carmen_die("\nUsage: %s <log> <camera_id> \n", argv[0]);
 	}
 
 	camera = atoi(argv[2]);
@@ -463,7 +415,9 @@ subscribe_to_relevant_messages()
 {
     carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) carmen_bumblebee_basic_stereoimage_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_fused_odometry_subscribe_fused_odometry_message(&fused_odometry_message, NULL, CARMEN_SUBSCRIBE_LATEST);
-	//carmen_velodyne_subscribe_partial_scan_message(NULL, (carmen_handler_t) velodyne_partial_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	#ifdef SYNC_WITH_VELODYNE
+	carmen_velodyne_subscribe_partial_scan_message(NULL, (carmen_handler_t) velodyne_partial_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	#endif
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 

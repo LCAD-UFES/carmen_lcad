@@ -18,7 +18,7 @@ SOURCES = localize_neural_dataset.cpp localize_neural_main.cpp
 PUBLIC_INCLUDES = localize_neural_messages.h localize_neural_interface.h
 PUBLIC_LIBRARIES =  liblocalize_neural_interface.a
 PUBLIC_LIBRARIES_SO = liblocalize_neural_interface.so
-PUBLIC_BINARIES = localize_neural
+PUBLIC_BINARIES = localize_neural localize_neural_dataset
 TARGETS = localize_neural_dataset localize_neural liblocalize_neural_interface.a
 
 ifndef NO_PYTHON

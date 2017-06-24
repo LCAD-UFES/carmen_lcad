@@ -44,10 +44,10 @@ static carmen_localize_ackerman_globalpos_message globalpos_message_buffer[100];
 int
 find_nearest_globalpos_message(double timestamp)
 {
-	int i, nearest_index = -1;
+	int nearest_index = -1;
 	double shortest_interval = MAXDOUBLE;
 
-	for (i = 0; i < 100; i++)
+	for (int i = 0; i < 100; i++)
 	{
 		if (globalpos_message_buffer[i].host != NULL)
 		{
@@ -183,45 +183,67 @@ get_transforms_from_camera_to_world(double car_x, double car_y, double car_theta
 void
 save_pose_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int camera)
 {
-	int nearest_message_index = -1;
 	char *left_img_filename, *right_img_filename;
 
-	if (stereo_image != NULL)
+	if ((stereo_image == NULL) || (image_pose_output_file == NULL))
+		return;
+
+	int nearest_message_index = find_nearest_globalpos_message(stereo_image->timestamp);
+	if (nearest_message_index < 0)
+		return;
+
+	carmen_localize_ackerman_globalpos_message globalpos_message = globalpos_message_buffer[nearest_message_index];
+	carmen_pose_3D_t globalpos = globalpos_message.pose;
+
+	double dt = stereo_image->timestamp - globalpos_message.timestamp;
+	if (dt > 0.0)
 	{
-		nearest_message_index = find_nearest_globalpos_message(stereo_image->timestamp);
-		if (nearest_message_index >= 0)
-		{
-			create_stereo_filename_from_timestamp(stereo_image->timestamp, &left_img_filename, &right_img_filename, camera);
-
-			if (image_pose_output_file != NULL)
-			{
-				double x = globalpos_message_buffer[nearest_message_index].pose.position.x;
-				double y = globalpos_message_buffer[nearest_message_index].pose.position.y;
-				//double z = globalpos_message_buffer[nearest_message_index].pose.position.z;
-
-				double roll = globalpos_message_buffer[nearest_message_index].pose.orientation.roll;
-				double pitch = globalpos_message_buffer[nearest_message_index].pose.orientation.pitch;
-				double yaw = globalpos_message_buffer[nearest_message_index].pose.orientation.yaw;
-
-				tf::StampedTransform camera_to_world = get_transforms_from_camera_to_world(x, y, yaw);
-
-				tf::Vector3 position = camera_to_world.getOrigin();
-				tf::Quaternion orientation = camera_to_world.getRotation();
-
-				tf::Matrix3x3(orientation).getRPY(roll, pitch, yaw);
-
-				fprintf(image_pose_output_file, "%s/%s %.25f %.25f %.25f %.25f %.25f %.25f %.25f %.25f %.25f %.25f %.25f\n",
-						(char*)output_dir_name, left_img_filename,
-						position.getX(), position.getY(), position.getZ(),
-						orientation.getW(), orientation.getX(), orientation.getY(), orientation.getZ(),
-						roll, pitch, yaw, stereo_image->timestamp);
-				fflush(image_pose_output_file);
-
-				//printf("%.6lf %.6lf %.6lf %.6lf %.6lf %.6lf\n", x, y, z, roll, pitch, yaw);
-			}
-		}
+		globalpos = carmen_ackerman_interpolated_robot_position_at_time(
+				globalpos_message.pose,
+				dt, globalpos_message.v,
+				globalpos_message.phi, 2.625);
 	}
+	else
+	{
+		carmen_die("dt<0\n");
+	}
+
+	tf::StampedTransform camera_to_world = get_transforms_from_camera_to_world(globalpos.position.x, globalpos.position.y, globalpos.orientation.yaw);
+
+	tf::Vector3 position = camera_to_world.getOrigin();
+	tf::Quaternion orientation = camera_to_world.getRotation();
+
+	double roll, pitch, yaw;
+	tf::Matrix3x3(orientation).getRPY(roll, pitch, yaw);
+
+	create_stereo_filename_from_timestamp(stereo_image->timestamp, &left_img_filename, &right_img_filename, camera);
+
+	fprintf(image_pose_output_file, "%s/%s %.25f %.25f %.25f %.25f %.25f %.25f %.25f %.25f %.25f %.25f %.25f\n",
+			(char*)output_dir_name, left_img_filename,
+			position.getX(), position.getY(), position.getZ(),
+			orientation.getW(), orientation.getX(), orientation.getY(), orientation.getZ(),
+			roll, pitch, yaw, stereo_image->timestamp);
+	fflush(image_pose_output_file);
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Publishers                                                                                //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Handlers                                                                                  //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 void
@@ -254,6 +276,15 @@ shutdown_module(int signo)
 		exit(0);
 	}
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                              //
+// Initializations                                                                              //
+//                                                                                              //
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 void
@@ -341,6 +372,7 @@ initialize_transformations()
 	tf::StampedTransform board_to_camera_transform(board_to_camera_pose, tf::Time(0), "/board", "/camera");
 	transformer.setTransform(board_to_camera_transform, "board_to_camera_transform");
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 int
