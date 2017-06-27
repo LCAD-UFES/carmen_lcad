@@ -8,6 +8,7 @@ import numpy as np
 import cv2
 import struct
 from xml.dom import minidom
+from cv2 import CV_WINDOW_AUTOSIZE
 
 # Global definitions
 VERBOSE = 0
@@ -62,6 +63,7 @@ def svg_d_get_bezier_points(d):
                 else:
                     if len(pt) == 2:
                         points.append((float(pt[0]), float(pt[1])))
+                        n_ms += 1
                     else:
                         errors += 1             
             elif letter == 'c': # Cubic Bezier curve, lowercase = relative coordinates
@@ -401,7 +403,8 @@ if __name__ == "__main__":
             print 'Unrecognized command line argument', sys.argv[i] 
         else:
             filenames.append(opt[0])
-    svg_file =  'i7705600_-338380.00.svg'
+    svg_file =  'i7726110_-353570.00.svg'
+    img_file =  svg_file[0:-3] + 'png'
     print 'Processing SVG file:', svg_file
     width, height, paths = svg_get_paths(svg_file)
     img1 = np.zeros((height, width, 3), np.uint8)
@@ -413,6 +416,14 @@ if __name__ == "__main__":
     cv2.moveWindow("distance to center of lane", 78 + width, 10)
     cv2.namedWindow("lane orientation")
     cv2.moveWindow("lane orientation", 78 + width, 128 + height)
+    
+    cv2.namedWindow("rot", cv2.WINDOW_NORMAL)
+    cv2.namedWindow("roi", cv2.WINDOW_NORMAL)
+    cv2.namedWindow("roi2", cv2.WINDOW_NORMAL)
+    print img_file
+    img4 = cv2.imread(img_file, 0)
+    cv2.imshow("image", img4)
+    
     map = []
     for y in range(height):
         map.append([])
@@ -427,6 +438,21 @@ if __name__ == "__main__":
             y = int(round(height - by[i]))
             if x >=0 and x < width and y >=0 and y < height:
                 img1[y][x] = (255, 0, 0)
+                
+                if i % 100 == 0:
+                    angle = -np.arctan2(byo[i], bxo[i]) * 180 / np.pi + 90
+                    print angle
+                    rot_mat = cv2.getRotationMatrix2D( (x, y), angle, 1.0 )
+                    img5 = cv2.warpAffine(img4, rot_mat, img4.shape, flags=cv2.INTER_LINEAR)
+                    s = 10
+                    print y, y+s*2, x-s, x+s
+                    if y+s*2 < height and x-s > 0 and x+s < width:
+                        img6 = img5[y:y+s*2, x-s:x+s]
+                        img7 = img4[y:y+s*2, x-s:x+s]
+                        cv2.imshow('rot', img5)
+                        cv2.imshow('roi', img6)
+                        cv2.imshow('roi2', img7)
+                        cv2.waitKey(0)
         cv2.imshow("cubic Bezier curve", img1)
         map = get_lane_from_bezier(map, bx, by, bxo, byo, lane, stroke_width = path[1], stroke_color = path[2], image = img2)
     for y in range(height):
