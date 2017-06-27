@@ -20,8 +20,7 @@
 using namespace std;
 using namespace cv;
 
-enum lane_marking_type { NO_MARKING, BROKEN_WHITE, SOLID_WHITE,
-                         BROKEN_YELLOW, SOLID_YELLOW,
+enum lane_marking_type { NO_MARKING, BROKEN_WHITE, SOLID_WHITE, BROKEN_YELLOW, SOLID_YELLOW,
                          DOUBLE_BROKEN_YELLOW, DOUBLE_SOLID_YELLOW };
 
 struct pixel_str			/* Attributes of a pixel inside a road lane */
@@ -37,9 +36,9 @@ struct pixel_str			/* Attributes of a pixel inside a road lane */
 
 union lane_map_union
 {
-	long off_road;			/* If pixel is off the road: (-1); otherwise pixel is inside a road lane  */
-	char pixel_data[8];
 	pixel_str pixel;
+	char pixel_data[8];
+	long off_road;			/* If pixel is off the road = (-1); otherwise pixel is inside a road lane  */
 } 	lane_map;
 
 string window_name1 = "distance to center of lane";
@@ -89,18 +88,15 @@ int main(int argc, char** argv)
 		if (lane_map.off_road != -1)
 		{
 			Vec3b color;
-			uchar blue, green, red;
-			color[0] = (float) lane_map.pixel.distance_center / 10.0 + 0.5; // blue = distance in centimeters
-			color[1] = lane_map.pixel.right_marking;
-			color[2] = lane_map.pixel.left_marking;
+			color[0] = lane_map.pixel.right_marking + lane_map.pixel.left_marking * 10; // blue = lane markings
+			int distance = lane_map.pixel.distance_center / 10.0 + 0.5; // distance in centimeters
+			color[1] = (!signbit(distance)) * distance; // green = positive degrees
+			color[2] = signbit(distance) * abs(distance); // red = negative degrees
 			image1.at<Vec3b>(height - 1 - y, x) = color;
-			float orientation;
-			int degrees;
-            orientation = atan2(lane_map.pixel.y_orientation, lane_map.pixel.x_orientation);
-            degrees = fabs(orientation) / PI * 180 + 0.5; // orientation in range (0, 180) degrees
-            color[0] = 0;
-            color[1] = (!signbit(orientation)) * degrees; // green = positive degrees
-            color[2] = signbit(orientation) * degrees; // red = negative degrees
+            float orientation = atan2(lane_map.pixel.y_orientation, lane_map.pixel.x_orientation);
+            int degrees = orientation / PI * 180 + 0.5; // orientation in range (-180, 180) degrees
+            color[1] = (!signbit(degrees)) * degrees; // green = positive degrees
+            color[2] = signbit(degrees) * abs(degrees); // red = negative degrees
             image2.at<Vec3b>(height - 1 - y, x) = color;
 		}
 		x++;

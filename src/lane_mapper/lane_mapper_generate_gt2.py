@@ -233,7 +233,9 @@ def get_bezier(width, height, lane, fraction, points):
 #     return bx2, by2, bxo2, byo2
 
 def scalar_product(dx1, dy1, dx2, dy2):
-    return dx1 * dx2 + dy1 * dy2
+    d_cos = dx1 * dx2 + dy1 * dy2
+    d_sin = dy1 * dx2 - dx1 * dy2
+    return d_cos, d_sin
 
 def distance_to_line(x, y, bx, by, bxo, byo):
     # Perform a binary search for a dot product (scalar product) near zero (orthogonal vectors)
@@ -245,35 +247,41 @@ def distance_to_line(x, y, bx, by, bxo, byo):
     dy0 = by[i0] - y
     dbx0 = bxo[i0]
     dby0 = byo[i0]
-    f0 = scalar_product(dx0, dy0, dbx0, dby0)
+    dbc0, dbs0 = scalar_product(dx0, dy0, dbx0, dby0)
     i1 = len(bx) - 1
     dx1 = bx[i1] - x
     dy1 = by[i1] - y
     dbx1 = bxo[i1]
     dby1 = byo[i1]
-    f1 = scalar_product(dx1, dy1, dbx1, dby1)
-    if VERBOSE >= 3: print '\ti0 =', i0, ' i1 =', i1, ' f0 =', f0, 'f1 =', f1, ' bx0 =', bx[i0],' by0 =', by[i0], ' bx1 =', bx[i1],' by1 =', by[i1], \
-                           ' dx0 =', dx0, ' dy0 =', dy0, ' dbx0 =', dbx0, ' dby0 =', dby0, ' dx1 =', dx1, ' dy1 =', dy1, ' dbx1 =', dbx1, ' dby1 =', dby1    
-    while (i1 - i0) > 1 and np.signbit(f1) != np.signbit(f0):
+    dbc1, dbs1 = scalar_product(dx1, dy1, dbx1, dby1)
+    if VERBOSE >= 3: print '\ti0 =', i0, ' i1 =', i1, ' dbc0 =', dbc0, ' dbs0 =', dbs0, 'dbc1 =', dbc1, ' dbs1 =', dbs1, \
+                           ' bx0 =', bx[i0],' by0 =', by[i0], ' bx1 =', bx[i1],' by1 =', by[i1], \
+                           ' dx0 =', dx0, ' dy0 =', dy0, ' dbx0 =', dbx0, ' dby0 =', dby0, \
+                           ' dx1 =', dx1, ' dy1 =', dy1, ' dbx1 =', dbx1, ' dby1 =', dby1    
+    while (i1 - i0) > 1 and np.signbit(dbc1) != np.signbit(dbc0):
         i2 = int((i0 + i1) / 2)
         dx2 = bx[i2] - x
         dy2 = by[i2] - y
         dbx2 = bxo[i2]
         dby2 = byo[i2]
-        f2 = scalar_product(dx2, dy2, dbx2, dby2)
-        if np.signbit(f2) != np.signbit(f0):
+        dbc2, dbs2 = scalar_product(dx2, dy2, dbx2, dby2)
+        if np.signbit(dbc2) != np.signbit(dbc0):
             i1 = i2
-            f1 = f2
+            dbc1 = dbc2
+            dbs1 = dbs2
         else:
-            i0 = i2       
-            f0 = f2
-        if VERBOSE >= 3: print '\ti0 =', i0, ' i1 =', i1, ' f0 =', f0, 'f1 =', f1, ' bx0 =', bx[i0],' by0 =', by[i0], ' bx1 =', bx[i1],' by1 =', by[i1], \
-                               ' i2 =', i2, ' dx2 =', dx2, ' dy2 =', dy2, ' dbx2 =', dbx2, ' dby2 =', dby2, ' f2 =', f2    
-    if abs(f1) < abs(f0):
+            i0 = i2    
+            dbc0 = dbc2
+            dbs0 = dbs2
+        if VERBOSE >= 3: print '\ti0 =', i0, ' i1 =', i1, ' dbc0 =', dbc0, ' dbs0 =', dbs0, 'dbc1 =', dbc1, ' dbs1 =', dbs1, \
+                               ' bx0 =', bx[i0],' by0 =', by[i0], ' bx1 =', bx[i1],' by1 =', by[i1], \
+                               ' i2 =', i2, ' dx2 =', dx2, ' dy2 =', dy2, ' dbx2 =', dbx2, ' dby2 =', dby2, ' dbc2 =', dbc2, ' dbs2 =', dbs2    
+    if abs(dbc1) < abs(dbc0):
         i0 = i1
-        f0 = f1
+        dbc0 = dbc1
+        dbs0 = dbs1
     d = np.sqrt((bx[i0] - x) * (bx[i0] - x) + (by[i0]- y) * (by[i0] - y))  
-    return d, f0, bxo[i0], byo[i0]
+    return d, dbc0, dbs0, bxo[i0], byo[i0]
 
 def get_lane_marking_by_color_code(stroke_color):
     if stroke_color == '#ff0000':
@@ -344,16 +352,16 @@ def get_lane_from_bezier(map, bx, by, bxo, byo, lane, stroke_width, stroke_color
                 continue
             cont += 1
             if VERBOSE >= 3: print 'i =', i, ': distance_to_line call #', cont, ': x =', x, ', y =', y  
-            d, ortho, dbx, dby = distance_to_line(x, y, bx, by, bxo, byo)
+            d, dbcos, dbsin, dbx, dby = distance_to_line(x, y, bx, by, bxo, byo)
             map[y][x].lane_number = lane
             if d > max_distance:
                 if VERBOSE >= 2: print 'i =', i, ': Map pixel is out of the current lane number', lane, ': d =', d, ', max_distance =', max_distance, ': x =', x, ', y =', y
                 continue
-            if d > 1.0 and abs(ortho / d) > MIN_ORTHO:
-                if VERBOSE >= 2: print 'i =', i, ': Map pixel is not orthogonal to the current lane number', lane, ': d =', d, ': ortho =', ortho, ', arccos =', np.arccos(ortho / d), ': x =', x, ', y =', y
+            if d > 1.0 and abs(dbcos / d) > MIN_ORTHO:
+                if VERBOSE >= 2: print 'i =', i, ': Map pixel is not orthogonal to the current lane number', lane, ': d =', d, ': dbcos =', dbcos, ', arccos =', np.arccos(dbcos / d), ': x =', x, ', y =', y
                 continue
-            map[y][x].distance_center = int(round(d * MM_PER_PIXEL))   # distance in millimeters from the pixel to the center of the lane
-            map[y][x].x_orientation = int(round(dbx * ORIENTATION_VECTOR_MODULUS)) 
+            map[y][x].distance_center = int(round(d * MM_PER_PIXEL) * np.sign(dbsin))  # distance in millimeters from the pixel to the center of the lane
+            map[y][x].x_orientation = int(round(dbx * ORIENTATION_VECTOR_MODULUS))
             map[y][x].y_orientation = int(round(dby * ORIENTATION_VECTOR_MODULUS))
             map[y][x].left_marking = l_marking
             map[y][x].right_marking = r_marking
@@ -424,15 +432,16 @@ if __name__ == "__main__":
     for y in range(height):
         for x in range(width):
             if map[y][x].in_the_lane:
-                blue = int(round(map[y][x].distance_center / 10)) # blue = distance in centimeters
-                green = map[y][x].right_marking
-                red = map[y][x].left_marking
+                blue = map[y][x].right_marking + map[y][x].left_marking * 10
+                distance = int(round(map[y][x].distance_center / 10)) # distance in centimeters
+                green = (not np.signbit(distance)) * distance  # green = positive distances = right hand
+                red = np.signbit(distance) * abs(distance) # red = negative distances = left hand
                 img2[height - 1 - y][x] = (blue, green, red)
                 orientation = np.arctan2(map[y][x].y_orientation, map[y][x].x_orientation)
-                degrees = int(round(abs(orientation) / np.pi * 180)) # orientation in range (0, 180) degrees
-                green = (not np.signbit(orientation)) * degrees  # green = positive degrees
-                red = np.signbit(orientation) * degrees # red = negative degrees
-                img3[height - 1 - y][x] = (0, green, red)
+                degrees = int(round(orientation / np.pi * 180)) # orientation in range (-180, 180) degrees
+                green = (not np.signbit(degrees)) * degrees  # green = positive degrees
+                red = np.signbit(degrees) * abs(degrees) # red = negative degrees
+                img3[height - 1 - y][x] = (blue, green, red)
     cv2.imshow("distance to center of lane", img2)
     cv2.imshow("lane orientation", img3)
     print 'Press "Esc" key on the image to continue...'
