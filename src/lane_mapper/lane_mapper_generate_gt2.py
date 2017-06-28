@@ -16,7 +16,7 @@ ANIMATION = 0
 BEZIER_FRACTION = 0.001     # Line length increment (from 0.000 to 1.000) to set cubic Bezier curve points  
 MM_PER_PIXEL = 200.0        # Pixel length in millimeters
 ORIENTATION_VECTOR_MODULUS = (2**15 - 1)
-MIN_ORTHO = 0.1
+MIN_ORTHO = 0.2
 NO_MARKING = 0
 BROKEN_LINE = 1
 SOLID_LINE = 2
@@ -183,8 +183,7 @@ def get_bezier(width, height, lane, fraction, points):
                 byo.append(last_byo)
             if len(bx) >= 3:
                 next_byo, next_bxo = normalize(by[-1] - by[-2], bx[-1] - bx[-2])
-                avg_bxo = (last_bxo + next_bxo) / 2.0
-                avg_byo = (last_byo + next_byo) / 2.0
+                avg_byo, avg_bxo = normalize((last_byo + next_byo) / 2.0, (last_bxo + next_bxo) / 2.0)
                 last_bxo = next_bxo
                 last_byo = next_byo
                 bxo.append(avg_bxo)
@@ -404,6 +403,8 @@ if __name__ == "__main__":
         else:
             filenames.append(opt[0])
     svg_file =  'i7726110_-353570.00.svg'
+    if len(filenames) > 0:
+        svg_file = filenames[0]
     img_file =  svg_file[0:-3] + 'png'
     print 'Processing SVG file:', svg_file
     width, height, paths = svg_get_paths(svg_file)
