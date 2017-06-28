@@ -13,10 +13,9 @@ from cv2 import CV_WINDOW_AUTOSIZE
 # Global definitions
 VERBOSE = 0
 ANIMATION = 0
-BEZIER_FRACTION = 0.001     # Line length increment (from 0.000 to 1.000) to set cubic Bezier curve points  
+BEZIER_FRACTION = 0.001     # Line length increment (from 0.000 to 1.000) to set cubic Bezier curve points (number of points = 1/fraction) 
 MM_PER_PIXEL = 200.0        # Pixel length in millimeters
 ORIENTATION_VECTOR_MODULUS = (2**15 - 1)
-MIN_ORTHO = 0.2
 NO_MARKING = 0
 BROKEN_LINE = 1
 SOLID_LINE = 2
@@ -358,7 +357,7 @@ def get_lane_from_bezier(map, bx, by, bxo, byo, lane, stroke_width, stroke_color
             if d > max_distance:
                 if VERBOSE >= 2: print 'i =', i, ': Map pixel is out of the current lane number', lane, ': d =', d, ', max_distance =', max_distance, ': x =', x, ', y =', y
                 continue
-            if d > 1.0 and abs(dbcos / d) > MIN_ORTHO:
+            if d > 1.0 and abs(dbcos) > 1.0:
                 if VERBOSE >= 2: print 'i =', i, ': Map pixel is not orthogonal to the current lane number', lane, ': d =', d, ': dbcos =', dbcos, ', arccos =', np.arccos(dbcos / d), ': x =', x, ', y =', y
                 continue
             map[y][x].distance_center = int(round(d * MM_PER_PIXEL) * np.sign(dbsin))  # distance in millimeters from the pixel to the center of the lane
