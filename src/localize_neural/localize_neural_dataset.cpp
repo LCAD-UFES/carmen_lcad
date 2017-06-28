@@ -36,14 +36,7 @@ static carmen_pose_3D_t board_pose_g;
 
 static char* output_dir_name;
 static char* image_pose_output_filename = (char*)"image_pose.txt";
-static FILE* gps_gpgga_output_file = NULL;
-static FILE* fused_odometry_output_file = NULL;
 static FILE* image_pose_output_file = NULL;
-static FILE* car_odometry_output_file = NULL;
-static FILE* globalpos_output_file = NULL;
-
-static unsigned short int m_gamma[2048];
-
 static int globalpos_message_index = 0;
 static carmen_localize_ackerman_globalpos_message globalpos_message_buffer[100];
 
@@ -51,10 +44,10 @@ static carmen_localize_ackerman_globalpos_message globalpos_message_buffer[100];
 int
 find_nearest_globalpos_message(double timestamp)
 {
-	int i, nearest_index = -1;
+	int nearest_index = -1;
 	double shortest_interval = MAXDOUBLE;
 
-	for (i = 0; i < 100; i++)
+	for (int i = 0; i < 100; i++)
 	{
 		if (globalpos_message_buffer[i].host != NULL)
 		{
@@ -157,8 +150,8 @@ save_image_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int
 	cvSaveImage(left_composed_path, left_img, NULL);
 	cvSaveImage(right_composed_path, right_img, NULL);
 
-	printf("left image saved: %s\n", left_composed_path);
-//	printf("right image saved: %s\n", right_composed_path);
+	//printf("left image saved: %s\n", left_composed_path);
+	//printf("right image saved: %s\n", right_composed_path);
 
 	free(left_img_filename);
 	free(left_composed_path);
@@ -190,52 +183,67 @@ get_transforms_from_camera_to_world(double car_x, double car_y, double car_theta
 void
 save_pose_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int camera)
 {
-	int nearest_message_index = -1;
 	char *left_img_filename, *right_img_filename;
-	tf::StampedTransform camera_to_world_transform;
 
-	if (stereo_image != NULL)
+	if ((stereo_image == NULL) || (image_pose_output_file == NULL))
+		return;
+
+	int nearest_message_index = find_nearest_globalpos_message(stereo_image->timestamp);
+	if (nearest_message_index < 0)
+		return;
+
+	carmen_localize_ackerman_globalpos_message globalpos_message = globalpos_message_buffer[nearest_message_index];
+	carmen_pose_3D_t globalpos = globalpos_message.pose;
+
+	double dt = stereo_image->timestamp - globalpos_message.timestamp;
+	if (dt > 0.0)
 	{
-		nearest_message_index = find_nearest_globalpos_message(stereo_image->timestamp);
-		if (nearest_message_index >= 0)
-		{
-			create_stereo_filename_from_timestamp(stereo_image->timestamp, &left_img_filename, &right_img_filename, camera);
-
-			if (image_pose_output_file != NULL)
-			{
-				double x = globalpos_message_buffer[nearest_message_index].pose.position.x;
-				double y = globalpos_message_buffer[nearest_message_index].pose.position.y;
-				//double z = globalpos_message_buffer[nearest_message_index].pose.position.z;
-
-				double roll = globalpos_message_buffer[nearest_message_index].pose.orientation.roll;
-				double pitch = globalpos_message_buffer[nearest_message_index].pose.orientation.pitch;
-				double yaw = globalpos_message_buffer[nearest_message_index].pose.orientation.yaw;
-
-				double v = globalpos_message_buffer[nearest_message_index].v;
-				double delta_t = stereo_image->timestamp - globalpos_message_buffer[nearest_message_index].timestamp;
-
-				x += v * delta_t * cos(yaw);
-				y += v * delta_t * sin(yaw);
-
-				tf::StampedTransform camera_to_world = get_transforms_from_camera_to_world(x, y, yaw);
-
-				tf::Vector3 position = camera_to_world.getOrigin();
-				tf::Quaternion orientation = camera_to_world.getRotation();
-
-				tf::Matrix3x3(orientation).getRPY(roll, pitch, yaw);
-
-				fprintf(image_pose_output_file, "%s/%s %.25f %.25f %.25f %.25f %.25f %.25f %.25f %.25f %.25f %.25f %.25f\n",
-						(char*)output_dir_name, left_img_filename,
-						position.getX(), position.getY(), position.getZ(),
-						orientation.getW(), orientation.getX(), orientation.getY(), orientation.getZ(),
-						roll, pitch, yaw, stereo_image->timestamp);
-				fflush(image_pose_output_file);
-
-				//printf("%.6lf %.6lf %.6lf %.6lf %.6lf %.6lf\n", x, y, z, roll, pitch, yaw);
-			}
-		}
+		globalpos = carmen_ackerman_interpolated_robot_position_at_time(
+				globalpos_message.pose,
+				dt, globalpos_message.v,
+				globalpos_message.phi, 2.625);
 	}
+	else
+	{
+		carmen_die("dt<0\n");
+	}
+
+	tf::StampedTransform camera_to_world = get_transforms_from_camera_to_world(globalpos.position.x, globalpos.position.y, globalpos.orientation.yaw);
+
+	tf::Vector3 position = camera_to_world.getOrigin();
+	tf::Quaternion orientation = camera_to_world.getRotation();
+
+	double roll, pitch, yaw;
+	tf::Matrix3x3(orientation).getRPY(roll, pitch, yaw);
+
+	create_stereo_filename_from_timestamp(stereo_image->timestamp, &left_img_filename, &right_img_filename, camera);
+
+	fprintf(image_pose_output_file, "%s/%s %.25f %.25f %.25f %.25f %.25f %.25f %.25f %.25f %.25f %.25f %.25f\n",
+			(char*)output_dir_name, left_img_filename,
+			position.getX(), position.getY(), position.getZ(),
+			orientation.getW(), orientation.getX(), orientation.getY(), orientation.getZ(),
+			roll, pitch, yaw, stereo_image->timestamp);
+	fflush(image_pose_output_file);
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Publishers                                                                                //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Handlers                                                                                  //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 void
@@ -262,51 +270,21 @@ shutdown_module(int signo)
 		carmen_ipc_disconnect();
 		printf("log_filter: disconnected\n");
 
-		if (gps_gpgga_output_file != NULL)
-			fclose(gps_gpgga_output_file);
-		if (fused_odometry_output_file != NULL)
-			fclose(fused_odometry_output_file);
 		if (image_pose_output_file != NULL)
 			fclose(image_pose_output_file);
-		if (car_odometry_output_file != NULL)
-			fclose(car_odometry_output_file);
-		if (globalpos_output_file != NULL)
-			fclose(globalpos_output_file);
 
 		exit(0);
 	}
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
-void
-create_image_from_depth_buffer (float *depth_buffer, IplImage **img, int size, int height, int width)
-{
-	int i;
-
-	(*img) = cvCreateImage(cvSize(width, height), IPL_DEPTH_32F, 1);
-
-	for(i = 0; i < size; i++)
-	{
-		(*img)->imageData[i] = depth_buffer[i];
-	}
-}
-
-
-
-void
-initialize_m_gamma ()
-{
-	int i;
-	// initialize m_gamma
-	for(i = 0 ; i < 2048 ; i++)
-	{
-		float v = i / 2048.0;
-		v = pow(v, 3)* 6;
-		m_gamma[i] = v * 6 * 256;
-	}
-
-}
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                              //
+// Initializations                                                                              //
+//                                                                                              //
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 void
@@ -367,7 +345,8 @@ read_camera_parameters(int argc, char **argv)
 
 }
 
-void initialize_transformations()
+void
+initialize_transformations()
 {
 	tf::Transform board_to_camera_pose;
 	tf::Transform car_to_board_pose;
@@ -388,11 +367,12 @@ void initialize_transformations()
 	transformer.setTransform(car_to_board_transform, "car_to_board_transform");
 
 	// camera pose with respect to the board
-	board_to_camera_pose.setOrigin(tf::Vector3(camera_pose_g.position.x + 5.0, camera_pose_g.position.y, camera_pose_g.position.z));
+	board_to_camera_pose.setOrigin(tf::Vector3(camera_pose_g.position.x, camera_pose_g.position.y, camera_pose_g.position.z));
 	board_to_camera_pose.setRotation(tf::Quaternion(camera_pose_g.orientation.yaw, camera_pose_g.orientation.pitch, camera_pose_g.orientation.roll)); 				// yaw, pitch, roll
 	tf::StampedTransform board_to_camera_transform(board_to_camera_pose, tf::Time(0), "/board", "/camera");
 	transformer.setTransform(board_to_camera_transform, "board_to_camera_transform");
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 int
