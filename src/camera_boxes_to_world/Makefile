@@ -18,8 +18,8 @@ LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lpara
 
 SOURCES = camera_boxes_to_world.cpp show_boxes.cpp
 
-PUBLIC_INCLUDES = 
-PUBLIC_LIBRARIES = 
+PUBLIC_INCLUDES = camera_boxes_to_world.h
+PUBLIC_LIBRARIES = libcamera_boxes_to_world.a
 PUBLIC_BINARIES = 
 
 TARGETS = libcamera_boxes_to_world.a show_boxes
