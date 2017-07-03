@@ -5,10 +5,10 @@ MODULE_COMMENT = Carmen Velodyne to Map
 
 LINK = g++
 
-CFLAGS += -Wall -std=c99
-CXXFLAGS += -Wall -std=c++98
+CFLAGS += -Wall
+CXXFLAGS += -Wall
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src `pkg-config opencv --cflags`
 LFLAGS += -lglobal -lipc -lvelodyne_interface -lparam_interface `pkg-config --libs opencv` \
 -L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lrt -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
 		-lboost_thread-mt -lboost_signals -lboost_system
