@@ -402,6 +402,7 @@ if __name__ == "__main__":
         else:
             filenames.append(opt[0])
     svg_file =  'i7726110_-353570.00.svg'
+    #svg_file =  'i7705600_-338380.00.svg'
     if len(filenames) > 0:
         svg_file = filenames[0]
     img_file =  svg_file[0:-3] + 'png'
@@ -417,12 +418,11 @@ if __name__ == "__main__":
     cv2.namedWindow("lane orientation")
     cv2.moveWindow("lane orientation", 78 + width, 128 + height)
     
-    cv2.namedWindow("rot", cv2.WINDOW_NORMAL)
+    #cv2.namedWindow("rot", cv2.WINDOW_NORMAL)
     cv2.namedWindow("roi", cv2.WINDOW_NORMAL)
     cv2.namedWindow("roi2", cv2.WINDOW_NORMAL)
     print img_file
     img4 = cv2.imread(img_file, 0)
-    cv2.imshow("image", img4)
     
     map = []
     for y in range(height):
@@ -436,20 +436,29 @@ if __name__ == "__main__":
         for i in range(len(bx)):
             x = int(round(bx[i]))
             y = int(round(height - by[i]))
-            if x >=0 and x < width and y >=0 and y < height:
+            #print bx[i], x, height - by[i], y
+            if 0 <= x < width and 0 <= y < height:
                 img1[y][x] = (255, 0, 0)
                 
-                if i % 100 == 0:
+                # code to generate ROIs
+                if i % 20 == 0:
+                    # rotate image to always get the lane in the vertical
                     angle = -np.arctan2(byo[i], bxo[i]) * 180 / np.pi + 90
-                    print angle
-                    rot_mat = cv2.getRotationMatrix2D( (x, y), angle, 1.0 )
+                    rot_mat = cv2.getRotationMatrix2D((x, y), angle, 1.0 )
                     img5 = cv2.warpAffine(img4, rot_mat, img4.shape, flags=cv2.INTER_LINEAR)
-                    s = 10
-                    print y, y+s*2, x-s, x+s
-                    if y+s*2 < height and x-s > 0 and x+s < width:
-                        img6 = img5[y:y+s*2, x-s:x+s]
-                        img7 = img4[y:y+s*2, x-s:x+s]
-                        cv2.imshow('rot', img5)
+                    roi_half_width = 12
+                    roi_height = 80
+                    roi_y1 = y - roi_height
+                    roi_x1 = x - roi_half_width
+                    roi_y2 = y
+                    roi_x2 = x + roi_half_width                    
+                    if 0 <= roi_x1 < width and 0 <= roi_x2 < width and 0 <= roi_y1 < height and 0 <= roi_y2 < height:
+                        #print x, y, roi_x1, roi_y1, roi_x2, roi_y2
+                        img6 = img5[roi_y1:roi_y2+1, roi_x1:roi_x2+1]
+                        img7 = img4[roi_y1:roi_y2+1, roi_x1:roi_x2+1]
+                        img6[roi_height-1][roi_half_width] = 255
+                        cv2.imshow("image", img4)
+                        #cv2.imshow('rot', img5)
                         cv2.imshow('roi', img6)
                         cv2.imshow('roi2', img7)
                         cv2.waitKey(0)
