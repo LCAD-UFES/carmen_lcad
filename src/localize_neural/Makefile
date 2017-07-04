@@ -32,7 +32,7 @@ PUBLIC_INCLUDES = localize_neural_messages.h localize_neural_interface.h
 PUBLIC_LIBRARIES =  liblocalize_neural_interface.a
 PUBLIC_LIBRARIES_SO = liblocalize_neural_interface.so
 PUBLIC_BINARIES = localize_neural localize_neural_dataset
-TARGETS = localize_neural_dataset liblocalize_neural_interface.a #localize_neural
+TARGETS = liblocalize_neural_interface.a #localize_neural_dataset localize_neural
 
 ifndef NO_PYTHON
 TARGETS += liblocalize_neural_interface.so.1
