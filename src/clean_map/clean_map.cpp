@@ -206,12 +206,12 @@ save_img_remission_map(carmen_map_t *remission_map)
 	{
 		x = remission_map->config.x_origin;
 		y = remission_map->config.y_origin;
-		printf("%.2lf %.2lf\n", x, y);
+		printf("%.0lf %.0lf\n", x, y);
 
 		map_img = rotate(map_img, 90);
-		cv::imshow("image", rotate(map_img, 90));
+		cv::imshow("image", map_img);
 		char name[256];
-		sprintf(name, "/dados/carmen_lcad/data/map_guarapari_20170403-2_imgs4/i%2.lf_%.2lf.png", x, y);
+		sprintf(name, "/dados/carmen_lcad/data/map_guarapari_20170403-2_imgs4/i%.0lf_%.0lf.png", x, y);
 		//cv::imwrite(name, map_img);
 		cv::waitKey(33);
 		//printf("%s\n", remission_map->config.map_name);
