@@ -174,6 +174,52 @@ cv::Mat rotate(cv::Mat src, double angle)
 }
 
 void
+save_img_remission_map(carmen_map_t *remission_map)
+{
+	cv::Mat map_img = cv::Mat::zeros(remission_map->config.x_size, remission_map->config.y_size, CV_8UC1);
+
+	int erosion_size = 1;
+	cv::Mat element = getStructuringElement( cv::MORPH_ELLIPSE,
+			cv::Size( 2*erosion_size + 1, 2*erosion_size+1 ),
+			cv::Point( erosion_size, erosion_size ));
+
+	for (int i = 0; i < remission_map->config.x_size; i++)
+	{
+		for (int j = 0; j < remission_map->config.x_size; j++)
+		{
+			//if (remission_map->map[i][j] < 0.0)
+				//continue;
+
+			uchar aux = (uchar) 3.5 * (255.0 * (1.0 - (remission_map->map[i][j] < 0 ? 1 : remission_map->map[i][j])) + 0.5);
+			map_img.at<uchar>(i, j) = aux;
+		}
+	}
+
+	//cv::equalizeHist(map_img, map_img);
+	//cv::morphologyEx(map_img, map_img, 0, element);
+	map_img =  cv::Scalar::all(255) - map_img;
+	//cv::morphologyEx(map_img, map_img, 1, element);
+
+	static double x = 0;
+	static double y = 0;
+	if ( x != remission_map->config.x_origin || y != remission_map->config.y_origin)
+	{
+		x = remission_map->config.x_origin;
+		y = remission_map->config.y_origin;
+		printf("%.2lf %.2lf\n", x, y);
+
+		map_img = rotate(map_img, 90);
+		cv::imshow("image", rotate(map_img, 90));
+		char name[256];
+		sprintf(name, "/dados/carmen_lcad/data/map_guarapari_20170403-2_imgs4/i%2.lf_%.2lf.png", x, y);
+		//cv::imwrite(name, map_img);
+		cv::waitKey(33);
+		//printf("%s\n", remission_map->config.map_name);
+	}
+	map_img.release();
+}
+
+void
 segment_remission_map(carmen_map_t *remission_map, carmen_map_t *map)
 {
 	cv::Mat map_img = cv::Mat::zeros(remission_map->config.x_size, remission_map->config.y_size, CV_8UC1);
@@ -193,7 +239,8 @@ segment_remission_map(carmen_map_t *remission_map, carmen_map_t *map)
 			//if (remission_map->map[i][j] < 0.0)
 				//continue;
 
-			uchar aux = (uchar)((255.0 * (1.0 - (remission_map->map[i][j] < 0 ? 1 : remission_map->map[i][j]))) + 0.5);
+//			uchar aux = (uchar)((255.0 * (1.0 - (remission_map->map[i][j] < 0 ? 1 : remission_map->map[i][j]))) + 0.5);
+			uchar aux = (uchar) 3.5 * (255.0 * (1.0 - (remission_map->map[i][j] < 0 ? 1 : remission_map->map[i][j])) + 0.5);
 			map_img.at<uchar>(i, j) = aux;
 
 			aux = 255 * (map->map[i][j] > 0.5 ? 1.0 : 0.0);
@@ -760,7 +807,8 @@ run_clean_map(/*sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, 
 	//carmen_grid_mapping_get_map_origin(&world_pose, &map_origin.x, &map_origin.y);
 
 //	build_map_using_velodyne(sensor_params, sensor_data, r_matrix_robot_to_global);
-	segment_remission_map(&localize_map.carmen_mean_remission_map, &localize_map.carmen_map);
+	//segment_remission_map(&localize_map.carmen_mean_remission_map, &localize_map.carmen_map);
+	save_img_remission_map(&localize_map.carmen_mean_remission_map);
 	
 	return (1);
 }
