@@ -530,3 +530,15 @@ bin/dataset_creator
 src/traffic_light/tlight_evaluate_train
 src/traffic_light/tlight_train
 src/global/carmen-config.c
+src/camera_boxes_to_world/show_boxes
+src/carmen_velodyne_to_map/box_positions_to_pixels
+src/carmen_velodyne_to_map/carmen_velodyne_to_map
+src/carmen_velodyne_to_map/crop_objects_from_map
+src/carmen_velodyne_to_map/view_bounding_boxes
+bin/show_boxes
+bin/box_positions_to_pixels
+bin/carmen_velodyne_to_map
+bin/crop_objects_from_map
+bin/view_bounding_boxes
+src/neural_car_detector/neural_car_detector
+bin/neural_car_detector
