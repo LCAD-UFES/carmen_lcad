@@ -58,7 +58,7 @@ Add the following lines to the end of .bashrc file
 	export PYTHONPATH=$NVCAFFE_HOME/python:/usr/lib/python2.7/dist-packages:$PYTHONPATH python
 	export LD_LIBRARY_PATH=$NVCAFFE_HOME/build/lib:$LD_LIBRARY_PATH
 	
-Make and run neural car detector module. (Download caffemodel first)
+Make and run neural car detector module. (Download caffemodel first: https://www.dropbox.com/s/075njerr4xvyz9u/snapshot_iter_21600.caffemodel?dl=0)
 
 ``` bash
 $ cd $CARMEN_HOME/src/neural_car_detector

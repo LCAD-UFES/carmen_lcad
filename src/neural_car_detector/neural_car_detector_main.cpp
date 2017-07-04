@@ -116,10 +116,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 	std::vector<bounding_box> bouding_boxes_list;
 
 	// detect the objects in image
-	double time_before = carmen_get_time();
 	std::vector<float> result = detectNet->Predict(crop);
-	double time_after = carmen_get_time();
-	printf("%f\n", time_after - time_before);
 
 	float correction_x = crop.cols / 1250.0;
 	float correction_y = crop.rows / 380.0;
@@ -175,11 +172,11 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 				cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0,0,255), 2);
 
 		cv::putText(*rgb_image, ponto_y,
-				cv::Point(bouding_boxes_list[i].pt2.x + 2, bouding_boxes_list[i].pt1.y + 20),
+				cv::Point(bouding_boxes_list[i].pt2.x + 2, bouding_boxes_list[i].pt1.y + 22),
 				cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0,0,255), 2);
 
 		cv::putText(*rgb_image, ponto_z,
-				cv::Point(bouding_boxes_list[i].pt2.x + 2, bouding_boxes_list[i].pt1.y + 30),
+				cv::Point(bouding_boxes_list[i].pt2.x + 2, bouding_boxes_list[i].pt1.y + 34),
 				cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0,0,255), 2);
 
 	}

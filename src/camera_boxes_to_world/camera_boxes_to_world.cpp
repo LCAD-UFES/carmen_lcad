@@ -33,7 +33,8 @@ velodyne_points_in_boxes(std::vector<bounding_box> bouding_boxes_list,
 			if (points_lasers_in_cam_with_obstacle[j].velodyne_points_in_cam.ipx > bouding_boxes_list[i].pt1.x
 					&& points_lasers_in_cam_with_obstacle[j].velodyne_points_in_cam.ipx < bouding_boxes_list[i].pt2.x
 					&& points_lasers_in_cam_with_obstacle[j].velodyne_points_in_cam.ipy > bouding_boxes_list[i].pt1.y
-					&& points_lasers_in_cam_with_obstacle[j].velodyne_points_in_cam.ipy < bouding_boxes_list[i].pt2.y)
+					&& points_lasers_in_cam_with_obstacle[j].velodyne_points_in_cam.ipy < bouding_boxes_list[i].pt2.y
+					&& points_lasers_in_cam_with_obstacle[j].hit_in_obstacle == true)
 			{
 				laser_points_in_camera_box.push_back(points_lasers_in_cam_with_obstacle[j]);
 			}
