@@ -5,7 +5,7 @@ include Makefile.conf
 PACKAGES = ipc global param_daemon proccontrol robot_ackerman_gui laser-new  	\
 	   obstacle_avoider simulator_ackerman localize_ackerman robot_ackerman \
 	   maptools mapeditor logger dynamic_object_detector \
-	   navigator_ackerman joystick pantilt laser gps gps_xyz imu localize_neural  	\
+	   navigator_ackerman joystick pantilt laser gps gps_xyz imu  	\
 	   fused_odometry moving_objects bumblebee_basic laser-ldmrs viewer_3D 		\
 	   stereo road_finding v_disparity stereo_mapping grid_mapping 		\
 	   visual_odometry_package2 stereo_point_cloud xsens xsens_MTi-G	\
