@@ -13,9 +13,10 @@
 #include <opencv/highgui.h>
 #include <vector>
 #include <string>
-using namespace std;
-
 #include <tf.h>
+#include "localize_neural_inference.h"
+
+using namespace std;
 
 int camera = 0;
 
@@ -33,6 +34,8 @@ vector<pair<carmen_point_t, double> > current_delta_poses_array;
 vector<pair<string, double> > current_frames_array;
 
 carmen_fused_odometry_message fused_odometry_message;
+carmen_localize_neural_imagepos_message curframe_message;
+carmen_localize_neural_imagepos_message keyframe_message;
 
 //#define SYNC_WITH_VELODYNE = 1
 
@@ -114,7 +117,7 @@ find_more_synchronized_pose(const vector<pair<carmen_point_t, double> > &poses, 
 	for (uint i = 0; i < poses.size(); i++)
 	{
 		double delta_t = timestamp - poses[i].second;
-		if ((delta_t >= 0) && (delta_t < shortest_interval))
+		if ((delta_t >= 0) && (delta_t <= shortest_interval))
 		{
 			shortest_interval = delta_t;
 			nearest_index = i;
@@ -187,46 +190,40 @@ publish_globalpos_message(carmen_pose_3D_t pose, double timestamp)
 
 
 void
-publish_imagepos_keyframe_message(carmen_pose_3D_t pose, double timestamp, string imagename)
+publish_imagepos_keyframe_message(carmen_pose_3D_t pose, double timestamp)
 {
-	static carmen_localize_neural_imagepos_message message;
 	static bool first_time = true;
 	if (first_time)
 	{
 		first_time = false;
-		memset(&message, 0, sizeof(message));
+		memset(&keyframe_message, 0, sizeof(keyframe_message));
 	}
 
-	copy_image(&message, imagename);
+	keyframe_message.pose = pose;
 
-	message.pose = pose;
+	keyframe_message.host = carmen_get_host();
+	keyframe_message.timestamp = timestamp;
 
-	message.host = carmen_get_host();
-	message.timestamp = timestamp;
-
-	carmen_localize_neural_publish_imagepos_keyframe_message(&message);
+	carmen_localize_neural_publish_imagepos_keyframe_message(&keyframe_message);
 }
 
 
 void
-publish_imagepos_curframe_message(carmen_pose_3D_t pose, double timestamp, string imagename)
+publish_imagepos_curframe_message(carmen_pose_3D_t pose, double timestamp)
 {
-	static carmen_localize_neural_imagepos_message message;
 	static bool first_time = true;
 	if (first_time)
 	{
 		first_time = false;
-		memset(&message, 0, sizeof(message));
+		memset(&curframe_message, 0, sizeof(curframe_message));
 	}
 
-	copy_image(&message, imagename);
+	curframe_message.pose = pose;
 
-	message.pose = pose;
+	curframe_message.host = carmen_get_host();
+	curframe_message.timestamp = timestamp;
 
-	message.host = carmen_get_host();
-	message.timestamp = timestamp;
-
-	carmen_localize_neural_publish_imagepos_curframe_message(&message);
+	carmen_localize_neural_publish_imagepos_curframe_message(&curframe_message);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -252,12 +249,16 @@ carmen_bumblebee_basic_stereoimage_message_handler(carmen_bumblebee_basic_stereo
 	string key_frame = key_frames_array[index].first;
 	string current_frame = current_frames_array[index].first;
 
+	copy_image(&keyframe_message, key_frame);
+	copy_image(&curframe_message, current_frame);
+
 	carmen_pose_3D_t key_pose = key_poses_array[index].first;
 	carmen_pose_3D_t current_pose = key_pose; //copy z
 
-	carmen_point_t delta_pose = current_delta_poses_array[index].first;
+	//carmen_point_t delta_pose = current_delta_poses_array[index].first;
+	carmen_point_t delta_pose =	run_cnn_inference(keyframe_message, curframe_message);
+
 	transform_deltapos(current_pose, key_pose, delta_pose);
-	//transform_odometry(current_pose, key_pose, delta_pose.x, delta_pose.y, delta_pose.theta);
 
 	tf::StampedTransform car_to_world = get_transforms_from_camera_to_car(current_pose.position.x, current_pose.position.y, current_pose.orientation.yaw);
 
@@ -273,8 +274,8 @@ carmen_bumblebee_basic_stereoimage_message_handler(carmen_bumblebee_basic_stereo
 	#ifndef SYNC_WITH_VELODYNE
 	publish_globalpos_message(global_pose, message->timestamp);
 	#endif
-	publish_imagepos_curframe_message(current_pose, message->timestamp, current_frame);
-	publish_imagepos_keyframe_message(key_pose, message->timestamp, key_frame);
+	publish_imagepos_curframe_message(current_pose, message->timestamp);
+	publish_imagepos_keyframe_message(key_pose, message->timestamp);
 }
 
 
@@ -303,6 +304,7 @@ shutdown_module(int signo)
 	if (signo == SIGINT)
 	{
 		carmen_ipc_disconnect();
+		finalize_tensorflow();
 		printf("publish: disconnected.\n");
 
 		exit(0);
@@ -432,6 +434,8 @@ main(int argc, char **argv)
 	define_messages();
 
 	initialize_transformations();
+
+	initialize_tensorflow(argv[3]);
 
 	load_delta_poses(argv[1]);
 
