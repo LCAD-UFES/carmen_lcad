@@ -26,13 +26,13 @@ IFLAGS += -std=c++11 -isystem /usr/local/include/tensorflow \
 		  -isystem /usr/local/include/tensorflow/third_party/eigen3
 LFLAGS += -L/usr/local/lib/tensorflow_cc/ -ltensorflow_cc 
 
-SOURCES = localize_neural_dataset.cpp localize_neural_main.cpp localize_neural_inference.cpp
+SOURCES = localize_neural_dataset.cpp localize_neural_main.cpp #localize_neural_inference.cpp
 
 PUBLIC_INCLUDES = localize_neural_messages.h localize_neural_interface.h
 PUBLIC_LIBRARIES =  liblocalize_neural_interface.a
 PUBLIC_LIBRARIES_SO = liblocalize_neural_interface.so
 PUBLIC_BINARIES = localize_neural localize_neural_dataset
-TARGETS = localize_neural_dataset localize_neural liblocalize_neural_interface.a
+TARGETS = localize_neural_dataset liblocalize_neural_interface.a #localize_neural
 
 ifndef NO_PYTHON
 TARGETS += liblocalize_neural_interface.so.1
@@ -44,6 +44,6 @@ liblocalize_neural_interface.so.1:	localize_neural_interface.o
 
 localize_neural_dataset: localize_neural_dataset.o 
 
-localize_neural: localize_neural_main.o localize_neural_inference.o liblocalize_neural_interface.a
+#localize_neural: localize_neural_main.o localize_neural_inference.o liblocalize_neural_interface.a
 
 include ../Makefile.rules
