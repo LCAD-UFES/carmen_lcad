@@ -32,10 +32,15 @@
  ***********************************/
 #include <gtk/gtk.h>
 #include <carmen/carmen.h>
+#if CV_MAJOR_VERSION == 3
 #include <opencv2/core/core_c.h>
 #include <opencv2/imgproc/imgproc_c.h>
 #include <opencv2/highgui/highgui_c.h>
 #include <opencv2/imgcodecs/imgcodecs_c.h>
+#else
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
+#endif
 
 extern GdkColor carmen_red, carmen_blue, carmen_white, carmen_yellow, 
 carmen_green, carmen_light_blue, carmen_black, carmen_orange,
