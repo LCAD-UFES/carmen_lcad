@@ -3,7 +3,8 @@
 #define CARMEN_SQUEEZENET_TLIGHT_H
 
 #include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #include <string>
 #include <vector>

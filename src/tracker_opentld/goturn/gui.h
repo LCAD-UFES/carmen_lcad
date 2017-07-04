@@ -22,7 +22,9 @@
 
 #include <string>
 
-#include <opencv/highgui.h>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
 
 /**
  * Get a bounding box from the user.
@@ -31,7 +33,7 @@
  * @param gui initialized gui
  * @return PROGRAM_EXIT if 'q' or 'Q' pressed, SUCCESS if everything went right
  */
-int getBBFromUser(cv::Mat *img, CvRect &rect, std::string windowName);
+int getBBFromUser(cv::Mat *img, cv::Rect &rect, std::string windowName);
 
 
 #endif /* GUI_H_ */
