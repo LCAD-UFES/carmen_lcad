@@ -30,7 +30,7 @@ static carmen_navigator_panel_config_t nav_panel_config;
 static carmen_navigator_map_t map_type = CARMEN_NAVIGATOR_MAP_v;
 static carmen_navigator_map_t superimposedmap_type = CARMEN_NONE_v;
 static carmen_map_p map = NULL, cost_map = NULL, offline_map = NULL, likelihood_map = NULL, global_likelihood_map = NULL,
-		complete_map = NULL, moving_objects_map = NULL, lane_map = NULL, remission_map = NULL;
+		complete_map = NULL, moving_objects_map = NULL, lane_map = NULL, remission_map = NULL, road_map = NULL;
 carmen_localize_ackerman_map_t localize_all_maps;
 int first_localize_map_message_received = 1;
 static double last_navigator_status = 0.0;
@@ -142,6 +142,9 @@ navigator_get_map(carmen_navigator_map_t type, int is_superimposed)
 		break;
 	case CARMEN_MOVING_OBJECTS_MAP_v:
 		navigator_get_specific_map(is_superimposed, moving_objects_map, CARMEN_MOVING_OBJECTS_MAP_v);
+		break;
+	case CARMEN_ROAD_MAP_v:
+		navigator_get_specific_map(is_superimposed, road_map, CARMEN_ROAD_MAP_v);
 		break;
 
 	default:
