@@ -12,10 +12,10 @@ StampedOdometry::~StampedOdometry() {}
 bool StampedOdometry::FromCarmenLog(std::stringstream &ss) {
 
     // read the velocity value
-    ss >> v;
+    ss >> raw_v;
 
     // read the phi value
-    ss >> phi;
+    ss >> raw_phi;
 
     // read the timestamp value
     ss >> StampedOdometry::timestamp;
@@ -28,8 +28,8 @@ bool StampedOdometry::FromCarmenLog(std::stringstream &ss) {
 
     }
 
-    v *= 1.000611;
-    phi = phi * 1.07004 - 0.003390;
+    v = raw_v * 0.98;
+    phi = raw_phi * 0.9906333 - 0.003390;
 
     return true;
 

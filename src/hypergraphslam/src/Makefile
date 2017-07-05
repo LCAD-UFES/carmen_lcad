@@ -5,7 +5,7 @@ LINK = g++
 MODULE_NAME = HyperGraphSlam Grab Data
 MODULE_COMMENT =
 
-CXXFLAGS += -std=c++11
+CXXFLAGS += -std=c++11 -O3
 
 IFLAGS += -I$(CARMEN_HOME)/src/hypergraphslam/src \
 			-I$(CARMEN_HOME)/src/hypergraphslam/Helpers \
@@ -14,7 +14,7 @@ IFLAGS += -I$(CARMEN_HOME)/src/hypergraphslam/src \
 			-I$(CARMEN_HOME)/src/hypergraphslam/src \
 
 #cheating
-IFLAGS += -std=c++11
+IFLAGS += -std=c++11 -O3
 
 # the eigen includes
 IFLAGS += -I/usr/include/eigen3
@@ -33,6 +33,6 @@ LFLAGS += -lglobal
 
 ###IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/include/pcl-1.7  -I/usr/include/vtk-5.8
 
-SOURCES = VehicleModel.cpp GrabData.cpp
+SOURCES = VehicleModel.cpp GrabData.cpp HyperGraphSclamOptimizer.cpp
 
 include ../../Makefile.rules

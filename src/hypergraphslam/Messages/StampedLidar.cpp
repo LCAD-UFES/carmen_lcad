@@ -19,8 +19,7 @@ StampedLidar::StampedLidar(unsigned msg_id, const std::string &base_path) :
     path(base_path),
     seq_measure(0.0, 0.0, 0.0),
     seq_id(std::numeric_limits<unsigned>::max()),
-    itcf(1.0),
-    ircf(1.0),
+    lidar_estimate(0.0, 0.0, 0.0),
     loop_measure(0.0, 0.0, 0.0),
     loop_closure_id(std::numeric_limits<unsigned>::max()) {
 

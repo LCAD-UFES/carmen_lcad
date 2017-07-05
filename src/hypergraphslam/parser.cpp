@@ -5,7 +5,7 @@ int main (int argc, char **argv) {
     if (argc != 3) {
 
         // error
-        std::cout << "Usage: hypergraphslam <log_file> <output_file>";
+        std::cout << "Usage: ./parser <log_file> <output_file>";
 
         return -1;
 

@@ -8,16 +8,18 @@ using namespace hyper;
 double VehicleModel::max_steering_angle = 0.5337;
 double VehicleModel::axle_distance = 2.61874;
 double VehicleModel::understeer = 0.0015;
+double VehicleModel::kmax = 0.2;
 
 // base constructor
 VehicleModel::VehicleModel() {}
 
 // read the vehicle parameters from file
-void VehicleModel::SetParameters(double msa, double ald, double und) {
+void VehicleModel::SetParameters(double msa, double ald, double und, double k) {
 
     VehicleModel::max_steering_angle = msa;
     VehicleModel::axle_distance = ald;
     VehicleModel::understeer = und;
+    VehicleModel::kmax = k;
 
 }
 
@@ -61,5 +63,10 @@ g2o::SE2 VehicleModel::NextState(g2o::SE2 prev, double v, double phi, double dt)
 
 }
 
+// get the max allowed curvature
+double VehicleModel::GetMaxAllowedCurvature() {
 
+    return kmax;
+
+}
 

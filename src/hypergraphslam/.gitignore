@@ -1,0 +1,8 @@
+*.txt
+tmp/
+parser
+hypergraphslam
+*.o
+*.depend
+*.cpp~
+*.hpp~

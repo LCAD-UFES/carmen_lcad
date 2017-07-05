@@ -9,6 +9,9 @@ class StampedOdometry : virtual public StampedMessage {
 
 	public:
 
+        double raw_v;
+        double raw_phi;
+
 		double v;
 		double phi;
 

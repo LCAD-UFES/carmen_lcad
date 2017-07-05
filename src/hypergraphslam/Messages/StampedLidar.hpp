@@ -25,13 +25,14 @@ class StampedLidar : virtual public StampedMessage {
         // to degree
         static double to_degree;
 
-        // the default leaf size
-        static double vg_leaf;
 
         // convert from spherical coordinates
         pcl::PointXYZHSV FromSpherical(double phi, double theta, double radius);
 
     public:
+
+        // the default leaf size
+        static double vg_leaf;
 
         // the cloud filtering object
         static VoxelGridFilter grid_filtering;
@@ -48,11 +49,8 @@ class StampedLidar : virtual public StampedMessage {
         // the seq id
         unsigned seq_id;
 
-        // the inverse translation confidence factor
-        double itcf;
-
-        // the inverse rotation confidence factor
-        double ircf;
+        // the current lidar estimate
+        g2o::SE2 lidar_estimate;
 
         // the loop restriction measure
         g2o::SE2 loop_measure;
@@ -77,8 +75,6 @@ class StampedLidar : virtual public StampedMessage {
 
         // custom point cloud loading process
         static void LoadPointCloud(const std::string &cloud_path, PointCloudHSV &cloud);
-
-
 
 };
 

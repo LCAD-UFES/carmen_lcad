@@ -16,6 +16,7 @@ GrabData::GrabData() :
     raw_messages(0),
     messages(0),
     gps_messages(0),
+    xsens_messages(0),
     velodyne_messages(0),
     sick_messages(0),
     point_cloud_lidar_messages(nullptr),
@@ -104,6 +105,7 @@ void GrabData::SeparateMessages() {
 
             // try to downcast
             StampedGPSPosePtr gps_pose = dynamic_cast<StampedGPSPosePtr>(msg);
+            StampedXSENSPtr xsens = dynamic_cast<StampedXSENSPtr>(msg);
             StampedSICKPtr sick = dynamic_cast<StampedSICKPtr>(msg);
             StampedVelodynePtr velodyne = dynamic_cast<StampedVelodynePtr>(msg);
             // StampedVelodynePtr bumblebee = dynamic_cast<StampedBumblebeePtr>(*it);
@@ -117,6 +119,10 @@ void GrabData::SeparateMessages() {
             } else if (nullptr != gps_pose) {
 
                 gps_messages.push_back(gps_pose);
+
+            } else if (nullptr != xsens) {
+
+                xsens_messages.push_back(xsens);
 
             } else if (nullptr != sick) {
 
@@ -142,6 +148,7 @@ void GrabData::SeparateMessages() {
     std::cout << "The messages were separated" << std::endl;
 
     std::cout << "GPS pose messages: " << gps_messages.size() << std::endl;
+    std::cout << "XSENS messages: " << xsens_messages.size() << std::endl;
     std::cout << "SICK messages: " << sick_messages.size() << std::endl;
     std::cout << "Velodyne messages: " << velodyne_messages.size() << std::endl;
     std::cout << "Odometry messages: " << odometry_messages.size() << std::endl;
@@ -363,7 +370,6 @@ void GrabData::BuildOdometryMeasures() {
         StampedMessagePtrVector::iterator end(messages.end());
         StampedMessagePtrVector::iterator begin(messages.begin());
         StampedMessagePtrVector::iterator it(begin);
-        StampedMessagePtrVector::iterator next(end);
 
         // find the first odometry message position
         while (end != it) {
@@ -372,9 +378,6 @@ void GrabData::BuildOdometryMeasures() {
             StampedOdometryPtr odom = dynamic_cast<StampedOdometryPtr>(*it);
 
             if (nullptr != odom) {
-
-                // set the next iterator
-                next = it + 1;
 
                 // get the initial odometry values
                 v = odom->v;
@@ -390,27 +393,34 @@ void GrabData::BuildOdometryMeasures() {
 
         }
 
-        if (end != next) {
+        if (end != it) {
 
-            // iterators
-            StampedMessagePtrVector::reverse_iterator rend(messages.rend());
-            StampedMessagePtrVector::reverse_iterator prev(it);
-            StampedMessagePtrVector::reverse_iterator rit(next);
+            if (begin != it) {
 
-            while (rend != prev) {
+                // iterators
+                StampedMessagePtrVector::reverse_iterator rend(messages.rend());
+                StampedMessagePtrVector::reverse_iterator rit(it + 1);
+                StampedMessagePtrVector::reverse_iterator prev(it);
 
-                // ge the internal message pointers
-                StampedMessagePtr current_msg = *rit;
-                StampedMessagePtr prev_msg = *prev;
+                while (rend != prev) {
 
-                // update the measure
-                prev_msg->odom_measure = VehicleModel::GetOdometryMeasure(v, phi, current_msg->timestamp - prev_msg->timestamp);
+                    // ge the internal message pointers
+                    StampedMessagePtr current_msg = *rit;
+                    StampedMessagePtr prev_msg = *prev;
 
-                // go to the previous message
-                rit = prev;
-                ++prev;
+                    // update the measure
+                    prev_msg->odom_measure = VehicleModel::GetOdometryMeasure(v, phi, current_msg->timestamp - prev_msg->timestamp);
+
+                    // go to the previous message
+                    rit = prev;
+                    ++prev;
+
+                }
 
             }
+
+            // get the next iterator
+            StampedMessagePtrVector::iterator next(it + 1);
 
             while (end != next) {
 
@@ -440,10 +450,8 @@ void GrabData::BuildOdometryMeasures() {
 
                 }
 
-                double dt = next_msg->timestamp - current_msg->timestamp;
-
                 // get the current odometry measure
-                current_msg->odom_measure = VehicleModel::GetOdometryMeasure(v, phi, dt);
+                current_msg->odom_measure = VehicleModel::GetOdometryMeasure(v, phi, next_msg->timestamp - current_msg->timestamp);
 
                 // go to the next messages
                 it = next;
@@ -469,33 +477,41 @@ void GrabData::BuildOdometryEstimates() {
         std::cout << "Start building the general estimates\n";
 
         // helpers
-        StampedMessagePtrVector::iterator end = messages.end();
-        StampedMessagePtrVector::iterator first_gps = messages.begin();
+        StampedMessagePtrVector::iterator end(messages.end());
+        StampedMessagePtrVector::iterator it(messages.begin());
 
-        // the first gps message
         StampedGPSPosePtr first_gps_pose = nullptr;
 
         // forward to the first gps pose
-        while (nullptr == first_gps_pose && end != first_gps) {
+        while (end != it) {
 
             // try to downcast
-            first_gps_pose = dynamic_cast<StampedGPSPosePtr>(*first_gps);
+            first_gps_pose = dynamic_cast<StampedGPSPosePtr>(*it);
+
+            if (nullptr != first_gps_pose) {
+
+                // show the first gps measure
+                std::cout << "First GPS measure: " << first_gps_pose->gps_measure.toVector().transpose() << std::endl;
+
+                // set the first gps pose estimate
+                first_gps_pose->est = first_gps_pose->gps_measure;
+
+                // exit the while loop
+                break;
+
+            }
 
             // go to the next message
-            ++first_gps;
+            ++it;
 
         }
 
-        // verify the casting against the gps messages missing
-        if (end != first_gps && nullptr != first_gps_pose) {
+        if (end != it && messages.begin() != it) {
 
-            // show the first gps measure
-            std::cout << "First GPS measure: " << first_gps_pose->gps_measure.toVector().transpose() << std::endl;
-
-            // some helpers
+            // iterate to the left
             StampedMessagePtrVector::reverse_iterator rend(messages.rend());
-            StampedMessagePtrVector::reverse_iterator ra(first_gps);
-            StampedMessagePtrVector::reverse_iterator rb(ra + 1);
+            StampedMessagePtrVector::reverse_iterator rb(it + 1);
+            StampedMessagePtrVector::reverse_iterator ra(it);
 
             // update the previous estimates
             // to the left
@@ -514,41 +530,40 @@ void GrabData::BuildOdometryEstimates() {
 
             }
 
-            // the standard foward iterators
-            StampedMessagePtrVector::iterator a = first_gps;
-            StampedMessagePtrVector::iterator b = a;
-            b++;
-
-            // update the next estimates
-            // to the right
-            while (end != b) {
-
-                // direct access
-                StampedMessagePtr current = *a;
-                StampedMessagePtr next = *b;
-
-                // try to downcast to gps pose
-                // StampedGPSPosePtr gps_pose = dynamic_cast<StampedGPSPosePtr>(next);
-
-                // set the initial estimate
-                // next->est = (nullptr == gps_pose) ? current->est * (current->odom_measure) : gps_pose->gps_measure;
-                next->est = current->est * (current->odom_measure);
-
-                // go to the next messages
-                a = b;
-                ++b;
-
-            }
-
-            // status report
-            std::cout << "General estimates done!\n";
-
         } else {
 
-            // error
-            throw std::runtime_error("GPS pose messages are missing!");
+            // reset the iterator
+            it = messages.begin();
 
         }
+
+        // forward iterators
+        StampedMessagePtrVector::iterator a(it);
+        StampedMessagePtrVector::iterator b(it + 1);
+
+        // to the right
+        while (end != b) {
+
+            // direct access
+            StampedMessagePtr current = *a;
+            StampedMessagePtr next = *b;
+
+            // set the initial estimate
+            next->est = current->est * (current->odom_measure);
+
+            // go to the next messages
+            a = b;
+            ++b;
+
+        }
+
+        // status report
+        std::cout << "General estimates done!\n";
+
+    } else {
+
+        // error
+        throw std::runtime_error("Odometry messages are missing!");
 
     }
 
@@ -559,6 +574,7 @@ bool GrabData::BuildLidarOdometryMeasure(
         GeneralizedICP &gicp,
         VoxelGridFilter &grid_filtering,
         double cf,
+        Eigen::Matrix4f &guess,
         const g2o::SE2 &odom,
         PointCloudHSV::Ptr source_cloud,
         PointCloudHSV::Ptr target_cloud,
@@ -579,12 +595,9 @@ bool GrabData::BuildLidarOdometryMeasure(
     gicp.setInputSource(target_cloud);
     gicp.setInputTarget(source_cloud);
 
-    // initial guess
-    Eigen::Matrix4f initial_guess(BuildMatrixFromSE2(odom));
-
     // perform the icp method
-    //gicp.align(result, initial_guess);
-    gicp.align(result, initial_guess);
+    // gicp.align(result);
+    gicp.align(result, guess);
 
     if (gicp.hasConverged()) {
 
@@ -597,8 +610,28 @@ bool GrabData::BuildLidarOdometryMeasure(
         // the distance
         double translation_difference = (odom.translation() - icp_measure.translation()).norm();
 
+        // try to validate the current transformation
+        bool valid_transformation = (0 < cf * icp_guess(0, 3)) && ICP_TRANSLATION_CONFIDENCE_FACTOR > translation_difference;
+
+        // if not valid, then we try to align again with odometry estimates
+        if (!valid_transformation) {
+
+            // let's try again
+            gicp.align(result, BuildMatrixFromSE2(odom));
+
+            // update the transformation
+            valid_transformation = gicp.hasConverged();
+
+            // update the icp guess
+            icp_guess = gicp.getFinalTransformation();
+
+            // update the icp measure
+            icp_measure = BuildSE2FromMatrix(icp_guess);
+
+        }
+
         // the movement and the cf value should have the same sign
-        if (0 < cf * icp_guess(0, 3) && ICP_TRANSLATION_CONFIDENCE_FACTOR > translation_difference) {
+        if (valid_transformation) {
 
             // get the inverse transformation
             Eigen::Matrix4f icp_inverse(icp_guess.inverse());
@@ -634,7 +667,7 @@ bool GrabData::BuildLidarOdometryMeasure(
 
     } else {
 
-        std::cout << "Error: It haven't converged!" << std::endl;
+        std::cout << "Error: It hasn't converged!" << std::endl;
 
     }
 
@@ -796,11 +829,8 @@ void GrabData::BuildLidarMeasuresMT() {
     // the voxel grid filtering
     VoxelGridFilter grid_filtering;
 
-    // vg leag
-    double leaf_size = 0.2;
-
     // set the voxel value
-    grid_filtering.setLeafSize(leaf_size, leaf_size, leaf_size);
+    grid_filtering.setLeafSize(StampedLidar::vg_leaf, StampedLidar::vg_leaf, StampedLidar::vg_leaf);
 
     // the local grid map
     // LocalGridMap3D<float> lgm(4.0, 40.0, 30.0f, 5.0f);
@@ -809,14 +839,14 @@ void GrabData::BuildLidarMeasuresMT() {
     float lfd = LIDAR_ODOMETRY_MIN_DISTANCE;
 
     // the base path
-    std::string path("");
+    std::string path("tmp/lgm/");
 
     bool is_sick = (point_cloud_lidar_messages == &sick_messages);
 
     if (is_sick) {
 
         // set the sick base path
-        path += "tmp/lgm/sick/";
+        path += "sick/";
 
         // set the origin
         // lgm.SetSickOrigin();
@@ -827,7 +857,7 @@ void GrabData::BuildLidarMeasuresMT() {
     } else {
 
         // set the velodyne base path
-        path += "tmp/lgm/velodyne/";
+        path += "velodyne/";
 
         // set the velodyne frequency
         lfd *= 20.0;
@@ -863,6 +893,9 @@ void GrabData::BuildLidarMeasuresMT() {
 
         }
 
+        // get the initial estimate
+        Eigen::Matrix4f guess(Eigen::Matrix4f::Identity());
+
         // the main iterator
         while (current_index < last_index) {
 
@@ -888,18 +921,18 @@ void GrabData::BuildLidarMeasuresMT() {
                 // get the factor
                 double cf = double(int(current->speed * (next->timestamp - current->timestamp) * 100.0)) * 0.02;
 
-                // get the current odometry estimate
+                // the odometry guess
                 g2o::SE2 odom(current->est.inverse() * next->est);
 
                 if (0.0 != cf) {
 
-                    if (BuildLidarOdometryMeasure(gicp, grid_filtering, cf, odom, current_cloud, next_cloud, current->seq_measure)) {
+                    if (BuildLidarOdometryMeasure(gicp, grid_filtering, cf, guess, odom, current_cloud, next_cloud, current->seq_measure)) {
 
                         // set the base id
                         current->seq_id = next->id;
 
                         // save the acculated cloud
-                        StampedLidar::SavePointCloud(path, current_index, *current_cloud);
+                        // StampedLidar::SavePointCloud(path, current_index, *current_cloud);
 
                     } else {
 
@@ -975,6 +1008,52 @@ void GrabData::BuildLidarOdometryMeasuresWithThreads(StampedLidarPtrVector &lida
 
         // status reporting
         std::cout << "\nLidar measures done" << std::endl;
+
+    }
+
+}
+
+
+// build the lidar odometry estimates, we should call this method after the BuildOdometryEstimates
+void GrabData::BuildLidarOdometryEstimates(StampedLidarPtrVector &lidar_messages) {
+
+    if (2 < lidar_messages.size()) {
+
+        // the limit index
+        unsigned limit_index = messages.size() + 1;
+
+        // iterators
+        StampedLidarPtrVector::iterator end(velodyne_messages.end());
+        StampedLidarPtrVector::iterator current(velodyne_messages.begin());
+        StampedLidarPtrVector::iterator next(current + 1);
+
+        // the first lidar estimate is the general odometry estimate
+        (*current)->lidar_estimate = (*current)->est;
+
+        while (end != next) {
+
+            // get the current lidar
+            StampedLidarPtr current_lidar = *current;
+            StampedLidarPtr next_lidar = *next;
+
+            // set the next
+            if (limit_index > current_lidar->seq_id) {
+
+                // set the next estimate
+                next_lidar->lidar_estimate = current_lidar->lidar_estimate * current_lidar->seq_measure;
+
+            } else {
+
+                // hack
+                next_lidar->lidar_estimate = current_lidar->lidar_estimate * (current_lidar->est.inverse() * next_lidar->est);
+
+            }
+
+            // go to the next messages
+            current = next;
+            ++next;
+
+        }
 
     }
 
@@ -1096,8 +1175,11 @@ void GrabData::SaveAllVertices(std::ofstream &os) {
     StampedMessagePtrVector::iterator it = messages.begin();
     StampedMessagePtrVector::iterator end = messages.end();
 
-    // savet the gps origin
+    // save the gps origin
     os << "GPS_ORIGIN " << std::fixed << gps_origin[0] << " " << gps_origin[1] << "\n";
+
+    // save the vertices ammount
+    os << "VERTICES_QUANTITY " << messages.size() << "\n";
 
     while (end != it) {
 
@@ -1117,42 +1199,96 @@ void GrabData::SaveAllVertices(std::ofstream &os) {
 // save the odometry edges
 void GrabData::SaveOdometryEdges(std::ofstream &os) {
 
-    // helpers
-    StampedMessagePtrVector::iterator end = messages.end();
-    StampedMessagePtrVector::iterator current = messages.begin();
-    StampedMessagePtrVector::iterator next = messages.begin();
-    ++next;
+    if (!messages.empty()) {
 
-    // open the odometry output
-    std::ofstream ofs("odom.txt", std::ofstream::out);
+        // helpers
+        StampedMessagePtrVector::iterator end = messages.end();
+        StampedMessagePtrVector::iterator current = messages.begin();
+        StampedMessagePtrVector::iterator next = messages.begin();
+        ++next;
 
-    if (!ofs.good()) {
+        // get the first speed
+        double rv = odometry_messages[0]->raw_v;
+        double rphi = odometry_messages[0]->raw_phi;
 
-        throw std::runtime_error("Could not open the odometry edge output file!");
+        // get the initial
+
+        while (end != next) {
+
+            // direct acccess
+            StampedMessagePtr a = *current;
+            StampedMessagePtr b = *next;
+
+            // direct acces
+            const g2o::SE2 &measure(a->odom_measure);
+
+            double dx = measure[0];
+            double dy = measure[1];
+            double yaw = measure[2];
+            double dt = b->timestamp - a->timestamp;
+
+            // write the odometry measures
+            os << "ODOM_EDGE " << a->id << " " << b->id << " " << std::fixed << dx << " " << dy << " " << yaw << " " << rv << " " << rphi << " " << dt << "\n";
+
+            // try to downcast to odometyr msg
+            StampedOdometryPtr odom = dynamic_cast<StampedOdometryPtr>(a);
+
+            if (nullptr != odom) {
+
+                // update the speed and steering angle
+                rv = odom->raw_v;
+                rphi = odom->raw_phi;
+
+            }
+
+            // go to the next messages
+            current = next;
+            ++next;
+
+        }
 
     }
 
-    // the initial pose
-    g2o::SE2 pose(messages[0]->est);
+}
 
-    while (end != next) {
+// save the odometry estimates
+void GrabData::SaveOdometryEstimates() {
 
-        // direct acccess
-        StampedMessagePtr from = *current;
-        StampedMessagePtr to = *next;
+    if (!messages.empty()) {
 
-        // write the odometry measures
-        os << "ODOM_EDGE " << from->id << " " << to->id << " " << std::fixed <<  from->odom_measure[0] << " " << from->odom_measure[1] << " " << from->odom_measure[2] << "\n";
+        // open the odometry output
+        std::ofstream ofs("odom.txt", std::ofstream::out);
 
-        // save the odometry estimated pose
-        ofs << pose.toVector().transpose() << "\n";
+        if (!ofs.good()) {
 
-        // get the next pose
-        pose = pose * from->odom_measure;
+            throw std::runtime_error("Could not open the odometry edge output file!");
 
-        // go to the next messages
-        current = next;
-        ++next;
+        }
+
+        StampedMessagePtrVector::iterator end(messages.end());
+        StampedMessagePtrVector::iterator it(messages.begin());
+
+        while (end != it) {
+
+            // direct access
+            Eigen::Vector3d pose((*it)->est.toVector());
+
+            // add the gps origin
+            pose[0] += gps_origin[0];
+            pose[1] += gps_origin[1];
+
+            double yaw = pose[2];
+
+            // save the odometry estimated pose
+            ofs << std::fixed << pose[0] << " " << pose[1] << " " << yaw << " " << std::cos(yaw) << " " << std::sin(yaw) << "\n";
+
+            // go to the next message
+            ++it;
+
+        }
+
+        // close it
+        ofs.close();
 
     }
 
@@ -1175,6 +1311,28 @@ void GrabData::SaveGPSEdges(std::ofstream &os) {
 
         // write the gps mesaure
         os << "GPS_EDGE " << gps->id << " " << std::fixed << measure[0] << " " << measure[1] << " " << measure[2] << " " << gps->gps_std << "\n";
+
+        // go to the next messages
+        ++current;
+
+    }
+
+}
+
+// save the gps edges
+void GrabData::SaveXSENSEdges(std::ofstream &os) {
+
+    // helpers
+    StampedXSENSPtrVector::iterator end(xsens_messages.end());
+    StampedXSENSPtrVector::iterator current(xsens_messages.begin());
+
+    while (end != current) {
+
+        // direct access
+        StampedXSENSPtr xsens = *current;
+
+        // write the gps mesaure
+        os << "XSENS_EDGE " << xsens->id << " " << std::fixed << xsens->yaw << "\n";
 
         // go to the next messages
         ++current;
@@ -1219,68 +1377,6 @@ void GrabData::SaveGPSEstimates() {
             ++current;
 
         }
-
-
-    }
-
-}
-
-// save the lidar vertices
-void GrabData::SaveVelodyneLidarOdometryEstimates() {
-
-    if (!gps_messages.empty() && 5 < velodyne_messages.size()) {
-
-        // open the lidar output file
-        std::ofstream ofs("velodyne.txt", std::ofstream::out);
-
-        if (!ofs.good()) {
-
-            throw std::runtime_error("Could not open the lidar estimate output file!");
-
-        }
-
-        // iterators
-        StampedLidarPtrVector::iterator end(velodyne_messages.end());
-        StampedLidarPtrVector::iterator it(velodyne_messages.begin());
-        StampedLidarPtrVector::iterator next(it + 1);
-
-        // the limit index
-        unsigned limit_index = messages.size() + 1;
-
-        // the first pose
-        g2o::SE2 pose(velodyne_messages[0]->est);
-
-        // update the pose
-        // pose.setTranslation(pose.translation() + gps_origin);
-
-        while (end != next) {
-
-            // get the current velodyne message
-            StampedLidarPtr current_lidar = *it;
-
-            if (limit_index > current_lidar->seq_id) {
-
-                double yaw = pose[2];
-
-                // save the estimate
-                ofs << std::fixed << pose[0] << " " << pose[1] << " " << yaw << " " << std::cos(yaw) << " " << std::sin(yaw) << "\n";
-
-                // update the pose given the current measure
-                pose = pose * current_lidar->seq_measure;
-
-                // update the translation
-                // pose.setTranslation(pose.translation() + gps_origin);
-
-            }
-
-            // go to the next message
-            it = next;
-            ++next;
-
-        }
-
-        // close the output file
-        ofs.close();
 
     }
 
@@ -1347,6 +1443,54 @@ void GrabData::SaveICPEdges(std::ofstream &os) {
 
 }
 
+// save the lidar estimates
+void GrabData::SaveLidarEstimates(const std::string &filename, const StampedLidarPtrVector &lidar_messages) {
+
+    if (5 < lidar_messages.size()) {
+
+        // open the lidar output file
+        std::ofstream ofs(filename, std::ofstream::out);
+
+        if (!ofs.good()) {
+
+            throw std::runtime_error("Could not open the lidar estimate output file!");
+
+        }
+
+        // iterators
+        StampedLidarPtrVector::iterator end(velodyne_messages.end());
+        StampedLidarPtrVector::iterator it(velodyne_messages.begin());
+
+        while (end != it) {
+
+            // get the current lidar message
+            StampedLidarPtr current_lidar = *it;
+
+            // direct access
+            Eigen::Vector3d pose(current_lidar->lidar_estimate.toVector());
+
+            // get the yaw
+            double yaw = pose[2];
+
+            // update the position
+            pose[0] += gps_origin[0];
+            pose[1] += gps_origin[1];
+
+            // save the estimate
+            ofs << std::fixed << pose[0] << " " << pose[1] << " " << yaw << " " << std::cos(yaw) << " " << std::sin(yaw) << "\n";
+
+            // go to the next message
+            ++it;
+
+        }
+
+        // close the output file
+        ofs.close();
+
+    }
+
+}
+
 // save the curvature constraint edges
 void GrabData::SaveCurvatureEdges(std::ofstream &os) {
 
@@ -1365,11 +1509,20 @@ void GrabData::SaveCurvatureEdges(std::ofstream &os) {
             StampedMessagePtr b(*curr);
             StampedMessagePtr c(*next);
 
-            // only sequencial ids
-            if (c->id == b->id + 1 && b->id == a->id + 1) {
+            // the time
+            double dt1 = b->timestamp - a->timestamp;
+            double dt2 = c->timestamp - b->timestamp;
 
-                // save the current hyper edge
-                os << "CURVATURE_CONSTRAINT " << a->id << " " << b->id << " " << c->id << " " << "\n";
+            if (CURVATURE_REQUIRED_TIME < std::fabs(dt1) && CURVATURE_REQUIRED_TIME < std::fabs(dt2)) {
+
+                // only sequencial ids
+                if (c->id == b->id + 1 && b->id == a->id + 1) {
+
+
+                    // save the current hyper edge
+                    os << "CURVATURE_CONSTRAINT " << a->id << " " << b->id << " " << c->id << " " << "\n";
+
+                }
 
             }
 
@@ -1435,15 +1588,18 @@ bool GrabData::ParseLogFile(const std::string &input_filename) {
     // how many velodyne messages
     unsigned vldn_msgs = 0;
 
-    // how many messages
-    unsigned percent = MINIMUM_VEL_SCANS * 0.1;
-
     // the msg id
-    // we must start with 2
-    unsigned msg_id = 2;
+    // we must start with 6
+    unsigned msg_id = 6;
+
+    // how many messages
+    unsigned vel_scans = 0 == MINIMUM_VEL_SCANS ? std::numeric_limits<unsigned>::max() : MINIMUM_VEL_SCANS;
+
+    // how many messages
+    unsigned percent = vel_scans * 0.1;
 
     // parse the carmen log file and extract all the desired infos
-    while(-1 != StringHelper::ReadLine(logfile, current_line) && MINIMUM_VEL_SCANS > vldn_msgs) {
+    while(-1 != StringHelper::ReadLine(logfile, current_line) && vel_scans > vldn_msgs) {
 
         // the input tag
         std::string tag;
@@ -1455,7 +1611,7 @@ bool GrabData::ParseLogFile(const std::string &input_filename) {
         StampedMessagePtr msg = nullptr;
 
         // take care of each message
-        if ("XSENS_QUAT__" == tag) {
+        if ("XSENS_QUAT" == tag) {
 
             // build a new XSENS orientation message
             msg = new StampedXSENS(msg_id);
@@ -1475,7 +1631,7 @@ bool GrabData::ParseLogFile(const std::string &input_filename) {
             // build a new GPS orientation message
             msg = new StampedGPSOrientation(msg_id);
 
-        } else if ("LASER_LDMRS_NEW" == tag) {
+        } else if ("LASER_LDMRS_NEW_" == tag) {
 
             // build a new sick message
             msg = new StampedSICK(msg_id);
@@ -1568,14 +1724,14 @@ void GrabData::BuildHyperGraph() {
         // build the velodyne odometry measures
         BuildLidarOdometryMeasuresWithThreads(velodyne_messages);
 
-        // build the sick odometry measures
-        // BuildLidarOdometryMeasuresWithThreads(sick_messages);
-
-        // build the lidar estimates
-        // BuildVelodyneLidarOdometryEstimates();
+        // built the velodyne odometry estimates
+        BuildLidarOdometryEstimates(velodyne_messages);
 
         // build the velodyne loop closure measures
         BuildLidarLoopClosureMeasures(velodyne_messages);
+
+        // build the sick odometry measures
+        // BuildLidarOdometryMeasuresWithThreads(sick_messages);
 
         // build the sick loop closure measMatrix4ures
         // BuildLidarLoopClosureMeasures(sick_messages);
@@ -1608,17 +1764,23 @@ void GrabData::SaveHyperGraph(const std::string &output_filename) {
             // save the GPS edges
             SaveGPSEdges(out);
 
-            // save the gps estimate to gps.txt file
-            SaveGPSEstimates();
+            // save the xsens edges
+            SaveXSENSEdges(out);
 
             // save the icp edges
             SaveICPEdges(out);
 
-            // save the velodyne estimates
-            SaveVelodyneLidarOdometryEstimates();
-
             // save the curvature constraint edges
-            // SaveCurvatureEdges(out);
+            SaveCurvatureEdges(out);
+
+            // save the odometry estimate to external file
+            SaveOdometryEstimates();
+
+            // save the gps estimate to gps.txt file
+            SaveGPSEstimates();
+
+            // save the velodyne estimates
+            SaveLidarEstimates("velodyne.txt", velodyne_messages);
 
         } else {
 
@@ -1642,6 +1804,9 @@ void GrabData::Clear() {
 
     // discard the gps messages pointers
     gps_messages.clear();
+
+    // discard the xsens messages pointers
+    xsens_messages.clear();
 
     // discards the odometry messages pointers
     odometry_messages.clear();

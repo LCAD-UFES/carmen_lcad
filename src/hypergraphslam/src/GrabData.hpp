@@ -30,7 +30,7 @@
 
 namespace hyper {
 
-#define MINIMUM_VEL_SCANS 20000
+#define MINIMUM_VEL_SCANS 0
 #define GPS_FILTER_THRESHOLD 40.0
 #define LOOP_REQUIRED_TIME 300.0
 #define LOOP_REQUIRED_SQR_DISTANCE 16.0
@@ -39,6 +39,7 @@ namespace hyper {
 #define ICP_THREAD_BLOCK_SIZE 100
 #define LIDAR_ODOMETRY_MIN_DISTANCE 0.3
 #define ICP_TRANSLATION_CONFIDENCE_FACTOR 1.00
+#define CURVATURE_REQUIRED_TIME 0.0001
 
 // define the gicp
 typedef pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZHSV, pcl::PointXYZHSV> GeneralizedICP;
@@ -55,6 +56,9 @@ class GrabData {
 
         // a gps list to help the filtering process
         StampedGPSPosePtrVector gps_messages;
+
+        // the xsens messages
+        StampedXSENSPtrVector xsens_messages;
 
         // a velodyne list to help the ICP process
         StampedLidarPtrVector velodyne_messages;
@@ -122,6 +126,7 @@ class GrabData {
                 GeneralizedICP &gicp,
                 VoxelGridFilter &grid_filtering,
                 double cf,
+                Eigen::Matrix4f &guess,
                 const g2o::SE2 &odom,
                 PointCloudHSV::Ptr source_cloud,
                 PointCloudHSV::Ptr target_cloud,
@@ -147,6 +152,10 @@ class GrabData {
         // build sequential and loop restriction ICP measures
         void BuildLidarOdometryMeasuresWithThreads(StampedLidarPtrVector &lidar_messages);
 
+        // build the lidar odometry estimates,
+        // we should call this method after the BuildOdometryEstimates
+        void BuildLidarOdometryEstimates(StampedLidarPtrVector &lidar_messages);
+
         // compute the loop closure measure
         void BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messages);
 
@@ -156,8 +165,14 @@ class GrabData {
         // save the odometry edges
         void SaveOdometryEdges(std::ofstream &os);
 
+        // save the current odometry estimates to odom.txt file
+        void SaveOdometryEstimates();
+
         // save the gps edges
         void SaveGPSEdges(std::ofstream &os);
+
+        // save the xsens edges
+        void SaveXSENSEdges(std::ofstream &os);
 
         // save the gps edges
         void SaveGPSEstimates();
@@ -168,8 +183,8 @@ class GrabData {
         // save icp edges
         void SaveICPEdges(std::ofstream &os);
 
-        // save the lidar vertices
-        void SaveVelodyneLidarOdometryEstimates();
+        // save the lidar estimates
+        void SaveLidarEstimates(const std::string &filename, const StampedLidarPtrVector &lidar_messages);
 
         // save the curvature constraint edges
         void SaveCurvatureEdges(std::ofstream &os);

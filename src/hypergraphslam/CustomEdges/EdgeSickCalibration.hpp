@@ -1,6 +1,8 @@
 #ifndef HYPERGRAPHSLAM_EDGE_SICK_CALIBRATION_HPP
 #define HYPERGRAPHSLAM_EDGE_SICK_CALIBRATION_HPP
 
+#include <vector>
+
 #include <g2o/core/base_multi_edge.h>
 #include <g2o/types/slam2d/vertex_se2.h>
 
@@ -183,7 +185,9 @@ class EdgeSickCalibration : public BaseMultiEdge<3, g2o::SE2> {
 // laser_ldmrs_yaw     0.0 # 1.5708
 
 // set the default displacement
-g2o::SE2 EdgeSickCalibration::_displacement = g2o::SE2(0.12, 0.0, 0.0);
+// g2o::SE2 EdgeSickCalibration::_displacement = g2o::SE2(0.12, 0.0, 0.0);
+
+typedef std::vector<EdgeSickCalibration*> EdgeSickCalibrationPtrVector;
 
 } // end namespace
 

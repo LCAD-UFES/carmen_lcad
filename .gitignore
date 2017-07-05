@@ -550,3 +550,6 @@ bin/dataset_creator
 src/traffic_light/tlight_evaluate_train
 src/traffic_light/tlight_train
 src/global/carmen-config.c
+src/hypergraphslam/sync.txt
+src/hypergraphslam/odom.txt
+src/hypergraphslam/poses.txt

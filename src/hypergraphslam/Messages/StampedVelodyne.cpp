@@ -8,7 +8,7 @@
 using namespace hyper;
 
 // the base path
-const std::string StampedVelodyne::base_velodyne_path = "tmp/velodyne/velodyne";
+const std::string StampedVelodyne::base_velodyne_path = "/dados/tmp/velodyne/velodyne";
 
 // the double size
 const unsigned StampedVelodyne::double_size = sizeof(double);
