@@ -692,7 +692,24 @@ get_tcp_from_td(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
 		TrajectoryLookupTable::TrajectoryControlParameters previous_good_tcp,
 		TrajectoryLookupTable::TrajectoryDimensions td)
 {
-	if (!previous_good_tcp.valid)
+	if (GlobalState::reverse_driving && !previous_good_tcp.valid)
+	{
+		TrajectoryLookupTable::TrajectoryControlParameters dummy_tcp;
+		tcp.valid = true;
+		tcp.tt = 2.5;
+		tcp.k1 = td.phi_i;
+		tcp.k2 = td.phi_i;
+		tcp.k3 = td.phi_i;
+		tcp.has_k1 = false;
+		tcp.shift_knots = false;
+		tcp.a = 0.0;
+		tcp.vf = td.v_i;
+		tcp.sf = td.dist;
+		tcp.s = td.dist;
+
+		tcp = dummy_tcp;
+	}
+	else if (!previous_good_tcp.valid)
 	{
 		TrajectoryLookupTable::TrajectoryDiscreteDimensions tdd = get_discrete_dimensions(td);
 		if (!has_valid_discretization(tdd))
