@@ -53,7 +53,7 @@ endif
 
 ifdef CAFFE_HOME
 IFLAGS += -I $(CAFFE_HOME)/include -I $(CAFFE_HOME)/build/src/ -I /usr/local/cuda/include
-LFLAGS += -L $(CAFFE_HOME)/lib -lcaffe \
+LFLAGS += -L $(CAFFE_HOME)/build/lib -L $(CAFFE_HOME)/lib -lcaffe \
 		-L /usr/local/cuda/lib64 -lglog -lprotobuf -L/usr/local/lib
 SOURCES += squeezenet_tlight.cpp
 PUBLIC_INCLUDES += squeezenet_tlight.h

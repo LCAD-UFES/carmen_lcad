@@ -524,7 +524,6 @@ src/virtual_scan/virtual_scan
 bin/virtual_scan
 src/carmen_log_to_dataset/carmen_log_to_dataset
 src/utilities/dataset_creator/dataset_creator
-<<<<<<< HEAD
 data/split_map_*
 data/mapper_teste2_*
 data/dir_split_map_*
@@ -553,3 +552,15 @@ src/global/carmen-config.c
 src/hypergraphslam/sync.txt
 src/hypergraphslam/odom.txt
 src/hypergraphslam/poses.txt
+src/camera_boxes_to_world/show_boxes
+src/carmen_velodyne_to_map/box_positions_to_pixels
+src/carmen_velodyne_to_map/carmen_velodyne_to_map
+src/carmen_velodyne_to_map/crop_objects_from_map
+src/carmen_velodyne_to_map/view_bounding_boxes
+bin/show_boxes
+bin/box_positions_to_pixels
+bin/carmen_velodyne_to_map
+bin/crop_objects_from_map
+bin/view_bounding_boxes
+src/neural_car_detector/neural_car_detector
+bin/neural_car_detector

@@ -239,6 +239,18 @@
                         <signal name="toggled" handler="on_menuMaps_MovingObjects_toggled" swapped="no"/>
                       </object>
                     </child>
+                    <child>
+                      <object class="GtkRadioMenuItem" id="menuMaps_RoadMap">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="label" translatable="yes">Road Map</property>
+                        <property name="use_underline">True</property>
+                        <property name="draw_as_radio">True</property>
+                        <property name="group">menuMaps_OfflineMap</property>
+                        <signal name="toggled" handler="on_menuMaps_RoadMap_toggled" swapped="no"/>
+                      </object>
+                    </child>
                   </object>
                 </child>
               </object>
@@ -372,6 +384,18 @@
                         <property name="draw_as_radio">True</property>
                         <property name="group">menuSuperimposedMaps_None</property>
                         <signal name="toggled" handler="on_menuSuperimposedMaps_MovingObjects_toggled" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkRadioMenuItem" id="menuSuperimposedRoadMap">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="label" translatable="yes">Road Map</property>
+                        <property name="use_underline">True</property>
+                        <property name="draw_as_radio">True</property>
+                        <property name="group">menuSuperimposedMaps_None</property>
+                        <signal name="toggled" handler="on_menuSuperimposedMaps_RoadMap_toggled" swapped="no"/>
                       </object>
                     </child>
                   </object>
