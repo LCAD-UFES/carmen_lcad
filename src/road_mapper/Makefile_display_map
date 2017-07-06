@@ -1,0 +1,8 @@
+objs = road_mapper_display_map.o
+
+road_mapper_display_map : $(objs)
+	g++ -o road_mapper_display_map $(objs) `pkg-config --cflags --libs opencv`
+
+road_mapper_display_map.o : road_mapper_display_map.cpp
+	g++ -c road_mapper_display_map.cpp
+
