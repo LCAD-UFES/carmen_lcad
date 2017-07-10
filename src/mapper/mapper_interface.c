@@ -49,6 +49,14 @@ carmen_mapper_subscribe_virtual_laser_message(carmen_mapper_virtual_laser_messag
 
 
 void
+carmen_mapper_subscribe_virtual_scan_message(carmen_mapper_virtual_scan_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how)
+{
+	carmen_subscribe_message(CARMEN_MAPPER_VIRTUAL_SCAN_MESSAGE_NAME,
+	CARMEN_MAPPER_VIRTUAL_SCAN_MESSAGE_FMT, message, sizeof(carmen_mapper_virtual_scan_message), handler, subscribe_how);
+}
+
+
+void
 carmen_mapper_subscribe_map_message(carmen_mapper_map_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how)
 {
 	carmen_subscribe_message(CARMEN_MAPPER_MAP_MESSAGE_NAME,
@@ -79,7 +87,14 @@ carmen_mapper_moving_objects_raw_map_subscribe_message(carmen_mapper_map_message
 void
 carmen_mapper_unsubscribe_virtual_laser_message(carmen_handler_t handler)
 {
-	carmen_unsubscribe_message(CARMEN_MAPPER_COMPACT_MAP_MESSAGE_NAME, handler);
+	carmen_unsubscribe_message(CARMEN_MAPPER_VIRTUAL_LASER_MESSAGE_NAME, handler);
+}
+
+
+void
+carmen_mapper_unsubscribe_virtual_scan_message(carmen_handler_t handler)
+{
+	carmen_unsubscribe_message(CARMEN_MAPPER_VIRTUAL_SCAN_MESSAGE_NAME, handler);
 }
 
 
@@ -105,6 +120,17 @@ carmen_mapper_define_virtual_laser_message()
 	err = IPC_defineMsg(CARMEN_MAPPER_VIRTUAL_LASER_MESSAGE_NAME, IPC_VARIABLE_LENGTH,
 			CARMEN_MAPPER_VIRTUAL_LASER_MESSAGE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_MAPPER_VIRTUAL_LASER_MESSAGE_NAME);
+}
+
+
+void
+carmen_mapper_define_virtual_scan_message()
+{
+	IPC_RETURN_TYPE err;
+
+	err = IPC_defineMsg(CARMEN_MAPPER_VIRTUAL_SCAN_MESSAGE_NAME, IPC_VARIABLE_LENGTH,
+			CARMEN_MAPPER_VIRTUAL_SCAN_MESSAGE_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_MAPPER_VIRTUAL_SCAN_MESSAGE_NAME);
 }
 
 
@@ -143,6 +169,18 @@ carmen_mapper_publish_virtual_laser_message(carmen_mapper_virtual_laser_message 
 
 	err = IPC_publishData(CARMEN_MAPPER_VIRTUAL_LASER_MESSAGE_NAME, virtual_laser_message);
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_MAPPER_VIRTUAL_LASER_MESSAGE_NAME);
+}
+
+
+void
+carmen_mapper_publish_virtual_scan_message(carmen_mapper_virtual_scan_message *virtual_scan_message, double timestamp)
+{
+	IPC_RETURN_TYPE err;
+
+	virtual_scan_message->timestamp = timestamp;
+
+	err = IPC_publishData(CARMEN_MAPPER_VIRTUAL_SCAN_MESSAGE_NAME, virtual_scan_message);
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_MAPPER_VIRTUAL_SCAN_MESSAGE_NAME);
 }
 
 
