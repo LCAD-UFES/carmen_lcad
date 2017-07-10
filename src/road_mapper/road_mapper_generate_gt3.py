@@ -532,5 +532,5 @@ if __name__ == "__main__":
     road_file.write(gridmap_chunk)
     for x in range(width):
         for y in range(height):
-            m = map[x][y]
+            m = map[y][x]
             road_file.write(struct.pack('HHHH', m.off_the_road, m.solid_marking, m.broken_marking, m.lane_center))
