@@ -235,7 +235,7 @@ def get_lane_marking_by_color_code(stroke_color):
     return l_marking, r_marking
 
 if __name__ == "__main__":
-    svg_file =  'i7705600_-338450.00.svg'
+    svg_file =  'i7705600_-338380.00.svg'
     print 'Processing SVG file: ', svg_file
     cv2.namedWindow("original")
     cv2.namedWindow("median_blur")
