@@ -9,8 +9,6 @@
 #include <sys/types.h>
 #include <math.h>
 
-#include "spline.h"
-
 #include <opencv2/core/version.hpp>
 #if CV_MAJOR_VERSION == 3
 #include <opencv2/core/core.hpp>
@@ -23,9 +21,6 @@
 #endif
 
 #define PI	3.14159265
-
-//using namespace std;
-//using namespace cv;
 
 enum lane_marking_type { NO_MARKING, BROKEN_WHITE, SOLID_WHITE, BROKEN_YELLOW, SOLID_YELLOW,
                          DOUBLE_BROKEN_YELLOW, DOUBLE_SOLID_YELLOW };
@@ -42,17 +37,14 @@ union lane_map_union
 {
 	pixel_str pixel;
 	char pixel_data[8];
-	//long off_road;			/* If pixel is off the road = (-1); otherwise pixel is inside a road lane  */
 } 	lane_map;
 
-std::string window_name1 = "distance to center of lane";
-//std::string window_name2 = "lane orientation";
+std::string window_name1 = "map probabilities";
 #define	width	350
 #define height	350
 #define MAX_PROB (pow(2.0, 16) - 1.0)
 
 cv::Mat image1(height, width, CV_8UC3, cv::Scalar::all(0));
-//cv::Mat image2(height, width, CV_8UC3, cv::Scalar::all(0));
 
 int main(int argc, char** argv)
 {
@@ -79,18 +71,14 @@ int main(int argc, char** argv)
 	}
 
 	cv::namedWindow(window_name1, 1);
-	//cv::namedWindow(window_name2, 1);
     cv::moveWindow(window_name1, 78 + width, 10);
-    //cv::moveWindow(window_name2, 78 + width, 128 + height);
 
 	int x = 0, y = 0;
 
-	//lane_map.off_road = -1;
 	input.read(lane_map.pixel_data, 8);
 
 	while (input.gcount() == 8)
 	{
-		//if (lane_map.off_road != -1)
 		if (lane_map.pixel.off_road == 0)
 		{
             uchar blue = (uchar) round(255.0 * lane_map.pixel.broken_marking / MAX_PROB);
@@ -111,7 +99,6 @@ int main(int argc, char** argv)
 			if (y == height)
 				break;
 		}
-		//lane_map.off_road = -1;
 		input.read(lane_map.pixel_data, 8);
 	}
 	if (y == height)
@@ -120,12 +107,10 @@ int main(int argc, char** argv)
 		std::cout << "File partially read: x = " << x << " , y = " << y << "\n";
 	input.close();
     cv::imshow(window_name1, image1);
-    //cv::imshow(window_name2, image2);
 	std::cout << "\nPress \"Esc\" key to continue...\n";
 	while(cv::waitKey() != 27);
-	image1.~Mat();
-	//image2.~Mat();
+	image1.release();
 	cv::destroyWindow(window_name1);
-	//cv::destroyWindow(window_name2);
+
 	return 0;
 }

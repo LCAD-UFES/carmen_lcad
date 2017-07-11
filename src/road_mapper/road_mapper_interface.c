@@ -1,3 +1,3 @@
 #include <carmen/carmen.h>
-#include <carmen/lane_mapper_messages.h>
+#include <carmen/road_mapper_messages.h>
 

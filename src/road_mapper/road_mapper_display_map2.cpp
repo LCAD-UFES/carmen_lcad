@@ -9,8 +9,6 @@
 #include <sys/types.h>
 #include <math.h>
 
-#include "spline.h"
-
 #include <opencv2/core/version.hpp>
 #if CV_MAJOR_VERSION == 3
 #include <opencv2/core/core.hpp>
@@ -23,9 +21,6 @@
 #endif
 
 #define PI	3.14159265
-
-//using namespace std;
-//using namespace cv;
 
 enum lane_marking_type { NO_MARKING, BROKEN_WHITE, SOLID_WHITE, BROKEN_YELLOW, SOLID_YELLOW,
                          DOUBLE_BROKEN_YELLOW, DOUBLE_SOLID_YELLOW };
