@@ -93,23 +93,11 @@ road_mapper_display_map3_display(void)
 		for (y = 0; y < current_road_map->config.y_size; y++)
 		{
 			cell_prob = road_mapper_double_to_prob(&current_road_map->map[x][y]);
-			if (cell_prob->broken_marking > cell_prob->off_road ||
-					cell_prob->solid_marking > cell_prob->off_road ||
-					cell_prob->lane_center > cell_prob->off_road)
-			{
-				road_mapper_cell_color(cell_prob, &blue, &green, &red);
-				color[0] = blue;
-				color[1] = green;
-				color[2] = red;
-				image1.at<cv::Vec3b>(current_road_map->config.y_size - 1 - y, x) = color;
-			}
-			else
-			{
-				color[0] = 255;
-				color[1] = 0;
-				color[2] = 0;
-				image1.at<cv::Vec3b>(current_road_map->config.y_size - 1 - y, x) = color;
-			}
+			road_mapper_cell_color(cell_prob, &blue, &green, &red);
+			color[0] = blue;
+			color[1] = green;
+			color[2] = red;
+			image1.at<cv::Vec3b>(current_road_map->config.y_size - 1 - y, x) = color;
 		}
 	}
 	cv::imshow(window_name1, image1);

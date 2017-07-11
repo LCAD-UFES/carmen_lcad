@@ -466,33 +466,8 @@ def map_write(map, svg_file, width, height):
             m = map[y][x]
             road_file.write(struct.pack('HHHH', m.off_the_road, m.solid_marking, m.broken_marking, m.lane_center))
     road_file.close()
-            
-if __name__ == "__main__":
-    USAGE = '[(-v|--verbose)=<level>] [(-a|--animation)=<milliseconds>] [(-f|--file)=<SVG file list>] [<SVG filename> ...]'
-    filelists = []
-    filenames = []
-    for i in range(1, len(sys.argv)):
-        opt = sys.argv[i].split('=')
-        if opt[0] == '-h' or opt[0] == '--help':
-            print 'Usage: python', sys.argv[0], USAGE
-        elif opt[0] == '-v' or opt[0] == '--verbose':
-            VERBOSE = int(opt[1])
-            print 'Verbose option set to level', VERBOSE
-        elif opt[0] == '-a' or opt[0] == '--animation':
-            ANIMATION = int(opt[1])
-            print 'Animation option set to', ANIMATION, 'milliseconds'
-        elif opt[0] == '-f' or opt[0] == '--file':
-            filelists.append(opt[1])
-        elif opt[0][0] == '-':
-            print 'Usage: python', sys.argv[0], USAGE
-            print 'Unrecognized command line argument', sys.argv[i] 
-        else:
-            filenames.append(opt[0])
-#     svg_file =  'i7726110_-353570.00.svg'
-    svg_file =  'i7705600_-338380.00.svg'
-    if len(filenames) > 0:
-        svg_file = filenames[0]
-    img_file =  svg_file[0:-3] + 'png'
+        
+def process_svg_file(svg_file):
     print 'Processing SVG file:', svg_file
     width, height, paths = svg_get_paths(svg_file)
     img1 = np.zeros((height, width, 3), np.uint8)
@@ -526,10 +501,50 @@ if __name__ == "__main__":
                 blue = int(round(255.0 * map[y][x].broken_marking / MAX_PROB))
                 green = int(round(255.0 * map[y][x].lane_center / MAX_PROB))
                 red = int(round(255.0 * map[y][x].solid_marking / MAX_PROB))
-                img2[height - 1 - y][x] = (blue, green, red)
+            else:
+                blue = 255
+                green = 255
+                red = 255
+            img2[height - 1 - y][x] = (blue, green, red)
     cv2.imshow(img_name2, img2)
     print 'Press "Esc" key on the image to continue...'
     while cv2.waitKey(0) & 0xFF != 0x1B: pass
     cv2.destroyAllWindows()
 
     map_write(map, svg_file, width, height)
+    
+if __name__ == "__main__":
+    USAGE = '[(-v|--verbose)=<level>] [(-a|--animation)=<milliseconds>] [(-f|--file)=<SVG file list>] [<SVG filename> ...]'
+    filelists = []
+    filenames = []
+    for i in range(1, len(sys.argv)):
+        opt = sys.argv[i].split('=')
+        if opt[0] == '-h' or opt[0] == '--help':
+            print 'Usage: python', sys.argv[0], USAGE
+        elif opt[0] == '-v' or opt[0] == '--verbose':
+            VERBOSE = int(opt[1])
+            print 'Verbose option set to level', VERBOSE
+        elif opt[0] == '-a' or opt[0] == '--animation':
+            ANIMATION = int(opt[1])
+            print 'Animation option set to', ANIMATION, 'milliseconds'
+        elif opt[0] == '-f' or opt[0] == '--file':
+            filelists.append(opt[1])
+        elif opt[0][0] == '-':
+            print 'Usage: python', sys.argv[0], USAGE
+            print 'Unrecognized command line argument', sys.argv[i] 
+        else:
+            filenames.append(opt[0])
+#     svg_file =  'i7726110_-353570.00.svg'
+    svg_file =  'i7705600_-338380.svg'
+    if len(filenames) > 0:
+        svg_file = filenames[0]
+        process_svg_file(svg_file)
+    elif len(filelists) > 0:
+        for i in range(len(filelists)):
+            f = open(filelists[i])
+            for svg_file in f:
+                print svg_file,
+                process_svg_file(svg_file[:-1])
+            f.close()
+    else:
+        process_svg_file(svg_file)
