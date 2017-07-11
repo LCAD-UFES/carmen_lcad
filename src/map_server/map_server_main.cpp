@@ -31,6 +31,7 @@ static carmen_map_t *current_mean_remission_map;
 static carmen_map_t *current_variance_remission_map;
 static carmen_map_t *current_sum_sqr_remission_map;
 static carmen_map_t *current_count_remission_map;
+static carmen_map_t *current_road_map;
 static double distance_to_update_lane_map = 1.0;
 //static carmen_map_t *current_google_map;
 
@@ -362,6 +363,7 @@ publish_a_new_offline_map_if_robot_moved_to_another_block(carmen_point_t *pose, 
 		carmen_grid_mapping_get_block_map_by_origin(map_path, 's', *pose, current_sum_remission_map);
 		carmen_grid_mapping_get_block_map_by_origin(map_path, '2', *pose, current_sum_sqr_remission_map);
 		carmen_grid_mapping_get_block_map_by_origin(map_path, 'c', *pose, current_count_remission_map);
+		carmen_grid_mapping_get_block_map_by_origin(map_path, 'r', *pose, current_road_map);
 
 		if (current_map->complete_map != NULL)
 			carmen_prob_models_calc_mean_and_variance_remission_map(current_mean_remission_map, current_variance_remission_map, current_sum_remission_map, current_sum_sqr_remission_map, current_count_remission_map);
@@ -375,6 +377,7 @@ publish_a_new_offline_map_if_robot_moved_to_another_block(carmen_point_t *pose, 
 
 		strcpy(current_map->config.origin, "from_param_daemon");
 		carmen_map_server_publish_offline_map_message(current_map, timestamp);
+		carmen_map_server_publish_road_map_message(current_road_map, timestamp);
 		offline_map_published = 1;
 		construct_compressed_lane_map();
 		publish_compressed_lane_map();
@@ -680,6 +683,7 @@ define_messages()
 
 	carmen_mapper_define_messages();
 	carmen_map_server_define_offline_map_message();
+	carmen_map_server_define_road_map_message();
 	// carmen_map_server_define_cost_map_message();
 	carmen_map_server_define_compact_lane_map_message();
 }
@@ -765,6 +769,11 @@ initialize_structures(void)
 //	current_google_map->config.x_origin = current_google_map->config.y_origin = 0.0001;
 //	current_google_map->complete_map = NULL;
 //	current_google_map->map = NULL;
+
+	current_road_map = (carmen_map_p) calloc (1, sizeof(carmen_map_t));
+	current_road_map->config.x_origin = current_road_map->config.y_origin = 0.0001;
+	current_road_map->complete_map = NULL;
+	current_road_map->map = NULL;
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -803,6 +812,7 @@ main(int argc, char **argv)
 			carmen_grid_mapping_get_block_map_by_origin(map_path, 's', pose, current_sum_remission_map);
 			carmen_grid_mapping_get_block_map_by_origin(map_path, '2', pose, current_sum_sqr_remission_map);
 			carmen_grid_mapping_get_block_map_by_origin(map_path, 'c', pose, current_count_remission_map);
+			carmen_grid_mapping_get_block_map_by_origin(map_path, 'r', pose, current_road_map);
 		}
 	}
 
@@ -815,6 +825,7 @@ main(int argc, char **argv)
 
 		carmen_to_localize_ackerman_map(current_map, current_mean_remission_map, current_variance_remission_map, &localize_map, &localize_param);
 		carmen_map_server_publish_offline_map_message(current_map, timestamp);
+		carmen_map_server_publish_road_map_message(current_road_map, timestamp);
 		carmen_map_server_publish_localize_map_message(&localize_map);
 
 		if (publish_grid_mapping_map_at_startup)
