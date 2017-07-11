@@ -96,18 +96,8 @@ extern carmen_mapper_virtual_laser_message virtual_laser_message;
 
 extern carmen_moving_objects_point_clouds_message moving_objects_message;
 
-///////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                           //
-// Publishers                                                                                //
-//                                                                                           //
-///////////////////////////////////////////////////////////////////////////////////////////////
+extern carmen_mapper_virtual_scan_message virtual_scan_message;
 
-
-static void
-publish_map(double timestamp)
-{
-	mapper_publish_map(timestamp);
-}
 
 
 void
@@ -163,6 +153,26 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 	}
 }
 
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Publishers                                                                                //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+static void
+publish_map(double timestamp)
+{
+	mapper_publish_map(timestamp);
+}
+
+
+void
+publish_virtual_scan(double timestamp)
+{
+	carmen_mapper_publish_virtual_scan_message(&virtual_scan_message, timestamp);
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -199,13 +209,16 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		robot_near_bump_or_barrier = 0;
 
 	if (ok_to_publish)
-	{	// A ordem é importante
+	{
+		virtual_scan_message.num_points = 0;
+		// A ordem é importante
 		if (sensors_params[VELODYNE].alive)
 			include_sensor_data_into_map(VELODYNE, globalpos_message);
 		if (sensors_params[LASER_LDMRS].alive && !robot_near_bump_or_barrier)
 			include_sensor_data_into_map(LASER_LDMRS, globalpos_message);
 
 		publish_map(globalpos_message->timestamp);
+//		publish_virtual_scan(globalpos_message->timestamp);
 	}
 }
 
@@ -1081,9 +1094,12 @@ define_mapper_messages()
 	/* register initialize message */
 	carmen_map_server_define_compact_cost_map_message();
 	carmen_mapper_define_messages();
+	carmen_mapper_define_virtual_scan_message();
 }
 
-void initialize_transforms()
+
+void
+initialize_transforms()
 {
 	tf::Transform board_to_camera_pose;
 	tf::Transform car_to_board_pose;

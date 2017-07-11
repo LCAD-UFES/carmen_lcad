@@ -1,9 +1,0 @@
-objs = image_splitter.o
-
-image_splitter : $(objs)
-	g++ -o image_splitter $(objs) -lpng
-
-image_splitter.o : image_splitter.cpp
-	g++ -c image_splitter.cpp -I$$CARMEN_HOME/include
-
-

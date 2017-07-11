@@ -1,5 +1,5 @@
 #include <carmen/carmen.h>
-#include <carmen/lane_mapper_interface.h>
+#include <carmen/road_mapper_interface.h>
 #include <carmen/localize_ackerman_interface.h>
 #include <carmen/map_server_interface.h>
 
@@ -24,8 +24,7 @@ localize_ackerman_globalpos_handler(carmen_localize_ackerman_globalpos_message *
 void
 map_server_localize_map_handler(carmen_map_server_localize_map_message *map_message)
 {
-	//printf("********* x: %lf | y: %lf\n", map_message->complete_x_offset, map_message->complete_y_offset);
-	//printf("******************************** x: %lf\n", g_robot_pose.pose.position.x);
+	printf("********* %s %lf\n", map_message->host, map_message->timestamp);
 }
 
 /*********************************************************

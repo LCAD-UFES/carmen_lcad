@@ -41,6 +41,9 @@ extern int number_of_threads;
 #define HUGE_DISTANCE     32000
 
 #define MAX_VIRTUAL_LASER_SAMPLES 10000
+
+#define MAX_VIRTUAL_SCAN_SAMPLES 100000
+
 /**
  * The map
  */
@@ -69,7 +72,10 @@ extern carmen_rddf_annotation_message last_rddf_annotation_message;
 
 carmen_mapper_virtual_laser_message virtual_laser_message;
 
+carmen_mapper_virtual_scan_message virtual_scan_message;
+
 carmen_moving_objects_point_clouds_message moving_objects_message;
+
 
 carmen_map_t *
 get_the_map()
@@ -127,49 +133,41 @@ build_front_laser_message_from_velodyne_point_cloud(sensor_parameters_t *sensor_
 
 
 void
-build_moving_points_vector_ldmrs(int tid, sensor_parameters_t* sensor_params, sensor_data_t* sensor_data, carmen_map_t* log_odds_snapshot_map)
+compute_virtual_scan_point(int ray_id, int tid, sensor_parameters_t* sensor_params, sensor_data_t* sensor_data,
+		carmen_map_t* log_odds_snapshot_map)
 {
-	for (int k = 0; k < sensor_params->vertical_resolution; k++)
+	if (!sensor_data->maxed[tid][ray_id])
 	{
-		if (!sensor_data->maxed[tid][k])
+		cell_coords_t cell_hit_by_ray;
+		double x = sensor_data->ray_position_in_the_floor[tid][ray_id].x;
+		double y = sensor_data->ray_position_in_the_floor[tid][ray_id].y;
+		cell_hit_by_ray.x = round(x / log_odds_snapshot_map->config.resolution);
+		cell_hit_by_ray.y = round(y / log_odds_snapshot_map->config.resolution);
+		if (map_grid_is_valid(log_odds_snapshot_map, cell_hit_by_ray.x, cell_hit_by_ray.y) &&
+			(sensor_data->occupancy_log_odds_of_each_ray_target[tid][ray_id] > sensor_params->log_odds.log_odds_occ / 3.0) &&
+			(offline_map.map[cell_hit_by_ray.x][cell_hit_by_ray.y] <= 0.5))
 		{
-			cell_coords_t cell_hit_by_ray;
-			cell_hit_by_ray.x = round(sensor_data->ray_position_in_the_floor[tid][k].x / log_odds_snapshot_map->config.resolution);
-			cell_hit_by_ray.y = round(sensor_data->ray_position_in_the_floor[tid][k].y / log_odds_snapshot_map->config.resolution);
-			if (map_grid_is_valid(log_odds_snapshot_map, cell_hit_by_ray.x, cell_hit_by_ray.y) && offline_map.map[cell_hit_by_ray.x][cell_hit_by_ray.y] < 0.5)
-			{
-				virtual_laser_message.positions[virtual_laser_message.num_positions].x = sensor_data->ray_position_in_the_floor[tid][k].x + x_origin;
-				virtual_laser_message.positions[virtual_laser_message.num_positions].y = sensor_data->ray_position_in_the_floor[tid][k].y + y_origin;
-				virtual_laser_message.num_positions += 1;
-			}
+			virtual_scan_message.points[virtual_scan_message.num_points].x = x + x_origin;
+			virtual_scan_message.points[virtual_scan_message.num_points].y = y + y_origin;
+			virtual_scan_message.num_points += 1;
 		}
 	}
 }
 
 
 void
-build_moving_points_vetor_velodyne(int tid, sensor_parameters_t* sensor_params, sensor_data_t* sensor_data, carmen_map_t* log_odds_snapshot_map)
+build_virtual_scan_message_ldmrs(int tid, sensor_parameters_t* sensor_params, sensor_data_t* sensor_data, carmen_map_t* log_odds_snapshot_map)
 {
-	//		int ray_thnt = sensor_data->ray_that_hit_the_nearest_target[tid];
 	for (int k = 0; k < sensor_params->vertical_resolution; k++)
-	{
-		if (!sensor_data->maxed[tid][k])
-		{
-			cell_coords_t cell_hit_by_ray;
-			double x = sensor_data->ray_position_in_the_floor[tid][k].x;
-			double y = sensor_data->ray_position_in_the_floor[tid][k].y;
-			cell_hit_by_ray.x = round(x / log_odds_snapshot_map->config.resolution);
-			cell_hit_by_ray.y = round(y / log_odds_snapshot_map->config.resolution);
-			if (map_grid_is_valid(log_odds_snapshot_map, cell_hit_by_ray.x, cell_hit_by_ray.y)
-					&& (sensor_data->occupancy_log_odds_of_each_ray_target[tid][k] > sensor_params->log_odds.log_odds_occ / 3.0)
-					&& (offline_map.map[cell_hit_by_ray.x][cell_hit_by_ray.y] <= 0.5))
-			{
-				virtual_laser_message.positions[virtual_laser_message.num_positions].x = x + x_origin;
-				virtual_laser_message.positions[virtual_laser_message.num_positions].y = y + y_origin;
-				virtual_laser_message.num_positions += 1;
-			}
-		}
-	}
+		compute_virtual_scan_point(k, tid, sensor_params, sensor_data, log_odds_snapshot_map);
+}
+
+
+void
+build_virtual_scan_message_velodyne(int tid, sensor_parameters_t* sensor_params, sensor_data_t* sensor_data, carmen_map_t* log_odds_snapshot_map)
+{
+	int k = sensor_data->ray_that_hit_the_nearest_target[tid];
+	compute_virtual_scan_point(k, tid, sensor_params, sensor_data, log_odds_snapshot_map);
 }
 
 //FILE *plot_data;
@@ -223,8 +221,7 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *log_odds
 		carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data, sensor_params, i, highest_sensor, safe_range_above_sensors,
 				robot_near_bump_or_barrier, tid);
 
-//		int ray_thnt = sensor_data->ray_that_hit_the_nearest_target[tid];
-//		build_moving_points_vetor_velodyne(tid, sensor_params, sensor_data, log_odds_snapshot_map);
+//		build_virtual_scan_message_velodyne(tid, sensor_params, sensor_data, log_odds_snapshot_map);
 
 		if (update_cells_crossed_by_rays == UPDATE_CELLS_CROSSED_BY_RAYS)
 		{
@@ -342,7 +339,7 @@ update_log_odds_of_cells_in_the_laser_ldmrs_perceptual_field(carmen_map_t *log_o
 //		if (update_cells_crossed_by_rays == UPDATE_CELLS_CROSSED_BY_RAYS)
 //			carmen_prob_models_update_cells_crossed_by_ray(snapshot_map, sensor_params, sensor_data, tid);
 
-//		build_moving_points_vector_ldmrs(tid, sensor_params, sensor_data, log_odds_snapshot_map);
+//		build_virtual_scan_message_ldmrs(tid, sensor_params, sensor_data, log_odds_snapshot_map);
 
 		carmen_prob_models_update_log_odds_of_cells_hit_by_ldmrs_rays(log_odds_snapshot_map, sensor_params, sensor_data, tid);
 
@@ -1030,6 +1027,10 @@ mapper_initialize(carmen_map_config_t *main_map_config, carmen_robot_ackerman_co
 //	virtual_laser_message.positions = (carmen_position_t *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(carmen_position_t));
 //	virtual_laser_message.colors = (char *) calloc(MAX_VIRTUAL_LASER_SAMPLES, sizeof(char));
 //	virtual_laser_message.host = carmen_get_host();
+
+	memset(&virtual_scan_message, 0, sizeof(carmen_mapper_virtual_scan_message));
+	virtual_scan_message.points = (carmen_position_t *) calloc(MAX_VIRTUAL_SCAN_SAMPLES, sizeof(carmen_position_t));
+	virtual_scan_message.host = carmen_get_host();
 
 	last_globalpos = 0;
 }

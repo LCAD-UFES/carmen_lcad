@@ -5,7 +5,7 @@ Rules for groundtruth annotations on remission map images:
 3. Place the start point of each polyline in such a way that lane orientation matches the direction from the start point to the finish point.
 4. If two polylines either cross, merge or fork, then make sure to draw the "main" polyline before the secondary. 
 5. Make each point of the polyline auto-smooth, in order to generate a cubic Bezier curve.
-6. Set each polyline stroke width properly, in order to fulfill each road lane.
+6. Set each polyline stroke width properly, in order to fulfill each road lane and touch the borders of the neighbor lanes.
 7. Select each line stroke paint color according to the following code:
 	RGB(255,   0,   0) = #ff0000 = single line marking on both lane sides
 	RGB(255,   0, 127) = #ff007f = single line marking on the right side and broken line marking on the left side

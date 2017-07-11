@@ -1,8 +1,0 @@
-objs = lane_mapper_display_map.o
-
-lane_mapper_display_map : $(objs)
-	g++ -o lane_mapper_display_map $(objs) `pkg-config --cflags --libs opencv`
-
-lane_mapper_display_map.o : lane_mapper_display_map.cpp
-	g++ -c lane_mapper_display_map.cpp
-
