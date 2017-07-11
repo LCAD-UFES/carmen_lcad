@@ -7,8 +7,8 @@ MODULE_COMMENT = Road Mapper Module
 LINK = g++
 
 IFLAGS += `pkg-config --cflags opencv` 
-LFLAGS += -lparam_interface -lipc -lglobal -llocalize_ackerman_interface -lmap_server_interface -lpng
-LFLAGS += `pkg-config --libs opencv`
+LFLAGS += -lparam_interface -lipc -lglobal -llocalize_ackerman_interface -lmap_server_interface -lmap_io -lmap_interface #-lgrid_mapping
+LFLAGS += `pkg-config --libs opencv` -lpng
 CFLAGS += -Wall 
 SOURCES = road_mapper_main.cpp road_mapper_interface.c 
 SOURCES += road_mapper_image_splitter.cpp road_mapper_display_map2.cpp road_mapper_display_map3.cpp

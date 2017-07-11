@@ -487,3 +487,4 @@ if __name__ == "__main__":
         for x in range(width):
             m = map[y][x]
             road_file.write(struct.pack('hhhbb', m.distance_center, m.x_orientation, m.y_orientation, m.left_marking, m.right_marking))
+    road_file.close()

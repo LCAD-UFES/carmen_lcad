@@ -465,6 +465,7 @@ def map_write(map, svg_file, width, height):
         for y in range(height):
             m = map[y][x]
             road_file.write(struct.pack('HHHH', m.off_the_road, m.solid_marking, m.broken_marking, m.lane_center))
+    road_file.close()
             
 if __name__ == "__main__":
     USAGE = '[(-v|--verbose)=<level>] [(-a|--animation)=<milliseconds>] [(-f|--file)=<SVG file list>] [<SVG filename> ...]'
