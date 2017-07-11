@@ -22,15 +22,9 @@
 
 #include <carmen/carmen.h>
 #include <carmen/grid_mapping.h>
+#include <carmen/road_mapper.h>
 
 static carmen_map_t *current_road_map;
-struct pixel_str					/* Probabilities of a pixel in the lane map */
-{
-	unsigned short off_road;		/* Probability of a pixel off road */
-	unsigned short solid_marking;	/* Probability of pixel in the lane's solid marking */
-	unsigned short broken_marking;	/* Probability of pixel in the lane's broken marking */
-	unsigned short lane_center;		/* Probability of pixel in lane center */
-};
 
 std::string window_name1 = "map probabilities";
 #define MAX_PROB (pow(2.0, 16) - 1.0)
@@ -60,10 +54,33 @@ road_mapper_display_map3_initialize_map(void)
 }
 
 void
+road_mapper_display_map3_deinitialize_map(void)
+{
+	if (current_road_map->complete_map) free(current_road_map->complete_map);
+	free(current_road_map);
+}
+
+void
+shutdown_module(int signo)
+{
+	if (signo == SIGINT)
+	{
+		carmen_ipc_disconnect();
+		std::cout << "road_mapper_display_map3: disconnected.\n";
+		road_mapper_display_map3_deinitialize_map();
+		exit(0);
+	}
+}
+
+void
 road_mapper_display_map3_display(void)
 {
 	int x = 0, y = 0;
-	pixel_str *road_pxl;
+	road_prob *cell_prob;
+	cv::Vec3b color;
+	uchar blue;
+	uchar green;
+	uchar red;
 
 	cv::namedWindow(window_name1, 1);
 	cv::moveWindow(window_name1, 78 + current_road_map->config.x_size, 10);
@@ -75,19 +92,22 @@ road_mapper_display_map3_display(void)
 	{
 		for (y = 0; y < current_road_map->config.y_size; y++)
 		{
-			road_pxl = (pixel_str*) &current_road_map->map[x][y];
-			if (road_pxl->broken_marking > road_pxl->off_road ||
-				road_pxl->solid_marking > road_pxl->off_road ||
-				road_pxl->lane_center > road_pxl->off_road)
+			cell_prob = road_mapper_double_to_prob(&current_road_map->map[x][y]);
+			if (cell_prob->broken_marking > cell_prob->off_road ||
+					cell_prob->solid_marking > cell_prob->off_road ||
+					cell_prob->lane_center > cell_prob->off_road)
 			{
-				uchar blue = (uchar) round(255.0 * road_pxl->broken_marking / MAX_PROB);
-				uchar green = (uchar) round(255.0 * road_pxl->lane_center / MAX_PROB);
-				uchar red = (uchar) round(255.0 * road_pxl->solid_marking / MAX_PROB);
-
-				cv::Vec3b color;
+				road_mapper_cell_color(cell_prob, &blue, &green, &red);
 				color[0] = blue;
 				color[1] = green;
 				color[2] = red;
+				image1.at<cv::Vec3b>(current_road_map->config.y_size - 1 - y, x) = color;
+			}
+			else
+			{
+				color[0] = 255;
+				color[1] = 0;
+				color[2] = 0;
 				image1.at<cv::Vec3b>(current_road_map->config.y_size - 1 - y, x) = color;
 			}
 		}
@@ -102,9 +122,7 @@ road_mapper_display_map3_display(void)
 int
 main(int argc, char **argv)
 {
-	//carmen_point_t pose;
 	int no_valid_map_on_file;
-	//double timestamp;
 	static char *map_file_name;
 
 	carmen_ipc_initialize(argc, argv);
@@ -112,7 +130,7 @@ main(int argc, char **argv)
 	read_parameters(argc, argv);
 	define_messages();
 
-	//usleep(initial_waiting_time * 1e6);
+	signal(SIGINT, shutdown_module);
 
 	road_mapper_display_map3_initialize_map();
 
@@ -126,23 +144,12 @@ main(int argc, char **argv)
 		map_file_name = argv[1];
 		no_valid_map_on_file = carmen_map_read_gridmap_chunk(map_file_name, current_road_map) != 0;
 		if (no_valid_map_on_file)
-			printf("map_server: could not read offline map from file named: %s\n", map_file_name);
-
+		{
+			std::cout << "map_server: could not read offline map from file named: " << map_file_name << std::endl;
+			return -1;
+		}
 		road_mapper_display_map3_display();
 	}
-//	else
-//	{
-//		pose.x = initial_map_x;
-//		pose.y = initial_map_y;
-//
-//		if (block_map)
-//		{
-//			carmen_grid_mapping_get_block_map_by_origin(map_path, 'm', pose, current_map);
-//			carmen_grid_mapping_get_block_map_by_origin(map_path, 's', pose, current_sum_remission_map);
-//			carmen_grid_mapping_get_block_map_by_origin(map_path, '2', pose, current_sum_sqr_remission_map);
-//			carmen_grid_mapping_get_block_map_by_origin(map_path, 'c', pose, current_count_remission_map);
-//		}
-//	}
 
 	register_handlers();
 	carmen_ipc_dispatch();
