@@ -238,6 +238,14 @@ navigator_get_offline_map_pointer()
 	return offline_map;
 }
 
+carmen_map_t*
+navigator_get_road_map_pointer()
+{
+	map_type = CARMEN_ROAD_MAP_v;
+
+	return road_map;
+}
+
 
 void
 init_moving_objects_tracking(int c_num_point_clouds, int p_num_point_clouds)
@@ -404,6 +412,30 @@ offline_map_update_handler(carmen_mapper_map_message *new_map)
 		gui->navigator_graphics_change_map(offline_map);
 }
 
+static void
+road_map_update_handler(carmen_mapper_map_message *new_map)
+{
+	if (new_map->size <= 0)
+		return;
+
+	if (road_map && (new_map->config.x_size != road_map->config.x_size || new_map->config.y_size != road_map->config.y_size))
+		carmen_map_destroy(&road_map);
+
+	if (road_map)
+		clone_grid_mapping_to_map(new_map, road_map);
+	else
+		road_map = copy_grid_mapping_to_map(new_map);
+
+
+	if (superimposedmap_type == CARMEN_ROAD_MAP_v)
+	{
+		carmen_map_interface_set_superimposed_map(road_map);
+		gui->navigator_graphics_redraw_superimposed();
+	}
+
+	if (gui->navigator_graphics_update_map() && is_graphics_up && map_type == CARMEN_ROAD_MAP_v)
+		gui->navigator_graphics_change_map(road_map);
+}
 
 static void
 map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_message *message)
@@ -923,6 +955,7 @@ subscribe_ipc_messages()
 	carmen_test_ipc_exit(err, "Could not subscribe message", CARMEN_NAVIGATOR_ACKERMAN_DISPLAY_CONFIG_NAME);
 
 	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_map_server_subscribe_road_map(NULL, (carmen_handler_t) road_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
 
 //	carmen_grid_mapping_moving_objects_raw_map_subscribe_message(NULL, (carmen_handler_t) grid_mapping_moving_objects_raw_map_handler, CARMEN_SUBSCRIBE_LATEST);
@@ -977,6 +1010,8 @@ init_navigator_gui_variables(int argc, char* argv[])
 	carmen_test_alloc(cost_map);
 	lane_map = (carmen_map_t*) (calloc(1, sizeof(carmen_map_t)));
 	carmen_test_alloc(lane_map);
+	road_map = (carmen_map_t*) (calloc(1, sizeof(carmen_map_t)));
+	carmen_test_alloc(road_map);
 }
 
 

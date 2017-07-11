@@ -139,6 +139,17 @@ void on_menuMaps_OfflineMap_toggled (GtkCheckMenuItem* togglebutton __attribute_
 }
 
 //extern "C" G_MODULE_EXPORT
+void on_menuMaps_RoadMap_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
+		GtkGui* gui __attribute__ ((unused)))
+{
+	if (gtk_check_menu_item_get_active(togglebutton))
+	{
+		superimposed_is_set = 0;
+		navigator_get_map(CARMEN_ROAD_MAP_v, superimposed_is_set);
+	}
+}
+
+//extern "C" G_MODULE_EXPORT
 void on_menuMaps_Utility_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
@@ -258,6 +269,18 @@ void on_menuSuperimposedMaps_OfflineMap_toggled (GtkCheckMenuItem* togglebutton 
 	{
 		superimposed_is_set = 1;
 		navigator_get_map(CARMEN_OFFLINE_MAP_v, superimposed_is_set);
+		carmen_map_graphics_redraw_superimposed(global_gui->controls_.map_view);
+	}
+}
+
+//extern "C" G_MODULE_EXPORT
+void on_menuSuperimposedMaps_RoadMap_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
+		GtkGui* gui)
+{
+	if (gtk_check_menu_item_get_active(togglebutton))
+	{
+		superimposed_is_set = 1;
+		navigator_get_map(CARMEN_ROAD_MAP_v, superimposed_is_set);
 		carmen_map_graphics_redraw_superimposed(global_gui->controls_.map_view);
 	}
 }
@@ -781,6 +804,12 @@ void on_buttonZoomIn_clicked(GtkWidget *widget __attribute__((unused)),
 	{
 		global_gui->navigator_graphics_change_map(offline_map_p);
 		global_gui->navigator_graphics_display_map(offline_map_p, CARMEN_OFFLINE_MAP_v);
+	}
+	carmen_map_p road_map_p = navigator_get_road_map_pointer();
+	if (road_map_p)
+	{
+		global_gui->navigator_graphics_change_map(road_map_p);
+		global_gui->navigator_graphics_display_map(road_map_p, CARMEN_ROAD_MAP_v);
 	}
 
 	gdk_window_set_cursor(global_gui->controls_.map_view->image_widget->window, gdk_cursor_new(GDK_BASED_ARROW_DOWN));
