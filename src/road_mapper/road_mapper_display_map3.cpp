@@ -133,7 +133,7 @@ main(int argc, char **argv)
 		no_valid_map_on_file = carmen_map_read_gridmap_chunk(map_file_name, current_road_map) != 0;
 		if (no_valid_map_on_file)
 		{
-			std::cout << "map_server: could not read offline map from file named: " << map_file_name << std::endl;
+			std::cout << "road_mapper_display_map3: could not read offline map from file named: " << map_file_name << std::endl;
 			return -1;
 		}
 		road_mapper_display_map3_display();
