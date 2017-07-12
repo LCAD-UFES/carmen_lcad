@@ -814,12 +814,6 @@ void on_buttonZoomIn_clicked(GtkWidget *widget __attribute__((unused)),
 		global_gui->navigator_graphics_change_map(offline_map_p);
 		global_gui->navigator_graphics_display_map(offline_map_p, CARMEN_OFFLINE_MAP_v);
 	}
-	carmen_map_p road_map_p = navigator_get_road_map_pointer();
-	if (road_map_p)
-	{
-		global_gui->navigator_graphics_change_map(road_map_p);
-		global_gui->navigator_graphics_display_map(road_map_p, CARMEN_ROAD_MAP_v);
-	}
 
 	gdk_window_set_cursor(global_gui->controls_.map_view->image_widget->window, gdk_cursor_new(GDK_BASED_ARROW_DOWN));
 	global_gui->placement_status = SELECTING_FINAL_REGION;

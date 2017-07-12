@@ -332,9 +332,9 @@ unsigned char *carmen_graphics_convert_to_image(carmen_map_p map, int flags)
 		  {
 			  cell = road_mapper_double_to_prob(&value);
 			  road_mapper_cell_color(cell, &blue, &green, &red);
-			  *(image_ptr++) = blue;
-			  *(image_ptr++) = green;
 			  *(image_ptr++) = red;
+			  *(image_ptr++) = green;
+			  *(image_ptr++) = blue;
 		  }
 		  else if (value < 0 && value > -1.5) {
 			  if (black_and_white) {
