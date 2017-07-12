@@ -26,8 +26,8 @@
 
 |Image Name|Remission Map | Ground Truth|Road Map |
 |-----------------------|--------------|-------------|--------------|
-|i7705600_-338380.00.png|![Remission Map](data/i7705600_-338380.00.png)|![Ground Truth](data/i7705600_-338380_svg.png)|![Road Map](data/r7705600_-338380_map.png)|
-|i7705600_-338380.00.png|![Remission Map](data/i7726110_-353570.00.png)|![Ground Truth](data/i7726110_-353570_svg.png)|![Road Map](data/r7726110_-353570_map.png)|
+|i7705600_-338380.00.png|![Remission Map](data/i7705600_-338380.png)|![Ground Truth](data/i7705600_-338380_svg.png)|![Road Map](data/r7705600_-338380_map.png)|
+|i7705600_-338380.00.png|![Remission Map](data/i7726110_-353570.png)|![Ground Truth](data/i7726110_-353570_svg.png)|![Road Map](data/r7726110_-353570_map.png)|
 
 </center>
 
