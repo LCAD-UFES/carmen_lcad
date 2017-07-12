@@ -16,13 +16,13 @@ typedef struct						/* Probabilities of a pixel in the lane map */
 	unsigned short lane_center;		/* Probability of pixel in lane center */
 } road_prob;
 
-road_prob*
+inline road_prob*
 road_mapper_double_to_prob(double *value)
 {
 	return (road_prob*) value;
 }
 
-void
+inline void
 road_mapper_cell_color(road_prob *cell, unsigned char *blue, unsigned char *green, unsigned char *red)
 {
 	if (cell->broken_marking > cell->off_road ||
