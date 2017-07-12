@@ -6,7 +6,6 @@
  */
 
 #include <carmen/carmen.h>
-#include <carmen/global_graphics.h>
 #include <carmen/base_ackerman_interface.h>
 #include <carmen/fused_odometry_interface.h>
 #include <carmen/localize_ackerman_interface.h>
