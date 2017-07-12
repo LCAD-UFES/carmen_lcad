@@ -5,7 +5,7 @@
  *      Author: romulo
  */
 #include "grid_mapping.h"
-
+#include <carmen/road_mapper.h>
 #include <string.h>
 
 
@@ -551,6 +551,49 @@ carmen_grid_mapping_get_block_map_by_origin_x_y(char *map_path, char map_type, d
 				free(unk_map.complete_map);
 				free(unk_map.config.map_name);
 				count_maps_on_file++;
+			}
+			else if(map_type == 'r')
+			{
+				road_prob cell;
+				carmen_map_p off_road_map;
+				int n;
+				cell.off_road = MAX_PROB;
+				cell.solid_marking = 0;
+				cell.broken_marking = 0;
+				cell.lane_center = 0;
+
+				if (new_map->complete_map != NULL)
+				{
+					off_road_map = (carmen_map_p) calloc (1, sizeof(carmen_map_t));
+					off_road_map->config.x_origin = off_road_map->config.y_origin = 0.0001;
+					off_road_map->complete_map = NULL;
+					off_road_map->map = NULL;
+
+					off_road_map->config.x_size = new_map->config.x_size;
+					off_road_map->config.y_size = new_map->config.y_size;
+					off_road_map->complete_map = (double *)calloc(off_road_map->config.x_size * off_road_map->config.y_size, sizeof(double));
+					carmen_test_alloc(off_road_map->complete_map);
+					off_road_map->map = (double **)calloc(off_road_map->config.x_size, sizeof(double *));
+					carmen_test_alloc(off_road_map->map);
+
+					for(n = 0; n < off_road_map->config.x_size; n++)
+						off_road_map->map[n] = off_road_map->complete_map + n * off_road_map->config.y_size;
+
+					int x, y;
+					for (x = 0; x < off_road_map->config.x_size; x++)
+					{
+						for (y = 0; y < off_road_map->config.y_size; y++)
+						{
+							off_road_map->map[x][y] = *((double*)&cell);
+						}
+					}
+
+					copy_cell_to_map(new_map, off_road_map->map, k);
+					free(off_road_map->map);
+					free(off_road_map->complete_map);
+					//free(off_road_map->config.map_name);
+					count_maps_on_file++;
+				}
 			}
 		}
 	}
