@@ -36,6 +36,7 @@ extern "C" {
 #include <gtk/gtk.h>
 #include <carmen/global.h>
 #include <carmen/map.h>
+#include <carmen/road_mapper.h>
 
 #define CARMEN_GRAPHICS_INVERT          	1
 #define CARMEN_GRAPHICS_RESCALE         	2

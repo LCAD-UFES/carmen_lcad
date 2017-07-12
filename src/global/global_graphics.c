@@ -32,7 +32,6 @@
 #include <carmen/map.h>
 #include "global_graphics.h"
 #include <sys/types.h>
-#include <carmen/road_mapper.h>
 
 #ifdef __APPLE__
 #include <limits.h>

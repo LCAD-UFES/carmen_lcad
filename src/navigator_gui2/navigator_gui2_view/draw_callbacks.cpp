@@ -1,6 +1,5 @@
 #include "draw_callbacks.h"
 
-
 namespace View
 {
 
@@ -770,15 +769,14 @@ gint motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *world_poin
 
 		if (the_map != NULL)
 		{
-			//TODO: @Rafael: acertar isso!!!
-//			int road_contrast = the_map_view->draw_flags & CARMEN_GRAPHICS_ROAD_CONTRAST;
-//			if (road_contrast)
-//			{
-//				road_prob *cell = road_mapper_double_to_prob(&the_map->map[point.x][point.y]);
-//				sprintf(buffer, "Value: off=%d solid=%d broken=%d center=%d",
-//						cell->off_road, cell->solid_marking, cell->broken_marking, cell->lane_center);
-//			}
-//			else
+			int road_contrast = the_map_view->draw_flags & CARMEN_GRAPHICS_ROAD_CONTRAST;
+			if (road_contrast)
+			{
+				road_prob *cell = road_mapper_double_to_prob(&the_map->map[point.x][point.y]);
+				sprintf(buffer, "Value: off=%d solid=%d broken=%d center=%d",
+						cell->off_road, cell->solid_marking, cell->broken_marking, cell->lane_center);
+			}
+			else
 			{
 				sprintf(buffer, "Value: %.2f", the_map->map[point.x][point.y]);
 			}
