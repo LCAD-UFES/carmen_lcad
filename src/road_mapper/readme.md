@@ -1,8 +1,12 @@
 # Road Mapper Module
 
-## Rules for groundtruth annotations on remission map images:
+## Description
 
-1. Use **InkScape** to draw a polyline all the way along the center of each road lane.
+The Road Mapper module defines a new  
+
+## Rules for groundtruth annotations on remission map images
+
+1. Use [**Inkscape**](https://inkscape.org/en/download) to draw a polyline all the way along the center of each road lane.
 2. Place both the start and finish points out of the image limits, in order to provide a better fit for each polyline.
 3. Place the start point of each polyline in such a way that lane orientation matches the direction from the start point to the finish point.
 4. If two polylines either cross, merge or fork, then make sure to draw the *"main"* polyline before the secondary. 
@@ -18,7 +22,7 @@
 	- ![#7fff00](https://placehold.it/20x20/7fff00/?text=+) RGB(127, 255, 000) = #7fff00 = no line marking on the right side and single line marking on the left side.
 	- ![#007fff](https://placehold.it/20x20/007fff/?text=+) RGB(000, 127, 255) = #007fff = broken line marking on the right side and no line marking on the left side.
 	- ![#00ff7f](https://placehold.it/20x20/00ff7f/?text=+) RGB(000, 255, 127) = #00ff7f = no line marking on the right side and broken line marking on the left side.
-8. Save the InkScape SVG file with same image name.
+8. Save the Inkscape SVG file with same image name.
 
 ### Examples:
 
@@ -26,14 +30,14 @@
 
 |Image Name|Remission Map | Ground Truth|Road Map |
 |-----------------------|--------------|-------------|--------------|
-|i7705600_-338380.00.png|![Remission Map](data/i7705600_-338380.png)|![Ground Truth](data/i7705600_-338380_svg.png)|![Road Map](data/r7705600_-338380_map.png)|
-|i7705600_-338380.00.png|![Remission Map](data/i7726110_-353570.png)|![Ground Truth](data/i7726110_-353570_svg.png)|![Road Map](data/r7726110_-353570_map.png)|
+|i7705600_-338380.png|![Remission Map](data/i7705600_-338380.png)|![Ground Truth](data/i7705600_-338380_svg.png)|![Road Map](data/r7705600_-338380_map.png)|
+|i7726110_-353570.png|![Remission Map](data/i7726110_-353570.png)|![Ground Truth](data/i7726110_-353570_svg.png)|![Road Map](data/r7726110_-353570_map.png)|
 
 </center>
 
- R.Carneiro:	from i7726530_-353710.00.png to i7758030_-363790.00.png
+ R.Carneiro:	from i7726530_-353710.png to i7758030_-363790.png
  
- R.Nascimento:	from i7705530_-338310.00.png to i7726460_-353990.00.png
+ R.Nascimento:	from i7705530_-338310.png to i7726460_-353990.png
 
 **For more information look in docs/**
 
