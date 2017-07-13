@@ -26,14 +26,14 @@
 
 |Image Name|Remission Map | Ground Truth|Road Map |
 |-----------------------|--------------|-------------|--------------|
-|i7705600_-338380.00.png|![Remission Map](data/i7705600_-338380.png)|![Ground Truth](data/i7705600_-338380_svg.png)|![Road Map](data/r7705600_-338380_map.png)|
-|i7705600_-338380.00.png|![Remission Map](data/i7726110_-353570.png)|![Ground Truth](data/i7726110_-353570_svg.png)|![Road Map](data/r7726110_-353570_map.png)|
+|i7705600_-338380.png|![Remission Map](data/i7705600_-338380.png)|![Ground Truth](data/i7705600_-338380_svg.png)|![Road Map](data/r7705600_-338380_map.png)|
+|i7726110_-353570.png|![Remission Map](data/i7726110_-353570.png)|![Ground Truth](data/i7726110_-353570_svg.png)|![Road Map](data/r7726110_-353570_map.png)|
 
 </center>
 
- R.Carneiro:	from i7726530_-353710.00.png to i7758030_-363790.00.png
+ R.Carneiro:	from i7726530_-353710.png to i7758030_-363790.png
  
- R.Nascimento:	from i7705530_-338310.00.png to i7726460_-353990.00.png
+ R.Nascimento:	from i7705530_-338310.png to i7726460_-353990.png
 
 **For more information look in docs/**
 
