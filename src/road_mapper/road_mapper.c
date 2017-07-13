@@ -17,6 +17,15 @@ road_mapper_cell_color(road_prob *cell, unsigned char *blue, unsigned char *gree
 		*green = (unsigned char) round(255.0 * cell->lane_center / MAX_PROB);
 		*red = (unsigned char) round(255.0 * cell->solid_marking / MAX_PROB);
 	}
+	else if (cell->off_road == MAX_PROB &&
+			cell->broken_marking == MAX_PROB &&
+			cell->solid_marking == MAX_PROB &&
+			cell->lane_center == MAX_PROB)
+	{
+		*blue = 255;
+		*green = 144;
+		*red = 30;
+	}
 	else
 	{
 		*blue = 255;
@@ -24,4 +33,3 @@ road_mapper_cell_color(road_prob *cell, unsigned char *blue, unsigned char *gree
 		*red = 255;
 	}
 }
-
