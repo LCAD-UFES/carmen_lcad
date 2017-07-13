@@ -1,6 +1,10 @@
 # Road Mapper Module
 
-## Rules for groundtruth annotations on remission map images:
+## Description
+
+The Road Mapper module defines a new  
+
+## Rules for groundtruth annotations on remission map images
 
 1. Use [**Inkscape**](https://inkscape.org/en/download) to draw a polyline all the way along the center of each road lane.
 2. Place both the start and finish points out of the image limits, in order to provide a better fit for each polyline.
