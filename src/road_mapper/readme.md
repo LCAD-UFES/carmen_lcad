@@ -2,7 +2,7 @@
 
 ## Description
 
-The Road Mapper module provides a new *map_type* CARMEN_ROAD_MAP_v (prefix character 'r'), a new data structure *road_prob* and a new map server message CARMEN_MAP_SERVER_ROAD_MAP_NAME. Each position in a road map contains the following data:
+The Road Mapper module handles a new *map_type* CARMEN_ROAD_MAP_v (prefix character 'r'), a new data structure *road_prob* and a new map server message CARMEN_MAP_SERVER_ROAD_MAP_NAME. Each position in a road map contains the following data:
 ```
 typedef struct				/* Probabilities of a pixel in the road map */
 {
