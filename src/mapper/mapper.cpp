@@ -42,7 +42,7 @@ extern int number_of_threads;
 
 #define MAX_VIRTUAL_LASER_SAMPLES 10000
 
-#define MAX_VIRTUAL_SCAN_SAMPLES 100000
+#define MAX_VIRTUAL_SCAN_SAMPLES 10000
 
 /**
  * The map
@@ -221,7 +221,7 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *log_odds
 		carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data, sensor_params, i, highest_sensor, safe_range_above_sensors,
 				robot_near_bump_or_barrier, tid);
 
-//		build_virtual_scan_message_velodyne(tid, sensor_params, sensor_data, log_odds_snapshot_map);
+		build_virtual_scan_message_velodyne(tid, sensor_params, sensor_data, log_odds_snapshot_map);
 
 		if (update_cells_crossed_by_rays == UPDATE_CELLS_CROSSED_BY_RAYS)
 		{
@@ -339,7 +339,7 @@ update_log_odds_of_cells_in_the_laser_ldmrs_perceptual_field(carmen_map_t *log_o
 //		if (update_cells_crossed_by_rays == UPDATE_CELLS_CROSSED_BY_RAYS)
 //			carmen_prob_models_update_cells_crossed_by_ray(snapshot_map, sensor_params, sensor_data, tid);
 
-//		build_virtual_scan_message_ldmrs(tid, sensor_params, sensor_data, log_odds_snapshot_map);
+		build_virtual_scan_message_ldmrs(tid, sensor_params, sensor_data, log_odds_snapshot_map);
 
 		carmen_prob_models_update_log_odds_of_cells_hit_by_ldmrs_rays(log_odds_snapshot_map, sensor_params, sensor_data, tid);
 
