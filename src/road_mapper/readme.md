@@ -2,7 +2,7 @@
 
 ## Rules for groundtruth annotations on remission map images:
 
-1. Use [**InkScape**](https://inkscape.org/en/download) to draw a polyline all the way along the center of each road lane.
+1. Use [**Inkscape**](https://inkscape.org/en/download) to draw a polyline all the way along the center of each road lane.
 2. Place both the start and finish points out of the image limits, in order to provide a better fit for each polyline.
 3. Place the start point of each polyline in such a way that lane orientation matches the direction from the start point to the finish point.
 4. If two polylines either cross, merge or fork, then make sure to draw the *"main"* polyline before the secondary. 
