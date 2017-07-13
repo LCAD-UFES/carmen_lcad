@@ -19,6 +19,7 @@ import time
 import os
 
 # Global definitions
+IMAGE = True
 VERBOSE = 0
 ANIMATION = 0
 BEZIER_FRACTION = 0.001     # Line length increment (from 0.000 to 1.000) to set cubic Bezier curve points (number of points = 1/fraction) 
@@ -391,7 +392,7 @@ def get_lane_from_bezier(map, bx, by, bxo, byo, lane, stroke_width, stroke_color
                 for dx in (-1, 0, 1):
                     neighbors.append((x + dx, y + dy))
                     if VERBOSE >= 2: print '\tNeighbor pixel added: (x + dx) =', x + dx, ', (y + dy) =', y + dy
-            if ANIMATION > 0:
+            if IMAGE and ANIMATION > 0:
                 image[height - 1 - y][x] = (255, 255, 255)
                 cv2.imshow(image_name, image)
                 cv2.waitKey(ANIMATION)
@@ -470,15 +471,17 @@ def map_write(map, svg_file, width, height):
 def process_svg_file(svg_file):
     print 'Processing SVG file:', svg_file
     width, height, paths = svg_get_paths(svg_file)
-    img1 = np.zeros((height, width, 3), np.uint8)
-    img2 = np.zeros((height, width, 3), np.uint8)
+    img1 = []
+    img2 = []
     img_name1 = "cubic Bezier curve"
     img_name2 = "road map"
-    cv2.namedWindow(img_name1, cv2.WINDOW_NORMAL)
-    cv2.moveWindow(img_name1, 10, 10)
-    cv2.namedWindow(img_name2, cv2.WINDOW_NORMAL)
-    cv2.moveWindow(img_name2, 78 + width, 10)
-    
+    if IMAGE:
+        img1 = np.zeros((height, width, 3), np.uint8)
+        img2 = np.zeros((height, width, 3), np.uint8)
+        cv2.namedWindow(img_name1, cv2.WINDOW_NORMAL)
+        cv2.moveWindow(img_name1, 10, 10)
+        cv2.namedWindow(img_name2, cv2.WINDOW_NORMAL)
+        cv2.moveWindow(img_name2, 78 + width, 10)
     map = []
     for y in range(height):
         map.append([])
@@ -488,63 +491,72 @@ def process_svg_file(svg_file):
     for path in paths:
         lane += 1
         bx, by, bxo, byo = get_bezier(width, height, lane, BEZIER_FRACTION, points = path[0])
-        for i in range(len(bx)):
-            x = int(round(bx[i]))
-            y = int(round(height - by[i]))
-            if x >=0 and x < width and y >=0 and y < height:
-                img1[y][x] = (255, 0, 0)
-        cv2.imshow(img_name1, img1)
+        if IMAGE:
+            for i in range(len(bx)):
+                x = int(round(bx[i]))
+                y = int(round(height - by[i]))
+                if x >=0 and x < width and y >=0 and y < height:
+                    img1[y][x] = (255, 0, 0)
+            cv2.imshow(img_name1, img1)
         map = get_lane_from_bezier(map, bx, by, bxo, byo, lane, stroke_width = path[1], stroke_color = path[2], image = img2, image_name = img_name2)
-    for y in range(height):
-        for x in range(width):
-            if map[y][x].in_the_lane:
-                blue = int(round(255.0 * map[y][x].broken_marking / MAX_PROB))
-                green = int(round(255.0 * map[y][x].lane_center / MAX_PROB))
-                red = int(round(255.0 * map[y][x].solid_marking / MAX_PROB))
-            else:
-                blue = 255
-                green = 255
-                red = 255
-            img2[height - 1 - y][x] = (blue, green, red)
-    cv2.imshow(img_name2, img2)
-    print 'Press "Esc" key on the image to continue...'
-    while cv2.waitKey(0) & 0xFF != 0x1B: pass
-    cv2.destroyAllWindows()
-
+    if IMAGE:
+        for y in range(height):
+            for x in range(width):
+                if map[y][x].in_the_lane:
+                    blue = int(round(255.0 * map[y][x].broken_marking / MAX_PROB))
+                    green = int(round(255.0 * map[y][x].lane_center / MAX_PROB))
+                    red = int(round(255.0 * map[y][x].solid_marking / MAX_PROB))
+                else:
+                    blue = 255
+                    green = 255
+                    red = 255
+                img2[height - 1 - y][x] = (blue, green, red)
+        cv2.imshow(img_name2, img2)
+        print 'Press "Esc" key on the image to continue...'
+        while cv2.waitKey(0) & 0xFF != 0x1B: pass
+        cv2.destroyAllWindows()
     map_write(map, svg_file, width, height)
     
 if __name__ == "__main__":
-    USAGE = '[(-v|--verbose)=<level>] [(-a|--animation)=<milliseconds>] [(-f|--file)=<SVG file list>] [<SVG filename> ...]'
-    filelists = []
+    USAGE = '[(-n|--noimage)] [(-v|--verbose)=<level>] [(-a|--animation)=<milliseconds>] [(-f|--file)=<SVG file list>] [<SVG filename> ...]'
+    fl = 'command line'
     filenames = []
+    filelists = []
     for i in range(1, len(sys.argv)):
         opt = sys.argv[i].split('=')
         if opt[0] == '-h' or opt[0] == '--help':
-            print 'Usage: python', sys.argv[0], USAGE
+            print 'Usage:\npython', sys.argv[0], USAGE
+        elif opt[0] == '-n' or opt[0] == '--noimage':
+            IMAGE = False
+            print 'Image option reset'
         elif opt[0] == '-v' or opt[0] == '--verbose':
             VERBOSE = int(opt[1])
             print 'Verbose option set to level', VERBOSE
         elif opt[0] == '-a' or opt[0] == '--animation':
             ANIMATION = int(opt[1])
-            print 'Animation option set to', ANIMATION, 'milliseconds'
+            print 'Animation option set to', ANIMATION, 'millisecond' + 's' * (ANIMATION > 1)
         elif opt[0] == '-f' or opt[0] == '--file':
             filelists.append(opt[1])
         elif opt[0][0] == '-':
-            print 'Usage: python', sys.argv[0], USAGE
+            print 'Usage:\npython', sys.argv[0], USAGE
             print 'Unrecognized command line argument', sys.argv[i] 
         else:
-            filenames.append(opt[0])
-#     svg_file =  'i7726110_-353570.00.svg'
-    svg_file =  'i7705600_-338380.svg'
-    if len(filenames) > 0:
-        svg_file = filenames[0]
-        process_svg_file(svg_file)
-    elif len(filelists) > 0:
-        for i in range(len(filelists)):
-            f = open(filelists[i])
-            for svg_file in f:
-                print svg_file,
-                process_svg_file(svg_file[:-1])
-            f.close()
-    else:
-        process_svg_file(svg_file)
+            if opt[0][-4:] == '.svg':
+                filenames.append(opt[0])
+            else:
+                print opt[0], ': SVG file expected'
+    if not filelists and not filenames:
+            fl = 'default'
+            filenames = [ 'i7705600_-338380.svg' ]
+#             filenames = [ 'i7726110_-353570.svg' ]
+    if filenames:
+        print '********** Processing', fl, 'filelist containing', len(filenames), 'file' + 's' * (len(filenames) > 1) 
+        for f in filenames:
+            process_svg_file(f)
+    for fl in filelists:
+        flist = open(fl)
+        filenames = flist.readlines()
+        print '********** Processing', fl, 'filelist containing', len(filenames), 'file' + 's' * (len(filenames) > 1) 
+        for f in filenames:
+            process_svg_file(f[:-1])
+        flist.close()
