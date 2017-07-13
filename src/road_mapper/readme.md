@@ -18,7 +18,7 @@
 	- ![#7fff00](https://placehold.it/20x20/7fff00/?text=+) RGB(127, 255, 000) = #7fff00 = no line marking on the right side and single line marking on the left side.
 	- ![#007fff](https://placehold.it/20x20/007fff/?text=+) RGB(000, 127, 255) = #007fff = broken line marking on the right side and no line marking on the left side.
 	- ![#00ff7f](https://placehold.it/20x20/00ff7f/?text=+) RGB(000, 255, 127) = #00ff7f = no line marking on the right side and broken line marking on the left side.
-8. Save the InkScape SVG file with same image name.
+8. Save the Inkscape SVG file with same image name.
 
 ### Examples:
 
