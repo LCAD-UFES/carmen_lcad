@@ -30,7 +30,7 @@ void
 carmen_grid_mapping_set_unknown_value(carmen_map_t *map, char map_type)
 {
 	int x, y;
-	road_prob cell = { .off_road = MAX_PROB, .solid_marking = MAX_PROB, .broken_marking = MAX_PROB, .lane_center = MAX_PROB };
+	road_prob cell = { .off_road = MAX_PROB, .solid_marking = 0, .broken_marking = 0, .lane_center = 0 };
 	double unknown = -1;
 
 	if (map_type == 'r')
@@ -52,8 +52,6 @@ void
 carmen_grid_mapping_initialize_map(carmen_map_t *map,
 		int gridmap_size, double gridmap_resolution, char map_type)
 {
-//	int i, j;
-
 	map->config.resolution = gridmap_resolution;
 	map->config.x_size = gridmap_size;
 	map->config.y_size = gridmap_size;
@@ -67,17 +65,6 @@ carmen_grid_mapping_initialize_map(carmen_map_t *map,
 	//carmen_test_alloc(map->config.map_name);
 	//strcpy(map->config.map_name, map_filename);
 
-//	for (i = 0; i < gridmap_size; i++)
-//	{
-//		map->map[i] = &(map->complete_map[i * gridmap_size]);
-//
-//		//initializing map with unknown
-//		for (j = 0; j < gridmap_size; j++)
-//		{
-//			map->map[i][j] = -1.0;
-//		}
-//	}
-
 	carmen_grid_mapping_set_unknown_value(map, map_type);
 }
 
@@ -85,8 +72,6 @@ void
 carmen_grid_mapping_create_new_map(carmen_map_t *map,
 		int gridmap_size_x, int gridmap_size_y, double gridmap_resolution, char map_type)
 {
-//	int i, j;
-
 	map->config.resolution = gridmap_resolution;
 	map->config.x_size = gridmap_size_x;
 	map->config.y_size = gridmap_size_y;
@@ -100,16 +85,6 @@ carmen_grid_mapping_create_new_map(carmen_map_t *map,
 	//carmen_test_alloc(map->config.map_name);
 	//strcpy(map->config.map_name, map_filename);
 
-//	for (i = 0; i < gridmap_size_x; i++)
-//	{
-//		map->map[i] = &map->complete_map[i * gridmap_size_y];
-//
-//		//initializing map with unknown
-//		for (j = 0; j < gridmap_size_y; j++)
-//		{
-//			map->map[i][j] = -1.0;
-//		}
-//	}
 	carmen_grid_mapping_set_unknown_value(map, map_type);
 }
 
@@ -554,14 +529,6 @@ carmen_grid_mapping_get_block_map_by_origin_x_y(char *map_path, char map_type, d
 	if (new_map->complete_map == NULL)
 		carmen_grid_mapping_initialize_map(new_map, local_gridmap_count, local_gridmap_resolution, map_type);
 	else
-//		for(i = 0; i < new_map->config.x_size * new_map->config.x_size; i++)
-//			if(map_type == 'r')
-//			{
-//				road_prob cell = { .off_road = MAX_PROB, .solid_marking = MAX_PROB, .broken_marking = MAX_PROB, .lane_center = MAX_PROB };
-//				new_map->complete_map[i] = *((double *) &cell);
-//			}
-//			else
-//				new_map->complete_map[i] = -1.0;
 		carmen_grid_mapping_set_unknown_value(new_map, map_type);
 
 	for (i = 0, k = 0; i < 3; i++)
