@@ -62,7 +62,7 @@ static void carmen_map_read_gridmap(carmen_FILE *fin, carmen_FILE *fout)
 
   printf("%d %d %lf\n", size_x, size_y, resolution);
 
-  carmen_grid_mapping_create_new_map(&map, size_x, size_y, resolution);
+  carmen_grid_mapping_create_new_map(&map, size_x, size_y, resolution, 'm');
   complete_map = (float *)calloc(map.config.x_size * map.config.y_size, sizeof(float));
 
   carmen_fread(complete_map, sizeof(float) * size_x * size_y, 1, fin);

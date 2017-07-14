@@ -72,8 +72,8 @@ main(int argc, char **argv)
 
 	carmen_grid_mapping_read_complete_map(map_path, &complete_map);
 
-	carmen_grid_mapping_initialize_map(&block_map, block_size_in_meters/map_resolution, map_resolution);
-	carmen_grid_mapping_initialize_map(&count_map, block_size_in_meters/map_resolution, map_resolution);
+	carmen_grid_mapping_initialize_map(&block_map, block_size_in_meters/map_resolution, map_resolution, 'm');
+	carmen_grid_mapping_initialize_map(&count_map, block_size_in_meters/map_resolution, map_resolution, 'm');
 
 	for (double x = 0; x < complete_map.config.x_size * complete_map.config.resolution; x += block_size_in_meters/3.0)
 	{
