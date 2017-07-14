@@ -16,6 +16,8 @@ LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lpara
 		-L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lrt \
 		-lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
 		-lboost_thread-mt -lrt -lboost_signals -lboost_system \
+		-lmoving_objects_interface \
+		-llocalize_ackerman_interface \
 		-lvelodyne_camera_calibration \
 		-lcamera_boxes_to_world \
 		-lDetectNet
@@ -29,7 +31,7 @@ PUBLIC_INCLUDES =
 PUBLIC_LIBRARIES = 
 PUBLIC_BINARIES = 
 
-TARGETS = libDetectNet.a velodyne_camera_calibration camera_boxes_to_world neural_car_detector
+TARGETS = velodyne_camera_calibration camera_boxes_to_world libDetectNet.a neural_car_detector
 
 #rules
 libDetectNet.a: DetectNet.o
@@ -42,5 +44,13 @@ velodyne_camera_calibration:
 camera_boxes_to_world:
 	$(MAKE) -C $(CARMEN_HOME)/src/camera_boxes_to_world
 
+clean: clean_velodyne_camera_calibration clean_camera_boxes_to_world
+
+clean_velodyne_camera_calibration:
+	$(MAKE) clean -C $(CARMEN_HOME)/src/velodyne_camera_calibration
+	
+clean_camera_boxes_to_world:
+	$(MAKE) clean -C $(CARMEN_HOME)/src/camera_boxes_to_world
+	
 include ../Makefile.rules
 
