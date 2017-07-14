@@ -9,12 +9,12 @@ extern "C" {
 
 #define MAX_PROB (pow(2.0, 16) - 1.0)
 
-typedef struct						/* Probabilities of a pixel in the lane map */
+typedef struct						/* Probabilities of a pixel in the road map */
 {
-	unsigned short off_road;		/* Probability of a pixel off road */
-	unsigned short solid_marking;	/* Probability of pixel in the lane's solid marking */
-	unsigned short broken_marking;	/* Probability of pixel in the lane's broken marking */
-	unsigned short lane_center;		/* Probability of pixel in lane center */
+	unsigned short off_road;		/* Probability of being off the road */
+	unsigned short solid_marking;	/* Probability of being in a lane solid marking */
+	unsigned short broken_marking;	/* Probability of being in a lane broken marking */
+	unsigned short lane_center;		/* Probability of being at the center of a lane */
 } road_prob;
 
 road_prob* road_mapper_double_to_prob(double *value);
