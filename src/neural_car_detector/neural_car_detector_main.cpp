@@ -268,13 +268,14 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 	char ponto_x[15];
 	char ponto_y[15];
 	char ponto_z[15];
+	char confianca[7];
 
 	for (unsigned int i = 0; i < laser_points_in_camera_box_list.size(); i++)
 	{
 		for (unsigned int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
 		{
 			cv::circle(*rgb_image, cv::Point(laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx,
-					laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy), 2, cv::Scalar(0, 0, 255), 1);
+					laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy), 1, cv::Scalar(0, 0, 255), 1);
 		}
 
 		carmen_vector_3D_t box_centroid = box_position(laser_points_in_camera_box_list[i]);
@@ -282,23 +283,28 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 		sprintf(ponto_x, "x = %.3f", box_centroid.x);
 		sprintf(ponto_y, "y = %.3f", box_centroid.y);
 		sprintf(ponto_z, "z = %.3f", box_centroid.z);
+		sprintf(confianca, "%.3f", result[5*i + 4]);
 
 		cv::rectangle(*rgb_image,
 				cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y),
 				cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y),
-				cv::Scalar(0, 0, 255), 2);
+				cv::Scalar(0, 0, 255), 1);
 
 		cv::putText(*rgb_image, ponto_x,
 				cv::Point(bouding_boxes_list[i].pt2.x + 2, bouding_boxes_list[i].pt1.y + 10),
-				cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0,0,255), 2);
+				cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0,0,255), 1);
 
 		cv::putText(*rgb_image, ponto_y,
 				cv::Point(bouding_boxes_list[i].pt2.x + 2, bouding_boxes_list[i].pt1.y + 22),
-				cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0,0,255), 2);
+				cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0,0,255), 1);
 
 		cv::putText(*rgb_image, ponto_z,
 				cv::Point(bouding_boxes_list[i].pt2.x + 2, bouding_boxes_list[i].pt1.y + 34),
-				cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0,0,255), 2);
+				cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0,0,255), 1);
+
+		cv::putText(*rgb_image, confianca,
+				cv::Point(bouding_boxes_list[i].pt1.x + 1, bouding_boxes_list[i].pt1.y - 3),
+				cv::FONT_HERSHEY_PLAIN, 1, cvScalar(255,255,0), 1);
 
 	}
 
