@@ -106,7 +106,7 @@ initialize_first_map_block_origin(carmen_map_t *current_carmen_map, carmen_posit
 			carmen_grid_mapping_initialize_map(current_carmen_map, remission_map[0].config.x_size, remission_map[0].config.resolution);
 	}
 	else		
-		carmen_grid_mapping_get_buffered_map(x_origin, y_origin, current_carmen_map);
+		carmen_grid_mapping_get_buffered_map(x_origin, y_origin, current_carmen_map, map_type);
 }
 
 

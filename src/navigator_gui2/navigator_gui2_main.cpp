@@ -451,7 +451,7 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 
 	if (compact_cost_map == NULL)
 	{
-		carmen_grid_mapping_create_new_map(cost_map, message->config.x_size, message->config.y_size, message->config.resolution);
+		carmen_grid_mapping_create_new_map(cost_map, message->config.x_size, message->config.y_size, message->config.resolution, 'm');
 		memset(cost_map->complete_map, 0, cost_map->config.x_size * cost_map->config.y_size * sizeof(double));
 
 		compact_cost_map = (carmen_compact_map_t*) (calloc(1, sizeof(carmen_compact_map_t)));
@@ -489,7 +489,7 @@ map_server_compact_lane_map_message_handler(carmen_map_server_compact_lane_map_m
 
 	if (compact_lane_map == NULL)
 	{
-		carmen_grid_mapping_create_new_map(lane_map, message->config.x_size, message->config.y_size, message->config.resolution);
+		carmen_grid_mapping_create_new_map(lane_map, message->config.x_size, message->config.y_size, message->config.resolution, 'm');
 
 		for (int i = 0; i < lane_map->config.x_size * lane_map->config.y_size; ++i)
 			lane_map->complete_map[i] = 1.0;
@@ -538,21 +538,21 @@ localize_map_update_handler(carmen_map_server_localize_map_message *message)
 	{
 		likelihood_map = (carmen_map_t *) calloc(1, sizeof(carmen_map_t));
 		carmen_test_alloc(likelihood_map);
-		carmen_grid_mapping_initialize_map(likelihood_map, localize_all_maps.config.x_size, localize_all_maps.config.resolution);
+		carmen_grid_mapping_initialize_map(likelihood_map, localize_all_maps.config.x_size, localize_all_maps.config.resolution, 'm');
 	}
 
 	if (global_likelihood_map == NULL)
 	{
 		global_likelihood_map = (carmen_map_t *) calloc(1, sizeof(carmen_map_t));
 		carmen_test_alloc(global_likelihood_map);
-		carmen_grid_mapping_initialize_map(global_likelihood_map, localize_all_maps.config.x_size, localize_all_maps.config.resolution);
+		carmen_grid_mapping_initialize_map(global_likelihood_map, localize_all_maps.config.x_size, localize_all_maps.config.resolution, 'm');
 	}
 
 	if (remission_map == NULL)
 	{
 		remission_map = (carmen_map_t *) calloc(1, sizeof(carmen_map_t));
 		carmen_test_alloc(remission_map);
-		carmen_grid_mapping_initialize_map(remission_map, localize_all_maps.config.x_size, localize_all_maps.config.resolution);
+		carmen_grid_mapping_initialize_map(remission_map, localize_all_maps.config.x_size, localize_all_maps.config.resolution, 'm');
 	}
 
 	remission_map->config = likelihood_map->config = global_likelihood_map->config = localize_all_maps.config = message->config;

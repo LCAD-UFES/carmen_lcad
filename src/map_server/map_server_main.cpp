@@ -743,14 +743,14 @@ initialize_structures(void)
 	current_mean_remission_map->complete_map = NULL;
 	current_mean_remission_map->map = NULL;
 
-	carmen_grid_mapping_initialize_map(current_mean_remission_map, ((double)map_width / map_grid_res), map_grid_res);
+	carmen_grid_mapping_initialize_map(current_mean_remission_map, ((double)map_width / map_grid_res), map_grid_res, 'm');
 
 	current_variance_remission_map = (carmen_map_p) calloc (1, sizeof(carmen_map_t));
 	current_variance_remission_map->config.x_origin = current_map->config.y_origin = 0.0001;
 	current_variance_remission_map->complete_map = NULL;
 	current_variance_remission_map->map = NULL;
 
-	carmen_grid_mapping_initialize_map(current_variance_remission_map, ((double)map_width / map_grid_res), map_grid_res);
+	carmen_grid_mapping_initialize_map(current_variance_remission_map, ((double)map_width / map_grid_res), map_grid_res, 'm');
 
 	localize_map.complete_distance = NULL;
 	localize_map.complete_gprob = NULL;
@@ -774,6 +774,8 @@ initialize_structures(void)
 	current_road_map->config.x_origin = current_road_map->config.y_origin = 0.0001;
 	current_road_map->complete_map = NULL;
 	current_road_map->map = NULL;
+
+	carmen_grid_mapping_initialize_map(current_road_map, ((double)map_width / map_grid_res), map_grid_res, 'r');
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////
 

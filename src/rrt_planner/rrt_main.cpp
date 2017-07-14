@@ -301,7 +301,7 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 
 	if (compact_cost_map == NULL)
 	{
-		carmen_grid_mapping_create_new_map(&GlobalState::cost_map, message->config.x_size, message->config.y_size, message->config.resolution);
+		carmen_grid_mapping_create_new_map(&GlobalState::cost_map, message->config.x_size, message->config.y_size, message->config.resolution, 'm');
 		memset(GlobalState::cost_map.complete_map, 0, GlobalState::cost_map.config.x_size * GlobalState::cost_map.config.y_size * sizeof(double));
 
 		compact_cost_map = (carmen_compact_map_t *) (calloc(1, sizeof(carmen_compact_map_t)));
@@ -329,7 +329,7 @@ map_server_compact_lane_map_message_handler(carmen_map_server_compact_lane_map_m
 
 	if (compact_lane_map == NULL)
 	{
-		carmen_grid_mapping_create_new_map(&GlobalState::lane_map, message->config.x_size, message->config.y_size, message->config.resolution);
+		carmen_grid_mapping_create_new_map(&GlobalState::lane_map, message->config.x_size, message->config.y_size, message->config.resolution, 'm');
 
 		for (int i = 0; i < GlobalState::lane_map.config.x_size * GlobalState::lane_map.config.y_size; ++i)
 			GlobalState::lane_map.complete_map[i] = 1.0;
