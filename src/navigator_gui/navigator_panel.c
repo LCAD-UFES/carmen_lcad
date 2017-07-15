@@ -163,7 +163,7 @@ get_empty_map()
 	empty_map = (carmen_map_t *) malloc(sizeof(carmen_map_t));
 	carmen_test_alloc(empty_map);
 
-	carmen_grid_mapping_initialize_map(empty_map, 10, 1.0);
+	carmen_grid_mapping_initialize_map(empty_map, 10, 1.0, 'm');
 
 	return (empty_map);
 }

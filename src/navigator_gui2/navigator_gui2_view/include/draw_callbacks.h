@@ -84,6 +84,9 @@ extern "C" G_MODULE_EXPORT
 void on_menuMaps_RemissionMap_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
+void on_menuMaps_RoadMap_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);
+
+extern "C" G_MODULE_EXPORT
 void on_menuSuperimposedMaps_None_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
@@ -112,6 +115,9 @@ void on_menuSuperimposedMaps_RemissionMap_toggled (GtkCheckMenuItem* togglebutto
 
 extern "C" G_MODULE_EXPORT
 void on_menuSuperimposedMaps_MovingObjects_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);
+
+extern "C" G_MODULE_EXPORT
+void on_menuSuperimposedMaps_RoadMap_toggled (GtkCheckMenuItem* togglebutton, GtkGui* gui);
 
 extern "C" G_MODULE_EXPORT
 void on_buttonZoomIn_clicked(GtkWidget *widget __attribute__((unused)), GtkGui* gui);

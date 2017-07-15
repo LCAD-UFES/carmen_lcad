@@ -534,7 +534,7 @@ void usage(char *fmt, ...)
 	va_end(args);
 
 	fprintf(stderr, "Usage: playback filename <args>\n");
-	fprintf(stderr, "\t-fast         - ignore timestamps.\n");
+	fprintf(stderr, "\t-fast -autostart -basic -message <initial message> - ignore timestamps.\n");
 	exit(-1);
 }
 
@@ -555,6 +555,9 @@ void read_parameters(int argc, char **argv)
 			paused = 0;
 		if(strncmp(argv[index], "-basic", 6) == 0)
 			basic_messages = 1;
+		if(strncmp(argv[index], "-message", 8) == 0)
+			if(index < argc - 1)
+				current_position = atoi(argv[++index]);
 	}
 }
 

@@ -130,9 +130,9 @@ localize_using_map_change_map_origin_to_another_map_block(carmen_position_t *map
 	{
 		g_map_origin = (*map_origin);
 
-		carmen_grid_mapping_create_new_map(&new_sum_remission_map, sum_remission_map.config.x_size, sum_remission_map.config.y_size, sum_remission_map.config.resolution);
-		carmen_grid_mapping_create_new_map(&new_sum_sqr_remission_map, sum_sqr_remission_map.config.x_size, sum_sqr_remission_map.config.y_size, sum_sqr_remission_map.config.resolution);
-		carmen_grid_mapping_create_new_map(&new_count_remission_map, count_remission_map.config.x_size, count_remission_map.config.y_size, count_remission_map.config.resolution);
+		carmen_grid_mapping_create_new_map(&new_sum_remission_map, sum_remission_map.config.x_size, sum_remission_map.config.y_size, sum_remission_map.config.resolution, 's');
+		carmen_grid_mapping_create_new_map(&new_sum_sqr_remission_map, sum_sqr_remission_map.config.x_size, sum_sqr_remission_map.config.y_size, sum_sqr_remission_map.config.resolution, '2');
+		carmen_grid_mapping_create_new_map(&new_count_remission_map, count_remission_map.config.x_size, count_remission_map.config.y_size, count_remission_map.config.resolution, 'c');
 		first_time = 0;
 	}
 
@@ -435,11 +435,11 @@ localize_using_map_initialize(carmen_map_config_t *main_map_config)
 {
 	map_config = *main_map_config;
 	
-	carmen_grid_mapping_create_new_map(&sum_remission_map, map_config.x_size, map_config.y_size, map_config.resolution);
-	carmen_grid_mapping_create_new_map(&sum_sqr_remission_map, map_config.x_size, map_config.y_size, map_config.resolution);
-	carmen_grid_mapping_create_new_map(&count_remission_map, map_config.x_size, map_config.y_size, map_config.resolution);
-	carmen_grid_mapping_create_new_map(&current_mean_remission_map, map_config.x_size, map_config.y_size, map_config.resolution);
-	carmen_grid_mapping_create_new_map(&current_variance_remission_map, map_config.x_size, map_config.y_size, map_config.resolution);
+	carmen_grid_mapping_create_new_map(&sum_remission_map, map_config.x_size, map_config.y_size, map_config.resolution, 's');
+	carmen_grid_mapping_create_new_map(&sum_sqr_remission_map, map_config.x_size, map_config.y_size, map_config.resolution, '2');
+	carmen_grid_mapping_create_new_map(&count_remission_map, map_config.x_size, map_config.y_size, map_config.resolution, 'c');
+	carmen_grid_mapping_create_new_map(&current_mean_remission_map, map_config.x_size, map_config.y_size, map_config.resolution, 'm');
+	carmen_grid_mapping_create_new_map(&current_variance_remission_map, map_config.x_size, map_config.y_size, map_config.resolution, 'm');
 
 	carmen_grid_mapping_init_parameters(map_config.resolution, map_config.x_size * map_config.resolution);
 

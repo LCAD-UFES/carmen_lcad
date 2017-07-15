@@ -63,8 +63,8 @@ int main(int argc __attribute__ ((unused)), char **argv)
 //		memcpy(&new_big_map_image_gray->imageData[j * new_big_map_image_gray->widthStep + init_extra_pixels_in_coluns], &big_map_image_gray->imageData[i * big_map_image_gray->widthStep], big_map_image_gray->width);
 //	}
 
-	carmen_grid_mapping_create_new_map(&map, big_map_image_gray->width, big_map_image_gray->height, 0.2);
-	carmen_grid_mapping_create_new_map(&map_count, big_map_image_gray->width, big_map_image_gray->height, 0.2);
+	carmen_grid_mapping_create_new_map(&map, big_map_image_gray->width, big_map_image_gray->height, 0.2, 'm');
+	carmen_grid_mapping_create_new_map(&map_count, big_map_image_gray->width, big_map_image_gray->height, 0.2, 'm');
 
 
 //	cvEqualizeHist(big_map_image_gray, big_map_image_gray);

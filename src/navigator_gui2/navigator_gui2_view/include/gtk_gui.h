@@ -142,6 +142,7 @@ namespace View
 			GtkCheckMenuItem* menuMaps_CompleteMap;
 			GtkCheckMenuItem* menuMaps_RemissionMap;
 			GtkCheckMenuItem* menuMaps_MovingObjects;
+			GtkCheckMenuItem* menuMaps_RoadMap;
 			GtkCheckMenuItem* menuSuperimposedMaps_None;
 			GtkCheckMenuItem* menuSuperimposedMaps_Map;
 			GtkCheckMenuItem* menuSuperimposedMaps_OfflineMap;
@@ -153,6 +154,7 @@ namespace View
 			GtkCheckMenuItem* menuSuperimposedMaps_CompleteMap;
 			GtkCheckMenuItem* menuSuperimposedMaps_RemissionMap;
 			GtkCheckMenuItem* menuSuperimposedMaps_MovingObjects;
+			GtkCheckMenuItem* menuSuperimposedMaps_RoadMap;
 		};
 
 		Controls controls_;
