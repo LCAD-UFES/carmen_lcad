@@ -4,21 +4,19 @@
 
 The Road Mapper module handles the *map_type* CARMEN_ROAD_MAP_v (prefix character 'r'), the data structure *road_prob* and the map server message CARMEN_MAP_SERVER_ROAD_MAP_NAME. Each cell in a road gridmap contains the following data:
 ```
-typedef struct						/* Probabilities of a pixel in the road map */
+typedef struct				/* Probabilities of a pixel in the road map */
 {
-	unsigned short off_road;		/* Probability of being off the road */
+	unsignedshort off_road;		/* Probability of being off the road */
 	unsigned short solid_marking;	/* Probability of being in a lane solid marking */
 	unsigned short broken_marking;	/* Probability of being in a lane broken marking */
-	unsigned short lane_center;		/* Probability of being at the center of a lane */
+	unsigned short lane_center;	/* Probability of being at the center of a lane */
 } road_prob;
 ```
 The following color code is adopted for displaying a road map:
-```
   - ![#ffffff](https://placehold.it/20x20/ffffff/?text=+) = off the road
   - ![#ff0000](https://placehold.it/20x20/ff0000/?text=+) = solid marking
   - ![#0000ff](https://placehold.it/20x20/0000ff/?text=+) = broken marking
   - ![#00ff00](https://placehold.it/20x20/00ff00/?text=+) = center of a lane
-```
 
 ## Rules for groundtruth annotations on remission map images
 
