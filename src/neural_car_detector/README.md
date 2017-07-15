@@ -44,6 +44,17 @@ If using gpu with CUDA capability lower than 3.0 change CUDA_ARCH lines, in Make
 			-gencode arch=compute_61,code=sm_61 \
 			-gencode arch=compute_61,code=compute_61
 
+<<<<<<< HEAD
+=======
+Uncomment the line, in Makefile.config
+
+	WITH_PYTHON_LAYER := 1
+
+If during compilation appear nvml.h error add the following line to Makefile.config:
+
+	NO_NVML := 1
+	
+>>>>>>> ca6fd9d95e08b1ad705dc30537612e3d5b6c37e9
 Then:
 
 ``` bash

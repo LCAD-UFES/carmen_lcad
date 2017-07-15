@@ -36,6 +36,7 @@ extern "C" {
 #include <gtk/gtk.h>
 #include <carmen/global.h>
 #include <carmen/map.h>
+#include <carmen/road_mapper.h>
 
 #define CARMEN_GRAPHICS_INVERT          	1
 #define CARMEN_GRAPHICS_RESCALE         	2
@@ -45,6 +46,7 @@ extern "C" {
 #define CARMEN_GRAPHICS_GRAYSCALE			32
 #define CARMEN_GRAPHICS_REMOVE_MINUS_ONE	64
 #define CARMEN_GRAPHICS_LOG_ODDS			128
+#define CARMEN_GRAPHICS_ROAD_CONTRAST		256
 
   typedef struct {
     int fd;

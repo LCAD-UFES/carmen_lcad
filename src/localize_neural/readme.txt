@@ -1,3 +1,8 @@
+0.0 Install tensorflow
+0.1 Install tensorflow C++ API as described here https://github.com/aforechi/tensorflow_cc
+0.2 export LD_LIBRARY_PATH=/usr/local/lib/tensorflow_cc:$LD_LIBRARY_PATH
+0.3 Install tensorflow from sources using version v1.2.0
+
 1.0 Export bumblebee images from one of the logs found in process-mapper.ini
 1.1 cd $CARMEN_HOME/bin
 1.2 ln -s ../src/localize_neural/process-dataset.ini .
@@ -20,3 +25,4 @@
 3.2 cd deepslam/tflow/deepodom2
 3.3 python make_data.py
 3.4 python train.py
+

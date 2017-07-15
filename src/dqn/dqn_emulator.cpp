@@ -1530,7 +1530,7 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 {
 	if (compact_cost_map.coord_x == NULL || cost_map.complete_map == NULL)
 	{
-		carmen_grid_mapping_create_new_map(&cost_map, message->config.x_size, message->config.y_size, message->config.resolution);
+		carmen_grid_mapping_create_new_map(&cost_map, message->config.x_size, message->config.y_size, message->config.resolution, 'm');
 		memset(cost_map.complete_map, 0, cost_map.config.x_size * cost_map.config.y_size * sizeof(double));
 	}
 	else

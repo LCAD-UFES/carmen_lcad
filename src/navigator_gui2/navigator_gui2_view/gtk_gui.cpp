@@ -260,6 +260,8 @@ namespace View
 			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_RemissionMap), true);
 		else if (strcmp(nav_panel_config->superimposed_map, "Moving Objects") == 0)
 			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_MovingObjects), true);
+		else if (strcmp(nav_panel_config->superimposed_map, "Road Map") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_RoadMap), true);
 		else
 			carmen_die("Unknown superimpose_map named \"%s\" set as parameter in the carmen ini file. Exiting...\n", nav_panel_config->superimposed_map);
 
@@ -283,6 +285,8 @@ namespace View
 			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuMaps_RemissionMap), true);
 		else if (strcmp(nav_panel_config->map, "Moving Objects") == 0)
 			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuMaps_MovingObjects), true);
+		else if (strcmp(nav_panel_config->map, "Road Map") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuMaps_RoadMap), true);
 		else
 			carmen_die("Unknown map named \"%s\" set as parameter in the carmen ini file. Exiting...\n", nav_panel_config->map);
 
@@ -443,6 +447,7 @@ namespace View
 		controls_.menuSuperimposedMaps_Lane = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSuperimposedMaps_Lane" ));
 		controls_.menuSuperimposedMaps_RemissionMap = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSuperimposedMaps_RemissionMap" ));
 		controls_.menuSuperimposedMaps_MovingObjects = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSuperimposedMaps_MovingObjects" ));
+		controls_.menuSuperimposedMaps_RoadMap = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSuperimposedMaps_RoadMap" ));
 
 		controls_.menuMaps_Map = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_Map" ));
 		controls_.menuMaps_OfflineMap = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_OfflineMap" ));
@@ -454,6 +459,7 @@ namespace View
 		controls_.menuMaps_CompleteMap = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_CompleteMap" ));
 		controls_.menuMaps_RemissionMap = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_RemissionMap" ));
 		controls_.menuMaps_MovingObjects = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_MovingObjects" ));
+		controls_.menuMaps_RoadMap = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_RoadMap" ));
 
 		controls_.comboGoalSource = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboGoalSource" ));
 		controls_.comboState = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboState" ));
@@ -560,6 +566,8 @@ namespace View
 			navigator_get_map(CARMEN_REMISSION_MAP_v, 1);
 		else if (strcmp(nav_panel_config->superimposed_map, "Moving Objects") == 0)
 			navigator_get_map(CARMEN_MOVING_OBJECTS_MAP_v, 1);
+		else if (strcmp(nav_panel_config->superimposed_map, "Road Map") == 0)
+			navigator_get_map(CARMEN_ROAD_MAP_v, 1);
 		else
 			carmen_die("Unknown superimpose_map named \"%s\" set as parameter in the carmen ini file. Exiting...\n", nav_panel_config->superimposed_map);
 
@@ -583,6 +591,8 @@ namespace View
 			navigator_get_map(CARMEN_REMISSION_MAP_v, 0);
 		else if (strcmp(nav_panel_config->map, "Moving Objects") == 0)
 			navigator_get_map(CARMEN_MOVING_OBJECTS_MAP_v, 0);
+		else if (strcmp(nav_panel_config->map, "Road Map") == 0)
+			navigator_get_map(CARMEN_ROAD_MAP_v, 0);
 		else
 			carmen_die("Unknown map named \"%s\" set as parameter in the carmen ini file. Exiting...\n", nav_panel_config->map);
 	}
@@ -920,6 +930,10 @@ namespace View
 
 		case CARMEN_MOVING_OBJECTS_MAP_v:
 			flags = 0; // CARMEN_GRAPHICS_LOG_ODDS | CARMEN_GRAPHICS_INVERT;
+			break;
+
+		case CARMEN_ROAD_MAP_v:
+			flags = CARMEN_GRAPHICS_ROAD_CONTRAST;
 			break;
 
 		default:
