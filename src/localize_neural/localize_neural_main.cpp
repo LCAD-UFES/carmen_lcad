@@ -26,45 +26,54 @@ tf::Transformer transformer;
 double camera_timestamp = 0.0;
 carmen_pose_3D_t true_pose;
 carmen_pose_3D_t global_pose;
-carmen_pose_3D_t keyframe_pose;
-carmen_pose_3D_t curframe_pose;
+carmen_pose_3D_t camera_pose_base;
+carmen_pose_3D_t camera_pose_curr;
 
 carmen_pose_3D_t car_pose_g;
 carmen_pose_3D_t camera_pose_g;
 carmen_pose_3D_t board_pose_g;
 
-vector<pair<carmen_pose_3D_t, double> > key_poses_array;
-vector<pair<string, double> > key_frames_array;
-vector<pair<carmen_point_t, double> > current_delta_poses_array;
-vector<pair<string, double> > current_frames_array;
-vector<carmen_point_t> delta_error_array;
+vector<pair<carmen_pose_3D_t, double> > camera_poses_base_array;
+vector<pair<string, double> > camera_frames_base_array;
+vector<pair<carmen_pose_3D_t, double> > camera_poses_curr_array;
+vector<pair<string, double> > camera_frames_curr_array;
+vector<carmen_point_t> camera_delta_error_array;
 
 carmen_simulator_ackerman_truepos_message truepos_message;
 carmen_localize_ackerman_globalpos_message globalpos_message;
 carmen_fused_odometry_message fused_odometry_message;
-carmen_localize_neural_imagepos_message curframe_message;
-carmen_localize_neural_imagepos_message keyframe_message;
+carmen_localize_neural_imagepos_message camera_message_curr;
+carmen_localize_neural_imagepos_message camera_message_base;
 carmen_mapper_virtual_laser_message virtual_laser_message;
 
-#define SYNC_WITH_VELODYNE = 1
+//#define SYNC_WITH_VELODYNE = 1
 
-void
-transform_deltapos(carmen_pose_3D_t &finalpos, const carmen_pose_3D_t &keypos, const carmen_point_t &deltapos)
+
+carmen_pose_3D_t
+transform_deltapos(const carmen_pose_3D_t &basepos, const carmen_point_t &deltapos)
 {
-	double sin_theta = sin(keypos.orientation.yaw);
-	double cos_theta = cos(keypos.orientation.yaw);
-	finalpos.position.x = keypos.position.x + deltapos.x * cos_theta - deltapos.y * sin_theta;
-	finalpos.position.y = keypos.position.y + deltapos.y * cos_theta + deltapos.x * sin_theta;
-	finalpos.orientation.yaw = keypos.orientation.yaw + deltapos.theta;
+	carmen_pose_3D_t finalpos = basepos; //copy z
+	double sin_theta = sin(basepos.orientation.yaw);
+	double cos_theta = cos(basepos.orientation.yaw);
+	finalpos.position.x = basepos.position.x + deltapos.x * cos_theta - deltapos.y * sin_theta;
+	finalpos.position.y = basepos.position.y + deltapos.y * cos_theta + deltapos.x * sin_theta;
+	finalpos.orientation.yaw = carmen_normalize_theta(basepos.orientation.yaw + deltapos.theta);
+	return finalpos;
 }
 
 
-void
-transform_odometry(carmen_pose_3D_t &finalpos, const carmen_pose_3D_t &keypos, double delta_trans, double delta_rot1, double delta_rot2)
+carmen_point_t
+transform_deltapos_inverse(const carmen_pose_3D_t &basepos, const carmen_pose_3D_t &currpos)
 {
-	finalpos.position.x = delta_trans * cos(delta_rot1 + keypos.orientation.yaw) + keypos.position.x;
-	finalpos.position.y = delta_trans * sin(delta_rot2 + keypos.orientation.yaw) + keypos.position.y;
-	finalpos.orientation.yaw = delta_rot1 + delta_rot2 + keypos.orientation.yaw;
+	carmen_point_t deltapos;
+	double delta_x = currpos.position.x - basepos.position.x;
+	double delta_y = currpos.position.y - basepos.position.y;
+	double sin_theta = sin(-basepos.orientation.yaw);
+	double cos_theta = cos(-basepos.orientation.yaw);
+	deltapos.x = delta_x * cos_theta - delta_y * sin_theta;
+	deltapos.y = delta_y * cos_theta + delta_x * sin_theta;
+	deltapos.theta = carmen_normalize_theta(currpos.orientation.yaw - basepos.orientation.yaw);
+	return deltapos;
 }
 
 
@@ -86,30 +95,57 @@ get_transforms_from_camera_to_car(double camera_x, double camera_y, double camer
 
 
 void
-load_delta_poses(char *filename)
+load_curr_poses(char *filename)
 {
 	char key_frame[256];
 	char current_frame[256];
 	double timestamp;
 	carmen_point_t delta_pose = {0.0,0.0,0.0};
 	carmen_pose_3D_t key_pose = {{0.0,0.0,0.0},{0.0,0.0,0.0}};
+	carmen_pose_3D_t curr_pose = {{0.0,0.0,0.0},{0.0,0.0,0.0}};
 	FILE *log_file = fopen(filename, "r");
 
 	fscanf(log_file, "%*[^\n]\n"); //skip header
 	while(!feof(log_file))
 	{
-		//delta_x delta_y delta_yaw base_image curr_image base_x base_y base_z base_yaw timestamp
-		fscanf(log_file, "%lf %lf %lf %s %s %lf %lf %lf %lf %lf\n",
+		//delta_x delta_y delta_yaw base_image curr_image base_x base_y base_z base_yaw curr_x curr_y curr_z curr_yaw timestamp
+		fscanf(log_file, "%lf %lf %lf %s %s %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
 			&delta_pose.x, &delta_pose.y, &delta_pose.theta,
 			key_frame, current_frame,
-			&key_pose.position.x, &key_pose.position.y,
-			&key_pose.position.z, &key_pose.orientation.yaw,
+			&key_pose.position.x, &key_pose.position.y, &key_pose.position.z, &key_pose.orientation.yaw,
+			&curr_pose.position.x, &curr_pose.position.y, &curr_pose.position.z, &curr_pose.orientation.yaw,
 			&timestamp);
 
-		key_poses_array.push_back(pair<carmen_pose_3D_t, double>(key_pose, timestamp));
-		key_frames_array.push_back(pair<string, double>(string(key_frame), timestamp));
-		current_delta_poses_array.push_back(pair<carmen_point_t, double>(delta_pose, timestamp));
-		current_frames_array.push_back(pair<string, double>(string(current_frame), timestamp));
+		camera_poses_curr_array.push_back(pair<carmen_pose_3D_t, double>(curr_pose, timestamp));
+		camera_frames_curr_array.push_back(pair<string, double>(string(current_frame), timestamp));
+	}
+
+	fclose(log_file);
+	printf("Load complete.\n");
+}
+
+
+void
+load_base_poses(char *filename)
+{
+	char key_frame[256];
+	double timestamp;
+	int id;
+	carmen_pose_3D_t key_pose = {{0.0,0.0,0.0},{0.0,0.0,0.0}};
+	FILE *log_file = fopen(filename, "r");
+
+	fscanf(log_file, "%*[^\n]\n"); //skip header
+	while(!feof(log_file))
+	{
+		//image x y z yaw label timestamp
+		fscanf(log_file, "%s %lf %lf %lf %lf %d %lf\n",
+			key_frame,
+			&key_pose.position.x, &key_pose.position.y,
+			&key_pose.position.z, &key_pose.orientation.yaw,
+			&id, &timestamp);
+
+		camera_poses_base_array.push_back(pair<carmen_pose_3D_t, double>(key_pose, timestamp));
+		camera_frames_base_array.push_back(pair<string, double>(string(key_frame), timestamp));
 	}
 
 	fclose(log_file);
@@ -121,14 +157,14 @@ void
 compute_statistics()
 {
 	double sum[3], mean[3], variance[3];
-	uint count = delta_error_array.size();
+	uint count = camera_delta_error_array.size();
 
 	sum[0] = sum[1] = sum[2] = 0.0;
 	for(uint i = 0; i < count; i++)
 	{
-		sum[0] += delta_error_array[i].x;
-		sum[1] += delta_error_array[i].y;
-		sum[2] += delta_error_array[i].theta;
+		sum[0] += camera_delta_error_array[i].x;
+		sum[1] += camera_delta_error_array[i].y;
+		sum[2] += camera_delta_error_array[i].theta;
 	}
 
 	if (count > 0)
@@ -141,9 +177,9 @@ compute_statistics()
 	variance[0] = variance[1] = variance[2] = 0.0;
 	for(uint i = 0; i < count; i++)
 	{
-		variance[0] += pow(delta_error_array[i].x		-mean[0],2.0);
-		variance[1] += pow(delta_error_array[i].y		-mean[1],2.0);
-		variance[2] += pow(delta_error_array[i].theta	-mean[2],2.0);
+		variance[0] += pow(camera_delta_error_array[i].x		-mean[0],2.0);
+		variance[1] += pow(camera_delta_error_array[i].y		-mean[1],2.0);
+		variance[2] += pow(camera_delta_error_array[i].theta	-mean[2],2.0);
 	}
 
 	if (count > 0)
@@ -163,18 +199,15 @@ compute_statistics()
 
 
 int
-find_more_synchronized_pose(const vector<pair<carmen_point_t, double> > &poses, double timestamp)
+find_more_synchronized_pose(const vector<pair<carmen_pose_3D_t, double> > &poses, double timestamp)
 {
 	int nearest_index = -1;
 	double shortest_interval = MAXDOUBLE;
 
 	for (uint i = 0; i < poses.size(); i++)
 	{
-		carmen_point_t delta = poses[i].first;
-		double distance = sqrt(delta.x * delta.x + delta.y * delta.y);
 		double delta_t = timestamp - poses[i].second;
-		if ((delta_t >= 0) && (delta_t <= shortest_interval) &&
-				(distance >= 3.0) && (distance < 4.0))
+		if ((delta_t >= 0) && (delta_t <= shortest_interval))
 		{
 			shortest_interval = delta_t;
 			nearest_index = i;
@@ -226,14 +259,15 @@ copy_image (carmen_localize_neural_imagepos_message *message, string imagename)
 void
 publish_truepos_message(carmen_pose_3D_t pose, double timestamp)
 {
+	carmen_fused_odometry_message odom = fused_odometry_message;
 	truepos_message.truepose.x = pose.position.x;
 	truepos_message.truepose.y = pose.position.y;
 	truepos_message.truepose.theta = pose.orientation.yaw;
-	truepos_message.odometrypose.x = fused_odometry_message.pose.position.x;
-	truepos_message.odometrypose.y = fused_odometry_message.pose.position.y;
-	truepos_message.odometrypose.theta = fused_odometry_message.pose.orientation.yaw;
-	truepos_message.v = fused_odometry_message.velocity.x;
-	truepos_message.phi = fused_odometry_message.phi;
+	truepos_message.odometrypose.x = odom.pose.position.x;
+	truepos_message.odometrypose.y = odom.pose.position.y;
+	truepos_message.odometrypose.theta = odom.pose.orientation.yaw;
+	truepos_message.v = odom.velocity.x;
+	truepos_message.phi = odom.phi;
 
 	truepos_message.host = carmen_get_host();
 	truepos_message.timestamp = timestamp;
@@ -247,11 +281,12 @@ publish_truepos_message(carmen_pose_3D_t pose, double timestamp)
 static void
 publish_globalpos_message(carmen_pose_3D_t pose, double timestamp)
 {
-	globalpos_message.phi = fused_odometry_message.phi;
-	globalpos_message.v = fused_odometry_message.velocity.x;
+	carmen_fused_odometry_message odom = fused_odometry_message;
+	globalpos_message.phi = odom.phi;
+	globalpos_message.v = odom.velocity.x;
 	globalpos_message.converged = 1;
 	globalpos_message.pose = pose;
-	globalpos_message.velocity = fused_odometry_message.velocity;
+	globalpos_message.velocity = odom.velocity;
 
 	globalpos_message.globalpos.x = pose.position.x;
 	globalpos_message.globalpos.y = pose.position.y;
@@ -267,24 +302,24 @@ publish_globalpos_message(carmen_pose_3D_t pose, double timestamp)
 void
 publish_imagepos_keyframe_message(carmen_pose_3D_t pose, double timestamp)
 {
-	keyframe_message.pose = pose;
+	camera_message_base.pose = pose;
 
-	keyframe_message.host = carmen_get_host();
-	keyframe_message.timestamp = timestamp;
+	camera_message_base.host = carmen_get_host();
+	camera_message_base.timestamp = timestamp;
 
-	carmen_localize_neural_publish_imagepos_keyframe_message(&keyframe_message);
+	carmen_localize_neural_publish_imagepos_keyframe_message(&camera_message_base);
 }
 
 
 void
 publish_imagepos_curframe_message(carmen_pose_3D_t pose, double timestamp)
 {
-	curframe_message.pose = pose;
+	camera_message_curr.pose = pose;
 
-	curframe_message.host = carmen_get_host();
-	curframe_message.timestamp = timestamp;
+	camera_message_curr.host = carmen_get_host();
+	camera_message_curr.timestamp = timestamp;
 
-	carmen_localize_neural_publish_imagepos_curframe_message(&curframe_message);
+	carmen_localize_neural_publish_imagepos_curframe_message(&camera_message_curr);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -300,44 +335,51 @@ publish_imagepos_curframe_message(carmen_pose_3D_t pose, double timestamp)
 void
 carmen_bumblebee_basic_stereoimage_message_handler(carmen_bumblebee_basic_stereoimage_message *message)
 {
+	carmen_pose_3D_t camera_pose_true;
+
 	camera_timestamp = message->timestamp;
 
-	int index = find_more_synchronized_pose(current_delta_poses_array, message->timestamp);
+	int index_base = find_more_synchronized_pose(camera_poses_base_array, message->timestamp);
 
-	if (index < 0)
+	if (index_base < 0)
 		return;
 
-	string key_frame = key_frames_array[index].first;
-	string cur_frame = current_frames_array[index].first;
+	int index_curr = find_more_synchronized_pose(camera_poses_curr_array, message->timestamp);
 
-	copy_image(&keyframe_message, key_frame);
-	copy_image(&curframe_message, cur_frame);
+	if (index_curr < 0)
+		return;
 
-	keyframe_pose = key_poses_array[index].first;
-	curframe_pose = keyframe_pose; //copy z
-	true_pose = keyframe_pose; //copy z
+	string key_frame = camera_frames_base_array[index_base].first;
+	string cur_frame = camera_frames_curr_array[index_curr].first;
 
-	carmen_point_t delta_pose_true = current_delta_poses_array[index].first;
-	carmen_point_t delta_pose =	run_cnn_inference(keyframe_message, curframe_message);
+	copy_image(&camera_message_base, key_frame);
+	copy_image(&camera_message_curr, cur_frame);
+
+	camera_pose_base = camera_poses_base_array[index_base].first;
+	camera_pose_true = camera_poses_curr_array[index_curr].first;
+
+	carmen_point_t delta_pose_true = transform_deltapos_inverse(camera_pose_base, camera_pose_true);
+	carmen_point_t delta_pose_curr = delta_pose_true;//run_cnn_inference(keyframe_message, curframe_message);
+
 	carmen_point_t delta_pose_error = {
-			(delta_pose.x-delta_pose_true.x),
-			(delta_pose.y-delta_pose_true.y),
-			(delta_pose.theta-delta_pose_true.theta)
+			(delta_pose_curr.x-delta_pose_true.x),
+			(delta_pose_curr.y-delta_pose_true.y),
+			(delta_pose_curr.theta-delta_pose_true.theta)
 	};
-	delta_error_array.push_back(delta_pose_error);
+	camera_delta_error_array.push_back(delta_pose_error);
 	carmen_warn("%lf %lf %lf\n", delta_pose_error.x, delta_pose_error.y, carmen_radians_to_degrees(delta_pose_error.theta));
 
-	transform_deltapos(curframe_pose, keyframe_pose, delta_pose);
-	transform_deltapos(true_pose, keyframe_pose, delta_pose_true);
+	camera_pose_curr = transform_deltapos(camera_pose_base, delta_pose_curr);
+	camera_pose_true = transform_deltapos(camera_pose_base, delta_pose_true);
 
-	tf::StampedTransform car_to_world = get_transforms_from_camera_to_car(curframe_pose.position.x, curframe_pose.position.y, curframe_pose.orientation.yaw);
-	tf::StampedTransform car_to_world_true = get_transforms_from_camera_to_car(true_pose.position.x, true_pose.position.y, true_pose.orientation.yaw);
+	tf::StampedTransform car_transform_curr = get_transforms_from_camera_to_car(camera_pose_curr.position.x, camera_pose_curr.position.y, camera_pose_curr.orientation.yaw);
+	tf::StampedTransform car_transform_true = get_transforms_from_camera_to_car(camera_pose_true.position.x, true_pose.position.y, true_pose.orientation.yaw);
 
-	tf::Vector3 position = car_to_world.getOrigin();
-	tf::Quaternion orientation = car_to_world.getRotation();
+	tf::Vector3 position = car_transform_curr.getOrigin();
+	tf::Quaternion orientation = car_transform_curr.getRotation();
 
-	tf::Vector3 position_true = car_to_world_true.getOrigin();
-	tf::Quaternion orientation_true = car_to_world_true.getRotation();
+	tf::Vector3 position_true = car_transform_true.getOrigin();
+	tf::Quaternion orientation_true = car_transform_true.getRotation();
 
 	global_pose.position.x = position.getX();
 	global_pose.position.y = position.getY();
@@ -358,8 +400,8 @@ carmen_bumblebee_basic_stereoimage_message_handler(carmen_bumblebee_basic_stereo
 	#ifndef SYNC_WITH_VELODYNE
 	//publish_truepos_message(true_pose, message->timestamp);
 	publish_globalpos_message(global_pose, message->timestamp);
-	publish_imagepos_curframe_message(curframe_pose, message->timestamp);
-	publish_imagepos_keyframe_message(keyframe_pose, message->timestamp);
+	publish_imagepos_curframe_message(camera_pose_curr, message->timestamp);
+	publish_imagepos_keyframe_message(camera_pose_base, message->timestamp);
 	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, message->timestamp);
 	#endif
 }
@@ -368,17 +410,21 @@ carmen_bumblebee_basic_stereoimage_message_handler(carmen_bumblebee_basic_stereo
 void
 velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *message)
 {
+	carmen_fused_odometry_message odom = fused_odometry_message;
 	double dt = message->timestamp - camera_timestamp;
-	double v = fused_odometry_message.velocity.x;
-	double phi = fused_odometry_message.phi;
+	double v = odom.velocity.x;
+	double phi = odom.phi;
 
-	if ((dt <= 0.0) || (camera_timestamp <= 0.0))
+	if (camera_timestamp <= 0.0)
 		return;
+
+	if (dt <= 0.0)
+		carmen_die("dt<0");
 
 	true_pose = carmen_ackerman_interpolated_robot_position_at_time(true_pose, dt, v, phi, 2.625);
 	global_pose = carmen_ackerman_interpolated_robot_position_at_time(global_pose, dt, v, phi, 2.625);
-	curframe_pose = carmen_ackerman_interpolated_robot_position_at_time(curframe_pose, dt, v, phi, 2.625);
-	keyframe_pose = carmen_ackerman_interpolated_robot_position_at_time(keyframe_pose, dt, v, phi, 2.625);
+	camera_pose_curr = carmen_ackerman_interpolated_robot_position_at_time(camera_pose_curr, dt, v, phi, 2.625);
+	camera_pose_base = carmen_ackerman_interpolated_robot_position_at_time(camera_pose_base, dt, v, phi, 2.625);
 
 	virtual_laser_message.positions[0].x = global_pose.position.x;
 	virtual_laser_message.positions[0].y = global_pose.position.y;
@@ -387,8 +433,8 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *mess
 
 	//publish_truepos_message(true_pose, message->timestamp);
 	publish_globalpos_message(global_pose, message->timestamp);
-	publish_imagepos_curframe_message(curframe_pose, message->timestamp);
-	publish_imagepos_keyframe_message(keyframe_pose, message->timestamp);
+	publish_imagepos_curframe_message(camera_pose_curr, message->timestamp);
+	publish_imagepos_keyframe_message(camera_pose_base, message->timestamp);
 	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, message->timestamp);
 }
 
@@ -419,8 +465,8 @@ initialize_messages()
 {
 	memset(&truepos_message, 0, sizeof(truepos_message));
 	memset(&globalpos_message, 0, sizeof(globalpos_message));
-	memset(&curframe_message, 0, sizeof(curframe_message));
-	memset(&keyframe_message, 0, sizeof(keyframe_message));
+	memset(&camera_message_curr, 0, sizeof(camera_message_curr));
+	memset(&camera_message_base, 0, sizeof(camera_message_base));
 	memset(&virtual_laser_message, 0, sizeof(carmen_mapper_virtual_laser_message));
 	virtual_laser_message.num_positions = 2;
 	virtual_laser_message.positions = (carmen_position_t *) calloc(virtual_laser_message.num_positions, sizeof(carmen_position_t));
@@ -466,12 +512,12 @@ read_camera_parameters(int argc, char **argv)
 	int num_items;
 	char camera_string[256];
 
-	if (argc < 3)
+	if (argc < 2)
 	{
-		carmen_die("\nUsage: %s <log> <camera_id> \n", argv[0]);
+		carmen_die("\nUsage: %s<camera_id> \n", argv[0]);
 	}
 
-	camera = atoi(argv[2]);
+	camera = atoi(argv[1]);
 
 	sprintf(camera_string, "%s%d", "camera", camera);
 
@@ -552,9 +598,10 @@ main(int argc, char **argv)
 
 	initialize_transformations();
 
-	initialize_tensorflow(argv[3]);
+	load_curr_poses(argv[2]);
+	load_base_poses(argv[3]);
+	initialize_tensorflow(argv[4]);
 
-	load_delta_poses(argv[1]);
 
 	signal(SIGINT, shutdown_module);
 
