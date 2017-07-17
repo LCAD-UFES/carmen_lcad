@@ -44,6 +44,8 @@ void carmen_grid_mapping_set_unknown_value(carmen_map_t *map, char map_type);
 
 void carmen_grid_mapping_create_new_map(carmen_map_t *map, int gridmap_size_x, int gridmap_size_y, double gridmap_resolution, char map_type);
 
+void carmen_grid_mapping_initialize_map(carmen_map_t *map, int gridmap_size, double gridmap_resolution, char map_type);
+
 int carmen_grid_mapping_get_buffered_map(double x_origin, double y_origin, carmen_map_t *new_map, char map_type);
 
 int carmen_grid_mapping_get_block_map_by_origin(char *map_path, char map_type, carmen_point_t pose, carmen_map_t *new_map);
@@ -55,8 +57,6 @@ int carmen_grid_mapping_save_block_map_by_origin(char *map_path, char map_type, 
 void carmen_grid_mapping_init_parameters(double resolution, double size);
 
 int carmen_grid_mapping_get_quadrant(carmen_point_t map_pose);
-
-void carmen_grid_mapping_initialize_map(carmen_map_t *map, int gridmap_size, double gridmap_resolution, char map_type);
 
 /**
  * Get the map origin in meters

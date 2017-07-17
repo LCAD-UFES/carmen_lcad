@@ -49,26 +49,6 @@ carmen_grid_mapping_set_unknown_value(carmen_map_t *map, char map_type)
 }
 
 void
-carmen_grid_mapping_initialize_map(carmen_map_t *map,
-		int gridmap_size, double gridmap_resolution, char map_type)
-{
-	map->config.resolution = gridmap_resolution;
-	map->config.x_size = gridmap_size;
-	map->config.y_size = gridmap_size;
-	map->config.map_name = NULL;
-
-	map->complete_map = (double*) malloc(sizeof(double) * gridmap_size * gridmap_size);
-	carmen_test_alloc(map->complete_map);
-	map->map = (double**) malloc(sizeof(double*) * gridmap_size);
-	carmen_test_alloc(map->map);
-	//map->config.map_name = (char *)calloc(strlen(map_filename)+1, sizeof(char));
-	//carmen_test_alloc(map->config.map_name);
-	//strcpy(map->config.map_name, map_filename);
-
-	carmen_grid_mapping_set_unknown_value(map, map_type);
-}
-
-void
 carmen_grid_mapping_create_new_map(carmen_map_t *map,
 		int gridmap_size_x, int gridmap_size_y, double gridmap_resolution, char map_type)
 {
@@ -88,6 +68,12 @@ carmen_grid_mapping_create_new_map(carmen_map_t *map,
 	carmen_grid_mapping_set_unknown_value(map, map_type);
 }
 
+void
+carmen_grid_mapping_initialize_map(carmen_map_t *map,
+		int gridmap_size, double gridmap_resolution, char map_type)
+{
+	carmen_grid_mapping_create_new_map(map, gridmap_size, gridmap_size, gridmap_resolution, map_type);
+}
 
 void
 carmen_grid_mapping_init_parameters(double resolution, double size)
