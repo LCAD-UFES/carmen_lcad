@@ -99,7 +99,6 @@ extern carmen_moving_objects_point_clouds_message moving_objects_message;
 extern carmen_mapper_virtual_scan_message virtual_scan_message;
 
 
-
 void
 include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalpos_message *globalpos_message)
 {

@@ -51,8 +51,8 @@ carmen_mapper_subscribe_virtual_laser_message(carmen_mapper_virtual_laser_messag
 void
 carmen_mapper_subscribe_virtual_scan_message(carmen_mapper_virtual_scan_message *message, carmen_handler_t handler, carmen_subscribe_t subscribe_how)
 {
-	carmen_subscribe_message(CARMEN_MAPPER_VIRTUAL_SCAN_MESSAGE_NAME,
-	CARMEN_MAPPER_VIRTUAL_SCAN_MESSAGE_FMT, message, sizeof(carmen_mapper_virtual_scan_message), handler, subscribe_how);
+	carmen_subscribe_message(CARMEN_MAPPER_VIRTUAL_SCAN_MESSAGE_NAME, CARMEN_MAPPER_VIRTUAL_SCAN_MESSAGE_FMT, message,
+			sizeof(carmen_mapper_virtual_scan_message), handler, subscribe_how);
 }
 
 
