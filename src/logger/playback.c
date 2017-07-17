@@ -542,7 +542,7 @@ void usage(char *fmt, ...)
 	va_end(args);
 
 	fprintf(stderr, "Usage: playback filename <args>\n");
-	fprintf(stderr, "\t-fast -autostart -basic -message <initial message> - ignore timestamps.\n");
+	fprintf(stderr, "\t-fast -autostart -basic -play_message <num> -stop_message <num>\n");
 	exit(-1);
 }
 
