@@ -6,10 +6,10 @@ The Road Mapper module handles the *map_type* CARMEN_ROAD_MAP_v (prefix characte
 ```
 typedef struct				/* Probabilities of a pixel in the road map */
 {
-	unsignedshort off_road;		/* Probability of being off the road */
-	unsigned short solid_marking;	/* Probability of being in a lane solid marking */
-	unsigned short broken_marking;	/* Probability of being in a lane broken marking */
-	unsigned short lane_center;	/* Probability of being at the center of a lane */
+  unsigned short off_road;		/* Probability of being off the road */
+  unsigned short solid_marking;		/* Probability of being in a lane solid marking */
+  unsigned short broken_marking;	/* Probability of being in a lane broken marking */
+  unsigned short lane_center;		/* Probability of being at the center of a lane */
 } road_prob;
 ```
 The following color code is adopted for displaying a road map:
