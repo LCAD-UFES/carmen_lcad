@@ -1085,8 +1085,8 @@ associate_object_point_clouds(std::list<object_point_cloud_data_t> &list_point_c
 		std::list<object_point_cloud_data_t> &list_current_point_clouds, carmen_map_p &occupancy_grid_map,
 		moving_objects_input_data_t moving_objects_input)
 {
-	filter_curbs_point_cloud(list_current_point_clouds);
-	filter_static_objects(list_current_point_clouds, occupancy_grid_map, moving_objects_input);
+	//filter_curbs_point_cloud(list_current_point_clouds);
+	//filter_static_objects(list_current_point_clouds, occupancy_grid_map, moving_objects_input);
 	if (first_associate_object_point_clouds_flag)
 	{
 		set_list_color_palette_and_association();
