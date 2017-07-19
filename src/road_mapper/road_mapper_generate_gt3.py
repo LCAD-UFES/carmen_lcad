@@ -474,6 +474,10 @@ def process_svg_file(svg_file):
     if svg_file[-4:] != '.svg':
         print 'Skipped file', svg_file, ': SVG file expected'
         return
+    road_filename = 'r' + svg_file[1:-3] + 'map'
+    if os.path.isfile(road_filename):
+        print 'Skipped file', svg_file, ': MAP file', road_filename, 'already exists'
+        return
     print 'Processing SVG file:', svg_file
     width, height, paths = svg_get_paths(svg_file)
     img1 = []
