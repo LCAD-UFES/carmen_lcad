@@ -8,13 +8,12 @@ CXXFLAGS += -Wall -std=c++98
 LINK = g++
 
 LFLAGS += \
-	-lvelodyne_interface -lparam_interface -lmapper_interface -lipc -lglobal \
-	-L$(CARMEN_HOME)/sharedlib/libtf/src -ltf \
-	-lboost_signals -lboost_system
+	-lparam_interface -lmapper_interface -lipc -lglobal
 
 SOURCES = \
 	virtual_scan_interface.cpp \
-	virtual_scan_main.cpp
+	virtual_scan_main.cpp \
+	virtual_scan.cpp
 
 PUBLIC_INCLUDES = \
 	virtual_scan_interface.h \
@@ -43,6 +42,6 @@ LFLAGS += \
 endif
 
 libvirtual_scan_interface.a: virtual_scan_interface.o
-virtual_scan: virtual_scan_main.o virtual_scan_interface.o
+virtual_scan: virtual_scan_main.o virtual_scan.o virtual_scan_interface.o
 
 include ../Makefile.rules

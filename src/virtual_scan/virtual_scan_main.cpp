@@ -1,6 +1,7 @@
 #include <carmen/carmen.h>
 #include <carmen/virtual_scan_interface.h>
 #include <carmen/global_graphics.h>
+#include "virtual_scan.h"
 
 
 double d_max;
@@ -47,6 +48,7 @@ publish_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan)
 void
 carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *message)
 {
+	detect_and_track_moving_objects(message);
 	publish_virtual_scan(message);
 }
 
