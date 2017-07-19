@@ -38,11 +38,13 @@ int main()
 	DIR *dir;
 	struct dirent *lsdir;
 	FILE *labels;
+	FILE *output_objectclass;
 
 	double timestamp;
 	char imagename[256];
 	char labelname[256];
 	char objectname[256];
+	char objectclass[256];
 
 	cv::Mat image;
 	cv::Mat object;
@@ -56,7 +58,10 @@ int main()
 
 	setlocale(LC_ALL, "C");
 
+	sprintf(objectclass,"/dados/dataset/objects/objectclass.txt");
+
 	dir = opendir("/dados/dataset/labels");
+	output_objectclass = fopen(objectclass, "w");
 
 	/* open all the files and directories within directory*/
 	while ( ( lsdir = readdir(dir) ) != NULL )
@@ -90,8 +95,9 @@ int main()
 
 				if (0 <= roi.x && 0 <= roi.width && roi.x + roi.width <= image.cols && 0 <= roi.y && 0 <= roi.height && roi.y + roi.height <= image.rows)
 				{
-					sprintf(objectname,"/dados/dataset/objects/images/%lf.%03d-%s.png", timestamp,count,classe);
+					sprintf(objectname, "/dados/dataset/objects/images/%lf.%03d.png", timestamp, count);
 					cv::imwrite(objectname, image(roi));
+					fprintf(output_objectclass, "%lf.%03d %s\n", timestamp, count, classe);
 					count++;
 
 					//printf("Objeto gerado com sucesso!!!\n");
@@ -110,6 +116,7 @@ int main()
 		}
 	}
 
+	fclose(output_objectclass);
 	closedir(dir);
 	return 0;
 }
