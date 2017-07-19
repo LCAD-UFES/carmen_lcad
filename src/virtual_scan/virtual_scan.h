@@ -11,7 +11,8 @@
 
 typedef struct
 {
-	carmen_point_t point;
+	int num_points;
+	carmen_point_t *point;
 } extended_virtual_scan_t;
 
 
