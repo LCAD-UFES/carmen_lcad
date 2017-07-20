@@ -1,28 +1,6 @@
 #include <iostream>
-#include <stdio.h>
-#include <sys/io.h>
-#include <string>
-#include <vector>
-#include <fstream>
-#include <sstream>
-#include <dirent.h>
-#include <sys/types.h>
 #include <math.h>
-
-#include <opencv2/core/version.hpp>
-#if CV_MAJOR_VERSION == 3
-#include <opencv2/core/core.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgcodecs/imgcodecs.hpp>
-#else
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
-#endif
-
-#include <carmen/carmen.h>
-#include <carmen/grid_mapping.h>
-#include <carmen/road_mapper.h>
+#include "road_mapper_utils.h"
 
 static carmen_map_t *current_road_map;
 
@@ -44,22 +22,6 @@ register_handlers()
 {
 }
 
-static void
-road_mapper_display_map3_initialize_map(void)
-{
-	current_road_map = (carmen_map_p) calloc (1, sizeof(carmen_map_t));
-	current_road_map->config.x_origin = current_road_map->config.y_origin = 0.0001;
-	current_road_map->complete_map = NULL;
-	current_road_map->map = NULL;
-}
-
-void
-road_mapper_display_map3_deinitialize_map(void)
-{
-	if (current_road_map->complete_map) free(current_road_map->complete_map);
-	free(current_road_map);
-}
-
 void
 shutdown_module(int signo)
 {
@@ -67,7 +29,7 @@ shutdown_module(int signo)
 	{
 		carmen_ipc_disconnect();
 		std::cout << "road_mapper_display_map3: disconnected.\n";
-		road_mapper_display_map3_deinitialize_map();
+		free_map_pointer(current_road_map);
 		exit(0);
 	}
 }
@@ -75,31 +37,14 @@ shutdown_module(int signo)
 void
 road_mapper_display_map3_display(void)
 {
-	int x = 0, y = 0;
-	road_prob *cell_prob;
-	cv::Vec3b color;
-	uchar blue;
-	uchar green;
-	uchar red;
-
 	cv::namedWindow(window_name1, 1);
 	cv::moveWindow(window_name1, 78 + current_road_map->config.x_size, 10);
 
 	cv::Mat image1(current_road_map->config.y_size, current_road_map->config.x_size,
 					CV_8UC3, cv::Scalar::all(0));
 
-	for (x = 0; x < current_road_map->config.x_size; x++)
-	{
-		for (y = 0; y < current_road_map->config.y_size; y++)
-		{
-			cell_prob = road_mapper_double_to_prob(&current_road_map->map[x][y]);
-			road_mapper_cell_color(cell_prob, &blue, &green, &red);
-			color[0] = blue;
-			color[1] = green;
-			color[2] = red;
-			image1.at<cv::Vec3b>(current_road_map->config.y_size - 1 - y, x) = color;
-		}
-	}
+	road_map_to_image(current_road_map, &image1);
+
 	cv::imshow(window_name1, image1);
 	std::cout << "\nPress \"Esc\" key to continue...\n";
 	while(cv::waitKey() != 27);
@@ -120,7 +65,7 @@ main(int argc, char **argv)
 
 	signal(SIGINT, shutdown_module);
 
-	road_mapper_display_map3_initialize_map();
+	current_road_map = alloc_map_pointer();
 
 	if (argc != 2)
 	{

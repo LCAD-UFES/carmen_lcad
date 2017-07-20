@@ -1,6 +1,6 @@
 
-#ifndef __ROAD_MAPPER_INTERFACES_H_
-#define __ROAD_MAPPER_INTERFACES_H_
+#ifndef ROAD_MAPPER_INTERFACES_H_
+#define ROAD_MAPPER_INTERFACES_H_
 
 #include <carmen/road_mapper_messages.h>
 
