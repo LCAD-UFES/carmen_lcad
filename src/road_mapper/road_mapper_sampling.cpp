@@ -31,6 +31,7 @@ static double g_distance_samples = 0.0;
 static int g_n_offsets = 0;
 static int g_n_rotations = 0;
 static double g_distance_offset = 0.0;
+static char g_out_path[256] = ".";
 
 cv::Mat *g_road_map_img;
 cv::Mat *g_remission_map_img;
@@ -137,8 +138,8 @@ generate_offset_samples(int x, int y, carmen_map_config_t *map_conf)
 	for (i = -g_n_offsets; i <= g_n_offsets; i++)
 	{
 		offset_i = i * distance_offset;
-		offset_i_x = offset_i * sin(g_global_pos.theta);
-		offset_i_y = -offset_i * cos(g_global_pos.theta);
+		offset_i_x = offset_i * sin(-g_global_pos.theta);    // OpenCV Y axis is downward, but theta Y-axis is upward. So we change theta sign.
+		offset_i_y = -offset_i * cos(-g_global_pos.theta);   // OpenCV Y axis is downward, but theta Y-axis is upward. So we change theta sign.
 
 		x_sample_origin = (int) round((x + offset_i_x) - g_sample_width / 2);
 		y_sample_origin = (int) round((y + offset_i_y) - g_sample_height / 2);
@@ -239,6 +240,7 @@ read_parameters(int argc, char **argv)
 			{(char*)"road_mapper",  (char*)"n_offset",			CARMEN_PARAM_INT, 		&(g_n_offsets), 		0, NULL},
 			{(char*)"road_mapper",  (char*)"n_rotation",		CARMEN_PARAM_INT, 		&(g_n_rotations), 		0, NULL},
 			{(char*)"road_mapper",  (char*)"distance_offset",	CARMEN_PARAM_DOUBLE, 	&(g_distance_offset),	0, NULL},
+			{(char*)"road_mapper",  (char*)"out_path",			CARMEN_PARAM_STRING, 	&(g_out_path),			0, NULL},
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
