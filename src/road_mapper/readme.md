@@ -145,6 +145,8 @@ Run the [road_mapper_display_map3.cpp](road_mapper_display_map3.cpp) program on 
 
 ## Road Mapper Sampling
 
+**Important: It is highly recommended to run the playback module with reduced velocity!**
+
 To sample the remission map images and road map images to train the neural network please do the following:
 
 First step:
