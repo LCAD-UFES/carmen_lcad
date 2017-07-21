@@ -5,7 +5,7 @@
 - [Splitting the Remission Map Images](#splitting-the-remission-map-images)
 - [Rules for Ground Truth Annotations on Remission Map Images](#rules-for-ground-truth-annotations-on-remission-map-images)
 - [Generating Road Maps from Annotated SVG Files](#generating-road-maps-from-annotated-svg-files)
-- [Visualing a Road Map](#visualing-a-road-map)
+- [Visualizing a Road Map](#visualizing-a-road-map)
 	- [Examples](#examples)
 - [Road Mapper Sampling](#road-mapper-sampling)
 	- [Example of Generated Samples](#example-of-generated-samples)
@@ -96,9 +96,9 @@ To learn more about the parameters please look at [road_mapper_image_splitter.cp
   - ![#00ff7f](https://placehold.it/20x20/00ff7f/?text=+) RGB(000, 255, 127) = #00ff7f = no line marking on the right side and broken line marking on the left side.
 8. Save the Inkscape SVG file with same image name.
 
- R.Carneiro:	from i7726530_-353710.png to i7758030_-363790.png
+*R.Carneiro:	from i7726530_-353710.png to i7758030_-363790.png*
 
- R.Nascimento:	from i7705530_-338310.png to i7726460_-353990.png
+*R.Nascimento:	from i7705530_-338310.png to i7726460_-353990.png*
 
 ## Generating Road Maps from Annotated SVG Files
 
@@ -119,9 +119,9 @@ To learn more about the parameters please look run the program with the -h optio
 python road_mapper_generate_gt3.py -h
 ```
 
-## Visualing a Road Map
+## Visualizing a Road Map
 
-To visalize a road map please do the following:
+To visualize a road map please do the following:
 
 First step:
 Run the central module as in [Saving Remission Map Images](#saving-remission-map-images)
@@ -145,7 +145,7 @@ Run the [road_mapper_display_map3.cpp](road_mapper_display_map3.cpp) program on 
 
 ## Road Mapper Sampling
 
-**Important: It is highly recommended to run the playback module with reduced velocity!**
+**Important: It is highly recommended to run the playback module with reduced (< 0.5) velocity!**
 
 To sample the remission map images and road map images to train the neural network please do the following:
 
@@ -161,7 +161,9 @@ Open another terminal tab on the carmen_lcad/bin directory and run the proccontr
 
 <center>
 
-![Sampling Gif](data/gif_7726093_-353507.gif)
+| Global Position    | Samples                                       |
+| ------------------ | --------------------------------------------- |
+| (7726093, -353507) | ![Sampling Gif](data/gif_7726093_-353507.gif) |
  
 </center>
 
