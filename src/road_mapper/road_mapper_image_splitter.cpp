@@ -10,7 +10,7 @@
  * Input:	1)	Number of split rows
  * 			2)	Number of split columns
  * 			3)	Text filename which contains a list of PNG image filenames to be split.
- * 				Each PNG filename must be in the following format: i<x_origin>_<y_origin>.00.png.
+ * 				Each PNG filename must be in the following format: i<x_origin>_<y_origin>.png.
  * 				X and Y origins are world coordinates in meters and may be positive or negative up to 8 digits.
  * 			4)	Path where the split PNG image files will be stored.
  *
@@ -265,13 +265,13 @@ void process_png_file() {
 
 int get_coordinates(const char *fname, int *x, int *y)
 {
-	// PNG filename must be in format: <path>/i<x_origin>_<y_origin>.00.png
+	// PNG filename must be in format: <path>/i<x_origin>_<y_origin>.png
 
 	int n;
 
 	for(n = strlen(fname); n > 0 && fname[n - 1] != '/'; n--);
 
-	return (sscanf(&fname[n],"i%d_%d.00.png", x, y) == 2);
+	return (sscanf(&fname[n],"i%d_%d.png", x, y) == 2);
 }
 
 int main(int argc, char **argv)
@@ -316,7 +316,7 @@ int main(int argc, char **argv)
 		printf("#%d In: %s\n", ++in_count, fname_in);
 
 		if(!get_coordinates(fname_in, &x_origin, &y_origin)) {
-			printf("PNG filename must be in format: <path>/i<x_origin>_<y_origin>.00.png\n");
+			printf("PNG filename must be in format: <path>/i<x_origin>_<y_origin>.png\n");
 			printf("Ignore #%d: %s\n", ++ignore_count, fname_in);
 			continue;
 		}
@@ -346,7 +346,7 @@ int main(int argc, char **argv)
 					init_y = 0;
 				}
 
-				sprintf(fname_out, "%s/i%d_%d.00.png", opath, init_x_meters, init_y_meters);
+				sprintf(fname_out, "%s/i%d_%d.png", opath, init_x_meters, init_y_meters);
 				printf("#%d Out: %s\n", ++out_count, fname_out);
 
 			    if (FILE *fp = fopen(fname_out, "r")) {
