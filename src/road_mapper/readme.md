@@ -124,7 +124,7 @@ python road_mapper_generate_gt3.py -h
 To visalize a road map please do the following:
 
 First step:
-Run the central module as in [Saving Remission Map Images](.#Saving Remission Map Images)
+Run the central module as in [Saving Remission Map Images](#saving-remission-map-images)
 
 Second step:
 Run the [road_mapper_display_map3.cpp](road_mapper_display_map3.cpp) program on this directory passing the path to a .map file:
@@ -148,7 +148,7 @@ Run the [road_mapper_display_map3.cpp](road_mapper_display_map3.cpp) program on 
 To sample the remission map images and road map images to train the neural network please do the following:
 
 First step:
-Run the central module as in [Saving Remission Map Images](.#Saving Remission Map Images)
+Run the central module as in [Saving Remission Map Images](#saving-remission-map-images)
 
 Second step:
 Open another terminal tab on the carmen_lcad/bin directory and run the proccontrol program with the following .ini file [process-ida_a_guarapari_playback_road_mapper_sampling.ini](../../bin/process-ida_a_guarapari_playback_road_mapper_sampling.ini):
