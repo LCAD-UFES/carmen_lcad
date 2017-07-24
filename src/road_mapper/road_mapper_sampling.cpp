@@ -244,7 +244,7 @@ static void
 localize_map_handler(carmen_map_server_localize_map_message *msg)
 {
 	static int first_time = 1;
-	static int i = 0;
+	static int count = 0;
 	if (first_time == 1)
 	{
 		int i;
@@ -259,16 +259,16 @@ localize_map_handler(carmen_map_server_localize_map_message *msg)
 											CV_8UC1);
 		first_time = 0;
 	}
-	memcpy(g_vec_remission_map[i%VEC_SIZE]->complete_map,
+	memcpy(g_vec_remission_map[count % VEC_SIZE]->complete_map,
 			msg->complete_mean_remission_map,
 			sizeof(double) * msg->size);
-	memcpy(&g_vec_remission_map[i%VEC_SIZE]->config,
+	memcpy(&g_vec_remission_map[count % VEC_SIZE]->config,
 			&msg->config,
 			sizeof(carmen_map_config_t));
-	i++;
+	count++;
 	if (g_verbose)
 	{
-		printf("map_server remission: %.2lf %.2lf %d %d\n", msg->config.x_origin, msg->config.y_origin, msg->config.x_size, msg->config.y_size);
+		printf("map_server remission [%d]: %.2lf %.2lf %d %d\n", count, msg->config.x_origin, msg->config.y_origin, msg->config.x_size, msg->config.y_size);
 	}
 }
 
@@ -276,7 +276,7 @@ static void
 road_map_handler(carmen_map_server_road_map_message *msg)
 {
 	static int first_time = 1;
-	static int i = 0;
+	static int count = 0;
 	if (first_time == 1)
 	{
 		int i;
@@ -292,16 +292,16 @@ road_map_handler(carmen_map_server_road_map_message *msg)
 										cv::Scalar::all(0));
 		first_time = 0;
 	}
-	memcpy(g_vec_road_map[i%VEC_SIZE]->complete_map,
+	memcpy(g_vec_road_map[count % VEC_SIZE]->complete_map,
 			msg->complete_map,
 			sizeof(double) * msg->size);
-	memcpy(&g_vec_road_map[i%VEC_SIZE]->config,
+	memcpy(&g_vec_road_map[count % VEC_SIZE]->config,
 			&msg->config,
 			sizeof(carmen_map_config_t));
-	i++;
+	count++;
 	if (g_verbose)
 	{
-		printf("map_server road: %.2lf %.2lf %d %d\n", msg->config.x_origin, msg->config.y_origin, msg->config.x_size, msg->config.y_size);
+		printf("map_server road [%d]: %.2lf %.2lf %d %d\n", count, msg->config.x_origin, msg->config.y_origin, msg->config.x_size, msg->config.y_size);
 	}
 }
 
