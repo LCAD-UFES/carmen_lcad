@@ -56,6 +56,7 @@ carmen_behavior_selector_road_profile_message road_profile_message;
 double robot_max_centripetal_acceleration = 1.5;
 
 int use_truepos = 0;
+int reverse_driving = 0;
 extern carmen_mapper_virtual_laser_message virtual_laser_message;
 
 static carmen_rddf_road_profile_message *last_rddf_message = NULL;
@@ -1322,7 +1323,10 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 
 	set_behaviours_parameters(current_robot_pose_v_and_phi, timestamp);
 
-	behaviour_selector_fill_goal_list(last_rddf_message, timestamp);
+	if (reverse_driving)
+		behaviour_selector_reverse_driving_fill_goal_list(last_rddf_message, timestamp);
+	else
+		behaviour_selector_fill_goal_list(last_rddf_message, timestamp);
 
 	int goal_list_size;
 	carmen_ackerman_traj_point_t *goal_list = behavior_selector_get_goal_list(&goal_list_size);
@@ -1702,6 +1706,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "behavior_selector", (char *) "rddf_num_poses_by_car_velocity", CARMEN_PARAM_ONOFF, &param_rddf_num_poses_by_car_velocity, 0, NULL},
 		{(char *) "behavior_selector", (char *) "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL},
 		{(char *) "behavior_selector", (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_obstacles_safe_distance, 0, NULL},
+		{(char *) "behavior_selector", (char *) "reverse_driving", CARMEN_PARAM_ONOFF, &reverse_driving, 0, NULL},
 		{(char *) "rrt",   			   (char *) "distance_interval", CARMEN_PARAM_DOUBLE, &param_distance_interval, 1, NULL},
 		{(char *) "obstacle_avoider", 		  (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.obstacle_avoider_obstacles_safe_distance, 	1, NULL},
 		{(char *) "model_predictive_planner", (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.model_predictive_planner_obstacles_safe_distance, 	1, NULL},

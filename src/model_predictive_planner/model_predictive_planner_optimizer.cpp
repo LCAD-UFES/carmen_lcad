@@ -741,7 +741,7 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 	// Se estou co velocidade vi e quero chagar a vt, sendo que vt < vi, a eh negativo. O tempo, tt, para
 	// ir de vi a vt pode ser derivado de dS/dt = Vo + a*t -> vt = vi + a*tt; a*tt = vt - vi; tt = (vt - vi) / a
 
-	if (target_v < 0.0)
+	if (!GlobalState::reverse_driving && target_v < 0.0)
 		target_v = 0.0;
 //	params.optimize_time = OPTIMIZE_DISTANCE;
 	params.optimize_time = OPTIMIZE_TIME;
@@ -779,11 +779,17 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 
 		if (a < 0.0)
 		{
-			params.optimize_time = OPTIMIZE_ACCELERATION;
+			if(!GlobalState::reverse_driving)
+				params.optimize_time = OPTIMIZE_ACCELERATION;
+
 			if (a < -GlobalState::robot_config.maximum_deceleration_forward)
 			{
 				a = -GlobalState::robot_config.maximum_deceleration_forward;
-				tt = (target_v - target_td.v_i) / a;
+				if (GlobalState::reverse_driving) //Pensar nisso aqui pro reverse driving
+					tt = (((-1.0) * target_v) - target_td.v_i) / a;
+				else
+					tt = (target_v - target_td.v_i) / a;
+
 			}
 		}
 

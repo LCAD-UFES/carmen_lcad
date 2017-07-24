@@ -179,7 +179,10 @@ get_trajectory_dimensions_from_robot_state(Pose *localizer_pose, Command last_od
 
 	td.dist = sqrt((goal_pose->x - localizer_pose->x) * (goal_pose->x - localizer_pose->x) +
 			(goal_pose->y - localizer_pose->y) * (goal_pose->y - localizer_pose->y));
-	td.theta = carmen_normalize_theta(atan2(goal_pose->y - localizer_pose->y, goal_pose->x - localizer_pose->x) - localizer_pose->theta);
+	if (GlobalState::reverse_driving)
+		td.theta = goal_pose->theta;
+	else
+		td.theta = carmen_normalize_theta(atan2(goal_pose->y - localizer_pose->y, goal_pose->x - localizer_pose->x) - localizer_pose->theta);
 	td.d_yaw = carmen_normalize_theta(goal_pose->theta - localizer_pose->theta);
 	td.phi_i = last_odometry.phi;
 	td.v_i = last_odometry.v;
@@ -310,7 +313,7 @@ move_lane_to_robot_reference_system(Pose *localizer_pose, carmen_behavior_select
 		if ((goal_list_message->number_of_poses_back < 2 || goal_list_message->number_of_poses_back > 250))
 					return false;
 
-		reverse_driving_move_poses_foward_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
+//		reverse_driving_move_poses_foward_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
 		reverse_driving_move_poses_back_to_local_reference(robot_pose, goal_list_message, lane_in_local_pose);
 	}
 	else
@@ -695,17 +698,17 @@ get_tcp_from_td(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
 	if (GlobalState::reverse_driving && !previous_good_tcp.valid)
 	{
 		TrajectoryLookupTable::TrajectoryControlParameters dummy_tcp;
-		tcp.valid = true;
-		tcp.tt = 2.5;
-		tcp.k1 = td.phi_i;
-		tcp.k2 = td.phi_i;
-		tcp.k3 = td.phi_i;
-		tcp.has_k1 = false;
-		tcp.shift_knots = false;
-		tcp.a = 0.0;
-		tcp.vf = td.v_i;
-		tcp.sf = td.dist;
-		tcp.s = td.dist;
+		dummy_tcp.valid = true;
+		dummy_tcp.tt = 2.5;
+		dummy_tcp.k1 = 0.01;
+		dummy_tcp.k2 = 0.01;
+		dummy_tcp.k3 = 0.01;
+		dummy_tcp.has_k1 = false;
+		dummy_tcp.shift_knots = false;
+		dummy_tcp.a = 0.0;
+		dummy_tcp.vf = td.v_i;
+		dummy_tcp.sf = td.dist;
+		dummy_tcp.s = td.dist;
 
 		tcp = dummy_tcp;
 	}
@@ -852,6 +855,9 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 	static bool first_time = true;
 	static double last_timestamp = 0.0;
 	bool goal_in_lane = false;
+
+	if (GlobalState::reverse_driving)
+		target_v = (-1.0)*target_v;
 
 	if (first_time || !GlobalState::following_path)
 	{
@@ -1004,10 +1010,23 @@ compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Command last_odometr
 
 	for (int i = 0; i < 1; i++)
 	{
-		Pose newPose = *goal_pose;
-		newPose.x += 0.3 * (double) magicSignals[i] * cos(carmen_normalize_theta((goal_pose->theta) - carmen_degrees_to_radians(90.0)));
-		newPose.y += 0.3 * (double) magicSignals[i] * sin(carmen_normalize_theta((goal_pose->theta) - carmen_degrees_to_radians(90.0)));
-		goalPoseVector.push_back(newPose);
+		if (GlobalState::reverse_driving)
+		{
+			Pose newPose;
+			newPose.x = 7756908.9483949998;
+			newPose.y = -364047.381773;
+			newPose.theta = 3.0150939999999999;
+			goalPoseVector.push_back(newPose);
+		}
+		else
+		{
+			Pose newPose = *goal_pose;
+			newPose.x += 0.3 * (double) magicSignals[i] * cos(carmen_normalize_theta((goal_pose->theta) - carmen_degrees_to_radians(90.0)));
+			newPose.y += 0.3 * (double) magicSignals[i] * sin(carmen_normalize_theta((goal_pose->theta) - carmen_degrees_to_radians(90.0)));
+			goalPoseVector.push_back(newPose);
+
+		}
+
 	}
 
 	paths.resize(lastOdometryVector.size() * goalPoseVector.size());

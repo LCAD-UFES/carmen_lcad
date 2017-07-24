@@ -652,7 +652,7 @@ compute_path_via_simulation(carmen_ackerman_traj_point_t &robot_state, Command &
 		command.phi = gsl_spline_eval(phi_spline, t, acc);
 		command.v += tcp.a * delta_t;
 		// TODO: @@@ Alberto: Verificar efeitos colaterais do codigo abaixo e a adicao do teste (command.v > 0.0) no if abaixo, fora do for
-		if (command.v < 0.0)
+		if (!GlobalState::reverse_driving && command.v < 0.0)
 			break;
 
 		robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, delta_t, &distance_traveled, delta_t, GlobalState::robot_config);

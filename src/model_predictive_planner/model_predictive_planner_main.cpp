@@ -575,7 +575,8 @@ carmen_obstacle_distance_mapper_compact_map_message_handler(carmen_obstacle_dist
 static void
 carmen_behaviour_selector_compact_lane_contents_message_handler(carmen_obstacle_distance_mapper_compact_map_message *message)
 {
-	carmen_obstacle_distance_mapper_overwrite_distance_map_message_with_compact_distance_map(GlobalState::distance_map, message);
+	if (GlobalState::distance_map)
+		carmen_obstacle_distance_mapper_overwrite_distance_map_message_with_compact_distance_map(GlobalState::distance_map, message);
 }
 
 
