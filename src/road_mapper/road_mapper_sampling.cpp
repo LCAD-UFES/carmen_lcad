@@ -204,6 +204,7 @@ generate_all(void)
 	{
 		printf("%ld poses still queued...\n", g_vec_pos.size());
 	}
+	fflush(stdout);
 }
 
 static void
@@ -268,8 +269,14 @@ localize_map_handler(carmen_map_server_localize_map_message *msg)
 	count++;
 	if (g_verbose)
 	{
-		printf("map_server remission [%d]: %.2lf %.2lf %d %d\n", count, msg->config.x_origin, msg->config.y_origin, msg->config.x_size, msg->config.y_size);
+		printf("map_server remission [%d]: %.2lf %.2lf %dx%d\n", count, msg->config.x_origin, msg->config.y_origin, msg->config.x_size, msg->config.y_size);
 	}
+	generate_all();
+	if (g_verbose && g_vec_pos.empty())
+	{
+		printf("Pose queue is empty.\n");
+	}
+	fflush(stdout);
 }
 
 static void
@@ -301,8 +308,14 @@ road_map_handler(carmen_map_server_road_map_message *msg)
 	count++;
 	if (g_verbose)
 	{
-		printf("map_server road [%d]: %.2lf %.2lf %d %d\n", count, msg->config.x_origin, msg->config.y_origin, msg->config.x_size, msg->config.y_size);
+		printf("map_server road_map  [%d]: %.2lf %.2lf %dx%d\n", count, msg->config.x_origin, msg->config.y_origin, msg->config.x_size, msg->config.y_size);
 	}
+	generate_all();
+	if (g_verbose && g_vec_pos.empty())
+	{
+		printf("Pose queue is empty.\n");
+	}
+	fflush(stdout);
 }
 
 static void
