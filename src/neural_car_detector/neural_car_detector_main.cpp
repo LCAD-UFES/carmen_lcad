@@ -88,20 +88,37 @@ void build_moving_objects_message(std::vector< std::vector<carmen_velodyne_point
 
 	for (int i = 0; i < moving_objects_point_clouds_message.num_point_clouds; i++)
 	{
+
+		carmen_vector_3D_t box_centroid = box_position(points_in_cam[i]);
+		carmen_vector_3D_t offset;
+
+		offset.x = -0.572;
+		offset.y = 0.0;
+		offset.z = 2.154;
+
+		box_centroid = translate_point(box_centroid, offset);
+		box_centroid = rotate_point(box_centroid, globalpos.theta);
+
+		offset.x = globalpos.x;
+		offset.y = globalpos.y;
+		offset.z = 0.0;
+
+		box_centroid = translate_point(box_centroid, offset);
+
 		moving_objects_point_clouds_message.point_clouds[i].r = 1.0;
 		moving_objects_point_clouds_message.point_clouds[i].g = 1.0;
 		moving_objects_point_clouds_message.point_clouds[i].b = 0.0;
 		moving_objects_point_clouds_message.point_clouds[i].linear_velocity = 0.0;
-		moving_objects_point_clouds_message.point_clouds[i].orientation = 0.0;
-		moving_objects_point_clouds_message.point_clouds[i].object_pose.x = 0.0;
-		moving_objects_point_clouds_message.point_clouds[i].object_pose.y = 0.0;
-		moving_objects_point_clouds_message.point_clouds[i].object_pose.z = 0.0;
-		moving_objects_point_clouds_message.point_clouds[i].height = 1.6;
-		moving_objects_point_clouds_message.point_clouds[i].length = 1.6;
+		moving_objects_point_clouds_message.point_clouds[i].orientation = globalpos.theta;
+		moving_objects_point_clouds_message.point_clouds[i].object_pose.x = box_centroid.x;
+		moving_objects_point_clouds_message.point_clouds[i].object_pose.y = box_centroid.y;
+		moving_objects_point_clouds_message.point_clouds[i].object_pose.z = box_centroid.z;
+		moving_objects_point_clouds_message.point_clouds[i].height = 1.8;
+		moving_objects_point_clouds_message.point_clouds[i].length = 4.5;
 		moving_objects_point_clouds_message.point_clouds[i].width = 1.6;
 		moving_objects_point_clouds_message.point_clouds[i].geometric_model = 0;
-		moving_objects_point_clouds_message.point_clouds[i].model_features.geometry.height = 1.6;
-		moving_objects_point_clouds_message.point_clouds[i].model_features.geometry.length = 1.6;
+		moving_objects_point_clouds_message.point_clouds[i].model_features.geometry.height = 1.8;
+		moving_objects_point_clouds_message.point_clouds[i].model_features.geometry.length = 4.5;
 		moving_objects_point_clouds_message.point_clouds[i].model_features.geometry.width = 1.6;
 		moving_objects_point_clouds_message.point_clouds[i].model_features.red = 1.0;
 		moving_objects_point_clouds_message.point_clouds[i].model_features.green = 0.0;
@@ -116,7 +133,7 @@ void build_moving_objects_message(std::vector< std::vector<carmen_velodyne_point
 		for (int j = 0; j < moving_objects_point_clouds_message.point_clouds[i].point_size; j++)
 		{
 			//TODO modificar isso
-			carmen_vector_3D_t p, offset;
+			carmen_vector_3D_t p;
 			points_in_cam[i][j].velodyne_points_in_cam.laser_polar.horizontal_angle = -points_in_cam[i][j].velodyne_points_in_cam.laser_polar.horizontal_angle;
 			p = carmen_covert_sphere_to_cartesian_coord(points_in_cam[i][j].velodyne_points_in_cam.laser_polar);
 
