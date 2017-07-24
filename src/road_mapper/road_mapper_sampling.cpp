@@ -4,6 +4,8 @@
 
 #include <wordexp.h>
 #include "road_mapper_utils.h"
+#include <vector>
+using namespace std;
 
 static carmen_point_t g_global_pos;
 static int g_sample_width = 0;
@@ -14,6 +16,7 @@ static int g_n_rotations = 0;
 static double g_distance_offset = 0.0;
 wordexp_t g_out_path_p;
 char* g_out_path;
+int g_verbose = 0;
 
 cv::Mat *g_road_map_img;
 cv::Mat *g_remission_map_img;
@@ -21,6 +24,7 @@ cv::Mat *g_remission_map_img;
 #define VEC_SIZE 20
 static carmen_map_p g_vec_remission_map[VEC_SIZE];
 static carmen_map_p g_vec_road_map[VEC_SIZE];
+static vector<carmen_point_t> g_vec_pos;
 
 void
 generate_rotate_samples(int x, int y,
@@ -81,9 +85,8 @@ generate_offset_samples(int x, int y, double resolution)
 	{
 		offset_i_meters = i * g_distance_offset;
 		offset_i = i * distance_offset;
-		// OpenCV Y axis is downward, but theta Y-axis is upward. So we change theta sign.
+		// OpenCV Y-axis is downward, but theta Y-axis is upward. So we change theta sign.
 		offset_i_x = offset_i * sin(-g_global_pos.theta);
-		// OpenCV Y axis is downward, but theta Y-axis is upward. So we change theta sign.
 		offset_i_y = -offset_i * cos(-g_global_pos.theta);
 
 		x_sample_center = x + offset_i_x;
@@ -102,7 +105,7 @@ generate_samples(void)
 	int i_road_map = global_pos_on_map_q4(g_global_pos, g_vec_road_map, VEC_SIZE);
 	if (i_remission_map == -1 || i_road_map == -1)
 	{
-		printf("Could not find remission_map[%d] or road_map[%d]\n", i_remission_map, i_road_map);
+		printf("globalpos %.2lf %.2lf: Could not find remission_map[%d] or road_map[%d]\n", g_global_pos.x, g_global_pos.y, i_remission_map, i_road_map);
 		return -1;
 	}
 
@@ -117,7 +120,7 @@ generate_samples(void)
 	int x_map = round((g_global_pos.x - remission_map->config.x_origin) / remission_map->config.resolution);
 	int y_map = round((g_global_pos.y - remission_map->config.y_origin) / remission_map->config.resolution);
 	int x_img = x_map;
-	int y_img = remission_map->config.y_size -1 -y_map;
+	int y_img = remission_map->config.y_size - 1 - y_map; // // OpenCV Y-axis is downward, but CARMEN Y-axis is upward
 
 	remission_map_to_image(remission_map, g_remission_map_img);
 	road_map_to_image(road_map, g_road_map_img);
@@ -149,6 +152,26 @@ read_parameters(int argc, char **argv)
 	wordexp(out_path, &g_out_path_p, 0 );
 	w = g_out_path_p.we_wordv;
 	g_out_path = *w;
+
+	const char usage[] = "[-v]";
+	for(int i = 1; i < argc; i++)
+	{
+		if(strncmp(argv[i], "-h", 2) == 0 || strncmp(argv[i], "--help", 6) == 0)
+		{
+			printf("Usage:\n%s %s\n", argv[0], usage);
+			exit(1);
+		}
+		else if(strncmp(argv[i], "-v", 2) == 0 || strncmp(argv[i], "--verbose", 9) == 0)
+		{
+			g_verbose = 1;
+			printf("Verbose option set.\n");
+		}
+		else
+		{
+			printf("Ignored command line parameter: %s\n", argv[i]);
+			printf("Usage:\n%s %s\n", argv[0], usage);
+		}
+	}
 }
 
 static void
@@ -160,30 +183,61 @@ define_messages()
 }
 
 static void
+generate_all(void)
+{
+	vector<carmen_point_t>::iterator pos = g_vec_pos.begin();
+
+	while (pos != g_vec_pos.end())
+	{
+		memcpy(&g_global_pos, &(*pos), sizeof(carmen_point_t));
+		int generate_err = generate_samples();
+		if (generate_err == 0)
+		{
+			pos = g_vec_pos.erase(pos);
+		}
+		else
+		{
+			pos++;
+		}
+	}
+	if (g_verbose && !g_vec_pos.empty())
+	{
+		printf("%ld poses still queued...\n", g_vec_pos.size());
+	}
+}
+
+static void
 global_pos_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
 	static int first_time = 1;
 	static carmen_point_t previous_global_pos;
-	int err = 0;
-	if (first_time == 1)
+	static int count_pos = 0, count_push = 0;
+	int good_to_push;
+	char status1[80] = "", status2[80] = "", status3[80] = "";
+
+	sprintf(status1, "localize_ackerman globalpos [%d]: %.2lf %.2lf", ++count_pos, msg->globalpos.x, msg->globalpos.y);
+	if (first_time)
 	{
-		memcpy(&previous_global_pos, &msg->globalpos, sizeof(carmen_point_t));
+		good_to_push = 1;
 		first_time = 0;
 	}
-	memcpy(&g_global_pos, &msg->globalpos, sizeof(carmen_point_t));
-	double distance = carmen_distance(&previous_global_pos, &g_global_pos);
-	//printf("#####%.2lf %.2lf %.2lf (%.2lf %.2lf)\n", g_global_pos.x, g_global_pos.y, distance,
-	//													previous_global_pos.x, previous_global_pos.y);
-	if (distance >= g_distance_samples)
+	else
 	{
-		//printf("%.2lf %.2lf %.2lf (%.2lf %.2lf)\n", g_global_pos.x, g_global_pos.y, distance,
-		//													previous_global_pos.x, previous_global_pos.y);
-		err = generate_samples();
-		if (err == 0)
-		{
-			memcpy(&previous_global_pos, &g_global_pos, sizeof(carmen_point_t));
-		}
+		double distance = carmen_distance(&previous_global_pos, &msg->globalpos);
+		good_to_push = (distance >= g_distance_samples);
+		sprintf(status2, "distance %.2lf previous %.2lf %.2lf", distance, previous_global_pos.x, previous_global_pos.y);
 	}
+	if (good_to_push)
+	{
+		memcpy(&previous_global_pos, &msg->globalpos, sizeof(carmen_point_t));
+		g_vec_pos.push_back(msg->globalpos);
+		sprintf(status3, "PUSHED [%d]", ++count_push);
+	}
+	if (g_verbose)
+	{
+		printf("%s %s %s\n", status1, status2, status3);
+	}
+	generate_all();
 }
 
 static void
@@ -212,6 +266,10 @@ localize_map_handler(carmen_map_server_localize_map_message *msg)
 			&msg->config,
 			sizeof(carmen_map_config_t));
 	i++;
+	if (g_verbose)
+	{
+		printf("map_server remission: %.2lf %.2lf %d %d\n", msg->config.x_origin, msg->config.y_origin, msg->config.x_size, msg->config.y_size);
+	}
 }
 
 static void
@@ -241,6 +299,10 @@ road_map_handler(carmen_map_server_road_map_message *msg)
 			&msg->config,
 			sizeof(carmen_map_config_t));
 	i++;
+	if (g_verbose)
+	{
+		printf("map_server road: %.2lf %.2lf %d %d\n", msg->config.x_origin, msg->config.y_origin, msg->config.x_size, msg->config.y_size);
+	}
 }
 
 static void
