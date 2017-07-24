@@ -1,3 +1,11 @@
-2014/07/26
+20170711
+- Tentar remover copias quando do recebimento de mapas
+- Checar se mapas de remission estao corretos (media e variancia): visualizar
+- Rever localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(): tratamento de remission nao faz sentido -> so precisamos das intensidades
+- Checar contas do paper do Thrun
+- Mudar codigo para usar intensity
+
+
+20140726
 
 - Remover delta_difference_mean e delta_difference_stddev dos fontes e do carmen ini -> nao eh mais usado
