@@ -1,6 +1,5 @@
 #include "draw_callbacks.h"
 
-
 namespace View
 {
 
@@ -139,6 +138,17 @@ void on_menuMaps_OfflineMap_toggled (GtkCheckMenuItem* togglebutton __attribute_
 }
 
 //extern "C" G_MODULE_EXPORT
+void on_menuMaps_RoadMap_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
+		GtkGui* gui __attribute__ ((unused)))
+{
+	if (gtk_check_menu_item_get_active(togglebutton))
+	{
+		superimposed_is_set = 0;
+		navigator_get_map(CARMEN_ROAD_MAP_v, superimposed_is_set);
+	}
+}
+
+//extern "C" G_MODULE_EXPORT
 void on_menuMaps_Utility_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
 		GtkGui* gui __attribute__ ((unused)))
 {
@@ -258,6 +268,18 @@ void on_menuSuperimposedMaps_OfflineMap_toggled (GtkCheckMenuItem* togglebutton 
 	{
 		superimposed_is_set = 1;
 		navigator_get_map(CARMEN_OFFLINE_MAP_v, superimposed_is_set);
+		carmen_map_graphics_redraw_superimposed(global_gui->controls_.map_view);
+	}
+}
+
+//extern "C" G_MODULE_EXPORT
+void on_menuSuperimposedMaps_RoadMap_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
+		GtkGui* gui)
+{
+	if (gtk_check_menu_item_get_active(togglebutton))
+	{
+		superimposed_is_set = 1;
+		navigator_get_map(CARMEN_ROAD_MAP_v, superimposed_is_set);
 		carmen_map_graphics_redraw_superimposed(global_gui->controls_.map_view);
 	}
 }
@@ -747,7 +769,17 @@ gint motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *world_poin
 
 		if (the_map != NULL)
 		{
-			sprintf(buffer, "Value: %.2f", the_map->map[point.x][point.y]);
+			int road_contrast = the_map_view->draw_flags & CARMEN_GRAPHICS_ROAD_CONTRAST;
+			if (road_contrast)
+			{
+				road_prob *cell = road_mapper_double_to_prob(&the_map->map[point.x][point.y]);
+				sprintf(buffer, "Value: off=%d solid=%d broken=%d center=%d",
+						cell->off_road, cell->solid_marking, cell->broken_marking, cell->lane_center);
+			}
+			else
+			{
+				sprintf(buffer, "Value: %.2f", the_map->map[point.x][point.y]);
+			}
 			gtk_label_set_text(GTK_LABEL(global_gui->controls_.labelValue), buffer);
 		}
 	}

@@ -32,8 +32,6 @@
 #include <prob_measurement_model.h>
 #include <prob_map.h>
 #include <omp.h>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
 #include <carmen/rotation_geometry.h>
 
 /* gains for gradient descent */
@@ -559,7 +557,7 @@ calc_global_cell_coordinate(cell_coords_t *local, carmen_map_config_t *local_map
 }
 
 
-inline void
+void
 calc_global_cell_coordinate_fast(cell_coords_t *global, cell_coords_t local,
 		double map_center_x, double map_center_y,
 		double robot_position_in_the_map_x, double robot_position_in_the_map_y,
@@ -658,15 +656,20 @@ inner_product_between_maps(double *inner_product, double *norm_local_map, double
 
 	sin_theta = sin(particle->theta);
 	cos_theta = cos(particle->theta);
+	double map_center_x = (double) local_map->config.x_size * 0.5;
+	double map_center_y = (double) local_map->config.y_size * 0.5;
 	robot_position.x = particle->x - global_map->config.x_origin;
 	robot_position.y = particle->y - global_map->config.y_origin;
+	double robot_position_in_the_map_x = robot_position.x / local_map->config.resolution;
+	double robot_position_in_the_map_y = robot_position.y / local_map->config.resolution;
 
-
-	for (i = 0; i < local_map->number_of_known_points_on_the_map; i++)
+	for (i = 0; i < local_map->number_of_known_points_on_the_map; i += 8)
 	{
 		local.x = local_map->coord_x[i];
 		local.y = local_map->coord_y[i];
-		global = calc_global_cell_coordinate(&local, &local_map->config, &robot_position, sin_theta, cos_theta);
+
+		calc_global_cell_coordinate_fast(&global, local, map_center_x, map_center_y,
+					robot_position_in_the_map_x, robot_position_in_the_map_y, sin_theta, cos_theta);
 
 		if (global.x >= 0 && global.y >= 0 && global.x < global_map->config.x_size && global.y < global_map->config.y_size)
 		{
@@ -1538,7 +1541,7 @@ carmen_localize_ackerman_function_velodyne_evaluation(
 	return w;
 }
 
-//#include <carmen/moving_objects_interface.h>
+#include <carmen/moving_objects_interface.h>
 
 void
 carmen_localize_ackerman_velodyne_correction(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_p localize_map,
@@ -1599,7 +1602,29 @@ carmen_localize_ackerman_velodyne_correction(carmen_localize_ackerman_particle_f
 
 		case 4:
 			cosine_correction_with_remission_map(filter, localize_map, local_mean_remission_map);
-			break;
+
+//			carmen_moving_objects_map_message moving_objects_map_message;
+//			moving_objects_map_message.complete_map = localize_map->carmen_mean_remission_map.complete_map;
+//			moving_objects_map_message.size = localize_map->config.x_size * localize_map->config.y_size;
+//			moving_objects_map_message.config = localize_map->config;
+//			moving_objects_map_message.timestamp = carmen_get_time();
+//			moving_objects_map_message.host = carmen_get_host();
+//			carmen_moving_objects_map_publish_message(&moving_objects_map_message);
+
+//			carmen_moving_objects_map_message moving_objects_map_message;
+//			carmen_map_t temp_map;
+//			carmen_grid_mapping_create_new_map(&temp_map, local_map->config.x_size, local_map->config.y_size, local_map->config.resolution);
+//			memset(temp_map.complete_map, 0, temp_map.config.x_size * temp_map.config.y_size * sizeof(double));
+//			carmen_prob_models_uncompress_compact_map(&temp_map, local_mean_remission_map);
+//			moving_objects_map_message.complete_map = temp_map.complete_map;
+//			moving_objects_map_message.size = temp_map.config.x_size * temp_map.config.y_size;
+//			moving_objects_map_message.config = temp_map.config;
+//			moving_objects_map_message.timestamp = carmen_get_time();
+//			moving_objects_map_message.host = carmen_get_host();
+//			carmen_moving_objects_map_publish_message(&moving_objects_map_message);
+//			free(temp_map.complete_map);
+//			free(temp_map.map);
+break;
 
 		case 5:
 			cosine_correction_with_remission_map_and_grid_map(filter, localize_map, local_mean_remission_map, local_map);

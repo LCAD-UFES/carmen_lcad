@@ -272,6 +272,8 @@ unsigned char *carmen_graphics_convert_to_image(carmen_map_p map, int flags)
   int x_index, y_index;
   int index;
   double max_val = -MAXDOUBLE, min_val = MAXDOUBLE;
+  unsigned char blue, green, red;
+  road_prob *cell;
 
   int rescale = flags & CARMEN_GRAPHICS_RESCALE;
   int invert = flags & CARMEN_GRAPHICS_INVERT;
@@ -281,6 +283,7 @@ unsigned char *carmen_graphics_convert_to_image(carmen_map_p map, int flags)
   int grayscale = flags & CARMEN_GRAPHICS_GRAYSCALE;
   int remove_minus_one = flags & CARMEN_GRAPHICS_REMOVE_MINUS_ONE;
   int log_odds = flags & CARMEN_GRAPHICS_LOG_ODDS;
+  int road_contrast = flags & CARMEN_GRAPHICS_ROAD_CONTRAST;
 
   if (map == NULL) {
     carmen_warn("carmen_graphics_convert_to_image was passed NULL map.\n");
@@ -324,6 +327,14 @@ unsigned char *carmen_graphics_convert_to_image(carmen_map_p map, int flags)
 				  p = 1.0 - p;
 			  for (index = 0; index < 3; index++)
 				  *(image_ptr++) = p * 255;
+		  }
+		  else if (road_contrast)
+		  {
+			  cell = road_mapper_double_to_prob(&value);
+			  road_mapper_cell_color(cell, &blue, &green, &red);
+			  *(image_ptr++) = red;
+			  *(image_ptr++) = green;
+			  *(image_ptr++) = blue;
 		  }
 		  else if (value < 0 && value > -1.5) {
 			  if (black_and_white) {

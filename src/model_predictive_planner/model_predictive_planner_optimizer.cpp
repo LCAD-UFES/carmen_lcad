@@ -1362,8 +1362,9 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 //	}
 //	print_tcp(tcp_complete);
 //	print_td(target_td, target_v);
-//	printf("t %.3lf, v0 %.1lf, a %.3lf, vg %.2lf, dg %.1lf, tt %.3lf\n",
-//			carmen_get_time(), target_td.v_i, tcp_complete.a, target_v, tcp_complete.s, tcp_complete.tt);
+	if (tcp_complete.tt < 0.0)
+	printf("t %.3lf, v0 %.1lf, a %.3lf, vg %.2lf, dg %.1lf, tt %.3lf\n",
+			carmen_get_time(), target_td.v_i, tcp_complete.a, target_v, tcp_complete.s, tcp_complete.tt);
 
 	return (tcp_complete);
 }

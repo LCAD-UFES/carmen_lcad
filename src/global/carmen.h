@@ -148,6 +148,10 @@ extern "C" {
 #include <carmen/playback_interface.h>
 #include <carmen/playback_messages.h>
 
+#include <carmen/road_mapper_interface.h>
+#include <carmen/road_mapper_messages.h>
+#include <carmen/road_mapper.h>
+
 #include <carmen/robot_ackerman_messages.h>
 #include <carmen/robot_ackerman_interface.h>
 

@@ -25,6 +25,11 @@ typedef carmen_mapper_map_message carmen_map_server_offline_map_message;
 #define CARMEN_MAP_SERVER_OFFLINE_MAP_NAME 	"carmen_map_server_offline_map_message"
 #define CARMEN_MAP_SERVER_OFFLINE_MAP_FMT 	CARMEN_MAPPER_MAP_MESSAGE_FMT
 
+typedef carmen_mapper_map_message carmen_map_server_road_map_message;
+
+#define CARMEN_MAP_SERVER_ROAD_MAP_NAME 	"carmen_map_server_road_map_message"
+#define CARMEN_MAP_SERVER_ROAD_MAP_FMT 	CARMEN_MAPPER_MAP_MESSAGE_FMT
+
 typedef carmen_mapper_compact_map_message carmen_map_server_compact_cost_map_message;
 
 #define CARMEN_MAP_SERVER_COMPACT_COST_MAP_NAME 	"carmen_map_server_compact_cost_map_message"

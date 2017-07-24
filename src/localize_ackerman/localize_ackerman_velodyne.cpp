@@ -7,8 +7,6 @@
 
 #include <carmen/stereo_velodyne.h>
 #include <carmen/stereo_velodyne_interface.h>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
 
 typedef struct
 {
@@ -59,10 +57,9 @@ extern carmen_localize_ackerman_particle_filter_p filter;
 static localize_ackerman_velodyne_laser_config_t front_laser_config;
 static carmen_laser_laser_message flaser_message;
 
-IplImage *map_image = NULL;
-
 extern cell_coords_t **map_cells_hit_by_each_rays;
 extern int number_of_threads;
+
 
 static void
 localize_ackerman_velodyne_laser_initialize()
@@ -373,145 +370,6 @@ create_binary_map(carmen_localize_ackerman_binary_map_t *map, carmen_compact_map
 }
 
 
-void
-equalize_image2(IplImage *img)
-{
-	IplImage *img_gray = cvCreateImage(cvSize(img->width, img->height), IPL_DEPTH_8U, 1);
-
-	int i, j;
-	for (j = 0; j < img->height; j++)
-	{
-		for (i = 0; i < img->width; i++)
-		{
-			if ((unsigned char)img->imageData[j * img->widthStep + 3 * i] == 255 &&
-				(unsigned char)img->imageData[j * img->widthStep + 3 * i + 1] == 0 &&
-				(unsigned char)img->imageData[j * img->widthStep + 3 * i + 2] == 0)
-				img_gray->imageData[j * img_gray->widthStep + i] = 255;
-			else
-				img_gray->imageData[j * img_gray->widthStep + i] = img->imageData[j * img->widthStep + 3 * i];
-		}
-	}
-	cvEqualizeHist(img_gray,img_gray);
-
-	for (j = 0; j < img->height; j++)
-	{
-		for (i = 0; i < img->width; i++)
-		{
-			if ((unsigned char)img->imageData[j * img->widthStep + 3 * i] == 255 &&
-				(unsigned char)img->imageData[j * img->widthStep + 3 * i + 1] == 0 &&
-				(unsigned char)img->imageData[j * img->widthStep + 3 * i + 2] == 0)
-				img->imageData[j * img->widthStep + 3 * i] = 255;
-			else
-			{
-				img->imageData[j * img->widthStep + 3 * i] = img_gray->imageData[j * img_gray->widthStep + i];
-				img->imageData[j * img->widthStep + 3 * i + 1] = img_gray->imageData[j * img_gray->widthStep + i];
-				img->imageData[j * img->widthStep + 3 * i + 2] = img_gray->imageData[j * img_gray->widthStep + i];
-			}
-		}
-	}
-
-	cvReleaseImage(&img_gray);
-}
-
-
-void
-debug_remission_map_velodyne(carmen_velodyne_partial_scan_message *velodyne_message, sensor_parameters_t *velodyne_params)
-{
-	int k, r, l;
-	int i, j;
-	static IplImage *range_image, *remission_image;
-	static char *cell_touched;
-
-	if (map_image == NULL)
-	{
-		map_image = cvCreateImage(cvSize(2 * 360, velodyne_params->vertical_resolution * 2), IPL_DEPTH_8U, 3);
-		range_image = cvCreateImage(cvSize(2 * 360, velodyne_params->vertical_resolution * 2), IPL_DEPTH_8U, 3);
-		remission_image = cvCreateImage(cvSize(2 * 360, velodyne_params->vertical_resolution * 2), IPL_DEPTH_8U, 3);
-
-		map_cells_hit_by_each_rays = (cell_coords_t **)malloc((velodyne_message->number_of_32_laser_shots + 50) * sizeof(cell_coords_t *));
-		cell_touched = (char *)calloc(local_mean_remission_map.config.x_size * local_mean_remission_map.config.y_size, sizeof(char));
-
-		for (i = 0; i < velodyne_message->number_of_32_laser_shots + 50; i++)
-		{
-			map_cells_hit_by_each_rays[i] = (cell_coords_t *)calloc(velodyne_params->vertical_resolution, sizeof(cell_coords_t));
-		}
-	}
-
-	memset(cell_touched, 0, local_mean_remission_map.config.x_size * local_mean_remission_map.config.y_size * sizeof(char));
-	for (l = 0, j = 0; j < velodyne_params->vertical_resolution; j++, l+=2)
-	{
-		k = 0;
-		r = velodyne_params->ray_order[(velodyne_params->vertical_resolution - 1) - j];
-		for (i = 0; i < velodyne_message->number_of_32_laser_shots; i++)
-		{
-			k = i;//(k + 1) % velodyne_message->number_of_32_laser_shots;
-			int index = ((int)((velodyne_message->partial_scan[i].angle + 180.0) / 0.5) % 720);
-
-			if ((velodyne_message->partial_scan[k].distance[r]) != 0)
-			{
-				float range = (velodyne_message->partial_scan[k].distance[r] / 500.0);
-				if (range < 50.0)
-				{
-					cell_coords_t map_cell = map_cells_hit_by_each_rays[k][r];
-
-					range_image->imageData[l * range_image->widthStep + 3 * index] = 255 * (range / 50.0);
-					range_image->imageData[l * range_image->widthStep + 3 * index + 1] = 255 * (range / 50.0);
-					range_image->imageData[l * range_image->widthStep + 3 * index + 2] = 255 * (range / 50.0);
-					if (/*!cell_touched[map_cell.x * local_mean_remission_map.config.x_size + map_cell.y]*/1)
-					{
-						cell_touched[map_cell.x * local_mean_remission_map.config.x_size + map_cell.y] = 1;
-						map_image->imageData[l * map_image->widthStep + 3 * index] =  255 * local_mean_remission_map.map[map_cell.x][map_cell.y];//velodyne_message->partial_scan[k].intensity[r];
-						map_image->imageData[l * map_image->widthStep + 3 * index + 1] =  255 * local_mean_remission_map.map[map_cell.x][map_cell.y];//velodyne_message->partial_scan[k].intensity[r];
-						map_image->imageData[l * map_image->widthStep + 3 * index + 2] =  255 * local_mean_remission_map.map[map_cell.x][map_cell.y];//velodyne_message->partial_scan[k].intensity[r];
-					}
-					else
-						map_image->imageData[l * map_image->widthStep + 3 * index] =  255;
-
-					remission_image->imageData[l * remission_image->widthStep + 3 * index] = velodyne_message->partial_scan[k].intensity[r];
-					remission_image->imageData[l * remission_image->widthStep + 3 * index + 1] = velodyne_message->partial_scan[k].intensity[r];
-					remission_image->imageData[l * remission_image->widthStep + 3 * index + 2] = velodyne_message->partial_scan[k].intensity[r];
-				}
-				else
-				{
-					range_image->imageData[l * range_image->widthStep + 3 * index] = 255;
-					map_image->imageData[l * map_image->widthStep + 3 * index] = 255;
-					remission_image->imageData[l * remission_image->widthStep + 3 * index] = 255;
-				}
-			}
-			else
-			{
-				range_image->imageData[l * range_image->widthStep + 3 * index] = 255;
-				map_image->imageData[l * map_image->widthStep + 3 * index] = 255;
-				remission_image->imageData[l * remission_image->widthStep + 3 * index] = 255;
-			}
-
-		}
-
-	}
-
-	for (l = 0, j = 0; j < velodyne_params->vertical_resolution; j++, l+=2)
-	{
-		memcpy(&range_image->imageData[(l + 1) * range_image->widthStep], &range_image->imageData[l * range_image->widthStep], range_image->widthStep);
-		//memcpy(&range_image->imageData[(l + 2) * velodyne_message->number_of_32_laser_shots], &range_image->imageData[l * velodyne_message->number_of_32_laser_shots], velodyne_message->number_of_32_laser_shots);
-		//memcpy(&range_image->imageData[(l + 3) * velodyne_message->number_of_32_laser_shots], &range_image->imageData[l * velodyne_message->number_of_32_laser_shots], velodyne_message->number_of_32_laser_shots);
-
-		memcpy(&map_image->imageData[(l + 1) * map_image->widthStep], &map_image->imageData[l * map_image->widthStep], map_image->widthStep);
-		memcpy(&remission_image->imageData[(l + 1) * remission_image->widthStep], &remission_image->imageData[l * remission_image->widthStep], remission_image->widthStep);
-		//memcpy(&map_image->imageData[(l + 2) * velodyne_message->number_of_32_laser_shots], &map_image->imageData[l * velodyne_message->number_of_32_laser_shots], velodyne_message->number_of_32_laser_shots);
-		//memcpy(&map_image->imageData[(l + 3) * velodyne_message->number_of_32_laser_shots], &map_image->imageData[l * velodyne_message->number_of_32_laser_shots], velodyne_message->number_of_32_laser_shots);
-		//memset(map_cells_hit_by_each_rays, 0, sensor_params->vertical_resolution * sizeof(cell_coords_t));
-	}
-
-
-	//equalize_image(remission_image);
-	//equalize_image(range_image);
-	cvShowImage("remission_image", remission_image);
-	cvShowImage("range_image", range_image);
-	cvShowImage("map_image", map_image);
-	cvWaitKey(33);
-}
-
-
 int
 localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(carmen_velodyne_partial_scan_message *velodyne_message,
 		sensor_parameters_t *velodyne_params, sensor_data_t *velodyne_data, double v, double phi)
@@ -527,9 +385,6 @@ localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(carmen_velodyne
 			velodyne_params->ray_order,	velodyne_params->vertical_correction, velodyne_params->range_max, velodyne_message->timestamp,
 			velodyne_params->use_remission);
 
-	//if (velodyne_viewer)
-		//debug_remission_map_velodyne(velodyne_message, velodyne_params);
-	
 	carmen_pose_3D_t local_pose;
 
 	local_pose.position.x = (local_map.config.x_size * local_map.config.resolution) * 0.5;

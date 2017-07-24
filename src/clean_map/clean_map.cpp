@@ -193,7 +193,8 @@ segment_remission_map(carmen_map_t *remission_map, carmen_map_t *map)
 			//if (remission_map->map[i][j] < 0.0)
 				//continue;
 
-			uchar aux = (uchar)((255.0 * (1.0 - (remission_map->map[i][j] < 0 ? 1 : remission_map->map[i][j]))) + 0.5);
+//			uchar aux = (uchar)((255.0 * (1.0 - (remission_map->map[i][j] < 0 ? 1 : remission_map->map[i][j]))) + 0.5);
+			uchar aux = (uchar) 3.5 * (255.0 * (1.0 - (remission_map->map[i][j] < 0 ? 1 : remission_map->map[i][j])) + 0.5);
 			map_img.at<uchar>(i, j) = aux;
 
 			aux = 255 * (map->map[i][j] > 0.5 ? 1.0 : 0.0);
@@ -635,16 +636,16 @@ clean_map_change_map_origin_to_another_map_block(carmen_position_t *map_origin)
 			//		initialize_first_map_block_origin(&variance_occupancy_map, map_origin, 'v');
 		}
 
-		carmen_grid_mapping_create_new_map(&new_carmen_map, map.config.x_size, map.config.y_size, map.config.resolution);
-		carmen_grid_mapping_create_new_map(&new_sum_remission_map, sum_remission_map.config.x_size, sum_remission_map.config.y_size, sum_remission_map.config.resolution);
-		carmen_grid_mapping_create_new_map(&new_sum_sqr_remission_map, sum_sqr_remission_map.config.x_size, sum_sqr_remission_map.config.y_size, sum_sqr_remission_map.config.resolution);
-		carmen_grid_mapping_create_new_map(&new_count_remission_map, count_remission_map.config.x_size, count_remission_map.config.y_size, count_remission_map.config.resolution);
+		carmen_grid_mapping_create_new_map(&new_carmen_map, map.config.x_size, map.config.y_size, map.config.resolution, 'm');
+		carmen_grid_mapping_create_new_map(&new_sum_remission_map, sum_remission_map.config.x_size, sum_remission_map.config.y_size, sum_remission_map.config.resolution, 's');
+		carmen_grid_mapping_create_new_map(&new_sum_sqr_remission_map, sum_sqr_remission_map.config.x_size, sum_sqr_remission_map.config.y_size, sum_sqr_remission_map.config.resolution, '2');
+		carmen_grid_mapping_create_new_map(&new_count_remission_map, count_remission_map.config.x_size, count_remission_map.config.y_size, count_remission_map.config.resolution, 'c');
 
 		if (create_map_sum_and_count)
 		{
-			carmen_grid_mapping_create_new_map(&new_sum_occupancy_map, sum_occupancy_map.config.x_size, sum_occupancy_map.config.y_size, sum_occupancy_map.config.resolution);
-			carmen_grid_mapping_create_new_map(&new_mean_occupancy_map, mean_occupancy_map.config.x_size, mean_occupancy_map.config.y_size, mean_occupancy_map.config.resolution);
-			carmen_grid_mapping_create_new_map(&new_count_occupancy_map, count_occupancy_map.config.x_size, count_occupancy_map.config.y_size, count_occupancy_map.config.resolution);
+			carmen_grid_mapping_create_new_map(&new_sum_occupancy_map, sum_occupancy_map.config.x_size, sum_occupancy_map.config.y_size, sum_occupancy_map.config.resolution, 'u');
+			carmen_grid_mapping_create_new_map(&new_mean_occupancy_map, mean_occupancy_map.config.x_size, mean_occupancy_map.config.y_size, mean_occupancy_map.config.resolution, 'e');
+			carmen_grid_mapping_create_new_map(&new_count_occupancy_map, count_occupancy_map.config.x_size, count_occupancy_map.config.y_size, count_occupancy_map.config.resolution, 'o');
 			//		carmen_grid_mapping_create_new_map(&new_variance_occupancy_map, variance_occupancy_map.config.x_size, variance_occupancy_map.config.y_size, variance_occupancy_map.config.resolution);
 		}
 
@@ -690,8 +691,8 @@ clean_map_change_map_origin_to_another_map_block(carmen_position_t *map_origin)
 		}
 		else
 		{
-			carmen_grid_mapping_update_map_buffer(&map);
-			carmen_grid_mapping_get_buffered_map(x_origin, y_origin, &new_carmen_map);
+			carmen_grid_mapping_update_map_buffer(&map, 'm');
+			carmen_grid_mapping_get_buffered_map(x_origin, y_origin, &new_carmen_map, 'm');
 		}
 
 		//destroy current map and assign new map to current map

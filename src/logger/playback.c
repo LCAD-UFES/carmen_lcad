@@ -31,6 +31,7 @@
 #include <carmen/playback_interface.h>
 
 #define        MAX_LINE_LENGTH           (5*4000000)
+#define		   MAX_SIGNED_INT			 (0x7FFFFFFF)
 
 carmen_FILE *logfile = NULL;
 carmen_logfile_index_p logfile_index = NULL;
@@ -40,6 +41,7 @@ double last_logfile_time = 0.0;
 double playback_speed = 1.0;
 
 int current_position = 0;
+int stop_position = MAX_SIGNED_INT;
 int offset = 0;
 int paused = 1;
 int fast = 0;
@@ -479,6 +481,12 @@ void main_playback_loop(void)
 		else if(!paused && current_position < logfile_index->num_messages - 1) {
 			read_message(current_position, 1, 0);
 			current_position++;
+			if(current_position > stop_position) {
+				offset = 0;
+				paused = 1;
+				print_playback_status();
+				stop_position = MAX_SIGNED_INT;
+			}
 		}
 		else if(paused && advance_frame) {
 			//      laser = 0;
@@ -534,7 +542,7 @@ void usage(char *fmt, ...)
 	va_end(args);
 
 	fprintf(stderr, "Usage: playback filename <args>\n");
-	fprintf(stderr, "\t-fast         - ignore timestamps.\n");
+	fprintf(stderr, "\t-fast -autostart -basic -play_message <num> -stop_message <num>\n");
 	exit(-1);
 }
 
@@ -555,6 +563,12 @@ void read_parameters(int argc, char **argv)
 			paused = 0;
 		if(strncmp(argv[index], "-basic", 6) == 0)
 			basic_messages = 1;
+		if(strncmp(argv[index], "-play_message", 13) == 0)
+			if(index < argc - 1)
+				current_position = atoi(argv[++index]);
+		if(strncmp(argv[index], "-stop_message", 13) == 0)
+			if(index < argc - 1)
+				stop_position = atoi(argv[++index]);
 	}
 }
 
