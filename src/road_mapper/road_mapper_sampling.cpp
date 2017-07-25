@@ -16,6 +16,8 @@ static int g_n_rotations = 0;
 static double g_distance_offset = 0.0;
 wordexp_t g_out_path_p;
 char* g_out_path;
+static int g_image_channels = 0;
+static int g_image_class_bits = 0;
 int g_verbose = 0;
 
 cv::Mat *g_road_map_img;
@@ -123,9 +125,17 @@ generate_samples(void)
 	int y_img = remission_map->config.y_size - 1 - y_map; // // OpenCV Y-axis is downward, but CARMEN Y-axis is upward
 
 	remission_map_to_image(remission_map, g_remission_map_img);
-	road_map_to_image(road_map, g_road_map_img);
+	if (g_image_channels == 1)
+	{
+		road_map_to_image_black_and_white(road_map, g_road_map_img, g_image_class_bits);
+	}
+	else
+	{
+		road_map_to_image(road_map, g_road_map_img);
+	}
 	//g_remission_map_img->at<uchar>(cv::Point(x_img, y_img)) = 255;
-	//g_road_map_img->at<cv::Vec3b>(cv::Point(x_img, y_img)) = cv::Vec3b(0, 0, 0);
+	//if (g_image_channels == 1)	g_road_map_img->at<uchar>(cv::Point(x_img, y_img)) = 0;
+	//if (g_image_channels == 3)	g_road_map_img->at<cv::Vec3b>(cv::Point(x_img, y_img)) = cv::Vec3b(0, 0, 0);
 	generate_offset_samples(x_img, y_img, remission_map->config.resolution);
 	return 0;
 }
@@ -144,6 +154,8 @@ read_parameters(int argc, char **argv)
 			{(char*)"road_mapper",  (char*)"n_rotation",		CARMEN_PARAM_INT, 		&(g_n_rotations), 		0, NULL},
 			{(char*)"road_mapper",  (char*)"distance_offset",	CARMEN_PARAM_DOUBLE, 	&(g_distance_offset),	0, NULL},
 			{(char*)"road_mapper",  (char*)"out_path",			CARMEN_PARAM_STRING, 	&(out_path),			0, NULL},
+			{(char*)"road_mapper",  (char*)"image_channels",	CARMEN_PARAM_INT, 		&(g_image_channels), 	0, NULL},
+			{(char*)"road_mapper",  (char*)"image_class_bits",	CARMEN_PARAM_INT, 		&(g_image_class_bits),	0, NULL},
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
@@ -293,10 +305,19 @@ road_map_handler(carmen_map_server_road_map_message *msg)
 												msg->config.x_size,
 												msg->config.resolution, 'r');
 		}
-		g_road_map_img = new cv::Mat(g_vec_road_map[0]->config.y_size,
+		if (g_image_channels == 1)
+		{
+			g_road_map_img = new cv::Mat(g_vec_road_map[0]->config.y_size,
+										g_vec_road_map[0]->config.x_size,
+										CV_8UC1);
+		}
+		else
+		{
+			g_road_map_img = new cv::Mat(g_vec_road_map[0]->config.y_size,
 										g_vec_road_map[0]->config.x_size,
 										CV_8UC3,
 										cv::Scalar::all(0));
+		}
 		first_time = 0;
 	}
 	memcpy(g_vec_road_map[count % VEC_SIZE]->complete_map,

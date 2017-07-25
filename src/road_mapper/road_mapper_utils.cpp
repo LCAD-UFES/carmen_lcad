@@ -28,15 +28,14 @@ remission_map_to_image(carmen_map_p map, cv::Mat *remission_map_img)
 void
 road_map_to_image(carmen_map_p map, cv::Mat *road_map_img)
 {
-	int x = 0, y = 0;
 	road_prob *cell_prob;
 	cv::Vec3b color;
 	uchar blue;
 	uchar green;
 	uchar red;
-	for (x = 0; x < map->config.x_size; x++)
+	for (int x = 0; x < map->config.x_size; x++)
 	{
-		for (y = 0; y < map->config.y_size; y++)
+		for (int y = 0; y < map->config.y_size; y++)
 		{
 			cell_prob = road_mapper_double_to_prob(&map->map[x][y]);
 			road_mapper_cell_color(cell_prob, &blue, &green, &red);
@@ -44,6 +43,24 @@ road_map_to_image(carmen_map_p map, cv::Mat *road_map_img)
 			color[1] = green;
 			color[2] = red;
 			road_map_img->at<cv::Vec3b>(x, y) = color;
+		}
+	}
+	cv::Point pt(road_map_img->cols/2.0, road_map_img->rows/2.0);
+	*road_map_img = rotate(*road_map_img, pt, 90);
+}
+
+void
+road_map_to_image_black_and_white(carmen_map_p map, cv::Mat *road_map_img, const int class_bits)
+{
+	road_prob *cell_prob;
+	uchar intensity;
+	for (int x = 0; x < map->config.x_size; x++)
+	{
+		for (int y = 0; y < map->config.y_size; y++)
+		{
+			cell_prob = road_mapper_double_to_prob(&map->map[x][y]);
+			road_mapper_cell_black_and_white(cell_prob, &intensity, class_bits);
+			road_map_img->at<uchar>(x, y) = intensity;
 		}
 	}
 	cv::Point pt(road_map_img->cols/2.0, road_map_img->rows/2.0);
