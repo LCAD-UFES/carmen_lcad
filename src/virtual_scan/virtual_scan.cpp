@@ -42,21 +42,31 @@ virtual_scan_sort(carmen_mapper_virtual_scan_message *virtual_scan)
 	}
 	qsort((void *) (extended_virtual_scan.point), (size_t) extended_virtual_scan.num_points, sizeof(carmen_point_t), compare_angles);
 
-//	for (int i = 0; i < extended_virtual_scan.num_points; i++)
-//	{
-//		printf("%f\n", extended_virtual_scan.point[i].theta);
-//	}
-//	printf("\n\n\n");
-//	fflush(stdout);
-
 	return (&extended_virtual_scan);
 }
 
 
 virtual_scan_segment_t *
-virtual_scan_segmentation(extended_virtual_scan_t *extended_virtual_scan __attribute__ ((unused)))
+virtual_scan_segmentation(extended_virtual_scan_t *extended_virtual_scan)
 {
-	return (NULL);
+	int segment_id = 0;
+	int begin_segment = 0;
+	virtual_scan_segment_t *virtual_scan_segments = NULL;
+
+	for (int i = 1; i < extended_virtual_scan->num_points; i++)
+	{
+		if ((DIST2D(extended_virtual_scan->point[i],  extended_virtual_scan->point[i - 1]) > 0.6) ||
+			(i == extended_virtual_scan->num_points - 1))
+		{
+			virtual_scan_segments = (virtual_scan_segment_t *) realloc(virtual_scan_segments, sizeof(virtual_scan_segment_t) * (segment_id + 1));
+			virtual_scan_segments[segment_id].num_points = i - begin_segment;
+			virtual_scan_segments[segment_id].point = &(extended_virtual_scan->point[begin_segment]);
+			begin_segment = i;
+			segment_id++;
+		}
+	}
+
+	return (virtual_scan_segments);
 }
 
 

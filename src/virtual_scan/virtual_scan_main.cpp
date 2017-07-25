@@ -19,22 +19,6 @@ carmen_mapper_virtual_laser_message virtual_laser_message;
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-//void
-//publish_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan)
-//{
-//	virtual_laser_message.host = carmen_get_host();
-//	virtual_laser_message.num_positions = virtual_scan->num_points;
-//	virtual_laser_message.positions = virtual_scan->points;
-//	virtual_laser_message.colors = (char *) malloc(virtual_laser_message.num_positions * sizeof(char));
-//	for (int i = 0; i < virtual_laser_message.num_positions; i++)
-//		virtual_laser_message.colors[i] = CARMEN_RED;
-//
-//	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
-//
-//	free(virtual_laser_message.colors);
-//}
-
-
 void
 publish_virtual_scan(extended_virtual_scan_t *extended_virtual_scan)
 {
