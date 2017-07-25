@@ -35,16 +35,26 @@ shutdown_module(int signo)
 }
 
 void
-road_mapper_display_map3_display(void)
+road_mapper_display_map3_display(int img_channels, int img_class_bits)
 {
-	cv::namedWindow(window_name1, 1);
+	cv::namedWindow(window_name1, cv::WINDOW_NORMAL);
 	cv::moveWindow(window_name1, 78 + current_road_map->config.x_size, 10);
 
-	cv::Mat image1(current_road_map->config.y_size, current_road_map->config.x_size,
-					CV_8UC3, cv::Scalar::all(0));
-
-	road_map_to_image(current_road_map, &image1);
-
+	cv::Mat image1;
+	if (img_channels == 1)
+	{
+		image1 = cv::Mat(current_road_map->config.y_size,
+						current_road_map->config.x_size,
+						CV_8UC1);
+		road_map_to_image_black_and_white(current_road_map, &image1, img_class_bits);
+	}
+	else
+	{
+		image1 = cv::Mat(current_road_map->config.y_size,
+						current_road_map->config.x_size,
+						CV_8UC3, cv::Scalar::all(0));
+		road_map_to_image(current_road_map, &image1);
+	}
 	cv::imshow(window_name1, image1);
 	std::cout << "\nPress \"Esc\" key to continue...\n";
 	while(cv::waitKey() != 27);
@@ -57,6 +67,8 @@ main(int argc, char **argv)
 {
 	int no_valid_map_on_file;
 	static char *map_file_name;
+	int img_channels = 0;
+	int img_class_bits = 0;
 
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
@@ -67,9 +79,9 @@ main(int argc, char **argv)
 
 	current_road_map = alloc_map_pointer();
 
-	if (argc != 2)
+	if (argc != 4)
 	{
-		std::cerr << argv[0] << " <road_map>.map" << std::endl;
+		std::cerr << argv[0] << " <road_map>.map <img_channels> <img_class_bits> " << std::endl;
 		return -1;
 	}
 	else
@@ -81,7 +93,9 @@ main(int argc, char **argv)
 			std::cout << "road_mapper_display_map3: could not read offline map from file named: " << map_file_name << std::endl;
 			return -1;
 		}
-		road_mapper_display_map3_display();
+		img_channels = atoi(argv[2]);
+		img_class_bits = atoi(argv[3]);
+		road_mapper_display_map3_display(img_channels, img_class_bits);
 	}
 
 	register_handlers();
