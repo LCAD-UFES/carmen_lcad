@@ -22,7 +22,7 @@ extern "C" {
 #endif
 
 cv::Mat rotate(cv::Mat src, cv::Point pt, double angle);
-void remission_map_to_image(carmen_map_p map, cv::Mat *remission_map_img);
+void remission_map_to_image(carmen_map_p map, cv::Mat *remission_map_img, int channels);
 void road_map_to_image(carmen_map_p map, cv::Mat *road_map_img);
 void road_map_to_image_black_and_white(carmen_map_p map, cv::Mat *road_map_img, const int class_bits);
 int global_pos_on_map_q4(carmen_point_t global_pos, carmen_map_p *maps, int maps_size);

@@ -18,6 +18,7 @@ wordexp_t g_out_path_p;
 char* g_out_path;
 static int g_image_channels = 0;
 static int g_image_class_bits = 0;
+static int g_remission_image_channels = 0;
 int g_verbose = 0;
 
 cv::Mat *g_road_map_img;
@@ -30,7 +31,8 @@ static vector<carmen_point_t> g_vec_pos;
 
 void
 generate_rotate_samples(int x, int y,
-						double offset_i_meters)
+						double offset_i_meters,
+						char* dir_name)
 {
 	int i;
 	double rotation_angle = 0;
@@ -38,7 +40,7 @@ generate_rotate_samples(int x, int y,
 	int x_sample_origin = x - g_sample_width / 2;
 	int y_sample_origin = y - g_sample_height / 2;
 	char name[256];
-	char path[512];
+	char path[2048];
 	cv::Rect roi;
 	cv::Point pt = cv::Point(x, y);
 	cv::Mat remission_sample;
@@ -60,10 +62,10 @@ generate_rotate_samples(int x, int y,
 		sprintf(name, "i%.0lf_%.0lf_%.2lf_%.2lf.png",
 										g_global_pos.x, g_global_pos.y,
 										offset_i_meters, rotation_angle);
-		sprintf(path, "%s/%s", g_out_path, name);
+		sprintf(path, "%s/%s/%s", g_out_path, dir_name, name);
 		cv::imwrite(path, remission_sample);
 		name[0] = 'r';
-		sprintf(path, "%s/%s", g_out_path, name);
+		sprintf(path, "%s/%s/%s", g_out_path, dir_name, name);
 		cv::imwrite(path, road_sample);
 	}
 	remission_map_img_aux.release();
@@ -83,6 +85,11 @@ generate_offset_samples(int x, int y, double resolution)
 	double distance_offset = g_distance_offset / resolution;
 	int x_sample_center = 0;
 	int y_sample_center = 0;
+	char dir_name[256];
+	char command[1024];
+	sprintf(dir_name, "%.0lf_%.0lf", g_global_pos.x, g_global_pos.y);
+	sprintf(command, "mkdir %s/%s/", g_out_path, dir_name);
+	system(command);
 	for (i = -g_n_offsets; i <= g_n_offsets; i++)
 	{
 		offset_i_meters = i * g_distance_offset;
@@ -96,7 +103,8 @@ generate_offset_samples(int x, int y, double resolution)
 
 		generate_rotate_samples(x_sample_center,
 								y_sample_center,
-								offset_i_meters);
+								offset_i_meters,
+								dir_name);
 	}
 }
 
@@ -124,7 +132,7 @@ generate_samples(void)
 	int x_img = x_map;
 	int y_img = remission_map->config.y_size - 1 - y_map; // // OpenCV Y-axis is downward, but CARMEN Y-axis is upward
 
-	remission_map_to_image(remission_map, g_remission_map_img);
+	remission_map_to_image(remission_map, g_remission_map_img, g_remission_image_channels);
 	if (g_image_channels == 1)
 	{
 		road_map_to_image_black_and_white(road_map, g_road_map_img, g_image_class_bits);
@@ -133,9 +141,10 @@ generate_samples(void)
 	{
 		road_map_to_image(road_map, g_road_map_img);
 	}
-	//g_remission_map_img->at<uchar>(cv::Point(x_img, y_img)) = 255;
-	//if (g_image_channels == 1)	g_road_map_img->at<uchar>(cv::Point(x_img, y_img)) = 0;
-	//if (g_image_channels == 3)	g_road_map_img->at<cv::Vec3b>(cv::Point(x_img, y_img)) = cv::Vec3b(0, 0, 0);
+	//if (g_remission_image_channels == 1)	g_remission_map_img->at<uchar>(cv::Point(x_img, y_img)) = 255;
+	//if (g_remission_image_channels == 3)	g_remission_map_img->at<cv::Vec3b>(cv::Point(x_img, y_img)) = cv::Vec3b(255, 255, 255);
+	//if (g_image_channels == 1)			g_road_map_img->at<uchar>(cv::Point(x_img, y_img)) = 0;
+	//if (g_image_channels == 3)			g_road_map_img->at<cv::Vec3b>(cv::Point(x_img, y_img)) = cv::Vec3b(0, 0, 0);
 	generate_offset_samples(x_img, y_img, remission_map->config.resolution);
 	return 0;
 }
@@ -147,15 +156,16 @@ read_parameters(int argc, char **argv)
 	char **w;
 	carmen_param_t param_list[] =
 	{
-			{(char*)"road_mapper",  (char*)"sample_width", 		CARMEN_PARAM_INT, 		&(g_sample_width), 		0, NULL},
-			{(char*)"road_mapper",  (char*)"sample_height",		CARMEN_PARAM_INT, 		&(g_sample_height), 	0, NULL},
-			{(char*)"road_mapper",  (char*)"distance_sample",	CARMEN_PARAM_DOUBLE, 	&(g_distance_samples), 	0, NULL},
-			{(char*)"road_mapper",  (char*)"n_offset",			CARMEN_PARAM_INT, 		&(g_n_offsets), 		0, NULL},
-			{(char*)"road_mapper",  (char*)"n_rotation",		CARMEN_PARAM_INT, 		&(g_n_rotations), 		0, NULL},
-			{(char*)"road_mapper",  (char*)"distance_offset",	CARMEN_PARAM_DOUBLE, 	&(g_distance_offset),	0, NULL},
-			{(char*)"road_mapper",  (char*)"out_path",			CARMEN_PARAM_STRING, 	&(out_path),			0, NULL},
-			{(char*)"road_mapper",  (char*)"image_channels",	CARMEN_PARAM_INT, 		&(g_image_channels), 	0, NULL},
-			{(char*)"road_mapper",  (char*)"image_class_bits",	CARMEN_PARAM_INT, 		&(g_image_class_bits),	0, NULL},
+			{(char*)"road_mapper",  (char*)"sample_width", 					CARMEN_PARAM_INT, 		&(g_sample_width), 				0, NULL},
+			{(char*)"road_mapper",  (char*)"sample_height",					CARMEN_PARAM_INT, 		&(g_sample_height), 			0, NULL},
+			{(char*)"road_mapper",  (char*)"distance_sample",				CARMEN_PARAM_DOUBLE, 	&(g_distance_samples), 			0, NULL},
+			{(char*)"road_mapper",  (char*)"n_offset",						CARMEN_PARAM_INT, 		&(g_n_offsets), 				0, NULL},
+			{(char*)"road_mapper",  (char*)"n_rotation",					CARMEN_PARAM_INT, 		&(g_n_rotations), 				0, NULL},
+			{(char*)"road_mapper",  (char*)"distance_offset",				CARMEN_PARAM_DOUBLE, 	&(g_distance_offset),			0, NULL},
+			{(char*)"road_mapper",  (char*)"out_path",						CARMEN_PARAM_STRING, 	&(out_path),					0, NULL},
+			{(char*)"road_mapper",  (char*)"image_channels",				CARMEN_PARAM_INT, 		&(g_image_channels), 			0, NULL},
+			{(char*)"road_mapper",  (char*)"image_class_bits",				CARMEN_PARAM_INT, 		&(g_image_class_bits),			0, NULL},
+			{(char*)"road_mapper",  (char*)"remission_image_channels",		CARMEN_PARAM_INT, 		&(g_remission_image_channels),	0, NULL},
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
@@ -267,9 +277,19 @@ localize_map_handler(carmen_map_server_localize_map_message *msg)
 												msg->config.x_size,
 												msg->config.resolution, 'm');
 		}
-		g_remission_map_img = new cv::Mat(g_vec_remission_map[0]->config.y_size,
-											g_vec_remission_map[0]->config.x_size,
-											CV_8UC1);
+		if (g_remission_image_channels == 1)
+		{
+			g_remission_map_img = new cv::Mat(g_vec_remission_map[0]->config.y_size,
+												g_vec_remission_map[0]->config.x_size,
+												CV_8UC1);
+		}
+		else
+		{
+			g_remission_map_img = new cv::Mat(g_vec_remission_map[0]->config.y_size,
+												g_vec_remission_map[0]->config.x_size,
+												CV_8UC3,
+												cv::Scalar::all(0));
+		}
 		first_time = 0;
 	}
 	memcpy(g_vec_remission_map[count % VEC_SIZE]->complete_map,

@@ -5,6 +5,7 @@ wordexp_t g_out_path_p;
 char* g_out_path;
 cv::Mat *g_remission_map_img;
 static carmen_map_p g_remission_map;
+static int g_remission_image_channels = 0;
 
 void
 save_remission_map_image(void)
@@ -13,7 +14,7 @@ save_remission_map_image(void)
 	static double y = 0;
 	if (x != g_remission_map->config.x_origin || y != g_remission_map->config.y_origin)
 	{
-		remission_map_to_image(g_remission_map, g_remission_map_img);
+		remission_map_to_image(g_remission_map, g_remission_map_img, g_remission_image_channels);
 		char name[256];
 		char path[512];
 		x = g_remission_map->config.x_origin;
@@ -32,7 +33,8 @@ read_parameters(int argc, char **argv)
 	char **w;
 	carmen_param_t param_list[] =
 	{
-			{(char*)"road_mapper",  (char*)"out_path_remission",			CARMEN_PARAM_STRING, 	&(out_path),			0, NULL},
+			{(char*)"road_mapper",  (char*)"out_path_remission",			CARMEN_PARAM_STRING, 	&(out_path),					0, NULL},
+			{(char*)"road_mapper",  (char*)"remission_image_channels",		CARMEN_PARAM_INT, 		&(g_remission_image_channels),	0, NULL},
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
@@ -58,9 +60,20 @@ localize_map_handler(carmen_map_server_localize_map_message *msg)
 		carmen_grid_mapping_initialize_map(g_remission_map,
 											msg->config.x_size,
 											msg->config.resolution, 'm');
-		g_remission_map_img = new cv::Mat(g_remission_map->config.y_size,
-											g_remission_map->config.x_size,
-											CV_8UC1);
+
+		if (g_remission_image_channels == 1)
+		{
+			g_remission_map_img = new cv::Mat(g_remission_map->config.y_size,
+												g_remission_map->config.x_size,
+												CV_8UC1);
+		}
+		else
+		{
+			g_remission_map_img = new cv::Mat(g_remission_map->config.y_size,
+												g_remission_map->config.x_size,
+												CV_8UC3,
+												cv::Scalar::all(0));
+		}
 		first_time = 0;
 	}
 	memcpy(g_remission_map->complete_map,

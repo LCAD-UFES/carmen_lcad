@@ -10,15 +10,23 @@ rotate(cv::Mat src, cv::Point pt, double angle)
 }
 
 void
-remission_map_to_image(carmen_map_p map, cv::Mat *remission_map_img)
+remission_map_to_image(carmen_map_p map, cv::Mat *remission_map_img, int channels)
 {
 	int i = 0, j = 0;
 	for (i = 0; i < map->config.x_size; i++)
 	{
 		for (j = 0; j < map->config.y_size; j++)
 		{
-			uchar aux = (uchar) 3.5 * (255.0 * (1.0 - (map->map[i][j] < 0 ? 1 : map->map[i][j])) + 0.5);
-			remission_map_img->at<uchar>(i, j) = 255 - aux;
+			uchar aux = 255 - (uchar) 3.5 * (255.0 * (1.0 - (map->map[i][j] < 0 ? 1 : map->map[i][j])) + 0.5);
+			if (channels == 1)
+			{
+				remission_map_img->at<uchar>(i, j) = aux;
+			}
+			else
+			{
+				cv::Vec3b color = cv::Vec3b(aux, aux, aux);
+				remission_map_img->at<cv::Vec3b>(i, j) = color;
+			}
 		}
 	}
 	cv::Point pt(remission_map_img->cols/2.0, remission_map_img->rows/2.0);
