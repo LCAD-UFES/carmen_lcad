@@ -10,10 +10,11 @@ extern "C" {
 #define MAX_PROB 		(pow(2.0, 16) - 1.0)
 #define MAX_CLASS(bits)	(pow(2.0, bits) - 1.0)
 
-#define OFF_ROAD_CLASS	  0 /* 0b 0000 0000 */
-#define SOLID_CLASS		 64 /* 0b 0100 0000 */
-#define BROKEN_CLASS	128	/* 0b 1000 0000 */
-#define LANE_CLASS		192	/* 0b 1100 0000 */
+#define OFF_ROAD_CLASS		0
+#define SOLID_CLASS			1
+#define BROKEN_CLASS		2
+#define LANE_CLASS			3
+#define OFFSET_CLASS		3
 
 typedef struct						/* Probabilities of a pixel in the road map */
 {

@@ -34,27 +34,34 @@ road_mapper_cell_color(road_prob *cell, unsigned char *blue, unsigned char *gree
 }
 
 void
-road_mapper_cell_black_and_white(road_prob *cell, unsigned char *intensity, const int class_bits)
+road_mapper_cell_black_and_white(road_prob *cell, unsigned char *cell_class, const int class_bits)
 {
+	// Cell classes:
+	//      bits == 0:
+	//					0: OFF_ROAD_CLASS, 1: SOLID_CLASS, 2: BROKEN_CLASS, 3: LANE_CLASS (regardless the distance to center)
+	//		bits > 0:
+	//					4: 50% SOLID_CLASS, 5: 50% BROKEN_CLASS, 6: LANE_CLASS (most distant to center), ..., LANE_CLASS (closest to center): 6 + MAX_CLASS
+	//
+	// Subclass bit field length must be in range (0, 6)
 	int bits = (class_bits < 0) ? 0 : (class_bits > 6) ? 6 : class_bits;
 
 	if (cell->lane_center >= cell->broken_marking &&
 			cell->lane_center >= cell->solid_marking &&
 			cell->lane_center >= cell->off_road)
 	{
-		*intensity = LANE_CLASS | (unsigned char) round(MAX_CLASS(bits) * cell->lane_center / MAX_PROB);
+		*cell_class = LANE_CLASS + (bits > 0 ? OFFSET_CLASS + (unsigned char) round(MAX_CLASS(bits) * cell->lane_center / MAX_PROB) : 0);
 	}
 	else if (cell->broken_marking >= cell->solid_marking &&
 			cell->broken_marking >= cell->off_road)
 	{
-		*intensity = BROKEN_CLASS | (unsigned char) round(MAX_CLASS(bits) * cell->broken_marking / MAX_PROB);
+		*cell_class = BROKEN_CLASS + (bits > 0 ? ((cell->broken_marking - 1.0) / MAX_PROB <= 0.5 ? OFFSET_CLASS : 0) : 0);
 	}
 	else if (cell->solid_marking >= cell->off_road)
 	{
-		*intensity = SOLID_CLASS | (unsigned char) round(MAX_CLASS(bits) * cell->solid_marking / MAX_PROB);
+		*cell_class = SOLID_CLASS + (bits > 0 ? ((cell->solid_marking - 1.0) / MAX_PROB <= 0.5 ? OFFSET_CLASS : 0) : 0);
 	}
 	else
 	{
-		*intensity = OFF_ROAD_CLASS;
+		*cell_class = OFF_ROAD_CLASS;
 	}
 }
