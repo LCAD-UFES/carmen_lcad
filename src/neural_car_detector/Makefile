@@ -29,7 +29,7 @@ SOURCES = DetectNet.cpp neural_car_detector_main.cpp
 
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES = 
-PUBLIC_BINARIES = 
+PUBLIC_BINARIES = neural_car_detector
 
 TARGETS = velodyne_camera_calibration camera_boxes_to_world libDetectNet.a neural_car_detector
 

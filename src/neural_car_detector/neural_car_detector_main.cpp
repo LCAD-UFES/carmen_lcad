@@ -282,9 +282,9 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 	std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > laser_points_in_camera_box_list = velodyne_points_in_boxes(bouding_boxes_list, &velodyne_sync_with_cam,
 			image_msg->width, image_msg->height);
 
-	char ponto_x[15];
-	char ponto_y[15];
-	char ponto_z[15];
+//	char ponto_x[15];
+//	char ponto_y[15];
+//	char ponto_z[15];
 	char confianca[7];
 
 	for (unsigned int i = 0; i < laser_points_in_camera_box_list.size(); i++)
@@ -295,11 +295,11 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 					laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy), 1, cv::Scalar(0, 0, 255), 1);
 		}
 
-		carmen_vector_3D_t box_centroid = box_position(laser_points_in_camera_box_list[i]);
-
-		sprintf(ponto_x, "x = %.3f", box_centroid.x);
-		sprintf(ponto_y, "y = %.3f", box_centroid.y);
-		sprintf(ponto_z, "z = %.3f", box_centroid.z);
+//		carmen_vector_3D_t box_centroid = box_position(laser_points_in_camera_box_list[i]);
+//
+//		sprintf(ponto_x, "x = %.3f", box_centroid.x);
+//		sprintf(ponto_y, "y = %.3f", box_centroid.y);
+//		sprintf(ponto_z, "z = %.3f", box_centroid.z);
 		sprintf(confianca, "%.3f", result[5*i + 4]);
 
 		cv::rectangle(*rgb_image,
@@ -307,17 +307,17 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 				cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y),
 				cv::Scalar(0, 0, 255), 1);
 
-		cv::putText(*rgb_image, ponto_x,
-				cv::Point(bouding_boxes_list[i].pt2.x + 2, bouding_boxes_list[i].pt1.y + 10),
-				cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0,0,255), 1);
-
-		cv::putText(*rgb_image, ponto_y,
-				cv::Point(bouding_boxes_list[i].pt2.x + 2, bouding_boxes_list[i].pt1.y + 22),
-				cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0,0,255), 1);
-
-		cv::putText(*rgb_image, ponto_z,
-				cv::Point(bouding_boxes_list[i].pt2.x + 2, bouding_boxes_list[i].pt1.y + 34),
-				cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0,0,255), 1);
+//		cv::putText(*rgb_image, ponto_x,
+//				cv::Point(bouding_boxes_list[i].pt2.x + 2, bouding_boxes_list[i].pt1.y + 10),
+//				cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0,0,255), 1);
+//
+//		cv::putText(*rgb_image, ponto_y,
+//				cv::Point(bouding_boxes_list[i].pt2.x + 2, bouding_boxes_list[i].pt1.y + 22),
+//				cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0,0,255), 1);
+//
+//		cv::putText(*rgb_image, ponto_z,
+//				cv::Point(bouding_boxes_list[i].pt2.x + 2, bouding_boxes_list[i].pt1.y + 34),
+//				cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0,0,255), 1);
 
 		cv::putText(*rgb_image, confianca,
 				cv::Point(bouding_boxes_list[i].pt1.x + 1, bouding_boxes_list[i].pt1.y - 3),
@@ -412,7 +412,7 @@ main(int argc, char **argv)
 
 	if (argc != 3)
 	{
-		fprintf(stderr, "%s: Wrong number of parameters. tracker_opentld requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)\n>", argv[0], argc - 1, argv[0]);
+		fprintf(stderr, "%s: Wrong number of parameters. Neural_car_detector requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)\n>", argv[0], argc - 1, argv[0]);
 		exit(1);
 	}
 
