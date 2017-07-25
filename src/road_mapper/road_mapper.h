@@ -32,7 +32,7 @@ void road_mapper_cell_color(road_prob *cell,
 							unsigned char *red);
 
 void road_mapper_cell_black_and_white(road_prob *cell,
-							unsigned char *intensity,
+							unsigned char *cell_class,
 							const int class_bits);
 
 #ifdef __cplusplus

@@ -40,7 +40,7 @@ road_mapper_cell_black_and_white(road_prob *cell, unsigned char *cell_class, con
 	//      bits == 0:
 	//					0: OFF_ROAD_CLASS, 1: SOLID_CLASS, 2: BROKEN_CLASS, 3: LANE_CLASS (regardless the distance to center)
 	//		bits > 0:
-	//					4: 50% SOLID_CLASS, 5: 50% BROKEN_CLASS, 6: LANE_CLASS (most distant to center), ..., LANE_CLASS (closest to center): 6 + MAX_CLASS
+	//					4: SOLID_CLASS (50%), 5: BROKEN_CLASS (50%), 6: LANE_CLASS (most distant to center), ..., 6 + MAX_CLASS: LANE_CLASS (closest to center)
 	//
 	// Subclass bit field length must be in range (0, 6)
 	int bits = (class_bits < 0) ? 0 : (class_bits > 6) ? 6 : class_bits;
