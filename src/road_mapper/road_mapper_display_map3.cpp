@@ -37,7 +37,7 @@ shutdown_module(int signo)
 void
 road_mapper_display_map3_display(int img_channels, int img_class_bits)
 {
-	cv::namedWindow(window_name1, cv::WINDOW_NORMAL);
+	cv::namedWindow(window_name1, cv::WINDOW_AUTOSIZE);
 	cv::moveWindow(window_name1, 78 + current_road_map->config.x_size, 10);
 
 	cv::Mat image1;
