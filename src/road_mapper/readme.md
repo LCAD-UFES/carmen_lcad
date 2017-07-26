@@ -41,8 +41,11 @@ The Road Mapper module parameters can be found at [carmen-ford-escape.ini](../ca
  road_mapper_distance_offset		0.5	# meters
  road_mapper_n_offset			3	# n shifts to the left and n shifts to the right
  road_mapper_n_rotation			24	# delta = (360 degrees / n_rotation) degrees
- road_mapper_out_path			$CARMEN_HOME/data/road_mapper  # out path for generated sample files
+ road_mapper_out_path			$CARMEN_HOME/data/road_mapper  		# out path for generated sample files
  road_mapper_out_path_remission		$CARMEN_HOME/data/road_mapper_remission # out path for generated sample files
+ road_mapper_image_channels		1	# road map sample image pixel may have either 1 (B&W) or 3 channels (BGR)
+ road_mapper_image_class_bits		4	# road map sample image pixel class may have 0 to 6 precision bits (B&W) or 1 to 8 precision bits (BGR)
+ road_mapper_remission_image_channels	3	# remission map sample image pixel may have either 1 (B&W) or 3 channels (BGR) 
 ```
 
 ## Saving Remission Map Images
@@ -51,13 +54,13 @@ To save the remission map images please do the following:
 
 First step:
 Open a terminal tab on the carmen_lcad/bin directory and run:
-```
-./central
+```bash
+ $ ./central
 ```
 Second step:
 Open another terminal tab on the carmen_lcad/bin directory and run the proccontrol program with the following .ini file [process-ida_a_guarapari_playback_road_mapper_save_remission_map_images.ini](../../bin/process-ida_a_guarapari_playback_road_mapper_save_remission_map_images.ini):
-```
-./proccontrol process-ida_a_guarapari_playback_road_mapper_save_remission_map_images.ini
+```bash
+ $ ./proccontrol process-ida_a_guarapari_playback_road_mapper_save_remission_map_images.ini
 ```
 
 ## Splitting the Remission Map Images
@@ -66,13 +69,13 @@ To split the remission map images to ground truth annotation please do the follo
 
 First step:
 Open a terminal tab on this directory and create a list of the remission map images:
-```
-ls ../../data/road_mapper_remission/*.png > remission_map_images.txt
+```bash
+ $ ls ../../data/road_mapper_remission/*.png > remission_map_images.txt
 ```
 Second step:
 Run the [road_mapper_image_splitter.cpp](road_mapper_image_splitter.cpp) program:
-```
-./road_mapper_image_splitter 3 3 remission_map_images.txt ../../data/road_mapper_remission_350px/
+```bash
+ $ ./road_mapper_image_splitter 3 3 remission_map_images.txt ../../data/road_mapper_remission_350px/
 ```
 To learn more about the parameters please look at [road_mapper_image_splitter.cpp](road_mapper_image_splitter.cpp)
 
@@ -106,17 +109,17 @@ To generate the road maps from the svg files please do the following:
 
 First step:
 Create a list of svg fnames:
-```
-ls svgs/*.svg > svg_list.txt
+```bash
+ $ ls svgs/*.svg > svg_list.txt
 ```
 Second step:
 Run the program road_mapper_generate_gt3.py program on this directory:
-```
-python road_mapper_generate_gt3.py -f=svg_list.txt -n
+```bash
+ $ python road_mapper_generate_gt3.py -f=svg_list.txt -n
 ```
 To learn more about the parameters please look run the program with the -h option:
-```
-python road_mapper_generate_gt3.py -h
+```bash
+ $ python road_mapper_generate_gt3.py -h
 ```
 
 ## Visualizing a Road Map
@@ -128,9 +131,11 @@ Run the central module as in [Saving Remission Map Images](#saving-remission-map
 
 Second step:
 Run the [road_mapper_display_map3.cpp](road_mapper_display_map3.cpp) program on this directory passing the path to a .map file:
+```bash
+ $ ./road_mapper_display_map3 maps/r7725970_-353430.map 3 0
 ```
-./road_mapper_display_map3 maps/r7725970_-353430.map
-```
+To learn more about the parameters please look at [road_mapper_display_map3.cpp](road_mapper_display_map3.cpp)
+
 
 ### Examples
 
@@ -145,7 +150,7 @@ Run the [road_mapper_display_map3.cpp](road_mapper_display_map3.cpp) program on 
 
 ## Road Mapper Sampling
 
-**Important: It is highly recommended to run the playback module with reduced (< 0.5) velocity!**
+**Important: It is highly recommended to run the playback module with reduced (< 0.3) velocity!**
 
 To sample the remission map images and road map images to train the neural network please do the following:
 
@@ -154,8 +159,8 @@ Run the central module as in [Saving Remission Map Images](#saving-remission-map
 
 Second step:
 Open another terminal tab on the carmen_lcad/bin directory and run the proccontrol program with the following .ini file [process-ida_a_guarapari_playback_road_mapper_sampling.ini](../../bin/process-ida_a_guarapari_playback_road_mapper_sampling.ini):
-```
-./proccontrol process-ida_a_guarapari_playback_road_mapper_sampling.ini
+```bash
+ $ ./proccontrol process-ida_a_guarapari_playback_road_mapper_sampling.ini
 ```
 ### Example of Generated Samples
 
