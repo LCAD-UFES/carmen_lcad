@@ -23,6 +23,8 @@
 
 #include "DetectNet.hpp"
 
+//#define SHOW_DETECTIONS
+
 // camera number and side
 int camera;
 int camera_side;
@@ -282,6 +284,10 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 	std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > laser_points_in_camera_box_list = velodyne_points_in_boxes(bouding_boxes_list, &velodyne_sync_with_cam,
 			image_msg->width, image_msg->height);
 
+	build_moving_objects_message(laser_points_in_camera_box_list);
+	publish_moving_objects(image_msg->timestamp);
+
+#ifdef SHOW_DETECTIONS
 //	char ponto_x[15];
 //	char ponto_y[15];
 //	char ponto_z[15];
@@ -325,8 +331,6 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 
 	}
 
-	build_moving_objects_message(laser_points_in_camera_box_list);
-	publish_moving_objects(image_msg->timestamp);
 
 
 	cv::Mat resized_image(cv::Size(640, 480), CV_8UC3);
@@ -336,6 +340,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 	cv::waitKey(1);
 
 	resized_image.release();
+
+#endif
 }
 
 
@@ -424,7 +430,10 @@ main(int argc, char **argv)
 
 	detectNet = new DetectNet(model_file, trained_file, gpu, device_id);
 
+#ifdef SHOW_DETECTIONS
 	cv::namedWindow( "Neural car detector", cv::WINDOW_AUTOSIZE );
+#endif
+
 	setlocale(LC_ALL, "C");
 
 	camera = atoi(argv[1]);
