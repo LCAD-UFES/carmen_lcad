@@ -13,8 +13,8 @@ IFLAGS += -std=c++11 -I/usr/local/zed/include -I/usr/include/eigen3 -I/usr/local
 LFLAGS += `pkg-config --libs opencv` -L/usr/local/zed/lib -L/usr/local/cuda/lib64 -lparam_interface -lglobal -lipc \
 		-lzed_camera_sensor_interface -lsl_zed -lcudpp -lbumblebee_basic_interface -lstereo_interface
 		
-CFLAGS += -Wall `pkg-config --cflags opencv` 
-CXXFLAGS += -std=c++11 -Wno-switch
+CFLAGS += -Wall `pkg-config --cflags opencv` -O3
+CXXFLAGS += -Wno-switch -O3
 # Source code files (.c, .cpp)
 SOURCES = zed_camera_sensor_main.cpp zed_camera_sensor_interface.c zed_camera_sensor_viewer.cpp
 

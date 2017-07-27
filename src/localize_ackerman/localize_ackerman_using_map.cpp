@@ -3,8 +3,6 @@
 #include <prob_transforms.h>
 #include <prob_map.h>
 #include <carmen/grid_mapping.h>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
 
 #include "localize_ackerman_using_map.h"
 
@@ -260,108 +258,6 @@ build_sensor_point_cloud(spherical_point_cloud **points, unsigned char **intensi
 		intensity[*point_cloud_index] = (unsigned char *)realloc((void *)intensity[*point_cloud_index], num_points * sizeof(unsigned char));
 
 	carmen_alloc_spherical_point_cloud(*points, num_points, *point_cloud_index);
-}
-
-
-int
-localize_using_map_velodyne_partial_scan(carmen_velodyne_partial_scan_message *velodyne_message)
-{
-	static int velodyne_message_id;
-	static IplImage *img_gray = NULL;
-	int ok_to_publish;
-
-	int num_points = velodyne_message->number_of_32_laser_shots * spherical_sensor_params[0].vertical_resolution;
-
-	ok_to_publish = 0;
-	if (!globalpos_initialized)
-		return (ok_to_publish);
-
-	if (spherical_sensor_data[0].last_timestamp == 0.0)
-	{
-		spherical_sensor_data[0].last_timestamp = velodyne_message->timestamp;
-		velodyne_message_id = -2;		// correntemente sao necessarias pelo menos 2 mensagens para ter uma volta completa de velodyne
-
-		return (ok_to_publish);
-	}
-	
-	spherical_sensor_data[0].current_timestamp = velodyne_message->timestamp;
-
-	build_sensor_point_cloud(&spherical_sensor_data[0].points, spherical_sensor_data[0].intensity, &spherical_sensor_data[0].point_cloud_index, num_points, NUM_VELODYNE_POINT_CLOUDS);
-
-	carmen_velodyne_partial_scan_update_points(velodyne_message, spherical_sensor_params[0].vertical_resolution,
-			&spherical_sensor_data[0].points[spherical_sensor_data[0].point_cloud_index], spherical_sensor_data[0].intensity[spherical_sensor_data[0].point_cloud_index],
-			spherical_sensor_params[0].ray_order,
-			spherical_sensor_params[0].vertical_correction,
-			spherical_sensor_params[0].range_max,
-			velodyne_message->timestamp);
-
-
-	spherical_sensor_data[0].robot_pose[spherical_sensor_data[0].point_cloud_index] = robot_pose;
-	spherical_sensor_data[0].robot_velocity[spherical_sensor_data[0].point_cloud_index] = robot_velocity;
-	spherical_sensor_data[0].robot_timestamp[spherical_sensor_data[0].point_cloud_index] = robot_pose_timestamp;
-	spherical_sensor_data[0].robot_phi[spherical_sensor_data[0].point_cloud_index] = robot_phi;
-
-
-	if (velodyne_message_id >= 0)
-	{
-		ok_to_publish = run_localize_using_map(&spherical_sensor_params[0], &spherical_sensor_data[0], r_matrix_car_to_global);
-
-		if (velodyne_message_id > 1000000)
-			velodyne_message_id = 0;
-	}
-	velodyne_message_id++;
-	spherical_sensor_data[0].last_timestamp = velodyne_message->timestamp;
-
-	if (img_gray == NULL)
-	{
-		img_gray = cvCreateImage(cvSize(current_mean_remission_map.config.x_size, current_mean_remission_map.config.y_size), IPL_DEPTH_8U, 3);
-	}
-
-//	for (int i = 0; i < current_mean_remission_map.config.x_size; i++)
-//	{
-//		for(int j = 0; j < current_mean_remission_map.config.y_size; j++)
-//		{
-//			img_gray->imageData[i * img_gray->widthStep + 3 * j] = 255;
-//			img_gray->imageData[i * img_gray->widthStep + 3 * j + 1] = 0;
-//			img_gray->imageData[i * img_gray->widthStep + 3 * j + 2] = 0;
-//		}
-//	}
-
-//	for (int i = 0; i < local_compacted_mean_remission_map.number_of_known_points_on_the_map; i++)
-//	{
-//		if (local_compacted_mean_remission_map.coord_x[i] < 0 || local_compacted_mean_remission_map.coord_y[i] < 0 ||
-//				local_compacted_mean_remission_map.coord_x[i] > current_mean_remission_map.config.x_size ||
-//				local_compacted_mean_remission_map.coord_y[i] > current_mean_remission_map.config.y_size)
-//			continue;
-//
-//		img_gray->imageData[local_compacted_mean_remission_map.coord_x[i] * img_gray->widthStep + 3 * local_compacted_mean_remission_map.coord_y[i]] = (unsigned char)(2550 * local_compacted_mean_remission_map.value[i]);
-//		img_gray->imageData[local_compacted_mean_remission_map.coord_x[i] * img_gray->widthStep + 3 * local_compacted_mean_remission_map.coord_y[i] + 1] = (unsigned char)(2550 * local_compacted_mean_remission_map.value[i]);
-//		img_gray->imageData[local_compacted_mean_remission_map.coord_x[i] * img_gray->widthStep + 3 * local_compacted_mean_remission_map.coord_y[i] + 2] = (unsigned char)(2550 * local_compacted_mean_remission_map.value[i]);
-//	}
-
-	for (int i = 0; i < current_mean_remission_map.config.x_size; i++)
-	{
-		for(int j = 0; j < current_mean_remission_map.config.y_size; j++)
-		{
-			if (current_mean_remission_map.map[i][j] < 0.0)
-			{
-				img_gray->imageData[i * img_gray->widthStep + 3 * j] = 255;
-				img_gray->imageData[i * img_gray->widthStep + 3 * j + 1] = 0;
-				img_gray->imageData[i * img_gray->widthStep + 3 * j + 2] = 0;
-				continue;
-			}
-
-			img_gray->imageData[i * img_gray->widthStep + 3 * j] = (unsigned char)(2550 * current_mean_remission_map.map[i][j]);
-			img_gray->imageData[i * img_gray->widthStep + 3 * j + 1] = (unsigned char)(2550 * current_mean_remission_map.map[i][j]);
-			img_gray->imageData[i * img_gray->widthStep + 3 * j + 2] = (unsigned char)(2550 * current_mean_remission_map.map[i][j]);
-		}
-	}
-
-	cvShowImage("1", img_gray);
-	cvWaitKey(33);
-
-
-	return (ok_to_publish);
 }
 
 

@@ -7,7 +7,14 @@
 extern "C" {
 #endif
 
-#define MAX_PROB (pow(2.0, 16) - 1.0)
+#define MAX_PROB 		(pow(2.0, 16) - 1.0)
+#define MAX_CLASS(bits)	(pow(2.0, bits) - 1.0)
+
+#define OFF_ROAD_CLASS		0
+#define SOLID_CLASS			1
+#define BROKEN_CLASS		2
+#define LANE_CLASS			3
+#define OFFSET_CLASS		3
 
 typedef struct						/* Probabilities of a pixel in the road map */
 {
@@ -23,6 +30,10 @@ void road_mapper_cell_color(road_prob *cell,
 							unsigned char *blue,
 							unsigned char *green,
 							unsigned char *red);
+
+void road_mapper_cell_black_and_white(road_prob *cell,
+							unsigned char *cell_class,
+							const int class_bits);
 
 #ifdef __cplusplus
 }

@@ -11,7 +11,8 @@
 
 typedef struct
 {
-	carmen_point_t point;
+	int num_points;
+	carmen_point_t *point;
 } extended_virtual_scan_t;
 
 
@@ -40,7 +41,7 @@ typedef struct
 } virtual_scan_box_model_t;
 
 
-void
+extended_virtual_scan_t *
 detect_and_track_moving_objects(carmen_mapper_virtual_scan_message *virtual_scan);
 
 

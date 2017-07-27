@@ -30,7 +30,8 @@ double zed_camera_sensor_fps = 0.0;
 int param_width = 0.0;
 int param_height = 0.0;
 
-static int disp_fps = 0, disp_last_fps = 0; //display fps
+//static int disp_fps = 0;
+//static int disp_last_fps = 0; //display fps
 
 using namespace std;
 using namespace cv;
@@ -44,13 +45,22 @@ using namespace cv;
 void
 carmen_bumblebee_publish_stereoimage_message(unsigned char *rawLeft, unsigned char *rawRight, int width, int height, int channels)
 {
+	static int first = 1;
+	static Mat *frameLeft_3 = NULL;
+    static Mat *frameRight_3 = NULL;
 
-	Mat frameLeft_4(height, width, CV_8UC4, rawLeft, 4 * width);
-	Mat frameRight_4(height, width, CV_8UC4, rawRight, 4 * width);
-	Mat frameLeft_3;
-	Mat frameRight_3;
-	cvtColor(frameLeft_4, frameLeft_3, CV_BGRA2RGB);
-	cvtColor(frameRight_4, frameRight_3, CV_BGRA2RGB);
+    Mat frameLeft_4(height, width, CV_8UC4, rawLeft, 4 * width);
+    Mat frameRight_4(height, width, CV_8UC4, rawRight, 4 * width);
+
+    if (first)
+    {
+    	frameLeft_3 = new Mat(Size(width, height), CV_8UC3);
+    	frameRight_3 = new Mat(Size(width, height), CV_8UC3);
+    	first = 0;
+    }
+
+    cvtColor(frameLeft_4, *frameLeft_3, CV_BGRA2RGB);
+    cvtColor(frameRight_4, *frameRight_3, CV_BGRA2RGB);
 
 	carmen_bumblebee_basic_stereoimage_message stereo_msg;
 
@@ -60,8 +70,8 @@ carmen_bumblebee_publish_stereoimage_message(unsigned char *rawLeft, unsigned ch
 	stereo_msg.width = width;
 	stereo_msg.isRectified = 1;
 	stereo_msg.height = height;
-	stereo_msg.raw_left = frameLeft_3.data;
-	stereo_msg.raw_right = frameRight_3.data;
+	stereo_msg.raw_left = frameLeft_3->data;
+	stereo_msg.raw_right = frameRight_3->data;
 //	printf("Publicando \n");
 	carmen_bumblebee_basic_publish_message(BUMBLEBEE_ID, &stereo_msg);
 }
@@ -167,8 +177,8 @@ void
 define_zed_resolution()
 {
 	//2208*1242 => HD2K: 0; 1920*1080 => HD1080: 1; 1280*720 => HD720: 2, 672*376 => VGA: 3
-
-	switch (param_width+param_height)
+	int param_size = param_width+param_height;
+	switch (param_size)
 	{
 	case (2208+1242):
 					zed_camera_sensor_quality = 0;
@@ -235,53 +245,60 @@ int main(int argc, char **argv)
 	//FILL: Occlusion filling, edge sharpening, advanced post-filtering. Application example : Refocusing, Multi-view generation
 	sl::zed::SENSING_MODE dm_type = sl::zed::STANDARD;
 
-	if(isStereo) {
-		while(1) {
-			static double last_time = 0.0;
-			double time_now = carmen_get_time();
-			if ((time_now - last_time) > 1.0)
-			{
-				disp_last_fps = disp_fps;
-				disp_fps = 0;
-				last_time = time_now;
-			}
+	if(isStereo)
+	{
+		while(1)
+		{
+			//---colar aqui PART1 calular FPS
 
 			bool res = zed->grab(dm_type);
 
-			if(!res) {
-				zed->setConfidenceThreshold(ConfidenceIdx);
+			if(!res)
+			{
+				//---colar aqui PART2 para imprimir FPS/mostrar imagem
 
-
-				/*Codigo para Mostrar imagem sem publicar - teste do delay*/
-				//        	  cv::Mat imagem(height, width, CV_8UC4);
-				//        	  for (int i  = 0; i < 4;)
-
-				//        	  sl::zed::slMat2cvMat(zed->retrieveImage(sl::zed::SIDE::LEFT)).copyTo(imagem);
-				//        	  cv::imshow("Janela", imagem);
-				//        	  cv::waitKey(1);
-				disp_fps++;
-//				printf("Atual FPS: %d \n", disp_last_fps);
-
+//				zed->setConfidenceThreshold(ConfidenceIdx);
 				carmen_bumblebee_publish_stereoimage_message(zed->retrieveImage(sl::zed::SIDE::LEFT).data, zed->retrieveImage(sl::zed::SIDE::RIGHT).data, width, height, 3);
-
-				ConfidenceIdx = ConfidenceIdx < 1 ? 1 : ConfidenceIdx;
-				ConfidenceIdx = ConfidenceIdx > 100 ? 100 : ConfidenceIdx;
+//				ConfidenceIdx = ConfidenceIdx < 1 ? 1 : ConfidenceIdx;
+//				ConfidenceIdx = ConfidenceIdx > 100 ? 100 : ConfidenceIdx;
 			}
-			usleep(1000/zed->getCurrentFPS());
+//			usleep(1000/zed->getCurrentFPS());
+//			res = zed->grab(dm_type);
 		}
 	}
-	else {
-		while(1) {
+	else
+	{
+		while(1)
+		{
 			bool res = zed->grab(dm_type);
-			if(!res) {
+			if(!res)
+			{
 				zed->setConfidenceThreshold(ConfidenceIdx);
 				carmen_stereo_publish_depthmap_message((zed->retrieveMeasure(sl::zed::MEASURE::DISPARITY)), (zed->retrieveImage(sl::zed::SIDE::LEFT).data), width, height, 3);
 				//              carmen_zed_publish_depthmap_message(zed->normalizeMeasure(sl::zed::MEASURE::DEPTH).data, width, height, 4);
-
 				ConfidenceIdx = ConfidenceIdx < 1 ? 1 : ConfidenceIdx;
 				ConfidenceIdx = ConfidenceIdx > 100 ? 100 : ConfidenceIdx;
 			}
 		}
 	}
+	//-----PART1----------------------------
+	//			static double last_time = 0.0;
+	//			double time_now = carmen_get_time();
+	//			if ((time_now - last_time) > 1.0)
+	//			{
+	//				disp_last_fps = disp_fps;
+	//				disp_fps = 0;
+	//				last_time = time_now;
+	//			}
+	//-------------------------------------
+	//PART2 --- *Codigo para Mostrar imagem sem publicar - teste do delay*/
+	//        	  cv::Mat imagem(height, width, CV_8UC4);
+	//        	  for (int i  = 0; i < 4;)
+
+	//        	  sl::zed::slMat2cvMat(zed->retrieveImage(sl::zed::SIDE::LEFT)).copyTo(imagem);
+	//        	  cv::imshow("Janela", imagem);
+	//        	  cv::waitKey(1);
+	//			disp_fps++;
+	//			printf("Atual FPS: %d \n", disp_last_fps);
 
 }
