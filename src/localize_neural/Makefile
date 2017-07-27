@@ -27,7 +27,7 @@ IFLAGS += -std=c++11 -isystem /usr/local/include/tensorflow \
 		  -isystem /usr/local/include/tensorflow/third_party/eigen3
 LFLAGS += -L/usr/local/lib/tensorflow_cc/ -ltensorflow_cc 
 
-SOURCES = localize_neural_main.cpp localize_neural_inference.cpp localize_neural_dataset.cpp 
+SOURCES = localize_neural_interface.cpp #localize_neural_main.cpp localize_neural_inference.cpp localize_neural_dataset.cpp 
 
 PUBLIC_INCLUDES = localize_neural_messages.h localize_neural_interface.h
 PUBLIC_LIBRARIES =  liblocalize_neural_interface.a
