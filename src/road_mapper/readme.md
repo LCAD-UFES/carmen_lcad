@@ -17,13 +17,13 @@
 
 The Road Mapper module handles the *map_type* CARMEN_ROAD_MAP_v (prefix character 'r'), the data structure *road_prob* and the map server message CARMEN_MAP_SERVER_ROAD_MAP_NAME. Each cell in a road gridmap contains the following data:
 ```c
-typedef struct				/* Probabilities of a pixel in the road map */
-{
-  unsigned short off_road;		/* Probability of being off the road */
-  unsigned short solid_marking;		/* Probability of being in a lane solid marking */
-  unsigned short broken_marking;	/* Probability of being in a lane broken marking */
-  unsigned short lane_center;		/* Probability of being at the center of a lane */
-} road_prob;
+ typedef struct				/* Probabilities of a pixel in the road map */
+ {
+   unsigned short off_road;		/* Probability of being off the road */
+   unsigned short solid_marking;	/* Probability of being in a lane solid marking */
+   unsigned short broken_marking;	/* Probability of being in a lane broken marking */
+   unsigned short lane_center;		/* Probability of being at the center of a lane */
+ } road_prob;
 ```
 The following color code is adopted for displaying a road map:
   - ![#ffffff](https://placehold.it/20x20/ffffff/?text=+) = off the road
@@ -42,7 +42,7 @@ The Road Mapper module parameters can be found at [carmen-ford-escape.ini](../ca
  road_mapper_n_offset			3	# n shifts to the left and n shifts to the right
  road_mapper_n_rotation			24	# delta = (360 degrees / n_rotation) degrees
  road_mapper_out_path			$CARMEN_HOME/data/road_mapper  		# out path for generated sample files
- road_mapper_out_path_remission		$CARMEN_HOME/data/road_mapper_remission # out path for generated sample files
+ road_mapper_out_path_remission		$CARMEN_HOME/data/road_mapper_remission # out path for generated remission files
  road_mapper_image_channels		1	# road map sample image pixel may have either 1 (B&W) or 3 channels (BGR)
  road_mapper_image_class_bits		4	# road map sample image pixel class may have 0 to 6 precision bits (B&W) or 1 to 8 precision bits (BGR)
  road_mapper_remission_image_channels	3	# remission map sample image pixel may have either 1 (B&W) or 3 channels (BGR) 
@@ -141,10 +141,10 @@ To learn more about the parameters please look at [road_mapper_display_map3.cpp]
 
 <center>
 
-| Image Name           | Remission Map                               | Ground Truth                                   | Road Map                                   |
-| -------------------- | ------------------------------------------- | ---------------------------------------------- | ------------------------------------------ |
-| i7705600_-338380.png | ![Remission Map](data/i7705600_-338380.png) | ![Ground Truth](data/i7705600_-338380_svg.png) | ![Road Map](data/r7705600_-338380_map.png) |
-| i7726110_-353570.png | ![Remission Map](data/i7726110_-353570.png) | ![Ground Truth](data/i7726110_-353570_svg.png) | ![Road Map](data/r7726110_-353570_map.png) |
+| Image Name           | Remission Map                               | Ground Truth                                   | Road Map Probabilities                     | Road Map Classes                               |
+| -------------------- | ------------------------------------------- | ---------------------------------------------- | ------------------------------------------ | ---------------------------------------------- |
+| i7705600_-338380.png | ![Remission Map](data/i7705600_-338380.png) | ![Ground Truth](data/i7705600_-338380_svg.png) | ![Road Map](data/r7705600_-338380_map.png) | ![Road Map](data/r7705600_-338380_map_1_6.png) |
+| i7726110_-353570.png | ![Remission Map](data/i7726110_-353570.png) | ![Ground Truth](data/i7726110_-353570_svg.png) | ![Road Map](data/r7726110_-353570_map.png) | ![Road Map](data/r7726110_-353570_map_1_6.png) |
 
 </center>
 
