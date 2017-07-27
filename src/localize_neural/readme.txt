@@ -1,7 +1,13 @@
-0.0 Install tensorflow
-0.1 Install tensorflow C++ API as described here https://github.com/aforechi/tensorflow_cc
-0.2 export LD_LIBRARY_PATH=/usr/local/lib/tensorflow_cc:$LD_LIBRARY_PATH
-0.3 Install tensorflow from sources using version v1.2.0
+0.0 Install tensorflow & opencv
+0.1.1 git clone https://github.com/opencv/opencv.git
+0.1.2 git clone https://github.com/opencv/opencv_contrib.git
+0.1.3 cd opencv && mkdir build && cmake -D WITH_CUDA=OFF -D WITH_OPENCL=OFF -D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib/modules ..
+0.1.4 make -j5 && sudo make install && sudo ldconfig
+0.2.1 git clone https://github.com/aforechi/tensorflow_cc
+0.2.2 cd tensorflow_cc/tensorflow_cc && mkdir build && cmake -DTENSORFLOW_STATIC=OFF -DTENSORFLOW_SHARED=ON ..
+0.2.3 make -j5 && sudo make install
+0.2.4 export LD_LIBRARY_PATH=/usr/local/lib/tensorflow_cc:$LD_LIBRARY_PATH
+0.2.5 Install tensorflow from sources (or virtualenv) using version v1.2.1
 
 1.0 Export bumblebee images from one of the logs found in process-mapper.ini
 1.1 cd $CARMEN_HOME/bin

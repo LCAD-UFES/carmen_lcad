@@ -77,7 +77,7 @@ finalize_tensorflow()
 
 
 void
-copy_tensor(tensorflow::Tensor &input_tensor, const char *keyframe_data, const char *curframe_data, int height, int width, int depth)
+copy_double_tensor(tensorflow::Tensor &input_tensor, const char *keyframe_data, const char *curframe_data, int height, int width, int depth)
 {
 	auto input_tensor_mapped = input_tensor.tensor<float, 4>();
 
@@ -96,6 +96,28 @@ copy_tensor(tensorflow::Tensor &input_tensor, const char *keyframe_data, const c
 				const char* curframe_value = curframe_pixel + c;
 				input_tensor_mapped(0, y, x, c) = (float)(*keyframe_value);
 				input_tensor_mapped(0, y, x, c+3) = (float)(*curframe_value);
+			}
+		}
+	}
+}
+
+
+void
+copy_simple_tensor(tensorflow::Tensor &input_tensor, const float *frame_data, int height, int width, int depth)
+{
+	auto input_tensor_mapped = input_tensor.tensor<float, 4>();
+
+	// copying the data into the corresponding tensor
+	for (int y = 0; y < height; y++)
+	{
+		const float* frame_row = frame_data + (y * width * depth);
+		for (int x = 0; x < width; x++)
+		{
+			const float* frame_pixel = frame_row + (x * depth);
+			for (int c = 0; c < depth; c++)
+			{
+				const float* frame_value = frame_pixel + c;
+				input_tensor_mapped(0, y, x, c) = (*frame_value);
 			}
 		}
 	}
@@ -131,13 +153,24 @@ resize_image(IplImage **img, int width, int height)
 }
 
 
+void
+normalize_image(IplImage **img)
+{
+	IplImage *imgf = cvCreateImage(cvSize((*img)->width, (*img)->height), IPL_DEPTH_32F, 3);
+	cvConvertScale((*img), imgf, 1.0/255.0);
+	cvSubS(imgf, 0.5, imgf);
+	cvRelease((void**) img);
+	(*img) = imgf;
+}
+
+
 carmen_point_t
 run_cnn_inference(const carmen_localize_neural_imagepos_message &keyframe, const carmen_localize_neural_imagepos_message &curframe)
 {
 	carmen_point_t delta_pose = {0.0,0.0,0.0};
 	IplImage *keyframe_image = cvCreateImage(cvSize(keyframe.width, keyframe.height), IPL_DEPTH_8U, 3);
 	IplImage *curframe_image = cvCreateImage(cvSize(curframe.width, curframe.height), IPL_DEPTH_8U, 3);
-	int input_size = 227;
+	int input_size = 224;
 	int channels = 3;
 
 	copy_image(keyframe.image_data, keyframe_image, keyframe.width, keyframe.height);
@@ -149,18 +182,20 @@ run_cnn_inference(const carmen_localize_neural_imagepos_message &keyframe, const
 	//cvSaveImage("keyframe.png", keyframe_image);
 	//cvSaveImage("curframe.png", curframe_image);
 
-	tensorflow::Tensor inputs(tensorflow::DT_FLOAT, tensorflow::TensorShape({1,input_size,input_size,2*channels}));
+	normalize_image(&keyframe_image);
+	normalize_image(&curframe_image);
 
-	copy_tensor(inputs, keyframe_image->imageData, curframe_image->imageData, input_size, input_size, channels);
+	tensorflow::Tensor input_base(tensorflow::DT_FLOAT, tensorflow::TensorShape({1,input_size,input_size,channels}));
+	tensorflow::Tensor input_curr(tensorflow::DT_FLOAT, tensorflow::TensorShape({1,input_size,input_size,channels}));
 
-	tensorflow::Tensor keep_prob(tensorflow::DT_FLOAT, tensorflow::TensorShape({1,1}));
-	keep_prob.scalar<float>()() = 1.0;
+	copy_simple_tensor(input_base, (float*)keyframe_image->imageData, input_size, input_size, channels);
+	copy_simple_tensor(input_curr, (float*)curframe_image->imageData, input_size, input_size, channels);
 
 	std::vector<tensorflow::Tensor> outputs;
 
 	if (session != NULL)
 	{
-		tensorflow::Status status = session->Run({{"input", inputs},{"keep_prob", keep_prob}}, {"output"}, {}, &outputs);
+		tensorflow::Status status = session->Run({{"input_base", input_base},{"input_curr", input_curr}}, {"output0"}, {}, &outputs);
 
 		if (!status.ok())
 		{
@@ -168,10 +203,10 @@ run_cnn_inference(const carmen_localize_neural_imagepos_message &keyframe, const
 		}
 		else
 		{
-			auto output = outputs[0].matrix<float>();
-			delta_pose.x = output(0,0);
-			delta_pose.y = output(0,1);
-			delta_pose.theta = output(0,2);
+			auto output = outputs[0].vec<float>();
+			delta_pose.x = output(0);
+			delta_pose.y = output(1);
+			delta_pose.theta = output(2);
 		}
 	}
 
