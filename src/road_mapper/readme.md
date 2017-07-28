@@ -398,7 +398,7 @@ Now, please do the following:
 | :----------: | :------------: | :--------------: | :-----------------: | :--------------------: | :-----------------------: |
 | i7726369_-353704_-0.50_0.00.png | ![Remission Map](data/i7726369_-353704_-0.50_0.00.png) | ![Road Map Classes](data/i7726369_-353704_-0.50_0.00_enet_gt_cl.png) | ![ENet Classes](data/i7726369_-353704_-0.50_0.00_enet_cl.png) | ![Road Map Probs](data/i7726369_-353704_-0.50_0.00_enet_gt.png) | ![ENet Probs](data/i7726369_-353704_-0.50_0.00_enet.png) |
 
-| Sample Name | Road Map Overlaid with Remission Map | ENet Output Overlaid Remission Map |
+| Sample Name | Road Map Overlaid with Remission Map | ENet Output Overlaid with Remission Map |
 | :---------: | :----------------------------------: | :--------------------------------: |
 | i7726369_-353704_-0.50_0.00.png | ![Remission Map](data/i7726369_-353704_-0.50_0.00_original_gt_trans.png) | ![Road Map Classes](data/i7726369_-353704_-0.50_0.00_original_enet_trans.png) |
 
