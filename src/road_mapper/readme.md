@@ -336,8 +336,7 @@ Now run:
 
 ```
 
-The Batch Normalisation layers [ Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift](https://arxiv.org/abs/1502.03167) in ENet shift the input feature maps according to their mean and variance
-statistics for each mini batch during training. At test time we must use the statistics for the entire dataset.
+The [Batch Normalisation layers](https://arxiv.org/abs/1502.03167) in ENet shift the input feature maps according to their mean and variance statistics for each mini batch during training. At test time we must use the statistics for the entire dataset.
 
 For this reason run **compute_bn_statistics.py** to calculate the new weights called **test_weights.caffemodel**:
 
