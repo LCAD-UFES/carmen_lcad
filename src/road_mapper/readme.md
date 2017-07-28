@@ -10,19 +10,18 @@
 - [Road Mapper Sampling](#road-mapper-sampling)
 	- [Example of Generated Samples](#example-of-generated-samples)
 - [Training the Neural Network](#training-the-neural-network)
-	- [Tutorial on how to train and test ENet on LCAD Road Remission dataset](#tutorial-on-how-to-train-and-test-enet-on-lcad-road-remission-dataset)
+	- [Tutorial on How to Train and Test ENet on LCAD Road Remission dataset](#tutorial-on-how-to-train-and-test-enet-on-lcad-road-remission-dataset)
 		- [Installation](#installation)
 		- [Preparation](#preparation)
 		- [Training ENet](#training-enet)
-			- [Let's start with the encoder training](#lets-start-with-the-encoder-training)
-			- [After the encoder-training is finished you can continue with the training of encoder + decoder](#after-the-encoder-training-is-finished-you-can-continue-with-the-training-of-encoder-decoder)
+			- [Let's Start With the Encoder Training](#lets-start-with-the-encoder-training)
+			- [After the Encoder-Training is Finished you can Continue with the Training of Encoder + Decoder](#after-the-encoder-training-is-finished-you-can-continue-with-the-training-of-encoder-decoder)
 		- [Testing ENet](#testing-enet)
-		- [Visualize the prediction with python](#visualize-the-prediction-with-python)
-<!--
-		- [Visualize the prediction with C++](#visualize-the-prediction-with-c)
-		- [Kick-start](#kick-start)
-		- [Measurement of execution time](#measurement-of-execution-time)
--->
+		- [Visualize the Prediction](#visualize-the-prediction)
+			- [Python Code](#python-code)
+			- [C++ Code](#c-code)
+			- [Examples](#examples)
+		- [Measurement of Execution Time](#measurement-of-execution-time)
 
 # Road Mapper Module
 
@@ -193,7 +192,7 @@ We are going to use the ENet Neural Network.
 
 For more information on ENet please refer to the published paper in arXiv: [ENet: A Deep Neural Network Architecture for Real-Time Semantic Segmentation](https://arxiv.org/abs/1606.02147).
 
-### Tutorial on how to train and test ENet on LCAD Road Remission dataset
+### Tutorial on How to Train and Test ENet on LCAD Road Remission dataset
 
 This tutorial is mainly based on [Tutorial on how to train and test ENet on Cityscapes dataset](https://github.com/TimoSaemann/ENet/tree/master/Tutorial).
 
@@ -228,9 +227,8 @@ You can do this by adding to you .bashrc file:
 #### Preparation
 
 After [sampling](#road-mapper-sampling) the dataset, please do the following to randomly generate the train and test datasets:
-$CARMEN_HOME/data/road_mapper
 ```bash
- python road_mapper_enet_training.py ../../data/road_mapper 9 1
+ $ python road_mapper_enet_training.py carmen_lcad/data/road_mapper 9 1
 ```
 To learn more about the parameters please look run the program with the -h option:
 ```bash
@@ -253,37 +251,38 @@ The training of ENet is performed in two stages:
  - training the encoder architecture
  - training the encoder and decoder architecture jointly
 
-##### Let's start with the encoder training
+##### Let's Start With the Encoder Training
 
 First, create the prototxt file `enet_train_encoder.prototxt` by running:
 ```bash
- $ python create_enet_prototxt.py --source carmen_lcad/src/road_mapper/road_mapper_train.txt 
-				  --mode train_encoder 
-				  --batch_size 2 
-				  --new_height 200 
-				  --new_width 200 
-				  --num_of_classes 22
+ $ python create_enet_prototxt.py	--source carmen_lcad/src/road_mapper/road_mapper_train.txt \
+					--mode train_encoder \
+					--batch_size 2 \
+					--new_height 200 \
+					--new_width 200 \
+					--num_of_classes 22
 ```
 To learn more about the parameters please look run the program with the -h option:
 ```bash
  $ python create_enet_prototxt.py -h
 ```
 
-Is important to note that batch_size, new_width and new_height are related with the available GPU memory. The parameter batch_size must be as big as possible and fit GPU memory, also new_height and new_width must be divisible by 8.
+It is important to note that batch_size, new_width and new_height are related with the available GPU memory. The parameter batch_size must be as big as possible and fit GPU memory, also new_height and new_width must be divisible by 8.
 	
 This prototxt file includes the encoder architecture of ENet with some default settings you can customize according your needs. For example, the input images are resized to 200x200, because of GPU memory restrictions. For more details have a look in the prototxt file or in the python file.
 
 <!--The next step is optional:-->
 To improve the quality of ENet predictions in small classes (solid marking, broken marking, etc.), you can add **class_weighting** to the **SoftmaxWithLoss** layer. 
 ```bash
- $ python calculate_class_weighting.py --source carmen_lcad/src/road_mapper/road_mapper_train.txt --num_classes 22
+ $ python calculate_class_weighting.py	--source carmen_lcad/src/road_mapper/road_mapper_train.txt \
+					--num_classes 22
 ```
 	
 Copy the **class_weightings** from the terminal in the `enet_train_encoder.prototxt` under **weight_by_label_freqs** and set this flag from **false** to **true**. 
  
 Before training:
 
-Please, have a look at the `ENet/prototxts/enet_solver_encoder.prototxt` file and change it to achieve the desired number of epochs and etc. For more details on the Caffe solver file, please have a look at [Caffe Solver Parameters](https://github.com/BVLC/caffe/wiki/Solver-Prototxt).
+Please, have a look in the `ENet/prototxts/enet_solver_encoder.prototxt` file and change it to achieve the desired number of epochs and etc. For more details on the Caffe solver file, please have a look at [Caffe Solver Parameters](https://github.com/BVLC/caffe/wiki/Solver-Prototxt).
 
 The number of epochs are calculated according to the following:
 
@@ -298,25 +297,26 @@ Now you are ready to start the training:
  $ ENet/caffe-enet/build/tools/caffe train -solver ENet/prototxts/enet_solver_encoder.prototxt
 ```
 
-If the GPU memory is not enough (error == cudasuccess), reduce the batch_size in `ENet/prototxt/enet_train_encoder.prototxt`.
+If the GPU memory is not enough (error == cudasuccess), reduce the batch_size in `ENet/prototxt/enet_train_encoder.prototxt` file.
 
-##### After the encoder-training is finished you can continue with the training of encoder + decoder
+##### After the Encoder-Training is Finished you can Continue with the Training of Encoder + Decoder
 
 First create the `enet_train_encoder_decoder.prototxt` by running:
 ```bash
- $ python create_enet_prototxt.py --source carmen_lcad/src/road_mapper/road_mapper_train.txt 
-				  --mode train_encoder_decoder 
-				  --batch_size 2 
-				  --new_height 200 
-				  --new_width 200 
-				  --num_of_classes 22
+ $ python create_enet_prototxt.py	--source carmen_lcad/src/road_mapper/road_mapper_train.txt \
+					--mode train_encoder_decoder \
+					--batch_size 2 \
+					--new_height 200 \
+					--new_width 200 \
+					--num_of_classes 22
 ```
 
 Copy the **class_weightings** from `enet_train_encoder.prototxt` to `enet_train_encoder_decoder.prototxt` under **weight_by_label_freqs** and set this flag from **false** to **true**. 
 
 Start the training of the encoder + decoder and use the pretrained weights as initialization of the encoder:
 ```bash
- $ ENet/caffe-enet/build/tools/caffe train -solver ENet/prototxts/enet_solver_encoder_decoder.prototxt -weights ENet/weights/snapshots_encoder/NAME.caffemodel
+ $ ENet/caffe-enet/build/tools/caffe train	-solver ENet/prototxts/enet_solver_encoder_decoder.prototxt \
+						-weights ENet/weights/snapshots_encoder/NAME.caffemodel
 ```
 
 Replace the place holder **NAME** to the name of your weights.
@@ -329,8 +329,9 @@ First change the line 256 in `create_enet_prototxt.py` from `parser.add_argument
 
 Now run:
 ```bash
- python create_enet_prototxt.py --source /dados/carmen_lcad/src/road_mapper/road_mapper_train.txt 
-				--mode test --input_size 200 200 
+ python create_enet_prototxt.py	--source carmen_lcad/src/road_mapper/road_mapper_train.txt \
+				--mode test \
+				--input_size 200 200 \
 				--num_of_classes 22 
 
 ```
@@ -360,62 +361,66 @@ For inference batch normalization and dropout layer can be merged into convoluti
 
 It also deletes the corresponding batch normalization and dropout layers from the prototxt file. The final model (prototxt file) and weights are saved in the folder **final_model_and_weights**. 
 
-#### Visualize the prediction with python
+#### Visualize the Prediction 
+
+##### Python Code
 
 Create the colormap:
 
 First copy the colors from [colors_to_colormap.txt](data/colors_to_colormap.txt) to `create_color_map.py` and change line 286 in `create_color_map.py` from `cv2.imwrite('ENet/scripts/cityscapes19.png', im_color)` to `cv2.imwrite('ENet/scripts/road_mapper_22.png', im_color)`. Alternatively you can use [road_mapper_22.png](data/road_mapper_22.png) colormap.
 
-You can visualize the prediction of ENet by running:
+Also, change line 67 in `test_segmentation.py` from `label_colours_bgr = label_colours[..., ::-1]` to `label_colours_bgr = label_colours#[..., ::-1]`.
+
+Now, you can visualize the prediction of ENet by running:
 ```bash
  $ python test_segmentation.py 	--model ENet/final_model_weigths/bn_conv_merged_model.prototxt \
 				--weights ENet/final_model_weigths/bn_conv_merged_weights.caffemodel \
-				--colours /ENet/scripts/road_mapper_22.png \
+				--colours ENet/scripts/road_mapper_22.png \
 				--input_image carmen_lcad/data/road_mapper/7726369_-353704/i7726369_-353704_1.50_90.00.png \
-				--out_dir /ENet/example_image/ 
+				--out_dir ENet/example_image/ 
 ```
 
-<!--
-### Visualize the prediction with C++
+##### C++ Code
 
 If you like to visualize the prediction of ENet with C++ code:
 
-	$ cd ENet/caffe-enet/build/examples/ENet_with_C++
-	$ ./test_segmentation 	ENet/final_model_weights/bn_conv_merged_model.prototxt \
+First, comment line 146 in `test_segmentation.cpp`.
+
+Copy the `test_segmentation.cpp` file from `ENet/scripts` to `ENet/caffe-enet/examples/ENet_with_C++/`.
+
+Now, please do the following:
+```bash
+ $ cd ENet/caffe-enet/
+ $ make
+ $ cd build/examples/ENet_with_C++
+ $ ./test_segmentation.bin 	ENet/final_model_weights/bn_conv_merged_model.prototxt \
 				ENet/final_model_weights/bn_conv_merged_weights.caffemodel \
-				ENet/example_image/munich_000000_000019_leftImg8bit.png \
-				ENet/scripts/cityscapes19.png
+				carmen_lcad/data/road_mapper/7726369_-353704/i7726369_-353704_1.50_90.00.png \
+				ENet/scripts/road_mapper_22.png
+```
+
+##### Examples
+
+<center>
+
+| Sample Name | Remission Map | Road Map Classes | ENet Output Classes | Road Map Probabilities | ENet Output Probabilities | 
+| ----------- | ------------- | ---------------- | ------------------- | ---------------------- | ------------------------- |
+| i7726369_-353704_-0.50_0.00.png | ![Remission Map](data/i7726369_-353704_-0.50_0.00.png) | ![Road Map Classes](data/i7726369_-353704_-0.50_0.00_enet_gt_cl.png) | ![ENet Classes](data/i7726369_-353704_-0.50_0.00_enet_cl.png) | ![Road Map Probs](data/i7726369_-353704_-0.50_0.00_enet_gt.png) | ![ENet Probs](data/i7726369_-353704_-0.50_0.00_enet.png) |
+
+| Sample Name | Road Map Overlaid with Remission Map | ENet Output Overlaid Remission Map |
+| ----------- | ------------------------------------ | ---------------------------------- |
+| i7726369_-353704_-0.50_0.00.png | ![Remission Map](data/i7726369_-353704_-0.50_0.00_original_gt_trans.png) | ![Road Map Classes](data/i7726369_-353704_-0.50_0.00_original_enet_trans.png) |
+
+</center>
 
 
-
-### Kick-start
-
-If you just want to test the quality with the trained weights in the [enet-weights-zoo](https://github.com/TimoSaemann/ENet/tree/master/enet_weights_zoo), run:
-	
-	$ sh cityscapes_weights.sh
-	
-to download the weights and then:
-
-	$ python test_segmentation.py 	--model ENet/prototxts/enet_deploy_final.prototxt \						
-					--weights ENet/enet_weights_zoo/cityscapes_weights.caffemodel \
-					--colours ENet/scripts/cityscapes19.png \
-					--input_image ENet/example_image/munich_000000_000019_leftImg8bit.png \
-					--out_dir ENet/example_image/
-
-You should be able to reproduce the following example:
-
-![Alt text](/example_image/image_enet.PNG?raw=true "image_enet")
-
-### Measurement of execution time
+#### Measurement of Execution Time
 
 To measure ENet execution time layer-by-layer run:
+```bash
+ $ ENet/caffe-enet/build/tools/caffe time -model ENet/prototxts/enet_deploy_final.prototxt -gpu 0 -iterations 100
+```
 
-	$ ENet/caffe-enet/build/tools/caffe time -model ENet/prototxts/enet_deploy_final.prototxt -gpu 0 -iterations 100
-
-
-[1] Ioffe, Sergey, and Christian Szegedy. "Batch normalization: Accelerating deep network training by reducing
-internal covariate shift." arXiv preprint arXiv:1502.03167 (2015)
--->
 **For more information look in docs/**
 
 
