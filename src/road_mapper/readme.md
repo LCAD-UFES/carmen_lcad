@@ -8,7 +8,7 @@
 - [Visualizing a Road Map](#visualizing-a-road-map)
 	- [Examples](#examples)
 - [Road Mapper Sampling](#road-mapper-sampling)
-	- [Example of Generated Samples](#example-of-generated-samples)
+	- [Examples](#examples-1)
 - [Training the Neural Network](#training-the-neural-network)
 	- [Tutorial on How to Train and Test ENet on LCAD Road Remission dataset](#tutorial-on-how-to-train-and-test-enet-on-lcad-road-remission-dataset)
 		- [Installation](#installation)
@@ -20,7 +20,7 @@
 		- [Visualize the Prediction](#visualize-the-prediction)
 			- [Python Code](#python-code)
 			- [C++ Code](#c-code)
-			- [Examples](#examples)
+			- [Examples](#examples-2)
 		- [Measurement of Execution Time](#measurement-of-execution-time)
 
 # Road Mapper Module
@@ -170,7 +170,7 @@ Open another terminal tab on the carmen_lcad/bin directory and run the proccontr
 ```bash
  $ ./proccontrol process-ida_a_guarapari_playback_road_mapper_sampling.ini
 ```
-### Example of Generated Samples
+### Examples
 
 | Global Position    | Samples                                       |
 | :----------------: | :-------------------------------------------: |
@@ -181,6 +181,8 @@ Open another terminal tab on the carmen_lcad/bin directory and run the proccontr
 ## Training the Neural Network
 
 We are going to use the ENet Neural Network.
+
+ENet as in SegNet learns to predict pixel-wise class labels from supervised learning. Therefore it requires a dataset of input images with corresponding ground truth labels. Input images must be three channel imagens. Label images must be single channel, with each pixel labelled with its class.
 
 For more information on ENet please refer to the published paper in arXiv: [ENet: A Deep Neural Network Architecture for Real-Time Semantic Segmentation](https://arxiv.org/abs/1606.02147).
 
@@ -400,8 +402,6 @@ Now, please do the following:
 | :---------: | :----------------------------------: | :--------------------------------: |
 | i7726369_-353704_-0.50_0.00.png | ![Remission Map](data/i7726369_-353704_-0.50_0.00_original_gt_trans.png) | ![Road Map Classes](data/i7726369_-353704_-0.50_0.00_original_enet_trans.png) |
 
-
-
 #### Measurement of Execution Time
 
 To measure ENet execution time layer-by-layer run:
@@ -410,5 +410,4 @@ To measure ENet execution time layer-by-layer run:
 ```
 
 **For more information look in docs/**
-
 
