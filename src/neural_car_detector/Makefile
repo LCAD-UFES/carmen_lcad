@@ -20,12 +20,13 @@ LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lpara
 		-llocalize_ackerman_interface \
 		-lvelodyne_camera_calibration \
 		-lcamera_boxes_to_world \
-		-lDetectNet
+		-lDetectNet \
+		-lDbscan
 
 LFLAGS += -L $(NVCAFFE_HOME)/build/lib -lcaffe-nv \
 		-L /usr/local/cuda/lib64 -lglog -lprotobuf -L/usr/local/lib
 
-SOURCES = DetectNet.cpp dbscan.cpp neural_car_detector_main.cpp
+SOURCES = DetectNet.cpp dbscan.cpp neural_car_detector.cpp neural_car_detector_main.cpp
 
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES = 
@@ -38,7 +39,7 @@ libDetectNet.a: DetectNet.o
 
 libDbscan.a: dbscan.o
 
-neural_car_detector: neural_car_detector_main.o
+neural_car_detector: neural_car_detector_main.o neural_car_detector.o
 
 velodyne_camera_calibration:
 	$(MAKE) -C $(CARMEN_HOME)/src/velodyne_camera_calibration

@@ -26,5 +26,10 @@ velodyne_points_in_boxes(std::vector<bounding_box> bouding_boxes_list,
 carmen_vector_3D_t
 box_position(std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> laser_points_in_camera_box);
 
+carmen_vector_3D_t
+compute_centroid(std::vector<carmen_vector_3D_t> points_inside_box);
+
+std::vector<std::vector<carmen_vector_3D_t> >
+get_cluster_list(std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > laser_points_in_camera_box_list);
 
 #endif /* SRC_CAMERA_BOXES_TO_WORLD_CAMERA_BOXES_TO_WORLD_H_ */

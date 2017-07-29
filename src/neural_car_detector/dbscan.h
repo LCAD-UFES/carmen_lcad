@@ -7,9 +7,8 @@ namespace dbscan
 {
 
 struct Point {
-	int x;
-
-	int y;
+	double x;
+	double y;
 };
 
 typedef std::vector<Point> Cluster;
