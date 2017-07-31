@@ -23,4 +23,13 @@ get_biggest_cluster(dbscan::Clusters clusters);
 std::vector<carmen_vector_3D_t>
 get_carmen_points(dbscan::Cluster cluster);
 
+carmen_vector_3D_t
+rotate_point(carmen_vector_3D_t point, double theta);
+
+carmen_vector_3D_t
+translate_point(carmen_vector_3D_t point, carmen_vector_3D_t offset);
+
+void
+filter_points_in_clusters(std::vector<std::vector<carmen_vector_3D_t> > *cluster_list);
+
 #endif /* SRC_NEURAL_CAR_DETECTOR_NEURAL_CAR_DETECTOR_HPP_ */
