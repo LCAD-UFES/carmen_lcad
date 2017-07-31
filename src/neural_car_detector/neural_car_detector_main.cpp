@@ -22,8 +22,9 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "DetectNet.hpp"
+#include "neural_car_detector.hpp"
 
-//#define SHOW_DETECTIONS
+#define SHOW_DETECTIONS
 
 // camera number and side
 int camera;
@@ -64,7 +65,8 @@ find_velodyne_most_sync_with_cam(double bumblebee_timestamp)
 }
 
 
-carmen_vector_3D_t translate_point(carmen_vector_3D_t point, carmen_vector_3D_t offset)
+carmen_vector_3D_t
+translate_point(carmen_vector_3D_t point, carmen_vector_3D_t offset)
 {
 	point.x += offset.x;
 	point.y += offset.y;
@@ -73,7 +75,8 @@ carmen_vector_3D_t translate_point(carmen_vector_3D_t point, carmen_vector_3D_t 
 }
 
 
-carmen_vector_3D_t rotate_point(carmen_vector_3D_t point, double theta)
+carmen_vector_3D_t
+rotate_point(carmen_vector_3D_t point, double theta)
 {
 	carmen_vector_3D_t p;
 	p.x = point.x * cos(theta) - point.y * sin(theta);
@@ -83,15 +86,28 @@ carmen_vector_3D_t rotate_point(carmen_vector_3D_t point, double theta)
 }
 
 
-void build_moving_objects_message(std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > points_in_cam)
+void
+filter_points_in_clusters(std::vector<std::vector<carmen_vector_3D_t> > &cluster_list)
 {
-	moving_objects_point_clouds_message.num_point_clouds = points_in_cam.size();
+	for (unsigned int i = 0; i < cluster_list.size(); i++)
+	{
+		dbscan::Cluster cluster = generate_cluster(cluster_list[i]);
+		dbscan::Clusters clusters = dbscan::DBSCAN(1.0, 5, cluster);
+		cluster = get_biggest_cluster(clusters);
+		cluster_list[i] = get_carmen_points(cluster);
+	}
+}
+
+void
+build_moving_objects_message(std::vector<std::vector<carmen_vector_3D_t> > cluster_list)
+{
+	moving_objects_point_clouds_message.num_point_clouds = cluster_list.size();
 	moving_objects_point_clouds_message.point_clouds = (t_point_cloud_struct *) (malloc(moving_objects_point_clouds_message.num_point_clouds * sizeof(t_point_cloud_struct)));
 
 	for (int i = 0; i < moving_objects_point_clouds_message.num_point_clouds; i++)
 	{
 
-		carmen_vector_3D_t box_centroid = box_position(points_in_cam[i]);
+		carmen_vector_3D_t box_centroid = compute_centroid(cluster_list[i]);
 		carmen_vector_3D_t offset;
 
 		offset.x = -0.572;
@@ -129,15 +145,17 @@ void build_moving_objects_message(std::vector< std::vector<carmen_velodyne_point
 		moving_objects_point_clouds_message.point_clouds[i].num_associated = 0;
 
 		// fill the points
-		moving_objects_point_clouds_message.point_clouds[i].point_size = points_in_cam[i].size();
+		moving_objects_point_clouds_message.point_clouds[i].point_size = cluster_list[i].size();
 		moving_objects_point_clouds_message.point_clouds[i].points = (carmen_vector_3D_t *)
 				malloc(moving_objects_point_clouds_message.point_clouds[i].point_size * sizeof(carmen_vector_3D_t));
 		for (int j = 0; j < moving_objects_point_clouds_message.point_clouds[i].point_size; j++)
 		{
 			//TODO modificar isso
 			carmen_vector_3D_t p;
-			points_in_cam[i][j].velodyne_points_in_cam.laser_polar.horizontal_angle = -points_in_cam[i][j].velodyne_points_in_cam.laser_polar.horizontal_angle;
-			p = carmen_covert_sphere_to_cartesian_coord(points_in_cam[i][j].velodyne_points_in_cam.laser_polar);
+
+			p.x = cluster_list[i][j].x;
+			p.y = cluster_list[i][j].y;
+			p.z = cluster_list[i][j].z;
 
 			offset.x = -0.572;
 			offset.y = 0.0;
@@ -206,6 +224,10 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 	static cv::Mat *src_image = NULL;
 	static cv::Mat *rgb_image = NULL;
 
+	double start_time, end_time, delta_t, fps;
+
+	start_time = carmen_get_time();
+
 	if (src_image == NULL)
 	{
 		src_image = new cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3);
@@ -253,10 +275,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 	std::vector<bounding_box> bouding_boxes_list;
 
 	// detect the objects in image
-	//double time_before = carmen_get_time();
 	std::vector<float> result = detectNet->Predict(crop);
-	//double time_after = carmen_get_time();
-	//printf("%lf\n", time_after - time_before);
 
 	float correction_x = crop.cols / 1250.0;
 	float correction_y = crop.rows / 380.0;
@@ -284,14 +303,29 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 	std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > laser_points_in_camera_box_list = velodyne_points_in_boxes(bouding_boxes_list, &velodyne_sync_with_cam,
 			image_msg->width, image_msg->height);
 
-	build_moving_objects_message(laser_points_in_camera_box_list);
+	std::vector<std::vector<carmen_vector_3D_t> > cluster_list = get_cluster_list(laser_points_in_camera_box_list);
+	filter_points_in_clusters(cluster_list);
+
+	end_time = carmen_get_time();
+
+	build_moving_objects_message(cluster_list);
 	publish_moving_objects(image_msg->timestamp);
+
+	delta_t = end_time - start_time;
+	fps = 1.0/delta_t;
 
 #ifdef SHOW_DETECTIONS
 //	char ponto_x[15];
 //	char ponto_y[15];
 //	char ponto_z[15];
 	char confianca[7];
+	char frame_rate[25];
+
+	sprintf(frame_rate, "FPS = %.2f", fps);
+
+	cv::putText(*rgb_image, frame_rate,
+			cv::Point(10, 25),
+			cv::FONT_HERSHEY_PLAIN, 2, cvScalar(0,255,0), 2);
 
 	for (unsigned int i = 0; i < laser_points_in_camera_box_list.size(); i++)
 	{
