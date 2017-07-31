@@ -5,7 +5,7 @@ Output: The following inconsistencies are reported:
     - Not all the PNG filenames for specific coordinates (x,y) are present (i.e. all expected rotation angles and offsets). 
 '''
 
-import sys
+import sys, os, argparse
 
 # Global definitions
 distance_sample = 5.0    # meters
@@ -51,7 +51,9 @@ def check_rot_off(fl, listname, distance_offset, n_offset, n_rotation):
     fl_xy = []
     fl_expected = []
     for f in fl:
-        xy = f[1:-4].split('_') # (x, y, offset, rotation)
+        fname = f.split('/')[-1]
+        fpath = f[:-len(fname)]
+        xy = fname[1:-5].split('_') # (x, y, offset, rotation)
         x = xy[0]
         y = xy[1]
         if x != x_previous or y != y_previous:
@@ -70,7 +72,7 @@ def check_rot_off(fl, listname, distance_offset, n_offset, n_rotation):
                 offset = noff * distance_offset
                 for rot in range(n_rotation):
                     rotation = 360.0 * rot / n_rotation
-                    f_expected = 'i{}_{}_{:.2f}_{:.2f}.png\n'.format(x, y, offset, rotation)
+                    f_expected = fpath + 'i{}_{}_{:.2f}_{:.2f}.png\n'.format(x, y, offset, rotation)
                     fl_expected.append(f_expected)
             fl_expected.sort()
         fl_xy.append(f)
@@ -83,21 +85,26 @@ def check_rot_off(fl, listname, distance_offset, n_offset, n_rotation):
         cont1_tot += cont1
     return cont1_tot, cont2_tot
 
+def file(s):
+    if not os.path.isfile(s):
+        msg = 'file not found: %r' % s
+        raise argparse.ArgumentTypeError(msg)
+    return s
+
 if __name__ == "__main__":
-    USAGE = '[-v=<level>]'
-    for i in range(1, len(sys.argv)):
-        opt = sys.argv[i].split('=')
-        if opt[0] == '-h' or opt[0] == '--help':
-            print 'Usage:\npython', sys.argv[0], USAGE
-            exit(0)
-        elif opt[0] == '-v' or opt[0] == '--verbose':
-            VERBOSE = int(opt[1])
-            print 'Verbose option set to level', VERBOSE
-    
-    flname1 = "../../data/road_mapper/filelist_i_png.txt"
-    flname2 = "../../data/road_mapper/filelist2_i_png.txt"
-    flist1 = open(flname1)
-    flist2 = open(flname2)
+    parser = argparse.ArgumentParser(description='This program reads two text files, each one containing a list of PNG filenames created by '
+                                     'road_mapper_sampling, and report the following inconsistencies:\n'
+                                     '- PNG filename belongs to one list but not to the other,\n'
+                                     '- Not all PNG filenames related to pose (x,y) are present (i.e. rotation angles and offsets).',
+                                     formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument('-v', '--verbose', help='output verbosity level',  action='store_true')
+    parser.add_argument('-f', '--flname1', help='text file containing a list of PNG filenames (one per line)', nargs='?', default='list1.txt', type=file)
+    parser.add_argument('-f2', '--flname2', help='text file containing a list of PNG filenames (one per line)', nargs='?', default='list2.txt', type=file)
+    args = parser.parse_args()
+    VERBOSE = args.verbose
+    if VERBOSE: print 'Verbose option set'
+    flist1 = open(args.flname1)
+    flist2 = open(args.flname2)
     fl1 = flist1.readlines()
     fl2 = flist2.readlines()
     fl1.sort()
@@ -105,8 +112,8 @@ if __name__ == "__main__":
     flist1.close()
     flist2.close()
 
-    print 'List1:', flname1
-    print 'List2:', flname2
+    print 'List1:', args.flname1
+    print 'List2:', args.flname2
     print '\nComparing List1 (', len(fl1), 'files ) to List2 (', len(fl2), 'files ):'
     cont1, cont2 = compare_lists(fl1, 'List1', fl2, 'List2')
     print 'Totals: ----------------------------------'

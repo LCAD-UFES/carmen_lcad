@@ -12,6 +12,7 @@ Output:
 import sys
 import os
 import random
+import argparse
 
 def is_number(s):
     try:
@@ -19,6 +20,22 @@ def is_number(s):
         return True
     except ValueError:
         return False
+
+def int_gt_zero(s):
+    if not is_number(s) or float(s) != int(float(s)):
+        msg = 'invalid int value: %r' % s
+        raise argparse.ArgumentTypeError(msg)
+    value = int(float(s))
+    if value <= 0:
+        msg = 'value must be greater than zero: %r' % s
+        raise argparse.ArgumentTypeError(msg)
+    return value
+
+def path(s):
+    if not os.path.isdir(s):
+        msg = 'directory not found: %r' % s
+        raise argparse.ArgumentTypeError(msg)
+    return s
 
 def generate_filelist(ds, ds_dir, f_name, n_samples):
     filelist = open(f_name, 'w')
@@ -49,62 +66,39 @@ def generate_filelist(ds, ds_dir, f_name, n_samples):
     return ds, n_valid_poses, n_valid_files_total
 
 if __name__ == "__main__":
-    USAGE = '<dataset directory> <number of poses for training> <number of poses for test>'
-    if len(sys.argv) < 4:
-        print 'Usage:\npython', sys.argv[0], USAGE
-        if len(sys.argv) == 1 or (len(sys.argv) > 1 and sys.argv[1] != '-h' and sys.argv[1] != '--help'):
-            print 'Insufficient number of arguments.'
-        exit(0)
-    if len(sys.argv) > 4:
-        print 'Usage:\npython', sys.argv[0], USAGE
-        print 'Excessive number of arguments.'
-        exit(0)
-    dataset_dir = sys.argv[1]
-    dataset_name = dataset_dir.split('/')
-    if not os.path.isdir(dataset_dir):
-        print 'Usage:\npython', sys.argv[0], USAGE
-        print "Dataset directory not found."
-        exit(0)
-    n_train = 0
-    if is_number(sys.argv[2]):
-        n_train = int(sys.argv[2])
-    if n_train < 1:
-        print 'Usage:\npython', sys.argv[0], USAGE
-        print "Number of poses for training must be at least 1."
-        exit(0)
-    n_test = 0
-    if is_number(sys.argv[3]):
-        n_test = int(sys.argv[3])
-    if n_test < 1:
-        print 'Usage:\npython', sys.argv[0], USAGE
-        print "Number of poses for test must be at least 1."
-        exit(0)
-    
-    ds = os.listdir(dataset_dir)
+    parser = argparse.ArgumentParser(description='This program generates random training and test filelists for use with ENet neural network.',
+                                     formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument('dataset_dir', help='PNG sample files directory', type=path)
+    parser.add_argument('n_train', help='number of subdirectories for training', type=int_gt_zero)
+    parser.add_argument('n_test', help='number of subdirectories for testing', type=int_gt_zero)
+    args = parser.parse_args()
+    dataset_name = args.dataset_dir.split('/')[-1]
+    ds = os.listdir(args.dataset_dir)
     i = len(ds)
     while i > 0:
         i -= 1
-        pose_dir = dataset_dir + '/' + ds[i]
+        pose_dir = args.dataset_dir + '/' + ds[i]
         if not os.path.isdir(pose_dir):
             del ds[i]
+            continue
         pose = ds[i].split('_')
         if len(pose) != 2 or not is_number(pose[0]) or not is_number(pose[1]):
             del ds[i]
     
-    print 'Dataset', dataset_dir, 'contains', len(ds), 'pose directories.'
-    if len(ds) < (n_train + n_test):
+    print 'Dataset', args.dataset_dir, 'contains', len(ds), 'pose directories.'
+    if len(ds) < (args.n_train + args.n_test):
         print 'Insufficient number of poses for training and test. Please modify the arguments.'
         exit(0)
     random.shuffle(ds)
     
-    f_train_name = dataset_name[-1] + '_train.txt'
-    ds, n_poses, n_files = generate_filelist(ds, dataset_dir, f_train_name, n_train)
-    if n_poses < n_train:
+    f_train_name = dataset_name + '_train.txt'
+    ds, n_poses, n_files = generate_filelist(ds, args.dataset_dir, f_train_name, args.n_train)
+    if n_poses < args.n_train:
         print 'Insufficient poses for training.'
         exit(0)
     
-    f_test_name = dataset_name[-1] + '_test.txt'
-    ds, n_poses, n_files = generate_filelist(ds, dataset_dir, f_test_name, n_test)
-    if n_poses < n_test:
+    f_test_name = dataset_name + '_test.txt'
+    ds, n_poses, n_files = generate_filelist(ds, args.dataset_dir, f_test_name, args.n_test)
+    if n_poses < args.n_test:
         print 'Insufficient poses for test.'
         exit(0)
