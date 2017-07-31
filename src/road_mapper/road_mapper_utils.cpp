@@ -5,7 +5,7 @@ rotate(cv::Mat src, cv::Point pt, double angle)
 {
     cv::Mat dst;
     cv::Mat r = getRotationMatrix2D(pt, angle, 1.0);
-    cv::warpAffine(src, dst, r, cv::Size(src.cols, src.rows));
+    cv::warpAffine(src, dst, r, cv::Size(src.cols, src.rows), cv::INTER_NEAREST);
     return dst;
 }
 
