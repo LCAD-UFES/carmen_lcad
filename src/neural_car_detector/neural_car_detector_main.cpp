@@ -65,39 +65,6 @@ find_velodyne_most_sync_with_cam(double bumblebee_timestamp)
 }
 
 
-carmen_vector_3D_t
-translate_point(carmen_vector_3D_t point, carmen_vector_3D_t offset)
-{
-	point.x += offset.x;
-	point.y += offset.y;
-	point.z += offset.z;
-	return (point);
-}
-
-
-carmen_vector_3D_t
-rotate_point(carmen_vector_3D_t point, double theta)
-{
-	carmen_vector_3D_t p;
-	p.x = point.x * cos(theta) - point.y * sin(theta);
-	p.y = point.x * sin(theta) + point.y * cos(theta);
-	p.z = point.z;
-	return (p);
-}
-
-
-void
-filter_points_in_clusters(std::vector<std::vector<carmen_vector_3D_t> > &cluster_list)
-{
-	for (unsigned int i = 0; i < cluster_list.size(); i++)
-	{
-		dbscan::Cluster cluster = generate_cluster(cluster_list[i]);
-		dbscan::Clusters clusters = dbscan::DBSCAN(1.0, 5, cluster);
-		cluster = get_biggest_cluster(clusters);
-		cluster_list[i] = get_carmen_points(cluster);
-	}
-}
-
 void
 build_moving_objects_message(std::vector<std::vector<carmen_vector_3D_t> > cluster_list)
 {
@@ -175,12 +142,6 @@ build_moving_objects_message(std::vector<std::vector<carmen_vector_3D_t> > clust
 		}
 
 	}
-
-//	moving_objects_point_clouds_message.timestamp = timestamp;
-//	moving_objects_point_clouds_message.host = carmen_get_host();
-//
-//	carmen_moving_objects_point_clouds_publish_message(&moving_objects_point_clouds_message);
-//	free(moving_objects_point_clouds_message.point_clouds);
 
 }
 
@@ -304,7 +265,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 			image_msg->width, image_msg->height);
 
 	std::vector<std::vector<carmen_vector_3D_t> > cluster_list = get_cluster_list(laser_points_in_camera_box_list);
-	filter_points_in_clusters(cluster_list);
+	filter_points_in_clusters(&cluster_list);
 
 	end_time = carmen_get_time();
 
