@@ -5,6 +5,7 @@
  *      Author: claudine
  */
 #include <carmen/carmen.h>
+#include <string.h>
 #include "virtual_scan.h"
 
 
@@ -46,23 +47,59 @@ virtual_scan_sort(carmen_mapper_virtual_scan_message *virtual_scan)
 }
 
 
-virtual_scan_segment_t *
+//virtual_scan_segment_t *
+//virtual_scan_segmentation(extended_virtual_scan_t *extended_virtual_scan)
+//{
+//	int segment_id = 0;
+//	int begin_segment = 0;
+//	virtual_scan_segment_t *virtual_scan_segments = NULL;
+//
+//	for (int i = 1; i < extended_virtual_scan->num_points; i++)
+//	{
+//		if ((DIST2D(extended_virtual_scan->point[i],  extended_virtual_scan->point[i - 1]) > 0.6) ||
+//			(i == extended_virtual_scan->num_points - 1))
+//		{
+//			virtual_scan_segments = (virtual_scan_segment_t *) realloc(virtual_scan_segments, sizeof(virtual_scan_segment_t) * (segment_id + 1));
+//			if (i < extended_virtual_scan->num_points - 1)
+//				virtual_scan_segments[segment_id].num_points = i - begin_segment;
+//			else
+//				virtual_scan_segments[segment_id].num_points = i - begin_segment + 1;
+//			virtual_scan_segments[segment_id].point = &(extended_virtual_scan->point[begin_segment]);
+//			begin_segment = i;
+//			segment_id++;
+//		}
+//	}
+//
+//	return (virtual_scan_segments);
+//}
+
+virtual_scan_segments_t *
 virtual_scan_segmentation(extended_virtual_scan_t *extended_virtual_scan)
 {
 	int segment_id = 0;
 	int begin_segment = 0;
-	virtual_scan_segment_t *virtual_scan_segments = NULL;
+	virtual_scan_segments_t *virtual_scan_segments;
 
+	virtual_scan_segments = (virtual_scan_segments_t *) malloc(sizeof(virtual_scan_segments_t));
+
+	virtual_scan_segments->num_segments = 0;
+	virtual_scan_segments->segment = NULL;
 	for (int i = 1; i < extended_virtual_scan->num_points; i++)
 	{
 		if ((DIST2D(extended_virtual_scan->point[i],  extended_virtual_scan->point[i - 1]) > 0.6) ||
 			(i == extended_virtual_scan->num_points - 1))
 		{
-			virtual_scan_segments = (virtual_scan_segment_t *) realloc(virtual_scan_segments, sizeof(virtual_scan_segment_t) * (segment_id + 1));
-			virtual_scan_segments[segment_id].num_points = i - begin_segment;
-			virtual_scan_segments[segment_id].point = &(extended_virtual_scan->point[begin_segment]);
+			virtual_scan_segments->segment = (virtual_scan_segment_t *) realloc(virtual_scan_segments->segment,
+					sizeof(virtual_scan_segment_t) * (segment_id + 1));
+			if (i < extended_virtual_scan->num_points - 1)
+				virtual_scan_segments->segment[segment_id].num_points = i - begin_segment;
+			else
+				virtual_scan_segments->segment[segment_id].num_points = i - begin_segment + 1;
+			memcpy(virtual_scan_segments->segment[segment_id].point, &(extended_virtual_scan->point[begin_segment]),
+					(size_t)(sizeof(virtual_scan_segment_t) * virtual_scan_segments->segment[segment_id].num_points));
 			begin_segment = i;
 			segment_id++;
+			virtual_scan_segments->num_segments++;
 		}
 	}
 

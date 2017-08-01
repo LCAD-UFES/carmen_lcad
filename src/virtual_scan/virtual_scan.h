@@ -25,6 +25,13 @@ typedef struct
 
 typedef struct
 {
+	int num_segments;
+	virtual_scan_segment_t *segment;
+} virtual_scan_segments_t;
+
+
+typedef struct
+{
 	int box_class;
 	double x;
 	double y;
