@@ -33,6 +33,7 @@ CARMEN_MAP_LABEL = "CARMENMAPFILE"  # maptools/map_io.h
 CARMEN_MAP_VERSION = "v020"         # maptools/map_io.h
 CARMEN_MAP_CREATOR_CHUNK = 32       # maptools/map_io.h
 CARMEN_MAP_GRIDMAP_CHUNK = 1        # maptools/map_io.h
+g_outputdir = ''
 
 #https://docs.python.org/2/library/struct.html
 class road:
@@ -479,7 +480,12 @@ def process_svg_file(svg_file):
         return
     svg_filename = svg_file.split('/')[-1]
     svg_pathname = svg_file[:-len(svg_filename)]
-    road_file = svg_pathname + 'r' + svg_filename[1:-4] + '.map'
+    road_pathname = g_outputdir
+    if not road_pathname:
+        road_pathname = svg_pathname
+    if road_pathname and road_pathname[-1] != '/':
+        road_pathname += '/'
+    road_file = road_pathname + 'r' + svg_filename[1:-4] + '.map'
     if os.path.isfile(road_file):
         print 'Skipped file', svg_file, ': MAP file', road_file, 'already exists'
         return
@@ -531,6 +537,12 @@ def process_svg_file(svg_file):
         cv2.destroyAllWindows()
     map_write(map, road_file, width, height)
 
+def path(s):
+    if not os.path.isdir(s):
+        msg = 'directory not found: %r' % s
+        raise argparse.ArgumentTypeError(msg)
+    return s
+
 def file(s):
     if not os.path.isfile(s):
         msg = 'file not found: %r' % s
@@ -543,6 +555,7 @@ if __name__ == "__main__":
     parser.add_argument('-n', '--noimage', help='image window suppression option', action='store_false', dest='image')
     parser.add_argument('-v', '--verbose', help='output verbosity level', type=int, choices=range(4), nargs='?', const=1, default=0)
     parser.add_argument('-a', '--animation', help='animation wait time in milliseconds', type=int, nargs='?', const=1, default=0)
+    parser.add_argument('-o', '--outputdir', help='road map file output directory', type=path)
     parser.add_argument('-f', '--filelist', help='text file containing a list of SVG filenames (one per line)', action='append', default=[], type=file)
     parser.add_argument('filename', help='list of SVG filenames (separated by spaces)', nargs='*', type=file)
     args = parser.parse_args()
@@ -552,6 +565,7 @@ if __name__ == "__main__":
     if VERBOSE > 0: print 'Verbose option set to level', VERBOSE
     ANIMATION = args.animation
     if ANIMATION > 0: print 'Animation option set to', ANIMATION, 'millisecond' + 's' * (ANIMATION > 1)
+    g_outputdir = args.outputdir
 
     fl = 'command line'
     if not args.filelist and not args.filename:
