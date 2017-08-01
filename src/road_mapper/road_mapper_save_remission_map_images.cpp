@@ -4,6 +4,7 @@
 wordexp_t g_out_path_p;
 char* g_out_path;
 cv::Mat *g_remission_map_img;
+cv::Mat *g_remission_map_img3;
 static carmen_map_p g_remission_map;
 static int g_remission_image_channels = 0;
 
@@ -14,15 +15,25 @@ save_remission_map_image(void)
 	static double y = 0;
 	if (x != g_remission_map->config.x_origin || y != g_remission_map->config.y_origin)
 	{
-		remission_map_to_image(g_remission_map, g_remission_map_img, g_remission_image_channels);
 		char name[256];
 		char path[512];
 		x = g_remission_map->config.x_origin;
 		y = g_remission_map->config.y_origin;
 		sprintf(name, "i%.0lf_%.0lf.png", x, y);
-		sprintf(path, "%s/%s", g_out_path, name);
-		printf("saving remission map image %s in %s\n", name, g_out_path);
-		cv::imwrite(path, *g_remission_map_img);
+		if (g_remission_image_channels == 1 || g_remission_image_channels == '*')
+		{
+			remission_map_to_image(g_remission_map, g_remission_map_img, 1);
+			sprintf(path, "%s/%c%s", g_out_path, 'h', &name[1]);
+			printf("saving remission map image %s\n", path);
+			cv::imwrite(path, *g_remission_map_img);
+		}
+		if (g_remission_image_channels == 3 || g_remission_image_channels == '*')
+		{
+			remission_map_to_image(g_remission_map, g_remission_map_img3, 3);
+			sprintf(path, "%s/%c%s", g_out_path, 'i', &name[1]);
+			printf("saving remission map image %s\n", path);
+			cv::imwrite(path, *g_remission_map_img3);
+		}
 	}
 }
 
@@ -31,10 +42,11 @@ read_parameters(int argc, char **argv)
 {
 	char *out_path = (char *)".";
 	char **w;
+	char *remission_image_channels = (char *)"*";
 	carmen_param_t param_list[] =
 	{
 			{(char*)"road_mapper",  (char*)"out_path_remission",			CARMEN_PARAM_STRING, 	&(out_path),					0, NULL},
-			{(char*)"road_mapper",  (char*)"remission_image_channels",		CARMEN_PARAM_INT, 		&(g_remission_image_channels),	0, NULL},
+			{(char*)"road_mapper",  (char*)"remission_image_channels",		CARMEN_PARAM_STRING, 	&(remission_image_channels),	0, NULL},
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
@@ -43,6 +55,13 @@ read_parameters(int argc, char **argv)
 	wordexp(out_path, &g_out_path_p, 0 );
 	w = g_out_path_p.we_wordv;
 	g_out_path = *w;
+
+	// image channels
+	g_remission_image_channels = '*';
+	if(strcmp(remission_image_channels, "1") == 0 || strcmp(remission_image_channels, "3") == 0)
+	{
+		g_remission_image_channels = atoi(remission_image_channels);
+	}
 }
 
 static void
@@ -61,15 +80,15 @@ localize_map_handler(carmen_map_server_localize_map_message *msg)
 											msg->config.x_size,
 											msg->config.resolution, 'm');
 
-		if (g_remission_image_channels == 1)
+		if (g_remission_image_channels == 1 || g_remission_image_channels == '*')
 		{
 			g_remission_map_img = new cv::Mat(g_remission_map->config.y_size,
 												g_remission_map->config.x_size,
 												CV_8UC1);
 		}
-		else
+		if (g_remission_image_channels == 3 || g_remission_image_channels == '*')
 		{
-			g_remission_map_img = new cv::Mat(g_remission_map->config.y_size,
+			g_remission_map_img3 = new cv::Mat(g_remission_map->config.y_size,
 												g_remission_map->config.x_size,
 												CV_8UC3,
 												cv::Scalar::all(0));
@@ -105,6 +124,7 @@ deinitialize_maps(void)
 {
 	free_map_pointer(g_remission_map);
 	g_remission_map_img->release();
+	g_remission_map_img3->release();
 	wordfree(&g_out_path_p);
 }
 
