@@ -13,3 +13,9 @@ Para adicionar annotations ao RNDF abra o arquivo KML com o Google Earth, clique
 - speed bumper: quebra-molas.
 
 OBS: NAO USE ASPAS!!
+
+Para gerar um rddf a partir de um kml exportado go Google maps, use o programa rddf_convert_from_gmaps_to_txt.
+
+>> ./rddf_convert_from_gmaps_to_txt <kml_gmaps> <rddf_txt>
+
+Mais informações, [clique aqui](https://drive.google.com/open?id=0BxIAWG0PyvMNN0Y2OHNBZzJBUEx4ZGNrLUs3Y1hiMFplMUFB).
