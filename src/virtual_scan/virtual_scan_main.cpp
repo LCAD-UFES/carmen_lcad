@@ -33,21 +33,22 @@ publish_virtual_scan(virtual_scan_segments_t *virtual_scan_segments)
 	virtual_laser_message.positions = (carmen_position_t *) malloc(virtual_laser_message.num_positions * sizeof(carmen_position_t));
 	virtual_laser_message.colors = (char *) malloc(virtual_laser_message.num_positions * sizeof(char));
 	int k = 0;
-//	printf("%d\n", virtual_scan_segments->num_segments);
+	printf("%d\n", virtual_scan_segments->num_segments);
 	for (int i = 0; i < virtual_scan_segments->num_segments; i++)
 	{
 		char color = colors[i % NUM_COLORS];
-//		printf("%d %d %d\n", i, color, virtual_scan_segments->segment[i].num_points);
+//		printf("%d %d\n", i, virtual_scan_segments->segment[i].num_points);
 		for (int j = 0; j < virtual_scan_segments->segment[i].num_points; j++)
 		{
 			virtual_laser_message.positions[k].x = virtual_scan_segments->segment[i].point[j].x;
 			virtual_laser_message.positions[k].y = virtual_scan_segments->segment[i].point[j].y;
-//			printf("%f %f %f\n",  virtual_scan_segments->segment[i].point[j].x,  virtual_scan_segments->segment[i].point[j].y,  virtual_scan_segments->segment[i].point[j].theta);
+			printf("%f %f %f\n",  virtual_scan_segments->segment[i].point[j].x,  virtual_scan_segments->segment[i].point[j].y,
+					virtual_scan_segments->segment[i].point[j].theta);
 			virtual_laser_message.colors[k] = color;
 			k++;
 		}
 	}
-//	printf("\n\n\n");
+	printf("\n\n\n");
 	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
 
 	free(virtual_laser_message.positions);

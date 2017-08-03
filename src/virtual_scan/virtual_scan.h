@@ -45,7 +45,7 @@ typedef struct
 {
 	int num_boxes;
 	box_model_t *box;
-} virtual_scan_box_model_t;
+} virtual_scan_box_models_t;
 
 
 virtual_scan_segments_t *

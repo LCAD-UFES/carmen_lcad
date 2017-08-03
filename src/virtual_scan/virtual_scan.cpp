@@ -79,9 +79,80 @@ virtual_scan_segmentation(extended_virtual_scan_t *extended_virtual_scan)
 }
 
 
-virtual_scan_box_model_t *
-fit_box_models(virtual_scan_segments_t *virtual_scan_segments __attribute__ ((unused)))
+static double
+dist2(carmen_point_t v, carmen_point_t w)
 {
+	return (carmen_square(v.x - w.x) + carmen_square(v.y - w.y));
+}
+
+
+carmen_point_t
+distance_from_point_to_line_segment_vw(int *point_in_trajectory_is, carmen_point_t v, carmen_point_t w, carmen_point_t p)
+{
+
+#define	POINT_WITHIN_SEGMENT		0
+#define	SEGMENT_TOO_SHORT			1
+#define	POINT_BEFORE_SEGMENT		2
+#define	POINT_AFTER_SEGMENT			3
+
+	// Return minimum distance between line segment vw and point p
+	// http://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
+	double l2, t;
+
+	l2 = dist2(v, w); // i.e. |w-v|^2 // NAO TROQUE POR carmen_ackerman_traj_distance2(&v, &w) pois nao sei se ee a mesma coisa.
+	if (l2 < 0.1)	  // v ~== w case // @@@ Alberto: Checar isso
+	{
+		*point_in_trajectory_is = SEGMENT_TOO_SHORT;
+		return (v);
+	}
+
+	// Consider the line extending the segment, parameterized as v + t (w - v).
+	// We find the projection of point p onto the line.
+	// It falls where t = [(p-v) . (w-v)] / |w-v|^2
+	t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+
+	if (t < 0.0) 	// p beyond the v end of the segment
+	{
+		*point_in_trajectory_is = POINT_BEFORE_SEGMENT;
+		return (v);
+	}
+	if (t > 1.0)	// p beyond the w end of the segment
+	{
+		*point_in_trajectory_is = POINT_AFTER_SEGMENT;
+		return (w);
+	}
+
+	// Projection falls on the segment
+	p = v; // Copy other elements, like theta, etc.
+	p.x = v.x + t * (w.x - v.x);
+	p.y = v.y + t * (w.y - v.y);
+	*point_in_trajectory_is = POINT_WITHIN_SEGMENT;
+
+	return (p);
+}
+
+
+virtual_scan_box_models_t *
+fit_box_models(virtual_scan_segments_t *virtual_scan_segments)
+{
+	for (int i = 0; i < virtual_scan_segments->num_segments; i++)
+	{
+		int num_points = virtual_scan_segments->segment[i].num_points;
+		carmen_point_t v = virtual_scan_segments->segment[i].point[0];
+		carmen_point_t w = virtual_scan_segments->segment[i].point[num_points - 1];
+		int segment_type;
+		for (int j = 0; j < virtual_scan_segments->segment[i].num_points; j++)
+		{
+			carmen_point_t point = virtual_scan_segments->segment[i].point[j];
+			int point_type;
+			carmen_point_t point_within_line_segment = distance_from_point_to_line_segment_vw(&point_type, v, w, point);
+		}
+		switch (segment_type)
+		{
+
+		}
+	}
+
 	return (NULL);
 }
 
@@ -91,7 +162,7 @@ detect_and_track_moving_objects(carmen_mapper_virtual_scan_message *virtual_scan
 {
 	extended_virtual_scan_t *extended_virtual_scan = virtual_scan_sort(virtual_scan);
 	virtual_scan_segments_t *virtual_scan_segments = virtual_scan_segmentation(extended_virtual_scan);
-//	virtual_scan_box_model_t *virtual_scan_box_models = fit_box_models(virtual_scan_segments);
+//	virtual_scan_box_models_t *virtual_scan_box_models = fit_box_models(virtual_scan_segments);
 //	neighborhood_graph_of_hypotheses = build_or_update_neighborhood_graph_of_hypotheses(virtual_scan_box_models);
 //	moving_objects = sample_moving_objects_tracks(neighborhood_graph_of_hypotheses);
 
