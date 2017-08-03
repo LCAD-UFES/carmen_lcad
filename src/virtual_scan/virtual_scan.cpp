@@ -55,12 +55,11 @@ virtual_scan_segmentation(extended_virtual_scan_t *extended_virtual_scan)
 	virtual_scan_segments_t *virtual_scan_segments;
 
 	virtual_scan_segments = (virtual_scan_segments_t *) malloc(sizeof(virtual_scan_segments_t));
-
 	virtual_scan_segments->num_segments = 0;
 	virtual_scan_segments->segment = NULL;
 	for (int i = 1; i < extended_virtual_scan->num_points; i++)
 	{
-		if ((DIST2D(extended_virtual_scan->point[i],  extended_virtual_scan->point[i - 1]) > 0.6) ||
+		if ((DIST2D(extended_virtual_scan->point[i],  extended_virtual_scan->point[i - 1]) > 1.5) ||
 			(i == extended_virtual_scan->num_points - 1))
 		{
 			virtual_scan_segments->segment = (virtual_scan_segment_t *) realloc(virtual_scan_segments->segment,
@@ -81,19 +80,20 @@ virtual_scan_segmentation(extended_virtual_scan_t *extended_virtual_scan)
 
 
 virtual_scan_box_model_t *
-fit_box_models(virtual_scan_segment_t *virtual_scan_segments __attribute__ ((unused)))
+fit_box_models(virtual_scan_segments_t *virtual_scan_segments __attribute__ ((unused)))
 {
 	return (NULL);
 }
 
 
-extended_virtual_scan_t *
+virtual_scan_segments_t *
 detect_and_track_moving_objects(carmen_mapper_virtual_scan_message *virtual_scan)
 {
 	extended_virtual_scan_t *extended_virtual_scan = virtual_scan_sort(virtual_scan);
-//	virtual_scan_segment_t *virtual_scan_segments = virtual_scan_segmentation(extended_virtual_scan);
+	virtual_scan_segments_t *virtual_scan_segments = virtual_scan_segmentation(extended_virtual_scan);
 //	virtual_scan_box_model_t *virtual_scan_box_models = fit_box_models(virtual_scan_segments);
 //	neighborhood_graph_of_hypotheses = build_or_update_neighborhood_graph_of_hypotheses(virtual_scan_box_models);
 //	moving_objects = sample_moving_objects_tracks(neighborhood_graph_of_hypotheses);
-	return (extended_virtual_scan);
+
+	return (virtual_scan_segments);
 }

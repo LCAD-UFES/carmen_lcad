@@ -48,7 +48,7 @@ typedef struct
 } virtual_scan_box_model_t;
 
 
-extended_virtual_scan_t *
+virtual_scan_segments_t *
 detect_and_track_moving_objects(carmen_mapper_virtual_scan_message *virtual_scan);
 
 
