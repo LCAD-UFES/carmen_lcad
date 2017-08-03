@@ -442,8 +442,8 @@ my_g(const gsl_vector *x, void *params)
 	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
 	{
 		w1 = 10.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 10.0;
-		if (td.dist < 7.0)
-			w2 *= exp(td.dist - 7.0);
+//		if (td.dist < 7.0)
+//			w2 *= exp(td.dist - 7.0);
 		result = (
 				w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
@@ -454,8 +454,8 @@ my_g(const gsl_vector *x, void *params)
 	else
 	{
 		w1 = 10.0; w2 = 55.0; w3 = 5.0; w4 = 1.5; w5 = 20.0; w6 = 0.005;
-		if (td.dist < 7.0)
-			w2 *= exp(td.dist - 7.0);
+//		if (td.dist < 7.0)
+//			w2 *= exp(td.dist - 7.0);
 		result = sqrt(
 				w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
@@ -569,8 +569,8 @@ my_h(const gsl_vector *x, void *params)
 	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
 	{
 		w1 = 10.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 10.0; w6 = 0.005;
-		if (td.dist < 7.0)
-			w2 *= exp(td.dist - 7.0);
+//		if (td.dist < 7.0)
+//			w2 *= exp(td.dist - 7.0);
 		result = (
 				//w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
@@ -584,8 +584,8 @@ my_h(const gsl_vector *x, void *params)
 		w1 = 10.0; w2 = 15.0; w3 = 30.0; w4 = 5.0; w5 = 10.0; w6 = 0.0005;
 //		double w7;
 //		w7 = 0.1;//(my_params->target_td->v_i > 0.2 ? 2.0 : 0.0);
-		if (td.dist < 7.0)
-			w2 *= exp(td.dist - 7.0);
+//		if (td.dist < 7.0)
+//			w2 *= exp(td.dist - 7.0);
 		result = sqrt(
 				w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
@@ -1362,9 +1362,9 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 //	}
 //	print_tcp(tcp_complete);
 //	print_td(target_td, target_v);
-	if (tcp_complete.tt < 0.0)
-	printf("t %.3lf, v0 %.1lf, a %.3lf, vg %.2lf, dg %.1lf, tt %.3lf\n",
-			carmen_get_time(), target_td.v_i, tcp_complete.a, target_v, tcp_complete.s, tcp_complete.tt);
+//	if (tcp_complete.tt < 0.0)
+//		printf("t %.3lf, v0 %.1lf, a %.3lf, vg %.2lf, dg %.1lf, tt %.3lf\n",
+//			carmen_get_time(), target_td.v_i, tcp_complete.a, target_v, tcp_complete.s, tcp_complete.tt);
 
 	return (tcp_complete);
 }
