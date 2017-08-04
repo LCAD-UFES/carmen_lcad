@@ -25,6 +25,13 @@ typedef struct
 
 typedef struct
 {
+	int num_segments;
+	virtual_scan_segment_t *segment;
+} virtual_scan_segments_t;
+
+
+typedef struct
+{
 	int box_class;
 	double x;
 	double y;
@@ -38,10 +45,10 @@ typedef struct
 {
 	int num_boxes;
 	box_model_t *box;
-} virtual_scan_box_model_t;
+} virtual_scan_box_models_t;
 
 
-extended_virtual_scan_t *
+virtual_scan_segments_t *
 detect_and_track_moving_objects(carmen_mapper_virtual_scan_message *virtual_scan);
 
 

@@ -4,9 +4,13 @@
 #include "virtual_scan.h"
 
 
+#define NUM_COLORS 4
+
 double d_max;
 
 carmen_mapper_virtual_laser_message virtual_laser_message;
+
+char colors[NUM_COLORS] = {CARMEN_RED, CARMEN_GREEN, CARMEN_LIGHT_BLUE, CARMEN_ORANGE};
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -20,23 +24,37 @@ carmen_mapper_virtual_laser_message virtual_laser_message;
 
 
 void
-publish_virtual_scan(extended_virtual_scan_t *extended_virtual_scan)
+publish_virtual_scan(virtual_scan_segments_t *virtual_scan_segments)
 {
 	virtual_laser_message.host = carmen_get_host();
-	virtual_laser_message.num_positions = extended_virtual_scan->num_points;
+	virtual_laser_message.num_positions = 0;
+	for (int i = 0; i < virtual_scan_segments->num_segments; i++)
+		virtual_laser_message.num_positions += virtual_scan_segments->segment[i].num_points;
 	virtual_laser_message.positions = (carmen_position_t *) malloc(virtual_laser_message.num_positions * sizeof(carmen_position_t));
 	virtual_laser_message.colors = (char *) malloc(virtual_laser_message.num_positions * sizeof(char));
-	for (int i = 0; i < virtual_laser_message.num_positions; i++)
+	int k = 0;
+	printf("%d\n", virtual_scan_segments->num_segments);
+	for (int i = 0; i < virtual_scan_segments->num_segments; i++)
 	{
-		virtual_laser_message.positions[i].x = extended_virtual_scan->point[i].x;
-		virtual_laser_message.positions[i].y = extended_virtual_scan->point[i].y;
-		virtual_laser_message.colors[i] = CARMEN_RED;
+		char color = colors[i % NUM_COLORS];
+//		printf("%d %d\n", i, virtual_scan_segments->segment[i].num_points);
+		for (int j = 0; j < virtual_scan_segments->segment[i].num_points; j++)
+		{
+			virtual_laser_message.positions[k].x = virtual_scan_segments->segment[i].point[j].x;
+			virtual_laser_message.positions[k].y = virtual_scan_segments->segment[i].point[j].y;
+			printf("%f %f %f\n",  virtual_scan_segments->segment[i].point[j].x,  virtual_scan_segments->segment[i].point[j].y,
+					virtual_scan_segments->segment[i].point[j].theta);
+			virtual_laser_message.colors[k] = color;
+			k++;
+		}
 	}
-
+	printf("\n\n\n");
 	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
 
-	free(virtual_laser_message.colors);
 	free(virtual_laser_message.positions);
+	free(virtual_laser_message.colors);
+	free(virtual_scan_segments->segment);
+	free(virtual_scan_segments);
 }
 
 
@@ -54,8 +72,8 @@ publish_virtual_scan(extended_virtual_scan_t *extended_virtual_scan)
 void
 carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *message)
 {
-	extended_virtual_scan_t *extended_virtual_scan = detect_and_track_moving_objects(message);
-	publish_virtual_scan(extended_virtual_scan);
+	virtual_scan_segments_t *virtual_scan_segments = detect_and_track_moving_objects(message);
+	publish_virtual_scan(virtual_scan_segments);
 }
 
 
