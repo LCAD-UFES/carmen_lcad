@@ -105,7 +105,7 @@ publish_model_predictive_planner_motion_commands()
 	carmen_ackerman_motion_command_t* commands =
 			(carmen_ackerman_motion_command_t*) (malloc(stehs_planner.state_list.size() * sizeof(carmen_ackerman_motion_command_t)));
 	int i = 0;
-	for (std::list<carmen_ackerman_path_point_t>::iterator it = stehs_planner.state_list.begin();	it != stehs_planner.state_list.end(); ++it)
+	for (std::list<carmen_ackerman_path_point_t>::iterator it = stehs_planner.state_list.begin(); it != stehs_planner.state_list.end(); ++it)
 	{
 		commands[i].v = it->v;
 		commands[i].phi = it->phi;

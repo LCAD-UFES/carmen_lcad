@@ -143,8 +143,7 @@ public:
     double UpdateStep(StateNodePtr state_node);
     bool Collision(StateNodePtr state_node);
 
-    void Expand(
-                StateNodePtr current,
+    void Expand(StateNodePtr current,
                 std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set,
                 std::vector<StateNodePtr> &closed_set,
                 double k);
@@ -153,6 +152,8 @@ public:
     		std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set);
 
     void SetSwap(std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set, std::vector<StateNodePtr> &closed_set);
+
+    void ReusePath(double elapsed_time);
 
     void GeneratePath();
 };

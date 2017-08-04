@@ -1,5 +1,7 @@
 #include "stehs_planner.hpp"
 
+using namespace std;
+
 // constructor
 StehsPlanner::StehsPlanner():
         start(),
@@ -17,9 +19,9 @@ StehsPlanner::StehsPlanner():
         state_list() {
 
     // creates a new opencv window
-    cv::namedWindow("CirclePath", cv::WINDOW_AUTOSIZE);
+//    cv::namedWindow("CirclePath", cv::WINDOW_AUTOSIZE);
 
-    std::cout<<"OpenCV Version used:"<<CV_MAJOR_VERSION<<"."<<CV_MINOR_VERSION<<std::endl;
+//    std::cout<<"OpenCV Version used:"<<CV_MAJOR_VERSION<<"."<<CV_MINOR_VERSION<<std::endl;
 
 }
 
@@ -310,8 +312,9 @@ StehsPlanner::ConnectCirclePathGaps()
         if(!it->circle.Overlap(previous_it->circle, MIN_OVERLAP_FACTOR))
         {
             temp_circle_path = SpaceExploration(&(*previous_it), &(*it));
+
             if(!temp_circle_path.empty())
-                circle_path.splice(previous_it,temp_circle_path);
+                circle_path.splice(previous_it,temp_circle_path);    // Splice effectively inserts temp_circle_path elements into the circle_path and removes them from temp_circle_path, altering the sizes of both containers
             else
             {
                 // TODO O que fazer?
@@ -395,6 +398,7 @@ StehsPlanner::RDDFSpaceExploration()
 
     circle_path.push_back(*goal_node);
 
+    // Check if all circles in the circle_path have a min overlap, case not call SpaceExploration function to connect them
     ConnectCirclePathGaps();
 
     UpdateCircleGoalDistance();
@@ -500,7 +504,8 @@ StehsPlanner::DistanceHeuristic(const State &state) // TODO Optimize this linear
 void
 StehsPlanner::BuildStateList(StateNodePtr node)
 {
-	state_list.clear();
+	// ReusePath
+	// state_list.clear();
 
 	carmen_ackerman_path_point_t path_point;
 	while(node != nullptr)
@@ -510,7 +515,7 @@ StehsPlanner::BuildStateList(StateNodePtr node)
 		path_point.theta  = node->state.theta;
 		path_point.v      = node->state.v    ;
 		path_point.phi    = node->state.phi  ;
-		path_point.time = node->step_size;
+		path_point.time   = node->step_size;
 		state_list.push_front(path_point);
 		node = node->parent;
 	}
@@ -518,7 +523,8 @@ StehsPlanner::BuildStateList(StateNodePtr node)
 
 // TODO we need to implement the circle radius clustering
 bool
-StehsPlanner::Exist(StateNodePtr current, std::vector<StateNodePtr> &closed_set, double k) {
+StehsPlanner::Exist(StateNodePtr current, std::vector<StateNodePtr> &closed_set, double k)
+{
 
     std::vector<StateNodePtr>::iterator it = closed_set.begin();
     std::vector<StateNodePtr>::iterator end = closed_set.end();
@@ -540,6 +546,7 @@ StehsPlanner::GetNextState(StateNodePtr current_state, double a, double w, doubl
     StateNodePtr next_state = new StateNode(*current_state);
     double target_phi = current_state->state.phi + w * step_size;
     double target_v = current_state->state.v + a * step_size;
+
     if(target_v > goal.v)
     	target_v = goal.v;
 
@@ -594,7 +601,7 @@ StehsPlanner::Collision(StateNodePtr state_node)
 	return (carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&state, trash, robot_config, distance_map, circle_radius) > 0.0); // Returns 0 if there is not a collision
 }
 
-cv::Mat imgem;
+//cv::Mat imgem;
 
 void
 StehsPlanner::Expand(
@@ -603,17 +610,17 @@ StehsPlanner::Expand(
         std::vector<StateNodePtr> &closed_set,
         double k)
 {
-    // the car acceleration
     double a[3] = {-1.0, 0.0, 1.0};
     double w[3] = {-0.1, 0.0, 0.1}; //TODO ler velocidade angular do volante do carmen.ini
 
-    double step_size = k * UpdateStep(current_state);
+    double step_size;
+    step_size = k * UpdateStep(current_state);
 
     // TODO tratar isso na UpdateStep
     if(step_size < 0.2)
     	step_size = 0.2;
 
-    printf ("Step %lf\n", step_size);
+    //printf ("Step %lf\n", step_size);
 
     // the acceleration loop
     for (int i = 0; i < 3; ++i)
@@ -776,8 +783,46 @@ StehsPlanner::HeuristicSearch()
 
 
 void
+StehsPlanner::ReusePath(double elapsed_time)
+{
+	std::list<carmen_ackerman_path_point_t>::iterator it = state_list.begin();
+	double time_sum = 0.0;
+
+	while (time_sum < elapsed_time)
+	{
+		time_sum += it->time;
+
+		if (time_sum <= elapsed_time)
+			state_list.pop_front();
+	}
+
+	if (time_sum > elapsed_time)
+		it->time = time_sum - elapsed_time;
+
+	it = state_list.end();
+
+	start.x = it->x;
+	start.y = it->y;
+	start.theta = it->theta;
+	start.v = it->v;
+	start.phi = it->phi;
+}
+
+
+void
 StehsPlanner::GeneratePath()
 {
+	static double time;
+	double elapsed_time = carmen_get_time() - time;
+
+	std::cout << state_list.size() << endl;
+
+	// *********************************************************************
+
+	//ReusePath(elapsed_time);
+
+	// *********************************************************************
+
 	//printf("Inicio space exploration\n");
 	RDDFSpaceExploration();
 	//printf("Fim space exploration\n");
@@ -791,12 +836,13 @@ StehsPlanner::GeneratePath()
 		printf("Não foi possível encontrar um caminho válido.\n");
 	}
 
+	time = carmen_get_time();
 	//ShowCirclePath();
 }
 
 
-unsigned char* StehsPlanner::GetCurrentMap() {
-
+unsigned char* StehsPlanner::GetCurrentMap()
+{
     unsigned int width = distance_map->config.x_size;
     unsigned int height = distance_map->config.y_size;
 
