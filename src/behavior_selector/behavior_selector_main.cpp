@@ -207,37 +207,37 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_ackerman
 {
 	double v = 60.0 / 3.6;
 
-	if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
-			&& (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_0))
-		v = 0.0;
-	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_BUMP)
-			|| (annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK))
+	if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
+		(annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK))
 		v = 3.0;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)
 		v = 1.0;
-	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
-			&& (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_5))
+	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_0))
+		v = 0.0;
+	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_5))
 		v = 5.0 / 3.6;
-	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
-			&& (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_10))
+	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_10))
 		v = 10.0 / 3.6;
-	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
-			&& (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_15))
+	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_15))
 		v = 15.0 / 3.6;
-	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
-			&& (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_20))
+	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_20))
 		v = 20.0 / 3.6;
-	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
-			&& (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_30))
+	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_30))
 		v = 30.0 / 3.6;
-	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
-			&& (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_40))
+	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_40))
 		v = 40.0 / 3.6;
-	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT)
-			&& (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_60))
+	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_60))
 		v = 60.0 / 3.6;
-	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP)
-			&& red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp))
+	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) &&
+			 red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp))
 		v = 0.07;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP)
 		v = 0.08;
@@ -709,8 +709,8 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	if (initial_time == 0.0)
 	{
 		returned_pose = previous_pose = rddf->poses[0];
-		returned_pose.x = previous_pose.x + disp * cos(previous_pose.theta - M_PI / 2.0);
-		returned_pose.y = previous_pose.y + disp * sin(previous_pose.theta - M_PI / 2.0);
+		returned_pose.x = previous_pose.x + disp * cos(previous_pose.theta + M_PI / 2.0);
+		returned_pose.y = previous_pose.y + disp * sin(previous_pose.theta + M_PI / 2.0);
 
 		previous_timestamp = timestamp;
 		initial_time = timestamp;
@@ -749,8 +749,8 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	}
 
 	returned_pose = previous_pose = next_pose;
-	returned_pose.x = previous_pose.x + disp * cos(previous_pose.theta - M_PI / 2.0);
-	returned_pose.y = previous_pose.y + disp * sin(previous_pose.theta - M_PI / 2.0);
+	returned_pose.x = previous_pose.x + disp * cos(previous_pose.theta + M_PI / 2.0);
+	returned_pose.y = previous_pose.y + disp * sin(previous_pose.theta + M_PI / 2.0);
 	previous_timestamp = timestamp;
 
 	return (&returned_pose);
@@ -1041,6 +1041,25 @@ distance_to_red_traffic_light(carmen_ackerman_traj_point_t current_robot_pose_v_
 }
 
 
+double
+distance_to_traffic_light_stop(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
+				&current_robot_pose_v_and_phi, false);
+
+	if (nearest_velocity_related_annotation == NULL)
+		return (1000.0);
+
+	double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi) -
+			(get_robot_config()->distance_between_front_and_rear_axles + get_robot_config()->distance_between_front_car_and_front_wheels);
+
+	if (nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP)
+		return (distance_to_annotation);
+	else
+		return (1000.0);
+}
+
+
 void
 clear_state_output(carmen_behavior_selector_state_message *decision_making_state_msg)
 {
@@ -1218,7 +1237,7 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 			}
 			break;
 		case Stopped_At_Red_Traffic_light_S2:
-			if (autonomous && (current_robot_pose_v_and_phi.v > 0.5))
+			if (autonomous && (current_robot_pose_v_and_phi.v > 0.5) && (distance_to_traffic_light_stop(current_robot_pose_v_and_phi) > 2.0))
 				decision_making_state_msg->low_level_state = Free_Running;
 			break;
 		case Stopping_At_Stop_Sign:
@@ -1734,14 +1753,15 @@ main(int argc, char **argv)
 {
 	signal(SIGINT, signal_handler);
 	carmen_ipc_initialize(argc, argv);
-	define_messages();
-	read_parameters(argc, argv);
 
-	register_handlers();
+	read_parameters(argc, argv);
 
 	memset(&last_rddf_annotation_message, 0, sizeof(last_rddf_annotation_message));
 	memset(&road_profile_message, 0, sizeof(carmen_behavior_selector_road_profile_message));
 	memset(&behavior_selector_state_message, 0, sizeof(carmen_behavior_selector_state_message));
+
+	define_messages();
+	register_handlers();
 
 	carmen_ipc_dispatch();
 

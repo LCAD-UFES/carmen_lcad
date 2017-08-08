@@ -262,8 +262,8 @@ compute_path_points_nearest_to_lane(ObjectiveFunctionParams *param, vector<carme
 	for (unsigned int j = 0; j < path.size(); j++)
 	{
 		// TODO: Alberto @@@ tratar disso quando estivermos dando reh tambem
-		if (path.at(j).v < 0.0)
-			continue;
+//		if (path.at(j).v < 0.0)
+//			continue;
 
 		carmen_ackerman_path_point_t front_axle = move_to_front_axle(path.at(j));
 
@@ -442,8 +442,8 @@ my_g(const gsl_vector *x, void *params)
 	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
 	{
 		w1 = 10.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 10.0;
-//		if (td.dist < 7.0)
-//			w2 *= exp(td.dist - 7.0);
+		if (td.dist < 7.0)
+			w2 *= exp(td.dist - 7.0);
 		result = (
 				w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
@@ -454,8 +454,8 @@ my_g(const gsl_vector *x, void *params)
 	else
 	{
 		w1 = 10.0; w2 = 55.0; w3 = 5.0; w4 = 1.5; w5 = 20.0; w6 = 0.005;
-//		if (td.dist < 7.0)
-//			w2 *= exp(td.dist - 7.0);
+		if (td.dist < 7.0)
+			w2 *= exp(td.dist - 7.0);
 		result = sqrt(
 				w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
@@ -569,8 +569,8 @@ my_h(const gsl_vector *x, void *params)
 	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
 	{
 		w1 = 10.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 10.0; w6 = 0.005;
-//		if (td.dist < 7.0)
-//			w2 *= exp(td.dist - 7.0);
+		if (td.dist < 7.0)
+			w2 *= exp(td.dist - 7.0);
 		result = (
 				//w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
@@ -584,8 +584,8 @@ my_h(const gsl_vector *x, void *params)
 		w1 = 10.0; w2 = 15.0; w3 = 30.0; w4 = 5.0; w5 = 10.0; w6 = 0.0005;
 //		double w7;
 //		w7 = 0.1;//(my_params->target_td->v_i > 0.2 ? 2.0 : 0.0);
-//		if (td.dist < 7.0)
-//			w2 *= exp(td.dist - 7.0);
+		if (td.dist < 7.0)
+			w2 *= exp(td.dist - 7.0);
 		result = sqrt(
 				w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
 				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +

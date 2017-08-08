@@ -343,7 +343,8 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double
 
 				double distance_to_free_waypoint = DIST2D(rddf->poses[0], rddf->poses[adequate_rddf_index]);
 				if (moving_obstacle_trasition != 1.0)
-					clear_lane_ahead_in_distance_map(current_goal_rddf_index, ideal_rddf_pose_index, rddf);
+					clear_lane_ahead_in_distance_map(rddf_pose_index, ideal_rddf_pose_index, rddf);
+//					clear_lane_ahead_in_distance_map(current_goal_rddf_index, ideal_rddf_pose_index, rddf);
 
 				if (distance_to_free_waypoint >= (distance_car_pose_car_front / 2.0))
 					add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, adequate_rddf_index, rddf,
@@ -354,7 +355,7 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double
 			else
 			{
 				goal_type[goal_index] = MOVING_OBSTACLE_GOAL2;
-				clear_lane_ahead_in_distance_map(current_goal_rddf_index, ideal_rddf_pose_index, rddf);
+//				clear_lane_ahead_in_distance_map(current_goal_rddf_index, ideal_rddf_pose_index, rddf);
 				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, ideal_rddf_pose_index, rddf,
 						-(distance_car_pose_car_front / 2.0) * reduction_factor);
 			}
