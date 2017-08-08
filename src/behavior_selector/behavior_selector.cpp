@@ -143,6 +143,7 @@ try_avoiding_obstacle(int rddf_pose_index, double circle_radius, carmen_rddf_roa
 			displaced_rddf_pose.y = displaced_rddf_pose.y + displacement * sin(displaced_rddf_pose.theta + M_PI / 2.0);
 			if (!trajectory_pose_hit_obstacle(displaced_rddf_pose, circle_radius, current_map, &robot_config))
 			{
+				rddf->poses[rddf_pose_index] = displaced_rddf_pose;
 				rddf_pose_hit_obstacle = 0;
 				break;
 			}
@@ -157,6 +158,7 @@ try_avoiding_obstacle(int rddf_pose_index, double circle_radius, carmen_rddf_roa
 				displaced_rddf_pose.y = displaced_rddf_pose.y + displacement * sin(displaced_rddf_pose.theta - M_PI / 2.0);
 				if (!trajectory_pose_hit_obstacle(displaced_rddf_pose, circle_radius, current_map, &robot_config))
 				{
+					rddf->poses[rddf_pose_index] = displaced_rddf_pose;
 					rddf_pose_hit_obstacle = 0;
 					break;
 				}
