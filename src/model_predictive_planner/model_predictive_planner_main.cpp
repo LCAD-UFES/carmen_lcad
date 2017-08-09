@@ -527,7 +527,7 @@ behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_
 //	GlobalState::robot_config.max_v = fmin(msg->goal_list->v, GlobalState::param_max_vel);
 	double desired_v = fmin(msg->goal_list->v, GlobalState::param_max_vel);
 	if (desired_v < GlobalState::robot_config.max_v)
-		GlobalState::robot_config.max_v = desired_v;
+		GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.2;
 	else
 		GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.1;
 //	printf("v %lf\n", GlobalState::robot_config.max_v);
