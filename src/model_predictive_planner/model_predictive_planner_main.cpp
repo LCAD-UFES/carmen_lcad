@@ -524,7 +524,12 @@ behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_
 	goal_pose.y = msg->goal_list->y;
 	goal_pose.theta = carmen_normalize_theta(msg->goal_list->theta);
 
-	GlobalState::robot_config.max_v = fmin(msg->goal_list->v, GlobalState::param_max_vel);
+//	GlobalState::robot_config.max_v = fmin(msg->goal_list->v, GlobalState::param_max_vel);
+	double desired_v = fmin(msg->goal_list->v, GlobalState::param_max_vel);
+	if (desired_v < GlobalState::robot_config.max_v)
+		GlobalState::robot_config.max_v = desired_v;
+	else
+		GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.1;
 //	printf("v %lf\n", GlobalState::robot_config.max_v);
 
 	GlobalState::set_goal_pose(goal_pose);
