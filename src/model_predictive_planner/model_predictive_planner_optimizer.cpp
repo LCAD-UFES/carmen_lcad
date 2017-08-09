@@ -262,8 +262,8 @@ compute_path_points_nearest_to_lane(ObjectiveFunctionParams *param, vector<carme
 	for (unsigned int j = 0; j < path.size(); j++)
 	{
 		// TODO: Alberto @@@ tratar disso quando estivermos dando reh tambem
-//		if (path.at(j).v < 0.0)
-//			continue;
+		if (path.at(j).v < 0.0)
+			continue;
 
 		carmen_ackerman_path_point_t front_axle = move_to_front_axle(path.at(j));
 
