@@ -652,12 +652,12 @@ compute_path_via_simulation(carmen_ackerman_traj_point_t &robot_state, Command &
 		command.phi = gsl_spline_eval(phi_spline, t, acc);
 		command.v += tcp.a * delta_t;
 		// TODO: @@@ Alberto: Verificar efeitos colaterais do codigo abaixo e a adicao do teste (command.v > 0.0) no if abaixo, fora do for
-		if (command.v < 0.0)
-			break;
+//		if (command.v < 0.0)
+//			break;
 
 		robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, delta_t, &distance_traveled, delta_t, GlobalState::robot_config);
 		if ((i % reduction_factor) == 0)
-		{
+		{	// Cada ponto na trajetoria marca uma posicao do robo e o delta_t para chegar aa proxima
 			path.push_back(convert_to_carmen_ackerman_path_point_t(last_robot_state, t + delta_t - last_t));
 			last_robot_state = robot_state;
 			last_t = t + delta_t;
@@ -665,17 +665,17 @@ compute_path_via_simulation(carmen_ackerman_traj_point_t &robot_state, Command &
 		i++;
 	}
 
-	if ((tcp.tt - t) > 0.0)
+	if (((tcp.tt - t) > 0.0)) // && (command.v > 0.0))
 	{
 		delta_t = tcp.tt - t;
 		command.phi = gsl_spline_eval(phi_spline, tcp.tt, acc);
 		command.v += tcp.a * delta_t;
 
-		if (command.v > 0.0)
-		{
-			robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, delta_t, &distance_traveled, delta_t, GlobalState::robot_config);
-			path.push_back(convert_to_carmen_ackerman_path_point_t(last_robot_state, tcp.tt - last_t));
-		}
+		robot_state = carmen_libcarmodel_recalc_pos_ackerman(robot_state, command.v, command.phi, delta_t, &distance_traveled, delta_t, GlobalState::robot_config);
+		// Cada ponto na trajetoria marca uma posicao do robo e o delta_t para chegar aa proxima
+		path.push_back(convert_to_carmen_ackerman_path_point_t(last_robot_state, tcp.tt - last_t));
+		// A ultima posicao nao tem proxima, logo, delta_t = 0.0
+		path.push_back(convert_to_carmen_ackerman_path_point_t(robot_state, 0.0));
 	}
 
 	return (distance_traveled);
@@ -702,12 +702,15 @@ print_phi_profile(gsl_spline *phi_spline, gsl_interp_accel *acc, double total_t,
 	system("pkill gnuplot");
 }
 
+
 void
 print_phi_profile_temp(gsl_spline *phi_spline, gsl_interp_accel *acc, double total_t, bool display_phi_profile)
 {
 	static int iteracao = 1;
+
 	if (!display_phi_profile)
 		return;
+
 	char phi_path[20];
 	sprintf(phi_path, "phi/%d.txt", iteracao);
 	FILE *path_file = fopen("gnu_tests/phi_plot.txt" , "w");
@@ -716,6 +719,26 @@ print_phi_profile_temp(gsl_spline *phi_spline, gsl_interp_accel *acc, double tot
 		fprintf(path_file, "%f %f\n", t, gsl_spline_eval(phi_spline, t, acc));
 	fclose(path_file);
 	iteracao++;
+}
+
+
+double
+get_max_distance_in_path(vector<carmen_ackerman_path_point_t> path, carmen_ackerman_path_point_t &furthest_point)
+{
+	double max_dist = 0.0;
+
+	furthest_point = path[0];
+	for (unsigned int i = 0; i < path.size(); i++)
+	{
+		double distance = sqrt(path[i].x * path[i].x + path[i].y * path[i].y);
+		if (distance > max_dist)
+		{
+			max_dist = distance;
+			furthest_point = path[i];
+		}
+	}
+
+	return (max_dist);
 }
 
 
@@ -785,9 +808,10 @@ simulate_car_from_parameters(TrajectoryLookupTable::TrajectoryDimensions &td,
 
 	gsl_spline_free(phi_spline);
 	gsl_interp_accel_free(acc);
-	td.dist = sqrt(robot_state.x * robot_state.x + robot_state.y * robot_state.y);
-	td.theta = atan2(robot_state.y, robot_state.x);
-	td.d_yaw = robot_state.theta;
+	carmen_ackerman_path_point_t furthest_point;
+	td.dist = get_max_distance_in_path(path, furthest_point);
+	td.theta = atan2(furthest_point.y, furthest_point.x);
+	td.d_yaw = furthest_point.theta;
 	td.phi_i = i_phi;
 	td.v_i = v0;
 	tcp.vf = command.v;

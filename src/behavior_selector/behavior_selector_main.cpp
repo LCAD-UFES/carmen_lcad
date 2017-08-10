@@ -1353,10 +1353,20 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	if (error != 0)
 		carmen_die("State machine error code %d\n", error);
 
+	static carmen_ackerman_traj_point_t last_valid_goal;
+	static carmen_ackerman_traj_point_t *last_valid_goal_p = NULL;
 	if (goal_list_size > 0)
 	{
 		set_goal_velocity(first_goal, &current_robot_pose_v_and_phi, goal_type[0], timestamp);
 		publish_goal_list(goal_list, goal_list_size, timestamp);
+
+		last_valid_goal = goal_list[0];
+		last_valid_goal_p = &last_valid_goal;
+	}
+	else if (last_valid_goal_p != NULL)
+	{	// Garante parada suave ao fim do rddf
+		last_valid_goal_p->v = 0.0;
+		publish_goal_list(last_valid_goal_p, 1, timestamp);
 	}
 
 	publish_updatet_lane_contents(timestamp);

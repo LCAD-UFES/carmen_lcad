@@ -250,7 +250,11 @@ compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<carmen_
 
 		total_distance += distance * distance;
 	}
-	return (total_distance / total_points);
+
+	if (total_points > 0.0)
+		return (total_distance / total_points);
+	else
+		return (0.0);
 }
 
 
@@ -1024,10 +1028,10 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 		tcp.valid = false;
 	}
 
-//	printf("plan_cost = %lf\n", params.plan_cost);
+//	printf("lane plan_cost = %lf\n", params.plan_cost);
 	if (params.plan_cost > 2.0)
 	{
-//		printf(">>>>>>>>>>>>>> plan_cost > 3.6\n");
+//		printf(">>>>>>>>>>>>>> lane plan_cost > 3.6\n");
 		tcp.valid = false;
 	}
 
@@ -1118,7 +1122,7 @@ optimized_lane_trajectory_control_parameters_new(TrajectoryLookupTable::Trajecto
 
 	if (tcp.tt < 0.2 || s->f > 20.0)
 	{
-	//	printf("Plano invalido>>>>>>>>>>>>>> tt: %lf s->f %lf\n",tcp.tt, s->f);
+//		printf("Plano invalido>>>>>>>>>>>>>> tt: %lf s->f %lf\n",tcp.tt, s->f);
 		tcp.valid = false;
 	}
 
@@ -1188,8 +1192,11 @@ get_optimized_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCon
 
 	TrajectoryLookupTable::TrajectoryControlParameters tcp = fill_in_tcp(s->x, &params);
 
-	if ((tcp.tt < 0.2) || (params.plan_cost > 0.07)) // too short plan or bad minimum (s->f should be close to zero) mudei de 0.05 para outro
+	if ((tcp.tt < 0.2) || (params.plan_cost > 0.1)) // too short plan or bad minimum (s->f should be close to zero) mudei de 0.05 para outro
+	{
+//		printf("################## plan_cost = %lf\n", params.plan_cost);
 		tcp.valid = false;
+	}
 
 	if (target_td.dist < 3.0 && tcp.valid == false) // para debugar
 		tcp.valid = false;
@@ -1346,13 +1353,13 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 	else
 		tcp_complete = optimized_lane_trajectory_control_parameters(tcp_complete, target_td, target_v, params);
 
-	if (tcp_complete.valid)
-	{
-		double dist = get_path_to_lane_distance(target_td, tcp_complete, &params);
+//	if (tcp_complete.valid)
+//	{
+//		double dist = get_path_to_lane_distance(target_td, tcp_complete, &params);
 //		printf("dist %lf %d\n", dist, (int) params.detailed_lane.size());
-		if (dist > GlobalState::max_square_distance_to_lane)
-			tcp_complete.valid = false;
-	}
+//		if (dist > GlobalState::max_square_distance_to_lane)
+//			tcp_complete.valid = false;
+//	}
 
 //	if (target_td.dist < 2.0)
 //	{
@@ -1361,6 +1368,7 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 //		tcp_complete.k3 = tcp_copy.k3;
 //	}
 //	print_tcp(tcp_complete);
+//	printf("\n");
 //	print_td(target_td, target_v);
 //	if (tcp_complete.tt < 0.0)
 //		printf("t %.3lf, v0 %.1lf, a %.3lf, vg %.2lf, dg %.1lf, tt %.3lf\n",
