@@ -48,6 +48,33 @@ carmen_libcarneuralmodel_init_steering_ann (fann_type *steering_ann_input)
 }*/
 
 
+// aoc is the arch tangent of curvature
+double
+carmen_libcarneuralmodel_compute_new_aoc_from_effort(double steering_effort, double atan_current_curvature, fann_type *steering_ann_input, struct fann *steering_ann)
+{
+	fann_type *steering_ann_output;
+
+	carmen_libcarneuralmodel_build_steering_ann_input(steering_ann_input, carmen_clamp(-100, steering_effort, 100), atan_current_curvature);
+
+	steering_ann_output = fann_run(steering_ann, steering_ann_input);
+
+	return (steering_ann_output[0]);
+}
+
+
+double
+carmen_libcarneuralmodel_compute_new_phi_from_effort_new(double steering_effort, double atan_current_curvature, fann_type *steering_ann_input, struct fann *steering_ann,
+														double v, double understeer_coeficient, double distance_between_front_and_rear_axles, double max_phi)
+{
+	double aoc = carmen_libcarneuralmodel_compute_new_aoc_from_effort(steering_effort, atan_current_curvature, steering_ann_input, steering_ann);
+
+	double phi = carmen_get_phi_from_curvature(tan(aoc), v, understeer_coeficient, distance_between_front_and_rear_axles);
+	phi = carmen_clamp(-max_phi, phi, max_phi);
+
+	return (phi);
+}
+
+
 double
 carmen_libcarneuralmodel_compute_new_phi_from_effort(double steering_effort, double atan_current_curvature, fann_type *steering_ann_input, struct fann *steering_ann,
 														double v, double understeer_coeficient, double distance_between_front_and_rear_axles,
