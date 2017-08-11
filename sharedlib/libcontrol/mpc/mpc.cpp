@@ -579,9 +579,9 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double current_aoc,
 
 /////////////  LISTA TESTES MPC	 /////////////////////////////////////////////
 ////  Testar novamente MPC
+////  Testar PID sem o Motion Planner
 ////  Verificar uso direto da curvatura dada pela torc no MPC e PID
 ////  Teste erro na previsão do modelo
-////  Testar PID sem o Motion Planner
 //////////////////////////////////////////////////////////////////////////////
 	double predicted_aoc = carmen_libcarneuralmodel_compute_new_aoc_from_effort(effort, current_aoc, params.steering_ann_input, params.steering_ann);
 	double Cxk = carmen_get_phi_from_curvature(tan(predicted_aoc), v, params.understeer_coeficient, params.distance_rear_axles);
