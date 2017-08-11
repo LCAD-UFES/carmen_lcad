@@ -457,7 +457,7 @@ my_g(const gsl_vector *x, void *params)
 	}
 	else
 	{
-		w1 = 10.0; w2 = 55.0; w3 = 5.0; w4 = 1.5; w5 = 20.0; w6 = 0.005;
+		w1 = 10.0; w2 = 55.0; w3 = 5.0; w4 = 3.0; w5 = 20.0; w6 = 0.0025;
 		if (td.dist < 7.0)
 			w2 *= exp(td.dist - 7.0);
 		result = sqrt(
@@ -1346,7 +1346,6 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 
 	verify_shift_option_for_k1(tcp_seed, target_td, tcp_complete);
 	// Atencao: params.suitable_acceleration deve ser preenchido na funcao acima para que nao seja alterado no inicio da otimizacao abaixo
-//	if (tcp_complete.valid)
 
 	if (optmize_time_and_acc)
 		tcp_complete = optimized_lane_trajectory_control_parameters_new(tcp_complete, target_td, target_v, params);
