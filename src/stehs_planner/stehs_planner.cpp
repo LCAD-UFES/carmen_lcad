@@ -2,6 +2,8 @@
 
 using namespace std;
 
+#define SHOWPATH
+
 // constructor
 StehsPlanner::StehsPlanner():
         start(),
@@ -18,10 +20,11 @@ StehsPlanner::StehsPlanner():
         circle_path(),
         state_list() {
 
-    // creates a new opencv window
-//    cv::namedWindow("CirclePath", cv::WINDOW_AUTOSIZE);
-
-//    std::cout<<"OpenCV Version used:"<<CV_MAJOR_VERSION<<"."<<CV_MINOR_VERSION<<std::endl;
+    	//creates a new opencv window
+		#ifdef SHOWPATH
+			cv::namedWindow("CirclePath", cv::WINDOW_AUTOSIZE);
+		#endif
+    	//std::cout<<"OpenCV Version used:"<<CV_MAJOR_VERSION<<"."<<CV_MINOR_VERSION<<std::endl;
 
 }
 
@@ -346,8 +349,10 @@ StehsPlanner::UpdateCircleGoalDistance()  // Iterate the entire circle path comp
 void
 StehsPlanner::RDDFSpaceExploration()
 {
-    // clear the old circle path
+	printf("Ent\n");
+	//printf("%d\n", circle_path.);
     circle_path.clear();
+    printf("Ent\n");
 
     //TODO verificar se os dados para os calculos estao disponiveis, se nao, nao fazer nada
     // create the start circle node
@@ -401,17 +406,17 @@ StehsPlanner::RDDFSpaceExploration()
     // Check if all circles in the circle_path have a min overlap, case not call SpaceExploration function to connect them
     ConnectCirclePathGaps();
 
+    printf("Entrou\n");
+
     UpdateCircleGoalDistance();
 
-
-/*
-    std::list<CircleNode>::iterator it;
+    /*std::list<CircleNode>::iterator it;
     for(it = circle_path.begin(); it != circle_path.end(); ++it)
     {
         printf("x: %f y: %f r: %f\n",it->circle.x, it->circle.y, it->circle.radius);
-    }
-*/
+    }*/
 
+    printf("Entrou\n");
 
 }
 
@@ -505,7 +510,7 @@ void
 StehsPlanner::BuildStateList(StateNodePtr node)
 {
 	// ReusePath
-	// state_list.clear();
+	// state_list.clear();  // TODO Apagar esta linha da funcao GeneratePath e descomentar aqui
 
 	carmen_ackerman_path_point_t path_point;
 	while(node != nullptr)
@@ -601,7 +606,11 @@ StehsPlanner::Collision(StateNodePtr state_node)
 	return (carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&state, trash, robot_config, distance_map, circle_radius) > 0.0); // Returns 0 if there is not a collision
 }
 
-//cv::Mat imgem;
+
+#ifdef SHOWPATH
+	cv::Mat imgem;
+#endif
+
 
 void
 StehsPlanner::Expand(
@@ -638,8 +647,9 @@ StehsPlanner::Expand(
             if (!Exist(next_state, closed_set, 1.0 /*k*/) && !Collision(next_state))
             {
                 open_set.push(next_state);
-
-                //ShowState(next_state, imgem);
+				#ifdef SHOWPATH
+                	ShowState(next_state, imgem);
+				#endif
             }
             else
             {
@@ -710,7 +720,9 @@ StehsPlanner::HeuristicSearch()
     double k = 1.0;
     int cont = 0;
 
-	//imgem = ShowCirclePath(closed_set);
+    #ifdef SHOWPATH
+		imgem = ShowCirclePath(closed_set);
+	#endif
 
     while (!open_set.empty())
     {
@@ -768,7 +780,9 @@ StehsPlanner::HeuristicSearch()
 
     }
 
-//    ShowCirclePath(closed_set);
+    #ifdef SHOWPATH
+    	ShowCirclePath(closed_set);
+	#endif
 
     while(!closed_set.empty())
     {
@@ -785,6 +799,9 @@ StehsPlanner::HeuristicSearch()
 void
 StehsPlanner::ReusePath(double elapsed_time)
 {
+	if (state_list.empty())
+		return;
+
 	std::list<carmen_ackerman_path_point_t>::iterator it = state_list.begin();
 	double time_sum = 0.0;
 
@@ -793,9 +810,14 @@ StehsPlanner::ReusePath(double elapsed_time)
 		time_sum += it->time;
 
 		if (time_sum <= elapsed_time)
+		{
+			printf("p\n");
 			state_list.pop_front();
+			printf("u\n");
+		}
 	}
 
+	printf("saiui\n");
 	if (time_sum > elapsed_time)
 		it->time = time_sum - elapsed_time;
 
@@ -806,20 +828,22 @@ StehsPlanner::ReusePath(double elapsed_time)
 	start.theta = it->theta;
 	start.v = it->v;
 	start.phi = it->phi;
+
+	printf("saiu\n");
 }
 
 
 void
 StehsPlanner::GeneratePath()
 {
-	static double time;
-	double elapsed_time = carmen_get_time() - time;
-
 	std::cout << state_list.size() << endl;
 
 	// *********************************************************************
+	//state_list.clear();
 
-	//ReusePath(elapsed_time);
+	static double time;
+	double elapsed_time = carmen_get_time() - time;
+	ReusePath(elapsed_time);
 
 	// *********************************************************************
 
