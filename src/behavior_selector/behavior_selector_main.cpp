@@ -207,7 +207,7 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_ackerman
 
 	if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
 		(annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK))
-		v = 3.0;
+		v = 2.5;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)
 		v = 1.0;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
@@ -353,7 +353,7 @@ get_velocity_at_goal(double v0, double va, double dg, double da)
 //	double a = -get_robot_config()->maximum_acceleration_forward * 2.5;
 	double a = (va * va - v0 * v0) / (2.0 * da);
 	// TODO: @@@ Alberto: nao deveria ser 2.0 ao inves de 1.0 abaixo? Com 2.0 freia esponencialmente nos quebra molas...
-	double sqrt_val = 0.8 * a * dg + v0 * v0;
+	double sqrt_val = 1.5 * a * dg + v0 * v0;
 	double vg = va;
 	if (sqrt_val > 0.0)
 		vg = sqrt(sqrt_val);
