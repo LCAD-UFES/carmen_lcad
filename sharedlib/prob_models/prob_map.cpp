@@ -1248,29 +1248,18 @@ get_log_odds_via_unexpeted_delta_range(sensor_parameters_t *sensor_params, senso
 	{
 		if (delta_ray > expected_delta_ray) // @@@ Alberto: nao trata buraco?
 			return (sensor_params->log_odds.log_odds_free);
-//		sigma = -sensor_params->unexpeted_delta_range_sigma;
-		sigma = sensor_params->unexpeted_delta_range_sigma / 3.0;
+		sigma = 0.05;
 	}
 	else
 	{
 		if (delta_ray > expected_delta_ray) // @@@ Alberto: nao trata buraco?
 			return (sensor_params->log_odds.log_odds_l0);
-//		two_times_sigma = (2.0 * sensor_params->unexpeted_delta_range_sigma * sensor_params->unexpeted_delta_range_sigma);
 		sigma = sensor_params->unexpeted_delta_range_sigma;
 	}
 
-	// valor da exponencial com evidencia zero (antigo)
-	//	p_0 = exp(-1.0 / two_times_sigma);
-	//	p_obstacle = (exp(-((obstacle_evidence - 1.0) * (obstacle_evidence - 1.0)) / two_times_sigma) - p_0) / (1.0 - p_0);
+	double p_0 = exp(-1.0 / sigma);
 
-	//a bom é entre [0.1 e 1.0]
-	//two_times_sigma = 2*a*a;
-	//plot [0:1] (1.0 / exp(-x / (2*a*a)) - 1.0) / (1.0 / exp(-1.0 / (2*a*a)) - 1.0)
-
-//	p_0 = (1.0 / exp(1.0 / sigma) - 1.0);
-//	p_obstacle = (1.0 / exp(obstacle_evidence / sigma) - 1.0) / p_0;
-
-	p_obstacle = exp(-((1.0 - obstacle_evidence) * (1.0 - obstacle_evidence)) / sigma);
+	p_obstacle = (exp(-((1.0 - obstacle_evidence) * (1.0 - obstacle_evidence)) / sigma) - p_0) / (1.0 - p_0);
 
 	if (p_obstacle >= 1.0)
 		log_odds = MAX_LOG_ODDS_POSSIBLE;

@@ -19,6 +19,7 @@
 #include <carmen/map_server_interface.h>
 #include <carmen/rddf_messages.h>
 #include <carmen/rddf_interface.h>
+#include <carmen/rddf_util.h>
 #include <carmen/ultrasonic_filter_interface.h>
 #include <carmen/parking_assistant_interface.h>
 #include <omp.h>
@@ -198,16 +199,23 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 
 	// Map annotations handling
 	double distance_to_nearest_annotation = 1000.0;
+	int index_of_nearest_annotation = 0;
 	for (int i = 0; i < last_rddf_annotation_message.num_annotations; i++)
 	{
 		double distance_to_annotation = DIST2D(last_rddf_annotation_message.annotations[i].annotation_point,
 				globalpos_history[last_globalpos].pose.position);
 		if (((last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
 			 (last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)) &&
-			 (distance_to_annotation < distance_to_nearest_annotation))
+			(distance_to_annotation < distance_to_nearest_annotation))
+		{
 			distance_to_nearest_annotation = distance_to_annotation;
+			index_of_nearest_annotation = i;
+		}
 	}
-	if (distance_to_nearest_annotation < 35.0)
+	if (((distance_to_nearest_annotation < 35.0) &&
+		 carmen_rddf_play_annotation_is_forward(globalpos_message->globalpos,
+				 last_rddf_annotation_message.annotations[index_of_nearest_annotation].annotation_point)) ||
+		(distance_to_nearest_annotation < 8.0))
 		robot_near_bump_or_barrier = 1;
 	else
 		robot_near_bump_or_barrier = 0;

@@ -3,6 +3,7 @@
 #include <carmen/rddf_messages.h>
 #include <carmen/path_planner_messages.h>
 #include <carmen/rddf_interface.h>
+#include <carmen/rddf_util.h>
 #include <carmen/grid_mapping.h>
 #include <carmen/udatmo.h>
 #include <carmen/udatmo_messages.h>
@@ -15,8 +16,6 @@
 #include <carmen/navigator_ackerman_interface.h>
 #include <carmen/collision_detection.h>
 
-#include "g2o/types/slam2d/se2.h"
-
 #include "behavior_selector.h"
 #include "behavior_selector_messages.h"
 
@@ -26,8 +25,6 @@
 
 // Comment or uncomment this definition to control whether moving obstacles are displayed.
 #define DISPLAY_MOVING_OBSTACLES
-
-using namespace g2o;
 
 static int necessary_maps_available = 0;
 static bool obstacle_avoider_active_recently = false;
@@ -59,6 +56,7 @@ int use_truepos = 0;
 extern carmen_mapper_virtual_laser_message virtual_laser_message;
 
 static carmen_rddf_road_profile_message *last_rddf_message = NULL;
+static carmen_rddf_road_profile_message *last_rddf_message_copy = NULL;
 
 bool autonomous = false;
 bool wait_start_moving = false;
@@ -95,18 +93,19 @@ compute_max_rddf_num_poses_ahead(carmen_ackerman_traj_point_t current_pose)
 }
 
 
-static void
-copy_rddf_message(carmen_rddf_road_profile_message *rddf_msg)
+static carmen_rddf_road_profile_message *
+copy_rddf_message_considering_velocity(carmen_rddf_road_profile_message *last_rddf_message, carmen_rddf_road_profile_message *rddf_msg)
 {
 	//Now the rddf is number of posses variable with the velocity
 	if (!last_rddf_message)
 	{
 		last_rddf_message = (carmen_rddf_road_profile_message *) malloc(sizeof(carmen_rddf_road_profile_message));
 		last_rddf_message->number_of_poses = 0;
-		last_rddf_message->poses = NULL;
-		last_rddf_message->annotations = NULL;
-		last_rddf_message->poses_back = NULL;
 		last_rddf_message->number_of_poses_back = 0;
+		last_rddf_message->poses = NULL;
+		last_rddf_message->poses_back = NULL;
+		last_rddf_message->annotations = NULL;
+		last_rddf_message->annotations_codes = NULL;
 	}
 
 	if ((rddf_msg->number_of_poses < param_rddf_num_poses_ahead_min) && (rddf_msg->number_of_poses > 0))
@@ -114,61 +113,56 @@ copy_rddf_message(carmen_rddf_road_profile_message *rddf_msg)
 	else
 		carmen_rddf_num_poses_ahead = compute_max_rddf_num_poses_ahead(get_robot_pose());
 
-	if (last_rddf_message->number_of_poses != carmen_rddf_num_poses_ahead)
-	{
-		last_rddf_message->number_of_poses = carmen_rddf_num_poses_ahead;
-
-		free(last_rddf_message->poses);
-		free(last_rddf_message->annotations);
-		free(last_rddf_message->poses_back);
-
-		last_rddf_message->poses = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * last_rddf_message->number_of_poses);
-		last_rddf_message->annotations = (int *) malloc(sizeof(int) * last_rddf_message->number_of_poses);
-
-		if (rddf_msg->number_of_poses_back > 0)
-		{
-			last_rddf_message->number_of_poses_back = carmen_rddf_num_poses_ahead;
-			last_rddf_message->poses_back = (carmen_ackerman_traj_point_t*) malloc(sizeof(carmen_ackerman_traj_point_t) * last_rddf_message->number_of_poses_back);
-		}
-	}
+	if (rddf_msg->number_of_poses_back > carmen_rddf_num_poses_ahead)
+		last_rddf_message->number_of_poses_back = carmen_rddf_num_poses_ahead;
 
 	last_rddf_message->timestamp = rddf_msg->timestamp;
-	for (int i = 0; i < carmen_rddf_num_poses_ahead; i++)
-	{
-		last_rddf_message->poses[i] = rddf_msg->poses[i];
-		last_rddf_message->annotations[i] = rddf_msg->annotations[i];
-	}
-	for (int i = 0; i < last_rddf_message->number_of_poses_back; i++)
-		last_rddf_message->poses_back[i] = rddf_msg->poses_back[i];
+	last_rddf_message->number_of_poses = carmen_rddf_num_poses_ahead;
+	last_rddf_message->number_of_poses_back = rddf_msg->number_of_poses_back;
+
+	last_rddf_message->poses = (carmen_ackerman_traj_point_t *) realloc(last_rddf_message->poses, sizeof(carmen_ackerman_traj_point_t) * carmen_rddf_num_poses_ahead);
+	last_rddf_message->poses_back = (carmen_ackerman_traj_point_t *) realloc(last_rddf_message->poses_back, sizeof(carmen_ackerman_traj_point_t) * last_rddf_message->number_of_poses_back);
+	last_rddf_message->annotations = (int *) realloc(last_rddf_message->annotations, sizeof(int) * carmen_rddf_num_poses_ahead);
+	last_rddf_message->annotations_codes = (int *) realloc(last_rddf_message->annotations_codes, sizeof(int) * carmen_rddf_num_poses_ahead);
+
+	memcpy(last_rddf_message->poses, rddf_msg->poses, sizeof(carmen_ackerman_traj_point_t) * carmen_rddf_num_poses_ahead);
+	memcpy(last_rddf_message->poses_back, rddf_msg->poses_back, sizeof(carmen_ackerman_traj_point_t) * last_rddf_message->number_of_poses_back);
+	memcpy(last_rddf_message->annotations, rddf_msg->annotations, sizeof(int) * carmen_rddf_num_poses_ahead);
+	memcpy(last_rddf_message->annotations_codes, rddf_msg->annotations_codes, sizeof(int) * carmen_rddf_num_poses_ahead);
+
+	return (last_rddf_message);
 }
 
 
-static void
-copy_rddf_message_old(carmen_rddf_road_profile_message *rddf_msg)
+static carmen_rddf_road_profile_message *
+copy_rddf_message(carmen_rddf_road_profile_message *last_rddf_message, carmen_rddf_road_profile_message *rddf_msg)
 {
 	if (!last_rddf_message)
 	{
-		last_rddf_message = (carmen_rddf_road_profile_message*)malloc(sizeof(carmen_rddf_road_profile_message));
+		last_rddf_message = (carmen_rddf_road_profile_message*) malloc(sizeof(carmen_rddf_road_profile_message));
 		last_rddf_message->number_of_poses = 0;
+		last_rddf_message->number_of_poses_back = 0;
 		last_rddf_message->poses = NULL;
+		last_rddf_message->poses_back = NULL;
 		last_rddf_message->annotations = NULL;
-	}
-
-	if (last_rddf_message->number_of_poses != rddf_msg->number_of_poses)
-	{
-		last_rddf_message->number_of_poses = rddf_msg->number_of_poses;
-
-		free(last_rddf_message->poses);
-		free(last_rddf_message->annotations);
-
-		last_rddf_message->poses = (carmen_ackerman_traj_point_t *) malloc(sizeof(carmen_ackerman_traj_point_t) * last_rddf_message->number_of_poses);
-		last_rddf_message->annotations = (int *) malloc(sizeof(int) * last_rddf_message->number_of_poses);
+		last_rddf_message->annotations_codes = NULL;
 	}
 
 	last_rddf_message->timestamp = rddf_msg->timestamp;
+	last_rddf_message->number_of_poses = rddf_msg->number_of_poses;
+	last_rddf_message->number_of_poses_back = rddf_msg->number_of_poses_back;
+
+	last_rddf_message->poses = (carmen_ackerman_traj_point_t *) realloc(last_rddf_message->poses, sizeof(carmen_ackerman_traj_point_t) * last_rddf_message->number_of_poses);
+	last_rddf_message->poses_back = (carmen_ackerman_traj_point_t *) realloc(last_rddf_message->poses_back, sizeof(carmen_ackerman_traj_point_t) * last_rddf_message->number_of_poses_back);
+	last_rddf_message->annotations = (int *) realloc(last_rddf_message->annotations, sizeof(int) * last_rddf_message->number_of_poses);
+	last_rddf_message->annotations_codes = (int *) realloc(last_rddf_message->annotations_codes, sizeof(int) * last_rddf_message->number_of_poses);
 
 	memcpy(last_rddf_message->poses, rddf_msg->poses, sizeof(carmen_ackerman_traj_point_t) * last_rddf_message->number_of_poses);
+	memcpy(last_rddf_message->poses_back, rddf_msg->poses_back, sizeof(carmen_ackerman_traj_point_t) * last_rddf_message->number_of_poses_back);
 	memcpy(last_rddf_message->annotations, rddf_msg->annotations, sizeof(int) * last_rddf_message->number_of_poses);
+	memcpy(last_rddf_message->annotations_codes, rddf_msg->annotations_codes, sizeof(int) * last_rddf_message->number_of_poses);
+
+	return (last_rddf_message);
 }
 
 
@@ -182,20 +176,6 @@ displace_pose(carmen_ackerman_traj_point_t robot_pose, double displacement)
 	displaced_robot_pose.y = displaced_robot_position.y;
 
 	return (displaced_robot_pose);
-}
-
-
-bool
-annotation_is_forward(carmen_ackerman_traj_point_t robot_pose, carmen_vector_3D_t annotation_point)
-{
-	SE2 robot_pose_mat(robot_pose.x, robot_pose.y, robot_pose.theta);
-	SE2 annotation_point_mat(annotation_point.x, annotation_point.y, 0.0);
-	SE2 annotation_in_car_reference = robot_pose_mat.inverse() * annotation_point_mat;
-
-	if (annotation_in_car_reference[0] > 0.0)
-		return (true);
-	else
-		return (false);
 }
 
 
@@ -393,14 +373,14 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, ca
 //				distance_to_act_on_annotation, distance_to_annotation, current_robot_pose_v_and_phi->v,
 //				get_velocity_at_goal(current_robot_pose_v_and_phi->v, velocity_at_next_annotation,
 //					distance_to_goal, distance_to_annotation),
-//				annotation_is_forward(get_robot_pose(), nearest_velocity_related_annotation->annotation_point));
+//				carmen_rddf_play_annotation_is_forward(get_robot_pose(), nearest_velocity_related_annotation->annotation_point));
 		if (last_rddf_annotation_message_valid &&
 			(clearing_annotation ||
 			 (((distance_to_annotation < distance_to_act_on_annotation) ||
 			   (distance_to_annotation < distance_to_goal +
 						 get_robot_config()->distance_between_front_and_rear_axles +
 						 get_robot_config()->distance_between_front_car_and_front_wheels)) &&
-			   annotation_is_forward(*current_robot_pose_v_and_phi, nearest_velocity_related_annotation->annotation_point))))
+					 carmen_rddf_play_annotation_is_forward(*current_robot_pose_v_and_phi, nearest_velocity_related_annotation->annotation_point))))
 		{
 			clearing_annotation = true;
 			goal->v = carmen_fmin(
@@ -409,7 +389,7 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, ca
 		}
 
 		carmen_ackerman_traj_point_t displaced_robot_pose = displace_pose(*current_robot_pose_v_and_phi, 1.0);
-		if (!annotation_is_forward(displaced_robot_pose, nearest_velocity_related_annotation->annotation_point))
+		if (!carmen_rddf_play_annotation_is_forward(displaced_robot_pose, nearest_velocity_related_annotation->annotation_point))
 			clearing_annotation = false;
 	}
 
@@ -904,9 +884,9 @@ void
 behavior_selector_motion_planner_publish_path_message(carmen_rddf_road_profile_message *rddf_msg, int rddf_num_poses_by_velocity)
 {
 	if (rddf_num_poses_by_velocity)
-		copy_rddf_message(rddf_msg);
+		last_rddf_message = copy_rddf_message_considering_velocity(last_rddf_message, rddf_msg);
 	else
-		copy_rddf_message_old(rddf_msg);
+		last_rddf_message = copy_rddf_message(last_rddf_message, rddf_msg);
 
 	if ((get_current_algorithm() == CARMEN_BEHAVIOR_SELECTOR_RDDF) && (last_rddf_message) && (last_rddf_message->number_of_poses > 0))
 		carmen_motion_planner_publish_path_message(last_rddf_message->poses, last_rddf_message->number_of_poses, CARMEN_BEHAVIOR_SELECTOR_RDDF);
@@ -966,7 +946,7 @@ stop_sign_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
 	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.1, distance_to_annotation);
 	if ((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) &&
 		(distance_to_act_on_annotation >= distance_to_annotation) &&
-		annotation_is_forward(current_robot_pose_v_and_phi, nearest_velocity_related_annotation->annotation_point))
+		carmen_rddf_play_annotation_is_forward(current_robot_pose_v_and_phi, nearest_velocity_related_annotation->annotation_point))
 		return (true);
 	else
 		return (false);
@@ -1003,7 +983,7 @@ red_traffic_light_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_ph
 			return (false);
 		else if ((last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) &&
 				 (DIST2D(last_rddf_annotation_message.annotations[i].annotation_point, current_robot_pose_v_and_phi) < 70.0) &&
-				 annotation_is_forward(current_robot_pose_v_and_phi, last_rddf_annotation_message.annotations[i].annotation_point))
+				 carmen_rddf_play_annotation_is_forward(current_robot_pose_v_and_phi, last_rddf_annotation_message.annotations[i].annotation_point))
 			last_red_timestamp = timestamp;
 	}
 
@@ -1329,7 +1309,9 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 
 	set_behaviours_parameters(current_robot_pose_v_and_phi, timestamp);
 
-	behaviour_selector_fill_goal_list(last_rddf_message, timestamp);
+	// Esta funcao altera a mensagem de rddf e funcoes abaixo dela precisam da original
+	last_rddf_message_copy = copy_rddf_message(last_rddf_message_copy, last_rddf_message);
+	behaviour_selector_fill_goal_list(last_rddf_message_copy, timestamp);
 
 	int goal_list_size;
 	carmen_ackerman_traj_point_t *goal_list = behavior_selector_get_goal_list(&goal_list_size);
@@ -1711,6 +1693,7 @@ read_parameters(int argc, char **argv)
 		{(char *) "robot", (char *) "maximum_acceleration_forward", CARMEN_PARAM_DOUBLE, &robot_config.maximum_acceleration_forward, 1, NULL},
 		{(char *) "robot", (char *) "maximum_deceleration_forward", CARMEN_PARAM_DOUBLE, &robot_config.maximum_deceleration_forward, 1, NULL},
 		{(char *) "robot", (char *) "max_centripetal_acceleration", CARMEN_PARAM_DOUBLE, &robot_max_centripetal_acceleration, 1, NULL},
+		{(char *) "robot", (char *) "distance_between_rear_wheels", CARMEN_PARAM_DOUBLE, &robot_config.distance_between_rear_wheels, 1,NULL},
 		{(char *) "robot", (char *) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &robot_config.distance_between_front_and_rear_axles, 1, NULL},
 		{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &robot_config.distance_between_rear_car_and_rear_wheels, 1, NULL},
 		{(char *) "robot", (char *) "distance_between_front_car_and_front_wheels", CARMEN_PARAM_DOUBLE, &robot_config.distance_between_front_car_and_front_wheels, 1, NULL},
