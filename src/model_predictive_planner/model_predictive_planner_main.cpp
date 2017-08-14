@@ -379,7 +379,7 @@ build_and_follow_path(double timestamp)
 	{
 		double distance_to_goal = sqrt(pow(GlobalState::goal_pose->x - GlobalState::localizer_pose->x, 2) + pow(GlobalState::goal_pose->y - GlobalState::localizer_pose->y, 2));
 		// goal achieved!
-		if (distance_to_goal < 1.0 && GlobalState::robot_config.max_v < 0.1 && GlobalState::last_odometry.v < 0.25)
+		if (0)//distance_to_goal < 1.0 && GlobalState::robot_config.max_v < 0.1 && GlobalState::last_odometry.v < 0.25)
 		{
 			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
 		}
@@ -392,12 +392,12 @@ build_and_follow_path(double timestamp)
 				publish_model_predictive_rrt_path_message(path_follower_path, timestamp);
 				publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
 
-//				FILE *caco = fopen("caco2.txt", "a");
-//				fprintf(caco, "%lf %lf %lf %d\n", GlobalState::last_odometry.v, GlobalState::robot_config.max_v,
-//						path_follower_path.begin()->command.v,
-//						GlobalState::behavior_selector_low_level_state);
-//				fflush(caco);
-//				fclose(caco);
+				FILE *caco = fopen("caco2.txt", "a");
+				fprintf(caco, "%lf %lf %lf %d\n", GlobalState::last_odometry.v, GlobalState::robot_config.max_v,
+						path_follower_path.begin()->command.v,
+						GlobalState::behavior_selector_low_level_state);
+				fflush(caco);
+				fclose(caco);
 			}
 			//		else
 				//			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);

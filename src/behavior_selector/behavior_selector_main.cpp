@@ -362,34 +362,45 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, ca
 
 	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
 			current_robot_pose_v_and_phi, wait_start_moving);
+
 	if (nearest_velocity_related_annotation != NULL)
 	{
-		double distance_to_annotation = DIST2D_P(&nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi);
+		carmen_ackerman_traj_point_t displaced_robot_pose = displace_pose(*current_robot_pose_v_and_phi,
+				get_robot_config()->distance_between_front_and_rear_axles +
+				get_robot_config()->distance_between_front_car_and_front_wheels);
+		double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, displaced_robot_pose);
 		double velocity_at_next_annotation = get_velocity_at_next_annotation(nearest_velocity_related_annotation, *current_robot_pose_v_and_phi, timestamp);
+
 		double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi->v, velocity_at_next_annotation,
 				distance_to_annotation);
+		bool annotation_ahead = carmen_rddf_play_annotation_is_forward(displaced_robot_pose, nearest_velocity_related_annotation->annotation_point);
+
 		double distance_to_goal = carmen_distance_ackerman_traj(current_robot_pose_v_and_phi, goal);
-//		printf("ca %d, daann %.1lf, dann %.1lf, v %.1lf, vg %.1lf, aif %d\n", clearing_annotation,
-//				distance_to_act_on_annotation, distance_to_annotation, current_robot_pose_v_and_phi->v,
-//				get_velocity_at_goal(current_robot_pose_v_and_phi->v, velocity_at_next_annotation,
-//					distance_to_goal, distance_to_annotation),
-//				carmen_rddf_play_annotation_is_forward(get_robot_pose(), nearest_velocity_related_annotation->annotation_point));
+
 		if (last_rddf_annotation_message_valid &&
 			(clearing_annotation ||
 			 (((distance_to_annotation < distance_to_act_on_annotation) ||
-			   (distance_to_annotation < distance_to_goal +
-						 get_robot_config()->distance_between_front_and_rear_axles +
-						 get_robot_config()->distance_between_front_car_and_front_wheels)) &&
-					 carmen_rddf_play_annotation_is_forward(*current_robot_pose_v_and_phi, nearest_velocity_related_annotation->annotation_point))))
+			   (distance_to_annotation < distance_to_goal)) && annotation_ahead)))
 		{
 			clearing_annotation = true;
 			goal->v = carmen_fmin(
-					get_velocity_at_goal(current_robot_pose_v_and_phi->v, velocity_at_next_annotation, distance_to_goal, distance_to_annotation),
+					get_velocity_at_goal(current_robot_pose_v_and_phi->v, velocity_at_next_annotation, distance_to_goal, distance_to_annotation +
+							get_robot_config()->distance_between_front_and_rear_axles +
+							get_robot_config()->distance_between_front_car_and_front_wheels),
 					goal->v);
 		}
 
-		carmen_ackerman_traj_point_t displaced_robot_pose = displace_pose(*current_robot_pose_v_and_phi, 1.0);
-		if (!carmen_rddf_play_annotation_is_forward(displaced_robot_pose, nearest_velocity_related_annotation->annotation_point))
+		FILE *caco = fopen("caco4.txt", "a");
+		fprintf(caco, "ca %d, aa %d, daann %.1lf, dann %.1lf, v %.1lf, vg %.1lf, aif %d, dg %.1lf\n", clearing_annotation, annotation_ahead,
+				distance_to_act_on_annotation, distance_to_annotation, current_robot_pose_v_and_phi->v,
+				get_velocity_at_goal(current_robot_pose_v_and_phi->v, velocity_at_next_annotation,
+					distance_to_goal, distance_to_annotation),
+				carmen_rddf_play_annotation_is_forward(get_robot_pose(), nearest_velocity_related_annotation->annotation_point),
+				distance_to_goal);
+		fflush(caco);
+		fclose(caco);
+
+		if (!annotation_ahead)
 			clearing_annotation = false;
 	}
 
@@ -504,21 +515,24 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 	else
 		goal->v = get_max_v();
 
-//	printf("gv %lf  ", goal->v);
+	FILE *caco = fopen("caco3.txt", "a");
+	fprintf(caco, "gv %lf  ", goal->v);
 
 	goal->v = set_goal_velocity_according_to_moving_obstacle(goal, current_robot_pose_v_and_phi, goal_type, timestamp);
 
-//	printf("gva %lf  ", goal->v);
+	fprintf(caco, "gva %lf  ", goal->v);
 	goal->v = limit_maximum_velocity_according_to_centripetal_acceleration(goal->v, get_robot_pose().v, goal,
 			road_profile_message.poses, road_profile_message.number_of_poses);
-//	printf("gvdlc %lf  ", goal->v);
+	fprintf(caco, "gvdlc %lf  ", goal->v);
 
 	goal->v = set_goal_velocity_according_to_annotation(goal, current_robot_pose_v_and_phi, timestamp);
-//	printf("gvda %lf\n", goal->v);
-	if (obstacle_avoider_active_recently)
-		goal->v = carmen_fmin(2.5, goal->v);
+	fprintf(caco, "gvda %lf ", goal->v);
+//	if (obstacle_avoider_active_recently)
+//		goal->v = carmen_fmin(2.5, goal->v);
 
-//	printf("gvf %lf\n", goal->v);
+	fprintf(caco, "gvf %lf\n", goal->v);
+	fflush(caco);
+	fclose(caco);
 }
 
 

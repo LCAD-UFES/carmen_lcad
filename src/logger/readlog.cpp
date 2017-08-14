@@ -1553,7 +1553,7 @@ char* carmen_string_and_file_to_bumblebee_basic_stereoimage_message(char* string
 	if(msg->raw_right == NULL)
 		msg->raw_right = (unsigned char*) malloc (msg->image_size * sizeof(unsigned char));
 
-	if (strcmp("png", path + strlen(path) - 3) == 0) // ZED Camera
+	if (0)//strcmp("png", path + strlen(path) - 3) == 0) // ZED Camera
 	{
 		cv::Mat img = cv::imread(path);
 		cv::Mat left = img(cv::Rect(0, 0, img.cols / 2, img.rows)).clone();
