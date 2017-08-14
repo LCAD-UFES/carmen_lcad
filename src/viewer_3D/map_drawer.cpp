@@ -73,7 +73,7 @@ static int getTotalObstacles(carmen_map_t map)
 	{
 		double map_value = map.complete_map[i];
 
-		if (map_value > 0.5)
+		if (map_value > 0.85)
 		{
 			total++;
 		}
@@ -163,7 +163,7 @@ static float *create_vertex_data(carmen_map_t map, int total_size)
 		{
 			double map_value = map.complete_map[i * map.config.x_size + j];
 			
-			if (map_value > 0.5)
+			if (map_value > 0.85)
 			{
 				double x = i * resolution;
 				double y = j * resolution;
@@ -382,7 +382,7 @@ void
 draw_map(map_drawer *m_drawer, carmen_vector_3D_t offset)
 {
 	glPushMatrix();
-	
+
 		int drawVBO = 1;
 
 		if (drawVBO)
