@@ -29,6 +29,9 @@ carmen_mapper_moving_objects_raw_map_subscribe_message(carmen_mapper_map_message
 //			       carmen_handler_t handler, carmen_subscribe_t subscribe_how);
 
 void
+carmen_mapper_unsubscribe_map_message(carmen_handler_t handler);
+
+void
 carmen_mapper_unsubscribe_message(carmen_handler_t handler);
 
 void

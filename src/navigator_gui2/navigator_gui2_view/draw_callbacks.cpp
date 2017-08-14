@@ -1,5 +1,10 @@
 #include "draw_callbacks.h"
 
+
+extern void
+mapper_handler(carmen_mapper_map_message *message);
+
+
 namespace View
 {
 
@@ -122,8 +127,11 @@ void on_menuMaps_Map_toggled (GtkCheckMenuItem* togglebutton,
 	if (gtk_check_menu_item_get_active(togglebutton))
 	{
 		superimposed_is_set = 0;
+		carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
 		navigator_get_map(CARMEN_NAVIGATOR_MAP_v, superimposed_is_set);
 	}
+	else
+		carmen_mapper_unsubscribe_map_message((carmen_handler_t) mapper_handler);
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -255,9 +263,12 @@ void on_menuSuperimposedMaps_Map_toggled (GtkCheckMenuItem* togglebutton __attri
 	if (gtk_check_menu_item_get_active(togglebutton))
 	{
 		superimposed_is_set = 1;
+		carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
 		navigator_get_map(CARMEN_NAVIGATOR_MAP_v, superimposed_is_set);
 		carmen_map_graphics_redraw_superimposed(global_gui->controls_.map_view);
 	}
+	else
+		carmen_mapper_unsubscribe_map_message((carmen_handler_t) mapper_handler);
 }
 
 //extern "C" G_MODULE_EXPORT

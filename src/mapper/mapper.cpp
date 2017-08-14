@@ -34,7 +34,7 @@ extern char *map_path;
 
 extern int publish_moving_objects_raw_map;
 
-extern int robot_near_bump_or_barrier;
+extern int robot_near_strong_slow_down_annotation;
 extern int ok_to_publish;
 extern int number_of_threads;
 
@@ -209,7 +209,7 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *log_odds
 
 		carmen_prob_models_compute_relevant_map_coordinates_with_remission_check(sensor_data, sensor_params, i, robot_interpolated_position.position,
 				sensor_params->sensor_support_pose, r_matrix_robot_to_global, sensor_params->support_to_car_matrix,
-				robot_wheel_radius, x_origin, y_origin, &car_config, robot_near_bump_or_barrier, tid, use_remission);
+				robot_wheel_radius, x_origin, y_origin, &car_config, robot_near_strong_slow_down_annotation, tid, use_remission);
 
 //		fprintf(plot_data, "%lf %lf %lf",
 //				sensor_data->ray_origin_in_the_floor[tid][1].x,
@@ -219,7 +219,7 @@ update_log_odds_of_cells_in_the_velodyne_perceptual_field(carmen_map_t *log_odds
 //				sensor_data->ray_position_in_the_floor[tid][0].x,
 //				sensor_data->ray_position_in_the_floor[tid][0].y, 1);
 		carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data, sensor_params, i, highest_sensor, safe_range_above_sensors,
-				robot_near_bump_or_barrier, tid);
+				robot_near_strong_slow_down_annotation, tid);
 
 		build_virtual_scan_message_velodyne(tid, sensor_params, sensor_data, log_odds_snapshot_map);
 
@@ -324,7 +324,7 @@ update_log_odds_of_cells_in_the_laser_ldmrs_perceptual_field(carmen_map_t *log_o
 
 		carmen_prob_models_compute_relevant_map_coordinates_with_remission_check(sensor_data, sensor_params, i, robot_interpolated_position.position,
 				sensor_params->sensor_support_pose, r_matrix_robot_to_global, sensor_params->support_to_car_matrix,
-				robot_wheel_radius, x_origin, y_origin, &car_config, robot_near_bump_or_barrier, tid, 0);
+				robot_wheel_radius, x_origin, y_origin, &car_config, robot_near_strong_slow_down_annotation, tid, 0);
 
 //		fprintf(plot_data, "%lf %lf %lf",
 //				sensor_data->ray_position_in_the_floor[tid][1].x,

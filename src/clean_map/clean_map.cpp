@@ -40,7 +40,7 @@ extern char *map_path;
 
 extern int publish_moving_objects_raw_map;
 
-extern int robot_near_bump_or_barrier;
+extern int robot_near_strong_slow_down_annotation;
 extern int ok_to_publish;
 extern int number_of_threads;
 

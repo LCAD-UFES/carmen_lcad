@@ -69,6 +69,7 @@ navigator_get_specific_map(int is_superimposed, carmen_map_t *specific_map, carm
 		map_type = type;
 	else
 		superimposedmap_type = type;
+	gui->navigator_graphics_set_flags(type);
 
 	if ((specific_map == NULL) || (specific_map->complete_map == NULL))
 		return;
@@ -154,65 +155,43 @@ navigator_get_map(carmen_navigator_map_t type, int is_superimposed)
 }
 
 
-static carmen_map_t*
-copy_grid_mapping_to_map(carmen_mapper_map_message *grid_map)
+static carmen_map_t *
+copy_grid_mapping_to_map(carmen_map_t *map, carmen_mapper_map_message *grid_map)
 {
 	int i;
-	carmen_map_t *map;
 
-	map = (carmen_map_t *) malloc(sizeof(carmen_map_t));
+	if (!map)
+	{
+		map = (carmen_map_t *) malloc(sizeof(carmen_map_t));
+		map->map = (double **) malloc(grid_map->config.x_size * sizeof(double *));
+	}
+
 	map->config = grid_map->config;
-	map->complete_map = (double *) malloc(sizeof(double) * grid_map->size);
-
-	memcpy(map->complete_map, grid_map->complete_map,
-			sizeof(double) * grid_map->size);
-
-	map->map = (double **)calloc(grid_map->config.x_size, sizeof(double *));
-
+	map->complete_map = grid_map->complete_map;
 	for (i = 0; i < map->config.x_size; i++)
 		map->map[i] = map->complete_map + i * map->config.y_size;
 
-	return map;
+	return (map);
 }
 
 
-static carmen_map_t*
-copy_grid_mapping_to_map2(carmen_moving_objects_map_message *grid_map)
+static carmen_map_t *
+copy_grid_mapping_to_map(carmen_map_t *map, carmen_moving_objects_map_message *grid_map)
 {
 	int i;
-	carmen_map_t *map;
 
-	map = (carmen_map_t *) malloc(sizeof(carmen_map_t));
+	if (!map)
+	{
+		map = (carmen_map_t *) malloc(sizeof(carmen_map_t));
+		map->map = (double **) malloc(grid_map->config.x_size * sizeof(double *));
+	}
+
 	map->config = grid_map->config;
-	map->complete_map = (double *) malloc(sizeof(double) * grid_map->size);
-
-	memcpy(map->complete_map, grid_map->complete_map,
-			sizeof(double) * grid_map->size);
-
-	map->map = (double **)calloc(grid_map->config.x_size, sizeof(double *));
-
+	map->complete_map = grid_map->complete_map;
 	for (i = 0; i < map->config.x_size; i++)
 		map->map[i] = map->complete_map + i * map->config.y_size;
 
-	return map;
-}
-
-
-static void
-clone_grid_mapping_to_map(carmen_mapper_map_message *grid_map, carmen_map_t *map)
-{
-	map->config = grid_map->config;
-
-	memcpy(map->complete_map, grid_map->complete_map, sizeof(double) * grid_map->size);
-}
-
-
-static void
-clone_grid_mapping_to_map2(carmen_moving_objects_map_message *grid_map, carmen_map_t *map)
-{
-	map->config = grid_map->config;
-
-	memcpy(map->complete_map, grid_map->complete_map, sizeof(double) * grid_map->size);
+	return (map);
 }
 
 
@@ -354,7 +333,7 @@ navigator_set_algorithm(carmen_behavior_selector_algorithm_t algorithm, carmen_b
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
-static void
+void
 mapper_handler(carmen_mapper_map_message *message)
 {
 	static double last_time_stamp = 0.0;
@@ -371,10 +350,7 @@ mapper_handler(carmen_mapper_map_message *message)
 	if (map && (message->config.x_size != map->config.x_size || message->config.y_size != map->config.y_size))
 		carmen_map_destroy(&map);
 
-	if (map)
-		clone_grid_mapping_to_map(message, map);
-	else
-		map = copy_grid_mapping_to_map(message);
+	map = copy_grid_mapping_to_map(map, message);
 
 	if (superimposedmap_type == CARMEN_NAVIGATOR_MAP_v)
 	{
@@ -396,11 +372,7 @@ offline_map_update_handler(carmen_mapper_map_message *new_map)
 	if (offline_map && (new_map->config.x_size != offline_map->config.x_size || new_map->config.y_size != offline_map->config.y_size))
 		carmen_map_destroy(&offline_map);
 
-	if (offline_map)
-		clone_grid_mapping_to_map(new_map, offline_map);
-	else
-		offline_map = copy_grid_mapping_to_map(new_map);
-
+	offline_map = copy_grid_mapping_to_map(offline_map, new_map);
 
 	if (superimposedmap_type == CARMEN_OFFLINE_MAP_v)
 	{
@@ -421,11 +393,7 @@ road_map_update_handler(carmen_mapper_map_message *new_map)
 	if (road_map && (new_map->config.x_size != road_map->config.x_size || new_map->config.y_size != road_map->config.y_size))
 		carmen_map_destroy(&road_map);
 
-	if (road_map)
-		clone_grid_mapping_to_map(new_map, road_map);
-	else
-		road_map = copy_grid_mapping_to_map(new_map);
-
+	road_map = copy_grid_mapping_to_map(road_map, new_map);
 
 	if (superimposedmap_type == CARMEN_ROAD_MAP_v)
 	{
@@ -436,6 +404,7 @@ road_map_update_handler(carmen_mapper_map_message *new_map)
 	if (gui->navigator_graphics_update_map() && is_graphics_up && map_type == CARMEN_ROAD_MAP_v)
 		gui->navigator_graphics_change_map(road_map);
 }
+
 
 static void
 map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_message *message)
@@ -474,11 +443,8 @@ map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_m
 		gui->navigator_graphics_redraw_superimposed();
 	}
 
-	if (gui->navigator_graphics_update_map() && map_type == CARMEN_COST_MAP_v)
-	{
-		if (is_graphics_up)
-			gui->navigator_graphics_change_map(cost_map);
-	}
+	if (gui->navigator_graphics_update_map() && is_graphics_up && map_type == CARMEN_COST_MAP_v)
+		gui->navigator_graphics_change_map(cost_map);
 }
 
 
@@ -514,11 +480,8 @@ map_server_compact_lane_map_message_handler(carmen_map_server_compact_lane_map_m
 		gui->navigator_graphics_redraw_superimposed();
 	}
 
-	if (gui->navigator_graphics_update_map() && map_type == CARMEN_LANE_MAP_v)
-	{
-		if (is_graphics_up)
-			gui->navigator_graphics_change_map(lane_map);
-	}
+	if (gui->navigator_graphics_update_map() && is_graphics_up && map_type == CARMEN_LANE_MAP_v)
+		gui->navigator_graphics_change_map(lane_map);
 }
 
 
@@ -598,10 +561,7 @@ grid_mapping_moving_objects_raw_map_handler(carmen_moving_objects_map_message *m
 	if (moving_objects_map && (message->config.x_size != moving_objects_map->config.x_size || message->config.y_size != moving_objects_map->config.y_size))
 		carmen_map_destroy(&moving_objects_map);
 
-	if (moving_objects_map)
-		clone_grid_mapping_to_map2(message, moving_objects_map);//funcao replicada
-	else
-		moving_objects_map = copy_grid_mapping_to_map2(message);//funcao replicada
+	moving_objects_map = copy_grid_mapping_to_map(moving_objects_map, message);
 
 	if (superimposedmap_type == CARMEN_MOVING_OBJECTS_MAP_v)
 	{
@@ -690,7 +650,7 @@ navigator_plan_handler(carmen_navigator_ackerman_plan_message *plan)
 
 
 static void
-path_handler (carmen_navigator_gui_path_message *msg)
+path_handler(carmen_navigator_gui_path_message *msg)
 {
 	gui->navigator_graphics_update_path(msg->path, msg->path_length, msg->path_id);
 }
@@ -957,7 +917,7 @@ subscribe_ipc_messages()
 
 	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_map_server_subscribe_road_map(NULL, (carmen_handler_t) road_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
-	carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
+//	carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
 
 //	carmen_grid_mapping_moving_objects_raw_map_subscribe_message(NULL, (carmen_handler_t) grid_mapping_moving_objects_raw_map_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_moving_objects_map_subscribe_message(NULL, (carmen_handler_t) grid_mapping_moving_objects_raw_map_handler, CARMEN_SUBSCRIBE_LATEST);

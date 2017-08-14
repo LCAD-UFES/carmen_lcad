@@ -67,7 +67,7 @@ char *map_path;
 int publish_moving_objects_raw_map;
 
 carmen_rddf_annotation_message last_rddf_annotation_message;
-int robot_near_bump_or_barrier = 0;
+int robot_near_strong_slow_down_annotation = 0;
 
 bool offline_map_available = false;
 int ok_to_publish = 0;

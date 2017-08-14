@@ -1,5 +1,10 @@
 #include "gtk_gui.h"
 
+
+extern void
+mapper_handler(carmen_mapper_map_message *message);
+
+
 GdkColor *
 build_color_gradient()
 {
@@ -546,7 +551,10 @@ namespace View
 		if (strcmp(nav_panel_config->superimposed_map, "None") == 0)
 			; // Do nothing
 		else if (strcmp(nav_panel_config->superimposed_map, "Map") == 0)
+		{
+			carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
 			navigator_get_map(CARMEN_NAVIGATOR_MAP_v, 1);
+		}
 		else if (strcmp(nav_panel_config->superimposed_map, "Offline Map") == 0)
 			navigator_get_map(CARMEN_OFFLINE_MAP_v, 1);
 		else if (strcmp(nav_panel_config->superimposed_map, "Utility") == 0)
@@ -571,7 +579,10 @@ namespace View
 			carmen_die("Unknown superimpose_map named \"%s\" set as parameter in the carmen ini file. Exiting...\n", nav_panel_config->superimposed_map);
 
 		if (strcmp(nav_panel_config->map, "Map") == 0)
+		{
+			carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
 			navigator_get_map(CARMEN_NAVIGATOR_MAP_v, 0);
+		}
 		else if (strcmp(nav_panel_config->map, "Offline Map") == 0)
 			navigator_get_map(CARMEN_OFFLINE_MAP_v, 0);
 		else if (strcmp(nav_panel_config->map, "Utility") == 0)
@@ -877,10 +888,8 @@ namespace View
 	int	 flags = 0;
 
 	void
-	GtkGui::navigator_graphics_display_map(carmen_map_t *new_map, carmen_navigator_map_t type)
+	GtkGui::navigator_graphics_set_flags(carmen_navigator_map_t type)
 	{
-		display = type;
-
 		switch (type)
 		{
 		case CARMEN_NAVIGATOR_MAP_v:
@@ -939,6 +948,13 @@ namespace View
 			flags = 0;
 			return;
 		}
+	}
+
+	void
+	GtkGui::navigator_graphics_display_map(carmen_map_t *new_map, carmen_navigator_map_t type)
+	{
+		display = type;
+		navigator_graphics_set_flags(type);
 
 		carmen_map_graphics_add_map(this->controls_.map_view, new_map, flags);
 	}
