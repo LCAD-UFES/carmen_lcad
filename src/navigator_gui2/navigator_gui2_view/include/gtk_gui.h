@@ -297,6 +297,8 @@ namespace View
 		void navigator_graphics_update_plan(carmen_ackerman_traj_point_p new_plan, int plan_length);
 		void navigator_graphics_update_path(carmen_ackerman_traj_point_t* new_path, int path_length, int path_id);
 		void navigator_graphics_display_map(carmen_map_t *new_map, carmen_navigator_map_t type);
+		void navigator_graphics_set_flags(carmen_navigator_map_t type);
+
 		void navigator_graphics_redraw_superimposed();
 		void navigator_graphics_change_map(carmen_map_p new_map);
 		void navigator_graphics_update_simulator_truepos(carmen_point_t truepose);

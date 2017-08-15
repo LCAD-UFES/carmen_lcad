@@ -7,7 +7,9 @@
 #include <carmen/velodyne_interface.h>
 #include <carmen/download_map_interface.h>
 #include <carmen/stereo_velodyne_interface.h>
+#include <prob_map.h>
 #include <carmen/mapper_interface.h>
+#include <carmen/map_server_interface.h>
 #include <carmen/stereo_velodyne.h>
 #include <carmen/navigator_ackerman_interface.h>
 #include <carmen/behavior_selector_interface.h>
@@ -1416,11 +1418,34 @@ gps_xyz_message_handler(carmen_gps_xyz_message *gps_xyz_raw_message)
 }
 
 static void
-mapper_map_message_handler(carmen_mapper_map_message *message)
+map_server_compact_cost_map_message_handler(carmen_map_server_compact_cost_map_message *message)
 {
-//    double time_since_last_draw = carmen_get_time() - lastDisplayTime;
+	static carmen_compact_map_t *compact_cost_map = NULL;
+	static carmen_map_t static_cost_map;
+	static carmen_map_t *cost_map;
 
-    if (!first_map_received)
+	cost_map = &static_cost_map;
+
+	if (compact_cost_map == NULL)
+	{
+		carmen_grid_mapping_create_new_map(cost_map, message->config.x_size, message->config.y_size, message->config.resolution, 'm');
+		memset(cost_map->complete_map, 0, cost_map->config.x_size * cost_map->config.y_size * sizeof(double));
+
+		compact_cost_map = (carmen_compact_map_t*) (calloc(1, sizeof(carmen_compact_map_t)));
+		carmen_cpy_compact_cost_message_to_compact_map(compact_cost_map, message);
+		carmen_prob_models_uncompress_compact_map(cost_map, compact_cost_map);
+	}
+	else
+	{
+		carmen_prob_models_clear_carmen_map_using_compact_map(cost_map, compact_cost_map, 0.0);
+		carmen_prob_models_free_compact_map(compact_cost_map);
+		carmen_cpy_compact_cost_message_to_compact_map(compact_cost_map, message);
+		carmen_prob_models_uncompress_compact_map(cost_map, compact_cost_map);
+	}
+
+	cost_map->config = message->config;
+
+	if (!first_map_received)
     {
         first_map_received = 1;
         first_map_origin.x = message->config.x_origin;
@@ -1436,9 +1461,34 @@ mapper_map_message_handler(carmen_mapper_map_message *message)
 
     if (draw_map_flag)// && (time_since_last_draw < 1.0 / 30.0))
     {
-        add_map_message(m_drawer, message);
+        add_map_message(m_drawer, static_cost_map);
     }
 }
+
+//static void
+//mapper_map_message_handler(carmen_mapper_map_message *message)
+//{
+////    double time_since_last_draw = carmen_get_time() - lastDisplayTime;
+//
+//    if (!first_map_received)
+//    {
+//        first_map_received = 1;
+//        first_map_origin.x = message->config.x_origin;
+//        first_map_origin.y = message->config.y_origin;
+//        first_map_origin.z = 0.0;
+//    }
+//    else if ((first_map_origin.x == 0.0) && (first_map_origin.y == 0.0) && ((message->config.x_origin != 0.0) || (message->config.y_origin != 0.0)))
+//    {
+//        first_map_origin.x = message->config.x_origin;
+//        first_map_origin.y = message->config.y_origin;
+//        first_map_origin.z = 0.0;
+//    }
+//
+//    if (draw_map_flag)// && (time_since_last_draw < 1.0 / 30.0))
+//    {
+//        add_map_message(m_drawer, message);
+//    }
+//}
 
 static void
 plan_message_handler(carmen_navigator_ackerman_plan_message *message)
@@ -2767,9 +2817,13 @@ subscribe_ipc_messages(void)
                                                       (carmen_handler_t) sick_variable_scan_message_handler,
                                                       CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_mapper_subscribe_map_message(NULL,
-                                          (carmen_handler_t) mapper_map_message_handler,
-                                          CARMEN_SUBSCRIBE_LATEST);
+//    carmen_mapper_subscribe_map_message(NULL,
+//                                          (carmen_handler_t) mapper_map_message_handler,
+//                                          CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_map_server_subscribe_compact_cost_map(NULL,
+													(carmen_handler_t) map_server_compact_cost_map_message_handler,
+													CARMEN_SUBSCRIBE_LATEST);
 
     carmen_navigator_ackerman_subscribe_plan_message(NULL,
                                                      (carmen_handler_t) plan_message_handler,

@@ -46,7 +46,7 @@ initGl ()
     glClearDepth (1.0);
     glDepthFunc (GL_LESS);
     glEnable (GL_DEPTH_TEST);
-    glShadeModel (GL_SMOOTH);
+    glShadeModel (GL_FLAT);
 
     GLfloat light_ambient[] = {0.5f, 0.5f, 0.5f, 1.0f};
     GLfloat light_diffuse[] = {0.4f, 0.4f, 0.3f, 1.0f};
@@ -58,7 +58,7 @@ initGl ()
     glEnable (GL_LIGHT1);
     glEnable (GL_LIGHTING);
 
-    glColorMaterial (GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+    glColorMaterial (GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
     glEnable (GL_COLOR_MATERIAL);
 
     map_image_texture_id = create_texture ();

@@ -83,7 +83,8 @@ int udatmo_detect_obstacle_index(carmen_obstacle_distance_mapper_map_message *cu
 							double timestamp)
 {
 	int index = detector->detect(current_map, rddf, goal_index, rddf_pose_index, robot_pose,
-			detector->robot_config.behaviour_selector_obstacles_safe_distance, 0.0, timestamp);
+			detector->robot_config.behaviour_selector_obstacles_safe_distance,
+			0.0, timestamp);
 	int index_left = detector_left->detect(current_map, rddf, goal_index, rddf_pose_index, robot_pose,
 			detector->robot_config.behaviour_selector_obstacles_safe_distance,
 			(detector->robot_config.width - 0.3), timestamp);

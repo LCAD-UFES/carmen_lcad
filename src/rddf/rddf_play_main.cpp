@@ -13,6 +13,7 @@ using namespace std;
 #include <carmen/carmen_gps_wrapper.h>
 #include <carmen/traffic_light_interface.h>
 #include <carmen/traffic_light_messages.h>
+#include <carmen/collision_detection.h>
 
 #include "rddf_interface.h"
 #include "rddf_messages.h"
@@ -34,6 +35,8 @@ static char *carmen_rddf_filename = NULL;
 
 static int carmen_rddf_perform_loop = 0;
 static int carmen_rddf_num_poses_ahead_max = 100;
+static double distance_between_front_and_rear_axles;
+static double distance_between_front_car_and_front_wheels;
 
 static int carmen_rddf_end_point_is_set = 0;
 static carmen_point_t carmen_rddf_end_point;
@@ -717,7 +720,15 @@ carmen_rddf_play_load_annotation_file()
 			&annotation.annotation_point.y,
 			&annotation.annotation_point.z
 		);
+		carmen_ackerman_traj_point_t annotation_point;
+		annotation_point.x = annotation.annotation_point.x;
+		annotation_point.y = annotation.annotation_point.y;
+		annotation_point.theta = annotation.annotation_orientation;
+		double distance_car_pose_car_front = distance_between_front_and_rear_axles + distance_between_front_car_and_front_wheels;
+		carmen_point_t new_annotation_point = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&annotation_point, -distance_car_pose_car_front);
 
+		annotation.annotation_point.x = new_annotation_point.x;
+		annotation.annotation_point.y = new_annotation_point.y;
 		annotation_read_from_file.push_back(annotation);
 	}
 
@@ -730,6 +741,8 @@ carmen_rddf_play_get_parameters(int argc, char** argv)
 {
 	carmen_param_t param_list[] =
 	{
+		{(char *) "robot", (char *) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &distance_between_front_and_rear_axles, 1, NULL},
+		{(char *) "robot", (char *) "distance_between_front_car_and_front_wheels", CARMEN_PARAM_DOUBLE, &distance_between_front_car_and_front_wheels, 1, NULL},
 		{(char *) "rddf", (char *) "num_poses_ahead", CARMEN_PARAM_INT, &carmen_rddf_num_poses_ahead_max, 0, NULL},
 		{(char *) "rddf", (char *) "loop", CARMEN_PARAM_ONOFF, &carmen_rddf_perform_loop, 0, NULL},
 		{(char *) "behavior_selector", (char *) "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL}

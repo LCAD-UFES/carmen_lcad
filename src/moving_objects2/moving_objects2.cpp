@@ -39,7 +39,7 @@ extern char *map_path;
 
 extern int publish_moving_objects_raw_map;
 
-extern int robot_near_bump_or_barrier;
+extern int robot_near_strong_slow_down_annotation;
 extern int ok_to_publish;
 extern int number_of_threads;
 
@@ -569,10 +569,10 @@ update_cells_in_the_velodyne_perceptual_field(carmen_map_t *snapshot_map, sensor
 		r_matrix_robot_to_global = compute_rotation_matrix(r_matrix_car_to_global, robot_interpolated_position.orientation);
 
 		carmen_prob_models_compute_relevant_map_coordinates(sensor_data, sensor_params, i, robot_interpolated_position.position, sensor_board_1_pose,
-				r_matrix_robot_to_global, board_to_car_matrix, robot_wheel_radius, x_origin, y_origin, &car_config, robot_near_bump_or_barrier, tid);
+				r_matrix_robot_to_global, board_to_car_matrix, robot_wheel_radius, x_origin, y_origin, &car_config, robot_near_strong_slow_down_annotation, tid);
 
 		carmen_prob_models_get_occuppancy_log_odds_via_unexpeted_delta_range(sensor_data, sensor_params, i, highest_sensor, safe_range_above_sensors,
-				robot_near_bump_or_barrier, tid);
+				robot_near_strong_slow_down_annotation, tid);
 
 		//sensor_params->log_odds.log_odds_free = -37;
 

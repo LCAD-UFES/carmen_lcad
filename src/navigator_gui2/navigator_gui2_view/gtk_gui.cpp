@@ -1,5 +1,10 @@
 #include "gtk_gui.h"
 
+
+extern void
+mapper_handler(carmen_mapper_map_message *message);
+
+
 GdkColor *
 build_color_gradient()
 {
@@ -387,7 +392,6 @@ namespace View
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_turn_left_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN][RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_LEFT] = get_annotation_image(annotation_image_filename);
 
-
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_5_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_SPEED_LIMIT][RDDF_ANNOTATION_CODE_SPEED_LIMIT_5] = get_annotation_image(annotation_image_filename);
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_10_15.png", carmen_home_path);
@@ -547,7 +551,10 @@ namespace View
 		if (strcmp(nav_panel_config->superimposed_map, "None") == 0)
 			; // Do nothing
 		else if (strcmp(nav_panel_config->superimposed_map, "Map") == 0)
+		{
+			carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
 			navigator_get_map(CARMEN_NAVIGATOR_MAP_v, 1);
+		}
 		else if (strcmp(nav_panel_config->superimposed_map, "Offline Map") == 0)
 			navigator_get_map(CARMEN_OFFLINE_MAP_v, 1);
 		else if (strcmp(nav_panel_config->superimposed_map, "Utility") == 0)
@@ -572,7 +579,10 @@ namespace View
 			carmen_die("Unknown superimpose_map named \"%s\" set as parameter in the carmen ini file. Exiting...\n", nav_panel_config->superimposed_map);
 
 		if (strcmp(nav_panel_config->map, "Map") == 0)
+		{
+			carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
 			navigator_get_map(CARMEN_NAVIGATOR_MAP_v, 0);
+		}
 		else if (strcmp(nav_panel_config->map, "Offline Map") == 0)
 			navigator_get_map(CARMEN_OFFLINE_MAP_v, 0);
 		else if (strcmp(nav_panel_config->map, "Utility") == 0)
@@ -878,10 +888,8 @@ namespace View
 	int	 flags = 0;
 
 	void
-	GtkGui::navigator_graphics_display_map(carmen_map_t *new_map, carmen_navigator_map_t type)
+	GtkGui::navigator_graphics_set_flags(carmen_navigator_map_t type)
 	{
-		display = type;
-
 		switch (type)
 		{
 		case CARMEN_NAVIGATOR_MAP_v:
@@ -940,6 +948,13 @@ namespace View
 			flags = 0;
 			return;
 		}
+	}
+
+	void
+	GtkGui::navigator_graphics_display_map(carmen_map_t *new_map, carmen_navigator_map_t type)
+	{
+		display = type;
+		navigator_graphics_set_flags(type);
 
 		carmen_map_graphics_add_map(this->controls_.map_view, new_map, flags);
 	}
@@ -2346,9 +2361,10 @@ namespace View
 
 		for (int i = 0; i < rddf_annotation_msg.num_annotations; i++)
 		{
-			world_point.pose.x = rddf_annotation_msg.annotations[i].annotation_point.x;
-			world_point.pose.y = rddf_annotation_msg.annotations[i].annotation_point.y;
+			double displacement = car_config->distance_between_front_and_rear_axles + car_config->distance_between_front_car_and_front_wheels;
 			world_point.pose.theta = rddf_annotation_msg.annotations[i].annotation_orientation;
+			world_point.pose.x = rddf_annotation_msg.annotations[i].annotation_point.x + displacement * cos(world_point.pose.theta);
+			world_point.pose.y = rddf_annotation_msg.annotations[i].annotation_point.y + displacement * sin(world_point.pose.theta);
 			world_point.map = the_map_view->internal_map;
 //			printf("x %lf, y %lf, theta %lf\n", world_point.pose.x, world_point.pose.y, world_point.pose.theta);
 

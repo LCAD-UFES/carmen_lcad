@@ -415,6 +415,19 @@ filter_path_old(vector<carmen_ackerman_path_point_t> &path)
 
 
 void
+remove_some_poses_at_the_end_of_the_path(vector<carmen_ackerman_path_point_t> &path)
+{
+	double path_time = 0.0;
+
+	while ((path.size() > 1) && (path_time < 1.0 / 20.0))
+	{
+		path_time += path[path.size() - 1].time;
+		path.pop_back();
+	}
+}
+
+
+void
 filter_path(vector<carmen_ackerman_path_point_t> &path)
 {
 	if (path.size() < 1)
@@ -451,7 +464,7 @@ filter_path(vector<carmen_ackerman_path_point_t> &path)
 	for (i = 1; (i < path.size()) && (i < (count + 1)); i += 2)
 		path.erase(path.begin() + i);
 
-	if (GlobalState::ford_escape_online)
+	if (1)//GlobalState::ford_escape_online)
 	{
 		path_time = 0.0;
 		count = 0;
@@ -547,7 +560,7 @@ path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> path)
 		}
 	}
 
-	if ((GlobalState::distance_map != NULL) && (max_circle_invasion > GlobalState::distance_map->config.resolution / 2.0))
+	if ((GlobalState::distance_map != NULL) && (max_circle_invasion > 0.0))// GlobalState::distance_map->config.resolution / 2.0))
 	{
 		printf("---------- PATH HIT OBSTACLE!!!!\n");
 		return (true);
@@ -698,10 +711,12 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 		return (false);
 	}
 
+	move_path_to_current_robot_pose(path, localizer_pose);
+
 	if (path_has_collision_or_phi_exceeded(path))
 		return (false);
 
-	move_path_to_current_robot_pose(path, localizer_pose);
+	remove_some_poses_at_the_end_of_the_path(path);
 
 //	if (GlobalState::use_mpc)
 //		apply_system_latencies(path);

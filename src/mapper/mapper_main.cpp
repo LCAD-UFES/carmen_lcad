@@ -19,6 +19,7 @@
 #include <carmen/map_server_interface.h>
 #include <carmen/rddf_messages.h>
 #include <carmen/rddf_interface.h>
+#include <carmen/rddf_util.h>
 #include <carmen/ultrasonic_filter_interface.h>
 #include <carmen/parking_assistant_interface.h>
 #include <omp.h>
@@ -82,7 +83,7 @@ char *map_path;
 int publish_moving_objects_raw_map;
 
 carmen_rddf_annotation_message last_rddf_annotation_message;
-int robot_near_bump_or_barrier = 0;
+int robot_near_strong_slow_down_annotation = 0;
 
 bool offline_map_available = false;
 int ok_to_publish = 0;
@@ -198,19 +199,28 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 
 	// Map annotations handling
 	double distance_to_nearest_annotation = 1000.0;
+	int index_of_nearest_annotation = 0;
 	for (int i = 0; i < last_rddf_annotation_message.num_annotations; i++)
 	{
 		double distance_to_annotation = DIST2D(last_rddf_annotation_message.annotations[i].annotation_point,
 				globalpos_history[last_globalpos].pose.position);
-		if (((last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
-			 (last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)) &&
-			 (distance_to_annotation < distance_to_nearest_annotation))
+		if ((distance_to_annotation < distance_to_nearest_annotation) &&
+			((last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
+			 (last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BARRIER) ||
+			 ((last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			  (last_rddf_annotation_message.annotations[i].annotation_code <= RDDF_ANNOTATION_CODE_SPEED_LIMIT_20))))
+		{
 			distance_to_nearest_annotation = distance_to_annotation;
+			index_of_nearest_annotation = i;
+		}
 	}
-	if (distance_to_nearest_annotation < 35.0)
-		robot_near_bump_or_barrier = 1;
+	if (((distance_to_nearest_annotation < 35.0) &&
+		 carmen_rddf_play_annotation_is_forward(globalpos_message->globalpos,
+				 last_rddf_annotation_message.annotations[index_of_nearest_annotation].annotation_point)) ||
+		(distance_to_nearest_annotation < 8.0))
+		robot_near_strong_slow_down_annotation = 1;
 	else
-		robot_near_bump_or_barrier = 0;
+		robot_near_strong_slow_down_annotation = 0;
 
 	if (ok_to_publish)
 	{
@@ -218,7 +228,7 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 		// A ordem é importante
 		if (sensors_params[VELODYNE].alive)
 			include_sensor_data_into_map(VELODYNE, globalpos_message);
-		if (sensors_params[LASER_LDMRS].alive && !robot_near_bump_or_barrier)
+		if (sensors_params[LASER_LDMRS].alive && !robot_near_strong_slow_down_annotation)
 			include_sensor_data_into_map(LASER_LDMRS, globalpos_message);
 
 		publish_map(globalpos_message->timestamp);

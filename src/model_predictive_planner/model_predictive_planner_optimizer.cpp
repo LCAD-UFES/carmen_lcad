@@ -252,7 +252,7 @@ compute_path_to_lane_distance(ObjectiveFunctionParams *my_params, vector<carmen_
 	}
 
 	if (total_points > 0.0)
-		return (total_distance / total_points);
+		return (((total_distance / total_points) > 7.0)? 7.0: total_distance / total_points);
 	else
 		return (0.0);
 }
@@ -445,7 +445,7 @@ my_g(const gsl_vector *x, void *params)
 	double w1, w2, w3, w4, w5, w6, result;
 	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
 	{
-		w1 = 10.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 10.0;
+		w1 = 10.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 10.0; w6 = 0.0025;;
 		if (td.dist < 7.0)
 			w2 *= exp(td.dist - 7.0);
 		result = (
@@ -453,11 +453,12 @@ my_g(const gsl_vector *x, void *params)
 				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
 				w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
 				w4 * path_to_lane_distance + // já é quandrática
-				w5 * proximity_to_obstacles); // já é quandrática
+				w5 * proximity_to_obstacles + // já é quandrática
+				w6 * tcp.sf * tcp.sf);
 	}
 	else
 	{
-		w1 = 10.0; w2 = 55.0; w3 = 5.0; w4 = 1.5; w5 = 20.0; w6 = 0.005;
+		w1 = 10.0; w2 = 55.0; w3 = 5.0; w4 = 3.0; w5 = 20.0; w6 = 0.0025;
 		if (td.dist < 7.0)
 			w2 *= exp(td.dist - 7.0);
 		result = sqrt(
@@ -747,8 +748,8 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 
 	if (target_v < 0.0)
 		target_v = 0.0;
-//	params.optimize_time = OPTIMIZE_DISTANCE;
-	params.optimize_time = OPTIMIZE_TIME;
+	params.optimize_time = OPTIMIZE_DISTANCE;
+//	params.optimize_time = OPTIMIZE_TIME;
 
 	if (params.optimize_time == OPTIMIZE_DISTANCE)
 	{
@@ -771,7 +772,7 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 				params.optimize_time = OPTIMIZE_TIME;
 		}
 		else
-			tt = (target_v - target_td.v_i) / a;
+			tt = tcp_seed.tt; // Isso vai ficar assim enquanto a < 0.0... Nao deveria haver um ajuste se "a" ficar com um valor indesejavel? So o limite maximo eh tratado abaixo...
 
 
 		if (a > 0.0)
@@ -788,6 +789,83 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 			{
 				a = -GlobalState::robot_config.maximum_deceleration_forward;
 				tt = (target_v - target_td.v_i) / a;
+			}
+		}
+
+		if (tt > 15.0)
+			tt = 15.0;
+		else if (tt < 0.15)
+			tt = 0.15;
+
+		params.suitable_tt = tcp_seed.tt = tt;
+		params.suitable_acceleration = tcp_seed.a = a;
+		//printf("SUITABLE a %lf, tt %lf\n", a, tt);
+	}
+}
+
+
+void
+compute_suitable_acceleration_and_tt_new2(ObjectiveFunctionParams &params,
+		TrajectoryLookupTable::TrajectoryControlParameters &tcp_seed,
+		TrajectoryLookupTable::TrajectoryDimensions target_td, double target_v)
+{
+	// (i) S = Vo*t + 1/2*a*t^2
+	// (ii) dS/dt = Vo + a*t
+	// dS/dt = 0 => máximo ou mínimo de S => 0 = Vo + a*t; a*t = -Vo; (iii) a = -Vo/t; (iv) t = -Vo/a
+	// Se "a" é negativa, dS/dt = 0 é um máximo de S
+	// Logo, como S = target_td.dist, "a" e "t" tem que ser tais em (iii) e (iv) que permitam que
+	// target_td.dist seja alcançada.
+	//
+	// O valor de maxS pode ser computado substituindo (iv) em (i):
+	// maxS = Vo*-Vo/a + 1/2*a*(-Vo/a)^2 = -Vo^2/a + 1/2*Vo^2/a = -1/2*Vo^2/a
+	//
+	// Se estou co velocidade vi e quero chagar a vt, sendo que vt < vi, a eh negativo. O tempo, tt, para
+	// ir de vi a vt pode ser derivado de dS/dt = Vo + a*t -> vt = vi + a*tt; a*tt = vt - vi; tt = (vt - vi) / a
+
+	if (target_v < 0.0)
+		target_v = 0.0;
+//	params.optimize_time = OPTIMIZE_DISTANCE;
+	params.optimize_time = OPTIMIZE_TIME;
+
+	if (params.optimize_time == OPTIMIZE_DISTANCE)
+	{
+		compute_a_and_t_from_s(tcp_seed.s, target_v, target_td, tcp_seed, &params);
+	}
+	else
+	{
+//		double a = (target_v * target_v - target_td.v_i * target_td.v_i) / (2.0 * target_td.dist);
+//		double tt = (target_v - target_td.v_i) / a;
+		double a = (target_v - target_td.v_i) / tcp_seed.tt;
+		// http://www.physicsclassroom.com/class/1DKin/Lesson-6/Kinematic-Equations
+		double tt = 2.0 * target_td.dist / (target_td.v_i + target_v);
+		if ((fabs(tt - tcp_seed.tt) / tcp_seed.tt) < 0.15)
+			tt = tcp_seed.tt;
+
+		if (a == 0.0)
+		{
+			if (target_td.v_i == 0.0)
+				params.optimize_time = OPTIMIZE_ACCELERATION;
+			else
+				params.optimize_time = OPTIMIZE_TIME;
+		}
+
+		if (a > 0.0)
+		{
+			params.optimize_time = OPTIMIZE_TIME;
+			if (a > GlobalState::robot_config.maximum_acceleration_forward)
+			{
+				a = GlobalState::robot_config.maximum_acceleration_forward;
+//				tt = (target_v - target_td.v_i) / a;
+			}
+		}
+
+		if (a < 0.0)
+		{
+			params.optimize_time = OPTIMIZE_ACCELERATION;
+			if (a < -GlobalState::robot_config.maximum_deceleration_forward)
+			{
+				a = -GlobalState::robot_config.maximum_deceleration_forward;
+//				tt = (target_v - target_td.v_i) / a;
 			}
 		}
 
@@ -1346,7 +1424,6 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 
 	verify_shift_option_for_k1(tcp_seed, target_td, tcp_complete);
 	// Atencao: params.suitable_acceleration deve ser preenchido na funcao acima para que nao seja alterado no inicio da otimizacao abaixo
-//	if (tcp_complete.valid)
 
 	if (optmize_time_and_acc)
 		tcp_complete = optimized_lane_trajectory_control_parameters_new(tcp_complete, target_td, target_v, params);
@@ -1368,8 +1445,8 @@ get_complete_optimized_trajectory_control_parameters(TrajectoryLookupTable::Traj
 //		tcp_complete.k3 = tcp_copy.k3;
 //	}
 //	print_tcp(tcp_complete);
-//	printf("\n");
 //	print_td(target_td, target_v);
+//	printf("\n");
 //	if (tcp_complete.tt < 0.0)
 //		printf("t %.3lf, v0 %.1lf, a %.3lf, vg %.2lf, dg %.1lf, tt %.3lf\n",
 //			carmen_get_time(), target_td.v_i, tcp_complete.a, target_v, tcp_complete.s, tcp_complete.tt);
