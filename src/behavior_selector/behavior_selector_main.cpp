@@ -385,9 +385,7 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, ca
 		{
 			clearing_annotation = true;
 			goal->v = carmen_fmin(
-					get_velocity_at_goal(current_robot_pose_v_and_phi->v, velocity_at_next_annotation, distance_to_goal, distance_to_annotation +
-							get_robot_config()->distance_between_front_and_rear_axles +
-							get_robot_config()->distance_between_front_car_and_front_wheels),
+					get_velocity_at_goal(current_robot_pose_v_and_phi->v, velocity_at_next_annotation, distance_to_goal, distance_to_annotation),
 					goal->v);
 		}
 
@@ -958,9 +956,11 @@ stop_sign_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
 
 	double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi);
 	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.1, distance_to_annotation);
+	carmen_ackerman_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
+
 	if ((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP) &&
 		(distance_to_act_on_annotation >= distance_to_annotation) &&
-		carmen_rddf_play_annotation_is_forward(current_robot_pose_v_and_phi, nearest_velocity_related_annotation->annotation_point))
+		carmen_rddf_play_annotation_is_forward(displaced_robot_pose, nearest_velocity_related_annotation->annotation_point))
 		return (true);
 	else
 		return (false);
@@ -973,19 +973,21 @@ red_traffic_light_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_ph
 	static double last_red_timestamp = 0.0;
 
 	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
-				&current_robot_pose_v_and_phi, wait_start_moving);
+				&current_robot_pose_v_and_phi, false);
 
 	if (nearest_velocity_related_annotation == NULL)
 		return (false);
 
 	double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi);
 	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.1, distance_to_annotation);
+	carmen_ackerman_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
+
 	if ((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT) &&
 		(nearest_velocity_related_annotation->annotation_code == RDDF_ANNOTATION_CODE_TRAFFIC_LIGHT_GREEN))
 		return (false);
 	else if ((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) &&
 		(distance_to_act_on_annotation >= distance_to_annotation) &&
-		carmen_rddf_play_annotation_is_forward(current_robot_pose_v_and_phi, nearest_velocity_related_annotation->annotation_point))
+		carmen_rddf_play_annotation_is_forward(displaced_robot_pose, nearest_velocity_related_annotation->annotation_point))
 		last_red_timestamp = timestamp;
 
 	if (timestamp - last_red_timestamp < 3.0)
