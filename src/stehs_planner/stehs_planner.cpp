@@ -2,7 +2,7 @@
 
 using namespace std;
 
-#define SHOWPATH
+//#define SHOWPATH
 
 // constructor
 StehsPlanner::StehsPlanner():
@@ -805,21 +805,24 @@ StehsPlanner::ReusePath(double elapsed_time)
 	std::list<carmen_ackerman_path_point_t>::iterator it = state_list.begin();
 	double time_sum = 0.0;
 
-	while (time_sum < elapsed_time)
+	printf("Elapsed Time %lf\n", elapsed_time);
+
+	while (time_sum < elapsed_time && it != state_list.end())
 	{
 		time_sum += it->time;
+		it++;
 
 		if (time_sum <= elapsed_time)
 		{
-			printf("p\n");
 			state_list.pop_front();
-			printf("u\n");
 		}
 	}
 
-	printf("saiui\n");
 	if (time_sum > elapsed_time)
+	{
+		it = state_list.begin();
 		it->time = time_sum - elapsed_time;
+	}
 
 	it = state_list.end();
 
@@ -828,28 +831,71 @@ StehsPlanner::ReusePath(double elapsed_time)
 	start.theta = it->theta;
 	start.v = it->v;
 	start.phi = it->phi;
+}
 
-	printf("saiu\n");
+
+void
+StehsPlanner::concatenate_state_lists(std::list<carmen_ackerman_path_point_t> reuse_list)
+{
+	state_list.pop_front();  // Erase the first element becuse it always have time = 0 because it is the cars actual state
+	state_list.pop_back();   // Erase the last element becuse it always have time = 0 because it is the cars end state
+
+	std::list<carmen_ackerman_path_point_t>::iterator it = state_list.end();
+
+
+
 }
 
 
 void
 StehsPlanner::GeneratePath()
 {
+	static double time = 0.0;
+	static int cont = 11;
+
+	if (cont < 10)
+	{
+		cont += 1;
+		ReusePath(carmen_get_time() - time);
+	}
+	else
+	{
+		printf("----------------------Inicio space exploration----------------------\n");
+
+		std::list<carmen_ackerman_path_point_t> reuse_list = state_list;
+		//printf("+++++ %d\n", reuse_list.size());
+
+		RDDFSpaceExploration();
+
+		if (!circle_path.empty())
+		{
+			HeuristicSearch();
+		}
+
+		concatenate_state_lists(reuse_list);
+
+		cont = 0;
+	}
+
+	std::list<carmen_ackerman_path_point_t>::iterator it = state_list.begin();
+	for (; it != state_list.end(); it++)
+		printf("time %lf\n", it->time);
+
+	time = carmen_get_time();
+	//ShowCirclePath();
+}
+
+
+/*
+void
+StehsPlanner::GeneratePath()
+{
 	std::cout << state_list.size() << endl;
 
-	// *********************************************************************
-	//state_list.clear();
+	state_list.clear();
 
-	static double time;
-	double elapsed_time = carmen_get_time() - time;
-	ReusePath(elapsed_time);
-
-	// *********************************************************************
-
-	//printf("Inicio space exploration\n");
 	RDDFSpaceExploration();
-	//printf("Fim space exploration\n");
+
 	if (!circle_path.empty())
 	{
 		HeuristicSearch();
@@ -860,22 +906,20 @@ StehsPlanner::GeneratePath()
 		printf("Não foi possível encontrar um caminho válido.\n");
 	}
 
-	time = carmen_get_time();
 	//ShowCirclePath();
 }
+*/
 
 
 unsigned char* StehsPlanner::GetCurrentMap()
 {
     unsigned int width = distance_map->config.x_size;
     unsigned int height = distance_map->config.y_size;
-
     unsigned int size = width * height;
-
     unsigned char *map = new unsigned char[size];
 
-    for (unsigned int i = 0; i < size; ++i) {
-
+    for (unsigned int i = 0; i < size; ++i)
+    {
         // get the current row
         unsigned int row = (height - 1) - i % height;
 
@@ -885,20 +929,17 @@ unsigned char* StehsPlanner::GetCurrentMap()
         // get the current index
         unsigned int index = row * width + col;
 
-        if (0.0 == distance_map->complete_x_offset[i] && 0.0 == distance_map->complete_y_offset[i]) {
-
+        if (0.0 == distance_map->complete_x_offset[i] && 0.0 == distance_map->complete_y_offset[i])
+        {
             map[index] = 0;
-
         } else {
-
             map[index] = 255;
-
         }
-
     }
 
     return map;
 }
+
 
 cv::Mat
 StehsPlanner::ShowCirclePath(std::vector<StateNodePtr> &state_node)
@@ -921,7 +962,8 @@ StehsPlanner::ShowCirclePath(std::vector<StateNodePtr> &state_node)
     std::list<CircleNode>::iterator it = circle_path.begin();
     std::list<CircleNode>::iterator end = circle_path.end();
 
-    while (it != end) {
+    while (it != end)
+    {
 
         unsigned int row = height - std::floor((it->circle.y - distance_map->config.y_origin) * inverse_resolution + 0.5);
         unsigned int col = std::floor((it->circle.x - distance_map->config.x_origin) * inverse_resolution + 0.5);
@@ -1005,8 +1047,8 @@ void StehsPlanner::ShowCirclePath() {
     std::list<CircleNode>::iterator it = circle_path.begin();
     std::list<CircleNode>::iterator end = circle_path.end();
 
-    while (it != end) {
-
+    while (it != end)
+    {
         unsigned int row = height - std::floor((it->circle.y - distance_map->config.y_origin) * inverse_resolution + 0.5);
         unsigned int col = std::floor((it->circle.x - distance_map->config.x_origin) * inverse_resolution + 0.5);
 
