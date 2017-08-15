@@ -21,7 +21,7 @@
 
 // Comment or uncomment this definition to control whether simulated moving obstacles are created.
 //#define SIMULATE_MOVING_OBSTACLE
-//#define SIMULATE_LATERAL_MOVING_OBSTACLE
+#define SIMULATE_LATERAL_MOVING_OBSTACLE
 
 // Comment or uncomment this definition to control whether moving obstacles are displayed.
 #define DISPLAY_MOVING_OBSTACLES
@@ -484,7 +484,11 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 
 	// ver "The DARPA Urban Challenge" book, pg. 36.
 	double Kgap = 0.1;
-	double new_goal_v = moving_obj_v + Kgap * (distance - desired_distance);
+	double new_goal_v;
+	if (goal->v > moving_obj_v)
+		new_goal_v = moving_obj_v + Kgap * (distance - desired_distance);
+	else
+		new_goal_v = goal->v;
 	SampleFilter_put(&filter2, new_goal_v);
 	new_goal_v = SampleFilter_get(&filter2);
 	if (new_goal_v < 0.0)
@@ -1728,7 +1732,10 @@ read_parameters(int argc, char **argv)
 		{(char *) "behavior_selector", (char *) "rddf_num_poses_ahead_min", CARMEN_PARAM_INT, &param_rddf_num_poses_ahead_min, 0, NULL},
 		{(char *) "behavior_selector", (char *) "rddf_num_poses_by_car_velocity", CARMEN_PARAM_ONOFF, &param_rddf_num_poses_by_car_velocity, 0, NULL},
 		{(char *) "behavior_selector", (char *) "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL},
-		{(char *) "behavior_selector", (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_obstacles_safe_distance, 0, NULL},
+		{(char *) "behavior_selector", (char *) "main_central_lane_obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_main_central_lane_obstacles_safe_distance, 0, NULL},
+		{(char *) "behavior_selector", (char *) "central_lane_obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_central_lane_obstacles_safe_distance, 0, NULL},
+		{(char *) "behavior_selector", (char *) "lateral_lane_obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_lateral_lane_obstacles_safe_distance, 0, NULL},
+		{(char *) "behavior_selector", (char *) "lateral_lane_displacement", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_lateral_lane_displacement, 0, NULL},
 		{(char *) "rrt",   			   (char *) "distance_interval", CARMEN_PARAM_DOUBLE, &param_distance_interval, 1, NULL},
 		{(char *) "obstacle_avoider", 		  (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.obstacle_avoider_obstacles_safe_distance, 	1, NULL},
 		{(char *) "model_predictive_planner", (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.model_predictive_planner_obstacles_safe_distance, 	1, NULL},
