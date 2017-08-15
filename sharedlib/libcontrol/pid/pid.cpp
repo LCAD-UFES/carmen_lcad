@@ -18,8 +18,8 @@ enum
 };
 
 
-#define min_fuzzy_v 5.56 // = 20km/h Parameters start variation from this velocity
-#define max_fuzzy_v 6.25 //*2=12.5 = 45km/h Parameters stop variation from twice this velocity
+#define min_fuzzy_v 4.17 // = 20km/h Parameters start variation from this velocity
+#define max_fuzzy_v 9.72 // = 45km/h Parameters stop variation from twice this velocity
 
 
 // Global variables
@@ -240,7 +240,7 @@ carmen_libpid_steering_PID_controler_FUZZY(double atan_desired_curvature, double
 	ki = g_steering_Ki + factor * 4976.7;
 	kd = g_steering_Kd + factor * 50.65;
 
-//	printf("v %lf kp %lf ki %lf kd %lf\n", v, kp, ki, kd);
+	//printf("v %lf kp %lf ki %lf kd %lf\n", v, kp, ki, kd);
 
 	u_t = (kp * error_t)  +  (ki * integral_t)  +  (kd * derivative_t);
 

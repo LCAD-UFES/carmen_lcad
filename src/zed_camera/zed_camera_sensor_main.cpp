@@ -263,7 +263,7 @@ int main(int argc, char **argv)
 //				ConfidenceIdx = ConfidenceIdx > 100 ? 100 : ConfidenceIdx;
 			}
 //			usleep(1000/zed->getCurrentFPS());
-			res = zed->grab(dm_type);
+//			res = zed->grab(dm_type);
 		}
 	}
 	else

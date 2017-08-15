@@ -1037,7 +1037,7 @@ void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(carmen_bumblebee_b
 
 	if ((frame_number % frequency) == 0)
 	{
-		if (bumblebee_num == 4) // ZED Camera
+		if (0)//bumblebee_num == 4) // ZED Camera
 		{
 //			  int width;                    /**<The x dimension of the image in pixels. */
 //			  int height;                   /**<The y dimension of the image in pixels. */
@@ -1050,11 +1050,17 @@ void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(carmen_bumblebee_b
 
 			sprintf(path, "%s/%lf.bb%d.png", subdir, msg->timestamp, bumblebee_num);
 
-			cv::Mat dest;
-			cv::Mat left = cv::Mat(cv::Size(msg->width, msg->height), CV_8UC3, msg->raw_left);
-			cv::Mat right = cv::Mat(cv::Size(msg->width, msg->height), CV_8UC3, msg->raw_right);
+			static cv::Mat dest;
+			static int first_time = 1;
+			if (first_time)
+			{
+				cv::Mat left = cv::Mat(cv::Size(msg->width, msg->height), CV_8UC3, msg->raw_left);
+				cv::Mat right = cv::Mat(cv::Size(msg->width, msg->height), CV_8UC3, msg->raw_right);
 
-			cv::hconcat(left, right, dest);
+
+				cv::hconcat(left, right, dest);
+				first_time = 0;
+			}
 			cv::imwrite(path, dest);
 		}
 		else

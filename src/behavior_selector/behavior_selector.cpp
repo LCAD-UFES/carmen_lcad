@@ -29,7 +29,7 @@ static carmen_behavior_selector_goal_source_t current_goal_source = CARMEN_BEHAV
 static double change_goal_distance = 8.0; // @@@ Alberto: acho que nao usa... deletar?
 static carmen_behavior_selector_algorithm_t following_lane_planner;
 static carmen_behavior_selector_algorithm_t parking_planner;
-static double distance_to_remove_annotation_goal = 0.0;
+static double distance_to_remove_annotation_goal = 1.5;
 
 int position_of_next_annotation = 0;
 
@@ -194,8 +194,7 @@ get_parameters_for_filling_in_goal_list(int &moving_object_in_front_index, int &
 	for (int i = current_goal_rddf_index; i < rddf_pose_index - 1; i++)
 		distance_from_car_to_rddf_point += DIST2D(rddf->poses[i], rddf->poses[i + 1]);
 
-	distance_to_annotation = carmen_distance_ackerman_traj(&current_goal, &rddf->poses[rddf_pose_index]) -
-			(robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels);
+	distance_to_annotation = carmen_distance_ackerman_traj(&current_goal, &rddf->poses[rddf_pose_index]);
 	distance_to_last_obstacle_free_waypoint = carmen_distance_ackerman_traj(&current_goal, &rddf->poses[last_obstacle_free_waypoint_index]);
 
 	return (rddf_pose_hit_obstacle);
@@ -357,6 +356,7 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double
 			else
 			{
 				goal_type[goal_index] = MOVING_OBSTACLE_GOAL2;
+//				clear_lane_ahead_in_distance_map(rddf_pose_index, ideal_rddf_pose_index, rddf);
 				clear_lane_ahead_in_distance_map(current_goal_rddf_index, ideal_rddf_pose_index, rddf);
 				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, ideal_rddf_pose_index, rddf,
 						-(distance_car_pose_car_front / 2.0) * reduction_factor);
