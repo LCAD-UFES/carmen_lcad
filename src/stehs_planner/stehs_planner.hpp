@@ -155,6 +155,8 @@ public:
 
     void ReusePath(double elapsed_time);
 
+    void concatenate_state_lists(std::list<carmen_ackerman_path_point_t> reuse_list);
+
     void GeneratePath();
 };
 
