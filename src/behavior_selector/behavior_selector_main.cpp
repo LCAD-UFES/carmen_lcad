@@ -189,7 +189,7 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_ackerman
 		(annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK))
 		v = 2.5;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)
-		v = 1.0;
+		v = 2.0;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
 			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_0))
 		v = 0.0;
