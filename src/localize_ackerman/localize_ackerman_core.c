@@ -757,9 +757,9 @@ convert_particles_log_odd_weights_to_prob(carmen_localize_ackerman_particle_filt
 	{
 		double weight = filter->particles[i].weight;
 
-		//if (filter->param->use_log_odds)
-			//filter->particles[i].weight = carmen_prob_models_log_odds_to_probabilistic(weight - max_weight);
-		//else
+		if (filter->param->use_log_odds)
+			filter->particles[i].weight = carmen_prob_models_log_odds_to_probabilistic(weight - max_weight);
+		else
 			filter->particles[i].weight = exp(weight - max_weight);
 
 //		printf("%04d, p %.15lf, mw %lf, w %lf\n", i, filter->particles[i].weight, max_weight, weight);
@@ -1611,7 +1611,7 @@ mahalanobis_distance_remission_map(carmen_localize_ackerman_particle_filter_p fi
 	{
 		w = mahalanobis_distance(global_map, local_mean_remission_map, local_variance_remission_map, &filter->particles[i], small_log_odds);
 		filter->particles[i].weight = exp(w);
-		printf("w = %.20f\n", exp(w));
+//		printf("w = %.20f\n", exp(w));
 	}
 	normalize_particles_map_matching(filter);
 }
