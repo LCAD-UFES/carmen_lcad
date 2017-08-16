@@ -730,7 +730,7 @@ get_max_distance_in_path(vector<carmen_ackerman_path_point_t> path, carmen_acker
 	furthest_point = path[0];
 	for (unsigned int i = 0; i < path.size(); i++)
 	{
-		double distance = sqrt(path[i].x * path[i].x + path[i].y * path[i].y);
+		double distance = DIST2D(path[0], path[i]);
 		if (distance > max_dist)
 		{
 			max_dist = distance;

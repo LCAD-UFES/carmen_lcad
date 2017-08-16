@@ -445,7 +445,7 @@ my_g(const gsl_vector *x, void *params)
 	double w1, w2, w3, w4, w5, w6, result;
 	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
 	{
-		w1 = 15.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 10.0; w6 = 0.0025;;
+		w1 = 30.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 3.0; w6 = 0.0025;;
 		if (td.dist < 7.0)
 			w2 *= exp(td.dist - 7.0);
 		result = (
@@ -573,7 +573,7 @@ my_h(const gsl_vector *x, void *params)
 	double w1, w2, w3, w4, w5, w6, result;
 	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
 	{
-		w1 = 15.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 10.0; w6 = 0.005;
+		w1 = 30.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 3.0; w6 = 0.005;
 		if (td.dist < 7.0)
 			w2 *= exp(td.dist - 7.0);
 		result = (

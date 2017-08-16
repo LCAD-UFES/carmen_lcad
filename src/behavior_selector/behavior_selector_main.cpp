@@ -407,6 +407,19 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, ca
 
 
 double
+set_goal_velocity_according_to_obstacle_distance(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
+{
+	double distance_to_obstacle = DIST2D_P(current_robot_pose_v_and_phi, goal);
+
+	goal->v = carmen_fmin(
+				get_velocity_at_goal(current_robot_pose_v_and_phi->v, 0.0, distance_to_obstacle, distance_to_obstacle),
+				goal->v);
+
+	return (goal->v);
+}
+
+
+double
 limit_maximum_velocity_according_to_centripetal_acceleration(double target_v, double current_v, carmen_ackerman_traj_point_t *goal,
 		carmen_ackerman_traj_point_t *path, int number_of_poses)
 {
@@ -512,10 +525,9 @@ void
 set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi,
 		int goal_type, double timestamp)
 {
+	goal->v = get_max_v();
 	if (goal_type == OBSTACLE_GOAL)
-		goal->v = 0.0;
-	else
-		goal->v = get_max_v();
+		goal->v = set_goal_velocity_according_to_obstacle_distance(goal, current_robot_pose_v_and_phi);
 
 	FILE *caco = fopen("caco3.txt", "a");
 	fprintf(caco, "gv %lf  ", goal->v);
@@ -720,7 +732,8 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	if (stop_t0 <= t && disp > 0.0)
 		disp -= 0.03;
 	if (t < stop_t1)
-		v = current_robot_pose_v_and_phi.v + 0.9;
+//		v = current_robot_pose_v_and_phi.v + 0.9;
+		v = current_robot_pose_v_and_phi.v + 0.5; // Motos!
 
 //	else if (t > stop_tn)
 //		initial_time = timestamp;
