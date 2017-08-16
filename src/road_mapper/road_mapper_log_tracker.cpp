@@ -573,7 +573,7 @@ main(int argc, char **argv)
 				map_index_message = message;
 				map_index_timestamp = timestamp;
 			}
-			else if(map_origin.x != last_map_origin.x && map_origin.y != last_map_origin.y)
+			else if(map_origin.x != last_map_origin.x || map_origin.y != last_map_origin.y)
 			{
 				// Finish the last missing map
 				printf("%8d\t%8d\t%17.6lf\t%17.6lf\t %.0lf_%.0lf\t(map file unavailable)\n", map_index_message, last_message, map_index_timestamp, last_timestamp, last_map_origin.x, last_map_origin.y);
