@@ -349,10 +349,8 @@ StehsPlanner::UpdateCircleGoalDistance()  // Iterate the entire circle path comp
 void
 StehsPlanner::RDDFSpaceExploration()
 {
-	printf("Ent\n");
 	//printf("%d\n", circle_path.);
     circle_path.clear();
-    printf("Ent\n");
 
     //TODO verificar se os dados para os calculos estao disponiveis, se nao, nao fazer nada
     // create the start circle node
@@ -406,8 +404,6 @@ StehsPlanner::RDDFSpaceExploration()
     // Check if all circles in the circle_path have a min overlap, case not call SpaceExploration function to connect them
     ConnectCirclePathGaps();
 
-    printf("Entrou\n");
-
     UpdateCircleGoalDistance();
 
     /*std::list<CircleNode>::iterator it;
@@ -415,9 +411,6 @@ StehsPlanner::RDDFSpaceExploration()
     {
         printf("x: %f y: %f r: %f\n",it->circle.x, it->circle.y, it->circle.radius);
     }*/
-
-    printf("Entrou\n");
-
 }
 
 
@@ -792,12 +785,11 @@ StehsPlanner::HeuristicSearch()
 
         delete tmp;
     }
-
 }
 
 
 void
-StehsPlanner::ReusePath(double elapsed_time)
+StehsPlanner::ConsumePath(double elapsed_time)
 {
 	if (state_list.empty())
 		return;
@@ -823,14 +815,6 @@ StehsPlanner::ReusePath(double elapsed_time)
 		it = state_list.begin();
 		it->time = time_sum - elapsed_time;
 	}
-
-	it = state_list.end();
-
-	start.x = it->x;
-	start.y = it->y;
-	start.theta = it->theta;
-	start.v = it->v;
-	start.phi = it->phi;
 }
 
 
@@ -840,30 +824,53 @@ StehsPlanner::concatenate_state_lists(std::list<carmen_ackerman_path_point_t> re
 	state_list.pop_front();  // Erase the first element becuse it always have time = 0 because it is the cars actual state
 	state_list.pop_back();   // Erase the last element becuse it always have time = 0 because it is the cars end state
 
-	std::list<carmen_ackerman_path_point_t>::iterator it = state_list.end();
+	std::list<carmen_ackerman_path_point_t>::iterator it = state_list.begin();
 
-
-
+	state_list.insert(it, reuse_list.begin(), reuse_list.end());
 }
 
 
 void
+StehsPlanner::set_start_position_last_state_list_position()
+{
+	if (state_list.empty())
+			return;
+
+	std::list<carmen_ackerman_path_point_t>::iterator it = state_list.begin();
+
+	it = state_list.end();
+	it--;                        // it-- because end() returns a void pointer
+
+	start.x = it->x;
+	start.y = it->y;
+	start.theta = it->theta;
+	start.v = it->v;
+	start.phi = it->phi;
+
+	//printf("%lf %lf %lf %lf %lf\n", it->x, it->y, it->theta, it->v, it->phi);
+}
+
+
+/*void
 StehsPlanner::GeneratePath()
 {
 	static double time = 0.0;
-	static int cont = 11;
+	static int cont = 99;
 
-	if (cont < 10)
+	ConsumePath(carmen_get_time() - time);
+
+	if (cont < 100)
 	{
 		cont += 1;
-		ReusePath(carmen_get_time() - time);
 	}
 	else
 	{
 		printf("----------------------Inicio space exploration----------------------\n");
 
 		std::list<carmen_ackerman_path_point_t> reuse_list = state_list;
-		//printf("+++++ %d\n", reuse_list.size());
+		state_list.clear();
+
+		set_start_position_last_state_list_position();
 
 		RDDFSpaceExploration();
 
@@ -871,10 +878,10 @@ StehsPlanner::GeneratePath()
 		{
 			HeuristicSearch();
 		}
+		//printf("+++++ %d\n", state_list.size());
 
 		concatenate_state_lists(reuse_list);
 
-		cont = 0;
 	}
 
 	std::list<carmen_ackerman_path_point_t>::iterator it = state_list.begin();
@@ -882,11 +889,9 @@ StehsPlanner::GeneratePath()
 		printf("time %lf\n", it->time);
 
 	time = carmen_get_time();
-	//ShowCirclePath();
-}
+}*/
 
 
-/*
 void
 StehsPlanner::GeneratePath()
 {
@@ -905,10 +910,7 @@ StehsPlanner::GeneratePath()
 		// TODO Pensar no que fazer. Consumir o plano, parar?
 		printf("Não foi possível encontrar um caminho válido.\n");
 	}
-
-	//ShowCirclePath();
 }
-*/
 
 
 unsigned char* StehsPlanner::GetCurrentMap()

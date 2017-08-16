@@ -153,9 +153,11 @@ public:
 
     void SetSwap(std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set, std::vector<StateNodePtr> &closed_set);
 
-    void ReusePath(double elapsed_time);
+    void ConsumePath(double elapsed_time);
 
     void concatenate_state_lists(std::list<carmen_ackerman_path_point_t> reuse_list);
+
+    void set_start_position_last_state_list_position();
 
     void GeneratePath();
 };
