@@ -425,7 +425,7 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	}
 	// if (fabs(base_ackerman_odometry_vector[odometry_index].v) > 0.2)
 	{
-		carmen_localize_ackerman_velodyne_resample(filter);
+		//carmen_localize_ackerman_velodyne_resample(filter);
 	}
 
 	if (filter->initialized)
@@ -929,7 +929,7 @@ get_sensors_param(int argc, char **argv, int correction_type)
 
 	int roi_ini, roi_end;
 
-	int use_remission = (correction_type == 4) || (correction_type == 5) || (correction_type == 6); // See carmen_ford_escape.ini
+	int use_remission = (correction_type == 4) || (correction_type == 5) || (correction_type == 6)|| (correction_type == 7); // See carmen_ford_escape.ini
 	spherical_sensor_params[0].use_remission = use_remission;
 
 	spherical_sensor_params[0].pose = velodyne_pose;

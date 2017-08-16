@@ -69,7 +69,7 @@ typedef struct {
 	carmen_map_config_t config;
 	int size;
 	double *complete_mean_remission_map;
-	//double *complete_variance_remission_map;
+	double *complete_variance_remission_map;
 	double *complete_map;
 	//double *complete_distance;
 	double *complete_prob;
@@ -82,6 +82,6 @@ typedef struct {
 
 #define CARMEN_MAP_SERVER_LOCALIZE_MAP_NAME		"carmen_map_server_localize_map_name"
 //#define CARMEN_MAP_SERVER_LOCALIZE_MAP_FMT		"{{int, int, double, [byte:64], string, double, double}, int, <double:2>, <double:2>, <double:2>, <double:2>, <double:2>, <double:2>, <short:2>, <short:2>, double, string}"
-#define CARMEN_MAP_SERVER_LOCALIZE_MAP_FMT		"{{int, int, double, [byte:64], string, double, double}, int, <double:2>, <double:2>, <double:2>, <double:2>, double, string}"
+#define CARMEN_MAP_SERVER_LOCALIZE_MAP_FMT		"{{int, int, double, [byte:64], string, double, double}, int, <double:2>, <double:2>, <double:2>, <double:2>, <double:2>, double, string}"
 
 #endif /* MAP_SERVER_MESSAGES_H_ */
