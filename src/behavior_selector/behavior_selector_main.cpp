@@ -1221,7 +1221,9 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 //			if (udatmo_obstacle_detected(timestamp) &&
 //				(udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi, get_robot_config()) < distance_to_red_traffic_light(current_robot_pose_v_and_phi, timestamp)))
 //				decision_making_state_msg->low_level_state = Following_Moving_Object;
-			if ((current_robot_pose_v_and_phi.v < 0.15) && (distance_to_red_traffic_light(current_robot_pose_v_and_phi, timestamp) < 2.0))
+			if ((current_robot_pose_v_and_phi.v < 0.15) &&
+				((distance_to_red_traffic_light(current_robot_pose_v_and_phi, timestamp) < 2.0) ||
+				 (distance_to_red_traffic_light(current_robot_pose_v_and_phi, timestamp) == 1000.0)))
 				decision_making_state_msg->low_level_state = Stopped_At_Red_Traffic_light_S0;
 			else if (!red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp))
 				decision_making_state_msg->low_level_state = Free_Running;
