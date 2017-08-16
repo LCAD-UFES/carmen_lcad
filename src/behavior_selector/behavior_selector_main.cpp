@@ -189,7 +189,7 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_ackerman
 		(annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK))
 		v = 2.5;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)
-		v = 1.0;
+		v = 2.0;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
 			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_0))
 		v = 0.0;
@@ -407,6 +407,19 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, ca
 
 
 double
+set_goal_velocity_according_to_obstacle_distance(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
+{
+	double distance_to_obstacle = DIST2D_P(current_robot_pose_v_and_phi, goal);
+
+	goal->v = carmen_fmin(
+				get_velocity_at_goal(current_robot_pose_v_and_phi->v, 0.0, distance_to_obstacle, distance_to_obstacle),
+				goal->v);
+
+	return (goal->v);
+}
+
+
+double
 limit_maximum_velocity_according_to_centripetal_acceleration(double target_v, double current_v, carmen_ackerman_traj_point_t *goal,
 		carmen_ackerman_traj_point_t *path, int number_of_poses)
 {
@@ -484,7 +497,11 @@ set_goal_velocity_according_to_moving_obstacle(carmen_ackerman_traj_point_t *goa
 
 	// ver "The DARPA Urban Challenge" book, pg. 36.
 	double Kgap = 0.1;
-	double new_goal_v = moving_obj_v + Kgap * (distance - desired_distance);
+	double new_goal_v;
+	if (goal->v > moving_obj_v)
+		new_goal_v = moving_obj_v + Kgap * (distance - desired_distance);
+	else
+		new_goal_v = goal->v;
 	SampleFilter_put(&filter2, new_goal_v);
 	new_goal_v = SampleFilter_get(&filter2);
 	if (new_goal_v < 0.0)
@@ -508,10 +525,9 @@ void
 set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi,
 		int goal_type, double timestamp)
 {
+	goal->v = get_max_v();
 	if (goal_type == OBSTACLE_GOAL)
-		goal->v = 0.0;
-	else
-		goal->v = get_max_v();
+		goal->v = set_goal_velocity_according_to_obstacle_distance(goal, current_robot_pose_v_and_phi);
 
 	FILE *caco = fopen("caco3.txt", "a");
 	fprintf(caco, "gv %lf  ", goal->v);
@@ -716,7 +732,8 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	if (stop_t0 <= t && disp > 0.0)
 		disp -= 0.03;
 	if (t < stop_t1)
-		v = current_robot_pose_v_and_phi.v + 0.9;
+//		v = current_robot_pose_v_and_phi.v + 0.9;
+		v = current_robot_pose_v_and_phi.v + 0.5; // Motos!
 
 //	else if (t > stop_tn)
 //		initial_time = timestamp;
@@ -1728,7 +1745,10 @@ read_parameters(int argc, char **argv)
 		{(char *) "behavior_selector", (char *) "rddf_num_poses_ahead_min", CARMEN_PARAM_INT, &param_rddf_num_poses_ahead_min, 0, NULL},
 		{(char *) "behavior_selector", (char *) "rddf_num_poses_by_car_velocity", CARMEN_PARAM_ONOFF, &param_rddf_num_poses_by_car_velocity, 0, NULL},
 		{(char *) "behavior_selector", (char *) "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL},
-		{(char *) "behavior_selector", (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_obstacles_safe_distance, 0, NULL},
+		{(char *) "behavior_selector", (char *) "main_central_lane_obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_main_central_lane_obstacles_safe_distance, 0, NULL},
+		{(char *) "behavior_selector", (char *) "central_lane_obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_central_lane_obstacles_safe_distance, 0, NULL},
+		{(char *) "behavior_selector", (char *) "lateral_lane_obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_lateral_lane_obstacles_safe_distance, 0, NULL},
+		{(char *) "behavior_selector", (char *) "lateral_lane_displacement", CARMEN_PARAM_DOUBLE, &robot_config.behaviour_selector_lateral_lane_displacement, 0, NULL},
 		{(char *) "rrt",   			   (char *) "distance_interval", CARMEN_PARAM_DOUBLE, &param_distance_interval, 1, NULL},
 		{(char *) "obstacle_avoider", 		  (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.obstacle_avoider_obstacles_safe_distance, 	1, NULL},
 		{(char *) "model_predictive_planner", (char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &robot_config.model_predictive_planner_obstacles_safe_distance, 	1, NULL},

@@ -404,12 +404,18 @@ localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(carmen_velodyne
 
 	if (velodyne_params->use_remission)
 	{
-		carmen_prob_models_calc_mean_and_variance_remission_map(&local_mean_remission_map, &local_variance_remission_map,
-							&local_sum_remission_map, &local_sum_sqr_remission_map, &local_count_remission_map);
+		carmen_prob_models_calc_mean_and_variance_remission_map(&local_mean_remission_map, &local_variance_remission_map, &local_sum_remission_map, &local_sum_sqr_remission_map, &local_count_remission_map);
+
 		carmen_prob_models_free_compact_map(&local_compacted_mean_remission_map);
+		carmen_prob_models_free_compact_map(&local_compacted_variance_remission_map);
+
 		carmen_prob_models_create_compact_map(&local_compacted_mean_remission_map, &local_mean_remission_map, -1.0);
+		carmen_prob_models_create_compact_map(&local_compacted_variance_remission_map, &local_variance_remission_map, -1.0);
+
 		carmen_prob_models_clear_carmen_map_using_compact_map(&local_mean_remission_map, &local_compacted_mean_remission_map, -1.0);
+		carmen_prob_models_clear_carmen_map_using_compact_map(&local_variance_remission_map, &local_compacted_variance_remission_map, -1.0);
 		carmen_prob_models_clear_carmen_map_using_compact_map(&local_sum_remission_map, &local_compacted_mean_remission_map, -1.0);
+		carmen_prob_models_clear_carmen_map_using_compact_map(&local_sum_sqr_remission_map, &local_compacted_variance_remission_map, -1.0);
 		carmen_prob_models_clear_carmen_map_using_compact_map(&local_count_remission_map, &local_compacted_mean_remission_map, -1.0);
 	}
 
