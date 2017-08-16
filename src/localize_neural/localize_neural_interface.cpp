@@ -6,8 +6,8 @@ carmen_localize_neural_subscribe_imagepos_keyframe_message(carmen_localize_neura
 		*imagepos, carmen_handler_t handler,
 		carmen_subscribe_t subscribe_how)
 {
-	carmen_subscribe_message(CARMEN_LOCALIZE_NEURAL_IMAGEPOS_KEYFRAME_NAME,
-			CARMEN_LOCALIZE_NEURAL_IMAGEPOS_FMT,
+	carmen_subscribe_message((char *)CARMEN_LOCALIZE_NEURAL_IMAGEPOS_KEYFRAME_NAME,
+			(char *)CARMEN_LOCALIZE_NEURAL_IMAGEPOS_FMT,
 			imagepos, sizeof(carmen_localize_neural_imagepos_message),
 			handler, subscribe_how);
 }
@@ -17,8 +17,8 @@ carmen_localize_neural_subscribe_imagepos_curframe_message(carmen_localize_neura
 		*imagepos, carmen_handler_t handler,
 		carmen_subscribe_t subscribe_how)
 {
-	carmen_subscribe_message(CARMEN_LOCALIZE_NEURAL_IMAGEPOS_CURFRAME_NAME,
-			CARMEN_LOCALIZE_NEURAL_IMAGEPOS_FMT,
+	carmen_subscribe_message((char *)CARMEN_LOCALIZE_NEURAL_IMAGEPOS_CURFRAME_NAME,
+			(char *)CARMEN_LOCALIZE_NEURAL_IMAGEPOS_FMT,
 			imagepos, sizeof(carmen_localize_neural_imagepos_message),
 			handler, subscribe_how);
 }
@@ -26,13 +26,13 @@ carmen_localize_neural_subscribe_imagepos_curframe_message(carmen_localize_neura
 void
 carmen_localize_neural_unsubscribe_imagepos_keyframe_message(carmen_handler_t handler)
 {
-	carmen_unsubscribe_message(CARMEN_LOCALIZE_NEURAL_IMAGEPOS_KEYFRAME_NAME, handler);
+	carmen_unsubscribe_message((char *)CARMEN_LOCALIZE_NEURAL_IMAGEPOS_KEYFRAME_NAME, handler);
 }
 
 void
 carmen_localize_neural_unsubscribe_imagepos_curframe_message(carmen_handler_t handler)
 {
-	carmen_unsubscribe_message(CARMEN_LOCALIZE_NEURAL_IMAGEPOS_CURFRAME_NAME, handler);
+	carmen_unsubscribe_message((char *)CARMEN_LOCALIZE_NEURAL_IMAGEPOS_CURFRAME_NAME, handler);
 }
 
 void
