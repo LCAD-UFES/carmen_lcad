@@ -265,7 +265,7 @@ The training of ENet is performed in two stages:
 
 First, create the prototxt file `enet_train_encoder.prototxt` by running:
 ```bash
- $ python create_enet_prototxt.py	--source carmen_lcad/src/road_mapper/road_mapper_train.txt \
+ $ python create_enet_prototxt.py	--source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt \
 					--mode train_encoder \
 					--batch_size 2 \
 					--new_height 200 \
