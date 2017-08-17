@@ -230,7 +230,7 @@ Please make sure that the python layer (spatial_dropout.py) is defined in your P
 
 You can do this by adding to you .bashrc file:
 ```bash
- export CAFFE_ENET_HOME=ENet/caffe-enet/
+ export CAFFE_ENET_HOME=$HOME/ENet/caffe-enet
  export PYTHONPATH=$CAFFE_ENET_HOME/python
 ```
 
