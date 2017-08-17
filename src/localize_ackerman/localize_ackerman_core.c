@@ -1544,7 +1544,7 @@ carmen_localize_ackerman_function_velodyne_evaluation(
 #include <carmen/moving_objects_interface.h>
 
 double
-mahalanobis_distance(carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_mean_remission_map, carmen_compact_map_t *local_variance_remission_map, carmen_localize_ackerman_particle_t *particle, double small_log_odds)
+mahalanobis_distance(carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_mean_remission_map, carmen_localize_ackerman_particle_t *particle, double small_log_odds)
 {
 	int i;
 	cell_coords_t local, global;
@@ -1561,8 +1561,19 @@ mahalanobis_distance(carmen_localize_ackerman_map_t *global_map, carmen_compact_
 	double robot_position_in_the_map_x = robot_position.x / local_mean_remission_map->config.resolution;
 	double robot_position_in_the_map_y = robot_position.y / local_mean_remission_map->config.resolution;
 
+	static double first_time = 0.0;
+	static int first_in = 1;
+	if (first_in == 1)
+	{
+		first_time = carmen_get_time();
+		first_in = 2;
+	}
+	FILE *caco;
+	double time = carmen_get_time();
+	if ((time - first_time > 15.0) && (first_in == 2))
+		caco = fopen("caco10.txt", "w");
 
-	for (i = 0; i < local_mean_remission_map->number_of_known_points_on_the_map; i += 8)
+	for (i = 0; i < local_mean_remission_map->number_of_known_points_on_the_map; i += 3)
 	{
 		local.x = local_mean_remission_map->coord_x[i];
 		local.y = local_mean_remission_map->coord_y[i];
@@ -1572,48 +1583,57 @@ mahalanobis_distance(carmen_localize_ackerman_map_t *global_map, carmen_compact_
 
 		if (global.x >= 0 && global.y >= 0 && global.x < global_map->config.x_size && global.y < global_map->config.y_size)
 		{
-			double diff = global_map->carmen_mean_remission_map.map[global.x][global.y] - local_mean_remission_map->value[i];
-			if (local_variance_remission_map->value[i] <= 0.0 || global_map->carmen_variance_remission_map.map[global.x][global.y] <= 0.0)
+			double cell_val = 1.5 * local_mean_remission_map->value[i];
+			double mean_map_val = global_map->carmen_mean_remission_map.map[global.x][global.y];
+			double variance = 100.0 * global_map->carmen_variance_remission_map.map[global.x][global.y];
+			if ((mean_map_val < 0.0) || (variance <= 0.001))
 			{
 				sum += small_log_odds;
 				continue;
 			}
-			double sigma_sum = sqrt(local_variance_remission_map->value[i]) + sqrt(global_map->carmen_variance_remission_map.map[global.x][global.y]);
-			if (sigma_sum != 0)
-				sum += (-(diff * diff)/(2 * sigma_sum * sigma_sum));
-			//if (isnan(sum)||isinf(sum))
+			double diff = cell_val - mean_map_val;
+			sum += -(diff * diff) / variance;
+			if ((time - first_time > 15.0) && (first_in == 2))
 			{
-			//	printf("sum = %.20f\n", sum);
+				fprintf(caco, "%lf %lf %lf %lf %lf\n", cell_val, mean_map_val, variance, -(diff * diff) / variance, sum);
+				fflush(caco);
 			}
-
 		}
 		else
 			sum += small_log_odds;
 	}
-	return sum;
+	if ((time - first_time > 15.0) && (first_in == 2))
+	{
+		fclose(caco);
+		first_in = 3;
+	}
+
+	return (sum);
 }
 
-static void
-mahalanobis_distance_remission_map(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_mean_remission_map, carmen_compact_map_t *local_variance_remission_map)
-{
 
+static void
+localize_map_mahalanobis_correction_with_remission_map(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_mean_remission_map)
+{
 	double  w;
 
 	int i;
 	double small_log_odds;
 
-	//if (filter->param->use_log_odds)
-		//small_log_odds = log(filter->param->tracking_beam_minlikelihood / (1.0 - filter->param->tracking_beam_minlikelihood));
-	//else
+	if (filter->param->use_log_odds)
+		small_log_odds = log(filter->param->tracking_beam_minlikelihood / (1.0 - filter->param->tracking_beam_minlikelihood));
+	else
 		small_log_odds = log(filter->param->tracking_beam_minlikelihood);
 
 	for (i = 0; i < filter->param->num_particles; i++)
 	{
-		w = mahalanobis_distance(global_map, local_mean_remission_map, local_variance_remission_map, &filter->particles[i], small_log_odds);
-		filter->particles[i].weight = exp(w);
-//		printf("w = %.20f\n", exp(w));
+		w = mahalanobis_distance(global_map, local_mean_remission_map, &filter->particles[i], small_log_odds);
+		if (filter->param->use_log_odds)
+			filter->particles[i].weight = log(exp(w) / (1.0 - exp(w)));
+		else
+			filter->particles[i].weight = w;
 	}
-	normalize_particles_map_matching(filter);
+	convert_particles_log_odd_weights_to_prob(filter);
 }
 
 
@@ -1698,7 +1718,7 @@ carmen_localize_ackerman_velodyne_correction(carmen_localize_ackerman_particle_f
 //			carmen_moving_objects_map_publish_message(&moving_objects_map_message);
 //			free(temp_map.complete_map);
 //			free(temp_map.map);
-break;
+			break;
 
 		case 5:
 			cosine_correction_with_remission_map_and_grid_map(filter, localize_map, local_mean_remission_map, local_map);
@@ -1708,7 +1728,37 @@ break;
 			cosine_correction_with_remission_map_and_log_likelihood(filter, localize_map, local_mean_remission_map, local_map);
 			break;
 		case 7:
-			mahalanobis_distance_remission_map(filter, localize_map, local_mean_remission_map, local_variance_remission_map);
+			localize_map_mahalanobis_correction_with_remission_map(filter, localize_map, local_mean_remission_map);
+
+			carmen_moving_objects_map_message moving_objects_map_message;
+			moving_objects_map_message.size = localize_map->config.x_size * localize_map->config.y_size;
+			double *new_map_x = (double *) malloc(moving_objects_map_message.size * sizeof(double));
+			moving_objects_map_message.complete_map = new_map_x;
+			for (int i = 0; i < moving_objects_map_message.size; i++)
+			{
+				if (localize_map->carmen_variance_remission_map.complete_map[i] > 0.0)
+					moving_objects_map_message.complete_map[i] = sqrt(localize_map->carmen_variance_remission_map.complete_map[i]);
+				else
+					moving_objects_map_message.complete_map[i] = -1.0;
+			}
+			moving_objects_map_message.config = localize_map->config;
+			moving_objects_map_message.timestamp = carmen_get_time();
+			moving_objects_map_message.host = carmen_get_host();
+			carmen_moving_objects_map_publish_message(&moving_objects_map_message);
+			free(new_map_x);
+
+//			carmen_moving_objects_map_message moving_objects_map_message;
+//			carmen_map_t temp_map;
+//			carmen_grid_mapping_create_new_map(&temp_map, local_map->config.x_size, local_map->config.y_size, local_map->config.resolution, 'c');
+//			carmen_prob_models_uncompress_compact_map(&temp_map, local_mean_remission_map);
+//			moving_objects_map_message.complete_map = temp_map.complete_map;
+//			moving_objects_map_message.size = temp_map.config.x_size * temp_map.config.y_size;
+//			moving_objects_map_message.config = temp_map.config;
+//			moving_objects_map_message.timestamp = carmen_get_time();
+//			moving_objects_map_message.host = carmen_get_host();
+//			carmen_moving_objects_map_publish_message(&moving_objects_map_message);
+//			free(temp_map.complete_map);
+//			free(temp_map.map);
 			break;
 	}
 }

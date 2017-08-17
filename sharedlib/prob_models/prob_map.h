@@ -253,15 +253,15 @@ void carmen_prob_models_overwrite_current_map_with_snapshot_map_and_clear_snapsh
 void carmen_prob_models_overwrite_current_map_with_log_odds_snapshot_map_and_clear_snapshot_map(carmen_map_t *current_log_odds_map, carmen_map_t *log_odds_snapshot_map, double log_odds_l0);
 void carmen_prob_models_clear_cells_hit_by_single_ray(carmen_map_t *log_odds_snapshot_map, double log_odds_occ, double log_odds_l0);
 
-void
-carmen_prob_models_update_intensity_of_cells_hit_by_rays(carmen_map_t *sum_remission_map,
+void carmen_prob_models_update_intensity_of_cells_hit_by_rays(carmen_map_t *sum_remission_map,
 		carmen_map_t *sum_sqr_remission_map, carmen_map_t *count_remission_map,
 		sensor_parameters_t *sensor_params,
 		sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, cell_coords_t *map_cells_hit_by_each_rays, int thread_id);
 
 void carmen_prob_models_calc_mean_and_variance_remission_map(carmen_map_t *mean_remission_map, carmen_map_t *variance_remission_map, carmen_map_t *sum_remission_map, carmen_map_t *sum_sqr_remission_map, carmen_map_t *count_remission_map);
-void
-carmen_prob_models_update_intensity_of_cells_hit_by_rays_for_calibration(carmen_map_t *sum_remission_map, carmen_map_t *sum_sqr_remission_map, carmen_map_t *count_remission_map, carmen_map_t *remission_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id);
+void carmen_prob_models_calc_mean_remission_map(carmen_map_t *mean_remission_map, carmen_map_t *sum_remission_map, carmen_map_t *count_remission_map);
+
+void carmen_prob_models_update_intensity_of_cells_hit_by_rays_for_calibration(carmen_map_t *sum_remission_map, carmen_map_t *sum_sqr_remission_map, carmen_map_t *count_remission_map, carmen_map_t *remission_map, sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int thread_id);
 
 void carmen_prob_models_clean_carmen_map(carmen_map_t *map);
 
