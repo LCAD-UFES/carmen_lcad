@@ -38,12 +38,10 @@
 class StehsPlanner
 {
 public:
+    State start;    // Robot global start state position
 
-    // the robot global state
-    State start;
-
-    //
     State goal;
+
     carmen_obstacle_distance_mapper_map_message *distance_map;
 
     carmen_behavior_selector_road_profile_message *goal_list_message;
@@ -52,10 +50,12 @@ public:
 
     // the planner activation flag
     bool active;
-
     unsigned int show_debug_info;
     unsigned int cheat;
-    bool lane_ready, distance_map_ready, goal_ready;
+    bool 	lane_ready,
+			distance_map_ready,
+			goal_ready,
+			use_rddf;
 
     unsigned int use_mpc;
     unsigned int use_obstacle_avoider;
@@ -107,6 +107,8 @@ public:
     std::list<CircleNode> BuildCirclePath(CircleNodePtr goal_node);
 
     bool Exist(CircleNodePtr current, std::vector<CircleNodePtr> &closed_set);
+
+    void GoalSpaceExploration();
 
     int FindClosestRDDFIndex();
 
