@@ -230,7 +230,7 @@ Please make sure that the python layer (spatial_dropout.py) is defined in your P
 
 You can do this by adding to you .bashrc file:
 ```bash
- export CAFFE_ENET_HOME=ENet/caffe-enet/
+ export CAFFE_ENET_HOME=$HOME/ENet/caffe-enet
  export PYTHONPATH=$CAFFE_ENET_HOME/python
 ```
 
@@ -265,29 +265,29 @@ The training of ENet is performed in two stages:
 
 First, create the prototxt file `enet_train_encoder.prototxt` by running:
 ```bash
- $ python create_enet_prototxt.py	--source carmen_lcad/src/road_mapper/road_mapper_train.txt \
-					--mode train_encoder \
-					--batch_size 2 \
-					--new_height 200 \
-					--new_width 200 \
-					--num_of_classes 22
+ $ python create_enet_prototxt.py  --source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt \
+                                   --mode train_encoder \
+                                   --batch_size 2 \
+                                   --new_height 120 \
+                                   --new_width  120 \
+                                   --num_of_classes 22
 ```
 To learn more about the parameters please run the program with the -h option:
 ```bash
  $ python create_enet_prototxt.py -h
 ```
 
-It is important to note that batch_size, new_width and new_height are related with the available GPU memory. The parameter batch_size must be as big as possible and fit GPU memory, also new_height and new_width must be divisible by 8.
-	
-This prototxt file includes the encoder architecture of ENet with some default settings you can customize according your needs. For example, the input images are resized to 200x200, because of GPU memory restrictions. For more details have a look in the prototxt file or in the python file.
+The values of batch_size, new_height and new_width are limited by the available GPU memory. The batch_size must be as big as possible and fit GPU memory. The values of new_height and new_width must be divisible by 8.
+
+The prototxt file contains the ENet encoder architecture with some default settings that you may customize according to your needs. For example, the input images are resized to 120x120 pixels, because of GPU memory limitation. For more information take a look in the prototxt file or in the python file.
 
 <!--The next step is optional:-->
 To improve the quality of ENet predictions in small classes (solid marking, broken marking, etc.), you can add **class_weighting** to the **SoftmaxWithLoss** layer. 
 ```bash
- $ python calculate_class_weighting.py	--source carmen_lcad/src/road_mapper/road_mapper_train.txt \
-					--num_classes 22
+ $ python calculate_class_weighting.py  --source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt \
+                                        --num_classes 22
 ```
-	
+
 Copy the **class_weightings** from the terminal in the `enet_train_encoder.prototxt` under **weight_by_label_freqs** and set this flag from **false** to **true**. 
  
 Before training:
@@ -313,12 +313,12 @@ If the GPU memory is not enough (error == cudasuccess), reduce the batch_size in
 
 First create the `enet_train_encoder_decoder.prototxt` by running:
 ```bash
- $ python create_enet_prototxt.py	--source carmen_lcad/src/road_mapper/road_mapper_train.txt \
-					--mode train_encoder_decoder \
-					--batch_size 2 \
-					--new_height 200 \
-					--new_width 200 \
-					--num_of_classes 22
+ $ python create_enet_prototxt.py  --source carmen_lcad/src/road_mapper/road_mapper_train.txt \
+                                   --mode train_encoder_decoder \
+                                   --batch_size 2 \
+                                   --new_height 120 \
+                                   --new_width  120 \
+                                   --num_of_classes 22
 ```
 
 Copy the **class_weightings** from `enet_train_encoder.prototxt` to `enet_train_encoder_decoder.prototxt` under **weight_by_label_freqs** and set this flag from **false** to **true**. 
