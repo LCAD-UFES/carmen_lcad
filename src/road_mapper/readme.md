@@ -265,12 +265,12 @@ The training of ENet is performed in two stages:
 
 First, create the prototxt file `enet_train_encoder.prototxt` by running:
 ```bash
- $ python create_enet_prototxt.py	--source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt \
-					--mode train_encoder \
-					--batch_size 2 \
-					--new_height 200 \
-					--new_width 200 \
-					--num_of_classes 22
+ $ python create_enet_prototxt.py  --source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt \
+                                   --mode train_encoder \
+                                   --batch_size 2 \
+                                   --new_height 120 \
+                                   --new_width  120 \
+                                   --num_of_classes 22
 ```
 To learn more about the parameters please run the program with the -h option:
 ```bash
@@ -313,12 +313,12 @@ If the GPU memory is not enough (error == cudasuccess), reduce the batch_size in
 
 First create the `enet_train_encoder_decoder.prototxt` by running:
 ```bash
- $ python create_enet_prototxt.py	--source carmen_lcad/src/road_mapper/road_mapper_train.txt \
-					--mode train_encoder_decoder \
-					--batch_size 2 \
-					--new_height 200 \
-					--new_width 200 \
-					--num_of_classes 22
+ $ python create_enet_prototxt.py  --source carmen_lcad/src/road_mapper/road_mapper_train.txt \
+                                   --mode train_encoder_decoder \
+                                   --batch_size 2 \
+                                   --new_height 120 \
+                                   --new_width  120 \
+                                   --num_of_classes 22
 ```
 
 Copy the **class_weightings** from `enet_train_encoder.prototxt` to `enet_train_encoder_decoder.prototxt` under **weight_by_label_freqs** and set this flag from **false** to **true**. 
