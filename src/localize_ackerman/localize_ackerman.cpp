@@ -111,6 +111,8 @@ int g_reinitiaze_particles = 10;
 int number_of_threads = 1;
 bool global_localization_requested = false;
 
+char *calibration_file = NULL;
+
 
 static int
 get_fused_odometry_index_by_timestamp(double timestamp)
@@ -885,7 +887,7 @@ get_alive_sensors(int argc, char **argv)
 			spherical_sensor_data[i].occupancy_log_odds_of_each_ray_target[j] = NULL;
 			spherical_sensor_data[i].ray_origin_in_the_floor[j] = NULL;
 			spherical_sensor_data[i].ray_size_in_the_floor[j] = NULL;
-			spherical_sensor_data[i].processed_intensity[i] = NULL;
+			spherical_sensor_data[i].processed_intensity[j] = NULL;
 			spherical_sensor_data[i].ray_hit_the_robot[j] = NULL;
 		}
 
@@ -932,6 +934,12 @@ get_sensors_param(int argc, char **argv, int correction_type)
 	int use_remission = (correction_type == 4) || (correction_type == 5) || (correction_type == 6) || (correction_type == 7); // See carmen_ford_escape.ini
 	spherical_sensor_params[0].use_remission = use_remission;
 
+	if (calibration_file)
+		spherical_sensor_params[0].calibration_table = load_calibration_table(calibration_file);
+	else
+		spherical_sensor_params[0].calibration_table = load_calibration_table((char *) "calibration_table.txt");
+	spherical_sensor_params[0].save_calibration_file = NULL;
+
 	spherical_sensor_params[0].pose = velodyne_pose;
 	spherical_sensor_params[0].sensor_robot_reference = carmen_change_sensor_reference(sensor_board_1_pose.position, spherical_sensor_params[0].pose.position, sensor_board_1_to_car_matrix);
 
@@ -977,7 +985,10 @@ get_sensors_param(int argc, char **argv, int correction_type)
 
 	for (i = 1; i < number_of_sensors; i++)
 	{
-		spherical_sensor_params[0].use_remission = use_remission;
+		spherical_sensor_params[i].use_remission = use_remission;
+
+		spherical_sensor_params[i].calibration_table = NULL;
+		spherical_sensor_params[i].save_calibration_file = NULL;
 
 		if (spherical_sensor_params[i].alive)
 		{
@@ -1102,6 +1113,14 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 		{(char *) "localize", (char *) "global_beam_minlikelihood", CARMEN_PARAM_DOUBLE, &param->global_beam_minlikelihood, 0, NULL},
 		{(char *) "localize", (char *) "global_beam_maxlikelihood", CARMEN_PARAM_DOUBLE, &param->global_beam_maxlikelihood, 0, NULL},
 
+		{(char *) "localize", (char *) "min_remission_variance", CARMEN_PARAM_DOUBLE, &param->min_remission_variance, 0, NULL},
+		{(char *) "localize", (char *) "small_remission_likelihood", CARMEN_PARAM_DOUBLE, &param->small_remission_likelihood, 0, NULL},
+
+		{(char *) "localize", (char *) "particles_normalize_factor", CARMEN_PARAM_DOUBLE, &param->particles_normalize_factor, 0, NULL},
+
+		{(char *) "localize", (char *) "yaw_uncertainty_due_to_grid_resolution", CARMEN_PARAM_DOUBLE, &param->yaw_uncertainty_due_to_grid_resolution, 0, NULL},
+		{(char *) "localize", (char *) "xy_uncertainty_due_to_grid_resolution", CARMEN_PARAM_DOUBLE, &param->xy_uncertainty_due_to_grid_resolution, 0, NULL},
+
 		{(char *) "sensor_board_1", (char *) "x", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.x),	0, NULL},
 		{(char *) "sensor_board_1", (char *) "y", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.y),	0, NULL},
 		{(char *) "sensor_board_1", (char *) "z", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.z),	0, NULL},
@@ -1141,6 +1160,18 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 
+	carmen_param_allow_unfound_variables(1);
+
+	carmen_param_t param_optional_list[] =
+	{
+		{(char *) "localize_ackerman", (char *) "use_raw_laser", CARMEN_PARAM_ONOFF, &use_raw_laser, 0, NULL},
+		{(char *) "commandline", (char *) "mapping_mode", CARMEN_PARAM_ONOFF, &mapping_mode, 0, NULL},
+		{(char *) "commandline", (char *) "velodyne_viewer", CARMEN_PARAM_ONOFF, &velodyne_viewer, 0, NULL},
+		{(char *) "commandline", (char *) "calibration_file", CARMEN_PARAM_STRING, &calibration_file, 0, NULL}
+	};
+
+	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
+
 	param->integrate_angle = carmen_degrees_to_radians(integrate_angle_deg);
 
 	sensor_board_1_to_car_matrix = create_rotation_matrix(sensor_board_1_pose.orientation);
@@ -1165,21 +1196,7 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 
 	localize_ackerman_velodyne_laser_read_parameters(argc, argv);
 
-//	param->xy_uncertainty_due_to_grid_resolution = (p_map_params->grid_res) * (p_map_params->grid_res);
-	param->yaw_uncertainty_due_to_grid_resolution = asin((p_map_params->grid_res / 0.5) / max_range) * asin((p_map_params->grid_res / 0.5) / max_range);
-	param->xy_uncertainty_due_to_grid_resolution = (p_map_params->grid_res / 2.0) * (p_map_params->grid_res / 2.0);
-//	param->yaw_uncertainty_due_to_grid_resolution = asin((p_map_params->grid_res / 0.2) / max_range) * asin((p_map_params->grid_res / 0.2) / max_range);
-	
-	carmen_param_allow_unfound_variables(1);
-
-	carmen_param_t param_optional_list[] = 
-	{
-		{(char *) "localize_ackerman", (char *) "use_raw_laser", CARMEN_PARAM_ONOFF, &use_raw_laser, 0, NULL},
-		{(char *) "commandline", (char *) "mapping_mode", CARMEN_PARAM_ONOFF, &mapping_mode, 0, NULL},
-		{(char *) "commandline", (char *) "velodyne_viewer", CARMEN_PARAM_ONOFF, &velodyne_viewer, 0, NULL}
-	};
-
-	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
+	param->yaw_uncertainty_due_to_grid_resolution = carmen_degrees_to_radians(param->yaw_uncertainty_due_to_grid_resolution);
 }
 
 

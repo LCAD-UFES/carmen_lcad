@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <carmen/carmen.h>
@@ -99,12 +100,15 @@ extern carmen_moving_objects_point_clouds_message moving_objects_message;
 
 extern carmen_mapper_virtual_scan_message virtual_scan_message;
 
+char *calibration_file = NULL;
+char *save_calibration_file = NULL;
+
 
 void
 include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalpos_message *globalpos_message)
 {
 	int i, old_point_cloud_index = -1;
-	int nearest_global_pos;
+	int nearest_global_pos = 0;
 	double nearest_time = globalpos_message->timestamp;
 	double old_globalpos_timestamp;
 	carmen_pose_3D_t old_robot_position;
@@ -537,6 +541,9 @@ shutdown_module(int signo)
 		if (update_and_merge_with_mapper_saved_maps)
 			mapper_save_current_map();
 
+		if (sensors_params[0].save_calibration_file)
+			fclose(sensors_params[0].save_calibration_file);
+
 		carmen_ipc_disconnect();
 		fprintf(stderr, "Shutdown mapper_main\n");
 
@@ -698,7 +705,7 @@ get_alive_sensors(int argc, char **argv)
 			sensors_data[i].occupancy_log_odds_of_each_ray_target[j] = NULL;
 			sensors_data[i].ray_origin_in_the_floor[j] = NULL;
 			sensors_data[i].ray_size_in_the_floor[j] = NULL;
-			sensors_data[i].processed_intensity[i] = NULL;
+			sensors_data[i].processed_intensity[j] = NULL;
 			sensors_data[i].ray_hit_the_robot[j] = NULL;
 		}
 
@@ -742,7 +749,17 @@ get_sensors_param(int argc, char **argv)
 
 	int roi_ini, roi_end;
 
-	//velodyne
+	// Velodyne
+
+	if (calibration_file)
+		sensors_params[0].calibration_table = load_calibration_table(calibration_file);
+	else
+		sensors_params[0].calibration_table = load_calibration_table((char *) "calibration_table.txt");
+
+	if (save_calibration_file)
+		sensors_params[0].save_calibration_file = fopen(save_calibration_file, "w"); // Eh fechado em shutdown_module()
+	else
+		sensors_params[0].save_calibration_file = NULL;
 
 	sensors_params[0].pose = velodyne_pose;
 	sensors_params[0].sensor_support_pose = sensor_board_1_pose;
@@ -784,6 +801,11 @@ get_sensors_param(int argc, char **argv)
 //		}
 //		fclose(f);
 	}
+
+	// LDMRS
+
+	sensors_params[1].calibration_table = NULL;
+	sensors_params[1].save_calibration_file = NULL;
 
 	if (sensors_params[1].alive && !strcmp(sensors_params[1].name, "laser_ldmrs"))
 	{
@@ -830,6 +852,9 @@ get_sensors_param(int argc, char **argv)
 
 	for (i = 2; i < number_of_sensors; i++)
 	{
+		sensors_params[i].calibration_table = NULL;
+		sensors_params[i].save_calibration_file = NULL;
+
 		if (sensors_params[i].alive)
 		{
 			sensors_params[i].sensor_type = CAMERA;
@@ -1032,6 +1057,16 @@ read_parameters(int argc, char **argv,
 	carmen_grid_mapping_init_parameters(map_resolution, map_width);
 
 	get_alive_sensors(argc, argv);
+
+	carmen_param_allow_unfound_variables(1);
+
+	carmen_param_t param_optional_list[] =
+	{
+		{(char *) "commandline", (char *) "calibration_file", CARMEN_PARAM_STRING, &calibration_file, 0, NULL},
+		{(char *) "commandline", (char *) "save_calibration_file", CARMEN_PARAM_STRING, &save_calibration_file, 0, NULL},
+	};
+
+	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 
 	get_sensors_param(argc, argv);
 }

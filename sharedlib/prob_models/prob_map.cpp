@@ -76,6 +76,17 @@ map_grid_is_valid(carmen_map_t *map, int x, int y)
 
 // Check that map coords are inside the array
 int
+map_grid_is_valid(carmen_compact_map_t *map, int x, int y)
+{
+	if ((x >= 0) && (x < map->config.x_size) && (y >= 0) && (y < map->config.y_size))
+		return 1;
+
+	return 0;
+}
+
+
+// Check that map coords are inside the array
+int
 map_grid_is_valid(int x, int y)
 {
 	if ((x >= 0) && (x < map_params.grid_sx) && (y >= 0) && (y < map_params.grid_sy))
@@ -621,10 +632,74 @@ carmen_prob_models_update_log_odds_of_cells_hit_by_ldmrs_rays(carmen_map_t *log_
 }
 
 
+static int
+get_distance_index(double distance)
+{	// Gera um indice para cada faixa de distancias. As faixas crescem de ~50% a cada intervalo. Indices de zero a 9 permitem distancias de zero a ~70 metros
+	if (distance < 3.5)
+		return (0);
+
+	int distance_index = (int) ((log(distance - 3.5 + 1.0) / log(1.45)) +  0.5);
+	if (distance_index > 9)
+		return (9);
+
+	return (distance_index);
+}
+
+
+float ***
+load_calibration_table(char *calibration_file)
+{
+	FILE *calibration_file_bin = fopen(calibration_file, "r");
+	if (!calibration_file_bin)
+		return (NULL);
+
+	float ***table;
+	table = (float ***) calloc(32, sizeof(float **));
+	for (int i = 0; i < 32; i++)
+	{
+		table[i] = (float **) calloc(10, sizeof(float *));
+		for (int j = 0; j < 10; j++)
+			table[i][j] = (float *) calloc(256, sizeof(float));
+	}
+	int laser, ray_size, intensity;
+	long accumulated_intennsity, count;
+	float val, max_val = 0.0, min_val = 255.0;
+	while (fscanf(calibration_file_bin, "%d %d %d %f %ld %ld", &laser, &ray_size, &intensity, &val, &accumulated_intennsity, &count) == 6)
+	{
+		table[laser][ray_size][intensity] = val;
+		if (val > max_val)
+			max_val = val;
+		if (val < min_val)
+			min_val = val;
+	}
+
+	for (int i = 0; i < 32; i++)
+	{
+		for (int j = 0; j < 10; j++)
+		{
+			for (int k = 0; k < 256; k++)
+			{
+				val = table[i][j][k];
+				val = (val - min_val) / (max_val - min_val);
+				if (val > 1.0)
+					val = 1.0;
+				if (val < 0.0)
+					val = 0.0;
+				table[i][j][k] = val;
+			}
+		}
+	}
+	fclose(calibration_file_bin);
+
+	return (table);
+}
+
+
 static void
 update_intensity_of_cells(carmen_map_t *sum_remission_map,
 		carmen_map_t *sum_sqr_remission_map, carmen_map_t *count_remission_map,
-		sensor_data_t *sensor_data, double highest_sensor, double safe_range_above_sensors, int ray, cell_coords_t *map_cells_hit_by_rays, int thread_id)
+		sensor_data_t *sensor_data, sensor_parameters_t *sensor_params,
+		double highest_sensor, double safe_range_above_sensors, int ray, cell_coords_t *map_cells_hit_by_rays, int thread_id)
 {
 	cell_coords_t cell_hit_by_ray;
 
@@ -632,28 +707,97 @@ update_intensity_of_cells(carmen_map_t *sum_remission_map,
 	cell_hit_by_ray.y = round(sensor_data->ray_position_in_the_floor[thread_id][ray].y / sum_remission_map->config.resolution);
 
 	if (map_grid_is_valid(sum_remission_map, cell_hit_by_ray.x, cell_hit_by_ray.y) &&
-			!sensor_data->maxed[thread_id][ray] && !sensor_data->ray_hit_the_robot[thread_id][ray] &&
-			!(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][ray], highest_sensor, safe_range_above_sensors)))
+		!sensor_data->maxed[thread_id][ray] && !sensor_data->ray_hit_the_robot[thread_id][ray] &&
+		!(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][ray], highest_sensor, safe_range_above_sensors)))
 	{
-
 		if (map_cells_hit_by_rays != NULL)
 		{
 			map_cells_hit_by_rays->x = cell_hit_by_ray.x;
 			map_cells_hit_by_rays->y = cell_hit_by_ray.y;
 		}
 
+		int distance_index = get_distance_index(sensor_data->ray_size_in_the_floor[thread_id][ray]);
+		int intensity = (int) round(sensor_data->processed_intensity[thread_id][ray] * 255.0);
+		if (sensor_params->save_calibration_file)
+			fprintf(sensor_params->save_calibration_file, "%ld %ld %04d %04d %02d %d %03d\n",
+					(long int) sum_remission_map->config.x_origin, (long int) sum_remission_map->config.y_origin,
+					cell_hit_by_ray.x, cell_hit_by_ray.y,
+					ray, distance_index, intensity);
+
+		double calibrated_intensity;
+		if (sensor_params->calibration_table)
+		{
+			calibrated_intensity = sensor_params->calibration_table[ray][distance_index][intensity];
+			if (calibrated_intensity == 0.0) // invalid table entry
+				return;
+		}
+		else
+			calibrated_intensity = sensor_data->processed_intensity[thread_id][ray];
+
 		if (sum_remission_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] < 0.0)
 		{
-			sum_sqr_remission_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] = sensor_data->processed_intensity[thread_id][ray] * sensor_data->processed_intensity[thread_id][ray];
-			sum_remission_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] = sensor_data->processed_intensity[thread_id][ray];
+			sum_sqr_remission_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] = calibrated_intensity * calibrated_intensity;
+			sum_remission_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] = calibrated_intensity;
 			count_remission_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] = 1.0;
 		}
 		else
 		{
-			sum_sqr_remission_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] += sensor_data->processed_intensity[thread_id][ray] * sensor_data->processed_intensity[thread_id][ray];
-			sum_remission_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] += sensor_data->processed_intensity[thread_id][ray];
+			sum_sqr_remission_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] += calibrated_intensity * calibrated_intensity;
+			sum_remission_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] += calibrated_intensity;
 			count_remission_map->map[cell_hit_by_ray.x][cell_hit_by_ray.y] += 1.0;
 		}
+	}
+}
+
+
+static void
+update_intensity_of_cells(carmen_compact_map_t *mean_remission_compact_map,
+		sensor_data_t *sensor_data, sensor_parameters_t *sensor_params,
+		double highest_sensor, double safe_range_above_sensors, int ray, cell_coords_t *map_cells_hit_by_rays, int thread_id)
+{
+	cell_coords_t cell_hit_by_ray;
+
+	cell_hit_by_ray.x = round(sensor_data->ray_position_in_the_floor[thread_id][ray].x / mean_remission_compact_map->config.resolution);
+	cell_hit_by_ray.y = round(sensor_data->ray_position_in_the_floor[thread_id][ray].y / mean_remission_compact_map->config.resolution);
+
+	if (map_grid_is_valid(mean_remission_compact_map, cell_hit_by_ray.x, cell_hit_by_ray.y) &&
+		!sensor_data->maxed[thread_id][ray] && !sensor_data->ray_hit_the_robot[thread_id][ray] &&
+		!(carmen_prob_models_unaceptable_height(sensor_data->obstacle_height[thread_id][ray], highest_sensor, safe_range_above_sensors)))
+	{
+		if (map_cells_hit_by_rays != NULL)
+		{
+			map_cells_hit_by_rays->x = cell_hit_by_ray.x;
+			map_cells_hit_by_rays->y = cell_hit_by_ray.y;
+		}
+
+		int distance_index = get_distance_index(sensor_data->ray_size_in_the_floor[thread_id][ray]);
+		int intensity = (int) round(sensor_data->processed_intensity[thread_id][ray] * 255.0);
+		if (sensor_params->save_calibration_file)
+			fprintf(sensor_params->save_calibration_file, "%ld %ld %04d %04d %02d %d %03d\n",
+					(long int) mean_remission_compact_map->config.x_origin, (long int) mean_remission_compact_map->config.y_origin,
+					cell_hit_by_ray.x, cell_hit_by_ray.y,
+					ray, distance_index, intensity);
+
+		double calibrated_intensity;
+		if (sensor_params->calibration_table)
+		{
+			calibrated_intensity = sensor_params->calibration_table[ray][distance_index][intensity];
+			if (calibrated_intensity == 0.0) // invalid table entry
+				return;
+		}
+		else
+			calibrated_intensity = sensor_data->processed_intensity[thread_id][ray];
+
+		if (mean_remission_compact_map->number_of_known_points_on_the_map > 1)
+		{
+			if ((mean_remission_compact_map->coord_x[mean_remission_compact_map->number_of_known_points_on_the_map - 1] == cell_hit_by_ray.x) &&
+				(mean_remission_compact_map->coord_y[mean_remission_compact_map->number_of_known_points_on_the_map - 1] == cell_hit_by_ray.y))
+				mean_remission_compact_map->number_of_known_points_on_the_map--; // Sobreescreve celulas revisitadas em seguida
+		}
+		mean_remission_compact_map->coord_x[mean_remission_compact_map->number_of_known_points_on_the_map] = cell_hit_by_ray.x;
+		mean_remission_compact_map->coord_y[mean_remission_compact_map->number_of_known_points_on_the_map] = cell_hit_by_ray.y;
+		mean_remission_compact_map->value[mean_remission_compact_map->number_of_known_points_on_the_map] = calibrated_intensity;
+		mean_remission_compact_map->number_of_known_points_on_the_map++;
 	}
 }
 
@@ -704,13 +848,30 @@ carmen_prob_models_update_intensity_of_cells_hit_by_rays(carmen_map_t *sum_remis
 
 	for (i = 0; i < sensor_params->vertical_resolution; i++)
 	{
-//		if (i == 5 || i == 9)
-//			continue;
-
 		if (map_cells_hit_by_each_rays != NULL)
-			update_intensity_of_cells(sum_remission_map, sum_sqr_remission_map, count_remission_map, sensor_data, highest_sensor, safe_range_above_sensors, i, &map_cells_hit_by_each_rays[i], thread_id);
+			update_intensity_of_cells(sum_remission_map, sum_sqr_remission_map, count_remission_map, sensor_data, sensor_params, highest_sensor, safe_range_above_sensors, i, &map_cells_hit_by_each_rays[i], thread_id);
 		else
-			update_intensity_of_cells(sum_remission_map, sum_sqr_remission_map, count_remission_map, sensor_data, highest_sensor, safe_range_above_sensors, i, NULL, thread_id);
+			update_intensity_of_cells(sum_remission_map, sum_sqr_remission_map, count_remission_map, sensor_data, sensor_params, highest_sensor, safe_range_above_sensors, i, NULL, thread_id);
+	}
+}
+
+
+void
+carmen_prob_models_add_intensity_of_cells_hit_by_rays(carmen_compact_map_t *mean_remission_compact_map,
+		sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, double highest_sensor,
+		double safe_range_above_sensors, cell_coords_t *map_cells_hit_by_each_rays, int thread_id)
+{
+	int i;
+
+	if (map_cells_hit_by_each_rays != NULL)
+		memset(map_cells_hit_by_each_rays, 0, sensor_params->vertical_resolution * sizeof(cell_coords_t));
+
+	for (i = 0; i < sensor_params->vertical_resolution; i++)
+	{
+		if (map_cells_hit_by_each_rays != NULL)
+			update_intensity_of_cells(mean_remission_compact_map, sensor_data, sensor_params, highest_sensor, safe_range_above_sensors, i, &map_cells_hit_by_each_rays[i], thread_id);
+		else
+			update_intensity_of_cells(mean_remission_compact_map, sensor_data, sensor_params, highest_sensor, safe_range_above_sensors, i, NULL, thread_id);
 	}
 }
 
@@ -730,7 +891,7 @@ carmen_prob_models_update_intensity_of_cells_hit_by_rays_for_calibration(carmen_
 		for (i = 0; i < sensor_params->vertical_resolution; i++)
 		{
 			if (i != j)
-				update_intensity_of_cells(&sum_remission_map[j], &sum_sqr_remission_map[j], &count_remission_map[j], sensor_data, highest_sensor, safe_range_above_sensors, i, NULL, thread_id);
+				update_intensity_of_cells(&sum_remission_map[j], &sum_sqr_remission_map[j], &count_remission_map[j], sensor_data, sensor_params, highest_sensor, safe_range_above_sensors, i, NULL, thread_id);
 		}
 		cell_hit_by_ray.x = round(sensor_data->ray_position_in_the_floor[thread_id][j].x / sum_remission_map->config.resolution);
 		cell_hit_by_ray.y = round(sensor_data->ray_position_in_the_floor[thread_id][j].y / sum_remission_map->config.resolution);
@@ -761,6 +922,7 @@ carmen_prob_models_calc_mean_and_variance_remission_map(carmen_map_t *mean_remis
 			mean = sum_remission_map->complete_map[i] / count_remission_map->complete_map[i];
 			mean_remission_map->complete_map[i] = mean;
 
+			// https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
 			variance = sum_sqr_remission_map->complete_map[i] - ((sum_remission_map->complete_map[i] * sum_remission_map->complete_map[i]) / count_remission_map->complete_map[i]);
 			variance /= count_remission_map->complete_map[i];
 			variance_remission_map->complete_map[i] = variance;

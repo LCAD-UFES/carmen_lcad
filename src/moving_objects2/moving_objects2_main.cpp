@@ -253,7 +253,7 @@ get_alive_sensors(int argc, char **argv)
 			sensors_data[i].occupancy_log_odds_of_each_ray_target[j] = NULL;
 			sensors_data[i].ray_origin_in_the_floor[j] = NULL;
 			sensors_data[i].ray_size_in_the_floor[j] = NULL;
-			sensors_data[i].processed_intensity[i] = NULL;
+			sensors_data[i].processed_intensity[j] = NULL;
 			sensors_data[i].ray_hit_the_robot[j] = NULL;
 		}
 

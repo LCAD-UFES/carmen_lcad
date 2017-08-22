@@ -104,6 +104,11 @@ typedef struct {
   double global_beam_minlikelihood;
   double global_beam_maxlikelihood;
   
+  double min_remission_variance;
+  double small_remission_likelihood;
+
+  double particles_normalize_factor;
+
   double xy_uncertainty_due_to_grid_resolution;
   double yaw_uncertainty_due_to_grid_resolution;
 

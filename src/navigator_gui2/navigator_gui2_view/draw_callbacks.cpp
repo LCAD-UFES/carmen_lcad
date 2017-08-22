@@ -789,7 +789,7 @@ gint motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *world_poin
 			}
 			else
 			{
-				sprintf(buffer, "Value: %.2f", the_map->map[point.x][point.y]);
+				sprintf(buffer, "Value: %.4f", the_map->map[point.x][point.y]);
 			}
 			gtk_label_set_text(GTK_LABEL(global_gui->controls_.labelValue), buffer);
 		}

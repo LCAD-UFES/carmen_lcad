@@ -2,6 +2,8 @@ Como criar um mapa usando GraphSLAM [usando o process]:
 
 #  Antes de executar os passos abaixo, leia o ../src/odometry_calibration/README.txt e execute os passos de lá
 
+#  Nos casos em que o navigator_gui2 eh usado abaixo, certifique-se de que o mapa corrente no menu Maps da interface do navigator_gui2 eh o Map.
+
 1. Compile o modulo graphslam (requer a biblioteca pcl e o framework g2o)
 2. Crie um ramdisk no diretorio tmp2:
 	> sudo mount -t ramfs -o nosuid,noexec,nodev,mode=0777,size=4096M ramdisk $CARMEN_HOME/bin/tmp2
