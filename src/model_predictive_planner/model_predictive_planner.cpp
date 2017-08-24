@@ -415,6 +415,19 @@ filter_path_old(vector<carmen_ackerman_path_point_t> &path)
 
 
 void
+remove_some_poses_at_the_end_of_the_path(vector<carmen_ackerman_path_point_t> &path)
+{
+	double path_time = 0.0;
+
+	while ((path.size() > 1) && (path_time < 1.0 / 10.0))
+	{
+		path_time += path[path.size() - 1].time;
+		path.pop_back();
+	}
+}
+
+
+void
 filter_path(vector<carmen_ackerman_path_point_t> &path)
 {
 	if (path.size() < 1)
@@ -527,10 +540,10 @@ write_tdd_to_file(FILE *problems, TrajectoryLookupTable::TrajectoryDiscreteDimen
 bool
 path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> path)
 {
-	double proximity_to_obstacles_for_path = 0.0;
 	double circle_radius = GlobalState::robot_config.obstacle_avoider_obstacles_safe_distance; // metade da largura do carro + um espacco de guarda
 	carmen_point_t localizer = {GlobalState::localizer_pose->x, GlobalState::localizer_pose->y, GlobalState::localizer_pose->theta};
 
+	double max_circle_invasion = 0.0;
 	for (unsigned int i = 0; i < path.size(); i += 1)
 	{
 		if ((path[i].phi > GlobalState::robot_config.max_phi) ||
@@ -539,13 +552,15 @@ path_has_collision_or_phi_exceeded(vector<carmen_ackerman_path_point_t> path)
 
 		carmen_point_t point_to_check = {path[i].x, path[i].y, path[i].theta};
 		if (GlobalState::distance_map != NULL)
-			proximity_to_obstacles_for_path += carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&localizer,
-					point_to_check, GlobalState::robot_config, GlobalState::distance_map, circle_radius);
-		else
-			return (true);
+		{
+			double circle_invasion = sqrt(carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&localizer,
+					point_to_check, GlobalState::robot_config, GlobalState::distance_map, circle_radius));
+			if (circle_invasion > max_circle_invasion)
+				max_circle_invasion = circle_invasion;
+		}
 	}
 
-	if (proximity_to_obstacles_for_path > 0.0)
+	if ((GlobalState::distance_map != NULL) && (max_circle_invasion > 0.0))// GlobalState::distance_map->config.resolution / 2.0))
 	{
 		printf("---------- PATH HIT OBSTACLE!!!!\n");
 		return (true);
@@ -696,10 +711,13 @@ get_path_from_optimized_tcp(vector<carmen_ackerman_path_point_t> &path,
 		return (false);
 	}
 
+	move_path_to_current_robot_pose(path, localizer_pose);
+
 	if (path_has_collision_or_phi_exceeded(path))
 		return (false);
 
-	move_path_to_current_robot_pose(path, localizer_pose);
+	// Para evitar que o fim do path bata em obstáculos devido a atrazo na propagacao da posicao atual deles
+	remove_some_poses_at_the_end_of_the_path(path);
 
 //	if (GlobalState::use_mpc)
 //		apply_system_latencies(path);

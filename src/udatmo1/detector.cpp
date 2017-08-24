@@ -75,9 +75,10 @@ Detector::detect(carmen_obstacle_distance_mapper_map_message *current_map,
 
 //	printf("distance %lf, ", distance);
 
-	if (!obstacle_already_detected && (distance < circle_radius) && false)
-//		(DIST2D(robot_pose, rddf->poses[rddf_pose_index]) < disp))
-	{	// Obstaculo fixo ao lado, ja que nao faz sentido detectar em cima do carro
+	if ((displacement == 0.0) && !obstacle_already_detected && (distance < circle_radius) && // false)
+		(DIST2D(robot_pose, rddf->poses[rddf_pose_index]) < (disp - circle_radius)))
+	{	// Este if eh soh para obstaculos frontais (displacement == 0.0).
+		// Se entrar ha obstaculo movel em cima do carro e este eh descartado, ja que nao faz sentido detectar obstaculo movel em cima do carro
 		obstacle_already_detected = true;
 
 		moving_object[0].valid = false;

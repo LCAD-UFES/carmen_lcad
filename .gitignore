@@ -564,3 +564,7 @@ bin/crop_objects_from_map
 bin/view_bounding_boxes
 src/neural_car_detector/neural_car_detector
 bin/neural_car_detector
+src/hypergraphsclam/hypergraphsclam
+src/hypergraphsclam/parser
+bin/hypergraphsclam
+bin/parser

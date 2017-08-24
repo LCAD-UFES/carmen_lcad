@@ -40,7 +40,7 @@ extern char *map_path;
 
 extern int publish_moving_objects_raw_map;
 
-extern int robot_near_bump_or_barrier;
+extern int robot_near_strong_slow_down_annotation;
 extern int ok_to_publish;
 extern int number_of_threads;
 
@@ -171,52 +171,6 @@ cv::Mat rotate(cv::Mat src, double angle)
     cv::Mat r = getRotationMatrix2D(pt, angle, 1.0);
     cv::warpAffine(src, dst, r, cv::Size(src.cols, src.rows));
     return dst;
-}
-
-void
-save_img_remission_map(carmen_map_t *remission_map)
-{
-	cv::Mat map_img = cv::Mat::zeros(remission_map->config.x_size, remission_map->config.y_size, CV_8UC1);
-
-	int erosion_size = 1;
-	cv::Mat element = getStructuringElement( cv::MORPH_ELLIPSE,
-			cv::Size( 2*erosion_size + 1, 2*erosion_size+1 ),
-			cv::Point( erosion_size, erosion_size ));
-
-	for (int i = 0; i < remission_map->config.x_size; i++)
-	{
-		for (int j = 0; j < remission_map->config.x_size; j++)
-		{
-			//if (remission_map->map[i][j] < 0.0)
-				//continue;
-
-			uchar aux = (uchar) 3.5 * (255.0 * (1.0 - (remission_map->map[i][j] < 0 ? 1 : remission_map->map[i][j])) + 0.5);
-			map_img.at<uchar>(i, j) = aux;
-		}
-	}
-
-	//cv::equalizeHist(map_img, map_img);
-	//cv::morphologyEx(map_img, map_img, 0, element);
-	map_img =  cv::Scalar::all(255) - map_img;
-	//cv::morphologyEx(map_img, map_img, 1, element);
-
-	static double x = 0;
-	static double y = 0;
-	if ( x != remission_map->config.x_origin || y != remission_map->config.y_origin)
-	{
-		x = remission_map->config.x_origin;
-		y = remission_map->config.y_origin;
-		printf("%.0lf %.0lf\n", x, y);
-
-		map_img = rotate(map_img, 90);
-		cv::imshow("image", map_img);
-		char name[256];
-		sprintf(name, "/dados/carmen_lcad/data/map_guarapari_20170403-2_imgs4/i%.0lf_%.0lf.png", x, y);
-		//cv::imwrite(name, map_img);
-		cv::waitKey(33);
-		//printf("%s\n", remission_map->config.map_name);
-	}
-	map_img.release();
 }
 
 void
@@ -682,16 +636,16 @@ clean_map_change_map_origin_to_another_map_block(carmen_position_t *map_origin)
 			//		initialize_first_map_block_origin(&variance_occupancy_map, map_origin, 'v');
 		}
 
-		carmen_grid_mapping_create_new_map(&new_carmen_map, map.config.x_size, map.config.y_size, map.config.resolution);
-		carmen_grid_mapping_create_new_map(&new_sum_remission_map, sum_remission_map.config.x_size, sum_remission_map.config.y_size, sum_remission_map.config.resolution);
-		carmen_grid_mapping_create_new_map(&new_sum_sqr_remission_map, sum_sqr_remission_map.config.x_size, sum_sqr_remission_map.config.y_size, sum_sqr_remission_map.config.resolution);
-		carmen_grid_mapping_create_new_map(&new_count_remission_map, count_remission_map.config.x_size, count_remission_map.config.y_size, count_remission_map.config.resolution);
+		carmen_grid_mapping_create_new_map(&new_carmen_map, map.config.x_size, map.config.y_size, map.config.resolution, 'm');
+		carmen_grid_mapping_create_new_map(&new_sum_remission_map, sum_remission_map.config.x_size, sum_remission_map.config.y_size, sum_remission_map.config.resolution, 's');
+		carmen_grid_mapping_create_new_map(&new_sum_sqr_remission_map, sum_sqr_remission_map.config.x_size, sum_sqr_remission_map.config.y_size, sum_sqr_remission_map.config.resolution, '2');
+		carmen_grid_mapping_create_new_map(&new_count_remission_map, count_remission_map.config.x_size, count_remission_map.config.y_size, count_remission_map.config.resolution, 'c');
 
 		if (create_map_sum_and_count)
 		{
-			carmen_grid_mapping_create_new_map(&new_sum_occupancy_map, sum_occupancy_map.config.x_size, sum_occupancy_map.config.y_size, sum_occupancy_map.config.resolution);
-			carmen_grid_mapping_create_new_map(&new_mean_occupancy_map, mean_occupancy_map.config.x_size, mean_occupancy_map.config.y_size, mean_occupancy_map.config.resolution);
-			carmen_grid_mapping_create_new_map(&new_count_occupancy_map, count_occupancy_map.config.x_size, count_occupancy_map.config.y_size, count_occupancy_map.config.resolution);
+			carmen_grid_mapping_create_new_map(&new_sum_occupancy_map, sum_occupancy_map.config.x_size, sum_occupancy_map.config.y_size, sum_occupancy_map.config.resolution, 'u');
+			carmen_grid_mapping_create_new_map(&new_mean_occupancy_map, mean_occupancy_map.config.x_size, mean_occupancy_map.config.y_size, mean_occupancy_map.config.resolution, 'e');
+			carmen_grid_mapping_create_new_map(&new_count_occupancy_map, count_occupancy_map.config.x_size, count_occupancy_map.config.y_size, count_occupancy_map.config.resolution, 'o');
 			//		carmen_grid_mapping_create_new_map(&new_variance_occupancy_map, variance_occupancy_map.config.x_size, variance_occupancy_map.config.y_size, variance_occupancy_map.config.resolution);
 		}
 
@@ -737,8 +691,8 @@ clean_map_change_map_origin_to_another_map_block(carmen_position_t *map_origin)
 		}
 		else
 		{
-			carmen_grid_mapping_update_map_buffer(&map);
-			carmen_grid_mapping_get_buffered_map(x_origin, y_origin, &new_carmen_map);
+			carmen_grid_mapping_update_map_buffer(&map, 'm');
+			carmen_grid_mapping_get_buffered_map(x_origin, y_origin, &new_carmen_map, 'm');
 		}
 
 		//destroy current map and assign new map to current map
@@ -807,8 +761,7 @@ run_clean_map(/*sensor_parameters_t *sensor_params, sensor_data_t *sensor_data, 
 	//carmen_grid_mapping_get_map_origin(&world_pose, &map_origin.x, &map_origin.y);
 
 //	build_map_using_velodyne(sensor_params, sensor_data, r_matrix_robot_to_global);
-	//segment_remission_map(&localize_map.carmen_mean_remission_map, &localize_map.carmen_map);
-	save_img_remission_map(&localize_map.carmen_mean_remission_map);
+	segment_remission_map(&localize_map.carmen_mean_remission_map, &localize_map.carmen_map);
 	
 	return (1);
 }

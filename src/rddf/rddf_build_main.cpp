@@ -16,7 +16,7 @@ carmen_rddf_build_shutdown_module(int signo)
 {
 	if (signo == SIGINT)
 	{
-		carmen_rddf_play_save_waypoints(carmen_rddf_filename);
+//		carmen_rddf_play_save_waypoints(carmen_rddf_filename);
 		carmen_ipc_disconnect();
 		fprintf(stderr, "\nRDDF Disconnecting...\n");
 		exit(0);
@@ -87,7 +87,7 @@ main (int argc, char **argv)
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 	carmen_rddf_build_get_parameters(argc, argv);
-	carmen_rddf_play_open_kml();
+//	carmen_rddf_play_open_kml();
 
 	carmen_localize_ackerman_subscribe_globalpos_message(
 			NULL, (carmen_handler_t) localize_globalpos_handler,

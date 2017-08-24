@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <carmen/carmen.h>
@@ -19,6 +20,7 @@
 #include <carmen/map_server_interface.h>
 #include <carmen/rddf_messages.h>
 #include <carmen/rddf_interface.h>
+#include <carmen/rddf_util.h>
 #include <carmen/ultrasonic_filter_interface.h>
 #include <carmen/parking_assistant_interface.h>
 #include <omp.h>
@@ -82,7 +84,7 @@ char *map_path;
 int publish_moving_objects_raw_map;
 
 carmen_rddf_annotation_message last_rddf_annotation_message;
-int robot_near_bump_or_barrier = 0;
+int robot_near_strong_slow_down_annotation = 0;
 
 bool offline_map_available = false;
 int ok_to_publish = 0;
@@ -96,25 +98,17 @@ extern carmen_mapper_virtual_laser_message virtual_laser_message;
 
 extern carmen_moving_objects_point_clouds_message moving_objects_message;
 
-///////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                           //
-// Publishers                                                                                //
-//                                                                                           //
-///////////////////////////////////////////////////////////////////////////////////////////////
+extern carmen_mapper_virtual_scan_message virtual_scan_message;
 
-
-static void
-publish_map(double timestamp)
-{
-	mapper_publish_map(timestamp);
-}
+char *calibration_file = NULL;
+char *save_calibration_file = NULL;
 
 
 void
 include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalpos_message *globalpos_message)
 {
 	int i, old_point_cloud_index = -1;
-	int nearest_global_pos;
+	int nearest_global_pos = 0;
 	double nearest_time = globalpos_message->timestamp;
 	double old_globalpos_timestamp;
 	carmen_pose_3D_t old_robot_position;
@@ -162,7 +156,32 @@ include_sensor_data_into_map(int sensor_number, carmen_localize_ackerman_globalp
 		sensors_data[sensor_number].point_cloud_index = old_point_cloud_index;
 	}
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
 
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Publishers                                                                                //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+static void
+publish_map(double timestamp)
+{
+	mapper_publish_map(timestamp);
+}
+
+
+void
+publish_virtual_scan(carmen_point_t globalpos, double v, double phi, double timestamp)
+{
+//	printf("%d\n", virtual_scan_message.num_points);
+	virtual_scan_message.globalpos = globalpos;
+	virtual_scan_message.v = v;
+	virtual_scan_message.phi = phi;
+	carmen_mapper_publish_virtual_scan_message(&virtual_scan_message, timestamp);
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -184,28 +203,40 @@ carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_glob
 
 	// Map annotations handling
 	double distance_to_nearest_annotation = 1000.0;
+	int index_of_nearest_annotation = 0;
 	for (int i = 0; i < last_rddf_annotation_message.num_annotations; i++)
 	{
 		double distance_to_annotation = DIST2D(last_rddf_annotation_message.annotations[i].annotation_point,
 				globalpos_history[last_globalpos].pose.position);
-		if (((last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
-			 (last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)) &&
-			 (distance_to_annotation < distance_to_nearest_annotation))
+		if ((distance_to_annotation < distance_to_nearest_annotation) &&
+			((last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
+			 (last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BARRIER) ||
+			 ((last_rddf_annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
+			  (last_rddf_annotation_message.annotations[i].annotation_code <= RDDF_ANNOTATION_CODE_SPEED_LIMIT_20))))
+		{
 			distance_to_nearest_annotation = distance_to_annotation;
+			index_of_nearest_annotation = i;
+		}
 	}
-	if (distance_to_nearest_annotation < 35.0)
-		robot_near_bump_or_barrier = 1;
+	if (((distance_to_nearest_annotation < 35.0) &&
+		 carmen_rddf_play_annotation_is_forward(globalpos_message->globalpos,
+				 last_rddf_annotation_message.annotations[index_of_nearest_annotation].annotation_point)) ||
+		(distance_to_nearest_annotation < 8.0))
+		robot_near_strong_slow_down_annotation = 1;
 	else
-		robot_near_bump_or_barrier = 0;
+		robot_near_strong_slow_down_annotation = 0;
 
 	if (ok_to_publish)
-	{	// A ordem é importante
+	{
+		virtual_scan_message.num_points = 0;
+		// A ordem é importante
 		if (sensors_params[VELODYNE].alive)
 			include_sensor_data_into_map(VELODYNE, globalpos_message);
-		if (sensors_params[LASER_LDMRS].alive && !robot_near_bump_or_barrier)
+		if (sensors_params[LASER_LDMRS].alive && !robot_near_strong_slow_down_annotation)
 			include_sensor_data_into_map(LASER_LDMRS, globalpos_message);
 
 		publish_map(globalpos_message->timestamp);
+		publish_virtual_scan(globalpos_message->globalpos, globalpos_message->v, globalpos_message->phi, globalpos_message->timestamp);
 	}
 }
 
@@ -510,6 +541,9 @@ shutdown_module(int signo)
 		if (update_and_merge_with_mapper_saved_maps)
 			mapper_save_current_map();
 
+		if (sensors_params[0].save_calibration_file)
+			fclose(sensors_params[0].save_calibration_file);
+
 		carmen_ipc_disconnect();
 		fprintf(stderr, "Shutdown mapper_main\n");
 
@@ -520,11 +554,11 @@ shutdown_module(int signo)
 
 
 
-//////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                              //
-// Initializations                                                                              //
-//                                                                                              //
-//////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Initializations                                                                           //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 static void
@@ -671,7 +705,7 @@ get_alive_sensors(int argc, char **argv)
 			sensors_data[i].occupancy_log_odds_of_each_ray_target[j] = NULL;
 			sensors_data[i].ray_origin_in_the_floor[j] = NULL;
 			sensors_data[i].ray_size_in_the_floor[j] = NULL;
-			sensors_data[i].processed_intensity[i] = NULL;
+			sensors_data[i].processed_intensity[j] = NULL;
 			sensors_data[i].ray_hit_the_robot[j] = NULL;
 		}
 
@@ -715,7 +749,17 @@ get_sensors_param(int argc, char **argv)
 
 	int roi_ini, roi_end;
 
-	//velodyne
+	// Velodyne
+
+	if (calibration_file)
+		sensors_params[0].calibration_table = load_calibration_table(calibration_file);
+	else
+		sensors_params[0].calibration_table = load_calibration_table((char *) "calibration_table.txt");
+
+	if (save_calibration_file)
+		sensors_params[0].save_calibration_file = fopen(save_calibration_file, "w"); // Eh fechado em shutdown_module()
+	else
+		sensors_params[0].save_calibration_file = NULL;
 
 	sensors_params[0].pose = velodyne_pose;
 	sensors_params[0].sensor_support_pose = sensor_board_1_pose;
@@ -757,6 +801,11 @@ get_sensors_param(int argc, char **argv)
 //		}
 //		fclose(f);
 	}
+
+	// LDMRS
+
+	sensors_params[1].calibration_table = NULL;
+	sensors_params[1].save_calibration_file = NULL;
 
 	if (sensors_params[1].alive && !strcmp(sensors_params[1].name, "laser_ldmrs"))
 	{
@@ -803,6 +852,9 @@ get_sensors_param(int argc, char **argv)
 
 	for (i = 2; i < number_of_sensors; i++)
 	{
+		sensors_params[i].calibration_table = NULL;
+		sensors_params[i].save_calibration_file = NULL;
+
 		if (sensors_params[i].alive)
 		{
 			sensors_params[i].sensor_type = CAMERA;
@@ -1006,6 +1058,16 @@ read_parameters(int argc, char **argv,
 
 	get_alive_sensors(argc, argv);
 
+	carmen_param_allow_unfound_variables(1);
+
+	carmen_param_t param_optional_list[] =
+	{
+		{(char *) "commandline", (char *) "calibration_file", CARMEN_PARAM_STRING, &calibration_file, 0, NULL},
+		{(char *) "commandline", (char *) "save_calibration_file", CARMEN_PARAM_STRING, &save_calibration_file, 0, NULL},
+	};
+
+	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
+
 	get_sensors_param(argc, argv);
 }
 
@@ -1081,9 +1143,12 @@ define_mapper_messages()
 	/* register initialize message */
 	carmen_map_server_define_compact_cost_map_message();
 	carmen_mapper_define_messages();
+	carmen_mapper_define_virtual_scan_message();
 }
 
-void initialize_transforms()
+
+void
+initialize_transforms()
 {
 	tf::Transform board_to_camera_pose;
 	tf::Transform car_to_board_pose;

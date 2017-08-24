@@ -25,13 +25,12 @@ void carmen_libcarneuralmodel_init_steering_ann_input(fann_type *input);
 
 void carmen_libcarneuralmodel_build_steering_ann_input(fann_type *input, double s, double cc);
 
-double
-carmen_libcarneuralmodel_compute_new_phi_from_effort(double steering_effort, double atan_current_curvature, fann_type *steering_ann_input, struct fann *steering_ann,
-														double v, double understeer_coeficient, double distance_between_front_and_rear_axles,
-														double max_phi);
+double carmen_libcarneuralmodel_compute_new_phi_from_effort(double steering_effort, double atan_current_curvature, fann_type *steering_ann_input, struct fann *steering_ann,
+															double v, double understeer_coeficient, double distance_between_front_and_rear_axles, double max_phi);
 
-double
-carmen_libcarneuralmodel_compute_new_velocity_from_efforts(fann_type *velocity_ann_input, struct fann *velocity_ann, double throttle_effort, double brake_effort, double current_velocity);
+double carmen_libcarneuralmodel_compute_new_aoc_from_effort(double steering_effort, double atan_current_curvature, fann_type *steering_ann_input, struct fann *steering_ann);
+
+double carmen_libcarneuralmodel_compute_new_velocity_from_efforts(fann_type *velocity_ann_input, struct fann *velocity_ann, double throttle_effort, double brake_effort, double current_velocity);
 
 void carmen_libcarneuralmodel_init_velocity_ann_input(fann_type *input);
 

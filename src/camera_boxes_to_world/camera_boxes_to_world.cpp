@@ -91,3 +91,21 @@ box_position(std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> laser_po
 }
 
 
+std::vector<std::vector<carmen_vector_3D_t> >
+get_cluster_list(std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > laser_points_in_camera_box_list)
+{
+	std::vector<std::vector<carmen_vector_3D_t> > cluster_list;
+	for (unsigned int i = 0; i < laser_points_in_camera_box_list.size(); i++)
+	{
+		std::vector<carmen_vector_3D_t> cluster;
+		for (unsigned int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
+		{
+			carmen_vector_3D_t p;
+			laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.laser_polar.horizontal_angle = -laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.laser_polar.horizontal_angle;
+			p = carmen_covert_sphere_to_cartesian_coord(laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.laser_polar);
+			cluster.push_back(p);
+		}
+		cluster_list.push_back(cluster);
+	}
+	return (cluster_list);
+}

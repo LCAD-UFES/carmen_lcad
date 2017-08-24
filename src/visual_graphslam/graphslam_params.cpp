@@ -156,7 +156,7 @@ get_alive_sensors(int argc, char **argv)
 			spherical_sensor_data[i].occupancy_log_odds_of_each_ray_target[j] = NULL;
 			spherical_sensor_data[i].ray_origin_in_the_floor[j] = NULL;
 			spherical_sensor_data[i].ray_size_in_the_floor[j] = NULL;
-			spherical_sensor_data[i].processed_intensity[i] = NULL;
+			spherical_sensor_data[i].processed_intensity[j] = NULL;
 			spherical_sensor_data[i].ray_hit_the_robot[j] = NULL;
 		}
 

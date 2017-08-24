@@ -67,7 +67,7 @@ char *map_path;
 int publish_moving_objects_raw_map;
 
 carmen_rddf_annotation_message last_rddf_annotation_message;
-int robot_near_bump_or_barrier = 0;
+int robot_near_strong_slow_down_annotation = 0;
 
 bool offline_map_available = false;
 int ok_to_publish = 0;
@@ -253,7 +253,7 @@ get_alive_sensors(int argc, char **argv)
 			sensors_data[i].occupancy_log_odds_of_each_ray_target[j] = NULL;
 			sensors_data[i].ray_origin_in_the_floor[j] = NULL;
 			sensors_data[i].ray_size_in_the_floor[j] = NULL;
-			sensors_data[i].processed_intensity[i] = NULL;
+			sensors_data[i].processed_intensity[j] = NULL;
 			sensors_data[i].ray_hit_the_robot[j] = NULL;
 		}
 

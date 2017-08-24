@@ -379,7 +379,7 @@ build_and_follow_path(double timestamp)
 	{
 		double distance_to_goal = sqrt(pow(GlobalState::goal_pose->x - GlobalState::localizer_pose->x, 2) + pow(GlobalState::goal_pose->y - GlobalState::localizer_pose->y, 2));
 		// goal achieved!
-		if (distance_to_goal < 1.0 && GlobalState::robot_config.max_v < 0.1 && GlobalState::last_odometry.v < 0.25)
+		if (distance_to_goal < 0.5 && GlobalState::robot_config.max_v < 0.1 && GlobalState::last_odometry.v < 0.25)
 		{
 			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
 		}
@@ -392,12 +392,12 @@ build_and_follow_path(double timestamp)
 				publish_model_predictive_rrt_path_message(path_follower_path, timestamp);
 				publish_navigator_ackerman_plan_message(tree.paths[0], tree.paths_sizes[0]);
 
-//				FILE *caco = fopen("caco2.txt", "a");
-//				fprintf(caco, "%lf %lf %lf %d\n", GlobalState::last_odometry.v, GlobalState::robot_config.max_v,
-//						path_follower_path.begin()->command.v,
-//						GlobalState::behavior_selector_low_level_state);
-//				fflush(caco);
-//				fclose(caco);
+				FILE *caco = fopen("caco2.txt", "a");
+				fprintf(caco, "%lf %lf %lf %d\n", GlobalState::last_odometry.v, GlobalState::robot_config.max_v,
+						path_follower_path.begin()->command.v,
+						GlobalState::behavior_selector_low_level_state);
+				fflush(caco);
+				fclose(caco);
 			}
 			//		else
 				//			publish_path_follower_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
@@ -421,7 +421,7 @@ build_and_follow_path_new(double timestamp)
 	{
 		double distance_to_goal = sqrt(pow(GlobalState::goal_pose->x - GlobalState::localizer_pose->x, 2) + pow(GlobalState::goal_pose->y - GlobalState::localizer_pose->y, 2));
 		// goal achieved!
-		if (distance_to_goal < 1.0 && GlobalState::robot_config.max_v < 0.1 && GlobalState::last_odometry.v < 0.25)
+		if (distance_to_goal < 0.5 && GlobalState::robot_config.max_v < 0.1 && GlobalState::last_odometry.v < 0.25)
 		{
 			publish_model_predictive_planner_single_motion_command(0.0, GlobalState::last_odometry.phi, timestamp);
 		}
@@ -524,7 +524,12 @@ behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_
 	goal_pose.y = msg->goal_list->y;
 	goal_pose.theta = carmen_normalize_theta(msg->goal_list->theta);
 
-	GlobalState::robot_config.max_v = fmin(msg->goal_list->v, GlobalState::param_max_vel);
+//	GlobalState::robot_config.max_v = fmin(msg->goal_list->v, GlobalState::param_max_vel);
+	double desired_v = fmin(msg->goal_list->v, GlobalState::param_max_vel);
+	if (desired_v < GlobalState::robot_config.max_v)
+		GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.2;
+	else
+		GlobalState::robot_config.max_v += (desired_v - GlobalState::robot_config.max_v) * 0.1;
 //	printf("v %lf\n", GlobalState::robot_config.max_v);
 
 	GlobalState::set_goal_pose(goal_pose);
@@ -575,7 +580,8 @@ carmen_obstacle_distance_mapper_compact_map_message_handler(carmen_obstacle_dist
 static void
 carmen_behaviour_selector_compact_lane_contents_message_handler(carmen_obstacle_distance_mapper_compact_map_message *message)
 {
-	carmen_obstacle_distance_mapper_overwrite_distance_map_message_with_compact_distance_map(GlobalState::distance_map, message);
+	if (GlobalState::distance_map)
+		carmen_obstacle_distance_mapper_overwrite_distance_map_message_with_compact_distance_map(GlobalState::distance_map, message);
 }
 
 

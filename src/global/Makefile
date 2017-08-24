@@ -74,10 +74,10 @@ libglobal.so.1:		global.o ipc_wrapper.o carmen_stdio.o
 
 
 ifndef NO_LIBJPEG
-libglobal_graphics.a:	global_graphics.o global_jpeg.o
+libglobal_graphics.a:	global_graphics.o global_jpeg.o ../road_mapper/road_mapper.o
 libglobal_graphics_qt.a:	global_graphics_qt.o global_jpeg.o
 else
-libglobal_graphics.a:	global_graphics.o
+libglobal_graphics.a:	global_graphics.o ../road_mapper/road_mapper.o
 libglobal_graphics_qt.a:  global_graphics_qt.o
 endif
 

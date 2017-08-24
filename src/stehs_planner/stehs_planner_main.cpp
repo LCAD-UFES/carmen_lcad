@@ -105,7 +105,7 @@ publish_model_predictive_planner_motion_commands()
 	carmen_ackerman_motion_command_t* commands =
 			(carmen_ackerman_motion_command_t*) (malloc(stehs_planner.state_list.size() * sizeof(carmen_ackerman_motion_command_t)));
 	int i = 0;
-	for (std::list<carmen_ackerman_path_point_t>::iterator it = stehs_planner.state_list.begin();	it != stehs_planner.state_list.end(); ++it)
+	for (std::list<carmen_ackerman_path_point_t>::iterator it = stehs_planner.state_list.begin(); it != stehs_planner.state_list.end(); ++it)
 	{
 		commands[i].v = it->v;
 		commands[i].phi = it->phi;
@@ -154,14 +154,16 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 //	std::cout << "lane " << stehs_planner.lane_ready << std::endl;
 //	std::cout << "Map " << stehs_planner.distance_map_ready << std::endl;
 //	std::cout << "goal " << stehs_planner.goal_ready << std::endl;
-	if (stehs_planner.lane_ready && stehs_planner.distance_map_ready && stehs_planner.goal_ready)
+	if (stehs_planner.distance_map_ready && stehs_planner.goal_ready)
 	{
 		stehs_planner.lane_ready = stehs_planner.distance_map_ready = stehs_planner.goal_ready = false;
 //		double time = carmen_get_time();
 		//stehs_planner.RDDFSpaceExploration();
+
 		stehs_planner.GeneratePath();
-//		printf("Tempo %f Ncirc %ld Nstate %ld\n", carmen_get_time() - time, stehs_planner.circle_path.size(),
-//				stehs_planner.state_list.size());
+		printf("Entrou\n");
+//		printf("Tempo %f Ncirc %ld Nstate %ld\n", carmen_get_time() - time, stehs_planner.circle_path.size(), stehs_planner.state_list.size());
+
 		if (!stehs_planner.state_list.empty())
 		{
 			if (stehs_planner.use_mpc)
@@ -223,6 +225,28 @@ base_ackerman_odometry_message_handler(carmen_base_ackerman_odometry_message *ms
 
 
 static void
+navigator_ackerman_set_goal_message_handler(carmen_navigator_ackerman_set_goal_message *msg)
+{
+	// Na mensagem atual não é possível representar um goal nulo. Coordenadas do mundo são grandes.
+	if (msg->x == -1 && msg->y == -1 && msg->theta == 0)
+	{
+		stehs_planner.goal_ready = false;
+		return;
+	}
+
+	printf("Chegou goal\n");
+
+	stehs_planner.goal.x		= msg->x;
+	stehs_planner.goal.y		= msg->y;
+	stehs_planner.goal.theta 	= carmen_normalize_theta(msg->theta);
+	stehs_planner.goal.v		= 0.0;
+	stehs_planner.goal.phi		= 0.0;
+
+	stehs_planner.goal_ready = true;
+}
+
+
+static void
 behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_message *msg)
 {
 	if ((msg->size <= 0) || !msg->goal_list)  // Precisa? || !GlobalState::localizer_pose)
@@ -240,6 +264,7 @@ behaviour_selector_goal_list_message_handler(carmen_behavior_selector_goal_list_
 	stehs_planner.goal.v = fmin(msg->goal_list->v, stehs_planner.robot_config.max_v);
 
 	stehs_planner.goal_ready = true;
+	stehs_planner.use_rddf = true;
 
 	//GlobalState::set_goal_pose(goal_pose);   // Criar uma flag para verificar se chegou goal ou não?
 }
@@ -294,7 +319,7 @@ navigator_ackerman_stop_message_handler()
 {
 	stehs_planner.active = false;
 
-	// Fazer funcao que para o robo
+	// FIXME Fazer funcao que para o robo
 }
 
 
@@ -365,12 +390,12 @@ register_handlers()
 		(carmen_handler_t)navigator_ackerman_stop_message_handler,
 		CARMEN_SUBSCRIBE_LATEST);
 
-//	carmen_subscribe_message(
-//		(char *) CARMEN_NAVIGATOR_ACKERMAN_SET_GOAL_NAME,
-//		(char *) CARMEN_NAVIGATOR_ACKERMAN_SET_GOAL_FMT,
-//		NULL, sizeof(carmen_navigator_ackerman_set_goal_message),
-//		(carmen_handler_t)navigator_ackerman_set_goal_message_handler,
-//		CARMEN_SUBSCRIBE_LATEST);
+	carmen_subscribe_message(
+			(char *) CARMEN_NAVIGATOR_ACKERMAN_SET_GOAL_NAME,
+			(char *) CARMEN_NAVIGATOR_ACKERMAN_SET_GOAL_FMT,
+			NULL, sizeof(carmen_navigator_ackerman_set_goal_message),
+			(carmen_handler_t)navigator_ackerman_set_goal_message_handler,
+			CARMEN_SUBSCRIBE_LATEST);
 
 }
 

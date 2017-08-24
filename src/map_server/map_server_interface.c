@@ -156,6 +156,17 @@ carmen_map_server_subscribe_offline_map(carmen_map_server_offline_map_message *m
 }
 
 void
+carmen_map_server_subscribe_road_map(carmen_map_server_road_map_message *message,
+		carmen_handler_t handler,
+		carmen_subscribe_t subscribe_how)
+{
+	carmen_subscribe_message(CARMEN_MAP_SERVER_ROAD_MAP_NAME,
+			CARMEN_MAP_SERVER_ROAD_MAP_FMT,
+			message, sizeof(carmen_map_server_road_map_message),
+			handler, subscribe_how);
+}
+
+void
 carmen_map_server_define_cost_map_message(void)
 {
 	IPC_RETURN_TYPE err;
@@ -209,6 +220,15 @@ carmen_map_server_define_offline_map_message(void)
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_MAP_SERVER_OFFLINE_MAP_NAME);
 }
 
+void
+carmen_map_server_define_road_map_message(void)
+{
+	IPC_RETURN_TYPE err;
+
+	err = IPC_defineMsg(CARMEN_MAP_SERVER_ROAD_MAP_NAME, IPC_VARIABLE_LENGTH,
+			CARMEN_MAP_SERVER_ROAD_MAP_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_MAP_SERVER_ROAD_MAP_NAME);
+}
 
 void
 carmen_map_server_publish_cost_map_message(carmen_map_t *carmen_map, double timestamp)
@@ -335,6 +355,23 @@ carmen_map_server_publish_offline_map_message(carmen_map_t *carmen_map, double t
 }
 
 void
+carmen_map_server_publish_road_map_message(carmen_map_t *carmen_road_map, double timestamp)
+{
+	IPC_RETURN_TYPE err;
+	static carmen_map_server_offline_map_message msg;
+
+//	strcpy(msg.config.origin, carmen_map->config.origin);
+	msg.complete_map = carmen_road_map->complete_map;
+	msg.size = carmen_road_map->config.x_size * carmen_road_map->config.y_size;
+	msg.config = carmen_road_map->config;
+	msg.host = carmen_get_host();
+	msg.timestamp = timestamp;
+
+	err = IPC_publishData(CARMEN_MAP_SERVER_ROAD_MAP_NAME, &msg);
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_MAP_SERVER_ROAD_MAP_NAME);
+}
+
+void
 carmen_map_server_define_localize_map_message(void)
 {
 	IPC_RETURN_TYPE err;
@@ -372,7 +409,7 @@ carmen_map_server_publish_localize_map_message(carmen_localize_ackerman_map_t* l
 	msg.config = localize_map->config;
 	msg.size = localize_map->carmen_map.config.x_size * localize_map->carmen_map.config.y_size;
 	msg.complete_mean_remission_map = localize_map->carmen_mean_remission_map.complete_map;
-	//msg.complete_variance_remission_map = localize_map->carmen_variance_remission_map.complete_map;
+	msg.complete_variance_remission_map = localize_map->carmen_variance_remission_map.complete_map;
 	msg.complete_map = localize_map->carmen_map.complete_map;
 //	msg.complete_distance = localize_map->complete_distance;
 	msg.complete_gprob = localize_map->complete_gprob;
@@ -391,7 +428,7 @@ carmen_map_server_localize_map_message_to_localize_map(carmen_map_server_localiz
 {
 	if (message->config.x_size != localize_map->config.x_size || message->config.y_size != localize_map->config.y_size)
 	{
-		//free(localize_map->carmen_variance_remission_map.complete_map);
+		free(localize_map->carmen_variance_remission_map.complete_map);
 		free(localize_map->carmen_mean_remission_map.complete_map);
 		free(localize_map->carmen_map.complete_map);
 		//free(localize_map->complete_distance);
@@ -400,7 +437,7 @@ carmen_map_server_localize_map_message_to_localize_map(carmen_map_server_localiz
 		//free(localize_map->complete_x_offset);
 		//free(localize_map->complete_y_offset);
 
-		//free(localize_map->carmen_variance_remission_map.map);
+		free(localize_map->carmen_variance_remission_map.map);
 		free(localize_map->carmen_mean_remission_map.map);
 		free(localize_map->carmen_map.map);
 		//free(localize_map->distance);
@@ -409,7 +446,7 @@ carmen_map_server_localize_map_message_to_localize_map(carmen_map_server_localiz
 	//	free(localize_map->x_offset);
 	//	free(localize_map->y_offset);
 
-		//localize_map->carmen_variance_remission_map.complete_map = NULL;
+		localize_map->carmen_variance_remission_map.complete_map = NULL;
 		localize_map->carmen_mean_remission_map.complete_map = NULL;
 		localize_map->carmen_map.complete_map = NULL;
 		//localize_map->complete_distance = NULL;
@@ -418,7 +455,7 @@ carmen_map_server_localize_map_message_to_localize_map(carmen_map_server_localiz
 		//localize_map->complete_x_offset = NULL;
 		//localize_map->complete_y_offset = NULL;
 
-		//localize_map->carmen_variance_remission_map.map = NULL;
+		localize_map->carmen_variance_remission_map.map = NULL;
 		localize_map->carmen_mean_remission_map.map = NULL;
 		localize_map->carmen_map.map = NULL;
 		//localize_map->distance = NULL;
@@ -431,7 +468,7 @@ carmen_map_server_localize_map_message_to_localize_map(carmen_map_server_localiz
 //	if (localize_map->complete_distance == NULL || localize_map->carmen_map.complete_map == NULL)
 	if (localize_map->carmen_map.complete_map == NULL)
 	{
-//		localize_map->carmen_variance_remission_map.complete_map = (double*) malloc(sizeof(double) * message->size);
+		localize_map->carmen_variance_remission_map.complete_map = (double*) malloc(sizeof(double) * message->size);
 		localize_map->carmen_mean_remission_map.complete_map = (double*) malloc(sizeof(double) * message->size);
 		localize_map->carmen_map.complete_map = (double*) malloc(sizeof(double) * message->size);
 //		localize_map->complete_distance = (double*) malloc(sizeof(double) * message->size);
@@ -440,7 +477,7 @@ carmen_map_server_localize_map_message_to_localize_map(carmen_map_server_localiz
 //		localize_map->complete_x_offset = (short int*) malloc(sizeof(short int) * message->size);
 //		localize_map->complete_y_offset = (short int*) malloc(sizeof(short int) * message->size);
 
-//		localize_map->carmen_variance_remission_map.map = (double**) malloc(sizeof(double*) * message->config.x_size);
+		localize_map->carmen_variance_remission_map.map = (double**) malloc(sizeof(double*) * message->config.x_size);
 		localize_map->carmen_mean_remission_map.map = (double**) malloc(sizeof(double*) * message->config.x_size);
 		localize_map->carmen_map.map = (double**) malloc(sizeof(double*) * message->config.x_size);
 //		localize_map->distance = (double**) malloc(sizeof(double*) * message->config.x_size);
@@ -451,7 +488,7 @@ carmen_map_server_localize_map_message_to_localize_map(carmen_map_server_localiz
 
 		for (int i = 0; i < message->config.x_size; i++)
 		{
-//			localize_map->carmen_variance_remission_map.map[i] = localize_map->carmen_variance_remission_map.complete_map + i * message->config.y_size;
+			localize_map->carmen_variance_remission_map.map[i] = localize_map->carmen_variance_remission_map.complete_map + i * message->config.y_size;
 			localize_map->carmen_mean_remission_map.map[i] = localize_map->carmen_mean_remission_map.complete_map + i * message->config.y_size;
 			localize_map->carmen_map.map[i] = localize_map->carmen_map.complete_map + i * message->config.y_size;
 //			localize_map->distance[i] = localize_map->complete_distance + i * message->config.y_size;
@@ -467,7 +504,7 @@ carmen_map_server_localize_map_message_to_localize_map(carmen_map_server_localiz
 	localize_map->carmen_mean_remission_map.config = message->config;
 	localize_map->carmen_variance_remission_map.config = message->config;
 
-//	memcpy(localize_map->carmen_variance_remission_map.complete_map, message->complete_variance_remission_map, sizeof(double) * message->size);
+	memcpy(localize_map->carmen_variance_remission_map.complete_map, message->complete_variance_remission_map, sizeof(double) * message->size);
 	memcpy(localize_map->carmen_mean_remission_map.complete_map, message->complete_mean_remission_map, sizeof(double) * message->size);
 	memcpy(localize_map->carmen_map.complete_map, message->complete_map, sizeof(double) * message->size);
 //	memcpy(localize_map->complete_distance, message->complete_distance, sizeof(double) * message->size);

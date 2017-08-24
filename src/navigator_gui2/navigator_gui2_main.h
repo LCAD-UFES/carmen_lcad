@@ -38,6 +38,7 @@ void navigator_stop_moving(void);
 void navigator_start_moving(void);
 void navigator_get_map(carmen_navigator_map_t New_Display, int is_superimposed);
 carmen_map_t* navigator_get_offline_map_pointer();
+carmen_map_t* navigator_get_road_map_pointer();
 carmen_map_t* navigator_get_complete_map_map_pointer();
 void get_initial_map(void);
 

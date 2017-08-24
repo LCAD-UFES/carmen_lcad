@@ -107,7 +107,162 @@ apply_system_latencies(carmen_ackerman_motion_command_p current_motion_command_v
 
 	return (i);
 }
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                              //
+// Publishers                                                                                   //
+//                                                                                              //
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+static void
+publish_odometry(double timestamp)
+{
+	IPC_RETURN_TYPE err = IPC_OK;
+	static carmen_base_ackerman_odometry_message odometry;
+	static int first = 1;
+
+	if (first)
+	{
+		odometry.host = carmen_get_host();
+		odometry.x = 0;
+		odometry.y = 0;
+		odometry.theta = 0;
+
+		odometry.v = odometry.phi = 0;
+		first = 0;
+	}
+
+
+	odometry.x = simulator_config->odom_pose.x;
+	odometry.y = simulator_config->odom_pose.y;
+	odometry.theta = simulator_config->odom_pose.theta;
+
+	odometry.v = simulator_config->v;
+	odometry.phi = simulator_config->phi;
+
+	odometry.timestamp = timestamp;
+	err = IPC_publishData(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, &odometry);
+	carmen_test_ipc(err, "Could not publish base_odometry_message",
+			CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
+}
+
+
+static void
+publish_truepos(double timestamp)
+{
+	IPC_RETURN_TYPE err = IPC_OK;
+	static carmen_simulator_ackerman_truepos_message truepos;
+	static int first = 1;
+	if (first)
+	{
+		truepos.host = carmen_get_host();
+		first = 0;
+	}
+
+	truepos.truepose = simulator_config->true_pose;
+	truepos.odometrypose = simulator_config->odom_pose;
+	truepos.v = simulator_config->v;
+	truepos.phi = simulator_config->phi;
+	truepos.timestamp = timestamp;
+	err = IPC_publishData(CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_NAME, &truepos);
+	carmen_test_ipc(err, "Could not publish simualator_truepos_message",
+			CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_NAME);
+}
+
+
+static void
+publish_objects(double timestamp)
+{
+	IPC_RETURN_TYPE err = IPC_OK;
+	static int first = 1;
+	static carmen_simulator_ackerman_objects_message objects;
+
+	if (first)
+	{
+		objects.host = carmen_get_host();
+		first = 0;
+	}
+
+	carmen_simulator_ackerman_get_object_poses(&(objects.num_objects), &(objects.objects_list));
+	objects.timestamp = timestamp;
+	err = IPC_publishData(CARMEN_SIMULATOR_ACKERMAN_OBJECTS_NAME, &objects);
+	carmen_test_ipc(err, "Could not publish simulator_objects_message",
+			CARMEN_SIMULATOR_ACKERMAN_OBJECTS_NAME);
+}
+
+
+static void
+publish_frontlaser(double timestamp)
+{
+	IPC_RETURN_TYPE err = IPC_OK;
+	static int first = 1;
+	static carmen_laser_laser_message flaser;
+
+	if (!simulator_config->use_front_laser)
+		return;
+
+	if (first)
+	{
+		flaser.host = carmen_get_host();
+		flaser.num_readings =
+				simulator_config->front_laser_config.num_lasers;
+		flaser.range = (double *)calloc
+				(simulator_config->front_laser_config.num_lasers, sizeof(double));
+		carmen_test_alloc(flaser.range);
+
+		flaser.num_remissions = 0;
+		flaser.remission = 0;
+
+		first = 0;
+	}
+
+	carmen_simulator_ackerman_calc_laser_msg(&flaser, simulator_config, 0);
+
+	flaser.timestamp = timestamp;
+	err = IPC_publishData(CARMEN_LASER_FRONTLASER_NAME, &flaser);
+	carmen_test_ipc(err, "Could not publish laser_frontlaser_message",
+			CARMEN_LASER_FRONTLASER_NAME);
+}
+
+
+static void
+publish_rearlaser(double timestamp)
+{
+	IPC_RETURN_TYPE err = IPC_OK;
+	static int first = 1;
+	static carmen_laser_laser_message rlaser;
+
+	if (!simulator_config->use_rear_laser)
+	{
+		return;
+	}
+
+	if (first)
+	{
+		rlaser.host = carmen_get_host();
+
+		rlaser.num_readings = simulator_config->rear_laser_config.num_lasers;
+		rlaser.range = (double *)calloc
+				(simulator_config->rear_laser_config.num_lasers, sizeof(double));
+		carmen_test_alloc(rlaser.range);
+
+		rlaser.num_remissions = 0;
+		rlaser.remission = 0;
+		first = 0;
+	}
+
+	carmen_simulator_ackerman_calc_laser_msg(&rlaser, simulator_config, 1);
+
+	rlaser.timestamp = timestamp;
+	err = IPC_publishData(CARMEN_LASER_REARLASER_NAME, &rlaser);
+	carmen_test_ipc(err, "Could not publish laser_rearlaser_message",
+			CARMEN_LASER_REARLASER_NAME);
+
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -115,6 +270,70 @@ apply_system_latencies(carmen_ackerman_motion_command_p current_motion_command_v
 // Handlers                                                                                     //
 //                                                                                              //
 //////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void
+simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
+		unsigned long currenttime __attribute__ ((unused)),
+		unsigned long scheduledTime __attribute__ ((unused)))
+{
+	double delta_time;
+	double timestamp;
+	static double last_timestamp = 0.0;
+
+	timestamp = carmen_get_time();
+	if (last_timestamp == 0.0)
+	{
+		last_timestamp = timestamp;
+		return;
+	}
+
+	simulator_config->delta_t = timestamp - last_timestamp;
+
+	if (!simulator_config->sync_mode)
+	{
+		delta_time = timestamp - simulator_config->time_of_last_command;
+		if ((simulator_config->v > 0 || simulator_config->phi > 0) && (delta_time > simulator_config->motion_timeout))
+		{
+			simulator_config->current_motion_command_vector = NULL;
+			simulator_config->nun_motion_commands = 0;
+			simulator_config->current_motion_command_vector_index = 0;
+			simulator_config->target_v = 0;
+			simulator_config->target_phi = 0;
+		}
+	}
+
+	carmen_simulator_ackerman_recalc_pos(simulator_config);
+	carmen_simulator_ackerman_update_objects(simulator_config);
+
+	if (!use_truepos)
+	{
+		publish_odometry(timestamp);
+		carmen_simulator_ackerman_update_objects(simulator_config);
+		publish_objects(timestamp);
+	}
+	publish_truepos(timestamp);
+
+	static unsigned int counter = 0;
+	if (publish_laser_flag && ((counter % 2) == 0) && !use_truepos)
+	{
+		publish_frontlaser(timestamp);
+		publish_rearlaser(timestamp);
+	}
+	counter++;
+
+	carmen_publish_heartbeat("simulator");
+
+	last_timestamp = timestamp;
+
+#ifdef __USE_RL_CONTROL
+	if (timestamp - time_last_message_arrived > 0.5)
+	{
+		set_rl_control(0,0,100);
+	}
+#endif
+}
+
 
 /*
 static void
@@ -367,233 +586,7 @@ shutdown_module(int x)
 		exit(0);
 	}
 }
-
-
-
 //////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                              //
-// Publishers                                                                                   //
-//                                                                                              //
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-static void
-publish_odometry(double timestamp)
-{
-	IPC_RETURN_TYPE err = IPC_OK;
-	static carmen_base_ackerman_odometry_message odometry;
-	static int first = 1;
-
-	if (first)
-	{
-		odometry.host = carmen_get_host();
-		odometry.x = 0;
-		odometry.y = 0;
-		odometry.theta = 0;
-
-		odometry.v = odometry.phi = 0;
-		first = 0;
-	}
-
-
-	odometry.x = simulator_config->odom_pose.x;
-	odometry.y = simulator_config->odom_pose.y;
-	odometry.theta = simulator_config->odom_pose.theta;
-
-	odometry.v = simulator_config->v;
-	odometry.phi = simulator_config->phi;
-
-	odometry.timestamp = timestamp;
-	err = IPC_publishData(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, &odometry);
-	carmen_test_ipc(err, "Could not publish base_odometry_message",
-			CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
-}
-
-
-static void
-publish_truepos(double timestamp)
-{
-	IPC_RETURN_TYPE err = IPC_OK;
-	static carmen_simulator_ackerman_truepos_message truepos;
-	static int first = 1;
-	if (first)
-	{
-		truepos.host = carmen_get_host();
-		first = 0;
-	}
-
-	truepos.truepose = simulator_config->true_pose;
-	truepos.odometrypose = simulator_config->odom_pose;
-	truepos.v = simulator_config->v;
-	truepos.phi = simulator_config->phi;
-	truepos.timestamp = timestamp;
-	err = IPC_publishData(CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_NAME, &truepos);
-	carmen_test_ipc(err, "Could not publish simualator_truepos_message",
-			CARMEN_SIMULATOR_ACKERMAN_TRUEPOS_NAME);
-}
-
-
-static void
-publish_objects(double timestamp)
-{
-	IPC_RETURN_TYPE err = IPC_OK;
-	static int first = 1;
-	static carmen_simulator_ackerman_objects_message objects;
-
-	if (first)
-	{
-		objects.host = carmen_get_host();
-		first = 0;
-	}
-
-	carmen_simulator_ackerman_get_object_poses(&(objects.num_objects), &(objects.objects_list));
-	objects.timestamp = timestamp;
-	err = IPC_publishData(CARMEN_SIMULATOR_ACKERMAN_OBJECTS_NAME, &objects);
-	carmen_test_ipc(err, "Could not publish simulator_objects_message",
-			CARMEN_SIMULATOR_ACKERMAN_OBJECTS_NAME);
-}
-
-
-static void
-publish_frontlaser(double timestamp)
-{
-	IPC_RETURN_TYPE err = IPC_OK;
-	static int first = 1;
-	static carmen_laser_laser_message flaser;
-
-	if (!simulator_config->use_front_laser)
-		return;
-
-	if (first)
-	{
-		flaser.host = carmen_get_host();
-		flaser.num_readings =
-				simulator_config->front_laser_config.num_lasers;
-		flaser.range = (double *)calloc
-				(simulator_config->front_laser_config.num_lasers, sizeof(double));
-		carmen_test_alloc(flaser.range);
-
-		flaser.num_remissions = 0;
-		flaser.remission = 0;
-
-		first = 0;
-	}
-
-	carmen_simulator_ackerman_calc_laser_msg(&flaser, simulator_config, 0);
-
-	flaser.timestamp = timestamp;
-	err = IPC_publishData(CARMEN_LASER_FRONTLASER_NAME, &flaser);
-	carmen_test_ipc(err, "Could not publish laser_frontlaser_message",
-			CARMEN_LASER_FRONTLASER_NAME);
-}
-
-
-static void
-publish_rearlaser(double timestamp)
-{
-	IPC_RETURN_TYPE err = IPC_OK;
-	static int first = 1;
-	static carmen_laser_laser_message rlaser;
-
-	if (!simulator_config->use_rear_laser)
-	{
-		return;
-	}
-
-	if (first)
-	{
-		rlaser.host = carmen_get_host();
-
-		rlaser.num_readings = simulator_config->rear_laser_config.num_lasers;
-		rlaser.range = (double *)calloc
-				(simulator_config->rear_laser_config.num_lasers, sizeof(double));
-		carmen_test_alloc(rlaser.range);
-
-		rlaser.num_remissions = 0;
-		rlaser.remission = 0;
-		first = 0;
-	}
-
-	carmen_simulator_ackerman_calc_laser_msg(&rlaser, simulator_config, 1);
-
-	rlaser.timestamp = timestamp;
-	err = IPC_publishData(CARMEN_LASER_REARLASER_NAME, &rlaser);
-	carmen_test_ipc(err, "Could not publish laser_rearlaser_message",
-			CARMEN_LASER_REARLASER_NAME);
-
-}
-
-
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                              //
-// Updates the robot's position, the people's position, and the laser reading                   //
-// and then publishes the laser reading and the odometry                                        //
-//                                                                                              //
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
-void
-simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
-		unsigned long currenttime __attribute__ ((unused)),
-		unsigned long scheduledTime __attribute__ ((unused)))
-{
-	double delta_time;
-	double timestamp;
-	static double last_timestamp = 0.0;
-
-	timestamp = carmen_get_time();
-	if (last_timestamp == 0.0)
-	{
-		last_timestamp = timestamp;
-		return;
-	}
-
-	simulator_config->delta_t = timestamp - last_timestamp;
-
-	if (!simulator_config->sync_mode)
-	{
-		delta_time = timestamp - simulator_config->time_of_last_command;
-		if ((simulator_config->v > 0 || simulator_config->phi > 0) && (delta_time > simulator_config->motion_timeout))
-		{
-			simulator_config->current_motion_command_vector = NULL;
-			simulator_config->nun_motion_commands = 0;
-			simulator_config->current_motion_command_vector_index = 0;
-			simulator_config->target_v = 0;
-			simulator_config->target_phi = 0;
-		}
-	}
-
-	carmen_simulator_ackerman_recalc_pos(simulator_config);
-	carmen_simulator_ackerman_update_objects(simulator_config);
-
-	if (!use_truepos)
-	{
-		publish_odometry(timestamp);
-		carmen_simulator_ackerman_update_objects(simulator_config);
-		publish_objects(timestamp);
-	}
-	publish_truepos(timestamp);
-
-	static unsigned int counter = 0;
-	if (publish_laser_flag && ((counter % 2) == 0) && !use_truepos)
-	{
-		publish_frontlaser(timestamp);
-		publish_rearlaser(timestamp);
-	}
-	counter++;
-
-	carmen_publish_heartbeat("simulator");
-
-	last_timestamp = timestamp;
-
-#ifdef __USE_RL_CONTROL
-	if (timestamp - time_last_message_arrived > 0.5)
-	{
-		set_rl_control(0,0,100);
-	}
-#endif
-}
-
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

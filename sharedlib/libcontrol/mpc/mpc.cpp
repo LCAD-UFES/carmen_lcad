@@ -560,7 +560,7 @@ init_mpc(bool &first_time, PARAMS &params, EFFORT_SPLINE_DESCRIPTOR &seed, doubl
 
 
 double
-carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvature,
+carmen_libmpc_get_optimized_steering_effort_using_MPC(double current_aoc,
 		carmen_ackerman_motion_command_p current_motion_command_vector,	int nun_motion_commands,
 		double v, double yp, double time_of_last_motion_command,
 		carmen_robot_ackerman_config_t *robot_config,
@@ -570,15 +570,25 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 	static EFFORT_SPLINE_DESCRIPTOR seed = {0.0, 0.0, 0.0, 0.0};
 	static bool first_time = true;
 
-	if (!init_mpc(first_time, params, seed, atan_current_curvature, current_motion_command_vector, nun_motion_commands, v, time_of_last_motion_command,
+	if (!init_mpc(first_time, params, seed, current_aoc, current_motion_command_vector, nun_motion_commands, v, time_of_last_motion_command,
 					robot_config, initialize_neural_networks))
 		return (0.0);
 
 	//seed = get_optimized_effort(&params, seed); // TODO essa funcao vai aqui ou depois do car_model???
 	double effort = seed.k1;
 
-	// Calcula o dk do proximo ciclo
-	double Cxk = car_steering_model(effort, atan_current_curvature, params.current_velocity, params.steering_ann_input, &params);
+/////////////  LISTA TESTES MPC	 /////////////////////////////////////////////
+////  Testar novamente MPC
+////  Testar PID sem o Motion Planner
+////  Verificar uso direto da curvatura dada pela torc no MPC e PID
+////  Teste erro na previsão do modelo
+//////////////////////////////////////////////////////////////////////////////
+	double predicted_aoc = carmen_libcarneuralmodel_compute_new_aoc_from_effort(effort, current_aoc, params.steering_ann_input, params.steering_ann);
+	double Cxk = carmen_get_phi_from_curvature(tan(predicted_aoc), v, params.understeer_coeficient, params.distance_rear_axles);
+	Cxk = carmen_clamp(-params.max_phi, Cxk, params.max_phi);
+
+	// Calculate dk for the next cycle, dk is the error between predicted phi and measured phi
+	//double Cxk = car_steering_model(effort, current_aoc, params.current_velocity, params.steering_ann_input, &params);
 	params.dk = yp - Cxk;
 	params.previous_k1 = effort;
 
@@ -595,10 +605,6 @@ carmen_libmpc_get_optimized_steering_effort_using_MPC(double atan_current_curvat
 	#ifdef PLOT
 		plot_state(&seed, &params, v, robot_config->understeer_coeficient, robot_config->distance_between_front_and_rear_axles, effort);
 	#endif
-
-//	double atan_desired_curvature = carmen_get_curvature_from_phi(params.motion_commands_vector[get_motion_timed_index_to_motion_command(&params)].phi, v, params.understeer_coeficient, params.distance_rear_axles);
-//		fprintf(stdout, "(cc, dc, s, t) %lf %lf %lf %lf\n", atan_current_curvature, atan_desired_curvature, effort, carmen_get_time());
-//	fflush(stdout);
 
 	carmen_clamp(-100.0, effort, 100.0);
 	return (effort);

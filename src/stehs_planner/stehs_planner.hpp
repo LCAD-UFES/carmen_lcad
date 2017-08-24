@@ -38,12 +38,10 @@
 class StehsPlanner
 {
 public:
+    State start;    // Robot global start state position
 
-    // the robot global state
-    State start;
-
-    //
     State goal;
+
     carmen_obstacle_distance_mapper_map_message *distance_map;
 
     carmen_behavior_selector_road_profile_message *goal_list_message;
@@ -52,10 +50,12 @@ public:
 
     // the planner activation flag
     bool active;
-
     unsigned int show_debug_info;
     unsigned int cheat;
-    bool lane_ready, distance_map_ready, goal_ready;
+    bool 	lane_ready,
+			distance_map_ready,
+			goal_ready,
+			use_rddf;
 
     unsigned int use_mpc;
     unsigned int use_obstacle_avoider;
@@ -108,6 +108,8 @@ public:
 
     bool Exist(CircleNodePtr current, std::vector<CircleNodePtr> &closed_set);
 
+    void GoalSpaceExploration();
+
     int FindClosestRDDFIndex();
 
     void UpdateCircleGoalDistance();
@@ -143,8 +145,7 @@ public:
     double UpdateStep(StateNodePtr state_node);
     bool Collision(StateNodePtr state_node);
 
-    void Expand(
-                StateNodePtr current,
+    void Expand(StateNodePtr current,
                 std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set,
                 std::vector<StateNodePtr> &closed_set,
                 double k);
@@ -153,6 +154,12 @@ public:
     		std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set);
 
     void SetSwap(std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set, std::vector<StateNodePtr> &closed_set);
+
+    void ConsumePath(double elapsed_time);
+
+    void concatenate_state_lists(std::list<carmen_ackerman_path_point_t> reuse_list);
+
+    void set_start_position_last_state_list_position();
 
     void GeneratePath();
 };

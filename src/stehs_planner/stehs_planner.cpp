@@ -1,5 +1,9 @@
 #include "stehs_planner.hpp"
 
+using namespace std;
+
+//#define SHOWPATH
+
 // constructor
 StehsPlanner::StehsPlanner():
         start(),
@@ -13,15 +17,18 @@ StehsPlanner::StehsPlanner():
         lane_ready(false),
         distance_map_ready(false),
         goal_ready(false),
+		use_rddf(false),
         circle_path(),
         state_list() {
 
-    // creates a new opencv window
-    cv::namedWindow("CirclePath", cv::WINDOW_AUTOSIZE);
-
-    std::cout<<"OpenCV Version used:"<<CV_MAJOR_VERSION<<"."<<CV_MINOR_VERSION<<std::endl;
+    	//creates a new opencv window
+		#ifdef SHOWPATH
+			cv::namedWindow("CirclePath", cv::WINDOW_AUTOSIZE);
+		#endif
+    	//std::cout<<"OpenCV Version used:"<<CV_MAJOR_VERSION<<"."<<CV_MINOR_VERSION<<std::endl;
 
 }
+
 
 // destructor
 StehsPlanner::~StehsPlanner() {
@@ -29,6 +36,7 @@ StehsPlanner::~StehsPlanner() {
     cv::destroyAllWindows();
 
 }
+
 
 double
 StehsPlanner::Distance(double ax, double ay, double bx, double by)
@@ -73,6 +81,7 @@ traj_to_point_t(State traj)
     return (point);
 }
 
+
 double
 StehsPlanner::ObstacleDistance(double x, double y)
 {
@@ -83,6 +92,7 @@ StehsPlanner::ObstacleDistance(double x, double y)
 
     return (carmen_obstacle_avoider_distance_from_global_point_to_obstacle(&p, distance_map));
 }
+
 
 double
 StehsPlanner::ObstacleDistance(const State &point)
@@ -108,6 +118,7 @@ StehsPlanner::BuildCirclePath(CircleNodePtr node)
 
     return(temp_circle_path);
 }
+
 
 bool
 StehsPlanner::Exist(CircleNodePtr current, std::vector<CircleNodePtr> &closed_set)
@@ -248,6 +259,17 @@ StehsPlanner::SpaceExploration(CircleNodePtr start_node, CircleNodePtr goal_node
 }
 
 
+void
+StehsPlanner::GoalSpaceExploration()
+{
+    CircleNodePtr start_circle =  new CircleNode(start.x, start.y, ObstacleDistance(start), 0.0, 0.0, nullptr);
+
+    CircleNodePtr goal_circle = new CircleNode(goal.x, goal.y, ObstacleDistance(goal), DBL_MAX, DBL_MAX, nullptr);
+
+    circle_path = SpaceExploration(start_circle, goal_circle);
+}
+
+
 int
 StehsPlanner::FindClosestRDDFIndex()
 {
@@ -309,9 +331,10 @@ StehsPlanner::ConnectCirclePathGaps()
     {
         if(!it->circle.Overlap(previous_it->circle, MIN_OVERLAP_FACTOR))
         {
-            temp_circle_path = SpaceExploration(&(*previous_it), &(*it));
+        	temp_circle_path = SpaceExploration(&(*previous_it), &(*it));
+
             if(!temp_circle_path.empty())
-                circle_path.splice(previous_it,temp_circle_path);
+                circle_path.splice(previous_it,temp_circle_path);    // Splice effectively inserts temp_circle_path elements into the circle_path and removes them from temp_circle_path, altering the sizes of both containers
             else
             {
                 // TODO O que fazer?
@@ -343,21 +366,19 @@ StehsPlanner::UpdateCircleGoalDistance()  // Iterate the entire circle path comp
 void
 StehsPlanner::RDDFSpaceExploration()
 {
-    // clear the old circle path
+	printf("Entrou RDDF\n");
     circle_path.clear();
 
     //TODO verificar se os dados para os calculos estao disponiveis, se nao, nao fazer nada
-    // create the start circle node
     CircleNodePtr start_node =  new CircleNode(start.x, start.y, ObstacleDistance(start), 0.0, 0.0, nullptr);
 
-    // create the goal circle node
     CircleNodePtr goal_node = new CircleNode(goal.x, goal.y, ObstacleDistance(goal), DBL_MAX, DBL_MAX, nullptr);
+
+    circle_path.push_back(*start_node);
 
     int current_rddf_index = FindClosestRDDFIndex();
 
     CircleNodePtr current_node = new CircleNode(goal_list_message->poses[current_rddf_index].x, goal_list_message->poses[current_rddf_index].y, ObstacleDistance(goal_list_message->poses[current_rddf_index]), DBL_MAX, DBL_MAX, nullptr);
-
-    circle_path.push_back(*start_node);
 
 //	if (current_node->circle.Overlap(start_node->circle, 0.5))
 //	{
@@ -395,20 +416,16 @@ StehsPlanner::RDDFSpaceExploration()
 
     circle_path.push_back(*goal_node);
 
-    ConnectCirclePathGaps();
+    ConnectCirclePathGaps();        // Check if all circles in the circle_path have a min overlap, case not call SpaceExploration function to connect them
 
     UpdateCircleGoalDistance();
 
-
-/*
-    std::list<CircleNode>::iterator it;
+    /*std::list<CircleNode>::iterator it;
     for(it = circle_path.begin(); it != circle_path.end(); ++it)
     {
         printf("x: %f y: %f r: %f\n",it->circle.x, it->circle.y, it->circle.radius);
-    }
-*/
-
-
+    }*/
+    printf("Saiu RDDF\n");
 }
 
 
@@ -500,7 +517,8 @@ StehsPlanner::DistanceHeuristic(const State &state) // TODO Optimize this linear
 void
 StehsPlanner::BuildStateList(StateNodePtr node)
 {
-	state_list.clear();
+	// ReusePath
+	// state_list.clear();  // TODO Apagar esta linha da funcao GeneratePath e descomentar aqui
 
 	carmen_ackerman_path_point_t path_point;
 	while(node != nullptr)
@@ -510,15 +528,17 @@ StehsPlanner::BuildStateList(StateNodePtr node)
 		path_point.theta  = node->state.theta;
 		path_point.v      = node->state.v    ;
 		path_point.phi    = node->state.phi  ;
-		path_point.time = node->step_size;
+		path_point.time   = node->step_size;
 		state_list.push_front(path_point);
 		node = node->parent;
 	}
 }
 
+
 // TODO we need to implement the circle radius clustering
 bool
-StehsPlanner::Exist(StateNodePtr current, std::vector<StateNodePtr> &closed_set, double k) {
+StehsPlanner::Exist(StateNodePtr current, std::vector<StateNodePtr> &closed_set, double k)
+{
 
     std::vector<StateNodePtr>::iterator it = closed_set.begin();
     std::vector<StateNodePtr>::iterator end = closed_set.end();
@@ -534,12 +554,14 @@ StehsPlanner::Exist(StateNodePtr current, std::vector<StateNodePtr> &closed_set,
     return false;
 }
 
+
 StateNodePtr
 StehsPlanner::GetNextState(StateNodePtr current_state, double a, double w, double step_size)
 {
     StateNodePtr next_state = new StateNode(*current_state);
     double target_phi = current_state->state.phi + w * step_size;
     double target_v = current_state->state.v + a * step_size;
+
     if(target_v > goal.v)
     	target_v = goal.v;
 
@@ -558,7 +580,6 @@ StehsPlanner::GetNextState(StateNodePtr current_state, double a, double w, doubl
 
     return (next_state);
 }
-
 
 
 double
@@ -594,31 +615,31 @@ StehsPlanner::Collision(StateNodePtr state_node)
 	return (carmen_obstacle_avoider_compute_car_distance_to_closest_obstacles(&state, trash, robot_config, distance_map, circle_radius) > 0.0); // Returns 0 if there is not a collision
 }
 
-cv::Mat imgem;
+
+#ifdef SHOWPATH
+	cv::Mat imgem;
+#endif
+
 
 void
-StehsPlanner::Expand(
-        StateNodePtr current_state,
+StehsPlanner::Expand(StateNodePtr current_state,
         std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set,
-        std::vector<StateNodePtr> &closed_set,
-        double k)
+        std::vector<StateNodePtr> &closed_set, double k)
 {
-    // the car acceleration
     double a[3] = {-1.0, 0.0, 1.0};
     double w[3] = {-0.1, 0.0, 0.1}; //TODO ler velocidade angular do volante do carmen.ini
 
-    double step_size = k * UpdateStep(current_state);
+    double step_size;
+    step_size = k * UpdateStep(current_state);
 
     // TODO tratar isso na UpdateStep
     if(step_size < 0.2)
     	step_size = 0.2;
 
-    printf ("Step %lf\n", step_size);
+    //printf ("Step %lf\n", step_size);
 
-    // the acceleration loop
     for (int i = 0; i < 3; ++i)
     {
-        // the steering angle acceleration
         for (int j = 0; j < 3; ++j)
         {
         	//printf("\nState %lf %lf %lf %lf %lf %lf\n", current_state->state.x, current_state->state.y, current_state->state.theta, current_state->state.phi, current_state->state.v, step_size);
@@ -632,7 +653,9 @@ StehsPlanner::Expand(
             {
                 open_set.push(next_state);
 
-                //ShowState(next_state, imgem);
+				#ifdef SHOWPATH
+                	ShowState(next_state, imgem);
+				#endif
             }
             else
             {
@@ -643,6 +666,7 @@ StehsPlanner::Expand(
 }
 
 
+// The articles did not explained this function
 void
 StehsPlanner::GoalExpand(StateNodePtr current, StateNodePtr &goal_node,
 		std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> &open_set)
@@ -682,33 +706,31 @@ StehsPlanner::SetSwap(
 	closed_set = outputvec;
 }
 
+
 void
 StehsPlanner::HeuristicSearch()
 {
-
-    //StateNode(const State &s, double g_, double f_, StateNode *p);
-    // build the start node, the initial configuration
-    StateNodePtr start_node = new StateNode(start, 0.0, TimeHeuristic(start), nullptr);
+    StateNodePtr start_node = new StateNode(start, 0.0, TimeHeuristic(start), nullptr);    // (State, g, h, Parent)  You dont pass the argument f because f=g+h
 
     StateNodePtr goal_node = new StateNode(goal, DBL_MAX, DBL_MAX, nullptr);
 
-    // create the priority queue
     std::priority_queue<StateNodePtr, std::vector<StateNodePtr>, StateNodePtrComparator> open_set;
 
     std::vector<StateNodePtr> closed_set;
 
     open_set.push(start_node);
 
-    // the inital step-rate
-    double k = 1.0;
-    int cont = 0;
+    double k = 1.0;    // the inital step-rate
+    int cont = 0;      // cont only for debug remove later
 
-	//imgem = ShowCirclePath(closed_set);
+    #ifdef SHOWPATH
+		imgem = ShowCirclePath(closed_set);
+		imgem = ShowState(goal_node, imgem);
+	#endif
 
     while (!open_set.empty())
     {
-        // get the circle wich is the closest to the goal node
-        StateNodePtr current = open_set.top();
+        StateNodePtr current = open_set.top();           // Get the circle witch is the closest to the goal node
         open_set.pop();
 
         if (goal_node->f < current->f)
@@ -727,20 +749,20 @@ StehsPlanner::HeuristicSearch()
             //printf("Nstate %ld cont %d\n", state_list.size(), cont);
             //printf("Sucesso!!\n");
             break;
-
         }
+
         // find the children states configuration
         Expand(current, open_set, closed_set, k);
         cont += 6;
 
         //printf("Nstate %d\n", cont);
-
         //printf("h %lf f %lf T %ld\n", current->h, current->f, open_set.size());
 
+
+        // FIXME Essa verificação nao devia ser feita usando o melhor
+        //candidato da ultima chamada a Expand???
         if (current->h < RGOAL)
         {
-//            printf("Goal!!\n");
-
             GoalExpand(current, goal_node, open_set);
         }
 
@@ -756,12 +778,12 @@ StehsPlanner::HeuristicSearch()
             {
                 SetSwap(open_set, closed_set);
             }
-
         }
-
     }
 
-//    ShowCirclePath(closed_set);
+    #ifdef SHOWPATH
+    	ShowCirclePath(closed_set);
+	#endif
 
     while(!closed_set.empty())
     {
@@ -771,16 +793,125 @@ StehsPlanner::HeuristicSearch()
 
         delete tmp;
     }
-
 }
+
+
+void
+StehsPlanner::ConsumePath(double elapsed_time)
+{
+	if (state_list.empty())
+		return;
+
+	std::list<carmen_ackerman_path_point_t>::iterator it = state_list.begin();
+	double time_sum = 0.0;
+
+	printf("Elapsed Time %lf\n", elapsed_time);
+
+	while (time_sum < elapsed_time && it != state_list.end())
+	{
+		time_sum += it->time;
+		it++;
+
+		if (time_sum <= elapsed_time)
+		{
+			state_list.pop_front();
+		}
+	}
+
+	if (time_sum > elapsed_time)
+	{
+		it = state_list.begin();
+		it->time = time_sum - elapsed_time;
+	}
+}
+
+
+void
+StehsPlanner::concatenate_state_lists(std::list<carmen_ackerman_path_point_t> reuse_list)
+{
+	state_list.pop_front();  // Erase the first element becuse it always have time = 0 because it is the cars actual state
+	state_list.pop_back();   // Erase the last element becuse it always have time = 0 because it is the cars end state
+
+	std::list<carmen_ackerman_path_point_t>::iterator it = state_list.begin();
+
+	state_list.insert(it, reuse_list.begin(), reuse_list.end());
+}
+
+
+void
+StehsPlanner::set_start_position_last_state_list_position()
+{
+	if (state_list.empty())
+			return;
+
+	std::list<carmen_ackerman_path_point_t>::iterator it = state_list.begin();
+
+	it = state_list.end();
+	it--;                        // it-- because end() returns a void pointer
+
+	start.x = it->x;
+	start.y = it->y;
+	start.theta = it->theta;
+	start.v = it->v;
+	start.phi = it->phi;
+
+	//printf("%lf %lf %lf %lf %lf\n", it->x, it->y, it->theta, it->v, it->phi);
+}
+
+
+/*void
+StehsPlanner::GeneratePath()
+{
+	static double time = 0.0;
+	static int cont = 99;
+
+	ConsumePath(carmen_get_time() - time);
+
+	if (cont < 100)
+	{
+		cont += 1;
+	}
+	else
+	{
+		printf("----------------------Inicio space exploration----------------------\n");
+
+		std::list<carmen_ackerman_path_point_t> reuse_list = state_list;
+		state_list.clear();
+
+		set_start_position_last_state_list_position();
+
+		RDDFSpaceExploration();
+
+		if (!circle_path.empty())
+		{
+			HeuristicSearch();
+		}
+		//printf("+++++ %d\n", state_list.size());
+
+		concatenate_state_lists(reuse_list);
+
+	}
+
+	std::list<carmen_ackerman_path_point_t>::iterator it = state_list.begin();
+	for (; it != state_list.end(); it++)
+		printf("time %lf\n", it->time);
+
+	time = carmen_get_time();
+}*/
 
 
 void
 StehsPlanner::GeneratePath()
 {
-	//printf("Inicio space exploration\n");
-	RDDFSpaceExploration();
-	//printf("Fim space exploration\n");
+	std::cout << state_list.size() << endl;
+
+	state_list.clear();
+
+	if (use_rddf)
+		RDDFSpaceExploration();
+	else
+		GoalSpaceExploration();
+
 	if (!circle_path.empty())
 	{
 		HeuristicSearch();
@@ -790,22 +921,18 @@ StehsPlanner::GeneratePath()
 		// TODO Pensar no que fazer. Consumir o plano, parar?
 		printf("Não foi possível encontrar um caminho válido.\n");
 	}
-
-	//ShowCirclePath();
 }
 
 
-unsigned char* StehsPlanner::GetCurrentMap() {
-
+unsigned char* StehsPlanner::GetCurrentMap()
+{
     unsigned int width = distance_map->config.x_size;
     unsigned int height = distance_map->config.y_size;
-
     unsigned int size = width * height;
-
     unsigned char *map = new unsigned char[size];
 
-    for (unsigned int i = 0; i < size; ++i) {
-
+    for (unsigned int i = 0; i < size; ++i)
+    {
         // get the current row
         unsigned int row = (height - 1) - i % height;
 
@@ -815,20 +942,18 @@ unsigned char* StehsPlanner::GetCurrentMap() {
         // get the current index
         unsigned int index = row * width + col;
 
-        if (0.0 == distance_map->complete_x_offset[i] && 0.0 == distance_map->complete_y_offset[i]) {
-
+        if (0.0 == distance_map->complete_x_offset[i] && 0.0 == distance_map->complete_y_offset[i])
+        {
             map[index] = 0;
-
-        } else {
-
+        } else
+        {
             map[index] = 255;
-
         }
-
     }
 
     return map;
 }
+
 
 cv::Mat
 StehsPlanner::ShowCirclePath(std::vector<StateNodePtr> &state_node)
@@ -851,7 +976,8 @@ StehsPlanner::ShowCirclePath(std::vector<StateNodePtr> &state_node)
     std::list<CircleNode>::iterator it = circle_path.begin();
     std::list<CircleNode>::iterator end = circle_path.end();
 
-    while (it != end) {
+    while (it != end)
+    {
 
         unsigned int row = height - std::floor((it->circle.y - distance_map->config.y_origin) * inverse_resolution + 0.5);
         unsigned int col = std::floor((it->circle.x - distance_map->config.x_origin) * inverse_resolution + 0.5);
@@ -935,8 +1061,8 @@ void StehsPlanner::ShowCirclePath() {
     std::list<CircleNode>::iterator it = circle_path.begin();
     std::list<CircleNode>::iterator end = circle_path.end();
 
-    while (it != end) {
-
+    while (it != end)
+    {
         unsigned int row = height - std::floor((it->circle.y - distance_map->config.y_origin) * inverse_resolution + 0.5);
         unsigned int col = std::floor((it->circle.x - distance_map->config.x_origin) * inverse_resolution + 0.5);
 

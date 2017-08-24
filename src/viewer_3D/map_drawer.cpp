@@ -69,18 +69,17 @@ static int getTotalObstacles(carmen_map_t map)
 
 	int total_size = map.config.x_size * map.config.y_size;
 	int i;
-	for(i=0; i < total_size; i++)
+	for(i = 0; i < total_size; i++)
 	{
 		double map_value = map.complete_map[i];
 
-		if(map_value > 0.5)
+		if (map_value > 0.85)
 		{
 			total++;
 		}
 	}
 
-	return total;
-
+	return (total);
 }
 
 static void fillCubeData(float* vd, int offset, float x, float y, float z, float x_size, float y_size, float z_size)
@@ -150,23 +149,21 @@ static void fillCubeData(float* vd, int offset, float x, float y, float z, float
 	vd[k+21] = x+length_x; 	vd[k+22] = y-length_y; 	vd[k+23] = z+length_z;
 }
 
-static float* create_vertex_data(carmen_map_t map)
+static float *create_vertex_data(carmen_map_t map, int total_size)
 {
-	int total_size = getTotalObstacles(map);
-
-	float* vd = (float*)malloc( total_size * 6 * 4 * 2 * 3 * sizeof(float));
+	float *vd = (float *) malloc(total_size * 6 * 4 * 2 * 3 * sizeof(float));
 
 	double resolution = map.config.resolution;
 	int pos = 0;
 	int i;	
-	for(i=0; i < map.config.x_size; i++)
+	for (i = 0; i < map.config.x_size; i++)
 	{
 		int j;
-		for(j=0; j < map.config.y_size; j++)
+		for (j = 0; j < map.config.y_size; j++)
 		{
 			double map_value = map.complete_map[i * map.config.x_size + j];
 			
-			if(map_value > 0.5)
+			if (map_value > 0.85)
 			{
 				double x = i * resolution;
 				double y = j * resolution;
@@ -183,6 +180,24 @@ static float* create_vertex_data(carmen_map_t map)
 
 
 void
+add_map_message(map_drawer* m_drawer, carmen_map_t map)
+{
+	m_drawer->maps[m_drawer->next_map] = map;
+
+	int total_size = getTotalObstacles(map);
+	float *vertex_data = create_vertex_data(map, total_size);
+	glBindBuffer(GL_ARRAY_BUFFER, m_drawer->vertex_buffer_ids[m_drawer->next_map]);
+	glBufferData(GL_ARRAY_BUFFER, total_size * (6 * 4 * 2 * 3) * sizeof(float), vertex_data, GL_DYNAMIC_DRAW);
+	free(vertex_data);
+
+	m_drawer->buffer_sizes[m_drawer->next_map] = total_size * 6 * 4;
+	m_drawer->next_map = (m_drawer->next_map + 1) % m_drawer->max_num_maps;
+
+	glBindBuffer(GL_ARRAY_BUFFER,0);
+}
+
+
+void
 add_map_message(map_drawer* m_drawer, carmen_mapper_map_message *message)
 {
 	carmen_map_t map;
@@ -193,7 +208,7 @@ add_map_message(map_drawer* m_drawer, carmen_mapper_map_message *message)
 	m_drawer->maps[m_drawer->next_map] = map;
 
 	int total_size = getTotalObstacles(map);
-	float* vertex_data = create_vertex_data(map);
+	float* vertex_data = create_vertex_data(map, total_size);
 	glBindBuffer(GL_ARRAY_BUFFER, m_drawer->vertex_buffer_ids[m_drawer->next_map]);
 	glBufferData(GL_ARRAY_BUFFER, total_size * (6 * 4 * 2 * 3) * sizeof(float), vertex_data, GL_STATIC_DRAW);
 	free(vertex_data);
@@ -224,25 +239,25 @@ drawBox(double length_x, double length_y, double length_z)
 			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(length_x/2, length_y/2, length_z/2);
 			glNormal3f( 0.0f, 0.0f, 1.0f);	glVertex3f(-length_x/2, length_y/2, length_z/2);
 
-			
+
 			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, length_z/2);
 			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, -length_z/2);
 			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, -length_z/2);
 			glNormal3f( 1.0f, 0.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, length_z/2);
-	
-				
+
+
 			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, length_z/2);
 			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, -length_z/2);
 			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, -length_z/2);
 			glNormal3f(-1.0f, 0.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, length_z/2);
-			
-				
+
+
 			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, length_z/2);
 			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(-length_x/2, length_y/2, -length_z/2);
 			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, -length_z/2);
 			glNormal3f( 0.0f, 1.0f, 0.0f);	glVertex3f(length_x/2, length_y/2, length_z/2);
 
-				
+
 			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, length_z/2);
 			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(-length_x/2, -length_y/2, -length_z/2);
 			glNormal3f( 0.0f,-1.0f, 0.0f);	glVertex3f(length_x/2, -length_y/2, -length_z/2);
@@ -326,7 +341,7 @@ draw_map_VBO(map_drawer *m_drawer, carmen_vector_3D_t offset)
 
 				glBindBuffer(GL_ARRAY_BUFFER, m_drawer->vertex_buffer_ids[i]);
 				glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) 0);
-				glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float)));
+				glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *) (3 * sizeof(float)));
 				glDrawArrays(GL_QUADS, 0, m_drawer->buffer_sizes[i]);
 				
 			glPopMatrix();
@@ -367,7 +382,7 @@ void
 draw_map(map_drawer *m_drawer, carmen_vector_3D_t offset)
 {
 	glPushMatrix();
-	
+
 		int drawVBO = 1;
 
 		if (drawVBO)

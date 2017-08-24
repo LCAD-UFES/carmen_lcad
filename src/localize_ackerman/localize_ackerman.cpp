@@ -44,8 +44,6 @@
 #include "localize_ackerman_messages.h"
 #include "localize_ackerman_interface.h"
 #include "localize_ackerman_velodyne.h"
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
 
 #include "localize_ackerman_using_map.h"
 
@@ -113,6 +111,8 @@ int g_reinitiaze_particles = 10;
 int number_of_threads = 1;
 bool global_localization_requested = false;
 
+char *calibration_file = NULL;
+
 
 static int
 get_fused_odometry_index_by_timestamp(double timestamp)
@@ -159,126 +159,6 @@ get_base_ackerman_odometry_index_by_timestamp(double timestamp)
 	}
 
 	return min_index;
-}
-
-
-static void
-equalize_image(IplImage *img)
-{
-	IplImage *img_gray = cvCreateImage(cvSize(img->width, img->height), IPL_DEPTH_8U, 1);
-
-	int i, j;
-	for (j = 0; j < img->height; j++)
-	{
-		for (i = 0; i < img->width; i++)
-		{
-			if ((unsigned char)img->imageData[j * img->widthStep + 3 * i] == 255 &&
-				(unsigned char)img->imageData[j * img->widthStep + 3 * i + 1] == 0 &&
-				(unsigned char)img->imageData[j * img->widthStep + 3 * i + 2] == 0)
-				img_gray->imageData[j * img_gray->widthStep + i] = 255;
-			else
-				img_gray->imageData[j * img_gray->widthStep + i] = img->imageData[j * img->widthStep + 3 * i];
-		}
-	}
-	cvEqualizeHist(img_gray,img_gray);
-
-	for (j = 0; j < img->height; j++)
-	{
-		for (i = 0; i < img->width; i++)
-		{
-			if ((unsigned char)img->imageData[j * img->widthStep + 3 * i] == 255 &&
-				(unsigned char)img->imageData[j * img->widthStep + 3 * i + 1] == 0 &&
-				(unsigned char)img->imageData[j * img->widthStep + 3 * i + 2] == 0)
-				img->imageData[j * img->widthStep + 3 * i] = 255;
-			else
-			{
-				img->imageData[j * img->widthStep + 3 * i] = img_gray->imageData[j * img_gray->widthStep + i];
-				img->imageData[j * img->widthStep + 3 * i + 1] = img_gray->imageData[j * img_gray->widthStep + i];
-				img->imageData[j * img->widthStep + 3 * i + 2] = img_gray->imageData[j * img_gray->widthStep + i];
-			}
-		}
-	}
-
-	cvReleaseImage(&img_gray);
-}
-
-
-void
-debug_remission_map(carmen_velodyne_partial_scan_message *velodyne_message)
-{
-
-	int i, j;
-	int  k, r, l;
-	static IplImage *remission_map = NULL;
-	static char *cell_touched = 0;
-
-	double sin_theta = sin(summary.mean.theta);
-	double cos_theta = cos(summary.mean.theta);
-
-	carmen_vector_2D_t robot_position;
-	robot_position.x = summary.mean.x - localize_map.config.x_origin;
-	robot_position.y = summary.mean.y - localize_map.config.y_origin;
-
-	if (remission_map == NULL)
-	{
-		remission_map = cvCreateImage(cvSize(2 * 360, spherical_sensor_params[0].vertical_resolution * 2), IPL_DEPTH_8U, 3);
-		cell_touched = (char *)calloc(localize_map.config.x_size * localize_map.config.y_size, sizeof(char));
-	}
-
-
-	memset(cell_touched, 0, localize_map.config.x_size * localize_map.config.y_size * sizeof(char));
-	for (l = 0, j = 0; j < spherical_sensor_params[0].vertical_resolution; j++, l+=2)
-	{
-		k = 0;
-		r = spherical_sensor_params[0].ray_order[(spherical_sensor_params[0].vertical_resolution - 1) - j];
-		for (i = 0; i < velodyne_message->number_of_32_laser_shots; i++)
-		{
-			k = i;
-			int index = ((int)((velodyne_message->partial_scan[i].angle + 180.0) / 0.5) % 720);
-			if ((velodyne_message->partial_scan[k].distance[r]) != 0)
-			{
-				float range = (velodyne_message->partial_scan[k].distance[r] / 500.0);
-				if (range < 50.0)
-				{
-					cell_coords_t map_cell = calc_global_cell_coordinate(&map_cells_hit_by_each_rays[k][r], &local_map.config, &robot_position, sin_theta, cos_theta);
-					if (map_cell.x >= 0 && map_cell.y >= 0 && map_cell.x < localize_map.config.x_size && map_cell.y < localize_map.config.y_size)
-					{
-						if (/*!cell_touched[map_cell.x * localize_map.config.x_size + map_cell.y]*/1)
-						{
-							cell_touched[map_cell.x * localize_map.config.x_size + map_cell.y] = 1;
-							remission_map->imageData[(l * remission_map->widthStep + 3 * index)] = 255 * (1.0 - localize_map.carmen_mean_remission_map.map[map_cell.x][map_cell.y]);
-							remission_map->imageData[(l * remission_map->widthStep + 3 * index) + 1] = 255 * (1.0 - localize_map.carmen_mean_remission_map.map[map_cell.x][map_cell.y]);
-							remission_map->imageData[(l * remission_map->widthStep + 3 * index) + 2] = 255 * (1.0 - localize_map.carmen_mean_remission_map.map[map_cell.x][map_cell.y]);
-						}
-						else
-							remission_map->imageData[(l * remission_map->widthStep + 3 * index)] = 255;
-					}
-					else
-						remission_map->imageData[(l * remission_map->widthStep + 3 * index) + 2] = 255;
-				}
-				else
-				{
-					remission_map->imageData[(l * remission_map->widthStep + 3 * index)] = 255;
-				}
-			}
-			else
-			{
-				remission_map->imageData[(l * remission_map->widthStep + 3 * index)] = 255;
-			}
-
-		}
-
-	}
-
-	for (l = 0, j = 0; j < spherical_sensor_params[0].vertical_resolution; j++, l+=2)
-	{
-		memcpy(&remission_map->imageData[(l + 1) * remission_map->widthStep], &remission_map->imageData[l * remission_map->widthStep], remission_map->widthStep);
-	}
-
-	equalize_image(remission_map);
-	cvShowImage("remission_map", remission_map);
-	cvWaitKey(33);
-
 }
 
 
@@ -1007,7 +887,7 @@ get_alive_sensors(int argc, char **argv)
 			spherical_sensor_data[i].occupancy_log_odds_of_each_ray_target[j] = NULL;
 			spherical_sensor_data[i].ray_origin_in_the_floor[j] = NULL;
 			spherical_sensor_data[i].ray_size_in_the_floor[j] = NULL;
-			spherical_sensor_data[i].processed_intensity[i] = NULL;
+			spherical_sensor_data[i].processed_intensity[j] = NULL;
 			spherical_sensor_data[i].ray_hit_the_robot[j] = NULL;
 		}
 
@@ -1051,8 +931,14 @@ get_sensors_param(int argc, char **argv, int correction_type)
 
 	int roi_ini, roi_end;
 
-	int use_remission = (correction_type == 4) || (correction_type == 5) || (correction_type == 6); // See carmen_ford_escape.ini
+	int use_remission = (correction_type == 4) || (correction_type == 5) || (correction_type == 6) || (correction_type == 7); // See carmen_ford_escape.ini
 	spherical_sensor_params[0].use_remission = use_remission;
+
+	if (calibration_file)
+		spherical_sensor_params[0].calibration_table = load_calibration_table(calibration_file);
+	else
+		spherical_sensor_params[0].calibration_table = load_calibration_table((char *) "calibration_table.txt");
+	spherical_sensor_params[0].save_calibration_file = NULL;
 
 	spherical_sensor_params[0].pose = velodyne_pose;
 	spherical_sensor_params[0].sensor_robot_reference = carmen_change_sensor_reference(sensor_board_1_pose.position, spherical_sensor_params[0].pose.position, sensor_board_1_to_car_matrix);
@@ -1099,7 +985,10 @@ get_sensors_param(int argc, char **argv, int correction_type)
 
 	for (i = 1; i < number_of_sensors; i++)
 	{
-		spherical_sensor_params[0].use_remission = use_remission;
+		spherical_sensor_params[i].use_remission = use_remission;
+
+		spherical_sensor_params[i].calibration_table = NULL;
+		spherical_sensor_params[i].save_calibration_file = NULL;
 
 		if (spherical_sensor_params[i].alive)
 		{
@@ -1224,6 +1113,14 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 		{(char *) "localize", (char *) "global_beam_minlikelihood", CARMEN_PARAM_DOUBLE, &param->global_beam_minlikelihood, 0, NULL},
 		{(char *) "localize", (char *) "global_beam_maxlikelihood", CARMEN_PARAM_DOUBLE, &param->global_beam_maxlikelihood, 0, NULL},
 
+		{(char *) "localize", (char *) "min_remission_variance", CARMEN_PARAM_DOUBLE, &param->min_remission_variance, 0, NULL},
+		{(char *) "localize", (char *) "small_remission_likelihood", CARMEN_PARAM_DOUBLE, &param->small_remission_likelihood, 0, NULL},
+
+		{(char *) "localize", (char *) "particles_normalize_factor", CARMEN_PARAM_DOUBLE, &param->particles_normalize_factor, 0, NULL},
+
+		{(char *) "localize", (char *) "yaw_uncertainty_due_to_grid_resolution", CARMEN_PARAM_DOUBLE, &param->yaw_uncertainty_due_to_grid_resolution, 0, NULL},
+		{(char *) "localize", (char *) "xy_uncertainty_due_to_grid_resolution", CARMEN_PARAM_DOUBLE, &param->xy_uncertainty_due_to_grid_resolution, 0, NULL},
+
 		{(char *) "sensor_board_1", (char *) "x", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.x),	0, NULL},
 		{(char *) "sensor_board_1", (char *) "y", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.y),	0, NULL},
 		{(char *) "sensor_board_1", (char *) "z", CARMEN_PARAM_DOUBLE, &(sensor_board_1_pose.position.z),	0, NULL},
@@ -1263,6 +1160,18 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 
+	carmen_param_allow_unfound_variables(1);
+
+	carmen_param_t param_optional_list[] =
+	{
+		{(char *) "localize_ackerman", (char *) "use_raw_laser", CARMEN_PARAM_ONOFF, &use_raw_laser, 0, NULL},
+		{(char *) "commandline", (char *) "mapping_mode", CARMEN_PARAM_ONOFF, &mapping_mode, 0, NULL},
+		{(char *) "commandline", (char *) "velodyne_viewer", CARMEN_PARAM_ONOFF, &velodyne_viewer, 0, NULL},
+		{(char *) "commandline", (char *) "calibration_file", CARMEN_PARAM_STRING, &calibration_file, 0, NULL}
+	};
+
+	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
+
 	param->integrate_angle = carmen_degrees_to_radians(integrate_angle_deg);
 
 	sensor_board_1_to_car_matrix = create_rotation_matrix(sensor_board_1_pose.orientation);
@@ -1287,21 +1196,7 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 
 	localize_ackerman_velodyne_laser_read_parameters(argc, argv);
 
-//	param->xy_uncertainty_due_to_grid_resolution = (p_map_params->grid_res) * (p_map_params->grid_res);
-	param->yaw_uncertainty_due_to_grid_resolution = asin((p_map_params->grid_res / 0.5) / max_range) * asin((p_map_params->grid_res / 0.5) / max_range);
-	param->xy_uncertainty_due_to_grid_resolution = (p_map_params->grid_res / 2.0) * (p_map_params->grid_res / 2.0);
-//	param->yaw_uncertainty_due_to_grid_resolution = asin((p_map_params->grid_res / 0.2) / max_range) * asin((p_map_params->grid_res / 0.2) / max_range);
-	
-	carmen_param_allow_unfound_variables(1);
-
-	carmen_param_t param_optional_list[] = 
-	{
-		{(char *) "localize_ackerman", (char *) "use_raw_laser", CARMEN_PARAM_ONOFF, &use_raw_laser, 0, NULL},
-		{(char *) "commandline", (char *) "mapping_mode", CARMEN_PARAM_ONOFF, &mapping_mode, 0, NULL},
-		{(char *) "commandline", (char *) "velodyne_viewer", CARMEN_PARAM_ONOFF, &velodyne_viewer, 0, NULL}
-	};
-
-	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
+	param->yaw_uncertainty_due_to_grid_resolution = carmen_degrees_to_radians(param->yaw_uncertainty_due_to_grid_resolution);
 }
 
 

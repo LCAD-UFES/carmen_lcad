@@ -1,5 +1,10 @@
 #include "gtk_gui.h"
 
+
+extern void
+mapper_handler(carmen_mapper_map_message *message);
+
+
 GdkColor *
 build_color_gradient()
 {
@@ -260,6 +265,8 @@ namespace View
 			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_RemissionMap), true);
 		else if (strcmp(nav_panel_config->superimposed_map, "Moving Objects") == 0)
 			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_MovingObjects), true);
+		else if (strcmp(nav_panel_config->superimposed_map, "Road Map") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuSuperimposedMaps_RoadMap), true);
 		else
 			carmen_die("Unknown superimpose_map named \"%s\" set as parameter in the carmen ini file. Exiting...\n", nav_panel_config->superimposed_map);
 
@@ -283,6 +290,8 @@ namespace View
 			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuMaps_RemissionMap), true);
 		else if (strcmp(nav_panel_config->map, "Moving Objects") == 0)
 			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuMaps_MovingObjects), true);
+		else if (strcmp(nav_panel_config->map, "Road Map") == 0)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM(controls_.menuMaps_RoadMap), true);
 		else
 			carmen_die("Unknown map named \"%s\" set as parameter in the carmen ini file. Exiting...\n", nav_panel_config->map);
 
@@ -383,7 +392,6 @@ namespace View
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_turn_left_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN][RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_LEFT] = get_annotation_image(annotation_image_filename);
 
-
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_5_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_SPEED_LIMIT][RDDF_ANNOTATION_CODE_SPEED_LIMIT_5] = get_annotation_image(annotation_image_filename);
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_10_15.png", carmen_home_path);
@@ -443,6 +451,7 @@ namespace View
 		controls_.menuSuperimposedMaps_Lane = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSuperimposedMaps_Lane" ));
 		controls_.menuSuperimposedMaps_RemissionMap = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSuperimposedMaps_RemissionMap" ));
 		controls_.menuSuperimposedMaps_MovingObjects = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSuperimposedMaps_MovingObjects" ));
+		controls_.menuSuperimposedMaps_RoadMap = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuSuperimposedMaps_RoadMap" ));
 
 		controls_.menuMaps_Map = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_Map" ));
 		controls_.menuMaps_OfflineMap = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_OfflineMap" ));
@@ -454,6 +463,7 @@ namespace View
 		controls_.menuMaps_CompleteMap = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_CompleteMap" ));
 		controls_.menuMaps_RemissionMap = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_RemissionMap" ));
 		controls_.menuMaps_MovingObjects = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_MovingObjects" ));
+		controls_.menuMaps_RoadMap = GTK_CHECK_MENU_ITEM(gtk_builder_get_object(builder, "menuMaps_RoadMap" ));
 
 		controls_.comboGoalSource = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboGoalSource" ));
 		controls_.comboState = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboState" ));
@@ -541,7 +551,10 @@ namespace View
 		if (strcmp(nav_panel_config->superimposed_map, "None") == 0)
 			; // Do nothing
 		else if (strcmp(nav_panel_config->superimposed_map, "Map") == 0)
+		{
+			carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
 			navigator_get_map(CARMEN_NAVIGATOR_MAP_v, 1);
+		}
 		else if (strcmp(nav_panel_config->superimposed_map, "Offline Map") == 0)
 			navigator_get_map(CARMEN_OFFLINE_MAP_v, 1);
 		else if (strcmp(nav_panel_config->superimposed_map, "Utility") == 0)
@@ -560,11 +573,16 @@ namespace View
 			navigator_get_map(CARMEN_REMISSION_MAP_v, 1);
 		else if (strcmp(nav_panel_config->superimposed_map, "Moving Objects") == 0)
 			navigator_get_map(CARMEN_MOVING_OBJECTS_MAP_v, 1);
+		else if (strcmp(nav_panel_config->superimposed_map, "Road Map") == 0)
+			navigator_get_map(CARMEN_ROAD_MAP_v, 1);
 		else
 			carmen_die("Unknown superimpose_map named \"%s\" set as parameter in the carmen ini file. Exiting...\n", nav_panel_config->superimposed_map);
 
 		if (strcmp(nav_panel_config->map, "Map") == 0)
+		{
+			carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
 			navigator_get_map(CARMEN_NAVIGATOR_MAP_v, 0);
+		}
 		else if (strcmp(nav_panel_config->map, "Offline Map") == 0)
 			navigator_get_map(CARMEN_OFFLINE_MAP_v, 0);
 		else if (strcmp(nav_panel_config->map, "Utility") == 0)
@@ -583,6 +601,8 @@ namespace View
 			navigator_get_map(CARMEN_REMISSION_MAP_v, 0);
 		else if (strcmp(nav_panel_config->map, "Moving Objects") == 0)
 			navigator_get_map(CARMEN_MOVING_OBJECTS_MAP_v, 0);
+		else if (strcmp(nav_panel_config->map, "Road Map") == 0)
+			navigator_get_map(CARMEN_ROAD_MAP_v, 0);
 		else
 			carmen_die("Unknown map named \"%s\" set as parameter in the carmen ini file. Exiting...\n", nav_panel_config->map);
 	}
@@ -868,10 +888,8 @@ namespace View
 	int	 flags = 0;
 
 	void
-	GtkGui::navigator_graphics_display_map(carmen_map_t *new_map, carmen_navigator_map_t type)
+	GtkGui::navigator_graphics_set_flags(carmen_navigator_map_t type)
 	{
-		display = type;
-
 		switch (type)
 		{
 		case CARMEN_NAVIGATOR_MAP_v:
@@ -915,17 +933,29 @@ namespace View
 			break;
 
 		case CARMEN_REMISSION_MAP_v:
-			flags = CARMEN_GRAPHICS_REMOVE_MINUS_ONE | CARMEN_GRAPHICS_RESCALE | CARMEN_GRAPHICS_INVERT | CARMEN_GRAPHICS_ENHANCE_CONTRAST;
+			flags = CARMEN_GRAPHICS_REMOVE_MINUS_ONE | CARMEN_GRAPHICS_INVERT | CARMEN_GRAPHICS_RESCALE;// | CARMEN_GRAPHICS_ENHANCE_CONTRAST;
 			break;
 
 		case CARMEN_MOVING_OBJECTS_MAP_v:
-			flags = 0; // CARMEN_GRAPHICS_LOG_ODDS | CARMEN_GRAPHICS_INVERT;
+			flags = CARMEN_GRAPHICS_REMOVE_MINUS_ONE | CARMEN_GRAPHICS_INVERT | CARMEN_GRAPHICS_RESCALE;// | CARMEN_GRAPHICS_ENHANCE_CONTRAST;
+//			flags = 0; // CARMEN_GRAPHICS_LOG_ODDS | CARMEN_GRAPHICS_INVERT;
+			break;
+
+		case CARMEN_ROAD_MAP_v:
+			flags = CARMEN_GRAPHICS_ROAD_CONTRAST;
 			break;
 
 		default:
 			flags = 0;
 			return;
 		}
+	}
+
+	void
+	GtkGui::navigator_graphics_display_map(carmen_map_t *new_map, carmen_navigator_map_t type)
+	{
+		display = type;
+		navigator_graphics_set_flags(type);
 
 		carmen_map_graphics_add_map(this->controls_.map_view, new_map, flags);
 	}
@@ -2332,9 +2362,10 @@ namespace View
 
 		for (int i = 0; i < rddf_annotation_msg.num_annotations; i++)
 		{
-			world_point.pose.x = rddf_annotation_msg.annotations[i].annotation_point.x;
-			world_point.pose.y = rddf_annotation_msg.annotations[i].annotation_point.y;
+			double displacement = car_config->distance_between_front_and_rear_axles + car_config->distance_between_front_car_and_front_wheels;
 			world_point.pose.theta = rddf_annotation_msg.annotations[i].annotation_orientation;
+			world_point.pose.x = rddf_annotation_msg.annotations[i].annotation_point.x + displacement * cos(world_point.pose.theta);
+			world_point.pose.y = rddf_annotation_msg.annotations[i].annotation_point.y + displacement * sin(world_point.pose.theta);
 			world_point.map = the_map_view->internal_map;
 //			printf("x %lf, y %lf, theta %lf\n", world_point.pose.x, world_point.pose.y, world_point.pose.theta);
 

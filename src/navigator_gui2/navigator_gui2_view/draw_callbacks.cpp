@@ -1,6 +1,10 @@
 #include "draw_callbacks.h"
 
 
+extern void
+mapper_handler(carmen_mapper_map_message *message);
+
+
 namespace View
 {
 
@@ -123,8 +127,11 @@ void on_menuMaps_Map_toggled (GtkCheckMenuItem* togglebutton,
 	if (gtk_check_menu_item_get_active(togglebutton))
 	{
 		superimposed_is_set = 0;
+		carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
 		navigator_get_map(CARMEN_NAVIGATOR_MAP_v, superimposed_is_set);
 	}
+	else
+		carmen_mapper_unsubscribe_map_message((carmen_handler_t) mapper_handler);
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -135,6 +142,17 @@ void on_menuMaps_OfflineMap_toggled (GtkCheckMenuItem* togglebutton __attribute_
 	{
 		superimposed_is_set = 0;
 		navigator_get_map(CARMEN_OFFLINE_MAP_v, superimposed_is_set);
+	}
+}
+
+//extern "C" G_MODULE_EXPORT
+void on_menuMaps_RoadMap_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
+		GtkGui* gui __attribute__ ((unused)))
+{
+	if (gtk_check_menu_item_get_active(togglebutton))
+	{
+		superimposed_is_set = 0;
+		navigator_get_map(CARMEN_ROAD_MAP_v, superimposed_is_set);
 	}
 }
 
@@ -245,9 +263,12 @@ void on_menuSuperimposedMaps_Map_toggled (GtkCheckMenuItem* togglebutton __attri
 	if (gtk_check_menu_item_get_active(togglebutton))
 	{
 		superimposed_is_set = 1;
+		carmen_mapper_subscribe_map_message(NULL, (carmen_handler_t) mapper_handler, CARMEN_SUBSCRIBE_LATEST);
 		navigator_get_map(CARMEN_NAVIGATOR_MAP_v, superimposed_is_set);
 		carmen_map_graphics_redraw_superimposed(global_gui->controls_.map_view);
 	}
+	else
+		carmen_mapper_unsubscribe_map_message((carmen_handler_t) mapper_handler);
 }
 
 //extern "C" G_MODULE_EXPORT
@@ -258,6 +279,18 @@ void on_menuSuperimposedMaps_OfflineMap_toggled (GtkCheckMenuItem* togglebutton 
 	{
 		superimposed_is_set = 1;
 		navigator_get_map(CARMEN_OFFLINE_MAP_v, superimposed_is_set);
+		carmen_map_graphics_redraw_superimposed(global_gui->controls_.map_view);
+	}
+}
+
+//extern "C" G_MODULE_EXPORT
+void on_menuSuperimposedMaps_RoadMap_toggled (GtkCheckMenuItem* togglebutton __attribute__ ((unused)),
+		GtkGui* gui)
+{
+	if (gtk_check_menu_item_get_active(togglebutton))
+	{
+		superimposed_is_set = 1;
+		navigator_get_map(CARMEN_ROAD_MAP_v, superimposed_is_set);
 		carmen_map_graphics_redraw_superimposed(global_gui->controls_.map_view);
 	}
 }
@@ -747,7 +780,17 @@ gint motion_handler(GtkMapViewer *the_map_view, carmen_world_point_t *world_poin
 
 		if (the_map != NULL)
 		{
-			sprintf(buffer, "Value: %.2f", the_map->map[point.x][point.y]);
+			int road_contrast = the_map_view->draw_flags & CARMEN_GRAPHICS_ROAD_CONTRAST;
+			if (road_contrast)
+			{
+				road_prob *cell = road_mapper_double_to_prob(&the_map->map[point.x][point.y]);
+				sprintf(buffer, "Value: off=%d solid=%d broken=%d center=%d",
+						cell->off_road, cell->solid_marking, cell->broken_marking, cell->lane_center);
+			}
+			else
+			{
+				sprintf(buffer, "Value: %.4f", the_map->map[point.x][point.y]);
+			}
 			gtk_label_set_text(GTK_LABEL(global_gui->controls_.labelValue), buffer);
 		}
 	}

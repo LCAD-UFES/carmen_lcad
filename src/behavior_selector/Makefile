@@ -8,7 +8,6 @@ CFLAGS += -std=c99
 
 IFLAGS += \
 	-I$(CARMEN_HOME)/sharedlib/prob_models \
-	-I/usr/include/eigen3 \
 	-I/usr/include/suitesparse \
 	-I/usr/include/eigen3 \
 	-I/usr/local/include/EXTERNAL/csparse/ \
@@ -38,6 +37,8 @@ LFLAGS += \
 	-ludatmo \
 	-lmoving_objects_interface \
 	`pkg-config --libs opencv`
+	
+LFLAGS += -lrddf_util -L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper
 
 ifeq ("$(CARMEN_LOGGING)","ON")
 CFLAGS += \

@@ -32,7 +32,6 @@ static char* output_dir_name;
 static char* gps_gpgga_output_filename = (char*)"gps.txt";
 static char* gps_xyz_output_filename = (char*)"gps_xyz.csv";
 static char* fused_odometry_output_filename = (char*)"fused_odometry.txt";
-static char* image_pose_filename = (char*)"image_pose.txt";
 static char* car_odometry_output_filename = (char*)"car_odometry.txt";
 static char* globalpos_output_filename = (char*)"globalpos.txt";
 static char* imagepos_output_filename = (char*)"imagepos.txt";

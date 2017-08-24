@@ -5,7 +5,7 @@
  *      Author: romulo
  */
 #include "grid_mapping.h"
-
+#include <carmen/road_mapper.h>
 #include <string.h>
 
 
@@ -26,44 +26,32 @@ static int map_quadrant;
 static carmen_map_t *map_buffer[MAP_BUFFER_SIZE + 1];
 static int map_buffer_index = 0;
 
-
 void
-carmen_grid_mapping_initialize_map(carmen_map_t *map,
-		int gridmap_size, double gridmap_resolution)
+carmen_grid_mapping_set_unknown_value(carmen_map_t *map, char map_type)
 {
-	int i, j;
+	int x, y;
+	road_prob cell = { .off_road = MAX_PROB, .solid_marking = 0, .broken_marking = 0, .lane_center = 0 };
+	double unknown = -1;
 
-	map->config.resolution = gridmap_resolution;
-	map->config.x_size = gridmap_size;
-	map->config.y_size = gridmap_size;
-	map->config.map_name = NULL;
+	if (map_type == 'r')
+		unknown = *((double*) &cell);
 
-	map->complete_map = (double*) malloc(sizeof(double) * gridmap_size * gridmap_size);
-	carmen_test_alloc(map->complete_map);
-	map->map = (double**) malloc(sizeof(double*) * gridmap_size);
-	carmen_test_alloc(map->map);
-	//map->config.map_name = (char *)calloc(strlen(map_filename)+1, sizeof(char));
-	//carmen_test_alloc(map->config.map_name);
-	//strcpy(map->config.map_name, map_filename);
-
-	for (i = 0; i < gridmap_size; i++)
+	for (x = 0; x < map->config.x_size; x++)
 	{
-		map->map[i] = &(map->complete_map[i * gridmap_size]);
+		map->map[x] = &(map->complete_map[x * map->config.y_size]);
 
 		//initializing map with unknown
-		for (j = 0; j < gridmap_size; j++)
+		for (y = 0; y < map->config.y_size; y++)
 		{
-			map->map[i][j] = -1.0;
+			map->map[x][y] = unknown;
 		}
 	}
 }
 
 void
 carmen_grid_mapping_create_new_map(carmen_map_t *map,
-		int gridmap_size_x, int gridmap_size_y, double gridmap_resolution)
+		int gridmap_size_x, int gridmap_size_y, double gridmap_resolution, char map_type)
 {
-	int i, j;
-
 	map->config.resolution = gridmap_resolution;
 	map->config.x_size = gridmap_size_x;
 	map->config.y_size = gridmap_size_y;
@@ -77,18 +65,15 @@ carmen_grid_mapping_create_new_map(carmen_map_t *map,
 	//carmen_test_alloc(map->config.map_name);
 	//strcpy(map->config.map_name, map_filename);
 
-	for (i = 0; i < gridmap_size_x; i++)
-	{
-		map->map[i] = &map->complete_map[i * gridmap_size_y];
-
-		//initializing map with unknown
-		for (j = 0; j < gridmap_size_y; j++)
-		{
-			map->map[i][j] = -1.0;
-		}
-	}
+	carmen_grid_mapping_set_unknown_value(map, map_type);
 }
 
+void
+carmen_grid_mapping_initialize_map(carmen_map_t *map,
+		int gridmap_size, double gridmap_resolution, char map_type)
+{
+	carmen_grid_mapping_create_new_map(map, gridmap_size, gridmap_size, gridmap_resolution, map_type);
+}
 
 void
 carmen_grid_mapping_init_parameters(double resolution, double size)
@@ -329,16 +314,16 @@ copy_map_to_cell(double **cell, carmen_map_t *map, int cell_number)
 }
 
 
-static void
-merge_map(carmen_map_t *map, double *map_file)
-{
-	int i;
-	for (i = 0; i < (map->config.x_size * map->config.y_size); i++)
-	{
-		if (map->complete_map[i] < 0)
-			map->complete_map[i] = map_file[i];
-	}
-}
+//static void
+//merge_map(carmen_map_t *map, double *map_file)
+//{
+//	int i;
+//	for (i = 0; i < (map->config.x_size * map->config.y_size); i++)
+//	{
+//		if (map->complete_map[i] < 0)
+//			map->complete_map[i] = map_file[i];
+//	}
+//}
 
 
 int
@@ -384,59 +369,59 @@ carmen_grid_mapping_swap_maps_and_clear_old_map(carmen_map_t *current_map, carme
 }
 
 
-int
-carmen_grid_mapping_get_map_by_origin(char *map_path, carmen_point_t pose, carmen_map_t *map, carmen_map_t *new_map)
-{
-	char full_map_path[100];
-	char file_map_name[100];
-	double x_origin, y_origin;
-	int map_exists_on_file;
-	double *map_file;
-	carmen_point_t map_pose;
-
-	map_file = NULL;
-	carmen_grid_mapping_get_map_origin(&pose, &x_origin, &y_origin);
-
-
-	sprintf(file_map_name, "m%d_%d.map", (int) x_origin, (int) y_origin);
-	sprintf(full_map_path, "%s/m%d_%d.map", map_path, (int) x_origin, (int) y_origin);
-
-	map_exists_on_file = carmen_map_read_gridmap_chunk(full_map_path, new_map) != -1;
-
-	if (!map_exists_on_file)
-	{
-		//map not found in the folder
-		//allocate and create a new map
-		carmen_grid_mapping_initialize_map(new_map, local_gridmap_count, local_gridmap_resolution);
-	}
-	else
-	{
-		map_file = (double*) malloc(sizeof(double) * new_map->config.x_size * new_map->config.y_size);
-		memcpy(map_file, new_map->complete_map, sizeof(double) * new_map->config.x_size * new_map->config.y_size);
-	}
-
-
-	new_map->config.x_origin = x_origin;
-	new_map->config.y_origin = y_origin;
-
-	if (map != NULL)
-	{
-		map_pose.x = (pose.x - map->config.x_origin) / map->config.resolution;
-		map_pose.y = (pose.y - map->config.y_origin) / map->config.resolution;
-
-		map_quadrant = carmen_grid_mapping_get_quadrant(map_pose);
-		integrate_maps(new_map, map, map_quadrant);
-	}
-
-
-	if (map_exists_on_file)
-	{
-		merge_map(new_map, map_file);
-		free(map_file);
-	}
-
-	return map_exists_on_file;
-}
+//int
+//carmen_grid_mapping_get_map_by_origin(char *map_path, carmen_point_t pose, carmen_map_t *map, carmen_map_t *new_map)
+//{
+//	char full_map_path[100];
+//	char file_map_name[100];
+//	double x_origin, y_origin;
+//	int map_exists_on_file;
+//	double *map_file;
+//	carmen_point_t map_pose;
+//
+//	map_file = NULL;
+//	carmen_grid_mapping_get_map_origin(&pose, &x_origin, &y_origin);
+//
+//
+//	sprintf(file_map_name, "m%d_%d.map", (int) x_origin, (int) y_origin);
+//	sprintf(full_map_path, "%s/m%d_%d.map", map_path, (int) x_origin, (int) y_origin);
+//
+//	map_exists_on_file = carmen_map_read_gridmap_chunk(full_map_path, new_map) != -1;
+//
+//	if (!map_exists_on_file)
+//	{
+//		//map not found in the folder
+//		//allocate and create a new map
+//		carmen_grid_mapping_initialize_map(new_map, local_gridmap_count, local_gridmap_resolution);
+//	}
+//	else
+//	{
+//		map_file = (double*) malloc(sizeof(double) * new_map->config.x_size * new_map->config.y_size);
+//		memcpy(map_file, new_map->complete_map, sizeof(double) * new_map->config.x_size * new_map->config.y_size);
+//	}
+//
+//
+//	new_map->config.x_origin = x_origin;
+//	new_map->config.y_origin = y_origin;
+//
+//	if (map != NULL)
+//	{
+//		map_pose.x = (pose.x - map->config.x_origin) / map->config.resolution;
+//		map_pose.y = (pose.y - map->config.y_origin) / map->config.resolution;
+//
+//		map_quadrant = carmen_grid_mapping_get_quadrant(map_pose);
+//		integrate_maps(new_map, map, map_quadrant);
+//	}
+//
+//
+//	if (map_exists_on_file)
+//	{
+//		merge_map(new_map, map_file);
+//		free(map_file);
+//	}
+//
+//	return map_exists_on_file;
+//}
 
 
 void
@@ -479,7 +464,7 @@ find_buffered_map(double x_origin, double y_origin)
 }
 
 int
-carmen_grid_mapping_get_buffered_map(double x_origin, double y_origin, carmen_map_t *new_map)
+carmen_grid_mapping_get_buffered_map(double x_origin, double y_origin, carmen_map_t *new_map, char map_type)
 {
 	double local_x_origin, local_y_origin;
 	int map_exists_on_buffer = 1;
@@ -487,7 +472,7 @@ carmen_grid_mapping_get_buffered_map(double x_origin, double y_origin, carmen_ma
 	int map_index;
 
 	if (new_map->complete_map == NULL)
-		carmen_grid_mapping_initialize_map(new_map, local_gridmap_count, local_gridmap_resolution);
+		carmen_grid_mapping_initialize_map(new_map, local_gridmap_count, local_gridmap_resolution, map_type);
 
 	for (i = 0, k = 0; i < 3; i++)
 	{
@@ -528,10 +513,9 @@ carmen_grid_mapping_get_block_map_by_origin_x_y(char *map_path, char map_type, d
 	int i, j, k;
 
 	if (new_map->complete_map == NULL)
-		carmen_grid_mapping_initialize_map(new_map, local_gridmap_count, local_gridmap_resolution);
+		carmen_grid_mapping_initialize_map(new_map, local_gridmap_count, local_gridmap_resolution, map_type);
 	else
-		for(i = 0; i < new_map->config.x_size * new_map->config.x_size; i++)
-			new_map->complete_map[i] = -1.0;
+		carmen_grid_mapping_set_unknown_value(new_map, map_type);
 
 	for (i = 0, k = 0; i < 3; i++)
 	{
@@ -573,7 +557,7 @@ carmen_grid_mapping_get_block_map_by_origin(char *map_path, char map_type, carme
 }
 
 int
-carmen_grid_mapping_update_map_buffer(carmen_map_t *map)
+carmen_grid_mapping_update_map_buffer(carmen_map_t *map, char map_type)
 {
 	int i, j, k, x_origin, y_origin;
 	int map_index;
@@ -593,7 +577,7 @@ carmen_grid_mapping_update_map_buffer(carmen_map_t *map)
 			}
 
 			if (map_buffer[map_index]->complete_map == NULL)
-				carmen_grid_mapping_initialize_map(map_buffer[map_index], local_gridmap_count_3, local_gridmap_resolution);
+				carmen_grid_mapping_initialize_map(map_buffer[map_index], local_gridmap_count_3, local_gridmap_resolution, map_type);
 
 			copy_map_to_cell(map_buffer[map_index]->map, map, k);
 			map_buffer[map_index]->config.x_origin = x_origin;
@@ -617,7 +601,7 @@ carmen_grid_mapping_save_block_map_by_origin(char *map_path, char map_type, carm
 	if (unk_map == NULL)
 	{
 		unk_map = (carmen_map_t *)calloc(1, sizeof(carmen_map_t));
-		carmen_grid_mapping_initialize_map(unk_map, local_gridmap_count / 3.0, local_gridmap_resolution);
+		carmen_grid_mapping_initialize_map(unk_map, local_gridmap_count / 3.0, local_gridmap_resolution, map_type);
 	}
 
 	for (i = 0, k = 0; i < 3; i++)

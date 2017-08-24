@@ -263,9 +263,14 @@ typedef struct {
 	double maximum_acceleration_reverse;
 	double maximum_steering_command_rate;
 	double understeer_coeficient;
+
 	double obstacle_avoider_obstacles_safe_distance;
 	double model_predictive_planner_obstacles_safe_distance;
-	double behaviour_selector_obstacles_safe_distance;
+
+	double behaviour_selector_main_central_lane_obstacles_safe_distance;
+	double behaviour_selector_central_lane_obstacles_safe_distance;
+	double behaviour_selector_lateral_lane_obstacles_safe_distance;
+	double behaviour_selector_lateral_lane_displacement;
 } carmen_robot_ackerman_config_t;
 
 
