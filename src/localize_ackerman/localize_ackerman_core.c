@@ -368,13 +368,14 @@ velodyne_resample(carmen_localize_ackerman_particle_filter_p filter)
 	which_particle = 0;
 
 	/* draw num_particles random samples */
+	double even_weight = filter->param->num_particles;
 	for (i = 0; i < filter->param->num_particles; i++)
 	{
 		while (position > cumulative_sum[which_particle])
 			which_particle++;
 
 		temp_particles[i] = filter->particles[which_particle];
-		temp_particles[i].weight = 0.5; // reinitialize for the next cycle
+		temp_particles[i].weight = 1.0 / even_weight; // reinitialize for the next cycle
 
 		position += step_size;
 		if (position > weight_sum)
@@ -1606,7 +1607,7 @@ mahalanobis_distance(carmen_localize_ackerman_map_t *global_map, carmen_compact_
 			if ((mean_map_val == 0.0) || (cell_val == 0.0))
 				continue;
 
-				double exponent = (cell_val - mean_map_val) * (cell_val - mean_map_val) / (2.0 * variance);
+			double exponent = (cell_val - mean_map_val) * (cell_val - mean_map_val) / (2.0 * variance);
 			if (use_log_odds)
 			{
 				double p = (1.0 / sqrt(2.0 * M_PI * variance)) * exp(-exponent);
@@ -1637,101 +1638,7 @@ mahalanobis_distance(carmen_localize_ackerman_map_t *global_map, carmen_compact_
 }
 
 
-//static void
-//localize_map_mahalanobis_correction_with_remission_map_new(carmen_localize_ackerman_particle_filter_p filter,
-//		carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_mean_remission_map)
-//{
-//	double map_center_x = (double) global_map->config.x_size * 0.5;
-//	double map_center_y = (double) global_map->config.y_size * 0.5;
-//
-//	int use_log_odds = filter->param->use_log_odds;
-//	double small_log_odds;
-//	if (use_log_odds)
-//		small_log_odds = log(filter->param->tracking_beam_minlikelihood / (1.0 - filter->param->tracking_beam_minlikelihood));
-//	else
-//		small_log_odds = log(filter->param->tracking_beam_minlikelihood);
-//
-//	for (int i = 0; i < filter->param->num_particles; i++)
-//	{
-//		carmen_localize_ackerman_particle_t *particle = &(filter->particles[i]);
-//
-//		double sin_theta, cos_theta;
-//		sin_theta = sin(particle->theta);
-//		cos_theta = cos(particle->theta);
-//		double robot_position_in_the_map_x = (particle->x - global_map->config.x_origin) / global_map->config.resolution;
-//		double robot_position_in_the_map_y = (particle->y - global_map->config.y_origin) / global_map->config.resolution;
-//
-////		static double first_time = 0.0;
-////		static int first_in = 1;
-////		if (first_in == 1)
-////		{
-////			first_time = carmen_get_time();
-////			first_in = 2;
-////		}
-////		FILE *caco;
-////		double time = carmen_get_time();
-////		if ((time - first_time > 15.0) && (first_in == 2))
-////		{
-////			caco = fopen("caco10.txt", "w");
-////			first_in = 3;
-////		}
-//
-//		double sum = 0.0;
-//		for (int laser_reading = 0; laser_reading < local_mean_remission_map->number_of_known_points_on_the_map; laser_reading++)
-//		{
-//			cell_coords_t local, global;
-//			local.x = local_mean_remission_map->coord_x[laser_reading];
-//			local.y = local_mean_remission_map->coord_y[laser_reading];
-//
-//			calc_global_cell_coordinate_fast(&global, local, map_center_x, map_center_y,
-//						robot_position_in_the_map_x, robot_position_in_the_map_y, sin_theta, cos_theta);
-//
-//			if (global.x >= 0 && global.y >= 0 && global.x < global_map->config.x_size && global.y < global_map->config.y_size)
-//			{
-//				double cell_val = local_mean_remission_map->value[laser_reading];
-//				double mean_map_val = global_map->carmen_mean_remission_map.map[global.x][global.y];
-//				double variance = global_map->carmen_variance_remission_map.map[global.x][global.y];
-//
-//				if (variance < 0.005)
-//					variance = 0.005;
-//
-//				if ((mean_map_val <= 0.0) || (cell_val <= 0.0))
-//				{
-//					sum += small_log_odds;
-//					continue;
-//				}
-//				double exponent = (cell_val - mean_map_val) * (cell_val - mean_map_val) / (2.0 * variance);
-//				if (use_log_odds)
-//				{
-//					double p = (1.0 / sqrt(2.0 * M_PI * variance)) * exp(-exponent);
-//					sum += log(p / (1.0 - p)); // nao esta funcionando pois p fica maior que 1.0 devido ao denominador acima
-//				}
-//				else
-//					sum += -(exponent + 0.5 * log(2.0 * M_PI * variance)); // log da probabilidade: https://www.wolframalpha.com/input/?i=log((1%2Fsqr(2*p*v))*exp(-((x-m)%5E2)%2F(2*v))
-//
-////				if ((time - first_time > 15.0) && (first_in >= 3) && (first_in < 10))
-////				{
-////					fprintf(caco, "%lf %lf %lf %lf %lf\n", cell_val, mean_map_val, variance, p, sum);
-////					fflush(caco);
-////				}
-//			}
-//			else
-//				sum += small_log_odds;
-//		}
-////		if ((time - first_time > 15.0) && (first_in == 10))
-////			fclose(caco);
-////
-////		if (first_in >= 3)
-////			first_in++;
-//
-//		filter->particles[i].weight = sum;
-//	}
-//
-//	convert_particles_log_odd_weights_to_prob(filter);
-//}
-
-
-static void
+void
 localize_map_mahalanobis_correction_with_remission_map(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_mean_remission_map)
 {
 	int i;
@@ -1745,6 +1652,114 @@ localize_map_mahalanobis_correction_with_remission_map(carmen_localize_ackerman_
 	for (i = 0; i < filter->param->num_particles; i++)
 		filter->particles[i].weight = filter->param->particles_normalize_factor * mahalanobis_distance(global_map, local_mean_remission_map, &filter->particles[i], filter->param->use_log_odds,
 				small_log_odds, filter->param->min_remission_variance);
+
+	convert_particles_log_odd_weights_to_prob(filter);
+}
+
+
+void
+mahalanobis_distance_with_outlier_rejection(carmen_localize_ackerman_map_t *localize_map, carmen_compact_map_t *local_map, carmen_localize_ackerman_particle_filter_p filter)
+{
+	double map_center_x = (double) local_map->config.x_size * 0.5;
+	double map_center_y = (double) local_map->config.y_size * 0.5;
+	double small_log_odds;
+
+	int use_log_odds = filter->param->use_log_odds;
+	if (use_log_odds)
+		small_log_odds = log(filter->param->tracking_beam_minlikelihood / (1.0 - filter->param->tracking_beam_minlikelihood));
+	else
+		small_log_odds = log(filter->param->tracking_beam_minlikelihood);
+
+	int *count = NULL;
+	int num_readings = local_map->number_of_known_points_on_the_map;
+	if (num_readings > 0)
+		count = (int *) calloc(num_readings, sizeof(int));
+
+	double min_remission_variance = filter->param->min_remission_variance;
+	double **mean_map = localize_map->carmen_mean_remission_map.map;
+	double **variance_map = localize_map->carmen_variance_remission_map.map;
+	double *local_map_value = local_map->value;
+	double **temp_weights = filter->temp_weights;
+
+	for (int i = 0; i < filter->param->num_particles; i++)
+	{
+		carmen_localize_ackerman_particle_t *particle = &(filter->particles[i]);
+
+		double sin_theta = sin(particle->theta);
+		double cos_theta = cos(particle->theta);
+		double robot_position_in_the_map_x = (particle->x - localize_map->config.x_origin) / local_map->config.resolution;
+		double robot_position_in_the_map_y = (particle->y - localize_map->config.y_origin) / local_map->config.resolution;
+
+		particle->weight = 0.0;
+		for (int laser_reading = 0; laser_reading < num_readings; laser_reading++)
+		{
+			cell_coords_t local_cell;
+			local_cell.x = local_map->coord_x[laser_reading];
+			local_cell.y = local_map->coord_y[laser_reading];
+
+			cell_coords_t global_cell;
+			calc_global_cell_coordinate_fast(&global_cell, local_cell, map_center_x, map_center_y,
+						robot_position_in_the_map_x, robot_position_in_the_map_y, sin_theta, cos_theta);
+
+			if (global_cell.x >= 0 && global_cell.y >= 0 && global_cell.x < localize_map->config.x_size && global_cell.y < localize_map->config.y_size)
+			{
+				double cell_val = local_map_value[laser_reading];
+				double mean_map_val = mean_map[global_cell.x][global_cell.y];
+				double variance = variance_map[global_cell.x][global_cell.y];
+
+				if (variance < min_remission_variance)
+					variance = min_remission_variance;
+
+				if ((mean_map_val <= 0.0) || (cell_val == 0.0))
+				{
+					temp_weights[i][laser_reading] = small_log_odds;
+				}
+				else
+				{
+					double exponent = (cell_val - mean_map_val) * (cell_val - mean_map_val) / (2.0 * variance);
+					if (use_log_odds)
+					{
+						double p = (1.0 / sqrt(2.0 * M_PI * variance)) * exp(-exponent);
+						temp_weights[i][laser_reading] = log(p / (1.0 - p)); // nao esta funcionando pois p fica maior que 1.0 devido ao denominador acima
+					}
+					else
+						temp_weights[i][laser_reading] = -(exponent);// + 0.5 * log(2.0 * M_PI * variance)); // log da probabilidade: https://www.wolframalpha.com/input/?i=log((1%2Fsqr(2*p*v))*exp(-((x-m)%5E2)%2F(2*v))
+				}
+				if (temp_weights[i][laser_reading] <= small_log_odds)
+					count[laser_reading] += 1;
+			}
+			else
+			{
+				temp_weights[i][laser_reading] = small_log_odds;
+				count[laser_reading] += 1;
+			}
+		}
+	}
+
+//	int discarded = 0;
+	for (int laser_reading = 0; laser_reading < num_readings; laser_reading++)
+	{
+		if (((double) count[laser_reading] / (double) filter->param->num_particles) < filter->param->outlier_fraction)
+			for (int i = 0; i < filter->param->num_particles; i++)
+				filter->particles[i].weight += temp_weights[i][laser_reading];
+//		else
+//			discarded++;
+	}
+
+//	printf("discarded %lf, count %d, total %d\n", (double) discarded / (double) num_readings, discarded, num_readings);
+	for (int i = 0; i < filter->param->num_particles; i++)
+		filter->particles[i].weight *= filter->param->particles_normalize_factor;
+
+	if (num_readings > 0)
+		free(count);
+}
+
+
+void
+localize_map_mahalanobis_correction_with_remission_map_and_outlier_rejection(carmen_localize_ackerman_particle_filter_p filter,
+		carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_mean_remission_map)
+{
+	mahalanobis_distance_with_outlier_rejection(global_map, local_mean_remission_map, filter);
 
 	convert_particles_log_odd_weights_to_prob(filter);
 }
@@ -1841,8 +1856,8 @@ carmen_localize_ackerman_velodyne_correction(carmen_localize_ackerman_particle_f
 			cosine_correction_with_remission_map_and_log_likelihood(filter, localize_map, local_mean_remission_map, local_map);
 			break;
 		case 7:
-			localize_map_mahalanobis_correction_with_remission_map(filter, localize_map, local_mean_remission_map);
-
+//			localize_map_mahalanobis_correction_with_remission_map(filter, localize_map, local_mean_remission_map);
+			localize_map_mahalanobis_correction_with_remission_map_and_outlier_rejection(filter, localize_map, local_mean_remission_map);
 //			carmen_moving_objects_map_message moving_objects_map_message;
 //			moving_objects_map_message.size = localize_map->config.x_size * localize_map->config.y_size;
 //			double *new_map_x = (double *) malloc(moving_objects_map_message.size * sizeof(double));
