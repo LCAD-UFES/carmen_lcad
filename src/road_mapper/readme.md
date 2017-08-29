@@ -313,7 +313,7 @@ If the GPU memory is not enough (error == cudasuccess), reduce the batch_size in
 
 First create the `enet_train_encoder_decoder.prototxt` by running:
 ```bash
- $ python create_enet_prototxt.py  --source carmen_lcad/src/road_mapper/road_mapper_train.txt \
+ $ python create_enet_prototxt.py  --source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt \
                                    --mode train_encoder_decoder \
                                    --batch_size 2 \
                                    --new_height 120 \
@@ -325,8 +325,8 @@ Copy the **class_weightings** from `enet_train_encoder.prototxt` to `enet_train_
 
 Start the training of the encoder + decoder and use the pretrained weights as initialization of the encoder:
 ```bash
- $ ENet/caffe-enet/build/tools/caffe train	-solver ENet/prototxts/enet_solver_encoder_decoder.prototxt \
-						-weights ENet/weights/snapshots_encoder/NAME.caffemodel
+ $ ENet/caffe-enet/build/tools/caffe train  -solver ENet/prototxts/enet_solver_encoder_decoder.prototxt \
+                                            -weights ENet/weights/snapshots_encoder/NAME.caffemodel
 ```
 
 Replace the place holder **NAME** to the name of your weights.
@@ -339,10 +339,10 @@ First change the line 256 in `create_enet_prototxt.py` from `parser.add_argument
 
 Now run:
 ```bash
- python create_enet_prototxt.py	--source carmen_lcad/src/road_mapper/road_mapper_train.txt \
-				--mode test \
-				--input_size 200 200 \
-				--num_of_classes 22 
+ python create_enet_prototxt.py  --source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt \
+                                 --mode test \
+                                 --input_size 120 120 \
+                                 --num_of_classes 22 
 
 ```
 
