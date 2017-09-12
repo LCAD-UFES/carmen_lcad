@@ -134,7 +134,8 @@ initializate_variables(rl_data* data)
 	data->variables.pid_params[0] = 1250;//0.12;//1250
 	data->variables.pid_params[1] = 600;//0.32; //600
 	data->variables.pid_params[2] = 25;//0.08; //25
-// INITIALIZE PAST VARIABLES
+
+	// INITIALIZE PAST VARIABLES
 	data->pv.critic_value = 0;
 	data->pv.sigma_critical_deviation = 0;
 
@@ -150,18 +151,19 @@ initializate_variables(rl_data* data)
 	data->pv.pid_params[0] = 1250;//0.12; //1250
 	data->pv.pid_params[1] = 600;//0.32; //600; //
 	data->pv.pid_params[2] = 25;//0.08; //25; //
-// INITIALIZE NETWORK
+
+    // INITIALIZE NETWORK
 	for (i = 0; i < neural_network_size; i++)
 	{
-	data->network[i].w_neuron_weight[0] = /*2.55*/5.1 + random_double() * FF_MULTIPLIER;//W_kp
-	data->network[i].w_neuron_weight[1] = /*1.2*/2.5 + random_double() * FF_MULTIPLIER;
-	data->network[i].w_neuron_weight[2] = -0.025 + random_double() * FF_MULTIPLIER;
-	data->network[i].v_neuron_weight = random_double() * FF_MULTIPLIER;
-	data->network[i].center_vector[0] = random_double() * RBF_MULTIPLIER;
-	data->network[i].center_vector[1] = random_double() * RBF_MULTIPLIER;
-	data->network[i].center_vector[2] = random_double() * RBF_MULTIPLIER;
-	data->network[i].width_scalar_sigma = random_double() * RBF_MULTIPLIER;
-	data->network[i].phi_value = 1;//random_double() * RBF_MULTIPLIER;
+		data->network[i].w_neuron_weight[0] = /*2.55*/5.1 + random_double() * FF_MULTIPLIER;//W_kp
+		data->network[i].w_neuron_weight[1] = /*1.2*/2.5 + random_double() * FF_MULTIPLIER;
+		data->network[i].w_neuron_weight[2] = -0.025 + random_double() * FF_MULTIPLIER;
+		data->network[i].v_neuron_weight = random_double() * FF_MULTIPLIER;
+		data->network[i].center_vector[0] = random_double() * RBF_MULTIPLIER;
+		data->network[i].center_vector[1] = random_double() * RBF_MULTIPLIER;
+		data->network[i].center_vector[2] = random_double() * RBF_MULTIPLIER;
+		data->network[i].width_scalar_sigma = random_double() * RBF_MULTIPLIER;
+		data->network[i].phi_value = 1;//random_double() * RBF_MULTIPLIER;
 	}
 
 	return data->pv;
@@ -187,6 +189,7 @@ calculate_total_error(rl_data* data, int media)
 	data->total_error_quadratico = data->total_error_quadratico + (data->variables.error[0]*data->variables.error[0]);
 	return (data->total_error_quadratico/media);
 }
+
 
 //   EQUATION 1
 void
@@ -221,6 +224,7 @@ update_plant_input_u(double atan_desired_curvature, double atan_current_curvatur
 	data->variables.U[0] = -u_t;//carmen_libpid_steering_PID_controler(atan_desired_curvature, atan_current_curvature, delta_t);
 }
 
+
 void
 update_plant_input_u_old(rl_data* data)
 { //Where:  U[0] = u(t), U[1] = u(t-1), U[2] = u(t-2)
@@ -231,7 +235,8 @@ update_plant_input_u_old(rl_data* data)
 	data->variables.pid_params[2] = 25;
 	data->variables.U[0] = data->variables.U[1] + data->variables.pid_params[1] * data->variables.error_order[0] + data->variables.pid_params[0] * data->variables.error_order[1] + data->variables.pid_params[2] * data->variables.error_order[2]; //Calculate actual output value.
 }
-// where
+
+
 void
 calculate_error_old(double y_desired, double y, rl_data* data)
 {
@@ -372,6 +377,7 @@ gaussian_noise(int mean, double sigma)
 	return (mean + sigma * z);
 }
 
+
 void
 update_pid_params(rl_data* data)
 {
@@ -383,18 +389,24 @@ update_pid_params(rl_data* data)
 	g_noise = gaussian_noise(0, data->variables.sigma_critical_deviation) * GAUSS_MULTIPLIER; //mean = 0// zero-mean and magntude = sigma_critical_deviation
 	data->variables.pid_params[2] = data->variables.recomended_pid_params[2] + g_noise;
 }
+
+
 // EQUATION 7
 void
 calculate_td_error(rl_data* data)
 {
 	data->td_error = data->reinforcement_signal/*[1]*/ + (data->params.discount_factor*data->future_critic_value) - data->variables.critic_value; // 0 < discount_factor < 1
 }
+
+
 // EQUATION 8
 double
 performance_index_of_system_learning(rl_data* data)
 {
 	return (pow(data->td_error,2)/2);
 }
+
+
 // EQUATION 9 AND 10
 void
 weights_update(rl_data* data)
@@ -403,16 +415,19 @@ weights_update(rl_data* data)
 	double aux = 0;
 	for (i = 0;i < neural_network_size;i++)
 	{
-// W WEIGHTS UPDATE-EQUATION 9
+		// W WEIGHTS UPDATE-EQUATION 9
 		aux = /*fabs(*/(data->params.actor_learning_rate * data->td_error * data->network[i].phi_value) / data->variables.sigma_critical_deviation/*network[i].width_scalar_sigma*/;//);
 		data->network[i].w_neuron_weight[0] = data->network[i].w_neuron_weight[0] + (aux*(data->variables.pid_params[0] - data->variables.recomended_pid_params[0])); //Kp
 		data->network[i].w_neuron_weight[1] = data->network[i].w_neuron_weight[1] + (aux*(data->variables.pid_params[1] - data->variables.recomended_pid_params[1])); //Ki
 		data->network[i].w_neuron_weight[2] = data->network[i].w_neuron_weight[2] + (aux*(data->variables.pid_params[2] - data->variables.recomended_pid_params[2])); //Kd
-// V WEIGHT UPDATE-EQUATION 10
+
+		// V WEIGHT UPDATE-EQUATION 10
 		aux = data->params.critic_learning_rate * data->td_error * data->network[i].phi_value;
 		data->network[i].v_neuron_weight = data->network[i].v_neuron_weight + aux;
 	}
 }
+
+
 // EQUATION 11
 void
 center_vector_update(rl_data* data)
@@ -428,6 +443,8 @@ center_vector_update(rl_data* data)
 		data->network[i].center_vector[2] = data->network[i].center_vector[2] + aux * (data->variables.error_order[2] - data->network[i].center_vector[2]);//Kd
 	}
 }
+
+
 // EQUATION 12
 void
 width_scalar_update(rl_data* data)
@@ -443,6 +460,8 @@ width_scalar_update(rl_data* data)
 		data->network[i].width_scalar_sigma = data->network[i].width_scalar_sigma + aux * aux2; // Width Scalar update here
 	}
 }
+
+
 // SAVE AND LOAD VARIABLES
 void
 store_variables(rl_data* data)
@@ -460,6 +479,7 @@ store_variables(rl_data* data)
 		data->pv.recomended_pid_params[i] = data->variables.recomended_pid_params[i];
 	}
 }
+
 
 void
 load_variables(rl_data* data)
@@ -479,6 +499,7 @@ load_variables(rl_data* data)
 	}
 }
 
+
 double
 carmen_librlpid_compute_effort(double current_curvature, double desired_curvature, double delta_t)
 {
@@ -490,29 +511,28 @@ carmen_librlpid_compute_effort(double current_curvature, double desired_curvatur
 		data.params = read_parameters("rlpid_params.txt");
 		data.pv = initializate_variables(&data); // Step 1
 		first_time = false;
-	}else // So começa a rodar a partir da segunda iteração
+	}
+	else // So começa a rodar a partir da segunda iteração
 	{
-
-	calculate_error_old(desired_curvature, current_curvature, &data); // Step 6 ==> CALCULA ERRO
-	update_neetwork_hidden_unit_phi_future(&data);// ==> UPDATE PHI
-	data.future_critic_value = update_critic_value_future(&data); //Step 7 ==> UPDATE V
-	calculate_td_error(&data); //Step 8 ==> CALCULA ERRO TD
-	load_variables(&data);
-	weights_update(&data); //Step 9 ==> UPDATE PESOS
-	center_vector_update(&data); //Step 10 ==> UPDATE CENTRO
-	width_scalar_update(&data); //Step 10 ==> UPDATE WIDTH SCALAR
+		calculate_error_old(desired_curvature, current_curvature, &data);       // Step 6 ==> CALCULA ERRO
+		update_neetwork_hidden_unit_phi_future(&data);                          //        ==> UPDATE PHI
+		data.future_critic_value = update_critic_value_future(&data);           // Step 7 ==> UPDATE V
+		calculate_td_error(&data);                                              // Step 8 ==> CALCULA ERRO TD
+		load_variables(&data);
+		weights_update(&data);                                                  // Step 9 ==> UPDATE PESOS
+		center_vector_update(&data);                                            // Step 10 ==> UPDATE CENTRO
+		width_scalar_update(&data);                                             // Step 10 ==> UPDATE WIDTH SCALAR
 	}
 
 	//imprime_os_pesos_agora++;
 	load_variables(&data);
-	calculate_error_old(desired_curvature, current_curvature, &data); // Step 2 ==> CALCULA ERRO
-	external_reinforcement_signal(&data); //Step 3 ==> RECOMPENSA
-	update_neetwork_hidden_unit_phi(&data);// ==> UPDATE PHI
-	update_recomended_pid_output(&data); //Step 4 ==> UPDATE K`
-	data.variables.critic_value = update_critic_value_output(&data);	//Step 4 ==> UPDATE V
-
-	update_pid_params(&data); //Step 5 ==> UPDATE K
-	update_plant_input_u(current_curvature, desired_curvature, delta_t, &data); //Step 5 ==> UPDATE U
+	calculate_error_old(desired_curvature, current_curvature, &data);           // Step 2 ==> CALCULA ERRO
+	external_reinforcement_signal(&data);                                       // Step 3 ==> RECOMPENSA
+	update_neetwork_hidden_unit_phi(&data);                                     //        ==> UPDATE PHI
+	update_recomended_pid_output(&data);                                        // Step 4 ==> UPDATE K'
+	data.variables.critic_value = update_critic_value_output(&data);	        // Step 4 ==> UPDATE V
+	update_pid_params(&data);                                                   // Step 5 ==> UPDATE K
+	update_plant_input_u(current_curvature, desired_curvature, delta_t, &data); // Step 5 ==> UPDATE U
 	store_variables(&data);
 
 	printf("u%lf e %f  kp %f ki %f  kd %f\n", data.variables.U[0], data.variables.error[0], data.variables.pid_params[0], data.variables.pid_params[1], data.variables.pid_params[2]);
