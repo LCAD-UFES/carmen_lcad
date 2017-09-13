@@ -15,6 +15,8 @@
 #define GOAL_LIST_SIZE 1000
 #define MAX_ANNOTATIONS 50
 
+//#define PRINT_UDATMO_LOG
+
 static carmen_robot_ackerman_config_t robot_config;
 static double distance_between_waypoints = 5;
 static carmen_ackerman_traj_point_t robot_pose;
@@ -308,6 +310,24 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double
 //	printf("v %lf\n", udatmo_speed_front());
 	int last_obstacle_free_waypoint_index = 0;
 	double distance_car_pose_car_front = robot_config.distance_between_front_and_rear_axles + robot_config.distance_between_front_car_and_front_wheels;
+
+#ifdef PRINT_UDATMO_LOG
+
+	carmen_ackerman_traj_point_t front_obst = udatmo_get_moving_obstacle_position();
+	double front_obst_velocity = udatmo_speed_front();
+
+	carmen_ackerman_traj_point_t left_obst = udatmo_get_moving_obstacle_position();
+	double left_obst_velocity = udatmo_speed_left();
+
+	carmen_ackerman_traj_point_t right_obst = udatmo_get_moving_obstacle_position();
+	double right_obst_velocity = udatmo_speed_right();
+
+	printf("%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n", timestamp, robot_pose.x, robot_pose.y, robot_pose.v, robot_pose.theta, robot_pose.phi,
+			front_obst.x, front_obst.y, front_obst_velocity,
+			left_obst.x, left_obst.y, left_obst_velocity,
+			right_obst.x, right_obst.y, right_obst_velocity);
+#endif
+
 	for (int rddf_pose_index = 0; rddf_pose_index < rddf->number_of_poses && goal_index < GOAL_LIST_SIZE; rddf_pose_index++)
 	{
 		double distance_from_car_to_rddf_point, distance_to_annotation, distance_to_last_obstacle_free_waypoint;
