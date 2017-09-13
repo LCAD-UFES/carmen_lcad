@@ -32,7 +32,7 @@ void
 bumblebee_basic_image_handler(carmen_bumblebee_basic_stereoimage_message *bumblebee_basic_message)
 {
 
-    static cv::Mat image = cv::Mat(bumblebee_basic_message->height, bumblebee_basic_message->width, CV_8UC3,
+    cv::Mat image = cv::Mat(bumblebee_basic_message->height, bumblebee_basic_message->width, CV_8UC3,
                                  bumblebee_basic_message->raw_right);
 
     cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
@@ -42,11 +42,11 @@ bumblebee_basic_image_handler(carmen_bumblebee_basic_stereoimage_message *bumble
     if(first_time)
     {
         first_time = false;
-        cv::namedWindow("simples", cv::WINDOW_AUTOSIZE);
+        cv::namedWindow("camera_viewer", cv::WINDOW_AUTOSIZE);
     }
 
 
-    cv::imshow("simples", image);
+    cv::imshow("camera_viewer", image);
     cv::waitKey(5);
 
 
