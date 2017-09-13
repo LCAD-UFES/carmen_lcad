@@ -2,7 +2,6 @@
 
 #include "detector.h"
 
-#include <limits>
 #include <stdexcept>
 #include <carmen/global_graphics.h>
 
@@ -212,44 +211,17 @@ double udatmo_speed_center(void)
 
 carmen_ackerman_traj_point_t udatmo_get_moving_obstacle_position(void)
 {
-	if (detector->detected == true)
-		return detector->get_moving_obstacle_position();
-	else
-	{
-		carmen_ackerman_traj_point_t obst;
-		obst.x = std::numeric_limits<double>::quiet_NaN();
-		obst.y = std::numeric_limits<double>::quiet_NaN();
-		obst.v = std::numeric_limits<double>::quiet_NaN();
-		return obst;
-	}
+	return detector->get_moving_obstacle_position();
 }
 
 carmen_ackerman_traj_point_t udatmo_get_moving_obstacle_position_left(void)
 {
-	if (detector_left->detected == true)
-		return detector_left->get_moving_obstacle_position();
-	else
-	{
-		carmen_ackerman_traj_point_t obst;
-		obst.x = std::numeric_limits<double>::quiet_NaN();
-		obst.y = std::numeric_limits<double>::quiet_NaN();
-		obst.v = std::numeric_limits<double>::quiet_NaN();
-		return obst;
-	}
+	return detector_left->get_moving_obstacle_position();
 }
 
 carmen_ackerman_traj_point_t udatmo_get_moving_obstacle_position_right(void)
 {
-	if (detector_right->detected == true)
-		return detector_right->get_moving_obstacle_position();
-	else
-	{
-		carmen_ackerman_traj_point_t obst;
-		obst.x = std::numeric_limits<double>::quiet_NaN();
-		obst.y = std::numeric_limits<double>::quiet_NaN();
-		obst.v = std::numeric_limits<double>::quiet_NaN();
-		return obst;
-	}
+	return detector_right->get_moving_obstacle_position();
 }
 
 double udatmo_get_moving_obstacle_distance(carmen_ackerman_traj_point_t robot_pose, carmen_robot_ackerman_config_t *robot_config __attribute__ ((unused)))

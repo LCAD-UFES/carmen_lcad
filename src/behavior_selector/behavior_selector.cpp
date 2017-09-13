@@ -15,7 +15,7 @@
 #define GOAL_LIST_SIZE 1000
 #define MAX_ANNOTATIONS 50
 
-//#define PRINT_UDATMO_LOG
+// #define PRINT_UDATMO_LOG
 
 static carmen_robot_ackerman_config_t robot_config;
 static double distance_between_waypoints = 5;
@@ -316,10 +316,10 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double
 	carmen_ackerman_traj_point_t front_obst = udatmo_get_moving_obstacle_position();
 	double front_obst_velocity = udatmo_speed_front();
 
-	carmen_ackerman_traj_point_t left_obst = udatmo_get_moving_obstacle_position();
+	carmen_ackerman_traj_point_t left_obst = udatmo_get_moving_obstacle_position_left();
 	double left_obst_velocity = udatmo_speed_left();
 
-	carmen_ackerman_traj_point_t right_obst = udatmo_get_moving_obstacle_position();
+	carmen_ackerman_traj_point_t right_obst = udatmo_get_moving_obstacle_position_right();
 	double right_obst_velocity = udatmo_speed_right();
 
 	printf("%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n", timestamp, robot_pose.x, robot_pose.y, robot_pose.v, robot_pose.theta, robot_pose.phi,
