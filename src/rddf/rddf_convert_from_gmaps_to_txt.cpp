@@ -145,16 +145,16 @@ calculate_yaws(placemark_vector_t *placemark_vector)
 		double deltaLat = 0.0, deltaLng = 0.0, yaw = 0.0;
 		GPS_Position_t srcGPS, dstGPS;
 
-		// Obter deltaLat (Lat2 - Lat1)
-		// Obter deltaLng (Lng2 - Lng1)
 		srcGPS = getPositionFrom(srcPlacemark);
 		dstGPS = getPositionFrom(dstPlacemark);
 		
+		// Obter deltaLat (Lat2 - Lat1)
 		deltaLat = dstGPS.latitude - srcGPS.latitude;
+		// Obter deltaLng (Lng2 - Lng1)
 		deltaLng = dstGPS.longitude - srcGPS.longitude;
 
-		// yaw = ATan2 (DeltaY, DeltaX)
-		yaw = atan2(deltaLng, deltaLat);
+		// yaw = atan2(deltaLng, deltaLat);
+		yaw = atan2(-deltaLat, deltaLng); // 
 
 		//set Yaw[i-1] = yaw;
 		sprintf(buffer, "%lf", carmen_normalize_theta(yaw));
@@ -176,6 +176,12 @@ void generate_placemarks(placemark_vector_t *placemark_vector, GPS_Position_t sr
 	std::vector<GPS_Position_t> positions;
 	gsl_interp_accel *acc = gsl_interp_accel_alloc ();
 	gsl_spline *spline = gsl_spline_alloc (type, size);
+	unsigned int count;
+
+	printf("#####\n");
+	for(count = 0; count < size; count++)
+		printf("Lat: [%lf], Lng: [%lf]\n", latitude[count], longitude[count]);
+	printf("#####\n");
 
 	gsl_spline_init (spline, latitude, longitude, size);
 	
@@ -230,7 +236,22 @@ generate_placemarks(placemark_vector_t *placemark_vector)
         	positions.clear();
 
         	positions.push_back(srcGPS);
-        	positions.push_back(dstGPS);
+
+        	while (positions.size() <= 1) {
+
+        		double aux = srcGPS.latitude - dstGPS.latitude;
+
+        		if(aux < 0.0)
+        			aux *= -1.0;
+
+        		if(aux < 0.000001) {
+        			dstPlacemark = placemark_vector->at(++i);
+        			dstGPS = getPositionFrom(dstPlacemark);
+        		}
+        		else
+        			positions.push_back(dstGPS);
+
+        	}
 
         	double *latitude  = (double*)malloc(sizeof(double)*positions.size()),
 			       *longitude = (double*)malloc(sizeof(double)*positions.size());
@@ -288,15 +309,16 @@ generate_placemarks(placemark_vector_t *placemark_vector)
         	}
         }
 	}
-/*
-	FILE *fp = fopen("files/gps_points.out", "wt");
+
+
+	FILE *fp = fopen("sample/gps_points.out", "wt");
 	for(unsigned int i = 0; i < newPlacemark.size(); i++){
 		GPS_Position_t pos = getPositionFrom(newPlacemark.at(i));
 		fprintf(fp, "{ lat:%lf, lng:%lf, nome:\"#%d\" }", pos.latitude, pos.longitude, i+1);
 		if(i != newPlacemark.size()-1)
 			fprintf(fp, ",\n");
 	}
-*/
+
 
 	placemark_vector->swap(newPlacemark);
 }
@@ -389,7 +411,7 @@ carmen_rddf_play_copy_kml(kmldom::PlacemarkPtr waypoint, carmen_fused_odometry_m
 			}
 		}
 
-		message->velocity.x = driver_speed;
+		message->velocity.x = 40.0;
 		message->pose.orientation.roll= 0;
 		message->pose.orientation.pitch= 0;
 		message->pose.orientation.yaw = theta;
