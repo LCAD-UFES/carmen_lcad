@@ -2,7 +2,7 @@
 
 using namespace std;
 
-//#define SHOWPATH
+#define SHOWPATH
 
 // constructor
 StehsPlanner::StehsPlanner():
@@ -31,10 +31,9 @@ StehsPlanner::StehsPlanner():
 
 
 // destructor
-StehsPlanner::~StehsPlanner() {
-
+StehsPlanner::~StehsPlanner()
+{
     cv::destroyAllWindows();
-
 }
 
 
@@ -191,6 +190,8 @@ StehsPlanner::Expand(CircleNodePtr current,	std::priority_queue<CircleNodePtr, s
 std::list<CircleNode>
 StehsPlanner::SpaceExploration(CircleNodePtr start_node, CircleNodePtr goal_node)
 {
+	printf("SpaceExploration\n");
+
     std::list<CircleNode> temp_circle_path;
 
     start_node->g = 0.0;
@@ -198,17 +199,23 @@ StehsPlanner::SpaceExploration(CircleNodePtr start_node, CircleNodePtr goal_node
 
     goal_node->g = goal_node->f = DBL_MAX;
 
-    // create the priority queue
     std::priority_queue<CircleNodePtr, std::vector<CircleNodePtr>, CircleNodePtrComparator> open_set;
 
     std::vector<CircleNodePtr> closed_set;
+
+//    if (start_node->circle.Overlap(goal_node->circle, MIN_OVERLAP_FACTOR))
+//    {
+//    	temp_circle_path.push_back(*start_node);
+//    	temp_circle_path.push_back(*goal_node);
+//
+//    	return (temp_circle_path);
+//    }
 
     Expand(start_node, open_set);
 
     while (!open_set.empty())
     {
-        // get the circle wich is the closest to the goal node
-        CircleNodePtr current = open_set.top();
+        CircleNodePtr current = open_set.top();                   // Get the circle witch is the closest to the goal node
         open_set.pop();
 
         if (goal_node->f < current->f)
@@ -246,7 +253,7 @@ StehsPlanner::SpaceExploration(CircleNodePtr start_node, CircleNodePtr goal_node
         }
     }
 
-    while(!closed_set.empty())
+    while(!closed_set.empty())                // Only to clean the closed_set
     {
         CircleNodePtr tmp = closed_set.back();
 
@@ -254,6 +261,8 @@ StehsPlanner::SpaceExploration(CircleNodePtr start_node, CircleNodePtr goal_node
 
         delete tmp;
     }
+
+	printf("Saiu SE\n");
 
     return (temp_circle_path);
 }
@@ -267,6 +276,8 @@ StehsPlanner::GoalSpaceExploration()
     CircleNodePtr goal_circle = new CircleNode(goal.x, goal.y, ObstacleDistance(goal), DBL_MAX, DBL_MAX, nullptr);
 
     circle_path = SpaceExploration(start_circle, goal_circle);
+
+    UpdateCircleGoalDistance();
 }
 
 
@@ -710,6 +721,8 @@ StehsPlanner::SetSwap(
 void
 StehsPlanner::HeuristicSearch()
 {
+	printf("HeuristicSearch\n");
+
     StateNodePtr start_node = new StateNode(start, 0.0, TimeHeuristic(start), nullptr);    // (State, g, h, Parent)  You dont pass the argument f because f=g+h
 
     StateNodePtr goal_node = new StateNode(goal, DBL_MAX, DBL_MAX, nullptr);
@@ -793,6 +806,8 @@ StehsPlanner::HeuristicSearch()
 
         delete tmp;
     }
+
+    printf("Saiu HS\n");
 }
 
 
@@ -908,9 +923,13 @@ StehsPlanner::GeneratePath()
 	state_list.clear();
 
 	if (use_rddf)
+	{
 		RDDFSpaceExploration();
+	}
 	else
+	{
 		GoalSpaceExploration();
+	}
 
 	if (!circle_path.empty())
 	{

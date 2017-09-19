@@ -56,58 +56,6 @@ random_double()
 }
 
 
-//void
-//carmen_librlpid_exporta_pesos()
-//{
-//	FILE *output;
-//	output = fopen("weigths.txt", "w");
-//	int i = 0;
-//
-//	for (i = 0; i < neural_network_size; i++)
-//	{
-//		fprintf(output, "%lf ->w_weight[0]\n%lf ->w_weight[1]\n%lf ->w_weight[2]\n", network[i].w_neuron_weight[0], network[i].w_neuron_weight[1], network[i].w_neuron_weight[2]);
-//		fprintf(output, "%lf ->v_weight\n", network[i].v_neuron_weight);
-//		fprintf(output, "%lf ->center_vector[0]\n%lf ->center_vector[1]\n%lf ->center_vector[2]\n", network[i].center_vector[0], network[i].center_vector[1], network[i].center_vector[2]);
-//		fprintf(output, "%lf ->width_scalar_sigma\n", network[i].width_scalar_sigma);
-//		fprintf(output, "%lf ->phi_value\n", network[i].phi_value);
-//	}
-//	fflush(output);
-//	fclose(output);
-//}
-//
-//void
-//carmen_librlpid_importa_pesos(rl_data* data)
-//{
-//	FILE* file = fopen("weigths.txt", "r");
-//	char trash[50];
-//	int i = 0;
-//
-//	if(file != NULL){
-//		for (i = 0; i < neural_network_size; i++)
-//		{
-//			fscanf(file, "%lf", &data->network[i].w_neuron_weight[0]);
-//			fscanf(file, "%s", trash);
-//			fscanf(file, "%lf", &data->network[i].w_neuron_weight[1]);
-//			fscanf(file, "%s", trash);
-//			fscanf(file, "%lf", &data->network[i].w_neuron_weight[2]);
-//			fscanf(file, "%s", trash);
-//			fscanf(file, "%lf", &data->network[i].v_neuron_weight);
-//			fscanf(file, "%s", trash);
-//			fscanf(file, "%lf", &data->network[i].center_vector[0]);
-//			fscanf(file, "%s", trash);
-//			fscanf(file, "%lf", &data->network[i].center_vector[1]);
-//			fscanf(file, "%s", trash);
-//			fscanf(file, "%lf", &data->network[i].center_vector[2]);
-//			fscanf(file, "%s", trash);
-//			fscanf(file, "%lf", &data->network[i].width_scalar_sigma);
-//			fscanf(file, "%s", trash);
-//			fscanf(file, "%lf", &data->network[i].phi_value);
-//			fscanf(file, "%s", trash);
-//		}
-//	}
-//}
-
-
 #define RBF_MULTIPLIER 1.0//5.0//10.0 //1.0
 #define FF_MULTIPLIER 0.2 //1.0//5.0 //0.05
 #define GAUSS_MULTIPLIER 0.002 //1.0//1.0 //0.05
@@ -174,27 +122,20 @@ initializate_variables(rl_data* data)
 
 
 void
-calculate_pid_errors(double y_desired, double y,  double delta_t, rl_data* data)
+compute_errors(double y_actual, double y_desired, double delta_t, rl_data* data)
 {
-	double 	error_t_1 = data->variables.error_order[0];
+	double error = (y_desired - y_actual);
 
-	data->variables.error_order[0] = (y_desired - y);
-	data->variables.error_order[1] = data->variables.error_order[1] + data->variables.error_order[0] * delta_t;
-	data->variables.error_order[2] = (data->variables.error_order[0] - error_t_1) / delta_t;
-}
-
-
-double
-calculate_total_error(rl_data* data, int media)
-{
-	data->total_error_quadratico = data->total_error_quadratico + (data->variables.error[0]*data->variables.error[0]);
-	return (data->total_error_quadratico/media);
+	data->variables.previous_error = data->variables.proportional_error;
+	data->variables.proportional_error = error;
+	data->variables.integral_error = data->variables.integral_error + (error * delta_t);
+	data->variables.derivative_error = (data->variables.derivative_error - error) / delta_t;
 }
 
 
 //   EQUATION 1 eq1
 void
-update_plant_input_u(double atan_desired_curvature, double atan_current_curvature, double delta_t, rl_data* data)
+compute_control_command_u(double atan_desired_curvature, double atan_current_curvature, double delta_t, rl_data* data)
 {
 	data->variables.U[2] = data->variables.U[1]; //Update the past u values
 	data->variables.U[1] = data->variables.U[0];
@@ -226,45 +167,24 @@ update_plant_input_u(double atan_desired_curvature, double atan_current_curvatur
 }
 
 
-void
-update_plant_input_u_old(rl_data* data)
-{ //Where:  U[0] = u(t), U[1] = u(t-1), U[2] = u(t-2)
-	data->variables.U[2] = data->variables.U[1]; //Update the past u values
-	data->variables.U[1] = data->variables.U[0];
-	data->variables.pid_params[1] = 600;
-	data->variables.pid_params[0] = 1250;
-	data->variables.pid_params[2] = 25;
-	data->variables.U[0] = data->variables.U[1] + data->variables.pid_params[1] * data->variables.error_order[0] + data->variables.pid_params[0] * data->variables.error_order[1] + data->variables.pid_params[2] * data->variables.error_order[2]; //Calculate actual output value.
-}
-
-
-void
-compute_error_history(double y_desired, double y, rl_data* data)  // history of last 3 errors
-{
-	data->variables.error[2] = data->variables.error[1];
-	data->variables.error[1] = data->variables.error[0];
-	data->variables.error[0] = (y_desired - y);
-}
-
-
 //   EQUATION 2 eq2 Reward
-void
-external_reinforcement_signal(rl_data* data)     //r(t) = alfa*Re + beta*Rec
+double
+compute_external_reinforcement_signal(rl_data* data)     //r(t) = alfa*Re + beta*Rec
 {
 	double Re = 0;
 	double Rec = 0;
 
-	if (fabs(data->variables.error[0]) > data->params.error_band)
+	if (fabs(data->variables.proportional_error) > data->params.error_band)
 	{
 		Re = -0.5;
 	}
 
-	if (fabs(data->variables.error[0]) > fabs(data->variables.error[1]))
+	if (fabs(data->variables.proportional_error) > fabs(data->variables.previous_error))
 	{
 		Rec = -0.5;
 	}
 
-	data->reinforcement_signal = (data->params.alfa_weight_coef * Re) + (data->params.beta_weight_coef * Rec);
+	return ((data->params.alfa_weight_coef * Re) + (data->params.beta_weight_coef * Rec));
 }
 
 
@@ -310,24 +230,19 @@ compute_recomended_pid_output(rl_data* data)
 {
 	int i = 0;
 
-	for (i = 0;i < 3;i++)                        // RESET THE VALUE OF THE RECOMENDED PID
-	{
-		data->variables.recomended_pid_params[i] = 0;
-	}
-
 	for (i = 0; i < neural_network_size; i++)    // FINDING THE RECOMMENDED KP
 	{
-		data->variables.recomended_pid_params[0] = data->variables.recomended_pid_params[0] + (data->network[i].w_neuron_weight[0] * data->network[i].phi_value);
+		data->variables.kp = data->network[i].w_neuron_weight[0] * data->network[i].phi_value;
 	}
 
 	for (i = 0; i < neural_network_size; i++)    // FINDING THE RECOMMENDED KI
 	{
-		data->variables.recomended_pid_params[1] = data->variables.recomended_pid_params[1] + (data->network[i].w_neuron_weight[1] * data->network[i].phi_value);
+		data->variables.ki = ddata->network[i].w_neuron_weight[1] * data->network[i].phi_value;
 	}
 
 	for (i = 0; i < neural_network_size; i++)    // FINDING THE RECOMMENDED KD
 	{
-		data->variables.recomended_pid_params[2] = data->variables.recomended_pid_params[2] + (data->network[i].w_neuron_weight[2] * data->network[i].phi_value);
+		data->variables.kd = data->network[i].w_neuron_weight[2] * data->network[i].phi_value;
 	}
 }
 
@@ -375,17 +290,10 @@ update_pid_params(rl_data* data)
 
 // EQUATION 7 eq7
 void
-calculate_td_error(rl_data* data, double reward_reinforcement_signal, double discount_factor_gamma, double critic_value, double previous_reward_reinforcement_signal)    // 0 < discount_factor < 1
+compute_td_error(rl_data* data)    // 0 < discount_factor < 1
 {
-	data->td_error = reward_reinforcement_signal + (discount_factor_gamma * critic_value) - previous_reward_reinforcement_signal;
-}
+	data->td_error = data->variables.previous_reinforcement_signal + (data->params.discount_factor * data->variables.critic_value) - data->variables.previous_critic_value; // 0 < discount_factor < 1
 
-
-// EQUATION 8 eq8
-double
-performance_index_of_system_learning(rl_data* data)
-{
-	return (pow(data->td_error,2)/2);
 }
 
 
@@ -492,16 +400,18 @@ carmen_librlpid_compute_effort(double current_curvature, double desired_curvatur
 	{
 		first_time = false;
 		data.params = read_parameters("rlpid_params.txt");
-		data.pv = initializate_variables(&data);
-		data.previous_critic_value = compute_critic_value(&data);
-		data.previous_reinforcement_signal = 0.0;
-		compute_error_history(desired_curvature, current_curvature, &data);
+		data.variables = initializate_variables(&data);
+
+		data.variables.proportional_error = 0.0; // Because tere is not this value
+		compute_errors(current_curvature, desired_curvature, delta_t, &data);
+
+		data.variables.previous_reinforcement_signal = compute_external_reinforcement_signal(&data);
+		data.variables.previous_critic_value = compute_critic_value(&data);
 	}
 	else
 	{
-		calculate_pid_errors(desired_curvature, current_curvature,  delta_t, &data);
-		compute_error_history(desired_curvature, current_curvature, &data);
-		external_reinforcement_signal(&data);
+		compute_errors(current_curvature, desired_curvature, delta_t, &data);
+
 		compute_recomended_pid_output(&data);
 		compute_critic_value(&data);
 
@@ -515,7 +425,7 @@ carmen_librlpid_compute_effort(double current_curvature, double desired_curvatur
 		weights_update(&data);                                                  // Step 9 ==> UPDATE PESOS
 		center_vector_update(&data);                                            // Step 10 ==> UPDATE CENTRO
 		width_scalar_update(&data);                                             // Step 10 ==> UPDATE WIDTH SCALAR
-	}
+
 
 	//imprime_os_pesos_agora++;
 	load_variables(&data);
@@ -532,3 +442,4 @@ carmen_librlpid_compute_effort(double current_curvature, double desired_curvatur
 
 	return data.variables.U[0];//carmen_clamp(-100.0, (U[0]), 100.0);
 }
+
