@@ -15,15 +15,15 @@ extern "C" {
 typedef struct
 {
 	char *shared_memory_name;
-	int buffer_index;
-	int buffer_size;
+	int map_index;
+	int number_of_maps;
 	carmen_map_config_t config;
 	double timestamp;
 	char *host;
 } carmen_shared_memory_test_map_message;
 
 #define CARMEN_SHARED_MEMORY_TEST_MAP_MESSAGE_NAME	"carmen_shared_memory_test_map_message"
-#define CARMEN_SHARED_MEMORY_TEST_MAP_MESSAGE_FMT		"{string, int, int, {int, int, double, [byte:64], string, double, double}, double, string}"
+#define CARMEN_SHARED_MEMORY_TEST_MAP_MESSAGE_FMT	"{string, int, int, {int, int, double, [byte:64], string, double, double}, double, string}"
 
 #ifdef __cplusplus
 }
