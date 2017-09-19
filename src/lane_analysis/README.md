@@ -1,4 +1,4 @@
-##Ego-Lane Analysis System
+## Ego-Lane Analysis System
 
 **Input Messages:**
 
@@ -12,7 +12,7 @@
 
 ----
 
-####Usage Notes:
+#### Usage Notes:
 
 - Camera number is required: `./lane-analysis <camera_number>`
 - Output messages are timestamped based on the input `timestamp`
@@ -20,7 +20,7 @@
 
 ----
 
-#####1. carmen_elas_lane_estimation_message:
+##### 1. carmen_elas_lane_estimation_message:
 
 	typedef struct {
 		int num_outputs_left, num_outputs_right;
@@ -33,7 +33,7 @@
 	} carmen_elas_lane_estimation_message;
 
 
-#####2. carmen_elas_lane_markings_type_message:
+##### 2. carmen_elas_lane_markings_type_message:
 
 	typedef struct {
 		int left, right;
@@ -41,7 +41,7 @@
 		char *host;
 	} carmen_elas_lane_markings_type_message;
 
-#####3. carmen_elas_adjacent_lanes_message:
+##### 3. carmen_elas_adjacent_lanes_message:
 
 	typedef struct {
 		int left, right;
@@ -51,7 +51,6 @@
 
 ----
 
-####Development Notes:
+#### Development Notes:
 
 - A calibration process will be developed to enable control over the visible distance in meters;
-- A visualization will be developed on the Viewer3D (requires another calibration), as demanded;
