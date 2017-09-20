@@ -4,7 +4,6 @@
 #include <carmen/global_graphics.h>
 
 #include <cmath>
-#include <limits>
 
 extern carmen_mapper_virtual_laser_message virtual_laser_message;
 
@@ -196,11 +195,7 @@ Detector::speed_front()
 carmen_ackerman_traj_point_t
 Detector::get_moving_obstacle_position()
 {
-	static double invalid = std::numeric_limits<double>::quiet_NaN();
-	static carmen_ackerman_traj_point_t invalid_pose = {invalid, invalid, invalid, invalid, invalid};
-
-	const Obstacle &obstacle = moving_object[0];
-	return (obstacle.valid ? obstacle.pose : invalid_pose);
+	return (moving_object[0].pose);
 }
 
 

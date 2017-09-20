@@ -214,16 +214,6 @@ carmen_ackerman_traj_point_t udatmo_get_moving_obstacle_position(void)
 	return detector->get_moving_obstacle_position();
 }
 
-carmen_ackerman_traj_point_t udatmo_get_moving_obstacle_position_left(void)
-{
-	return detector_left->get_moving_obstacle_position();
-}
-
-carmen_ackerman_traj_point_t udatmo_get_moving_obstacle_position_right(void)
-{
-	return detector_right->get_moving_obstacle_position();
-}
-
 double udatmo_get_moving_obstacle_distance(carmen_ackerman_traj_point_t robot_pose, carmen_robot_ackerman_config_t *robot_config __attribute__ ((unused)))
 {
 	double distance = detector->get_moving_obstacle_distance(robot_pose);
