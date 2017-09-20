@@ -153,7 +153,7 @@ read_parameters(int argc, char *argv[], carmen_base_ackerman_config_t *config)
 		{"robot", "publish_odometry", CARMEN_PARAM_ONOFF, &(config->publish_odometry), 0, NULL},
 
 		{"robot", "phi_multiplier", CARMEN_PARAM_DOUBLE, &phi_multiplier, 0, NULL},
-		{"robot", "phi_bias", CARMEN_PARAM_DOUBLE, &phi_bias, 0, NULL},
+		{"robot", "phi_bias", CARMEN_PARAM_DOUBLE, &phi_bias, 1, NULL},
 		{"robot", "v_multiplier", CARMEN_PARAM_DOUBLE, &v_multiplier, 0, NULL},
 
 		{"visual_odometry", "phi_multiplier", CARMEN_PARAM_DOUBLE, &visual_odometry_phi_multiplier, 0, NULL},

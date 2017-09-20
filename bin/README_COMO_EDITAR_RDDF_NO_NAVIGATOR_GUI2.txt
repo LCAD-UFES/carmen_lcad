@@ -19,6 +19,7 @@
      - As setas para mover para esquerda, direita, para cima e para baixo
      - As letras "a" e "s" para girar
      - As letras "n" e "p" para selecionar a pose seguinte e a anterior
+     - A tecla "d" para deletar uma pose do rddf
      - A letra "f" para parar de editar
      - O botao esquerdo do mouse para selecionar outra pose e voltar a editar
      
