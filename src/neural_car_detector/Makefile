@@ -8,11 +8,21 @@ LINK = g++
 CFLAGS += -Wall
 CXXFLAGS = -Wno-sign-compare -DUSE_OPENCV 
 
+# Flags to control wich network will be used
+# CXXFLAGS += -DUSE_DETECTNET
+CXXFLAGS += -DUSE_YOLO_V2
+
 IFLAGS += `pkg-config opencv --cflags` -std=c++11 -DNO_NVML
 LFLAGS += `pkg-config opencv --libs` -std=c++11
 
-IFLAGS += -I $(NVCAFFE_HOME)/include -I $(NVCAFFE_HOME)/build/src/ -I $(NVCAFFE_HOME)/3rdparty -I /usr/local/cuda/include
+ifdef DARKNET_HOME
 IFLAGS += $(DARKNET_HOME)/darknet.so
+endif
+
+ifdef NVCAFFE_HOME
+IFLAGS += -I $(NVCAFFE_HOME)/include -I $(NVCAFFE_HOME)/build/src/ -I $(NVCAFFE_HOME)/3rdparty -I /usr/local/cuda/include
+endif
+
 LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lparam_interface \
 		-L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lrt \
 		-lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \

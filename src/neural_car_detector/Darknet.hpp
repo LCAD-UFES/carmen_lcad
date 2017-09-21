@@ -8,9 +8,8 @@
 #include <vector>
 #include <deque>
 #include <algorithm>
-#define OPENCV 1
 
-#ifdef OPENCV
+#ifdef USE_OPENCV
 #include <opencv2/opencv.hpp>			// C++
 #include "opencv2/highgui/highgui_c.h"	// C
 #include "opencv2/imgproc/imgproc_c.h"	// C
@@ -62,7 +61,7 @@ public:
 
     YOLODLL_API std::vector<bbox_t> tracking(std::vector<bbox_t> cur_bbox_vec, int const frames_story = 6);
 
-#ifdef OPENCV
+#ifdef USE_OPENCV
     std::vector<bbox_t> detect(cv::Mat mat, float thresh = 0.2, bool use_mean = false)
 	{
 		if(mat.data == NULL)

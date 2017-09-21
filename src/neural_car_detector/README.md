@@ -4,7 +4,11 @@ Detect vehicles using convolutional neural networks.
 
 ## Building
 ### Dependencies
-To run this module the Nvidia Caffe is needed.
+To run this module you need either NVIDIA Caffe or Darknet.
+Choose one of the two and proceed with installation.
+
+####Option 1: Installing NVIDIA Caffe
+
 Install nvcaffe dependencies:
 
 ``` bash
@@ -66,8 +70,41 @@ Add the following lines to the end of .bashrc file
 	export PYTHONPATH=$NVCAFFE_HOME/python:/usr/lib/python2.7/dist-packages:$PYTHONPATH python
 	export LD_LIBRARY_PATH=$NVCAFFE_HOME/build/lib:$LD_LIBRARY_PATH
 	
-Make and run neural car detector module. (Download caffemodel first: https://www.dropbox.com/s/075njerr4xvyz9u/snapshot_iter_21600.caffemodel?dl=0)
+Download caffemodel at: https://www.dropbox.com/s/075njerr4xvyz9u/snapshot_iter_21600.caffemodel?dl=0
 
+	
+#### Option 2: Darknet (YOLO)
+
+Clone the repository:
+
+``` bash
+$ cd ~
+$ git clone https://github.com/AlexeyAB/darknet.git
+$ cd darknet
+```
+Some options need to be changed in the Makefile. Open it and set these:
+
+* `GPU=1` to build with CUDA to accelerate by using GPU (CUDA should be in `/use/local/cuda`)
+* `CUDNN=1` to build with cuDNN v5/v6 to accelerate training by using GPU (cuDNN should be in `/usr/local/cudnn`)
+* `OPENCV=1` to build with OpenCV 3.x/2.4.x - allows to detect on video files and video streams from network cameras or web-cams
+* `OPENMP=1` to build with OpenMP support to accelerate Yolo by using multi-core CPU
+* `LIBSO=1` to build a library `darknet.so` and binary runable file `uselib` that uses this library.
+
+Now just do `make` to compile the framework. Check if an file named darknet.so was created in the current directory.
+
+The next step is to download the network weights and test if the detection is working. 
+
+``` bash
+$ wget -P data/ http://pjreddie.com/media/files/yolo.weights
+$ ./darknet detect cfg/yolo.cfg data/yolo.weights data/dog.jpg
+```
+If everything is correct, you should now see this image:
+
+![example](Example_darknet.jpg)
+
+#### Compiling and running the module
+
+Make and run neural car detector module. 
 ``` bash
 $ cd $CARMEN_HOME/src/neural_car_detector
 $ make

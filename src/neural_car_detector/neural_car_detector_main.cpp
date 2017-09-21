@@ -25,11 +25,9 @@
 #include "Darknet.hpp" /*< Yolo V2 */
 #include "neural_car_detector.hpp"
 
-#define SHOW_DETECTIONS
+#include <cstdlib> /*< std::getenv */
 
-/*********FLAGS TO CONTROL WICH NETWORK WILL BE USED*********/
-#define USE_DETECTNET 0
-#define USE_YOLO_V2 1
+#define SHOW_DETECTIONS
 
 // camera number and side
 int camera;
@@ -246,6 +244,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 	// detect the objects in image
 #if USE_DETECTNET
 	std::vector<float> result = detectNet->Predict(crop); 
+	
     float correction_x = crop.cols / 1250.0;
 	float correction_y = crop.rows / 380.0;
 
@@ -448,20 +447,25 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	/**** DETECTNET PARAMETERS ****/
+
 	int gpu = 1;
 	int device_id = 0;
+
+	/**** DETECTNET PARAMETERS ****/
 	std::string model_file = "deploy.prototxt";
 	std::string trained_file = "snapshot_iter_21600.caffemodel";
 
     /**** YOLO PARAMETERS ****/
-    std::string cfg_filename = "YOLO/yolo.cfg";
-    std::string weight_filename = "YOLO/yolo.weights";
+    std::string darknet_home = std::getenv("DARKNET_HOME"); /*< get environment variable pointing path of darknet*/
+ 	if(darknet_home.empty())
+ 		printf("Cannot find darknet path. Check if you have correctly set DARKNET_HOME environment variable.\n");
+    std::string cfg_filename = darknet_home + "/cfg/yolo.cfg";
+    std::string weight_filename = darknet_home + "/data/yolo.weights";
 
 #if USE_DETECTNET
 	detectNet = new DetectNet(model_file, trained_file, gpu, device_id);
 #elif USE_YOLO_V2
-    darknet = new Detector(cfg_filename, weight_filename);
+    darknet = new Detector(cfg_filename, weight_filename, device_id);
 #endif
 
 #ifdef SHOW_DETECTIONS
