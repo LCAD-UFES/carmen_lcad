@@ -177,7 +177,6 @@ publish_moving_objects(double timestamp)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
 // Handlers                                                                                  //
@@ -228,6 +227,11 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 
 	cv::cvtColor(*src_image, *rgb_image, cv::COLOR_RGB2BGR);
 
+	std::vector<bounding_box> bouding_boxes_list;
+
+	// detect the objects in image
+#if USE_DETECTNET
+
 	//crop image
 	float inv_aspect = 380.0 / 1250.0;
 
@@ -239,10 +243,6 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 
 	cv::Mat crop = (*rgb_image)(roi);
 
-	std::vector<bounding_box> bouding_boxes_list;
-
-	// detect the objects in image
-#if USE_DETECTNET
 	std::vector<float> result = detectNet->Predict(crop); 
 	
     float correction_x = crop.cols / 1250.0;
@@ -268,12 +268,10 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 		}
 	}
 #elif USE_YOLO_V2
-	//0.3 threshold is good, more than this and it starts to miss some obstacles (very bad)
-    std::vector<bbox_t> predictions = darknet->detect(crop, 0.3);
 
-    //TODO: fix those boxes bob
-    float y_manual_fix = 140;
-    float y_correction = 1;
+	//0.3 threshold is good, more than this and it starts to miss some obstacles (very bad)
+    std::vector<bbox_t> predictions = darknet->detect(*src_image, 0.3);
+    predictions = darknet->tracking(predictions); /*< Coment this line if object tracking is not necessary */
 
     /* The bouding box returned by the detector is different than what is 
 	*	expected by this module, so we have to convert
@@ -281,13 +279,15 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
     for(const auto &box : predictions)
     {
         bounding_box bbox;
+
         bbox.pt1.x = box.x;
-        bbox.pt1.y = box.y * y_correction + y_manual_fix;
+        bbox.pt1.y = box.y;
         bbox.pt2.x = box.x + box.w;
-        bbox.pt2.y = (box.y + box.h + y_manual_fix) * y_correction ;
+        bbox.pt2.y = box.y + box.h;
 
         bouding_boxes_list.push_back(bbox);
     }
+
 #endif
 
 
