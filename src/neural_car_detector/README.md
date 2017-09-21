@@ -92,6 +92,11 @@ Some options need to be changed in the Makefile. Open it and set these:
 
 Now just do `make` to compile the framework. Check if an file named darknet.so was created in the current directory.
 
+Add the following lines to the end of .bashrc file
+
+	# Darknet
+	export DARKNET_HOME=~/darknet
+
 The next step is to download the network weights and test if the detection is working. 
 
 ``` bash
@@ -102,11 +107,23 @@ If everything is correct, you should now see this image:
 
 ![example](Example_darknet.jpg)
 
+
 #### Compiling and running the module
 
-Make and run neural car detector module. 
+Before compiling the module, there are two flags in the makefile that control wich framework will be used. 
+In order to select it, first open the Makefile:
+
 ``` bash
 $ cd $CARMEN_HOME/src/neural_car_detector
-$ make
-$ ./neural_car_detector 3 1
+$ gedit Makefile
+```
+
+The two flags of interest are `-DUSE_DETECTNET` and `-DUSE_YOLO_V2`.
+Comment only the one you don't want to use. 
+In the case you don't comment neither of them, detectnet have preference over darknet.
+
+Compile the module doing an `make` at the current folder. To run it, you have to pass two parameters:
+
+```bash
+$ ./neural_car_detector <camera_number> <camera_side(0-left; 1-right)>
 ```
