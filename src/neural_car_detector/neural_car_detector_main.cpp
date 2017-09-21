@@ -22,9 +22,14 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "DetectNet.hpp"
+#include "Darknet.hpp" /*< Yolo V2 */
 #include "neural_car_detector.hpp"
 
 #define SHOW_DETECTIONS
+
+/*********FLAGS TO CONTROL WICH NETWORK WILL BE USED*********/
+#define USE_DETECTNET 0
+#define USE_YOLO_V2 1
 
 // camera number and side
 int camera;
@@ -35,9 +40,12 @@ const unsigned int maxPositions = 50;
 carmen_velodyne_partial_scan_message *velodyne_message_arrange;
 std::vector<carmen_velodyne_partial_scan_message> velodyne_vector;
 
-
-// Uses the detectNet
+#if USE_DETECTNET
 DetectNet *detectNet;
+#elif USE_YOLO_V2
+Detector *darknet;
+#endif
+
 
 // Moving objects message
 carmen_moving_objects_point_clouds_message moving_objects_point_clouds_message;
@@ -236,9 +244,9 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 	std::vector<bounding_box> bouding_boxes_list;
 
 	// detect the objects in image
-	std::vector<float> result = detectNet->Predict(crop);
-
-	float correction_x = crop.cols / 1250.0;
+#if USE_DETECTNET
+	std::vector<float> result = detectNet->Predict(crop); 
+    float correction_x = crop.cols / 1250.0;
 	float correction_y = crop.rows / 380.0;
 
 	for (int i = 0; i < 10; i++)
@@ -260,6 +268,29 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 			bouding_boxes_list.push_back(bbox);
 		}
 	}
+#elif USE_YOLO_V2
+	//0.3 threshold is good, more than this and it starts to miss some obstacles (very bad)
+    std::vector<bbox_t> predictions = darknet->detect(crop, 0.3);
+
+    //TODO: fix those boxes bob
+    float y_manual_fix = 140;
+    float y_correction = 1;
+
+    /* The bouding box returned by the detector is different than what is 
+	*	expected by this module, so we have to convert
+    */
+    for(const auto &box : predictions)
+    {
+        bounding_box bbox;
+        bbox.pt1.x = box.x;
+        bbox.pt1.y = box.y * y_correction + y_manual_fix;
+        bbox.pt2.x = box.x + box.w;
+        bbox.pt2.y = (box.y + box.h + y_manual_fix) * y_correction ;
+
+        bouding_boxes_list.push_back(bbox);
+    }
+#endif
+
 
 	std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > laser_points_in_camera_box_list = velodyne_points_in_boxes(bouding_boxes_list, &velodyne_sync_with_cam,
 			image_msg->width, image_msg->height);
@@ -301,7 +332,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 //		sprintf(ponto_x, "x = %.3f", box_centroid.x);
 //		sprintf(ponto_y, "y = %.3f", box_centroid.y);
 //		sprintf(ponto_z, "z = %.3f", box_centroid.z);
-		sprintf(confianca, "%.3f", result[5*i + 4]);
+//		sprintf(confianca, "%.3f", result[5*i + 4]);
 
 		cv::rectangle(*rgb_image,
 				cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y),
@@ -417,13 +448,21 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	// load network model
+	/**** DETECTNET PARAMETERS ****/
 	int gpu = 1;
 	int device_id = 0;
 	std::string model_file = "deploy.prototxt";
 	std::string trained_file = "snapshot_iter_21600.caffemodel";
 
+    /**** YOLO PARAMETERS ****/
+    std::string cfg_filename = "YOLO/yolo.cfg";
+    std::string weight_filename = "YOLO/yolo.weights";
+
+#if USE_DETECTNET
 	detectNet = new DetectNet(model_file, trained_file, gpu, device_id);
+#elif USE_YOLO_V2
+    darknet = new Detector(cfg_filename, weight_filename);
+#endif
 
 #ifdef SHOW_DETECTIONS
 	cv::namedWindow( "Neural car detector", cv::WINDOW_AUTOSIZE );
