@@ -135,44 +135,22 @@ compute_errors(double y_actual, double y_desired, double delta_t, rl_data* data)
 
 //   EQUATION 1 eq1
 void
-compute_control_command_u(double atan_desired_curvature, double atan_current_curvature, double delta_t, rl_data* data)
+compute_control_command_u(double delta_t, rl_data* data)
 {
-	data->variables.U[2] = data->variables.U[1]; //Update the past u values
-	data->variables.U[1] = data->variables.U[0];
-
-	double 	integral_t_1 = data->variables.error_order[1];
-	double 		u_t;			// u(t)	-> actuation in time t
-
-
-	if (delta_t == 0.0)
-	{
-		data->variables.U[0] = 0;
-		return;
-	}
-
-	calculate_pid_errors(atan_desired_curvature, atan_current_curvature, delta_t, data);
-
-	u_t = (data->variables.pid_params[0] * data->variables.error_order[0]) + (data->variables.pid_params[1] * data->variables.error_order[1]) + (data->variables.pid_params[2] * data->variables.error_order[2]);
-
-	data->variables.error[2] = data->variables.error[1];
-	data->variables.error[1] = data->variables.error[0];
-	data->variables.error[0] = data->variables.error_order[0];
-
-	// Anti windup
-	if ((u_t < -100.0) || (u_t > 100.0))
-		data->variables.error_order[1] = integral_t_1;
+	double u_t = (data->variables.kp * data->variables.proportional_error) + (data->variables.ki * data->variables.integral_error) +
+			(data->variables.kd * data->variables.derivative_error);
 
 	u_t = carmen_clamp(-100.0, u_t, 100.0);
-	data->variables.U[0] = -u_t;//carmen_libpid_steering_PID_controler(atan_desired_curvature, atan_current_curvature, delta_t);
+	data->variables.control_command_u = -u_t;
 }
 
 
 //   EQUATION 2 eq2 Reward
-double
+void
 compute_external_reinforcement_signal(rl_data* data)     //r(t) = alfa*Re + beta*Rec
 {
-	double Re = 0;
-	double Rec = 0;
+	double Re = 0.0;
+	double Rec = 0.0;
 
 	if (fabs(data->variables.proportional_error) > data->params.error_band)
 	{
@@ -184,7 +162,8 @@ compute_external_reinforcement_signal(rl_data* data)     //r(t) = alfa*Re + beta
 		Rec = -0.5;
 	}
 
-	return ((data->params.alfa_weight_coef * Re) + (data->params.beta_weight_coef * Rec));
+	data->variables.previous_reinforcement_signal = data->variables.reinforcement_signal;
+	data->variables.reinforcement_signal = ((data->params.alfa_weight_coef * Re) + (data->params.beta_weight_coef * Rec));
 }
 
 
@@ -248,17 +227,18 @@ compute_recomended_pid_output(rl_data* data)
 
 
 // EQUATION 5 eq5 FINDING THE CRITIC VALUE OUTPUT
-double
+void
 compute_critic_value(rl_data* data)
 {
-	int i = 0;
 	double c_value = 0;
 
-	for (i = 0; i < neural_network_size; i++)
+	for (int i = 0; i < neural_network_size; i++)
 	{
 		c_value = c_value + (data->network[i].v_neuron_weight * data->network[i].phi_value);
 	}
-	return c_value;
+
+	data->variables.previous_critic_value = data->variables.critic_value;
+	data->variables.critic_value = c_value;
 }
 
 
@@ -352,44 +332,6 @@ width_scalar_update(rl_data* data)
 }
 
 
-// SAVE AND LOAD VARIABLES
-void
-store_variables(rl_data* data)
-{
-	int i =0;
-
-	data->pv.sigma_critical_deviation = data->variables.sigma_critical_deviation;
-	data->pv.critic_value = data->variables.critic_value;
-	for(i = 0; i<3; i++)
-	{
-		data->pv.U[i] = data->variables.U[i];
-		data->pv.error[i] = data->variables.error[i];
-		data->pv.error_order[i] = data->variables.error_order[i];
-		data->pv.pid_params[i] = data->variables.pid_params[i];
-		data->pv.recomended_pid_params[i] = data->variables.recomended_pid_params[i];
-	}
-}
-
-
-void
-load_variables(rl_data* data)
-{
-	int i = 0;
-
-	data->variables.sigma_critical_deviation = data->pv.sigma_critical_deviation;
-	data->variables.critic_value = data->pv.critic_value;
-
-	for (i = 0; i < 3; i++)
-	{
-		data->variables.U[i] = data->pv.U[i];
-		data->variables.error[i] = data->pv.error[i];
-		data->variables.error_order[i] = data->pv.error_order[i];
-		data->variables.pid_params[i] = data->pv.pid_params[i];
-		data->variables.recomended_pid_params[i] = data->pv.recomended_pid_params[i];
-	}
-}
-
-
 double
 carmen_librlpid_compute_effort(double current_curvature, double desired_curvature, double delta_t)
 {
@@ -402,42 +344,22 @@ carmen_librlpid_compute_effort(double current_curvature, double desired_curvatur
 		data.params = read_parameters("rlpid_params.txt");
 		data.variables = initializate_variables(&data);
 
-		data.variables.proportional_error = 0.0; // Because tere is not this value
 		compute_errors(current_curvature, desired_curvature, delta_t, &data);
+		compute_external_reinforcement_signal(&data);
+		compute_critic_value(&data);
 
-		data.variables.previous_reinforcement_signal = compute_external_reinforcement_signal(&data);
-		data.variables.previous_critic_value = compute_critic_value(&data);
+		compute_recomended_pid_output(rl_data* data);
+		compute_control_command_u(delta_t, &data);
 	}
 	else
 	{
 		compute_errors(current_curvature, desired_curvature, delta_t, &data);
-
-		compute_recomended_pid_output(&data);
+		compute_external_reinforcement_signal(&data);
 		compute_critic_value(&data);
 
-
-
-		calculate_error_old(desired_curvature, current_curvature, &data);       // Step 6 ==> CALCULA ERRO
-		update_neetwork_hidden_unit_phi_future(&data);                          //        ==> UPDATE PHI
-		data.future_critic_value = update_critic_value_future(&data);           // Step 7 ==> UPDATE V
-		calculate_td_error(&data);                                              // Step 8 ==> CALCULA ERRO TD
-		load_variables(&data);
-		weights_update(&data);                                                  // Step 9 ==> UPDATE PESOS
-		center_vector_update(&data);                                            // Step 10 ==> UPDATE CENTRO
-		width_scalar_update(&data);                                             // Step 10 ==> UPDATE WIDTH SCALAR
-
-
-	//imprime_os_pesos_agora++;
-	load_variables(&data);
-	calculate_error_old(desired_curvature, current_curvature, &data);           // Step 2 ==> CALCULA ERRO
-	external_reinforcement_signal(&data);                                       // Step 3 ==> RECOMPENSA
-	update_neetwork_hidden_unit_phi(&data);                                     //        ==> UPDATE PHI
-	update_recomended_pid_output(&data);                                        // Step 4 ==> UPDATE K'
-	data.variables.critic_value = update_critic_value_output(&data);	        // Step 4 ==> UPDATE V
-	update_pid_params(&data);                                                   // Step 5 ==> UPDATE K
-	update_plant_input_u(current_curvature, desired_curvature, delta_t, &data); // Step 5 ==> UPDATE U
-	store_variables(&data);
-
+		compute_recomended_pid_output(rl_data* data);
+		compute_control_command_u(delta_t, &data);
+	}
 	printf("u%lf e %f  kp %f ki %f  kd %f\n", data.variables.U[0], data.variables.error[0], data.variables.pid_params[0], data.variables.pid_params[1], data.variables.pid_params[2]);
 
 	return data.variables.U[0];//carmen_clamp(-100.0, (U[0]), 100.0);

@@ -45,6 +45,11 @@ typedef struct {
 	double kp;
 	double ki;
 	double kd;
+	double control_command_u;
+	double previous_critic_value;
+	double previous_reinforcement_signal;
+	double reinforcement_signal;
+	double critic_value;
 } rl_variables;
 
 
@@ -69,9 +74,6 @@ typedef struct {
 	double total_error_quadratico;
 	rbf_neuron network[neural_network_size]; //The size is defined at .h file
 
-	// Ranik Params
-	double previous_critic_value;
-	double previous_reinforcement_signal;
 } rl_data;
 
 
