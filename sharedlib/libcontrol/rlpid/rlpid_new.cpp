@@ -209,19 +209,23 @@ compute_recomended_pid_output(rl_data* data)
 {
 	int i = 0;
 
+	data->variables.kp = 0.0;
+	data->variables.ki = 0.0;
+	data->variables.kd = 0.0;
+
 	for (i = 0; i < neural_network_size; i++)    // FINDING THE RECOMMENDED KP
 	{
-		data->variables.kp = data->network[i].w_neuron_weight[0] * data->network[i].phi_value;
+		data->variables.kp += data->network[i].w_neuron_weight[0] * data->network[i].phi_value;
 	}
 
 	for (i = 0; i < neural_network_size; i++)    // FINDING THE RECOMMENDED KI
 	{
-		data->variables.ki = ddata->network[i].w_neuron_weight[1] * data->network[i].phi_value;
+		data->variables.ki += data->network[i].w_neuron_weight[1] * data->network[i].phi_value;
 	}
 
 	for (i = 0; i < neural_network_size; i++)    // FINDING THE RECOMMENDED KD
 	{
-		data->variables.kd = data->network[i].w_neuron_weight[2] * data->network[i].phi_value;
+		data->variables.kd += data->network[i].w_neuron_weight[2] * data->network[i].phi_value;
 	}
 }
 
@@ -347,8 +351,7 @@ carmen_librlpid_compute_effort(double current_curvature, double desired_curvatur
 		compute_errors(current_curvature, desired_curvature, delta_t, &data);
 		compute_external_reinforcement_signal(&data);
 		compute_critic_value(&data);
-
-		compute_recomended_pid_output(rl_data* data);
+		compute_recomended_pid_output(&data);
 		compute_control_command_u(delta_t, &data);
 	}
 	else
@@ -356,9 +359,10 @@ carmen_librlpid_compute_effort(double current_curvature, double desired_curvatur
 		compute_errors(current_curvature, desired_curvature, delta_t, &data);
 		compute_external_reinforcement_signal(&data);
 		compute_critic_value(&data);
-
-		compute_recomended_pid_output(rl_data* data);
+		compute_recomended_pid_output(&data);
 		compute_control_command_u(delta_t, &data);
+
+		compute_td_error(&data);
 	}
 	printf("u%lf e %f  kp %f ki %f  kd %f\n", data.variables.U[0], data.variables.error[0], data.variables.pid_params[0], data.variables.pid_params[1], data.variables.pid_params[2]);
 
