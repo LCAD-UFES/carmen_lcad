@@ -13,8 +13,10 @@ INTERFACE_LIBS = -llaser_interface -llaser_ldmrs_interface \
 		 -lvisual_odometry_interface -lultrasonic_filter_interface -lford_escape_hybrid_interface
 endif
 
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I$(CARMEN_HOME)/sharedlib/png++
+IFLAGS += `libpng-config --cflags`
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
+LFLAGS += -L`libpng-config --ldflags`
 LFLAGS += $(INTERFACE_LIBS) -lparam_interface \
 	  -lglobal -lipc -lrotation_geometry
 LFLAGS += -ltf -lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system `pkg-config --libs opencv`
