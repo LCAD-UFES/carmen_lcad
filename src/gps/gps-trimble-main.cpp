@@ -148,6 +148,10 @@ publish_carmen_gps_gpgga_message()
 	{
 		if (carmen_extern_gpgga_ptr->utc == previous_utc_gpgga)
 			return (0);
+
+		//presention_mode force GPS quality to the viewer3D shows velodyne message in indoor
+//		carmen_extern_gpgga_ptr->gps_quality = 4;
+
 		previous_utc_gpgga = carmen_extern_gpgga_ptr->utc;
 
 		err = IPC_publishData (CARMEN_GPS_GPGGA_MESSAGE_NAME,
@@ -267,7 +271,7 @@ main(int argc, char *argv[])
 	signal(SIGINT, shutdown_module);
 	carmen_ipc_initialize(argc, argv);
 	ipc_initialize_messages();
- 
+
 	fprintf( stderr, "INFO: ************************\n" );
 	fprintf( stderr, "INFO: ********* GPS   ********\n" );
 	fprintf( stderr, "INFO: ************************\n" );

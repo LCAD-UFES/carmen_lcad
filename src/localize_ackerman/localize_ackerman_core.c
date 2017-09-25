@@ -754,8 +754,8 @@ convert_particles_log_odd_weights_to_prob(carmen_localize_ackerman_particle_filt
 {
 	double max_weight = get_particle_max_weight(filter);
 
-	FILE *caco;
-	caco = fopen("caco11.txt", "a");
+//	FILE *caco;
+//	caco = fopen("caco11.txt", "a");
 
 	for (int i = 0; i < filter->param->num_particles; i++)
 	{
@@ -766,9 +766,9 @@ convert_particles_log_odd_weights_to_prob(carmen_localize_ackerman_particle_filt
 		else
 			filter->particles[i].weight = exp(weight - max_weight);
 
-		fprintf(caco, "%04d, p %.15lf, mw %lf, w %lf\n", i, filter->particles[i].weight, max_weight, weight);
+//		fprintf(caco, "%04d, p %.15lf, mw %lf, w %lf\n", i, filter->particles[i].weight, max_weight, weight);
 	}
-	fclose(caco);
+//	fclose(caco);
 }
 
 
@@ -1567,20 +1567,20 @@ mahalanobis_distance(carmen_localize_ackerman_map_t *global_map, carmen_compact_
 	double robot_position_in_the_map_x = robot_position.x / local_mean_remission_map->config.resolution;
 	double robot_position_in_the_map_y = robot_position.y / local_mean_remission_map->config.resolution;
 
-	static double first_time = 0.0;
-	static int first_in = 1;
-	if (first_in == 1)
-	{
-		first_time = carmen_get_time();
-		first_in = 2;
-	}
-	FILE *caco = NULL;
-	double time = carmen_get_time();
-	if ((time - first_time > 15.0) && (first_in == 2))
-	{
-		caco = fopen("caco10.txt", "w");
-		first_in = 3;
-	}
+//	static double first_time = 0.0;
+//	static int first_in = 1;
+//	if (first_in == 1)
+//	{
+//		first_time = carmen_get_time();
+//		first_in = 2;
+//	}
+//	FILE *caco = NULL;
+//	double time = carmen_get_time();
+//	if ((time - first_time > 15.0) && (first_in == 2))
+//	{
+//		caco = fopen("caco10.txt", "w");
+//		first_in = 3;
+//	}
 
 	for (i = 0; i < local_mean_remission_map->number_of_known_points_on_the_map; i++)
 	{
@@ -1616,23 +1616,23 @@ mahalanobis_distance(carmen_localize_ackerman_map_t *global_map, carmen_compact_
 			else
 				sum += -(exponent);// + 0.5 * log(2.0 * M_PI * variance)); // log da probabilidade: https://www.wolframalpha.com/input/?i=log((1%2Fsqr(2*p*v))*exp(-((x-m)%5E2)%2F(2*v))
 
-			if ((caco != NULL) && (first_in >= 3) && (first_in < 10))
-			{
-				fprintf(caco, "%lf %lf %lf %lf %lf\n", cell_val, mean_map_val, variance, exp(-exponent), sum);
-				fflush(caco);
-			}
+//			if ((caco != NULL) && (first_in >= 3) && (first_in < 10))
+//			{
+//				fprintf(caco, "%lf %lf %lf %lf %lf\n", cell_val, mean_map_val, variance, exp(-exponent), sum);
+//				fflush(caco);
+//			}
 		}
 		else
 			sum += small_log_odds;
 	}
-	if ((caco != NULL) && (first_in == 10))
-	{
-		fclose(caco);
-		caco = NULL;
-	}
-
-	if (first_in >= 3)
-		first_in++;
+//	if ((caco != NULL) && (first_in == 10))
+//	{
+//		fclose(caco);
+//		caco = NULL;
+//	}
+//
+//	if (first_in >= 3)
+//		first_in++;
 
 	return (sum);
 }

@@ -148,20 +148,15 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 	stehs_planner.start.phi = msg->phi;
 	localizer_pose_timestamp = msg->timestamp;
 
-//	printf("GLOBAL POS x: %f y: %f theta: %f v: %f phi: %f\n", stehs_planner.start.x, stehs_planner.start.y,
-//			stehs_planner.start.theta, stehs_planner.start.v, stehs_planner.start.phi);
-
-//	std::cout << "lane " << stehs_planner.lane_ready << std::endl;
-//	std::cout << "Map " << stehs_planner.distance_map_ready << std::endl;
-//	std::cout << "goal " << stehs_planner.goal_ready << std::endl;
 	if (stehs_planner.distance_map_ready && stehs_planner.goal_ready)
 	{
 		stehs_planner.lane_ready = stehs_planner.distance_map_ready = stehs_planner.goal_ready = false;
 //		double time = carmen_get_time();
 		//stehs_planner.RDDFSpaceExploration();
 
-		stehs_planner.GeneratePath();
 		printf("Entrou\n");
+		stehs_planner.GeneratePath();
+
 //		printf("Tempo %f Ncirc %ld Nstate %ld\n", carmen_get_time() - time, stehs_planner.circle_path.size(), stehs_planner.state_list.size());
 
 		if (!stehs_planner.state_list.empty())

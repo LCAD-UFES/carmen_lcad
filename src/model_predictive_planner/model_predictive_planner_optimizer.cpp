@@ -144,6 +144,8 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 		tcp.tt = 0.2;
 	if (tcp.a < -GlobalState::robot_config.maximum_deceleration_forward) // a aceleracao nao pode ser negativa demais
 		tcp.a = -GlobalState::robot_config.maximum_deceleration_forward;
+	if (tcp.s < 0.2)
+		tcp.s = 0.2;
 //
 //	if (tcp.a > GlobalState::robot_config.maximum_acceleration_forward) // a aceleracao nao pode ser positiva demais
 //		tcp.a = GlobalState::robot_config.maximum_acceleration_forward;

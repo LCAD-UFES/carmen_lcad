@@ -36,6 +36,7 @@ typedef struct {
 	double recomended_pid_params[3]; //K' ->The new recomended params of Kp,Ki and Kd respectvely
 
 	// Ranik Params
+	double previous_error;
 	double proportional_error;
 	double integral_error;
 	double derivative_error;
@@ -45,6 +46,10 @@ typedef struct {
 	double kp;
 	double ki;
 	double kd;
+	double control_command_u;
+	double previous_critic_value;
+	double previous_reinforcement_signal;
+	double reinforcement_signal;
 } rl_variables;
 
 
@@ -69,9 +74,6 @@ typedef struct {
 	double total_error_quadratico;
 	rbf_neuron network[neural_network_size]; //The size is defined at .h file
 
-	// Ranik Params
-	double previous_critic_value;
-	double previous_reinforcement_signal;
 } rl_data;
 
 

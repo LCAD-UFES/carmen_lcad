@@ -8,10 +8,21 @@ LINK = g++
 CFLAGS += -Wall
 CXXFLAGS = -Wno-sign-compare -DUSE_OPENCV 
 
+# Flags to control wich network will be used
+# CXXFLAGS += -DUSE_DETECTNET
+CXXFLAGS += -DUSE_YOLO_V2
+
 IFLAGS += `pkg-config opencv --cflags` -std=c++11 -DNO_NVML
 LFLAGS += `pkg-config opencv --libs` -std=c++11
 
+ifdef DARKNET_HOME
+IFLAGS += $(DARKNET_HOME)/darknet.so
+endif
+
+ifdef NVCAFFE_HOME
 IFLAGS += -I $(NVCAFFE_HOME)/include -I $(NVCAFFE_HOME)/build/src/ -I $(NVCAFFE_HOME)/3rdparty -I /usr/local/cuda/include
+endif
+
 LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lparam_interface \
 		-L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lrt \
 		-lBulletCollision -lBulletDynamics -lBulletSoftBody -lLinearMath \
@@ -25,14 +36,19 @@ LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lpara
 
 LFLAGS += -L $(NVCAFFE_HOME)/build/lib -lcaffe-nv \
 		-L /usr/local/cuda/lib64 -lglog -lprotobuf -L/usr/local/lib
+# LFLAGS += -L $(NVCAFFE_HOME)/build/lib \
+# 		-L /usr/local/cuda/lib64 -lglog -lprotobuf -L/usr/local/lib
+
 
 SOURCES = DetectNet.cpp dbscan.cpp neural_car_detector.cpp neural_car_detector_main.cpp
+# SOURCES = dbscan.cpp neural_car_detector.cpp neural_car_detector_main.cpp
 
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES = 
 PUBLIC_BINARIES = neural_car_detector
 
 TARGETS = velodyne_camera_calibration camera_boxes_to_world libDetectNet.a libDbscan.a neural_car_detector
+# TARGETS = velodyne_camera_calibration camera_boxes_to_world libDbscan.a neural_car_detector
 
 #rules
 libDetectNet.a: DetectNet.o

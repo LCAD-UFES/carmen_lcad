@@ -22,7 +22,10 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "DetectNet.hpp"
+#include "Darknet.hpp" /*< Yolo V2 */
 #include "neural_car_detector.hpp"
+
+#include <cstdlib> /*< std::getenv */
 
 #define SHOW_DETECTIONS
 
@@ -35,9 +38,12 @@ const unsigned int maxPositions = 50;
 carmen_velodyne_partial_scan_message *velodyne_message_arrange;
 std::vector<carmen_velodyne_partial_scan_message> velodyne_vector;
 
-
-// Uses the detectNet
+#if USE_DETECTNET
 DetectNet *detectNet;
+#elif USE_YOLO_V2
+Detector *darknet;
+#endif
+
 
 // Moving objects message
 carmen_moving_objects_point_clouds_message moving_objects_point_clouds_message;
@@ -171,7 +177,6 @@ publish_moving_objects(double timestamp)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
 // Handlers                                                                                  //
@@ -222,6 +227,11 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 
 	cv::cvtColor(*src_image, *rgb_image, cv::COLOR_RGB2BGR);
 
+	std::vector<bounding_box> bouding_boxes_list;
+
+	// detect the objects in image
+#if USE_DETECTNET
+
 	//crop image
 	float inv_aspect = 380.0 / 1250.0;
 
@@ -233,12 +243,9 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 
 	cv::Mat crop = (*rgb_image)(roi);
 
-	std::vector<bounding_box> bouding_boxes_list;
-
-	// detect the objects in image
-	std::vector<float> result = detectNet->Predict(crop);
-
-	float correction_x = crop.cols / 1250.0;
+	std::vector<float> result = detectNet->Predict(crop); 
+	
+    float correction_x = crop.cols / 1250.0;
 	float correction_y = crop.rows / 380.0;
 
 	for (int i = 0; i < 10; i++)
@@ -260,6 +267,29 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 			bouding_boxes_list.push_back(bbox);
 		}
 	}
+#elif USE_YOLO_V2
+
+	//0.3 threshold is good, more than this and it starts to miss some obstacles (very bad)
+    std::vector<bbox_t> predictions = darknet->detect(*src_image, 0.3);
+    predictions = darknet->tracking(predictions); /*< Coment this line if object tracking is not necessary */
+
+    /* The bouding box returned by the detector is different than what is 
+	*	expected by this module, so we have to convert
+    */
+    for(const auto &box : predictions)
+    {
+        bounding_box bbox;
+
+        bbox.pt1.x = box.x;
+        bbox.pt1.y = box.y;
+        bbox.pt2.x = box.x + box.w;
+        bbox.pt2.y = box.y + box.h;
+
+        bouding_boxes_list.push_back(bbox);
+    }
+
+#endif
+
 
 	std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > laser_points_in_camera_box_list = velodyne_points_in_boxes(bouding_boxes_list, &velodyne_sync_with_cam,
 			image_msg->width, image_msg->height);
@@ -301,7 +331,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 //		sprintf(ponto_x, "x = %.3f", box_centroid.x);
 //		sprintf(ponto_y, "y = %.3f", box_centroid.y);
 //		sprintf(ponto_z, "z = %.3f", box_centroid.z);
-		sprintf(confianca, "%.3f", result[5*i + 4]);
+//		sprintf(confianca, "%.3f", result[5*i + 4]);
 
 		cv::rectangle(*rgb_image,
 				cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y),
@@ -417,13 +447,26 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	// load network model
+
 	int gpu = 1;
 	int device_id = 0;
+
+	/**** DETECTNET PARAMETERS ****/
 	std::string model_file = "deploy.prototxt";
 	std::string trained_file = "snapshot_iter_21600.caffemodel";
 
+    /**** YOLO PARAMETERS ****/
+    std::string darknet_home = std::getenv("DARKNET_HOME"); /*< get environment variable pointing path of darknet*/
+ 	if(darknet_home.empty())
+ 		printf("Cannot find darknet path. Check if you have correctly set DARKNET_HOME environment variable.\n");
+    std::string cfg_filename = darknet_home + "/cfg/yolo.cfg";
+    std::string weight_filename = darknet_home + "/data/yolo.weights";
+
+#if USE_DETECTNET
 	detectNet = new DetectNet(model_file, trained_file, gpu, device_id);
+#elif USE_YOLO_V2
+    darknet = new Detector(cfg_filename, weight_filename, device_id);
+#endif
 
 #ifdef SHOW_DETECTIONS
 	cv::namedWindow( "Neural car detector", cv::WINDOW_AUTOSIZE );
