@@ -12,10 +12,11 @@
 #include <carmen/localize_ackerman_interface.h>
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
+#include <opencv2/highgui/highgui.hpp>
 #include <vector>
 #include <string>
 #include <tf.h>
-#include "localize_neural_inference.h"
+#include "localize_neural_torch.h"
 
 using namespace std;
 
@@ -42,6 +43,48 @@ carmen_mapper_virtual_laser_message virtual_laser_message;
 
 
 carmen_pose_3D_t
+camera_carmen_transform(const carmen_pose_3D_t & pose)
+{
+	double roll, pitch, yaw;
+	carmen_pose_3D_t finalpos;
+
+	tf::Matrix3x3 camera_matrix(
+			0, -1,  0, // camera x-axis wrt world
+			0,  0, -1, // camera y-axis wrt world
+			1,  0,  0  // camera z-axis wrt world
+			);
+	tf::Quaternion camera_pose_q;
+	camera_matrix.getRotation(camera_pose_q);
+	tf::Vector3 camera_pose_3d(0,0,0);
+
+	tf::Transform camera_frame;
+	camera_frame.setOrigin(camera_pose_3d);
+	camera_frame.setRotation(camera_pose_q);
+
+	tf::Vector3 pose_3d(pose.position.x, pose.position.y, pose.position.z);
+	tf::Quaternion pose_q(pose.orientation.yaw, pose.orientation.pitch, pose.orientation.roll);
+
+	tf::Transform pose_wrt_camera;
+	pose_wrt_camera.setOrigin(pose_3d);
+	pose_wrt_camera.setRotation(pose_q);
+
+	tf::Transform pose_wrt_carmen = camera_frame.inverse() * pose_wrt_camera * camera_frame;
+
+	tf::Vector3 final_pose_3d = pose_wrt_carmen.getOrigin();
+	tf::Quaternion final_pose_q = pose_wrt_carmen.getRotation();
+	tf::Matrix3x3(final_pose_q).getRPY(roll, pitch, yaw);
+
+	finalpos.position.x = final_pose_3d.getX();
+	finalpos.position.y = final_pose_3d.getY();
+	finalpos.position.z = final_pose_3d.getZ();
+	finalpos.orientation.roll = carmen_normalize_theta(roll);
+	finalpos.orientation.pitch = carmen_normalize_theta(pitch);
+	finalpos.orientation.yaw = carmen_normalize_theta(yaw);
+	return finalpos;
+}
+
+
+carmen_pose_3D_t
 direct_transform(const carmen_pose_3D_t &basepos, const carmen_pose_3D_t &deltapos)
 {
 	double roll, pitch, yaw;
@@ -52,8 +95,17 @@ direct_transform(const carmen_pose_3D_t &basepos, const carmen_pose_3D_t &deltap
 	tf::Vector3 delta_pose_3d(deltapos.position.x, deltapos.position.y, deltapos.position.z);
 	tf::Quaternion delta_pose_q(deltapos.orientation.yaw, deltapos.orientation.pitch, deltapos.orientation.roll);
 
-	tf::Vector3 curr_pose_3d = base_pose_3d + tf::quatRotate(base_pose_q, delta_pose_3d);
-	tf::Quaternion curr_pose_q = base_pose_q * delta_pose_q;
+	tf::Transform base_pose;
+	base_pose.setOrigin(base_pose_3d);
+	base_pose.setRotation(base_pose_q);
+
+	tf::Transform delta_pose;
+	delta_pose.setOrigin(delta_pose_3d);
+	delta_pose.setRotation(delta_pose_q);
+
+	tf::Transform curr_pose = base_pose * delta_pose;
+	tf::Quaternion curr_pose_q = curr_pose.getRotation();
+	tf::Vector3 curr_pose_3d = curr_pose.getOrigin();
 	tf::Matrix3x3(curr_pose_q).getRPY(roll, pitch, yaw);
 
 	finalpos.position.x = curr_pose_3d.getX();
@@ -77,9 +129,17 @@ inverse_transform(const carmen_pose_3D_t &basepos, const carmen_pose_3D_t &currp
 	tf::Vector3 curr_pose_3d(currpos.position.x, currpos.position.y, currpos.position.z);
 	tf::Quaternion curr_pose_q(currpos.orientation.yaw, currpos.orientation.pitch, currpos.orientation.roll);
 
-	tf::Quaternion base_pose_q_inverse = base_pose_q.inverse();
-	tf::Quaternion delta_pose_q_wrt_base = base_pose_q_inverse * curr_pose_q;
-	tf::Vector3 delta_pose_3d_wrt_base = tf::quatRotate(base_pose_q_inverse, curr_pose_3d -  base_pose_3d);
+	tf::Transform base_pose;
+	base_pose.setOrigin(base_pose_3d);
+	base_pose.setRotation(base_pose_q);
+
+	tf::Transform curr_pose;
+	curr_pose.setOrigin(curr_pose_3d);
+	curr_pose.setRotation(curr_pose_q);
+
+	tf::Transform delta_pose = base_pose.inverseTimes(curr_pose);
+	tf::Quaternion delta_pose_q_wrt_base = delta_pose.getRotation();
+	tf::Vector3 delta_pose_3d_wrt_base = delta_pose.getOrigin();
 	tf::Matrix3x3(delta_pose_q_wrt_base).getRPY(roll, pitch, yaw);
 
 	deltapos.position.x = delta_pose_3d_wrt_base.getX();
@@ -112,7 +172,8 @@ get_transforms_from_camera_to_car(double camera_x, double camera_y, double camer
 void
 load_poses(char *filename, vector<pair<carmen_pose_3D_t, double> > &poses, vector<pair<string, double> > &frames)
 {
-	char imagename[256];
+	char imagename_l[256];
+	char imagename_r[256];
 	double timestamp, dummy;
 	carmen_pose_3D_t pose = {{0.0,0.0,0.0},{0.0,0.0,0.0}};
 	FILE *log_file = fopen(filename, "r");
@@ -121,8 +182,7 @@ load_poses(char *filename, vector<pair<carmen_pose_3D_t, double> > &poses, vecto
 	while(!feof(log_file))
 	{
 		//image x y z w p q r roll pitch yaw timestamp
-		fscanf(log_file, "%s %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
-				imagename,
+		fscanf(log_file, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %s %s\n",
 				&pose.position.x,
 				&pose.position.y,
 				&pose.position.z,
@@ -130,10 +190,12 @@ load_poses(char *filename, vector<pair<carmen_pose_3D_t, double> > &poses, vecto
 				&pose.orientation.roll,
 				&pose.orientation.pitch,
 				&pose.orientation.yaw,
-				&timestamp);
+				&timestamp,
+				imagename_l,
+				imagename_r);
 
 		poses.push_back(pair<carmen_pose_3D_t, double>(pose, timestamp));
-		frames.push_back(pair<string, double>(string(imagename), timestamp));
+		frames.push_back(pair<string, double>(string(imagename_l), timestamp));
 	}
 
 	fclose(log_file);
@@ -210,27 +272,21 @@ void
 copy_image (carmen_localize_neural_imagepos_message *message, string imagename)
 {
 	string imagepath = string("/dados/ufes/") + imagename;
-	IplImage *img = cvLoadImage (imagepath.c_str(), CV_LOAD_IMAGE_ANYCOLOR);
+	cv::Mat img = cv::imread (imagepath.c_str(), CV_LOAD_IMAGE_COLOR);
 
-	message->height = img->height;
-	message->width = img->width;
-	message->size = 3 * img->height * img->width;
+	message->height = img.rows;
+	message->width = img.cols;
+	message->size = 3 * message->height * message->width;
 
 	if (message->image_data == NULL)
 		message->image_data = (char *) calloc (message->size, sizeof(char));
 
-	for(int i = 0; i < img->height; i++)
+	for(int i = 0; i < (message->height * message->width); i++)
 	{
-		for(int j = 0; j < img->width; j++)
-		{
-			int p_msg = 3 * (i * img->width + j);
-			int p_img = (i * img->widthStep) + (3 * j);
-
-			// opencv image is BGR and I want my image in rgb format ...
-			message->image_data [p_msg + 2] = img->imageData[p_img + 0];
-			message->image_data [p_msg + 1] = img->imageData[p_img + 1];
-			message->image_data [p_msg + 0] = img->imageData[p_img + 2];
-		}
+		// opencv image is BGR and I want my image in rgb format ...
+		message->image_data [3 * i + 2] = (uchar)img.data[3 * i + 0];
+		message->image_data [3 * i + 1] = (uchar)img.data[3 * i + 1];
+		message->image_data [3 * i + 0] = (uchar)img.data[3 * i + 2];
 	}
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -356,10 +412,12 @@ carmen_bumblebee_basic_stereoimage_message_handler(carmen_bumblebee_basic_stereo
 	if (delta_pose_true.position.x < 0.0)
 		return;
 
-	carmen_pose_3D_t delta_pose_curr = delta_pose_true;
-	//delta_pose_curr = run_cnn_inference(camera_message_base, camera_message_curr);
+	carmen_pose_3D_t delta_pose_curr = forward_network(camera_message_curr, camera_message_base);
+	delta_pose_curr = camera_carmen_transform(delta_pose_curr);
 
 	camera_pose_curr = direct_transform(camera_pose_base, delta_pose_curr);
+	camera_pose_base.position.z = 1.7;
+	camera_pose_curr.position.z = 1.7;
 
 	carmen_point_t delta_pose_error = {
 			(delta_pose_curr.position.x-delta_pose_true.position.x),
@@ -408,7 +466,7 @@ shutdown_module(int signo)
 	if (signo == SIGINT)
 	{
 		carmen_ipc_disconnect();
-		finalize_tensorflow();
+		finalize_network();
 		printf("publish: disconnected.\n");
 
 		exit(0);
@@ -558,7 +616,7 @@ main(int argc, char **argv)
 
 	initialize_transformations();
 
-	initialize_tensorflow(argv[4]);
+	initialize_network(argv[4]);
 
 	load_poses(argv[2], camera_poses_base_array, camera_frames_base_array);
 	load_poses(argv[3], camera_poses_curr_array, camera_frames_curr_array);
