@@ -72,7 +72,7 @@ find_velodyne_most_sync_with_cam(double bumblebee_timestamp)
 
 
 void
-build_moving_objects_message(std::vector<std::vector<carmen_vector_3D_t> > cluster_list)
+build_moving_objects_message(std::vector<std::vector<carmen_vector_3D_t> > cluster_list, const std::vector<int> &cluster_tracking_id)
 {
 	moving_objects_point_clouds_message.num_point_clouds = cluster_list.size();
 	moving_objects_point_clouds_message.point_clouds = (t_point_cloud_struct *) (malloc(moving_objects_point_clouds_message.num_point_clouds * sizeof(t_point_cloud_struct)));
@@ -115,7 +115,7 @@ build_moving_objects_message(std::vector<std::vector<carmen_vector_3D_t> > clust
 		moving_objects_point_clouds_message.point_clouds[i].model_features.green = 0.0;
 		moving_objects_point_clouds_message.point_clouds[i].model_features.blue = 0.8;
 		moving_objects_point_clouds_message.point_clouds[i].model_features.model_name = (char *) "car";
-		moving_objects_point_clouds_message.point_clouds[i].num_associated = 0;
+		moving_objects_point_clouds_message.point_clouds[i].num_associated = cluster_tracking_id.at(i);
 
 		// fill the points
 		moving_objects_point_clouds_message.point_clouds[i].point_size = cluster_list[i].size();
@@ -228,8 +228,9 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 	cv::cvtColor(*src_image, *rgb_image, cv::COLOR_RGB2BGR);
 
 	std::vector<bounding_box> bouding_boxes_list;
+    std::vector<int> cluster_tracking_id;
 
-	// detect the objects in image
+    // detect the objects in image
 #if USE_DETECTNET
 
 	//crop image
@@ -271,6 +272,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 
 	//0.3 threshold is good, more than this and it starts to miss some obstacles (very bad)
     std::vector<bbox_t> predictions = darknet->detect(*src_image, 0.3);
+    //TODO: change this to the better tracker
     predictions = darknet->tracking(predictions); /*< Coment this line if object tracking is not necessary */
 
     /* The bouding box returned by the detector is different than what is 
@@ -286,6 +288,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
         bbox.pt2.y = box.y + box.h;
 
         bouding_boxes_list.push_back(bbox);
+
+        cluster_tracking_id.push_back(box.track_id); //TODO: change this to the better tracker
     }
 
 #endif
@@ -299,7 +303,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 
 	end_time = carmen_get_time();
 
-	build_moving_objects_message(cluster_list);
+	build_moving_objects_message(cluster_list, cluster_tracking_id);
 	publish_moving_objects(image_msg->timestamp);
 
 	delta_t = end_time - start_time;
@@ -332,6 +336,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 //		sprintf(ponto_y, "y = %.3f", box_centroid.y);
 //		sprintf(ponto_z, "z = %.3f", box_centroid.z);
 //		sprintf(confianca, "%.3f", result[5*i + 4]);
+        sprintf(confianca, "%.3f", predictions.at(i).prob);
 
 		cv::rectangle(*rgb_image,
 				cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y),
