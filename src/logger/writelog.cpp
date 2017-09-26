@@ -40,6 +40,9 @@
 #define GET_SHORT_THIRD_NIBBLE(x) (int_to_nibble_hex[(x >> 8) & 0xf])
 #define GET_SHORT_FOURTH_NIBBLE(x) (int_to_nibble_hex[(x >> 12) & 0xf])
 
+// Usar PNG++ salvar log
+//#define usepng
+
 char *hex_char_image = NULL; // Stores the image as a string of nibbles, i.e., a hexadecimal digit ([0-9a-fA-F])
 char *hex_char_image_kinect = NULL;
 char *hex_char_depth_kinect = NULL;
@@ -1026,7 +1029,7 @@ void carmen_logwrite_write_bumblebee_basic_steroimage(
 
 unsigned char* read_raw_image(const char* filename)
 {
-    int i;
+    //int i;
     FILE* f = fopen(filename, "rb");
     //unsigned char info[54];
     //fread(info, sizeof(unsigned char), 54, f); // read the 54-byte header
@@ -1052,8 +1055,7 @@ unsigned char* read_raw_image(const char* filename)
 
 void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(
 		carmen_bumblebee_basic_stereoimage_message* msg, int bumblebee_num,
-		carmen_FILE *outfile, double timestamp, int frequency,
-		char *log_filename)
+		carmen_FILE *outfile, double timestamp, int frequency, char *log_filename)
 {
 	const double HIGH_LEVEL_SUBDIR_TIME = 100.0 * 100.0; // new each 100 x 100 seconds
 	const double LOW_LEVEL_SUBDIR_TIME = 100.0; // new each 100 seconds
@@ -1084,7 +1086,7 @@ void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(
 
 	if ((frame_number % frequency) == 0)
 	{
-		if (1)          //bumblebee_num == 4) // ZED Camera
+		if (bumblebee_num == 4) // ZED Camera
 		{
 //			  int width;                    /**<The x dimension of the image in pixels. */
 //			  int height;                   /**<The y dimension of the image in pixels. */
@@ -1095,30 +1097,19 @@ void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(
 //			  double timestamp;
 //			  char *host;
 
-			sprintf(path, "%s/%lf.bb%d.png", subdir, msg->timestamp,
-					bumblebee_num);
+	double init_time = carmen_get_time();
+	#ifdef usepng
 			char pathr [1030];
 			char pathl [1030];
-			sprintf(pathr, "%s/%lf.bb%d_r.png", subdir, msg->timestamp,
-								bumblebee_num);
-			sprintf(pathl, "%s/%lf.bb%d_l.png", subdir, msg->timestamp,
-								bumblebee_num);
-			static cv::Mat dest;
-			//codigo comentado para o png++
+			sprintf(pathr, "%s/%lf.bb%d_r.png", subdir, msg->timestamp, bumblebee_num);
+			sprintf(pathl, "%s/%lf.bb%d_l.png", subdir, msg->timestamp, bumblebee_num);
+
 			png::image<png::rgb_pixel> pngRight(msg->width, msg->height);
 			png::image<png::rgb_pixel> pngLeft(msg->width, msg->height);
 
 			static int first_time = 1;
 			if (first_time)
 			{
-				/*cv::Mat left = cv::Mat(cv::Size(msg->width, msg->height),
-				CV_8UC3, msg->raw_left);
-				cv::Mat right = cv::Mat(cv::Size(msg->width, msg->height),
-				CV_8UC3, msg->raw_right);
-
-				cv::hconcat(left, right, dest);
-				first_time = 0;*/
-
 				png::uint_32 i = 0;
 
 				for (png::uint_32 y = 0; y < pngLeft.get_height(); ++y)
@@ -1133,9 +1124,22 @@ void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(
 					 }
 				}
 			}
-			//cv::imwrite(path, dest);
 			pngRight.write(pathr);
-			pngLeft.write(pathl);*/
+			pngLeft.write(pathl);
+	#else
+			sprintf(path, "%s/%lf.bb%d.png", subdir, msg->timestamp, bumblebee_num);
+			static cv::Mat dest;
+
+//			static int first_time = 1;
+			//if (first_time)
+
+			cv::Mat left = cv::Mat(cv::Size(msg->width, msg->height), CV_8UC3, msg->raw_left);
+			cv::Mat right = cv::Mat(cv::Size(msg->width, msg->height), CV_8UC3, msg->raw_right);
+
+			cv::hconcat(left, right, dest);
+			cv::imwrite(path, dest);
+			//printf("%lf\n", init_time - carmen_get_time());
+	#endif
 		}
 		else
 		{
@@ -1165,6 +1169,7 @@ void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(
 
 	frame_number++;
 }
+
 
 void carmen_logwrite_write_web_cam_message(carmen_web_cam_message* msg,
 		carmen_FILE *outfile, double timestamp)
