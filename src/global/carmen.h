@@ -183,6 +183,10 @@ extern "C" {
 #include <carmen/ford_escape_hybrid_messages.h>
 #include <carmen/ford_escape_hybrid_interface.h>
 
+#include <carmen/can_dump_messages.h>
+#include <carmen/can_dump_interface.h>
+
+
 #ifdef CARMEN_MEMORY_DEBUG
 #include <dmalloc.h>
 #endif

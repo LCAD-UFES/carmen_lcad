@@ -36,7 +36,7 @@
 #include <control.h>
 #include "ford_escape_hybrid.h"
 
-
+#define FORD_ESCAPE_COMMUNICATION_DUMP
 
 static ford_escape_hybrid_config_t *ford_escape_hybrid_config = NULL;
 
@@ -285,6 +285,14 @@ void
 publish_ford_escape_throttle_and_brakes_command(OjCmpt XGV_CCU)
 {
 	send_set_wrench_efforts_message(XGV_CCU);
+
+#ifdef	FORD_ESCAPE_COMMUNICATION_DUMP
+	FILE *caco = fopen("ford_dump.txt", "a");
+	fprintf(caco, "%lf g_throttle_command %lf g_steering_command %lf g_brakes_command %lf\n", carmen_get_time(),
+			g_throttle_command, g_steering_command, g_brakes_command);
+	fflush(caco);
+	fclose(caco);
+#endif
 }
 
 
@@ -292,6 +300,14 @@ void
 publish_ford_escape_turn_horn_and_headlight_signals(OjCmpt XGV_CCU)
 {
 	send_set_signals_message(XGV_CCU);
+
+#ifdef	FORD_ESCAPE_COMMUNICATION_DUMP
+	FILE *caco = fopen("ford_dump.txt", "a");
+	fprintf(caco, "%lf g_turn_signal_command %d g_horn_status_command %d g_headlights_status_command %d\n", carmen_get_time(),
+			g_turn_signal_command, g_horn_status_command, g_headlights_status_command);
+	fflush(caco);
+	fclose(caco);
+#endif
 }
 
 
@@ -299,6 +315,14 @@ void
 publish_ford_escape_gear_command(OjCmpt XGV_CCU)
 {
 	send_set_discrete_devices_message(XGV_CCU);
+
+#ifdef	FORD_ESCAPE_COMMUNICATION_DUMP
+	FILE *caco = fopen("ford_dump.txt", "a");
+	fprintf(caco, "%lf presenceVector %d g_gear_command %d\n", carmen_get_time(),
+			4, g_gear_command);
+	fflush(caco);
+	fclose(caco);
+#endif
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -464,6 +488,12 @@ torc_report_velocity_state_message_handler(OjCmpt XGV_CCU __attribute__ ((unused
 	{
 		// A media da velocidade das radas trazeiras ee mais correta. A velocidade abaixo ee a media das rodas dianteiras mais um ruido estranho...
 		// g_XGV_velocity = reportVelocityState->velocityXMps;
+#ifdef	FORD_ESCAPE_COMMUNICATION_DUMP
+		FILE *caco = fopen("ford_dump.txt", "a");
+		fprintf(caco, "%lf velocityXMps %lf\n", carmen_get_time(), reportVelocityState->velocityXMps);
+		fflush(caco);
+		fclose(caco);
+#endif
 		
 		reportVelocityStateMessageDestroy(reportVelocityState);
 	}
@@ -563,6 +593,12 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 	reportCurvature = reportCurvatureMessageFromJausMessage(curvature_message);
 	if (reportCurvature)
 	{
+#ifdef	FORD_ESCAPE_COMMUNICATION_DUMP
+		FILE *caco = fopen("ford_dump.txt", "a");
+		fprintf(caco, "%lf atanOfCurrentCurvature %lf\n", carmen_get_time(), reportCurvature->atanOfCurrentCurvature);
+		fflush(caco);
+		fclose(caco);
+#endif
 		g_XGV_atan_curvature = reportCurvature->atanOfCurrentCurvature; // @@@ Alberto: a curvatura do carro vem ao contrario de carmen
 		//g_XGV_atan_curvature += get_curvature_from_phi(carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.05)), ford_escape_hybrid_config);
 
@@ -698,6 +734,13 @@ torc_report_wheels_speed_message_handler(OjCmpt XGV_CCU __attribute__ ((unused))
 		g_XGV_right_rear_wheel_speed = reportWheelsSpeed->rightRear;
 		g_XGV_left_rear_wheel_speed = reportWheelsSpeed->leftRear;
 
+#ifdef	FORD_ESCAPE_COMMUNICATION_DUMP
+		FILE *caco = fopen("ford_dump.txt", "a");
+		fprintf(caco, "%lf rightFront %lf leftFront %lf rightRear %lf leftRear %lf\n", carmen_get_time(),
+				reportWheelsSpeed->rightFront, reportWheelsSpeed->leftFront, reportWheelsSpeed->rightRear, reportWheelsSpeed->leftRear);
+		fflush(caco);
+		fclose(caco);
+#endif
 		g_XGV_velocity = (g_XGV_right_rear_wheel_speed + g_XGV_left_rear_wheel_speed) / 2.0;
 
 //		printf("WHEELS (RF, LF, RR, LR, ts): %lf, %lf, %lf, %lf, %lf\n", 
@@ -724,6 +767,13 @@ torc_report_whrench_effort_message_handler(OjCmpt XGV_CCU __attribute__ ((unused
 		g_XGV_throttle = reportWrenchEffort->propulsiveLinearEffortXPercent;
 		g_XGV_steering = reportWrenchEffort->propulsiveRotationalEffortZPercent;
 		g_XGV_brakes = reportWrenchEffort->resistiveLinearEffortXPercent;
+#ifdef	FORD_ESCAPE_COMMUNICATION_DUMP
+		FILE *caco = fopen("ford_dump.txt", "a");
+		fprintf(caco, "%lf propulsiveLinearEffortXPercent %lf propulsiveRotationalEffortZPercent %lf resistiveLinearEffortXPercent %lf\n", carmen_get_time(),
+				reportWrenchEffort->propulsiveLinearEffortXPercent, reportWrenchEffort->propulsiveRotationalEffortZPercent, reportWrenchEffort->resistiveLinearEffortXPercent);
+		fflush(caco);
+		fclose(caco);
+#endif
 		carmen_verbose("throttle %.2f\tsteering %.2f\tbrakes %.2f\n", g_XGV_throttle, g_XGV_steering, g_XGV_brakes);
 
 		reportWrenchEffortMessageDestroy(reportWrenchEffort);
@@ -747,6 +797,13 @@ torc_report_discrete_devices_message_handler(OjCmpt XGV_CCU __attribute__ ((unus
 		g_XGV_main_fuel_supply = (int) reportDiscreteDevices->mainFuelSupply;
 		g_XGV_parking_brake = (int) reportDiscreteDevices->parkingBrake;
 		g_XGV_gear = (int) reportDiscreteDevices->gear;
+#ifdef	FORD_ESCAPE_COMMUNICATION_DUMP
+		FILE *caco = fopen("ford_dump.txt", "a");
+		fprintf(caco, "%lf mainPropulsion %d mainFuelSupply %d parkingBrake %d\n", carmen_get_time(),
+				(int) reportDiscreteDevices->mainPropulsion, (int) reportDiscreteDevices->mainFuelSupply, (int) reportDiscreteDevices->parkingBrake);
+		fflush(caco);
+		fclose(caco);
+#endif
 		carmen_verbose("propulsion %d\tfuel_supply %d\tparking_brake %d\tgear %d\n",
 				g_XGV_main_propulsion, g_XGV_main_fuel_supply,
 				g_XGV_parking_brake, g_XGV_gear);
@@ -771,6 +828,13 @@ torc_report_signals_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), Jau
 		g_XGV_turn_signal = reportSignals->turnSignal;
 		g_XGV_horn_status = reportSignals->hornStatus;
 		g_XGV_headlights_status = reportSignals->headlightsStatus;
+#ifdef	FORD_ESCAPE_COMMUNICATION_DUMP
+		FILE *caco = fopen("ford_dump.txt", "a");
+		fprintf(caco, "%lf turnSignal %d hornStatus %d headlightsStatus %d\n", carmen_get_time(),
+				reportSignals->turnSignal, reportSignals->hornStatus, reportSignals->headlightsStatus);
+		fflush(caco);
+		fclose(caco);
+#endif
 		carmen_verbose("signal %d\thorn %d\theadlights %d\n", g_XGV_turn_signal, g_XGV_horn_status, g_XGV_headlights_status);
 
 		reportSignalsMessageDestroy(reportSignals);
@@ -792,6 +856,13 @@ torc_report_component_status_message_handler(OjCmpt XGV_CCU __attribute__ ((unus
 	{
 		// bits 0-15: reserved, bits 16-31: see page 62 of ByWire XGV User Manual, Version 1.5.
 		g_XGV_component_status = reportComponentStatus->secondaryStatusCode;
+#ifdef	FORD_ESCAPE_COMMUNICATION_DUMP
+		FILE *caco = fopen("ford_dump.txt", "a");
+		fprintf(caco, "%lf secondaryStatusCode 0x%x\n", carmen_get_time(),
+				reportComponentStatus->secondaryStatusCode);
+		fflush(caco);
+		fclose(caco);
+#endif
 		reportComponentStatusMessageDestroy(reportComponentStatus);
 	}
 	else
@@ -817,6 +888,13 @@ torc_report_error_count_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)),
 			carmen_verbose("error[%d]: %d\t",i,g_XGV_error[i]);
 		}
 		carmen_verbose("\n");
+#ifdef	FORD_ESCAPE_COMMUNICATION_DUMP
+		FILE *caco = fopen("ford_dump.txt", "a");
+		fprintf(caco, "%lf numberOfErrors %d\n", carmen_get_time(),
+				reportErrorCount->numberOfErrors);
+		fflush(caco);
+		fclose(caco);
+#endif
 		reportErrorCountMessageDestroy(reportErrorCount);
 	}
 	else

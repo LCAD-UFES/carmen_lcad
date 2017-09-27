@@ -31,7 +31,6 @@ libcan_dump_interface.a: can_dump_interface.o
 
 can_dump: can_dump_main.o libcan_dump_interface.a
 
-
 # rules
 
 include ../Makefile.rules

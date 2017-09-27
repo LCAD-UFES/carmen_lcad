@@ -60,33 +60,35 @@ static int log_bumblebee_frames_to_save = 1;
 static int log_bumblebee_save_to_file = 0;
 static int log_velodyne_save_to_file = 0;
 static int log_ford_escape_status = 0;
+static int log_can_dump = 0;
 
 void get_logger_params(int argc, char** argv) {
 
   int num_items;
 
   carmen_param_t param_list[] = {
-    {"logger", "odometry",    		CARMEN_PARAM_ONOFF, &log_odometry, 0, NULL},
-    {"logger", "visual_odometry",	CARMEN_PARAM_ONOFF, &log_visual_odometry, 0, NULL},
-    {"logger", "laser",       		CARMEN_PARAM_ONOFF, &log_laser, 0, NULL},
-    {"logger", "velodyne",    		CARMEN_PARAM_ONOFF, &log_velodyne, 0, NULL},
-    {"logger", "robot_laser", 		CARMEN_PARAM_ONOFF, &log_robot_laser, 0, NULL},
-    {"logger", "localize",    		CARMEN_PARAM_ONOFF, &log_localize, 0, NULL},
-    {"logger", "params",      		CARMEN_PARAM_ONOFF, &log_params, 0, NULL},
-    {"logger", "simulator",   		CARMEN_PARAM_ONOFF, &log_simulator, 0, NULL},
-    {"logger", "gps",         		CARMEN_PARAM_ONOFF, &log_gps, 0, NULL},
-    {"logger", "imu",         		CARMEN_PARAM_ONOFF, &log_imu, 0, NULL},
-    {"logger", "motioncmds",  		CARMEN_PARAM_ONOFF, &log_motioncmds, 0, NULL},
-    {"logger", "kinect",      		CARMEN_PARAM_ONOFF, &log_kinect, 0, NULL},
-    {"logger", "xsens",       		CARMEN_PARAM_ONOFF, &log_xsens, 0, NULL},
-    {"logger", "xsens_mtig",  		CARMEN_PARAM_ONOFF, &log_xsens_mtig, 0, NULL},
-    {"logger", "bumblebee",   		CARMEN_PARAM_ONOFF, &log_bumblebee, 0, NULL},
-    {"logger", "web_cam",   		CARMEN_PARAM_ONOFF, &log_web_cam, 0, NULL},
+    {"logger", "odometry",    			CARMEN_PARAM_ONOFF, &log_odometry, 0, NULL},
+    {"logger", "visual_odometry",		CARMEN_PARAM_ONOFF, &log_visual_odometry, 0, NULL},
+    {"logger", "laser",       			CARMEN_PARAM_ONOFF, &log_laser, 0, NULL},
+    {"logger", "velodyne",    			CARMEN_PARAM_ONOFF, &log_velodyne, 0, NULL},
+    {"logger", "robot_laser", 			CARMEN_PARAM_ONOFF, &log_robot_laser, 0, NULL},
+    {"logger", "localize",    			CARMEN_PARAM_ONOFF, &log_localize, 0, NULL},
+    {"logger", "params",      			CARMEN_PARAM_ONOFF, &log_params, 0, NULL},
+    {"logger", "simulator",   			CARMEN_PARAM_ONOFF, &log_simulator, 0, NULL},
+    {"logger", "gps",         			CARMEN_PARAM_ONOFF, &log_gps, 0, NULL},
+    {"logger", "imu",         			CARMEN_PARAM_ONOFF, &log_imu, 0, NULL},
+    {"logger", "motioncmds",  			CARMEN_PARAM_ONOFF, &log_motioncmds, 0, NULL},
+    {"logger", "kinect",      			CARMEN_PARAM_ONOFF, &log_kinect, 0, NULL},
+    {"logger", "xsens",       			CARMEN_PARAM_ONOFF, &log_xsens, 0, NULL},
+    {"logger", "xsens_mtig",  			CARMEN_PARAM_ONOFF, &log_xsens_mtig, 0, NULL},
+    {"logger", "bumblebee",   			CARMEN_PARAM_ONOFF, &log_bumblebee, 0, NULL},
+    {"logger", "web_cam",   			CARMEN_PARAM_ONOFF, &log_web_cam, 0, NULL},
     {"logger", "bumblebee_frames_to_save", CARMEN_PARAM_INT, &log_bumblebee_frames_to_save, 0, NULL},
-    {"logger", "sonar",       		CARMEN_PARAM_ONOFF, &log_sonar, 0, NULL},
+    {"logger", "sonar",       			CARMEN_PARAM_ONOFF, &log_sonar, 0, NULL},
     {"logger", "velodyne_save_to_file",	CARMEN_PARAM_ONOFF, &log_velodyne_save_to_file, 0, NULL},
     {"logger", "bumblebee_save_to_file", CARMEN_PARAM_ONOFF, &log_bumblebee_save_to_file, 0, NULL},
-    {"logger", "ford_escape_status", CARMEN_PARAM_ONOFF, &log_ford_escape_status, 0, NULL},
+    {"logger", "ford_escape_status", 	CARMEN_PARAM_ONOFF, &log_ford_escape_status, 0, NULL},
+    {"logger", "can_dump", 				CARMEN_PARAM_ONOFF, &log_can_dump, 0, NULL},
   };
 
   num_items = sizeof(param_list)/sizeof(param_list[0]);
@@ -480,6 +482,12 @@ ford_escape_status_message_handler(carmen_ford_escape_status_message *message)
 }
 
 void
+can_dump_message_handler(carmen_can_dump_can_line_message *message)
+{
+	carmen_logwrite_write_carmen_can_dump_can_line_message(message, outfile, carmen_get_time() - logger_starttime);
+}
+
+void
 register_ipc_messages(void)
 {
   carmen_subscribe_message(CARMEN_LOGGER_SYNC_NAME, CARMEN_LOGGER_SYNC_FMT,
@@ -793,6 +801,13 @@ int main(int argc, char **argv)
   {
 	  carmen_ford_escape_subscribe_status_message(NULL,
 		 (carmen_handler_t) ford_escape_status_message_handler,
+		 CARMEN_SUBSCRIBE_ALL);
+  }
+
+  if (log_can_dump)
+  {
+	  carmen_can_dump_subscribe_can_line_message(NULL,
+		 (carmen_handler_t) can_dump_message_handler,
 		 CARMEN_SUBSCRIBE_ALL);
   }
 
