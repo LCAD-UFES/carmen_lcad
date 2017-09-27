@@ -6,18 +6,25 @@
 #include <lua.hpp>
 #include <luaT.h>
 #include <TH/TH.h>
+#include <THC/THC.h>
 #include "localize_neural_torch.h"
 
 
 class TorchModel
 {
 	lua_State *state;
+	THCState *state_gpu;
+	THCudaTensor *keytensor_gpu;
 	THFloatTensor *keytensor;
+	THCudaTensor *curtensor_gpu;
 	THFloatTensor *curtensor;
 
 public:
 	TorchModel (std::string const &torch_config, std::string const& model_path): state(luaL_newstate())
-{
+	{
+		state_gpu = (THCState*)malloc(sizeof(THCState));
+		THCudaInit(state_gpu);
+
 		if (!state)
 			throw std::runtime_error("failed to initialize Lua");
 		luaL_openlibs(state);
@@ -29,19 +36,25 @@ public:
 		lua_pushstring(state, model_path.c_str());
 		if (lua_pcall(state, 1, 0, 0) != 0)
 			throw std::runtime_error("fail to load model");
+
+		allocate();
 	}
 
 	~TorchModel ()
 	{
+		release();
+		THCudaShutdown(state_gpu);
 		lua_close(state);
 	}
 
 	void
 	allocate ()
 	{
+		keytensor_gpu = THCudaTensor_newWithSize4d(state_gpu, 1, 3, 155, 320);
 		keytensor = THFloatTensor_newWithSize4d(1, 3, 155, 320);
 		if (!THFloatTensor_isContiguous(keytensor))
 			throw std::runtime_error("Torch tensor is not contiguous.");
+		curtensor_gpu = THCudaTensor_newWithSize4d(state_gpu, 1, 3, 155, 320);
 		curtensor = THFloatTensor_newWithSize4d(1, 3, 155, 320);
 		if (!THFloatTensor_isContiguous(curtensor))
 			throw std::runtime_error("Torch tensor is not contiguous.");
@@ -52,6 +65,8 @@ public:
 	{
 		THFloatTensor_free(curtensor);
 		THFloatTensor_free(keytensor);
+		THCudaTensor_free(state_gpu, keytensor_gpu);
+		THCudaTensor_free(state_gpu, curtensor_gpu);
 	}
 
 	void
@@ -70,7 +85,6 @@ public:
 	size_byte(const THByteTensor * otensor)
 	{
 		long dim = THByteTensor_nDimension(otensor);
-		// get output size
 		size_t sz = 1;
 		for (long i = 0; i < dim; ++i)
 		{
@@ -83,7 +97,6 @@ public:
 	size_float(const THFloatTensor * otensor)
 	{
 		long dim = THFloatTensor_nDimension(otensor);
-		// get output size
 		size_t sz = 1;
 		for (long i = 0; i < dim; ++i)
 		{
@@ -95,15 +108,16 @@ public:
 	std::vector<float>
 	forward (IplImage *curframe, IplImage *keyframe)
 	{
-		allocate();
-
 		convert(curframe, curtensor);
 		convert(keyframe, keytensor);
 
+		THCudaTensor_copyFloat(state_gpu, keytensor_gpu, keytensor);
+		THCudaTensor_copyFloat(state_gpu, curtensor_gpu, curtensor);
+
 		// call "forward" in lua
 		lua_getglobal(state, "forward");
-		luaT_pushudata(state, (void*)curtensor, "torch.FloatTensor");
-		luaT_pushudata(state, (void*)keytensor, "torch.FloatTensor");
+		luaT_pushudata(state, (void*)curtensor_gpu, "torch.CudaTensor");
+		luaT_pushudata(state, (void*)keytensor_gpu, "torch.CudaTensor");
 		if (lua_pcall(state, 2, 1, 0) != 0)
 		{
 			throw std::runtime_error(lua_tostring(state, -1));
@@ -121,8 +135,6 @@ public:
 			output.at(i) = ptr[i];
 		}
 		lua_pop(state, 1);
-
-		release();
 
 		return output;
 	}
