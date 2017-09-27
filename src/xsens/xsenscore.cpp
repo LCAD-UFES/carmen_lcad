@@ -121,7 +121,7 @@ int doHardwareScan(xsens::Cmt3 &cmt3, CmtDeviceId deviceIds[], char* xsens_dev)
 	//open the port which the device is connected to and connect at the device's baudrate.
 	//for(int p = 0; p < (int)portCount; p++){
 		//res = cmt3.openPort(portInfo[p].m_portName, portInfo[p].m_baudrate);
-		res = cmt3.openPort(xsens_dev, B230400);
+		res = cmt3.openPort(xsens_dev, B460800); //B230400
 		EXIT_ON_ERROR(res,"doHardwareScan() call to cmt3.OpenPort (is the baudrate correct?)");  
 
 		if(res == XRV_OK)
@@ -233,13 +233,15 @@ void doMtSettings(xsens::Cmt3 &cmt3, CmtOutputMode &mode, CmtOutputSettings &set
   sampleFreq = cmt3.getSampleFrequency();
   
   // set the device output mode for the device(s)
-  printf("Configuring your mode selection\n");
+//  printf("Configuring your mode selection\n");
   
   for (unsigned int i = 0; i < mtCount; i++) 
   {
+//	  printf("c %d, i %d\n", (int) mtCount, (int) i);
     CmtDeviceMode deviceMode(mode, settings, sampleFreq);
     if ((deviceIds[i] & 0xFFF00000) != 0x00500000) 
     {
+//    	printf("entrei\n");
       // not an MTi-G, remove all GPS related stuff
       deviceMode.m_outputMode &= 0xFF0F;
     }

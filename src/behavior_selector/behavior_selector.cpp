@@ -135,40 +135,42 @@ try_avoiding_obstacle(int rddf_pose_index, double circle_radius, carmen_rddf_roa
 {
 	int rddf_pose_hit_obstacle = trajectory_pose_hit_obstacle(rddf->poses[rddf_pose_index], circle_radius, current_map, &robot_config);
 
-	if (rddf_pose_hit_obstacle == 1)
-	{
-		// try moving goal left
-		for (double displacement = 0.0; displacement < circle_radius; displacement += 0.2)
-		{
-			carmen_ackerman_traj_point_t displaced_rddf_pose = rddf->poses[rddf_pose_index];
-			displaced_rddf_pose.x = displaced_rddf_pose.x + displacement * cos(displaced_rddf_pose.theta + M_PI / 2.0);
-			displaced_rddf_pose.y = displaced_rddf_pose.y + displacement * sin(displaced_rddf_pose.theta + M_PI / 2.0);
-			if (!trajectory_pose_hit_obstacle(displaced_rddf_pose, circle_radius, current_map, &robot_config))
-			{
-				rddf->poses[rddf_pose_index] = displaced_rddf_pose;
-				rddf_pose_hit_obstacle = 0;
-				break;
-			}
-		}
-		if (rddf_pose_hit_obstacle)
-		{
-			// try moving goal right
-			for (double displacement = 0.0; displacement < circle_radius; displacement += 0.2)
-			{
-				carmen_ackerman_traj_point_t displaced_rddf_pose = rddf->poses[rddf_pose_index];
-				displaced_rddf_pose.x = displaced_rddf_pose.x + displacement * cos(displaced_rddf_pose.theta - M_PI / 2.0);
-				displaced_rddf_pose.y = displaced_rddf_pose.y + displacement * sin(displaced_rddf_pose.theta - M_PI / 2.0);
-				if (!trajectory_pose_hit_obstacle(displaced_rddf_pose, circle_radius, current_map, &robot_config))
-				{
-					rddf->poses[rddf_pose_index] = displaced_rddf_pose;
-					rddf_pose_hit_obstacle = 0;
-					break;
-				}
-			}
-		}
-	}
-
 	return (rddf_pose_hit_obstacle);
+
+//	if (rddf_pose_hit_obstacle == 1)
+//	{
+//		// try moving goal left
+//		for (double displacement = 0.0; displacement < circle_radius; displacement += 0.2)
+//		{
+//			carmen_ackerman_traj_point_t displaced_rddf_pose = rddf->poses[rddf_pose_index];
+//			displaced_rddf_pose.x = displaced_rddf_pose.x + displacement * cos(displaced_rddf_pose.theta + M_PI / 2.0);
+//			displaced_rddf_pose.y = displaced_rddf_pose.y + displacement * sin(displaced_rddf_pose.theta + M_PI / 2.0);
+//			if (!trajectory_pose_hit_obstacle(displaced_rddf_pose, circle_radius, current_map, &robot_config))
+//			{
+//				rddf->poses[rddf_pose_index] = displaced_rddf_pose;
+//				rddf_pose_hit_obstacle = 0;
+//				break;
+//			}
+//		}
+//		if (rddf_pose_hit_obstacle)
+//		{
+//			// try moving goal right
+//			for (double displacement = 0.0; displacement < circle_radius; displacement += 0.2)
+//			{
+//				carmen_ackerman_traj_point_t displaced_rddf_pose = rddf->poses[rddf_pose_index];
+//				displaced_rddf_pose.x = displaced_rddf_pose.x + displacement * cos(displaced_rddf_pose.theta - M_PI / 2.0);
+//				displaced_rddf_pose.y = displaced_rddf_pose.y + displacement * sin(displaced_rddf_pose.theta - M_PI / 2.0);
+//				if (!trajectory_pose_hit_obstacle(displaced_rddf_pose, circle_radius, current_map, &robot_config))
+//				{
+//					rddf->poses[rddf_pose_index] = displaced_rddf_pose;
+//					rddf_pose_hit_obstacle = 0;
+//					break;
+//				}
+//			}
+//		}
+//	}
+//
+//	return (rddf_pose_hit_obstacle);
 }
 
 

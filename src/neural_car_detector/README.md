@@ -21,7 +21,7 @@ libhdf5-serial-dev protobuf-compiler -y
 $ sudo apt-get install --no-install-recommends libboost-all-dev -y
 
 # BLAS
-$ sudo apt-get install libatlas-base-dev -y
+$ sudo apt-get install libopenblas-dev -y
 
 # Remaining Dependencies
 $ sudo apt-get install libgflags-dev libgoogle-glog-dev liblmdb-dev -y
@@ -38,7 +38,8 @@ $ cd nvcaffe
 $ cp Makefile.config.example Makefile.config
 ```
 
-If using gpu with CUDA capability lower than 3.0 change CUDA_ARCH lines, in Makefile.config to this
+If using gpu with CUDA capability lower than 3.0 change CUDA_ARCH lines, in Makefile.config to this: 
+(use [this](https://developer.nvidia.com/cuda-gpus) list to check your GPU's CUDA capability)
 
 	CUDA_ARCH := -gencode arch=compute_20,code=sm_20 \
 			-gencode arch=compute_20,code=sm_21 \
@@ -84,7 +85,7 @@ $ cd darknet
 ```
 Some options need to be changed in the Makefile. Open it and set these:
 
-* `GPU=1` to build with CUDA to accelerate by using GPU (CUDA should be in `/use/local/cuda`)
+* `GPU=1` to build with CUDA to accelerate by using GPU (CUDA should be in `/usr/local/cuda`)
 * `CUDNN=1` to build with cuDNN v5/v6 to accelerate training by using GPU (cuDNN should be in `/usr/local/cudnn`)
 * `OPENCV=1` to build with OpenCV 3.x/2.4.x - allows to detect on video files and video streams from network cameras or web-cams
 * `OPENMP=1` to build with OpenMP support to accelerate Yolo by using multi-core CPU

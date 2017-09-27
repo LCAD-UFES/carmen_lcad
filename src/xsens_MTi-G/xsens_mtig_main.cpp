@@ -67,8 +67,8 @@ read_parameters(int argc, char **argv)
 // Set user settings in MTi/MTx
 // Assumes initialized global MTComm class
 void 
-doMtSettings(xsens::Cmt3 &cmt3, CmtOutputMode &mode, 
-		     CmtOutputSettings &settings, CmtDeviceId deviceIds[]) 
+doMtSettings(xsens::Cmt3 &cmt3, CmtOutputMode &mode,
+		     CmtOutputSettings &settings, CmtDeviceId deviceIds[])
 {
 	XsensResultValue res;
 	unsigned long mtCount = cmt3.getMtCount();
@@ -77,9 +77,9 @@ doMtSettings(xsens::Cmt3 &cmt3, CmtOutputMode &mode,
 	res = cmt3.gotoConfig();
 	EXIT_ON_ERROR(res,"gotoConfig");
 
-	cmt3.setBaudrate(CMT_BAUD_RATE_230K4);
+	cmt3.setBaudrate(CMT_BAUD_RATE_460K8);
 
-		
+
 	// set the device output mode for the device(s)
 	printf("Configuring your mode selection\n");
 
@@ -87,7 +87,7 @@ doMtSettings(xsens::Cmt3 &cmt3, CmtOutputMode &mode,
 	{
 		CmtScenario scenarios[5];
 		cmt3.getAvailableScenarios(scenarios, deviceIds[i]);
-	
+
 		int scenario_available = 0;
 		printf("\nAvailable scenarios:\n");
 		for(int j=0; j<5; j++)
@@ -102,7 +102,7 @@ doMtSettings(xsens::Cmt3 &cmt3, CmtOutputMode &mode,
 
 		if(scenario_available)
 		{
-			cmt3.setScenario(xsens_scenario, deviceIds[i]);	
+			cmt3.setScenario(xsens_scenario, deviceIds[i]);
 		}
 		else
 		{
@@ -113,13 +113,13 @@ doMtSettings(xsens::Cmt3 &cmt3, CmtOutputMode &mode,
 		uint8_t scenarioVersion = 0;
 		cmt3.getScenario(scenarioType, scenarioVersion, deviceIds[i]);
 
-		printf("\nScenario in use is %d, version %d\n", scenarioType, scenarioVersion);		
-		
+		printf("\nScenario in use is %d, version %d\n", scenarioType, scenarioVersion);
+
 		cmt3.setGpsLeverArm(gps_position, deviceIds[i]);
 
 		unsigned short sampleFreq;
 		sampleFreq = cmt3.getSampleFrequency();
-		
+
 		CmtDeviceMode deviceMode(mode, settings, sampleFreq);
 
 		if ((deviceIds[i] & 0xFFF00000) != 0x01500000) 		// This was modified!!! Original was 0x00500000 but our sensor gives this ID
@@ -152,7 +152,7 @@ int doHardwareScan(xsens::Cmt3 &cmt3, CmtDeviceId deviceIds[])
 	
 	printf("Opening ports...");
 
-	res = cmt3.openPort(xsens_dev, B230400);
+	res = cmt3.openPort(xsens_dev, B460800);
 	EXIT_ON_ERROR(res,"cmtOpenPort");
 
 	if(res == XRV_OK)
