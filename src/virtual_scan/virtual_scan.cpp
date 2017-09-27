@@ -135,21 +135,84 @@ distance_from_point_to_line_segment_vw(int *point_in_trajectory_is, carmen_point
 virtual_scan_box_models_t *
 fit_box_models(virtual_scan_segments_t *virtual_scan_segments)
 {
+// Segment classes
+#define MASS_POINT	0
+#define L_SHAPED	1
+#define	I_SHAPED	2
+
+// Box classes
+#define BUS			0
+#define CAR			1
+#define BIKE		2 // Motorcycles and bicycles
+#define PEDESTRIAN	3
+
+	virtual_scan_box_models_t *virtual_scan_box_models;
+
+	virtual_scan_box_models = (virtual_scan_box_models_t *) malloc(sizeof(virtual_scan_box_models_t));
+	virtual_scan_box_models->num_boxes = virtual_scan_segments->num_segments;
+
 	for (int i = 0; i < virtual_scan_segments->num_segments; i++)
 	{
 		int num_points = virtual_scan_segments->segment[i].num_points;
 		carmen_point_t v = virtual_scan_segments->segment[i].point[0];
 		carmen_point_t w = virtual_scan_segments->segment[i].point[num_points - 1];
 		int segment_type;
-		for (int j = 0; j < virtual_scan_segments->segment[i].num_points; j++)
+		double average_distance = 0.0;
+		double max_distance = 0.0;
+		for (int j = 0; j < num_points; j++)
 		{
 			carmen_point_t point = virtual_scan_segments->segment[i].point[j];
 			int point_type;
 			carmen_point_t point_within_line_segment = distance_from_point_to_line_segment_vw(&point_type, v, w, point);
+			if (point_type == SEGMENT_TOO_SHORT)
+			{
+				segment_type = MASS_POINT;
+				break;
+			}
+			else if (point_type == POINT_WITHIN_SEGMENT)
+			{
+				double distance = DIST2D(point, point_within_line_segment);
+				if (distance > max_distance)
+					max_distance = distance;
+				average_distance += DIST2D(point, point_within_line_segment);
+				if (j >= (num_points - 1))
+				{
+					average_distance = average_distance / (double) (num_points - 2);
+					if (average_distance > DIST2D(v, w) / 7.0)
+						segment_type = L_SHAPED;
+					else
+						segment_type = I_SHAPED;
+				}
+			}
+			else
+				continue;
 		}
+
 		switch (segment_type)
 		{
+			case MASS_POINT:
+//				virtual_scan_box_models->box[i].box_class = ;
+//				virtual_scan_box_models->box[i].x = ;
+//				virtual_scan_box_models->box[i].y = ;
+			break;
 
+			case L_SHAPED:
+//				virtual_scan_box_models->box[i].box_class = ;
+//				virtual_scan_box_models->box[i].x = ;
+//				virtual_scan_box_models->box[i].y = ;
+//				virtual_scan_box_models->box[i].theta = ;
+//				virtual_scan_box_models->box[i].width = ;
+//				virtual_scan_box_models->box[i].length = ;
+			break;
+
+			case I_SHAPED:
+//				virtual_scan_box_models->box[i].box_class = ;
+//				virtual_scan_box_models->box[i].x = ;
+//				virtual_scan_box_models->box[i].y = ;
+//				virtual_scan_box_models->box[i].theta = ;
+//				virtual_scan_box_models->box[i].width = ;
+//				virtual_scan_box_models->box[i].length = ;
+			break;
 		}
 	}
 

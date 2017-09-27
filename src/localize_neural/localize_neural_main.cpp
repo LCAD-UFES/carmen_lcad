@@ -617,6 +617,7 @@ main(int argc, char **argv)
 	initialize_transformations();
 
 	initialize_network(argv[4]);
+	carmen_warn("Network Initialized!");
 
 	load_poses(argv[2], camera_poses_base_array, camera_frames_base_array);
 	load_poses(argv[3], camera_poses_curr_array, camera_frames_curr_array);

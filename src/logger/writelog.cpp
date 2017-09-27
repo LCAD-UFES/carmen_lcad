@@ -1106,7 +1106,6 @@ void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(
 //			  double timestamp;
 //			  char *host;
 
-	double init_time = carmen_get_time();
 	#ifdef usepng
 			char pathr [1030];
 			char pathl [1030];
