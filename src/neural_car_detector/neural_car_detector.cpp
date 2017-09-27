@@ -57,6 +57,40 @@ get_carmen_points(dbscan::Cluster cluster)
 }
 
 
+carmen_moving_object_type
+find_cluster_type_by_obj_id(const std::vector<std::string> &object_names, int obj_id)
+{
+    std::string obj_name;
+
+    if(object_names.size() > obj_id)
+        obj_name = object_names[obj_id];
+
+    if(obj_name.compare("car") == 0)
+        return carmen_moving_object_type::car;
+
+    if(obj_name.compare("bus") == 0)
+        return carmen_moving_object_type::bus;
+
+    if(obj_name.compare("person") == 0)
+        return carmen_moving_object_type::pedestrian;
+
+    return carmen_moving_object_type::other;
+
+}
+
+carmen_vector_3D_t
+compute_velocity(const carmen_vector_3D_t &point1, const carmen_vector_3D_t &point2, double delta_t)
+{
+	carmen_vector_3D_t velocity;
+    double factor = 1 / delta_t;
+
+    velocity.x = (point1.x - point2.x) * factor;
+    velocity.y = (point1.y - point2.y) * factor;
+    velocity.z = (point1.z - point2.z) * factor;
+
+    return velocity;
+}
+
 carmen_vector_3D_t
 translate_point(carmen_vector_3D_t point, carmen_vector_3D_t offset)
 {
