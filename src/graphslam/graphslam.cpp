@@ -533,7 +533,7 @@ save_corrected_vertices(SparseOptimizer *optimizer)
 			printf("graph: %d %lf %lf %lf\n", (int) i, bla_teste[0], bla_teste[1], carmen_radians_to_degrees(bla_teste[2]));
 		}
 
-		fprintf(f, "%lf %lf %lf %lf\n", pose.toVector().data()[0], pose.toVector().data()[1], pose.toVector().data()[2], input_data[i].time);
+		fprintf(f, "%lf %lf %lf %.25lf\n", pose.toVector().data()[0], pose.toVector().data()[1], pose.toVector().data()[2], input_data[i].time);
 		// fprintf(f, "%lf %lf %lf %lf %d\n", vertex_data[0], vertex_data[1], vertex_data[2], input_data[i].time, (int) i);
 		// fprintf(f, "%lf %lf %lf %lf\n", input_data[i].odom[0], input_data[i].odom[1], input_data[i].odom[2], input_data[i].time);
 	}

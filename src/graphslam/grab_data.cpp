@@ -232,7 +232,7 @@ ackerman_prediction(carmen_pose_3D_t *pose, double v, double phi, double dt)
 void
 write_sensor_data(carmen_pose_3D_t dead_reckoning, carmen_pose_3D_t gps_pose, double time, double gps_std, double gps_yaw, int gps_valid)
 {
-	fprintf(output_file, "%lf %lf %lf %lf %lf %lf 0.0 0.0 0.0 %f %lf %lf %d\n",
+	fprintf(output_file, "%lf %lf %lf %lf %lf %lf 0.0 0.0 0.0 %.25lf %lf %lf %d\n",
 		dead_reckoning.position.x, dead_reckoning.position.y, dead_reckoning.orientation.yaw,
 		gps_pose.position.x, gps_pose.position.y, gps_pose.orientation.yaw,
 		time, gps_std, gps_yaw, gps_valid
