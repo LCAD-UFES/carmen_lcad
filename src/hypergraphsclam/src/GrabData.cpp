@@ -1158,7 +1158,7 @@ void GrabData::SaveAllVertices(std::ofstream &os) {
         StampedMessagePtr msg = *it;
 
         // write the estimate id and initial value
-        os << "VERTEX " << msg->id << " " << std::fixed << msg->est[0] << " " << msg->est[1] << " " << msg->est[2] << " " << msg->timestamp << "\n";
+        os << "VERTEX " << msg->id << " " << std::fixed << std::setprecision(6) << msg->est[0] << " " << msg->est[1] << " " << msg->est[2] << " " << std::fixed << std::setprecision(25) << msg->timestamp << "\n";
 
         // go to the next message
         ++it;
