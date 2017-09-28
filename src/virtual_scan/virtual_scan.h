@@ -9,6 +9,11 @@
 #define SRC_VIRTUAL_SCAN_VIRTUAL_SCAN_H_
 
 
+// Segment classes
+#define L_SHAPED	0
+#define	I_SHAPED	1
+#define MASS_POINT	2
+
 typedef struct
 {
 	int num_points;
@@ -32,6 +37,25 @@ typedef struct
 
 typedef struct
 {
+	int segment_class;
+	carmen_point_t first_point;
+	carmen_point_t last_point;
+	double average_distance_from_point_to_line_segment;
+	double maximum_distance_from_point_to_line_segment;
+	carmen_point_t centroid;
+} virtual_scan_segment_features_t;
+
+
+typedef struct
+{
+	int num_segments;
+	virtual_scan_segment_t *segment;
+	virtual_scan_segment_features_t *segment_features;
+} virtual_scan_segment_classes_t;
+
+
+typedef struct
+{
 	int box_class;
 	double x;
 	double y;
@@ -48,7 +72,7 @@ typedef struct
 } virtual_scan_box_models_t;
 
 
-virtual_scan_segments_t *
+virtual_scan_segment_classes_t *
 detect_and_track_moving_objects(carmen_mapper_virtual_scan_message *virtual_scan);
 
 

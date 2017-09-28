@@ -611,6 +611,15 @@ void carmen_logwrite_write_ford_escape_status_message(
 			msg->g_XGV_headlights_status, msg->timestamp, msg->host, timestamp);
 }
 
+void carmen_logwrite_write_carmen_can_dump_can_line_message(
+		carmen_can_dump_can_line_message *msg, carmen_FILE *outfile,
+		double timestamp)
+{
+	carmen_fprintf(outfile,
+			"CAN_DUMP_CAN_LINE_MESSADE %s %lf %s %lf\n",
+			msg->can_line, msg->timestamp, msg->host, timestamp);
+}
+
 void carmen_logwrite_write_robot_ackerman_velocity(
 		carmen_robot_ackerman_velocity_message *msg, carmen_FILE *outfile,
 		double timestamp)
