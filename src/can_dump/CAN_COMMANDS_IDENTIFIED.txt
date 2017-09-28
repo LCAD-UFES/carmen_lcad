@@ -1,0 +1,23 @@
+- can1 (feita para sniffar) estava ligado no torc cabo azul
+
+480 00 C8 59 02 - Esforco para o volante sentido horario
+480 XX XX 5B 01 - Esforco para o volante sentido antihorario
+480 XX XX 5B 01 - Esforco para o volante sentido antihorario
+400 20 XX - Seta esquerda (acionada pelo Torc)
+400 40 XX - Seta direita (acionada pelo Torc)
+400 XX 01 - Buzina ligada
+400 XX 00 - Buzina desligada
+400 1X XX - Algum farol que o can nao controla
+400 X1 XX - Algum farol que o can nao controla
+
+
+- can1 (bypass do volante)
+
+431  00 00 00 00 00 00 00 10 - Seta para esquerda (acionada por humano)
+431  00 00 00 00 00 00 00 20 - Seta para direita (acionada por humano)
+431  00 00 02 00 00 00 00 00 - Porta direita (carona) aberta (acionada por humano)
+431  00 00 04 00 00 00 00 00 - Porta esquerda (motorista) aberta (acionada por humano)
+431  00 00 00 80 00 00 00 00 - Porta direita (trazeira) aberta (acionada por humano)
+431  00 00 01 00 00 00 00 00 - Porta esquerda (trazeira) aberta (acionada por humano)
+431  00 00 00 30 00 00 00 00 - Porta porta malas (vidro) aberta (acionada por humano)
+
