@@ -431,7 +431,7 @@ def map_get_creator_chunk(origin, description):
     size = vchunk_size(CARMEN_MAP_CREATOR_CHUNK)
     creator_chunk += struct.pack('I', size)     # unsigned int: 'I'
     creator_chunk += "CREATOR   " 
-    login = os.getlogin()
+    login = os.getenv('LOGNAME')
     if len(login) == 0:
       login = "UNKNOWN"
     login += (' ' * 10)
