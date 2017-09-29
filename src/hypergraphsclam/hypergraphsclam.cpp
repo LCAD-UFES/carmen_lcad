@@ -484,7 +484,7 @@ save_corrected_vertices(const std::string &output_filename, const std::map<unsig
             }
 
             // write to the output file
-            ofs << std::fixed << std::setprecision(6) << pose[0] << " " << pose[1] << " " << pose[2] << " " << std::fixed << std::setprecision(25) << id_time_map.at((unsigned) v->id()) << "\n";
+            ofs << std::fixed << pose[0] << " " << pose[1] << " " << pose[2] << " " << id_time_map.at((unsigned) v->id()) << "\n";
 
         }
 
