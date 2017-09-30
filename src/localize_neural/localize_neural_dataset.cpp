@@ -34,6 +34,7 @@ static carmen_pose_3D_t car_pose_g;
 static carmen_pose_3D_t camera_pose_g;
 static carmen_pose_3D_t board_pose_g;
 static double between_axis_distance = 0.0;
+static int skip_frames;
 
 static char* output_dir_name;
 static char* image_pose_output_filename;
@@ -166,15 +167,15 @@ get_camera_pose_wrt_world(carmen_point_t robot_pose)
 }
 
 
-carmen_point_t
-get_interpolated_pose_at_time(carmen_point_t robot_pose, double dt, double v, double phi)
+carmen_pose_3D_t
+get_interpolated_pose_at_time(carmen_pose_3D_t robot_pose, double dt, double v, double phi)
 {
-	carmen_point_t pose = robot_pose;
+	carmen_pose_3D_t pose = robot_pose;
 	double ds = v * dt;
 
-	pose.x = pose.x + ds * cos(pose.theta);
-	pose.y = pose.y + ds * sin(pose.theta);
-	pose.theta = carmen_normalize_theta(pose.theta + ds * (tan(phi) / between_axis_distance));
+	pose.position.x = pose.position.x + ds * cos(pose.orientation.yaw);
+	pose.position.y = pose.position.y + ds * sin(pose.orientation.yaw);
+	pose.orientation.yaw = carmen_normalize_theta(pose.orientation.yaw + ds * (tan(phi) / between_axis_distance));
 
 	return pose;
 }
@@ -191,6 +192,12 @@ save_pose_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int 
 		carmen_die("no image received\n");
 	}
 
+	if (skip_frames > 0)
+	{
+		carmen_warn("skip frames: %d\n", skip_frames--);
+		return;
+	}
+
 	int nearest_message_index = find_nearest_globalpos_message(stereo_image->timestamp);
 	if (nearest_message_index < 0)
 	{
@@ -199,7 +206,10 @@ save_pose_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int 
 	}
 
 	carmen_localize_ackerman_globalpos_message globalpos_message = globalpos_message_buffer[nearest_message_index];
-	carmen_point_t globalpos = globalpos_message.globalpos;
+	carmen_pose_3D_t globalpos = globalpos_message.pose;
+	globalpos.position.x = globalpos_message.globalpos.x;
+	globalpos.position.y = globalpos_message.globalpos.y;
+	globalpos.orientation.yaw = globalpos_message.globalpos.theta;
 
 	double dt = stereo_image->timestamp - globalpos_message.timestamp;
 	if (dt >= 0.0)
@@ -222,8 +232,8 @@ save_pose_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int 
 	create_stereo_filename_from_timestamp(stereo_image->timestamp, &left_img_filename, &right_img_filename, camera);
 
 	fprintf(image_pose_output_file, "%.6f %.6f %.6f %.6f %.6f %.6f %.25f %s/%s %s/%s\n",
-			globalpos.x, globalpos.y, 0.0,	//tx, ty, tz
-			0.0, 0.0, globalpos.theta,		//rx, ry, rz,
+			globalpos.position.x, globalpos.position.y, globalpos.position.z,	//tx, ty, tz
+			globalpos.orientation.roll, globalpos.orientation.pitch, globalpos.orientation.yaw,		//rx, ry, rz,
 			stereo_image->timestamp,
 			(char*)output_dir_name, left_img_filename,
 			(char*)output_dir_name, right_img_filename);
@@ -300,6 +310,7 @@ read_parameters(int argc, char **argv)
 	carmen_param_t param_cmd_list[] =
 	{
 		{(char *) "commandline", (char *) "camera_id", CARMEN_PARAM_INT, &camera, 0, NULL},
+		{(char *) "commandline", (char *) "skip_frames", CARMEN_PARAM_INT, &skip_frames, 0, NULL},
 		{(char *) "commandline", (char *) "output_dir", CARMEN_PARAM_STRING, &output_dir_name, 0, NULL},
 		{(char *) "commandline", (char *) "output_txt", CARMEN_PARAM_STRING, &image_pose_output_filename, 0, NULL}
 	};

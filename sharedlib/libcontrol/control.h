@@ -62,12 +62,15 @@ pid_plot_velocity(double current_phi, double desired_phi, double y_range, char* 
 
 double
 carmen_librlpid_compute_effort_signal(double current_phi, double desired_phi, double next_desired_phi, fann_type *steering_ann_input,
-	struct fann *steering_ann, double v, double understeer_coeficient, double distance_between_front_and_rear_axles,
-	double max_phi);
+	struct fann *steering_ann, double v, double understeer_coeficient, double distance_between_front_and_rear_axles, double max_phi);
 
 
 double
 carmen_librlpid_compute_effort(double current_curvature, double desired_curvature, double delta_t);
+
+
+double
+carmen_librlpid_compute_effort_new(double current_curvature, double desired_curvature, double delta_t);
 
 
 #ifdef __cplusplus

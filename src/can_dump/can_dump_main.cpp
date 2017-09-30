@@ -18,7 +18,7 @@ publish_can_dump_can_line_message(char *can_line)
 	can_line[strlen(can_line) - 1] = '\0'; // Apaga o '\n' no fim da string
 
 	FILE *caco = fopen("can_dump.txt", "a");
-	fprintf(caco, "%lf %s\n", carmen_get_time(), can_line);
+	fprintf(caco, "%lf can_line %s\n", carmen_get_time(), can_line);
 	fflush(caco);
 	fclose(caco);
 
@@ -56,7 +56,7 @@ main (int argc, char **argv)
 	carmen_ipc_initialize(argc, argv);
 	carmen_can_dump_define_can_line_message();
 
-	FILE *can_dump = popen("ssh -XC pi@192.168.0.13 'candump any'", "r");
+	FILE *can_dump = popen("ssh -XC pi@192.168.0.14 'candump any'", "r");
 	char line[1024];
 
 	while (fgets(line, 1023, can_dump) != NULL)
