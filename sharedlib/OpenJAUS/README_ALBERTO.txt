@@ -50,3 +50,4 @@ OpenJAUS Node Manager Help
   You should see the XGV Carmen Control Unit (XGV_CCU) interface (ascii 
 terminal interface implemented with curses). The first lines present
 the keyboard functionalities.
+
