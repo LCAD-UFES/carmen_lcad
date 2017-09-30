@@ -233,7 +233,13 @@ int main(int argc, char **args)
 
 	printf("\nOpenJAUS Node Manager Version %s\n\n", OJ_NODE_MANAGER_VERSION);
 
-	FileLoader *configData = new FileLoader("nodeManager.conf");
+	char *file_name;
+	if (argc != 2)
+		file_name = (char *) "nodeManager.conf";
+	else
+		file_name = (char *) args[1];
+
+	FileLoader *configData = new FileLoader(file_name);
 	MyHandler *handler = new MyHandler();
 
 	try
