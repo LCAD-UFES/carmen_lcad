@@ -43,6 +43,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/signal.h>
 #include <termios.h>
 #include <curses.h>
 #include <math.h>
@@ -50,6 +51,7 @@
 #include <openJaus.h>				// Header file for the OpenJAUS specific C/C++ code base
 #include <torc.h>
 
+struct termios storedTermio;
 
 double g_throttle_command = MIN_THROTTLE;
 double g_steering_command = (MAX_STEERING - MIN_STEERING) / 2.0 + MIN_STEERING;
@@ -323,7 +325,6 @@ void
 user_interface(OjCmpt XGV_CCU)
 {
 	struct termios newTermio;
-	struct termios storedTermio;
 	int running = 1;
 	char choice[8] = {0};
 	int count = 0;
@@ -548,8 +549,8 @@ create_xgv_ccu_component(char *xgv_ccu_name, int xgv_ccu_component_id, double xg
 	XGV_CCU = ojCmptCreate(xgv_ccu_name, xgv_ccu_component_id, xgv_ccu_state_machine_update_rate);	// Create the component
 	if (XGV_CCU == NULL)
 	{
-		printf("Error creating %s component\n", xgv_ccu_name);
-		exit(1);
+		printf("Error creating %s component. Is ojNodeManager running?\n", xgv_ccu_name);
+		return(NULL);
 	}
 	
 	ojCmptAddService(XGV_CCU, xgv_ccu_component_id);				// Add XGV_CCU service type
@@ -562,13 +563,50 @@ create_xgv_ccu_component(char *xgv_ccu_name, int xgv_ccu_component_id, double xg
 }
 
 
+OjCmpt
+create_xgv_ccu_component_ojTorc(char *xgv_ccu_name, int xgv_ccu_component_id, double xgv_ccu_state_machine_update_rate)
+{
+	OjCmpt XGV_CCU;		// Variable that will store the component reference
+
+	XGV_CCU = ojCmptCreate(xgv_ccu_name, xgv_ccu_component_id, xgv_ccu_state_machine_update_rate);	// Create the component
+	if (XGV_CCU == NULL)
+	{
+		printf("Error creating %s component. Is ojNodeManager running?\n", xgv_ccu_name);
+		return(NULL);
+	}
+
+	ojCmptAddService(XGV_CCU, xgv_ccu_component_id);				// Add XGV_CCU service type
+	add_xgv_ccu_component_service_messages(XGV_CCU, xgv_ccu_component_id);
+
+	//TODO função abaixo foi comentada pois gera 50Htz de mensagens desnecessarias de xgv_ccu_state_machine.
+	ojCmptSetStateCallback(XGV_CCU, JAUS_READY_STATE, xgv_ccu_state_machine);	// Set ready state callback
+	ojCmptSetState(XGV_CCU, JAUS_READY_STATE);					// Set the current state to ready
+	return (XGV_CCU);
+}
+
+
+void
+shutdown_module(int a __attribute__ ((unused)))
+{
+	endwin();
+	tcsetattr(0, TCSANOW, &storedTermio);
+
+	exit(0);
+}
+
+
 int 
 main(void)
 {
 	OjCmpt XGV_CCU;
 	int *xgv_ccu_service_connections;
 
-	XGV_CCU = create_xgv_ccu_component(XGV_CCU_NAME, XGV_CCU_COMPONENTE_ID, XGV_CCU_STATE_MACHINE_UPDATE_RATE);
+	signal(SIGINT, shutdown_module);
+
+	XGV_CCU = create_xgv_ccu_component_ojTorc(XGV_CCU_NAME, XGV_CCU_COMPONENTE_ID, XGV_CCU_STATE_MACHINE_UPDATE_RATE);
+	if (!XGV_CCU)
+		exit(1);
+
 	register_xgv_ccu_messages_callbacks(XGV_CCU);
 	ojCmptSetAuthority(XGV_CCU, 6);
 	ojCmptRun(XGV_CCU);				// Begin running the XGV_CCU state machine

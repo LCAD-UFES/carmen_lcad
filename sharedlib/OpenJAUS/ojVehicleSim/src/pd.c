@@ -38,6 +38,7 @@
 
 #include <jaus.h>
 #include <openJaus.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "vehicleSim.h"
@@ -71,6 +72,12 @@ OjCmpt pdCreate(void)
 
 	cmpt = ojCmptCreate("pd", JAUS_PRIMITIVE_DRIVER, PD_THREAD_DESIRED_RATE_HZ);
 
+	if (!cmpt)
+	{
+		printf("Could not create primitive driver. Is ojNodeManager running?\n");
+		return (NULL);
+	}
+
 	ojCmptAddService(cmpt, JAUS_PRIMITIVE_DRIVER);
 	ojCmptAddServiceInputMessage(cmpt, JAUS_PRIMITIVE_DRIVER, JAUS_SET_WRENCH_EFFORT, 0xFF);
 	ojCmptAddServiceInputMessage(cmpt, JAUS_PRIMITIVE_DRIVER, JAUS_SET_DISCRETE_DEVICES, 0xFF);
@@ -99,7 +106,7 @@ OjCmpt pdCreate(void)
 
 	ojCmptSetUserData(cmpt, (void *)data);
 
-	if(ojCmptRun(cmpt))
+	if (ojCmptRun(cmpt))
 	{
 		ojCmptDestroy(cmpt);
 		return NULL;

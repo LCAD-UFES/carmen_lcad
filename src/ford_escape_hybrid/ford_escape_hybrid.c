@@ -36,7 +36,7 @@
 #include <control.h>
 #include "ford_escape_hybrid.h"
 
-#define FORD_ESCAPE_COMMUNICATION_DUMP
+//#define FORD_ESCAPE_COMMUNICATION_DUMP
 
 static ford_escape_hybrid_config_t *ford_escape_hybrid_config = NULL;
 
@@ -1025,7 +1025,7 @@ initialize_structures()
 
 
 static void
-default_signals_command()
+send_default_signals_command()
 {
 	g_turn_signal_command = 0; // TODO: usar #define
 	g_horn_status_command = 0; // TODO: usar #define
@@ -1042,11 +1042,14 @@ initialize_jaus()
 {
 	//init TORC/JAUS
 	XGV_CCU = create_xgv_ccu_component(XGV_CCU_NAME, XGV_CCU_COMPONENTE_ID, XGV_CCU_STATE_MACHINE_UPDATE_RATE);
+	if (!XGV_CCU)
+		exit(1);
+
 	register_xgv_ccu_messages_handlers(XGV_CCU);
 	ojCmptSetAuthority(XGV_CCU, 6);
 	ojCmptRun(XGV_CCU);	// Begin running the XGV_CCU state machine
 
-	default_signals_command();
+	send_default_signals_command();
 	change_control_mode_to_wrench_efforts(XGV_CCU);
 	xgv_ccu_service_connections = create_xgv_ccu_service_connections(XGV_CCU);
 

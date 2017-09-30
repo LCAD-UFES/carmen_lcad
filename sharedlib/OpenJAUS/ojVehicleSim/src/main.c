@@ -483,28 +483,21 @@ int main(int argCount, char **argString)
 	double keyboardLockTime = ojGetTimeSec() + KEYBOARD_LOCK_TIMEOUT_SEC;
 	time_t timeStamp;
 
+//	parseCommandLine(argCount, argString);
+
 	//Get and Format Time String
 	time(&timeStamp);
 	strftime(timeString, DEFAULT_STRING_LENGTH-1, "%m-%d-%Y %X", localtime(&timeStamp));
 
 	system(CLEAR);
 
-	//cDebug(1, "main: Starting Up %s Node Software\n", simulatorGetName());
-//	if(simulatorStartup())
-//	{
-//		printf("main: %s Node Startup failed\n", simulatorGetName());
-//		//cDebug(1, "main: Exiting %s Node Software\n", simulatorGetName());
-//#if defined(WIN32)
-//		system("pause");
-//#else
-//		printf("Press ENTER to exit\n");
-//		getch();
-//#endif
-//		return 0;
-//	}
-
 	vehicleSimStartup();
 	pd = pdCreate();
+	if (!pd)
+	{
+		vehicleSimShutdown();
+		exit(1);
+	}
 	gpos = gposCreate();
 	vss = vssCreate();
 	wd = wdCreate();
@@ -548,7 +541,7 @@ int main(int argCount, char **argString)
 	vssDestroy(vss);
 	vehicleSimShutdown();
 
-	if(logFile != NULL)
+	if (logFile != NULL)
 	{
 		fclose(logFile);
 	}
