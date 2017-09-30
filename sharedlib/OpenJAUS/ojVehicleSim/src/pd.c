@@ -42,7 +42,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "vehicleSim.h"
-#include "pd.h"
+#include "pd.h"x
 
 #define CONTROLLER_STATUS_TIMEOUT_SEC 	1.5
 #define CONTROLLER_STATUS_UPDATE_RATE_HZ		5.0
