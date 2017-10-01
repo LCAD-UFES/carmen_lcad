@@ -390,7 +390,9 @@ void* ojCmptThread(void *threadData)
 
 	while(ojCmpt->run) // Execute state machine code while not in the SHUTDOWN state
 	{
-		switch(nodeManagerTimedReceive(ojCmpt->nmi, &rxMessage, nextStateTime))
+		int event = nodeManagerTimedReceive(ojCmpt->nmi, &rxMessage, nextStateTime);
+		ojGetTimeSec(); // Foi necessario colocar esta chamada que nao faz nada porque estava parando de chamar a maquina de estado do modulos...
+		switch(event)
 		{
 			case NMI_MESSAGE_RECEIVED:
 				// If we were sent a message
@@ -447,7 +449,6 @@ void* ojCmptThread(void *threadData)
 				ojCmpt->run = FALSE;
 				break;
 		}
-
 	}
 
 	return NULL;
@@ -528,6 +529,11 @@ void ojCmptDefaultMessageProcessor(OjCmpt ojCmpt, JausMessage message)
 int ojCmptGetState(OjCmpt ojCmpt)
 {
 	return ojCmpt->state;
+}
+
+int ojCmptIsRunning(OjCmpt ojCmpt)
+{
+	return ojCmpt->run;
 }
 
 int ojCmptSendMessage(OjCmpt ojCmpt, JausMessage message)

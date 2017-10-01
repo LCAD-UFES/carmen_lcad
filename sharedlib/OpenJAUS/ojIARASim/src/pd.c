@@ -41,7 +41,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "vehicleSim.h"
+#include <ncurses.h>
+#include <termios.h>
+#include <unistd.h>
 #include "pd.h"
 
 #define CONTROLLER_STATUS_TIMEOUT_SEC 	1.5
@@ -85,12 +87,13 @@ OjCmpt pdCreate(void)
 	ojCmptAddServiceInputMessage(cmpt, JAUS_PRIMITIVE_DRIVER, JAUS_QUERY_WRENCH_EFFORT, 0xFF);
 	ojCmptAddServiceOutputMessage(cmpt, JAUS_PRIMITIVE_DRIVER, JAUS_REPORT_PLATFORM_SPECIFICATIONS, 0xFF);
 	ojCmptAddServiceOutputMessage(cmpt, JAUS_PRIMITIVE_DRIVER, JAUS_REPORT_WRENCH_EFFORT, 0xFF);
+//	ojCmptAddServiceOutputMessage(cmpt, JAUS_PRIMITIVE_DRIVER, JAUS_REPORT_DISCRETE_DEVICES, 0xFF);
 	ojCmptAddSupportedSc(cmpt, JAUS_REPORT_WRENCH_EFFORT);
 
 	ojCmptSetMessageProcessorCallback(cmpt, pdProcessMessage);
 	ojCmptSetStateCallback(cmpt, JAUS_STANDBY_STATE, pdStandbyState);
 	ojCmptSetStateCallback(cmpt, JAUS_READY_STATE, pdReadyState);
-	ojCmptSetState(cmpt, JAUS_STANDBY_STATE);
+	ojCmptSetState(cmpt, JAUS_READY_STATE);
 
 	pdAddr = ojCmptGetAddress(cmpt);
 
@@ -163,6 +166,15 @@ SetWrenchEffortMessage pdGetWrenchEffort(OjCmpt pd)
 	data = (PdData*)ojCmptGetUserData(pd);
 
 	return data->setWrenchEffort;
+}
+
+SetDiscreteDevicesMessage pdGetDiscreteDevices(OjCmpt pd)
+{
+	PdData *data;
+
+	data = (PdData*)ojCmptGetUserData(pd);
+
+	return data->setDiscreteDevices;
 }
 
 // Function: pdProcessMessage
@@ -265,11 +277,15 @@ void pdStandbyState(OjCmpt pd)
 {
 	PdData *data;
 
+//	static int count = 0;
+//	mvprintw(15,0,"Standby %d", count++);
+//	refresh();
+
 	data = (PdData*)ojCmptGetUserData(pd);
 
 	pdSendReportWrenchEffort(pd);
 
-	if(	vehicleSimGetState() == VEHICLE_SIM_READY_STATE	)
+	if(TRUE)//	vehicleSimGetState() == VEHICLE_SIM_READY_STATE	)
 	{
 		ojCmptSetState(pd, JAUS_READY_STATE);
 	}
@@ -289,11 +305,15 @@ void pdReadyState(OjCmpt pd)
 	PdData *data;
 	JausAddress address;
 
+//	static int count = 0;
+//	mvprintw(15,0,"Ready %d", count++);
+//	refresh();
+
 	data = (PdData*)ojCmptGetUserData(pd);
 
 	pdSendReportWrenchEffort(pd);
 
-	if(	vehicleSimGetState() != VEHICLE_SIM_READY_STATE )
+	if(FALSE)//	vehicleSimGetState() != VEHICLE_SIM_READY_STATE )
 	{
 		ojCmptSetState(pd, JAUS_STANDBY_STATE);
 		return;
@@ -316,28 +336,28 @@ void pdReadyState(OjCmpt pd)
 
 		if(ojCmptIsIncomingScActive(pd, data->controllerSc))
 		{
-			if(data->controllerStatus->primaryStatusCode == JAUS_READY_STATE || data->controllerStatus->primaryStatusCode == JAUS_STANDBY_STATE)
-			{
-				if(vehicleSimGetRunPause() == VEHICLE_SIM_RUN)
-				{
-					vehicleSimSetCommand(	data->setWrenchEffort->propulsiveLinearEffortXPercent,
-											data->setWrenchEffort->resistiveLinearEffortXPercent,
-											data->setWrenchEffort->propulsiveRotationalEffortZPercent
-										);
-				}
-				else
-				{
-					vehicleSimSetCommand(0, 80, data->setWrenchEffort->propulsiveRotationalEffortZPercent);
-				}
-			}
-			else
-			{
-				vehicleSimSetCommand(0, 80, 0);
-			}
+//			if(data->controllerStatus->primaryStatusCode == JAUS_READY_STATE || data->controllerStatus->primaryStatusCode == JAUS_STANDBY_STATE)
+//			{
+//				if(vehicleSimGetRunPause() == VEHICLE_SIM_RUN)
+//				{
+//					vehicleSimSetCommand(	data->setWrenchEffort->propulsiveLinearEffortXPercent,
+//											data->setWrenchEffort->resistiveLinearEffortXPercent,
+//											data->setWrenchEffort->propulsiveRotationalEffortZPercent
+//										);
+//				}
+//				else
+//				{
+//					vehicleSimSetCommand(0, 80, data->setWrenchEffort->propulsiveRotationalEffortZPercent);
+//				}
+//			}
+//			else
+//			{
+//				vehicleSimSetCommand(0, 80, 0);
+//			}
 		}
 		else
 		{
-			vehicleSimSetCommand(0, 80, 0);
+//			vehicleSimSetCommand(0, 80, 0);
 		}
 	}
 	else
@@ -350,9 +370,8 @@ void pdReadyState(OjCmpt pd)
 
 		data->controllerStatus->primaryStatusCode = JAUS_UNKNOWN_STATE;
 
-		vehicleSimSetCommand(0, 80, 0);
+//		vehicleSimSetCommand(0, 80, 0);
 	}
-
 }
 
 void pdSendReportWrenchEffort(OjCmpt pd)

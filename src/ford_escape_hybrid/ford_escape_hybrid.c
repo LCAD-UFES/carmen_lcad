@@ -175,6 +175,33 @@ set_wrench_efforts_desired_v_and_curvature()
 
 
 static void
+publish_velocity_message(void *clientData __attribute__ ((unused)), unsigned long currentTime __attribute__ ((unused)), unsigned long scheduledTime __attribute__ ((unused)))
+{
+	// This function publish the low level velocity and steering angle from the car
+
+	IPC_RETURN_TYPE err = IPC_OK;
+	carmen_robot_ackerman_velocity_message robot_ackerman_velocity_message;
+	static int heartbeat = 0;
+
+	robot_ackerman_velocity_message.v = g_XGV_velocity;
+	robot_ackerman_velocity_message.phi = get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config);
+	robot_ackerman_velocity_message.timestamp = carmen_get_time(); // @@ Alberto: era igual a = ford_escape_hybrid_config->XGV_v_and_phi_timestamp;
+	robot_ackerman_velocity_message.host = carmen_get_host();
+
+	err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, &robot_ackerman_velocity_message);
+	carmen_test_ipc(err, "Could not publish ford_escape_hybrid message named carmen_robot_ackerman_velocity_message", CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME);
+
+	if ((heartbeat % 10) == 0)
+	{
+		publish_car_status();
+		publish_car_error();
+	}
+
+	heartbeat++;
+}
+
+
+static void
 publish_car_status()
 {
 	IPC_RETURN_TYPE err = IPC_OK;
@@ -242,33 +269,6 @@ publish_car_error()
 
 	err = IPC_publishData(CARMEN_FORD_ESCAPE_ERROR_NAME, &msg);
 	carmen_test_ipc(err, "Could not publish", CARMEN_FORD_ESCAPE_ERROR_NAME);
-}
-
-
-static void
-publish_velocity_message(void *clientData __attribute__ ((unused)), unsigned long currentTime __attribute__ ((unused)), unsigned long scheduledTime __attribute__ ((unused)))
-{
-	// This function publish the low level velocity and steering angle from the car
-
-	IPC_RETURN_TYPE err = IPC_OK;
-	carmen_robot_ackerman_velocity_message robot_ackerman_velocity_message;
-	static int heartbeat = 0;
-
-	robot_ackerman_velocity_message.v = g_XGV_velocity;
-	robot_ackerman_velocity_message.phi = get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config);
-	robot_ackerman_velocity_message.timestamp = carmen_get_time(); // @@ Alberto: era igual a = ford_escape_hybrid_config->XGV_v_and_phi_timestamp;
-	robot_ackerman_velocity_message.host = carmen_get_host();
-
-	err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, &robot_ackerman_velocity_message);
-	carmen_test_ipc(err, "Could not publish ford_escape_hybrid message named carmen_robot_ackerman_velocity_message", CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME);
-
-	if ((heartbeat % 10) == 0)
-	{
-		publish_car_status();
-		publish_car_error();
-	}
-
-	heartbeat++;
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
 

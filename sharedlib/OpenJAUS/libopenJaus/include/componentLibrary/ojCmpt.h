@@ -91,6 +91,7 @@ JAUS_EXPORT JausAddress ojCmptGetAddress(OjCmpt ojCmpt);
 JAUS_EXPORT JausAddress ojCmptGetControllerAddress(OjCmpt ojCmpt);
 JAUS_EXPORT JausBoolean ojCmptHasController(OjCmpt ojCmpt);
 JAUS_EXPORT int ojCmptGetState(OjCmpt ojCmpt);
+JAUS_EXPORT int ojCmptIsRunning(OjCmpt ojCmpt);
 JAUS_EXPORT void ojCmptDefaultMessageProcessor(OjCmpt ojCmpt, JausMessage message);
 JAUS_EXPORT char* ojCmptGetName(OjCmpt ojCmpt);
 JAUS_EXPORT void *ojCmptGetUserData(OjCmpt ojCmpt);
