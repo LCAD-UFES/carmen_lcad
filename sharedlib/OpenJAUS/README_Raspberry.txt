@@ -16,6 +16,9 @@ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/sharedlib/OpenJAUS
 - Depois de baixado o OpenJAUS como acima, todas as mudanças futuras no github podem ser incorporadas com:
 svn up
 
+- Para subir coisas para o git use o commit do svn (que já sobre as mudanças). Exemplo:
+svn commit -m "adicao de ojNodeManager/IARAnodeManager.conf"
+
 - Compile o OpenJAUS
 cd OpenJAUS
 make
