@@ -1,7 +1,7 @@
 TARGET	= 	./bin/ojIARASim
-CCFLAGS	=	-Wall -fno-strict-aliasing -c -g -I ./include/ -I ../libjaus/include/ -I ../libopenJaus/include/
-LFLAGS	=	-L ../libjaus/lib/ -L ../libopenJaus/lib/
-LIBS		=	-lopenJaus -ljaus -lpthread -lcurses
+CCFLAGS	=	-Wall -fno-strict-aliasing -c -g -I ./include/ -I ../libjaus/include/ -I ../libopenJaus/include/ -I ../ojTorc/include
+LFLAGS	=	-L ../libjaus/lib/ -L ../libopenJaus/lib/ -L ../ojTorc/lib/
+LIBS	=	-lopenJaus -ljaus -lpthread -lcurses -lojTorc
 
 SOURCES =	./src/getLine.c \
 		./src/main.c \
