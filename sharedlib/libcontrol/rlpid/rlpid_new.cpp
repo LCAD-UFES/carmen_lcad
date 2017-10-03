@@ -67,13 +67,6 @@ initializate_variables(data* data)
 {
 	int i = 0;
 
-	//data->variables.recomended_pid_params[0] = 1250;
-	//data->variables.recomended_pid_params[1] = 600;
-	//data->variables.recomended_pid_params[2] = 25;
-	//data->variables.pid_params[0] = 1250;//0.12;//1250
-	//data->variables.pid_params[1] = 600;//0.32; //600
-	//data->variables.pid_params[2] = 25;//0.08; //25
-
 	data->sigma_critical_deviation = 0.0;
 	data->previous_error = 0.0;
 	data->proportional_error = 0.0;
@@ -97,12 +90,12 @@ initializate_variables(data* data)
 		data->hidden_neuron[i].w_neuron_weight[0] = /*2.55*/5.1 + random_double() * FF_MULTIPLIER;//W_kp
 		data->hidden_neuron[i].w_neuron_weight[1] = /*1.2*/2.5 + random_double() * FF_MULTIPLIER;
 		data->hidden_neuron[i].w_neuron_weight[2] = -0.025 + random_double() * FF_MULTIPLIER;
-		data->hidden_neuron[i].v_neuron_weight = random_double() * FF_MULTIPLIER;
-		data->hidden_neuron[i].center_vector[0] = random_double() * RBF_MULTIPLIER;
-		data->hidden_neuron[i].center_vector[1] = random_double() * RBF_MULTIPLIER;
-		data->hidden_neuron[i].center_vector[2] = random_double() * RBF_MULTIPLIER;
+		data->hidden_neuron[i].v_neuron_weight    = random_double() * FF_MULTIPLIER;
+		data->hidden_neuron[i].center_vector[0]   = random_double() * RBF_MULTIPLIER;
+		data->hidden_neuron[i].center_vector[1]   = random_double() * RBF_MULTIPLIER;
+		data->hidden_neuron[i].center_vector[2]   = random_double() * RBF_MULTIPLIER;
 		data->hidden_neuron[i].width_scalar_sigma = random_double() * RBF_MULTIPLIER;
-		data->hidden_neuron[i].phi_value = 1;//random_double() * RBF_MULTIPLIER;
+		data->hidden_neuron[i].phi_value = 1; //random_double() * RBF_MULTIPLIER;
 	}
 }
 
@@ -166,7 +159,6 @@ update_neuron_hidden_unit_phi(double width_scalar, double* center_vector, data* 
 }
 
 
-// UPDATE ALL NEURAL NETWORK
 void
 update_neetwork_hidden_unit_phi(data* data)
 {
@@ -174,17 +166,6 @@ update_neetwork_hidden_unit_phi(data* data)
 	for (i = 0; i < NEURONS_NUMBER_HIDDEN_UNIT;i++)
 	{
 		data->hidden_neuron[i].phi_value = update_neuron_hidden_unit_phi(data->hidden_neuron[i].width_scalar_sigma, data->hidden_neuron[i].center_vector, data);
-	}
-}
-
-
-void
-update_neetwork_hidden_unit_phi_future(data* data)
-{
-	int i = 0;
-	for (i = 0; i < NEURONS_NUMBER_HIDDEN_UNIT;i++)
-	{
-		data->hidden_neuron[i].phi_future = update_neuron_hidden_unit_phi(data->hidden_neuron[i].width_scalar_sigma, data->hidden_neuron[i].center_vector, data);
 	}
 }
 
@@ -202,15 +183,10 @@ compute_recomended_pid_output(data* data)
 	for (i = 0; i < NEURONS_NUMBER_HIDDEN_UNIT; i++)     // TODO juntar esses 3 loops
 	{
 		data->recomended_kp += data->hidden_neuron[i].w_neuron_weight[0] * data->hidden_neuron[i].phi_value;
-	}
+		//printf("w %lf p %lf\n", data->hidden_neuron[i].w_neuron_weight[0], data->hidden_neuron[i].phi_value);
 
-	for (i = 0; i < NEURONS_NUMBER_HIDDEN_UNIT; i++)
-	{
 		data->recomended_ki += data->hidden_neuron[i].w_neuron_weight[1] * data->hidden_neuron[i].phi_value;
-	}
 
-	for (i = 0; i < NEURONS_NUMBER_HIDDEN_UNIT; i++)
-	{
 		data->recomended_kd += data->hidden_neuron[i].w_neuron_weight[2] * data->hidden_neuron[i].phi_value;
 	}
 
@@ -344,6 +320,7 @@ carmen_librlpid_compute_effort_new(double current_curvature, double desired_curv
 
 		compute_errors(current_curvature, desired_curvature, delta_t, &data);
 		compute_external_reinforcement_signal(&data);
+		update_neetwork_hidden_unit_phi(&data);
 		compute_recomended_pid_output(&data);
 		compute_critic_value(&data);
 		compute_actual_pid_params(&data);
@@ -364,7 +341,7 @@ carmen_librlpid_compute_effort_new(double current_curvature, double desired_curv
 		compute_control_command_u(&data);
 	}
 
-	printf("u%lf e %lf kp %lf ki %lf kd %lf\n", /*data.u_t, data.proportional_error,*/ current_curvature, desired_curvature, data.actual_kp, data.actual_ki, data.actual_kd);
+	printf("u %lf e %lf kp %lf ki %lf kd %lf\n", data.u_t, data.proportional_error, data.actual_kp, data.actual_ki, data.actual_kd);
 
 	return data.u_t;//carmen_clamp(-100.0, (U[0]), 100.0);
 }
