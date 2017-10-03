@@ -156,7 +156,7 @@ void vssReadyState(OjCmpt vss)
 
 	message = (ReportVelocityStateMessage)ojCmptGetUserData(vss);
 
-	message->velocityXMps = 0.0; //vehicleSimGetSpeed();
+	message->velocityXMps = 1.2345; //Ler velocidade da IARA aqui. Antigo vehicleSimGetSpeed();
 	message->velocityYMps = 0;
 	message->velocityZMps = 0;
 	message->velocityRmsMps = 0.01;

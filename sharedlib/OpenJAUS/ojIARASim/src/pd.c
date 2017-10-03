@@ -385,8 +385,6 @@ void pdReadyState(OjCmpt pd)
 
 	// Ler estado da IARA e reporta-los aqui
 	data->setWheelsSpeed->leftFront = 12.345;
-	if (data->setWheelsSpeed->leftFront > 9.0)
-		data->setWheelsSpeed->leftFront = 0.0;
 	data->setWheelsSpeed->leftRear = data->setWheelsSpeed->leftFront;
 	data->setWheelsSpeed->rightFront = data->setWheelsSpeed->leftFront;
 	data->setWheelsSpeed->rightRear = data->setWheelsSpeed->leftFront;
