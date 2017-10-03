@@ -200,7 +200,7 @@ print_interface()
 	mvprintw(row++, col, "g_atan_curvature_command = %lf,  g_XGV_atan_curvature = %lf", g_atan_curvature_command, g_XGV_atan_curvature);
 	mvprintw(row++, col, "g_velocity_command       = %lf,  g_XGV_velocity       = %lf", g_velocity_command, g_XGV_velocity);
 	
-	mvprintw(row++, col, "Wheels Speed: Front(L,R), Rear(L,R) = (%2.5lf,%2.5lf), (%2.5lf,%2.5lf)",
+	mvprintw(row++, col, "Wheels Speed: Front(L,R), Rear(L,R) = (%lf,%lf), (%lf,%lf)",
 		 	g_XGV_right_front_wheel_speed, g_XGV_left_front_wheel_speed,
 			g_XGV_right_rear_wheel_speed, g_XGV_left_rear_wheel_speed);
 	
