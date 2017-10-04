@@ -1007,7 +1007,7 @@ register_xgv_ccu_messages_handlers(OjCmpt XGV_CCU)
 	ojCmptSetMessageCallback(XGV_CCU, JAUS_REPORT_DISCRETE_DEVICES, torc_report_discrete_devices_message_handler);	// Ok
 	ojCmptSetMessageCallback(XGV_CCU, JAUS_REPORT_SIGNALS, torc_report_signals_message_handler);					// Ok
 	ojCmptSetMessageCallback(XGV_CCU, JAUS_REPORT_ERROR_COUNT, torc_report_error_count_message_handler);			// 4 (precisa implementar? acho que nao implementei direito no ojTorc (apenas a contagem eh mandada?))
-	ojCmptSetMessageCallback(XGV_CCU, JAUS_REPORT_COMPONENT_STATUS, torc_report_component_status_message_handler);	// 3 (inclui o botao amarelo (Manual override). parece estar implemetado errado no PD (ao contrario (send<->receive); sem ojCmptAddSupportedSc() no lcal certo em sem funcao de resposta a service connection no pdReadyState()))
+	ojCmptSetMessageCallback(XGV_CCU, JAUS_REPORT_COMPONENT_STATUS, torc_report_component_status_message_handler);	// Ok
 }
 
 
