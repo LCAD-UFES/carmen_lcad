@@ -1,5 +1,5 @@
 TARGET	= 	./lib/libopenJaus.so
-CCFLAGS	=	-Wall -fPIC -fno-strict-aliasing -O2 -c -g -I ./include/ -I ../libjaus/include/
+CCFLAGS	=	-Wall -fPIC -fno-strict-aliasing -c -g -I ./include/ -I ../libjaus/include/
 LFLAGS	=	-L ../libjaus/lib/
 LIBS		=	-ljaus
 SOURCES =	./src/componentLibrary/ojCmpt.c \

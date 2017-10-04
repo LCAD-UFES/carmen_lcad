@@ -373,6 +373,19 @@ void pdSendReportWrenchEffort(OjCmpt pd)
 		data->reportWrenchEffort->sequenceNumber = sc->sequenceNumber;
 		data->reportWrenchEffort->properties.scFlag = JAUS_SERVICE_CONNECTION_MESSAGE;
 
+		data->reportWrenchEffort->propulsiveLinearEffortXPercent = data->setWrenchEffort->propulsiveLinearEffortXPercent;
+		data->reportWrenchEffort->propulsiveLinearEffortYPercent = data->setWrenchEffort->propulsiveLinearEffortYPercent;
+		data->reportWrenchEffort->propulsiveLinearEffortZPercent = data->setWrenchEffort->propulsiveLinearEffortZPercent;
+		data->reportWrenchEffort->propulsiveRotationalEffortXPercent = data->setWrenchEffort->propulsiveRotationalEffortXPercent;
+		data->reportWrenchEffort->propulsiveRotationalEffortYPercent = data->setWrenchEffort->propulsiveRotationalEffortYPercent;
+		data->reportWrenchEffort->propulsiveRotationalEffortZPercent = data->setWrenchEffort->propulsiveRotationalEffortZPercent;
+		data->reportWrenchEffort->resistiveLinearEffortXPercent = data->setWrenchEffort->resistiveLinearEffortXPercent;
+		data->reportWrenchEffort->resistiveLinearEffortYPercent = data->setWrenchEffort->resistiveLinearEffortYPercent;
+		data->reportWrenchEffort->resistiveLinearEffortZPercent = data->setWrenchEffort->resistiveLinearEffortXPercent;
+		data->reportWrenchEffort->resistiveRotationalEffortXPercent = data->setWrenchEffort->resistiveRotationalEffortXPercent;
+		data->reportWrenchEffort->resistiveRotationalEffortYPercent = data->setWrenchEffort->resistiveRotationalEffortYPercent;
+		data->reportWrenchEffort->resistiveRotationalEffortZPercent = data->setWrenchEffort->resistiveRotationalEffortZPercent;
+
 		txMessage = reportWrenchEffortMessageToJausMessage(data->reportWrenchEffort);
 		ojCmptSendMessage(pd, txMessage);
 		jausMessageDestroy(txMessage);

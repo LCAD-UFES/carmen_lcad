@@ -200,7 +200,7 @@ print_interface()
 	mvprintw(row++, col, "g_atan_curvature_command = %lf,  g_XGV_atan_curvature = %lf", g_atan_curvature_command, g_XGV_atan_curvature);
 	mvprintw(row++, col, "g_velocity_command       = %lf,  g_XGV_velocity       = %lf", g_velocity_command, g_XGV_velocity);
 	
-	mvprintw(row++, col, "Wheels Speed: Front(L,R), Rear(L,R) = (%lf,%lf), (%lf,%lf)", 
+	mvprintw(row++, col, "Wheels Speed: Front(L,R), Rear(L,R) = (%lf,%lf), (%lf,%lf)",
 		 	g_XGV_right_front_wheel_speed, g_XGV_left_front_wheel_speed,
 			g_XGV_right_rear_wheel_speed, g_XGV_left_rear_wheel_speed);
 	
@@ -557,7 +557,7 @@ create_xgv_ccu_component(char *xgv_ccu_name, int xgv_ccu_component_id, double xg
 	add_xgv_ccu_component_service_messages(XGV_CCU, xgv_ccu_component_id);
 	
 	//TODO função abaixo foi comentada pois gera 50Htz de mensagens desnecessarias de xgv_ccu_state_machine.
-	ojCmptSetStateCallback(XGV_CCU, JAUS_READY_STATE, xgv_ccu_state_machine);	// Set ready state callback
+//	ojCmptSetStateCallback(XGV_CCU, JAUS_READY_STATE, xgv_ccu_state_machine);	// Set ready state callback
 	ojCmptSetState(XGV_CCU, JAUS_READY_STATE);					// Set the current state to ready
 	return (XGV_CCU);
 }
@@ -578,7 +578,6 @@ create_xgv_ccu_component_ojTorc(char *xgv_ccu_name, int xgv_ccu_component_id, do
 	ojCmptAddService(XGV_CCU, xgv_ccu_component_id);				// Add XGV_CCU service type
 	add_xgv_ccu_component_service_messages(XGV_CCU, xgv_ccu_component_id);
 
-	//TODO função abaixo foi comentada pois gera 50Htz de mensagens desnecessarias de xgv_ccu_state_machine.
 	ojCmptSetStateCallback(XGV_CCU, JAUS_READY_STATE, xgv_ccu_state_machine);	// Set ready state callback
 	ojCmptSetState(XGV_CCU, JAUS_READY_STATE);					// Set the current state to ready
 	return (XGV_CCU);
