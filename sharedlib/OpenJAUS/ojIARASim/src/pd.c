@@ -56,11 +56,13 @@ typedef struct
 {
 	SetWrenchEffortMessage setWrenchEffort;
 	SetDiscreteDevicesMessage setDiscreteDevices;
-	ReportWheelsSpeedMessage setWheelsSpeed;
+	ReportWheelsSpeedMessage setWheelsSpeed; // O nome eh set... mas as velocidades sao apenas reportadas. Esta escolha nome nome foi feita para seguir o padrao de outras mensagens do pd
 
 	ReportWrenchEffortMessage reportWrenchEffort;
 	ReportDiscreteDevicesMessage reportDiscreteDevices;
 	ReportWheelsSpeedMessage reportWheelsSpeed;
+	ReportComponentStatusMessage reportComponentStatus;
+
 	ReportComponentStatusMessage controllerStatus;
 	int controllerSc;
 }PdData;
@@ -269,9 +271,43 @@ void pdSendReportWheelsSpeed(OjCmpt pd)
 		data->reportWheelsSpeed->sequenceNumber = sc->sequenceNumber;
 		data->reportWheelsSpeed->properties.scFlag = JAUS_SERVICE_CONNECTION_MESSAGE;
 
-		*(data->reportWheelsSpeed) = *(data->setWheelsSpeed);
+		data->reportWheelsSpeed->leftFront = data->setWheelsSpeed->leftFront;
+		data->reportWheelsSpeed->leftRear = data->setWheelsSpeed->leftRear;
+		data->reportWheelsSpeed->rightFront = data->setWheelsSpeed->rightFront;
+		data->reportWheelsSpeed->rightRear = data->setWheelsSpeed->rightRear;
+		*data->reportWheelsSpeed->timeStamp = *data->setWheelsSpeed->timeStamp;
 
 		txMessage = reportWheelsSpeedMessageToJausMessage(data->reportWheelsSpeed);
+		ojCmptSendMessage(pd, txMessage);
+		jausMessageDestroy(txMessage);
+
+		sc = sc->nextSc;
+	}
+
+	ojCmptDestroySendList(scList);
+}
+
+void pdSendReportComponentStatus(OjCmpt pd)
+{
+	PdData *data;
+	JausMessage txMessage;
+	ServiceConnection scList;
+	ServiceConnection sc;
+
+	data = (PdData*)ojCmptGetUserData(pd);
+
+	scList = ojCmptGetScSendList(pd, JAUS_REPORT_COMPONENT_STATUS);
+	sc = scList;
+	while(sc)
+	{
+		jausAddressCopy(data->reportComponentStatus->destination, sc->address);
+		data->reportComponentStatus->sequenceNumber = sc->sequenceNumber;
+		data->reportComponentStatus->properties.scFlag = JAUS_SERVICE_CONNECTION_MESSAGE;
+
+		data->reportComponentStatus->primaryStatusCode = data->controllerStatus->primaryStatusCode;
+//		data->reportComponentStatus->secondaryStatusCode = data->controllerStatus->secondaryStatusCode;
+
+		txMessage = reportComponentStatusMessageToJausMessage(data->reportComponentStatus);
 		ojCmptSendMessage(pd, txMessage);
 		jausMessageDestroy(txMessage);
 
@@ -388,7 +424,12 @@ void pdReadyState(OjCmpt pd)
 	data->setWheelsSpeed->leftRear = data->setWheelsSpeed->leftFront;
 	data->setWheelsSpeed->rightFront = data->setWheelsSpeed->leftFront;
 	data->setWheelsSpeed->rightRear = data->setWheelsSpeed->leftFront;
+//	data->setWheelsSpeed->timeStamp = data->setWheelsSpeed->timeStamp;
 	pdSendReportWheelsSpeed(pd);
+
+	data->reportComponentStatus->primaryStatusCode = data->controllerStatus->primaryStatusCode;
+	data->reportComponentStatus->secondaryStatusCode += 1;
+	pdSendReportComponentStatus(pd);
 }
 
 OjCmpt pdCreate(void)
@@ -415,17 +456,18 @@ OjCmpt pdCreate(void)
 	ojCmptAddServiceOutputMessage(cmpt, JAUS_PRIMITIVE_DRIVER, JAUS_REPORT_PLATFORM_SPECIFICATIONS, 0xFF);
 	ojCmptAddServiceOutputMessage(cmpt, JAUS_PRIMITIVE_DRIVER, JAUS_REPORT_WRENCH_EFFORT, 0xFF);
 	ojCmptAddServiceOutputMessage(cmpt, JAUS_PRIMITIVE_DRIVER, JAUS_REPORT_DISCRETE_DEVICES, 0xFF);
+	ojCmptAddServiceOutputMessage(cmpt, JAUS_PRIMITIVE_DRIVER, JAUS_REPORT_WHEELS_SPEED, 0xFF);
+	ojCmptAddServiceOutputMessage(cmpt, JAUS_PRIMITIVE_DRIVER, JAUS_REPORT_COMPONENT_STATUS, 0xFF);
 
 	ojCmptAddSupportedSc(cmpt, JAUS_REPORT_WRENCH_EFFORT);
 	ojCmptAddSupportedSc(cmpt, JAUS_REPORT_DISCRETE_DEVICES);
 	ojCmptAddSupportedSc(cmpt, JAUS_REPORT_WHEELS_SPEED);
+	ojCmptAddSupportedSc(cmpt, JAUS_REPORT_COMPONENT_STATUS);
 
 	ojCmptSetMessageProcessorCallback(cmpt, pdProcessMessage);
 	ojCmptSetStateCallback(cmpt, JAUS_STANDBY_STATE, pdStandbyState);
 	ojCmptSetStateCallback(cmpt, JAUS_READY_STATE, pdReadyState);
 	ojCmptSetState(cmpt, JAUS_READY_STATE);
-
-	pdAddr = ojCmptGetAddress(cmpt);
 
 	data = (PdData*)malloc(sizeof(PdData));
 	data->setWrenchEffort = setWrenchEffortMessageCreate();
@@ -435,11 +477,16 @@ OjCmpt pdCreate(void)
 	data->reportWrenchEffort = reportWrenchEffortMessageCreate();
 	data->reportDiscreteDevices = reportDiscreteDevicesMessageCreate();
 	data->reportWheelsSpeed = reportWheelsSpeedMessageCreate();
+	data->reportComponentStatus = reportComponentStatusMessageCreate();
 
 	data->controllerStatus = reportComponentStatusMessageCreate();
 	data->controllerSc = -1;
-	jausAddressCopy(data->reportWrenchEffort->source, pdAddr);
 
+	pdAddr = ojCmptGetAddress(cmpt);
+	jausAddressCopy(data->reportWrenchEffort->source, pdAddr);
+	jausAddressCopy(data->reportDiscreteDevices->source, pdAddr);
+	jausAddressCopy(data->reportWheelsSpeed->source, pdAddr);
+	jausAddressCopy(data->reportComponentStatus->source, pdAddr);
 	jausAddressDestroy(pdAddr);
 
 	ojCmptSetUserData(cmpt, (void *)data);
@@ -464,14 +511,20 @@ void pdDestroy(OjCmpt pd)
 		ojCmptTerminateSc(pd, data->controllerSc);
 	}
 	ojCmptRemoveSupportedSc(pd, JAUS_REPORT_WRENCH_EFFORT);
+	ojCmptRemoveSupportedSc(pd, JAUS_REPORT_DISCRETE_DEVICES);
+	ojCmptRemoveSupportedSc(pd, JAUS_REPORT_WHEELS_SPEED);
+	ojCmptRemoveSupportedSc(pd, JAUS_REPORT_COMPONENT_STATUS);
 	ojCmptDestroy(pd);
-
 
 	setWrenchEffortMessageDestroy(data->setWrenchEffort);
 	setDiscreteDevicesMessageDestroy(data->setDiscreteDevices);
+	reportWheelsSpeedMessageDestroy(data->setWheelsSpeed);
+
 	reportWrenchEffortMessageDestroy(data->reportWrenchEffort);
 	reportDiscreteDevicesMessageDestroy(data->reportDiscreteDevices);
 	reportWheelsSpeedMessageDestroy(data->reportWheelsSpeed);
+	reportComponentStatusMessageDestroy(data->reportComponentStatus);
+
 	reportComponentStatusMessageDestroy(data->controllerStatus);
 	free(data);
 }

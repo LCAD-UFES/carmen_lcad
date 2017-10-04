@@ -10,6 +10,7 @@
 
 #include <jaus.h>
 #include <openJaus.h>
+#include <torc.h>
 
 #include <ncurses.h>
 #include <termios.h>
@@ -18,6 +19,8 @@
 
 #include "pd.h"
 #include "vss.h"
+#include "mpd.h"
+#include "sd.h"
 
 #ifndef TRUE
 #define TRUE 1
@@ -38,8 +41,10 @@ static char timeString[DEFAULT_STRING_LENGTH] = "";
 static struct termios newTermio;
 static struct termios storedTermio;
 
-OjCmpt vss;
 OjCmpt pd;
+OjCmpt vss;
+OjCmpt mpd;
+OjCmpt sd;
 
 // Refresh screen in curses mode
 void updateScreen(int keyboardLock, int keyPress)
@@ -231,6 +236,14 @@ int main(int argCount, char **argString)
 	if (!pd)
 		exit(1);
 	vss = vssCreate();
+	if (!vss)
+		exit(1);
+	mpd = mpdCreate();
+	if (!mpd)
+		exit(1);
+	sd = sdCreate();
+	if (!sd)
+		exit(1);
 
 	setupTerminal();
 
@@ -256,6 +269,8 @@ int main(int argCount, char **argString)
 
 	pdDestroy(pd);
 	vssDestroy(vss);
+	mpdDestroy(mpd);
+	sdDestroy(sd);
 
 	return 0;
 }

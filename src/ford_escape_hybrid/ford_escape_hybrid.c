@@ -175,33 +175,6 @@ set_wrench_efforts_desired_v_and_curvature()
 
 
 static void
-publish_velocity_message(void *clientData __attribute__ ((unused)), unsigned long currentTime __attribute__ ((unused)), unsigned long scheduledTime __attribute__ ((unused)))
-{
-	// This function publish the low level velocity and steering angle from the car
-
-	IPC_RETURN_TYPE err = IPC_OK;
-	carmen_robot_ackerman_velocity_message robot_ackerman_velocity_message;
-	static int heartbeat = 0;
-
-	robot_ackerman_velocity_message.v = g_XGV_velocity;
-	robot_ackerman_velocity_message.phi = get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config);
-	robot_ackerman_velocity_message.timestamp = carmen_get_time(); // @@ Alberto: era igual a = ford_escape_hybrid_config->XGV_v_and_phi_timestamp;
-	robot_ackerman_velocity_message.host = carmen_get_host();
-
-	err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, &robot_ackerman_velocity_message);
-	carmen_test_ipc(err, "Could not publish ford_escape_hybrid message named carmen_robot_ackerman_velocity_message", CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME);
-
-	if ((heartbeat % 10) == 0)
-	{
-		publish_car_status();
-		publish_car_error();
-	}
-
-	heartbeat++;
-}
-
-
-static void
 publish_car_status()
 {
 	IPC_RETURN_TYPE err = IPC_OK;
@@ -269,6 +242,33 @@ publish_car_error()
 
 	err = IPC_publishData(CARMEN_FORD_ESCAPE_ERROR_NAME, &msg);
 	carmen_test_ipc(err, "Could not publish", CARMEN_FORD_ESCAPE_ERROR_NAME);
+}
+
+
+static void
+publish_velocity_message(void *clientData __attribute__ ((unused)), unsigned long currentTime __attribute__ ((unused)), unsigned long scheduledTime __attribute__ ((unused)))
+{
+	// This function publish the low level velocity and steering angle from the car
+
+	IPC_RETURN_TYPE err = IPC_OK;
+	carmen_robot_ackerman_velocity_message robot_ackerman_velocity_message;
+	static int heartbeat = 0;
+
+	robot_ackerman_velocity_message.v = g_XGV_velocity;
+	robot_ackerman_velocity_message.phi = get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config);
+	robot_ackerman_velocity_message.timestamp = carmen_get_time(); // @@ Alberto: era igual a = ford_escape_hybrid_config->XGV_v_and_phi_timestamp;
+	robot_ackerman_velocity_message.host = carmen_get_host();
+
+	err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, &robot_ackerman_velocity_message);
+	carmen_test_ipc(err, "Could not publish ford_escape_hybrid message named carmen_robot_ackerman_velocity_message", CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME);
+
+	if ((heartbeat % 10) == 0)
+	{
+		publish_car_status();
+		publish_car_error();
+	}
+
+	heartbeat++;
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1001,11 +1001,11 @@ static void
 register_xgv_ccu_messages_handlers(OjCmpt XGV_CCU)
 {
 	ojCmptSetMessageCallback(XGV_CCU, JAUS_REPORT_VELOCITY_STATE, torc_report_velocity_state_message_handler); 		// Ok
-	ojCmptSetMessageCallback(XGV_CCU, JAUS_REPORT_CURVATURE, torc_report_curvature_message_handler);				// 1 (similar ao vss (motion profiles driver))
+	ojCmptSetMessageCallback(XGV_CCU, JAUS_REPORT_CURVATURE, torc_report_curvature_message_handler);				// Ok
 	ojCmptSetMessageCallback(XGV_CCU, JAUS_REPORT_WHEELS_SPEED, torc_report_wheels_speed_message_handler);			// Ok
 	ojCmptSetMessageCallback(XGV_CCU, JAUS_REPORT_WRENCH_EFFORT, torc_report_whrench_effort_message_handler);		// Ok
 	ojCmptSetMessageCallback(XGV_CCU, JAUS_REPORT_DISCRETE_DEVICES, torc_report_discrete_devices_message_handler);	// Ok
-	ojCmptSetMessageCallback(XGV_CCU, JAUS_REPORT_SIGNALS, torc_report_signals_message_handler);					// 2 (similar ao ps (signals driver))
+	ojCmptSetMessageCallback(XGV_CCU, JAUS_REPORT_SIGNALS, torc_report_signals_message_handler);					// Ok
 	ojCmptSetMessageCallback(XGV_CCU, JAUS_REPORT_ERROR_COUNT, torc_report_error_count_message_handler);			// 4 (precisa implementar? acho que nao implementei direito no ojTorc (apenas a contagem eh mandada?))
 	ojCmptSetMessageCallback(XGV_CCU, JAUS_REPORT_COMPONENT_STATUS, torc_report_component_status_message_handler);	// 3 (inclui o botao amarelo (Manual override). parece estar implemetado errado no PD (ao contrario (send<->receive); sem ojCmptAddSupportedSc() no lcal certo em sem funcao de resposta a service connection no pdReadyState()))
 }

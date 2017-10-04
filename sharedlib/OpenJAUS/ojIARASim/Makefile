@@ -7,12 +7,16 @@ SOURCES =	./src/getLine.c \
 		./src/main.c \
 		./src/properties.c \
 		./src/pd.c \
+		./src/mpd.c \
+		./src/sd.c \
 		./src/vss.c
 
 OBJECTS =	./Build/getLine.o \
 		./Build/main.o \
 		./Build/properties.o \
 		./Build/pd.o \
+		./Build/mpd.o \
+		./Build/sd.o \
 		./Build/vss.o
 
 default : all
@@ -38,6 +42,11 @@ $(TARGET) : $(OBJECTS)
 ./Build/pd.o : ./src/pd.c
 	gcc $(CCFLAGS) -o ./Build/pd.o ./src/pd.c
 
+./Build/mpd.o : ./src/mpd.c
+	gcc $(CCFLAGS) -o ./Build/mpd.o ./src/mpd.c
+
+./Build/sd.o : ./src/sd.c
+	gcc $(CCFLAGS) -o ./Build/sd.o ./src/sd.c
+
 ./Build/vss.o : ./src/vss.c
 	gcc $(CCFLAGS) -o ./Build/vss.o ./src/vss.c
-
