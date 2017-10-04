@@ -108,7 +108,7 @@ compute_errors(double y_actual, double y_desired, double delta_t, data* data)
 	data->previous_error = data->proportional_error;
 	data->proportional_error = error;
 	data->integral_error = data->integral_error + (error * delta_t);
-	data->derivative_error = (data->derivative_error - error) / delta_t;
+	data->derivative_error = (error - data->previous_error) / delta_t;
 }
 
 
@@ -248,6 +248,7 @@ void
 compute_td_error(data* data)    // 0 < discount_factor < 1
 {
 	data->td_error = data->reinforcement_signal + (data->params.discount_factor * data->critic_value) - data->previous_critic_value; // 0 < discount_factor < 1
+	//printf("%lf %lf\n", data->critic_value, data->previous_critic_value);
 }
 
 

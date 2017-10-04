@@ -615,7 +615,7 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 	{
 		if (simulator_config->use_rlpid)
 		{	//RL_PID
-			if (simulator_config->current_motion_command_vector != NULL)
+			if (simulator_config->current_motion_command_vector != NULL)//&& simulator_config->current_motion_command_vector[2].v > 0.0)
 			{
 				steering_effort = carmen_librlpid_compute_effort(atan_current_curvature, atan_desired_curvature, simulator_config->delta_t);
 				//steering_effort = carmen_librlpid_compute_effort_new(atan_current_curvature, atan_desired_curvature, simulator_config->delta_t);
