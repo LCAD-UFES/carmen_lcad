@@ -278,7 +278,7 @@ print_interface()
 			break;			
 	}
 	
-	move(1, 1);
+	//move(0,0);
 	refresh();
 }	
 
@@ -326,9 +326,8 @@ user_interface(OjCmpt XGV_CCU)
 {
 	struct termios newTermio;
 	int running = 1;
-//	char choice[8] = {0};
-	int choice = 0;
-//	int count = 0;
+	char choice[8] = {0};
+	int count = 0;
 
 	// Prepare terminal for receiving key commands
 	tcgetattr(0, &storedTermio);
@@ -342,21 +341,19 @@ user_interface(OjCmpt XGV_CCU)
 
 	// Start up Curses window
 	initscr();
-	cbreak();
-	noecho();
-	nodelay(stdscr, 1);	// Don't wait at the getch() function if the user hasn't hit a key
+	//cbreak();
+	//noecho();
+	//nodelay(stdscr, 1);	// Don't wait at the getch() function if the user hasn't hit a key
 	keypad(stdscr, 1); // Allow Function key input and arrow key input
 
 	while (running)
 	{
 		print_interface();
-//		memset(choice, 0, 8);
-//		count = read(0, &choice, 8);
-//		if (count == 1)
-//		{
-//			switch (choice[0])
-			choice = getch();
-			switch (choice)
+		memset(choice, 0, 8);
+		count = read(0, &choice, 8);
+		if (count == 1)
+		{
+			switch (choice[0])
 			{
 				case 27: // ESC
 					printf("Shutting Down XGV_CCU...\n");
@@ -469,15 +466,15 @@ user_interface(OjCmpt XGV_CCU)
 					send_set_signals_message(XGV_CCU);
 					break;
 
-//				default:
-//					break;
-//			}
-//		}
-//		else
-//		{
-//			switch (choice[2])
-//			{
-				case KEY_UP: // Up
+				default:
+					break;
+			}
+		}
+		else
+		{
+			switch (choice[2])
+			{
+				case 65: // Up
 					g_throttle_command += (MAX_THROTTLE - MIN_THROTTLE) / 100.0;
 					if (g_throttle_command > MAX_THROTTLE)
 						g_throttle_command = MAX_THROTTLE;
@@ -524,7 +521,7 @@ user_interface(OjCmpt XGV_CCU)
 
 				default:
 					break;
-//			}
+			}
 		}
 	}
 	endwin();
