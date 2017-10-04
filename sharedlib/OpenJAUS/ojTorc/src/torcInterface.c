@@ -278,7 +278,7 @@ print_interface()
 			break;			
 	}
 	
-	//move(0,0);
+	move(1, 1);
 	refresh();
 }	
 
