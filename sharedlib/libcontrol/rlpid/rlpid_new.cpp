@@ -232,12 +232,15 @@ compute_actual_pid_params(data* data)
 
 	g_noise = gaussian_noise(0, data->sigma_critical_deviation) * GAUSS_MULTIPLIER; //mean = 0// zero-mean and magntude = sigma_critical_deviation
 	data->actual_kp = data->recomended_kp + g_noise;
+	//printf("%lf ", g_noise);
 
 	g_noise = gaussian_noise(0, data->sigma_critical_deviation) * GAUSS_MULTIPLIER; //mean = 0// zero-mean and magntude = sigma_critical_deviation
 	data->actual_ki = data->recomended_ki + g_noise;
+	//printf("%lf ", g_noise);
 
 	g_noise = gaussian_noise(0, data->sigma_critical_deviation) * GAUSS_MULTIPLIER; //mean = 0// zero-mean and magntude = sigma_critical_deviation
 	data->actual_kd = data->recomended_kd + g_noise;
+	//printf("%lf\n", g_noise);
 
 	//printf("akp %lf aki %lf akd %lf\n", data->actual_kp, data->actual_ki, data->actual_kd);
 }
@@ -280,7 +283,7 @@ center_vector_update(data* data)
 
 	for (int i = 0; i < NEURONS_NUMBER_HIDDEN_UNIT; i++)
 	{
-		aux = (data->params.learning_rate_center * data->td_error * data->hidden_neuron[i].v_neuron_weight * data->hidden_neuron[i].phi_value) / pow(data->hidden_neuron[i].width_scalar_sigma,2);
+		aux = (data->params.learning_rate_center * data->td_error * data->hidden_neuron[i].v_neuron_weight * data->hidden_neuron[i].phi_value) / pow(data->hidden_neuron[i].width_scalar_sigma, 2);
 
 		data->hidden_neuron[i].center_vector[0] = data->hidden_neuron[i].center_vector[0] + aux * (data->proportional_error - data->hidden_neuron[i].center_vector[0]);
 		data->hidden_neuron[i].center_vector[1] = data->hidden_neuron[i].center_vector[1] + aux * (data->integral_error     - data->hidden_neuron[i].center_vector[1]);
@@ -331,12 +334,14 @@ carmen_librlpid_compute_effort_new(double current_curvature, double desired_curv
 	{
 		compute_critic_value(&data);
 		compute_td_error(&data);
+
 		weights_update(&data);
 		center_vector_update(&data);
 		width_scalar_update(&data);
 
 		compute_errors(current_curvature, desired_curvature, delta_t, &data);
 		compute_external_reinforcement_signal(&data);
+		update_neetwork_hidden_unit_phi(&data);
 		compute_recomended_pid_output(&data);
 		compute_actual_pid_params(&data);
 		compute_control_command_u(&data);
@@ -344,5 +349,5 @@ carmen_librlpid_compute_effort_new(double current_curvature, double desired_curv
 
 	printf("u %lf e %lf kp %lf ki %lf kd %lf\n", data.u_t, data.proportional_error, data.actual_kp, data.actual_ki, data.actual_kd);
 
-	return data.u_t;//carmen_clamp(-100.0, (U[0]), 100.0);
+	return data.u_t;
 }
