@@ -1,8 +1,7 @@
 
 /**
  * @description
- * This code have been created to filter some messages of the log
- * The messages of the chosen sensor are saved to a file
+ * This code have been created to export camera poses
  *
  * @author avelino forechi
  */
@@ -79,7 +78,7 @@ void
 compose_filename_from_timestamp_bb(double timestamp, char **filename, char *extension, int camera)
 {
 	*filename = (char*) malloc (256 * sizeof(char));
-	sprintf((*filename), "%.25f.bb%02d.%s", timestamp, camera, extension);
+	sprintf((*filename), "%lf.bb%d.%s", timestamp, camera, extension);
 }
 
 
@@ -161,7 +160,7 @@ get_camera_pose_wrt_world(carmen_point_t robot_pose)
 	camera_pose = world_to_camera_pose;
 
 	tf::Matrix3x3(camera_pose.getRotation()).getRPY(roll, pitch, yaw);
-	carmen_warn("%.6f %.6f %.6f %.6f %.6f %.6f\n", camera_pose.getOrigin().x(), camera_pose.getOrigin().y(), camera_pose.getOrigin().z(), carmen_radians_to_degrees(yaw), carmen_radians_to_degrees(pitch), carmen_radians_to_degrees(roll));
+	carmen_warn("%lf %lf %lf %lf %lf %lf\n", camera_pose.getOrigin().x(), camera_pose.getOrigin().y(), camera_pose.getOrigin().z(), carmen_radians_to_degrees(yaw), carmen_radians_to_degrees(pitch), carmen_radians_to_degrees(roll));
 
 	return camera_pose;
 }
@@ -231,7 +230,7 @@ save_pose_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int 
 	*/
 	create_stereo_filename_from_timestamp(stereo_image->timestamp, &left_img_filename, &right_img_filename, camera);
 
-	fprintf(image_pose_output_file, "%.6f %.6f %.6f %.6f %.6f %.6f %.25f %s/%s %s/%s\n",
+	fprintf(image_pose_output_file, "%lf %lf %lf %lf %lf %lf %lf %s/%s %s/%s\n",
 			globalpos.position.x, globalpos.position.y, globalpos.position.z,	//tx, ty, tz
 			globalpos.orientation.roll, globalpos.orientation.pitch, globalpos.orientation.yaw,		//rx, ry, rz,
 			stereo_image->timestamp,
@@ -264,7 +263,8 @@ void
 bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image)
 {
 	save_pose_to_file(stereo_image, camera);
-	save_image_to_file(stereo_image, camera);
+	//use log2png.py instead
+	//save_image_to_file(stereo_image, camera);
 }
 
 
@@ -383,7 +383,7 @@ initialize_transformations()
 	tf::StampedTransform board_to_camera_transform(board_to_camera_pose, tf::Time(0), "/board", "/camera");
 	transformer.setTransform(board_to_camera_transform, "board_to_camera_transform");
 
-	carmen_warn("%.6f %.6f %.6f %.6f %.6f %.6f\n", camera_pose_g.position.x, camera_pose_g.position.y, camera_pose_g.position.z,
+	carmen_warn("%lf %lf %lf %lf %lf %lf\n", camera_pose_g.position.x, camera_pose_g.position.y, camera_pose_g.position.z,
 			carmen_radians_to_degrees(camera_pose_g.orientation.yaw), carmen_radians_to_degrees(camera_pose_g.orientation.pitch),
 			carmen_radians_to_degrees(camera_pose_g.orientation.roll));
 }

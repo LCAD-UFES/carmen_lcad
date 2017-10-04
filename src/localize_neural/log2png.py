@@ -27,8 +27,8 @@ def save_any_img(img_left, img_right, img_size, dst_size, timestamp, camera_id, 
         img_right = cv2.resize(img_right, dst_size)
 
     if max_height is not None:
-        img_left = img_left[0:max_height, 0:-1]
-        img_right = img_right[0:max_height, 0:-1]
+        img_left = img_left[0:max_height]
+        img_right = img_right[0:max_height]
 
     img_left_fname = '{0}.bb{1}.l.png'.format(timestamp, camera_id)
     img_right_fname = '{0}.bb{1}.r.png'.format(timestamp, camera_id)
