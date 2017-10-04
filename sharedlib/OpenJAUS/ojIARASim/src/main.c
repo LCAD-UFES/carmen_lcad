@@ -35,7 +35,6 @@
 static int mainRunning = FALSE;
 static int verbose = FALSE; // Se verdadeiro, printf() funciona; caso contrario, nao.
 static int keyboardLock = FALSE;
-static char timeString[DEFAULT_STRING_LENGTH] = "";
 
 // Operating specific console handles
 static struct termios newTermio;
@@ -224,11 +223,6 @@ int main(int argCount, char **argString)
 {
 	char keyPressed = FALSE;
 	double keyboardLockTime = ojGetTimeSec() + KEYBOARD_LOCK_TIMEOUT_SEC;
-	time_t timeStamp;
-
-	//Get and Format Time String
-	time(&timeStamp);
-	strftime(timeString, DEFAULT_STRING_LENGTH-1, "%m-%d-%Y %X", localtime(&timeStamp));
 
 	system(CLEAR);
 
