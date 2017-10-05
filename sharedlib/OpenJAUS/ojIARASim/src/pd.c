@@ -45,7 +45,11 @@
 #include <termios.h>
 #include <unistd.h>
 #include <torc.h>
+#include <linux/can.h>
+#include <linux/can/raw.h>
+
 #include "pd.h"
+#include "can_utils.h"
 
 #define CONTROLLER_STATUS_TIMEOUT_SEC 	1.5
 #define CONTROLLER_STATUS_UPDATE_RATE_HZ		5.0
@@ -147,6 +151,14 @@ void pdProcessMessage(OjCmpt pd, JausMessage message)
 				if ((1 << JAUS_DEVICES_PV_GEAR_BIT) & setDiscreteDevices->presenceVector)
 				{
 					data->setDiscreteDevices->gear = setDiscreteDevices->gear;
+					if (data->setDiscreteDevices->gear == 1)
+					{
+						struct can_frame frame;
+						frame.can_id = 0x10;
+						frame.can_dlc = 1;
+						frame.data[0] = 0x42;
+						send_frame(out_can_sockfd, &frame);
+					}
 					// Mandar comandos para a IARA aqui
  				}
 				setDiscreteDevicesMessageDestroy(setDiscreteDevices);

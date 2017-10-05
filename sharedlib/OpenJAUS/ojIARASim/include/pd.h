@@ -60,7 +60,7 @@
 
 #define PD_THREAD_DESIRED_RATE_HZ			100.0	// USER: Modify this rate as needed
 
-// USER: All defines should start with "PD_", where your component acronym replaces "PD"
+extern int out_can_sockfd;
 
 OjCmpt pdCreate(void);
 void pdDestroy(OjCmpt pd);
