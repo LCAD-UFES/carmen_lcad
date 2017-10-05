@@ -267,6 +267,8 @@ static void signal_handler(int signo)
 		close(in_can_sockfd);
 		close(out_can_sockfd);
 	}
+
+	exit(0);
 }
 
 int main(int argCount, char **argString)
