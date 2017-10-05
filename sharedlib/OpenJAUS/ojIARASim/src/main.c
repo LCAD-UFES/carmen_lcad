@@ -260,7 +260,10 @@ int main(int argCount, char **argString)
 	if (argCount == 1) // Sem parametro liga a interface
 		system(CLEAR);
 	else
+	{
 		in_can_sockfd = init_can(argString[1]);
+		out_can_sockfd = init_can(argString[2]);
+	}
 
 	int_modules();
 
