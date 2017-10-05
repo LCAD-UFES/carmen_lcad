@@ -105,8 +105,6 @@ int init_can(char *intf_name)
 	struct ifreq ifr;
 	struct sockaddr_can addr;
 	int family = PF_CAN, type = SOCK_RAW, proto = CAN_RAW;
-	int echo_gen = 0;
-	int opt, err;
 
 //	printf("interface = %s, family = %d, type = %d, proto = %d\n",
 //	       intf_name, family, type, proto);
