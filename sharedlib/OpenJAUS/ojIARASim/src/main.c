@@ -39,6 +39,7 @@
 static int mainRunning = FALSE;
 static int verbose = FALSE; // Se verdadeiro, printf() funciona; caso contrario, nao.
 static int keyboardLock = FALSE;
+static int interface_active = FALSE;
 
 // Operating specific console handles
 static struct termios newTermio;
@@ -256,35 +257,46 @@ void terminate_modules()
 
 static void signal_handler(int signo)
 {
-	mainRunning = FALSE;
+	if (interface_active)
+		cleanupConsole();
+
+	terminate_modules();
+
+	if (!interface_active)
+	{
+		close(in_can_sockfd);
+		close(out_can_sockfd);
+	}
 }
 
 int main(int argCount, char **argString)
 {
+	signal(SIGTERM, signal_handler);
+	signal(SIGHUP, signal_handler);
+	signal(SIGINT, signal_handler);
+
 	if (argCount == 1) // Sem parametro liga a interface
+		interface_active = TRUE;
+
+	if (interface_active)
 		system(CLEAR);
 	else
 	{
 		in_can_sockfd = init_can(argString[1]);
 		out_can_sockfd = init_can(argString[2]);
-
-		signal(SIGTERM, signal_handler);
-		signal(SIGHUP, signal_handler);
-		signal(SIGINT, signal_handler);
 	}
 
 	int_modules();
 
-	if (argCount == 1) // Sem parametro liga a interface
+	if (interface_active)
 		setupTerminal();
 
 	mainRunning = TRUE;
 	while(mainRunning)
 	{
-		if (argCount == 1) // Sem parametro liga a interface
+		if (interface_active)
 		{
 			getUserInput();
-
 			ojSleepMsec(100);
 		}
 		else
@@ -295,12 +307,12 @@ int main(int argCount, char **argString)
 		}
 	}
 
-	if (argCount == 1) // Sem parametro liga a interface
+	if (interface_active)
 		cleanupConsole();
 
 	terminate_modules();
 
-	if (argCount != 1)
+	if (!interface_active)
 	{
 		close(in_can_sockfd);
 		close(out_can_sockfd);
