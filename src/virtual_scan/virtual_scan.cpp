@@ -213,22 +213,20 @@ classify_segments(virtual_scan_segments_t *virtual_scan_segments)
 
 
 //virtual_scan_box_models_t *
-//fit_box_models(virtual_scan_segments_t *virtual_scan_segments)
+//fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment_classes)
 //{
 //// Box classes
 //#define BUS			0
 //#define CAR			1
 //#define BIKE		2 // Motorcycles and bicycles
 //#define PEDESTRIAN	3
-//
+
 //	virtual_scan_box_models_t *virtual_scan_box_models;
 //
 //	virtual_scan_box_models = (virtual_scan_box_models_t *) malloc(sizeof(virtual_scan_box_models_t));
 //	virtual_scan_box_models->num_boxes = virtual_scan_segments->num_segments;
 //	virtual_scan_box_models->box = (box_model_t *) malloc(sizeof(box_model_t) * virtual_scan_box_models->num_boxes);
 //
-
-
 //		switch (segment_class)
 //		{
 //			case MASS_POINT: // Represented by a point model, by which the object is parameterized by the object class and object center position
@@ -258,9 +256,7 @@ classify_segments(virtual_scan_segments_t *virtual_scan_segments)
 ////				virtual_scan_box_models->box[i].length = ;
 //			break;
 //		}
-
-
-
+//
 //	return (virtual_scan_box_models);
 //	}
 
