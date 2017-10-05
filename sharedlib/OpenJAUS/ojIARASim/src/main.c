@@ -254,15 +254,23 @@ void terminate_modules()
 	sdDestroy(sd);
 }
 
+static void signal_handler(int signo)
+{
+	mainRunning = FALSE;
+}
+
 int main(int argCount, char **argString)
 {
-
 	if (argCount == 1) // Sem parametro liga a interface
 		system(CLEAR);
 	else
 	{
 		in_can_sockfd = init_can(argString[1]);
 		out_can_sockfd = init_can(argString[2]);
+
+		signal(SIGTERM, signal_handler);
+		signal(SIGHUP, signal_handler);
+		signal(SIGINT, signal_handler);
 	}
 
 	int_modules();
@@ -291,6 +299,12 @@ int main(int argCount, char **argString)
 		cleanupConsole();
 
 	terminate_modules();
+
+	if (argCount != 1)
+	{
+		close(in_can_sockfd);
+		close(out_can_sockfd);
+	}
 
 	return (0);
 }
