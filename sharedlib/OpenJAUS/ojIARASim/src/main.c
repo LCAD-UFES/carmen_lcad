@@ -12,6 +12,9 @@
 #include <openJaus.h>
 #include <torc.h>
 
+#include <linux/can.h>
+#include <linux/can/raw.h>
+
 #include <ncurses.h>
 #include <termios.h>
 #include <unistd.h>
@@ -45,6 +48,10 @@ OjCmpt pd;
 OjCmpt vss;
 OjCmpt mpd;
 OjCmpt sd;
+
+int in_can_sockfd;
+int out_can_sockfd;
+
 
 // Refresh screen in curses mode
 void updateScreen(int keyboardLock, int keyPress)
@@ -220,59 +227,67 @@ char getUserInput()
 	return retVal;
 }
 
+void int_modules()
+{
+	pd = pdCreate();
+	if (!pd)
+		exit(1);
+
+	vss = vssCreate();
+	if (!vss)
+		exit(1);
+
+	mpd = mpdCreate();
+	if (!mpd)
+		exit(1);
+
+	sd = sdCreate();
+	if (!sd)
+		exit(1);
+}
+
+void terminate_modules()
+{
+	pdDestroy(pd);
+	vssDestroy(vss);
+	mpdDestroy(mpd);
+	sdDestroy(sd);
+}
+
 int main(int argCount, char **argString)
 {
 
 	if (argCount == 1) // Sem parametro liga a interface
 		system(CLEAR);
 	else
-		init_can(argString[1]);
+		in_can_sockfd = init_can(argString[1]);
 
-	pd = pdCreate();
-	if (!pd)
-		exit(1);
-	vss = vssCreate();
-	if (!vss)
-		exit(1);
-	mpd = mpdCreate();
-	if (!mpd)
-		exit(1);
-	sd = sdCreate();
-	if (!sd)
-		exit(1);
+	int_modules();
 
 	if (argCount == 1) // Sem parametro liga a interface
 		setupTerminal();
 
 	mainRunning = TRUE;
-	char keyPressed = FALSE;
-	double keyboardLockTime = ojGetTimeSec() + KEYBOARD_LOCK_TIMEOUT_SEC;
 	while(mainRunning)
 	{
 		if (argCount == 1) // Sem parametro liga a interface
 		{
-			keyPressed = getUserInput();
-
-			if(keyPressed)
-			{
-				keyboardLockTime = ojGetTimeSec() + KEYBOARD_LOCK_TIMEOUT_SEC;
-			}
-			else if(ojGetTimeSec() > keyboardLockTime)
-			{
-	//			keyboardLock = TRUE;
-			}
+			getUserInput();
 
 			ojSleepMsec(100);
+		}
+		else
+		{
+			struct can_frame frame;
+			recv_frame(in_can_sockfd, &frame);
+			print_frame(&frame);
 		}
 	}
 
 	if (argCount == 1) // Sem parametro liga a interface
 		cleanupConsole();
 
-	pdDestroy(pd);
-	vssDestroy(vss);
-	mpdDestroy(mpd);
-	sdDestroy(sd);
+	terminate_modules();
 
-	return 0;
+	return (0);
 }
