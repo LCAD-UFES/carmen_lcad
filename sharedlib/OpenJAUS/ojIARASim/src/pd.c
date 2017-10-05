@@ -129,7 +129,14 @@ void pdProcessMessage(OjCmpt pd, JausMessage message)
 			{
 				setWrenchEffortMessageDestroy(data->setWrenchEffort);
 				data->setWrenchEffort = setWrenchEffort;
-				// Mandar comandos para a IARA aqui
+				struct can_frame frame;
+				frame.can_id = 0x480;
+				frame.can_dlc = 4;
+				frame.data[0] = 0x00;
+				frame.data[1] = (int) (2.0 * data->setWrenchEffort->resistiveLinearEffortXPercent + 0.5); // breaks
+				frame.data[2] = 0xDA; // Steering
+				frame.data[3] = 0x01; // Steering
+				send_frame(out_can_sockfd, &frame);
 			}
 			break;
 
