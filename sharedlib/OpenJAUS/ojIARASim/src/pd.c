@@ -153,11 +153,11 @@ void pdProcessMessage(OjCmpt pd, JausMessage message)
 					data->setDiscreteDevices->gear = setDiscreteDevices->gear;
 					if (data->setDiscreteDevices->gear == 1)
 					{
-						struct can_frame frame;
-						frame.can_id = 0x10;
-						frame.can_dlc = 1;
-						frame.data[0] = 0x42;
-						send_frame(out_can_sockfd, &frame);
+//						struct can_frame frame;
+//						frame.can_id = 0x10;
+//						frame.can_dlc = 1;
+//						frame.data[0] = 0x42;
+//						send_frame(out_can_sockfd, &frame);
 					}
 					// Mandar comandos para a IARA aqui
  				}

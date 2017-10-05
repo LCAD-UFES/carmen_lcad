@@ -12,7 +12,11 @@
 #include <termios.h>
 #include <unistd.h>
 #include <torc.h>
+#include <linux/can.h>
+#include <linux/can/raw.h>
+
 #include "sd.h"
+#include "can_utils.h"
 
 #define CONTROLLER_STATUS_TIMEOUT_SEC 	1.5
 #define CONTROLLER_STATUS_UPDATE_RATE_HZ		5.0
@@ -79,7 +83,12 @@ void sdProcessMessage(OjCmpt sd, JausMessage message)
 				if ((1 << JAUS_SIGNALS_PV_TURN_SIGNAL_BIT) & setSignals->presenceVector)
 				{
 					data->setSignals->turnSignal = setSignals->turnSignal;
-					// Mandar comandos para a IARA aqui
+					struct can_frame frame;
+					frame.can_id = 0x400;
+					frame.can_dlc = 2; // numero de bytes
+					frame.data[0] = data->setSignals->turnSignal << 5;
+					frame.data[1] = 0x00;
+					send_frame(out_can_sockfd, &frame);
 				}
 				if ((1 << JAUS_SIGNALS_PV_HORN_BIT) & setSignals->presenceVector)
 				{

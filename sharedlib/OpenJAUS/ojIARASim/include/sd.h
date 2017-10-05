@@ -19,6 +19,8 @@
 
 #define SD_THREAD_DESIRED_RATE_HZ			10.0
 
+extern int out_can_sockfd;
+
 OjCmpt sdCreate(void);
 void sdDestroy(OjCmpt pd);
 
