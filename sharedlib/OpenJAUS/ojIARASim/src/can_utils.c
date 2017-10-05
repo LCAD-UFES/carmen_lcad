@@ -43,9 +43,6 @@
 #define CAN_MSG_COUNT	50
 #define CAN_MSG_WAIT	27
 
-static int verbose;
-static int sockfd;
-
 void print_frame(struct can_frame *frame)
 {
 	int i;
@@ -61,7 +58,7 @@ void print_frame(struct can_frame *frame)
 	printf("\n");
 }
 
-int recv_frame(struct can_frame *frame)
+int recv_frame(int sockfd, struct can_frame *frame)
 {
 	int ret;
 
@@ -76,7 +73,7 @@ int recv_frame(struct can_frame *frame)
 	return 1;
 }
 
-int send_frame(struct can_frame *frame)
+int send_frame(int sockfd, struct can_frame *frame)
 {
 	int ret;
 
@@ -86,11 +83,6 @@ int send_frame(struct can_frame *frame)
 			if (errno != ENOBUFS) {
 				perror("send failed");
 				return 0;
-			} else {
-				if (verbose) {
-					printf("N");
-					fflush(stdout);
-				}
 			}
 		} else {
 			fprintf(stderr, "send returned %d", ret);
@@ -109,9 +101,10 @@ int init_can(char *intf_name)
 //	printf("interface = %s, family = %d, type = %d, proto = %d\n",
 //	       intf_name, family, type, proto);
 
+	int sockfd;
 	if ((sockfd = socket(family, type, proto)) < 0) {
 		perror("socket");
-		return 0;
+		return -1;
 	}
 
 	addr.can_family = family;
@@ -122,8 +115,8 @@ int init_can(char *intf_name)
 	if (bind(sockfd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
 		perror("bind");
 		close(sockfd);
-		return 0;
+		return -1;
 	}
 
-	return (1);
+	return (sockfd);
 }
