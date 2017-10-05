@@ -21,6 +21,7 @@
 #include "vss.h"
 #include "mpd.h"
 #include "sd.h"
+#include "can_utils.h"
 
 #ifndef TRUE
 #define TRUE 1
@@ -221,10 +222,11 @@ char getUserInput()
 
 int main(int argCount, char **argString)
 {
-	char keyPressed = FALSE;
-	double keyboardLockTime = ojGetTimeSec() + KEYBOARD_LOCK_TIMEOUT_SEC;
 
-	system(CLEAR);
+	if (argCount == 1) // Sem parametro liga a interface
+		system(CLEAR);
+	else
+		init_can(argString[1]);
 
 	pd = pdCreate();
 	if (!pd)
@@ -239,27 +241,33 @@ int main(int argCount, char **argString)
 	if (!sd)
 		exit(1);
 
-	setupTerminal();
+	if (argCount == 1) // Sem parametro liga a interface
+		setupTerminal();
 
 	mainRunning = TRUE;
-
+	char keyPressed = FALSE;
+	double keyboardLockTime = ojGetTimeSec() + KEYBOARD_LOCK_TIMEOUT_SEC;
 	while(mainRunning)
 	{
-		keyPressed = getUserInput();
-
-		if(keyPressed)
+		if (argCount == 1) // Sem parametro liga a interface
 		{
-			keyboardLockTime = ojGetTimeSec() + KEYBOARD_LOCK_TIMEOUT_SEC;
-		}
-		else if(ojGetTimeSec() > keyboardLockTime)
-		{
-//			keyboardLock = TRUE;
-		}
+			keyPressed = getUserInput();
 
-		ojSleepMsec(100);
+			if(keyPressed)
+			{
+				keyboardLockTime = ojGetTimeSec() + KEYBOARD_LOCK_TIMEOUT_SEC;
+			}
+			else if(ojGetTimeSec() > keyboardLockTime)
+			{
+	//			keyboardLock = TRUE;
+			}
+
+			ojSleepMsec(100);
+		}
 	}
 
-	cleanupConsole();
+	if (argCount == 1) // Sem parametro liga a interface
+		cleanupConsole();
 
 	pdDestroy(pd);
 	vssDestroy(vss);

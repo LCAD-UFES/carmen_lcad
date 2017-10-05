@@ -9,6 +9,7 @@ SOURCES =	./src/getLine.c \
 		./src/pd.c \
 		./src/mpd.c \
 		./src/sd.c \
+		./src/can_utils.c \
 		./src/vss.c
 
 OBJECTS =	./Build/getLine.o \
@@ -17,6 +18,7 @@ OBJECTS =	./Build/getLine.o \
 		./Build/pd.o \
 		./Build/mpd.o \
 		./Build/sd.o \
+		./Build/can_utils.o \
 		./Build/vss.o
 
 default : all
@@ -47,6 +49,9 @@ $(TARGET) : $(OBJECTS)
 
 ./Build/sd.o : ./src/sd.c
 	gcc $(CCFLAGS) -o ./Build/sd.o ./src/sd.c
+
+./Build/can_utils.o : ./src/can_utils.c
+	gcc $(CCFLAGS) -o ./Build/can_utils.o ./src/can_utils.c
 
 ./Build/vss.o : ./src/vss.c
 	gcc $(CCFLAGS) -o ./Build/vss.o ./src/vss.c
