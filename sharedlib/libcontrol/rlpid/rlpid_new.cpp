@@ -114,34 +114,22 @@ calculate_pid_errors(double y_desired, double y,  double delta_t, data* data)
 }
 
 
-double
-calculate_total_error(data* data, int media)
-{
-	data->total_error_quadratico = data->total_error_quadratico + (data->variables.error[0]*data->variables.error[0]);
-	return (data->total_error_quadratico/media);
-}
-
-
 //   EQUATION 1
-void
+double
 update_plant_input_u(double atan_desired_curvature, double atan_current_curvature, double delta_t, data* data)
 {
-	data->variables.U[2] = data->variables.U[1]; //Update the past u values
-	data->variables.U[1] = data->variables.U[0];
-
 	double 	integral_t_1 = data->variables.error_order[1];
 	double 	u_t;			// u(t)	-> actuation in time t
 
 
 	if (delta_t == 0.0)
 	{
-		data->variables.U[0] = 0;
-		return;
+		return 0.0;
 	}
 
 	calculate_pid_errors(atan_desired_curvature, atan_current_curvature, delta_t, data);
 
-	u_t = (data->variables.pid_params[0] * data->variables.error_order[0]) + (data->variables.pid_params[1] * data->variables.error_order[1]) + (data->variables.pid_params[2] * data->variables.error_order[2]);
+	u_t = (data->actual_kp * data->error_order_0) + (data->actual_ki * data->error_order_1) + (data->actual_kd * data->error_order_2);
 
 	data->variables.error[2] = data->variables.error[1];
 	data->variables.error[1] = data->variables.error[0];
