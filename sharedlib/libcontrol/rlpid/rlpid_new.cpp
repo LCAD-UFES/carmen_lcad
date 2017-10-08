@@ -118,7 +118,7 @@ calculate_pid_errors(double y_desired, double y,  double delta_t, data* data)
 double
 update_plant_input_u(double atan_desired_curvature, double atan_current_curvature, double delta_t, data* data)
 {
-	double 	integral_t_1 = data->variables.error_order[1];
+	//double 	integral_t_1 = data->variables.error_order[1];
 	double 	u_t;			// u(t)	-> actuation in time t
 
 
@@ -131,28 +131,16 @@ update_plant_input_u(double atan_desired_curvature, double atan_current_curvatur
 
 	u_t = (data->actual_kp * data->error_order_0) + (data->actual_ki * data->error_order_1) + (data->actual_kd * data->error_order_2);
 
-	data->variables.error[2] = data->variables.error[1];
-	data->variables.error[1] = data->variables.error[0];
-	data->variables.error[0] = data->variables.error_order[0];
+	data->error_2 = data->error_1;
+	data->error_1 = data->error_0;
+	data->error_0 = data->error_order_0;
 
 	// Anti windup
-	if ((u_t < -100.0) || (u_t > 100.0))
-		data->variables.error_order[1] = integral_t_1;
+	//if ((u_t < -100.0) || (u_t > 100.0))
+	//	data->variables.error_order[1] = integral_t_1;
 
 	u_t = carmen_clamp(-100.0, u_t, 100.0);
-	data->variables.U[0] = -u_t;//carmen_libpid_steering_PID_controler(atan_desired_curvature, atan_current_curvature, delta_t);
-}
-
-
-void
-update_plant_input_u_old(data* data)
-{ //Where:  U[0] = u(t), U[1] = u(t-1), U[2] = u(t-2)
-	data->variables.U[2] = data->variables.U[1]; //Update the past u values
-	data->variables.U[1] = data->variables.U[0];
-	data->variables.pid_params[1] = 600;
-	data->variables.pid_params[0] = 1250;
-	data->variables.pid_params[2] = 25;
-	data->variables.U[0] = data->variables.U[1] + data->variables.pid_params[1] * data->variables.error_order[0] + data->variables.pid_params[0] * data->variables.error_order[1] + data->variables.pid_params[2] * data->variables.error_order[2]; //Calculate actual output value.
+	return (-u_t);
 }
 
 
@@ -171,12 +159,10 @@ external_reinforcement_signal(data* data) //r(t) = alfa*Re + beta*Rec
 {
 	double Re = 0;
 	double Rec = 0;
-// Calculate Re
 	if (fabs(data->variables.error[0]) > data->params.error_band)
 	{
 		Re = -0.5;
 	}
-// Calculate Rec
 	if (fabs(data->variables.error[0]) > fabs(data->variables.error[1]))
 	{
 		Rec = -0.5;
@@ -224,27 +210,16 @@ void
 update_recomended_pid_output(data* data)
 {
 	int i = 0;
-// RESET THE VALUE OF THE RECOMENDED PID
-	for (i = 0;i < 3;i++)
-	{
-		data->variables.recomended_pid_params[i] = 0;
-	}
-// FINDING THE RECOMMENDED KP
-	for (i = 0; i < neural_network_size; i++)
-	{
-		data->variables.recomended_pid_params[0] = data->variables.recomended_pid_params[0] + (data->neuron[i].w_neuron_weight[0] * data->neuron[i].phi_value);
-		//printf("w %lf p %lf\n", data->neuron[i].w_neuron_weight[0], data->neuron[i].phi_value);
 
-	}
-// FINDING THE RECOMMENDED KI
+	data->recomended_kp = 0.0;
+	data->recomended_ki = 0.0;
+	data->recomended_kd = 0.0;
+
 	for (i = 0; i < neural_network_size; i++)
 	{
-		data->variables.recomended_pid_params[1] = data->variables.recomended_pid_params[1] + (data->neuron[i].w_neuron_weight[1] * data->neuron[i].phi_value);
-	}
-// FINDING THE RECOMMENDED KD
-	for (i = 0; i < neural_network_size; i++)
-	{
-		data->variables.recomended_pid_params[2] = data->variables.recomended_pid_params[2] + (data->neuron[i].w_neuron_weight[2] * data->neuron[i].phi_value);
+		data->recomended_kp = data->recomended_kp + (data->neuron[i].w_neuron_weight[0] * data->neuron[i].phi_value);
+		data->recomended_ki = data->recomended_ki + (data->neuron[i].w_neuron_weight[1] * data->neuron[i].phi_value);
+		data->recomended_kd = data->recomended_kd + (data->neuron[i].w_neuron_weight[2] * data->neuron[i].phi_value);
 	}
 }
 
@@ -292,13 +267,15 @@ gaussian_noise(int mean, double sigma)
 void
 update_pid_params(data* data)
 {
-	data->variables.sigma_critical_deviation = 1 / (1 + exp(2 * data->variables.critic_value));
-	double g_noise = gaussian_noise(0, data->variables.sigma_critical_deviation) * GAUSS_MULTIPLIER;
-	data->variables.pid_params[0] = data->variables.recomended_pid_params[0] + g_noise;
-	g_noise = gaussian_noise(0, data->variables.sigma_critical_deviation) * GAUSS_MULTIPLIER;
-	data->variables.pid_params[1] = data->variables.recomended_pid_params[1] + g_noise;
-	g_noise = gaussian_noise(0, data->variables.sigma_critical_deviation) * GAUSS_MULTIPLIER;
-	data->variables.pid_params[2] = data->variables.recomended_pid_params[2] + g_noise;
+	data->sigma_critical_deviation = 1 / (1 + exp(2 * data->critic_value));
+	double g_noise = gaussian_noise(0, data->sigma_critical_deviation) * GAUSS_MULTIPLIER;
+	data->actual_kp = data->recomended_kp + g_noise;
+
+	g_noise = gaussian_noise(0, data->sigma_critical_deviation) * GAUSS_MULTIPLIER;
+	data->actual_ki = data->recomended_ki + g_noise;
+
+	g_noise = gaussian_noise(0, data->sigma_critical_deviation) * GAUSS_MULTIPLIER;
+	data->actual_kd = data->recomended_kd + g_noise;
 }
 
 
@@ -306,7 +283,7 @@ update_pid_params(data* data)
 void
 calculate_td_error(data* data)
 {
-	data->td_error = data->reinforcement_signal/*[1]*/ + (data->params.discount_factor*data->future_critic_value) - data->variables.critic_value; // 0 < discount_factor < 1
+	data->td_error = data->reinforcement_signal + (data->params.discount_factor*data->future_critic_value) - data->variables.critic_value; // 0 < discount_factor < 1
 }
 
 
@@ -437,10 +414,10 @@ carmen_librlpid_compute_effort(double current_curvature, double desired_curvatur
 	update_recomended_pid_output(&data);                                        // Step 4 ==> UPDATE K'
 	data.critic_value = update_critic_value_output(&data);	                    // Step 4 ==> UPDATE V
 	update_pid_params(&data);                                                   // Step 5 ==> UPDATE K
-	update_plant_input_u(current_curvature, desired_curvature, delta_t, &data); // Step 5 ==> UPDATE U
+	effort = update_plant_input_u(current_curvature, desired_curvature, delta_t, &data); // Step 5 ==> UPDATE U
 	store_variables(&data);
 
-	printf("u%lf e %f  kp %f ki %f  kd %f\n", data.variables.U[0], data.variables.error[0], data.variables.pid_params[0], data.variables.pid_params[1], data.variables.pid_params[2]);
+	printf("u%lf el%f kp%lf ki%lf kd%lf\n", effort, data.error_0, data.actual_kp, data.actual_ki, data.actual_kd);
 
-	return effort;//carmen_clamp(-100.0, (U[0]), 100.0);
+	return effort;
 }
