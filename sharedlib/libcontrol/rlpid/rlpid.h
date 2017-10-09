@@ -12,7 +12,7 @@ extern "C" {
 
 #define PI (3.141592653589793)
 #define neural_network_size (1000)
-#define HIDDEN_UNIT_NEURONS 1000
+#define N_HIDDEN 1000
 
 
 typedef struct {
@@ -62,9 +62,6 @@ typedef struct {
 
 
 typedef struct {
-	intelligent_control_params params;
-	rbf_neuron neuron[HIDDEN_UNIT_NEURONS];   // Number of Neurons in the Hidden Unit
-
 	double sigma_critical_deviation;
 	double previous_error;
 	double proportional_error;
@@ -87,6 +84,9 @@ typedef struct {
 	double previous_critic_value;
 	double reinforcement_signal;
 	double td_error;
+
+	intelligent_control_params params;
+	rbf_neuron neuron[N_HIDDEN];   // Number of Neurons in the Hidden Unit
 } data;
 
 
