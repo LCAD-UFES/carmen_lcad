@@ -9,8 +9,48 @@
 #include "virtual_scan.h"
 
 
+
 extended_virtual_scan_t extended_virtual_scan;
 carmen_point_t extended_virtual_scan_points[10000];
+extern carmen_localize_ackerman_map_t localize_map;
+extern double x_origin;
+extern double y_origin;
+extern double map_resolution;
+
+carmen_mapper_virtual_scan_message *
+filter_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan)
+{
+
+#define PROB_THRESHOLD	0.0
+
+	carmen_mapper_virtual_scan_message *filtered_virtual_scan;
+	filtered_virtual_scan = (carmen_mapper_virtual_scan_message *) malloc(sizeof(carmen_mapper_virtual_scan_message));
+
+	filtered_virtual_scan->globalpos = virtual_scan->globalpos;
+	filtered_virtual_scan->host = virtual_scan->host;
+	filtered_virtual_scan->phi = virtual_scan->phi;
+	filtered_virtual_scan->timestamp = virtual_scan->timestamp;
+	filtered_virtual_scan->v = virtual_scan->v;
+	int point_id = 0;
+	for (int i = 0; i < virtual_scan->num_points; i++)
+	{
+		carmen_position_t point;
+		point.x = virtual_scan->points[i].x - x_origin;
+		point.y = virtual_scan->points[i].y - y_origin;
+		int x_index_map = round((virtual_scan->points[i].x - x_origin) / map_resolution);
+		int y_index_map = round((virtual_scan->points[i].y - y_origin) / map_resolution);
+		if (localize_map.prob[x_index_map][y_index_map] < PROB_THRESHOLD)
+		{
+			filtered_virtual_scan->points = (carmen_position_t *) realloc(filtered_virtual_scan->points,
+								sizeof(carmen_position_t) * (point_id + 1));
+			filtered_virtual_scan->points[point_id]=point;
+			point_id++;
+		}
+	}
+	filtered_virtual_scan->num_points = point_id;
+
+	return (filtered_virtual_scan);
+}
 
 
 int
@@ -264,6 +304,8 @@ classify_segments(virtual_scan_segments_t *virtual_scan_segments)
 virtual_scan_segment_classes_t *
 detect_and_track_moving_objects(carmen_mapper_virtual_scan_message *virtual_scan)
 {
+//	carmen_mapper_virtual_scan_message *filtered_virtual_scan = filter_virtual_scan(virtual_scan);
+//	extended_virtual_scan_t *extended_virtual_scan = sort_virtual_scan(filtered_virtual_scan);
 	extended_virtual_scan_t *extended_virtual_scan = sort_virtual_scan(virtual_scan);
 	virtual_scan_segments_t *virtual_scan_segments = segment_virtual_scan(extended_virtual_scan);
 	virtual_scan_segment_classes_t *virtual_scan_segment_classes = classify_segments(virtual_scan_segments);

@@ -12,8 +12,9 @@ double d_max;
 carmen_mapper_virtual_laser_message virtual_laser_message;
 char colors[NUM_COLORS] = {CARMEN_RED, CARMEN_GREEN, CARMEN_LIGHT_BLUE, CARMEN_ORANGE};
 carmen_localize_ackerman_map_t localize_map;
-//double x_origin = 0.0;
-//double y_origin = 0.0;
+double x_origin = 0.0;
+double y_origin = 0.0;
+double map_resolution = 0.0;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -110,8 +111,9 @@ localize_map_update_handler(carmen_map_server_localize_map_message *message)
 {
 	carmen_map_server_localize_map_message_to_localize_map(message, &localize_map);
 
-//	x_origin = message->config.x_origin;
-//	y_origin = message->config.y_origin;
+	x_origin = message->config.x_origin;
+	y_origin = message->config.y_origin;
+	map_resolution = message->config.resolution;
 
 //	necessary_maps_available = 1;
 
