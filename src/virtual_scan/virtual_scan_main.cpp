@@ -3,6 +3,8 @@
 #include <carmen/global_graphics.h>
 #include "virtual_scan.h"
 #include <carmen/map_server_interface.h>
+#include <carmen/map.h>
+#include <carmen/grid_mapping.h>
 
 #define NUM_COLORS 4
 
@@ -112,6 +114,12 @@ localize_map_update_handler(carmen_map_server_localize_map_message *message)
 //	y_origin = message->config.y_origin;
 
 //	necessary_maps_available = 1;
+
+	carmen_map_t temp_map;
+	temp_map.config = localize_map.config;
+	temp_map.complete_map = localize_map.complete_prob;
+	temp_map.map = localize_map.prob;
+	carmen_grid_mapping_save_map((char *) "test.map", &temp_map);
 }
 
 
