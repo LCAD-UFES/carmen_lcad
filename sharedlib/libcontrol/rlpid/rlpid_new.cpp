@@ -104,13 +104,18 @@ initializate_variables(data* data)
 
 
 void
-calculate_pid_errors(double y_desired, double y,  double delta_t, data* data)
+calculate_pid_errors(double y_desired, double y_current,  double delta_t, data* data)
 {
-	double error_t_1 = data->error_order_0;
+//	double error_t_1 = data->error_order_0;
+//	data->error_order_0 = (y_desired - y_current);
+//	data->error_order_1 = data->error_order_1 + data->error_order_0 * delta_t;
+//	data->error_order_2 = (data->error_order_0 - error_t_1) / delta_t;
 
-	data->error_order_0 = (y_desired - y);
-	data->error_order_1 = data->error_order_1 + data->error_order_0 * delta_t;
-	data->error_order_2 = (data->error_order_0 - error_t_1) / delta_t;
+	data->previous_error = data->proportional_error;
+
+	data->proportional_error = y_desired - y_current;
+	data->integral_error = data->integral_error + data->proportional_error * delta_t;
+	data->derivative_error = (data->proportional_error - data->previous_error) / delta_t;
 }
 
 
@@ -135,13 +140,14 @@ update_plant_input_u(double atan_desired_curvature, double atan_current_curvatur
 		return 0.0;
 	}
 
-	calculate_pid_errors(atan_desired_curvature, atan_current_curvature, delta_t, data);
+	//calculate_pid_errors(atan_desired_curvature, atan_current_curvature, delta_t, data);
 
-	u_t = (data->actual_kp * data->error_order_0) + (data->actual_ki * data->error_order_1) + (data->actual_kd * data->error_order_2);
+	//u_t = (data->actual_kp * data->error_order_0) + (data->actual_ki * data->error_order_1) + (data->actual_kd * data->error_order_2);
+	u_t = (data->actual_kp * data->proportional_error) + (data->actual_ki * data->integral_error) + (data->actual_kd * data->derivative_error);
 
-	data->error_2 = data->error_1;
-	data->error_1 = data->error_0;
-	data->error_0 = data->error_order_0;
+	//data->error_2 = data->error_1;
+	//data->error_1 = data->error_0;
+	//data->error_0 = data->error_order_0;
 
 	// Anti windup
 	//if ((u_t < -100.0) || (u_t > 100.0))
@@ -158,14 +164,23 @@ external_reinforcement_signal(data* data) //r(t) = alfa*Re + beta*Rec
 {
 	double Re = 0.0, Rec = 0.0;
 
-	if (fabs(data->error_0) > data->params.error_band)
+//	if (fabs(data->error_0) > data->params.error_band)
+//	{
+//		Re = -0.5;
+//	}
+//	if (fabs(data->error_0) > fabs(data->error_1))
+//	{
+//		Rec = -0.5;
+//	}
+	if (fabs(data->proportional_error) > data->params.error_band)
 	{
 		Re = -0.5;
 	}
-	if (fabs(data->error_0) > fabs(data->error_1))
+	if (fabs(data->proportional_error) > fabs(data->previous_error))
 	{
 		Rec = -0.5;
 	}
+
 	data->reinforcement_signal = (data->params.alfa_weight_coef * Re) + (data->params.beta_weight_coef * Rec); //r(t+1)
 }
 
@@ -174,9 +189,12 @@ external_reinforcement_signal(data* data) //r(t) = alfa*Re + beta*Rec
 double
 update_neuron_hidden_unit_phi(double width_scalar, double* center_vector, data* data)
 {
-	double neuron_hidden_phi = pow((data->error_order_0 - center_vector[0]),2) +
-			                   pow((data->error_order_1 - center_vector[1]),2) +
-							   pow((data->error_order_2 - center_vector[2]),2);
+//	double neuron_hidden_phi = pow((data->error_order_0 - center_vector[0]), 2) +
+//			                   pow((data->error_order_1 - center_vector[1]), 2) +
+//							   pow((data->error_order_2 - center_vector[2]), 2);
+	double neuron_hidden_phi = pow((data->proportional_error - center_vector[0]), 2) +
+				               pow((data->integral_error     - center_vector[1]), 2) +
+							   pow((data->derivative_error   - center_vector[2]), 2);
 
 	neuron_hidden_phi = -neuron_hidden_phi / (2 * width_scalar * width_scalar);
 	neuron_hidden_phi = exp(neuron_hidden_phi);
@@ -300,9 +318,12 @@ center_vector_update(data* data)
 	{
 		// @FILIPE USAR O ERROR_ORDER DO TEMPO T
 		aux = (data->params.learning_rate_center * data->td_error * data->neuron[i].v_neuron_weight * data->neuron[i].phi_value) / pow(data->neuron[i].width_scalar_sigma,2);
-		data->neuron[i].center_vector[0] = data->neuron[i].center_vector[0] + aux * (data->error_0 - data->neuron[i].center_vector[0]);
-		data->neuron[i].center_vector[1] = data->neuron[i].center_vector[1] + aux * (data->error_1 - data->neuron[i].center_vector[1]);
-		data->neuron[i].center_vector[2] = data->neuron[i].center_vector[2] + aux * (data->error_2 - data->neuron[i].center_vector[2]);
+		//data->neuron[i].center_vector[0] = data->neuron[i].center_vector[0] + aux * (data->error_0 - data->neuron[i].center_vector[0]);
+		//data->neuron[i].center_vector[1] = data->neuron[i].center_vector[1] + aux * (data->error_1 - data->neuron[i].center_vector[1]);
+		//data->neuron[i].center_vector[2] = data->neuron[i].center_vector[2] + aux * (data->error_2 - data->neuron[i].center_vector[2]);
+		data->neuron[i].center_vector[0] = data->neuron[i].center_vector[0] + aux * (data->proportional_error - data->neuron[i].center_vector[0]);
+		data->neuron[i].center_vector[1] = data->neuron[i].center_vector[1] + aux * (data->integral_error     - data->neuron[i].center_vector[1]);
+		data->neuron[i].center_vector[2] = data->neuron[i].center_vector[2] + aux * (data->derivative_error   - data->neuron[i].center_vector[2]);
 	}
 }
 
@@ -318,7 +339,13 @@ width_scalar_update(data* data)
 	{
 		// @FILIPE USAR O PHI_VALUE DO TEMPO T
 		aux = (data->params.learning_rate_width * data->td_error * data->neuron[i].v_neuron_weight * data->neuron[i].phi_value) / pow(data->neuron[i].width_scalar_sigma, 3);
-		aux2 = pow(data->error_0 - data->neuron[i].center_vector[0], 2) + pow(data->error_1 - data->neuron[i].center_vector[1], 2) + pow(data->error_2 - data->neuron[i].center_vector[2], 2);
+//		aux2 = pow(data->error_0 - data->neuron[i].center_vector[0], 2) +
+//			   pow(data->error_1 - data->neuron[i].center_vector[1], 2) +
+//			   pow(data->error_2 - data->neuron[i].center_vector[2], 2);
+		aux2 = pow(data->proportional_error - data->neuron[i].center_vector[0], 2) +
+			   pow(data->integral_error     - data->neuron[i].center_vector[1], 2) +
+			   pow(data->derivative_error   - data->neuron[i].center_vector[2], 2);
+
 		data->neuron[i].width_scalar_sigma = data->neuron[i].width_scalar_sigma + aux * aux2; // Width Scalar update here
 	}
 }
@@ -347,7 +374,8 @@ carmen_librlpid_compute_effort_new(double current_curvature, double desired_curv
 		width_scalar_update(&data);
 	}
 
-	calculate_error_order(desired_curvature, current_curvature, &data);
+	//calculate_error_order(desired_curvature, current_curvature, &data);
+	calculate_pid_errors(desired_curvature, current_curvature, delta_t, &data);
 	external_reinforcement_signal(&data);
 	update_network_hidden_unit_phi(&data);
 	compute_recomended_pid_output(&data);
@@ -355,7 +383,7 @@ carmen_librlpid_compute_effort_new(double current_curvature, double desired_curv
 	compute_actual_pid_params(&data);
 	effort = update_plant_input_u(current_curvature, desired_curvature, delta_t, &data); // Step 5 ==> UPDATE U
 
-	//printf("u%lf el%f kp%lf ki%lf kd%lf\n", effort, data.error_0, data.actual_kp, data.actual_ki, data.actual_kd);
+	printf("u %lf e %lf ie %lf de %lf kp %lf ki %lf kd %lf\n", effort, data.proportional_error/*data.error_0*/, data.integral_error, data.derivative_error, data.actual_kp, data.actual_ki, data.actual_kd);
 
 	return effort;
 }
