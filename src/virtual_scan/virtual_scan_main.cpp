@@ -3,6 +3,8 @@
 #include <carmen/global_graphics.h>
 #include "virtual_scan.h"
 #include <carmen/map_server_interface.h>
+#include <carmen/map.h>
+#include <carmen/grid_mapping.h>
 
 #define NUM_COLORS 4
 
@@ -10,8 +12,9 @@ double d_max;
 carmen_mapper_virtual_laser_message virtual_laser_message;
 char colors[NUM_COLORS] = {CARMEN_RED, CARMEN_GREEN, CARMEN_LIGHT_BLUE, CARMEN_ORANGE};
 carmen_localize_ackerman_map_t localize_map;
-//double x_origin = 0.0;
-//double y_origin = 0.0;
+double x_origin = 0.0;
+double y_origin = 0.0;
+double map_resolution = 0.0;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -108,10 +111,17 @@ localize_map_update_handler(carmen_map_server_localize_map_message *message)
 {
 	carmen_map_server_localize_map_message_to_localize_map(message, &localize_map);
 
-//	x_origin = message->config.x_origin;
-//	y_origin = message->config.y_origin;
+	x_origin = message->config.x_origin;
+	y_origin = message->config.y_origin;
+	map_resolution = message->config.resolution;
 
 //	necessary_maps_available = 1;
+
+	carmen_map_t temp_map;
+	temp_map.config = localize_map.config;
+	temp_map.complete_map = localize_map.complete_prob;
+	temp_map.map = localize_map.prob;
+	carmen_grid_mapping_save_map((char *) "test.map", &temp_map);
 }
 
 
