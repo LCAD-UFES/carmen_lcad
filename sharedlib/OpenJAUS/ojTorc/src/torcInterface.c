@@ -134,6 +134,8 @@ int g_XGV_num_errors = 0;
 JausInteger g_XGV_error[MAX_ERRORS];
 unsigned int g_XGV_component_status = 0;
 
+double factor = 1.0;
+
 
 void
 get_errors_descriptions()
@@ -466,6 +468,14 @@ user_interface(OjCmpt XGV_CCU)
 					send_set_signals_message(XGV_CCU);
 					break;
 
+				case 'k':
+					factor /= 2.0;
+					break;
+
+				case 'K':
+					factor *= 2.0;
+					break;
+
 				default:
 					break;
 			}
@@ -475,46 +485,46 @@ user_interface(OjCmpt XGV_CCU)
 			switch (choice[2])
 			{
 				case 65: // Up
-					g_throttle_command += (MAX_THROTTLE - MIN_THROTTLE) / 100.0;
+					g_throttle_command += factor * (MAX_THROTTLE - MIN_THROTTLE) / 100.0;
 					if (g_throttle_command > MAX_THROTTLE)
 						g_throttle_command = MAX_THROTTLE;
 					g_brakes_command = 0.0;
 
-					g_velocity_command += (MAX_VELOCITY - MIN_VELOCITY) / 100.0;
+					g_velocity_command += factor * (MAX_VELOCITY - MIN_VELOCITY) / 100.0;
 					if (g_velocity_command > MAX_VELOCITY)
 						g_velocity_command = MAX_VELOCITY;
 					break;
 
 				case 66: // Down
-					g_throttle_command -= (MAX_THROTTLE - MIN_THROTTLE) / 100.0;
+					g_throttle_command -= factor * (MAX_THROTTLE - MIN_THROTTLE) / 100.0;
 					if (g_throttle_command < MIN_THROTTLE)
 					{
 						g_throttle_command = MIN_THROTTLE;
-						g_brakes_command += (MAX_BRAKES - MIN_BRAKES) / 100.0;
+						g_brakes_command += factor * (MAX_BRAKES - MIN_BRAKES) / 100.0;
 						if (g_brakes_command > MAX_BRAKES)
 							g_brakes_command = MAX_BRAKES;
 					}
-					g_velocity_command -= (MAX_VELOCITY - MIN_VELOCITY) / 100.0;
+					g_velocity_command -= factor * (MAX_VELOCITY - MIN_VELOCITY) / 100.0;
 					if (g_velocity_command < MIN_VELOCITY)
 						g_velocity_command = MIN_VELOCITY;
 					break;
 
 				case 67: // Right
-					g_steering_command += (MAX_STEERING - MIN_STEERING) / 100.0;
+					g_steering_command += factor * (MAX_STEERING - MIN_STEERING) / 100.0;
 					if (g_steering_command > MAX_STEERING)
 						g_steering_command = MAX_STEERING;
 
-					g_atan_curvature_command += (MAX_ARCTAN_DESIRED_CURVATURE - MIN_ARCTAN_DESIRED_CURVATURE) / 100.0;
+					g_atan_curvature_command += factor * (MAX_ARCTAN_DESIRED_CURVATURE - MIN_ARCTAN_DESIRED_CURVATURE) / 100.0;
 					if (g_atan_curvature_command > MAX_ARCTAN_DESIRED_CURVATURE)
 						g_atan_curvature_command = MAX_ARCTAN_DESIRED_CURVATURE;
 					break;
 					
 				case 68: // Left
-					g_steering_command -= (MAX_STEERING - MIN_STEERING) / 100.0;
+					g_steering_command -= factor * (MAX_STEERING - MIN_STEERING) / 100.0;
 					if (g_steering_command < MIN_STEERING)
 						g_steering_command = MIN_STEERING;
 					
-					g_atan_curvature_command -= (MAX_ARCTAN_DESIRED_CURVATURE - MIN_ARCTAN_DESIRED_CURVATURE) / 100.0;
+					g_atan_curvature_command -= factor * (MAX_ARCTAN_DESIRED_CURVATURE - MIN_ARCTAN_DESIRED_CURVATURE) / 100.0;
 					if (g_atan_curvature_command < MIN_ARCTAN_DESIRED_CURVATURE)
 						g_atan_curvature_command = MIN_ARCTAN_DESIRED_CURVATURE;
 					break;
