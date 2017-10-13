@@ -83,11 +83,12 @@ void sdProcessMessage(OjCmpt sd, JausMessage message)
 				if ((1 << JAUS_SIGNALS_PV_TURN_SIGNAL_BIT) & setSignals->presenceVector)
 				{
 					data->setSignals->turnSignal = setSignals->turnSignal;
+
 					struct can_frame frame;
 					frame.can_id = 0x400;
 					frame.can_dlc = 2; // numero de bytes
 					frame.data[0] = data->setSignals->turnSignal << 5;
-					frame.data[1] = 0x00;
+					frame.data[1] = data->setSignals->hornStatus;
 					send_frame(out_can_sockfd, &frame);
 				}
 				if ((1 << JAUS_SIGNALS_PV_HORN_BIT) & setSignals->presenceVector)
@@ -95,7 +96,13 @@ void sdProcessMessage(OjCmpt sd, JausMessage message)
 					data->setSignals->hornPeriodOff = setSignals->hornPeriodOff;
 					data->setSignals->hornPeriodOn = setSignals->hornPeriodOn;
 					data->setSignals->hornStatus = setSignals->hornStatus;
-					// Mandar comandos para a IARA aqui
+
+					struct can_frame frame;
+					frame.can_id = 0x400;
+					frame.can_dlc = 2; // numero de bytes
+					frame.data[0] = data->setSignals->turnSignal << 5;
+					frame.data[1] = data->setSignals->hornStatus;
+					send_frame(out_can_sockfd, &frame);
 				}
 				if ((1 << JAUS_SIGNALS_PV_HEADLIGHTS_BIT) & setSignals->presenceVector)
 				{
@@ -125,7 +132,7 @@ void sdSendReportSignals(OjCmpt sd)
 
 	scList = ojCmptGetScSendList(sd, JAUS_REPORT_SIGNALS);
 	sc = scList;
-	while(sc)
+	while (sc)
 	{
 		jausAddressCopy(data->reportSignals->destination, sc->address);
 		data->reportSignals->presenceVector = sc->presenceVector;
@@ -138,6 +145,8 @@ void sdSendReportSignals(OjCmpt sd)
 		data->reportSignals->hornStatus = data->setSignals->hornStatus;
 		data->reportSignals->lightsPeriodOff = data->setSignals->lightsPeriodOff;
 		data->reportSignals->lightsPeriodOn = data->setSignals->lightsPeriodOn;
+
+		// TODO: @@@ Alberto: Retornar comandos humanos das setas aqui. Ver src/can_dump/CAN_COMMANDS_IDENTIFIED.txt. Portas abertas deveriam fazer o carro parar?
 		data->reportSignals->turnSignal = data->setSignals->turnSignal;
 
 		txMessage = reportSignalsMessageToJausMessage(data->reportSignals);

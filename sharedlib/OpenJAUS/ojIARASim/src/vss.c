@@ -166,11 +166,11 @@ void vssReadyState(OjCmpt vss)
 	message->rateRmsRps = 0;
 
 	// send message
-	if(ojCmptIsOutgoingScActive(vss, JAUS_REPORT_VELOCITY_STATE))
+	if (ojCmptIsOutgoingScActive(vss, JAUS_REPORT_VELOCITY_STATE))
 	{
 		scList = ojCmptGetScSendList(vss, JAUS_REPORT_VELOCITY_STATE);
 		sc = scList;
-		while(sc)
+		while (sc)
 		{
 			jausAddressCopy(message->destination, sc->address);
 			message->presenceVector = sc->presenceVector;

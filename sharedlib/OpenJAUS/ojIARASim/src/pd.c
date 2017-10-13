@@ -70,13 +70,15 @@ typedef struct
 
 	ReportComponentStatusMessage controllerStatus;
 	int controllerSc;
-}PdData;
+} PdData;
+
+extern double front_left_speed;
+extern double front_right_speed;
+extern double back_left_speed;
+extern double back_right_speed;
+//extern double time_last_odometry;
 
 
-// Function: pdProcessMessage
-// Access:		Private
-// Description:	This function is responsible for handling incoming JAUS messages from the Node Manager.
-//				Incoming messages are processed according to message type.
 void pdProcessMessage(OjCmpt pd, JausMessage message)
 {
 	ReportComponentStatusMessage reportComponentStatus;
@@ -203,27 +205,39 @@ void pdProcessMessage(OjCmpt pd, JausMessage message)
 			{
 				if ((1 << JAUS_DEVICES_PV_PROPULSION_BIT) & setDiscreteDevices->presenceVector)
 				{
+					// TODO: @@@ Alberto: Ver pagina 66 do manual
 					data->setDiscreteDevices->mainPropulsion = setDiscreteDevices->mainPropulsion;
 					data->setDiscreteDevices->mainFuelSupply = setDiscreteDevices->mainFuelSupply;
+					// Mandar comandos para a IARA aqui
  				}
 				if ((1 << JAUS_DEVICES_PV_PARKING_BIT) & setDiscreteDevices->presenceVector)
 				{
+					// Nao usados pela Torc - Ver pagina 66 do manual. A horn eh controlada pelo Signals Drive (sd.c)
 					data->setDiscreteDevices->parkingBrake = setDiscreteDevices->parkingBrake;
 					data->setDiscreteDevices->horn = setDiscreteDevices->horn;
-					// Mandar comandos para a IARA aqui
  				}
 				if ((1 << JAUS_DEVICES_PV_GEAR_BIT) & setDiscreteDevices->presenceVector)
 				{
 					data->setDiscreteDevices->gear = setDiscreteDevices->gear;
-					if (data->setDiscreteDevices->gear == 1)
+
+					int gear_can_command = 0;
+					if (data->setDiscreteDevices->gear == 1) // Low
+						gear_can_command = 0x04;
+					else if (data->setDiscreteDevices->gear == 2) // Drive
+						gear_can_command = 0x03;
+					else if (data->setDiscreteDevices->gear == 128) // Neutral
+						gear_can_command = 0x02;
+					else if (data->setDiscreteDevices->gear == 129) // Reverse
+						gear_can_command = 0x01;
+
+					if (gear_can_command)
 					{
-//						struct can_frame frame;
-//						frame.can_id = 0x10;
-//						frame.can_dlc = 1;
-//						frame.data[0] = 0x42;
-//						send_frame(out_can_sockfd, &frame);
+						struct can_frame frame;
+						frame.can_id = 0x405;
+						frame.can_dlc = 1;
+						frame.data[0] = gear_can_command;
+						send_frame(out_can_sockfd, &frame);
 					}
-					// Mandar comandos para a IARA aqui
  				}
 				setDiscreteDevicesMessageDestroy(setDiscreteDevices);
 			}
@@ -307,7 +321,7 @@ void pdSendReportDiscreteDevices(OjCmpt pd)
 
 	scList = ojCmptGetScSendList(pd, JAUS_REPORT_DISCRETE_DEVICES);
 	sc = scList;
-	while(sc)
+	while (sc)
 	{
 		jausAddressCopy(data->reportDiscreteDevices->destination, sc->address);
 		data->reportDiscreteDevices->presenceVector = sc->presenceVector;
@@ -341,7 +355,7 @@ void pdSendReportWheelsSpeed(OjCmpt pd)
 
 	scList = ojCmptGetScSendList(pd, JAUS_REPORT_WHEELS_SPEED);
 	sc = scList;
-	while(sc)
+	while (sc)
 	{
 		jausAddressCopy(data->reportWheelsSpeed->destination, sc->address);
 		data->reportWheelsSpeed->sequenceNumber = sc->sequenceNumber;
@@ -495,16 +509,17 @@ void pdReadyState(OjCmpt pd)
 //		vehicleSimSetCommand(0, 80, 0);
 	}
 
-	// Ler estado da IARA e reporta-los aqui
-	data->setWheelsSpeed->leftFront = 12.345;
-	data->setWheelsSpeed->leftRear = data->setWheelsSpeed->leftFront;
-	data->setWheelsSpeed->rightFront = data->setWheelsSpeed->leftFront;
-	data->setWheelsSpeed->rightRear = data->setWheelsSpeed->leftFront;
-//	data->setWheelsSpeed->timeStamp = data->setWheelsSpeed->timeStamp;
+	data->setWheelsSpeed->leftFront = front_left_speed;
+	data->setWheelsSpeed->leftRear = back_left_speed;
+	data->setWheelsSpeed->rightFront = front_right_speed;
+	data->setWheelsSpeed->rightRear = back_right_speed;
+//	data->setWheelsSpeed->timeStamp = time_last_odometry;
 	pdSendReportWheelsSpeed(pd);
 
 	data->reportComponentStatus->primaryStatusCode = data->controllerStatus->primaryStatusCode;
-	data->reportComponentStatus->secondaryStatusCode += 1;
+
+	// Preencher o byte abaixo com dados da IARA
+	data->reportComponentStatus->secondaryStatusCode = 0;
 	pdSendReportComponentStatus(pd);
 }
 

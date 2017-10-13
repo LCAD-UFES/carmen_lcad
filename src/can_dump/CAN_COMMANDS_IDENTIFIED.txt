@@ -21,3 +21,9 @@
 431  00 00 01 00 00 00 00 00 - Porta esquerda (trazeira) aberta (acionada por humano)
 431  00 00 00 30 00 00 00 00 - Porta porta malas (vidro) aberta (acionada por humano)
 
+425  11 11 XX XX XX XX XX XX - Parece a velocidade ruidosa. Se andar para traz fica negativa? (ver filme can-dump-velocity-analysis-01.mp4, 09:38)
+
+216  11 11 11 11 XX XX XX XX - Parece ser o odometro das quatro rodas. (ver filme can-dump-velocity-analysis-01.mp4, 02:47)
+
+217  11 11 11 11 XX XX XX XX - Parece ser o odometro de duas rodas. (ver filme can-dump-velocity-analysis-01.mp4, 14:40)
+
