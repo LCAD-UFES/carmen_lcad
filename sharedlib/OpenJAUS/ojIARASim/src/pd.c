@@ -169,7 +169,8 @@ void pdProcessMessage(OjCmpt pd, JausMessage message)
 				frame.data[1] = (int) (2.0 * data->setWrenchEffort->resistiveLinearEffortXPercent + 0.5); // breaks
 
 				// Steering
-				#define	STEERING_BIAS -38
+				// #define	STEERING_BIAS -38
+				#define	STEERING_BIAS 0
 				int steering_byte0, steering_byte1;
 				double effort = setWrenchEffort->propulsiveRotationalEffortZPercent;
 				if (effort > 0.0)
