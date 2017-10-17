@@ -8,7 +8,7 @@ CXXFLAGS += -Wall -std=c++98
 LINK = g++
 
 LFLAGS += \
-	-lparam_interface -lmapper_interface -lipc -lglobal
+	-lgrid_mapping -lmap_io -lmap_interface -lmapper_interface -lparam_interface -lipc -lglobal -lmap_server_interface 
 
 SOURCES = \
 	virtual_scan_interface.cpp \

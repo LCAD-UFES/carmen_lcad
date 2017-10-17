@@ -38,6 +38,7 @@
 
 #include <jaus.h>
 #include <openJaus.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "vehicleSim.h"
@@ -71,6 +72,12 @@ OjCmpt pdCreate(void)
 
 	cmpt = ojCmptCreate("pd", JAUS_PRIMITIVE_DRIVER, PD_THREAD_DESIRED_RATE_HZ);
 
+	if (!cmpt)
+	{
+		printf("Could not create primitive driver. Is ojNodeManager running?\n");
+		return (NULL);
+	}
+
 	ojCmptAddService(cmpt, JAUS_PRIMITIVE_DRIVER);
 	ojCmptAddServiceInputMessage(cmpt, JAUS_PRIMITIVE_DRIVER, JAUS_SET_WRENCH_EFFORT, 0xFF);
 	ojCmptAddServiceInputMessage(cmpt, JAUS_PRIMITIVE_DRIVER, JAUS_SET_DISCRETE_DEVICES, 0xFF);
@@ -99,7 +106,7 @@ OjCmpt pdCreate(void)
 
 	ojCmptSetUserData(cmpt, (void *)data);
 
-	if(ojCmptRun(cmpt))
+	if (ojCmptRun(cmpt))
 	{
 		ojCmptDestroy(cmpt);
 		return NULL;
@@ -365,6 +372,19 @@ void pdSendReportWrenchEffort(OjCmpt pd)
 		data->reportWrenchEffort->presenceVector = sc->presenceVector;
 		data->reportWrenchEffort->sequenceNumber = sc->sequenceNumber;
 		data->reportWrenchEffort->properties.scFlag = JAUS_SERVICE_CONNECTION_MESSAGE;
+
+		data->reportWrenchEffort->propulsiveLinearEffortXPercent = data->setWrenchEffort->propulsiveLinearEffortXPercent;
+		data->reportWrenchEffort->propulsiveLinearEffortYPercent = data->setWrenchEffort->propulsiveLinearEffortYPercent;
+		data->reportWrenchEffort->propulsiveLinearEffortZPercent = data->setWrenchEffort->propulsiveLinearEffortZPercent;
+		data->reportWrenchEffort->propulsiveRotationalEffortXPercent = data->setWrenchEffort->propulsiveRotationalEffortXPercent;
+		data->reportWrenchEffort->propulsiveRotationalEffortYPercent = data->setWrenchEffort->propulsiveRotationalEffortYPercent;
+		data->reportWrenchEffort->propulsiveRotationalEffortZPercent = data->setWrenchEffort->propulsiveRotationalEffortZPercent;
+		data->reportWrenchEffort->resistiveLinearEffortXPercent = data->setWrenchEffort->resistiveLinearEffortXPercent;
+		data->reportWrenchEffort->resistiveLinearEffortYPercent = data->setWrenchEffort->resistiveLinearEffortYPercent;
+		data->reportWrenchEffort->resistiveLinearEffortZPercent = data->setWrenchEffort->resistiveLinearEffortXPercent;
+		data->reportWrenchEffort->resistiveRotationalEffortXPercent = data->setWrenchEffort->resistiveRotationalEffortXPercent;
+		data->reportWrenchEffort->resistiveRotationalEffortYPercent = data->setWrenchEffort->resistiveRotationalEffortYPercent;
+		data->reportWrenchEffort->resistiveRotationalEffortZPercent = data->setWrenchEffort->resistiveRotationalEffortZPercent;
 
 		txMessage = reportWrenchEffortMessageToJausMessage(data->reportWrenchEffort);
 		ojCmptSendMessage(pd, txMessage);

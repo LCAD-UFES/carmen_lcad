@@ -174,19 +174,18 @@ load_poses(char *filename, vector<pair<carmen_pose_3D_t, double> > &poses, vecto
 {
 	char imagename_l[256];
 	char imagename_r[256];
-	double timestamp, dummy;
+	double timestamp;
 	carmen_pose_3D_t pose = {{0.0,0.0,0.0},{0.0,0.0,0.0}};
 	FILE *log_file = fopen(filename, "r");
 
 	fscanf(log_file, "%*[^\n]\n"); //skip header
 	while(!feof(log_file))
 	{
-		//image x y z w p q r roll pitch yaw timestamp
-		fscanf(log_file, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %s %s\n",
+		//image x y z roll pitch yaw timestamp left right
+		fscanf(log_file, "%lf %lf %lf %lf %lf %lf %lf %s %s\n",
 				&pose.position.x,
 				&pose.position.y,
 				&pose.position.z,
-				&dummy, &dummy, &dummy, &dummy,
 				&pose.orientation.roll,
 				&pose.orientation.pitch,
 				&pose.orientation.yaw,
@@ -271,8 +270,7 @@ find_more_synchronized_pose(const vector<pair<carmen_pose_3D_t, double> > &poses
 void
 copy_image (carmen_localize_neural_imagepos_message *message, string imagename)
 {
-	string imagepath = string("/dados/ufes/") + imagename;
-	cv::Mat img = cv::imread (imagepath.c_str(), CV_LOAD_IMAGE_COLOR);
+	cv::Mat img = cv::imread (imagename.c_str(), CV_LOAD_IMAGE_COLOR);
 
 	message->height = img.rows;
 	message->width = img.cols;
@@ -412,8 +410,9 @@ carmen_bumblebee_basic_stereoimage_message_handler(carmen_bumblebee_basic_stereo
 	if (delta_pose_true.position.x < 0.0)
 		return;
 
-	carmen_pose_3D_t delta_pose_curr = forward_network(camera_message_curr, camera_message_base);
-	delta_pose_curr = camera_carmen_transform(delta_pose_curr);
+	carmen_pose_3D_t delta_pose_curr = delta_pose_true;
+//	carmen_pose_3D_t delta_pose_curr = forward_network(camera_message_curr, camera_message_base);
+//	delta_pose_curr = camera_carmen_transform(delta_pose_curr);
 
 	camera_pose_curr = direct_transform(camera_pose_base, delta_pose_curr);
 	camera_pose_base.position.z = 1.7;
@@ -616,7 +615,8 @@ main(int argc, char **argv)
 
 	initialize_transformations();
 
-	initialize_network(argv[4]);
+	//initialize_network(argv[4]);
+	carmen_warn("Network Initialized!");
 
 	load_poses(argv[2], camera_poses_base_array, camera_frames_base_array);
 	load_poses(argv[3], camera_poses_curr_array, camera_frames_curr_array);

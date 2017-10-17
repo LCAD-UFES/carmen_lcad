@@ -126,7 +126,7 @@ send_set_engine_message(OjCmpt XGV_CCU, int set_engine_on)
 		setDiscreteDevicesMessage->mainPropulsion = JAUS_TRUE;
 		setDiscreteDevicesMessage->mainFuelSupply = JAUS_TRUE;
 		setDiscreteDevicesMessage->automaticStart = JAUS_TRUE;
-		setDiscreteDevicesMessage->auxFuelSupply = JAUS_FALSE; // The Torc manual does not mention hoe to set this
+		setDiscreteDevicesMessage->auxFuelSupply = JAUS_FALSE; // The Torc manual does not mention how to set this
 	}
 	else
 	{

@@ -12,7 +12,7 @@ then
 	path=$1
 fi
 
-for file in $path/i*; do
+for file in $path/*; do
 	if [ "$file" != "${file/.00./.}" ]
 	then
 		#echo "Renaming " $file "to " "${file/.00./.}"

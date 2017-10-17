@@ -12,6 +12,7 @@ extern "C" {
 
 #define PI (3.141592653589793)
 #define neural_network_size (1000)
+#define N_HIDDEN 1000
 
 
 typedef struct {
@@ -27,33 +28,6 @@ typedef struct {
 
 
 typedef struct {
-	double sigma_critical_deviation;
-	double critic_value; //V(t)
-	double U[3]; //The size of the vector is 3, because "u" uses U(t-2) in equation, this means that you need store the past value of U
-	double error[3]; //You need the last 3 values of e => t(t), e(t-1) and e(t-2)
-	double error_order[3]; //e(t), Delta(e) and Delta^2(e)
-	double pid_params[3]; //K ->The parameters Kp,Ki and Kd respectvely
-	double recomended_pid_params[3]; //K' ->The new recomended params of Kp,Ki and Kd respectvely
-
-	// Ranik Params
-	double previous_error;
-	double proportional_error;
-	double integral_error;
-	double derivative_error;
-	double recomended_kp;
-	double recomended_ki;
-	double recomended_kd;
-	double kp;
-	double ki;
-	double kd;
-	double control_command_u;
-	double previous_critic_value;
-	double previous_reinforcement_signal;
-	double reinforcement_signal;
-} rl_variables;
-
-
-typedef struct {
 	double center_vector[3];
 	double width_scalar_sigma;
 	double phi_value;
@@ -64,7 +38,19 @@ typedef struct {
 
 
 typedef struct {
+	double sigma_critical_deviation;
+	double critic_value; //V(t)
+	double U[3]; //The size of the vector is 3, because "u" uses U(t-2) in equation, this means that you need store the past value of U
+	double error[3]; //You need the last 3 values of e => t(t), e(t-1) and e(t-2)
+	double error_order[3]; //e(t), Delta(e) and Delta^2(e)
+	double pid_params[3]; //K ->The parameters Kp,Ki and Kd respectvely
+	double recomended_pid_params[3]; //K' ->The new recomended params of Kp,Ki and Kd respectvely
+} rl_variables;
+
+
+typedef struct {
 	intelligent_control_params params;
+	rbf_neuron network[neural_network_size]; //The size is defined at .h file
 	rl_variables variables;
 	rl_variables pv; // Past variables
 	double td_error;
@@ -72,9 +58,36 @@ typedef struct {
 	double reinforcement_signal; // r(t)
 	double best_pid[3];
 	double total_error_quadratico;
-	rbf_neuron network[neural_network_size]; //The size is defined at .h file
-
 } rl_data;
+
+
+typedef struct {
+	double sigma_critical_deviation;
+	double previous_error;
+	double proportional_error;
+	double integral_error;
+	double derivative_error;
+	double error_0;
+	double error_1;
+	double error_2;
+	double error_order_0;
+	double error_order_1;
+	double error_order_2;
+	double recomended_kp;
+	double recomended_ki;
+	double recomended_kd;
+	double actual_kp;
+	double actual_ki;
+	double actual_kd;
+	double critic_value;
+	double future_critic_value;
+	double previous_critic_value;
+	double reinforcement_signal;
+	double td_error;
+
+	intelligent_control_params params;
+	rbf_neuron neuron[N_HIDDEN];   // Number of Neurons in the Hidden Unit
+} data;
 
 
 void

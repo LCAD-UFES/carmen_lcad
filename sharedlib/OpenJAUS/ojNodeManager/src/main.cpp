@@ -233,7 +233,13 @@ int main(int argc, char **args)
 
 	printf("\nOpenJAUS Node Manager Version %s\n\n", OJ_NODE_MANAGER_VERSION);
 
-	FileLoader *configData = new FileLoader("nodeManager.conf");
+	char *file_name;
+	if (argc != 2)
+		file_name = (char *) "nodeManager.conf";
+	else
+		file_name = (char *) args[1];
+
+	FileLoader *configData = new FileLoader(file_name);
 	MyHandler *handler = new MyHandler();
 
 	try
@@ -258,7 +264,8 @@ int main(int argc, char **args)
 	while(running)
 	{
 		memset(&choice, 0, 1);
-		scanf("%c", &choice);
+		int x = scanf("%c", &choice);
+		x = x; // Para evitar warning
 		parseUserInput(choice);
 	}
 
@@ -272,6 +279,8 @@ int main(int argc, char **args)
 
 void parseUserInput(char input)
 {
+	int x;
+
 	switch(input)
 	{
 		case 'T':
@@ -292,11 +301,13 @@ void parseUserInput(char input)
 
 		case 'c':
 		case 'C':
-			system(CLEAR_COMMAND);
+			x = system(CLEAR_COMMAND);
+			x = x; // Para evitar warning...
 			break;
 
 		case '?':
 			printHelpMenu();
+			break;
 
 		default:
 			break;

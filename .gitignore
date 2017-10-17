@@ -2,7 +2,7 @@ bin/line_follower_main
 src/line_follower/line_follower_main
 sharedlib/libvoice/voice_test
 bin/zed*
-include/
+include/*
 .idea/
 *.o
 *.a

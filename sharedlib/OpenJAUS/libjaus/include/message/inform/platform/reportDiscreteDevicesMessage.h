@@ -125,7 +125,7 @@ typedef struct
 	JausBoolean automaticStart;
 	JausBoolean automaticStop;
 
-	// Parking, Brake and Horn
+	// Parking Brake and Horn
 	JausBoolean parkingBrake;
 	JausBoolean horn;
 	

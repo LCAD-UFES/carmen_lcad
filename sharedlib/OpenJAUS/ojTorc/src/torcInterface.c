@@ -43,6 +43,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/signal.h>
 #include <termios.h>
 #include <curses.h>
 #include <math.h>
@@ -50,6 +51,7 @@
 #include <openJaus.h>				// Header file for the OpenJAUS specific C/C++ code base
 #include <torc.h>
 
+struct termios storedTermio;
 
 double g_throttle_command = MIN_THROTTLE;
 double g_steering_command = (MAX_STEERING - MIN_STEERING) / 2.0 + MIN_STEERING;
@@ -132,6 +134,8 @@ int g_XGV_num_errors = 0;
 JausInteger g_XGV_error[MAX_ERRORS];
 unsigned int g_XGV_component_status = 0;
 
+double factor = 1.0;
+
 
 void
 get_errors_descriptions()
@@ -198,7 +202,7 @@ print_interface()
 	mvprintw(row++, col, "g_atan_curvature_command = %lf,  g_XGV_atan_curvature = %lf", g_atan_curvature_command, g_XGV_atan_curvature);
 	mvprintw(row++, col, "g_velocity_command       = %lf,  g_XGV_velocity       = %lf", g_velocity_command, g_XGV_velocity);
 	
-	mvprintw(row++, col, "Wheels Speed: Front(L,R), Rear(L,R) = (%lf,%lf), (%lf,%lf)", 
+	mvprintw(row++, col, "Wheels Speed: Front(L,R), Rear(L,R) = (%lf,%lf), (%lf,%lf)",
 		 	g_XGV_right_front_wheel_speed, g_XGV_left_front_wheel_speed,
 			g_XGV_right_rear_wheel_speed, g_XGV_left_rear_wheel_speed);
 	
@@ -323,7 +327,6 @@ void
 user_interface(OjCmpt XGV_CCU)
 {
 	struct termios newTermio;
-	struct termios storedTermio;
 	int running = 1;
 	char choice[8] = {0};
 	int count = 0;
@@ -465,6 +468,14 @@ user_interface(OjCmpt XGV_CCU)
 					send_set_signals_message(XGV_CCU);
 					break;
 
+				case 'k':
+					factor /= 2.0;
+					break;
+
+				case 'K':
+					factor *= 2.0;
+					break;
+
 				default:
 					break;
 			}
@@ -474,46 +485,46 @@ user_interface(OjCmpt XGV_CCU)
 			switch (choice[2])
 			{
 				case 65: // Up
-					g_throttle_command += (MAX_THROTTLE - MIN_THROTTLE) / 100.0;
+					g_throttle_command += factor * (MAX_THROTTLE - MIN_THROTTLE) / 100.0;
 					if (g_throttle_command > MAX_THROTTLE)
 						g_throttle_command = MAX_THROTTLE;
 					g_brakes_command = 0.0;
 
-					g_velocity_command += (MAX_VELOCITY - MIN_VELOCITY) / 100.0;
+					g_velocity_command += factor * (MAX_VELOCITY - MIN_VELOCITY) / 100.0;
 					if (g_velocity_command > MAX_VELOCITY)
 						g_velocity_command = MAX_VELOCITY;
 					break;
 
 				case 66: // Down
-					g_throttle_command -= (MAX_THROTTLE - MIN_THROTTLE) / 100.0;
+					g_throttle_command -= factor * (MAX_THROTTLE - MIN_THROTTLE) / 100.0;
 					if (g_throttle_command < MIN_THROTTLE)
 					{
 						g_throttle_command = MIN_THROTTLE;
-						g_brakes_command += (MAX_BRAKES - MIN_BRAKES) / 100.0;
+						g_brakes_command += factor * (MAX_BRAKES - MIN_BRAKES) / 100.0;
 						if (g_brakes_command > MAX_BRAKES)
 							g_brakes_command = MAX_BRAKES;
 					}
-					g_velocity_command -= (MAX_VELOCITY - MIN_VELOCITY) / 100.0;
+					g_velocity_command -= factor * (MAX_VELOCITY - MIN_VELOCITY) / 100.0;
 					if (g_velocity_command < MIN_VELOCITY)
 						g_velocity_command = MIN_VELOCITY;
 					break;
 
 				case 67: // Right
-					g_steering_command += (MAX_STEERING - MIN_STEERING) / 100.0;
+					g_steering_command += factor * (MAX_STEERING - MIN_STEERING) / 100.0;
 					if (g_steering_command > MAX_STEERING)
 						g_steering_command = MAX_STEERING;
 
-					g_atan_curvature_command += (MAX_ARCTAN_DESIRED_CURVATURE - MIN_ARCTAN_DESIRED_CURVATURE) / 100.0;
+					g_atan_curvature_command += factor * (MAX_ARCTAN_DESIRED_CURVATURE - MIN_ARCTAN_DESIRED_CURVATURE) / 100.0;
 					if (g_atan_curvature_command > MAX_ARCTAN_DESIRED_CURVATURE)
 						g_atan_curvature_command = MAX_ARCTAN_DESIRED_CURVATURE;
 					break;
 					
 				case 68: // Left
-					g_steering_command -= (MAX_STEERING - MIN_STEERING) / 100.0;
+					g_steering_command -= factor * (MAX_STEERING - MIN_STEERING) / 100.0;
 					if (g_steering_command < MIN_STEERING)
 						g_steering_command = MIN_STEERING;
 					
-					g_atan_curvature_command -= (MAX_ARCTAN_DESIRED_CURVATURE - MIN_ARCTAN_DESIRED_CURVATURE) / 100.0;
+					g_atan_curvature_command -= factor * (MAX_ARCTAN_DESIRED_CURVATURE - MIN_ARCTAN_DESIRED_CURVATURE) / 100.0;
 					if (g_atan_curvature_command < MIN_ARCTAN_DESIRED_CURVATURE)
 						g_atan_curvature_command = MIN_ARCTAN_DESIRED_CURVATURE;
 					break;
@@ -548,17 +559,48 @@ create_xgv_ccu_component(char *xgv_ccu_name, int xgv_ccu_component_id, double xg
 	XGV_CCU = ojCmptCreate(xgv_ccu_name, xgv_ccu_component_id, xgv_ccu_state_machine_update_rate);	// Create the component
 	if (XGV_CCU == NULL)
 	{
-		printf("Error creating %s component\n", xgv_ccu_name);
-		exit(1);
+		printf("Error creating %s component. Is ojNodeManager running?\n", xgv_ccu_name);
+		return(NULL);
 	}
 	
 	ojCmptAddService(XGV_CCU, xgv_ccu_component_id);				// Add XGV_CCU service type
 	add_xgv_ccu_component_service_messages(XGV_CCU, xgv_ccu_component_id);
 	
 	//TODO função abaixo foi comentada pois gera 50Htz de mensagens desnecessarias de xgv_ccu_state_machine.
-	//ojCmptSetStateCallback(XGV_CCU, JAUS_READY_STATE, xgv_ccu_state_machine);	// Set ready state callback
-	//ojCmptSetState(XGV_CCU, JAUS_READY_STATE);					// Set the current state to ready
+//	ojCmptSetStateCallback(XGV_CCU, JAUS_READY_STATE, xgv_ccu_state_machine);	// Set ready state callback
+	ojCmptSetState(XGV_CCU, JAUS_READY_STATE);					// Set the current state to ready
 	return (XGV_CCU);
+}
+
+
+OjCmpt
+create_xgv_ccu_component_ojTorc(char *xgv_ccu_name, int xgv_ccu_component_id, double xgv_ccu_state_machine_update_rate)
+{
+	OjCmpt XGV_CCU;		// Variable that will store the component reference
+
+	XGV_CCU = ojCmptCreate(xgv_ccu_name, xgv_ccu_component_id, xgv_ccu_state_machine_update_rate);	// Create the component
+	if (XGV_CCU == NULL)
+	{
+		printf("Error creating %s component. Is ojNodeManager running?\n", xgv_ccu_name);
+		return(NULL);
+	}
+
+	ojCmptAddService(XGV_CCU, xgv_ccu_component_id);				// Add XGV_CCU service type
+	add_xgv_ccu_component_service_messages(XGV_CCU, xgv_ccu_component_id);
+
+	ojCmptSetStateCallback(XGV_CCU, JAUS_READY_STATE, xgv_ccu_state_machine);	// Set ready state callback
+	ojCmptSetState(XGV_CCU, JAUS_READY_STATE);					// Set the current state to ready
+	return (XGV_CCU);
+}
+
+
+void
+shutdown_module(int a __attribute__ ((unused)))
+{
+	endwin();
+	tcsetattr(0, TCSANOW, &storedTermio);
+
+	exit(0);
 }
 
 
@@ -568,7 +610,12 @@ main(void)
 	OjCmpt XGV_CCU;
 	int *xgv_ccu_service_connections;
 
-	XGV_CCU = create_xgv_ccu_component(XGV_CCU_NAME, XGV_CCU_COMPONENTE_ID, XGV_CCU_STATE_MACHINE_UPDATE_RATE);
+	signal(SIGINT, shutdown_module);
+
+	XGV_CCU = create_xgv_ccu_component_ojTorc(XGV_CCU_NAME, XGV_CCU_COMPONENTE_ID, XGV_CCU_STATE_MACHINE_UPDATE_RATE);
+	if (!XGV_CCU)
+		exit(1);
+
 	register_xgv_ccu_messages_callbacks(XGV_CCU);
 	ojCmptSetAuthority(XGV_CCU, 6);
 	ojCmptRun(XGV_CCU);				// Begin running the XGV_CCU state machine
