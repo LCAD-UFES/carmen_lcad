@@ -12,9 +12,8 @@ INTERFACE_LIBS = -llaser_interface -llaser_ldmrs_interface \
 		 -lxsens_mtig_interface -lweb_cam_interface -lrobot_ackerman_interface \
 		 -lvisual_odometry_interface -lultrasonic_filter_interface -lford_escape_hybrid_interface
 endif
-
-IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/ -I$(CARMEN_HOME)/sharedlib/png++
-IFLAGS += `libpng-config --cflags`
+#CFLAGS +=  -O4
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libtf/src -I/usr/local/include/bullet/
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/libtf/src
 LFLAGS += -L`libpng-config --ldflags`
 LFLAGS += $(INTERFACE_LIBS) -lparam_interface \
