@@ -28,7 +28,6 @@
 
 #include <carmen/carmen.h>
 #include <opencv2/highgui/highgui.hpp>
-#include "png.hpp"
 
 //byte numbers
 #define GET_LOW_ORDER_NIBBLE(x) (int_to_nibble_hex[x & 0xf])
@@ -39,9 +38,6 @@
 #define GET_SHORT_SECOND_NIBBLE(x) (int_to_nibble_hex[(x >> 4) & 0xf])
 #define GET_SHORT_THIRD_NIBBLE(x) (int_to_nibble_hex[(x >> 8) & 0xf])
 #define GET_SHORT_FOURTH_NIBBLE(x) (int_to_nibble_hex[(x >> 12) & 0xf])
-
-// Usar PNG++ salvar log
-//#define usepng
 
 char *hex_char_image = NULL; // Stores the image as a string of nibbles, i.e., a hexadecimal digit ([0-9a-fA-F])
 char *hex_char_image_kinect = NULL;
@@ -1106,48 +1102,16 @@ void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(
 //			  double timestamp;
 //			  char *host;
 
-	#ifdef usepng
-			char pathr [1030];
-			char pathl [1030];
-			sprintf(pathr, "%s/%lf.bb%d_r.png", subdir, msg->timestamp, bumblebee_num);
-			sprintf(pathl, "%s/%lf.bb%d_l.png", subdir, msg->timestamp, bumblebee_num);
 
-			png::image<png::rgb_pixel> pngRight(msg->width, msg->height);
-			png::image<png::rgb_pixel> pngLeft(msg->width, msg->height);
-
-			static int first_time = 1;
-			if (first_time)
-			{
-				png::uint_32 i = 0;
-
-				for (png::uint_32 y = 0; y < pngLeft.get_height(); ++y)
-				{
-					for (png::uint_32 x = 0; x < pngLeft.get_width(); ++x)
-					{
-						pngLeft[y][x] = png::rgb_pixel(msg->raw_left[i], msg->raw_left[i+1],
-					        		msg->raw_left[i+2]);
-					    pngRight[y][x] = png::rgb_pixel(msg->raw_right[i], msg->raw_right[i+1],
-					       			msg->raw_right[i+2]);
-					    i += 3;
-					 }
-				}
-			}
-			pngRight.write(pathr);
-			pngLeft.write(pathl);
-	#else
 			sprintf(path, "%s/%lf.bb%d.png", subdir, msg->timestamp, bumblebee_num);
 			static cv::Mat dest;
-
-//			static int first_time = 1;
-			//if (first_time)
 
 			cv::Mat left = cv::Mat(cv::Size(msg->width, msg->height), CV_8UC3, msg->raw_left);
 			cv::Mat right = cv::Mat(cv::Size(msg->width, msg->height), CV_8UC3, msg->raw_right);
 
 			cv::hconcat(left, right, dest);
 			cv::imwrite(path, dest);
-			//printf("%lf\n", init_time - carmen_get_time());
-	#endif
+
 		}
 		else
 		{
