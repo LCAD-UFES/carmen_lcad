@@ -60,6 +60,8 @@
 
 #define PD_THREAD_DESIRED_RATE_HZ			100.0	// USER: Modify this rate as needed
 
+#define WHEEL_SPEED_MOVING_AVERAGE_SIZE 5
+
 extern int out_can_sockfd;
 
 OjCmpt pdCreate(void);

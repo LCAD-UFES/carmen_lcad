@@ -72,12 +72,21 @@ typedef struct
 	int controllerSc;
 } PdData;
 
-extern double front_left_speed;
-extern double front_right_speed;
-extern double back_left_speed;
-extern double back_right_speed;
-//extern double time_last_odometry;
+extern double front_left_speed[WHEEL_SPEED_MOVING_AVERAGE_SIZE];
+extern double front_right_speed[WHEEL_SPEED_MOVING_AVERAGE_SIZE];
+extern double back_left_speed[WHEEL_SPEED_MOVING_AVERAGE_SIZE];
+extern double back_right_speed[WHEEL_SPEED_MOVING_AVERAGE_SIZE];
 
+double wheel_speed_moving_average(double *wheel_speed)
+{
+	int i;
+	double moving_average_wheel_speed = 0.0;
+
+	for (i = 0; i < WHEEL_SPEED_MOVING_AVERAGE_SIZE; i++)
+		moving_average_wheel_speed += wheel_speed[i];
+
+	return (moving_average_wheel_speed / (double) WHEEL_SPEED_MOVING_AVERAGE_SIZE);
+}
 
 void pdProcessMessage(OjCmpt pd, JausMessage message)
 {
@@ -510,10 +519,10 @@ void pdReadyState(OjCmpt pd)
 //		vehicleSimSetCommand(0, 80, 0);
 	}
 
-	data->setWheelsSpeed->leftFront = front_left_speed;
-	data->setWheelsSpeed->leftRear = back_left_speed;
-	data->setWheelsSpeed->rightFront = front_right_speed;
-	data->setWheelsSpeed->rightRear = back_right_speed;
+	data->setWheelsSpeed->leftFront = wheel_speed_moving_average(front_left_speed);
+	data->setWheelsSpeed->leftRear = wheel_speed_moving_average(back_left_speed);
+	data->setWheelsSpeed->rightFront = wheel_speed_moving_average(front_right_speed);
+	data->setWheelsSpeed->rightRear = wheel_speed_moving_average(back_right_speed);
 //	data->setWheelsSpeed->timeStamp = time_last_odometry;
 	pdSendReportWheelsSpeed(pd);
 

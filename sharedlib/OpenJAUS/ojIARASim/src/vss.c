@@ -46,6 +46,9 @@
 #include <unistd.h>
 #include "vss.h"	// USER: Implement and rename this header file. Include prototypes for all public functions contained in this file.
 
+extern double car_speed;
+
+
 // Private function prototypes
 void vssReadyState(OjCmpt vss);
 void vssQueryVelocityStateCallback(OjCmpt vss, JausMessage query);
@@ -122,12 +125,21 @@ void vssQueryVelocityStateCallback(OjCmpt vss, JausMessage query)
 	message = (ReportVelocityStateMessage)ojCmptGetUserData(vss);
 
 	queryVelocityState = queryVelocityStateMessageFromJausMessage(query);
-	if(queryVelocityState)
+	if (queryVelocityState)
 	{
 		jausAddressCopy(message->destination, queryVelocityState->source);
 		message->presenceVector = queryVelocityState->presenceVector;
 		message->sequenceNumber = 0;
 		message->properties.scFlag = 0;
+
+		message->velocityXMps = car_speed;
+		message->velocityYMps = 0.0;
+		message->velocityZMps = 0.0;
+		message->velocityRmsMps = 1.0;
+		message->rollRateRps = 0.0;
+		message->pitchRateRps = 0.0;
+		message->yawRateRps = 0.0;
+		message->rateRmsRps = 0.0;
 
 		txMessage = reportVelocityStateMessageToJausMessage(message);
 		ojCmptSendMessage(vss, txMessage);
@@ -156,14 +168,14 @@ void vssReadyState(OjCmpt vss)
 
 	message = (ReportVelocityStateMessage)ojCmptGetUserData(vss);
 
-	message->velocityXMps = 1.2345; //Ler velocidade da IARA aqui. Antigo vehicleSimGetSpeed();
-	message->velocityYMps = 0;
-	message->velocityZMps = 0;
-	message->velocityRmsMps = 0.01;
+	message->velocityXMps = car_speed;
+	message->velocityYMps = 0.0;
+	message->velocityZMps = 0.0;
+	message->velocityRmsMps = 1.0;
 	message->rollRateRps = 0.0;
 	message->pitchRateRps = 0.0;
 	message->yawRateRps = 0.0;
-	message->rateRmsRps = 0;
+	message->rateRmsRps = 0.0;
 
 	// send message
 	if (ojCmptIsOutgoingScActive(vss, JAUS_REPORT_VELOCITY_STATE))

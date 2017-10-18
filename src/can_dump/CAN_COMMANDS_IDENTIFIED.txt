@@ -21,9 +21,23 @@
 431  00 00 01 00 00 00 00 00 - Porta esquerda (trazeira) aberta (acionada por humano)
 431  00 00 00 30 00 00 00 00 - Porta porta malas (vidro) aberta (acionada por humano)
 
-425  11 11 XX XX XX XX XX XX - Parece a velocidade ruidosa. Se andar para traz fica negativa? (ver filme can-dump-velocity-analysis-01.mp4, 09:38)
-
-216  11 11 11 11 XX XX XX XX - Parece ser o odometro das quatro rodas. (ver filme can-dump-velocity-analysis-01.mp4, 02:47)
+216  11 11 11 11 XX XX XX XX - Parece ser o odometro das quatro rodas. (ver filme can-dump-velocity-analysis-01.mp4, 02:47) (0x4f = 1 volta do pneu)
 
 217  11 11 11 11 XX XX XX XX - Parece ser o odometro de duas rodas. (ver filme can-dump-velocity-analysis-01.mp4, 14:40)
+
+---------------------
+425  11 11 XX XX XX XX XX XX - Parece a velocidade ruidosa. Se andar para traz fica negativa? (ver filme can-dump-velocity-analysis-01.mp4, 09:38)
+
+can0  425   [8]  00 00 23 28 02 58 28 1C - situacao em repouso
+can0  425   [8]  00 87 22 EE 02 56 28 98 - alguma velocidade para frente (roda motorista - left)
+can0  425   [8]  00 BA 23 74 02 59 27 78 - alguma velocidade para traz (roda motorista - left)
+
+Km/h
+20
+30
+40
+
+inicio primeira revolucao de um pneu
+fim primeira revolucao - 2.245
+fim segunda revolucao - 2.23
 
