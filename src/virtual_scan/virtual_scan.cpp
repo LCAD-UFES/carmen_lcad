@@ -20,7 +20,7 @@ carmen_mapper_virtual_scan_message *
 filter_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan)
 {
 
-#define PROB_THRESHOLD	-2.0
+#define PROB_THRESHOLD	-2.14
 
 	carmen_mapper_virtual_scan_message *filtered_virtual_scan;
 	filtered_virtual_scan = (carmen_mapper_virtual_scan_message *) malloc(sizeof(carmen_mapper_virtual_scan_message));
@@ -46,9 +46,6 @@ filter_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan)
 		}
 	}
 	filtered_virtual_scan->num_points = num_points;
-
-	fprintf(stdout, "%d %d %f\n", virtual_scan->num_points,filtered_virtual_scan->num_points, (double)filtered_virtual_scan->num_points/(double)virtual_scan->num_points);
-	fflush(stdout);
 
 	return (filtered_virtual_scan);
 }
@@ -208,6 +205,7 @@ classify_segments(virtual_scan_segments_t *virtual_scan_segments)
 		int segment_class = MASS_POINT;
 		double average_distance = 0.0;
 		double maximum_distance = 0.0;
+		carmen_point_t maximum_point;
 		for (int j = 0; j < num_points; j++)
 		{
 			carmen_point_t point = virtual_scan_segments->segment[i].point[j];
@@ -221,27 +219,41 @@ classify_segments(virtual_scan_segments_t *virtual_scan_segments)
 			}
 			else if (point_type == POINT_WITHIN_SEGMENT)
 			{
+				//				average_distance += DIST2D(point, point_within_line_segment);
+				//				if (j >= (num_points - 1))
+				//				{
+				//					average_distance = average_distance / (double) (num_points - 2);
+				//					if (average_distance > DIST2D(v, w) / 7.0) // Revise
+				//						segment_class = L_SHAPED;
+				//					else
+				//						segment_class = I_SHAPED;
+				//				}
 				double distance = DIST2D(point, point_within_line_segment);
 				if (distance > maximum_distance)
+				{
 					maximum_distance = distance;
-				average_distance += DIST2D(point, point_within_line_segment);
+					maximum_point = point;
+				}
+				double a = DIST2D(maximum_point, v);
+				double b = DIST2D(maximum_point, w);
+				double alpha = atan2(b, a);
+				double h = a * sin(alpha);
 				if (j >= (num_points - 1))
 				{
-					average_distance = average_distance / (double) (num_points - 2);
-					if (average_distance > DIST2D(v, w) / 7.0) // Revise
-						segment_class = L_SHAPED;
-					else
+					if (maximum_distance < h * 0.5)
 						segment_class = I_SHAPED;
+					else
+						segment_class = L_SHAPED;
 				}
+
 			}
-			else
-				continue;
 		}
 
 		carmen_point_t centroid = compute_segment_centroid(virtual_scan_segments->segment[i]);
 
 		virtual_scan_segment_classes->segment[i].num_points = num_points;
-		virtual_scan_segment_classes->segment[i].point = virtual_scan_segments->segment[i].point;	virtual_scan_segment_classes->segment_features[i].average_distance_from_point_to_line_segment = average_distance;
+		virtual_scan_segment_classes->segment[i].point = virtual_scan_segments->segment[i].point;
+		virtual_scan_segment_classes->segment_features[i].average_distance_from_point_to_line_segment = average_distance;
 		virtual_scan_segment_classes->segment_features[i].centroid = centroid;
 		virtual_scan_segment_classes->segment_features[i].first_point = v;
 		virtual_scan_segment_classes->segment_features[i].last_point = w;
@@ -251,6 +263,7 @@ classify_segments(virtual_scan_segments_t *virtual_scan_segments)
 
 	return (virtual_scan_segment_classes);
 }
+
 
 virtual_scan_segment_classes_t *
 detect_and_track_moving_objects(carmen_mapper_virtual_scan_message *virtual_scan)
