@@ -33,16 +33,16 @@
 #define FALSE 0
 #endif
 
-#define DESOUZA_GUIDOLINI_CONSTANT 0.0020882803
+#define DESOUZA_GUIDOLINI_CONSTANT 0.0022
 
 #define FRONT_RIGHT	0
 #define FRONT_LEFT	1
 #define BACK_RIGHT	2
 #define BACK_LEFT	3
-// Com 0.05 (abaixo), velocidade maxima = 161.1 km/h (pois senao o odeometro termina uma volta)
-#define WHEEL_VELOCITY_SAMPLE_TIME 	0.05
+// Com 0.14 (abaixo), velocidade maxima ~= 165 km/h (pois senao o odeometro termina uma volta)
+#define WHEEL_VELOCITY_SAMPLE_TIME 	0.14
 // Metros por revolucao do pneu ~= 2.2375 m
-#define METERS_BY_ODOMETRY_COUNT	0.02632
+#define METERS_BY_ODOMETRY_COUNT	0.0255
 
 #define DEFAULT_STRING_LENGTH 128
 #define KEYBOARD_LOCK_TIMEOUT_SEC	60.0
@@ -382,7 +382,7 @@ void update_IARA_state(struct can_frame frame)
 	if (frame.can_id == 0x425) // Velocidade da IARA (segundo o can)
 		update_car_speed(frame);
 
-	if (frame.can_id == 0x80) // Reh
+	if (frame.can_id == 0x80) // Angulo do volante
 		update_steering_angle(frame);
 
 //	if (frame.can_id == 0xXX) // Botao amarelo
