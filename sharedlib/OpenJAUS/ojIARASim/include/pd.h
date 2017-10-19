@@ -58,7 +58,7 @@
 #define TRUE 1
 #endif
 
-#define PD_THREAD_DESIRED_RATE_HZ			100.0	// USER: Modify this rate as needed
+#define PD_THREAD_DESIRED_RATE_HZ			50.0	// USER: Modify this rate as needed
 
 #define WHEEL_SPEED_MOVING_AVERAGE_SIZE 5
 

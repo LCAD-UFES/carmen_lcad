@@ -77,6 +77,9 @@ extern double front_right_speed[WHEEL_SPEED_MOVING_AVERAGE_SIZE];
 extern double back_left_speed[WHEEL_SPEED_MOVING_AVERAGE_SIZE];
 extern double back_right_speed[WHEEL_SPEED_MOVING_AVERAGE_SIZE];
 
+int gear_can_command = 0;
+
+
 double wheel_speed_moving_average(double *wheel_speed)
 {
 	int i;
@@ -230,7 +233,6 @@ void pdProcessMessage(OjCmpt pd, JausMessage message)
 				{
 					data->setDiscreteDevices->gear = setDiscreteDevices->gear;
 
-					int gear_can_command = 0;
 					if (data->setDiscreteDevices->gear == 1) // Low
 						gear_can_command = 0x04;
 					else if (data->setDiscreteDevices->gear == 2) // Drive
@@ -239,15 +241,6 @@ void pdProcessMessage(OjCmpt pd, JausMessage message)
 						gear_can_command = 0x02;
 					else if (data->setDiscreteDevices->gear == 129) // Reverse
 						gear_can_command = 0x01;
-
-					if (gear_can_command)
-					{
-						struct can_frame frame;
-						frame.can_id = 0x405;
-						frame.can_dlc = 1;
-						frame.data[0] = gear_can_command;
-						send_frame(out_can_sockfd, &frame);
-					}
  				}
 				setDiscreteDevicesMessageDestroy(setDiscreteDevices);
 			}
@@ -531,6 +524,16 @@ void pdReadyState(OjCmpt pd)
 	// Preencher o byte abaixo com dados da IARA
 	data->reportComponentStatus->secondaryStatusCode = 0;
 	pdSendReportComponentStatus(pd);
+
+	// Gear
+	if (gear_can_command)
+	{
+		struct can_frame frame;
+		frame.can_id = 0x405;
+		frame.can_dlc = 1;
+		frame.data[0] = gear_can_command;
+		send_frame(out_can_sockfd, &frame);
+	}
 }
 
 OjCmpt pdCreate(void)
