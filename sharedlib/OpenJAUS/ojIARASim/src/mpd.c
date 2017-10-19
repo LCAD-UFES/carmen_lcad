@@ -29,6 +29,8 @@ typedef struct
 	int controllerSc;
 }PdData;
 
+extern double steering_angle;
+
 
 void mpdProcessMessage(OjCmpt mpd, JausMessage message)
 {
@@ -207,7 +209,7 @@ void mpdReadyState(OjCmpt mpd)
 	}
 
 	// Ler estado da IARA e reporta-los aqui
-	data->setCurvature->atanOfCurrentCurvature = 0.12345;
+	data->setCurvature->atanOfCurrentCurvature = steering_angle;
 //	data->setCurvature->timeStamp = data->setCurvature->timeStamp;
 	mpdSendReportCurvature(mpd);
 }

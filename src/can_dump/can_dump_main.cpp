@@ -56,7 +56,7 @@ main (int argc, char **argv)
 	carmen_ipc_initialize(argc, argv);
 	carmen_can_dump_define_can_line_message();
 
-	FILE *can_dump = popen("ssh -XC pi@192.168.0.14 'candump any'", "r");
+	FILE *can_dump = popen("ssh -XC pi@192.168.0.13 'candump any'", "r");
 	char line[1024];
 
 	while (fgets(line, 1023, can_dump) != NULL)

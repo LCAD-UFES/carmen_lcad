@@ -36,7 +36,7 @@
 #include <control.h>
 #include "ford_escape_hybrid.h"
 
-//#define FORD_ESCAPE_COMMUNICATION_DUMP
+#define FORD_ESCAPE_COMMUNICATION_DUMP
 
 static ford_escape_hybrid_config_t *ford_escape_hybrid_config = NULL;
 

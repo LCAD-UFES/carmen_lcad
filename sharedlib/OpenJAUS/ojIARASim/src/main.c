@@ -78,6 +78,8 @@ int wheel_speed_index;
 
 double car_speed = 0.0;
 double speed_signal = 1.0;
+double steering_angle = 0.0;
+
 
 // Refresh screen in curses mode
 void updateScreen(int keyboardLock, int keyPress)
@@ -367,6 +369,11 @@ void update_car_speed(struct can_frame frame)
 	car_speed *= speed_signal;
 }
 
+void update_steering_angle(struct can_frame frame)
+{
+	steering_angle = -(((double) frame.data[2] * 256.0 + (double) frame.data[3]) - 20015.0) / 28200.0;
+}
+
 void update_IARA_state(struct can_frame frame)
 {
 	if (frame.can_id == 0x216) // Odometro das rodas
@@ -374,10 +381,10 @@ void update_IARA_state(struct can_frame frame)
 
 	if (frame.can_id == 0x425) // Velocidade da IARA (segundo o can)
 		update_car_speed(frame);
-//
-//	if (frame.can_id == 0xXX) // Reh
-//		update_wheels_speed(frame);
-//
+
+	if (frame.can_id == 0x80) // Reh
+		update_steering_angle(frame);
+
 //	if (frame.can_id == 0xXX) // Botao amarelo
 //		update_wheels_speed(frame);
 //
