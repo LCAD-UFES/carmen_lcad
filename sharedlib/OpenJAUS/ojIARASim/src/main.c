@@ -363,7 +363,7 @@ void update_wheels_speed(struct can_frame frame)
 void update_car_speed(struct can_frame frame)
 {
 	car_speed = ((double) frame.data[0] * 256.0 + (double) frame.data[1]) * DESOUZA_GUIDOLINI_CONSTANT;
-	speed_signal = (((double) frame.data[6] * 256.0 + (double) frame.data[7]) > 0x281C)? 1.0: -1.0;
+	speed_signal = (((double) frame.data[6] * 256.0 + (double) frame.data[7]) > 0x286C)? 1.0: -1.0;
 	car_speed *= speed_signal;
 }
 

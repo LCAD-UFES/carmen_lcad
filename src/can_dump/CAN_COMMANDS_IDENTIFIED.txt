@@ -41,3 +41,18 @@ inicio primeira revolucao de um pneu
 fim primeira revolucao - 2.245
 fim segunda revolucao - 2.23
 
+Effort
+2  - 0.3
+4  - 0.7
+6  - 1.7
+8  - 2.7
+10 - 3.4
+14 - 6.3
+20 - 8.9
+30 - 13.8
+40 - 17.4
+50 - 19.8
+60 - 23.8
+70 - 26.0
+
+
