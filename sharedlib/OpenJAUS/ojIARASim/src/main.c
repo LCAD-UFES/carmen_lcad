@@ -444,7 +444,7 @@ int main(int argCount, char **argString)
 			struct can_frame frame;
 			recv_frame(in_can_sockfd, &frame);
 			update_IARA_state(frame);
-			print_frame(&frame);
+//			print_frame(&frame);
 		}
 	}
 
