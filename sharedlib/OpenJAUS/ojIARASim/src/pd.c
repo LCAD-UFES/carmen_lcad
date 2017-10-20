@@ -77,6 +77,14 @@ extern double front_right_speed[WHEEL_SPEED_MOVING_AVERAGE_SIZE];
 extern double back_left_speed[WHEEL_SPEED_MOVING_AVERAGE_SIZE];
 extern double back_right_speed[WHEEL_SPEED_MOVING_AVERAGE_SIZE];
 
+// ByWire XGV User Manual 1.5, pg. 62
+#define XGV_MANUAL_OVERRIDE_FLAG 16
+#define XGV_SAFE_STOP_FLAG 18
+#define XGV_DOOR_OPEN_FLAG 24
+
+extern unsigned int manual_override_and_safe_stop;
+extern int door_signal;
+
 int gear_can_command = 0;
 
 
@@ -521,8 +529,10 @@ void pdReadyState(OjCmpt pd)
 
 	data->reportComponentStatus->primaryStatusCode = data->controllerStatus->primaryStatusCode;
 
-	// Preencher o byte abaixo com dados da IARA
-	data->reportComponentStatus->secondaryStatusCode = 0;
+	unsigned int ssc = (((manual_override_and_safe_stop & 0x02) >> 1) << XGV_MANUAL_OVERRIDE_FLAG) |
+					   (((manual_override_and_safe_stop & 0x01)) << XGV_SAFE_STOP_FLAG) |
+					   (((door_signal & 0x80) || (door_signal & 0x100) || (door_signal & 0x200) || (door_signal & 0x400)) << XGV_DOOR_OPEN_FLAG);
+	data->reportComponentStatus->secondaryStatusCode = ssc;
 	pdSendReportComponentStatus(pd);
 
 	// Gear

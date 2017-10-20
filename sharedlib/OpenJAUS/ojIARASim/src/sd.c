@@ -30,7 +30,10 @@ typedef struct
 	ReportSignalsMessage reportSignals;
 	ReportComponentStatusMessage controllerStatus;
 	int controllerSc;
-}PdData;
+} PdData;
+
+extern int turn_signal;
+extern int door_signal;
 
 
 void sdProcessMessage(OjCmpt sd, JausMessage message)
@@ -146,8 +149,7 @@ void sdSendReportSignals(OjCmpt sd)
 		data->reportSignals->lightsPeriodOff = data->setSignals->lightsPeriodOff;
 		data->reportSignals->lightsPeriodOn = data->setSignals->lightsPeriodOn;
 
-		// TODO: @@@ Alberto: Retornar comandos humanos das setas aqui. Ver src/can_dump/CAN_COMMANDS_IDENTIFIED.txt. Portas abertas deveriam fazer o carro parar?
-		data->reportSignals->turnSignal = data->setSignals->turnSignal;
+		data->reportSignals->turnSignal = (turn_signal >> 4) & 0x3;
 
 		txMessage = reportSignalsMessageToJausMessage(data->reportSignals);
 		ojCmptSendMessage(sd, txMessage);

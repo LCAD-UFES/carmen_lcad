@@ -79,6 +79,9 @@ int wheel_speed_index;
 double car_speed = 0.0;
 double speed_signal = 1.0;
 double steering_angle = 0.0;
+unsigned int manual_override_and_safe_stop;
+int turn_signal;
+int door_signal;
 
 
 // Refresh screen in curses mode
@@ -374,6 +377,17 @@ void update_steering_angle(struct can_frame frame)
 	steering_angle = -(((double) frame.data[2] * 256.0 + (double) frame.data[3]) - 20015.0) / 28200.0;
 }
 
+void update_manual_override_and_safe_stop(struct can_frame frame)
+{
+	manual_override_and_safe_stop = frame.data[0];
+}
+
+void update_signals(struct can_frame frame)
+{
+	turn_signal = frame.data[7];
+	door_signal = (frame.data[2] << 8) | frame.data[3];
+}
+
 void update_IARA_state(struct can_frame frame)
 {
 	if (frame.can_id == 0x216) // Odometro das rodas
@@ -385,12 +399,12 @@ void update_IARA_state(struct can_frame frame)
 	if (frame.can_id == 0x80) // Angulo do volante
 		update_steering_angle(frame);
 
-//	if (frame.can_id == 0xXX) // Botao amarelo
-//		update_wheels_speed(frame);
-//
-//	if (frame.can_id == 0xXX) // Setas acionadas manualmente e estado das portas (abertas/fechadas)
-//		update_wheels_speed(frame);
-//
+	if (frame.can_id == 0x600) // Botao amarelo
+		update_manual_override_and_safe_stop(frame);
+
+	if (frame.can_id == 0x431) // Setas acionadas manualmente e estado das portas (abertas/fechadas)
+		update_signals(frame);
+
 //	if (frame.can_id == 0x216) // Safe Stop?
 //		update_wheels_speed(frame);
 }
