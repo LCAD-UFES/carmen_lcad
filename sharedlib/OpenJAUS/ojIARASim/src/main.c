@@ -258,8 +258,10 @@ char getUserInput()
 	return retVal;
 }
 
-void int_modules()
+void init_modules()
 {
+	usleep(1000000); // Espera um segundo para o NodeManager entrar
+
 	pd = pdCreate();
 	if (!pd)
 		exit(1);
@@ -426,7 +428,7 @@ int main(int argCount, char **argString)
 		out_can_sockfd = init_can(argString[2]);
 	}
 
-	int_modules();
+	init_modules();
 
 	if (interface_active)
 		setupTerminal();
