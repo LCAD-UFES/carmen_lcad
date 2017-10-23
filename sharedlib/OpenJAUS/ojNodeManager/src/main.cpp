@@ -229,15 +229,23 @@ int main(int argc, char **args)
 int main(int argc, char **args)
 {
 	bool running = true;
+	bool run_in_background = false;
 	char choice;
 
 	printf("\nOpenJAUS Node Manager Version %s\n\n", OJ_NODE_MANAGER_VERSION);
 
 	char *file_name;
-	if (argc != 2)
-		file_name = (char *) "nodeManager.conf";
-	else
+	if (argc == 2)
+	{
 		file_name = (char *) args[1];
+	}
+	else if (argc == 3)
+	{
+		file_name = (char *) args[1];
+		run_in_background = true;
+	}
+	else
+		file_name = (char *) "nodeManager.conf";
 
 	FileLoader *configData = new FileLoader(file_name);
 	MyHandler *handler = new MyHandler();
@@ -261,12 +269,19 @@ int main(int argc, char **args)
 
 	signal (SIGINT, shutdown_module);
 
-	while(running)
+	while (running)
 	{
-		memset(&choice, 0, 1);
-		int x = scanf("%c", &choice);
-		x = x; // Para evitar warning
-		parseUserInput(choice);
+		if (run_in_background)
+		{
+			usleep(5000);
+		}
+		else
+		{
+			memset(&choice, 0, 1);
+			int x = scanf("%c", &choice);
+			x = x; // Para evitar warning
+			parseUserInput(choice);
+		}
 	}
 
 	delete nm;
