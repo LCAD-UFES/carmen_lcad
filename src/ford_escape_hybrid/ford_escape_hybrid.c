@@ -599,9 +599,6 @@ torc_report_curvature_message_handler(OjCmpt XGV_CCU __attribute__ ((unused)), J
 		fflush(caco);
 		fclose(caco);
 #endif
-		printf("flag = %d\n", g_XGV_component_status);
-		fflush(stdout);
-//		printf("g_XGV_turn_signal = %d\n", g_XGV_turn_signal);
 		g_XGV_atan_curvature = reportCurvature->atanOfCurrentCurvature; // @@@ Alberto: a curvatura do carro vem ao contrario de carmen
 		//g_XGV_atan_curvature += get_curvature_from_phi(carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.05)), ford_escape_hybrid_config);
 
