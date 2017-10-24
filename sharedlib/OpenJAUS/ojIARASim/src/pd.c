@@ -406,7 +406,7 @@ void pdSendReportComponentStatus(OjCmpt pd)
 		data->reportComponentStatus->properties.scFlag = JAUS_SERVICE_CONNECTION_MESSAGE;
 
 		data->reportComponentStatus->primaryStatusCode = data->controllerStatus->primaryStatusCode;
-//		data->reportComponentStatus->secondaryStatusCode = data->controllerStatus->secondaryStatusCode;
+		data->reportComponentStatus->secondaryStatusCode = data->controllerStatus->secondaryStatusCode;
 
 		txMessage = reportComponentStatusMessageToJausMessage(data->reportComponentStatus);
 		ojCmptSendMessage(pd, txMessage);
@@ -532,7 +532,8 @@ void pdReadyState(OjCmpt pd)
 	unsigned int ssc = (((manual_override_and_safe_stop & 0x02) >> 1) << XGV_MANUAL_OVERRIDE_FLAG) |
 					   (((manual_override_and_safe_stop & 0x01)) << XGV_SAFE_STOP_FLAG) |
 					   (((door_signal & 0x80) || (door_signal & 0x100) || (door_signal & 0x200) || (door_signal & 0x400)) << XGV_DOOR_OPEN_FLAG);
-	data->reportComponentStatus->secondaryStatusCode = ssc;
+	data->controllerStatus->secondaryStatusCode = ssc;
+	data->reportComponentStatus->secondaryStatusCode = data->controllerStatus->secondaryStatusCode;
 	pdSendReportComponentStatus(pd);
 
 	// Gear
