@@ -260,7 +260,7 @@ char getUserInput()
 
 void init_modules()
 {
-	usleep(1000000); // Espera um segundo para o NodeManager entrar
+//	usleep(1000000); // Espera um segundo para o NodeManager entrar
 
 	pd = pdCreate();
 	if (!pd)
