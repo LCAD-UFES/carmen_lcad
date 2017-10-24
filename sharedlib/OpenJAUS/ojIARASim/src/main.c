@@ -18,6 +18,9 @@
 #include <ncurses.h>
 #include <termios.h>
 #include <unistd.h>
+
+#include <pthread.h>
+
 #define CLEAR "clear"
 
 #include "pd.h"
@@ -390,7 +393,7 @@ void update_signals(struct can_frame frame)
 	door_signal = (frame.data[2] << 8) | frame.data[3];
 }
 
-void update_IARA_state(struct can_frame frame)
+void update_Car_state(struct can_frame frame)
 {
 	if (frame.can_id == 0x216) // Odometro das rodas
 		update_wheels_speed(frame);
@@ -401,9 +404,6 @@ void update_IARA_state(struct can_frame frame)
 	if (frame.can_id == 0x80) // Angulo do volante
 		update_steering_angle(frame);
 
-	if (frame.can_id == 0x600) // Botao amarelo
-		update_manual_override_and_safe_stop(frame);
-
 	if (frame.can_id == 0x431) // Setas acionadas manualmente e estado das portas (abertas/fechadas)
 		update_signals(frame);
 
@@ -411,8 +411,42 @@ void update_IARA_state(struct can_frame frame)
 //		update_wheels_speed(frame);
 }
 
+void update_Torc_state(struct can_frame frame)
+{
+	if (frame.can_id == 0x600) // Botao amarelo
+		update_manual_override_and_safe_stop(frame);
+}
+
+void *can_in_read_thread_func(void *unused)
+{
+	struct can_frame frame;
+
+	while (1)
+	{
+		recv_frame(in_can_sockfd, &frame);
+		update_Car_state(frame);
+	}
+
+	return (NULL);
+}
+
+void *can_out_read_thread_func(void *unused)
+{
+	struct can_frame frame;
+
+	while (1)
+	{
+		recv_frame(out_can_sockfd, &frame);
+		update_Torc_state(frame);
+	}
+
+	return (NULL);
+}
+
 int main(int argCount, char **argString)
 {
+	pthread_t can_in_read_thread, can_out_read_thread;
+
 	signal(SIGTERM, signal_handler);
 	signal(SIGHUP, signal_handler);
 	signal(SIGINT, signal_handler);
@@ -443,10 +477,14 @@ int main(int argCount, char **argString)
 		}
 		else
 		{
-			struct can_frame frame;
-			recv_frame(in_can_sockfd, &frame);
-			update_IARA_state(frame);
-//			print_frame(&frame);
+			static int first_time = true;
+			if (first_time)
+			{
+				pthread_create(&can_in_read_thread, NULL, can_in_read_thread_func, NULL);
+				pthread_create(&can_out_read_thread, NULL, can_out_read_thread_func, NULL);
+				first_time = false;
+			}
+			ojSleepMsec(100);
 		}
 	}
 
