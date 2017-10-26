@@ -65,14 +65,29 @@ typedef struct
 	double theta;
 	double width;
 	double length;
-} box_model_t;
+} virtual_scan_box_model_t;
 
 
 typedef struct
 {
 	int num_boxes;
-	box_model_t *box;
+	virtual_scan_box_model_t *box;
 } virtual_scan_box_models_t;
+
+
+typedef struct
+{
+	int num_virtual_scan_box_model_hypotheses;
+	virtual_scan_box_models_t *virtual_scan_box_model_hypotheses;
+} virtual_scan_box_model_hypotheses_t;
+
+
+typedef struct
+{
+	int category;
+	double width;
+	double length;
+} virtual_scan_category_t;
 
 
 virtual_scan_segment_classes_t *
