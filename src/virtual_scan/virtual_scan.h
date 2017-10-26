@@ -37,12 +37,15 @@ typedef struct
 
 typedef struct
 {
-	int segment_class;
 	carmen_point_t first_point;
 	carmen_point_t last_point;
-	double average_distance_from_point_to_line_segment;
-	double maximum_distance_from_point_to_line_segment;
+	double maximum_distance_to_line_segment;
+	carmen_point_t farthest_point;
+	double width;
+	double length;
+	int segment_class;
 	carmen_point_t centroid;
+	//	double average_distance_to_line_segment;
 } virtual_scan_segment_features_t;
 
 
@@ -56,7 +59,7 @@ typedef struct
 
 typedef struct
 {
-	int box_class;
+	int c;
 	double x;
 	double y;
 	double theta;
