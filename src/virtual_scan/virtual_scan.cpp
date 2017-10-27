@@ -9,6 +9,9 @@
 #include <string.h>
 #include "virtual_scan.h"
 
+// moving objects
+#include <carmen/moving_objects_messages.h>
+#include <carmen/moving_objects_interface.h>
 
 extended_virtual_scan_t extended_virtual_scan;
 carmen_point_t extended_virtual_scan_points[10000];
@@ -287,7 +290,7 @@ classify_segments(virtual_scan_segments_t *virtual_scan_segments)
 
 
 virtual_scan_box_model_hypotheses_t *
-fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment_classes)
+virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment_classes)
 {
 
 #define	BUS			0 // Width: 2,4 m to 2,6 m; Length: 10 m to 14 m;
@@ -324,8 +327,6 @@ fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment_classes)
 		{
 			for (int j = 0; j < 2; j++)
 			{
-				box_models->box = (virtual_scan_box_model_t *) realloc(box_models->box, sizeof(virtual_scan_box_model_t) * (j + 1));
-				box_models->num_boxes = j + 1;
 				carmen_point_t length_point = first_point;
 				carmen_point_t width_point = last_point;
 				if (DIST2D(farthest_point, length_point) < DIST2D(farthest_point, width_point))
@@ -333,20 +334,37 @@ fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment_classes)
 					std::swap(length_point, width_point);
 				}
 
-				double rho = atan2(length_point.y - farthest_point.y, length_point.x - farthest_point.x);
-				double phi = atan2(width_point.y  - farthest_point.y, width_point.x  - farthest_point.x);
+				for (int o = 0; o < 2; o++)
+				{
+					double l = DIST2D(farthest_point, length_point);
+					double w = DIST2D(farthest_point, width_point);
+					if (categories[j].length < l || categories[j].width < w)
+						continue;
 
-				carmen_position_t length_center_position = {
-					farthest_point.x + 0.5 * categories[j].length * cos(rho),
-					farthest_point.y + 0.5 * categories[j].length * sin(rho)
-				};
+					double rho = atan2(length_point.y - farthest_point.y, length_point.x - farthest_point.x);
+					double phi = atan2(width_point.y  - farthest_point.y, width_point.x  - farthest_point.x);
 
-				box_models->box[j].c = categories[j].category;
-				box_models->box[j].x = length_center_position.x + 0.5 * categories[j].width * cos(phi);
-				box_models->box[j].y = length_center_position.y + 0.5 * categories[j].width * sin(phi);
-				box_models->box[j].theta = rho;
-				box_models->box[j].width = categories[j].width;
-				box_models->box[j].length = categories[j].length;
+					carmen_position_t length_center_position = {
+						farthest_point.x + 0.5 * categories[j].length * cos(rho),
+						farthest_point.y + 0.5 * categories[j].length * sin(rho)
+					};
+
+					for (double direction = 0; direction <= M_PI; direction += M_PI)
+					{
+						int k = box_models->num_boxes;
+						box_models->box = (virtual_scan_box_model_t *) realloc(box_models->box, sizeof(virtual_scan_box_model_t) * (k + 1));
+						box_models->num_boxes = k + 1;
+
+						box_models->box[k].c = categories[j].category;
+						box_models->box[k].width = categories[j].width;
+						box_models->box[k].length = categories[j].length;
+						box_models->box[k].x = length_center_position.x + 0.5 * categories[j].width * cos(phi);
+						box_models->box[k].y = length_center_position.y + 0.5 * categories[j].width * sin(phi);
+						box_models->box[k].theta = carmen_normalize_theta(rho + direction);
+					}
+
+					std::swap(length_point, width_point);
+				}
 			}
 		}
 		else if (segment_class == I_SHAPED) // I-shape segments segments will generate bus, car and bike hypotheses
@@ -378,18 +396,22 @@ fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment_classes)
 					for (int p = 0; p < 3; p++)
 					{
 						carmen_position_t length_center_position = center_positions[p];
-						for (double direction = -M_PI_2; direction < M_PI; direction += M_PI)
+						for (double delta_phi = -M_PI_2; delta_phi < M_PI; delta_phi += M_PI)
 						{
-							int k = box_models->num_boxes;
-							box_models->num_boxes += 1;
-							box_models->box = (virtual_scan_box_model_t*) realloc(box_models->box, sizeof(virtual_scan_box_model_t) * box_models->num_boxes);
+							double phi = carmen_normalize_theta(theta + delta_phi);
+							for (double direction = 0; direction <= M_PI; direction += M_PI)
+							{
+								int k = box_models->num_boxes;
+								box_models->num_boxes += 1;
+								box_models->box = (virtual_scan_box_model_t*) realloc(box_models->box, sizeof(virtual_scan_box_model_t) * box_models->num_boxes);
 
-							box_models->box[k].c = categories[j].category;
-							box_models->box[k].width = categories[j].width;
-							box_models->box[k].length = categories[j].length;
-							box_models->box[k].x = length_center_position.x + 0.5 * categories[j].width * cos(theta + direction);
-							box_models->box[k].y = length_center_position.y + 0.5 * categories[j].width * sin(theta + direction);
-							box_models->box[k].theta = theta;
+								box_models->box[k].c = categories[j].category;
+								box_models->box[k].width = categories[j].width;
+								box_models->box[k].length = categories[j].length;
+								box_models->box[k].x = length_center_position.x + 0.5 * categories[j].width * cos(phi);
+								box_models->box[k].y = length_center_position.y + 0.5 * categories[j].width * sin(phi);
+								box_models->box[k].theta = carmen_normalize_theta(theta + direction);
+							}
 						}
 					}
 				}
@@ -416,19 +438,23 @@ fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment_classes)
 					// Compute two boxes for the center from first_point and two more from last_point
 					for (int p = 0; p < 3; p++)
 					{
-						carmen_position_t length_center_position = center_positions[p];
-						for (double direction = -M_PI_2; direction < M_PI; direction += M_PI)
+						carmen_position_t width_center_position = center_positions[p];
+						for (double delta_phi = -M_PI_2; delta_phi < M_PI; delta_phi += M_PI)
 						{
-							int k = box_models->num_boxes;
-							box_models->num_boxes += 1;
-							box_models->box = (virtual_scan_box_model_t*) realloc(box_models->box, sizeof(virtual_scan_box_model_t) * box_models->num_boxes);
+							double phi = carmen_normalize_theta(theta + delta_phi);
+							for (double direction = 0; direction <= M_PI; direction += M_PI)
+							{
+								int k = box_models->num_boxes;
+								box_models->num_boxes += 1;
+								box_models->box = (virtual_scan_box_model_t*) realloc(box_models->box, sizeof(virtual_scan_box_model_t) * box_models->num_boxes);
 
-							box_models->box[k].c = categories[j].category;
-							box_models->box[k].width = categories[j].width;
-							box_models->box[k].length = categories[j].length;
-							box_models->box[k].x = length_center_position.x + 0.5 * categories[j].length * cos(theta + direction);
-							box_models->box[k].y = length_center_position.y + 0.5 * categories[j].length * sin(theta + direction);
-							box_models->box[k].theta = theta + direction;
+								box_models->box[k].c = categories[j].category;
+								box_models->box[k].width = categories[j].width;
+								box_models->box[k].length = categories[j].length;
+								box_models->box[k].x = width_center_position.x + 0.5 * categories[j].length * cos(phi);
+								box_models->box[k].y = width_center_position.y + 0.5 * categories[j].length * sin(phi);
+								box_models->box[k].theta = carmen_normalize_theta(phi + direction);
+							}
 						}
 					}
 				}
@@ -440,9 +466,69 @@ fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment_classes)
 	return(box_model_hypotheses);
 }
 
+int
+virtual_scan_num_box_models(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses)
+{
+	int total = 0;
+
+	virtual_scan_box_models_t *hypotheses = virtual_scan_box_model_hypotheses->virtual_scan_box_model_hypotheses;
+	for (int i = 0, m = virtual_scan_box_model_hypotheses->num_virtual_scan_box_model_hypotheses; i < m; i++)
+		total += hypotheses[i].num_boxes;
+
+	return total;
+}
 
 void
-free_virtual_scan_box_model_hypothesis (virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses)
+virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses)
+{
+	static carmen_moving_objects_point_clouds_message message = {0, NULL, 0, NULL};
+
+	if (message.point_clouds != NULL)
+		free(message.point_clouds);
+
+	message.host = carmen_get_host();
+	message.timestamp = carmen_get_time();
+
+	int total = virtual_scan_num_box_models(virtual_scan_box_model_hypotheses);
+	message.point_clouds = (t_point_cloud_struct *) calloc(total, sizeof(t_point_cloud_struct));
+	message.num_point_clouds = total;
+
+	virtual_scan_box_models_t *hypotheses = virtual_scan_box_model_hypotheses->virtual_scan_box_model_hypotheses;
+	for (int i = 0, k = 0, m = virtual_scan_box_model_hypotheses->num_virtual_scan_box_model_hypotheses; i < m; i++)
+	{
+		virtual_scan_box_model_t *boxes = hypotheses[i].box;
+		for (int j = 0, n = hypotheses[i].num_boxes; j < n; j++, k++)
+		{
+			virtual_scan_box_model_t *box = (boxes + j);
+
+			message.point_clouds[k].r = 0.0;
+			message.point_clouds[k].g = 0.0;
+			message.point_clouds[k].b = 1.0;
+			message.point_clouds[k].point_size = 1;
+			message.point_clouds[k].linear_velocity = 0;
+			message.point_clouds[k].orientation = box->theta;
+			message.point_clouds[k].object_pose.x = box->x;
+			message.point_clouds[k].object_pose.y = box->y;
+			message.point_clouds[k].object_pose.z = 0.0;
+			message.point_clouds[k].height = 0;
+			message.point_clouds[k].length = box->length;
+			message.point_clouds[k].width= box->width;
+			message.point_clouds[k].geometric_model = box->c;
+//			message.point_clouds[k].model_features = get_obj_model_features(idMod);
+//			message.point_clouds[k].num_associated = timestamp_moving_objects_list[current_vector_index].objects[i].id;
+
+//			message.point_clouds[k].points = (carmen_vector_3D_t *) malloc(1 * sizeof(carmen_vector_3D_t));
+//			message.point_clouds[k].points[0].x = box->x;
+//			message.point_clouds[k].points[0].y = box->y;
+//			message.point_clouds[k].points[0].z = 0.0;
+		}
+	}
+
+	carmen_moving_objects_point_clouds_publish_message(&message);
+}
+
+void
+virtual_scan_free_box_model_hypothesis(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses)
 {
 	for (int i = 0; i < virtual_scan_box_model_hypotheses->num_virtual_scan_box_model_hypotheses; i++)
 		free(virtual_scan_box_model_hypotheses->virtual_scan_box_model_hypotheses[i].box);
@@ -452,7 +538,7 @@ free_virtual_scan_box_model_hypothesis (virtual_scan_box_model_hypotheses_t *vir
 
 
 virtual_scan_segment_classes_t *
-detect_and_track_moving_objects(carmen_mapper_virtual_scan_message *virtual_scan)
+virtual_scan_extract_segments(carmen_mapper_virtual_scan_message *virtual_scan)
 {
 	carmen_mapper_virtual_scan_message *filtered_virtual_scan = filter_virtual_scan(virtual_scan);
 	extended_virtual_scan_t *extended_virtual_scan = sort_virtual_scan(filtered_virtual_scan);
@@ -462,9 +548,23 @@ detect_and_track_moving_objects(carmen_mapper_virtual_scan_message *virtual_scan
 	virtual_scan_segment_classes_t *virtual_scan_segment_classes = classify_segments(virtual_scan_segments);
 	free(virtual_scan_segments->segment);
 	free(virtual_scan_segments);
-	virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = fit_box_models(virtual_scan_segment_classes);
 //	neighborhood_graph_of_hypotheses = build_or_update_neighborhood_graph_of_hypotheses(virtual_scan_box_models);
 //	moving_objects = sample_moving_objects_tracks(neighborhood_graph_of_hypotheses);
-	free_virtual_scan_box_model_hypothesis (virtual_scan_box_model_hypotheses);
 	return (virtual_scan_segment_classes);
+}
+
+void
+virtual_scan_free_segments(virtual_scan_segment_classes_t *virtual_scan_segments)
+{
+	virtual_scan_segment_t *segments = virtual_scan_segments->segment;
+	for (int i = 0, n = virtual_scan_segments->num_segments; i < n; i++)
+	{
+		carmen_point_t *point = segments[i].point;
+		if (point != NULL)
+			free(point);
+	}
+
+	free(segments);
+	free(virtual_scan_segments->segment_features);
+	free(virtual_scan_segments);
 }

@@ -91,7 +91,18 @@ typedef struct
 
 
 virtual_scan_segment_classes_t *
-detect_and_track_moving_objects(carmen_mapper_virtual_scan_message *virtual_scan);
+virtual_scan_extract_segments(carmen_mapper_virtual_scan_message *virtual_scan);
 
+void
+virtual_scan_free_segments(virtual_scan_segment_classes_t *virtual_scan_segments);
+
+virtual_scan_box_model_hypotheses_t *
+virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment_classes);
+
+void
+virtual_scan_free_box_model_hypothesis(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses);
+
+void
+virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses);
 
 #endif /* SRC_VIRTUAL_SCAN_VIRTUAL_SCAN_H_ */
