@@ -74,6 +74,11 @@ typedef struct
 	virtual_scan_box_model_t *box;
 } virtual_scan_box_models_t;
 
+virtual_scan_box_models_t *
+virtual_scan_new_box_models(void);
+
+virtual_scan_box_model_t *
+virtual_scan_append_box(virtual_scan_box_models_t *models);
 
 typedef struct
 {
@@ -81,6 +86,11 @@ typedef struct
 	virtual_scan_box_models_t *virtual_scan_box_model_hypotheses;
 } virtual_scan_box_model_hypotheses_t;
 
+virtual_scan_box_model_hypotheses_t *
+virtual_scan_new_box_model_hypotheses(int length);
+
+virtual_scan_box_models_t *
+virtual_scan_get_box_models(virtual_scan_box_model_hypotheses_t *hypotheses, int i);
 
 typedef struct
 {
