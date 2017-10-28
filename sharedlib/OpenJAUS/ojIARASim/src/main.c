@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
+#include <math.h>
 
 #include <jaus.h>
 #include <openJaus.h>
@@ -34,6 +35,7 @@
 #endif
 
 #define DESOUZA_GUIDOLINI_CONSTANT 0.0022
+#define robot_distance_between_front_and_rear_axles 2.625
 
 #define FRONT_RIGHT	0
 #define FRONT_LEFT	1
@@ -376,7 +378,15 @@ void update_car_speed(struct can_frame frame)
 
 void update_steering_angle(struct can_frame frame)
 {
-	steering_angle = -(((double) frame.data[2] * 256.0 + (double) frame.data[3]) - 20015.0) / 28200.0;
+//	steering_angle = -(((double) frame.data[2] * 256.0 + (double) frame.data[3]) - 20015.0) / 28200.0;
+	double val = ((double) frame.data[2] * 256.0 + (double) frame.data[3]) - 20000.0 + 30.0;
+	if (val > 0.0)
+		steering_angle = -tan((0.00000012332 * val * val + 0.0052782 * val - 0.058558) * M_PI / 180.0) / robot_distance_between_front_and_rear_axles;
+	else
+	{
+		val = -val;
+		steering_angle = tan((0.00000012332 * val * val + 0.0052782 * val - 0.058558) * M_PI / 180.0) / robot_distance_between_front_and_rear_axles;
+	}
 }
 
 void update_manual_override_and_safe_stop(struct can_frame frame)
