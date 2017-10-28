@@ -1,12 +1,5 @@
-#!/bin/bash
-
-ip=192.168.25.59
-port=3794
-data_received=`nping --tcp -c 1 -p $port $ip | grep RCVD`
-
-while [ -z "$data_received" ]; do
-	echo "vazio"
-	data_received=`nping --tcp -c 1 -p $port $ip | grep RCVD`
-done
-echo "valor: " $data_received
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/OpenJAUS/libopenJaus/lib:~/OpenJAUS/libjaus/lib:~/OpenJAUS/ojTorc/lib
+/home/pi/OpenJAUS/ojNodeManager/bin/ojNodeManager /home/pi/OpenJAUS/ojNodeManager/nodeManager_IARA.conf a >> /home/pi/ojNodeManager.log 2>&1 &
+sleep 1
+/home/pi/OpenJAUS/ojIARASim/bin/ojIARASim can0 can1 &>> /home/pi/ojIARASim.log 2>&1 &
 

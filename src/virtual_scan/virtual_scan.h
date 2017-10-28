@@ -37,12 +37,15 @@ typedef struct
 
 typedef struct
 {
-	int segment_class;
 	carmen_point_t first_point;
 	carmen_point_t last_point;
-	double average_distance_from_point_to_line_segment;
-	double maximum_distance_from_point_to_line_segment;
+	double maximum_distance_to_line_segment;
+	carmen_point_t farthest_point;
+	double width;
+	double length;
+	int segment_class;
 	carmen_point_t centroid;
+	//	double average_distance_to_line_segment;
 } virtual_scan_segment_features_t;
 
 
@@ -56,24 +59,60 @@ typedef struct
 
 typedef struct
 {
-	int box_class;
+	int c;
 	double x;
 	double y;
 	double theta;
 	double width;
 	double length;
-} box_model_t;
+} virtual_scan_box_model_t;
 
 
 typedef struct
 {
 	int num_boxes;
-	box_model_t *box;
+	virtual_scan_box_model_t *box;
 } virtual_scan_box_models_t;
+
+virtual_scan_box_models_t *
+virtual_scan_new_box_models(void);
+
+virtual_scan_box_model_t *
+virtual_scan_append_box(virtual_scan_box_models_t *models);
+
+typedef struct
+{
+	int num_virtual_scan_box_model_hypotheses;
+	virtual_scan_box_models_t *virtual_scan_box_model_hypotheses;
+} virtual_scan_box_model_hypotheses_t;
+
+virtual_scan_box_model_hypotheses_t *
+virtual_scan_new_box_model_hypotheses(int length);
+
+virtual_scan_box_models_t *
+virtual_scan_get_box_models(virtual_scan_box_model_hypotheses_t *hypotheses, int i);
+
+typedef struct
+{
+	int category;
+	double width;
+	double length;
+} virtual_scan_category_t;
 
 
 virtual_scan_segment_classes_t *
-detect_and_track_moving_objects(carmen_mapper_virtual_scan_message *virtual_scan);
+virtual_scan_extract_segments(carmen_mapper_virtual_scan_message *virtual_scan);
 
+void
+virtual_scan_free_segments(virtual_scan_segment_classes_t *virtual_scan_segments);
+
+virtual_scan_box_model_hypotheses_t *
+virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment_classes);
+
+void
+virtual_scan_free_box_model_hypothesis(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses);
+
+void
+virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses);
 
 #endif /* SRC_VIRTUAL_SCAN_VIRTUAL_SCAN_H_ */

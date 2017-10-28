@@ -57,7 +57,7 @@ double map_resolution = 0.0;
 
 
 void
-publish_virtual_scan(virtual_scan_segment_classes_t *virtual_scan_segment_classes)
+virtual_scan_publish_segments(virtual_scan_segment_classes_t *virtual_scan_segment_classes)
 {
 	virtual_laser_message.host = carmen_get_host();
 	virtual_laser_message.num_positions = 0;
@@ -101,8 +101,15 @@ publish_virtual_scan(virtual_scan_segment_classes_t *virtual_scan_segment_classe
 void
 carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *message)
 {
-	virtual_scan_segment_classes_t *virtual_scan_segment_classes = detect_and_track_moving_objects(message);
-	publish_virtual_scan(virtual_scan_segment_classes);
+	virtual_scan_segment_classes_t *virtual_scan_segment_classes = virtual_scan_extract_segments(message);
+//	virtual_scan_publish_segments(virtual_scan_segment_classes);
+
+	virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(virtual_scan_segment_classes);
+
+	virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
+
+	virtual_scan_free_box_model_hypothesis(virtual_scan_box_model_hypotheses);
+	virtual_scan_free_segments(virtual_scan_segment_classes);
 }
 
 
