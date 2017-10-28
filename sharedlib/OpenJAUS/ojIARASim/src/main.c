@@ -406,8 +406,8 @@ void update_steering_angle(struct can_frame frame)
 	}
 
 	double v = (wheel_speed_moving_average(back_left_speed) + wheel_speed_moving_average(back_right_speed)) / 2.0;
-
-	steering_angle = -tan(phi / (1.0 + v * v * robot_understeer_coeficient)); // Ver pg. 42 do ByWire XGV User Manual, Version 1.5
+	double curvature = tan(phi / (1.0 + v * v * robot_understeer_coeficient)) / robot_distance_between_front_and_rear_axles; // Ver pg. 42 do ByWire XGV User Manual, Version 1.5
+	steering_angle = -atan(curvature); // Ver pg. 73 do ByWire XGV User Manual, Version 1.5
 }
 
 void update_manual_override_and_safe_stop(struct can_frame frame)
