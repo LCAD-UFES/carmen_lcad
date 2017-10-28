@@ -37,8 +37,9 @@
 #define FALSE 0
 #endif
 
-#define DESOUZA_GUIDOLINI_CONSTANT 0.0022
-#define robot_distance_between_front_and_rear_axles 2.625
+#define DESOUZA_GUIDOLINI_CONSTANT 					0.0022
+#define robot_distance_between_front_and_rear_axles	2.625
+#define robot_understeer_coeficient					0.0015
 
 #define FRONT_RIGHT	0
 #define FRONT_LEFT	1
@@ -379,17 +380,34 @@ void update_car_speed(struct can_frame frame)
 	car_speed *= speed_signal;
 }
 
+
+double wheel_speed_moving_average(double *wheel_speed)
+{
+	int i;
+	double moving_average_wheel_speed = 0.0;
+
+	for (i = 0; i < WHEEL_SPEED_MOVING_AVERAGE_SIZE; i++)
+		moving_average_wheel_speed += wheel_speed[i];
+
+	return (moving_average_wheel_speed / (double) WHEEL_SPEED_MOVING_AVERAGE_SIZE);
+}
+
 void update_steering_angle(struct can_frame frame)
 {
 //	steering_angle = -(((double) frame.data[2] * 256.0 + (double) frame.data[3]) - 20015.0) / 28200.0;
 	double val = ((double) frame.data[2] * 256.0 + (double) frame.data[3]) - 20000.0 + 30.0;
+	double phi;
 	if (val > 0.0)
-		steering_angle = -tan((0.00000012332 * val * val + 0.0052782 * val - 0.058558) * M_PI / 180.0) / robot_distance_between_front_and_rear_axles;
+		phi = (0.00000012332 * val * val + 0.0052782 * val - 0.058558) * M_PI / 180.0;
 	else
 	{
 		val = -val;
-		steering_angle = tan((0.00000012332 * val * val + 0.0052782 * val - 0.058558) * M_PI / 180.0) / robot_distance_between_front_and_rear_axles;
+		phi = -(0.00000012332 * val * val + 0.0052782 * val - 0.058558) * M_PI / 180.0;
 	}
+
+	double v = (wheel_speed_moving_average(back_left_speed) + wheel_speed_moving_average(back_right_speed)) / 2.0;
+
+	steering_angle = -tan(phi / (1.0 + v * v * robot_understeer_coeficient)); // Ver pg. 42 do ByWire XGV User Manual, Version 1.5
 }
 
 void update_manual_override_and_safe_stop(struct can_frame frame)

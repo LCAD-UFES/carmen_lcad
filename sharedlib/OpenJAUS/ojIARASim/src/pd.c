@@ -87,17 +87,8 @@ extern int door_signal;
 
 int gear_can_command = 0;
 
+double wheel_speed_moving_average(double *wheel_speed);
 
-double wheel_speed_moving_average(double *wheel_speed)
-{
-	int i;
-	double moving_average_wheel_speed = 0.0;
-
-	for (i = 0; i < WHEEL_SPEED_MOVING_AVERAGE_SIZE; i++)
-		moving_average_wheel_speed += wheel_speed[i];
-
-	return (moving_average_wheel_speed / (double) WHEEL_SPEED_MOVING_AVERAGE_SIZE);
-}
 
 void pdProcessMessage(OjCmpt pd, JausMessage message)
 {
