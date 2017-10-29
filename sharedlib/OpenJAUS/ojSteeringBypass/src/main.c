@@ -49,8 +49,14 @@ void forward_frame_but_filter_speed(int can_sockfd, struct can_frame frame)
 {
 	if (frame.can_id == 0x425) // Velocidade
 	{
-		frame.data[0] = 0;
-		frame.data[1] = 0;
+		frame.data[0] = 0x00;
+		frame.data[1] = 0x00;
+		frame.data[2] = 0x23;
+		frame.data[3] = 0x28;
+		frame.data[4] = 0x02;
+		frame.data[5] = 0x58;
+		frame.data[6] = 0x28;
+		frame.data[7] = 0xa8;
 	}
 	send_frame(can_sockfd, &frame);
 }
