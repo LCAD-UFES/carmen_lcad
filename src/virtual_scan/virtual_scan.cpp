@@ -578,15 +578,7 @@ virtual_scan_extract_segments(carmen_mapper_virtual_scan_message *virtual_scan)
 void
 virtual_scan_free_segments(virtual_scan_segment_classes_t *virtual_scan_segments)
 {
-	virtual_scan_segment_t *segments = virtual_scan_segments->segment;
-//	for (int i = 0, n = virtual_scan_segments->num_segments; i < n; i++)
-//	{
-//		carmen_point_t *point = segments[i].point;
-//		if (point != NULL)
-//			free(point);
-//	}
-
-	free(segments);
+	free(virtual_scan_segments->segment);
 	free(virtual_scan_segments->segment_features);
 	free(virtual_scan_segments);
 }
