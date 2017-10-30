@@ -550,7 +550,7 @@ virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses_t *virtual_sca
 }
 
 void
-virtual_scan_free_box_model_hypothesis(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses)
+virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses)
 {
 	for (int i = 0; i < virtual_scan_box_model_hypotheses->num_virtual_scan_box_model_hypotheses; i++)
 		free(virtual_scan_box_model_hypotheses->virtual_scan_box_model_hypotheses[i].box);
