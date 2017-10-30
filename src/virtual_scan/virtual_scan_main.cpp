@@ -108,7 +108,7 @@ carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *m
 
 	virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
 
-	virtual_scan_free_box_model_hypothesis(virtual_scan_box_model_hypotheses);
+	virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses);
 	virtual_scan_free_segments(virtual_scan_segment_classes);
 }
 

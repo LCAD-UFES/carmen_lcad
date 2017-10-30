@@ -110,7 +110,7 @@ virtual_scan_box_model_hypotheses_t *
 virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment_classes);
 
 void
-virtual_scan_free_box_model_hypothesis(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses);
+virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses);
 
 void
 virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses);
