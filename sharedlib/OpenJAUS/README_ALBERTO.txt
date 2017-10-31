@@ -4,15 +4,21 @@ To run the XGV Carmen Control Unit (XGV_CCU - ojTorc/bin/ojTorc):
  # OpenJAUS
 # export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/alberto/robotics/code/carmen_lcad/sharedlib/OpenJAUS/libopenJaus/lib:/home/alberto/robotics/code/carmen_lcad/sharedlib/OpenJAUS/libjaus/lib:/home/alberto/robotics/code/carmen_lcad/sharedlib/OpenJAUS/ojTorc/lib
 
+1- Install necessary packages
+ sudo apt-get install subversion
+ sudo apt-get install libncurses5-dev
 
-1- Compile the code by typing in this directory:
+2- Download the LCAD OpenJAUS code
+ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/sharedlib/OpenJAUS
+
+3- Compile the code by typing in this directory:
  make clean
  make
 
-2- Make sure that the JUDP_IP_Address in the file ojNodeManager/nodeManager.conf is 
+4- Make sure that the JUDP_IP_Address in the file ojNodeManager/nodeManager.conf is 
 the same as that of the machine where you are going to run this code.
 
-3- Open a Linux terminal, go to the directory ojNodeManager, and type
+5- Open a Linux terminal, go to the directory ojNodeManager, and type
  bin/ojNodeManager
  
  You should see something like this:
@@ -50,4 +56,5 @@ OpenJAUS Node Manager Help
   You should see the XGV Carmen Control Unit (XGV_CCU) interface (ascii 
 terminal interface implemented with curses). The first lines present
 the keyboard functionalities.
+
 
