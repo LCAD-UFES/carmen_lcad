@@ -36,7 +36,7 @@ typedef enum
 static const float FarNear = 100.0f;
 
 float angleSteering = 0.0;
-float angleTireToSteering = 18.0;
+float angleTireToSteering = 16.0;
 double interval = 1.0;
 
 Steering *steering;

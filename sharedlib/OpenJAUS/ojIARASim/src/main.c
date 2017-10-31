@@ -89,6 +89,8 @@ unsigned int manual_override_and_safe_stop;
 int turn_signal;
 int door_signal;
 
+int calibrate_steering_wheel = 0;
+
 
 // Refresh screen in curses mode
 void updateScreen(int keyboardLock, int keyPress)
@@ -421,6 +423,12 @@ void update_signals(struct can_frame frame)
 	door_signal = (frame.data[2] << 8) | frame.data[3];
 }
 
+void calibrate_steering_wheel(struct can_frame frame)
+{
+	if (frame.data[0] == 13) // Calibra!
+		calibrate_steering_wheel = 1;
+}
+
 void update_Car_state(struct can_frame frame)
 {
 	if (frame.can_id == 0x216) // Odometro das rodas
@@ -443,6 +451,9 @@ void update_Torc_state(struct can_frame frame)
 {
 	if (frame.can_id == 0x600) // Botao amarelo
 		update_manual_override_and_safe_stop(frame);
+
+	if (frame.can_id == 0x813) // Calibrar volante
+		calibrate_steering_wheel(frame);
 }
 
 void *can_in_read_thread_func(void *unused)
@@ -469,6 +480,42 @@ void *can_out_read_thread_func(void *unused)
 	}
 
 	return (NULL);
+}
+
+void calibrate_steering_wheel_state_machine()
+{
+#define IDLE 					0
+#define WAIT_CLOCKWISE_LIMIT 	1
+#define WAIT_SENSOR_RESET 		2
+
+	static int state = IDLE;
+	static double wait_clockwise_limit_time = 0.0;
+	static double last_steering_angle = 0.0;
+	static int clockwise_steering_wheel_limit = 0;
+
+	if (state == IDLE)
+	{
+		wait_clockwise_limit_time = ojGetTimeSec();
+
+		state = WAIT_CLOCKWISE_LIMIT;
+	}
+	if (state == WAIT_CLOCKWISE_LIMIT)
+	{
+		if (last_steering_angle != steering_angle)
+		{
+			last_steering_angle = steering_angle;
+			wait_clockwise_limit_time = ojGetTimeSec();
+		}
+		else if (ojGetTimeSec() - wait_clockwise_limit_time > 3.0)
+		{
+			clockwise_steering_wheel_limit = ;
+			state = WAIT_SENSOR_RESET;
+		}
+	}
+	if (state == WAIT_SENSOR_RESET)
+	{
+		state = IDLE;
+	}
 }
 
 int main(int argCount, char **argString)
@@ -512,6 +559,10 @@ int main(int argCount, char **argString)
 				pthread_create(&can_out_read_thread, NULL, can_out_read_thread_func, NULL);
 				first_time = false;
 			}
+
+			if (calibrate_steering_wheel)
+				calibrate_steering_wheel_state_machine();
+
 			ojSleepMsec(100);
 		}
 	}
