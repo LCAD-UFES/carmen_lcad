@@ -73,4 +73,7 @@ JausState pdGetControllerState(OjCmpt pd);
 SetWrenchEffortMessage pdGetWrenchEffort(OjCmpt pd);
 SetDiscreteDevicesMessage pdGetDiscreteDevices(OjCmpt pd);
 
+void send_gear(int gear_can_command);
+void send_efforts(double throttle_effort, double breaks_effort, double steering_effort);
+
 #endif // PD_H

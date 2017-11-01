@@ -90,6 +90,15 @@ int gear_can_command = 0;
 double wheel_speed_moving_average(double *wheel_speed);
 
 
+void send_gear(int gear_can_command)
+{
+	struct can_frame frame;
+	frame.can_id = 0x405;
+	frame.can_dlc = 1;
+	frame.data[0] = gear_can_command;
+	send_frame(out_can_sockfd, &frame);
+}
+
 void send_efforts(double throttle_effort, double breaks_effort, double steering_effort)
 {
 	struct can_frame frame;
@@ -532,15 +541,8 @@ void pdReadyState(OjCmpt pd)
 	data->reportComponentStatus->secondaryStatusCode = data->controllerStatus->secondaryStatusCode;
 	pdSendReportComponentStatus(pd);
 
-	// Gear
 	if (gear_can_command)
-	{
-		struct can_frame frame;
-		frame.can_id = 0x405;
-		frame.can_dlc = 1;
-		frame.data[0] = gear_can_command;
-		send_frame(out_can_sockfd, &frame);
-	}
+		send_gear(gear_can_command);
 }
 
 OjCmpt pdCreate(void)

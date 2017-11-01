@@ -93,7 +93,6 @@ int calibrate_steering_wheel = 0;
 int steering_angle_sensor = 20000.0 + 30.0;
 int steering_angle_auxiliary_sensor = 0xFFFC;
 int steering_angle_sensor_zero = 20000.0 + 30.0;
-void send_efforts(double throttle_effort, double breaks_effort, double steering_effort);
 
 
 // Refresh screen in curses mode
@@ -509,7 +508,7 @@ void calibrate_steering_wheel_state_machine()
 			last_steering_angle = steering_angle;
 			wait_clockwise_limit_time = ojGetTimeSec();
 		}
-		else if (ojGetTimeSec() - wait_clockwise_limit_time > 3.0)
+		else if (ojGetTimeSec() - wait_clockwise_limit_time > 2.0)
 			state = WAIT_SENSOR_RESET;
 
 		send_efforts(0.0, 0.0, 100.0);
