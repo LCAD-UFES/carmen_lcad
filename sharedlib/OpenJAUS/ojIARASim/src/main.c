@@ -539,7 +539,7 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 #define MOVE_CLOSE_TO_ZERO_ANGLE2 		3
 #define MOVE_COUNTER_CLOCKWISE 			4
 #define CHANGE_ZERO_TORQUE 				5
-#define SMALL_ANGLE						0.01
+#define SMALL_ANGLE						0.005
 #define LARGE_ANGLE						0.2
 #define TIME_OUT_CONSTANT				5.0
 #define SMALL_ACCELERATION				0.01
@@ -565,7 +565,7 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 			send_efforts(0.0, 0.0, 0.0);
 			send_gear(0x02); // Neutral
 
-			if (ojGetTimeSec() - last_annotated_time > TIME_OUT_CONSTANT * 1.3)
+			if (ojGetTimeSec() - last_annotated_time > TIME_OUT_CONSTANT)
 			{
 				last_annotated_time = ojGetTimeSec();
 				state = IDLE;
