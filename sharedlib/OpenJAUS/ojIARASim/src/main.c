@@ -518,7 +518,7 @@ void calibrate_steering_wheel_state_machine()
 		if (steering_angle_sensor != 0xFFFC)
 		{
 			steering_angle_sensor_zero = steering_angle_sensor + 2500;
-			FILE *steering_angle_sensor_zero_file = fopen("steering_angle_sensor_zero_file.txt", "w");
+			FILE *steering_angle_sensor_zero_file = fopen("/home/pi/steering_angle_sensor_zero_file.txt", "w");
 			if (steering_angle_sensor_zero_file)
 			{
 				fprintf(steering_angle_sensor_zero_file, "%d\n", steering_angle_sensor_zero);
@@ -556,7 +556,7 @@ int main(int argCount, char **argString)
 	if (interface_active)
 		setupTerminal();
 
-	FILE *steering_angle_sensor_zero_file = fopen("steering_angle_sensor_zero_file.txt", "r");
+	FILE *steering_angle_sensor_zero_file = fopen("/home/pi/steering_angle_sensor_zero_file.txt", "r");
 	if (steering_angle_sensor_zero_file)
 	{
 		fscanf(steering_angle_sensor_zero_file, "%d\n", &steering_angle_sensor_zero);
