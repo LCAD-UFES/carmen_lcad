@@ -638,7 +638,7 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 		}
 		else
 		{
-			steering_wheel_zero_torque += (acceleration_clockwise - acceleration_counter_clockwise) * ACCELERATION_TO_TORQUE_FACTOR;
+			steering_wheel_zero_torque += round((acceleration_clockwise - acceleration_counter_clockwise) * ACCELERATION_TO_TORQUE_FACTOR);
 			state = MOVE_CLOSE_TO_ZERO_ANGLE;
 		}
 	}
