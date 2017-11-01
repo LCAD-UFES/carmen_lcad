@@ -543,7 +543,7 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 #define LARGE_ANGLE						0.2
 #define TIME_OUT_CONSTANT				5.0
 #define SMALL_ACCELERATION				0.01
-#define ACCELERATION_TO_TORQUE_FACTOR	10.0
+#define ACCELERATION_TO_TORQUE_FACTOR	20.0
 
 	static int state = IDLE;
 	static double last_annotated_time = 0.0;
