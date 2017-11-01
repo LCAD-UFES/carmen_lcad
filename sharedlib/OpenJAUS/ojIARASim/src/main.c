@@ -429,7 +429,7 @@ void update_signals(struct can_frame frame)
 
 void perform_steering_wheel_calibration(struct can_frame frame)
 {
-	if (frame.data[0] == 13) // Calibra!
+	if (frame.data[0] == 0x13) // Calibra!
 		calibrate_steering_wheel = 1;
 }
 
