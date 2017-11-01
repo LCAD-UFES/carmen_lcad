@@ -559,7 +559,7 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 	}
 	if (state == MOVE_CLOSE_TO_ZERO_ANGLE)
 	{
-		printf("zerando, angulo\n", steering_angle);
+		printf("zerando, angulo %lf\n", steering_angle);
 		if ((fabs(steering_angle) < SMALL_ANGLE) || (ojGetTimeSec() - last_annotated_time > TIME_OUT_CONSTANT))
 		{
 			last_annotated_time = ojGetTimeSec();
