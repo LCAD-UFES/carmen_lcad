@@ -406,11 +406,11 @@ void update_steering_angle(struct can_frame frame)
 	double val = (double) (steering_angle_sensor - steering_angle_sensor_zero);
 	double phi;
 	if (val > 0.0)
-		phi = (0.000000106681 * val * val + 0.00532682 * val - 0.08083) * M_PI / 180.0; // Ver arquivo "medicoes na boca rodas.xlsx"
+		phi = (0.000000106681 * val * val + 0.00532682 * val) * M_PI / 180.0; // Ver arquivo "medicoes na boca rodas.xlsx"
 	else
 	{
 		val = -val;
-		phi = -(0.000000106681 * val * val + 0.00532682 * val - 0.08083) * M_PI / 180.0; // Ver arquivo "medicoes na boca rodas.xlsx"
+		phi = -(0.000000106681 * val * val + 0.00532682 * val) * M_PI / 180.0; // Ver arquivo "medicoes na boca rodas.xlsx"
 	}
 
 	double v = (wheel_speed_moving_average(back_left_speed) + wheel_speed_moving_average(back_right_speed)) / 2.0;
