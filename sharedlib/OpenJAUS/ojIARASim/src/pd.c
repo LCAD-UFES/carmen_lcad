@@ -107,12 +107,24 @@ void send_efforts(double throttle_effort, double breaks_effort, double steering_
 	frame.can_dlc = 4;
 
 	// Throttle
+	if (throttle_effort > 100.0)
+		throttle_effort = 100.0;
+	else if (throttle_effort < 0.0)
+		throttle_effort = 0.0;
 	frame.data[0] = (int) (2.0 * throttle_effort + 0.5); // throttle
 
 	// Breaks
+	if (breaks_effort > 100.0)
+		breaks_effort = 100.0;
+	else if (breaks_effort < 0.0)
+		breaks_effort = 0.0;
 	frame.data[1] = (int) (2.0 * breaks_effort + 0.5); // breaks
 
 	// Steering
+	if (steering_effort > 100.0)
+		steering_effort = 100.0;
+	else if (steering_effort < -100.0)
+		steering_effort = -100.0;
 	int steering_byte0, steering_byte1;
 	if (steering_effort > 0.0)
 		steering_byte0 = (int) round(27.463 * pow(steering_effort, 0.332)); // Obtido examinando os dados enviados pelo Torc para o can

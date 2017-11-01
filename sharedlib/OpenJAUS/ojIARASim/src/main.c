@@ -573,14 +573,9 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 	//			state = MOVE_CLOCKWISE;
 			}
 		}
-		else if (steering_angle < 0.0)
-		{
-			send_efforts(0.0, 0.0, 100.0);
-			send_gear(0x02); // Neutral
-		}
 		else
 		{
-			send_efforts(0.0, 0.0, -100.0);
+			send_efforts(0.0, 0.0, -steering_angle * 2000.0);
 			send_gear(0x02); // Neutral
 		}
 	}
