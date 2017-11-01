@@ -90,6 +90,46 @@ int gear_can_command = 0;
 double wheel_speed_moving_average(double *wheel_speed);
 
 
+void send_efforts(double throttle_effort, double breaks_effort, double steering_effort)
+{
+	struct can_frame frame;
+	frame.can_id = 0x480;
+	frame.can_dlc = 4;
+
+	// Throttle
+	frame.data[0] = (int) (2.0 * throttle_effort + 0.5); // throttle
+
+	// Breaks
+	frame.data[1] = (int) (2.0 * breaks_effort + 0.5); // breaks
+
+	// Steering
+	// #define	STEERING_BIAS -38
+	#define	STEERING_BIAS 0
+	int steering_byte0, steering_byte1;
+	if (steering_effort > 0.0)
+		steering_byte0 = (int) round(27.463 * pow(steering_effort, 0.332)); // Obtido examinando os dados enviados pelo Torc para o can
+	else if (steering_effort < 0.0)
+		steering_byte0 = (int) round(-27.463 * pow(-steering_effort, 0.332));
+	else // effort == 0.0
+		steering_byte0 = 0;
+
+	if ((steering_byte0 + STEERING_BIAS) < 0)
+	{
+		steering_byte0 += STEERING_BIAS + 256;
+		steering_byte1 = 0x01;
+	}
+	else
+	{
+		steering_byte0 += STEERING_BIAS;
+		steering_byte1 = 0x02;
+	}
+
+	frame.data[2] = steering_byte0; // Steering
+	frame.data[3] = steering_byte1; // Steering
+
+	send_frame(out_can_sockfd, &frame);
+}
+
 void pdProcessMessage(OjCmpt pd, JausMessage message)
 {
 	ReportComponentStatusMessage reportComponentStatus;
@@ -169,43 +209,8 @@ void pdProcessMessage(OjCmpt pd, JausMessage message)
 				if ((1 << JAUS_WRENCH_PV_RESISTIVE_ROTATIONAL_Z_BIT) & setWrenchEffort->presenceVector)
 					data->setWrenchEffort->resistiveRotationalEffortZPercent = setWrenchEffort->resistiveRotationalEffortZPercent;
 
-				struct can_frame frame;
-				frame.can_id = 0x480;
-				frame.can_dlc = 4;
-
-				// Throttle
-				frame.data[0] = (int) (2.0 * data->setWrenchEffort->propulsiveLinearEffortXPercent + 0.5); // breaks
-
-				// Breaks
-				frame.data[1] = (int) (2.0 * data->setWrenchEffort->resistiveLinearEffortXPercent + 0.5); // breaks
-
-				// Steering
-				// #define	STEERING_BIAS -38
-				#define	STEERING_BIAS 0
-				int steering_byte0, steering_byte1;
-				double effort = setWrenchEffort->propulsiveRotationalEffortZPercent;
-				if (effort > 0.0)
-					steering_byte0 = (int) round(27.463 * pow(effort, 0.332)); // Obtido examinando os dados enviados pelo Torc para o can
-				else if (effort < 0.0)
-					steering_byte0 = (int) round(-27.463 * pow(-effort, 0.332));
-				else // effort == 0.0
-					steering_byte0 = 0;
-
-				if ((steering_byte0 + STEERING_BIAS) < 0)
-				{
-					steering_byte0 += STEERING_BIAS + 256;
-					steering_byte1 = 0x01;
-				}
-				else
-				{
-					steering_byte0 += STEERING_BIAS;
-					steering_byte1 = 0x02;
-				}
-
-				frame.data[2] = steering_byte0; // Steering
-				frame.data[3] = steering_byte1; // Steering
-
-				send_frame(out_can_sockfd, &frame);
+				send_efforts(data->setWrenchEffort->propulsiveLinearEffortXPercent, data->setWrenchEffort->resistiveLinearEffortXPercent,
+						setWrenchEffort->propulsiveRotationalEffortZPercent);
 
 				setWrenchEffortMessageDestroy(setWrenchEffort);
 			}

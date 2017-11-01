@@ -90,6 +90,9 @@ int turn_signal;
 int door_signal;
 
 int calibrate_steering_wheel = 0;
+int steering_angle_sensor = 20000.0 + 30.0;
+int steering_angle_sensor_zero = 20000.0 + 30.0;
+void send_efforts(double throttle_effort, double breaks_effort, double steering_effort);
 
 
 // Refresh screen in curses mode
@@ -397,7 +400,8 @@ double wheel_speed_moving_average(double *wheel_speed)
 void update_steering_angle(struct can_frame frame)
 {
 //	steering_angle = -(((double) frame.data[2] * 256.0 + (double) frame.data[3]) - 20015.0) / 28200.0;
-	double val = ((double) frame.data[2] * 256.0 + (double) frame.data[3]) - 20000.0 + 30.0;
+	steering_angle_sensor = frame.data[2] * 256.0 + frame.data[3];
+	double val = (double) (steering_angle_sensor - steering_angle_sensor_zero);
 	double phi;
 	if (val > 0.0)
 		phi = (0.000000106681 * val * val + 0.00532682 * val - 0.08083) * M_PI / 180.0; // Ver arquivo "medicoes na boca rodas.xlsx"
@@ -423,7 +427,7 @@ void update_signals(struct can_frame frame)
 	door_signal = (frame.data[2] << 8) | frame.data[3];
 }
 
-void calibrate_steering_wheel(struct can_frame frame)
+void perform_steering_wheel_calibration(struct can_frame frame)
 {
 	if (frame.data[0] == 13) // Calibra!
 		calibrate_steering_wheel = 1;
@@ -453,7 +457,7 @@ void update_Torc_state(struct can_frame frame)
 		update_manual_override_and_safe_stop(frame);
 
 	if (frame.can_id == 0x813) // Calibrar volante
-		calibrate_steering_wheel(frame);
+		perform_steering_wheel_calibration(frame);
 }
 
 void *can_in_read_thread_func(void *unused)
@@ -491,7 +495,6 @@ void calibrate_steering_wheel_state_machine()
 	static int state = IDLE;
 	static double wait_clockwise_limit_time = 0.0;
 	static double last_steering_angle = 0.0;
-	static int clockwise_steering_wheel_limit = 0;
 
 	if (state == IDLE)
 	{
@@ -505,16 +508,27 @@ void calibrate_steering_wheel_state_machine()
 		{
 			last_steering_angle = steering_angle;
 			wait_clockwise_limit_time = ojGetTimeSec();
+			send_efforts(0.0, 0.0, -60.0);
 		}
 		else if (ojGetTimeSec() - wait_clockwise_limit_time > 3.0)
-		{
-			clockwise_steering_wheel_limit = ;
 			state = WAIT_SENSOR_RESET;
-		}
 	}
 	if (state == WAIT_SENSOR_RESET)
 	{
-		state = IDLE;
+		if (steering_angle_sensor != 0xFFFC)
+		{
+			steering_angle_sensor_zero = steering_angle_sensor + 2500;
+			FILE *steering_angle_sensor_zero_file = fopen("steering_angle_sensor_zero_file.txt", "w");
+			if (steering_angle_sensor_zero_file)
+			{
+				fprintf(steering_angle_sensor_zero_file, "%d\n", steering_angle_sensor_zero);
+				fclose(steering_angle_sensor_zero_file);
+			}
+			state = IDLE;
+			calibrate_steering_wheel = 0;
+		}
+		else
+			send_efforts(0.0, 0.0, 60.0);
 	}
 }
 
@@ -542,6 +556,13 @@ int main(int argCount, char **argString)
 	if (interface_active)
 		setupTerminal();
 
+	FILE *steering_angle_sensor_zero_file = fopen("steering_angle_sensor_zero_file.txt", "r");
+	if (steering_angle_sensor_zero_file)
+	{
+		fscanf(steering_angle_sensor_zero_file, "%d\n", &steering_angle_sensor_zero);
+		fclose(steering_angle_sensor_zero_file);
+	}
+
 	mainRunning = TRUE;
 	while(mainRunning)
 	{
@@ -563,7 +584,7 @@ int main(int argCount, char **argString)
 			if (calibrate_steering_wheel)
 				calibrate_steering_wheel_state_machine();
 
-			ojSleepMsec(100);
+			ojSleepMsec(10);
 		}
 	}
 
