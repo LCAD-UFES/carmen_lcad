@@ -84,6 +84,7 @@ extern double back_right_speed[WHEEL_SPEED_MOVING_AVERAGE_SIZE];
 
 extern unsigned int manual_override_and_safe_stop;
 extern int door_signal;
+extern int steering_wheel_zero_torque;
 
 int gear_can_command = 0;
 
@@ -112,8 +113,6 @@ void send_efforts(double throttle_effort, double breaks_effort, double steering_
 	frame.data[1] = (int) (2.0 * breaks_effort + 0.5); // breaks
 
 	// Steering
-	// #define	STEERING_BIAS -38
-	#define	STEERING_BIAS -30
 	int steering_byte0, steering_byte1;
 	if (steering_effort > 0.0)
 		steering_byte0 = (int) round(27.463 * pow(steering_effort, 0.332)); // Obtido examinando os dados enviados pelo Torc para o can
@@ -122,14 +121,14 @@ void send_efforts(double throttle_effort, double breaks_effort, double steering_
 	else // effort == 0.0
 		steering_byte0 = 0;
 
-	if ((steering_byte0 + STEERING_BIAS) < 0)
+	if ((steering_byte0 + steering_wheel_zero_torque) < 0)
 	{
-		steering_byte0 += STEERING_BIAS + 256;
+		steering_byte0 += steering_wheel_zero_torque + 256;
 		steering_byte1 = 0x01;
 	}
 	else
 	{
-		steering_byte0 += STEERING_BIAS;
+		steering_byte0 += steering_wheel_zero_torque;
 		steering_byte1 = 0x02;
 	}
 
