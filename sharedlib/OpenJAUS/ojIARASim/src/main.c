@@ -551,6 +551,7 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 	static double delta_t_counter_clockwise = 0.0;
 
 	printf("estado %d\n", state);
+	printf("steering_wheel_zero_torque %d\n", steering_wheel_zero_torque);
 	if (state == IDLE)
 	{
 		printf("entrei na sm\n");
@@ -614,7 +615,7 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 	}
 	if (state == MOVE_COUNTER_CLOCKWISE)
 	{
-		printf("clockwise\n");
+		printf("counter_clockwise\n");
 		send_efforts(0.0, 0.0, -100.0);
 		send_gear(0x02); // Neutral
 		if ((fabs(steering_angle) > LARGE_ANGLE) || (ojGetTimeSec() - last_annotated_time > TIME_OUT_CONSTANT))
