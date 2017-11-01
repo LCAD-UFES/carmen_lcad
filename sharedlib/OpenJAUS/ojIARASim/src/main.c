@@ -301,18 +301,7 @@ void terminate_modules()
 
 static void signal_handler(int signo)
 {
-	if (interface_active)
-		cleanupConsole();
-
-	terminate_modules();
-
-	if (!interface_active)
-	{
-		close(in_can_sockfd);
-		close(out_can_sockfd);
-	}
-
-	exit(0);
+	mainRunning = FALSE;
 }
 
 void clear_wheel_speed_moving_average()
@@ -473,7 +462,7 @@ void *can_in_read_thread_func(void *unused)
 {
 	struct can_frame frame;
 
-	while (1)
+	while (mainRunning)
 	{
 		recv_frame(in_can_sockfd, &frame);
 		update_Car_state(frame);
@@ -486,7 +475,7 @@ void *can_out_read_thread_func(void *unused)
 {
 	struct can_frame frame;
 
-	while (1)
+	while (mainRunning)
 	{
 		recv_frame(out_can_sockfd, &frame);
 		update_Torc_state(frame);
