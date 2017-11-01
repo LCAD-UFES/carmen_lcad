@@ -498,6 +498,7 @@ void calibrate_steering_wheel_state_machine()
 
 	if (state == IDLE)
 	{
+		printf("entrei\n");
 		wait_clockwise_limit_time = ojGetTimeSec();
 
 		state = WAIT_CLOCKWISE_LIMIT;
