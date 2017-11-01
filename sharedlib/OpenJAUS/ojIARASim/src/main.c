@@ -511,17 +511,20 @@ void calibrate_steering_wheel_state_machine()
 	}
 	if (state == WAIT_CLOCKWISE_LIMIT)
 	{
+		printf("virando pra direita\n");
 		if (last_steering_angle != steering_angle)
 		{
 			last_steering_angle = steering_angle;
 			wait_clockwise_limit_time = ojGetTimeSec();
-			send_efforts(0.0, 0.0, -60.0);
 		}
 		else if (ojGetTimeSec() - wait_clockwise_limit_time > 3.0)
 			state = WAIT_SENSOR_RESET;
+
+		send_efforts(0.0, 0.0, -60.0);
 	}
 	if (state == WAIT_SENSOR_RESET)
 	{
+		printf("virando pra esquerda\n");
 		if (steering_angle_sensor != 0xFFFC)
 		{
 			steering_angle_sensor_zero = steering_angle_sensor + 2500;
