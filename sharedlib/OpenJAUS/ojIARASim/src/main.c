@@ -91,6 +91,7 @@ int door_signal;
 
 int calibrate_steering_wheel = 0;
 int steering_angle_sensor = 20000.0 + 30.0;
+int steering_angle_auxiliary_sensor = 0xFFFC;
 int steering_angle_sensor_zero = 20000.0 + 30.0;
 void send_efforts(double throttle_effort, double breaks_effort, double steering_effort);
 
@@ -401,6 +402,7 @@ void update_steering_angle(struct can_frame frame)
 {
 //	steering_angle = -(((double) frame.data[2] * 256.0 + (double) frame.data[3]) - 20015.0) / 28200.0;
 	steering_angle_sensor = frame.data[2] * 256.0 + frame.data[3];
+	steering_angle_auxiliary_sensor = frame.data[0] * 256.0 + frame.data[1];
 	double val = (double) (steering_angle_sensor - steering_angle_sensor_zero);
 	double phi;
 	if (val > 0.0)
@@ -524,8 +526,8 @@ void calibrate_steering_wheel_state_machine()
 	}
 	if (state == WAIT_SENSOR_RESET)
 	{
-		printf("virando pra esquerda, sensor 0x%x\n", steering_angle_sensor);
-		if (steering_angle_sensor != 0xFFFC)
+		printf("virando pra esquerda, sensor 0x%x\n", steering_angle_auxiliary_sensor);
+		if (steering_angle_auxiliary_sensor != 0xFFFC)
 		{
 			steering_angle_sensor_zero = steering_angle_sensor + 2500;
 			FILE *steering_angle_sensor_zero_file = fopen("/home/pi/steering_angle_sensor_zero_file.txt", "w");
