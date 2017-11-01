@@ -429,8 +429,14 @@ void update_signals(struct can_frame frame)
 
 void perform_steering_wheel_calibration(struct can_frame frame)
 {
+	printf("recebi a mensagem\n");
+
 	if (frame.data[0] == 0x13) // Calibra!
+	{
+		printf("codigo OK\n");
+
 		calibrate_steering_wheel = 1;
+	}
 }
 
 void update_Car_state(struct can_frame frame)
@@ -498,7 +504,7 @@ void calibrate_steering_wheel_state_machine()
 
 	if (state == IDLE)
 	{
-		printf("entrei\n");
+		printf("entrei na sm\n");
 		wait_clockwise_limit_time = ojGetTimeSec();
 
 		state = WAIT_CLOCKWISE_LIMIT;
@@ -557,9 +563,11 @@ int main(int argCount, char **argString)
 	if (interface_active)
 		setupTerminal();
 
+	printf("to no codigo\n");
 	FILE *steering_angle_sensor_zero_file = fopen("/home/pi/steering_angle_sensor_zero_file.txt", "r");
 	if (steering_angle_sensor_zero_file)
 	{
+		printf("Li o arquivo\n");
 		fscanf(steering_angle_sensor_zero_file, "%d\n", &steering_angle_sensor_zero);
 		fclose(steering_angle_sensor_zero_file);
 	}
