@@ -563,6 +563,10 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 		if ((fabs(steering_angle) < SMALL_ANGLE) || (ojGetTimeSec() - last_annotated_time > TIME_OUT_CONSTANT))
 		{
 			last_annotated_time = ojGetTimeSec();
+
+			send_efforts(0.0, 0.0, 0.0);
+			send_gear(0x02); // Neutral
+
 			state = IDLE;
 			calibrate_steering_wheel_zero_torque = 0;
 //			state = MOVE_CLOCKWISE;
