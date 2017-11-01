@@ -613,7 +613,7 @@ int main(int argCount, char **argString)
 			if (calibrate_steering_wheel)
 				calibrate_steering_wheel_state_machine();
 
-			ojSleepMsec(10);
+			ojSleepMsec(5);
 		}
 	}
 
