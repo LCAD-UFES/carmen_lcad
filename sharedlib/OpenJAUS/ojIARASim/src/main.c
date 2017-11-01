@@ -539,7 +539,7 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 #define MOVE_CLOSE_TO_ZERO_ANGLE2 		3
 #define MOVE_COUNTER_CLOCKWISE 			4
 #define CHANGE_ZERO_TORQUE 				5
-#define SMALL_ANGLE						0.02
+#define SMALL_ANGLE						0.01
 #define LARGE_ANGLE						0.2
 #define TIME_OUT_CONSTANT				5.0
 #define SMALL_ACCELERATION				0.01
