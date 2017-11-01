@@ -403,6 +403,7 @@ void update_steering_angle(struct can_frame frame)
 //	steering_angle = -(((double) frame.data[2] * 256.0 + (double) frame.data[3]) - 20015.0) / 28200.0;
 	steering_angle_sensor = frame.data[2] * 256.0 + frame.data[3];
 	steering_angle_auxiliary_sensor = frame.data[0] * 256.0 + frame.data[1];
+	printf("s 0x%x, as 0x%x\n", steering_angle_sensor, steering_angle_auxiliary_sensor);
 	double val = (double) (steering_angle_sensor - steering_angle_sensor_zero);
 	double phi;
 	if (val > 0.0)
