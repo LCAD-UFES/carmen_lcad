@@ -524,7 +524,7 @@ void calibrate_steering_wheel_state_machine()
 	}
 	if (state == WAIT_SENSOR_RESET)
 	{
-		printf("virando pra esquerda\n");
+		printf("virando pra esquerda, sensor 0x%x\n", steering_angle_sensor);
 		if (steering_angle_sensor != 0xFFFC)
 		{
 			steering_angle_sensor_zero = steering_angle_sensor + 2500;
