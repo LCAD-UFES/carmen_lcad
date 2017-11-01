@@ -95,7 +95,7 @@ int steering_angle_sensor = 20000.0 + 30.0;
 int steering_angle_auxiliary_sensor = 0xFFFC;
 int steering_angle_sensor_zero = 20000.0 + 30.0;
 
-int steering_wheel_zero_torque = 30;
+int steering_wheel_zero_torque = -30;
 
 
 // Refresh screen in curses mode
