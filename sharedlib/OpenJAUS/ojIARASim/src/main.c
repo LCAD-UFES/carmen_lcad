@@ -535,7 +535,7 @@ void calibrate_steering_wheel_state_machine()
 		printf("virando pra esquerda, sensor 0x%x\n", steering_angle_auxiliary_sensor);
 		if (steering_angle_auxiliary_sensor != 0xFFFC)
 		{
-			steering_angle_sensor_zero = steering_angle_sensor + 2500;
+			steering_angle_sensor_zero = steering_angle_sensor - 2500;
 			FILE *steering_angle_sensor_zero_file = fopen("/home/pi/steering_angle_sensor_zero_file.txt", "w");
 			if (steering_angle_sensor_zero_file)
 			{
