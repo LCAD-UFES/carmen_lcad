@@ -92,7 +92,7 @@ double wheel_speed_moving_average(double *wheel_speed);
 
 void send_efforts(double throttle_effort, double breaks_effort, double steering_effort)
 {
-	struct can_frame frame;
+	static struct can_frame frame;
 	frame.can_id = 0x480;
 	frame.can_dlc = 4;
 
