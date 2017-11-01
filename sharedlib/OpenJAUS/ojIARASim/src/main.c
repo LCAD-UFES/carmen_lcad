@@ -550,6 +550,7 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 	static double delta_t_clockwise = 0.0;
 	static double delta_t_counter_clockwise = 0.0;
 
+	printf("estado %d\n", state);
 	if (state == IDLE)
 	{
 		printf("entrei na sm\n");
@@ -568,9 +569,9 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 			if (ojGetTimeSec() - last_annotated_time > TIME_OUT_CONSTANT)
 			{
 				last_annotated_time = ojGetTimeSec();
-				state = IDLE;
-				calibrate_steering_wheel_zero_torque = 0;
-	//			state = MOVE_CLOCKWISE;
+//				state = IDLE;
+//				calibrate_steering_wheel_zero_torque = 0;
+				state = MOVE_CLOCKWISE;
 			}
 		}
 		else
@@ -593,20 +594,21 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 	}
 	if (state == MOVE_CLOSE_TO_ZERO_ANGLE2)
 	{
-		printf("zerando2\n");
+		printf("zerando2, angulo %lf\n", steering_angle);
 		if ((fabs(steering_angle) < SMALL_ANGLE) || (ojGetTimeSec() - last_annotated_time > TIME_OUT_CONSTANT))
 		{
-			last_annotated_time = ojGetTimeSec();
-			state = MOVE_COUNTER_CLOCKWISE;
-		}
-		else if (steering_angle < 0.0)
-		{
-			send_efforts(0.0, 0.0, 100.0);
+			send_efforts(0.0, 0.0, 0.0);
 			send_gear(0x02); // Neutral
+
+			if (ojGetTimeSec() - last_annotated_time > TIME_OUT_CONSTANT)
+			{
+				last_annotated_time = ojGetTimeSec();
+				state = MOVE_COUNTER_CLOCKWISE;
+			}
 		}
 		else
 		{
-			send_efforts(0.0, 0.0, -100.0);
+			send_efforts(0.0, 0.0, -steering_angle * 2000.0);
 			send_gear(0x02); // Neutral
 		}
 	}
