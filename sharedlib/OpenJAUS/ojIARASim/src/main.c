@@ -522,7 +522,7 @@ void calibrate_steering_wheel_state_machine()
 		else if (ojGetTimeSec() - wait_clockwise_limit_time > 3.0)
 			state = WAIT_SENSOR_RESET;
 
-		send_efforts(0.0, 0.0, -60.0);
+		send_efforts(0.0, 0.0, 100.0);
 
 		struct can_frame frame;
 		frame.can_id = 0x405;
@@ -547,7 +547,7 @@ void calibrate_steering_wheel_state_machine()
 		}
 		else
 		{
-			send_efforts(0.0, 0.0, 60.0);
+			send_efforts(0.0, 0.0, -100.0);
 
 			struct can_frame frame;
 			frame.can_id = 0x405;
