@@ -456,7 +456,7 @@ void update_Torc_state(struct can_frame frame)
 	if (frame.can_id == 0x600) // Botao amarelo
 		update_manual_override_and_safe_stop(frame);
 
-	if (frame.can_id == 0x813) // Calibrar volante
+	if (frame.can_id == 0x113) // Calibrar volante
 		perform_steering_wheel_calibration(frame);
 }
 
