@@ -548,7 +548,7 @@ void calibrate_steering_wheel_state_machine()
 		}
 		else
 		{
-			send_efforts(0.0, 0.0, -60.0);
+			send_efforts(0.0, 0.0, -80.0);
 
 			struct can_frame frame;
 			frame.can_id = 0x405;
