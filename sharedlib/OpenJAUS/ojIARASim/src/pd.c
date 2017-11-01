@@ -104,7 +104,7 @@ void send_efforts(double throttle_effort, double breaks_effort, double steering_
 
 	// Steering
 	// #define	STEERING_BIAS -38
-	#define	STEERING_BIAS 0
+	#define	STEERING_BIAS -25
 	int steering_byte0, steering_byte1;
 	if (steering_effort > 0.0)
 		steering_byte0 = (int) round(27.463 * pow(steering_effort, 0.332)); // Obtido examinando os dados enviados pelo Torc para o can

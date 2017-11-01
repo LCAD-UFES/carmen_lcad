@@ -532,9 +532,10 @@ void calibrate_steering_wheel_state_machine()
 	}
 	if (state == WAIT_SENSOR_RESET)
 	{
-		printf("virando pra esquerda, sensor 0x%x\n", steering_angle_auxiliary_sensor);
+//		printf("virando pra esquerda, sensor 0x%x\n", steering_angle_auxiliary_sensor);
 		if (steering_angle_auxiliary_sensor != 0xFFFC)
 		{
+			printf("Achou trava, sensor 0x%x\n", steering_angle_auxiliary_sensor);
 			steering_angle_sensor_zero = steering_angle_sensor - 2500;
 			FILE *steering_angle_sensor_zero_file = fopen("/home/pi/steering_angle_sensor_zero_file.txt", "w");
 			if (steering_angle_sensor_zero_file)
@@ -547,7 +548,7 @@ void calibrate_steering_wheel_state_machine()
 		}
 		else
 		{
-			send_efforts(0.0, 0.0, -100.0);
+			send_efforts(0.0, 0.0, -60.0);
 
 			struct can_frame frame;
 			frame.can_id = 0x405;
@@ -612,7 +613,7 @@ int main(int argCount, char **argString)
 			if (calibrate_steering_wheel)
 				calibrate_steering_wheel_state_machine();
 
-			ojSleepMsec(50);
+			ojSleepMsec(10);
 		}
 	}
 
