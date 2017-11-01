@@ -629,8 +629,9 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 	{
 		double acceleration_clockwise = 2.0 * LARGE_ANGLE / (delta_t_clockwise * delta_t_clockwise); // s = v0*t+0.5*a*t^2
 		double acceleration_counter_clockwise = 2.0 * LARGE_ANGLE / (delta_t_counter_clockwise * delta_t_counter_clockwise); // s = v0*t+0.5*a*t^2
+		printf("delta_acceleration %lf\n", (acceleration_clockwise - acceleration_counter_clockwise) * ACCELERATION_TO_TORQUE_FACTOR);
 
-		if (fabs(acceleration_clockwise - acceleration_counter_clockwise) < SMALL_ACCELERATION)
+		if (fabs((acceleration_clockwise - acceleration_counter_clockwise) * ACCELERATION_TO_TORQUE_FACTOR) < 1.0)
 		{
 			state = IDLE;
 			calibrate_steering_wheel_zero_torque = 0;
