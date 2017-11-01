@@ -523,6 +523,12 @@ void calibrate_steering_wheel_state_machine()
 			state = WAIT_SENSOR_RESET;
 
 		send_efforts(0.0, 0.0, -60.0);
+
+		struct can_frame frame;
+		frame.can_id = 0x405;
+		frame.can_dlc = 1;
+		frame.data[0] = 0x02;
+		send_frame(out_can_sockfd, &frame);
 	}
 	if (state == WAIT_SENSOR_RESET)
 	{
@@ -540,7 +546,15 @@ void calibrate_steering_wheel_state_machine()
 			calibrate_steering_wheel = 0;
 		}
 		else
+		{
 			send_efforts(0.0, 0.0, 60.0);
+
+			struct can_frame frame;
+			frame.can_id = 0x405;
+			frame.can_dlc = 1;
+			frame.data[0] = 0x02;
+			send_frame(out_can_sockfd, &frame);
+		}
 	}
 }
 
