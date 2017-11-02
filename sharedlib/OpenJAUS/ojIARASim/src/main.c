@@ -663,6 +663,12 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 		double zero_torque_correction = round((delta_t_clockwise - delta_t_counter_clockwise) * ZERO_TORQUE_CORRECTION_FACTOR);
 		if (zero_torque_correction < 1.0)
 		{
+			FILE *steering_wheel_zero_torque_file = fopen("/home/pi/steering_wheel_zero_torque_file.txt", "w");
+			if (steering_wheel_zero_torque_file)
+			{
+				fprintf(steering_wheel_zero_torque_file, "%d\n", steering_wheel_zero_torque);
+				fclose(steering_wheel_zero_torque_file);
+			}
 			state = IDLE;
 			calibrate_steering_wheel_zero_torque = 0;
 		}
@@ -703,6 +709,12 @@ int main(int argCount, char **argString)
 	{
 		fscanf(steering_angle_sensor_zero_file, "%d\n", &steering_angle_sensor_zero);
 		fclose(steering_angle_sensor_zero_file);
+	}
+	FILE *steering_wheel_zero_torque_file = fopen("/home/pi/steering_wheel_zero_torque_file.txt", "r");
+	if (steering_wheel_zero_torque_file)
+	{
+		fscanf(steering_wheel_zero_torque_file, "%d\n", &steering_wheel_zero_torque);
+		fclose(steering_wheel_zero_torque_file);
 	}
 
 	mainRunning = TRUE;
