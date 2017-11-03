@@ -96,7 +96,17 @@ int main(int argCount, char **argString)
 	signal(SIGINT, signal_handler);
 
 	in_can_sockfd = init_can(argString[1]);
+	if (in_can_sockfd == -1)
+	{
+		printf("Error opening in_can_sockfd (can device = %s)\n", argString[1]);
+		exit(1);
+	}
 	out_can_sockfd = init_can(argString[2]);
+	if (out_can_sockfd == -1)
+	{
+		printf("Error opening out_can_sockfd (can device = %s)\n", argString[2]);
+		exit(1);
+	}
 
 	mainRunning = TRUE;
 	while (mainRunning)
