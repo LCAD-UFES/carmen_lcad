@@ -674,7 +674,7 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 		}
 		else
 		{
-			steering_wheel_zero_torque -= zero_torque_correction;
+			steering_wheel_zero_torque += zero_torque_correction;
 			state = MOVE_CLOSE_TO_ZERO_ANGLE;
 		}
 	}
