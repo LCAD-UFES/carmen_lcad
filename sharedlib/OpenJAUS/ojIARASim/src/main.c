@@ -519,7 +519,7 @@ void calibrate_steering_wheel_zero_angle_state_machine()
 	{
 		if (steering_angle_auxiliary_sensor != 0xFFFC)
 		{
-			steering_angle_sensor_zero = steering_angle_sensor - 2540;
+			steering_angle_sensor_zero = steering_angle_sensor - 2550;
 			FILE *steering_angle_sensor_zero_file = fopen("/home/pi/steering_angle_sensor_zero_file.txt", "w");
 			if (steering_angle_sensor_zero_file)
 			{
