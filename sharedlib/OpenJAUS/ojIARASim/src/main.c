@@ -546,7 +546,7 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 #define PROPORTIONAL_CONSTANT_KP		2000.0
 #define SMALL_ACCELERATION				0.01
 //#define ACCELERATION_TO_TORQUE_FACTOR	40.0
-#define ZERO_TORQUE_CORRECTION_FACTOR	20.0
+#define ZERO_TORQUE_CORRECTION_FACTOR	40.0
 
 	static int state = IDLE;
 	static double last_annotated_time = 0.0;
@@ -658,8 +658,6 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 //			state = MOVE_CLOSE_TO_ZERO_ANGLE;
 //		}
 
-		printf("zero_torque_correction %lf, steering_wheel_zero_torque %d\n",
-				(delta_t_clockwise - delta_t_counter_clockwise) * ZERO_TORQUE_CORRECTION_FACTOR, steering_wheel_zero_torque);
 		double zero_torque_correction = round((delta_t_clockwise - delta_t_counter_clockwise) * ZERO_TORQUE_CORRECTION_FACTOR);
 		if (fabs(zero_torque_correction) < 1.0)
 		{
@@ -677,6 +675,8 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 			steering_wheel_zero_torque += zero_torque_correction;
 			state = MOVE_CLOSE_TO_ZERO_ANGLE;
 		}
+		printf("zero_torque_correction %lf, steering_wheel_zero_torque %d\n",
+				(delta_t_clockwise - delta_t_counter_clockwise) * ZERO_TORQUE_CORRECTION_FACTOR, steering_wheel_zero_torque);
 	}
 }
 
