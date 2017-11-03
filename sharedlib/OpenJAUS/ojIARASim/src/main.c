@@ -486,14 +486,17 @@ void calibrate_steering_wheel_zero_angle_state_machine()
 #define IDLE 					0
 #define WAIT_CLOCKWISE_LIMIT 	1
 #define WAIT_SENSOR_RESET 		2
+#define TIME_OUT_CONSTANT		5.0
 
 	static int state = IDLE;
 	static double wait_clockwise_limit_time = 0.0;
 	static double last_steering_angle = 0.0;
+	static double last_annotated_time = 0.0;
 
 	if (state == IDLE)
 	{
 		wait_clockwise_limit_time = ojGetTimeSec();
+		last_steering_angle = 0.0;
 
 		state = WAIT_CLOCKWISE_LIMIT;
 	}
@@ -509,6 +512,8 @@ void calibrate_steering_wheel_zero_angle_state_machine()
 
 		send_efforts(0.0, 0.0, 100.0);
 		send_gear(0x02); // Neutral
+
+		last_annotated_time = ojGetTimeSec();
 	}
 	if (state == WAIT_SENSOR_RESET)
 	{
@@ -521,6 +526,11 @@ void calibrate_steering_wheel_zero_angle_state_machine()
 				fprintf(steering_angle_sensor_zero_file, "%d\n", steering_angle_sensor_zero);
 				fclose(steering_angle_sensor_zero_file);
 			}
+			state = IDLE;
+			calibrate_steering_wheel_zero_angle = 0;
+		}
+		else if (ojGetTimeSec() - last_annotated_time > TIME_OUT_CONSTANT)
+		{
 			state = IDLE;
 			calibrate_steering_wheel_zero_angle = 0;
 		}
@@ -542,29 +552,25 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 #define CHANGE_ZERO_TORQUE 				5
 #define SMALL_ANGLE						0.0
 #define LARGE_ANGLE						0.13
-#define TIME_OUT_CONSTANT				5.0
 #define PROPORTIONAL_CONSTANT_KP		2000.0
 #define SMALL_ACCELERATION				0.01
-//#define ACCELERATION_TO_TORQUE_FACTOR	40.0
-#define ZERO_TORQUE_CORRECTION_FACTOR	40.0
+#define ZERO_TORQUE_CORRECTION_FACTOR	100.0
 
 	static int state = IDLE;
 	static double last_annotated_time = 0.0;
 	static double delta_t_clockwise = 0.0;
 	static double delta_t_counter_clockwise = 0.0;
 
-//	printf("estado %d\n", state);
-//	printf("steering_wheel_zero_torque %d\n", steering_wheel_zero_torque);
 	if (state == IDLE)
 	{
-		printf("entrei na sm\n");
 		last_annotated_time = ojGetTimeSec();
+		delta_t_clockwise = 0.0;
+		delta_t_counter_clockwise = 0.0;
 
 		state = MOVE_COUNTER_CLOCKWISE0;
 	}
 	if (state == MOVE_COUNTER_CLOCKWISE0)
 	{
-//		printf("counter_clockwise0\n");
 		send_efforts(0.0, 0.0, -100.0);
 		send_gear(0x02); // Neutral
 		if ((fabs(steering_angle) > LARGE_ANGLE) || (ojGetTimeSec() - last_annotated_time > TIME_OUT_CONSTANT))
@@ -576,7 +582,6 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 	}
 	if (state == MOVE_CLOSE_TO_ZERO_ANGLE)
 	{
-//		printf("zerando, angulo %lf\n", steering_angle);
 		if ((fabs(steering_angle) < SMALL_ANGLE) || (ojGetTimeSec() - last_annotated_time > TIME_OUT_CONSTANT))
 		{
 			send_efforts(0.0, 0.0, 0.0);
@@ -585,8 +590,6 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 			if (ojGetTimeSec() - last_annotated_time > TIME_OUT_CONSTANT)
 			{
 				last_annotated_time = ojGetTimeSec();
-//				state = IDLE;
-//				calibrate_steering_wheel_zero_torque = 0;
 				state = MOVE_CLOCKWISE;
 			}
 		}
@@ -598,7 +601,6 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 	}
 	if (state == MOVE_CLOCKWISE)
 	{
-//		printf("clockwise\n");
 		send_efforts(0.0, 0.0, 100.0);
 		send_gear(0x02); // Neutral
 		if ((fabs(steering_angle) > LARGE_ANGLE) || (ojGetTimeSec() - last_annotated_time > TIME_OUT_CONSTANT))
@@ -610,7 +612,6 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 	}
 	if (state == MOVE_CLOSE_TO_ZERO_ANGLE2)
 	{
-//		printf("zerando2, angulo %lf\n", steering_angle);
 		if ((fabs(steering_angle) < SMALL_ANGLE) || (ojGetTimeSec() - last_annotated_time > TIME_OUT_CONSTANT))
 		{
 			send_efforts(0.0, 0.0, 0.0);
@@ -630,7 +631,6 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 	}
 	if (state == MOVE_COUNTER_CLOCKWISE)
 	{
-//		printf("counter_clockwise\n");
 		send_efforts(0.0, 0.0, -100.0);
 		send_gear(0x02); // Neutral
 		if ((fabs(steering_angle) > LARGE_ANGLE) || (ojGetTimeSec() - last_annotated_time > TIME_OUT_CONSTANT))
@@ -642,22 +642,6 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 	}
 	if (state == CHANGE_ZERO_TORQUE)
 	{
-//		double acceleration_clockwise = 2.0 * LARGE_ANGLE / (delta_t_clockwise * delta_t_clockwise); // s = v0*t+0.5*a*t^2
-//		double acceleration_counter_clockwise = 2.0 * LARGE_ANGLE / (delta_t_counter_clockwise * delta_t_counter_clockwise); // s = v0*t+0.5*a*t^2
-//		printf("delta_acceleration %lf, steering_wheel_zero_torque %d\n",
-//				(acceleration_clockwise - acceleration_counter_clockwise) * ACCELERATION_TO_TORQUE_FACTOR, steering_wheel_zero_torque);
-//
-//		if (fabs(round((acceleration_clockwise - acceleration_counter_clockwise) * ACCELERATION_TO_TORQUE_FACTOR)) < 1.0)
-//		{
-//			state = IDLE;
-//			calibrate_steering_wheel_zero_torque = 0;
-//		}
-//		else
-//		{
-//			steering_wheel_zero_torque -= round((acceleration_clockwise - acceleration_counter_clockwise) * ACCELERATION_TO_TORQUE_FACTOR);
-//			state = MOVE_CLOSE_TO_ZERO_ANGLE;
-//		}
-
 		double zero_torque_correction = round((delta_t_clockwise - delta_t_counter_clockwise) * ZERO_TORQUE_CORRECTION_FACTOR);
 		if (fabs(zero_torque_correction) < 1.0)
 		{
@@ -675,8 +659,6 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 			steering_wheel_zero_torque += zero_torque_correction;
 			state = MOVE_CLOSE_TO_ZERO_ANGLE;
 		}
-		printf("zero_torque_correction %lf, steering_wheel_zero_torque %d\n",
-				(delta_t_clockwise - delta_t_counter_clockwise) * ZERO_TORQUE_CORRECTION_FACTOR, steering_wheel_zero_torque);
 	}
 }
 
