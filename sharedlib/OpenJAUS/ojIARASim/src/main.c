@@ -661,7 +661,7 @@ void calibrate_steering_wheel_zero_torque_state_machine()
 		printf("zero_torque_correction %lf, steering_wheel_zero_torque %d\n",
 				(delta_t_clockwise - delta_t_counter_clockwise) * ZERO_TORQUE_CORRECTION_FACTOR, steering_wheel_zero_torque);
 		double zero_torque_correction = round((delta_t_clockwise - delta_t_counter_clockwise) * ZERO_TORQUE_CORRECTION_FACTOR);
-		if (zero_torque_correction < 1.0)
+		if (fabs(zero_torque_correction) < 1.0)
 		{
 			FILE *steering_wheel_zero_torque_file = fopen("/home/pi/steering_wheel_zero_torque_file.txt", "w");
 			if (steering_wheel_zero_torque_file)
