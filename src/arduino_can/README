@@ -15,31 +15,31 @@ Now just compile and upload the code to the arduino
 
 Connecting the hardware to the arduino NANO:
 
-MCP2515		 Arduino Nano
+MCP2515	     Arduino Nano
 ________	 ___________
-		|	|
-	VCC	|---| 5v
-	GND	|---| GND
-	 CS	|---| D10
-	 SO	|---| D12
- 	 SI	|---| D11
-	SCK	|---| D13
-	INT	|---| D2
+        |   |
+    VCC	|---| 5v
+    GND	|---| GND
+     CS	|---| D10
+     SO	|---| D12
+     SI	|---| D11
+    SCK	|---| D13
+    INT	|---| D2
 ________|	|___________
 
 
-Arduino 							   Arduino 
- Nano				 MCP4922		     Nano	
+Arduino                                Arduino 
+ Nano                 MCP4922            Nano	
 ________		 _______ _______	   ________
-		|		|o	    U	    |	  |
-	 5v	|-------| VDD	 Vout_A |	  |	
-		|		| NC 	 Vref_A |-----| 5v
-	 D9	|-------| ~CS	    VSS |-----| GND
-	D13	|-------| SCK	 Vref_B |-----| 5v
-	D11	|-------| SDI 	 Vout_B |	  |
-		|		| NC	  ~SHDN |	  |
-		|		| NC	  ~LDAC |-----| GND
-________|       |_______________|	  |________
+        |       |o	    U       |     |
+     5v	|-------| VDD    Vout_A |     |	
+        |       | NC     Vref_A |-----| 5v
+     D9	|-------| ~CS       VSS |-----| GND
+    D13	|-------| SCK    Vref_B |-----| 5v
+    D11	|-------| SDI    Vout_B |     |
+        |       | NC      ~SHDN |     |
+        |       | NC      ~LDAC |-----| GND
+________|       |_______________|     |________
 
 
 The Vout_X will provide two analog signals and tshould be connected to your actuators.
