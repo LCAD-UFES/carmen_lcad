@@ -1091,7 +1091,7 @@ void carmen_logwrite_write_to_file_bumblebee_basic_steroimage(
 
 	if ((frame_number % frequency) == 0)
 	{
-		if (bumblebee_num == 4) // ZED Camera
+		if (0)//(bumblebee_num == 4) // ZED Camera
 		{
 //			  int width;                    /**<The x dimension of the image in pixels. */
 //			  int height;                   /**<The y dimension of the image in pixels. */

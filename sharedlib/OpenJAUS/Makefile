@@ -7,6 +7,7 @@ all:
 	@cd ./ojVehicleSim; make;
 	@cd ./ojTorc; make;
 	@cd ./ojIARASim; make;
+	@cd ./ojSteeringBypass; make;
 
 clean:
 	@cd ./libjaus; make clean;
@@ -15,4 +16,5 @@ clean:
 	@cd ./ojVehicleSim; make clean;
 	@cd ./ojTorc; make clean;
 	@cd ./ojIARASim; make clean;
+	@cd ./ojSteeringBypass; make clean;
 

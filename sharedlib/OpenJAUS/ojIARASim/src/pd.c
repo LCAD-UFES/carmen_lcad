@@ -84,19 +84,70 @@ extern double back_right_speed[WHEEL_SPEED_MOVING_AVERAGE_SIZE];
 
 extern unsigned int manual_override_and_safe_stop;
 extern int door_signal;
+extern int steering_wheel_zero_torque;
 
 int gear_can_command = 0;
 
+double wheel_speed_moving_average(double *wheel_speed);
 
-double wheel_speed_moving_average(double *wheel_speed)
+
+void send_gear(int gear_can_command)
 {
-	int i;
-	double moving_average_wheel_speed = 0.0;
+	struct can_frame frame;
+	frame.can_id = 0x405;
+	frame.can_dlc = 1;
+	frame.data[0] = gear_can_command;
+	send_frame(out_can_sockfd, &frame);
+}
 
-	for (i = 0; i < WHEEL_SPEED_MOVING_AVERAGE_SIZE; i++)
-		moving_average_wheel_speed += wheel_speed[i];
+void send_efforts(double throttle_effort, double breaks_effort, double steering_effort)
+{
+	struct can_frame frame;
+	frame.can_id = 0x480;
+	frame.can_dlc = 4;
 
-	return (moving_average_wheel_speed / (double) WHEEL_SPEED_MOVING_AVERAGE_SIZE);
+	// Throttle
+	if (throttle_effort > 100.0)
+		throttle_effort = 100.0;
+	else if (throttle_effort < 0.0)
+		throttle_effort = 0.0;
+	frame.data[0] = (int) (2.0 * throttle_effort + 0.5); // throttle
+
+	// Breaks
+	if (breaks_effort > 100.0)
+		breaks_effort = 100.0;
+	else if (breaks_effort < 0.0)
+		breaks_effort = 0.0;
+	frame.data[1] = (int) (2.0 * breaks_effort + 0.5); // breaks
+
+	// Steering
+	if (steering_effort > 100.0)
+		steering_effort = 100.0;
+	else if (steering_effort < -100.0)
+		steering_effort = -100.0;
+	int steering_byte0, steering_byte1;
+	if (steering_effort > 0.0)
+		steering_byte0 = (int) round(27.463 * pow(steering_effort, 0.332)); // Obtido examinando os dados enviados pelo Torc para o can
+	else if (steering_effort < 0.0)
+		steering_byte0 = (int) round(-27.463 * pow(-steering_effort, 0.332));
+	else // effort == 0.0
+		steering_byte0 = 0;
+
+	if ((steering_byte0 + steering_wheel_zero_torque) < 0)
+	{
+		steering_byte0 += steering_wheel_zero_torque + 256;
+		steering_byte1 = 0x01;
+	}
+	else
+	{
+		steering_byte0 += steering_wheel_zero_torque;
+		steering_byte1 = 0x02;
+	}
+
+	frame.data[2] = steering_byte0; // Steering
+	frame.data[3] = steering_byte1; // Steering
+
+	send_frame(out_can_sockfd, &frame);
 }
 
 void pdProcessMessage(OjCmpt pd, JausMessage message)
@@ -178,43 +229,8 @@ void pdProcessMessage(OjCmpt pd, JausMessage message)
 				if ((1 << JAUS_WRENCH_PV_RESISTIVE_ROTATIONAL_Z_BIT) & setWrenchEffort->presenceVector)
 					data->setWrenchEffort->resistiveRotationalEffortZPercent = setWrenchEffort->resistiveRotationalEffortZPercent;
 
-				struct can_frame frame;
-				frame.can_id = 0x480;
-				frame.can_dlc = 4;
-
-				// Throttle
-				frame.data[0] = (int) (2.0 * data->setWrenchEffort->propulsiveLinearEffortXPercent + 0.5); // breaks
-
-				// Breaks
-				frame.data[1] = (int) (2.0 * data->setWrenchEffort->resistiveLinearEffortXPercent + 0.5); // breaks
-
-				// Steering
-				// #define	STEERING_BIAS -38
-				#define	STEERING_BIAS 0
-				int steering_byte0, steering_byte1;
-				double effort = setWrenchEffort->propulsiveRotationalEffortZPercent;
-				if (effort > 0.0)
-					steering_byte0 = (int) round(27.463 * pow(effort, 0.332)); // Obtido examinando os dados enviados pelo Torc para o can
-				else if (effort < 0.0)
-					steering_byte0 = (int) round(-27.463 * pow(-effort, 0.332));
-				else // effort == 0.0
-					steering_byte0 = 0;
-
-				if ((steering_byte0 + STEERING_BIAS) < 0)
-				{
-					steering_byte0 += STEERING_BIAS + 256;
-					steering_byte1 = 0x01;
-				}
-				else
-				{
-					steering_byte0 += STEERING_BIAS;
-					steering_byte1 = 0x02;
-				}
-
-				frame.data[2] = steering_byte0; // Steering
-				frame.data[3] = steering_byte1; // Steering
-
-				send_frame(out_can_sockfd, &frame);
+				send_efforts(data->setWrenchEffort->propulsiveLinearEffortXPercent, data->setWrenchEffort->resistiveLinearEffortXPercent,
+						data->setWrenchEffort->propulsiveRotationalEffortZPercent);
 
 				setWrenchEffortMessageDestroy(setWrenchEffort);
 			}
@@ -406,7 +422,7 @@ void pdSendReportComponentStatus(OjCmpt pd)
 		data->reportComponentStatus->properties.scFlag = JAUS_SERVICE_CONNECTION_MESSAGE;
 
 		data->reportComponentStatus->primaryStatusCode = data->controllerStatus->primaryStatusCode;
-//		data->reportComponentStatus->secondaryStatusCode = data->controllerStatus->secondaryStatusCode;
+		data->reportComponentStatus->secondaryStatusCode = data->controllerStatus->secondaryStatusCode;
 
 		txMessage = reportComponentStatusMessageToJausMessage(data->reportComponentStatus);
 		ojCmptSendMessage(pd, txMessage);
@@ -532,18 +548,12 @@ void pdReadyState(OjCmpt pd)
 	unsigned int ssc = (((manual_override_and_safe_stop & 0x02) >> 1) << XGV_MANUAL_OVERRIDE_FLAG) |
 					   (((manual_override_and_safe_stop & 0x01)) << XGV_SAFE_STOP_FLAG) |
 					   (((door_signal & 0x80) || (door_signal & 0x100) || (door_signal & 0x200) || (door_signal & 0x400)) << XGV_DOOR_OPEN_FLAG);
-	data->reportComponentStatus->secondaryStatusCode = ssc;
+	data->controllerStatus->secondaryStatusCode = ssc;
+	data->reportComponentStatus->secondaryStatusCode = data->controllerStatus->secondaryStatusCode;
 	pdSendReportComponentStatus(pd);
 
-	// Gear
 	if (gear_can_command)
-	{
-		struct can_frame frame;
-		frame.can_id = 0x405;
-		frame.can_dlc = 1;
-		frame.data[0] = gear_can_command;
-		send_frame(out_can_sockfd, &frame);
-	}
+		send_gear(gear_can_command);
 }
 
 OjCmpt pdCreate(void)
