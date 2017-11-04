@@ -134,6 +134,9 @@ int g_XGV_num_errors = 0;
 JausInteger g_XGV_error[MAX_ERRORS];
 unsigned int g_XGV_component_status = 0;
 
+double g_wheels_speed_update_freq = 0.0;
+double g_atan_curvature_update_freq = 0.0;
+
 double factor = 1.0;
 
 
@@ -206,6 +209,10 @@ print_interface()
 		 	g_XGV_right_front_wheel_speed, g_XGV_left_front_wheel_speed,
 			g_XGV_right_rear_wheel_speed, g_XGV_left_rear_wheel_speed);
 	
+	row++;
+	mvprintw(row++, col, "Wheels Speed Update (Hz): = %lf, Atan Curvature Update (Hz): = %lf",
+			g_wheels_speed_update_freq, g_atan_curvature_update_freq);
+
 	row++;
 	mvprintw(row++, col, "g_XGV_main_propulsion  = %d", g_XGV_main_propulsion);
 	mvprintw(row++, col, "g_XGV_main_fuel_supply = %d", g_XGV_main_fuel_supply);

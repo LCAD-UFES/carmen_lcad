@@ -17,7 +17,7 @@
 #define TRUE 1
 #endif
 
-#define MPD_THREAD_DESIRED_RATE_HZ			100
+#define MPD_THREAD_DESIRED_RATE_HZ			202
 
 OjCmpt mpdCreate(void);
 void mpdDestroy(OjCmpt mpd);

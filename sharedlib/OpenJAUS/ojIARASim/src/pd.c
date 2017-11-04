@@ -97,7 +97,8 @@ void send_gear(int gear_can_command)
 	frame.can_id = 0x405;
 	frame.can_dlc = 1;
 	frame.data[0] = gear_can_command;
-	send_frame(out_can_sockfd, &frame);
+	if (out_can_sockfd != -1)
+		send_frame(out_can_sockfd, &frame);
 }
 
 void send_efforts(double throttle_effort, double breaks_effort, double steering_effort)
@@ -147,7 +148,8 @@ void send_efforts(double throttle_effort, double breaks_effort, double steering_
 	frame.data[2] = steering_byte0; // Steering
 	frame.data[3] = steering_byte1; // Steering
 
-	send_frame(out_can_sockfd, &frame);
+	if (out_can_sockfd != -1)
+		send_frame(out_can_sockfd, &frame);
 }
 
 void pdProcessMessage(OjCmpt pd, JausMessage message)

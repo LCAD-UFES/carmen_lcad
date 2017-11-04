@@ -50,7 +50,7 @@ velocity_state_message_handler(OjCmpt XGV_CCU, JausMessage velocity_message)
 	reportVelocityState = reportVelocityStateMessageFromJausMessage(velocity_message);
 	if (reportVelocityState)
 	{
-		if (g_XGV_velocity != reportVelocityState->velocityXMps)
+//		if (g_XGV_velocity != reportVelocityState->velocityXMps)
 		{
 			g_XGV_velocity = reportVelocityState->velocityXMps;
 			print_interface();
@@ -85,6 +85,12 @@ report_curvature_message_handler(OjCmpt XGV_CCU, JausMessage curvature_message)
 			print_interface();
 		}
 		
+		static double last_update = 0.0;
+		double t = ojGetTimeSec();
+		if (last_update != 0.0)
+			g_atan_curvature_update_freq = 1.0 / (t - last_update);
+		last_update = t;
+
 		/*		printf("commandCode = 0x%x  ", reportVelocityState->commandCode);
 		 *		printf("destination = %d.%d.%d.%d\r", 	reportVelocityState->destination->subsystem, 
 		 *							reportVelocityState->destination->node, 
@@ -105,29 +111,39 @@ report_wheels_speed_message_handler(OjCmpt XGV_CCU, JausMessage wheels_speed_mes
 {
 	ReportWheelsSpeedMessage reportWheelsSpeed;
 	
+	int wheels_speed_change = 0;
 	reportWheelsSpeed = reportWheelsSpeedMessageFromJausMessage(wheels_speed_message);
 	if (reportWheelsSpeed)
 	{
 		if (g_XGV_right_front_wheel_speed != reportWheelsSpeed->rightFront)
 		{
 			g_XGV_right_front_wheel_speed = reportWheelsSpeed->rightFront;
-			print_interface();
+			wheels_speed_change = 1;
 		}
 		if (g_XGV_left_front_wheel_speed != reportWheelsSpeed->leftFront)
 		{
 			g_XGV_left_front_wheel_speed = reportWheelsSpeed->leftFront;
-			print_interface();
+			wheels_speed_change = 1;
 		}
 		if (g_XGV_right_rear_wheel_speed != reportWheelsSpeed->rightRear)
 		{
 			g_XGV_right_rear_wheel_speed = reportWheelsSpeed->rightRear;
-			print_interface();
+			wheels_speed_change = 1;
 		}
 		if (g_XGV_left_rear_wheel_speed != reportWheelsSpeed->leftRear)
 		{
 			g_XGV_left_rear_wheel_speed = reportWheelsSpeed->leftRear;
-			print_interface();
+			wheels_speed_change = 1;
 		}
+
+		if (wheels_speed_change)
+			print_interface();
+
+		static double last_update = 0.0;
+		double t = ojGetTimeSec();
+		if (last_update != 0.0)
+			g_wheels_speed_update_freq = 1.0 / (t - last_update);
+		last_update = t;
 		
 		/*		printf("commandCode = 0x%x  ", reportVelocityState->commandCode);
 		 *		printf("destination = %d.%d.%d.%d\r", 	reportVelocityState->destination->subsystem, 

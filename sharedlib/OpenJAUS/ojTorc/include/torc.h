@@ -130,6 +130,8 @@ extern JausInteger g_XGV_error[MAX_ERRORS];
 extern int g_XGV_num_errors;
 extern unsigned int g_XGV_component_status;
 
+extern double g_wheels_speed_update_freq;
+extern double g_atan_curvature_update_freq;
 
 // Prototypes
 void send_set_signals_message(OjCmpt XGV_CCU);

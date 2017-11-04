@@ -4,6 +4,7 @@ TARGETSO = 	./lib/libojTorc.so
 CCFLAGS	=	-Wall -std=c99 -fPIC -fno-strict-aliasing -c -g -I ./include/ -I ../libjaus/include/ -I ../libopenJaus/include/
 LFLAGS	=	-L ../libjaus/lib/ -L ../libopenJaus/lib/
 LIBS	=	-lopenJaus -ljaus -lpthread -lcurses -lm
+
 SOURCES =	./src/torcInterface.c \
 		./src/torc.c \
 		./src/torcComm.c \

@@ -1,14 +1,11 @@
 TARGET	= 	./bin/ojSteeringBypass
-CCFLAGS	=	-Wall -fno-strict-aliasing -c -g -I ./include/ -I ../libjaus/include/ -I ../libopenJaus/include/ -I ../ojTorc/include
-LFLAGS	=	-L ../libjaus/lib/ -L ../libopenJaus/lib/ -L ../ojTorc/lib/
-LIBS	=	-lopenJaus -ljaus -lpthread -lcurses -lojTorc
+CCFLAGS	=	-Wall -fno-strict-aliasing -c -g -I ./include/ -I ../libjaus/include/ -I ../libopenJaus/include/ -I ../ojTorc/include -I ../ojIARASim/include
+LFLAGS	=	-L ../libjaus/lib/ -L ../libopenJaus/lib/ -L ../ojTorc/lib/ -L ../ojIARASim/lib/
+LIBS	=	-lopenJaus -ljaus -lpthread -lcurses -lojTorc -lojIARASim
 
-SOURCES =	./src/getLine.c \
-		./src/main.c \
-		./src/can_utils.c
+SOURCES =	./src/main.c
 
-OBJECTS = ./Build/main.o \
-		./Build/can_utils.o
+OBJECTS = ./Build/main.o
 		
 default : all
 
@@ -24,5 +21,3 @@ $(TARGET) : $(OBJECTS)
 ./Build/main.o : ./src/main.c
 	gcc $(CCFLAGS) -o ./Build/main.o ./src/main.c
 
-./Build/can_utils.o : ./src/can_utils.c
-	gcc $(CCFLAGS) -o ./Build/can_utils.o ./src/can_utils.c

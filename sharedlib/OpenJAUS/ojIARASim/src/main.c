@@ -56,7 +56,7 @@
 static int mainRunning = FALSE;
 static int verbose = FALSE; // Se verdadeiro, printf() funciona; caso contrario, nao.
 static int keyboardLock = FALSE;
-static int interface_active = FALSE;
+int interface_active = FALSE;
 
 // Operating specific console handles
 static struct termios newTermio;
@@ -67,8 +67,8 @@ OjCmpt vss;
 OjCmpt mpd;
 OjCmpt sd;
 
-int in_can_sockfd;
-int out_can_sockfd;
+int in_can_sockfd = -1;
+int out_can_sockfd = -1;
 
 int front_left_odometer = -1;
 int front_right_odometer = -1;
@@ -461,8 +461,11 @@ void *can_in_read_thread_func(void *unused)
 
 	while (mainRunning)
 	{
-		recv_frame(in_can_sockfd, &frame);
-		update_Car_state(frame);
+		if (in_can_sockfd != -1)
+		{
+			recv_frame(in_can_sockfd, &frame);
+			update_Car_state(frame);
+		}
 	}
 
 	return (NULL);
@@ -474,8 +477,11 @@ void *can_out_read_thread_func(void *unused)
 
 	while (mainRunning)
 	{
-		recv_frame(out_can_sockfd, &frame);
-		update_Torc_state(frame);
+		if (out_can_sockfd != -1)
+		{
+			recv_frame(out_can_sockfd, &frame);
+			update_Torc_state(frame);
+		}
 	}
 
 	return (NULL);

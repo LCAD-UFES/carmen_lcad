@@ -49,7 +49,7 @@
 #define TRUE 1
 #endif
 
-#define VSS_THREAD_DESIRED_RATE_HZ			100.0
+#define VSS_THREAD_DESIRED_RATE_HZ			200.0
 
 // USER: All defines should start with "VSS_", where your component acronym replaces "VSS"
 

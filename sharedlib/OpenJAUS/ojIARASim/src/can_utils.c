@@ -103,7 +103,7 @@ int init_can(char *intf_name)
 
 	int sockfd;
 	if ((sockfd = socket(family, type, proto)) < 0) {
-		perror("socket");
+		perror(intf_name);
 		return -1;
 	}
 
@@ -113,7 +113,7 @@ int init_can(char *intf_name)
 	addr.can_ifindex = ifr.ifr_ifindex;
 
 	if (bind(sockfd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-		perror("bind");
+		perror(intf_name);
 		close(sockfd);
 		return -1;
 	}

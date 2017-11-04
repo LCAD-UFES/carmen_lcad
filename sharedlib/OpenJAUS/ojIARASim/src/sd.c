@@ -33,7 +33,6 @@ typedef struct
 } PdData;
 
 extern int turn_signal;
-extern int door_signal;
 
 
 void sdProcessMessage(OjCmpt sd, JausMessage message)
@@ -92,7 +91,8 @@ void sdProcessMessage(OjCmpt sd, JausMessage message)
 					frame.can_dlc = 2; // numero de bytes
 					frame.data[0] = data->setSignals->turnSignal << 5;
 					frame.data[1] = data->setSignals->hornStatus;
-					send_frame(out_can_sockfd, &frame);
+					if (out_can_sockfd != -1)
+						send_frame(out_can_sockfd, &frame);
 				}
 				if ((1 << JAUS_SIGNALS_PV_HORN_BIT) & setSignals->presenceVector)
 				{
@@ -105,7 +105,8 @@ void sdProcessMessage(OjCmpt sd, JausMessage message)
 					frame.can_dlc = 2; // numero de bytes
 					frame.data[0] = data->setSignals->turnSignal << 5;
 					frame.data[1] = data->setSignals->hornStatus;
-					send_frame(out_can_sockfd, &frame);
+					if (out_can_sockfd != -1)
+						send_frame(out_can_sockfd, &frame);
 				}
 				if ((1 << JAUS_SIGNALS_PV_HEADLIGHTS_BIT) & setSignals->presenceVector)
 				{
