@@ -16,7 +16,7 @@ Now just compile and upload the code to the arduino
 Connecting the hardware to the arduino NANO:
 
 MCP2515	     Arduino Nano
-________	 ___________
+________     ___________
         |   |
     VCC	|---| 5v
     GND	|---| GND
@@ -25,13 +25,13 @@ ________	 ___________
      SI	|---| D11
     SCK	|---| D13
     INT	|---| D2
-________|	|___________
+________|   |___________
 
 
 Arduino                                Arduino 
  Nano                 MCP4922            Nano	
-________		 _______ _______	   ________
-        |       |o	    U       |     |
+________         _______ _______       ________
+        |       |o      U       |     |
      5v	|-------| VDD    Vout_A |     |	
         |       | NC     Vref_A |-----| 5v
      D9	|-------| ~CS       VSS |-----| GND
