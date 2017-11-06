@@ -11,7 +11,6 @@
 
 #include <jaus.h>
 #include <openJaus.h>
-#include <torc.h>
 
 #include <linux/can.h>
 #include <linux/can/raw.h>

@@ -22,3 +22,8 @@ svn commit -m "adicao de ojNodeManager/IARAnodeManager.conf"
 - Compile o OpenJAUS
 cd OpenJAUS
 make
+
+- Mude seu .bashrc incluindo as linhas abaixo:
+#OpenJaus
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/carmen_lcad/sharedlib/OpenJAUS/libopenJaus/lib:~/carmen_lcad/sharedlib/OpenJAUS/libjaus/lib:~/carmen_lcad/sharedlib/OpenJAUS/ojTorc/lib:~/carmen_lcad/sharedlib/OpenJAUS/ojIARASim/lib
+

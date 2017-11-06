@@ -60,7 +60,7 @@
 
 #define PD_THREAD_DESIRED_RATE_HZ			202.0	// USER: Modify this rate as needed
 
-#define WHEEL_SPEED_MOVING_AVERAGE_SIZE 5
+#define WHEEL_SPEED_MOVING_AVERAGE_SIZE 10
 
 extern int out_can_sockfd;
 

@@ -1,9 +1,9 @@
-TARGET	= 	./bin/ojSteeringBypass
-CCFLAGS	=	-Wall -fno-strict-aliasing -c -g -I ./include/ -I ../libjaus/include/ -I ../libopenJaus/include/ -I ../ojTorc/include -I ../ojIARASim/include
-LFLAGS	=	-L ../libjaus/lib/ -L ../libopenJaus/lib/ -L ../ojTorc/lib/ -L ../ojIARASim/lib/
-LIBS	=	-lopenJaus -ljaus -lpthread -lcurses -lojTorc -lojIARASim
+TARGET	= ./bin/ojSteeringBypass
+CCFLAGS	= -Wall -fno-strict-aliasing -c -g -I ./include/ -I ../libjaus/include/ -I ../libopenJaus/include/ -I ../ojIARASim/include
+LFLAGS	= -L ../libjaus/lib/ -L ../libopenJaus/lib/ -L ../ojIARASim/lib/
+LIBS	= -lpthread -lopenJaus -ljaus -lojIARASim
 
-SOURCES =	./src/main.c
+SOURCES = ./src/main.c
 
 OBJECTS = ./Build/main.o
 		

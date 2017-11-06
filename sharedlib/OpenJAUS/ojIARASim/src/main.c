@@ -45,10 +45,10 @@
 #define FRONT_LEFT	1
 #define BACK_RIGHT	2
 #define BACK_LEFT	3
-// Com 0.14 (abaixo), velocidade maxima ~= 165 km/h (pois senao o odeometro termina uma volta)
-#define WHEEL_VELOCITY_SAMPLE_TIME 	0.14
 // Metros por revolucao do pneu ~= 2.2375 m
 #define METERS_BY_ODOMETRY_COUNT	0.0255
+#define MAX_ODOMETER 10000
+#define ODOMETER_FIFO_SIZE 12
 
 #define DEFAULT_STRING_LENGTH 128
 #define KEYBOARD_LOCK_TIMEOUT_SEC	60.0
@@ -70,17 +70,10 @@ OjCmpt sd;
 int in_can_sockfd = -1;
 int out_can_sockfd = -1;
 
-int front_left_odometer = -1;
-int front_right_odometer = -1;
-int back_left_odometer = -1;
-int back_right_odometer = -1;
-double time_last_odometry = -1.0;
-
 double front_left_speed[WHEEL_SPEED_MOVING_AVERAGE_SIZE];
 double front_right_speed[WHEEL_SPEED_MOVING_AVERAGE_SIZE];
 double back_left_speed[WHEEL_SPEED_MOVING_AVERAGE_SIZE];
 double back_right_speed[WHEEL_SPEED_MOVING_AVERAGE_SIZE];
-int wheel_speed_index;
 
 double car_speed = 0.0;
 double speed_signal = 1.0;
@@ -308,7 +301,7 @@ static void signal_handler(int signo)
 
 void clear_wheel_speed_moving_average()
 {
-	wheel_speed_index = 0;
+	int wheel_speed_index = 0;
 	while (wheel_speed_index < WHEEL_SPEED_MOVING_AVERAGE_SIZE)
 	{
 		front_left_speed[wheel_speed_index] = 0.0;
@@ -319,55 +312,98 @@ void clear_wheel_speed_moving_average()
 	}
 }
 
+void update_wheel_speed(double *wheel_speed, int wheel_speed_index,
+		int *wheel_odometer, int odometer_index, int delta_odometer, double *time_stamps, int odometer_previous_index, double t)
+{
+	if (delta_odometer < 0)
+		delta_odometer += 256;
+
+	int new_wheel_odometer = wheel_odometer[odometer_previous_index] + delta_odometer;
+	if (new_wheel_odometer > MAX_ODOMETER)
+		new_wheel_odometer -= MAX_ODOMETER;
+
+	delta_odometer = new_wheel_odometer - wheel_odometer[odometer_index];
+	if (delta_odometer < 0)
+		delta_odometer += MAX_ODOMETER;
+	wheel_odometer[odometer_index] = new_wheel_odometer;
+
+	if (time_stamps[odometer_index] != 0.0)
+		wheel_speed[wheel_speed_index] = speed_signal * ((double) delta_odometer * METERS_BY_ODOMETRY_COUNT) / (t - time_stamps[odometer_index]);
+	else
+		wheel_speed[wheel_speed_index] = 0.0;
+}
+
 void update_wheels_speed(struct can_frame frame)
 {
+	static int wheel_speed_index, odometer_index;
+
+	static int front_left_odometer;
+	static int front_right_odometer;
+	static int back_left_odometer;
+	static int back_right_odometer;
+
+	static int front_left_odometer_fifo[ODOMETER_FIFO_SIZE];
+	static int front_right_odometer_fifo[ODOMETER_FIFO_SIZE];
+	static int back_left_odometer_fifo[ODOMETER_FIFO_SIZE];
+	static int back_right_odometer_fifo[ODOMETER_FIFO_SIZE];
+	static double time_stamps[ODOMETER_FIFO_SIZE];
+
+	static int first_time = 1;
+
 	double t = ojGetTimeSec();
 
-	if (time_last_odometry == -1.0) // Inicializacao
+	if (first_time)
 	{
-		front_left_odometer = (int) frame.data[FRONT_LEFT];
-		front_right_odometer = (int) frame.data[FRONT_RIGHT];
-		back_left_odometer = (int) frame.data[BACK_LEFT];
-		back_right_odometer = (int) frame.data[BACK_RIGHT];
+		memset((void *) front_left_odometer_fifo, 0, ODOMETER_FIFO_SIZE * sizeof(int));
+		memset((void *) front_right_odometer_fifo, 0, ODOMETER_FIFO_SIZE * sizeof(int));
+		memset((void *) back_left_odometer_fifo, 0, ODOMETER_FIFO_SIZE * sizeof(int));
+		memset((void *) back_right_odometer_fifo, 0, ODOMETER_FIFO_SIZE * sizeof(int));
 
-		time_last_odometry = t;
+		memset((void *) time_stamps, 0, ODOMETER_FIFO_SIZE * sizeof(double));
+
+		wheel_speed_index = odometer_index = 0;
 		clear_wheel_speed_moving_average();
+
+		front_left_odometer  = front_left_odometer_fifo[odometer_index] = (int) frame.data[FRONT_LEFT];
+		front_right_odometer = front_right_odometer_fifo[odometer_index] = (int) frame.data[FRONT_RIGHT];
+		back_left_odometer   = back_left_odometer_fifo[odometer_index] = (int) frame.data[BACK_LEFT];
+		back_right_odometer  = back_right_odometer_fifo[odometer_index] = (int) frame.data[BACK_RIGHT];
+
+		time_stamps[odometer_index] = t;
+
+		odometer_index++;
+		first_time = 0;
+
+		return;
+	}
+
+	int odometer_previous_index = odometer_index - 1;
+	if (odometer_previous_index < 0)
+		odometer_previous_index = ODOMETER_FIFO_SIZE - 1;
+
+	update_wheel_speed(front_left_speed, wheel_speed_index, front_left_odometer_fifo, odometer_index, frame.data[FRONT_LEFT] - front_left_odometer,
+			time_stamps, odometer_previous_index, t);
+	update_wheel_speed(front_right_speed, wheel_speed_index, front_right_odometer_fifo, odometer_index, frame.data[FRONT_RIGHT] - front_right_odometer,
+			time_stamps, odometer_previous_index, t);
+	update_wheel_speed(back_left_speed, wheel_speed_index, back_left_odometer_fifo, odometer_index, frame.data[BACK_LEFT] - back_left_odometer,
+			time_stamps, odometer_previous_index, t);
+	update_wheel_speed(back_right_speed, wheel_speed_index, back_right_odometer_fifo, odometer_index, frame.data[BACK_RIGHT] - back_right_odometer,
+			time_stamps, odometer_previous_index, t);
+
+	front_left_odometer = (int) frame.data[FRONT_LEFT];
+	front_right_odometer = (int) frame.data[FRONT_RIGHT];
+	back_left_odometer = (int) frame.data[BACK_LEFT];
+	back_right_odometer = (int) frame.data[BACK_RIGHT];
+
+	time_stamps[odometer_index] = t;
+
+	odometer_index++;
+	if (odometer_index == ODOMETER_FIFO_SIZE)
+		odometer_index = 0;
+
+	wheel_speed_index++;
+	if (wheel_speed_index == WHEEL_SPEED_MOVING_AVERAGE_SIZE)
 		wheel_speed_index = 0;
-	}
-	else if ((t - time_last_odometry) > WHEEL_VELOCITY_SAMPLE_TIME)
-	{
-		double delta_t = t - time_last_odometry;
-
-		int delta_odometer = frame.data[FRONT_LEFT] - front_left_odometer;
-		if (delta_odometer < 0)
-			delta_odometer += 256;
-		front_left_speed[wheel_speed_index] = speed_signal * ((double) delta_odometer * METERS_BY_ODOMETRY_COUNT) / delta_t;
-
-		delta_odometer = frame.data[FRONT_RIGHT] - front_right_odometer;
-		if (delta_odometer < 0)
-			delta_odometer += 256;
-		front_right_speed[wheel_speed_index] = speed_signal * ((double) delta_odometer * METERS_BY_ODOMETRY_COUNT) / delta_t;
-
-		delta_odometer = frame.data[BACK_LEFT] - back_left_odometer;
-		if (delta_odometer < 0)
-			delta_odometer += 256;
-		back_left_speed[wheel_speed_index] = speed_signal * ((double) delta_odometer * METERS_BY_ODOMETRY_COUNT) / delta_t;
-
-		delta_odometer = frame.data[BACK_RIGHT] - back_right_odometer;
-		if (delta_odometer < 0)
-			delta_odometer += 256;
-		back_right_speed[wheel_speed_index] = speed_signal * ((double) delta_odometer * METERS_BY_ODOMETRY_COUNT) / delta_t;
-
-		front_left_odometer = (int) frame.data[FRONT_LEFT];
-		front_right_odometer = (int) frame.data[FRONT_RIGHT];
-		back_left_odometer = (int) frame.data[BACK_LEFT];
-		back_right_odometer = (int) frame.data[BACK_RIGHT];
-
-		time_last_odometry = t;
-		wheel_speed_index++;
-		if (wheel_speed_index >= WHEEL_SPEED_MOVING_AVERAGE_SIZE)
-			wheel_speed_index = 0;
-	}
 }
 
 void update_car_speed(struct can_frame frame)
@@ -430,10 +466,10 @@ void perform_steering_wheel_calibration(struct can_frame frame)
 
 void update_Car_state(struct can_frame frame)
 {
-	if (frame.can_id == 0x216) // Odometro das rodas
+	if (frame.can_id == 0x216) // Odometro das rodas. Frequencia de 60Hz no Ford Escape Hybrid
 		update_wheels_speed(frame);
 
-	if (frame.can_id == 0x425) // Velocidade da IARA (segundo o can)
+	if (frame.can_id == 0x425) // Velocidade da IARA. Frequencia de 60Hz no Ford Escape Hybrid
 		update_car_speed(frame);
 
 	if (frame.can_id == 0x80) // Angulo do volante
