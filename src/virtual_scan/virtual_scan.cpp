@@ -13,8 +13,8 @@
 #include <carmen/moving_objects_messages.h>
 #include <carmen/moving_objects_interface.h>
 
-extended_virtual_scan_t extended_virtual_scan;
-carmen_point_t extended_virtual_scan_points[10000];
+virtual_scan_extended_t extended_virtual_scan; // Melhorar
+carmen_point_t extended_virtual_scan_points[10000]; // Melhorar
 extern carmen_localize_ackerman_map_t localize_map;
 extern double x_origin;
 extern double y_origin;
@@ -63,15 +63,15 @@ filter_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan)
 
 #define PROB_THRESHOLD	-2.14
 
-	carmen_mapper_virtual_scan_message *filtered_virtual_scan;
-	filtered_virtual_scan = (carmen_mapper_virtual_scan_message *) malloc(sizeof(carmen_mapper_virtual_scan_message));
+	carmen_mapper_virtual_scan_message *virtual_scan_filtered;
+	virtual_scan_filtered = (carmen_mapper_virtual_scan_message *) malloc(sizeof(carmen_mapper_virtual_scan_message));
 
-	filtered_virtual_scan->points = NULL;
-	filtered_virtual_scan->globalpos = virtual_scan->globalpos;
-	filtered_virtual_scan->v = virtual_scan->v;
-	filtered_virtual_scan->phi = virtual_scan->phi;
-	filtered_virtual_scan->timestamp = virtual_scan->timestamp;
-	filtered_virtual_scan->host = virtual_scan->host;
+	virtual_scan_filtered->points = NULL;
+	virtual_scan_filtered->globalpos = virtual_scan->globalpos;
+	virtual_scan_filtered->v = virtual_scan->v;
+	virtual_scan_filtered->phi = virtual_scan->phi;
+	virtual_scan_filtered->timestamp = virtual_scan->timestamp;
+	virtual_scan_filtered->host = virtual_scan->host;
 
 	int num_points = 0;
 	for (int i = 0; i < virtual_scan->num_points; i++)
@@ -80,15 +80,16 @@ filter_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan)
 		int y_index_map = (int) round((virtual_scan->points[i].y - y_origin) / map_resolution);
 		if (localize_map.prob[x_index_map][y_index_map] < PROB_THRESHOLD)
 		{
-			filtered_virtual_scan->points = (carmen_position_t *) realloc(filtered_virtual_scan->points,
+			virtual_scan_filtered->points = (carmen_position_t *) realloc(virtual_scan_filtered->points,
 								sizeof(carmen_position_t) * (num_points + 1));
-			filtered_virtual_scan->points[num_points]=virtual_scan->points[i];
+			virtual_scan_filtered->points[num_points]=virtual_scan->points[i];
 			num_points++;
 		}
 	}
-	filtered_virtual_scan->num_points = num_points;
+	virtual_scan_filtered->num_points = num_points;
+	virtual_scan_filtered->timestamp = virtual_scan->timestamp;
 
-	return (filtered_virtual_scan);
+	return (virtual_scan_filtered);
 }
 
 
@@ -107,17 +108,18 @@ compare_angles(const void *a, const void *b)
 }
 
 
-extended_virtual_scan_t *
-sort_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan)
+virtual_scan_extended_t *
+sort_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan_filtered)
 {
 	extended_virtual_scan.point = extended_virtual_scan_points;
-	extended_virtual_scan.num_points = virtual_scan->num_points;
-	for (int i = 0; i < virtual_scan->num_points; i++)
+	extended_virtual_scan.num_points = virtual_scan_filtered->num_points;
+	extended_virtual_scan.timestamp = virtual_scan_filtered->timestamp;
+	for (int i = 0; i < virtual_scan_filtered->num_points; i++)
 	{
-		extended_virtual_scan.point[i].x = virtual_scan->points[i].x;
-		extended_virtual_scan.point[i].y = virtual_scan->points[i].y;
-		double theta = atan2(virtual_scan->points[i].y - virtual_scan->globalpos.y, virtual_scan->points[i].x - virtual_scan->globalpos.x);
-		theta = carmen_normalize_theta(theta - virtual_scan->globalpos.theta);
+		extended_virtual_scan.point[i].x = virtual_scan_filtered->points[i].x;
+		extended_virtual_scan.point[i].y = virtual_scan_filtered->points[i].y;
+		double theta = atan2(virtual_scan_filtered->points[i].y - virtual_scan_filtered->globalpos.y, virtual_scan_filtered->points[i].x - virtual_scan_filtered->globalpos.x);
+		theta = carmen_normalize_theta(theta - virtual_scan_filtered->globalpos.theta);
 		extended_virtual_scan.point[i].theta = theta;
 	}
 	qsort((void *) (extended_virtual_scan.point), (size_t) extended_virtual_scan.num_points, sizeof(carmen_point_t), compare_angles);
@@ -127,7 +129,7 @@ sort_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan)
 
 
 virtual_scan_segments_t *
-segment_virtual_scan(extended_virtual_scan_t *extended_virtual_scan)
+segment_virtual_scan(virtual_scan_extended_t *extended_virtual_scan)
 {
 	int segment_id = 0;
 	int begin_segment = 0;
@@ -135,6 +137,7 @@ segment_virtual_scan(extended_virtual_scan_t *extended_virtual_scan)
 
 	virtual_scan_segments = (virtual_scan_segments_t *) malloc(sizeof(virtual_scan_segments_t));
 	virtual_scan_segments->num_segments = 0;
+	virtual_scan_segments->timestamp = extended_virtual_scan->timestamp;
 	virtual_scan_segments->segment = NULL;
 	for (int i = 1; i < extended_virtual_scan->num_points; i++)
 	{
@@ -321,9 +324,12 @@ classify_segments(virtual_scan_segments_t *virtual_scan_segments)
 		//		virtual_scan_segment_classes->segment_features[i].average_distance_to_line_segment = average_distance;
 
 	}
+	virtual_scan_segment_classes->timestamp = virtual_scan_segments->timestamp;
+
 
 	return (virtual_scan_segment_classes);
 }
+
 
 virtual_scan_box_model_hypotheses_t *
 virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment_classes)
@@ -338,6 +344,7 @@ virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment
 
 	int num_segments = virtual_scan_segment_classes->num_segments;
 	virtual_scan_box_model_hypotheses_t *box_model_hypotheses = virtual_scan_new_box_model_hypotheses(num_segments);
+	box_model_hypotheses->timestamp = virtual_scan_segment_classes->timestamp;
 	for (int i = 0; i < num_segments; i++)
 	{
 		int segment_class = virtual_scan_segment_classes->segment_features[i].segment_class;
@@ -488,6 +495,7 @@ virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment
 	return(box_model_hypotheses);
 }
 
+
 int
 virtual_scan_num_box_models(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses)
 {
@@ -499,6 +507,7 @@ virtual_scan_num_box_models(virtual_scan_box_model_hypotheses_t *virtual_scan_bo
 
 	return total;
 }
+
 
 void
 virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses)
@@ -549,6 +558,7 @@ virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses_t *virtual_sca
 	carmen_moving_objects_point_clouds_publish_message(&message);
 }
 
+
 void
 virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses)
 {
@@ -559,26 +569,76 @@ virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses_t *virt
 }
 
 
+void
+virtual_scan_free_message(carmen_mapper_virtual_scan_message *virtual_scan_filtered)
+{
+	free(virtual_scan_filtered->points);
+	free(virtual_scan_filtered);
+}
+
+
+void
+virtual_scan_free_segments(virtual_scan_segments_t *virtual_scan_segments)
+{
+	free(virtual_scan_segments->segment);
+	free(virtual_scan_segments);
+}
+
+
+void
+virtual_scan_free_segment_classes(virtual_scan_segment_classes_t *virtual_scan_segment_classes)
+{
+	free(virtual_scan_segment_classes->segment);
+	free(virtual_scan_segment_classes->segment_features);
+	free(virtual_scan_segment_classes);
+}
+
+
 virtual_scan_segment_classes_t *
 virtual_scan_extract_segments(carmen_mapper_virtual_scan_message *virtual_scan)
 {
-	carmen_mapper_virtual_scan_message *filtered_virtual_scan = filter_virtual_scan(virtual_scan);
-	extended_virtual_scan_t *extended_virtual_scan = sort_virtual_scan(filtered_virtual_scan);
-	free(filtered_virtual_scan->points);
-	free(filtered_virtual_scan);
-	virtual_scan_segments_t *virtual_scan_segments = segment_virtual_scan(extended_virtual_scan);
+	carmen_mapper_virtual_scan_message *virtual_scan_filtered = filter_virtual_scan(virtual_scan);
+	virtual_scan_extended_t *virtual_scan_extended = sort_virtual_scan(virtual_scan_filtered);
+	virtual_scan_segments_t *virtual_scan_segments = segment_virtual_scan(virtual_scan_extended);
 	virtual_scan_segment_classes_t *virtual_scan_segment_classes = classify_segments(virtual_scan_segments);
-	free(virtual_scan_segments->segment);
-	free(virtual_scan_segments);
 //	neighborhood_graph_of_hypotheses = build_or_update_neighborhood_graph_of_hypotheses(virtual_scan_box_models);
 //	moving_objects = sample_moving_objects_tracks(neighborhood_graph_of_hypotheses);
+	virtual_scan_free_message(virtual_scan_filtered);
+	virtual_scan_free_segments(virtual_scan_segments);
 	return (virtual_scan_segment_classes);
 }
 
-void
-virtual_scan_free_segments(virtual_scan_segment_classes_t *virtual_scan_segments)
+
+virtual_scan_neighborhood_graph_node_t *
+virtual_scan_compute_neighborhood_graph(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses)
 {
-	free(virtual_scan_segments->segment);
-	free(virtual_scan_segments->segment_features);
-	free(virtual_scan_segments);
+	virtual_scan_neighborhood_graph_node_t *virtual_scan_neighborhood_graph;
+	virtual_scan_neighborhood_graph = (virtual_scan_neighborhood_graph_node_t *) malloc(sizeof(virtual_scan_neighborhood_graph_node_t));
+	virtual_scan_box_models_t *hypotheses = virtual_scan_box_model_hypotheses->virtual_scan_box_model_hypotheses;
+	for (int i = 0, m = virtual_scan_box_model_hypotheses->num_virtual_scan_box_model_hypotheses; i < m; i++)
+	{
+		int num_boxes = hypotheses[i].num_boxes;
+		virtual_scan_neighborhood_graph_node_t *neighborhood_graph_node = (virtual_scan_neighborhood_graph_node_t *) malloc(sizeof(virtual_scan_neighborhood_graph_node_t) * num_boxes);
+		for (int j = 0, n = num_boxes; j < n; j++)
+		{
+			virtual_scan_neighborhood_graph_node_t **siblings = (virtual_scan_neighborhood_graph_node_t **) malloc(sizeof(virtual_scan_neighborhood_graph_node_t *) * (num_boxes - 1));
+			for (int k = 0, l = 0; k < (num_boxes - 1); k++, l++)
+			{
+				if (j == l)
+					l++;
+				siblings[k] = neighborhood_graph_node + l;
+			}
+		}
+
+
+		virtual_scan_box_model_t *boxes = hypotheses[i].box;
+		for (int j = 0, n = hypotheses[i].num_boxes; j < n; j++)
+		{
+			virtual_scan_neighborhood_graph->box_model = boxes[j];
+			virtual_scan_neighborhood_graph->timestamp = virtual_scan_box_model_hypotheses->timestamp;
+			virtual_scan_neighborhood_graph->siblings
+		}
+	}
+
+	return virtual_scan_neighborhood_graph;
 }
