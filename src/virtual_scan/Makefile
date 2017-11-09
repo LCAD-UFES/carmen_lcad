@@ -13,7 +13,8 @@ LFLAGS += \
 SOURCES = \
 	virtual_scan_interface.cpp \
 	virtual_scan_main.cpp \
-	virtual_scan.cpp
+	virtual_scan.cpp \
+	virtual_scan_neighborhood_graph.cpp
 
 PUBLIC_INCLUDES = \
 	virtual_scan_interface.h \
@@ -42,6 +43,6 @@ LFLAGS += \
 endif
 
 libvirtual_scan_interface.a: virtual_scan_interface.o
-virtual_scan: virtual_scan_main.o virtual_scan.o virtual_scan_interface.o
+virtual_scan: virtual_scan_main.o virtual_scan.o virtual_scan_interface.o virtual_scan_neighborhood_graph.o
 
 include ../Makefile.rules
