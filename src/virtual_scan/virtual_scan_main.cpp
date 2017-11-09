@@ -5,6 +5,7 @@
 #include <carmen/map_server_interface.h>
 #include <carmen/map.h>
 #include <carmen/grid_mapping.h>
+#include "virtual_scan_neighborhood_graph.h"
 
 #define NUM_COLORS 4
 
@@ -15,6 +16,7 @@ carmen_localize_ackerman_map_t localize_map;
 double x_origin = 0.0;
 double y_origin = 0.0;
 double map_resolution = 0.0;
+virtual_scan_neighborhood_graph_t *neighborhood_graph;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -105,6 +107,7 @@ carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *m
 //	virtual_scan_publish_segments(virtual_scan_segment_classes);
 
 	virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(virtual_scan_segment_classes);
+	update_neighborhood_graph (neighborhood_graph, virtual_scan_box_model_hypotheses);
 
 	virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
 
@@ -184,6 +187,8 @@ carmen_virtual_scan_subscribe_messages()
 int
 main(int argc, char **argv)
 {
+	neighborhood_graph = virtual_scan_alloc_neighborhood_graph();
+
 	carmen_ipc_initialize(argc, argv);
 
 	carmen_virtual_scan_install_params(argc, argv);

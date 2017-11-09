@@ -80,8 +80,8 @@ typedef struct
 
 typedef struct
 {
-	int num_virtual_scan_box_model_hypotheses;
-	virtual_scan_box_models_t *virtual_scan_box_model_hypotheses;
+	int num_box_model_hypotheses;
+	virtual_scan_box_models_t *box_model_hypotheses;
 	double timestamp;
 } virtual_scan_box_model_hypotheses_t;
 
@@ -92,23 +92,6 @@ typedef struct
 	double width;
 	double length;
 } virtual_scan_category_t;
-
-
-typedef struct _virtual_scan_neighborhood_graph_node_t
-{
-	virtual_scan_box_models_t box_model;
-	double timestamp;
-	_virtual_scan_neighborhood_graph_node_t *parent;
-	_virtual_scan_neighborhood_graph_node_t **children;
-	_virtual_scan_neighborhood_graph_node_t **siblings;
-} virtual_scan_neighborhood_graph_node_t;
-
-
-typedef struct
-{
-	int num_graph_roots;
-	virtual_scan_neighborhood_graph_node *graph_roots;
-} virtual_scan_neighborhood_graph_t;
 
 virtual_scan_box_models_t *
 virtual_scan_new_box_models(void);

@@ -46,15 +46,15 @@ virtual_scan_box_model_hypotheses_t *
 virtual_scan_new_box_model_hypotheses(int length)
 {
 	virtual_scan_box_model_hypotheses_t *hypotheses = (virtual_scan_box_model_hypotheses_t *) malloc(sizeof(virtual_scan_box_model_hypotheses_t));
-	hypotheses->num_virtual_scan_box_model_hypotheses = length;
-	hypotheses->virtual_scan_box_model_hypotheses = (virtual_scan_box_models_t *) calloc(length, sizeof(virtual_scan_box_models_t));
+	hypotheses->num_box_model_hypotheses = length;
+	hypotheses->box_model_hypotheses = (virtual_scan_box_models_t *) calloc(length, sizeof(virtual_scan_box_models_t));
 	return hypotheses;
 }
 
 virtual_scan_box_models_t *
 virtual_scan_get_box_models(virtual_scan_box_model_hypotheses_t *hypotheses, int i)
 {
-	return (hypotheses->virtual_scan_box_model_hypotheses + i);
+	return (hypotheses->box_model_hypotheses + i);
 }
 
 carmen_mapper_virtual_scan_message *
@@ -501,8 +501,8 @@ virtual_scan_num_box_models(virtual_scan_box_model_hypotheses_t *virtual_scan_bo
 {
 	int total = 0;
 
-	virtual_scan_box_models_t *hypotheses = virtual_scan_box_model_hypotheses->virtual_scan_box_model_hypotheses;
-	for (int i = 0, m = virtual_scan_box_model_hypotheses->num_virtual_scan_box_model_hypotheses; i < m; i++)
+	virtual_scan_box_models_t *hypotheses = virtual_scan_box_model_hypotheses->box_model_hypotheses;
+	for (int i = 0, m = virtual_scan_box_model_hypotheses->num_box_model_hypotheses; i < m; i++)
 		total += hypotheses[i].num_boxes;
 
 	return total;
@@ -524,8 +524,8 @@ virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses_t *virtual_sca
 	message.point_clouds = (t_point_cloud_struct *) calloc(total, sizeof(t_point_cloud_struct));
 	message.num_point_clouds = total;
 
-	virtual_scan_box_models_t *hypotheses = virtual_scan_box_model_hypotheses->virtual_scan_box_model_hypotheses;
-	for (int i = 0, k = 0, m = virtual_scan_box_model_hypotheses->num_virtual_scan_box_model_hypotheses; i < m; i++)
+	virtual_scan_box_models_t *hypotheses = virtual_scan_box_model_hypotheses->box_model_hypotheses;
+	for (int i = 0, k = 0, m = virtual_scan_box_model_hypotheses->num_box_model_hypotheses; i < m; i++)
 	{
 		virtual_scan_box_model_t *boxes = hypotheses[i].box;
 		for (int j = 0, n = hypotheses[i].num_boxes; j < n; j++, k++)
@@ -562,9 +562,9 @@ virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses_t *virtual_sca
 void
 virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses)
 {
-	for (int i = 0; i < virtual_scan_box_model_hypotheses->num_virtual_scan_box_model_hypotheses; i++)
-		free(virtual_scan_box_model_hypotheses->virtual_scan_box_model_hypotheses[i].box);
-	free(virtual_scan_box_model_hypotheses->virtual_scan_box_model_hypotheses);
+	for (int i = 0; i < virtual_scan_box_model_hypotheses->num_box_model_hypotheses; i++)
+		free(virtual_scan_box_model_hypotheses->box_model_hypotheses[i].box);
+	free(virtual_scan_box_model_hypotheses->box_model_hypotheses);
 	free(virtual_scan_box_model_hypotheses);
 }
 
@@ -609,36 +609,39 @@ virtual_scan_extract_segments(carmen_mapper_virtual_scan_message *virtual_scan)
 }
 
 
-virtual_scan_neighborhood_graph_node_t *
-virtual_scan_compute_neighborhood_graph(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses)
-{
-	virtual_scan_neighborhood_graph_node_t *virtual_scan_neighborhood_graph;
-	virtual_scan_neighborhood_graph = (virtual_scan_neighborhood_graph_node_t *) malloc(sizeof(virtual_scan_neighborhood_graph_node_t));
-	virtual_scan_box_models_t *hypotheses = virtual_scan_box_model_hypotheses->virtual_scan_box_model_hypotheses;
-	for (int i = 0, m = virtual_scan_box_model_hypotheses->num_virtual_scan_box_model_hypotheses; i < m; i++)
-	{
-		int num_boxes = hypotheses[i].num_boxes;
-		virtual_scan_neighborhood_graph_node_t *neighborhood_graph_node = (virtual_scan_neighborhood_graph_node_t *) malloc(sizeof(virtual_scan_neighborhood_graph_node_t) * num_boxes);
-		for (int j = 0, n = num_boxes; j < n; j++)
-		{
-			virtual_scan_neighborhood_graph_node_t **siblings = (virtual_scan_neighborhood_graph_node_t **) malloc(sizeof(virtual_scan_neighborhood_graph_node_t *) * (num_boxes - 1));
-			for (int k = 0, l = 0; k < (num_boxes - 1); k++, l++)
-			{
-				if (j == l)
-					l++;
-				siblings[k] = neighborhood_graph_node + l;
-			}
-		}
 
-
-		virtual_scan_box_model_t *boxes = hypotheses[i].box;
-		for (int j = 0, n = hypotheses[i].num_boxes; j < n; j++)
-		{
-			virtual_scan_neighborhood_graph->box_model = boxes[j];
-			virtual_scan_neighborhood_graph->timestamp = virtual_scan_box_model_hypotheses->timestamp;
-			virtual_scan_neighborhood_graph->siblings
-		}
-	}
-
-	return virtual_scan_neighborhood_graph;
-}
+//virtual_scan_neighborhood_graph_node_t *
+//virtual_scan_compute_neighborhood_graph(virtual_scan_box_model_hypotheses_t *box_model_hypotheses)
+//{
+//	virtual_scan_neighborhood_graph_node_t *neighborhood_graph = (virtual_scan_neighborhood_graph_node_t *) malloc(sizeof(virtual_scan_neighborhood_graph_node_t));
+//	virtual_scan_box_models_t *hypotheses = box_model_hypotheses->box_model_hypotheses;
+//	int num_box_model_hypotheses = box_model_hypotheses->num_box_model_hypotheses;
+//	for (int i = 0, m = num_box_model_hypotheses; i < m; i++)
+//	{
+//		int num_boxes = hypotheses[i].num_boxes;
+//		virtual_scan_neighborhood_graph_node_t *neighborhood_graph_node = (virtual_scan_neighborhood_graph_node_t *)
+//				malloc(sizeof(virtual_scan_neighborhood_graph_node_t) * num_boxes);
+//
+//
+//
+//
+//
+//		for (int j = 0, n = num_boxes; j < n; j++)
+//		{
+//			neighborhood_graph_node[j].box_model = hypotheses[i].box[j];
+//			neighborhood_graph_node[j].timestamp = box_model_hypotheses->timestamp;
+//			virtual_scan_neighborhood_graph_node_t **siblings = (virtual_scan_neighborhood_graph_node_t **) malloc(sizeof(virtual_scan_neighborhood_graph_node_t *) * (num_boxes - 1));
+//			neighborhood_graph_node[j].siblings = siblings;
+//
+//			for (int k = 0, l = 0; k < (num_boxes - 1); k++, l++)
+//			{
+//				if (j == l)
+//					l++;
+//				siblings[k] = neighborhood_graph_node + l;
+//			}
+//		}
+//
+//	}
+//
+//	return neighborhood_graph;
+//}
