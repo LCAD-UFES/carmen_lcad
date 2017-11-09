@@ -83,7 +83,7 @@
 
 	double getTimeSeconds(void)
 	{
-	      static struct timeval time;
+	      struct timeval time;
 	      
 	      gettimeofday(&time, NULL);
 	      
@@ -92,7 +92,7 @@
 
 	double ojGetTimeSec(void)
 	{
-		  static struct timeval time;
+		  struct timeval time;
 	      
 		  gettimeofday(&time, NULL);
 	      
