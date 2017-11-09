@@ -6,7 +6,8 @@ MODULE_COMMENT = Model-predictive motion planner
 
 LINK = g++
 CFLAGS += 
-CXXFLAGS += -std=c++0x 
+CXXFLAGS += -std=c++0x
+#CXXFLAGS += -DDEBUG_OBJECTS_PLOT
 #CFLAGS += -msse3 -O4 -fopenmp
 #CXXFLAGS += -std=c++0x -msse3 -O4 -fopenmp
 #CFLAGS += -ffast-math -O3 -msse3 #-march=native
@@ -31,7 +32,7 @@ LFLAGS += 	-lgrid_mapping -lmap_io -lmap_util -lmap_interface -lparam_interface 
 		-lmap_server_interface -lbehavior_selector_interface  -lrotation_geometry \
 		-L/usr/lib64/libkml -lkmlbase -lkmldom -lkmlengine -lcarmen_gps_wrapper \
 		-lrddf_interface -lmotion_planner_interface -lnavigator_gui_interface -llocalize_ackerman_core \
-		-lcollision_detection -lcarmodel -lgsl -lgslcblas -lm -lford_escape_hybrid_interface
+		-lcollision_detection -lcarmodel -lgsl -lgslcblas -lm -lford_escape_hybrid_interface -lmoving_objects_interface
 			
 			
 SOURCES = model_predictive_planner_main.cpp model_predictive_planner.cpp trajectory_lookup_table.cpp \

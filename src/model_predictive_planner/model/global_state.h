@@ -13,8 +13,9 @@
 #include <carmen/carmen.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
 #include <carmen/behavior_selector_messages.h>
+#include <carmen/moving_objects_interface.h>
 #include <list>
-
+#include <vector>
 
 using namespace std;
 
@@ -44,6 +45,11 @@ public:
 	static carmen_map_t cost_map;
 	static carmen_obstacle_distance_mapper_map_message *distance_map;
 	static bool cost_map_initialized;
+
+	static carmen_moving_objects_point_clouds_message *objects_message;
+	static bool moving_objects_initialized;
+
+	static std::vector<carmen_ackerman_traj_point_t*> moving_objects_trajectories;
 
 	static bool	  following_path; // true if the path is being followed
 

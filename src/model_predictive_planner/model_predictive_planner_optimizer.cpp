@@ -14,6 +14,7 @@
 #include <gsl/gsl_multimin.h>
 
 #include <carmen/collision_detection.h>
+#include <carmen/carmen.h>
 
 #include "model/robot_state.h"
 #include "model/global_state.h"
@@ -328,6 +329,51 @@ compute_proximity_to_obstacles_using_distance_map(vector<carmen_ackerman_path_po
 	return (proximity_to_obstacles_for_path);
 }
 
+double
+compute_collision_with_moving_obstacles(const vector<carmen_ackerman_path_point_t> &path, double car_velocity)
+{
+    double intersection_with_obstacles = 0.0;
+    int num_path_points = path.size();
+    int num_objects = GlobalState::moving_objects_trajectories.size();
+    carmen_oriented_bounding_box car;
+    car.length = GlobalState::robot_config.model_predictive_planner_obstacles_safe_length_distance;
+    car.width = 2 * GlobalState::robot_config.model_predictive_planner_obstacles_safe_distance;
+    car.linear_velocity = car_velocity;
+
+    for (int i = 0; i < num_path_points; i++) {
+        // Planning is done relative to car front axis, but we need the center point instead
+        double half_axis_distance = 0.5 * GlobalState::robot_config.distance_between_front_and_rear_axles;
+        car.object_pose.x = path[i].x - half_axis_distance * cos(path[i].theta);
+        car.object_pose.y = path[i].y - half_axis_distance * sin(path[i].theta);
+
+        car.orientation = path[i].theta;
+
+        for (int j = 0; j < num_objects; j++) {
+            // Broad phase
+            if ((carmen_square(GlobalState::moving_objects_trajectories[j][i].x - path[i].x) +
+                 carmen_square(GlobalState::moving_objects_trajectories[j][i].y - path[i].y)) > 25) {
+                continue;
+            }
+
+            // Narrow phase
+            carmen_oriented_bounding_box object;
+            object.object_pose.x = GlobalState::moving_objects_trajectories[j][i].x;
+            object.object_pose.y = GlobalState::moving_objects_trajectories[j][i].y;
+            object.orientation = GlobalState::moving_objects_trajectories[j][i].theta;
+            object.length = GlobalState::robot_config.length;
+            object.width = GlobalState::robot_config.width;
+            object.linear_velocity = GlobalState::moving_objects_trajectories[j][i].v;
+
+            intersection_with_obstacles += compute_collision_obb_obb(car, object);
+
+            //if (intersection_with_obstacles > 0)
+            //    return intersection_with_obstacles;
+        }
+    }
+
+    return intersection_with_obstacles;
+
+}
 
 double
 my_f(const gsl_vector *x, void *params)
@@ -437,6 +483,13 @@ my_g(const gsl_vector *x, void *params)
 	if (use_obstacles && GlobalState::distance_map != NULL && path.size() > 0)
 		proximity_to_obstacles = compute_proximity_to_obstacles_using_distance_map(path);
 
+    //TODO: essa parte do modulo esta em desenvolvimento ainda
+//    double distance_to_moving_obstacles = 0.0;
+//    if(!path.empty())
+//    {
+//        distance_to_moving_obstacles = compute_collision_with_moving_obstacles(path, my_params->target_td->v_i);
+//    }
+
 	my_params->tcp_seed->vf = tcp.vf;
 	my_params->tcp_seed->sf = tcp.sf;
 
@@ -444,10 +497,10 @@ my_g(const gsl_vector *x, void *params)
 			(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 0.2) +
 			(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2));
 
-	double w1, w2, w3, w4, w5, w6, result;
+	double w1, w2, w3, w4, w5, w6, w7, result;
 	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
 	{
-		w1 = 30.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 3.0; w6 = 0.0025;;
+		w1 = 30.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 3.0; w6 = 0.0025; w7 = 1.0;
 		if (td.dist < 7.0)
 			w2 *= exp(td.dist - 7.0);
 		result = (
@@ -456,7 +509,8 @@ my_g(const gsl_vector *x, void *params)
 				w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
 				w4 * path_to_lane_distance + // já é quandrática
 				w5 * proximity_to_obstacles + // já é quandrática
-				w6 * tcp.sf * tcp.sf);
+				w6 * tcp.sf * tcp.sf); // +
+               // w7 * distance_to_moving_obstacles);
 	}
 	else
 	{

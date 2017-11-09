@@ -1,3 +1,4 @@
+
 #ifndef COLISION_DETECTION_H
 #define COLISION_DETECTION_H
 
@@ -8,6 +9,19 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef struct _carmen_oriented_bounding_box
+{
+	carmen_vector_2D_t object_pose; /*< Center of the bounding box*/
+	double length;
+	double width;
+	double orientation;
+	double linear_velocity;
+} carmen_oriented_bounding_box;
+
+double compute_collision_obb_obb(const carmen_oriented_bounding_box carmen_oriented_bounding_box1,
+								 const carmen_oriented_bounding_box carmen_oriented_bounding_box2);
+
 
 void set_variable_map_config(double map_config);
 

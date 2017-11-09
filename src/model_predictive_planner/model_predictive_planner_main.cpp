@@ -11,6 +11,7 @@
 #include <carmen/obstacle_distance_mapper_interface.h>
 #include <carmen/map_server_interface.h>
 #include <carmen/ford_escape_hybrid_interface.h>
+#include <carmen/moving_objects_interface.h>
 
 #include <carmen/rddf_messages.h>
 #include <carmen/rddf_interface.h>
@@ -440,6 +441,91 @@ build_and_follow_path_new(double timestamp)
 		publish_navigator_ackerman_status_message();
 	}
 }
+
+/**
+ * @brief      This function create discrete trajectory points for moving objects
+ *
+ * @param      new_msg             message containing the moving objects
+ * @param  prediction_horizon  How many seconds in the future it will predict the trajectories
+ * @param  time_interval       Interval of time between two points in the trajectory
+ */
+static void
+construct_object_trajectories(carmen_moving_objects_point_clouds_message *new_msg, double prediction_horizon = 5, double time_interval = 0.15)
+{
+	GlobalState::moving_objects_trajectories.clear();
+
+	int num_objects = new_msg->num_point_clouds;
+	/* Reserve the memory beforehand to optimize construction */
+	GlobalState::moving_objects_trajectories.reserve(num_objects);
+	/* Precomputing this to use when moving object to car reference */
+    //TODO: check if this angle is correct or inverted
+	double cos_car = cos(-GlobalState::localizer_pose->theta);
+	double sin_car = sin(-GlobalState::localizer_pose->theta);
+
+	#ifdef DEBUG_OBJECTS_PLOT
+	carmen_ackerman_traj_point_t* all_traj = (carmen_ackerman_traj_point_t*)malloc(num_objects * static_cast<int>(prediction_horizon / time_interval) * sizeof(carmen_ackerman_traj_point_t));
+	#endif
+
+	for(int i = 0; i < num_objects; i++)
+	{
+		int num_trajectory_points = static_cast<int>(prediction_horizon / time_interval); //TODO: Checar esse time_interval
+		carmen_ackerman_traj_point_t *trajectory;	
+		trajectory = (carmen_ackerman_traj_point_t*)malloc(num_trajectory_points * sizeof(carmen_ackerman_traj_point_t));
+		carmen_test_alloc(trajectory);
+
+		/* Now let's calculate the trajectory for the ith object*/
+		for(int j = 0; j < num_trajectory_points; j++)
+		{
+			carmen_ackerman_traj_point_t new_trajectory_point;
+			/* EXTREMELY SIMPLE MOTION SIMULATION USING SIMPLIFIED ACKERMAN MODEL */
+			/* X = X_0 + V * Cos(theta)*/
+			new_trajectory_point.x = new_msg->point_clouds[i].object_pose.x + (time_interval * j) * new_msg->point_clouds[i].linear_velocity * cos(new_msg->point_clouds[i].orientation);
+			/* Y = Y_0 + V * Sin(theta)*/
+			new_trajectory_point.y = new_msg->point_clouds[i].object_pose.y + (time_interval * j) * new_msg->point_clouds[i].linear_velocity * sin(new_msg->point_clouds[i].orientation);
+			/* Moving to car reference*/
+			if(GlobalState::localizer_pose)
+            {
+				new_trajectory_point.x = new_trajectory_point.x - GlobalState::localizer_pose->x;
+				new_trajectory_point.y = new_trajectory_point.y - GlobalState::localizer_pose->y;
+
+				//carmen_rotate_2d(&new_trajectory_point.x,&new_trajectory_point.y, GlobalState::localizer_pose->theta);
+				double x2 = new_trajectory_point.x;
+				new_trajectory_point.x = cos_car*(new_trajectory_point.x) - sin_car*(new_trajectory_point.y);
+  				new_trajectory_point.y = sin_car*x2 + cos_car*(new_trajectory_point.y);
+            }
+
+			/* We suppose the orientation remain constant */
+			new_trajectory_point.theta = new_msg->point_clouds[i].orientation - GlobalState::localizer_pose->theta;
+			new_trajectory_point.v = new_msg->point_clouds[i].linear_velocity;
+
+            /* We suppose no steering wheel angle, the car continue in the same direction forever */
+			new_trajectory_point.phi = 0.0;
+			//new_trajectory_point.time = new_msg->timestamp + j * time_interval;
+
+
+			trajectory[j] = new_trajectory_point;
+
+			#ifdef DEBUG_OBJECTS_PLOT
+			all_traj[i + num_objects*j] = new_trajectory_point;
+            carmen_rotate_2d(&all_traj[i + num_objects*j].x, &all_traj[i + num_objects*j].y, GlobalState::localizer_pose->theta);
+            all_traj[i + num_objects*j].x += GlobalState::localizer_pose->x;
+            all_traj[i + num_objects*j].y += GlobalState::localizer_pose->y;
+            all_traj[i + num_objects*j].theta += GlobalState::localizer_pose->theta;
+			#endif
+
+		} /* End of trajectory for one object */
+
+		GlobalState::moving_objects_trajectories.push_back(trajectory);
+
+	} /* End of pass through all objects*/
+	
+	#ifdef DEBUG_OBJECTS_PLOT
+		carmen_rddf_publish_road_profile_around_end_point_message(all_traj, num_objects * static_cast<int>(prediction_horizon / time_interval));
+	#endif
+
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -635,6 +721,14 @@ signal_handler(int sig)
 	carmen_ipc_disconnect();
 	exit(1);
 }
+
+static void
+carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_clouds_message* msg)
+{
+	GlobalState::objects_message = msg;
+	GlobalState::moving_objects_initialized = true;
+	construct_object_trajectories(msg);
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -689,6 +783,10 @@ register_handlers()
 			(carmen_handler_t)navigator_ackerman_set_goal_message_handler,
 			CARMEN_SUBSCRIBE_LATEST);
 
+	carmen_moving_objects_point_clouds_subscribe_message(NULL, 
+			(carmen_handler_t) carmen_moving_objects_point_clouds_message_handler,
+			CARMEN_SUBSCRIBE_LATEST);
+
 //	carmen_obstacle_distance_mapper_subscribe_message(NULL,
 //			(carmen_handler_t) carmen_obstacle_distance_mapper_map_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
@@ -705,7 +803,8 @@ read_parameters_specific(int argc, char **argv)
 {
 	carmen_param_t optional_param_list[] = {
 		{(char *) "model_predictive_planner", 	(char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.model_predictive_planner_obstacles_safe_distance, 1, NULL},
-		{(char *) "model_predictive_planner", 	(char *) "max_square_distance_to_lane", CARMEN_PARAM_DOUBLE, &GlobalState::max_square_distance_to_lane, 1, NULL},
+        {(char *) "model_predictive_planner", 	(char *) "obstacles_safe_length_distance", CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.model_predictive_planner_obstacles_safe_length_distance, 1, NULL},
+        {(char *) "model_predictive_planner", 	(char *) "max_square_distance_to_lane", CARMEN_PARAM_DOUBLE, &GlobalState::max_square_distance_to_lane, 1, NULL},
 		{(char *) "obstacle_avoider", 			(char *) "obstacles_safe_distance", CARMEN_PARAM_DOUBLE, &GlobalState::robot_config.obstacle_avoider_obstacles_safe_distance, 1, NULL},
 		{(char *) "rrt",	(char *) "use_obstacle_avoider", 	CARMEN_PARAM_ONOFF,		&GlobalState::use_obstacle_avoider, 	1, NULL},
 		{(char *) "rrt",	(char *) "use_mpc",					CARMEN_PARAM_ONOFF,		&GlobalState::use_mpc, 					0, NULL},

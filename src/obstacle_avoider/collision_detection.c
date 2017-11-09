@@ -9,6 +9,147 @@
 
 //carmen_mapper_virtual_laser_message virtual_laser_message;
 
+/**
+ * @brief Computes unit vector representing local y-axis of the obb
+ *
+ * @details To better understand what unit local axis mean refer to Huynh, Johnny. "Separating Axis Theorem
+ *          for Oriented Bounding Boxes.", figure at page 13, where Ay is the local y-axis of obb A and
+ *          By is local y-axis of obb B.
+ *
+ * @param obb Oriented bounding box
+ * @return 2D vector normalized representing the local y-axis of the box
+ */
+carmen_vector_2D_t
+get_unit_local_axis_y(const carmen_oriented_bounding_box obb)
+{
+	carmen_vector_2D_t axis;
+
+//	axis.x = cos(obb.orientation);
+//	axis.y = sin(obb.orientation);
+	sincos(obb.orientation,&axis.y, &axis.x);
+
+	return axis;
+}
+
+/**
+ * @brief Computes unit vector representing local x-axis of the obb
+ *
+ * @details To better understand what unit local axis mean refer to Huynh, Johnny. "Separating Axis Theorem
+ *          for Oriented Bounding Boxes.", figure at page 13, where Ax is the local x-axis of obb A and
+ *          By is local x-axis of obb B. Don't use this function if you already have the unit vector at the axis Y,
+ *          just use the fact that the y-axis and x-axis are perpendicular (Ax.x = -Ay.x; Ax.y = Ay.x)
+ *
+ * @param obb Oriented bounding box
+ *
+ * @return 2D vector normalized representing the local x-axis of the box
+ */
+carmen_vector_2D_t
+get_unit_local_axis_x(const carmen_oriented_bounding_box obb)
+{
+	carmen_vector_2D_t axis;
+	axis = get_unit_local_axis_y(obb);
+	double temp = axis.x;
+	axis.x = -axis.y;
+	axis.y = temp;
+	return axis;
+}
+
+/**
+ * @brief Project vector T onto some arbitrary axis
+ *
+ * @param T Vector to be projected
+ * @param Axis Vector representing the axis
+ *
+ * @return size of the projection of T at the axis
+ */
+double
+project_T_at_axis(const carmen_vector_2D_t T, const carmen_vector_2D_t Axis)
+{
+	return fabs(DOT2D(T,Axis));
+}
+
+
+/**
+ * @brief Project specific dimensions of an obb at an arbritary axis
+ *
+ * @details This function implements the operations c + |(d1*V2) dot V1| + |(d2*V3) dot V1|, where dot represent the
+ *          scalar product between the two vectors. This is used during the test cases to the collision between two obb
+ *          using the Separation axis theorem. For more information, check Huynh, Johnny. "Separating Axis Theorem
+ *          for Oriented Bounding Boxes.", in the section "Separating Axis Theorem and Rectangles in 2D Space"
+ *
+ * @param V1 Axis of the first obb where the projection will occur
+ * @param V2 unit x-axis of the second obb
+ * @param V3 unit y-axis of the second obb
+ * @param d1 half width of the second obb
+ * @param d2 half length of the second obb
+ * @param c half width/length of the first obb (depends on the test)
+ * @return size of the projection of the dimensions of the two obb at the axis V1
+ */
+double
+project_dimensions_at_axis(const carmen_vector_2D_t V1, carmen_vector_2D_t V2, carmen_vector_2D_t V3, double d1, double d2, double c)
+{
+	V2.x = d1 * V2.x;
+	V2.y = d1 * V2.y;
+	V3.x = d2 * V3.x;
+	V3.y = d2 * V3.y;
+	return c + fabs(DOT2D(V2,V1)) + fabs(DOT2D(V3, V1));
+}
+
+/**
+ * @brief Compute collision between two obb's using the Separation axis theorem
+ *
+ * @details This function implements the scheme for obb collision as described in Huynh, Johnny. "Separating Axis Theorem
+ *          for Oriented Bounding Boxes."
+ *
+ * @param obb1 first oriented bouding box
+ * @param obb2 second oriented bouding box
+ * @return 0.0 if no collision occurs between the two boxes, penetration distance of obb2 into obb1 otherwise.
+ */
+double
+compute_collision_obb_obb(const carmen_oriented_bounding_box obb1, const carmen_oriented_bounding_box obb2)
+{
+	carmen_vector_2D_t T; // T is a vector extends from center of obb1 to center of obb2
+	T.x = obb2.object_pose.x - obb1.object_pose.x;
+	T.y = obb2.object_pose.y - obb1.object_pose.y;
+
+    /* Calculating unit local axis from the two obb's. Here A refers to obb1 and B refers to obb2 */
+	carmen_vector_2D_t Ay = get_unit_local_axis_y(obb1);
+	carmen_vector_2D_t Ax;
+	Ax.x = Ay.y; Ax.y = -Ay.x; // Ax is perpendicular to Ay
+
+	carmen_vector_2D_t By = get_unit_local_axis_y(obb2);
+	carmen_vector_2D_t Bx;
+	Bx.x = By.y; Bx.y = -By.x; // Bx is perpendicular to By
+
+    /* When computing the first two tests, the results are stored so we can later use it to calculate
+     * the penetration distance of obb2 into obb1. */
+
+    //Projection at Ay
+    double d1 = project_dimensions_at_axis(Ay, Bx, By, obb2.width*0.5, obb2.length*0.5, obb1.length*0.5);
+    double d2 = project_T_at_axis(T, Ay);
+    if(d2 > d1)
+        return 0;
+
+    //Projection at Ax
+    double d3 = project_dimensions_at_axis(Ax, Bx, By, obb2.width*0.5, obb2.length*0.5, obb1.width*0.5);
+    double d4 = project_T_at_axis(T, Ax);
+    if(d4 > d3)
+        return 0;
+
+    //Projection at By
+    if(project_T_at_axis(T, By) > project_dimensions_at_axis(By, Ax, Ay, obb1.width*0.5, obb1.length*0.5, obb2.width*0.5))
+        return 0;
+
+    //Projection at Bx
+    if(project_T_at_axis(T, Bx) > project_dimensions_at_axis(Bx, Ax, Ay, obb1.width*0.5, obb1.length*0.5, obb2.width*0.5))
+        return 0;
+
+    // If the code reaches here the two boxes have an interception.
+	double penetration_distance = carmen_square(d1 - d2) + carmen_square(d3 - d4);
+
+	return penetration_distance;
+
+}
 
 carmen_point_t
 to_carmen_point_t (carmen_ackerman_traj_point_t *p)

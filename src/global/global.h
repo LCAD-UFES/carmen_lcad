@@ -265,7 +265,8 @@ typedef struct {
 	double understeer_coeficient;
 
 	double obstacle_avoider_obstacles_safe_distance;
-	double model_predictive_planner_obstacles_safe_distance;
+	double model_predictive_planner_obstacles_safe_distance; /*< distance used for car collision radius */
+	double model_predictive_planner_obstacles_safe_length_distance; /* distance from rear to front for moving obstacle collision check */
 
 	double behaviour_selector_main_central_lane_obstacles_safe_distance;
 	double behaviour_selector_central_lane_obstacles_safe_distance;
