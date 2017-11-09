@@ -229,6 +229,8 @@ set_limits(int dim)
 	// initial angle
 	limits[4][0] = -3.14;
 	limits[4][1] = 3.14;
+//	limits[4][0] = 0.62 - 0.05;
+//	limits[4][1] = 0.62 + 0.05;
 
 	return limits;
 }

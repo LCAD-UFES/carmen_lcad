@@ -1055,24 +1055,24 @@ get_missing_k1(const TrajectoryLookupTable::TrajectoryDimensions& target_td,
 void
 print_tcp(TrajectoryLookupTable::TrajectoryControlParameters tcp)
 {
-	printf("v %d, tt %1.4lf, a %1.4lf, h_k1 %d, k1 %1.4lf, k2 %1.4lf, k3 %1.4lf, vf %2.4lf, sf %2.2lf \n",
-			tcp.valid, tcp.tt, tcp.a, tcp.has_k1, tcp.k1, tcp.k2, tcp.k3, tcp.vf, tcp.sf);
+	printf("v %d, tt %1.4lf, a %1.4lf, h_k1 %d, k1 %1.4lf, k2 %1.4lf, k3 %1.4lf, vf %2.4lf, sf %2.2lf %lf\n",
+			tcp.valid, tcp.tt, tcp.a, tcp.has_k1, tcp.k1, tcp.k2, tcp.k3, tcp.vf, tcp.sf, carmen_get_time());
 }
 
 
 void
 print_td(TrajectoryLookupTable::TrajectoryDimensions td)
 {
-	printf("dist %2.4lf, theta %1.4lf, d_yaw %1.4lf, phi_i %1.4lf, v_i %2.4lf\n",
-			td.dist, td.theta, td.d_yaw, td.phi_i, td.v_i);
+	printf("dist %2.4lf, theta %1.4lf, d_yaw %1.4lf, phi_i %1.4lf, v_i %2.4lf %lf\n",
+			td.dist, td.theta, td.d_yaw, td.phi_i, td.v_i, carmen_get_time());
 }
 
 
 void
 print_td(TrajectoryLookupTable::TrajectoryDimensions td, double target_v)
 {
-	printf("dist %2.4lf, theta %1.4lf, d_yaw %1.4lf, phi_i %1.4lf, v_i %2.4lf, t_v %2.4lf\n",
-			td.dist, td.theta, td.d_yaw, td.phi_i, td.v_i, target_v);
+	printf("dist %2.4lf, theta %1.4lf, d_yaw %1.4lf, phi_i %1.4lf, v_i %2.4lf, t_v %2.4lf %lf\n",
+			td.dist, td.theta, td.d_yaw, td.phi_i, td.v_i, target_v, carmen_get_time());
 }
 
 

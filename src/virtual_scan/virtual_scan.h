@@ -18,7 +18,8 @@ typedef struct
 {
 	int num_points;
 	carmen_point_t *point;
-} extended_virtual_scan_t;
+	double timestamp;
+} virtual_scan_extended_t;
 
 
 typedef struct
@@ -32,6 +33,7 @@ typedef struct
 {
 	int num_segments;
 	virtual_scan_segment_t *segment;
+	double timestamp;
 } virtual_scan_segments_t;
 
 
@@ -54,6 +56,7 @@ typedef struct
 	int num_segments;
 	virtual_scan_segment_t *segment;
 	virtual_scan_segment_features_t *segment_features;
+	double timestamp;
 } virtual_scan_segment_classes_t;
 
 
@@ -74,23 +77,14 @@ typedef struct
 	virtual_scan_box_model_t *box;
 } virtual_scan_box_models_t;
 
-virtual_scan_box_models_t *
-virtual_scan_new_box_models(void);
-
-virtual_scan_box_model_t *
-virtual_scan_append_box(virtual_scan_box_models_t *models);
 
 typedef struct
 {
-	int num_virtual_scan_box_model_hypotheses;
-	virtual_scan_box_models_t *virtual_scan_box_model_hypotheses;
+	int num_box_model_hypotheses;
+	virtual_scan_box_models_t *box_model_hypotheses;
+	double timestamp;
 } virtual_scan_box_model_hypotheses_t;
 
-virtual_scan_box_model_hypotheses_t *
-virtual_scan_new_box_model_hypotheses(int length);
-
-virtual_scan_box_models_t *
-virtual_scan_get_box_models(virtual_scan_box_model_hypotheses_t *hypotheses, int i);
 
 typedef struct
 {
@@ -99,12 +93,23 @@ typedef struct
 	double length;
 } virtual_scan_category_t;
 
+virtual_scan_box_models_t *
+virtual_scan_new_box_models(void);
+
+virtual_scan_box_model_t *
+virtual_scan_append_box(virtual_scan_box_models_t *models);
+
+virtual_scan_box_model_hypotheses_t *
+virtual_scan_new_box_model_hypotheses(int length);
+
+virtual_scan_box_models_t *
+virtual_scan_get_box_models(virtual_scan_box_model_hypotheses_t *hypotheses, int i);
 
 virtual_scan_segment_classes_t *
 virtual_scan_extract_segments(carmen_mapper_virtual_scan_message *virtual_scan);
 
 void
-virtual_scan_free_segments(virtual_scan_segment_classes_t *virtual_scan_segments);
+virtual_scan_free_segment_classes(virtual_scan_segment_classes_t *virtual_scan_segment_classes);
 
 virtual_scan_box_model_hypotheses_t *
 virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment_classes);
