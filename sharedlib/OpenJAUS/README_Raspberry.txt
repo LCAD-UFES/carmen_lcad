@@ -1,9 +1,28 @@
 == Para colocar para operar o OpenJaus no Raspberry Pi ==
-- Para incluir uma rede WiFi, edite /etc/wpa_supplicant/wpa_supplicant.conf e inclua sua rede
+- Instale uma versao do Raspibian >= 2017-09-07
+- Para ativar a rede wired: https://www.modmypi.com/blog/how-to-give-your-raspberry-pi-a-static-ip-address-update
+- Para incluir uma rede WiFi (note que o Raspberry 3 tem hardware de wifi e Bluetooth nativos), edite /etc/wpa_supplicant/wpa_supplicant.conf e inclua sua rede
 sudo nano /etc/wpa_supplicant/wpa_supplicant.conf
 - Em seguida, baixe e suba a interface de rede
 sudo ifdown wlan1
 sudo ifup wlan1
+
+- Para permitir rodar comandos remotamente no Raspberry Pi siga os passos abaixo:
+
+1- Se você ainda não tem uma chave pública no computador que vai acessar o Pi, execute os comando abaixo 
+  para gera-la em ~/.ssh/id_rsa.pub (verifique se você já tem o arquivo para não gera-lo de novo)
+ cd
+ ssh-keygen -t rsa
+
+2- Copie a chave pública do computador que vai acessar o Pi para o Pi com os comando abaixo
+ cd
+ ssh pi@192.168.0.14 mkdir -p .ssh
+ cat .ssh/id_rsa.pub | ssh pi@192.168.0.14 'cat >> .ssh/authorized_keys'
+
+2- Teste se funcionou com o comando abaixo
+ ssh pi@192.168.0.14 'ls'
+
+- Copie os utilitarios para o Raspberry Pi
 
 - Instale a lib curses
 sudo apt-get install libncurses5-dev
