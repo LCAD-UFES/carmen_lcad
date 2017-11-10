@@ -60,3 +60,58 @@ Para medir o ângulo do volante:
 - usar o can_dump para capturar o dump do can -> modificar o fonte para ler o dump do Raspberry Pi de bypass da direcao. Foco na mensagem com id 0x80
 - gelar o Torc e usar o driver da IARA bin/ford_escape_hybrid modificado para salvar o communication dump (ativar o #define FORD_ESCAPE_COMMUNICATION_DUMP)
 
+
+Safe Stop
+- Radio desligado
+  can0  340   [2]  26 01
+
+- Radio ligado
+  can0  340   [2]  26 00
+
+- Pause do radio ligado (em pause)
+  can0  340   [2]  2C 01
+
+- Pause do radio desligado
+  can0  340   [2]  2C 00
+
+- Stop do radio ligado
+  can0  340   [2]  2B 01
+
+  can0  340   [2]  06 01
+  can0  340   [2]  0D 01
+  can0  340   [2]  03 01
+
+  can0  405   [1]  FF
+  can0  480   [4]  FF FF FF FF
+
+- Stop do radio desligado seguido de stop do carro ligado e desligado
+  can0  340   [2]  03 00
+  can0  340   [2]  0D 00
+  can0  340   [2]  06 00
+
+  can0  340   [2]  2B 00
+
+Emergency Manual Override
+
+- Apertado (inibe coisas)
+  can0  340   [2]  0D 01
+  can0  340   [2]  03 01
+  can0  340   [2]  06 01
+
+  can0  405   [1]  FF
+  can0  480   [4]  FF FF FF FF
+
+- Solto
+  can0  340   [2]  0D 00
+  can0  340   [2]  03 00
+  can0  340   [2]  06 00
+
+
+Portas
+- Alguma porta aberta
+  can0  340   [2]  4C 01
+
+- Portas fechadas
+  can0  340   [2]  4C 00
+
+

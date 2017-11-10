@@ -25,5 +25,4 @@ make
 
 - Mude seu .bashrc incluindo as linhas abaixo:
 #OpenJaus
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/carmen_lcad/sharedlib/OpenJAUS/libopenJaus/lib:~/carmen_lcad/sharedlib/OpenJAUS/libjaus/lib:~/carmen_lcad/sharedlib/OpenJAUS/ojTorc/lib:~/carmen_lcad/sharedlib/OpenJAUS/ojIARASim/lib
-
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/OpenJAUS/libopenJaus/lib:~/OpenJAUS/libjaus/lib:~/OpenJAUS/ojTorc/lib:~/OpenJAUS/ojIARASim/lib
