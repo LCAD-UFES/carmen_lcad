@@ -13,6 +13,8 @@
 #include <carmen/moving_objects_messages.h>
 #include <carmen/moving_objects_interface.h>
 
+#define PROB_THRESHOLD	-2.14
+
 virtual_scan_extended_t extended_virtual_scan; // Melhorar
 carmen_point_t extended_virtual_scan_points[10000]; // Melhorar
 extern carmen_localize_ackerman_map_t localize_map;
@@ -48,8 +50,16 @@ virtual_scan_new_box_model_hypotheses(int length)
 	virtual_scan_box_model_hypotheses_t *hypotheses = (virtual_scan_box_model_hypotheses_t *) malloc(sizeof(virtual_scan_box_model_hypotheses_t));
 	hypotheses->num_box_model_hypotheses = length;
 	hypotheses->box_model_hypotheses = (virtual_scan_box_models_t *) calloc(length, sizeof(virtual_scan_box_models_t));
+	hypotheses->last_box_model_hypotheses = 0;
 	return hypotheses;
 }
+
+virtual_scan_box_models_t *
+virtual_scan_get_empty_box_models(virtual_scan_box_model_hypotheses_t *hypotheses)
+{
+	return (hypotheses->box_model_hypotheses + hypotheses->last_box_model_hypotheses);
+}
+
 
 virtual_scan_box_models_t *
 virtual_scan_get_box_models(virtual_scan_box_model_hypotheses_t *hypotheses, int i)
@@ -57,12 +67,10 @@ virtual_scan_get_box_models(virtual_scan_box_model_hypotheses_t *hypotheses, int
 	return (hypotheses->box_model_hypotheses + i);
 }
 
+
 carmen_mapper_virtual_scan_message *
 filter_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan)
 {
-
-#define PROB_THRESHOLD	-2.14
-
 	carmen_mapper_virtual_scan_message *virtual_scan_filtered;
 	virtual_scan_filtered = (carmen_mapper_virtual_scan_message *) malloc(sizeof(carmen_mapper_virtual_scan_message));
 
@@ -331,6 +339,14 @@ classify_segments(virtual_scan_segments_t *virtual_scan_segments)
 }
 
 
+int
+is_last_box_model_hypotheses_empty(virtual_scan_box_model_hypotheses_t *box_model_hypotheses)
+{
+	int i = box_model_hypotheses->last_box_model_hypotheses;
+	return (box_model_hypotheses->box_model_hypotheses[i].num_boxes == 0);
+}
+
+
 virtual_scan_box_model_hypotheses_t *
 virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment_classes)
 {
@@ -354,7 +370,7 @@ virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment
 		//double width = virtual_scan_segment_classes->segment_features[i].width;
 		//double length = virtual_scan_segment_classes->segment_features[i].length;
 		carmen_point_t centroid = virtual_scan_segment_classes->segment_features[i].centroid;
-		virtual_scan_box_models_t *box_models = virtual_scan_get_box_models(box_model_hypotheses, i);
+		virtual_scan_box_models_t *box_models = virtual_scan_get_empty_box_models(box_model_hypotheses);
 		if (segment_class == MASS_POINT)
 		{
 			virtual_scan_box_model_t *box = virtual_scan_append_box(box_models);
@@ -448,7 +464,6 @@ virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment
 						}
 					}
 				}
-
 				if (l <= categories[j].width)
 				{
 					double theta = atan2(last_point.y - first_point.y, last_point.x - first_point.x);
@@ -490,6 +505,8 @@ virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment
 				}
 			}
 		}
+		if (!is_last_box_model_hypotheses_empty(box_model_hypotheses))
+			box_model_hypotheses->last_box_model_hypotheses++;
 	}
 
 	return(box_model_hypotheses);

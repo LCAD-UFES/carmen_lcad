@@ -1,9 +1,11 @@
+#include <cassert>
+
 #include <carmen/carmen.h>
 #include "virtual_scan.h"
 #include "virtual_scan_neighborhood_graph.h"
 
 #define MAX_SPEED 60
-
+#define MAX_NUM_DISCONNECTED_SUB_GRAPHS 10
 
 void
 virtual_scan_initiate_elements(virtual_scan_elements_t *elements)
@@ -76,7 +78,7 @@ virtual_scan_compute_disconnected_sub_graph(virtual_scan_box_model_hypotheses_t 
 	virtual_scan_disconnected_sub_graph_t *disconnected_sub_graph = (virtual_scan_disconnected_sub_graph_t *)
 			malloc(sizeof(virtual_scan_disconnected_sub_graph_t));
 	virtual_scan_box_models_t *hypotheses = box_model_hypotheses->box_model_hypotheses;
-	int num_box_model_hypotheses = box_model_hypotheses->num_box_model_hypotheses;
+	int num_box_model_hypotheses = box_model_hypotheses->last_box_model_hypotheses;
 	virtual_scan_complete_sub_graph_t *complete_sub_graphs = (virtual_scan_complete_sub_graph_t *)
 			malloc(sizeof(virtual_scan_complete_sub_graph_t) * num_box_model_hypotheses);
 	disconnected_sub_graph->complete_sub_graphs = complete_sub_graphs;
@@ -85,6 +87,7 @@ virtual_scan_compute_disconnected_sub_graph(virtual_scan_box_model_hypotheses_t 
 
 	for (int i = 0, m = num_box_model_hypotheses; i < m; i++)
 	{
+		assert(hypotheses[i].num_boxes > 0);
 		virtual_scan_compute_graph_nodes(complete_sub_graphs+i, hypotheses+i, disconnected_sub_graph->timestamp);
 	}
 	return disconnected_sub_graph;
@@ -137,8 +140,8 @@ connect_parent_child(virtual_scan_graph_node_t *graph_node_parent, virtual_scan_
 void
 connect_disconnected_subgraphs(
 		virtual_scan_disconnected_sub_graph_t *disconnected_sub_graph_parent,
-		virtual_scan_disconnected_sub_graph_t *disconnected_sub_graph_child
-){
+		virtual_scan_disconnected_sub_graph_t *disconnected_sub_graph_child)
+{
 	virtual_scan_disconnected_sub_graph_iterator_t iterator_parent = {disconnected_sub_graph_parent, 0, 0};
 	for ( ; ; )
 	{
@@ -154,18 +157,36 @@ connect_disconnected_subgraphs(
 			if (is_parent_child(graph_node_parent, graph_node_child))
 				connect_parent_child(graph_node_parent, graph_node_child);
 		}
-
 	}
-
 }
 
 
 void
+remove_oldest_disconnected_subgraph(virtual_scan_neighborhood_graph_t *neighborhood_graph)
+{
+	virtual_scan_disconnected_sub_graph_t *first = neighborhood_graph->first_disconnected_sub_graph;
+	virtual_scan_disconnected_sub_graph_t *second = first->next;
+
+	virtual_scan_disconnected_sub_graph_iterator_t iterator = {second, 0, 0};
+	for ( ; ; )
+	{
+		virtual_scan_graph_node_t *graph_node = next(&iterator);
+		if (graph_node == NULL)
+			break;
+		free(graph_node->parents.pointers);
+		graph_node->parents.num_pointers = 0;
+		graph_node->parents.pointers = NULL;
+	}
+	neighborhood_graph->first_disconnected_sub_graph = second;
+}
+
+void
 update_neighborhood_graph (
 		virtual_scan_neighborhood_graph_t *neighborhood_graph,
-		virtual_scan_box_model_hypotheses_t *box_model_hypotheses
-) {
+		virtual_scan_box_model_hypotheses_t *box_model_hypotheses)
+{
 	virtual_scan_disconnected_sub_graph_t *new_disconnected_sub_graph = virtual_scan_compute_disconnected_sub_graph(box_model_hypotheses);
+	neighborhood_graph->num_disconnected_sub_graphs++;
 	if (neighborhood_graph->first_disconnected_sub_graph == NULL)
 	{
 		neighborhood_graph->first_disconnected_sub_graph = new_disconnected_sub_graph;
@@ -175,4 +196,12 @@ update_neighborhood_graph (
 	connect_disconnected_subgraphs(neighborhood_graph->last_disconnected_sub_graph, new_disconnected_sub_graph);
 	new_disconnected_sub_graph->previous_disconnected_sub_graph = neighborhood_graph->last_disconnected_sub_graph;
 	neighborhood_graph->last_disconnected_sub_graph = new_disconnected_sub_graph;
+	if (neighborhood_graph->num_disconnected_sub_graphs > MAX_NUM_DISCONNECTED_SUB_GRAPHS)
+	{
+		remove_oldest_disconnected_subgraph(neighborhood_graph);
+		neighborhood_graph->num_disconnected_sub_graphs--;
+	}
 }
+
+
+

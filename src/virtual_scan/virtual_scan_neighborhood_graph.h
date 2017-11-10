@@ -36,24 +36,26 @@ typedef struct
 typedef struct _virtual_scan_disconnected_sub_graph_t
 {
 	double timestamp;
-	int num_complete_sub_graphs;
-	virtual_scan_complete_sub_graph_t *complete_sub_graphs;
-	_virtual_scan_disconnected_sub_graph_t *previous_disconnected_sub_graph;
+	int num_complete_sub_graphs; // num_graphs
+	virtual_scan_complete_sub_graph_t *complete_sub_graphs; // graphs
+	_virtual_scan_disconnected_sub_graph_t *previous_disconnected_sub_graph; //previous
+	_virtual_scan_disconnected_sub_graph_t *next;
 } virtual_scan_disconnected_sub_graph_t;
 
 
 typedef struct
 {
-	virtual_scan_disconnected_sub_graph_t *disconnected_sub_graph;
-	int subgraph_index;
+	virtual_scan_disconnected_sub_graph_t *disconnected_sub_graph; // graph
+	int subgraph_index; //
 	int node_index;
 } virtual_scan_disconnected_sub_graph_iterator_t;
 
 
 typedef struct
 {
-	virtual_scan_disconnected_sub_graph_t *first_disconnected_sub_graph;
-	virtual_scan_disconnected_sub_graph_t *last_disconnected_sub_graph;
+	int num_disconnected_sub_graphs; // num_graphs
+	virtual_scan_disconnected_sub_graph_t *first_disconnected_sub_graph; //first
+	virtual_scan_disconnected_sub_graph_t *last_disconnected_sub_graph; // last
 } virtual_scan_neighborhood_graph_t;
 
 
