@@ -26,8 +26,9 @@ sudo ifup wlan1
  <linha> deb http://linorg.usp.br/raspbian/raspbian/ stretch main contrib non-free rpi
  sudo nano /etc/apt/sources.list 
 	
-- Instale a lib curses
+- Instale libs necessarias
  sudo apt-get install libncurses5-dev
+ sudo apt-get install nmap
 
 - Baixe a OpenJaus (apenas) do github do LCAD (https://stackoverflow.com/questions/7106012/download-a-single-folder-or-directory-from-a-github-repo)
  sudo apt-get install subversion
