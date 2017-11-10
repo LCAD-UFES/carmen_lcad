@@ -82,6 +82,7 @@ typedef struct
 {
 	int num_box_model_hypotheses;
 	virtual_scan_box_models_t *box_model_hypotheses;
+	int last_box_model_hypotheses;
 	double timestamp;
 } virtual_scan_box_model_hypotheses_t;
 
