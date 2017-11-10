@@ -22,25 +22,27 @@ sudo ifup wlan1
 2- Teste se funcionou com o comando abaixo
  ssh pi@192.168.0.14 'ls'
 
-- Copie os utilitarios para o Raspberry Pi
-
+- Mude o endereco do servidor de pacotes (do apt-get) comentando a linha existente e adicionando a <linha> abaixo no arquivo indicado abaixo:
+ <linha> deb http://linorg.usp.br/raspbian/raspbian/ stretch main contrib non-free rpi
+ sudo nano /etc/apt/sources.list 
+	
 - Instale a lib curses
-sudo apt-get install libncurses5-dev
+ sudo apt-get install libncurses5-dev
 
 - Baixe a OpenJaus (apenas) do github do LCAD (https://stackoverflow.com/questions/7106012/download-a-single-folder-or-directory-from-a-github-repo)
-sudo apt-get install subversion
-cd
-svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/sharedlib/OpenJAUS
+ sudo apt-get install subversion
+ cd
+ svn checkout https://github.com/LCAD-UFES/carmen_lcad/trunk/sharedlib/OpenJAUS
 
 - Depois de baixado o OpenJAUS como acima, todas as mudanças futuras no github podem ser incorporadas com:
-svn up
+ svn up
 
 - Para subir coisas para o git use o commit do svn (que já sobe as mudanças). Exemplo:
-svn commit -m "adicao de ojNodeManager/IARAnodeManager.conf"
+ svn commit -m "adicao de ojNodeManager/IARAnodeManager.conf"
 
 - Compile o OpenJAUS
-cd OpenJAUS
-make
+ cd OpenJAUS
+ make
 
 - Mude seu .bashrc incluindo as linhas abaixo:
 #OpenJaus
