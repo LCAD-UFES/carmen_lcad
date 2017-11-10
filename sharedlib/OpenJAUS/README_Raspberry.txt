@@ -40,10 +40,30 @@ sudo ifup wlan1
 - Para subir coisas para o git use o commit do svn (que já sobe as mudanças). Exemplo:
  svn commit -m "adicao de ojNodeManager/IARAnodeManager.conf"
 
+- Mude seu .bashrc incluindo as linhas abaixo (depois, reboote ou inicie um novo bash):
+#OpenJaus
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/OpenJAUS/libopenJaus/lib:~/OpenJAUS/libjaus/lib:~/OpenJAUS/ojTorc/lib:~/OpenJAUS/ojIARASim/lib
+
 - Compile o OpenJAUS
  cd OpenJAUS
  make
 
-- Mude seu .bashrc incluindo as linhas abaixo:
-#OpenJaus
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/OpenJAUS/libopenJaus/lib:~/OpenJAUS/libjaus/lib:~/OpenJAUS/ojTorc/lib:~/OpenJAUS/ojIARASim/lib
+- No Raspberry, ajuste o processo de boot adicionando as linhas abaixo no fim do arquivo /boot/config.txt
+# Desempenho - Alberto
+disable_splash=1
+force_turbo=1
+
+dtparam=spi=on
+dtoverlay=mcp2515-can0,oscillator=8000000,interrupt=25
+dtoverlay=mcp2515-can1,oscillator=8000000,interrupt=24
+dtoverlay=spi-bcm2835-overlay
+
+- No Raspberry 192.168.0.13 ajuste o processo de boot adicionando as linhas abaixo no arquivo /etc/rc.local antes do "exit 0"
+/home/pi/OpenJAUS/ojNodeManager/set.bat
+su - pi -c "/home/pi/OpenJAUS/ojNodeManager/run_SteeringBypass.bat"
+
+- No Raspberry 192.168.0.14 ajuste o processo de boot adicionando as linhas abaixo no arquivo /etc/rc.local antes do "exit 0"
+/home/pi/OpenJAUS/ojNodeManager/set.bat
+/home/pi/OpenJAUS/ojNodeManager/wait_for_IARA_driver_network.bat
+su - pi -c "/home/pi/OpenJAUS/ojNodeManager/run_IARA_driver.bat"
+
