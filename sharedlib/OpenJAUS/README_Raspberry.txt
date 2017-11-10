@@ -29,6 +29,7 @@ sudo ifup wlan1
 - Instale libs necessarias
  sudo apt-get install libncurses5-dev
  sudo apt-get install nmap
+ sudo apt-get install can-utils
 
 - Baixe a OpenJaus (apenas) do github do LCAD (https://stackoverflow.com/questions/7106012/download-a-single-folder-or-directory-from-a-github-repo)
  sudo apt-get install subversion

@@ -61,6 +61,8 @@ Para medir o ângulo do volante:
 - gelar o Torc e usar o driver da IARA bin/ford_escape_hybrid modificado para salvar o communication dump (ativar o #define FORD_ESCAPE_COMMUNICATION_DUMP)
 
 
+== Racking (aparece can0 abaixo quando intercalamos o Raspberry para racking. Mas tem que mandar mensagens para can1 quando em operacao normal)
+
 Safe Stop
 - Radio desligado
   can0  340   [2]  26 01
