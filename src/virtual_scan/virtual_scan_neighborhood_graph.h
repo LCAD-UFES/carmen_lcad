@@ -28,34 +28,34 @@ typedef struct _virtual_scan_graph_node_t
 
 typedef struct
 {
-	int num_graph_nodes;
-	virtual_scan_graph_node_t *graph_nodes;
-} virtual_scan_complete_sub_graph_t;
+	int num_nodes;
+	virtual_scan_graph_node_t *nodes;
+} virtual_scan_complete_sub_graph_t; // Pensar em um nome melhor
 
 
 typedef struct _virtual_scan_disconnected_sub_graph_t
 {
 	double timestamp;
-	int num_complete_sub_graphs; // num_graphs
-	virtual_scan_complete_sub_graph_t *complete_sub_graphs; // graphs
-	_virtual_scan_disconnected_sub_graph_t *previous_disconnected_sub_graph; //previous
+	int num_sub_graphs;
+	virtual_scan_complete_sub_graph_t *sub_graphs;
+	_virtual_scan_disconnected_sub_graph_t *previous;
 	_virtual_scan_disconnected_sub_graph_t *next;
-} virtual_scan_disconnected_sub_graph_t;
+} virtual_scan_disconnected_sub_graph_t;// Pensar em um nome melhor
 
 
 typedef struct
 {
 	virtual_scan_disconnected_sub_graph_t *disconnected_sub_graph; // graph
-	int subgraph_index; //
+	int sub_graph_index; //
 	int node_index;
 } virtual_scan_disconnected_sub_graph_iterator_t;
 
 
 typedef struct
 {
-	int num_disconnected_sub_graphs; // num_graphs
-	virtual_scan_disconnected_sub_graph_t *first_disconnected_sub_graph; //first
-	virtual_scan_disconnected_sub_graph_t *last_disconnected_sub_graph; // last
+	int num_sub_graphs;
+	virtual_scan_disconnected_sub_graph_t *first;
+	virtual_scan_disconnected_sub_graph_t *last;
 } virtual_scan_neighborhood_graph_t;
 
 

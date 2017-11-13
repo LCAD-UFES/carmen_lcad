@@ -53,8 +53,8 @@ virtual_scan_compute_graph_nodes (virtual_scan_complete_sub_graph_t *complete_su
 	int num_boxes = hypothesys->num_boxes;
 	virtual_scan_graph_node_t *graph_nodes = (virtual_scan_graph_node_t *)
 					malloc(sizeof(virtual_scan_graph_node_t) * num_boxes);
-	complete_sub_graph->graph_nodes = graph_nodes;
-	complete_sub_graph->num_graph_nodes = num_boxes;
+	complete_sub_graph->nodes = graph_nodes;
+	complete_sub_graph->num_nodes = num_boxes;
 	for (int j = 0, n = num_boxes; j < n; j++)
 	{
 		graph_nodes[j].box_model = hypothesys->box[j];
@@ -81,8 +81,8 @@ virtual_scan_compute_disconnected_sub_graph(virtual_scan_box_model_hypotheses_t 
 	int num_box_model_hypotheses = box_model_hypotheses->last_box_model_hypotheses;
 	virtual_scan_complete_sub_graph_t *complete_sub_graphs = (virtual_scan_complete_sub_graph_t *)
 			malloc(sizeof(virtual_scan_complete_sub_graph_t) * num_box_model_hypotheses);
-	disconnected_sub_graph->complete_sub_graphs = complete_sub_graphs;
-	disconnected_sub_graph->num_complete_sub_graphs = num_box_model_hypotheses;
+	disconnected_sub_graph->sub_graphs = complete_sub_graphs;
+	disconnected_sub_graph->num_sub_graphs = num_box_model_hypotheses;
 	disconnected_sub_graph->timestamp = box_model_hypotheses->timestamp;
 
 	for (int i = 0, m = num_box_model_hypotheses; i < m; i++)
@@ -97,19 +97,19 @@ virtual_scan_compute_disconnected_sub_graph(virtual_scan_box_model_hypotheses_t 
 virtual_scan_graph_node_t *
 next(virtual_scan_disconnected_sub_graph_iterator_t *iterator)
 {
-	int i = iterator->subgraph_index;
+	int i = iterator->sub_graph_index;
 	int j = iterator->node_index;
 
 	virtual_scan_disconnected_sub_graph_t *disconnected_subgraph = iterator->disconnected_sub_graph;
-	if (i >= disconnected_subgraph->num_complete_sub_graphs)
+	if (i >= disconnected_subgraph->num_sub_graphs)
 		return NULL;
-	virtual_scan_complete_sub_graph_t *complete_sub_graph = disconnected_subgraph->complete_sub_graphs + i;
-	virtual_scan_graph_node_t *graph_node = complete_sub_graph->graph_nodes + j;
+	virtual_scan_complete_sub_graph_t *complete_sub_graph = disconnected_subgraph->sub_graphs + i;
+	virtual_scan_graph_node_t *graph_node = complete_sub_graph->nodes + j;
 
 	iterator->node_index++;
-	if (iterator->node_index >= complete_sub_graph->num_graph_nodes)
+	if (iterator->node_index >= complete_sub_graph->num_nodes)
 	{
-		iterator->subgraph_index++;
+		iterator->sub_graph_index++;
 		iterator->node_index = 0;
 	}
 
@@ -162,9 +162,46 @@ connect_disconnected_subgraphs(
 
 
 void
-remove_oldest_disconnected_subgraph(virtual_scan_neighborhood_graph_t *neighborhood_graph)
+clear_node(virtual_scan_graph_node_t *node)
 {
-	virtual_scan_disconnected_sub_graph_t *first = neighborhood_graph->first_disconnected_sub_graph;
+	free(node->siblings.pointers);
+	free(node->parents.pointers);
+	free(node->children.pointers);
+}
+
+
+void
+clear_complete_subgraph(virtual_scan_complete_sub_graph_t *sub_graph)
+{
+	for (int i = 0; i < sub_graph->num_nodes; i++)
+	{
+		clear_node(&sub_graph->nodes[i]);
+	}
+	free(sub_graph->nodes);
+}
+
+
+void
+free_disconnected_subgraph(virtual_scan_disconnected_sub_graph_t *sub_graph)
+{
+	if (sub_graph->previous != NULL)
+		sub_graph->previous->next = sub_graph->next;
+	if (sub_graph->next != NULL)
+		sub_graph->next->previous = sub_graph->previous;
+	for (int i = 0; i < sub_graph->num_sub_graphs; i++)
+	{
+		clear_complete_subgraph(&sub_graph->sub_graphs[i]);
+	}
+	if ((sub_graph->previous != NULL) && (sub_graph->next != NULL))
+		connect_disconnected_subgraphs(sub_graph->previous, sub_graph->next);
+	free(sub_graph->sub_graphs);
+}
+
+
+void
+free_oldest_disconnected_subgraph(virtual_scan_neighborhood_graph_t *neighborhood_graph)
+{
+	virtual_scan_disconnected_sub_graph_t *first = neighborhood_graph->first;
 	virtual_scan_disconnected_sub_graph_t *second = first->next;
 
 	virtual_scan_disconnected_sub_graph_iterator_t iterator = {second, 0, 0};
@@ -177,8 +214,10 @@ remove_oldest_disconnected_subgraph(virtual_scan_neighborhood_graph_t *neighborh
 		graph_node->parents.num_pointers = 0;
 		graph_node->parents.pointers = NULL;
 	}
-	neighborhood_graph->first_disconnected_sub_graph = second;
+	neighborhood_graph->first = second;
+	free_disconnected_subgraph(first);
 }
+
 
 void
 update_neighborhood_graph (
@@ -186,20 +225,22 @@ update_neighborhood_graph (
 		virtual_scan_box_model_hypotheses_t *box_model_hypotheses)
 {
 	virtual_scan_disconnected_sub_graph_t *new_disconnected_sub_graph = virtual_scan_compute_disconnected_sub_graph(box_model_hypotheses);
-	neighborhood_graph->num_disconnected_sub_graphs++;
-	if (neighborhood_graph->first_disconnected_sub_graph == NULL)
+	neighborhood_graph->num_sub_graphs++;
+	if (neighborhood_graph->first == NULL)
 	{
-		neighborhood_graph->first_disconnected_sub_graph = new_disconnected_sub_graph;
-		neighborhood_graph->last_disconnected_sub_graph = new_disconnected_sub_graph;
+		neighborhood_graph->first = new_disconnected_sub_graph;
+		neighborhood_graph->last = new_disconnected_sub_graph;
 		return;
 	}
-	connect_disconnected_subgraphs(neighborhood_graph->last_disconnected_sub_graph, new_disconnected_sub_graph);
-	new_disconnected_sub_graph->previous_disconnected_sub_graph = neighborhood_graph->last_disconnected_sub_graph;
-	neighborhood_graph->last_disconnected_sub_graph = new_disconnected_sub_graph;
-	if (neighborhood_graph->num_disconnected_sub_graphs > MAX_NUM_DISCONNECTED_SUB_GRAPHS)
+	connect_disconnected_subgraphs(neighborhood_graph->last, new_disconnected_sub_graph);
+	neighborhood_graph->last->next = new_disconnected_sub_graph;
+	new_disconnected_sub_graph->previous = neighborhood_graph->last;
+	new_disconnected_sub_graph->next = NULL;
+	neighborhood_graph->last = new_disconnected_sub_graph;
+	if (neighborhood_graph->num_sub_graphs > MAX_NUM_DISCONNECTED_SUB_GRAPHS)
 	{
-		remove_oldest_disconnected_subgraph(neighborhood_graph);
-		neighborhood_graph->num_disconnected_sub_graphs--;
+		free_oldest_disconnected_subgraph(neighborhood_graph);
+		neighborhood_graph->num_sub_graphs--;
 	}
 }
 
