@@ -76,7 +76,7 @@ virtual_scan_disconnected_sub_graph_t *
 virtual_scan_compute_disconnected_sub_graph(virtual_scan_box_model_hypotheses_t *box_model_hypotheses)
 {
 	virtual_scan_disconnected_sub_graph_t *disconnected_sub_graph = (virtual_scan_disconnected_sub_graph_t *)
-			malloc(sizeof(virtual_scan_disconnected_sub_graph_t));
+			calloc(1, sizeof(virtual_scan_disconnected_sub_graph_t));
 	virtual_scan_box_models_t *hypotheses = box_model_hypotheses->box_model_hypotheses;
 	int num_box_model_hypotheses = box_model_hypotheses->last_box_model_hypotheses;
 	virtual_scan_complete_sub_graph_t *complete_sub_graphs = (virtual_scan_complete_sub_graph_t *)
@@ -243,6 +243,3 @@ update_neighborhood_graph (
 		neighborhood_graph->num_sub_graphs--;
 	}
 }
-
-
-

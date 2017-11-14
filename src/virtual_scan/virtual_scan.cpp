@@ -380,17 +380,15 @@ virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment
 		}
 		else if (segment_class == L_SHAPED) // L-shape segments segments will generate bus and car hypotheses
 		{
-			for (int j = 0; j < 2; j++)
+			for (int j = 0; j < 2; j++) // Indexes the model categories
 			{
 				carmen_point_t length_point = first_point;
 				carmen_point_t width_point = last_point;
-				if (DIST2D(farthest_point, length_point) < DIST2D(farthest_point, width_point))
+
+				for (int o = 0; o < 2; o++) // Indexes the matching orientation of model categories
 				{
 					std::swap(length_point, width_point);
-				}
 
-				for (int o = 0; o < 2; o++)
-				{
 					double l = DIST2D(farthest_point, length_point);
 					double w = DIST2D(farthest_point, width_point);
 					if (categories[j].length < l || categories[j].width < w)
@@ -414,8 +412,6 @@ virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment
 						box->y = length_center_position.y + 0.5 * categories[j].width * sin(phi);
 						box->theta = carmen_normalize_theta(rho + direction);
 					}
-
-					std::swap(length_point, width_point);
 				}
 			}
 		}
