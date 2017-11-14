@@ -13,7 +13,7 @@
 static void
 publish_can_dump_can_line_message(char *can_line)
 {
-	carmen_can_dump_can_line_message message;
+//	carmen_can_dump_can_line_message message;
 
 	can_line[strlen(can_line) - 1] = '\0'; // Apaga o '\n' no fim da string
 
@@ -22,9 +22,9 @@ publish_can_dump_can_line_message(char *can_line)
 	fflush(caco);
 	fclose(caco);
 
-	message.can_line = can_line;
-	message.timestamp = carmen_get_time();
-	message.host = carmen_get_host();
+//	message.can_line = can_line;
+//	message.timestamp = carmen_get_time();
+//	message.host = carmen_get_host();
 
 //	carmen_can_dump_publish_can_line_message(&message);
 }
