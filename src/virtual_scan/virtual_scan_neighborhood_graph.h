@@ -40,6 +40,7 @@ typedef struct _virtual_scan_disconnected_sub_graph_t
 	virtual_scan_complete_sub_graph_t *sub_graphs;
 	_virtual_scan_disconnected_sub_graph_t *previous;
 	_virtual_scan_disconnected_sub_graph_t *next;
+	virtual_scan_extended_t *virtual_scan_extended;
 } virtual_scan_disconnected_sub_graph_t;// Pensar em um nome melhor
 
 

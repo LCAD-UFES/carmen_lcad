@@ -17,7 +17,7 @@
 typedef struct
 {
 	int num_points;
-	carmen_point_t *point;
+	carmen_point_t *points;
 	double timestamp;
 } virtual_scan_extended_t;
 
@@ -25,7 +25,7 @@ typedef struct
 typedef struct
 {
 	int num_points;
-	carmen_point_t *point;
+	carmen_point_t *points;
 } virtual_scan_segment_t;
 
 
@@ -93,6 +93,9 @@ typedef struct
 	double width;
 	double length;
 } virtual_scan_category_t;
+
+void
+virtual_scan_free_extended(virtual_scan_extended_t *virtual_scan_extended);
 
 virtual_scan_box_models_t *
 virtual_scan_new_box_models(void);

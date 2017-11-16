@@ -12,17 +12,9 @@ Tracker::Tracker(int n):
 {
 }
 
-
 double Tracks::P()
 {
 	
-}
-
-
-bool Tracker::keep(Tracks *tracks_new)
-{
-	double U = uniform(rd);
-	return (U < (tracks_new->P() / tracks_n->P()));
 }
 
 Tracks *Tracker::track(virtual_scan_box_model_hypotheses_t *box_model_hypotheses)
@@ -31,8 +23,8 @@ Tracks *Tracker::track(virtual_scan_box_model_hypotheses_t *box_model_hypotheses
 	for (int n = 0; n < n_mc; n++)
 	{
 		Tracks *tracks_new = tracks_n->propose(neighborhood_graph);
-		
-		if (keep(tracks_new)) 
+		double U = uniform(rd);
+		if (U < (tracks_new->P() / tracks_n->P())) 
 		{
 			if (tracks_n != tracks_star)
 				delete tracks_n;
