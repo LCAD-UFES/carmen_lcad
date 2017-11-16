@@ -102,13 +102,13 @@ carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *m
 {
 	virtual_scan_extended_t *virtual_scan_extended = sort_virtual_scan(message);
 	virtual_scan_segment_classes_t *virtual_scan_segment_classes = virtual_scan_extract_segments(virtual_scan_extended);
-//	virtual_scan_publish_segments(virtual_scan_segment_classes);
+	virtual_scan_publish_segments(virtual_scan_segment_classes);
 
-	virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(virtual_scan_segment_classes);
-	update_neighborhood_graph (neighborhood_graph, virtual_scan_box_model_hypotheses);
-	virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
-
-	virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses);
+//	virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(virtual_scan_segment_classes);
+//	update_neighborhood_graph (neighborhood_graph, virtual_scan_box_model_hypotheses);
+//	virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
+//
+//	virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses);
 	virtual_scan_free_segment_classes(virtual_scan_segment_classes);
 }
 

@@ -6,10 +6,37 @@ namespace virtual_scan
 Tracker::Tracker(int n):
 	n_mc(n),
 	neighborhood_graph(virtual_scan_alloc_neighborhood_graph ()),
-	tracks_n(new Tracks()),
-	tracks_star(new Tracks()),
-	uniform(0.0, 1.0),
+	tracks_n(new Tracks(&rd)),
+	tracks_star(new Tracks(&rd)),
+	uniform(0.0, 1.0)
 {
+}
+
+Tracks::Tracks(std::random_device *rd_):
+	rd(rd_)
+{
+}
+
+Tracks *Tracks::track_birth(virtual_scan_neighborhood_graph_t *neighborhood_graph)
+{
+	std::uniform_int_distribution<> uniform(0, neighborhood_graph->num_sub_graphs);
+	int n = uniform(*rd);
+
+	virtual_scan_disconnected_sub_graph_t *disconnected_sub_graph = neighborhood_graph->first;
+	for (int i = 0; i < n; i++)
+		disconnected_sub_graph = disconnected_sub_graph->next;
+
+	std::uniform_int_distribution<> uniform(0, neighborhood_graph->first);
+}
+
+Tracks *track_extension(virtual_scan_neighborhood_graph_t *neighborhood_graph)
+{
+
+}
+
+Tracks *Tracks::propose(neighborhood_graph_t *neighborhood_graph)
+{
+
 }
 
 double Tracks::P()
