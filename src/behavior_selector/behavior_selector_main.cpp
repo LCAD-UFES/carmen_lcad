@@ -236,7 +236,7 @@ get_distance_to_act_on_annotation(double v0, double va, double distance_to_annot
 	// t = (va - v0) / a
 	// da = va * t + 0.5 * a * t * t
 
-	double a = -get_robot_config()->maximum_acceleration_forward * 1.5;
+	double a = -get_robot_config()->maximum_acceleration_forward * 1.1;
 	double t = (va - v0) / a;
 	double daa = v0 * t + 0.5 * a * t * t;
 
@@ -353,6 +353,41 @@ get_velocity_at_goal(double v0, double va, double dg, double da)
 
 
 double
+compute_distance_within_rddf(carmen_vector_3D_t annotation_point, carmen_ackerman_traj_point_t  current_robot_pose_v_and_phi)
+{
+	carmen_rddf_road_profile_message *rddf = last_rddf_message;
+
+	double distance_to_annotation = 1000.0;
+	double distance_to_car = 1000.0;
+	int index_car_pose = 0;
+	int index_annotation = 0;
+	for (int i = 0; i < rddf->number_of_poses; i++)
+	{
+		double distance = DIST2D(annotation_point, rddf->poses[i]);
+		if (distance < distance_to_annotation)
+		{
+			distance_to_annotation = distance;
+			index_annotation = i;
+		}
+		distance = DIST2D(current_robot_pose_v_and_phi, rddf->poses[i]);
+		if (distance < distance_to_car)
+		{
+			distance_to_car = distance;
+			index_car_pose = i;
+		}
+	}
+
+	double distance_within_rddf = 0.0;
+	for (int i = index_car_pose; i < index_annotation; i++)
+		distance_within_rddf += DIST2D(rddf->poses[i], rddf->poses[i + 1]);
+
+	double min_distance = DIST2D(annotation_point, current_robot_pose_v_and_phi);
+
+	return ((distance_within_rddf < min_distance)? min_distance: distance_within_rddf);
+}
+
+
+double
 set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi,
 		double timestamp)
 {
@@ -369,7 +404,14 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, ca
 //		carmen_ackerman_traj_point_t displaced_robot_pose = displace_pose(*current_robot_pose_v_and_phi,
 //				get_robot_config()->distance_between_front_and_rear_axles +
 //				get_robot_config()->distance_between_front_car_and_front_wheels);
+
 		double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, *current_robot_pose_v_and_phi);
+//		double distance_to_annotation = compute_distance_within_rddf(nearest_velocity_related_annotation->annotation_point, *current_robot_pose_v_and_phi);
+		FILE *caco13 = fopen("caco13.txt", "a");
+		fprintf(caco13, "%.2lf %.2lf\n", distance_to_annotation, DIST2D(nearest_velocity_related_annotation->annotation_point, *current_robot_pose_v_and_phi));
+		fflush(caco13);
+		fclose(caco13);
+
 		double velocity_at_next_annotation = get_velocity_at_next_annotation(nearest_velocity_related_annotation, *current_robot_pose_v_and_phi, timestamp);
 
 		double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi->v, velocity_at_next_annotation,
@@ -390,11 +432,11 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, ca
 		}
 
 		FILE *caco = fopen("caco4.txt", "a");
-		fprintf(caco, "ca %d, aa %d, daann %.1lf, dann %.1lf, v %.1lf, vg %.1lf, aif %d, dg %.1lf\n", clearing_annotation, annotation_ahead,
+		fprintf(caco, "ca %d, aa %d, daann %.1lf, dann %.1lf, v %.1lf, vg %.1lf, aif %d, dg %.1lf, ts %lf\n", clearing_annotation, annotation_ahead,
 				distance_to_act_on_annotation, distance_to_annotation, current_robot_pose_v_and_phi->v,
 				goal->v,
 				carmen_rddf_play_annotation_is_forward(get_robot_pose(), nearest_velocity_related_annotation->annotation_point),
-				distance_to_goal);
+				distance_to_goal, carmen_get_time());
 		fflush(caco);
 		fclose(caco);
 
@@ -544,7 +586,7 @@ set_goal_velocity(carmen_ackerman_traj_point_t *goal, carmen_ackerman_traj_point
 //	if (obstacle_avoider_active_recently)
 //		goal->v = carmen_fmin(2.5, goal->v);
 
-	fprintf(caco, "gvf %lf\n", goal->v);
+	fprintf(caco, "gvf %lf ts %lf\n", goal->v, carmen_get_time());
 	fflush(caco);
 	fclose(caco);
 }
@@ -808,7 +850,7 @@ publish_goal_list(carmen_ackerman_traj_point_t *goal_list, int goal_list_size, d
 	}
 
 	FILE *caco = fopen("caco.txt", "a");
-	fprintf(caco, "%lf %lf\n", goal_list->v, distance_to_moving_obstacle_annotation(get_robot_pose()));
+	fprintf(caco, "%lf %lf %lf\n", goal_list->v, distance_to_moving_obstacle_annotation(get_robot_pose()), carmen_get_time());
 	fflush(caco);
 	fclose(caco);
 }

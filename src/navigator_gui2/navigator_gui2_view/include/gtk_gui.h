@@ -100,8 +100,9 @@ namespace View
 			GtkComboBox *comboFollowLane;
 			GtkComboBox *comboParking;
 
-			GtkLabel *labelFusedOdometry;
 			GtkLabel *labelStatusMap;
+
+			GtkLabel *labelFusedOdometry;
 			GtkLabel *labelOrigin;
 			GtkLabel *labelRobot;
 			GtkLabel *labelVelocity;
@@ -110,6 +111,8 @@ namespace View
 			GtkLabel *labelValue;
 			GtkLabel *labelDistTraveled;
 			GtkLabel *labelLowLevelState;
+
+			GtkLabel *labelNavConTimestamp;
 
 			GtkToggleButton* buttonSyncMode;
 			GtkToggleButton* buttonNextTick;

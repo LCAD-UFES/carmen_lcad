@@ -123,15 +123,19 @@ carmen_libcarneuralmodel_build_velocity_ann_input(fann_type *input, double t, do
 
 
 double
-carmen_libcarneuralmodel_compute_new_velocity_from_efforts(fann_type *velocity_ann_input, struct fann *velocity_ann, double throttle_effort, double brake_effort, double current_velocity)
+carmen_libcarneuralmodel_compute_new_velocity_from_efforts(fann_type *velocity_ann_input, struct fann *velocity_ann __attribute__ ((unused)), double throttle_effort, double brake_effort, double current_velocity)
 {
-	fann_type *velocity_ann_output;
+//	fann_type *velocity_ann_output;
 
 	carmen_libcarneuralmodel_build_velocity_ann_input(velocity_ann_input, carmen_clamp(-100, throttle_effort, 100), carmen_clamp(-100, brake_effort, 100), current_velocity);
 
-	velocity_ann_output = fann_run(velocity_ann, velocity_ann_input);
-
-	return (velocity_ann_output[0]);
+//	velocity_ann_output = fann_run(velocity_ann, velocity_ann_input);
+//
+//	return (velocity_ann_output[0]);
+	static double v = 0.0;
+	v += 0.15 * (velocity_ann_input[0] - (velocity_ann_input[1] - 0.17));
+	v = (v < 0.0)? 0.0: v;
+	return (v); // Velocidade com atraso.
 }
 
 

@@ -69,7 +69,7 @@
   </object>
   <object class="GtkWindow" id="mainWindow">
     <property name="can_focus">False</property>
-    <property name="title" translatable="yes">Carmen Navigator</property>
+    <property name="title" translatable="yes">Carmen-LCAD Navigator</property>
     <property name="icon">nav.ico</property>
     <signal name="destroy" handler="gtk_main_quit" swapped="no"/>
     <signal name="realize" handler="on_mainWindow_realize" swapped="no"/>
@@ -1289,9 +1289,6 @@
                                     <property name="yalign">0.51999998092651367</property>
                                     <property name="xpad">1</property>
                                     <property name="label" translatable="yes">Navigation</property>
-                                    <attributes>
-                                      <attribute name="style" value="italic"/>
-                                    </attributes>
                                   </object>
                                 </child>
                               </object>
@@ -1528,10 +1525,13 @@
                           </object>
                         </child>
                         <child type="label">
-                          <object class="GtkLabel" id="label2">
+                          <object class="GtkLabel" id="labelNavConTimestamp">
+                            <property name="selectable">True</property>
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">Buttons</property>
+                            <property name="xalign">0</property>
+                            <property name="xpad">5</property>
+                            <property name="label" translatable="yes">NavCon</property>
                           </object>
                         </child>
                       </object>
