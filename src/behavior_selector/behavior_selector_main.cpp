@@ -269,8 +269,7 @@ get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotatio
 			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&
 			  (annotation_message.annotations[i].annotation_code == RDDF_ANNOTATION_CODE_DYNAMIC_STOP) && !wait_start_moving) ||
 			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BUMP)) &&
-			 (distance_to_annotation < distance_to_nearest_annotation) &&
-			 carmen_rddf_play_annotation_is_forward(*current_robot_pose_v_and_phi, annotation_message.annotations[i].annotation_point))
+			 (distance_to_annotation < distance_to_nearest_annotation))
 		{
 			distance_to_nearest_annotation = distance_to_annotation;
 			nearest_annotation_index = i;
@@ -425,7 +424,8 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, ca
 		double distance_to_goal = carmen_distance_ackerman_traj(current_robot_pose_v_and_phi, goal);
 
 		if ((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_BARRIER) && 	// Reduz o criterio dos obstaculos moveis se for barreira
-			((distance_to_annotation - distance_to_goal) < get_robot_config()->distance_between_front_and_rear_axles))
+			(distance_to_annotation < 25.0))
+//			((distance_to_annotation - distance_to_goal) < get_robot_config()->distance_between_front_and_rear_axles))
 		{
 			get_robot_config()->behaviour_selector_central_lane_obstacles_safe_distance = 1.233;	// Padrao da Ida a Guarapari
 			get_robot_config()->model_predictive_planner_obstacles_safe_distance = 1.233;			// Padrao da Ida a Guarapari
