@@ -73,10 +73,11 @@ virtual_scan_compute_graph_nodes (virtual_scan_complete_sub_graph_t *complete_su
 
 
 virtual_scan_disconnected_sub_graph_t *
-virtual_scan_compute_disconnected_sub_graph(virtual_scan_box_model_hypotheses_t *box_model_hypotheses)
+virtual_scan_compute_disconnected_sub_graph(virtual_scan_box_model_hypotheses_t *box_model_hypotheses,
+		virtual_scan_extended_t *virtual_scan_extended)
 {
 	virtual_scan_disconnected_sub_graph_t *disconnected_sub_graph = (virtual_scan_disconnected_sub_graph_t *)
-			malloc(sizeof(virtual_scan_disconnected_sub_graph_t));
+			calloc(1, sizeof(virtual_scan_disconnected_sub_graph_t));
 	virtual_scan_box_models_t *hypotheses = box_model_hypotheses->box_model_hypotheses;
 	int num_box_model_hypotheses = box_model_hypotheses->last_box_model_hypotheses;
 	virtual_scan_complete_sub_graph_t *complete_sub_graphs = (virtual_scan_complete_sub_graph_t *)
@@ -84,6 +85,7 @@ virtual_scan_compute_disconnected_sub_graph(virtual_scan_box_model_hypotheses_t 
 	disconnected_sub_graph->sub_graphs = complete_sub_graphs;
 	disconnected_sub_graph->num_sub_graphs = num_box_model_hypotheses;
 	disconnected_sub_graph->timestamp = box_model_hypotheses->timestamp;
+	disconnected_sub_graph->virtual_scan_extended = virtual_scan_extended;
 
 	for (int i = 0, m = num_box_model_hypotheses; i < m; i++)
 	{
@@ -194,6 +196,7 @@ free_disconnected_subgraph(virtual_scan_disconnected_sub_graph_t *sub_graph)
 	}
 	if ((sub_graph->previous != NULL) && (sub_graph->next != NULL))
 		connect_disconnected_subgraphs(sub_graph->previous, sub_graph->next);
+	virtual_scan_free_extended(sub_graph->virtual_scan_extended);
 	free(sub_graph->sub_graphs);
 }
 
@@ -222,9 +225,10 @@ free_oldest_disconnected_subgraph(virtual_scan_neighborhood_graph_t *neighborhoo
 void
 update_neighborhood_graph (
 		virtual_scan_neighborhood_graph_t *neighborhood_graph,
-		virtual_scan_box_model_hypotheses_t *box_model_hypotheses)
+		virtual_scan_box_model_hypotheses_t *box_model_hypotheses,
+		virtual_scan_extended_t *virtual_scan_extended)
 {
-	virtual_scan_disconnected_sub_graph_t *new_disconnected_sub_graph = virtual_scan_compute_disconnected_sub_graph(box_model_hypotheses);
+	virtual_scan_disconnected_sub_graph_t *new_disconnected_sub_graph = virtual_scan_compute_disconnected_sub_graph(box_model_hypotheses, virtual_scan_extended);
 	neighborhood_graph->num_sub_graphs++;
 	if (neighborhood_graph->first == NULL)
 	{
@@ -243,6 +247,3 @@ update_neighborhood_graph (
 		neighborhood_graph->num_sub_graphs--;
 	}
 }
-
-
-
