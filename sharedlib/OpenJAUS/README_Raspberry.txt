@@ -19,7 +19,7 @@ sudo ifup wlan1
  ssh pi@192.168.0.14 mkdir -p .ssh
  cat .ssh/id_rsa.pub | ssh pi@192.168.0.14 'cat >> .ssh/authorized_keys'
 
-2- Teste se funcionou com o comando abaixo
+3- Teste se funcionou com o comando abaixo
  ssh pi@192.168.0.14 'ls'
 
 - Mude o endereco do servidor de pacotes (do apt-get) comentando a linha existente e adicionando a <linha> abaixo no arquivo indicado abaixo:
@@ -68,4 +68,35 @@ su - pi -c "/home/pi/OpenJAUS/ojNodeManager/run_SteeringBypass.bat"
 /home/pi/OpenJAUS/ojNodeManager/set.bat
 /home/pi/OpenJAUS/ojNodeManager/wait_for_IARA_driver_network.bat
 su - pi -c "/home/pi/OpenJAUS/ojNodeManager/run_IARA_driver.bat"
+
+
+= Para desligamento dos Raspberry Pi quando do shoutdown de car01
+
+- Se o root da car01 ainda não tem uma chave pública para acessar os Pi, execute os comando abaixo 
+  para gera-la em ~/.ssh/id_rsa.pub (verifique se você já tem o arquivo para não gera-lo de novo)
+ sudo su
+ cd
+ ssh-keygen -t rsa
+
+- Copie a chave pública da car01 para os Pi com os comando abaixo
+ cd
+ ssh pi@192.168.0.14 mkdir -p .ssh
+ ssh pi@192.168.0.13 mkdir -p .ssh
+ cat .ssh/id_rsa.pub | ssh pi@192.168.0.14 'cat >> .ssh/authorized_keys'
+ cat .ssh/id_rsa.pub | ssh pi@192.168.0.13 'cat >> .ssh/authorized_keys'
+
+- Teste se funcionou com o comando abaixo
+ ssh pi@192.168.0.14 'ls'
+
+- Crie o arquivo /etc/init.d/shutdown-raspberrys na car01 e acrescente os comandos abaixo dentro dele:
+ #! /bin/sh
+ ssh pi@192.168.0.14 -t sudo shutdown -h -P now
+ ssh pi@192.168.0.13 -t sudo shutdown -h -P now
+ exit 0
+
+- Mude as permissoes do arquivo como abaixo:
+ sudo chmod +x /etc/init.d/shutdown-raspberrys
+
+- Crie um link para o arquivo /etc/rc6.d/K99shutdown-raspberrys
+ sudo ln -s /etc/init.d/shutdown-raspberrys /etc/rc0.d/K99shutdown-raspberrys
 
