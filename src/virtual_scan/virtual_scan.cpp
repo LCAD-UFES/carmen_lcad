@@ -90,7 +90,11 @@ filter_virtual_scan(virtual_scan_extended_t *virtual_scan_extended)
 	virtual_scan_extended_filtered->num_points = num_points;
 	virtual_scan_extended_filtered->timestamp = virtual_scan_extended->timestamp;
 
-	return (virtual_scan_extended_filtered);
+	fprintf(stdout,"virtual_scan_extended->num_points = %d\n", virtual_scan_extended->num_points);
+	fprintf(stdout,"virtual_scan_extended_filtered->num_points = %d\n\n", virtual_scan_extended_filtered->num_points);
+	fflush(stdout);
+
+	return virtual_scan_extended_filtered;
 }
 
 
