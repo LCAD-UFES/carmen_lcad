@@ -132,7 +132,7 @@ calculate_error_order(double y_desired, double y, data* data)
 
 //   EQUATION 1
 double
-update_plant_input_u(double atan_desired_curvature, double atan_current_curvature, double delta_t, data* data)
+update_plant_input_u(double atan_desired_curvature __attribute__ ((unused)), double atan_current_curvature __attribute__ ((unused)), double delta_t, data* data)
 {
 	//double 	integral_t_1 = data->variables.error_order[1];
 	double 	u_t;			// u(t)	-> actuation in time t

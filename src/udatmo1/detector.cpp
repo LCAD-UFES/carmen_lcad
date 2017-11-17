@@ -104,14 +104,14 @@ Detector::detect(carmen_obstacle_distance_mapper_map_message *current_map,
 		update_moving_object_velocity(robot_pose);
 		speed += moving_object[0].pose.v;
 
-		if ((goal_index == 0) && (speed_front() > 0.05))
+		if ((goal_index == 0) && (speed_front() > 0.1))
 			set_detected(true);
 		else
 			set_detected(false);
 
 //		printf("aqui 2, %d\n", rddf_pose_index);
 
-		if (speed_front() > 0.05)
+		if (speed_front() > 0.1)
 			return (rddf_pose_index);
 		else
 			return (-1);
@@ -125,7 +125,7 @@ Detector::detect(carmen_obstacle_distance_mapper_map_message *current_map,
 	}
 	else if (obstacle_already_detected)
 	{
-		if (moving_object[0].valid && (speed_front() > 0.05))
+		if (moving_object[0].valid && (speed_front() > 0.1))
 			return (moving_object[0].rddf_pose_index);
 		else
 			return (-1);

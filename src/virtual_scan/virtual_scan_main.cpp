@@ -73,8 +73,8 @@ virtual_scan_publish_segments(virtual_scan_segment_classes_t *virtual_scan_segme
 		char color = colors[virtual_scan_segment_classes->segment_features[i].segment_class];
 		for (int j = 0; j < virtual_scan_segment_classes->segment[i].num_points; j++)
 		{
-			virtual_laser_message.positions[k].x = virtual_scan_segment_classes->segment[i].point[j].x;
-			virtual_laser_message.positions[k].y = virtual_scan_segment_classes->segment[i].point[j].y;
+			virtual_laser_message.positions[k].x = virtual_scan_segment_classes->segment[i].points[j].x;
+			virtual_laser_message.positions[k].y = virtual_scan_segment_classes->segment[i].points[j].y;
 			virtual_laser_message.colors[k] = color;
 			k++;
 		}
@@ -83,9 +83,6 @@ virtual_scan_publish_segments(virtual_scan_segment_classes_t *virtual_scan_segme
 
 	free(virtual_laser_message.positions);
 	free(virtual_laser_message.colors);
-	free(virtual_scan_segment_classes->segment);
-	free(virtual_scan_segment_classes->segment_features);
-	free(virtual_scan_segment_classes);
 }
 
 
@@ -103,15 +100,15 @@ virtual_scan_publish_segments(virtual_scan_segment_classes_t *virtual_scan_segme
 void
 carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *message)
 {
-	virtual_scan_segment_classes_t *virtual_scan_segment_classes = virtual_scan_extract_segments(message);
-//	virtual_scan_publish_segments(virtual_scan_segment_classes);
+	virtual_scan_extended_t *virtual_scan_extended = sort_virtual_scan(message);
+	virtual_scan_segment_classes_t *virtual_scan_segment_classes = virtual_scan_extract_segments(virtual_scan_extended);
+	virtual_scan_publish_segments(virtual_scan_segment_classes);
 
-	virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(virtual_scan_segment_classes);
-	update_neighborhood_graph (neighborhood_graph, virtual_scan_box_model_hypotheses);
-
-	virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
-
-	virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses);
+//	virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(virtual_scan_segment_classes);
+//	update_neighborhood_graph (neighborhood_graph, virtual_scan_box_model_hypotheses);
+//	virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
+//
+//	virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses);
 	virtual_scan_free_segment_classes(virtual_scan_segment_classes);
 }
 

@@ -12,22 +12,22 @@ Choose one of the two and proceed with installation.
 Install nvcaffe dependencies:
 
 ``` bash
-$ sudo apt-get update -y
-$ sudo apt-get install cmake -y
+$ sudo apt-get update
+$ sudo apt-get install cmake
 
 # General dependencies
 $ sudo apt-get install libprotobuf-dev libleveldb-dev libsnappy-dev \
-libhdf5-serial-dev protobuf-compiler -y
-$ sudo apt-get install --no-install-recommends libboost-all-dev -y
+libhdf5-serial-dev protobuf-compiler
+$ sudo apt-get install --no-install-recommends libboost-all-dev
 
 # BLAS
-$ sudo apt-get install libopenblas-dev -y
+$ sudo apt-get install libopenblas-dev
 
 # Remaining Dependencies
-$ sudo apt-get install libgflags-dev libgoogle-glog-dev liblmdb-dev -y
+$ sudo apt-get install libgflags-dev libgoogle-glog-dev liblmdb-dev
 
 # Python Dependencies
-$ sudo apt-get install python-dev python-numpy python-skimage python-protobuf -y
+$ sudo apt-get install python-dev python-numpy python-skimage python-protobuf
 ```
 Install nvcaffe
 

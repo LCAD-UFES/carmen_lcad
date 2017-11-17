@@ -470,9 +470,9 @@ namespace View
 		controls_.comboFollowLane = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboFollowLane" ));
 		controls_.comboParking = GTK_COMBO_BOX(gtk_builder_get_object(builder, "comboParking" ));
 
+		controls_.labelStatusMap = GTK_LABEL(gtk_builder_get_object(builder, "labelStatusMap" ));
 		controls_.labelFusedOdometry = GTK_LABEL(gtk_builder_get_object(builder, "labelFusedOdometry" ));
 		controls_.labelOrigin = GTK_LABEL(gtk_builder_get_object(builder, "labelOrigin" ));
-		controls_.labelStatusMap = GTK_LABEL(gtk_builder_get_object(builder, "labelStatusMap" ));
 		controls_.labelRobot = GTK_LABEL(gtk_builder_get_object(builder, "labelRobot" ));
 		controls_.labelVelocity = GTK_LABEL(gtk_builder_get_object(builder, "labelVelocity" ));
 		controls_.labelGoal = GTK_LABEL(gtk_builder_get_object(builder, "labelGoal" ));
@@ -481,6 +481,7 @@ namespace View
 		controls_.labelDistTraveled = GTK_LABEL(gtk_builder_get_object(builder, "labelDistTraveled" ));
 		controls_.labelLowLevelState = GTK_LABEL(gtk_builder_get_object(builder, "labelLowLevelState" ));
 
+		controls_.labelNavConTimestamp = GTK_LABEL(gtk_builder_get_object(builder, "labelNavConTimestamp" ));
 		controls_.buttonSyncMode = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "buttonSyncMode" ));
 		controls_.buttonNextTick = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "buttonNextTick" ));
 
@@ -742,6 +743,9 @@ namespace View
 		}
 
 		last_navigator_update = carmen_get_time();
+
+		sprintf(buffer, "NavCon timestamp: %lf", last_navigator_update);
+		gtk_label_set_text(GTK_LABEL(this->controls_.labelNavConTimestamp), buffer);
 
 		do_redraw();
 	}

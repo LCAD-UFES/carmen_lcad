@@ -12,7 +12,9 @@ extern "C" {
 #include <floatfann.h>
 #include <control.h>
 
-#define NUM_VELOCITY_ANN_INPUTS 360
+// @@@ Alberto: mudanca em NUM_VELOCITY_ANN_INPUTS para simular atraso apenas
+//#define NUM_VELOCITY_ANN_INPUTS 360
+#define NUM_VELOCITY_ANN_INPUTS 3
 #define NUM_STEERING_ANN_INPUTS 80
 
 
