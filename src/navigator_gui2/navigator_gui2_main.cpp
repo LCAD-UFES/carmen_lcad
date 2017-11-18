@@ -686,8 +686,8 @@ carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_c
 		moving_objects_tracking[i].moving_objects_pose.position.x = moving_objects_point_clouds_message->point_clouds[i].object_pose.x;
 		moving_objects_tracking[i].moving_objects_pose.position.y = moving_objects_point_clouds_message->point_clouds[i].object_pose.y;
 		moving_objects_tracking[i].moving_objects_pose.position.z = moving_objects_point_clouds_message->point_clouds[i].object_pose.z;
-		moving_objects_tracking[i].length = moving_objects_point_clouds_message->point_clouds[i].length;
-		moving_objects_tracking[i].width = moving_objects_point_clouds_message->point_clouds[i].width;
+		moving_objects_tracking[i].length = moving_objects_point_clouds_message->point_clouds[i].model_features.geometry.length;
+		moving_objects_tracking[i].width = moving_objects_point_clouds_message->point_clouds[i].model_features.geometry.width;
 		moving_objects_tracking[i].height = moving_objects_point_clouds_message->point_clouds[i].height;
 		moving_objects_tracking[i].linear_velocity = moving_objects_point_clouds_message->point_clouds[i].linear_velocity;
 		moving_objects_tracking[i].geometric_model = moving_objects_point_clouds_message->point_clouds[i].geometric_model;

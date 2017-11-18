@@ -366,14 +366,19 @@ namespace View
 		annotation_image[RDDF_ANNOTATION_TYPE_END_POINT_AREA][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/intervention3_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_HUMAN_INTERVENTION][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
+
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/pedestrian_2_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/pedestrian_2_15_red.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK][RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_BUSY] = get_annotation_image(annotation_image_filename);
+
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/stop_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_STOP][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/barrier_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_BARRIER][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/bump_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_BUMP][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
+
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_light_neutral_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_light_red_15.png", carmen_home_path);
@@ -1009,9 +1014,7 @@ namespace View
 		this->time_of_simulator_update = carmen_get_time();
 
 		if (this->simulator_hidden)
-		{
 			this->simulator_hidden = 0;
-		}
 
 		simulator_trueposition.pose = truepose;
 		simulator_trueposition.map	= this->controls_.map_view->internal_map;
@@ -1028,20 +1031,15 @@ namespace View
 		if (simulator_objects == NULL)
 		{
 			if (num_objects == 0)
-			{
 				return;
-			}
 
-			simulator_objects = carmen_list_create
-					(sizeof(carmen_traj_point_t), num_objects);
+			simulator_objects = carmen_list_create(sizeof(carmen_traj_point_t), num_objects);
 		}
 
 		simulator_objects->length = 0;
 
 		for (i = 0; i < num_objects; i++)
-		{
 			carmen_list_add(simulator_objects, objects_list + i);
-		}
 
 		display_needs_updating = 1;
 		do_redraw();
@@ -1054,20 +1052,15 @@ namespace View
 		if (moving_objects_list == NULL)
 		{
 			if (num_point_clouds == 0)
-			{
 				return;
-			}
 
-			moving_objects_list = carmen_list_create
-					(sizeof(moving_objects_tracking_t), num_point_clouds);
+			moving_objects_list = carmen_list_create(sizeof(moving_objects_tracking_t), num_point_clouds);
 		}
 
 		moving_objects_list->length = 0;
 
 		for (i = 0; i < num_point_clouds; i++)
-		{
 			carmen_list_add(moving_objects_list, moving_objects_tracking + i);
-		}
 
 		display_needs_updating = 1;
 		do_redraw();
@@ -2323,16 +2316,13 @@ namespace View
 
 					wp[0].map = wp[1].map = wp[2].map = wp[3].map = location->map;
 
-					GdkColor *colour = &carmen_black;
+					GdkColor *colour;
+					if (strcmp(moving_objects_tracking->model_features.model_name, "pedestrian") == 0)
+						colour = &carmen_red;
+					else
+						colour = &carmen_black;
 
 					carmen_map_graphics_draw_polygon(the_map_view, colour, wp, 4, 0);
-
-//					particle.pose.x	 = simulator_object->x;
-//					particle.pose.y	 = simulator_object->y;
-//					carmen_map_graphics_draw_circle(the_map_view, &carmen_orange, TRUE,
-//							&particle, circle_size);
-//					carmen_map_graphics_draw_circle(the_map_view, &carmen_black, FALSE,
-//							&particle, circle_size);
 				}
 			}
 		}

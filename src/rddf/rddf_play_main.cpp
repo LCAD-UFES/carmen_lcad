@@ -14,6 +14,8 @@ using namespace std;
 #include <carmen/traffic_light_interface.h>
 #include <carmen/traffic_light_messages.h>
 #include <carmen/collision_detection.h>
+#include <carmen/moving_objects_messages.h>
+#include <carmen/moving_objects_interface.h>
 
 #include "rddf_interface.h"
 #include "rddf_messages.h"
@@ -70,6 +72,8 @@ static int traffic_lights_camera = 3;
 carmen_traffic_light_message *traffic_lights = NULL;
 
 deque<carmen_rddf_dynamic_annotation_message> dynamic_annotation_messages;
+
+carmen_moving_objects_point_clouds_message *moving_objects = NULL;
 
 
 static void
@@ -213,15 +217,28 @@ carmen_rddf_play_find_nearest_poses_ahead(double x, double y, double yaw, double
 
 
 bool
+pedestrian_track_busy(carmen_moving_objects_point_clouds_message *moving_objects, carmen_annotation_t pedestrain_track_annotation)
+{
+	for (int i = 0; i < moving_objects->num_point_clouds; i++)
+	{
+		if ((strcmp(moving_objects->point_clouds[i].model_features.model_name, "pedestrian") == 0) &&
+			(DIST2D(moving_objects->point_clouds[i].object_pose, pedestrain_track_annotation.annotation_point) < 10.0))
+			return (true);
+	}
+	return (false);
+}
+
+
+bool
 add_annotation(double x, double y, double theta, size_t annotation_index)
 {
 	double dx = annotation_read_from_file[annotation_index].annotation_point.x - x;
 	double dy = annotation_read_from_file[annotation_index].annotation_point.y - y;
 	double dist = sqrt(pow(dx, 2) + pow(dy, 2));
+	double angle_to_annotation = carmen_radians_to_degrees(fabs(carmen_normalize_theta(theta - annotation_read_from_file[annotation_index].annotation_orientation)));
 
 	if (annotation_read_from_file[annotation_index].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT)
 	{
-		double angle_to_annotation = carmen_radians_to_degrees(fabs(carmen_normalize_theta(theta - annotation_read_from_file[annotation_index].annotation_orientation)));
 		bool orientation_ok = angle_to_annotation < 70.0 ? true : false;
 
 		if ((dist < MAX_TRAFFIC_LIGHT_DISTANCE) && orientation_ok)
@@ -249,9 +266,31 @@ add_annotation(double x, double y, double theta, size_t annotation_index)
 			return (true);
 		}
 	}
+	else if (annotation_read_from_file[annotation_index].annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK)
+	{
+		bool orientation_ok = angle_to_annotation < 70.0 ? true : false;
+
+		if ((dist < 100.0) && orientation_ok)
+		{
+			if (moving_objects != NULL)
+			{
+				annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
+				if (pedestrian_track_busy(moving_objects, annotation_read_from_file[annotation_index]))
+					annotation_i.annotation.annotation_code = RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_BUSY;
+				else
+					annotation_i.annotation.annotation_code = RDDF_ANNOTATION_CODE_NONE;
+				annotations_to_publish.push_back(annotation_i);
+			}
+			else
+			{
+				annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
+				annotations_to_publish.push_back(annotation_i);
+			}
+			return (true);
+		}
+	}
 	else if (annotation_read_from_file[annotation_index].annotation_type == RDDF_ANNOTATION_TYPE_STOP)
 	{
-		double angle_to_annotation = carmen_radians_to_degrees(fabs(carmen_normalize_theta(theta - annotation_read_from_file[annotation_index].annotation_orientation)));
 		bool orientation_ok = angle_to_annotation < 15.0 ? true : false;
 
 		if ((dist < 20.0) && orientation_ok)
@@ -263,7 +302,6 @@ add_annotation(double x, double y, double theta, size_t annotation_index)
 	}
 	else if (dist < 20.0)
 	{
-		double angle_to_annotation = carmen_radians_to_degrees(fabs(carmen_normalize_theta(theta - annotation_read_from_file[annotation_index].annotation_orientation)));
 		bool orientation_ok = angle_to_annotation < 70.0 ? true : false;
 
 		if (orientation_ok)
@@ -619,6 +657,13 @@ carmen_rddf_dynamic_annotation_message_handler(carmen_rddf_dynamic_annotation_me
 	if (dynamic_annotation_messages.size() > 30)
 		dynamic_annotation_messages.pop_back();
 }
+
+
+void
+carmen_moving_objects_point_clouds_message_handler(carmen_moving_objects_point_clouds_message *moving_objects_point_clouds_message)
+{
+	moving_objects = moving_objects_point_clouds_message;
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -649,6 +694,8 @@ carmen_rddf_play_subscribe_messages()
     carmen_traffic_light_subscribe(traffic_lights_camera, NULL, (carmen_handler_t) carmen_traffic_light_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
     carmen_rddf_subscribe_dynamic_annotation_message(NULL, (carmen_handler_t) carmen_rddf_dynamic_annotation_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
 
 

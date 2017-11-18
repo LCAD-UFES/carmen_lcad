@@ -932,7 +932,7 @@ mapper_publish_map(double timestamp)
 
 	add_virtual_laser_points(&map, &virtual_laser_message);
 
-	add_moving_objects(&map, &moving_objects_message);
+//	add_moving_objects(&map, &moving_objects_message);
 
 	carmen_mapper_publish_map_message(&map, timestamp);
 //	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, timestamp);

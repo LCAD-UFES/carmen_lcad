@@ -39,6 +39,9 @@ const unsigned int maxPositions = 50;
 carmen_velodyne_partial_scan_message *velodyne_message_arrange;
 std::vector<carmen_velodyne_partial_scan_message> velodyne_vector;
 
+#define USE_YOLO_V2 	1
+#define USE_DETECTNET 	0
+
 #if USE_DETECTNET
 DetectNet *detectNet;
 #elif USE_YOLO_V2
@@ -221,34 +224,30 @@ publish_moving_objects(double timestamp)
 void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
-    cv::Mat src_image = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3);
-    cv::Mat rgb_image = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3);
+    cv::Mat src_image = cv::Mat(cv::Size(image_msg->width, image_msg->height - image_msg->height * 0.25), CV_8UC3);
+    cv::Mat rgb_image = cv::Mat(cv::Size(image_msg->width, image_msg->height - image_msg->height * 0.25), CV_8UC3);
 
     double start_time, end_time, delta_t, fps;
 
     start_time = carmen_get_time();
 
-    if (camera_side == 0) {
-        memcpy(src_image.data, image_msg->raw_left, image_msg->image_size * sizeof(char));
-    } else {
-        memcpy(src_image.data, image_msg->raw_right, image_msg->image_size * sizeof(char));
-    }
+    if (camera_side == 0)
+        memcpy(src_image.data, image_msg->raw_left, image_msg->image_size * sizeof(char) - image_msg->image_size * 0.25 * sizeof(char));
+    else
+        memcpy(src_image.data, image_msg->raw_right, image_msg->image_size * sizeof(char) - image_msg->image_size * 0.25 * sizeof(char));
 
     carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
     std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> points_lasers_in_cam_with_obstacle;
 
-    if (velodyne_vector.size() > 0) {
+    if (velodyne_vector.size() > 0)
         velodyne_sync_with_cam = find_velodyne_most_sync_with_cam(image_msg->timestamp);
-    } else {
+    else
         return;
-    }
-
 
     points_lasers_in_cam_with_obstacle = carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_display(
             &velodyne_sync_with_cam, image_msg->width, image_msg->height);
 
     cv::cvtColor(src_image, rgb_image, cv::COLOR_RGB2BGR);
-
 
     std::vector<carmen_tracked_cluster_t> clusters;
 
@@ -293,14 +292,15 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 #elif USE_YOLO_V2
 
     //0.3 threshold is good, more than this and it starts to miss some obstacles (very bad)
-    std::vector<bbox_t> predictions = darknet->detect(src_image, 0.3);
+    std::vector<bbox_t> predictions = darknet->detect(src_image, 0.2);
     //TODO: change this to the better tracker
     predictions = darknet->tracking(predictions); /*< Coment this line if object tracking is not necessary */
 
     /* The bouding box returned by the detector is different than what is
 	*	expected by this module, so we have to convert
     */
-    for (const auto &box : predictions) {
+    for (const auto &box : predictions)
+    {
         bounding_box bbox;
 
         bbox.pt1.x = box.x;
@@ -309,7 +309,6 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
         bbox.pt2.y = box.y + box.h;
 
         bouding_boxes_list.push_back(bbox);
-
     }
 
 #endif
@@ -320,7 +319,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     std::vector<std::vector<carmen_vector_3D_t> > cluster_list = get_cluster_list(laser_points_in_camera_box_list);
     filter_points_in_clusters(&cluster_list);
 
-    for (int i = 0; i < cluster_list.size(); i++) {
+    for (int i = 0; i < cluster_list.size(); i++)
+    {
         carmen_moving_object_type tp = find_cluster_type_by_obj_id(obj_names, predictions.at(i).obj_id);
 
         //TODO: Isso eh pois so queremos mexer com pedestres no momento
@@ -404,8 +404,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
     }
 
-
-    cv::Mat resized_image(cv::Size(640, 480), CV_8UC3);
+    cv::Mat resized_image(cv::Size(640, 480 - 480 * 0.25), CV_8UC3);
     cv::resize(rgb_image, resized_image, resized_image.size());
 
     cv::imshow("Neural car detector", resized_image);

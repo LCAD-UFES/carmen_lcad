@@ -8,10 +8,6 @@ LINK = g++
 CFLAGS += -Wall
 CXXFLAGS = -Wno-sign-compare -DUSE_OPENCV 
 
-# Flags to control wich network will be used
-# CXXFLAGS += -DUSE_DETECTNET
-CXXFLAGS += -DUSE_YOLO_V2
-
 IFLAGS += `pkg-config opencv --cflags` -std=c++11 -DNO_NVML
 LFLAGS += `pkg-config opencv --libs` -std=c++11
 

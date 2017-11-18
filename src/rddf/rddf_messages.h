@@ -25,7 +25,7 @@ extern "C"
 	#define RDDF_ANNOTATION_TYPE_DYNAMIC			11
 
 
-	#define NUM_RDDF_ANNOTATION_CODES						19
+	#define NUM_RDDF_ANNOTATION_CODES						20
 
 	#define RDDF_ANNOTATION_CODE_NONE		 				0
 
@@ -50,7 +50,9 @@ extern "C"
 
 	#define RDDF_ANNOTATION_CODE_DYNAMIC_STOP				18
 
-    typedef struct
+	#define RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_BUSY		19
+
+	typedef struct
     {
         int number_of_poses;
         int number_of_poses_back;
