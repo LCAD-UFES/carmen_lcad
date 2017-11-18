@@ -30,6 +30,7 @@ typedef struct
 {
 	int num_nodes;
 	virtual_scan_graph_node_t *nodes;
+	int selected;
 } virtual_scan_complete_sub_graph_t; // Pensar em um nome melhor
 
 

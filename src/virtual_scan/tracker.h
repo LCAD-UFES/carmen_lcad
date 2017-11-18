@@ -17,7 +17,13 @@ namespace virtual_scan
 
 class Track
 {
-	std::vector<virtual_scan_box_model_t> box_model;
+	std::deque<virtual_scan_graph_node_t *> graph_nodes;
+
+public:
+	void append_front(virtual_scan_graph_node_t *node);
+	void append_back(virtual_scan_graph_node_t *node);
+	virtual_scan_graph_node_t *Track::front_node();
+	virtual_scan_graph_node_t *Track::back_node();
 };
 
 class Tracks
@@ -25,28 +31,19 @@ class Tracks
 	std::vector<Track> tracks;
 	std::random_device *rd;
 
-	Tracks *
-	track_extension(virtual_scan_neighborhood_graph_t *neighborhood_graph);
-	Tracks *
-	track_reduction(virtual_scan_neighborhood_graph_t *neighborhood_graph);
-	Tracks *
-	track_birth(virtual_scan_neighborhood_graph_t *neighborhood_graph);
-	Tracks *
-	track_death(virtual_scan_neighborhood_graph_t *neighborhood_graph);
-	Tracks *
-	track_split(virtual_scan_neighborhood_graph_t *neighborhood_graph);
-	Tracks *
-	track_merge(virtual_scan_neighborhood_graph_t *neighborhood_graph);
-	Tracks *
-	track_switch(virtual_scan_neighborhood_graph_t *neighborhood_graph);
-	Tracks *
-	track_diffusion(virtual_scan_neighborhood_graph_t *neighborhood_graph);
+	void track_extension(virtual_scan_neighborhood_graph_t *neighborhood_graph, Track *tau);
+	void track_extension(virtual_scan_neighborhood_graph_t *neighborhood_graph);
+	void track_reduction(virtual_scan_neighborhood_graph_t *neighborhood_graph);
+	void track_birth(virtual_scan_neighborhood_graph_t *neighborhood_graph);
+	void track_death(virtual_scan_neighborhood_graph_t *neighborhood_graph);
+	void track_split(virtual_scan_neighborhood_graph_t *neighborhood_graph);
+	void track_merge(virtual_scan_neighborhood_graph_t *neighborhood_graph);
+	void track_switch(virtual_scan_neighborhood_graph_t *neighborhood_graph);
+	void track_diffusion(virtual_scan_neighborhood_graph_t *neighborhood_graph);
 public:
 	Tracks(std::random_device *rd);
-	Tracks *
-	propose(neighborhood_graph_t *neighborhood_graph);
-	double
-	P();
+	Tracks *propose(neighborhood_graph_t *neighborhood_graph);
+	double P();
 };
 
 class Tracker
