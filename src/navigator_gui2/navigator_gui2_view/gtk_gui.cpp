@@ -371,6 +371,8 @@ namespace View
 		annotation_image[RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/pedestrian_2_15_red.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK][RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_BUSY] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/stop-line_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);
 
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/stop_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_STOP][RDDF_ANNOTATION_CODE_NONE] = get_annotation_image(annotation_image_filename);

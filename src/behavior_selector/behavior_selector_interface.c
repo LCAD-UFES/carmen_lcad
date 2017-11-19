@@ -194,9 +194,13 @@ get_low_level_state_name(carmen_behavior_selector_low_level_state_t state)
 	if (state == Stopped_Behind_Moving_Object_S1) 	return ((char *) "Stopped_Behind_Moving_Object_S1");
 	if (state == Stopped_Behind_Moving_Object_S2) 	return ((char *) "Stopped_Behind_Moving_Object_S2");
 	if (state == Stopping_At_Red_Traffic_Light)     return ((char *) "Stopping_At_Red_Traffic_Light");
-	if (state == Stopped_At_Red_Traffic_light_S0) 	return ((char *) "Stopped_At_Red_Traffic_light_S0");
-	if (state == Stopped_At_Red_Traffic_light_S1) 	return ((char *) "Stopped_At_Red_Traffic_light_S1");
-	if (state == Stopped_At_Red_Traffic_light_S2) 	return ((char *) "Stopped_At_Red_Traffic_light_S2");
+	if (state == Stopped_At_Red_Traffic_Light_S0) 	return ((char *) "Stopped_At_Red_Traffic_Light_S0");
+	if (state == Stopped_At_Red_Traffic_Light_S1) 	return ((char *) "Stopped_At_Red_Traffic_Light_S1");
+	if (state == Stopped_At_Red_Traffic_Light_S2) 	return ((char *) "Stopped_At_Red_Traffic_Light_S2");
+	if (state == Stopping_At_Busy_Pedestrian_Track)     return ((char *) "Stopping_At_Busy_Pedestrian_Track");
+	if (state == Stopped_At_Busy_Pedestrian_Track_S0) 	return ((char *) "Stopped_At_Busy_Pedestrian_Track_S0");
+	if (state == Stopped_At_Busy_Pedestrian_Track_S1) 	return ((char *) "Stopped_At_Busy_Pedestrian_Track_S1");
+	if (state == Stopped_At_Busy_Pedestrian_Track_S2) 	return ((char *) "Stopped_At_Busy_Pedestrian_Track_S2");
 	if (state == Stopping_At_Stop_Sign) 			return ((char *) "Stopping_At_Stop_Sign");
 	if (state == Stopped_At_Stop_Sign_S0) 			return ((char *) "Stopped_At_Stop_Sign_S0");
 	if (state == Stopped_At_Stop_Sign_S1) 			return ((char *) "Stopped_At_Stop_Sign_S1");
