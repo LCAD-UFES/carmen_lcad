@@ -151,5 +151,5 @@ set fontpath
 set psdir
 set fit noerrorvariables
 GNUTERM = "wxt"
-plot "caco4.txt" u 2 w l t "clearing_annot", "caco4.txt" u 4 w l t "annot_ahead", "caco4.txt" u 6 w l t "dist_to_act_annot", "caco4.txt" u 8 w l t "dist_annot", "caco4.txt" u 10 w l t "v", "caco4.txt" u 12 w l t "gv", "caco4.txt" u 14 w l t "test", "caco4.txt" u 16 w l t "dist_goal"
+plot "caco4.txt" u 2 w l t "clearing_annot", "caco4.txt" u 6 w l t "dist_to_act_annot", "caco4.txt" u 8 w l t "dist_annot", "caco4.txt" u 10 w l t "v", "caco4.txt" u 12 w l t "gv", "caco4.txt" u 18 w l t "annot_v", "caco4.txt" u 16 w l t "dist_goal"
 #    EOF

@@ -62,6 +62,7 @@ extern "C" {
 	// int moving_object_in_front();
 	double distance_between_waypoints_and_goals();
 	bool red_traffic_light_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp);
+	bool busy_pedestrian_track_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp);
 	bool stop_sign_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi);
 
 	void publish_dynamic_annotation(carmen_vector_3D_t annotation_point, double orientation, char *annotation_description,

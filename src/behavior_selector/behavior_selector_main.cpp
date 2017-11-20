@@ -183,8 +183,8 @@ displace_pose(carmen_ackerman_traj_point_t robot_pose, double displacement)
 
 
 carmen_annotation_t *
-get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotation_message,
-		carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi, bool wait_start_moving)
+get_nearest_specified_annotation(int annotation, carmen_rddf_annotation_message annotation_message,
+		carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
 {
 	int nearest_annotation_index = -1;
 	double distance_to_nearest_annotation = 1000.0;
@@ -192,15 +192,10 @@ get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotatio
 	for (int i = 0; i < annotation_message.num_annotations; i++)
 	{
 		double distance_to_annotation = DIST2D_P(&annotation_message.annotations[i].annotation_point, current_robot_pose_v_and_phi);
-		if (((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) ||
-			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BARRIER) ||
-			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP) ||
-			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_STOP) && !wait_start_moving) ||
-			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) && !wait_start_moving) ||
-			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&
-			  (annotation_message.annotations[i].annotation_code == RDDF_ANNOTATION_CODE_DYNAMIC_STOP) && !wait_start_moving) ||
-			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BUMP)) &&
-			 (distance_to_annotation < distance_to_nearest_annotation))
+
+		if ((annotation_message.annotations[i].annotation_type == annotation) &&
+			(distance_to_annotation < distance_to_nearest_annotation) &&
+			carmen_rddf_play_annotation_is_forward(*current_robot_pose_v_and_phi, annotation_message.annotations[i].annotation_point))
 		{
 			distance_to_nearest_annotation = distance_to_annotation;
 			nearest_annotation_index = i;
@@ -214,8 +209,42 @@ get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotatio
 }
 
 
+bool
+busy_pedestrian_track_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+{
+	static double last_pedestrian_track_busy_timestamp = 0.0;
+
+//	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
+//				&current_robot_pose_v_and_phi, false);
+//
+//	if (nearest_velocity_related_annotation == NULL)
+//		return (false);
+//
+//	double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi);
+//	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.1, distance_to_annotation);
+	carmen_ackerman_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
+
+	carmen_annotation_t *nearest_pedestrian_track_annotation = get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK,
+			last_rddf_annotation_message, &displaced_robot_pose);
+
+	if (nearest_pedestrian_track_annotation == NULL)
+		return (false);
+
+	if ((nearest_pedestrian_track_annotation->annotation_code == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_BUSY))// &&
+//		(nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP) &&
+//		(distance_to_act_on_annotation >= distance_to_annotation) &&
+//		carmen_rddf_play_annotation_is_forward(displaced_robot_pose, nearest_velocity_related_annotation->annotation_point))
+		last_pedestrian_track_busy_timestamp = timestamp;
+
+	if (timestamp - last_pedestrian_track_busy_timestamp < 4.0)
+		return (true);
+
+	return (false);
+}
+
+
 carmen_annotation_t *
-get_nearest_traffic_light_annotation(carmen_rddf_annotation_message annotation_message,
+get_nearest_velocity_related_annotation(carmen_rddf_annotation_message annotation_message,
 		carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi, bool wait_start_moving)
 {
 	int nearest_annotation_index = -1;
@@ -224,10 +253,17 @@ get_nearest_traffic_light_annotation(carmen_rddf_annotation_message annotation_m
 	for (int i = 0; i < annotation_message.num_annotations; i++)
 	{
 		double distance_to_annotation = DIST2D_P(&annotation_message.annotations[i].annotation_point, current_robot_pose_v_and_phi);
-
-		if (((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT) && !wait_start_moving) &&
-			 (distance_to_annotation < distance_to_nearest_annotation) &&
-			 carmen_rddf_play_annotation_is_forward(*current_robot_pose_v_and_phi, annotation_message.annotations[i].annotation_point))
+		if (((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) ||
+			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BARRIER) ||
+			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) ||
+			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_STOP) && !wait_start_moving) ||
+			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) && !wait_start_moving) ||
+			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP) && busy_pedestrian_track_ahead(*current_robot_pose_v_and_phi, carmen_get_time()) && !wait_start_moving) ||
+			 ((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&
+			  (annotation_message.annotations[i].annotation_code == RDDF_ANNOTATION_CODE_DYNAMIC_STOP) && !wait_start_moving) ||
+			 (annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_BUMP)) &&
+			carmen_rddf_play_annotation_is_forward(*current_robot_pose_v_and_phi, annotation_message.annotations[i].annotation_point) &&
+			 (distance_to_annotation < distance_to_nearest_annotation))
 		{
 			distance_to_nearest_annotation = distance_to_annotation;
 			nearest_annotation_index = i;
@@ -277,8 +313,8 @@ red_traffic_light_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_ph
 	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.1, distance_to_annotation);
 	carmen_ackerman_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
 
-	carmen_annotation_t *nearest_traffic_light_annotation = get_nearest_traffic_light_annotation(last_rddf_annotation_message,
-				&displaced_robot_pose, false);
+	carmen_annotation_t *nearest_traffic_light_annotation = get_nearest_specified_annotation(RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT,
+			last_rddf_annotation_message, &displaced_robot_pose);
 
 	if (nearest_traffic_light_annotation == NULL)
 		return (false);
@@ -297,44 +333,26 @@ red_traffic_light_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_ph
 }
 
 
-bool
-busy_pedestrian_track_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
-{
-	static double last_pedestrian_track_busy_timestamp = 0.0;
-
-	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
-				&current_robot_pose_v_and_phi, false);
-
-	if (nearest_velocity_related_annotation == NULL)
-		return (false);
-
-	double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi);
-	double distance_to_act_on_annotation = get_distance_to_act_on_annotation(current_robot_pose_v_and_phi.v, 0.1, distance_to_annotation);
-	carmen_ackerman_traj_point_t displaced_robot_pose = displace_pose(current_robot_pose_v_and_phi, -1.0);
-
-	if ((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) &&
-		(nearest_velocity_related_annotation->annotation_code == RDDF_ANNOTATION_TYPE_NONE))
-		return (false);
-	else if ((nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP) &&
-		(distance_to_act_on_annotation >= distance_to_annotation) &&
-		carmen_rddf_play_annotation_is_forward(displaced_robot_pose, nearest_velocity_related_annotation->annotation_point))
-		last_pedestrian_track_busy_timestamp = timestamp;
-
-	if (timestamp - last_pedestrian_track_busy_timestamp < 3.0)
-		return (true);
-
-	return (false);
-}
-
-
 double
 get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_ackerman_traj_point_t current_robot_pose_v_and_phi,
 		double timestamp)
 {
 	double v = 60.0 / 3.6;
 
-	if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_BUMP) ||
-		(annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP))
+	if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) &&
+		red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp))
+		v = 0.08;
+	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP) &&
+			 busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp))
+		v = 0.08;
+	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP)
+		v = 0.08;
+	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&
+			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_DYNAMIC_STOP))
+		v = 0.09;
+	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_BUMP)
+		v = 2.5;
+	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK)
 		v = 2.5;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_BARRIER)
 		v = 2.0;
@@ -362,17 +380,6 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_ackerman
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_SPEED_LIMIT) &&
 			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_SPEED_LIMIT_60))
 		v = 60.0 / 3.6;
-	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP) &&
-			 red_traffic_light_ahead(current_robot_pose_v_and_phi, timestamp))
-		v = 0.08;
-	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP) &&
-			 busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp))
-		v = 0.08;
-	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP)
-		v = 0.08;
-	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&
-			 (annotation->annotation_code == RDDF_ANNOTATION_CODE_DYNAMIC_STOP))
-		v = 0.09;
 
 	return (v);
 }
@@ -394,31 +401,6 @@ distance_to_moving_obstacle_annotation(carmen_ackerman_traj_point_t current_robo
 		return (distance_to_annotation);
 	else
 		return (1000.0);
-}
-
-
-carmen_annotation_t *
-get_nearest_traffic_light_annotation(carmen_rddf_annotation_message annotation_message,
-		carmen_ackerman_traj_point_t *current_robot_pose_v_and_phi)
-{
-	int nearest_annotation_index = -1;
-	double distance_to_nearest_annotation = 1000.0;
-
-	for (int i = 0; i < annotation_message.num_annotations; i++)
-	{
-		double distance_to_annotation = DIST2D_P(&annotation_message.annotations[i].annotation_point, current_robot_pose_v_and_phi);
-		if (((annotation_message.annotations[i].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT)) &&
-			 (distance_to_annotation < distance_to_nearest_annotation))
-		{
-			distance_to_nearest_annotation = distance_to_annotation;
-			nearest_annotation_index = i;
-		}
-	}
-
-	if (nearest_annotation_index != -1)
-		return (&(annotation_message.annotations[nearest_annotation_index]));
-	else
-		return (NULL);
 }
 
 
@@ -490,6 +472,7 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, ca
 		double timestamp)
 {
 	static bool clearing_annotation = false;
+	static carmen_vector_3D_t previous_annotation_point = {0.0, 0.0, 0.0};
 
 	if (!autonomous)
 		clearing_annotation = false;
@@ -535,29 +518,31 @@ set_goal_velocity_according_to_annotation(carmen_ackerman_traj_point_t *goal, ca
 			udatmo_set_model_predictive_planner_obstacles_safe_distance(original_model_predictive_planner_obstacles_safe_distance);
 		}
 
-
 		if (last_rddf_annotation_message_valid &&
 			(clearing_annotation ||
 			 (((distance_to_annotation < distance_to_act_on_annotation) ||
 			   (distance_to_annotation < distance_to_goal)) && annotation_ahead)))
 		{
+			if (!clearing_annotation)
+				previous_annotation_point = nearest_velocity_related_annotation->annotation_point;
+
 			clearing_annotation = true;
 			goal->v = carmen_fmin(
 					get_velocity_at_goal(current_robot_pose_v_and_phi->v, velocity_at_next_annotation, distance_to_goal, distance_to_annotation),
 					goal->v);
 		}
 
+		if (!annotation_ahead || (DIST2D(previous_annotation_point, nearest_velocity_related_annotation->annotation_point) > 0.0))
+			clearing_annotation = false;
+
 		FILE *caco = fopen("caco4.txt", "a");
-		fprintf(caco, "ca %d, aa %d, daann %.1lf, dann %.1lf, v %.1lf, vg %.1lf, aif %d, dg %.1lf, ts %lf\n", clearing_annotation, annotation_ahead,
+		fprintf(caco, "ca %d, aa %d, daann %.1lf, dann %.1lf, v %.1lf, vg %.1lf, aif %d, dg %.1lf, av %.1lf, ts %lf\n", clearing_annotation, annotation_ahead,
 				distance_to_act_on_annotation, distance_to_annotation, current_robot_pose_v_and_phi->v,
 				goal->v,
 				carmen_rddf_play_annotation_is_forward(get_robot_pose(), nearest_velocity_related_annotation->annotation_point),
-				distance_to_goal, carmen_get_time());
+				distance_to_goal, velocity_at_next_annotation, carmen_get_time());
 		fflush(caco);
 		fclose(caco);
-
-		if (!annotation_ahead)
-			clearing_annotation = false;
 	}
 	else
 	{
@@ -1187,6 +1172,24 @@ distance_to_red_traffic_light(carmen_ackerman_traj_point_t current_robot_pose_v_
 
 
 double
+distance_to_traffic_light_stop(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
+{
+	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
+				&current_robot_pose_v_and_phi, false);
+
+	if (nearest_velocity_related_annotation == NULL)
+		return (1000.0);
+
+	double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi);
+
+	if (nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP)
+		return (distance_to_annotation);
+	else
+		return (1000.0);
+}
+
+
+double
 distance_to_busy_pedestrian_track(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
 	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
@@ -1199,24 +1202,6 @@ distance_to_busy_pedestrian_track(carmen_ackerman_traj_point_t current_robot_pos
 
 	if (busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp) &&
 		(nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP))
-		return (distance_to_annotation);
-	else
-		return (1000.0);
-}
-
-
-double
-distance_to_traffic_light_stop(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi)
-{
-	carmen_annotation_t *nearest_velocity_related_annotation = get_nearest_velocity_related_annotation(last_rddf_annotation_message,
-				&current_robot_pose_v_and_phi, false);
-
-	if (nearest_velocity_related_annotation == NULL)
-		return (1000.0);
-
-	double distance_to_annotation = DIST2D(nearest_velocity_related_annotation->annotation_point, current_robot_pose_v_and_phi);
-
-	if (nearest_velocity_related_annotation->annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_LIGHT_STOP)
 		return (distance_to_annotation);
 	else
 		return (1000.0);
