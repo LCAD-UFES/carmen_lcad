@@ -3,13 +3,15 @@
 namespace virtual_scan
 {
 
-Tracker::Tracker(int n):
-	n_mc(n),
-	neighborhood_graph(virtual_scan_alloc_neighborhood_graph ()),
-	tracks_n(new Tracks(&rd)),
-	tracks_star(new Tracks(&rd)),
-	uniform(0.0, 1.0)
+Track::~Track()
 {
+	for (int i = 0; i < graph_nodes.size(); i++)
+		graph_nodes[i]->complete_sub_graph->selected = 0;
+}
+
+int Track::size()
+{
+	return graph_nodes.size();
 }
 
 void Track::append_front(virtual_scan_graph_node_t *node)
@@ -32,15 +34,34 @@ virtual_scan_graph_node_t *Track::back_node()
 	return graph_nodes.back();
 }
 
+void Track::track_forward_reduction(int r)
+{
+	for (int i = r + 1; i < graph_nodes.size(); i++)
+		graph_nodes[i]->complete_sub_graph->selected = 0;
+	graph_nodes.erase(graph_nodes.begin() + (r + 1), graph_nodes.end());
+}
+
+void Track::track_backward_reduction(int r)
+{
+	for (int i = 0; i < r; i++)
+			graph_nodes[i]->complete_sub_graph->selected = 0;
+	graph_nodes.erase(graph_nodes.begin(), graph_nodes.begin() + r);
+}
+
 Tracks::Tracks(std::random_device *rd_):
 	rd(rd_)
 {
 }
 
+inline int random_int(int a, int b, std::random_device *rd)
+{
+	std::uniform_int_distribution <> u(a, b);
+	return u(*rd);
+}
+
 bool Tracks::track_birth(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
-	std::uniform_int_distribution <> uniform_disconnected_sub_graph(0, neighborhood_graph->num_sub_graphs);
-	int n = uniform_disconnected_sub_graph(*rd);
+	int n = random_int(0, neighborhood_graph->num_sub_graphs, rd);
 	virtual_scan_disconnected_sub_graph_t *disconnected_sub_graph = neighborhood_graph->first;
 	for (int i = 0; i < n; i++)
 		disconnected_sub_graph = disconnected_sub_graph->next;
@@ -56,29 +77,38 @@ bool Tracks::track_birth(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 	if (indexes.size() == 0)
 		return false;
 
-	std::uniform_int_distribution <> uniform_complete_sub_graph(0, indexes.size());
-	n = indexes[uniform_complete_sub_graph(*rd)];
+	n = indexes[random_int(0, indexes.size(), rd)];
 	complete_sub_graph = disconnected_sub_graph->sub_graphs + n;
 
 	complete_sub_graph->selected = 1;
-	std::uniform_int_distribution <> uniform_graph_node(0, complete_sub_graph->num_nodes);
-	n = uniform_graph_node(*rd);
+	n = random_int(0, complete_sub_graph->num_nodes, rd);
+
 	virtual_scan_graph_node_t *node = complete_sub_graph->nodes + n;
 
-	Track tau;
-	tau.append_front(node);
+	tracks.emplace_back();
+	Track *tau = &tracks.back();
+	tau->append_front(node);
+	track_extension(neighborhood_graph, tau);
 
-	track_extension(neighborhood_graph, &tau);
-
-	if (tau.size() >= 2)
+	if (tau->size() < 2)
 	{
-		tracks.push_back(tau);
+		tracks.pop_back();
 	}
 
 	return true;
 }
 
-bool Tracks::forward_extension(Track *tau)
+bool Tracks::track_death()
+{
+	if (tracks.size() == 0)
+		return false;
+	int n = random_int(0, tracks.size(), rd); // Selects the track to be deleted
+	tracks.erase(tracks.begin() + n);
+
+	return true;
+}
+
+bool Tracks::track_forward_extension(Track *tau)
 {
 	virtual_scan_graph_node_t *graph_node = tau->back_node();
 	int num_children = graph_node->children.num_pointers;
@@ -97,15 +127,14 @@ bool Tracks::forward_extension(Track *tau)
 	if (indexes.size() == 0)
 		return false;
 
-	std::uniform_int_distribution <> uniform_sort_child(0, indexes.size());
-	int n = indexes[uniform_sort_child(*rd)];
+	int n = indexes[random_int(0, indexes.size(), rd)];
 	child = graph_node->children.pointers[n];
 	tau->append_back(child);
 
 	return true;
 }
 
-bool Tracks::backward_extension(Track *tau)
+bool Tracks::track_backward_extension(Track *tau)
 {
 	virtual_scan_graph_node_t *graph_node = tau->front_node();
 	int num_parents = graph_node->parents.num_pointers;
@@ -124,26 +153,52 @@ bool Tracks::backward_extension(Track *tau)
 	if (indexes.size() == 0)
 		return false;
 
-	std::uniform_int_distribution <> uniform_sort_parent(0, indexes.size());
-	int n = indexes[uniform_sort_parent(*rd)];
+	int n = indexes[random_int(0, indexes.size(), rd)];
 	parent = graph_node->parents.pointers[n];
 	tau->append_front(parent);
 
 	return true;
 }
 
-void Tracks::track_extension(virtual_scan_neighborhood_graph_t *neighborhood_graph, Track *tau)
+bool Tracks::track_extension(virtual_scan_neighborhood_graph_t *neighborhood_graph, Track *tau)
 {
-	std::uniform_int_distribution <> uniform_forward_backward_extension(0, 2); // 0 denotes forward extension and 1 backward extension
-	int n = uniform_forward_backward_extension(*rd);
+	int n = random_int(0, 2, rd); // 0 denotes forward extension and 1 backward extension
 
 	if (n == 0 && forward_extension(tau)==true)// Forward extension
-		return;
+		return true;
 	// Backward extension
-	backward_extension(tau);
+	return backward_extension(tau);
 }
 
-void Tracks::track_extension(virtual_scan_neighborhood_graph_t *neighborhood_graph)
+bool Tracks::track_extension(virtual_scan_neighborhood_graph_t *neighborhood_graph)
+{
+	if (tracks.size()==0)
+		return false;
+	int n = random_int(0, tracks.size(), rd);
+	Track *tau = &tracks[n];
+
+	return track_extension(neighborhood_graph, tau);
+}
+
+void Tracks::track_reduction(virtual_scan_neighborhood_graph_t *neighborhood_graph)
+{
+	if (tracks.size()==0)
+		return false;
+	int n = random_int(0, 2, rd); // 0 denotes forward reduction and 1 backward reduction
+	int r = random_int(0, tracks.size(), rd); // Selects the track to be reduced
+	Track *tau = &tracks[r];
+	r = random_int(1, tracks.size() - 1, rd); // Selects the cutting index
+	if (n == 0) // Forward reduction
+	{
+		tau->track_forward_reduction(r);
+	}
+	else // Backward reduction
+	{
+		tau->track_backward_reduction(r);
+	}
+}
+
+Tracks *Tracks::track_split(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
 
 }
@@ -159,6 +214,15 @@ Tracks *Tracks::propose(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 double Tracks::P()
 {
 	
+}
+
+Tracker::Tracker(int n):
+	n_mc(n),
+	neighborhood_graph(virtual_scan_alloc_neighborhood_graph ()),
+	tracks_n(new Tracks(&rd)),
+	tracks_star(new Tracks(&rd)),
+	uniform(0.0, 1.0)
+{
 }
 
 Tracks *Tracker::track(virtual_scan_box_model_hypotheses_t *box_model_hypotheses)
