@@ -33,8 +33,10 @@ class Tracks
 
 	void track_extension(virtual_scan_neighborhood_graph_t *neighborhood_graph, Track *tau);
 	void track_extension(virtual_scan_neighborhood_graph_t *neighborhood_graph);
+	bool forward_extension(Track *tau);
+	bool backward_extension(Track *tau);
 	void track_reduction(virtual_scan_neighborhood_graph_t *neighborhood_graph);
-	void track_birth(virtual_scan_neighborhood_graph_t *neighborhood_graph);
+	bool track_birth(virtual_scan_neighborhood_graph_t *neighborhood_graph);
 	void track_death(virtual_scan_neighborhood_graph_t *neighborhood_graph);
 	void track_split(virtual_scan_neighborhood_graph_t *neighborhood_graph);
 	void track_merge(virtual_scan_neighborhood_graph_t *neighborhood_graph);
@@ -42,7 +44,7 @@ class Tracks
 	void track_diffusion(virtual_scan_neighborhood_graph_t *neighborhood_graph);
 public:
 	Tracks(std::random_device *rd);
-	Tracks *propose(neighborhood_graph_t *neighborhood_graph);
+	Tracks *propose(virtual_scan_neighborhood_graph_t *neighborhood_graph);
 	double P();
 };
 
