@@ -59,6 +59,7 @@ virtual_scan_compute_graph_nodes (virtual_scan_complete_sub_graph_t *complete_su
 	{
 		graph_nodes[j].box_model = hypothesys->box[j];
 		graph_nodes[j].timestamp = timestamp;
+		graph_nodes[j].complete_sub_graph = complete_sub_graph;
 		virtual_scan_initiate_elements(&graph_nodes[j].siblings);
 		virtual_scan_initiate_elements(&graph_nodes[j].parents);
 		virtual_scan_initiate_elements(&graph_nodes[j].children);

@@ -20,6 +20,7 @@ typedef struct _virtual_scan_graph_node_t
 {
 	virtual_scan_box_model_t box_model;
 	double timestamp;
+	virtual_scan_complete_sub_graph_t *complete_sub_graph;
 	virtual_scan_elements_t parents;
 	virtual_scan_elements_t children;
 	virtual_scan_elements_t siblings;
