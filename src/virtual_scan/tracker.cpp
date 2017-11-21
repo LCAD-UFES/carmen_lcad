@@ -48,29 +48,85 @@ void Track::track_backward_reduction(int r)
 	graph_nodes.erase(graph_nodes.begin(), graph_nodes.begin() + r);
 }
 
-void Track::track_move(Track *track, int s)
+void Track::track_move(Track *tau, int s)
 {
 	for (int i = s + 1; i < graph_nodes.size(); i++)
 	{
-		track->graph_nodes.push_back(graph_nodes[i]);
+		tau->graph_nodes.push_back(graph_nodes[i]);
 	}
 	graph_nodes.erase(graph_nodes.begin() + (s + 1), graph_nodes.end());
 }
 
-bool Track::track_merge(Track *track)
+bool Track::is_mergeable(Track *tau)
 {
 	virtual_scan_graph_node_t *last_node = this->graph_nodes.back();
-	virtual_scan_graph_node_t *first_node = track->graph_nodes.front();
+	virtual_scan_graph_node_t *first_node = tau->graph_nodes.front();
 	for (int i = 0; i < first_node->parents.num_pointers; i++)
 	{
 		virtual_scan_graph_node_t *parent = first_node->parents.pointers[i];
 		if (parent == last_node)
 		{
-			track->track_move(this, -1);
 			return true;
 		}
 	}
 	return false;
+}
+
+void Track::track_merge(Track *tau)
+{
+	tau->track_move(this, -1);
+}
+
+inline bool is_parent(virtual_scan_graph_node_t *node_1, virtual_scan_graph_node_t *node_2)
+{
+	for (int i = 0; i < node_2->parents.num_pointers; i++)
+	{
+		virtual_scan_graph_node_t *parent = node_2->parents.pointers[i];
+		if (parent == node_1)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+std::pair <int, int>  Track::is_switchable(Track *tau)
+{
+	for (int p = 0; p < this->size() - 1; p++)
+	{
+		virtual_scan_graph_node_t *t_p = this->graph_nodes[p];
+		virtual_scan_graph_node_t *t_p_plus_1 = this->graph_nodes[p + 1];
+		for (int q = 0; q < tau->size() - 1; q++)
+		{
+			virtual_scan_graph_node_t *t_q = tau->graph_nodes[q];
+			virtual_scan_graph_node_t *t_q_plus_1 = tau->graph_nodes[q + 1];
+			if (is_parent(t_p, t_q_plus_1) && is_parent(t_q, t_p_plus_1))
+				return(std::make_pair(p,q));
+		}
+	}
+	return (std::make_pair(-1, -1));
+}
+
+void Track::track_switch(Track *tau, std::pair <int, int> break_point_pair)
+{
+	Track tau_temp;
+
+	int p = break_point_pair.first;
+	int q = break_point_pair.second;
+
+	track_move(&tau_temp, p);
+	tau->track_move(this, q);
+	tau_temp.track_move(tau, -1);
+}
+
+void Track::track_update(std::random_device *rd)
+{
+	std::normal_distribution normal;
+	int n = random_int(0, this->size(), rd);
+	virtual_scan_box_model_t *box_model = &this->graph_nodes[n]->box_model;
+	box_model->x += normal(rd);
+	box_model->y += normal(rd);
+	box_model->theta = carmen_normalize_theta(box_model->theta + normal(rd));
 }
 
 Tracks::Tracks(std::random_device *rd_):
@@ -250,25 +306,75 @@ bool Tracks::track_split(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 
 bool Tracks::track_merge(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
-	if (tracks.size() < 2)
-		return false;
-
-	Track *tau_1 = &tracks[random_int(0, tracks.size(), rd)];
-	Track *tau_2;
-	int i;
-	do
+	std::vector <std::pair <int, int>> pairs;
+	for (int i = 0; i < tracks.size(); i++)
 	{
-		i = random_int(0, tracks.size(), rd);
-		tau_2 = &tracks[i];
+		Track *tau_1 = &tracks[i];
+		for (int j = i + 1; j < tracks.size(); j++)
+		{
+			Track *tau_2 = &tracks[j];
+			if (tau_1->is_mergeable(tau_2))
+				pairs.push_back(std::make_pair(i, j));
+			else if (tau_2->is_mergeable(tau_1))
+				pairs.push_back(std::make_pair(j, i));
+		}
 	}
-	while (tau_1 == tau_2);
 
-	if (!tau_1->merge(tau2))
+	if (pairs.size() < 1)
 		return false;
 
-	tracks.erase(tracks.begin() + i);
+	int n = random_int(0, pairs.size(), rd);
+	Track *tau_1 = &tracks[pairs[n].first];
+	Track *tau_2 = &tracks[pairs[n].second];
+	tau_1->track_merge(tau2);
+
+	tracks.erase(tracks.begin() + pairs[n].second);
 
 	return true;
+}
+
+bool Tracks::track_switch(virtual_scan_neighborhood_graph_t *neighborhood_graph)
+{
+	std::vector <std::pair <int, int>> track_pairs;
+	std::vector <std::pair <int, int>> break_points_pairs;
+	for (int i = 0; i < tracks.size(); i++)
+	{
+		Track *tau_1 = &tracks[i];
+		for (int j = i + 1; j < tracks.size(); j++)
+		{
+			Track *tau_2 = &tracks[j];
+			for (int k = 0; k < 2; k++)
+			{
+				std::pair <int, int> break_points = tau_1->is_switchable(tau_2);
+				if (break_points.first != -1)
+				{
+					track_pairs.push_back(std::make_pair(i, j));
+					break_points_pairs.push_back(break_points);
+				}
+				std::swap(tau_1, tau_2);
+				std::swap(i, j);
+			}
+		}
+	}
+
+	if (track_pairs.size() < 1)
+		return false;
+
+	int n = random_int(0, track_pairs.size(), rd);
+	Track *tau_1 = &tracks[track_pairs[n].first];
+	Track *tau_2 = &tracks[track_pairs[n].second];
+	tau_1->track_switch(tau_2, break_points_pairs[n]);
+
+	return true;
+}
+
+bool Tracks::track_diffusion()
+{
+	if (tracks.size() < 1)
+		return false;
+	int n = random_int(0, tracks.size(), rd);
+	Track *tau = &tracks[n];
+	tau->track_update(rd);
 }
 
 Tracks *Tracks::propose(virtual_scan_neighborhood_graph_t *neighborhood_graph)

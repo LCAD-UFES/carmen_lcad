@@ -8,9 +8,11 @@
 #ifndef SRC_VIRTUAL_SCAN_TRACKER_H_
 #define SRC_VIRTUAL_SCAN_TRACKER_H_
 
+#include <carmen/carmen.h>
+#include "virtual_scan_neighborhood_graph.h"
 #include <vector>
 #include <random>
-#include "virtual_scan_neighborhood_graph.h"
+
 
 namespace virtual_scan
 {
@@ -29,7 +31,11 @@ public:
 	void track_forward_reduction(int r);
 	void track_backward_reduction(int r);
 	void track_move(Track *track, int s);
-	bool track_merge(Track *track);
+	bool is_mergeable(Track *tau);
+	void track_merge(Track *track);
+	std::pair <int, int> is_switchable(Track *tau);
+	void track_switch(Track *tau, std::pair <int, int> break_point_pair);
+	void track_update(std::random_device *rd);
 };
 
 class Tracks
@@ -41,13 +47,13 @@ class Tracks
 	bool track_extension(virtual_scan_neighborhood_graph_t *neighborhood_graph);
 	bool track_forward_extension(Track *tau);
 	bool track_backward_extension(Track *tau);
-	void track_reduction(virtual_scan_neighborhood_graph_t *neighborhood_graph);
+	bool track_reduction(virtual_scan_neighborhood_graph_t *neighborhood_graph);
 	bool track_birth(virtual_scan_neighborhood_graph_t *neighborhood_graph);
 	bool track_death();
 	bool track_split(virtual_scan_neighborhood_graph_t *neighborhood_graph);
 	bool track_merge(virtual_scan_neighborhood_graph_t *neighborhood_graph);
-	void track_switch(virtual_scan_neighborhood_graph_t *neighborhood_graph);
-	void track_diffusion(virtual_scan_neighborhood_graph_t *neighborhood_graph);
+	bool track_switch(virtual_scan_neighborhood_graph_t *neighborhood_graph);
+	bool track_diffusion();
 public:
 	Tracks(std::random_device *rd);
 	Tracks *propose(virtual_scan_neighborhood_graph_t *neighborhood_graph);
