@@ -219,10 +219,16 @@ carmen_rddf_play_find_nearest_poses_ahead(double x, double y, double yaw, double
 bool
 pedestrian_track_busy(carmen_moving_objects_point_clouds_message *moving_objects, carmen_annotation_t pedestrain_track_annotation)
 {
+	carmen_vector_2D_t world_point;
+	double displacement = distance_between_front_and_rear_axles + distance_between_front_car_and_front_wheels;
+	double theta = pedestrain_track_annotation.annotation_orientation;
+	world_point.x = pedestrain_track_annotation.annotation_point.x + displacement * cos(theta);
+	world_point.y = pedestrain_track_annotation.annotation_point.y + displacement * sin(theta);
+
 	for (int i = 0; i < moving_objects->num_point_clouds; i++)
 	{
 		if ((strcmp(moving_objects->point_clouds[i].model_features.model_name, "pedestrian") == 0) &&
-			(DIST2D(moving_objects->point_clouds[i].object_pose, pedestrain_track_annotation.annotation_point) < 10.0))
+			(DIST2D(moving_objects->point_clouds[i].object_pose, world_point) < pedestrain_track_annotation.annotation_point.z))
 			return (true);
 	}
 	return (false);
