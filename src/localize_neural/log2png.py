@@ -1,4 +1,4 @@
-import os
+import os.path
 import sys
 import cv2
 import argparse
@@ -32,10 +32,13 @@ def save_any_img(img_left, img_right, img_size, dst_size, timestamp, camera_id, 
 
     img_left_fname = '{0}.bb{1}.l.png'.format(timestamp, camera_id)
     img_right_fname = '{0}.bb{1}.r.png'.format(timestamp, camera_id)
-    print('Saving images {} and {} into {}'.format(img_left_fname, img_right_fname, output_dir))
-    cv2.imwrite(os.path.join(output_dir, img_left_fname), img_left)
-    cv2.imwrite(os.path.join(output_dir, img_right_fname), img_right)
-
+    if not (os.path.isfile(os.path.join(output_dir, img_left_fname)) and 
+            os.path.isfile(os.path.join(output_dir, img_right_fname))):
+        print('Saving images {} and {} into {}'.format(img_left_fname, img_right_fname, output_dir))
+        cv2.imwrite(os.path.join(output_dir, img_left_fname), img_left)
+        cv2.imwrite(os.path.join(output_dir, img_right_fname), img_right)
+    else:
+        print('Skipping images {} and {} into {}'.format(img_left_fname, img_right_fname, output_dir))
 
 def save_old_img(image, output_dir, camera_id, dst_size=None, max_height=None):
     img_left = np.fromstring(image['left'], count=image['bytes'], dtype=np.uint8)

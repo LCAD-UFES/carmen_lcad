@@ -33,7 +33,6 @@ static carmen_pose_3D_t car_pose_g;
 static carmen_pose_3D_t camera_pose_g;
 static carmen_pose_3D_t board_pose_g;
 static double between_axis_distance = 0.0;
-static int skip_frames;
 
 static char* output_dir_name;
 static char* image_pose_output_filename;
@@ -112,11 +111,28 @@ create_image_from_rgb_buffer (unsigned char *rgb_buffer, IplImage **img, int wid
 
 
 void
+resize_image(IplImage **img, int width, int height)
+{
+	IplImage *resized_image = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 3);
+	cvResize((*img), resized_image, CV_INTER_AREA);
+	cvRelease((void**) img);
+	(*img) = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 3);
+	cvCopy(resized_image, (*img));
+	cvRelease((void**) &resized_image);
+}
+
+
+void
 save_image_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int camera)
 {
 	char *left_img_filename, *right_img_filename;
 	char *left_composed_path, *right_composed_path;
 	IplImage *left_img, *right_img;
+	cv::Rect crop;
+	crop.x = 0;
+	crop.y = 0;
+	crop.width = 640;
+	crop.height = 380;
 
 	create_stereo_filename_from_timestamp(stereo_image->timestamp, &left_img_filename, &right_img_filename, camera);
 	compose_output_path(output_dir_name, left_img_filename, &left_composed_path);
@@ -124,6 +140,12 @@ save_image_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int
 
 	create_image_from_rgb_buffer(stereo_image->raw_left, &left_img, stereo_image->width, stereo_image->height);
 	create_image_from_rgb_buffer(stereo_image->raw_right, &right_img, stereo_image->width, stereo_image->height);
+
+	resize_image(&left_img, 640, 480);
+	resize_image(&right_img, 640, 480);
+
+	cvSetImageROI(left_img, crop);
+	cvSetImageROI(right_img, crop);
 
 	cvSaveImage(left_composed_path, left_img, NULL);
 	cvSaveImage(right_composed_path, right_img, NULL);
@@ -189,12 +211,6 @@ save_pose_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int 
 	if ((stereo_image == NULL) || (image_pose_output_file == NULL))
 	{
 		carmen_die("no image received\n");
-	}
-
-	if (skip_frames > 0)
-	{
-		carmen_warn("skip frames: %d\n", skip_frames--);
-		return;
 	}
 
 	int nearest_message_index = find_nearest_globalpos_message(stereo_image->timestamp);
@@ -263,7 +279,7 @@ void
 bumblebee_basic_handler(carmen_bumblebee_basic_stereoimage_message *stereo_image)
 {
 	save_pose_to_file(stereo_image, camera);
-	//use log2png.py instead
+	//use log2png.py for newer logs instead
 	//save_image_to_file(stereo_image, camera);
 }
 
@@ -310,7 +326,6 @@ read_parameters(int argc, char **argv)
 	carmen_param_t param_cmd_list[] =
 	{
 		{(char *) "commandline", (char *) "camera_id", CARMEN_PARAM_INT, &camera, 0, NULL},
-		{(char *) "commandline", (char *) "skip_frames", CARMEN_PARAM_INT, &skip_frames, 0, NULL},
 		{(char *) "commandline", (char *) "output_dir", CARMEN_PARAM_STRING, &output_dir_name, 0, NULL},
 		{(char *) "commandline", (char *) "output_txt", CARMEN_PARAM_STRING, &image_pose_output_filename, 0, NULL}
 	};

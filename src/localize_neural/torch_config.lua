@@ -13,10 +13,11 @@ net = nil
 
 function load (model)    -- this function will be called by C++ constructor
     net = torch.load(model)
+    net = net:cuda()
     net:evaluate()
 end
 
 function forward (curr_data, base_data)
-    output = net:forward{curr_data, base_data}
+    local output = net:forward({curr_data, base_data})
     return output:float()
 end

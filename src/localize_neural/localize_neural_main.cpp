@@ -28,6 +28,8 @@ carmen_pose_3D_t car_pose_g;
 carmen_pose_3D_t camera_pose_g;
 carmen_pose_3D_t board_pose_g;
 
+vector<pair<carmen_pose_3D_t, double> > camera_delta_poses_array;
+vector<pair<string, string> > camera_delta_frames_array;
 vector<pair<carmen_pose_3D_t, double> > camera_poses_base_array;
 vector<pair<string, double> > camera_frames_base_array;
 vector<pair<carmen_pose_3D_t, double> > camera_poses_curr_array;
@@ -52,7 +54,7 @@ camera_carmen_transform(const carmen_pose_3D_t & pose)
 			0, -1,  0, // camera x-axis wrt world
 			0,  0, -1, // camera y-axis wrt world
 			1,  0,  0  // camera z-axis wrt world
-			);
+	);
 	tf::Quaternion camera_pose_q;
 	camera_matrix.getRotation(camera_pose_q);
 	tf::Vector3 camera_pose_3d(0,0,0);
@@ -170,35 +172,55 @@ get_transforms_from_camera_to_car(double camera_x, double camera_y, double camer
 
 
 void
-load_poses(char *filename, vector<pair<carmen_pose_3D_t, double> > &poses, vector<pair<string, double> > &frames)
+load_delta_poses(char *filename,
+		vector<pair<string, string> > &delta_frames, vector<pair<carmen_pose_3D_t, double> > &delta_poses,
+		vector<pair<carmen_pose_3D_t, double> > &base_poses, vector<pair<carmen_pose_3D_t, double> > &live_poses)
 {
-	char imagename_l[256];
-	char imagename_r[256];
+	char imagename_depth[256];
+	char imagename_base[256];
+	char imagename_live[256];
 	double timestamp;
-	carmen_pose_3D_t pose = {{0.0,0.0,0.0},{0.0,0.0,0.0}};
+	carmen_pose_3D_t delta_pose = {{0.0,0.0,0.0},{0.0,0.0,0.0}};
+	carmen_pose_3D_t base_pose = {{0.0,0.0,0.0},{0.0,0.0,0.0}};
+	carmen_pose_3D_t live_pose = {{0.0,0.0,0.0},{0.0,0.0,0.0}};
 	FILE *log_file = fopen(filename, "r");
 
 	fscanf(log_file, "%*[^\n]\n"); //skip header
 	while(!feof(log_file))
 	{
-		//image x y z roll pitch yaw timestamp left right
-		fscanf(log_file, "%lf %lf %lf %lf %lf %lf %lf %s %s\n",
-				&pose.position.x,
-				&pose.position.y,
-				&pose.position.z,
-				&pose.orientation.roll,
-				&pose.orientation.pitch,
-				&pose.orientation.yaw,
-				&timestamp,
-				imagename_l,
-				imagename_r);
+		//dx dy dz dr dp dy base_depth base_image live_image timestamp
+		fscanf(log_file, "%lf %lf %lf %lf %lf %lf%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %s %s %s %lf\n",
+				&delta_pose.position.x,
+				&delta_pose.position.y,
+				&delta_pose.position.z,
+				&delta_pose.orientation.roll,
+				&delta_pose.orientation.pitch,
+				&delta_pose.orientation.yaw,
+				&base_pose.position.x,
+				&base_pose.position.y,
+				&base_pose.position.z,
+				&base_pose.orientation.roll,
+				&base_pose.orientation.pitch,
+				&base_pose.orientation.yaw,
+				&live_pose.position.x,
+				&live_pose.position.y,
+				&live_pose.position.z,
+				&live_pose.orientation.roll,
+				&live_pose.orientation.pitch,
+				&live_pose.orientation.yaw,
+				imagename_depth,
+				imagename_base,
+				imagename_live,
+				&timestamp
+		);
 
-		poses.push_back(pair<carmen_pose_3D_t, double>(pose, timestamp));
-		frames.push_back(pair<string, double>(string(imagename_l), timestamp));
+		delta_frames.push_back(pair<string, string>(string(imagename_base), string(imagename_live)));
+		delta_poses.push_back(pair<carmen_pose_3D_t, double>(delta_pose, timestamp));
+		base_poses.push_back(pair<carmen_pose_3D_t, double>(base_pose, timestamp));
+		live_poses.push_back(pair<carmen_pose_3D_t, double>(live_pose, timestamp));
 	}
 
 	fclose(log_file);
-	printf("Load complete.\n");
 }
 
 
@@ -255,8 +277,13 @@ find_more_synchronized_pose(const vector<pair<carmen_pose_3D_t, double> > &poses
 
 	for (uint i = 0; i < poses.size(); i++)
 	{
+		//comment out code below to get just frames ahead
 		double delta_t = timestamp - poses[i].second;
 		if ((delta_t >= 0) && (delta_t <= shortest_interval))
+			/*
+		double delta_t = fabs(timestamp - poses[i].second);
+		if (delta_t <= shortest_interval)
+			 */
 		{
 			shortest_interval = delta_t;
 			nearest_index = i;
@@ -384,44 +411,46 @@ carmen_bumblebee_basic_stereoimage_message_handler(carmen_bumblebee_basic_stereo
 	carmen_pose_3D_t camera_pose_curr;
 	carmen_pose_3D_t camera_pose_true;
 
-	int index_base = find_more_synchronized_pose(camera_poses_base_array, message->timestamp);
-	if (index_base < 0)
+	camera_timestamp = message->timestamp;
+
+	int index_delta = find_more_synchronized_pose(camera_delta_poses_array, camera_timestamp);
+	if (index_delta < 0)
 		return;
 
-	int index_curr = find_more_synchronized_pose(camera_poses_curr_array, message->timestamp);
-	if (index_curr < 0)
-		return;
-
-	if (camera_frames_curr_array[index_curr].second > message->timestamp)
-		camera_timestamp = camera_frames_curr_array[index_curr].second;
-	else
-		camera_timestamp = message->timestamp;
-
-	string key_frame = camera_frames_base_array[index_base].first;
-	string cur_frame = camera_frames_curr_array[index_curr].first;
+	string key_frame = camera_delta_frames_array[index_delta].first;
+	string cur_frame = camera_delta_frames_array[index_delta].second;
 
 	copy_image(&camera_message_base, key_frame);
 	copy_image(&camera_message_curr, cur_frame);
 
-	camera_pose_base = camera_poses_base_array[index_base].first;
-	camera_pose_true = camera_poses_curr_array[index_curr].first;
+	camera_pose_base = camera_poses_base_array[index_delta].first;
+	camera_pose_true = camera_poses_curr_array[index_delta].first;
 
-	carmen_pose_3D_t delta_pose_true = inverse_transform(camera_pose_base, camera_pose_true);
-	if (delta_pose_true.position.x < 0.0)
-		return;
+	//comment out code below in case you want to check transforms
+	//carmen_pose_3D_t delta_pose_true = inverse_transform(camera_pose_base, camera_pose_true);
+	carmen_pose_3D_t delta_pose_true = camera_delta_poses_array[index_delta].first;
+	delta_pose_true = camera_carmen_transform(delta_pose_true);
 
-	carmen_pose_3D_t delta_pose_curr = delta_pose_true;
-//	carmen_pose_3D_t delta_pose_curr = forward_network(camera_message_curr, camera_message_base);
-//	delta_pose_curr = camera_carmen_transform(delta_pose_curr);
+	//comment out code below when testing the network
+#if 0
+	carmen_pose_3D_t delta_pose_pred = delta_pose_true;
+#else
+	carmen_pose_3D_t delta_pose_pred = forward_network(camera_message_curr, camera_message_base);
+	delta_pose_pred = camera_carmen_transform(delta_pose_pred);
+#endif
+	//comment out code below when network is trained with the opposite odometer vector
+	carmen_pose_3D_t camera_pose_zero = {{0.0,0.0,0.0},{0.0,0.0,0.0}};
+	delta_pose_pred = inverse_transform(delta_pose_pred, camera_pose_zero);
+	delta_pose_true = inverse_transform(delta_pose_true, camera_pose_zero);
 
-	camera_pose_curr = direct_transform(camera_pose_base, delta_pose_curr);
+	camera_pose_curr = direct_transform(camera_pose_base, delta_pose_pred);
 	camera_pose_base.position.z = 1.7;
 	camera_pose_curr.position.z = 1.7;
 
 	carmen_point_t delta_pose_error = {
-			(delta_pose_curr.position.x-delta_pose_true.position.x),
-			(delta_pose_curr.position.y-delta_pose_true.position.y),
-			(delta_pose_curr.orientation.yaw-delta_pose_true.orientation.yaw)
+			(delta_pose_pred.position.x-delta_pose_true.position.x),
+			(delta_pose_pred.position.y-delta_pose_true.position.y),
+			(delta_pose_pred.orientation.yaw-delta_pose_true.orientation.yaw)
 	};
 	camera_delta_error_array.push_back(delta_pose_error);
 	carmen_warn("(%.2f %.2f %.3f)\n", delta_pose_error.x, delta_pose_error.y, delta_pose_error.theta);
@@ -543,26 +572,26 @@ read_camera_parameters(int argc, char **argv)
 
 	carmen_param_t param_list[] =
 	{
-		{(char *) camera_string, (char *) "x",		CARMEN_PARAM_DOUBLE, &(camera_pose_g.position.x), 0, NULL},
-		{(char *) camera_string, (char *) "y",		CARMEN_PARAM_DOUBLE, &(camera_pose_g.position.y), 0, NULL},
-		{(char *) camera_string, (char *) "z", 		CARMEN_PARAM_DOUBLE, &(camera_pose_g.position.z), 0, NULL},
-		{(char *) camera_string, (char *) "yaw", 	CARMEN_PARAM_DOUBLE, &(camera_pose_g.orientation.yaw), 0, NULL},
-		{(char *) camera_string, (char *) "pitch", 	CARMEN_PARAM_DOUBLE, &(camera_pose_g.orientation.pitch), 0, NULL},
-		{(char *) camera_string, (char *) "roll", 	CARMEN_PARAM_DOUBLE, &(camera_pose_g.orientation.roll), 0, NULL},
+			{(char *) camera_string, (char *) "x",		CARMEN_PARAM_DOUBLE, &(camera_pose_g.position.x), 0, NULL},
+			{(char *) camera_string, (char *) "y",		CARMEN_PARAM_DOUBLE, &(camera_pose_g.position.y), 0, NULL},
+			{(char *) camera_string, (char *) "z", 		CARMEN_PARAM_DOUBLE, &(camera_pose_g.position.z), 0, NULL},
+			{(char *) camera_string, (char *) "yaw", 	CARMEN_PARAM_DOUBLE, &(camera_pose_g.orientation.yaw), 0, NULL},
+			{(char *) camera_string, (char *) "pitch", 	CARMEN_PARAM_DOUBLE, &(camera_pose_g.orientation.pitch), 0, NULL},
+			{(char *) camera_string, (char *) "roll", 	CARMEN_PARAM_DOUBLE, &(camera_pose_g.orientation.roll), 0, NULL},
 
-		{(char *) "car", 			 (char *) "x", 	CARMEN_PARAM_DOUBLE, &(car_pose_g.position.x), 0, NULL},
-		{(char *) "car", 			 (char *) "y", 	CARMEN_PARAM_DOUBLE, &(car_pose_g.position.y), 0, NULL},
-		{(char *) "car", 			 (char *) "z", 	CARMEN_PARAM_DOUBLE, &(car_pose_g.position.z), 0, NULL},
-		{(char *) "car", 			 (char *) "yaw", 	CARMEN_PARAM_DOUBLE, &(car_pose_g.orientation.yaw), 0, NULL},
-		{(char *) "car", 			 (char *) "pitch", CARMEN_PARAM_DOUBLE, &(car_pose_g.orientation.pitch), 0, NULL},
-		{(char *) "car", 			 (char *) "roll", 	CARMEN_PARAM_DOUBLE, &(car_pose_g.orientation.roll), 0, NULL},
+			{(char *) "car", 			 (char *) "x", 	CARMEN_PARAM_DOUBLE, &(car_pose_g.position.x), 0, NULL},
+			{(char *) "car", 			 (char *) "y", 	CARMEN_PARAM_DOUBLE, &(car_pose_g.position.y), 0, NULL},
+			{(char *) "car", 			 (char *) "z", 	CARMEN_PARAM_DOUBLE, &(car_pose_g.position.z), 0, NULL},
+			{(char *) "car", 			 (char *) "yaw", 	CARMEN_PARAM_DOUBLE, &(car_pose_g.orientation.yaw), 0, NULL},
+			{(char *) "car", 			 (char *) "pitch", CARMEN_PARAM_DOUBLE, &(car_pose_g.orientation.pitch), 0, NULL},
+			{(char *) "car", 			 (char *) "roll", 	CARMEN_PARAM_DOUBLE, &(car_pose_g.orientation.roll), 0, NULL},
 
-		{(char *) "sensor_board_1",  (char *) "x", 	CARMEN_PARAM_DOUBLE, &(board_pose_g.position.x), 0, NULL},
-		{(char *) "sensor_board_1",  (char *) "y", 	CARMEN_PARAM_DOUBLE, &(board_pose_g.position.y), 0, NULL},
-		{(char *) "sensor_board_1",  (char *) "z", 	CARMEN_PARAM_DOUBLE, &(board_pose_g.position.z), 0, NULL},
-		{(char *) "sensor_board_1",  (char *) "yaw", 	CARMEN_PARAM_DOUBLE, &(board_pose_g.orientation.yaw), 0, NULL},
-		{(char *) "sensor_board_1",  (char *) "pitch", CARMEN_PARAM_DOUBLE, &(board_pose_g.orientation.pitch), 0, NULL},
-		{(char *) "sensor_board_1",  (char *) "roll", 	CARMEN_PARAM_DOUBLE, &(board_pose_g.orientation.roll), 0, NULL}
+			{(char *) "sensor_board_1",  (char *) "x", 	CARMEN_PARAM_DOUBLE, &(board_pose_g.position.x), 0, NULL},
+			{(char *) "sensor_board_1",  (char *) "y", 	CARMEN_PARAM_DOUBLE, &(board_pose_g.position.y), 0, NULL},
+			{(char *) "sensor_board_1",  (char *) "z", 	CARMEN_PARAM_DOUBLE, &(board_pose_g.position.z), 0, NULL},
+			{(char *) "sensor_board_1",  (char *) "yaw", 	CARMEN_PARAM_DOUBLE, &(board_pose_g.orientation.yaw), 0, NULL},
+			{(char *) "sensor_board_1",  (char *) "pitch", CARMEN_PARAM_DOUBLE, &(board_pose_g.orientation.pitch), 0, NULL},
+			{(char *) "sensor_board_1",  (char *) "roll", 	CARMEN_PARAM_DOUBLE, &(board_pose_g.orientation.roll), 0, NULL}
 	};
 
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
@@ -596,7 +625,7 @@ define_messages(void)
 void
 subscribe_to_relevant_messages()
 {
-    carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) carmen_bumblebee_basic_stereoimage_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) carmen_bumblebee_basic_stereoimage_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_fused_odometry_subscribe_fused_odometry_message(&fused_odometry_message, NULL, CARMEN_SUBSCRIBE_LATEST);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -615,11 +644,11 @@ main(int argc, char **argv)
 
 	initialize_transformations();
 
-	//initialize_network(argv[4]);
+	initialize_network(argv[2]);
 	carmen_warn("Network Initialized!");
 
-	load_poses(argv[2], camera_poses_base_array, camera_frames_base_array);
-	load_poses(argv[3], camera_poses_curr_array, camera_frames_curr_array);
+	load_delta_poses(argv[3], camera_delta_frames_array, camera_delta_poses_array, camera_poses_base_array, camera_poses_curr_array);
+	carmen_warn("Ground truth loaded!");
 
 	signal(SIGINT, shutdown_module);
 

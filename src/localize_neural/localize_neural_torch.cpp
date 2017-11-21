@@ -9,6 +9,9 @@
 #include <THC/THC.h>
 #include "localize_neural_torch.h"
 
+static int input_width = 320;
+static int input_height = 240;
+static int input_channels = 3;
 
 class TorchModel
 {
@@ -36,13 +39,10 @@ public:
 		lua_pushstring(state, model_path.c_str());
 		if (lua_pcall(state, 1, 0, 0) != 0)
 			throw std::runtime_error("fail to load model");
-
-		allocate();
 	}
 
 	~TorchModel ()
 	{
-		release();
 		THCudaShutdown(state_gpu);
 		lua_close(state);
 	}
@@ -50,12 +50,12 @@ public:
 	void
 	allocate ()
 	{
-		keytensor_gpu = THCudaTensor_newWithSize4d(state_gpu, 1, 3, 155, 320);
-		keytensor = THFloatTensor_newWithSize4d(1, 3, 155, 320);
+		keytensor_gpu = THCudaTensor_newWithSize4d(state_gpu, 1, input_channels, input_height, input_width);
+		keytensor = THFloatTensor_newWithSize4d(1, input_channels, input_height, input_width);
 		if (!THFloatTensor_isContiguous(keytensor))
 			throw std::runtime_error("Torch tensor is not contiguous.");
-		curtensor_gpu = THCudaTensor_newWithSize4d(state_gpu, 1, 3, 155, 320);
-		curtensor = THFloatTensor_newWithSize4d(1, 3, 155, 320);
+		curtensor_gpu = THCudaTensor_newWithSize4d(state_gpu, 1, input_channels, input_height, input_width);
+		curtensor = THFloatTensor_newWithSize4d(1, input_channels, input_height, input_width);
 		if (!THFloatTensor_isContiguous(curtensor))
 			throw std::runtime_error("Torch tensor is not contiguous.");
 	}
@@ -73,12 +73,18 @@ public:
 	convert (IplImage * frame, THFloatTensor * tensor)
 	{
 		for(int i=0; i < frame->height; i++)
+		{
 			for(int j=0; j < frame->width; j++)
+			{
 				for(int k=0; k < frame->nChannels; k++)
 				{
-					float pixel = ((uchar)frame->imageData[3*i*frame->width + 3*j+k]);
+					float pixel = ((uchar)frame->imageData[frame->nChannels*(i*frame->width + j) + k]);
+					//THFloatTensor_set4d(tensor, 0, k, i, j, (pixel-128.0f)/255.0f);
 					THFloatTensor_set4d(tensor, 0, k, i, j, pixel/255.0f);
+					//THFloatTensor_set4d(tensor, 0, k, i, j, pixel);
 				}
+			}
+		}
 	}
 
 	long
@@ -108,11 +114,13 @@ public:
 	std::vector<float>
 	forward (IplImage *curframe, IplImage *keyframe)
 	{
+		allocate();
+
 		convert(curframe, curtensor);
 		convert(keyframe, keytensor);
 
-		THCudaTensor_copyFloat(state_gpu, keytensor_gpu, keytensor);
 		THCudaTensor_copyFloat(state_gpu, curtensor_gpu, curtensor);
+		THCudaTensor_copyFloat(state_gpu, keytensor_gpu, keytensor);
 
 		// call "forward" in lua
 		lua_getglobal(state, "forward");
@@ -135,6 +143,8 @@ public:
 			output.at(i) = ptr[i];
 		}
 		lua_pop(state, 1);
+
+		//release(); Lua's garbage collector takes care of it
 
 		return output;
 	}
@@ -182,18 +192,18 @@ initialize_network(const char * saved_network)
 
 
 carmen_pose_3D_t
-forward_network(const carmen_localize_neural_imagepos_message &keyframe, const carmen_localize_neural_imagepos_message &curframe)
+forward_network(const carmen_localize_neural_imagepos_message &curframe, const carmen_localize_neural_imagepos_message &keyframe)
 {
 	carmen_pose_3D_t delta_pose = {{0.0,0.0,0.0},{0.0,0.0,0.0}};
 	IplImage *keyframe_image = cvCreateImage(cvSize(keyframe.width, keyframe.height), IPL_DEPTH_8U, 3);
 	IplImage *curframe_image = cvCreateImage(cvSize(curframe.width, curframe.height), IPL_DEPTH_8U, 3);
-	int input_width = 320;
-	int input_height = 155;
+	IplImage *keyframe_image_input = cvCreateImage(cvSize(input_width, input_height), IPL_DEPTH_8U, input_channels);
+	IplImage *curframe_image_input = cvCreateImage(cvSize(input_width, input_height), IPL_DEPTH_8U, input_channels);
 	cv::Rect crop;
-	crop.x = 0;
-	crop.y = 0;
-	crop.width = input_width*4;
-	crop.height = input_height*4;
+	crop.x = 160-1;
+	crop.y = 140-1;
+	crop.width = input_width;
+	crop.height = input_height;
 
 	copy_image(keyframe.image_data, keyframe_image, keyframe.width, keyframe.height);
 	copy_image(curframe.image_data, curframe_image, curframe.width, curframe.height);
@@ -201,20 +211,42 @@ forward_network(const carmen_localize_neural_imagepos_message &keyframe, const c
 	cvSetImageROI(keyframe_image, crop);
 	cvSetImageROI(curframe_image, crop);
 
-	resize_image(&keyframe_image, input_width, input_height);
-	resize_image(&curframe_image, input_width, input_height);
+	//cvCopy(keyframe_image, keyframe_image_input);
+	//cvCopy(curframe_image, curframe_image_input);
 
-	cvCvtColor(keyframe_image, keyframe_image, CV_BGR2RGB);
-	cvCvtColor(curframe_image, curframe_image, CV_BGR2RGB);
+	//resize_image(&keyframe_image, input_width, input_height);
+	//resize_image(&curframe_image, input_width, input_height);
 
-	std::vector<float> output = torch->forward(keyframe_image, curframe_image);
+	if (input_channels == 3)
+	{
+		cvCvtColor(keyframe_image, keyframe_image_input, CV_BGR2RGB);
+		cvCvtColor(curframe_image, curframe_image_input, CV_BGR2RGB);
+	}
+	else
+	{
+		cvCvtColor(keyframe_image, keyframe_image_input, CV_BGR2GRAY);
+		cvCvtColor(curframe_image, curframe_image_input, CV_BGR2GRAY);
+	}
+
+	std::vector<float> output = torch->forward(curframe_image_input, keyframe_image_input);
+	delta_pose.orientation.roll  = 0;
+	delta_pose.orientation.pitch = output[0];
+	delta_pose.orientation.yaw 	 = 0;
+	delta_pose.position.x = output[1];
+	delta_pose.position.y = 0;
+	delta_pose.position.z = output[2];
+
+	/*
 	delta_pose.orientation.roll  = output[0];
 	delta_pose.orientation.pitch = output[1];
 	delta_pose.orientation.yaw 	 = output[2];
 	delta_pose.position.x = output[3];
 	delta_pose.position.y = output[4];
 	delta_pose.position.z = output[5];
+	*/
 
+	cvRelease((void**) &keyframe_image_input);
+	cvRelease((void**) &curframe_image_input);
 	cvRelease((void**) &keyframe_image);
 	cvRelease((void**) &curframe_image);
 
