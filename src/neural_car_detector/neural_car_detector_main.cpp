@@ -21,7 +21,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 // Module specific
-#include "DetectNet.hpp"
+//#include "DetectNet.hpp"
 #include "Darknet.hpp" /*< Yolo V2 */
 #include "neural_car_detector.hpp"
 
