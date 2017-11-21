@@ -48,6 +48,31 @@ void Track::track_backward_reduction(int r)
 	graph_nodes.erase(graph_nodes.begin(), graph_nodes.begin() + r);
 }
 
+void Track::track_move(Track *track, int s)
+{
+	for (int i = s + 1; i < graph_nodes.size(); i++)
+	{
+		track->graph_nodes.push_back(graph_nodes[i]);
+	}
+	graph_nodes.erase(graph_nodes.begin() + (s + 1), graph_nodes.end());
+}
+
+bool Track::track_merge(Track *track)
+{
+	virtual_scan_graph_node_t *last_node = this->graph_nodes.back();
+	virtual_scan_graph_node_t *first_node = track->graph_nodes.front();
+	for (int i = 0; i < first_node->parents.num_pointers; i++)
+	{
+		virtual_scan_graph_node_t *parent = first_node->parents.pointers[i];
+		if (parent == last_node)
+		{
+			track->track_move(this, -1);
+			return true;
+		}
+	}
+	return false;
+}
+
 Tracks::Tracks(std::random_device *rd_):
 	rd(rd_)
 {
@@ -164,15 +189,16 @@ bool Tracks::track_extension(virtual_scan_neighborhood_graph_t *neighborhood_gra
 {
 	int n = random_int(0, 2, rd); // 0 denotes forward extension and 1 backward extension
 
-	if (n == 0 && forward_extension(tau)==true)// Forward extension
-		return true;
-	// Backward extension
-	return backward_extension(tau);
+	if (n == 0 && forward_extension(tau)==false)// Forward extension
+		return backward_extension(tau);
+	if (n == 1 && backward_extension(tau)==false)// Backward extension
+		return forward_extension(tau);
+	return true;
 }
 
 bool Tracks::track_extension(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
-	if (tracks.size()==0)
+	if (tracks.size() == 0)
 		return false;
 	int n = random_int(0, tracks.size(), rd);
 	Track *tau = &tracks[n];
@@ -180,12 +206,12 @@ bool Tracks::track_extension(virtual_scan_neighborhood_graph_t *neighborhood_gra
 	return track_extension(neighborhood_graph, tau);
 }
 
-void Tracks::track_reduction(virtual_scan_neighborhood_graph_t *neighborhood_graph)
+bool Tracks::track_reduction(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
-	if (tracks.size()==0)
+	if (tracks.size() == 0)
 		return false;
 	int n = random_int(0, 2, rd); // 0 denotes forward reduction and 1 backward reduction
-	int r = random_int(0, tracks.size(), rd); // Selects the track to be reduced
+	int r = random_int(0, tracks.size(), rd); // Selects the track index to be reduced
 	Track *tau = &tracks[r];
 	r = random_int(1, tracks.size() - 1, rd); // Selects the cutting index
 	if (n == 0) // Forward reduction
@@ -196,11 +222,53 @@ void Tracks::track_reduction(virtual_scan_neighborhood_graph_t *neighborhood_gra
 	{
 		tau->track_backward_reduction(r);
 	}
+
+	return true;
 }
 
-Tracks *Tracks::track_split(virtual_scan_neighborhood_graph_t *neighborhood_graph)
+bool Tracks::track_split(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
+	// Verifying if there is a track with 4 or more nodes
+	std::vector <int> indexes;
+	for (int i = 0; i < tracks.size(); i++)
+	{
+		if (tracks[i].size() >= 4)
+			indexes.push_back(i);
+	}
+	if (indexes.size() == 0)
+		return false;
 
+	int n = indexes[random_int(0, indexes.size(), rd)]; // Selects the track index to be split
+	Track *tau = &tracks[n];
+	int s = random_int(1, tau->size() - 2, rd); // Selects the splitting index
+	tracks.emplace_back(); // Add a new object Track to the end of the vector
+	Track *tau_new = &tracks.back();
+	tau->track_move(tau_new, s);
+
+	return true;
+}
+
+bool Tracks::track_merge(virtual_scan_neighborhood_graph_t *neighborhood_graph)
+{
+	if (tracks.size() < 2)
+		return false;
+
+	Track *tau_1 = &tracks[random_int(0, tracks.size(), rd)];
+	Track *tau_2;
+	int i;
+	do
+	{
+		i = random_int(0, tracks.size(), rd);
+		tau_2 = &tracks[i];
+	}
+	while (tau_1 == tau_2);
+
+	if (!tau_1->merge(tau2))
+		return false;
+
+	tracks.erase(tracks.begin() + i);
+
+	return true;
 }
 
 Tracks *Tracks::propose(virtual_scan_neighborhood_graph_t *neighborhood_graph)

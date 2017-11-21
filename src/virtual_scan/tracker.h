@@ -28,6 +28,8 @@ public:
 	virtual_scan_graph_node_t *back_node();
 	void track_forward_reduction(int r);
 	void track_backward_reduction(int r);
+	void track_move(Track *track, int s);
+	bool track_merge(Track *track);
 };
 
 class Tracks
@@ -42,8 +44,8 @@ class Tracks
 	void track_reduction(virtual_scan_neighborhood_graph_t *neighborhood_graph);
 	bool track_birth(virtual_scan_neighborhood_graph_t *neighborhood_graph);
 	bool track_death();
-	void track_split(virtual_scan_neighborhood_graph_t *neighborhood_graph);
-	void track_merge(virtual_scan_neighborhood_graph_t *neighborhood_graph);
+	bool track_split(virtual_scan_neighborhood_graph_t *neighborhood_graph);
+	bool track_merge(virtual_scan_neighborhood_graph_t *neighborhood_graph);
 	void track_switch(virtual_scan_neighborhood_graph_t *neighborhood_graph);
 	void track_diffusion(virtual_scan_neighborhood_graph_t *neighborhood_graph);
 public:
