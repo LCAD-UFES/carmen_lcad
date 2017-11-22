@@ -5,21 +5,36 @@
  *      Author: claudine
  */
 
-#ifndef SRC_VIRTUAL_SCAN_TRACKER_H_
-#define SRC_VIRTUAL_SCAN_TRACKER_H_
+#ifndef SRC_VIRTUAL_SCAN_VIRTUAL_SCAN_TRACKER_H_
+#define SRC_VIRTUAL_SCAN_VIRTUAL_SCAN_TRACKER_H_
 
 #include <carmen/carmen.h>
-#include "virtual_scan_neighborhood_graph.h"
-#include <vector>
-#include <random>
 
+#include "virtual_scan.h"
+#include "virtual_scan_neighborhood_graph.h"
+
+#include <deque>
+#include <random>
+#include <vector>
 
 namespace virtual_scan
 {
 
+class Obstacle
+{
+public:
+	virtual_scan_graph_node_t *graph_node;
+	double x;
+	double y;
+	double theta;
+	Obstacle();
+	Obstacle(virtual_scan_graph_node_t *graph_node);
+	virtual_scan_graph_node_t *operator -> (); // Operator overload
+};
+
 class Track
 {
-	std::deque<virtual_scan_graph_node_t *> graph_nodes;
+	std::deque<Obstacle> graph_nodes;
 
 public:
 	~Track();
@@ -80,7 +95,7 @@ public:
 } /* namespace virtual_scan */
 
 
-#endif /* SRC_VIRTUAL_SCAN_TRACKER_H_ */
+#endif /* SRC_VIRTUAL_SCAN_VIRTUAL_SCAN_TRACKER_H_ */
 
 
 

@@ -3,8 +3,8 @@ include ../Makefile.conf
 MODULE_NAME = Virtual Scan
 MODULE_COMMENT = Abstract polar 2D representation of 2D or 3D range scanner data
 
-CFLAGS += -Wall -std=c99
-CXXFLAGS += -Wall -std=c++98
+CFLAGS += -Wall -std=c++0x
+CXXFLAGS += -Wall -std=c++0x
 LINK = g++
 
 LFLAGS += \
@@ -14,7 +14,8 @@ SOURCES = \
 	virtual_scan_interface.cpp \
 	virtual_scan_main.cpp \
 	virtual_scan.cpp \
-	virtual_scan_neighborhood_graph.cpp
+	virtual_scan_neighborhood_graph.cpp \
+	virtual_scan_tracker.cpp
 
 PUBLIC_INCLUDES = \
 	virtual_scan_interface.h \
@@ -43,6 +44,6 @@ LFLAGS += \
 endif
 
 libvirtual_scan_interface.a: virtual_scan_interface.o
-virtual_scan: virtual_scan_main.o virtual_scan.o virtual_scan_interface.o virtual_scan_neighborhood_graph.o
+virtual_scan: virtual_scan_main.o virtual_scan.o virtual_scan_interface.o virtual_scan_neighborhood_graph.o virtual_scan_tracker.o
 
 include ../Makefile.rules

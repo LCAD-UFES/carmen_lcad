@@ -1,12 +1,33 @@
-#include "tracker.h"
+#include "virtual_scan_tracker.h"
 
 namespace virtual_scan
 {
 
+Obstacle::Obstacle()
+{
+	graph_node = NULL;
+	x = 0.0;
+	y = 0.0;
+	theta = 0.0;
+}
+
+Obstacle::Obstacle(virtual_scan_graph_node_t *graph_node)
+{
+	this->graph_node = graph_node;
+	x = this->graph_node->box_model.x;
+	y = this->graph_node->box_model.y;
+	theta = this->graph_node->box_model.theta;
+}
+
+virtual_scan_graph_node_t *Obstacle::operator -> ()
+{
+	return(graph_node);
+}
+
 Track::~Track()
 {
 	for (int i = 0; i < graph_nodes.size(); i++)
-		graph_nodes[i]->complete_sub_graph->selected = 0;
+		graph_nodes[i]->complete_sub_graph->selected = 0; //graph_nodes[i].graph_node->complete_sub_graph->selected = 0;
 }
 
 int Track::size()
@@ -16,7 +37,7 @@ int Track::size()
 
 void Track::append_front(virtual_scan_graph_node_t *node)
 {
-	graph_nodes.push_front(node);
+	graph_nodes.push_front(node); // graph_nodes.push_front(Obstacle(node));
 }
 
 void Track::append_back(virtual_scan_graph_node_t *node)
@@ -26,12 +47,12 @@ void Track::append_back(virtual_scan_graph_node_t *node)
 
 virtual_scan_graph_node_t *Track::front_node()
 {
-	return graph_nodes.front();
+	return graph_nodes.front().graph_node;
 }
 
 virtual_scan_graph_node_t *Track::back_node()
 {
-	return graph_nodes.back();
+	return graph_nodes.back().graph_node;
 }
 
 void Track::track_forward_reduction(int r)
@@ -59,11 +80,11 @@ void Track::track_move(Track *tau, int s)
 
 bool Track::is_mergeable(Track *tau)
 {
-	virtual_scan_graph_node_t *last_node = this->graph_nodes.back();
-	virtual_scan_graph_node_t *first_node = tau->graph_nodes.front();
+	virtual_scan_graph_node_t *last_node = this->graph_nodes.back().graph_node;
+	virtual_scan_graph_node_t *first_node = tau->graph_nodes.front().graph_node;
 	for (int i = 0; i < first_node->parents.num_pointers; i++)
 	{
-		virtual_scan_graph_node_t *parent = first_node->parents.pointers[i];
+		virtual_scan_graph_node_t *parent = (virtual_scan_graph_node_t *) first_node->parents.pointers[i];
 		if (parent == last_node)
 		{
 			return true;
@@ -81,7 +102,7 @@ inline bool is_parent(virtual_scan_graph_node_t *node_1, virtual_scan_graph_node
 {
 	for (int i = 0; i < node_2->parents.num_pointers; i++)
 	{
-		virtual_scan_graph_node_t *parent = node_2->parents.pointers[i];
+		virtual_scan_graph_node_t *parent = (virtual_scan_graph_node_t *) node_2->parents.pointers[i];
 		if (parent == node_1)
 		{
 			return true;
@@ -90,16 +111,16 @@ inline bool is_parent(virtual_scan_graph_node_t *node_1, virtual_scan_graph_node
 	return false;
 }
 
-std::pair <int, int>  Track::is_switchable(Track *tau)
+std::pair <int, int> Track::is_switchable(Track *tau)
 {
 	for (int p = 0; p < this->size() - 1; p++)
 	{
-		virtual_scan_graph_node_t *t_p = this->graph_nodes[p];
-		virtual_scan_graph_node_t *t_p_plus_1 = this->graph_nodes[p + 1];
+		virtual_scan_graph_node_t *t_p = this->graph_nodes[p].graph_node;
+		virtual_scan_graph_node_t *t_p_plus_1 = this->graph_nodes[p + 1].graph_node;
 		for (int q = 0; q < tau->size() - 1; q++)
 		{
-			virtual_scan_graph_node_t *t_q = tau->graph_nodes[q];
-			virtual_scan_graph_node_t *t_q_plus_1 = tau->graph_nodes[q + 1];
+			virtual_scan_graph_node_t *t_q = tau->graph_nodes[q].graph_node;
+			virtual_scan_graph_node_t *t_q_plus_1 = tau->graph_nodes[q + 1].graph_node;
 			if (is_parent(t_p, t_q_plus_1) && is_parent(t_q, t_p_plus_1))
 				return(std::make_pair(p,q));
 		}
@@ -119,25 +140,25 @@ void Track::track_switch(Track *tau, std::pair <int, int> break_point_pair)
 	tau_temp.track_move(tau, -1);
 }
 
+inline int random_int(int a, int b, std::random_device *rd)
+{
+	std::uniform_int_distribution <> u(a, b);
+	return u(*rd);
+}
+
 void Track::track_update(std::random_device *rd)
 {
-	std::normal_distribution normal;
+	std::normal_distribution <> normal ;
 	int n = random_int(0, this->size(), rd);
-	virtual_scan_box_model_t *box_model = &this->graph_nodes[n]->box_model;
-	box_model->x += normal(rd);
-	box_model->y += normal(rd);
-	box_model->theta = carmen_normalize_theta(box_model->theta + normal(rd));
+	Obstacle *obstacle = &this->graph_nodes[n];
+	obstacle->x += normal(*rd);
+	obstacle->y += normal(*rd);
+	obstacle->theta = carmen_normalize_theta(obstacle->theta + normal(*rd));
 }
 
 Tracks::Tracks(std::random_device *rd_):
 	rd(rd_)
 {
-}
-
-inline int random_int(int a, int b, std::random_device *rd)
-{
-	std::uniform_int_distribution <> u(a, b);
-	return u(*rd);
 }
 
 bool Tracks::track_birth(virtual_scan_neighborhood_graph_t *neighborhood_graph)
@@ -201,7 +222,7 @@ bool Tracks::track_forward_extension(Track *tau)
 	virtual_scan_graph_node_t *child;
 	for (int i = 0; i < graph_node->children.num_pointers; i++)
 	{
-		child = graph_node->children.pointers[i];
+		child = (virtual_scan_graph_node_t *) graph_node->children.pointers[i];
 		if (!child->complete_sub_graph->selected)
 			indexes.push_back(i);
 	}
@@ -209,7 +230,7 @@ bool Tracks::track_forward_extension(Track *tau)
 		return false;
 
 	int n = indexes[random_int(0, indexes.size(), rd)];
-	child = graph_node->children.pointers[n];
+	child = (virtual_scan_graph_node_t *) graph_node->children.pointers[n];
 	tau->append_back(child);
 
 	return true;
@@ -227,7 +248,7 @@ bool Tracks::track_backward_extension(Track *tau)
 	virtual_scan_graph_node_t *parent;
 	for (int i = 0; i < graph_node->parents.num_pointers; i++)
 	{
-		parent = graph_node->parents.pointers[i];
+		parent = (virtual_scan_graph_node_t *) graph_node->parents.pointers[i];
 		if (!parent->complete_sub_graph->selected)
 			indexes.push_back(i);
 	}
@@ -235,7 +256,7 @@ bool Tracks::track_backward_extension(Track *tau)
 		return false;
 
 	int n = indexes[random_int(0, indexes.size(), rd)];
-	parent = graph_node->parents.pointers[n];
+	parent = (virtual_scan_graph_node_t *) graph_node->parents.pointers[n];
 	tau->append_front(parent);
 
 	return true;
@@ -245,10 +266,10 @@ bool Tracks::track_extension(virtual_scan_neighborhood_graph_t *neighborhood_gra
 {
 	int n = random_int(0, 2, rd); // 0 denotes forward extension and 1 backward extension
 
-	if (n == 0 && forward_extension(tau)==false)// Forward extension
-		return backward_extension(tau);
-	if (n == 1 && backward_extension(tau)==false)// Backward extension
-		return forward_extension(tau);
+	if (n == 0 && track_forward_extension(tau)==false)// Forward extension
+		return track_backward_extension(tau);
+	if (n == 1 && track_backward_extension(tau)==false)// Backward extension
+		return track_forward_extension(tau);
 	return true;
 }
 
@@ -326,7 +347,7 @@ bool Tracks::track_merge(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 	int n = random_int(0, pairs.size(), rd);
 	Track *tau_1 = &tracks[pairs[n].first];
 	Track *tau_2 = &tracks[pairs[n].second];
-	tau_1->track_merge(tau2);
+	tau_1->track_merge(tau_2);
 
 	tracks.erase(tracks.begin() + pairs[n].second);
 
@@ -411,7 +432,7 @@ Tracks *Tracker::track(virtual_scan_box_model_hypotheses_t *box_model_hypotheses
 			if (tracks_n != tracks_star)
 				delete tracks_n;
 			tracks_n = tracks_new;
-			if (P(tracks_n) > P(tracks_star))
+			if (tracks_n->P() > tracks_star->P())
 			{
 				delete tracks_star;
 				tracks_star = tracks_n;
