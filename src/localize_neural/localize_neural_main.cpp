@@ -423,6 +423,10 @@ carmen_bumblebee_basic_stereoimage_message_handler(carmen_bumblebee_basic_stereo
 	copy_image(&camera_message_base, key_frame);
 	copy_image(&camera_message_curr, cur_frame);
 
+	if (!camera_message_base.height || !camera_message_base.width ||
+			!camera_message_curr.height || !camera_message_curr.width)
+		return;
+
 	camera_pose_base = camera_poses_base_array[index_delta].first;
 	camera_pose_true = camera_poses_curr_array[index_delta].first;
 
