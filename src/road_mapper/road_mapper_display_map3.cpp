@@ -7,6 +7,8 @@ static carmen_map_t *current_road_map;
 std::string window_name1 = "map probabilities";
 #define MAX_PROB (pow(2.0, 16) - 1.0)
 
+int ipc_required = 0;
+
 static void
 read_parameters(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused)))
 {
@@ -27,7 +29,10 @@ shutdown_module(int signo)
 {
 	if (signo == SIGINT)
 	{
-		carmen_ipc_disconnect();
+		if (ipc_required)
+		{
+			carmen_ipc_disconnect();
+		}
 		std::cout << "road_mapper_display_map3: disconnected.\n";
 		free_map_pointer(current_road_map);
 		exit(0);
@@ -70,10 +75,13 @@ main(int argc, char **argv)
 	int img_channels = 0;
 	int img_class_bits = 0;
 
-	carmen_ipc_initialize(argc, argv);
-	carmen_param_check_version(argv[0]);
-	read_parameters(argc, argv);
-	define_messages();
+	if (ipc_required)
+	{
+		carmen_ipc_initialize(argc, argv);
+		carmen_param_check_version(argv[0]);
+		read_parameters(argc, argv);
+		define_messages();
+	}
 
 	signal(SIGINT, shutdown_module);
 
@@ -98,8 +106,11 @@ main(int argc, char **argv)
 		road_mapper_display_map3_display(img_channels, img_class_bits);
 	}
 
-	register_handlers();
-	carmen_ipc_dispatch();
+	if (ipc_required)
+	{
+		register_handlers();
+		carmen_ipc_dispatch();
+	}
 
 	return 0;
 }
