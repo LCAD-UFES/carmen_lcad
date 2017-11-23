@@ -57,7 +57,7 @@ road_mapper_display_map3_display(int img_channels, int img_class_bits)
 	}
 	cv::imshow(window_name1, image1);
 	std::cout << "\nPress \"Esc\" key to continue...\n";
-	while(cv::waitKey() != 27);
+	while((cv::waitKey() & 0xff) != 27);
 	image1.release();
 	cv::destroyWindow(window_name1);
 }
