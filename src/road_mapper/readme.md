@@ -198,7 +198,7 @@ Output sample files will be placed in the directory set by _road_mapper_out_path
 
 We are using the ENet Neural Network to learn and predict the road map classes.
 
-ENet as in SegNet learns to predict pixel-wise class labels from supervised learning. Therefore it requires a dataset of input images with corresponding ground truth labels. Input must be three-channel images. Ground truth must be single-channel images, each pixel labeled with a class.
+ENet is a semantic segmentation deep neural network that learns to predict pixel-wise class labels from supervised learning. Therefore it requires a dataset of input images with corresponding ground truth labels. Input must be three-channel images. Ground truth must be single-channel images, each pixel labeled with a class number.
 
 For more information on ENet please refer to the published paper in arXiv: [ENet: A Deep Neural Network Architecture for Real-Time Semantic Segmentation](https://arxiv.org/abs/1606.02147).
 
