@@ -149,13 +149,7 @@ To learn more about the utility parameters please run the program with -h option
 
 ## Visualizing a Road Map
 
-To visualize a road map please do the following:
-
-First step:  
-Start the IPC central server (if it is not running yet) [as previously said](#saving-remission-map-images).
-
-Second step:  
-Run the [Display Map utility](road_mapper_display_map3.cpp):
+To visualize a road map please run the [Display Map utility](road_mapper_display_map3.cpp):
 ```bash
  $ ./road_mapper_display_map3 maps/r7725970_-353430.map 3 0
 ```
