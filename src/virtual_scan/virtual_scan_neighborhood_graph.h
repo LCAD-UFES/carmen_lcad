@@ -62,11 +62,9 @@ virtual_scan_alloc_neighborhood_graph ();
 
 
 void
-update_neighborhood_graph
-(
-	virtual_scan_neighborhood_graph_t *neighborhood_graph,
-	virtual_scan_box_model_hypotheses_t *box_model_hypotheses
-);
+update_neighborhood_graph(virtual_scan_neighborhood_graph_t *neighborhood_graph,
+		virtual_scan_box_model_hypotheses_t *box_model_hypotheses,
+		virtual_scan_extended_t *virtual_scan_extended);
 
 
 #endif /* SRC_VIRTUAL_SCAN_VIRTUAL_SCAN_NEIGHBORHOOD_GRAPH_H_ */

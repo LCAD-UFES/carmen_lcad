@@ -51,6 +51,7 @@ public:
 	std::pair <int, int> is_switchable(Track *tau);
 	void track_switch(Track *tau, std::pair <int, int> break_point_pair);
 	void track_update(std::random_device *rd);
+	double P_L(double lambda_L);
 };
 
 class Tracks
@@ -58,16 +59,16 @@ class Tracks
 	std::vector<Track> tracks;
 	std::random_device *rd;
 
-	bool track_extension(virtual_scan_neighborhood_graph_t *neighborhood_graph, Track *tau);
-	bool track_extension(virtual_scan_neighborhood_graph_t *neighborhood_graph);
-	bool track_forward_extension(Track *tau);
-	bool track_backward_extension(Track *tau);
-	bool track_reduction(virtual_scan_neighborhood_graph_t *neighborhood_graph);
+	bool track_extension(Track *tau);
+	bool track_extension();
+	bool forward_extension(Track *tau);
+	bool backward_extension(Track *tau);
+	bool track_reduction();
 	bool track_birth(virtual_scan_neighborhood_graph_t *neighborhood_graph);
 	bool track_death();
-	bool track_split(virtual_scan_neighborhood_graph_t *neighborhood_graph);
-	bool track_merge(virtual_scan_neighborhood_graph_t *neighborhood_graph);
-	bool track_switch(virtual_scan_neighborhood_graph_t *neighborhood_graph);
+	bool track_split();
+	bool track_merge();
+	bool track_switch();
 	bool track_diffusion();
 public:
 	Tracks(std::random_device *rd);
@@ -79,6 +80,7 @@ class Tracker
 {
 	int n_mc;
 	virtual_scan_neighborhood_graph_t *neighborhood_graph;
+
 	Tracks *tracks_n;
 	Tracks *tracks_star;
 
@@ -89,7 +91,8 @@ class Tracker
 
 public:
 	Tracker(int n);
-	Tracks *track(virtual_scan_box_model_hypotheses_t *box_model_hypotheses);
+	Tracks *track(virtual_scan_box_model_hypotheses_t *box_model_hypotheses,
+			virtual_scan_extended_t *virtual_scan_extended);
 };
 
 } /* namespace virtual_scan */

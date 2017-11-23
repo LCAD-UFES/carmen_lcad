@@ -26,7 +26,7 @@ virtual_scan_graph_node_t *Obstacle::operator -> ()
 
 Track::~Track()
 {
-	for (int i = 0; i < graph_nodes.size(); i++)
+	for (int i = 0, n = graph_nodes.size(); i < n; i++)
 		graph_nodes[i]->complete_sub_graph->selected = 0; //graph_nodes[i].graph_node->complete_sub_graph->selected = 0;
 }
 
@@ -57,7 +57,7 @@ virtual_scan_graph_node_t *Track::back_node()
 
 void Track::track_forward_reduction(int r)
 {
-	for (int i = r + 1; i < graph_nodes.size(); i++)
+	for (int i = r + 1, n = graph_nodes.size(); i < n; i++)
 		graph_nodes[i]->complete_sub_graph->selected = 0;
 	graph_nodes.erase(graph_nodes.begin() + (r + 1), graph_nodes.end());
 }
@@ -71,7 +71,7 @@ void Track::track_backward_reduction(int r)
 
 void Track::track_move(Track *tau, int s)
 {
-	for (int i = s + 1; i < graph_nodes.size(); i++)
+	for (int i = s + 1, n = graph_nodes.size(); i < n; i++)
 	{
 		tau->graph_nodes.push_back(graph_nodes[i]);
 	}
@@ -156,6 +156,14 @@ void Track::track_update(std::random_device *rd)
 	obstacle->theta = carmen_normalize_theta(obstacle->theta + normal(*rd));
 }
 
+double Track::P_L(double lambda_L)
+{
+	double fx = exp(lambda_L * size());
+	double fx_minus_1 = exp(lambda_L * (size() - 1));
+	double fx_integral = (fx - 1) / lambda_L;
+	return (fx - fx_minus_1) / fx_integral;
+}
+
 Tracks::Tracks(std::random_device *rd_):
 	rd(rd_)
 {
@@ -190,7 +198,7 @@ bool Tracks::track_birth(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 	tracks.emplace_back();
 	Track *tau = &tracks.back();
 	tau->append_front(node);
-	track_extension(neighborhood_graph, tau);
+	track_extension(tau);
 
 	if (tau->size() < 2)
 	{
@@ -210,7 +218,7 @@ bool Tracks::track_death()
 	return true;
 }
 
-bool Tracks::track_forward_extension(Track *tau)
+bool Tracks::forward_extension(Track *tau)
 {
 	virtual_scan_graph_node_t *graph_node = tau->back_node();
 	int num_children = graph_node->children.num_pointers;
@@ -236,7 +244,7 @@ bool Tracks::track_forward_extension(Track *tau)
 	return true;
 }
 
-bool Tracks::track_backward_extension(Track *tau)
+bool Tracks::backward_extension(Track *tau)
 {
 	virtual_scan_graph_node_t *graph_node = tau->front_node();
 	int num_parents = graph_node->parents.num_pointers;
@@ -262,28 +270,28 @@ bool Tracks::track_backward_extension(Track *tau)
 	return true;
 }
 
-bool Tracks::track_extension(virtual_scan_neighborhood_graph_t *neighborhood_graph, Track *tau)
+bool Tracks::track_extension(Track *tau)
 {
 	int n = random_int(0, 2, rd); // 0 denotes forward extension and 1 backward extension
 
-	if (n == 0 && track_forward_extension(tau)==false)// Forward extension
-		return track_backward_extension(tau);
-	if (n == 1 && track_backward_extension(tau)==false)// Backward extension
-		return track_forward_extension(tau);
+	if (n == 0 && forward_extension(tau)==false)// Forward extension
+		return backward_extension(tau);
+	if (n == 1 && backward_extension(tau)==false)// Backward extension
+		return forward_extension(tau);
 	return true;
 }
 
-bool Tracks::track_extension(virtual_scan_neighborhood_graph_t *neighborhood_graph)
+bool Tracks::track_extension()
 {
 	if (tracks.size() == 0)
 		return false;
 	int n = random_int(0, tracks.size(), rd);
 	Track *tau = &tracks[n];
 
-	return track_extension(neighborhood_graph, tau);
+	return track_extension(tau);
 }
 
-bool Tracks::track_reduction(virtual_scan_neighborhood_graph_t *neighborhood_graph)
+bool Tracks::track_reduction()
 {
 	if (tracks.size() == 0)
 		return false;
@@ -303,11 +311,11 @@ bool Tracks::track_reduction(virtual_scan_neighborhood_graph_t *neighborhood_gra
 	return true;
 }
 
-bool Tracks::track_split(virtual_scan_neighborhood_graph_t *neighborhood_graph)
+bool Tracks::track_split()
 {
 	// Verifying if there is a track with 4 or more nodes
 	std::vector <int> indexes;
-	for (int i = 0; i < tracks.size(); i++)
+	for (int i = 0, n = tracks.size(); i < n; i++)
 	{
 		if (tracks[i].size() >= 4)
 			indexes.push_back(i);
@@ -325,13 +333,13 @@ bool Tracks::track_split(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 	return true;
 }
 
-bool Tracks::track_merge(virtual_scan_neighborhood_graph_t *neighborhood_graph)
+bool Tracks::track_merge()
 {
 	std::vector <std::pair <int, int>> pairs;
-	for (int i = 0; i < tracks.size(); i++)
+	for (int i = 0, n = tracks.size(); i < n; i++)
 	{
 		Track *tau_1 = &tracks[i];
-		for (int j = i + 1; j < tracks.size(); j++)
+		for (int j = i + 1; j < n; j++)
 		{
 			Track *tau_2 = &tracks[j];
 			if (tau_1->is_mergeable(tau_2))
@@ -354,14 +362,14 @@ bool Tracks::track_merge(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 	return true;
 }
 
-bool Tracks::track_switch(virtual_scan_neighborhood_graph_t *neighborhood_graph)
+bool Tracks::track_switch()
 {
 	std::vector <std::pair <int, int>> track_pairs;
 	std::vector <std::pair <int, int>> break_points_pairs;
-	for (int i = 0; i < tracks.size(); i++)
+	for (int i = 0, n = tracks.size(); i < n; i++)
 	{
 		Track *tau_1 = &tracks[i];
-		for (int j = i + 1; j < tracks.size(); j++)
+		for (int j = i + 1; j < n; j++)
 		{
 			Track *tau_2 = &tracks[j];
 			for (int k = 0; k < 2; k++)
@@ -396,19 +404,52 @@ bool Tracks::track_diffusion()
 	int n = random_int(0, tracks.size(), rd);
 	Track *tau = &tracks[n];
 	tau->track_update(rd);
+	return true;
 }
 
 Tracks *Tracks::propose(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
 	Tracks *tracks = new Tracks(*this);
-	tracks->track_birth(neighborhood_graph);
+
+	bool result = false;
+	while (!result)
+	{
+		int n = random_int(0, 8, rd);
+		switch(n)
+		{
+			case 0:
+				result = tracks->track_birth(neighborhood_graph);
+				break;
+			case 1:
+				result = tracks->track_death();
+				break;
+			case 2:
+				result = tracks->track_diffusion();
+				break;
+			case 3:
+				result = tracks->track_extension();
+				break;
+			case 4:
+				result = tracks->track_merge();
+				break;
+			case 5:
+				result = tracks->track_reduction();
+				break;
+			case 6:
+				result = tracks->track_split();
+				break;
+			case 7:
+				result = tracks->track_switch();
+				break;
+		}
+	}
 
 	return tracks;
 }
 
 double Tracks::P()
 {
-	
+	return 0.0;
 }
 
 Tracker::Tracker(int n):
@@ -420,9 +461,10 @@ Tracker::Tracker(int n):
 {
 }
 
-Tracks *Tracker::track(virtual_scan_box_model_hypotheses_t *box_model_hypotheses)
+// MCMC Sampler
+Tracks *Tracker::track(virtual_scan_box_model_hypotheses_t *box_model_hypotheses, virtual_scan_extended_t *virtual_scan_extended)
 {
-	update_neighborhood_graph(neighborhood_graph, box_model_hypotheses);
+	update_neighborhood_graph(neighborhood_graph, box_model_hypotheses, virtual_scan_extended);
 	for (int n = 0; n < n_mc; n++)
 	{
 		Tracks *tracks_new = tracks_n->propose(neighborhood_graph);
