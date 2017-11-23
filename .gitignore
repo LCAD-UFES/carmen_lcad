@@ -546,3 +546,4 @@ src/hypergraphsclam/hypergraphsclam
 src/hypergraphsclam/parser
 bin/hypergraphsclam
 bin/parser
+src/kitti2carmen/kitti2carmen_main
