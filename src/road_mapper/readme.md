@@ -229,11 +229,24 @@ You can do this by adding to you .bashrc file:
 
 #### Preparation
 
-After [sampling](#road-mapper-sampling) the dataset, please do the following to randomly generate the train and test datasets:
+After [sampling](#road-mapper-sampling) the dataset, please do the following to learn how many directories your dataset has:
 ```bash
- $ python road_mapper_enet_training.py carmen_lcad/data/road_mapper 9 1
+ $ cd $CARMEN_LCAD/src/road_mapper
+ $ python road_mapper_enet_training.py ../../data/road_mapper 1000000000 1
 ```
-To learn more about the parameters please run the program with the -h option:
+The output will be:
+```bash
+Dataset ../../data/road_mapper contains yyyyy pose directories.
+Insufficient number of poses for training and test. Please modify the arguments.
+```
+where yyyyy tells you how many directories of data you have.
+
+Please do the following to randomly generate the train and test datasets, where yyyyy and zzzz are the number of directories that will be used for building your train an test datasets. You will have about 168 input-ouput pairs for each directory.
+```bash
+ $ cd $CARMEN_LCAD/src/road_mapper
+ $ python road_mapper_enet_training.py ../../data/road_mapper yyyyy zzzz
+```
+To learn more about the parameters of road_mapper_enet_training.py, please run the program with the -h option:
 ```bash
  $ python road_mapper_enet_training.py -h
 ```
