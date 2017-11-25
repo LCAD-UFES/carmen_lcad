@@ -43,13 +43,12 @@ The following color code is used for displaying a road map:
   - ![#00ff00](https://placehold.it/20x20/00ff00/?text=+) RGB(000, 255, 000) = center of a lane
 
 The following class code is used for segmenting a road map:
-  - 0 = off the road
-  - 1 = solid marking
-  - 2 = broken marking
-  - 3 = in a lane (regardless the distance to the center)
-  - 4 = solid marking (50% confidence)
-  - 5 = broken marking (50% confidence)
-  - 6, 7, 8, ..., 20, 21 = center of a lane (25%, 30%, 35%, ..., 95%, 100% confidence)
+  - 0 = off the road;
+  - 1 = solid marking;
+  - 2 = broken marking;
+  - 3 = solid marking (50% confidence);
+  - 4 = broken marking (50% confidence);
+  - 5, 6, 7, ..., 20, 20 = center of a lane confidence (100% confidence, 93.75%, 87.50%, 81.25%, ..., 0%), we have 16 levels of confidence, or distances from the center.
 
 The Road Mapper module parameters can be found at [carmen-ford-escape.ini](../carmen-ford-escape.ini) and are the following:
 ```ini

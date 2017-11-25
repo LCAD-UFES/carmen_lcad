@@ -14,7 +14,7 @@ extern "C" {
 #define SOLID_CLASS			1
 #define BROKEN_CLASS		2
 #define LANE_CLASS			3
-#define OFFSET_CLASS		3
+#define OFFSET_CLASS		2
 
 typedef struct						/* Probabilities of a pixel in the road map */
 {
