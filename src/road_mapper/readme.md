@@ -274,18 +274,15 @@ The training of ENet is performed in two stages:
 
 To improve the quality of ENet predictions for classes less represented in the dataset (solid marking, broken marking, etc.), you can add **class_weighting** to the **SoftmaxWithLoss** layer. 
 ```bash
- $ python ENet/scripts/calculate_class_weighting.py  --source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt --num_classes 22
+ $ python ENet/scripts/calculate_class_weighting.py --source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt --num_classes 22 > result.txt
 ```
-The program ENet/scripts/calculate_class_weighting.py might complain that there is a classe missing, say, class 18 - **Exception: The class 18 is not present in the dataset**. In this case, change the parameter --num_classes 22 to --num_classes 17. Note that, in this case, you have to change the number of classes in all commands below and in the following files:
+The program ENet/scripts/calculate_class_weighting.py might complain (see the result.txt file) that there is a classe missing, say, class 18 - **Exception: The class 18 is not present in the dataset**. In this case, change the parameter --num_classes 22 to --num_classes 17. Note that, in this case, you have to change the number of classes in all commands below.
 
-- 
-- 
-
-Copy the **class_weightings** from the terminal in the `enet_train_encoder.prototxt` under **weight_by_label_freqs** and set this flag from **false** to **true**. 
+Copy the **class_weightings** from the result.txt to the `enet_train_encoder.prototxt` file under **weight_by_label_freqs** and set this flag from **false** to **true**. The file is generated/changed in the step below. So, after that step, copy the **class_weightings** from the result.txt to it.
 
 First, create the prototxt file `enet_train_encoder.prototxt` by running:
 ```bash
- $ python ENet/scripts/create_enet_prototxt.py  --source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt --mode train_encoder --batch_size 100 --new_height 120 --new_width  120 --num_of_classes 17
+ $ python ENet/scripts/create_enet_prototxt.py  --source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt --mode train_encoder --batch_size 20 --new_height 120 --new_width  120 --num_of_classes 17
 ```
 To learn more about the parameters please run the program with the -h option:
 ```bash
