@@ -276,7 +276,7 @@ To improve the quality of ENet predictions for classes less represented in the d
 ```bash
  $ python ENet/scripts/calculate_class_weighting.py  --source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt --num_classes 22
 ```
-The program ENet/scripts/calculate_class_weighting.py might complain that there is a classe missing, say, class 18 - **Exception: The class 18 is not present in the dataset**. In this case, change the parameter --num_classes 22 to --num_classes 18. Note that, in this case, you have to change the number of classes in all commands below and in the following files:
+The program ENet/scripts/calculate_class_weighting.py might complain that there is a classe missing, say, class 18 - **Exception: The class 18 is not present in the dataset**. In this case, change the parameter --num_classes 22 to --num_classes 17. Note that, in this case, you have to change the number of classes in all commands below and in the following files:
 
 - 
 - 
@@ -285,12 +285,7 @@ Copy the **class_weightings** from the terminal in the `enet_train_encoder.proto
 
 First, create the prototxt file `enet_train_encoder.prototxt` by running:
 ```bash
- $ python create_enet_prototxt.py  --source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt \
-                                   --mode train_encoder \
-                                   --batch_size 2 \
-                                   --new_height 120 \
-                                   --new_width  120 \
-                                   --num_of_classes 22
+ $ python ENet/scripts/create_enet_prototxt.py  --source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt --mode train_encoder --batch_size 100 --new_height 120 --new_width  120 --num_of_classes 17
 ```
 To learn more about the parameters please run the program with the -h option:
 ```bash
@@ -299,7 +294,7 @@ To learn more about the parameters please run the program with the -h option:
 
 The values of batch_size, new_height and new_width are limited by the available GPU memory. The batch_size must be as big as possible and fit GPU memory. The values of new_height and new_width must be divisible by 8.
 
-The prototxt file contains the ENet encoder architecture with some default settings that you may customize according to your needs. For example, the input images are resized to 120x120 pixels, because of GPU memory limitation. For more information take a look in the prototxt file or in the python file.
+The prototxt file contains the ENet encoder architecture with some default settings that you may customize according to your needs. For more information take a look at the prototxt file or in the python file.
  
 Before training:
 
