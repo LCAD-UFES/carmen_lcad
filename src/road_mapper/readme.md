@@ -243,9 +243,10 @@ where yyyyy tells you how many directories of data you have.
 
 Please do the following to randomly generate the train and test datasets, where yyyyy and zzzz are the number of directories that will be used for building your train an test datasets. You will have about 168 input-ouput pairs for each directory.
 ```bash
- $ cd $CARMEN_LCAD/src/road_mapper
  $ python road_mapper_enet_training.py ../../data/road_mapper yyyyy zzzz
 ```
+The files road_mapper_train.txt and road_mapper_test.txt will be generated with the trainning and test input-output pairs, respectively.
+
 To learn more about the parameters of road_mapper_enet_training.py, please run the program with the -h option:
 ```bash
  $ python road_mapper_enet_training.py -h
