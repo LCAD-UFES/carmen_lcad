@@ -18,6 +18,7 @@ remission_map_to_image(carmen_map_p map, cv::Mat *remission_map_img, int channel
 		for (j = 0; j < map->config.y_size; j++)
 		{
 			uchar aux = 255 - (uchar) 3.5 * (255.0 * (1.0 - (map->map[i][j] < 0 ? 1 : map->map[i][j])) + 0.5);
+//			uchar aux = (uchar) (255.0 * ((map->map[i][j] < 0 ? 0.4 : map->map[i][j])) + 0.5);
 			if (channels == 1)
 			{
 				remission_map_img->at<uchar>(i, j) = aux;
