@@ -31,6 +31,26 @@ static carmen_map_p g_vec_remission_map[VEC_SIZE];
 static carmen_map_p g_vec_road_map[VEC_SIZE];
 static vector<carmen_point_t> g_vec_pos;
 
+
+void
+deinitialize_maps(void)
+{
+	int i;
+	for (i = 0; i < VEC_SIZE; i++)
+	{
+		free_map_pointer(g_vec_remission_map[i]);
+		free_map_pointer(g_vec_road_map[i]);
+	}
+
+	g_remission_map_img->release();
+	g_remission_map_img3->release();
+	g_road_map_img->release();
+	g_road_map_img3->release();
+
+	wordfree(&g_out_path_p);
+}
+
+
 void
 generate_sample(cv::Mat map_img, cv::Point center, double angle, cv::Rect roi, char* path)
 {
@@ -40,6 +60,7 @@ generate_sample(cv::Mat map_img, cv::Point center, double angle, cv::Rect roi, c
 	rot_img.release();
 	sample.release();
 }
+
 
 void
 generate_rotate_samples(int x, int y,
@@ -84,6 +105,7 @@ generate_rotate_samples(int x, int y,
 	}
 }
 
+
 void
 generate_offset_samples(int x, int y, double resolution)
 {
@@ -117,6 +139,7 @@ generate_offset_samples(int x, int y, double resolution)
 								dir_name);
 	}
 }
+
 
 int
 generate_samples(void)
@@ -165,6 +188,206 @@ generate_samples(void)
 	generate_offset_samples(x_img, y_img, remission_map->config.resolution);
 	return 0;
 }
+
+
+static void
+generate_all(void)
+{
+	vector<carmen_point_t>::iterator pos = g_vec_pos.begin();
+
+	while (pos != g_vec_pos.end())
+	{
+		memcpy(&g_global_pos, &(*pos), sizeof(carmen_point_t));
+		int generate_err = generate_samples();
+		if (generate_err == 0)
+		{
+			pos = g_vec_pos.erase(pos);
+		}
+		else
+		{
+			pos++;
+		}
+	}
+	if (g_verbose && !g_vec_pos.empty())
+	{
+		printf("%ld poses still queued...\n", g_vec_pos.size());
+	}
+	fflush(stdout);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Publishers                                                                                //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Handlers                                                                                  //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+static void
+global_pos_handler(carmen_localize_ackerman_globalpos_message *msg)
+{
+	static int first_time = 1;
+	static carmen_point_t previous_global_pos;
+	static int count_pos = 0, count_push = 0;
+	int good_to_push;
+	char status1[80] = "", status2[80] = "", status3[80] = "";
+
+	sprintf(status1, "localize_ackerman globalpos [%d]: %.2lf %.2lf", ++count_pos, msg->globalpos.x, msg->globalpos.y);
+	if (first_time)
+	{
+		good_to_push = 1;
+		first_time = 0;
+	}
+	else
+	{
+		double distance = carmen_distance(&previous_global_pos, &msg->globalpos);
+		good_to_push = (distance >= g_distance_samples);
+		sprintf(status2, "distance %.2lf previous %.2lf %.2lf", distance, previous_global_pos.x, previous_global_pos.y);
+	}
+	if (good_to_push)
+	{
+		memcpy(&previous_global_pos, &msg->globalpos, sizeof(carmen_point_t));
+		g_vec_pos.push_back(msg->globalpos);
+		sprintf(status3, "PUSHED [%d]", ++count_push);
+	}
+	if (g_verbose)
+	{
+		printf("%s %s %s\n", status1, status2, status3);
+	}
+	generate_all();
+}
+
+
+static void
+localize_map_handler(carmen_map_server_localize_map_message *msg)
+{
+	static int first_time = 1;
+	static int count = 0;
+	if (first_time == 1)
+	{
+		int i;
+		for (i = 0; i < VEC_SIZE; i++)
+		{
+			carmen_grid_mapping_initialize_map(g_vec_remission_map[i],
+												msg->config.x_size,
+												msg->config.resolution, 'm');
+		}
+		if (g_remission_image_channels == 1 || g_remission_image_channels == '*')
+		{
+			g_remission_map_img = new cv::Mat(g_vec_remission_map[0]->config.y_size,
+												g_vec_remission_map[0]->config.x_size,
+												CV_8UC1);
+		}
+		if (g_remission_image_channels == 3 || g_remission_image_channels == '*')
+		{
+			g_remission_map_img3 = new cv::Mat(g_vec_remission_map[0]->config.y_size,
+												g_vec_remission_map[0]->config.x_size,
+												CV_8UC3,
+												cv::Scalar::all(0));
+		}
+		first_time = 0;
+	}
+	memcpy(g_vec_remission_map[count % VEC_SIZE]->complete_map,
+			msg->complete_mean_remission_map,
+			sizeof(double) * msg->size);
+	memcpy(&g_vec_remission_map[count % VEC_SIZE]->config,
+			&msg->config,
+			sizeof(carmen_map_config_t));
+	count++;
+	if (g_verbose)
+	{
+		printf("map_server remission [%d]: %.2lf %.2lf %dx%d\n", count, msg->config.x_origin, msg->config.y_origin, msg->config.x_size, msg->config.y_size);
+	}
+	generate_all();
+	if (g_verbose && g_vec_pos.empty())
+	{
+		printf("Pose queue is empty.\n");
+	}
+	fflush(stdout);
+}
+
+
+static void
+road_map_handler(carmen_map_server_road_map_message *msg)
+{
+	static int first_time = 1;
+	static int count = 0;
+	if (first_time == 1)
+	{
+		int i;
+		for (i = 0; i < VEC_SIZE; i++)
+		{
+			carmen_grid_mapping_initialize_map(g_vec_road_map[i],
+												msg->config.x_size,
+												msg->config.resolution, 'r');
+		}
+		if (g_image_channels == 1 || g_image_channels == '*')
+		{
+			g_road_map_img = new cv::Mat(g_vec_road_map[0]->config.y_size,
+										g_vec_road_map[0]->config.x_size,
+										CV_8UC1);
+		}
+		if (g_image_channels == 3 || g_image_channels == '*')
+		{
+			g_road_map_img3 = new cv::Mat(g_vec_road_map[0]->config.y_size,
+										g_vec_road_map[0]->config.x_size,
+										CV_8UC3,
+										cv::Scalar::all(0));
+		}
+		first_time = 0;
+	}
+	memcpy(g_vec_road_map[count % VEC_SIZE]->complete_map,
+			msg->complete_map,
+			sizeof(double) * msg->size);
+	memcpy(&g_vec_road_map[count % VEC_SIZE]->config,
+			&msg->config,
+			sizeof(carmen_map_config_t));
+	count++;
+	if (g_verbose)
+	{
+		printf("map_server road_map  [%d]: %.2lf %.2lf %dx%d\n", count, msg->config.x_origin, msg->config.y_origin, msg->config.x_size, msg->config.y_size);
+	}
+	generate_all();
+	if (g_verbose && g_vec_pos.empty())
+	{
+		printf("Pose queue is empty.\n");
+	}
+	fflush(stdout);
+}
+
+
+void
+shutdown_module(int signo)
+{
+	if (signo == SIGINT)
+	{
+		carmen_ipc_disconnect();
+		printf("road_mapper_sampling: disconnected.\n");
+		deinitialize_maps();
+		exit(0);
+	}
+}
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                              //
+// Initializations                                                                              //
+//                                                                                              //
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 static void
 read_parameters(int argc, char **argv)
@@ -227,6 +450,7 @@ read_parameters(int argc, char **argv)
 	}
 }
 
+
 static void
 define_messages()
 {
@@ -235,160 +459,6 @@ define_messages()
 	carmen_map_server_define_road_map_message();
 }
 
-static void
-generate_all(void)
-{
-	vector<carmen_point_t>::iterator pos = g_vec_pos.begin();
-
-	while (pos != g_vec_pos.end())
-	{
-		memcpy(&g_global_pos, &(*pos), sizeof(carmen_point_t));
-		int generate_err = generate_samples();
-		if (generate_err == 0)
-		{
-			pos = g_vec_pos.erase(pos);
-		}
-		else
-		{
-			pos++;
-		}
-	}
-	if (g_verbose && !g_vec_pos.empty())
-	{
-		printf("%ld poses still queued...\n", g_vec_pos.size());
-	}
-	fflush(stdout);
-}
-
-static void
-global_pos_handler(carmen_localize_ackerman_globalpos_message *msg)
-{
-	static int first_time = 1;
-	static carmen_point_t previous_global_pos;
-	static int count_pos = 0, count_push = 0;
-	int good_to_push;
-	char status1[80] = "", status2[80] = "", status3[80] = "";
-
-	sprintf(status1, "localize_ackerman globalpos [%d]: %.2lf %.2lf", ++count_pos, msg->globalpos.x, msg->globalpos.y);
-	if (first_time)
-	{
-		good_to_push = 1;
-		first_time = 0;
-	}
-	else
-	{
-		double distance = carmen_distance(&previous_global_pos, &msg->globalpos);
-		good_to_push = (distance >= g_distance_samples);
-		sprintf(status2, "distance %.2lf previous %.2lf %.2lf", distance, previous_global_pos.x, previous_global_pos.y);
-	}
-	if (good_to_push)
-	{
-		memcpy(&previous_global_pos, &msg->globalpos, sizeof(carmen_point_t));
-		g_vec_pos.push_back(msg->globalpos);
-		sprintf(status3, "PUSHED [%d]", ++count_push);
-	}
-	if (g_verbose)
-	{
-		printf("%s %s %s\n", status1, status2, status3);
-	}
-	generate_all();
-}
-
-static void
-localize_map_handler(carmen_map_server_localize_map_message *msg)
-{
-	static int first_time = 1;
-	static int count = 0;
-	if (first_time == 1)
-	{
-		int i;
-		for (i = 0; i < VEC_SIZE; i++)
-		{
-			carmen_grid_mapping_initialize_map(g_vec_remission_map[i],
-												msg->config.x_size,
-												msg->config.resolution, 'm');
-		}
-		if (g_remission_image_channels == 1 || g_remission_image_channels == '*')
-		{
-			g_remission_map_img = new cv::Mat(g_vec_remission_map[0]->config.y_size,
-												g_vec_remission_map[0]->config.x_size,
-												CV_8UC1);
-		}
-		if (g_remission_image_channels == 3 || g_remission_image_channels == '*')
-		{
-			g_remission_map_img3 = new cv::Mat(g_vec_remission_map[0]->config.y_size,
-												g_vec_remission_map[0]->config.x_size,
-												CV_8UC3,
-												cv::Scalar::all(0));
-		}
-		first_time = 0;
-	}
-	memcpy(g_vec_remission_map[count % VEC_SIZE]->complete_map,
-			msg->complete_mean_remission_map,
-			sizeof(double) * msg->size);
-	memcpy(&g_vec_remission_map[count % VEC_SIZE]->config,
-			&msg->config,
-			sizeof(carmen_map_config_t));
-	count++;
-	if (g_verbose)
-	{
-		printf("map_server remission [%d]: %.2lf %.2lf %dx%d\n", count, msg->config.x_origin, msg->config.y_origin, msg->config.x_size, msg->config.y_size);
-	}
-	generate_all();
-	if (g_verbose && g_vec_pos.empty())
-	{
-		printf("Pose queue is empty.\n");
-	}
-	fflush(stdout);
-}
-
-static void
-road_map_handler(carmen_map_server_road_map_message *msg)
-{
-	static int first_time = 1;
-	static int count = 0;
-	if (first_time == 1)
-	{
-		int i;
-		for (i = 0; i < VEC_SIZE; i++)
-		{
-			carmen_grid_mapping_initialize_map(g_vec_road_map[i],
-												msg->config.x_size,
-												msg->config.resolution, 'r');
-		}
-		if (g_image_channels == 1 || g_image_channels == '*')
-		{
-			g_road_map_img = new cv::Mat(g_vec_road_map[0]->config.y_size,
-										g_vec_road_map[0]->config.x_size,
-										CV_8UC1);
-		}
-		if (g_image_channels == 3 || g_image_channels == '*')
-		{
-			g_road_map_img3 = new cv::Mat(g_vec_road_map[0]->config.y_size,
-										g_vec_road_map[0]->config.x_size,
-										CV_8UC3,
-										cv::Scalar::all(0));
-		}
-		first_time = 0;
-	}
-	memcpy(g_vec_road_map[count % VEC_SIZE]->complete_map,
-			msg->complete_map,
-			sizeof(double) * msg->size);
-	memcpy(&g_vec_road_map[count % VEC_SIZE]->config,
-			&msg->config,
-			sizeof(carmen_map_config_t));
-	count++;
-	if (g_verbose)
-	{
-		printf("map_server road_map  [%d]: %.2lf %.2lf %dx%d\n", count, msg->config.x_origin, msg->config.y_origin, msg->config.x_size, msg->config.y_size);
-	}
-	generate_all();
-	if (g_verbose && g_vec_pos.empty())
-	{
-		printf("Pose queue is empty.\n");
-	}
-	fflush(stdout);
-}
 
 static void
 register_handlers()
@@ -406,6 +476,7 @@ register_handlers()
 												CARMEN_SUBSCRIBE_ALL);
 }
 
+
 static void
 initialize_maps(void)
 {
@@ -417,35 +488,6 @@ initialize_maps(void)
 	}
 }
 
-void
-deinitialize_maps(void)
-{
-	int i;
-	for (i = 0; i < VEC_SIZE; i++)
-	{
-		free_map_pointer(g_vec_remission_map[i]);
-		free_map_pointer(g_vec_road_map[i]);
-	}
-
-	g_remission_map_img->release();
-	g_remission_map_img3->release();
-	g_road_map_img->release();
-	g_road_map_img3->release();
-
-	wordfree(&g_out_path_p);
-}
-
-void
-shutdown_module(int signo)
-{
-	if (signo == SIGINT)
-	{
-		carmen_ipc_disconnect();
-		printf("road_mapper_sampling: disconnected.\n");
-		deinitialize_maps();
-		exit(0);
-	}
-}
 
 int
 main(int argc, char **argv)
