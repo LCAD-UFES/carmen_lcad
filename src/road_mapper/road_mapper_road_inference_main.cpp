@@ -43,7 +43,7 @@ generate_road_map_via_deep_learning_inference(carmen_map_t remission_map)
 	// As linhas abaixo sao soh para fazer generate_sample() funcionar. Esta funcao nao será necessaria no futuro.
 	cv::Point pt = cv::Point(100, 100);
 	// ROI point is on the top-left corner
-	cv::Rect roi = cv::Rect(cv::Point(500, 500), cv::Size(g_sample_width, g_sample_height));
+	cv::Rect roi = cv::Rect(cv::Point(0, 0), cv::Size(g_sample_width, g_sample_height));
 
 	if (g_remission_image_channels == 1 || g_remission_image_channels == '*')
 	{
