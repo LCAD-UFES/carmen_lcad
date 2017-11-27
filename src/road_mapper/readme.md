@@ -278,9 +278,9 @@ To improve the quality of ENet predictions for classes less represented in the d
 ```
 The program ENet/scripts/calculate_class_weighting.py might complain (see the result.txt file) that there is a classe missing, say, class 18 - **Exception: The class 18 is not present in the dataset**. In this case, change the parameter --num_classes 22 to --num_classes 17. Note that, in this case, you have to change the number of classes in all commands below.
 
-Copy the **class_weightings** from the result.txt to the `enet_train_encoder.prototxt` file under **weight_by_label_freqs** and set this flag from **false** to **true**. The file is generated/changed in the step below. So, after that step, copy the **class_weightings** from the result.txt to it.
+Copy the **class_weightings** from the result.txt to the `enet_train_encoder.prototxt` file under **weight_by_label_freqs** and set this flag from **false** to **true**. The file is `enet_train_encoder.prototxt` generated/changed in the step below. So, after that step, copy the **class_weightings** from the result.txt to it.
 
-First, create the prototxt file `enet_train_encoder.prototxt` by running:
+Create the prototxt file `enet_train_encoder.prototxt` by running:
 ```bash
  $ python ENet/scripts/create_enet_prototxt.py  --source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt --mode train_encoder --batch_size 20 --new_height 120 --new_width  120 --num_of_classes 17
 ```
@@ -316,20 +316,14 @@ If the GPU memory is not enough (error == cudasuccess), reduce the batch_size in
 
 First create the `enet_train_encoder_decoder.prototxt` by running:
 ```bash
- $ python create_enet_prototxt.py  --source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt \
-                                   --mode train_encoder_decoder \
-                                   --batch_size 2 \
-                                   --new_height 120 \
-                                   --new_width  120 \
-                                   --num_of_classes 22
+ $ python ENet/scripts/create_enet_prototxt.py  --source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt --mode train_encoder_decoder --batch_size 20 --new_height 120 --new_width  120 --num_of_classes 17
 ```
 
 Copy the **class_weightings** from `enet_train_encoder.prototxt` to `enet_train_encoder_decoder.prototxt` under **weight_by_label_freqs** and set this flag from **false** to **true**. 
 
 Start the training of the encoder + decoder and use the pretrained weights as initialization of the encoder:
 ```bash
- $ ENet/caffe-enet/build/tools/caffe train  -solver ENet/prototxts/enet_solver_encoder_decoder.prototxt \
-                                            -weights ENet/weights/snapshots_encoder/NAME.caffemodel
+ $ ENet/caffe-enet/build/tools/caffe train -solver ENet/prototxts/enet_solver_encoder_decoder.prototxt -weights ENet/weights/snapshots_encoder/NAME.caffemodel
 ```
 
 Replace the place holder **NAME** to the name of your weights.
@@ -342,10 +336,7 @@ First change the line 256 in `create_enet_prototxt.py` from `parser.add_argument
 
 Now run:
 ```bash
- python create_enet_prototxt.py  --source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt \
-                                 --mode test \
-                                 --input_size 120 120 \
-                                 --num_of_classes 22 
+ python ENet/scripts/create_enet_prototxt.py  --source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt --mode test --input_size 120 120 --num_of_classes 17 
 
 ```
 
@@ -353,22 +344,18 @@ The [Batch Normalisation layers](https://arxiv.org/abs/1502.03167) in ENet shift
 
 For this reason run **compute_bn_statistics.py** to calculate the new weights called **test_weights.caffemodel**:
 
-First, change the line 196 in `compute_bn_statistics.py` from `in_h, in_w = (512, 1024)` to `in_h, in_w = (200, 200)`.
+First, change the line 196 in `compute_bn_statistics.py` from `in_h, in_w = (512, 1024)` to `in_h, in_w = (120, 120)`.
 
 Now run:
 ```bash
- $ python compute_bn_statistics.py 	ENet/prototxt/enet_train_encoder_decoder.prototxt \
-					ENet/weights/snapshots_decoder/NAME.caffemodel \
-					ENet/weights/weights_bn/ 
+ $ python ENet/scripts/compute_bn_statistics.py ENet/prototxts/enet_train_encoder_decoder.prototxt ENet/weights/snapshots_decoder/NAME.caffemodel ENet/weights/weights_bn/ 
 ```
 
-The script saves the **bn-weights** in the output directory `ENet/weights/weights_bn/bn_weights.caffemodel`.
+The script saves the **bn-weights** in the output directory `ENet/weights/weights_bn/weights_bn.caffemodel`.
 
-For inference batch normalization and dropout layer can be merged into convolutional kernels, to speed up the network. You can do this by running:
+For inference, batch normalization and dropout layer can be merged into convolutional kernels, to speed up the network. You can do this by running:
 ```bash
- $ python BN-absorber-enet.py 	--model ENet/prototxts/enet_deploy.prototxt \
-				--weights ENet/weights/bn_weights.caffemodel \
-				--out_dir ENet/final_model_weigths/
+ $ python ENet/scripts/BN-absorber-enet.py --model ENet/prototxts/enet_deploy.prototxt --weights ENet/weights/weights_bn/weights_bn.caffemodel --out_dir ENet/final_model_weights/
 ```
 
 It also deletes the corresponding batch normalization and dropout layers from the prototxt file. The final model (prototxt file) and weights are saved in the folder **final_model_and_weights**. 
@@ -379,17 +366,27 @@ It also deletes the corresponding batch normalization and dropout layers from th
 
 Create the colormap:
 
-First copy the colors from [colors_to_colormap.txt](data/colors_to_colormap.txt) to `create_color_map.py` and change line 286 in `create_color_map.py` from `cv2.imwrite('ENet/scripts/cityscapes19.png', im_color)` to `cv2.imwrite('ENet/scripts/road_mapper_22.png', im_color)`. Alternatively you can use [road_mapper_22.png](data/road_mapper_22.png) colormap.
+First copy the colors from [colors_to_colormap.txt](data/colors_to_colormap.txt) to `create_colormap.py` (note that the array lut1 must have 256 elements) and change line 286 in `create_colormap.py` from `cv2.imwrite('ENet/scripts/cityscapes19.png', im_color)` to `cv2.imwrite('ENet/scripts/road_mapper_17.png', im_color)`. Then:
+```bash
+ $ python ENet/scripts/create_colormap.py
+```
+
+Alternatively you can use [road_mapper_17.png](data/road_mapper_17.png) colormap.
 
 Also, change line 67 in `test_segmentation.py` from `label_colours_bgr = label_colours[..., ::-1]` to `label_colours_bgr = label_colours#[..., ::-1]`.
 
 Now, you can visualize the prediction of ENet by running:
 ```bash
- $ python test_segmentation.py 	--model ENet/final_model_weigths/bn_conv_merged_model.prototxt \
-				--weights ENet/final_model_weigths/bn_conv_merged_weights.caffemodel \
-				--colours ENet/scripts/road_mapper_22.png \
-				--input_image carmen_lcad/data/road_mapper/7726369_-353704/i7726369_-353704_1.50_90.00.png \
-				--out_dir ENet/example_image/ 
+ $ python ENet/scripts/test_segmentation.py --model ENet/final_model_weigths/bn_conv_merged_model.prototxt \
+ 		--weights ENet/final_model_weigths/bn_conv_merged_weights.caffemodel \
+ 		--colours carmen_lcad/src/road_mapper/data/road_mapper_17.png \
+ 		--input_image carmen_lcad/data/road_mapper/7726627_-353889/i7726627_-353889_0.50_30.00.png \
+ 		--out_dir ENet/example_image/
+```
+
+Or, in a single line:
+```bash
+ $ python ENet/scripts/test_segmentation.py --model ENet/final_model_weigths/bn_conv_merged_model.prototxt --weights ENet/final_model_weigths/bn_conv_merged_weights.caffemodel --colours carmen_lcad/src/road_mapper/data/road_mapper_17.png --input_image carmen_lcad/data/road_mapper/7726627_-353889/i7726627_-353889_0.50_30.00.png --out_dir ENet/example_image/ 
 ```
 
 ##### C++ Code
@@ -402,13 +399,22 @@ Copy the `test_segmentation.cpp` file from `ENet/scripts` to `ENet/caffe-enet/ex
 
 Now, please do the following:
 ```bash
- $ cd ENet/caffe-enet/
+ $ cd ENet/caffe-enet/build
  $ make
- $ cd build/examples/ENet_with_C++
- $ ./test_segmentation.bin 	ENet/final_model_weights/bn_conv_merged_model.prototxt \
-				ENet/final_model_weights/bn_conv_merged_weights.caffemodel \
-				carmen_lcad/data/road_mapper/7726369_-353704/i7726369_-353704_1.50_90.00.png \
-				ENet/scripts/road_mapper_22.png
+ $ cd examples/ENet_with_C++
+```
+ 
+And, then:
+```bash
+ $ ./test_segmentation.bin ~/ENet/final_model_weights/bn_conv_merged_model.prototxt \
+ 		~/ENet/final_model_weights/bn_conv_merged_weights.caffemodel \
+ 		~/carmen_lcad/data/road_mapper/7726627_-353889/i7726627_-353889_0.50_30.00.png \
+ 		~/ENet/scripts/road_mapper_17.png
+```
+
+Or, in a single line:
+```bash
+ $ ./test_segmentation.bin ~/ENet/final_model_weights/bn_conv_merged_model.prototxt ~/ENet/final_model_weights/bn_conv_merged_weights.caffemodel ~/carmen_lcad/data/road_mapper/7726627_-353889/i7726627_-353889_0.50_30.00.png ~/ENet/scripts/road_mapper_17.png
 ```
 
 ##### Examples
