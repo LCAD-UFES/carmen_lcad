@@ -37,6 +37,30 @@ generate_sample(cv::Mat map_img, cv::Point center, double angle, cv::Rect roi, c
 }
 
 
+void
+generate_road_map_via_deep_learning_inference(carmen_map_t remission_map)
+{
+	// As linhas abaixo sao soh para fazer generate_sample() funcionar. Esta funcao nao será necessaria no futuro.
+	cv::Point pt = cv::Point(100, 100);
+	// ROI point is on the top-left corner
+	cv::Rect roi = cv::Rect(cv::Point(500, 500), cv::Size(g_sample_width, g_sample_height));
+
+	if (g_remission_image_channels == 1 || g_remission_image_channels == '*')
+	{
+		g_remission_map_img = new cv::Mat(remission_map.config.y_size, remission_map.config.x_size, CV_8UC1);
+		remission_map_to_image(&remission_map, g_remission_map_img, 1);
+		// Chamar a rede neural várias vezes abaixo para gerar e salvar o road_map, ao inves de salvar sample.png
+		generate_sample(*g_remission_map_img, pt, 0.0, roi, (char*) ("sample.png"));
+	}
+	if (g_remission_image_channels == 3 || g_remission_image_channels == '*')
+	{
+		g_remission_map_img3 = new cv::Mat(remission_map.config.y_size, remission_map.config.x_size, CV_8UC3, cv::Scalar::all(0));
+		remission_map_to_image(&remission_map, g_remission_map_img3, 3);
+		// Chamar a rede neural várias vezes abaixo para gerar e salvar o road_map, ao inves de salvar sample.png
+		generate_sample(*g_remission_map_img3, pt, 0.0, roi, (char*) ("sample.png"));
+	}
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
 // Publishers                                                                                //
@@ -70,23 +94,7 @@ localize_map_handler(carmen_map_server_localize_map_message *msg)
 	memcpy(remission_map.complete_map, msg->complete_mean_remission_map, sizeof(double) * msg->size);
 	remission_map.config = msg->config;
 
-	cv::Point pt = cv::Point(100, 100);
-	// ROI point is on the top-left corner
-	cv::Rect roi = cv::Rect(cv::Point(500, 500), cv::Size(g_sample_width, g_sample_height));
-
-	if (g_remission_image_channels == 1 || g_remission_image_channels == '*')
-	{
-		g_remission_map_img = new cv::Mat(remission_map.config.y_size, remission_map.config.x_size, CV_8UC1);
-		remission_map_to_image(&remission_map, g_remission_map_img, 1);
-		generate_sample(*g_remission_map_img, pt, 0.0, roi, (char *) "sample.png");
-	}
-
-	if (g_remission_image_channels == 3 || g_remission_image_channels == '*')
-	{
-		g_remission_map_img3 = new cv::Mat(remission_map.config.y_size, remission_map.config.x_size, CV_8UC3, cv::Scalar::all(0));
-		remission_map_to_image(&remission_map, g_remission_map_img3, 3);
-		generate_sample(*g_remission_map_img3, pt, 0.0, roi, (char *) "sample.png");
-	}
+	generate_road_map_via_deep_learning_inference(remission_map);
 }
 
 
