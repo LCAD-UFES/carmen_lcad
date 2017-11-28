@@ -227,6 +227,14 @@ You can do this by adding to you .bashrc file:
  export PYTHONPATH=$CAFFE_ENET_HOME/python
 ```
 
+Check the existence of file $CAFFE_ENET_HOME/include/caffe/proto/caffe.pb.h. If not, please do the following: 
+```bash
+ cd $CAFFE_ENET_HOME
+ protoc src/caffe/proto/caffe.proto --cpp_out=.
+ mkdir include/caffe/proto
+ mv src/caffe/proto/caffe.pb.h include/caffe/proto
+```
+
 #### Preparation
 
 After [sampling](#road-mapper-sampling) the dataset, please do the following to learn how many directories your dataset has:
