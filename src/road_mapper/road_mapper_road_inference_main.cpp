@@ -5,6 +5,9 @@
 #include <wordexp.h>
 #include "road_mapper_utils.h"
 #include <vector>
+
+#include <caffe/caffe.hpp>
+
 using namespace std;
 
 static int g_sample_width = 0;
@@ -28,6 +31,32 @@ cv::Mat *g_road_map_img;
 cv::Mat *g_road_map_img3;
 cv::Mat *g_remission_map_img;
 cv::Mat *g_remission_map_img3;
+
+
+class Classifier
+{
+ public:
+	  Classifier(const string& model_file,
+				 const string& trained_file);
+
+	  void Predict(const cv::Mat& img, string LUT_file);
+
+ private:
+	  void SetMean(const string& mean_file);
+
+	  void WrapInputLayer(std::vector<cv::Mat>* input_channels);
+
+	  void Preprocess(const cv::Mat& img,
+					  std::vector<cv::Mat>* input_channels);
+
+	  void Visualization(cv::Mat prediction_map, string LUT_file);
+
+ private:
+	  shared_ptr<Net<float> > net_;
+	  cv::Size input_geometry_;
+	  int num_channels_;
+
+} *g_classifier;
 
 
 cv::Mat
@@ -98,24 +127,23 @@ generate_road_map_via_deep_learning_inference(carmen_map_t remission_map)
 	cv::Rect roi = cv::Rect(cv::Point(0, 0), cv::Size(g_sample_width, g_sample_height));
 	cv::Mat sample;
 
-	cv::namedWindow("remission", cv::WINDOW_NORMAL);
+	cv::namedWindow("remission", cv::WINDOW_AUTOSIZE);
 	cv::moveWindow("remission", 90, 60);
-	cv::namedWindow("sample", cv::WINDOW_NORMAL);
+	cv::namedWindow("sample", cv::WINDOW_AUTOSIZE);
 	cv::moveWindow("sample", 140, 60);
 
 	if (g_remission_image_channels == 1 || g_remission_image_channels == '*')
 	{
 		g_remission_map_img = new cv::Mat(remission_map.config.y_size, remission_map.config.x_size, CV_8UC1);
 		remission_map_to_image(&remission_map, g_remission_map_img, 1);
+		// generate_sample(*g_remission_map_img, pt, 0.0, roi, (char*) ("sample.png"));
 		// Chamar a rede neural várias vezes abaixo para gerar e salvar o road_map, ao inves de salvar sample.png
-		generate_sample(*g_remission_map_img, pt, 0.0, roi, (char*) ("sample.png"));
 	}
 	if (g_remission_image_channels == 3 || g_remission_image_channels == '*')
 	{
 		g_remission_map_img3 = new cv::Mat(remission_map.config.y_size, remission_map.config.x_size, CV_8UC3, cv::Scalar::all(0));
 		remission_map_to_image(&remission_map, g_remission_map_img3, 3);
 		cv::imshow("remission", *g_remission_map_img3);
-		// Chamar a rede neural várias vezes abaixo para gerar e salvar o road_map, ao inves de salvar sample.png
 		int margin_x = (g_sample_width - g_sampling_stride)/2;
 		int margin_y = (g_sample_height - g_sampling_stride)/2;
 		for (int i = 0; i < remission_map.config.x_size; i += g_sampling_stride)
@@ -129,6 +157,8 @@ generate_road_map_via_deep_learning_inference(carmen_map_t remission_map)
 				cv::imshow("sample", sample);
 				printf("\nPress \"Esc\" key to continue...\n");
 				while((cv::waitKey() & 0xff) != 27);
+				// generate_sample(*g_remission_map_img, pt, 0.0, roi, (char*) ("sample.png"));
+				// Chamar a rede neural várias vezes abaixo para gerar e salvar o road_map, ao inves de salvar sample.png
 //				classifier.Predict(img, LUT_file);
 //				update_roap_map;
 			}
@@ -293,6 +323,8 @@ main(int argc, char **argv)
 	define_messages();
 
 	signal(SIGINT, shutdown_module);
+
+	g_classifier = Classifier(g_prototxt_filename, g_caffemodel_filename);
 
 	register_handlers();
 	carmen_ipc_dispatch();

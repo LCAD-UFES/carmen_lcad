@@ -7,6 +7,8 @@ LINK=g++
 CFLAGS += -Wall 
 
 IFLAGS += \
+	-I$(CAFFE_ENET_HOME)/include \
+	-I/usr/local/cuda/include \
 	`pkg-config --cflags opencv`
 
 LFLAGS += \
