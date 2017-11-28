@@ -17,6 +17,7 @@ IFLAGS += \
 
 LFLAGS += \
 	-L$(CAFFE_ENET_HOME)/build/lib \
+	`pkg-config --libs opencv` \
 	-lparam_interface \
 	-lipc \
 	-lglobal \
@@ -32,8 +33,8 @@ LFLAGS += \
 	-lprotobuf \
 	-lboost_signals \
 	-lboost_system \
-	-lcaffe \
-	`pkg-config --libs opencv`
+	-lproto \
+	-lcaffe 
 
 SOURCES = \
 	road_mapper_main.cpp \
