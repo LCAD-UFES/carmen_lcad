@@ -4,11 +4,21 @@
 
 #include <wordexp.h>
 #include "road_mapper_utils.h"
+
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <caffe/caffe.hpp>
+#include <algorithm>
+#include <iosfwd>
+#include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 
-#include <caffe/caffe.hpp>
-
 using namespace std;
+using namespace caffe;  // NOLINT(build/namespaces)
+using std::string;
 
 static int g_sample_width = 0;
 static int g_sample_height = 0;
@@ -56,7 +66,26 @@ class Classifier
 	  cv::Size input_geometry_;
 	  int num_channels_;
 
-} *g_classifier;
+};
+
+
+Classifier::Classifier(const string& model_file, const string& trained_file)
+{
+  Caffe::set_mode(Caffe::GPU);
+
+  /* Load the network. */
+  net_.reset(new Net<float>(model_file, TEST));
+  net_->CopyTrainedLayersFrom(trained_file);
+
+  CHECK_EQ(net_->num_inputs(), 1) << "Network should have exactly one input.";
+  CHECK_EQ(net_->num_outputs(), 1) << "Network should have exactly one output.";
+
+  Blob<float>* input_layer = net_->input_blobs()[0];
+  num_channels_ = input_layer->channels();
+  CHECK(num_channels_ == 3 || num_channels_ == 1)
+    << "Input layer should have 1 or 3 channels.";
+  input_geometry_ = cv::Size(input_layer->width(), input_layer->height());
+}
 
 
 cv::Mat
@@ -122,9 +151,9 @@ void
 generate_road_map_via_deep_learning_inference(carmen_map_t remission_map)
 {
 	// As linhas abaixo sao soh para fazer generate_sample() funcionar. Esta funcao nao será necessaria no futuro.
-	cv::Point pt = cv::Point(g_sample_width/2, g_sample_height/2);
+//	cv::Point pt = cv::Point(g_sample_width/2, g_sample_height/2);
 	// ROI point is on the top-left corner
-	cv::Rect roi = cv::Rect(cv::Point(0, 0), cv::Size(g_sample_width, g_sample_height));
+//	cv::Rect roi = cv::Rect(cv::Point(0, 0), cv::Size(g_sample_width, g_sample_height));
 	cv::Mat sample;
 
 	cv::namedWindow("remission", cv::WINDOW_AUTOSIZE);
@@ -324,7 +353,7 @@ main(int argc, char **argv)
 
 	signal(SIGINT, shutdown_module);
 
-	g_classifier = Classifier(g_prototxt_filename, g_caffemodel_filename);
+	Classifier g_classifier = Classifier(g_prototxt_filename, g_caffemodel_filename);
 
 	register_handlers();
 	carmen_ipc_dispatch();

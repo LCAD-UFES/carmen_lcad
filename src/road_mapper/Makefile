@@ -3,15 +3,20 @@ include ../Makefile.conf
 MODULE_NAME = Road Mapper
 MODULE_COMMENT = Create, view, learn and predict *road maps*
 
-LINK=g++
-CFLAGS += -Wall 
+LINK = g++
+CFLAGS += -Wall
+
+#CXXFLAGS += -std=c++11
+CXXFLAGS += -Wno-ignored-qualifiers
 
 IFLAGS += \
+	`pkg-config --cflags opencv` \
+	-I /usr/local/cuda/include \
 	-I$(CAFFE_ENET_HOME)/include \
-	-I/usr/local/cuda/include \
-	`pkg-config --cflags opencv`
+	-I$(CAFFE_ENET_HOME)/build/include 
 
 LFLAGS += \
+	-L$(CAFFE_ENET_HOME)/build/lib \
 	-lparam_interface \
 	-lipc \
 	-lglobal \
@@ -23,6 +28,11 @@ LFLAGS += \
 	-lpng \
 	-lreadlog \
 	-lkinect_interface \
+	-lglog \
+	-lprotobuf \
+	-lboost_signals \
+	-lboost_system \
+	-lcaffe \
 	`pkg-config --libs opencv`
 
 SOURCES = \
