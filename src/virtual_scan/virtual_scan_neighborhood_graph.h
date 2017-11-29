@@ -34,7 +34,6 @@ typedef struct _virtual_scan_complete_sub_graph_t
 
 typedef struct _virtual_scan_disconnected_sub_graph_t
 {
-	double timestamp;
 	int num_sub_graphs;
 	virtual_scan_complete_sub_graph_t *sub_graphs;
 	_virtual_scan_disconnected_sub_graph_t *previous;
@@ -52,14 +51,17 @@ typedef struct
 typedef struct
 {
 	int num_sub_graphs;
+	int max_num_sub_graphs;
 	virtual_scan_disconnected_sub_graph_t *first;
 	virtual_scan_disconnected_sub_graph_t *last;
 } virtual_scan_neighborhood_graph_t;
 
 
-virtual_scan_neighborhood_graph_t *
-virtual_scan_alloc_neighborhood_graph ();
+virtual_scan_disconnected_sub_graph_t *
+virtual_scan_get_disconnected_sub_graph(virtual_scan_neighborhood_graph_t *neighborhood_graph, int i);
 
+virtual_scan_neighborhood_graph_t *
+virtual_scan_initiate_neighborhood_graph (int max_num_sub_graphs);
 
 void
 update_neighborhood_graph(virtual_scan_neighborhood_graph_t *neighborhood_graph,

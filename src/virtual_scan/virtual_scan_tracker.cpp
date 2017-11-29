@@ -24,6 +24,8 @@ virtual_scan_graph_node_t *Obstacle::operator -> ()
 	return(graph_node);
 }
 
+
+
 Track::~Track()
 {
 	for (int i = 0, n = graph_nodes.size(); i < n; i++)
@@ -148,7 +150,7 @@ inline int random_int(int a, int b, std::random_device *rd)
 
 void Track::track_update(std::random_device *rd)
 {
-	std::normal_distribution <> normal ;
+	std::normal_distribution <> normal;
 	int n = random_int(0, this->size(), rd);
 	Obstacle *obstacle = &this->graph_nodes[n];
 	obstacle->x += normal(*rd);
@@ -156,12 +158,18 @@ void Track::track_update(std::random_device *rd)
 	obstacle->theta = carmen_normalize_theta(obstacle->theta + normal(*rd));
 }
 
-double Track::P_L(double lambda_L)
+double Track::P_L(double lambda_L, int T)
 {
-	double fx = exp(lambda_L * size());
-	double fx_minus_1 = exp(lambda_L * (size() - 1));
-	double fx_integral = (fx - 1) / lambda_L;
-	return (fx - fx_minus_1) / fx_integral;
+	// f(x) = exp(lambda_L * x)
+	// F(x) = exp(lambda_L * x) / lambda_L
+	// P_L = f(x) / int_0^T f(x) dx
+
+	return (lambda_L * exp(lambda_L * size())) / (exp(lambda_L * T) - 1);
+}
+
+double Track::P_T(double lambda_T)
+{
+
 }
 
 Tracks::Tracks(std::random_device *rd_):
@@ -407,6 +415,41 @@ bool Tracks::track_diffusion()
 	return true;
 }
 
+
+struct
+{
+	bool operator()(AngleRange a, AngleRange b) const
+	{
+		return a.first_angle < b.first_angle;
+	}
+} compare_angle_ranges;
+
+
+double Tracks::PM1(virtual_scan_neighborhood_graph_t *neighborhood_graph, int i)
+{
+	virtual_scan_disconnected_sub_graph_t *disconnected_sub_graph = virtual_scan_get_disconnected_sub_graph(neighborhood_graph, i);
+	carmen_point_t globalpos = disconnected_sub_graph->virtual_scan_extended->globalpos;
+	std::vector <AngleRange> angle_ranges;
+	for (int j = 0; j < tracks.size(); j++)
+	{
+		Track *track = &tracks[j];
+		AngleRange angle_range = track->points_range(i, globalpos);
+		angle_ranges.push_back(angle_range);
+	}
+	int k = 0;
+	std::sort(angle_ranges.begin(), angle_ranges.end(), compare_angle_ranges);
+	for (int j = 0; j < disconnected_sub_graph->virtual_scan_extended->num_points; j++)
+	{
+		carmen_point_t point = disconnected_sub_graph->virtual_scan_extended->points[j];
+		if (point.theta < angle_ranges[k].first_angle)
+			continue;
+		else if (point.theta > angle_ranges[k].first_angle && point.theta < angle_ranges[k].second_angle)
+			double dn = compute_dn(point, angle_ranges[k]);
+	}
+
+}
+
+
 Tracks *Tracks::propose(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
 	Tracks *tracks = new Tracks(*this);
@@ -452,9 +495,9 @@ double Tracks::P()
 	return 0.0;
 }
 
-Tracker::Tracker(int n):
+Tracker::Tracker(int n, int T):
 	n_mc(n),
-	neighborhood_graph(virtual_scan_alloc_neighborhood_graph ()),
+	neighborhood_graph(virtual_scan_initiate_neighborhood_graph (T)),
 	tracks_n(new Tracks(&rd)),
 	tracks_star(new Tracks(&rd)),
 	uniform(0.0, 1.0)

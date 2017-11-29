@@ -53,6 +53,7 @@ sort_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan) // Verify if
 {
 	extended_virtual_scan.points = extended_virtual_scan_points;
 	extended_virtual_scan.num_points = virtual_scan->num_points;
+	extended_virtual_scan.globalpos = virtual_scan->globalpos;
 	extended_virtual_scan.timestamp = virtual_scan->timestamp;
 	for (int i = 0; i < virtual_scan->num_points; i++)
 	{

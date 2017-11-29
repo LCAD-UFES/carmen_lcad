@@ -32,10 +32,16 @@ public:
 	virtual_scan_graph_node_t *operator -> (); // Operator overload
 };
 
+struct AngleRange
+{
+	double first_angle;
+	double second_angle;
+	Obstacle *obstacle;
+};
+
 class Track
 {
-	std::deque<Obstacle> graph_nodes;
-
+	std::deque<Obstacle> graph_nodes; // Mudar de graph_nodes para poses
 public:
 	~Track();
 	int size();
@@ -51,7 +57,7 @@ public:
 	std::pair <int, int> is_switchable(Track *tau);
 	void track_switch(Track *tau, std::pair <int, int> break_point_pair);
 	void track_update(std::random_device *rd);
-	double P_L(double lambda_L);
+	double P_L(double lambda_L, int T);
 };
 
 class Tracks
@@ -90,7 +96,7 @@ class Tracker
 	bool keep(Tracks *new_tracks);
 
 public:
-	Tracker(int n);
+	Tracker(int n, int T);
 	Tracks *track(virtual_scan_box_model_hypotheses_t *box_model_hypotheses,
 			virtual_scan_extended_t *virtual_scan_extended);
 };

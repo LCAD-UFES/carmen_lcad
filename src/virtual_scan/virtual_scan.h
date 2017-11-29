@@ -18,6 +18,7 @@ typedef struct
 {
 	int num_points;
 	carmen_point_t *points;
+	carmen_point_t globalpos;
 	double timestamp;
 } virtual_scan_extended_t;
 

@@ -10,6 +10,7 @@
 
 #define NUM_COLORS 4
 #define NMC	250
+#define T 10
 
 double d_max;
 carmen_mapper_virtual_laser_message virtual_laser_message;
@@ -98,7 +99,7 @@ virtual_scan_publish_segments(virtual_scan_segment_classes_t *virtual_scan_segme
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-virtual_scan::Tracker tracker(NMC);
+virtual_scan::Tracker tracker(NMC, T);
 
 void
 carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *message)
@@ -188,8 +189,6 @@ carmen_virtual_scan_subscribe_messages()
 int
 main(int argc, char **argv)
 {
-	neighborhood_graph = virtual_scan_alloc_neighborhood_graph();
-
 	carmen_ipc_initialize(argc, argv);
 
 	carmen_virtual_scan_install_params(argc, argv);
