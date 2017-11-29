@@ -21,17 +21,19 @@ remission_map_to_image(carmen_map_p map, cv::Mat *remission_map_img, int channel
 //			uchar aux = (uchar) (255.0 * ((map->map[i][j] < 0 ? 0.4 : map->map[i][j])) + 0.5);
 			if (channels == 1)
 			{
-				remission_map_img->at<uchar>(i, j) = aux;
+//				remission_map_img->at<uchar>(i, j) = aux;
+				remission_map_img->at<uchar>(map->config.y_size - 1 - j, i) = aux;
 			}
 			else
 			{
 				cv::Vec3b color = cv::Vec3b(aux, aux, aux);
-				remission_map_img->at<cv::Vec3b>(i, j) = color;
+//				remission_map_img->at<cv::Vec3b>(i, j) = color;
+				remission_map_img->at<cv::Vec3b>(map->config.y_size - 1 - j, i) = color;
 			}
 		}
 	}
-	cv::Point pt(remission_map_img->cols/2.0, remission_map_img->rows/2.0);
-	*remission_map_img = rotate(*remission_map_img, pt, 90);
+//	cv::Point pt(remission_map_img->cols/2.0, remission_map_img->rows/2.0);
+//	*remission_map_img = rotate(*remission_map_img, pt, 90);
 }
 
 void

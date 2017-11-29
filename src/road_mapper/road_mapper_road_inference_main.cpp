@@ -49,7 +49,7 @@ class Classifier
 	  Classifier(const string& model_file,
 				 const string& trained_file);
 
-	  void Predict(const cv::Mat& img, string LUT_file);
+	  cv::Mat Predict(const cv::Mat& img, string LUT_file);
 
  private:
 	  void SetMean(const string& mean_file);
@@ -69,7 +69,7 @@ class Classifier
 };
 
 Classifier *g_classifier;
-
+cv::Mat g_label_colours;
 
 Classifier::Classifier(const string& model_file, const string& trained_file)
 {
@@ -93,9 +93,9 @@ void Classifier::Visualization(cv::Mat prediction_map, string LUT_file)
 
 	cv::cvtColor(prediction_map.clone(), prediction_map, CV_GRAY2BGR);
 	cv::Mat label_colours = cv::imread(LUT_file, 1);
-//  cv::cvtColor(label_colours, label_colours, CV_RGB2BGR);
+////  cv::cvtColor(label_colours, label_colours, CV_RGB2BGR);
 	cv::Mat output_image;
-	LUT(prediction_map, label_colours, output_image);
+	LUT(prediction_map, g_label_colours, output_image);
 
 	cv::imshow("Display window", output_image);
 	cv::waitKey(0);
@@ -162,7 +162,7 @@ Classifier::Preprocess(const cv::Mat& img, std::vector<cv::Mat>* input_channels)
 }
 
 
-void
+cv::Mat
 Classifier::Predict(const cv::Mat& img, string LUT_file)
 {
 	Blob<float>* input_layer = net_->input_blobs()[0];
@@ -210,8 +210,11 @@ Classifier::Predict(const cv::Mat& img, string LUT_file)
 		minMaxLoc(class_each_row.row(i), 0, &maxValue, 0, &maxId);
 		prediction_map.at<uchar>(i) = maxId.x;
 	}
-
-	Visualization(prediction_map, LUT_file);
+	if (g_verbose >= 2)
+	{
+		Visualization(prediction_map, LUT_file);
+	}
+	return prediction_map;
 }
 
 
@@ -281,12 +284,18 @@ generate_road_map_via_deep_learning_inference(carmen_map_t remission_map)
 //	cv::Point pt = cv::Point(g_sample_width/2, g_sample_height/2);
 	// ROI point is on the top-left corner
 //	cv::Rect roi = cv::Rect(cv::Point(0, 0), cv::Size(g_sample_width, g_sample_height));
-	cv::Mat sample;
+	cv::Mat sample, prediction;
 
-	cv::namedWindow("remission", cv::WINDOW_AUTOSIZE);
-	cv::moveWindow("remission", 90, 60);
-	cv::namedWindow("sample", cv::WINDOW_AUTOSIZE);
-	cv::moveWindow("sample", 140, 60);
+	if(g_verbose >= 1)
+	{
+		cv::namedWindow("remission", cv::WINDOW_AUTOSIZE);
+		cv::moveWindow("remission", 90, 60);
+	}
+	if(g_verbose >= 2)
+	{
+		cv::namedWindow("sample", cv::WINDOW_AUTOSIZE);
+		cv::moveWindow("sample", 140, 60);
+	}
 
 	if (g_remission_image_channels == 1 || g_remission_image_channels == '*')
 	{
@@ -297,9 +306,12 @@ generate_road_map_via_deep_learning_inference(carmen_map_t remission_map)
 	}
 	if (g_remission_image_channels == 3 || g_remission_image_channels == '*')
 	{
-		g_remission_map_img3 = new cv::Mat(remission_map.config.y_size, remission_map.config.x_size, CV_8UC3, cv::Scalar::all(0));
+		g_remission_map_img3 = new cv::Mat(remission_map.config.y_size, remission_map.config.x_size, CV_8UC3);
 		remission_map_to_image(&remission_map, g_remission_map_img3, 3);
-		cv::imshow("remission", *g_remission_map_img3);
+		if (g_verbose >= 1)
+		{
+			cv::imshow("remission", *g_remission_map_img3);
+		}
 		int margin_x = (g_sample_width - g_sampling_stride)/2;
 		int margin_y = (g_sample_height - g_sampling_stride)/2;
 		for (int i = 0; i < remission_map.config.x_size; i += g_sampling_stride)
@@ -309,27 +321,33 @@ generate_road_map_via_deep_learning_inference(carmen_map_t remission_map)
 				int rect_x = i - margin_x, rect_y = j - margin_y;
 				int rect_width = g_sample_width, rect_height = g_sample_height;
 				sample = get_padded_roi(*g_remission_map_img3, rect_x, rect_y, rect_width, rect_height, cv::Scalar::all(255));
-				cv::moveWindow("sample", 10 + g_sample_width + rect_x, 10 + rect_y);
-				cv::imshow("sample", sample);
-
 //				string file = "/home/alberto/carmen_lcad/data/road_mapper/7726627_-353889/i7726627_-353889_0.50_30.00.png";
 //				cv::Mat img = cv::imread(file, 1);
 //				CHECK(!img.empty()) << "Unable to decode image " << file;
 
-				g_classifier->Predict(sample, g_label_colours_filename);
+				prediction = g_classifier->Predict(sample, g_label_colours_filename);
 
-				printf("\nPress \"Esc\" key to continue...\n");
-				while((cv::waitKey() & 0xff) != 27);
+				if (g_verbose >= 2)
+				{
+					cv::moveWindow("sample", 10 + g_sample_width + rect_x, 10 + rect_y);
+					cv::imshow("sample", sample);
+					printf("\nPress \"Esc\" key to continue...\n");
+					while((cv::waitKey() & 0xff) != 27);
+				}
 				// generate_sample(*g_remission_map_img, pt, 0.0, roi, (char*) ("sample.png"));
 				// Chamar a rede neural várias vezes abaixo para gerar e salvar o road_map, ao inves de salvar sample.png
-//				classifier.Predict(img, LUT_file);
-//				update_roap_map;
+				//update_roap_map;
 			}
 		}
+		if (g_verbose >= 1)
+		{
+			printf("\nPress \"Esc\" key to continue...\n");
+			while((cv::waitKey() & 0xff) != 27);
+		}
 	}
-	sample.release();
-	cv::destroyWindow("sample");
-	cv::destroyWindow("remission");
+//	sample.release();
+//	cv::destroyWindow("sample");
+//	cv::destroyWindow("remission");
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -441,7 +459,7 @@ read_parameters(int argc, char **argv)
 		g_remission_image_channels = atoi(remission_image_channels);
 	}
 
-	const char usage[] = "[-v]";
+	const char usage[] = "[-v [<level>]]";
 	for(int i = 1; i < argc; i++)
 	{
 		if(strncmp(argv[i], "-h", 2) == 0 || strncmp(argv[i], "--help", 6) == 0)
@@ -452,7 +470,12 @@ read_parameters(int argc, char **argv)
 		else if(strncmp(argv[i], "-v", 2) == 0 || strncmp(argv[i], "--verbose", 9) == 0)
 		{
 			g_verbose = 1;
-			printf("Verbose option set.\n");
+			if ((i + 1) < argc && atoi(argv[i + 1]) > 0)
+			{
+				g_verbose = atoi(argv[i + 1]);
+				i++;
+			}
+			printf("Verbose option set to level %d.\n", g_verbose);
 		}
 		else
 		{
@@ -502,8 +525,11 @@ main(int argc, char **argv)
 
 	::google::InitGoogleLogging(argv[0]);
 
-	Classifier classifier(g_prototxt_filename, g_caffemodel_filename);
-	g_classifier = &classifier;
+	g_classifier = new Classifier(g_prototxt_filename, g_caffemodel_filename);
+	g_label_colours = cv::imread(g_label_colours_filename, 1);
+
+//	Classifier classifier(g_prototxt_filename, g_caffemodel_filename);
+//	g_classifier = &classifier;
 
 	register_handlers();
 	carmen_ipc_dispatch();

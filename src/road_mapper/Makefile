@@ -33,7 +33,6 @@ LFLAGS += \
 	-lprotobuf \
 	-lboost_signals \
 	-lboost_system \
-	-lproto \
 	-lcaffe 
 
 SOURCES = \
