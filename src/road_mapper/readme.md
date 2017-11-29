@@ -225,6 +225,7 @@ You can do this by adding to you .bashrc file:
 ```bash
  export CAFFE_ENET_HOME=$HOME/ENet/caffe-enet
  export PYTHONPATH=$CAFFE_ENET_HOME/python
+ export LD_LIBRARY_PATH=$CAFFE_ENET_HOME/build/lib:$LD_LIBRARY_PATH
 ```
 
 Check the existence of file $CAFFE_ENET_HOME/include/caffe/proto/caffe.pb.h. If not, please do the following: 
