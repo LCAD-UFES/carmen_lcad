@@ -64,3 +64,61 @@ road_mapper_cell_black_and_white(road_prob *cell, unsigned char *cell_class, con
 		*cell_class = OFF_ROAD_CLASS;
 	}
 }
+
+
+void
+road_mapper_cell_class_to_prob(road_prob *cell, const unsigned char cell_class, const int class_bits)
+{
+	// See: https://github.com/LCAD-UFES/carmen_lcad/tree/master/src/road_mapper#description
+	// Cell classes (currently, class_bits is always 4):
+	//		0: OFF_ROAD_CLASS, 1: SOLID_CLASS, 2: BROKEN_CLASS,
+	//		3: SOLID_CLASS (50%), 4: BROKEN_CLASS (50%), 5: LANE_CLASS closest to the center, ..., 5 + MAX_CLASS: LANE_CLASS most distant to the center
+	//
+	// Subclass bit field length must be in range (0, 6)
+	int bits = (class_bits < 0) ? 0 : (class_bits > 6) ? 6 : class_bits;
+
+	cell->off_road = 0, cell->solid_marking = 0, cell->broken_marking = 0, cell->lane_center = 0;
+	if (bits == 0)
+	{
+		switch (cell_class)
+		{
+			case OFF_ROAD_CLASS:
+				cell->off_road = MAX_PROB;
+				break;
+			case SOLID_CLASS:
+				cell->solid_marking = MAX_PROB;
+				break;
+			case BROKEN_CLASS:
+				cell->broken_marking = MAX_PROB;
+				break;
+			case LANE_CLASS:
+				cell->lane_center = MAX_PROB;
+				break;
+		}
+	}
+	else
+	{
+		switch (cell_class)
+		{
+			case OFF_ROAD_CLASS:
+				cell->off_road = MAX_PROB;
+				break;
+			case SOLID_CLASS:
+				cell->solid_marking = MAX_PROB;
+				break;
+			case BROKEN_CLASS:
+				cell->broken_marking = MAX_PROB;
+				break;
+			case SOLID_CLASS + OFFSET_CLASS:
+				cell->solid_marking = MAX_PROB / 2;
+				break;
+			case BROKEN_CLASS + OFFSET_CLASS:
+				cell->broken_marking = MAX_PROB / 2;
+				break;
+			case LANE_CLASS + OFFSET_CLASS:
+			default:
+				cell->lane_center = round((1.0 - 0.75 * (cell_class - LANE_CLASS - OFFSET_CLASS) / MAX_CLASS(bits)) * MAX_PROB);
+				break;
+		}
+	}
+}
