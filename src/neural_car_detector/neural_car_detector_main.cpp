@@ -515,8 +515,8 @@ main(int argc, char **argv)
     std::string darknet_home = std::getenv("DARKNET_HOME"); /*< get environment variable pointing path of darknet*/
     if (darknet_home.empty())
         printf("Cannot find darknet path. Check if you have correctly set DARKNET_HOME environment variable.\n");
-    std::string cfg_filename = darknet_home + "/cfg/yolo.cfg";
-    std::string weight_filename = darknet_home + "/data/yolo.weights";
+    std::string cfg_filename = darknet_home + "/cfg/neural_car_detector_yolo.cfg";
+    std::string weight_filename = darknet_home + "/yolo.weights";
     std::string voc_names = darknet_home + "/data/coco.names";
     obj_names = objects_names_from_file(voc_names);
 

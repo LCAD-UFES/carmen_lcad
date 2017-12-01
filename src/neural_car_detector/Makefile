@@ -11,10 +11,6 @@ CXXFLAGS = -Wno-sign-compare -DUSE_OPENCV
 IFLAGS += `pkg-config opencv --cflags` -std=c++11 -DNO_NVML
 LFLAGS += `pkg-config opencv --libs` -std=c++11
 
-ifdef DARKNET_HOME
-IFLAGS += $(DARKNET_HOME)/darknet.so
-endif
-
 ifdef NVCAFFE_HOME
 IFLAGS += -I $(NVCAFFE_HOME)/include -I $(NVCAFFE_HOME)/build/src/ -I $(NVCAFFE_HOME)/3rdparty -I /usr/local/cuda/include
 endif
@@ -27,8 +23,11 @@ LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lpara
 		-llocalize_ackerman_interface \
 		-lvelodyne_camera_calibration \
 		-lcamera_boxes_to_world \
-		-lDbscan
+		-lDbscan \
+		-ldarknet
 #		-lDetectNet \
+
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet
 
 #LFLAGS += -L $(NVCAFFE_HOME)/build/lib -lcaffe-nv \
 #		-L /usr/local/cuda/lib64 -lglog -lprotobuf -L/usr/local/lib
@@ -43,7 +42,7 @@ PUBLIC_INCLUDES =
 PUBLIC_LIBRARIES = 
 PUBLIC_BINARIES = neural_car_detector
 
-TARGETS = velodyne_camera_calibration camera_boxes_to_world libDbscan.a neural_car_detector  #libDetectNet.a
+TARGETS = darknet velodyne_camera_calibration camera_boxes_to_world libDbscan.a neural_car_detector  #libDetectNet.a
 # TARGETS = velodyne_camera_calibration camera_boxes_to_world libDbscan.a neural_car_detector
 
 #rules
@@ -53,19 +52,25 @@ libDbscan.a: dbscan.o
 
 neural_car_detector: neural_car_detector_main.o neural_car_detector.o
 
+darknet:
+	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet
+	
 velodyne_camera_calibration:
 	$(MAKE) -C $(CARMEN_HOME)/src/velodyne_camera_calibration
 	
 camera_boxes_to_world:
 	$(MAKE) -C $(CARMEN_HOME)/src/camera_boxes_to_world
 
-clean: clean_velodyne_camera_calibration clean_camera_boxes_to_world
+clean: clean_velodyne_camera_calibration clean_camera_boxes_to_world clean_darknet
 
 clean_velodyne_camera_calibration:
 	$(MAKE) clean -C $(CARMEN_HOME)/src/velodyne_camera_calibration
 	
 clean_camera_boxes_to_world:
 	$(MAKE) clean -C $(CARMEN_HOME)/src/camera_boxes_to_world
+	
+clean_darknet:
+	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/darknet
 	
 include ../Makefile.rules
 

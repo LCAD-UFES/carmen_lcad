@@ -2,8 +2,8 @@ GPU=1
 CUDNN=0
 OPENCV=1
 DEBUG=0
-OPENMP=0
-LIBSO=1
+OPENMP=1
+LIBSO=0
 
 ARCH= -gencode arch=compute_20,code=sm_20
 
@@ -21,9 +21,11 @@ EXEC=darknet
 OBJDIR=./obj/
 
 ifeq ($(LIBSO), 1)
-LIBNAMESO=darknet.so
+LIBNAMESO=libdarknet.so
 APPNAMESO=uselib
 endif
+
+LIBNAME=libdarknet.a
 
 CC=gcc
 CPP=g++
@@ -31,7 +33,7 @@ NVCC=nvcc
 OPTS=-Ofast
 LDFLAGS= -lm -pthread 
 COMMON= 
-CFLAGS=-Wall -Wfatal-errors
+CFLAGS= -Wfatal-errors
 
 ifeq ($(DEBUG), 1) 
 OPTS=-O0 -g
@@ -72,7 +74,7 @@ endif
 OBJS = $(addprefix $(OBJDIR), $(OBJ))
 DEPS = $(wildcard src/*.h) Makefile
 
-all: yolo.weights obj $(EXEC) $(LIBNAMESO) $(APPNAMESO)
+all: yolo.weights obj $(EXEC) $(LIBNAMESO) $(LIBNAME) $(APPNAMESO)
 
 ifeq ($(LIBSO), 1) 
 CFLAGS+= -fPIC
@@ -83,6 +85,9 @@ $(LIBNAMESO): $(OBJS) src/yolo_v2_class.hpp src/yolo_v2_class.cpp
 $(APPNAMESO): $(LIBNAMESO) src/yolo_v2_class.hpp src/yolo_console_dll.cpp
 	$(CPP) -std=c++11 $(COMMON) $(CFLAGS) -o $@ src/yolo_console_dll.cpp $(LDFLAGS) -L ./ -l:$(LIBNAMESO)
 endif
+
+$(LIBNAME): $(OBJS) src/yolo_v2_class.hpp src/yolo_v2_class.cpp
+	$(CPP) -std=c++11 -fvisibility=hidden -DYOLODLL_EXPORTS $(COMMON) $(CFLAGS) $(OBJS) src/yolo_v2_class.cpp -o $@ $(LDFLAGS)
 
 $(EXEC): $(OBJS)
 	$(CC) $(COMMON) $(CFLAGS) $^ -o $@ $(LDFLAGS)
@@ -97,10 +102,10 @@ obj:
 	mkdir -p obj
 
 yolo.weights:
-	cat yolo.weights.a yolo.weights.b yolo.weights.c > yolo.weights
+	cat yolo.weights.xa yolo.weights.xb yolo.weights.xc > yolo.weights
 	
 .PHONY: clean
 
 clean:
-	rm -rf $(OBJS) $(EXEC) $(LIBNAMESO) $(APPNAMESO) yolo.weights predictions.jpg
+	rm -rf $(OBJS) $(EXEC) $(LIBNAMESO) $(LIBNAME) $(APPNAMESO) yolo.weights predictions.jpg
 
