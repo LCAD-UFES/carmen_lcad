@@ -1,5 +1,8 @@
 #include "virtual_scan_tracker.h"
 
+#include "parameters.h"
+
+#include <algorithm>
 #include <limits>
 
 namespace virtual_scan
@@ -15,9 +18,8 @@ Obstacle::Obstacle()
 
 
 ObstacleView::ObstacleView():
-	range(std::make_range(0.0, 0.0)),
-	pose({0, 0, 0}),
-	obstacle(NULL)
+	range(std::make_pair(0.0, 0.0)),
+	pose({0, 0, 0})
 {
 	// Nothing to do.
 }
@@ -54,7 +56,7 @@ template<class P, class S> P shift(const P &p, const S &s)
 }
 
 
-inline carmen_position_t make_corner(x, y, pose)
+inline carmen_position_t make_corner(double x, double y, const carmen_point_t &pose)
 {
 	carmen_position_t c = {x, y};
 	return shift(rotate(c, pose.theta), pose);
@@ -75,8 +77,8 @@ ObstacleView::ObstacleView(const Obstacle &obstacle, const carmen_point_t &globa
 
 	// Compute the positions of the obstacle's four corners.
 	std::vector<carmen_position_t> corners;
-	double w_2 = 0.5 * obstacle.graph_node.box_model.width;
-	double l_2 = 0.5 * obstacle.graph_node.box_model.length;
+	double w_2 = 0.5 * obstacle.graph_node->box_model.width;
+	double l_2 = 0.5 * obstacle.graph_node->box_model.length;
 	corners.push_back(make_corner(-l_2, -w_2, pose));
 	corners.push_back(make_corner(l_2, -w_2, pose));
 	corners.push_back(make_corner(l_2, w_2, pose));
@@ -91,7 +93,7 @@ ObstacleView::ObstacleView(const Obstacle &obstacle, const carmen_point_t &globa
 	for (int i = 0, m = corners.size(); i < m; i++)
 	{
 		bool obstructed = false;
-		const carment_position_t &corner = corners[i];
+		const carmen_position_t &corner = corners[i];
 		for (int j = 0, n = sides.size(); j < n && !obstructed; j++)
 			obstructed = sides[j].obstructs(corner);
 
@@ -137,19 +139,17 @@ bool ObstacleView::operator > (const carmen_point_t &point) const
 
 double ObstacleView::P_M1(const carmen_point_t &p) const
 {
-	Line ray(p);
+	Line ray({p.x, p.y});
 
-	int i_min = 0;
 	double d_min = std::numeric_limits<double>::max();
-	carmen_position_t c;
+	carmen_position_t c = {d_min, d_min};
 
-	// Find the obstacle side closest to the observer alongside the ray.
+	// Find the obstacle point closest to the observer alongside the ray.
 	for (int i = 0, n = sides.size(); i < n; i++)
 	{
 		std::pair<double, double> crossing = ray.crosspoint(sides[i]);
 		if (crossing.first < d_min && 0 <= crossing.second && crossing.second <= 1.0)
 		{
-			i_min = i;
 			d_min = crossing.first;
 			c = ray(d_min);
 		}
@@ -157,8 +157,7 @@ double ObstacleView::P_M1(const carmen_point_t &p) const
 
 	double d_n = DIST2D(p, c);
 
-	// TODO: Implement computation
-	return 0;
+    return LAMBDA_1 * std::exp(-LAMBDA_1 * d_n);
 }
 
 
@@ -258,11 +257,11 @@ inline bool is_parent(virtual_scan_graph_node_t *node_1, virtual_scan_graph_node
 
 std::pair <int, int> Track::is_switchable(Track *tau)
 {
-	for (int p = 0; p < this->size() - 1; p++)
+	for (int p = 0, m = this->size() - 1; p < m; p++)
 	{
 		virtual_scan_graph_node_t *t_p = this->graph_nodes[p].graph_node;
 		virtual_scan_graph_node_t *t_p_plus_1 = this->graph_nodes[p + 1].graph_node;
-		for (int q = 0; q < tau->size() - 1; q++)
+		for (int q = 0, n = tau->size() - 1; q < n; q++)
 		{
 			virtual_scan_graph_node_t *t_q = tau->graph_nodes[q].graph_node;
 			virtual_scan_graph_node_t *t_q_plus_1 = tau->graph_nodes[q + 1].graph_node;
@@ -317,9 +316,10 @@ double Track::P_L(double lambda_L, int T)
 	return (lambda_L * exp(lambda_L * size())) / (exp(lambda_L * T) - 1);
 }
 
-double Track::P_T(double lambda_T)
+double Track::P_T() const
 {
-
+    // TODO: implement function.
+    return 1.0;
 }
 
 Tracks::Tracks(std::random_device *rd_):
@@ -566,7 +566,7 @@ bool Tracks::track_diffusion()
 }
 
 
-double Tracks::P_M1(int i, virtual_scan_neighborhood_graph_t *neighborhood_graph)
+double Tracks::P_M1(int i, virtual_scan_neighborhood_graph_t *neighborhood_graph) const
 {
 	virtual_scan_disconnected_sub_graph_t *disconnected_sub_graph = virtual_scan_get_disconnected_sub_graph(neighborhood_graph, i);
 	virtual_scan_extended_t *reading = disconnected_sub_graph->virtual_scan_extended;
@@ -583,7 +583,7 @@ double Tracks::P_M1(int i, virtual_scan_neighborhood_graph_t *neighborhood_graph
 	int k = 0;
 	for (int j = 0, n = reading->num_points; j < n; j++)
 	{
-		const ObjectView &view = views[k];
+		const ObstacleView &view = views[k];
 		const carmen_point_t &point = reading->points[j];
 		while (view < point)
 			k = (k + 1) % views.size();
