@@ -96,10 +96,9 @@ virtual_scan_compute_disconnected_sub_graph(virtual_scan_box_model_hypotheses_t 
 
 virtual_scan_disconnected_sub_graph_t *
 virtual_scan_get_disconnected_sub_graph(virtual_scan_neighborhood_graph_t *neighborhood_graph, int i)
-		//virtual_scan_disconnected_sub_graph_iterator_t *iterator)
 {
 	virtual_scan_disconnected_sub_graph_t *disconnected_sub_graph = neighborhood_graph->first;
-	for (j = 0; j < i; j++)
+	for (int j = 0; j < i; j++)
 		disconnected_sub_graph = disconnected_sub_graph->next;
 
 	return disconnected_sub_graph;

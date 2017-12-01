@@ -8,10 +8,11 @@
 #ifndef SRC_VIRTUAL_SCAN_VIRTUAL_SCAN_TRACKER_H_
 #define SRC_VIRTUAL_SCAN_VIRTUAL_SCAN_TRACKER_H_
 
-#include <carmen/carmen.h>
-
+#include "line.h"
 #include "virtual_scan.h"
 #include "virtual_scan_neighborhood_graph.h"
+
+#include <carmen/carmen.h>
 
 #include <deque>
 #include <random>
@@ -32,19 +33,65 @@ public:
 	virtual_scan_graph_node_t *operator -> (); // Operator overload
 };
 
-struct AngleRange
+/**
+ * @brief A representation of a view of an Obstacle from a given point of view.
+ */
+class ObstacleView
 {
-	double first_angle;
-	double second_angle;
-	Obstacle *obstacle;
+	/** @brief Sensor field of view range obstructed by the obstacle, as a pair of angles. */
+	std::pair<double, double> range;
+
+	/** @brief The lines that constitute the obstacle's perimeter, in observer-centric coordinates. */
+	std::vector<Line> sides;
+
+	/** @brief Obstacle pose relative to the observer. */
+	carmen_point_t pose;
+
+public:
+	/**
+	 * @brief Default constructor.
+	 */
+	ObstacleView();
+
+	/**
+	 * @brief Create a new view for the given obstacle from the given point of view.
+	 */
+	ObstacleView(const Obstacle &obstacle, const carmen_point_t &globalpos);
+
+	/**
+	 * @brief Defines a ordering of views by the beginning of the angle range.
+	 */
+	bool operator < (const ObstacleView &that) const;
+
+	/**
+	 * @brief Checks whether a sensor reading is "before" the view in the sensor's field of view.
+	 */
+	bool operator < (const carmen_point_t &point) const;
+
+	/**
+	 * @brief Checks whether a sensor reading is "after" the view in the sensor's field of view.
+	 */
+	bool operator > (const carmen_point_t &point) const;
+
+	/**
+	 * @brief Compute the probability that a sensor reading is explained by this obstacle view.
+	 */
+	double P_M1(const carmen_point_t &point) const;
 };
 
+/**
+ * @brief A sequence of obstacle configurations over time.
+ */
 class Track
 {
+	/** @brief Sequence of obstacle configurations. */
 	std::deque<Obstacle> graph_nodes; // Mudar de graph_nodes para poses
+
 public:
+	/**
+	 * @brief Class destructor.
+	 */
 	~Track();
-	int size();
 	void append_front(virtual_scan_graph_node_t *node);
 	void append_back(virtual_scan_graph_node_t *node);
 	virtual_scan_graph_node_t *front_node();
@@ -58,6 +105,22 @@ public:
 	void track_switch(Track *tau, std::pair <int, int> break_point_pair);
 	void track_update(std::random_device *rd);
 	double P_L(double lambda_L, int T);
+
+	/**
+	 * @brief Compute the temporal consistency probability of this track.
+	 */
+	double P_T() const;
+
+
+	/**
+	 * @brief Return a view of this track at time `t` from global pose `globalpos`.
+	 */
+	ObstacleView view(int t, const carmen_point_t &globalpos) const;
+
+	/**
+	 * @brief Return the length of this track, in number of configurations.
+	 */
+	size_t size() const;
 };
 
 class Tracks
@@ -76,6 +139,12 @@ class Tracks
 	bool track_merge();
 	bool track_switch();
 	bool track_diffusion();
+
+	/**
+	 * @brief Compute the point matching probability for this track set.
+	 */
+	double P_M1(int i, virtual_scan_neighborhood_graph_t *neighborhood_graph) const;
+
 public:
 	Tracks(std::random_device *rd);
 	Tracks *propose(virtual_scan_neighborhood_graph_t *neighborhood_graph);

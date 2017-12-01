@@ -1,5 +1,10 @@
 #include "virtual_scan_tracker.h"
 
+#include "parameters.h"
+
+#include <algorithm>
+#include <limits>
+
 namespace virtual_scan
 {
 
@@ -11,6 +16,98 @@ Obstacle::Obstacle()
 	theta = 0.0;
 }
 
+
+ObstacleView::ObstacleView():
+	range(std::make_pair(0.0, 0.0)),
+	pose({0, 0, 0})
+{
+	// Nothing to do.
+}
+
+
+template<class T> double angle(const T &p)
+{
+	return atan2(p.y, p.x);
+}
+
+
+template<class T> T rotate(const T &p, double o)
+{
+	double x = p.x;
+	double y = p.y;
+
+	double cos_o = cos(o);
+	double sin_o = sin(o);
+
+	T p_o;
+	p_o.x = x * cos_o - y * sin_o;
+	p_o.y = x * sin_o + y * cos_o;
+
+	return p_o;
+}
+
+
+template<class P, class S> P shift(const P &p, const S &s)
+{
+	P p_s = p;
+	p_s.x += s.x;
+	p_s.y += s.y;
+	return p_s;
+}
+
+
+inline carmen_position_t make_corner(double x, double y, const carmen_point_t &pose)
+{
+	carmen_position_t c = {x, y};
+	return shift(rotate(c, pose.theta), pose);
+}
+
+
+ObstacleView::ObstacleView(const Obstacle &obstacle, const carmen_point_t &globalpos)
+{
+	// Compute obstacle view orientation relative to observer.
+	pose.theta = carmen_normalize_theta(obstacle.theta - globalpos.theta);
+
+	// Shift view's reference frame so that observer stands in (0, 0).
+	pose.x = obstacle.x - globalpos.x;
+	pose.y = obstacle.y - globalpos.y;
+
+	// Rotate view's reference frame clockwise by o radians.
+	pose = rotate(pose, -globalpos.theta);
+
+	// Compute the positions of the obstacle's four corners.
+	std::vector<carmen_position_t> corners;
+	double w_2 = 0.5 * obstacle.graph_node->box_model.width;
+	double l_2 = 0.5 * obstacle.graph_node->box_model.length;
+	corners.push_back(make_corner(-l_2, -w_2, pose));
+	corners.push_back(make_corner(l_2, -w_2, pose));
+	corners.push_back(make_corner(l_2, w_2, pose));
+	corners.push_back(make_corner(-l_2, w_2, pose));
+
+	// Compute the obstacle's side lines.
+	for (int i = 0, n = corners.size(); i < n; i++)
+		sides.emplace_back(corners[i], corners[(i + 1) % n]);
+
+	// Record the angles of the corners that have a clear view of the observer.
+	std::vector<double> angles;
+	for (int i = 0, m = corners.size(); i < m; i++)
+	{
+		bool obstructed = false;
+		const carmen_position_t &corner = corners[i];
+		for (int j = 0, n = sides.size(); j < n && !obstructed; j++)
+			obstructed = sides[j].obstructs(corner);
+
+		if (!obstructed)
+			angles.push_back(angle(corner));
+	}
+
+	// Select the smaller and largest angles for the view range.
+	std::sort(angles.begin(), angles.end());
+	range.first = angles.front();
+	range.second = angles.back();
+}
+
+
 Obstacle::Obstacle(virtual_scan_graph_node_t *graph_node)
 {
 	this->graph_node = graph_node;
@@ -18,6 +115,51 @@ Obstacle::Obstacle(virtual_scan_graph_node_t *graph_node)
 	y = this->graph_node->box_model.y;
 	theta = this->graph_node->box_model.theta;
 }
+
+
+bool ObstacleView::operator < (const ObstacleView &that) const
+{
+	return this->range.first < that.range.first;
+}
+
+
+bool ObstacleView::operator < (const carmen_point_t &point) const
+{
+	// TODO: Check for corner cases (e.g. angles > 90 degrees).
+	return this->range.first < point.theta;
+}
+
+
+bool ObstacleView::operator > (const carmen_point_t &point) const
+{
+	// TODO: Check for corner cases (e.g. angles > 90 degrees).
+	return this->range.second > point.theta;
+}
+
+
+double ObstacleView::P_M1(const carmen_point_t &p) const
+{
+	Line ray({p.x, p.y});
+
+	double d_min = std::numeric_limits<double>::max();
+	carmen_position_t c = {d_min, d_min};
+
+	// Find the obstacle point closest to the observer alongside the ray.
+	for (int i = 0, n = sides.size(); i < n; i++)
+	{
+		std::pair<double, double> crossing = ray.crosspoint(sides[i]);
+		if (crossing.first < d_min && 0 <= crossing.second && crossing.second <= 1.0)
+		{
+			d_min = crossing.first;
+			c = ray(d_min);
+		}
+	}
+
+	double d_n = DIST2D(p, c);
+
+    return LAMBDA_1 * std::exp(-LAMBDA_1 * d_n);
+}
+
 
 virtual_scan_graph_node_t *Obstacle::operator -> ()
 {
@@ -32,7 +174,7 @@ Track::~Track()
 		graph_nodes[i]->complete_sub_graph->selected = 0; //graph_nodes[i].graph_node->complete_sub_graph->selected = 0;
 }
 
-int Track::size()
+size_t Track::size() const
 {
 	return graph_nodes.size();
 }
@@ -115,11 +257,11 @@ inline bool is_parent(virtual_scan_graph_node_t *node_1, virtual_scan_graph_node
 
 std::pair <int, int> Track::is_switchable(Track *tau)
 {
-	for (int p = 0; p < this->size() - 1; p++)
+	for (int p = 0, m = this->size() - 1; p < m; p++)
 	{
 		virtual_scan_graph_node_t *t_p = this->graph_nodes[p].graph_node;
 		virtual_scan_graph_node_t *t_p_plus_1 = this->graph_nodes[p + 1].graph_node;
-		for (int q = 0; q < tau->size() - 1; q++)
+		for (int q = 0, n = tau->size() - 1; q < n; q++)
 		{
 			virtual_scan_graph_node_t *t_q = tau->graph_nodes[q].graph_node;
 			virtual_scan_graph_node_t *t_q_plus_1 = tau->graph_nodes[q + 1].graph_node;
@@ -158,6 +300,13 @@ void Track::track_update(std::random_device *rd)
 	obstacle->theta = carmen_normalize_theta(obstacle->theta + normal(*rd));
 }
 
+
+ObstacleView Track::view(int t, const carmen_point_t &globalpos) const
+{
+	return ObstacleView(graph_nodes[t], globalpos);
+}
+
+
 double Track::P_L(double lambda_L, int T)
 {
 	// f(x) = exp(lambda_L * x)
@@ -167,9 +316,10 @@ double Track::P_L(double lambda_L, int T)
 	return (lambda_L * exp(lambda_L * size())) / (exp(lambda_L * T) - 1);
 }
 
-double Track::P_T(double lambda_T)
+double Track::P_T() const
 {
-
+    // TODO: implement function.
+    return 1.0;
 }
 
 Tracks::Tracks(std::random_device *rd_):
@@ -416,37 +566,35 @@ bool Tracks::track_diffusion()
 }
 
 
-struct
-{
-	bool operator()(AngleRange a, AngleRange b) const
-	{
-		return a.first_angle < b.first_angle;
-	}
-} compare_angle_ranges;
-
-
-double Tracks::PM1(virtual_scan_neighborhood_graph_t *neighborhood_graph, int i)
+double Tracks::P_M1(int i, virtual_scan_neighborhood_graph_t *neighborhood_graph) const
 {
 	virtual_scan_disconnected_sub_graph_t *disconnected_sub_graph = virtual_scan_get_disconnected_sub_graph(neighborhood_graph, i);
-	carmen_point_t globalpos = disconnected_sub_graph->virtual_scan_extended->globalpos;
-	std::vector <AngleRange> angle_ranges;
-	for (int j = 0; j < tracks.size(); j++)
-	{
-		Track *track = &tracks[j];
-		AngleRange angle_range = track->points_range(i, globalpos);
-		angle_ranges.push_back(angle_range);
-	}
+	virtual_scan_extended_t *reading = disconnected_sub_graph->virtual_scan_extended;
+	const carmen_point_t &globalpos = reading->globalpos;
+
+	std::vector<ObstacleView> views;
+	for (int j = 0, n = tracks.size(); j < n; j++)
+		views.push_back(tracks[j].view(i, globalpos));
+
+	std::sort(views.begin(), views.end());
+
+	double p = 1.0;
+
 	int k = 0;
-	std::sort(angle_ranges.begin(), angle_ranges.end(), compare_angle_ranges);
-	for (int j = 0; j < disconnected_sub_graph->virtual_scan_extended->num_points; j++)
+	for (int j = 0, n = reading->num_points; j < n; j++)
 	{
-		carmen_point_t point = disconnected_sub_graph->virtual_scan_extended->points[j];
-		if (point.theta < angle_ranges[k].first_angle)
+		const ObstacleView &view = views[k];
+		const carmen_point_t &point = reading->points[j];
+		while (view < point)
+			k = (k + 1) % views.size();
+
+		if (view > point)
 			continue;
-		else if (point.theta > angle_ranges[k].first_angle && point.theta < angle_ranges[k].second_angle)
-			double dn = compute_dn(point, angle_ranges[k]);
+
+		p *= view.P_M1(point);
 	}
 
+	return p;
 }
 
 

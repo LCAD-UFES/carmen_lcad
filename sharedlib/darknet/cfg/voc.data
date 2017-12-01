@@ -1,0 +1,6 @@
+classes= 20
+train  = /media/raid0/darknet/Pascal/train.txt
+valid  = /media/raid0/darknet/Pascal/2007_test.txt
+names = data/voc.names
+backup = /media/raid0/darknet/backup/
+

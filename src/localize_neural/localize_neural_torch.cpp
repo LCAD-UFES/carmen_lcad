@@ -70,7 +70,7 @@ public:
 	}
 
 	void
-	convert (IplImage * frame, THFloatTensor * tensor)
+	convert_image2tensor (IplImage * frame, THFloatTensor * tensor)
 	{
 		for(int i=0; i < frame->height; i++)
 		{
@@ -116,8 +116,8 @@ public:
 	{
 		allocate();
 
-		convert(curframe, curtensor);
-		convert(keyframe, keytensor);
+		convert_image2tensor(curframe, curtensor);
+		convert_image2tensor(keyframe, keytensor);
 
 		THCudaTensor_copyFloat(state_gpu, curtensor_gpu, curtensor);
 		THCudaTensor_copyFloat(state_gpu, keytensor_gpu, keytensor);
@@ -210,12 +210,6 @@ forward_network(const carmen_localize_neural_imagepos_message &curframe, const c
 
 	cvSetImageROI(keyframe_image, crop);
 	cvSetImageROI(curframe_image, crop);
-
-	//cvCopy(keyframe_image, keyframe_image_input);
-	//cvCopy(curframe_image, curframe_image_input);
-
-	//resize_image(&keyframe_image, input_width, input_height);
-	//resize_image(&curframe_image, input_width, input_height);
 
 	if (input_channels == 3)
 	{

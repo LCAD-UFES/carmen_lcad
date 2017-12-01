@@ -48,7 +48,7 @@ The following class code is used for segmenting a road map:
   - 2 = broken marking;
   - 3 = solid marking (50% confidence);
   - 4 = broken marking (50% confidence);
-  - 5, 6, 7, ..., 20, 20 = center of a lane confidence (100% confidence, 93.75%, 87.50%, 81.25%, ..., 0%), we have 16 levels of confidence, or distances from the center.
+  - 5, 6, 7, ..., 20 = center of a lane confidence (100% confidence, 93.75%, 87.50%, 81.25%, ..., 0%), we have 16 levels of confidence, or distances from the center.
 
 The Road Mapper module parameters can be found at [carmen-ford-escape.ini](../carmen-ford-escape.ini) and are the following:
 ```ini
