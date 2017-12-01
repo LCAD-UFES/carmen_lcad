@@ -1,0 +1,6 @@
+classes= 20
+train  = build/darknet/x64/data/voc/train.txt
+valid  = build/darknet/x64/data/voc/2007_test.txt
+names = build/darknet/x64/data/voc.names
+backup = build/darknet/x64/backup/
+
