@@ -107,6 +107,12 @@ public:
 	double P_L(double lambda_L, int T);
 
 	/**
+	 * @brief Compute the temporal consistency probability of this track.
+	 */
+	double P_T() const;
+
+
+	/**
 	 * @brief Return a view of this track at time `t` from global pose `globalpos`.
 	 */
 	ObstacleView view(int t, const carmen_point_t &globalpos) const;
@@ -133,6 +139,12 @@ class Tracks
 	bool track_merge();
 	bool track_switch();
 	bool track_diffusion();
+
+	/**
+	 * @brief Compute the point matching probability for this track set.
+	 */
+	double P_M1(int i, virtual_scan_neighborhood_graph_t *neighborhood_graph) const;
+
 public:
 	Tracks(std::random_device *rd);
 	Tracks *propose(virtual_scan_neighborhood_graph_t *neighborhood_graph);

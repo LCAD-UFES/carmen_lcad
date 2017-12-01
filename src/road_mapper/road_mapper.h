@@ -35,6 +35,10 @@ void road_mapper_cell_black_and_white(road_prob *cell,
 							unsigned char *cell_class,
 							const int class_bits);
 
+void road_mapper_cell_class_to_prob(road_prob *cell,
+							const unsigned char cell_class,
+							const int class_bits);
+
 #ifdef __cplusplus
 }
 #endif

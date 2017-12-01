@@ -12,6 +12,8 @@ LFLAGS += \
 	-lgrid_mapping -lmap_io -lmap_interface -lmapper_interface -lparam_interface -lipc -lglobal -lmap_server_interface -lmoving_objects_interface
 
 SOURCES = \
+	line.cpp \
+	parameters.cpp \
 	virtual_scan_interface.cpp \
 	virtual_scan_main.cpp \
 	virtual_scan.cpp \
@@ -45,6 +47,6 @@ LFLAGS += \
 endif
 
 libvirtual_scan_interface.a: virtual_scan_interface.o
-virtual_scan: virtual_scan_main.o virtual_scan.o virtual_scan_interface.o virtual_scan_neighborhood_graph.o virtual_scan_tracker.o
+virtual_scan: line.o parameters.o virtual_scan_main.o virtual_scan.o virtual_scan_interface.o virtual_scan_neighborhood_graph.o virtual_scan_tracker.o
 
 include ../Makefile.rules

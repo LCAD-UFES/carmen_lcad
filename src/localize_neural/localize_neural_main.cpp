@@ -20,7 +20,10 @@
 
 using namespace std;
 
-int camera = 0;
+static int camera = 0;
+static int cheating = 0;
+static char* cnn_model;
+static char* cnn_data;
 
 tf::Transformer transformer;
 
@@ -189,7 +192,7 @@ load_delta_poses(char *filename,
 	while(!feof(log_file))
 	{
 		//dx dy dz dr dp dy base_depth base_image live_image timestamp
-		fscanf(log_file, "%lf %lf %lf %lf %lf %lf%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %s %s %s %lf\n",
+		fscanf(log_file, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %s %s %s %lf\n",
 				&delta_pose.position.x,
 				&delta_pose.position.y,
 				&delta_pose.position.z,
@@ -415,14 +418,22 @@ carmen_bumblebee_basic_stereoimage_message_handler(carmen_bumblebee_basic_stereo
 
 	int index_delta = find_more_synchronized_pose(camera_delta_poses_array, camera_timestamp);
 	if (index_delta < 0)
+	{
+		carmen_warn("Frame lost!\n");
 		return;
-
+	}
 	string key_frame = camera_delta_frames_array[index_delta].first;
 	string cur_frame = camera_delta_frames_array[index_delta].second;
 
 	copy_image(&camera_message_base, key_frame);
 	copy_image(&camera_message_curr, cur_frame);
 
+	if (!camera_message_base.height || !camera_message_base.width ||
+			!camera_message_curr.height || !camera_message_curr.width)
+	{
+		carmen_warn("Invalid images!\n");
+		return;
+	}
 	camera_pose_base = camera_poses_base_array[index_delta].first;
 	camera_pose_true = camera_poses_curr_array[index_delta].first;
 
@@ -431,13 +442,16 @@ carmen_bumblebee_basic_stereoimage_message_handler(carmen_bumblebee_basic_stereo
 	carmen_pose_3D_t delta_pose_true = camera_delta_poses_array[index_delta].first;
 	delta_pose_true = camera_carmen_transform(delta_pose_true);
 
-	//comment out code below when testing the network
-#if 0
-	carmen_pose_3D_t delta_pose_pred = delta_pose_true;
-#else
-	carmen_pose_3D_t delta_pose_pred = forward_network(camera_message_curr, camera_message_base);
-	delta_pose_pred = camera_carmen_transform(delta_pose_pred);
-#endif
+	carmen_pose_3D_t delta_pose_pred;
+	if (cheating)
+	{
+		delta_pose_pred = delta_pose_true;
+	}
+	else
+	{
+		delta_pose_pred = forward_network(camera_message_curr, camera_message_base);
+		delta_pose_pred = camera_carmen_transform(delta_pose_pred);
+	}
 	//comment out code below when network is trained with the opposite odometer vector
 	carmen_pose_3D_t camera_pose_zero = {{0.0,0.0,0.0},{0.0,0.0,0.0}};
 	delta_pose_pred = inverse_transform(delta_pose_pred, camera_pose_zero);
@@ -558,15 +572,18 @@ initialize_transformations()
 void
 read_camera_parameters(int argc, char **argv)
 {
-	int num_items;
 	char camera_string[256];
 
-	if (argc < 2)
+	carmen_param_t param_cmd_list[] =
 	{
-		carmen_die("\nUsage: %s<camera_id> \n", argv[0]);
-	}
+		{(char *) "commandline", (char *) "camera_id", CARMEN_PARAM_INT, &camera, 0, NULL},
+		{(char *) "commandline", (char *) "cnn_model", CARMEN_PARAM_STRING, &cnn_model, 0, NULL},
+		{(char *) "commandline", (char *) "cnn_data", CARMEN_PARAM_STRING, &cnn_data, 0, NULL},
+		{(char *) "commandline", (char *) "cheating", CARMEN_PARAM_INT, &cheating, 0, NULL}
+	};
 
-	camera = atoi(argv[1]);
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_install_params(argc, argv, param_cmd_list, sizeof(param_cmd_list)/sizeof(param_cmd_list[0]));
 
 	sprintf(camera_string, "%s%d", "camera", camera);
 
@@ -594,8 +611,8 @@ read_camera_parameters(int argc, char **argv)
 			{(char *) "sensor_board_1",  (char *) "roll", 	CARMEN_PARAM_DOUBLE, &(board_pose_g.orientation.roll), 0, NULL}
 	};
 
-	num_items = sizeof(param_list)/sizeof(param_list[0]);
-	carmen_param_install_params(argc, argv, param_list, num_items);
+	carmen_param_allow_unfound_variables(0);
+	carmen_param_install_params(argc, argv, param_list, sizeof(param_list)/sizeof(param_list[0]));
 
 }
 
@@ -644,10 +661,9 @@ main(int argc, char **argv)
 
 	initialize_transformations();
 
-	initialize_network(argv[2]);
-	carmen_warn("Network Initialized!");
+	initialize_network(cnn_model);
 
-	load_delta_poses(argv[3], camera_delta_frames_array, camera_delta_poses_array, camera_poses_base_array, camera_poses_curr_array);
+	load_delta_poses(cnn_data, camera_delta_frames_array, camera_delta_poses_array, camera_poses_base_array, camera_poses_curr_array);
 	carmen_warn("Ground truth loaded!");
 
 	signal(SIGINT, shutdown_module);
