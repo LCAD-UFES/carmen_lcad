@@ -213,10 +213,10 @@ show_velodyne(carmen_velodyne_partial_scan_message *velodyne_message)
 				tf::Point p3d_camera_reference = move_to_camera_reference(p3d_velodyne_reference);
 
 				const int XB3_MAX_PIXEL_WIDTH = 640;//1280;
-				const int XB3_MAX_PIXEL_HEIGHT = 480; //960;
+//				const int XB3_MAX_PIXEL_HEIGHT = 480; //960;
 				const double XB3_PIXEL_SIZE = 0.00000375f;//pixel size (in meters)
 
-				double ccd_width = XB3_MAX_PIXEL_WIDTH * XB3_PIXEL_SIZE;
+//				double ccd_width = XB3_MAX_PIXEL_WIDTH * XB3_PIXEL_SIZE;
 
 				double f_meters = fx * XB3_MAX_PIXEL_WIDTH * XB3_PIXEL_SIZE;
 
@@ -322,7 +322,7 @@ show_velodyne(carmen_velodyne_partial_scan_message *velodyne_message)
 
 
 void
-bumblebee_basic_image_handler(carmen_bumblebee_basic_stereoimage_message *bumblebee_basic_message)
+bumblebee_basic_image_handler(carmen_bumblebee_basic_stereoimage_message *bumblebee_basic_message __attribute__ ((unused)))
 {
 	bumblebee_received = 1;
 

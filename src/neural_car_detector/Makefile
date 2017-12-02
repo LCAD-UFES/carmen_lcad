@@ -27,7 +27,7 @@ LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lpara
 		-ldarknet
 #		-lDetectNet \
 
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet/lib
 
 #LFLAGS += -L $(NVCAFFE_HOME)/build/lib -lcaffe-nv \
 #		-L /usr/local/cuda/lib64 -lglog -lprotobuf -L/usr/local/lib

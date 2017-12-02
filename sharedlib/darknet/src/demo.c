@@ -50,6 +50,7 @@ static float *avg;
 
 void draw_detections_cv(IplImage* show_img, int num, float thresh, box *boxes, float **probs, char **names, image **alphabet, int classes);
 image get_image_from_stream_resize(CvCapture *cap, int w, int h, IplImage** in_img);
+void show_image_cv_ipl(IplImage *disp, const char *name, const char *out_filename);
 IplImage* in_img;
 IplImage* det_img;
 IplImage* show_img;

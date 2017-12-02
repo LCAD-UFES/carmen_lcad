@@ -161,7 +161,7 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_parti
 				tf::Point p3d_camera_reference = move_to_camera_reference(p3d_velodyne_reference);
 
 				const int XB3_MAX_PIXEL_WIDTH = image_width;//1280;//TODO MESMO DA IMAGEM OU PRECISA SER UM VALOR FIXO?
-				const int XB3_MAX_PIXEL_HEIGHT = image_height; //960;//TODO MESMO DA IMAGEM OU PRECISA SER UM VALOR FIXO?
+//				const int XB3_MAX_PIXEL_HEIGHT = image_height; //960;//TODO MESMO DA IMAGEM OU PRECISA SER UM VALOR FIXO?
 				const double XB3_PIXEL_SIZE = 0.00000375f;//pixel size (in meters)
 
 				double f_meters = fx * XB3_MAX_PIXEL_WIDTH * XB3_PIXEL_SIZE;
@@ -207,7 +207,7 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle(carmen_
 		int image_width, int image_height)
 {
 
-	double robot_wheel_radius =  0.28;//parametro do carmen-ford-escape.ini
+//	double robot_wheel_radius =  0.28;//parametro do carmen-ford-escape.ini
 	std::vector<carmen_velodyne_points_in_cam_t> laser_points_in_camera;
 
 	for (int j = 0; j < velodyne_message->number_of_32_laser_shots; j++)
@@ -265,7 +265,7 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle(carmen_
 				tf::Point p3d_camera_reference = move_to_camera_reference(p3d_velodyne_reference);
 
 				const int XB3_MAX_PIXEL_WIDTH = image_width;//1280;//TODO MESMO DA IMAGEM OU PRECISA SER UM VALOR FIXO?
-				const int XB3_MAX_PIXEL_HEIGHT = image_height; //960;//TODO MESMO DA IMAGEM OU PRECISA SER UM VALOR FIXO?
+//				const int XB3_MAX_PIXEL_HEIGHT = image_height; //960;//TODO MESMO DA IMAGEM OU PRECISA SER UM VALOR FIXO?
 				const double XB3_PIXEL_SIZE = 0.00000375f;//pixel size (in meters)
 
 				double f_meters = fx * XB3_MAX_PIXEL_WIDTH * XB3_PIXEL_SIZE;
@@ -303,7 +303,7 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_dis
 		int image_width, int image_height)
 {
 
-	double robot_wheel_radius =  0.28;//parametro do carmen-ford-escape.ini
+//	double robot_wheel_radius =  0.28;//parametro do carmen-ford-escape.ini
 	std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> laser_points_in_camera;
 
 	for (int j = 0; j < velodyne_message->number_of_32_laser_shots; j++)
@@ -361,7 +361,7 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_dis
 				tf::Point p3d_camera_reference = move_to_camera_reference(p3d_velodyne_reference);
 
 				const int XB3_MAX_PIXEL_WIDTH = image_width;//1280;//TODO MESMO DA IMAGEM OU PRECISA SER UM VALOR FIXO?
-				const int XB3_MAX_PIXEL_HEIGHT = image_height; //960;//TODO MESMO DA IMAGEM OU PRECISA SER UM VALOR FIXO?
+//				const int XB3_MAX_PIXEL_HEIGHT = image_height; //960;//TODO MESMO DA IMAGEM OU PRECISA SER UM VALOR FIXO?
 				const double XB3_PIXEL_SIZE = 0.00000375f;//pixel size (in meters)
 
 				double f_meters = fx * XB3_MAX_PIXEL_WIDTH * XB3_PIXEL_SIZE;
@@ -415,9 +415,9 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_angles(carmen_ve
 			double hrad = carmen_degrees_to_radians(hangle);
 			double hblablabla = carmen_normalize_theta(hrad);
 
-			double hangle_1 = velodyne_message->partial_scan[j-1].angle;
-			double hrad_1 = carmen_degrees_to_radians(hangle);
-			double hblablabla_1 = carmen_normalize_theta(hrad);
+//			double hangle_1 = velodyne_message->partial_scan[j-1].angle;
+//			double hrad_1 = carmen_degrees_to_radians(hangle);
+//			double hblablabla_1 = carmen_normalize_theta(hrad);
 			//float r = 0;
 			//float b = 0;
 
@@ -444,7 +444,7 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_angles(carmen_ve
 				tf::Point p3d_camera_reference = move_to_camera_reference(p3d_velodyne_reference);
 
 				const int XB3_MAX_PIXEL_WIDTH = bumblebee_message->width;//1280;//TODO MESMO DA IMAGEM OU PRECISA SER UM VALOR FIXO?
-				const int XB3_MAX_PIXEL_HEIGHT = bumblebee_message->height; //960;//TODO MESMO DA IMAGEM OU PRECISA SER UM VALOR FIXO?
+//				const int XB3_MAX_PIXEL_HEIGHT = bumblebee_message->height; //960;//TODO MESMO DA IMAGEM OU PRECISA SER UM VALOR FIXO?
 				const double XB3_PIXEL_SIZE = 0.00000375f;//pixel size (in meters)
 
 				double f_meters = fx * XB3_MAX_PIXEL_WIDTH * XB3_PIXEL_SIZE;

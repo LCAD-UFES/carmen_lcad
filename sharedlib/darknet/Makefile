@@ -1,16 +1,23 @@
+include ../../src/Makefile.conf
+
+MODULE_NAME = DARKNET
+MODULE_COMMENT = darknet dnn 
+
+
 GPU=1
 CUDNN=0
 OPENCV=1
 DEBUG=0
 OPENMP=1
-LIBSO=0
+LIBSO=1
 
-ARCH= -gencode arch=compute_20,code=sm_20
+#ARCH= -gencode arch=compute_20,code=sm_20
 
-#ARCH= -gencode arch=compute_30,code=sm_30 \
-#      -gencode arch=compute_35,code=sm_35 \
-#      -gencode arch=compute_50,code=[sm_50,compute_50] \
-#      -gencode arch=compute_52,code=[sm_52,compute_52] \
+ARCH= -gencode arch=compute_20,code=sm_20 \
+      -gencode arch=compute_30,code=sm_30 \
+      -gencode arch=compute_35,code=sm_35 \
+      -gencode arch=compute_50,code=[sm_50,compute_50] \
+      -gencode arch=compute_52,code=[sm_52,compute_52] 
 #      -gencode arch=compute_61,code=[sm_61,compute_61]
 
 # This is what I use, uncomment if you know your arch and want to specify
@@ -21,11 +28,9 @@ EXEC=darknet
 OBJDIR=./obj/
 
 ifeq ($(LIBSO), 1)
-LIBNAMESO=libdarknet.so
+LIBNAMESO=lib/libdarknet.so
 APPNAMESO=uselib
 endif
-
-LIBNAME=libdarknet.a
 
 CC=gcc
 CPP=g++
@@ -33,7 +38,7 @@ NVCC=nvcc
 OPTS=-Ofast
 LDFLAGS= -lm -pthread 
 COMMON= 
-CFLAGS= -Wfatal-errors
+CFLAGS= -Wall -Wfatal-errors -Wno-unused-result -Wno-unknown-pragmas -Wno-unused-variable -Wno-unused-but-set-variable 
 
 ifeq ($(DEBUG), 1) 
 OPTS=-O0 -g
@@ -74,20 +79,19 @@ endif
 OBJS = $(addprefix $(OBJDIR), $(OBJ))
 DEPS = $(wildcard src/*.h) Makefile
 
-all: yolo.weights obj $(EXEC) $(LIBNAMESO) $(LIBNAME) $(APPNAMESO)
+CXXFLAGS = $(CFLAGS) -Wno-sign-compare -Wno-literal-suffix 
+
+all: yolo.weights obj $(EXEC) $(LIBNAMESO) $(APPNAMESO)
 
 ifeq ($(LIBSO), 1) 
 CFLAGS+= -fPIC
 
 $(LIBNAMESO): $(OBJS) src/yolo_v2_class.hpp src/yolo_v2_class.cpp
-	$(CPP) -shared -std=c++11 -fvisibility=hidden -DYOLODLL_EXPORTS $(COMMON) $(CFLAGS) $(OBJS) src/yolo_v2_class.cpp -o $@ $(LDFLAGS)
+	$(CPP) -shared -std=c++11 -fvisibility=hidden -DYOLODLL_EXPORTS $(COMMON) $(CXXFLAGS) $(OBJS) src/yolo_v2_class.cpp -o $@ $(LDFLAGS)
 	
 $(APPNAMESO): $(LIBNAMESO) src/yolo_v2_class.hpp src/yolo_console_dll.cpp
-	$(CPP) -std=c++11 $(COMMON) $(CFLAGS) -o $@ src/yolo_console_dll.cpp $(LDFLAGS) -L ./ -l:$(LIBNAMESO)
+	$(CPP) -std=c++11 $(COMMON) $(CXXFLAGS) -o $@ src/yolo_console_dll.cpp $(LDFLAGS) -L ./ -l:$(LIBNAMESO)
 endif
-
-$(LIBNAME): $(OBJS) src/yolo_v2_class.hpp src/yolo_v2_class.cpp
-	$(CPP) -std=c++11 -fvisibility=hidden -DYOLODLL_EXPORTS $(COMMON) $(CFLAGS) $(OBJS) src/yolo_v2_class.cpp -o $@ $(LDFLAGS)
 
 $(EXEC): $(OBJS)
 	$(CC) $(COMMON) $(CFLAGS) $^ -o $@ $(LDFLAGS)
@@ -104,8 +108,11 @@ obj:
 yolo.weights:
 	cat yolo.weights.xa yolo.weights.xb yolo.weights.xc > yolo.weights
 	
-.PHONY: clean
+#.PHONY: clean
 
-clean:
-	rm -rf $(OBJS) $(EXEC) $(LIBNAMESO) $(LIBNAME) $(APPNAMESO) yolo.weights predictions.jpg
+clean: clean_darknet
 
+clean_darknet:
+	rm -rf $(OBJS) $(EXEC) $(LIBNAMESO) $(APPNAMESO) yolo.weights predictions.jpg
+
+include ../../src/Makefile.rules
