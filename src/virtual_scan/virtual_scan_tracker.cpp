@@ -18,6 +18,15 @@ Obstacle::Obstacle()
 }
 
 
+Obstacle::Obstacle(virtual_scan_graph_node_t *graph_node)
+{
+	this->graph_node = graph_node;
+	x = this->graph_node->box_model.x;
+	y = this->graph_node->box_model.y;
+	theta = this->graph_node->box_model.theta;
+}
+
+
 ObstacleView::ObstacleView():
 	range(std::make_pair(0.0, 0.0))
 {
@@ -26,39 +35,11 @@ ObstacleView::ObstacleView():
 
 
 
-ObstacleView::ObstacleView(const Obstacle &obstacle, const carmen_point_t &globalpos):
-    Rectangle(
-        obstacle.graph_node->box_model.width,
-        obstacle.graph_node->box_model.length,
-        project_pose(obstacle, globalpos)
-    )
+ObstacleView::ObstacleView(const Rectangle &rectangle, const std::pair<double, double> &angles):
+    Rectangle(rectangle),
+	range(angles)
 {
-	// Record the angles of the corners that have a clear view of the observer.
-	std::vector<double> angles;
-	for (int i = 0, m = corners.size(); i < m; i++)
-	{
-		bool obstructed = false;
-		const carmen_position_t &corner = corners[i];
-		for (int j = 0, n = sides.size(); j < n && !obstructed; j++)
-			obstructed = sides[j].obstructs(corner);
-
-		if (!obstructed)
-			angles.push_back(angle(corner));
-	}
-
-	// Select the smaller and largest angles for the view range.
-	std::sort(angles.begin(), angles.end());
-	range.first = angles.front();
-	range.second = angles.back();
-}
-
-
-Obstacle::Obstacle(virtual_scan_graph_node_t *graph_node)
-{
-	this->graph_node = graph_node;
-	x = this->graph_node->box_model.x;
-	y = this->graph_node->box_model.y;
-	theta = this->graph_node->box_model.theta;
+	// Nothing to do.
 }
 
 
@@ -70,15 +51,13 @@ bool ObstacleView::operator < (const ObstacleView &that) const
 
 bool ObstacleView::operator < (const carmen_point_t &point) const
 {
-	// TODO: Check for corner cases (e.g. angles > 90 degrees).
-	return this->range.first < point.theta;
+	return this->range.second < point.theta;
 }
 
 
 bool ObstacleView::operator > (const carmen_point_t &point) const
 {
-	// TODO: Check for corner cases (e.g. angles > 90 degrees).
-	return this->range.second > point.theta;
+	return this->range.first > point.theta;
 }
 
 
@@ -246,9 +225,29 @@ void Track::track_update(std::random_device *rd)
 }
 
 
-ObstacleView Track::view(int t, const carmen_point_t &globalpos) const
+
+void Track::push_view(int t, const carmen_point_t &globalpos, std::vector<ObstacleView> &w) const
 {
-	return ObstacleView(graph_nodes[t], globalpos);
+	const Obstacle &obstacle = graph_nodes[t];
+	Rectangle rectangle(
+        obstacle.graph_node->box_model.width,
+        obstacle.graph_node->box_model.length,
+        project_pose(obstacle, globalpos)
+    );
+
+	std::pair<double, double> angles = rectangle.obstruction();
+
+	// If the obstacle lies on the border between quadrants 2 and 3,
+	// produce two views of it: one from quadrant 2 onwards, the other
+	// from 3 backwards. This is necessary to correctly match reading
+	// rays to obstacles.
+	if (angles.first < -M_PI_2 && angles.second > M_PI_2)
+	{
+		w.emplace_back(rectangle, std::make_pair(angles.second - 2.0 * M_PI, angles.first));
+		w.emplace_back(rectangle, std::make_pair(angles.second, 2.0 * M_PI + angles.first));
+	}
+	else
+		w.emplace_back(rectangle, angles);
 }
 
 
@@ -511,32 +510,29 @@ bool Tracks::track_diffusion()
 }
 
 
-std::vector<ObstacleView> Tracks::views(int t, const carmen_point_t &globalpos) const
-{
-	std::vector<ObstacleView> w;
-	for (int i = 0, n = tracks.size(); i < n; i++)
-		w.push_back(tracks[i].view(t, globalpos));
-
-	std::sort(w.begin(), w.end());
-
-    return w;
-}
-
-
 double Tracks::P_M1(int i, virtual_scan_neighborhood_graph_t *neighborhood_graph) const
 {
 	virtual_scan_disconnected_sub_graph_t *disconnected_sub_graph = virtual_scan_get_disconnected_sub_graph(neighborhood_graph, i);
 	virtual_scan_extended_t *reading = disconnected_sub_graph->virtual_scan_extended;
 	const carmen_point_t &globalpos = reading->globalpos;
-	std::vector<ObstacleView> w_i = views(i, globalpos);
+
+	std::vector<ObstacleView> w_i;
+	for (int j = 0, n = tracks.size(); j < n; j++)
+		tracks[j].push_view(i, globalpos, w_i);
+
+	std::sort(w_i.begin(), w_i.end());
 
 	double p = 1.0;
-	for (int j = 0, k = 0, n = reading->num_points; j < n; j++)
+	for (int j = 0, k = 0, m = reading->num_points, n = w_i.size(); j < m; j++)
 	{
 		const ObstacleView &view = w_i[k];
 		const carmen_point_t &point = reading->points[j];
 		while (view < point)
-			k = (k + 1) % w_i.size();
+		{
+			k++;
+			if (k >= n)
+				return p;
+		}
 
 		if (view > point)
 			continue;

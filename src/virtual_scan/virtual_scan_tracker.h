@@ -50,7 +50,7 @@ public:
 	/**
 	 * @brief Create a new view for the given obstacle from the given point of view.
 	 */
-	ObstacleView(const Obstacle &obstacle, const carmen_point_t &globalpos);
+	ObstacleView(const Rectangle &rectangle, const std::pair<double, double> &angles);
 
 	/**
 	 * @brief Defines a ordering of views by the beginning of the angle range.
@@ -107,9 +107,9 @@ public:
 
 
 	/**
-	 * @brief Return a view of this track at time `t` from global pose `globalpos`.
+	 * @brief Add the view(s) of this track at time `t` from global pose `globalpos` to the given sequence.
 	 */
-	ObstacleView view(int t, const carmen_point_t &globalpos) const;
+	void push_view(int t, const carmen_point_t &globalpos, std::vector<ObstacleView> &w) const;
 
 	/**
 	 * @brief Return the length of this track, in number of configurations.
@@ -138,11 +138,6 @@ class Tracks
 	 * @brief Compute the point matching probability for this track set.
 	 */
 	double P_M1(int i, virtual_scan_neighborhood_graph_t *neighborhood_graph) const;
-
-	/**
-	 * @brief Compute the obstacle views at time t relative to the given pose.
-	 */
-	std::vector<ObstacleView> views(int t, const carmen_point_t &globalpos) const;
 
 public:
 	Tracks(std::random_device *rd);
