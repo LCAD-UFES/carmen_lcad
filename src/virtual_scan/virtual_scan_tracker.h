@@ -8,7 +8,7 @@
 #ifndef SRC_VIRTUAL_SCAN_VIRTUAL_SCAN_TRACKER_H_
 #define SRC_VIRTUAL_SCAN_VIRTUAL_SCAN_TRACKER_H_
 
-#include "line.h"
+#include "rectangle.h"
 #include "virtual_scan.h"
 #include "virtual_scan_neighborhood_graph.h"
 
@@ -36,16 +36,10 @@ public:
 /**
  * @brief A representation of a view of an Obstacle from a given point of view.
  */
-class ObstacleView
+class ObstacleView: Rectangle
 {
 	/** @brief Sensor field of view range obstructed by the obstacle, as a pair of angles. */
 	std::pair<double, double> range;
-
-	/** @brief The lines that constitute the obstacle's perimeter, in observer-centric coordinates. */
-	std::vector<Line> sides;
-
-	/** @brief Obstacle pose relative to the observer. */
-	carmen_point_t pose;
 
 public:
 	/**
@@ -144,6 +138,11 @@ class Tracks
 	 * @brief Compute the point matching probability for this track set.
 	 */
 	double P_M1(int i, virtual_scan_neighborhood_graph_t *neighborhood_graph) const;
+
+	/**
+	 * @brief Compute the obstacle views at time t relative to the given pose.
+	 */
+	std::vector<ObstacleView> views(int t, const carmen_point_t &globalpos) const;
 
 public:
 	Tracks(std::random_device *rd);

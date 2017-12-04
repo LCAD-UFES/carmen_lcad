@@ -14,6 +14,7 @@ LFLAGS += \
 SOURCES = \
 	line.cpp \
 	parameters.cpp \
+	rectangle.cpp \
 	virtual_scan_interface.cpp \
 	virtual_scan_main.cpp \
 	virtual_scan.cpp \
@@ -47,6 +48,6 @@ LFLAGS += \
 endif
 
 libvirtual_scan_interface.a: virtual_scan_interface.o
-virtual_scan: line.o parameters.o virtual_scan_main.o virtual_scan.o virtual_scan_interface.o virtual_scan_neighborhood_graph.o virtual_scan_tracker.o
+virtual_scan: line.o parameters.o rectangle.o virtual_scan_main.o virtual_scan.o virtual_scan_interface.o virtual_scan_neighborhood_graph.o virtual_scan_tracker.o
 
 include ../Makefile.rules
