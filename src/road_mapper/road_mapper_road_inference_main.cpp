@@ -298,96 +298,100 @@ generate_sample(cv::Mat map_img, cv::Point center, double angle, cv::Rect roi, c
 
 
 void
-generate_road_map_via_deep_learning_inference(carmen_map_t remission_map)
+generate_road_map_by_remission_map_img(cv::Mat *remission_map_img, carmen_map_config_t config)
 {
-	cv::Mat *remission_map_img, sample, prediction;
-	static cv::Mat *road_map_img;
-	static carmen_map_t road_map;
 	static bool first_time = true;
+	static carmen_map_t road_map;
+	static cv::Mat *road_map_img;
+	cv::Mat sample, prediction;
 	road_prob cell;
 	double *cell_value;
 
 	if (first_time)
 	{
-		carmen_grid_mapping_initialize_map(&road_map, remission_map.config.x_size, remission_map.config.resolution, 'r');
-		road_map_img = new cv::Mat(remission_map.config.y_size, remission_map.config.x_size, CV_8UC3);
+		carmen_grid_mapping_initialize_map(&road_map, config.x_size, config.resolution, 'r');
+		road_map_img = new cv::Mat(config.x_size, config.y_size, CV_8UC3);
 		first_time = false;
 	}
-	memcpy(&road_map.config, &remission_map.config, sizeof(remission_map.config));
+	memcpy(&road_map.config, &config, sizeof(config));
 
-	if (g_remission_image_channels == 1 || g_remission_image_channels == '*')
+	if (g_verbose >= 1)
 	{
-		g_remission_map_img = new cv::Mat(remission_map.config.y_size, remission_map.config.x_size, CV_8UC1);
-		remission_map_img = g_remission_map_img;
-		remission_map_to_image(&remission_map, remission_map_img, 1);
-		// Repeat the procedure below
+		cv::namedWindow("remission", cv::WINDOW_AUTOSIZE);
+		cv::moveWindow("remission", 10, 10);
+		cv::imshow("remission", *remission_map_img);
+		cv::waitKey(1);
 	}
-	if (g_remission_image_channels == 3 || g_remission_image_channels == '*')
+	int margin_x = (g_sample_width - g_sampling_stride)/2;
+	int margin_y = (g_sample_height - g_sampling_stride)/2;
+	for (int i = 0; i < config.x_size; i += g_sampling_stride)
 	{
-		g_remission_map_img3 = new cv::Mat(remission_map.config.y_size, remission_map.config.x_size, CV_8UC3);
-		remission_map_img = g_remission_map_img3;
-		remission_map_to_image(&remission_map, remission_map_img, 3);
-		if (g_verbose >= 1)
+		for (int j = 0; j < config.y_size; j += g_sampling_stride)
 		{
-			cv::namedWindow("remission", cv::WINDOW_AUTOSIZE);
-			cv::moveWindow("remission", 10, 10);
-			cv::imshow("remission", *g_remission_map_img3);
-			cv::waitKey(1);
-		}
-		int margin_x = (g_sample_width - g_sampling_stride)/2;
-		int margin_y = (g_sample_height - g_sampling_stride)/2;
-		for (int i = 0; i < remission_map.config.x_size; i += g_sampling_stride)
-		{
-			for (int j = 0; j < remission_map.config.y_size; j += g_sampling_stride)
+			int rect_x = i - margin_x, rect_y = j - margin_y;
+			int rect_width = g_sample_width, rect_height = g_sample_height;
+			sample = get_padded_roi(*remission_map_img, rect_x, rect_y, rect_width, rect_height, cv::Scalar::all(255));
+			if (g_verbose >= 2)
 			{
-				int rect_x = i - margin_x, rect_y = j - margin_y;
-				int rect_width = g_sample_width, rect_height = g_sample_height;
-				sample = get_padded_roi(*g_remission_map_img3, rect_x, rect_y, rect_width, rect_height, cv::Scalar::all(255));
-				if (g_verbose >= 2)
+				cv::namedWindow("sample", cv::WINDOW_AUTOSIZE);
+				cv::moveWindow("sample", 10 + rect_x, 10 + rect_y);
+				cv::imshow("sample", sample);
+			}
+			prediction = g_classifier->Predict(sample);
+			if (g_verbose >= 2)
+			{
+				printf("\nPress \"Esc\" key to continue...\n");
+				while((cv::waitKey() & 0xff) != 27);
+			}
+			// Update inferred roap map, using only a central square (stride x stride)
+			for (int x = margin_x; x < (margin_x + g_sampling_stride); x++)
+			{
+				for (int y = margin_y; y < (margin_y + g_sampling_stride); y++)
 				{
-					cv::namedWindow("sample", cv::WINDOW_AUTOSIZE);
-					cv::moveWindow("sample", 10 + rect_x, 10 + rect_y);
-					cv::imshow("sample", sample);
-				}
-				prediction = g_classifier->Predict(sample);
-				if (g_verbose >= 2)
-				{
-					printf("\nPress \"Esc\" key to continue...\n");
-					while((cv::waitKey() & 0xff) != 27);
-				}
-				// Update inferred roap map, using only a central square (stride x stride)
-				for (int x = margin_x; x < (margin_x + g_sampling_stride); x++)
-				{
-					for (int y = margin_y; y < (margin_y + g_sampling_stride); y++)
-					{
-						road_mapper_cell_class_to_prob(&cell, prediction.at<uchar>(x, y), g_image_class_bits);
-						cell_value = (double*) &cell;
-						road_map.map[i + y - margin_y][remission_map.config.x_size - 1 - (j + x - margin_x)] = *cell_value;
-					}
+					road_mapper_cell_class_to_prob(&cell, prediction.at<uchar>(x, y), g_image_class_bits);
+					cell_value = (double*) &cell;
+					road_map.map[i + y - margin_y][config.y_size - 1 - (j + x - margin_x)] = *cell_value;
 				}
 			}
 		}
-		if (g_verbose >= 1)
-		{
-			road_map_to_image(&road_map, road_map_img);
-			cv::namedWindow("road map", cv::WINDOW_AUTOSIZE);
-			cv::moveWindow("road map", 800, 10);
-			cv::imshow("road map", *road_map_img);
-			printf("\nPress \"Esc\" key to continue...\n");
-			while((cv::waitKey() & 0xff) != 27);
-		}
-		// Save complete road map
-		bool ok = (carmen_grid_mapping_save_block_map_by_origin(g_map_path, 'r', &road_map) != 0);
-		if (!ok)
-		{
-			printf("ERROR: Could not save road map: (%.0lf,%.0lf) at %s\n", road_map.config.x_origin, road_map.config.y_origin, g_map_path);
-		}
-		else if (g_verbose >= 1)
-		{
-			printf("Road map saved: (%.0lf,%.0lf) at %s\n", road_map.config.x_origin, road_map.config.y_origin, g_map_path);
-		}
+	}
+	// Save complete road map
+	bool ok = (carmen_grid_mapping_save_block_map_by_origin(g_map_path, 'r', &road_map) != 0);
+	if (!ok)
+	{
+		printf("ERROR: Could not save road map: (%.0lf,%.0lf) at %s\n", road_map.config.x_origin, road_map.config.y_origin, g_map_path);
+	}
+	else if (g_verbose >= 1)
+	{
+		printf("Road map saved: (%.0lf,%.0lf) at %s\n", road_map.config.x_origin, road_map.config.y_origin, g_map_path);
+	}
+	if (g_verbose >= 1)
+	{
+		road_map_to_image(&road_map, road_map_img);
+		cv::namedWindow("road map", cv::WINDOW_AUTOSIZE);
+		cv::moveWindow("road map", 800, 10);
+		cv::imshow("road map", *road_map_img);
+		printf("Press \"Esc\" key to continue...\n\n");
+		while((cv::waitKey() & 0xff) != 27);
 	}
 }
+
+
+void
+generate_road_map_via_deep_learning_inference(carmen_map_t remission_map)
+{
+	if (g_remission_image_channels == 1 || g_remission_image_channels == '*')
+	{
+		remission_map_to_image(&remission_map, g_remission_map_img, 1);
+		generate_road_map_by_remission_map_img(g_remission_map_img, remission_map.config);
+	}
+	if (g_remission_image_channels == 3 || g_remission_image_channels == '*')
+	{
+		remission_map_to_image(&remission_map, g_remission_map_img3, 3);
+		generate_road_map_by_remission_map_img(g_remission_map_img3, remission_map.config);
+	}
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
@@ -416,6 +420,8 @@ localize_map_handler(carmen_map_server_localize_map_message *msg)
 	if (first_time)
 	{
 		carmen_grid_mapping_initialize_map(&remission_map, msg->config.x_size, msg->config.resolution, 'm');
+		g_remission_map_img  = new cv::Mat(remission_map.config.x_size, remission_map.config.y_size, CV_8UC1);
+		g_remission_map_img3 = new cv::Mat(remission_map.config.x_size, remission_map.config.y_size, CV_8UC3);
 		first_time = false;
 	}
 
