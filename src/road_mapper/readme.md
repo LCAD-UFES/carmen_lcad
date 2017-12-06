@@ -150,10 +150,12 @@ To learn more about the utility parameters please run the program with -h option
 
 To visualize a road map please run the [Display Map utility](road_mapper_display_map3.cpp):
 ```bash
- $ ./road_mapper_display_map3 maps/r7725970_-353430.map 3 0
+ $ ./road_mapper_display_map3 maps/r*.map
 ```
-To learn more about the utility parameters please take a look at [road_mapper_display_map3.cpp](road_mapper_display_map3.cpp).
-
+To learn more about the utility parameters please please run the program with -h option:
+```bash
+ $ ./road_mapper_display_map3 -h
+```
 
 ### Examples
 
