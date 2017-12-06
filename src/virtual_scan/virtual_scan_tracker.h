@@ -8,7 +8,7 @@
 #ifndef SRC_VIRTUAL_SCAN_VIRTUAL_SCAN_TRACKER_H_
 #define SRC_VIRTUAL_SCAN_VIRTUAL_SCAN_TRACKER_H_
 
-#include "line.h"
+#include "rectangle.h"
 #include "virtual_scan.h"
 #include "virtual_scan_neighborhood_graph.h"
 
@@ -36,16 +36,10 @@ public:
 /**
  * @brief A representation of a view of an Obstacle from a given point of view.
  */
-class ObstacleView
+class ObstacleView: Rectangle
 {
 	/** @brief Sensor field of view range obstructed by the obstacle, as a pair of angles. */
 	std::pair<double, double> range;
-
-	/** @brief The lines that constitute the obstacle's perimeter, in observer-centric coordinates. */
-	std::vector<Line> sides;
-
-	/** @brief Obstacle pose relative to the observer. */
-	carmen_point_t pose;
 
 public:
 	/**
@@ -56,7 +50,7 @@ public:
 	/**
 	 * @brief Create a new view for the given obstacle from the given point of view.
 	 */
-	ObstacleView(const Obstacle &obstacle, const carmen_point_t &globalpos);
+	ObstacleView(const Rectangle &rectangle, const std::pair<double, double> &angles);
 
 	/**
 	 * @brief Defines a ordering of views by the beginning of the angle range.
@@ -113,9 +107,9 @@ public:
 
 
 	/**
-	 * @brief Return a view of this track at time `t` from global pose `globalpos`.
+	 * @brief Add the view(s) of this track at time `t` from global pose `globalpos` to the given sequence.
 	 */
-	ObstacleView view(int t, const carmen_point_t &globalpos) const;
+	void push_view(int t, const carmen_point_t &globalpos, std::vector<ObstacleView> &w) const;
 
 	/**
 	 * @brief Return the length of this track, in number of configurations.
