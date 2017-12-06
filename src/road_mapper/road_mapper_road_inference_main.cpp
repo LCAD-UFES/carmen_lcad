@@ -35,6 +35,12 @@ char* g_prototxt_filename;
 char* g_caffemodel_filename;
 char* g_label_colours_filename;
 wordexp_t g_out_path_p, g_prototxt_filename_p, g_caffemodel_filename_p, g_label_colours_filename_p;
+
+static double g_map_resolution;
+static double g_map_width;
+static double g_map_height;
+static char *g_map_path = (char*) ".";
+
 int g_verbose = 0;
 
 cv::Mat *g_road_map_img;
@@ -108,8 +114,10 @@ Classifier::Visualization(cv::Mat prediction_map, string LUT_file = "")
 
 	if (g_verbose >= 2)
 	{
+		cv::namedWindow("prediction", cv::WINDOW_AUTOSIZE);
+		cv::moveWindow("prediction", 1060, 10);
 		cv::imshow("prediction", output_image);
-		cv::waitKey(0);
+		cv::waitKey(1);
 	}
 	return output_image;
 }
@@ -292,16 +300,17 @@ generate_sample(cv::Mat map_img, cv::Point center, double angle, cv::Rect roi, c
 void
 generate_road_map_via_deep_learning_inference(carmen_map_t remission_map)
 {
-	cv::Mat *remission_map_img, sample, prediction, road_map_img;
+	cv::Mat *remission_map_img, sample, prediction;
+	static cv::Mat *road_map_img;
 	static carmen_map_t road_map;
 	static bool first_time = true;
 	road_prob cell;
 	double *cell_value;
-	char map_path[] = ".";
 
 	if (first_time)
 	{
 		carmen_grid_mapping_initialize_map(&road_map, remission_map.config.x_size, remission_map.config.resolution, 'r');
+		road_map_img = new cv::Mat(remission_map.config.y_size, remission_map.config.x_size, CV_8UC3);
 		first_time = false;
 	}
 	memcpy(&road_map.config, &remission_map.config, sizeof(remission_map.config));
@@ -320,7 +329,10 @@ generate_road_map_via_deep_learning_inference(carmen_map_t remission_map)
 		remission_map_to_image(&remission_map, remission_map_img, 3);
 		if (g_verbose >= 1)
 		{
+			cv::namedWindow("remission", cv::WINDOW_AUTOSIZE);
+			cv::moveWindow("remission", 10, 10);
 			cv::imshow("remission", *g_remission_map_img3);
+			cv::waitKey(1);
 		}
 		int margin_x = (g_sample_width - g_sampling_stride)/2;
 		int margin_y = (g_sample_height - g_sampling_stride)/2;
@@ -333,7 +345,8 @@ generate_road_map_via_deep_learning_inference(carmen_map_t remission_map)
 				sample = get_padded_roi(*g_remission_map_img3, rect_x, rect_y, rect_width, rect_height, cv::Scalar::all(255));
 				if (g_verbose >= 2)
 				{
-					cv::moveWindow("sample", rect_x, rect_y);
+					cv::namedWindow("sample", cv::WINDOW_AUTOSIZE);
+					cv::moveWindow("sample", 10 + rect_x, 10 + rect_y);
 					cv::imshow("sample", sample);
 				}
 				prediction = g_classifier->Predict(sample);
@@ -349,28 +362,29 @@ generate_road_map_via_deep_learning_inference(carmen_map_t remission_map)
 					{
 						road_mapper_cell_class_to_prob(&cell, prediction.at<uchar>(x, y), g_image_class_bits);
 						cell_value = (double*) &cell;
-						road_map.map[i + x - margin_x][j + y - margin_y] = *cell_value;
+						road_map.map[i + y - margin_y][remission_map.config.x_size - 1 - (j + x - margin_x)] = *cell_value;
 					}
 				}
 			}
 		}
-		// Save complete road map
-		bool ok = (carmen_grid_mapping_save_block_map_by_origin(map_path, 'r', &road_map) != 0);
-		if (!ok)
-		{
-			printf("ERROR: Could not save road map: (%.0lf,%.0lf) at %s\n", road_map.config.x_origin, road_map.config.y_origin, map_path);
-		}
-
 		if (g_verbose >= 1)
 		{
-			if (ok)
-			{
-				printf("Road map saved: (%.0lf,%.0lf) at %s\n", road_map.config.x_origin, road_map.config.y_origin, map_path);
-			}
-			road_map_to_image(&road_map, &road_map_img);
-			cv::imshow("road map", road_map_img);
+			road_map_to_image(&road_map, road_map_img);
+			cv::namedWindow("road map", cv::WINDOW_AUTOSIZE);
+			cv::moveWindow("road map", 800, 10);
+			cv::imshow("road map", *road_map_img);
 			printf("\nPress \"Esc\" key to continue...\n");
 			while((cv::waitKey() & 0xff) != 27);
+		}
+		// Save complete road map
+		bool ok = (carmen_grid_mapping_save_block_map_by_origin(g_map_path, 'r', &road_map) != 0);
+		if (!ok)
+		{
+			printf("ERROR: Could not save road map: (%.0lf,%.0lf) at %s\n", road_map.config.x_origin, road_map.config.y_origin, g_map_path);
+		}
+		else if (g_verbose >= 1)
+		{
+			printf("Road map saved: (%.0lf,%.0lf) at %s\n", road_map.config.x_origin, road_map.config.y_origin, g_map_path);
 		}
 	}
 }
@@ -458,6 +472,11 @@ read_parameters(int argc, char **argv)
 			{(char*)"road_mapper",  (char*)"prototxt_filename",			CARMEN_PARAM_STRING, 	&(prototxt_filename),			0, NULL},
 			{(char*)"road_mapper",  (char*)"caffemodel_filename",		CARMEN_PARAM_STRING, 	&(caffemodel_filename),			0, NULL},
 			{(char*)"road_mapper",  (char*)"label_colours_filename",	CARMEN_PARAM_STRING, 	&(label_colours_filename),		0, NULL},
+
+			{(char*) "mapper",  	(char*)"map_grid_res", 				CARMEN_PARAM_DOUBLE, 	&(g_map_resolution), 			0, NULL},
+			{(char*) "mapper",  	(char*)"map_width", 				CARMEN_PARAM_DOUBLE, 	&(g_map_width), 				0, NULL},
+			{(char*) "mapper",  	(char*)"map_height", 				CARMEN_PARAM_DOUBLE, 	&(g_map_height), 				0, NULL},
+
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
@@ -484,7 +503,9 @@ read_parameters(int argc, char **argv)
 		g_remission_image_channels = atoi(remission_image_channels);
 	}
 
-	const char usage[] = "[-v [<level>]]";
+	carmen_grid_mapping_init_parameters(g_map_resolution, g_map_width);
+
+	const char usage[] = "[-v [<level>]] [-m <map_path>]";
 	for(int i = 1; i < argc; i++)
 	{
 		if(strncmp(argv[i], "-h", 2) == 0 || strncmp(argv[i], "--help", 6) == 0)
@@ -501,6 +522,20 @@ read_parameters(int argc, char **argv)
 				i++;
 			}
 			printf("Verbose option set to level %d.\n", g_verbose);
+		}
+		else if(strncmp(argv[i], "-m", 2) == 0 || strncmp(argv[i], "--map_path", 10) == 0)
+		{
+			if ((i + 1) < argc)
+			{
+				g_map_path = argv[i + 1];
+				printf("Map path set to %s.\n", g_map_path);
+				i++;
+			}
+			else
+			{
+				printf("Map path expected.\n");
+				printf("Usage:\n%s %s\n", argv[0], usage);
+			}
 		}
 		else
 		{
