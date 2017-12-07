@@ -139,7 +139,7 @@ fill_in_tcp(const gsl_vector *x, ObjectiveFunctionParams *params)
 	}
 	tcp.vf = params->tcp_seed->vf;
 	tcp.sf = params->tcp_seed->sf;
-
+	//printf(">>>>>>>>>>>>>> tt : %lf\n",tcp.tt);
 	if (tcp.tt < 0.2) // o tempo nao pode ser pequeno demais
 		tcp.tt = 0.2;
 	if (tcp.a < -GlobalState::robot_config.maximum_deceleration_forward) // a aceleracao nao pode ser negativa demais
@@ -413,7 +413,7 @@ my_g(const gsl_vector *x, void *params)
 	TrajectoryLookupTable::TrajectoryDimensions td;
 
 	vector<carmen_ackerman_path_point_t> path = simulate_car_from_parameters(td, tcp, my_params->target_td->v_i, my_params->target_td->phi_i, false);
-
+	double proximity_to_goal = 0.0;
 	double path_to_lane_distance = 0.0;
 	if (my_params->use_lane && (my_params->detailed_lane.size() > 0) && (path.size() > 0))
 	{
@@ -424,7 +424,10 @@ my_g(const gsl_vector *x, void *params)
 		}
 		else
 			path_to_lane_distance = compute_path_to_lane_distance(my_params, path);
+
+		proximity_to_goal = dist2(*path.end(), *my_params->detailed_lane.end());
 	}
+
 
 	double proximity_to_obstacles = 0.0;
 
@@ -438,7 +441,7 @@ my_g(const gsl_vector *x, void *params)
 			(carmen_normalize_theta(td.theta) - my_params->target_td->theta) * (carmen_normalize_theta(td.theta) - my_params->target_td->theta) / (my_params->theta_by_index * 0.2) +
 			(carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) * (carmen_normalize_theta(td.d_yaw) - my_params->target_td->d_yaw) / (my_params->d_yaw_by_index * 0.2));
 
-	double w1, w2, w3, w4, w5, w6, result;
+	double w1, w2, w3, w4, w5, w6, w7, result;
 	if (((ObjectiveFunctionParams *) (params))->optimize_time == OPTIMIZE_DISTANCE)
 	{
 		w1 = 10.0; w2 = 15.0; w3 = 15.0; w4 = 3.0; w5 = 10.0;
@@ -453,13 +456,14 @@ my_g(const gsl_vector *x, void *params)
 	}
 	else
 	{
-		w1 = 10.0; w2 = 55.0; w3 = 5.0; w4 = 1.5; w5 = 20.0; w6 = 0.005;
+		w1 = 10.0; w2 = 55.0; w3 = 5.0; w4 = 1.5; w5 = 20.0; w6 = 0.005; w7 = 10.0;
 		if (td.dist < 7.0)
 			w2 *= exp(td.dist - 7.0);
 		result = sqrt(
-				w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
-				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
-				w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
+//				w1 * (td.dist - my_params->target_td->dist) * (td.dist - my_params->target_td->dist) / my_params->distance_by_index +
+//				w2 * (carmen_normalize_theta(td.theta - my_params->target_td->theta) * carmen_normalize_theta(td.theta - my_params->target_td->theta)) / my_params->theta_by_index +
+//				w3 * (carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw) * carmen_normalize_theta(td.d_yaw - my_params->target_td->d_yaw)) / my_params->d_yaw_by_index +
+				w7 * proximity_to_goal +
 				w4 * path_to_lane_distance + // já é quandrática
 				w5 * proximity_to_obstacles + // já é quandrática
 				w6 * tcp.sf * tcp.sf);
@@ -772,31 +776,33 @@ compute_suitable_acceleration_and_tt(ObjectiveFunctionParams &params,
 
 		if (a > 0.0)
 		{
-			params.optimize_time = OPTIMIZE_TIME;
+			if(GlobalState::reverse_driving)
+				params.optimize_time = OPTIMIZE_ACCELERATION;
+			else
+				params.optimize_time = OPTIMIZE_TIME;
 			if (a > GlobalState::robot_config.maximum_acceleration_forward)
 				a = GlobalState::robot_config.maximum_acceleration_forward;
 		}
 
 		if (a < 0.0)
 		{
-			if(!GlobalState::reverse_driving)
+			if(GlobalState::reverse_driving)
+				params.optimize_time = OPTIMIZE_TIME;
+			else
 				params.optimize_time = OPTIMIZE_ACCELERATION;
-
 			if (a < -GlobalState::robot_config.maximum_deceleration_forward)
 			{
 				a = -GlobalState::robot_config.maximum_deceleration_forward;
-				if (GlobalState::reverse_driving) //Pensar nisso aqui pro reverse driving
-					tt = (((-1.0) * target_v) - target_td.v_i) / a;
-				else
-					tt = (target_v - target_td.v_i) / a;
-
+				tt = (target_v - target_td.v_i) / a;
 			}
 		}
 
 		if (tt > 15.0)
 			tt = 15.0;
-		else if (tt < 0.15)
+		else if (tt > 0.0 && tt < 0.15)
 			tt = 0.15;
+		else if (tt < 0.0)
+			tt = (-1)*tt;
 
 		params.suitable_tt = tcp_seed.tt = tt;
 		params.suitable_acceleration = tcp_seed.a = a;
@@ -1026,7 +1032,7 @@ optimized_lane_trajectory_control_parameters(TrajectoryLookupTable::TrajectoryCo
 
 	if (tcp.tt < 0.2)
 	{
-//		printf(">>>>>>>>>>>>>> tt < 0.2\n");
+//		printf(">>>>>>>>>>>>>> tt < 0.2: %lf\n",tcp.tt);
 		tcp.valid = false;
 	}
 

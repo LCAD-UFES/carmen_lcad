@@ -1324,9 +1324,11 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 	set_behaviours_parameters(current_robot_pose_v_and_phi, timestamp);
 
 	if (reverse_driving)
-		behaviour_selector_reverse_driving_fill_goal_list(last_rddf_message, timestamp);
+		behaviour_selector_fill_goal_list(last_rddf_message, last_rddf_message->poses_back, last_rddf_message->number_of_poses_back,
+				last_rddf_message->annotations, last_rddf_message->annotations_codes,  timestamp);
 	else
-		behaviour_selector_fill_goal_list(last_rddf_message, timestamp);
+		behaviour_selector_fill_goal_list(last_rddf_message, last_rddf_message->poses, last_rddf_message->number_of_poses,
+				last_rddf_message->annotations, last_rddf_message->annotations_codes,  timestamp);
 
 	int goal_list_size;
 	carmen_ackerman_traj_point_t *goal_list = behavior_selector_get_goal_list(&goal_list_size);

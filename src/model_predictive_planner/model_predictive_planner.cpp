@@ -25,8 +25,8 @@
 
 using namespace g2o;
 
-int print_to_debug = 0;
-int plot_to_debug = 0;
+int print_to_debug = 1;
+int plot_to_debug = 1;
 
 //-----------Funcoes para extrair dados do Experimento------------------------
 double
@@ -171,6 +171,51 @@ plot_state(vector<carmen_ackerman_path_point_t> &pOTCP, vector<carmen_ackerman_p
 
 	fflush(gnuplot_pipeMP);
 }
+
+
+void
+plot_state2(vector<carmen_ackerman_path_point_t> &path_points, char* file_name, char* plot_name)
+{
+	//	plot data Table - Last TCP - Optmizer tcp - Lane
+	//Plot Optmizer step tcp and lane?
+
+	static bool first_time = true;
+//	static bool first_plot = true;
+
+	static FILE *gnuplot_pipeMP;
+
+
+	if (first_time)
+	{
+		first_time = false;
+
+		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+		fprintf(gnuplot_pipeMP, "set xrange [0:70]\n");
+		fprintf(gnuplot_pipeMP, "set yrange [-10:10]\n");
+		//		fprintf(gnuplot_pipe, "set y2range [-0.55:0.55]\n");
+		fprintf(gnuplot_pipeMP, "set xlabel 'senconds'\n");
+		fprintf(gnuplot_pipeMP, "set ylabel 'effort'\n");
+		//		fprintf(gnuplot_pipe, "set y2label 'phi (radians)'\n");
+		//		fprintf(gnuplot_pipe, "set ytics nomirror\n");
+		//		fprintf(gnuplot_pipe, "set y2tics\n");
+		fprintf(gnuplot_pipeMP, "set tics out\n");
+	}
+
+	FILE *gnuplot_data_file = fopen(file_name, "w");
+
+	for (unsigned int i = 0; i < path_points.size(); i++)
+		fprintf(gnuplot_data_file, "%lf %lf %lf %lf %lf %lf %lf\n", path_points.at(i).x, path_points.at(i).y, 1.0 * cos(path_points.at(i).theta), 1.0 * sin(path_points.at(i).theta),
+				path_points.at(i).theta, path_points.at(i).phi, path_points.at(i).time);
+
+	fclose(gnuplot_data_file);
+
+	//	fprintf(gnuplot_pipe, "unset arrow\nset arrow from %lf, %lf to %lf, %lf nohead\n",0, -60.0, 0, 60.0);
+	fprintf(gnuplot_pipeMP, "plot "
+			"'./%s' using 1:2:3:4 w vec size  0.3, 10 filled title '%s' axes x1y1\n", file_name, plot_name);
+
+	fflush(gnuplot_pipeMP);
+}
+
 
 TrajectoryLookupTable::TrajectoryDimensions
 get_trajectory_dimensions_from_robot_state(Pose *localizer_pose, Command last_odometry,	Pose *goal_pose)
@@ -699,14 +744,14 @@ get_tcp_from_td(TrajectoryLookupTable::TrajectoryControlParameters &tcp,
 	{
 		TrajectoryLookupTable::TrajectoryControlParameters dummy_tcp;
 		dummy_tcp.valid = true;
-		dummy_tcp.tt = 2.5;
-		dummy_tcp.k1 = 0.01;
+		dummy_tcp.tt = 5.0;
+		dummy_tcp.k1 = 0.0;
 		dummy_tcp.k2 = 0.01;
-		dummy_tcp.k3 = 0.01;
+		dummy_tcp.k3 = 0.02;
 		dummy_tcp.has_k1 = false;
 		dummy_tcp.shift_knots = false;
 		dummy_tcp.a = 0.0;
-		dummy_tcp.vf = td.v_i;
+		dummy_tcp.vf = -2.0;
 		dummy_tcp.sf = td.dist;
 		dummy_tcp.s = td.dist;
 
@@ -885,7 +930,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 			detailed_lane.clear();
 		//		printf("\nGoal_in_lane: %d detail_size: %ld \n",goal_in_lane, detailed_lane.size());
 	}
-
+//	plot_state2(detailed_lane, "detail_lane_plot.txt", "Lane");
 
 /***************************************
  * Funcao para extrair dados para artigo
@@ -934,7 +979,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 				vector<carmen_ackerman_path_point_t> pathSeed;
 				if (plot_to_debug)
 				{
-					pathSeed = simulate_car_from_parameters(td, tcp, lastOdometryVector[0].v, lastOdometryVector[0].phi, false, 0.025);
+					pathSeed = simulate_car_from_parameters(td, tcp, tcp.vf, lastOdometryVector[0].phi, false, 0.025);
 				}
 
 				if (!get_path_from_optimized_tcp(path, path_local, otcp, td, localizer_pose))
@@ -1010,22 +1055,22 @@ compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Command last_odometr
 
 	for (int i = 0; i < 1; i++)
 	{
-		if (GlobalState::reverse_driving)
-		{
-			Pose newPose;
-			newPose.x = 7756908.9483949998;
-			newPose.y = -364047.381773;
-			newPose.theta = 3.0150939999999999;
-			goalPoseVector.push_back(newPose);
-		}
-		else
-		{
+//		if (GlobalState::reverse_driving)
+//		{
+//			Pose newPose;
+//			newPose.x = 7756908.9483949998;
+//			newPose.y = -364047.381773;
+//			newPose.theta = 3.0150939999999999;
+//			goalPoseVector.push_back(newPose);
+//		}
+//		else
+//		{
 			Pose newPose = *goal_pose;
 			newPose.x += 0.3 * (double) magicSignals[i] * cos(carmen_normalize_theta((goal_pose->theta) - carmen_degrees_to_radians(90.0)));
 			newPose.y += 0.3 * (double) magicSignals[i] * sin(carmen_normalize_theta((goal_pose->theta) - carmen_degrees_to_radians(90.0)));
 			goalPoseVector.push_back(newPose);
 
-		}
+//		}
 
 	}
 
