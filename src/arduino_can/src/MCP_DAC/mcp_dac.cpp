@@ -15,14 +15,14 @@ void MCP_DAC::begin(){
 	off(DAC_B);
 }
 
-void MCP_DAC::gain(bool gain, int channel){
+void MCP_DAC::gain(int channel ,bool gain){
 	if (gain)
 		config[channel] = (!(0x2000) & config[channel]);
 	else
 		config[channel] = (0x2000 | config[channel]);
 }
 
-void MCP_DAC::buffered(bool buf, int channel){
+void MCP_DAC::buffered(int channel, bool buf){
 	if (buf)
 		config[channel] = (!(0x4000) & config[channel]);
 	else
@@ -37,8 +37,7 @@ void MCP_DAC::off(int channel){
 	SPI.endTransaction();
 }
 
-
-void MCP_DAC::write(uint16_t data, int channel){
+void MCP_DAC::write(int channel, uint16_t data){
 	SPI.beginTransaction(SPISettings(20000000, MSBFIRST, SPI_MODE0));
 	digitalWrite(MCPCS,LOW);
 	SPI.transfer16(config[channel] | data);

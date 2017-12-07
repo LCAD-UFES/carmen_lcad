@@ -1,5 +1,5 @@
-#include <mcp_can.h>
-#include <mcp_dac.h>
+#include "src/MCP_CAN/mcp_can.h"
+#include "src/MCP_DAC/mcp_dac.h"
 #include <SPI.h>
 
 long unsigned int rxId;
@@ -8,17 +8,12 @@ unsigned char rxBuf[8];
 char msgString[128];                        // Array to store serial string
 
 #define CAN0_INT 2                              // Set INT to pin 2
-#define DAC_CS 9
+MCP_DAC DAC(9);
 MCP_CAN CAN0(10);                               // Set CS to pin 10
 
-void analogWriteSPI(int value, int port) { //0 DAC_A,1 DAC_B
-  // take the SS pin low to select the chip:
-  digitalWrite(DAC_CS, LOW);
-  //  send in the address and value via SPI:
-  SPI.transfer16((port<<15)|0x3000|value);
-  // take the SS pin high to de-select the chip:
-  digitalWrite(DAC_CS, HIGH);
-}
+int sig = 1;
+int cnt = 0;
+int value = 0;
 
 void setup()
 {
@@ -37,11 +32,9 @@ void setup()
   
   CAN0.setMode(MCP_NORMAL);                     // Set operation mode to normal so the MCP2515 sends acks to received data.
 
-  pinMode(DAC_CS,OUTPUT);
-  digitalWrite(DAC_CS, HIGH);
   pinMode(CAN0_INT, INPUT);                            // Configuring pin for /INT input
 
-  SPI.begin();
+  DAC.begin();  
 }
 
 void loop()
@@ -63,8 +56,21 @@ void loop()
       }
       Serial.println();
 
-      int value = (((rxBuf[0]<<8) | rxBuf[1])&0x0FFF);
+      value = (((rxBuf[0]<<8) | rxBuf[1])&0x0FFF);
       Serial.println(value);
-      analogWriteSPI(value,0);
+       DAC.write(DAC_A, value);
   }
+/*
+  if (cnt > 2048){
+      cnt = 2047;
+      sig = -1;
+  }
+  if (cnt < 0){
+      cnt = 0;
+      sig = 1;
+  }
+  cnt+=sig*value;
+  double seno = sin((double)(cnt-1024)*0.001533981);
+  DAC.write(DAC_A, seno*1024+1024);
+*/
 }
