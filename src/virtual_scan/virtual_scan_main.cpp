@@ -6,7 +6,7 @@
 #include <carmen/map.h>
 #include <carmen/grid_mapping.h>
 #include "virtual_scan_neighborhood_graph.h"
-#include "virtual_scan_tracker.h"
+#include "tracker.h"
 
 #define NUM_COLORS 4
 #define NMC	250
