@@ -3,7 +3,7 @@ Extract and install ( ./install )
 
 It's important to download the IDE from the aduino website, because it has the updated version of the SPI Library
 
-Install the Custom Libraries (MCP_CAN and MCP_DAC):
+If you prefer you can install the Custom Libraries (MCP_CAN and MCP_DAC):
 	Open the Arduino IDE
 	Go to Sketch >> Include Library >> Add .ZIP Library...
 	Select the libraries to install
