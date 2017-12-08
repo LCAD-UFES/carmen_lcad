@@ -2,7 +2,7 @@
  * virtual_scan.h
  *
  *  Created on: Jul 17, 2017
- *      Author: claudine
+ *	  Author: claudine
  */
 
 #ifndef SRC_VIRTUAL_SCAN_VIRTUAL_SCAN_H_

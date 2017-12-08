@@ -6,8 +6,32 @@ namespace virtual_scan
 {
 
 
+Collector::Collector(bool hits):
+	hits(hits)
+{
+	// Nothing to do.
+}
+
+
+void Collector::operator() (bool mode, const carmen_point_t &point)
+{
+	if (mode == hits)
+		points.push_back(point);
+}
+
+
+void Collector::move(Reading &Z_i, Reading &Z_j)
+{
+	for (int i = 0, n = points.size(); i < n; i++)
+	{
+		const carmen_point_t &point = points[i];
+		Z_i.erase(point);
+		Z_j.insert(point);
+	}
+}
+
+
 Posterior::Posterior():
-	lengths(1, 0.0),
 	S_len(0.0),
 	S_mot(0.0),
 	S_ms1(0.0),
@@ -32,20 +56,14 @@ double Posterior::operator () () const
 }
 
 
-void Posterior::update_S_len(size_t n, const Track::S &tracks)
+void Posterior::update_S_len(int i, const Track::S &tracks)
 {
-	auto length = lengths.begin();
-	for (size_t i = 0; i < n; i++)
-	{
-		if (lengths.size() <= i)
-			lengths.push_back(0.0);
+	Track::ID id = tracks[i]->id;
+	if (lengths.count(id) > 0)
+		S_len -= lengths[id];
 
-		length++;
-	}
-
-	S_len -= *length;
-	*length = tracks.size();
-	S_len += *length;
+	lengths[id] = tracks[i]->size();
+	S_len += lengths[id];
 }
 
 
@@ -54,8 +72,65 @@ void Posterior::update_S_mot(int i, const Track::S &tracks)
 }
 
 
+void Posterior::update_S_ms1(const ObstaclePose &pose, const Reading &Z_k, Collector &collect)
+{
+	if (Z_k.size() == 0)
+		return;
+
+	ObstacleView view(pose, Z_k.origin);
+
+	double d_sum = 0.0;
+	for (auto i = Z_k.begin(), n = Z_k.end(); i != n; ++i)
+	{
+		const carmen_point_t &point = *i;
+		if (view < point)
+		{
+			collect(false, point);
+			break;
+		}
+		else if (view > point)
+		{
+			collect(false, point);
+			continue;
+		}
+
+		double d = view.distance(point);
+		if (d > D_MAX)
+		{
+			collect(false, point);
+			continue;
+		}
+
+		d_sum += d;
+		collect(true, point);
+	}
+
+	const virtual_scan_graph_node_t *node = pose.node;
+	if (distances.count(node) > 0)
+		S_ms1 -= distances[node];
+
+	distances[node] = d_sum;
+	S_ms1 += d_sum;
+}
+
+
 void Posterior::update_S_ms1(int i, int j, const Track::S &tracks)
 {
+	const Track &track = *tracks[i];
+	const ObstaclePose pose = track[j];
+	const virtual_scan_graph_node_t *node = pose.node;
+
+	Reading &Zs_ij = Zs[node->timestamp];
+	Reading &Zd_ij = Zd[node];
+
+	Collector hits(true);
+	Collector misses(false);
+
+	update_S_ms1(pose, Zs_ij.range(pose), hits);
+	update_S_ms1(pose, Zd_ij, misses);
+
+	hits.move(Zs_ij, Zd_ij);
+	misses.move(Zd_ij, Zs_ij);
 }
 
 
@@ -86,11 +161,11 @@ void Posterior::diffuse(int i, int j, const Track::S &tracks)
 
 void Posterior::swap(int i, int j, const Track::S &tracks)
 {
-    update_S_len(i, tracks);
-    update_S_len(j, tracks);
+	update_S_len(i, tracks);
+	update_S_len(j, tracks);
 
-    update_S_mot(i, tracks);
-    update_S_mot(j, tracks);
+	update_S_mot(i, tracks);
+	update_S_mot(j, tracks);
 }
 
 

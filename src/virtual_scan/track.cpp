@@ -7,10 +7,22 @@ namespace virtual_scan
 {
 
 
-Track::~Track()
+Track::Track():
+	id(this)
 {
-	for (int i = 0, n = poses.size(); i < n; i++)
-		poses[i]->complete_sub_graph->selected = 0; //poses[i].graph_node->complete_sub_graph->selected = 0;
+	// Nothing to do.
+}
+
+
+ObstaclePose &Track::operator[] (int index)
+{
+	return poses[index];
+}
+
+
+const ObstaclePose &Track::operator[] (int index) const
+{
+	return poses[index];
 }
 
 
@@ -34,39 +46,42 @@ void Track::push_back(virtual_scan_graph_node_t *node)
 
 virtual_scan_graph_node_t *Track::at_node(int index)
 {
-	return poses.at(index).graph_node;
+	return poses.at(index).node;
+}
+
+
+const virtual_scan_graph_node_t *Track::at_node(int index) const
+{
+	return poses.at(index).node;
 }
 
 
 virtual_scan_graph_node_t *Track::front_node()
 {
-	return poses.front().graph_node;
+	return poses.front().node;
 }
 
 
 virtual_scan_graph_node_t *Track::back_node()
 {
-	return poses.back().graph_node;
+	return poses.back().node;
 }
 
 
 const virtual_scan_graph_node_t *Track::front_node() const
 {
-	return poses.front().graph_node;
+	return poses.front().node;
 }
 
 
 const virtual_scan_graph_node_t *Track::back_node() const
 {
-	return poses.back().graph_node;
+	return poses.back().node;
 }
 
 
 void Track::pop_back(int r)
 {
-	for (int i = r + 1, n = poses.size(); i < n; i++)
-		poses[i]->complete_sub_graph->selected = 0;
-
 	poses.erase(poses.begin() + (r + 1), poses.end());
 }
 
@@ -82,9 +97,6 @@ void Track::pop_back(int r, Track &that)
 
 void Track::pop_front(int r)
 {
-	for (int i = 0; i < r; i++)
-		poses[i]->complete_sub_graph->selected = 0;
-
 	poses.erase(poses.begin(), poses.begin() + r);
 }
 
@@ -123,48 +135,6 @@ int Track::diffuse()
 	pose.theta = carmen_normalize_theta(pose.theta + normal(RD));
 
 	return n;
-}
-
-
-void Track::push_view(int t, const carmen_point_t &globalpos, std::vector<ObstacleView> &w) const
-{
-	const ObstaclePose &pose = poses[t];
-	Rectangle rectangle(
-		pose.graph_node->box_model.width,
-		pose.graph_node->box_model.length,
-		project_pose(pose, globalpos)
-	);
-
-	std::pair<double, double> angles = rectangle.obstruction();
-
-	// If the obstacle lies on the border between quadrants 2 and 3,
-	// produce two views of it: one from quadrant 2 onwards, the other
-	// from 3 backwards. This is necessary to correctly match reading
-	// rays to obstacles.
-	if (angles.first < -M_PI_2 && angles.second > M_PI_2)
-	{
-		w.emplace_back(rectangle, std::make_pair(angles.second - 2.0 * M_PI, angles.first));
-		w.emplace_back(rectangle, std::make_pair(angles.second, 2.0 * M_PI + angles.first));
-	}
-	else
-		w.emplace_back(rectangle, angles);
-}
-
-
-double Track::P_L(double lambda_L, int T)
-{
-	// f(x) = exp(lambda_L * x)
-	// F(x) = exp(lambda_L * x) / lambda_L
-	// P_L = f(x) / int_0^T f(x) dx
-
-	return (lambda_L * exp(lambda_L * size())) / (exp(lambda_L * T) - 1);
-}
-
-
-double Track::P_T() const
-{
-	// TODO: implement function.
-	return 1.0;
 }
 
 

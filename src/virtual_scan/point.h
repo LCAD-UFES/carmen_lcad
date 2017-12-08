@@ -50,13 +50,13 @@ template<class Point, class Shift> Point shift(const Point &p, const Shift &s)
  */
 template<class Pose, class Origin> carmen_point_t project_pose(const Pose &pose, const Origin &origin)
 {
-    carmen_point_t projected = {
-        pose.x - origin.x,
-        pose.y - origin.y,
-        carmen_normalize_theta(pose.theta - origin.theta)
-    };
+	carmen_point_t projected = {
+		pose.x - origin.x,
+		pose.y - origin.y,
+		carmen_normalize_theta(pose.theta - origin.theta)
+	};
 
-    return rotate(projected, -origin.theta);
+	return rotate(projected, -origin.theta);
 }
 
 } // namespace virtual_scan

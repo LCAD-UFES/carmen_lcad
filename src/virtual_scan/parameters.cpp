@@ -3,6 +3,8 @@
 namespace virtual_scan
 {
 
+const double D_MAX = 0.1;
+
 const double LAMBDA_L = 0.5;
 
 const double LAMBDA_T = 0.5;

@@ -6,6 +6,8 @@
 #include <carmen/carmen.h>
 
 #include <deque>
+#include <memory>
+#include <vector>
 
 namespace virtual_scan
 {
@@ -19,13 +21,32 @@ class Track
 	std::deque<ObstaclePose> poses;
 
 public:
+	/** @brief Unique Track ID type. */
+	typedef Track* ID;
+
+	/** @brief Reference-counted Track pointer type. */
+	typedef std::shared_ptr<Track> P;
+
 	/** @brief Alias for a vector of tracks. */
-	typedef std::vector<Track> S;
+	typedef std::vector<Track::P> S;
+
+	/** @brief Unique ID associated to this track. */
+	ID id;
 
 	/**
-	 * @brief Class destructor.
+	 * @brief Default constructor.
 	 */
-	~Track();
+	Track();
+
+	/**
+	 * @brief Return the obstace pose at the given position in the Track.
+	 */
+	ObstaclePose &operator[] (int index);
+
+	/**
+	 * @brief Return the obstace pose at the given position in the Track.
+	 */
+	const ObstaclePose &operator[] (int index) const;
 
 	/**
 	 * @brief Add a new obstacle pose to the beginning of this track, created from the given neighborhood graph node.
@@ -41,6 +62,11 @@ public:
 	 * @brief Return the neighborhood graph node associated to the obstacle pose at the given index.
 	 */
 	virtual_scan_graph_node_t *at_node(int index);
+
+	/**
+	 * @brief Return the neighborhood graph node associated to the obstacle pose at the given index.
+	 */
+	const virtual_scan_graph_node_t *at_node(int index) const;
 
 	/**
 	 * @brief Return the neighborhood graph node associated to the first obstacle pose.
@@ -81,24 +107,11 @@ public:
 	
 	void merge(Track &that);
 	
-    /**
-     * @brief Update a random pose in the track.
-     */
-    int diffuse();
+	/**
+	 * @brief Update a random pose in the track.
+	 */
+	int diffuse();
 	
-    double P_L(double lambda_L, int T);
-
-	/**
-	 * @brief Compute the temporal consistency probability of this track.
-	 */
-	double P_T() const;
-
-
-	/**
-	 * @brief Add the view(s) of this track at time `t` from global pose `globalpos` to the given sequence.
-	 */
-	void push_view(int t, const carmen_point_t &globalpos, std::vector<ObstacleView> &w) const;
-
 	/**
 	 * @brief Return the length of this track, in number of configurations.
 	 */

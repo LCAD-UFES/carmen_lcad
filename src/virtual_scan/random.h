@@ -14,6 +14,11 @@ extern std::random_device RD;
  */
 int random_int(int a, int b);
 
+template<class T> T &random_choose(std::vector<T> &vector)
+{
+	return vector[random_int(0, vector.size())];
+}
+
 } // namespace virtual_scan
 
 #endif

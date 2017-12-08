@@ -2,7 +2,7 @@
  * virtual_scan.h
  *
  *  Created on: Nov 09, 2017
- *      Author: claudine
+ *	  Author: claudine
  */
 
 #ifndef SRC_VIRTUAL_SCAN_VIRTUAL_SCAN_NEIGHBORHOOD_GRAPH_H_

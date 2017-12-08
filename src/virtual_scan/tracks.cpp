@@ -8,6 +8,20 @@ namespace virtual_scan
 {
 
 
+Tracks::Tracks()
+{
+	// Nothing to do.
+}
+
+
+Tracks::Tracks(const Tracks &that):
+	PwZ(that.PwZ)
+{
+	for (int i = 0, n = that.tracks.size(); i < n; i++)
+		this->tracks.emplace_back(new Track(*that.tracks[i]));
+}
+
+
 bool Tracks::create(virtual_scan_neighborhood_graph_t *graph)
 {
 	int n = random_int(0, graph->num_sub_graphs);
@@ -17,7 +31,7 @@ bool Tracks::create(virtual_scan_neighborhood_graph_t *graph)
 	std::vector <int> indexes;
 	for (int i = 0; i < subgraph->num_sub_graphs; i++)
 	{
-		if (!subgraph->sub_graphs[i].selected)
+		if (subgraph->sub_graphs[i].selected == 0)
 			indexes.push_back(i);
 	}
 
@@ -25,22 +39,19 @@ bool Tracks::create(virtual_scan_neighborhood_graph_t *graph)
 		return false;
 
 	virtual_scan_complete_sub_graph_t *nodes = subgraph->sub_graphs + indexes[random_int(0, indexes.size())];
-	nodes->selected = 1;
-
 	virtual_scan_graph_node_t *node = nodes->nodes + random_int(0, nodes->num_nodes);
 
-	tracks.emplace_back();
-	Track &tau = tracks.back();
-	tau.push_front(node);
+	Track::P tau(new Track());
+	tau->push_back(node);
 	extend(tau);
 
-	if (tau.size() < 2)
+	if (tau->size() >= 2)
 	{
-		tracks.pop_back();
-		return false;
+		tracks.push_back(tau);
+		return true;
 	}
 
-	return true;
+	return false;
 }
 
 
@@ -61,12 +72,11 @@ bool Tracks::extend()
 	if (tracks.size() == 0)
 		return false;
 
-	int n = random_int(0, tracks.size());
-	return extend(tracks[n]);
+	return extend(random_choose(tracks));
 }
 
 
-bool Tracks::extend(Track &tau)
+bool Tracks::extend(Track::P tau)
 {
 	int n = random_int(0, 2); // 0 denotes forward extension and 1 backward extension
 
@@ -80,53 +90,39 @@ bool Tracks::extend(Track &tau)
 }
 
 
-bool Tracks::extend_forward(Track &tau)
+inline std::vector<virtual_scan_graph_node_t*> unselected(const virtual_scan_elements_t &nodes)
 {
-	const virtual_scan_elements_t &children = tau.back_node()->children;
-	int num_children = children.num_pointers;
-	if (num_children == 0)
-		return false;
-
-	// Verifying if there is a child node not selected yet
-	std::vector<int> indexes;
-	for (int i = 0, n = children.num_pointers; i < n; i++)
+	std::vector<virtual_scan_graph_node_t*> found;
+	for (int i = 0, n = nodes.num_pointers; i < n; i++)
 	{
-		virtual_scan_graph_node_t *child = (virtual_scan_graph_node_t*) children.pointers[i];
-		if (!child->complete_sub_graph->selected)
-			indexes.push_back(i);
+		virtual_scan_graph_node_t *node = (virtual_scan_graph_node_t*) nodes.pointers[i];
+		if (node->complete_sub_graph->selected == 0)
+			found.push_back(node);
 	}
 
-	if (indexes.size() == 0)
+	return found;
+}
+
+
+bool Tracks::extend_forward(Track::P tau)
+{
+	std::vector<virtual_scan_graph_node_t*> children = unselected(tau->back_node()->children);
+	if (children.size() == 0)
 		return false;
 
-	int n = indexes[random_int(0, indexes.size())];
-	tau.push_back((virtual_scan_graph_node_t*) children.pointers[n]);
+	tau->push_back(random_choose(children));
 
 	return true;
 }
 
 
-bool Tracks::extend_backward(Track &tau)
+bool Tracks::extend_backward(Track::P tau)
 {
-	const virtual_scan_elements_t &parents = tau.back_node()->parents;
-	int num_parents = parents.num_pointers;
-	if (num_parents == 0)
+	std::vector<virtual_scan_graph_node_t*> parents = unselected(tau->back_node()->parents);
+	if (parents.size() == 0)
 		return false;
 
-	// Verifying if there is a parent node not selected yet
-	std::vector<int> indexes;
-	for (int i = 0; i < parents.num_pointers; i++)
-	{
-		virtual_scan_graph_node_t *parent = (virtual_scan_graph_node_t*) parents.pointers[i];
-		if (!parent->complete_sub_graph->selected)
-			indexes.push_back(i);
-	}
-
-	if (indexes.size() == 0)
-		return false;
-
-	int n = indexes[random_int(0, indexes.size())];
-	tau.push_front((virtual_scan_graph_node_t*) parents.pointers[n]);
+	tau->push_front(random_choose(parents));
 
 	return true;
 }
@@ -137,14 +133,14 @@ bool Tracks::reduce()
 	if (tracks.size() == 0)
 		return false;
 
-	Track &tau = tracks[random_int(0, tracks.size())]; // Selects the track index to be reduced
-	int r = random_int(1, tau.size() - 1); // Selects the cutting index
+	Track::P tau = random_choose(tracks); // Selects the track index to be reduced
+	int r = random_int(1, tau->size() - 1); // Selects the cutting index
 
 	int mode = random_int(0, 2); // 0 denotes forward reduction and 1 backward reduction
 	if (mode == 0) // Forward reduction
-		tau.pop_back(r);
+		tau->pop_back(r);
 	else // Backward reduction
-		tau.pop_front(r);
+		tau->pop_front(r);
 
 	return true;
 }
@@ -152,38 +148,34 @@ bool Tracks::reduce()
 bool Tracks::split()
 {
 	// Verifying if there is a track with 4 or more nodes
-	std::vector<int> indexes;
+	std::vector<Track::P> found;
 	for (int i = 0, n = tracks.size(); i < n; i++)
-	{
-		if (tracks[i].size() >= 4)
-			indexes.push_back(i);
-	}
+		if (tracks[i]->size() >= 4)
+			found.push_back(tracks[i]);
 
-	if (indexes.size() == 0)
+	if (found.size() == 0)
 		return false;
 
-	int n = indexes[random_int(0, indexes.size())]; // Selects the track index to be split
-	Track &tau = tracks[n];
-	int s = random_int(1, tau.size() - 2); // Selects the splitting index
-	tracks.emplace_back(); // Add a new object Track to the end of the vector
-	Track &tau_new = tracks.back();
-	tau.pop_back(s, tau_new);
+	Track::P tau_new(new Track());
+	Track::P tau = random_choose(found); // Selects the track index to be split
+	tau->pop_back(random_int(1, tau->size() - 2), *tau_new); // Split tau at a random index
+	tracks.push_back(tau_new); // Add a new Track object to the end of the vector
 
 	return true;
 }
 
 bool Tracks::merge()
 {
-	std::vector <std::pair <int, int>> pairs;
+	std::vector <std::pair<int, int>> pairs;
 	for (int i = 0, n = tracks.size(); i < n; i++)
 	{
-		Track &tau_1 = tracks[i];
+		Track::P tau_1 = tracks[i];
 		for (int j = i + 1; j < n; j++)
 		{
-			Track &tau_2 = tracks[j];
-			if (tau_1.is_mergeable(tau_2))
+			Track::P tau_2 = tracks[j];
+			if (tau_1->is_mergeable(*tau_2))
 				pairs.push_back(std::make_pair(i, j));
-			else if (tau_2.is_mergeable(tau_1))
+			else if (tau_2->is_mergeable(*tau_1))
 				pairs.push_back(std::make_pair(j, i));
 		}
 	}
@@ -191,12 +183,12 @@ bool Tracks::merge()
 	if (pairs.size() < 1)
 		return false;
 
-	int n = random_int(0, pairs.size());
-	Track &tau_1 = tracks[pairs[n].first];
-	Track &tau_2 = tracks[pairs[n].second];
-	tau_1.merge(tau_2);
+	std::pair<int, int> &pair = random_choose(pairs);
+	Track::P tau_1 = tracks[pair.first];
+	Track::P tau_2 = tracks[pair.second];
+	tau_1->merge(*tau_2);
 
-	tracks.erase(tracks.begin() + pairs[n].second);
+	tracks.erase(tracks.begin() + pair.second);
 
 	return true;
 }
@@ -236,19 +228,19 @@ class Swap
 	 */
 	bool plan(int i, int j, Track::S &tracks)
 	{
-		Track &a = tracks[i];
-		Track &b = tracks[j];
+		Track::P a = tracks[i];
+		Track::P b = tracks[j];
 
-		int m = a.size() - 1;
-		int n = b.size() - 1;
+		int m = a->size() - 1;
+		int n = b->size() - 1;
 		for (p = 0; p < m; p++)
 		{
-			virtual_scan_graph_node_t *t_p = a.at_node(p);
-			virtual_scan_graph_node_t *t_p_plus_1 = a.at_node(p + 1);
+			virtual_scan_graph_node_t *t_p = a->at_node(p);
+			virtual_scan_graph_node_t *t_p_plus_1 = a->at_node(p + 1);
 			for (q = 0; q < n; q++)
 			{
-				virtual_scan_graph_node_t *t_q = b.at_node(q);
-				virtual_scan_graph_node_t *t_q_plus_1 = b.at_node(q + 1);
+				virtual_scan_graph_node_t *t_q = b->at_node(q);
+				virtual_scan_graph_node_t *t_q_plus_1 = b->at_node(q + 1);
 				if (is_parent(t_p, t_q_plus_1) && is_parent(t_q, t_p_plus_1))
 				{
 					this->i = i;
@@ -301,13 +293,13 @@ public:
 		if (!valid())
 			return false;
 
-		Track &a = tracks[i];
-		Track &b = tracks[j];
+		Track::P a = tracks[i];
+		Track::P b = tracks[j];
 		Track temp;
 
-		a.pop_back(p, temp);
-		b.pop_back(q, a);
-		temp.pop_back(-1, b);
+		a->pop_back(p, temp);
+		b->pop_back(q, *a);
+		temp.pop_back(-1, *b);
 
 		return true;
 	}
@@ -342,7 +334,7 @@ bool Tracks::swap()
 	Swap &swapping = swappings[n];
 	swapping(tracks);
 
-	P_wZ.swap(swapping.i, swapping.j, tracks);
+	PwZ.swap(swapping.i, swapping.j, tracks);
 
 	return true;
 }
@@ -354,61 +346,15 @@ bool Tracks::diffuse()
 		return false;
 
 	int i = random_int(0, tracks.size());
-	Track &track = tracks[i];
+	Track::P track = tracks[i];
 
-	int j = track.diffuse();
+	int j = track->diffuse();
 
-	P_wZ.diffuse(i, j, tracks);
+	PwZ.diffuse(i, j, tracks);
 
 	return true;
 }
 
-
-double Tracks::P_M1(int i, virtual_scan_neighborhood_graph_t *neighborhood_graph) const
-{
-	virtual_scan_disconnected_sub_graph_t *disconnected_sub_graph = virtual_scan_get_disconnected_sub_graph(neighborhood_graph, i);
-	virtual_scan_extended_t *reading = disconnected_sub_graph->virtual_scan_extended;
-	const carmen_point_t &globalpos = reading->globalpos;
-
-	std::vector<ObstacleView> w_i;
-	for (int j = 0, n = tracks.size(); j < n; j++)
-		tracks[j].push_view(i, globalpos, w_i);
-
-	std::sort(w_i.begin(), w_i.end());
-
-	double p = 1.0;
-	for (int j = 0, k = 0, m = reading->num_points, n = w_i.size(); j < m; j++)
-	{
-		const ObstacleView &view = w_i[k];
-		const carmen_point_t &point = reading->points[j];
-		while (view < point)
-		{
-			k++;
-			if (k >= n)
-				return p;
-		}
-
-		if (view > point)
-			continue;
-
-		p *= view.P_M1(point);
-	}
-
-	return p;
-}
-
-/*
-Track &Ttracks::operator[] (size_t index)
-{
-	return tracks[index];
-}
-
-
-const Track &Ttracks::operator[] (size_t index) const
-{
-	return tracks[index];
-}
-*/
 
 Tracks::P Tracks::propose(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {

@@ -4,18 +4,55 @@
 #include "readings.h"
 #include "track.h"
 
-#include <list>
+#include <map>
 
 namespace virtual_scan
 {
+
+/**
+ * @brief Class used to manage exchanges between dynamic and static readings.
+ */
+class Collector
+{
+	/** @brief Whether to collect hitting or missing points. */
+	bool hits;
+
+	/** @brief Sequence of collected points. */
+	std::vector<carmen_point_t> points;
+
+public:
+	/**
+	 * Create a new collector of given mode.
+	 */
+	Collector(bool hits);
+
+	/**
+	 * @brief Collect the given point if its mode agrees with the object's.
+	 */
+	void operator() (bool mode, const carmen_point_t &point);
+
+	/**
+	 * @brief Move points from origin to destination reading.
+	 */
+	void move(Reading &Z_i, Reading &Z_j);
+};
 
 /**
  * @brief Algorithm class for computing the posterior probability of a sequence of Track objects.
  */
 class Posterior
 {
-	/** @brief List of track lengths. */
-	std::list<int> lengths;
+	/** @brief Map of track lengths. */
+	std::map<Track::ID, int> lengths;
+
+	/** @brief Sums of ray distances, indexed by generating obstacle. */
+	std::map<const virtual_scan_graph_node_t*, double> distances;
+
+	/** @brief Dynamic sensor readings, indexed by generatig obstacle. */
+	std::map<const virtual_scan_graph_node_t*, Reading> Zd;
+
+	/** @brief Static sensor readings. */
+	Readings Zs;
 
 	/** @brief Sum of the lengths of all tracks. */
 	double S_len;
@@ -42,7 +79,7 @@ class Posterior
 	 *
 	 * @param tracks Sequence containing the updated track.
 	 */
-	void update_S_len(size_t i, const Track::S &tracks);
+	void update_S_len(int i, const Track::S &tracks);
 
 	/**
 	 * @brief Update the value of the `S_mot` parameter with the given track's new covariance.
@@ -56,7 +93,7 @@ class Posterior
 	/**
 	 * @brief Update the distances between dynamic sensor readings and a given obstacle pose.
 	 *
-	 * This method also updates the internal _dynamic_ and _static_ sensor reading
+	 * This method also updates the internal dynamic and static sensor reading
 	 * collections used by other update methods.
 	 *
 	 * @param i Position of the given track in the sequence.
@@ -66,6 +103,14 @@ class Posterior
 	 * @param tracks Sequence containing the updated track.
 	 */
 	void update_S_ms1(int i, int j, const Track::S &tracks);
+
+	/**
+	 * @brief Update the distances between the given object and reading rays.
+	 *
+	 * Rays that do or don't hit the object at the given pose will be collected for
+	 * reassignment according to the configuration of the given Collector object.
+	 */
+	void update_S_ms1(const ObstaclePose &pose, const Reading &Z_k, Collector &collect);
 
 	/**
 	 * @brief Update the counter for static objects observed behind obstacle poses.

@@ -4,6 +4,8 @@
 namespace virtual_scan
 {
 
+extern const double D_MAX;
+
 extern const double LAMBDA_L;
 
 extern const double LAMBDA_T;

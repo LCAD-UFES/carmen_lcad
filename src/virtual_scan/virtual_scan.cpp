@@ -2,7 +2,7 @@
  * virtual_scan.cpp
  *
  *  Created on: Jul 17, 2017
- *      Author: claudine
+ *	  Author: claudine
  */
 #include <carmen/carmen.h>
 #include <algorithm>

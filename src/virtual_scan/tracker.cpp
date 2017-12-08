@@ -22,10 +22,10 @@ Tracks::P Tracker::track(virtual_scan_box_model_hypotheses_t *box_model_hypothes
 	{
 		Tracks::P tracks_new = tracks_n->propose(neighborhood_graph);
 		double U = uniform(RD);
-		if (U < (tracks_new->P_wZ() / tracks_n->P_wZ())) 
+		if (U < (tracks_new->PwZ() / tracks_n->PwZ())) 
 		{
 			tracks_n = tracks_new;
-			if (tracks_n->P_wZ() > tracks->P_wZ())
+			if (tracks_n->PwZ() > tracks->PwZ())
 				tracks = tracks_n;
 		}
 	}

@@ -14,7 +14,7 @@ namespace virtual_scan
 struct ObstaclePose
 {
 	/** @brief Pointer to the neighborhood graph node related to this pose. */
-	virtual_scan_graph_node_t *graph_node;
+	virtual_scan_graph_node_t *node;
 	
 	/** @brief Position of this pose in the global x-axis. */
 	double x;
@@ -35,19 +35,20 @@ struct ObstaclePose
 	 */
 	ObstaclePose(virtual_scan_graph_node_t *graph_node);
 
-	// Operator overload.
-	virtual_scan_graph_node_t *operator -> ();
+	/**
+	 * @brief Class destructor.
+	 */
+	~ObstaclePose();
 };
 
 /**
  * @brief A representation of an obstacle pose from a given point of view.
  */
-class ObstacleView: Rectangle
+struct ObstacleView: private Rectangle
 {
 	/** @brief Sensor field of view range obstructed by the obstacle, as a pair of angles. */
 	std::pair<double, double> range;
 
-public:
 	/**
 	 * @brief Default constructor.
 	 */
@@ -56,7 +57,7 @@ public:
 	/**
 	 * @brief Create a new view for the given obstacle from the given point of view.
 	 */
-	ObstacleView(const Rectangle &rectangle, const std::pair<double, double> &angles);
+	ObstacleView(const ObstaclePose &pose, const carmen_point_t &origin);
 
 	/**
 	 * @brief Defines a ordering of views by the beginning of the angle range.
@@ -76,7 +77,7 @@ public:
 	/**
 	 * @brief Compute the probability that a sensor reading is explained by this obstacle view.
 	 */
-	double P_M1(const carmen_point_t &point) const;
+	double distance(const carmen_point_t &point) const;
 };
 
 } // namespace virtual_scan
