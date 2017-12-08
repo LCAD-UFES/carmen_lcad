@@ -23,6 +23,7 @@
 			- [C++ Code](#c-code)
 			- [Examples](#examples-2)
 		- [Measurement of Execution Time](#measurement-of-execution-time)
+- [Generating Road Maps via Inference from Remission Maps](#generating-road-maps-via-inference-from-remission-maps)
 
 ## Description
 
@@ -48,7 +49,7 @@ The following class code is used for segmenting a road map:
   - 2 = broken marking;
   - 3 = solid marking (50% confidence);
   - 4 = broken marking (50% confidence);
-  - 5, 6, 7, ..., 20 = center of a lane confidence (100% confidence, 93.75%, 87.50%, 81.25%, ..., 0%), we have 16 levels of confidence, or distances from the center.
+  - 5, 6, 7, ..., 20 = center of a lane confidence (100% confidence, 95%, 90%, 85%, ..., 25%), we have 16 levels of confidence, or distances from the center.
 
 The Road Mapper module parameters can be found at [carmen-ford-escape.ini](../carmen-ford-escape.ini) and are the following:
 ```ini
@@ -446,3 +447,30 @@ To measure ENet execution time layer-by-layer run:
 ```
 
 **For more information look in [docs/](./docs)**
+
+## Generating Road Maps via Inference from Remission Maps
+
+To generate the road maps via deep learning inference from existing remission maps, please do the following:
+
+First step:  
+Save the files used in ENet training and set the following parameters in [carmen-ford-escape.ini](../carmen-ford-escape.ini):
+```
+ # Road Mapper
+
+ road_mapper_sampling_stride		50  # pixels,
+ road_mapper_prototxt_filename		$CARMEN_HOME/src/road_mapper/data/bn_conv_merged_model.prototxt # Caffe ENet model file
+ road_mapper_caffemodel_filename	$CARMEN_HOME/src/road_mapper/data/bn_conv_merged_weights.caffemodel # Caffe ENet trained weights file
+ road_mapper_label_colours_filename	$CARMEN_HOME/src/road_mapper/data/road_mapper_17.png # Caffe ENet label colours file
+```
+Second step:  
+Start the IPC central server (if it is not running yet) [as previously said](#saving-remission-map-images).
+
+Third step:  
+In another terminal window, run the Process Control module using the following 
+[.ini file](../../bin/process-ida_a_guarapari_playback_road_mapper_road_inference.ini) as a reference. 
+Output files will be placed in the directory set by -m parameter of road_inference module.
+```bash
+ $ cd $CARMEN_HOME/bin
+ $ ./proccontrol process-ida_a_guarapari_playback_road_mapper_road_inference.ini
+```
+**Important: Before clicking the _Play_ button in the Playback Control panel, set a reduced _Speed_ (0.3 or less).**
