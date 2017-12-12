@@ -9,6 +9,31 @@
 #include <stdio.h>
 #include <math.h>
 
+
+void
+arrange_velodyne_vertical_angles_to_true_position(carmen_velodyne_partial_scan_message *velodyne_message)
+{
+	const int column_correspondence[32] =
+	{
+		0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23, 8,
+		24, 9, 25, 10, 26, 11, 27, 12, 28, 13, 29, 14, 30, 15, 31
+	};
+
+	int i, j;
+	unsigned short original_distances[32];
+
+	for (i = 0; i < velodyne_message->number_of_32_laser_shots; i++)
+	{
+		memcpy(original_distances, velodyne_message->partial_scan[i].distance, 32 * sizeof(unsigned short));
+
+		for (j = 0; j < 32; j++)
+		{
+			velodyne_message->partial_scan[i].distance[column_correspondence[j]] = original_distances[j];
+		}
+	}
+}
+
+
 carmen_velodyne_variable_scan_message
 read_velodyne(char *dir, int file_id, double timestamp)
 {
@@ -181,14 +206,17 @@ read_velodyne_hdl32(char *dir, int file_id, double timestamp)
 
 		h_id = velodyne_message.number_of_32_laser_shots - h_id - 1;
 
-		if (h_id < 0 || h_id >= velodyne_message.number_of_32_laser_shots || v_id < 0 || v_id >= 32)
+		if (h_id < 0 || h_id >= velodyne_message.number_of_32_laser_shots || v_id < 0 || v_id > 63)
 		{
 			//printf("ERRO %lf %lf %lf %lf %lf %lf %d %d %d\n", v, h, r, x, y, z, h_id, v_id, velodyne_message.number_of_32_laser_shots);
 		}
 		else
 		{
-			velodyne_message.partial_scan[h_id].distance[v_id] = (unsigned short) (r * 500.0);
-			velodyne_message.partial_scan[h_id].intensity[v_id] = (unsigned char) ((*pr) * 255.0);
+			int v32_id = vel64_to_vel32_id[v_id];
+			if (v32_id >= 0) {
+				velodyne_message.partial_scan[h_id].distance[v32_id] = (unsigned short) (r * 500.0);
+				velodyne_message.partial_scan[h_id].intensity[v32_id] = (unsigned char) ((*pr) * 255.0);
+			}
 		}
 
 		//cloud->points[i].rgba = *pr;
@@ -201,6 +229,7 @@ read_velodyne_hdl32(char *dir, int file_id, double timestamp)
 	//printf("max: %lf min: %lf diff: %lf\n", max, min,max-min);
 	free(data);
 	fclose(stream);
+	arrange_velodyne_vertical_angles_to_true_position(&velodyne_message);
 	return velodyne_message;
 }
 

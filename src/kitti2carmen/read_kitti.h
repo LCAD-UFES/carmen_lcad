@@ -8,6 +8,8 @@
 #include <carmen/gps_nmea_messages.h>
 #include <carmen/xsens_messages.h>
 
+extern int vel64_to_vel32_id[];
+
 carmen_velodyne_variable_scan_message
 read_velodyne(char *dir, int file_id, double timestamp);
 
