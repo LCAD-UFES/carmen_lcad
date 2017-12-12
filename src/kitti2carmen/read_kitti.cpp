@@ -107,6 +107,104 @@ read_velodyne(char *dir, int file_id, double timestamp)
 }
 
 
+carmen_velodyne_partial_scan_message
+read_velodyne_hdl32(char *dir, int file_id, double timestamp)
+{
+	FILE *stream;
+	double x, y, z;
+	double h, v, r;
+	static char filename[1024];
+	carmen_velodyne_partial_scan_message velodyne_message;
+
+	sprintf(filename, "%s/%010d.bin", dir, file_id);
+	printf("%s\n", filename);
+	// allocate 4 MB buffer (only ~130*4*4 KB are needed)
+	int32_t num = 1000000;
+	float* data = (float*) malloc(num * sizeof(float));
+
+	// pointers
+	float *px = data + 0;
+	float *py = data + 1;
+	float *pz = data + 2;
+	float *pr = data + 3;
+
+	stream = fopen(filename, "rb");
+
+	num = fread(data, sizeof(float), num, stream) / 4;
+
+	velodyne_message.number_of_32_laser_shots = num / 64;
+	velodyne_message.partial_scan = (carmen_velodyne_32_laser_shot *) malloc (velodyne_message.number_of_32_laser_shots * sizeof(carmen_velodyne_32_laser_shot));
+	velodyne_message.timestamp = timestamp;
+	velodyne_message.host = (char*) "carmen";
+
+	// angulo horizontal minimo
+	double hmin = -M_PI + 0.0001;
+	// angulo horizontal maximo
+	double hmax = M_PI - 0.0001;
+	// intervalo angular horizontal
+	double hstep = (hmax - hmin) / (double) velodyne_message.number_of_32_laser_shots;
+
+	// angulo vertical minimo
+	double vmin =  -0.45;
+	// angulo vertical maximo
+	double vmax = 0.111;
+	// intervalo angular vertical
+	double vstep = (vmax - vmin) / 64.0;
+
+	// alocacao
+	for (int i = 0; i < velodyne_message.number_of_32_laser_shots; i++)
+	{
+//		velodyne_message.partial_scan[i].shot_size = 64;
+//		velodyne_message.partial_scan[i].distance = (unsigned short*) calloc (64, sizeof(unsigned short));
+//		velodyne_message.partial_scan[i].intensity = (unsigned char*) calloc (64, sizeof(unsigned char));
+		velodyne_message.partial_scan[i].angle = carmen_radians_to_degrees(carmen_normalize_theta(hmin + i * hstep));
+	}
+
+	double max = 0, min = 999;
+
+	// preenchimento
+	for (int i = 0; i < num; i++)
+	{
+		x = *px;
+		y = *py;
+		z = *pz;
+
+		r = sqrt(x * x + y * y + z * z);
+		v = asin(z / r);
+		h = atan2(y, x);
+
+		if (v > max) max = v;
+		if (v < min) min = v;
+
+		int h_id = (int) ((h - hmin) / hstep - 0.5);
+		int v_id = (int) ((v - vmin) / vstep - 0.5);
+
+		h_id = velodyne_message.number_of_32_laser_shots - h_id - 1;
+
+		if (h_id < 0 || h_id >= velodyne_message.number_of_32_laser_shots || v_id < 0 || v_id >= 32)
+		{
+			//printf("ERRO %lf %lf %lf %lf %lf %lf %d %d %d\n", v, h, r, x, y, z, h_id, v_id, velodyne_message.number_of_32_laser_shots);
+		}
+		else
+		{
+			velodyne_message.partial_scan[h_id].distance[v_id] = (unsigned short) (r * 500.0);
+			velodyne_message.partial_scan[h_id].intensity[v_id] = (unsigned char) ((*pr) * 255.0);
+		}
+
+		//cloud->points[i].rgba = *pr;
+		px += 4;
+		py += 4;
+		pz += 4;
+		pr += 4;
+	}
+
+	//printf("max: %lf min: %lf diff: %lf\n", max, min,max-min);
+	free(data);
+	fclose(stream);
+	return velodyne_message;
+}
+
+
 carmen_bumblebee_basic_stereoimage_message
 read_camera(char *left_dir, char *right_dir, int file_id, double timestamp)
 {
