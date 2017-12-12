@@ -202,19 +202,12 @@ For more information on ENet please refer to the published paper in arXiv: [ENet
 
 This tutorial is inspired on [Tutorial on how to train and test ENet on Cityscapes dataset](https://github.com/TimoSaemann/ENet/tree/master/Tutorial).
 
-#### Installation
-
-First, please clone the ENet repository by running:
+Please compile the carmen_lcad version of the modified Caffe framework **caffe-enet** (It supports all necessary layers for ENet):
 ```bash
- $ git clone --recursive https://github.com/TimoSaemann/ENet.git
-```
-
-Please compile the modified Caffe framework **caffe-enet** (It supports all necessary layers for ENet):
-```bash
- $ cd ENet/caffe-enet
+ $ cd $CARMEN_HOME/sharedlib/ENet/caffe-enet
  $ mkdir build && cd build
  $ cmake ..
- $ make all -j8 && make pycaffe
+ $ make all -j 20 && make pycaffe
 ```
 
 You can also consult the generic [Caffe installation guide](http://caffe.berkeleyvision.org/installation.html) for further help. If you like to compile with **make**, please uncomment the following line in the Makefile.config 
