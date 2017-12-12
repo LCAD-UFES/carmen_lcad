@@ -54,6 +54,7 @@ for i in "${!dirs[@]}"; do
         if [ -f "$disp" ]; then
             echo "Processing ${left} ${right}"
             ~/deepslam/spsstereo/build/spsstereo $left $right
+             mv disparity.png ${disp}
         fi
     done
 done

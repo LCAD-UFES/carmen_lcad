@@ -125,23 +125,6 @@ copy_simple_tensor(tensorflow::Tensor &input_tensor, const float *frame_data, in
 
 
 void
-copy_image (const char *rgb_buffer, IplImage *img, int width, int height)
-{
-	for(int i = 0; i < (height * width); i++)
-	{
-		/**
-		 * A imagem da bumblebee usa o formato rgb-rgb-rgb, enquanto
-		 * a imagem da opencv usa o formato bgr-bgr-bgr. As linhas
-		 * abaixo fazem essa conversao.
-		 */
-		img->imageData[3 * i + 0] = rgb_buffer[3 * i + 2];
-		img->imageData[3 * i + 1] = rgb_buffer[3 * i + 1];
-		img->imageData[3 * i + 2] = rgb_buffer[3 * i + 0];
-	}
-}
-
-
-void
 resize_image(IplImage **img, int width, int height)
 {
 	IplImage *resized_image = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 3);

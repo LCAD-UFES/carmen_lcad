@@ -8,6 +8,7 @@
 #include <TH/TH.h>
 #include <THC/THC.h>
 #include "localize_neural_torch.h"
+#include "localize_neural_util.h"
 
 static int input_width = 320;
 static int input_height = 240;
@@ -151,34 +152,6 @@ public:
 
 };
 
-void
-copy_image (const char *rgb_buffer, IplImage *img, int width, int height)
-{
-	for(int i = 0; i < (height * width); i++)
-	{
-		/**
-		 * A imagem da bumblebee usa o formato rgb-rgb-rgb, enquanto
-		 * a imagem da opencv usa o formato bgr-bgr-bgr. As linhas
-		 * abaixo fazem essa conversao.
-		 */
-		img->imageData[3 * i + 0] = (uchar)rgb_buffer[3 * i + 2];
-		img->imageData[3 * i + 1] = (uchar)rgb_buffer[3 * i + 1];
-		img->imageData[3 * i + 2] = (uchar)rgb_buffer[3 * i + 0];
-	}
-}
-
-
-void
-resize_image(IplImage **img, int width, int height)
-{
-	IplImage *resized_image = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 3);
-	cvResize((*img), resized_image, CV_INTER_AREA);
-	cvRelease((void**) img);
-	(*img) = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 3);
-	cvCopy(resized_image, (*img));
-	cvRelease((void**) &resized_image);
-}
-
 
 static
 TorchModel *torch = NULL;
@@ -200,8 +173,8 @@ forward_network(const carmen_localize_neural_imagepos_message &curframe, const c
 	IplImage *keyframe_image_input = cvCreateImage(cvSize(input_width, input_height), IPL_DEPTH_8U, input_channels);
 	IplImage *curframe_image_input = cvCreateImage(cvSize(input_width, input_height), IPL_DEPTH_8U, input_channels);
 	cv::Rect crop;
-	crop.x = 160-1;
-	crop.y = 140-1;
+	crop.x = 160;//-1;
+	crop.y = 140;//-1;
 	crop.width = input_width;
 	crop.height = input_height;
 
