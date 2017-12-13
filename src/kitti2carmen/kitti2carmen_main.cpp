@@ -11,69 +11,69 @@
 
 int vel64_to_vel32_id[] = {
 		-1, //00
-		 5, //01
+		10, //01
 		-1, //02
 		-1, //03
-		 6, //04
+		12, //04
 		-1, //05
 		-1, //06
 		-1, //07
-		 7, //08
+		14, //08
 		-1, //09
-		 8, //10
+		16, //10
 		-1, //11
 		-1, //12
 		-1, //13
-		 9, //14
+		18, //14
 		-1, //15
 		-1, //16
-		10, //17
+		20, //17
 		-1, //18
 		-1, //19
-		11, //20
+		22, //20
 		-1, //21
 		-1, //22
-		12, //23
+		24, //23
 		-1, //24
 		-1, //25
-		13, //26
+		26, //26
 		-1, //27
 		-1, //28
-		14, //29
+		28, //29
 		-1, //30
 		-1, //31
-		15, //32
+		30, //32
 		-1, //33
 		-1, //34
-		16, //35
+		 1, //35
 		-1, //36
 		-1, //37
-		17, //38
+		 3, //38
 		-1, //39
 		-1, //40
 		-1, //41
-		18, //42
+		 5, //42
 		-1, //43
 		-1, //44
-		19, //45
+		 7, //45
 		-1, //46
 		-1, //47
-		20, //48
+		 9, //48
 		-1, //49
 		-1, //50
-		21, //51
+		11, //51
 		-1, //52
 		-1, //53
-		22, //54
+		13, //54
 		-1, //55
 		-1, //56
-		23, //57
+		15, //57
 		-1, //58
 		-1, //59
-		24, //60
+		17, //60
 		-1, //61
 		-1, //62
-		25  //63
+		19  //63
 };
 
 void
@@ -92,7 +92,8 @@ desalloc_velodyne_data(carmen_velodyne_variable_scan_message velodyne_message)
 void
 desalloc_velodyne_hdl32_data(carmen_velodyne_partial_scan_message velodyne_message)
 {
-	free(velodyne_message.partial_scan);
+	if (velodyne_message.partial_scan != NULL)
+		free(velodyne_message.partial_scan);
 }
 
 
@@ -178,9 +179,11 @@ read_velodyne_and_save_to_log(double carmen_initial_time, carmen_FILE *g, char *
 //		desalloc_velodyne_data(velodyne_message);
 
 		carmen_velodyne_partial_scan_message velodyne_message = read_velodyne_hdl32(dir, line, timestamp);
-		publish_velodyne_hdl32(velodyne_message);
-		carmen_logwrite_write_velodyne_partial_scan(&velodyne_message, g, timestamp);
-		desalloc_velodyne_hdl32_data(velodyne_message);
+		if (velodyne_message.partial_scan != NULL) {
+			publish_velodyne_hdl32(velodyne_message);
+			carmen_logwrite_write_velodyne_partial_scan(&velodyne_message, g, timestamp);
+			desalloc_velodyne_hdl32_data(velodyne_message);
+		}
 
 		line++;
 	}
@@ -300,7 +303,7 @@ define_messages()
 	err = IPC_defineMsg(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, IPC_VARIABLE_LENGTH, CARMEN_ROBOT_ACKERMAN_VELOCITY_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME);
 
-	carmen_bumblebee_basic_define_messages(10);
+	carmen_bumblebee_basic_define_messages(9);
 	carmen_xsens_define_messages();
 
 	carmen_velodyne_define_messages();
