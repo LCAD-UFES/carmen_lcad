@@ -236,7 +236,7 @@ Check the existence of file $CAFFE_ENET_HOME/include/caffe/proto/caffe.pb.h. If 
 
 After [sampling](#road-mapper-sampling) the dataset, please do the following to learn how many directories your dataset has:
 ```bash
- $ cd $CARMEN_LCAD/src/road_mapper
+ $ cd $CARMEN_HOME/src/road_mapper
  $ python road_mapper_enet_training.py ../../data/road_mapper 1000000000 1
 ```
 The output will be:
