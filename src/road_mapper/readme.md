@@ -281,7 +281,7 @@ To improve the quality of ENet predictions for classes less represented in the d
 ```bash
  $ python ENet/scripts/calculate_class_weighting.py --source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt --num_classes 22 > result.txt
 ```
-The program ENet/scripts/calculate_class_weighting.py might complain (see the result.txt file) that there is a classe missing, say, class 18 - **Exception: The class 18 is not present in the dataset**. In this case, change the parameter --num_classes 22 to --num_classes 17. Note that, in this case, you have to change the number of classes in all commands below.
+The program ENet/scripts/calculate_class_weighting.py might complain (see the result.txt file) that there is a class missing, say, class 18 - **Exception: The class 18 is not present in the dataset**. In this case, change the parameter --num_classes 22 to --num_classes 17. Note that, in this case, you have to change the number of classes in all commands below.
 
 Copy the **class_weightings** from the result.txt to the `enet_train_encoder.prototxt` file under **weight_by_label_freqs** and set this flag from **false** to **true**. The file is `enet_train_encoder.prototxt` generated/changed in the step below. So, after that step, copy the **class_weightings** from the result.txt to it.
 
