@@ -1,7 +1,9 @@
 #ifndef VIRTUAL_SCAN_RANDOM_H
 #define VIRTUAL_SCAN_RANDOM_H
 
+#include <deque>
 #include <random>
+#include <vector>
 
 namespace virtual_scan
 {
@@ -13,6 +15,11 @@ extern std::random_device RD;
  * @brief Return a random integer in the range `[a, b)`.
  */
 int random_int(int a, int b);
+
+template<class T> T &random_choose(std::deque<T> &vector)
+{
+	return vector[random_int(0, vector.size())];
+}
 
 template<class T> T &random_choose(std::vector<T> &vector)
 {

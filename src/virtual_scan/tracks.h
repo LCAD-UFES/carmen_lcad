@@ -1,7 +1,9 @@
 #ifndef VIRTUAL_SCAN_TRACKS_H
 #define VIRTUAL_SCAN_TRACKS_H
 
+#include "neighborhood_graph.h"
 #include "posterior.h"
+#include "readings.h"
 #include "track.h"
 
 #include <memory>
@@ -20,7 +22,7 @@ class Tracks
 	/**
 	 * @brief Create a new track.
 	 */
-	bool create(virtual_scan_neighborhood_graph_t *neighborhood_graph);
+	bool create(Graph &graph);
 
 	/**
 	 * @brief Erase an existing track.
@@ -99,7 +101,12 @@ public:
 	 */
 	//const Track &operator[] (size_t index) const;
 
-	Tracks::P propose(virtual_scan_neighborhood_graph_t *neighborhood_graph);
+	Tracks::P propose(Graph &graph);
+
+	/**
+	 * @brief Update tracks and the posterior distribution to reflect changes in sensor information.
+	 */
+	void update(const Readings &readings);
 };
 
 } // namespace virtual_scan

@@ -13,7 +13,7 @@ Collector::Collector(bool hits):
 }
 
 
-void Collector::operator() (bool mode, const carmen_point_t &point)
+void Collector::operator() (bool mode, const Point2D &point)
 {
 	if (mode == hits)
 		points.push_back(point);
@@ -24,7 +24,7 @@ void Collector::move(Reading &Z_i, Reading &Z_j)
 {
 	for (int i = 0, n = points.size(); i < n; i++)
 	{
-		const carmen_point_t &point = points[i];
+		const Point2D &point = points[i];
 		Z_i.erase(point);
 		Z_j.insert(point);
 	}
@@ -72,17 +72,25 @@ void Posterior::update_S_mot(int i, const Track::S &tracks)
 }
 
 
-void Posterior::update_S_ms1(const ObstaclePose &pose, const Reading &Z_k, Collector &collect)
+void Posterior::update_S_ms1(const ObstaclePose &pose, const Reading &Z_k, bool ranged, Collector &collect)
 {
 	if (Z_k.size() == 0)
 		return;
 
-	ObstacleView view(pose, Z_k.origin);
+	ObstacleView view(pose);
+
+	Reading::const_iterator i = Z_k.begin();
+	Reading::const_iterator n = Z_k.end();
+	if (ranged)
+	{
+		i = Z_k.lower_bound(view.range.first);
+		n = Z_k.upper_bound(view.range.second);
+	}
 
 	double d_sum = 0.0;
-	for (auto i = Z_k.begin(), n = Z_k.end(); i != n; ++i)
+	for (; i != n; ++i)
 	{
-		const carmen_point_t &point = *i;
+		const Point2D &point = *i;
 		if (view < point)
 		{
 			collect(false, point);
@@ -105,7 +113,7 @@ void Posterior::update_S_ms1(const ObstaclePose &pose, const Reading &Z_k, Colle
 		collect(true, point);
 	}
 
-	const virtual_scan_graph_node_t *node = pose.node;
+	const Node *node = pose.node;
 	if (distances.count(node) > 0)
 		S_ms1 -= distances[node];
 
@@ -118,7 +126,7 @@ void Posterior::update_S_ms1(int i, int j, const Track::S &tracks)
 {
 	const Track &track = *tracks[i];
 	const ObstaclePose pose = track[j];
-	const virtual_scan_graph_node_t *node = pose.node;
+	const Node *node = pose.node;
 
 	Reading &Zs_ij = Zs[node->timestamp];
 	Reading &Zd_ij = Zd[node];
@@ -126,8 +134,8 @@ void Posterior::update_S_ms1(int i, int j, const Track::S &tracks)
 	Collector hits(true);
 	Collector misses(false);
 
-	update_S_ms1(pose, Zs_ij.range(pose), hits);
-	update_S_ms1(pose, Zd_ij, misses);
+	update_S_ms1(pose, Zs_ij, true, hits);
+	update_S_ms1(pose, Zd_ij, false, misses);
 
 	hits.move(Zs_ij, Zd_ij);
 	misses.move(Zd_ij, Zs_ij);

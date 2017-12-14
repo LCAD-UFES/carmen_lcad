@@ -1,112 +1,67 @@
 #include "reading.h"
 
+#include <limits>
+
 namespace virtual_scan
 {
 
 
-bool Reading::iterator::operator != (const iterator &that) const
+Reading::Reading():
+	timestamp(0),
+	origin(0, 0, 0)
 {
-	return false;
+	// Nothing to do.
 }
 
 
-Reading::iterator &Reading::iterator::operator ++ ()
+Reading::Reading(double timestamp, const Pose &origin):
+	timestamp(timestamp),
+	origin(origin)
 {
-	return *this;
+	// Nothing to do.
 }
 
 
-carmen_point_t &Reading::iterator::operator * ()
+Reading::Reading(carmen_mapper_virtual_scan_message *message):
+	timestamp(message->timestamp)
 {
-	static carmen_point_t point;
-	return point;
+	const carmen_point_t &globalpos = message->globalpos;
+	origin.x = globalpos.x;
+	origin.y = globalpos.y;
+	origin.o = globalpos.theta;
+
+	carmen_position_t *points = message->points;
+	for (int i = 0, n = message->num_points; i < n; i++)
+	{
+		const carmen_position_t &point = points[i];
+		emplace(PointXY(point.x - origin.x, point.y - origin.y));
+	}
 }
 
 
-bool Reading::const_iterator::operator != (const const_iterator &that) const
+Reading::const_iterator Reading::lower_bound(double angle) const
 {
-	return false;
+	return std::set<Point2D, ComparatorOD>::lower_bound(Point2D(PointOD(angle, 0.0)));
 }
 
 
-Reading::const_iterator &Reading::const_iterator::operator ++ ()
+Reading::const_iterator Reading::upper_bound(double angle) const
 {
-	return *this;
+	static const double D_MAX = std::numeric_limits<double>::max();
+
+	return std::set<Point2D, ComparatorOD>::upper_bound(Point2D(PointOD(angle, D_MAX)));
 }
 
 
-const carmen_point_t &Reading::const_iterator::operator * () const
+const Point2D &Reading::back() const
 {
-	static carmen_point_t point;
-	return point;
+	return *rbegin();
 }
 
 
-
-Reading::iterator Reading::begin()
+const Point2D &Reading::front() const
 {
-	return iterator();
-}
-
-
-/**
- * @brief Return an iterator at the beggining of this reading.
- */
-Reading::const_iterator Reading::begin() const
-{
-	return const_iterator();
-}
-
-
-/**
- * @brief Return the past-the-end iterator.
- */
-Reading::iterator Reading::end()
-{
-	return iterator();
-}
-
-
-/**
- * @brief Return the past-the-end iterator.
- */
-Reading::const_iterator Reading::end() const
-{
-	return const_iterator();
-}
-
-
-/**
- * @brief Erase the given point from this reading.
- */
-void Reading::erase(const carmen_point_t &point)
-{
-}
-
-
-/**
- * @brief Add the given point to this reading.
- */
-void Reading::insert(const carmen_point_t &point)
-{
-}
-
-
-/**
- * @brief Generate a reading containing only the rays in the range of the given obstacle.
- */
-Reading Reading::range(const ObstaclePose &pose) const
-{
-	return Reading();
-}
-
-
-/**
- * @brief Return the number of rays in this reading.
- */
-size_t Reading::size() const
-{
-	return 0;
+	return *begin();
 }
 
 

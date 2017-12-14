@@ -22,27 +22,24 @@ Tracks::Tracks(const Tracks &that):
 }
 
 
-bool Tracks::create(virtual_scan_neighborhood_graph_t *graph)
+bool Tracks::create(Graph &graph)
 {
-	int n = random_int(0, graph->num_sub_graphs);
-	virtual_scan_disconnected_sub_graph_t *subgraph = virtual_scan_get_disconnected_sub_graph(graph, n);
-		
-	// Verifying if there is a complete_sub_graph not selected yet
-	std::vector <int> indexes;
-	for (int i = 0; i < subgraph->num_sub_graphs; i++)
-	{
-		if (subgraph->sub_graphs[i].selected == 0)
-			indexes.push_back(i);
-	}
+	Subgraph &subgraph = random_choose(graph);
 
-	if (indexes.size() == 0)
+	// Verifying if there is a complete_sub_graph not selected yet
+	std::vector<Cluster::S::iterator> unselected;
+	for (auto i = subgraph.begin(), n = subgraph.end(); i != n; ++i)
+		if (!i->selected())
+			unselected.push_back(i);
+
+	if (unselected.size() == 0)
 		return false;
 
-	virtual_scan_complete_sub_graph_t *nodes = subgraph->sub_graphs + indexes[random_int(0, indexes.size())];
-	virtual_scan_graph_node_t *node = nodes->nodes + random_int(0, nodes->num_nodes);
+	Cluster &cluster = *random_choose(unselected);
+	Node &node = random_choose(cluster);
 
 	Track::P tau(new Track());
-	tau->push_back(node);
+	tau->push_back(&node);
 	extend(tau);
 
 	if (tau->size() >= 2)
@@ -90,15 +87,12 @@ bool Tracks::extend(Track::P tau)
 }
 
 
-inline std::vector<virtual_scan_graph_node_t*> unselected(const virtual_scan_elements_t &nodes)
+inline Node::Edges unselected(const Node::Edges &nodes)
 {
-	std::vector<virtual_scan_graph_node_t*> found;
-	for (int i = 0, n = nodes.num_pointers; i < n; i++)
-	{
-		virtual_scan_graph_node_t *node = (virtual_scan_graph_node_t*) nodes.pointers[i];
-		if (node->complete_sub_graph->selected == 0)
-			found.push_back(node);
-	}
+	Node::Edges found;
+	for (auto i = nodes.begin(), n = nodes.end(); i != n; ++i)
+		if (!(*i)->selected())
+			found.push_back(*i);
 
 	return found;
 }
@@ -106,7 +100,7 @@ inline std::vector<virtual_scan_graph_node_t*> unselected(const virtual_scan_ele
 
 bool Tracks::extend_forward(Track::P tau)
 {
-	std::vector<virtual_scan_graph_node_t*> children = unselected(tau->back_node()->children);
+	Node::Edges children = unselected(tau->back_node()->children);
 	if (children.size() == 0)
 		return false;
 
@@ -118,7 +112,7 @@ bool Tracks::extend_forward(Track::P tau)
 
 bool Tracks::extend_backward(Track::P tau)
 {
-	std::vector<virtual_scan_graph_node_t*> parents = unselected(tau->back_node()->parents);
+	Node::Edges parents = unselected(tau->back_node()->parents);
 	if (parents.size() == 0)
 		return false;
 
@@ -144,6 +138,7 @@ bool Tracks::reduce()
 
 	return true;
 }
+
 
 bool Tracks::split()
 {
@@ -208,15 +203,12 @@ class Swap
 	/**
 	 * @brief Return whether `node_1` is a parent of `node_2`.
 	 */
-	bool is_parent(virtual_scan_graph_node_t *node_1, virtual_scan_graph_node_t *node_2)
+	bool is_parent(Node *node_1, Node *node_2)
 	{
-		const virtual_scan_elements_t &parents = node_2->parents;
-		for (int i = 0, n = parents.num_pointers; i < n; i++)
-		{
-			virtual_scan_graph_node_t *parent = (virtual_scan_graph_node_t*) parents.pointers[i];
-			if (parent == node_1)
+		const Node::Edges &parents = node_2->parents;
+		for (auto i = parents.begin(), n = parents.end(); i != n; ++i)
+			if (*i == node_1)
 				return true;
-		}
 
 		return false;
 	}
@@ -235,12 +227,12 @@ class Swap
 		int n = b->size() - 1;
 		for (p = 0; p < m; p++)
 		{
-			virtual_scan_graph_node_t *t_p = a->at_node(p);
-			virtual_scan_graph_node_t *t_p_plus_1 = a->at_node(p + 1);
+			Node *t_p = a->at_node(p);
+			Node *t_p_plus_1 = a->at_node(p + 1);
 			for (q = 0; q < n; q++)
 			{
-				virtual_scan_graph_node_t *t_q = b->at_node(q);
-				virtual_scan_graph_node_t *t_q_plus_1 = b->at_node(q + 1);
+				Node *t_q = b->at_node(q);
+				Node *t_q_plus_1 = b->at_node(q + 1);
 				if (is_parent(t_p, t_q_plus_1) && is_parent(t_q, t_p_plus_1))
 				{
 					this->i = i;
@@ -356,7 +348,7 @@ bool Tracks::diffuse()
 }
 
 
-Tracks::P Tracks::propose(virtual_scan_neighborhood_graph_t *neighborhood_graph)
+Tracks::P Tracks::propose(Graph &graph)
 {
 	Tracks::P tracks(new Tracks(*this));
 
@@ -367,7 +359,7 @@ Tracks::P Tracks::propose(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 		switch(n)
 		{
 			case 0:
-				result = tracks->create(neighborhood_graph);
+				result = tracks->create(graph);
 				break;
 			case 1:
 				result = tracks->destroy();
@@ -394,6 +386,12 @@ Tracks::P Tracks::propose(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 	}
 
 	return tracks;
+}
+
+
+void Tracks::update(const Readings &readings)
+{
+	// TODO: implement function.
 }
 
 
