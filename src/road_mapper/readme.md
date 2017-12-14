@@ -277,14 +277,6 @@ The training of ENet is performed in two stages:
 
 <!--The next step is optional:-->
 
-To improve the quality of ENet predictions for classes less represented in the dataset (solid marking, broken marking, etc.), you can add **class_weighting** to the **SoftmaxWithLoss** layer. 
-```bash
- $ python ENet/scripts/calculate_class_weighting.py --source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt --num_classes 22 > result.txt
-```
-The program ENet/scripts/calculate_class_weighting.py might complain (see the result.txt file) that there is a class missing, say, class 18 - **Exception: The class 18 is not present in the dataset**. In this case, change the parameter --num_classes 22 to --num_classes 17. Note that, in this case, you have to change the number of classes in all commands below.
-
-Copy the **class_weightings** from the result.txt to the `enet_train_encoder.prototxt` file under **weight_by_label_freqs** and set this flag from **false** to **true**. The file is `enet_train_encoder.prototxt` generated/changed in the step below. So, after that step, copy the **class_weightings** from the result.txt to it.
-
 Create the prototxt file `enet_train_encoder.prototxt` by running:
 ```bash
  $ python ENet/scripts/create_enet_prototxt.py  --source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt --mode train_encoder --batch_size 20 --new_height 120 --new_width  120 --num_of_classes 17
@@ -298,6 +290,14 @@ The values of batch_size, new_height and new_width are limited by the available 
 
 The prototxt file contains the ENet encoder architecture with some default settings that you may customize according to your needs. For more information take a look at the prototxt file or in the python file.
  
+To improve the quality of ENet predictions for classes less represented in the dataset (solid marking, broken marking, etc.), you can add **class_weighting** to the **SoftmaxWithLoss** layer. 
+```bash
+ $ python ENet/scripts/calculate_class_weighting.py --source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt --num_classes 22 > result.txt
+```
+The program ENet/scripts/calculate_class_weighting.py might complain (see the result.txt file) that there is a class missing, say, class 18 - **Exception: The class 18 is not present in the dataset**. In this case, change the parameter --num_classes 22 to --num_classes 17. Note that, in this case, you have to change the number of classes in all commands below.
+
+Copy the **class_weightings** from the result.txt to the `enet_train_encoder.prototxt` file under **weight_by_label_freqs** and set this flag from **false** to **true**. The file is `enet_train_encoder.prototxt` generated/changed in the step below. So, after that step, copy the **class_weightings** from the result.txt to it.
+
 Before training:
 
 Please, have a look in the `ENet/prototxts/enet_solver_encoder.prototxt` file and change it to achieve the desired number of epochs and etc. For more details on the Caffe solver file, please have a look at [Caffe Solver Parameters](https://github.com/BVLC/caffe/wiki/Solver-Prototxt).
