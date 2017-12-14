@@ -283,7 +283,7 @@ Create the prototxt file `enet_train_encoder.prototxt` by running:
 ```
 To learn more about the parameters please run the program with the -h option:
 ```bash
- $ python create_enet_prototxt.py -h
+ $ python ENet/scripts/create_enet_prototxt.py -h
 ```
 
 The values of batch_size, new_height and new_width are limited by the available GPU memory. The batch_size must be as big as possible and fit GPU memory. The values of new_height and new_width must be divisible by 8.
