@@ -18,6 +18,16 @@ public:
 	 * @brief Return the sensor reading of given timestamp.
 	 */
 	Reading &operator [] (double timestamp);
+
+	/**
+	 * @brief Return a reference to the latest reading.
+	 */
+	const Reading &back() const;
+
+	/**
+	 * @brief Add the given reading to this sequence, erasing the oldest reading if necessary.
+	 */
+	void update(carmen_mapper_virtual_scan_message *message);
 };
 
 } // namespace virtual_scan

@@ -18,7 +18,7 @@ class Collector
 	bool hits;
 
 	/** @brief Sequence of collected points. */
-	std::vector<carmen_point_t> points;
+	std::vector<Point2D> points;
 
 public:
 	/**
@@ -29,7 +29,7 @@ public:
 	/**
 	 * @brief Collect the given point if its mode agrees with the object's.
 	 */
-	void operator() (bool mode, const carmen_point_t &point);
+	void operator() (bool mode, const Point2D &point);
 
 	/**
 	 * @brief Move points from origin to destination reading.
@@ -46,10 +46,10 @@ class Posterior
 	std::map<Track::ID, int> lengths;
 
 	/** @brief Sums of ray distances, indexed by generating obstacle. */
-	std::map<const virtual_scan_graph_node_t*, double> distances;
+	std::map<const Node*, double> distances;
 
 	/** @brief Dynamic sensor readings, indexed by generatig obstacle. */
-	std::map<const virtual_scan_graph_node_t*, Reading> Zd;
+	std::map<const Node*, Reading> Zd;
 
 	/** @brief Static sensor readings. */
 	Readings Zs;
@@ -107,10 +107,12 @@ class Posterior
 	/**
 	 * @brief Update the distances between the given object and reading rays.
 	 *
+	 * If `ranged` is `true`, only rays that intercept the obstacle are processed.
+	 *
 	 * Rays that do or don't hit the object at the given pose will be collected for
 	 * reassignment according to the configuration of the given Collector object.
 	 */
-	void update_S_ms1(const ObstaclePose &pose, const Reading &Z_k, Collector &collect);
+	void update_S_ms1(const ObstaclePose &pose, const Reading &Z_k, bool ranged, Collector &collect);
 
 	/**
 	 * @brief Update the counter for static objects observed behind obstacle poses.

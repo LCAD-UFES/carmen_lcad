@@ -155,7 +155,13 @@ read_velodyne_hdl32(char *dir, int file_id, double timestamp)
 
 	stream = fopen(filename, "rb");
 
-	num = fread(data, sizeof(float), num, stream) / 4;
+
+	if (stream != NULL) {
+		num = fread(data, sizeof(float), num, stream) / 4;
+	} else {
+		velodyne_message.partial_scan = NULL;
+		return velodyne_message;
+	}
 
 	velodyne_message.number_of_32_laser_shots = num / 64;
 	velodyne_message.partial_scan = (carmen_velodyne_32_laser_shot *) malloc (velodyne_message.number_of_32_laser_shots * sizeof(carmen_velodyne_32_laser_shot));
@@ -229,7 +235,7 @@ read_velodyne_hdl32(char *dir, int file_id, double timestamp)
 	//printf("max: %lf min: %lf diff: %lf\n", max, min,max-min);
 	free(data);
 	fclose(stream);
-	arrange_velodyne_vertical_angles_to_true_position(&velodyne_message);
+	//arrange_velodyne_vertical_angles_to_true_position(&velodyne_message);
 	return velodyne_message;
 }
 

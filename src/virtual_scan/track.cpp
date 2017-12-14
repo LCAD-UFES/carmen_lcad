@@ -32,49 +32,49 @@ size_t Track::size() const
 }
 
 
-void Track::push_front(virtual_scan_graph_node_t *node)
+void Track::push_front(Node *node)
 {
 	poses.emplace_front(node); // poses.push_front(Obstacle(node));
 }
 
 
-void Track::push_back(virtual_scan_graph_node_t *node)
+void Track::push_back(Node *node)
 {
 	poses.emplace_back(node);
 }
 
 
-virtual_scan_graph_node_t *Track::at_node(int index)
+Node *Track::at_node(int index)
 {
 	return poses.at(index).node;
 }
 
 
-const virtual_scan_graph_node_t *Track::at_node(int index) const
+const Node *Track::at_node(int index) const
 {
 	return poses.at(index).node;
 }
 
 
-virtual_scan_graph_node_t *Track::front_node()
+Node *Track::front_node()
 {
 	return poses.front().node;
 }
 
 
-virtual_scan_graph_node_t *Track::back_node()
+Node *Track::back_node()
 {
 	return poses.back().node;
 }
 
 
-const virtual_scan_graph_node_t *Track::front_node() const
+const Node *Track::front_node() const
 {
 	return poses.front().node;
 }
 
 
-const virtual_scan_graph_node_t *Track::back_node() const
+const Node *Track::back_node() const
 {
 	return poses.back().node;
 }
@@ -103,15 +103,11 @@ void Track::pop_front(int r)
 
 bool Track::is_mergeable(const Track &that) const
 {
-	const virtual_scan_graph_node_t *last_node = this->back_node();
-	const virtual_scan_elements_t &parents = that.front_node()->parents;
-
-	for (int i = 0, n = parents.num_pointers; i < n; i++)
-	{
-		virtual_scan_graph_node_t *parent = (virtual_scan_graph_node_t*) parents.pointers[i];
-		if (parent == last_node)
+	const Node *last_node = this->back_node();
+	const Node::Edges &parents = that.front_node()->parents;
+	for (auto i = parents.begin(), n = parents.end(); i != n; ++i)
+		if (*i == last_node)
 			return true;
-	}
 
 	return false;
 }
@@ -130,9 +126,9 @@ int Track::diffuse()
 	int n = random_int(0, size());
 	ObstaclePose &pose = poses[n];
 
-	pose.x += normal(RD);
-	pose.y += normal(RD);
-	pose.theta = carmen_normalize_theta(pose.theta + normal(RD));
+	Pose delta(normal(RD), normal(RD), normal(RD));
+	pose.global += delta;
+	pose.local += delta;
 
 	return n;
 }

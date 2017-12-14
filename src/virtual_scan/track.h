@@ -51,42 +51,42 @@ public:
 	/**
 	 * @brief Add a new obstacle pose to the beginning of this track, created from the given neighborhood graph node.
 	 */
-	void push_front(virtual_scan_graph_node_t *node);
+	void push_front(Node *node);
 
 	/**
 	 * @brief Add a new obstacle pose to the end of this track, created from the given neighborhood graph node.
 	 */
-	void push_back(virtual_scan_graph_node_t *node);
+	void push_back(Node *node);
 
 	/**
 	 * @brief Return the neighborhood graph node associated to the obstacle pose at the given index.
 	 */
-	virtual_scan_graph_node_t *at_node(int index);
+	Node *at_node(int index);
 
 	/**
 	 * @brief Return the neighborhood graph node associated to the obstacle pose at the given index.
 	 */
-	const virtual_scan_graph_node_t *at_node(int index) const;
+	const Node *at_node(int index) const;
 
 	/**
 	 * @brief Return the neighborhood graph node associated to the first obstacle pose.
 	 */
-	virtual_scan_graph_node_t *front_node();
+	Node *front_node();
 
 	/**
 	 * @brief Return the neighborhood graph node associated to the first obstacle pose.
 	 */
-	const virtual_scan_graph_node_t *front_node() const;
+	const Node *front_node() const;
 
 	/**
 	 * @brief Return the neighborhood graph node associated to the last obstacle pose.
 	 */
-	virtual_scan_graph_node_t *back_node();
+	Node *back_node();
 	
 	/**
 	 * @brief Return the neighborhood graph node associated to the last obstacle pose.
 	 */
-	const virtual_scan_graph_node_t *back_node() const;
+	const Node *back_node() const;
 	
 	/**
 	 * @brief Remove all poses from `(r + 1)` to the end of the track.

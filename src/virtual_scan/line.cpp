@@ -11,26 +11,25 @@ Line::Line()
 }
 
 
-Line::Line(const carmen_position_t &point)
+Line::Line(const PointXY &point):
+	p1(0, 0),
+	p2(point)
 {
-	static carmen_position_t origin = {0, 0};
-
-	this->p1 = origin;
-	this->p2 = point;
+	// Nothing to do.
 }
 
 
-Line::Line(const carmen_position_t &p1, const carmen_position_t &p2)
+Line::Line(const PointXY &p1, const PointXY &p2):
+	p1(p1),
+	p2(p2)
 {
-	this->p1 = p1;
-	this->p2 = p2;
+	// Nothing to do.
 }
 
 
-carmen_position_t Line::operator () (double t) const
+PointXY Line::operator () (double t) const
 {
-	carmen_position_t p = {p1.x + t * p2.x, p1.y + t * p2.y};
-	return p;
+	return PointXY(p1.x + t * p2.x, p1.y + t * p2.y);
 }
 
 
@@ -56,7 +55,26 @@ std::pair<double, double> Line::crosspoint(const Line &that) const
 }
 
 
-bool Line::obstructs(const carmen_position_t &point) const
+double Line::distance(const PointXY &point) const
+{
+	double x_0 = point.x;
+	double y_0 = point.y;
+	double x_1 = p1.x;
+	double y_1 = p1.y;
+	double x_2 = p2.x;
+	double y_2 = p2.y;
+
+	double dx = x_2 - x_1;
+	double dy = y_2 - y_1;
+	double dx2 = dx * dx;
+	double dy2 = dy * dy;
+
+	// See: https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line#Line_defined_by_two_points
+	return std::abs(dy * x_0 - dx * y_0 + x_2 * y_1 - y_2 * x_1) / std::sqrt(dx2 * dy2);
+}
+
+
+bool Line::obstructs(const PointXY &point) const
 {
 	// Compute the crosspoint between this line and the line passing over the
 	// point and the origin. If lines are parallel, point is not obstructed.

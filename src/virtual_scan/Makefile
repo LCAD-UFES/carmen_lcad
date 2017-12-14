@@ -13,13 +13,16 @@ LFLAGS += \
 
 SOURCES = \
 	line.cpp \
+	neighborhood_graph.cpp \
 	obstacle.cpp \
 	parameters.cpp \
+	point.cpp \
 	posterior.cpp \
 	random.cpp \
 	reading.cpp \
 	readings.cpp \
 	rectangle.cpp \
+	segment.cpp \
 	track.cpp \
 	tracker.cpp \
 	tracks.cpp \
@@ -55,6 +58,6 @@ LFLAGS += \
 endif
 
 libvirtual_scan_interface.a: virtual_scan_interface.o
-virtual_scan: line.o obstacle.o parameters.o posterior.o random.o reading.o readings.o rectangle.o track.o tracker.o tracks.o virtual_scan_main.o virtual_scan.o virtual_scan_interface.o virtual_scan_neighborhood_graph.o
+virtual_scan: line.o neighborhood_graph.o obstacle.o parameters.o point.o posterior.o random.o reading.o readings.o rectangle.o segment.o track.o tracker.o tracks.o virtual_scan_main.o virtual_scan.o virtual_scan_interface.o virtual_scan_neighborhood_graph.o
 
 include ../Makefile.rules
