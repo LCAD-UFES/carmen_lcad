@@ -34,4 +34,4 @@ echo >> $PARAM
 echo [$SOLVER]: >> $PARAM
 cat $SOLVER >> $PARAM
 echo File $PARAM saved.
-echo Suggested output log file: `echo $PARAM | sed s/parameters/results/`
+echo Suggested output log filename: `echo $PARAM | sed s/parameters/results/`
