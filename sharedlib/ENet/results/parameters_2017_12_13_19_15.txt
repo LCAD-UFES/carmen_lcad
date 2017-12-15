@@ -1,12 +1,14 @@
-# https://github.com/BVLC/caffe/wiki/Solver-Prototxt
-#
+
+[/home/newuser/carmen_lcad/src/road_mapper/road_mapper_train.txt]:
 # dataset_train_size = 335960	# Numero total de exemplos de treinamento
-# epochs = 10			# Numero de epocas de treinamento (uma epoca corresponde a utilizacao de todos os exemplos de treinamento)
+# epochs = 10			# Numero de epocas de treinamento
 
-[enet_train_encoder.prototxt]:
-    batch_size: 100		# Numero de exemplos de treinamento que compoem um batch
+[/home/newuser/carmen_lcad/sharedlib/ENet/prototxts/enet_train_encoder.prototxt]:
+    source: "/home/newuser/carmen_lcad/src/road_mapper/road_mapper_train.txt"
+    batch_size: 100
 
-[enet_solver_encoder_prototxt]:
+[/home/newuser/carmen_lcad/sharedlib/ENet/prototxts/enet_solver_encoder.prototxt]:
+# https://github.com/BVLC/caffe/wiki/Solver-Prototxt
 net: "/home/newuser/carmen_lcad/sharedlib/ENet/prototxts/enet_train_encoder.prototxt"		# Modelo da rede
 test_initialization: true	# Executa o teste da rede antes de iniciar o treinamento
 test_iter: 1 			# Indica quantas iteracoes de teste ocorrem por <test_interval> (se o comportamento da rede for estocastico)

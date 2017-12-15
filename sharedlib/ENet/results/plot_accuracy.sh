@@ -1,5 +1,7 @@
 #!/bin/bash
-[ $# -ne 1 ] && echo "Usage: $0 <results_file>" && exit
+USAGE="Usage: $0 <results_file>"
+[ $# -ne 1 ] && echo "$USAGE" && exit
+! [ -f $1 ] && echo "$1: No such file" && echo "$USAGE" && exit
 grep "Train net output #0: accuracy" $1 > accuracy_$1
 echo "set xlabel \"Batch # (1 batch = 100 samples, 1 epoch = 3360 batches)\" " > accuracy_$1.gp  
 echo "set ylabel \"Overall Accuracy\" " >> accuracy_$1.gp  
