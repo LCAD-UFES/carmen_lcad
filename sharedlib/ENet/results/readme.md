@@ -31,6 +31,9 @@ Plot ENet Caffe training accuracy during the procedure or afterwards:
 ```bash
  $ cd $CARMEN_HOME/sharedlib/ENet/results
  $ ./plot_accuracy.sh results_<timestamp>.txt
+ 
+ Expected output:
+ ![sample chart](sample_plot_image.jpg)
 
 ```
 
