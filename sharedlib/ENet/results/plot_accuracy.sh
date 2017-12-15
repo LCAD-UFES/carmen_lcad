@@ -9,7 +9,7 @@ EPOCH=$(( $EXAMPLES / $BATCH + 2 * $EXAMPLES / $BATCH % 2 ))
 MAX_ITER=`grep -m 1 -e "max_iter:" $1 | cut -d: -f 2 | cut -d# -f 1 | awk '{$1=$1}1'`
 DISPLAY_RESULTS=`grep -m 1 -e "display" $1 | cut -d' ' -f 2`
 echo "set xlabel \"Batch # (1 batch = $BATCH examples, 1 epoch = $EPOCH batches, max_iter = $MAX_ITER)\" " > accuracy_$1.gp  
-echo "set ylabel \"Accuracy per Batch\" " >> accuracy_$1.gp  
+echo "set ylabel \"Accuracy\" " >> accuracy_$1.gp  
 echo "set grid xtics ytics" >> accuracy_$1.gp
 echo "plot [][0.0:1.0]\"accuracy_$1\" u (\$0 * $DISPLAY_RESULTS):11 w l t \"$1\" " >> accuracy_$1.gp 
 echo "pause -1" >> accuracy_$1.gp
