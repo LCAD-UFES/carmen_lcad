@@ -6,9 +6,11 @@ Before start the training, save the solver parameters:
 ```bash
  $ cd $CARMEN_HOME/sharedlib/ENet/results
  $ ./save_train_params.sh ../prototxts/enet_solver_encoder.prototxt
+ 
+ Expected output:
+ File parameters_<timestamp>.txt saved. 
 
 ```
- $ File parameters_<timestamp>.txt saved. 
 
 Start ENet Caffe training procedure immune to hangup signal: 
 ```bash
