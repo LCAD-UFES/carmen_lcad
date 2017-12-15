@@ -33,7 +33,6 @@ Plot ENet Caffe training accuracy during the procedure or afterwards:
  $ ./plot_accuracy.sh results_<timestamp>.txt
  
  Expected output:
- ![sample chart](sample_plot_image.jpg)
 
 ```
-
+ ![sample chart](sample_plot_image.jpg)
