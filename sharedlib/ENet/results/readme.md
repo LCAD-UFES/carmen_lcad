@@ -9,6 +9,7 @@ Before start the training, save the solver parameters:
  
  Expected output:
  File parameters_<timestamp>.txt saved. 
+ Suggested output log filename: results_<timestamp>.txt 
 
 ```
 
@@ -19,14 +20,14 @@ Start ENet Caffe training procedure immune to hangup signal:
 
 ```
 
-Monitor ENet Caffe training running: 
+Monitor ENet Caffe training progress during the procedure or afterwards: 
 ```bash
  $ cd $CARMEN_HOME/sharedlib/ENet/results
  $ ./show_last_iteration.sh results_<timestamp>.txt
 
 ```
 
-Plot ENet Caffe training accuracy: 
+Plot ENet Caffe training accuracy during the procedure or afterwards: 
 ```bash
  $ cd $CARMEN_HOME/sharedlib/ENet/results
  $ ./plot_accuracy.sh results_<timestamp>.txt
