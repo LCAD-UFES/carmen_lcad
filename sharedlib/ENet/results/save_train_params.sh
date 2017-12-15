@@ -19,8 +19,8 @@ BATCH=`grep -e "batch_size:" $TRAIN | cut -d: -f 2 | cut -d# -f 1 | awk '{$1=$1}
 MAX_ITER=`grep -e "max_iter:" $SOLVER | cut -d: -f 2 | cut -d# -f 1 | awk '{$1=$1}1'`
 EPOCHS=$(( $MAX_ITER * $BATCH / $EXAMPLES ))
 ITERS_REM=$(( $MAX_ITER * $BATCH % $EXAMPLES ))
-EPOCHS_FRAC=$(( 1000 * $MAX_ITER * $BATCH / $EXAMPLES + 2000 * $MAX_ITER * $BATCH / $EXAMPLES % 2 ))
-[ $ITERS_REM -ne 0 ] && EPOCHS=`echo $EPOCHS_FRAC | sed s/$EPOCHS/$EPOCHS./`
+EPOCHS_FRAC="00"$(( 1000 * $ITERS_REM / $EXAMPLES ))
+[ $ITERS_REM -ne 0 ] && EPOCHS=$EPOCHS.${EPOCHS_FRAC:${#EPOCHS_FRAC}-3:3}
 TS=`date -Iminutes | sed y/-T:/___/ | cut -d_ -f 1,2,3,4,5`
 PARAM=`echo $CARMEN_HOME/sharedlib/ENet/results/parameters_$TS.txt | sed s:$PWD/::`
 echo > $PARAM
@@ -34,3 +34,4 @@ echo >> $PARAM
 echo [$SOLVER]: >> $PARAM
 cat $SOLVER >> $PARAM
 echo File $PARAM saved.
+echo Suggested output log file: `echo $PARAM | sed s/parameters/results/`
