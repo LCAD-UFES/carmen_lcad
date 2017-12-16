@@ -1,0 +1,24 @@
+#######################################
+# Syntax Coloring Map For debug_lvc
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+MCP_DAC		KEYWORD1
+mcp_dac		KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+begin       KEYWORD2
+gain       	KEYWORD2
+buffered    KEYWORD2
+off			KEYWORD2
+write    	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+DAC_A		LITERAL1   
+DAC_B		LITERAL1
