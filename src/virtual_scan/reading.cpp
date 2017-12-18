@@ -32,10 +32,7 @@ Reading::Reading(carmen_mapper_virtual_scan_message *message):
 
 	carmen_position_t *points = message->points;
 	for (int i = 0, n = message->num_points; i < n; i++)
-	{
-		const carmen_position_t &point = points[i];
-		emplace(PointXY(point.x - origin.x, point.y - origin.y));
-	}
+		emplace(origin.project_local(points[i]));
 }
 
 

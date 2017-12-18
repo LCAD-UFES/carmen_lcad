@@ -30,6 +30,16 @@ struct PointXY
 	PointXY(double x, double y);
 
 	/**
+	 * @brief Create a new 2D point from any point-like object.
+	 */
+	template<class P>
+	PointXY(const P &point):
+		PointXY(point.x, point.y)
+	{
+		// Nothing to do.
+	}
+
+	/**
 	 * @brief Point addition operator.
 	 */
 	PointXY operator + (const PointXY &that) const;
@@ -66,6 +76,11 @@ struct PointOD
 	 * @brief Create a new 2D point at given coordinates.
 	 */
 	PointOD(double o, double d);
+
+	/**
+	 * @brief Create a new polar point from a cartesian point.
+	 */
+	PointOD(const PointXY &p);
 };
 
 /**
@@ -129,9 +144,19 @@ struct Pose: PointXY
 	Pose &operator += (const Pose &that);
 
 	/**
+	 * @brief Project the given cartesian point (assumed relative to this pose) to the global reference frame.
+	 */
+	PointXY project_global(const PointXY &point) const;
+
+	/**
 	 * @brief Project the given pose (assumed relative to this pose) to the global reference frame.
 	 */
 	Pose project_global(const Pose &pose) const;
+
+	/**
+	 * @brief Project the given cartesian point (assumed global) to this pose's reference frame.
+	 */
+	PointXY project_local(const PointXY &point) const;
 };
 
 /**
@@ -149,6 +174,11 @@ template<class Point> double angle(const Point &a, const Point &b)
 {
 	return std::atan2(b.y - a.y, b.x - a.x);
 }
+
+/**
+ * @brief Return the Euclidean distance between a cartesian point and the origin.
+ */
+double distance(const PointXY &p);
 
 /**
  * @brief Return the Euclidean distance between two cartesian points.

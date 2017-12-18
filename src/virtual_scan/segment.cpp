@@ -8,6 +8,7 @@
 namespace virtual_scan
 {
 
+
 Segment::Segment():
 	Reading()
 {
@@ -39,7 +40,8 @@ Point2D Segment::centroid() const
 }
 
 
-inline void insert(double timestamp, const Pose &origin, const Point2D &point, std::vector<Segment> &segments)
+// TODO: What happens if the segment lies on the border between quadrants 2 and 3 (i.e. around angle 180)?
+inline void insert(double timestamp, const Pose &origin, const Point2D &point, Segment::S &segments)
 {
 	static const double D2_SEGMENT = D_SEGMENT * D_SEGMENT;
 
@@ -51,7 +53,9 @@ inline void insert(double timestamp, const Pose &origin, const Point2D &point, s
 		const Point2D &tip = i->back();
 		if (distance2(point, tip) < D2_SEGMENT)
 		{
-			i->insert(point);
+			// Add point to segment (the iterator argument is a hint that the new
+			// element is probably "higher" than any other already in the set).
+			i->insert(i->end(), point);
 			return;
 		}
 		
@@ -69,9 +73,15 @@ inline void insert(double timestamp, const Pose &origin, const Point2D &point, s
 
 inline void classify(Segment &segment)
 {
+	if (segment.size() < 3)
+	{
+		segment.shape = POINT_MASS;
+		return;
+	}
+
 	const Point2D &a = segment.front();
 	const Point2D &b = segment.back();
-	if (distance2(a, b) < 0.1)
+	if (distance2(a, b) < 0.5)
 	{
 		segment.shape = POINT_MASS;
 		return;
@@ -79,9 +89,9 @@ inline void classify(Segment &segment)
 
 	Line line(a, b);
 
-	Segment::iterator n = segment.end();
-	Segment::iterator i = segment.begin();
-	Segment::iterator i_max = segment.begin();
+	Segment::iterator n = --(segment.end());
+	Segment::iterator i = ++(segment.begin());
+	Segment::iterator i_max = i;
 	double d_max = 0.0;
 
 	for (; i != n; ++i)
@@ -94,7 +104,7 @@ inline void classify(Segment &segment)
 		}
 	}
 
-	if (d_max < 0.05)
+	if (d_max < 0.5)
 		segment.shape = I_SHAPED;
 	else
 	{
@@ -113,7 +123,7 @@ Segment::S split_segments(const Reading &reading)
 	if (reading.size() == 0)
 		return segments;
 
-	for (auto i = reading.cbegin(), n = reading.cend(); i != n; ++i)
+	for (auto i = reading.begin(), n = reading.end(); i != n; ++i)
 		insert(timestamp, origin, *i, segments);
 
 	for (auto i = segments.begin(), n = segments.end(); i != n; ++i)

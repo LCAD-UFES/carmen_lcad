@@ -122,7 +122,7 @@ bool ObstacleView::operator > (const PointOD &point) const
 
 double ObstacleView::distance(const PointXY &p) const
 {
-	Line ray({p.x, p.y});
+	Line ray(p);
 
 	double d_min = std::numeric_limits<double>::max();
 	PointXY c(d_min, d_min);

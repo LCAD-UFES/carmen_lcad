@@ -36,6 +36,12 @@ double distance2(const PointXY &a, const PointXY &b)
 }
 
 
+double distance(const PointXY &p)
+{
+	return sqrt(p.x * p.x + p.y * p.y);
+}
+
+
 double distance(const PointXY &a, const PointXY &b)
 {
 	return sqrt(distance2(a, b));
@@ -69,6 +75,14 @@ PointOD::PointOD(double o, double d):
 }
 
 
+PointOD::PointOD(const PointXY &p):
+	o(angle(p)),
+	d(distance(p))
+{
+	// Nothing to do
+}
+
+
 bool ComparatorOD::operator () (const PointOD &a, const PointOD &b) const
 {
 	if (a.o < b.o)
@@ -90,10 +104,7 @@ Point2D::Point2D():
 
 Point2D::Point2D(const PointXY &p):
 	PointXY(p),
-	PointOD(
-		std::atan2(p.y, p.x),
-		std::sqrt(std::pow(p.x, 2) + std::pow(p.y, 2))
-	)
+	PointOD(p)
 {
 	// Nothing to do.
 }
@@ -144,11 +155,23 @@ Pose &Pose::operator += (const Pose &that)
 }
 
 
+PointXY Pose::project_global(const PointXY &point) const
+{
+	return shift(rotate(point, o), *this);
+}
+
+
 Pose Pose::project_global(const Pose &pose) const
 {
 	Pose global = shift(rotate(pose, o), *this);
 	global.o = carmen_normalize_theta(global.o + o);
 	return global;
+}
+
+
+PointXY Pose::project_local(const PointXY &point) const
+{
+	return rotate(shift(point, PointXY(-x, -y)), -o);
 }
 
 
