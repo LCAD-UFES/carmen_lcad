@@ -1,6 +1,6 @@
 #include "point.h"
 
-#include <cmath>
+#include <iomanip>
 
 namespace virtual_scan
 {
@@ -27,25 +27,6 @@ PointXY PointXY::operator + (const PointXY &that) const
 	return PointXY(this->x + that.x, this->y + that.y);
 }
 
-
-double distance2(const PointXY &a, const PointXY &b)
-{
-	double dx = a.x - b.x;
-	double dy = a.y - b.y;
-	return dx * dx + dy * dy;
-}
-
-
-double distance(const PointXY &p)
-{
-	return sqrt(p.x * p.x + p.y * p.y);
-}
-
-
-double distance(const PointXY &a, const PointXY &b)
-{
-	return sqrt(distance2(a, b));
-}
 
 
 bool ComparatorXY::operator () (const PointXY &a, const PointXY &b) const
@@ -172,6 +153,12 @@ Pose Pose::project_global(const Pose &pose) const
 PointXY Pose::project_local(const PointXY &point) const
 {
 	return rotate(shift(point, PointXY(-x, -y)), -o);
+}
+
+
+std::ostream &operator << (std::ostream &out, const Pose &pose)
+{
+	return out << std::setprecision(2) << '(' << pose.x << ", " << pose.y << ", " << pose.o << ')';
 }
 
 

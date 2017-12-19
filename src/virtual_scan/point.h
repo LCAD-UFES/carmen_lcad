@@ -4,9 +4,95 @@
 #include <carmen/carmen.h>
 
 #include <cmath>
+#include <iostream>
 
 namespace virtual_scan
 {
+
+/**
+ * @brief Compute the angle of the line segment between the given cartesian point and the origin.
+ */
+template<class Point> double angle(const Point &p)
+{
+	return std::atan2(p.y, p.x);
+}
+
+/**
+ * @brief Compute the angle of the line that passes between the given cartesian points.
+ */
+template<class P1, class P2> double angle(const P1 &a, const P2 &b)
+{
+	return std::atan2(b.y - a.y, b.x - a.x);
+}
+
+/**
+ * @brief Return the squared Euclidean distance between two cartesian points.
+ */
+template<class P1, class P2> double distance2(const P1 &a, const P2 &b)
+{
+	double dx = a.x - b.x;
+	double dy = a.y - b.y;
+	return dx * dx + dy * dy;
+}
+
+/**
+ * @brief Return the Euclidean distance between the given cartesian point and the origin.
+ */
+template<class Point> double distance(const Point &p)
+{
+	return sqrt(p.x * p.x + p.y * p.y);
+}
+
+/**
+ * @brief Return the Euclidean distance between two cartesian points.
+ */
+template<class P1, class P2> double distance(const P1 &a, const P2 &b)
+{
+	return sqrt(distance2(a, b));
+}
+
+/**
+ * @brief Rotate the point around the origin by the given angle.
+ */
+template<class Point> Point rotate(const Point &p, double o)
+{
+	double x = p.x;
+	double y = p.y;
+
+	double cos_o = std::cos(o);
+	double sin_o = std::sin(o);
+
+	Point p_o = p;
+	p_o.x = x * cos_o - y * sin_o;
+	p_o.y = x * sin_o + y * cos_o;
+
+	return p_o;
+}
+
+/**
+ * @brief Shift the given point by the given 2D shift.
+ */
+template<class Point, class Shift> Point shift(const Point &p, const Shift &s)
+{
+	Point p_s = p;
+	p_s.x += s.x;
+	p_s.y += s.y;
+	return p_s;
+}
+
+/**
+ * @brief Project the given pose to the reference frame described by the given origin pose.
+ */
+template<class Pose, class Origin> carmen_point_t project_pose(const Pose &pose, const Origin &origin)
+{
+	carmen_point_t projected = {
+		pose.x - origin.x,
+		pose.y - origin.y,
+		carmen_normalize_theta(pose.theta - origin.theta)
+	};
+
+	return rotate(projected, -origin.theta);
+}
 
 /**
  * @brief A 2D point represented in cartesian notation.
@@ -160,78 +246,9 @@ struct Pose: PointXY
 };
 
 /**
- * @brief Compute the angle of the line segment between the given point and the origin.
+ * Write a pose to an output stream.
  */
-template<class Point> double angle(const Point &p)
-{
-	return std::atan2(p.y, p.x);
-}
-
-/**
- * @brief Compute the angle of the line that passes between the given two points.
- */
-template<class Point> double angle(const Point &a, const Point &b)
-{
-	return std::atan2(b.y - a.y, b.x - a.x);
-}
-
-/**
- * @brief Return the Euclidean distance between a cartesian point and the origin.
- */
-double distance(const PointXY &p);
-
-/**
- * @brief Return the Euclidean distance between two cartesian points.
- */
-double distance(const PointXY &a, const PointXY &b);
-
-/**
- * @brief Return the squared Euclidean distance between two cartesian points.
- */
-double distance2(const PointXY &a, const PointXY &b);
-
-/**
- * @brief Rotate the point around the origin by the given angle.
- */
-template<class Point> Point rotate(const Point &p, double o)
-{
-	double x = p.x;
-	double y = p.y;
-
-	double cos_o = std::cos(o);
-	double sin_o = std::sin(o);
-
-	Point p_o = p;
-	p_o.x = x * cos_o - y * sin_o;
-	p_o.y = x * sin_o + y * cos_o;
-
-	return p_o;
-}
-
-/**
- * @brief Shift the given point by the given 2D shift.
- */
-template<class Point, class Shift> Point shift(const Point &p, const Shift &s)
-{
-	Point p_s = p;
-	p_s.x += s.x;
-	p_s.y += s.y;
-	return p_s;
-}
-
-/**
- * @brief Project the given pose to the reference frame described by the given origin pose.
- */
-template<class Pose, class Origin> carmen_point_t project_pose(const Pose &pose, const Origin &origin)
-{
-	carmen_point_t projected = {
-		pose.x - origin.x,
-		pose.y - origin.y,
-		carmen_normalize_theta(pose.theta - origin.theta)
-	};
-
-	return rotate(projected, -origin.theta);
-}
+std::ostream &operator << (std::ostream &out, const Pose &pose);
 
 } // namespace virtual_scan
 

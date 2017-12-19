@@ -5,8 +5,17 @@
 #include "reading.h"
 #include "segment.h"
 
+// Double-ended queues have better performance than vectors for end-insertion,
+// while still allowing random access. This makes them preferable as the default
+// collection for graph structures, which are constructed dynamically and seldom
+// accessed randomly (iterated access being the most common case).
 #include <deque>
+
+// Still, in some cases vectors remain the best option, particularly in the
+// Graph class where a circular buffer is implemented.
 #include <vector>
+
+#include <iostream>
 
 namespace virtual_scan
 {
@@ -16,6 +25,19 @@ namespace virtual_scan
  */
 struct Model
 {
+	/** @brief Model identifier. */
+	enum ID
+	{
+		BIKE,
+		BUS,
+		CAR,
+		PEDESTRIAN,
+		UNKNOWN
+	};
+
+	/** @brief Model identifier. */
+	ID id;
+
 	/** @brief Model width. */
 	double width;
 
@@ -25,8 +47,13 @@ struct Model
 	/**
 	 * @brief Create a new model of given settings.
 	 */
-	Model(double width, double length);
+	Model(ID id, double width, double length);
 };
+
+/**
+ * Write a model to an output stream.
+ */
+std::ostream &operator << (std::ostream &out, const Model &model);
 
 /**
  * @brief A single node in the graph, representing a particular hypothesis.
@@ -34,10 +61,10 @@ struct Model
 struct Node
 {
 	/** @brief Node sequence type. */
-	typedef std::vector<Node> S;
+	typedef std::deque<Node> S;
 
 	/** @brief Type for a sequence of edges connecting this node to others. */
-	typedef std::vector<Node*> Edges;
+	typedef std::deque<Node*> Edges;
 
 	/** @brief Time when this node was generated. */
 	double timestamp;
@@ -70,12 +97,12 @@ struct Node
 	/**
 	 * Make the given node a child of this one.
 	 */
-	void adopt(Node &child);
+	void add_child(Node &child);
 
 	/**
 	 * Make the given node a sibling of this one.
 	 */
-	void connect(Node &node);
+	void add_sibling(Node &node);
 
 	/**
 	 * @brief Mark this node (and its whole parent cluster) as selected as a track pose.
@@ -100,10 +127,13 @@ private:
 /**
  * @brief A collection of nodes which are all siblings of each other.
  */
-struct Cluster: Node::S
+struct Cluster
 {
 	/** @brief Cluster sequence type. */
-	typedef std::vector<Cluster> S;
+	typedef std::deque<Cluster> S;
+
+	/** @brief Alias to the `Node` type, needed to make the `Cluster` type work with some template functions (notably `random_choose`). */
+	typedef Node value_type;
 
 	/**
 	 * @brief Default constrcutor.
@@ -112,20 +142,48 @@ struct Cluster: Node::S
 
 	/**
 	 * @brief Create a new node cluster from the given reading segment.
+	 *
+	 * Created nodes are stored in the given sequence.
 	 */
-	Cluster(const Segment &segment);
+	Cluster(const Segment &segment, Node::S &nodes);
+
+	/**
+	 * @brief Return a reference to the node at the given index.
+	 */
+	Node &operator [] (size_t index);
+
+	/**
+	 * @brief Return a reference to the node at the given index.
+	 */
+	const Node &operator [] (size_t index) const;
 
 	/**
 	 * @brief Return whether the cluster is selected.
 	 */
 	bool selected() const;
 
+	/**
+	 * @brief Return the number of nodes in this cluster.
+	 */
+	size_t size() const;
+
 private:
 	/** @brief Indicates whether one node in this cluster is currently being used as an obstacle hypothesys. */
 	int selected_latch;
 
+	/** @brief Pointer to the sequence storing the nodes that are part of this cluster. */
+	Node::S *nodes;
+
+	/** @begin Index to the first node of this cluster. */
+	size_t i_0;
+
+	/** @begin Index to the position just past the last node of this cluster. */
+	size_t i_n;
+
 	/**
 	 * @brief Add a new node to this cluster, connecting it to any pre-existing nodes.
+	 *
+	 * The new node is created at the given collection.
 	 */
 	void add_node(double timestamp, const Pose &origin, const Pose &local, const Model *model);
 
@@ -145,56 +203,20 @@ private:
 	void init_POINT_MASS(const Segment &segment);
 };
 
+/**
+ * @brief Collection of nodes created all at the same time point.
+ */
 struct Subgraph: Cluster::S
 {
 	/** @brief Subgraph sequence type. */
-	typedef std::deque<Subgraph> S;
+	typedef std::vector<Subgraph> S;
 
-	/**
-	 * @brief Iterator over nodes in this subgraph.
-	 */
-	class iterator_nodes
-	{
-		/** @brief Iterator over clusters. */
-		Cluster::S::iterator cluster;
-
-		/** @brief Iterator over nodes in a cluster. */
-		Node::S::iterator node;
-
-	public:
-		/**
-		 * @brief Default constructor.
-		 */
-		iterator_nodes();
-
-		/**
-		 * @brief Create a new node iterator started at the given position.
-		 */
-		iterator_nodes(const Cluster::S::iterator &cluster, const Node::S::iterator &node);
-
-		/**
-		 * @brief Check whether this iterator is different from another.
-		 */
-		bool operator != (const iterator_nodes &that) const;
-
-		/**
-		 * @brief Moves this iterator one element forward.
-		 */
-		iterator_nodes &operator ++ ();
-
-		/**
-		 * @brief Return a reference to the node currently pointed by this iterator.
-		 */
-		Node &operator * ();
-
-		/**
-		 * @brief Return a pointer to the node currently pointed by this iterator.
-		 */
-		Node *operator -> ();
-	};
 
 	/** @brief Time of the reading used to generate this subgraph. */
 	double timestamp;
+
+	/** @brief Sequence of nodes contained in this subgraph. */
+	Node::S nodes;
 
 	/**
 	 * @brief Default constructor.
@@ -210,27 +232,57 @@ struct Subgraph: Cluster::S
 	 * @brief Create a new subgraph from the given reading, connected to the given parent subgraph.
 	 */
 	Subgraph(Subgraph &parent, const Reading &reading);
-
-	/**
-	 * @brief Return an iterator at the beggining of this reading.
-	 */
-	iterator_nodes begin_nodes();
-
-	/**
-	 * @brief Return the past-the-end iterator.
-	 */
-	iterator_nodes end_nodes();
 };
 
 /**
  * @brief A neighborhood graph representing possible explanation of sensor reading segments.
  */
-struct Graph: Subgraph::S
+struct Graph
 {
+	/** @brief Value type alias, needed to make this type work with some template functions (notably `random_choose`). */
+	typedef Subgraph value_type;
+
+	/**
+	 * @brief Default constructor.
+	 */
+	Graph();
+
+	/**
+	 * @brief Return the subgraph at the given index.
+	 */
+	Subgraph &operator [] (size_t index);
+
+	/**
+	 * @brief Return the subgraph at the given index.
+	 */
+	const Subgraph &operator [] (size_t index) const;
+
+	/**
+	 * @brief Return the most recent subgraph.
+	 */
+	Subgraph &back();
+
+	/**
+	 * @brief Return the most recent subgraph.
+	 */
+	const Subgraph &back() const;
+
 	/**
 	 * @brief Update this graph with data from the given sensor reading.
 	 */
 	void update(const Reading &reading);
+
+	/**
+	 * @brief Return the number of subgraphs.
+	 */
+	size_t size() const;
+
+private:
+	/** @brief Sequence of subgraphs. */
+	Subgraph::S subgraphs;
+
+	/** @brief Index of the oldest subgraph. */
+	size_t i_0;
 };
 
 } // namespace virtual_scan

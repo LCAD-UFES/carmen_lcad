@@ -12,6 +12,7 @@ LFLAGS += \
 	-lgrid_mapping -lmap_io -lmap_interface -lmapper_interface -lparam_interface -lipc -lglobal -lmap_server_interface -lmoving_objects_interface
 
 SOURCES = \
+	hypothesis_viewer.cpp \
 	line.cpp \
 	neighborhood_graph.cpp \
 	obstacle.cpp \
@@ -44,6 +45,7 @@ PUBLIC_BINARIES = \
 
 TARGETS = \
 	libvirtual_scan_interface.a \
+	hypothesis_viewer \
 	message_viewer \
 	reading_viewer \
 	segment_viewer \
@@ -63,6 +65,15 @@ endif
 
 libvirtual_scan_interface.a: \
 	virtual_scan_interface.o
+
+hypothesis_viewer: \
+	hypothesis_viewer.o \
+	neighborhood_graph.o \
+	line.o \
+	parameters.o \
+	point.o \
+	reading.o \
+	segment.o \
 
 message_viewer: \
 	message_viewer.o

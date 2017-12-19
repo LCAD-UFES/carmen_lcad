@@ -2,27 +2,45 @@
 
 #include "parameters.h"
 
+#include <iomanip>
+
 namespace virtual_scan
 {
 
-static const Model *BIKE = new Model(1.2, 2.2);
+static const Model *BIKE = new Model(Model::BIKE, 1.2, 2.2);
 
-static const Model *BUS = new Model(2.5, 12.0);
+static const Model *BUS = new Model(Model::BUS, 2.5, 12.0);
 
-static const Model *CAR = new Model(1.9, 5.1);
+static const Model *CAR = new Model(Model::CAR, 1.9, 5.1);
 
-static const Model *PEDESTRIAN = new Model(0.0, 0.0);
+static const Model *PEDESTRIAN = new Model(Model::PEDESTRIAN, 0.0, 0.0);
 
-static const Model *UNKNOWN = new Model(0.0, 0.0);
+static const Model *UNKNOWN = new Model(Model::UNKNOWN, 0.0, 0.0);
 
 static std::vector<const Model*> VEHICLES = {BIKE, BUS, CAR};
 
 
-Model::Model(double width, double length):
+Model::Model(ID id, double width, double length):
+	id(id),
 	width(width),
 	length(length)
 {
 	// Nothing to do.
+}
+
+
+std::ostream &operator << (std::ostream &out, const Model &model)
+{
+	switch (model.id)
+	{
+		case Model::BIKE       : out << "Bike, "; break;
+		case Model::BUS        : out << "Bus, "; break;
+		case Model::CAR        : out << "Car, "; break;
+		case Model::PEDESTRIAN : out << "Pedestrian, "; break;
+		case Model::UNKNOWN    : out << "Unknown, "; break;
+	}
+
+	return out << "(width, length) = " << std::setprecision(2) << '(' << model.width << ", " << model.length << ')';
 }
 
 
@@ -45,7 +63,7 @@ Node::Node(double timestamp, const Pose &origin, const Pose &local, const Model 
 }
 
 
-void Node::adopt(Node &child)
+void Node::add_child(Node &child)
 {
 	// Only nodes of same model can have child / parent relations.
 	if (this->model != child.model)
@@ -63,7 +81,7 @@ void Node::adopt(Node &child)
 }
 
 
-void Node::connect(Node &node)
+void Node::add_sibling(Node &node)
 {
 	this->siblings.push_back(&node);
 	node.siblings.push_back(this);
@@ -91,14 +109,19 @@ bool Node::selected() const
 
 
 Cluster::Cluster():
-	selected_latch(0)
+	selected_latch(0),
+	nodes(NULL),
+	i_0(0),
+	i_n(0)
 {
 	// Nothing to do.
 }
 
 
-Cluster::Cluster(const Segment &segment):
-	selected_latch(0)
+Cluster::Cluster(const Segment &segment, Node::S &nodes):
+	selected_latch(0),
+	nodes(&nodes),
+	i_0(nodes.size())
 {
 	switch (segment.shape)
 	{
@@ -106,21 +129,24 @@ Cluster::Cluster(const Segment &segment):
 		case L_SHAPED   : init_L_SHAPED(segment);   break;
 		case POINT_MASS : init_POINT_MASS(segment); break;
 	}
+
+	i_n = nodes.size();
 }
 
 
 void Cluster::add_node(double timestamp, const Pose &origin, const Pose &local, const Model *model)
 {
-	emplace_back(timestamp, origin, local, model, &selected_latch);
-	Node &node = back();
-	for (auto i = rbegin() + 1, n = rend(); i != n; i++)
-		node.connect(*i);
+	nodes->emplace_back(timestamp, origin, local, model, &selected_latch);
+	Node &node = nodes->back();
+	for (auto i = nodes->rbegin() + 1, n = nodes->rend(); i != n; i++)
+		node.add_sibling(*i);
 }
 
 
 inline std::vector<PointXY> find_side_points(double length, double theta, const PointXY &first_point, const PointXY &last_point)
 {
 	std::vector<PointXY> points;
+	points.reserve(3); // Pre-allocate space for the points.
 
 	double cos_o = std::cos(theta);
 	double sin_o = std::sin(theta);
@@ -239,7 +265,19 @@ void Cluster::init_L_SHAPED(const Segment &segment)
 
 void Cluster::init_POINT_MASS(const Segment &segment)
 {
-	emplace_back(segment.timestamp, segment.origin, Pose(segment.centroid()), PEDESTRIAN, &selected_latch);	
+	nodes->emplace_back(segment.timestamp, segment.origin, Pose(segment.centroid()), PEDESTRIAN, &selected_latch);	
+}
+
+
+Node &Cluster::operator [] (size_t index)
+{
+	return (*nodes)[i_0 + index];
+}
+
+
+const Node &Cluster::operator [] (size_t index) const
+{
+	return (*nodes)[i_0 + index];
 }
 
 
@@ -249,52 +287,14 @@ bool Cluster::selected() const
 }
 
 
-Subgraph::iterator_nodes::iterator_nodes()
+size_t Cluster::size() const
 {
-	// Nothing to do.
+	return i_n - i_0;
 }
 
 
-Subgraph::iterator_nodes::iterator_nodes(const Cluster::S::iterator &cluster, const Node::S::iterator &node):
-	cluster(cluster),
-	node(node)
-{
-	// Nothing to do.
-}
-
-
-bool Subgraph::iterator_nodes::operator != (const iterator_nodes &that) const
-{
-	return (this->cluster != that.cluster || this->node != that.node);
-}
-
-
-Subgraph::iterator_nodes &Subgraph::iterator_nodes::operator ++ ()
-{
-	++node;
-	if (node == cluster->end())
-	{
-		++cluster;
-		node = cluster->begin();
-	}
-
-	return *this;
-}
-
-
-Node &Subgraph::iterator_nodes::operator * ()
-{
-	return *node;
-}
-
-
-Node *Subgraph::iterator_nodes::operator -> ()
-{
-	return node.operator->();
-}
-
-
-Subgraph::Subgraph()
+Subgraph::Subgraph():
+	timestamp(0)
 {
 	// Nothing to do.
 }
@@ -304,53 +304,76 @@ Subgraph::Subgraph(const Reading &reading):
 	timestamp(reading.timestamp)
 {
 	Segment::S segments = split_segments(reading);
-	for (auto i = segments.begin(), n = segments.end(); i != n; ++i)
-		emplace_back(*i);
+	for (auto segment = segments.begin(), n = segments.end(); segment != n; ++segment)
+		emplace_back(*segment, nodes);
 }
 
 
-Subgraph::Subgraph(Subgraph &parent, const Reading &reading):
+Subgraph::Subgraph(Subgraph &that, const Reading &reading):
 	Subgraph(reading)
 {
-	for (auto i = parent.begin_nodes(), m = parent.end_nodes(); i != m; ++i)
-		for (auto j = this->begin_nodes(), n = this->end_nodes(); j != n; ++j)
-			i->adopt(*j);
+	for (auto parent = that.nodes.begin(), m = that.nodes.end(); parent != m; ++parent)
+		for (auto child = this->nodes.begin(), n = this->nodes.end(); child != n; ++child)
+			parent->add_child(*child);
 }
 
 
-Subgraph::iterator_nodes Subgraph::begin_nodes()
+Graph::Graph():
+	i_0(0)
 {
-	if (size() > 0)
-		return iterator_nodes(begin(), front().begin());
-	else
-		return iterator_nodes();
+	// Nothing to do.
 }
 
 
-Subgraph::iterator_nodes Subgraph::end_nodes()
+Subgraph &Graph::operator [] (size_t index)
 {
-	if (size() > 0)
-		return iterator_nodes(end(), back().end());
-	else
-		return iterator_nodes();
+	return subgraphs[(i_0 + index) % T];
+}
+
+
+const Subgraph &Graph::operator [] (size_t index) const
+{
+	return subgraphs[(i_0 + index) % T];
+}
+
+
+Subgraph &Graph::back()
+{
+	return subgraphs[i_0 > 0 ? i_0 - 1 : size() - 1];
+}
+
+
+const Subgraph &Graph::back() const
+{
+	return subgraphs[i_0 > 0 ? i_0 - 1 : size() - 1];
 }
 
 
 void Graph::update(const Reading &reading)
 {
-	if (size() == T)
+	if (subgraphs.size() == T)
 	{
-		pop_front();
+		// Replace the oldest subgraph with a new one.
+		subgraphs[i_0] = Subgraph(back(), reading);
+
+		// Update the initial index, wrapping it around if necessary.
+		i_0 = (i_0 + 1) % T;
 
 		// Remove all dangling parent node pointers from the now-oldest subgraph.
-		for (auto i = front().begin_nodes(), n = front().end_nodes(); i != n; ++i)
-			i->parents.clear();
+		Node::S &nodes = subgraphs[i_0].nodes;
+		for (auto node = nodes.begin(), n = nodes.end(); node != n; ++node)
+			node->parents.clear();
 	}
-
-	if (size() > 0)
-		emplace_back(back(), reading);
+	else if (size() > 0)
+		subgraphs.emplace_back(subgraphs.back(), reading);
 	else
-		emplace_back(reading);
+		subgraphs.emplace_back(reading);
+}
+
+
+size_t Graph::size() const
+{
+	return subgraphs.size();
 }
 
 
