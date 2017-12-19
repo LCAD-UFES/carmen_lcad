@@ -26,18 +26,18 @@ virtual_scan_publish_segments(carmen_mapper_virtual_scan_message *message)
 
 	int n = message->num_points;
 
-    virtual_laser_message.num_positions = n;
-    virtual_laser_message.positions = resize(virtual_laser_message.positions, virtual_laser_message.num_positions);
-    virtual_laser_message.colors = resize(virtual_laser_message.colors, virtual_laser_message.num_positions);
+	virtual_laser_message.num_positions = n;
+	virtual_laser_message.positions = resize(virtual_laser_message.positions, virtual_laser_message.num_positions);
+	virtual_laser_message.colors = resize(virtual_laser_message.colors, virtual_laser_message.num_positions);
 	virtual_laser_message.timestamp = carmen_get_time();
 
 	carmen_position_t *points = message->points;
 	for (int i = 0; i < n; i++)
 	{
 		const carmen_position_t &global = points[i];
-        virtual_laser_message.positions[i].x = global.x;
-        virtual_laser_message.positions[i].y = global.y;
-        virtual_laser_message.colors[i] = CARMEN_ORANGE;
+		virtual_laser_message.positions[i].x = global.x;
+		virtual_laser_message.positions[i].y = global.y;
+		virtual_laser_message.colors[i] = CARMEN_ORANGE;
 	}
 
 	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());

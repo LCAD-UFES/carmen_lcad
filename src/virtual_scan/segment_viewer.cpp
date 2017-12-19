@@ -4,9 +4,6 @@
 #include <carmen/virtual_scan_interface.h>
 #include <carmen/global_graphics.h>
 
-#define NUM_COLORS 4
-
-char colors[NUM_COLORS] = {CARMEN_RED, CARMEN_GREEN, CARMEN_LIGHT_BLUE, CARMEN_ORANGE};
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //																						   //
@@ -27,6 +24,8 @@ template<class T> T *resize(T *buffer, size_t size)
 void
 virtual_scan_publish_segments(carmen_mapper_virtual_scan_message *message)
 {
+	static char colors[] = {CARMEN_RED, CARMEN_GREEN, CARMEN_LIGHT_BLUE};
+
 	static carmen_mapper_virtual_laser_message virtual_laser_message = {0, NULL, NULL, 0.0, carmen_get_host()};
 
 	virtual_scan::Reading reading(message);

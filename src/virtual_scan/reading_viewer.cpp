@@ -6,6 +6,7 @@
 
 #include <iostream>
 
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //																						   //
 // Publishers																				//
@@ -31,18 +32,18 @@ virtual_scan_publish_segments(carmen_mapper_virtual_scan_message *message)
 	const virtual_scan::Pose &origin = reading.origin;
 
 	virtual_laser_message.timestamp = carmen_get_time();
-    virtual_laser_message.num_positions = reading.size();
-    virtual_laser_message.positions = resize(virtual_laser_message.positions, virtual_laser_message.num_positions);
-    virtual_laser_message.colors = resize(virtual_laser_message.colors, virtual_laser_message.num_positions);
+	virtual_laser_message.num_positions = reading.size();
+	virtual_laser_message.positions = resize(virtual_laser_message.positions, virtual_laser_message.num_positions);
+	virtual_laser_message.colors = resize(virtual_laser_message.colors, virtual_laser_message.num_positions);
 
-    int k = 0;
-    for (auto point = reading.begin(), n = reading.end(); point != n; ++point, ++k)
-    {
+	int k = 0;
+	for (auto point = reading.begin(), n = reading.end(); point != n; ++point, ++k)
+	{
 		virtual_scan::PointXY global = origin.project_global(*point);
-        virtual_laser_message.positions[k].x = global.x;
-        virtual_laser_message.positions[k].y = global.y;
-        virtual_laser_message.colors[k] = CARMEN_ORANGE;
-    }
+		virtual_laser_message.positions[k].x = global.x;
+		virtual_laser_message.positions[k].y = global.y;
+		virtual_laser_message.colors[k] = CARMEN_ORANGE;
+	}
 
 	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
 }
