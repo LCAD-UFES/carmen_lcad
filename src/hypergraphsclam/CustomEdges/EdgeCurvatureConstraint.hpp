@@ -1,12 +1,16 @@
 #ifndef HYPERGRAPHSLAM_VEHICLE_CURVATURE_CONSTRAINT_HPP
 #define HYPERGRAPHSLAM_VEHICLE_CURVATURE_CONSTRAINT_HPP
 
+#include <limits>
+
 #include <g2o/core/base_multi_edge.h>
 #include <g2o/types/slam2d/vertex_se2.h>
 
+#include <Wrap2pi.hpp>
+
 namespace g2o {
 
-class EdgeCurvatureConstraint : public BaseMultiEdge<3, Eigen::Vector3d> {
+class EdgeCurvatureConstraint : public BaseMultiEdge<3, SE2> {
 
     protected:
 
@@ -14,7 +18,10 @@ class EdgeCurvatureConstraint : public BaseMultiEdge<3, Eigen::Vector3d> {
         static constexpr double kmax = 0.22;
 
         // the wk value
-        static constexpr double wk = 1.0;
+        static constexpr double wk = 0.5;
+
+        // the delta time
+        double dt;
 
     public:
 
@@ -22,20 +29,22 @@ class EdgeCurvatureConstraint : public BaseMultiEdge<3, Eigen::Vector3d> {
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
         // the base constructor
-        EdgeCurvatureConstraint() {
+        EdgeCurvatureConstraint() : BaseMultiEdge<3, SE2>(), dt(0.0) {
 
             // resize the base edge
             resize(3);
 
-            // set the error values to zero
-            _error(0,0) = 1e03;
-            _error(1,0) = 1e03;
-            _error(2,0) = 1e03;
+        }
+
+
+        void setTimeDifference(double _t) {
+
+            dt = _t;
 
         }
 
         // get curvature value
-        Eigen::Vector2d GetCurvatureDerivative(const Eigen::Vector2d &xim1, const Eigen::Vector2d &xi, const Eigen::Vector2d &xip1) {
+        Eigen::Vector2d getCurvatureDerivative(const Eigen::Vector2d &xim1, const Eigen::Vector2d &xi, const Eigen::Vector2d &xip1) {
 
             // the resulting derivative
             Eigen::Vector2d res(0.0, 0.0);
@@ -146,32 +155,29 @@ class EdgeCurvatureConstraint : public BaseMultiEdge<3, Eigen::Vector3d> {
             const VertexSE2* v3 = static_cast<const VertexSE2*>(_vertices[2]);
 
             // the estimates
-            const Eigen::Vector2d xim1(v1->estimate().translation());
-            const Eigen::Vector2d xi(v2->estimate().translation());
-            const Eigen::Vector2d xip1(v3->estimate().translation());
+            const SE2 &xim1(v1->estimate());
+            const SE2 &xi(v2->estimate());
+            const SE2 &xip1(v3->estimate());
 
-            // get the current displacement
-            const Eigen::Vector2d dxi(xi - xim1);
+            SE2 xim1_inverse(xim1.inverse());
 
-            // get the next displacement
-            const Eigen::Vector2d dxip1(xip1 - xi);
+            // the angle
+            SE2 total_delta(xim1_inverse * xip1);
 
-            // conpute the inverse norm
-            double dxi_norm = dxi.norm();
+            // the current measure
+            SE2 partial_delta(total_delta.toVector() * dt);
 
-            // compute the curvature error
-            double k_error = 0.0 != dxi_norm ? std::fabs(std::atan2(dxip1(1, 0), dxip1(0, 0)) - std::atan2(dxi(1, 0), dxi(0, 0))) / dxi_norm : 0.0;
+            // the translation vector
+            Eigen::Vector2d translation(total_delta.translation());
 
-            // verify the curvature constraint
-            k_error = kmax < k_error ? k_error - kmax : 0.0;
+            // update the partial angle
+            partial_delta.setRotation(std::atan2(translation[1], translation[0]));
 
-            // the current norm
-            _error(0, 0) = k_error;
-            _error(1, 0) = k_error;
-            _error(2, 0) = k_error;
+            // compute the error
+            SE2 delta((xim1_inverse * xi).inverse() * partial_delta);
 
-            //std::cout << "Error: " << _error.transpose() << std::endl;
-            // _error(2, 0) = 0.0;
+            // get the error
+            _error = delta.toVector() * wk;
 
         }
 

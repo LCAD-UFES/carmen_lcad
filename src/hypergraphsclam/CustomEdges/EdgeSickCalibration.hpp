@@ -1,6 +1,8 @@
 #ifndef HYPERGRAPHSLAM_EDGE_SICK_CALIBRATION_HPP
 #define HYPERGRAPHSLAM_EDGE_SICK_CALIBRATION_HPP
 
+#include <vector>
+
 #include <g2o/core/base_multi_edge.h>
 #include <g2o/types/slam2d/vertex_se2.h>
 
@@ -48,8 +50,8 @@ class EdgeSickCalibration : public BaseMultiEdge<3, g2o::SE2> {
             const SE2& sick = sensor_offset->estimate();
 
             // compute the error
-            // SE2 delta = _inverseMeasurement * (((x1 * (sick * _displacement)).inverse() * x2 * (sick * _displacement)));
-            SE2 delta = _inverseMeasurement * ((x1 * sick).inverse() * x2 * sick);
+            SE2 delta = _inverseMeasurement * (((x1 * (sick * _displacement)).inverse() * x2 * (sick * _displacement)));
+            // SE2 delta = _inverseMeasurement * ((x1 * sick).inverse() * x2 * sick);
 
             // save the error in an Eigen Vector
             _error = delta.toVector();
@@ -184,6 +186,8 @@ class EdgeSickCalibration : public BaseMultiEdge<3, g2o::SE2> {
 
 // set the default displacement
 g2o::SE2 EdgeSickCalibration::_displacement = g2o::SE2(0.12, 0.0, 0.0);
+
+typedef std::vector<EdgeSickCalibration*> EdgeSickCalibrationPtrVector;
 
 } // end namespace
 

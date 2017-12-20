@@ -4,7 +4,7 @@
 using namespace hyper;
 
 // the basic constructor
-StampedXSENS::StampedXSENS(unsigned msg_id) : StampedMessage(msg_id), yaw() {}
+StampedXSENS::StampedXSENS(unsigned msg_id) : StampedMessage(msg_id), yaw(00.0) {}
 
 // the basic destructor
 StampedXSENS::~StampedXSENS() {}

@@ -6,16 +6,10 @@
 #include <StampedMessage.hpp>
 
 #include <StringHelper.hpp>
-
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/io/pcd_io.h>
+#include <SimpleLidarSegmentation.hpp>
 
 namespace hyper {
 
-// syntactic sugar
-typedef pcl::PointCloud<pcl::PointXYZHSV> PointCloudHSV;
 typedef pcl::VoxelGrid<pcl::PointXYZHSV> VoxelGridFilter;
 
 class StampedLidar : virtual public StampedMessage {
@@ -25,6 +19,17 @@ class StampedLidar : virtual public StampedMessage {
         // to degree
         static double to_degree;
 
+        // x min max values
+        double minx, maxx, absx;
+
+        // y min max values
+        double miny, maxy, absy;
+
+        // z min max values
+        double minz, maxz, absz;
+
+        // the segmentation class
+        static hyper::SimpleLidarSegmentation segm;
 
         // convert from spherical coordinates
         pcl::PointXYZHSV FromSpherical(double phi, double theta, double radius);
@@ -52,6 +57,9 @@ class StampedLidar : virtual public StampedMessage {
         // the current lidar estimate
         g2o::SE2 lidar_estimate;
 
+        // the current gps sync estimate
+        g2o::SE2 gps_sync_estimate;
+
         // the loop restriction measure
         g2o::SE2 loop_measure;
 
@@ -75,6 +83,9 @@ class StampedLidar : virtual public StampedMessage {
 
         // custom point cloud loading process
         static void LoadPointCloud(const std::string &cloud_path, PointCloudHSV &cloud);
+
+        // remove undesired points
+        void RemoveUndesiredPoints(PointCloudHSV &cloud);
 
 };
 

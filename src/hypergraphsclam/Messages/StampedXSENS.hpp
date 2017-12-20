@@ -32,6 +32,9 @@ class StampedXSENS : virtual public StampedMessage {
 typedef StampedXSENS* StampedXSENSPtr;
 typedef StampedXSENS& StampedXSENSRef;
 
+// helper
+typedef std::vector<StampedXSENSPtr> StampedXSENSPtrVector;
+
 }
 
 #endif

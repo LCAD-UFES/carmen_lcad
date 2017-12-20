@@ -5,7 +5,7 @@ int main (int argc, char **argv) {
     if (argc != 3) {
 
         // error
-        std::cout << "Usage: hypergraphslam <log_file> <output_file>";
+        std::cout << "Usage: ./parser <log_file> <output_file>";
 
         return -1;
 
@@ -30,6 +30,9 @@ int main (int argc, char **argv) {
         // save the hyper graph
         gd.SaveHyperGraph(output_file);
 
+        // save extra info
+        gd.SaveEstimates();
+
     } else {
 
         std::cout << "Error! Could not parse the log file!\n";
@@ -41,7 +44,6 @@ int main (int argc, char **argv) {
 
     // clearing?
     std::cout << "Cleared!\n";
-    std::cout << "Parser END!\n";
 
     return 0;
 

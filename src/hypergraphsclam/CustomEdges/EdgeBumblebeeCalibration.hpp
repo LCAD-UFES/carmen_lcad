@@ -1,5 +1,5 @@
-#ifndef HYPERGRAPHSLAM_EDGE_VELODYNE_CALIBRATION_HPP
-#define HYPERGRAPHSLAM_EDGE_VELODYNE_CALIBRATION_HPP
+#ifndef HYPERGRAPHSLAM_EDGE_BUMBLEBEE_CALIBRATION_HPP
+#define HYPERGRAPHSLAM_EDGE_BUMBLEBEE_CALIBRATION_HPP
 
 #include <vector>
 
@@ -11,15 +11,12 @@ namespace g2o {
   /**
    * \brief scanmatch measurement that also calibrates an offset for the laser
    */
-class EdgeVelodyneCalibration : public BaseMultiEdge<3, g2o::SE2> {
+class EdgeBumblebeeCalibration : public BaseMultiEdge<3, g2o::SE2> {
 
     protected:
 
         // precomputed inverse measurement
         g2o::SE2 _inverseMeasurement;
-
-        // the displacement
-        static g2o::SE2 _displacement;
 
     public:
 
@@ -27,7 +24,7 @@ class EdgeVelodyneCalibration : public BaseMultiEdge<3, g2o::SE2> {
         // EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
         // the base constructor
-        EdgeVelodyneCalibration() {
+        EdgeBumblebeeCalibration() {
 
             // resize the base edge
             resize(3);
@@ -41,17 +38,16 @@ class EdgeVelodyneCalibration : public BaseMultiEdge<3, g2o::SE2> {
             const VertexSE2* v1 = static_cast<const VertexSE2*>(_vertices[0]);
             const VertexSE2* v2 = static_cast<const VertexSE2*>(_vertices[1]);
 
-            // the velodyne sensor offset
+            // the bumblebee sensor offset
             const VertexSE2* sensor_offset = static_cast<const VertexSE2*>(_vertices[2]);
 
             // direct access
             const SE2& x1(v1->estimate());
             const SE2& x2(v2->estimate());
-            const SE2& velodyne(sensor_offset->estimate());
+            const SE2& bumblebee(sensor_offset->estimate());
 
             // compute the error
-            // SE2 delta = _inverseMeasurement * (((x1 * velodyne) * _displacement).inverse() * ((x2 * velodyne) * _displacement));
-            SE2 delta = _inverseMeasurement * (((x1 * velodyne).inverse()) * (x2 * velodyne));
+            SE2 delta = _inverseMeasurement * (((x1 * bumblebee).inverse()) * (x2 * bumblebee));
 
             // save the error in an Eigen Vector
             _error = delta.toVector();
@@ -183,10 +179,10 @@ class EdgeVelodyneCalibration : public BaseMultiEdge<3, g2o::SE2> {
 // velodyne_yaw    -0.01 # 0.09
 
 // set the default displacement
-g2o::SE2 EdgeVelodyneCalibration::_displacement = g2o::SE2(0.145, 0.0, -0.01);
+// g2o::SE2 EdgeBumblebeeCalibration::_displacement = g2o::SE2(0.145, 0.0, -0.01);
 
 // the velodyne edges
-typedef std::vector<g2o::EdgeVelodyneCalibration*> EdgeVelodyneCalibrationPtrVector;
+typedef std::vector<g2o::EdgeBumblebeeCalibration*> EdgeBumblebeeCalibrationPtrVector;
 
 } // end namespace
 

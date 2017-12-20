@@ -1,7 +1,7 @@
 Como fazer o mapa com o HYPERGRAPHSCLAM
 
 ==============================================================================
-Verifique se no seu computador tem as seguintes pastas, caso não tenha criei:
+Verifique se no seu computador tem as seguintes pastas, caso não tenha crie:
 
     mkdir $CARMEN_HOME/data/mapper_teste2
     mkdir /dados/sick
@@ -16,38 +16,12 @@ Alem disso, apagar os arquivos antigos nessas pastas
 ==============================================================================
 
 
-1. Calibre a a odometria, Ver em ../src/odometry_calibration/README.txt
+1. Modifique no process-volta_da_ufes_playback_viewer_3D_map_generation_hypergraphsclam.ini as saidas dos programas playback, rdd_build, graphslam_publish:
+ playback 		support 	1		0			./playback <seu log>
+ rndf_build		interface	1		0			./rddf_build ../data/rndf/rndf_<nome_do_log>.txt
+ publish_poses		graphslam	0		0   			./graphslam_publish <output do ./hypergraphsclam - ver na etapa 7>
 
-2. Modificar o valor da odometria calibrada no Messages/StampedOdometry.cpp nas linhas com o valor da calibracao da etapa anterior:
-
-    v *= 0.976350;
-    phi = phi * 0.50000 - 0.001324;    
-
-3. compile o codigo do hypergraphsclam
-
-4. Modifique no process-volta_da_ufes_playback_viewer_3D_map_generation_hypergraphsclam.ini  as saidas dos programas:
-	 playback, rdd_build, graphslam_publish
-
-
-     playback 		support 	1		0			./playback <seu log>
-
-	exemplo:
-	    ./playback /dados/log_aeroporto_vila_velha_20170726-2.txt
-	
-
-    rndf_build		interface	1		0			./rddf_build ../data/rndf/rndf_<nome_do_log>.txt
-	
-	exemplo:
-	    ./rddf_build ../data/rndf/rndf-aeroporto_vila_velha_20170726.txt
-
-
-     Publish_poses		graphslam	0		0   ./graphslam_publish <output do ./hypergraphsclam - ver na etapa 7>
-
-        exemplo:
-            ./graphslam_publish  ../src/hypergraphsclam/poses-log_aeroporto_vila_velha_20170726.txt
-
-
-5. Modifique o carmen-ford-escape.ini para ativar a criacao de mapas, comente o trecho dos parâmetros acima e descomente o de baixo.
+2. Modifique o carmen-ford-escape.ini para ativar a criacao de mapas comentando e descomentando o trecho abaixo (ver o carmen-ford-escape.ini).
 
 ## Use the parameters below for building maps
 mapper_update_and_merge_with_snapshot_map		off
@@ -62,7 +36,7 @@ mapper_create_map_sum_and_count				off
 mapper_use_remission					on
 mapper_laser_ldmrs 					off
 
-6. Execute o parser no log dentro da pasta src/hypergraphsclam:
+3. Execute o parser no log dentro da pasta src/hypergraphsclam:
 
     ./parser <log> <output>
     
