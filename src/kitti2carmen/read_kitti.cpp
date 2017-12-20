@@ -188,6 +188,10 @@ read_velodyne_hdl32(char *dir, int file_id, double timestamp)
 //		velodyne_message.partial_scan[i].shot_size = 64;
 //		velodyne_message.partial_scan[i].distance = (unsigned short*) calloc (64, sizeof(unsigned short));
 //		velodyne_message.partial_scan[i].intensity = (unsigned char*) calloc (64, sizeof(unsigned char));
+		for (int j = 0; j < 32; j++) {
+			velodyne_message.partial_scan[i].distance[j] = 0;
+			velodyne_message.partial_scan[i].intensity[j] = 0;
+		}
 		velodyne_message.partial_scan[i].angle = carmen_radians_to_degrees(carmen_normalize_theta(hmin + i * hstep));
 	}
 
