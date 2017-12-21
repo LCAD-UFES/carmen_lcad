@@ -1,5 +1,6 @@
 #include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #include <carmen/carmen.h>
 #include <carmen/bumblebee_basic_interface.h>
@@ -24,6 +25,11 @@ int bumblebee_basic_height;
 
 carmen_bumblebee_basic_stereoimage_message bumblebee_message;
 
+static carmen_pose_3D_t camera_pose; // Camera pose in relation to sensor board
+static carmen_pose_3D_t velodyne_pose; //velodyne pose in relation to sensor board
+
+static carmen_camera_parameters camera_parameters;
+
 static cv::Rect box;
 static double confidence;
 std::vector<carmen_velodyne_points_in_cam_t> laser_in_cam_px;
@@ -36,7 +42,7 @@ show_velodyne(carmen_velodyne_partial_scan_message *velodyne_message)
 
 	static int first = 1;
 
-	vector<double> median_ranges;
+	std::vector<double> median_ranges;
 	double average_range = 0.0;
 	int count_range = 0;
 
@@ -80,11 +86,16 @@ show_velodyne(carmen_velodyne_partial_scan_message *velodyne_message)
 	mini_box.height = (box.height/3);
 	Scalar yellow = CV_RGB(255, 255, 0);
 	Scalar white = CV_RGB(255, 255, 255);
-	laser_in_cam_px = carmen_velodyne_camera_calibration_lasers_points_in_camera(velodyne_message, &bumblebee_message);
+
+	laser_in_cam_px = carmen_velodyne_camera_calibration_lasers_points_in_camera(velodyne_message, camera_parameters,
+																				 velodyne_pose, camera_pose,
+																				 bumblebee_message.width,
+																				 bumblebee_message.height);
+
 	rectangle(*bumb_image, cv::Point(box.x, box.y),cv::Point(box.x + box.width, box.y + box.height), Scalar( 0, r, 0 ), 1, 4 );
 	rectangle(*bumb_image, cv::Point(mini_box.x, mini_box.y),cv::Point(mini_box.x + mini_box.width, mini_box.y + mini_box.height), yellow, 1, 4 );
 
-	vector<double> ranges_d;
+	std::vector<double> ranges_d;
 
 	for(int i = 0; i < laser_in_cam_px.size(); i++)
 	{
@@ -210,10 +221,32 @@ read_parameters(int argc, char **argv, int camera)
 {
 	int num_items;
 	char bumblebee_string[256];
+	char camera_string[256];
 
 	sprintf(bumblebee_string, "%s%d", "bumblebee_basic", camera);
+	sprintf(camera_string, "%s%d", "camera", camera);
 
 	carmen_param_t param_list[] = {
+			{ bumblebee_string, (char*) "fx", CARMEN_PARAM_DOUBLE, &camera_parameters.fx_factor, 0, NULL },
+			{ bumblebee_string, (char*) "fy", CARMEN_PARAM_DOUBLE, &camera_parameters.fy_factor, 0, NULL },
+			{ bumblebee_string, (char*) "cu", CARMEN_PARAM_DOUBLE, &camera_parameters.cu_factor, 0, NULL },
+			{ bumblebee_string, (char*) "cv", CARMEN_PARAM_DOUBLE, &camera_parameters.cv_factor, 0, NULL },
+			{ bumblebee_string, (char*) "pixel_size", CARMEN_PARAM_DOUBLE, &camera_parameters.pixel_size, 0, NULL },
+
+			{(char *) "velodyne",  (char *) "x", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.x), 0, NULL},
+			{(char *) "velodyne",  (char *) "y", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.y), 0, NULL},
+			{(char *) "velodyne",  (char *) "z", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.z), 0, NULL},
+			{(char *) "velodyne",  (char *) "roll", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.roll), 0, NULL},
+			{(char *) "velodyne",  (char *) "pitch", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.pitch), 0, NULL},
+			{(char *) "velodyne",  (char *) "yaw", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.yaw), 0, NULL},
+
+			{ camera_string, (char*) "x", CARMEN_PARAM_DOUBLE, &camera_pose.position.x, 0, NULL },
+			{ camera_string, (char*) "y", CARMEN_PARAM_DOUBLE, &camera_pose.position.y, 0, NULL },
+			{ camera_string, (char*) "z", CARMEN_PARAM_DOUBLE, &camera_pose.position.z, 0, NULL },
+			{ camera_string, (char*) "roll", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.roll, 0, NULL },
+			{ camera_string, (char*) "pitch", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.pitch, 0, NULL },
+			{ camera_string, (char*) "yaw", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.yaw, 0, NULL },
+
 			{ bumblebee_string, (char*) "width", CARMEN_PARAM_INT, &bumblebee_basic_width, 0, NULL },
 			{ bumblebee_string, (char*) "height", CARMEN_PARAM_INT, &bumblebee_basic_height, 0, NULL } };
 
