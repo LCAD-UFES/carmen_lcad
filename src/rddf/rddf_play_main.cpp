@@ -75,6 +75,8 @@ deque<carmen_rddf_dynamic_annotation_message> dynamic_annotation_messages;
 
 carmen_moving_objects_point_clouds_message *moving_objects = NULL;
 
+bool simulated_pedestrian_on = false;
+
 
 static void
 carmen_rddf_play_shutdown_module(int signo)
@@ -216,9 +218,45 @@ carmen_rddf_play_find_nearest_poses_ahead(double x, double y, double yaw, double
 }
 
 
+int
+get_key_non_blocking(void)
+{
+	struct termios oldt, newt;
+	int ch;
+	int oldf;
+
+	tcgetattr(STDIN_FILENO, &oldt);
+	newt = oldt;
+	newt.c_lflag &= ~(ICANON | ECHO);
+	tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+	oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
+	fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
+
+	ch = getchar();
+
+	tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+	fcntl(STDIN_FILENO, F_SETFL, oldf);
+
+	return (ch);
+}
+
+
 bool
 pedestrian_track_busy(carmen_moving_objects_point_clouds_message *moving_objects, carmen_annotation_t pedestrain_track_annotation)
 {
+	int ch = get_key_non_blocking();
+
+	if (ch == 'p')
+		simulated_pedestrian_on = true;
+	if (ch == ' ')
+		simulated_pedestrian_on = false;
+
+	if (simulated_pedestrian_on)
+		return (true);
+
+	if (moving_objects == NULL)
+		return (false);
+
 	carmen_vector_2D_t world_point;
 	double displacement = distance_between_front_and_rear_axles + distance_between_front_car_and_front_wheels;
 	double theta = pedestrain_track_annotation.annotation_orientation;
@@ -278,20 +316,12 @@ add_annotation(double x, double y, double theta, size_t annotation_index)
 
 		if ((dist < 100.0) && orientation_ok)
 		{
-			if (moving_objects != NULL)
-			{
-				annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
-				if (pedestrian_track_busy(moving_objects, annotation_read_from_file[annotation_index]))
-					annotation_i.annotation.annotation_code = RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_BUSY;
-				else
-					annotation_i.annotation.annotation_code = RDDF_ANNOTATION_CODE_NONE;
-				annotations_to_publish.push_back(annotation_i);
-			}
+			annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
+			if (pedestrian_track_busy(moving_objects, annotation_read_from_file[annotation_index]))
+				annotation_i.annotation.annotation_code = RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_BUSY;
 			else
-			{
-				annotation_and_index annotation_i = {annotation_read_from_file[annotation_index], annotation_index};
-				annotations_to_publish.push_back(annotation_i);
-			}
+				annotation_i.annotation.annotation_code = RDDF_ANNOTATION_CODE_NONE;
+			annotations_to_publish.push_back(annotation_i);
 			return (true);
 		}
 	}
@@ -528,6 +558,7 @@ carmen_rddf_play_find_and_publish_poses_around_end_point(double x, double y, dou
 
 	free(poses_around_end_point);
 }
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 

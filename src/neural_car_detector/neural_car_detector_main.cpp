@@ -361,8 +361,10 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
                 cv::Point(10, 25),
                 cv::FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
 
-    for (unsigned int i = 0; i < laser_points_in_camera_box_list.size(); i++) {
-        for (unsigned int j = 0; j < laser_points_in_camera_box_list[i].size(); j++) {
+    for (unsigned int i = 0; i < laser_points_in_camera_box_list.size(); i++)
+    {
+        for (unsigned int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
+        {
             cv::circle(rgb_image, cv::Point(laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx,
                                             laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy), 1,
                        cv::Scalar(0, 0, 255), 1);
@@ -464,15 +466,19 @@ shutdown_module(int signo)
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-std::vector<std::string> objects_names_from_file(std::string const filename)
+
+std::vector<std::string>
+objects_names_from_file(std::string const filename)
 {
     std::ifstream file(filename);
     std::vector<std::string> file_lines;
     if (!file.is_open()) return file_lines;
     for (std::string line; getline(file, line);) file_lines.push_back(line);
     std::cout << "object names loaded \n";
+
     return file_lines;
 }
+
 
 void
 subscribe_messages()
@@ -488,7 +494,6 @@ subscribe_messages()
     carmen_localize_ackerman_subscribe_globalpos_message(NULL,
                                                          (carmen_handler_t) carmen_localize_ackerman_globalpos_message_handler,
                                                          CARMEN_SUBSCRIBE_LATEST);
-
 }
 
 
@@ -496,7 +501,8 @@ int
 main(int argc, char **argv)
 {
 
-    if (argc != 3) {
+    if (argc != 3)
+    {
         fprintf(stderr,
                 "%s: Wrong number of parameters. Neural_car_detector requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)\n>",
                 argv[0], argc - 1, argv[0]);
