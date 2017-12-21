@@ -24,6 +24,10 @@ const unsigned int maxPositions = 50;
 carmen_velodyne_partial_scan_message *velodyne_message_arrange;
 std::vector<carmen_velodyne_partial_scan_message> velodyne_vector;
 
+carmen_camera_parameters camera_parameters;
+carmen_pose_3D_t velodyne_pose;
+carmen_pose_3D_t camera_pose;
+
 
 /*
  This function find the closest velodyne message with the camera message
@@ -89,7 +93,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 	}
 
 	points_lasers_in_cam_with_obstacle =  carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_display(
-			&velodyne_sync_with_cam, image_msg->width, image_msg->height);
+			&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
 
 	cv::cvtColor(*src_image, *rgb_image, cv::COLOR_RGB2BGR);
 
@@ -112,7 +116,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message* image_msg)
 
 	bouding_boxes_list.push_back(bbox);
 
-	std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > laser_points_in_camera_box_list = velodyne_points_in_boxes(bouding_boxes_list, &velodyne_sync_with_cam,
+	std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > laser_points_in_camera_box_list = velodyne_points_in_boxes(
+			bouding_boxes_list, &velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose,
 			image_msg->width, image_msg->height);
 
 	char ponto_x[15];
@@ -215,24 +220,68 @@ subscribe_messages()
 
 }
 
+int
+read_parameters(int argc, char **argv)
+{
+
+    if ((argc != 3))
+        carmen_die("%s: Wrong number of parameters. tracker_opentld requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)\n>",
+                   argv[0], argc - 1, argv[0]);
+
+    /* defining the camera to be used */
+    camera = atoi(argv[1]);
+    camera_side = atoi(argv[2]);
+
+    int num_items;
+    char bumblebee_string[256];
+    char camera_string[256];
+
+    sprintf(bumblebee_string, "%s%d", "bumblebee_basic", camera);
+    sprintf(camera_string, "%s%d", "camera", camera);
+
+    carmen_param_t param_list[] = {
+
+            { bumblebee_string, (char*) "fx", CARMEN_PARAM_DOUBLE, &camera_parameters.fx_factor, 0, NULL },
+            { bumblebee_string, (char*) "fy", CARMEN_PARAM_DOUBLE, &camera_parameters.fy_factor, 0, NULL },
+            { bumblebee_string, (char*) "cu", CARMEN_PARAM_DOUBLE, &camera_parameters.cu_factor, 0, NULL },
+            { bumblebee_string, (char*) "cv", CARMEN_PARAM_DOUBLE, &camera_parameters.cv_factor, 0, NULL },
+            { bumblebee_string, (char*) "pixel_size", CARMEN_PARAM_DOUBLE, &camera_parameters.pixel_size, 0, NULL },
+
+            {(char *) "velodyne",  (char *) "x", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.x), 0, NULL},
+            {(char *) "velodyne",  (char *) "y", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.y), 0, NULL},
+            {(char *) "velodyne",  (char *) "z", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.z), 0, NULL},
+            {(char *) "velodyne",  (char *) "roll", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.roll), 0, NULL},
+            {(char *) "velodyne",  (char *) "pitch", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.pitch), 0, NULL},
+            {(char *) "velodyne",  (char *) "yaw", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.yaw), 0, NULL},
+
+            { camera_string, (char*) "x", CARMEN_PARAM_DOUBLE, &camera_pose.position.x, 0, NULL },
+            { camera_string, (char*) "y", CARMEN_PARAM_DOUBLE, &camera_pose.position.y, 0, NULL },
+            { camera_string, (char*) "z", CARMEN_PARAM_DOUBLE, &camera_pose.position.z, 0, NULL },
+            { camera_string, (char*) "roll", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.roll, 0, NULL },
+            { camera_string, (char*) "pitch", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.pitch, 0, NULL },
+            { camera_string, (char*) "yaw", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.yaw, 0, NULL }
+
+    };
+
+
+    num_items = sizeof(param_list) / sizeof(param_list[0]);
+    carmen_param_install_params(argc, argv, param_list, num_items);
+
+    return 0;
+}
+
 
 int
 main(int argc, char **argv)
 {
 
-	if (argc != 3)
-	{
-		fprintf(stderr, "%s: Wrong number of parameters. tracker_opentld requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)\n>", argv[0], argc - 1, argv[0]);
-		exit(1);
-	}
-
 	cv::namedWindow( "Display window", cv::WINDOW_AUTOSIZE );
 	setlocale(LC_ALL, "C");
 
-	camera = atoi(argv[1]);
-	camera_side = atoi(argv[2]);
+    carmen_ipc_initialize(argc, argv);
 
-	carmen_ipc_initialize(argc, argv);
+    read_parameters(argc,argv);
+
 	signal(SIGINT, shutdown_module);
 
 	subscribe_messages();
