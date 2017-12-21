@@ -12,14 +12,26 @@ LFLAGS += \
 	-lgrid_mapping -lmap_io -lmap_interface -lmapper_interface -lparam_interface -lipc -lglobal -lmap_server_interface -lmoving_objects_interface
 
 SOURCES = \
+	hypothesis_viewer.cpp \
 	line.cpp \
+	neighborhood_graph.cpp \
+	obstacle.cpp \
 	parameters.cpp \
+	point.cpp \
+	posterior.cpp \
+	random.cpp \
+	reading.cpp \
+	readings.cpp \
 	rectangle.cpp \
+	segment.cpp \
+	segment_viewer.cpp \
+	track.cpp \
+	tracker.cpp \
+	tracks.cpp \
+	virtual_scan.cpp \
 	virtual_scan_interface.cpp \
 	virtual_scan_main.cpp \
-	virtual_scan.cpp \
-	virtual_scan_neighborhood_graph.cpp \
-	virtual_scan_tracker.cpp
+	virtual_scan_neighborhood_graph.cpp
 
 PUBLIC_INCLUDES = \
 	virtual_scan_interface.h \
@@ -33,6 +45,10 @@ PUBLIC_BINARIES = \
 
 TARGETS = \
 	libvirtual_scan_interface.a \
+	hypothesis_viewer \
+	message_viewer \
+	reading_viewer \
+	segment_viewer \
 	virtual_scan
 
 # If you set graphics support in configure.
@@ -47,7 +63,52 @@ LFLAGS += \
 	`pkg-config --libs gtkglext-1.0`
 endif
 
-libvirtual_scan_interface.a: virtual_scan_interface.o
-virtual_scan: line.o parameters.o rectangle.o virtual_scan_main.o virtual_scan.o virtual_scan_interface.o virtual_scan_neighborhood_graph.o virtual_scan_tracker.o
+libvirtual_scan_interface.a: \
+	virtual_scan_interface.o
+
+hypothesis_viewer: \
+	hypothesis_viewer.o \
+	neighborhood_graph.o \
+	line.o \
+	parameters.o \
+	point.o \
+	reading.o \
+	segment.o \
+
+message_viewer: \
+	message_viewer.o
+
+reading_viewer: \
+	point.o \
+	reading.o \
+	reading_viewer.o
+
+segment_viewer: \
+	line.o \
+	parameters.o \
+	point.o \
+	reading.o \
+	segment.o \
+	segment_viewer.o
+
+virtual_scan: \
+	line.o \
+	neighborhood_graph.o \
+	obstacle.o \
+	parameters.o \
+	point.o \
+	posterior.o \
+	random.o \
+	reading.o \
+	readings.o \
+	rectangle.o \
+	segment.o \
+	track.o \
+	tracker.o \
+	tracks.o \
+	virtual_scan_main.o \
+	virtual_scan.o \
+	virtual_scan_interface.o \
+	virtual_scan_neighborhood_graph.o
 
 include ../Makefile.rules

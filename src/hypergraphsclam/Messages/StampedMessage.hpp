@@ -50,8 +50,20 @@ class StampedMessage {
         // the odometry measure
         g2o::SE2 odom_measure;
 
+        // the raw estimate
+        g2o::SE2 raw_est;
+
+        // the raw measure
+        g2o::SE2 raw_measure;
+
         // the basic constructor
-        StampedMessage(unsigned msg_id) : timestamp(-1.0), id(msg_id), est(0.0, 0.0, 0.0), odom_measure(0.0, 0.0, 0.0) {}
+        StampedMessage(unsigned msg_id) :
+            timestamp(-1.0),
+            id(msg_id),
+            est(0.0, 0.0, 0.0),
+            odom_measure(0.0, 0.0, 0.0),
+            raw_est(0.0, 0.0, 0.0),
+            raw_measure(0.0, 0.0, 0.0) {}
 
         // the basic destructor
         virtual ~StampedMessage() {}

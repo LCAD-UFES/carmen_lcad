@@ -1,6 +1,8 @@
 #ifndef HYPERGRAPHSLAM_EDGE_VELODYNE_CALIBRATION_HPP
 #define HYPERGRAPHSLAM_EDGE_VELODYNE_CALIBRATION_HPP
 
+#include <vector>
+
 #include <g2o/core/base_multi_edge.h>
 #include <g2o/types/slam2d/vertex_se2.h>
 
@@ -22,7 +24,7 @@ class EdgeVelodyneCalibration : public BaseMultiEdge<3, g2o::SE2> {
     public:
 
         // eigen new operator
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+        // EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 
         // the base constructor
         EdgeVelodyneCalibration() {
@@ -43,9 +45,9 @@ class EdgeVelodyneCalibration : public BaseMultiEdge<3, g2o::SE2> {
             const VertexSE2* sensor_offset = static_cast<const VertexSE2*>(_vertices[2]);
 
             // direct access
-            const SE2& x1 = v1->estimate();
-            const SE2& x2 = v2->estimate();
-            const SE2& velodyne = sensor_offset->estimate();
+            const SE2& x1(v1->estimate());
+            const SE2& x2(v2->estimate());
+            const SE2& velodyne(sensor_offset->estimate());
 
             // compute the error
             // SE2 delta = _inverseMeasurement * (((x1 * velodyne) * _displacement).inverse() * ((x2 * velodyne) * _displacement));
@@ -171,7 +173,6 @@ class EdgeVelodyneCalibration : public BaseMultiEdge<3, g2o::SE2> {
 
         }
 
-
 };
 
 // velodyne_x  0.145
@@ -183,6 +184,9 @@ class EdgeVelodyneCalibration : public BaseMultiEdge<3, g2o::SE2> {
 
 // set the default displacement
 g2o::SE2 EdgeVelodyneCalibration::_displacement = g2o::SE2(0.145, 0.0, -0.01);
+
+// the velodyne edges
+typedef std::vector<g2o::EdgeVelodyneCalibration*> EdgeVelodyneCalibrationPtrVector;
 
 } // end namespace
 

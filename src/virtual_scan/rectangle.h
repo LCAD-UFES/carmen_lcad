@@ -11,10 +11,10 @@ namespace virtual_scan
 struct Rectangle
 {
 	/** @brief Rectangle pose. */
-	carmen_point_t pose;
+	Pose pose;
 
 	/** @brief Rectangle corners. */
-	std::vector<carmen_position_t> corners;
+	std::vector<PointXY> corners;
 
 	/** @brief Rectangle sides. */
 	std::vector<Line> sides;
@@ -30,15 +30,7 @@ struct Rectangle
 	 * Position is relative to the center of the rectangle, and orientation is
 	 * relative to the length sides.
 	 */
-	Rectangle(double width, double length, const carmen_point_t &pose);
-
-	/**
-	 * @brief Compute the rectangle's _obstruction_, i.e. the range of lines
-	 * passing through the origin that intercept this rectangle.
-	 *
-	 * The range is given as a start and end angle between the lines and the x-axis.
-	 */
-	std::pair<double, double> obstruction() const;
+	Rectangle(double width, double length, const Pose &pose);
 };
 
 } // namespace virtual_scan

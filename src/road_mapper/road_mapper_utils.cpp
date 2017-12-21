@@ -53,11 +53,12 @@ road_map_to_image(carmen_map_p map, cv::Mat *road_map_img)
 			color[0] = blue;
 			color[1] = green;
 			color[2] = red;
-			road_map_img->at<cv::Vec3b>(x, y) = color;
+//			road_map_img->at<cv::Vec3b>(x, y) = color;
+			road_map_img->at<cv::Vec3b>(map->config.y_size - 1 - y, x) = color;
 		}
 	}
-	cv::Point pt(road_map_img->cols/2.0, road_map_img->rows/2.0);
-	*road_map_img = rotate(*road_map_img, pt, 90);
+//	cv::Point pt(road_map_img->cols/2.0, road_map_img->rows/2.0);
+//	*road_map_img = rotate(*road_map_img, pt, 90);
 }
 
 void
@@ -71,11 +72,12 @@ road_map_to_image_black_and_white(carmen_map_p map, cv::Mat *road_map_img, const
 		{
 			cell_prob = road_mapper_double_to_prob(&map->map[x][y]);
 			road_mapper_cell_black_and_white(cell_prob, &intensity, class_bits);
-			road_map_img->at<uchar>(x, y) = intensity;
+//			road_map_img->at<uchar>(x, y) = intensity;
+			road_map_img->at<uchar>(map->config.y_size - 1 - y, x) = intensity;
 		}
 	}
-	cv::Point pt(road_map_img->cols/2.0, road_map_img->rows/2.0);
-	*road_map_img = rotate(*road_map_img, pt, 90);
+//	cv::Point pt(road_map_img->cols/2.0, road_map_img->rows/2.0);
+//	*road_map_img = rotate(*road_map_img, pt, 90);
 }
 
 int

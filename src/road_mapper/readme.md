@@ -23,6 +23,7 @@
 			- [C++ Code](#c-code)
 			- [Examples](#examples-2)
 		- [Measurement of Execution Time](#measurement-of-execution-time)
+- [Generating Road Maps via Inference from Remission Maps](#generating-road-maps-via-inference-from-remission-maps)
 
 ## Description
 
@@ -48,7 +49,7 @@ The following class code is used for segmenting a road map:
   - 2 = broken marking;
   - 3 = solid marking (50% confidence);
   - 4 = broken marking (50% confidence);
-  - 5, 6, 7, ..., 20 = center of a lane confidence (100% confidence, 93.75%, 87.50%, 81.25%, ..., 0%), we have 16 levels of confidence, or distances from the center.
+  - 5, 6, 7, ..., 20 = center of a lane confidence (100% confidence, 95%, 90%, 85%, ..., 25%), we have 16 levels of confidence, or distances from the center.
 
 The Road Mapper module parameters can be found at [carmen-ford-escape.ini](../carmen-ford-escape.ini) and are the following:
 ```ini
@@ -150,10 +151,12 @@ To learn more about the utility parameters please run the program with -h option
 
 To visualize a road map please run the [Display Map utility](road_mapper_display_map3.cpp):
 ```bash
- $ ./road_mapper_display_map3 maps/r7725970_-353430.map 3 0
+ $ ./road_mapper_display_map3 maps/r*.map
 ```
-To learn more about the utility parameters please take a look at [road_mapper_display_map3.cpp](road_mapper_display_map3.cpp).
-
+To learn more about the utility parameters please please run the program with -h option:
+```bash
+ $ ./road_mapper_display_map3 -h
+```
 
 ### Examples
 
@@ -199,19 +202,12 @@ For more information on ENet please refer to the published paper in arXiv: [ENet
 
 This tutorial is inspired on [Tutorial on how to train and test ENet on Cityscapes dataset](https://github.com/TimoSaemann/ENet/tree/master/Tutorial).
 
-#### Installation
-
-First, please clone the ENet repository by running:
+Please compile the carmen_lcad version of the modified Caffe framework **caffe-enet** (It supports all necessary layers for ENet):
 ```bash
- $ git clone --recursive https://github.com/TimoSaemann/ENet.git
-```
-
-Please compile the modified Caffe framework **caffe-enet** (It supports all necessary layers for ENet):
-```bash
- $ cd ENet/caffe-enet
+ $ cd $CARMEN_HOME/sharedlib/ENet/caffe-enet
  $ mkdir build && cd build
  $ cmake ..
- $ make all -j8 && make pycaffe
+ $ make all -j 20 && make pycaffe
 ```
 
 You can also consult the generic [Caffe installation guide](http://caffe.berkeleyvision.org/installation.html) for further help. If you like to compile with **make**, please uncomment the following line in the Makefile.config 
@@ -240,7 +236,7 @@ Check the existence of file $CAFFE_ENET_HOME/include/caffe/proto/caffe.pb.h. If 
 
 After [sampling](#road-mapper-sampling) the dataset, please do the following to learn how many directories your dataset has:
 ```bash
- $ cd $CARMEN_LCAD/src/road_mapper
+ $ cd $CARMEN_HOME/src/road_mapper
  $ python road_mapper_enet_training.py ../../data/road_mapper 1000000000 1
 ```
 The output will be:
@@ -281,27 +277,27 @@ The training of ENet is performed in two stages:
 
 <!--The next step is optional:-->
 
-To improve the quality of ENet predictions for classes less represented in the dataset (solid marking, broken marking, etc.), you can add **class_weighting** to the **SoftmaxWithLoss** layer. 
-```bash
- $ python ENet/scripts/calculate_class_weighting.py --source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt --num_classes 22 > result.txt
-```
-The program ENet/scripts/calculate_class_weighting.py might complain (see the result.txt file) that there is a classe missing, say, class 18 - **Exception: The class 18 is not present in the dataset**. In this case, change the parameter --num_classes 22 to --num_classes 17. Note that, in this case, you have to change the number of classes in all commands below.
-
-Copy the **class_weightings** from the result.txt to the `enet_train_encoder.prototxt` file under **weight_by_label_freqs** and set this flag from **false** to **true**. The file is `enet_train_encoder.prototxt` generated/changed in the step below. So, after that step, copy the **class_weightings** from the result.txt to it.
-
 Create the prototxt file `enet_train_encoder.prototxt` by running:
 ```bash
  $ python ENet/scripts/create_enet_prototxt.py  --source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt --mode train_encoder --batch_size 20 --new_height 120 --new_width  120 --num_of_classes 17
 ```
 To learn more about the parameters please run the program with the -h option:
 ```bash
- $ python create_enet_prototxt.py -h
+ $ python ENet/scripts/create_enet_prototxt.py -h
 ```
 
 The values of batch_size, new_height and new_width are limited by the available GPU memory. The batch_size must be as big as possible and fit GPU memory. The values of new_height and new_width must be divisible by 8.
 
 The prototxt file contains the ENet encoder architecture with some default settings that you may customize according to your needs. For more information take a look at the prototxt file or in the python file.
  
+To improve the quality of ENet predictions for classes less represented in the dataset (solid marking, broken marking, etc.), you can add **class_weighting** to the **SoftmaxWithLoss** layer. 
+```bash
+ $ python ENet/scripts/calculate_class_weighting.py --source $CARMEN_HOME/src/road_mapper/road_mapper_train.txt --num_classes 22 > result.txt
+```
+The program ENet/scripts/calculate_class_weighting.py might complain (see the result.txt file) that there is a class missing, say, class 18 - **Exception: The class 18 is not present in the dataset**. In this case, change the parameter --num_classes 22 to --num_classes 17. Note that, in this case, you have to change the number of classes in all commands below.
+
+Copy the **class_weightings** from the result.txt to the `enet_train_encoder.prototxt` file under **weight_by_label_freqs** and set this flag from **false** to **true**. The file is `enet_train_encoder.prototxt` generated/changed in the step below. So, after that step, copy the **class_weightings** from the result.txt to it.
+
 Before training:
 
 Please, have a look in the `ENet/prototxts/enet_solver_encoder.prototxt` file and change it to achieve the desired number of epochs and etc. For more details on the Caffe solver file, please have a look at [Caffe Solver Parameters](https://github.com/BVLC/caffe/wiki/Solver-Prototxt).
@@ -444,3 +440,30 @@ To measure ENet execution time layer-by-layer run:
 ```
 
 **For more information look in [docs/](./docs)**
+
+## Generating Road Maps via Inference from Remission Maps
+
+To generate the road maps via deep learning inference from existing remission maps, please do the following:
+
+First step:  
+Save the files used in ENet training and set the following parameters in [carmen-ford-escape.ini](../carmen-ford-escape.ini):
+```
+ # Road Mapper
+
+ road_mapper_sampling_stride		50  # pixels,
+ road_mapper_prototxt_filename		$CARMEN_HOME/src/road_mapper/data/bn_conv_merged_model.prototxt # Caffe ENet model file
+ road_mapper_caffemodel_filename	$CARMEN_HOME/src/road_mapper/data/bn_conv_merged_weights.caffemodel # Caffe ENet trained weights file
+ road_mapper_label_colours_filename	$CARMEN_HOME/src/road_mapper/data/road_mapper_17.png # Caffe ENet label colours file
+```
+Second step:  
+Start the IPC central server (if it is not running yet) [as previously said](#saving-remission-map-images).
+
+Third step:  
+In another terminal window, run the Process Control module using the following 
+[.ini file](../../bin/process-ida_a_guarapari_playback_road_mapper_road_inference.ini) as a reference. 
+Output files will be placed in the directory set by -m parameter of road_inference module.
+```bash
+ $ cd $CARMEN_HOME/bin
+ $ ./proccontrol process-ida_a_guarapari_playback_road_mapper_road_inference.ini
+```
+**Important: Before clicking the _Play_ button in the Playback Control panel, set a reduced _Speed_ (0.3 or less).**

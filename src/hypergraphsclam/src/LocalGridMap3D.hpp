@@ -548,6 +548,11 @@ class LocalGridMap3D {
             }
 
             // allocate the old grid map collumns
+            unsigned size = width * depth * height;
+
+            // contiguous
+            GridCell<T> *local_contiguous_grid = new GridCell<T>[size];
+
             current_map = new GridCell<T>**[width];
 
             for (unsigned i = 0; i < width; ++i) {

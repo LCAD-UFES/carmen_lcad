@@ -9,8 +9,13 @@ class StampedOdometry : virtual public StampedMessage {
 
 	public:
 
+        double raw_v;
+        double raw_phi;
+
 		double v;
 		double phi;
+
+		double vmb, phiab, phimb;
 
 		// basic constructor
 		StampedOdometry(unsigned msg_id);

@@ -3,10 +3,78 @@
 #include <carmen/gps_nmea_interface.h>
 #include <carmen/bumblebee_basic_interface.h>
 #include <carmen/stereo_velodyne_messages.h>
+#include <carmen/velodyne_interface.h>
+#include <carmen/velodyne_messages.h>
 #include <carmen/writelog.h>
 #include <carmen/carmen.h>
 #include "read_kitti.h"
 
+int vel64_to_vel32_id[] = {
+		-1, //00
+		10, //01
+		-1, //02
+		-1, //03
+		12, //04
+		-1, //05
+		-1, //06
+		-1, //07
+		14, //08
+		-1, //09
+		16, //10
+		-1, //11
+		-1, //12
+		-1, //13
+		18, //14
+		-1, //15
+		-1, //16
+		20, //17
+		-1, //18
+		-1, //19
+		22, //20
+		-1, //21
+		-1, //22
+		24, //23
+		-1, //24
+		-1, //25
+		26, //26
+		-1, //27
+		-1, //28
+		28, //29
+		-1, //30
+		-1, //31
+		30, //32
+		-1, //33
+		-1, //34
+		 1, //35
+		-1, //36
+		-1, //37
+		 3, //38
+		-1, //39
+		-1, //40
+		-1, //41
+		 5, //42
+		-1, //43
+		-1, //44
+		 7, //45
+		-1, //46
+		-1, //47
+		 9, //48
+		-1, //49
+		-1, //50
+		11, //51
+		-1, //52
+		-1, //53
+		13, //54
+		-1, //55
+		-1, //56
+		15, //57
+		-1, //58
+		-1, //59
+		17, //60
+		-1, //61
+		-1, //62
+		19  //63
+};
 
 void
 desalloc_velodyne_data(carmen_velodyne_variable_scan_message velodyne_message)
@@ -22,12 +90,30 @@ desalloc_velodyne_data(carmen_velodyne_variable_scan_message velodyne_message)
 
 
 void
+desalloc_velodyne_hdl32_data(carmen_velodyne_partial_scan_message velodyne_message)
+{
+	if (velodyne_message.partial_scan != NULL)
+		free(velodyne_message.partial_scan);
+}
+
+
+void
 publish_velodyne(carmen_velodyne_variable_scan_message velodyne_message)
 {
 	IPC_RETURN_TYPE err;
 
 	err = IPC_publishData("carmen_stereo_velodyne_scan_message8", &velodyne_message);
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_STEREO_VELODYNE_SCAN_MESSAGE_FMT);
+}
+
+
+void
+publish_velodyne_hdl32(carmen_velodyne_partial_scan_message velodyne_message)
+{
+	IPC_RETURN_TYPE err;
+
+	err = IPC_publishData("carmen_velodyne_partial_scan_message", &velodyne_message);
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_VELODYNE_PARTIAL_SCAN_MESSAGE_FMT);
 }
 
 
@@ -87,10 +173,17 @@ read_velodyne_and_save_to_log(double carmen_initial_time, carmen_FILE *g, char *
 
 		timestamp = (timestamp - first_kitti_timestamp) + carmen_initial_time;
 
-		carmen_velodyne_variable_scan_message velodyne_message = read_velodyne(dir, line, timestamp);
-		publish_velodyne(velodyne_message);
-		carmen_logwrite_write_variable_velodyne_scan(&velodyne_message, g, timestamp);
-		desalloc_velodyne_data(velodyne_message);
+//		carmen_velodyne_variable_scan_message velodyne_message = read_velodyne(dir, line, timestamp);
+//		publish_velodyne(velodyne_message);
+//		carmen_logwrite_write_variable_velodyne_scan(&velodyne_message, g, timestamp);
+//		desalloc_velodyne_data(velodyne_message);
+
+		carmen_velodyne_partial_scan_message velodyne_message = read_velodyne_hdl32(dir, line, timestamp);
+		if (velodyne_message.partial_scan != NULL) {
+			publish_velodyne_hdl32(velodyne_message);
+			carmen_logwrite_write_velodyne_partial_scan(&velodyne_message, g, timestamp);
+			desalloc_velodyne_hdl32_data(velodyne_message);
+		}
 
 		line++;
 	}
@@ -207,8 +300,13 @@ define_messages()
 	err = IPC_defineMsg(CARMEN_GPS_GPGGA_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_GPS_GPGGA_MESSAGE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_GPS_GPGGA_MESSAGE_NAME);
 
-	carmen_bumblebee_basic_define_messages(10);
+	err = IPC_defineMsg(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, IPC_VARIABLE_LENGTH, CARMEN_ROBOT_ACKERMAN_VELOCITY_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME);
+
+	carmen_bumblebee_basic_define_messages(9);
 	carmen_xsens_define_messages();
+
+	carmen_velodyne_define_messages();
 
 }
 
