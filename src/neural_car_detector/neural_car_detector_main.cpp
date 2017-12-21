@@ -362,8 +362,10 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
                 cv::Point(10, 25),
                 cv::FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
 
-    for (unsigned int i = 0; i < laser_points_in_camera_box_list.size(); i++) {
-        for (unsigned int j = 0; j < laser_points_in_camera_box_list[i].size(); j++) {
+    for (unsigned int i = 0; i < laser_points_in_camera_box_list.size(); i++)
+    {
+        for (unsigned int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
+        {
             cv::circle(rgb_image, cv::Point(laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx,
                                             laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy), 1,
                        cv::Scalar(0, 0, 255), 1);
@@ -465,15 +467,19 @@ shutdown_module(int signo)
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-std::vector<std::string> objects_names_from_file(std::string const filename)
+
+std::vector<std::string>
+objects_names_from_file(std::string const filename)
 {
     std::ifstream file(filename);
     std::vector<std::string> file_lines;
     if (!file.is_open()) return file_lines;
     for (std::string line; getline(file, line);) file_lines.push_back(line);
     std::cout << "object names loaded \n";
+
     return file_lines;
 }
+
 
 void
 subscribe_messages()
@@ -489,18 +495,12 @@ subscribe_messages()
     carmen_localize_ackerman_subscribe_globalpos_message(NULL,
                                                          (carmen_handler_t) carmen_localize_ackerman_globalpos_message_handler,
                                                          CARMEN_SUBSCRIBE_LATEST);
-
 }
 
 
 int
 read_parameters(int argc, char **argv)
 {
-
-    if ((argc != 3))
-        carmen_die("%s: Wrong number of parameters. Neural_car_detector requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)\n>",
-                   argv[0], argc - 1, argv[0]);
-
     /* defining the camera to be used */
     camera = atoi(argv[1]);
     camera_side = atoi(argv[2]);
@@ -512,28 +512,27 @@ read_parameters(int argc, char **argv)
     sprintf(bumblebee_string, "%s%d", "bumblebee_basic", camera);
     sprintf(camera_string, "%s%d", "camera", camera);
 
-    carmen_param_t param_list[] = {
+    carmen_param_t param_list[] =
+    {
+		{ bumblebee_string, (char*) "fx", CARMEN_PARAM_DOUBLE, &camera_parameters.fx_factor, 0, NULL },
+		{ bumblebee_string, (char*) "fy", CARMEN_PARAM_DOUBLE, &camera_parameters.fy_factor, 0, NULL },
+		{ bumblebee_string, (char*) "cu", CARMEN_PARAM_DOUBLE, &camera_parameters.cu_factor, 0, NULL },
+		{ bumblebee_string, (char*) "cv", CARMEN_PARAM_DOUBLE, &camera_parameters.cv_factor, 0, NULL },
+		{ bumblebee_string, (char*) "pixel_size", CARMEN_PARAM_DOUBLE, &camera_parameters.pixel_size, 0, NULL },
 
-            { bumblebee_string, (char*) "fx", CARMEN_PARAM_DOUBLE, &camera_parameters.fx_factor, 0, NULL },
-            { bumblebee_string, (char*) "fy", CARMEN_PARAM_DOUBLE, &camera_parameters.fy_factor, 0, NULL },
-            { bumblebee_string, (char*) "cu", CARMEN_PARAM_DOUBLE, &camera_parameters.cu_factor, 0, NULL },
-            { bumblebee_string, (char*) "cv", CARMEN_PARAM_DOUBLE, &camera_parameters.cv_factor, 0, NULL },
-            { bumblebee_string, (char*) "pixel_size", CARMEN_PARAM_DOUBLE, &camera_parameters.pixel_size, 0, NULL },
+		{(char *) "velodyne",  (char *) "x", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.x), 0, NULL},
+		{(char *) "velodyne",  (char *) "y", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.y), 0, NULL},
+		{(char *) "velodyne",  (char *) "z", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.z), 0, NULL},
+		{(char *) "velodyne",  (char *) "roll", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.roll), 0, NULL},
+		{(char *) "velodyne",  (char *) "pitch", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.pitch), 0, NULL},
+		{(char *) "velodyne",  (char *) "yaw", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.yaw), 0, NULL},
 
-            {(char *) "velodyne",  (char *) "x", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.x), 0, NULL},
-            {(char *) "velodyne",  (char *) "y", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.y), 0, NULL},
-            {(char *) "velodyne",  (char *) "z", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.z), 0, NULL},
-            {(char *) "velodyne",  (char *) "roll", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.roll), 0, NULL},
-            {(char *) "velodyne",  (char *) "pitch", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.pitch), 0, NULL},
-            {(char *) "velodyne",  (char *) "yaw", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.yaw), 0, NULL},
-
-            { camera_string, (char*) "x", CARMEN_PARAM_DOUBLE, &camera_pose.position.x, 0, NULL },
-            { camera_string, (char*) "y", CARMEN_PARAM_DOUBLE, &camera_pose.position.y, 0, NULL },
-            { camera_string, (char*) "z", CARMEN_PARAM_DOUBLE, &camera_pose.position.z, 0, NULL },
-            { camera_string, (char*) "roll", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.roll, 0, NULL },
-            { camera_string, (char*) "pitch", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.pitch, 0, NULL },
-            { camera_string, (char*) "yaw", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.yaw, 0, NULL }
-
+		{ camera_string, (char*) "x", CARMEN_PARAM_DOUBLE, &camera_pose.position.x, 0, NULL },
+		{ camera_string, (char*) "y", CARMEN_PARAM_DOUBLE, &camera_pose.position.y, 0, NULL },
+		{ camera_string, (char*) "z", CARMEN_PARAM_DOUBLE, &camera_pose.position.z, 0, NULL },
+		{ camera_string, (char*) "roll", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.roll, 0, NULL },
+		{ camera_string, (char*) "pitch", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.pitch, 0, NULL },
+		{ camera_string, (char*) "yaw", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.yaw, 0, NULL }
     };
 
 
@@ -547,6 +546,10 @@ read_parameters(int argc, char **argv)
 int
 main(int argc, char **argv)
 {
+    if ((argc != 3))
+        carmen_die("%s: Wrong number of parameters. Neural_car_detector requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)\n>",
+                   argv[0], argc - 1, argv[0]);
+
     int gpu = 1;
     int device_id = 0;
 
