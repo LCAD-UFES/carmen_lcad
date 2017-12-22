@@ -92,7 +92,7 @@ O parser gera 7 arquivos:
 
     Exemplo com arquivo de configuração próprio:
 
-        ./hypergraphsclam sync-log_aeroporto_vila_velha_20170726.txt poses-log_aeroporto_vila_velha_20170726.txt minha_configuração.txt
+        ./hypergraphsclam sync-log.txt poses-log.txt minha_configuração.txt
 
 Após a otimização, os dados podem ser visualizados pelo gnuplot:
 	exemplo:
