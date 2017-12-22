@@ -1,0 +1,23 @@
+-- how many velodyne scans, 0 means no limit.
+MAXIMUM_VEL_SCANS 0
+
+-- how many seconds to consider a loop closure
+LOOP_REQUIRED_TIME 300.0
+
+-- how many meters to consider the loop closure, squared here
+LOOP_REQUIRED_SQR_DISTANCE 25.0
+
+-- how many threads the ICP method can use
+ICP_THREADS_POOL_SIZE 3
+
+-- each thread will take 400 clouds and execute the sensor movement estimates
+ICP_THREAD_BLOCK_SIZE 400
+
+-- the distace parameter to find the next point cloud
+LIDAR_ODOMETRY_MIN_DISTANCE 0.3
+
+-- the  distace parameter to find the next image
+VISUAL_ODOMETRY_MIN_DISTANCE 0.1
+
+ICP_TRANSLATION_CONFIDENCE_FACTOR 1.00
+CURVATURE_REQUIRED_TIME 0.0001

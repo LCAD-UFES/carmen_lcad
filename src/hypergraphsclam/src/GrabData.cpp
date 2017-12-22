@@ -31,7 +31,16 @@ GrabData::GrabData() :
     icp_start_index(0),
     icp_end_index(0),
     icp_mutex(),
-    dmax(std::numeric_limits<double>::max()) {}
+    first_last_mutex(),
+    dmax(std::numeric_limits<double>::max()),
+    maximum_vel_scans(MAXIMUM_VEL_SCANS),
+    loop_required_time(LOOP_REQUIRED_TIME),
+    loop_required_sqr_distance(LOOP_REQUIRED_SQR_DISTANCE),
+    icp_threads_pool_size(ICP_THREADS_POOL_SIZE),
+    icp_thread_block_size(ICP_THREAD_BLOCK_SIZE),
+    lidar_odometry_min_distance(LIDAR_ODOMETRY_MIN_DISTANCE),
+    visual_odometry_min_distance(VISUAL_ODOMETRY_MIN_DISTANCE),
+    icp_translation_confidence_factor(ICP_TRANSLATION_CONFIDENCE_FACTOR) {}
 
 // the main destructor
 GrabData::~GrabData() {
@@ -628,7 +637,7 @@ bool GrabData::BuildLidarOdometryMeasure(
         double translation_difference = (odom.translation() - icp_measure.translation()).norm();
 
         // try to validate the current transformation
-        bool valid_transformation = (0 != cf * icp_guess(0, 3)) && ICP_TRANSLATION_CONFIDENCE_FACTOR > translation_difference;
+        bool valid_transformation = (0 != cf * icp_guess(0, 3)) && icp_translation_confidence_factor > translation_difference;
 
         // the movement and the cf value should have the same sign
         if (valid_transformation) {
@@ -660,7 +669,7 @@ bool GrabData::BuildLidarOdometryMeasure(
         } else {
 
             // report
-            std::cout << "Error: " << translation_difference << " is greater than " << ICP_TRANSLATION_CONFIDENCE_FACTOR << " or " << cf
+            std::cout << "Error: " << translation_difference << " is greater than " << icp_translation_confidence_factor << " or " << cf
                 << " is lesser than zero and icp is greater, let's see icp matrix: \n" << icp_guess << std::endl;
 
         }
@@ -735,7 +744,7 @@ bool GrabData::GetNextLidarBlock(unsigned &first_index, unsigned &last_index) {
         first_index = icp_start_index;
 
         // get the end index
-        icp_end_index = icp_start_index + ICP_THREAD_BLOCK_SIZE;
+        icp_end_index = icp_start_index + icp_thread_block_size;
 
         // verify the end index
         if (upper_limit < icp_end_index) {
@@ -782,7 +791,7 @@ bool GrabData::GetNextICPIterators(StampedLidarPtrVector::iterator &begin, Stamp
         begin = point_cloud_lidar_messages->begin() + icp_start_index;
 
         // get the end index
-        icp_end_index = icp_start_index + ICP_THREAD_BLOCK_SIZE;
+        icp_end_index = icp_start_index + icp_thread_block_size;
 
         // verify the end index
         if (upper_limit < icp_end_index) {
@@ -836,7 +845,7 @@ void GrabData::BuildLidarMeasuresMT() {
     // LocalGridMap3D<float> lgm(4.0, 40.0, 30.0f, 5.0f);
 
     // the lidar frequency times the base distance
-    float lfd = LIDAR_ODOMETRY_MIN_DISTANCE;
+    float lfd = lidar_odometry_min_distance;
 
     // the base path
     std::string path("/dados/tmp/lgm/");
@@ -878,6 +887,9 @@ void GrabData::BuildLidarMeasuresMT() {
 
     // get the the range iterators
     while (GetNextLidarBlock(current_index, last_index)) {
+
+        // save the first index to mutex usage
+        unsigned first_index = current_index;
 
         // get the current message pointer
         StampedLidarPtr current = *(begin + current_index);
@@ -928,13 +940,31 @@ void GrabData::BuildLidarMeasuresMT() {
                         // set the base id
                         current->seq_id = next->id;
 
-                        // save the acculated cloud
-                        // StampedLidar::SavePointCloud(path, current_index, *current_cloud);
+                        if (first_index == current_index || last_index == current_index) {
+
+                            // lock it
+                            first_last_mutex.lock();
+
+                            // save the acculated cloud
+                            StampedLidar::SavePointCloud(path, current_index, *current_cloud);
+
+                            // unlock it
+                            first_last_mutex.unlock();
+
+                        } else {
+
+                            // save the acculated cloud
+                            StampedLidar::SavePointCloud(path, current_index, *current_cloud);
+
+                        }
+
 
                     } else {
 
+                        // old debug message
                         std::cout << "clouds: " << current->path << " and " << next->path << std::endl;
 
+                        // yet another error
                         ++errors;
 
                     }
@@ -973,7 +1003,7 @@ void GrabData::BuildLidarOdometryMeasuresWithThreads(StampedLidarPtrVector &lida
     if (1 < lidar_messages.size()) {
 
         // status reporting
-        std::cout << "Starting the Lidar measures with " << ICP_THREADS_POOL_SIZE << " threads" << std::endl;
+        std::cout << "Starting the Lidar measures with " << icp_threads_pool_size << " threads" << std::endl;
 
         // set the point cloud lidar_messages to be used inside the lidar
         point_cloud_lidar_messages = &lidar_messages;
@@ -988,7 +1018,7 @@ void GrabData::BuildLidarOdometryMeasuresWithThreads(StampedLidarPtrVector &lida
         std::cout << "Start building the Lidar measures of " << lidar_messages.size() << " point clouds\n";
 
         // create the threads using the defined pool size
-        for (unsigned i = 0; i < ICP_THREADS_POOL_SIZE; ++i) {
+        for (unsigned i = 0; i < icp_threads_pool_size; ++i) {
 
             // create a new thread
             pool.push_back(std::thread(&GrabData::BuildLidarMeasuresMT, this));
@@ -996,7 +1026,7 @@ void GrabData::BuildLidarOdometryMeasuresWithThreads(StampedLidarPtrVector &lida
         }
 
         // wait all threads
-        for (unsigned i = 0; i < ICP_THREADS_POOL_SIZE; ++i) {
+        for (unsigned i = 0; i < icp_threads_pool_size; ++i) {
 
             // join the thread
             pool[i].join();
@@ -1243,7 +1273,7 @@ void GrabData::BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messag
                 // the time difference
                 double dt = std::fabs(lidar_loop->timestamp - current->timestamp);
 
-                if (min_dist > distance && LOOP_REQUIRED_TIME < dt && LOOP_REQUIRED_SQR_DISTANCE > distance) {
+                if (min_dist > distance && loop_required_time < dt && loop_required_sqr_distance > distance) {
 
                     // update the min distance
                     min_dist = distance;
@@ -1313,7 +1343,7 @@ void GrabData::BuildVisualOdometryMeasures() {
     std::cout << "Building the visual odometry measures with " << bumblebee_messages.size() << " messages!" << std::endl;
 
     // the camera freq
-    float bfd = VISUAL_ODOMETRY_MIN_DISTANCE * 16.0;
+    float bfd = visual_odometry_min_distance * 16.0;
 
     // set most important visual odometry parameters
     // for a full parameter list, look at: viso_stereo.h
@@ -1710,7 +1740,8 @@ void GrabData::SaveVisualOdometryEdges(std::ofstream &os) {
     std::cout << "\tVisual odometry saved!" << std::endl;
 
 }
-// save all the edges containgin icp measures, from SICK and Velodyne sensors
+
+// save all the edges containing icp measures, from SICK and Velodyne sensors
 void GrabData::SaveICPEdges(std::ofstream &os) {
 
     std::cout << "\tSaving all SICK edges..." << std::endl;
@@ -1820,52 +1851,6 @@ void GrabData::SaveVisualOdometryEstimates() {
     }
 }
 
-// save the curvature constraint edges
-void GrabData::SaveCurvatureEdges(std::ofstream &os) {
-
-    if (2 < messages.size()) {
-
-        // iterators
-        StampedMessagePtrVector::iterator end(messages.end());
-        StampedMessagePtrVector::iterator prev(messages.begin());
-        StampedMessagePtrVector::iterator curr(prev + 1);
-        StampedMessagePtrVector::iterator next(curr + 1);
-
-        while (next != end) {
-
-            // get the messages direct access
-            StampedMessagePtr a(*prev);
-            StampedMessagePtr b(*curr);
-            StampedMessagePtr c(*next);
-
-            // the time
-            double dt1 = b->timestamp - a->timestamp;
-            double dt2 = c->timestamp - b->timestamp;
-
-            if (CURVATURE_REQUIRED_TIME < std::fabs(dt1) && CURVATURE_REQUIRED_TIME < std::fabs(dt2)) {
-
-                // only sequencial ids
-                if (c->id == b->id + 1 && b->id == a->id + 1) {
-
-
-                    // save the current hyper edge
-                    os << "CURVATURE_CONSTRAINT " << a->id << " " << b->id << " " << c->id << " " << "\n";
-
-                }
-
-            }
-
-            // go to the next messages
-            prev = curr;
-            curr = next;
-            ++next;
-
-        }
-
-    }
-
-}
-
 // build Eigen homogeneous matrix from g2o SE2
 Eigen::Matrix4f GrabData::BuildEigenMatrixFromSE2(const g2o::SE2 &transform) {
 
@@ -1901,6 +1886,49 @@ g2o::SE2 GrabData::GetSE2FromVisoMatrix(const Matrix &matrix) {
 // the main sync method
 // PUBLIC METHODS
 
+// configuration
+void GrabData::Configure(std::string config_filename) {
+
+    std::ifstream is(config_filename, std::ifstream::in);
+    if (is.good()) {
+
+        // helpers
+        std::stringstream ss;
+
+        while (-1 != StringHelper::ReadLine(is, ss)) {
+
+            std::string str;
+            ss >> str;
+
+            if ("MAXIMUM_VEL_SCANS" == str){
+                ss >> maximum_vel_scans;
+            } else  if ("LOOP_REQUIRED_TIME" == str){
+                ss >> loop_required_time;
+            } else  if ("LOOP_REQUIRED_SQR_DISTANCE" == str){
+                ss >> loop_required_sqr_distance;
+            } else  if ("ICP_THREADS_POOL_SIZE" == str){
+                ss >> icp_threads_pool_size;
+            } else  if ("ICP_THREAD_BLOCK_SIZE" == str){
+                ss >> icp_thread_block_size;
+            } else  if ("LIDAR_ODOMETRY_MIN_DISTANCE" == str){
+                ss >> lidar_odometry_min_distance;
+            } else  if ("VISUAL_ODOMETRY_MIN_DISTANCE" == str){
+                ss >> visual_odometry_min_distance;
+            } else  if ("ICP_TRANSLATION_CONFIDENCE_FACTOR" == str){
+                ss >> icp_translation_confidence_factor;
+            }
+
+        }
+
+    } else {
+
+        std::cout << "Can't find the parser_config.txt file, using default parameters!" << std::endl;
+    }
+
+    is.close();
+
+}
+
 // the main process
 // it reads the entire log file and builds the hypergraph
 bool GrabData::ParseLogFile(const std::string &input_filename) {
@@ -1933,7 +1961,7 @@ bool GrabData::ParseLogFile(const std::string &input_filename) {
     unsigned msg_id = 6;
 
     // how many messages
-    unsigned vel_scans = 0 == MAXIMUM_VEL_SCANS ? std::numeric_limits<unsigned>::max() : MAXIMUM_VEL_SCANS;
+    unsigned vel_scans = 0 == maximum_vel_scans ? std::numeric_limits<unsigned>::max() : maximum_vel_scans;
 
     // how many messages
     unsigned percent = vel_scans * 0.1;
@@ -2118,9 +2146,6 @@ void GrabData::SaveHyperGraph(const std::string &output_filename) {
 
             // save the icp edges
             SaveICPEdges(out);
-
-            // save the curvature constraint edges
-            SaveCurvatureEdges(out);
 
         } else {
 

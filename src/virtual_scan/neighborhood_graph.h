@@ -229,9 +229,24 @@ struct Subgraph: Cluster::S
 	Subgraph(const Reading &reading);
 
 	/**
-	 * @brief Create a new subgraph from the given reading, connected to the given parent subgraph.
+	 * @brief Create a new subgraph from the given reading, connected to the given subgraph.
 	 */
-	Subgraph(Subgraph &parent, const Reading &reading);
+	Subgraph(Subgraph &that, const Reading &reading);
+
+	/**
+	 * @brief Update this subgraph with data from the given reading.
+	 */
+	void assign(const Reading &reading);
+
+	/**
+	 * @brief Update this subgraph with data from the given reading and connect it to the given subgraph.
+	 */
+	void assign(Subgraph &that, const Reading &reading);
+
+	/**
+	 * @brief Remove all clusters and nodes from this subgraph.
+	 */
+	void clear();
 };
 
 /**
@@ -268,6 +283,16 @@ struct Graph
 	const Subgraph &back() const;
 
 	/**
+	 * @brief Return the oldest subgraph.
+	 */
+	Subgraph &front();
+
+	/**
+	 * @brief Return the oldest subgraph.
+	 */
+	const Subgraph &front() const;
+
+	/**
 	 * @brief Update this graph with data from the given sensor reading.
 	 */
 	void update(const Reading &reading);
@@ -281,8 +306,14 @@ private:
 	/** @brief Sequence of subgraphs. */
 	Subgraph::S subgraphs;
 
-	/** @brief Index of the oldest subgraph. */
-	size_t i_0;
+	/**
+	 * @brief Index offset pointing to the oldest subgraph.
+	 *
+	 * When the subgraph sequence is full, the subgraph at this position is updated
+	 * to represent the most recent state, and then incremented (and possibly wrapped
+	 * around) to point to the now-oldest subgraph.
+	 */
+	size_t offset;
 };
 
 } // namespace virtual_scan
