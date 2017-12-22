@@ -9,7 +9,8 @@ Verifique se no seu computador tem as seguintes pastas, caso não tenha crie:
     mkdir /dados/tmp/
     mkdir /dados/tmp/lgm
     mkdir /dados/tmp/lgm/sick
-    mkdir /dados/tmp/lgm/velodyne    
+    mkdir /dados/tmp/lgm/velodyne
+    mkdir /dados/tmp/images
 
 Alem disso, apagar os arquivos antigos nessas pastas
 ==============================================================================
@@ -36,34 +37,58 @@ mapper_create_map_sum_and_count				off
 mapper_use_remission					on
 mapper_laser_ldmrs 					off
 
-3. Execute o parser no log dentro da pasta src/hypergraphsclam:
+3. Execute o parser no log dentro da pasta src/hypergraphsclam/:
 
     ./parser <log> <output>
-    
+
     exemplo:
-        ./parser log_aeroporto_vila_velha_20170726.txt sync-log_aeroporto_vila_velha_20170726.txt
 
-O parser gera 3 arquivos de poses do gps(gps.txt), odometria(odom.txt) e do icp do velodyne(velodyne.txt)
+    ./parser log_aeroporto_vila_velha_20170726.txt sync-log_aeroporto_vila_velha_20170726.txt
 
-##OBS: Caso der erro nessa etapa, eh preciso apagar os arquivos no /dados/tmp/
+O parser gera 7 arquivos:
+    as poses do GPS: gps.txt
+    a odometria com calibração inicial: odometry.txt
+    a odometria sem calibração: raw_odometry.txt
+    poses do ICP do velodyne: velodyne.txt
+    poses do ICP do sick: sick.txt
+    poses da câmera: bumblebee.txt
+    o arquivo de saída <output> contendo o hipergrafo.
+
+## OBS 1: o parser contém alguns parâmetros que podem ser ajustados no arquivo parser_config.txt
+## o arquivo contém comentários sobre do que se tratam os parâmetros
+## temos como exemplo, o parâmetro ICP_THREAD_POOL_SIZE que define a quantidade de threads disponíveis para as estimativas de movimento
+## dos sensores do tipo LiDAR.
+
+## OBS 2: caso seja do interesse do usuário, utilize um terceiro argumento no parser para especificar outro arquivo de configuração.
+## Caso não seja fornecido o terceiro parâmetro, então o parser vai procurar pelo arquivo parser_config.txt na pasta do hypergraphsclam/config/
+
+    ./parser <log> <output> <config_file>
+
+    Exemplo:
+
+        ./parser log_aeroporto_vila_velha_20170726.txt sync-log_aeroporto_vila_velha_20170726.txt outro_parser_config.txt
+
+## OBS 2: o parser gera muitos arquivos nas pastas /dados/tmp/*. As nuvens de pontos do velodyne, por exemplo, estão na pasta /dados/tmp/velodyne. As nuvens de pontos do velodyne acumuladas no ICP estão na pasta /dados/tmp/lgm/velodyne.
+## Portanto, é bom remover esses dados ao terminar de construir o mapa
 
 7. Execute o hypergraphsclam dentro da pasta src/hypergraphsclam:
 
     ./hypergraphsclam <output do ./parser> <poses-nome_do_log>
 
     exemplo:
-        ./hypergraphsclam ../data/graphslam/sync-log_aeroporto_vila_velha_20170726.txt ../data/graphslam/poses-log_aeroporto_vila_velha_20170726.txt
+        ./hypergraphsclam sync-log_aeroporto_vila_velha_20170726.txt poses-log_aeroporto_vila_velha_20170726.txt
 
-##OBS: chi2 representa o erro do graphslam.
+##OBS 1: chi2 representa o erro do graphslam.
+##OBS 2: o
 
 para visualizar os dados use o gnuplot.
 	exemplo:
 	$ gnuplot
 	plot '<gps.txt ou odom.txt ou velodyne.txt ou poses> u 1:2 w l
-	replot '<gps.txt ou odom.txt ou velodyne.txt ou poses>' u 1:2 w l 
+	replot '<gps.txt ou odom.txt ou velodyne.txt ou poses>' u 1:2 w l
 
 8. Execute o ./central e o process-volta_da_ufes_playback_viewer_3D_map_generation_hypergraphsclam.ini
-     
+
 9. Execute no proccontrol CleanMap
 
 10. Execute no proccontrol o publish_poses
@@ -72,8 +97,8 @@ para visualizar os dados use o gnuplot.
 
 12. Der o o play no playback e espere terminar de tocar o log.
 
-##OBS: selecionar map na aba map do carmen navegatior 
- 
+##OBS: selecionar map na aba map do carmen navegatior
+
 13. Ao final do log seu mapa está pronto em ../data/mapper_teste2/ !!!! Pode matar o proccontrol no terminal e copiar seu novo mapa para seu lugar definitivo.
 
 
@@ -83,8 +108,8 @@ para visualizar os dados use o gnuplot.
 O process já constroe o rndf(rddf) usando o ./rddf_build ../data/rndf/rndf.kml
 	Após criar o mapa, renomear o arquivo ../data/rndf/rndf.kml para ../data/rndf/rddf-<nome do log>.txt
 		mv ../data/rndf/rndf.kml ../data/rndf/rddf-<nome do log>.txt
-		
-==================================================================================================================================================		
+
+==================================================================================================================================================
 Para limpar o mapa use os programas
 	bin/build_complete_map -map_path <path do diretorio do mapa> -map_resolution 0.2 -map_type m
 	bin/map_editor <path do diretorio do mapa>/complete_map.map

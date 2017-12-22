@@ -24,7 +24,6 @@
 
 // custom edges
 #include <EdgeGPS.hpp>
-#include <EdgeCurvatureConstraint.hpp>
 
 namespace hyper {
 
@@ -101,9 +100,6 @@ class HyperGraphSclamOptimizer {
 
         // xsens default constraint variances
         double xsens_constraint_var;
-
-        // curvature constraint variances
-        double curvature_xx_var, curvature_yy_var, curvature_hh_var;
 
         // visual odometry variances
         double visual_xx_var, visual_yy_var, visual_hh_var;
@@ -237,9 +233,6 @@ class HyperGraphSclamOptimizer {
 
         // read the xsens edge and save it to the optimizer
         void AddXSENSEdge(std::stringstream &ss, Eigen::Matrix<double, 1, 1> &information);
-
-        // read the curvature edge and save it to the optimizer
-        void AddCurvatureConstraintEdge(std::stringstream &ss, Eigen::Matrix3d &information);
 
         // initialize the sparse optimizer
         void InitializeOptimizer();

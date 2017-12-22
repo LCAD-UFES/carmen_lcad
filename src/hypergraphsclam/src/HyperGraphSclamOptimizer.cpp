@@ -11,6 +11,7 @@
 #include <StringHelper.hpp>
 
 #include <algorithm>
+#include <unistd.h>
 
 using namespace hyper;
 
@@ -33,9 +34,6 @@ HyperGraphSclamOptimizer::HyperGraphSclamOptimizer(int argc, char **argv) :
         velodyne_loop_yy_var(DEFAULT_VELODYNE_LOOP_ICP_YY_VAR),
         velodyne_loop_hh_var(DEFAULT_VELODYNE_LOOP_ICP_HH_VAR),
         xsens_constraint_var(DEFAULT_XSENS_CONSTRAINT_VAR),
-        curvature_xx_var(DEFAULT_CURVATURE_XX_VAR),
-        curvature_yy_var(DEFAULT_CURVATURE_YY_VAR),
-        curvature_hh_var(DEFAULT_CURVATURE_HH_VAR),
         visual_xx_var(DEFAULT_VISUAL_XX_VAR),
         visual_yy_var(DEFAULT_VISUAL_YY_VAR),
         visual_hh_var(DEFAULT_VISUAL_HH_VAR),
@@ -100,102 +98,96 @@ void HyperGraphSclamOptimizer::ArgsParser(int argc, char **argv) {
         input_filename = std::string(argv[1]);
         output_filename = std::string(argv[2]);
 
-        if (3 < argc) {
+        std::string carmen_home(getenv("CARMEN_HOME"));
+        std::string config_filename = 3 < argc ? std::string(argv[3]) : carmen_home + "/src/hypergraphsclam/config/optimization_config.txt";
 
-            std::ifstream is(argv[3], std::ifstream::in);
+        std::ifstream is(config_filename, std::ifstream::in);
+        if (is.good()) {
 
-            if (is.good()) {
+            // helpers
+            std::stringstream ss;
 
-                // helpers
-                std::stringstream ss;
+            while (-1 != StringHelper::ReadLine(is, ss)) {
 
-                while (-1 != StringHelper::ReadLine(is, ss)) {
+                std::string str;
 
-                    std::string str;
+                ss >> str;
 
-                    ss >> str;
-
-                    if ("ODOMETRY_XX_VAR" == str) {
-                         ss >> odometry_xx_var;
-                    } else if ("ODOMETRY_YY_VAR" == str) {
-                        ss >> odometry_yy_var;
-                    } else if ("ODOMETRY_HH_VAR" == str) {
-                        ss >> odometry_hh_var;
-                    } else if ("SPECIAL_ODOMETRY_INFORMATION" == str) {
-                        ss >> special_odometry_information;
-                    } else if ("SICK_ICP_XX_VAR" == str) {
-                        ss >> sick_icp_xx_var;
-                    } else if ("SICK_ICP_YY_VAR" == str) {
-                        ss >> sick_icp_yy_var;
-                    } else if ("SICK_ICP_HH_VAR" == str) {
-                        ss >> sick_icp_hh_var;
-                    } else if ("SICK_LOOP_ICP_XX_VAR" == str) {
-                        ss >> sick_loop_xx_var;
-                    } else if ("SICK_LOOP_ICP_YY_VAR" == str) {
-                        ss >> sick_loop_yy_var;
-                    } else if ("SICK_LOOP_ICP_HH_VAR" == str) {
-                        ss >> sick_loop_hh_var;
-                    } else if ("VELODYNE_ICP_XX_VAR" == str) {
-                        ss >> velodyne_icp_xx_var;
-                    } else if ("VELODYNE_ICP_YY_VAR" == str) {
-                        ss >> velodyne_icp_yy_var;
-                    } else if ("VELODYNE_ICP_HH_VAR" == str) {
-                        ss >> velodyne_icp_hh_var;
-                    } else if ("VELODYNE_LOOP_ICP_XX_VAR" == str) {
-                        ss >> velodyne_loop_xx_var;
-                    } else if ("VELODYNE_LOOP_ICP_YY_VAR" == str) {
-                        ss >> velodyne_loop_yy_var;
-                    } else if ("VELODYNE_LOOP_ICP_HH_VAR" == str) {
-                        ss >> velodyne_loop_hh_var;
-                    } else if ("XSENS_CONSTRAINT_VAR" == str) {
-                        ss >> xsens_constraint_var;
-                    } else if ("CURVATURE_XX_VAR" == str) {
-                        ss >> curvature_xx_var;
-                    } else if ("CURVATURE_YY_VAR" == str) {
-                        ss >> curvature_yy_var;
-                    } else if ("CURVATURE_HH_VAR" == str) {
-                        ss >> curvature_hh_var;
-                    } else if ("VISUAL_XX_VAR" == str) {
-                        ss >> visual_xx_var;
-                    } else if ("VISUAL_YY_VAR" == str) {
-                        ss >> visual_yy_var;
-                    } else if ("VISUAL_HH_VAR" == str) {
-                        ss >> visual_hh_var;
-                    } else if ("GPS_POSE_STD_MULTIPLIER" == str) {
-                        ss >> gps_pose_std_multiplier;
-                    } else if ("GPS_POSE_HH_STD" == str) {
-                        ss >> gps_pose_hh_std;
-                    } else if ("ODOM_ACKERMAN_PARAMS_VERTICES" == str) {
-                        ss >> odom_ackerman_params_vertices;
-                    } else if ("OPTIMIZER_OUTER_ITERATIONS" == str) {
-                        ss >> external_loop;
-                    } else if ("OPTIMIZER_INNER_POSE_ITERATIONS" == str) {
-                        ss >> internal_loop;
-                    } else if ("OPTIMIZER_INNER_ODOM_CALIB_ITERATIONS" == str) {
-                        ss >> optimizer_inner_odom_calib_iterations;
-                    } else if ("USE_GPS" == str) {
-                        use_gps = true;
-                    } else if ("USE_VELODYNE_SEQ" == str) {
-                        use_velodyne_seq = true;
-                    } else if ("USE_VELODYNE_LOOP" == str) {
-                        use_velodyne_loop = true;
-                    } else if ("USE_SICK_SEQ" == str) {
-                        use_sick_seq = true;
-                    } else if ("USE_SICK_LOOP" == str) {
-                        use_sick_loop = true;
-                    } else if ("USE_BUMBLEBEE_SEQ" == str) {
-                        use_bumblebee_seq = true;
-                    } else if ("USE_BUMBLEBEE_LOOP" == str) {
-                        use_bumblebee_loop = true;
-                    }
-
+                if ("ODOMETRY_XX_VAR" == str) {
+                     ss >> odometry_xx_var;
+                } else if ("ODOMETRY_YY_VAR" == str) {
+                    ss >> odometry_yy_var;
+                } else if ("ODOMETRY_HH_VAR" == str) {
+                    ss >> odometry_hh_var;
+                } else if ("SPECIAL_ODOMETRY_INFORMATION" == str) {
+                    ss >> special_odometry_information;
+                } else if ("SICK_ICP_XX_VAR" == str) {
+                    ss >> sick_icp_xx_var;
+                } else if ("SICK_ICP_YY_VAR" == str) {
+                    ss >> sick_icp_yy_var;
+                } else if ("SICK_ICP_HH_VAR" == str) {
+                    ss >> sick_icp_hh_var;
+                } else if ("SICK_LOOP_ICP_XX_VAR" == str) {
+                    ss >> sick_loop_xx_var;
+                } else if ("SICK_LOOP_ICP_YY_VAR" == str) {
+                    ss >> sick_loop_yy_var;
+                } else if ("SICK_LOOP_ICP_HH_VAR" == str) {
+                    ss >> sick_loop_hh_var;
+                } else if ("VELODYNE_ICP_XX_VAR" == str) {
+                    ss >> velodyne_icp_xx_var;
+                } else if ("VELODYNE_ICP_YY_VAR" == str) {
+                    ss >> velodyne_icp_yy_var;
+                } else if ("VELODYNE_ICP_HH_VAR" == str) {
+                    ss >> velodyne_icp_hh_var;
+                } else if ("VELODYNE_LOOP_ICP_XX_VAR" == str) {
+                    ss >> velodyne_loop_xx_var;
+                } else if ("VELODYNE_LOOP_ICP_YY_VAR" == str) {
+                    ss >> velodyne_loop_yy_var;
+                } else if ("VELODYNE_LOOP_ICP_HH_VAR" == str) {
+                    ss >> velodyne_loop_hh_var;
+                } else if ("XSENS_CONSTRAINT_VAR" == str) {
+                    ss >> xsens_constraint_var;
+                } else if ("VISUAL_XX_VAR" == str) {
+                    ss >> visual_xx_var;
+                } else if ("VISUAL_YY_VAR" == str) {
+                    ss >> visual_yy_var;
+                } else if ("VISUAL_HH_VAR" == str) {
+                    ss >> visual_hh_var;
+                } else if ("GPS_POSE_STD_MULTIPLIER" == str) {
+                    ss >> gps_pose_std_multiplier;
+                } else if ("GPS_POSE_HH_STD" == str) {
+                    ss >> gps_pose_hh_std;
+                } else if ("ODOM_ACKERMAN_PARAMS_VERTICES" == str) {
+                    ss >> odom_ackerman_params_vertices;
+                } else if ("OPTIMIZER_OUTER_ITERATIONS" == str) {
+                    ss >> external_loop;
+                } else if ("OPTIMIZER_INNER_POSE_ITERATIONS" == str) {
+                    ss >> internal_loop;
+                } else if ("OPTIMIZER_INNER_ODOM_CALIB_ITERATIONS" == str) {
+                    ss >> optimizer_inner_odom_calib_iterations;
+                } else if ("USE_GPS" == str) {
+                    use_gps = true;
+                } else if ("USE_VELODYNE_SEQ" == str) {
+                    use_velodyne_seq = true;
+                } else if ("USE_VELODYNE_LOOP" == str) {
+                    use_velodyne_loop = true;
+                } else if ("USE_SICK_SEQ" == str) {
+                    use_sick_seq = true;
+                } else if ("USE_SICK_LOOP" == str) {
+                    use_sick_loop = true;
+                } else if ("USE_BUMBLEBEE_SEQ" == str) {
+                    use_bumblebee_seq = true;
+                } else if ("USE_BUMBLEBEE_LOOP" == str) {
+                    use_bumblebee_loop = true;
                 }
 
-            } else {
-
-                std::cout << "Could not open the config file, using default parameters!" << std::endl;
-
             }
+
+            is.close();
+
+        } else {
+
+            std::cout << "Could not open the config file, using default parameters!" << std::endl;
 
         }
 
@@ -236,9 +228,6 @@ void HyperGraphSclamOptimizer::RegisterCustomTypes() {
 
     // register the custom odometry calibration edge
     factory->registerType("EDGE_SE2_ODOM_ACKERMAN_CALIBRATION", new g2o::HyperGraphElementCreator<g2o::EdgeSE2OdomAckermanCalibration>);
-
-    // register the custom curvature constraint edge
-    factory->registerType("EDGE_CURVATURE_CONSTRAINT", new g2o::HyperGraphElementCreator<g2o::EdgeCurvatureConstraint>);
 
     // register the custom vertex
     factory->registerType("VERTEX_ODOM_ACKERMAN_PARAM_CALIBRATION", new g2o::HyperGraphElementCreator<g2o::VertexOdomAckermanParams>);
@@ -983,51 +972,6 @@ void HyperGraphSclamOptimizer::AddXSENSEdge(std::stringstream &ss, Eigen::Matrix
 
 }
 
-// read the curvature edge and save it to the optimizer
-void HyperGraphSclamOptimizer::AddCurvatureConstraintEdge(std::stringstream &ss, Eigen::Matrix3d &information) {
-
-    // helpers
-    unsigned l, c, r;
-
-    // read the actual ids
-    ss >> l >> c >> r;
-
-    // the timestamps
-    double t1 = id_time_map[l];
-    double t2 = id_time_map[c];
-    double t3 = id_time_map[r];
-
-    double dt1 = std::fabs(t2 - t1);
-    double dt2 = std::fabs(t3 - t2);
-
-    if (0.0001 < dt1 && 0.0001 < dt2) {
-
-        // build a new curvature edge
-        g2o::EdgeCurvatureConstraint *edge = new g2o::EdgeCurvatureConstraint;
-
-        // set the current vertex
-        edge->vertices()[0] = optimizer->vertex(l);
-        edge->vertices()[1] = optimizer->vertex(c);
-        edge->vertices()[2] = optimizer->vertex(r);
-
-        // set the information matrix
-        edge->setInformation(information);
-
-        // set the delta time
-        edge->setTimeDifference(dt1 / std::fabs(t3 - t1));
-
-        // try to save it
-        if (!optimizer->addEdge(edge)) {
-
-            // error
-            throw std::runtime_error("Could not add the curvature constraint edge to the optimizer!");
-
-        }
-
-    }
-
-}
-
 // manage the hypergraph region
 void HyperGraphSclamOptimizer::ManageHypergraphRegion(std::vector<g2o::VertexSE2*> &group, bool status) {
 
@@ -1174,7 +1118,6 @@ void HyperGraphSclamOptimizer::LoadHyperGraphToOptimizer() {
     Eigen::Matrix3d sick_loop_information(GetInformationMatrix(sick_loop_xx_var, sick_loop_yy_var, sick_loop_hh_var));
     Eigen::Matrix3d velodyne_icp_information(GetInformationMatrix(velodyne_icp_xx_var, velodyne_icp_yy_var, velodyne_icp_hh_var));
     Eigen::Matrix3d velodyne_loop_information(GetInformationMatrix(velodyne_loop_xx_var, velodyne_loop_yy_var, velodyne_loop_hh_var));
-    Eigen::Matrix3d curvature_constraint_information(GetInformationMatrix(curvature_xx_var, curvature_yy_var, curvature_hh_var));
     Eigen::Matrix3d visual_odom_information(GetInformationMatrix(visual_xx_var, visual_yy_var, visual_hh_var));
     Eigen::Matrix<double, 1, 1> xsens_information(Eigen::Matrix<double, 1, 1>::Identity() * 1.0 /  std::pow(xsens_constraint_var, 2));
 
@@ -1263,11 +1206,6 @@ void HyperGraphSclamOptimizer::LoadHyperGraphToOptimizer() {
 
             // push the visual odometry edge to the optimizer
             AddVisualOdometryEdge(ss, visual_odom_information);
-
-        } else if ("CURVATURE_CONSTRAINT_" == tag) {
-
-            // create the curvature constraint edge
-            AddCurvatureConstraintEdge(ss, curvature_constraint_information);
 
         } else if ("GPS_ORIGIN" == tag) {
 

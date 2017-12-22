@@ -32,11 +32,9 @@
 
 namespace hyper {
 
-#define MAXIMUM_VEL_SCANS 3000
-#define GPS_FILTER_THRESHOLD 40.0
+#define MAXIMUM_VEL_SCANS 0
 #define LOOP_REQUIRED_TIME 300.0
 #define LOOP_REQUIRED_SQR_DISTANCE 25.0
-#define CORRESPONDENCE_FACTOR 2.0
 #define ICP_THREADS_POOL_SIZE 3
 #define ICP_THREAD_BLOCK_SIZE 400
 #define LIDAR_ODOMETRY_MIN_DISTANCE 0.3
@@ -94,10 +92,20 @@ class GrabData {
         unsigned icp_start_index, icp_end_index;
 
         // mutex to avoid racing conditions
-        std::mutex icp_mutex;
+        std::mutex icp_mutex, first_last_mutex;
 
         // helper
         double dmax;
+
+        // parameters
+        unsigned maximum_vel_scans;
+        double loop_required_time;
+        double loop_required_sqr_distance;
+        unsigned icp_threads_pool_size;
+        unsigned icp_thread_block_size;
+        double lidar_odometry_min_distance;
+        double visual_odometry_min_distance;
+        double icp_translation_confidence_factor;
 
         // separate the gps, sick and velodyne messages
         void SeparateMessages();
@@ -230,9 +238,6 @@ class GrabData {
         // save the visual odometry estimates
         void SaveVisualOdometryEstimates();
 
-        // save the curvature constraint edges
-        void SaveCurvatureEdges(std::ofstream &os);
-
         // build Eigen homogeneous matrix from g2o SE2
         Eigen::Matrix4f BuildEigenMatrixFromSE2(const g2o::SE2 &transform);
 
@@ -255,6 +260,9 @@ class GrabData {
 
         // the main destructor
         ~GrabData();
+
+        // configuration
+        void Configure(std::string config_filename);
 
         // parse the log file
         bool ParseLogFile(const std::string &input_filename);
