@@ -236,7 +236,7 @@ busy_pedestrian_track_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_an
 //		carmen_rddf_play_annotation_is_forward(displaced_robot_pose, nearest_velocity_related_annotation->annotation_point))
 		last_pedestrian_track_busy_timestamp = timestamp;
 
-	if (timestamp - last_pedestrian_track_busy_timestamp < 2.0)
+	if (timestamp - last_pedestrian_track_busy_timestamp < 1.5)
 		return (true);
 
 	return (false);
@@ -417,7 +417,7 @@ get_velocity_at_goal(double v0, double va, double dg, double da)
 //	double a = -get_robot_config()->maximum_acceleration_forward * 2.5;
 	double a = (va * va - v0 * v0) / (2.0 * da);
 	// TODO: @@@ Alberto: nao deveria ser 2.0 ao inves de 1.0 abaixo? Com 2.0 freia esponencialmente nos quebra molas...
-	double sqrt_val = 1.5 * a * dg + v0 * v0;
+	double sqrt_val = 1.8 * a * dg + v0 * v0;
 	double vg = va;
 	if (sqrt_val > 0.0)
 		vg = sqrt(sqrt_val);
