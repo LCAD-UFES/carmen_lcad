@@ -56,11 +56,14 @@ O parser gera 7 arquivos:
 
 ## OBS 1: o parser contém alguns parâmetros que podem ser ajustados no arquivo parser_config.txt
 ## o arquivo contém comentários sobre do que se tratam os parâmetros
-## temos como exemplo, o parâmetro ICP_THREAD_POOL_SIZE que define a quantidade de threads disponíveis para as estimativas de movimento
+## temos como exemplo, o parâmetro ICP_THREAD_POOL_SIZE que define
+## a quantidade de threads disponíveis para as estimativas de movimento
 ## dos sensores do tipo LiDAR.
+## o usuário pode alterar livremente o arquivo.
 
-## OBS 2: caso seja do interesse do usuário, utilize um terceiro argumento no parser para especificar outro arquivo de configuração.
-## Caso não seja fornecido o terceiro parâmetro, então o parser vai procurar pelo arquivo parser_config.txt na pasta do hypergraphsclam/config/
+## OBS 2: caso seja do interesse do usuário, utilize um terceiro argumento no parser
+## para especificar outro arquivo de configuração. Caso não seja fornecido o terceiro parâmetro,
+## então o parser vai procurar pelo arquivo parser_config.txt na pasta do hypergraphsclam/config/
 
     ./parser <log> <output> <config_file>
 
@@ -68,7 +71,9 @@ O parser gera 7 arquivos:
 
         ./parser log_aeroporto_vila_velha_20170726.txt sync-log_aeroporto_vila_velha_20170726.txt outro_parser_config.txt
 
-## OBS 2: o parser gera muitos arquivos nas pastas /dados/tmp/*. As nuvens de pontos do velodyne, por exemplo, estão na pasta /dados/tmp/velodyne. As nuvens de pontos do velodyne acumuladas no ICP estão na pasta /dados/tmp/lgm/velodyne.
+## OBS 3: o parser gera muitos arquivos nas pastas /dados/tmp/*.
+## As nuvens de pontos do velodyne, por exemplo, estão na pasta /dados/tmp/velodyne.
+## As nuvens de pontos do velodyne acumuladas no ICP estão na pasta /dados/tmp/lgm/velodyne.
 ## Portanto, é bom remover esses dados ao terminar de construir o mapa
 
 7. Execute o hypergraphsclam dentro da pasta src/hypergraphsclam:
@@ -79,9 +84,17 @@ O parser gera 7 arquivos:
         ./hypergraphsclam sync-log_aeroporto_vila_velha_20170726.txt poses-log_aeroporto_vila_velha_20170726.txt
 
 ##OBS 1: chi2 representa o erro do graphslam.
-##OBS 2: o
+##OBS 2: o otimizador também utiliza um arquivo de configuração que está na pasta config/, intitulado optimization_config.txt
+## basta alterar os parâmetros no arquivo
+## se preferir, o usuário pode utilizar um terceiro argumento para especificar um arquivo de configuração
+## o arquivo contém os parâmetros de covariâncias de cada tipo de aresta, bem como especificação de quantas iterações
+## o arquivo ainda permite habilitar/desabilitar as aretas do hipergrafo.
 
-para visualizar os dados use o gnuplot.
+    Exemplo com arquivo de configuração próprio:
+
+        ./hypergraphsclam sync-log_aeroporto_vila_velha_20170726.txt poses-log_aeroporto_vila_velha_20170726.txt minha_configuração.txt
+
+Após a otimização, os dados podem ser visualizados pelo gnuplot:
 	exemplo:
 	$ gnuplot
 	plot '<gps.txt ou odom.txt ou velodyne.txt ou poses> u 1:2 w l
