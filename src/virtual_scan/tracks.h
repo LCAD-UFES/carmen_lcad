@@ -30,6 +30,11 @@ class Tracks
 	bool destroy();
 
 	/**
+	 * @brief Erase the track of given index.
+	 */
+	bool destroy(size_t n);
+
+	/**
 	 * @brief Randomly select a track and an extension method (forward or backward), then apply it to the selected track.
 	 */
 	bool extend();
@@ -92,15 +97,13 @@ public:
 	Tracks(const Tracks &that);
 
 	/**
-	 * @brief Return the `index`th Track object in this sequence.
+	 * @brief Return a sequence containing the last pose of each track in this collection.
 	 */
-	//Track &operator[] (size_t index);
+	ObstaclePose::S back() const;
 
 	/**
-	 * @brief Return the `index`th Track object in this sequence.
+	 * @brief Returns a random variation of this track collection, generated from the given neighborhood graph.
 	 */
-	//const Track &operator[] (size_t index) const;
-
 	Tracks::P propose(Graph &graph);
 
 	/**

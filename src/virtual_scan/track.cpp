@@ -26,6 +26,18 @@ const ObstaclePose &Track::operator[] (int index) const
 }
 
 
+ObstaclePose &Track::back()
+{
+	return poses.back();
+}
+
+
+const ObstaclePose &Track::back() const
+{
+	return poses.back();
+}
+
+
 size_t Track::size() const
 {
 	return poses.size();

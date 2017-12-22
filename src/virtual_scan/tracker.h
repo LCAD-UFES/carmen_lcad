@@ -43,7 +43,7 @@ public:
 	 *
 	 * Return a pointer to the updated tracking hypothesis.
 	 */
-	Tracks::P track(carmen_mapper_virtual_scan_message *message);
+	ObstaclePose::S track(carmen_mapper_virtual_scan_message *message);
 };
 
 } // namespace virtual_scan

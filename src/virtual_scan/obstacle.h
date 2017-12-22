@@ -5,6 +5,8 @@
 #include "point.h"
 #include "rectangle.h"
 
+#include <deque>
+
 namespace virtual_scan
 {
 
@@ -13,6 +15,9 @@ namespace virtual_scan
  */
 struct ObstaclePose
 {
+	/** @brief Obstacle pose sequence type. */
+	typedef std::deque<ObstaclePose> S;
+
 	/** @brief Pointer to the neighborhood graph node related to this pose. */
 	Node *node;
 

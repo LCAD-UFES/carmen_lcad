@@ -15,7 +15,7 @@ Tracker::Tracker():
 
 
 // MCMC Sampler
-Tracks::P Tracker::track(carmen_mapper_virtual_scan_message *message)
+ObstaclePose::S Tracker::track(carmen_mapper_virtual_scan_message *message)
 {
 	readings.update(message);
 	graph.update(readings.back());
@@ -34,7 +34,7 @@ Tracks::P Tracker::track(carmen_mapper_virtual_scan_message *message)
 		}
 	}
 	
-	return tracks;
+	return tracks->back();
 }
 
 

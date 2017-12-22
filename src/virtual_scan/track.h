@@ -5,7 +5,6 @@
 
 #include <carmen/carmen.h>
 
-#include <deque>
 #include <memory>
 #include <vector>
 
@@ -18,7 +17,7 @@ namespace virtual_scan
 class Track
 {
 	/** @brief Sequence of obstacle configurations. */
-	std::deque<ObstaclePose> poses;
+	ObstaclePose::S poses;
 
 public:
 	/** @brief Unique Track ID type. */
@@ -47,6 +46,16 @@ public:
 	 * @brief Return the obstace pose at the given position in the Track.
 	 */
 	const ObstaclePose &operator[] (int index) const;
+
+	/**
+	 * @brief Return a reference to the last pose in this track.
+	 */
+	ObstaclePose &back();
+
+	/**
+	 * @brief Return a reference to the last pose in this track.
+	 */
+	const ObstaclePose &back() const;
 
 	/**
 	 * @brief Add a new obstacle pose to the beginning of this track, created from the given neighborhood graph node.

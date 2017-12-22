@@ -22,6 +22,16 @@ Tracks::Tracks(const Tracks &that):
 }
 
 
+ObstaclePose::S Tracks::back() const
+{
+	ObstaclePose::S poses;
+	for (auto track = tracks.begin(), n = tracks.end(); track != n; ++track)
+		poses.push_back((*track)->back());
+
+	return poses;
+}
+
+
 bool Tracks::create(Graph &graph)
 {
 	Subgraph &subgraph = random_choose(graph);
@@ -57,8 +67,20 @@ bool Tracks::destroy()
 	if (tracks.size() == 0)
 		return false;
 
-	int n = random_int(0, tracks.size()); // Selects the track to be deleted
-	tracks.erase(tracks.begin() + n);
+	// Randomly select a track and destroy it.
+	size_t n = random_int(0, tracks.size());
+	return destroy(n);
+}
+
+
+bool Tracks::destroy(size_t n)
+{
+	// Move the selected track to the end of the sequence if it's not already there.
+	if (n < (tracks.size() - 1))
+		std::swap(tracks[n], tracks.back());
+
+	// Remove the selected track.
+	tracks.pop_back();
 
 	return true;
 }
@@ -175,7 +197,7 @@ bool Tracks::merge()
 		}
 	}
 
-	if (pairs.size() < 1)
+	if (pairs.size() == 0)
 		return false;
 
 	std::pair<int, int> &pair = random_choose(pairs);
@@ -183,9 +205,7 @@ bool Tracks::merge()
 	Track::P tau_2 = tracks[pair.second];
 	tau_1->merge(*tau_2);
 
-	tracks.erase(tracks.begin() + pair.second);
-
-	return true;
+	return destroy(pair.second);
 }
 
 
@@ -319,7 +339,7 @@ bool Tracks::swap()
 		}
 	}
 
-	if (swappings.size() < 1)
+	if (swappings.size() == 0)
 		return false;
 
 	int n = random_int(0, swappings.size());
@@ -334,7 +354,7 @@ bool Tracks::swap()
 
 bool Tracks::diffuse()
 {
-	if (tracks.size() < 1)
+	if (tracks.size() == 0)
 		return false;
 
 	int i = random_int(0, tracks.size());
@@ -356,32 +376,16 @@ Tracks::P Tracks::propose(Graph &graph)
 	while (!result)
 	{
 		int n = random_int(0, 8);
-		switch(n)
+		switch (n)
 		{
-			case 0:
-				result = tracks->create(graph);
-				break;
-			case 1:
-				result = tracks->destroy();
-				break;
-			case 2:
-				result = tracks->diffuse();
-				break;
-			case 3:
-				result = tracks->extend();
-				break;
-			case 4:
-				result = tracks->merge();
-				break;
-			case 5:
-				result = tracks->reduce();
-				break;
-			case 6:
-				result = tracks->split();
-				break;
-			case 7:
-				result = tracks->swap();
-				break;
+			case 0: result = tracks->create(graph); break;
+			case 1: result = tracks->destroy();     break;
+			case 2: result = tracks->diffuse();     break;
+			case 3: result = tracks->extend();      break;
+			case 4: result = tracks->merge();       break;
+			case 5: result = tracks->reduce();      break;
+			case 6: result = tracks->split();       break;
+			case 7: result = tracks->swap();        break;
 		}
 	}
 
