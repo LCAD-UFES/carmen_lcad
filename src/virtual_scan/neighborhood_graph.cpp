@@ -300,52 +300,85 @@ Subgraph::Subgraph():
 }
 
 
-Subgraph::Subgraph(const Reading &reading):
-	timestamp(reading.timestamp)
+Subgraph::Subgraph(const Reading &reading)
 {
+	assign(reading);
+}
+
+
+Subgraph::Subgraph(Subgraph &that, const Reading &reading)
+{
+	assign(that, reading);
+}
+
+
+void Subgraph::assign(const Reading &reading)
+{
+	clear();
+
+	timestamp = reading.timestamp;
 	Segment::S segments = split_segments(reading);
 	for (auto segment = segments.begin(), n = segments.end(); segment != n; ++segment)
 		emplace_back(*segment, nodes);
 }
 
 
-Subgraph::Subgraph(Subgraph &that, const Reading &reading):
-	Subgraph(reading)
+void Subgraph::assign(Subgraph &that, const Reading &reading)
 {
+	assign(reading);
 	for (auto parent = that.nodes.begin(), m = that.nodes.end(); parent != m; ++parent)
 		for (auto child = this->nodes.begin(), n = this->nodes.end(); child != n; ++child)
 			parent->add_child(*child);
 }
 
 
-Graph::Graph():
-	i_0(0)
+void Subgraph::clear()
 {
-	// Nothing to do.
+	Cluster::S::clear();
+	nodes.clear();
+}
+
+
+Graph::Graph():
+	offset(0)
+{
+	subgraphs.reserve(T);
 }
 
 
 Subgraph &Graph::operator [] (size_t index)
 {
-	return subgraphs[(i_0 + index) % T];
+	return subgraphs[(offset + index) % T];
 }
 
 
 const Subgraph &Graph::operator [] (size_t index) const
 {
-	return subgraphs[(i_0 + index) % T];
+	return subgraphs[(offset + index) % T];
 }
 
 
 Subgraph &Graph::back()
 {
-	return subgraphs[i_0 > 0 ? i_0 - 1 : size() - 1];
+	return subgraphs[offset > 0 ? offset - 1 : size() - 1];
 }
 
 
 const Subgraph &Graph::back() const
 {
-	return subgraphs[i_0 > 0 ? i_0 - 1 : size() - 1];
+	return subgraphs[offset > 0 ? offset - 1 : size() - 1];
+}
+
+
+Subgraph &Graph::front()
+{
+	return subgraphs[offset];
+}
+
+
+const Subgraph &Graph::front() const
+{
+	return subgraphs[offset];
 }
 
 
@@ -354,13 +387,13 @@ void Graph::update(const Reading &reading)
 	if (subgraphs.size() == T)
 	{
 		// Replace the oldest subgraph with a new one.
-		subgraphs[i_0] = Subgraph(back(), reading);
+		front().assign(back(), reading);
 
-		// Update the initial index, wrapping it around if necessary.
-		i_0 = (i_0 + 1) % T;
+		// Update the offset index, wrapping it around if necessary.
+		offset = (offset + 1) % T;
 
 		// Remove all dangling parent node pointers from the now-oldest subgraph.
-		Node::S &nodes = subgraphs[i_0].nodes;
+		Node::S &nodes = front().nodes;
 		for (auto node = nodes.begin(), n = nodes.end(); node != n; ++node)
 			node->parents.clear();
 	}
