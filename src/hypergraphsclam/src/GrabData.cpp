@@ -889,7 +889,7 @@ void GrabData::BuildLidarMeasuresMT() {
     while (GetNextLidarBlock(current_index, last_index)) {
 
         // save the first index to mutex usage
-        unsigned first_index = current_index;
+//        unsigned first_index = current_index;
 
         // get the current message pointer
         StampedLidarPtr current = *(begin + current_index);
@@ -940,23 +940,23 @@ void GrabData::BuildLidarMeasuresMT() {
                         // set the base id
                         current->seq_id = next->id;
 
-                        if (first_index == current_index || last_index == current_index) {
-
-                            // lock it
-                            first_last_mutex.lock();
-
-                            // save the acculated cloud
-                            StampedLidar::SavePointCloud(path, current_index, *current_cloud);
-
-                            // unlock it
-                            first_last_mutex.unlock();
-
-                        } else {
-
-                            // save the acculated cloud
-                            StampedLidar::SavePointCloud(path, current_index, *current_cloud);
-
-                        }
+//                        if (first_index == current_index || last_index == current_index) {
+//
+//                            // lock it
+//                            first_last_mutex.lock();
+//
+//                            // save the acculated cloud
+//                            StampedLidar::SavePointCloud(path, current_index, *current_cloud);
+//
+//                            // unlock it
+//                            first_last_mutex.unlock();
+//
+//                        } else {
+//
+//                            // save the acculated cloud
+//                            StampedLidar::SavePointCloud(path, current_index, *current_cloud);
+//
+//                        }
 
 
                     } else {

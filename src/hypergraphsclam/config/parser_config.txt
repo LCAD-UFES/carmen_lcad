@@ -4,11 +4,11 @@ MAXIMUM_VEL_SCANS 0
 -- how many seconds to consider a loop closure
 LOOP_REQUIRED_TIME 300.0
 
--- how many meters to consider the loop closure, squared here
+-- how many squared meters to consider a loop closure
 LOOP_REQUIRED_SQR_DISTANCE 25.0
 
--- how many threads the ICP method can use
-ICP_THREADS_POOL_SIZE 3
+-- how many threads the ICP (Interative Closest Point) method can use (typically the number of cores of your machine)
+ICP_THREADS_POOL_SIZE 8
 
 -- each thread will take 400 clouds and execute the sensor movement estimates
 ICP_THREAD_BLOCK_SIZE 400
