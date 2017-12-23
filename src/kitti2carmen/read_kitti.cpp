@@ -258,14 +258,14 @@ read_camera(char *left_dir, char *right_dir, int file_id, double timestamp)
 	printf("%s %s\n", left_filename, right_filename);
 
 	// ler imagem
-	cv::Mat o_left = cv::imread(left_filename);
-	cv::Mat o_right = cv::imread(right_filename);
+	cv::Mat left = cv::imread(left_filename);
+	cv::Mat right = cv::imread(right_filename);
 
-	cv::Mat left = cv::Mat(480, 640, CV_8UC3);
-	cv::Mat right = cv::Mat(480, 640, CV_8UC3);
-
-	cv::resize(o_left, left, left.size());
-	cv::resize(o_right, right, right.size());
+//	cv::Mat left = cv::Mat(480, 640, CV_8UC3);
+//	cv::Mat right = cv::Mat(480, 640, CV_8UC3);
+//
+//	cv::resize(o_left, left, left.size());
+//	cv::resize(o_right, right, right.size());
 
 	// preencher mensagem do carmen
 	camera_message.width = left.cols;
