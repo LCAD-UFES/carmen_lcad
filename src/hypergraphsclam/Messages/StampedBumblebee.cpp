@@ -19,28 +19,26 @@ StampedBumblebee::StampedBumblebee(unsigned msg_id) :
     size(0),
     is_rectified(false),
     speed(0.0),
-    seq_measure(0.0, 0.0, 0.0),
+    seq_measurement(0.0, 0.0, 0.0),
     seq_id(std::numeric_limits<unsigned>::max()),
     visual_estimate(0.0, 0.0, 0.0) {}
 
 // the basic destructor
 StampedBumblebee::~StampedBumblebee() {}
 
-
 // parse the raw image and save it to the output folder
-bool StampedBumblebee::LoadBumblebeeImage(std::vector<uint8_t> &limg, std::vector<uint8_t> &rimg) {
-
+bool StampedBumblebee::LoadBumblebeeImage(std::vector<uint8_t> &limg, std::vector<uint8_t> &rimg)
+{
     bool result = false;
 
-    if (0 < size) {
-
+    if (0 < size)
+    {
         // open the images
         std::ifstream images(raw_image, std::ifstream::in | std::ios::binary);
 
-        if (!images.is_open()) {
-
+        if (!images.is_open())
+        {
             throw std::runtime_error("Could not open the input file\n");
-
         }
 
         // resize the local buffers
@@ -57,42 +55,38 @@ bool StampedBumblebee::LoadBumblebeeImage(std::vector<uint8_t> &limg, std::vecto
         // close the file stream
         images.close();
 
-        for (unsigned i = 0; i < width * height; ++i) {
-
+        for (unsigned i = 0; i < width * height; ++i)
+        {
             unsigned char *lpxl = &left[i * 3];
             unsigned char *rpxl = &right[i * 3];
 
             limg[i] = uint8_t(0.21 * float(lpxl[0]) + 0.72 * float(lpxl[1]) + 0.07 * float(lpxl[2]));
             rimg[i] = uint8_t(0.21 * float(rpxl[0]) + 0.72 * float(rpxl[1]) + 0.07 * float(rpxl[2]));
-
         }
 
         // save the png output image
         result = true;
-
     }
 
     return result;
-
 }
 
 // parse the raw image and save it to the output folder
-bool StampedBumblebee::ParseBumblebeeImage(std::vector<uint8_t> &limg, std::vector<uint8_t> &rimg) {
-
+bool StampedBumblebee::ParseBumblebeeImage(std::vector<uint8_t> &limg, std::vector<uint8_t> &rimg)
+{
     bool result = false;
 
-    if (0 < size) {
-
+    if (0 < size)
+    {
         // alloc the image in memmory
         std::vector<unsigned char> left(size), right(size);
 
         // open the images
         std::ifstream images(raw_image, std::ifstream::in | std::ios::binary);
 
-        if (!images.is_open()) {
-
+        if (!images.is_open())
+        {
             throw std::runtime_error("Could not open the input file\n");
-
         }
 
         // copy all data to buffers
@@ -113,10 +107,10 @@ bool StampedBumblebee::ParseBumblebeeImage(std::vector<uint8_t> &limg, std::vect
         unsigned k = 0;
         unsigned l = 0;
 
-        for (unsigned j = 0; j < height; ++j) {
-
-            for (unsigned i = 0; i < width; ++i) {
-
+        for (unsigned j = 0; j < height; ++j)
+        {
+            for (unsigned i = 0; i < width; ++i)
+            {
                 unsigned char *lpxl = &left[k];
                 unsigned char *rpxl = &right[k];
 
@@ -128,9 +122,7 @@ bool StampedBumblebee::ParseBumblebeeImage(std::vector<uint8_t> &limg, std::vect
 
                 k += 3;
                 l += 1;
-
             }
-
         }
 
         // create the names
@@ -146,16 +138,14 @@ bool StampedBumblebee::ParseBumblebeeImage(std::vector<uint8_t> &limg, std::vect
 
         // save the png output image
         result = true;
-
     }
 
     return result;
-
 }
 
 // parse the pose from string stream
-bool StampedBumblebee::FromCarmenLog(std::stringstream &ss) {
-
+bool StampedBumblebee::FromCarmenLog(std::stringstream &ss)
+{
     // read the path
     ss >> raw_image;
 
@@ -167,47 +157,46 @@ bool StampedBumblebee::FromCarmenLog(std::stringstream &ss) {
 
     // verify if file exists
     return 0 < width && 0 < height && 0 < size && width * height * 3 == size;
-
 }
 
 // the raw image path
-std::string StampedBumblebee::GetRawImagePath() {
-
+std::string StampedBumblebee::GetRawImagePath()
+{
     return raw_image;
-
 }
 
 // get the image file path
-std::string StampedBumblebee::GetLeftImagePath() {
-
+std::string StampedBumblebee::GetLeftImagePath()
+{
     return left_image;
-
 }
 
 // the image file path
-std::string StampedBumblebee::GetRightImagePath() {
-
+std::string StampedBumblebee::GetRightImagePath()
+{
     return right_image;
-
 }
 
 // get the image width
-unsigned StampedBumblebee::GetWidth() {
-
+unsigned StampedBumblebee::GetWidth()
+{
     return width;
-
 }
 
 // get the image width
-unsigned StampedBumblebee::GetHeight() {
-
+unsigned StampedBumblebee::GetHeight()
+{
     return height;
-
 }
 
 // get the image size
-unsigned StampedBumblebee::GetImageSize() {
-
+unsigned StampedBumblebee::GetImageSize()
+{
     return width * height;
+}
 
+// get the message type
+StampedMessageType StampedBumblebee::GetType()
+{
+    return StampedBumblebeeMessage;
 }

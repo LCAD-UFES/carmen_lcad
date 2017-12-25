@@ -65,12 +65,14 @@ const double StampedVelodyne::vertical_correction[32] =
 // the basic constructor
 StampedVelodyne::StampedVelodyne(unsigned msg_id) : StampedMessage(msg_id), StampedLidar(msg_id, base_velodyne_path), vertical_scans(0) {}
 
+
 // the basic destructor
 StampedVelodyne::~StampedVelodyne() {}
 
-// read the point cloud from file
-PointCloudHSV::Ptr StampedVelodyne::ReadVelodyneCloudFromFile(std::stringstream &ss) {
 
+// read the point cloud from file
+PointCloudHSV::Ptr StampedVelodyne::ReadVelodyneCloudFromFile(std::stringstream &ss)
+{
     // the pcl object
     PointCloudHSV::Ptr input_cloud(new PointCloudHSV());
 
@@ -90,15 +92,14 @@ PointCloudHSV::Ptr StampedVelodyne::ReadVelodyneCloudFromFile(std::stringstream 
     // open the pointcloud file
     std::ifstream source(velodyne_log_path, std::ifstream::in | std::ifstream::binary);
 
-    if (!source.is_open()) {
-
+    if (!source.is_open())
+    {
         // error
         std::string error("Could not open the velodyne point cloud: ");
         error += velodyne_log_path;
 
         // return the empty pointer
         throw std::runtime_error(error);
-
     }
 
     // the point cloud values
@@ -118,8 +119,8 @@ PointCloudHSV::Ptr StampedVelodyne::ReadVelodyneCloudFromFile(std::stringstream 
     source.close();
 
     // read all the point cloud file
-    for (unsigned i = 0; i < vertical_scans; ++i) {
-
+    for (unsigned i = 0; i < vertical_scans; ++i)
+    {
         // set the char walking pointer
         char *cp = binary_buffer + i * velodyne_struct_size;
 
@@ -129,8 +130,8 @@ PointCloudHSV::Ptr StampedVelodyne::ReadVelodyneCloudFromFile(std::stringstream 
         // set the distance pointer
         short *dp = (short*) (cp + double_size);
 
-        for (unsigned j = 0; j < 32; ++j) {
-
+        for (unsigned j = 0; j < 32; ++j)
+        {
             // get the vertical angle
             v_angle = vertical_correction[j];
 
@@ -140,8 +141,8 @@ PointCloudHSV::Ptr StampedVelodyne::ReadVelodyneCloudFromFile(std::stringstream 
             // conver to cartesian coords
             pcl::PointXYZHSV point(StampedLidar::FromSpherical(h_angle, v_angle, distance));
 
-            if (4.0 < distance && 100.0 > distance && -2.9 < point.z) {
-
+            if (4.0 < distance && 100.0 > distance && -2.9 < point.z)
+            {
                 // update the min max values
                 if (minx > point.x) minx = point.x;
                 if (maxx < point.x) maxx = point.x;
@@ -154,11 +155,8 @@ PointCloudHSV::Ptr StampedVelodyne::ReadVelodyneCloudFromFile(std::stringstream 
 
                 // get the hsv point
                 input_cloud->push_back(point);
-
             }
-
         }
-
     }
 
     // set the abs values
@@ -171,12 +169,11 @@ PointCloudHSV::Ptr StampedVelodyne::ReadVelodyneCloudFromFile(std::stringstream 
 
     // return the input cloud
     return input_cloud;
-
 }
 
 // read the point cloud from carmen log
-PointCloudHSV::Ptr StampedVelodyne::ReadVelodyneCloudFromLog(std::stringstream &ss) {
-
+PointCloudHSV::Ptr StampedVelodyne::ReadVelodyneCloudFromLog(std::stringstream &ss)
+{
     // the input cloud
     PointCloudHSV::Ptr input_cloud(new PointCloudHSV());
 
@@ -193,8 +190,8 @@ PointCloudHSV::Ptr StampedVelodyne::ReadVelodyneCloudFromLog(std::stringstream &
     ss >> vertical_scans;
 
     // read all data
-    for (unsigned i = 0; i < vertical_scans; ++i) {
-
+    for (unsigned i = 0; i < vertical_scans; ++i)
+    {
         // read the horizontal angle
         ss >> h_angle;
 
@@ -212,19 +209,18 @@ PointCloudHSV::Ptr StampedVelodyne::ReadVelodyneCloudFromLog(std::stringstream &
 
         // each individual vertical scan should have the same 32 lasers
         // so the scan string should have 192 bytes
-        for (unsigned j = 0; j < 32; ++j) {
-
+        for (unsigned j = 0; j < 32; ++j)
+        {
             // get the vertical angle
             v_angle = M_PI_2 - vertical_correction[j];
 
-            for (unsigned k = 0; k < 4; ++k) {
-
+            for (unsigned k = 0; k < 4; ++k)
+            {
                 // get the current nibble, then move forward the current position index
                 r = scan[current_pos++];
 
                 // convert the int value to char, bit shifting operation
                 nibbles[k] = std::isalpha(r) ? r - 'a' + 10 : r - '0';
-
             }
 
             // move the current position two byte ahead, it discards the intensity value
@@ -236,8 +232,8 @@ PointCloudHSV::Ptr StampedVelodyne::ReadVelodyneCloudFromLog(std::stringstream &
             // conver to cartesian coords
             pcl::PointXYZHSV point(StampedLidar::FromSpherical(h_angle, v_angle, distance));
 
-            if (4.0 < distance && 100.0 > distance && -2.9 < point.z) {
-
+            if (4.0 < distance && 100.0 > distance && -2.9 < point.z)
+            {
                 // update the min max values
                 if (minx > point.x) minx = point.x;
                 if (maxx < point.x) maxx = point.x;
@@ -250,14 +246,11 @@ PointCloudHSV::Ptr StampedVelodyne::ReadVelodyneCloudFromLog(std::stringstream &
 
                 // get the hsv point
                 input_cloud->push_back(point);
-
             }
 
             // get the next point and save it to the point cloud
             input_cloud->push_back(StampedLidar::FromSpherical(h_angle, v_angle, distance));
-
         }
-
     }
 
     // set the abs values
@@ -267,17 +260,16 @@ PointCloudHSV::Ptr StampedVelodyne::ReadVelodyneCloudFromLog(std::stringstream &
 
     // return the current cloud
     return input_cloud;
-
 }
 
 // parse the pose from string stream
-bool StampedVelodyne::FromCarmenLog(std::stringstream &ss) {
-
+bool StampedVelodyne::FromCarmenLog(std::stringstream &ss)
+{
     // the pcl object
     PointCloudHSV::Ptr input_cloud = 1e04 > StringHelper::GetStringStreamSize(ss) ? ReadVelodyneCloudFromFile(ss) : ReadVelodyneCloudFromLog(ss);
 
-    if (0 < input_cloud->size()) {
-
+    if (0 < input_cloud->size())
+    {
         // creates the filtered version
         PointCloudHSV::Ptr filtered_cloud(new PointCloudHSV());
 
@@ -298,23 +290,27 @@ bool StampedVelodyne::FromCarmenLog(std::stringstream &ss) {
         StampedLidar::path += pcd_filename.str();
 
         // save the input cloud, binary option set to true
-        if (-1 == pcl::io::savePCDFile(StampedLidar::path, *filtered_cloud, true)) {
-
+        if (-1 == pcl::io::savePCDFile(StampedLidar::path, *filtered_cloud, true))
+        {
             // show the error
             std::cerr << "Could not save the input cloud, verify the tmp/velodyne/ directory\n";
 
             return false;
-
         }
 
         // clear the filtered cloud
         filtered_cloud->clear();
-
     }
 
     // clear the input cloud
     input_cloud->clear();
 
     return true;
+}
 
+
+// get the message type
+StampedMessageType StampedVelodyne::GetType()
+{
+    return StampedVelodyneMessage;
 }

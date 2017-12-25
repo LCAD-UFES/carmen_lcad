@@ -26,11 +26,11 @@ StampedLidar::StampedLidar(unsigned msg_id, const std::string &base_path) :
     maxz(-std::numeric_limits<double>::max()),
     speed(0.0),
     path(base_path),
-    seq_measure(0.0, 0.0, 0.0),
+    seq_measurement(0.0, 0.0, 0.0),
     seq_id(std::numeric_limits<unsigned>::max()),
     lidar_estimate(0.0, 0.0, 0.0),
     gps_sync_estimate(0.0, 0.0, 0.0),
-    loop_measure(0.0, 0.0, 0.0),
+    loop_measurement(0.0, 0.0, 0.0),
     loop_closure_id(std::numeric_limits<unsigned>::max()) {
 
     // set the default leaf size

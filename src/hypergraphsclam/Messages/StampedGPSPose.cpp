@@ -12,14 +12,14 @@
 using namespace hyper;
 
 // basic constructor
-StampedGPSPose::StampedGPSPose(unsigned msg_id) : StampedMessage(msg_id), gps_measure(0.0, 0.0, M_PI), gps_std(0.0) {}
+StampedGPSPose::StampedGPSPose(unsigned msg_id) : StampedMessage(msg_id), gps_measurement(0.0, 0.0, M_PI), gps_std(0.0) {}
 
 // basic destructor
 StampedGPSPose::~StampedGPSPose() {}
 
 // parse the pose from string stream
-bool StampedGPSPose::FromCarmenLog(std::stringstream &ss) {
-
+bool StampedGPSPose::FromCarmenLog(std::stringstream &ss)
+{
     // helpers
     double lt_dm, lt, lg_dm, lg, sl;
     char lt_orientation, lg_orientation;
@@ -28,8 +28,8 @@ bool StampedGPSPose::FromCarmenLog(std::stringstream &ss) {
     // get the gps id
     ss >> gps_id;
 
-    if (1 == gps_id) {
-
+    if (1 == gps_id)
+    {
         // discards the second value
         SkipValues(ss, 1);
 
@@ -68,7 +68,8 @@ bool StampedGPSPose::FromCarmenLog(std::stringstream &ss) {
         // 4: 0.1
         // 5: 0.1
 
-        switch (quality) {
+        switch (quality)
+        {
             case 1:
                 gps_std = 16.0;
                 break;
@@ -105,15 +106,21 @@ bool StampedGPSPose::FromCarmenLog(std::stringstream &ss) {
         Gdc_To_Utm_Converter::Convert(gdc , utm);
 
         // update the measure without orientation
-        gps_measure.setTranslation(Eigen::Vector2d(utm.y, -utm.x));
+        gps_measurement.setTranslation(Eigen::Vector2d(utm.y, -utm.x));
 
         // set the estimate
-        StampedMessage::est = gps_measure;
+        StampedMessage::est = gps_measurement;
 
         // the orientation values stays the same for now
         return true;
-
     }
 
     return false;
+}
+
+
+// get the stamped message type
+StampedMessageType StampedGPSPose::GetType()
+{
+    return StampedGPSMessage;
 }

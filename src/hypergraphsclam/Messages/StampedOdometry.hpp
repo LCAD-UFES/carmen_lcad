@@ -5,35 +5,35 @@
 
 namespace hyper {
 
-class StampedOdometry : virtual public StampedMessage {
+	class StampedOdometry : virtual public StampedMessage
+	{
+		public:
 
-	public:
+	        double raw_v, raw_phi;
+			double v, phi;
 
-        double raw_v;
-        double raw_phi;
+			// basic constructor
+			StampedOdometry(unsigned msg_id);
 
-		double v;
-		double phi;
+			// basic destructor
+			~StampedOdometry();
 
-		double vmb, phiab, phimb;
+			// parse odometry from string stream
+			virtual bool FromCarmenLog(std::stringstream &ss);
 
-		// basic constructor
-		StampedOdometry(unsigned msg_id);
+			// get the message type
+            virtual StampedMessageType GetType();
 
-		// basic destructor
-		~StampedOdometry();
+            // static public variables
+			static double vmb, phiab, phimb;
+	};
 
-		// parse odometry from string stream
-		virtual bool FromCarmenLog(std::stringstream &ss);
+	// syntactic sugar
+	typedef StampedOdometry* StampedOdometryPtr;
+	typedef StampedOdometry& StampedOdometryRef;
 
-};
-
-// syntactic sugar
-typedef StampedOdometry* StampedOdometryPtr;
-typedef StampedOdometry& StampedOdometryRef;
-
-// define the standard vector type
-typedef std::vector<StampedOdometryPtr> StampedOdometryPtrVector;
+	// define the standard vector type
+	typedef std::vector<StampedOdometryPtr> StampedOdometryPtrVector;
 
 }
 

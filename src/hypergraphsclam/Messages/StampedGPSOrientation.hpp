@@ -5,27 +5,29 @@
 
 namespace hyper {
 
-class StampedGPSOrientation : virtual public StampedMessage {
+    class StampedGPSOrientation : virtual public StampedMessage
+    {
+        public:
 
-    public:
+            // public members
+            double yaw;
 
-        // public members
-        double yaw;
+            // basic constructor
+            StampedGPSOrientation(unsigned msg_id);
 
-        // basic constructor
-        StampedGPSOrientation(unsigned msg_id);
+            // basic destructor
+            ~StampedGPSOrientation();
 
-        // basic destructor
-        ~StampedGPSOrientation();
+            // parse the pose from string stream
+            virtual bool FromCarmenLog(std::stringstream &ss);
 
-        // parse the pose from string stream
-        virtual bool FromCarmenLog(std::stringstream &ss);
+            // get the message type
+            virtual StampedMessageType GetType();
+    };
 
-};
-
-// syntactic sugar
-typedef StampedGPSOrientation* StampedGPSOrientationPtr;
-typedef StampedGPSOrientation& StampedGPSOrientationeRef;
+    // syntactic sugar
+    typedef StampedGPSOrientation* StampedGPSOrientationPtr;
+    typedef StampedGPSOrientation& StampedGPSOrientationeRef;
 
 }
 

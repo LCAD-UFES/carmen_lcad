@@ -6,6 +6,7 @@
 #include <exception>
 #include <cmath>
 #include <map>
+#include <utility>
 
 #include <g2o/types/slam2d/se2.h>
 #include <g2o/types/slam2d/vertex_se2.h>
@@ -156,7 +157,7 @@ class HyperGraphSclamOptimizer {
         g2o::Factory *factory;
 
         // the timestamp and ids vectors
-        std::map<unsigned, double> id_time_map;
+        std::map<unsigned, std::pair<double, unsigned>> id_time_type_map;
 
         // hack
         std::list<g2o::EdgeGPS*> gps_buffer;
@@ -251,6 +252,9 @@ class HyperGraphSclamOptimizer {
 
         // load the data into the optimizer
         void LoadHyperGraphToOptimizer();
+
+        // show the sensor pose otimization
+        void ShowAllParametersVertices();
 
         // save the optimized estimates to the output file
         void SaveCorrectedVertices();

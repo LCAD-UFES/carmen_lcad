@@ -9,6 +9,7 @@
 #include <EdgeSE2OdomAckermanCalibration.hpp>
 
 #include <StringHelper.hpp>
+#include <StampedMessageType.hpp>
 
 #include <algorithm>
 #include <unistd.h>
@@ -53,10 +54,9 @@ HyperGraphSclamOptimizer::HyperGraphSclamOptimizer(int argc, char **argv) :
         gps_origin(0.0, 0.0),
         optimizer(nullptr),
         factory(nullptr),
-        id_time_map(),
+        id_time_type_map(),
         gps_buffer(0)
 {
-
     // get the input filename
     ArgsParser(argc, argv);
 
@@ -78,22 +78,22 @@ HyperGraphSclamOptimizer::HyperGraphSclamOptimizer(int argc, char **argv) :
     LoadHyperGraphToOptimizer();
 
     std::cout << "Hypergraph loaded!\n";
-
 }
+
 
 // basic destructor
-HyperGraphSclamOptimizer::~HyperGraphSclamOptimizer() {
-
+HyperGraphSclamOptimizer::~HyperGraphSclamOptimizer()
+{
     // call the clear method
     Clear();
-
 }
 
+
 // parse the input args
-void HyperGraphSclamOptimizer::ArgsParser(int argc, char **argv) {
-
-    if (2 < argc) {
-
+void HyperGraphSclamOptimizer::ArgsParser(int argc, char **argv)
+{
+    if (2 < argc)
+    {
         // get the input filename
         input_filename = std::string(argv[1]);
         output_filename = std::string(argv[2]);
@@ -102,102 +102,164 @@ void HyperGraphSclamOptimizer::ArgsParser(int argc, char **argv) {
         std::string config_filename = 3 < argc ? std::string(argv[3]) : carmen_home + "/src/hypergraphsclam/config/optimization_config.txt";
 
         std::ifstream is(config_filename, std::ifstream::in);
-        if (is.good()) {
-
+        if (is.good())
+        {
             // helpers
             std::stringstream ss;
 
-            while (-1 != StringHelper::ReadLine(is, ss)) {
-
+            while (-1 != StringHelper::ReadLine(is, ss))
+            {
                 std::string str;
 
                 ss >> str;
 
-                if ("ODOMETRY_XX_VAR" == str) {
+                if ("ODOMETRY_XX_VAR" == str)
+                {
                      ss >> odometry_xx_var;
-                } else if ("ODOMETRY_YY_VAR" == str) {
+                }
+                else if ("ODOMETRY_YY_VAR" == str)
+                {
                     ss >> odometry_yy_var;
-                } else if ("ODOMETRY_HH_VAR" == str) {
+                }
+                else if ("ODOMETRY_HH_VAR" == str)
+                {
                     ss >> odometry_hh_var;
-                } else if ("SPECIAL_ODOMETRY_INFORMATION" == str) {
+                }
+                else if ("SPECIAL_ODOMETRY_INFORMATION" == str)
+                {
                     ss >> special_odometry_information;
-                } else if ("SICK_ICP_XX_VAR" == str) {
+                }
+                else if ("SICK_ICP_XX_VAR" == str)
+                {
                     ss >> sick_icp_xx_var;
-                } else if ("SICK_ICP_YY_VAR" == str) {
+                }
+                else if ("SICK_ICP_YY_VAR" == str)
+                {
                     ss >> sick_icp_yy_var;
-                } else if ("SICK_ICP_HH_VAR" == str) {
+                }
+                else if ("SICK_ICP_HH_VAR" == str)
+                {
                     ss >> sick_icp_hh_var;
-                } else if ("SICK_LOOP_ICP_XX_VAR" == str) {
+                }
+                else if ("SICK_LOOP_ICP_XX_VAR" == str)
+                {
                     ss >> sick_loop_xx_var;
-                } else if ("SICK_LOOP_ICP_YY_VAR" == str) {
+                }
+                else if ("SICK_LOOP_ICP_YY_VAR" == str)
+                {
                     ss >> sick_loop_yy_var;
-                } else if ("SICK_LOOP_ICP_HH_VAR" == str) {
+                }
+                else if ("SICK_LOOP_ICP_HH_VAR" == str)
+                {
                     ss >> sick_loop_hh_var;
-                } else if ("VELODYNE_ICP_XX_VAR" == str) {
+                }
+                else if ("VELODYNE_ICP_XX_VAR" == str)
+                {
                     ss >> velodyne_icp_xx_var;
-                } else if ("VELODYNE_ICP_YY_VAR" == str) {
+                }
+                else if ("VELODYNE_ICP_YY_VAR" == str)
+                {
                     ss >> velodyne_icp_yy_var;
-                } else if ("VELODYNE_ICP_HH_VAR" == str) {
+                }
+                else if ("VELODYNE_ICP_HH_VAR" == str)
+                {
                     ss >> velodyne_icp_hh_var;
-                } else if ("VELODYNE_LOOP_ICP_XX_VAR" == str) {
+                }
+                else if ("VELODYNE_LOOP_ICP_XX_VAR" == str)
+                {
                     ss >> velodyne_loop_xx_var;
-                } else if ("VELODYNE_LOOP_ICP_YY_VAR" == str) {
+                }
+                else if ("VELODYNE_LOOP_ICP_YY_VAR" == str)
+                {
                     ss >> velodyne_loop_yy_var;
-                } else if ("VELODYNE_LOOP_ICP_HH_VAR" == str) {
+                }
+                else if ("VELODYNE_LOOP_ICP_HH_VAR" == str)
+                {
                     ss >> velodyne_loop_hh_var;
-                } else if ("XSENS_CONSTRAINT_VAR" == str) {
+                }
+                else if ("XSENS_CONSTRAINT_VAR" == str)
+                {
                     ss >> xsens_constraint_var;
-                } else if ("VISUAL_XX_VAR" == str) {
+                }
+                else if ("VISUAL_XX_VAR" == str)
+                {
                     ss >> visual_xx_var;
-                } else if ("VISUAL_YY_VAR" == str) {
+                }
+                else if ("VISUAL_YY_VAR" == str)
+                {
                     ss >> visual_yy_var;
-                } else if ("VISUAL_HH_VAR" == str) {
+                }
+                else if ("VISUAL_HH_VAR" == str)
+                {
                     ss >> visual_hh_var;
-                } else if ("GPS_POSE_STD_MULTIPLIER" == str) {
+                }
+                else if ("GPS_POSE_STD_MULTIPLIER" == str)
+                {
                     ss >> gps_pose_std_multiplier;
-                } else if ("GPS_POSE_HH_STD" == str) {
+                }
+                else if ("GPS_POSE_HH_STD" == str)
+                {
                     ss >> gps_pose_hh_std;
-                } else if ("ODOM_ACKERMAN_PARAMS_VERTICES" == str) {
+                }
+                else if ("ODOM_ACKERMAN_PARAMS_VERTICES" == str)
+                {
                     ss >> odom_ackerman_params_vertices;
-                } else if ("OPTIMIZER_OUTER_ITERATIONS" == str) {
+                }
+                else if ("OPTIMIZER_OUTER_ITERATIONS" == str)
+                {
                     ss >> external_loop;
-                } else if ("OPTIMIZER_INNER_POSE_ITERATIONS" == str) {
+                }
+                else if ("OPTIMIZER_INNER_POSE_ITERATIONS" == str)
+                {
                     ss >> internal_loop;
-                } else if ("OPTIMIZER_INNER_ODOM_CALIB_ITERATIONS" == str) {
+                }
+                else if ("OPTIMIZER_INNER_ODOM_CALIB_ITERATIONS" == str)
+                {
                     ss >> optimizer_inner_odom_calib_iterations;
-                } else if ("USE_GPS" == str) {
+                }
+                else if ("USE_GPS" == str)
+                {
                     use_gps = true;
-                } else if ("USE_VELODYNE_SEQ" == str) {
+                }
+                else if ("USE_VELODYNE_SEQ" == str)
+                {
                     use_velodyne_seq = true;
-                } else if ("USE_VELODYNE_LOOP" == str) {
+                }
+                else if ("USE_VELODYNE_LOOP" == str)
+                {
                     use_velodyne_loop = true;
-                } else if ("USE_SICK_SEQ" == str) {
+                }
+                else if ("USE_SICK_SEQ" == str)
+                {
                     use_sick_seq = true;
-                } else if ("USE_SICK_LOOP" == str) {
+                }
+                else if ("USE_SICK_LOOP" == str)
+                {
                     use_sick_loop = true;
-                } else if ("USE_BUMBLEBEE_SEQ" == str) {
+                }
+                else if ("USE_BUMBLEBEE_SEQ" == str)
+                {
                     use_bumblebee_seq = true;
-                } else if ("USE_BUMBLEBEE_LOOP" == str) {
+                }
+                else if ("USE_BUMBLEBEE_LOOP" == str)
+                {
                     use_bumblebee_loop = true;
                 }
-
             }
 
             is.close();
-
-        } else {
-
-            std::cout << "Could not open the config file, using default parameters!" << std::endl;
-
         }
-
+        else
+        {
+            std::cout << "Could not open the config file, using default parameters!" << std::endl;
+        }
     }
-
 }
 
-// return a 3x3 information matrix given the diagonal covariances
-Eigen::Matrix3d HyperGraphSclamOptimizer::GetInformationMatrix(double xx_var, double yy_var, double hh_var) {
 
+// return a 3x3 information matrix given the diagonal covariances
+Eigen::Matrix3d HyperGraphSclamOptimizer::GetInformationMatrix(double xx_var, double yy_var, double hh_var)
+{
     // create the covariance matrix
     Eigen::Matrix3d cov(Eigen::Matrix3d::Zero());
 
@@ -208,12 +270,12 @@ Eigen::Matrix3d HyperGraphSclamOptimizer::GetInformationMatrix(double xx_var, do
 
     // get the information
     return cov.inverse();
-
 }
 
-// registering the custom edges and vertices
-void HyperGraphSclamOptimizer::RegisterCustomTypes() {
 
+// registering the custom edges and vertices
+void HyperGraphSclamOptimizer::RegisterCustomTypes()
+{
     // register the custom gps edge
     factory->registerType("EDGE_GPS", new g2o::HyperGraphElementCreator<g2o::EdgeGPS>);
 
@@ -231,12 +293,12 @@ void HyperGraphSclamOptimizer::RegisterCustomTypes() {
 
     // register the custom vertex
     factory->registerType("VERTEX_ODOM_ACKERMAN_PARAM_CALIBRATION", new g2o::HyperGraphElementCreator<g2o::VertexOdomAckermanParams>);
-
 }
 
-// initialize the sparse optimizer
-void HyperGraphSclamOptimizer::InitializeOptimizer() {
 
+// initialize the sparse optimizer
+void HyperGraphSclamOptimizer::InitializeOptimizer()
+{
     // creates a new sparse optimizer in memmory
     optimizer = new g2o::SparseOptimizer;
 
@@ -257,12 +319,12 @@ void HyperGraphSclamOptimizer::InitializeOptimizer() {
 
     // set the verbose mode
     optimizer->setVerbose(true);
-
 }
 
-// add the sick, velodyne and odometry calibration vertices
-void HyperGraphSclamOptimizer::AddParametersVertices() {
 
+// add the sick, velodyne and odometry calibration vertices
+void HyperGraphSclamOptimizer::AddParametersVertices()
+{
     // creates the sick offset vertex with a given initial estimate
     g2o::VertexSE2 *sick_offset = new g2o::VertexSE2;
 
@@ -278,11 +340,9 @@ void HyperGraphSclamOptimizer::AddParametersVertices() {
     // set the sick offset id 0
     sick_offset->setId(SICK_VERTEX_OFFSET_ID);
 
-    if (!optimizer->addVertex(sick_offset)) {
-
-        // error
+    if (!optimizer->addVertex(sick_offset))
+    {
         throw std::runtime_error("Could not add the sick offset vertex to the optimizer!");
-
     }
 
     // creates the velodyne offset vertex with a given initial estimate
@@ -305,11 +365,9 @@ void HyperGraphSclamOptimizer::AddParametersVertices() {
     velodyne_offset->setFixed(true);
 
     // save the offset vertex
-    if (!optimizer->addVertex(velodyne_offset)) {
-
-        // error
+    if (!optimizer->addVertex(velodyne_offset))
+    {
         throw std::runtime_error("Could not add the velodyne offset vertex to the optimizer!");
-
     }
 
     // creates the bumblebee offset vertex with a given initial estimate
@@ -334,16 +392,14 @@ void HyperGraphSclamOptimizer::AddParametersVertices() {
     bumblebee_offset->setFixed(true);
 
     // save the offset vertex
-    if (!optimizer->addVertex(bumblebee_offset)) {
-
-        // error
+    if (!optimizer->addVertex(bumblebee_offset))
+    {
         throw std::runtime_error("Could not add the bumblebee offset vertex to the optimizer!");
-
     }
 
     // include all ackerman params
-    for (unsigned i = 0; i < odom_ackerman_params_vertices; ++i) {
-
+    for (unsigned i = 0; i < odom_ackerman_params_vertices; ++i)
+    {
         // get the current param
         g2o::VertexOdomAckermanParams *odom_param = new g2o::VertexOdomAckermanParams();
 
@@ -360,52 +416,35 @@ void HyperGraphSclamOptimizer::AddParametersVertices() {
         odom_param->setToOriginImpl();
 
         // try to save the current vertex to the optimizer
-        if (!optimizer->addVertex(odom_param)) {
+        if (!optimizer->addVertex(odom_param))
+        {
 
-            // error
             throw std::runtime_error("Could not add the odom ackerman params calibration vertex to the optimizer!");
-
         }
-
     }
-
 }
 
-// read the current vertex from the input stream and save it to the optimizer
-void HyperGraphSclamOptimizer::AddVertex(std::stringstream &ss) {
 
+// read the current vertex from the input stream and save it to the optimizer
+void HyperGraphSclamOptimizer::AddVertex(std::stringstream &ss)
+{
     // helpers
-    unsigned vertex_id;
+    unsigned vid, vertex_id, msg_type;
     double x, y, theta, timestamp;
 
-    double dx = 0.0f, lx, ly, ltheta;
-
     // read the current line
-    ss >> vertex_id >> x >> y >> theta >> timestamp;
+    ss >> vid >> x >> y >> theta >> timestamp >> msg_type;
+
+    vertex_id = vid + vertex_id_offset;
 
     // creates the new vertex
     g2o::VertexSE2 *v = new g2o::VertexSE2;
 
     // set the id
-    v->setId(vertex_id + vertex_id_offset);
+    v->setId(vertex_id);
 
-    if ((544219 / 30) > vertex_id + vertex_id_offset) {
-
-        // set the tranlation
-        v->setEstimate(g2o::SE2(x, y, theta));
-
-        dx = x - lx;
-        lx = x;
-        ly = y;
-        ltheta = theta;
-
-    } else {
-
-        // set the tranlation
-        v->setEstimate(g2o::SE2(lx, ly, ltheta) * g2o::SE2(dx * 10, 0.0f, 0.0f));
-
-
-    }
+    // set the initial estimate
+    v->setEstimate(g2o::SE2(x, y, theta));
 
     // disable the vertex
     // v->setFixed(true);
@@ -414,21 +453,19 @@ void HyperGraphSclamOptimizer::AddVertex(std::stringstream &ss) {
     // v->setMarginalized(true);
 
     // add to the optimizer
-    if(!optimizer->addVertex(v)) {
-
-        // error
+    if(!optimizer->addVertex(v))
+    {
         throw std::runtime_error("Could not add a new vertex to the optimizer!");
-
     }
 
-    // save the timestamp
-    id_time_map[vertex_id + vertex_id_offset] = timestamp;
-
+    // save the timestamp and type
+    id_time_type_map[vertex_id] = std::pair<double, unsigned>(timestamp, msg_type);
 }
 
-// read the sick edge from the input stream and save it to the optimizer
-void HyperGraphSclamOptimizer::AddSickEdge(std::stringstream &ss, Eigen::Matrix3d &sick_icp_information) {
 
+// read the sick edge from the input stream and save it to the optimizer
+void HyperGraphSclamOptimizer::AddSickEdge(std::stringstream &ss, Eigen::Matrix3d &sick_icp_information)
+{
     // helpers
     unsigned from, to;
     double x, y, theta;
@@ -453,18 +490,16 @@ void HyperGraphSclamOptimizer::AddSickEdge(std::stringstream &ss, Eigen::Matrix3
     sick_seq_edge->setInformation(sick_icp_information);
 
     // try to append the the sick seq edge
-    if (!optimizer->addEdge(sick_seq_edge)) {
-
-        // error
+    if (!optimizer->addEdge(sick_seq_edge))
+    {
         throw std::runtime_error("Could not add the sick seq icp edge to the optimizer!");
-
     }
-
 }
 
-// read the velodyne edge from the input stream and save it to the optimizer
-void HyperGraphSclamOptimizer::AddVelodyneEdge(std::stringstream &ss, Eigen::Matrix3d &velodyne_icp_information) {
 
+// read the velodyne edge from the input stream and save it to the optimizer
+void HyperGraphSclamOptimizer::AddVelodyneEdge(std::stringstream &ss, Eigen::Matrix3d &velodyne_icp_information)
+{
     // helpers
     unsigned from, to;
     double x, y, theta;
@@ -489,14 +524,12 @@ void HyperGraphSclamOptimizer::AddVelodyneEdge(std::stringstream &ss, Eigen::Mat
     velodyne_seq_edge->setInformation(velodyne_icp_information);
 
     // try to append the the velodyne seq edge
-    if (!optimizer->addEdge(velodyne_seq_edge)) {
-
-        // error
+    if (!optimizer->addEdge(velodyne_seq_edge))
+    {
         throw std::runtime_error("Could not add the velodyne seq icp edge to the optimizer!");
-
     }
-
 }
+
 
 // add the odometry calibration edge to the optimizer
 void HyperGraphSclamOptimizer::AddOdomCalibrationEdge(
@@ -508,8 +541,8 @@ void HyperGraphSclamOptimizer::AddOdomCalibrationEdge(
     double phi,
     double time,
     const Eigen::Matrix3d &special,
-    const Eigen::Matrix3d &info) {
-
+    const Eigen::Matrix3d &info)
+{
     // create the new edges
     g2o::EdgeSE2OdomAckermanCalibration *odom_calib_edge = new g2o::EdgeSE2OdomAckermanCalibration();
 
@@ -526,33 +559,30 @@ void HyperGraphSclamOptimizer::AddOdomCalibrationEdge(
     odom_calib_edge->setRawValues(vel, phi, time);
 
     // set the info matrix
-    if (0.0 == time) {
-
+    if (0.0 == time)
+    {
         // set the special info
         odom_calib_edge->setInformation(special);
-
-    } else {
-
+    }
+    else
+    {
         // set the general info
         odom_calib_edge->setInformation(info);
-
     }
 
-    if (!optimizer->addEdge(odom_calib_edge)) {
-
-        // error
+    if (!optimizer->addEdge(odom_calib_edge))
+    {
         throw std::runtime_error("Could not add the odometry calibration edge to the optimizer!");
-
     }
-
 }
+
 
 // read the odometry edge and the odometry calibration edge and save them to the optimizer
 void HyperGraphSclamOptimizer::AddOdometryAndCalibEdges(
     std::stringstream &ss, unsigned odom_param_id,
     const Eigen::Matrix3d &special,
-    const Eigen::Matrix3d &odom_info) {
-
+    const Eigen::Matrix3d &odom_info)
+{
     // helpers
     unsigned from, to;
     double x, y, theta, _v, _p, _t;
@@ -573,33 +603,30 @@ void HyperGraphSclamOptimizer::AddOdometryAndCalibEdges(
     // set the base measurement
     edge->setMeasurement(g2o::SE2(x, y, theta));
 
-    if (0.0 == x && 0.0 == y && 0.0 == theta) {
-
+    if (0.0 == x && 0.0 == y && 0.0 == theta)
+    {
         // set the special info
         edge->setInformation(special);
-
-    } else {
-
+    }
+    else
+    {
         // set the info
         edge->setInformation(odom_info);
-
     }
 
-    if (!optimizer->addEdge(edge)) {
-
-        // error
+    if (!optimizer->addEdge(edge))
+    {
         throw std::runtime_error("Could not add the odometry edge to the optimizer!");
-
     }
 
     // add a new odom calibration edge
     AddOdomCalibrationEdge(l_vertex, r_vertex, edge, odom_param_id, _v, _p, _t, special, odom_info);
-
 }
 
-// read the visual odometry edge
-void HyperGraphSclamOptimizer::AddVisualOdometryEdge(std::stringstream &ss, Eigen::Matrix3d &visual_odom_information) {
 
+// read the visual odometry edge
+void HyperGraphSclamOptimizer::AddVisualOdometryEdge(std::stringstream &ss, Eigen::Matrix3d &visual_odom_information)
+{
     // helpers
     unsigned from, to;
     double x, y, theta;
@@ -624,20 +651,19 @@ void HyperGraphSclamOptimizer::AddVisualOdometryEdge(std::stringstream &ss, Eige
     bumblebee_seq_edge->setInformation(visual_odom_information);
 
     // try to append the the bumblebee seq edge
-    if (!optimizer->addEdge(bumblebee_seq_edge)) {
-
-        // error
+    if (!optimizer->addEdge(bumblebee_seq_edge))
+    {
         throw std::runtime_error("Could not add the bumblebee seq edge to the optimizer!");
-
     }
-
 }
 
+
 // compute fake orientations
-void HyperGraphSclamOptimizer::ComputeGPSFakeOrientations() {
+void HyperGraphSclamOptimizer::ComputeGPSFakeOrientations()
+{
 
-    if (3 < gps_buffer.size()) {
-
+    if (3 < gps_buffer.size())
+    {
         // iterators
         std::list<g2o::EdgeGPS*>::iterator end(gps_buffer.end());
         std::list<g2o::EdgeGPS*>::iterator prev(gps_buffer.begin());
@@ -656,8 +682,8 @@ void HyperGraphSclamOptimizer::ComputeGPSFakeOrientations() {
         prev_gps->computeFakeOrientation(curr_gps->measurement());
 
         // main loop
-        while (end != next) {
-
+        while (end != next)
+        {
             // process the current one
             prev_gps = *prev;
             curr_gps = *curr;
@@ -670,25 +696,23 @@ void HyperGraphSclamOptimizer::ComputeGPSFakeOrientations() {
             prev = curr;
             curr = next;
             ++next;
-
         }
 
         // compute the last fake orientation
         prev_gps->computeFakeOrientation(curr_gps->measurement());
-
-    } else {
-
-        throw std::runtime_error("Invalid GPS edges! Make sure you'are loading the gps correctly!");
-
     }
-
+    else
+    {
+        throw std::runtime_error("Invalid GPS edges! Make sure you'are loading the gps correctly!");
+    }
 }
 
+
 // remove the undesired chunks
-void HyperGraphSclamOptimizer::RemoveUndesiredDisplacements(double threshold) {
-
-    if (5 < gps_buffer.size()) {
-
+void HyperGraphSclamOptimizer::RemoveUndesiredDisplacements(double threshold)
+{
+    if (5 < gps_buffer.size())
+    {
         // iterators
         std::list<g2o::EdgeGPS*>::iterator prev(gps_buffer.begin());
         std::list<g2o::EdgeGPS*>::iterator curr(prev);
@@ -703,21 +727,21 @@ void HyperGraphSclamOptimizer::RemoveUndesiredDisplacements(double threshold) {
 
         unsigned counter = 0;
 
-        while (gps_buffer.end() != next) {
-
+        while (gps_buffer.end() != next)
+        {
             Eigen::Vector2d next_t((*next)->measurement().translation());
 
             double diff = (next_t - last_t).norm();
 
-            if (threshold < diff) {
-
-                if (80 > counter) {
-
+            if (threshold < diff)
+            {
+                if (40 > counter)
+                {
                     curr = prev;
                     std::advance(curr, 1);
 
-                    while (prev != next) {
-
+                    while (prev != next)
+                    {
                         g2o::EdgeGPS* gps(*prev);
 
                         gps_buffer.erase(prev);
@@ -726,36 +750,32 @@ void HyperGraphSclamOptimizer::RemoveUndesiredDisplacements(double threshold) {
 
                         prev = curr;
                         ++curr;
-
                     }
-
                 }
 
                 curr = prev = next;
                 counter = 0;
-
-            } else {
-
+            }
+            else
+            {
                 ++curr;
                 counter += 1;
-
             }
 
             last_t = next_t;
 
             ++next;
-
         }
-
     }
-
 }
 
+
 // remove gps messages
-void HyperGraphSclamOptimizer::MakeGPSSparse() {
+void HyperGraphSclamOptimizer::MakeGPSSparse()
+{
 
-    if (5 < gps_buffer.size()) {
-
+    if (5 < gps_buffer.size())
+    {
         // iterators
         std::list<g2o::EdgeGPS*>::iterator curr(gps_buffer.begin());
         std::list<g2o::EdgeGPS*>::iterator next(curr);
@@ -766,64 +786,61 @@ void HyperGraphSclamOptimizer::MakeGPSSparse() {
 
         unsigned counter = 0;
 
-        while (gps_buffer.end() != next) {
-
+        while (gps_buffer.end() != next)
+        {
             Eigen::Vector2d next_t((*next)->measurement().translation());
 
             double diff = (next_t - last_t).norm();
 
-            if (0.850f > diff) {
-
+            if (0.850f > diff)
+            {
                 g2o::EdgeGPS* gps(*next);
                 gps_buffer.erase(next);
                 delete gps;
 
                 next = curr;
-
-            } else {
-
+            }
+            else
+            {
                 ++curr;
                 counter += 1;
                 last_t = next_t;
-
             }
 
             ++next;
-
         }
-
     }
-
 }
 
-// gps edges filtering
-void HyperGraphSclamOptimizer::GPSFiltering() {
 
+// gps edges filtering
+void HyperGraphSclamOptimizer::GPSFiltering()
+{
     // no displacement
-    RemoveUndesiredDisplacements(1.5f);
+    RemoveUndesiredDisplacements(1.2f);
 
     // sparse!
     MakeGPSSparse();
 
     // no displacement
-    RemoveUndesiredDisplacements(2.5f);
-
+    RemoveUndesiredDisplacements(1.2f);
 }
 
-// save the valid gps edges to the optimizer
-void HyperGraphSclamOptimizer::AddAllValidGPS() {
 
+// save the valid gps edges to the optimizer
+void HyperGraphSclamOptimizer::AddAllValidGPS()
+{
     // open the file
     std::ofstream os("fake_gps.txt", std::ofstream::out);
 
-    if (!os.good()) {
+    if (!os.good())
+    {
 
         throw std::runtime_error("Could not open the fake_gps.txt!");
-
     }
 
-    while (!gps_buffer.empty()) {
-
+    while (!gps_buffer.empty())
+    {
         // get the first one
         g2o::EdgeGPS *gps_edge = gps_buffer.front();
 
@@ -831,11 +848,10 @@ void HyperGraphSclamOptimizer::AddAllValidGPS() {
         gps_buffer.pop_front();
 
         // save it
-        if (!optimizer->addEdge(gps_edge)) {
+        if (!optimizer->addEdge(gps_edge))
+        {
 
-            // error
             throw std::runtime_error("Could not add the gps edge to the optimizer!");
-
         }
 
         // save it to the output
@@ -847,16 +863,16 @@ void HyperGraphSclamOptimizer::AddAllValidGPS() {
         double cosa = std::cos(gps_pose[2]) * 0.5;
 
         os << std::fixed << x << " " << y << " " << gps_pose[2] << " " << cosa << " " << sina << "\n";
-
     }
 
     // close the fake gps file
     os.close();
-
 }
 
+
 // gps edges filtering
-void HyperGraphSclamOptimizer::AddFilteredGPSEdges() {
+void HyperGraphSclamOptimizer::AddFilteredGPSEdges()
+{
 
     std::cout << "Computing the gps filtering!" << std::endl;
 
@@ -872,12 +888,12 @@ void HyperGraphSclamOptimizer::AddFilteredGPSEdges() {
 
     // add all valid gps to the optimizer
     AddAllValidGPS();
-
 }
 
-// add the raw gps edge
-void HyperGraphSclamOptimizer::AddRawGPSEdge(std::stringstream &ss, Eigen::Matrix3d &cov) {
 
+// add the raw gps edge
+void HyperGraphSclamOptimizer::AddRawGPSEdge(std::stringstream &ss, Eigen::Matrix3d &cov)
+{
     // helpers
     unsigned from;
     double x, y, theta, gps_std;
@@ -901,18 +917,16 @@ void HyperGraphSclamOptimizer::AddRawGPSEdge(std::stringstream &ss, Eigen::Matri
     gps_edge->setInformation(Eigen::Matrix3d(cov.inverse()));
 
     // save it
-    if (!optimizer->addEdge(gps_edge)) {
-
-        // error
+    if (!optimizer->addEdge(gps_edge))
+    {
         throw std::runtime_error("Could not add the gps edge to the optimizer!");
-
     }
-
 }
 
-// read the gps edge and save it to the optimizer
-void HyperGraphSclamOptimizer::AddGPSEdge(std::stringstream &ss, Eigen::Matrix3d &cov) {
 
+// read the gps edge and save it to the optimizer
+void HyperGraphSclamOptimizer::AddGPSEdge(std::stringstream &ss, Eigen::Matrix3d &cov)
+{
     // helpers
     unsigned from;
     double x, y, theta, gps_std;
@@ -937,12 +951,12 @@ void HyperGraphSclamOptimizer::AddGPSEdge(std::stringstream &ss, Eigen::Matrix3d
 
     // save it to the gps buffer
     gps_buffer.push_back(gps_edge);
-
 }
 
-// read the xsens edge and save it to the optimizer
-void HyperGraphSclamOptimizer::AddXSENSEdge(std::stringstream &ss, Eigen::Matrix<double, 1, 1> &information) {
 
+// read the xsens edge and save it to the optimizer
+void HyperGraphSclamOptimizer::AddXSENSEdge(std::stringstream &ss, Eigen::Matrix<double, 1, 1> &information)
+{
     // helpers
     unsigned from;
     double yaw;
@@ -963,24 +977,22 @@ void HyperGraphSclamOptimizer::AddXSENSEdge(std::stringstream &ss, Eigen::Matrix
     xsens_edge->setInformation(information);
 
     // try to save it
-    if (!optimizer->addEdge(xsens_edge)) {
-
-        // error
+    if (!optimizer->addEdge(xsens_edge))
+    {
         throw std::runtime_error("Could not add the xsens edge to the optimizer!");
-
     }
-
 }
 
-// manage the hypergraph region
-void HyperGraphSclamOptimizer::ManageHypergraphRegion(std::vector<g2o::VertexSE2*> &group, bool status) {
 
+// manage the hypergraph region
+void HyperGraphSclamOptimizer::ManageHypergraphRegion(std::vector<g2o::VertexSE2*> &group, bool status)
+{
     // helpers
     std::vector<g2o::VertexSE2*>::iterator it(group.begin());
     std::vector<g2o::VertexSE2*>::iterator end(group.end());
 
-    while (end != it) {
-
+    while (end != it)
+    {
         // direct access
         g2o::VertexSE2* v = *it;
 
@@ -992,15 +1004,16 @@ void HyperGraphSclamOptimizer::ManageHypergraphRegion(std::vector<g2o::VertexSE2
 
         // go to the next vertex
         ++it;
-
     }
-
 }
 
-// reset the graph to the pose estimation
-void HyperGraphSclamOptimizer::PreparePrevOptimization() {
 
-    for (g2o::SparseOptimizer::VertexIDMap::const_iterator it = optimizer->vertices().begin(); it != optimizer->vertices().end(); ++it) {
+// reset the graph to the pose estimation
+void HyperGraphSclamOptimizer::PreparePrevOptimization()
+{
+
+    for (g2o::SparseOptimizer::VertexIDMap::const_iterator it = optimizer->vertices().begin(); it != optimizer->vertices().end(); ++it)
+    {
 
         g2o::OptimizableGraph::Vertex* v = static_cast<g2o::OptimizableGraph::Vertex*>(it->second);
 
@@ -1012,32 +1025,31 @@ void HyperGraphSclamOptimizer::PreparePrevOptimization() {
 
         // enable it
         v->setFixed(status);
-
     }
 
     // Initializes the structures for optimizing the whole graph.
     optimizer->initializeOptimization();
 
-    for (g2o::SparseOptimizer::EdgeSet::const_iterator it = optimizer->edges().begin(); it != optimizer->edges().end(); ++it) {
+    for (g2o::SparseOptimizer::EdgeSet::const_iterator it = optimizer->edges().begin(); it != optimizer->edges().end(); ++it)
+    {
 
         g2o::OptimizableGraph::Edge* e = static_cast<g2o::OptimizableGraph::Edge*>(*it);
 
         // specify the robust kernel to be used in this edge
         e->setRobustKernel(nullptr);
-
     }
 
     // pre-compute the active errors
     optimizer->computeActiveErrors();
-
 }
 
+
 // reset the graph to the odometry calibration estimation
-void HyperGraphSclamOptimizer::PreparePostOptimization() {
-
+void HyperGraphSclamOptimizer::PreparePostOptimization()
+{
     // preprare
-    for (g2o::SparseOptimizer::VertexIDMap::const_iterator it = optimizer->vertices().begin(); it != optimizer->vertices().end(); ++it) {
-
+    for (g2o::SparseOptimizer::VertexIDMap::const_iterator it = optimizer->vertices().begin(); it != optimizer->vertices().end(); ++it)
+    {
         // downcasting
         g2o::OptimizableGraph::Vertex* v = static_cast<g2o::OptimizableGraph::Vertex*>(it->second);
 
@@ -1049,59 +1061,55 @@ void HyperGraphSclamOptimizer::PreparePostOptimization() {
 
         // enable it
         v->setFixed(status);
-
     }
 
     // Initializes the structures for optimizing the whole graph.
     optimizer->initializeOptimization();
 
-    for (g2o::SparseOptimizer::EdgeSet::const_iterator it = optimizer->edges().begin(); it != optimizer->edges().end(); ++it) {
+    for (g2o::SparseOptimizer::EdgeSet::const_iterator it = optimizer->edges().begin(); it != optimizer->edges().end(); ++it)
+    {
 
         g2o::EdgeSE2OdomAckermanCalibration *odom_calib_edge = dynamic_cast<g2o::EdgeSE2OdomAckermanCalibration*>(*it);
 
-        if (nullptr != odom_calib_edge) {
-
+        if (nullptr != odom_calib_edge)
+        {
             // get the measurements from the current vertices
             odom_calib_edge->getMeasurementFromVertices();
-
         }
-
     }
 
     // pre-compute the active errors
     optimizer->computeActiveErrors();
-
 }
 
-// reset the graph to the next optimization round
-void HyperGraphSclamOptimizer::PrepareRoundOptimization() {
 
+// reset the graph to the next optimization round
+void HyperGraphSclamOptimizer::PrepareRoundOptimization()
+{
     // update the odometry measure
-    for (g2o::SparseOptimizer::EdgeSet::const_iterator it = optimizer->edges().begin(); it != optimizer->edges().end(); ++it) {
+    for (g2o::SparseOptimizer::EdgeSet::const_iterator it = optimizer->edges().begin(); it != optimizer->edges().end(); ++it)
+    {
 
         g2o::EdgeSE2OdomAckermanCalibration *odom_calib_edge = dynamic_cast<g2o::EdgeSE2OdomAckermanCalibration*>(*it);
 
-        if (nullptr != odom_calib_edge) {
-
+        if (nullptr != odom_calib_edge)
+        {
             // get the measurements from the current vertices
             odom_calib_edge->updateOdometryMeasure();
-
         }
-
     }
-
 }
 
-// load the data into the optimizer
-void HyperGraphSclamOptimizer::LoadHyperGraphToOptimizer() {
 
+// load the data into the optimizer
+void HyperGraphSclamOptimizer::LoadHyperGraphToOptimizer()
+{
     // try to open the input filename
     std::ifstream is(input_filename, std::ifstream::in);
 
-    if (!is.is_open()) {
-
+    if (!is.is_open())
+    {
         throw std::runtime_error("Could not read the input file!");
-
     }
 
     // helpers
@@ -1129,8 +1137,8 @@ void HyperGraphSclamOptimizer::LoadHyperGraphToOptimizer() {
     AddParametersVertices();
 
     // the main loop
-    while(-1 != hyper::StringHelper::ReadLine(is, ss)) {
-
+    while(-1 != hyper::StringHelper::ReadLine(is, ss))
+    {
         // the tag
         std::string tag;
 
@@ -1138,125 +1146,97 @@ void HyperGraphSclamOptimizer::LoadHyperGraphToOptimizer() {
         ss >> tag;
 
         // the VERTEX tags should become first in the sync file
-        if ("VERTEX" == tag) {
-
+        if ("VERTEX" == tag)
+        {
             // push the new vertex to the optimizer
             AddVertex(ss);
-
-        } else if ("ODOM_EDGE" == tag) {
-
-            if (0 != odom_counter) {
-
-                // add odom edges
+        }
+        else if ("ODOM_EDGE" == tag)
+        {
+            if (0 != odom_counter)
+            {
                 AddOdometryAndCalibEdges(ss, odom_param_id, special_odom_information, odom_information);
-
-            } else {
-
-                // add odom edges
+            }
+            else
+            {
                 AddOdometryAndCalibEdges(ss, odom_param_id, special_odom_information, special_odom_information);
-
             }
 
             // increment the odometry counter
             ++odom_counter;
 
-            if (0 == odom_counter % subdivision && last_odom_param_id > odom_param_id) {
-
-                // increment the param index
+            if (0 == odom_counter % subdivision && last_odom_param_id > odom_param_id)
+            {
+                // increment the odometry param index
                 ++odom_param_id;
-
             }
-
-        } else if ("GPS_EDGE" == tag && use_gps) {
-
+        }
+        else if ("GPS_EDGE" == tag && use_gps)
+        {
             // add the gps edge to the optimizer
             AddGPSEdge(ss, cov);
-
-        } else if ("XSENS_EDGE_" == tag) {
-
+        }
+        else if ("XSENS_EDGE_" == tag)
+        {
             // add the xsens edge to the optimizer
             AddXSENSEdge(ss, xsens_information);
-
-        } else if ("SICK_SEQ" == tag && use_sick_seq) {
-
+        }
+        else if ("SICK_SEQ" == tag && use_sick_seq)
+        {
             // push the sick edge to the optimizer
             AddSickEdge(ss, sick_icp_information);
-
-        } else if ("SICK_LOOP" == tag && use_sick_loop) {
-
+        }
+        else if ("SICK_LOOP" == tag && use_sick_loop)
+        {
             // push the sick edge to the optimizer
             AddSickEdge(ss, sick_loop_information);
-
-        } else if ("VELODYNE_SEQ" == tag && use_velodyne_seq) {
-
+        }
+        else if ("VELODYNE_SEQ" == tag && use_velodyne_seq)
+        {
             // push the velodyne icp edge to the optimizer
             AddVelodyneEdge(ss, velodyne_icp_information);
-
-        } else if ("VELODYNE_LOOP" == tag && use_velodyne_loop) {
-
+        }
+        else if ("VELODYNE_LOOP" == tag && use_velodyne_loop)
+        {
             // push the velodyne icp edge to the optimizer
             AddVelodyneEdge(ss, velodyne_loop_information);
-
-        } else if ("BUMBLEBEE_SEQ" == tag && use_bumblebee_seq) {
-
+        }
+        else if ("BUMBLEBEE_SEQ" == tag && use_bumblebee_seq)
+        {
             // push the visual odometry edge to the optimizer
             AddVisualOdometryEdge(ss, visual_odom_information);
-
-        } else if ("BUMBLEBE_LOOP" == tag && use_bumblebee_loop) {
-
+        }
+        else if ("BUMBLEBE_LOOP" == tag && use_bumblebee_loop)
+        {
             // push the visual odometry edge to the optimizer
             AddVisualOdometryEdge(ss, visual_odom_information);
-
-        } else if ("GPS_ORIGIN" == tag) {
-
+        }
+        else if ("GPS_ORIGIN" == tag)
+        {
             // read the origin
             ss >> gps_origin[0] >> gps_origin[1];
 
             std::cout << "GPS origin: " << std::fixed << gps_origin.transpose() << std::endl;
-
-        } else if ("VERTICES_QUANTITY" == tag) {
-
+        }
+        else if ("VERTICES_QUANTITY" == tag)
+        {
             // read the qnt
             ss >> subdivision;
 
-            // divide it by 4
+            // divide it by the number of odometry param vertices
             subdivision /= odom_ackerman_params_vertices;
-
         }
-
     }
 
-    if (use_gps) {
-
-        // Process filtered gps
-        AddFilteredGPSEdges();
-
-    }
+    if (use_gps) { AddFilteredGPSEdges(); }
 
     // close the input file stream
     is.close();
-
 }
 
-// save the optimized estimates to the output file
-void HyperGraphSclamOptimizer::SaveCorrectedVertices() {
 
-    // open the output files
-    std::ofstream car_poses(output_filename, std::ofstream::out);
-    std::ofstream velodyne_poses("velodyne_offset.txt", std::ofstream::out);
-
-    if (!car_poses.is_open() || !velodyne_poses.is_open()) {
-
-        throw std::runtime_error("Could not open the output files!");
-
-    }
-
-    // how many vertices
-    unsigned size = optimizer->vertices().size();
-
-    // report
-    std::cout << "How many vertices: " << size << std::endl;
-
+void HyperGraphSclamOptimizer::ShowAllParametersVertices()
+{
     // the first vertex is the sick displacement
     // downcast to the base vertex
     g2o::VertexSE2* sick_offset = dynamic_cast<g2o::VertexSE2*>(optimizer->vertex(SICK_VERTEX_OFFSET_ID));
@@ -1282,23 +1262,44 @@ void HyperGraphSclamOptimizer::SaveCorrectedVertices() {
     std::cout << std::endl << "The Bumblebee offset: " << std::fixed << std::setprecision(10) << bumblebee_offset->estimate().toVector().transpose() << std::endl << std::endl;
 
     // get all ackerman params
-    for (unsigned i = 0; i < odom_ackerman_params_vertices; ++i) {
-
+    for (unsigned i = 0; i < odom_ackerman_params_vertices; ++i)
+    {
         // the current id
         unsigned curr_id = ODOM_ACKERMAN_PARAMS_VERTEX_INITIAL_ID + i;
 
         // get the current param
         g2o::VertexOdomAckermanParams *odom_param = dynamic_cast<g2o::VertexOdomAckermanParams*>(optimizer->vertex(curr_id));
 
-        if (nullptr != odom_param) {
-
+        if (nullptr != odom_param)
+        {
             // show the resulting calibration
-            std::cout << "The " << curr_id - 2 << "º odom ackerman calib edge: ";
+            std::cout << "The " << curr_id - 2 << "º odom ackerman bias calibration vertex: ";
             std::cout << std::fixed << odom_param->estimate().transpose() << std::endl << std::endl;
-
         }
-
     }
+
+}
+
+
+// save the optimized estimates to the output file
+void HyperGraphSclamOptimizer::SaveCorrectedVertices()
+{
+    // open the output files
+    std::ofstream car_poses(output_filename + ".txt", std::ofstream::out);
+    std::ofstream velodyne_poses(output_filename + "_velodyne.txt", std::ofstream::out);
+    std::ofstream sick_poses(output_filename + "_sick.txt", std::ofstream::out);
+    std::ofstream bumblebee_poses(output_filename + "_bumblebee.txt", std::ofstream::out);
+
+    if (!car_poses.is_open() || !velodyne_poses.is_open() || !sick_poses.is_open() || !bumblebee_poses.is_open())
+    {
+        throw std::runtime_error("Could not open the output files!");
+    }
+
+    // how many vertices
+    unsigned size = optimizer->vertices().size();
+
+    // report
+    std::cout << "How many vertices: " << size << std::endl;
 
     // get the first valid id
     unsigned start_id = ODOM_ACKERMAN_PARAMS_VERTEX_INITIAL_ID + odom_ackerman_params_vertices - 1;
@@ -1307,68 +1308,66 @@ void HyperGraphSclamOptimizer::SaveCorrectedVertices() {
     g2o::SparseOptimizer::VertexIDMap::iterator it(optimizer->vertices().begin());
     g2o::SparseOptimizer::VertexIDMap::iterator end(optimizer->vertices().end());
 
-    while (end != it) {
-
+    while (end != it)
+    {
         // downcast to the base vertex
         g2o::VertexSE2* v = dynamic_cast<g2o::VertexSE2*>(it->second);
 
-        if (nullptr != v && start_id < unsigned(v->id())) {
-
-            // get the estimate
-            g2o::SE2 estimate(v->estimate());
-            Eigen::Vector3d car_pose(estimate.toVector());
-            Eigen::Vector3d velodyne_pose((estimate * velodyne_offset_pose).toVector());
-
+        if (nullptr != v && start_id < unsigned(v->id()))
+        {
+            Eigen::Vector3d p(v->estimate().toVector());
 
             // build the base
-            car_pose[0] += gps_origin[0];
-            car_pose[1] += gps_origin[1];
-            velodyne_pose[0] += gps_origin[0];
-            velodyne_pose[1] += gps_origin[1];
+            p[0] += gps_origin[0];
+            p[1] += gps_origin[1];
 
-            double a = car_pose[2];
-
+            double a = p[2];
             double sina = std::sin(a) * 0.05;
             double cosa = std::cos(a) * 0.05;
 
-            double timestamp = id_time_map.at((unsigned) v->id());
-
-            if (0 > v->id()) {
-
-                // error
-                throw std::runtime_error("Invalid vertex id");
-
-            }
+            std::pair<double, unsigned> time_type(id_time_type_map.at(unsigned(v->id())));
+            double t = time_type.first;
+            StampedMessageType msg_type = StampedMessageType(time_type.second);
 
             // write to the output file
-            car_poses << std::fixed << car_pose[0] << " " << car_pose[1] << " " << car_pose[2] << " " << timestamp << " " << cosa << " " << sina << "\n";
+            car_poses << std::fixed << p[0] << " " << p[1] << " " << p[2] << " " << t << " " << cosa << " " << sina << "\n";
 
-            a = velodyne_pose[2];
-            sina = std::sin(a) * 0.05;
-            cosa = std::cos(a) * 0.05;
-
-            velodyne_poses << std::fixed << velodyne_pose[0] << " " << velodyne_pose[1] << " " << velodyne_pose[2] << " " << timestamp << " " << cosa << " " << sina << "\n";
-
+            switch (msg_type)
+            {
+                case StampedVelodyneMessage:
+                    velodyne_poses << std::fixed << p[0] << " " << p[1] << " " << p[2] << " " << t << " " << cosa << " " << sina << "\n";
+                    break;
+                case StampedBumblebeeMessage:
+                    bumblebee_poses << std::fixed << p[0] << " " << p[1] << " " << p[2] << " " << t << " " << cosa << " " << sina << "\n";
+                    break;
+                case StampedSICKMessage:
+                    sick_poses << std::fixed << p[0] << " " << p[1] << " " << p[2] << " " << t << " " << cosa << " " << sina << "\n";
+                default:
+                    break;
+            }
         }
 
         // go to the next vertex
         ++it;
-
     }
-
 
     // close the output files
     car_poses.close();
     velodyne_poses.close();
+    sick_poses.close();
+    bumblebee_poses.close();
 
+    // save the parameters vertices
+    ShowAllParametersVertices();
 }
 
+
 // the main optimization loop
-void HyperGraphSclamOptimizer::OptimizationLoop() {
-
+void HyperGraphSclamOptimizer::OptimizationLoop()
+{
     // the outer loop
-    for (unsigned i = 0; i < external_loop; ++i) {
-
+    for (unsigned i = 0; i < external_loop; ++i)
+    {
         // optimzization status report
         std::cout << "First Stage Optimization with " << optimizer->vertices().size() << " vertices" << std::endl;
 
@@ -1389,57 +1388,54 @@ void HyperGraphSclamOptimizer::OptimizationLoop() {
 
         // restart the odometry measures
         PrepareRoundOptimization();
-
     }
 
     // optimzization status report
     std::cout << "Optimization Done!" << std::endl;
-
 }
+
 
 // verify if the optimizer is ready
-bool HyperGraphSclamOptimizer::Good() {
-
+bool HyperGraphSclamOptimizer::Good()
+{
     return nullptr != optimizer;
-
 }
 
-// the main run method
-void HyperGraphSclamOptimizer::Run() {
 
+// the main run method
+void HyperGraphSclamOptimizer::Run()
+{
     // start
     std::cout << "Start running!\n";
 
-    if (nullptr != optimizer) {
-
+    if (nullptr != optimizer)
+    {
         // the main optimization process
         OptimizationLoop();
 
         // save the optimized graph to the output file
         SaveCorrectedVertices();
-
     }
-
 }
 
+
 // clear the entire hypergraph
-void HyperGraphSclamOptimizer::Clear() {
-
+void HyperGraphSclamOptimizer::Clear()
+{
     // clear the id timestamps map
-    id_time_map.clear();
+    id_time_type_map.clear();
 
-    if (nullptr != factory) {
-
+    if (nullptr != factory)
+    {
         // destroy the factory
         g2o::Factory::destroy();
 
         // reset the pointer
         factory = nullptr;
-
     }
 
-    if (nullptr != optimizer) {
-
+    if (nullptr != optimizer)
+    {
         // remove all edges and vertices
         optimizer->clear();
 
@@ -1448,7 +1444,5 @@ void HyperGraphSclamOptimizer::Clear() {
 
         // reset the value
         optimizer = nullptr;
-
     }
-
 }

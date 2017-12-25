@@ -7,32 +7,34 @@
 
 namespace hyper {
 
-class StampedSICK : virtual public StampedLidar {
+    class StampedSICK : virtual public StampedLidar
+    {
+        protected:
 
-    protected:
+            // the default sick file path
+            static const std::string base_sick_path;
 
-        // the default sick file path
-        static const std::string base_sick_path;
+            // the mirror mask
+            static const uint16_t MIRROR_MASK;
 
-        // the mirror mask
-        static const uint16_t MIRROR_MASK;
+        public:
 
-    public:
+            // the basic constructor
+            StampedSICK(unsigned msg_id);
 
-        // the basic constructor
-        StampedSICK(unsigned msg_id);
+            // the basic destructor
+            virtual ~StampedSICK();
 
-        // the basic destructor
-        virtual ~StampedSICK();
+            // parse the pose from string stream
+            virtual bool FromCarmenLog(std::stringstream &ss);
 
-        // parse the pose from string stream
-        virtual bool FromCarmenLog(std::stringstream &ss);
+            // get the message type
+            virtual StampedMessageType GetType();
+    };
 
-};
-
-// syntactic sugar
-typedef StampedSICK* StampedSICKPtr;
-typedef StampedSICK& StampedSICKRef;
+    // syntactic sugar
+    typedef StampedSICK* StampedSICKPtr;
+    typedef StampedSICK& StampedSICKRef;
 
 }
 

@@ -49,7 +49,7 @@ class StampedLidar : virtual public StampedMessage {
         std::string path;
 
         // the sequential ICP measure
-        g2o::SE2 seq_measure;
+        g2o::SE2 seq_measurement;
 
         // the seq id
         unsigned seq_id;
@@ -61,7 +61,7 @@ class StampedLidar : virtual public StampedMessage {
         g2o::SE2 gps_sync_estimate;
 
         // the loop restriction measure
-        g2o::SE2 loop_measure;
+        g2o::SE2 loop_measurement;
 
         // the loop cloure id
         unsigned loop_closure_id;
