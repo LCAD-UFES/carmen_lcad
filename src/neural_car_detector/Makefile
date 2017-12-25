@@ -5,10 +5,10 @@ MODULE_COMMENT = Detect vehicles using convolutional neural networks.
 
 LINK = g++
 
-CFLAGS += -Wall
-CXXFLAGS = -Wno-sign-compare -DUSE_OPENCV 
+CFLAGS += -Wall -g
+CXXFLAGS = -Wno-sign-compare -DUSE_OPENCV -g 
 
-IFLAGS += `pkg-config opencv --cflags` -std=c++11 -DNO_NVML
+IFLAGS += `pkg-config opencv --cflags` -std=c++11 -DNO_NVML -g
 LFLAGS += `pkg-config opencv --libs` -std=c++11
 
 ifdef NVCAFFE_HOME

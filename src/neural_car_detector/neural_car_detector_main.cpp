@@ -228,17 +228,25 @@ publish_moving_objects(double timestamp)
 void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
-    cv::Mat src_image = cv::Mat(cv::Size(image_msg->width, image_msg->height - image_msg->height * 0.25), CV_8UC3);
-    cv::Mat rgb_image = cv::Mat(cv::Size(image_msg->width, image_msg->height - image_msg->height * 0.25), CV_8UC3);
+	double hood_removal_percentage = 0.2;
+
+    cv::Mat src_image = cv::Mat(cv::Size(image_msg->width, image_msg->height - image_msg->height * hood_removal_percentage), CV_8UC3);
+    cv::Mat rgb_image = cv::Mat(cv::Size(image_msg->width, image_msg->height - image_msg->height * hood_removal_percentage), CV_8UC3);
+//    cv::Mat src_image = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3);
+//    cv::Mat rgb_image = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3);
 
     double start_time, end_time, delta_t, fps;
 
     start_time = carmen_get_time();
 
     if (camera_side == 0)
-        memcpy(src_image.data, image_msg->raw_left, image_msg->image_size * sizeof(char) - image_msg->image_size * 0.25 * sizeof(char));
+        memcpy(src_image.data, image_msg->raw_left, image_msg->image_size * sizeof(char) - image_msg->image_size * hood_removal_percentage * sizeof(char));
     else
-        memcpy(src_image.data, image_msg->raw_right, image_msg->image_size * sizeof(char) - image_msg->image_size * 0.25 * sizeof(char));
+        memcpy(src_image.data, image_msg->raw_right, image_msg->image_size * sizeof(char) - image_msg->image_size * hood_removal_percentage * sizeof(char));
+//    if (camera_side == 0)
+//        memcpy(src_image.data, image_msg->raw_left, image_msg->image_size * sizeof(char));
+//    else
+//        memcpy(src_image.data, image_msg->raw_right, image_msg->image_size * sizeof(char));
 
     carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
 
@@ -246,6 +254,20 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
         velodyne_sync_with_cam = find_velodyne_most_sync_with_cam(image_msg->timestamp);
     else
         return;
+
+//    // Coloca barra preta em baixo
+//    // select a region of interest
+//    cv::Mat pRoi = src_image(cv::Rect(0, image_msg->height - image_msg->height * hood_removal_percentage, image_msg->width, image_msg->height - (image_msg->height - image_msg->height * hood_removal_percentage)));
+//    // set roi to some rgb colour
+//    pRoi.setTo(cv::Scalar(0, 0, 0));
+
+    double lateral_reduction = 0.0;
+    // select a region of interest
+    cv::Mat src_image_copy = src_image.clone();
+
+    cv::Mat pRoi = src_image_copy(cv::Rect(src_image_copy.cols * lateral_reduction / 2.0, 0,
+    		src_image_copy.cols - src_image_copy.cols * lateral_reduction, src_image_copy.rows));
+    src_image = pRoi;
 
     cv::cvtColor(src_image, rgb_image, cv::COLOR_RGB2BGR);
 
@@ -407,7 +429,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
     }
 
-    cv::Mat resized_image(cv::Size(640, 480 - 480 * 0.25), CV_8UC3);
+    cv::Mat resized_image(cv::Size(640, 480 - 480 * hood_removal_percentage), CV_8UC3);
+//    cv::Mat resized_image(cv::Size(640, 480), CV_8UC3);
     cv::resize(rgb_image, resized_image, resized_image.size());
 
     cv::imshow("Neural car detector", resized_image);
