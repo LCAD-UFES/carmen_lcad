@@ -48,7 +48,7 @@ class Posterior
 	/** @brief Sums of ray distances, indexed by generating obstacle. */
 	std::map<const Node*, double> distances;
 
-	/** @brief Dynamic sensor readings, indexed by generatig obstacle. */
+	/** @brief Dynamic sensor readings, indexed by generating obstacle. */
 	std::map<const Node*, Reading> Zd;
 
 	/** @brief Static sensor readings. */
@@ -157,6 +157,26 @@ public:
 	 * @brief Return the current posterior value.
 	 */
 	double operator () () const;
+
+	/**
+	 * @brief Update the posterior is response to the creation of a new track.
+	 *
+	 * @param i Index of the track in its parent sequence.
+	 *
+	 * @param tracks Sequence containing the created track.
+	 */
+	void create(int i, const Track::S &tracks);
+
+	/**
+	 * @brief Update the posterior is response to the destruction of a track.
+	 *
+	 * This method is called just prior to the actual destruction of the track.
+	 *
+	 * @param i Index of the track in its parent sequence.
+	 *
+	 * @param tracks Sequence containing the track to be destroyed.
+	 */
+	void destroy(int i, const Track::S &tracks);
 
 	/**
 	 * @brief Update the posterior in response to a diffusion operation performed on the given track.

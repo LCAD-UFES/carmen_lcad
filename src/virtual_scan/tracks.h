@@ -42,17 +42,17 @@ class Tracks
 	/**
 	 * @brief Randomly select an extension method (forward or backward), then apply it to the given track.
 	 */
-	bool extend(Track::P tau);
+	bool extend(Track &tau);
 
 	/**
 	 * @brief Extend the given track forward.
 	 */
-	bool extend_forward(Track::P tau);
+	bool extend_forward(Track &tau);
 
 	/**
 	 * @brief Extend the given track backward.
 	 */
-	bool extend_backward(Track::P tau);
+	bool extend_backward(Track &tau);
 
 	/**
 	 * @brief Reduce a randomly selected track.
@@ -85,16 +85,6 @@ public:
 
 	/** @brief Posterior probability of this track sequence. */
 	Posterior PwZ;
-
-	/**
-	 * @brief Default constructor.
-	 */
-	Tracks();
-
-	/**
-	 * @brief Copy constructor.
-	 */
-	Tracks(const Tracks &that);
 
 	/**
 	 * @brief Return a sequence containing the last pose of each track in this collection.

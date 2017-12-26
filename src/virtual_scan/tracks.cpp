@@ -8,25 +8,11 @@ namespace virtual_scan
 {
 
 
-Tracks::Tracks()
-{
-	// Nothing to do.
-}
-
-
-Tracks::Tracks(const Tracks &that):
-	PwZ(that.PwZ)
-{
-	for (int i = 0, n = that.tracks.size(); i < n; i++)
-		this->tracks.emplace_back(new Track(*that.tracks[i]));
-}
-
-
 ObstaclePose::S Tracks::back() const
 {
 	ObstaclePose::S poses;
 	for (auto track = tracks.begin(), n = tracks.end(); track != n; ++track)
-		poses.push_back((*track)->back());
+		poses.push_back(track->back());
 
 	return poses;
 }
@@ -48,17 +34,20 @@ bool Tracks::create(Graph &graph)
 	Cluster &cluster = *random_choose(unselected);
 	Node &node = random_choose(cluster);
 
-	Track::P tau(new Track());
-	tau->push_back(&node);
-	extend(tau);
+	tracks.emplace_back();
+	Track &tau = tracks.back();
+	tau.push_back(&node);
 
-	if (tau->size() >= 2)
+	extend(tau);
+	if (tau.size() < 2)
 	{
-		tracks.push_back(tau);
-		return true;
+		tracks.pop_back();
+		return false;
 	}
 
-	return false;
+	PwZ.create(tracks.size() - 1, tracks);
+
+	return true;
 }
 
 
@@ -69,6 +58,7 @@ bool Tracks::destroy()
 
 	// Randomly select a track and destroy it.
 	size_t n = random_int(0, tracks.size());
+	PwZ.destroy(n, tracks);
 	return destroy(n);
 }
 
@@ -95,7 +85,7 @@ bool Tracks::extend()
 }
 
 
-bool Tracks::extend(Track::P tau)
+bool Tracks::extend(Track &tau)
 {
 	int n = random_int(0, 2); // 0 denotes forward extension and 1 backward extension
 
@@ -120,25 +110,25 @@ inline Node::Edges unselected(const Node::Edges &nodes)
 }
 
 
-bool Tracks::extend_forward(Track::P tau)
+bool Tracks::extend_forward(Track &tau)
 {
-	Node::Edges children = unselected(tau->back_node()->children);
+	Node::Edges children = unselected(tau.back_node()->children);
 	if (children.size() == 0)
 		return false;
 
-	tau->push_back(random_choose(children));
+	tau.push_back(random_choose(children));
 
 	return true;
 }
 
 
-bool Tracks::extend_backward(Track::P tau)
+bool Tracks::extend_backward(Track &tau)
 {
-	Node::Edges parents = unselected(tau->back_node()->parents);
+	Node::Edges parents = unselected(tau.back_node()->parents);
 	if (parents.size() == 0)
 		return false;
 
-	tau->push_front(random_choose(parents));
+	tau.push_front(random_choose(parents));
 
 	return true;
 }
@@ -149,14 +139,14 @@ bool Tracks::reduce()
 	if (tracks.size() == 0)
 		return false;
 
-	Track::P tau = random_choose(tracks); // Selects the track index to be reduced
-	int r = random_int(1, tau->size() - 1); // Selects the cutting index
+	Track &tau = random_choose(tracks); // Selects the track index to be reduced
+	int r = random_int(1, tau.size() - 1); // Selects the cutting index
 
 	int mode = random_int(0, 2); // 0 denotes forward reduction and 1 backward reduction
 	if (mode == 0) // Forward reduction
-		tau->pop_back(r);
+		tau.pop_back(r);
 	else // Backward reduction
-		tau->pop_front(r);
+		tau.pop_front(r);
 
 	return true;
 }
@@ -165,18 +155,17 @@ bool Tracks::reduce()
 bool Tracks::split()
 {
 	// Verifying if there is a track with 4 or more nodes
-	std::vector<Track::P> found;
+	std::vector<Track*> found;
 	for (int i = 0, n = tracks.size(); i < n; i++)
-		if (tracks[i]->size() >= 4)
-			found.push_back(tracks[i]);
+		if (tracks[i].size() >= 4)
+			found.push_back(&(tracks[i]));
 
 	if (found.size() == 0)
 		return false;
 
-	Track::P tau_new(new Track());
-	Track::P tau = random_choose(found); // Selects the track index to be split
-	tau->pop_back(random_int(1, tau->size() - 2), *tau_new); // Split tau at a random index
-	tracks.push_back(tau_new); // Add a new Track object to the end of the vector
+	Track *tau = random_choose(found); // Selects the track index to be split
+	tracks.emplace_back(); // Create new track to receive section split from tau
+	tau->pop_back(random_int(1, tau->size() - 2), tracks.back()); // Split tau at a random index
 
 	return true;
 }
@@ -186,13 +175,13 @@ bool Tracks::merge()
 	std::vector <std::pair<int, int>> pairs;
 	for (int i = 0, n = tracks.size(); i < n; i++)
 	{
-		Track::P tau_1 = tracks[i];
+		Track &tau_1 = tracks[i];
 		for (int j = i + 1; j < n; j++)
 		{
-			Track::P tau_2 = tracks[j];
-			if (tau_1->is_mergeable(*tau_2))
+			Track &tau_2 = tracks[j];
+			if (tau_1.is_mergeable(tau_2))
 				pairs.push_back(std::make_pair(i, j));
-			else if (tau_2->is_mergeable(*tau_1))
+			else if (tau_2.is_mergeable(tau_1))
 				pairs.push_back(std::make_pair(j, i));
 		}
 	}
@@ -201,9 +190,9 @@ bool Tracks::merge()
 		return false;
 
 	std::pair<int, int> &pair = random_choose(pairs);
-	Track::P tau_1 = tracks[pair.first];
-	Track::P tau_2 = tracks[pair.second];
-	tau_1->merge(*tau_2);
+	Track &tau_1 = tracks[pair.first];
+	Track &tau_2 = tracks[pair.second];
+	tau_1.merge(tau_2);
 
 	return destroy(pair.second);
 }
@@ -240,19 +229,19 @@ class Swap
 	 */
 	bool plan(int i, int j, Track::S &tracks)
 	{
-		Track::P a = tracks[i];
-		Track::P b = tracks[j];
+		Track &a = tracks[i];
+		Track &b = tracks[j];
 
-		int m = a->size() - 1;
-		int n = b->size() - 1;
+		int m = a.size() - 1;
+		int n = b.size() - 1;
 		for (p = 0; p < m; p++)
 		{
-			Node *t_p = a->at_node(p);
-			Node *t_p_plus_1 = a->at_node(p + 1);
+			Node *t_p = a.at_node(p);
+			Node *t_p_plus_1 = a.at_node(p + 1);
 			for (q = 0; q < n; q++)
 			{
-				Node *t_q = b->at_node(q);
-				Node *t_q_plus_1 = b->at_node(q + 1);
+				Node *t_q = b.at_node(q);
+				Node *t_q_plus_1 = b.at_node(q + 1);
 				if (is_parent(t_p, t_q_plus_1) && is_parent(t_q, t_p_plus_1))
 				{
 					this->i = i;
@@ -305,13 +294,13 @@ public:
 		if (!valid())
 			return false;
 
-		Track::P a = tracks[i];
-		Track::P b = tracks[j];
+		Track &a = tracks[i];
+		Track &b = tracks[j];
 		Track temp;
 
-		a->pop_back(p, temp);
-		b->pop_back(q, *a);
-		temp.pop_back(-1, *b);
+		a.pop_back(p, temp);
+		b.pop_back(q, a);
+		temp.pop_back(-1, b);
 
 		return true;
 	}
@@ -358,9 +347,9 @@ bool Tracks::diffuse()
 		return false;
 
 	int i = random_int(0, tracks.size());
-	Track::P track = tracks[i];
+	Track &track = tracks[i];
 
-	int j = track->diffuse();
+	int j = track.diffuse();
 
 	PwZ.diffuse(i, j, tracks);
 

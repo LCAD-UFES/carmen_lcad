@@ -58,11 +58,11 @@ double Posterior::operator () () const
 
 void Posterior::update_S_len(int i, const Track::S &tracks)
 {
-	Track::ID id = tracks[i]->id;
+	Track::ID id = tracks[i].id;
 	if (lengths.count(id) > 0)
 		S_len -= lengths[id];
 
-	lengths[id] = tracks[i]->size();
+	lengths[id] = tracks[i].size();
 	S_len += lengths[id];
 }
 
@@ -124,7 +124,7 @@ void Posterior::update_S_ms1(const ObstaclePose &pose, const Reading &Z_k, bool 
 
 void Posterior::update_S_ms1(int i, int j, const Track::S &tracks)
 {
-	const Track &track = *tracks[i];
+	const Track &track = tracks[i];
 	const ObstaclePose pose = track[j];
 	const Node *node = pose.node;
 
@@ -153,6 +153,26 @@ void Posterior::update_S_ms3(int i, int j, const Track::S &tracks)
 
 
 void Posterior::update_S_ms4(int i, int j, const Track::S &tracks)
+{
+}
+
+
+void Posterior::create(int i, const Track::S &tracks)
+{
+	update_S_len(i, tracks);
+	update_S_mot(i, tracks);
+
+	for (int j = 0, n = tracks[i].size(); j < n; j++)
+	{
+		update_S_ms1(i, j, tracks);
+		update_S_ms2(i, j, tracks);
+		update_S_ms3(i, j, tracks);
+		update_S_ms4(i, j, tracks);
+	}
+}
+
+
+void Posterior::destroy(int i, const Track::S &tracks)
 {
 }
 

@@ -5,8 +5,7 @@
 
 #include <carmen/carmen.h>
 
-#include <memory>
-#include <vector>
+#include <deque>
 
 namespace virtual_scan
 {
@@ -23,11 +22,8 @@ public:
 	/** @brief Unique Track ID type. */
 	typedef Track* ID;
 
-	/** @brief Reference-counted Track pointer type. */
-	typedef std::shared_ptr<Track> P;
-
-	/** @brief Alias for a vector of tracks. */
-	typedef std::vector<Track::P> S;
+	/** @brief Alias for a sequence of tracks. */
+	typedef std::deque<Track> S;
 
 	/** @brief Unique ID associated to this track. */
 	ID id;
