@@ -112,7 +112,7 @@ inline Node::Edges unselected(const Node::Edges &nodes)
 
 bool Tracks::extend_forward(Track &tau)
 {
-	Node::Edges children = unselected(tau.back_node()->children);
+	Node::Edges children = unselected(tau.back().node->children);
 	if (children.size() == 0)
 		return false;
 
@@ -124,7 +124,7 @@ bool Tracks::extend_forward(Track &tau)
 
 bool Tracks::extend_backward(Track &tau)
 {
-	Node::Edges parents = unselected(tau.back_node()->parents);
+	Node::Edges parents = unselected(tau.back().node->parents);
 	if (parents.size() == 0)
 		return false;
 
@@ -236,12 +236,12 @@ class Swap
 		int n = b.size() - 1;
 		for (p = 0; p < m; p++)
 		{
-			Node *t_p = a.at_node(p);
-			Node *t_p_plus_1 = a.at_node(p + 1);
+			Node *t_p = a[p].node;
+			Node *t_p_plus_1 = a[p + 1].node;
 			for (q = 0; q < n; q++)
 			{
-				Node *t_q = b.at_node(q);
-				Node *t_q_plus_1 = b.at_node(q + 1);
+				Node *t_q = b[q].node;
+				Node *t_q_plus_1 = b[q + 1].node;
 				if (is_parent(t_p, t_q_plus_1) && is_parent(t_q, t_p_plus_1))
 				{
 					this->i = i;
@@ -384,7 +384,33 @@ Tracks::P Tracks::propose(Graph &graph)
 
 void Tracks::update(const Readings &readings)
 {
-	// TODO: implement function.
+	/*
+	double timestamp = readings.front().timestamp;
+
+	for (size_t i = 0, n = tracks.size(); i < n; i++)
+	{
+		Track &track = tracks[i];
+		size_t n = track.size();
+		size_t j = 0;
+
+		while (j < n && track.front().node->timestamp < timestamp)
+			j++;
+
+		if (j == 0)
+			continue;
+
+		if (j < n)
+		{
+			posterior.shorten(i, j, tracks);
+			track.erase(track.begin(), track.begin() + j);
+		}
+		else
+		{
+			posterior.destroy(i, tracks);
+			destroy(i);
+		}
+	}
+	*/
 }
 
 

@@ -14,109 +14,29 @@ Track::Track():
 }
 
 
-ObstaclePose &Track::operator[] (int index)
-{
-	return poses[index];
-}
-
-
-const ObstaclePose &Track::operator[] (int index) const
-{
-	return poses[index];
-}
-
-
-ObstaclePose &Track::back()
-{
-	return poses.back();
-}
-
-
-const ObstaclePose &Track::back() const
-{
-	return poses.back();
-}
-
-
-size_t Track::size() const
-{
-	return poses.size();
-}
-
-
-void Track::push_front(Node *node)
-{
-	poses.emplace_front(node); // poses.push_front(Obstacle(node));
-}
-
-
-void Track::push_back(Node *node)
-{
-	poses.emplace_back(node);
-}
-
-
-Node *Track::at_node(int index)
-{
-	return poses.at(index).node;
-}
-
-
-const Node *Track::at_node(int index) const
-{
-	return poses.at(index).node;
-}
-
-
-Node *Track::front_node()
-{
-	return poses.front().node;
-}
-
-
-Node *Track::back_node()
-{
-	return poses.back().node;
-}
-
-
-const Node *Track::front_node() const
-{
-	return poses.front().node;
-}
-
-
-const Node *Track::back_node() const
-{
-	return poses.back().node;
-}
-
-
 void Track::pop_back(int r)
 {
-	poses.erase(poses.begin() + (r + 1), poses.end());
+	erase(begin() + (r + 1), end());
 }
 
 
 void Track::pop_back(int r, Track &that)
 {
-	for (int i = r + 1, n = poses.size(); i < n; i++)
-		that.poses.push_back(poses[i]);
-
-	poses.erase(poses.begin() + (r + 1), poses.end());
+	that.insert(that.end(), begin() + (r + 1), end());
+	pop_back(r);
 }
 
 
 void Track::pop_front(int r)
 {
-	poses.erase(poses.begin(), poses.begin() + r);
+	erase(begin(), begin() + r);
 }
 
 
 bool Track::is_mergeable(const Track &that) const
 {
-	const Node *last_node = this->back_node();
-	const Node::Edges &parents = that.front_node()->parents;
+	const Node *last_node = this->back().node;
+	const Node::Edges &parents = that.front().node->parents;
 	for (auto i = parents.begin(), n = parents.end(); i != n; ++i)
 		if (*i == last_node)
 			return true;
@@ -136,7 +56,7 @@ int Track::diffuse()
 	std::normal_distribution<> normal;
 
 	int n = random_int(0, size());
-	ObstaclePose &pose = poses[n];
+	ObstaclePose &pose = at(n);
 
 	Pose delta(normal(RD), normal(RD), normal(RD));
 	pose.global += delta;
