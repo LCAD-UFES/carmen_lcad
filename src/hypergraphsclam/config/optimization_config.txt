@@ -23,7 +23,7 @@ GPS_POSE_STD_MULTIPLIER 25.0
 GPS_POSE_HH_STD 30.75
 
 -- special edge: two messages with same timestamp value
-SPECIAL_ODOMETRY_INFORMATION 100000
+SPECIAL_ODOMETRY_INFORMATION 100
 
 -- how many bias calibration nodes
 ODOM_ACKERMAN_PARAMS_VERTICES 1

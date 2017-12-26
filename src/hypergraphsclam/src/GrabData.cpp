@@ -850,7 +850,7 @@ void GrabData::BuildLidarMeasuresMT()
     while (GetNextLidarBlock(current_index, last_index))
     {
         // save the first index to mutex usage
-//        unsigned first_index = current_index;
+       unsigned first_index = current_index;
 
         // get the current message pointer
         StampedLidarPtr current = *(begin + current_index);
@@ -886,6 +886,7 @@ void GrabData::BuildLidarMeasuresMT()
 
                 // get the factor
                 double cf = double(int(current->speed * (next->timestamp - current->timestamp) * 100.0)) * 0.02;
+
                 // the odometry guess
                 g2o::SE2 odom(current->est.inverse() * next->est);
 
