@@ -90,6 +90,8 @@ carmen_ultrasonic_sonar_sensor_message ultrasonic_message;
 
 carmen_ford_escape_status_message ford_escape_status;
 
+carmen_localize_ackerman_globalpos_message globalpos;
+
 
 void print_playback_status(void)
 {
@@ -370,6 +372,8 @@ logger_callback_t logger_callbacks[] =
 		{"ULTRASONIC_SONAR_SENSOR", CARMEN_ULTRASONIC_SONAR_SENSOR_NAME, (converter_func) carmen_string_to_ultrasonic_message, &ultrasonic_message, 0},
 
 		{"FORD_ESCAPE_STATUS", CARMEN_FORD_ESCAPE_STATUS_NAME, (converter_func) carmen_string_to_ford_escape_estatus_message, &ford_escape_status, 0},
+
+		{"GLOBALPOS_ACK", CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME, (converter_func) carmen_string_to_globalpos_message, &globalpos, 0},
 	};
 
 int read_message(int message_num, int publish, int no_wait)
@@ -695,6 +699,7 @@ int main(int argc, char **argv)
 	memset(&ackerman_motion_message, 0, sizeof(ackerman_motion_message));
 	memset(&ultrasonic_message, 0, sizeof(ultrasonic_message));
 	memset(&ford_escape_status, 0, sizeof(ford_escape_status));
+	memset(&globalpos, 0, sizeof(globalpos));
 
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);

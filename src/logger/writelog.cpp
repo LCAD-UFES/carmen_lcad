@@ -336,11 +336,14 @@ void carmen_logwrite_write_localize_ackerman(
 		double timestamp)
 {
 	carmen_fprintf(outfile,
-			"GLOBALPOS_ACK %f %f %f %f %f %f %f %f %f %f %f %f %d %f %s %f\n",
+			"GLOBALPOS_ACK %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %d %f %s %f\n",
 			msg->globalpos.x, msg->globalpos.y, msg->globalpos.theta,
 			msg->globalpos_std.x, msg->globalpos_std.y,
-			msg->globalpos_std.theta, msg->odometrypos.x, msg->odometrypos.y,
-			msg->odometrypos.theta, msg->v, msg->phi, msg->globalpos_xy_cov,
+			msg->globalpos_std.theta, msg->odometrypos.x, msg->odometrypos.y, msg->odometrypos.theta,
+			msg->pose.orientation.pitch, msg->pose.orientation.roll, msg->pose.orientation.yaw,
+			msg->pose.position.x, msg->pose.position.y, msg->pose.position.z,
+			msg->velocity.x, msg->velocity.y, msg->velocity.z,
+			msg->v, msg->phi, msg->globalpos_xy_cov,
 			msg->converged, msg->timestamp, msg->host, timestamp);
 }
 
