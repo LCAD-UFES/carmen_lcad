@@ -331,6 +331,14 @@ def get_lane_marking_by_color_code(stroke_color):
         r_marking = NO_MARKING
     return l_marking, r_marking
 
+def get_circle(neighbors, x, y, max_distance):
+    delta_angle = 1.0 / max_distance
+    angle = 2 * np.pi
+    while angle > 0.0:
+         neighbors.append((int(round(x + max_distance * np.cos(angle))), int(round(y + max_distance * np.sin(angle)))))
+         angle -= delta_angle
+    return neighbors
+
 def get_lane_from_bezier(map, bx, by, bxo, byo, lane, stroke_width, stroke_color, image, image_name):
     # map of lanes in a grid of pixels
     # bx, by: Bezier curve points
@@ -354,6 +362,7 @@ def get_lane_from_bezier(map, bx, by, bxo, byo, lane, stroke_width, stroke_color
         last_x = x
         last_y = y
         neighbors = [(x, y)]
+        neighbors = get_circle(neighbors, bx[i], by[i], max_distance)
         while len(neighbors) > 0:
             x, y = neighbors.pop()
             if x < 0 or x >= width or y < 0 or y >= height:
