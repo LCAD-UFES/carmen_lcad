@@ -1458,6 +1458,43 @@ char* carmen_string_to_ford_escape_estatus_message(char* string, carmen_ford_esc
 	return current_pos;
 }
 
+
+char* carmen_string_to_globalpos_message(char* string, carmen_localize_ackerman_globalpos_message* msg)
+{
+	char *current_pos = string;
+
+	if (strncmp(current_pos, "GLOBALPOS_ACK", 13) == 0)
+		current_pos += 13;
+
+	msg->globalpos.x = CLF_READ_DOUBLE(&current_pos);
+	msg->globalpos.y = CLF_READ_DOUBLE(&current_pos);
+	msg->globalpos.theta = CLF_READ_DOUBLE(&current_pos);
+	msg->globalpos_std.x = CLF_READ_DOUBLE(&current_pos);
+	msg->globalpos_std.y = CLF_READ_DOUBLE(&current_pos);
+	msg->globalpos_std.theta = CLF_READ_DOUBLE(&current_pos);
+	msg->odometrypos.x = CLF_READ_DOUBLE(&current_pos);
+	msg->odometrypos.y = CLF_READ_DOUBLE(&current_pos);
+	msg->odometrypos.theta = CLF_READ_DOUBLE(&current_pos);
+	msg->pose.orientation.pitch = CLF_READ_DOUBLE(&current_pos);
+	msg->pose.orientation.roll = CLF_READ_DOUBLE(&current_pos);
+	msg->pose.orientation.yaw = CLF_READ_DOUBLE(&current_pos);
+	msg->pose.position.x = CLF_READ_DOUBLE(&current_pos);
+	msg->pose.position.y = CLF_READ_DOUBLE(&current_pos);
+	msg->pose.position.z = CLF_READ_DOUBLE(&current_pos);
+	msg->velocity.x = CLF_READ_DOUBLE(&current_pos);
+	msg->velocity.y = CLF_READ_DOUBLE(&current_pos);
+	msg->velocity.z = CLF_READ_DOUBLE(&current_pos);
+	msg->v = CLF_READ_DOUBLE(&current_pos);
+	msg->phi = CLF_READ_DOUBLE(&current_pos);
+	msg->globalpos_xy_cov = CLF_READ_DOUBLE(&current_pos);
+	msg->converged = CLF_READ_INT(&current_pos);
+	msg->timestamp = CLF_READ_DOUBLE(&current_pos);
+	copy_host_string(&msg->host, &current_pos);
+
+	return current_pos;
+}
+
+
 char* carmen_string_to_bumblebee_basic_stereoimage_message(char* string, carmen_bumblebee_basic_stereoimage_message* msg)
 {
 	char r;
