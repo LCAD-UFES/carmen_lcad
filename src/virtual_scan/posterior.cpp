@@ -35,9 +35,7 @@ Posterior::Posterior():
 	S_len(0.0),
 	S_mot(0.0),
 	S_ms1(0.0),
-	S_ms2(0.0),
-	S_ms3(0.0),
-	S_ms4(0.0)
+	S_ms3(0.0)
 {
 	// Nothing to do.
 }
@@ -49,9 +47,7 @@ double Posterior::operator () () const
 		LAMBDA_L * S_len -
 		LAMBDA_T * S_mot -
 		LAMBDA_1 * S_ms1 -
-		LAMBDA_2 * S_ms2 -
-		LAMBDA_3 * S_ms3 -
-		LAMBDA_4 * S_ms4
+		LAMBDA_3 * S_ms3
 	);
 }
 
@@ -68,6 +64,11 @@ void Posterior::update_S_len(int i, const Track::S &tracks)
 
 
 void Posterior::update_S_mot(int i, const Track::S &tracks)
+{
+}
+
+
+void Posterior::update_S_mot(int i, int k, const Track::S &tracks)
 {
 }
 
@@ -142,17 +143,12 @@ void Posterior::update_S_ms1(int i, int j, const Track::S &tracks)
 }
 
 
-void Posterior::update_S_ms2(int i, int j, const Track::S &tracks)
-{
-}
-
-
 void Posterior::update_S_ms3(int i, int j, const Track::S &tracks)
 {
 }
 
 
-void Posterior::update_S_ms4(int i, int j, const Track::S &tracks)
+void Posterior::update_S_ms3(const Track::S &tracks, const Reading &Z)
 {
 }
 
@@ -165,15 +161,45 @@ void Posterior::create(int i, const Track::S &tracks)
 	for (int j = 0, n = tracks[i].size(); j < n; j++)
 	{
 		update_S_ms1(i, j, tracks);
-		update_S_ms2(i, j, tracks);
 		update_S_ms3(i, j, tracks);
-		update_S_ms4(i, j, tracks);
 	}
+}
+
+void Posterior::erase_node(bool keep_sensor_points, int i, int j, const Track::S &tracks)
+{
+	const Node *node = tracks[i][j].node;
+
+	S_ms1 -= distances[node];
+	distances.erase(node);
+
+	if (keep_sensor_points)
+	{
+		Reading &Zd_i = Zd[node];
+		update_S_ms3(tracks, Zd_i);
+		Zs[node->timestamp].merge(Zd_i);
+	}
+
+	Zd.erase(node);
 }
 
 
 void Posterior::destroy(int i, const Track::S &tracks)
 {
+	const Track &track = tracks[i];
+	Track::ID id = track.id;
+
+	// Update the length term and the length map.
+	S_len -= lengths[id];
+	lengths.erase(id);
+
+	// Update the consistency term and the consistency map.
+	S_mot -= covariances[id];
+	covariances.erase(id);
+
+	// Reassign sensor points related to the removed poses
+	// as static readings.
+	for (int j = 0, n = track.size(); j < n; j++)
+		erase_node(true, i, j, tracks);
 }
 
 
@@ -181,9 +207,25 @@ void Posterior::diffuse(int i, int j, const Track::S &tracks)
 {
 	update_S_mot(i, tracks);
 	update_S_ms1(i, j, tracks);
-	update_S_ms2(i, j, tracks);
 	update_S_ms3(i, j, tracks);
-	update_S_ms4(i, j, tracks);
+}
+
+
+void Posterior::shorten(int i, int k, const Track::S &tracks)
+{
+	const Track &track = tracks[i];
+	Track::ID id = track.id;
+
+	// Update the length map and the length term.
+	lengths[id] -= k;
+	S_len -= k;
+
+	// Update the consistency term and the consistency map.
+	update_S_mot(i, k, tracks);
+
+	// Remove sensor points related to the removed poses.
+	for (int j = 0; j < k; j++)
+		erase_node(false, i, j, tracks);
 }
 
 

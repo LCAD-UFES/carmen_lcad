@@ -384,10 +384,9 @@ Tracks::P Tracks::propose(Graph &graph)
 
 void Tracks::update(const Readings &readings)
 {
-	/*
 	double timestamp = readings.front().timestamp;
 
-	for (size_t i = 0, n = tracks.size(); i < n; i++)
+	for (size_t i = 0, m = tracks.size(); i < m; i++)
 	{
 		Track &track = tracks[i];
 		size_t n = track.size();
@@ -401,16 +400,15 @@ void Tracks::update(const Readings &readings)
 
 		if (j < n)
 		{
-			posterior.shorten(i, j, tracks);
-			track.erase(track.begin(), track.begin() + j);
+			PwZ.shorten(i, j, tracks);
+			track.pop_front(j);
 		}
 		else
 		{
-			posterior.destroy(i, tracks);
+			PwZ.destroy(i, tracks);
 			destroy(i);
 		}
 	}
-	*/
 }
 
 

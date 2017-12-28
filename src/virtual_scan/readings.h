@@ -25,6 +25,11 @@ public:
 	const Reading &back() const;
 
 	/**
+	 * @brief Return a reference to the oldest reading.
+	 */
+	const Reading &front() const;
+
+	/**
 	 * @brief Add the given reading to this sequence, erasing the oldest reading if necessary.
 	 */
 	void update(carmen_mapper_virtual_scan_message *message);

@@ -62,4 +62,11 @@ const Point2D &Reading::front() const
 }
 
 
+void Reading::merge(Reading &that)
+{
+	for (const Point2D point: that)
+		insert(point);
+}
+
+
 } // namespace virtual_scan

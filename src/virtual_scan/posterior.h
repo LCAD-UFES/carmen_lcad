@@ -45,6 +45,9 @@ class Posterior
 	/** @brief Map of track lengths. */
 	std::map<Track::ID, int> lengths;
 
+	/** @brief Map of track covariances. */
+	std::map<Track::ID, double> covariances;
+
 	/** @brief Sums of ray distances, indexed by generating obstacle. */
 	std::map<const Node*, double> distances;
 
@@ -63,14 +66,21 @@ class Posterior
 	/** @brief Sum of the distances between dynamic sensor readings and their generating obstacles. */
 	double S_ms1;
 
-	/** @brief Number of static sensor readings found behind obstacles. */
-	double S_ms2;
-
 	/** @brief Number of static sensor readings found in areas occupied by obstacles in some earlier or later time. */
 	double S_ms3;
 
-	/** @brief Number of dynamic sensor readings found behind presumed static objects. */
-	double S_ms4;
+	/**
+	 * @brief Erase entries from the `distances` and `Zd` maps, updating the values of `S_ms1` and `S_ms3` accordingly.
+	 *
+	 * @param keep_sensor_points Whether sensor points associated to the to-be-erased node should be reassigned as static or discarded.
+	 *
+	 * @param i Index of the track containing the node to erase (through their enclosing obstacle poses).
+	 *
+	 * param j Index of the pose containing the node to erase.
+	 *
+	 * @param tracks Sequence containing the target track.
+	 */
+	void erase_node(bool keep_sensor_points, int i, int j, const Track::S &tracks);
 
 	/**
 	 * @brief Update the value of the `S_len` parameter with the given track's new length.
@@ -89,6 +99,17 @@ class Posterior
 	 * @param tracks Sequence containing the updated track.
 	 */
 	void update_S_mot(int i, const Track::S &tracks);
+
+	/**
+	 * @brief Update the value of the `S_mot` parameter with the recomputed covariance for a to-be-shortened track.
+	 *
+	 * @param i Position of the track in the sequence.
+	 *
+	 * @param k Cut-off index of the track.
+	 *
+	 * @param tracks Sequence containing the to-be-shortened track.
+	 */
+	void update_S_mot(int i, int k, const Track::S &tracks);
 
 	/**
 	 * @brief Update the distances between dynamic sensor readings and a given obstacle pose.
@@ -115,18 +136,7 @@ class Posterior
 	void update_S_ms1(const ObstaclePose &pose, const Reading &Z_k, bool ranged, Collector &collect);
 
 	/**
-	 * @brief Update the counter for static objects observed behind obstacle poses.
-	 *
-	 * @param i Position of the given track in the sequence.
-	 *
-	 * @param j Position of the track pose to update.
-	 *
-	 * @param tracks Sequence containing the updated track.
-	 */
-	void update_S_ms2(int i, int j, const Track::S &tracks);
-
-	/**
-	 * @brief Update the counter for static objects observed in areas occupied by obstacle at some point in time.
+	 * @brief Update the counter for static sensor readings observed in areas occupied by an obstacle at some point in time.
 	 *
 	 * @param i Position of the given track in the sequence.
 	 *
@@ -137,16 +147,13 @@ class Posterior
 	void update_S_ms3(int i, int j, const Track::S &tracks);
 
 	/**
-	 * @brief Update the counter for dynamic sensor readings found behind presumed static objects.
+	 * @brief Update the counter for static sensor readings observed in areas occupied by an obstacle at some point in time.
+	 * 
+	 * @param tracks Sequence of tracks containing the obstacle poses to check.
 	 *
-	 * @param i Position of the given track in the sequence.
-	 *
-	 * @param j Position of the track pose to update.
-	 *
-	 * @param tracks Sequence containing the updated track.
+	 * @param Z Collection of sensor readings to check.
 	 */
-	void update_S_ms4(int i, int j, const Track::S &tracks);
-
+	void update_S_ms3(const Track::S &tracks, const Reading &Z);
 public:
 	/**
 	 * @brief Default constructor.
@@ -177,6 +184,19 @@ public:
 	 * @param tracks Sequence containing the track to be destroyed.
 	 */
 	void destroy(int i, const Track::S &tracks);
+
+	/**
+	 * @brief Update the posterior is response to the shortening of a track.
+	 *
+	 * This method is called just prior to the actual shortening of the track.
+	 *
+	 * @param i Index of the track in its parent sequence.
+	 *
+	 * @param k Cut-off index for track shortening.
+	 *
+	 * @param tracks Sequence containing the track to be shortened.
+	 */
+	void shorten(int i, int k, const Track::S &tracks);
 
 	/**
 	 * @brief Update the posterior in response to a diffusion operation performed on the given track.

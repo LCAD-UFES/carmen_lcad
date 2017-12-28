@@ -18,6 +18,12 @@ const Reading &Readings::back() const
 }
 
 
+const Reading &Readings::front() const
+{
+	return readings.begin()->second;
+}
+
+
 void Readings::update(carmen_mapper_virtual_scan_message *message)
 {
 	if (readings.size() == T)

@@ -50,6 +50,13 @@ struct Reading: std::set<Point2D, ComparatorOD>
 	 * @brief Return the first point in this reading.
 	 */
 	const Point2D &front() const;
+
+	/**
+	 * @brief Copy all elements from `that` Reading into `this` one.
+	 *
+	 * This is a stop-gap measure for C++17, which already includes a `merge()` method to its `std::set` class.
+	 */
+	void merge(Reading &that);
 };
 
 } // namespace virtual_scan
