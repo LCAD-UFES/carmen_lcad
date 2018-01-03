@@ -6,30 +6,27 @@ namespace virtual_scan
 {
 
 
-Reading &Readings::operator [] (double timestamp)
-{
-	return readings[timestamp];
-}
-
-
 const Reading &Readings::back() const
 {
-	return readings.rbegin()->second;
+	return rbegin()->second;
 }
 
 
 const Reading &Readings::front() const
 {
-	return readings.begin()->second;
+	return begin()->second;
 }
 
 
 void Readings::update(carmen_mapper_virtual_scan_message *message)
 {
-	if (readings.size() == T)
-		readings.erase(readings.begin());
+	// If the whole time window is filled, discard the oldest reading
+	// before adding a new one.
+	if (size() == T)
+		erase(begin());
 
-	readings.emplace_hint(readings.end(), message->timestamp, message);
+	// Add a new, more recent reading to the collection.
+	emplace_hint(end(), message->timestamp, message);
 }
 
 

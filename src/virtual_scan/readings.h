@@ -8,17 +8,8 @@
 namespace virtual_scan
 {
 
-class Readings
+struct Readings: std::map<double, Reading>
 {
-	/** @brief Sensor readings indexed by timestamp. */
-	std::map<double, Reading> readings;
-
-public:
-	/**
-	 * @brief Return the sensor reading of given timestamp.
-	 */
-	Reading &operator [] (double timestamp);
-
 	/**
 	 * @brief Return a reference to the latest reading.
 	 */
