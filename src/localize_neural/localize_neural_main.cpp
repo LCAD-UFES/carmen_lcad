@@ -535,14 +535,14 @@ carmen_bumblebee_basic_stereoimage_message_handler_wnn(carmen_bumblebee_basic_st
 	int index_base = find_more_similar_base_pose(message);
 	if (index_base < 0)
 	{
-		carmen_warn("Not enough frames!");
+		//carmen_warn("Not enough frames!");
 		return;
 	}
 
 	int index_delta = find_more_synchronized_pose(camera_delta_poses_array, camera_timestamp);
 	if (index_delta < 0)
 	{
-		carmen_warn("Frame lost!\n");
+		//carmen_warn("Frame lost!\n");
 		return;
 	}
 
@@ -580,7 +580,7 @@ carmen_bumblebee_basic_stereoimage_message_handler_wnn(carmen_bumblebee_basic_st
 			(delta_pose_pred.orientation.yaw-delta_pose_true.orientation.yaw)
 	};
 	camera_delta_error_array.push_back(delta_pose_error);
-	carmen_warn("(%.2f %.2f %.3f)\n", delta_pose_error.x, delta_pose_error.y, delta_pose_error.theta);
+	//carmen_warn("(%.2f %.2f %.3f)\n", delta_pose_error.x, delta_pose_error.y, delta_pose_error.theta);
 
 	publish_imagepos_messages(camera_pose_true, camera_pose_base, camera_pose_curr, camera_timestamp);
 }
@@ -608,15 +608,16 @@ carmen_bumblebee_basic_stereoimage_message_handler_cnn(carmen_bumblebee_basic_st
 	int index_delta = find_more_synchronized_pose(camera_delta_poses_array, camera_timestamp);
 	if (index_delta < 0)
 	{
-		carmen_warn("Frame lost!\n");
+		//carmen_warn("Frame lost!\n");
 		return;
 	}
 
 	string key_frame = camera_delta_frames_array[index_delta].first;
+	string cur_frame = camera_delta_frames_array[index_delta].second;
 
 	read_image_file(&camera_message_base, key_frame);
-
-	read_image_message(&camera_message_curr, message);
+	read_image_file(&camera_message_curr, cur_frame);
+	//read_image_message(&camera_message_curr, message);
 
 	camera_pose_base = camera_poses_base_array[index_delta].first;
 	camera_pose_true = camera_poses_curr_array[index_delta].first;
@@ -649,7 +650,7 @@ carmen_bumblebee_basic_stereoimage_message_handler_cnn(carmen_bumblebee_basic_st
 			(delta_pose_pred.orientation.yaw-delta_pose_true.orientation.yaw)
 	};
 	camera_delta_error_array.push_back(delta_pose_error);
-	carmen_warn("(%.2f %.2f %.3f)\n", delta_pose_error.x, delta_pose_error.y, delta_pose_error.theta);
+	//carmen_warn("(%.2f %.2f %.3f)\n", delta_pose_error.x, delta_pose_error.y, delta_pose_error.theta);
 
 	publish_imagepos_messages(camera_pose_true, camera_pose_base, camera_pose_curr, camera_timestamp);
 }
