@@ -8,21 +8,20 @@ namespace virtual_scan
 {
 
 
-Rectangle::Rectangle():
-	pose({0, 0, 0})
+Rectangle::Rectangle()
 {
 	// Nothing to do.
 }
 
 
-inline carmen_position_t make_corner(double x, double y, const carmen_point_t &pose)
+inline PointXY make_corner(double x, double y, const Pose &pose)
 {
-	carmen_position_t c = {x, y};
-	return shift(rotate(c, pose.theta), pose);
+	PointXY c(x, y);
+	return shift(rotate(c, pose.o), pose);
 }
 
 
-Rectangle::Rectangle(double width, double length, const carmen_point_t &pose):
+Rectangle::Rectangle(double width, double length, const Pose &pose):
 	pose(pose)
 {
 	double w_2 = 0.5 * width;

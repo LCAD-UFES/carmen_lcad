@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <GrabData.hpp>
 
 int main (int argc, char **argv) {
@@ -5,7 +6,7 @@ int main (int argc, char **argv) {
     if (argc != 3) {
 
         // error
-        std::cout << "Usage: hypergraphslam <log_file> <output_file>";
+        std::cout << "Usage: ./parser <log_file> <output_file>";
 
         return -1;
 
@@ -18,8 +19,14 @@ int main (int argc, char **argv) {
     // std::cout << "Input file: " << input_file << "\n";
     // std::cout << "Output file: " << output_file << "\n";
 
+    std::string carmen_home(getenv("CARMEN_HOME"));
+    std::string config_filename = 3 < argc ? std::string(argv[3]) : carmen_home + "/src/hypergraphsclam/config/parser_config.txt";
+
     // create a grab data object
     hyper::GrabData gd;
+
+    // configure it
+    gd.Configure(config_filename);
 
     // try to process the log file
     if (gd.ParseLogFile(input_file)) {
@@ -29,6 +36,9 @@ int main (int argc, char **argv) {
 
         // save the hyper graph
         gd.SaveHyperGraph(output_file);
+
+        // save extra info
+        gd.SaveEstimates();
 
     } else {
 
@@ -41,7 +51,6 @@ int main (int argc, char **argv) {
 
     // clearing?
     std::cout << "Cleared!\n";
-    std::cout << "Parser END!\n";
 
     return 0;
 

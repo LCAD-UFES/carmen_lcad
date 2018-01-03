@@ -1,0 +1,33 @@
+-- how many velodyne scans, 0 means no limit.
+MAXIMUM_VEL_SCANS 0
+
+-- how many seconds to consider a loop closure
+LOOP_REQUIRED_TIME 300.0
+
+-- how many squared meters to consider a loop closure
+LOOP_REQUIRED_SQR_DISTANCE 25.0
+
+-- how many threads the ICP (Interative Closest Point) method can use (typically the number of cores of your machine)
+ICP_THREADS_POOL_SIZE 8
+
+-- each thread will take 400 clouds and execute the sensor movement estimates
+ICP_THREAD_BLOCK_SIZE 100
+
+-- the distace parameter to find the next point cloud
+LIDAR_ODOMETRY_MIN_DISTANCE 0.3
+
+-- the distace parameter to find the next image
+VISUAL_ODOMETRY_MIN_DISTANCE 0.1
+
+ICP_TRANSLATION_CONFIDENCE_FACTOR 1.00
+CURVATURE_REQUIRED_TIME 0.0001
+
+-- Initial odometry bias guess, the default values are: v_mult = 1.0, phi_mult = 1.0 and phi_add = 0.0
+-- You can pick this values from a previous calibration result
+-- V_MULT_ODOMETRY_BIAS 1.0
+-- PHI_MULT_ODOMETRY_BIAS 1.0
+-- PHI_ADD_ODOMETRY_BIAS 0.0
+
+-- Save the accumulated point clouds, uncomment the line below in order to save the accumulated clouds
+-- Make sure you have enough space available in your hard drive (3x the log size)
+-- SAVE_ACCUMULATED_POINT_CLOUDS

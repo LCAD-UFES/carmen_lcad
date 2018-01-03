@@ -7,21 +7,21 @@
 
 
 #include <carmen/velodyne_interface.h>
-#include <carmen/velodyne_camera_calibration.h>
-
 #include "camera_boxes_to_world.h"
 
 
 std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> >
 velodyne_points_in_boxes(std::vector<bounding_box> bouding_boxes_list,
-		carmen_velodyne_partial_scan_message *velodyne_sync_with_cam,
-		unsigned int width, unsigned int height)
+                         carmen_velodyne_partial_scan_message *velodyne_sync_with_cam,
+                         carmen_camera_parameters camera_parameters,
+                         carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose,
+                         unsigned int width, unsigned int height)
 {
 
 	std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> points_lasers_in_cam_with_obstacle;
 
 	points_lasers_in_cam_with_obstacle = carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_display(
-				velodyne_sync_with_cam, width, height);
+				velodyne_sync_with_cam,camera_parameters, velodyne_pose,camera_pose, width, height);
 
 	std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > laser_points_in_camera_box_list;
 

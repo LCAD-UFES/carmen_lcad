@@ -1,17 +1,16 @@
 #ifndef HYPERGRAPHSLAM_GRAB_DATA_HPP
 #define HYPERGRAPHSLAM_GRAB_DATA_HPP
 
+#include <string>
+#include <vector>
+#include <mutex>
+
 #include <g2o/types/slam2d/se2.h>
 #include <g2o/types/slam2d/vertex_se2.h>
 #include <g2o/types/slam2d/edge_se2.h>
 #include <g2o/types/slam2d/types_slam2d.h>
 
-#include <EdgeGPS.hpp>
-
 #include <pcl/registration/gicp.h>
-
-#include <string>
-#include <vector>
 
 #include <StampedOdometry.hpp>
 #include <StampedXSENS.hpp>
@@ -19,203 +18,274 @@
 #include <StampedGPSOrientation.hpp>
 #include <StampedSICK.hpp>
 #include <StampedVelodyne.hpp>
+#include <StampedBumblebee.hpp>
+#include <EdgeGPS.hpp>
+
 #include <VehicleModel.hpp>
 #include <LocalGridMap3D.hpp>
 #include <StringHelper.hpp>
 #include <Wrap2pi.hpp>
 
-#include <carmen/carmen.h>
+#include <matrix.h>
 
-#include <mutex>
+#include <carmen/carmen.h>
 
 namespace hyper {
 
-#define MINIMUM_VEL_SCANS 0
-#define GPS_FILTER_THRESHOLD 40.0
+#define MAXIMUM_VEL_SCANS 0
 #define LOOP_REQUIRED_TIME 300.0
-#define LOOP_REQUIRED_SQR_DISTANCE 16.0
-#define CORRESPONDENCE_FACTOR 2.0
-#define ICP_THREADS_POOL_SIZE 8
-#define ICP_THREAD_BLOCK_SIZE 100
+#define LOOP_REQUIRED_SQR_DISTANCE 25.0
+#define ICP_THREADS_POOL_SIZE 3
+#define ICP_THREAD_BLOCK_SIZE 400
 #define LIDAR_ODOMETRY_MIN_DISTANCE 0.3
+#define VISUAL_ODOMETRY_MIN_DISTANCE 0.1
 #define ICP_TRANSLATION_CONFIDENCE_FACTOR 1.00
+#define CURVATURE_REQUIRED_TIME 0.0001
 
-// define the gicp
-typedef pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZHSV, pcl::PointXYZHSV> GeneralizedICP;
+    // define the gicp
+    typedef pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZHSV, pcl::PointXYZHSV> GeneralizedICP;
 
-class GrabData {
+    class GrabData
+    {
+        private:
 
-    private:
+            // the raw input message list
+            StampedMessagePtrVector raw_messages;
 
-        // the raw input message list
-        StampedMessagePtrVector raw_messages;
+            // the main and general message queue
+            StampedMessagePtrVector messages;
 
-        // the main and general message queue
-        StampedMessagePtrVector messages;
+            // a gps list to help the filtering process
+            StampedGPSPosePtrVector gps_messages;
 
-        // a gps list to help the filtering process
-        StampedGPSPosePtrVector gps_messages;
+            // the xsens messages
+            StampedXSENSPtrVector xsens_messages;
 
-        // a velodyne list to help the ICP process
-        StampedLidarPtrVector velodyne_messages;
+            // a velodyne list to help the ICP process
+            StampedLidarPtrVector velodyne_messages;
 
-        // a SICK list to help the ICP process
-        StampedLidarPtrVector sick_messages;
+            // a velodyne list to help the ICP process
+            StampedLidarPtrVector used_velodyne;
 
-        // the current cloud to be processed
-        StampedLidarPtrVector *point_cloud_lidar_messages;
+            // a SICK list to help the ICP process
+            StampedLidarPtrVector sick_messages;
 
-        // an Odometry list
-        StampedOdometryPtrVector odometry_messages;
+            // the used sick messages
+            StampedLidarPtrVector used_sick;
 
-        // the gps origin
-        Eigen::Vector2d gps_origin;
+            // the current cloud to be processed
+            StampedLidarPtrVector *point_cloud_lidar_messages;
 
-        // the current lidar message iterator index to be used in the ICP measure methods
-        unsigned icp_start_index, icp_end_index;
+            // an Odometry list
+            StampedOdometryPtrVector odometry_messages;
 
-        // mutex to avoid racing conditions
-        std::mutex icp_mutex;
+            // the bumblebee messages
+            StampedBumblebeePtrVector bumblebee_messages;
 
-        // helper
-        double dmax;
+            // used bumblebee messages
+            StampedBumblebeePtrVector used_frames;
 
-        // separate the gps, sick and velodyne messages
-        void SeparateMessages();
+            // the gps origin
+            Eigen::Vector2d gps_origin;
 
-        // get the gps estimation
-        void GetNearestOrientation(
-                    StampedMessagePtrVector::iterator it,
-                    StampedMessagePtrVector::iterator end,
-                    int adv,
-                    double timestamp,
-                    double &h,
-                    double &dt);
+            // the current lidar message iterator index to be used in the ICP measure methods
+            unsigned icp_start_index, icp_end_index;
 
-        // get the gps full measure
-        Eigen::Rotation2Dd GetGPSRotation(
-                    StampedMessagePtrVector::iterator begin,
-                    StampedMessagePtrVector::iterator it,
-                    StampedMessagePtrVector::iterator end,
-                    double timestamp);
+            // mutex to avoid racing conditions
+            std::mutex icp_mutex, first_last_mutex, error_increment_mutex;
 
-        // get the first gps position
-        Eigen::Vector2d GetFirstGPSPosition();
+            // the icp error counter
+            unsigned icp_errors;
 
-        // find the nearest orientation
-        double FindGPSOrientation(StampedMessagePtrVector::iterator gps);
+            // helper
+            double dmax;
 
-        // filter the entire gps positions
-        void GPSFiltering();
+            // parameters
+            unsigned maximum_vel_scans;
+            double loop_required_time;
+            double loop_required_sqr_distance;
+            unsigned icp_threads_pool_size;
+            unsigned icp_thread_block_size;
+            double lidar_odometry_min_distance;
+            double visual_odometry_min_distance;
+            double icp_translation_confidence_factor;
+            bool save_accumulated_point_clouds;
 
-        // iterate over the entire message list and build the measures and estimates
-        void BuildGPSMeasures();
+            // separate the gps, sick and velodyne messages
+            void SeparateMessages();
 
-        // iterate over the entire message list and build the measures and estimates
-        void BuildOdometryMeasures();
+            // get the gps estimation
+            g2o::SE2 GetNearestGPSMeasure(
+                        StampedMessagePtrVector::iterator it,
+                        StampedMessagePtrVector::iterator end,
+                        int adv,
+                        double timestamp,
+                        double &dt);
 
-        // build the initial estimates
-        void BuildOdometryEstimates();
+            // get the gps estimation
+            g2o::SE2 GetGPSMeasure(
+                        StampedMessagePtrVector::iterator begin,
+                        StampedMessagePtrVector::iterator gps,
+                        StampedMessagePtrVector::iterator end,
+                        double timestamp);
 
-        // build an icp measure
-        bool BuildLidarOdometryMeasure(
-                GeneralizedICP &gicp,
-                VoxelGridFilter &grid_filtering,
-                double cf,
-                const g2o::SE2 &odom,
-                PointCloudHSV::Ptr source_cloud,
-                PointCloudHSV::Ptr target_cloud,
-                g2o::SE2 &icp_measure);
+            // get the gps estimation
+            void GetNearestOrientation(
+                        StampedMessagePtrVector::iterator it,
+                        StampedMessagePtrVector::iterator end,
+                        int adv,
+                        double timestamp,
+                        double &h,
+                        double &dt);
 
-        // build an icp measure
-        bool BuildLidarLoopMeasure(
-                GeneralizedICP &gicp,
-                double cf,
-                PointCloudHSV::Ptr source_cloud,
-                PointCloudHSV::Ptr target_cloud,
-                g2o::SE2 &loop_measure);
+            // get the gps full measure
+            Eigen::Rotation2Dd GetGPSOrientation(
+                        StampedMessagePtrVector::iterator begin,
+                        StampedMessagePtrVector::iterator it,
+                        StampedMessagePtrVector::iterator end,
+                        double timestamp);
 
-        // get the next lidar block
-        bool GetNextLidarBlock(unsigned &first_index, unsigned &last_index);
+            // get the first gps position
+            Eigen::Vector2d GetFirstGPSPosition();
 
-        // it results in a safe region
-        bool GetNextICPIterators(StampedLidarPtrVector::iterator &begin, StampedLidarPtrVector::iterator &end);
+            // find the nearest orientation
+            double FindGPSOrientation(StampedMessagePtrVector::iterator gps);
 
-        // the main icp measure method, multithreading version
-        void BuildLidarMeasuresMT();
+            // iterate over the entire message list and build the measures and estimates
+            void BuildGPSMeasures();
 
-        // build sequential and loop restriction ICP measures
-        void BuildLidarOdometryMeasuresWithThreads(StampedLidarPtrVector &lidar_messages);
+            // iterate over the entire message list and build the measures and estimates
+            void BuildOdometryMeasures();
 
-        // build the lidar odometry estimates,
-        // we should call this method after the BuildOdometryEstimates
-        void BuildLidarOdometryEstimates(StampedLidarPtrVector &lidar_messages);
+            // build the initial estimates
+            void BuildOdometryEstimates();
 
-        // compute the loop closure measure
-        void BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messages);
+            // build an icp measure
+            bool BuildLidarOdometryMeasure(
+                    GeneralizedICP &gicp,
+                    VoxelGridFilter &grid_filtering,
+                    double cf,
+                    const g2o::SE2 &odom,
+                    PointCloudHSV::Ptr source_cloud,
+                    PointCloudHSV::Ptr target_cloud,
+                    g2o::SE2 &icp_measure);
 
-        // save all vertices to the external file
-        void SaveAllVertices(std::ofstream &os);
+            // build an icp measure
+            bool BuildLidarLoopMeasure(
+                    GeneralizedICP &gicp,
+                    double cf,
+                    PointCloudHSV::Ptr source_cloud,
+                    PointCloudHSV::Ptr target_cloud,
+                    g2o::SE2 &loop_measure);
 
-        // save the odometry edges
-        void SaveOdometryEdges(std::ofstream &os);
+            // get the next lidar block
+            bool GetNextLidarBlock(unsigned &first_index, unsigned &last_index);
 
-        // save the current odometry estimates to odom.txt file
-        void SaveOdometryEstimates();
+            // it results in a safe region
+            bool GetNextICPIterators(StampedLidarPtrVector::iterator &begin, StampedLidarPtrVector::iterator &end);
 
-        // save the gps edges
-        void SaveGPSEdges(std::ofstream &os);
+            // the main icp measure method, multithreading version
+            void BuildLidarMeasuresMT();
 
-        // save the gps edges
-        void SaveGPSEstimates();
+            // build sequential and loop restriction ICP measures
+            void BuildLidarOdometryMeasuresWithThreads(StampedLidarPtrVector &lidar_messages);
 
-        // save icp edges
-        void SaveLidarEdges(const std::string &msg_name, std::ofstream &os, const StampedLidarPtrVector &lidar_messages);
+            // remove the unused lidar messages
+            void LidarMessagesFiltering(StampedLidarPtrVector &lidar_messages, StampedLidarPtrVector &used_lidar);
 
-        // save icp edges
-        void SaveICPEdges(std::ofstream &os);
+            // build the gps sync lidar estimates
+            void BuildLidarOdometryGPSEstimates();
 
-        // save the lidar estimates
-        void SaveLidarEstimates(const std::string &filename, const StampedLidarPtrVector &lidar_messages);
+            // build the lidar odometry estimates,
+            // we should call this method after the BuildOdometryEstimates
+            void BuildRawLidarOdometryEstimates(StampedLidarPtrVector &lidar_messages, StampedLidarPtrVector &used_lidar);
 
-        // save the curvature constraint edges
-        void SaveCurvatureEdges(std::ofstream &os);
+            // build the visual odometry estimates, we should call this method after the BuildOdometryEstimates
+            void BuildVisualOdometryEstimates();
 
-        // build Eigen homogeneous matrix from g2o SE2
-        Eigen::Matrix4f BuildMatrixFromSE2(const g2o::SE2 &transform);
+            // compute the loop closure measure
+            void BuildLidarLoopClosureMeasures(StampedLidarPtrVector &lidar_messages);
 
-        // get SE2 transform from Eigen homogeneous coordinate matrix
-        g2o::SE2 BuildSE2FromMatrix(const Eigen::Matrix4f &matrix);
+            // compute the bumblebee measure
+            void BuildVisualOdometryMeasures();
 
-        // removing the copy constructor
-        GrabData(const GrabData&) = delete;
+            // save all vertices to the external file
+            void SaveAllVertices(std::ofstream &os);
 
-        // removing the assignment operator overloading
-        void operator=(const GrabData&);
+            // save the odometry edges
+            void SaveOdometryEdges(std::ofstream &os);
 
-    public:
+            // save the current odometry estimates to odom.txt file
+            void SaveOdometryEstimates(const std::string &output_filename, bool raw_version = false);
 
-        // the main constructor
-        GrabData();
+            // save the gps edges
+            void SaveGPSEdges(std::ofstream &os);
 
-        // the main destructor
-        ~GrabData();
+            // save the xsens edges
+            void SaveXSENSEdges(std::ofstream &os);
 
-        // parse the log file
-        bool ParseLogFile(const std::string &input_filename);
+            // save the gps edges
+            void SaveGPSEstimates();
 
-        // sync all messages and process each one
-        // it builds the all estimates and measures
-        // and constructs the hypergraph
-        void BuildHyperGraph();
+            // save icp edges
+            void SaveLidarEdges(const std::string &msg_name, std::ofstream &os, const StampedLidarPtrVector &lidar_messages);
 
-        // save the hyper graph to the output file
-        void SaveHyperGraph(const std::string &output_filename);
+            // save visual odometry edges
+            void SaveVisualOdometryEdges(std::ofstream &os);
 
-        // clear the entire object
-        void Clear();
+            // save icp edges
+            void SaveICPEdges(std::ofstream &os);
 
-};
+            // save the lidar estimates
+            void SaveRawLidarEstimates(const std::string &filename, const StampedLidarPtrVector &lidar_messages);
+
+            // save the visual odometry estimates
+            void SaveVisualOdometryEstimates();
+
+            // build Eigen homogeneous matrix from g2o SE2
+            Eigen::Matrix4f BuildEigenMatrixFromSE2(const g2o::SE2 &transform);
+
+            // get SE2 transform from Eigen homogeneous coordinate matrix
+            g2o::SE2 GetSE2FromEigenMatrix(const Eigen::Matrix4f &matrix);
+
+            // get SE2 transform from libviso homogeneous coordinate matrix
+            g2o::SE2 GetSE2FromVisoMatrix(const Matrix &matrix);
+
+            // removing the copy constructor
+            GrabData(const GrabData&) = delete;
+
+            // removing the assignment operator overloading
+            void operator=(const GrabData&);
+
+        public:
+
+            // the main constructor
+            GrabData();
+
+            // the main destructor
+            ~GrabData();
+
+            // configuration
+            void Configure(std::string config_filename);
+
+            // parse the log file
+            bool ParseLogFile(const std::string &input_filename);
+
+            // sync all messages and process each one
+            // it builds the all estimates and measures
+            // and constructs the hypergraph
+            void BuildHyperGraph();
+
+            // save the hyper graph to the output file
+            void SaveHyperGraph(const std::string &output_filename);
+
+            // save the estimates to external files
+            void SaveEstimates();
+
+            // clear the entire object
+            void Clear();
+
+    };
 
 }
 

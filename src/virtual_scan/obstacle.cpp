@@ -11,28 +11,24 @@ namespace virtual_scan
 
 
 ObstaclePose::ObstaclePose():
-	node(NULL),
-	x(0.0),
-	y(0.0),
-	theta(0.0)
+	node(NULL)
 {
 	// Nothing to do.
 }
 
 
-ObstaclePose::ObstaclePose(virtual_scan_graph_node_t *node):
+ObstaclePose::ObstaclePose(Node *node):
 	node(node),
-	x(node->box_model.x),
-	y(node->box_model.y),
-	theta(node->box_model.theta)
+	global(node->pose.global),
+	local(node->pose.local)
 {
-	node->complete_sub_graph->selected++;
+	node->select();
 }
 
 
 ObstaclePose::~ObstaclePose()
 {
-	node->complete_sub_graph->selected--;	
+	node->deselect();
 }
 
 
@@ -43,11 +39,11 @@ ObstacleView::ObstacleView():
 }
 
 
-ObstacleView::ObstacleView(const ObstaclePose &pose, const carmen_point_t &origin):
+ObstacleView::ObstacleView(const ObstaclePose &pose):
 	Rectangle(
-		pose.node->box_model.width,
-		pose.node->box_model.length,
-		project_pose(pose, origin)
+		pose.node->model->width,
+		pose.node->model->length,
+		pose.local
 	)
 {
 	std::vector<double> angles;
@@ -55,7 +51,7 @@ ObstacleView::ObstacleView(const ObstaclePose &pose, const carmen_point_t &origi
 	double b = std::numeric_limits<double>::lowest();
 	for (int i = 0, m = corners.size(), n = sides.size(); i < m; i++)
 	{
-		const carmen_position_t &corner = corners[i];
+		const PointXY &corner = corners[i];
 
 		bool obstructed = false;
 		for (int j = 0; j < n && !obstructed; j++)
@@ -98,38 +94,38 @@ bool ObstacleView::operator < (const ObstacleView &that) const
 }
 
 
-bool ObstacleView::operator < (const carmen_point_t &point) const
+bool ObstacleView::operator < (const PointOD &point) const
 {
 	// If the obstacle is over the border between quadrants 2 and 3
 	// and the ray is on quadrant 3, convert the end range angle to
 	// [-pi, pi) representation.
-	if (range.second > M_PI && point.theta < -M_PI_2)
-		return (range.second - 2.0 * M_PI) < point.theta;
+	if (range.second > M_PI && point.o < -M_PI_2)
+		return (range.second - 2.0 * M_PI) < point.o;
 
 	// Otherwise, check inequality as usual.
-	return range.second < point.theta;
+	return range.second < point.o;
 }
 
 
-bool ObstacleView::operator > (const carmen_point_t &point) const
+bool ObstacleView::operator > (const PointOD &point) const
 {
 	// If the obstacle is over the border between quadrants 2 and 3
 	// and the ray is on quadrant 3, convert the start range angle to
 	// [-2pi, 0) representation.
-	if (range.second > M_PI && point.theta < -M_PI_2)
-		return (range.first - 2.0 * M_PI) > point.theta;
+	if (range.second > M_PI && point.o < -M_PI_2)
+		return (range.first - 2.0 * M_PI) > point.o;
 
 	// Otherwise, check inequality as usual.
-	return range.first > point.theta;
+	return range.first > point.o;
 }
 
 
-double ObstacleView::distance(const carmen_point_t &p) const
+double ObstacleView::distance(const PointXY &p) const
 {
-	Line ray({p.x, p.y});
+	Line ray(p);
 
 	double d_min = std::numeric_limits<double>::max();
-	carmen_position_t c = {d_min, d_min};
+	PointXY c(d_min, d_min);
 
 	// Find the obstacle point closest to the observer alongside the ray.
 	for (int i = 0, n = sides.size(); i < n; i++)
@@ -142,7 +138,7 @@ double ObstacleView::distance(const carmen_point_t &p) const
 		}
 	}
 
-	return DIST2D(p, c);
+	return virtual_scan::distance(p, c);
 }
 
 

@@ -2,10 +2,10 @@ include ../../Makefile.conf
 
 LINK = g++
 
-MODULE_NAME = hypergraphsclam Grab Data
+MODULE_NAME = HYPERGRAPHSCLAM GRAB DATA
 MODULE_COMMENT =
 
-CXXFLAGS += -std=c++11
+CXXFLAGS += -std=c++11 -O2
 
 IFLAGS += -I$(CARMEN_HOME)/src/hypergraphsclam/src \
 			-I$(CARMEN_HOME)/src/hypergraphsclam/Helpers \
@@ -14,7 +14,7 @@ IFLAGS += -I$(CARMEN_HOME)/src/hypergraphsclam/src \
 			-I$(CARMEN_HOME)/src/hypergraphsclam/src \
 
 #cheating
-IFLAGS += -std=c++11
+IFLAGS += -std=c++11 -O2
 
 # the eigen includes
 IFLAGS += -I/usr/include/eigen3
@@ -31,8 +31,9 @@ IFLAGS += -I/usr/include/pcl-1.7
 # the carmen libs
 LFLAGS += -lglobal
 
-###IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/include/pcl-1.7  -I/usr/include/vtk-5.8
+# the libviso includes
+IFLAGS += -I$(CARMEN_HOME)/sharedlib/libviso2.3/src
 
-SOURCES = VehicleModel.cpp GrabData.cpp
+SOURCES = VehicleModel.cpp GrabData.cpp HyperGraphSclamOptimizer.cpp
 
 include ../../Makefile.rules

@@ -236,7 +236,7 @@ busy_pedestrian_track_ahead(carmen_ackerman_traj_point_t current_robot_pose_v_an
 //		carmen_rddf_play_annotation_is_forward(displaced_robot_pose, nearest_velocity_related_annotation->annotation_point))
 		last_pedestrian_track_busy_timestamp = timestamp;
 
-	if (timestamp - last_pedestrian_track_busy_timestamp < 4.0)
+	if (timestamp - last_pedestrian_track_busy_timestamp < 1.5)
 		return (true);
 
 	return (false);
@@ -345,6 +345,9 @@ get_velocity_at_next_annotation(carmen_annotation_t *annotation, carmen_ackerman
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK_STOP) &&
 			 busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp))
 		v = 0.08;
+	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) &&
+			 busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp))
+		v = 0.08;
 	else if (annotation->annotation_type == RDDF_ANNOTATION_TYPE_STOP)
 		v = 0.08;
 	else if ((annotation->annotation_type == RDDF_ANNOTATION_TYPE_DYNAMIC) &&
@@ -414,7 +417,7 @@ get_velocity_at_goal(double v0, double va, double dg, double da)
 //	double a = -get_robot_config()->maximum_acceleration_forward * 2.5;
 	double a = (va * va - v0 * v0) / (2.0 * da);
 	// TODO: @@@ Alberto: nao deveria ser 2.0 ao inves de 1.0 abaixo? Com 2.0 freia esponencialmente nos quebra molas...
-	double sqrt_val = 1.5 * a * dg + v0 * v0;
+	double sqrt_val = 1.8 * a * dg + v0 * v0;
 	double vg = va;
 	if (sqrt_val > 0.0)
 		vg = sqrt(sqrt_val);
@@ -924,6 +927,27 @@ clear_moving_obstacles_from_compact_lane_map(carmen_obstacle_distance_mapper_com
 		compact_lane_contents->y_offset[i] = distance_map.complete_y_offset[index];
 	}
 }
+
+
+void
+add_simulated_object(carmen_ackerman_traj_point_t *object_pose)
+{
+	virtual_laser_message.positions[virtual_laser_message.num_positions].x = object_pose->x;
+	virtual_laser_message.positions[virtual_laser_message.num_positions].y = object_pose->y;
+	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_PURPLE;
+	virtual_laser_message.num_positions++;
+
+	double disp = 0.3;
+	virtual_laser_message.positions[virtual_laser_message.num_positions].x = object_pose->x + disp * cos(object_pose->theta + M_PI / 2.0);
+	virtual_laser_message.positions[virtual_laser_message.num_positions].y = object_pose->y + disp * sin(object_pose->theta + M_PI / 2.0);
+	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_PURPLE;
+	virtual_laser_message.num_positions++;
+
+	virtual_laser_message.positions[virtual_laser_message.num_positions].x = object_pose->x + disp * cos(object_pose->theta - M_PI / 2.0);
+	virtual_laser_message.positions[virtual_laser_message.num_positions].y = object_pose->y + disp * sin(object_pose->theta - M_PI / 2.0);
+	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_PURPLE;
+	virtual_laser_message.num_positions++;
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -1078,27 +1102,6 @@ publish_dynamic_annotation(carmen_vector_3D_t annotation_point, double orientati
 {
 	carmen_rddf_publish_dynamic_annotation_message(annotation_point, orientation, annotation_description, annotation_type,
 			annotation_code, timestamp);
-}
-
-
-void
-add_simulated_object(carmen_ackerman_traj_point_t *object_pose)
-{
-	virtual_laser_message.positions[virtual_laser_message.num_positions].x = object_pose->x;
-	virtual_laser_message.positions[virtual_laser_message.num_positions].y = object_pose->y;
-	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_PURPLE;
-	virtual_laser_message.num_positions++;
-
-	double disp = 0.3;
-	virtual_laser_message.positions[virtual_laser_message.num_positions].x = object_pose->x + disp * cos(object_pose->theta + M_PI / 2.0);
-	virtual_laser_message.positions[virtual_laser_message.num_positions].y = object_pose->y + disp * sin(object_pose->theta + M_PI / 2.0);
-	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_PURPLE;
-	virtual_laser_message.num_positions++;
-
-	virtual_laser_message.positions[virtual_laser_message.num_positions].x = object_pose->x + disp * cos(object_pose->theta - M_PI / 2.0);
-	virtual_laser_message.positions[virtual_laser_message.num_positions].y = object_pose->y + disp * sin(object_pose->theta - M_PI / 2.0);
-	virtual_laser_message.colors[virtual_laser_message.num_positions] = CARMEN_PURPLE;
-	virtual_laser_message.num_positions++;
 }
 
 
@@ -1428,9 +1431,6 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 			break;
 
 		case Stopping_At_Busy_Pedestrian_Track:
-//			if (udatmo_obstacle_detected(timestamp) &&
-//				(udatmo_get_moving_obstacle_distance(current_robot_pose_v_and_phi, get_robot_config()) < distance_to_red_traffic_light(current_robot_pose_v_and_phi, timestamp)))
-//				decision_making_state_msg->low_level_state = Following_Moving_Object;
 			if ((current_robot_pose_v_and_phi.v < 0.15) &&
 				((distance_to_busy_pedestrian_track(current_robot_pose_v_and_phi, timestamp) < 2.0) ||
 				 (distance_to_busy_pedestrian_track(current_robot_pose_v_and_phi, timestamp) == 1000.0)))
@@ -1460,6 +1460,8 @@ perform_state_transition(carmen_behavior_selector_state_message *decision_making
 		case Stopped_At_Busy_Pedestrian_Track_S2:
 			if (autonomous && (current_robot_pose_v_and_phi.v > 0.5) && (distance_to_pedestrian_track_stop(current_robot_pose_v_and_phi) > 2.0))
 				decision_making_state_msg->low_level_state = Free_Running;
+			if (busy_pedestrian_track_ahead(current_robot_pose_v_and_phi, timestamp))
+				decision_making_state_msg->low_level_state = Stopped_At_Busy_Pedestrian_Track_S0;
 			break;
 
 		case Stopping_At_Stop_Sign:

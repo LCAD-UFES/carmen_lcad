@@ -4,7 +4,7 @@
 using namespace hyper;
 
 // set the multiplier
-double StampedLidar::to_degree = M_PI / 180.0;
+double StampedLidar::to_degree = M_PI / 180.0f;
 
 // define the default voxel grid leaf filter value
 double StampedLidar::vg_leaf = 0.2;
@@ -12,15 +12,25 @@ double StampedLidar::vg_leaf = 0.2;
 // the voxel grid
 pcl::VoxelGrid<pcl::PointXYZHSV> StampedLidar::grid_filtering;
 
+// the segmentation class
+SimpleLidarSegmentation StampedLidar::segm;
+
 // the basic constructor
 StampedLidar::StampedLidar(unsigned msg_id, const std::string &base_path) :
     StampedMessage::StampedMessage(msg_id),
+    minx(std::numeric_limits<double>::max()),
+    maxx(-std::numeric_limits<double>::max()),
+    miny(std::numeric_limits<double>::max()),
+    maxy(-std::numeric_limits<double>::max()),
+    minz(std::numeric_limits<double>::max()),
+    maxz(-std::numeric_limits<double>::max()),
     speed(0.0),
     path(base_path),
-    seq_measure(0.0, 0.0, 0.0),
+    seq_measurement(0.0, 0.0, 0.0),
     seq_id(std::numeric_limits<unsigned>::max()),
     lidar_estimate(0.0, 0.0, 0.0),
-    loop_measure(0.0, 0.0, 0.0),
+    gps_sync_estimate(0.0, 0.0, 0.0),
+    loop_measurement(0.0, 0.0, 0.0),
     loop_closure_id(std::numeric_limits<unsigned>::max()) {
 
     // set the default leaf size
@@ -151,5 +161,13 @@ void StampedLidar::LoadPointCloud(const std::string &cloud_path, PointCloudHSV &
 
     // close the file
     input.close();
+
+}
+
+// remove undesired points
+void StampedLidar::RemoveUndesiredPoints(PointCloudHSV &cloud) {
+
+    // segmentation
+    segm.PointTypeSegmentation(cloud, absx, absy, minz, maxz);
 
 }

@@ -13,7 +13,7 @@ int StringHelper::ReadLine(std::istream &is, std::stringstream& line) {
         return -1;
 
     // clear the output string
-    line.str("");
+    line.str(std::string());
     line.clear();
 
     // read the current line

@@ -8,33 +8,35 @@
 
 namespace hyper {
 
-class StampedGPSPose : virtual public StampedMessage {
+	class StampedGPSPose : virtual public StampedMessage
+	{
+		public:
 
-	public:
+			// the gps measure
+			g2o::SE2 gps_measurement;
 
-		// the gps measure
-		g2o::SE2 gps_measure;
+			// the standard deviation value
+			double gps_std;
 
-		// the standard deviation value
-		double gps_std;
+			// basic constructor
+			StampedGPSPose(unsigned msg_id);
 
-		// basic constructor
-		StampedGPSPose(unsigned msg_id);
+			// basic destructor
+			~StampedGPSPose();
 
-		// basic destructor
-		~StampedGPSPose();
+			// parse the pose from string stream
+			virtual bool FromCarmenLog(std::stringstream &ss);
 
-		// parse the pose from string stream
-		virtual bool FromCarmenLog(std::stringstream &ss);
+			// get the message type
+			virtual StampedMessageType GetType();
+	};
 
-};
+	// syntactic sugar
+	typedef StampedGPSPose* StampedGPSPosePtr;
+	typedef StampedGPSPose& StampedGPSPoseRef;
 
-// syntactic sugar
-typedef StampedGPSPose* StampedGPSPosePtr;
-typedef StampedGPSPose& StampedGPSPoseRef;
-
-// the standard vector typedef
-typedef std::vector<StampedGPSPosePtr> StampedGPSPosePtrVector;
+	// the standard vector typedef
+	typedef std::vector<StampedGPSPosePtr> StampedGPSPosePtrVector;
 
 }
 

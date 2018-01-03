@@ -34,6 +34,10 @@
 int camera;
 int camera_side;
 
+carmen_camera_parameters camera_parameters;
+carmen_pose_3D_t velodyne_pose;
+carmen_pose_3D_t camera_pose;
+
 // velodyne buffer
 const unsigned int maxPositions = 50;
 carmen_velodyne_partial_scan_message *velodyne_message_arrange;
@@ -224,28 +228,46 @@ publish_moving_objects(double timestamp)
 void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
-    cv::Mat src_image = cv::Mat(cv::Size(image_msg->width, image_msg->height - image_msg->height * 0.25), CV_8UC3);
-    cv::Mat rgb_image = cv::Mat(cv::Size(image_msg->width, image_msg->height - image_msg->height * 0.25), CV_8UC3);
+	double hood_removal_percentage = 0.2;
+
+    cv::Mat src_image = cv::Mat(cv::Size(image_msg->width, image_msg->height - image_msg->height * hood_removal_percentage), CV_8UC3);
+    cv::Mat rgb_image = cv::Mat(cv::Size(image_msg->width, image_msg->height - image_msg->height * hood_removal_percentage), CV_8UC3);
+//    cv::Mat src_image = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3);
+//    cv::Mat rgb_image = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3);
 
     double start_time, end_time, delta_t, fps;
 
     start_time = carmen_get_time();
 
     if (camera_side == 0)
-        memcpy(src_image.data, image_msg->raw_left, image_msg->image_size * sizeof(char) - image_msg->image_size * 0.25 * sizeof(char));
+        memcpy(src_image.data, image_msg->raw_left, image_msg->image_size * sizeof(char) - image_msg->image_size * hood_removal_percentage * sizeof(char));
     else
-        memcpy(src_image.data, image_msg->raw_right, image_msg->image_size * sizeof(char) - image_msg->image_size * 0.25 * sizeof(char));
+        memcpy(src_image.data, image_msg->raw_right, image_msg->image_size * sizeof(char) - image_msg->image_size * hood_removal_percentage * sizeof(char));
+//    if (camera_side == 0)
+//        memcpy(src_image.data, image_msg->raw_left, image_msg->image_size * sizeof(char));
+//    else
+//        memcpy(src_image.data, image_msg->raw_right, image_msg->image_size * sizeof(char));
 
     carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
-    std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> points_lasers_in_cam_with_obstacle;
 
     if (velodyne_vector.size() > 0)
         velodyne_sync_with_cam = find_velodyne_most_sync_with_cam(image_msg->timestamp);
     else
         return;
 
-    points_lasers_in_cam_with_obstacle = carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_display(
-            &velodyne_sync_with_cam, image_msg->width, image_msg->height);
+//    // Coloca barra preta em baixo
+//    // select a region of interest
+//    cv::Mat pRoi = src_image(cv::Rect(0, image_msg->height - image_msg->height * hood_removal_percentage, image_msg->width, image_msg->height - (image_msg->height - image_msg->height * hood_removal_percentage)));
+//    // set roi to some rgb colour
+//    pRoi.setTo(cv::Scalar(0, 0, 0));
+
+    double lateral_reduction = 0.0;
+    // select a region of interest
+    cv::Mat src_image_copy = src_image.clone();
+
+    cv::Mat pRoi = src_image_copy(cv::Rect(src_image_copy.cols * lateral_reduction / 2.0, 0,
+    		src_image_copy.cols - src_image_copy.cols * lateral_reduction, src_image_copy.rows));
+    src_image = pRoi;
 
     cv::cvtColor(src_image, rgb_image, cv::COLOR_RGB2BGR);
 
@@ -314,6 +336,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 #endif
 
     auto laser_points_in_camera_box_list = velodyne_points_in_boxes(bouding_boxes_list, &velodyne_sync_with_cam,
+                                                                    camera_parameters, velodyne_pose, camera_pose,
                                                                     image_msg->width, image_msg->height);
 
     std::vector<std::vector<carmen_vector_3D_t> > cluster_list = get_cluster_list(laser_points_in_camera_box_list);
@@ -361,8 +384,10 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
                 cv::Point(10, 25),
                 cv::FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
 
-    for (unsigned int i = 0; i < laser_points_in_camera_box_list.size(); i++) {
-        for (unsigned int j = 0; j < laser_points_in_camera_box_list[i].size(); j++) {
+    for (unsigned int i = 0; i < laser_points_in_camera_box_list.size(); i++)
+    {
+        for (unsigned int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
+        {
             cv::circle(rgb_image, cv::Point(laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx,
                                             laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy), 1,
                        cv::Scalar(0, 0, 255), 1);
@@ -404,7 +429,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
     }
 
-    cv::Mat resized_image(cv::Size(640, 480 - 480 * 0.25), CV_8UC3);
+    cv::Mat resized_image(cv::Size(640, 480 - 480 * hood_removal_percentage), CV_8UC3);
+//    cv::Mat resized_image(cv::Size(640, 480), CV_8UC3);
     cv::resize(rgb_image, resized_image, resized_image.size());
 
     cv::imshow("Neural car detector", resized_image);
@@ -464,15 +490,19 @@ shutdown_module(int signo)
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-std::vector<std::string> objects_names_from_file(std::string const filename)
+
+std::vector<std::string>
+objects_names_from_file(std::string const filename)
 {
     std::ifstream file(filename);
     std::vector<std::string> file_lines;
     if (!file.is_open()) return file_lines;
     for (std::string line; getline(file, line);) file_lines.push_back(line);
     std::cout << "object names loaded \n";
+
     return file_lines;
 }
+
 
 void
 subscribe_messages()
@@ -488,21 +518,60 @@ subscribe_messages()
     carmen_localize_ackerman_subscribe_globalpos_message(NULL,
                                                          (carmen_handler_t) carmen_localize_ackerman_globalpos_message_handler,
                                                          CARMEN_SUBSCRIBE_LATEST);
+}
 
+
+int
+read_parameters(int argc, char **argv)
+{
+    /* defining the camera to be used */
+    camera = atoi(argv[1]);
+    camera_side = atoi(argv[2]);
+
+    int num_items;
+    char bumblebee_string[256];
+    char camera_string[256];
+
+    sprintf(bumblebee_string, "%s%d", "bumblebee_basic", camera);
+    sprintf(camera_string, "%s%d", "camera", camera);
+
+    carmen_param_t param_list[] =
+    {
+		{ bumblebee_string, (char*) "fx", CARMEN_PARAM_DOUBLE, &camera_parameters.fx_factor, 0, NULL },
+		{ bumblebee_string, (char*) "fy", CARMEN_PARAM_DOUBLE, &camera_parameters.fy_factor, 0, NULL },
+		{ bumblebee_string, (char*) "cu", CARMEN_PARAM_DOUBLE, &camera_parameters.cu_factor, 0, NULL },
+		{ bumblebee_string, (char*) "cv", CARMEN_PARAM_DOUBLE, &camera_parameters.cv_factor, 0, NULL },
+		{ bumblebee_string, (char*) "pixel_size", CARMEN_PARAM_DOUBLE, &camera_parameters.pixel_size, 0, NULL },
+
+		{(char *) "velodyne",  (char *) "x", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.x), 0, NULL},
+		{(char *) "velodyne",  (char *) "y", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.y), 0, NULL},
+		{(char *) "velodyne",  (char *) "z", CARMEN_PARAM_DOUBLE, &(velodyne_pose.position.z), 0, NULL},
+		{(char *) "velodyne",  (char *) "roll", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.roll), 0, NULL},
+		{(char *) "velodyne",  (char *) "pitch", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.pitch), 0, NULL},
+		{(char *) "velodyne",  (char *) "yaw", CARMEN_PARAM_DOUBLE, &(velodyne_pose.orientation.yaw), 0, NULL},
+
+		{ camera_string, (char*) "x", CARMEN_PARAM_DOUBLE, &camera_pose.position.x, 0, NULL },
+		{ camera_string, (char*) "y", CARMEN_PARAM_DOUBLE, &camera_pose.position.y, 0, NULL },
+		{ camera_string, (char*) "z", CARMEN_PARAM_DOUBLE, &camera_pose.position.z, 0, NULL },
+		{ camera_string, (char*) "roll", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.roll, 0, NULL },
+		{ camera_string, (char*) "pitch", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.pitch, 0, NULL },
+		{ camera_string, (char*) "yaw", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.yaw, 0, NULL }
+    };
+
+
+    num_items = sizeof(param_list) / sizeof(param_list[0]);
+    carmen_param_install_params(argc, argv, param_list, num_items);
+
+    return 0;
 }
 
 
 int
 main(int argc, char **argv)
 {
-
-    if (argc != 3) {
-        fprintf(stderr,
-                "%s: Wrong number of parameters. Neural_car_detector requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)\n>",
-                argv[0], argc - 1, argv[0]);
-        exit(1);
-    }
-
+    if ((argc != 3))
+        carmen_die("%s: Wrong number of parameters. Neural_car_detector requires 2 parameter and received %d. \n Usage: %s <camera_number> <camera_side(0-left; 1-right)\n>",
+                   argv[0], argc - 1, argv[0]);
 
     int gpu = 1;
     int device_id = 0;
@@ -534,11 +603,10 @@ main(int argc, char **argv)
 
     setlocale(LC_ALL, "C");
 
-    camera = atoi(argv[1]);
-    camera_side = atoi(argv[2]);
-
     carmen_ipc_initialize(argc, argv);
     signal(SIGINT, shutdown_module);
+
+    read_parameters(argc, argv);
 
     subscribe_messages();
     carmen_ipc_dispatch();

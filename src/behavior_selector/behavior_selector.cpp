@@ -50,7 +50,6 @@ carmen_mapper_virtual_laser_message virtual_laser_message;
 SampleFilter filter2;
 
 extern bool wait_start_moving;
-extern bool autonomous;
 
 extern double map_width;
 
@@ -452,6 +451,27 @@ behaviour_selector_fill_goal_list(carmen_rddf_road_profile_message *rddf, double
 		{	// Ou seja, se a anotacao estiver em cima de um obstaculo, adiciona um waypoint na posicao anterior mais proxima da anotacao que estiver livre.
 			goal_type[goal_index] = ANNOTATION_GOAL3;
 			add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, last_obstacle_free_waypoint_index, rddf);
+			moving_obstacle_trasition = 0.0;
+		}
+		else if ((((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) &&  // -> Adiciona um waypoint na ultima posicao livre se a posicao atual contem uma das anotacoes especificadas
+				   !wait_start_moving && busy_pedestrian_track_ahead(robot_pose, timestamp))) &&
+				  !rddf_pose_hit_obstacle) // e se ela nao colide com um obstaculo.
+		{
+			goal_type[goal_index] = ANNOTATION_GOAL2;
+			double distance_to_waypoint = DIST2D(rddf->poses[0], rddf->poses[rddf_pose_index]);
+			if (distance_to_waypoint >= 0.0)
+				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, rddf_pose_index, rddf, -2.0);
+			else
+				add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, 0, rddf);
+			moving_obstacle_trasition = 0.0;
+			break;
+		}
+		else if ((((rddf->annotations[rddf_pose_index] == RDDF_ANNOTATION_TYPE_PEDESTRIAN_TRACK) && !wait_start_moving)) &&  // -> Adiciona um waypoint na ultima posicao livre se a posicao atual contem uma das anotacoes especificadas
+				 (distance_to_last_obstacle_free_waypoint > 1.5) && // e se ela esta a mais de 1.5 metros da ultima posicao livre de obstaculo
+				 rddf_pose_hit_obstacle) // e se ela colidiu com obstaculo.
+		{	// Ou seja, se a anotacao estiver em cima de um obstaculo, adiciona um waypoint na posicao anterior mais proxima da anotacao que estiver livre.
+			goal_type[goal_index] = ANNOTATION_GOAL3;
+			add_goal_to_goal_list(goal_index, current_goal, current_goal_rddf_index, last_obstacle_free_waypoint_index, rddf, -2.0);
 			moving_obstacle_trasition = 0.0;
 		}
 		else if (((distance_from_car_to_rddf_point >= distance_between_waypoints) && // -> Adiciona um waypoint na posicao atual se ela esta numa distancia apropriada

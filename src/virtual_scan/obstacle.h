@@ -1,9 +1,11 @@
 #ifndef VIRTUAL_SCAN_OBSTACLE_H
 #define VIRTUAL_SCAN_OBSTACLE_H
 
+#include "neighborhood_graph.h"
+#include "point.h"
 #include "rectangle.h"
-#include "virtual_scan.h"
-#include "virtual_scan_neighborhood_graph.h"
+
+#include <deque>
 
 namespace virtual_scan
 {
@@ -13,18 +15,18 @@ namespace virtual_scan
  */
 struct ObstaclePose
 {
+	/** @brief Obstacle pose sequence type. */
+	typedef std::deque<ObstaclePose> S;
+
 	/** @brief Pointer to the neighborhood graph node related to this pose. */
-	virtual_scan_graph_node_t *node;
+	Node *node;
+
+	/** @brief Obstacle pose relative to the global reference frame. */
+	Pose global;
+
+	/** @brief Obsacle pose relative to the node's local frame. */
+	Pose local;
 	
-	/** @brief Position of this pose in the global x-axis. */
-	double x;
-
-	/** @brief Position of this pose in the global y-axis. */
-	double y;
-
-	/** @brief Angle of this pose relative to the global x-axis */
-	double theta;
-
 	/**
 	 * @brief Default constructor.
 	 */
@@ -33,7 +35,7 @@ struct ObstaclePose
 	/**
 	 * @brief Create a new pose related to the given node.
 	 */
-	ObstaclePose(virtual_scan_graph_node_t *graph_node);
+	ObstaclePose(Node *node);
 
 	/**
 	 * @brief Class destructor.
@@ -57,7 +59,7 @@ struct ObstacleView: private Rectangle
 	/**
 	 * @brief Create a new view for the given obstacle from the given point of view.
 	 */
-	ObstacleView(const ObstaclePose &pose, const carmen_point_t &origin);
+	ObstacleView(const ObstaclePose &pose);
 
 	/**
 	 * @brief Defines a ordering of views by the beginning of the angle range.
@@ -67,17 +69,17 @@ struct ObstacleView: private Rectangle
 	/**
 	 * @brief Checks whether a sensor reading is "before" the view in the sensor's field of view.
 	 */
-	bool operator < (const carmen_point_t &point) const;
+	bool operator < (const PointOD &point) const;
 
 	/**
 	 * @brief Checks whether a sensor reading is "after" the view in the sensor's field of view.
 	 */
-	bool operator > (const carmen_point_t &point) const;
+	bool operator > (const PointOD &point) const;
 
 	/**
-	 * @brief Compute the probability that a sensor reading is explained by this obstacle view.
+	 * @brief Compute the distance between this view and a sensor reading point.
 	 */
-	double distance(const carmen_point_t &point) const;
+	double distance(const PointXY &point) const;
 };
 
 } // namespace virtual_scan

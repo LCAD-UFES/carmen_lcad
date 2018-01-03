@@ -1,12 +1,10 @@
 #include <carmen/carmen.h>
 #include <carmen/virtual_scan_interface.h>
 #include <carmen/global_graphics.h>
-#include "virtual_scan.h"
 #include <carmen/map_server_interface.h>
 #include <carmen/map.h>
 #include <carmen/grid_mapping.h>
-#include "virtual_scan_neighborhood_graph.h"
-#include "tracker.h"
+#include "virtual_scan.h"
 
 #define NUM_COLORS 4
 #define NMC	250
@@ -19,7 +17,6 @@ carmen_localize_ackerman_map_t localize_map;
 double x_origin = 0.0;
 double y_origin = 0.0;
 double map_resolution = 0.0;
-virtual_scan_neighborhood_graph_t *neighborhood_graph;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -60,7 +57,7 @@ virtual_scan_neighborhood_graph_t *neighborhood_graph;
 //	free(virtual_scan_segments);
 //}
 
-
+/*
 void
 virtual_scan_publish_segments(virtual_scan_segment_classes_t *virtual_scan_segment_classes)
 {
@@ -87,7 +84,7 @@ virtual_scan_publish_segments(virtual_scan_segment_classes_t *virtual_scan_segme
 	free(virtual_laser_message.positions);
 	free(virtual_laser_message.colors);
 }
-
+*/
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -99,22 +96,18 @@ virtual_scan_publish_segments(virtual_scan_segment_classes_t *virtual_scan_segme
 //																						   //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-virtual_scan::Tracker tracker(NMC, T);
-
 void
 carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *message)
 {
 	virtual_scan_extended_t *virtual_scan_extended = sort_virtual_scan(message);
 	virtual_scan_segment_classes_t *virtual_scan_segment_classes = virtual_scan_extract_segments(virtual_scan_extended);
-	virtual_scan_publish_segments(virtual_scan_segment_classes);
+//	virtual_scan_publish_segments(virtual_scan_segment_classes);
 
 	virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(virtual_scan_segment_classes);
-//	virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
-
-	tracker.track(virtual_scan_box_model_hypotheses, virtual_scan_extended);
+	virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
 
 //	virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses);
-	virtual_scan_free_segment_classes(virtual_scan_segment_classes);
+//	virtual_scan_free_segment_classes(virtual_scan_segment_classes);
 }
 
 

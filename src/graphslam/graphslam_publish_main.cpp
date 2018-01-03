@@ -172,22 +172,28 @@ base_ackerman_message_handler(carmen_base_ackerman_odometry_message *message)
 			return;
 
 		pose = poses_array[index].first;
+		double timestamp = poses_array[index].second;
 
-		double dt = message->timestamp - poses_array[index].second;
+		// Set the if condition to 1 to use the Ackerman motion model to predict the vehicle's pose 
+		// in the base_ackerman timestamp. 
+		if (0) 
+		{
+			double dt = message->timestamp - poses_array[index].second;
 
-		if (dt < 0)
-			exit(printf("dt: %lf\n", dt));
+			if (dt < 0)
+				exit(printf("dt: %lf\n", dt));
 
-		//printf("pose.x = %lf, pose.y = %lf, dt = %lf, message->timestamp = %lf, message->v = %lf\n", pose.x, pose.y, dt, message->timestamp, message->v);
-
-		dt = 0;
-		pose.x = pose.x + dt * message->v * cos(pose.theta);
-		pose.y = pose.y + dt * message->v * sin(pose.theta);
-		pose.theta = pose.theta + dt * (message->v / 2.625 /* L */) * tan(message->phi);
-		pose.theta = carmen_normalize_theta(pose.theta);
-
-		assembly_and_publish_fused_odometry_message(pose, message->timestamp, message->v, message->phi);
-		assembly_and_publish_fused_odometry_particles(pose, message->timestamp, message->v, message->phi);
+			//printf("pose.x = %lf, pose.y = %lf, dt = %lf, message->timestamp = %lf, message->v = %lf\n", pose.x, pose.y, dt, message->timestamp, message->v);
+			dt = 0;
+			pose.x = pose.x + dt * message->v * cos(pose.theta);
+			pose.y = pose.y + dt * message->v * sin(pose.theta);
+			pose.theta = pose.theta + dt * (message->v / 2.625 /* L */) * tan(message->phi);
+			pose.theta = carmen_normalize_theta(pose.theta);
+			timestamp = message->timestamp;
+		}
+		
+		assembly_and_publish_fused_odometry_message(pose, timestamp, message->v, message->phi);
+		assembly_and_publish_fused_odometry_particles(pose, timestamp, message->v, message->phi);
 	}
 }
 

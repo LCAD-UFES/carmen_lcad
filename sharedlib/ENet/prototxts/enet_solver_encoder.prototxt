@@ -1,0 +1,19 @@
+net: "/home/alberto/ENet/prototxts/enet_train_encoder.prototxt"  # Change this to the absolute path to your model file
+test_initialization: true
+test_iter: 1
+test_interval: 200
+base_lr: 0.00005
+lr_policy: "multistep"
+gamma: 0.1
+stepvalue: 50000
+stepvalue: 70000
+stepvalue: 90000
+display: 20
+momentum: 0.9
+max_iter: 167980
+weight_decay: 0.0002
+snapshot: 1000
+snapshot_prefix: "/home/alberto/ENet/weights/snapshots_encoder/enet"  # Change this to the absolute path to where you wish to output solver snapshots
+solver_mode: GPU
+solver_type: ADAM
+momentum2: 0.999

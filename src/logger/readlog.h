@@ -184,6 +184,8 @@ char* carmen_string_to_bumblebee_basic_stereoimage_message(char* string, carmen_
 
 char* carmen_string_to_ford_escape_estatus_message(char* string, carmen_ford_escape_status_message* msg);
 
+char* carmen_string_to_globalpos_message(char* string, carmen_localize_ackerman_globalpos_message* msg);
+
 char* carmen_string_and_file_to_bumblebee_basic_stereoimage_message(char* string, carmen_bumblebee_basic_stereoimage_message* msg);
 
 /** Converts the string to a robot-ackerman-velocity message.

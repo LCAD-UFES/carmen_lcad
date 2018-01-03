@@ -22,8 +22,8 @@ StampedSICK::~StampedSICK() {}
 // PUBLIC METHODS
 
 // parse the pose from string stream
-bool StampedSICK::FromCarmenLog(std::stringstream &ss) {
-
+bool StampedSICK::FromCarmenLog(std::stringstream &ss)
+{
     // helpers
     uint16_t scanner_status;
     unsigned points;
@@ -39,8 +39,8 @@ bool StampedSICK::FromCarmenLog(std::stringstream &ss) {
     ss >> scanner_status;
 
     // apply the mask and verify
-    if (scanner_status & MIRROR_MASK) {
-
+    if (scanner_status & MIRROR_MASK)
+    {
         // discards the next six values
         SkipValues(ss, 6);
 
@@ -51,8 +51,8 @@ bool StampedSICK::FromCarmenLog(std::stringstream &ss) {
         SkipValues(ss, 1);
 
         // read all points
-        for (unsigned i = 0; i < points; ++i) {
-
+        for (unsigned i = 0; i < points; ++i)
+        {
             // get the horizontal angle
             ss >> h_angle;
 
@@ -81,14 +81,17 @@ bool StampedSICK::FromCarmenLog(std::stringstream &ss) {
         StampedLidar::path += (ss_parser.str() + ".pcd");
 
         // save the pcd file
-        if (-1 != pcl::io::savePCDFile(StampedLidar::path, cloud, true)) {
-
+        if (-1 != pcl::io::savePCDFile(StampedLidar::path, cloud, true))
+        {
             return true;
-
         }
-
     }
 
     return false;
+}
 
+// get the message type
+StampedMessageType StampedSICK::GetType()
+{
+    return StampedSICKMessage;
 }

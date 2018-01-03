@@ -58,7 +58,8 @@ void loop()
 
       value = (((rxBuf[0]<<8) | rxBuf[1])&0x0FFF);
       Serial.println(value);
-       DAC.write(DAC_A, value);
+      DAC.write(DAC_A, value);
+      DAC.write(DAC_B, value>>1);
   }
 /*
   if (cnt > 2048){

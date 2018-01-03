@@ -1,79 +1,62 @@
 #ifndef VIRTUAL_SCAN_READING_H
 #define VIRTUAL_SCAN_READING_H
 
-#include "obstacle.h"
+#include "point.h"
+
+#include <set>
 
 namespace virtual_scan
 {
 
-class Reading
+struct Reading: std::set<Point2D, ComparatorOD>
 {
-public:
-	class iterator
-	{
-	public:
-		bool operator != (const iterator &that) const;
-
-		iterator &operator ++ ();
-
-		carmen_point_t &operator * ();
-	};
-
-	class const_iterator
-	{
-	public:
-		bool operator != (const const_iterator &that) const;
-
-		const_iterator &operator ++ ();
-
-		const carmen_point_t &operator * () const;
-	};
-
-	/** @brief Observer pose at the time this reading was collected. */
-	carmen_point_t origin;
-
 	/** @brief Time when this reading was collected. */
 	double timestamp;
 
-	/**
-	 * @brief Return an iterator at the beggining of this reading.
-	 */
-	iterator begin();
+	/** @brief Observer pose at the time this reading was collected. */
+	Pose origin;
 
 	/**
-	 * @brief Return an iterator at the beggining of this reading.
+	 * @brief Default constructor.
 	 */
-	const_iterator begin() const;
+	Reading();
 
 	/**
-	 * @brief Return the past-the-end iterator.
+	 * @brief Create a new empty reading at the given time and origin pose.
 	 */
-	iterator end();
+	Reading(double timestamp, const Pose &origin);
 
 	/**
-	 * @brief Return the past-the-end iterator.
+	 * @brief Create a new reading from the given message.
 	 */
-	const_iterator end() const;
+	Reading(carmen_mapper_virtual_scan_message *message);
 
 	/**
-	 * @brief Erase the given point from this reading.
+	 * @brief Return an iterator placed on the first point at the given angle.
 	 */
-	void erase(const carmen_point_t &point);
+	const_iterator lower_bound(double angle) const;
 
 	/**
-	 * @brief Add the given point to this reading.
+	 * @brief Return an iterator placed on the first point at the given angle.
 	 */
-	void insert(const carmen_point_t &point);
+	const_iterator upper_bound(double angle) const;
 
 	/**
-	 * @brief Generate a reading containing only the rays in the range of the given obstacle.
+	 * @brief Return the last point in this reading.
 	 */
-	Reading range(const ObstaclePose &pose) const;
+	const Point2D &back() const;
 
 	/**
-	 * @brief Return the number of rays in this reading.
+	 * @brief Return the first point in this reading.
 	 */
-	size_t size() const;
+	const Point2D &front() const;
+
+	/**
+	 * @brief Copy all elements from `that` Reading into `this` one.
+	 *
+	 * This is a stop-gap measure for C++17, which already includes a `merge()` method to its `std::set` class.
+	 */
+	void merge(Reading &that);
 };
 
 } // namespace virtual_scan

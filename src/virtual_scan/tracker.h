@@ -8,35 +8,42 @@
 #ifndef VIRTUAL_SCAN_TRACKER_H
 #define VIRTUAL_SCAN_TRACKER_H
 
+#include "neighborhood_graph.h"
 #include "random.h"
 #include "tracks.h"
-#include "virtual_scan.h"
-#include "virtual_scan_neighborhood_graph.h"
 
 namespace virtual_scan
 {
 
+/**
+ * @brief Moving obstacle tracker.
+ */
 class Tracker
 {
-	int n_mc;
-	virtual_scan_neighborhood_graph_t *neighborhood_graph;
-
+	/** @brief Sequence of sensor readings over the time window. */
 	Readings readings;
+
+	/** @brief Neighborhood graph used to generate track hypotheses. */
+	Graph graph;
 
 	/** @brief Pointer to current tracks. */
 	Tracks::P tracks;
 
+	/** @brief Random number generator used to select track variations. */
 	std::uniform_real_distribution<> uniform;
 
-	bool keep(Tracks *new_tracks);
-
 public:
-	Tracker(int n, int T);
+	/**
+	 * @brief Default constructor.
+	 */
+	Tracker();
 
-	Tracks::P track(
-		virtual_scan_box_model_hypotheses_t *box_model_hypotheses,
-		virtual_scan_extended_t *virtual_scan_extended
-	);
+	/**
+	 * @brief Update the current tracking hypothesis with the given data.
+	 *
+	 * Return a pointer to the updated tracking hypothesis.
+	 */
+	ObstaclePose::S track(carmen_mapper_virtual_scan_message *message);
 };
 
 } // namespace virtual_scan

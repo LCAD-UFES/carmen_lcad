@@ -1,7 +1,9 @@
 #ifndef VIRTUAL_SCAN_TRACKS_H
 #define VIRTUAL_SCAN_TRACKS_H
 
+#include "neighborhood_graph.h"
 #include "posterior.h"
+#include "readings.h"
 #include "track.h"
 
 #include <memory>
@@ -20,12 +22,17 @@ class Tracks
 	/**
 	 * @brief Create a new track.
 	 */
-	bool create(virtual_scan_neighborhood_graph_t *neighborhood_graph);
+	bool create(Graph &graph);
 
 	/**
 	 * @brief Erase an existing track.
 	 */
 	bool destroy();
+
+	/**
+	 * @brief Erase the track of given index.
+	 */
+	bool destroy(size_t n);
 
 	/**
 	 * @brief Randomly select a track and an extension method (forward or backward), then apply it to the selected track.
@@ -35,17 +42,17 @@ class Tracks
 	/**
 	 * @brief Randomly select an extension method (forward or backward), then apply it to the given track.
 	 */
-	bool extend(Track::P tau);
+	bool extend(Track &tau);
 
 	/**
 	 * @brief Extend the given track forward.
 	 */
-	bool extend_forward(Track::P tau);
+	bool extend_forward(Track &tau);
 
 	/**
 	 * @brief Extend the given track backward.
 	 */
-	bool extend_backward(Track::P tau);
+	bool extend_backward(Track &tau);
 
 	/**
 	 * @brief Reduce a randomly selected track.
@@ -80,26 +87,19 @@ public:
 	Posterior PwZ;
 
 	/**
-	 * @brief Default constructor.
+	 * @brief Return a sequence containing the last pose of each track in this collection.
 	 */
-	Tracks();
+	ObstaclePose::S back() const;
 
 	/**
-	 * @brief Copy constructor.
+	 * @brief Returns a random variation of this track collection, generated from the given neighborhood graph.
 	 */
-	Tracks(const Tracks &that);
+	Tracks::P propose(Graph &graph);
 
 	/**
-	 * @brief Return the `index`th Track object in this sequence.
+	 * @brief Update tracks and the posterior distribution to reflect changes in sensor information.
 	 */
-	//Track &operator[] (size_t index);
-
-	/**
-	 * @brief Return the `index`th Track object in this sequence.
-	 */
-	//const Track &operator[] (size_t index) const;
-
-	Tracks::P propose(virtual_scan_neighborhood_graph_t *neighborhood_graph);
+	void update(const Readings &readings);
 };
 
 } // namespace virtual_scan

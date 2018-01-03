@@ -9,8 +9,8 @@ StampedGPSOrientation::StampedGPSOrientation(unsigned msg_id) : StampedMessage(m
 StampedGPSOrientation::~StampedGPSOrientation() {}
 
 // parse the pose from string stream
-bool StampedGPSOrientation::FromCarmenLog(std::stringstream &ss) {
-
+bool StampedGPSOrientation::FromCarmenLog(std::stringstream &ss)
+{
     // discards the first value
     SkipValues(ss, 1);
 
@@ -24,5 +24,11 @@ bool StampedGPSOrientation::FromCarmenLog(std::stringstream &ss) {
     ss >> StampedMessage::timestamp;
 
     return true;
+}
 
+
+// get the message type
+StampedMessageType StampedGPSOrientation::GetType()
+{
+    return StampedGPSOrientationMessage;
 }
