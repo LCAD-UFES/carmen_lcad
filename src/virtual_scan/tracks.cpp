@@ -118,6 +118,8 @@ bool Tracks::extend_forward(Track &tau)
 
 	tau.push_back(random_choose(children));
 
+	PwZ.extend_forward(tau);
+
 	return true;
 }
 
@@ -130,6 +132,8 @@ bool Tracks::extend_backward(Track &tau)
 
 	tau.push_front(random_choose(parents));
 
+	PwZ.extend_backward(tau);
+
 	return true;
 }
 
@@ -139,14 +143,21 @@ bool Tracks::reduce()
 	if (tracks.size() == 0)
 		return false;
 
-	Track &tau = random_choose(tracks); // Selects the track index to be reduced
+	int i = random_int(0, tracks.size()); // Selects the track index to be reduced
+	Track &tau = tracks[i];
 	int r = random_int(1, tau.size() - 1); // Selects the cutting index
 
 	int mode = random_int(0, 2); // 0 denotes forward reduction and 1 backward reduction
 	if (mode == 0) // Forward reduction
+	{
+		PwZ.pop_back(i, r, tracks);
 		tau.pop_back(r);
+	}
 	else // Backward reduction
+	{
+		PwZ.pop_front(i, r, tracks);
 		tau.pop_front(r);
+	}
 
 	return true;
 }
@@ -163,9 +174,16 @@ bool Tracks::split()
 	if (found.size() == 0)
 		return false;
 
-	Track *tau = random_choose(found); // Selects the track index to be split
-	tracks.emplace_back(); // Create new track to receive section split from tau
-	tau->pop_back(random_int(1, tau->size() - 2), tracks.back()); // Split tau at a random index
+	// Selects the track index to be split.
+	Track &tau_1 = *random_choose(found);
+
+	// Create new track to receive section split from tau_1.
+	tracks.emplace_back(); 
+	Track &tau_2 = tracks.back();
+
+	tau_1.pop_back(random_int(1, tau_1.size() - 1), tau_2); // Split tau at a random index
+
+	PwZ.split(tau_1, tau_2);
 
 	return true;
 }
@@ -193,6 +211,8 @@ bool Tracks::merge()
 	Track &tau_1 = tracks[pair.first];
 	Track &tau_2 = tracks[pair.second];
 	tau_1.merge(tau_2);
+
+	PwZ.merge(tau_1, tau_2);
 
 	return destroy(pair.second);
 }
@@ -409,6 +429,8 @@ void Tracks::update(const Readings &readings)
 			destroy(i);
 		}
 	}
+
+	PwZ.update(readings);
 }
 
 

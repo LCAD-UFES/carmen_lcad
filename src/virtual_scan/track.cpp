@@ -16,13 +16,13 @@ Track::Track():
 
 void Track::pop_back(int r)
 {
-	erase(begin() + (r + 1), end());
+	erase(begin() + r, end());
 }
 
 
 void Track::pop_back(int r, Track &that)
 {
-	that.insert(that.end(), begin() + (r + 1), end());
+	that.insert(that.end(), begin() + r, end());
 	pop_back(r);
 }
 

@@ -21,9 +21,19 @@ struct Readings: std::map<double, Reading>
 	const Reading &front() const;
 
 	/**
+	 * @brief Erase all reading objects up to the given timestamp.
+	 */
+	void erase(double timestamp);
+
+	/**
 	 * @brief Add the given reading to this sequence, erasing the oldest reading if necessary.
 	 */
 	void update(carmen_mapper_virtual_scan_message *message);
+
+	/**
+	 * @brief Add the given reading to this sequence, erasing the oldest reading if necessary.
+	 */
+	void update(const Reading &reading);
 };
 
 } // namespace virtual_scan
