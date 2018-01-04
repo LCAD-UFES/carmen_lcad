@@ -789,31 +789,47 @@ carmen_rddf_play_load_annotation_file()
 		return;
 
 	FILE *f = fopen(carmen_annotation_filename, "r");
-
+	char flag_commentary = '#';
 	while(!feof(f))
 	{
 		carmen_annotation_t annotation;
 		annotation.annotation_description = (char *) calloc (1024, sizeof(char));
 
-		fscanf(f, "%s\t%d\t%d\t%lf\t%lf\t%lf\t%lf\n",
-			annotation.annotation_description,
-			&annotation.annotation_type,
-			&annotation.annotation_code,
-			&annotation.annotation_orientation,
-			&annotation.annotation_point.x,
-			&annotation.annotation_point.y,
-			&annotation.annotation_point.z
-		);
-		carmen_ackerman_traj_point_t annotation_point;
-		annotation_point.x = annotation.annotation_point.x;
-		annotation_point.y = annotation.annotation_point.y;
-		annotation_point.theta = annotation.annotation_orientation;
-		double distance_car_pose_car_front = distance_between_front_and_rear_axles + distance_between_front_car_and_front_wheels;
-		carmen_point_t new_annotation_point = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&annotation_point, -distance_car_pose_car_front);
+		fscanf(f, "%s", annotation.annotation_description);
+		if (strcmp(annotation.annotation_description, &flag_commentary) == 0)
+		{
+			fscanf(f, "%*[^\n]\n");
+		}
+		else
+		{
+			fscanf(f, "\t%d\t%d\t%lf\t%lf\t%lf\t%lf\n",
+					&annotation.annotation_type,
+					&annotation.annotation_code,
+					&annotation.annotation_orientation,
+					&annotation.annotation_point.x,
+					&annotation.annotation_point.y,
+					&annotation.annotation_point.z
+			);
 
-		annotation.annotation_point.x = new_annotation_point.x;
-		annotation.annotation_point.y = new_annotation_point.y;
-		annotation_read_from_file.push_back(annotation);
+//			printf("%s\t%d\t%d\t%lf\t%lf\t%lf\t%lf\n", annotation.annotation_description,
+//					annotation.annotation_type,
+//					annotation.annotation_code,
+//					annotation.annotation_orientation,
+//					annotation.annotation_point.x,
+//					annotation.annotation_point.y,
+//					annotation.annotation_point.z);
+
+			carmen_ackerman_traj_point_t annotation_point;
+			annotation_point.x = annotation.annotation_point.x;
+			annotation_point.y = annotation.annotation_point.y;
+			annotation_point.theta = annotation.annotation_orientation;
+			double distance_car_pose_car_front = distance_between_front_and_rear_axles + distance_between_front_car_and_front_wheels;
+			carmen_point_t new_annotation_point = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&annotation_point, -distance_car_pose_car_front);
+
+			annotation.annotation_point.x = new_annotation_point.x;
+			annotation.annotation_point.y = new_annotation_point.y;
+			annotation_read_from_file.push_back(annotation);
+		}
 	}
 
 	fclose(f);
