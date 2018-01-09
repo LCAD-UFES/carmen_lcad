@@ -16,6 +16,8 @@ using namespace std;
 #include <carmen/collision_detection.h>
 #include <carmen/moving_objects_messages.h>
 #include <carmen/moving_objects_interface.h>
+#include <carmen/road_mapper.h>
+#include <carmen/grid_mapping.h>
 
 #include "rddf_interface.h"
 #include "rddf_messages.h"
@@ -33,12 +35,20 @@ typedef std::vector<kmldom::PlacemarkPtr> placemark_vector_t;
 
 #include "rddf_util.h"
 
+static bool use_road_map = false;
+static bool robot_pose_queued = false;
+static carmen_localize_ackerman_globalpos_message *current_globalpos_msg = NULL;
+static carmen_simulator_ackerman_truepos_message *current_truepos_msg = NULL;
+static carmen_map_p current_road_map = NULL;
+
 static char *carmen_rddf_filename = NULL;
 
 static int carmen_rddf_perform_loop = 0;
 static int carmen_rddf_num_poses_ahead_max = 100;
+static double rddf_min_distance_between_waypoints = 0.5;
 static double distance_between_front_and_rear_axles;
 static double distance_between_front_car_and_front_wheels;
+static int road_mapper_kernel_size = 7;
 
 static int carmen_rddf_end_point_is_set = 0;
 static carmen_point_t carmen_rddf_end_point;
@@ -460,6 +470,304 @@ set_annotations(carmen_point_t robot_pose)
 		}
 	}
 }
+
+
+int
+pose_out_of_map_coordinates(carmen_point_t pose, carmen_map_p map)
+{
+	double x_min = map->config.x_origin;
+	double x_max = map->config.x_origin + map->config.x_size * map->config.resolution;
+	double y_min = map->config.y_origin;
+	double y_max = map->config.y_origin + map->config.y_size * map->config.resolution;
+	return (int) (pose.x < x_min || pose.x >= x_max || pose.y < y_min || pose.y >= y_max);
+}
+
+
+double
+get_lane_prob(carmen_point_t pose, carmen_map_p road_map)
+{
+	int x = round((pose.x - road_map->config.x_origin) / road_map->config.resolution);
+	int y = round((pose.y - road_map->config.y_origin) / road_map->config.resolution);
+	if (x < 0 || x >= road_map->config.x_size || y < 0 || y >= road_map->config.y_size)
+		return -1;
+
+	double cell = road_map->map[x][y];
+	road_prob *cell_prob = (road_prob *) &cell;
+	double prob = (double) (cell_prob->lane_center - cell_prob->off_road - cell_prob->broken_marking - cell_prob->solid_marking) / MAX_PROB;
+	return (prob > 0) ? prob : 0;
+}
+
+
+int
+get_nearest_lane(carmen_point_p lane_pose, carmen_point_t pose, carmen_map_p road_map)
+{
+	double dx = 1.0 + (pose.x - road_map->config.x_origin) / road_map->config.resolution;
+	double dy = 1.0 + (pose.y - road_map->config.y_origin) / road_map->config.resolution;
+	if (dx < road_map->config.x_size / 2.0)
+		dx = road_map->config.x_size - dx;
+	if (dy < road_map->config.y_size / 2.0)
+		dy = road_map->config.y_size - dy;
+	double max_radius = sqrt(dx * dx + dy * dy);
+	double max_angle = 2.0 * M_PI;
+	for (double radius = 1.0; radius <= max_radius; radius += 1.0)
+	{
+		double delta_angle = 1.0 / radius;
+		for (double angle = 0.0; angle < max_angle; angle += delta_angle)
+		{
+			lane_pose->x = pose.x + radius * cos(angle) * road_map->config.resolution;
+			lane_pose->y = pose.y + radius * sin(angle) * road_map->config.resolution;
+			if (get_lane_prob(*lane_pose, road_map) >= 0.25) // pose is probably located in a road lane
+				return 0;
+		}
+	}
+	return -1;
+}
+
+
+int
+find_pose_in_vector(vector<carmen_point_t> poses, carmen_point_t pose, double resolution)
+{
+	int pose_x = round(pose.x / resolution);
+	int pose_y = round(pose.y / resolution);
+	for (size_t i = 0; i < poses.size(); i++)
+	{
+		int x = round(poses[i].x / resolution);
+		int y = round(poses[i].y / resolution);
+		if (x == pose_x && y == pose_y)
+			return i;
+	}
+	return -1;
+}
+
+
+int
+distance_within_limits(carmen_point_p pose1, carmen_point_p pose2, double dist_min, double dist_max)
+{
+	if (dist_min == 0 && dist_max == 0)	// dist_max == 0 corresponds to MAX_VALUE
+		return 1;
+	if (pose1 == NULL || pose2 == NULL)
+		return 0;
+	double distance = DIST2D(*pose1, *pose2);
+	return (int) ((distance >= dist_min) && (distance <= dist_max || dist_max == 0));
+}
+
+
+double
+get_center_of_mass(carmen_point_p central_pose, carmen_map_p road_map, int kernel_size, double weight(carmen_point_t, carmen_map_p),
+		carmen_point_p skip_pose = NULL, double dist_min = 0, double dist_max = 0)
+{
+	carmen_point_t pose;
+	double sum_wx = 0, sum_wy = 0, sum_w = 0;
+	int count = 0;
+
+	pose.x = central_pose->x - floor(kernel_size / 2) * road_map->config.resolution;
+	for (int x = 0; x < kernel_size; x++, pose.x += road_map->config.resolution)
+	{
+		pose.y = central_pose->y - floor(kernel_size / 2) * road_map->config.resolution;
+		for (int y = 0; y < kernel_size; y++, pose.y += road_map->config.resolution)
+		{
+			if (distance_within_limits(&pose, skip_pose, dist_min, dist_max))
+			{
+				double pose_weight = weight(pose, road_map);
+				if (pose_weight >= 0)
+				{
+					sum_wx += pose_weight * pose.x;
+					sum_wy += pose_weight * pose.y;
+					sum_w  += pose_weight;
+					count++;
+				}
+			}
+		}
+	}
+	if (sum_w == 0)
+		return 0;
+
+	central_pose->x = sum_wx / sum_w;
+	central_pose->y = sum_wy / sum_w;
+	return (sum_w / count);
+}
+
+
+carmen_point_t
+get_pose_with_max_lane_prob(vector<carmen_point_t> poses, carmen_map_p road_map)
+{
+	carmen_point_t pose;
+	double max_prob = -1.0;
+
+	for (size_t i = 0; i < poses.size(); i++)
+	{
+		double lane_prob = get_lane_prob(poses[i], road_map);
+		if (lane_prob > max_prob)
+		{
+			pose = poses[i];
+			max_prob = lane_prob;
+		}
+	}
+	return pose;
+}
+
+
+double
+get_orthogonal_angle(double x1, double y1, double x2, double y2)
+{
+	return atan2(x1 - x2, y2 - y1);
+}
+
+
+int
+carmen_rddf_play_find_nearest_pose_by_road_map(carmen_point_p rddf_pose, carmen_point_t initial_pose, carmen_map_p road_map)
+{
+	carmen_point_t lane_pose = initial_pose;
+
+	if (get_lane_prob(initial_pose, road_map) < 0.25) // initial pose is probably off the road
+	{
+		int result = get_nearest_lane(&lane_pose, initial_pose, road_map);
+		if (result != 0) // no lane found in the road map
+			return result;
+	}
+
+	carmen_point_t pose = lane_pose;
+	vector<carmen_point_t> gradient_line;
+
+	while (find_pose_in_vector(gradient_line, pose, road_map->config.resolution) < 0) // while pose not yet pushed into vector
+	{
+		gradient_line.push_back(pose);
+		get_center_of_mass(&pose, road_map, road_mapper_kernel_size, get_lane_prob);
+	}
+
+	(*rddf_pose) = get_pose_with_max_lane_prob(gradient_line, road_map);
+	rddf_pose->theta = get_orthogonal_angle(lane_pose.x, lane_pose.y, rddf_pose->x, rddf_pose->y);
+	if (fabs(carmen_normalize_theta(rddf_pose->theta - initial_pose.theta)) > (M_PI / 2.0))
+		rddf_pose->theta = carmen_normalize_theta(rddf_pose->theta - M_PI); // rddf should have similar orientation as initial pose's
+
+	return 0;
+}
+
+
+double
+mean_angle(double angle1, double angle2)
+{
+	return atan2((sin(angle1) + sin(angle2)) / 2, (cos(angle1) + cos(angle2)) / 2);
+}
+
+
+carmen_point_t
+add_distance_to_pose(carmen_point_t pose, double distance)
+{
+	pose.x += distance * cos(pose.theta);
+	pose.y += distance * sin(pose.theta);
+	return pose;
+}
+
+
+int
+fill_in_poses_ahead_by_road_map(carmen_point_t initial_pose, carmen_map_p road_map,
+		carmen_ackerman_traj_point_t *poses_ahead, int num_poses_desired)
+{
+	int num_poses = 0;
+	carmen_point_t next_pose = initial_pose, rddf_pose;
+	double velocity = 10.0, phi = 0.0;
+
+	while ((num_poses < num_poses_desired) && (pose_out_of_map_coordinates(next_pose, road_map) == 0) &&
+			(carmen_rddf_play_find_nearest_pose_by_road_map(&rddf_pose, next_pose, road_map) == 0))
+	{
+		if (num_poses > 0)
+			rddf_pose.theta = atan2(rddf_pose.y - poses_ahead[num_poses - 1].y, rddf_pose.x - poses_ahead[num_poses - 1].x);
+		poses_ahead[num_poses] = create_ackerman_traj_point_struct(rddf_pose.x, rddf_pose.y, velocity, phi, rddf_pose.theta);
+		num_poses++;
+		next_pose = add_distance_to_pose(rddf_pose, rddf_min_distance_between_waypoints);
+	}
+	if (num_poses > 0)
+		poses_ahead[0].theta = poses_ahead[1].theta;
+	return num_poses;
+}
+
+
+int
+fill_in_poses_back_by_road_map(carmen_point_t initial_pose, carmen_map_p road_map,
+		carmen_ackerman_traj_point_t *poses_back, int num_poses_desired)
+{
+	int num_poses = 0;
+	carmen_point_t next_pose = initial_pose, rddf_pose;
+	double velocity = 10.0, phi = 0.0;
+
+	while ((num_poses < num_poses_desired) && (pose_out_of_map_coordinates(next_pose, road_map) == 0) &&
+			(carmen_rddf_play_find_nearest_pose_by_road_map(&rddf_pose, next_pose, road_map) == 0))
+	{
+		if (num_poses > 0)
+			rddf_pose.theta = atan2(poses_back[num_poses - 1].y - rddf_pose.y, poses_back[num_poses - 1].x - rddf_pose.x);
+		poses_back[num_poses] = create_ackerman_traj_point_struct(rddf_pose.x, rddf_pose.y, velocity, phi, rddf_pose.theta);
+		num_poses++;
+		next_pose = add_distance_to_pose(rddf_pose, -rddf_min_distance_between_waypoints);
+	}
+	if (num_poses > 0)
+		poses_back[0].theta = poses_back[1].theta;
+	return num_poses;
+}
+
+
+void
+calculate_phi_ahead(carmen_ackerman_traj_point_t *path, int num_poses)
+{
+	double L = distance_between_front_and_rear_axles;
+
+	for (int i = 0; i < (num_poses - 1); i++)
+	{
+		double delta_theta = carmen_normalize_theta(path[i + 1].theta - path[i].theta);
+		double l = DIST2D(path[i], path[i + 1]);
+		if (l < 0.01)
+		{
+			path[i].phi = 0.0;
+			continue;
+		}
+		path[i].phi = L * atan(delta_theta / l);
+	}
+
+	for (int i = 1; i < (num_poses - 1); i++)
+	{
+		path[i].phi = (path[i].phi + path[i - 1].phi + path[i + 1].phi) / 3.0;
+	}
+}
+
+
+void
+calculate_phi_back(carmen_ackerman_traj_point_t *path, int num_poses)
+{
+	double L = distance_between_front_and_rear_axles;
+
+	for (int i = (num_poses - 1); i > 0; i--)
+	{
+		double delta_theta = carmen_normalize_theta(path[i - 1].theta - path[i].theta);
+		double l = DIST2D(path[i], path[i - 1]);
+		if (l < 0.01)
+		{
+			path[i].phi = 0.0;
+			continue;
+		}
+		path[i].phi = L * atan(delta_theta / l);
+	}
+
+	for (int i = (num_poses - 2); i > 0; i--)
+	{
+		path[i].phi = (path[i].phi + path[i - 1].phi + path[i + 1].phi) / 3.0;
+	}
+}
+
+
+int
+carmen_rddf_play_find_nearest_poses_by_road_map(carmen_point_t initial_pose, carmen_map_p road_map,
+		carmen_ackerman_traj_point_t *poses_ahead, carmen_ackerman_traj_point_t *poses_back, int *num_poses_back, int num_poses_ahead_max)
+{
+	int num_poses_ahead = fill_in_poses_ahead_by_road_map(initial_pose, road_map, poses_ahead, num_poses_ahead_max);
+	(*num_poses_back) = fill_in_poses_back_by_road_map(initial_pose, road_map, poses_back, num_poses_ahead_max / 3);
+	poses_ahead[0].theta = poses_back[0].theta = mean_angle(poses_ahead[0].theta, poses_back[0].theta);
+	calculate_phi_ahead(poses_ahead, num_poses_ahead);
+	calculate_phi_back(poses_back, *num_poses_back);
+	poses_back[0].phi = poses_ahead[0].phi;
+	return num_poses_ahead;
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -576,17 +884,35 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	carmen_point_t robot_pose = msg->globalpos;
 	carmen_rddf_pose_initialized = 1;
 
-	carmen_rddf_num_poses_ahead = carmen_rddf_play_find_nearest_poses_ahead(
-			robot_pose.x,
-			robot_pose.y,
-			robot_pose.theta,
-			msg->timestamp,
-			carmen_rddf_poses_ahead,
-			carmen_rddf_poses_back,
-			&carmen_rddf_num_poses_back,
-			carmen_rddf_num_poses_ahead_max,
-			annotations
-	);
+	if (use_road_map)
+	{
+		current_globalpos_msg = msg;
+		robot_pose_queued = pose_out_of_map_coordinates(robot_pose, current_road_map);
+		if (robot_pose_queued)
+			return;
+		carmen_rddf_num_poses_ahead = carmen_rddf_play_find_nearest_poses_by_road_map(
+				robot_pose,
+				current_road_map,
+				carmen_rddf_poses_ahead,
+				carmen_rddf_poses_back,
+				&carmen_rddf_num_poses_back,
+				carmen_rddf_num_poses_ahead_max
+		);
+	}
+	else
+	{
+		carmen_rddf_num_poses_ahead = carmen_rddf_play_find_nearest_poses_ahead(
+				robot_pose.x,
+				robot_pose.y,
+				robot_pose.theta,
+				msg->timestamp,
+				carmen_rddf_poses_ahead,
+				carmen_rddf_poses_back,
+				&carmen_rddf_num_poses_back,
+				carmen_rddf_num_poses_ahead_max,
+				annotations
+		);
+	}
 
 	annotations_to_publish.clear();
 	carmen_check_for_annotations(robot_pose, carmen_rddf_poses_ahead, carmen_rddf_poses_back,
@@ -602,23 +928,68 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	carmen_point_t robot_pose = msg->truepose;
 	carmen_rddf_pose_initialized = 1;
 
-	carmen_rddf_num_poses_ahead = carmen_rddf_play_find_nearest_poses_ahead(
-			robot_pose.x,
-			robot_pose.y,
-			robot_pose.theta,
-			msg->timestamp,
-			carmen_rddf_poses_ahead,
-			carmen_rddf_poses_back,
-			&carmen_rddf_num_poses_back,
-			carmen_rddf_num_poses_ahead_max,
-			annotations
-	);
+	if (use_road_map)
+	{
+		current_truepos_msg = msg;
+		robot_pose_queued = pose_out_of_map_coordinates(robot_pose, current_road_map);
+		if (robot_pose_queued)
+			return;
+		carmen_rddf_num_poses_ahead = carmen_rddf_play_find_nearest_poses_by_road_map(
+				robot_pose,
+				current_road_map,
+				carmen_rddf_poses_ahead,
+				carmen_rddf_poses_back,
+				&carmen_rddf_num_poses_back,
+				carmen_rddf_num_poses_ahead_max
+		);
+	}
+	else
+	{
+		carmen_rddf_num_poses_ahead = carmen_rddf_play_find_nearest_poses_ahead(
+				robot_pose.x,
+				robot_pose.y,
+				robot_pose.theta,
+				msg->timestamp,
+				carmen_rddf_poses_ahead,
+				carmen_rddf_poses_back,
+				&carmen_rddf_num_poses_back,
+				carmen_rddf_num_poses_ahead_max,
+				annotations
+		);
+	}
 
 	annotations_to_publish.clear();
 	carmen_check_for_annotations(robot_pose, carmen_rddf_poses_ahead, carmen_rddf_poses_back,
 			carmen_rddf_num_poses_ahead, carmen_rddf_num_poses_back, msg->timestamp);
 
 	carmen_rddf_play_publish_rddf_and_annotations(robot_pose);
+}
+
+
+static void
+road_map_handler(carmen_map_server_road_map_message *msg)
+{
+	static bool first_time = true;
+
+	if (first_time)
+	{
+		carmen_grid_mapping_initialize_map(current_road_map, msg->config.x_size, msg->config.resolution, 'r');
+		first_time = false;
+	}
+
+	if (msg->config.x_origin != current_road_map->config.x_origin || msg->config.y_origin != current_road_map->config.y_origin) // new map
+	{
+		memcpy(current_road_map->complete_map, msg->complete_map, sizeof(double) * msg->size);
+		memcpy(&current_road_map->config, &msg->config, sizeof(carmen_map_config_t));
+
+		if (robot_pose_queued)
+		{
+			if (use_truepos)
+				simulator_ackerman_truepos_message_handler(current_truepos_msg);
+			else
+				localize_globalpos_handler(current_globalpos_msg);
+		}
+	}
 }
 
 
@@ -720,6 +1091,9 @@ carmen_rddf_play_subscribe_messages()
 	else
 		carmen_simulator_ackerman_subscribe_truepos_message(NULL, (carmen_handler_t) simulator_ackerman_truepos_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
+	if (use_road_map)
+		carmen_map_server_subscribe_road_map(NULL, (carmen_handler_t) road_map_handler, CARMEN_SUBSCRIBE_LATEST);
+
 //	carmen_rddf_subscribe_nearest_waypoint_message(NULL,
 //			(carmen_handler_t) carmen_rddf_play_nearest_waypoint_message_handler,
 //			CARMEN_SUBSCRIBE_LATEST);
@@ -733,6 +1107,7 @@ carmen_rddf_play_subscribe_messages()
     carmen_rddf_subscribe_dynamic_annotation_message(NULL, (carmen_handler_t) carmen_rddf_dynamic_annotation_message_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_moving_objects_point_clouds_subscribe_message(NULL, (carmen_handler_t) carmen_moving_objects_point_clouds_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
 }
 
 
@@ -844,8 +1219,10 @@ carmen_rddf_play_get_parameters(int argc, char** argv)
 		{(char *) "robot", (char *) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &distance_between_front_and_rear_axles, 1, NULL},
 		{(char *) "robot", (char *) "distance_between_front_car_and_front_wheels", CARMEN_PARAM_DOUBLE, &distance_between_front_car_and_front_wheels, 1, NULL},
 		{(char *) "rddf", (char *) "num_poses_ahead", CARMEN_PARAM_INT, &carmen_rddf_num_poses_ahead_max, 0, NULL},
+		{(char *) "rddf", (char *) "min_distance_between_waypoints", CARMEN_PARAM_DOUBLE, &rddf_min_distance_between_waypoints, 0, NULL},
 		{(char *) "rddf", (char *) "loop", CARMEN_PARAM_ONOFF, &carmen_rddf_perform_loop, 0, NULL},
-		{(char *) "behavior_selector", (char *) "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL}
+		{(char *) "behavior_selector", (char *) "use_truepos", CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL},
+		{(char *) "road_mapper", (char *) "kernel_size", CARMEN_PARAM_INT, &road_mapper_kernel_size, 0, NULL},
 	};
 
 	int num_items = sizeof(param_list) / sizeof(param_list[0]);
@@ -874,27 +1251,36 @@ int
 main(int argc, char **argv)
 {
 	setlocale(LC_ALL, "C");
+	char *usage[] = {(char *) "<rddf_filename> [<annotation_filename> [<traffic_lights_camera>]]",
+			         (char *) "-use_road_map   [<annotation_filename> [<traffic_lights_camera>]]"};
 
-	if (argc < 2)
-		exit(printf("Error: Use %s <rddf> <annotations> <traffic_lights_camera>\n", argv[0]));
-
-	carmen_rddf_filename = argv[1];
-
-	if (argc == 2)
+	if (argc >= 2 && strcmp(argv[1], "-h") == 0)
 	{
-		carmen_annotation_filename = NULL;
-		traffic_lights_camera = 3;
+		printf("\nUsage 1: %s %s\nUsage 2: %s %s\n\nCarmen parameters:\n", argv[0], usage[0], argv[0], usage[1]);
+		carmen_rddf_play_get_parameters(argc, argv); // display help and exit
 	}
-	else if (argc == 3)
+	if (argc < 2 || argc > 4)
+		exit(printf("Error: Usage 1: %s %s\n       Usage 2: %s %s\n", argv[0], usage[0], argv[0], usage[1]));
+
+	if (strcmp(argv[1], "-use_road_map") == 0)
 	{
-		carmen_annotation_filename = argv[2];
-		traffic_lights_camera = 3;
+		use_road_map = true;
+		printf("Road map option set.\n");
 	}
-	else if (argc == 4)
+	else
 	{
+		carmen_rddf_filename = argv[1];
+		printf("RDDF filename: %s.\n", carmen_rddf_filename);
+	}
+
+	if (argc >= 3)
 		carmen_annotation_filename = argv[2];
+	if (carmen_annotation_filename)
+		printf("Annotation filename: %s.\n", carmen_annotation_filename);
+
+	if (argc >= 4)
 		traffic_lights_camera = atoi(argv[3]);
-	}
+	printf("Traffic lights camera: %d.\n", traffic_lights_camera);
 
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
@@ -902,11 +1288,10 @@ main(int argc, char **argv)
 	carmen_rddf_play_initialize();
 	carmen_rddf_define_messages();
 	carmen_rddf_play_subscribe_messages();
-	carmen_rddf_play_load_index(carmen_rddf_filename);
+	if (!use_road_map)
+		carmen_rddf_play_load_index(carmen_rddf_filename);
 	carmen_rddf_play_load_annotation_file();
-
 	signal (SIGINT, carmen_rddf_play_shutdown_module);
 	carmen_ipc_dispatch();
-
 	return (0);
 }
