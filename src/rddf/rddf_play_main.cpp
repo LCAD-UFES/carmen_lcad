@@ -887,7 +887,7 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	if (use_road_map)
 	{
 		current_globalpos_msg = msg;
-		robot_pose_queued = pose_out_of_map_coordinates(robot_pose, current_road_map);
+		robot_pose_queued = (current_road_map == NULL || pose_out_of_map_coordinates(robot_pose, current_road_map));
 		if (robot_pose_queued)
 			return;
 		carmen_rddf_num_poses_ahead = carmen_rddf_play_find_nearest_poses_by_road_map(
@@ -931,7 +931,7 @@ simulator_ackerman_truepos_message_handler(carmen_simulator_ackerman_truepos_mes
 	if (use_road_map)
 	{
 		current_truepos_msg = msg;
-		robot_pose_queued = pose_out_of_map_coordinates(robot_pose, current_road_map);
+		robot_pose_queued = (current_road_map == NULL || pose_out_of_map_coordinates(robot_pose, current_road_map));
 		if (robot_pose_queued)
 			return;
 		carmen_rddf_num_poses_ahead = carmen_rddf_play_find_nearest_poses_by_road_map(
