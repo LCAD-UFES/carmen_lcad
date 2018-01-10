@@ -51,6 +51,9 @@ class Posterior
 	/** @brief Sums of ray distances, indexed by generating obstacle. */
 	std::map<const Node*, double> distances;
 
+	/** @brief Sums of readings inside obstacles, indexed by enclosing obstacle. */
+	std::map<const Node*, double> collisions;
+
 	/** @brief Dynamic sensor readings, indexed by generating obstacle. */
 	std::map<const Node*, Reading> Zd;
 

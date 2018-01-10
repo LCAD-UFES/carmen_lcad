@@ -32,6 +32,12 @@ ObstaclePose::~ObstaclePose()
 }
 
 
+PointXY ObstaclePose::project_local(const Pose &origin, const PointXY &point) const
+{
+	return global.project_local(origin.project_global(point));
+}
+
+
 ObstacleView::ObstacleView():
 	range(std::make_pair(0.0, 0.0))
 {
@@ -39,11 +45,11 @@ ObstacleView::ObstacleView():
 }
 
 
-ObstacleView::ObstacleView(const ObstaclePose &pose):
+ObstacleView::ObstacleView(const Pose &origin, const ObstaclePose &pose):
 	Rectangle(
 		pose.node->model->width,
 		pose.node->model->length,
-		pose.local
+		origin
 	)
 {
 	std::vector<double> angles;
@@ -85,6 +91,13 @@ ObstacleView::ObstacleView(const ObstaclePose &pose):
 	}
 	else
 		range = std::make_pair(a, b);
+}
+
+
+ObstacleView::ObstacleView(const ObstaclePose &pose):
+	ObstacleView(pose.local, pose)
+{
+	// Nothing to do.
 }
 
 

@@ -90,16 +90,22 @@ void Posterior::update_S_len(int i, const Track::S &tracks)
 
 void Posterior::update_S_mot(const Track &track)
 {
+	update_S_mot(0, track.size(), track);
 }
 
 
 void Posterior::update_S_mot(int i, const Track::S &tracks)
 {
+	update_S_mot(tracks[i]);
 }
 
 
 void Posterior::update_S_mot(int a, int n, const Track &track)
 {
+	for (int i = a; i < n; i++)
+	{
+		const ObstaclePose &pose = track[i];
+	}
 }
 
 
@@ -178,7 +184,7 @@ void Posterior::update_S_ms1(int i, int j, const Track::S &tracks)
 }
 
 
-void Posterior::update_S_ms3(int j, const Track &tracks)
+void Posterior::update_S_ms3(int j, const Track &track)
 {
 }
 
@@ -190,6 +196,35 @@ void Posterior::update_S_ms3(int i, int j, const Track::S &tracks)
 
 void Posterior::update_S_ms3(const Track::S &tracks, const Reading &Z)
 {
+	const Pose &origin = Z.origin;
+	for (int i = 0, m = tracks.size(); i < m; i++)
+	{
+		const Track &track = tracks[i];
+		for (int j = 0, n = track.size(); j < n; j++)
+		{
+			const ObstaclePose &pose = track[j];
+			const Node *node = pose.node;
+			double w_2 = 0.5 * node->model->length; // The model rectangle is
+			double h_2 = 0.5 * node->model->width;  // "lying" on its side.
+
+			ObstacleView view(origin, pose);
+
+			// TODO: Think what happens when obstacle is between quadrants 2 and 3.
+			int count = 0;
+			for (auto point = Z.lower_bound(view.range.first), done = Z.upper_bound(view.range.second); point != done; ++point)
+			{
+				PointXY local = pose.project_local(origin, *point);
+				if (std::abs(local.x) < w_2 && std::abs(local.y) < h_2)
+					count++;
+			}
+
+			if (collisions.count(node) > 0)
+				S_ms3 -= collisions[node];
+
+			collisions[node] = count;
+			S_ms3 += count;
+		}
+	}
 }
 
 

@@ -41,6 +41,11 @@ struct ObstaclePose
 	 * @brief Class destructor.
 	 */
 	~ObstaclePose();
+
+	/**
+	 * @brief Project a point (given relative to `origin`) to this pose's coordinate system.
+	 */
+	PointXY project_local(const Pose &origin, const PointXY &point) const;
 };
 
 /**
@@ -57,9 +62,14 @@ struct ObstacleView: private Rectangle
 	ObstacleView();
 
 	/**
-	 * @brief Create a new view for the given obstacle from the given point of view.
+	 * @brief Create a new view for the given obstacle from the view of its originating sensor reading.
 	 */
 	ObstacleView(const ObstaclePose &pose);
+
+	/**
+	 * @brief Create a new view for the given obstacle from given coordinate system. 
+	 */
+	ObstacleView(const Pose &origin, const ObstaclePose &pose);
 
 	/**
 	 * @brief Defines a ordering of views by the beginning of the angle range.
