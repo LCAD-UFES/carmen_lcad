@@ -482,10 +482,10 @@ plot_state(carmen_ackerman_traj_point_t *path, int num_points, carmen_ackerman_t
 	if (first_time)
 	{
 		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
-		fprintf(gnuplot_pipeMP, "set xrange [0:70]\n");
-		fprintf(gnuplot_pipeMP, "set yrange [-10:10]\n");
-		fprintf(gnuplot_pipeMP, "set xlabel 'senconds'\n");
-		fprintf(gnuplot_pipeMP, "set ylabel 'effort'\n");
+//		fprintf(gnuplot_pipeMP, "set xrange [0:70]\n");
+//		fprintf(gnuplot_pipeMP, "set yrange [-10:10]\n");
+		fprintf(gnuplot_pipeMP, "set xlabel 'x'\n");
+		fprintf(gnuplot_pipeMP, "set ylabel 'y'\n");
 		fprintf(gnuplot_pipeMP, "set tics out\n");
 		first_time = false;
 	}
@@ -496,14 +496,19 @@ plot_state(carmen_ackerman_traj_point_t *path, int num_points, carmen_ackerman_t
 	for (int i = 0; i < num_points; i++)
 	{
 		fprintf(gnuplot_data_lane, "%lf %lf %lf %lf %lf %lf\n", path[i].x, path[i].y,
-				cos(path[i].theta), sin(path[i].theta), path[i].theta, path[i].phi);
-		fprintf(gnuplot_data_lane, "%lf %lf %lf %lf %lf %lf\n", path[i].x, path[i].y,
-				cos(path[i].theta), sin(path[i].theta), path[i].theta, path[i].phi);
+				0.2 * cos(path[i].theta), 0.2 * sin(path[i].theta), path[i].theta, path[i].phi);
+	}
+	for (int i = 0; i < num_points2; i++)
+	{
+		fprintf(gnuplot_data_lane2, "%lf %lf %lf %lf %lf %lf\n", path2[i].x, path2[i].y,
+				0.2 * cos(path2[i].theta), 0.2 * sin(path2[i].theta), path2[i].theta, path2[i].phi);
 	}
 	fclose(gnuplot_data_lane);
+	fclose(gnuplot_data_lane2);
 
 	fprintf(gnuplot_pipeMP, "plot "
-			"'./gnuplot_data_lane.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane' axes x1y1\n");
+			"'./gnuplot_data_lane.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Ahead'"
+			", './gnuplot_data_lane2.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Back' axes x1y1\n");
 
 	fflush(gnuplot_pipeMP);
 }
@@ -830,7 +835,7 @@ fill_in_poses_back_by_road_map(carmen_point_t initial_pose, carmen_map_p road_ma
 	}
 
 	for (int i = 1; i < num_poses - 1; i++)
-		poses_back[i].theta = atan2(poses_back[i].y - poses_back[i + 1].y, poses_back[i].x - poses_back[i + 1].x);
+		poses_back[i].theta = carmen_normalize_theta(atan2(poses_back[i].y - poses_back[i - 1].y, poses_back[i].x - poses_back[i - 1].x) + M_PI);
 
 	calculate_phi_back(poses_back, num_poses);
 
