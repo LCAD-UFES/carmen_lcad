@@ -973,6 +973,7 @@ road_map_handler(carmen_map_server_road_map_message *msg)
 
 	if (first_time)
 	{
+		current_road_map = (carmen_map_p) calloc (1, sizeof(carmen_map_t));
 		carmen_grid_mapping_initialize_map(current_road_map, msg->config.x_size, msg->config.resolution, 'r');
 		first_time = false;
 	}
