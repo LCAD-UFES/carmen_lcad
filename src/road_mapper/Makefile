@@ -41,6 +41,7 @@ SOURCES = \
 	road_mapper_utils.cpp \
 	road_mapper_save_remission_map_images.cpp \
 	road_mapper_image_splitter.cpp \
+	road_mapper_display_map.cpp \
 	road_mapper_display_map2.cpp \
 	road_mapper_display_map3.cpp \
 	road_mapper_sampling.cpp \
@@ -60,7 +61,9 @@ PUBLIC_BINARIES = \
 	road_mapper \
 	road_mapper_save_remission_map_images \
 	road_mapper_sampling \
-	road_mapper_road_inference_main
+	road_mapper_road_inference_main \
+	road_mapper_image_splitter \
+	road_mapper_display_map
 
 TARGETS = \
 	libroad_mapper_interface.a \
@@ -70,6 +73,7 @@ TARGETS = \
 	road_mapper_sampling \
 	road_mapper_road_inference_main \
 	road_mapper_image_splitter \
+	road_mapper_display_map \
 	road_mapper_display_map2 \
 	road_mapper_display_map3 \
 	road_mapper_log_tracker
@@ -93,6 +97,7 @@ road_mapper_save_remission_map_images: road_mapper_save_remission_map_images.o r
 road_mapper_sampling: road_mapper_sampling.o road_mapper.o road_mapper_utils.o
 road_mapper_road_inference_main: road_mapper_road_inference_main.o road_mapper.o road_mapper_utils.o
 road_mapper_image_splitter: road_mapper_image_splitter.o
+road_mapper_display_map: road_mapper_display_map.o road_mapper.o road_mapper_utils.o
 road_mapper_display_map2: road_mapper_display_map2.o
 road_mapper_display_map3: road_mapper_display_map3.o road_mapper.o road_mapper_utils.o
 road_mapper_log_tracker: road_mapper_log_tracker.o

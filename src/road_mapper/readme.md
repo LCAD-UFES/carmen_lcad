@@ -149,13 +149,13 @@ To learn more about the utility parameters please run the program with -h option
 
 ## Visualizing a Road Map
 
-To visualize a road map please run the [Display Map utility](road_mapper_display_map3.cpp):
+To visualize a road map please run the [Display Map utility](road_mapper_display_map.cpp):
 ```bash
- $ ./road_mapper_display_map3 maps/r*.map
+ $ ./road_mapper_display_map -r $CARMEN_HOME/data/map_ida_guarapari-20170403-2 maps/r*.map
 ```
 To learn more about the utility parameters please please run the program with -h option:
 ```bash
- $ ./road_mapper_display_map3 -h
+ $ ./road_mapper_display_map -h
 ```
 
 ### Examples
