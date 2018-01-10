@@ -17,6 +17,8 @@
 #include <string>
 #include <tf.h>
 #include "localize_neural_torch.h"
+#include "localize_neural_wnn.h"
+#include "localize_neural_util.h"
 
 using namespace std;
 
@@ -24,6 +26,8 @@ static int camera = 0;
 static int cheating = 0;
 static char* cnn_model;
 static char* cnn_data;
+static char* wnn_model;
+static char* wnn_data;
 
 tf::Transformer transformer;
 
@@ -38,6 +42,8 @@ vector<pair<string, double> > camera_frames_base_array;
 vector<pair<carmen_pose_3D_t, double> > camera_poses_curr_array;
 vector<pair<string, double> > camera_frames_curr_array;
 vector<carmen_point_t> camera_delta_error_array;
+vector<pair<carmen_pose_3D_t, int> > camera_poses_base_array2;
+vector<pair<string, int> > camera_frames_base_array2;
 
 carmen_simulator_ackerman_truepos_message truepos_message;
 carmen_localize_ackerman_globalpos_message globalpos_message;
@@ -175,14 +181,47 @@ get_transforms_from_camera_to_car(double camera_x, double camera_y, double camer
 
 
 void
-load_delta_poses(char *filename,
-		vector<pair<string, string> > &delta_frames, vector<pair<carmen_pose_3D_t, double> > &delta_poses,
-		vector<pair<carmen_pose_3D_t, double> > &base_poses, vector<pair<carmen_pose_3D_t, double> > &live_poses)
+load_base_poses(const char *filename)
 {
-	char imagename_depth[256];
-	char imagename_base[256];
-	char imagename_live[256];
+	int imagelabel;
+	char imagename[256];
+	carmen_pose_3D_t base_pose = {{0.0,0.0,0.0},{0.0,0.0,0.0}};
 	double timestamp;
+
+	FILE *log_file = fopen(filename, "r");
+	if (!log_file)
+	{
+		printf("File not found!\n %s\n", filename);
+		exit(0);
+	}
+
+	fscanf(log_file, "%*[^\n]\n"); //skip header
+	while(!feof(log_file))
+	{
+		//image label x y z rx ry rz timestamp
+		fscanf(log_file, "%s %d %lf %lf %lf %lf %lf %lf %lf\n",
+				imagename,
+				&imagelabel,
+				&base_pose.position.x, &base_pose.position.y, &base_pose.position.z,
+				&base_pose.orientation.roll, &base_pose.orientation.pitch, &base_pose.orientation.yaw,
+				&timestamp
+		);
+		if (file_exists(imagename))
+		{
+			camera_frames_base_array2.push_back(pair<string, int>(imagename, imagelabel));
+			camera_poses_base_array2.push_back(pair<carmen_pose_3D_t, int>(base_pose, imagelabel));
+		}
+	}
+	fclose(log_file);
+}
+
+
+void
+load_delta_poses(const char *filename)
+{
+	char imagename_base_depth[256], imagename_base_left[256], imagename_base_right[256];
+	char imagename_live_depth[256], imagename_live_left[256], imagename_live_right[256];
+	double timestamp, dummy;
 	carmen_pose_3D_t delta_pose = {{0.0,0.0,0.0},{0.0,0.0,0.0}};
 	carmen_pose_3D_t base_pose = {{0.0,0.0,0.0},{0.0,0.0,0.0}};
 	carmen_pose_3D_t live_pose = {{0.0,0.0,0.0},{0.0,0.0,0.0}};
@@ -192,7 +231,7 @@ load_delta_poses(char *filename,
 	while(!feof(log_file))
 	{
 		//dx dy dz dr dp dy base_depth base_image live_image timestamp
-		fscanf(log_file, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %s %s %s %lf\n",
+		fscanf(log_file, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %s %s %s %s %s %s %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
 				&delta_pose.position.x,
 				&delta_pose.position.y,
 				&delta_pose.position.z,
@@ -211,16 +250,19 @@ load_delta_poses(char *filename,
 				&live_pose.orientation.roll,
 				&live_pose.orientation.pitch,
 				&live_pose.orientation.yaw,
-				imagename_depth,
-				imagename_base,
-				imagename_live,
+				imagename_base_depth, imagename_base_left, imagename_base_right,
+				imagename_live_depth, imagename_live_left, imagename_live_right,
+				&dummy, &dummy, &dummy, &dummy, &dummy,
+				&dummy, &dummy, &dummy, &dummy, &dummy,
 				&timestamp
 		);
-
-		delta_frames.push_back(pair<string, string>(string(imagename_base), string(imagename_live)));
-		delta_poses.push_back(pair<carmen_pose_3D_t, double>(delta_pose, timestamp));
-		base_poses.push_back(pair<carmen_pose_3D_t, double>(base_pose, timestamp));
-		live_poses.push_back(pair<carmen_pose_3D_t, double>(live_pose, timestamp));
+		if (file_exists(imagename_base_left))
+		{
+			camera_delta_frames_array.push_back(pair<string, string>(string(imagename_base_left), string(imagename_live_left)));
+			camera_delta_poses_array.push_back(pair<carmen_pose_3D_t, double>(delta_pose, timestamp));
+			camera_poses_base_array.push_back(pair<carmen_pose_3D_t, double>(base_pose, timestamp));
+			camera_poses_curr_array.push_back(pair<carmen_pose_3D_t, double>(live_pose, timestamp));
+		}
 	}
 
 	fclose(log_file);
@@ -272,6 +314,30 @@ compute_statistics()
 }
 
 
+float
+euclidean_distance(float *pt1, float *pt2)
+{
+	return sqrt(pow(pt1[0]-pt2[0],2) + pow(pt1[1]-pt2[1],2));
+}
+
+
+int
+find_more_similar_base_pose(const carmen_bumblebee_basic_stereoimage_message* message)
+{
+	int base_pose_index = -1;
+	int base_pose_label = test_wnn_image(message);
+	for (uint i = 0; i < camera_poses_base_array2.size(); i++)
+	{
+		if (camera_poses_base_array2[i].second == base_pose_label)
+		{
+			base_pose_index = i;
+		}
+	}
+
+	return base_pose_index;
+}
+
+
 int
 find_more_synchronized_pose(const vector<pair<carmen_pose_3D_t, double> > &poses, double timestamp)
 {
@@ -298,7 +364,7 @@ find_more_synchronized_pose(const vector<pair<carmen_pose_3D_t, double> > &poses
 
 
 void
-copy_image (carmen_localize_neural_imagepos_message *message, string imagename)
+read_image_file (carmen_localize_neural_imagepos_message *message, string imagename)
 {
 	cv::Mat img = cv::imread (imagename.c_str(), CV_LOAD_IMAGE_COLOR);
 
@@ -316,6 +382,20 @@ copy_image (carmen_localize_neural_imagepos_message *message, string imagename)
 		message->image_data [3 * i + 1] = (uchar)img.data[3 * i + 1];
 		message->image_data [3 * i + 0] = (uchar)img.data[3 * i + 2];
 	}
+}
+
+
+void
+read_image_message (carmen_localize_neural_imagepos_message *message, const carmen_bumblebee_basic_stereoimage_message *source)
+{
+	message->height = source->height;
+	message->width = source->width;
+	message->size = source->image_size;
+
+	if (message->image_data == NULL)
+		message->image_data = (char *) calloc (message->size, sizeof(char));
+
+	memcpy(message->image_data, source->raw_left, message->size * sizeof(unsigned char));
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -393,81 +473,13 @@ publish_imagepos_curframe_message(carmen_pose_3D_t pose, double timestamp)
 
 	carmen_localize_neural_publish_imagepos_curframe_message(&camera_message_curr);
 }
-///////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////
-//                                                                                           //
-// Handlers                                                                                  //
-//                                                                                           //
-///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 void
-carmen_bumblebee_basic_stereoimage_message_handler(carmen_bumblebee_basic_stereoimage_message *message)
+publish_imagepos_messages(carmen_pose_3D_t camera_pose_true, carmen_pose_3D_t camera_pose_base, carmen_pose_3D_t camera_pose_curr, double camera_timestamp)
 {
-	double camera_timestamp;
 	carmen_pose_3D_t true_pose;
 	carmen_pose_3D_t global_pose;
-	carmen_pose_3D_t camera_pose_base;
-	carmen_pose_3D_t camera_pose_curr;
-	carmen_pose_3D_t camera_pose_true;
-
-	camera_timestamp = message->timestamp;
-
-	int index_delta = find_more_synchronized_pose(camera_delta_poses_array, camera_timestamp);
-	if (index_delta < 0)
-	{
-		carmen_warn("Frame lost!\n");
-		return;
-	}
-	string key_frame = camera_delta_frames_array[index_delta].first;
-	string cur_frame = camera_delta_frames_array[index_delta].second;
-
-	copy_image(&camera_message_base, key_frame);
-	copy_image(&camera_message_curr, cur_frame);
-
-	if (!camera_message_base.height || !camera_message_base.width ||
-			!camera_message_curr.height || !camera_message_curr.width)
-	{
-		carmen_warn("Invalid images!\n");
-		return;
-	}
-	camera_pose_base = camera_poses_base_array[index_delta].first;
-	camera_pose_true = camera_poses_curr_array[index_delta].first;
-
-	//comment out code below in case you want to check transforms
-	//carmen_pose_3D_t delta_pose_true = inverse_transform(camera_pose_base, camera_pose_true);
-	carmen_pose_3D_t delta_pose_true = camera_delta_poses_array[index_delta].first;
-	delta_pose_true = camera_carmen_transform(delta_pose_true);
-
-	carmen_pose_3D_t delta_pose_pred;
-	if (cheating)
-	{
-		delta_pose_pred = delta_pose_true;
-	}
-	else
-	{
-		delta_pose_pred = forward_network(camera_message_curr, camera_message_base);
-		delta_pose_pred = camera_carmen_transform(delta_pose_pred);
-	}
-	//comment out code below when network is trained with the opposite odometer vector
-	carmen_pose_3D_t camera_pose_zero = {{0.0,0.0,0.0},{0.0,0.0,0.0}};
-	delta_pose_pred = inverse_transform(delta_pose_pred, camera_pose_zero);
-	delta_pose_true = inverse_transform(delta_pose_true, camera_pose_zero);
-
-	camera_pose_curr = direct_transform(camera_pose_base, delta_pose_pred);
-	camera_pose_base.position.z = 1.7;
-	camera_pose_curr.position.z = 1.7;
-
-	carmen_point_t delta_pose_error = {
-			(delta_pose_pred.position.x-delta_pose_true.position.x),
-			(delta_pose_pred.position.y-delta_pose_true.position.y),
-			(delta_pose_pred.orientation.yaw-delta_pose_true.orientation.yaw)
-	};
-	camera_delta_error_array.push_back(delta_pose_error);
-	carmen_warn("(%.2f %.2f %.3f)\n", delta_pose_error.x, delta_pose_error.y, delta_pose_error.theta);
 
 	tf::StampedTransform car_transform_curr = get_transforms_from_camera_to_car(camera_pose_curr.position.x, camera_pose_curr.position.y, camera_pose_curr.orientation.yaw);
 	tf::StampedTransform car_transform_true = get_transforms_from_camera_to_car(camera_pose_true.position.x, camera_pose_true.position.y, camera_pose_true.orientation.yaw);
@@ -500,6 +512,148 @@ carmen_bumblebee_basic_stereoimage_message_handler(carmen_bumblebee_basic_stereo
 	publish_imagepos_keyframe_message(camera_pose_base, camera_timestamp);
 	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, camera_timestamp);
 }
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+// Handlers                                                                                  //
+//                                                                                           //
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void
+carmen_bumblebee_basic_stereoimage_message_handler_wnn(carmen_bumblebee_basic_stereoimage_message *message)
+{
+	//	carmen_pose_3D_t camera_pose_zero = {{0.0,0.0,0.0},{0.0,0.0,0.0}};
+	carmen_pose_3D_t camera_pose_base, camera_pose_curr, camera_pose_true;
+	carmen_pose_3D_t delta_pose_true, delta_pose_pred;
+
+	double camera_timestamp = message->timestamp;
+
+	int index_base = find_more_similar_base_pose(message);
+	if (index_base < 0)
+	{
+		//carmen_warn("Not enough frames!");
+		return;
+	}
+
+	int index_delta = find_more_synchronized_pose(camera_delta_poses_array, camera_timestamp);
+	if (index_delta < 0)
+	{
+		//carmen_warn("Frame lost!\n");
+		return;
+	}
+
+	camera_pose_true = camera_poses_curr_array[index_delta].first;
+
+	read_image_message(&camera_message_curr, message);
+
+	camera_pose_base = camera_poses_base_array2[index_base].first;
+
+	string key_frame = camera_frames_base_array2[index_base].first;
+
+	read_image_file(&camera_message_base, key_frame);
+
+	delta_pose_true = inverse_transform(camera_pose_true, camera_pose_base);
+
+	if (!cheating)
+	{
+		delta_pose_pred = forward_network(camera_message_curr, camera_message_base);
+		delta_pose_pred = camera_carmen_transform(delta_pose_pred);
+	}
+	else
+		delta_pose_pred = delta_pose_true;
+
+	//network is trained with the base pose w.r.t. the live
+	//delta_pose_pred = inverse_transform(delta_pose_pred, camera_pose_zero);
+	//delta_pose_true = inverse_transform(delta_pose_true, camera_pose_zero);
+
+	camera_pose_curr = direct_transform(camera_pose_base, delta_pose_pred);
+	camera_pose_base.position.z = 1.7;
+	camera_pose_curr.position.z = 1.7;
+
+	carmen_point_t delta_pose_error = {
+			(delta_pose_pred.position.x-delta_pose_true.position.x),
+			(delta_pose_pred.position.y-delta_pose_true.position.y),
+			(delta_pose_pred.orientation.yaw-delta_pose_true.orientation.yaw)
+	};
+	camera_delta_error_array.push_back(delta_pose_error);
+	//carmen_warn("(%.2f %.2f %.3f)\n", delta_pose_error.x, delta_pose_error.y, delta_pose_error.theta);
+
+	publish_imagepos_messages(camera_pose_true, camera_pose_base, camera_pose_curr, camera_timestamp);
+}
+
+
+void
+carmen_bumblebee_basic_stereoimage_message_handler_cnn(carmen_bumblebee_basic_stereoimage_message *message)
+{
+	//	carmen_pose_3D_t camera_pose_zero = {{0.0,0.0,0.0},{0.0,0.0,0.0}};
+	carmen_pose_3D_t camera_pose_base;
+	carmen_pose_3D_t camera_pose_curr;
+	carmen_pose_3D_t camera_pose_true;
+	carmen_pose_3D_t delta_pose_pred;
+	carmen_pose_3D_t delta_pose_true;
+
+	double camera_timestamp = message->timestamp;
+	/*
+	int index_base = find_more_similar_base_pose(message);
+	if (index_base < 0)
+	{
+		carmen_warn("Not enough frames!");
+		return;
+	}
+	 */
+	int index_delta = find_more_synchronized_pose(camera_delta_poses_array, camera_timestamp);
+	if (index_delta < 0)
+	{
+		//carmen_warn("Frame lost!\n");
+		return;
+	}
+
+	string key_frame = camera_delta_frames_array[index_delta].first;
+	string cur_frame = camera_delta_frames_array[index_delta].second;
+
+	read_image_file(&camera_message_base, key_frame);
+	read_image_file(&camera_message_curr, cur_frame);
+	//read_image_message(&camera_message_curr, message);
+
+	camera_pose_base = camera_poses_base_array[index_delta].first;
+	camera_pose_true = camera_poses_curr_array[index_delta].first;
+
+	//just in case you want to check transforms
+	//carmen_pose_3D_t delta_pose_true = inverse_transform(camera_pose_true, camera_pose_base);
+	delta_pose_true = camera_delta_poses_array[index_delta].first;
+	delta_pose_true = camera_carmen_transform(delta_pose_true);
+
+	if (cheating)
+	{
+		delta_pose_pred = delta_pose_true;
+	}
+	else
+	{
+		delta_pose_pred = forward_network(camera_message_curr, camera_message_base);
+		delta_pose_pred = camera_carmen_transform(delta_pose_pred);
+	}
+	//network is trained with the base pose w.r.t. the live
+	//delta_pose_pred = inverse_transform(delta_pose_pred, camera_pose_zero);
+	//delta_pose_true = inverse_transform(delta_pose_true, camera_pose_zero);
+
+	camera_pose_curr = direct_transform(camera_pose_base, delta_pose_pred);
+	camera_pose_base.position.z = 1.7;
+	camera_pose_curr.position.z = 1.7;
+
+	carmen_point_t delta_pose_error = {
+			(delta_pose_pred.position.x-delta_pose_true.position.x),
+			(delta_pose_pred.position.y-delta_pose_true.position.y),
+			(delta_pose_pred.orientation.yaw-delta_pose_true.orientation.yaw)
+	};
+	camera_delta_error_array.push_back(delta_pose_error);
+	//carmen_warn("(%.2f %.2f %.3f)\n", delta_pose_error.x, delta_pose_error.y, delta_pose_error.theta);
+
+	publish_imagepos_messages(camera_pose_true, camera_pose_base, camera_pose_curr, camera_timestamp);
+}
 
 
 void
@@ -509,6 +663,7 @@ shutdown_module(int signo)
 	{
 		carmen_ipc_disconnect();
 		finalize_network();
+		finalize_wnn();
 		printf("publish: disconnected.\n");
 
 		exit(0);
@@ -576,10 +731,12 @@ read_camera_parameters(int argc, char **argv)
 
 	carmen_param_t param_cmd_list[] =
 	{
-		{(char *) "commandline", (char *) "camera_id", CARMEN_PARAM_INT, &camera, 0, NULL},
-		{(char *) "commandline", (char *) "cnn_model", CARMEN_PARAM_STRING, &cnn_model, 0, NULL},
-		{(char *) "commandline", (char *) "cnn_data", CARMEN_PARAM_STRING, &cnn_data, 0, NULL},
-		{(char *) "commandline", (char *) "cheating", CARMEN_PARAM_INT, &cheating, 0, NULL}
+			{(char *) "commandline", (char *) "camera_id", CARMEN_PARAM_INT, &camera, 0, NULL},
+			{(char *) "commandline", (char *) "cnn_model", CARMEN_PARAM_STRING, &cnn_model, 0, NULL},
+			{(char *) "commandline", (char *) "cnn_data", CARMEN_PARAM_STRING, &cnn_data, 0, NULL},
+			{(char *) "commandline", (char *) "wnn_model", CARMEN_PARAM_STRING, &wnn_model, 0, NULL},
+			{(char *) "commandline", (char *) "wnn_data", CARMEN_PARAM_STRING, &wnn_data, 0, NULL},
+			{(char *) "commandline", (char *) "cheating", CARMEN_PARAM_INT, &cheating, 0, NULL}
 	};
 
 	carmen_param_allow_unfound_variables(1);
@@ -642,7 +799,7 @@ define_messages(void)
 void
 subscribe_to_relevant_messages()
 {
-	carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) carmen_bumblebee_basic_stereoimage_message_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) carmen_bumblebee_basic_stereoimage_message_handler_cnn, CARMEN_SUBSCRIBE_LATEST);
 	carmen_fused_odometry_subscribe_fused_odometry_message(&fused_odometry_message, NULL, CARMEN_SUBSCRIBE_LATEST);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -661,16 +818,24 @@ main(int argc, char **argv)
 
 	initialize_transformations();
 
-	initialize_network(cnn_model);
+	if (!cheating)
+	{
+		initialize_network(cnn_model);
 
-	load_delta_poses(cnn_data, camera_delta_frames_array, camera_delta_poses_array, camera_poses_base_array, camera_poses_curr_array);
-	carmen_warn("Ground truth loaded!");
+		initialize_wnn(); train_wnn(wnn_data);
+	}
+
+	load_base_poses(wnn_data);
+
+	load_delta_poses(cnn_data);
 
 	signal(SIGINT, shutdown_module);
 
 	subscribe_to_relevant_messages();
 
 	carmen_ipc_addPeriodicTimer(30.0, (TIMER_HANDLER_TYPE) compute_statistics, NULL);
+
+	carmen_warn("Ready!");
 
 	carmen_ipc_dispatch();
 

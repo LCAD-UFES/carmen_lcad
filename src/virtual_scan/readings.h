@@ -8,17 +8,8 @@
 namespace virtual_scan
 {
 
-class Readings
+struct Readings: std::map<double, Reading>
 {
-	/** @brief Sensor readings indexed by timestamp. */
-	std::map<double, Reading> readings;
-
-public:
-	/**
-	 * @brief Return the sensor reading of given timestamp.
-	 */
-	Reading &operator [] (double timestamp);
-
 	/**
 	 * @brief Return a reference to the latest reading.
 	 */
@@ -30,9 +21,19 @@ public:
 	const Reading &front() const;
 
 	/**
+	 * @brief Erase all reading objects up to the given timestamp.
+	 */
+	void erase(double timestamp);
+
+	/**
 	 * @brief Add the given reading to this sequence, erasing the oldest reading if necessary.
 	 */
 	void update(carmen_mapper_virtual_scan_message *message);
+
+	/**
+	 * @brief Add the given reading to this sequence, erasing the oldest reading if necessary.
+	 */
+	void update(const Reading &reading);
 };
 
 } // namespace virtual_scan

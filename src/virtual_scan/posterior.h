@@ -85,11 +85,25 @@ class Posterior
 	/**
 	 * @brief Update the value of the `S_len` parameter with the given track's new length.
 	 *
+	 * @param tracks Reference to the updated track.
+	 */
+	void update_S_len(const Track &track);
+
+	/**
+	 * @brief Update the value of the `S_len` parameter with the given track's new length.
+	 *
 	 * @param i Position of the track in the sequence.
 	 *
 	 * @param tracks Sequence containing the updated track.
 	 */
 	void update_S_len(int i, const Track::S &tracks);
+
+	/**
+	 * @brief Update the value of the `S_mot` parameter with the given track's new covariance.
+	 *
+	 * @param track Reference to the updated track.
+	 */
+	void update_S_mot(const Track &track);
 
 	/**
 	 * @brief Update the value of the `S_mot` parameter with the given track's new covariance.
@@ -103,13 +117,25 @@ class Posterior
 	/**
 	 * @brief Update the value of the `S_mot` parameter with the recomputed covariance for a to-be-shortened track.
 	 *
-	 * @param i Position of the track in the sequence.
+	 * @param a Index of the first retained track pose.
 	 *
-	 * @param k Cut-off index of the track.
+	 * @param n Index just past the last retained track pose.
 	 *
-	 * @param tracks Sequence containing the to-be-shortened track.
+	 * @param track Reference to the to-be-shortened track.
 	 */
-	void update_S_mot(int i, int k, const Track::S &tracks);
+	void update_S_mot(int a, int n, const Track &track);
+
+	/**
+	 * @brief Update the distances between dynamic sensor readings and a given obstacle pose.
+	 *
+	 * This method also updates the internal dynamic and static sensor reading
+	 * collections used by other update methods.
+	 *
+	 * @param j Position of the track pose to update.
+	 *
+	 * @param track Reference to the updated track.
+	 */
+	void update_S_ms1(int j, const Track &track);
 
 	/**
 	 * @brief Update the distances between dynamic sensor readings and a given obstacle pose.
@@ -134,6 +160,15 @@ class Posterior
 	 * reassignment according to the configuration of the given Collector object.
 	 */
 	void update_S_ms1(const ObstaclePose &pose, const Reading &Z_k, bool ranged, Collector &collect);
+
+	/**
+	 * @brief Update the counter for static sensor readings observed in areas occupied by an obstacle at some point in time.
+	 *
+	 * @param j Position of the track pose to update.
+	 *
+	 * @param track Reference to the updated track.
+	 */
+	void update_S_ms3(int j, const Track &track);
 
 	/**
 	 * @brief Update the counter for static sensor readings observed in areas occupied by an obstacle at some point in time.
@@ -186,6 +221,56 @@ public:
 	void destroy(int i, const Track::S &tracks);
 
 	/**
+	 * @brief Update the posterior in response to a track being extended forward.
+	 */
+	void extend_forward(const Track &track);
+
+	/**
+	 * @brief Update the posterior in response to a track being extended backward.
+	 */
+	void extend_backward(const Track &track);
+
+	/**
+	 * @brief Update the posterior in responde to removing all later poses from index `k` onwards.
+	 *
+	 * This method is called just prior to the actual shortening of the track.
+	 *
+	 * @param i Index of the track in its parent sequence.
+	 *
+	 * @param k Index of the first pose to be removed.
+	 *
+	 * @param tracks Sequence containing the track to be shortened.
+	 *
+	 */
+	void pop_back(int i, int k, const Track::S &tracks);
+
+	/**
+	 * @brief Update the posterior in responde to removing the first `k` poses.
+	 *
+	 * This method is called just prior to the actual shortening of the track.
+	 *
+	 * @param i Index of the track in its parent sequence.
+	 *
+	 * @param k Index just past the last pose to be removed.
+	 *
+	 * @param tracks Sequence containing the track to be shortened.
+	 *
+	 */
+	void pop_front(int i, int k, const Track::S &tracks);
+
+	/**
+	 * @brief Update the posterior in response to splitting a track in two.
+	 */
+	void split(const Track &track_1, const Track &track_2);
+
+	/**
+	 * @brief Update the posterior in response to merging two tracks.
+	 *
+	 * This method is called just after the tracks are merged, so `track_2` will be empty.
+	 */
+	void merge(const Track &track_1, const Track &track_2);
+
+	/**
 	 * @brief Update the posterior is response to the shortening of a track.
 	 *
 	 * This method is called just prior to the actual shortening of the track.
@@ -223,9 +308,9 @@ public:
 	void swap(int i, int j, const Track::S &tracks);
 
 	/**
-	 * @brief Update the readings over the time window and recompute respective posterior terms.
+	 * @brief Update static readings over the time window.
 	 */
-	void update(const Track::S &tracks, const Readings &readings);
+	void update(const Readings &readings);
 };
 
 } // namespace virtual_scan

@@ -22,6 +22,8 @@
 #include <carmen/localize_ackerman_messages.h>
 #include <carmen/xsens_interface.h>
 
+#include "localize_neural_util.h"
+
 #include <tf.h>
 
 tf::Transformer transformer(false);
@@ -90,44 +92,12 @@ create_stereo_filename_from_timestamp(double timestamp, char **left_img_filename
 
 
 void
-create_image_from_rgb_buffer (unsigned char *rgb_buffer, IplImage **img, int width, int height)
-{
-	int i;
-
-	(*img) = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 3);
-
-	for(i = 0; i < (height * width); i++)
-	{
-		/**
-		 * A imagem da bumblebee usa o formato rgb-rgb-rgb, enquanto
-		 * a imagem da opencv usa o formato bgr-bgr-bgr. As linhas
-		 * abaixo fazem essa conversao.
-		 */
-		(*img)->imageData[3 * i] = rgb_buffer[3 * i + 2];
-		(*img)->imageData[3 * i + 1] = rgb_buffer[3 * i + 1];
-		(*img)->imageData[3 * i + 2] = rgb_buffer[3 * i];
-	}
-}
-
-
-void
-resize_image(IplImage **img, int width, int height)
-{
-	IplImage *resized_image = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 3);
-	cvResize((*img), resized_image, CV_INTER_AREA);
-	cvRelease((void**) img);
-	(*img) = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 3);
-	cvCopy(resized_image, (*img));
-	cvRelease((void**) &resized_image);
-}
-
-
-void
 save_image_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int camera)
 {
 	char *left_img_filename, *right_img_filename;
 	char *left_composed_path, *right_composed_path;
-	IplImage *left_img, *right_img;
+	IplImage *left_img = cvCreateImage(cvSize(stereo_image->width, stereo_image->height), IPL_DEPTH_8U, 3);
+	IplImage *right_img = cvCreateImage(cvSize(stereo_image->width, stereo_image->height), IPL_DEPTH_8U, 3);
 	cv::Rect crop;
 	crop.x = 0;
 	crop.y = 0;
@@ -138,8 +108,8 @@ save_image_to_file(carmen_bumblebee_basic_stereoimage_message *stereo_image, int
 	compose_output_path(output_dir_name, left_img_filename, &left_composed_path);
 	compose_output_path(output_dir_name, right_img_filename, &right_composed_path);
 
-	create_image_from_rgb_buffer(stereo_image->raw_left, &left_img, stereo_image->width, stereo_image->height);
-	create_image_from_rgb_buffer(stereo_image->raw_right, &right_img, stereo_image->width, stereo_image->height);
+	copy_image((char *)stereo_image->raw_left, left_img, stereo_image->width, stereo_image->height);
+	copy_image((char *)stereo_image->raw_right, right_img, stereo_image->width, stereo_image->height);
 
 	resize_image(&left_img, 640, 480);
 	resize_image(&right_img, 640, 480);

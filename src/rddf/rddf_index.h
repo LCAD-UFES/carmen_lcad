@@ -141,6 +141,8 @@ void carmen_rddf_index_save(char *rddf_filename);
 
 long find_timestamp_index_position_with_full_index_search(double x, double y, double yaw, int test_orientation, double timestamp_ignore_neighborhood = 0, int search_only_in_the_begining = 0);
 carmen_timestamp_index* get_timestamp_index();
+carmen_ackerman_traj_point_t create_ackerman_traj_point_struct(double x, double y, double velocity_x, double phi, double yaw);
+
 
 #ifdef __cplusplus
 }

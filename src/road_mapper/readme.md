@@ -137,25 +137,25 @@ Create a list of svg filenames:
  $ ls svgs/*.svg > svg_list.txt
 ```
 Second step:  
-Run the [Generate Ground Truth utility](road_mapper_generate_gt3.py).
+Run the [Generate Ground Truth utility](road_mapper_generate_gt4.py).
 Output files will be placed in the directory set by -o parameter
 ```bash
- $ python road_mapper_generate_gt3.py -f svg_list.txt -o maps -n
+ $ python road_mapper_generate_gt4.py -f svg_list.txt -o maps -n
 ```
 To learn more about the utility parameters please run the program with -h option:
 ```bash
- $ python road_mapper_generate_gt3.py -h
+ $ python road_mapper_generate_gt4.py -h
 ```
 
 ## Visualizing a Road Map
 
-To visualize a road map please run the [Display Map utility](road_mapper_display_map3.cpp):
+To visualize a road map please run the [Display Map utility](road_mapper_display_map.cpp):
 ```bash
- $ ./road_mapper_display_map3 maps/r*.map
+ $ ./road_mapper_display_map -r $CARMEN_HOME/data/map_ida_guarapari-20170403-2 maps/r*.map
 ```
 To learn more about the utility parameters please please run the program with -h option:
 ```bash
- $ ./road_mapper_display_map3 -h
+ $ ./road_mapper_display_map -h
 ```
 
 ### Examples

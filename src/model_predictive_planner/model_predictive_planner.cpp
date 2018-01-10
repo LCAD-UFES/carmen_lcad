@@ -67,17 +67,17 @@ get_points2(vector<carmen_ackerman_path_point_t> &detailed_goal_list, int &index
     {
         index_p1 = 0;
         index_p2 = 1;
-        mais_proxima = d;
+        mais_proxima = index_p1;
         if(centro < d)
-            mais_proxima = centro;
+            mais_proxima = 1;
     }
     else
     {
         index_p1 = 1;
         index_p2 = 2;
-        mais_proxima = d2;
+        mais_proxima = index_p2;
         if(centro < d2)
-            mais_proxima = centro;
+            mais_proxima = 1;
     }
 }
 
