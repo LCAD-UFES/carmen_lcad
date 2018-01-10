@@ -49,6 +49,7 @@ static double rddf_min_distance_between_waypoints = 0.5;
 static double distance_between_front_and_rear_axles;
 static double distance_between_front_car_and_front_wheels;
 static int road_mapper_kernel_size = 7;
+static bool debug = true;
 
 static int carmen_rddf_end_point_is_set = 0;
 static carmen_point_t carmen_rddf_end_point;
@@ -472,6 +473,42 @@ set_annotations(carmen_point_t robot_pose)
 }
 
 
+void
+plot_state(carmen_ackerman_traj_point_t *path, int num_points, carmen_ackerman_traj_point_t *path2, int num_points2)
+{
+	static bool first_time = true;
+	static FILE *gnuplot_pipeMP;
+
+	if (first_time)
+	{
+		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
+		fprintf(gnuplot_pipeMP, "set xrange [0:70]\n");
+		fprintf(gnuplot_pipeMP, "set yrange [-10:10]\n");
+		fprintf(gnuplot_pipeMP, "set xlabel 'senconds'\n");
+		fprintf(gnuplot_pipeMP, "set ylabel 'effort'\n");
+		fprintf(gnuplot_pipeMP, "set tics out\n");
+		first_time = false;
+	}
+
+	FILE *gnuplot_data_lane  = fopen("gnuplot_data_lane.txt", "w");
+	FILE *gnuplot_data_lane2 = fopen("gnuplot_data_lane2.txt", "w");
+
+	for (int i = 0; i < num_points; i++)
+	{
+		fprintf(gnuplot_data_lane, "%lf %lf %lf %lf %lf %lf\n", path[i].x, path[i].y,
+				cos(path[i].theta), sin(path[i].theta), path[i].theta, path[i].phi);
+		fprintf(gnuplot_data_lane, "%lf %lf %lf %lf %lf %lf\n", path[i].x, path[i].y,
+				cos(path[i].theta), sin(path[i].theta), path[i].theta, path[i].phi);
+	}
+	fclose(gnuplot_data_lane);
+
+	fprintf(gnuplot_pipeMP, "plot "
+			"'./gnuplot_data_lane.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane' axes x1y1\n");
+
+	fflush(gnuplot_pipeMP);
+}
+
+
 int
 pose_out_of_map_coordinates(carmen_point_t pose, carmen_map_p map)
 {
@@ -479,7 +516,9 @@ pose_out_of_map_coordinates(carmen_point_t pose, carmen_map_p map)
 	double x_max = map->config.x_origin + map->config.x_size * map->config.resolution;
 	double y_min = map->config.y_origin;
 	double y_max = map->config.y_origin + map->config.y_size * map->config.resolution;
-	return (int) (pose.x < x_min || pose.x >= x_max || pose.y < y_min || pose.y >= y_max);
+	int out_of_map = (pose.x < x_min || pose.x >= x_max || pose.y < y_min || pose.y >= y_max);
+
+	return (out_of_map);
 }
 
 
@@ -808,6 +847,9 @@ carmen_rddf_play_find_nearest_poses_by_road_map(carmen_point_t initial_pose, car
 	initial_pose.y = poses_ahead[0].y;
 	initial_pose.theta = poses_ahead[0].theta;
 	(*num_poses_back) = fill_in_poses_back_by_road_map(initial_pose, road_map, poses_back, num_poses_ahead_max / 3);
+
+	if (debug)
+		plot_state(poses_ahead, num_poses_ahead, poses_back, *num_poses_back);
 
 	return (num_poses_ahead);
 }
