@@ -981,7 +981,7 @@ road_map_handler(carmen_map_server_road_map_message *msg)
 	if (msg->config.x_origin != current_road_map->config.x_origin || msg->config.y_origin != current_road_map->config.y_origin) // new map
 	{
 		memcpy(current_road_map->complete_map, msg->complete_map, sizeof(double) * msg->size);
-		memcpy(&current_road_map->config, &msg->config, sizeof(carmen_map_config_t));
+		current_road_map->config = msg->config;
 
 		if (robot_pose_queued)
 		{
