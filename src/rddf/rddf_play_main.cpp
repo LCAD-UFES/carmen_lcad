@@ -3,6 +3,8 @@
 #include <vector>
 #include <string.h>
 #include <algorithm>
+#include <list>
+
 using namespace std;
 
 #include <carmen/carmen.h>
@@ -28,6 +30,11 @@ using namespace std;
 #include <kml/dom.h>
 #include <kml/engine/kml_file.h>
 #include "g2o/types/slam2d/se2.h"
+
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_spline.h>
+#include <gsl/gsl_multimin.h>
+#include <gsl/gsl_math.h>
 
 using namespace g2o;
 
@@ -473,8 +480,256 @@ set_annotations(carmen_point_t robot_pose)
 }
 
 
+void calculate_theta_and_phi(carmen_ackerman_traj_point_t *poses_ahead, int num_poses_ahead,
+		carmen_ackerman_traj_point_t *poses_back, int num_poses_back);
+
+//////////////////////////////////////////////////////////////////////////////////
+
+/* GSL - GNU Scientific Library
+ * Multidimensional Minimization
+ * https://www.gnu.org/software/gsl/doc/html/multimin.html
+ *
+ * Sebastian Thrun
+ */
+
+
+//Function to be minimized summation[x(i+1)-2x(i)+x(i-1)]
+double
+my_f(const gsl_vector *v, void *params)
+{
+	list<carmen_ackerman_traj_point_t> *p = (list<carmen_ackerman_traj_point_t> *) params;
+	int i, j, size = (p->size() - 2);           //we have to discount the first and last point that wont be optimized
+	double a = 0.0, b = 0.0, sum = 0.0;
+
+	double x_prev = p->front().x;				//x(i-1)
+	double x      = gsl_vector_get(v, 0);		//x(i)
+	double x_next = gsl_vector_get(v, 1);		//x(i+1)
+
+	double y_prev = p->front().y;
+	double y      = gsl_vector_get(v, size);
+	double y_next = gsl_vector_get(v, size+1);
+
+	for (i = 2, j = (size+2); i < size; i++, j++)
+	{
+		a = x_next - (2*x) + x_prev;
+		b = y_next - (2*y) + y_prev;
+		sum += (a*a + b*b);
+
+		x_prev = x;
+		x      = x_next;
+		x_next = gsl_vector_get(v, i);
+
+		y_prev = y;
+		y      = y_next;
+		y_next = gsl_vector_get(v, j);
+	}
+
+	x_prev = x;
+	x      = x_next;
+	x_next = p->back().x;
+
+	y_prev = y;
+	y      = y_next;
+	y_next = p->back().y;
+
+	a = x_next - (2*x) + x_prev;
+	b = y_next - (2*y) + y_prev;
+	sum += (a*a + b*b);
+
+	return (sum);
+}
+
+
+//The gradient of f, df = (df/dx, df/dy)
+//derivative in each point [2x(i-2)-8x(i-1)+12x(i)-8x(i+1)+2x(i+2)]
 void
-plot_state(carmen_ackerman_traj_point_t *path, int num_points, carmen_ackerman_traj_point_t *path2, int num_points2)
+my_df (const gsl_vector *v, void *params, gsl_vector *df)
+{
+	list<carmen_ackerman_traj_point_t> *p = (list<carmen_ackerman_traj_point_t> *) params;
+	int i, j, size =(p->size() - 2);
+
+	double x_prev2= 0;
+	double x_prev = p->front().x;
+	double x      = gsl_vector_get(v, 0);
+	double x_next = gsl_vector_get(v, 1);
+	double x_next2= gsl_vector_get(v, 2);
+	double sum_x  =  (10*x) - (8*x_next) + (2*x_next2) - (4*x_prev);
+	gsl_vector_set(df, 0, sum_x);
+
+	double y_prev2= 0;
+	double y_prev = p->front().y;
+	double y      = gsl_vector_get(v, size);
+	double y_next = gsl_vector_get(v, size+1);
+	double y_next2= gsl_vector_get(v, size+2);
+	double sum_y  = (10*y) - (8*y_next) + (2*y_next2) - (4*y_prev);
+	gsl_vector_set(df, size, sum_y);
+
+	for (i = 3, j = (size+3); i < size; i++, j++)
+	{
+		x_prev2= x_prev;
+		x_prev = x;
+		x      = x_next;
+		x_next = x_next2;
+		x_next2= gsl_vector_get(v, i);
+		sum_x = (2*x_prev2) - (8*x_prev) + (12*x) - (8*x_next) + (2*x_next2);
+		gsl_vector_set(df, (i-2), sum_x);
+
+		y_prev2= y_prev;
+		y_prev = y;
+		y      = y_next;
+		y_next = y_next2;
+		y_next2= gsl_vector_get(v, j);
+		sum_y = (2*y_prev2) - (8*y_prev) + (12*y) - (8*y_next) + (2*y_next2);
+		gsl_vector_set(df, (j-2), sum_y);
+	}
+
+	x_prev2= x_prev;
+	x_prev = x;
+	x      = x_next;
+	x_next = x_next2;
+	x_next2= p->back().x;
+	sum_x  = (2*x_prev2) - (8*x_prev) + (12*x) - (8*x_next) + (2*x_next2);
+	gsl_vector_set(df, size-2, sum_x);
+
+	y_prev2= y_prev;
+	y_prev = y;
+	y      = y_next;
+	y_next = y_next2;
+	y_next2= p->back().y;
+	sum_y  = (2*y_prev2) - (8*y_prev) + (12*y) - (8*y_next) + (2*y_next2);
+	gsl_vector_set(df, (2*size)-2, sum_y);
+
+	x_prev2= x_prev;
+	x_prev = x;
+	x      = x_next;
+	x_next = x_next2;
+	sum_x  = (2*x_prev2) - (8*x_prev) + (10*x) - (4*x_next);
+	gsl_vector_set(df, size-1, sum_x);
+
+	y_prev2= y_prev;
+	y_prev = y;
+	y      = y_next;
+	y_next = y_next2;
+	sum_y  = (2*y_prev2) - (8*y_prev) + (10*y) - (4*y_next);
+	gsl_vector_set(df, (2*size)-1, sum_y);
+}
+
+
+// Compute both f and df together
+void
+my_fdf (const gsl_vector *x, void *params, double *f, gsl_vector *df)
+{
+	*f = my_f(x, params);
+	my_df(x, params, df);
+}
+
+
+int
+smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, int num_poses_ahead,
+		carmen_ackerman_traj_point_t *poses_back, int num_poses_back)
+{
+	size_t iter = 0;
+	int status, i = 0, j = 0, size;
+
+	const gsl_multimin_fdfminimizer_type *T;
+	gsl_multimin_fdfminimizer *s;
+	gsl_vector *v;
+	gsl_multimin_function_fdf my_func;
+
+	list<carmen_ackerman_traj_point_t>::iterator it;
+	list<carmen_ackerman_traj_point_t> path;
+
+	for (i = (num_poses_back - 1); i > 0; i--) // skip poses_back[0], because it is equal to poses_ahead[0]
+		path.push_back(poses_back[i]);
+
+	for (i = 0; i < num_poses_ahead; i++)
+		path.push_back(poses_ahead[i]);
+
+	if (path.size() < 5)
+		return (1);
+
+	size = path.size();
+
+	my_func.n = (2 * size) - 4;
+	my_func.f = my_f;
+	my_func.df = my_df;
+	my_func.fdf = my_fdf;
+	my_func.params = &path;
+
+	v = gsl_vector_alloc ((2 * size) - 4);
+	it = path.begin();
+
+	static int count = 0;
+	count++;
+	FILE *plot = fopen("gnuplot_smooth_lane.m", "w");
+
+	fprintf(plot, "a%d = [\n", count);
+	fprintf(plot, "%f %f\n", it->x, it->y);
+
+	it++; // skip the first pose
+	for (i = 0, j = (size - 2); i < (size - 2); i++, j++, it++)
+	{
+		fprintf(plot, "%f %f\n", it->x, it->y);
+
+		gsl_vector_set (v, i, it->x);
+		gsl_vector_set (v, j, it->y);
+	}
+
+	fprintf(plot, "%f %f]\n\n", it->x, it->y);
+
+	T = gsl_multimin_fdfminimizer_conjugate_fr;
+	s = gsl_multimin_fdfminimizer_alloc (T, (2 * size) - 4);
+
+	gsl_multimin_fdfminimizer_set (s, &my_func, v, 0.1, 0.01);  //(function_fdf, gsl_vector, step_size, tol)
+
+	do
+	{
+		iter++;
+		status = gsl_multimin_fdfminimizer_iterate (s);
+		if (status) // error code
+			return (0);
+
+		status = gsl_multimin_test_gradient (s->gradient, 0.01);   //(gsl_vector, epsabs) and  |g| < epsabs
+		// status == GSL_SUCCESS, if a minimum has been found
+	}
+	while (status == GSL_CONTINUE && iter < 999);
+
+	it = path.begin();
+
+	fprintf(plot, "b%d = [   \n%f %f\n", count, it->x, it->y);
+
+	it++; // skip the first pose
+	for (i = 0, j = (size - 2); i < (size - 2); i++, j++, it++)
+	{
+		it->x = gsl_vector_get (s->x, i);
+		it->y = gsl_vector_get (s->x, j);
+
+		fprintf(plot, "%f %f\n", it->x, it->y);
+	}
+
+	fprintf(plot, "%f %f]\n\n", it->x, it->y);
+	fprintf(plot, "\nplot (a%d(:,1), a%d(:,2), b%d(:,1), b%d(:,2)); \nstr = input (\"a   :\");\n\n", count, count, count, count);
+	fclose(plot);
+
+	for (i = (num_poses_back - 1); i > 0; i--) // skip first and last poses
+		path.push_back(poses_back[i]);
+
+	for (i = 0; i < num_poses_ahead; i++) // skip first and last poses
+		path.push_back(poses_ahead[i]);
+
+	calculate_theta_and_phi(poses_ahead, num_poses_ahead, poses_back, num_poses_back);
+
+	gsl_multimin_fdfminimizer_free (s);
+	gsl_vector_free (v);
+
+	return (1);
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+
+
+void
+plot_state(carmen_ackerman_traj_point_t *path, int num_points, carmen_ackerman_traj_point_t *path2, int num_points2, bool display)
 {
 	static bool first_time = true;
 	static FILE *gnuplot_pipeMP;
@@ -482,8 +737,6 @@ plot_state(carmen_ackerman_traj_point_t *path, int num_points, carmen_ackerman_t
 	if (first_time)
 	{
 		gnuplot_pipeMP = popen("gnuplot", "w"); // -persist to keep last plot after program closes
-//		fprintf(gnuplot_pipeMP, "set xrange [0:70]\n");
-//		fprintf(gnuplot_pipeMP, "set yrange [-10:10]\n");
 		fprintf(gnuplot_pipeMP, "set xlabel 'x'\n");
 		fprintf(gnuplot_pipeMP, "set ylabel 'y'\n");
 		fprintf(gnuplot_pipeMP, "set tics out\n");
@@ -506,11 +759,13 @@ plot_state(carmen_ackerman_traj_point_t *path, int num_points, carmen_ackerman_t
 	fclose(gnuplot_data_lane);
 	fclose(gnuplot_data_lane2);
 
-	fprintf(gnuplot_pipeMP, "plot "
-			"'./gnuplot_data_lane.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Ahead'"
-			", './gnuplot_data_lane2.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Back' axes x1y1\n");
-
-	fflush(gnuplot_pipeMP);
+	if (display)
+	{
+		fprintf(gnuplot_pipeMP, "plot "
+				"'./gnuplot_data_lane.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Ahead'"
+				", './gnuplot_data_lane2.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Back' axes x1y1\n");
+		fflush(gnuplot_pipeMP);
+	}
 }
 
 
@@ -795,6 +1050,40 @@ calculate_phi_back(carmen_ackerman_traj_point_t *path, int num_poses)
 }
 
 
+void
+calculate_theta_ahead(carmen_ackerman_traj_point_t *path, int num_poses)
+{
+	for (int i = 0; i < (num_poses - 1); i++)
+		path[i].theta = atan2(path[i + 1].y - path[i].y, path[i + 1].x - path[i].x);
+	if (num_poses > 1)
+		path[num_poses - 1].theta = path[num_poses - 2].theta;
+}
+
+
+
+void
+calculate_theta_back(carmen_ackerman_traj_point_t *path, int num_poses)
+{
+	for (int i = 1; i < num_poses; i++)
+		path[i].theta = atan2(path[i - 1].y - path[i].y, path[i - 1].x - path[i].x);
+//		path[i].theta = carmen_normalize_theta(atan2(path[i].y - path[i - 1].y, path[i].x - path[i - 1].x) + M_PI);
+}
+
+
+void
+calculate_theta_and_phi(carmen_ackerman_traj_point_t *poses_ahead, int num_poses_ahead,
+		carmen_ackerman_traj_point_t *poses_back, int num_poses_back)
+{
+	calculate_theta_ahead(poses_ahead, num_poses_ahead);
+	poses_back[0].theta = poses_ahead[0].theta;
+	calculate_theta_back(poses_back, num_poses_back);
+
+	calculate_phi_ahead(poses_ahead, num_poses_ahead);
+	poses_back[0].phi = poses_ahead[0].phi;
+	calculate_phi_back(poses_back, num_poses_back);
+}
+
+
 int
 fill_in_poses_ahead_by_road_map(carmen_point_t initial_pose, carmen_map_p road_map,
 		carmen_ackerman_traj_point_t *poses_ahead, int num_poses_desired)
@@ -815,11 +1104,7 @@ fill_in_poses_ahead_by_road_map(carmen_point_t initial_pose, carmen_map_p road_m
 		next_pose = add_distance_to_pose(rddf_pose, rddf_min_distance_between_waypoints);
 	}
 
-	for (int i = 0; i < num_poses - 1; i++)
-		poses_ahead[i].theta = atan2(poses_ahead[i + 1].y - poses_ahead[i].y, poses_ahead[i + 1].x - poses_ahead[i].x);
-	if (num_poses > 1)
-		poses_ahead[num_poses - 1].theta = poses_ahead[num_poses - 2].theta;
-
+	calculate_theta_ahead(poses_ahead, num_poses);
 	calculate_phi_ahead(poses_ahead, num_poses);
 
 	return (num_poses);
@@ -848,9 +1133,7 @@ fill_in_poses_back_by_road_map(carmen_point_t initial_pose, carmen_map_p road_ma
 		next_pose = add_distance_to_pose(rddf_pose, -rddf_min_distance_between_waypoints);
 	}
 
-	for (int i = 1; i < num_poses - 1; i++)
-		poses_back[i].theta = carmen_normalize_theta(atan2(poses_back[i].y - poses_back[i - 1].y, poses_back[i].x - poses_back[i - 1].x) + M_PI);
-
+	calculate_theta_back(poses_back, num_poses);
 	calculate_phi_back(poses_back, num_poses);
 
 	return (num_poses);
@@ -869,7 +1152,12 @@ carmen_rddf_play_find_nearest_poses_by_road_map(carmen_point_t initial_pose, car
 	poses_back[0].phi = poses_ahead[0].phi;
 
 	if (debug)
-		plot_state(poses_ahead, num_poses_ahead, poses_back, *num_poses_back);
+		plot_state(poses_ahead, num_poses_ahead, poses_back, *num_poses_back, "b", true);
+
+	smooth_rddf_using_conjugate_gradient(poses_ahead, num_poses_ahead, poses_back, *num_poses_back);
+
+	if (debug)
+		plot_state(poses_ahead, num_poses_ahead, poses_back, *num_poses_back, "b", false);
 
 	return (num_poses_ahead);
 }
