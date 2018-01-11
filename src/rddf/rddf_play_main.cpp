@@ -533,7 +533,7 @@ get_lane_prob(carmen_point_t pose, carmen_map_p road_map)
 	int x = round((pose.x - road_map->config.x_origin) / road_map->config.resolution);
 	int y = round((pose.y - road_map->config.y_origin) / road_map->config.resolution);
 	if (x < 0 || x >= road_map->config.x_size || y < 0 || y >= road_map->config.y_size)
-		return -1;
+		return (-1.0);
 
 	double cell = road_map->map[x][y];
 	road_prob *cell_prob = (road_prob *) &cell;
@@ -563,10 +563,11 @@ get_nearest_lane(carmen_point_p lane_pose, carmen_point_t pose, carmen_map_p roa
 			lane_pose->x = pose.x + radius * cos(angle) * road_map->config.resolution;
 			lane_pose->y = pose.y + radius * sin(angle) * road_map->config.resolution;
 			if (get_lane_prob(*lane_pose, road_map) >= 0.25) // pose is probably located in a road lane
-				return 0;
+				return (1);
 		}
 	}
-	return -1;
+
+	return (0);
 }
 
 
@@ -580,9 +581,10 @@ find_pose_in_vector(vector<carmen_point_t> poses, carmen_point_t pose, double re
 		int x = round(poses[i].x / resolution);
 		int y = round(poses[i].y / resolution);
 		if (x == pose_x && y == pose_y)
-			return i;
+			return (i);
 	}
-	return -1;
+
+	return (-1);
 }
 
 
@@ -590,20 +592,23 @@ int
 distance_within_limits(carmen_point_p pose1, carmen_point_p pose2, double dist_min, double dist_max)
 {
 	if (dist_min == 0 && dist_max == 0)	// dist_max == 0 corresponds to MAX_VALUE
-		return 1;
+		return (1);
 	if (pose1 == NULL || pose2 == NULL)
-		return 0;
+		return (0);
+
 	double distance = DIST2D(*pose1, *pose2);
-	return (int) ((distance >= dist_min) && (distance <= dist_max || dist_max == 0));
+	int within_limits = ((distance >= dist_min) && (distance <= dist_max || dist_max == 0));
+
+	return (within_limits);
 }
 
 
 double
 get_center_of_mass(carmen_point_p central_pose, carmen_map_p road_map, int kernel_size, double weight(carmen_point_t, carmen_map_p),
-		carmen_point_p skip_pose = NULL, double dist_min = 0, double dist_max = 0)
+		carmen_point_p skip_pose = NULL, double dist_min = 0.0, double dist_max = 0.0)
 {
 	carmen_point_t pose;
-	double sum_wx = 0, sum_wy = 0, sum_w = 0;
+	double sum_wx = 0.0, sum_wy = 0.0, sum_w = 0.0;
 	int count = 0;
 
 	pose.x = central_pose->x - floor(kernel_size / 2) * road_map->config.resolution;
@@ -615,7 +620,7 @@ get_center_of_mass(carmen_point_p central_pose, carmen_map_p road_map, int kerne
 			if (distance_within_limits(&pose, skip_pose, dist_min, dist_max))
 			{
 				double pose_weight = weight(pose, road_map);
-				if (pose_weight >= 0)
+				if (pose_weight >= 0.0)
 				{
 					sum_wx += pose_weight * pose.x;
 					sum_wy += pose_weight * pose.y;
@@ -625,12 +630,14 @@ get_center_of_mass(carmen_point_p central_pose, carmen_map_p road_map, int kerne
 			}
 		}
 	}
-	if (sum_w == 0)
-		return 0;
+	if (sum_w == 0.0)
+		return (0.0);
 
 	central_pose->x = sum_wx / sum_w;
 	central_pose->y = sum_wy / sum_w;
-	return (sum_w / count);
+	double mean_w = sum_w / count;
+
+	return (mean_w);
 }
 
 
@@ -649,7 +656,8 @@ get_pose_with_max_lane_prob(vector<carmen_point_t> poses, carmen_map_p road_map)
 			max_prob = lane_prob;
 		}
 	}
-	return pose;
+
+	return (pose);
 }
 
 
@@ -665,27 +673,32 @@ get_orthogonal_angle(double x1, double y1, double x2, double y2)
 double
 mean_angle(double angle1, double angle2)
 {
-	return atan2((sin(angle1) + sin(angle2)) / 2, (cos(angle1) + cos(angle2)) / 2);
+	double mean = atan2((sin(angle1) + sin(angle2)) / 2, (cos(angle1) + cos(angle2)) / 2);
+
+	return (mean);
 }
 
 
 carmen_point_t
 add_distance_to_pose(carmen_point_t pose, double distance)
 {
-	pose.x += distance * cos(pose.theta);
-	pose.y += distance * sin(pose.theta);
+	carmen_point_t next_pose = pose;
+	next_pose.x += distance * cos(pose.theta);
+	next_pose.y += distance * sin(pose.theta);
 
-	return (pose);
+	return (next_pose);
 }
 
 
 carmen_point_t
-add_distance_to_pose(carmen_point_t pose, double distance, double theta)
+add_orthogonal_distance_to_pose(carmen_point_t pose, double distance)
 {
-	pose.x += distance * cos(theta);
-	pose.y += distance * sin(theta);
+	carmen_point_t next_pose = pose;
+	double orthogonal_theta = carmen_normalize_theta(pose.theta + (M_PI / 2.0));
+	next_pose.x += distance * cos(orthogonal_theta);
+	next_pose.y += distance * sin(orthogonal_theta);
 
-	return (pose);
+	return (next_pose);
 }
 
 
@@ -697,17 +710,18 @@ carmen_rddf_play_find_nearest_pose_by_road_map(carmen_point_p rddf_pose, carmen_
 //	if (get_lane_prob(initial_pose, road_map) < 0.25) // initial pose is probably off the road
 //	{
 ////		int result = get_nearest_lane(&lane_pose, initial_pose, road_map);
-////		if (result != 0) // no lane found in the road map
-//			return (0);
+////		if (result == 0) // no lane found in the road map
+//				return (0);
 //	}
 
-	double orthogonal_angle = carmen_normalize_theta(initial_pose.theta + (M_PI / 2.0));
+//	double orthogonal_angle = carmen_normalize_theta(initial_pose.theta + (M_PI / 2.0));
+	*rddf_pose = lane_pose;
+	double max_lane_prob = get_lane_prob(lane_pose, road_map);
 	double step = road_map->config.resolution / 2.0;
 	double lane_expected_width = 3.3;
-	double max_lane_prob = 0.0;
 	for (double delta_pose = -lane_expected_width / 2.0; delta_pose < lane_expected_width / 2.0; delta_pose += step)
 	{
-		lane_pose = add_distance_to_pose(initial_pose, delta_pose, orthogonal_angle);
+		lane_pose = add_orthogonal_distance_to_pose(initial_pose, delta_pose);
 		double lane_prob = get_lane_prob(lane_pose, road_map);
 		if (lane_prob > max_lane_prob)
 		{
@@ -808,7 +822,7 @@ fill_in_poses_ahead_by_road_map(carmen_point_t initial_pose, carmen_map_p road_m
 
 	calculate_phi_ahead(poses_ahead, num_poses);
 
-	return num_poses;
+	return (num_poses);
 }
 
 
@@ -852,6 +866,7 @@ carmen_rddf_play_find_nearest_poses_by_road_map(carmen_point_t initial_pose, car
 	initial_pose.y = poses_ahead[0].y;
 	initial_pose.theta = poses_ahead[0].theta;
 	(*num_poses_back) = fill_in_poses_back_by_road_map(initial_pose, road_map, poses_back, num_poses_ahead_max / 3);
+	poses_back[0].phi = poses_ahead[0].phi;
 
 	if (debug)
 		plot_state(poses_ahead, num_poses_ahead, poses_back, *num_poses_back);
@@ -1382,5 +1397,6 @@ main(int argc, char **argv)
 	carmen_rddf_play_load_annotation_file();
 	signal (SIGINT, carmen_rddf_play_shutdown_module);
 	carmen_ipc_dispatch();
+
 	return (0);
 }
