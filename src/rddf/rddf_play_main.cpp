@@ -480,8 +480,86 @@ set_annotations(carmen_point_t robot_pose)
 }
 
 
-void calculate_theta_and_phi(carmen_ackerman_traj_point_t *poses_ahead, int num_poses_ahead,
-		carmen_ackerman_traj_point_t *poses_back, int num_poses_back);
+void
+calculate_phi_ahead(carmen_ackerman_traj_point_t *path, int num_poses)
+{
+	double L = distance_between_front_and_rear_axles;
+
+	for (int i = 0; i < (num_poses - 1); i++)
+	{
+		double delta_theta = carmen_normalize_theta(path[i + 1].theta - path[i].theta);
+		double l = DIST2D(path[i], path[i + 1]);
+		if (l < 0.01)
+		{
+			path[i].phi = 0.0;
+			continue;
+		}
+		path[i].phi = L * atan(delta_theta / l);
+	}
+
+	for (int i = 1; i < (num_poses - 1); i++)
+	{
+		path[i].phi = (path[i].phi + path[i - 1].phi + path[i + 1].phi) / 3.0;
+	}
+}
+
+
+void
+calculate_phi_back(carmen_ackerman_traj_point_t *path, int num_poses)
+{
+	double L = distance_between_front_and_rear_axles;
+
+	for (int i = (num_poses - 1); i > 0; i--)
+	{
+		double delta_theta = carmen_normalize_theta(path[i - 1].theta - path[i].theta);
+		double l = DIST2D(path[i], path[i - 1]);
+		if (l < 0.01)
+		{
+			path[i].phi = 0.0;
+			continue;
+		}
+		path[i].phi = L * atan(delta_theta / l);
+	}
+
+	for (int i = (num_poses - 2); i > 0; i--)
+	{
+		path[i].phi = (path[i].phi + path[i - 1].phi + path[i + 1].phi) / 3.0;
+	}
+}
+
+
+void
+calculate_theta_ahead(carmen_ackerman_traj_point_t *path, int num_poses)
+{
+	for (int i = 0; i < (num_poses - 1); i++)
+		path[i].theta = atan2(path[i + 1].y - path[i].y, path[i + 1].x - path[i].x);
+	if (num_poses > 1)
+		path[num_poses - 1].theta = path[num_poses - 2].theta;
+}
+
+
+void
+calculate_theta_back(carmen_ackerman_traj_point_t *path, int num_poses)
+{
+	for (int i = 1; i < num_poses; i++)
+//		path[i].theta = atan2(path[i - 1].y - path[i].y, path[i - 1].x - path[i].x);
+		path[i].theta = carmen_normalize_theta(atan2(path[i].y - path[i - 1].y, path[i].x - path[i - 1].x) + M_PI);
+}
+
+
+void
+calculate_theta_and_phi(carmen_ackerman_traj_point_t *poses_ahead, int num_poses_ahead,
+		carmen_ackerman_traj_point_t *poses_back, int num_poses_back)
+{
+	calculate_theta_ahead(poses_ahead, num_poses_ahead);
+	poses_back[0].theta = poses_ahead[0].theta;
+	calculate_theta_back(poses_back, num_poses_back);
+
+	calculate_phi_ahead(poses_ahead, num_poses_ahead);
+	poses_back[0].phi = poses_ahead[0].phi;
+	calculate_phi_back(poses_back, num_poses_back);
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////
 
@@ -628,7 +706,7 @@ int
 smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, int num_poses_ahead,
 		carmen_ackerman_traj_point_t *poses_back, int num_poses_back)
 {
-	size_t iter = 0;
+	int iter = 0;
 	int status, i = 0, j = 0, size;
 
 	const gsl_multimin_fdfminimizer_type *T;
@@ -657,25 +735,25 @@ smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, 
 	my_func.params = &path;
 
 	v = gsl_vector_alloc ((2 * size) - 4);
-	it = path.begin();
 
 	static int count = 0;
 	count++;
-	FILE *plot = fopen("gnuplot_smooth_lane.m", "w");
+//	FILE *plot = fopen("gnuplot_smooth_lane.m", "w");
 
-	fprintf(plot, "a%d = [\n", count);
-	fprintf(plot, "%f %f\n", it->x, it->y);
+//	fprintf(plot, "a%d = [\n", count);
+	it = path.begin();
+//	fprintf(plot, "%f %f\n", it->x, it->y);
 
 	it++; // skip the first pose
 	for (i = 0, j = (size - 2); i < (size - 2); i++, j++, it++)
 	{
-		fprintf(plot, "%f %f\n", it->x, it->y);
+//		fprintf(plot, "%f %f\n", it->x, it->y);
 
 		gsl_vector_set (v, i, it->x);
 		gsl_vector_set (v, j, it->y);
 	}
 
-	fprintf(plot, "%f %f]\n\n", it->x, it->y);
+//	fprintf(plot, "%f %f]\n\n", it->x, it->y);
 
 	T = gsl_multimin_fdfminimizer_conjugate_fr;
 	s = gsl_multimin_fdfminimizer_alloc (T, (2 * size) - 4);
@@ -689,14 +767,15 @@ smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, 
 		if (status) // error code
 			return (0);
 
-		status = gsl_multimin_test_gradient (s->gradient, 0.01);   //(gsl_vector, epsabs) and  |g| < epsabs
+		status = gsl_multimin_test_gradient (s->gradient, 0.2);   //(gsl_vector, epsabs) and  |g| < epsabs
 		// status == GSL_SUCCESS, if a minimum has been found
-	}
-	while (status == GSL_CONTINUE && iter < 999);
+	} while (status == GSL_CONTINUE && iter < 999);
 
+	printf("status %d, iter %d\n", status, iter);
+	fflush(stdout);
 	it = path.begin();
 
-	fprintf(plot, "b%d = [   \n%f %f\n", count, it->x, it->y);
+//	fprintf(plot, "b%d = [   \n%f %f\n", count, it->x, it->y);
 
 	it++; // skip the first pose
 	for (i = 0, j = (size - 2); i < (size - 2); i++, j++, it++)
@@ -704,18 +783,21 @@ smooth_rddf_using_conjugate_gradient(carmen_ackerman_traj_point_t *poses_ahead, 
 		it->x = gsl_vector_get (s->x, i);
 		it->y = gsl_vector_get (s->x, j);
 
-		fprintf(plot, "%f %f\n", it->x, it->y);
+//		fprintf(plot, "%f %f\n", it->x, it->y);
 	}
 
-	fprintf(plot, "%f %f]\n\n", it->x, it->y);
-	fprintf(plot, "\nplot (a%d(:,1), a%d(:,2), b%d(:,1), b%d(:,2)); \nstr = input (\"a   :\");\n\n", count, count, count, count);
-	fclose(plot);
+//	fprintf(plot, "%f %f]\n\n", it->x, it->y);
+//	fprintf(plot, "\nplot (a%d(:,1), a%d(:,2), b%d(:,1), b%d(:,2)); \nstr = input (\"a   :\");\n\n", count, count, count, count);
+//	fclose(plot);
 
-	for (i = (num_poses_back - 1); i > 0; i--) // skip first and last poses
-		path.push_back(poses_back[i]);
+	it = path.begin();
+	it++;
+	for (i = (num_poses_back - 2); i > 0; i--, it++) // skip first and last poses
+		poses_back[i] = *it;
 
-	for (i = 0; i < num_poses_ahead; i++) // skip first and last poses
-		path.push_back(poses_ahead[i]);
+	poses_back[0] = *it;
+	for (i = 0; i < num_poses_ahead - 1; i++, it++) // skip first and last poses
+		poses_ahead[i] = *it;
 
 	calculate_theta_and_phi(poses_ahead, num_poses_ahead, poses_back, num_poses_back);
 
@@ -743,18 +825,24 @@ plot_state(carmen_ackerman_traj_point_t *path, int num_points, carmen_ackerman_t
 		first_time = false;
 	}
 
+	if (display)
+	{
+		system("cp gnuplot_data_lane.txt gnuplot_data_lane_.txt");
+		system("cp gnuplot_data_lane2.txt gnuplot_data_lane2_.txt");
+	}
+
 	FILE *gnuplot_data_lane  = fopen("gnuplot_data_lane.txt", "w");
 	FILE *gnuplot_data_lane2 = fopen("gnuplot_data_lane2.txt", "w");
 
 	for (int i = 0; i < num_points; i++)
 	{
 		fprintf(gnuplot_data_lane, "%lf %lf %lf %lf %lf %lf\n", path[i].x, path[i].y,
-				0.2 * cos(path[i].theta), 0.2 * sin(path[i].theta), path[i].theta, path[i].phi);
+				0.8 * cos(path[i].theta), 0.8 * sin(path[i].theta), path[i].theta, path[i].phi);
 	}
 	for (int i = 0; i < num_points2; i++)
 	{
 		fprintf(gnuplot_data_lane2, "%lf %lf %lf %lf %lf %lf\n", path2[i].x, path2[i].y,
-				0.2 * cos(path2[i].theta), 0.2 * sin(path2[i].theta), path2[i].theta, path2[i].phi);
+				0.8 * cos(path2[i].theta), 0.8 * sin(path2[i].theta), path2[i].theta, path2[i].phi);
 	}
 	fclose(gnuplot_data_lane);
 	fclose(gnuplot_data_lane2);
@@ -762,9 +850,17 @@ plot_state(carmen_ackerman_traj_point_t *path, int num_points, carmen_ackerman_t
 	if (display)
 	{
 		fprintf(gnuplot_pipeMP, "plot "
-				"'./gnuplot_data_lane.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Ahead'"
-				", './gnuplot_data_lane2.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Back' axes x1y1\n");
+//				"'./gnuplot_data_lane_.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Ahead normal'"
+//				", './gnuplot_data_lane2_.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Back normal'"
+				"'./gnuplot_data_lane.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Ahead smooth'"
+				", './gnuplot_data_lane2.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Back smooth' axes x1y1\n");
 		fflush(gnuplot_pipeMP);
+//		fprintf(gnuplot_pipeMP, "plot "
+////				"'./gnuplot_data_lane_.txt' using 1:2 w l title 'Lane Ahead normal'"
+////				", './gnuplot_data_lane2_.txt' using 1:2 w l title 'Lane Back normal'"
+//				"'./gnuplot_data_lane.txt' using 1:2 w l title 'Lane Ahead smooth'"
+//				", './gnuplot_data_lane2.txt' using 1:2 w l title 'Lane Back smooth' axes x1y1\n");
+//		fflush(gnuplot_pipeMP);
 	}
 }
 
@@ -973,7 +1069,7 @@ carmen_rddf_play_find_nearest_pose_by_road_map(carmen_point_p rddf_pose, carmen_
 	*rddf_pose = lane_pose;
 	double max_lane_prob = get_lane_prob(lane_pose, road_map);
 	double step = road_map->config.resolution / 2.0;
-	double lane_expected_width = 3.3;
+	double lane_expected_width = 1.3;
 	for (double delta_pose = -lane_expected_width / 2.0; delta_pose < lane_expected_width / 2.0; delta_pose += step)
 	{
 		lane_pose = add_orthogonal_distance_to_pose(initial_pose, delta_pose);
@@ -981,7 +1077,10 @@ carmen_rddf_play_find_nearest_pose_by_road_map(carmen_point_p rddf_pose, carmen_
 		if (lane_prob > max_lane_prob)
 		{
 			max_lane_prob = lane_prob;
-			*rddf_pose = lane_pose;
+			rddf_pose->x = round(lane_pose.x / road_map->config.resolution) * road_map->config.resolution;
+			rddf_pose->y = round(lane_pose.y / road_map->config.resolution) * road_map->config.resolution;
+
+//			*rddf_pose = lane_pose;
 		}
 	}
 //	carmen_point_t pose = lane_pose;
@@ -999,88 +1098,6 @@ carmen_rddf_play_find_nearest_pose_by_road_map(carmen_point_p rddf_pose, carmen_
 //		rddf_pose->theta = carmen_normalize_theta(rddf_pose->theta - M_PI); // rddf should have similar orientation as initial pose's
 
 	return (1);
-}
-
-
-void
-calculate_phi_ahead(carmen_ackerman_traj_point_t *path, int num_poses)
-{
-	double L = distance_between_front_and_rear_axles;
-
-	for (int i = 0; i < (num_poses - 1); i++)
-	{
-		double delta_theta = carmen_normalize_theta(path[i + 1].theta - path[i].theta);
-		double l = DIST2D(path[i], path[i + 1]);
-		if (l < 0.01)
-		{
-			path[i].phi = 0.0;
-			continue;
-		}
-		path[i].phi = L * atan(delta_theta / l);
-	}
-
-	for (int i = 1; i < (num_poses - 1); i++)
-	{
-		path[i].phi = (path[i].phi + path[i - 1].phi + path[i + 1].phi) / 3.0;
-	}
-}
-
-
-void
-calculate_phi_back(carmen_ackerman_traj_point_t *path, int num_poses)
-{
-	double L = distance_between_front_and_rear_axles;
-
-	for (int i = (num_poses - 1); i > 0; i--)
-	{
-		double delta_theta = carmen_normalize_theta(path[i - 1].theta - path[i].theta);
-		double l = DIST2D(path[i], path[i - 1]);
-		if (l < 0.01)
-		{
-			path[i].phi = 0.0;
-			continue;
-		}
-		path[i].phi = L * atan(delta_theta / l);
-	}
-
-	for (int i = (num_poses - 2); i > 0; i--)
-	{
-		path[i].phi = (path[i].phi + path[i - 1].phi + path[i + 1].phi) / 3.0;
-	}
-}
-
-
-void
-calculate_theta_ahead(carmen_ackerman_traj_point_t *path, int num_poses)
-{
-	for (int i = 0; i < (num_poses - 1); i++)
-		path[i].theta = atan2(path[i + 1].y - path[i].y, path[i + 1].x - path[i].x);
-	if (num_poses > 1)
-		path[num_poses - 1].theta = path[num_poses - 2].theta;
-}
-
-
-
-void
-calculate_theta_back(carmen_ackerman_traj_point_t *path, int num_poses)
-{
-	for (int i = 1; i < num_poses; i++)
-		path[i].theta = atan2(path[i - 1].y - path[i].y, path[i - 1].x - path[i].x);
-//		path[i].theta = carmen_normalize_theta(atan2(path[i].y - path[i - 1].y, path[i].x - path[i - 1].x) + M_PI);
-}
-
-
-void
-calculate_theta_and_phi(carmen_ackerman_traj_point_t *poses_ahead, int num_poses_ahead,
-		carmen_ackerman_traj_point_t *poses_back, int num_poses_back)
-{
-	calculate_theta_ahead(poses_ahead, num_poses_ahead);
-	poses_back[0].theta = poses_ahead[0].theta;
-	calculate_theta_back(poses_back, num_poses_back);
-
-	calculate_phi_ahead(poses_ahead, num_poses_ahead);
-	poses_back[0].phi = poses_ahead[0].phi;
-	calculate_phi_back(poses_back, num_poses_back);
 }
 
 
@@ -1151,13 +1168,13 @@ carmen_rddf_play_find_nearest_poses_by_road_map(carmen_point_t initial_pose, car
 	(*num_poses_back) = fill_in_poses_back_by_road_map(initial_pose, road_map, poses_back, num_poses_ahead_max / 3);
 	poses_back[0].phi = poses_ahead[0].phi;
 
-	if (debug)
-		plot_state(poses_ahead, num_poses_ahead, poses_back, *num_poses_back, "b", true);
+//	if (debug)
+//		plot_state(poses_ahead, num_poses_ahead, poses_back, *num_poses_back, false);
 
 	smooth_rddf_using_conjugate_gradient(poses_ahead, num_poses_ahead, poses_back, *num_poses_back);
 
 	if (debug)
-		plot_state(poses_ahead, num_poses_ahead, poses_back, *num_poses_back, "b", false);
+		plot_state(poses_ahead, num_poses_ahead, poses_back, *num_poses_back, true);
 
 	return (num_poses_ahead);
 }
