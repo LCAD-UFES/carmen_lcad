@@ -850,9 +850,9 @@ plot_state(carmen_ackerman_traj_point_t *path, int num_points, carmen_ackerman_t
 	if (display)
 	{
 		fprintf(gnuplot_pipeMP, "plot "
-//				"'./gnuplot_data_lane_.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Ahead normal'"
-//				", './gnuplot_data_lane2_.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Back normal'"
-				"'./gnuplot_data_lane.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Ahead smooth'"
+				"'./gnuplot_data_lane_.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Ahead normal'"
+				", './gnuplot_data_lane2_.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Back normal'"
+				", './gnuplot_data_lane.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Ahead smooth'"
 				", './gnuplot_data_lane2.txt' using 1:2:3:4 w vec size  0.3, 10 filled title 'Lane Back smooth' axes x1y1\n");
 		fflush(gnuplot_pipeMP);
 //		fprintf(gnuplot_pipeMP, "plot "
@@ -1045,7 +1045,7 @@ carmen_point_t
 add_orthogonal_distance_to_pose(carmen_point_t pose, double distance)
 {
 	carmen_point_t next_pose = pose;
-	double orthogonal_theta = carmen_normalize_theta(pose.theta + (M_PI / 2.0));
+	double orthogonal_theta = carmen_normalize_theta(pose.theta - (M_PI / 2.0));
 	next_pose.x += distance * cos(orthogonal_theta);
 	next_pose.y += distance * sin(orthogonal_theta);
 
@@ -1074,7 +1074,8 @@ carmen_rddf_play_find_nearest_pose_by_road_map(carmen_point_p rddf_pose, carmen_
 	{
 		lane_pose = add_orthogonal_distance_to_pose(initial_pose, delta_pose);
 		double lane_prob = get_lane_prob(lane_pose, road_map);
-		if (lane_prob > max_lane_prob)
+//		double theta = atan2(initial_pose.y - lane_pose.y, initial_pose.x - lane_pose.x);
+		if ((lane_prob > max_lane_prob) && (true))//fabs(carmen_normalize_theta(theta - initial_pose.theta)) < M_PI / 6.0))
 		{
 			max_lane_prob = lane_prob;
 			rddf_pose->x = round(lane_pose.x / road_map->config.resolution) * road_map->config.resolution;
@@ -1168,8 +1169,8 @@ carmen_rddf_play_find_nearest_poses_by_road_map(carmen_point_t initial_pose, car
 	(*num_poses_back) = fill_in_poses_back_by_road_map(initial_pose, road_map, poses_back, num_poses_ahead_max / 3);
 	poses_back[0].phi = poses_ahead[0].phi;
 
-//	if (debug)
-//		plot_state(poses_ahead, num_poses_ahead, poses_back, *num_poses_back, false);
+	if (debug)
+		plot_state(poses_ahead, num_poses_ahead, poses_back, *num_poses_back, false);
 
 	smooth_rddf_using_conjugate_gradient(poses_ahead, num_poses_ahead, poses_back, *num_poses_back);
 
