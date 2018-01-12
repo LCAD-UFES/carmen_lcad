@@ -116,12 +116,17 @@ void Posterior::update_S_ms1(const ObstaclePose &pose, const Reading &Z_k, bool 
 
 	ObstacleView view(pose);
 
-	Reading::const_iterator i = Z_k.begin();
-	Reading::const_iterator n = Z_k.end();
+	const_iterator_chain<Reading> i, n;
 	if (ranged)
 	{
-		i = Z_k.lower_bound(view.range.first);
-		n = Z_k.upper_bound(view.range.second);
+		i = Z_k.lower_bound(view.range);
+		n = Z_k.upper_bound(view.range);
+	}
+	else
+	{
+		std::pair<double, double> all = std::make_pair(0, M_PI);
+		i = Z_k.lower_bound(all);
+		n = Z_k.upper_bound(all);
 	}
 
 	double d_sum = 0.0;
@@ -204,17 +209,16 @@ void Posterior::update_S_ms3(const Track::S &tracks, const Reading &Z)
 		{
 			const ObstaclePose &pose = track[j];
 			const Node *node = pose.node;
-			double w_2 = 0.5 * node->model->length; // The model rectangle is
-			double h_2 = 0.5 * node->model->width;  // "lying" on its side.
+			double l_2 = 0.5 * node->model->length; // The model rectangle is
+			double w_2 = 0.5 * node->model->width;  // "lying" on its side.
 
 			ObstacleView view(origin, pose);
 
-			// TODO: Think what happens when obstacle is between quadrants 2 and 3.
 			int count = 0;
-			for (auto point = Z.lower_bound(view.range.first), done = Z.upper_bound(view.range.second); point != done; ++point)
+			for (auto point = Z.lower_bound(view.range), done = Z.upper_bound(view.range); point != done; ++point)
 			{
 				PointXY local = pose.project_local(origin, *point);
-				if (std::abs(local.x) < w_2 && std::abs(local.y) < h_2)
+				if (std::abs(local.x) < l_2 && std::abs(local.y) < w_2)
 					count++;
 			}
 
