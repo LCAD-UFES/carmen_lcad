@@ -1,6 +1,7 @@
 #ifndef VIRTUAL_SCAN_READING_H
 #define VIRTUAL_SCAN_READING_H
 
+#include "iterator_chain.h"
 #include "point.h"
 
 #include <set>
@@ -40,6 +41,16 @@ struct Reading: std::set<Point2D, ComparatorOD>
 	 * @brief Return an iterator placed on the first point at the given angle.
 	 */
 	const_iterator upper_bound(double angle) const;
+
+	/**
+	 * @brief Return an iterator placed on the first point within the given range.
+	 */
+	const_iterator_chain<Reading> lower_bound(const std::pair<double, double> &range) const;
+
+	/**
+	 * @brief Return an iterator placed on the first point after the given range.
+	 */
+	const_iterator_chain<Reading> upper_bound(const std::pair<double, double> &range) const;
 
 	/**
 	 * @brief Return the last point in this reading.
