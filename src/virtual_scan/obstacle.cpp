@@ -49,7 +49,7 @@ ObstacleView::ObstacleView(const Pose &origin, const ObstaclePose &pose):
 	Rectangle(
 		pose.node->model->width,
 		pose.node->model->length,
-		origin
+		origin.project_local(pose.global)
 	)
 {
 	std::vector<double> angles;
