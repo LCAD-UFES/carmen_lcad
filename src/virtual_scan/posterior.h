@@ -166,6 +166,15 @@ class Posterior
 
 	/**
 	 * @brief Update the counter for static sensor readings observed in areas occupied by an obstacle at some point in time.
+	 * 
+	 * @param pose Pose to be inspected for static point collision.
+	 *
+	 * @param Z Collection of sensor readings to check.
+	 */
+	void update_S_ms3(const ObstaclePose &pose, const Reading &Z);
+
+	/**
+	 * @brief Update the counter for static sensor readings observed in areas occupied by an obstacle at some point in time.
 	 *
 	 * @param j Position of the track pose to update.
 	 *
