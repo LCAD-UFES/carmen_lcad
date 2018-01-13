@@ -21,6 +21,7 @@ import argparse
 
 # Global definitions
 IMAGE = True
+OVERRIDE = False
 VERBOSE = 0
 ANIMATION = 0
 BEZIER_FRACTION = 0.001     # Line length increment (from 0.000 to 1.000) to set cubic Bezier curve points (number of points = 1/fraction) 
@@ -134,6 +135,9 @@ def svg_get_paths(svg_file):
     doc = minidom.parse(svg_file)  # parseString also exists    
     paths = []
     img = doc.getElementsByTagName('image')
+    if not img:
+        doc.unlink()
+        return 0, 0, []
     width = int(img[0].getAttribute('width'))
     height = int(img[0].getAttribute('height'))
     for path in doc.getElementsByTagName('path'):
@@ -498,11 +502,17 @@ def process_svg_file(svg_file):
     if road_pathname and road_pathname[-1] != '/':
         road_pathname += '/'
     road_file = road_pathname + 'r' + svg_filename[1:-4] + '.map'
-    if os.path.isfile(road_file):
+    if os.path.isfile(road_file) and not OVERRIDE:
         print 'Skipped file', svg_file, ': MAP file', road_file, 'already exists'
         return
     print 'Processing SVG file:', svg_file
     width, height, paths = svg_get_paths(svg_file)
+    if not paths:
+        print 'File ', svg_file, 'contains no path: road map not generated'
+        return
+    if width == 0 or height == 0:
+        print 'File ', svg_file, 'contains no image: road map not generated'
+        return
     img1 = []
     img2 = []
     img_name1 = "cubic Bezier curve"
@@ -568,6 +578,7 @@ if __name__ == "__main__":
     parser.add_argument('-v', '--verbose', help='output verbosity level', type=int, choices=range(4), nargs='?', const=1, default=0)
     parser.add_argument('-a', '--animation', help='animation wait time in milliseconds', type=int, nargs='?', const=1, default=0)
     parser.add_argument('-o', '--outputdir', help='road map file output directory', type=path)
+    parser.add_argument('-x', '--override', help='override existing road map files', action='store_true', dest='override')
     parser.add_argument('-f', '--filelist', help='text file containing a list of SVG filenames (one per line)', action='append', default=[], type=file)
     parser.add_argument('filename', help='list of SVG filenames (separated by spaces)', nargs='*', type=file)
     args = parser.parse_args()
@@ -578,6 +589,8 @@ if __name__ == "__main__":
     ANIMATION = args.animation
     if ANIMATION > 0: print 'Animation option set to', ANIMATION, 'millisecond' + 's' * (ANIMATION > 1)
     g_outputdir = args.outputdir
+    OVERRIDE = args.override
+    if OVERRIDE: print 'Override option set'
 
     fl = 'command line'
     if not args.filelist and not args.filename:
