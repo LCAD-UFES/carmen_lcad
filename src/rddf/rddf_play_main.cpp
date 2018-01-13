@@ -373,11 +373,19 @@ add_annotation(double x, double y, double theta, size_t annotation_index)
 int
 direction_traffic_sign_found(carmen_point_t robot_pose)
 {
+	double distance_car_pose_car_front = distance_between_front_and_rear_axles + distance_between_front_car_and_front_wheels;
+
 	for (size_t annotation_index = 0; annotation_index < annotation_read_from_file.size(); annotation_index++)
 	{
 		if (annotation_read_from_file[annotation_index].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN)
 		{
-			double dist = DIST2D(robot_pose, annotation_read_from_file[annotation_index].annotation_point);
+			carmen_ackerman_traj_point_t annotation_point;
+			annotation_point.x = annotation_read_from_file[annotation_index].annotation_point.x;
+			annotation_point.y = annotation_read_from_file[annotation_index].annotation_point.y;
+			annotation_point.theta = annotation_read_from_file[annotation_index].annotation_orientation;
+			carmen_point_t new_annotation_point = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&annotation_point, distance_car_pose_car_front);
+
+			double dist = DIST2D(robot_pose, new_annotation_point);
 			double search_radius = annotation_read_from_file[annotation_index].annotation_point.z;
 			double angle_to_annotation = carmen_radians_to_degrees(fabs(carmen_normalize_theta(robot_pose.theta - annotation_read_from_file[annotation_index].annotation_orientation)));
 
@@ -1066,9 +1074,13 @@ carmen_point_t
 add_orthogonal_distance_to_pose(carmen_point_t pose, double distance)
 {
 	carmen_point_t next_pose = pose;
-	double orthogonal_theta = carmen_normalize_theta(pose.theta + (M_PI / 2.0));
-	next_pose.x += distance * cos(orthogonal_theta);
-	next_pose.y += distance * sin(orthogonal_theta);
+	double orthogonal_theta;
+	if (distance >= 0.0)
+		orthogonal_theta = carmen_normalize_theta(pose.theta + (M_PI / 2.0));
+	else
+		orthogonal_theta = carmen_normalize_theta(pose.theta - (M_PI / 2.0));
+	next_pose.x += fabs(distance) * cos(orthogonal_theta);
+	next_pose.y += fabs(distance) * sin(orthogonal_theta);
 
 	return (next_pose);
 }
@@ -1080,10 +1092,10 @@ carmen_rddf_play_find_nearest_pose_by_road_map(carmen_point_p rddf_pose, carmen_
 	carmen_point_t lane_pose = initial_pose;
 
 	*rddf_pose = lane_pose;
-	double step = road_map->config.resolution / 2.0;
-	double lane_expected_width = 0.79;
-	double left_limit = -lane_expected_width / 2.0;
-	double right_limit = lane_expected_width / 2.0;
+	double step = road_map->config.resolution / 4.0;
+	double lane_expected_width = 1.0;
+	double left_limit = lane_expected_width / 2.0;
+	double right_limit = -lane_expected_width / 2.0;
 
 	int direction_code = direction_traffic_sign_found(initial_pose);
 	switch (direction_code)
@@ -1101,18 +1113,15 @@ carmen_rddf_play_find_nearest_pose_by_road_map(carmen_point_p rddf_pose, carmen_
 	}
 
 	double max_lane_prob = get_lane_prob(lane_pose, road_map);
-	for (double delta_pose = left_limit; delta_pose < right_limit; delta_pose += step)
+	for (double delta_pose = right_limit; delta_pose <= left_limit; delta_pose += step)
 	{
 		lane_pose = add_orthogonal_distance_to_pose(initial_pose, delta_pose);
 		double lane_prob = get_lane_prob(lane_pose, road_map);
-//		double theta = atan2(initial_pose.y - lane_pose.y, initial_pose.x - lane_pose.x);
-		if ((lane_prob > max_lane_prob) && (true))//fabs(carmen_normalize_theta(theta - initial_pose.theta)) < M_PI / 6.0))
+		if (lane_prob > max_lane_prob)
 		{
 			max_lane_prob = lane_prob;
 			rddf_pose->x = round(lane_pose.x / road_map->config.resolution) * road_map->config.resolution;
 			rddf_pose->y = round(lane_pose.y / road_map->config.resolution) * road_map->config.resolution;
-
-//			*rddf_pose = lane_pose;
 		}
 	}
 
