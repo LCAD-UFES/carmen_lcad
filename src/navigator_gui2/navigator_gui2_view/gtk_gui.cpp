@@ -398,6 +398,8 @@ namespace View
 		annotation_image[RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN][RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_RIGHT] = get_annotation_image(annotation_image_filename);
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_turn_left_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN][RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_LEFT] = get_annotation_image(annotation_image_filename);
+		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_go_straight_15.png", carmen_home_path);
+		annotation_image[RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN][RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_GO_STRAIGHT] = get_annotation_image(annotation_image_filename);
 
 		sprintf(annotation_image_filename, "%s/data/gui/annotations_images/traffic_sign_5_15.png", carmen_home_path);
 		annotation_image[RDDF_ANNOTATION_TYPE_SPEED_LIMIT][RDDF_ANNOTATION_CODE_SPEED_LIMIT_5] = get_annotation_image(annotation_image_filename);

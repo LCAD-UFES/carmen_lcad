@@ -56,7 +56,7 @@ static double rddf_min_distance_between_waypoints = 0.5;
 static double distance_between_front_and_rear_axles;
 static double distance_between_front_car_and_front_wheels;
 static int road_mapper_kernel_size = 7;
-static bool debug = true;
+static bool debug = false;
 
 static int carmen_rddf_end_point_is_set = 0;
 static carmen_point_t carmen_rddf_end_point;
@@ -367,6 +367,27 @@ add_annotation(double x, double y, double theta, size_t annotation_index)
 	}
 
 	return (false);
+}
+
+
+int
+direction_traffic_sign_found(carmen_point_t robot_pose)
+{
+	for (size_t annotation_index = 0; annotation_index < annotation_read_from_file.size(); annotation_index++)
+	{
+		if (annotation_read_from_file[annotation_index].annotation_type == RDDF_ANNOTATION_TYPE_TRAFFIC_SIGN)
+		{
+			double dist = DIST2D(robot_pose, annotation_read_from_file[annotation_index].annotation_point);
+			double search_radius = annotation_read_from_file[annotation_index].annotation_point.z;
+			double angle_to_annotation = carmen_radians_to_degrees(fabs(carmen_normalize_theta(robot_pose.theta - annotation_read_from_file[annotation_index].annotation_orientation)));
+
+			bool orientation_ok = angle_to_annotation < 70.0 ? true : false;
+
+			if ((dist < search_radius) && orientation_ok)
+				return (annotation_read_from_file[annotation_index].annotation_code);
+		}
+	}
+	return (RDDF_ANNOTATION_CODE_NONE);
 }
 
 
@@ -1045,7 +1066,7 @@ carmen_point_t
 add_orthogonal_distance_to_pose(carmen_point_t pose, double distance)
 {
 	carmen_point_t next_pose = pose;
-	double orthogonal_theta = carmen_normalize_theta(pose.theta - (M_PI / 2.0));
+	double orthogonal_theta = carmen_normalize_theta(pose.theta + (M_PI / 2.0));
 	next_pose.x += distance * cos(orthogonal_theta);
 	next_pose.y += distance * sin(orthogonal_theta);
 
@@ -1058,19 +1079,29 @@ carmen_rddf_play_find_nearest_pose_by_road_map(carmen_point_p rddf_pose, carmen_
 {
 	carmen_point_t lane_pose = initial_pose;
 
-//	if (get_lane_prob(initial_pose, road_map) < 0.25) // initial pose is probably off the road
-//	{
-////		int result = get_nearest_lane(&lane_pose, initial_pose, road_map);
-////		if (result == 0) // no lane found in the road map
-//				return (0);
-//	}
-
-//	double orthogonal_angle = carmen_normalize_theta(initial_pose.theta + (M_PI / 2.0));
 	*rddf_pose = lane_pose;
-	double max_lane_prob = get_lane_prob(lane_pose, road_map);
 	double step = road_map->config.resolution / 2.0;
-	double lane_expected_width = 1.3;
-	for (double delta_pose = -lane_expected_width / 2.0; delta_pose < lane_expected_width / 2.0; delta_pose += step)
+	double lane_expected_width = 0.79;
+	double left_limit = -lane_expected_width / 2.0;
+	double right_limit = lane_expected_width / 2.0;
+
+	int direction_code = direction_traffic_sign_found(initial_pose);
+	switch (direction_code)
+	{
+		case RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_GO_STRAIGHT:
+			left_limit /= 10.0;
+			right_limit /= 10.0;
+			break;
+		case RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_LEFT:
+			right_limit /= 10.0;
+			break;
+		case RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_RIGHT:
+			left_limit /= 10.0;
+			break;
+	}
+
+	double max_lane_prob = get_lane_prob(lane_pose, road_map);
+	for (double delta_pose = left_limit; delta_pose < right_limit; delta_pose += step)
 	{
 		lane_pose = add_orthogonal_distance_to_pose(initial_pose, delta_pose);
 		double lane_prob = get_lane_prob(lane_pose, road_map);
@@ -1084,19 +1115,6 @@ carmen_rddf_play_find_nearest_pose_by_road_map(carmen_point_p rddf_pose, carmen_
 //			*rddf_pose = lane_pose;
 		}
 	}
-//	carmen_point_t pose = lane_pose;
-//	vector<carmen_point_t> gradient_line;
-//
-//	while (find_pose_in_vector(gradient_line, pose, road_map->config.resolution) < 0) // while pose not yet pushed into vector
-//	{
-//		gradient_line.push_back(pose);
-//		get_center_of_mass(&pose, road_map, road_mapper_kernel_size, get_lane_prob);
-//	}
-//
-//	(*rddf_pose) = get_pose_with_max_lane_prob(gradient_line, road_map);
-//	rddf_pose->theta = get_orthogonal_angle(lane_pose.x, lane_pose.y, rddf_pose->x, rddf_pose->y);
-//	if (fabs(carmen_normalize_theta(rddf_pose->theta - initial_pose.theta)) > (M_PI / 2.0))
-//		rddf_pose->theta = carmen_normalize_theta(rddf_pose->theta - M_PI); // rddf should have similar orientation as initial pose's
 
 	return (1);
 }
@@ -1581,7 +1599,7 @@ carmen_rddf_play_load_annotation_file()
 		annotation.annotation_description = (char *) calloc (1024, sizeof(char));
 
 		fscanf(f, "%s", annotation.annotation_description);
-		if (strcmp(annotation.annotation_description, &flag_commentary) == 0)
+		if (annotation.annotation_description[0] == flag_commentary)
 		{
 			fscanf(f, "%*[^\n]\n");
 		}
