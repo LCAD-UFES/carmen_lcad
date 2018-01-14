@@ -1179,6 +1179,53 @@ carmen_rddf_play_find_nearest_pose_by_road_map(carmen_point_t previous_pose, car
 }
 
 
+carmen_point_t
+carmen_rddf_play_find_nearest_pose_back_by_road_map(carmen_point_t previous_pose, carmen_point_t rddf_pose_candidate, carmen_map_p road_map)
+{
+	carmen_point_t rddf_pose;
+	carmen_point_t lane_pose = rddf_pose = rddf_pose_candidate;
+
+	double step = road_map->config.resolution / 4.0;
+	double lane_expected_width = 1.0;
+	double left_limit = lane_expected_width / 2.0;
+	double right_limit = -lane_expected_width / 2.0;
+
+	int direction_code = direction_traffic_sign_found(previous_pose);
+	switch (direction_code)
+	{
+		case RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_GO_STRAIGHT:
+//			left_limit /= 10.0;
+//			right_limit /= 10.0;
+			break;
+		case RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_LEFT:
+			right_limit /= 10.0;
+			break;
+		case RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_RIGHT:
+			left_limit /= 10.0;
+			break;
+	}
+
+	double max_lane_prob = 0.0;
+	for (double delta_pose = right_limit; delta_pose <= left_limit; delta_pose += step)
+	{
+		lane_pose = add_orthogonal_distance_to_pose(rddf_pose_candidate, delta_pose);
+		double angle = atan2(previous_pose.y - lane_pose.y, previous_pose.x - lane_pose.x);
+		double angle_diff = carmen_radians_to_degrees(fabs(carmen_normalize_theta(previous_pose.theta - angle)));
+		if ((direction_code == RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_GO_STRAIGHT) && (angle_diff > 15.0))
+			continue;
+		double lane_prob = get_lane_prob(lane_pose, road_map);
+		if (lane_prob > max_lane_prob)
+		{
+			max_lane_prob = lane_prob;
+			rddf_pose.x = round(lane_pose.x / road_map->config.resolution) * road_map->config.resolution;
+			rddf_pose.y = round(lane_pose.y / road_map->config.resolution) * road_map->config.resolution;
+		}
+	}
+
+	return (rddf_pose);
+}
+
+
 int
 fill_in_poses_ahead_by_road_map(carmen_point_t initial_pose, carmen_map_p road_map,
 		carmen_ackerman_traj_point_t *poses_ahead, int num_poses_desired)
@@ -1213,34 +1260,40 @@ fill_in_poses_ahead_by_road_map(carmen_point_t initial_pose, carmen_map_p road_m
 
 
 int
-fill_in_poses_ahead_by_road_map_old(carmen_point_t initial_pose, carmen_map_p road_map,
-		carmen_ackerman_traj_point_t *poses_ahead, int num_poses_desired)
+fill_in_poses_back_by_road_map(carmen_point_t initial_pose, carmen_map_p road_map,
+		carmen_ackerman_traj_point_t *poses_back, int num_poses_desired)
 {
 	int num_poses = 0;
-	carmen_point_t next_pose, rddf_pose;
 	double velocity = 10.0, phi = 0.0;
 
-	next_pose = initial_pose;
+	poses_back[0] = create_ackerman_traj_point_struct(initial_pose.x, initial_pose.y, velocity, phi, initial_pose.theta);
+	carmen_point_t previous_pose = initial_pose;
+	carmen_point_t rddf_pose_candidate = add_distance_to_pose(previous_pose, -rddf_min_distance_between_waypoints);
+	num_poses = 1;
 
-	while ((num_poses < num_poses_desired) && !pose_out_of_map_coordinates(next_pose, road_map) &&
-			carmen_rddf_play_find_nearest_pose_by_road_map(&rddf_pose, next_pose, road_map))
+	do
 	{
-		if (num_poses > 0)
-			rddf_pose.theta = atan2(rddf_pose.y - poses_ahead[num_poses - 1].y, rddf_pose.x - poses_ahead[num_poses - 1].x);
-		poses_ahead[num_poses] = create_ackerman_traj_point_struct(rddf_pose.x, rddf_pose.y, velocity, phi, rddf_pose.theta);
-		num_poses++;
-		next_pose = add_distance_to_pose(rddf_pose, rddf_min_distance_between_waypoints);
-	}
+		carmen_point_t rddf_pose = carmen_rddf_play_find_nearest_pose_back_by_road_map(previous_pose, rddf_pose_candidate, road_map);
+		if (pose_out_of_map_coordinates(rddf_pose, road_map))
+			break;
 
-	calculate_theta_ahead(poses_ahead, num_poses);
-	calculate_phi_ahead(poses_ahead, num_poses);
+		rddf_pose.theta = atan2(previous_pose.y - rddf_pose.y, previous_pose.x - rddf_pose.x);
+		poses_back[num_poses] = create_ackerman_traj_point_struct(rddf_pose.x, rddf_pose.y, velocity, phi, rddf_pose.theta);
+
+		previous_pose = rddf_pose;
+		rddf_pose_candidate = add_distance_to_pose(previous_pose, -rddf_min_distance_between_waypoints);
+		num_poses++;
+	} while (num_poses < num_poses_desired);
+
+	calculate_theta_back(poses_back, num_poses);
+	calculate_phi_back(poses_back, num_poses);
 
 	return (num_poses);
 }
 
 
 int
-fill_in_poses_back_by_road_map(carmen_point_t initial_pose, carmen_map_p road_map,
+fill_in_poses_back_by_road_map_old(carmen_point_t initial_pose, carmen_map_p road_map,
 		carmen_ackerman_traj_point_t *poses_back, int num_poses_desired)
 {
 	int num_poses;
@@ -1684,28 +1737,25 @@ carmen_rddf_play_load_annotation_file()
 		return;
 
 	FILE *f = fopen(carmen_annotation_filename, "r");
-	char flag_commentary = '#';
-	while(!feof(f))
+	char line[1024];
+	while(fgets(line, 1023, f) != NULL)
 	{
+		if (line[0] == '#') // comment line
+			continue;
+
 		carmen_annotation_t annotation;
-		annotation.annotation_description = (char *) calloc (1024, sizeof(char));
-
-		fscanf(f, "%s", annotation.annotation_description);
-		if (annotation.annotation_description[0] == flag_commentary)
+		char annotation_description[1024];
+		if (sscanf(line, "%s %d %d %lf %lf %lf %lf\n",
+				annotation_description,
+				&annotation.annotation_type,
+				&annotation.annotation_code,
+				&annotation.annotation_orientation,
+				&annotation.annotation_point.x,
+				&annotation.annotation_point.y,
+				&annotation.annotation_point.z) == 7)
 		{
-			fscanf(f, "%*[^\n]\n");
-		}
-		else
-		{
-			fscanf(f, "\t%d\t%d\t%lf\t%lf\t%lf\t%lf\n",
-					&annotation.annotation_type,
-					&annotation.annotation_code,
-					&annotation.annotation_orientation,
-					&annotation.annotation_point.x,
-					&annotation.annotation_point.y,
-					&annotation.annotation_point.z
-			);
-
+			annotation.annotation_description = (char *) calloc (1024, sizeof(char));
+			strcpy(annotation.annotation_description, annotation_description);
 //			printf("%s\t%d\t%d\t%lf\t%lf\t%lf\t%lf\n", annotation.annotation_description,
 //					annotation.annotation_type,
 //					annotation.annotation_code,
