@@ -355,15 +355,19 @@ carmen_obstacle_distance_mapper_compact_map_message_handler(carmen_obstacle_dist
 static void
 carmen_obstacle_distance_mapper_compact_lane_contents_message_handler(carmen_obstacle_distance_mapper_compact_map_message *message)
 {
-	if ((message->timestamp - last_behaviour_selector_compact_lane_contents_message_timestamp) > 0.5)
-		carmen_obstacle_distance_mapper_overwrite_distance_map_message_with_compact_distance_map(get_current_map(), message);
+	carmen_obstacle_distance_mapper_map_message *distance_map = get_current_map();
+	if ((distance_map != NULL) && ((message->timestamp - last_behaviour_selector_compact_lane_contents_message_timestamp) > 0.5))
+		carmen_obstacle_distance_mapper_overwrite_distance_map_message_with_compact_distance_map(distance_map, message);
 }
 
 
 static void
 carmen_behaviour_selector_compact_lane_contents_message_handler(carmen_obstacle_distance_mapper_compact_map_message *message)
 {
-	carmen_obstacle_distance_mapper_overwrite_distance_map_message_with_compact_distance_map(get_current_map(), message);
+	carmen_obstacle_distance_mapper_map_message *distance_map = get_current_map();
+	if (distance_map != NULL)
+		carmen_obstacle_distance_mapper_overwrite_distance_map_message_with_compact_distance_map(distance_map, message);
+
 	last_behaviour_selector_compact_lane_contents_message_timestamp = message->timestamp;
 }
 

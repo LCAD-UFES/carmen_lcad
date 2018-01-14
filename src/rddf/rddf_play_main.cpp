@@ -1129,8 +1129,91 @@ carmen_rddf_play_find_nearest_pose_by_road_map(carmen_point_p rddf_pose, carmen_
 }
 
 
+carmen_point_t
+carmen_rddf_play_find_nearest_pose_by_road_map(carmen_point_t previous_pose, carmen_point_t rddf_pose_candidate, carmen_map_p road_map)
+{
+	carmen_point_t rddf_pose;
+	carmen_point_t lane_pose = rddf_pose = rddf_pose_candidate;
+
+	double step = road_map->config.resolution / 4.0;
+	double lane_expected_width = 1.0;
+	double left_limit = lane_expected_width / 2.0;
+	double right_limit = -lane_expected_width / 2.0;
+
+	int direction_code = direction_traffic_sign_found(rddf_pose_candidate);
+	switch (direction_code)
+	{
+		case RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_GO_STRAIGHT:
+//			left_limit /= 10.0;
+//			right_limit /= 10.0;
+			break;
+		case RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_LEFT:
+			right_limit /= 10.0;
+			break;
+		case RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_TURN_RIGHT:
+			left_limit /= 10.0;
+			break;
+	}
+
+	double max_lane_prob = 0.0;
+	for (double delta_pose = right_limit; delta_pose <= left_limit; delta_pose += step)
+	{
+		lane_pose = add_orthogonal_distance_to_pose(rddf_pose_candidate, delta_pose);
+		if (DIST2D(previous_pose, rddf_pose_candidate) != 0.0) // A pose zero do rddf nao tem previous_pose
+		{
+			double angle = atan2(lane_pose.y - previous_pose.y, lane_pose.x - previous_pose.x);
+			double angle_diff = carmen_radians_to_degrees(fabs(carmen_normalize_theta(previous_pose.theta - angle)));
+			if ((direction_code == RDDF_ANNOTATION_CODE_TRAFFIC_SIGN_GO_STRAIGHT) && (angle_diff > 15.0))
+				continue;
+		}
+		double lane_prob = get_lane_prob(lane_pose, road_map);
+		if (lane_prob > max_lane_prob)
+		{
+			max_lane_prob = lane_prob;
+			rddf_pose.x = round(lane_pose.x / road_map->config.resolution) * road_map->config.resolution;
+			rddf_pose.y = round(lane_pose.y / road_map->config.resolution) * road_map->config.resolution;
+		}
+	}
+
+	return (rddf_pose);
+}
+
+
 int
 fill_in_poses_ahead_by_road_map(carmen_point_t initial_pose, carmen_map_p road_map,
+		carmen_ackerman_traj_point_t *poses_ahead, int num_poses_desired)
+{
+	int num_poses = 0;
+	double velocity = 10.0, phi = 0.0;
+
+	carmen_point_t rddf_pose = carmen_rddf_play_find_nearest_pose_by_road_map(initial_pose, initial_pose, road_map);
+	poses_ahead[0] = create_ackerman_traj_point_struct(rddf_pose.x, rddf_pose.y, velocity, phi, rddf_pose.theta);
+	carmen_point_t previous_pose = initial_pose;
+	carmen_point_t rddf_pose_candidate = add_distance_to_pose(previous_pose, rddf_min_distance_between_waypoints);
+	num_poses = 1;
+	do
+	{
+		rddf_pose = carmen_rddf_play_find_nearest_pose_by_road_map(previous_pose, rddf_pose_candidate, road_map);
+		if (pose_out_of_map_coordinates(rddf_pose, road_map))
+			break;
+
+		rddf_pose.theta = atan2(rddf_pose.y - previous_pose.y, rddf_pose.x - previous_pose.x);
+		poses_ahead[num_poses] = create_ackerman_traj_point_struct(rddf_pose.x, rddf_pose.y, velocity, phi, rddf_pose.theta);
+
+		previous_pose = rddf_pose;
+		rddf_pose_candidate = add_distance_to_pose(previous_pose, rddf_min_distance_between_waypoints);
+		num_poses++;
+	} while (num_poses < num_poses_desired);
+
+	calculate_theta_ahead(poses_ahead, num_poses);
+	calculate_phi_ahead(poses_ahead, num_poses);
+
+	return (num_poses);
+}
+
+
+int
+fill_in_poses_ahead_by_road_map_old(carmen_point_t initial_pose, carmen_map_p road_map,
 		carmen_ackerman_traj_point_t *poses_ahead, int num_poses_desired)
 {
 	int num_poses = 0;

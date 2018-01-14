@@ -1724,7 +1724,7 @@ path_planner_road_profile_handler(carmen_path_planner_road_profile_message *rddf
 static void
 carmen_obstacle_distance_mapper_compact_map_message_handler(carmen_obstacle_distance_mapper_compact_map_message *message)
 {
-	if (!necessary_maps_available)
+	if (compact_lane_contents == NULL)
 		return;
 
 	if (compact_distance_map == NULL)
@@ -1740,6 +1740,10 @@ carmen_obstacle_distance_mapper_compact_map_message_handler(carmen_obstacle_dist
 		carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_distance_map, message);
 		carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, message);
 	}
+
+	behavior_selector_update_map(&distance_map);
+
+	necessary_maps_available = 1;
 }
 
 
@@ -1760,10 +1764,6 @@ carmen_obstacle_distance_mapper_compact_lane_contents_message_handler(carmen_obs
 		carmen_obstacle_distance_mapper_cpy_compact_map_message_to_compact_map(compact_lane_contents, message);
 		carmen_obstacle_distance_mapper_uncompress_compact_distance_map_message(&distance_map, message);
 	}
-
-	behavior_selector_update_map(&distance_map);
-
-	necessary_maps_available = 1;
 }
 
 
