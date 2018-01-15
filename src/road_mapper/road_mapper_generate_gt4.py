@@ -133,14 +133,14 @@ def svg_d_get_bezier_points(d):
 
 #https://stackoverflow.com/questions/15857818/python-svg-parser
 def svg_get_paths(svg_file):
-    doc = minidom.parse(svg_file)  # parseString also exists    
+    width = 0
+    height = 0
     paths = []
+    doc = minidom.parse(svg_file)  # parseString also exists    
     img = doc.getElementsByTagName('image')
-    if not img:
-        doc.unlink()
-        return 0, 0, []
-    width = int(img[0].getAttribute('width'))
-    height = int(img[0].getAttribute('height'))
+    if img:
+        width = int(img[0].getAttribute('width'))
+        height = int(img[0].getAttribute('height'))
     for path in doc.getElementsByTagName('path'):
         d = path.getAttribute('d')
         points = svg_d_get_bezier_points(d)
@@ -148,10 +148,11 @@ def svg_get_paths(svg_file):
             s = style.split(':')
             if s[0] == 'stroke-width':
                 stroke_width = float(s[1]) 
-            if s[0] == 'stroke': # this field has the stroke color
-                # stroke-color codes the lane marking according to readme.txt
+            if s[0] == 'stroke': # stroke color codes the lane marking according to readme.md
                 stroke_color = s[1]
-        paths.append((points, stroke_width, stroke_color))
+            if s[0] == 'stroke-dasharray': # Dashes = none : merge_lane = true
+                merge_lane = (s[1] == 'none')
+        paths.append((points, stroke_width, stroke_color, merge_lane))
     doc.unlink()
     return width, height, paths
 
@@ -344,13 +345,14 @@ def get_circle(neighbors, x, y, radius):
          angle -= delta_angle
     return neighbors
 
-def get_lane_from_bezier(map, bx, by, bxo, byo, lane, stroke_width, stroke_color, image, image_name):
+def get_lane_from_bezier(map, bx, by, bxo, byo, lane, stroke_width, stroke_color, merge_lane, image, image_name):
     # map of lanes in a grid of pixels
     # bx, by: Bezier curve points
     # bxo, byo: Bezier curve points orientation
     # lane number in SVG file
     # stroke width of the lane
     # stroke color of the lane
+    # merge_lane flag defined by stroke style Dashes = none
     # image for displaying the animation
     height = len(map)
     width = len(map[0])
@@ -388,7 +390,7 @@ def get_lane_from_bezier(map, bx, by, bxo, byo, lane, stroke_width, stroke_color
                 if VERBOSE >= 2: print 'i =', i, ': Map pixel is not orthogonal to the current lane number', lane, ': d =', d, ': dbcos =', dbcos, ', arccos =', np.arccos(dbcos / d), ': x =', x, ', y =', y
                 continue
             lane_center = int(round((1.0 - 0.75 * d / max_distance) * MAX_PROB))  # probability in range(0.25, 1.0) * MAX_PROB
-            if map[y][x].in_the_lane and map[y][x].lane_center >= lane_center:
+            if map[y][x].in_the_lane and ((map[y][x].lane_center >= lane_center) or not merge_lane):
                 if VERBOSE >= 2: print 'i =', i, ': Map pixel is already inside lane number', map[y][x].lane_number, ': x =', x, ', y =', y
                 continue
             map[y][x].lane_number = lane
@@ -541,7 +543,7 @@ def process_svg_file(svg_file):
                 if x >=0 and x < width and y >=0 and y < height:
                     img1[y][x] = (255, 0, 0)
             cv2.imshow(img_name1, img1)
-        map = get_lane_from_bezier(map, bx, by, bxo, byo, lane, stroke_width = path[1], stroke_color = path[2], image = img2, image_name = img_name2)
+        map = get_lane_from_bezier(map, bx, by, bxo, byo, lane, stroke_width = path[1], stroke_color = path[2], merge_lane = path[3], image = img2, image_name = img_name2)
     if IMAGE:
         for y in range(height):
             for x in range(width):

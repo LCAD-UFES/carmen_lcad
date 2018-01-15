@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   version="1.1"
+   id="svg5734"
+   width="350"
+   height="350"
+   viewBox="0 0 350 350"
+   sodipodi:docname="i7757750_-363860.svg"
+   inkscape:version="0.92.2 (unknown)">
+  <metadata
+     id="metadata5740">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs5738" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1855"
+     inkscape:window-height="1056"
+     id="namedview5736"
+     showgrid="false"
+     inkscape:zoom="1.0636576"
+     inkscape:cx="360.01087"
+     inkscape:cy="3.3732556"
+     inkscape:window-x="65"
+     inkscape:window-y="24"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg5734" />
+  <image
+     sodipodi:absref="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757680_-363860.png"
+     y="0"
+     x="0"
+     id="image5303"
+     xlink:href="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757680_-363860.png"
+     preserveAspectRatio="none"
+     height="350"
+     width="350" />
+  <image
+     width="350"
+     height="350"
+     preserveAspectRatio="none"
+     xlink:href="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757750_-363860.png"
+     id="image5742"
+     x="350"
+     y="0"
+     sodipodi:absref="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757750_-363860.png" />
+  <path
+     style="fill:none;stroke:#7fff00;stroke-width:22;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     d="m 324.01749,334.93002 c 0,0 41.95113,-31.48737 62.77236,-47.43392 24.12318,-18.47543 47.9929,-37.27949 72.00889,-55.89403 22.70235,-17.59636 45.40443,-35.19315 68.14398,-52.74141 26.76472,-20.65452 53.57316,-41.25234 80.38189,-61.84971 24.18634,-18.582568 48.46178,-37.049314 72.59895,-55.695703 20.91806,-16.159567 62.59103,-48.689151 62.59103,-48.689151"
+     id="path5774"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="caaaaac" />
+  <path
+     style="fill:none;stroke:#7fff00;stroke-width:22;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     d="m 738.74886,-14.16185 c 0,0 -54.21805,41.526649 -81.33358,62.281476 -35.65347,27.289951 -71.39756,54.461754 -106.9775,81.847504 -19.62893,15.10832 -39.10683,30.41238 -58.75516,45.49544 -15.74917,12.08986 -31.67317,23.95117 -47.39885,36.07157 -18.67713,14.39519 -37.09693,29.12207 -55.76583,43.52792 -24.78273,19.12358 -74.66565,56.95696 -74.66565,56.95696"
+     id="path5776"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="caaaaac" />
+  <image
+     width="350"
+     height="350"
+     preserveAspectRatio="none"
+     xlink:href="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757680_-363930.png"
+     id="image6181"
+     x="0"
+     y="350"
+     sodipodi:absref="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757680_-363930.png" />
+  <path
+     style="fill:none;stroke:#7fff00;stroke-width:22;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     d="M -33.26798,610.52061 324.01749,334.93002"
+     id="path6248"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="cc" />
+  <path
+     style="fill:none;stroke:#7fff00;stroke-width:22;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     d="M 313.85229,312.01902 -56.976195,597.51933"
+     id="path6250"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="cc" />
+</svg>
