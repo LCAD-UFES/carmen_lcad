@@ -22,6 +22,7 @@ import argparse
 # Global definitions
 IMAGE = True
 OVERRIDE = False
+LEFT_DISTANCE = 0.0
 VERBOSE = 0
 ANIMATION = 0
 BEZIER_FRACTION = 0.001     # Line length increment (from 0.000 to 1.000) to set cubic Bezier curve points (number of points = 1/fraction) 
@@ -34,7 +35,6 @@ CARMEN_MAP_LABEL = "CARMENMAPFILE"  # maptools/map_io.h
 CARMEN_MAP_VERSION = "v020"         # maptools/map_io.h
 CARMEN_MAP_CREATOR_CHUNK = 32       # maptools/map_io.h
 CARMEN_MAP_GRIDMAP_CHUNK = 1        # maptools/map_io.h
-LEFT_DISTANCE = 0.0
 g_outputdir = ''
 
 #https://docs.python.org/2/library/struct.html
@@ -590,12 +590,10 @@ if __name__ == "__main__":
     parser.add_argument('-a', '--animation', help='animation wait time in milliseconds', type=int, nargs='?', const=1, default=0)
     parser.add_argument('-o', '--outputdir', help='road map file output directory', type=path)
     parser.add_argument('-x', '--override', help='override existing road map files', action='store_true', dest='override')
-    parser.add_argument('-f', '--filelist', help='text file containing a list of SVG filenames (one per line)', action='append', default=[], type=file)
     parser.add_argument('-l', '--leftdistance', help='distance, in map cells, from lane center to left border of Inkscape path ground truth', type=float, dest='left_distance', default=0.0)
+    parser.add_argument('-f', '--filelist', help='text file containing a list of SVG filenames (one per line)', action='append', default=[], type=file)
     parser.add_argument('filename', help='list of SVG filenames (separated by spaces)', nargs='*', type=file)
     args = parser.parse_args()
-    LEFT_DISTANCE = args.left_distance
-    print LEFT_DISTANCE
     IMAGE = args.image
     if not IMAGE: print 'Image option reset'
     VERBOSE = args.verbose
@@ -605,6 +603,8 @@ if __name__ == "__main__":
     g_outputdir = args.outputdir
     OVERRIDE = args.override
     if OVERRIDE: print 'Override option set'
+    LEFT_DISTANCE = args.left_distance
+    if LEFT_DISTANCE > 0.0: print 'Left distance set to', LEFT_DISTANCE, 'map cells'
 
     fl = 'command line'
     if not args.filelist and not args.filename:
