@@ -8,10 +8,10 @@ LOOP_REQUIRED_TIME 300.0
 LOOP_REQUIRED_SQR_DISTANCE 25.0
 
 -- how many threads the ICP (Interative Closest Point) method can use (typically the number of cores of your machine)
-ICP_THREADS_POOL_SIZE 8
+ICP_THREADS_POOL_SIZE 24
 
 -- each thread will take 400 clouds and execute the sensor movement estimates
-ICP_THREAD_BLOCK_SIZE 100
+ICP_THREAD_BLOCK_SIZE 200
 
 -- the distace parameter to find the next point cloud
 LIDAR_ODOMETRY_MIN_DISTANCE 0.3

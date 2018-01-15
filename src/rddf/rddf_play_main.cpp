@@ -56,7 +56,7 @@ static double rddf_min_distance_between_waypoints = 0.5;
 static double distance_between_front_and_rear_axles;
 static double distance_between_front_car_and_front_wheels;
 static int road_mapper_kernel_size = 7;
-static bool debug = true;
+static bool debug = false;
 
 static int carmen_rddf_end_point_is_set = 0;
 static carmen_point_t carmen_rddf_end_point;
