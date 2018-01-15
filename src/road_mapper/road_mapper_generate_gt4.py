@@ -34,6 +34,7 @@ CARMEN_MAP_LABEL = "CARMENMAPFILE"  # maptools/map_io.h
 CARMEN_MAP_VERSION = "v020"         # maptools/map_io.h
 CARMEN_MAP_CREATOR_CHUNK = 32       # maptools/map_io.h
 CARMEN_MAP_GRIDMAP_CHUNK = 1        # maptools/map_io.h
+LEFT_DISTANCE = 0.0
 g_outputdir = ''
 
 #https://docs.python.org/2/library/struct.html
@@ -580,8 +581,11 @@ if __name__ == "__main__":
     parser.add_argument('-o', '--outputdir', help='road map file output directory', type=path)
     parser.add_argument('-x', '--override', help='override existing road map files', action='store_true', dest='override')
     parser.add_argument('-f', '--filelist', help='text file containing a list of SVG filenames (one per line)', action='append', default=[], type=file)
+    parser.add_argument('-l', '--leftdistance', help='distance, in map cells, from lane center to left border of Inkscape path ground truth', type=float, dest='left_distance', default=0.0)
     parser.add_argument('filename', help='list of SVG filenames (separated by spaces)', nargs='*', type=file)
     args = parser.parse_args()
+    LEFT_DISTANCE = args.left_distance
+    print LEFT_DISTANCE
     IMAGE = args.image
     if not IMAGE: print 'Image option reset'
     VERBOSE = args.verbose
