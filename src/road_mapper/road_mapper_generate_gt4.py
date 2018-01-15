@@ -357,6 +357,10 @@ def get_lane_from_bezier(map, bx, by, bxo, byo, lane, stroke_width, stroke_color
     height = len(map)
     width = len(map[0])
     max_distance = stroke_width / 2.0
+    desloc_center = 0.0
+    if LEFT_DISTANCE > 0.0 and max_distance > LEFT_DISTANCE:
+        desloc_center = max_distance - LEFT_DISTANCE
+        max_distance = LEFT_DISTANCE
     l_marking, r_marking = get_lane_marking_by_color_code(stroke_color)
     last_x = last_y = np.NaN
     cont = 0
@@ -381,6 +385,10 @@ def get_lane_from_bezier(map, bx, by, bxo, byo, lane, stroke_width, stroke_color
             cont += 1
             if VERBOSE >= 3: print 'i =', i, ': distance_to_line call #', cont, ': x =', x, ', y =', y  
             d, dbcos, dbsin, dbx, dby = distance_to_line(x, y, bx, by, bxo, byo)
+            d += np.sign(dbsin) * desloc_center
+            if d < 0:
+                d = abs(d)
+                dbsin = - dbsin
             if map[y][x].lane_number == 0:
                 map[y][x].lane_number = lane
             if d > max_distance:
