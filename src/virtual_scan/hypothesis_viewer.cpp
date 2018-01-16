@@ -64,7 +64,13 @@ virtual_scan_publish_hypotheses(carmen_mapper_virtual_scan_message *data)
 		message.point_clouds[k].geometric_model = model->id;
 		message.point_clouds[k].point_size = 0;
 
-//		std::cout << "    " << *model << ", pose (x, y, o) = " << node->pose.local << std::endl;
+		object_model_features_t &model_features = message.point_clouds[k].model_features;
+		model_features.model_id = model->id;
+		model_features.model_name = (char*) model->name.c_str();
+		model_features.geometry.length = model->length;
+		model_features.geometry.width = model->width;
+
+//		std::cout << "	" << *model << ", pose (x, y, o) = " << node->pose.local << std::endl;
 	}
 
 	std::cout << std::endl;
