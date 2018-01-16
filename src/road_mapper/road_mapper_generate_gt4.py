@@ -36,6 +36,8 @@ CARMEN_MAP_VERSION = "v020"         # maptools/map_io.h
 CARMEN_MAP_CREATOR_CHUNK = 32       # maptools/map_io.h
 CARMEN_MAP_GRIDMAP_CHUNK = 1        # maptools/map_io.h
 g_outputdir = ''
+g_count_files = 0
+g_total_files = 0
 
 #https://docs.python.org/2/library/struct.html
 class road:
@@ -498,6 +500,9 @@ def map_write(map, road_filename, width, height):
     print 'Road map file generated :', road_filename
         
 def process_svg_file(svg_file):
+    global g_count_files
+    g_count_files += 1
+    print '>>>>> File', g_count_files, 'of', g_total_files, '<<<<<'
     if svg_file[-4:] != '.svg':
         print 'Skipped file', svg_file, ': SVG file expected'
         return
@@ -609,6 +614,12 @@ if __name__ == "__main__":
     if not args.filelist and not args.filename:
         fl = 'default'
         args.filename = [ 'data/i7730800_-357770.00.svg' ]
+    g_total_files = len(args.filename)
+    for filelist in args.filelist:
+        flist = open(filelist)
+        filenames = flist.readlines()
+        g_total_files += len(filenames)
+        flist.close()
     if args.filename:
         print '********** Processing', fl, 'filelist containing', len(args.filename), 'file' + 's' * (len(args.filename) > 1) 
         for f in args.filename:
