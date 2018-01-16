@@ -46,12 +46,21 @@
      id="namedview5646"
      showgrid="false"
      inkscape:zoom="0.80489983"
-     inkscape:cx="115.46206"
-     inkscape:cy="-39.933647"
+     inkscape:cx="-115.95937"
+     inkscape:cy="108.80495"
      inkscape:window-x="65"
      inkscape:window-y="24"
      inkscape:window-maximized="1"
      inkscape:current-layer="svg5644" />
+  <image
+     sodipodi:absref="/home/rcarneiro/carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757890_-363790.png"
+     y="0"
+     x="350"
+     id="image2071"
+     xlink:href="file:///home/rcarneiro/carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757890_-363790.png"
+     preserveAspectRatio="none"
+     height="350"
+     width="350" />
   <image
      sodipodi:absref="/home/rcarneiro/carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757750_-363790.png"
      y="0"
@@ -64,40 +73,88 @@
   <image
      sodipodi:absref="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757750_-363860.png"
      xlink:href="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757750_-363860.png"
-     width="350"
-     height="350"
-     preserveAspectRatio="none"
-     id="image5742"
+     y="350"
      x="-350"
-     y="350" />
+     id="image5742"
+     preserveAspectRatio="none"
+     height="350"
+     width="350" />
   <image
      sodipodi:absref="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757820_-363860.png"
      xlink:href="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757820_-363860.png"
-     width="350"
-     height="350"
-     preserveAspectRatio="none"
-     id="image5832"
+     y="350"
      x="0"
-     y="350" />
+     id="image5832"
+     preserveAspectRatio="none"
+     height="350"
+     width="350" />
   <image
      sodipodi:absref="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757820_-363790.png"
      xlink:href="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757820_-363790.png"
-     width="350"
-     height="350"
-     preserveAspectRatio="none"
-     id="image5652"
+     y="0"
      x="0"
-     y="0" />
+     id="image5652"
+     preserveAspectRatio="none"
+     height="350"
+     width="350" />
   <path
      style="opacity:0.344;fill:none;stroke:#7fff00;stroke-width:25;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-     d="m 376.21884,74.808986 c -51.70939,40.800304 -95.22219,74.232164 -143.08615,111.020794 -27.96215,21.49194 -56.15545,42.68158 -84.18016,64.09189 -28.08093,21.45327 -56.145501,42.92823 -84.1363,64.49896 -33.897624,26.12275 -60.5555823,46.86173 -101.493723,78.626"
+     d="m 379.50434,73.705455 c -52.64118,40.800305 -97.68265,74.617355 -146.37165,112.124325 -27.82546,21.43499 -55.3914,43.20669 -83.30166,64.53114 -28.19502,21.54202 -56.819911,42.51751 -85.0148,64.05971 -34.005689,25.98192 -60.5555823,46.86173 -101.493723,78.626"
      id="path5549"
      inkscape:connector-curvature="0"
      sodipodi:nodetypes="caaac" />
   <path
-     style="opacity:0.49599998;fill:none;stroke:#7fff00;stroke-width:25;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;stroke-dashoffset:0"
-     d="M -21.591109,413.21766 C 32.960934,369.53522 59.299448,349.97755 99.943547,318.61403 152.06364,278.39491 204.56567,238.6731 256.81097,198.61675 301.23345,164.55814 346.21934,127.14328 389.96639,96.295004"
+     style="opacity:0.49599998;fill:none;stroke:#7fff00;stroke-width:25;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+     d="M -21.591109,413.21766 C 32.960934,369.53522 59.198277,349.846 99.943547,318.61403 c 22.136083,-16.9677 44.595243,-33.51033 66.785493,-50.40714 30.60505,-23.30428 60.99649,-46.8878 91.5173,-70.3023 45.41637,-34.84185 93.50094,-71.41558 136.3162,-104.43803"
      id="path5551"
      inkscape:connector-curvature="0"
-     sodipodi:nodetypes="caac" />
+     sodipodi:nodetypes="caaac" />
+  <image
+     sodipodi:absref="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757960_-363720.png"
+     xlink:href="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757960_-363720.png"
+     width="350"
+     height="350"
+     preserveAspectRatio="none"
+     id="image5472"
+     x="700"
+     y="-350" />
+  <image
+     sodipodi:absref="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757890_-363720.png"
+     xlink:href="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757890_-363720.png"
+     width="350"
+     height="350"
+     preserveAspectRatio="none"
+     id="image5290"
+     x="350"
+     y="-350" />
+  <image
+     sodipodi:absref="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757960_-363650.png"
+     xlink:href="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757960_-363650.png"
+     width="350"
+     height="350"
+     preserveAspectRatio="none"
+     id="image5382"
+     x="700"
+     y="-700" />
+  <image
+     sodipodi:absref="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757890_-363650.png"
+     xlink:href="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757890_-363650.png"
+     width="350"
+     height="350"
+     preserveAspectRatio="none"
+     id="image5200"
+     x="350"
+     y="-700" />
+  <path
+     style="opacity:0.47700004;fill:none;stroke:#7fff00;stroke-width:25;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     d="m 718.78564,-281.66289 c 0,0 2.3705,29.52843 0.3013,44.0735 -1.5909,11.18323 -5.6179,21.93467 -9.6725,32.47772 -2.1219,5.51773 -4.6883,10.88215 -7.6313,16.00925 -3.9297,6.84613 -8.2918,13.495 -13.3196,19.58049 -6.3745,7.7155 -13.7058,14.62685 -21.1939,21.26708 -11.2674,9.99172 -23.6995,18.58743 -35.5851,27.83529 -10.8768,8.46302 -21.7744,16.89943 -32.6958,25.304943 -11.7337,9.03075 -23.5645,17.93516 -35.2741,26.9971 -12.6428,9.784162 -25.0981,19.809642 -37.7706,29.555402 -25.3005,19.457379 -51.0643,38.30690022 -76.389,57.73286 -23.4797,18.01072 -70.0507,54.53471 -70.0507,54.53471"
+     id="path5324-7"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="caaaaaaaaaac" />
+  <path
+     style="opacity:0.40800003;fill:none;stroke:#7fff00;stroke-width:25;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     d="m 394.56254,93.46656 c 0,0 70.6756,-55.055165 106.2203,-82.314385 21.5295,-16.5109808 43.2989,-32.707521 64.8375,-49.20659 13.5554,-10.38368 27.0106,-20.89745 40.5258,-31.333322 14.2803,-11.02663 28.682,-21.8971 42.8618,-33.052683 13.0798,-10.2902 26.7122,-19.95826 38.9381,-31.24965 8.071,-7.45413 15.8916,-15.29006 22.6044,-23.98739 6.3097,-8.17496 11.7267,-17.07139 16.4282,-26.26581 3.3214,-6.49526 5.8599,-13.3786 8.2486,-20.27162 3.1099,-8.97404 6.3484,-18.00643 7.8944,-27.37738 1.5681,-9.50471 1.2581,-19.23576 1.3366,-28.86862 0.063,-7.68345 -0.189,-13.6082 -0.6904,-23.04077"
+     id="path5326-5"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="caaaaaaaaaac" />
 </svg>
