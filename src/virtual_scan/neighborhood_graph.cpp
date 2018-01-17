@@ -7,21 +7,22 @@
 namespace virtual_scan
 {
 
-static const Model *BIKE = new Model(Model::BIKE, 1.2, 2.2);
+static const Model *BIKE = new Model(Model::BIKE, "bike", 1.2, 2.2);
 
-static const Model *BUS = new Model(Model::BUS, 2.5, 12.0);
+static const Model *BUS = new Model(Model::BUS, "bus", 2.5, 12.0);
 
-static const Model *CAR = new Model(Model::CAR, 1.9, 5.1);
+static const Model *CAR = new Model(Model::CAR, "car", 1.9, 5.1);
 
-static const Model *PEDESTRIAN = new Model(Model::PEDESTRIAN, 0.0, 0.0);
+static const Model *PEDESTRIAN = new Model(Model::PEDESTRIAN, "pedestrian", 0.0, 0.0);
 
-static const Model *UNKNOWN = new Model(Model::UNKNOWN, 0.0, 0.0);
+static const Model *UNKNOWN = new Model(Model::UNKNOWN, "unknown", 0.0, 0.0);
 
 static std::vector<const Model*> VEHICLES = {BIKE, BUS, CAR};
 
 
-Model::Model(ID id, double width, double length):
+Model::Model(ID id, const std::string &name, double width, double length):
 	id(id),
+	name(name),
 	width(width),
 	length(length)
 {

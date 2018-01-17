@@ -24,9 +24,9 @@ bool Tracks::create(Graph &graph)
 
 	// Verifying if there is a complete_sub_graph not selected yet
 	std::vector<Cluster::S::iterator> unselected;
-	for (auto i = subgraph.begin(), n = subgraph.end(); i != n; ++i)
-		if (!i->selected())
-			unselected.push_back(i);
+	for (auto cluster = subgraph.begin(), n = subgraph.end(); cluster != n; ++cluster)
+		if (!cluster->selected())
+			unselected.push_back(cluster);
 
 	if (unselected.size() == 0)
 		return false;
@@ -381,24 +381,29 @@ Tracks::P Tracks::propose(Graph &graph)
 {
 	Tracks::P tracks(new Tracks(*this));
 
-	bool result = false;
-	while (!result)
-	{
-		int n = random_int(0, 8);
-		switch (n)
-		{
-			case 0: result = tracks->create(graph); break;
-			case 1: result = tracks->destroy();     break;
-			case 2: result = tracks->diffuse();     break;
-			case 3: result = tracks->extend();      break;
-			case 4: result = tracks->merge();       break;
-			case 5: result = tracks->reduce();      break;
-			case 6: result = tracks->split();       break;
-			case 7: result = tracks->swap();        break;
-		}
-	}
+	// Create a vector of change operations.
+	std::vector<std::function<bool()>> operations = {
+		[&]() {return tracks->create(graph);},
+		[&]() {return tracks->destroy();},
+		[&]() {return tracks->diffuse();},
+		[&]() {return tracks->extend();},
+		[&]() {return tracks->merge();},
+		[&]() {return tracks->reduce();},
+		[&]() {return tracks->split();},
+		[&]() {return tracks->swap();}
+	};
 
-	return tracks;
+	// Shuffle the operation vector.
+	std::shuffle(operations.begin(), operations.end(), std::mt19937(RD()));
+
+	// Tries the shuffled operations one by one, returning the changed
+	// Tracks object as soon as one succeeds.
+	for (std::function<bool()> &operation: operations)
+		if (operation())
+			return tracks;
+
+	// If no operations suceed, return an empty Tracks reference.
+	return Tracks::P();
 }
 
 
