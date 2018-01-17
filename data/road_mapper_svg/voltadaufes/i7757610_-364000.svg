@@ -44,70 +44,79 @@
      inkscape:window-height="1056"
      id="namedview6390"
      showgrid="false"
-     inkscape:zoom="3.6931177"
-     inkscape:cx="123.14133"
-     inkscape:cy="265.87251"
+     inkscape:zoom="2.6114286"
+     inkscape:cx="290.34926"
+     inkscape:cy="406.98819"
      inkscape:window-x="65"
      inkscape:window-y="24"
      inkscape:window-maximized="1"
      inkscape:current-layer="svg6388" />
   <image
-     sodipodi:absref="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757680_-363930.png"
-     xlink:href="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757680_-363930.png"
      width="350"
      height="350"
      preserveAspectRatio="none"
-     id="image6181"
+     id="image6507"
+     x="-350"
+     y="0"
+     xlink:href="/home/rcarneiro/carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757540_-364000.png"
+     sodipodi:absref="/home/rcarneiro/carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757540_-364000.png" />
+  <image
+     sodipodi:absref="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757680_-363930.png"
+     xlink:href="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757680_-363930.png"
+     y="-350"
      x="350"
-     y="-350" />
+     id="image6181"
+     preserveAspectRatio="none"
+     height="350"
+     width="350" />
   <image
      sodipodi:absref="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757610_-363930.png"
      xlink:href="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757610_-363930.png"
-     y="-350"
-     x="0"
-     id="image6306"
-     preserveAspectRatio="none"
+     width="350"
      height="350"
-     width="350" />
+     preserveAspectRatio="none"
+     id="image6306"
+     x="0"
+     y="-350" />
   <image
      sodipodi:absref="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757610_-364000.png"
      xlink:href="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757610_-364000.png"
-     y="0"
-     x="0"
-     id="image6396"
-     preserveAspectRatio="none"
+     width="350"
      height="350"
-     width="350" />
+     preserveAspectRatio="none"
+     id="image6396"
+     x="0"
+     y="0" />
   <path
      style="opacity:0.54199997;fill:none;stroke:#7fff00;stroke-width:25;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-     d="m -57.945621,197.82505 c 0,0 117.89409,-90.84849 176.907511,-136.186426 91.35284,-70.1831757 274.26376,-210.282114 274.26376,-210.282114"
+     d="M -58.661213,197.82505 C -7.7604158,158.71432 59.754177,107.03408 118.96189,61.638624 210.38313,-8.4554374 393.22565,-148.64349 393.22565,-148.64349"
      id="path6449"
      inkscape:connector-curvature="0"
      sodipodi:nodetypes="cac" />
   <path
      style="opacity:0.53399999;fill:none;stroke:#7fff00;stroke-width:25;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-     d="m 378.03474,-168.345 c 0,0 -184.04413,140.958993 -275.91863,211.630607 C 50.963777,82.632956 -51.176272,161.54135 -51.176272,161.54135"
+     d="m 378.03474,-168.345 c 0,0 -84.75705,64.92606 -127.11657,97.413889 C 201.30263,-32.878233 151.72911,5.22941 102.11611,43.285607 50.871803,82.593118 23.626703,102.98624 -51.654937,161.15842"
      id="path6451"
      inkscape:connector-curvature="0"
-     sodipodi:nodetypes="cac" />
+     sodipodi:nodetypes="caac" />
   <image
      sodipodi:absref="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757750_-363860.png"
      xlink:href="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757750_-363860.png"
-     y="-700"
-     x="700"
-     id="image5742"
-     preserveAspectRatio="none"
+     width="350"
      height="350"
-     width="350" />
+     preserveAspectRatio="none"
+     id="image5742"
+     x="700"
+     y="-700" />
   <image
      sodipodi:absref="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757680_-363860.png"
      xlink:href="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757680_-363860.png"
-     y="-700"
-     x="350"
-     id="image5303"
-     preserveAspectRatio="none"
+     width="350"
      height="350"
-     width="350" />
+     preserveAspectRatio="none"
+     id="image5303"
+     x="350"
+     y="-700" />
   <path
      style="opacity:0.49599998;fill:none;stroke:#7fff00;stroke-width:25;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
      d="m 393.22565,-148.64349 c 0,0 56.86872,-43.84282 85.32533,-65.73533 83.77432,-64.45005 251.45386,-193.17989 251.45386,-193.17989"
@@ -141,55 +150,67 @@
   <image
      sodipodi:absref="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757820_-363860.png"
      xlink:href="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757820_-363860.png"
-     y="-700"
-     x="1050"
-     id="image5832"
-     preserveAspectRatio="none"
+     width="350"
      height="350"
-     width="350" />
+     preserveAspectRatio="none"
+     id="image5832"
+     x="1050"
+     y="-700" />
   <image
      sodipodi:absref="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757820_-363790.png"
      xlink:href="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757820_-363790.png"
-     y="-1050"
-     x="1050"
-     id="image5652"
-     preserveAspectRatio="none"
+     width="350"
      height="350"
-     width="350" />
+     preserveAspectRatio="none"
+     id="image5652"
+     x="1050"
+     y="-1050" />
   <image
      sodipodi:absref="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757960_-363720.png"
      xlink:href="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757960_-363720.png"
-     y="-1400"
-     x="1750"
-     id="image5472"
-     preserveAspectRatio="none"
+     width="350"
      height="350"
-     width="350" />
+     preserveAspectRatio="none"
+     id="image5472"
+     x="1750"
+     y="-1400" />
   <image
      sodipodi:absref="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757890_-363720.png"
      xlink:href="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757890_-363720.png"
-     y="-1400"
-     x="1400"
-     id="image5290"
-     preserveAspectRatio="none"
+     width="350"
      height="350"
-     width="350" />
+     preserveAspectRatio="none"
+     id="image5290"
+     x="1400"
+     y="-1400" />
   <image
      sodipodi:absref="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757960_-363650.png"
      xlink:href="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757960_-363650.png"
-     y="-1750"
-     x="1750"
-     id="image5382"
-     preserveAspectRatio="none"
+     width="350"
      height="350"
-     width="350" />
+     preserveAspectRatio="none"
+     id="image5382"
+     x="1750"
+     y="-1750" />
   <image
      sodipodi:absref="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757890_-363650.png"
      xlink:href="carmen_lcad/data/road_mapper_remission_350px/voltadaufes/i7757890_-363650.png"
-     y="-1750"
-     x="1400"
-     id="image5200"
-     preserveAspectRatio="none"
+     width="350"
      height="350"
-     width="350" />
+     preserveAspectRatio="none"
+     id="image5200"
+     x="1400"
+     y="-1750" />
+  <path
+     style="opacity:0.53399999;fill:none;stroke:#7fff00;stroke-width:25;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     d="M -273.91252,360.01863 C -235.22386,331.49223 -113.137,239.17344 -33.087277,178.30458 1.4532431,152.04038 70.241143,99.127953 70.241143,99.127953"
+     id="path6539"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="cac" />
+  <path
+     style="opacity:0.519;fill:none;stroke:#7fff00;stroke-width:25;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     d="m 54.942413,79.496842 c 0,0 -59.9445399,46.070558 -90.00567,68.989598 -55.498797,42.31308 -111.082523,84.51551 -166.823403,126.50918 -28.63396,21.57206 -63.42014,47.95005 -86.1061,64.4442"
+     id="path6541"
+     inkscape:connector-curvature="0"
+     sodipodi:nodetypes="caac" />
 </svg>

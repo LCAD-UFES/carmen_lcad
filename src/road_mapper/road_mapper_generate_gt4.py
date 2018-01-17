@@ -22,6 +22,7 @@ import argparse
 # Global definitions
 IMAGE = True
 OVERRIDE = False
+UPDATE_ONLY = False
 LEFT_DISTANCE = 0.0
 VERBOSE = 0
 ANIMATION = 0
@@ -517,9 +518,14 @@ def process_svg_file(svg_file):
     if road_pathname and road_pathname[-1] != '/':
         road_pathname += '/'
     road_file = road_pathname + 'r' + svg_filename[1:-4] + '.map'
-    if os.path.isfile(road_file) and not OVERRIDE:
-        print 'Skipped file', svg_file, ': MAP file', road_file, 'already exists'
-        return
+    if os.path.isfile(road_file):
+        if UPDATE_ONLY:
+            if os.path.getmtime(road_file) >= os.path.getmtime(svg_file):
+                print 'Skipped file', svg_file, ': MAP file', road_file, 'is up-to-date'
+                return
+        elif not OVERRIDE:
+            print 'Skipped file', svg_file, ': MAP file', road_file, 'already exists'
+            return
     print 'Processing SVG file:', svg_file
     width, height, paths = svg_get_paths(svg_file)
     if not paths:
@@ -594,7 +600,8 @@ if __name__ == "__main__":
     parser.add_argument('-a', '--animation', help='animation wait time in milliseconds', type=int, nargs='?', const=1, default=0)
     parser.add_argument('-o', '--outputdir', help='road map file output directory', type=path)
     parser.add_argument('-x', '--override', help='override existing road map files', action='store_true', dest='override')
-    parser.add_argument('-l', '--leftdistance', help='distance, in map cells, from lane center to left border of Inkscape path ground truth', type=float, dest='left_distance', default=0.0)
+    parser.add_argument('-u', '--update', help='update existing road map files only if source SVG is modified', action='store_true')
+    parser.add_argument('-l', '--left_distance', help='distance, in map cells, from lane center to left border of Inkscape path ground truth', type=float, default=0.0)
     parser.add_argument('-f', '--filelist', help='text file containing a list of SVG filenames (one per line)', action='append', default=[], type=file)
     parser.add_argument('filename', help='list of SVG filenames (separated by spaces)', nargs='*', type=file)
     args = parser.parse_args()
@@ -607,6 +614,8 @@ if __name__ == "__main__":
     g_outputdir = args.outputdir
     OVERRIDE = args.override
     if OVERRIDE: print 'Override option set'
+    UPDATE_ONLY = args.update
+    if UPDATE_ONLY: print 'Update only if modified option set'
     LEFT_DISTANCE = args.left_distance
     if LEFT_DISTANCE > 0.0: print 'Left distance set to', LEFT_DISTANCE, 'map cells'
 

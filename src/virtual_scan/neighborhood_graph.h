@@ -38,6 +38,9 @@ struct Model
 	/** @brief Model identifier. */
 	ID id;
 
+	/** @brief Model name. */
+	std::string name;
+
 	/** @brief Model width. */
 	double width;
 
@@ -47,7 +50,7 @@ struct Model
 	/**
 	 * @brief Create a new model of given settings.
 	 */
-	Model(ID id, double width, double length);
+	Model(ID id, const std::string &name, double width, double length);
 };
 
 /**
