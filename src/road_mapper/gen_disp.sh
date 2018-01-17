@@ -7,5 +7,5 @@ if [[ $# > 2 ]] ; then
 	left_distance=$3 
 fi
 [[ -f r$1_-$2.map ]] && rm r$1_-$2.map
-python $CARMEN_HOME/src/road_mapper/road_mapper_generate_gt4.py  -o . -n -l $left_distance i$1_-$2.svg
+python $CARMEN_HOME/src/road_mapper/road_mapper_generate_gt4.py  -n -x -o . -l $left_distance i$1_-$2.svg
 $CARMEN_HOME/src/road_mapper/road_mapper_display_map r$1_-$2.map

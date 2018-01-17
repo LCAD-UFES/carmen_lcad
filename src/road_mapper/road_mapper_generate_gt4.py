@@ -359,6 +359,9 @@ def get_lane_from_bezier(map, bx, by, bxo, byo, lane, stroke_width, stroke_color
     # image for displaying the animation
     height = len(map)
     width = len(map[0])
+    if stroke_width == 0:
+        print 'Warning: SVG path #', lane, 'has stroke width zero.'
+        stroke_width = 0.1
     max_distance = stroke_width / 2.0
     if LEFT_DISTANCE > 0.0 and max_distance > LEFT_DISTANCE:
         desloc_center = max_distance - LEFT_DISTANCE
