@@ -8,10 +8,10 @@ namespace virtual_scan
 {
 
 
-ObstaclePose::S Tracks::back() const
+ObstaclePose::S Tracks::obstacles() const
 {
 	ObstaclePose::S poses;
-	for (auto track = tracks.begin(), n = tracks.end(); track != n; ++track)
+	for (auto track = begin(), n = end(); track != n; ++track)
 		poses.push_back(track->back());
 
 	return poses;
@@ -34,18 +34,18 @@ bool Tracks::create(Graph &graph)
 	Cluster &cluster = *random_choose(unselected);
 	Node &node = random_choose(cluster);
 
-	tracks.emplace_back();
-	Track &tau = tracks.back();
+	emplace_back();
+	Track &tau = back();
 	tau.push_back(&node);
 
 	extend(tau);
 	if (tau.size() < 2)
 	{
-		tracks.pop_back();
+		pop_back();
 		return false;
 	}
 
-	PwZ.create(tracks.size() - 1, tracks);
+	PwZ.create(size() - 1, *this);
 
 	return true;
 }
@@ -53,12 +53,12 @@ bool Tracks::create(Graph &graph)
 
 bool Tracks::destroy()
 {
-	if (tracks.size() == 0)
+	if (size() == 0)
 		return false;
 
 	// Randomly select a track and destroy it.
-	size_t n = random_int(0, tracks.size());
-	PwZ.destroy(n, tracks);
+	size_t n = random_int(0, size());
+	PwZ.destroy(n, *this);
 	return destroy(n);
 }
 
@@ -66,11 +66,11 @@ bool Tracks::destroy()
 bool Tracks::destroy(size_t n)
 {
 	// Move the selected track to the end of the sequence if it's not already there.
-	if (n < (tracks.size() - 1))
-		std::swap(tracks[n], tracks.back());
+	if (n < (size() - 1))
+		std::swap(at(n), back());
 
 	// Remove the selected track.
-	tracks.pop_back();
+	pop_back();
 
 	return true;
 }
@@ -78,10 +78,10 @@ bool Tracks::destroy(size_t n)
 
 bool Tracks::extend()
 {
-	if (tracks.size() == 0)
+	if (size() == 0)
 		return false;
 
-	return extend(random_choose(tracks));
+	return extend(random_choose(*this));
 }
 
 
@@ -140,22 +140,22 @@ bool Tracks::extend_backward(Track &tau)
 
 bool Tracks::reduce()
 {
-	if (tracks.size() == 0)
+	if (size() == 0)
 		return false;
 
-	int i = random_int(0, tracks.size()); // Selects the track index to be reduced
-	Track &tau = tracks[i];
+	int i = random_int(0, size()); // Selects the track index to be reduced
+	Track &tau = at(i);
 	int r = random_int(1, tau.size() - 1); // Selects the cutting index
 
 	int mode = random_int(0, 2); // 0 denotes forward reduction and 1 backward reduction
 	if (mode == 0) // Forward reduction
 	{
-		PwZ.pop_back(i, r, tracks);
+		PwZ.pop_back(i, r, *this);
 		tau.pop_back(r);
 	}
 	else // Backward reduction
 	{
-		PwZ.pop_front(i, r, tracks);
+		PwZ.pop_front(i, r, *this);
 		tau.pop_front(r);
 	}
 
@@ -167,9 +167,9 @@ bool Tracks::split()
 {
 	// Verifying if there is a track with 4 or more nodes
 	std::vector<Track*> found;
-	for (int i = 0, n = tracks.size(); i < n; i++)
-		if (tracks[i].size() >= 4)
-			found.push_back(&(tracks[i]));
+	for (int i = 0, n = size(); i < n; i++)
+		if (at(i).size() >= 4)
+			found.push_back(&at(i));
 
 	if (found.size() == 0)
 		return false;
@@ -178,8 +178,8 @@ bool Tracks::split()
 	Track &tau_1 = *random_choose(found);
 
 	// Create new track to receive section split from tau_1.
-	tracks.emplace_back(); 
-	Track &tau_2 = tracks.back();
+	emplace_back(); 
+	Track &tau_2 = back();
 
 	tau_1.pop_back(random_int(1, tau_1.size() - 1), tau_2); // Split tau at a random index
 
@@ -191,12 +191,12 @@ bool Tracks::split()
 bool Tracks::merge()
 {
 	std::vector <std::pair<int, int>> pairs;
-	for (int i = 0, n = tracks.size(); i < n; i++)
+	for (int i = 0, n = size(); i < n; i++)
 	{
-		Track &tau_1 = tracks[i];
+		Track &tau_1 = at(i);
 		for (int j = i + 1; j < n; j++)
 		{
-			Track &tau_2 = tracks[j];
+			Track &tau_2 = at(j);
 			if (tau_1.is_mergeable(tau_2))
 				pairs.push_back(std::make_pair(i, j));
 			else if (tau_2.is_mergeable(tau_1))
@@ -208,8 +208,8 @@ bool Tracks::merge()
 		return false;
 
 	std::pair<int, int> &pair = random_choose(pairs);
-	Track &tau_1 = tracks[pair.first];
-	Track &tau_2 = tracks[pair.second];
+	Track &tau_1 = at(pair.first);
+	Track &tau_2 = at(pair.second);
 	tau_1.merge(tau_2);
 
 	PwZ.merge(tau_1, tau_2);
@@ -338,11 +338,11 @@ public:
 bool Tracks::swap()
 {
 	std::vector<Swap> swappings;
-	for (int i = 0, n = tracks.size(); i < n; i++)
+	for (int i = 0, n = size(); i < n; i++)
 	{
 		for (int j = i + 1; j < n; j++)
 		{
-			Swap swapping(i, j, tracks);
+			Swap swapping(i, j, *this);
 			if (swapping.valid())
 				swappings.push_back(swapping);
 		}
@@ -353,9 +353,9 @@ bool Tracks::swap()
 
 	int n = random_int(0, swappings.size());
 	Swap &swapping = swappings[n];
-	swapping(tracks);
+	swapping(*this);
 
-	PwZ.swap(swapping.i, swapping.j, tracks);
+	PwZ.swap(swapping.i, swapping.j, *this);
 
 	return true;
 }
@@ -363,15 +363,15 @@ bool Tracks::swap()
 
 bool Tracks::diffuse()
 {
-	if (tracks.size() == 0)
+	if (size() == 0)
 		return false;
 
-	int i = random_int(0, tracks.size());
-	Track &track = tracks[i];
+	int i = random_int(0, size());
+	Track &track = at(i);
 
 	int j = track.diffuse();
 
-	PwZ.diffuse(i, j, tracks);
+	PwZ.diffuse(i, j, *this);
 
 	return true;
 }
@@ -411,9 +411,9 @@ void Tracks::update(const Readings &readings)
 {
 	double timestamp = readings.front().timestamp;
 
-	for (size_t i = 0, m = tracks.size(); i < m; i++)
+	for (size_t i = 0, m = size(); i < m; i++)
 	{
-		Track &track = tracks[i];
+		Track &track = at(i);
 		size_t n = track.size();
 		size_t j = 0;
 
@@ -425,17 +425,28 @@ void Tracks::update(const Readings &readings)
 
 		if (j < n)
 		{
-			PwZ.shorten(i, j, tracks);
+			PwZ.shorten(i, j, *this);
 			track.pop_front(j);
 		}
 		else
 		{
-			PwZ.destroy(i, tracks);
+			PwZ.destroy(i, *this);
 			destroy(i);
 		}
 	}
 
 	PwZ.update(readings);
+}
+
+
+std::ostream &operator << (std::ostream &out, const Tracks &tracks)
+{
+	out << "Tracks (total = " << tracks.size() << "):";
+
+	for (const Track &track: tracks)
+		out << std::endl << "  " << track;
+
+	return out;
 }
 
 

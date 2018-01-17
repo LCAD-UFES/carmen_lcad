@@ -54,6 +54,11 @@ struct Track: ObstaclePose::S
 	int diffuse();
 };
 
+/**
+ * @brief Print a Track object to an output stream.
+ */
+std::ostream &operator << (std::ostream &out, const Track &track);
+
 } // namespace virtual_scan
 
 #endif

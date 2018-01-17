@@ -66,4 +66,20 @@ int Track::diffuse()
 }
 
 
+std::ostream &operator << (std::ostream &out, const Track &track)
+{
+	out << "ID: " << track.id << ", poses: {";
+	for (auto obstacle = track.begin(), n = track.end(); obstacle != n;)
+	{
+		out << *obstacle;
+		if (++obstacle != n)
+			out << ", ";
+	}
+
+	out << "}";
+
+	return out;
+}
+
+
 } // namespace virtual_scan

@@ -155,4 +155,11 @@ double ObstacleView::distance(const PointXY &p) const
 }
 
 
+std::ostream &operator << (std::ostream &out, const ObstaclePose &pose)
+{
+	out << "{global = " << pose.global << ", local = " << pose.local << "}";
+	return out;
+}
+
+
 } // namespace virtual_scan

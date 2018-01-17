@@ -92,6 +92,11 @@ struct ObstacleView: private Rectangle
 	double distance(const PointXY &point) const;
 };
 
+/**
+ * @brief Print an obstacle pose to an output stream.
+ */
+std::ostream &operator << (std::ostream &out, const ObstaclePose &pose);
+
 } // namespace virtual_scan
 
 #endif

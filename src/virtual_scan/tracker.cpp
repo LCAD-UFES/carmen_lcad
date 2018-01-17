@@ -39,7 +39,7 @@ ObstaclePose::S Tracker::track(carmen_mapper_virtual_scan_message *message)
 		}
 	}
 	
-	return tracks->back();
+	return tracks->obstacles();
 }
 
 

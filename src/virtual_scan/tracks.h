@@ -14,11 +14,30 @@ namespace virtual_scan
 /**
  * @brief A sequence of tracks along with Markov dynamics and posterior probability.
  */
-class Tracks
+struct Tracks: Track::S
 {
-	/** @brief Track objects contained in this sequence. */
-	Track::S tracks;
+	/** @brief Shared Tracks pointer type. */
+	typedef std::shared_ptr<Tracks> P;
 
+	/** @brief Posterior probability of this track sequence. */
+	Posterior PwZ;
+
+	/**
+	 * @brief Return a sequence containing the last pose of each track in this collection.
+	 */
+	ObstaclePose::S obstacles() const;
+
+	/**
+	 * @brief Returns a random variation of this track collection, generated from the given neighborhood graph.
+	 */
+	Tracks::P propose(Graph &graph);
+
+	/**
+	 * @brief Update tracks and the posterior distribution to reflect changes in sensor information.
+	 */
+	void update(const Readings &readings);
+
+private:
 	/**
 	 * @brief Create a new track.
 	 */
@@ -78,29 +97,12 @@ class Tracks
 	 * @brief Change a randomly selected track pose.
 	 */
 	bool diffuse();
-
-public:
-	/** @brief Shared Tracks pointer type. */
-	typedef std::shared_ptr<Tracks> P;
-
-	/** @brief Posterior probability of this track sequence. */
-	Posterior PwZ;
-
-	/**
-	 * @brief Return a sequence containing the last pose of each track in this collection.
-	 */
-	ObstaclePose::S back() const;
-
-	/**
-	 * @brief Returns a random variation of this track collection, generated from the given neighborhood graph.
-	 */
-	Tracks::P propose(Graph &graph);
-
-	/**
-	 * @brief Update tracks and the posterior distribution to reflect changes in sensor information.
-	 */
-	void update(const Readings &readings);
 };
+
+/**
+ * @brief Print a Tracks object to to an output stream.
+ */
+std::ostream &operator << (std::ostream &out, const Tracks &tracks);
 
 } // namespace virtual_scan
 
