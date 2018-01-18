@@ -511,7 +511,10 @@ void Tracks::update(const Readings &readings)
 			j++;
 
 		if (j == 0)
+		{
+			i++;
 			continue;
+		}
 
 		if (j < n)
 		{
