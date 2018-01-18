@@ -1,19 +1,14 @@
 #include "tracks.h"
 
+//#undef DEBUG
+#include "logging.h"
+
 #include "random.h"
 
 #include <algorithm>
 
 namespace virtual_scan
 {
-
-#undef DEBUG
-
-#ifdef DEBUG
-	#define LOG(message) std::cout << message << std::endl
-#else
-	#define LOG(message)
-#endif
 
 
 ObstaclePose::S Tracks::obstacles() const

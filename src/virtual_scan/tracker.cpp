@@ -1,5 +1,8 @@
 #include "tracker.h"
 
+//#undef DEBUG
+#include "logging.h"
+
 #include "parameters.h"
 
 namespace virtual_scan
@@ -39,7 +42,11 @@ ObstaclePose::S Tracker::track(carmen_mapper_virtual_scan_message *message)
 		}
 	}
 	
-	return tracks->obstacles();
+	ObstaclePose::S obstacles = tracks->obstacles();
+
+	LOG("Tracking obstacles: " << obstacles.size());
+
+	return obstacles;
 }
 
 
