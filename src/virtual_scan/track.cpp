@@ -47,7 +47,7 @@ bool Track::is_mergeable(const Track &that) const
 
 void Track::merge(Track &that)
 {
-	that.pop_back(-1, *this);
+	that.pop_back(0, *this);
 }
 
 
