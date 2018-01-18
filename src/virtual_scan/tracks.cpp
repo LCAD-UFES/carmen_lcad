@@ -7,6 +7,12 @@
 namespace virtual_scan
 {
 
+#ifdef DEBUG
+	#define LOG(message) std::cout << message << std::endl
+#else
+	#define LOG(message)
+#endif
+
 
 ObstaclePose::S Tracks::obstacles() const
 {
@@ -20,6 +26,8 @@ ObstaclePose::S Tracks::obstacles() const
 
 bool Tracks::create(Graph &graph)
 {
+	LOG("Before create: " << *this);
+
 	Subgraph &subgraph = random_choose(graph);
 
 	// Verifying if there is a complete_sub_graph not selected yet
@@ -29,7 +37,10 @@ bool Tracks::create(Graph &graph)
 			unselected.push_back(cluster);
 
 	if (unselected.size() == 0)
+	{
+		LOG("After create (unselected == {}): " << *this);
 		return false;
+	}
 
 	Cluster &cluster = *random_choose(unselected);
 	Node &node = random_choose(cluster);
@@ -42,10 +53,13 @@ bool Tracks::create(Graph &graph)
 	if (tau.size() < 2)
 	{
 		pop_back();
+		LOG("After create (failed extension): " << *this);
 		return false;
 	}
 
 	PwZ.create(size() - 1, *this);
+
+	LOG("After create (success): " << *this);
 
 	return true;
 }
@@ -53,13 +67,22 @@ bool Tracks::create(Graph &graph)
 
 bool Tracks::destroy()
 {
+	LOG("Before destroy: " << *this);
+
 	if (size() == 0)
+	{
+		LOG("After destroy (no tracks): " << *this);
 		return false;
+	}
 
 	// Randomly select a track and destroy it.
 	size_t n = random_int(0, size());
 	PwZ.destroy(n, *this);
-	return destroy(n);
+	destroy(n);
+
+	LOG("After destroy (success): " << *this);
+
+	return true;
 }
 
 
@@ -112,13 +135,20 @@ inline Node::Edges unselected(const Node::Edges &nodes)
 
 bool Tracks::extend_forward(Track &tau)
 {
+	LOG("Before forward extension: " << *this);
+
 	Node::Edges children = unselected(tau.back().node->children);
 	if (children.size() == 0)
+	{
+		LOG("After forward extension (no children): " << *this);
 		return false;
+	}
 
 	tau.push_back(random_choose(children));
 
 	PwZ.extend_forward(tau);
+
+	LOG("After forward extension (success): " << *this);
 
 	return true;
 }
@@ -126,13 +156,20 @@ bool Tracks::extend_forward(Track &tau)
 
 bool Tracks::extend_backward(Track &tau)
 {
+	LOG("Before backward extension: " << *this);
+
 	Node::Edges parents = unselected(tau.back().node->parents);
 	if (parents.size() == 0)
+	{
+		LOG("After backward extension (no parents): " << *this);
 		return false;
+	}
 
 	tau.push_front(random_choose(parents));
 
 	PwZ.extend_backward(tau);
+
+	LOG("After backward extension (success): " << *this);
 
 	return true;
 }
@@ -140,8 +177,12 @@ bool Tracks::extend_backward(Track &tau)
 
 bool Tracks::reduce()
 {
+	LOG("Before reduction: " << *this);
 	if (size() == 0)
+	{
+		LOG("After reduction (no tracks): " << *this);
 		return false;
+	}
 
 	int i = random_int(0, size()); // Selects the track index to be reduced
 	Track &tau = at(i);
@@ -152,11 +193,13 @@ bool Tracks::reduce()
 	{
 		PwZ.pop_back(i, r, *this);
 		tau.pop_back(r);
+		LOG("After forward reduction (success): " << *this);
 	}
 	else // Backward reduction
 	{
 		PwZ.pop_front(i, r, *this);
 		tau.pop_front(r);
+		LOG("After backward reduction (success): " << *this);
 	}
 
 	return true;
@@ -165,6 +208,8 @@ bool Tracks::reduce()
 
 bool Tracks::split()
 {
+	LOG("Before split: " << *this);
+
 	// Verifying if there is a track with 4 or more nodes
 	std::vector<Track*> found;
 	for (int i = 0, n = size(); i < n; i++)
@@ -172,7 +217,10 @@ bool Tracks::split()
 			found.push_back(&at(i));
 
 	if (found.size() == 0)
+	{
+		LOG("After split (no suitable tracks): " << *this);
 		return false;
+	}
 
 	// Selects the track index to be split.
 	Track &tau_1 = *random_choose(found);
@@ -185,11 +233,15 @@ bool Tracks::split()
 
 	PwZ.split(tau_1, tau_2);
 
+	LOG("After split (success): " << *this);
+
 	return true;
 }
 
 bool Tracks::merge()
 {
+	LOG("Before merge: " << *this);
+
 	std::vector <std::pair<int, int>> pairs;
 	for (int i = 0, n = size(); i < n; i++)
 	{
@@ -205,7 +257,10 @@ bool Tracks::merge()
 	}
 
 	if (pairs.size() == 0)
+	{
+		LOG("After merge (no suitable pairs): " << *this);
 		return false;
+	}
 
 	std::pair<int, int> &pair = random_choose(pairs);
 	Track &tau_1 = at(pair.first);
@@ -213,8 +268,11 @@ bool Tracks::merge()
 	tau_1.merge(tau_2);
 
 	PwZ.merge(tau_1, tau_2);
+	destroy(pair.second);
 
-	return destroy(pair.second);
+	LOG("After merge (success): " << *this);
+
+	return true;
 }
 
 
@@ -337,6 +395,8 @@ public:
 
 bool Tracks::swap()
 {
+	LOG("Before swap: " << *this);
+
 	std::vector<Swap> swappings;
 	for (int i = 0, n = size(); i < n; i++)
 	{
@@ -349,7 +409,10 @@ bool Tracks::swap()
 	}
 
 	if (swappings.size() == 0)
+	{
+		LOG("After swap (no swappable tracks): " << *this);
 		return false;
+	}
 
 	int n = random_int(0, swappings.size());
 	Swap &swapping = swappings[n];
@@ -357,14 +420,21 @@ bool Tracks::swap()
 
 	PwZ.swap(swapping.i, swapping.j, *this);
 
+	LOG("After swap (success): " << *this);
+
 	return true;
 }
 
 
 bool Tracks::diffuse()
 {
+	LOG("Before diffusion: " << *this);
+
 	if (size() == 0)
+	{
+		LOG("After diffusion (no tracks): " << *this);
 		return false;
+	}
 
 	int i = random_int(0, size());
 	Track &track = at(i);
@@ -372,6 +442,8 @@ bool Tracks::diffuse()
 	int j = track.diffuse();
 
 	PwZ.diffuse(i, j, *this);
+
+	LOG("After diffusion (success): " << *this);
 
 	return true;
 }
