@@ -232,10 +232,10 @@ bool Tracks::split()
 	LOG("Before split: " << *this);
 
 	// Verifying if there is a track with 4 or more nodes
-	std::vector<Track*> found;
+	std::vector<int> found;
 	for (int i = 0, n = size(); i < n; i++)
 		if (at(i).size() >= 4)
-			found.push_back(&at(i));
+			found.push_back(i);
 
 	if (found.size() == 0)
 	{
@@ -244,13 +244,13 @@ bool Tracks::split()
 	}
 
 	// Selects the track index to be split.
-	Track &tau_1 = *random_choose(found);
+	Track &tau_1 = at(random_choose(found));
 
 	// Create new track to receive section split from tau_1.
 	emplace_back(); 
 	Track &tau_2 = back();
 
-	tau_1.pop_back(random_int(1, tau_1.size() - 1), tau_2); // Split tau at a random index
+	tau_1.pop_back(random_int(2, tau_1.size() - 2), tau_2); // Split tau at a random index
 
 	PwZ.split(tau_1, tau_2);
 
