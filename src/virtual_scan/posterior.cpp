@@ -307,7 +307,7 @@ void Posterior::pop_back(int i, int k, const Track::S &tracks)
 	Track::ID id = track.id;
 
 	// Update the length map and the length term.
-	int n = tracks.size();
+	int n = track.size();
 	int w = n - k;
 	lengths[id] -= w;
 	S_len -= w;
