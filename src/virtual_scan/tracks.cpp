@@ -77,7 +77,7 @@ bool Tracks::destroy()
 
 	// Randomly select a track and destroy it.
 	size_t n = random_int(0, size());
-	PwZ.destroy(n, *this);
+	PwZ.destroy(true, n, *this);
 	destroy(n);
 
 	LOG("After destroy (success): " << *this);
@@ -523,7 +523,7 @@ void Tracks::update(const Readings &readings)
 		}
 		else
 		{
-			PwZ.destroy(i, *this);
+			PwZ.destroy(false, i, *this);
 			destroy(i);
 		}
 	}

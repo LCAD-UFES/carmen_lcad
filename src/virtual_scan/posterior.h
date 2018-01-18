@@ -224,13 +224,15 @@ public:
 	/**
 	 * @brief Update the posterior is response to the destruction of a track.
 	 *
+	 * @param keep_sensor_points Whether sensor points associated to the to-be-erased nodes should be reassigned as static or discarded.
+	 *
 	 * This method is called just prior to the actual destruction of the track.
 	 *
 	 * @param i Index of the track in its parent sequence.
 	 *
 	 * @param tracks Sequence containing the track to be destroyed.
 	 */
-	void destroy(int i, const Track::S &tracks);
+	void destroy(bool keep_sensor_points, int i, const Track::S &tracks);
 
 	/**
 	 * @brief Update the posterior in response to a track being extended forward.

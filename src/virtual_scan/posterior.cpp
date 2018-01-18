@@ -252,7 +252,7 @@ void Posterior::create(int i, const Track::S &tracks)
 }
 
 
-void Posterior::destroy(int i, const Track::S &tracks)
+void Posterior::destroy(bool keep_sensor_points, int i, const Track::S &tracks)
 {
 	const Track &track = tracks[i];
 	Track::ID id = track.id;
@@ -268,7 +268,7 @@ void Posterior::destroy(int i, const Track::S &tracks)
 	// Reassign sensor points related to the removed poses
 	// as static readings.
 	for (int j = 0, n = track.size(); j < n; j++)
-		erase_node(true, i, j, tracks);
+		erase_node(keep_sensor_points, i, j, tracks);
 }
 
 
