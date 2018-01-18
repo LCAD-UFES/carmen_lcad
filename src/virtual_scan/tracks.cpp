@@ -397,9 +397,9 @@ public:
 		Track &b = tracks[j];
 		Track temp;
 
-		a.pop_back(p, temp);
-		b.pop_back(q, a);
-		temp.pop_back(-1, b);
+		a.pop_back(p + 1, temp);
+		b.pop_back(q + 1, a);
+		temp.pop_back(0, b);
 
 		return true;
 	}
