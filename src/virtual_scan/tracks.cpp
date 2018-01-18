@@ -178,27 +178,48 @@ bool Tracks::extend_backward(Track &tau)
 bool Tracks::reduce()
 {
 	LOG("Before reduction: " << *this);
-	if (size() == 0)
+
+	std::vector<int> reducible;
+	reducible.reserve(size());
+
+	// Compile a list of reducible tracks.
+	for (int i = 0, n = size(); i < n; i++)
+		if (at(i).size() > 2)
+			reducible.push_back(i);
+
+	if (reducible.size() == 0)
 	{
-		LOG("After reduction (no tracks): " << *this);
+		LOG("After reduction (no reducible tracks): " << *this);
 		return false;
 	}
 
-	int i = random_int(0, size()); // Selects the track index to be reduced
-	Track &tau = at(i);
-	int r = random_int(1, tau.size() - 1); // Selects the cutting index
+	// Randomly select a reducible track.
+	int i = random_choose(reducible);
+	Track &track = at(i);
 
-	int mode = random_int(0, 2); // 0 denotes forward reduction and 1 backward reduction
+	// If the track has only 3 poses, place the cutting index in the middle and
+	// randomly choose between forward and backward reduction. Otherwise, randomly
+	// select the cutting index and set reduction mode based on how close the index
+	// is to either end of the track.
+	int r = 1;
+	int mode = random_int(0, 2);
+	int n = track.size();
+	if (n > 3)
+	{
+		r = random_int(1, n - 1);
+		mode = (r < n / 2 ? 1 : 0);
+	}
+
 	if (mode == 0) // Forward reduction
 	{
-		PwZ.pop_back(i, r, *this);
-		tau.pop_back(r);
+		PwZ.pop_back(i, r + 1, *this);
+		track.pop_back(r + 1);
 		LOG("After forward reduction (success): " << *this);
 	}
 	else // Backward reduction
 	{
 		PwZ.pop_front(i, r, *this);
-		tau.pop_front(r);
+		track.pop_front(r);
 		LOG("After backward reduction (success): " << *this);
 	}
 
