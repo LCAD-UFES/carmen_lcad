@@ -7,6 +7,8 @@
 namespace virtual_scan
 {
 
+#undef DEBUG
+
 #ifdef DEBUG
 	#define LOG(message) std::cout << message << std::endl
 #else
@@ -504,7 +506,7 @@ void Tracks::update(const Readings &readings)
 {
 	double timestamp = readings.front().timestamp;
 
-	for (size_t i = 0, m = size(); i < m; i++)
+	for (size_t i = 0; i < size();) // size() may change as Track objects are destroyed
 	{
 		Track &track = at(i);
 		size_t n = track.size();
@@ -520,6 +522,10 @@ void Tracks::update(const Readings &readings)
 		{
 			PwZ.shorten(i, j, *this);
 			track.pop_front(j);
+
+			// Only increment the Track index if the current Track
+			// is not deleted.
+			i++;
 		}
 		else
 		{
