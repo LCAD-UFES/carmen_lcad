@@ -1,1 +1,1 @@
-python road_mapper_generate_gt4.py -n -l 8 -x -o /home/car01/carmen_lcad/data/map_ida_guarapari-20170403-2 -f svg_list_volta_da_ufes.txt
+python road_mapper_generate_gt4.py -n -l 8 -u -o /home/car01/carmen_lcad/data/map_ida_guarapari-20170403-2 -f svg_list_volta_da_ufes.txt
