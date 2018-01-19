@@ -507,29 +507,29 @@ void Tracks::update(const Readings &readings)
 		size_t n = track.size();
 		size_t j = 0;
 
+		// Find the index of the oldest non-overdue obstacle pose in the Track.
 		while (j < n && track[j].node->timestamp < timestamp)
 			j++;
 
-		if (j == 0)
-		{
-			i++;
-			continue;
-		}
-
-		if (j < n)
-		{
-			PwZ.shorten(i, j, *this);
-			track.pop_front(j);
-
-			// Only increment the Track index if the current Track
-			// is not deleted.
-			i++;
-		}
-		else
+		// If a Track would be left empty or with a single element after erasing
+		// overdue obstacles, destroy the whole object.
+		if (n - j < 2)
 		{
 			PwZ.destroy(false, i, *this);
 			destroy(i);
+			continue;
 		}
+
+		// Otherwise, erase overdue obstacle poses as required.
+		if (j > 0)
+		{
+			PwZ.shorten(i, j, *this);
+			track.pop_front(j);
+		}
+
+		// Only increment the Track index if the current Track
+		// is not deleted.
+		i++;
 	}
 
 	PwZ.update(readings);
