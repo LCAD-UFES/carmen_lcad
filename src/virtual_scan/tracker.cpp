@@ -21,8 +21,8 @@ Tracker::Tracker():
 ObstaclePose::S Tracker::track(carmen_mapper_virtual_scan_message *message)
 {
 	readings.update(message);
-	graph.update(readings.back());
 	tracks->update(readings);
+	graph.update(readings.back());
 
 	Tracks::P tracks_n = tracks;
 	for (size_t n = 0; n < N_MC; n++)

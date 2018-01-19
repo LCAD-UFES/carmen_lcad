@@ -507,7 +507,7 @@ void Tracks::update(const Readings &readings)
 		size_t n = track.size();
 		size_t j = 0;
 
-		while (j < n && track.front().node->timestamp < timestamp)
+		while (j < n && track[j].node->timestamp < timestamp)
 			j++;
 
 		if (j == 0)
