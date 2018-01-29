@@ -411,15 +411,15 @@ Now, please do the following:
  
 And, then:
 ```bash
- $ ./test_segmentation.bin ~/ENet/final_model_weights/bn_conv_merged_model.prototxt \
- 		~/ENet/final_model_weights/bn_conv_merged_weights.caffemodel \
- 		~/carmen_lcad/data/road_mapper/7726627_-353889/i7726627_-353889_0.50_30.00.png \
- 		~/ENet/scripts/road_mapper_17.png
+ $ ./test_segmentation.bin $CARMEN_HOME/sharedlib/ENet/final_model_weights/bn_conv_merged_model.prototxt \
+ $CARMEN_HOME/sharedlib/ENet/final_model_weights/bn_conv_merged_weights.caffemodel \
+ $CARMEN_HOME/data/road_mapper/7726627_-353889/i7726627_-353889_0.50_30.00.png \
+ $CARMEN_HOME/src/road_mapper/data/road_mapper_17.png
 ```
 
 Or, in a single line:
 ```bash
- $ ./test_segmentation.bin ~/ENet/final_model_weights/bn_conv_merged_model.prototxt ~/ENet/final_model_weights/bn_conv_merged_weights.caffemodel ~/carmen_lcad/data/road_mapper/7726627_-353889/i7726627_-353889_0.50_30.00.png ~/ENet/scripts/road_mapper_17.png
+ $ ./test_segmentation.bin $CARMEN_HOME/sharedlib/ENet/final_model_weights/bn_conv_merged_model.prototxt $CARMEN_HOME/sharedlib/ENet/final_model_weights/bn_conv_merged_weights.caffemodel $CARMEN_HOME/data/road_mapper/7726627_-353889/i7726627_-353889_0.50_30.00.png $CARMEN_HOME/src/road_mapper/data/road_mapper_17.png
 ```
 
 ##### Examples
