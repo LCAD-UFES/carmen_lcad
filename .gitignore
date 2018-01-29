@@ -6,6 +6,7 @@ include/*
 .idea/
 *.o
 *.a
+*.pyc
 Makefile.depend
 *.*~
 *~
