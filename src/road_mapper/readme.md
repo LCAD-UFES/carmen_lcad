@@ -514,12 +514,13 @@ the Map Server fetches new submaps in order to keep IARA always within the centr
 Every time IARA crosses the boundaries of the central submap, new submaps
 are fetched from disk and a new grid map is built and published.
 
-### Video 2: 
+### Video 2: Experiments to test de capapibility of computing proper RDDFs from road grid maps
 
 [Click here to access]()
 
-This video shows a comparison of two experiments.
-To test the capability of the proposed system to compute
+This video shows a comparison of two experiments: 
+
+1. To test the capability of the proposed system to compute
 proper RDDFs from road grid maps, first we have set IARA
 to drive autonomously using a RDDF extracted from the
 manually annotated road grid map ground truth of UFES' ring road.
@@ -528,7 +529,8 @@ or better autonomous navigation performance than when using
 the precisely annotated RDDF (the RDDF employed by the
 previous subsystem, used before the implementation of Road Mapper module).
 No human intervention was needed. 
-Then, ENet was used to generate the road grid map of UFES' ring road
+
+2. ENet was used to generate the road grid map of UFES' ring road
 and we set IARA to drive autonomously using the
 RDDF extracted from this road grid map. In this second experiment,
 IARA had a navigation performance equivalent to that of the
