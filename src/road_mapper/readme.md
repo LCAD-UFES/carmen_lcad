@@ -479,7 +479,7 @@ Output files will be placed in the directory set by -m parameter of road_inferen
 
 [Click here to download](https://drive.google.com/file/d/1aPpq7y0MaAZg8MKYj7dUbOeNFatMJPQa/view?usp=sharing) 
 
-This dataset pertains to the ring road of the _Universidade Federal do Espírito Santo - UFES_ (Vitória, Brazil) wich has a total extension of 3.7 km. It contains 658 directories identified by their UTM (Universal Transverse Mercator) Zone 24K coordinates {latitude}_{longitude} in meters. 
+This dataset pertains to the ring road of the _Universidade Federal do Espírito Santo - UFES_ (Vitória, Brazil). It has a total extension of 3.7 km and contains 658 directories identified by their UTM (Universal Transverse Mercator) Zone 24K coordinates {latitude}_{longitude} in meters. 
 ```
  Each directory contains 504 files in the format: <type><latitude>_<longitude>_<translation>_<rotation>.png 
  <type>: i = crop of remission grid map; r = crop of road grid map; t = color coded road grid map 
@@ -492,7 +492,7 @@ This dataset pertains to the ring road of the _Universidade Federal do Espírito
 
 [Click here to download](https://drive.google.com/file/d/12m1CK44AUkTDNZOSAIjEJX5tXyP_C3rc/view?usp=sharing) 
 
-This dataset pertains to the _Rodovia do Sol_ (Vila Velha - Guarapari, Brazil) with an extension of 32.4 km. It contains 3,556 directories identified by their UTM (Universal Transverse Mercator) Zone 24K coordinates {latitude}_{longitude} in meters. 
+This dataset pertains to the _Rodovia do Sol_ (Vila Velha - Guarapari, Brazil). It has a partial extension of 32.4 km and contains 3,556 directories identified by their UTM (Universal Transverse Mercator) Zone 24K coordinates {latitude}_{longitude} in meters. 
 ```
  Each directory contains 3 files in the format: <type><latitude>_<longitude>_<translation>_<rotation>.png 
  <type>: i = crop of remission grid map; r = crop of road grid map; t = color coded road grid map 
