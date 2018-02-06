@@ -501,5 +501,36 @@ This dataset pertains to the _Rodovia do Sol_ (Vila Velha - Guarapari, Brazil). 
  <rotation>: in degrees (0.00, 15.00, 30.00, ..., 315.00, 330.00, 345.00) 
  Example: i7718416_-343188_0.00_0.00.png 
 ```
-## Videos
+## Videos 
 
+### Video 1: Map Server module fetching submaps to compose new grid maps
+
+[Click here to access]()
+
+This video shows the operation of the Map Server module of the IARA Software System. 
+It shows a grid map composed by 9 submaps arranged in 3 columns and 3 rows. 
+As IARA travels through the grid map, 
+the Map Server fetches new submaps in order to keep IARA always within the central submap. 
+Every time IARA crosses the boundaries of the central submap, new submaps
+are fetched from disk and a new grid map is built and published.
+
+### Video 2: 
+
+[Click here to access]()
+
+This video shows a comparison of two experiments.
+To test the capability of the proposed system to compute
+proper RDDFs from road grid maps, first we have set IARA
+to drive autonomously using a RDDF extracted from the
+manually annotated road grid map ground truth of UFES' ring road.
+In this first experiment, IARA have shown an equivalent
+or better autonomous navigation performance than when using
+the precisely annotated RDDF (the RDDF employed by the
+previous subsystem, used before the implementation of Road Mapper module).
+No human intervention was needed. 
+Then, ENet was used to generate the road grid map of UFES' ring road
+and we set IARA to drive autonomously using the
+RDDF extracted from this road grid map. In this second experiment,
+IARA had a navigation performance equivalent to that of the
+first experiment described above. Again, no human
+intervention was needed. 
