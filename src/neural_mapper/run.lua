@@ -67,8 +67,8 @@ t.model = model
 t.loss:cuda()
 t.model:cuda()
 
-local train = require 'train'
-local test  = require 'test'
+local train = require 'train_neural_mapper'
+local test  = require 'test_neural_mapper'
 
 --[[
 print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")

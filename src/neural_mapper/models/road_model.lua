@@ -26,32 +26,32 @@ function GetModel()
 	pool = nn.SpatialMaxPooling(2,2,2,2)
 
 	local model = nn.Sequential()
-	model:add(nn.SpatialConvolution(n_input, n_layers_enc, 3, 3, 1, 1, 0, 0))
+	model:add(nn.SpatialConvolution(n_input, n_layers_enc, 3, 3, 1, 1, 1, 1))
 	model:add(nn.ELU())
-	model:add(nn.SpatialConvolution(n_layers_enc, n_layers_enc, 3, 3, 1, 1, 0, 0))
+	model:add(nn.SpatialConvolution(n_layers_enc, n_layers_enc, 3, 3, 1, 1, 1, 1))
 	model:add(nn.ELU())
 	model:add(pool)
 
 	---Context module 
-	model:add(nn.SpatialDilatedConvolution(n_layers_enc, n_layers_ctx, 3, 3, 1, 1, 0, 0, 1, 1))
+	model:add(nn.SpatialDilatedConvolution(n_layers_enc, n_layers_ctx, 3, 3, 1, 1, 1, 1, 1, 1))
 	model:add(nn.ELU())
 	model:add(nn.SpatialDropout(prob_drop))
-	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_ctx, 3, 3, 1, 1, 0, 0, 1, 2))
+	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_ctx, 3, 3, 1, 1, 1, 1, 1, 1))
 	model:add(nn.ELU())
 	model:add(nn.SpatialDropout(prob_drop))
-	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_ctx, 3, 3, 1, 1, 0, 0, 2, 4));
+	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_ctx, 3, 3, 1, 1, 1, 1, 1, 1));
 	model:add(nn.ELU())
 	model:add(nn.SpatialDropout(prob_drop))
-	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_ctx, 3, 3, 1, 1, 0, 0, 4, 8));
+	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_ctx, 3, 3, 1, 1, 1, 1, 1, 1));
 	model:add(nn.ELU())
 	model:add(nn.SpatialDropout(prob_drop))
-	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_ctx, 3, 3, 1, 1, 0, 0, 8, 16));
+	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_ctx, 3, 3, 1, 1, 1, 1, 1, 1));
 	model:add(nn.ELU())
 	model:add(nn.SpatialDropout(prob_drop))
-	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_ctx, 3, 3, 1, 1, 0, 0, 16, 32));
+	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_ctx, 3, 3, 1, 1, 1, 1, 1, 1));
 	model:add(nn.ELU())
 	model:add(nn.SpatialDropout(prob_drop))
-	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_ctx, 3, 3, 1, 1, 0, 0, 32, 64));
+	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_ctx, 3, 3, 1, 1, 1, 1, 1, 1));
 	model:add(nn.ELU())
 	model:add(nn.SpatialDropout(prob_drop))
 	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_enc, 1, 1));
@@ -59,9 +59,9 @@ function GetModel()
 
 	---Decoder
 	model:add(nn.SpatialMaxUnpooling(pool))
-	model:add(nn.SpatialConvolution(n_layers_enc, n_layers_enc, 3, 3, 1, 1, 0, 0))
+	model:add(nn.SpatialConvolution(n_layers_enc, n_layers_enc, 3, 3, 1, 1, 1, 1))
 	model:add(nn.ELU())
-	model:add(nn.SpatialConvolution(n_layers_enc, num_classes, 3, 3, 1, 1, 0, 0))
+	model:add(nn.SpatialConvolution(n_layers_enc, num_classes, 3, 3, 1, 1, 1, 1))
 	model:add(nn.ELU())  
   model:add(nn.SoftMax())
 
@@ -84,6 +84,7 @@ for i = 1, #classes do
 end
 ]]
 loss = cudnn.SpatialCrossEntropyCriterion(classWeights)
+--loss = nn.SpatialCrossEntropyCriterion(classWeights)
 
 
 ----------------------------------------------------------------------
