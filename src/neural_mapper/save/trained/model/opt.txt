@@ -1,0 +1,31 @@
+smallNet : false
+learningRate : 0.0006
+datahistClasses :  326537
+ 153463
+[torch.FloatTensor of size 2]
+
+batchSize : 1
+dataconClasses : table: 0x410ac458
+dataClasses : table: 0x410ac418
+channels : 5
+plot : false
+save : save/trained/model/
+CNNEncoder : /media/Models/CamVid/enc/model-100.net
+labelHeight : 400
+labelWidth : 200
+weightDecay : 0.0002
+nGPU : 2
+lrDecayEvery : 0
+cachepath : KITTI_DATASET_REDUCED
+imHeight : 400
+dataset : kitti
+printNorm : false
+devid : 1
+momentum : 0.9
+datapath : /dados/kitti-road-dataset/
+threads : 8
+maxepoch : 100
+noConfusion : skip
+learningRateDecay : 1e-07
+model : models/road_model.lua
+imWidth : 200
