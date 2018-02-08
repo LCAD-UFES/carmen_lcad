@@ -66,6 +66,7 @@ local function train(trainData, classes, epoch)
   -- local vars
   local time = sys.clock()
 
+
   -- total loss error
   local err
   local totalerr = 0

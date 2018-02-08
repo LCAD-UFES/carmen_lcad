@@ -5,8 +5,8 @@ datahistClasses :  326537
 [torch.FloatTensor of size 2]
 
 batchSize : 1
-dataconClasses : table: 0x40816758
-dataClasses : table: 0x40816718
+dataconClasses : table: 0x409a7848
+dataClasses : table: 0x409a7808
 channels : 5
 plot : false
 save : save/trained/model/
@@ -24,7 +24,7 @@ devid : 1
 momentum : 0.9
 datapath : /dados/kitti-road-dataset/
 threads : 8
-maxepoch : 10
+maxepoch : 5
 noConfusion : skip
 learningRateDecay : 1e-07
 model : models/road_model.lua
