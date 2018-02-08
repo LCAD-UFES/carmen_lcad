@@ -41,6 +41,10 @@ for j = ini, fim do
 
 
 		for key, val in ipairs(l) do
+        if tonumber(val) < -30 then
+          debug = string.format('Max ' .. j .. ' Muito alto! Valor = ' .. val)
+          print(debug)
+        end
 		    max[1][i][key] = val
 		end
 	end
@@ -70,6 +74,10 @@ for j = ini, fim do
 
 
 		for key, val in ipairs(l) do
+        if tonumber(val) < -40 then
+          debug = string.format('Min ' .. j .. ' Muito alto! Valor = ' .. val)
+          print(debug)
+        end
 		    min[1][i][key] = val
 		end
 	end
@@ -99,6 +107,10 @@ for j = ini, fim do
 		i = i + 1
 
 		for key, val in ipairs(l) do
+        if tonumber(val) < -40 then
+          debug = string.format('Mean ' .. j .. ' Muito alto! Valor = ' .. val)
+          print(debug)
+        end        
 		    mean[1][i][key] = val
 		end
 	end
@@ -128,6 +140,10 @@ for j = ini, fim do
 
 
 		for key, val in ipairs(l) do
+        if tonumber(val) < -40 then
+          debug = string.format('Median ' .. j .. ' Muito alto! Valor = ' .. val)
+          print(debug)
+        end
 		    median[1][i][key] = val
 		end
 	end
@@ -157,6 +173,10 @@ for j = ini, fim do
 
 
 		for key, val in ipairs(l) do
+        if tonumber(val) < -3 then
+          debug = string.format('Std ' .. j .. ' Muito alto! Valor = ' .. val)
+          print(debug)
+        end
 		    std[1][i][key] = val
 		end
 	end
@@ -177,7 +197,7 @@ for j = ini, fim do
 
     local labelFile = image.scale(labelIn, 200, 400, 'simple'):float()
 
-    labelFile:apply(function(x) return classMap[x][1] end)
+    labelFile = labelFile:apply(function(x) return classMap[x][1] end)
     --print(labelIn)
 
 

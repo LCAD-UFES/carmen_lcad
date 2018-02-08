@@ -38,7 +38,7 @@ function opts.parse(arg)
    --labelHeight           (default 45)          label height  (45  cv/32 cs/32 su)
    --labelWidth            (default 60)          label width   (60  cv/64 cs/41 su)
    --smallNet                                    reduce number of classes
-
+   --datasetSize           (default 90)
    Model Related:
    --model                 (default models/encoder.lua)
                            Path of a model

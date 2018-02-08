@@ -36,22 +36,22 @@ function GetModel()
 	model:add(nn.SpatialDilatedConvolution(n_layers_enc, n_layers_ctx, 3, 3, 1, 1, 1, 1, 1, 1))
 	model:add(nn.ELU())
 	model:add(nn.SpatialDropout(prob_drop))
-	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_ctx, 3, 3, 1, 1, 1, 1, 1, 1))
+	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_ctx, 3, 3, 1, 1, 1, 2, 1, 2))
 	model:add(nn.ELU())
 	model:add(nn.SpatialDropout(prob_drop))
-	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_ctx, 3, 3, 1, 1, 1, 1, 1, 1));
+	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_ctx, 3, 3, 1, 1, 2, 4, 2, 4));
 	model:add(nn.ELU())
 	model:add(nn.SpatialDropout(prob_drop))
-	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_ctx, 3, 3, 1, 1, 1, 1, 1, 1));
+	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_ctx, 3, 3, 1, 1, 4, 8, 4, 8));
 	model:add(nn.ELU())
 	model:add(nn.SpatialDropout(prob_drop))
-	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_ctx, 3, 3, 1, 1, 1, 1, 1, 1));
+	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_ctx, 3, 3, 1, 1, 8, 16, 8, 16));
 	model:add(nn.ELU())
 	model:add(nn.SpatialDropout(prob_drop))
-	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_ctx, 3, 3, 1, 1, 1, 1, 1, 1));
+	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_ctx, 3, 3, 1, 1, 16, 32, 16, 32));
 	model:add(nn.ELU())
 	model:add(nn.SpatialDropout(prob_drop))
-	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_ctx, 3, 3, 1, 1, 1, 1, 1, 1));
+	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_ctx, 3, 3, 1, 1, 32, 64, 32, 64));
 	model:add(nn.ELU())
 	model:add(nn.SpatialDropout(prob_drop))
 	model:add(nn.SpatialDilatedConvolution(n_layers_ctx, n_layers_enc, 1, 1));
