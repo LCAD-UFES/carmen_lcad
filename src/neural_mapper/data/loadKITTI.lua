@@ -157,6 +157,21 @@ print '==> verify statistics'
 -- It's always good practice to verify that data is properly
 -- normalized.
 
+--for image = 1, trsize do
+--   for c = 1, opt.channels do
+--      for i = 1, opt.labelHeight do
+--         for j = 1, opt.labelWidth do
+--            if math.abs(trainData.data[image][c][i][j]) > 10.0 then
+--               print("image " .. image .. ", c " .. c .. ", i " .. i .. ", j " .. j .. ", td " .. trainData.data[image][c][i][j])
+--            end
+--         end
+--      end
+--   end
+--end
+
+local siz = trainData.data:size()
+print("trainData.data:size() = ")
+print(siz)
 for i = 1, opt.channels do
    local trainMean = trainData.data[{ {},i }]:mean()
    local trainStd = trainData.data[{ {},i }]:std()
@@ -179,11 +194,8 @@ for _,cat in pairs(classes) do
 end
 
 filePath = paths.concat(opt.save, 'categories.txt')
-print(filePath)
-print(classes_td)
 
 local file = io.open(filePath, 'w')
-print(file)
 file:write(table.concat(classes_td))
 file:close()
 
