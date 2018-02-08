@@ -7,7 +7,6 @@
 require 'torch'   -- torch
 require 'image'   -- to visualize the dataset
 require("data/open_kitti_files")
-require 'math'
 
 -- Local repo files
 local opts = require '../opts'
@@ -21,22 +20,9 @@ torch.setdefaulttensortype('torch.FloatTensor')
 
 local trsize, tesize
 
--- 80% of the images for training\
-
-trsize = math.ceil(0.8*opt.datasetSize)    -- MAX 227 -- kitti train images
-tesize = math.floor(0.2*opt.datasetSize)      -- MAX 59  -- kitti validation images
-
-eachTrainingSize = math.floor(trsize/3)
-eachTestingSize = math.floor(tesize/3)
-print(eachTrainingSize)
-print(eachTestingSize)
---umTrsize
---uuTrsize
---ummTrsize
-
-
---trsize = 5
---tesize = 1
+-- 80% of the images for training
+trsize = 5--227 -- kitti train images
+tesize = 1--59  -- kitti validation images
 
 local classes = {'not-road','Road'}
 local conClasses = {'Road'} -- 19 classes
@@ -102,9 +88,7 @@ else
    assert(paths.dirp(dpathRoot), 'No training folder found at: ' .. opt.datapath)
    --load training and testingimages and labels:
    j=1
-   for i=0, eachTrainingSize-1 do--93 do
-      debug = 'Training => Posicao no tensor: ' .. j .. '| Tipo = um | Indice= ' .. i .. ' %%%%%'
-      print(debug)
+   for i=0, 4 do--93 do
       trainData.data[j], labelFile = GetBatchWithType(dpathRoot,'um',i,i)
       --labelFile:apply(function(x) return classMap[x][1] end)
       -- Syntax: histc(data, bins, min, max)
@@ -115,10 +99,8 @@ else
       xlua.progress(j, trsize)
       collectgarbage()
    end
-   
-   for i=0, eachTrainingSize-1 do
-      debug = 'Training => Posicao no tensor: ' .. j .. '| Tipo = umm | Indice= ' .. i .. ' %%%%%'
-      print(debug)
+   --[[
+   for i=0, 94 do
       trainData.data[j], labelFile = GetBatchWithType(dpathRoot,'umm',i,i)
       --labelFile:apply(function(x) return classMap[x][1] end)
       -- Syntax: histc(data, bins, min, max)
@@ -129,9 +111,7 @@ else
       xlua.progress(j, trsize)
       collectgarbage()
    end
-   for i=0, (trsize- (2*eachTrainingSize))-1 do
-      debug = 'Training => Posicao no tensor: ' .. j .. '| Tipo = uu | Indice= ' .. i .. ' %%%%%'
-      print(debug)
+   for i=0, 37 do
       trainData.data[j], labelFile = GetBatchWithType(dpathRoot,'uu',i,i)
       --labelFile:apply(function(x) return classMap[x][1] end)
       -- Syntax: histc(data, bins, min, max)
@@ -142,40 +122,12 @@ else
       xlua.progress(j, trsize)
       collectgarbage()
    end
-   
+   ]]
    print('==> loading testing files');
    
    j = 1
-   for i= eachTrainingSize, (eachTrainingSize+eachTestingSize)-1 do--38, 96 do
-      debug = 'Testing => Posicao no tensor: ' .. j .. '| Tipo = um | Indice= ' .. i .. ' %%%%%'
-      print(debug)
+   for i= 0, 0 do--38, 96 do
       testData.data[j], labelFile = GetBatchWithType(dpathRoot,'um',i,i)
-      --labelFile:apply(function(x) return classMap[x][1] end)
-      -- Syntax: histc(data, bins, min, max)
-      histClasses = histClasses + torch.histc(labelFile, #classes, 1, #classes)
-      
-      testData.labels[j] = labelFile
-      j = j + 1
-      xlua.progress(j, tesize)
-      collectgarbage()
-   end
-   for i= eachTrainingSize, (eachTrainingSize+eachTestingSize)-1 do--38, 96 do
-      debug = 'Testing => Posicao no tensor: ' .. j .. '| Tipo = umm | Indice= ' .. i .. ' %%%%%'
-      print(debug)
-      testData.data[j], labelFile = GetBatchWithType(dpathRoot,'umm',i,i)
-      --labelFile:apply(function(x) return classMap[x][1] end)
-      -- Syntax: histc(data, bins, min, max)
-      histClasses = histClasses + torch.histc(labelFile, #classes, 1, #classes)
-      
-      testData.labels[j] = labelFile
-      j = j + 1
-      xlua.progress(j, tesize)
-      collectgarbage()
-   end
-   for i= (trsize- (2*eachTrainingSize)), (trsize+(tesize- (2*eachTestingSize)))-1 do--38, 96 do
-      debug = 'Testing => Posicao no tensor: ' .. j .. '| Tipo = uu | Indice= ' .. i .. ' %%%%%'
-      print(debug)
-      testData.data[j], labelFile = GetBatchWithType(dpathRoot,'uu',i,i)
       --labelFile:apply(function(x) return classMap[x][1] end)
       -- Syntax: histc(data, bins, min, max)
       histClasses = histClasses + torch.histc(labelFile, #classes, 1, #classes)
@@ -205,21 +157,6 @@ print '==> verify statistics'
 -- It's always good practice to verify that data is properly
 -- normalized.
 
---for image = 1, trsize do
---   for c = 1, opt.channels do
---      for i = 1, opt.labelHeight do
---         for j = 1, opt.labelWidth do
---            if math.abs(trainData.data[image][c][i][j]) > 10.0 then
---               print("image " .. image .. ", c " .. c .. ", i " .. i .. ", j " .. j .. ", td " .. trainData.data[image][c][i][j])
---            end
---         end
---      end
---   end
---end
-
-local siz = trainData.data:size()
-print("trainData.data:size() = ")
-print(siz)
 for i = 1, opt.channels do
    local trainMean = trainData.data[{ {},i }]:mean()
    local trainStd = trainData.data[{ {},i }]:std()
@@ -242,8 +179,11 @@ for _,cat in pairs(classes) do
 end
 
 filePath = paths.concat(opt.save, 'categories.txt')
+print(filePath)
+print(classes_td)
 
 local file = io.open(filePath, 'w')
+print(file)
 file:write(table.concat(classes_td))
 file:close()
 
