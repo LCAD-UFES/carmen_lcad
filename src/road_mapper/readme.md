@@ -315,7 +315,8 @@ To calculate the max_iter solver parameter to a given number of epochs please do
 
 max_iter = (epochs * dataset_train_size) / batch_size
 
-Now you are ready to start the training:
+Now you are ready to start the training. 
+If you wish to use some handy scripts to save your training parameters, monitor the training progress, and plot the accuracy chart, [click here](../../sharedlib/ENet/results). Otherwise, run the following:
 ```bash
  $ ENet/caffe-enet/build/tools/caffe train -solver ENet/prototxts/enet_solver_encoder.prototxt
 ```
@@ -331,7 +332,8 @@ First create the `enet_train_encoder_decoder.prototxt` by running:
 
 Copy the **class_weightings** from `enet_train_encoder.prototxt` to `enet_train_encoder_decoder.prototxt` under **weight_by_label_freqs** and set this flag from **false** to **true**. 
 
-Start the training of the encoder + decoder and use the pretrained weights as initialization of the encoder:
+Start the training of the encoder + decoder and use the pretrained weights as initialization of the encoder.
+Again, if you wish to use some handy scripts to save your training parameters, monitor the training progress, and plot the accuracy chart, [click here](../../sharedlib/ENet/results). Otherwise, run the following:
 ```bash
  $ ENet/caffe-enet/build/tools/caffe train -solver ENet/prototxts/enet_solver_encoder_decoder.prototxt -weights ENet/weights/snapshots_encoder/NAME.caffemodel
 ```
@@ -369,6 +371,57 @@ For inference, batch normalization and dropout layer can be merged into convolut
 ```
 
 It also deletes the corresponding batch normalization and dropout layers from the prototxt file. The final model (prototxt file) and weights are saved in the folder **final_model_and_weights**. 
+
+Copy the final model and weights to the Road Mapper folder:
+```
+ $ cp ENet/final_model_weights/bn_conv_merged_model.prototxt ../src/road_mapper/data/
+ $ cp ENet/final_model_weights/bn_conv_merged_weights.caffemodel ../src/road_mapper/data/
+```
+
+For estimating the accuracy using the test filelist `road_mapper_test.txt`, copy the final model `bn_conv_merged_model.prototxt` to `bn_conv_merged_model_test.prototxt` and do the following changes: 
+
+```
+ # Replace the first layer of the model by this one: 
+ layer {
+   name: "data"
+   type: "DenseImageData"
+   top: "data"
+   top: "label"
+   dense_image_data_param {
+     source: "$CARMEN_HOME/src/road_mapper/road_mapper_test.txt"  # replace $CARMEN_HOME by its absolute path
+     batch_size: 16                                               # replace by a proper batch size
+     shuffle: false
+     new_height: 120                                              # replace by the image size
+     new_width: 120                                               # replace by the image size
+     label_divide_factor: 1
+   }
+ }
+ 
+ # Append a final layer at the end of the model: 
+ layer {
+   name: "accuracy"
+   type: "Accuracy"
+   bottom: "deconv6_0_0"
+   bottom: "label"
+   top: "accuracy"
+   top: "per_class_accuracy"
+ }
+```
+
+Then, run the following:
+```
+ $ ENet/caffe-enet/build/tools/caffe test \
+   -model $CARMEN_HOME/src/road_mapper/data/bn_conv_merged_model_test.prototxt \
+   -weights $CARMEN_HOME/src/road_mapper/data/bn_conv_merged_weights.caffemodel \
+   -iterations NUM_ITER -gpu 0 &> results_test.txt
+```
+In the above command, replace NUM_ITER by (dataset_test_size / batch_size)
+
+Or, in a single line:
+```
+ $ ENet/caffe-enet/build/tools/caffe test -model $CARMEN_HOME/src/road_mapper/data/bn_conv_merged_model_test.prototxt -weights $CARMEN_HOME/src/road_mapper/data/bn_conv_merged_weights.caffemodel -iterations NUM_ITER -gpu 0 &> results_test.txt
+```
+The final lines of `results_test.txt` show the mean accuracy and the accuracy per classes.  
 
 #### Visualize the Prediction 
 
