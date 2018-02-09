@@ -558,7 +558,7 @@ This dataset pertains to the _Rodovia do Sol_ (Vila Velha - Guarapari, Brazil). 
 
 ### Video 1: Map Server module fetching submaps to compose new grid maps
 
-[Click here to access]()
+[Click here to access](https://youtu.be/dkYKzvSZWVQ)
 
 This video shows the operation of the Map Server module of the IARA Software System. 
 It shows a grid map composed by 9 submaps arranged in 3 columns and 3 rows. 
@@ -569,7 +569,7 @@ are fetched from disk and a new grid map is built and published.
 
 ### Video 2: Experiments to test de capapibility of computing proper RDDFs from road grid maps
 
-[Click here to access]()
+[Click here to access](https://youtu.be/jUmQhaOftUg)
 
 This video shows a comparison of two experiments: 
 
