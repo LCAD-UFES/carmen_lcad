@@ -1,33 +1,18 @@
 name: "ENet"
-################### Replaced
-#layer {
-#  name: "data"
-#  type: "Input"
-#  top: "data"
-#  input_param {
-#    shape {
-#      dim: 1
-#      dim: 3
-#      dim: 120
-#      dim: 120
-#    }
-#  }
-#}
 layer {
   name: "data"
   type: "DenseImageData"
   top: "data"
   top: "label"
   dense_image_data_param {
-    source: "/home/newuser/carmen_lcad/src/road_mapper/voltadaufes_test.txt"
-    batch_size: 16
+    source: "/home/alberto/carmen_lcad/src/road_mapper/road_mapper_test.txt"  # replace $CARMEN_HOME by its absolute path
+    batch_size: 16                                               # replace by a proper batch size
     shuffle: false
-    new_height: 120
-    new_width: 120
+    new_height: 120                                              # replace by the image size
+    new_width: 120                                               # replace by the image size
     label_divide_factor: 1
   }
 }
-###########################################
 layer {
   name: "conv0_1"
   type: "Convolution"
@@ -2499,7 +2484,6 @@ layer {
     stride: 2
   }
 }
-########################## Added
 layer {
   name: "accuracy"
   type: "Accuracy"
@@ -2508,3 +2492,4 @@ layer {
   top: "accuracy"
   top: "per_class_accuracy"
 }
+

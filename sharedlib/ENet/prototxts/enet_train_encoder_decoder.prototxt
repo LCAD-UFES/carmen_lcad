@@ -5,7 +5,7 @@ layer {
   top: "data"
   top: "label"
   dense_image_data_param {
-    source: "/home/alberto/carmen_lcad/src/road_mapper/voltadaufes_train.txt"
+    source: "/home/alberto/carmen_lcad/src/road_mapper/road_mapper_train.txt"
     batch_size: 16
     shuffle: true
     new_height: 120
@@ -4617,23 +4617,23 @@ layer {
   loss_param {
     ignore_label: 255
     weight_by_label_freqs: true
-    class_weighting: 0.0437
-    class_weighting: 1.1047
-    class_weighting: 2.5269
-    class_weighting: 1.0279
-    class_weighting: 2.5006
-    class_weighting: 2.1484
-    class_weighting: 1.0721
-    class_weighting: 1.0861
-    class_weighting: 1.0917
-    class_weighting: 1.0958
-    class_weighting: 1.1043
-    class_weighting: 1.1090
-    class_weighting: 1.1110
-    class_weighting: 1.1931
-    class_weighting: 3.7017
-    class_weighting: 3.7190
-    class_weighting: 5.2495
+    class_weighting: 0.0435
+    class_weighting: 1.1146
+    class_weighting: 2.5429
+    class_weighting: 1.0336
+    class_weighting: 2.5120
+    class_weighting: 2.1670
+    class_weighting: 1.0818
+    class_weighting: 1.0934
+    class_weighting: 1.0983
+    class_weighting: 1.1025
+    class_weighting: 1.1102
+    class_weighting: 1.1151
+    class_weighting: 1.1163
+    class_weighting: 1.1982
+    class_weighting: 3.6914
+    class_weighting: 3.7066
+    class_weighting: 5.1919
   }
 }
 layer {
