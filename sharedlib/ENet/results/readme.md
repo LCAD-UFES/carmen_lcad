@@ -5,8 +5,11 @@
 Before start the training, save the solver parameters: 
 ```bash
  $ cd $CARMEN_HOME/sharedlib/ENet/results
+ $ # Before the encoder training:
  $ ./save_train_params.sh ../prototxts/enet_solver_encoder.prototxt
- 
+ $ # Before the encoder+decoder training:
+ $ ./save_train_params.sh ../prototxts/enet_solver_encoder_decoder.prototxt
+
  Expected output:
  File parameters_<timestamp>.txt saved. 
  Suggested output log filename: results_<timestamp>.txt 
@@ -16,7 +19,10 @@ Before start the training, save the solver parameters:
 Start ENet Caffe training procedure immune to hangup signal: 
 ```bash
  $ cd $CARMEN_HOME/sharedlib/ENet/results
+ $ # Start the encoder training:
  $ nohup ../caffe-enet/build/tools/caffe train -solver ../prototxts/enet_solver_encoder.prototxt &> results_<timestamp>.txt &
+ $ # Start the encoder+decoder training (after the encoder training is finished):
+ $ nohup ../caffe-enet/build/tools/caffe train -solver ../prototxts/enet_solver_encoder_decoder.prototxt -weights ../weights/snapshots_encoder/<NAME>.caffemodel &> results_<timestamp>.txt &
 
 ```
 
