@@ -88,7 +88,7 @@ else
    assert(paths.dirp(dpathRoot), 'No training folder found at: ' .. opt.datapath)
    --load training and testingimages and labels:
    j=1
-   for i=0, 4 do--93 do
+   for i=13, 17 do--93 do
       trainData.data[j], labelFile = GetBatchWithType(dpathRoot,'um',i,i)
       --labelFile:apply(function(x) return classMap[x][1] end)
       -- Syntax: histc(data, bins, min, max)
@@ -126,7 +126,7 @@ else
    print('==> loading testing files');
    
    j = 1
-   for i= 0, 0 do--38, 96 do
+   for i= 13, 13 do--38, 96 do
       testData.data[j], labelFile = GetBatchWithType(dpathRoot,'um',i,i)
       --labelFile:apply(function(x) return classMap[x][1] end)
       -- Syntax: histc(data, bins, min, max)

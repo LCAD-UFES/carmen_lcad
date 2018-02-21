@@ -19,7 +19,7 @@ function GetModel()
 	n_layers_enc = 32
 	n_layers_ctx = 128
 	n_input = 5
-	prob_drop = 0.25
+	prob_drop = 0 --0.25
 
 
 	---Encoder 

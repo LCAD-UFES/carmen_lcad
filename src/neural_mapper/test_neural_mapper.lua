@@ -42,7 +42,7 @@ function test(testData, classes, epoch, trainConf, model, loss )
    -- total loss error
    local err = 0
    local totalerr = 0
-
+  
    -- This matrix records the current confusion across classes
 
    model:evaluate()
@@ -79,7 +79,82 @@ function test(testData, classes, epoch, trainConf, model, loss )
          if opt.dataconClasses then k = k - 1 end
          teconfusion:batchAdd(predictions, k)
       end
+      
+      -- /DEBUG
+      if epoch % 10 == 0 then
+        print("Measuring statistics")
 
+        predict = torch.Tensor(opt.batchSize, opt.imHeight, opt.imWidth)
+
+        xx = torch.Tensor(1, opt.channels, opt.imHeight, opt.imWidth)
+        xx = x
+        image.save("debug_images/input-" .. t .. ".png", xx[1][1]:add(0.1))
+        
+        tp = 0
+        tn = 0
+        fp = 0
+        fn = 0
+        for batchInd = 1, opt.batchSize do
+          for i=1, opt.imHeight do
+            for j = 1, opt.imWidth do
+              if y[batchInd][1][i][j] > y[batchInd][2][i][j] then
+                predict[batchInd][i][j] = 0 
+              else
+                predict[batchInd][i][j] = 1
+              end
+              ytn = (yt[batchInd][i][j] - 1)
+
+              --positive cases
+              if predict[batchInd][i][j] == 1 then
+                -- true positive
+                
+                if ytn < 0 then
+                  if ytn > 1 then
+                    print(ytn)
+                  end
+                end
+                
+                if predict[batchInd][i][j] == ytn then
+                  tp = tp + 1
+                -- false positive
+                else
+                  fp = fp + 1
+                end
+              -- negative cases
+              else
+                -- true negative
+                if predict[batchInd][i][j] == ytn then
+                  tn = tn + 1
+                -- false negative
+                else
+                  fn = fn + 1
+                end
+              end
+            end
+          end
+          labelImg = predict[batchInd]
+          image.save("debug_images/predict-" .. t  .. "-" .. epoch ..".png", labelImg)
+          labelImg = yt[batchInd]:clone()
+          labelImg:add(-1)
+          image.save("debug_images/gt-" .. t  .. ".png", labelImg)
+        end
+
+      b = 1
+      precission = tp/(tp+fp)
+      recall = tp/(tp + fn)
+      acc = (tp + tn)/(tp + tn + fp + fn)
+      fmeasure = (1 + (b*b))*precission*recall/((b*b*precission)+ recall)
+      print("================ MEASURES:")
+      print("Recall = " .. recall)
+      print("Precission = " .. precission)
+      print("Accuracy = " .. acc)
+      print("Fmesure = " .. fmeasure)
+      
+      numPixels = (opt.imHeight * opt.imWidth)
+      print("tp = " .. (tp*100/numPixels) .. " %" .. " fp = " .. (fp*100/numPixels) .. " %" .. " tn = " .. (tn*100/numPixels) .. " %" .. " fn = " .. (fn*100/numPixels) .. " %")
+      end
+      -- DEBUG/
+      
       totalerr = totalerr + err
       collectgarbage()
    end

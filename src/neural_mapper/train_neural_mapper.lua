@@ -118,10 +118,10 @@ local function train(trainData, classes, epoch)
       --print(model)
       -- estimate df/dW
 
-      -- /DEBUG
+      --[[ /DEBUG
       xx = torch.Tensor(1, opt.channels, opt.imHeight, opt.imWidth)
       xx = x
-
+      
       image.save("debug_images/caco" .. t  .. ".png", xx[1][1]:add(0.1))
       labelImg = y[1][1]
       image.save("debug_images/caco" .. t  .. "-2.png", labelImg)
@@ -131,7 +131,7 @@ local function train(trainData, classes, epoch)
       labelImg:add(-1)
       image.save("debug_images/caco" .. t  .. "-4.png", labelImg)
 
-      -- DEBUG/
+      -- DEBUG/]]
 
       yt = yt:cuda()
       y = y:cuda()
