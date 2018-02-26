@@ -1,0 +1,1 @@
+qlua ./run.lua --dataset kitti --datapath /dados/kitti-road-dataset/ --model models/road_model.lua --save save/trained/model/ --imHeight 400 --imWidth 200 --labelHeight 400 --labelWidth 200 --cachepath KITTI_DATASET_13-17 --batchSize 1 --channels 5 --learningRate 0.001 --lrDecayEvery 300 --maxepoch 200
