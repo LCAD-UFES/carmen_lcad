@@ -18,15 +18,15 @@
 #include <carmen/grid_mapping.h>
 #include <prob_map.h>
 
-//#include "model/global_state.h"
+#include "model/global_state.h"
 //#include "model/rrt_node.h"
 //#include "model/pose.h"
 
 //#include "util.h"
 //#include "publisher_util.h"
-//#include "model_predictive_planner.h"
+#include "rddf_graph.h"
 
-/*
+
 #define DIST_SQR(x1,y1,x2,y2) ((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2))
 
 Tree tree; //tree rooted on robot
@@ -34,8 +34,7 @@ TrajectoryLookupTable *g_trajectory_lookup_table;
 carmen_behavior_selector_road_profile_message goal_list_message;
 
 static int update_lookup_table = 0;
-
-
+/*
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                           //
 // Publishers                                                                                //
@@ -522,7 +521,7 @@ register_handlers()
 	carmen_behaviour_selector_subscribe_compact_lane_contents_message(NULL,
 			(carmen_handler_t) carmen_behaviour_selector_compact_lane_contents_message_handler, CARMEN_SUBSCRIBE_LATEST);
 }
-
+*/
 
 void
 read_parameters_specific(int argc, char **argv)
@@ -584,7 +583,7 @@ read_parameters(int argc, char **argv)
 
 //extern carmen_mapper_virtual_laser_message virtual_laser_message;
 //#define MAX_VIRTUAL_LASER_SAMPLES 10000
-*/
+
 
 void printTest(){
 
@@ -597,7 +596,7 @@ main(int argc, char **argv)
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 	printTest();
-	//read_parameters(argc, argv);
+	read_parameters(argc, argv);
 
 	//memset(&goal_list_message, 0, sizeof(goal_list_message));
 

@@ -1,8 +1,8 @@
 include ../Makefile.conf
 
 # Module name and description
-MODULE_NAME = RDDF-Graph
-MODULE_COMMENT = RDDF-Graph
+MODULE_NAME = rddf_graph
+MODULE_COMMENT = rddf_graph
 
 LINK = g++
 CFLAGS += 
@@ -35,12 +35,13 @@ LFLAGS += 	-lgrid_mapping -lmap_io -lmap_util -lmap_interface -lparam_interface 
 		-lcollision_detection -lcarmodel -lgsl -lgslcblas -lm -lford_escape_hybrid_interface -lmoving_objects_interface
 			
 			
-SOURCES = rddf_graph_main.cpp rddf_graph.cpp
+SOURCES = rddf_graph_main.cpp rddf_graph.cpp trajectory_lookup_table.cpp \
+		global_state.cpp publisher_util.cpp util.cpp pose.cpp command.cpp
 
 PUBLIC_BINARIES = rddf_graph
 PUBLIC_LIBRARIES = 
 
-TARGETS = rddf_graph
+TARGETS = libcarmodel rddf_graph
 
 libcarmodel:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcarmodel
@@ -48,6 +49,19 @@ clean: clean_libcarmodel
 clean_libcarmodel:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcarmodel
 
-rddf_graph: rddf_graph_main.o rddf_graph.o
+rddf_graph: rddf_graph_main.o rddf_graph.o trajectory_lookup_table.o \
+	global_state.o publisher_util.o util.o pose.o command.o
+
+trajectory_lookup_table: trajectory_lookup_table.o
+
+global_state: global_state.o
+
+publisher_util: publisher_util.o
+
+util: util.o
+
+pose: pose.o
+
+command: command.o
 
 include ../Makefile.rules
