@@ -1,25 +1,19 @@
 /*
- * model_predictive_planner.cpp
+ * rddf_graph.cpp
  *
- *  Created on: Jun 22, 2016
- *      Author: alberto
+ *  Created on: Fev 26, 2018
+ *      Author: Pedro Azevedo
  */
 #include <stdio.h>
 #include <iostream>
 #include <vector>
 #include <math.h>
 
-#include <gsl/gsl_errno.h>
-#include <gsl/gsl_spline.h>
-#include <gsl/gsl_multimin.h>
+//#include "model/robot_state.h"
+//#include "model/global_state.h"
+//#include "util.h"
 
-#include <carmen/collision_detection.h>
-
-#include "model/robot_state.h"
-#include "model/global_state.h"
-#include "util.h"
-
-#include "model_predictive_planner.h"
+//#include "model_predictive_planner.h"
 
 #include "g2o/types/slam2d/se2.h"
 
@@ -28,7 +22,7 @@ using namespace g2o;
 int print_to_debug = 0;
 int plot_to_debug = 0;
 
-//-----------Funcoes para extrair dados do Experimento------------------------
+/*//-----------Funcoes para extrair dados do Experimento------------------------
 double
 dist(carmen_ackerman_path_point_t v, carmen_ackerman_path_point_t w)
 {
@@ -814,12 +808,12 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 //		printf("\nGoal_in_lane: %d detail_size: %ld \n",goal_in_lane, detailed_lane.size());
 	}
 
-/***************************************
+**************************************
  * Funcao para extrair dados para artigo
  *	save_experiment_data(goal_list_message, localizer_pose,
 						 detailed_lane, lastOdometryVector);
  *	return;
-******************************************/
+*****************************************
 
 	otcps.resize(paths.size());
 	bool has_valid_path = false;
@@ -951,4 +945,4 @@ compute_path_to_goal(Pose *localizer_pose, Pose *goal_pose, Command last_odometr
 //	fflush(stdout);
 
 	return (paths);
-}
+}*/
