@@ -1,17 +1,17 @@
 ## Requisitos
 
-- Caffe - http://caffe.berkeleyvision.org/
+- Caffe - preferencialmente utilize a Caffe-ENet (ja presente no Carmen LCAD sharedlib)
 
-  [Installation instructions](http://caffe.berkeleyvision.org/installation.html)
+  [Instrucoes de instalacao - pare em *end of installation*](https://github.com/LCAD-UFES/carmen_lcad/blob/master/src/road_mapper/readme.md#installation)
+  
+
+
 Preferencialmente compile com CUDA
+
 Coloque as váriaveis de sistema:
 
-#Caffe
-export CAFFE_HOME=/home/vinicius/caffe
-export PATH=$CAFFE_HOME/build/tools:$PATH
-export PATH=$CAFFE_HOME/build/lib:$PATH
-export LD_LIBRARY_PATH=$CAFFE_HOME/build/lib:$LD_LIBRARY_PATH
-#Para suprimir a saida de texto da caffe
+export CAFFE_HOME=$CAFFE_ENET_HOME
+#Para suprimir a saida de texto da Caffe
 export GLOG_minloglevel=1
 
 Mude as variaveis para usar a squeezenet no $CARMEN_HOME/carmen-ford-escape.ini
