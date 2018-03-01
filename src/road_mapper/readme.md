@@ -228,7 +228,7 @@ Please make sure that the python layer (spatial_dropout.py) is defined in your P
 
 You can do this by adding to you .bashrc file:
 ```bash
- export CAFFE_ENET_HOME=$HOME/ENet/caffe-enet
+ export CAFFE_ENET_HOME=$CARMEN_HOME/sharedlib/ENet/caffe-enet
  export PYTHONPATH=$CAFFE_ENET_HOME/python
  export LD_LIBRARY_PATH=$CAFFE_ENET_HOME/build/lib:$LD_LIBRARY_PATH
 ```
