@@ -60,6 +60,8 @@ publish_carmen_base_ackerman_odometry_message(double timestamp)
 	IPC_RETURN_TYPE err = IPC_OK;
 	static carmen_base_ackerman_odometry_message odometry;
 	static int first = 1;
+	static double first_timestamp;
+	static FILE *graf;
 
 	if (first)
 	{
@@ -69,6 +71,9 @@ publish_carmen_base_ackerman_odometry_message(double timestamp)
 		odometry.theta = 0;
 
 		odometry.v = odometry.phi = 0;
+		first_timestamp = timestamp;
+
+		graf = fopen("odometry_graph.txt", "w");
 		first = 0;
 	}
 
@@ -78,6 +83,8 @@ publish_carmen_base_ackerman_odometry_message(double timestamp)
 	odometry.v = car_config->v;
 	odometry.phi = car_config->phi;
 	odometry.timestamp = timestamp;
+
+	fprintf(graf, "v_phi_time %lf %lf %lf\n", odometry.v, -odometry.phi, odometry.timestamp - first_timestamp); // @@@ Alberto: O phi esta negativado porque o carro inicialmente publicava a odometria ao contrario
 
 	err = IPC_publishData(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, &odometry);
 	carmen_test_ipc(err, "Could not publish base_odometry_message", CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
@@ -96,15 +103,17 @@ static void
 robot_ackerman_velocity_handler(carmen_robot_ackerman_velocity_message *robot_ackerman_velocity_message)
 {
 
-	if(visual_odometry_publish){
-	carmen_add_bias_and_multiplier_to_v_and_phi(&(car_config->v), &(car_config->phi), 
+	if (visual_odometry_publish)
+	{
+		carmen_add_bias_and_multiplier_to_v_and_phi(&(car_config->v), &(car_config->phi),
 						    robot_ackerman_velocity_message->v, robot_ackerman_velocity_message->phi, 
 						    0.0, visual_odometry_v_multiplier, visual_odometry_phi_bias, visual_odometry_phi_multiplier);
-	}else{
+	}
+	else
+	{
 		carmen_add_bias_and_multiplier_to_v_and_phi(&(car_config->v), &(car_config->phi),
-							    robot_ackerman_velocity_message->v, robot_ackerman_velocity_message->phi,
-							    0.0, v_multiplier, phi_bias, phi_multiplier);
-
+							robot_ackerman_velocity_message->v, robot_ackerman_velocity_message->phi,
+							0.0, v_multiplier, phi_bias, phi_multiplier);
 	}
 	// Filipe: Nao deveria ter um normalize theta nessa atualizacao do phi? Sugestao abaixo:
 	// car_config->phi = carmen_normalize_theta(robot_ackerman_velocity_message->phi * phi_multiplier + phi_bias);

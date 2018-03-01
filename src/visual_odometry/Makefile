@@ -1,6 +1,6 @@
 include ../Makefile.conf
 
-MODULE_NAME = VISUAL_ODOMETRY_2
+MODULE_NAME = VISUAL_ODOMETRY
 MODULE_COMMENT = Visual Odometry Package
 
 LINK = g++

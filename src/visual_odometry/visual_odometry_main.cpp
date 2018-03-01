@@ -455,7 +455,7 @@ publish_base_ackerman_odometry(carmen_visual_odometry_pose6d_message *visual_odo
 	odometry.theta = visual_odometry_message->pose_6d.yaw;
 	odometry.v = visual_odometry_message->v;
 	odometry.phi = visual_odometry_message->phi;
-	odometry.acceleration = maximum_acceleration_forward;
+	//odometry.acceleration = maximum_acceleration_forward;
 	odometry.timestamp = visual_odometry_message->timestamp;
 
 	//	printf("v_phi_time %lf %lf %lf\n", odometry.v, -odometry.phi, odometry.timestamp - first_timestamp); // @@@ Alberto: O phi esta negativado porque o carro inicialmente publicava a odometria ao contrario
@@ -512,7 +512,7 @@ bumblebee_stereo_message_handler(carmen_bumblebee_basic_stereoimage_message *mes
 			err = IPC_publishData(CARMEN_VISUAL_ODOMETRY_POSE6D_MESSAGE_NAME, &odometry_msg);
 			carmen_test_ipc_exit(err, "Could not publish", CARMEN_VISUAL_ODOMETRY_POSE6D_MESSAGE_NAME);
 
-			if(ackerman_publish_odometry)
+			if(!ackerman_publish_odometry)
 				publish_base_ackerman_odometry(&odometry_msg);
 		}
 	}
