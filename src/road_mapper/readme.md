@@ -211,6 +211,8 @@ For more information on ENet please refer to the published paper in arXiv: [ENet
 
 This tutorial is inspired on [Tutorial on how to train and test ENet on Cityscapes dataset](https://github.com/TimoSaemann/ENet/tree/master/Tutorial).
 
+#### Installation
+
 Please compile the carmen_lcad version of the modified Caffe framework **caffe-enet** (It supports all necessary layers for ENet):
 ```bash
  $ cd $CARMEN_HOME/sharedlib/ENet/caffe-enet
@@ -240,6 +242,7 @@ Check the existence of file $CAFFE_ENET_HOME/include/caffe/proto/caffe.pb.h. If 
  mkdir include/caffe/proto
  mv src/caffe/proto/caffe.pb.h include/caffe/proto
 ```
+(end of installation)
 
 #### Preparation
 
