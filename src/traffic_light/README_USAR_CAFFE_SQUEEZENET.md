@@ -2,7 +2,7 @@
 
 Caffe - preferencialmente utilize a Caffe-ENet ja presente em `carmen_lcad/sharedlib/ENet/caffe-enet`.
 
-Siga as [instrucoes de instalacao](https://github.com/LCAD-UFES/carmen_lcad/blob/master/src/road_mapper/readme.md#inst1allation) ate `(end of installation)`.
+Siga as [instrucoes de instalacao](../road_mapper/readme.md#installation) ate `(end of installation)`.
 
 Preferencialmente compile com CUDA.
 
@@ -18,9 +18,9 @@ Mude as variaveis para usar a squeezenet no `$CARMEN_HOME/src/carmen-ford-escape
 
 ```
  #--------- Traffic light ------------
- traffic_light_use_squeezenet 		on
- traffic_light_gpu_mode 			    on
- traffic_light_gpu_device_id 		  0	
+ traffic_light_use_squeezenet   on
+ traffic_light_gpu_mode         on
+ traffic_light_gpu_device_id    0	
 ```
 
 Se quiser usar a CPU em vez da GPU, mude `traffic_light_gpu_mode` para `off`. 
