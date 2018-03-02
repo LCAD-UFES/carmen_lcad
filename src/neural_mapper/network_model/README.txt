@@ -14,7 +14,7 @@ Instalar o itorch notebook:
 
 ---------------------------------------------------------
 DADOS DE ENTRADA/GROUND TRUTH:
-Dataset esta na pasta do Drive: https://drive.google.com/open?id=1m8T9EfJQm0ZTKdA-uNvTtweJjISIImPZ
+
 A pasta 'Dataset/'  e composta por arquivos no formato csv de entrada/ground truth da rede, geradas a partir do banco de dados de
 marcacao de ruas da KITTI.
 5 estatisticas sao geradas para cada instante a partir da nuvem de pontos do LIDAR e servem como dados de entrada. 

@@ -81,7 +81,7 @@ DEPS = $(wildcard src/*.h) Makefile
 
 CXXFLAGS = $(CFLAGS) -Wno-sign-compare -Wno-literal-suffix 
 
-all: yolo.weights obj $(EXEC) $(LIBNAMESO) $(APPNAMESO)
+all: yolo.weights yolo_lane.weights obj $(EXEC) $(LIBNAMESO) $(APPNAMESO)
 
 ifeq ($(LIBSO), 1) 
 CFLAGS+= -fPIC
@@ -108,11 +108,14 @@ obj:
 yolo.weights:
 	cat yolo.weights.xa yolo.weights.xb yolo.weights.xc > yolo.weights
 	
+yolo_lane.weights:
+	cat yolo_lane.weights.xa yolo_lane.weights.xb yolo_lane.weights.xc > yolo_lane.weights
+	
 #.PHONY: clean
 
 clean: clean_darknet
 
 clean_darknet:
-	rm -rf $(OBJS) $(EXEC) $(LIBNAMESO) $(APPNAMESO) yolo.weights predictions.jpg
+	rm -rf $(OBJS) $(EXEC) $(LIBNAMESO) $(APPNAMESO) yolo.weights yolo_lane.weights predictions.jpg
 
 include ../../src/Makefile.rules

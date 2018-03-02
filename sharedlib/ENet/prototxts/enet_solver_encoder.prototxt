@@ -2,7 +2,7 @@
 net: "/home/alberto/carmen_lcad/sharedlib/ENet/prototxts/enet_train_encoder.prototxt"		# Modelo da rede
 test_initialization: true	# Executa o teste da rede antes de iniciar o treinamento
 test_iter: 1 			# Indica quantas iteracoes de teste ocorrem por <test_interval> (se o comportamento da rede for estocastico)
-test_interval: 256		# Executa o teste da rede a cada xxx iteracoes (batches)
+test_interval: 128		# Executa o teste da rede a cada xxx iteracoes (batches)
 base_lr: 0.005			# Taxa de aprendizagem (learning rate) inicial
 lr_policy: "step"		# Politica de modificacao da taxa de aprendizagem (learning rate policy):
 				#	"fixed": nao varia a taxa de aprendizagem
@@ -12,16 +12,16 @@ lr_policy: "step"		# Politica de modificacao da taxa de aprendizagem (learning r
 				#	"poly": varia a taxa de aprendizagem a cada iteracao segundo um polinomio de grau <power> ate chegar a zero na ultima iteracao
 				#	"sigmoid": varia a taxa de aprendizagem segundo uma curva sigmoide com ponto de inflexao em <stepsize>
 gamma: 0.1			# Fator de multiplicacao da taxa de aprendizagem conforme a politica adotada
-stepsize: 4142			# Politica "step": multiplica a taxa de aprendizagem por <gamma> a cada xxx iteracoes (batches)
+stepsize: 4095			# Politica "step": multiplica a taxa de aprendizagem por <gamma> a cada xxx iteracoes (batches)
 # stepvalue: 50000		# Politica "multistep": multiplica a taxa de aprendizagem por <gamma> na iteracao numero xxx
 # stepvalue: 70000		# Politica "multistep": multiplica a taxa de aprendizagem por <gamma> na iteracao numero xxx
 # stepvalue: 90000		# Politica "multistep": multiplica a taxa de aprendizagem por <gamma> na iteracao numero xxx
 display: 16			# Exibe os resultados do treino a cada xxx iteracoes (batches)
 momentum: 0.9			# Fracao do peso anterior que sera mantida no calculo do novo peso
-max_iter: 16569			# Numero total de iteracoes (batches) de todas as epocas de treinamento = (epochs * dataset_train_size) / batch_size
+max_iter: 16380			# Numero total de iteracoes (batches) de todas as epocas de treinamento = (epochs * dataset_train_size) / batch_size
 weight_decay: 0.0002		# Fator de regularizacao para pesos grandes
-snapshot: 2071			# Salva os pesos treinados a cada xxx iteracoes (batches)
-snapshot_prefix: "/home/alberto/carmen_lcad/sharedlib/ENet/weights"	# Diretorio/prefixo que o solver usara para salvar o modelo e os pesos treinados (snapshots)
+snapshot: 4095			# Salva os pesos treinados a cada xxx iteracoes (batches)
+snapshot_prefix: "/home/alberto/carmen_lcad/sharedlib/ENet/weights/snapshots_encoder/weights"	# Diretorio/prefixo que o solver usara para salvar o modelo e os pesos treinados (snapshots)
 solver_mode: GPU		# Opcoes: GPU ou CPU
 solver_type: ADAM		# Opcoes: SGD (Stochastic Gradient Descent), AdaGrad (Adaptive Gradient), AdaDelta, Adam, RMSprop, Nesterov
 momentum2: 0.999		# Segundo fator de momentum usado no algoritmo ADAM

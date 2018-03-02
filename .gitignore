@@ -553,3 +553,6 @@ src/hypergraphsclam/parser
 bin/hypergraphsclam
 bin/parser
 src/kitti2carmen/kitti2carmen_main
+src/neural_mapper/generate_gt/neural_mapper_dataset_generator
+src/neural_mapper/generate_gt/neural_mapper_dataset_generator.o
+src/neural_mapper/generate_gt/Makefile.depend
