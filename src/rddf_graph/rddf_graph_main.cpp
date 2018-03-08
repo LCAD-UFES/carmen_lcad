@@ -11,6 +11,7 @@ using namespace std;
 string g_window_name1 = "road map";
 string g_window_name2 = "road center vertical";
 string g_window_name3 = "road center horizontal";
+string g_window_name4 = "blended images";
 
 #define MAX_PROB (pow(2.0, 16) - 1.0)
 
@@ -100,8 +101,27 @@ shutdown_module(int signo)
 }
 
 void
+blend_images_vertical_and_horizontal(carmen_map_p road_map, cv::Mat *image_vertical, cv::Mat *image_horizontal)
+{
+	//source: https://docs.opencv.org/2.4/doc/tutorials/core/adding_images/adding_images.html
+
+	double alpha = 0.5; double beta;
+	cv::Mat blended_image;
+	beta = 1-alpha;
+	cv::addWeighted( *image_vertical, alpha, *image_horizontal, beta, 0.0, blended_image);
+	cv::namedWindow(g_window_name4, cv::WINDOW_AUTOSIZE);
+	cv::moveWindow(g_window_name4, (78*3) + 2*road_map->config.x_size, 50+road_map->config.y_size);
+	cv::imshow(g_window_name4, blended_image);
+	//cv::waitKey(0);
+	while((cv::waitKey() & 0xff) != 27);
+
+
+}
+
+void
 road_mapper_display_road_map(carmen_map_p road_map, int img_channels, int img_class_bits)
 {
+	road_prob *cell_prob;
 	cv::namedWindow(g_window_name1, cv::WINDOW_AUTOSIZE);
 	cv::moveWindow(g_window_name1, 78 + road_map->config.x_size, 10);
 	cv::namedWindow(g_window_name2, cv::WINDOW_AUTOSIZE);
@@ -145,11 +165,12 @@ road_mapper_display_road_map(carmen_map_p road_map, int img_channels, int img_cl
 	cv::Vec3b pixelChannelPosV; //pegar cada canal de cor em separado
 	int thickness = -1;
 	int lineType = 8;
-	for (int y = 0; y < road_map->config.y_size-1; y+=1)
+	for (int y = 1; y < road_map->config.y_size-1; y+=1)
 		{
 			for (int x = 1; x < road_map->config.x_size-1; x+=1)
 			{
-
+				cell_prob = road_mapper_double_to_prob(&road_map->map[x][road_map->config.y_size - 1 - y]);
+				//printf("%d X %d %hu\n",x,y,cell_prob->lane_center);
 				imgPaint = image1.clone();
 				p.x = x;
 				p.y = y;
@@ -173,16 +194,16 @@ road_mapper_display_road_map(carmen_map_p road_map, int img_channels, int img_cl
 				else{
 					cv::circle(imgPaint, p, 1,cv::Scalar( 0, 0, 0 ),thickness,lineType);
 					if(((pixelChannel.val[1]>pixelChannelAnt.val[1])&&(pixelChannel.val[1]>pixelChannelPos.val[1]))||(pixelChannel.val[0]==0 && pixelChannel.val[1]==255 && pixelChannel.val[2]==0)){
-						printf("Pixel Color at %dX%d: b: %d g: %d r: %d  CENTER!!!\n",x,y,pixelChannel.val[0],pixelChannel.val[1],pixelChannel.val[2]);
-						cv::circle(imageCenterVertical, p, 1,cv::Scalar( 0, 0, 0 ),thickness,lineType);
+						//printf("Pixel Color at %dX%d: b: %d g: %d r: %d %hu CENTER!!!\n",x,y,pixelChannel.val[0],pixelChannel.val[1],pixelChannel.val[2], cell_prob->lane_center);
+						cv::circle(imageCenterVertical, p, 1,cv::Scalar( 255, 0, 0 ),thickness,lineType);
 					}
-					else{
-						printf("Pixel Color at %dX%d: b: %d g: %d r: %d\n",x,y,pixelChannel.val[0],pixelChannel.val[1],pixelChannel.val[2]);
-					}
+					//else{
+						//printf("Pixel Color at %dX%d: b: %d g: %d r: %d %hu\n",x,y,pixelChannel.val[0],pixelChannel.val[1],pixelChannel.val[2], cell_prob->lane_center);
+					//}
 
 					if(((pixelChannel.val[1]>pixelChannelAntV.val[1])&&(pixelChannel.val[1]>pixelChannelPosV.val[1]))||(pixelChannel.val[0]==0 && pixelChannel.val[1]==255 && pixelChannel.val[2]==0)){
 						//printf("Pixel Color at %dX%d: b: %d g: %d r: %d  CENTER!!!\n",x,y,pixelChannel.val[0],pixelChannel.val[1],pixelChannel.val[2]);
-						cv::circle(imageCenterHorizontal, p, 1,cv::Scalar( 0, 0, 0 ),thickness,lineType);
+						cv::circle(imageCenterHorizontal, p, 1,cv::Scalar( 0, 0, 255 ),thickness,lineType);
 					}
 
 					
@@ -203,8 +224,10 @@ road_mapper_display_road_map(carmen_map_p road_map, int img_channels, int img_cl
 
 			}
 			//while((cv::waitKey() & 0xff) != 27);
-			system("clear");
+			//system("clear");
 		}
+	blend_images_vertical_and_horizontal(road_map, &imageCenterVertical, &imageCenterHorizontal);
+	//cv::waitKey(0);
 
 }
 
