@@ -6,7 +6,7 @@ using namespace std;
 
 
 void
-print_vector(vector<float> v)
+print_vector(vector<double> v)
 {
 	for (unsigned int i = 0; i < v.size(); i++)
 		printf("%.3f ", v[i]);

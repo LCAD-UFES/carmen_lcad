@@ -13,7 +13,7 @@
 
 namespace std
 {
-    %template(FloatVector) vector<float>;
+    %template(FloatVector) vector<double>;
 }
 
 // **********************************************************

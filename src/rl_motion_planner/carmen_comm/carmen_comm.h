@@ -6,8 +6,8 @@
 
 void env_destroy();
 void env_init();
-std::vector<float> env_reset(float x, float y, float th);
-std::vector<float> env_step(float v, float phi);
+std::vector<double> env_reset(double x, double y, double th);
+std::vector<double> env_step(double v, double phi);
 bool env_done();
 
 #endif

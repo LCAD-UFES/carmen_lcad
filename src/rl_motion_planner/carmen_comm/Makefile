@@ -2,8 +2,11 @@
 include $(CARMEN_HOME)/src/Makefile.conf
 
 CXXFLAGS += -Wno-write-strings 
-IFLAGS += 
-LFLAGS += -lglobal -lipc -llocalize_ackerman_interface -lrobot_ackerman_interface
+IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/EXTERNAL/csparse/ \
+	 -I/usr/local/include/g2o/
+	 
+LFLAGS += -lglobal -lipc -llocalize_ackerman_interface -lrobot_ackerman_interface -lbehavior_selector_interface
+
 
 MODULE_NAME = carmen_comm
 MODULE_COMMENT = Infra-structure for communicating with carmen via Python 
