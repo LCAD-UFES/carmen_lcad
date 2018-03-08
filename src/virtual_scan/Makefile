@@ -42,6 +42,11 @@ PUBLIC_LIBRARIES = \
 	libvirtual_scan_interface.a
 
 PUBLIC_BINARIES = \
+	datmo_mcmc \
+	hypothesis_viewer \
+	message_viewer \
+	reading_viewer \
+	segment_viewer \
 	virtual_scan
 
 TARGETS = \
