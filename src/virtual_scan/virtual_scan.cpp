@@ -557,10 +557,15 @@ virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses_t *virtual_sca
 			message.point_clouds[k].length = box->length;
 			message.point_clouds[k].width= box->width;
 			message.point_clouds[k].geometric_model = box->c;
-//			message.point_clouds[k].model_features = get_obj_model_features(idMod);
 //			message.point_clouds[k].num_associated = timestamp_moving_objects_list[current_vector_index].objects[i].id;
 
-			message.point_clouds[k].point_size = 0; // 1
+			object_model_features_t &model_features = message.point_clouds[k].model_features;
+			model_features.model_id = box->c;
+			model_features.model_name = (char *) "name?";
+			model_features.geometry.length = box->length;
+			model_features.geometry.width = box->width;
+
+			//			message.point_clouds[k].point_size = 0; // 1
 //			message.point_clouds[k].points = (carmen_vector_3D_t *) malloc(1 * sizeof(carmen_vector_3D_t));
 //			message.point_clouds[k].points[0].x = box->x;
 //			message.point_clouds[k].points[0].y = box->y;
