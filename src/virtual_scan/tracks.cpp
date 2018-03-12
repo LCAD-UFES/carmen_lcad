@@ -23,7 +23,7 @@ ObstaclePose::S Tracks::obstacles() const
 
 bool Tracks::create(Graph &graph)
 {
-	LOG("Before create: " << *this);
+	//LOG("Before create: " << *this);
 
 	Subgraph &subgraph = random_choose(graph);
 
@@ -35,7 +35,7 @@ bool Tracks::create(Graph &graph)
 
 	if (unselected.size() == 0)
 	{
-		LOG("After create (unselected == {}): " << *this);
+		//LOG("After create (unselected == {}): " << *this);
 		return false;
 	}
 
@@ -50,13 +50,13 @@ bool Tracks::create(Graph &graph)
 	if (tau.size() < 2)
 	{
 		pop_back();
-		LOG("After create (failed extension): " << *this);
+		//LOG("After create (failed extension): " << *this);
 		return false;
 	}
 
 	PwZ.create(size() - 1, *this);
 
-	LOG("After create (success): " << *this);
+	//LOG("After create (success): " << *this);
 
 	return true;
 }
@@ -64,11 +64,11 @@ bool Tracks::create(Graph &graph)
 
 bool Tracks::destroy()
 {
-	LOG("Before destroy: " << *this);
+	//LOG("Before destroy: " << *this);
 
 	if (size() == 0)
 	{
-		LOG("After destroy (no tracks): " << *this);
+		//LOG("After destroy (no tracks): " << *this);
 		return false;
 	}
 
@@ -77,7 +77,7 @@ bool Tracks::destroy()
 	PwZ.destroy(true, n, *this);
 	destroy(n);
 
-	LOG("After destroy (success): " << *this);
+	//LOG("After destroy (success): " << *this);
 
 	return true;
 }
@@ -132,12 +132,12 @@ inline Node::Edges unselected(const Node::Edges &nodes)
 
 bool Tracks::extend_forward(Track &tau)
 {
-	LOG("Before forward extension: " << *this);
+	//LOG("Before forward extension: " << *this);
 
 	Node::Edges children = unselected(tau.back().node->children);
 	if (children.size() == 0)
 	{
-		LOG("After forward extension (no children): " << *this);
+		//LOG("After forward extension (no children): " << *this);
 		return false;
 	}
 
@@ -145,7 +145,7 @@ bool Tracks::extend_forward(Track &tau)
 
 	PwZ.extend_forward(tau);
 
-	LOG("After forward extension (success): " << *this);
+	//LOG("After forward extension (success): " << *this);
 
 	return true;
 }
@@ -153,12 +153,12 @@ bool Tracks::extend_forward(Track &tau)
 
 bool Tracks::extend_backward(Track &tau)
 {
-	LOG("Before backward extension: " << *this);
+	//LOG("Before backward extension: " << *this);
 
 	Node::Edges parents = unselected(tau.back().node->parents);
 	if (parents.size() == 0)
 	{
-		LOG("After backward extension (no parents): " << *this);
+		//LOG("After backward extension (no parents): " << *this);
 		return false;
 	}
 
@@ -166,7 +166,7 @@ bool Tracks::extend_backward(Track &tau)
 
 	PwZ.extend_backward(tau);
 
-	LOG("After backward extension (success): " << *this);
+	//LOG("After backward extension (success): " << *this);
 
 	return true;
 }
@@ -174,7 +174,7 @@ bool Tracks::extend_backward(Track &tau)
 
 bool Tracks::reduce()
 {
-	LOG("Before reduction: " << *this);
+	//LOG("Before reduction: " << *this);
 
 	std::vector<int> reducible;
 	reducible.reserve(size());
@@ -186,7 +186,7 @@ bool Tracks::reduce()
 
 	if (reducible.size() == 0)
 	{
-		LOG("After reduction (no reducible tracks): " << *this);
+		//LOG("After reduction (no reducible tracks): " << *this);
 		return false;
 	}
 
@@ -211,13 +211,13 @@ bool Tracks::reduce()
 	{
 		PwZ.pop_back(i, r + 1, *this);
 		track.pop_back(r + 1);
-		LOG("After forward reduction (success): " << *this);
+		//LOG("After forward reduction (success): " << *this);
 	}
 	else // Backward reduction
 	{
 		PwZ.pop_front(i, r, *this);
 		track.pop_front(r);
-		LOG("After backward reduction (success): " << *this);
+		//LOG("After backward reduction (success): " << *this);
 	}
 
 	return true;
@@ -226,7 +226,7 @@ bool Tracks::reduce()
 
 bool Tracks::split()
 {
-	LOG("Before split: " << *this);
+	//LOG("Before split: " << *this);
 
 	// Verifying if there is a track with 4 or more nodes
 	std::vector<int> found;
@@ -236,7 +236,7 @@ bool Tracks::split()
 
 	if (found.size() == 0)
 	{
-		LOG("After split (no suitable tracks): " << *this);
+		//LOG("After split (no suitable tracks): " << *this);
 		return false;
 	}
 
@@ -251,14 +251,14 @@ bool Tracks::split()
 
 	PwZ.split(tau_1, tau_2);
 
-	LOG("After split (success): " << *this);
+	//LOG("After split (success): " << *this);
 
 	return true;
 }
 
 bool Tracks::merge()
 {
-	LOG("Before merge: " << *this);
+	//LOG("Before merge: " << *this);
 
 	std::vector <std::pair<int, int>> pairs;
 	for (int i = 0, n = size(); i < n; i++)
@@ -276,7 +276,7 @@ bool Tracks::merge()
 
 	if (pairs.size() == 0)
 	{
-		LOG("After merge (no suitable pairs): " << *this);
+		//LOG("After merge (no suitable pairs): " << *this);
 		return false;
 	}
 
@@ -288,7 +288,7 @@ bool Tracks::merge()
 	PwZ.merge(tau_1, tau_2);
 	destroy(pair.second);
 
-	LOG("After merge (success): " << *this);
+	//LOG("After merge (success): " << *this);
 
 	return true;
 }
@@ -413,7 +413,7 @@ public:
 
 bool Tracks::swap()
 {
-	LOG("Before swap: " << *this);
+	//LOG("Before swap: " << *this);
 
 	std::vector<Swap> swappings;
 	for (int i = 0, n = size(); i < n; i++)
@@ -428,7 +428,7 @@ bool Tracks::swap()
 
 	if (swappings.size() == 0)
 	{
-		LOG("After swap (no swappable tracks): " << *this);
+		//LOG("After swap (no swappable tracks): " << *this);
 		return false;
 	}
 
@@ -438,7 +438,7 @@ bool Tracks::swap()
 
 	PwZ.swap(swapping.i, swapping.j, *this);
 
-	LOG("After swap (success): " << *this);
+	//LOG("After swap (success): " << *this);
 
 	return true;
 }
@@ -446,11 +446,11 @@ bool Tracks::swap()
 
 bool Tracks::diffuse()
 {
-	LOG("Before diffusion: " << *this);
+	//LOG("Before diffusion: " << *this);
 
 	if (size() == 0)
 	{
-		LOG("After diffusion (no tracks): " << *this);
+		//LOG("After diffusion (no tracks): " << *this);
 		return false;
 	}
 
@@ -461,7 +461,7 @@ bool Tracks::diffuse()
 
 	PwZ.diffuse(i, j, *this);
 
-	LOG("After diffusion (success): " << *this);
+	//LOG("After diffusion (success): " << *this);
 
 	return true;
 }

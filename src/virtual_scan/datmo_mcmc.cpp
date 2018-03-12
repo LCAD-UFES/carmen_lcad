@@ -46,20 +46,26 @@ virtual_scan_publish_obstacles(carmen_mapper_virtual_scan_message *data)
 		const virtual_scan::Model *model = obstacle->node->model;
 		const virtual_scan::Pose &pose = obstacle->global;
 
-		message.point_clouds[k].r = 0.0;
-		message.point_clouds[k].g = 0.0;
-		message.point_clouds[k].b = 1.0;
-		message.point_clouds[k].linear_velocity = 0;
-		message.point_clouds[k].orientation = pose.o;
-		message.point_clouds[k].object_pose.x = pose.x;
-		message.point_clouds[k].object_pose.y = pose.y;
-		message.point_clouds[k].object_pose.z = 0.0;
-		message.point_clouds[k].height = 0;
-		message.point_clouds[k].length = model->length;
-		message.point_clouds[k].width = model->width;
-		message.point_clouds[k].geometric_model = model->id;
-		message.point_clouds[k].point_size = 0;
-	}
+			message.point_clouds[k].r = 0.0;
+			message.point_clouds[k].g = 0.0;
+			message.point_clouds[k].b = 1.0;
+			message.point_clouds[k].linear_velocity = 0;
+			message.point_clouds[k].orientation = pose.o;
+			message.point_clouds[k].object_pose.x = pose.x;
+			message.point_clouds[k].object_pose.y = pose.y;
+			message.point_clouds[k].object_pose.z = 0.0;
+			message.point_clouds[k].height = 0;
+			message.point_clouds[k].length = model->length;
+			message.point_clouds[k].width = model->width;
+			message.point_clouds[k].geometric_model = model->id;
+			message.point_clouds[k].point_size = 0;
+
+			object_model_features_t &model_features = message.point_clouds[k].model_features;
+			model_features.model_id = model->id;
+			model_features.model_name = (char *) "name?";
+			model_features.geometry.length = model->length;
+			model_features.geometry.width = model->width;
+}
 
 	carmen_moving_objects_point_clouds_publish_message(&message);
 }

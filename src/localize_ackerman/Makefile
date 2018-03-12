@@ -31,7 +31,7 @@ LFLAGS += -lvtkCommon -lvtkFiltering -lpcl_common -lpcl_surface -lpcl_io -lpcl_r
 MODULE_NAME = LOCALIZE ACKERMAN
 MODULE_COMMENT = Markov Localization Module
 
-SOURCES = localize_ackerman.cpp localize_ackerman_using_map.cpp localize_ackerman_likelihood_map.c localize_ackerman_core.c localize_ackerman_interface.c \
+SOURCES = localize_ackerman_main.cpp localize_ackerman_using_map.cpp localize_ackerman_likelihood_map.c localize_ackerman_core.c localize_ackerman_interface.c \
 	  localize_ackerman_initialize.c localize_ackerman_motion.c localize_ackerman_velodyne.cpp localize_ackerman_particle_viewer.c
 	  
 PUBLIC_INCLUDES = localize_ackerman_messages.h localize_ackerman_interface.h localize_ackerman_core.h \
@@ -80,7 +80,7 @@ liblocalize_ackerman_core.a: localize_ackerman_core.o localize_ackerman_initiali
 
 liblocalize_ackerman_motion.a: localize_ackerman_motion.o
 
-localize_ackerman:	localize_ackerman.o localize_ackerman_using_map.o localize_ackerman_velodyne.o liblocalize_ackerman_core.a liblocalize_ackerman_interface.a \
+localize_ackerman:	localize_ackerman_main.o localize_ackerman_using_map.o localize_ackerman_velodyne.o liblocalize_ackerman_core.a liblocalize_ackerman_interface.a \
 	liblocalize_ackerman_motion.a
 
 localize_ackerman_graph:	localize_ackerman_graph.o localize_ackerman_likelihood_map.o liblocalize_ackerman_interface.a
