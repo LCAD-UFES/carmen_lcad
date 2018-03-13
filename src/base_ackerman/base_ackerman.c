@@ -41,16 +41,11 @@ static double phi_multiplier;
 static double phi_bias;
 static double v_multiplier;
 
-static double visual_odometry_phi_multiplier;
-static double visual_odometry_phi_bias;
-static double visual_odometry_v_multiplier;
-static double visual_odometry_publish;
-
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-//												//
-// Publishers											//
-//												//
+//																								//
+// Publishers																					//
+//																								//
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -93,9 +88,9 @@ publish_carmen_base_ackerman_odometry_message(double timestamp)
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-//												//
-// Handlers											//
-//												//
+//																								//
+// Handlers																						//
+//																								//
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -103,18 +98,9 @@ static void
 robot_ackerman_velocity_handler(carmen_robot_ackerman_velocity_message *robot_ackerman_velocity_message)
 {
 
-	if (visual_odometry_publish)
-	{
-		carmen_add_bias_and_multiplier_to_v_and_phi(&(car_config->v), &(car_config->phi),
-						    robot_ackerman_velocity_message->v, robot_ackerman_velocity_message->phi, 
-						    0.0, visual_odometry_v_multiplier, visual_odometry_phi_bias, visual_odometry_phi_multiplier);
-	}
-	else
-	{
-		carmen_add_bias_and_multiplier_to_v_and_phi(&(car_config->v), &(car_config->phi),
-							robot_ackerman_velocity_message->v, robot_ackerman_velocity_message->phi,
-							0.0, v_multiplier, phi_bias, phi_multiplier);
-	}
+	carmen_add_bias_and_multiplier_to_v_and_phi(&(car_config->v), &(car_config->phi),
+						robot_ackerman_velocity_message->v, robot_ackerman_velocity_message->phi,
+						0.0, v_multiplier, phi_bias, phi_multiplier);
 	// Filipe: Nao deveria ter um normalize theta nessa atualizacao do phi? Sugestao abaixo:
 	// car_config->phi = carmen_normalize_theta(robot_ackerman_velocity_message->phi * phi_multiplier + phi_bias);
 
@@ -142,9 +128,9 @@ shutdown_module()
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
-//												//
-// Inicializations										//
-//												//
+//																								//
+// Inicializations																				//
+//																								//
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -163,13 +149,7 @@ read_parameters(int argc, char *argv[], carmen_base_ackerman_config_t *config)
 
 		{"robot", "phi_multiplier", CARMEN_PARAM_DOUBLE, &phi_multiplier, 0, NULL},
 		{"robot", "phi_bias", CARMEN_PARAM_DOUBLE, &phi_bias, 1, NULL},
-		{"robot", "v_multiplier", CARMEN_PARAM_DOUBLE, &v_multiplier, 0, NULL},
-
-		{"visual_odometry", "phi_multiplier", CARMEN_PARAM_DOUBLE, &visual_odometry_phi_multiplier, 0, NULL},
-		{"visual_odometry", "phi_bias", CARMEN_PARAM_DOUBLE, &visual_odometry_phi_bias, 0, NULL},
-		{"visual_odometry", "v_multiplier", CARMEN_PARAM_DOUBLE, &visual_odometry_v_multiplier, 0, NULL},
-
-		{"visual_odometry", "publish", CARMEN_PARAM_DOUBLE, &visual_odometry_publish, 0, NULL}
+		{"robot", "v_multiplier", CARMEN_PARAM_DOUBLE, &v_multiplier, 0, NULL}
 	};
 
 	num_items = sizeof(param_list) / sizeof(param_list[0]);

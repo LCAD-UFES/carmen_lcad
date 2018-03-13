@@ -38,7 +38,7 @@ unsigned char* right_image;
 static carmen_pose_3D_t camera_pose;
 static carmen_pose_3D_t sensor_board_pose;
 
-static double axis_distance;
+static double distance_between_front_and_rear_axles;
 
 static carmen_pose_3D_t previous_pose = {{0.0,0.0,0.0},{0.0,0.0,0.0}};
 
@@ -49,6 +49,11 @@ static char* board_tf_name = (char*)"/board";
 static double previous_timestamp = 0.0;
 
 static double maximum_acceleration_forward;
+
+static double visual_odometry_phi_multiplier;
+static double visual_odometry_phi_bias;
+static double visual_odometry_v_multiplier;
+//static double visual_odometry_publish;
 
 
 void
@@ -272,7 +277,7 @@ compute_v_and_phi(carmen_visual_odometry_pose6d_message *visual_odometry_message
 	carmen_pose_3D_t current_pose = get_carmen_pose_from_visual_odometry_message(visual_odometry_message);
 	carmen_pose_3D_t delta_pose = calculate_delta_pose(current_pose, previous_pose);
 
-//	double yaw2 = atan2(delta_pose.position.y, delta_pose.position.x);
+	double yaw2 = atan2(delta_pose.position.y, delta_pose.position.x);
 
 	static double yaw_velocity = 0.0;
 
@@ -285,13 +290,15 @@ compute_v_and_phi(carmen_visual_odometry_pose6d_message *visual_odometry_message
 	{
 		visual_odometry_message->v += 0.5 * ((sqrt(delta_pose.position.x * delta_pose.position.x + delta_pose.position.y * delta_pose.position.y) / delta_t) - visual_odometry_message->v);
 				
-//		if (fabs(carmen_normalize_theta(current_pose.orientation.yaw - yaw2)) > M_PI/4.0)
-//		{
-//			visual_odometry_message->v = -visual_odometry_message->v;	//@@@ Isso parou de funcionar com o visual odometry novo. Mas acho que consertei.. Checar.
-//		}
+		if (fabs(carmen_normalize_theta(current_pose.orientation.yaw - yaw2)) > M_PI/4.0)
+		{
+			visual_odometry_message->v = -visual_odometry_message->v;	//@@@ Isso parou de funcionar com o visual odometry novo. Mas acho que consertei.. Checar.
+		}
 
-		yaw_velocity += 0.5 * ((delta_pose.orientation.yaw / delta_t) - yaw_velocity);
-		double L = axis_distance;
+		double yaw_velocity_raw = delta_pose.orientation.yaw / delta_t;
+		yaw_velocity += 0.25 * (yaw_velocity_raw - yaw_velocity);
+
+		double L = distance_between_front_and_rear_axles;
 		if (fabs(visual_odometry_message->v) > 0.1)
 		{
 			visual_odometry_message->phi = atan2(L * yaw_velocity, fabs(visual_odometry_message->v));
@@ -601,15 +608,18 @@ bumblebee_stereo_message_handler(carmen_bumblebee_basic_stereoimage_message *mes
 //			err = IPC_publishData(CARMEN_VISUAL_ODOMETRY_IMAGE_MESSAGE_NAME, &image_msg);
 //			carmen_test_ipc_exit(err, "Could not publish", CARMEN_VISUAL_ODOMETRY_IMAGE_MESSAGE_NAME);
 
+			carmen_add_bias_and_multiplier_to_v_and_phi(&(odometry_msg.v), &(odometry_msg.phi), odometry_msg.v, odometry_msg.phi,
+					0.0, visual_odometry_v_multiplier, visual_odometry_phi_bias, visual_odometry_phi_multiplier);
+
 			err = IPC_publishData(CARMEN_VISUAL_ODOMETRY_POSE6D_MESSAGE_NAME, &odometry_msg);
 			carmen_test_ipc_exit(err, "Could not publish", CARMEN_VISUAL_ODOMETRY_POSE6D_MESSAGE_NAME);
 			
-//			if (!ackerman_publish_odometry)
+			//if (!ackerman_publish_odometry)
 				publish_base_ackerman_odometry_message(&odometry_msg);
 
 			if (visual_odometry_publish_velocity)
 				publish_robot_ackerman_velocity_message(&odometry_msg);
-			
+
 			if (visual_odometry_is_global_pos)
 				publish_visual_odometry_as_global_pos(&odometry_msg);
 		}
@@ -657,21 +667,26 @@ read_parameters(int argc, char **argv)
 		{(char *) "robot", (char *) "maximum_acceleration_forward", CARMEN_PARAM_DOUBLE, &maximum_acceleration_forward, 0, NULL},
 		{(char *) "robot", (char *) "publish_odometry", CARMEN_PARAM_ONOFF, &ackerman_publish_odometry, 0, NULL},
 		{(char *) "visual_odometry", (char *) "publish", CARMEN_PARAM_ONOFF, &visual_odometry_publish_velocity, 0, NULL},
-		{(char*)camera_string, (char*)"x", CARMEN_PARAM_DOUBLE, &camera_pose.position.x, 0, NULL},
-		{(char*)camera_string, (char*)"y", CARMEN_PARAM_DOUBLE, &camera_pose.position.y, 0, NULL},
-		{(char*)camera_string, (char*)"z", CARMEN_PARAM_DOUBLE, &camera_pose.position.z, 0, NULL},
-		{(char*)camera_string, (char*)"roll", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.roll, 0, NULL},
-		{(char*)camera_string, (char*)"pitch", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.pitch, 0, NULL},
-		{(char*)camera_string, (char*)"yaw", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.yaw, 0, NULL},
-		{(char*)"car", (char*)"axis_distance", CARMEN_PARAM_DOUBLE, &axis_distance, 0, NULL},
-		{(char*)"sensor_board_1", (char*)"x", CARMEN_PARAM_DOUBLE, &sensor_board_pose.position.x,	0, NULL},
-		{(char*)"sensor_board_1", (char*)"y", CARMEN_PARAM_DOUBLE, &sensor_board_pose.position.y,	0, NULL},
-		{(char*)"sensor_board_1", (char*)"z", CARMEN_PARAM_DOUBLE, &sensor_board_pose.position.z,	0, NULL},
-		{(char*)"sensor_board_1", (char*)"roll", CARMEN_PARAM_DOUBLE, &sensor_board_pose.orientation.roll,0, NULL},
-		{(char*)"sensor_board_1", (char*)"pitch", CARMEN_PARAM_DOUBLE, &sensor_board_pose.orientation.pitch,0, NULL},
-		{(char*)"sensor_board_1", (char*)"yaw", CARMEN_PARAM_DOUBLE, &sensor_board_pose.orientation.yaw,	0, NULL},
-		{(char *) "visual_odometry", (char *) "is_global_pos", CARMEN_PARAM_ONOFF, &visual_odometry_is_global_pos, 0, NULL}
+		{(char *) camera_string, (char *) "x", CARMEN_PARAM_DOUBLE, &camera_pose.position.x, 0, NULL},
+		{(char *) camera_string, (char *) "y", CARMEN_PARAM_DOUBLE, &camera_pose.position.y, 0, NULL},
+		{(char *) camera_string, (char *) "z", CARMEN_PARAM_DOUBLE, &camera_pose.position.z, 0, NULL},
+		{(char *) camera_string, (char *) "roll", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.roll, 0, NULL},
+		{(char *) camera_string, (char *) "pitch", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.pitch, 0, NULL},
+		{(char *) camera_string, (char *) "yaw", CARMEN_PARAM_DOUBLE, &camera_pose.orientation.yaw, 0, NULL},
+		{(char *) "robot", (char *) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &distance_between_front_and_rear_axles, 1,NULL},
+		{(char *) "sensor_board_1", (char *) "x", CARMEN_PARAM_DOUBLE, &sensor_board_pose.position.x,	0, NULL},
+		{(char *) "sensor_board_1", (char *) "y", CARMEN_PARAM_DOUBLE, &sensor_board_pose.position.y,	0, NULL},
+		{(char *) "sensor_board_1", (char *) "z", CARMEN_PARAM_DOUBLE, &sensor_board_pose.position.z,	0, NULL},
+		{(char *) "sensor_board_1", (char *) "roll", CARMEN_PARAM_DOUBLE, &sensor_board_pose.orientation.roll,0, NULL},
+		{(char *) "sensor_board_1", (char *) "pitch", CARMEN_PARAM_DOUBLE, &sensor_board_pose.orientation.pitch,0, NULL},
+		{(char *) "sensor_board_1", (char *) "yaw", CARMEN_PARAM_DOUBLE, &sensor_board_pose.orientation.yaw,	0, NULL},
+		{(char *) "visual_odometry", (char *) "is_global_pos", CARMEN_PARAM_ONOFF, &visual_odometry_is_global_pos, 0, NULL},
 
+//		{(char *) "visual_odometry", (char *) "publish", CARMEN_PARAM_DOUBLE, &visual_odometry_publish, 0, NULL},
+
+		{(char *) "visual_odometry", (char *) "phi_multiplier", CARMEN_PARAM_DOUBLE, &visual_odometry_phi_multiplier, 0, NULL},
+		{(char *) "visual_odometry", (char *) "phi_bias", CARMEN_PARAM_DOUBLE, &visual_odometry_phi_bias, 0, NULL},
+		{(char *) "visual_odometry", (char *) "v_multiplier", CARMEN_PARAM_DOUBLE, &visual_odometry_v_multiplier, 0, NULL}
 	};
 
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
@@ -684,25 +699,26 @@ read_parameters(int argc, char **argv)
 bool 
 visual_odometry_initialize(float focal_length, float principal_point_x, float principal_point_y, float baseline)
 {
+	// TODO Isso nao deveria vir dos parametros da bumblebee
 	viso_param.calib.f = focal_length;
 	viso_param.calib.cu = principal_point_x;
 	viso_param.calib.cv = principal_point_y;
 	viso_param.base = baseline;
 
-	viso_param.bucket.max_features = 4;
+	viso_param.bucket.max_features = 100;
 	viso_param.bucket.bucket_width = 64;
 	viso_param.bucket.bucket_height = 48;
 
-	viso_param.match.nms_n                  = 4;
-	viso_param.match.nms_tau                = 50;
-	viso_param.match.match_binsize          = 50;
-	viso_param.match.match_radius           = 200;
-	viso_param.match.match_disp_tolerance   = 1;
-	viso_param.match.outlier_disp_tolerance = 8;
-	viso_param.match.outlier_flow_tolerance = 8;
-	viso_param.match.multi_stage            = 1;
-	viso_param.match.half_resolution        = 1;
-	viso_param.match.refinement             = 1;
+	viso_param.match.nms_n                  = 10;  // non-max-suppression: min. distance between maxima (in pixels)
+	viso_param.match.nms_tau                = 30;  // non-max-suppression: interest point peakiness threshold
+	viso_param.match.match_binsize          = 25;  // matching bin width/height (affects efficiency only)
+	viso_param.match.match_radius           = 100; // matching radius (du/dv in pixels)
+	viso_param.match.match_disp_tolerance   = 10;  // dv tolerance for stereo matches (in pixels)
+	viso_param.match.outlier_disp_tolerance = 20;  // outlier removal: disparity tolerance (in pixels)
+	viso_param.match.outlier_flow_tolerance = 20;  // outlier removal: flow tolerance (in pixels)
+	viso_param.match.multi_stage            = 1;   // 0=disabled,1=multistage matching (denser and faster)
+	viso_param.match.half_resolution        = 1;   // 0=disabled,1=match at half resolution, refine at full resolution
+	viso_param.match.refinement             = 1;   // refinement (0=none,1=pixel,2=subpixel)
 
 	if (viso == NULL)
 	{
