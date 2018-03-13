@@ -21,14 +21,30 @@
 extern "C" {
 #endif
 
+typedef struct t_point
+{
+	int x;
+	int y;
+
+} t_point;
+
+typedef struct type_list
+{
+	t_point p;
+	type_list* prox;
+
+} t_list;
+
 cv::Mat rotate(cv::Mat src, cv::Point pt, double angle);
-void remission_map_to_image(carmen_map_p map, cv::Mat *remission_map_img, int channels);
 void road_map_to_image(carmen_map_p map, cv::Mat *road_map_img);
 void road_map_to_image_black_and_white(carmen_map_p map, cv::Mat *road_map_img, const int class_bits);
-int global_pos_on_map_q4(carmen_point_t global_pos, carmen_map_p *maps, int maps_size);
-int maps_has_same_origin(carmen_map_p map1, carmen_map_p map2);
-carmen_map_p alloc_map_pointer(void);
-void free_map_pointer(carmen_map_p map);
+void road_map_find_center(carmen_map_p map);
+int **alloc_matrix(int r, int c);
+t_list *create_list();
+t_list *insert_in_list (t_list *l, t_point p);
+void print_list (t_list *l);
+bool is_center (carmen_map_p map, int x, int y, unsigned short *next_lane_center);
+void check_neighbours(int x, int y, carmen_map_p map, int **already_visited, t_list *list, bool has_point);
 
 #ifdef __cplusplus
 }
