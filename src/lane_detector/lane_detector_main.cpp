@@ -287,10 +287,17 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
         bounding_box bbox;
 
         bbox.pt1.x = box.x;
-        bbox.pt1.y = box.y;
+        
         bbox.pt2.x = box.x + box.w;
-        bbox.pt2.y = box.y + box.h;
-
+        if (box.x > rgb_image.cols / 2)
+        {
+        	bbox.pt1.y = box.y;
+        	bbox.pt2.y = box.y + box.h;
+        }else
+        {
+        	bbox.pt2.y = box.y;
+        	bbox.pt1.y = box.y + box.h;
+        }
         bouding_boxes_list.push_back(bbox);
     }
 
@@ -343,7 +350,10 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     cv::putText(rgb_image, frame_rate,
                 cv::Point(10, 25),
                 cv::FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
-
+    
+    std::vector<cv::Point> points_1; 
+    std::vector<cv::Point> points_2;    
+    
     for (unsigned int i = 0; i < laser_points_in_camera_box_list.size(); i++)
     {
         for (unsigned int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
@@ -357,7 +367,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
 
 
-        sprintf(confianca, "%.3f", predictions.at(i).prob);
+        sprintf(confianca, "%d", i);
 
         int obj_id = predictions.at(i).obj_id;
 
@@ -369,22 +379,41 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
             object_color = cv::Scalar(0, 0, 255);
         else
             object_color = cv::Scalar(255, 0, 255);
-
-        cv::rectangle(rgb_image,
+        
+        /*cv::line(rgb_image,
+                	  cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y),
                       cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y),
-                      cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y),
-                      object_color, 1);
-
-        cv::putText(rgb_image, obj_name,
+                      object_color, 1);*/
+        if (bouding_boxes_list[i].pt2.x > rgb_image.cols / 2)
+        {
+        	points_1.push_back(cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y));
+        	points_1.push_back(cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y));
+        }else
+        {
+        	points_2.push_back(cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y));
+        	points_2.push_back(cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y));
+        }
+        /*cv::putText(rgb_image, obj_name,
                     cv::Point(bouding_boxes_list[i].pt2.x + 1, bouding_boxes_list[i].pt1.y - 3),
                     cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0, 0, 255), 1);
 
         cv::putText(rgb_image, confianca,
                     cv::Point(bouding_boxes_list[i].pt1.x + 1, bouding_boxes_list[i].pt1.y - 3),
                     cv::FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
-
+		*/
     }
-
+    int num = cv::Mat(points_1).rows;
+    int num1 = cv::Mat(points_2).rows;
+    const cv::Point *pts_1 = (const cv::Point*) cv::Mat(points_1).data;
+    const cv::Point *pts_2 = (const cv::Point*) cv::Mat(points_2).data;
+    if (points_1.empty() == false)
+    {
+    	cv::polylines(rgb_image, &pts_1, &num, 1, false, cv::Scalar(0,255,0), 3, CV_AA, 0);
+    }
+    if (points_2.empty() == false)
+    {
+    	cv::polylines(rgb_image, &pts_2, &num1, 1, false, cv::Scalar(0,255,0), 3, CV_AA, 0);
+    }
     cv::Mat resized_image(cv::Size(640, 480 - 480 * hood_removal_percentage), CV_8UC3);
 //    cv::Mat resized_image(cv::Size(640, 480), CV_8UC3);
     cv::resize(rgb_image, resized_image, resized_image.size());

@@ -1,0 +1,2 @@
+Image channels set to 3.
+File ../../data/map_ida_guarapari-20170403-2WithR/r7705600_-338380.map being displayed... (1 of 1)

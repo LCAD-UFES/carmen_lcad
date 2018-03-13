@@ -34,6 +34,11 @@ struct Tracks: Track::S
 
 	/**
 	 * @brief Update tracks and the posterior distribution to reflect changes in sensor information.
+	 *
+	 * This method searches for and destroys overdue Obstacle poses (that is, those
+	 * that are older than the time window's lower bound) while simultaneously
+	 * updating Posterior parameters as required. Additionally it updates the
+	 * Posterior with sensor data from the latest Reading.
 	 */
 	void update(const Readings &readings);
 
