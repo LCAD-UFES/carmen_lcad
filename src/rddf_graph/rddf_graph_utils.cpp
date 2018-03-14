@@ -1,5 +1,9 @@
 #include "rddf_graph_utils.h"
 
+
+using namespace std;
+
+
 cv::Mat
 rotate(cv::Mat src, cv::Point pt, double angle)
 {
@@ -142,14 +146,16 @@ t_list
 	return node;
 }
 
-t_list
-*create_list() //função para criar lista de caminhos
+
+t_list*
+create_list() //função para criar lista de caminhos
 {
 	return NULL;
 }
 
-int
-**alloc_matrix(int r, int c)
+
+int**
+alloc_matrix(int r, int c)
 {
 	int **matrix;
 	matrix = (int **) calloc (r,sizeof(int*));
@@ -159,7 +165,7 @@ int
 	    return (NULL);
 	}
 
-	for(int i = 0; i < r; i++)
+	for (int i = 0; i < r; i++)
 	{
 		matrix[i] = (int *) calloc (c,sizeof(int));
 		if (matrix[i] == NULL)
@@ -170,6 +176,7 @@ int
 	}
 	return matrix;
 }
+
 
 bool
 is_center (carmen_map_p map, int x, int y, unsigned short *next_lane_center)
@@ -297,5 +304,85 @@ road_map_find_center(carmen_map_p map)
 		//print_list(list);
 		//	cv::Point pt(road_map_img->cols/2.0, road_map_img->rows/2.0);
 		//	*road_map_img = rotate(*road_map_img, pt, 90);
+	}
+}
+
+bool
+point_is_in_map(carmen_map_p map, int i, int j)
+{
+	if (i >= 0 && i <= map->config.x_size && j >= 0 && j <= map->config.y_size)
+		return (true);
+	else
+		return (false);
+}
+
+
+void
+expand_neighbours(carmen_map_p map, int x, int y, vector<t_list> *open_set, vector<t_list> *closed_set, int **already_visited)
+{
+	unsigned short next_lane_center = NULL;
+	t_list* current;
+	t_list p;
+	int count = 0;
+
+	while (!open_set.empty())
+	{
+		current = open_set.pop_back();
+
+		for (int x = current->p.x - 1; x <= current->p.x + 1; x++)
+		{
+			for (int y = current->p.y - 1; y <= current->p.y + 1; y++)
+			{
+				if (point_is_in_map(map, x, y))
+				{
+					already_visited[x][y] = 1;
+
+					if (is_center(map, x, y, &next_lane_center))
+					{
+						p.p.x = x;
+						p.p.y = y;
+						p.prox = current;
+						open_set.push_back(p);
+
+						count++;
+					}
+				}
+			}
+		}
+		if (count == 0)
+			closed_set.push_back(current);
+	}
+}
+
+void
+road_map_find_center2(carmen_map_p map)
+{
+	int **already_visited;
+	t_list p;
+	unsigned short next_lane_center=0;
+	std::vector<t_list> open_set;
+	std::vector<t_list> closed_set;
+
+	already_visited = alloc_matrix(map->config.x_size, map->config.y_size);
+
+	for (int x = 0; x < map->config.x_size; x++)
+	{
+		for (int y = 0; y < map->config.y_size; y++)
+		{
+			if(already_visited[x][y] == 1)
+				continue;					// Jump to next y
+
+			already_visited[x][y] = 1;
+
+			if (is_center(map, x, y, &next_lane_center) == true)
+			{
+				p.p.x = x;
+				p.p.y = y;
+				p.prox = NULL;
+				open_set.push_back(p);
+
+				expand_neighbours(map, x, y, &open_set, &closed_set, already_visited);
+			}
+		}
 	}
 }
