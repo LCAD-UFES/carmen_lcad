@@ -45,6 +45,7 @@ t_list *insert_in_list (t_list *l, t_point p);
 void print_list (t_list *l);
 bool is_center (carmen_map_p map, int x, int y, unsigned short *next_lane_center);
 void check_neighbours(int x, int y, carmen_map_p map, int **already_visited, t_list *list, bool has_point);
+void print_open_set(std::vector<t_point> &open_set);
 
 #ifdef __cplusplus
 }
