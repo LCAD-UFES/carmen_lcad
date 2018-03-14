@@ -57,7 +57,7 @@ road_map_to_image_black_and_white(carmen_map_p map, cv::Mat *road_map_img, const
 //	*road_map_img = rotate(*road_map_img, pt, 90);
 }
 
-void
+/*void
 check_neighbours(int x, int y, carmen_map_p map, int **already_visited, t_list *list, bool has_point)
 {
 	road_prob *cell_prob;
@@ -120,19 +120,19 @@ check_neighbours(int x, int y, carmen_map_p map, int **already_visited, t_list *
 
 
 
-}
+}*/
 
 void
-print_list (t_list *l)
+print_list (rddf_graph_node *l)
 {
 	printf("Point in list:\n");
-	for(t_list *aux = l; aux!=NULL; aux = aux->prox)
+	for(rddf_graph_node *aux = l; aux!=NULL; aux = aux->prox)
 	{
-		printf("\t%d X %d\n", aux->p.x, aux->p.y);
+		printf("\t%d X %d\n", aux->x, aux->y);
 	}
 }
 
-t_list
+/*t_list
 *insert_in_list (t_list *l, t_point p) //funcão para inserir um ponto na lista
 {
 	t_list *node = (t_list*) malloc (sizeof(t_list));
@@ -144,15 +144,20 @@ t_list
 	node->p = p;
 	node->prox = l;
 	return node;
-}
+}*/
 
 
-t_list*
+/*t_list*
 create_list() //função para criar lista de caminhos
 {
 	return NULL;
-}
+}*/
 
+void
+print_closed_set_in_image(carmen_map_p map, vector<rddf_graph_node*> &closed_set)
+{
+
+}
 
 int**
 alloc_matrix(int r, int c)
@@ -202,18 +207,22 @@ is_center (carmen_map_p map, int x, int y, unsigned short *next_lane_center)
 }
 
 void
-print_open_set(std::vector<t_point> &open_set)
+print_open_set(std::vector<rddf_graph_node*> &open_set)
 {
 	printf("Points in open_set:\n");
 	for(unsigned int i = 0; i < open_set.size(); i++)
 	{
-		printf("\t%d X %d\n", open_set[i].x,open_set[i].y );
+		printf("\t%d\n",i);
+		for(rddf_graph_node *aux = open_set[i]; aux != NULL; aux = aux->prox)
+			printf("\t\t%d X %d\n", aux->x,aux->y );
+
+		printf("\n");
 	}
 	getchar();
 }
 
 
-void
+/*void
 road_map_find_center(carmen_map_p map)
 {
 
@@ -305,11 +314,12 @@ road_map_find_center(carmen_map_p map)
 		//	cv::Point pt(road_map_img->cols/2.0, road_map_img->rows/2.0);
 		//	*road_map_img = rotate(*road_map_img, pt, 90);
 	}
-}
+}*/
 
 bool
 point_is_in_map(carmen_map_p map, int i, int j)
 {
+
 	if (i >= 0 && i <= map->config.x_size && j >= 0 && j <= map->config.y_size)
 		return (true);
 	else
@@ -318,33 +328,53 @@ point_is_in_map(carmen_map_p map, int i, int j)
 
 
 void
-expand_neighbours(carmen_map_p map, int x, int y, vector<t_list> *open_set, vector<t_list> *closed_set, int **already_visited)
+expand_neighbours(carmen_map_p map, vector<rddf_graph_node*> &open_set, vector<rddf_graph_node*> &closed_set, int **already_visited)
 {
-	unsigned short next_lane_center = NULL;
-	t_list* current;
-	t_list p;
+	printf("\nexpand_neighbours:\n");
+	unsigned short next_lane_center;
+	rddf_graph_node* current;
+	rddf_graph_node* p;
 	int count = 0;
+
+	current = NULL;
 
 	while (!open_set.empty())
 	{
-		current = open_set.pop_back();
+		current = open_set.back();
+		open_set.pop_back();
+		count = 0;
+		printf("\tCurrent: %dX%d", current->x, current->y);
+		printf("\topen_set size: %d", open_set.size());
+		getchar();
 
-		for (int x = current->p.x - 1; x <= current->p.x + 1; x++)
+		//explorando os pontos vizinhos de current
+		for (int x = current->x - 1; x <= current->x + 1; x++)
 		{
-			for (int y = current->p.y - 1; y <= current->p.y + 1; y++)
+			for (int y = current->y - 1; y <= current->y + 1; y++)
 			{
-				if (point_is_in_map(map, x, y))
+
+				if (point_is_in_map(map, x, y) && already_visited[x][y] != 1) //só pode processar o ponto caso ele esteja entre 0 e tam_max
 				{
 					already_visited[x][y] = 1;
-
+					//printf("\tPoint in Map at %d X %d\n", x,y);
+					//getchar();
 					if (is_center(map, x, y, &next_lane_center))
 					{
-						p.p.x = x;
-						p.p.y = y;
-						p.prox = current;
+						//printf("\tLane Center at %d X %d\n", x,y);
+						//getchar();
+						p = (rddf_graph_node*)malloc(sizeof(rddf_graph_node));
+						p->x = x;
+						p->y = y;
+						p->prox = current;
+						//current = insert_in_list(current, p);
+						//printf("\tNext Lane Center at %d X %d: %hu\n", current->x,current->y, next_lane_center);
+						//getchar();
 						open_set.push_back(p);
+						//print_open_set(open_set);
 
 						count++;
+						//printf("\tCount: %d\n\n",count);
+						//getchar();
 					}
 				}
 			}
@@ -352,18 +382,23 @@ expand_neighbours(carmen_map_p map, int x, int y, vector<t_list> *open_set, vect
 		if (count == 0)
 			closed_set.push_back(current);
 	}
+	//getchar();
+
 }
 
 void
-road_map_find_center2(carmen_map_p map)
+road_map_find_center(carmen_map_p map)
 {
+	printf("road_map_find_center:\n");
 	int **already_visited;
-	t_list p;
+	int **check_matrix;
+	rddf_graph_node *p;
 	unsigned short next_lane_center=0;
-	std::vector<t_list> open_set;
-	std::vector<t_list> closed_set;
+	std::vector<rddf_graph_node*> open_set;
+	std::vector<rddf_graph_node*> closed_set;
 
 	already_visited = alloc_matrix(map->config.x_size, map->config.y_size);
+	check_matrix = alloc_matrix(map->config.x_size, map->config.y_size);
 
 	for (int x = 0; x < map->config.x_size; x++)
 	{
@@ -376,13 +411,48 @@ road_map_find_center2(carmen_map_p map)
 
 			if (is_center(map, x, y, &next_lane_center) == true)
 			{
-				p.p.x = x;
-				p.p.y = y;
-				p.prox = NULL;
+				//printf("\tLane Center at %d X %d: %hu\n", x,y,next_lane_center);
+				p = (rddf_graph_node*)malloc(sizeof(rddf_graph_node));
+				p->x = x;
+				p->y = y;
+				p->prox = NULL;
+
+				//l = insert_in_list(l,p);
+
 				open_set.push_back(p);
 
-				expand_neighbours(map, x, y, &open_set, &closed_set, already_visited);
+
+				expand_neighbours(map, open_set, closed_set, already_visited);
+				//printf("Closed Set Size: %d\n", closed_set.size());
+				//print_open_set(closed_set);
+				/*for (int i=0;i<map->config.x_size;i++){
+					for (int j=0;j<map->config.y_size;j++){
+						printf("%d",already_visited[i][j]);
+					}
+					printf("\n");
+				}*/
+				//printf("Saiu\n");
 			}
 		}
 	}
+	//printf("Closed Set Size: %d\n", closed_set.size());
+	//print_open_set(closed_set);
+
+	print_closed_set_in_image(map, closed_set);
+
+	for(unsigned int i = 0; i < closed_set.size(); i++)
+	{
+		//printf("\t%d\n",i);
+		for(rddf_graph_node *aux = closed_set[i]; aux != NULL; aux = aux->prox)
+			check_matrix[aux->x][aux->y]=1;
+
+	}
+
+	for (int i=0;i<map->config.x_size;i++){
+		for (int j=0;j<map->config.y_size;j++){
+			printf("%d",check_matrix[i][j]);
+		}
+		printf("\n");
+	}
+
 }
