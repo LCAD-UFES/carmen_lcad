@@ -121,9 +121,10 @@ check_neighbours(int x, int y, carmen_map_p map, int **already_visited, t_list *
 void
 print_list (t_list *l)
 {
+	printf("Point in list:\n");
 	for(t_list *aux = l; aux!=NULL; aux = aux->prox)
 	{
-		printf("Point in list: %d X %d\n", aux->p.x, aux->p.y);
+		printf("\t%d X %d\n", aux->p.x, aux->p.y);
 	}
 }
 
@@ -181,6 +182,8 @@ is_center (carmen_map_p map, int x, int y, unsigned short *next_lane_center)
 	cell_prob_ant = road_mapper_double_to_prob(&map->map[x][y-1]);
 	cell_prob = road_mapper_double_to_prob(&map->map[x][y]); //pq o mapa está invertido??? PERGUNTAR RAFAEL!
 	cell_prob_post = road_mapper_double_to_prob(&map->map[x][y+1]);
+	//printf("%dX%d: %hu %hu %hu\n", x,y,cell_prob_ant->lane_center,cell_prob->lane_center,cell_prob_post->lane_center);
+	//getchar();
 
 	if(cell_prob->lane_center > cell_prob_ant->lane_center && cell_prob->lane_center > cell_prob_post->lane_center)
 	{
@@ -192,6 +195,18 @@ is_center (carmen_map_p map, int x, int y, unsigned short *next_lane_center)
 }
 
 void
+print_open_set(std::vector<t_point> &open_set)
+{
+	printf("Points in open_set:\n");
+	for(unsigned int i = 0; i < open_set.size(); i++)
+	{
+		printf("\t%d X %d\n", open_set[i].x,open_set[i].y );
+	}
+	getchar();
+}
+
+
+void
 road_map_find_center(carmen_map_p map)
 {
 
@@ -199,7 +214,7 @@ road_map_find_center(carmen_map_p map)
 	t_point p;
 	unsigned short next_lane_center=0;
 	t_list *list;
-	std::vector<t_list> open_set;
+	std::vector<t_point> open_set;
 	std::vector<t_list> closed_set;
 	int waypoints=0;
 
@@ -216,44 +231,60 @@ road_map_find_center(carmen_map_p map)
 			if(is_center(map,x,y,&next_lane_center) == true)
 				//if(cell_prob->lane_center!=0)
 			{
-				p.x = x;
-				p.y = y;
-				list = insert_in_list(list, p);
-				print_list(list);
-
-				for (int i = x-1; i <= x+1; i++)
+				waypoints++;
+				if(waypoints == 1)//se é igual a 1 significa que ele achou o primeiro centro de pista, logo, já posso inseri-lo na lista
 				{
-					if(i<0) //em caso de dimensao negativa, pula loop
-						continue;
-					for (int j = y-1; j <= y+1; j++)
-					{
-						if(j<0) //em caso de dimensao negativa, pula loop
-							continue;
-
-						already_visited[x][y] = 1;
-						//printf("Lane Center Neighbour at %d X %d: %hu\n", i,j,cell_prob->lane_center);
-						if (is_center(map,x,y,&next_lane_center) == true)
-						{
-							printf("Lane Center Neighbour at %d X %d: %hu\n", i,j,next_lane_center);
-							getchar();
-							//bigger = cell_prob->lane_center;
-							//p.x = x;
-							//p.y = y;
-							//has_point = true;
-						}
-						//else
-						//has_point = false;
-						//}
-					}
-
-					//print_list(list);
-
-					//}
-					waypoints++;
-					//check_neighbours(x, y, map, already_visited, list, has_point); //função para checar os vizinhos do ponto marcado como centro
-					//printf("Lane Center at %d X %d: %hu\n", x,y,cell_prob->lane_center);
-					//printf("X");
+					p.x = x;
+					p.y = y;
+					list = insert_in_list(list, p);
 				}
+				open_set.push_back(p);
+
+				//print_list(list);
+				while(!open_set.empty())
+				{
+					//o ponto a ser explorado estará sempre na posicao zero do open_set
+					for (int i = open_set[0].x-1; i <= open_set[0].x+1; i++)
+					{
+						if(i<0) //em caso de dimensao negativa, pula loop
+							continue;
+						for (int j = open_set[0].y-1; j <= open_set[0].y+1; j++)
+						{
+							if(j<0) //em caso de dimensao negativa, pula loop
+								continue;
+							if(already_visited[i][j] == 1)
+							{
+								continue;
+							}
+
+							already_visited[i][j] = 1;
+							//printf("Lane Center Neighbour at %d X %d: %hu\n", i,j,cell_prob->lane_center);
+							if (is_center(map,i,j,&next_lane_center) == true)
+							{
+								//printf("Lane Center Neighbour at %d X %d: %hu\n", i,j,next_lane_center);
+								p.x = i;
+								p.y = j;
+								open_set.push_back(p);
+								print_open_set(open_set);
+							}
+						}
+
+					}
+					if(open_set.size() == 2)
+					{
+						list = insert_in_list(list, open_set[1]);
+						open_set.erase(open_set.begin());
+						print_list(list);
+						getchar();
+					}
+					system("clear");
+
+
+
+				}
+
+
+
 				//else
 				//printf(".");
 
