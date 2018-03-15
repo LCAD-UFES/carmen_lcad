@@ -1,4 +1,5 @@
 
+import sys
 import numpy as np
 import tensorflow as tf
 from rl.util import Transform2d
@@ -158,3 +159,4 @@ class Policy:
                 epoch_loss += loss
                 
             print('Epoch:', i, 'Loss:', epoch_loss)
+            sys.stdout.flush()
