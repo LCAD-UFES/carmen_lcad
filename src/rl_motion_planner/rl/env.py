@@ -18,40 +18,65 @@ class CarmenSimEnv(Env):
         return rddf
     
     def __init__(self):
+        # values from the dataset used for immitation learning.
+        self.max_v = 10.049866
+        self.max_phi = 0.254299
+
         carmen.env_init()
         self.rddf = self.read_rddf()
         
         state = self.reset()
         self.observation_space = spaces.Box(-np.inf, np.inf, len(state))
-        self.action_space = spaces.Box(-1., 1., 1)
+        self.action_space = spaces.Box(-1., 1., 2)
     
     def dist_to_goal(self, car_info):
         return ((car_info[0] - self.goal[0]) ** 2 + (car_info[1] - self.goal[1]) ** 2) ** 0.5
     
     def goal_in_car_ref(self, car_info):
-        p = Transform2d(car_info[0] - car_info[0], car_info[1] - car_info[1], car_info[2])
+        p = Transform2d(0., 0., car_info[2])
         g = Transform2d(self.goal[0] - car_info[0], self.goal[1] - car_info[1], self.goal[2])
         g = p.inverse().transform(g)
         return [g.x, g.y, g.th]
     
     def step(self, action):
         action = np.clip(action, -1., 1.)
-        car_info = carmen.env_step(5.0, action[0] * np.deg2rad(28.), 
+        
+        car_info = carmen.env_step(action[0] * self.max_v, action[1] * self.max_phi, 
                                   self.goal[0], self.goal[1], self.goal[2],
                                   self.goal[3], self.goal[4])
         
         d_goal = self.dist_to_goal(car_info)
+        
+        # rw = -d_goal / 100.0 
         rw = (self.prev_dist_to_goal - d_goal) / 10.0
+        # rw = 0.0
+        
         self.prev_dist_to_goal = d_goal
         
-        # done = carmen.env_done()        
-        # if done:
-            # rw -= 2.0
-        done = True if d_goal < 1.0 else False
+        collided = carmen.env_done()        
+        if collided:
+            rw -= 2.0
+            
+        goal_reached = d_goal < 1.0
+        done = True if goal_reached or collided else False
 
-        g = np.array(self.goal_in_car_ref(car_info))
+        if goal_reached:
+            rw += 1.0
 
-        return g, rw, done, None
+        g = self.goal_in_car_ref(car_info)
+
+        self.previous_commands.append(action[0])
+        self.previous_commands.append(action[1])
+        
+        self.previous_commands.pop(0)
+        self.previous_commands.pop(0)
+        
+        v, phi = car_info[-2] / self.max_v, car_info[-1] / self.max_phi
+        # state = np.array(g + self.previous_commands + [v, phi])
+        state = np.copy(g + [v, phi])
+        # print('state: ', state, 'rw:', rw)
+        
+        return state, rw, done, None
 
     def reset(self):
         init_pos_id = np.random.randint(len(self.rddf) - 20.0)
@@ -65,8 +90,16 @@ class CarmenSimEnv(Env):
                                     self.goal[3], self.goal[4])
         
         self.prev_dist_to_goal = self.dist_to_goal(car_info)
+
+        g = self.goal_in_car_ref(car_info)
         
-        return np.array(self.goal_in_car_ref(car_info))
+        self.previous_commands = [0.0 for _ in range(20)]
+
+        v, phi = car_info[-2] / self.max_v, car_info[-1] / self.max_phi
+        # state = np.concatenate([g, self.previous_commands, [v, phi]])
+        state = np.copy(g + [v, phi])
+        
+        return state
     
     def render(self, mode='human', close=False):
         pass
@@ -76,6 +109,6 @@ def register_carmen_sim():
     register(
         id='CarmenSim-v0',
         entry_point='rl.env:CarmenSimEnv',
-        max_episode_steps=1000
+        max_episode_steps=100
     )
 
