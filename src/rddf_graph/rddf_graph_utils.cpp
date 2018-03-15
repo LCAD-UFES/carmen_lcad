@@ -178,24 +178,41 @@ alloc_matrix(int r, int c)
 bool
 road_is_center (carmen_map_p map, int x, int y, unsigned short *next_lane_center)
 {
+	road_prob *cell_prob_ant2;
+	road_prob *cell_prob_ant1;
 	road_prob *cell_prob;
-	road_prob *cell_prob_ant;
-	road_prob *cell_prob_post;
+	road_prob *cell_prob_post1;
+	road_prob *cell_prob_post2;
 
 	//para mapas na vertical, estamos checando o ponto com o y anterior e com o y posterior MELHORAR CHECAGEM!
-	cell_prob_ant = road_mapper_double_to_prob(&map->map[x][y-1]);
+	cell_prob_ant2 = road_mapper_double_to_prob(&map->map[x][y-2]);
+	cell_prob_ant1 = road_mapper_double_to_prob(&map->map[x][y-1]);
 	cell_prob = road_mapper_double_to_prob(&map->map[x][y]); //pq o mapa está invertido??? PERGUNTAR RAFAEL!
-	cell_prob_post = road_mapper_double_to_prob(&map->map[x][y+1]);
+	cell_prob_post1 = road_mapper_double_to_prob(&map->map[x][y+1]);
+	cell_prob_post2 = road_mapper_double_to_prob(&map->map[x][y+2]);
 	//printf("%dX%d: %hu %hu %hu\n", x,y,cell_prob_ant->lane_center,cell_prob->lane_center,cell_prob_post->lane_center);
 	//getchar();
 
-	if(cell_prob->lane_center > cell_prob_ant->lane_center && cell_prob->lane_center > cell_prob_post->lane_center)
+
+	if(((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-2])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-1])->lane_center) &&
+			(cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y+2])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y+1])->lane_center)) ||
+			((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x-2][y])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x-1][y])->lane_center) &&
+					(cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x+2][y])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x-2][y])->lane_center)))
+	{
+
+		return true;
+	}
+	else
+		return false;
+
+
+	/*if(cell_prob->lane_center > cell_prob_ant->lane_center && cell_prob->lane_center > cell_prob_post->lane_center)
 	{
 		*next_lane_center = cell_prob->lane_center;
 		return true;
 	}
 	else
-		return false;
+		return false;*/
 }
 
 
@@ -229,7 +246,7 @@ point_is_in_map(carmen_map_p map, int x, int y)
 void
 expand_neighbours(carmen_map_p map, vector<rddf_graph_node*> &open_set, vector<rddf_graph_node*> &closed_set, int **already_visited)
 {
-	//printf("\nexpand_neighbours:\n");
+	printf("\nexpand_neighbours:\n");
 	unsigned short next_lane_center;
 	rddf_graph_node* current;
 	rddf_graph_node* p;
@@ -242,9 +259,9 @@ expand_neighbours(carmen_map_p map, vector<rddf_graph_node*> &open_set, vector<r
 		current = open_set.back();
 		open_set.pop_back();
 		count = 0;
-		//printf("\tCurrent: %dX%d", current->x, current->y);
-		//printf("\topen_set size: %lu", open_set.size());
-		//getchar();
+		printf("\tCurrent: %dX%d", current->x, current->y);
+		printf("\topen_set size: %lu", open_set.size());
+		getchar();
 
 		//explorando os pontos vizinhos de current
 		for (int x = current->x - 1; x <= current->x + 1; x++)
@@ -293,9 +310,9 @@ road_map_find_center(carmen_map_p map)
 	already_visited = alloc_matrix(map->config.x_size, map->config.y_size);
 	//check_matrix = alloc_matrix(map->config.x_size, map->config.y_size);
 
-	for (int x = 0; x < map->config.x_size; x++)
+	for (int x = 5; x < map->config.x_size-5; x++)
 	{
-		for (int y = 0; y < map->config.y_size; y++)
+		for (int y = 5; y < map->config.y_size-5; y++)
 		{
 			if(already_visited[x][y] == 1)
 				continue;					// Jump to next y
@@ -304,7 +321,7 @@ road_map_find_center(carmen_map_p map)
 			//printf("\tPoint at: %d X %d: %hu\n", x,y,next_lane_center);
 			if (road_is_center(map, x, y, &next_lane_center))
 			{
-				//printf("\tLane Center at %d X %d: %hu\n", x,y,next_lane_center);
+				printf("\tLane Center at %d X %d: %hu\n", x,y,next_lane_center);
 				p = (rddf_graph_node*)malloc(sizeof(rddf_graph_node));
 				p->x = x;
 				p->y = y;
