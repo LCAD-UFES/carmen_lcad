@@ -17,6 +17,7 @@ carmen_localize_ackerman_globalpos_message global_localize_ackerman_message;
 carmen_obstacle_distance_mapper_compact_map_message global_obstacle_distance_mapper_compact_map_message;
 carmen_obstacle_distance_mapper_map_message global_obstacle_distance_map;
 carmen_robot_ackerman_config_t global_robot_ackerman_config;
+carmen_behavior_selector_goal_list_message global_goal_list_message;
 
 
 void
@@ -114,7 +115,6 @@ publish_current_state()
 std::vector<double>
 read_state()
 {
-	carmen_ipc_sleep(1e-4);
 	std::vector<double> state;
 
 	carmen_localize_ackerman_globalpos_message globalpos = global_localize_ackerman_message;
@@ -124,6 +124,19 @@ read_state()
 	state.push_back(globalpos.globalpos.theta);
 	state.push_back(globalpos.v);
 	state.push_back(globalpos.phi);
+
+	return state;
+}
+
+
+std::vector<double>
+read_goal()
+{
+	std::vector<double> state;
+
+	state.push_back(global_goal_list_message.goal_list[0].x);
+	state.push_back(global_goal_list_message.goal_list[0].y);
+	state.push_back(global_goal_list_message.goal_list[0].theta);
 
 	return state;
 }
@@ -203,6 +216,14 @@ process_map_message(carmen_obstacle_distance_mapper_compact_map_message *message
 }
 
 
+void
+handle_messages()
+{
+	carmen_ipc_sleep(5e-2);
+	process_map_message(&global_obstacle_distance_mapper_compact_map_message);
+}
+
+
 int
 read_parameters(int argc, char **argv)
 {
@@ -252,6 +273,9 @@ env_init()
 	carmen_obstacle_distance_mapper_subscribe_compact_map_message(&global_obstacle_distance_mapper_compact_map_message,
 		NULL, CARMEN_SUBSCRIBE_LATEST);
 
+	carmen_behavior_selector_subscribe_goal_list_message(&global_goal_list_message,
+		NULL, CARMEN_SUBSCRIBE_LATEST);
+
 	signal(SIGINT, signal_handler);
 }
 
@@ -299,9 +323,12 @@ env_reset(double pos_x, double pos_y, double pos_th,
 	{
 		publish_command(0, 0);
 		publish_starting_pose(pos_x, pos_y, pos_th);
-		publish_goal_list(goal_x, goal_y, goal_th, goal_v, goal_phi, carmen_get_time());
+
+		if (goal_x != 0 && goal_y != 0)
+			publish_goal_list(goal_x, goal_y, goal_th, goal_v, goal_phi, carmen_get_time());
+
 		publish_current_state();
-		carmen_ipc_sleep(1e-2);
+		carmen_ipc_sleep(5e-2);
 
 	} while (pose_is_invalid(&global_localize_ackerman_message, pos_x, pos_y, pos_th) ||
 			map_is_invalid(&global_obstacle_distance_mapper_compact_map_message, pos_x, pos_y));
@@ -313,11 +340,23 @@ env_reset(double pos_x, double pos_y, double pos_th,
 std::vector<double>
 env_step(double v, double phi, double goal_x, double goal_y, double goal_th, double goal_v, double goal_phi)
 {
+	double t, t1;
+
+	t = global_localize_ackerman_message.timestamp;
+
 	publish_command(v, phi);
-	publish_goal_list(goal_x, goal_y, goal_th, goal_v, goal_phi, carmen_get_time());
+
+	if (goal_x != 0 && goal_y != 0)
+		publish_goal_list(goal_x, goal_y, goal_th, goal_v, goal_phi, carmen_get_time());
+
 	publish_current_state();
 
-	carmen_ipc_sleep(1e-2);
+	do
+	{
+		carmen_ipc_sleep(5e-2);
+		t1 = global_localize_ackerman_message.timestamp;
+	}
+	while (fabs(t - t1) < 0.1);
 
 	process_map_message(&global_obstacle_distance_mapper_compact_map_message);
 	return read_state();
