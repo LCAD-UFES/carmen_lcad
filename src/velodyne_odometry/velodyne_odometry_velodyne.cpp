@@ -187,6 +187,48 @@ pid_plot_velocity(double *intensity, double *angle, double *previous_intensity, 
 }
 
 
+void
+get_v_and_phi(double *intensity, double *angle, double *previous_intensity, double *previous_angle, int size)
+{
+	double begin_angle = carmen_degrees_to_radians(-100.0);
+	double end_angle = carmen_degrees_to_radians(-80.0);
+
+	int begin_j = -1, end_j = -1;
+	for (int i = 0; i < size; i++)
+	{
+		if ((previous_angle[i] > begin_angle) && (previous_angle[i] < end_angle))
+		{
+			if (begin_j == -1)
+				begin_j = i;
+			end_j = i;
+		}
+	}
+
+	begin_angle = carmen_degrees_to_radians(-95.0);
+	end_angle = carmen_degrees_to_radians(-85.0);
+	double min_difference = 100000000.0;
+	double best_angle = 0.0;
+	for (int i = 0; i < size; i++)
+	{
+		if ((angle[i] > begin_angle) && (angle[i] < end_angle))
+		{
+			double difference = 0.0;
+			int ii = 0;
+			for (int j = begin_j; j < end_j; j++, ii++)
+			{
+				difference += (intensity[i + ii] - previous_intensity[j]) * (intensity[i + ii] - previous_intensity[j]);
+			}
+			if (difference < min_difference)
+			{
+				min_difference = difference;
+				best_angle = angle[i];
+			}
+		}
+	}
+	printf("angle %lf\n", carmen_radians_to_degrees(best_angle));
+}
+
+
 static void
 compute_v_and_phi(sensor_parameters_t *velodyne_params, sensor_data_t *velodyne_data)
 {
@@ -217,7 +259,7 @@ compute_v_and_phi(sensor_parameters_t *velodyne_params, sensor_data_t *velodyne_
 
 	for (int j = 0; j < N; j += 1)
 	{
-		int ray = j * velodyne_params->vertical_resolution + 10;
+		int ray = j * velodyne_params->vertical_resolution + 15;
 
 		intensity[j] = velodyne_intensities[ray] / 255.0;
 		angle[j] = velodyne_points.sphere_points[ray].horizontal_angle;
@@ -226,6 +268,7 @@ compute_v_and_phi(sensor_parameters_t *velodyne_params, sensor_data_t *velodyne_
 		previous_angle[j] = previous_velodyne_points.sphere_points[ray].horizontal_angle;
 	}
 	pid_plot_velocity(intensity, angle, previous_intensity, previous_angle, N);
+	get_v_and_phi(intensity, angle, previous_intensity, previous_angle, N);
 
 	free(intensity);
 	free(angle);

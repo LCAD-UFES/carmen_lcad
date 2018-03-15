@@ -9,10 +9,6 @@
 #include <string.h>
 #include "virtual_scan.h"
 
-// moving objects
-#include <carmen/moving_objects_messages.h>
-#include <carmen/moving_objects_interface.h>
-
 #define PROB_THRESHOLD	-2.14
 
 #define	POINT_WITHIN_SEGMENT		0
@@ -25,12 +21,21 @@
 #define	BIKE		2 // Width: 1,20 m; Length: 2,20 m
 #define	PEDESTRIAN	3
 
+#define PEDESTRAIN_SIZE	0.3 // Pedestrian approximate size (from the top) in meters
+#define	L_SMALL_SEGMENT_AS_A_PROPORTION_OF_THE_LARGE	0.3
+
+#define	MCMC_MAX_ITERATIONS	100
+
+
 virtual_scan_extended_t extended_virtual_scan; // Melhorar
 carmen_point_t extended_virtual_scan_points[10000]; // Melhorar
 extern carmen_localize_ackerman_map_t localize_map;
 extern double x_origin;
 extern double y_origin;
 extern double map_resolution;
+
+virtual_scan_track_t *best_tracks = NULL;
+int g_number_of_tracks = 0;
 
 
 int
@@ -147,7 +152,7 @@ distance_from_point_to_line_segment_vw(int *point_in_trajectory_is, carmen_point
 	double l2, t;
 
 	l2 = dist2(v, w); // i.e. |w-v|^2 // NAO TROQUE POR carmen_ackerman_traj_distance2(&v, &w) pois nao sei se ee a mesma coisa.
-	if (l2 < 0.1)	  // v ~== w case // @@@ Alberto: Checar isso
+	if (l2 < PEDESTRAIN_SIZE)	  // v ~== w case // @@@ Alberto: Checar isso
 	{
 		*point_in_trajectory_is = SEGMENT_TOO_SHORT;
 		return (v);
@@ -230,15 +235,6 @@ classify_segments(virtual_scan_segments_t *virtual_scan_segments)
 			}
 			else if (point_type == POINT_WITHIN_SEGMENT)
 			{
-				//				average_distance += DIST2D(points, point_within_line_segment);
-				//				if (j >= (num_points - 1))
-				//				{
-				//					average_distance = average_distance / (double) (num_points - 2);
-				//					if (average_distance > DIST2D(v, w) / 7.0) // Revise
-				//						segment_class = L_SHAPED;
-				//					else
-				//						segment_class = I_SHAPED;
-				//				}
 				double distance = DIST2D(point, point_within_line_segment);
 				if (distance > maximum_distance_to_line_segment)
 				{
@@ -261,16 +257,13 @@ classify_segments(virtual_scan_segments_t *virtual_scan_segments)
 					}
 					double alpha = atan2(length, width);
 					double height = width * sin(alpha);
-					if (maximum_distance_to_line_segment < height * 0.5)
+					if (maximum_distance_to_line_segment < height * L_SMALL_SEGMENT_AS_A_PROPORTION_OF_THE_LARGE)
 						segment_class = I_SHAPED;
 					else
 					{
 						segment_class = L_SHAPED;
-
-
 					}
 				}
-
 			}
 		}
 
@@ -523,61 +516,6 @@ virtual_scan_num_box_models(virtual_scan_box_model_hypotheses_t *virtual_scan_bo
 
 
 void
-virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses)
-{
-	static carmen_moving_objects_point_clouds_message message = {0, NULL, 0, NULL};
-
-	if (message.point_clouds != NULL)
-		free(message.point_clouds);
-
-	message.host = carmen_get_host();
-	message.timestamp = carmen_get_time();
-
-	int total = virtual_scan_num_box_models(virtual_scan_box_model_hypotheses);
-	message.point_clouds = (t_point_cloud_struct *) calloc(total, sizeof(t_point_cloud_struct));
-	message.num_point_clouds = total;
-
-	virtual_scan_box_models_t *hypotheses = virtual_scan_box_model_hypotheses->box_model_hypotheses;
-	for (int i = 0, k = 0, m = virtual_scan_box_model_hypotheses->num_box_model_hypotheses; i < m; i++)
-	{
-		virtual_scan_box_model_t *boxes = hypotheses[i].box;
-		for (int j = 0, n = hypotheses[i].num_boxes; j < n; j++, k++)
-		{
-			virtual_scan_box_model_t *box = (boxes + j);
-
-			message.point_clouds[k].r = 0.0;
-			message.point_clouds[k].g = 0.0;
-			message.point_clouds[k].b = 1.0;
-			message.point_clouds[k].linear_velocity = 0;
-			message.point_clouds[k].orientation = box->theta;
-			message.point_clouds[k].object_pose.x = box->x;
-			message.point_clouds[k].object_pose.y = box->y;
-			message.point_clouds[k].object_pose.z = 0.0;
-			message.point_clouds[k].height = 0;
-			message.point_clouds[k].length = box->length;
-			message.point_clouds[k].width = box->width;
-			message.point_clouds[k].geometric_model = box->c;
-			message.point_clouds[k].point_size = 0; // 1
-//			message.point_clouds[k].num_associated = timestamp_moving_objects_list[current_vector_index].objects[i].id;
-
-			object_model_features_t &model_features = message.point_clouds[k].model_features;
-			model_features.model_id = box->c;
-			model_features.model_name = (char *) "name?";
-			model_features.geometry.length = box->length;
-			model_features.geometry.width = box->width;
-
-//			message.point_clouds[k].points = (carmen_vector_3D_t *) malloc(1 * sizeof(carmen_vector_3D_t));
-//			message.point_clouds[k].points[0].x = box->x;
-//			message.point_clouds[k].points[0].y = box->y;
-//			message.point_clouds[k].points[0].z = 0.0;
-		}
-	}
-
-	carmen_moving_objects_point_clouds_publish_message(&message);
-}
-
-
-void
 virtual_scan_free_extended(virtual_scan_extended_t *virtual_scan_extended)
 {
 	free(virtual_scan_extended->points);
@@ -620,6 +558,13 @@ virtual_scan_free_segment_classes(virtual_scan_segment_classes_t *virtual_scan_s
 }
 
 
+void
+virtual_scan_free_moving_objects(virtual_scan_moving_objects_t *moving_objects)
+{
+
+}
+
+
 virtual_scan_segment_classes_t *
 virtual_scan_extract_segments(virtual_scan_extended_t *virtual_scan_extended)
 {
@@ -630,4 +575,203 @@ virtual_scan_extract_segments(virtual_scan_extended_t *virtual_scan_extended)
 	virtual_scan_free_segments(virtual_scan_segments);
 
 	return virtual_scan_segment_classes;
+}
+
+
+void
+virtual_scan_update_neighborhood_graph(virtual_scan_neighborhood_graph_t *neighborhood_graph, virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses)
+{
+}
+
+
+int *
+get_v_star(int *size, virtual_scan_neighborhood_graph_t *neighborhood_graph)
+{
+	*size = 0;
+	for (int i = 0; i < neighborhood_graph->size; i++)
+	{
+		if (!neighborhood_graph->box_model_hypothesis[i].selected)
+			*size++;
+	}
+
+	if (*size != 0)
+	{
+		int *v_star = (int *) malloc(*size * sizeof(int));
+		for (int i = 0, j = 0; i < neighborhood_graph->size; i++)
+		{
+			if (!neighborhood_graph->box_model_hypothesis[i].selected)
+			{
+				v_star[j] = i;
+				j++;
+			}
+		}
+		return (v_star);
+	}
+	else
+		return (NULL);
+}
+
+
+virtual_scan_track_t *
+track_birth(virtual_scan_neighborhood_graph_t *neighborhood_graph)
+{
+	if (neighborhood_graph != NULL)
+	{
+		int v_star_size;
+		int *v_star = get_v_star(&v_star_size, neighborhood_graph);
+		if (v_star != NULL)
+		{
+			int rand_v = rand() % v_star_size;
+			virtual_scan_track_t *new_track = (virtual_scan_track_t *) malloc(sizeof(virtual_scan_track_t));
+			new_track->box_model_hypothesis = (virtual_scan_box_model_hypothesis_t *) malloc(sizeof(virtual_scan_box_model_hypothesis_t));
+			new_track->size = 1;
+			new_track->box_model_hypothesis[0] = neighborhood_graph->box_model_hypothesis[v_star[rand_v]];
+			neighborhood_graph->box_model_hypothesis[v_star[rand_v]].selected = true;
+
+			free(v_star);
+			return (new_track);
+		}
+		else
+			return (NULL);
+	}
+	else
+		return (NULL);
+}
+
+
+int
+add_track(virtual_scan_track_t *tracks_n_1, virtual_scan_track_t new_track)
+{
+	if (tracks_n_1 == NULL)
+	{
+		tracks_n_1 = (virtual_scan_track_t *) malloc(sizeof(virtual_scan_track_t));
+		tracks_n_1[0] = new_track;
+	}
+	else
+	{
+		tracks_n_1 = (virtual_scan_track_t *) realloc(tracks_n_1, (g_number_of_tracks + 1) * sizeof(virtual_scan_track_t));
+		tracks_n_1[g_number_of_tracks] = new_track;
+	}
+
+	return (g_number_of_tracks);
+}
+
+
+void
+track_extension(virtual_scan_track_t *track, virtual_scan_neighborhood_graph_t *neighborhood_graph)
+{
+
+}
+
+
+virtual_scan_track_t *
+propose_tracks_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood_graph, virtual_scan_track_t *tracks_n_1)
+{
+#define NUMBER_OF_TYPES_OF_MOVES	7
+
+	int rand_track = rand() % g_number_of_tracks;
+	int rand_var = rand() % NUMBER_OF_TYPES_OF_MOVES;
+	switch (rand_var)
+	{
+		case 0:	// Birth
+			virtual_scan_track_t *new_track = track_birth(neighborhood_graph);
+			if (new_track != NULL)
+			{
+				int track_added = add_track(tracks_n_1, *new_track);
+				track_extension(&(tracks_n_1[track_added]), neighborhood_graph);
+				g_number_of_tracks += 1;
+			}
+			break;
+		case 1:	// Extension
+			track_extension(&(tracks_n_1[rand_track]), neighborhood_graph);
+			break;
+		case 2:	// Reduction
+			track_reduction(tracks_n_1[rand_track]);
+			break;
+		case 3: //Death
+			if (track_death(tracks_n_1[rand_track]))
+				g_number_of_tracks -= 1;
+			break;
+		case 4:	// Split
+			if (track_size(tracks_n_1[rand_track]) >= 4)
+			{
+				if (track_split(tracks_n_1[rand_track]))
+					g_number_of_tracks += 1;
+			}
+			break;
+		case 5:	// Merge
+			int rand_track2 = rand() % g_number_of_tracks;
+			if (track_merge(tracks_n_1, rand_track, rand_track2))
+				g_number_of_tracks -= 1;
+			break;
+		case 6:	// Diffusion
+			track_diffusion(tracks_n_1[rand_track]);
+			break;
+	}
+
+	virtual_scan_track_t *tracks = copy_tracks(tracks_n_1);
+	return (tracks);
+}
+
+
+double
+probability_of_tracks_given_measurement(virtual_scan_track_t *tracks)
+{
+	return (0.5);
+}
+
+
+void
+free_tracks(virtual_scan_track_t *tracks_victim)
+{
+
+}
+
+
+virtual_scan_moving_objects_t *
+get_moving_objects_from_track_set(virtual_scan_track_t *best_tracks)
+{
+	return (NULL);
+}
+
+
+double
+A(virtual_scan_track_t *tracks_n, virtual_scan_track_t *tracks_prime)
+{
+	return (0.5);
+}
+
+
+virtual_scan_moving_objects_t *
+virtual_scan_infer_moving_objects(virtual_scan_neighborhood_graph_t *neighborhood_graph)
+{
+	virtual_scan_track_t *tracks_victim;
+	virtual_scan_track_t *tracks_n = best_tracks;
+	for (int n = 0; n < MCMC_MAX_ITERATIONS; n++)
+	{
+		virtual_scan_track_t *tracks_prime = propose_tracks_according_to_q(neighborhood_graph, tracks_n);
+		tracks_victim = tracks_prime;
+		double U = carmen_uniform_random(0.0, 1.0);
+		if (U < A(tracks_n, tracks_prime))
+		{
+			tracks_n = tracks_prime;
+			if (probability_of_tracks_given_measurement(tracks_n) > probability_of_tracks_given_measurement(best_tracks))
+			{
+				tracks_victim = best_tracks;
+				best_tracks = tracks_n;
+			}
+		}
+		free_tracks(tracks_victim);
+	}
+
+	virtual_scan_moving_objects_t *moving_objects = get_moving_objects_from_track_set(best_tracks);
+
+	return (moving_objects);
+}
+
+
+void
+virtual_scan_moving_objects_publish(virtual_scan_moving_objects_t *moving_objects)
+{
+
 }

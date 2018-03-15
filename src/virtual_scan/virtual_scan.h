@@ -95,6 +95,44 @@ typedef struct
 	double length;
 } virtual_scan_category_t;
 
+
+typedef struct
+{
+	int size;
+	int *edge;
+	int *edge_type;
+} virtual_scan_box_model_hypothesis_edges_t;
+
+
+typedef struct
+{
+	virtual_scan_box_model_t hypothesis;
+	bool selected;
+	double timestamp;
+} virtual_scan_box_model_hypothesis_t;
+
+
+typedef struct
+{
+	virtual_scan_box_model_hypothesis_t *box_model_hypothesis;
+	virtual_scan_box_model_hypothesis_edges_t *box_model_hypothesis_edges;
+	int size;
+} virtual_scan_neighborhood_graph_t;
+
+
+typedef struct
+{
+	int size;
+	virtual_scan_box_model_hypothesis_t *box_model_hypothesis;
+} virtual_scan_track_t;
+
+
+typedef struct
+{
+
+} virtual_scan_moving_objects_t;
+
+
 virtual_scan_extended_t *
 sort_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan);
 
@@ -126,6 +164,21 @@ void
 virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses);
 
 void
+virtual_scan_free_moving_objects(virtual_scan_moving_objects_t *moving_objects);
+
+void
 virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses);
+
+int
+virtual_scan_num_box_models(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses);
+
+void
+virtual_scan_update_neighborhood_graph(virtual_scan_neighborhood_graph_t *neighborhood_graph, virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses);
+
+virtual_scan_moving_objects_t *
+virtual_scan_infer_moving_objects(virtual_scan_neighborhood_graph_t *neighborhood_graph);
+
+void
+virtual_scan_moving_objects_publish(virtual_scan_moving_objects_t *moving_objects);
 
 #endif /* SRC_VIRTUAL_SCAN_VIRTUAL_SCAN_H_ */
