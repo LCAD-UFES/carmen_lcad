@@ -4,6 +4,9 @@
 #include <carmen/map_server_interface.h>
 #include <carmen/map.h>
 #include <carmen/grid_mapping.h>
+#include <carmen/moving_objects_messages.h>
+#include <carmen/moving_objects_interface.h>
+
 #include "virtual_scan.h"
 
 #define NUM_COLORS 4
@@ -12,11 +15,15 @@
 
 double d_max;
 carmen_mapper_virtual_laser_message virtual_laser_message;
+//							L shaped	I shaped		Mass point
 char colors[NUM_COLORS] = {CARMEN_RED, CARMEN_GREEN, CARMEN_LIGHT_BLUE, CARMEN_ORANGE};
 carmen_localize_ackerman_map_t localize_map;
 double x_origin = 0.0;
 double y_origin = 0.0;
 double map_resolution = 0.0;
+
+virtual_scan_neighborhood_graph_t *neighborhood_graph = NULL;
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -56,6 +63,61 @@ double map_resolution = 0.0;
 //	free(virtual_scan_segments->segment);
 //	free(virtual_scan_segments);
 //}
+
+
+void
+virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses)
+{
+	static carmen_moving_objects_point_clouds_message message = {0, NULL, 0, NULL};
+
+	if (message.point_clouds != NULL)
+		free(message.point_clouds);
+
+	message.host = carmen_get_host();
+	message.timestamp = carmen_get_time();
+
+	int total = virtual_scan_num_box_models(virtual_scan_box_model_hypotheses);
+	message.point_clouds = (t_point_cloud_struct *) calloc(total, sizeof(t_point_cloud_struct));
+	message.num_point_clouds = total;
+
+	virtual_scan_box_models_t *hypotheses = virtual_scan_box_model_hypotheses->box_model_hypotheses;
+	for (int i = 0, k = 0, m = virtual_scan_box_model_hypotheses->num_box_model_hypotheses; i < m; i++)
+	{
+		virtual_scan_box_model_t *boxes = hypotheses[i].box;
+		for (int j = 0, n = hypotheses[i].num_boxes; j < n; j++, k++)
+		{
+			virtual_scan_box_model_t *box = (boxes + j);
+
+			message.point_clouds[k].r = 0.0;
+			message.point_clouds[k].g = 0.0;
+			message.point_clouds[k].b = 1.0;
+			message.point_clouds[k].linear_velocity = 0;
+			message.point_clouds[k].orientation = box->theta;
+			message.point_clouds[k].object_pose.x = box->x;
+			message.point_clouds[k].object_pose.y = box->y;
+			message.point_clouds[k].object_pose.z = 0.0;
+			message.point_clouds[k].height = 0;
+			message.point_clouds[k].length = box->length;
+			message.point_clouds[k].width = box->width;
+			message.point_clouds[k].geometric_model = box->c;
+			message.point_clouds[k].point_size = 0; // 1
+//			message.point_clouds[k].num_associated = timestamp_moving_objects_list[current_vector_index].objects[i].id;
+
+			object_model_features_t &model_features = message.point_clouds[k].model_features;
+			model_features.model_id = box->c;
+			model_features.model_name = (char *) "name?";
+			model_features.geometry.length = box->length;
+			model_features.geometry.width = box->width;
+
+//			message.point_clouds[k].points = (carmen_vector_3D_t *) malloc(1 * sizeof(carmen_vector_3D_t));
+//			message.point_clouds[k].points[0].x = box->x;
+//			message.point_clouds[k].points[0].y = box->y;
+//			message.point_clouds[k].points[0].z = 0.0;
+		}
+	}
+
+	carmen_moving_objects_point_clouds_publish_message(&message);
+}
 
 
 void
@@ -106,8 +168,13 @@ carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *m
 	virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(virtual_scan_segment_classes);
 	virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
 
+	virtual_scan_update_neighborhood_graph(neighborhood_graph, virtual_scan_box_model_hypotheses);
+	virtual_scan_moving_objects_t *moving_objects = virtual_scan_infer_moving_objects(neighborhood_graph);
+	virtual_scan_moving_objects_publish(moving_objects);
+
 	virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses);
 	virtual_scan_free_segment_classes(virtual_scan_segment_classes);
+	virtual_scan_free_moving_objects(moving_objects);
 }
 
 
