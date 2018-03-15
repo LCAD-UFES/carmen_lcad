@@ -21,14 +21,33 @@
 extern "C" {
 #endif
 
+typedef struct rddf_graph_node
+{
+	int x;
+	int y;
+	rddf_graph_node *prox;
+
+} rddf_graph_node;
+
+using namespace std;
+
 cv::Mat rotate(cv::Mat src, cv::Point pt, double angle);
-void remission_map_to_image(carmen_map_p map, cv::Mat *remission_map_img, int channels);
 void road_map_to_image(carmen_map_p map, cv::Mat *road_map_img);
 void road_map_to_image_black_and_white(carmen_map_p map, cv::Mat *road_map_img, const int class_bits);
-int global_pos_on_map_q4(carmen_point_t global_pos, carmen_map_p *maps, int maps_size);
-int maps_has_same_origin(carmen_map_p map1, carmen_map_p map2);
-carmen_map_p alloc_map_pointer(void);
-void free_map_pointer(carmen_map_p map);
+void road_map_find_center(carmen_map_p map);
+int **alloc_matrix(int r, int c);
+//t_list *create_list();
+//t_list *insert_in_list (t_list *l, t_point p);
+void print_list (rddf_graph_node *l);
+void print_map_in_terminal (carmen_map_p map);
+int count_graph_nodes(rddf_graph_node *graph);
+void display_graph_in_image(carmen_map_p map, vector<rddf_graph_node*> &closed_set);
+int** alloc_matrix(int r, int c);
+bool road_is_center (carmen_map_p map, int x, int y, unsigned short *next_lane_center);
+void print_open_set(std::vector<rddf_graph_node*> &open_set);
+bool point_is_in_map(carmen_map_p map, int x, int y);
+void expand_neighbours(carmen_map_p map, vector<rddf_graph_node*> &open_set, vector<rddf_graph_node*> &closed_set, int **already_visited);
+void road_map_find_center(carmen_map_p map);
 
 #ifdef __cplusplus
 }

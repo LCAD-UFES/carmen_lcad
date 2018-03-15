@@ -13,6 +13,8 @@ Makefile.depend
 *complete_map.map
 .settings/org.eclipse.cdt.codan.core.prefs
 data/map*/*.bmp
+data/map_ida_guarapari-20170403-2.tar.gz
+data/map_ida_guarapari-20170403-2/*
 bin/debug.txt
 bin/out.txt
 bin/build_average_map

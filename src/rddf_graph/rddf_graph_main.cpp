@@ -21,85 +21,6 @@ int g_class_bits = 0;
 char *g_remission_map_dir = NULL;
 int g_road_map_index = 1;
 
-static void
-read_parameters(int argc, char **argv)
-//read_parameters(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused)))
-{
-	const char usage[] = "[-c <img_channels>] [-b <class_bits>] [-r <remission_map_dir>] <road_map_1>.map [...]";
-	for(int i = 1; i < argc; i++)
-	{
-		if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
-			exit(printf("Usage:\n%s %s\n", argv[0], usage));
-		else if(strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "--img_channels") == 0)
-		{
-			g_road_map_index++;
-			if ((i + 1) < argc)
-			{
-				g_img_channels = atoi(argv[i + 1]);
-				i++, g_road_map_index++;
-			}
-			else
-				printf("Image channels expected following -c option.\nUsage:\n%s %s\n", argv[0], usage);
-		}
-		else if(strcmp(argv[i], "-b") == 0 || strcmp(argv[i], "--class_bits") == 0)
-		{
-			g_road_map_index++;
-			if ((i + 1) < argc)
-			{
-				g_class_bits = atoi(argv[i + 1]);
-				i++, g_road_map_index++;
-			}
-			else
-				printf("Class bits expected following -b option.\nUsage:\n%s %s\n", argv[0], usage);
-		}
-		else if(strcmp(argv[i], "-r") == 0 || strcmp(argv[i], "--remission_maps") == 0)
-		{
-			g_road_map_index++;
-			if ((i + 1) < argc)
-			{
-				g_remission_map_dir = argv[i + 1];
-				int n = strlen(g_remission_map_dir) - 1;
-				if (n >= 0 && g_remission_map_dir[n] == '/')
-					g_remission_map_dir[n] = 0;
-				i++, g_road_map_index++;
-			}
-			else
-				printf("Remission map directory expected following -r option.\nUsage:\n%s %s\n", argv[0], usage);
-		}
-		else
-			break;
-	}
-	if (g_road_map_index == argc)
-		exit(printf("At least one road map file expected\nUsage:\n%s %s\n", argv[0], usage));
-	printf("Image channels set to %d.\n", g_img_channels);
-	if (g_img_channels == 1)
-		printf("Class bits set to %d.\n", g_class_bits);
-	if (g_remission_map_dir)
-		printf("Remission map directory: %s.\n", g_remission_map_dir);
-}
-
-
-static void
-define_messages()
-{
-}
-
-static void
-register_handlers()
-{
-}
-
-void
-shutdown_module(int signo)
-{
-	if (signo == SIGINT)
-	{
-		if (g_ipc_required)
-			carmen_ipc_disconnect();
-		exit(printf("road_mapper_display_map: disconnected.\n"));
-	}
-}
-
 void
 blend_images_vertical_and_horizontal(carmen_map_p road_map, cv::Mat *image_vertical, cv::Mat *image_horizontal)
 {
@@ -121,7 +42,7 @@ blend_images_vertical_and_horizontal(carmen_map_p road_map, cv::Mat *image_verti
 void
 road_mapper_display_road_map(carmen_map_p road_map, int img_channels, int img_class_bits)
 {
-	road_prob *cell_prob;
+	//road_prob *cell_prob;
 	cv::namedWindow(g_window_name1, cv::WINDOW_AUTOSIZE);
 	cv::moveWindow(g_window_name1, 78 + road_map->config.x_size, 10);
 	cv::namedWindow(g_window_name2, cv::WINDOW_AUTOSIZE);
@@ -144,12 +65,7 @@ road_mapper_display_road_map(carmen_map_p road_map, int img_channels, int img_cl
 		imageCenterHorizontal = cv::Mat(road_map->config.y_size, road_map->config.x_size, CV_8UC3, cv::Scalar::all(255));
 		road_map_to_image(road_map, &image1);
 	}
-	/*cv::imshow(g_window_name1, image1);
-	if (g_remission_map_dir == NULL)
-	{
-		cout << "Press \"Esc\" key to continue...\n\n";
-		while((cv::waitKey() & 0xff) != 27);
-	}OLD WAY!*/
+
 	printf("IMSIZE: %d X %d: \n",road_map->config.x_size, road_map->config.y_size);
 	cv::Point p;
 	cv::Point pAnt;
@@ -165,27 +81,29 @@ road_mapper_display_road_map(carmen_map_p road_map, int img_channels, int img_cl
 	cv::Vec3b pixelChannelPosV; //pegar cada canal de cor em separado
 	int thickness = -1;
 	int lineType = 8;
-	for (int y = 1; y < road_map->config.y_size-1; y+=1)
+	for (int y = 2; y < road_map->config.y_size-2; y+=1)
 		{
-			for (int x = 1; x < road_map->config.x_size-1; x+=1)
+			for (int x = 2; x < road_map->config.x_size-2; x+=1)
 			{
-				cell_prob = road_mapper_double_to_prob(&road_map->map[x][road_map->config.y_size - 1 - y]);
+				//cell_prob = road_mapper_double_to_prob(&road_map->map[x][road_map->config.y_size - 1 - y]);
 				//printf("%d X %d %hu\n",x,y,cell_prob->lane_center);
 				imgPaint = image1.clone();
 				p.x = x;
 				p.y = y;
-				pAnt.x = x-1;
+				pAnt.x = x-2;
 				pAnt.y = y;
-				pPos.x = x+1;
+				pPos.x = x+2;
 				pPos.y = y;
 				pixelChannelAnt = image1.at<cv::Vec3b>(pAnt);
 				pixelChannel = image1.at<cv::Vec3b>(p);
 				pixelChannelPos = image1.at<cv::Vec3b>(pPos);
 
+				//src1.at<Vec3b>(i,j)[0]
+
 				pAntV.x = x;
-				pAntV.y = y-1;
+				pAntV.y = y-2;
 				pPosV.x = x;
-				pPosV.y = y+1;
+				pPosV.y = y+2;
 				pixelChannelAntV = image1.at<cv::Vec3b>(pAntV);
 				pixelChannelPosV = image1.at<cv::Vec3b>(pPosV);
 
@@ -193,58 +111,113 @@ road_mapper_display_road_map(carmen_map_p road_map, int img_channels, int img_cl
 					continue;
 				else{
 					cv::circle(imgPaint, p, 1,cv::Scalar( 0, 0, 0 ),thickness,lineType);
+					/*if(
+						(image1.at<cv::Vec3b>(x,y)[1]>image1.at<cv::Vec3b>(y,x-2)[1])&&
+						(image1.at<cv::Vec3b>(x,y)[1]>image1.at<cv::Vec3b>(y,x-1)[1])&&
+						(image1.at<cv::Vec3b>(x,y)[1]>image1.at<cv::Vec3b>(y,x+2)[1])&&
+						(image1.at<cv::Vec3b>(x,y)[1]>image1.at<cv::Vec3b>(y,x+1)[1])||
+						(pixelChannel.val[0]==0 && pixelChannel.val[1]==255 && pixelChannel.val[2]==0)
+					){*/
+
 					if(((pixelChannel.val[1]>pixelChannelAnt.val[1])&&(pixelChannel.val[1]>pixelChannelPos.val[1]))||(pixelChannel.val[0]==0 && pixelChannel.val[1]==255 && pixelChannel.val[2]==0)){
 						//printf("Pixel Color at %dX%d: b: %d g: %d r: %d %hu CENTER!!!\n",x,y,pixelChannel.val[0],pixelChannel.val[1],pixelChannel.val[2], cell_prob->lane_center);
-						cv::circle(imageCenterVertical, p, 1,cv::Scalar( 255, 0, 0 ),thickness,lineType);
+						cv::circle(imageCenterHorizontal, p, 1,cv::Scalar( 255, 0, 0 ),thickness,lineType);
 					}
 					//else{
 						//printf("Pixel Color at %dX%d: b: %d g: %d r: %d %hu\n",x,y,pixelChannel.val[0],pixelChannel.val[1],pixelChannel.val[2], cell_prob->lane_center);
 					//}
-
+					/*if(
+						(image1.at<cv::Vec3b>(x,y)[1]>image1.at<cv::Vec3b>(y-2,x)[1])&&
+						(image1.at<cv::Vec3b>(x,y)[1]>image1.at<cv::Vec3b>(y-1,x)[1])&&
+						(image1.at<cv::Vec3b>(x,y)[1]>image1.at<cv::Vec3b>(y+2,x)[1])&&
+						(image1.at<cv::Vec3b>(x,y)[1]>image1.at<cv::Vec3b>(y+1,x)[1])||
+						(pixelChannel.val[0]==0 && pixelChannel.val[1]==255 && pixelChannel.val[2]==0)
+					){*/
 					if(((pixelChannel.val[1]>pixelChannelAntV.val[1])&&(pixelChannel.val[1]>pixelChannelPosV.val[1]))||(pixelChannel.val[0]==0 && pixelChannel.val[1]==255 && pixelChannel.val[2]==0)){
 						//printf("Pixel Color at %dX%d: b: %d g: %d r: %d  CENTER!!!\n",x,y,pixelChannel.val[0],pixelChannel.val[1],pixelChannel.val[2]);
-						cv::circle(imageCenterHorizontal, p, 1,cv::Scalar( 0, 0, 255 ),thickness,lineType);
+						cv::circle(imageCenterVertical, p, 1,cv::Scalar( 0, 0, 255 ),thickness,lineType);
 					}
-
-					
-
 				}
-
 
 				cv::imshow(g_window_name1, imgPaint);
 				cv::imshow(g_window_name2, imageCenterVertical);
 				cv::imshow(g_window_name3, imageCenterHorizontal);
-				//printf("Pixel Green Color at %dX%d: %d\n",x,y,image1.at<cv::Vec3b>(p)[1]);
-				//printf("Pixel Color at %dX%d: b: %d g: %d r: %d\n",x,y,image1.at<cv::Vec3b>(p)[0],image1.at<cv::Vec3b>(p)[1],image1.at<cv::Vec3b>(p)[2]);
-				//cout<<"Pixel Green Color at "<<x<<"X"<<y<< ": "<< imgPaint.at<cv::Vec3b>(p)[1]<<endl;
-				//sleep(1000);
-				//cout << "Press \"Esc\" key to continue...\n\n";
 				cv::waitKey(1);
 				//while((cv::waitKey() & 0xff) != 27);
 
 			}
-			//while((cv::waitKey() & 0xff) != 27);
-			//system("clear");
 		}
 	blend_images_vertical_and_horizontal(road_map, &imageCenterVertical, &imageCenterHorizontal);
-	//cv::waitKey(0);
-
 }
 
+static void
+define_messages()
+{
+}
+
+static void
+register_handlers()
+{
+}
+
+void
+shutdown_module(int signo)
+{
+	if (signo == SIGINT)
+	{
+		if (g_ipc_required)
+			carmen_ipc_disconnect();
+		exit(printf("road_mapper_display_map: disconnected.\n"));
+	}
+}
+
+static void
+read_parameters(int argc, char **argv)
+//read_parameters(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused)))
+{
+	const char usage[] = "[-c <img_channels>] [-b <class_bits>] [-r <remission_map_dir>] <road_map_1>.map [...]";
+	for(int i = 1; i < argc; i++)
+	{
+		if(strcmp(argv[i], "-r") == 0 || strcmp(argv[i], "--road_maps") == 0)
+		{
+			g_road_map_index++;
+			if ((i + 1) < argc)
+			{
+				i++, g_road_map_index++;
+			}
+			else
+				printf("Remission map directory expected following -r option.\nUsage:\n%s %s\n", argv[0], usage);
+		}
+		else
+			break;
+	}
+	if (g_road_map_index == argc)
+		exit(printf("At least one road map file expected\nUsage:\n%s %s\n", argv[0], usage));
+	printf("Image channels set to %d.\n", g_img_channels);
+	if (g_img_channels == 1)
+		printf("Class bits set to %d.\n", g_class_bits);
+	if (g_remission_map_dir)
+		printf("Remission map directory: %s.\n", g_remission_map_dir);
+}
 
 int
 main(int argc, char **argv)
 {
 	read_parameters(argc, argv);
+
+
 	if (g_ipc_required)
 	{
 		carmen_ipc_initialize(argc, argv);
 		carmen_param_check_version(argv[0]);
 		define_messages();
 	}
+
 	signal(SIGINT, shutdown_module);
 
 	carmen_map_t road_map;
+	//printf("%d \t %d\n",g_road_map_index, argc);
+		//getchar();
 	for (int i = g_road_map_index; i < argc; i++)
 	{
 		char *road_map_filename = argv[i];
@@ -253,7 +226,9 @@ main(int argc, char **argv)
 		{
 			cout << "File " << string(road_map_filename) << " being displayed... ("
 					<< (i - g_road_map_index + 1) << " of " << (argc - g_road_map_index) << ")" << endl;
-			road_mapper_display_road_map(&road_map, g_img_channels, g_class_bits);
+			//road_mapper_display_road_map(&road_map, g_img_channels, g_class_bits);
+			road_map_find_center(&road_map);
+			//print_map_in_terminal(&road_map);
 		}
 		else
 			cout << "road_mapper_display_map: could not read offline map from file named: " << road_map_filename << endl;
