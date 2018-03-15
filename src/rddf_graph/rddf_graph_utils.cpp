@@ -75,7 +75,7 @@ print_map_in_terminal (carmen_map_p map)
 	{
 		for (int y = 0; y < map->config.y_size; y++)
 		{
-			if (road_center(map, y, x, &next_lane_center) == true)
+			if (road_is_center(map, y, x, &next_lane_center) == true)
 			{
 				printf("X");
 			}
@@ -86,6 +86,20 @@ print_map_in_terminal (carmen_map_p map)
 	}
 
 }
+
+
+int
+count_graph_nodes(rddf_graph_node *graph)
+{
+	int count=0;
+	for (rddf_graph_node *aux = graph; aux != NULL; aux = aux->prox)
+	{
+		count++;
+	}
+	return count;
+
+}
+
 
 void
 display_graph_in_image(carmen_map_p map, vector<rddf_graph_node*> &closed_set)
@@ -111,13 +125,13 @@ display_graph_in_image(carmen_map_p map, vector<rddf_graph_node*> &closed_set)
 		color[0] = blue;
 		color[1] = green;
 		color[2] = red;
-
+		printf("\t%do graph nodes: %d\n", i+1, count_graph_nodes(closed_set[i]));
 		for(rddf_graph_node *aux = closed_set[i]; aux != NULL; aux = aux->prox)
 		{
 			//image_graph->at<cv::Vec3b>(map->config.y_size - 1 - y, x) = color;
-			p.x = aux->y;
-			p.y = aux->x;
-			cv::circle(image_graph, p, 0.1,cv::Scalar( blue, green, red ),thickness,lineType);
+			p.x = aux->x;
+			p.y = aux->y;
+			cv::circle(image_graph, p, 0.2,cv::Scalar( blue, green, red ),thickness,lineType);
 			//image_graph.at<cv::Vec3b>(aux->x, aux->y) = color;
 		}
 
@@ -162,7 +176,7 @@ alloc_matrix(int r, int c)
 
 
 bool
-road_center (carmen_map_p map, int x, int y, unsigned short *next_lane_center)
+road_is_center (carmen_map_p map, int x, int y, unsigned short *next_lane_center)
 {
 	road_prob *cell_prob;
 	road_prob *cell_prob_ant;
@@ -229,7 +243,7 @@ expand_neighbours(carmen_map_p map, vector<rddf_graph_node*> &open_set, vector<r
 		open_set.pop_back();
 		count = 0;
 		//printf("\tCurrent: %dX%d", current->x, current->y);
-		//printf("\topen_set size: %d", open_set.size());
+		//printf("\topen_set size: %lu", open_set.size());
 		//getchar();
 
 		//explorando os pontos vizinhos de current
@@ -243,7 +257,7 @@ expand_neighbours(carmen_map_p map, vector<rddf_graph_node*> &open_set, vector<r
 					already_visited[x][y] = 1;
 					//printf("\tPoint in Map at %d X %d\n", x,y);
 					//getchar();
-					if (road_center(map, x, y, &next_lane_center))
+					if (road_is_center(map, x, y, &next_lane_center))
 					{
 						//printf("\tLane Center at %d X %d\n", x,y);
 						//getchar();
@@ -270,14 +284,14 @@ road_map_find_center(carmen_map_p map)
 {
 	//printf("road_map_find_center:\n");
 	int **already_visited;
-	int **check_matrix;
+	//int **check_matrix;
 	rddf_graph_node *p;
 	unsigned short next_lane_center=0;
 	std::vector<rddf_graph_node*> open_set;
 	std::vector<rddf_graph_node*> closed_set;
 
 	already_visited = alloc_matrix(map->config.x_size, map->config.y_size);
-	check_matrix = alloc_matrix(map->config.x_size, map->config.y_size);
+	//check_matrix = alloc_matrix(map->config.x_size, map->config.y_size);
 
 	for (int x = 0; x < map->config.x_size; x++)
 	{
@@ -288,7 +302,7 @@ road_map_find_center(carmen_map_p map)
 
 			already_visited[x][y] = 1;
 			//printf("\tPoint at: %d X %d: %hu\n", x,y,next_lane_center);
-			if (road_center(map, x, y, &next_lane_center))
+			if (road_is_center(map, x, y, &next_lane_center))
 			{
 				//printf("\tLane Center at %d X %d: %hu\n", x,y,next_lane_center);
 				p = (rddf_graph_node*)malloc(sizeof(rddf_graph_node));
@@ -304,11 +318,7 @@ road_map_find_center(carmen_map_p map)
 			}
 		}
 	}
-	//printf("Closed Set Size: %d\n", closed_set.size());
-	//print_open_set(closed_set);
 	printf("Graphs Found: %lu\n", closed_set.size());
 
 	display_graph_in_image(map, closed_set);
-
-
 }
