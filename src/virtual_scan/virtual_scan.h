@@ -191,7 +191,4 @@ virtual_scan_update_neighborhood_graph(virtual_scan_neighborhood_graph_t *neighb
 virtual_scan_moving_objects_t *
 virtual_scan_infer_moving_objects(virtual_scan_neighborhood_graph_t *neighborhood_graph);
 
-void
-virtual_scan_moving_objects_publish(virtual_scan_moving_objects_t *moving_objects);
-
 #endif /* SRC_VIRTUAL_SCAN_VIRTUAL_SCAN_H_ */

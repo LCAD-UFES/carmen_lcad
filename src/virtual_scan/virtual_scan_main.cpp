@@ -35,6 +35,13 @@ virtual_scan_neighborhood_graph_t *neighborhood_graph = NULL;
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
+void
+virtual_scan_moving_objects_publish(virtual_scan_moving_objects_t *moving_objects)
+{
+
+}
+
+
 //void
 //publish_virtual_scan(virtual_scan_segments_t *virtual_scan_segments)
 //{

@@ -559,13 +559,6 @@ virtual_scan_free_segment_classes(virtual_scan_segment_classes_t *virtual_scan_s
 }
 
 
-void
-virtual_scan_free_moving_objects(virtual_scan_moving_objects_t *moving_objects)
-{
-
-}
-
-
 virtual_scan_segment_classes_t *
 virtual_scan_extract_segments(virtual_scan_extended_t *virtual_scan_extended)
 {
@@ -787,39 +780,39 @@ track_extension(virtual_scan_track_t *track, virtual_scan_neighborhood_graph_t *
 }
 
 
-void
-track_reduction(virtual_scan_track_t *track)
-{
-
-}
-
-
-void
-track_death(virtual_scan_track_t *track)
-{
-
-}
-
-
-void
-track_split(virtual_scan_track_t *track)
-{
-
-}
-
-
-void
-track_merge(virtual_scan_track_set_t *track_set, int rand_track, int rand_track2)
-{
-
-}
-
-
-void
-track_diffusion(virtual_scan_track_t *track)
-{
-
-}
+//void
+//track_reduction(virtual_scan_track_t *track)
+//{
+//
+//}
+//
+//
+//void
+//track_death(virtual_scan_track_t *track)
+//{
+//
+//}
+//
+//
+//void
+//track_split(virtual_scan_track_t *track)
+//{
+//
+//}
+//
+//
+//void
+//track_merge(virtual_scan_track_set_t *track_set, int rand_track, int rand_track2)
+//{
+//
+//}
+//
+//
+//void
+//track_diffusion(virtual_scan_track_t *track)
+//{
+//
+//}
 
 
 virtual_scan_track_set_t *
@@ -836,13 +829,13 @@ propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood
 
 	int rand_track;
 
-	int rand_var = rand() % NUMBER_OF_TYPES_OF_MOVES;
+	int rand_move = rand() % NUMBER_OF_TYPES_OF_MOVES;
 	if (track_set_n_1->size != 0)
 		rand_track = rand() % track_set_n_1->size;
 	else
 		rand_track = -1;
 
-	switch (rand_var)
+	switch (rand_move)
 	{
 		case 0:	// Birth
 			{
@@ -858,32 +851,32 @@ propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood
 			if (rand_track != -1)
 				track_extension(&(track_set_n_1->tracks[rand_track]), neighborhood_graph);
 			break;
-		case 2:	// Reduction
-			if (rand_track != -1)
-				track_reduction(&(track_set_n_1->tracks[rand_track]));
-			break;
-		case 3: //Death
-			if (rand_track != -1)
-				track_death(&(track_set_n_1->tracks[rand_track]));
-			break;
-		case 4:	// Split
-			if (rand_track != -1)
-			{
-				if (track_set_n_1->tracks[rand_track].size >= 4)
-					track_split(&(track_set_n_1->tracks[rand_track]));
-			}
-			break;
-		case 5:	// Merge
-			if (rand_track != -1)
-			{
-				int rand_track2 = rand() % track_set_n_1->size;
-				track_merge(track_set_n_1, rand_track, rand_track2);
-			}
-			break;
-		case 6:	// Diffusion
-			if (rand_track != -1)
-				track_diffusion(&track_set_n_1->tracks[rand_track]);
-			break;
+//		case 2:	// Reduction
+//			if (rand_track != -1)
+//				track_reduction(&(track_set_n_1->tracks[rand_track]));
+//			break;
+//		case 3: //Death
+//			if (rand_track != -1)
+//				track_death(&(track_set_n_1->tracks[rand_track]));
+//			break;
+//		case 4:	// Split
+//			if (rand_track != -1)
+//			{
+//				if (track_set_n_1->tracks[rand_track].size >= 4)
+//					track_split(&(track_set_n_1->tracks[rand_track]));
+//			}
+//			break;
+//		case 5:	// Merge
+//			if (rand_track != -1)
+//			{
+//				int rand_track2 = rand() % track_set_n_1->size;
+//				track_merge(track_set_n_1, rand_track, rand_track2);
+//			}
+//			break;
+//		case 6:	// Diffusion
+//			if (rand_track != -1)
+//				track_diffusion(&track_set_n_1->tracks[rand_track]);
+//			break;
 	}
 
 	virtual_scan_track_set_t *track_set = copy_track_set(track_set_n_1);
@@ -923,12 +916,11 @@ A(virtual_scan_track_set_t *track_set_n, virtual_scan_track_set_t *track_set_pri
 virtual_scan_moving_objects_t *
 virtual_scan_infer_moving_objects(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
-	virtual_scan_track_set_t *track_set_victim;
 	virtual_scan_track_set_t *track_set_n = best_track_set;
 	for (int n = 0; n < MCMC_MAX_ITERATIONS; n++)
 	{
 		virtual_scan_track_set_t *track_set_prime = propose_track_set_according_to_q(neighborhood_graph, track_set_n);
-		track_set_victim = track_set_prime;
+		virtual_scan_track_set_t *track_set_victim = track_set_prime;
 		double U = carmen_uniform_random(0.0, 1.0);
 		if (U < A(track_set_n, track_set_prime))
 		{
@@ -949,7 +941,7 @@ virtual_scan_infer_moving_objects(virtual_scan_neighborhood_graph_t *neighborhoo
 
 
 void
-virtual_scan_moving_objects_publish(virtual_scan_moving_objects_t *moving_objects)
+virtual_scan_free_moving_objects(virtual_scan_moving_objects_t *moving_objects)
 {
 
 }
