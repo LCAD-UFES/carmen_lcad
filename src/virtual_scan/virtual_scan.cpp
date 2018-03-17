@@ -26,6 +26,8 @@
 
 #define	MCMC_MAX_ITERATIONS	100
 
+#define GAMMA	0.5
+
 
 virtual_scan_extended_t extended_virtual_scan; // Melhorar
 carmen_point_t extended_virtual_scan_points[10000]; // Melhorar
@@ -34,8 +36,7 @@ extern double x_origin;
 extern double y_origin;
 extern double map_resolution;
 
-virtual_scan_track_t *best_tracks = NULL;
-int g_number_of_tracks = 0;
+virtual_scan_track_set_t *best_track_set = NULL;
 
 
 int
@@ -585,21 +586,21 @@ virtual_scan_update_neighborhood_graph(virtual_scan_neighborhood_graph_t *neighb
 
 
 int *
-get_v_star(int *size, virtual_scan_neighborhood_graph_t *neighborhood_graph)
+get_v_star(int &size, virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
-	*size = 0;
+	size = 0;
 	for (int i = 0; i < neighborhood_graph->size; i++)
 	{
-		if (!neighborhood_graph->box_model_hypothesis[i].selected)
-			*size++;
+		if (!neighborhood_graph->vertex_selected[i])
+			size++;
 	}
 
-	if (*size != 0)
+	if (size != 0)
 	{
-		int *v_star = (int *) malloc(*size * sizeof(int));
+		int *v_star = (int *) malloc(size * sizeof(int));
 		for (int i = 0, j = 0; i < neighborhood_graph->size; i++)
 		{
-			if (!neighborhood_graph->box_model_hypothesis[i].selected)
+			if (!neighborhood_graph->vertex_selected[i])
 			{
 				v_star[j] = i;
 				j++;
@@ -618,7 +619,7 @@ track_birth(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 	if (neighborhood_graph != NULL)
 	{
 		int v_star_size;
-		int *v_star = get_v_star(&v_star_size, neighborhood_graph);
+		int *v_star = get_v_star(v_star_size, neighborhood_graph);
 		if (v_star != NULL)
 		{
 			int rand_v = rand() % v_star_size;
@@ -626,7 +627,7 @@ track_birth(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 			new_track->box_model_hypothesis = (virtual_scan_box_model_hypothesis_t *) malloc(sizeof(virtual_scan_box_model_hypothesis_t));
 			new_track->size = 1;
 			new_track->box_model_hypothesis[0] = neighborhood_graph->box_model_hypothesis[v_star[rand_v]];
-			neighborhood_graph->box_model_hypothesis[v_star[rand_v]].selected = true;
+			neighborhood_graph->vertex_selected[v_star[rand_v]] = true;
 
 			free(v_star);
 			return (new_track);
@@ -639,104 +640,281 @@ track_birth(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 }
 
 
-int
-add_track(virtual_scan_track_t *tracks_n_1, virtual_scan_track_t new_track)
+void
+add_track(virtual_scan_track_set_t *track_set_n_1, virtual_scan_track_t *new_track)
 {
-	if (tracks_n_1 == NULL)
+	if (track_set_n_1 == NULL)
 	{
-		tracks_n_1 = (virtual_scan_track_t *) malloc(sizeof(virtual_scan_track_t));
-		tracks_n_1[0] = new_track;
+		track_set_n_1 = (virtual_scan_track_set_t *) malloc(sizeof(virtual_scan_track_set_t));
+		track_set_n_1->tracks = (virtual_scan_track_t *) malloc(sizeof(virtual_scan_track_t));
+		track_set_n_1->tracks = new_track;
+		track_set_n_1->size = 1;
 	}
 	else
 	{
-		tracks_n_1 = (virtual_scan_track_t *) realloc(tracks_n_1, (g_number_of_tracks + 1) * sizeof(virtual_scan_track_t));
-		tracks_n_1[g_number_of_tracks] = new_track;
+		track_set_n_1->tracks = (virtual_scan_track_t *) realloc(track_set_n_1->tracks, (track_set_n_1->tracks->size + 1) * sizeof(virtual_scan_track_t));
+		track_set_n_1->tracks = new_track;
+		track_set_n_1->tracks->size += 1;
+	}
+}
+
+
+void
+add_hypothesis_at_the_end(virtual_scan_track_t *track, virtual_scan_box_model_hypothesis_t *hypothesis, virtual_scan_neighborhood_graph_t *neighborhood_graph)
+{
+	if (track == NULL)
+		carmen_die("track == NULL in add_hypothesis_at_the_end()\n");
+
+	if (hypothesis == NULL)
+		return;
+
+	track->box_model_hypothesis = (virtual_scan_box_model_hypothesis_t *) realloc(track->box_model_hypothesis,
+			(track->size + 1) * sizeof(virtual_scan_box_model_hypothesis_t));
+	track->box_model_hypothesis[track->size] = *hypothesis;
+	track->size += 1;
+
+	neighborhood_graph->vertex_selected[hypothesis->index] = true;
+}
+
+
+void
+add_hypothesis_at_the_beginning(virtual_scan_track_t *track, virtual_scan_box_model_hypothesis_t *hypothesis, virtual_scan_neighborhood_graph_t *neighborhood_graph)
+{
+	if (track == NULL)
+		carmen_die("track == NULL in add_hypothesis_at_the_beginning()\n");
+
+	if (hypothesis == NULL)
+		return;
+
+	track->box_model_hypothesis = (virtual_scan_box_model_hypothesis_t *) realloc(track->box_model_hypothesis,
+			(track->size + 1) * sizeof(virtual_scan_box_model_hypothesis_t));
+	for (int i = track->size; i > 0; i--)
+		track->box_model_hypothesis[i] = track->box_model_hypothesis[i - 1];
+	track->box_model_hypothesis[0] = *hypothesis;
+	track->size += 1;
+
+	neighborhood_graph->vertex_selected[hypothesis->index] = true;
+}
+
+
+int *
+get_neighbors_within_v_star(int neighbor_type, int &number_of_neighbors, virtual_scan_box_model_hypothesis_edges_t *hypothesis_neighbors,
+		virtual_scan_neighborhood_graph_t *neighborhood_graph)
+{
+	number_of_neighbors = 0;
+	for (int i = 0; i < hypothesis_neighbors->size; i++)
+	{
+		if (hypothesis_neighbors->edge_type[i] == neighbor_type)
+			number_of_neighbors++;
 	}
 
-	return (g_number_of_tracks);
+	if (number_of_neighbors != 0)
+	{
+		int *neighbors = (int *) malloc(number_of_neighbors * sizeof(int));
+		for (int i = 0, j = 0; i < hypothesis_neighbors->size; i++)
+		{
+			// if (neighborhood_graph->vertex_selected[hypothesis_neighbors->edge[i]] == true), this neighbor is within v_star
+			if ((hypothesis_neighbors->edge_type[i] == neighbor_type) && !(neighborhood_graph->vertex_selected[hypothesis_neighbors->edge[i]]))
+			{
+				neighbors[j] = i;
+				j++;
+			}
+		}
+		return (neighbors);
+	}
+	else
+		return (NULL);
+}
+
+
+virtual_scan_box_model_hypothesis_t *
+get_child_hypothesis_in_v_star_and_at_the_end_of_track(virtual_scan_track_t *track, virtual_scan_neighborhood_graph_t *neighborhood_graph)
+{
+	virtual_scan_box_model_hypothesis_t end_of_track = track->box_model_hypothesis[track->size - 1];
+	virtual_scan_box_model_hypothesis_edges_t *hypothesis_neighbors = &(neighborhood_graph->box_model_hypothesis_edges[end_of_track.index]);
+	int number_of_children;
+	int *hypothesis_children = get_neighbors_within_v_star(CHILDREN_EDGE, number_of_children, hypothesis_neighbors, neighborhood_graph);
+	if (hypothesis_children != NULL)
+	{
+		int rand_hypothesis = rand() % number_of_children;
+		virtual_scan_box_model_hypothesis_t *child_hypothesis = &(neighborhood_graph->box_model_hypothesis[hypothesis_children[rand_hypothesis]]);
+		free(hypothesis_children);
+
+		return (child_hypothesis);
+	}
+	else
+		return (NULL);
+}
+
+
+virtual_scan_box_model_hypothesis_t *
+get_child_hypothesis_in_v_star_and_at_the_beginning_of_track(virtual_scan_track_t *track, virtual_scan_neighborhood_graph_t *neighborhood_graph)
+{
+	virtual_scan_box_model_hypothesis_t beginning_of_track = track->box_model_hypothesis[0];
+	virtual_scan_box_model_hypothesis_edges_t *hypothesis_neighbors = &(neighborhood_graph->box_model_hypothesis_edges[beginning_of_track.index]);
+	int number_of_parents;
+	int *hypothesis_parents = get_neighbors_within_v_star(PARENT_EDGE, number_of_parents, hypothesis_neighbors, neighborhood_graph);
+	if (hypothesis_parents != NULL)
+	{
+		int rand_hypothesis = rand() % number_of_parents;
+		virtual_scan_box_model_hypothesis_t *parent_hypothesis = &(neighborhood_graph->box_model_hypothesis[hypothesis_parents[rand_hypothesis]]);
+		free(hypothesis_parents);
+
+		return (parent_hypothesis);
+	}
+	else
+		return (NULL);
 }
 
 
 void
 track_extension(virtual_scan_track_t *track, virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
+	virtual_scan_box_model_hypothesis_t *hypothesis = get_child_hypothesis_in_v_star_and_at_the_end_of_track(track, neighborhood_graph);
+	add_hypothesis_at_the_end(track, hypothesis, neighborhood_graph);
+
+	hypothesis = get_child_hypothesis_in_v_star_and_at_the_beginning_of_track(track, neighborhood_graph);
+	add_hypothesis_at_the_beginning(track, hypothesis, neighborhood_graph);
+
+	while (carmen_uniform_random(0.0, 1.0) > GAMMA)
+	{
+		hypothesis = get_child_hypothesis_in_v_star_and_at_the_end_of_track(track, neighborhood_graph);
+		add_hypothesis_at_the_end(track, hypothesis, neighborhood_graph);
+
+		hypothesis = get_child_hypothesis_in_v_star_and_at_the_beginning_of_track(track, neighborhood_graph);
+		add_hypothesis_at_the_beginning(track, hypothesis, neighborhood_graph);
+	}
+}
+
+
+void
+track_reduction(virtual_scan_track_t *track)
+{
 
 }
 
 
-virtual_scan_track_t *
-propose_tracks_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood_graph, virtual_scan_track_t *tracks_n_1)
+void
+track_death(virtual_scan_track_t *track)
+{
+
+}
+
+
+void
+track_split(virtual_scan_track_t *track)
+{
+
+}
+
+
+void
+track_merge(virtual_scan_track_set_t *track_set, int rand_track, int rand_track2)
+{
+
+}
+
+
+void
+track_diffusion(virtual_scan_track_t *track)
+{
+
+}
+
+
+virtual_scan_track_set_t *
+copy_track_set(virtual_scan_track_set_t *track_set)
+{
+	return (NULL);
+}
+
+
+virtual_scan_track_set_t *
+propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood_graph, virtual_scan_track_set_t *track_set_n_1)
 {
 #define NUMBER_OF_TYPES_OF_MOVES	7
 
-	int rand_track = rand() % g_number_of_tracks;
+	int rand_track;
+
 	int rand_var = rand() % NUMBER_OF_TYPES_OF_MOVES;
+	if (track_set_n_1->size != 0)
+		rand_track = rand() % track_set_n_1->size;
+	else
+		rand_track = -1;
+
 	switch (rand_var)
 	{
 		case 0:	// Birth
-			virtual_scan_track_t *new_track = track_birth(neighborhood_graph);
-			if (new_track != NULL)
 			{
-				int track_added = add_track(tracks_n_1, *new_track);
-				track_extension(&(tracks_n_1[track_added]), neighborhood_graph);
-				g_number_of_tracks += 1;
+				virtual_scan_track_t *new_track = track_birth(neighborhood_graph);
+				if (new_track != NULL)
+				{
+					add_track(track_set_n_1, new_track);
+					track_extension(new_track, neighborhood_graph);
+				}
 			}
 			break;
 		case 1:	// Extension
-			track_extension(&(tracks_n_1[rand_track]), neighborhood_graph);
+			if (rand_track != -1)
+				track_extension(&(track_set_n_1->tracks[rand_track]), neighborhood_graph);
 			break;
 		case 2:	// Reduction
-			track_reduction(tracks_n_1[rand_track]);
+			if (rand_track != -1)
+				track_reduction(&(track_set_n_1->tracks[rand_track]));
 			break;
 		case 3: //Death
-			if (track_death(tracks_n_1[rand_track]))
-				g_number_of_tracks -= 1;
+			if (rand_track != -1)
+				track_death(&(track_set_n_1->tracks[rand_track]));
 			break;
 		case 4:	// Split
-			if (track_size(tracks_n_1[rand_track]) >= 4)
+			if (rand_track != -1)
 			{
-				if (track_split(tracks_n_1[rand_track]))
-					g_number_of_tracks += 1;
+				if (track_set_n_1->tracks[rand_track].size >= 4)
+					track_split(&(track_set_n_1->tracks[rand_track]));
 			}
 			break;
 		case 5:	// Merge
-			int rand_track2 = rand() % g_number_of_tracks;
-			if (track_merge(tracks_n_1, rand_track, rand_track2))
-				g_number_of_tracks -= 1;
+			if (rand_track != -1)
+			{
+				int rand_track2 = rand() % track_set_n_1->size;
+				track_merge(track_set_n_1, rand_track, rand_track2);
+			}
 			break;
 		case 6:	// Diffusion
-			track_diffusion(tracks_n_1[rand_track]);
+			if (rand_track != -1)
+				track_diffusion(&track_set_n_1->tracks[rand_track]);
 			break;
 	}
 
-	virtual_scan_track_t *tracks = copy_tracks(tracks_n_1);
-	return (tracks);
+	virtual_scan_track_set_t *track_set = copy_track_set(track_set_n_1);
+
+	return (track_set);
 }
 
 
 double
-probability_of_tracks_given_measurement(virtual_scan_track_t *tracks)
+probability_of_track_set_given_measurement(virtual_scan_track_set_t *track_set)
 {
 	return (0.5);
 }
 
 
 void
-free_tracks(virtual_scan_track_t *tracks_victim)
+free_track_set(virtual_scan_track_set_t *track_set_victim)
 {
 
 }
 
 
 virtual_scan_moving_objects_t *
-get_moving_objects_from_track_set(virtual_scan_track_t *best_tracks)
+get_moving_objects_from_track_set(virtual_scan_track_set_t *best_track_set)
 {
 	return (NULL);
 }
 
 
 double
-A(virtual_scan_track_t *tracks_n, virtual_scan_track_t *tracks_prime)
+A(virtual_scan_track_set_t *track_set_n, virtual_scan_track_set_t *track_set_prime)
 {
 	return (0.5);
 }
@@ -745,26 +923,26 @@ A(virtual_scan_track_t *tracks_n, virtual_scan_track_t *tracks_prime)
 virtual_scan_moving_objects_t *
 virtual_scan_infer_moving_objects(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
-	virtual_scan_track_t *tracks_victim;
-	virtual_scan_track_t *tracks_n = best_tracks;
+	virtual_scan_track_set_t *track_set_victim;
+	virtual_scan_track_set_t *track_set_n = best_track_set;
 	for (int n = 0; n < MCMC_MAX_ITERATIONS; n++)
 	{
-		virtual_scan_track_t *tracks_prime = propose_tracks_according_to_q(neighborhood_graph, tracks_n);
-		tracks_victim = tracks_prime;
+		virtual_scan_track_set_t *track_set_prime = propose_track_set_according_to_q(neighborhood_graph, track_set_n);
+		track_set_victim = track_set_prime;
 		double U = carmen_uniform_random(0.0, 1.0);
-		if (U < A(tracks_n, tracks_prime))
+		if (U < A(track_set_n, track_set_prime))
 		{
-			tracks_n = tracks_prime;
-			if (probability_of_tracks_given_measurement(tracks_n) > probability_of_tracks_given_measurement(best_tracks))
+			track_set_n = track_set_prime;
+			if (probability_of_track_set_given_measurement(track_set_n) > probability_of_track_set_given_measurement(best_track_set))
 			{
-				tracks_victim = best_tracks;
-				best_tracks = tracks_n;
+				track_set_victim = best_track_set;
+				best_track_set = track_set_n;
 			}
 		}
-		free_tracks(tracks_victim);
+		free_track_set(track_set_victim);
 	}
 
-	virtual_scan_moving_objects_t *moving_objects = get_moving_objects_from_track_set(best_tracks);
+	virtual_scan_moving_objects_t *moving_objects = get_moving_objects_from_track_set(best_track_set);
 
 	return (moving_objects);
 }

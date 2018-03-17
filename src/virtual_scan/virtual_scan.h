@@ -10,9 +10,14 @@
 
 
 // Segment classes
-#define L_SHAPED	0
-#define	I_SHAPED	1
-#define MASS_POINT	2
+#define L_SHAPED	1
+#define	I_SHAPED	2
+#define MASS_POINT	3
+
+#define CHILDREN_EDGE 	1
+#define PARENT_EDGE 	2
+#define SIBLING_EDGE 	3
+
 
 typedef struct
 {
@@ -106,8 +111,8 @@ typedef struct
 
 typedef struct
 {
+	int index;
 	virtual_scan_box_model_t hypothesis;
-	bool selected;
 	double timestamp;
 } virtual_scan_box_model_hypothesis_t;
 
@@ -116,6 +121,7 @@ typedef struct
 {
 	virtual_scan_box_model_hypothesis_t *box_model_hypothesis;
 	virtual_scan_box_model_hypothesis_edges_t *box_model_hypothesis_edges;
+	bool *vertex_selected;
 	int size;
 } virtual_scan_neighborhood_graph_t;
 
@@ -125,6 +131,13 @@ typedef struct
 	int size;
 	virtual_scan_box_model_hypothesis_t *box_model_hypothesis;
 } virtual_scan_track_t;
+
+
+typedef struct
+{
+	int size;
+	virtual_scan_track_t *tracks;
+} virtual_scan_track_set_t;
 
 
 typedef struct
