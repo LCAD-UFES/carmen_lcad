@@ -21,12 +21,12 @@
 #define	BIKE		2 // Width: 1,20 m; Length: 2,20 m
 #define	PEDESTRIAN	3
 
-#define PEDESTRAIN_SIZE	0.3 // Pedestrian approximate size (from the top) in meters
+#define PEDESTRAIN_SIZE	0.5 // Pedestrian approximate size (from the top) in meters
 #define	L_SMALL_SEGMENT_AS_A_PROPORTION_OF_THE_LARGE	0.3
 
-#define	MCMC_MAX_ITERATIONS	100
+#define	MCMC_MAX_ITERATIONS	300
 
-#define GAMMA	0.5
+#define GAMMA	0.75
 
 
 virtual_scan_extended_t extended_virtual_scan; // Melhorar
@@ -350,7 +350,7 @@ virtual_scan_get_box_models(virtual_scan_box_model_hypotheses_t *hypotheses, int
 virtual_scan_box_model_hypotheses_t *
 virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment_classes)
 {
-	virtual_scan_category_t categories[] = {{BUS, 2.5, 12}, {CAR, 1.9, 5.1}, {BIKE, 1.2, 2.2}};
+	virtual_scan_category_t categories[] = {{BUS, 2.5, 12.0}, {CAR, 1.7, 4.5}, {BIKE, 0.5, 2.1}}; // Trung-Dung Vu Thesis
 
 	int num_segments = virtual_scan_segment_classes->num_segments;
 	virtual_scan_box_model_hypotheses_t *box_model_hypotheses = virtual_scan_new_box_model_hypotheses(num_segments);
@@ -615,7 +615,7 @@ track_birth(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 		int *v_star = get_v_star(v_star_size, neighborhood_graph);
 		if (v_star != NULL)
 		{
-			int rand_v = rand() % v_star_size;
+			int rand_v = carmen_int_random(v_star_size);
 			virtual_scan_track_t *new_track = (virtual_scan_track_t *) malloc(sizeof(virtual_scan_track_t));
 			new_track->box_model_hypothesis = (virtual_scan_box_model_hypothesis_t *) malloc(sizeof(virtual_scan_box_model_hypothesis_t));
 			new_track->size = 1;
@@ -729,7 +729,7 @@ get_child_hypothesis_in_v_star_and_at_the_end_of_track(virtual_scan_track_t *tra
 	int *hypothesis_children = get_neighbors_within_v_star(CHILDREN_EDGE, number_of_children, hypothesis_neighbors, neighborhood_graph);
 	if (hypothesis_children != NULL)
 	{
-		int rand_hypothesis = rand() % number_of_children;
+		int rand_hypothesis = carmen_int_random(number_of_children);
 		virtual_scan_box_model_hypothesis_t *child_hypothesis = &(neighborhood_graph->box_model_hypothesis[hypothesis_children[rand_hypothesis]]);
 		free(hypothesis_children);
 
@@ -749,7 +749,7 @@ get_child_hypothesis_in_v_star_and_at_the_beginning_of_track(virtual_scan_track_
 	int *hypothesis_parents = get_neighbors_within_v_star(PARENT_EDGE, number_of_parents, hypothesis_neighbors, neighborhood_graph);
 	if (hypothesis_parents != NULL)
 	{
-		int rand_hypothesis = rand() % number_of_parents;
+		int rand_hypothesis = carmen_int_random(number_of_parents);
 		virtual_scan_box_model_hypothesis_t *parent_hypothesis = &(neighborhood_graph->box_model_hypothesis[hypothesis_parents[rand_hypothesis]]);
 		free(hypothesis_parents);
 
@@ -763,19 +763,20 @@ get_child_hypothesis_in_v_star_and_at_the_beginning_of_track(virtual_scan_track_
 void
 track_extension(virtual_scan_track_t *track, virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
-	virtual_scan_box_model_hypothesis_t *hypothesis = get_child_hypothesis_in_v_star_and_at_the_end_of_track(track, neighborhood_graph);
-	add_hypothesis_at_the_end(track, hypothesis, neighborhood_graph);
-
-	hypothesis = get_child_hypothesis_in_v_star_and_at_the_beginning_of_track(track, neighborhood_graph);
-	add_hypothesis_at_the_beginning(track, hypothesis, neighborhood_graph);
+	virtual_scan_box_model_hypothesis_t *hypothesis;
 
 	while (carmen_uniform_random(0.0, 1.0) > GAMMA)
 	{
-		hypothesis = get_child_hypothesis_in_v_star_and_at_the_end_of_track(track, neighborhood_graph);
-		add_hypothesis_at_the_end(track, hypothesis, neighborhood_graph);
-
-		hypothesis = get_child_hypothesis_in_v_star_and_at_the_beginning_of_track(track, neighborhood_graph);
-		add_hypothesis_at_the_beginning(track, hypothesis, neighborhood_graph);
+		if (carmen_int_random(2) == 0)
+		{
+			hypothesis = get_child_hypothesis_in_v_star_and_at_the_end_of_track(track, neighborhood_graph);
+			add_hypothesis_at_the_end(track, hypothesis, neighborhood_graph);
+		}
+		else
+		{
+			hypothesis = get_child_hypothesis_in_v_star_and_at_the_beginning_of_track(track, neighborhood_graph);
+			add_hypothesis_at_the_beginning(track, hypothesis, neighborhood_graph);
+		}
 	}
 }
 
@@ -825,13 +826,13 @@ copy_track_set(virtual_scan_track_set_t *track_set)
 virtual_scan_track_set_t *
 propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood_graph, virtual_scan_track_set_t *track_set_n_1)
 {
-#define NUMBER_OF_TYPES_OF_MOVES	7
+#define NUMBER_OF_TYPES_OF_MOVES	2
 
 	int rand_track;
 
-	int rand_move = rand() % NUMBER_OF_TYPES_OF_MOVES;
-	if (track_set_n_1->size != 0)
-		rand_track = rand() % track_set_n_1->size;
+	int rand_move = carmen_int_random(NUMBER_OF_TYPES_OF_MOVES);
+	if ((track_set_n_1 != NULL) && (track_set_n_1->size != 0))
+		rand_track = carmen_int_random(track_set_n_1->size);
 	else
 		rand_track = -1;
 
@@ -869,7 +870,7 @@ propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood
 //		case 5:	// Merge
 //			if (rand_track != -1)
 //			{
-//				int rand_track2 = rand() % track_set_n_1->size;
+//				int rand_track2 = carmen_int_random(track_set_n_1->size);
 //				track_merge(track_set_n_1, rand_track, rand_track2);
 //			}
 //			break;
@@ -886,8 +887,22 @@ propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood
 
 
 double
-probability_of_track_set_given_measurement(virtual_scan_track_set_t *track_set)
+sum_of_tracks_lengths(virtual_scan_track_set_t *track_set)
 {
+	double sum = 0.0;
+
+	for (int i = 0; i < track_set->size; i++)
+		sum += track_set->tracks[i].size;
+
+	return (sum);
+}
+
+
+double
+probability_of_track_set_given_measurements(virtual_scan_track_set_t *track_set)
+{
+	double Slen = sum_of_tracks_lengths(track_set);
+	double Sms2 = sum_of_number_of_non_maximal_measurements_that_fall_behind_the_object_model();
 	return (0.5);
 }
 
@@ -909,7 +924,14 @@ get_moving_objects_from_track_set(virtual_scan_track_set_t *best_track_set)
 double
 A(virtual_scan_track_set_t *track_set_n, virtual_scan_track_set_t *track_set_prime)
 {
-	return (0.5);
+	double pi_w_prime = probability_of_track_set_given_measurements(track_set_prime);
+	double pi_w_n_1 = probability_of_track_set_given_measurements(track_set_n);
+	double q_w_w_prime = 1.0 / NUMBER_OF_TYPES_OF_MOVES;
+	double q_w_prime_w = 1.0 / NUMBER_OF_TYPES_OF_MOVES;
+
+	double A_w_w_prime = carmen_fmin(1.0, (pi_w_prime * q_w_w_prime) / (pi_w_n_1 * q_w_prime_w));
+
+	return (A_w_w_prime);
 }
 
 
@@ -925,7 +947,7 @@ virtual_scan_infer_moving_objects(virtual_scan_neighborhood_graph_t *neighborhoo
 		if (U < A(track_set_n, track_set_prime))
 		{
 			track_set_n = track_set_prime;
-			if (probability_of_track_set_given_measurement(track_set_n) > probability_of_track_set_given_measurement(best_track_set))
+			if (probability_of_track_set_given_measurements(track_set_n) > probability_of_track_set_given_measurements(best_track_set))
 			{
 				track_set_victim = best_track_set;
 				best_track_set = track_set_n;
