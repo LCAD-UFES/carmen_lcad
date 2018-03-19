@@ -39,9 +39,7 @@ class CarmenSimEnv(Env):
         return [g.x, g.y, g.th]
     
     def step(self, action):
-        action = np.clip(action, -1., 1.)
-        
-        car_info = carmen.env_step(action[0] * self.max_v, action[1] * self.max_phi, 
+        car_info = carmen.env_step(action[0], action[1], 
                                   self.goal[0], self.goal[1], self.goal[2],
                                   self.goal[3], self.goal[4])
         

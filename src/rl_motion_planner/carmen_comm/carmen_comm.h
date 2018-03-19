@@ -26,5 +26,7 @@ int car_hit_obstacle();
 std::vector<double> read_state();
 std::vector<double> read_goal();
 
+std::vector<double> read_laser();
+
 
 #endif

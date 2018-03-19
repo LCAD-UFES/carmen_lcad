@@ -10,7 +10,8 @@ fc = tf.contrib.layers.fully_connected
 
 class Policy:
     def __init__(self, input_shape, n_outputs, hidden_size, learning_rate, nonlin,
-                 single_thread, n_hidden_layers=1, continuous_action_max=1.0, continuous_std=0.1):
+                 single_thread, n_hidden_layers=1, continuous_action_max=1.0, continuous_std=0.1,
+                 load_from_file=None):
 
         if nonlin == 'relu':
             nonlin_f = tf.nn.relu
@@ -20,6 +21,10 @@ class Policy:
             nonlin_f = tf.nn.tanh
         else:
             raise Exception('Invalid nonlin "' + nonlin + '"')
+
+        self.config = dict([l.rstrip().rsplit(' ') for l in open('data/config.txt', 'r').readlines()])
+        for key, value in self.config.items():
+            self.config[key] = float(value)
 
         self.n_outputs = n_outputs
         self.learning_rate = learning_rate
@@ -36,7 +41,7 @@ class Policy:
         for _ in range(n_hidden_layers - 1):
             h = fc(h, hidden_size, activation_fn=nonlin_f)
 
-        self.policy_mean = fc(h, n_outputs, activation_fn=tf.nn.tanh) * continuous_action_max
+        self.policy_mean = fc(h, n_outputs, activation_fn=None) * continuous_action_max
         
         noise = tf.random_normal(shape=tf.shape(self.policy_mean))
         
@@ -58,6 +63,29 @@ class Policy:
         self.sess = tf.Session(config=sess_config)
         self.sess.run(tf.global_variables_initializer())
 
+    def assemble_state(self, pose, goal, v, phi, goal_v, goal_phi, readings):
+        pose.x -= self.config['x_offset']
+        pose.y -= self.config['y_offset']
+        goal.x -= self.config['x_offset']
+        goal.y -= self.config['y_offset']
+        
+        goal = pose.inverse().transform(goal)
+        
+        g = [goal.x / self.config['max_gx'], 
+             goal.y / self.config['max_gy'], 
+             goal.th]
+        
+        v = [v / self.config['max_v'], 
+             phi / self.config['max_phi'],
+             goal_v / self.config['max_v'], 
+             goal_phi / self.config['max_phi']]
+        
+        r = [reading / self.config['max_range'] for reading in readings]
+        
+        state = np.array(g + v + r)
+        
+        return state
+
     def save(self, path):
         save_path = self.saver.save(self.sess, path)
         print('Saved:', save_path)
@@ -68,7 +96,10 @@ class Policy:
     def forward(self, state):
         feed = {self.state: [state]}
         p = self.sess.run([self.policy], feed_dict=feed)
-        return p[0][0]
+        v, phi = p[0][0][0], p[0][0][1]
+        v *= self.config['max_v']
+        phi *= self.config['max_phi']
+        return v, phi
 
     def create_train_infrastructure(self):
         self.actions = tf.placeholder(tf.float32, shape=[None, self.n_outputs])
@@ -108,55 +139,67 @@ class Policy:
 
         self.sess.run([self.pg_trainer], feed_dict=feed)
 
-    def train_immitation_learning(self, dataset_path, n_epochs, n_batches_by_epoch, batch_size):
+    def train_immitation_learning(self, dataset_path, n_epochs, n_batches_by_epoch, batch_size, checkpoint_path=None):
+        """
+        0: globalpos.x 
+        1: globalpos.y 
+        2: globalpos.theta 
+        3: globalpos->v 
+        4: globalpos->phi
+        5: goal.x
+        6: goal.y 
+        7: goal.theta 
+        8: goal.v 
+        9: goal.phi
+        10: command.x 
+        11: command.y
+        12: globalpos->timestamp
+        13~: laser readings
+        """
         dataset = np.array([[float(f) for f in l.rstrip().rsplit(' ')] for l in open(dataset_path, 'r').readlines()])
         
-        y = dataset[:, -3:-1]
-        max_cmd = np.max(np.abs(y), axis=0)
-        max_v, max_phi = max_cmd
-        y /= max_cmd
-
-        print('Max v:', max_v, 'Max phi:', max_phi)
-        
-        # preprocess dataset
         x = []
+        y = []
         
         for i in range(len(dataset)):
             l = dataset[i]
 
+            pose = Transform2d(x=l[0], y=l[1], th=l[2]) 
+            goal = Transform2d(x=l[5], y=l[6], th=l[7])
             v, phi = l[3], l[4]
-            pose = Transform2d(x=0., y=0., th=l[2]) 
-            g = Transform2d(x=l[5] - l[0], y=l[6] - l[1], th=l[7])
-            
-            g = pose.inverse().transform(g)
-            g = [g.x, g.y, g.th]
-            
-            p = []
-            for j in range(i - 10, i, 1): 
-                if j < 0:
-                    p.append(0.)
-                    p.append(0.)
-                else:
-                    p.append(dataset[j][-3] / max_v)
-                    p.append(dataset[j][-2] / max_phi)
+            goal_v, goal_phi = l[8], l[9]
+            readings = l[13:]
+            cmd_v, cmd_phi = l[10], l[11]
 
-            # state = g + p + [v / max_v, phi / max_phi]
-            state = g + [v / max_v, phi / max_phi]
+            state = self.assemble_state(pose, goal, v, phi, goal_v, goal_phi, readings)
             x.append(state)
+            y.append([cmd_v / self.config['max_v'], 
+                      cmd_phi / self.config['max_phi']])
         
         # train
         for i in range(n_epochs):
+            if i % 10 == 0:
+                self.save(checkpoint_path)
+                
             epoch_loss = 0.
             
             for j in range(n_batches_by_epoch):
                 sample_ids = np.random.randint(low=len(x), size=batch_size)
-                xs = [x[id] for id in sample_ids]
-                ys = [y[id] for id in sample_ids]
+                
+                batch_xs = []
+                batch_ys = []
+                
+                for id in sample_ids:
+                    batch_xs.append(x[id])
+                    batch_ys.append(y[id])
                 
                 loss, _ = self.sess.run([self.immitation_loss, self.immitation_trainer], 
-                                        feed_dict={self.state: xs, self.actions: ys})
+                                        feed_dict={self.state: batch_xs, 
+                                                   self.actions: batch_ys})
                 
                 epoch_loss += loss
                 
             print('Epoch:', i, 'Loss:', epoch_loss)
             sys.stdout.flush()
+
+        self.save(checkpoint_path)
