@@ -15,13 +15,14 @@ KalmanHoughs::KalmanHoughs(ConfigXML *_config, bool _verbose, bool _display) {
 	_KF = new KalmanFilter(6, 3, 0, CV_64F);
 
 	// inicialização do filtro
-	_KF->transitionMatrix = *(Mat1d(6, 6) <<
+    double matrix []= {
 		1, 0, 0, 1, 0, 0,		// base += delta_base
 		0, 1, 0, 0, 1, 0,		// topo += delta_topo
 		0, 0, 1, 0, 0, 1,		// largura += delta_largura
 		0, 0, 0, 1, 0, 0,		// delta_base
 		0, 0, 0, 0, 1, 0,		// delta_topo
-		0, 0, 0, 0, 0, 1);		// delta_largura
+		0, 0, 0, 0, 0, 1};      // delta_largura
+	_KF->transitionMatrix = (Mat(6, 6, CV_64F, matrix));
 	setIdentity(_KF->measurementMatrix);
 	setIdentity(_KF->processNoiseCov, Scalar::all(1e-5));
 	setIdentity(_KF->measurementNoiseCov, Scalar::all(1e-1));

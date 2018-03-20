@@ -16,13 +16,14 @@ void Kalman::resetaKalman(KalmanFilter *KF, int m, int n) {
 	KF->init(m, n, 0, CV_64F);
 
 	// inicialização do filtro
-	KF->transitionMatrix = *(Mat1d(m, m) <<
+    double matrix []= {
 		1, 0, 0, 1, 0, 0,		// base += delta_base
 		0, 1, 0, 0, 1, 0,		// topo += delta_topo
 		0, 0, 1, 0, 0, 1,		// largura += delta_largura
 		0, 0, 0, 1, 0, 0,		// delta_base
 		0, 0, 0, 0, 1, 0,		// delta_topo
-		0, 0, 0, 0, 0, 1);		// delta_largura
+		0, 0, 0, 0, 0, 1};      // delta_largura
+	KF->transitionMatrix = (Mat(m, m, CV_64F,matrix));		
 	setIdentity(KF->measurementMatrix);
 	setIdentity(KF->processNoiseCov, Scalar::all(1e-5));
 	setIdentity(KF->measurementNoiseCov, Scalar::all(1e-1));
@@ -36,13 +37,14 @@ void Kalman::resetaKalman(KalmanFilter *KF, int m, int n, const Mat1d &kalmanMea
 	KF->init(m, n, 0, CV_64F);
 
 	// inicialização do filtro
-	KF->transitionMatrix = *(Mat1d(m, m) <<
+	double matrix []= {
 		1, 0, 0, 1, 0, 0,		// base += delta_base
 		0, 1, 0, 0, 1, 0,		// topo += delta_topo
 		0, 0, 1, 0, 0, 1,		// largura += delta_largura
 		0, 0, 0, 1, 0, 0,		// delta_base
 		0, 0, 0, 0, 1, 0,		// delta_topo
-		0, 0, 0, 0, 0, 1);		// delta_largura
+		0, 0, 0, 0, 0, 1};      // delta_largura
+	KF->transitionMatrix = (Mat(m, m, CV_64F,matrix));	
 	setIdentity(KF->measurementMatrix);
 	setIdentity(KF->processNoiseCov, Scalar::all(1e-5));
 	setIdentity(KF->measurementNoiseCov, Scalar::all(1e-1));
@@ -168,20 +170,22 @@ void Kalman::realizarEstimativa(KalmanFilter *KF, KalmanState *state, const Mat1
 
 void Kalman::alteraMatrixTransicao(KalmanFilter *KF, bool estimarLargura) {
 	if (estimarLargura) {
-		KF->transitionMatrix = *(Mat1d(KF->transitionMatrix.cols, KF->transitionMatrix.rows) <<
-			1, 0, 0, 1, 0, 0,		// base += delta_base
-			0, 1, 0, 0, 1, 0,		// topo += delta_topo
-			0, 0, 1, 0, 0, 1,		// largura += delta_largura
-			0, 0, 0, 1, 0, 0,		// delta_base
-			0, 0, 0, 0, 1, 0,		// delta_topo
-			0, 0, 0, 0, 0, 1);		// delta_largura
+        double matrix []= {
+		1, 0, 0, 1, 0, 0,		// base += delta_base
+		0, 1, 0, 0, 1, 0,		// topo += delta_topo
+		0, 0, 1, 0, 0, 1,		// largura += delta_largura
+		0, 0, 0, 1, 0, 0,		// delta_base
+		0, 0, 0, 0, 1, 0,		// delta_topo
+		0, 0, 0, 0, 0, 1};      // delta_largura
+		KF->transitionMatrix = (Mat(KF->transitionMatrix.cols, KF->transitionMatrix.rows, CV_64F, matrix));
 	} else {
-		KF->transitionMatrix = *(Mat1d(KF->transitionMatrix.cols, KF->transitionMatrix.rows) <<
-			1, 0, 0, 1, 0, 0,		// base += delta_base
-			0, 1, 0, 0, 1, 0,		// topo += delta_topo
-			0, 0, 1, 0, 0, 0,		// largura = largura <-- não estima/atualiza
-			0, 0, 0, 1, 0, 0,		// delta_base
-			0, 0, 0, 0, 1, 0,		// delta_topo
-			0, 0, 0, 0, 0, 0);		// delta_largura  <-- não estima/atualiza
+        double matrix []= {
+		1, 0, 0, 1, 0, 0,		// base += delta_base
+		0, 1, 0, 0, 1, 0,		// topo += delta_topo
+		0, 0, 1, 0, 0, 1,		// largura += delta_largura
+		0, 0, 0, 1, 0, 0,		// delta_base
+		0, 0, 0, 0, 1, 0,		// delta_topo
+		0, 0, 0, 0, 0, 1};      // delta_largura
+		KF->transitionMatrix = (Mat(KF->transitionMatrix.cols, KF->transitionMatrix.rows, CV_64F, matrix));		// delta_largura-- não estima/atualiza
 	}
 }

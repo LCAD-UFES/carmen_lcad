@@ -1,9 +1,9 @@
 #ifndef __ERRORNIETO_H__
 #define __ERRORNIETO_H__
 
-#include "cv.h"      
-#include "highgui.h" 
-#include "cxcore.h" 
+#include <opencv2/opencv.hpp>     
+#include <opencv2/highgui/highgui.hpp> 
+
 
 /** This is the data structure passed to the Levenberg-Marquardt procedure */
 struct data_struct
