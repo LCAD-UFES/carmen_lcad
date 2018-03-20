@@ -92,7 +92,7 @@ typedef struct {
   double velocity_noise_phi;
   double phi_noise_phi;
   double phi_noise_velocity;
-  int use_velocity_prediction;
+  int prediction_type;
 
   int use_log_odds;
   double phi_bias_std;
@@ -322,7 +322,9 @@ void carmen_localize_ackerman_summarize_velodyne(carmen_localize_ackerman_partic
 void
 carmen_localize_ackerman_velodyne_prediction(
 		carmen_localize_ackerman_particle_filter_p filter, carmen_base_ackerman_odometry_message *odometry,
-		carmen_fused_odometry_message *fused_odometry, int use_velocity_prediction, double velodyne_timestamp, double distance_between_front_and_rear_axles);
+		carmen_xsens_global_quat_message *xsens_global_quat_message,
+		double velodyne_timestamp,
+		double distance_between_front_and_rear_axles);
 
 void
 carmen_localize_ackerman_velodyne_correction(
