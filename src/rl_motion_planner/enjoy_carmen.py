@@ -11,7 +11,8 @@ import carmen_comm.carmen_comm as carmen
 
 def read_rddf():
     carmen_path = os.environ['CARMEN_HOME']
-    rddf_path = carmen_path + '/data/rndf/rddf-log_voltadaufes-20160513.txt'
+    # rddf_path = carmen_path + '/data/rndf/rddf-log_voltadaufes-20160513.txt'
+    rddf_path = carmen_path + '/data/rndf/rddf_ida_guarapari-20170403.txt'
     rddf = [[float(field) for field in line.rstrip().rsplit(' ')] for line in open(rddf_path, 'r').readlines()]
     return rddf
 
@@ -31,9 +32,10 @@ n_collisions = 0
 
 while True:
 
-    # init_pos = rddf[np.random.randint(len(rddf))]
+    init_pos = rddf[np.random.randint(len(rddf))]
     # init_pos = rddf[int(len(rddf) / 2)]
-    init_pos = rddf[0]
+    # init_pos = rddf[0]
+    # init_pos = rddf[7800]
 
     carmen.env_reset(init_pos[0], init_pos[1], init_pos[2])
     
