@@ -8,7 +8,7 @@
 #include <opencv2/opencv.hpp>
 #include "ELAS/ELAS.h"
 
-#define SHOW_DISPLAY
+//#define SHOW_DISPLAY
 // #define TEST_MESSAGES_PUBLISH
 
 using namespace cv;
@@ -174,19 +174,19 @@ void lane_analysis_handler(carmen_bumblebee_basic_stereoimage_message * stereo_i
 		printf("I do not see any car pose at the moment... sorry!\n");
 		return;
 	}
-
+	printf("oi4\n");
 	// get the image from the bumblebee
 	Mat3b image;
 	if (stereo_image->image_size == 3686400) image = Mat3b(960, 1280);
 	else image = Mat3b(480, 640);
-
+	printf("oi2\n");
 	if (camera_side == CameraSide::LEFT) image.data = (uchar *) stereo_image->raw_left;
 	else if(camera_side == CameraSide::RIGHT) image.data = (uchar *) stereo_image->raw_right;
 	else image.data = (uchar *) stereo_image->raw_right;
-
+	printf("oi1\n");
 	cvtColor(image, image, CV_RGB2BGR);
 	cv::resize(image, image, Size(640,480));
-
+	printf("oi3\n");
 	fnumber++;
 
 //	if(fnumber>100)
@@ -208,21 +208,21 @@ void lane_analysis_handler(carmen_bumblebee_basic_stereoimage_message * stereo_i
 
 		// publish messages
 		lane_analysis_publish_messages(stereo_image->timestamp);
-
 #ifdef SHOW_DISPLAY
 		// display viz
-		ELAS::display(image, &_raw_elas_message);
+		//ELAS::display(image, &_raw_elas_message);
 #endif
 
 	} else {
 		printf("End of dataset!\n");
 	}
+	printf("oi15\n");
 }
 
 static int read_parameters(int argc, char **argv) {
     int num_items;
     char bumblebee_string[256];
-
+    camera = stoi(argv[1]);
     sprintf(bumblebee_string, "%s%d", "bumblebee_basic", camera); // bumblebee_basic8
     carmen_param_t param_list[] = {
         { bumblebee_string, (char *) "width", CARMEN_PARAM_INT, &image_width, 0, NULL},
