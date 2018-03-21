@@ -899,11 +899,36 @@ sum_of_tracks_lengths(virtual_scan_track_set_t *track_set)
 
 
 double
+sum_of_measurements_that_fall_inside_object_models_in_track_set(virtual_scan_track_set_t *track_set)
+{
+	double sum = 0.0;
+
+	for (int i = 0; i < track_set->size; i++)
+	{
+		for (int j = 0; j < track_set->tracks[i].size; i++)
+			sum += track_set->tracks[i].box_model_hypothesis[j].number_measurements_that_fall_inside_hypothesis;
+	}
+
+	return (sum);
+}
+
+
+double
 probability_of_track_set_given_measurements(virtual_scan_track_set_t *track_set)
 {
+#define lambda_L	0.5
+#define lambda_3	0.5
+
+	if (track_set == NULL)
+		return (0.0);
+
 	double Slen = sum_of_tracks_lengths(track_set);
-	double Sms2 = sum_of_number_of_non_maximal_measurements_that_fall_behind_the_object_model();
-	return (0.5);
+//	double Sms2 = sum_of_number_of_non_maximal_measurements_that_fall_behind_the_object_model(track_set);
+	double Sms3 = sum_of_measurements_that_fall_inside_object_models_in_track_set(track_set);
+
+	double p_w_z = exp(lambda_L * Slen - lambda_3 * Sms3);
+
+	return (p_w_z);
 }
 
 

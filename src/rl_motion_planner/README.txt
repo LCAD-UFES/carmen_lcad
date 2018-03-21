@@ -49,6 +49,8 @@ TODO
 
 [ ] test with the obstacle avoider ligado
 
+[ ] move processes to the module dir
+
 Coisas para conversar com o Alberto
 
 - Como avaliar a qualidade do plano?

@@ -113,16 +113,19 @@ typedef struct
 {
 	int index;
 	virtual_scan_box_model_t hypothesis;
+	double number_measurements_that_fall_inside_hypothesis;
 	double timestamp;
 } virtual_scan_box_model_hypothesis_t;
 
 
 typedef struct
 {
+	int size;
 	virtual_scan_box_model_hypothesis_t *box_model_hypothesis;
 	virtual_scan_box_model_hypothesis_edges_t *box_model_hypothesis_edges;
 	bool *vertex_selected;
-	int size;
+
+	double *last_frames_timetamps;
 } virtual_scan_neighborhood_graph_t;
 
 

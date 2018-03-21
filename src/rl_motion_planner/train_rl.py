@@ -12,11 +12,11 @@ import carmen_comm.carmen_comm as carmen
 def main():
     env = gym.make('CarmenSim-v0')
     
-    policy = Policy(env.observation_space.shape, 
-                    env.action_space.shape[0], 
+    policy = Policy(input_shape=[368], 
+                    n_outputs=2, 
                     hidden_size=64, learning_rate=1e-4, nonlin='elu',
                     single_thread=False, n_hidden_layers=3,
-                    continuous_std=1e-1)
+                    continuous_std=1e-7)
 
     policy.load('data/model_immitation.ckpt')
     

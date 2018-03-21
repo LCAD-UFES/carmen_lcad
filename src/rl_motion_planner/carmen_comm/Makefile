@@ -6,7 +6,8 @@ IFLAGS += -I/usr/include/suitesparse -I/usr/include/eigen3 -I/usr/local/include/
 	 -I/usr/local/include/g2o/ -I$(CARMEN_HOME)/sharedlib/prob_models -fopenmp
 LFLAGS += -lglobal -lipc -llocalize_ackerman_interface -lrobot_ackerman_interface -lbehavior_selector_interface \
 	-lobstacle_avoider_interface -lcollision_detection -lobstacle_distance_mapper_interface \
-	-L$(CARMEN_HOME)/sharedlib/prob_models -fopenmp -lparam_interface -lrobot_ackerman_interface
+	-L$(CARMEN_HOME)/sharedlib/prob_models -fopenmp -lparam_interface -lrobot_ackerman_interface \
+	-llaser_interface `pkg-config --libs opencv` -lparam_interface
 
 MODULE_NAME = carmen_comm
 MODULE_COMMENT = Infra-structure for communicating with carmen via Python 

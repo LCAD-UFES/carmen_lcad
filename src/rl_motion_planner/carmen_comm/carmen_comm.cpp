@@ -1,10 +1,12 @@
 
 #include "carmen_comm.h"
 
+#include <cmath>
 #include <cstdio>
 #include <unistd.h>
 #include <carmen/carmen.h>
 #include "g2o/types/slam2d/se2.h"
+#include <carmen/laser_interface.h>
 #include <carmen/collision_detection.h>
 #include <carmen/robot_ackerman_interface.h>
 #include <carmen/localize_ackerman_interface.h>
@@ -12,12 +14,22 @@
 #include <carmen/obstacle_avoider_interface.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
 
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
 
+// General Module Params
+const int VIEW_LASER = 0;
+
+// Carmen Parameters
+carmen_robot_ackerman_config_t global_robot_ackerman_config;
+
+// Messages
+carmen_laser_laser_message global_frontlaser_message;
+// carmen_laser_laser_message global_rearlaser_message;
+carmen_behavior_selector_goal_list_message global_goal_list_message;
+carmen_obstacle_distance_mapper_map_message global_obstacle_distance_map;
 carmen_localize_ackerman_globalpos_message global_localize_ackerman_message;
 carmen_obstacle_distance_mapper_compact_map_message global_obstacle_distance_mapper_compact_map_message;
-carmen_obstacle_distance_mapper_map_message global_obstacle_distance_map;
-carmen_robot_ackerman_config_t global_robot_ackerman_config;
-carmen_behavior_selector_goal_list_message global_goal_list_message;
 
 
 void
@@ -137,8 +149,52 @@ read_goal()
 	state.push_back(global_goal_list_message.goal_list[0].x);
 	state.push_back(global_goal_list_message.goal_list[0].y);
 	state.push_back(global_goal_list_message.goal_list[0].theta);
+	state.push_back(global_goal_list_message.goal_list[0].v);
+	state.push_back(global_goal_list_message.goal_list[0].phi);
 
 	return state;
+}
+
+
+std::vector<double>
+read_laser()
+{
+	int i;
+	std::vector<double> readings;
+
+	for (i = 0; i < global_frontlaser_message.num_readings; i++)
+		readings.push_back(global_frontlaser_message.range[i]);
+
+	if (VIEW_LASER)
+	{
+		int px, py;
+		double x, y;
+		double a;
+		cv::Mat m(500, 500, CV_8UC3);
+
+		memset(m.data, (uchar) 255, m.rows * m.cols * 3 * sizeof(uchar));
+		a = global_frontlaser_message.config.start_angle;
+
+		cv::circle(m, cv::Point(m.cols / 2, m.rows / 2), 2, cv::Scalar(0, 0, 255), -1);
+
+		for (i = 0; i < global_frontlaser_message.num_readings; i++)
+		{
+			a += global_frontlaser_message.config.angular_resolution;
+
+			x = cos(global_localize_ackerman_message.globalpos.theta + a) * global_frontlaser_message.range[i];
+			y = sin(global_localize_ackerman_message.globalpos.theta + a) * global_frontlaser_message.range[i];
+
+			px = x * 5 + m.cols / 2.0;
+			py = m.rows - (y * 5 + m.rows / 2.0);
+
+			cv::circle(m, cv::Point(px, py), 2, cv::Scalar(0, 0, 0), -1);
+		}
+
+		cv::imshow("laser", m);
+		cv::waitKey(1);
+	}
+
+	return readings;
 }
 
 
@@ -276,6 +332,12 @@ env_init()
 	carmen_behavior_selector_subscribe_goal_list_message(&global_goal_list_message,
 		NULL, CARMEN_SUBSCRIBE_LATEST);
 
+	carmen_laser_subscribe_frontlaser_message(&global_frontlaser_message,
+		NULL, CARMEN_SUBSCRIBE_LATEST);
+
+//	carmen_laser_subscribe_rearlaser_message(&global_rearlaser_message,
+//		NULL, CARMEN_SUBSCRIBE_LATEST);
+
 	signal(SIGINT, signal_handler);
 }
 
@@ -299,12 +361,22 @@ map_is_invalid(carmen_obstacle_distance_mapper_compact_map_message *map, double 
 
 
 int
-pose_is_invalid(carmen_localize_ackerman_globalpos_message *msg, double pos_x, double pos_y, double pos_th)
+pose_is_invalid(carmen_localize_ackerman_globalpos_message *msg, double pos_x, double pos_y)
 {
 	if (msg->timestamp == 0 ||
-		msg->globalpos.x != pos_x ||
-		msg->globalpos.y != pos_y ||
-		msg->globalpos.theta != pos_th)
+		fabs(msg->globalpos.x - pos_x) > 2.0 ||
+		fabs(msg->globalpos.y != pos_y) > 2.0)
+		return 1;
+
+	return 0;
+}
+
+
+int
+laser_reading_is_invalid(carmen_laser_laser_message *laser_message)
+{
+	if (laser_message->timestamp == 0 ||
+		laser_message->num_readings == 0)
 		return 1;
 
 	return 0;
@@ -316,8 +388,10 @@ env_reset(double pos_x, double pos_y, double pos_th,
 		double goal_x, double goal_y, double goal_th,
 		double goal_v, double goal_phi)
 {
-	memset(&global_localize_ackerman_message, 0, sizeof(carmen_localize_ackerman_globalpos_message));
 	memset(&global_obstacle_distance_mapper_compact_map_message, 0, sizeof(global_obstacle_distance_mapper_compact_map_message));
+	memset(&global_localize_ackerman_message, 0, sizeof(carmen_localize_ackerman_globalpos_message));
+	memset(&global_frontlaser_message, 0, sizeof(global_frontlaser_message));
+	// memset(&global_rearlaser_message, 0, sizeof(global_rearlaser_message));
 
 	do
 	{
@@ -330,8 +404,10 @@ env_reset(double pos_x, double pos_y, double pos_th,
 		publish_current_state();
 		carmen_ipc_sleep(5e-2);
 
-	} while (pose_is_invalid(&global_localize_ackerman_message, pos_x, pos_y, pos_th) ||
-			map_is_invalid(&global_obstacle_distance_mapper_compact_map_message, pos_x, pos_y));
+	} while (pose_is_invalid(&global_localize_ackerman_message, pos_x, pos_y) ||
+			map_is_invalid(&global_obstacle_distance_mapper_compact_map_message, pos_x, pos_y) ||
+			// laser_reading_is_invalid(&global_rearlaser_message) ||
+			laser_reading_is_invalid(&global_frontlaser_message));
 
 	return read_state();
 }
@@ -357,6 +433,8 @@ env_step(double v, double phi, double goal_x, double goal_y, double goal_th, dou
 		t1 = global_localize_ackerman_message.timestamp;
 	}
 	while (fabs(t - t1) < 0.1);
+
+	read_laser();
 
 	process_map_message(&global_obstacle_distance_mapper_compact_map_message);
 	return read_state();

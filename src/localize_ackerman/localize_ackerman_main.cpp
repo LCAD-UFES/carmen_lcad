@@ -35,7 +35,7 @@
 #include <carmen/stereo_velodyne.h>
 #include <carmen/stereo_velodyne_interface.h>
 #include <carmen/grid_mapping.h>
-
+#include <carmen/xsens_interface.h>
 
 #include <prob_measurement_model.h>
 #include <prob_map.h>
@@ -51,7 +51,6 @@ double safe_range_above_sensors;
 
 static int necessary_maps_available = 0;
 static int use_raw_laser = 1;
-static int use_velocity_prediction = 0;
 static int mapping_mode = 0;
 
 #define BASE_ACKERMAN_ODOMETRY_VECTOR_SIZE 50
@@ -81,6 +80,8 @@ carmen_compact_map_t local_compacted_variance_remission_map;
 carmen_localize_ackerman_binary_map_t binary_map;
 
 carmen_robot_ackerman_laser_message front_laser;
+
+carmen_xsens_global_quat_message *xsens_global_quat_message = NULL;
 
 carmen_pose_3D_t sensor_board_1_pose;
 rotation_matrix *sensor_board_1_to_car_matrix;
@@ -355,7 +356,7 @@ velodyne_variable_scan_localize(carmen_velodyne_variable_scan_message *message, 
 		return;
 
 	carmen_localize_ackerman_velodyne_prediction(filter, &base_ackerman_odometry_vector[odometry_index],
-			&fused_odometry_vector[fused_odometry_index], use_velocity_prediction,
+			xsens_global_quat_message,
 			message->timestamp, car_config.distance_between_front_and_rear_axles);
 
 	carmen_localize_ackerman_velodyne_correction(filter, &localize_map, &local_compacted_map, &local_compacted_mean_remission_map,
@@ -414,7 +415,7 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 		return;
 
 	carmen_localize_ackerman_velodyne_prediction(filter,
-			&base_ackerman_odometry_vector[odometry_index], &fused_odometry_vector[fused_odometry_index], use_velocity_prediction,
+			&base_ackerman_odometry_vector[odometry_index], xsens_global_quat_message,
 			velodyne_message->timestamp, car_config.distance_between_front_and_rear_axles);
 
 	carmen_localize_ackerman_velodyne_correction(filter,
@@ -598,6 +599,12 @@ fused_odometry_handler(carmen_fused_odometry_message *msg)
 	fused_odometry_vector[g_fused_odometry_index] = *msg;
 }
 
+
+static void
+carmen_xsens_subscribe_xsens_global_quat_message_handler(carmen_xsens_global_quat_message *message)
+{
+	xsens_global_quat_message = message;
+}
 
 static void
 carmen_localize_ackerman_initialize_message_handler(carmen_localize_ackerman_initialize_message *initialize_msg)
@@ -1073,7 +1080,7 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 		{(char *) "localize_ackerman", 	(char *) "velocity_noise_phi", CARMEN_PARAM_DOUBLE, &param->velocity_noise_phi, 0, NULL},
 		{(char *) "localize_ackerman", 	(char *) "phi_noise_phi", CARMEN_PARAM_DOUBLE, &param->phi_noise_phi, 0, NULL},
 		{(char *) "localize_ackerman", 	(char *) "phi_noise_velocity", CARMEN_PARAM_DOUBLE, &param->phi_noise_velocity, 0, NULL},
-		{(char *) "localize_ackerman", 	(char *) "use_velocity_prediction", CARMEN_PARAM_ONOFF, &param->use_velocity_prediction, 0, NULL},
+		{(char *) "localize_ackerman", 	(char *) "prediction_type", CARMEN_PARAM_INT, &param->prediction_type, 0, NULL},
 
 		{(char *) "robot", (char *) "frontlaser_offset", CARMEN_PARAM_DOUBLE, &param->front_laser_offset, 0, NULL},
 		{(char *) "robot", (char *) "rearlaser_offset", CARMEN_PARAM_DOUBLE, &param->rear_laser_offset, 0, NULL},
@@ -1299,6 +1306,9 @@ subscribe_to_ipc_message()
 
 		if (spherical_sensor_params[9].alive)
 			carmen_stereo_velodyne_subscribe_scan_message(9, NULL, (carmen_handler_t) velodyne_variable_scan_message_handler9, CARMEN_SUBSCRIBE_LATEST);
+
+		if (filter->param->prediction_type == 2) // use IMU based prediction
+			carmen_xsens_subscribe_xsens_global_quat_message(NULL, (carmen_handler_t) carmen_xsens_subscribe_xsens_global_quat_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	}
 	else
 	{

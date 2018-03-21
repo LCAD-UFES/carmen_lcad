@@ -1,0 +1,7 @@
+max_v 10.0
+max_phi 0.5
+x_offset 7757963.830058
+y_offset -363507.898123 
+max_gx 20.0
+max_gy 10.0 
+max_range 50.0
