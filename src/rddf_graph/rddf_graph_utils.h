@@ -34,7 +34,7 @@ using namespace std;
 cv::Mat rotate(cv::Mat src, cv::Point pt, double angle);
 void road_map_to_image(carmen_map_p map, cv::Mat *road_map_img);
 void road_map_to_image_black_and_white(carmen_map_p map, cv::Mat *road_map_img, const int class_bits);
-void road_map_find_center(carmen_map_p map);
+//void road_map_find_center(carmen_map_p map);
 int **alloc_matrix(int r, int c);
 //t_list *create_list();
 //t_list *insert_in_list (t_list *l, t_point p);
@@ -46,8 +46,8 @@ int** alloc_matrix(int r, int c);
 bool road_is_center (carmen_map_p map, int x, int y, unsigned short *next_lane_center);
 void print_open_set(std::vector<rddf_graph_node*> &open_set);
 bool point_is_in_map(carmen_map_p map, int x, int y);
-void expand_neighbours(carmen_map_p map, vector<rddf_graph_node*> &open_set, vector<rddf_graph_node*> &closed_set, int **already_visited);
-void road_map_find_center(carmen_map_p map);
+void expand_neighbours(carmen_map_p map, vector<rddf_graph_node*> &open_set, vector<rddf_graph_node*> &closed_set, int **already_visited, int *called_expand);
+void road_map_find_center(carmen_map_p map, std::string str_road_map_filename);
 
 #ifdef __cplusplus
 }

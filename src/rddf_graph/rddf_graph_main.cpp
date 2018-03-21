@@ -221,13 +221,14 @@ main(int argc, char **argv)
 	for (int i = g_road_map_index; i < argc; i++)
 	{
 		char *road_map_filename = argv[i];
+		string str_road_map_filename(road_map_filename);
 		bool valid_map_on_file = (carmen_map_read_gridmap_chunk(road_map_filename, &road_map) == 0);
 		if (valid_map_on_file)
 		{
-			cout << "File " << string(road_map_filename) << " being displayed... ("
+			cout << "File " << str_road_map_filename << " being displayed... ("
 					<< (i - g_road_map_index + 1) << " of " << (argc - g_road_map_index) << ")" << endl;
 			//road_mapper_display_road_map(&road_map, g_img_channels, g_class_bits);
-			road_map_find_center(&road_map);
+			road_map_find_center(&road_map, str_road_map_filename);
 			//print_map_in_terminal(&road_map);
 		}
 		else
