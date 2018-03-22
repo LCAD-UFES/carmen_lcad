@@ -175,7 +175,7 @@ carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *m
 	virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(virtual_scan_segment_classes);
 	virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
 
-	virtual_scan_update_neighborhood_graph(neighborhood_graph, virtual_scan_box_model_hypotheses);
+	neighborhood_graph = virtual_scan_update_neighborhood_graph(neighborhood_graph, virtual_scan_box_model_hypotheses);
 	virtual_scan_moving_objects_t *moving_objects = virtual_scan_infer_moving_objects(neighborhood_graph);
 	virtual_scan_moving_objects_publish(moving_objects);
 

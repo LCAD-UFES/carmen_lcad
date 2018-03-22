@@ -572,9 +572,17 @@ virtual_scan_extract_segments(virtual_scan_extended_t *virtual_scan_extended)
 }
 
 
-void
+virtual_scan_neighborhood_graph_t *
 virtual_scan_update_neighborhood_graph(virtual_scan_neighborhood_graph_t *neighborhood_graph, virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses)
 {
+	if (neighborhood_graph == NULL)
+	{
+		neighborhood_graph = (virtual_scan_neighborhood_graph_t *) malloc(sizeof(virtual_scan_neighborhood_graph_t));
+		neighborhood_graph->size = virtual_scan_box_model_hypotheses->num_box_model_hypotheses;
+		neighborhood_graph->box_model_hypothesis = (virtual_scan_box_model_hypothesis_t **) malloc(virtual_scan_box_model_hypotheses->num_box_model_hypotheses * sizeof(virtual_scan_box_model_hypothesis_t *));
+		for (int i; i < )
+	}
+	return (neighborhood_graph);
 }
 
 
@@ -619,7 +627,7 @@ track_birth(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 			virtual_scan_track_t *new_track = (virtual_scan_track_t *) malloc(sizeof(virtual_scan_track_t));
 			new_track->box_model_hypothesis = (virtual_scan_box_model_hypothesis_t *) malloc(sizeof(virtual_scan_box_model_hypothesis_t));
 			new_track->size = 1;
-			new_track->box_model_hypothesis[0] = neighborhood_graph->box_model_hypothesis[v_star[rand_v]];
+			new_track->box_model_hypothesis[0] = *(neighborhood_graph->box_model_hypothesis[v_star[rand_v]]);
 			neighborhood_graph->vertex_selected[v_star[rand_v]] = true;
 
 			free(v_star);
@@ -724,13 +732,13 @@ virtual_scan_box_model_hypothesis_t *
 get_child_hypothesis_in_v_star_and_at_the_end_of_track(virtual_scan_track_t *track, virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
 	virtual_scan_box_model_hypothesis_t end_of_track = track->box_model_hypothesis[track->size - 1];
-	virtual_scan_box_model_hypothesis_edges_t *hypothesis_neighbors = &(neighborhood_graph->box_model_hypothesis_edges[end_of_track.index]);
+	virtual_scan_box_model_hypothesis_edges_t *hypothesis_neighbors = neighborhood_graph->box_model_hypothesis_edges[end_of_track.index];
 	int number_of_children;
 	int *hypothesis_children = get_neighbors_within_v_star(CHILDREN_EDGE, number_of_children, hypothesis_neighbors, neighborhood_graph);
 	if (hypothesis_children != NULL)
 	{
 		int rand_hypothesis = carmen_int_random(number_of_children);
-		virtual_scan_box_model_hypothesis_t *child_hypothesis = &(neighborhood_graph->box_model_hypothesis[hypothesis_children[rand_hypothesis]]);
+		virtual_scan_box_model_hypothesis_t *child_hypothesis = neighborhood_graph->box_model_hypothesis[hypothesis_children[rand_hypothesis]];
 		free(hypothesis_children);
 
 		return (child_hypothesis);
@@ -744,13 +752,13 @@ virtual_scan_box_model_hypothesis_t *
 get_child_hypothesis_in_v_star_and_at_the_beginning_of_track(virtual_scan_track_t *track, virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
 	virtual_scan_box_model_hypothesis_t beginning_of_track = track->box_model_hypothesis[0];
-	virtual_scan_box_model_hypothesis_edges_t *hypothesis_neighbors = &(neighborhood_graph->box_model_hypothesis_edges[beginning_of_track.index]);
+	virtual_scan_box_model_hypothesis_edges_t *hypothesis_neighbors = neighborhood_graph->box_model_hypothesis_edges[beginning_of_track.index];
 	int number_of_parents;
 	int *hypothesis_parents = get_neighbors_within_v_star(PARENT_EDGE, number_of_parents, hypothesis_neighbors, neighborhood_graph);
 	if (hypothesis_parents != NULL)
 	{
 		int rand_hypothesis = carmen_int_random(number_of_parents);
-		virtual_scan_box_model_hypothesis_t *parent_hypothesis = &(neighborhood_graph->box_model_hypothesis[hypothesis_parents[rand_hypothesis]]);
+		virtual_scan_box_model_hypothesis_t *parent_hypothesis = neighborhood_graph->box_model_hypothesis[hypothesis_parents[rand_hypothesis]];
 		free(hypothesis_parents);
 
 		return (parent_hypothesis);

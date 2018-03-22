@@ -175,7 +175,7 @@ publish_particles_name(carmen_localize_ackerman_particle_filter_p filter, carmen
 	pmsg.globalpos = summary->mean;
 	pmsg.globalpos_std = summary->std;
 	pmsg.num_particles = filter->param->num_particles;
-	pmsg.particles = (carmen_localize_ackerman_particle_ipc_p) filter->particles;
+	pmsg.particles = filter->particles;
 
 	err = IPC_publishData(message_name, &pmsg);
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_LOCALIZE_ACKERMAN_PARTICLE_NAME);
@@ -241,6 +241,12 @@ void
 publish_particles_prediction(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_summary_p summary, double timestamp)
 {
 	publish_particles_name(filter, summary, (char *) CARMEN_LOCALIZE_ACKERMAN_PARTICLE_PREDICTION_NAME, timestamp);
+//	FILE *caco = fopen("cacoxx.txt", "a");
+//	for (int i = 0; i < filter->param->num_particles; i++)
+//		fprintf(caco, "%03d %2.10lf\n", i, filter->particles[i].weight);
+//	fprintf(caco, "++++++++++++++++++++++++++++++\n");
+//	fclose(caco);
+
 }
 
 
@@ -421,6 +427,8 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 	carmen_localize_ackerman_velodyne_correction(filter,
 			&localize_map, &local_compacted_map, &local_compacted_mean_remission_map, &local_compacted_variance_remission_map, &binary_map);
 
+	publish_particles_correction(filter, &summary, velodyne_message->timestamp);
+
 	if (filter->initialized)
 	{
 		carmen_localize_ackerman_summarize_velodyne(filter, &summary);
@@ -451,8 +459,6 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 //				base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi);
 //		fflush(caco);
 //		fclose(caco);
-
-		publish_particles_correction(filter, &summary, velodyne_message->timestamp);
 	}
 
 	if (g_reinitiaze_particles)

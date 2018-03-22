@@ -21,7 +21,7 @@ build_color_gradient()
 static double
 get_log_prob(double prob)
 {
-#define	MIN_PROB	0.0000000000000000000000001
+#define	MIN_PROB	0.000000000000000000000000000000000001
 	double log_prob;
 	
 	if (prob < 0.0) // unknown
@@ -45,7 +45,6 @@ compute_particle_weight_color(carmen_localize_ackerman_particle_ipc_t *particles
 	double min_log_prob_weight;
 	double log_prob;
 	int index;
-//	int average_weight = 0;
 	
 	weight_color = (int *) malloc(num_particles * sizeof(int));
 	log_prob_weight = (double *) malloc(num_particles * sizeof(double));
@@ -68,13 +67,14 @@ compute_particle_weight_color(carmen_localize_ackerman_particle_ipc_t *particles
 			weight_color[index] = 255;
 		else
 			weight_color[index] = 0;
-		
-//		average_weight += weight_color[index];
 	}
-//	average_weight /= num_particles;
-//	printf("average_weight = %d\n", average_weight);
-//	fflush(stdout);
-	
+
+//	FILE *caco = fopen("cacoxxx.txt", "a");
+//	for (int i = 0; i < num_particles; i++)
+//		fprintf(caco, "%03d %3.1lf\n", i, (double) weight_color[i]);
+//	fprintf(caco, "++++++++++++++++++++++++++++++\n");
+//	fclose(caco);
+
 	free(log_prob_weight);
 	
 	return (weight_color);
@@ -1972,7 +1972,10 @@ namespace View
 	{
 		int index;
 		carmen_world_point_t particle, final_point;
-		static GdkColor *color_gradient = build_color_gradient();
+		static GdkColor *color_gradient = NULL;
+
+		if (color_gradient == NULL)
+			color_gradient = build_color_gradient();
 
 		if (!nav_panel_config->show_particles)
 			return;

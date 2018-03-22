@@ -121,8 +121,8 @@ typedef struct
 typedef struct
 {
 	int size;
-	virtual_scan_box_model_hypothesis_t *box_model_hypothesis;
-	virtual_scan_box_model_hypothesis_edges_t *box_model_hypothesis_edges;
+	virtual_scan_box_model_hypothesis_t **box_model_hypothesis;
+	virtual_scan_box_model_hypothesis_edges_t **box_model_hypothesis_edges;
 	bool *vertex_selected;
 
 	double *last_frames_timetamps;
