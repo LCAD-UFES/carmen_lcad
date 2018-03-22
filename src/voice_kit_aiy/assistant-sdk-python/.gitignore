@@ -1,0 +1,16 @@
+__pycache__/
+env/
+env2/
+*~
+*.pyc
+.embedded_assistant_credentials.json
+client_secret_*.googleusercontent.com.json
+dist/
+build/
+google_assistant.egg-info/
+*.egg
+.eggs/
+*.egg-info/
+.nox/
+.tox/
+.cache/

@@ -27,6 +27,7 @@
 
 #include <cstdlib> /*< std::getenv */
 #include <fstream>
+#include <math.h>
 
 #define SHOW_DETECTIONS
 
@@ -370,55 +371,123 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
         sprintf(confianca, "%d", i);
 
         int obj_id = predictions.at(i).obj_id;
-
         std::string obj_name;
         if (obj_names.size() > obj_id)
             obj_name = obj_names[obj_id];
-
+       /*
         if (obj_name.compare("car") == 0)
             object_color = cv::Scalar(0, 0, 255);
         else
             object_color = cv::Scalar(255, 0, 255);
         
-        /*cv::line(rgb_image,
-                	  cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y),
-                      cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y),
-                      object_color, 1);*/
-        if (bouding_boxes_list[i].pt2.x > rgb_image.cols / 2)
+        /*cv::rectangle(rgb_image,
+                             cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y),
+                             cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y),
+                             object_color, 1);*/
+        
+        if(obj_name .compare("dashed_white_lane") == 0)
         {
-        	points_1.push_back(cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y));
-        	points_1.push_back(cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y));
-        }else
+        	if (bouding_boxes_list[i].pt2.x < rgb_image.cols / 2)
+        	{
+        		//if (bouding_boxes_list[i].pt2.y > bouding_boxes_list[i].pt1.y)
+        		//{
+        			float distx = 0.2 * (float) (bouding_boxes_list[i].pt2.x - bouding_boxes_list[i].pt1.x);
+        			float disty = 0.2 * (float) (bouding_boxes_list[i].pt2.y - bouding_boxes_list[i].pt1.y);
+        		    int x1 = (int) bouding_boxes_list[i].pt2.x - (int)distx;
+        		    int x2 = (int) bouding_boxes_list[i].pt1.x + (int)distx;
+        		    int y1 = (int) bouding_boxes_list[i].pt2.y - (int)disty;
+        		    int y2 = (int) bouding_boxes_list[i].pt1.y + (int)disty;
+        			cv::line(rgb_image,
+                	  cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y),
+                      cv::Point(x1, y1), cv::Scalar(255, 255, 255), 3);
+        		    cv::line(rgb_image,
+        		         cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y),
+        		         cv::Point(x2, y2),
+        		         cv::Scalar(255, 255, 255), 3);
+        		/*}else
+        		{
+        			float distx = 0.4 * (bouding_boxes_list[i].pt2.x - bouding_boxes_list[i].pt1.x);
+        			float disty = 0.4 * (bouding_boxes_list[i].pt1.y - bouding_boxes_list[i].pt2.y);
+        			cv::line(rgb_image,
+        			     cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y),
+        			     cv::Point(bouding_boxes_list[i].pt1.x - (int)distx, bouding_boxes_list[i].pt1.y - (int) disty),
+        			     cv::Scalar(255, 255, 255), 3);
+        			cv::line(rgb_image,
+        			    cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y),
+        			    cv::Point(bouding_boxes_list[i].pt2.x + (int)distx, bouding_boxes_list[i].pt2.y + (int) disty),
+        			    cv::Scalar(255, 255, 255), 3);
+        		}*/
+        /*	}else
+        	{
+        		//if (bouding_boxes_list[i].pt2.y > bouding_boxes_list[i].pt1.y)
+        		//{
+        			float distx = 0.2 * (bouding_boxes_list[i].pt1.x - bouding_boxes_list[i].pt2.x);
+        		    float disty = 0.2 * (bouding_boxes_list[i].pt2.y - bouding_boxes_list[i].pt1.y);
+        		    cv::line(rgb_image,
+        		        cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y),
+        		        cv::Point(bouding_boxes_list[i].pt2.x + (int)distx, bouding_boxes_list[i].pt2.y - (int) disty),
+        		        cv::Scalar(255, 255, 255), 1);
+        		     cv::line(rgb_image,
+        		        cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y),
+        		        cv::Point(bouding_boxes_list[i].pt1.x - (int)distx, bouding_boxes_list[i].pt1.y + (int) disty),
+        		        cv::Scalar(255, 255, 255), 3);
+        		   /*}else
+        		   {
+        		        float distx = 0.4 * (bouding_boxes_list[i].pt1.x - bouding_boxes_list[i].pt2.x);
+        		        float disty = 0.4 * (bouding_boxes_list[i].pt1.y - bouding_boxes_list[i].pt2.y);
+        		        cv::line(rgb_image,
+        		        	cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y),
+        		            cv::Point(bouding_boxes_list[i].pt1.x + (int)distx, bouding_boxes_list[i].pt1.y - (int) disty),
+        		            cv::Scalar(255, 255, 255), 3);
+        		        cv::line(rgb_image,
+        		        	cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y),
+        		            cv::Point(bouding_boxes_list[i].pt2.x - (int)distx, bouding_boxes_list[i].pt2.y + (int) disty),
+        		            cv::Scalar(255, 255, 255), 3);
+        		    }*/
+        	/*	}
+        }
+    if(obj_name.compare("dashed_white_lane") == 0)
+    {*/
+    	cv::line(rgb_image,
+    	   cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y),
+    	   cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y),
+    	   cv::Scalar(255, 255, 255), 3);
+    //}
+        //if (bouding_boxes_list[i].pt2.x > rgb_image.cols / 2)
+        //{
+        	//points_1.push_back(cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y));
+        	//points_1.push_back(cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y));
+        /*}else
         {
         	points_2.push_back(cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y));
         	points_2.push_back(cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y));
-        }
-        /*cv::putText(rgb_image, obj_name,
+        }*/
+        cv::putText(rgb_image, obj_name,
                     cv::Point(bouding_boxes_list[i].pt2.x + 1, bouding_boxes_list[i].pt1.y - 3),
                     cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0, 0, 255), 1);
 
-        cv::putText(rgb_image, confianca,
+        /*cv::putText(rgb_image, confianca,
                     cv::Point(bouding_boxes_list[i].pt1.x + 1, bouding_boxes_list[i].pt1.y - 3),
                     cv::FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
 		*/
     }
-    int num = cv::Mat(points_1).rows;
-    int num1 = cv::Mat(points_2).rows;
-    const cv::Point *pts_1 = (const cv::Point*) cv::Mat(points_1).data;
-    const cv::Point *pts_2 = (const cv::Point*) cv::Mat(points_2).data;
-    if (points_1.empty() == false)
+    //int num = cv::Mat(points_1).rows;
+    //int num1 = cv::Mat(points_2).rows;
+    //const cv::Point *pts_1 = (const cv::Point*) cv::Mat(points_1).data;
+   // const cv::Point *pts_2 = (const cv::Point*) cv::Mat(points_2).data;
+    /*if (points_1.empty() == false)
     {
-    	cv::polylines(rgb_image, &pts_1, &num, 1, false, cv::Scalar(0,255,0), 3, CV_AA, 0);
+    	cv::fillPoly(rgb_image, &pts_1, &num, 1, cv::Scalar(0,255,0),8);
     }
-    if (points_2.empty() == false)
+    /*if (points_2.empty() == false)
     {
-    	cv::polylines(rgb_image, &pts_2, &num1, 1, false, cv::Scalar(0,255,0), 3, CV_AA, 0);
-    }
+    	cv::polylines(rgb_image, &pts_2, &num1, 1, cv::Scalar(0,255,0), 3, CV_AA, 0);
+    }*/
     cv::Mat resized_image(cv::Size(640, 480 - 480 * hood_removal_percentage), CV_8UC3);
 //    cv::Mat resized_image(cv::Size(640, 480), CV_8UC3);
     cv::resize(rgb_image, resized_image, resized_image.size());
 
-    cv::imshow("Neural car detector", resized_image);
+    cv::imshow("Lane detector", resized_image);
     cv::waitKey(1);
 
     resized_image.release();
@@ -570,7 +639,7 @@ main(int argc, char **argv)
     if (darknet_home.empty())
         printf("Cannot find darknet path. Check if you have correctly set DARKNET_HOME environment variable.\n");
     std::string cfg_filename = darknet_home + "/cfg/yolo_voc_lane.cfg";
-    std::string weight_filename = darknet_home + "/yolo_lane.weights";
+    std::string weight_filename = darknet_home + "/yolo-voc_final.weights";
     std::string voc_names = darknet_home + "/data/lane.names";
     obj_names = objects_names_from_file(voc_names);
 

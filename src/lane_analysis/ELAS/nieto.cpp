@@ -1,4 +1,5 @@
 #include "nieto.h"
+#include <opencv2/core/core.hpp>
 
 using namespace std;
 using namespace cv;
@@ -547,7 +548,7 @@ void Nieto::featureL_IPM(const Mat1b &inGrayFrameFiltradoRoi, IPM * _ipm, map<st
 	*/
 }
 
-void Nieto::ExpectationMaximizationOpenCV(const Mat1b &inGrayFrameRoi, int maxIters, map<string, double> &_means0, map<string, double> &_covs0, map<string, double> &_weights0) {
+/*void Nieto::ExpectationMaximizationOpenCV(const Mat1b &inGrayFrameRoi, int maxIters, map<string, double> &_means0, map<string, double> &_covs0, map<string, double> &_weights0) {
 
 	double tempoInicio = static_cast<double>(getTickCount());
 	const int nClusters = 4; // 4 classes => {pavement, markings, objects, unknown}
@@ -614,8 +615,8 @@ void Nieto::ExpectationMaximizationOpenCV(const Mat1b &inGrayFrameRoi, int maxIt
 		imshow("EM OpenCV - 1 Feature", predictedImage);
 	}
 }
-
-void Nieto::ExpectationMaximizationOpenCV2Features(const Mat1b &imageI, const Mat1b &imageL,
+*/
+/*void Nieto::ExpectationMaximizationOpenCV2Features(const Mat1b &imageI, const Mat1b &imageL,
 	map<string, double> &i_means0, map<string, double> &i_covs0, map<string, double> &i_weights0,
 	map<string, double> &l_means0, map<string, double> &l_covs0, map<string, double> &l_weights0, int maxIters) {
 
@@ -723,7 +724,7 @@ void Nieto::ExpectationMaximizationOpenCV2Features(const Mat1b &imageI, const Ma
 		imshow("EM OpenCV - 2 Features", predictedImage);
 	}
 }
-
+*/
 #ifdef USING_ARMADILLO
 
 void Nieto::ExpectationMaximizationArmadillo(const Mat1b &inGrayFrameRoi, int maxIters, map<string, double> &_means0, map<string, double> &_covs0, map<string, double> &_weights0) {
