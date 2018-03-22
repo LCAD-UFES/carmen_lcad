@@ -33,8 +33,8 @@
 
 #include <carmen/carmen.h>
 
-#include "simulator_ackerman.h"
 #include "objects_ackerman.h"
+#include "simulator_ackerman2.h"
 
 #define MAX_STEP  0.40  //m
 

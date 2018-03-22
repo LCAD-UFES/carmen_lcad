@@ -933,8 +933,9 @@ read_parameters(int argc, char *argv[], ford_escape_hybrid_config_t *config)
 		{"robot", "phi_bias", CARMEN_PARAM_DOUBLE, &phi_bias, 0, NULL},
 		{"robot", "v_multiplier", CARMEN_PARAM_DOUBLE, &v_multiplier, 0, NULL},
 
-		{"rrt",   "use_mpc",                    CARMEN_PARAM_ONOFF, &(config->use_mpc), 0, NULL},
-		{"rrt",   "use_rlpid",                  CARMEN_PARAM_ONOFF, &(config->use_rlpid), 0, NULL}
+		{"rrt",   "use_mpc",          CARMEN_PARAM_ONOFF, &(config->use_mpc), 0, NULL},
+		{"rrt",   "use_rlpid",        CARMEN_PARAM_ONOFF, &(config->use_rlpid), 0, NULL},
+		{"robot", "publish_odometry", CARMEN_PARAM_ONOFF, &(config->publish_odometry), 0, NULL}
 	};
 
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
@@ -1078,6 +1079,9 @@ main(int argc, char** argv)
 	subscribe_to_relevant_messages();
 
 	initialize_jaus();
+
+//	if (ford_escape_hybrid_config->publish_odometry)
+//		printf("publish\n");
 
 	carmen_ipc_addPeriodicTimer(1.0 / 40.0, (TIMER_HANDLER_TYPE) publish_velocity_message, NULL);
 

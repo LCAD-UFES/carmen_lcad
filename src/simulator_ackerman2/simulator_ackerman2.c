@@ -26,15 +26,16 @@
  *
  ********************************************************/
 
+#include "simulator_ackerman2.h"
+
 #include <carmen/carmen.h>
 #include <carmen/map_server_interface.h>
 #include <control.h>
 
-#include "simulator_ackerman.h"
-#include "simulator_ackerman_simulation.h"
 #include "simulator_ackerman_messages.h"
 
 #include "objects_ackerman.h"
+#include "simulator_ackerman2_simulation.h"
 
 static carmen_simulator_ackerman_config_t simulator_conf;
 static carmen_simulator_ackerman_config_t *simulator_config;
@@ -280,7 +281,7 @@ motion_command_handler(carmen_base_ackerman_motion_command_message *motion_comma
 	if (!necessary_maps_available)
 		return;
 
-	if (motion_command_message->num_motion_commands < NUM_MOTION_COMMANDS_PER_VECTOR)
+	if (motion_command_message->num_motion_commands < NUM_MOTION_COMMANDS_PER_VECTOR) // ???? pq nao apenas setar o numero de morion comands da mensagem???
 		num_motion_commands = motion_command_message->num_motion_commands;
 	else
 		num_motion_commands = NUM_MOTION_COMMANDS_PER_VECTOR;
@@ -492,6 +493,13 @@ shutdown_module(int x)
 }
 
 
+void
+behavior_selector_lane_message_handler(carmen_behavior_selector_road_profile_message *message)
+{
+	simulator_config->rddf_lane_message = message;
+}
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                              //
 // Inicializations                                                                              //
@@ -559,6 +567,10 @@ subscribe_to_relevant_messages()
 	carmen_base_ackerman_subscribe_motion_command(NULL, (carmen_handler_t) motion_command_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_subscribe_message((char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_NAME, (char *) CARMEN_BEHAVIOR_SELECTOR_ROAD_PROFILE_MESSAGE_FMT,
+	    		NULL, sizeof (carmen_behavior_selector_road_profile_message), (carmen_handler_t) behavior_selector_lane_message_handler, CARMEN_SUBSCRIBE_LATEST);
+
 
 	return (0);
 }
