@@ -87,7 +87,7 @@ typedef struct
 typedef struct
 {
 	int num_box_model_hypotheses;
-	virtual_scan_box_models_t *box_model_hypotheses;
+	virtual_scan_box_models_t *box_model_hypotheses; // Varios boxes por segmento do scan
 	int last_box_model_hypotheses;
 	double timestamp;
 } virtual_scan_box_model_hypotheses_t;
@@ -188,7 +188,7 @@ virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses_t *virtual_sca
 int
 virtual_scan_num_box_models(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses);
 
-void
+virtual_scan_neighborhood_graph_t *
 virtual_scan_update_neighborhood_graph(virtual_scan_neighborhood_graph_t *neighborhood_graph, virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses);
 
 virtual_scan_moving_objects_t *
