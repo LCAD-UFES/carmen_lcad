@@ -49,6 +49,8 @@ int advance_frame = 0;
 int rewind_frame = 0;
 int basic_messages = 0;
 
+int g_publish_odometry = 1;
+
 double timestamp_last_message_published = 0;
 
 double playback_timestamp;
@@ -311,7 +313,7 @@ typedef struct {
 	int interpreted;
 } logger_callback_t;
 
-logger_callback_t logger_callbacks[] =
+static logger_callback_t logger_callbacks[] =
 	{
 		{"LASER_LDMRS", CARMEN_LASER_LDMRS_NAME, (converter_func) carmen_string_to_laser_ldmrs_message, &laser_ldmrs, 0},
 		{"LASER_LDMRS_NEW", CARMEN_LASER_LDMRS_NEW_NAME, (converter_func) carmen_string_to_laser_ldmrs_new_message, &laser_ldmrs_new, 0},
@@ -376,7 +378,9 @@ logger_callback_t logger_callbacks[] =
 		{"GLOBALPOS_ACK", CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME, (converter_func) carmen_string_to_globalpos_message, &globalpos, 0},
 	};
 
-int read_message(int message_num, int publish, int no_wait)
+
+int
+read_message(int message_num, int publish, int no_wait)
 {
 	//  char *line[MAX_LINE_LENGTH];
 	char *line;
@@ -391,35 +395,40 @@ int read_message(int message_num, int publish, int no_wait)
 		carmen_die("Could not alloc memory in playback.c:read_message()\n");
 
 	carmen_logfile_read_line(logfile_index, logfile, message_num,
-			MAX_LINE_LENGTH, line);
+	MAX_LINE_LENGTH, line);
 	current_pos = carmen_next_word(line);
 
-	for(i = 0; i < (int)(sizeof(logger_callbacks) /
-			sizeof(logger_callback_t)); i++) {
+	for (i = 0; i < (int) (sizeof(logger_callbacks) / sizeof(logger_callback_t)); i++)
+	{
 		/* copy the command over */
 		j = 0;
-		while(line[j] != ' ') {
+		while (line[j] != ' ')
+		{
 			command[j] = line[j];
 			j++;
 		}
 		command[j] = '\0';
-		if(strncmp(command, logger_callbacks[i].logger_message_name, j) == 0) {
-			if(!basic_messages || !logger_callbacks[i].interpreted) {
-				current_pos =
-					logger_callbacks[i].conv_func(current_pos,
-							logger_callbacks[i].message_data);
+		if (strncmp(command, logger_callbacks[i].logger_message_name, j) == 0)
+		{
+			if (!basic_messages || !logger_callbacks[i].interpreted)
+			{
+				current_pos = logger_callbacks[i].conv_func(current_pos, logger_callbacks[i].message_data);
 				playback_timestamp = atof(current_pos);
 				//printf("command = %s, playback_timestamp = %lf\n", command, playback_timestamp);
-				if(publish) {
+				if (publish)
+				{
 					current_time = carmen_get_time();
-					if(current_time - last_update > 0.2) {
+					if (current_time - last_update > 0.2)
+					{
 						print_playback_status();
 						last_update = current_time;
 					}
 					if (!no_wait)
 						wait_for_timestamp(playback_timestamp);
-					IPC_publishData(logger_callbacks[i].ipc_message_name,
-							logger_callbacks[i].message_data);
+
+					int do_not_publish = !g_publish_odometry && (strcmp(logger_callbacks[i].ipc_message_name, CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME) == 0);
+					if (!do_not_publish)
+						IPC_publishData(logger_callbacks[i].ipc_message_name, logger_callbacks[i].message_data);
 				}
 				/* return 1 if it is a front laser message */
 				free(line);
@@ -552,26 +561,33 @@ void usage(char *fmt, ...)
 
 void read_parameters(int argc, char **argv)
 {
+	carmen_param_t param_list[] =
+	{
+		{"robot", "publish_odometry", CARMEN_PARAM_ONOFF, &(g_publish_odometry), 0, NULL}
+	};
+
+	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
+
 	int index;
 
-	if(argc < 2)
+	if (argc < 2)
 		usage("Needs at least one argument.\n");
 
-	for(index = 0; index < argc; index++) {
-		if(strncmp(argv[index], "-h", 2) == 0 ||
-				strncmp(argv[index], "--help", 6) == 0)
+	for (index = 0; index < argc; index++)
+	{
+		if (strncmp(argv[index], "-h", 2) == 0 || strncmp(argv[index], "--help", 6) == 0)
 			usage(NULL);
-		if(strncmp(argv[index], "-fast", 5) == 0)
+		if (strncmp(argv[index], "-fast", 5) == 0)
 			fast = 1;
-		if(strncmp(argv[index], "-autostart", 5) == 0)
+		if (strncmp(argv[index], "-autostart", 5) == 0)
 			paused = 0;
-		if(strncmp(argv[index], "-basic", 6) == 0)
+		if (strncmp(argv[index], "-basic", 6) == 0)
 			basic_messages = 1;
-		if(strncmp(argv[index], "-play_message", 13) == 0)
+		if (strncmp(argv[index], "-play_message", 13) == 0)
 			if(index < argc - 1)
 				current_position = atoi(argv[++index]);
-		if(strncmp(argv[index], "-stop_message", 13) == 0)
-			if(index < argc - 1)
+		if (strncmp(argv[index], "-stop_message", 13) == 0)
+			if (index < argc - 1)
 				stop_position = atoi(argv[++index]);
 	}
 }

@@ -227,7 +227,7 @@ shutdown_module(int signo)
 
 
 void
-carmen_virtual_scan_install_params(int argc, char *argv[])
+read_parameters(int argc, char *argv[])
 {
 	carmen_param_t laser_param_list[] =
 	{
@@ -258,7 +258,7 @@ main(int argc, char **argv)
 {
 	carmen_ipc_initialize(argc, argv);
 
-	carmen_virtual_scan_install_params(argc, argv);
+	read_parameters(argc, argv);
 	carmen_virtual_scan_define_messages();
 
 	signal(SIGINT, shutdown_module);

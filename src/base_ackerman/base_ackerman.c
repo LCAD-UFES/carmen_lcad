@@ -106,8 +106,7 @@ robot_ackerman_velocity_handler(carmen_robot_ackerman_velocity_message *robot_ac
 
 	carmen_simulator_ackerman_recalc_pos(car_config);
 
-	if (car_config->publish_odometry)
-		publish_carmen_base_ackerman_odometry_message(robot_ackerman_velocity_message->timestamp);
+	publish_carmen_base_ackerman_odometry_message(robot_ackerman_velocity_message->timestamp);
 }
 
 
@@ -144,9 +143,6 @@ read_parameters(int argc, char *argv[], carmen_base_ackerman_config_t *config)
 		{"robot", "width", CARMEN_PARAM_DOUBLE, &(config->width), 1, NULL},
 		{"robot", "length", CARMEN_PARAM_DOUBLE, &(config->length), 1, NULL},
 		{"robot", "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &(config->distance_between_front_and_rear_axles), 1,NULL},
-
-		{"robot", "publish_odometry", CARMEN_PARAM_ONOFF, &(config->publish_odometry), 0, NULL},
-
 		{"robot", "phi_multiplier", CARMEN_PARAM_DOUBLE, &phi_multiplier, 0, NULL},
 		{"robot", "phi_bias", CARMEN_PARAM_DOUBLE, &phi_bias, 1, NULL},
 		{"robot", "v_multiplier", CARMEN_PARAM_DOUBLE, &v_multiplier, 0, NULL}

@@ -254,13 +254,16 @@ publish_velocity_message(void *clientData __attribute__ ((unused)), unsigned lon
 	carmen_robot_ackerman_velocity_message robot_ackerman_velocity_message;
 	static int heartbeat = 0;
 
-	robot_ackerman_velocity_message.v = g_XGV_velocity;
-	robot_ackerman_velocity_message.phi = get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config);
-	robot_ackerman_velocity_message.timestamp = carmen_get_time(); // @@ Alberto: era igual a = ford_escape_hybrid_config->XGV_v_and_phi_timestamp;
-	robot_ackerman_velocity_message.host = carmen_get_host();
+	if (ford_escape_hybrid_config->publish_odometry)
+	{
+		robot_ackerman_velocity_message.v = g_XGV_velocity;
+		robot_ackerman_velocity_message.phi = get_phi_from_curvature(-tan(g_XGV_atan_curvature), ford_escape_hybrid_config);
+		robot_ackerman_velocity_message.timestamp = carmen_get_time(); // @@ Alberto: era igual a = ford_escape_hybrid_config->XGV_v_and_phi_timestamp;
+		robot_ackerman_velocity_message.host = carmen_get_host();
 
-	err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, &robot_ackerman_velocity_message);
-	carmen_test_ipc(err, "Could not publish ford_escape_hybrid message named carmen_robot_ackerman_velocity_message", CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME);
+		err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME, &robot_ackerman_velocity_message);
+		carmen_test_ipc(err, "Could not publish ford_escape_hybrid message named carmen_robot_ackerman_velocity_message", CARMEN_ROBOT_ACKERMAN_VELOCITY_NAME);
+	}
 
 	if ((heartbeat % 10) == 0)
 	{
@@ -933,9 +936,10 @@ read_parameters(int argc, char *argv[], ford_escape_hybrid_config_t *config)
 		{"robot", "phi_bias", CARMEN_PARAM_DOUBLE, &phi_bias, 0, NULL},
 		{"robot", "v_multiplier", CARMEN_PARAM_DOUBLE, &v_multiplier, 0, NULL},
 
+		{"robot", "publish_odometry", CARMEN_PARAM_ONOFF, &(config->publish_odometry), 0, NULL},
+
 		{"rrt",   "use_mpc",          CARMEN_PARAM_ONOFF, &(config->use_mpc), 0, NULL},
-		{"rrt",   "use_rlpid",        CARMEN_PARAM_ONOFF, &(config->use_rlpid), 0, NULL},
-		{"robot", "publish_odometry", CARMEN_PARAM_ONOFF, &(config->publish_odometry), 0, NULL}
+		{"rrt",   "use_rlpid",        CARMEN_PARAM_ONOFF, &(config->use_rlpid), 0, NULL}
 	};
 
 	num_items = sizeof(param_list)/sizeof(param_list[0]);
@@ -1079,9 +1083,6 @@ main(int argc, char** argv)
 	subscribe_to_relevant_messages();
 
 	initialize_jaus();
-
-//	if (ford_escape_hybrid_config->publish_odometry)
-//		printf("publish\n");
 
 	carmen_ipc_addPeriodicTimer(1.0 / 40.0, (TIMER_HANDLER_TYPE) publish_velocity_message, NULL);
 

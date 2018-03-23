@@ -60,7 +60,8 @@ carmen_localize_ackerman_incorporate_IMU(carmen_localize_ackerman_particle_filte
 		filter->particles[i].v += xsens_global_quat_message->m_acc.x * dt + carmen_gaussian_random(0.0, 0.2);
 		double v = filter->particles[i].v;
 		average_v += v;
-		double phi = atan2(xsens_global_quat_message->m_gyr.z * distance_between_front_and_rear_axles, v);
+		filter->particles[i].phi = atan2((xsens_global_quat_message->m_gyr.z + carmen_gaussian_random(0.0, 0.01)) * distance_between_front_and_rear_axles, v);
+		double phi = filter->particles[i].phi;
 
 		if (i != 0)
 		{
@@ -2481,14 +2482,13 @@ carmen_localize_ackerman_summarize_swarm(carmen_localize_ackerman_particle_filte
 	summary->mean.x = filter->swarm_gbest.x;
 	summary->mean.y = filter->swarm_gbest.y;
 	summary->mean.theta = filter->swarm_gbest.theta;
-
 }
 
 
 void 
 carmen_localize_ackerman_summarize_velodyne(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_summary_p summary)
 {
-	double mean_x, mean_y, mean_theta_x, mean_theta_y, mean_phi_bias;
+	double mean_x, mean_y, mean_theta_x, mean_theta_y, mean_v, mean_phi, mean_phi_bias;
 	double diff_x, diff_y, diff_theta, std_x, std_y, std_theta, xy_cov;	
 	double total_weight = 0;
 	int i;
@@ -2501,12 +2501,16 @@ carmen_localize_ackerman_summarize_velodyne(carmen_localize_ackerman_particle_fi
 	mean_theta_x = 0.0;
 	mean_theta_y = 0.0;
 	mean_phi_bias = 0.0;
+	mean_v = 0.0;
+	mean_phi = 0.0;
 	for (i = 0; i < filter->param->num_particles; i++)
 	{
 		mean_x += filter->particles[i].x * filter->particles[i].weight;
 		mean_y += filter->particles[i].y * filter->particles[i].weight;
 		mean_theta_x += cos(filter->particles[i].theta) * filter->particles[i].weight;
 		mean_theta_y += sin(filter->particles[i].theta) * filter->particles[i].weight;
+		mean_v += filter->particles[i].v * filter->particles[i].weight;
+		mean_phi += filter->particles[i].phi * filter->particles[i].weight;
 		mean_phi_bias += filter->particles[i].phi_bias * filter->particles[i].weight;
 		
 		total_weight += filter->particles[i].weight;
@@ -2514,6 +2518,8 @@ carmen_localize_ackerman_summarize_velodyne(carmen_localize_ackerman_particle_fi
 	summary->mean.x = mean_x / total_weight;
 	summary->mean.y = mean_y / total_weight;
 	summary->mean.theta = atan2(mean_theta_y, mean_theta_x);
+	mean_v = mean_v / total_weight;
+	mean_phi = mean_phi / total_weight;
 	mean_phi_bias = mean_phi_bias / total_weight;
 
 	summary->odometry_pos = filter->last_odometry_position;
@@ -2546,6 +2552,8 @@ carmen_localize_ackerman_summarize_velodyne(carmen_localize_ackerman_particle_fi
 	filter->particles[0].x = summary->mean.x;
 	filter->particles[0].y = summary->mean.y;
 	filter->particles[0].theta = summary->mean.theta;
+	filter->particles[0].v = mean_v;
+	filter->particles[0].phi = mean_phi;
 	filter->particles[0].phi_bias = mean_phi_bias;
 //	printf("mean_phi_bias %lf\n", mean_phi_bias);
 }
