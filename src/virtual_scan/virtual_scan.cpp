@@ -28,6 +28,7 @@
 
 #define GAMMA	0.75
 
+#define NUMBER_OF_FRAMES_T 2
 
 virtual_scan_extended_t extended_virtual_scan; // Melhorar
 carmen_point_t extended_virtual_scan_points[10000]; // Melhorar
@@ -585,13 +586,13 @@ create_hypothesis_vertex(int h, int i, int j, virtual_scan_neighborhood_graph_t*
 
 
 void
-create_hypothesis_sibling_edges(int h, int num_boxes, virtual_scan_neighborhood_graph_t* neighborhood_graph)
+create_hypothesis_sibling_edges(int h, int num_boxes, virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
 	neighborhood_graph->box_model_hypothesis_edges[h] =
-			(virtual_scan_box_model_hypothesis_edges_t*) (malloc(sizeof(virtual_scan_box_model_hypothesis_edges_t)));
+			(virtual_scan_box_model_hypothesis_edges_t *) malloc(sizeof(virtual_scan_box_model_hypothesis_edges_t));
 	neighborhood_graph->box_model_hypothesis_edges[h]->size = num_boxes - 1;
-	neighborhood_graph->box_model_hypothesis_edges[h]->edge = (int*) (malloc((num_boxes - 1) * sizeof(int)));
-	neighborhood_graph->box_model_hypothesis_edges[h]->edge_type = (int*) (malloc((num_boxes - 1) * sizeof(int)));
+	neighborhood_graph->box_model_hypothesis_edges[h]->edge = (int *) malloc((num_boxes - 1) * sizeof(int));
+	neighborhood_graph->box_model_hypothesis_edges[h]->edge_type = (int *) malloc((num_boxes - 1) * sizeof(int));
 	int e = 0;
 	for (int k = 0; k < num_boxes; k++)
 	{
@@ -605,37 +606,150 @@ create_hypothesis_sibling_edges(int h, int num_boxes, virtual_scan_neighborhood_
 }
 
 
+int
+find_parent(int child, virtual_scan_neighborhood_graph_t *neighborhood_graph)
+{
+	return (0);
+}
+
+
+void
+create_hypothesis_parent_child_edges(int child, virtual_scan_neighborhood_graph_t *neighborhood_graph)
+{
+	int parent = find_parent(child, neighborhood_graph);
+
+	int e = neighborhood_graph->box_model_hypothesis_edges[child]->size;
+	neighborhood_graph->box_model_hypothesis_edges[child]->edge = (int *) realloc(neighborhood_graph->box_model_hypothesis_edges[child]->edge,
+			(e + 1) * sizeof(int));
+	neighborhood_graph->box_model_hypothesis_edges[child]->edge_type = (int *) realloc(neighborhood_graph->box_model_hypothesis_edges[child]->edge_type,
+			(e + 1) * sizeof(int));
+
+	neighborhood_graph->box_model_hypothesis_edges[child]->edge[e] = parent;
+	neighborhood_graph->box_model_hypothesis_edges[child]->edge_type[e] = PARENT_EDGE;
+
+	neighborhood_graph->box_model_hypothesis_edges[child]->size += 1;
+
+
+	e = neighborhood_graph->box_model_hypothesis_edges[parent]->size;
+	neighborhood_graph->box_model_hypothesis_edges[parent]->edge = (int *) realloc(neighborhood_graph->box_model_hypothesis_edges[parent]->edge,
+			(e + 1) * sizeof(int));
+	neighborhood_graph->box_model_hypothesis_edges[parent]->edge_type = (int *) realloc(neighborhood_graph->box_model_hypothesis_edges[parent]->edge_type,
+			(e + 1) * sizeof(int));
+
+	neighborhood_graph->box_model_hypothesis_edges[parent]->edge[e] = child;
+	neighborhood_graph->box_model_hypothesis_edges[parent]->edge_type[e] = CHILD_EDGE;
+
+	neighborhood_graph->box_model_hypothesis_edges[parent]->size += 1;
+
+}
+
+
+void
+remove_graph_vertexes_of_victim_timestamp(double victim_timestamp, virtual_scan_neighborhood_graph_t *neighborhood_graph)
+{
+
+}
+
+
+virtual_scan_neighborhood_graph_t *
+first_neighborhood_graph_update(virtual_scan_neighborhood_graph_t *neighborhood_graph, virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses)
+{
+	neighborhood_graph = (virtual_scan_neighborhood_graph_t *) malloc(sizeof(virtual_scan_neighborhood_graph_t));
+	neighborhood_graph->last_frames_timetamps = (double *) malloc(NUMBER_OF_FRAMES_T * sizeof(double));
+
+	int num_hypotheses = 0;
+	for (int i = 0; i < virtual_scan_box_model_hypotheses->num_box_model_hypotheses; i++)
+		for (int j = 0; j < virtual_scan_box_model_hypotheses->box_model_hypotheses[i].num_boxes; j++)
+			num_hypotheses++;
+
+	neighborhood_graph->size = num_hypotheses;
+	neighborhood_graph->box_model_hypothesis = (virtual_scan_box_model_hypothesis_t **) malloc(num_hypotheses * sizeof(virtual_scan_box_model_hypothesis_t *));
+	neighborhood_graph->box_model_hypothesis_edges =
+			(virtual_scan_box_model_hypothesis_edges_t **) malloc(num_hypotheses * sizeof(virtual_scan_box_model_hypothesis_edges_t *));
+	neighborhood_graph->vertex_selected = (bool *) malloc(num_hypotheses * sizeof(bool));
+	for (int i = 0; i < num_hypotheses; i++)
+		neighborhood_graph->vertex_selected[i] = false;
+
+	int h = 0;
+	for (int i = 0; i < virtual_scan_box_model_hypotheses->num_box_model_hypotheses; i++)
+	{
+		int num_boxes = virtual_scan_box_model_hypotheses->box_model_hypotheses[i].num_boxes;
+		int previous_h = h;
+		for (int j = 0; j < num_boxes; j++, h++)
+			create_hypothesis_vertex(h, i, j, neighborhood_graph, virtual_scan_box_model_hypotheses);
+		h = previous_h;
+		for (int j = 0; j < num_boxes; j++, h++)
+			create_hypothesis_sibling_edges(h, num_boxes, neighborhood_graph);
+	}
+
+	neighborhood_graph->number_of_frames_filled = 0;
+	neighborhood_graph->last_frames_timetamps[neighborhood_graph->number_of_frames_filled] = virtual_scan_box_model_hypotheses->timestamp;
+	neighborhood_graph->number_of_frames_filled = 1;
+
+	return (neighborhood_graph);
+}
+
+
+virtual_scan_neighborhood_graph_t *
+neighborhood_graph_update(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses, virtual_scan_neighborhood_graph_t *neighborhood_graph)
+{
+	int num_hypotheses = 0;
+	for (int i = 0; i < virtual_scan_box_model_hypotheses->num_box_model_hypotheses; i++)
+		for (int j = 0; j < virtual_scan_box_model_hypotheses->box_model_hypotheses[i].num_boxes; j++)
+			num_hypotheses++;
+
+	neighborhood_graph->size = num_hypotheses;
+	neighborhood_graph->box_model_hypothesis =
+			(virtual_scan_box_model_hypothesis_t **) realloc(neighborhood_graph->box_model_hypothesis, (num_hypotheses + neighborhood_graph->size) * sizeof(virtual_scan_box_model_hypothesis_t *));
+	neighborhood_graph->box_model_hypothesis_edges =
+			(virtual_scan_box_model_hypothesis_edges_t **) realloc(neighborhood_graph->box_model_hypothesis, (num_hypotheses + neighborhood_graph->size) * sizeof(virtual_scan_box_model_hypothesis_edges_t *));
+	neighborhood_graph->vertex_selected = (bool *) realloc(neighborhood_graph->vertex_selected, (num_hypotheses + neighborhood_graph->size) * sizeof(bool));
+	for (int i = neighborhood_graph->size; i < neighborhood_graph->size + num_hypotheses; i++)
+		neighborhood_graph->vertex_selected[i] = false;
+
+	int h = 0;
+	for (int i = 0; i < virtual_scan_box_model_hypotheses->num_box_model_hypotheses; i++)
+	{
+		int num_boxes = virtual_scan_box_model_hypotheses->box_model_hypotheses[i].num_boxes;
+		int previous_h = h;
+		for (int j = 0; j < num_boxes; j++, h++)
+			create_hypothesis_vertex(h, i, j, neighborhood_graph, virtual_scan_box_model_hypotheses);
+		h = previous_h;
+		for (int j = 0; j < num_boxes; j++, h++)
+		{
+			create_hypothesis_sibling_edges(h, num_boxes, neighborhood_graph);
+			create_hypothesis_parent_child_edges(h, neighborhood_graph);
+		}
+	}
+
+	if (neighborhood_graph->number_of_frames_filled == NUMBER_OF_FRAMES_T)
+	{
+		double victim_timestamp = neighborhood_graph->last_frames_timetamps[0];
+		for (int i = 0; i < NUMBER_OF_FRAMES_T - 1; i++)
+			neighborhood_graph->last_frames_timetamps[i] = neighborhood_graph->last_frames_timetamps[i + 1];
+
+		remove_graph_vertexes_of_victim_timestamp(victim_timestamp, neighborhood_graph);
+
+		neighborhood_graph->number_of_frames_filled -= 1;
+	}
+
+	neighborhood_graph->last_frames_timetamps[neighborhood_graph->number_of_frames_filled] = virtual_scan_box_model_hypotheses->timestamp;
+	neighborhood_graph->number_of_frames_filled += 1;
+
+	return (neighborhood_graph);
+}
+
+
 virtual_scan_neighborhood_graph_t *
 virtual_scan_update_neighborhood_graph(virtual_scan_neighborhood_graph_t *neighborhood_graph, virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses)
 {
 	if (virtual_scan_box_model_hypotheses == NULL)
-		return (NULL);
+		return (neighborhood_graph);
 
 	if (neighborhood_graph == NULL)
-	{
-		neighborhood_graph = (virtual_scan_neighborhood_graph_t *) malloc(sizeof(virtual_scan_neighborhood_graph_t));
-
-		int num_hypotheses = 0;
-		for (int i = 0; i < virtual_scan_box_model_hypotheses->num_box_model_hypotheses; i++)
-			for (int j = 0; j < virtual_scan_box_model_hypotheses->box_model_hypotheses[i].num_boxes; j++)
-				num_hypotheses++;
-		neighborhood_graph->size = num_hypotheses;
-
-		neighborhood_graph->box_model_hypothesis = (virtual_scan_box_model_hypothesis_t **) malloc(num_hypotheses * sizeof(virtual_scan_box_model_hypothesis_t *));
-		neighborhood_graph->box_model_hypothesis_edges = (virtual_scan_box_model_hypothesis_edges_t **) malloc(num_hypotheses * sizeof(virtual_scan_box_model_hypothesis_edges_t *));
-		int h = 0;
-		for (int i = 0; i < virtual_scan_box_model_hypotheses->num_box_model_hypotheses; i++)
-		{
-			int num_boxes = virtual_scan_box_model_hypotheses->box_model_hypotheses[i].num_boxes;
-			int previous_h = h;
-			for (int j = 0; j < num_boxes; j++, h++)
-				create_hypothesis_vertex(h, i, j, neighborhood_graph, virtual_scan_box_model_hypotheses);
-
-			h = previous_h;
-			for (int j = 0; j < num_boxes; j++, h++)
-				create_hypothesis_sibling_edges(h, num_boxes, neighborhood_graph);
-		}
-	}
+		neighborhood_graph = first_neighborhood_graph_update(neighborhood_graph, virtual_scan_box_model_hypotheses);
+	else
+		neighborhood_graph = neighborhood_graph_update(virtual_scan_box_model_hypotheses, neighborhood_graph);
 
 	return (neighborhood_graph);
 }
@@ -760,7 +874,8 @@ get_neighbors_within_v_star(int neighbor_type, int &number_of_neighbors, virtual
 	number_of_neighbors = 0;
 	for (int i = 0; i < hypothesis_neighbors->size; i++)
 	{
-		if (hypothesis_neighbors->edge_type[i] == neighbor_type)
+		// if (neighborhood_graph->vertex_selected[hypothesis_neighbors->edge[i]] == true), this neighbor is within v_star
+		if ((hypothesis_neighbors->edge_type[i] == neighbor_type) && !(neighborhood_graph->vertex_selected[hypothesis_neighbors->edge[i]]))
 			number_of_neighbors++;
 	}
 
@@ -789,7 +904,7 @@ get_child_hypothesis_in_v_star_and_at_the_end_of_track(virtual_scan_track_t *tra
 	virtual_scan_box_model_hypothesis_t end_of_track = track->box_model_hypothesis[track->size - 1];
 	virtual_scan_box_model_hypothesis_edges_t *hypothesis_neighbors = neighborhood_graph->box_model_hypothesis_edges[end_of_track.index];
 	int number_of_children;
-	int *hypothesis_children = get_neighbors_within_v_star(CHILDREN_EDGE, number_of_children, hypothesis_neighbors, neighborhood_graph);
+	int *hypothesis_children = get_neighbors_within_v_star(CHILD_EDGE, number_of_children, hypothesis_neighbors, neighborhood_graph);
 	if (hypothesis_children != NULL)
 	{
 		int rand_hypothesis = carmen_int_random(number_of_children);

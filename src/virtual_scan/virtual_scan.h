@@ -14,7 +14,7 @@
 #define	I_SHAPED	2
 #define MASS_POINT	3
 
-#define CHILDREN_EDGE 	1
+#define CHILD_EDGE 	1
 #define PARENT_EDGE 	2
 #define SIBLING_EDGE 	3
 
@@ -126,6 +126,7 @@ typedef struct
 	bool *vertex_selected;
 
 	double *last_frames_timetamps;
+	int number_of_frames_filled;
 } virtual_scan_neighborhood_graph_t;
 
 
