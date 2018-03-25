@@ -1,4 +1,4 @@
-#include "dbscan.h"
+#include "../neural_object_detector/dbscan.h"
 
 using std::size_t;
 

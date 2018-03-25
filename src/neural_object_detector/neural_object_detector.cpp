@@ -5,7 +5,7 @@
  *      Author: luan
  */
 
-#include "neural_car_detector.hpp"
+#include "neural_object_detector.hpp"
 
 
 dbscan::Cluster
