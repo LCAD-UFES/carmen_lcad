@@ -51,14 +51,6 @@ TODO
 
 [ ] move processes to the module dir
 
-Coisas para conversar com o Alberto
-
-- Como avaliar a qualidade do plano?
-- Navigator_gui2 esta' morrendo e com leak memoria (ou alguma outra coisa q faz o computador travar)
-- Qual mensagem de behavior selector esta valendo?
-
-
-
 
 
 

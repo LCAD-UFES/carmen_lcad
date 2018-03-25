@@ -135,7 +135,6 @@ publish_odometry(double timestamp)
 		first = 0;
 	}
 
-
 	odometry.x = simulator_config->odom_pose.x;
 	odometry.y = simulator_config->odom_pose.y;
 	odometry.theta = simulator_config->odom_pose.theta;
@@ -303,6 +302,8 @@ simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
 		}
 	}
 
+	// Existem duas versoes dessa funcao, uma em base_ackerman_simulation e
+	// outra em simulator_ackerman_simulation.
 	carmen_simulator_ackerman_recalc_pos(simulator_config);
 	carmen_simulator_ackerman_update_objects(simulator_config);
 
@@ -521,7 +522,7 @@ map_update_handler(carmen_map_t *new_map)
 
 }
 
-
+// Essa funcao nao eh usada em lugar nenhum...
 void
 grid_mapping_handler(carmen_map_server_offline_map_message *new_gridmap)
 {

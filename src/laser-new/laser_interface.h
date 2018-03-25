@@ -38,6 +38,7 @@
 #ifndef CARMEN_LASER_INTERFACE_H
 #define CARMEN_LASER_INTERFACE_H
 
+#include <carmen/carmen.h>
 #include "laser_messages.h"
 
 #ifdef __cplusplus
