@@ -14,7 +14,7 @@
 #define	I_SHAPED	2
 #define MASS_POINT	3
 
-#define CHILDREN_EDGE 	1
+#define CHILD_EDGE 	1
 #define PARENT_EDGE 	2
 #define SIBLING_EDGE 	3
 
@@ -87,7 +87,7 @@ typedef struct
 typedef struct
 {
 	int num_box_model_hypotheses;
-	virtual_scan_box_models_t *box_model_hypotheses;
+	virtual_scan_box_models_t *box_model_hypotheses; // Varios boxes por segmento do scan
 	int last_box_model_hypotheses;
 	double timestamp;
 } virtual_scan_box_model_hypotheses_t;
@@ -121,11 +121,12 @@ typedef struct
 typedef struct
 {
 	int size;
-	virtual_scan_box_model_hypothesis_t *box_model_hypothesis;
-	virtual_scan_box_model_hypothesis_edges_t *box_model_hypothesis_edges;
+	virtual_scan_box_model_hypothesis_t **box_model_hypothesis;
+	virtual_scan_box_model_hypothesis_edges_t **box_model_hypothesis_edges;
 	bool *vertex_selected;
 
 	double *last_frames_timetamps;
+	int number_of_frames_filled;
 } virtual_scan_neighborhood_graph_t;
 
 
@@ -188,7 +189,7 @@ virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses_t *virtual_sca
 int
 virtual_scan_num_box_models(virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses);
 
-void
+virtual_scan_neighborhood_graph_t *
 virtual_scan_update_neighborhood_graph(virtual_scan_neighborhood_graph_t *neighborhood_graph, virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses);
 
 virtual_scan_moving_objects_t *

@@ -4,29 +4,30 @@
 
 #include <vector>
 
-void env_destroy();
-void env_init();
+void publish_command(std::vector<double> v, std::vector<double> phi, std::vector<double> dt,
+		double x = 0, double y = 0, double th = 0);
+void publish_goal_list(std::vector<double> x, std::vector<double> y,
+		std::vector<double> th, std::vector<double> v, std::vector<double> phi,
+		double timestamp);
 
-std::vector<double> env_reset(double pos_x, double pos_y, double pos_th,
-							double goal_x=0, double goal_y=0, double goal_th=0,
-							double goal_v=0, double goal_phi=0);
+void handle_messages(double how_long = 5e-2);
 
-std::vector<double> env_step(double v, double phi,
-							double goal_x=0, double goal_y=0, double goal_th=0,
-							double goal_v=0, double goal_phi=0);
+void reset_initial_pose(double x, double y, double th);
 
-bool env_done();
-
-void handle_messages();
-
-void publish_starting_pose(double x, double y, double th);
-void publish_command(double v, double phi);
-int car_hit_obstacle();
-
-std::vector<double> read_state();
-std::vector<double> read_goal();
-
+std::vector<double> read_pose();
 std::vector<double> read_laser();
+std::vector<double> read_goal();
+int hit_obstacle();
 
+void init();
+
+void simulation_reset(double x, double y, double th, double v, double phi);
+void simulation_step(double v, double phi, double delta_t);
+
+std::vector<double> simulation_read_pose();
+std::vector<double> simulation_read_goal();
+std::vector<double> simulation_read_laser();
+
+int simulation_hit_obstacle();
 
 #endif

@@ -22,6 +22,8 @@ double x_origin = 0.0;
 double y_origin = 0.0;
 double map_resolution = 0.0;
 
+int necessary_maps_available = 0;
+
 virtual_scan_neighborhood_graph_t *neighborhood_graph = NULL;
 
 
@@ -168,20 +170,23 @@ virtual_scan_publish_segments(virtual_scan_segment_classes_t *virtual_scan_segme
 void
 carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *message)
 {
-	virtual_scan_extended_t *virtual_scan_extended = sort_virtual_scan(message);
-	virtual_scan_segment_classes_t *virtual_scan_segment_classes = virtual_scan_extract_segments(virtual_scan_extended);
-	virtual_scan_publish_segments(virtual_scan_segment_classes);
+	if (necessary_maps_available)
+	{
+		virtual_scan_extended_t *virtual_scan_extended = sort_virtual_scan(message);
+		virtual_scan_segment_classes_t *virtual_scan_segment_classes = virtual_scan_extract_segments(virtual_scan_extended);
+		virtual_scan_publish_segments(virtual_scan_segment_classes);
 
-	virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(virtual_scan_segment_classes);
-	virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
+		virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(virtual_scan_segment_classes);
+		virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
 
-	virtual_scan_update_neighborhood_graph(neighborhood_graph, virtual_scan_box_model_hypotheses);
-	virtual_scan_moving_objects_t *moving_objects = virtual_scan_infer_moving_objects(neighborhood_graph);
-	virtual_scan_moving_objects_publish(moving_objects);
+		neighborhood_graph = virtual_scan_update_neighborhood_graph(neighborhood_graph, virtual_scan_box_model_hypotheses);
+		virtual_scan_moving_objects_t *moving_objects = virtual_scan_infer_moving_objects(neighborhood_graph);
+		virtual_scan_moving_objects_publish(moving_objects);
 
-	virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses);
-	virtual_scan_free_segment_classes(virtual_scan_segment_classes);
-	virtual_scan_free_moving_objects(moving_objects);
+		virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses);
+		virtual_scan_free_segment_classes(virtual_scan_segment_classes);
+		virtual_scan_free_moving_objects(moving_objects);
+	}
 }
 
 
@@ -194,13 +199,7 @@ localize_map_update_handler(carmen_map_server_localize_map_message *message)
 	y_origin = message->config.y_origin;
 	map_resolution = message->config.resolution;
 
-//	necessary_maps_available = 1;
-
-	carmen_map_t temp_map;
-	temp_map.config = localize_map.config;
-	temp_map.complete_map = localize_map.complete_prob;
-	temp_map.map = localize_map.prob;
-	carmen_grid_mapping_save_map((char *) "test.map", &temp_map);
+	necessary_maps_available = 1;
 }
 
 
@@ -227,7 +226,7 @@ shutdown_module(int signo)
 
 
 void
-carmen_virtual_scan_install_params(int argc, char *argv[])
+read_parameters(int argc, char *argv[])
 {
 	carmen_param_t laser_param_list[] =
 	{
@@ -258,7 +257,7 @@ main(int argc, char **argv)
 {
 	carmen_ipc_initialize(argc, argv);
 
-	carmen_virtual_scan_install_params(argc, argv);
+	read_parameters(argc, argv);
 	carmen_virtual_scan_define_messages();
 
 	signal(SIGINT, shutdown_module);

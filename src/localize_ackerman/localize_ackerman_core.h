@@ -118,17 +118,12 @@ typedef struct {
 } carmen_localize_ackerman_param_t, *carmen_localize_ackerman_param_p;
 
 typedef struct {
-  double x, y, theta, phi_bias;
-  double weight;
-} carmen_localize_ackerman_particle_t, *carmen_localize_ackerman_particle_p;
-
-typedef struct {
   int initialized, first_odometry, global_mode;
   carmen_localize_ackerman_param_p param;
-  carmen_localize_ackerman_particle_p particles;
-  carmen_localize_ackerman_particle_p swarm_velocity;
-  carmen_localize_ackerman_particle_p swarm_pbest;
-  carmen_localize_ackerman_particle_t swarm_gbest;
+  carmen_localize_ackerman_particle_ipc_p particles;
+  carmen_localize_ackerman_particle_ipc_p swarm_velocity;
+  carmen_localize_ackerman_particle_ipc_p swarm_pbest;
+  carmen_localize_ackerman_particle_ipc_t swarm_gbest;
   carmen_point_t last_odometry_position;
   double **temp_weights;
   double distance_travelled;

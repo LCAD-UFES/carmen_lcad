@@ -5,104 +5,152 @@
 #include <cstdio>
 #include <unistd.h>
 #include <carmen/carmen.h>
+#include <carmen/control.h>
 #include "g2o/types/slam2d/se2.h"
 #include <carmen/laser_interface.h>
+#include <carmen/objects_ackerman.h>
 #include <carmen/collision_detection.h>
+#include <carmen/map_server_interface.h>
 #include <carmen/robot_ackerman_interface.h>
+#include <carmen/obstacle_avoider_interface.h>
 #include <carmen/localize_ackerman_interface.h>
 #include <carmen/behavior_selector_interface.h>
-#include <carmen/obstacle_avoider_interface.h>
+#include <carmen/simulator_ackerman_simulation.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
+#include "util.h"
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
 
-// General Module Params
+// Flags
 const int VIEW_LASER = 0;
+const int VIEW_SIMULATED_LASER = 0;
 
-// Carmen Parameters
+// Parameters
 carmen_robot_ackerman_config_t global_robot_ackerman_config;
 
 // Messages
-carmen_laser_laser_message global_frontlaser_message;
-// carmen_laser_laser_message global_rearlaser_message;
+carmen_laser_laser_message global_front_laser_message;
 carmen_behavior_selector_goal_list_message global_goal_list_message;
 carmen_obstacle_distance_mapper_map_message global_obstacle_distance_map;
 carmen_localize_ackerman_globalpos_message global_localize_ackerman_message;
 carmen_obstacle_distance_mapper_compact_map_message global_obstacle_distance_mapper_compact_map_message;
+carmen_map_server_offline_map_message global_offline_map_message;
 
+// Termination signal handling
+int global_destroy_already_requested = 0;
+
+// Simulation
+carmen_simulator_ackerman_config_t simulator_config;
+carmen_laser_laser_message global_simulated_front_laser;
+
+
+/**
+ * *******************************************************************************
+ * The functions below were copied from simulator_ackerman.c
+ * TODO: Improve the simulator_ackerman interface to make these functions public.
+ * *******************************************************************************
+ */
 
 void
-publish_starting_pose(double x, double y, double th)
+fill_laser_config_data(carmen_simulator_ackerman_laser_config_t *lasercfg)
 {
-	carmen_localize_ackerman_globalpos_message localize_ackerman_message;
-	memset(&localize_ackerman_message, 0, sizeof(localize_ackerman_message));
+	lasercfg->num_lasers = 1 + carmen_round(lasercfg->fov / lasercfg->angular_resolution);
+	lasercfg->start_angle = -0.5*lasercfg->fov;
 
-	carmen_point_t pose;
-	carmen_point_t std;
+	/* give a warning if it is not a standard configuration */
 
-	pose.x = x;
-	pose.y = y;
-	pose.theta = th;
+	if (fabs(lasercfg->fov - M_PI) > 1e-6 &&
+			fabs(lasercfg->fov - 100.0/180.0 * M_PI) > 1e-6 &&
+			fabs(lasercfg->fov -  90.0/180.0 * M_PI) > 1e-6)
+		carmen_warn("Warning: You are not using a standard SICK configuration (fov=%.4f deg)\n",
+				carmen_radians_to_degrees(lasercfg->fov));
 
-	std.x = 0.001;
-	std.y = 0.001;
-	std.theta = carmen_degrees_to_radians(0.01);
-
-	carmen_localize_ackerman_initialize_gaussian_command(pose, std);
+	if (fabs(lasercfg->angular_resolution - carmen_degrees_to_radians(1.0)) > 1e-6 &&
+			fabs(lasercfg->angular_resolution - carmen_degrees_to_radians(0.5)) > 1e-6 &&
+			fabs(lasercfg->angular_resolution - carmen_degrees_to_radians(0.25)) > 1e-6)
+		carmen_warn("Warning: You are not using a standard SICK configuration (res=%.4f deg)\n",
+				carmen_radians_to_degrees(lasercfg->angular_resolution));
 }
 
 
-void
-publish_command(double v, double phi)
+int
+apply_system_latencies(carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands)
 {
-	static const int NUM_MOTION_COMMANDS = 20;
-	static carmen_ackerman_motion_command_t *motion_commands = NULL;
+	int i, j;
 
-	if (motion_commands == NULL)
-		motion_commands = (carmen_ackerman_motion_command_t *) calloc (NUM_MOTION_COMMANDS, sizeof(carmen_ackerman_motion_command_t));
-
-	for (int i = 0; i < NUM_MOTION_COMMANDS; i++)
+	for (i = 0; i < nun_motion_commands; i++)
 	{
-			motion_commands[i].time = 0.1 * i;
-			motion_commands[i].v = v;
-			motion_commands[i].phi = phi;
+		j = i;
+		for (double lat = 0.0; lat < 0.2; j++)
+		{
+			if (j >= nun_motion_commands)
+				break;
+			lat += current_motion_command_vector[j].time;
+		}
+		if (j >= nun_motion_commands)
+			break;
+		current_motion_command_vector[i].phi = current_motion_command_vector[j].phi;
+//		current_motion_command_vector[i].phi = current_motion_command_vector[j].phi;
+//		current_motion_command_vector[i].v = current_motion_command_vector[j].v;
+//		current_motion_command_vector[i].x = current_motion_command_vector[j].x;
+//		current_motion_command_vector[i].y = current_motion_command_vector[j].y;
+//		current_motion_command_vector[i].theta = current_motion_command_vector[j].theta;
+//		current_motion_command_vector[i].time = current_motion_command_vector[j].time;
 	}
 
-	carmen_robot_ackerman_publish_motion_command(motion_commands,
-		NUM_MOTION_COMMANDS, global_localize_ackerman_message.timestamp);
+	for (i = 0; i < nun_motion_commands; i++)
+	{
+		j = i;
+		for (double lat = 0.0; lat < 0.6; j++)
+		{
+			if (j >= nun_motion_commands)
+				break;
+			lat += current_motion_command_vector[j].time;
+		}
+		if (j >= nun_motion_commands)
+			break;
+		current_motion_command_vector[i].v = current_motion_command_vector[j].v;
+	}
+
+	return (i);
 }
 
-
-void
-publish_goal_list(double x, double y, double th, double v, double phi, double timestamp)
+int
+hit_something_in_the_map(carmen_simulator_ackerman_config_t *simulator_config, carmen_point_t new_true)
 {
-	static carmen_ackerman_traj_point_t *goal_list = NULL;
-	static carmen_behavior_selector_goal_list_message goal_list_msg;
+	//	Verificando colisão completa
+	//	carmen_robot_ackerman_config_t robot_config;
+	//
+	//	robot_config.distance_between_rear_car_and_rear_wheels = simulator_config->distance_between_rear_car_and_rear_wheels;
+	//	robot_config.width = simulator_config->width;
+	//	robot_config.length = simulator_config->length;
+	//
+	//	return pose_hit_obstacle(new_true, &simulator_config->map, &robot_config);
 
-	if (goal_list == NULL)
-		goal_list = (carmen_ackerman_traj_point_t *) calloc (10, sizeof(carmen_ackerman_traj_point_t));
+	carmen_map_p map;
+	int map_x, map_y;
 
-	goal_list[0].x = x;
-	goal_list[0].y = y;
-	goal_list[0].theta = th;
-	goal_list[0].v = v;
-	goal_list[0].phi = phi;
+	map = &(simulator_config->map);
+	map_x = (new_true.x - map->config.x_origin) / map->config.resolution;
+	map_y = (new_true.y - map->config.y_origin) / map->config.resolution;
 
-	goal_list_msg.goal_list = goal_list;
-	goal_list_msg.size = 1;
-	goal_list_msg.timestamp = timestamp;
-	goal_list_msg.host = carmen_get_host();
+	if (map_x < 0 || map_x >= map->config.x_size ||
+			map_y < 0 || map_y >= map->config.y_size ||
+			map->map[map_x][map_y] > .15 ||					// @@@ Tem que tratar o robo retangular...
+			carmen_simulator_object_too_close(new_true.x, new_true.y, -1)) 	// @@@ Tem que tratar o robo retangular...
+		return (1);
 
-	IPC_RETURN_TYPE err;
-
-	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME, &goal_list_msg);
-	carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME);
+	return (0);
 }
+
+/*
+ * *******************************************************************************
+ * End of copy.
+ * *******************************************************************************
+ */
 
 
 void
-publish_current_state()
+publish_behavior_selector_state()
 {
 	IPC_RETURN_TYPE err;
 
@@ -124,126 +172,93 @@ publish_current_state()
 }
 
 
-std::vector<double>
-read_state()
+void
+publish_command(std::vector<double> v, std::vector<double> phi, std::vector<double> dt,
+				double x, double y, double th)
 {
-	std::vector<double> state;
+	static int n_motion_commands = 0;
+	static carmen_ackerman_motion_command_t *motion_commands = NULL;
 
-	carmen_localize_ackerman_globalpos_message globalpos = global_localize_ackerman_message;
+	if (motion_commands == NULL)
+		motion_commands = (carmen_ackerman_motion_command_t *) calloc (v.size(), sizeof(carmen_ackerman_motion_command_t));
+	else if (n_motion_commands != v.size())
+		motion_commands = (carmen_ackerman_motion_command_t *) realloc (motion_commands, v.size() * sizeof(carmen_ackerman_motion_command_t));
 
-	state.push_back(globalpos.globalpos.x);
-	state.push_back(globalpos.globalpos.y);
-	state.push_back(globalpos.globalpos.theta);
-	state.push_back(globalpos.v);
-	state.push_back(globalpos.phi);
+	n_motion_commands = v.size();
 
-	return state;
-}
+	double base_time = carmen_get_time();
 
-
-std::vector<double>
-read_goal()
-{
-	std::vector<double> state;
-
-	state.push_back(global_goal_list_message.goal_list[0].x);
-	state.push_back(global_goal_list_message.goal_list[0].y);
-	state.push_back(global_goal_list_message.goal_list[0].theta);
-	state.push_back(global_goal_list_message.goal_list[0].v);
-	state.push_back(global_goal_list_message.goal_list[0].phi);
-
-	return state;
-}
-
-
-std::vector<double>
-read_laser()
-{
-	int i;
-	std::vector<double> readings;
-
-	for (i = 0; i < global_frontlaser_message.num_readings; i++)
-		readings.push_back(global_frontlaser_message.range[i]);
-
-	if (VIEW_LASER)
+	for (int i = 0; i < n_motion_commands; i++)
 	{
-		int px, py;
-		double x, y;
-		double a;
-		cv::Mat m(500, 500, CV_8UC3);
+		ackerman_motion_model(&x, &y, &th,
+			v[i], phi[i], dt[i],
+			simulator_config.distance_between_front_and_rear_axles);
 
-		memset(m.data, (uchar) 255, m.rows * m.cols * 3 * sizeof(uchar));
-		a = global_frontlaser_message.config.start_angle;
+		motion_commands[i].x = x;
+		motion_commands[i].y = y;
+		motion_commands[i].theta = th;
 
-		cv::circle(m, cv::Point(m.cols / 2, m.rows / 2), 2, cv::Scalar(0, 0, 255), -1);
-
-		for (i = 0; i < global_frontlaser_message.num_readings; i++)
-		{
-			a += global_frontlaser_message.config.angular_resolution;
-
-			x = cos(global_localize_ackerman_message.globalpos.theta + a) * global_frontlaser_message.range[i];
-			y = sin(global_localize_ackerman_message.globalpos.theta + a) * global_frontlaser_message.range[i];
-
-			px = x * 5 + m.cols / 2.0;
-			py = m.rows - (y * 5 + m.rows / 2.0);
-
-			cv::circle(m, cv::Point(px, py), 2, cv::Scalar(0, 0, 0), -1);
-		}
-
-		cv::imshow("laser", m);
-		cv::waitKey(1);
+		motion_commands[i].time = dt[i];
+		motion_commands[i].v = v[i];
+		motion_commands[i].phi = phi[i];
 	}
 
-	return readings;
-}
+	publish_behavior_selector_state();
 
-
-int
-car_hit_obstacle()
-{
-	carmen_ackerman_traj_point_t pose;
-
-	pose.x = global_localize_ackerman_message.globalpos.x;
-	pose.y = global_localize_ackerman_message.globalpos.y;
-	pose.theta = global_localize_ackerman_message.globalpos.theta;
-	pose.phi = global_localize_ackerman_message.phi;
-	pose.v = global_localize_ackerman_message.v;
-
-	int hit = trajectory_pose_hit_obstacle(pose,
-		global_robot_ackerman_config.obstacle_avoider_obstacles_safe_distance,
-		&global_obstacle_distance_map, &global_robot_ackerman_config);
-
-	return hit;
+	carmen_robot_ackerman_publish_motion_command(motion_commands,
+		n_motion_commands, base_time);
 }
 
 
 void
-env_destroy()
+publish_stop_command()
 {
-	publish_command(0, 0);
-	carmen_ipc_disconnect();
-	exit(0);
+	std::vector<double> v;
+	std::vector<double> phi;
+	std::vector<double> dt;
+
+	double base_time = carmen_get_time();
+
+	for (int i = 0; i < 20; i++)
+	{
+		v.push_back(0.);
+		phi.push_back(0.);
+		dt.push_back(base_time + i * 0.1);
+	}
+
+	publish_command(v, phi, dt);
 }
 
 
 void
-define_messages()
+publish_goal_list(std::vector<double> x, std::vector<double> y,
+		std::vector<double> th, std::vector<double> v, std::vector<double> phi,
+		double timestamp)
 {
+	static carmen_ackerman_traj_point_t *goal_list = NULL;
+	static carmen_behavior_selector_goal_list_message goal_list_msg;
+
+	if (goal_list == NULL)
+		goal_list = (carmen_ackerman_traj_point_t *) calloc (x.size(), sizeof(carmen_ackerman_traj_point_t));
+
+	for (int i = 0; i < x.size(); i++)
+	{
+		goal_list[i].x = x[i];
+		goal_list[i].y = y[i];
+		goal_list[i].theta = th[i];
+		goal_list[i].v = v[i];
+		goal_list[i].phi = phi[i];
+	}
+
+	goal_list_msg.goal_list = goal_list;
+	goal_list_msg.size = 1;
+	goal_list_msg.timestamp = timestamp;
+	goal_list_msg.host = carmen_get_host();
+
 	IPC_RETURN_TYPE err;
 
-	err = IPC_defineMsg(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME, IPC_VARIABLE_LENGTH,
-		CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_FMT);
-
-	carmen_test_ipc_exit(err, "Could not define message",
-		CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME);
-}
-
-
-void
-signal_handler(int signo)
-{
-	if (signo == SIGINT)
-		env_destroy();
+	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME, &goal_list_msg);
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME);
 }
 
 
@@ -273,15 +288,247 @@ process_map_message(carmen_obstacle_distance_mapper_compact_map_message *message
 
 
 void
-handle_messages()
+handle_messages(double how_long)
 {
-	carmen_ipc_sleep(5e-2);
+	double time_previous_globalpos = global_localize_ackerman_message.timestamp;
+
+	do
+		carmen_ipc_sleep(how_long);
+	while (global_localize_ackerman_message.timestamp == time_previous_globalpos);
+
 	process_map_message(&global_obstacle_distance_mapper_compact_map_message);
+	carmen_map_server_copy_offline_map_from_message(&(simulator_config.map), &global_offline_map_message);
 }
 
 
 int
-read_parameters(int argc, char **argv)
+map_is_invalid(carmen_obstacle_distance_mapper_compact_map_message *map, double pos_x, double pos_y)
+{
+	if (map->timestamp == 0 ||
+		map->config.x_origin == 0 ||
+		map->config.y_origin == 0 ||
+		map->config.x_size == 0 ||
+		map->config.y_size == 0 ||
+		map->config.x_origin > pos_x ||
+		map->config.y_origin > pos_y ||
+		pos_x > map->config.x_origin + map->config.x_size ||
+		pos_y > map->config.y_origin + map->config.y_size)
+		return 1;
+
+	return 0;
+}
+
+
+int
+offline_map_is_invalid(carmen_map_server_offline_map_message *map, double pos_x, double pos_y)
+{
+	if (map->timestamp == 0 ||
+		map->config.x_origin == 0 ||
+		map->config.y_origin == 0 ||
+		map->config.x_size == 0 ||
+		map->config.y_size == 0 ||
+		map->config.x_origin > pos_x ||
+		map->config.y_origin > pos_y ||
+		pos_x > map->config.x_origin + map->config.x_size ||
+		pos_y > map->config.y_origin + map->config.y_size)
+	{
+		// printf("%lf\n", map->timestamp);
+		// printf("%lf\n", map->config.x_origin);
+		// printf("%lf\n", map->config.y_origin);
+		// printf("%d\n", map->config.x_size);
+		// printf("%d\n", map->config.y_size);
+		// printf("%lf\n", map->config.x_origin);
+		// printf("%lf\n", map->config.y_origin);
+		// printf("%lf\n", pos_x);
+		// printf("%lf\n", pos_y);
+
+		return 1;
+	}
+
+	return 0;
+}
+
+
+int
+pose_is_invalid(carmen_localize_ackerman_globalpos_message *msg, double pos_x, double pos_y)
+{
+	if (msg->timestamp == 0 ||
+		fabs(msg->globalpos.x - pos_x) > 2.0 ||
+		fabs(msg->globalpos.y != pos_y) > 2.0)
+		return 1;
+
+	return 0;
+}
+
+
+int
+laser_reading_is_invalid(carmen_laser_laser_message *laser_message)
+{
+	if (laser_message->timestamp == 0 ||
+		laser_message->num_readings == 0)
+		return 1;
+
+	return 0;
+}
+
+
+int
+goal_list_is_invalid(carmen_behavior_selector_goal_list_message *goal_list_message)
+{
+	if (goal_list_message->timestamp == 0 || goal_list_message->size == 0)
+		return 1;
+
+	return 0;
+}
+
+
+void
+reset_initial_pose(double x, double y, double th)
+{
+	publish_stop_command();
+
+	memset(&global_obstacle_distance_mapper_compact_map_message, 0, sizeof(global_obstacle_distance_mapper_compact_map_message));
+	memset(&global_localize_ackerman_message, 0, sizeof(carmen_localize_ackerman_globalpos_message));
+	memset(&global_front_laser_message, 0, sizeof(global_front_laser_message));
+	memset(&global_offline_map_message, 0, sizeof(global_offline_map_message));
+	memset(&global_goal_list_message, 0, sizeof(global_goal_list_message));
+
+	carmen_point_t pose;
+	carmen_point_t std;
+
+	pose.x = x;
+	pose.y = y;
+	pose.theta = th;
+
+	std.x = 0.001;
+	std.y = 0.001;
+	std.theta = carmen_degrees_to_radians(0.01);
+
+	double time_last_message = carmen_get_time();
+
+	do
+	{
+		publish_stop_command();
+		carmen_localize_ackerman_initialize_gaussian_command(pose, std);
+		publish_behavior_selector_state();
+		carmen_ipc_sleep(0.1);
+
+		// If the messages are taking too long to arrive, warn the user.
+		double curr_time = carmen_get_time();
+		if (curr_time - time_last_message > 1.0)
+		{
+			printf("Waiting for valid messages after reseting initial pose.\n");
+			time_last_message = curr_time;
+		}
+
+	} while (pose_is_invalid(&global_localize_ackerman_message, x, y) ||
+			map_is_invalid(&global_obstacle_distance_mapper_compact_map_message, x, y) ||
+			laser_reading_is_invalid(&global_front_laser_message) ||
+			offline_map_is_invalid(&global_offline_map_message, x, y) ||
+			goal_list_is_invalid(&global_goal_list_message));
+}
+
+
+std::vector<double>
+read_pose()
+{
+	std::vector<double> state;
+
+	carmen_localize_ackerman_globalpos_message globalpos = global_localize_ackerman_message;
+
+	state.push_back(globalpos.globalpos.x);
+	state.push_back(globalpos.globalpos.y);
+	state.push_back(globalpos.globalpos.theta);
+	state.push_back(globalpos.v);
+	state.push_back(globalpos.phi);
+
+	return state;
+}
+
+
+std::vector<double>
+read_goal()
+{
+	double x = global_localize_ackerman_message.globalpos.x;
+	double y = global_localize_ackerman_message.globalpos.y;
+	double th = global_localize_ackerman_message.globalpos.theta;
+
+	return next_goal_from_list(x, y, th, &global_goal_list_message);
+}
+
+
+std::vector<double>
+read_laser()
+{
+	return laser_to_vec(global_front_laser_message,
+		global_localize_ackerman_message.globalpos.theta, VIEW_LASER);
+}
+
+
+int
+hit_obstacle()
+{
+	carmen_ackerman_traj_point_t pose;
+
+	pose.x = global_localize_ackerman_message.globalpos.x;
+	pose.y = global_localize_ackerman_message.globalpos.y;
+	pose.theta = global_localize_ackerman_message.globalpos.theta;
+	pose.phi = global_localize_ackerman_message.phi;
+	pose.v = global_localize_ackerman_message.v;
+
+	int hit = trajectory_pose_hit_obstacle(pose,
+		global_robot_ackerman_config.obstacle_avoider_obstacles_safe_distance,
+		&global_obstacle_distance_map, &global_robot_ackerman_config);
+
+	return (hit == 1);
+}
+
+
+void
+simulation_destroy()
+{
+	free(global_simulated_front_laser.range);
+}
+
+
+void
+destroy()
+{
+	if (!global_destroy_already_requested)
+	{
+		publish_stop_command();
+		simulation_destroy();
+		global_destroy_already_requested = 1;
+		carmen_ipc_disconnect();
+	}
+
+	exit(0);
+}
+
+
+void
+define_messages()
+{
+	IPC_RETURN_TYPE err;
+
+	err = IPC_defineMsg(CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME, IPC_VARIABLE_LENGTH,
+		CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_FMT);
+
+	carmen_test_ipc_exit(err, "Could not define message",
+		CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME);
+}
+
+
+void
+signal_handler(int signo)
+{
+	if (signo == SIGINT)
+		destroy();
+}
+
+
+int
+read_robot_ackerman_parameters(int argc, char **argv)
 {
 	int num_items;
 
@@ -314,13 +561,158 @@ read_parameters(int argc, char **argv)
 }
 
 
-void
-env_init()
+static void
+read_simulator_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *config)
 {
+	int num_items;
+
+	carmen_param_t param_list[]=
+	{
+			{"simulator", "time", CARMEN_PARAM_DOUBLE, &(config->real_time), 1, NULL},
+			{"simulator", "sync_mode", CARMEN_PARAM_ONOFF, &(config->sync_mode), 1, NULL},
+			{"simulator", "motion_timeout", CARMEN_PARAM_DOUBLE, &(config->motion_timeout),1, NULL},
+			{"robot", "frontlaser_use", CARMEN_PARAM_ONOFF, &(config->use_front_laser), 1, NULL},
+			{"robot", "frontlaser_id", CARMEN_PARAM_INT, &(config->front_laser_config.id), 0, NULL},
+			{"robot", "rearlaser_use", CARMEN_PARAM_ONOFF, &(config->use_rear_laser), 1, NULL},
+			{"robot", "rearlaser_id", CARMEN_PARAM_INT, &(config->rear_laser_config.id), 0, NULL},
+			{"robot", "width", CARMEN_PARAM_DOUBLE, &(config->width), 1, NULL},
+			{"robot", "length", CARMEN_PARAM_DOUBLE, &(config->length), 1, NULL},
+			{"robot", "distance_between_rear_wheels", CARMEN_PARAM_DOUBLE, &(config->distance_between_rear_wheels), 1, NULL},
+			{"robot", "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &(config->distance_between_front_and_rear_axles), 1, NULL},
+			{"robot", "max_velocity", CARMEN_PARAM_DOUBLE, &(config->max_v), 1,NULL},
+			{"robot", "max_steering_angle", CARMEN_PARAM_DOUBLE, &(config->max_phi), 1, NULL},
+			{"robot", "maximum_steering_command_rate", CARMEN_PARAM_DOUBLE, &(config->maximum_steering_command_rate), 0, NULL},
+			{"robot", "understeer_coeficient", CARMEN_PARAM_DOUBLE, &(config->understeer_coeficient), 0, NULL},
+			{"robot", "understeer_coeficient2", CARMEN_PARAM_DOUBLE, &(config->understeer_coeficient2), 0, NULL},
+			{"robot", "maximum_speed_forward", CARMEN_PARAM_DOUBLE, &(config->maximum_speed_forward), 0, NULL},
+			{"robot", "maximum_speed_reverse", CARMEN_PARAM_DOUBLE, &(config->maximum_speed_reverse), 0, NULL},
+			{"robot", "maximum_acceleration_forward", CARMEN_PARAM_DOUBLE, &(config->maximum_acceleration_forward), 0, NULL},
+			{"robot", "maximum_deceleration_forward", CARMEN_PARAM_DOUBLE, &(config->maximum_deceleration_forward), 0, NULL},
+			{"robot", "maximum_acceleration_reverse", CARMEN_PARAM_DOUBLE, &(config->maximum_acceleration_reverse), 0, NULL},
+			{"robot", "maximum_deceleration_reverse", CARMEN_PARAM_DOUBLE, &(config->maximum_deceleration_reverse), 0, NULL},
+			{"robot", "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &(config->distance_between_rear_car_and_rear_wheels), 0, NULL},
+			{"rrt",   "use_mpc",                    CARMEN_PARAM_ONOFF, &(config->use_mpc), 0, NULL},
+			{"rrt",   "use_rlpid",                  CARMEN_PARAM_ONOFF, &(config->use_rlpid), 0, NULL},
+	};
+
+
+	num_items = sizeof(param_list)/sizeof(param_list[0]);
+	carmen_param_install_params(argc, argv, param_list, num_items);
+
+	static char frontlaser_fov_string[256];
+	static char frontlaser_res_string[256];
+	static char rearlaser_fov_string[256];
+	static char rearlaser_res_string[256];
+
+	sprintf(frontlaser_fov_string, "laser%d_fov", config->front_laser_config.id);
+	sprintf(frontlaser_res_string, "laser%d_resolution", config->front_laser_config.id);
+
+	sprintf(rearlaser_fov_string, "laser%d_fov", config->rear_laser_config.id);
+	sprintf(rearlaser_res_string, "laser%d_resolution", config->rear_laser_config.id);
+
+	carmen_param_t param_list_front_laser[] =
+	{
+			{"simulator", "frontlaser_maxrange", CARMEN_PARAM_DOUBLE, &(config->front_laser_config.max_range), 1, NULL},
+			{"robot", "frontlaser_offset", CARMEN_PARAM_DOUBLE, &(config->front_laser_config.offset), 1, NULL},
+			{"robot", "frontlaser_side_offset", CARMEN_PARAM_DOUBLE, &(config->front_laser_config.side_offset), 1, NULL},
+			{"robot", "frontlaser_angular_offset", CARMEN_PARAM_DOUBLE, &(config->front_laser_config.angular_offset), 1, NULL},
+			{"laser", frontlaser_fov_string, CARMEN_PARAM_DOUBLE, &(config->front_laser_config.fov), 0, NULL},
+			{"laser", frontlaser_res_string, CARMEN_PARAM_DOUBLE, &(config->front_laser_config.angular_resolution), 0, NULL},
+			{"simulator", "laser_probability_of_random_max", CARMEN_PARAM_DOUBLE, &(config->front_laser_config.prob_of_random_max), 1, NULL},
+			{"simulator", "laser_probability_of_random_reading", CARMEN_PARAM_DOUBLE, &(config->front_laser_config.prob_of_random_reading), 1, NULL},
+			{"simulator", "laser_sensor_variance", CARMEN_PARAM_DOUBLE, &(config->front_laser_config.variance), 1, NULL}
+	};
+
+	carmen_param_t param_list_rear_laser[] =
+	{
+			{"simulator", "rearlaser_maxrange", CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.max_range), 1, NULL},
+			{"robot", "rearlaser_offset", CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.offset), 1, NULL},
+			{"robot", "rearlaser_side_offset", CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.side_offset), 1, NULL},
+			{"robot", "rearlaser_angular_offset", CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.angular_offset), 1, NULL},
+			{"laser", rearlaser_fov_string, CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.fov), 0, NULL},
+			{"laser", rearlaser_res_string, CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.angular_resolution), 0, NULL},
+			{"simulator", "laser_probability_of_random_max", CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.prob_of_random_max), 1, NULL},
+			{"simulator", "laser_probability_of_random_reading", CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.prob_of_random_reading), 1, NULL},
+			{"simulator", "laser_sensor_variance", CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.variance), 1, NULL}
+	};
+
+	if (config->use_front_laser)
+	{
+		num_items = sizeof(param_list_front_laser)/
+				sizeof(param_list_front_laser[0]);
+		carmen_param_install_params(argc, argv, param_list_front_laser,
+				num_items);
+		config->front_laser_config.angular_resolution =
+				carmen_degrees_to_radians(config->front_laser_config.angular_resolution);
+
+		config->front_laser_config.fov =
+				carmen_degrees_to_radians(config->front_laser_config.fov);
+	}
+
+	if (config->use_rear_laser)
+	{
+		num_items = sizeof(param_list_rear_laser)/
+				sizeof(param_list_rear_laser[0]);
+		carmen_param_install_params(argc, argv, param_list_rear_laser,
+				num_items);
+		config->rear_laser_config.angular_resolution =
+				carmen_degrees_to_radians(config->rear_laser_config.angular_resolution);
+
+		config->rear_laser_config.fov =
+				carmen_degrees_to_radians(config->rear_laser_config.fov);
+	}
+
+	fill_laser_config_data( &(config->front_laser_config) );
+
+	if(config->use_rear_laser)
+		fill_laser_config_data( &(config->rear_laser_config));
+
+
+	// TODO REMOVER ESTA PARTE E LER OS PARAMETROS DIRETAMENTE PARA O ROBO_CONFIG
+	config->robot_config.maximum_steering_command_rate = config->maximum_steering_command_rate;
+	config->robot_config.understeer_coeficient = config->understeer_coeficient;
+	config->robot_config.maximum_acceleration_forward = config->maximum_acceleration_forward;
+	config->robot_config.maximum_deceleration_forward = config->maximum_deceleration_forward;
+	config->robot_config.maximum_acceleration_reverse = config->maximum_acceleration_reverse;
+	config->robot_config.maximum_deceleration_reverse = config->maximum_deceleration_reverse;
+	config->robot_config.distance_between_rear_car_and_rear_wheels = config->distance_between_rear_car_and_rear_wheels;
+	config->robot_config.distance_between_front_and_rear_axles = config->distance_between_front_and_rear_axles;
+	config->robot_config.max_phi = config->max_phi;
+	config->robot_config.length = config->length;
+}
+
+
+void
+initialize_global_data()
+{
+	global_simulated_front_laser.host = carmen_get_host();
+	global_simulated_front_laser.num_readings = simulator_config.front_laser_config.num_lasers;
+
+	global_simulated_front_laser.range = (double *) calloc (simulator_config.front_laser_config.num_lasers, sizeof(double));
+	carmen_test_alloc(global_simulated_front_laser.range);
+
+	global_simulated_front_laser.num_remissions = 0;
+	global_simulated_front_laser.remission = 0;
+
+	memset(&global_obstacle_distance_mapper_compact_map_message, 0, sizeof(global_obstacle_distance_mapper_compact_map_message));
+	memset(&global_localize_ackerman_message, 0, sizeof(carmen_localize_ackerman_globalpos_message));
+	memset(&global_front_laser_message, 0, sizeof(global_front_laser_message));
+	memset(&global_offline_map_message, 0, sizeof(global_offline_map_message));
+}
+
+
+void
+init()
+{
+	int argc = 1;
 	char *argv[] = {"rl_motion_planner"};
 	carmen_ipc_initialize(1, argv);
-	read_parameters(1, argv);
 
+	read_robot_ackerman_parameters(argc, argv);
+	read_simulator_parameters(argc, argv, &simulator_config);
+	carmen_libpid_read_PID_parameters(argc, argv);
+
+	initialize_global_data();
 	define_messages();
 
     carmen_localize_ackerman_subscribe_globalpos_message(&global_localize_ackerman_message,
@@ -332,124 +724,146 @@ env_init()
 	carmen_behavior_selector_subscribe_goal_list_message(&global_goal_list_message,
 		NULL, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_laser_subscribe_frontlaser_message(&global_frontlaser_message,
+	carmen_laser_subscribe_frontlaser_message(&global_front_laser_message,
 		NULL, CARMEN_SUBSCRIBE_LATEST);
 
-//	carmen_laser_subscribe_rearlaser_message(&global_rearlaser_message,
-//		NULL, CARMEN_SUBSCRIBE_LATEST);
+	carmen_map_server_subscribe_offline_map(&global_offline_map_message,
+		NULL, CARMEN_SUBSCRIBE_LATEST);
 
 	signal(SIGINT, signal_handler);
 }
 
 
-int
-map_is_invalid(carmen_obstacle_distance_mapper_compact_map_message *map, double pos_x, double pos_y)
+void
+simulation_reset(double p_x, double p_y, double p_th, double p_v, double p_phi)
 {
-	if (map->timestamp == 0 ||
-		map->config.x_origin == 0 ||
-		map->config.y_origin == 0 ||
-		map->config.x_size == 0 ||
-		map->config.y_size == 0 ||
-		map->config.x_origin > pos_x ||
-		map->config.y_origin > pos_y ||
-		pos_x > map->config.x_origin + map->config.x_size ||
-		pos_y > map->config.y_origin + map->config.y_size)
-		return 1;
+	carmen_simulator_ackerman_config_t *simulator_config_ptr = &simulator_config;
 
-	return 0;
+	simulator_config_ptr->true_pose.x = p_x;
+	simulator_config_ptr->true_pose.y = p_y;
+	simulator_config_ptr->true_pose.theta = p_th;
+	simulator_config_ptr->odom_pose.theta = p_th;
+
+	simulator_config_ptr->v = p_v;
+	simulator_config_ptr->phi = p_phi;
+	simulator_config_ptr->target_v = p_v;
+	simulator_config_ptr->target_phi = p_phi;
+
+	simulator_config_ptr->current_motion_command_vector = NULL;
+	simulator_config_ptr->nun_motion_commands = 0;
+	simulator_config_ptr->current_motion_command_vector_index = 0;
+	simulator_config_ptr->initialize_neural_networks = 1;
 }
 
 
-int
-pose_is_invalid(carmen_localize_ackerman_globalpos_message *msg, double pos_x, double pos_y)
+void
+simulation_step(double v, double phi, double delta_t)
 {
-	if (msg->timestamp == 0 ||
-		fabs(msg->globalpos.x - pos_x) > 2.0 ||
-		fabs(msg->globalpos.y != pos_y) > 2.0)
-		return 1;
+	carmen_simulator_ackerman_config_t *simulator_config_ptr = &simulator_config;
+	double base_time = carmen_get_time();
 
-	return 0;
-}
+	carmen_ackerman_motion_command_t cmd;
 
+	cmd.x = cmd.y = cmd.theta = 0.0;
+	cmd.v = v;
+	cmd.phi = phi;
+	cmd.time = base_time + 0.1;
 
-int
-laser_reading_is_invalid(carmen_laser_laser_message *laser_message)
-{
-	if (laser_message->timestamp == 0 ||
-		laser_message->num_readings == 0)
-		return 1;
+	simulator_config_ptr->current_motion_command_vector = &cmd;
+	simulator_config_ptr->nun_motion_commands = 1;
+	simulator_config_ptr->time_of_last_command = base_time;
 
-	return 0;
-}
+	if (simulator_config_ptr->use_mpc)
+		simulator_config_ptr->nun_motion_commands = apply_system_latencies(simulator_config_ptr->current_motion_command_vector, simulator_config_ptr->nun_motion_commands);
 
+	simulator_config_ptr->delta_t = delta_t;
 
-std::vector<double>
-env_reset(double pos_x, double pos_y, double pos_th,
-		double goal_x, double goal_y, double goal_th,
-		double goal_v, double goal_phi)
-{
-	memset(&global_obstacle_distance_mapper_compact_map_message, 0, sizeof(global_obstacle_distance_mapper_compact_map_message));
-	memset(&global_localize_ackerman_message, 0, sizeof(carmen_localize_ackerman_globalpos_message));
-	memset(&global_frontlaser_message, 0, sizeof(global_frontlaser_message));
-	// memset(&global_rearlaser_message, 0, sizeof(global_rearlaser_message));
-
-	do
+	/*
+	if (!simulator_config_ptr->sync_mode)
 	{
-		publish_command(0, 0);
-		publish_starting_pose(pos_x, pos_y, pos_th);
-
-		if (goal_x != 0 && goal_y != 0)
-			publish_goal_list(goal_x, goal_y, goal_th, goal_v, goal_phi, carmen_get_time());
-
-		publish_current_state();
-		carmen_ipc_sleep(5e-2);
-
-	} while (pose_is_invalid(&global_localize_ackerman_message, pos_x, pos_y) ||
-			map_is_invalid(&global_obstacle_distance_mapper_compact_map_message, pos_x, pos_y) ||
-			// laser_reading_is_invalid(&global_rearlaser_message) ||
-			laser_reading_is_invalid(&global_frontlaser_message));
-
-	return read_state();
-}
-
-
-std::vector<double>
-env_step(double v, double phi, double goal_x, double goal_y, double goal_th, double goal_v, double goal_phi)
-{
-	double t, t1;
-
-	t = global_localize_ackerman_message.timestamp;
-
-	publish_command(v, phi);
-
-	if (goal_x != 0 && goal_y != 0)
-		publish_goal_list(goal_x, goal_y, goal_th, goal_v, goal_phi, carmen_get_time());
-
-	publish_current_state();
-
-	do
-	{
-		carmen_ipc_sleep(5e-2);
-		t1 = global_localize_ackerman_message.timestamp;
+		delta_time = timestamp - simulator_config_ptr->time_of_last_command;
+		if ((simulator_config_ptr->v > 0 || simulator_config_ptr->phi > 0) && (delta_time > simulator_config_ptr->motion_timeout))
+		{
+			simulator_config_ptr->current_motion_command_vector = NULL;
+			simulator_config_ptr->nun_motion_commands = 0;
+			simulator_config_ptr->current_motion_command_vector_index = 0;
+			simulator_config_ptr->target_v = 0;
+			simulator_config_ptr->target_phi = 0;
+		}
 	}
-	while (fabs(t - t1) < 0.1);
+	*/
 
-	read_laser();
+	/**
+	 * *************************************************************************************************
+	 * IMPORTANT: The list of commands used as input to the neural simulator is maintained internally,
+	 * and it seems that there isn't an easy way of reinitializing it to some command list besides to
+	 * zero. It seems that the simulator was designed to be reinitialized to zero once in the beginning
+	 * and then used without being reinitialized until the end of execution.
+	 * Because of that, I'm just doing a simple Ackerman prediction here, and ignoring latency.
+	 * *************************************************************************************************
+	 */
+	// carmen_simulator_ackerman_recalc_pos(simulator_config_ptr);
+	simulator_config_ptr->v = cmd.v;
+	simulator_config_ptr->phi = cmd.phi;
+	// simulator_config_ptr->true_pose.x +=  simulator_config_ptr->v * simulator_config_ptr->delta_t * cos(simulator_config_ptr->true_pose.theta);
+	// simulator_config_ptr->true_pose.y +=  simulator_config_ptr->v * simulator_config_ptr->delta_t * sin(simulator_config_ptr->true_pose.theta);
+	// simulator_config_ptr->true_pose.theta += simulator_config_ptr->v * simulator_config_ptr->delta_t * tan(simulator_config_ptr->phi) / simulator_config_ptr->distance_between_front_and_rear_axles;
+	// simulator_config_ptr->true_pose.theta = carmen_normalize_theta(simulator_config_ptr->true_pose.theta);
 
-	process_map_message(&global_obstacle_distance_mapper_compact_map_message);
-	return read_state();
+	ackerman_motion_model(&(simulator_config_ptr->true_pose.x),
+		&(simulator_config_ptr->true_pose.y),
+		&(simulator_config_ptr->true_pose.theta),
+		simulator_config_ptr->v,
+		simulator_config_ptr->phi,
+		simulator_config_ptr->delta_t,
+		simulator_config_ptr->distance_between_front_and_rear_axles);
+
+	// carmen_simulator_ackerman_update_objects(simulator_config_ptr);
+	carmen_simulator_ackerman_calc_laser_msg(&global_simulated_front_laser,
+		simulator_config_ptr, 0);
 }
 
 
-bool
-env_done()
+int
+simulation_hit_obstacle()
 {
-	int hit = car_hit_obstacle();
+	if (hit_something_in_the_map(&simulator_config, simulator_config.true_pose))
+		return 1;
 
-	// hit = 2 means the car pose is not in the current map.
-	if (hit == 1)
-		return true;
-	else
-		return false;
+	return 0;
+}
+
+
+std::vector<double>
+simulation_read_laser()
+{
+	return laser_to_vec(global_simulated_front_laser,
+		simulator_config.true_pose.theta, VIEW_SIMULATED_LASER);
+}
+
+
+std::vector<double>
+simulation_read_goal()
+{
+	double x = simulator_config.true_pose.x;
+	double y = simulator_config.true_pose.y;
+	double th = simulator_config.true_pose.theta;
+
+	return next_goal_from_list(x, y, th, &global_goal_list_message);
+}
+
+
+std::vector<double>
+simulation_read_pose()
+{
+	std::vector<double> pose;
+
+	pose.push_back(simulator_config.true_pose.x);
+	pose.push_back(simulator_config.true_pose.y);
+	pose.push_back(simulator_config.true_pose.theta);
+	pose.push_back(simulator_config.v);
+	pose.push_back(simulator_config.phi);
+
+	return pose;
 }
 

@@ -24,12 +24,14 @@ MODULE_COMMENT = "simulates the readings of a ackerman robot on a map"
 SOURCES = simulator_ackerman.c objects_ackerman.c simulator_ackerman_simulation.c simulator_ackerman_test.c \
 	simulator_ackerman_interface.c
 
-PUBLIC_INCLUDES = simulator_ackerman_messages.h simulator_ackerman_interface.h simulator_ackerman.h
-PUBLIC_LIBRARIES = libsimulator_ackerman_interface.a
+PUBLIC_INCLUDES = simulator_ackerman_messages.h simulator_ackerman_interface.h simulator_ackerman.h \
+	simulator_ackerman_simulation.h objects_ackerman.h
+PUBLIC_LIBRARIES = libsimulator_ackerman_interface.a libsimulator_ackerman.a
 PUBLIC_BINARIES = simulator_ackerman simulator_ackerman_connect_multiple
 MAN_PAGES =
 
-TARGETS = libcarmodel libcontrol simulator_ackerman simulator_ackerman_test  libsimulator_ackerman_interface.a simulator_ackerman_connect_multiple
+TARGETS = libcarmodel libcontrol simulator_ackerman simulator_ackerman_test  libsimulator_ackerman_interface.a \
+	simulator_ackerman_connect_multiple libsimulator_ackerman.a
 
 
 ifndef NO_PYTHON
@@ -51,6 +53,8 @@ clean: clean_libcontrol
 clean_libcontrol:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcontrol/
 
+
+libsimulator_ackerman.a: simulator_ackerman_simulation.o objects_ackerman.o
 
 simulator_ackerman:	simulator_ackerman.o simulator_ackerman_simulation.o objects_ackerman.o
 

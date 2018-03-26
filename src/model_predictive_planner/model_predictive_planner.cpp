@@ -794,6 +794,7 @@ compute_paths(const vector<Command> &lastOdometryVector, vector<Pose> &goalPoseV
 		last_timestamp = goal_list_message->timestamp;
 	}
 
+	// TODO: behide -> behind
 	if (goal_is_behide_car(localizer_pose, &goalPoseVector[0]))
 	{
 //		printf("goal is behide the car\n");

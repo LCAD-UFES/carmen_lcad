@@ -1,8 +1,7 @@
 include ../Makefile.conf
 
 LINK = g++
-
-CFLAGS += -DOLD_MOTION_MODEL -std=c99
+CXXFLAGS += -std=c++0x
 
 IFLAGS += -I../obstacle_avoider
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libcarmodel
@@ -21,11 +20,11 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/libcontrol
 MODULE_NAME = SIMULATOR ACKERMAN
 MODULE_COMMENT = "simulates the readings of a ackerman robot on a map"
 
-SOURCES = simulator_ackerman.c objects_ackerman.c simulator_ackerman_simulation.c simulator_ackerman_test.c \
+SOURCES = simulator_ackerman2.c objects_ackerman.c simulator_ackerman2_simulation.cpp simulator_ackerman_test.c \
 	simulator_ackerman_interface.c
 
 
-PUBLIC_INCLUDES = simulator_ackerman_messages.h simulator_ackerman_interface.h simulator_ackerman.h
+PUBLIC_INCLUDES = simulator_ackerman_messages.h simulator_ackerman_interface.h simulator2_ackerman.h
 PUBLIC_LIBRARIES = 
 PUBLIC_BINARIES = simulator_ackerman2
 MAN_PAGES =
@@ -34,7 +33,7 @@ MAN_PAGES =
 TARGETS = simulator_ackerman2
 
 
-simulator_ackerman2: simulator_ackerman.o simulator_ackerman_simulation.o objects_ackerman.o
+simulator_ackerman2: simulator2_ackerman.o simulator_ackerman2_simulation.o objects_ackerman.o
 
 
 include ../Makefile.rules

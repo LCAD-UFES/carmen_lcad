@@ -91,6 +91,7 @@ int velodyne_viewer = 0;
 double robot_wheel_radius;
 carmen_robot_ackerman_config_t car_config;
 double highest_sensor;
+int robot_publish_odometry;
 
 double x_origin = 0.0;
 double y_origin = 0.0;
@@ -175,7 +176,7 @@ publish_particles_name(carmen_localize_ackerman_particle_filter_p filter, carmen
 	pmsg.globalpos = summary->mean;
 	pmsg.globalpos_std = summary->std;
 	pmsg.num_particles = filter->param->num_particles;
-	pmsg.particles = (carmen_localize_ackerman_particle_ipc_p) filter->particles;
+	pmsg.particles = filter->particles;
 
 	err = IPC_publishData(message_name, &pmsg);
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_LOCALIZE_ACKERMAN_PARTICLE_NAME);
@@ -241,6 +242,12 @@ void
 publish_particles_prediction(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_summary_p summary, double timestamp)
 {
 	publish_particles_name(filter, summary, (char *) CARMEN_LOCALIZE_ACKERMAN_PARTICLE_PREDICTION_NAME, timestamp);
+//	FILE *caco = fopen("cacoxx.txt", "a");
+//	for (int i = 0; i < filter->param->num_particles; i++)
+//		fprintf(caco, "%03d %2.10lf\n", i, filter->particles[i].weight);
+//	fprintf(caco, "++++++++++++++++++++++++++++++\n");
+//	fclose(caco);
+
 }
 
 
@@ -329,6 +336,25 @@ publish_globalpos_on_mapping_mode(carmen_fused_odometry_message *msg, double tim
 		carmen_test_ipc_exit(err, "Could not publish",	CARMEN_LOCALIZE_ACKERMAN_GLOBALPOS_NAME);
 	}
 }
+
+
+static void
+publish_carmen_base_ackerman_odometry()
+{
+	IPC_RETURN_TYPE err = IPC_OK;
+	carmen_base_ackerman_odometry_message base_ackerman_odometry;
+
+	base_ackerman_odometry.x = filter->particles[0].x;
+	base_ackerman_odometry.y = filter->particles[0].y;
+	base_ackerman_odometry.theta = filter->particles[0].theta;
+	base_ackerman_odometry.v = filter->particles[0].v;
+	base_ackerman_odometry.phi = filter->particles[0].phi;
+	base_ackerman_odometry.timestamp = carmen_get_time();
+	base_ackerman_odometry.host = carmen_get_host();
+
+	err = IPC_publishData(CARMEN_BASE_ACKERMAN_ODOMETRY_NAME, &base_ackerman_odometry);
+	carmen_test_ipc(err, "Could not publish carmen_base_ackerman_odometry_message", CARMEN_BASE_ACKERMAN_ODOMETRY_NAME);
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -341,7 +367,8 @@ velodyne_variable_scan_localize(carmen_velodyne_variable_scan_message *message, 
 	odometry_index = get_base_ackerman_odometry_index_by_timestamp(message->timestamp);
 	fused_odometry_index = get_fused_odometry_index_by_timestamp(message->timestamp);
 
-	if (!necessary_maps_available || !global_localization_requested || base_ackerman_odometry_index < 0)
+	if (!necessary_maps_available || !global_localization_requested ||
+		((base_ackerman_odometry_index < 0) && (filter->param->prediction_type != 2)))
 		return;
 
 	if (mapping_mode)
@@ -359,9 +386,12 @@ velodyne_variable_scan_localize(carmen_velodyne_variable_scan_message *message, 
 			xsens_global_quat_message,
 			message->timestamp, car_config.distance_between_front_and_rear_axles);
 
+	publish_particles_prediction(filter, &summary, message->timestamp);
+
 	carmen_localize_ackerman_velodyne_correction(filter, &localize_map, &local_compacted_map, &local_compacted_mean_remission_map,
 			&local_compacted_variance_remission_map, &binary_map);
 
+	publish_particles_correction(filter, &summary, message->timestamp);
 
 //	if (fabs(base_ackerman_odometry_vector[odometry_index].v) > 0.2)
 	{
@@ -374,7 +404,9 @@ velodyne_variable_scan_localize(carmen_velodyne_variable_scan_message *message, 
 
 		publish_globalpos(&summary, base_ackerman_odometry_vector[odometry_index].v,
 				base_ackerman_odometry_vector[odometry_index].phi, message->timestamp);
-		publish_particles_correction(filter, &summary, message->timestamp);
+
+		if ((filter->param->prediction_type == 2) && !robot_publish_odometry)
+			publish_carmen_base_ackerman_odometry();
 	}
 
 	if (g_reinitiaze_particles)
@@ -406,7 +438,8 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 		return;
 	}
 
-	if (!necessary_maps_available || !global_localization_requested || base_ackerman_odometry_index < 0)
+	if (!necessary_maps_available || !global_localization_requested ||
+		((base_ackerman_odometry_index < 0) && (filter->param->prediction_type != 2)))
 		return;
 
 	velodyne_initilized = localize_ackerman_velodyne_partial_scan_build_instanteneous_maps(velodyne_message, &spherical_sensor_params[0], 
@@ -418,14 +451,16 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 			&base_ackerman_odometry_vector[odometry_index], xsens_global_quat_message,
 			velodyne_message->timestamp, car_config.distance_between_front_and_rear_axles);
 
+	publish_particles_prediction(filter, &summary, velodyne_message->timestamp);
+
 	carmen_localize_ackerman_velodyne_correction(filter,
 			&localize_map, &local_compacted_map, &local_compacted_mean_remission_map, &local_compacted_variance_remission_map, &binary_map);
 
+	publish_particles_correction(filter, &summary, velodyne_message->timestamp);
+
 	if (filter->initialized)
-	{
 		carmen_localize_ackerman_summarize_velodyne(filter, &summary);
-		publish_particles_prediction(filter, &summary, velodyne_message->timestamp);
-	}
+
 	// if (fabs(base_ackerman_odometry_vector[odometry_index].v) > 0.2)
 	{
 		carmen_localize_ackerman_velodyne_resample(filter);
@@ -436,6 +471,9 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 		carmen_localize_ackerman_summarize_velodyne(filter, &summary);
 		publish_globalpos(&summary, base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi,
 				velodyne_message->timestamp);
+
+		if ((filter->param->prediction_type == 2) && !robot_publish_odometry)
+			publish_carmen_base_ackerman_odometry();
 
 //		static bool ft = true;
 //		static double init_t = 0.0;
@@ -451,8 +489,6 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
 //				base_ackerman_odometry_vector[odometry_index].v, base_ackerman_odometry_vector[odometry_index].phi);
 //		fflush(caco);
 //		fclose(caco);
-
-		publish_particles_correction(filter, &summary, velodyne_message->timestamp);
 	}
 
 	if (g_reinitiaze_particles)
@@ -1088,6 +1124,7 @@ read_parameters(int argc, char **argv, carmen_localize_ackerman_param_p param, P
 		{(char *) "robot", (char *) "width", CARMEN_PARAM_DOUBLE, &car_config.width, 0, NULL},
 		{(char *) "robot", (char *) "distance_between_rear_car_and_rear_wheels",	CARMEN_PARAM_DOUBLE, &car_config.distance_between_rear_car_and_rear_wheels, 1, NULL},
 		{(char *) "robot",  (char *) "distance_between_front_and_rear_axles",		CARMEN_PARAM_DOUBLE, &car_config.distance_between_front_and_rear_axles, 1, NULL},
+		{(char *) "robot",  (char *) "publish_odometry", CARMEN_PARAM_DOUBLE, &robot_publish_odometry, 1, NULL},
 
 		{(char *) "robot", (char *) "wheel_radius", CARMEN_PARAM_DOUBLE, &robot_wheel_radius, 0, NULL},
 

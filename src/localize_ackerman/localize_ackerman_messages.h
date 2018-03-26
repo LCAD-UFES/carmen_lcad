@@ -90,7 +90,7 @@ typedef struct {
 /* particle message */
 
 typedef struct {
-  double x, y, theta;
+  double x, y, theta, v, phi, phi_bias;
   double weight;
 } carmen_localize_ackerman_particle_ipc_t, *carmen_localize_ackerman_particle_ipc_p;
 
@@ -104,7 +104,7 @@ typedef struct {
 } carmen_localize_ackerman_particle_message;
 
 #define CARMEN_LOCALIZE_ACKERMAN_PARTICLE_NAME "carmen_localize_ackerman_particle"
-#define CARMEN_LOCALIZE_ACKERMAN_PARTICLE_FMT  "{int,<{double,double,double,double}:1>,{double,double,double},{double,double,double},double,double,string}"
+#define CARMEN_LOCALIZE_ACKERMAN_PARTICLE_FMT  "{int,<{double,double,double,double,double,double,double}:1>,{double,double,double},{double,double,double},double,double,string}"
 
 #define CARMEN_LOCALIZE_ACKERMAN_PARTICLE_PREDICTION_NAME "carmen_localize_ackerman_particle_prediction"
 #define CARMEN_LOCALIZE_ACKERMAN_PARTICLE_CORRECTION_NAME "carmen_localize_ackerman_particle_correction"

@@ -45,8 +45,6 @@ carmen_localize_ackerman_incorporate_IMU(carmen_localize_ackerman_particle_filte
 		carmen_xsens_global_quat_message *xsens_global_quat_message,
 		double distance_between_front_and_rear_axles, double dt)
 {
-	static double v = 0.0;
-
 	double v_step, phi_step;
 	carmen_pose_3D_t robot_pose;
 
@@ -56,13 +54,15 @@ carmen_localize_ackerman_incorporate_IMU(carmen_localize_ackerman_particle_filte
 	if (!xsens_global_quat_message)
 		return;
 
-	v += xsens_global_quat_message->m_acc.x * dt;
-	double phi = atan2(xsens_global_quat_message->m_gyr.z * distance_between_front_and_rear_axles, v);
-
-	filter->distance_travelled += fabs(v * dt);
-
+	double average_v = 0.0;
 	for (int i = 0; i < filter->param->num_particles; i++)
 	{
+		filter->particles[i].v += xsens_global_quat_message->m_acc.x * dt + carmen_gaussian_random(0.0, 0.2);
+		double v = filter->particles[i].v;
+		average_v += v;
+		filter->particles[i].phi = atan2((xsens_global_quat_message->m_gyr.z + carmen_gaussian_random(0.0, 0.01)) * distance_between_front_and_rear_axles, v);
+		double phi = filter->particles[i].phi;
+
 		if (i != 0)
 		{
 			robot_pose.position.x = filter->particles[i].x;
@@ -105,6 +105,8 @@ carmen_localize_ackerman_incorporate_IMU(carmen_localize_ackerman_particle_filte
 			filter->particles[i].y = robot_pose.position.y;
 			filter->particles[i].theta = carmen_normalize_theta(robot_pose.orientation.yaw);
 		}
+
+		filter->distance_travelled += fabs((average_v / (double) filter->param->num_particles) * dt);
 	}
 }
 
@@ -398,10 +400,10 @@ static void
 velodyne_resample(carmen_localize_ackerman_particle_filter_p filter)
 {
 	static double *cumulative_sum = NULL;
-	static carmen_localize_ackerman_particle_p temp_particles = NULL;
+	static carmen_localize_ackerman_particle_ipc_p temp_particles = NULL;
 	static int num_particles = 0;
 
-	carmen_localize_ackerman_particle_p aux;
+	carmen_localize_ackerman_particle_ipc_p aux;
 	int i, which_particle;
 	double weight_sum;
 	double position, step_size;
@@ -417,7 +419,7 @@ velodyne_resample(carmen_localize_ackerman_particle_filter_p filter)
 		/* Allocate memory necessary for resampling */
 		cumulative_sum = (double *) calloc(filter->param->num_particles, sizeof(double));
 		carmen_test_alloc(cumulative_sum);
-		temp_particles = (carmen_localize_ackerman_particle_p) calloc(filter->param->num_particles, sizeof(carmen_localize_ackerman_particle_t));
+		temp_particles = (carmen_localize_ackerman_particle_ipc_p) calloc(filter->param->num_particles, sizeof(carmen_localize_ackerman_particle_ipc_t));
 		carmen_test_alloc(temp_particles);
 
 		num_particles = filter->param->num_particles;
@@ -466,10 +468,10 @@ void
 carmen_localize_ackerman_resample(carmen_localize_ackerman_particle_filter_p filter)
 {
 	static double *cumulative_sum = NULL;
-	static carmen_localize_ackerman_particle_p temp_particles = NULL;
+	static carmen_localize_ackerman_particle_ipc_p temp_particles = NULL;
 	static int num_particles = 0;
 
-	carmen_localize_ackerman_particle_p aux;
+	carmen_localize_ackerman_particle_ipc_p aux;
 	int i, which_particle;
 	double weight_sum;
 	double position, step_size, max_weight;
@@ -483,7 +485,7 @@ carmen_localize_ackerman_resample(carmen_localize_ackerman_particle_filter_p fil
 		/* Allocate memory necessary for resampling */
 		cumulative_sum = (double *)calloc(filter->param->num_particles, sizeof(double));
 		carmen_test_alloc(cumulative_sum);
-		temp_particles = (carmen_localize_ackerman_particle_p) calloc(filter->param->num_particles, sizeof(carmen_localize_ackerman_particle_t));
+		temp_particles = (carmen_localize_ackerman_particle_ipc_p) calloc(filter->param->num_particles, sizeof(carmen_localize_ackerman_particle_ipc_t));
 		carmen_test_alloc(temp_particles);
 
 		num_particles = filter->param->num_particles;
@@ -672,7 +674,7 @@ calc_posible_particle_position(carmen_localize_ackerman_particle_filter_p filter
 
 
 static double
-pearson_correlation_correction(carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_map, carmen_localize_ackerman_particle_t *particle, double map_mean)
+pearson_correlation_correction(carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_map, carmen_localize_ackerman_particle_ipc_t *particle, double map_mean)
 {
 	int i;
 	cell_coords_t local, global;
@@ -717,7 +719,7 @@ pearson_correlation_correction(carmen_localize_ackerman_map_t *global_map, carme
 
 
 void
-inner_product_between_maps(double *inner_product, double *norm_local_map, double *norm_global_map, carmen_map_t *global_map, carmen_compact_map_t *local_map, carmen_localize_ackerman_particle_t *particle)
+inner_product_between_maps(double *inner_product, double *norm_local_map, double *norm_global_map, carmen_map_t *global_map, carmen_compact_map_t *local_map, carmen_localize_ackerman_particle_ipc_t *particle)
 {
 	int i;
 	cell_coords_t local, global;
@@ -766,7 +768,7 @@ inner_product_between_maps(double *inner_product, double *norm_local_map, double
 
 
 static double
-cosine_correlation_correction_with_likelihood_map(carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_map, carmen_localize_ackerman_particle_t *particle)
+cosine_correlation_correction_with_likelihood_map(carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_map, carmen_localize_ackerman_particle_ipc_t *particle)
 {
 	int i;
 	cell_coords_t local, global;
@@ -892,7 +894,7 @@ cosine_correction(carmen_localize_ackerman_particle_filter_p filter, carmen_loca
 
 
 static double
-hausdoff_distance(carmen_map_t *global_map, carmen_compact_map_t *local_map, carmen_localize_ackerman_particle_t *particle)
+hausdoff_distance(carmen_map_t *global_map, carmen_compact_map_t *local_map, carmen_localize_ackerman_particle_ipc_t *particle)
 {
 	int i, j;
 	cell_coords_t localA, localB, globalA, globalB;
@@ -1001,7 +1003,7 @@ map_particle_correction(carmen_localize_ackerman_map_t *localize_map, carmen_com
 	cell_coords_t local_cell, global_cell;
 	carmen_vector_2D_t robot_position;
 
-	carmen_localize_ackerman_particle_t *particle = &(filter->particles[particle_index]);
+	carmen_localize_ackerman_particle_ipc_t *particle = &(filter->particles[particle_index]);
 
 	double sin_theta = sin(particle->theta);
 	double cos_theta = cos(particle->theta);
@@ -1066,7 +1068,7 @@ compute_particles_weights_with_outlier_rejection(carmen_localize_ackerman_map_t 
 //	FILE *p = fopen("p.txt", "a");
 	for (int i = 0; i < filter->param->num_particles; i++)
 	{
-		carmen_localize_ackerman_particle_t *particle = &(filter->particles[i]);
+		carmen_localize_ackerman_particle_ipc_t *particle = &(filter->particles[i]);
 
 		double sin_theta = sin(particle->theta);
 		double cos_theta = cos(particle->theta);
@@ -1180,7 +1182,7 @@ cosine_correction_with_remission_map_and_grid_map(carmen_localize_ackerman_parti
 
 
 double
-mahalanobis_distance_between_maps(carmen_map_t *global_mean_map, carmen_map_t *global_variance_map, carmen_compact_map_t *local_mean_map, carmen_localize_ackerman_particle_t *particle)
+mahalanobis_distance_between_maps(carmen_map_t *global_mean_map, carmen_map_t *global_variance_map, carmen_compact_map_t *local_mean_map, carmen_localize_ackerman_particle_ipc_t *particle)
 {
 	int i;
 	cell_coords_t local, global;
@@ -1269,7 +1271,7 @@ calc_global_cell_coordinate2(cell_coords_t *local, carmen_map_config_t *local_ma
 
 
 double
-normalized_mutual_information(carmen_map_t *global_map, carmen_compact_map_t *local_map, carmen_localize_ackerman_particle_t *particle)
+normalized_mutual_information(carmen_map_t *global_map, carmen_compact_map_t *local_map, carmen_localize_ackerman_particle_ipc_t *particle)
 {
 	int i, j;
 	cell_coords_t local, global;
@@ -1372,7 +1374,7 @@ mutual_information_correction(carmen_localize_ackerman_particle_filter_p filter,
 
 
 double
-hamming_distance(carmen_map_t *global_map, carmen_compact_map_t *local_map, carmen_localize_ackerman_binary_map_t *binary_map, carmen_localize_ackerman_particle_t *particle)
+hamming_distance(carmen_map_t *global_map, carmen_compact_map_t *local_map, carmen_localize_ackerman_binary_map_t *binary_map, carmen_localize_ackerman_particle_ipc_t *particle)
 {
 	int i;
 	cell_coords_t local1, local2, global1, global2;
@@ -1471,7 +1473,7 @@ cosine_correction_with_likelihood_map(carmen_localize_ackerman_particle_filter_p
 
 
 static double
-calc_map_mean(carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_map, carmen_localize_ackerman_particle_t *particle)
+calc_map_mean(carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_map, carmen_localize_ackerman_particle_ipc_t *particle)
 {
 	int i;
 	cell_coords_t local, global;
@@ -1620,7 +1622,7 @@ carmen_localize_ackerman_function_velodyne_evaluation(
 #include <carmen/moving_objects_interface.h>
 
 double
-mahalanobis_distance(carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_mean_remission_map, carmen_localize_ackerman_particle_t *particle,
+mahalanobis_distance(carmen_localize_ackerman_map_t *global_map, carmen_compact_map_t *local_mean_remission_map, carmen_localize_ackerman_particle_ipc_t *particle,
 		int use_log_odds, double small_log_odds, double min_remission_variance)
 {
 	int i;
@@ -1754,7 +1756,7 @@ mahalanobis_distance_with_outlier_rejection(carmen_localize_ackerman_map_t *loca
 
 	for (int i = 0; i < filter->param->num_particles; i++)
 	{
-		carmen_localize_ackerman_particle_t *particle = &(filter->particles[i]);
+		carmen_localize_ackerman_particle_ipc_t *particle = &(filter->particles[i]);
 
 		double sin_theta = sin(particle->theta);
 		double cos_theta = cos(particle->theta);
@@ -2116,9 +2118,9 @@ swarm_get_best_particle(carmen_localize_ackerman_particle_filter_p filter)
 void
 swarm_initialize(carmen_localize_ackerman_particle_filter_p filter)
 {
-	memset( filter->swarm_pbest, 	0, filter->param->num_particles * sizeof(carmen_localize_ackerman_particle_t));
-	memset( filter->swarm_velocity, 0, filter->param->num_particles * sizeof(carmen_localize_ackerman_particle_t));
-	memset(&filter->swarm_gbest, 	0, sizeof(carmen_localize_ackerman_particle_t));
+	memset( filter->swarm_pbest, 	0, filter->param->num_particles * sizeof(carmen_localize_ackerman_particle_ipc_t));
+	memset( filter->swarm_velocity, 0, filter->param->num_particles * sizeof(carmen_localize_ackerman_particle_ipc_t));
+	memset(&filter->swarm_gbest, 	0, sizeof(carmen_localize_ackerman_particle_ipc_t));
 }
 
 
@@ -2143,7 +2145,7 @@ swarm(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerma
 						local_mean_remission_map, local_variance_remission_map, binary_map);
 		swarm_get_best_particle(filter);
 	}
-	memcpy( filter->particles, 	filter->swarm_pbest, filter->param->num_particles * sizeof(carmen_localize_ackerman_particle_t));
+	memcpy( filter->particles, 	filter->swarm_pbest, filter->param->num_particles * sizeof(carmen_localize_ackerman_particle_ipc_t));
 }
 
 
@@ -2318,7 +2320,7 @@ de(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_m
 		swarm_get_best_particle(filter);
 	}
 
-	memcpy( filter->particles, 	filter->swarm_pbest, filter->param->num_particles * sizeof(carmen_localize_ackerman_particle_t));
+	memcpy( filter->particles, 	filter->swarm_pbest, filter->param->num_particles * sizeof(carmen_localize_ackerman_particle_ipc_t));
 }
 
 
@@ -2341,7 +2343,7 @@ hade(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman
 				local_mean_remission_map, local_variance_remission_map);
 	}
 
-	memcpy( filter->particles, 	filter->swarm_pbest, filter->param->num_particles * sizeof(carmen_localize_ackerman_particle_t));
+	memcpy( filter->particles, 	filter->swarm_pbest, filter->param->num_particles * sizeof(carmen_localize_ackerman_particle_ipc_t));
 }
 
 
@@ -2480,14 +2482,13 @@ carmen_localize_ackerman_summarize_swarm(carmen_localize_ackerman_particle_filte
 	summary->mean.x = filter->swarm_gbest.x;
 	summary->mean.y = filter->swarm_gbest.y;
 	summary->mean.theta = filter->swarm_gbest.theta;
-
 }
 
 
 void 
 carmen_localize_ackerman_summarize_velodyne(carmen_localize_ackerman_particle_filter_p filter, carmen_localize_ackerman_summary_p summary)
 {
-	double mean_x, mean_y, mean_theta_x, mean_theta_y, mean_phi_bias;
+	double mean_x, mean_y, mean_theta_x, mean_theta_y, mean_v, mean_phi, mean_phi_bias;
 	double diff_x, diff_y, diff_theta, std_x, std_y, std_theta, xy_cov;	
 	double total_weight = 0;
 	int i;
@@ -2500,12 +2501,16 @@ carmen_localize_ackerman_summarize_velodyne(carmen_localize_ackerman_particle_fi
 	mean_theta_x = 0.0;
 	mean_theta_y = 0.0;
 	mean_phi_bias = 0.0;
+	mean_v = 0.0;
+	mean_phi = 0.0;
 	for (i = 0; i < filter->param->num_particles; i++)
 	{
 		mean_x += filter->particles[i].x * filter->particles[i].weight;
 		mean_y += filter->particles[i].y * filter->particles[i].weight;
 		mean_theta_x += cos(filter->particles[i].theta) * filter->particles[i].weight;
 		mean_theta_y += sin(filter->particles[i].theta) * filter->particles[i].weight;
+		mean_v += filter->particles[i].v * filter->particles[i].weight;
+		mean_phi += filter->particles[i].phi * filter->particles[i].weight;
 		mean_phi_bias += filter->particles[i].phi_bias * filter->particles[i].weight;
 		
 		total_weight += filter->particles[i].weight;
@@ -2513,6 +2518,8 @@ carmen_localize_ackerman_summarize_velodyne(carmen_localize_ackerman_particle_fi
 	summary->mean.x = mean_x / total_weight;
 	summary->mean.y = mean_y / total_weight;
 	summary->mean.theta = atan2(mean_theta_y, mean_theta_x);
+	mean_v = mean_v / total_weight;
+	mean_phi = mean_phi / total_weight;
 	mean_phi_bias = mean_phi_bias / total_weight;
 
 	summary->odometry_pos = filter->last_odometry_position;
@@ -2545,6 +2552,8 @@ carmen_localize_ackerman_summarize_velodyne(carmen_localize_ackerman_particle_fi
 	filter->particles[0].x = summary->mean.x;
 	filter->particles[0].y = summary->mean.y;
 	filter->particles[0].theta = summary->mean.theta;
+	filter->particles[0].v = mean_v;
+	filter->particles[0].phi = mean_phi;
 	filter->particles[0].phi_bias = mean_phi_bias;
 //	printf("mean_phi_bias %lf\n", mean_phi_bias);
 }

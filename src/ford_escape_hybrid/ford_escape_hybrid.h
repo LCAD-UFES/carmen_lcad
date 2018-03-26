@@ -63,6 +63,7 @@ typedef struct
 
 	unsigned int use_mpc;
 	unsigned int use_rlpid;
+	unsigned int publish_odometry;
 } ford_escape_hybrid_config_t, *ford_escape_hybrid_config_p;
 
 #ifdef __cplusplus

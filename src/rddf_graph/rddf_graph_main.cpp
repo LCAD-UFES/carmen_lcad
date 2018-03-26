@@ -228,7 +228,7 @@ main(int argc, char **argv)
 			cout << "File " << str_road_map_filename << " being displayed... ("
 					<< (i - g_road_map_index + 1) << " of " << (argc - g_road_map_index) << ")" << endl;
 			//road_mapper_display_road_map(&road_map, g_img_channels, g_class_bits);
-			road_map_find_center(&road_map, str_road_map_filename);
+			generate_road_map_graph(&road_map, str_road_map_filename);
 			//print_map_in_terminal(&road_map);
 		}
 		else

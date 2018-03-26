@@ -182,13 +182,13 @@ carmen_localize_ackerman_particle_filter_initialize(carmen_localize_ackerman_par
 
 	filter->param = param;
 
-	filter->particles = (carmen_localize_ackerman_particle_p) calloc(filter->param->num_particles, sizeof(carmen_localize_ackerman_particle_t));
+	filter->particles = (carmen_localize_ackerman_particle_ipc_p) calloc(filter->param->num_particles, sizeof(carmen_localize_ackerman_particle_ipc_t));
 	carmen_test_alloc(filter->particles);
 
-	filter->swarm_pbest = (carmen_localize_ackerman_particle_p) calloc(filter->param->num_particles, sizeof(carmen_localize_ackerman_particle_t));
+	filter->swarm_pbest = (carmen_localize_ackerman_particle_ipc_p) calloc(filter->param->num_particles, sizeof(carmen_localize_ackerman_particle_ipc_t));
 	carmen_test_alloc(filter->swarm_pbest);
 
-	filter->swarm_velocity = (carmen_localize_ackerman_particle_p) calloc(filter->param->num_particles, sizeof(carmen_localize_ackerman_particle_t));
+	filter->swarm_velocity = (carmen_localize_ackerman_particle_ipc_p) calloc(filter->param->num_particles, sizeof(carmen_localize_ackerman_particle_ipc_t));
 	carmen_test_alloc(filter->swarm_velocity);
 
 	initialize_temp_weights(filter);
@@ -434,8 +434,8 @@ carmen_localize_ackerman_initialize_particles_manual(carmen_localize_ackerman_pa
 
 	if(num_particles != filter->param->num_particles) {
 		filter->particles =
-				(carmen_localize_ackerman_particle_p)realloc(filter->particles, num_particles *
-						sizeof(carmen_localize_ackerman_particle_t));
+				(carmen_localize_ackerman_particle_ipc_p)realloc(filter->particles, num_particles *
+						sizeof(carmen_localize_ackerman_particle_ipc_t));
 		carmen_test_alloc(filter->particles);
 		realloc_temp_weights(filter, num_particles);
 		filter->param->num_particles = num_particles;
