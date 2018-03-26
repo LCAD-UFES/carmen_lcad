@@ -11,6 +11,10 @@
 const int MIN_ANGLE_OBSTACLE = 2;
 const int MAX_ANGLE_OBSTACLE = 188;
 
+// TODO read from carmen ini RANIK
+#define MAX_RANGE 50.0
+#define MIN_RANGE 0.5
+
 const int column_correspondence[32] =
 {
 		0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23, 8,
@@ -104,9 +108,6 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_parti
             double h_angle = carmen_normalize_theta(carmen_degrees_to_radians(velodyne_message->partial_scan[j].angle));
 
 
-			const float MAX_RANGE = 50.0;
-			const float MIN_RANGE = 0.5;
-
 			if (range <= MIN_RANGE)
 				range = MAX_RANGE;
 
@@ -170,9 +171,6 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle(carmen_
 			double range = (((double) velodyne_message->partial_scan[j].distance[i]) / 500.0);
 			double range_1 = (((double) velodyne_message->partial_scan[j].distance[i-1]) / 500.0);
 
-			const float MAX_RANGE = 50.0;
-			const float MIN_RANGE = 0.5;
-
 			if (range <= MIN_RANGE)
 				range = MAX_RANGE;
 
@@ -187,7 +185,7 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle(carmen_
 
 			if (p3d_velodyne_reference.x() > 0)
 			{
-				//metodo de jose
+				// Jose method check if a point is obstacle
 				double delta_x = p3d_velodyne_reference.x() - p3d_velodyne_reference_1.x();
 
 				//obstacle_z = global_point_position_in_the_world.z - (robot_position.z - robot_wheel_radius);
@@ -204,6 +202,7 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle(carmen_
 				int ipx = (int) px;
 				int ipy = (int) py;
 
+				// Get only the points that are in the image field of view
 				if (ipx >= 0 && ipx <= image_width && ipy >= 0 && ipy <= image_height && obstacle)
 				{
 
@@ -219,13 +218,14 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle(carmen_
 	return laser_points_in_camera;
 }
 
-std::vector<carmen_velodyne_points_in_cam_with_obstacle_t>
-carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_display(carmen_velodyne_partial_scan_message *velodyne_message,
-                                                                                     carmen_camera_parameters camera_parameters,
-                                                                                     carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose,
-                                                                                     int image_width, int image_height)
+
+std::vector<velodyne_camera_points>
+velodyne_camera_calibration_remove_points_out_of_FOV_and_ground(carmen_velodyne_partial_scan_message *velodyne_message,
+                                                                         carmen_camera_parameters camera_parameters,
+                                                                         carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose,
+                                                                         int image_width, int image_height)
 {
-	std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> laser_points_in_camera;
+	std::vector<velodyne_camera_points> laser_points_in_camera;
 
 	double fx_meters = camera_parameters.fx_factor * image_width * camera_parameters.pixel_size;
 	double fy_meters = camera_parameters.fy_factor * image_height * camera_parameters.pixel_size;
@@ -239,30 +239,24 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_dis
 
 		for (int i = 1; i < 32; i++)
 		{
-			double v_angle = carmen_normalize_theta(carmen_degrees_to_radians(sorted_vertical_angles[i]));
-			double v_angle_1 = carmen_normalize_theta(carmen_degrees_to_radians(sorted_vertical_angles[i-1]));
-
 			double range = (((double) velodyne_message->partial_scan[j].distance[i]) / 500.0);
 			double range_1 = (((double) velodyne_message->partial_scan[j].distance[i-1]) / 500.0);
 
-			const float MAX_RANGE = 50.0;
-			const float MIN_RANGE = 0.5;
-
-			if (range <= MIN_RANGE)
-				range = MAX_RANGE;
-
-			if (range > MAX_RANGE)
-				range = MAX_RANGE;
-
 			if (range >= MAX_RANGE)
 				continue;
+
+			if (range <= MIN_RANGE || range > MAX_RANGE)
+				range = MAX_RANGE;
+
+			double v_angle = carmen_normalize_theta(carmen_degrees_to_radians(sorted_vertical_angles[i]));
+			double v_angle_1 = carmen_normalize_theta(carmen_degrees_to_radians(sorted_vertical_angles[i-1]));
 
 			tf::Point p3d_velodyne_reference = spherical_to_cartesian(h_angle, v_angle, range);
 			tf::Point p3d_velodyne_reference_1 = spherical_to_cartesian(h_angle, v_angle_1, range_1);
 
 			if (p3d_velodyne_reference.x() > 0)
 			{
-				//metodo de jose
+				// Jose method check if a point is obstacle
 				double delta_x = p3d_velodyne_reference.x() - p3d_velodyne_reference_1.x();
 
 				//obstacle_z = global_point_position_in_the_world.z - (robot_position.z - robot_wheel_radius);
@@ -271,7 +265,7 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_dis
 
 				bool obstacle = (line_angle > MIN_ANGLE_OBSTACLE) && (line_angle < MAX_ANGLE_OBSTACLE);
 
-				tf::Point p3d_camera_reference = move_to_camera_reference(p3d_velodyne_reference,velodyne_pose,camera_pose);
+				tf::Point p3d_camera_reference = move_to_camera_reference(p3d_velodyne_reference, velodyne_pose, camera_pose);
 
                 double px = (fx_meters * (p3d_camera_reference.y() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cu);
                 double py = (fy_meters * (-p3d_camera_reference.z() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cv);
@@ -279,17 +273,16 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_dis
 				int ipx = (int) px;
 				int ipy = (int) py;
 
-				if (ipx >= 0 && ipx <= image_width && ipy >= 0 && ipy <= image_height)
+				// Get only the points that are in the image field of view
+				if (ipx >= 0 && ipx <= image_width && ipy >= 0 && ipy <= image_height && obstacle)
 				{
-					carmen_velodyne_points_in_cam_with_obstacle_t laser_px_points = {ipx, ipy, {h_angle,v_angle,range}, obstacle};
 
-					laser_points_in_camera.push_back(laser_px_points);
+					velodyne_camera_points point = {ipx, ipy, {h_angle, v_angle, range}, {p3d_camera_reference.x(), p3d_camera_reference.y(), p3d_camera_reference.z()}};
+
+					laser_points_in_camera.push_back(point);
 				}
-
 			}
 		}
 	}
 	return laser_points_in_camera;
 }
-
-

@@ -14,7 +14,15 @@ typedef struct {
 	bool hit_in_obstacle;
 } carmen_velodyne_points_in_cam_with_obstacle_t, *carmen_velodyne_points_in_cam_with_obstacle_p;
 
-/* These parameters are given in percentual form. */
+
+typedef struct {
+	int image_x;
+	int image_y;
+	carmen_sphere_coord_t polar;
+	carmen_vector_3D_t cartesian;
+} velodyne_camera_points;
+
+// These parameters are given in percentual form
 typedef struct {
 	double fx_factor;
 	double fy_factor;
@@ -45,4 +53,4 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_dis
                                                                                      carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose,
                                                                                      int image_width, int image_height);
 
-#endif /* SRC_VELODYNE_CAMERA_CALIBRATION_VELODYNE_CAMERA_CALIBRATION_H_ */
+#endif // SRC_VELODYNE_CAMERA_CALIBRATION_VELODYNE_CAMERA_CALIBRATION_H_
