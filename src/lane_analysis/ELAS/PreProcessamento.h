@@ -2,6 +2,9 @@
 #define __PRE_PROCESSAMENTO_H
 
 #include <opencv2/opencv.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
+
 #include "utils/IPM.h"
 
 using namespace std;

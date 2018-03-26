@@ -3,7 +3,8 @@
 
 #include <memory>
 #include <opencv2/opencv.hpp>
-
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui.hpp>
 // utils
 #include "utils/common.h"
 #include "utils/HelperXML.h"
@@ -22,7 +23,7 @@
 #define DISPLAY_CROSSWALK 				false
 #define DISPLAY_ROAD_SIGNS 				false
 #define DISPLAY_MARKINGS_REMOVAL 		false
-#define DISPLAY_LANE_POSITION			false
+#define DISPLAY_LANE_POSITION		    false
 #define DISPLAY_LANE_CENTER_DEVIATION	false
 #define DISPLAY_LANE_MARKINGS_TYPE		false
 #define DISPLAY_ADJACENT_LANES			false

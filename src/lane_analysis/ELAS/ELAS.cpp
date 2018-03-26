@@ -152,7 +152,7 @@ void ELAS::run(const Mat3b & original_frame) {
 	}
 
 	// road signs and crosswalk removal
-	if (DISPLAY_MARKINGS_REMOVAL) imshow("map_srf before", out_feature_maps->map_srf);
+	if (DISPLAY_MARKINGS_REMOVAL){ imshow("map_srf before", out_feature_maps->map_srf); waitKey(0);}
 	pavement_markings_removal(out_feature_maps, out_crosswalks, out_road_signs, cfg);
 	if (DISPLAY_MARKINGS_REMOVAL) {
 		imshow("map_srf after", out_feature_maps->map_srf);
@@ -172,6 +172,7 @@ void ELAS::run(const Mat3b & original_frame) {
 			for (Point p : out_lane_position->right) if (!(isnan(p.x) || isnan(p.y))) circle(lane_position_img, p, 2, BGR_RED, CV_FILLED);
 
 			imshow("DISPLAY_LANE_POSITION", lane_position_img);
+			waitKey(0);
 		}
 	}
 
@@ -349,6 +350,10 @@ void ELAS::finishProgram() {
 
 void ELAS::finishRun() {
 	printf("ELAS::finishRun()\n");
+
+	//delete out_raw_houghs;
+	//delete out_adjacent_lanes;
+
 	delete out_pre_process;
 	delete out_feature_maps;
 	delete out_crosswalks;
