@@ -14,7 +14,6 @@
 #include <fstream>
 #include "../neural_object_detector/Darknet.hpp"
 #include "neural_object_detector.hpp"
-#include <carmen/velodyne_camera_calibration.h>
 
 #define SHOW_DETECTIONS
 
@@ -279,15 +278,15 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
         bouding_boxes_list.push_back(bbox);
     }
 
-    // Removes the ground, Removes points outside cameras field of view and Returns the points that are obstacles
+    // Removes the ground, Removes points outside cameras field of view and Returns the points that are obstacles and are inside bboxes
     vector<vector<carmen_velodyne_points_in_cam_with_obstacle_t>> laser_points_in_camera_box_list = velodyne_points_in_boxes(bouding_boxes_list,
     		&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
 
-    // Removes the ground, Removes points outside cameras field of view and Returns the points that are obstacles
+    // Removes the ground, Removes points outside cameras field of view and Returns the points that reach obstacles
     //vector<velodyne_camera_points> points = velodyne_camera_calibration_remove_points_out_of_FOV_and_ground(
-    //		velodyne_sync_with_cam, camera_parameters, velodyne_pose, image_msg->width, image_msg->height);
+    //		&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
 
-    // Convert from sferical to cartesian cordinates
+    // ONLY Convert from sferical to cartesian cordinates
     vector< vector<carmen_vector_3D_t>> cluster_list = get_cluster_list(laser_points_in_camera_box_list);
 
     // Cluster points and get biggest
@@ -336,8 +335,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
         cv::Scalar object_color;
 
-        sprintf(confianca, "%d  ", predictions.at(i).obj_id);
-        sprintf(confianca, "%.3f", predictions.at(i).prob);
+        sprintf(confianca, "%d  %.3f", predictions.at(i).obj_id, predictions.at(i).prob);
 
         int obj_id = predictions.at(i).obj_id;
 

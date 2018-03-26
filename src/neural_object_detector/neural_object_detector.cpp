@@ -106,8 +106,10 @@ filter_points_in_clusters(std::vector<std::vector<carmen_vector_3D_t> > *cluster
 	{
 		if ((*cluster_list)[i].size() > 0)
 		{
-			dbscan::Cluster cluster = generate_cluster((*cluster_list)[i]);
-			dbscan::Clusters clusters = dbscan::DBSCAN(0.5, 5, cluster);
+			dbscan::Cluster cluster = generate_cluster((*cluster_list)[i]);  // Create vector in dbscan point type
+
+			dbscan::Clusters clusters = dbscan::DBSCAN(0.5, 5, cluster);     // Compute clusters using dbscan
+
 			if (clusters.size() > 0)
 			{
 				cluster = get_biggest_cluster(clusters);
