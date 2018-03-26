@@ -20,6 +20,7 @@ velodyne_points_in_boxes(std::vector<bounding_box> bouding_boxes_list,
 
 	std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> points_lasers_in_cam_with_obstacle;
 
+	// Removes the ground, Removes points outside cameras field of view and Returns the points that are obstacles
 	points_lasers_in_cam_with_obstacle = carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_display(
 				velodyne_sync_with_cam,camera_parameters, velodyne_pose,camera_pose, width, height);
 

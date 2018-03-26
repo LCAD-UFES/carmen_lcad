@@ -14,6 +14,7 @@
 #include <fstream>
 #include "../neural_object_detector/Darknet.hpp"
 #include "neural_object_detector.hpp"
+#include <carmen/velodyne_camera_calibration.h>
 
 #define SHOW_DETECTIONS
 
@@ -74,6 +75,7 @@ build_moving_objects_message(vector<carmen_tracked_cluster_t> clusters)
         carmen_vector_3D_t box_centroid = compute_centroid(clusters[i].points);
         carmen_vector_3D_t offset;
 
+        // TODO ler do carmen ini
         offset.x = 0.572;
         offset.y = 0.0;
         offset.z = 2.154;
@@ -277,10 +279,18 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
         bouding_boxes_list.push_back(bbox);
     }
 
-    vector< vector<carmen_velodyne_points_in_cam_with_obstacle_t>> laser_points_in_camera_box_list = velodyne_points_in_boxes(bouding_boxes_list,
+    // Removes the ground, Removes points outside cameras field of view and Returns the points that are obstacles
+    vector<vector<carmen_velodyne_points_in_cam_with_obstacle_t>> laser_points_in_camera_box_list = velodyne_points_in_boxes(bouding_boxes_list,
     		&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
 
+    // Removes the ground, Removes points outside cameras field of view and Returns the points that are obstacles
+    //vector<velodyne_camera_points> points = velodyne_camera_calibration_remove_points_out_of_FOV_and_ground(
+    //		velodyne_sync_with_cam, camera_parameters, velodyne_pose, image_msg->width, image_msg->height);
+
+    // Convert from sferical to cartesian cordinates
     vector< vector<carmen_vector_3D_t>> cluster_list = get_cluster_list(laser_points_in_camera_box_list);
+
+    // Cluster points and get biggest
     filter_points_in_clusters(&cluster_list);
 
     for (int i = 0; i < cluster_list.size(); i++)
@@ -293,8 +303,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
         clust.points = cluster_list.at(i);
 
-        //TODO: Calcular velocidade e orientacao corretas (provavelmente usando um tracker)
-        clust.orientation = globalpos.theta;
+        clust.orientation = globalpos.theta;  //TODO: Calcular velocidade e orientacao corretas (provavelmente usando um tracker)
         clust.linear_velocity = 0.0;
         clust.track_id = cluster_id;
         clust.last_detection_timestamp = image_msg->timestamp;
@@ -304,6 +313,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     }
 
     build_moving_objects_message(clusters);
+
     publish_moving_objects_message(image_msg->timestamp);
 
     fps = 1.0 / (carmen_get_time() - start_time);
