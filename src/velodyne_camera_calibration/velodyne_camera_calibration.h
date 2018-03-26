@@ -7,6 +7,7 @@
 
 #ifndef SRC_VELODYNE_CAMERA_CALIBRATION_VELODYNE_CAMERA_CALIBRATION_H_
 #define SRC_VELODYNE_CAMERA_CALIBRATION_VELODYNE_CAMERA_CALIBRATION_H_
+
 #include <vector>
 
 typedef struct {
@@ -21,6 +22,7 @@ typedef struct {
 	carmen_sphere_coord_t polar;
 	carmen_vector_3D_t cartesian;
 } velodyne_camera_points;
+
 
 // These parameters are given in percentual form
 typedef struct {
@@ -52,5 +54,12 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_dis
                                                                                      carmen_camera_parameters camera_parameters,
                                                                                      carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose,
                                                                                      int image_width, int image_height);
+
+
+std::vector<velodyne_camera_points>
+velodyne_camera_calibration_remove_points_out_of_FOV_and_ground(carmen_velodyne_partial_scan_message *velodyne_message,
+                                                                         carmen_camera_parameters camera_parameters,
+                                                                         carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose,
+                                                                         int image_width, int image_height);
 
 #endif // SRC_VELODYNE_CAMERA_CALIBRATION_VELODYNE_CAMERA_CALIBRATION_H_
