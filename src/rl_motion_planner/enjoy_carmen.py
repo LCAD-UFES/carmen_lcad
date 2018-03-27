@@ -19,7 +19,7 @@ def read_rddf(rddf):
 
 # ###############################################################################
 
-policy = Policy(input_shape=[368], 
+policy = Policy(input_shape=[248], 
                 n_outputs=2, 
                 hidden_size=128, learning_rate=1e-4, nonlin='elu',
                 single_thread=False, n_hidden_layers=4,
@@ -27,20 +27,20 @@ policy = Policy(input_shape=[368],
 
 policy.load('data/model_immitation.ckpt')
 
-rddf = read_rddf('rddf_ida_guarapari-20170403.txt')
+rddf = read_rddf('rddf-voltadaufes-20170809.txt')
 
 carmen.init()
 n_collisions = 0
 
 
-def compute_command(policy, pose_data, goal_data, laser):
+def compute_command(policy, pose_data, goal_data, laser, rddf_data):
     pose = Transform2d(pose_data[0], pose_data[1], pose_data[2])
     v, phi = pose_data[3], pose_data[4]
     
     goal = Transform2d(goal_data[0], goal_data[1], goal_data[2])
     goal_v, goal_phi = goal_data[3], goal_data[4]
 
-    state = policy.assemble_state(pose, goal, v, phi, goal_v, goal_phi, laser)
+    state = policy.assemble_state(pose, goal, v, phi, goal_v, goal_phi, laser, rddf_data)
     v, phi = policy.forward(state)
 
     return v, phi
@@ -91,8 +91,8 @@ def generate_plan(policy, pose_data, n_commands=20, dt=0.2):
 while True:
     # init_pos = rddf[np.random.randint(len(rddf))]
     # init_pos = rddf[int(len(rddf) / 2)]
-    init_pos = rddf[0]
-    # init_pos = rddf[7800]
+    # init_pos = rddf[0]
+    init_pos = rddf[-50]
 
     carmen.reset_initial_pose(init_pos[0], init_pos[1], init_pos[2])
     
@@ -100,12 +100,13 @@ while True:
         pose_data = carmen.read_pose()
         goal_data = carmen.read_goal()
         laser = carmen.read_laser()
+        rddf_data = carmen.read_rddf()
 
         if len(goal_data) == 0:
             print('Invalid goal data. Waiting for valid data.')
             continue
 
-        v, phi = compute_command(policy, pose_data, goal_data, laser)
+        v, phi = compute_command(policy, pose_data, goal_data, laser, rddf_data)
         vs = [v] * 20
         phis = [phi] * 20
         ts = [0.2] * 20

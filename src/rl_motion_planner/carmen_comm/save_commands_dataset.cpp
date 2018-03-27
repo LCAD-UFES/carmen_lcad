@@ -90,6 +90,7 @@ find_most_synchronized_message(double t, deque<pair<T, double>> &queue)
 void
 write_vector(vector<double> &v, FILE *fptr)
 {
+	fprintf(fptr, "%ld ", v.size());
 	for (int i = 0; i < v.size(); i++)
 		fprintf(fptr, "%lf ", v[i]);
 }
