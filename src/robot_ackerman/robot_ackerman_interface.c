@@ -30,8 +30,6 @@
 #include "robot_ackerman_messages.h"
 #include "robot_ackerman_laser.h"
 #include "robot_ackerman_interface.h"
-
-#include "robot_ackerman_messages.h"
 #include <carmen/ipc_wrapper.h>
 
 #include <carmen/carmen.h>
@@ -137,6 +135,18 @@ carmen_robot_ackerman_subscribe_motion_command(carmen_robot_ackerman_motion_comm
 
 
 void
+carmen_robot_ackerman_subscribe_teacher_motion_command(carmen_robot_ackerman_motion_command_message *motion_command,
+		carmen_handler_t handler,
+		carmen_subscribe_t subscribe_how)
+{
+	carmen_subscribe_message(CARMEN_ROBOT_ACKERMAN_TEACHER_MOTION_COMMAND_NAME,
+		CARMEN_ROBOT_ACKERMAN_TEACHER_MOTION_COMMAND_FMT,
+		motion_command, sizeof(carmen_robot_ackerman_motion_command_message),
+		handler, subscribe_how);
+}
+
+
+void
 carmen_robot_ackerman_move_along_vector(double distance, double theta)
 {
 	IPC_RETURN_TYPE err;
@@ -188,22 +198,29 @@ carmen_robot_ackerman_follow_trajectory(carmen_ackerman_traj_point_p trajectory,
 }
 
 
-void 
-carmen_robot_ackerman_publish_motion_command(carmen_ackerman_motion_command_p motion_command, int num_motion_commands, double timestamp)
+void
+define_motion_command_message(const char *name, const char *fmt)
 {
 	IPC_RETURN_TYPE err;
-	static carmen_robot_ackerman_motion_command_message msg;
+
+	err = IPC_defineMsg(name, IPC_VARIABLE_LENGTH, fmt);
+	carmen_test_ipc_exit(err, "Could not define message", name);
+}
+
+
+void
+publish_motion_command_with_name(carmen_ackerman_motion_command_p motion_command, int num_motion_commands, double timestamp, const char *name, const char *fmt)
+{
+	IPC_RETURN_TYPE err;
 	static int first_time = 1;
 
 	if (first_time)
 	{
-		err = IPC_defineMsg(CARMEN_ROBOT_ACKERMAN_MOTION_COMMAND_NAME,
-				IPC_VARIABLE_LENGTH,
-				CARMEN_ROBOT_ACKERMAN_MOTION_COMMAND_FMT);
-		carmen_test_ipc_exit(err, "Could not define message", 
-				CARMEN_ROBOT_ACKERMAN_MOTION_COMMAND_NAME);
+		define_motion_command_message(name, fmt);
 		first_time = 0;
 	}
+
+	static carmen_robot_ackerman_motion_command_message msg;
 
 	msg.motion_command = motion_command;
 	msg.num_motion_commands = num_motion_commands;
@@ -211,7 +228,25 @@ carmen_robot_ackerman_publish_motion_command(carmen_ackerman_motion_command_p mo
 	msg.timestamp = timestamp;
 	msg.host = carmen_get_host();
 
-	err = IPC_publishData(CARMEN_ROBOT_ACKERMAN_MOTION_COMMAND_NAME, &msg);
-	carmen_test_ipc(err, "Could not publish", 
-			CARMEN_ROBOT_ACKERMAN_MOTION_COMMAND_NAME);
+	err = IPC_publishData(name, &msg);
+	carmen_test_ipc(err, "Could not publish", name);
 }
+
+
+void 
+carmen_robot_ackerman_publish_motion_command(carmen_ackerman_motion_command_p motion_command, int num_motion_commands, double timestamp)
+{
+	publish_motion_command_with_name(motion_command, num_motion_commands,
+		timestamp, CARMEN_ROBOT_ACKERMAN_MOTION_COMMAND_NAME,
+		CARMEN_ROBOT_ACKERMAN_MOTION_COMMAND_FMT);
+}
+
+
+void
+carmen_robot_ackerman_publish_teacher_motion_command(carmen_ackerman_motion_command_p motion_command, int num_motion_commands, double timestamp)
+{
+	publish_motion_command_with_name(motion_command, num_motion_commands,
+		timestamp, CARMEN_ROBOT_ACKERMAN_TEACHER_MOTION_COMMAND_FMT,
+		CARMEN_ROBOT_ACKERMAN_TEACHER_MOTION_COMMAND_FMT);
+}
+
