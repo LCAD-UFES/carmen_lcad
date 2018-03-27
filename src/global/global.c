@@ -701,6 +701,17 @@ carmen_distance_ackerman_traj(carmen_ackerman_traj_point_p p1, carmen_ackerman_t
 	return ((double) sqrt_ld);
 }
 
+
+carmen_inline double
+carmen_distance2_vector_3D(carmen_vector_3D_p p1, carmen_vector_3D_p p2) // distance2 because the SQRT is not computed
+{
+	double dx = p1->x - p2->x;
+	double dy = p1->y - p2->y;
+	double dz = p1->z - p2->z;
+
+	return dx * dx + dy * dy + dz * dz;
+}
+
 carmen_inline double
 carmen_ackerman_traj_distance2(carmen_ackerman_traj_point_p p1, carmen_ackerman_traj_point_p p2)
 {
