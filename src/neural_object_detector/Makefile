@@ -25,7 +25,7 @@ PUBLIC_INCLUDES =
 PUBLIC_LIBRARIES = 
 PUBLIC_BINARIES = neural_object_detector
 
-TARGETS = darknet velodyne_camera_calibration camera_boxes_to_world libDbscan.a neural_car_detector
+TARGETS = darknet velodyne_camera_calibration camera_boxes_to_world libDbscan.a neural_object_detector
 
 libDbscan.a: dbscan.o
 

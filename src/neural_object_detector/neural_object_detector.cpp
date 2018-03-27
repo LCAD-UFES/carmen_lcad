@@ -99,6 +99,67 @@ rotate_point(carmen_vector_3D_t point, double theta)
 }
 
 
+using namespace std;
+
+
+vector<int>
+query2(double max_distance, int i, vector<carmen_vector_3D_t> &points)
+{
+	vector<int> neighbors;
+	carmen_vector_3D_t point = points[i];
+
+    for (int j = 0, size = points.size(); j < size; ++j)
+    {
+        if (carmen_distance2_vector_3D(&point, &points[j]) < max_distance)
+            neighbors.push_back(j);
+    }
+
+    return neighbors;
+}
+
+
+vector<vector<carmen_vector_3D_t>>
+dbscan_compute_clusters(double max_distance, int density, vector<carmen_vector_3D_t> &points)
+{
+	vector<vector<carmen_vector_3D_t>> clusters;
+    int num_points = points.size();
+    vector<int> number_of_neighbors;
+    vector<bool> clustered(num_points, false);
+
+    for (int i = 0; i < num_points; ++i)
+    {
+        // Ignore already clustered points.
+        if (clustered[i])
+            continue;
+
+        // Ignore points without enough neighbors.
+        number_of_neighbors = query2(max_distance, i, points);
+        if (number_of_neighbors.size() < density)
+            continue;
+
+        clusters[i].push_back(points[i]);
+        clustered[i] = true;
+
+        // Add the point's neighbors (and possibly their neighbors) to the cluster.
+        for (int j = 0; j < number_of_neighbors.size(); ++j)
+        {
+            int k = number_of_neighbors[j];
+            if (clustered[k])
+                continue;
+
+            clusters[i].push_back(points[k]);
+            clustered[k] = true;
+
+            vector<int> farther = query2(max_distance, k, points);
+            if (farther.size() >= density)
+            	number_of_neighbors.insert(number_of_neighbors.end(), farther.begin(), farther.end());
+        }
+    }
+
+    return clusters;
+}
+
+
 void
 filter_points_in_clusters(std::vector<std::vector<carmen_vector_3D_t> > *cluster_list)
 {
@@ -109,6 +170,17 @@ filter_points_in_clusters(std::vector<std::vector<carmen_vector_3D_t> > *cluster
 			dbscan::Cluster cluster = generate_cluster((*cluster_list)[i]);  // Create vector in dbscan point type
 
 			dbscan::Clusters clusters = dbscan::DBSCAN(0.5, 5, cluster);     // Compute clusters using dbscan
+/*
+
+			vector<vector<carmen_vector_3D_t>> converted = dbscan_compute_clusters(0.5, 5, (*cluster_list)[i]);
+			for (int i = 0; i < clusters.size(); i++)
+			{
+				for (int j = 0; j < clusters[i].size(); j++)
+				{
+					printf("%d\n", clusters[i][j].x - converted[i][j].x);
+				}
+			}
+*/
 
 			if (clusters.size() > 0)
 			{
