@@ -22,7 +22,7 @@ def read_rddf(rddf):
 policy = Policy(input_shape=[368], 
                 n_outputs=2, 
                 hidden_size=128, learning_rate=1e-4, nonlin='elu',
-                single_thread=False, n_hidden_layers=5,
+                single_thread=False, n_hidden_layers=4,
                 continuous_std=1e-7)
 
 policy.load('data/model_immitation.ckpt')
@@ -49,7 +49,7 @@ def compute_command(policy, pose_data, goal_data, laser):
 def generate_plan(policy, pose_data, n_commands=20, dt=0.2):
     x, y, th = pose_data[0], pose_data[1], pose_data[2]
     v, phi = pose_data[3], pose_data[4]
-    
+
     carmen.simulation_reset(x, y, th, v, phi)
     
     vs = []
@@ -105,17 +105,18 @@ while True:
             print('Invalid goal data. Waiting for valid data.')
             continue
 
-        # v, phi = compute_command(policy, pose_data, goal_data, laser)
-        # vs = [v]
-        # phis = [phi]
-        # ts = [t]
-        init = time.time()
-        vs, phis, ts = generate_plan(policy, pose_data)
-        print('Time to generate plan: %.4lf' % (time.time() - init))
+        v, phi = compute_command(policy, pose_data, goal_data, laser)
+        vs = [v] * 20
+        phis = [phi] * 20
+        ts = [0.2] * 20
+        # init = time.time()
+        # vs, phis, ts = generate_plan(policy, pose_data)
+        # print('Time to generate plan: %.4lf' % (time.time() - init))
         
         carmen.publish_command(vs, phis, ts) # , pose_data[0], pose_data[1], pose_data[2])
         carmen.handle_messages()
         
+    carmen.publish_command([0.] * 20, [0.] * 20, [0.2] * 20) 
     n_collisions += 1
     print('n_collisions:', n_collisions)
 

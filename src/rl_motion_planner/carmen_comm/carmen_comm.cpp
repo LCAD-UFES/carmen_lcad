@@ -17,6 +17,7 @@
 #include <carmen/behavior_selector_interface.h>
 #include <carmen/simulator_ackerman_simulation.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
+#include <carmen/rddf_interface.h>
 #include "util.h"
 
 
@@ -34,6 +35,7 @@ carmen_obstacle_distance_mapper_map_message global_obstacle_distance_map;
 carmen_localize_ackerman_globalpos_message global_localize_ackerman_message;
 carmen_obstacle_distance_mapper_compact_map_message global_obstacle_distance_mapper_compact_map_message;
 carmen_map_server_offline_map_message global_offline_map_message;
+carmen_rddf_road_profile_message global_rddf_message;
 
 // Termination signal handling
 int global_destroy_already_requested = 0;
@@ -382,6 +384,16 @@ goal_list_is_invalid(carmen_behavior_selector_goal_list_message *goal_list_messa
 }
 
 
+int
+rddf_is_invalid(carmen_rddf_road_profile_message *rddf_message)
+{
+	if (rddf_message->timestamp == 0 || rddf_message->number_of_poses == 0)
+		return 1;
+
+	return 0;
+}
+
+
 void
 reset_initial_pose(double x, double y, double th)
 {
@@ -392,6 +404,7 @@ reset_initial_pose(double x, double y, double th)
 	memset(&global_front_laser_message, 0, sizeof(global_front_laser_message));
 	memset(&global_offline_map_message, 0, sizeof(global_offline_map_message));
 	memset(&global_goal_list_message, 0, sizeof(global_goal_list_message));
+	memset(&global_rddf_message, 0, sizeof(global_rddf_message));
 
 	carmen_point_t pose;
 	carmen_point_t std;
@@ -425,7 +438,8 @@ reset_initial_pose(double x, double y, double th)
 			map_is_invalid(&global_obstacle_distance_mapper_compact_map_message, x, y) ||
 			laser_reading_is_invalid(&global_front_laser_message) ||
 			offline_map_is_invalid(&global_offline_map_message, x, y) ||
-			goal_list_is_invalid(&global_goal_list_message));
+			goal_list_is_invalid(&global_goal_list_message) ||
+			rddf_is_invalid(&global_rddf_message));
 }
 
 
@@ -462,6 +476,31 @@ read_laser()
 {
 	return laser_to_vec(global_front_laser_message,
 		global_localize_ackerman_message.globalpos.theta, VIEW_LASER);
+}
+
+
+std::vector<double>
+read_rddf()
+{
+	std::vector<double> v;
+
+	for (int i = 0; i < 100; i++)
+	{
+		if (i < global_rddf_message.number_of_poses)
+		{
+			v.push_back(global_rddf_message.poses[i].x);
+			v.push_back(global_rddf_message.poses[i].y);
+			v.push_back(global_rddf_message.poses[i].theta);
+		}
+		else
+		{
+			v.push_back(0.);
+			v.push_back(0.);
+			v.push_back(0.);
+		}
+	}
+
+	return v;
 }
 
 
@@ -728,6 +767,9 @@ init()
 		NULL, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_map_server_subscribe_offline_map(&global_offline_map_message,
+		NULL, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_rddf_subscribe_road_profile_message(&global_rddf_message,
 		NULL, CARMEN_SUBSCRIBE_LATEST);
 
 	signal(SIGINT, signal_handler);
