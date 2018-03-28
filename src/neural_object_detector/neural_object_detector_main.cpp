@@ -226,6 +226,64 @@ publish_moving_objects_message(double timestamp)
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
+void
+show_detections(cv::Mat rgb_image, vector<vector<carmen_velodyne_points_in_cam_with_obstacle_t>> laser_points_in_camera_box_list,
+		vector<bbox_t> predictions, vector<bounding_box> bouding_boxes_list, double hood_removal_percentage, double fps)
+{
+    char confianca[25];
+    char frame_rate[25];
+
+    sprintf(frame_rate, "FPS = %.2f", fps);
+
+    cv::putText(rgb_image, frame_rate, cv::Point(10, 25), cv::FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
+
+    for (unsigned int i = 0; i < laser_points_in_camera_box_list.size(); i++)
+    {
+        for (unsigned int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
+        {
+            cv::circle(rgb_image, cv::Point(laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx,
+            		laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy), 1, cv::Scalar(0, 0, 255), 1);
+        }
+
+        cv::Scalar object_color;
+
+        sprintf(confianca, "%d  %.3f", predictions.at(i).obj_id, predictions.at(i).prob);
+
+        int obj_id = predictions.at(i).obj_id;
+
+        string obj_name;
+        if (obj_names.size() > obj_id)
+            obj_name = obj_names[obj_id];
+
+        if (obj_name.compare("car") == 0)
+            object_color = cv::Scalar(0, 0, 255);
+        else
+            object_color = cv::Scalar(255, 0, 255);
+
+        cv::rectangle(rgb_image,
+                      cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y),
+                      cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y),
+                      object_color, 1);
+
+        cv::putText(rgb_image, obj_name,
+                    cv::Point(bouding_boxes_list[i].pt2.x + 1, bouding_boxes_list[i].pt1.y - 3),
+                    cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0, 0, 255), 1);
+
+        cv::putText(rgb_image, confianca,
+                    cv::Point(bouding_boxes_list[i].pt1.x + 1, bouding_boxes_list[i].pt1.y - 3),
+                    cv::FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
+
+    }
+
+    cv::Mat resized_image(cv::Size(640, 480 - 480 * hood_removal_percentage), CV_8UC3);
+    cv::resize(rgb_image, resized_image, resized_image.size());
+
+    cv::imshow("Neural car detector", resized_image);
+    cv::waitKey(1);
+
+    resized_image.release();
+}
+
 #define crop_x 0.0
 #define crop_y 1.0
 
@@ -318,59 +376,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     fps = 1.0 / (carmen_get_time() - start_time);
 
 #ifdef SHOW_DETECTIONS
-    char confianca[25];
-    char frame_rate[25];
-
-    sprintf(frame_rate, "FPS = %.2f", fps);
-
-    cv::putText(rgb_image, frame_rate, cv::Point(10, 25), cv::FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
-
-    for (unsigned int i = 0; i < laser_points_in_camera_box_list.size(); i++)
-    {
-        for (unsigned int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
-        {
-            cv::circle(rgb_image, cv::Point(laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx,
-            		laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy), 1, cv::Scalar(0, 0, 255), 1);
-        }
-
-        cv::Scalar object_color;
-
-        sprintf(confianca, "%d  %.3f", predictions.at(i).obj_id, predictions.at(i).prob);
-
-        int obj_id = predictions.at(i).obj_id;
-
-        string obj_name;
-        if (obj_names.size() > obj_id)
-            obj_name = obj_names[obj_id];
-
-        if (obj_name.compare("car") == 0)
-            object_color = cv::Scalar(0, 0, 255);
-        else
-            object_color = cv::Scalar(255, 0, 255);
-
-        cv::rectangle(rgb_image,
-                      cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y),
-                      cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y),
-                      object_color, 1);
-
-        cv::putText(rgb_image, obj_name,
-                    cv::Point(bouding_boxes_list[i].pt2.x + 1, bouding_boxes_list[i].pt1.y - 3),
-                    cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0, 0, 255), 1);
-
-        cv::putText(rgb_image, confianca,
-                    cv::Point(bouding_boxes_list[i].pt1.x + 1, bouding_boxes_list[i].pt1.y - 3),
-                    cv::FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
-
-    }
-
-    cv::Mat resized_image(cv::Size(640, 480 - 480 * hood_removal_percentage), CV_8UC3);
-    cv::resize(rgb_image, resized_image, resized_image.size());
-
-    cv::imshow("Neural car detector", resized_image);
-    cv::waitKey(1);
-
-    resized_image.release();
-
+    show_detections(rgb_image, laser_points_in_camera_box_list, predictions, bouding_boxes_list,
+    		hood_removal_percentage, fps);
 #endif
 }
 
