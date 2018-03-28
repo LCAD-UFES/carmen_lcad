@@ -1,6 +1,6 @@
 include ../Makefile.conf
 
-MODULE_NAME = Neural Car Detector
+MODULE_NAME = Neural Object Detector
 MODULE_COMMENT = Detect vehicles using convolutional neural networks.
 
 LINK = g++

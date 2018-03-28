@@ -110,7 +110,7 @@ query2(double max_distance, int i, vector<carmen_vector_3D_t> &points)
 
     for (int j = 0, size = points.size(); j < size; ++j)
     {
-        if (carmen_distance2_vector_3D(&point, &points[j]) < max_distance)
+        if (DOT3D(point, points[j]) < max_distance)
             neighbors.push_back(j);
     }
 
@@ -170,8 +170,8 @@ filter_points_in_clusters(std::vector<std::vector<carmen_vector_3D_t> > *cluster
 			dbscan::Cluster cluster = generate_cluster((*cluster_list)[i]);  // Create vector in dbscan point type
 
 			dbscan::Clusters clusters = dbscan::DBSCAN(0.5, 5, cluster);     // Compute clusters using dbscan
-/*
 
+/*
 			vector<vector<carmen_vector_3D_t>> converted = dbscan_compute_clusters(0.5, 5, (*cluster_list)[i]);
 			for (int i = 0; i < clusters.size(); i++)
 			{

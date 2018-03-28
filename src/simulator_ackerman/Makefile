@@ -42,14 +42,18 @@ endif
 
 libcarmodel:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcarmodel
+	
 clean: clean_libcarmodel
+
 clean_libcarmodel:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcarmodel
 
 
 libcontrol:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/libcontrol/
+	
 clean: clean_libcontrol
+
 clean_libcontrol:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcontrol/
 

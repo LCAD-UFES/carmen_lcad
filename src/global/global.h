@@ -103,20 +103,31 @@ extern "C" {
 #define MAX3(x,y,z) MAX(MAX(x,y),z)
 #endif
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846  // PI
+#endif
+
 #define DOT2D(x1,x2) ((x1).x * (x2).x + (x1).y * (x2).y)
+
+#define DOT2D_P(x1,x2) ((x1)->x * (x2)->x + (x1)->y * (x2)->y)
+
 #define DIST2D(x1,x2) (sqrt(((x1).x - (x2).x) * ((x1).x - (x2).x) + \
 							((x1).y - (x2).y) * ((x1).y - (x2).y)))
+
 #define DIST2D_P(x1,x2) (sqrt(((x1)->x - (x2)->x) * ((x1)->x - (x2)->x) + \
 							((x1)->y - (x2)->y) * ((x1)->y - (x2)->y)))
 
 #define DOT3D(x1,x2) ((x1).x * (x2).x + (x1).y * (x2).y + (x1).z * (x2).z)
+
+#define DOT3DP_P(x1,x2) ((x1)->x * (x2)->x + (x1)->y * (x2)->y + (x1)->z * (x2)->z)
+
 #define DIST3D(x1,x2) (sqrt(((x1).x - (x2).x) * ((x1).x - (x2).x) + \
 							((x1).y - (x2).y) * ((x1).y - (x2).y) + \
 							((x1).z - (x2).z) * ((x1).z - (x2).z)))
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846  /* pi */
-#endif
+#define DIST3D_P(x1,x2) (sqrt(((x1)->x - (x2)->x) * ((x1)->x - (x2)->x) + \
+							((x1)->y - (x2)->y) * ((x1)->y - (x2)->y) + \
+							((x1)->z - (x2)->z) * ((x1)->z - (x2)->z)))
 
 typedef struct {
 	double x;
@@ -531,12 +542,6 @@ extern carmen_inline double carmen_distance_traj(carmen_traj_point_p p1, carmen_
 extern carmen_inline double carmen_distance_ackerman_traj(carmen_ackerman_traj_point_p p1, carmen_ackerman_traj_point_p p2)
 {
 	return sqrt((p1->x-p2->x)*(p1->x-p2->x) + (p1->y-p2->y)*(p1->y-p2->y));
-}
-
-extern carmen_inline double
-carmen_distance2_vector_3D(carmen_vector_3D_p p1, carmen_vector_3D_p p2) // distance2 because the SQRT is not computed
-{
-	double dx = p1->x - p2->x; 	double dy = p1->y - p2->y; 	double dz = p1->z - p2->z; 	return dx * dx + dy * dy + dz * dz;
 }
 
 extern carmen_inline double carmen_ackerman_traj_distance2(carmen_ackerman_traj_point_p p1, carmen_ackerman_traj_point_p p2)
