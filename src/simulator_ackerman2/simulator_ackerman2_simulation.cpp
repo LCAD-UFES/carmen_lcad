@@ -379,10 +379,6 @@ compute_desired_phi_from_dynamic_model(carmen_simulator_ackerman_config_t *simul
 }
 
 
-
-
-
-
 double
 compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 {
