@@ -10,20 +10,19 @@ void Kalman::inicializa(KalmanFilter *KF, KalmanState *state, int m, int n) {
 }
 
 void Kalman::resetaKalman(KalmanFilter *KF, int m, int n) {
-	// vetor de estado terá 6 params
-	// vetor de medida terá 3 params
-	// não haverá vetor de controle
+	// vetor de estado terï¿½ 6 params
+	// vetor de medida terï¿½ 3 params
+	// nï¿½o haverï¿½ vetor de controle
 	KF->init(m, n, 0, CV_64F);
 
-	// inicialização do filtro
-    double matrix []= {
-		1, 0, 0, 1, 0, 0,		// base += delta_base
-		0, 1, 0, 0, 1, 0,		// topo += delta_topo
-		0, 0, 1, 0, 0, 1,		// largura += delta_largura
-		0, 0, 0, 1, 0, 0,		// delta_base
-		0, 0, 0, 0, 1, 0,		// delta_topo
-		0, 0, 0, 0, 0, 1};      // delta_largura
-	KF->transitionMatrix = (Mat(m, m, CV_64F,matrix));		
+	// inicializaï¿½ï¿½o do filtro
+    KF->transitionMatrix = (Mat_<double>(m, m)<<
+    			1, 0, 0, 1, 0, 0,		// base += delta_base
+    			0, 1, 0, 0, 1, 0,		// topo += delta_topo
+    			0, 0, 1, 0, 0, 1,		// largura += delta_largura
+    			0, 0, 0, 1, 0, 0,		// delta_base
+    			0, 0, 0, 0, 1, 0,		// delta_topo
+    			0, 0, 0, 0, 0, 1);
 	setIdentity(KF->measurementMatrix);
 	setIdentity(KF->processNoiseCov, Scalar::all(1e-5));
 	setIdentity(KF->measurementNoiseCov, Scalar::all(1e-1));
@@ -31,20 +30,19 @@ void Kalman::resetaKalman(KalmanFilter *KF, int m, int n) {
 }
 
 void Kalman::resetaKalman(KalmanFilter *KF, int m, int n, const Mat1d &kalmanMeasurement) {
-	// vetor de estado terá 6 params
-	// vetor de medida terá 3 params
-	// não haverá vetor de controle
+	// vetor de estado terï¿½ 6 params
+	// vetor de medida terï¿½ 3 params
+	// nï¿½o haverï¿½ vetor de controle
 	KF->init(m, n, 0, CV_64F);
 
-	// inicialização do filtro
-	double matrix []= {
-		1, 0, 0, 1, 0, 0,		// base += delta_base
-		0, 1, 0, 0, 1, 0,		// topo += delta_topo
-		0, 0, 1, 0, 0, 1,		// largura += delta_largura
-		0, 0, 0, 1, 0, 0,		// delta_base
-		0, 0, 0, 0, 1, 0,		// delta_topo
-		0, 0, 0, 0, 0, 1};      // delta_largura
-	KF->transitionMatrix = (Mat(m, m, CV_64F,matrix));	
+	// inicializaï¿½ï¿½o do filtro
+	KF->transitionMatrix = (Mat_<double>(m, m)<<
+			1, 0, 0, 1, 0, 0,		// base += delta_base
+			0, 1, 0, 0, 1, 0,		// topo += delta_topo
+			0, 0, 1, 0, 0, 1,		// largura += delta_largura
+			0, 0, 0, 1, 0, 0,		// delta_base
+			0, 0, 0, 0, 1, 0,		// delta_topo
+			0, 0, 0, 0, 0, 1);
 	setIdentity(KF->measurementMatrix);
 	setIdentity(KF->processNoiseCov, Scalar::all(1e-5));
 	setIdentity(KF->measurementNoiseCov, Scalar::all(1e-1));
@@ -129,7 +127,7 @@ void Kalman::estimar(KalmanFilter *KF, KalmanState *state, const HoughDoMeio &me
 
 	// limpar
 	if (state->limpar) {
-		state->hough = NULL; // não há estimado
+		state->hough = NULL; // nï¿½o hï¿½ estimado
 		resetaKalman(KF, 6, 3);
 		int auxSem = state->nFramesSemEvidencias;
 		int auxCom = state->nFramesComEvidencias;
@@ -143,7 +141,7 @@ void Kalman::estimar(KalmanFilter *KF, KalmanState *state, const HoughDoMeio &me
 
 	// desativado ou manter
 	if (state->estaDesativado || state->manter) {
-		// não atualiza estimado (hough do estado)
+		// nï¿½o atualiza estimado (hough do estado)
 		state->manter = false;
 		// cout << "sei nao... esta estranho, vou manter a ultima" << endl;
 		return; 
@@ -152,10 +150,10 @@ void Kalman::estimar(KalmanFilter *KF, KalmanState *state, const HoughDoMeio &me
 
 void Kalman::realizarEstimativa(KalmanFilter *KF, KalmanState *state, const Mat1d &kalmanMeasurement, bool estimarLargura) {
 	
-	// altera a matrix de transição para que a largura seja ou não estimada conforme necessário
+	// altera a matrix de transiï¿½ï¿½o para que a largura seja ou nï¿½o estimada conforme necessï¿½rio
 	if (!estimarLargura) alteraMatrixTransicao(KF, false);
 	
-	// predição
+	// prediï¿½ï¿½o
 	KF->predict();
 	
 	// estima
@@ -170,22 +168,20 @@ void Kalman::realizarEstimativa(KalmanFilter *KF, KalmanState *state, const Mat1
 
 void Kalman::alteraMatrixTransicao(KalmanFilter *KF, bool estimarLargura) {
 	if (estimarLargura) {
-        double matrix []= {
-		1, 0, 0, 1, 0, 0,		// base += delta_base
-		0, 1, 0, 0, 1, 0,		// topo += delta_topo
-		0, 0, 1, 0, 0, 1,		// largura += delta_largura
-		0, 0, 0, 1, 0, 0,		// delta_base
-		0, 0, 0, 0, 1, 0,		// delta_topo
-		0, 0, 0, 0, 0, 1};      // delta_largura
-		KF->transitionMatrix = (Mat(KF->transitionMatrix.cols, KF->transitionMatrix.rows, CV_64F, matrix));
+        KF->transitionMatrix = (Mat_<double>(KF->transitionMatrix.cols, KF->transitionMatrix.rows) <<
+        			1, 0, 0, 1, 0, 0,		// base += delta_base
+        			0, 1, 0, 0, 1, 0,		// topo += delta_topo
+        			0, 0, 1, 0, 0, 1,		// largura += delta_largura
+        			0, 0, 0, 1, 0, 0,		// delta_base
+        			0, 0, 0, 0, 1, 0,		// delta_topo
+					0, 0, 0, 0, 0, 1); // delta_largura
 	} else {
-        double matrix []= {
-		1, 0, 0, 1, 0, 0,		// base += delta_base
-		0, 1, 0, 0, 1, 0,		// topo += delta_topo
-		0, 0, 1, 0, 0, 1,		// largura += delta_largura
-		0, 0, 0, 1, 0, 0,		// delta_base
-		0, 0, 0, 0, 1, 0,		// delta_topo
-		0, 0, 0, 0, 0, 1};      // delta_largura
-		KF->transitionMatrix = (Mat(KF->transitionMatrix.cols, KF->transitionMatrix.rows, CV_64F, matrix));		// delta_largura-- não estima/atualiza
+        KF->transitionMatrix = (Mat_<double>(KF->transitionMatrix.cols, KF->transitionMatrix.rows) <<
+        			1, 0, 0, 1, 0, 0,		// base += delta_base
+        			0, 1, 0, 0, 1, 0,		// topo += delta_topo
+        			0, 0, 1, 0, 0, 0,		// largura = largura <-- nÃ£o estima/atualiza
+        			0, 0, 0, 1, 0, 0,		// delta_base
+        			0, 0, 0, 0, 1, 0,		// delta_topo
+					0, 0, 0, 0, 0, 0); // delta_largura  <-- nÃ£o estima/atualiza		// delta_largura-- nï¿½o estima/atualiza
 	}
 }

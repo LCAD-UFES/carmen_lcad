@@ -62,14 +62,49 @@ class Policy:
         self.saver = tf.train.Saver()
         self.sess = tf.Session(config=sess_config)
         self.sess.run(tf.global_variables_initializer())
+        
+        self.replay_memory = []
 
-    def assemble_state(self, pose, goal, v, phi, goal_v, goal_phi, readings):
+    def subsample_rddf(self, rddfs, px, py, pth):
+        n = int(len(rddfs) / 3)
+        x, y, th = px, py, pth
+        subsampled_rddfs = []
+        
+        for i in range(n):
+            p = 3 * i
+            nx, ny, nth = rddfs[p], rddfs[p + 1], rddfs[p + 2]
+            d = ((nx - x) ** 2 + (ny - y) ** 2) ** .5
+            if d > 1.0:
+                x, y, th = nx, ny, nth
+                subsampled_rddfs += [x, y, th]
+        
+        nmax = 3 * int(self.config['n_rddf_poses'])
+          
+        if len(subsampled_rddfs) > nmax:
+            subsampled_rddfs = subsampled_rddfs[:nmax]
+        else:
+            while len(subsampled_rddfs) < nmax:
+                subsampled_rddfs += [px, py, pth]
+                
+        return subsampled_rddfs
+
+    def subsample_laser(self, laser):
+        i = 0
+        ls = int(self.config['laser_subsample'])
+        subsampled_laser = []
+        while i < len(laser):
+            subsampled_laser.append(np.min(laser[i:(i + ls)]))    
+            i += ls
+        return subsampled_laser
+
+    def assemble_state(self, pose, goal, v, phi, goal_v, goal_phi, readings, rddfs):
         pose.x -= self.config['x_offset']
         pose.y -= self.config['y_offset']
         goal.x -= self.config['x_offset']
         goal.y -= self.config['y_offset']
         
-        goal = pose.inverse().transform(goal)
+        inverted_pose = pose.inverse() 
+        goal = inverted_pose.transform(goal)
         
         g = [goal.x / self.config['max_gx'], 
              goal.y / self.config['max_gy'], 
@@ -80,10 +115,28 @@ class Policy:
              goal_v / self.config['max_v'], 
              goal_phi / self.config['max_phi']]
         
+        rddfs = self.subsample_rddf(rddfs, pose.x, pose.y, pose.th)
+        readings = self.subsample_laser(readings)
+
         r = [reading / self.config['max_range'] for reading in readings]
         
-        state = np.array(g + v + r)
+        n = int(len(rddfs) / 3)
+        rddf_poses = []
         
+        """
+        for i in range(n):
+            p = i * 3
+            rddf_pose = Transform2d(x = rddfs[p] - self.config['x_offset'], 
+                                    y = rddfs[p + 1] - self.config['y_offset'], 
+                                    th = rddfs[p + 2])
+            rddf_pose = inverted_pose.transform(rddf_pose)
+            rddf_pose = [rddf_pose.x / self.config['max_gx'], 
+                         rddf_pose.y / self.config['max_gy'],
+                         rddf_pose.th]
+            rddf_poses += rddf_pose 
+        """
+        
+        state = np.array(g + v + r + rddf_poses)
         return state
 
     def save(self, path):
@@ -96,7 +149,10 @@ class Policy:
     def forward(self, state):
         feed = {self.state: [state]}
         p = self.sess.run([self.policy], feed_dict=feed)
+        
         v, phi = p[0][0][0], p[0][0][1]
+        # v, phi = np.clip(p[0][0][0], -1., 1.), np.clip(p[0][0][1], -1., 1.)
+        
         v *= self.config['max_v']
         phi *= self.config['max_phi']
         return v, phi
@@ -139,6 +195,36 @@ class Policy:
 
         self.sess.run([self.pg_trainer], feed_dict=feed)
 
+    
+    def train_immitation_learning_episode(self, episode, n_batches, batch_size):
+        self.replay_memory.append(episode)
+        total_loss = 0.
+                
+        for i in range(n_batches):
+            batch_xs = []
+            batch_ys = []
+            
+            for j in range(batch_size):
+                ep_id = np.random.randint(len(self.replay_memory))
+                tr_id = np.random.randint(len(self.replay_memory[ep_id]))
+                
+                state = self.replay_memory[ep_id][tr_id][0]
+                v, phi = self.replay_memory[ep_id][tr_id][1]
+                target_command = [v / self.config['max_v'], phi / self.config['max_phi']]
+                
+                batch_xs.append(state)
+                batch_ys.append(target_command)
+            
+            loss, _ = self.sess.run([self.immitation_loss, self.immitation_trainer], 
+                                    feed_dict={self.state: batch_xs, 
+                                               self.actions: batch_ys})
+            
+            total_loss += loss
+
+        sys.stdout.flush()
+        return total_loss
+
+
     def train_immitation_learning(self, dataset_path, n_epochs, n_batches_by_epoch, batch_size, checkpoint_path=None):
         """
         0: globalpos.x 
@@ -154,9 +240,14 @@ class Policy:
         10: command.x 
         11: command.y
         12: globalpos->timestamp
-        13~: laser readings
+        13: n_laser_readings
+        14~: laser readings
+        ...
+        n: n_rddf poses
+        n+1~: rddf poses
         """
-        dataset = np.array([[float(f) for f in l.rstrip().rsplit(' ')] for l in open(dataset_path, 'r').readlines()])
+        dataset = [[float(f) for f in l.rstrip().rsplit(' ')] for l in open(dataset_path, 'r').readlines()]
+        dataset = np.array(dataset)
         
         x = []
         y = []
@@ -168,13 +259,21 @@ class Policy:
             goal = Transform2d(x=l[5], y=l[6], th=l[7])
             v, phi = l[3], l[4]
             goal_v, goal_phi = l[8], l[9]
-            readings = l[13:]
+            n_readings = int(l[13])
+            readings = l[14:(14 + n_readings)]
+            n_rddfs = int(l[(14 + n_readings)])
+            rddfs = l[(14 + n_readings + 1):(14 + n_readings + n_rddfs)]
             cmd_v, cmd_phi = l[10], l[11]
 
-            state = self.assemble_state(pose, goal, v, phi, goal_v, goal_phi, readings)
-            x.append(state)
-            y.append([cmd_v / self.config['max_v'], 
-                      cmd_phi / self.config['max_phi']])
+            state = self.assemble_state(pose, goal, v, phi, goal_v, goal_phi, readings, rddfs)
+
+            # print(len(state))
+            # sys.exit(0)
+            
+            if cmd_v > 0.01:
+                x.append(state)
+                y.append([cmd_v / self.config['max_v'], 
+                          cmd_phi / self.config['max_phi']])
         
         # train
         for i in range(n_epochs):

@@ -3,15 +3,16 @@
  * of the simulator                        *
  *******************************************/
 
+#include "simulator_ackerman2_simulation.h"
+
 #include <carmen/carmen.h>
 #include <carmen/collision_detection.h>
 #include <carmen/ford_escape_hybrid.h>
 #include <car_model.h>
 #include <control.h>
 #include <pthread.h>
-#include "simulator_ackerman.h"
-#include "simulator_ackerman_simulation.h"
 #include "objects_ackerman.h"
+#include "simulator_ackerman2.h"
 
 double
 get_acceleration(double v, double target_v, carmen_simulator_ackerman_config_t *simulator_config)
@@ -190,7 +191,7 @@ void
 update_target_v_and_target_phi(carmen_simulator_ackerman_config_t *simulator_config)
 {
 	double time_elapsed_since_last_motion_command, motion_command_time_consumed;
-	int i, motion_command_completely_consumed;
+	int i = 0, motion_command_completely_consumed;
 
 	if (simulator_config->current_motion_command_vector == NULL)
 	{
@@ -201,7 +202,6 @@ update_target_v_and_target_phi(carmen_simulator_ackerman_config_t *simulator_con
 
 	time_elapsed_since_last_motion_command = carmen_get_time() - simulator_config->time_of_last_command;
 
-	i = 0;
 	motion_command_completely_consumed = 1;
 	motion_command_time_consumed = 0.0;
 	do
@@ -218,13 +218,11 @@ update_target_v_and_target_phi(carmen_simulator_ackerman_config_t *simulator_con
 	if (motion_command_completely_consumed)
 	{
 		simulator_config->target_v = 0.0;
-		//printf("motion command completely consumed; i = %d\n", i);
 	}
 	else
 	{
 		simulator_config->target_v = simulator_config->current_motion_command_vector[i].v;
 		simulator_config->target_phi = simulator_config->current_motion_command_vector[i].phi;
-		//printf("i = %d\n", i);
 	}
 	simulator_config->current_motion_command_vector_index = i;
 }
@@ -254,13 +252,6 @@ compute_new_velocity_with_ann(carmen_simulator_ackerman_config_t *simulator_conf
 	if (simulator_config->initialize_neural_networks)
 		carmen_libcarneuralmodel_init_velocity_ann_input(velocity_ann_input);
 
-#ifdef __USE_RL_CONTROL
-
-	throttle_command = rl_control_throttle;
-	brakes_command = rl_control_brake;
-
-#else
-
 	if (simulator_config->use_mpc)
 	{
 		carmen_libmpc_compute_velocity_effort(&throttle_command, &brakes_command, &gear_command,
@@ -272,8 +263,6 @@ compute_new_velocity_with_ann(carmen_simulator_ackerman_config_t *simulator_conf
 		carmen_libpid_velocity_PID_controler(&throttle_command, &brakes_command, &gear_command,
 				simulator_config->target_v, simulator_config->v, simulator_config->delta_t, 0);
 	}
-
-#endif
 
 	if (gear_command == 129) // marcha reh
 		simulator_config->v = -carmen_libcarneuralmodel_compute_new_velocity_from_efforts(velocity_ann_input, velocity_ann, throttle_command, brakes_command, -simulator_config->v);
@@ -287,64 +276,107 @@ compute_new_velocity_with_ann(carmen_simulator_ackerman_config_t *simulator_conf
 
 
 double
-compute_lateral_error() // TODO
+distance_point_to_line(double point_x, double point_y, double line_a_x, double line_a_y, double line_b_x, double line_b_y)
 {
-	return (0.0);
+	double a = line_a_y - line_b_y;                                                     // yA-yB=a,  xB-xA=b,  xAyB-xB*yA=c
+	double b = line_b_x - line_a_x;
+	double c = (line_a_x * line_b_y) - (line_b_x * line_a_y);
+
+	if ( a == 0.0 || b == 0.0)
+		return (5.0);   // TODO quando os pontos sao iguais, oq fazer?
+
+	double dist = fabs((a *  point_x) + (b * point_y) + c) / sqrt((a * a) + (b * b));   // dist = |ax0 + by0 + c| / √(a^2 + b^2)
+
+	return (dist);
 }
 
 
-double
-compute_lookahead_error() // TODO
-{
-	return (0.0);
+unsigned int
+find_two_closest_point_in_path(carmen_simulator_ackerman_config_t *simulator_config) // Always returns the previous of the two points
+{                                                                                    // between the global_pos
+	double dist = 0.0, dist_1 = 9999.9, dist_2 = 9999.9;
+	unsigned int i = 0;
+	unsigned int number_of_poses = abs(simulator_config->rddf_lane_message->number_of_poses);
+
+	for (; i < number_of_poses; i++)
+	{
+		dist = carmen_distance_ackerman_traj(&simulator_config->rddf_lane_message->poses[i], &simulator_config->rddf_lane_message->poses[i + 1]);
+		dist_2 = dist_1;
+		dist_1 = dist;
+
+		if (dist > dist_1)
+			break;
+	}
+
+	if (dist > dist_2)		// TODO check if it is correct
+		return (i - 2);
+	else
+		return (i - 1);
 }
 
 
-double
-compute_heading_error() // TODO
+void
+compute_lateral_and_heading_errors(carmen_simulator_ackerman_config_t *simulator_config, double &lateral_error, double &heading_error)
 {
-	return (0.0);
+	// TODO Check if it is simply get the first of poses back and first of poses
+	unsigned int closest_rddf_index = find_two_closest_point_in_path(simulator_config);      // Compute the two RDDF points between the actual car pose
+
+	// The lateral error is the distance from the car pose (global_pos) to the line composed of the two closest points in the RDDF
+	lateral_error = distance_point_to_line(simulator_config->global_pos.globalpos.x, simulator_config->global_pos.globalpos.y,
+			simulator_config->rddf_lane_message->poses[closest_rddf_index].x, simulator_config->rddf_lane_message->poses[closest_rddf_index].y,
+			simulator_config->rddf_lane_message->poses[closest_rddf_index + 1].x, simulator_config->rddf_lane_message->poses[closest_rddf_index + 1].y);
+
+
+	heading_error = atan2(simulator_config->rddf_lane_message->poses[closest_rddf_index].y - simulator_config->rddf_lane_message->poses[closest_rddf_index + 1].y,
+			simulator_config->rddf_lane_message->poses[closest_rddf_index].x - simulator_config->rddf_lane_message->poses[closest_rddf_index + 1].x);
 }
+
 
 
 
 #define g 9.80665		// Gravity constant
 
-double
+double                                                                                                           // TODO missing Ux e Rs
 compute_feed_forward_phi(carmen_simulator_ackerman_config_t *simulator_config, double Ux, double Rs, double Kug) // TODO Ux, Rs, Kug sao mesmo parametros?
 {
 	double L = simulator_config->distance_between_front_and_rear_axles;
-	return ((L + (Kug * Ux * Ux) / g) / Rs);
+	return ((L + (Kug * Ux * Ux) / g) / Rs);  // TODO Check if g is really the gravity
 }
 
 
-#define Kp 10
+#define Kp 10			// Kritayakiranas constant
+#define Xla 20          // Position of the point ahead the car to compute the lookahead_error (Kritayakirana used 20)
 
 double
-compute_control_phi()
+compute_control_phi(carmen_simulator_ackerman_config_t *simulator_config)  // TODO missing Cf
 {
 	double Cf = 1.0; // TODO Como encontrar Cf??? (Frontal Cornering Stifiness)
+	double e_lateral_error = 0.0, delta_psi_heading_error = 0.0;
 
-	double e = compute_lateral_error();
-	double Xla = compute_lookahead_error();
-	double delta_psi = compute_heading_error();
+	compute_lateral_and_heading_errors(simulator_config, e_lateral_error, delta_psi_heading_error);
 
-	return (-2 * (Kp/Cf) * (e + Xla * sin(delta_psi)));
+	double lookahead_error = e_lateral_error + Xla * sin(delta_psi_heading_error);
+
+	return (-2 * (Kp/Cf) * lookahead_error);
 }
 
 
 double
-compute_damping_phi() // TODO
+compute_damping_phi() // TODO missing r_yaw_rate, beta_vehicle_sideslip, K_road_curvature
 {
-	return (0.0);
+	double r_yaw_rate = 0.0, Ux_desired_speed = 0.0, K_road_curvature = 0.0, delta_psi_heading_error = 0.0, beta_vehicle_sideslip = 0.0;
+	double K_delta_psi_derivative = 0.0;
+	double delta_psi_derivative = r_yaw_rate - (Ux_desired_speed * K_road_curvature) * (cos(delta_psi_heading_error) - tan(beta_vehicle_sideslip) * sin(delta_psi_heading_error));
+
+	return (- K_delta_psi_derivative * delta_psi_derivative);
 }
 
 
-//double
-//compute_desired_phi_from_dynamic_model(carmen_ackerman_motion_command_p current_motion_command_vector, int nun_motion_commands, carmen_point_t odom_pose, double v)
-//{
-//	return (compute_feed_forward_phi(simulator_config) + compute_control_phi() + compute_damping_phi());
-//}
+double
+compute_desired_phi_from_dynamic_model(carmen_simulator_ackerman_config_t *simulator_config)
+{
+	return (compute_feed_forward_phi(simulator_config, 1, 1, 1) + compute_control_phi(simulator_config) + compute_damping_phi());
+}
 
 
 double
@@ -372,13 +404,10 @@ compute_new_phi_with_ann(carmen_simulator_ackerman_config_t *simulator_config)
 	atan_current_curvature = carmen_get_curvature_from_phi(simulator_config->phi, simulator_config->v, simulator_config->understeer_coeficient2,
 															simulator_config->distance_between_front_and_rear_axles);
 
-	double atan_desired_curvature = carmen_get_curvature_from_phi(simulator_config->target_phi, simulator_config->v, simulator_config->understeer_coeficient2,
-															simulator_config->distance_between_front_and_rear_axles);
-
 	// Dynamic model
-//	double dynamic_desired_phi = compute_desired_phi_from_dynamic_model(simulator_config->current_motion_command_vector, simulator_config->nun_motion_commands, simulator_config->odom_pose, simulator_config->v);
-//	atan_desired_curvature = carmen_get_curvature_from_phi(dynamic_desired_phi, simulator_config->v, simulator_config->understeer_coeficient2, 1.0,
-//			simulator_config->distance_between_front_and_rear_axles);
+	double dynamic_desired_phi = compute_desired_phi_from_dynamic_model(simulator_config);
+
+	double atan_desired_curvature = carmen_get_curvature_from_phi(dynamic_desired_phi, simulator_config->v, 1.0, simulator_config->distance_between_front_and_rear_axles);
 
 	steering_effort = carmen_libpid_steering_PID_controler_FUZZY(atan_desired_curvature, atan_current_curvature, simulator_config->delta_t, 0, simulator_config->v);
 
@@ -416,16 +445,12 @@ carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulat
 
 	update_target_v_and_target_phi(simulator_config);
 
-	// Velocity must be calculated before phi
-	//	v   = compute_new_velocity(simulator_config);
+	//Velocity must be calculated before phi
+	//v   = compute_new_velocity(simulator_config);
 	//phi = compute_new_phi(simulator_config);// + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.1));
 
 	v   = compute_new_velocity_with_ann(simulator_config);
 	phi = compute_new_phi_with_ann(simulator_config);// + carmen_gaussian_random(0.0, carmen_degrees_to_radians(0.05));
-
-#ifdef PLOT_VELOCITY
-	pid_plot_velocity(simulator_config->v, simulator_config->target_v, 15.0, "vel");
-#endif
 
 	phi = carmen_clamp(-simulator_config->max_phi, phi, simulator_config->max_phi);
 	simulator_config->phi = phi;

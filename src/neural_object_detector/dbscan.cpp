@@ -1,4 +1,4 @@
-#include "dbscan.h"
+#include "../neural_object_detector/dbscan.h"
 
 using std::size_t;
 
@@ -25,6 +25,7 @@ Indexes query(double d2, int i, const Cluster &points) {
 
     return neighbors;
 }
+
 
 Clusters DBSCAN(double d2, size_t density, const Cluster &points) {
     Clusters clusters;
@@ -68,4 +69,4 @@ Clusters DBSCAN(double d2, size_t density, const Cluster &points) {
     return clusters;
 }
 
-} // namespace dbscan
+} // end of namespace dbscan

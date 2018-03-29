@@ -36,6 +36,12 @@ typedef struct
 	rddf_graph_edges_t *edge;
 } rddf_graph_t;
 
+typedef struct
+{
+	int size;
+	rddf_graph_t *graph;
+} rddf_graphs_of_map_t;
+
 using namespace std;
 
 cv::Mat rotate(cv::Mat src, cv::Point pt, double angle);

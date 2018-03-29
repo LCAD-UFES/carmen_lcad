@@ -295,6 +295,9 @@ motion_command_handler(carmen_base_ackerman_motion_command_message *motion_comma
 }
 
 
+
+
+
 static void
 set_object_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
 		void *clientData __attribute__ ((unused)))
@@ -491,6 +494,8 @@ shutdown_module(int x)
 		exit(0);
 	}
 }
+
+
 
 
 void

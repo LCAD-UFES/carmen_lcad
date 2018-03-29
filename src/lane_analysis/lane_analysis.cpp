@@ -1,11 +1,14 @@
 #include <stdio.h>
 
 #include <carmen/carmen.h>
+#include <opencv2/opencv.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 #include <carmen/bumblebee_basic_interface.h>
 #include <carmen/lane_analysis_interface.h> // implement if needed
 #include <carmen/lane_analysis_messages.h>  // implement when needed
 
-#include <opencv2/opencv.hpp>
+
 #include "ELAS/ELAS.h"
 
 //#define SHOW_DISPLAY
@@ -21,7 +24,7 @@ enum CameraSide {
 };
 
 // camera
-static int camera = 8;
+static int camera = 3;
 static int camera_side = CameraSide::RIGHT;
 static int image_width;
 static int image_height;
@@ -174,19 +177,16 @@ void lane_analysis_handler(carmen_bumblebee_basic_stereoimage_message * stereo_i
 		printf("I do not see any car pose at the moment... sorry!\n");
 		return;
 	}
-	printf("oi4\n");
+	printf("car_pose: %lf %lf\n", car_pose->orientation.pitch, car_pose->position.x);
 	// get the image from the bumblebee
 	Mat3b image;
 	if (stereo_image->image_size == 3686400) image = Mat3b(960, 1280);
 	else image = Mat3b(480, 640);
-	printf("oi2\n");
-	if (camera_side == CameraSide::LEFT) image.data = (uchar *) stereo_image->raw_left;
-	else if(camera_side == CameraSide::RIGHT) image.data = (uchar *) stereo_image->raw_right;
+	if (camera_side == CameraSide::LEFT) image.data = (uchar *)  stereo_image->raw_left;
 	else image.data = (uchar *) stereo_image->raw_right;
-	printf("oi1\n");
+
 	cvtColor(image, image, CV_RGB2BGR);
 	cv::resize(image, image, Size(640,480));
-	printf("oi3\n");
 	fnumber++;
 
 //	if(fnumber>100)
@@ -195,6 +195,7 @@ void lane_analysis_handler(carmen_bumblebee_basic_stereoimage_message * stereo_i
 //	}
 
 	if (!image.empty()) {
+
 		cout << "frame: " << fnumber << endl;
 		// run ELAS
 		ELAS::run(image);
@@ -208,15 +209,14 @@ void lane_analysis_handler(carmen_bumblebee_basic_stereoimage_message * stereo_i
 
 		// publish messages
 		lane_analysis_publish_messages(stereo_image->timestamp);
-#ifdef SHOW_DISPLAY
+//#ifdef SHOW_DISPLAY
 		// display viz
-		//ELAS::display(image, &_raw_elas_message);
-#endif
+		ELAS::display(image, &_raw_elas_message);
+//#endif
 
 	} else {
 		printf("End of dataset!\n");
 	}
-	printf("oi15\n");
 }
 
 static int read_parameters(int argc, char **argv) {
@@ -334,7 +334,6 @@ int main(int argc, char ** argv) {
 
 	// Loop forever waiting for messages
 	carmen_ipc_dispatch();
-
     ELAS::finishProgram();
 
 	return EXIT_SUCCESS;

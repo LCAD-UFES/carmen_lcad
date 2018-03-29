@@ -103,20 +103,31 @@ extern "C" {
 #define MAX3(x,y,z) MAX(MAX(x,y),z)
 #endif
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846  // PI
+#endif
+
 #define DOT2D(x1,x2) ((x1).x * (x2).x + (x1).y * (x2).y)
+
+#define DOT2D_P(x1,x2) ((x1)->x * (x2)->x + (x1)->y * (x2)->y)
+
 #define DIST2D(x1,x2) (sqrt(((x1).x - (x2).x) * ((x1).x - (x2).x) + \
 							((x1).y - (x2).y) * ((x1).y - (x2).y)))
+
 #define DIST2D_P(x1,x2) (sqrt(((x1)->x - (x2)->x) * ((x1)->x - (x2)->x) + \
 							((x1)->y - (x2)->y) * ((x1)->y - (x2)->y)))
 
 #define DOT3D(x1,x2) ((x1).x * (x2).x + (x1).y * (x2).y + (x1).z * (x2).z)
+
+#define DOT3DP_P(x1,x2) ((x1)->x * (x2)->x + (x1)->y * (x2)->y + (x1)->z * (x2)->z)
+
 #define DIST3D(x1,x2) (sqrt(((x1).x - (x2).x) * ((x1).x - (x2).x) + \
 							((x1).y - (x2).y) * ((x1).y - (x2).y) + \
 							((x1).z - (x2).z) * ((x1).z - (x2).z)))
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846  /* pi */
-#endif
+#define DIST3D_P(x1,x2) (sqrt(((x1)->x - (x2)->x) * ((x1)->x - (x2)->x) + \
+							((x1)->y - (x2)->y) * ((x1)->y - (x2)->y) + \
+							((x1)->z - (x2)->z) * ((x1)->z - (x2)->z)))
 
 typedef struct {
 	double x;

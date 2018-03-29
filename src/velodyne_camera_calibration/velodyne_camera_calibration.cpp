@@ -11,6 +11,9 @@
 const int MIN_ANGLE_OBSTACLE = 2;
 const int MAX_ANGLE_OBSTACLE = 188;
 
+#define MAX_RANGE 50.0
+#define MIN_RANGE 0.5
+
 const int column_correspondence[32] =
 {
 		0, 16, 1, 17, 2, 18, 3, 19, 4, 20, 5, 21, 6, 22, 7, 23, 8,
@@ -103,10 +106,6 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera(carmen_velodyne_parti
 
             double h_angle = carmen_normalize_theta(carmen_degrees_to_radians(velodyne_message->partial_scan[j].angle));
 
-
-			const float MAX_RANGE = 50.0;
-			const float MIN_RANGE = 0.5;
-
 			if (range <= MIN_RANGE)
 				range = MAX_RANGE;
 
@@ -169,9 +168,6 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle(carmen_
 
 			double range = (((double) velodyne_message->partial_scan[j].distance[i]) / 500.0);
 			double range_1 = (((double) velodyne_message->partial_scan[j].distance[i-1]) / 500.0);
-
-			const float MAX_RANGE = 50.0;
-			const float MIN_RANGE = 0.5;
 
 			if (range <= MIN_RANGE)
 				range = MAX_RANGE;
@@ -245,9 +241,6 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_dis
 			double range = (((double) velodyne_message->partial_scan[j].distance[i]) / 500.0);
 			double range_1 = (((double) velodyne_message->partial_scan[j].distance[i-1]) / 500.0);
 
-			const float MAX_RANGE = 50.0;
-			const float MIN_RANGE = 0.5;
-
 			if (range <= MIN_RANGE)
 				range = MAX_RANGE;
 
@@ -293,3 +286,77 @@ carmen_velodyne_camera_calibration_lasers_points_in_camera_with_obstacle_and_dis
 }
 
 
+#define CAMERA_FOV 0.44 // In radians ~ 25 degrees
+
+std::vector<velodyne_camera_points>
+velodyne_camera_calibration_remove_points_out_of_FOV_and_ground(carmen_velodyne_partial_scan_message *velodyne_message,
+                                                                         carmen_camera_parameters camera_parameters,
+                                                                         carmen_pose_3D_t velodyne_pose, carmen_pose_3D_t camera_pose,
+                                                                         int image_width, int image_height)
+{
+	std::vector<velodyne_camera_points> points;
+
+	double fx_meters = camera_parameters.fx_factor * image_width * camera_parameters.pixel_size;
+	double fy_meters = camera_parameters.fy_factor * image_height * camera_parameters.pixel_size;
+
+	double cu = camera_parameters.cu_factor * (double) image_width;
+	double cv = camera_parameters.cv_factor * (double) image_height;
+
+	double horizontal_angle = 0.0, vertical_angle = 0.0, previous_vertical_angle = 0.0, range = 0.0, previous_range = 0.0;
+
+	int point_x_on_img =0, point_y_on_img = 0;
+
+	for (int j = 0; j < velodyne_message->number_of_32_laser_shots; j++)
+	{
+		// TODO use the angle from measure velodyne_message->partial_scan[j].angle
+		horizontal_angle = carmen_normalize_theta(carmen_degrees_to_radians(velodyne_message->partial_scan[j].angle));
+
+		if (horizontal_angle < -CAMERA_FOV || horizontal_angle > CAMERA_FOV) // Discharge measures out of the camera field of view
+			continue;
+
+		previous_range = (((double) velodyne_message->partial_scan[j].distance[0]) / 500.0);
+		previous_vertical_angle = carmen_normalize_theta(carmen_degrees_to_radians(sorted_vertical_angles[0]));
+
+		for (int i = 1; i < 32; i++)
+		{
+			range = (((double) velodyne_message->partial_scan[j].distance[i]) / 500.0);
+
+			if (range >= MAX_RANGE)
+				continue;
+
+			if (range <= MIN_RANGE || range > MAX_RANGE)
+				range = MAX_RANGE;
+
+			vertical_angle = carmen_normalize_theta(carmen_degrees_to_radians(sorted_vertical_angles[i]));
+
+			tf::Point p3d_velodyne_reference = spherical_to_cartesian(horizontal_angle, vertical_angle, range);
+			tf::Point p3d_velodyne_reference_1 = spherical_to_cartesian(horizontal_angle, previous_vertical_angle, previous_range);
+
+			if (p3d_velodyne_reference.x() > 0)
+			{
+				// Jose's method check if a point is obstacle
+				double delta_x = p3d_velodyne_reference.x() - p3d_velodyne_reference_1.x();
+				double delta_z = (p3d_velodyne_reference.z()) - (p3d_velodyne_reference_1.z()); // TODO verificar calculo do z no mapper
+
+				double line_angle = carmen_radians_to_degrees(fabs(atan2(delta_z, delta_x)));
+
+				if (!(line_angle > MIN_ANGLE_OBSTACLE) && (line_angle < MAX_ANGLE_OBSTACLE))
+					continue;
+
+				tf::Point p3d_camera_reference = move_to_camera_reference(p3d_velodyne_reference, velodyne_pose, camera_pose);
+
+				point_x_on_img = (int) (fx_meters * (p3d_camera_reference.y() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cu);
+                point_y_on_img = (int) (fy_meters * (-p3d_camera_reference.z() / p3d_camera_reference.x()) / camera_parameters.pixel_size + cv);
+
+                // TODO Need spherical coordinates???
+                velodyne_camera_points point = {point_x_on_img, point_y_on_img, {horizontal_angle, vertical_angle, range},
+                		{p3d_camera_reference.x(), p3d_camera_reference.y(), p3d_camera_reference.z()}};
+
+                points.push_back(point);
+			}
+			previous_range = range;
+			previous_vertical_angle = vertical_angle;
+		}
+	}
+	return points;
+}

@@ -18,6 +18,7 @@ set_rl_control(double steering, double throttle, double brake);
 
 #endif
 
+#include <carmen/simulator_ackerman.h>
 
 /* recalculates the actual position */
 
