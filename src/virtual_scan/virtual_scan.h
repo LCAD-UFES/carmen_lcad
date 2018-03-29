@@ -140,7 +140,7 @@ typedef struct
 typedef struct
 {
 	int size;
-	virtual_scan_track_t *tracks;
+	virtual_scan_track_t **tracks;
 } virtual_scan_track_set_t;
 
 
