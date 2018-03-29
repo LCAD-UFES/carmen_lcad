@@ -382,33 +382,6 @@ point_is_already_visited(int **already_visited, int x, int y)
 }
 
 
-/*void
-expand_neighbours_of_point (carmen_map_p map, rddf_graph_node *current, vector<rddf_graph_node*> &open_set, int **already_visited, int *count)
-{
-	rddf_graph_node* next;
-	for (int x = current->x - 1; x <= current->x + 1; x++)
-	{
-		for (int y = current->y - 1; y <= current->y + 1; y++)
-		{
-			if (point_is_in_map(map, x, y) && !point_is_already_visited(already_visited,x,y)) //só pode processar o ponto caso ele esteja entre 0 e tam_max
-			{
-				already_visited[x][y] = 1;
-
-				if (point_is_lane_center(map, x, y))
-				{
-					next = (rddf_graph_node *) malloc(sizeof(rddf_graph_node));
-					next->x = x;
-					next->y = y;
-					next->prox = current;
-					open_set.push_back(next);
-					(*count) = (*count)+1;
-				}
-			}
-		}
-	}
-}*/
-
-
 bool
 get_neighbour(carmen_position_t *neighbour, carmen_position_t current, int ** already_visited, carmen_map_p map)
 {
@@ -434,7 +407,14 @@ get_neighbour(carmen_position_t *neighbour, carmen_position_t current, int ** al
 
 
 rddf_graph_t *
-add_point_to_graph(rddf_graph_t *graph, int x, int y)
+add_point_to_graph_branch(rddf_graph_t * graph, int x, int y, int branch_node)
+{
+	return (graph);
+}
+
+
+rddf_graph_t *
+add_point_to_graph(carmen_map_p map, rddf_graph_t *graph, int x, int y)
 {
 	if (graph == NULL)
 	{
@@ -443,9 +423,14 @@ add_point_to_graph(rddf_graph_t *graph, int x, int y)
 		graph->point[0].x = x;
 		graph->point[0].y = y;
 
-		//graph->edge = (rddf_graph_edges_t *) malloc(sizeof(rddf_graph_edges_t));
-		//graph->edge[0].point = NULL;
-		//graph->edge[0].size = 0;
+		graph->world_coordinate = (carmen_position_t *) malloc(sizeof(carmen_position_t));
+		graph->world_coordinate[0].x = (x * map->config.resolution) + map->config.x_origin;
+		graph->world_coordinate[0].y = (y * map->config.resolution) + map->config.y_origin;
+
+		graph->edge = (rddf_graph_edges_t *) malloc(sizeof(rddf_graph_edges_t));
+		graph->edge[0].point = (int *) malloc(sizeof(int));
+		graph->edge[0].point = NULL;
+		graph->edge[0].size = 0;
 
 		graph->size = 1;
 	}
@@ -455,10 +440,14 @@ add_point_to_graph(rddf_graph_t *graph, int x, int y)
 		graph->point[graph->size].x = x;
 		graph->point[graph->size].y = y;
 
-		//graph->edge = (rddf_graph_edges_t *) realloc(graph->edge, (graph->size + 1) * sizeof(rddf_graph_edges_t));
-		//graph->edge[graph->size].point = (int *) realloc(graph->edge[graph->size].point, (graph->edge[graph->size].size + 1) * sizeof(int));
-		//graph->edge[graph->size].point[graph->edge[graph->size].size] = graph->size + 1;
-		//graph->edge[graph->size].size += 1;
+		graph->world_coordinate = (carmen_position_t *) realloc(graph->world_coordinate, (graph->size + 1) * sizeof(carmen_position_t));
+		graph->world_coordinate[graph->size].x = (x * map->config.resolution) + map->config.x_origin;
+		graph->world_coordinate[graph->size].y = (y * map->config.resolution) + map->config.y_origin;
+
+		graph->edge = (rddf_graph_edges_t *) realloc(graph->edge, (graph->size + 1) * sizeof(rddf_graph_edges_t));
+		graph->edge[graph->size].point = (int *) malloc (sizeof(int));// realloc(graph->edge[graph->size].point, (graph->edge[graph->size].size + 1) * sizeof(int));
+		graph->edge[graph->size].point[0] = graph->size + 1;//graph->edge[graph->size].point[graph->edge[graph->size].size] = graph->size + 1;
+		graph->edge[graph->size].size  += 1;
 
 		graph->size += 1;
 	}
@@ -476,9 +465,8 @@ A_star(int x, int y, carmen_map_p map, int **already_visited)
 	int num_iter = 0;
 
 	rddf_graph_t *graph = NULL;
-	graph = add_point_to_graph(graph, x, y);
+	graph = add_point_to_graph(map,graph, x, y);
 
-	//current = NULL;
 	open_set.push_back(graph->point[0]);
 
 	while (!open_set.empty())
@@ -496,13 +484,13 @@ A_star(int x, int y, carmen_map_p map, int **already_visited)
 			//if (number_of_neighbours == 0)
 			//{
 				//current = open_set.back();
-				graph = add_point_to_graph(graph, neighbour.x, neighbour.y);
+				graph = add_point_to_graph(map, graph, neighbour.x, neighbour.y);
 				branch_node = graph->size - 1;
 			//}
 
 
 			//else
-				//graph = add_point_to_graph(graph, neighbour.x, neighbour.y, branch_node);
+				//graph = add_point_to_graph_branch(graph, neighbour.x, neighbour.y, branch_node);
 		}
 	}
 
