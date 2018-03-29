@@ -62,6 +62,8 @@ class Policy:
         self.saver = tf.train.Saver()
         self.sess = tf.Session(config=sess_config)
         self.sess.run(tf.global_variables_initializer())
+        
+        self.replay_memory = []
 
     def subsample_rddf(self, rddfs, px, py, pth):
         n = int(len(rddfs) / 3)
@@ -121,6 +123,7 @@ class Policy:
         n = int(len(rddfs) / 3)
         rddf_poses = []
         
+        """
         for i in range(n):
             p = i * 3
             rddf_pose = Transform2d(x = rddfs[p] - self.config['x_offset'], 
@@ -131,6 +134,7 @@ class Policy:
                          rddf_pose.y / self.config['max_gy'],
                          rddf_pose.th]
             rddf_poses += rddf_pose 
+        """
         
         state = np.array(g + v + r + rddf_poses)
         return state
@@ -145,8 +149,10 @@ class Policy:
     def forward(self, state):
         feed = {self.state: [state]}
         p = self.sess.run([self.policy], feed_dict=feed)
-        # v, phi = np.clip(p[0][0][0], 0., 1.), np.clip(p[0][0][1], -1., 1.)
+        
         v, phi = p[0][0][0], p[0][0][1]
+        # v, phi = np.clip(p[0][0][0], -1., 1.), np.clip(p[0][0][1], -1., 1.)
+        
         v *= self.config['max_v']
         phi *= self.config['max_phi']
         return v, phi
@@ -189,6 +195,36 @@ class Policy:
 
         self.sess.run([self.pg_trainer], feed_dict=feed)
 
+    
+    def train_immitation_learning_episode(self, episode, n_batches, batch_size):
+        self.replay_memory.append(episode)
+        total_loss = 0.
+                
+        for i in range(n_batches):
+            batch_xs = []
+            batch_ys = []
+            
+            for j in range(batch_size):
+                ep_id = np.random.randint(len(self.replay_memory))
+                tr_id = np.random.randint(len(self.replay_memory[ep_id]))
+                
+                state = self.replay_memory[ep_id][tr_id][0]
+                v, phi = self.replay_memory[ep_id][tr_id][1]
+                target_command = [v / self.config['max_v'], phi / self.config['max_phi']]
+                
+                batch_xs.append(state)
+                batch_ys.append(target_command)
+            
+            loss, _ = self.sess.run([self.immitation_loss, self.immitation_trainer], 
+                                    feed_dict={self.state: batch_xs, 
+                                               self.actions: batch_ys})
+            
+            total_loss += loss
+
+        sys.stdout.flush()
+        return total_loss
+
+
     def train_immitation_learning(self, dataset_path, n_epochs, n_batches_by_epoch, batch_size, checkpoint_path=None):
         """
         0: globalpos.x 
@@ -210,7 +246,8 @@ class Policy:
         n: n_rddf poses
         n+1~: rddf poses
         """
-        dataset = np.array([[float(f) for f in l.rstrip().rsplit(' ')] for l in open(dataset_path, 'r').readlines()])
+        dataset = [[float(f) for f in l.rstrip().rsplit(' ')] for l in open(dataset_path, 'r').readlines()]
+        dataset = np.array(dataset)
         
         x = []
         y = []
@@ -229,10 +266,14 @@ class Policy:
             cmd_v, cmd_phi = l[10], l[11]
 
             state = self.assemble_state(pose, goal, v, phi, goal_v, goal_phi, readings, rddfs)
-                        
-            x.append(state)
-            y.append([cmd_v / self.config['max_v'], 
-                      cmd_phi / self.config['max_phi']])
+
+            # print(len(state))
+            # sys.exit(0)
+            
+            if cmd_v > 0.01:
+                x.append(state)
+                y.append([cmd_v / self.config['max_v'], 
+                          cmd_phi / self.config['max_phi']])
         
         # train
         for i in range(n_epochs):

@@ -204,6 +204,9 @@ build_and_follow_path(carmen_point_t point, double pose_timestamp)
 static void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
+	if (g_teacher_mode)
+		Follower::go();
+
 	build_and_follow_path(msg->globalpos, msg->timestamp);
 }
 

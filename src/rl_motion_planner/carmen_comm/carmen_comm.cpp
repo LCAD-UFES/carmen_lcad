@@ -36,6 +36,7 @@ carmen_localize_ackerman_globalpos_message global_localize_ackerman_message;
 carmen_obstacle_distance_mapper_compact_map_message global_obstacle_distance_mapper_compact_map_message;
 carmen_map_server_offline_map_message global_offline_map_message;
 carmen_rddf_road_profile_message global_rddf_message;
+carmen_robot_ackerman_motion_command_message global_motion_command_message;
 
 // Termination signal handling
 int global_destroy_already_requested = 0;
@@ -176,7 +177,7 @@ publish_behavior_selector_state()
 
 void
 publish_command(std::vector<double> v, std::vector<double> phi, std::vector<double> dt,
-				double x, double y, double th)
+		int publish_behavior_selector_state_flag, double x, double y, double th)
 {
 	static int n_motion_commands = 0;
 	static carmen_ackerman_motion_command_t *motion_commands = NULL;
@@ -205,7 +206,8 @@ publish_command(std::vector<double> v, std::vector<double> phi, std::vector<doub
 		motion_commands[i].phi = phi[i];
 	}
 
-	publish_behavior_selector_state();
+	if (publish_behavior_selector_state_flag)
+		publish_behavior_selector_state();
 
 	carmen_robot_ackerman_publish_motion_command(motion_commands,
 		n_motion_commands, base_time);
@@ -228,7 +230,7 @@ publish_stop_command()
 		dt.push_back(base_time + i * 0.1);
 	}
 
-	publish_command(v, phi, dt);
+	publish_command(v, phi, dt, 0);
 }
 
 
@@ -355,8 +357,8 @@ int
 pose_is_invalid(carmen_localize_ackerman_globalpos_message *msg, double pos_x, double pos_y)
 {
 	if (msg->timestamp == 0 ||
-		fabs(msg->globalpos.x - pos_x) > 2.0 ||
-		fabs(msg->globalpos.y != pos_y) > 2.0)
+		fabs(msg->globalpos.x - pos_x) > 5.0 ||
+		fabs(msg->globalpos.y != pos_y) > 5.0)
 		return 1;
 
 	return 0;
@@ -375,9 +377,21 @@ laser_reading_is_invalid(carmen_laser_laser_message *laser_message)
 
 
 int
-goal_list_is_invalid(carmen_behavior_selector_goal_list_message *goal_list_message)
+goal_list_is_invalid(carmen_behavior_selector_goal_list_message *goal_list_message, double px, double py, double pth)
 {
 	if (goal_list_message->timestamp == 0 || goal_list_message->size == 0)
+		return 1;
+
+	g2o::SE2 pose(0., 0., pth);
+	g2o::SE2 goal(goal_list_message->goal_list[0].x - px,
+			goal_list_message->goal_list[0].y - py,
+			goal_list_message->goal_list[0].theta);
+
+	goal = pose.inverse() * goal;
+
+	// if the goal is behind the car, or more than 100m ahead or to the side, we consider
+	// the message invalid.
+	if (goal[0] < 0 || goal[0] > 100.0 || fabs(goal[1]) > 100.0)
 		return 1;
 
 	return 0;
@@ -385,9 +399,21 @@ goal_list_is_invalid(carmen_behavior_selector_goal_list_message *goal_list_messa
 
 
 int
-rddf_is_invalid(carmen_rddf_road_profile_message *rddf_message)
+rddf_is_invalid(carmen_rddf_road_profile_message *rddf_message, double x, double y, double th)
 {
 	if (rddf_message->timestamp == 0 || rddf_message->number_of_poses == 0)
+		return 1;
+
+	g2o::SE2 pose(0., 0., th);
+	g2o::SE2 goal(rddf_message->poses[0].x - x,
+				  rddf_message->poses[0].y - y,
+				  rddf_message->poses[0].theta);
+
+	goal = pose.inverse() * goal;
+
+	// if the goal is behind the car, or more than 100m ahead or to the side, we consider
+	// the message invalid.
+	if (goal[0] < 0 || goal[0] > 30.0 || fabs(goal[1]) > 30.0)
 		return 1;
 
 	return 0;
@@ -399,12 +425,13 @@ reset_initial_pose(double x, double y, double th)
 {
 	publish_stop_command();
 
-	memset(&global_obstacle_distance_mapper_compact_map_message, 0, sizeof(global_obstacle_distance_mapper_compact_map_message));
-	memset(&global_localize_ackerman_message, 0, sizeof(carmen_localize_ackerman_globalpos_message));
-	memset(&global_front_laser_message, 0, sizeof(global_front_laser_message));
-	memset(&global_offline_map_message, 0, sizeof(global_offline_map_message));
-	memset(&global_goal_list_message, 0, sizeof(global_goal_list_message));
-	memset(&global_rddf_message, 0, sizeof(global_rddf_message));
+	// memset(&global_obstacle_distance_mapper_compact_map_message, 0, sizeof(global_obstacle_distance_mapper_compact_map_message));
+	// memset(&global_localize_ackerman_message, 0, sizeof(global_localize_ackerman_message));
+	// memset(&global_motion_command_message, 0, sizeof(global_motion_command_message));
+	// memset(&global_front_laser_message, 0, sizeof(global_front_laser_message));
+	// memset(&global_offline_map_message, 0, sizeof(global_offline_map_message));
+	// memset(&global_goal_list_message, 0, sizeof(global_goal_list_message));
+	// memset(&global_rddf_message, 0, sizeof(global_rddf_message));
 
 	carmen_point_t pose;
 	carmen_point_t std;
@@ -423,7 +450,7 @@ reset_initial_pose(double x, double y, double th)
 	{
 		publish_stop_command();
 		carmen_localize_ackerman_initialize_gaussian_command(pose, std);
-		publish_behavior_selector_state();
+		// publish_behavior_selector_state();
 		carmen_ipc_sleep(0.1);
 
 		// If the messages are taking too long to arrive, warn the user.
@@ -438,8 +465,8 @@ reset_initial_pose(double x, double y, double th)
 			map_is_invalid(&global_obstacle_distance_mapper_compact_map_message, x, y) ||
 			laser_reading_is_invalid(&global_front_laser_message) ||
 			offline_map_is_invalid(&global_offline_map_message, x, y) ||
-			goal_list_is_invalid(&global_goal_list_message) ||
-			rddf_is_invalid(&global_rddf_message));
+			goal_list_is_invalid(&global_goal_list_message, x, y, th) ||
+			rddf_is_invalid(&global_rddf_message, x, y, th));
 }
 
 
@@ -501,6 +528,22 @@ read_rddf()
 	}
 
 	return v;
+}
+
+
+std::vector<double>
+read_commands()
+{
+	std::vector<double> commands;
+
+	for (int i = 0; i < global_motion_command_message.num_motion_commands; i++)
+	{
+		commands.push_back(global_motion_command_message.motion_command[i].v);
+		commands.push_back(global_motion_command_message.motion_command[i].phi);
+		commands.push_back(global_motion_command_message.motion_command[i].time);
+	}
+
+	return commands;
 }
 
 
@@ -734,9 +777,10 @@ initialize_global_data()
 	global_simulated_front_laser.remission = 0;
 
 	memset(&global_obstacle_distance_mapper_compact_map_message, 0, sizeof(global_obstacle_distance_mapper_compact_map_message));
-	memset(&global_localize_ackerman_message, 0, sizeof(carmen_localize_ackerman_globalpos_message));
+	memset(&global_localize_ackerman_message, 0, sizeof(global_localize_ackerman_message));
 	memset(&global_front_laser_message, 0, sizeof(global_front_laser_message));
 	memset(&global_offline_map_message, 0, sizeof(global_offline_map_message));
+	memset(&global_motion_command_message, 0, sizeof(global_motion_command_message));
 }
 
 
@@ -770,6 +814,9 @@ init()
 		NULL, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_rddf_subscribe_road_profile_message(&global_rddf_message,
+		NULL, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_robot_ackerman_subscribe_teacher_motion_command(&global_motion_command_message,
 		NULL, CARMEN_SUBSCRIBE_LATEST);
 
 	signal(SIGINT, signal_handler);

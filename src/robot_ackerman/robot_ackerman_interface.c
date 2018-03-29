@@ -246,7 +246,7 @@ void
 carmen_robot_ackerman_publish_teacher_motion_command(carmen_ackerman_motion_command_p motion_command, int num_motion_commands, double timestamp)
 {
 	publish_motion_command_with_name(motion_command, num_motion_commands,
-		timestamp, CARMEN_ROBOT_ACKERMAN_TEACHER_MOTION_COMMAND_FMT,
+		timestamp, CARMEN_ROBOT_ACKERMAN_TEACHER_MOTION_COMMAND_NAME,
 		CARMEN_ROBOT_ACKERMAN_TEACHER_MOTION_COMMAND_FMT);
 }
 
