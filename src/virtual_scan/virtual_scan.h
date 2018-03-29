@@ -14,9 +14,14 @@
 #define	I_SHAPED	2
 #define MASS_POINT	3
 
-#define CHILD_EDGE 	1
-#define PARENT_EDGE 	2
-#define SIBLING_EDGE 	3
+#define	BUS			'B' // Width: 2,4 m to 2,6 m; Length: 10 m to 14 m;
+#define	CAR			'C' // Width: 1,8 m to 2,1; Length: 3,9 m to 5,3 m
+#define	BIKE		'b' // Width: 1,20 m; Length: 2,20 m
+#define	PEDESTRIAN	'P'
+
+#define CHILD_EDGE 		'C'
+#define PARENT_EDGE 	'P'
+#define SIBLING_EDGE 	'S'
 
 
 typedef struct

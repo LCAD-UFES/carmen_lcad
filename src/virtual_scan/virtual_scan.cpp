@@ -16,19 +16,16 @@
 #define	POINT_BEFORE_SEGMENT		2
 #define	POINT_AFTER_SEGMENT			3
 
-#define	BUS			0 // Width: 2,4 m to 2,6 m; Length: 10 m to 14 m;
-#define	CAR			1 // Width: 1,8 m to 2,1; Length: 3,9 m to 5,3 m
-#define	BIKE		2 // Width: 1,20 m; Length: 2,20 m
-#define	PEDESTRIAN	3
-
 #define PEDESTRAIN_SIZE	0.5 // Pedestrian approximate size (from the top) in meters
 #define	L_SMALL_SEGMENT_AS_A_PROPORTION_OF_THE_LARGE	0.3
 
 #define	MCMC_MAX_ITERATIONS	300
 
 #define GAMMA	0.75
+#define VMAX	(120.0 / 3.6)
 
-#define NUMBER_OF_FRAMES_T 2
+#define NUMBER_OF_FRAMES_T 10
+
 
 virtual_scan_extended_t extended_virtual_scan; // Melhorar
 carmen_point_t extended_virtual_scan_points[10000]; // Melhorar
@@ -618,18 +615,27 @@ create_hypothesis_sibling_edges(int h, int previous_h, int num_boxes, virtual_sc
 bool
 is_parent(int candidate_parent, int child, virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
+	if (neighborhood_graph->box_model_hypothesis[candidate_parent]->hypothesis.c == neighborhood_graph->box_model_hypothesis[child]->hypothesis.c)
+	{
+		double distance = DIST2D(neighborhood_graph->box_model_hypothesis[candidate_parent]->hypothesis, neighborhood_graph->box_model_hypothesis[child]->hypothesis);
+		double delta_t = neighborhood_graph->box_model_hypothesis[child]->timestamp - neighborhood_graph->box_model_hypothesis[candidate_parent]->timestamp;
+
+		if (distance < delta_t * VMAX)
+			return (true);
+	}
+
 	return (false);
 }
 
 
 void
-create_hypothesis_parent_child_edges(int child, virtual_scan_neighborhood_graph_t *neighborhood_graph, double previous_timestamp)
+create_hypothesis_parent_child_edges(int child, virtual_scan_neighborhood_graph_t *neighborhood_graph, double current_timestamp)
 {
-	int candidate_parent = 0;
-	while ((candidate_parent < neighborhood_graph->size) && (neighborhood_graph->box_model_hypothesis[candidate_parent]->timestamp != previous_timestamp))
-		candidate_parent++;
+	int num_candidate_parent = 0;
+	while ((num_candidate_parent < neighborhood_graph->size) && (neighborhood_graph->box_model_hypothesis[num_candidate_parent]->timestamp != current_timestamp))
+		num_candidate_parent++;
 
-	while ((candidate_parent < neighborhood_graph->size) && (neighborhood_graph->box_model_hypothesis[candidate_parent]->timestamp == previous_timestamp))
+	for (int candidate_parent = 0; candidate_parent < num_candidate_parent; candidate_parent++)
 	{
 		if (is_parent(candidate_parent, child, neighborhood_graph))
 		{
@@ -645,7 +651,6 @@ create_hypothesis_parent_child_edges(int child, virtual_scan_neighborhood_graph_
 			neighborhood_graph->box_model_hypothesis_edges[child]->edge_type[e] = PARENT_EDGE;
 
 			neighborhood_graph->box_model_hypothesis_edges[child]->size += 1;
-
 
 			e = neighborhood_graph->box_model_hypothesis_edges[parent]->size;
 			neighborhood_graph->box_model_hypothesis_edges[parent]->edge = (int *) realloc(neighborhood_graph->box_model_hypothesis_edges[parent]->edge,
@@ -731,7 +736,7 @@ void
 remove_graph_vertexes_of_victim_timestamp(double victim_timestamp, virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
 	int vextexes_to_remove = 0;
-	while (neighborhood_graph->box_model_hypothesis[vextexes_to_remove]->timestamp == victim_timestamp)
+	while ((vextexes_to_remove < neighborhood_graph->size) && (neighborhood_graph->box_model_hypothesis[vextexes_to_remove]->timestamp == victim_timestamp))
 		vextexes_to_remove++;
 
 	free_neighborhood_graph_vextexes(neighborhood_graph, vextexes_to_remove);
@@ -818,7 +823,7 @@ neighborhood_graph_update(virtual_scan_box_model_hypotheses_t *virtual_scan_box_
 		for (int j = 0; j < num_boxes; j++, h++)
 		{
 			create_hypothesis_sibling_edges(h, previous_h, num_boxes, neighborhood_graph);
-			create_hypothesis_parent_child_edges(h, neighborhood_graph, neighborhood_graph->last_frames_timetamps[neighborhood_graph->number_of_frames_filled - 1]);
+			create_hypothesis_parent_child_edges(h, neighborhood_graph, virtual_scan_box_model_hypotheses->timestamp);
 		}
 	}
 	neighborhood_graph->size += num_hypotheses;
@@ -841,6 +846,22 @@ neighborhood_graph_update(virtual_scan_box_model_hypotheses_t *virtual_scan_box_
 }
 
 
+void
+print_neighborhood_graph(virtual_scan_neighborhood_graph_t *neighborhood_graph)
+{
+	FILE *graph = fopen("graph.txt", "a");
+	for (int i = 0; i < neighborhood_graph->size; i++)
+	{
+		fprintf(graph, "%d %c -", i, neighborhood_graph->box_model_hypothesis[i]->hypothesis.c);
+		for (int j = 0; j < neighborhood_graph->box_model_hypothesis_edges[i]->size; j++)
+			fprintf(graph, " %c(%d, %d)", neighborhood_graph->box_model_hypothesis_edges[i]->edge_type[j], i, neighborhood_graph->box_model_hypothesis_edges[i]->edge[j]);
+		fprintf(graph, "\n");
+	}
+	fprintf(graph, "\n");
+	fclose(graph);
+}
+
+
 virtual_scan_neighborhood_graph_t *
 virtual_scan_update_neighborhood_graph(virtual_scan_neighborhood_graph_t *neighborhood_graph, virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses)
 {
@@ -851,6 +872,8 @@ virtual_scan_update_neighborhood_graph(virtual_scan_neighborhood_graph_t *neighb
 		neighborhood_graph = first_neighborhood_graph_update(virtual_scan_box_model_hypotheses);
 	else
 		neighborhood_graph = neighborhood_graph_update(virtual_scan_box_model_hypotheses, neighborhood_graph);
+
+//	print_neighborhood_graph(neighborhood_graph);
 
 	return (neighborhood_graph);
 }
