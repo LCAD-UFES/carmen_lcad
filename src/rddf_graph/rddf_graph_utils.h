@@ -33,6 +33,7 @@ typedef struct
 {
 	int size;
 	carmen_position_t *point;
+	carmen_position_t *world_coordinate;
 	rddf_graph_edges_t *edge;
 } rddf_graph_t;
 
