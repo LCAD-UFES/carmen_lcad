@@ -12,7 +12,12 @@
 
 #include <cstdlib>
 #include <fstream>
-#include "../neural_object_detector/Darknet.hpp"
+#include "Darknet.hpp"
+#include "image.h"
+
+//#include "../../sharedlib/darknet/src/image.h"
+//#include "../../sharedlib/darknet/src/yolo_v2_class.hpp"
+
 #include "neural_object_detector.hpp"
 
 #define SHOW_DETECTIONS
@@ -237,13 +242,8 @@ show_detections(cv::Mat rgb_image, vector<vector<carmen_velodyne_points_in_cam_w
 
     cv::putText(rgb_image, frame_rate, cv::Point(10, 25), cv::FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
 
-    for (unsigned int i = 0; i < laser_points_in_camera_box_list.size(); i++)
+    for (unsigned int i = 0; i < bouding_boxes_list.size(); i++)
     {
-        for (unsigned int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
-        {
-            cv::circle(rgb_image, cv::Point(laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx,
-            		laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy), 1, cv::Scalar(0, 0, 255), 1);
-        }
 
         cv::Scalar object_color;
 
@@ -380,6 +380,61 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     		hood_removal_percentage, fps);
 #endif
 }
+
+
+image
+convert_image_msg_to_darknet_image(carmen_bumblebee_basic_stereoimage_message *image_msg)
+{
+	image converted_image;
+	converted_image.w = image_msg->width;
+	converted_image.h = image_msg->height;
+	converted_image.h = 3;
+	converted_image.data = (float *) malloc ((image_msg->width * image_msg->height) * sizeof (float));
+
+	for (int i = 0; i < image_msg->width; i++)
+	{
+		for (int j = 0; j < image_msg->height; i++)
+		{
+			converted_image.data[i + j] = (float) image_msg->raw_left[i + j];
+		}
+	}
+
+	return (converted_image);
+}
+
+
+void
+image_handler_new(carmen_bumblebee_basic_stereoimage_message *image_msg)
+{
+	cv::Mat src_image = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3);
+	memcpy(src_image.data, image_msg->raw_left, image_msg->image_size * sizeof(char));
+
+	cv::cvtColor(src_image, src_image, cv::COLOR_RGB2BGR);
+
+	vector<bbox_t> predictions = darknet->detect(src_image, 0.2);
+
+	vector<vector<carmen_velodyne_points_in_cam_with_obstacle_t>> laser_points_in_camera_box_list;
+
+	vector<bounding_box> bouding_boxes_list;
+
+	for (const auto &box : predictions) // Covert Darknet bounding box to neural_object_deddtector bounding box
+	{
+		bounding_box bbox;
+
+		bbox.pt1.x = box.x;
+		bbox.pt1.y = box.y;
+		bbox.pt2.x = box.x + box.w;
+		bbox.pt2.y = box.y + box.h;
+
+		bouding_boxes_list.push_back(bbox);
+	}
+
+	//printf("%d\n", (int) predictions.size());
+
+	show_detections(src_image, laser_points_in_camera_box_list,	predictions, bouding_boxes_list, 0.0, 10);
+
+}
+
 
 
 void

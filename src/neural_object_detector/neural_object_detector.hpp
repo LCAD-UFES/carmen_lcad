@@ -5,7 +5,7 @@
 #include <vector>
 #include <string>
 
-#include "../neural_object_detector/dbscan.h"
+#include "dbscan.h"
 
 enum class carmen_moving_object_type
 {

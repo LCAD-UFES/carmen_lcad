@@ -4,6 +4,7 @@
 #include <carmen/carmen.h>
 #include <vector>
 
+using namespace std;
 
 namespace dbscan
 {
@@ -30,5 +31,10 @@ typedef std::vector<Cluster> Clusters;
 Clusters DBSCAN(double d2, std::size_t density, const Cluster &points);
 
 } // namespace dbscan
+
+
+vector<vector<carmen_vector_3D_t>>
+dbscan_compute_clusters(double max_distance, int density, vector<carmen_vector_3D_t> &points);
+
 
 #endif

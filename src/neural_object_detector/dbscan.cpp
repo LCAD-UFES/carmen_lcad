@@ -70,3 +70,69 @@ Clusters DBSCAN(double d2, size_t density, const Cluster &points) {
 }
 
 } // end of namespace dbscan
+
+
+double distance(carmen_vector_3D_t a, carmen_vector_3D_t b) {
+    double dx = a.x - b.x;
+    double dy = a.y - b.y;
+    return dx * dx + dy * dy;
+}
+
+vector<int>
+query2(double max_distance, int point_index, vector<carmen_vector_3D_t> &points)
+{
+	vector<int> neighbors;
+	carmen_vector_3D_t point = points[point_index];
+
+    for (int j = 0, size = points.size(); j < size; ++j)
+    {
+        if (distance(point, points[j]) < max_distance)  // TODO Trocar por uma fincao do global
+            neighbors.push_back(j);
+    }
+
+    return neighbors;
+}
+
+
+vector<vector<carmen_vector_3D_t>>
+dbscan_compute_clusters(double max_distance, int density, vector<carmen_vector_3D_t> &points)
+{
+	vector<vector<carmen_vector_3D_t>> clusters;
+    int num_points = points.size();
+    vector<bool> clustered(num_points, false);
+
+    for (int i = 0; i < num_points; ++i)
+    {
+        // Ignore already clustered points.
+        if (clustered[i])
+            continue;
+
+        // Ignore points without enough neighbors.
+        vector<int> number_of_neighbors = query2(max_distance, i, points);
+        if (number_of_neighbors.size() < density)
+            continue;
+
+        clusters.push_back(vector<carmen_vector_3D_t>());
+        vector<carmen_vector_3D_t> &cluster = clusters.back();
+        cluster.push_back(points[i]);
+
+        clustered[i] = true;
+
+        // Add the point's neighbors (and possibly their neighbors) to the cluster.
+        for (size_t j = 0; j < number_of_neighbors.size(); ++j)
+        {
+            int k = number_of_neighbors[j];
+
+            if (clustered[k])
+                continue;
+
+            cluster.push_back(points[k]);
+            clustered[k] = true;
+
+            vector<int> farther = query2(max_distance, k, points);
+            if (farther.size() >= density)
+            	number_of_neighbors.insert(number_of_neighbors.end(), farther.begin(), farther.end());
+        }
+    }
+    return clusters;
+}
