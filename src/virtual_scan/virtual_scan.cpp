@@ -84,7 +84,18 @@ filter_virtual_scan(virtual_scan_extended_t *virtual_scan_extended)
 	{
 		int x_index_map = (int) round((virtual_scan_extended->points[i].x - x_origin) / map_resolution);
 		int y_index_map = (int) round((virtual_scan_extended->points[i].y - y_origin) / map_resolution);
-		if (localize_map.prob[x_index_map][y_index_map] < PROB_THRESHOLD)
+		if ((x_index_map > 0) && (x_index_map < localize_map.config.x_size) &&
+			(y_index_map > 0) && (y_index_map < localize_map.config.y_size))
+		{
+			if (localize_map.prob[x_index_map][y_index_map] < PROB_THRESHOLD)
+			{
+				virtual_scan_extended_filtered->points = (carmen_point_t *) realloc(virtual_scan_extended_filtered->points,
+									sizeof(carmen_point_t) * (num_points + 1));
+				virtual_scan_extended_filtered->points[num_points]=virtual_scan_extended->points[i];
+				num_points++;
+			}
+		}
+		else // Inclui (nao filtra) pontos fora do mapa pois o mapa pode estar simplesmente atrasado.
 		{
 			virtual_scan_extended_filtered->points = (carmen_point_t *) realloc(virtual_scan_extended_filtered->points,
 								sizeof(carmen_point_t) * (num_points + 1));
@@ -514,7 +525,7 @@ virtual_scan_num_box_models(virtual_scan_box_model_hypotheses_t *virtual_scan_bo
 
 
 void
-virtual_scan_free_extended(virtual_scan_extended_t *virtual_scan_extended)
+virtual_scan_free_scan_extended(virtual_scan_extended_t *virtual_scan_extended)
 {
 	free(virtual_scan_extended->points);
 	free(virtual_scan_extended);
@@ -528,14 +539,6 @@ virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses_t *virt
 		free(virtual_scan_box_model_hypotheses->box_model_hypotheses[i].box);
 	free(virtual_scan_box_model_hypotheses->box_model_hypotheses);
 	free(virtual_scan_box_model_hypotheses);
-}
-
-
-void
-virtual_scan_free_message(virtual_scan_extended_t *virtual_scan_extended_filtered)
-{
-	free(virtual_scan_extended_filtered->points);
-	free(virtual_scan_extended_filtered);
 }
 
 
@@ -562,7 +565,7 @@ virtual_scan_extract_segments(virtual_scan_extended_t *virtual_scan_extended)
 	virtual_scan_extended_t *virtual_scan_extended_filtered = filter_virtual_scan(virtual_scan_extended);
 	virtual_scan_segments_t *virtual_scan_segments = segment_virtual_scan(virtual_scan_extended_filtered);
 	virtual_scan_segment_classes_t *virtual_scan_segment_classes = classify_segments(virtual_scan_segments);
-	virtual_scan_free_message(virtual_scan_extended_filtered);
+	virtual_scan_free_scan_extended(virtual_scan_extended_filtered);
 	virtual_scan_free_segments(virtual_scan_segments);
 
 	return virtual_scan_segment_classes;
@@ -731,7 +734,7 @@ rename_neighborhood_graph_vextexes_ids(virtual_scan_neighborhood_graph_t *neighb
 }
 
 
-void
+int
 remove_graph_vertexes_of_victim_timestamp(double victim_timestamp, virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
 	int vextexes_to_remove = 0;
@@ -748,6 +751,64 @@ remove_graph_vertexes_of_victim_timestamp(double victim_timestamp, virtual_scan_
 	neighborhood_graph->box_model_hypothesis_edges =
 			(virtual_scan_box_model_hypothesis_edges_t **) realloc(neighborhood_graph->box_model_hypothesis_edges, neighborhood_graph->size * sizeof(virtual_scan_box_model_hypothesis_edges_t *));
 	neighborhood_graph->vertex_selected = (bool *) realloc(neighborhood_graph->vertex_selected, neighborhood_graph->size * sizeof(bool));
+
+	return (vextexes_to_remove);
+}
+
+
+virtual_scan_box_model_hypothesis_t *
+update_track_according_to_new_graph(virtual_scan_track_t *track, int vextexes_removed_from_graph)
+{
+	int i = 0;
+	while (i < track->size)
+	{
+		track->box_model_hypothesis[i].index -= vextexes_removed_from_graph;
+		if (track->box_model_hypothesis[i].index < 0) // Remove hypothesis
+		{
+			for (int j = i; j < track->size - 1; j++)
+				track->box_model_hypothesis[j] = track->box_model_hypothesis[j + 1];
+
+			track->size--;
+			track->box_model_hypothesis = (virtual_scan_box_model_hypothesis_t *) realloc(track->box_model_hypothesis,
+					track->size * sizeof(virtual_scan_box_model_hypothesis_t));
+		}
+		else
+			i++;
+	}
+
+	if (track->size != 0)
+		return (track->box_model_hypothesis);
+	else
+		return (NULL);
+}
+
+
+virtual_scan_track_set_t *
+update_best_track_set_according_to_new_graph(virtual_scan_track_set_t *best_track_set, int vextexes_removed_from_graph)
+{
+	if (best_track_set == NULL)
+		return (NULL);
+
+	int i = 0;
+	while (i < best_track_set->size)
+	{
+		virtual_scan_track_t *track = best_track_set->tracks[i];
+		if (update_track_according_to_new_graph(track, vextexes_removed_from_graph) == NULL) // Remove track
+		{
+			for (int j = i; j < best_track_set->size - 1; j++)
+				best_track_set->tracks[j] = best_track_set->tracks[j + 1];
+
+			best_track_set->size--;
+			best_track_set->tracks = (virtual_scan_track_t **) realloc(best_track_set->tracks, best_track_set->size * sizeof(virtual_scan_track_t *));
+		}
+		else
+			i++;
+	}
+
+	if (best_track_set->size != 0)
+		return (best_track_set);
+	else
+		return (NULL);
 }
 
 
@@ -833,7 +894,8 @@ neighborhood_graph_update(virtual_scan_box_model_hypotheses_t *virtual_scan_box_
 		for (int i = 0; i < NUMBER_OF_FRAMES_T - 1; i++)
 			neighborhood_graph->last_frames_timetamps[i] = neighborhood_graph->last_frames_timetamps[i + 1];
 
-		remove_graph_vertexes_of_victim_timestamp(victim_timestamp, neighborhood_graph);
+		int vextexes_removed_from_graph = remove_graph_vertexes_of_victim_timestamp(victim_timestamp, neighborhood_graph);
+		best_track_set = update_best_track_set_according_to_new_graph(best_track_set, vextexes_removed_from_graph);
 
 		neighborhood_graph->number_of_frames_filled -= 1;
 	}
@@ -1300,8 +1362,9 @@ A(virtual_scan_track_set_t *track_set_n, virtual_scan_track_set_t *track_set_pri
 virtual_scan_moving_objects_t *
 virtual_scan_infer_moving_objects(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
-	virtual_scan_track_set_t *track_set_n = best_track_set;
-	for (int n = 0; n < MCMC_MAX_ITERATIONS; n++)
+	virtual_scan_track_set_t *track_set_n = copy_track_set(best_track_set);
+	int n;
+	for (n = 0; n < MCMC_MAX_ITERATIONS; n++)
 	{
 		virtual_scan_track_set_t *track_set_prime = propose_track_set_according_to_q(neighborhood_graph, track_set_n);
 		virtual_scan_track_set_t *track_set_victim = track_set_prime;
@@ -1312,12 +1375,13 @@ virtual_scan_infer_moving_objects(virtual_scan_neighborhood_graph_t *neighborhoo
 			track_set_n = track_set_prime;
 			if (probability_of_track_set_given_measurements(track_set_n) > probability_of_track_set_given_measurements(best_track_set))
 			{
-				track_set_victim = best_track_set;
-				best_track_set = track_set_n;
+				free_track_set(best_track_set);
+				best_track_set = copy_track_set(track_set_n);
 			}
 		}
 		free_track_set(track_set_victim);
 	}
+	free_track_set(track_set_n);
 
 	virtual_scan_moving_objects_t *moving_objects = get_moving_objects_from_track_set(best_track_set);
 
