@@ -1,7 +1,6 @@
 #ifndef DBSCAN_H
 #define DBSCAN_H
 
-#include <carmen/carmen.h>
 #include <vector>
 
 using namespace std;

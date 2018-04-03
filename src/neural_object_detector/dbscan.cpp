@@ -1,4 +1,5 @@
-#include "../neural_object_detector/dbscan.h"
+#include <carmen/carmen.h>
+#include "dbscan.h"
 
 using std::size_t;
 
