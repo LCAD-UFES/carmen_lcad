@@ -5,14 +5,12 @@
 
 #include "simulator_ackerman2_simulation.h"
 
-#include <carmen/carmen.h>
 #include <carmen/collision_detection.h>
 #include <carmen/ford_escape_hybrid.h>
 #include <car_model.h>
 #include <control.h>
 #include <pthread.h>
 #include "objects_ackerman.h"
-#include "simulator_ackerman2.h"
 
 double
 get_acceleration(double v, double target_v, carmen_simulator_ackerman_config_t *simulator_config)
@@ -437,7 +435,7 @@ get_robot_config(carmen_simulator_ackerman_config_t *simulator_config)
 
 
 void
-carmen_simulator_ackerman_recalc_pos(carmen_simulator_ackerman_config_t *simulator_config)
+carmen_simulator_ackerman2_recalc_pos(carmen_simulator_ackerman_config_t *simulator_config)
 {
 	carmen_point_t new_odom;
 	carmen_point_t new_true;
@@ -500,7 +498,7 @@ add_laser_error(carmen_laser_laser_message * laser,
 
 /*calculates a laser message based upon the current position*/
 void
-carmen_simulator_ackerman_calc_laser_msg(carmen_laser_laser_message *laser, 
+carmen_simulator_ackerman2_calc_laser_msg(carmen_laser_laser_message *laser,
 		carmen_simulator_ackerman_config_p simulator_config,
 		int is_rear)
 {

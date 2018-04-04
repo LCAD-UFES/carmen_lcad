@@ -26,16 +26,15 @@
  *
  ********************************************************/
 
-#include "simulator_ackerman2.h"
+#include "simulator_ackerman2_simulation.h"
 
-#include <carmen/carmen.h>
 #include <carmen/map_server_interface.h>
 #include <control.h>
 
 #include "simulator_ackerman_messages.h"
 
 #include "objects_ackerman.h"
-#include "simulator_ackerman2_simulation.h"
+//#include "simulator_ackerman2_simulation.h"
 
 static carmen_simulator_ackerman_config_t simulator_conf;
 static carmen_simulator_ackerman_config_t *simulator_config;
@@ -165,7 +164,7 @@ publish_frontlaser(double timestamp)
 		first = 0;
 	}
 
-	carmen_simulator_ackerman_calc_laser_msg(&flaser, simulator_config, 0);
+	carmen_simulator_ackerman2_calc_laser_msg(&flaser, simulator_config, 0);
 
 	flaser.timestamp = timestamp;
 	err = IPC_publishData(CARMEN_LASER_FRONTLASER_NAME, &flaser);
@@ -200,7 +199,7 @@ publish_rearlaser(double timestamp)
 		first = 0;
 	}
 
-	carmen_simulator_ackerman_calc_laser_msg(&rlaser, simulator_config, 1);
+	carmen_simulator_ackerman2_calc_laser_msg(&rlaser, simulator_config, 1);
 
 	rlaser.timestamp = timestamp;
 	err = IPC_publishData(CARMEN_LASER_REARLASER_NAME, &rlaser);
@@ -248,7 +247,7 @@ simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
 		}
 	}
 
-	carmen_simulator_ackerman_recalc_pos(simulator_config);
+	carmen_simulator_ackerman2_recalc_pos(simulator_config);
 	carmen_simulator_ackerman_update_objects(simulator_config);
 
 	if (!use_truepos)
@@ -267,7 +266,7 @@ simulate_car_and_publish_readings(void *clientdata __attribute__ ((unused)),
 	}
 	counter++;
 
-	carmen_publish_heartbeat("simulator");
+	carmen_publish_heartbeat((char*) "simulator");
 
 	last_timestamp = timestamp;
 }
@@ -664,34 +663,34 @@ read_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *conf
 
 	carmen_param_t param_list[]=
 	{
-			{"simulator", "time", CARMEN_PARAM_DOUBLE, &(config->real_time), 1, NULL},
-			{"simulator", "sync_mode", CARMEN_PARAM_ONOFF, &(config->sync_mode), 1, NULL},
-			{"simulator", "use_robot", CARMEN_PARAM_ONOFF, &use_robot, 1, NULL},
-			{"simulator", "motion_timeout", CARMEN_PARAM_DOUBLE, &(config->motion_timeout),1, NULL},
-			{"robot", "frontlaser_use", CARMEN_PARAM_ONOFF, &(config->use_front_laser), 1, NULL},
-			{"robot", "frontlaser_id", CARMEN_PARAM_INT, &(config->front_laser_config.id), 0, NULL},
-			{"robot", "rearlaser_use", CARMEN_PARAM_ONOFF, &(config->use_rear_laser), 1, NULL},
-			{"robot", "rearlaser_id", CARMEN_PARAM_INT, &(config->rear_laser_config.id), 0, NULL},
-			{"robot", "width", CARMEN_PARAM_DOUBLE, &(config->width), 1, NULL},
-			{"robot", "length", CARMEN_PARAM_DOUBLE, &(config->length), 1, NULL},
-			{"robot", "distance_between_rear_wheels", CARMEN_PARAM_DOUBLE, &(config->distance_between_rear_wheels), 1, NULL},
-			{"robot", "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &(config->distance_between_front_and_rear_axles), 1, NULL},
-			{"robot", "max_velocity", CARMEN_PARAM_DOUBLE, &(config->max_v), 1,NULL},
-			{"robot", "max_steering_angle", CARMEN_PARAM_DOUBLE, &(config->max_phi), 1, NULL},
-			{"robot", "maximum_steering_command_rate", CARMEN_PARAM_DOUBLE, &(config->maximum_steering_command_rate), 0, NULL},
-			{"robot", "understeer_coeficient", CARMEN_PARAM_DOUBLE, &(config->understeer_coeficient), 0, NULL},
-			{"robot", "understeer_coeficient2", CARMEN_PARAM_DOUBLE, &(config->understeer_coeficient2), 0, NULL},
-			{"robot", "maximum_speed_forward", CARMEN_PARAM_DOUBLE, &(config->maximum_speed_forward), 0, NULL},
-			{"robot", "maximum_speed_reverse", CARMEN_PARAM_DOUBLE, &(config->maximum_speed_reverse), 0, NULL},
-			{"robot", "maximum_acceleration_forward", CARMEN_PARAM_DOUBLE, &(config->maximum_acceleration_forward), 0, NULL},
-			{"robot", "maximum_deceleration_forward", CARMEN_PARAM_DOUBLE, &(config->maximum_deceleration_forward), 0, NULL},
-			{"robot", "maximum_acceleration_reverse", CARMEN_PARAM_DOUBLE, &(config->maximum_acceleration_reverse), 0, NULL},
-			{"robot", "maximum_deceleration_reverse", CARMEN_PARAM_DOUBLE, &(config->maximum_deceleration_reverse), 0, NULL},
-			{"robot", "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &(config->distance_between_rear_car_and_rear_wheels), 0, NULL},
-			{"simulator_ackerman", "publish_laser", CARMEN_PARAM_ONOFF, &publish_laser_flag, 0, NULL},
-			{"rrt",   "use_mpc",                    CARMEN_PARAM_ONOFF, &(config->use_mpc), 0, NULL},
-			{"rrt",   "use_rlpid",                  CARMEN_PARAM_ONOFF, &(config->use_rlpid), 0, NULL},
-			{"behavior_selector",  "use_truepos", 	CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL}
+			{(char*) "simulator", (char*) "time", CARMEN_PARAM_DOUBLE, &(config->real_time), 1, NULL},
+			{(char*) "simulator", (char*) "sync_mode", CARMEN_PARAM_ONOFF, &(config->sync_mode), 1, NULL},
+			{(char*) "simulator", (char*) "use_robot", CARMEN_PARAM_ONOFF, &use_robot, 1, NULL},
+			{(char*) "simulator", (char*) "motion_timeout", CARMEN_PARAM_DOUBLE, &(config->motion_timeout),1, NULL},
+			{(char*) "robot", (char*) "frontlaser_use", CARMEN_PARAM_ONOFF, &(config->use_front_laser), 1, NULL},
+			{(char*) "robot", (char*) "frontlaser_id", CARMEN_PARAM_INT, &(config->front_laser_config.id), 0, NULL},
+			{(char*) "robot", (char*) "rearlaser_use", CARMEN_PARAM_ONOFF, &(config->use_rear_laser), 1, NULL},
+			{(char*) "robot", (char*) "rearlaser_id", CARMEN_PARAM_INT, &(config->rear_laser_config.id), 0, NULL},
+			{(char*) "robot", (char*) "width", CARMEN_PARAM_DOUBLE, &(config->width), 1, NULL},
+			{(char*) "robot", (char*) "length", CARMEN_PARAM_DOUBLE, &(config->length), 1, NULL},
+			{(char*) "robot", (char*) "distance_between_rear_wheels", CARMEN_PARAM_DOUBLE, &(config->distance_between_rear_wheels), 1, NULL},
+			{(char*) "robot", (char*) "distance_between_front_and_rear_axles", CARMEN_PARAM_DOUBLE, &(config->distance_between_front_and_rear_axles), 1, NULL},
+			{(char*) "robot", (char*) "max_velocity", CARMEN_PARAM_DOUBLE, &(config->max_v), 1,NULL},
+			{(char*) "robot", (char*) "max_steering_angle", CARMEN_PARAM_DOUBLE, &(config->max_phi), 1, NULL},
+			{(char*) "robot", (char*) "maximum_steering_command_rate", CARMEN_PARAM_DOUBLE, &(config->maximum_steering_command_rate), 0, NULL},
+			{(char*) "robot", (char*) "understeer_coeficient", CARMEN_PARAM_DOUBLE, &(config->understeer_coeficient), 0, NULL},
+			{(char*) "robot", (char*) "understeer_coeficient2", CARMEN_PARAM_DOUBLE, &(config->understeer_coeficient2), 0, NULL},
+			{(char*) "robot", (char*) "maximum_speed_forward", CARMEN_PARAM_DOUBLE, &(config->maximum_speed_forward), 0, NULL},
+			{(char*) "robot", (char*) "maximum_speed_reverse", CARMEN_PARAM_DOUBLE, &(config->maximum_speed_reverse), 0, NULL},
+			{(char*) "robot", (char*) "maximum_acceleration_forward", CARMEN_PARAM_DOUBLE, &(config->maximum_acceleration_forward), 0, NULL},
+			{(char*) "robot", (char*) "maximum_deceleration_forward", CARMEN_PARAM_DOUBLE, &(config->maximum_deceleration_forward), 0, NULL},
+			{(char*) "robot", (char*) "maximum_acceleration_reverse", CARMEN_PARAM_DOUBLE, &(config->maximum_acceleration_reverse), 0, NULL},
+			{(char*) "robot", (char*) "maximum_deceleration_reverse", CARMEN_PARAM_DOUBLE, &(config->maximum_deceleration_reverse), 0, NULL},
+			{(char*) "robot", (char*) "distance_between_rear_car_and_rear_wheels", CARMEN_PARAM_DOUBLE, &(config->distance_between_rear_car_and_rear_wheels), 0, NULL},
+			{(char*) "simulator_ackerman", (char*) "publish_laser", CARMEN_PARAM_ONOFF, &publish_laser_flag, 0, NULL},
+			{(char*) "rrt",   (char*) "use_mpc",                    CARMEN_PARAM_ONOFF, &(config->use_mpc), 0, NULL},
+			{(char*) "rrt",   (char*) "use_rlpid",                  CARMEN_PARAM_ONOFF, &(config->use_rlpid), 0, NULL},
+			{(char*) "behavior_selector",  (char*) "use_truepos", 	CARMEN_PARAM_ONOFF, &use_truepos, 0, NULL}
 	};
 
 
@@ -712,28 +711,28 @@ read_parameters(int argc, char *argv[], carmen_simulator_ackerman_config_t *conf
 
 	carmen_param_t param_list_front_laser[] =
 	{
-			{"simulator", "frontlaser_maxrange", CARMEN_PARAM_DOUBLE, &(config->front_laser_config.max_range), 1, NULL},
-			{"robot", "frontlaser_offset", CARMEN_PARAM_DOUBLE, &(config->front_laser_config.offset), 1, NULL},
-			{"robot", "frontlaser_side_offset", CARMEN_PARAM_DOUBLE, &(config->front_laser_config.side_offset), 1, NULL},
-			{"robot", "frontlaser_angular_offset", CARMEN_PARAM_DOUBLE, &(config->front_laser_config.angular_offset), 1, NULL},
-			{"laser", frontlaser_fov_string, CARMEN_PARAM_DOUBLE, &(config->front_laser_config.fov), 0, NULL},
-			{"laser", frontlaser_res_string, CARMEN_PARAM_DOUBLE, &(config->front_laser_config.angular_resolution), 0, NULL},
-			{"simulator", "laser_probability_of_random_max", CARMEN_PARAM_DOUBLE, &(config->front_laser_config.prob_of_random_max), 1, NULL},
-			{"simulator", "laser_probability_of_random_reading", CARMEN_PARAM_DOUBLE, &(config->front_laser_config.prob_of_random_reading), 1, NULL},
-			{"simulator", "laser_sensor_variance", CARMEN_PARAM_DOUBLE, &(config->front_laser_config.variance), 1, NULL}
+			{(char*) "simulator", (char*) "frontlaser_maxrange", CARMEN_PARAM_DOUBLE, &(config->front_laser_config.max_range), 1, NULL},
+			{(char*) "robot", (char*) "frontlaser_offset", CARMEN_PARAM_DOUBLE, &(config->front_laser_config.offset), 1, NULL},
+			{(char*) "robot", (char*) "frontlaser_side_offset", CARMEN_PARAM_DOUBLE, &(config->front_laser_config.side_offset), 1, NULL},
+			{(char*) "robot", (char*) "frontlaser_angular_offset", CARMEN_PARAM_DOUBLE, &(config->front_laser_config.angular_offset), 1, NULL},
+			{(char*) "laser", frontlaser_fov_string, CARMEN_PARAM_DOUBLE, &(config->front_laser_config.fov), 0, NULL},
+			{(char*) "laser", frontlaser_res_string, CARMEN_PARAM_DOUBLE, &(config->front_laser_config.angular_resolution), 0, NULL},
+			{(char*) "simulator", (char*) "laser_probability_of_random_max", CARMEN_PARAM_DOUBLE, &(config->front_laser_config.prob_of_random_max), 1, NULL},
+			{(char*) "simulator", (char*) "laser_probability_of_random_reading", CARMEN_PARAM_DOUBLE, &(config->front_laser_config.prob_of_random_reading), 1, NULL},
+			{(char*) "simulator", (char*) "laser_sensor_variance", CARMEN_PARAM_DOUBLE, &(config->front_laser_config.variance), 1, NULL}
 	};
 
 	carmen_param_t param_list_rear_laser[] =
 	{
-			{"simulator", "rearlaser_maxrange", CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.max_range), 1, NULL},
-			{"robot", "rearlaser_offset", CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.offset), 1, NULL},
-			{"robot", "rearlaser_side_offset", CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.side_offset), 1, NULL},
-			{"robot", "rearlaser_angular_offset", CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.angular_offset), 1, NULL},
-			{"laser", rearlaser_fov_string, CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.fov), 0, NULL},
-			{"laser", rearlaser_res_string, CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.angular_resolution), 0, NULL},
-			{"simulator", "laser_probability_of_random_max", CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.prob_of_random_max), 1, NULL},
-			{"simulator", "laser_probability_of_random_reading", CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.prob_of_random_reading), 1, NULL},
-			{"simulator", "laser_sensor_variance", CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.variance), 1, NULL}
+			{(char*) "simulator", (char*) "rearlaser_maxrange", CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.max_range), 1, NULL},
+			{(char*) "robot", (char*) "rearlaser_offset", CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.offset), 1, NULL},
+			{(char*) "robot", (char*) "rearlaser_side_offset", CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.side_offset), 1, NULL},
+			{(char*) "robot", (char*) "rearlaser_angular_offset", CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.angular_offset), 1, NULL},
+			{(char*) "laser", rearlaser_fov_string, CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.fov), 0, NULL},
+			{(char*) "laser", rearlaser_res_string, CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.angular_resolution), 0, NULL},
+			{(char*) "simulator", (char*) "laser_probability_of_random_max", CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.prob_of_random_max), 1, NULL},
+			{(char*) "simulator", (char*) "laser_probability_of_random_reading", CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.prob_of_random_reading), 1, NULL},
+			{(char*) "simulator", (char*) "laser_sensor_variance", CARMEN_PARAM_DOUBLE, &(config->rear_laser_config.variance), 1, NULL}
 	};
 
 	if (config->use_front_laser)
