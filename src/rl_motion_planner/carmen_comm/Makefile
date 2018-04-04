@@ -13,7 +13,8 @@ LFLAGS += -lglobal -lipc -llocalize_ackerman_interface -lrobot_ackerman_interfac
 	-lobstacle_avoider_interface -lcollision_detection -lobstacle_distance_mapper_interface \
 	-L$(CARMEN_HOME)/sharedlib/prob_models -lparam_interface -lrobot_ackerman_interface \
 	-llaser_interface `pkg-config --libs opencv` -lparam_interface -lmap_server_interface \
-	-lsimulator_ackerman -lcontrol -lcarmodel -lfann -lgsl -lgslcblas -lgeometry -lrddf_interface
+	-lsimulator_ackerman -lcontrol -lcarmodel -lfann -lgsl -lgslcblas -lgeometry -lrddf_interface \
+	-lnavigator_ackerman_interface
 
 MODULE_NAME = carmen_comm
 MODULE_COMMENT = Infra-structure for communicating with carmen via Python 

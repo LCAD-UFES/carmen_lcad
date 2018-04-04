@@ -17,6 +17,7 @@
 #include <carmen/behavior_selector_interface.h>
 #include <carmen/simulator_ackerman_simulation.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
+#include <carmen/navigator_ackerman_interface.h>
 #include <carmen/rddf_interface.h>
 #include "util.h"
 
@@ -300,6 +301,7 @@ handle_messages(double how_long)
 		carmen_ipc_sleep(how_long);
 	while (global_localize_ackerman_message.timestamp == time_previous_globalpos);
 
+	carmen_navigator_ackerman_go();
 	process_map_message(&global_obstacle_distance_mapper_compact_map_message);
 	carmen_map_server_copy_offline_map_from_message(&(simulator_config.map), &global_offline_map_message);
 }
