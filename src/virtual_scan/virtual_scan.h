@@ -23,6 +23,23 @@
 #define PARENT_EDGE 	'P'
 #define SIBLING_EDGE 	'S'
 
+#define PROB_THRESHOLD	-2.14
+
+#define	POINT_WITHIN_SEGMENT		0
+#define	SEGMENT_TOO_SHORT			1
+#define	POINT_BEFORE_SEGMENT		2
+#define	POINT_AFTER_SEGMENT			3
+
+#define PEDESTRAIN_SIZE	0.5 // Pedestrian approximate size (from the top) in meters
+#define	L_SMALL_SEGMENT_AS_A_PROPORTION_OF_THE_LARGE	0.3
+
+#define	MCMC_MAX_ITERATIONS	300
+
+#define GAMMA	0.75
+#define VMAX	(120.0 / 3.6)
+
+#define NUMBER_OF_FRAMES_T 10
+
 
 typedef struct
 {
@@ -86,6 +103,7 @@ typedef struct
 {
 	int num_boxes;
 	virtual_scan_box_model_t *box;
+	virtual_scan_segment_t *box_points;
 } virtual_scan_box_models_t;
 
 
@@ -118,7 +136,11 @@ typedef struct
 {
 	int index;
 	virtual_scan_box_model_t hypothesis;
+	virtual_scan_segment_t hypothesis_points;
+
 	double number_measurements_that_fall_inside_hypothesis;
+	double dn;
+
 	double timestamp;
 } virtual_scan_box_model_hypothesis_t;
 
