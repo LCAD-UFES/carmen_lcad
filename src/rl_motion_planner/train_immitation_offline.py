@@ -6,7 +6,7 @@ from rl.policy import Policy
 
 policy = Policy(input_shape=[98], 
                 n_outputs=2, 
-                hidden_size=128, learning_rate=1e-4, nonlin='elu',
+                hidden_size=128, learning_rate=1e-4, nonlin='tanh',
                 single_thread=False, n_hidden_layers=4,
                 continuous_std=1e-7)
 
