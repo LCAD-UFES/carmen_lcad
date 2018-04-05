@@ -24,8 +24,11 @@ double map_resolution = 0.0;
 
 int necessary_maps_available = 0;
 
-int g_segments_index = 0;
+int g_zi = 0;
+
+virtual_scan_extended_t *g_virtual_scan_extended[NUMBER_OF_FRAMES_T];
 virtual_scan_segment_classes_t *g_virtual_scan_segment_classes[NUMBER_OF_FRAMES_T];
+
 virtual_scan_neighborhood_graph_t *g_neighborhood_graph = NULL;
 
 
@@ -174,13 +177,14 @@ carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *m
 {
 	if (necessary_maps_available)
 	{
-		virtual_scan_extended_t *virtual_scan_extended = sort_virtual_scan(message);
+		virtual_scan_free_scan_extended(g_virtual_scan_extended[g_zi]);
+		g_virtual_scan_extended[g_zi] = sort_virtual_scan(message);
 
-		virtual_scan_free_segment_classes(g_virtual_scan_segment_classes[g_segments_index]);
-		g_virtual_scan_segment_classes[g_segments_index] = virtual_scan_extract_segments(virtual_scan_extended);
-		virtual_scan_publish_segments(g_virtual_scan_segment_classes[g_segments_index]);
+		virtual_scan_free_segment_classes(g_virtual_scan_segment_classes[g_zi]);
+		g_virtual_scan_segment_classes[g_zi] = virtual_scan_extract_segments(g_virtual_scan_extended[g_zi]);
+		virtual_scan_publish_segments(g_virtual_scan_segment_classes[g_zi]);
 
-		virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(g_virtual_scan_segment_classes[g_segments_index]); // acrescentar numa lista de tamanho T e retornar o ultimo
+		virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(g_virtual_scan_segment_classes[g_zi]); // acrescentar numa lista de tamanho T e retornar o ultimo
 		virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
 
 		g_neighborhood_graph = virtual_scan_update_neighborhood_graph(g_neighborhood_graph, virtual_scan_box_model_hypotheses); // usar os pontos vindos das funcoes acima
@@ -190,9 +194,9 @@ carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *m
 		virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses); // remover o que está no fim de T
 		virtual_scan_free_moving_objects(moving_objects);
 
-		g_segments_index++;
-		if (g_segments_index >= NUMBER_OF_FRAMES_T)
-			g_segments_index = 0;
+		g_zi++;
+		if (g_zi >= NUMBER_OF_FRAMES_T)
+			g_zi = 0;
 	}
 }
 
@@ -267,6 +271,7 @@ main(int argc, char **argv)
 	read_parameters(argc, argv);
 	carmen_virtual_scan_define_messages();
 
+	memset(g_virtual_scan_extended, 0, sizeof(virtual_scan_extended_t *) * NUMBER_OF_FRAMES_T);
 	memset(g_virtual_scan_segment_classes, 0, sizeof(virtual_scan_segment_classes_t *) * NUMBER_OF_FRAMES_T);
 
 	signal(SIGINT, shutdown_module);
