@@ -18,6 +18,7 @@
 #include <carmen/simulator_ackerman_simulation.h>
 #include <carmen/obstacle_distance_mapper_interface.h>
 #include <carmen/navigator_ackerman_interface.h>
+#include <carmen/velodyne_interface.h>
 #include <carmen/rddf_interface.h>
 #include "util.h"
 
@@ -31,13 +32,13 @@ carmen_robot_ackerman_config_t global_robot_ackerman_config;
 
 // Messages
 carmen_laser_laser_message global_front_laser_message;
+carmen_map_server_offline_map_message global_offline_map_message;
 carmen_behavior_selector_goal_list_message global_goal_list_message;
 carmen_obstacle_distance_mapper_map_message global_obstacle_distance_map;
 carmen_localize_ackerman_globalpos_message global_localize_ackerman_message;
 carmen_obstacle_distance_mapper_compact_map_message global_obstacle_distance_mapper_compact_map_message;
-carmen_map_server_offline_map_message global_offline_map_message;
-carmen_rddf_road_profile_message global_rddf_message;
 carmen_robot_ackerman_motion_command_message global_motion_command_message;
+carmen_rddf_road_profile_message global_rddf_message;
 
 // Termination signal handling
 int global_destroy_already_requested = 0;
