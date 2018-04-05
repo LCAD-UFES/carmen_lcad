@@ -137,9 +137,11 @@ typedef struct
 	int index;
 	virtual_scan_box_model_t hypothesis;
 	virtual_scan_segment_t hypothesis_points;
+	int zi;
 
-	double number_measurements_that_fall_inside_hypothesis;
 	double dn;
+	double c2;
+	double c3;
 
 	double timestamp;
 } virtual_scan_box_model_hypothesis_t;
@@ -197,6 +199,9 @@ virtual_scan_get_box_models(virtual_scan_box_model_hypotheses_t *hypotheses, int
 
 virtual_scan_segment_classes_t *
 virtual_scan_extract_segments(virtual_scan_extended_t *virtual_scan_extended);
+
+void
+virtual_scan_free_scan_extended(virtual_scan_extended_t *virtual_scan_extended);
 
 void
 virtual_scan_free_segment_classes(virtual_scan_segment_classes_t *virtual_scan_segment_classes);
