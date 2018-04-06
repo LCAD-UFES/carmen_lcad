@@ -7,6 +7,7 @@
 #include <carmen/carmen.h>
 #include <algorithm>
 #include <string.h>
+#include <cmath>
 #include "virtual_scan.h"
 
 
@@ -176,6 +177,38 @@ distance_from_point_to_line_segment_vw(int *point_in_trajectory_is, carmen_point
 	*point_in_trajectory_is = POINT_WITHIN_SEGMENT;
 
 	return (p);
+}
+
+
+double
+distance_from_point_to_line_segment_vw(carmen_point_t v, carmen_point_t w, carmen_point_t p)
+{
+	// Return minimum distance between line segment vw and points p
+	// http://stackoverflow.com/questions/849211/shortest-distance-between-a-points-and-a-line-segment
+	double l2, t;
+
+	l2 = dist2(v, w); // i.e. |w-v|^2 // NAO TROQUE POR carmen_ackerman_traj_distance2(&v, &w) pois nao sei se ee a mesma coisa.
+
+	// Consider the line extending the segment, parameterized as v + t (w - v).
+	// We find the projection of point p onto the line.
+	// It falls where t = [(p-v) . (w-v)] / |w-v|^2
+	t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+
+//	if (t < 0.0) 	// p beyond the v end of the segment
+//	{
+//	}
+//	if (t > 1.0)	// p beyond the w end of the segment
+//	{
+//	}
+
+	// Projection falls on the segment
+	double x = v.x + t * (w.x - v.x);
+	double y = v.y + t * (w.y - v.y);
+
+	double dx = p.x - x;
+	double dy = p.y - y;
+
+	return (sqrt(dx * dx + dy * dy));
 }
 
 
@@ -1015,9 +1048,37 @@ get_points_inside_and_outside_scaled_rectangle(carmen_point_t *&points_inside_re
 
 
 double
-get_distance_to_hypothesis_rectangle(carmen_point_t points_outside_small_rectangle, virtual_scan_box_model_hypothesis_t *box_model_hypothesis)
+get_distance_to_hypothesis_rectangle(carmen_point_t zd_point, virtual_scan_box_model_hypothesis_t *box_model_hypothesis)
 {
-	return (0.0);
+	virtual_scan_box_model_t hypothesis = box_model_hypothesis->hypothesis;
+	carmen_point_t v, w;
+	double d, new_d;
+
+	v.x = hypothesis.x - hypothesis.length / 2.0;
+	v.y = hypothesis.y - hypothesis.width / 2.0;
+	w.x = hypothesis.x + hypothesis.length / 2.0;
+	w.y = hypothesis.y - hypothesis.width / 2.0;
+	d = distance_from_point_to_line_segment_vw(v, w, zd_point);
+
+	w.x = hypothesis.x - hypothesis.length / 2.0;
+	w.y = hypothesis.y + hypothesis.width / 2.0;
+	new_d = distance_from_point_to_line_segment_vw(v, w, zd_point);
+	if (new_d < d)
+		d = new_d;
+
+	v.x = hypothesis.x + hypothesis.length / 2.0;
+	v.y = hypothesis.y + hypothesis.width / 2.0;
+	new_d = distance_from_point_to_line_segment_vw(v, w, zd_point);
+	if (new_d < d)
+		d = new_d;
+
+	w.x = hypothesis.x + hypothesis.length / 2.0;
+	w.y = hypothesis.y - hypothesis.width / 2.0;
+	new_d = distance_from_point_to_line_segment_vw(v, w, zd_point);
+	if (new_d < d)
+		d = new_d;
+
+	return (d);
 }
 
 
@@ -1025,7 +1086,7 @@ void
 get_Zs_and_Zd_of_hypothesis(carmen_point_t *&Zs_in, int &Zs_in_size, carmen_point_t *&Zs_out, int &Zs_out_size,
 		carmen_point_t *&Zd, int &Zd_size, virtual_scan_box_model_hypothesis_t *box_model_hypothesis)
 {
-	int num_points_inside_large_rectangle, num_points_inside_small_rectangle;
+	int num_points_inside_large_rectangle;
 	carmen_point_t *points_inside_large_rectangle;
 
 	get_points_inside_and_outside_scaled_rectangle(points_inside_large_rectangle, Zs_out,
@@ -1049,9 +1110,74 @@ PM1(carmen_point_t *Zd, int Zd_size, virtual_scan_box_model_hypothesis_t *box_mo
 }
 
 
+double
+Det(double a, double b, double c, double d)
+{
+	return (a * d - b * c);
+}
+
+
+bool
+line_to_line_intersection(double x1, double y1, double x2, double y2,
+	double x3, double y3, double x4, double y4)
+{
+	//http://mathworld.wolfram.com/Line-LineIntersection.html
+	//https://gist.github.com/TimSC/47203a0f5f15293d2099507ba5da44e6
+
+	double detL1 = Det(x1, y1, x2, y2);
+	double detL2 = Det(x3, y3, x4, y4);
+	double x1mx2 = x1 - x2;
+	double x3mx4 = x3 - x4;
+	double y1my2 = y1 - y2;
+	double y3my4 = y3 - y4;
+
+	double xnom = Det(detL1, x1mx2, detL2, x3mx4);
+	double ynom = Det(detL1, y1my2, detL2, y3my4);
+	double denom = Det(x1mx2, y1my2, x3mx4, y3my4);
+	if (denom == 0.0) //Lines don't seem to cross
+		return (false);
+
+	double ixOut = xnom / denom;
+	double iyOut = ynom / denom;
+	if(!std::isfinite(ixOut) || !std::isfinite(iyOut)) //Probably a numerical issue
+		return (false);
+
+	return (true);
+}
+
+
 int
 line_to_point_crossed_rectangle(carmen_point_t point, virtual_scan_box_model_t hypothesis, carmen_point_t origin)
 {
+	double x1, y1, x2, y2, x3, y3, x4, y4;
+
+	x1 = origin.x;
+	y1 = origin.y;
+	x2 = point.x;
+	y2 = point.y;
+
+	x3 = hypothesis.x - hypothesis.length / 2.0;
+	y3 = hypothesis.y - hypothesis.width / 2.0;
+	x4 = hypothesis.x + hypothesis.length / 2.0;
+	y4 = hypothesis.y - hypothesis.width / 2.0;
+	if (line_to_line_intersection(x1, y1, x2, y2, x3, y3, x4, y4))
+		return (1);
+
+	x4 = hypothesis.x - hypothesis.length / 2.0;
+	y4 = hypothesis.y + hypothesis.width / 2.0;
+	if (line_to_line_intersection(x1, y1, x2, y2, x3, y3, x4, y4))
+		return (1);
+
+	x3 = hypothesis.x + hypothesis.length / 2.0;
+	y3 = hypothesis.y + hypothesis.width / 2.0;
+	if (line_to_line_intersection(x1, y1, x2, y2, x3, y3, x4, y4))
+		return (1);
+
+	x4 = hypothesis.x + hypothesis.length / 2.0;
+	y4 = hypothesis.y - hypothesis.width / 2.0;
+	if (line_to_line_intersection(x1, y1, x2, y2, x3, y3, x4, y4))
+		return (1);
+
 	return (0);
 }
 
