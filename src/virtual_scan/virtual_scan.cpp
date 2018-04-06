@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <string.h>
 #include <cmath>
+#include <carmen/moving_objects_messages.h>
 #include "virtual_scan.h"
 
 
@@ -989,10 +990,57 @@ get_v_star(int &size, virtual_scan_neighborhood_graph_t *neighborhood_graph)
 }
 
 
-int
-point_inside_scaled_rectangle(carmen_point_t point, virtual_scan_box_model_t rectangle, double scale)
+carmen_point_t
+vect2d(carmen_point_t p1, carmen_point_t p2)
 {
-	return (0);
+    carmen_point_t temp;
+
+    temp.x = (p2.x - p1.x);
+    temp.y = -1.0 * (p2.y - p1.y);
+
+    return (temp);
+}
+
+
+int
+point_inside_scaled_rectangle(carmen_point_t point, virtual_scan_box_model_t hypothesis, double scale)
+{
+	carmen_point_t A, B, C, D, m;
+
+	double length = hypothesis.length * scale;
+	double width = hypothesis.width * scale;
+
+	m = point;
+
+	A.x = hypothesis.x - length / 2.0;
+	A.y = hypothesis.y - width / 2.0;
+	B.x = hypothesis.x + length / 2.0;
+	B.y = hypothesis.y - width / 2.0;
+	C.x = hypothesis.x + length / 2.0;
+	C.y = hypothesis.y + width / 2.0;
+	D.x = hypothesis.x - length / 2.0;
+	D.y = hypothesis.y + width / 2.0;
+
+	carmen_point_t AB = vect2d(A, B);
+	double C1 = -1.0 * (AB.y * A.x + AB.x * A.y);
+	double D1 = (AB.y * m.x + AB.x * m.y) + C1;
+
+	carmen_point_t AD = vect2d(A, D);
+	double C2 = -1.0 * (AD.y * A.x + AD.x * A.y);
+	double D2 = (AD.y * m.x + AD.x * m.y) + C2;
+
+	carmen_point_t BC = vect2d(B, C);
+	double C3 = -1.0 * (BC.y * B.x + BC.x * B.y);
+	double D3 = (BC.y * m.x + BC.x * m.y) + C3;
+
+	carmen_point_t CD = vect2d(C, D);
+	double C4 = -1.0 * (CD.y * C.x + CD.x * C.y);
+	double D4 = (CD.y * m.x + CD.x * m.y) + C4;
+
+	if ((0.0 >= D1 && 0.0 >= D4 && 0.0 <= D2 && 0.0 >= D3))
+		return (1);
+	else
+		return (0);
 }
 
 
@@ -1620,10 +1668,66 @@ free_track_set(virtual_scan_track_set_t *track_set_victim)
 }
 
 
-virtual_scan_moving_objects_t *
+carmen_moving_objects_point_clouds_message *
 get_moving_objects_from_track_set(virtual_scan_track_set_t *best_track_set)
 {
-	return (NULL);
+	carmen_moving_objects_point_clouds_message *message = (carmen_moving_objects_point_clouds_message *) malloc(sizeof(carmen_moving_objects_point_clouds_message));
+	message->host = carmen_get_host();
+	message->timestamp = carmen_get_time();
+
+	int num_moving_objects = 0;
+	for (int i = 0; i < best_track_set->size; i++)
+		num_moving_objects += best_track_set->tracks[i]->size;
+
+	message->point_clouds = (t_point_cloud_struct *) malloc(sizeof(t_point_cloud_struct) * num_moving_objects);
+	message->num_point_clouds = num_moving_objects;
+
+	int k = 0;
+	for (int i = 0; i < best_track_set->size; i++)
+	{
+		for (int j = 0; j < best_track_set->tracks[i]->size; j++)
+		{
+			virtual_scan_box_model_t *box = &(best_track_set->tracks[i]->box_model_hypothesis[j].hypothesis);
+
+			message->point_clouds[k].r = 0.0;
+			message->point_clouds[k].g = 0.0;
+			message->point_clouds[k].b = 1.0;
+			message->point_clouds[k].linear_velocity = 0;
+			message->point_clouds[k].orientation = box->theta;
+			message->point_clouds[k].object_pose.x = box->x;
+			message->point_clouds[k].object_pose.y = box->y;
+			message->point_clouds[k].object_pose.z = 0.0;
+			message->point_clouds[k].height = 0;
+			message->point_clouds[k].length = box->length;
+			message->point_clouds[k].width = box->width;
+			message->point_clouds[k].geometric_model = box->c;
+			message->point_clouds[k].point_size = 0; // 1
+//			message->point_clouds[k].num_associated = timestamp_moving_objects_list[current_vector_index].objects[i].id;
+
+			object_model_features_t &model_features = message->point_clouds[k].model_features;
+			model_features.model_id = box->c;
+			model_features.model_name = (char *) "name?";
+			model_features.geometry.length = box->length;
+			model_features.geometry.width = box->width;
+
+//			message->point_clouds[k].points = (carmen_vector_3D_t *) malloc(1 * sizeof(carmen_vector_3D_t));
+//			message->point_clouds[k].points[0].x = box->x;
+//			message->point_clouds[k].points[0].y = box->y;
+//			message->point_clouds[k].points[0].z = 0.0;
+
+			k++;
+		}
+	}
+
+	return (message);
+}
+
+
+void
+virtual_scan_free_moving_objects(carmen_moving_objects_point_clouds_message *moving_objects)
+{
+	free(moving_objects->point_clouds);
+	free(moving_objects);
 }
 
 
@@ -1646,7 +1750,7 @@ A(virtual_scan_track_set_t *track_set_n, virtual_scan_track_set_t *track_set_pri
 }
 
 
-virtual_scan_moving_objects_t *
+carmen_moving_objects_point_clouds_message *
 virtual_scan_infer_moving_objects(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
 	virtual_scan_track_set_t *track_set_n = copy_track_set(best_track_set);
@@ -1670,14 +1774,7 @@ virtual_scan_infer_moving_objects(virtual_scan_neighborhood_graph_t *neighborhoo
 	}
 	free_track_set(track_set_n);
 
-	virtual_scan_moving_objects_t *moving_objects = get_moving_objects_from_track_set(best_track_set);
+	carmen_moving_objects_point_clouds_message *moving_objects = get_moving_objects_from_track_set(best_track_set);
 
 	return (moving_objects);
-}
-
-
-void
-virtual_scan_free_moving_objects(virtual_scan_moving_objects_t *moving_objects)
-{
-
 }

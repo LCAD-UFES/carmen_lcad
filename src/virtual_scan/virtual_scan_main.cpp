@@ -43,9 +43,9 @@ virtual_scan_neighborhood_graph_t *g_neighborhood_graph = NULL;
 
 
 void
-virtual_scan_moving_objects_publish(virtual_scan_moving_objects_t *moving_objects)
+virtual_scan_moving_objects_publish(carmen_moving_objects_point_clouds_message *moving_objects)
 {
-
+	carmen_moving_objects_point_clouds_publish_message(moving_objects);
 }
 
 
@@ -185,10 +185,10 @@ carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *m
 		virtual_scan_publish_segments(g_virtual_scan_segment_classes[g_zi]);
 
 		virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(g_virtual_scan_segment_classes[g_zi]); // acrescentar numa lista de tamanho T e retornar o ultimo
-		virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
+//		virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
 
 		g_neighborhood_graph = virtual_scan_update_neighborhood_graph(g_neighborhood_graph, virtual_scan_box_model_hypotheses); // usar os pontos vindos das funcoes acima
-		virtual_scan_moving_objects_t *moving_objects = virtual_scan_infer_moving_objects(g_neighborhood_graph);
+		carmen_moving_objects_point_clouds_message *moving_objects = virtual_scan_infer_moving_objects(g_neighborhood_graph);
 		virtual_scan_moving_objects_publish(moving_objects);
 
 		virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses); // remover o que está no fim de T
