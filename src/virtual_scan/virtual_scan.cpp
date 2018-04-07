@@ -78,7 +78,7 @@ filter_virtual_scan(virtual_scan_extended_t *virtual_scan_extended)
 			{
 				virtual_scan_extended_filtered->points = (carmen_point_t *) realloc(virtual_scan_extended_filtered->points,
 									sizeof(carmen_point_t) * (num_points + 1));
-				virtual_scan_extended_filtered->points[num_points]=virtual_scan_extended->points[i];
+				virtual_scan_extended_filtered->points[num_points] = virtual_scan_extended->points[i];
 				num_points++;
 			}
 		}
@@ -86,29 +86,29 @@ filter_virtual_scan(virtual_scan_extended_t *virtual_scan_extended)
 		{
 			virtual_scan_extended_filtered->points = (carmen_point_t *) realloc(virtual_scan_extended_filtered->points,
 								sizeof(carmen_point_t) * (num_points + 1));
-			virtual_scan_extended_filtered->points[num_points]=virtual_scan_extended->points[i];
+			virtual_scan_extended_filtered->points[num_points] = virtual_scan_extended->points[i];
 			num_points++;
 		}
 	}
 	virtual_scan_extended_filtered->num_points = num_points;
 	virtual_scan_extended_filtered->timestamp = virtual_scan_extended->timestamp;
 
-	fprintf(stdout,"virtual_scan_extended->num_points = %d\n", virtual_scan_extended->num_points);
-	fprintf(stdout,"virtual_scan_extended_filtered->num_points = %d\n\n", virtual_scan_extended_filtered->num_points);
-	fflush(stdout);
+//	fprintf(stdout,"virtual_scan_extended->num_points = %d\n", virtual_scan_extended->num_points);
+//	fprintf(stdout,"virtual_scan_extended_filtered->num_points = %d\n\n", virtual_scan_extended_filtered->num_points);
+//	fflush(stdout);
 
-	return virtual_scan_extended_filtered;
+	return (virtual_scan_extended_filtered);
 }
 
 
-virtual_scan_segments_t *
+virtual_scan_segment_classes_t *
 segment_virtual_scan(virtual_scan_extended_t *extended_virtual_scan)
 {
 	int segment_id = 0;
 	int begin_segment = 0;
-	virtual_scan_segments_t *virtual_scan_segments;
+	virtual_scan_segment_classes_t *virtual_scan_segments;
 
-	virtual_scan_segments = (virtual_scan_segments_t *) malloc(sizeof(virtual_scan_segments_t));
+	virtual_scan_segments = (virtual_scan_segment_classes_t *) malloc(sizeof(virtual_scan_segment_classes_t));
 	virtual_scan_segments->num_segments = 0;
 	virtual_scan_segments->timestamp = extended_virtual_scan->timestamp;
 	virtual_scan_segments->segment = NULL;
@@ -123,7 +123,10 @@ segment_virtual_scan(virtual_scan_extended_t *extended_virtual_scan)
 				virtual_scan_segments->segment[segment_id].num_points = i - begin_segment;
 			else
 				virtual_scan_segments->segment[segment_id].num_points = i - begin_segment + 1; // TODO: checar isso
-			virtual_scan_segments->segment[segment_id].points = &(extended_virtual_scan->points[begin_segment]);
+
+			virtual_scan_segments->segment[segment_id].points = (carmen_point_t *) malloc(sizeof(carmen_point_t) * virtual_scan_segments->segment[segment_id].num_points);
+			memcpy((void *) virtual_scan_segments->segment[segment_id].points, (void *) &(extended_virtual_scan->points[begin_segment]), sizeof(carmen_point_t) * virtual_scan_segments->segment[segment_id].num_points);
+
 			begin_segment = i;
 			segment_id++;
 			virtual_scan_segments->num_segments++;
@@ -216,31 +219,47 @@ distance_from_point_to_line_segment_vw(carmen_point_t v, carmen_point_t w, carme
 carmen_point_t
 compute_segment_centroid(virtual_scan_segment_t virtual_scan_segment)
 {
-	carmen_point_t centroid;
+	carmen_point_t centroid = {0.0, 0.0, 0.0};
 
 	for (int i = 0; i < virtual_scan_segment.num_points; i++)
 	{
 		centroid.x += virtual_scan_segment.points[i].x;
 		centroid.y += virtual_scan_segment.points[i].y;
 	}
-	centroid.x /= virtual_scan_segment.num_points;
-	centroid.y /= virtual_scan_segment.num_points;
+	centroid.x /= (double) virtual_scan_segment.num_points;
+	centroid.y /= (double) virtual_scan_segment.num_points;
 
-	return(centroid);
+	return (centroid);
 }
 
 
-virtual_scan_segment_classes_t *
-classify_segments(virtual_scan_segments_t *virtual_scan_segments)
+void
+set_segment_features(virtual_scan_segment_classes_t *virtual_scan_segment_classes, int segment, carmen_point_t first_point,
+		carmen_point_t last_point, double maximum_distance_to_line_segment, carmen_point_t farthest_point, double width, double length,
+		int segment_class)
 {
-	virtual_scan_segment_classes_t *virtual_scan_segment_classes;
-	virtual_scan_segment_classes = (virtual_scan_segment_classes_t *) malloc(sizeof(virtual_scan_segment_classes_t));
-	int num_segments = virtual_scan_segments->num_segments;
-	virtual_scan_segment_classes->num_segments = num_segments;
-	virtual_scan_segment_classes->segment = (virtual_scan_segment_t *) malloc(sizeof(virtual_scan_segment_t)*num_segments);
-	virtual_scan_segment_classes->segment_features = (virtual_scan_segment_features_t *) malloc(sizeof(virtual_scan_segment_features_t)*num_segments);
+	carmen_point_t centroid = compute_segment_centroid(virtual_scan_segment_classes->segment[segment]);
+	virtual_scan_segment_classes->segment_features[segment].centroid = centroid;
 
-	for (int i = 0; i < virtual_scan_segments->num_segments; i++)
+	virtual_scan_segment_classes->segment_features[segment].first_point = first_point;
+	virtual_scan_segment_classes->segment_features[segment].last_point = last_point;
+	virtual_scan_segment_classes->segment_features[segment].maximum_distance_to_line_segment = maximum_distance_to_line_segment;
+	virtual_scan_segment_classes->segment_features[segment].farthest_point = farthest_point;
+	virtual_scan_segment_classes->segment_features[segment].width = width;
+	virtual_scan_segment_classes->segment_features[segment].length = length;
+	virtual_scan_segment_classes->segment_features[segment].segment_class = segment_class;
+}
+
+
+void
+classify_segments(virtual_scan_segment_classes_t *virtual_scan_segments)
+{
+	virtual_scan_segment_classes_t *virtual_scan_segment_classes = virtual_scan_segments;
+	virtual_scan_segment_classes->segment_features = (virtual_scan_segment_features_t *) malloc(sizeof(virtual_scan_segment_features_t) *
+			virtual_scan_segment_classes->num_segments);
+
+	int num_segments = virtual_scan_segments->num_segments;
+	for (int i = 0; i < num_segments; i++)
 	{
 		int num_points = virtual_scan_segments->segment[i].num_points;
 		carmen_point_t first_point = virtual_scan_segments->segment[i].points[0];
@@ -250,7 +269,6 @@ classify_segments(virtual_scan_segments_t *virtual_scan_segments)
 		double width = 0.0;
 		double length = 0.0;
 		int segment_class = MASS_POINT;
-//		double average_distance = 0.0;
 		int j;
 		for (j = 0; j < num_points; j++)
 		{
@@ -296,24 +314,8 @@ classify_segments(virtual_scan_segments_t *virtual_scan_segments)
 				segment_class = L_SHAPED;
 		}
 
-		carmen_point_t centroid = compute_segment_centroid(virtual_scan_segments->segment[i]);
-
-		virtual_scan_segment_classes->segment[i].num_points = num_points;
-		virtual_scan_segment_classes->segment[i].points = virtual_scan_segments->segment[i].points;
-		virtual_scan_segment_classes->segment_features[i].first_point = first_point;
-		virtual_scan_segment_classes->segment_features[i].last_point = last_point;
-		virtual_scan_segment_classes->segment_features[i].maximum_distance_to_line_segment = maximum_distance_to_line_segment;
-		virtual_scan_segment_classes->segment_features[i].farthest_point = farthest_point;
-		virtual_scan_segment_classes->segment_features[i].width = width;
-		virtual_scan_segment_classes->segment_features[i].length = length;
-		virtual_scan_segment_classes->segment_features[i].segment_class = segment_class;
-		virtual_scan_segment_classes->segment_features[i].centroid = centroid;
-		//		virtual_scan_segment_classes->segment_features[i].average_distance_to_line_segment = average_distance;
-
+		set_segment_features(virtual_scan_segment_classes, i, first_point, last_point, maximum_distance_to_line_segment, farthest_point, width, length, segment_class);
 	}
-	virtual_scan_segment_classes->timestamp = virtual_scan_segments->timestamp;
-
-	return (virtual_scan_segment_classes);
 }
 
 
@@ -390,7 +392,7 @@ void
 append_l_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, virtual_scan_segment_t box_points,
 		carmen_point_t first_point, carmen_point_t last_point, carmen_point_t farthest_point, virtual_scan_category_t categories[])
 {
-	for (int j = 0; j < 2; j++) // Indexes the model categories
+	for (int category = 1; category < 2; category++)
 	{
 		carmen_point_t length_point = first_point;
 		carmen_point_t width_point = last_point;
@@ -399,21 +401,21 @@ append_l_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, vir
 			std::swap(length_point, width_point);
 			double l = DIST2D(farthest_point, length_point);
 			double w = DIST2D(farthest_point, width_point);
-			if (categories[j].length < l || categories[j].width < w)
+			if (categories[category].length < l || categories[category].width < w)
 				continue;
 
 			double rho = atan2(length_point.y - farthest_point.y, length_point.x - farthest_point.x);
 			double phi = atan2(width_point.y - farthest_point.y, width_point.x - farthest_point.x);
 			carmen_position_t length_center_position =
-				{ farthest_point.x + 0.5 * categories[j].length * cos(rho), farthest_point.y + 0.5 * categories[j].length * sin(rho) };
+				{ farthest_point.x + 0.5 * categories[category].length * cos(rho), farthest_point.y + 0.5 * categories[category].length * sin(rho) };
 			for (double direction = 0; direction <= M_PI; direction += M_PI)
 			{
 				virtual_scan_box_model_t *box = virtual_scan_append_box(box_models, box_points);
-				box->c = categories[j].category;
-				box->width = categories[j].width;
-				box->length = categories[j].length;
-				box->x = length_center_position.x + 0.5 * categories[j].width * cos(phi);
-				box->y = length_center_position.y + 0.5 * categories[j].width * sin(phi);
+				box->c = categories[category].category;
+				box->width = categories[category].width;
+				box->length = categories[category].length;
+				box->x = length_center_position.x + 0.5 * categories[category].width * cos(phi);
+				box->y = length_center_position.y + 0.5 * categories[category].width * sin(phi);
 				box->theta = carmen_normalize_theta(rho + direction);
 			}
 		}
@@ -508,12 +510,12 @@ virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment
 		virtual_scan_segment_t box_points = virtual_scan_segment_classes->segment[i];
 
 		virtual_scan_box_models_t *box_models = virtual_scan_get_empty_box_models(box_model_hypotheses);
-		if (segment_class == MASS_POINT)
-			append_pedestrian_to_box_models(box_models, box_points, centroid);
-		else if (segment_class == L_SHAPED) // L-shape segments segments will generate bus and car hypotheses
+//		if (segment_class == MASS_POINT)
+//			append_pedestrian_to_box_models(box_models, box_points, centroid);
+		if (segment_class == L_SHAPED) // L-shape segments segments will generate bus and car hypotheses
 			append_l_shaped_objects_to_box_models(box_models, box_points, first_point, last_point, farthest_point, categories);
-		else if (segment_class == I_SHAPED) // I-shape segments segments will generate bus, car and bike hypotheses
-			append_i_shaped_objects_to_box_models(box_models, box_points, first_point, last_point, categories);
+//		else if (segment_class == I_SHAPED) // I-shape segments segments will generate bus, car and bike hypotheses
+//			append_i_shaped_objects_to_box_models(box_models, box_points, first_point, last_point, categories);
 
 		if (!is_last_box_model_hypotheses_empty(box_model_hypotheses))
 			box_model_hypotheses->last_box_model_hypotheses++;
@@ -550,18 +552,13 @@ virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses_t *virt
 
 
 void
-virtual_scan_free_segments(virtual_scan_segments_t *virtual_scan_segments)
-{
-	free(virtual_scan_segments->segment);
-	free(virtual_scan_segments);
-}
-
-
-void
 virtual_scan_free_segment_classes(virtual_scan_segment_classes_t *virtual_scan_segment_classes)
 {
 	if (virtual_scan_segment_classes != NULL)
 	{
+		for (int i = 0; i < virtual_scan_segment_classes->num_segments; i++)
+			free(virtual_scan_segment_classes->segment[i].points);
+
 		free(virtual_scan_segment_classes->segment);
 		free(virtual_scan_segment_classes->segment_features);
 		free(virtual_scan_segment_classes);
@@ -584,12 +581,12 @@ virtual_scan_segment_classes_t *
 virtual_scan_extract_segments(virtual_scan_extended_t *virtual_scan_extended)
 {
 	virtual_scan_extended_t *virtual_scan_extended_filtered = filter_virtual_scan(virtual_scan_extended);
-	virtual_scan_segments_t *virtual_scan_segments = segment_virtual_scan(virtual_scan_extended_filtered);
-	virtual_scan_segment_classes_t *virtual_scan_segment_classes = classify_segments(virtual_scan_segments);
-	virtual_scan_free_scan_extended(virtual_scan_extended_filtered);
-	virtual_scan_free_segments(virtual_scan_segments);
+	virtual_scan_segment_classes_t *virtual_scan_segments = segment_virtual_scan(virtual_scan_extended_filtered);
+	classify_segments(virtual_scan_segments);
 
-	return (virtual_scan_segment_classes);
+	virtual_scan_free_scan_extended(virtual_scan_extended_filtered);
+
+	return (virtual_scan_segments);
 }
 
 
@@ -622,7 +619,7 @@ create_hypothesis_sibling_edges(int h, int previous_h, int num_boxes, virtual_sc
 		{
 			if (k != reference_h)
 			{
-				neighborhood_graph->box_model_hypothesis_edges[h]->edge[e] = k;
+				neighborhood_graph->box_model_hypothesis_edges[h]->edge[e] = k + previous_h;
 				neighborhood_graph->box_model_hypothesis_edges[h]->edge_type[e] = SIBLING_EDGE;
 				e++;
 			}
@@ -990,13 +987,35 @@ get_v_star(int &size, virtual_scan_neighborhood_graph_t *neighborhood_graph)
 }
 
 
+void
+free_track(virtual_scan_track_t *track)
+{
+	free(track->box_model_hypothesis);
+	free(track);
+}
+
+
+void
+free_track_set(virtual_scan_track_set_t *track_set_victim)
+{
+	if (track_set_victim != NULL)
+	{
+		for (int i = 0; i < track_set_victim->size; i++)
+			free_track(track_set_victim->tracks[i]);
+
+		free(track_set_victim->tracks);
+		free(track_set_victim);
+	}
+}
+
+
 carmen_point_t
 vect2d(carmen_point_t p1, carmen_point_t p2)
 {
     carmen_point_t temp;
 
     temp.x = (p2.x - p1.x);
-    temp.y = -1.0 * (p2.y - p1.y);
+    temp.y = -(p2.y - p1.y);
 
     return (temp);
 }
@@ -1004,7 +1023,7 @@ vect2d(carmen_point_t p1, carmen_point_t p2)
 
 int
 point_inside_scaled_rectangle(carmen_point_t point, virtual_scan_box_model_t hypothesis, double scale)
-{
+{	// https://stackoverflow.com/questions/2752725/finding-whether-a-point-lies-inside-a-rectangle-or-not
 	carmen_point_t A, B, C, D, m;
 
 	double length = hypothesis.length * scale;
@@ -1022,22 +1041,22 @@ point_inside_scaled_rectangle(carmen_point_t point, virtual_scan_box_model_t hyp
 	D.y = hypothesis.y + width / 2.0;
 
 	carmen_point_t AB = vect2d(A, B);
-	double C1 = -1.0 * (AB.y * A.x + AB.x * A.y);
+	double C1 = -(AB.y * A.x + AB.x * A.y);
 	double D1 = (AB.y * m.x + AB.x * m.y) + C1;
 
-	carmen_point_t AD = vect2d(A, D);
-	double C2 = -1.0 * (AD.y * A.x + AD.x * A.y);
-	double D2 = (AD.y * m.x + AD.x * m.y) + C2;
-
 	carmen_point_t BC = vect2d(B, C);
-	double C3 = -1.0 * (BC.y * B.x + BC.x * B.y);
-	double D3 = (BC.y * m.x + BC.x * m.y) + C3;
+	double C2 = -(BC.y * B.x + BC.x * B.y);
+	double D2 = (BC.y * m.x + BC.x * m.y) + C2;
 
 	carmen_point_t CD = vect2d(C, D);
-	double C4 = -1.0 * (CD.y * C.x + CD.x * C.y);
-	double D4 = (CD.y * m.x + CD.x * m.y) + C4;
+	double C3 = -(CD.y * C.x + CD.x * C.y);
+	double D3 = (CD.y * m.x + CD.x * m.y) + C3;
 
-	if ((0.0 >= D1 && 0.0 >= D4 && 0.0 <= D2 && 0.0 >= D3))
+	carmen_point_t DA = vect2d(D, A);
+	double C4 = -(DA.y * A.x + DA.x * A.y);
+	double D4 = (DA.y * m.x + DA.x * m.y) + C4;
+
+	if ((D1 > 0.0) && (D4 > 0.0) && (D2 > 0.0) && (D3 > 0.0))
 		return (1);
 	else
 		return (0);
@@ -1248,10 +1267,10 @@ compute_hypothesis_posterior_probability_components(virtual_scan_box_model_hypot
 		return;
 
 	carmen_point_t *Zs_out, *Zs_in, *Zd; int Zs_out_size, Zs_in_size, Zd_size;
-	get_Zs_and_Zd_of_hypothesis(Zs_out, Zs_out_size, Zs_in, Zs_in_size, Zd, Zd_size, box_model_hypothesis);
+	get_Zs_and_Zd_of_hypothesis(Zs_in, Zs_in_size, Zs_out, Zs_out_size, Zd, Zd_size, box_model_hypothesis);
 
-	box_model_hypothesis->dn = PM1(Zd, Zd_size, box_model_hypothesis);
-	box_model_hypothesis->c2 = PM2(Zs_out, Zs_out_size, box_model_hypothesis);
+	box_model_hypothesis->dn = 0.0;//PM1(Zd, Zd_size, box_model_hypothesis);
+	box_model_hypothesis->c2 = 0.0;//PM2(Zs_out, Zs_out_size, box_model_hypothesis);
 	box_model_hypothesis->c3 = 0.0;
 
 	free(Zs_out); free(Zs_in); free(Zd);
@@ -1267,7 +1286,6 @@ compute_track_posterior_probability_components(virtual_scan_track_t *track)
 	for (int h = 0; h < track->size; h++)
 	{
 		virtual_scan_box_model_hypothesis_t *box_model_hypothesis = &(track->box_model_hypothesis[h]);
-
 		compute_hypothesis_posterior_probability_components(box_model_hypothesis);
 	}
 }
@@ -1301,9 +1319,13 @@ track_birth(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 			new_track->box_model_hypothesis = (virtual_scan_box_model_hypothesis_t *) malloc(sizeof(virtual_scan_box_model_hypothesis_t));
 			new_track->size = 1;
 			new_track->box_model_hypothesis[0] = *(neighborhood_graph->box_model_hypothesis[v_star[rand_v]]);
+
 			neighborhood_graph->vertex_selected[v_star[rand_v]] = true;
 
 			free(v_star);
+
+			compute_hypothesis_posterior_probability_components(&(new_track->box_model_hypothesis[0]));
+
 			return (new_track);
 		}
 		else
@@ -1459,11 +1481,15 @@ track_extension(virtual_scan_track_t *track, virtual_scan_neighborhood_graph_t *
 		if (carmen_int_random(2) == 0)
 		{
 			hypothesis = get_child_hypothesis_in_v_star_and_at_the_end_of_track(track, neighborhood_graph);
+			compute_hypothesis_posterior_probability_components(hypothesis);
+
 			add_hypothesis_at_the_end(track, hypothesis, neighborhood_graph);
 		}
 		else
 		{
 			hypothesis = get_child_hypothesis_in_v_star_and_at_the_beginning_of_track(track, neighborhood_graph);
+			compute_hypothesis_posterior_probability_components(hypothesis);
+
 			add_hypothesis_at_the_beginning(track, hypothesis, neighborhood_graph);
 		}
 	}
@@ -1492,13 +1518,15 @@ track_reduction(virtual_scan_track_t *track)
 }
 
 
-//void
-//track_death(virtual_scan_track_t *track)
-//{
-//
-//}
-//
-//
+void
+track_death(virtual_scan_track_set_t *track_set, int victim)
+{
+	free_track(track_set->tracks[victim]);
+	memmove((void *) &(track_set->tracks[victim]), &(track_set->tracks[victim + 1]), (track_set->size - (victim + 1)) * sizeof(virtual_scan_track_t *));
+	track_set->size -= 1;
+}
+
+
 //void
 //track_split(virtual_scan_track_t *track)
 //{
@@ -1548,7 +1576,7 @@ copy_track_set(virtual_scan_track_set_t *track_set_n_1)
 virtual_scan_track_set_t *
 propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood_graph, virtual_scan_track_set_t *track_set_n_1)
 {
-#define NUMBER_OF_TYPES_OF_MOVES	3
+#define NUMBER_OF_TYPES_OF_MOVES	4
 
 	int rand_track;
 
@@ -1567,7 +1595,6 @@ propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood
 				if (new_track != NULL)
 				{
 					track_extension(new_track, neighborhood_graph);
-					compute_track_posterior_probability_components(new_track);
 					track_set = add_track(track_set, new_track);
 				}
 			}
@@ -1580,10 +1607,10 @@ propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood
 			if (rand_track != -1)
 				track_reduction(track_set->tracks[rand_track]);
 			break;
-//		case 3: //Death
-//			if (rand_track != -1)
-//				track_death(&(track_set->tracks[rand_track]));
-//			break;
+		case 3: // Death
+			if (rand_track != -1)
+				track_death(track_set, rand_track);
+			break;
 //		case 4:	// Split
 //			if (rand_track != -1)
 //			{
@@ -1603,8 +1630,6 @@ propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood
 //				track_diffusion(&track_set->tracks[rand_track]);
 //			break;
 	}
-
-	compute_track_set_posterior_probability_components(track_set);
 
 	return (track_set);
 }
@@ -1668,7 +1693,7 @@ sum_of_dn_of_tracks(virtual_scan_track_set_t *track_set)
 
 
 double
-probability_of_track_set_given_measurements(virtual_scan_track_set_t *track_set)
+probability_of_track_set_given_measurements(virtual_scan_track_set_t *track_set, bool print = false)
 {
 #define lambda_L	0.5
 #define lambda_1	0.5
@@ -1683,31 +1708,21 @@ probability_of_track_set_given_measurements(virtual_scan_track_set_t *track_set)
 	double Sms2 = sum_of_number_of_non_maximal_measurements_that_fall_behind_the_object_model(track_set);
 	double Sms3 = sum_of_measurements_that_fall_inside_object_models_in_track_set(track_set);
 
+	if (print)
+		printf("Slen = %lf, Sms1 = %lf, Sms2 = %lf, Sms3 = %lf\n", Slen, Sms1, Sms2, Sms3);
+
 	double p_w_z = exp(lambda_L * Slen - lambda_1 * Sms1 - lambda_2 * Sms2 - lambda_3 * Sms3);
 
 	return (p_w_z);
 }
 
 
-void
-free_track_set(virtual_scan_track_set_t *track_set_victim)
-{
-	if (track_set_victim != NULL)
-	{
-		for (int i = 0; i < track_set_victim->size; i++)
-		{
-			free(track_set_victim->tracks[i]->box_model_hypothesis);
-			free(track_set_victim->tracks[i]);
-		}
-		free(track_set_victim->tracks);
-		free(track_set_victim);
-	}
-}
-
-
 carmen_moving_objects_point_clouds_message *
 get_moving_objects_from_track_set(virtual_scan_track_set_t *best_track_set)
 {
+	if (best_track_set == NULL)
+		return (NULL);
+
 	carmen_moving_objects_point_clouds_message *message = (carmen_moving_objects_point_clouds_message *) malloc(sizeof(carmen_moving_objects_point_clouds_message));
 	message->host = carmen_get_host();
 	message->timestamp = carmen_get_time();
@@ -1763,8 +1778,11 @@ get_moving_objects_from_track_set(virtual_scan_track_set_t *best_track_set)
 void
 virtual_scan_free_moving_objects(carmen_moving_objects_point_clouds_message *moving_objects)
 {
-	free(moving_objects->point_clouds);
-	free(moving_objects);
+	if (moving_objects != NULL)
+	{
+		free(moving_objects->point_clouds);
+		free(moving_objects);
+	}
 }
 
 
@@ -1812,6 +1830,8 @@ virtual_scan_infer_moving_objects(virtual_scan_neighborhood_graph_t *neighborhoo
 	free_track_set(track_set_n);
 
 	carmen_moving_objects_point_clouds_message *moving_objects = get_moving_objects_from_track_set(best_track_set);
+	printf("num_tracks %d, num_objects %d\n", (best_track_set)? best_track_set->size: 0, (moving_objects)? moving_objects->num_point_clouds: 0);
+	probability_of_track_set_given_measurements(best_track_set, true);
 
 	return (moving_objects);
 }

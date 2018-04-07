@@ -10,9 +10,9 @@
 
 
 // Segment classes
-#define L_SHAPED	1
-#define	I_SHAPED	2
-#define MASS_POINT	3
+#define L_SHAPED	0
+#define	I_SHAPED	1
+#define MASS_POINT	2
 
 #define	BUS			'B' // Width: 2,4 m to 2,6 m; Length: 10 m to 14 m;
 #define	CAR			'C' // Width: 1,8 m to 2,1; Length: 3,9 m to 5,3 m
