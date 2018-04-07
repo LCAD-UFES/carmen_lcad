@@ -1449,13 +1449,28 @@ track_extension(virtual_scan_track_t *track, virtual_scan_neighborhood_graph_t *
 }
 
 
-//void
-//track_reduction(virtual_scan_track_t *track)
-//{
-//
-//}
-//
-//
+void
+track_reduction(virtual_scan_track_t *track)
+{
+	if (track->size > 2)
+	{
+		int r = carmen_int_random(track->size - 2) + 1; // r entre 1 e (track->size - 2). Note que, diferente do paper, nossa numeracao comecca de 0
+		if (carmen_int_random(2) == 0)
+		{	// forward reduction
+			track->size = r + 1;
+		}
+		else
+		{	// backward reduction
+			track->size -= r;
+			memmove((void *) &(track->box_model_hypothesis[0]), (void *) &(track->box_model_hypothesis[r]),
+					track->size * sizeof(virtual_scan_box_model_hypothesis_t));
+		}
+		track->box_model_hypothesis = (virtual_scan_box_model_hypothesis_t *) realloc(track->box_model_hypothesis,
+				track->size * sizeof(virtual_scan_box_model_hypothesis_t));
+	}
+}
+
+
 //void
 //track_death(virtual_scan_track_t *track)
 //{
@@ -1512,7 +1527,7 @@ copy_track_set(virtual_scan_track_set_t *track_set_n_1)
 virtual_scan_track_set_t *
 propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood_graph, virtual_scan_track_set_t *track_set_n_1)
 {
-#define NUMBER_OF_TYPES_OF_MOVES	2
+#define NUMBER_OF_TYPES_OF_MOVES	3
 
 	int rand_track;
 
@@ -1539,10 +1554,10 @@ propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood
 			if (rand_track != -1)
 				track_extension(track_set->tracks[rand_track], neighborhood_graph);
 			break;
-//		case 2:	// Reduction
-//			if (rand_track != -1)
-//				track_reduction(&(track_set->tracks[rand_track]));
-//			break;
+		case 2:	// Reduction
+			if (rand_track != -1)
+				track_reduction(track_set->tracks[rand_track]);
+			break;
 //		case 3: //Death
 //			if (rand_track != -1)
 //				track_death(&(track_set->tracks[rand_track]));
