@@ -1242,7 +1242,39 @@ PM2(carmen_point_t *Zs, int Zs_size, virtual_scan_box_model_hypothesis_t *box_mo
 
 
 void
-compute_posterior_probability_components(virtual_scan_track_set_t *track_set)
+compute_hypothesis_posterior_probability_components(virtual_scan_box_model_hypothesis_t *box_model_hypothesis)
+{
+	if (box_model_hypothesis == NULL)
+		return;
+
+	carmen_point_t *Zs_out, *Zs_in, *Zd; int Zs_out_size, Zs_in_size, Zd_size;
+	get_Zs_and_Zd_of_hypothesis(Zs_out, Zs_out_size, Zs_in, Zs_in_size, Zd, Zd_size, box_model_hypothesis);
+
+	box_model_hypothesis->dn = PM1(Zd, Zd_size, box_model_hypothesis);
+	box_model_hypothesis->c2 = PM2(Zs_out, Zs_out_size, box_model_hypothesis);
+	box_model_hypothesis->c3 = 0.0;
+
+	free(Zs_out); free(Zs_in); free(Zd);
+}
+
+
+void
+compute_track_posterior_probability_components(virtual_scan_track_t *track)
+{
+	if (track == NULL)
+		return;
+
+	for (int h = 0; h < track->size; h++)
+	{
+		virtual_scan_box_model_hypothesis_t *box_model_hypothesis = &(track->box_model_hypothesis[h]);
+
+		compute_hypothesis_posterior_probability_components(box_model_hypothesis);
+	}
+}
+
+
+void
+compute_track_set_posterior_probability_components(virtual_scan_track_set_t *track_set)
 {
 	if (track_set == NULL)
 		return;
@@ -1250,18 +1282,7 @@ compute_posterior_probability_components(virtual_scan_track_set_t *track_set)
 	for (int i = 0; i < track_set->size; i++)
 	{
 		virtual_scan_track_t *track = track_set->tracks[i];
-		for (int h = 0; h < track->size; h++)
-		{
-			virtual_scan_box_model_hypothesis_t *box_model_hypothesis = &(track->box_model_hypothesis[h]);
-
-			carmen_point_t *Zs_out, *Zs_in, *Zd; int Zs_out_size, Zs_in_size, Zd_size;
-			get_Zs_and_Zd_of_hypothesis(Zs_out, Zs_out_size, Zs_in, Zs_in_size, Zd, Zd_size, box_model_hypothesis);
-
-			box_model_hypothesis->dn = PM1(Zd, Zd_size, box_model_hypothesis);
-			box_model_hypothesis->c2 = PM2(Zs_out, Zs_out_size, box_model_hypothesis);
-			box_model_hypothesis->c3 = 0.0;
-			free(Zs_out); free(Zs_in); free(Zd);
-		}
+		compute_track_posterior_probability_components(track);
 	}
 }
 
@@ -1545,8 +1566,9 @@ propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood
 				virtual_scan_track_t *new_track = track_birth(neighborhood_graph);
 				if (new_track != NULL)
 				{
-					track_set = add_track(track_set, new_track);
 					track_extension(new_track, neighborhood_graph);
+					compute_track_posterior_probability_components(new_track);
+					track_set = add_track(track_set, new_track);
 				}
 			}
 			break;
@@ -1582,7 +1604,7 @@ propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood
 //			break;
 	}
 
-	compute_posterior_probability_components(track_set);
+	compute_track_set_posterior_probability_components(track_set);
 
 	return (track_set);
 }
