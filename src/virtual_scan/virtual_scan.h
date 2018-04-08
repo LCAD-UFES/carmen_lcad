@@ -30,8 +30,9 @@
 #define	POINT_BEFORE_SEGMENT		2
 #define	POINT_AFTER_SEGMENT			3
 
-#define PEDESTRAIN_SIZE	0.5 // Pedestrian approximate size (from the top) in meters
-#define	L_SMALL_SEGMENT_AS_A_PROPORTION_OF_THE_LARGE	0.3
+#define DISTANCE_BETWEEN_SEGMENTS	1.0
+#define	L_SMALL_SEGMENT_AS_A_PROPORTION_OF_THE_LARGE	0.13
+#define PEDESTRIAN_SIZE				0.6 // Pedestrian approximate size (from the top) in meters
 
 #define	MCMC_MAX_ITERATIONS	300
 
@@ -69,13 +70,11 @@ typedef struct
 {
 	carmen_point_t first_point;
 	carmen_point_t last_point;
-	double maximum_distance_to_line_segment;
 	carmen_point_t farthest_point;
 	double width;
 	double length;
 	int segment_class;
 	carmen_point_t centroid;
-	//	double average_distance_to_line_segment;
 } virtual_scan_segment_features_t;
 
 
