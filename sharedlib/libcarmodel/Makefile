@@ -1,8 +1,7 @@
 include $(CARMEN_HOME)/src/Makefile.conf
 
 LINK = g++
-CFLAGS += -pg
-CXXFLAGS += -std=c++0x -pg
+CXXFLAGS += -std=c++0x
 
 MODULE_NAME = CAR MODEL
 MODULE_COMMENT = Car Neural and Ackeman Motion Model

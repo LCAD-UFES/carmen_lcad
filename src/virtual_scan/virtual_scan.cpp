@@ -9,8 +9,10 @@
 #include <string.h>
 #include <cmath>
 #include <carmen/moving_objects_messages.h>
+#include <carmen/velodyne_interface.h>
+#include <dbscan.h>
 #include "virtual_scan.h"
-
+#include <vector>
 
 extern carmen_localize_ackerman_map_t localize_map;
 extern double x_origin;
@@ -31,10 +33,11 @@ compare_angles(const void *a, const void *b)
 
 	// The contents of the array are being sorted in ascending order
 	if (arg1->theta < arg2->theta)
-		return -1;
+		return (-1);
 	if (arg1->theta > arg2->theta)
-		return 1;
-	return 0;
+		return (1);
+
+	return (0);
 }
 
 
@@ -44,7 +47,11 @@ sort_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan) // Verify if
 	virtual_scan_extended_t *extended_virtual_scan = (virtual_scan_extended_t *) malloc(sizeof(virtual_scan_extended_t));
 	extended_virtual_scan->points = (carmen_point_t *) malloc(virtual_scan->num_points * sizeof(carmen_point_t));
 	extended_virtual_scan->num_points = virtual_scan->num_points;
-	extended_virtual_scan->globalpos = virtual_scan->globalpos;
+
+	carmen_pose_3D_t world_pose = {{virtual_scan->globalpos.x, virtual_scan->globalpos.y, 0.0}, {0.0, 0.0, virtual_scan->globalpos.theta}};
+	world_pose = get_world_pose_with_velodyne_offset(world_pose);
+	extended_virtual_scan->velodyne_pos = {world_pose.position.x, world_pose.position.y, world_pose.orientation.yaw};
+
 	extended_virtual_scan->timestamp = virtual_scan->timestamp;
 	for (int i = 0; i < virtual_scan->num_points; i++)
 	{
@@ -54,7 +61,7 @@ sort_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan) // Verify if
 		theta = carmen_normalize_theta(theta - virtual_scan->globalpos.theta);
 		extended_virtual_scan->points[i].theta = theta;
 	}
-//	qsort((void *) (extended_virtual_scan->points), (size_t) extended_virtual_scan->num_points, sizeof(carmen_point_t), compare_angles);
+	qsort((void *) (extended_virtual_scan->points), (size_t) extended_virtual_scan->num_points, sizeof(carmen_point_t), compare_angles);
 
 	return (extended_virtual_scan);
 }
@@ -102,7 +109,7 @@ filter_virtual_scan(virtual_scan_extended_t *virtual_scan_extended)
 
 
 virtual_scan_segment_classes_t *
-segment_virtual_scan(virtual_scan_extended_t *extended_virtual_scan)
+segment_virtual_scan_old(virtual_scan_extended_t *extended_virtual_scan)
 {
 	int segment_id = 0;
 	int begin_segment = 0;
@@ -112,6 +119,8 @@ segment_virtual_scan(virtual_scan_extended_t *extended_virtual_scan)
 	virtual_scan_segments->num_segments = 0;
 	virtual_scan_segments->timestamp = extended_virtual_scan->timestamp;
 	virtual_scan_segments->segment = NULL;
+
+	int p_in_c = 0;
 	for (int i = 1; i < extended_virtual_scan->num_points; i++)
 	{
 		if ((DIST2D(extended_virtual_scan->points[i],  extended_virtual_scan->points[i - 1]) > DISTANCE_BETWEEN_SEGMENTS) ||
@@ -127,12 +136,63 @@ segment_virtual_scan(virtual_scan_extended_t *extended_virtual_scan)
 			virtual_scan_segments->segment[segment_id].points = (carmen_point_t *) malloc(sizeof(carmen_point_t) * virtual_scan_segments->segment[segment_id].num_points);
 			memcpy((void *) virtual_scan_segments->segment[segment_id].points, (void *) &(extended_virtual_scan->points[begin_segment]), sizeof(carmen_point_t) * virtual_scan_segments->segment[segment_id].num_points);
 
+			p_in_c += virtual_scan_segments->segment[segment_id].num_points;
+
 			begin_segment = i;
 			segment_id++;
 			virtual_scan_segments->num_segments++;
 		}
 	}
+//	printf("points %d, clusters %d, points in clusters %d\n", extended_virtual_scan->num_points, virtual_scan_segments->num_segments, p_in_c);
 
+	return (virtual_scan_segments);
+}
+
+
+dbscan::Cluster
+generate_cluster_with_all_points(carmen_point_t *points, int size)
+{
+	dbscan::Cluster cluster;
+	for (int i = 0; i < size; i++)
+	{
+		carmen_point_t point;
+		point.x = points[i].x;
+		point.y = points[i].y;
+		cluster.push_back(point);
+	}
+	return (cluster);
+}
+
+
+virtual_scan_segment_classes_t *
+segment_virtual_scan(virtual_scan_extended_t *extended_virtual_scan)
+{
+	virtual_scan_segment_classes_t *virtual_scan_segments = (virtual_scan_segment_classes_t *) malloc(sizeof(virtual_scan_segment_classes_t));
+	virtual_scan_segments->segment = NULL;
+	virtual_scan_segments->num_segments = 0;
+	virtual_scan_segments->timestamp = extended_virtual_scan->timestamp;
+
+	dbscan::Cluster single_cluster = generate_cluster_with_all_points(extended_virtual_scan->points, extended_virtual_scan->num_points);
+	dbscan::Clusters clusters = dbscan::dbscan(PEDESTRIAN_RADIUS * PEDESTRIAN_RADIUS, 1, single_cluster);
+
+	int p_in_c = 0;
+	if (clusters.size() > 0)
+	{
+		virtual_scan_segments->segment = (virtual_scan_segment_t *) malloc(sizeof(virtual_scan_segment_t) * clusters.size());
+		virtual_scan_segments->num_segments = clusters.size();
+
+		for (unsigned int segment_id = 0; segment_id < clusters.size(); segment_id++)
+		{
+			dbscan::Cluster cluster = clusters[segment_id];
+			p_in_c += cluster.size();
+			virtual_scan_segments->segment[segment_id].points = (carmen_point_t *) malloc(sizeof(carmen_point_t) * cluster.size());
+			virtual_scan_segments->segment[segment_id].num_points = cluster.size();
+			for (unsigned int i = 0; i < cluster.size(); i++)
+				virtual_scan_segments->segment[segment_id].points[i] = cluster[i];
+		}
+	}
+
+//	printf("points %d, clusters %ld, points in clusters %d\n", extended_virtual_scan->num_points, clusters.size(), p_in_c);
 	return (virtual_scan_segments);
 }
 
@@ -152,7 +212,7 @@ distance_from_point_to_line_segment_vw(int *point_in_trajectory_is, carmen_point
 	double l2, t;
 
 	l2 = dist2(v, w); // i.e. |w-v|^2 // NAO TROQUE POR carmen_ackerman_traj_distance2(&v, &w) pois nao sei se ee a mesma coisa.
-	if (sqrt(l2) < PEDESTRIAN_SIZE)	  // v ~== w case // @@@ Alberto: Checar isso
+	if (sqrt(l2) < PEDESTRIAN_RADIUS)	  // v ~== w case // @@@ Alberto: Checar isso
 	{
 		*point_in_trajectory_is = SEGMENT_TOO_SHORT;
 		return (v);
@@ -260,7 +320,7 @@ segment_is_mass_point(virtual_scan_segment_t segment, carmen_point_t centroid)
 			max_distance_to_centroid = distance;
 	}
 
-	if (max_distance_to_centroid < (PEDESTRIAN_SIZE / 2.0))
+	if (max_distance_to_centroid < (PEDESTRIAN_RADIUS / 2.0))
 		return (true);
 	else
 		return (false);
@@ -322,7 +382,7 @@ classify_segments(virtual_scan_segment_classes_t *virtual_scan_segments)
 	virtual_scan_segment_classes->segment_features = (virtual_scan_segment_features_t *) malloc(sizeof(virtual_scan_segment_features_t) *
 			virtual_scan_segment_classes->num_segments);
 
-	double width = PEDESTRIAN_SIZE, length = PEDESTRIAN_SIZE;
+	double width = PEDESTRIAN_RADIUS, length = PEDESTRIAN_RADIUS;
 	for (int i = 0; i < virtual_scan_segments->num_segments; i++)
 	{
 		virtual_scan_segment_t segment = virtual_scan_segment_classes->segment[i];
@@ -1294,7 +1354,7 @@ line_to_line_intersection(double x1, double y1, double x2, double y2,
 
 
 int
-line_to_point_crossed_rectangle(carmen_point_t point, virtual_scan_box_model_t hypothesis, carmen_point_t origin)
+line_to_point_crossed_rectangle(carmen_point_t origin, carmen_point_t point, virtual_scan_box_model_t hypothesis)
 {
 	double x1, y1, x2, y2, x3, y3, x4, y4;
 
@@ -1334,7 +1394,7 @@ PM2(carmen_point_t *Zs, int Zs_size, virtual_scan_box_model_hypothesis_t *box_mo
 {
 	double sum = 0.0;
 	for (int i = 0; i < Zs_size; i++)
-		sum += (double) line_to_point_crossed_rectangle(Zs[i], box_model_hypothesis->hypothesis, g_virtual_scan_extended[box_model_hypothesis->zi]->globalpos);
+		sum += (double) line_to_point_crossed_rectangle(g_virtual_scan_extended[box_model_hypothesis->zi]->velodyne_pos, Zs[i], box_model_hypothesis->hypothesis);
 
 	return (sum);
 }

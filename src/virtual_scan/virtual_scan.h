@@ -31,8 +31,8 @@
 #define	POINT_AFTER_SEGMENT			3
 
 #define DISTANCE_BETWEEN_SEGMENTS	1.0
-#define	L_SMALL_SEGMENT_AS_A_PROPORTION_OF_THE_LARGE	0.13
-#define PEDESTRIAN_SIZE				0.6 // Pedestrian approximate size (from the top) in meters
+#define	L_SMALL_SEGMENT_AS_A_PROPORTION_OF_THE_LARGE	0.15
+#define PEDESTRIAN_RADIUS				0.5 // Pedestrian approximate size (from the top) in meters
 
 #define	MCMC_MAX_ITERATIONS	300
 
@@ -46,7 +46,7 @@ typedef struct
 {
 	int num_points;
 	carmen_point_t *points;
-	carmen_point_t globalpos;
+	carmen_point_t velodyne_pos;
 	double timestamp;
 } virtual_scan_extended_t;
 

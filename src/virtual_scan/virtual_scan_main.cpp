@@ -6,6 +6,7 @@
 #include <carmen/grid_mapping.h>
 #include <carmen/moving_objects_messages.h>
 #include <carmen/moving_objects_interface.h>
+#include <carmen/velodyne_interface.h>
 
 #include "virtual_scan.h"
 
@@ -272,6 +273,8 @@ main(int argc, char **argv)
 
 	read_parameters(argc, argv);
 	carmen_virtual_scan_define_messages();
+
+	get_world_pose_with_velodyne_offset_initialize(argc, argv);
 
 	memset(g_virtual_scan_extended, 0, sizeof(virtual_scan_extended_t *) * NUMBER_OF_FRAMES_T);
 	memset(g_virtual_scan_segment_classes, 0, sizeof(virtual_scan_segment_classes_t *) * NUMBER_OF_FRAMES_T);
