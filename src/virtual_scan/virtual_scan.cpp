@@ -473,6 +473,9 @@ append_pedestrian_to_box_models(virtual_scan_box_models_t *box_models, virtual_s
 	box->c = PEDESTRIAN;
 	box->x = centroid.x;
 	box->y = centroid.y;
+	box->width = 2.0 * PEDESTRIAN_RADIUS;
+	box->length = 2.0 * PEDESTRIAN_RADIUS;
+	box->theta = 0.0;
 }
 
 
@@ -512,13 +515,35 @@ append_l_shaped_objects_to_box_models_old(virtual_scan_box_models_t *box_models,
 
 
 void
-append_object(virtual_scan_box_models_t *box_models, virtual_scan_segment_t box_points, carmen_point_t farthest_point,
+append_l_object(virtual_scan_box_models_t *box_models, virtual_scan_segment_t box_points, carmen_point_t farthest_point,
 		int category, virtual_scan_category_t categories[], double theta, double theta2)
 {
 	carmen_position_t p1 = {farthest_point.x + categories[category].length * cos(theta),
 							farthest_point.y + categories[category].length * sin(theta)};
 	carmen_position_t p2 = {farthest_point.x + categories[category].width * cos(theta2),
 							farthest_point.y + categories[category].width * sin(theta2)};
+	carmen_position_t length_center_position;
+	length_center_position.x = (p1.x + p2.x) / 2.0;
+	length_center_position.y = (p1.y + p2.y) / 2.0;
+
+	virtual_scan_box_model_t *box = virtual_scan_append_box(box_models, box_points);
+	box->c = categories[category].category;
+	box->width = categories[category].width;
+	box->length = categories[category].length;
+	box->x = length_center_position.x;
+	box->y = length_center_position.y;
+	box->theta = theta;
+}
+
+
+void
+append_i_object(virtual_scan_box_models_t *box_models, virtual_scan_segment_t box_points, carmen_point_t first_point,
+		int category, virtual_scan_category_t categories[], double theta, double theta2)
+{
+	carmen_position_t p1 = {first_point.x + categories[category].length * cos(theta),
+							first_point.y + categories[category].length * sin(theta)};
+	carmen_position_t p2 = {first_point.x + categories[category].width * cos(theta2),
+							first_point.y + categories[category].width * sin(theta2)};
 	carmen_position_t length_center_position;
 	length_center_position.x = (p1.x + p2.x) / 2.0;
 	length_center_position.y = (p1.y + p2.y) / 2.0;
@@ -551,7 +576,7 @@ append_l_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, vir
 		{
 			theta = atan2(first_point.y - farthest_point.y, first_point.x - farthest_point.x);
 			theta2 = atan2(last_point.y - farthest_point.y, last_point.x - farthest_point.x);
-			append_object(box_models, box_points, farthest_point, category, categories, theta, theta2);
+			append_l_object(box_models, box_points, farthest_point, category, categories, theta, theta2);
 		}
 
 		l = DIST2D(farthest_point, last_point);
@@ -561,14 +586,14 @@ append_l_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, vir
 		{
 			theta = atan2(last_point.y - farthest_point.y, last_point.x - farthest_point.x);
 			theta2 = atan2(first_point.y - farthest_point.y, first_point.x - farthest_point.x);
-			append_object(box_models, box_points, farthest_point, category, categories, theta, theta2);
+			append_l_object(box_models, box_points, farthest_point, category, categories, theta, theta2);
 		}
 	}
 }
 
 
 void
-append_i_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, virtual_scan_segment_t box_points,
+append_i_shaped_objects_to_box_models_old(virtual_scan_box_models_t *box_models, virtual_scan_segment_t box_points,
 		carmen_point_t first_point, carmen_point_t last_point, virtual_scan_category_t categories[])
 {
 	for (int j = 0; j < 3; j++)
@@ -636,6 +661,37 @@ append_i_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, vir
 }
 
 
+void
+append_i_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, virtual_scan_segment_t box_points,
+		virtual_scan_segment_features_t segment_features, virtual_scan_category_t categories[])
+{
+	carmen_point_t first_point = segment_features.first_point;
+	carmen_point_t last_point = segment_features.last_point;
+	for (int category = 0; category < 3; category++)
+	{
+		double theta, theta2, l;
+
+		l = DIST2D(first_point, last_point);
+		if (categories[category].length > l)
+		{
+			theta = atan2(last_point.y - first_point.y, last_point.x - first_point.x);
+			theta2 = carmen_normalize_theta(theta + M_PI / 2.0);
+			append_i_object(box_models, box_points, first_point, category, categories, theta, theta2);
+
+			theta2 = carmen_normalize_theta(theta - M_PI / 2.0);
+			append_i_object(box_models, box_points, first_point, category, categories, theta, theta2);
+
+			theta = atan2(first_point.y - last_point.y, first_point.x - last_point.x);
+			theta2 = carmen_normalize_theta(theta + M_PI / 2.0);
+			append_i_object(box_models, box_points, last_point, category, categories, theta, theta2);
+
+			theta2 = carmen_normalize_theta(theta - M_PI / 2.0);
+			append_i_object(box_models, box_points, last_point, category, categories, theta, theta2);
+		}
+	}
+}
+
+
 virtual_scan_box_model_hypotheses_t *
 virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment_classes)
 {
@@ -650,12 +706,12 @@ virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment
 		virtual_scan_segment_t box_points = virtual_scan_segment_classes->segment[i];
 
 		virtual_scan_box_models_t *box_models = virtual_scan_get_empty_box_models(box_model_hypotheses);
-//		if (segment_class == MASS_POINT)
-//			append_pedestrian_to_box_models(box_models, box_points, centroid);
+		if (segment_class == MASS_POINT)
+			append_pedestrian_to_box_models(box_models, box_points, virtual_scan_segment_classes->segment_features[i].centroid);
 		if (segment_class == L_SHAPED) // L-shape segments segments will generate bus and car hypotheses
 			append_l_shaped_objects_to_box_models(box_models, box_points, virtual_scan_segment_classes->segment_features[i], categories);
-//		else if (segment_class == I_SHAPED) // I-shape segments segments will generate bus, car and bike hypotheses
-//			append_i_shaped_objects_to_box_models(box_models, box_points, first_point, last_point, categories);
+		else if (segment_class == I_SHAPED) // I-shape segments segments will generate bus, car and bike hypotheses
+			append_i_shaped_objects_to_box_models(box_models, box_points, virtual_scan_segment_classes->segment_features[i], categories);
 
 		if (!is_last_box_model_hypotheses_empty(box_model_hypotheses))
 			box_model_hypotheses->last_box_model_hypotheses++;
