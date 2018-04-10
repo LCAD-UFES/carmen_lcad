@@ -11,7 +11,7 @@ fc = tf.contrib.layers.fully_connected
 class Policy:
     def __init__(self, input_shape, n_outputs, hidden_size, learning_rate, nonlin,
                  single_thread, n_hidden_layers=1, continuous_action_max=1.0, continuous_std=0.1,
-                 load_from_file=None):
+                 load_from_file=None, use_critic=False):
 
         if nonlin == 'relu':
             nonlin_f = tf.nn.relu
@@ -26,6 +26,7 @@ class Policy:
         for key, value in self.config.items():
             self.config[key] = float(value)
 
+        self.use_critic = use_critic
         self.n_outputs = n_outputs
         self.learning_rate = learning_rate
         self.continuous_std = continuous_std
@@ -41,12 +42,19 @@ class Policy:
         for _ in range(n_hidden_layers - 1):
             h = fc(h, hidden_size, activation_fn=nonlin_f)
 
-        self.policy_mean = fc(h, n_outputs, activation_fn=None) * continuous_action_max
+        self.policy_mean = fc(h, n_outputs, activation_fn=None)
+
+        h = fc(self.state, hidden_size, activation_fn=nonlin_f)
+
+        if self.use_critic:
+            for _ in range(n_hidden_layers - 1):
+                h = fc(h, hidden_size, activation_fn=nonlin_f)
+    
+            self.critic = fc(h, 1, activation_fn=None)
         
-        noise = tf.random_normal(shape=tf.shape(self.policy_mean))
-        
-        self.base_policy = self.policy_mean + noise * continuous_std
-        self.policy = tf.clip_by_value(self.base_policy, -continuous_action_max, continuous_action_max)
+        # noise = tf.random_normal(shape=tf.shape(self.policy_mean))
+        # self.base_policy = self.policy_mean + noise * continuous_std
+        # self.policy = tf.clip_by_value(self.base_policy, -continuous_action_max, continuous_action_max)
 
         self.create_train_infrastructure()
 
@@ -115,15 +123,16 @@ class Policy:
              goal_v / self.config['max_v'], 
              goal_phi / self.config['max_phi']]
         
-        rddfs = self.subsample_rddf(rddfs, pose.x, pose.y, pose.th)
         readings = self.subsample_laser(readings)
 
         r = [reading / self.config['max_range'] for reading in readings]
         
+        rddf_poses = []
+        """
+        rddfs = self.subsample_rddf(rddfs, pose.x, pose.y, pose.th)
         n = int(len(rddfs) / 3)
         rddf_poses = []
         
-        """
         for i in range(n):
             p = i * 3
             rddf_pose = Transform2d(x = rddfs[p] - self.config['x_offset'], 
@@ -148,13 +157,14 @@ class Policy:
 
     def forward(self, state):
         feed = {self.state: [state]}
-        p = self.sess.run([self.policy], feed_dict=feed)
+        p = self.sess.run([self.policy_mean], feed_dict=feed)
         
         v, phi = p[0][0][0], p[0][0][1]
-        # v, phi = np.clip(p[0][0][0], -1., 1.), np.clip(p[0][0][1], -1., 1.)
+        v, phi = np.clip(v, 0., 1.), np.clip(phi, -1., 1.)
         
         v *= self.config['max_v']
         phi *= self.config['max_phi']
+        
         return v, phi
 
     def create_train_infrastructure(self):
@@ -164,20 +174,28 @@ class Policy:
         mult = 1.0 / (self.continuous_std * np.sqrt(2.0 * np.pi))
         diff = self.actions - self.policy_mean
         t = -0.5 * (tf.reduce_sum(tf.square(diff), axis=1) / (self.continuous_std ** 2))
-        prob = mult * tf.exp(t) + 1e-5
-
-        log_prob = tf.log(prob)
+        prob = mult * tf.exp(t)
+        log_prob = tf.log(prob + 1e-5)
 
         self.returns = tf.placeholder(tf.float32, shape=[None])
         advantage = self.returns
+        
+        if self.use_critic:
+            advantage -= self.critic
+            self.critic_loss = tf.reduce_mean((self.returns - self.critic) ** 2)
+            self.critic_trainer = tf.train.AdamOptimizer(self.learning_rate * 10.).minimize(self.critic_loss)
 
         self.pg_loss = -tf.reduce_sum(log_prob * advantage)
         self.pg_trainer = tf.train.AdamOptimizer(self.learning_rate).minimize(self.pg_loss)
 
         # loss and optimizer to train with supervised learning
         self.immitation_loss = tf.reduce_mean(tf.reduce_sum((self.actions - self.policy_mean) ** 2, axis=1))
-        self.immitation_trainer = tf.train.AdamOptimizer(self.learning_rate).minimize(self.immitation_loss)
-        
+
+        vars = tf.trainable_variables() 
+        l2loss = tf.add_n([ tf.nn.l2_loss(v) for v in vars if 'bias' not in v.name]) * 0.001
+        train_loss = self.immitation_loss + l2loss
+
+        self.immitation_trainer = tf.train.AdamOptimizer(self.learning_rate).minimize(train_loss)
 
     def train(self, episode):
         returns = [] 
@@ -185,7 +203,8 @@ class Policy:
         for i in range(len(episode['rewards'])):
             r = 0.
             for j in range(i, len(episode['rewards'])):
-                r += 0.95 ** (j - i) * episode['rewards'][j]
+                r += 0.9 ** (j - i) * episode['rewards'][j]
+                # r += episode['rewards'][j]
             returns.append(r)
 
         feed = dict()
@@ -193,13 +212,26 @@ class Policy:
         feed[self.returns] = returns
         feed[self.actions] = episode['actions']
 
-        self.sess.run([self.pg_trainer], feed_dict=feed)
+        loss, _ = self.sess.run([self.pg_loss, self.pg_trainer], feed_dict=feed)
+        
+        if self.use_critic:
+            self.sess.run([self.critic_trainer], feed_dict=feed)
+        
+        return loss
 
     
     def train_immitation_learning_episode(self, episode, n_batches, batch_size):
-        self.replay_memory.append(episode)
+        if len(episode) > 10:
+            self.replay_memory.append(episode)
+        
+        if len(self.replay_memory) <= 0:
+            return
+        
+        if len(self.replay_memory) > 20:
+            self.replay_memory.pop(0)
+
         total_loss = 0.
-                
+
         for i in range(n_batches):
             batch_xs = []
             batch_ys = []
@@ -218,11 +250,13 @@ class Policy:
             loss, _ = self.sess.run([self.immitation_loss, self.immitation_trainer], 
                                     feed_dict={self.state: batch_xs, 
                                                self.actions: batch_ys})
+
+            if i % 100 == 0:
+                print("Trained batch", i, "of", n_batches, "Percentual: %.2f" % (100 * (i / n_batches)), 'loss:', loss)
             
             total_loss += loss
 
-        sys.stdout.flush()
-        return total_loss
+        return total_loss / n_batches
 
 
     def train_immitation_learning(self, dataset_path, n_epochs, n_batches_by_epoch, batch_size, checkpoint_path=None):

@@ -45,6 +45,12 @@ carmen_pose_3D_t
 get_velodyne_pose_in_relation_to_car(int argc, char** argv);
 
 void
+get_world_pose_with_velodyne_offset_initialize(int argc, char **argv);
+
+carmen_pose_3D_t
+get_world_pose_with_velodyne_offset(carmen_pose_3D_t world_pose);
+
+void
 carmen_velodyne_variable_scan_update_points(carmen_velodyne_variable_scan_message *message,
 		int vertical_resolution, spherical_point_cloud *points, unsigned char *intensity,
 		int *ray_order, double *vertical_correction, float range_max, double timestamp);
