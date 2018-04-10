@@ -36,7 +36,8 @@
 
 #define	MCMC_MAX_ITERATIONS	300
 
-#define GAMMA	0.75
+//#define GAMMA	0.75
+#define GAMMA	1.0
 #define VMAX	(120.0 / 3.6)
 
 #define NUMBER_OF_FRAMES_T 10
@@ -151,7 +152,6 @@ typedef struct
 	int size;
 	virtual_scan_box_model_hypothesis_t **box_model_hypothesis;
 	virtual_scan_box_model_hypothesis_edges_t **box_model_hypothesis_edges;
-	bool *vertex_selected;
 
 	double *last_frames_timetamps;
 	int number_of_frames_filled;
@@ -169,6 +169,7 @@ typedef struct
 {
 	int size;
 	virtual_scan_track_t **tracks;
+	bool *vertex_selected;
 } virtual_scan_track_set_t;
 
 
