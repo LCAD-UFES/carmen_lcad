@@ -275,17 +275,220 @@ show_detections(cv::Mat rgb_image, vector<vector<carmen_velodyne_points_in_cam_w
 
     }
 
-    cv::Mat resized_image(cv::Size(640, 480 - 480 * hood_removal_percentage), CV_8UC3);
-    cv::resize(rgb_image, resized_image, resized_image.size());
+    //cv::Mat resized_image(cv::Size(640, 480 - 480 * hood_removal_percentage), CV_8UC3);
+    //cv::resize(rgb_image, resized_image, resized_image.size());
 
-    cv::imshow("Neural car detector", resized_image);
+    cv::imshow("Neural Object Detector", rgb_image);
     cv::waitKey(1);
 
-    resized_image.release();
+    //resized_image.release();
 }
 
 #define crop_x 0.0
 #define crop_y 1.0
+
+void
+image_handler_wide(carmen_bumblebee_basic_stereoimage_message *image_msg)
+{
+	double hood_removal_percentage = 0.2;
+	carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
+	vector<carmen_tracked_cluster_t> clusters;
+	vector<bounding_box> bouding_boxes_list;
+
+    cv::Mat image = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3);
+
+    double start_time, fps;
+
+    start_time = carmen_get_time();
+
+    if (camera_side == 0)
+        memcpy(image.data, image_msg->raw_left, image_msg->image_size * sizeof(char));
+    else
+        memcpy(image.data, image_msg->raw_right, image_msg->image_size * sizeof(char));
+
+    //cv::Rect myROI(280, 70, 720, 480);
+    cv::Rect roi_1(160, 134, 480, 416);
+    cv::Rect roi_2(640, 134, 480, 416);
+    cv::Mat src_image_1 = image(roi_1);
+    cv::Mat src_image_2 = image(roi_2);
+
+    if (velodyne_vector.size() > 0)
+        velodyne_sync_with_cam = find_velodyne_most_sync_with_cam(image_msg->timestamp); // TODO não faz sentido! Tem que sempre pegar a ultima msg do velodyne
+    else
+        return;
+
+    vector<bbox_t> predictions = darknet->detect(src_image_1, 0.2);  // Arguments (img, threshold)
+    vector<bbox_t> predictions_2 = darknet->detect(src_image_2, 0.2);
+
+    //predictions = darknet->tracking(predictions); // TODO DEBUG Coment this line if object tracking is not necessary
+
+    for (const auto &box : predictions) // Covert Darknet bounding box to neural_object_deddtector bounding box
+    {
+        bounding_box bbox;
+
+        bbox.pt1.x = box.x;
+        bbox.pt1.y = box.y;
+        bbox.pt2.x = box.x + box.w;
+        bbox.pt2.y = box.y + box.h;
+
+        bouding_boxes_list.push_back(bbox);
+    }
+
+    for (const auto &box : predictions_2) // Covert Darknet bounding box to neural_object_deddtector bounding box
+    {
+    	bounding_box bbox_2;
+
+    	bbox_2.pt1.x = box.x + 480;       // Sum 480 to translate to the second image
+    	bbox_2.pt1.y = box.y;
+    	bbox_2.pt2.x = box.x + box.w + 480;
+    	bbox_2.pt2.y = box.y + box.h;
+
+    	bouding_boxes_list.push_back(bbox_2);
+    }
+
+    predictions.insert(predictions.end(), predictions_2.begin(), predictions_2.end()); // The viewer uses this information
+
+    // Removes the ground, Removes points outside cameras field of view and Returns the points that are obstacles and are inside bboxes
+    vector<vector<carmen_velodyne_points_in_cam_with_obstacle_t>> laser_points_in_camera_box_list = velodyne_points_in_boxes(bouding_boxes_list,
+    		&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
+
+    // Removes the ground, Removes points outside cameras field of view and Returns the points that reach obstacles
+    //vector<velodyne_camera_points> points = velodyne_camera_calibration_remove_points_out_of_FOV_and_ground(
+    //		&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
+
+    // ONLY Convert from sferical to cartesian cordinates
+    vector< vector<carmen_vector_3D_t>> cluster_list = get_cluster_list(laser_points_in_camera_box_list);
+
+    // Cluster points and get biggest
+    filter_points_in_clusters(&cluster_list);
+
+    for (int i = 0; i < cluster_list.size(); i++)
+    {
+        carmen_moving_object_type tp = find_cluster_type_by_obj_id(obj_names, predictions.at(i).obj_id);
+
+        int cluster_id = predictions.at(i).track_id;
+
+        carmen_tracked_cluster_t clust;
+
+        clust.points = cluster_list.at(i);
+
+        clust.orientation = globalpos.theta;  //TODO: Calcular velocidade e orientacao corretas (provavelmente usando um tracker)
+        clust.linear_velocity = 0.0;
+        clust.track_id = cluster_id;
+        clust.last_detection_timestamp = image_msg->timestamp;
+        clust.cluster_type = tp;
+
+        clusters.push_back(clust);
+    }
+
+    build_moving_objects_message(clusters);
+
+    publish_moving_objects_message(image_msg->timestamp);
+
+    fps = 1.0 / (carmen_get_time() - start_time);
+
+    cv::Mat rgb_image;
+    hconcat(src_image_1, src_image_2, rgb_image);
+    cv::cvtColor(rgb_image, rgb_image, cv::COLOR_RGB2BGR);
+
+#ifdef SHOW_DETECTIONS
+    show_detections(rgb_image, laser_points_in_camera_box_list, predictions, bouding_boxes_list, hood_removal_percentage, fps);
+#endif
+}
+
+
+void
+image_handler_new(carmen_bumblebee_basic_stereoimage_message *image_msg)
+{
+	double hood_removal_percentage = 0.2;
+	carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
+	vector<carmen_tracked_cluster_t> clusters;
+	vector<bounding_box> bouding_boxes_list;
+
+    cv::Mat image = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3);
+
+    double start_time, fps;
+
+    start_time = carmen_get_time();
+
+    if (camera_side == 0)
+        memcpy(image.data, image_msg->raw_left, image_msg->image_size * sizeof(char));
+    else
+        memcpy(image.data, image_msg->raw_right, image_msg->image_size * sizeof(char));
+
+    cv::Rect myROI(280, 70, 720, 480);
+    cv::Mat src_image = image(myROI);
+    cv::Mat rgb_image;
+
+    if (velodyne_vector.size() > 0)
+        velodyne_sync_with_cam = find_velodyne_most_sync_with_cam(image_msg->timestamp); // TODO não faz sentido! Tem que sempre pegar a ultima msg do velodyne
+    else
+        return;
+
+    cv::cvtColor(src_image, rgb_image, cv::COLOR_RGB2BGR);
+
+    vector<bbox_t> predictions = darknet->detect(src_image, 0.2);  // Arguments (img, threshold)
+
+    predictions = darknet->tracking(predictions); // Coment this line if object tracking is not necessary
+
+    for (const auto &box : predictions) // Covert Darknet bounding box to neural_object_deddtector bounding box
+    {
+        bounding_box bbox;
+
+        bbox.pt1.x = box.x;
+        bbox.pt1.y = box.y;
+        bbox.pt2.x = box.x + box.w;
+        bbox.pt2.y = box.y + box.h;
+
+        bouding_boxes_list.push_back(bbox);
+    }
+
+    // Removes the ground, Removes points outside cameras field of view and Returns the points that are obstacles and are inside bboxes
+    vector<vector<carmen_velodyne_points_in_cam_with_obstacle_t>> laser_points_in_camera_box_list = velodyne_points_in_boxes(bouding_boxes_list,
+    		&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
+
+    // Removes the ground, Removes points outside cameras field of view and Returns the points that reach obstacles
+    //vector<velodyne_camera_points> points = velodyne_camera_calibration_remove_points_out_of_FOV_and_ground(
+    //		&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
+
+    // ONLY Convert from sferical to cartesian cordinates
+    vector< vector<carmen_vector_3D_t>> cluster_list = get_cluster_list(laser_points_in_camera_box_list);
+
+    // Cluster points and get biggest
+    filter_points_in_clusters(&cluster_list);
+
+    for (int i = 0; i < cluster_list.size(); i++)
+    {
+        carmen_moving_object_type tp = find_cluster_type_by_obj_id(obj_names, predictions.at(i).obj_id);
+
+        int cluster_id = predictions.at(i).track_id;
+
+        carmen_tracked_cluster_t clust;
+
+        clust.points = cluster_list.at(i);
+
+        clust.orientation = globalpos.theta;  //TODO: Calcular velocidade e orientacao corretas (provavelmente usando um tracker)
+        clust.linear_velocity = 0.0;
+        clust.track_id = cluster_id;
+        clust.last_detection_timestamp = image_msg->timestamp;
+        clust.cluster_type = tp;
+
+        clusters.push_back(clust);
+    }
+
+    build_moving_objects_message(clusters);
+
+    publish_moving_objects_message(image_msg->timestamp);
+
+    fps = 1.0 / (carmen_get_time() - start_time);
+
+
+#ifdef SHOW_DETECTIONS
+    show_detections(rgb_image, laser_points_in_camera_box_list, predictions, bouding_boxes_list,
+    		hood_removal_percentage, fps);
+#endif
+}
+
 
 void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
