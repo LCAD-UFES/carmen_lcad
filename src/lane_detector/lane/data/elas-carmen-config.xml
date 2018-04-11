@@ -1,0 +1,11 @@
+<config>
+  <verbose>true</verbose>
+  <display_images>true</display_images>
+  <particle_filter num="500"></particle_filter>
+  <dataset id="VIX_S05" name="VIX_S05" path="D:/projects/masters-degree/code/python/src/VIX_S05/images/">
+	  <frame_sequence start="0" end="900"></frame_sequence>
+	  <frame_size width="640" height="480"></frame_size>
+	  <region_of_interest x="0" y="290" width="640" height="150"></region_of_interest>
+		<ipm_points top_left="299" top_right="365" bottom_right="550" bottom_left="97"></ipm_points>
+  </dataset>
+</config>
