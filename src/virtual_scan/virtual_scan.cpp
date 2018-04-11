@@ -577,7 +577,7 @@ append_i_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, vir
 {
 	carmen_point_t first_point = segment_features.first_point;
 	carmen_point_t last_point = segment_features.last_point;
-	for (int category = 0; category < 3; category++)
+	for (int category = 1; category < 2; category++)
 	{
 		double theta, theta2, l;
 
@@ -1501,11 +1501,17 @@ line_to_point_crossed_rectangle(carmen_point_t origin, carmen_point_t point, vir
 
 
 double
-PM2(carmen_point_t *Zs, int Zs_size, virtual_scan_box_model_hypothesis_t *box_model_hypothesis)
+PM2(carmen_point_t *Zs_out, int Zs_out_size, virtual_scan_box_model_hypothesis_t *box_model_hypothesis)
 {
+	carmen_point_t velodyne_pos = g_virtual_scan_extended[box_model_hypothesis->zi]->velodyne_pos;
+	double distance_to_hypothesis = DIST2D(velodyne_pos, box_model_hypothesis->hypothesis);
+
 	double sum = 0.0;
-	for (int i = 0; i < Zs_size; i++)
-		sum += (double) line_to_point_crossed_rectangle(g_virtual_scan_extended[box_model_hypothesis->zi]->velodyne_pos, Zs[i], box_model_hypothesis->hypothesis);
+	for (int i = 0; i < Zs_out_size; i++)
+	{
+		if (DIST2D(velodyne_pos, Zs_out[i]) > distance_to_hypothesis)
+			sum += (double) line_to_point_crossed_rectangle(velodyne_pos, Zs_out[i], box_model_hypothesis->hypothesis);
+	}
 
 	return (sum);
 }
@@ -1967,8 +1973,8 @@ double
 probability_of_track_set_given_measurements(virtual_scan_track_set_t *track_set, bool print = false)
 {
 #define lambda_L	0.5
-#define lambda_1	0.5
-#define lambda_2	0.5
+#define lambda_1	0.1
+#define lambda_2	0.0 //0.5
 #define lambda_3	0.5
 
 	if (track_set == NULL)
