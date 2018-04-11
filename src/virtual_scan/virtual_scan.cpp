@@ -19,6 +19,17 @@ extern double x_origin;
 extern double y_origin;
 extern double map_resolution;
 
+#define SMALL_NUM   0.00000001 // anything that avoids division overflow
+
+#define dot(u,v)   ((u).x * (v).x + (u).y * (v).y)
+#define perp(u,v)  ((u).x * (v).y - (u).y * (v).x)  // perp product  (2D)
+
+typedef struct {
+    carmen_position_t P0;
+    carmen_position_t P1;
+} line_segment_t;
+
+
 extern int g_zi;
 extern virtual_scan_extended_t *g_virtual_scan_extended[NUMBER_OF_FRAMES_T];
 
@@ -896,7 +907,7 @@ update_track_according_to_new_graph(virtual_scan_track_t *track, int vextexes_re
 
 
 virtual_scan_track_set_t *
-update_best_track_set_according_to_new_graph(virtual_scan_track_set_t *best_track_set, int vextexes_removed_from_graph, virtual_scan_neighborhood_graph_t *neighborhood_graph)
+update_best_track_set_due_to_vertexes_removed_from_graph(virtual_scan_track_set_t *best_track_set, int vextexes_removed_from_graph, virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
 	if (best_track_set == NULL)
 		return (NULL);
@@ -919,7 +930,7 @@ update_best_track_set_according_to_new_graph(virtual_scan_track_set_t *best_trac
 
 	if (best_track_set->size != 0)
 	{
-		memmove((void *) (best_track_set->vertex_selected), (void *) &(best_track_set->vertex_selected[vextexes_removed_from_graph]),
+		memmove((void *) &(best_track_set->vertex_selected[0]), (void *) &(best_track_set->vertex_selected[vextexes_removed_from_graph]),
 				neighborhood_graph->size * sizeof(bool));
 		best_track_set->vertex_selected = (bool *) realloc(best_track_set->vertex_selected, neighborhood_graph->size * sizeof(bool));
 
@@ -932,6 +943,18 @@ update_best_track_set_according_to_new_graph(virtual_scan_track_set_t *best_trac
 
 		return (NULL);
 	}
+}
+
+
+void
+update_best_track_set_due_to_vertexes_added_to_graph(virtual_scan_track_set_t *best_track_set, int vextexes_added_to_graph, virtual_scan_neighborhood_graph_t *neighborhood_graph)
+{
+	if (best_track_set == NULL)
+		return;
+
+	best_track_set->vertex_selected = (bool *) realloc(best_track_set->vertex_selected, (neighborhood_graph->size + vextexes_added_to_graph) * sizeof(bool));
+	for (int i = neighborhood_graph->size; i < (neighborhood_graph->size + vextexes_added_to_graph); i++)
+		best_track_set->vertex_selected[i] = false;
 }
 
 
@@ -987,6 +1010,8 @@ neighborhood_graph_update(virtual_scan_box_model_hypotheses_t *virtual_scan_box_
 	neighborhood_graph->box_model_hypothesis_edges =
 			(virtual_scan_box_model_hypothesis_edges_t **) realloc(neighborhood_graph->box_model_hypothesis_edges, (neighborhood_graph->size + num_hypotheses) * sizeof(virtual_scan_box_model_hypothesis_edges_t *));
 
+	update_best_track_set_due_to_vertexes_added_to_graph(best_track_set, num_hypotheses, neighborhood_graph);
+
 	int h = first_new_vertex_to_add; // Each vertex hold an hypothesis
 	for (int i = 0; i < virtual_scan_box_model_hypotheses->num_box_model_hypotheses; i++)
 	{
@@ -1010,7 +1035,7 @@ neighborhood_graph_update(virtual_scan_box_model_hypotheses_t *virtual_scan_box_
 			neighborhood_graph->last_frames_timetamps[i] = neighborhood_graph->last_frames_timetamps[i + 1];
 
 		int vextexes_removed_from_graph = remove_graph_vertexes_of_victim_timestamp(victim_timestamp, neighborhood_graph);
-		best_track_set = update_best_track_set_according_to_new_graph(best_track_set, vextexes_removed_from_graph, neighborhood_graph);
+		best_track_set = update_best_track_set_due_to_vertexes_removed_from_graph(best_track_set, vextexes_removed_from_graph, neighborhood_graph);
 
 		neighborhood_graph->number_of_frames_filled -= 1;
 	}
@@ -1298,32 +1323,144 @@ Det(double a, double b, double c, double d)
 }
 
 
-bool
-line_to_line_intersection(double x1, double y1, double x2, double y2,
-	double x3, double y3, double x4, double y4)
+// inSegment(): determine if a point is inside a segment
+//    Input:  a point P, and a collinear segment S
+//    Return: 1 = P is inside S
+//            0 = P is  not inside S
+
+int
+inSegment(carmen_position_t P, line_segment_t S)
 {
-	//http://mathworld.wolfram.com/Line-LineIntersection.html
-	//https://gist.github.com/TimSC/47203a0f5f15293d2099507ba5da44e6
+	if (S.P0.x != S.P1.x)
+	{    // S is not  vertical
+		if (S.P0.x <= P.x && P.x <= S.P1.x)
+			return (1);
+		if (S.P0.x >= P.x && P.x >= S.P1.x)
+			return (1);
+	}
+	else
+	{    // S is vertical, so test y  coordinate
+		if (S.P0.y <= P.y && P.y <= S.P1.y)
+			return (1);
+		if (S.P0.y >= P.y && P.y >= S.P1.y)
+			return (1);
+	}
+	return (0);
+}
 
-	double detL1 = Det(x1, y1, x2, y2);
-	double detL2 = Det(x3, y3, x4, y4);
-	double x1mx2 = x1 - x2;
-	double x3mx4 = x3 - x4;
-	double y1my2 = y1 - y2;
-	double y3my4 = y3 - y4;
 
-	double xnom = Det(detL1, x1mx2, detL2, x3mx4);
-	double ynom = Det(detL1, y1my2, detL2, y3my4);
-	double denom = Det(x1mx2, y1my2, x3mx4, y3my4);
-	if (denom == 0.0) //Lines don't seem to cross
-		return (false);
+//http://geomalgorithms.com/a05-_intersect-1.html#intersect2D_2Segments()
+// intersect2D_2Segments(): find the 2D intersection of 2 finite segments
+//    Input:  two finite segments S1 and S2
+//    Output: *I0 = intersect point (when it exists)
+//            *I1 =  endpoint of intersect segment [I0,I1] (when it exists)
+//    Return: 0=disjoint (no intersect)
+//            1=intersect  in unique point I0
+//            2=overlap  in segment from I0 to I1
 
-	double ixOut = xnom / denom;
-	double iyOut = ynom / denom;
-	if(!std::isfinite(ixOut) || !std::isfinite(iyOut)) //Probably a numerical issue
-		return (false);
+int
+line_to_line_intersection(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4)
+{
+	line_segment_t S1 = {{x1, y1}, {x2, y2}};
+	line_segment_t S2 = {{x3, y3}, {x4, y4}};
 
-	return (true);
+	carmen_position_t u;
+	u.x = S1.P1.x - S1.P0.x;
+	u.y = S1.P1.y - S1.P0.y;
+
+	carmen_position_t v;
+	v.x = S2.P1.x - S2.P0.x;
+	v.y = S2.P1.y - S2.P0.y;
+
+	carmen_position_t w;
+	w.x = S1.P0.x - S2.P0.x;
+	w.y = S1.P0.y - S2.P0.y;
+
+	double D = perp(u, v);
+
+	// test if  they are parallel (includes either being a point)
+	if (fabs(D) < SMALL_NUM)
+	{           // S1 and S2 are parallel
+		if (perp(u,w) != 0 || perp(v,w) != 0)
+			return (0);                    // they are NOT collinear
+
+		// they are collinear or degenerate
+		// check if they are degenerate  points
+		double du = dot(u, u);
+		double dv = dot(v, v);
+		if (du == 0 && dv == 0)
+		{            // both segments are points
+			if (S1.P0.x != S2.P0.x && S1.P0.y != S2.P0.y)         // they are distinct  points
+				return (0);
+			//*I0 = S1.P0;                 // they are the same point
+			return (1);
+		}
+		if (du == 0)
+		{                     // S1 is a single point
+			if (inSegment(S1.P0, S2) == 0)  // but is not in S2
+				return (0);
+			//*I0 = S1.P0;
+			return (1);
+		}
+		if (dv == 0)
+		{                     // S2 a single point
+			if (inSegment(S2.P0, S1) == 0)  // but is not in S1
+				return (0);
+			//*I0 = S2.P0;
+			return (1);
+		}
+		// they are collinear segments - get  overlap (or not)
+		double t0, t1;                    // endpoints of S1 in eqn for S2
+		carmen_position_t w2;
+		w2.x = S1.P1.x - S2.P0.x;
+		w2.y = S1.P1.y - S2.P0.y;
+		if (v.x != 0)
+		{
+			t0 = w.x / v.x;
+			t1 = w2.x / v.x;
+		}
+		else
+		{
+			t0 = w.y / v.y;
+			t1 = w2.y / v.y;
+		}
+		if (t0 > t1)
+		{                   // must have t0 smaller than t1
+			double t = t0;
+			t0 = t1;
+			t1 = t;    // swap if not
+		}
+		if (t0 > 1 || t1 < 0)
+		{
+			return (0);      // NO overlap
+		}
+		t0 = t0 < 0 ? 0 : t0;               // clip to min 0
+		t1 = t1 > 1 ? 1 : t1;               // clip to max 1
+		if (t0 == t1)
+		{                  // intersect is a point
+			//*I0 = S2.P0 +  t0 * v;
+			return (1);
+		}
+
+		// they overlap in a valid subsegment
+		//*I0 = S2.P0 + t0 * v;
+		//*I1 = S2.P0 + t1 * v;
+		return (2);
+	}
+
+	// the segments are skew and may intersect in a point
+	// get the intersect parameter for S1
+	double sI = perp(v,w) / D;
+	if (sI < 0 || sI > 1)                // no intersect with S1
+		return (0);
+
+	// get the intersect parameter for S2
+	double tI = perp(u,w) / D;
+	if (tI < 0 || tI > 1)                // no intersect with S2
+		return (0);
+
+	//*I0 = S1.P0 + sI * u;                // compute S1 intersect point
+	return (1);
 }
 
 
@@ -1341,22 +1478,22 @@ line_to_point_crossed_rectangle(carmen_point_t origin, carmen_point_t point, vir
 	y3 = hypothesis.y - hypothesis.width / 2.0;
 	x4 = hypothesis.x + hypothesis.length / 2.0;
 	y4 = hypothesis.y - hypothesis.width / 2.0;
-	if (line_to_line_intersection(x1, y1, x2, y2, x3, y3, x4, y4))
+	if (line_to_line_intersection(x1, y1, x2, y2, x3, y3, x4, y4) != 0)
 		return (1);
 
 	x4 = hypothesis.x - hypothesis.length / 2.0;
 	y4 = hypothesis.y + hypothesis.width / 2.0;
-	if (line_to_line_intersection(x1, y1, x2, y2, x3, y3, x4, y4))
+	if (line_to_line_intersection(x1, y1, x2, y2, x3, y3, x4, y4) != 0)
 		return (1);
 
 	x3 = hypothesis.x + hypothesis.length / 2.0;
 	y3 = hypothesis.y + hypothesis.width / 2.0;
-	if (line_to_line_intersection(x1, y1, x2, y2, x3, y3, x4, y4))
+	if (line_to_line_intersection(x1, y1, x2, y2, x3, y3, x4, y4) != 0)
 		return (1);
 
 	x4 = hypothesis.x + hypothesis.length / 2.0;
 	y4 = hypothesis.y - hypothesis.width / 2.0;
-	if (line_to_line_intersection(x1, y1, x2, y2, x3, y3, x4, y4))
+	if (line_to_line_intersection(x1, y1, x2, y2, x3, y3, x4, y4) != 0)
 		return (1);
 
 	return (0);
@@ -1384,7 +1521,7 @@ compute_hypothesis_posterior_probability_components(virtual_scan_box_model_hypot
 	get_Zs_and_Zd_of_hypothesis(Zs_in, Zs_in_size, Zs_out, Zs_out_size, Zd, Zd_size, box_model_hypothesis);
 
 	box_model_hypothesis->dn = PM1(Zd, Zd_size, box_model_hypothesis);
-	box_model_hypothesis->c2 = 0.0; //PM2(Zs_out, Zs_out_size, box_model_hypothesis);
+	box_model_hypothesis->c2 = PM2(Zs_out, Zs_out_size, box_model_hypothesis);
 	box_model_hypothesis->c3 = 0.0;
 
 	free(Zs_out); free(Zs_in); free(Zd);
@@ -1688,7 +1825,6 @@ copy_track_set(virtual_scan_track_set_t *track_set_n_1, virtual_scan_neighborhoo
 	{
 		virtual_scan_track_set_t *track_set = (virtual_scan_track_set_t *) malloc(sizeof(virtual_scan_track_set_t));
 		track_set->tracks = (virtual_scan_track_t **) malloc(track_set_n_1->size * sizeof(virtual_scan_track_t *));
-		track_set->vertex_selected = (bool *) malloc(neighborhood_graph->size * sizeof(bool));
 
 		track_set->size = track_set_n_1->size;
 		for (int i = 0; i < track_set_n_1->size; i++)
@@ -1701,6 +1837,7 @@ copy_track_set(virtual_scan_track_set_t *track_set_n_1, virtual_scan_neighborhoo
 				track_set->tracks[i]->box_model_hypothesis[j] = track_set_n_1->tracks[i]->box_model_hypothesis[j];
 		}
 
+		track_set->vertex_selected = (bool *) malloc(neighborhood_graph->size * sizeof(bool));
 		memcpy((void *) track_set->vertex_selected, (void *) track_set_n_1->vertex_selected, neighborhood_graph->size * sizeof(bool));
 
 		return (track_set);
@@ -1729,7 +1866,8 @@ propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood
 		case 0:	// Birth
 			{
 				track_set = track_birth(track_set, neighborhood_graph);
-				track_extension(track_set, track_set->size - 1, neighborhood_graph); // aqui a new_track eh sempre a ultima track de track_set
+				if (track_set != NULL)
+					track_extension(track_set, track_set->size - 1, neighborhood_graph); // aqui a new_track eh sempre a ultima track de track_set
 			}
 			break;
 		case 1:	// Extension
