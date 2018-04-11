@@ -1,0 +1,11 @@
+<config>
+  <verbose>true</verbose>
+  <display_images>true</display_images>
+  <particle_filter num="400"></particle_filter>
+  <dataset id="CARMEN-RODRIGO" name="CARMEN-RODRIGO" path="/log/">
+	  <frame_sequence start="0" end="600"></frame_sequence>
+	  <frame_size width="640" height="480"></frame_size>
+	  <region_of_interest x="0" y="260" width="640" height="115"></region_of_interest>
+		<ipm_points top_left="294" top_right="375" bottom_right="497" bottom_left="213"></ipm_points>
+  </dataset>
+</config>
