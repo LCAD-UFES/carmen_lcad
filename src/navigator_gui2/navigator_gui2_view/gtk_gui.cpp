@@ -2329,6 +2329,11 @@ namespace View
 					else
 						colour = &carmen_black;
 
+					if (moving_objects_tracking->model_features.model_id == 'C')
+						colour = &carmen_red;
+					else if (moving_objects_tracking->model_features.model_id == 'b')
+						colour = &carmen_green;
+
 					carmen_map_graphics_draw_polygon(the_map_view, colour, wp, 4, 0);
 				}
 			}
