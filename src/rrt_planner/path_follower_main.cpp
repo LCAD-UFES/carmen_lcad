@@ -25,6 +25,7 @@
 #include "path_follower/path_follower_ackerman.h"
 
 
+int g_teacher_mode = 0;
 Path_Follower_Ackerman follower;
 
 
@@ -44,7 +45,12 @@ Path_Follower_Ackerman::publish_path_follower_motion_commands(carmen_ackerman_mo
 //	fflush(stdout);
 
 	if (use_obstacle_avoider)
-		carmen_robot_ackerman_publish_motion_command(commands, num_commands, timestamp);
+	{
+		if (!g_teacher_mode)  // standard operation
+			carmen_robot_ackerman_publish_motion_command(commands, num_commands, timestamp);
+		else
+			carmen_robot_ackerman_publish_teacher_motion_command(commands, num_commands, timestamp);
+	}
 	else
 		carmen_base_ackerman_publish_motion_command(commands, num_commands, timestamp);
 }
@@ -198,6 +204,9 @@ build_and_follow_path(carmen_point_t point, double pose_timestamp)
 static void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
+	if (g_teacher_mode)
+		Follower::go();
+
 	build_and_follow_path(msg->globalpos, msg->timestamp);
 }
 
@@ -428,6 +437,13 @@ read_parameters(int argc, char **argv)
 	carmen_param_install_params(argc, argv, optional_param_list, sizeof(optional_param_list) / sizeof(optional_param_list[0]));
 
 	read_parameters_specific(argc, argv);
+
+	carmen_param_t param_optional_list[] =
+	{
+		{(char *) "commandline", (char *) "teacher_mode", CARMEN_PARAM_ONOFF, &g_teacher_mode, 0, NULL}
+	};
+
+	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
 }
 
 

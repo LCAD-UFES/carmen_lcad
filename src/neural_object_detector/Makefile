@@ -1,23 +1,22 @@
 include ../Makefile.conf
 
-MODULE_NAME = Neural Car Detector
+MODULE_NAME = Neural Object Detector
 MODULE_COMMENT = Detect vehicles using convolutional neural networks.
 
 LINK = g++
 
-CFLAGS += -Wall -g
-CXXFLAGS = -Wno-sign-compare -DUSE_OPENCV -g 
+CFLAGS += -Wall
+CXXFLAGS = -Wno-sign-compare -DUSE_OPENCV `pkg-config opencv --cflags` -std=c++11 
 
-IFLAGS += `pkg-config opencv --cflags` -std=c++11 -DNO_NVML -g
-LFLAGS += `pkg-config opencv --libs` -std=c++11
+IFLAGS += -DNO_NVML 
+LFLAGS += `pkg-config opencv --libs`
+LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet/lib -L$(CARMEN_HOME)/sharedlib/libtf/src
 
 LFLAGS += -lglobal -lipc -lvelodyne_interface -lbumblebee_basic_interface -lparam_interface \
-		-L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lrt -lBulletCollision -lBulletDynamics \
+		-ltf -lrt -lBulletCollision -lBulletDynamics \
 		-lBulletSoftBody -lLinearMath -lboost_thread-mt -lrt -lboost_signals -lboost_system \
 		-lmoving_objects_interface -llocalize_ackerman_interface -lvelodyne_camera_calibration \
 		-lcamera_boxes_to_world -lDbscan -ldarknet
-
-LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet/lib
 
 SOURCES = dbscan.cpp neural_object_detector.cpp neural_object_detector_main.cpp
 
@@ -25,7 +24,7 @@ PUBLIC_INCLUDES =
 PUBLIC_LIBRARIES = 
 PUBLIC_BINARIES = neural_object_detector
 
-TARGETS = darknet velodyne_camera_calibration camera_boxes_to_world libDbscan.a neural_car_detector
+TARGETS = darknet velodyne_camera_calibration camera_boxes_to_world libDbscan.a neural_object_detector
 
 libDbscan.a: dbscan.o
 

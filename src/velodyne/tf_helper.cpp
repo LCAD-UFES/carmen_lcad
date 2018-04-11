@@ -4,14 +4,12 @@
 #include "tf_helper.h"
 
 
-static char* car_tf_name = (char*)"/car";
-static char* velodyne_tf_name = (char*)"/velodyne";
-static char* board_tf_name = (char*)"/board";
-
 static carmen_pose_3D_t velodyne_pose;
 static carmen_pose_3D_t sensor_board_pose;
 
 static tf::Transformer transformer(false);
+
+static int initialized = 0;
 
 
 static tf::Vector3
@@ -102,13 +100,13 @@ initialize_transformations(void)
 	tf::Transform velodyne_position_on_board;	
 	velodyne_position_on_board.setOrigin(carmen_vector3_to_tf_vector3(velodyne_pose.position));
 	velodyne_position_on_board.setRotation(carmen_rotation_to_tf_quaternion(velodyne_pose.orientation));
-	tf::StampedTransform board_to_velodyne_transform(velodyne_position_on_board, tf::Time(0), board_tf_name, velodyne_tf_name);
+	tf::StampedTransform board_to_velodyne_transform(velodyne_position_on_board, tf::Time(0), (char *) "/board", (char *) "/velodyne");
 	transformer.setTransform(board_to_velodyne_transform, "board_to_velodyne_transform");
 
 	tf::Transform board_position_on_car;	
 	board_position_on_car.setOrigin(carmen_vector3_to_tf_vector3(sensor_board_pose.position));
 	board_position_on_car.setRotation(carmen_rotation_to_tf_quaternion(sensor_board_pose.orientation));
-	tf::StampedTransform car_to_board_transform(board_position_on_car, tf::Time(0), car_tf_name, board_tf_name);
+	tf::StampedTransform car_to_board_transform(board_position_on_car, tf::Time(0), (char *) "/car", (char *) "/board");
 	transformer.setTransform(car_to_board_transform, "car_to_board_transform");
 }
 
@@ -116,9 +114,7 @@ initialize_transformations(void)
 carmen_pose_3D_t
 get_velodyne_pose_in_relation_to_car_helper(int argc, char** argv)
 {	
-	static int initialized = 0;
-
-	if(initialized == 0)
+	if (initialized == 0)
 	{
 		initialize_carmen_parameters(argc, argv);
 		initialize_transformations();
@@ -127,10 +123,42 @@ get_velodyne_pose_in_relation_to_car_helper(int argc, char** argv)
 	}
 
 	tf::StampedTransform car_to_velodyne;
-	transformer.lookupTransform(car_tf_name, velodyne_tf_name, tf::Time(0), car_to_velodyne);
+	transformer.lookupTransform((char *) "/car", (char *) "/velodyne", tf::Time(0), car_to_velodyne);
 	
 	carmen_pose_3D_t velodyne_pose = tf_transform_to_carmen_pose_3D(car_to_velodyne);
 
 	return velodyne_pose;
 }
 
+
+void
+get_world_pose_with_velodyne_offset_initialize_helper(int argc, char **argv)
+{
+	if (initialized == 0)
+	{
+		initialize_carmen_parameters(argc, argv);
+		initialize_transformations();
+
+		initialized = 1;
+	}
+}
+
+
+carmen_pose_3D_t
+get_world_pose_with_velodyne_offset_helper(carmen_pose_3D_t world_pose)
+{
+	tf::Transform world_to_car_pose;
+	tf::StampedTransform world_to_velodyne_pose;
+
+	world_to_car_pose.setOrigin(tf::Vector3(world_pose.position.x, world_pose.position.y, world_pose.position.z));
+	world_to_car_pose.setRotation(tf::createQuaternionFromRPY(world_pose.orientation.roll, world_pose.orientation.pitch, world_pose.orientation.yaw));
+
+	tf::StampedTransform world_to_car_transform(world_to_car_pose, tf::Time(0), (char *) "/world", (char *) "/car");
+	transformer.setTransform(world_to_car_transform, (char *) "world_to_car_transform");
+
+	transformer.lookupTransform((char *) "/world", (char *) "/velodyne", tf::Time(0), world_to_velodyne_pose);
+
+	carmen_pose_3D_t world_pose_with_velodyne_offset = tf_transform_to_carmen_pose_3D(world_to_velodyne_pose);
+
+	return (world_pose_with_velodyne_offset);
+}

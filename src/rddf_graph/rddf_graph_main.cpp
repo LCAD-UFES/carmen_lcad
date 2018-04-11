@@ -171,6 +171,37 @@ shutdown_module(int signo)
 	}
 }
 
+
+void parse_world_origin_to_road_map(string road_map_filename, carmen_map_p road_map)
+{
+	string x_origin;
+	string y_origin;
+	string coordinates;
+	int last_bar_position=0;
+	int last_trace_position=0;
+	int last_underline_position=0;
+	int last_dot_position=0;
+	unsigned int l;
+	for(l=1; l<=road_map_filename.length();l++)
+	{
+		if(road_map_filename[l] == '/')
+			last_bar_position = l;
+		if(road_map_filename[l] == '.')
+			last_dot_position = l;
+		if(road_map_filename[l] == '_')
+			last_underline_position = l;
+		if(road_map_filename[l] == '-')
+			last_trace_position = l;
+	}
+	x_origin = road_map_filename.substr(last_bar_position+2,last_underline_position-last_bar_position-2);
+	y_origin = road_map_filename.substr(last_trace_position+1,last_dot_position-last_trace_position-1);
+
+	road_map->config.x_origin = atof(x_origin.c_str());
+	road_map->config.y_origin = atof(y_origin.c_str());
+
+}
+
+
 static void
 read_parameters(int argc, char **argv)
 //read_parameters(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused)))
@@ -223,6 +254,7 @@ main(int argc, char **argv)
 		char *road_map_filename = argv[i];
 		string str_road_map_filename(road_map_filename);
 		bool valid_map_on_file = (carmen_map_read_gridmap_chunk(road_map_filename, &road_map) == 0);
+		parse_world_origin_to_road_map(road_map_filename, &road_map);
 		if (valid_map_on_file)
 		{
 			cout << "File " << str_road_map_filename << " being displayed... ("

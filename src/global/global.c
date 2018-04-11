@@ -701,11 +701,13 @@ carmen_distance_ackerman_traj(carmen_ackerman_traj_point_p p1, carmen_ackerman_t
 	return ((double) sqrt_ld);
 }
 
+
 carmen_inline double
 carmen_ackerman_traj_distance2(carmen_ackerman_traj_point_p p1, carmen_ackerman_traj_point_p p2)
 {
 	return (p1->x-p2->x)*(p1->x-p2->x) + (p1->y-p2->y)*(p1->y-p2->y);
 }
+
 
 carmen_inline double
 carmen_distance(carmen_point_p p1, carmen_point_p p2)
@@ -713,11 +715,13 @@ carmen_distance(carmen_point_p p1, carmen_point_p p2)
   return sqrt((p1->x-p2->x)*(p1->x-p2->x) + (p1->y-p2->y)*(p1->y-p2->y));
 }
 
+
 carmen_inline double
 carmen_angle_between(carmen_traj_point_p p1, carmen_traj_point_p p2)
 {
   return atan2(p2->y - p1->y, p2->x - p1->x);
 }
+
 
 void
 carmen_get_bresenham_parameters(int p1x, int p1y, int p2x, int p2y, carmen_bresenham_param_t *params)

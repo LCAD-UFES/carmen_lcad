@@ -54,13 +54,18 @@ carmen_localize_ackerman_incorporate_IMU(carmen_localize_ackerman_particle_filte
 	if (!xsens_global_quat_message)
 		return;
 
-	double average_v = 0.0;
+	double average_v = filter->particles[0].v;
+
+	filter->distance_travelled += fabs(average_v * dt);
+
 	for (int i = 0; i < filter->param->num_particles; i++)
 	{
-		filter->particles[i].v += xsens_global_quat_message->m_acc.x * dt + carmen_gaussian_random(0.0, 0.2);
+		filter->particles[i].v += 1.1 * (xsens_global_quat_message->m_acc.x + 0.2) * dt + carmen_gaussian_random(0.0, 0.01);
 		double v = filter->particles[i].v;
-		average_v += v;
-		filter->particles[i].phi = atan2((xsens_global_quat_message->m_gyr.z + carmen_gaussian_random(0.0, 0.01)) * distance_between_front_and_rear_axles, v);
+		if (fabs(average_v) > 0.2)
+			filter->particles[i].phi = atan2((xsens_global_quat_message->m_gyr.z + carmen_gaussian_random(0.0, 0.01)) * distance_between_front_and_rear_axles, v);
+		else
+			filter->particles[i].phi = 0.0;
 		double phi = filter->particles[i].phi;
 
 		if (i != 0)
@@ -105,8 +110,6 @@ carmen_localize_ackerman_incorporate_IMU(carmen_localize_ackerman_particle_filte
 			filter->particles[i].y = robot_pose.position.y;
 			filter->particles[i].theta = carmen_normalize_theta(robot_pose.orientation.yaw);
 		}
-
-		filter->distance_travelled += fabs((average_v / (double) filter->param->num_particles) * dt);
 	}
 }
 

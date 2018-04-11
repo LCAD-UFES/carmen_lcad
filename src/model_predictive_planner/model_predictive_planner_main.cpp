@@ -29,6 +29,7 @@
 #define DIST_SQR(x1,y1,x2,y2) ((x1-x2)*(x1-x2)+(y1-y2)*(y1-y2))
 
 Tree tree; //tree rooted on robot
+int g_teacher_mode = 0;
 TrajectoryLookupTable *g_trajectory_lookup_table;
 carmen_behavior_selector_road_profile_message goal_list_message;
 
@@ -124,7 +125,12 @@ publish_model_predictive_planner_motion_commands(vector<carmen_ackerman_path_poi
 
 	int num_commands = path.size();
 	if (GlobalState::use_obstacle_avoider)
-		carmen_robot_ackerman_publish_motion_command(commands, num_commands, timestamp);
+	{
+		if (!g_teacher_mode)  // standard operation
+			carmen_robot_ackerman_publish_motion_command(commands, num_commands, timestamp);
+		else  // mode to prevent sending mpp commands to the rest of the control hierarchy and interfaces.
+			carmen_robot_ackerman_publish_teacher_motion_command(commands, num_commands, timestamp);
+	}
 	else
 		carmen_base_ackerman_publish_motion_command(commands, num_commands, timestamp);
 
@@ -136,7 +142,12 @@ void
 publish_path_follower_motion_commands(carmen_ackerman_motion_command_t *commands, int num_commands, double timestamp)
 {
 	if (GlobalState::use_obstacle_avoider)
-		carmen_robot_ackerman_publish_motion_command(commands, num_commands, timestamp);
+	{
+		if (!g_teacher_mode)  // standard operation
+			carmen_robot_ackerman_publish_motion_command(commands, num_commands, timestamp);
+		else  // mode to prevent sending mpp commands to the rest of the control hierarchy and interfaces.
+			carmen_robot_ackerman_publish_teacher_motion_command(commands, num_commands, timestamp);
+	}
 	else
 		carmen_base_ackerman_publish_motion_command(commands, num_commands, timestamp);
 }
@@ -850,7 +861,8 @@ read_parameters(int argc, char **argv)
 
 	carmen_param_t param_optional_list[] =
 	{
-			{(char *) "commandline", (char *) "update_lookup_table", CARMEN_PARAM_ONOFF, &update_lookup_table, 0, NULL}
+		{(char *) "commandline", (char *) "update_lookup_table", CARMEN_PARAM_ONOFF, &update_lookup_table, 0, NULL},
+		{(char *) "commandline", (char *) "teacher_mode", CARMEN_PARAM_ONOFF, &g_teacher_mode, 0, NULL}
 	};
 
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));

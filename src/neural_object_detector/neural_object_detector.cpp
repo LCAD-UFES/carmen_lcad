@@ -110,6 +110,19 @@ filter_points_in_clusters(std::vector<std::vector<carmen_vector_3D_t> > *cluster
 
 			dbscan::Clusters clusters = dbscan::DBSCAN(0.5, 5, cluster);     // Compute clusters using dbscan
 
+
+//			vector<vector<carmen_vector_3D_t>> converted = dbscan_compute_clusters(0.5, 5, (*cluster_list)[i]);
+//			printf("L %d R %d \n", (int)clusters.size(), (int)converted.size());
+//
+//			for (int i = 0; i < clusters.size() && i < converted.size(); i++)
+//			{
+//				for (int j = 0; j < clusters[i].size() && i < converted[i].size(); j++)
+//				{
+//					printf("%f\n", clusters[i][j].x - converted[i][j].x);
+//				}
+//			}
+
+
 			if (clusters.size() > 0)
 			{
 				cluster = get_biggest_cluster(clusters);

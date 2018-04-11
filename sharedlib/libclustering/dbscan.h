@@ -3,17 +3,10 @@
 
 #include <vector>
 
-using namespace std;
-
 namespace dbscan
 {
 
-struct Point {
-	double x;
-	double y;
-};
-
-typedef std::vector<Point> Cluster;
+typedef std::vector<carmen_point_t> Cluster;
 
 typedef std::vector<Cluster> Clusters;
 
@@ -27,13 +20,8 @@ typedef std::vector<Cluster> Clusters;
  * it's close enough to a point already assigned to a cluster (i.e. if its
  * squared distance to it is less than `d2`).
  */
-Clusters DBSCAN(double d2, std::size_t density, const Cluster &points);
+Clusters dbscan(double d2, std::size_t density, const Cluster &points);
 
 } // namespace dbscan
-
-
-vector<vector<carmen_vector_3D_t>>
-dbscan_compute_clusters(double max_distance, int density, vector<carmen_vector_3D_t> &points);
-
 
 #endif
