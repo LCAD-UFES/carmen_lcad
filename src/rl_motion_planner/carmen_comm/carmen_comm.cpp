@@ -10,7 +10,7 @@
 #include <carmen/laser_interface.h>
 #include <carmen/objects_ackerman.h>
 #include <carmen/collision_detection.h>
-#include <carmen/map_server_interface.h>
+#include <carmen/mapper_interface.h>
 #include <carmen/robot_ackerman_interface.h>
 #include <carmen/obstacle_avoider_interface.h>
 #include <carmen/localize_ackerman_interface.h>
@@ -20,8 +20,9 @@
 #include <carmen/navigator_ackerman_interface.h>
 #include <carmen/velodyne_interface.h>
 #include <carmen/rddf_interface.h>
+#include <locale.h>
 #include "util.h"
-
+#include <assert.h>
 
 // Flags
 const int VIEW_LASER = 0;
@@ -32,7 +33,7 @@ carmen_robot_ackerman_config_t global_robot_ackerman_config;
 
 // Messages
 carmen_laser_laser_message global_front_laser_message;
-carmen_map_server_offline_map_message global_offline_map_message;
+carmen_mapper_map_message global_mapper_map_message;
 carmen_behavior_selector_goal_list_message global_goal_list_message;
 carmen_obstacle_distance_mapper_map_message global_obstacle_distance_map;
 carmen_localize_ackerman_globalpos_message global_localize_ackerman_message;
@@ -42,6 +43,7 @@ carmen_rddf_road_profile_message global_rddf_message;
 
 // Termination signal handling
 int global_destroy_already_requested = 0;
+int autonomous_mode = 0;
 
 // Simulation
 carmen_simulator_ackerman_config_t simulator_config;
@@ -171,9 +173,146 @@ publish_behavior_selector_state()
 	msg.parking_algorithm = CARMEN_BEHAVIOR_SELECTOR_RRT;
 
 	msg.goal_source = CARMEN_BEHAVIOR_SELECTOR_RDDF_GOAL;
+	msg.low_level_state = Stopped;
+
+	msg.behaviour_seletor_mode = stopped;
 
 	err = IPC_publishData(CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME, &msg);
 	carmen_test_ipc_exit(err, "Could not publish", CARMEN_BEHAVIOR_SELECTOR_CURRENT_STATE_NAME);
+}
+
+
+// TODO: copied from model_predictive_planner/publisher_util because model predictive doesn't
+// expose this function and the Tree type.
+void
+publish_navigator_ackerman_plan_message(std::vector<double> &vs, std::vector<double> &phis,
+		std::vector<double> &xs, std::vector<double> &ys, std::vector<double> &ths,
+		double timestamp)
+{
+	static int path_size = 0;
+	static carmen_ackerman_traj_point_t *path = NULL;
+	static carmen_navigator_ackerman_plan_message msg;
+
+	static bool first_time = true;
+	IPC_RETURN_TYPE err;
+
+	if (first_time)
+	{
+		err = IPC_defineMsg(CARMEN_NAVIGATOR_ACKERMAN_PLAN_NAME,
+				IPC_VARIABLE_LENGTH, CARMEN_NAVIGATOR_ACKERMAN_PLAN_FMT);
+
+		carmen_test_ipc_exit(err, "Could not define message",
+				CARMEN_NAVIGATOR_ACKERMAN_PLAN_NAME);
+
+		path = (carmen_ackerman_traj_point_t *) calloc (vs.size(), sizeof(carmen_ackerman_traj_point_t));
+		path_size = vs.size();
+
+		first_time = false;
+	}
+
+	if (path_size != vs.size())
+	{
+		path_size = vs.size();
+		path = (carmen_ackerman_traj_point_t *) realloc (path, vs.size() * sizeof(carmen_ackerman_traj_point_t));
+	}
+
+	// copy path and mask
+	for (int i = 0; i < vs.size(); i++)
+	{
+		path[i].x = xs[i];
+		path[i].y = ys[i];
+		path[i].theta = ths[i];
+		path[i].v = vs[i];
+		path[i].phi = phis[i];
+	}
+
+	msg.host = carmen_get_host();
+	msg.timestamp = timestamp;
+	msg.path_length = vs.size();
+	msg.path = path;
+
+	err = IPC_publishData(CARMEN_NAVIGATOR_ACKERMAN_PLAN_NAME, &msg);
+	carmen_test_ipc(err, "Could not publish",
+			CARMEN_NAVIGATOR_ACKERMAN_PLAN_NAME);
+}
+
+
+void
+publish_plan_tree_message(std::vector<double> vs, std::vector<double> phis,
+	std::vector<double> xs, std::vector<double> ys, std::vector<double> ths,
+	double timestamp)
+{
+	IPC_RETURN_TYPE err = IPC_OK;
+
+	carmen_navigator_ackerman_plan_tree_message plan_tree_msg;
+
+	int size = (int) vs.size();
+
+	if (size <= 0)
+		return;
+
+	memset(plan_tree_msg.path_size, 0, 500 * sizeof(int));
+	for (int i = 0; i < 500; i++)
+		for (int j = 0; j < 100; j++)
+			memset(&(plan_tree_msg.paths[i][j]), 0, sizeof(carmen_ackerman_traj_point_t));
+
+	plan_tree_msg.num_path = 1;
+	plan_tree_msg.path_size[0] = size;
+
+	// copy path and mask
+	printf("size: %d\n", size);
+	for (int i = 0; i < size; i++)
+	{
+		plan_tree_msg.paths[0][i].x = xs[i];
+		plan_tree_msg.paths[0][i].y = ys[i];
+		plan_tree_msg.paths[0][i].theta = ths[i];
+		plan_tree_msg.paths[0][i].v = vs[i];
+		plan_tree_msg.paths[0][i].phi = phis[i];
+		printf("%f %f %f\n", xs[i], ys[i], ths[i]);
+	}
+
+	plan_tree_msg.num_edges = 0;
+	plan_tree_msg.p1 = NULL;
+	plan_tree_msg.p2 = NULL;
+	plan_tree_msg.mask = NULL;
+
+	plan_tree_msg.timestamp = carmen_get_time();
+	plan_tree_msg.host = carmen_get_host();
+
+	printf("publishing!\n");
+	err = IPC_publishData(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME, &plan_tree_msg);
+	carmen_test_ipc(err, "Could not publish", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TREE_NAME);
+	printf("done.\n");
+}
+
+
+void
+publish_path_to_draw(std::vector<double> vs, std::vector<double> phis,
+		std::vector<double> xs, std::vector<double> ys, std::vector<double> ths)
+{
+	carmen_navigator_ackerman_plan_to_draw_message  message;
+
+	int path_size = vs.size();
+	carmen_ackerman_traj_point_t *path = (carmen_ackerman_traj_point_t *) calloc (vs.size(), sizeof(carmen_ackerman_traj_point_t));
+
+	for (int i = 0; i < vs.size(); i++)
+	{
+		path[i].x = xs[i];
+		path[i].y = ys[i];
+		path[i].theta = ths[i];
+		path[i].v = vs[i];
+		path[i].phi = phis[i];
+	}
+
+	message.host = carmen_get_host();
+	message.timestamp = carmen_get_time();
+	message.path_size = path_size;
+	message.path = path;
+
+	IPC_RETURN_TYPE err = IPC_publishData(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_NAME, &message);
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_NAME);
+
+	free(path);
 }
 
 
@@ -181,6 +320,14 @@ void
 publish_command(std::vector<double> v, std::vector<double> phi, std::vector<double> dt,
 		int publish_behavior_selector_state_flag, double x, double y, double th)
 {
+	if (v.size() == 0)
+	{
+		printf("Empty command list! Ignoring commands!\n");
+		return;
+	}
+
+	setlocale(LC_ALL, "en_US.UTF-8");
+
 	static int n_motion_commands = 0;
 	static carmen_ackerman_motion_command_t *motion_commands = NULL;
 
@@ -193,6 +340,8 @@ publish_command(std::vector<double> v, std::vector<double> phi, std::vector<doub
 
 	double base_time = carmen_get_time();
 
+	std::vector<double> xs, ys, ths;
+
 	for (int i = 0; i < n_motion_commands; i++)
 	{
 		ackerman_motion_model(&x, &y, &th,
@@ -204,12 +353,32 @@ publish_command(std::vector<double> v, std::vector<double> phi, std::vector<doub
 		motion_commands[i].theta = th;
 
 		motion_commands[i].time = dt[i];
-		motion_commands[i].v = v[i];
-		motion_commands[i].phi = phi[i];
+
+		if (autonomous_mode)
+		{
+			motion_commands[i].v = v[i];
+			motion_commands[i].phi = phi[i];
+		}
+		else
+		{
+			motion_commands[i].v = 0.0;
+			motion_commands[i].phi = 0.0;
+		}
+
+
+		xs.push_back(x);
+		ys.push_back(y);
+		ths.push_back(th);
 	}
 
 	if (publish_behavior_selector_state_flag)
 		publish_behavior_selector_state();
+
+	assert(v.size() == xs.size());
+	assert(v.size() == ys.size());
+	assert(v.size() == ths.size());
+
+	publish_path_to_draw(v, phi, xs, ys, ths);
 
 	carmen_robot_ackerman_publish_motion_command(motion_commands,
 		n_motion_commands, base_time);
@@ -299,17 +468,21 @@ handle_messages(double how_long)
 	double time_previous_globalpos = global_localize_ackerman_message.timestamp;
 
 	do
+	{
 		carmen_ipc_sleep(how_long);
+	}
 	while (global_localize_ackerman_message.timestamp == time_previous_globalpos);
 
-	carmen_navigator_ackerman_go();
+	// carmen_navigator_ackerman_go();
 	process_map_message(&global_obstacle_distance_mapper_compact_map_message);
-	carmen_map_server_copy_offline_map_from_message(&(simulator_config.map), &global_offline_map_message);
+
+	carmen_mapper_copy_map_from_message(&(simulator_config.map), &global_mapper_map_message);
+	// carmen_map_server_copy_offline_map_from_message(&(simulator_config.map), &global_offline_map_message);
 }
 
 
 int
-map_is_invalid(carmen_obstacle_distance_mapper_compact_map_message *map, double pos_x, double pos_y)
+obstacle_distance_map_is_invalid(carmen_obstacle_distance_mapper_compact_map_message *map, double pos_x, double pos_y)
 {
 	if (map->timestamp == 0 ||
 		map->config.x_origin == 0 ||
@@ -322,12 +495,13 @@ map_is_invalid(carmen_obstacle_distance_mapper_compact_map_message *map, double 
 		pos_y > map->config.y_origin + map->config.y_size)
 		return 1;
 
+	//printf("obstacle distance mapper invalid\n");
 	return 0;
 }
 
 
 int
-offline_map_is_invalid(carmen_map_server_offline_map_message *map, double pos_x, double pos_y)
+map_is_invalid(carmen_mapper_map_message *map, double pos_x, double pos_y)
 {
 	if (map->timestamp == 0 ||
 		map->config.x_origin == 0 ||
@@ -339,19 +513,10 @@ offline_map_is_invalid(carmen_map_server_offline_map_message *map, double pos_x,
 		pos_x > map->config.x_origin + map->config.x_size ||
 		pos_y > map->config.y_origin + map->config.y_size)
 	{
-		// printf("%lf\n", map->timestamp);
-		// printf("%lf\n", map->config.x_origin);
-		// printf("%lf\n", map->config.y_origin);
-		// printf("%d\n", map->config.x_size);
-		// printf("%d\n", map->config.y_size);
-		// printf("%lf\n", map->config.x_origin);
-		// printf("%lf\n", map->config.y_origin);
-		// printf("%lf\n", pos_x);
-		// printf("%lf\n", pos_y);
-
 		return 1;
 	}
 
+	//printf("mapper map invalid\n");
 	return 0;
 }
 
@@ -397,6 +562,7 @@ goal_list_is_invalid(carmen_behavior_selector_goal_list_message *goal_list_messa
 	if (goal[0] < 0 || goal[0] > 100.0 || fabs(goal[1]) > 100.0)
 		return 1;
 
+	//printf("goal list invalid\n");
 	return 0;
 }
 
@@ -419,7 +585,44 @@ rddf_is_invalid(carmen_rddf_road_profile_message *rddf_message, double x, double
 	if (goal[0] < 0 || goal[0] > 30.0 || fabs(goal[1]) > 30.0)
 		return 1;
 
+	//printf("rddf invalid\n");
 	return 0;
+}
+
+
+// TODO: Merge this function with the reset_initial_pose.
+void
+reset_without_initial_pose()
+{
+	double time_last_message = carmen_get_time();
+
+	double x = 0.;
+	double y = 0.;
+	double th = 0.;
+
+	do
+	{
+		publish_stop_command();
+		carmen_ipc_sleep(0.1);
+
+		// If the messages are taking too long to arrive, warn the user.
+		double curr_time = carmen_get_time();
+		if (curr_time - time_last_message > 1.0)
+		{
+			printf("Waiting for initialization messages.\n");
+			time_last_message = curr_time;
+		}
+
+		x = global_localize_ackerman_message.globalpos.x;
+		y = global_localize_ackerman_message.globalpos.y;
+		th = global_localize_ackerman_message.globalpos.theta;
+
+	} while (global_localize_ackerman_message.timestamp == 0 ||
+			obstacle_distance_map_is_invalid(&global_obstacle_distance_mapper_compact_map_message, x, y) ||
+			// laser_reading_is_invalid(&global_front_laser_message) ||
+			map_is_invalid(&global_mapper_map_message, x, y) ||
+			goal_list_is_invalid(&global_goal_list_message, x, y, th) ||
+			rddf_is_invalid(&global_rddf_message, x, y, th));
 }
 
 
@@ -427,14 +630,6 @@ void
 reset_initial_pose(double x, double y, double th)
 {
 	publish_stop_command();
-
-	// memset(&global_obstacle_distance_mapper_compact_map_message, 0, sizeof(global_obstacle_distance_mapper_compact_map_message));
-	// memset(&global_localize_ackerman_message, 0, sizeof(global_localize_ackerman_message));
-	// memset(&global_motion_command_message, 0, sizeof(global_motion_command_message));
-	// memset(&global_front_laser_message, 0, sizeof(global_front_laser_message));
-	// memset(&global_offline_map_message, 0, sizeof(global_offline_map_message));
-	// memset(&global_goal_list_message, 0, sizeof(global_goal_list_message));
-	// memset(&global_rddf_message, 0, sizeof(global_rddf_message));
 
 	carmen_point_t pose;
 	carmen_point_t std;
@@ -453,7 +648,6 @@ reset_initial_pose(double x, double y, double th)
 	{
 		publish_stop_command();
 		carmen_localize_ackerman_initialize_gaussian_command(pose, std);
-		// publish_behavior_selector_state();
 		carmen_ipc_sleep(0.1);
 
 		// If the messages are taking too long to arrive, warn the user.
@@ -465,9 +659,9 @@ reset_initial_pose(double x, double y, double th)
 		}
 
 	} while (pose_is_invalid(&global_localize_ackerman_message, x, y) ||
-			map_is_invalid(&global_obstacle_distance_mapper_compact_map_message, x, y) ||
+			obstacle_distance_map_is_invalid(&global_obstacle_distance_mapper_compact_map_message, x, y) ||
 			laser_reading_is_invalid(&global_front_laser_message) ||
-			offline_map_is_invalid(&global_offline_map_message, x, y) ||
+			map_is_invalid(&global_mapper_map_message, x, y) ||
 			goal_list_is_invalid(&global_goal_list_message, x, y, th) ||
 			rddf_is_invalid(&global_rddf_message, x, y, th));
 }
@@ -601,6 +795,11 @@ define_messages()
 
 	carmen_test_ipc_exit(err, "Could not define message",
 		CARMEN_BEHAVIOR_SELECTOR_GOAL_LIST_NAME);
+
+	err = IPC_defineMsg(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_NAME, IPC_VARIABLE_LENGTH,
+			CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_FMT);
+
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_NAME);
 }
 
 
@@ -782,8 +981,22 @@ initialize_global_data()
 	memset(&global_obstacle_distance_mapper_compact_map_message, 0, sizeof(global_obstacle_distance_mapper_compact_map_message));
 	memset(&global_localize_ackerman_message, 0, sizeof(global_localize_ackerman_message));
 	memset(&global_front_laser_message, 0, sizeof(global_front_laser_message));
-	memset(&global_offline_map_message, 0, sizeof(global_offline_map_message));
+	memset(&global_mapper_map_message, 0, sizeof(global_mapper_map_message));
 	memset(&global_motion_command_message, 0, sizeof(global_motion_command_message));
+}
+
+
+void
+go_message_handler()
+{
+	autonomous_mode = 1;
+}
+
+
+void
+stop_message_handler()
+{
+	autonomous_mode = 0;
 }
 
 
@@ -813,7 +1026,10 @@ init()
 	carmen_laser_subscribe_frontlaser_message(&global_front_laser_message,
 		NULL, CARMEN_SUBSCRIBE_LATEST);
 
-	carmen_map_server_subscribe_offline_map(&global_offline_map_message,
+//	carmen_map_server_subscribe_offline_map(&global_offline_map_message,
+//		NULL, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_mapper_subscribe_map_message(&global_mapper_map_message,
 		NULL, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_rddf_subscribe_road_profile_message(&global_rddf_message,
@@ -821,6 +1037,20 @@ init()
 
 	carmen_robot_ackerman_subscribe_teacher_motion_command(&global_motion_command_message,
 		NULL, CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_subscribe_message(
+			(char *) CARMEN_NAVIGATOR_ACKERMAN_GO_NAME,
+			(char *) CARMEN_DEFAULT_MESSAGE_FMT,
+			NULL, sizeof(carmen_navigator_ackerman_go_message),
+			(carmen_handler_t) go_message_handler,
+			CARMEN_SUBSCRIBE_LATEST);
+
+	carmen_subscribe_message(
+			(char *) CARMEN_NAVIGATOR_ACKERMAN_STOP_NAME,
+			(char *) CARMEN_DEFAULT_MESSAGE_FMT,
+			NULL, sizeof(carmen_navigator_ackerman_stop_message),
+			(carmen_handler_t) stop_message_handler,
+			CARMEN_SUBSCRIBE_LATEST);
 
 	signal(SIGINT, signal_handler);
 }

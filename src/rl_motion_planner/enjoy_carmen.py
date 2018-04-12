@@ -87,7 +87,6 @@ def generate_plan(policy, pose_data, n_commands=30, dt=0.1):
         laser_data = carmen.simulation_read_laser()
 
         if len(goal_data) == 0:
-            print('Invalid goal data during simulation.')
             break
 
         state = compute_state(policy, pose_data, goal_data, laser_data, None)
@@ -100,8 +99,7 @@ def generate_plan(policy, pose_data, n_commands=30, dt=0.1):
         velocity) instead of v. This is equivalent to assume the car will achieve the 
         desired velocity. 
         """
-        if i == 0:
-            nn_v = filter_v(nn_v, v, dt, laser_data)
+        nn_v = filter_v(nn_v, pose_data[3], dt, laser_data)
 
         vs.append(nn_v)
         phis.append(nn_phi)
@@ -148,7 +146,8 @@ policy = Policy(input_shape=[98],
                 continuous_std=1e-7)
 
 # policy.load('data/model_immitation.ckpt')
-policy.load('data/model_online_immitation_learning.ckpt')
+carmen_path = os.environ['CARMEN_HOME']
+policy.load(carmen_path + '/src/rl_motion_planner/data/model_online_immitation_learning.ckpt')
 
 goal_achievement_dist = 1.0
 max_steps_stopped = 20
@@ -158,10 +157,14 @@ while True:
     # init_pos_id = np.random.randint(len(rddf))
     # init_pos = rddf[init_pos_id]
     # init_pos = rddf[int(len(rddf) / 2)]
-    init_pos = rddf[0]
+    # init_pos = rddf[0]
     # init_pos = rddf[-1000]
+    init_pos = [0., 0., 0., 0., 0.]
     
-    carmen.reset_initial_pose(init_pos[0], init_pos[1], init_pos[2])
+    # carmen.reset_initial_pose(init_pos[0], init_pos[1], init_pos[2])
+    carmen.reset_without_initial_pose()
+    # print('Initialized!')
+    
     time_since_last_print = time.time()
 
     # plan = None
@@ -176,15 +179,16 @@ while True:
           (n_steps_v_zero < max_steps_stopped):
         carmen.handle_messages()
         pose_data = carmen.read_pose()
-        goal_data = carmen.read_goal()
-        laser = carmen.read_laser()
-        rddf_data = carmen.read_rddf()
-
-        if len(goal_data) == 0:
-            print('Invalid goal data. Waiting for valid data. Reinitializing environment.')
-            break
 
         if False:
+            laser = carmen.read_laser()
+            rddf_data = carmen.read_rddf()
+            goal_data = carmen.read_goal()
+            
+            if len(goal_data) == 0:
+                print('Empty goal list. Reinitializing.')
+                break
+
             state = compute_state(policy, pose_data, goal_data, laser, rddf_data)
             nn_v, nn_phi = policy.forward(state)
             nn_dt = 0.1 
@@ -197,25 +201,29 @@ while True:
         else:
             vs, phis, ts = generate_plan(policy, pose_data, n_commands=30, dt=0.2)
             
-            cv2.imshow('img', np.zeros((200, 200)))
-            c = cv2.waitKey(1)
-            
-            if c == ord('w'):
-                vs = [policy.config['max_v']] * len(ts) 
-            elif c == ord('s'):
-                vs = [-policy.config['max_v']] * len(ts) 
-            elif c == ord('a'):
-                phis = [-policy.config['max_phi']] * len(ts)
-            elif c == ord('d'):
-                phis = [policy.config['max_phi']] * len(ts)
-            
-        travelled_dist += ((last_pos[0] - pose_data[0]) ** 2 + (last_pos[1] - pose_data[1]) ** 2) ** .5
-        last_pos = pose_data[0], pose_data[1] 
+#             cv2.imshow('img', np.zeros((200, 200)))
+#             c = cv2.waitKey(1)
+#             
+#             if c == ord('w'):
+#                 vs = [policy.config['max_v']] * len(ts) 
+#             elif c == ord('s'):
+#                 vs = [-policy.config['max_v']] * len(ts) 
+#             elif c == ord('a'):
+#                 phis = [-policy.config['max_phi']] * len(ts)
+#             elif c == ord('d'):
+#                 phis = [policy.config['max_phi']] * len(ts)
+#             
+#         travelled_dist += ((last_pos[0] - pose_data[0]) ** 2 + (last_pos[1] - pose_data[1]) ** 2) ** .5
+#         last_pos = pose_data[0], pose_data[1] 
         
-        carmen.publish_command(vs, phis, ts, True)
+        if len(vs) > 0:
+            carmen.publish_command(vs, phis, ts, True, pose_data[0], pose_data[1], pose_data[2])
+        else:
+            print('Ignoring empty command list!')
+
         episode_size += 1
         
-    print("Episode done.")
+    # print("Episode done.")
     carmen.publish_stop_command()
 
     n_episodes += 1
@@ -225,8 +233,8 @@ while True:
         collided = True
         n_collisions += 1
 
-    print('Episode:', n_episodes, 
-          'Collided:', collided, 
-          'n_collisions:', n_collisions, 
-          'Episode size:', episode_size,
-          'Travelled dist:', travelled_dist)
+#     print('Episode:', n_episodes, 
+#           'Collided:', collided, 
+#           'n_collisions:', n_collisions, 
+#           'Episode size:', episode_size,
+#           'Travelled dist:', travelled_dist)

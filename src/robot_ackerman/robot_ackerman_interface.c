@@ -209,16 +209,9 @@ define_motion_command_message(const char *name, const char *fmt)
 
 
 void
-publish_motion_command_with_name(carmen_ackerman_motion_command_p motion_command, int num_motion_commands, double timestamp, const char *name, const char *fmt)
+publish_motion_command_with_name(carmen_ackerman_motion_command_p motion_command, int num_motion_commands, double timestamp, const char *name)
 {
 	IPC_RETURN_TYPE err;
-	static int first_time = 1;
-
-	if (first_time)
-	{
-		define_motion_command_message(name, fmt);
-		first_time = 0;
-	}
 
 	static carmen_robot_ackerman_motion_command_message msg;
 
@@ -236,17 +229,31 @@ publish_motion_command_with_name(carmen_ackerman_motion_command_p motion_command
 void 
 carmen_robot_ackerman_publish_motion_command(carmen_ackerman_motion_command_p motion_command, int num_motion_commands, double timestamp)
 {
+	static int first_time = 1;
+
+	if (first_time)
+	{
+		define_motion_command_message(CARMEN_ROBOT_ACKERMAN_MOTION_COMMAND_NAME, CARMEN_ROBOT_ACKERMAN_MOTION_COMMAND_FMT);
+		first_time = 0;
+	}
+
 	publish_motion_command_with_name(motion_command, num_motion_commands,
-		timestamp, CARMEN_ROBOT_ACKERMAN_MOTION_COMMAND_NAME,
-		CARMEN_ROBOT_ACKERMAN_MOTION_COMMAND_FMT);
+		timestamp, CARMEN_ROBOT_ACKERMAN_MOTION_COMMAND_NAME);
 }
 
 
 void
 carmen_robot_ackerman_publish_teacher_motion_command(carmen_ackerman_motion_command_p motion_command, int num_motion_commands, double timestamp)
 {
+	static int first_time = 1;
+
+	if (first_time)
+	{
+		define_motion_command_message(CARMEN_ROBOT_ACKERMAN_TEACHER_MOTION_COMMAND_NAME, CARMEN_ROBOT_ACKERMAN_TEACHER_MOTION_COMMAND_FMT);
+		first_time = 0;
+	}
+
 	publish_motion_command_with_name(motion_command, num_motion_commands,
-		timestamp, CARMEN_ROBOT_ACKERMAN_TEACHER_MOTION_COMMAND_NAME,
-		CARMEN_ROBOT_ACKERMAN_TEACHER_MOTION_COMMAND_FMT);
+		timestamp, CARMEN_ROBOT_ACKERMAN_TEACHER_MOTION_COMMAND_NAME);
 }
 

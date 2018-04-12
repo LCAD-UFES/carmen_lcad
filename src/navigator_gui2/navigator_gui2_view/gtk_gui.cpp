@@ -1080,6 +1080,42 @@ namespace View
 	}
 
 	void
+	GtkGui::navigator_graphics_update_plan_to_draw(int path_size, carmen_ackerman_traj_point_t *path)
+	{
+		static int first = 1;
+		static int allocated_size = 0;
+
+		if (first)
+		{
+			this->candidate_path_size = (int *) calloc (1, sizeof(int));
+			this->canditade_path = (carmen_world_point_t **) calloc (1, sizeof(carmen_world_point_t *));
+			this->canditade_path[0] = (carmen_world_point_t *) calloc (path_size, sizeof(carmen_world_point_t));
+			allocated_size = path_size;
+			first = 0;
+		}
+
+		if (path_size != allocated_size)
+		{
+			this->canditade_path[0] = (carmen_world_point_t *) realloc (this->canditade_path[0], path_size * sizeof(carmen_world_point_t));
+			allocated_size = path_size;
+		}
+
+		this->num_candidate_path = 1;
+		this->candidate_path_size[0] = path_size;
+
+		for (int j = 0; j < path_size; j++)
+		{
+			this->canditade_path[0][j].pose.x	   = path[j].x;
+			this->canditade_path[0][j].pose.y	   = path[j].y;
+			this->canditade_path[0][j].pose.theta  = path[j].theta;
+			this->canditade_path[0][j].map = this->controls_.map_view->internal_map;
+		}
+
+		display_needs_updating = 1;
+		do_redraw();
+	}
+
+	void
 	GtkGui::navigator_graphics_update_plan_tree(
 			carmen_ackerman_traj_point_p p1,
 			carmen_ackerman_traj_point_p p2,
