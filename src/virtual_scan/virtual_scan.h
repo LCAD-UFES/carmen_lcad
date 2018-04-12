@@ -37,7 +37,7 @@
 #define	MCMC_MAX_ITERATIONS	300
 
 //#define GAMMA	0.75
-#define GAMMA	1.0
+#define GAMMA	0.15
 #define VMAX	(120.0 / 3.6)
 
 #define NUMBER_OF_FRAMES_T 10

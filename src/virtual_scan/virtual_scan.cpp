@@ -1790,8 +1790,8 @@ track_death(virtual_scan_track_set_t *track_set, int victim)
 	if (track_set->size > 1)
 	{
 		free_track(track_set->tracks[victim]);
-		memmove((void *) &(track_set->tracks[victim]), &(track_set->tracks[victim + 1]), (track_set->size - (victim + 1)) * sizeof(virtual_scan_track_t *));
-		track_set->size -= 1;
+		memmove((void *) &(track_set->tracks[victim]), &(track_set->tracks[victim + 1]), (track_set->size - (victim + 1)) * sizeof(virtual_scan_track_t *)); // verificar (victim + 1)
+		track_set->size -= 1; // realloc
 	}
 	else
 	{
