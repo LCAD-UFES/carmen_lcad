@@ -2,8 +2,8 @@
 #include <cmath>
 #include <carmen/carmen.h>
 #include <carmen/laser_interface.h>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+// #include <opencv/cv.h>
+// #include <opencv/highgui.h>
 #include <vector>
 #include "g2o/types/slam2d/se2.h"
 
@@ -16,7 +16,7 @@ laser_to_vec(carmen_laser_laser_message &laser_message, double theta, int view)
 
 	for (i = 0; i < laser_message.num_readings; i++)
 		readings.push_back(laser_message.range[i]);
-
+	/*
 	if (view)
 	{
 		int px, py;
@@ -45,7 +45,8 @@ laser_to_vec(carmen_laser_laser_message &laser_message, double theta, int view)
 		cv::imshow("laser", m);
 		cv::waitKey(1);
 	}
-
+	*/
+	
 	return readings;
 }
 
