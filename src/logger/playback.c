@@ -48,6 +48,7 @@ int fast = 0;
 int advance_frame = 0;
 int rewind_frame = 0;
 int basic_messages = 0;
+char *logfile_name = NULL;
 
 int g_publish_odometry = 1;
 
@@ -566,14 +567,13 @@ void read_parameters(int argc, char **argv)
 		{"robot", "publish_odometry", CARMEN_PARAM_ONOFF, &(g_publish_odometry), 0, NULL}
 	};
 
-	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
-
 	int index;
 
 	if (argc < 2)
 		usage("Needs at least one argument.\n");
 
-	for (index = 0; index < argc; index++)
+	logfile_name = argv[1];
+	for (index = 2; index < argc; index++)
 	{
 		if (strncmp(argv[index], "-h", 2) == 0 || strncmp(argv[index], "--help", 6) == 0)
 			usage(NULL);
@@ -590,6 +590,9 @@ void read_parameters(int argc, char **argv)
 			if (index < argc - 1)
 				stop_position = atoi(argv[++index]);
 	}
+
+	// Esta funcao altera a sequencia de itens de *argv, entao ela so pode ser chamada no final
+	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 }
 
 void shutdown_playback_module(int sig)
@@ -725,9 +728,9 @@ int main(int argc, char **argv)
 	carmen_playback_define_messages ();
 	signal(SIGINT, shutdown_playback_module);
 
-	logfile = carmen_fopen(argv[1], "r");
+	logfile = carmen_fopen(logfile_name, "r");
 	if (logfile == NULL)
-		carmen_die("Error: could not open file %s for reading.\n", argv[1]);
+		carmen_die("Error: could not open file %s for reading.\n", logfile_name);
 
 	int fadvise_error = posix_fadvise(fileno(logfile->fp), 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (fadvise_error)
@@ -736,7 +739,7 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	strcpy(index_file_name, argv[1]);
+	strcpy(index_file_name, logfile_name);
 	strcat(index_file_name, ".index");
 	index_file = fopen(index_file_name, "r");
 	if (index_file == NULL)
