@@ -579,10 +579,10 @@ append_i_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, vir
 	carmen_point_t last_point = segment_features.last_point;
 	for (int category = 1; category < 2; category++)
 	{
-		double theta, theta2, l;
+		double theta, theta2;
 
-		l = DIST2D(first_point, last_point);
-		if (categories[category].length > l)
+//		double l = DIST2D(first_point, last_point);
+//		if (categories[category].length > l)
 		{
 			theta = atan2(last_point.y - first_point.y, last_point.x - first_point.x);
 //			theta2 = carmen_normalize_theta(theta + M_PI / 2.0);
@@ -620,7 +620,7 @@ virtual_scan_fit_box_models(virtual_scan_segment_classes_t *virtual_scan_segment
 //			append_pedestrian_to_box_models(box_models, box_points, virtual_scan_segment_classes->segment_features[i].centroid);
 		if (segment_class == L_SHAPED) // L-shape segments segments will generate bus and car hypotheses
 			append_l_shaped_objects_to_box_models(box_models, box_points, virtual_scan_segment_classes->segment_features[i], categories);
-		else if (segment_class == I_SHAPED) // I-shape segments segments will generate bus, car and bike hypotheses
+		if (segment_class == I_SHAPED) // I-shape segments segments will generate bus, car and bike hypotheses
 			append_i_shaped_objects_to_box_models(box_models, box_points, virtual_scan_segment_classes->segment_features[i], categories);
 
 		if (!is_last_box_model_hypotheses_empty(box_model_hypotheses))
@@ -1080,16 +1080,41 @@ virtual_scan_update_neighborhood_graph(virtual_scan_neighborhood_graph_t *neighb
 }
 
 
+bool
+do_not_have_sibling_in_track_set(virtual_scan_box_model_hypothesis_edges_t *hypothesis_edges, virtual_scan_track_set_t *track_set)
+{
+	for (int k = 0; k < hypothesis_edges->size; k++)
+	{
+		if (hypothesis_edges->edge_type[k] == SIBLING_EDGE)
+		{
+			for (int i = 0; i < track_set->size; i++)
+			{
+				for (int j = 0; j < track_set->tracks[i]->size; j++)
+				{
+					int h = track_set->tracks[i]->box_model_hypothesis[j].index;
+					if (hypothesis_edges->edge[k] == h)
+						return (false);
+				}
+			}
+		}
+	}
+
+	return (true);
+}
+
+
 int *
 get_v_star(int &size, virtual_scan_track_set_t *track_set, virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
+	size = 0;
+
 	if (track_set != NULL)
 	{
-		size = 0;
 		for (int i = 0; i < neighborhood_graph->size; i++)
 		{
 			if (!track_set->vertex_selected[i])
-				size++;
+				if (do_not_have_sibling_in_track_set(neighborhood_graph->box_model_hypothesis_edges[i], track_set))
+					size++;
 		}
 
 		if (size != 0)
@@ -1099,8 +1124,11 @@ get_v_star(int &size, virtual_scan_track_set_t *track_set, virtual_scan_neighbor
 			{
 				if (!track_set->vertex_selected[i])
 				{
-					v_star[j] = i;
-					j++;
+					if (do_not_have_sibling_in_track_set(neighborhood_graph->box_model_hypothesis_edges[i], track_set))
+					{
+						v_star[j] = i;
+						j++;
+					}
 				}
 			}
 			return (v_star);
@@ -1526,8 +1554,8 @@ compute_hypothesis_posterior_probability_components(virtual_scan_box_model_hypot
 	carmen_point_t *Zs_out, *Zs_in, *Zd; int Zs_out_size, Zs_in_size, Zd_size;
 	get_Zs_and_Zd_of_hypothesis(Zs_in, Zs_in_size, Zs_out, Zs_out_size, Zd, Zd_size, box_model_hypothesis);
 
-	box_model_hypothesis->dn = PM1(Zd, Zd_size, box_model_hypothesis);
-	box_model_hypothesis->c2 = PM2(Zs_out, Zs_out_size, box_model_hypothesis);
+	box_model_hypothesis->dn = PM1(Zd, Zd_size, box_model_hypothesis) / (double) Zd_size;
+	box_model_hypothesis->c2 = PM2(Zs_out, Zs_out_size, box_model_hypothesis) / (double) Zd_size;
 	box_model_hypothesis->c3 = 0.0;
 
 	free(Zs_out); free(Zs_in); free(Zd);
@@ -1652,8 +1680,19 @@ add_hypothesis_at_the_beginning(virtual_scan_track_set_t *track_set, int track_i
 }
 
 
+bool
+hypothesis_in_v_star(int hypothesis, int *v_star, int v_star_size)
+{
+	for (int i = 0; i < v_star_size; i++)
+		if (v_star[i] == hypothesis)
+			return (true);
+
+	return (false);
+}
+
+
 int *
-get_neighbors_within_v_star(int neighbor_type, int &number_of_neighbors, virtual_scan_box_model_hypothesis_edges_t *hypothesis_neighbors, bool *vertex_selected)
+get_neighbors_within_v_star(int neighbor_type, int &number_of_neighbors, virtual_scan_box_model_hypothesis_edges_t *hypothesis_neighbors, int *v_star, int v_star_size)
 {
 	if (hypothesis_neighbors == NULL)
 		return (NULL);
@@ -1661,7 +1700,7 @@ get_neighbors_within_v_star(int neighbor_type, int &number_of_neighbors, virtual
 	number_of_neighbors = 0;
 	for (int i = 0; i < hypothesis_neighbors->size; i++)
 	{
-		if ((hypothesis_neighbors->edge_type[i] == neighbor_type) && !(vertex_selected[hypothesis_neighbors->edge[i]]))
+		if ((hypothesis_neighbors->edge_type[i] == neighbor_type) && hypothesis_in_v_star(hypothesis_neighbors->edge[i], v_star, v_star_size))
 			number_of_neighbors++;
 	}
 
@@ -1670,7 +1709,7 @@ get_neighbors_within_v_star(int neighbor_type, int &number_of_neighbors, virtual
 		int *neighbors = (int *) malloc(number_of_neighbors * sizeof(int));
 		for (int i = 0, j = 0; i < hypothesis_neighbors->size; i++)
 		{
-			if ((hypothesis_neighbors->edge_type[i] == neighbor_type) && !(vertex_selected[hypothesis_neighbors->edge[i]]))
+			if ((hypothesis_neighbors->edge_type[i] == neighbor_type) && hypothesis_in_v_star(hypothesis_neighbors->edge[i], v_star, v_star_size))
 			{
 				neighbors[j] = hypothesis_neighbors->edge[i];
 				j++;
@@ -1684,12 +1723,13 @@ get_neighbors_within_v_star(int neighbor_type, int &number_of_neighbors, virtual
 
 
 virtual_scan_box_model_hypothesis_t *
-get_child_hypothesis_in_v_star_and_at_the_end_of_track(virtual_scan_track_t *track, virtual_scan_neighborhood_graph_t *neighborhood_graph, bool *vertex_selected)
+get_child_hypothesis_in_v_star_and_at_the_end_of_track(virtual_scan_track_t *track, virtual_scan_neighborhood_graph_t *neighborhood_graph,
+		int *v_star, int v_star_size)
 {
 	virtual_scan_box_model_hypothesis_t end_of_track = track->box_model_hypothesis[track->size - 1];
 	virtual_scan_box_model_hypothesis_edges_t *hypothesis_neighbors = neighborhood_graph->box_model_hypothesis_edges[end_of_track.index];
 	int number_of_children;
-	int *hypothesis_children = get_neighbors_within_v_star(CHILD_EDGE, number_of_children, hypothesis_neighbors, vertex_selected);
+	int *hypothesis_children = get_neighbors_within_v_star(CHILD_EDGE, number_of_children, hypothesis_neighbors, v_star, v_star_size);
 	if (hypothesis_children != NULL)
 	{
 		int rand_hypothesis = carmen_int_random(number_of_children);
@@ -1704,12 +1744,13 @@ get_child_hypothesis_in_v_star_and_at_the_end_of_track(virtual_scan_track_t *tra
 
 
 virtual_scan_box_model_hypothesis_t *
-get_child_hypothesis_in_v_star_and_at_the_beginning_of_track(virtual_scan_track_t *track, virtual_scan_neighborhood_graph_t *neighborhood_graph, bool *vertex_selected)
+get_child_hypothesis_in_v_star_and_at_the_beginning_of_track(virtual_scan_track_t *track, virtual_scan_neighborhood_graph_t *neighborhood_graph,
+		int *v_star, int v_star_size)
 {
 	virtual_scan_box_model_hypothesis_t beginning_of_track = track->box_model_hypothesis[0];
 	virtual_scan_box_model_hypothesis_edges_t *hypothesis_neighbors = neighborhood_graph->box_model_hypothesis_edges[beginning_of_track.index];
 	int number_of_parents;
-	int *hypothesis_parents = get_neighbors_within_v_star(PARENT_EDGE, number_of_parents, hypothesis_neighbors, vertex_selected);
+	int *hypothesis_parents = get_neighbors_within_v_star(PARENT_EDGE, number_of_parents, hypothesis_neighbors, v_star, v_star_size);
 	if (hypothesis_parents != NULL)
 	{
 		int rand_hypothesis = carmen_int_random(number_of_parents);
@@ -1729,26 +1770,32 @@ track_extension(virtual_scan_track_set_t *track_set, int track_id, virtual_scan_
 	if (track_set == NULL)
 		return;
 
-	virtual_scan_track_t *track = track_set->tracks[track_id];
-	virtual_scan_box_model_hypothesis_t *hypothesis;
-
-	do
+	int v_star_size;
+	int *v_star = get_v_star(v_star_size, track_set, neighborhood_graph);
+	if (v_star != NULL)
 	{
-		if (carmen_int_random(2) == 0)
+		virtual_scan_track_t *track = track_set->tracks[track_id];
+		virtual_scan_box_model_hypothesis_t *hypothesis;
+		do
 		{
-			hypothesis = get_child_hypothesis_in_v_star_and_at_the_end_of_track(track, neighborhood_graph, track_set->vertex_selected);
-			compute_hypothesis_posterior_probability_components(hypothesis);
+			if (carmen_int_random(2) == 0)
+			{
+				hypothesis = get_child_hypothesis_in_v_star_and_at_the_end_of_track(track, neighborhood_graph, v_star, v_star_size);
+				compute_hypothesis_posterior_probability_components(hypothesis);
 
-			add_hypothesis_at_the_end(track_set, track_id, hypothesis);
-		}
-		else
-		{
-			hypothesis = get_child_hypothesis_in_v_star_and_at_the_beginning_of_track(track, neighborhood_graph, track_set->vertex_selected);
-			compute_hypothesis_posterior_probability_components(hypothesis);
+				add_hypothesis_at_the_end(track_set, track_id, hypothesis);
+			}
+			else
+			{
+				hypothesis = get_child_hypothesis_in_v_star_and_at_the_beginning_of_track(track, neighborhood_graph, v_star, v_star_size);
+				compute_hypothesis_posterior_probability_components(hypothesis);
 
-			add_hypothesis_at_the_beginning(track_set, track_id, hypothesis);
-		}
-	} while (carmen_uniform_random(0.0, 1.0) > GAMMA);
+				add_hypothesis_at_the_beginning(track_set, track_id, hypothesis);
+			}
+		} while (carmen_uniform_random(0.0, 1.0) > GAMMA);
+
+		free(v_star);
+	}
 }
 
 
@@ -2076,7 +2123,9 @@ get_moving_objects_from_track_set(virtual_scan_track_set_t *best_track_set)
 
 	int num_moving_objects = 0;
 	for (int i = 0; i < best_track_set->size; i++)
-		num_moving_objects += best_track_set->tracks[i]->size;
+		for (int j = 0; j < best_track_set->tracks[i]->size; j++)
+//			if (best_track_set->tracks[i]->box_model_hypothesis[j].zi == g_zi)
+				num_moving_objects++;
 
 	message->point_clouds = (t_point_cloud_struct *) malloc(sizeof(t_point_cloud_struct) * num_moving_objects);
 	message->num_point_clouds = num_moving_objects;
@@ -2086,35 +2135,38 @@ get_moving_objects_from_track_set(virtual_scan_track_set_t *best_track_set)
 	{
 		for (int j = 0; j < best_track_set->tracks[i]->size; j++)
 		{
-			virtual_scan_box_model_t *box = &(best_track_set->tracks[i]->box_model_hypothesis[j].hypothesis);
+//			if (best_track_set->tracks[i]->box_model_hypothesis[j].zi == g_zi)
+			{
+				virtual_scan_box_model_t *box = &(best_track_set->tracks[i]->box_model_hypothesis[j].hypothesis);
 
-			message->point_clouds[k].r = 0.0;
-			message->point_clouds[k].g = 0.0;
-			message->point_clouds[k].b = 1.0;
-			message->point_clouds[k].linear_velocity = 0;
-			message->point_clouds[k].orientation = box->theta;
-			message->point_clouds[k].object_pose.x = box->x;
-			message->point_clouds[k].object_pose.y = box->y;
-			message->point_clouds[k].object_pose.z = 0.0;
-			message->point_clouds[k].height = 0;
-			message->point_clouds[k].length = box->length;
-			message->point_clouds[k].width = box->width;
-			message->point_clouds[k].geometric_model = box->c;
-			message->point_clouds[k].point_size = 0; // 1
-//			message->point_clouds[k].num_associated = timestamp_moving_objects_list[current_vector_index].objects[i].id;
+				message->point_clouds[k].r = 0.0;
+				message->point_clouds[k].g = 0.0;
+				message->point_clouds[k].b = 1.0;
+				message->point_clouds[k].linear_velocity = 0;
+				message->point_clouds[k].orientation = box->theta;
+				message->point_clouds[k].object_pose.x = box->x;
+				message->point_clouds[k].object_pose.y = box->y;
+				message->point_clouds[k].object_pose.z = 0.0;
+				message->point_clouds[k].height = 0;
+				message->point_clouds[k].length = box->length;
+				message->point_clouds[k].width = box->width;
+				message->point_clouds[k].geometric_model = box->c;
+				message->point_clouds[k].point_size = 0; // 1
+	//			message->point_clouds[k].num_associated = timestamp_moving_objects_list[current_vector_index].objects[i].id;
 
-			object_model_features_t &model_features = message->point_clouds[k].model_features;
-			model_features.model_id = box->c;
-			model_features.model_name = (char *) "name?";
-			model_features.geometry.length = box->length;
-			model_features.geometry.width = box->width;
+				object_model_features_t &model_features = message->point_clouds[k].model_features;
+				model_features.model_id = box->c;
+				model_features.model_name = (char *) "name?";
+				model_features.geometry.length = box->length;
+				model_features.geometry.width = box->width;
 
-//			message->point_clouds[k].points = (carmen_vector_3D_t *) malloc(1 * sizeof(carmen_vector_3D_t));
-//			message->point_clouds[k].points[0].x = box->x;
-//			message->point_clouds[k].points[0].y = box->y;
-//			message->point_clouds[k].points[0].z = 0.0;
+	//			message->point_clouds[k].points = (carmen_vector_3D_t *) malloc(1 * sizeof(carmen_vector_3D_t));
+	//			message->point_clouds[k].points[0].x = box->x;
+	//			message->point_clouds[k].points[0].y = box->y;
+	//			message->point_clouds[k].points[0].z = 0.0;
 
-			k++;
+				k++;
+			}
 		}
 	}
 
