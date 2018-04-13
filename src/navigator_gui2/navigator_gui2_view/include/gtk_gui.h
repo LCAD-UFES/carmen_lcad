@@ -307,6 +307,9 @@ namespace View
 		void navigator_graphics_update_simulator_truepos(carmen_point_t truepose);
 		void navigator_graphics_update_simulator_objects(int num_objects, carmen_traj_point_t *objects_list);
 		void navigator_graphics_update_moving_objects(int num_point_clouds, moving_objects_tracking_t *moving_objects_tracking);
+
+		void navigator_graphics_update_plan_to_draw(int path_size, carmen_ackerman_traj_point_t *path);
+
 		void navigator_graphics_update_plan_tree(
 				carmen_ackerman_traj_point_p p1,
 				carmen_ackerman_traj_point_p p2,
@@ -315,6 +318,7 @@ namespace View
 				carmen_ackerman_traj_point_t paths[500][100],
 				int path_size[100],
 				int num_path);
+
 		void navigator_graphics_update_fused_odometry(carmen_point_t fused_odometry_pose);
 		void navigator_graphics_update_behavior_selector_state(carmen_behavior_selector_state_message msg);
 		void navigator_graphics_update_parking_assistant_goal(carmen_point_t pose);

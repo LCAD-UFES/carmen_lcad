@@ -707,6 +707,13 @@ plan_tree_handler(carmen_navigator_ackerman_plan_tree_message *msg)
 
 
 static void
+plan_to_draw_handler(carmen_navigator_ackerman_plan_to_draw_message *message)
+{
+	gui->navigator_graphics_update_plan_to_draw(message->path_size, message->path);
+}
+
+
+static void
 carmen_parking_assistant_goal_handler(carmen_parking_assistant_goal_message *msg)
 {
 	gui->navigator_graphics_update_parking_assistant_goal(msg->pose);
@@ -915,6 +922,11 @@ subscribe_ipc_messages()
 
 	err = IPC_subscribe(CARMEN_NAVIGATOR_ACKERMAN_DISPLAY_CONFIG_NAME, display_config_handler, NULL);
 	carmen_test_ipc_exit(err, "Could not subscribe message", CARMEN_NAVIGATOR_ACKERMAN_DISPLAY_CONFIG_NAME);
+
+	carmen_subscribe_message(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_NAME,
+			CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_FMT,
+			NULL, sizeof(carmen_navigator_ackerman_plan_to_draw_message),
+			(carmen_handler_t) plan_to_draw_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_map_server_subscribe_offline_map(NULL, (carmen_handler_t) offline_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_map_server_subscribe_road_map(NULL, (carmen_handler_t) road_map_update_handler, CARMEN_SUBSCRIBE_LATEST);

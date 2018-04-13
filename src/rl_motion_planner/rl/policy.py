@@ -1,4 +1,5 @@
 
+import os
 import sys
 import numpy as np
 import tensorflow as tf
@@ -22,7 +23,10 @@ class Policy:
         else:
             raise Exception('Invalid nonlin "' + nonlin + '"')
 
-        self.config = dict([l.rstrip().rsplit(' ') for l in open('data/config.txt', 'r').readlines()])
+        carmen_path = os.environ['CARMEN_HOME']
+        config_path = carmen_path + '/src/rl_motion_planner/data/config.txt'
+
+        self.config = dict([l.rstrip().rsplit(' ') for l in open(config_path, 'r').readlines()])
         for key, value in self.config.items():
             self.config[key] = float(value)
 
