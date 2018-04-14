@@ -239,8 +239,7 @@ publish_navigator_ackerman_plan_message(std::vector<double> &vs, std::vector<dou
 
 void
 publish_plan_tree_message(std::vector<double> vs, std::vector<double> phis,
-	std::vector<double> xs, std::vector<double> ys, std::vector<double> ths,
-	double timestamp)
+	std::vector<double> xs, std::vector<double> ys, std::vector<double> ths)
 {
 	IPC_RETURN_TYPE err = IPC_OK;
 

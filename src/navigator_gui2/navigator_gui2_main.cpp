@@ -923,8 +923,9 @@ subscribe_ipc_messages()
 	err = IPC_subscribe(CARMEN_NAVIGATOR_ACKERMAN_DISPLAY_CONFIG_NAME, display_config_handler, NULL);
 	carmen_test_ipc_exit(err, "Could not subscribe message", CARMEN_NAVIGATOR_ACKERMAN_DISPLAY_CONFIG_NAME);
 
-	carmen_subscribe_message(CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_NAME,
-			CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_FMT,
+    // Todo: Add a function in the interfaces.
+	carmen_subscribe_message((char *) CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_NAME,
+			(char *) CARMEN_NAVIGATOR_ACKERMAN_PLAN_TO_DRAW_FMT,
 			NULL, sizeof(carmen_navigator_ackerman_plan_to_draw_message),
 			(carmen_handler_t) plan_to_draw_handler, CARMEN_SUBSCRIBE_LATEST);
 
