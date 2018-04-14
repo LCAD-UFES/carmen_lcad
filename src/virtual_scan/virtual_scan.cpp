@@ -184,7 +184,7 @@ segment_virtual_scan(virtual_scan_extended_t *extended_virtual_scan)
 	virtual_scan_segments->timestamp = extended_virtual_scan->timestamp;
 
 	dbscan::Cluster single_cluster = generate_cluster_with_all_points(extended_virtual_scan->points, extended_virtual_scan->num_points);
-	dbscan::Clusters clusters = dbscan::dbscan(PEDESTRIAN_RADIUS * PEDESTRIAN_RADIUS, 1, single_cluster);
+	dbscan::Clusters clusters = dbscan::dbscan(8.0 * PEDESTRIAN_RADIUS * PEDESTRIAN_RADIUS, MINIMUN_CLUSTER_SIZE, single_cluster);
 
 	int p_in_c = 0;
 	if (clusters.size() > 0)
@@ -2123,9 +2123,10 @@ get_moving_objects_from_track_set(virtual_scan_track_set_t *best_track_set)
 
 	int num_moving_objects = 0;
 	for (int i = 0; i < best_track_set->size; i++)
-		for (int j = 0; j < best_track_set->tracks[i]->size; j++)
-//			if (best_track_set->tracks[i]->box_model_hypothesis[j].zi == g_zi)
-				num_moving_objects++;
+		if (best_track_set->tracks[i]->size > 0)
+			for (int j = 0; j < best_track_set->tracks[i]->size; j++)
+//				if (best_track_set->tracks[i]->box_model_hypothesis[j].zi == g_zi)
+					num_moving_objects++;
 
 	message->point_clouds = (t_point_cloud_struct *) malloc(sizeof(t_point_cloud_struct) * num_moving_objects);
 	message->num_point_clouds = num_moving_objects;
@@ -2133,39 +2134,56 @@ get_moving_objects_from_track_set(virtual_scan_track_set_t *best_track_set)
 	int k = 0;
 	for (int i = 0; i < best_track_set->size; i++)
 	{
-		for (int j = 0; j < best_track_set->tracks[i]->size; j++)
+		if (best_track_set->tracks[i]->size > 0)
 		{
-//			if (best_track_set->tracks[i]->box_model_hypothesis[j].zi == g_zi)
+			for (int j = 0; j < best_track_set->tracks[i]->size; j++)
 			{
-				virtual_scan_box_model_t *box = &(best_track_set->tracks[i]->box_model_hypothesis[j].hypothesis);
+	//			if (best_track_set->tracks[i]->box_model_hypothesis[j].zi == g_zi)
+				{
+					virtual_scan_box_model_t *box = &(best_track_set->tracks[i]->box_model_hypothesis[j].hypothesis);
 
-				message->point_clouds[k].r = 0.0;
-				message->point_clouds[k].g = 0.0;
-				message->point_clouds[k].b = 1.0;
-				message->point_clouds[k].linear_velocity = 0;
-				message->point_clouds[k].orientation = box->theta;
-				message->point_clouds[k].object_pose.x = box->x;
-				message->point_clouds[k].object_pose.y = box->y;
-				message->point_clouds[k].object_pose.z = 0.0;
-				message->point_clouds[k].height = 0;
-				message->point_clouds[k].length = box->length;
-				message->point_clouds[k].width = box->width;
-				message->point_clouds[k].geometric_model = box->c;
-				message->point_clouds[k].point_size = 0; // 1
-	//			message->point_clouds[k].num_associated = timestamp_moving_objects_list[current_vector_index].objects[i].id;
+					message->point_clouds[k].r = 0.0;
+					message->point_clouds[k].g = 0.0;
+					message->point_clouds[k].b = 1.0;
+					message->point_clouds[k].linear_velocity = 0.0;
+					message->point_clouds[k].orientation = box->theta;
+					message->point_clouds[k].object_pose.x = box->x;
+					message->point_clouds[k].object_pose.y = box->y;
+					message->point_clouds[k].object_pose.z = 0.0;
+					message->point_clouds[k].height = box->width;
+					message->point_clouds[k].length = box->length;
+					message->point_clouds[k].width = box->width;
+					message->point_clouds[k].geometric_model = box->c;
+					message->point_clouds[k].point_size = 0;
+					message->point_clouds[k].num_associated = 0;
 
-				object_model_features_t &model_features = message->point_clouds[k].model_features;
-				model_features.model_id = box->c;
-				model_features.model_name = (char *) "name?";
-				model_features.geometry.length = box->length;
-				model_features.geometry.width = box->width;
+					object_model_features_t &model_features = message->point_clouds[k].model_features;
+					model_features.model_id = box->c;
+					switch (box->c)
+					{
+						case BUS:
+							model_features.model_name = (char *) "Bus";
+							model_features.red = 1.0; model_features.green = 0.0; model_features.blue = 0.0;
+							break;
+						case CAR:
+							model_features.model_name = (char *) "Car";
+							model_features.red = 0.5; model_features.green = 1.0; model_features.blue = 0.0;
+							break;
+						case BIKE:
+							model_features.model_name = (char *) "Bike";
+							model_features.red = 1.0; model_features.green = 1.0; model_features.blue = 1.0;
+							break;
+						case PEDESTRIAN:
+							model_features.model_name = (char *) "Pedestrian";
+							model_features.red = 0.0; model_features.green = 1.0; model_features.blue = 1.0;
+							break;
+					}
+					model_features.geometry.length = box->length;
+					model_features.geometry.width = box->width;
+					model_features.geometry.height = box->width;
 
-	//			message->point_clouds[k].points = (carmen_vector_3D_t *) malloc(1 * sizeof(carmen_vector_3D_t));
-	//			message->point_clouds[k].points[0].x = box->x;
-	//			message->point_clouds[k].points[0].y = box->y;
-	//			message->point_clouds[k].points[0].z = 0.0;
-
-				k++;
+					k++;
+				}
 			}
 		}
 	}
