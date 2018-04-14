@@ -156,6 +156,7 @@ typedef struct
 
 	double *last_frames_timetamps;
 	int number_of_frames_filled;
+	int index;
 } virtual_scan_neighborhood_graph_t;
 
 

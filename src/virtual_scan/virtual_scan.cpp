@@ -970,6 +970,7 @@ first_neighborhood_graph_update(virtual_scan_box_model_hypotheses_t *virtual_sca
 		for (int j = 0; j < virtual_scan_box_model_hypotheses->box_model_hypotheses[i].num_boxes; j++)
 			num_hypotheses++;
 
+	neighborhood_graph->index = 0;
 	neighborhood_graph->size = 0;
 	neighborhood_graph->box_model_hypothesis = (virtual_scan_box_model_hypothesis_t **) malloc(num_hypotheses * sizeof(virtual_scan_box_model_hypothesis_t *));
 	neighborhood_graph->box_model_hypothesis_edges =
@@ -1053,7 +1054,7 @@ print_neighborhood_graph(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 	FILE *graph = fopen("graph.txt", "a");
 	for (int i = 0; i < neighborhood_graph->size; i++)
 	{
-		fprintf(graph, "%d %c -", i, neighborhood_graph->box_model_hypothesis[i]->hypothesis.c);
+		fprintf(graph, "%d %d %c -",neighborhood_graph->index, i, neighborhood_graph->box_model_hypothesis[i]->hypothesis.c);
 		for (int j = 0; j < neighborhood_graph->box_model_hypothesis_edges[i]->size; j++)
 			fprintf(graph, " %c(%d, %d)", neighborhood_graph->box_model_hypothesis_edges[i]->edge_type[j], i, neighborhood_graph->box_model_hypothesis_edges[i]->edge[j]);
 		fprintf(graph, "\n");
@@ -1074,7 +1075,8 @@ virtual_scan_update_neighborhood_graph(virtual_scan_neighborhood_graph_t *neighb
 	else
 		neighborhood_graph = neighborhood_graph_update(virtual_scan_box_model_hypotheses, neighborhood_graph);
 
-//	print_neighborhood_graph(neighborhood_graph);
+	print_neighborhood_graph(neighborhood_graph);
+	neighborhood_graph->index += 1;
 
 	return (neighborhood_graph);
 }
@@ -1993,7 +1995,7 @@ print_track_set(virtual_scan_track_set_t *track_set, virtual_scan_neighborhood_g
 
 	if (track_set == NULL)
 	{
-		fprintf(track_sets, "\nNum Proposal %d - track_set == NULL\n", num_proposal);
+		fprintf(track_sets, "\nGraph Id %d Num Proposal %d - track_set == NULL\n", neighborhood_graph->index, num_proposal);
 		fclose(track_sets);
 
 		return;
@@ -2001,7 +2003,7 @@ print_track_set(virtual_scan_track_set_t *track_set, virtual_scan_neighborhood_g
 
 	double prob = probability_of_track_set_given_measurements(track_set, false);
 
-	fprintf(track_sets, "\nNum Proposal %d - Num tracks = %d, prob = %lf\n", num_proposal, track_set->size, prob);
+	fprintf(track_sets, "\nGraph Id %d Num Proposal %d - Num tracks = %d, prob = %lf\n", neighborhood_graph->index, num_proposal, track_set->size, prob);
 	for (int i = 0; i < neighborhood_graph->size; i++)
 		fprintf(track_sets, "v[%d] %d, ", i, track_set->vertex_selected[i]);
 	fprintf(track_sets, "\n");
