@@ -43,12 +43,12 @@ double playback_speed = 1.0;
 int current_position = 0;
 int stop_position = MAX_SIGNED_INT;
 int offset = 0;
+int autostart = 0;
 int paused = 1;
 int fast = 0;
 int advance_frame = 0;
 int rewind_frame = 0;
 int basic_messages = 0;
-char *logfile_name = NULL;
 
 int g_publish_odometry = 1;
 
@@ -555,8 +555,8 @@ void usage(char *fmt, ...)
 	vfprintf(stderr, fmt, args);
 	va_end(args);
 
-	fprintf(stderr, "Usage: playback filename <args>\n");
-	fprintf(stderr, "\t-fast -autostart -basic -play_message <num> -stop_message <num>\n");
+	fprintf(stderr, "Usage: playback <log_file_name> [args]\n");
+	fprintf(stderr, "[args]: -fast {on|off} -autostart {on|off} -basic {on|off} -play_message <num> -stop_message <num>\n");
 	exit(-1);
 }
 
@@ -564,35 +564,24 @@ void read_parameters(int argc, char **argv)
 {
 	carmen_param_t param_list[] =
 	{
-		{"robot", "publish_odometry", CARMEN_PARAM_ONOFF, &(g_publish_odometry), 0, NULL}
+		{(char *) "robot",			(char *) "publish_odometry",	CARMEN_PARAM_ONOFF,		&(g_publish_odometry),	0, NULL},
 	};
 
-	int index;
-
-	if (argc < 2)
-		usage("Needs at least one argument.\n");
-
-	logfile_name = argv[1];
-	for (index = 2; index < argc; index++)
-	{
-		if (strncmp(argv[index], "-h", 2) == 0 || strncmp(argv[index], "--help", 6) == 0)
-			usage(NULL);
-		if (strncmp(argv[index], "-fast", 5) == 0)
-			fast = 1;
-		if (strncmp(argv[index], "-autostart", 5) == 0)
-			paused = 0;
-		if (strncmp(argv[index], "-basic", 6) == 0)
-			basic_messages = 1;
-		if (strncmp(argv[index], "-play_message", 13) == 0)
-			if(index < argc - 1)
-				current_position = atoi(argv[++index]);
-		if (strncmp(argv[index], "-stop_message", 13) == 0)
-			if (index < argc - 1)
-				stop_position = atoi(argv[++index]);
-	}
-
-	// Esta funcao altera a sequencia de itens de *argv, entao ela so pode ser chamada no final
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
+
+	carmen_param_t param_list2[] =
+	{
+		{(char *) "commandline",	(char *) "fast",				CARMEN_PARAM_ONOFF,		&(fast),				0, NULL},
+		{(char *) "commandline",	(char *) "autostart",			CARMEN_PARAM_ONOFF, 	&(autostart),			0, NULL},
+		{(char *) "commandline",	(char *) "basic",				CARMEN_PARAM_ONOFF, 	&(basic_messages),		0, NULL},
+		{(char *) "commandline",	(char *) "play_message",		CARMEN_PARAM_INT, 		&(current_position),	0, NULL},
+		{(char *) "commandline",	(char *) "stop_message",		CARMEN_PARAM_INT, 		&(stop_position),		0, NULL},
+	};
+
+	carmen_param_allow_unfound_variables(1);
+	carmen_param_install_params(argc, argv, param_list2, sizeof(param_list2) / sizeof(param_list2[0]));
+
+	paused = !(autostart);
 }
 
 void shutdown_playback_module(int sig)
@@ -670,6 +659,7 @@ int main(int argc, char **argv)
 {
 	FILE *index_file;
 	char index_file_name[2000];
+	char *log_file_name;
 
 	memset(&odometry_ackerman, 0, sizeof(odometry_ackerman));
 	memset(&velocity_ackerman, 0, sizeof(velocity_ackerman));
@@ -723,23 +713,23 @@ int main(int argc, char **argv)
 	carmen_ipc_initialize(argc, argv);
 	carmen_param_check_version(argv[0]);
 
-	define_ipc_messages ();
-	read_parameters (argc, argv);
-	carmen_playback_define_messages ();
-	signal(SIGINT, shutdown_playback_module);
+	if (argc < 2)
+		carmen_die("Error: wrong number of parameters: program requires 1 parameter and received %d parameter(s).\n"
+				"Usage:\n %s <log_file_name>\n", argc - 1, argv[0]);
 
-	logfile = carmen_fopen(logfile_name, "r");
+	if (strcmp(argv[1], "-h") == 0)
+		usage(NULL);
+
+    log_file_name = argv[1];
+	logfile = carmen_fopen(log_file_name, "r");
 	if (logfile == NULL)
-		carmen_die("Error: could not open file %s for reading.\n", logfile_name);
+		carmen_die("Error: could not open file %s for reading.\n", log_file_name);
 
 	int fadvise_error = posix_fadvise(fileno(logfile->fp), 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (fadvise_error)
-	{
-		printf("Could not advise POSIX_FADV_SEQUENTIAL on playback\n");
-		exit(1);
-	}
+		carmen_die("Could not advise POSIX_FADV_SEQUENTIAL on playback.\n");
 
-	strcpy(index_file_name, logfile_name);
+	strcpy(index_file_name, log_file_name);
 	strcat(index_file_name, ".index");
 	index_file = fopen(index_file_name, "r");
 	if (index_file == NULL)
@@ -758,7 +748,12 @@ int main(int argc, char **argv)
 		logfile_index = load_logindex_file(index_file_name);
 	}
 
+	read_parameters (argc, argv);
+	define_ipc_messages();
+	carmen_playback_define_messages();
+
+	signal(SIGINT, shutdown_playback_module);
+
 	main_playback_loop();
 	return 0;
 }
-
