@@ -61,3 +61,52 @@ TEST_CASE("OBB collision using SAT", "[COLLISION]")
     REQUIRE(compute_collision_obb_obb(obb5, obb1) == Approx(0.0));
 
 }
+
+TEST_CASE("Collision between lines", "[COLLISION]")
+{
+
+    carmen_point_t line1;
+    line1.x = 1.5;
+    line1.y = 1.5;
+    line1.theta = 0.5;
+
+    carmen_point_t line2;
+    line2.x = 7.0;
+    line2.y = 7.0;
+    line2.theta = 0.5;
+
+    // CASO 1 - LINHAS PARALELAS COM ORIENTACAO ARBITRARIA (NAO COLIDEM)
+    REQUIRE(has_collision_between_lines(line1, line2) == 0);
+
+    // CASO 2 - LINHAS COLIDEM ARBITRARIAMENTE
+    line1.theta = 0.5;
+    line2.theta = 0.3;
+    REQUIRE(has_collision_between_lines(line1, line2) != 0);
+
+    // CASO 3 - LINHAS COLIDEM, UMA DELAS EH VERTICAL
+    line1.theta = 0.5;
+    line2.theta = M_PI / 2.0;
+    REQUIRE(has_collision_between_lines(line1, line2) != 0);
+
+    // CASO 4 - LINHAS NAO COLIDEM, AS DUAS SAO VERTICAIS
+    line1.theta = M_PI / 2.0;
+    line2.theta = M_PI / 2.0;
+    REQUIRE(has_collision_between_lines(line1, line2) == 0);
+
+    // CASO 5 - LINHAS COLIDEM, UMA HORIZONTAL
+    line1.theta = 0.0;
+    line2.theta = 0.3;
+    REQUIRE(has_collision_between_lines(line1, line2) != 0);
+
+    // CASO 6 - LINHAS NAO COLIDEM, AS DUAS HORIZONTAIS
+    line1.theta = 0.0;
+    line2.theta = 0.0;
+    REQUIRE(has_collision_between_lines(line1, line2) == 0);
+
+    // CASO 7 - LINHAS COLIDEM, UMA VERTICAL A OUTRA HORIZONTAL
+    line1.theta = 0;
+    line2.theta = M_PI / 2.0;
+    REQUIRE(has_collision_between_lines(line1, line2) != 0);
+
+
+}
