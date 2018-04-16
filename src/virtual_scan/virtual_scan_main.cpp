@@ -115,12 +115,12 @@ virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses_t *virtual_sca
 			message.point_clouds[k].height = 0;
 			message.point_clouds[k].length = box->length;
 			message.point_clouds[k].width = box->width;
-			message.point_clouds[k].geometric_model = box->c;
+			message.point_clouds[k].geometric_model = 'P'; // box->c;
 			message.point_clouds[k].point_size = 0; // 1
 //			message.point_clouds[k].num_associated = timestamp_moving_objects_list[current_vector_index].objects[i].id;
 
 			object_model_features_t &model_features = message.point_clouds[k].model_features;
-			model_features.model_id = box->c;
+			model_features.model_id = 'P'; // box->c;
 			model_features.model_name = (char *) "name?";
 			model_features.geometry.length = box->length;
 			model_features.geometry.width = box->width;
@@ -188,7 +188,7 @@ carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *m
 		virtual_scan_publish_segments(g_virtual_scan_segment_classes[g_zi]);
 
 		virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(g_virtual_scan_segment_classes[g_zi]); // acrescentar numa lista de tamanho T e retornar o ultimo
-//		virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
+		virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
 
 		g_neighborhood_graph = virtual_scan_update_neighborhood_graph(g_neighborhood_graph, virtual_scan_box_model_hypotheses); // usar os pontos vindos das funcoes acima
 		carmen_moving_objects_point_clouds_message *moving_objects = virtual_scan_infer_moving_objects(g_neighborhood_graph);

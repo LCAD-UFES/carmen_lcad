@@ -134,7 +134,7 @@ build_front_laser_message_from_velodyne_point_cloud(sensor_parameters_t *sensor_
 
 void
 compute_virtual_scan_point(int ray_id, int tid, sensor_parameters_t* sensor_params, sensor_data_t* sensor_data,
-		carmen_map_t* log_odds_snapshot_map)
+		carmen_map_t* log_odds_snapshot_map, bool is_ldmrs = false)
 {
 	if (!sensor_data->maxed[tid][ray_id])
 	{
@@ -144,7 +144,7 @@ compute_virtual_scan_point(int ray_id, int tid, sensor_parameters_t* sensor_para
 		cell_hit_by_ray.x = round(x / log_odds_snapshot_map->config.resolution);
 		cell_hit_by_ray.y = round(y / log_odds_snapshot_map->config.resolution);
 		if (map_grid_is_valid(log_odds_snapshot_map, cell_hit_by_ray.x, cell_hit_by_ray.y) &&
-			(sensor_data->occupancy_log_odds_of_each_ray_target[tid][ray_id] > sensor_params->log_odds.log_odds_occ / 3.0) &&
+			((sensor_data->occupancy_log_odds_of_each_ray_target[tid][ray_id] > sensor_params->log_odds.log_odds_occ / 10.0) || is_ldmrs) &&
 			(offline_map.map[cell_hit_by_ray.x][cell_hit_by_ray.y] <= 0.5))
 		{
 			virtual_scan_message.points[virtual_scan_message.num_points].x = x + x_origin;
@@ -158,8 +158,23 @@ compute_virtual_scan_point(int ray_id, int tid, sensor_parameters_t* sensor_para
 void
 build_virtual_scan_message_ldmrs(int tid, sensor_parameters_t* sensor_params, sensor_data_t* sensor_data, carmen_map_t* log_odds_snapshot_map)
 {
+//	for (int k = 0; k < sensor_params->vertical_resolution; k++)
+//		compute_virtual_scan_point(k, tid, sensor_params, sensor_data, log_odds_snapshot_map, true);
+
+	double min_ray_size_in_the_floor = 1000.0;
+	int nearest_target = 0;
+	
 	for (int k = 0; k < sensor_params->vertical_resolution; k++)
-		compute_virtual_scan_point(k, tid, sensor_params, sensor_data, log_odds_snapshot_map);
+	{
+		double ray_size_in_the_floor = sensor_data->ray_size_in_the_floor[tid][k];
+
+		if (ray_size_in_the_floor > min_ray_size_in_the_floor)
+		{
+			ray_size_in_the_floor = min_ray_size_in_the_floor;
+			nearest_target = k;
+		}
+	}
+	compute_virtual_scan_point(nearest_target, tid, sensor_params, sensor_data, log_odds_snapshot_map, true);
 }
 
 

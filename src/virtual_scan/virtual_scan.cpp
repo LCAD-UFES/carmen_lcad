@@ -87,25 +87,28 @@ filter_virtual_scan(virtual_scan_extended_t *virtual_scan_extended)
 	int num_points = 0;
 	for (int i = 0; i < virtual_scan_extended->num_points; i++)
 	{
-		int x_index_map = (int) round((virtual_scan_extended->points[i].x - x_origin) / map_resolution);
-		int y_index_map = (int) round((virtual_scan_extended->points[i].y - y_origin) / map_resolution);
-		if ((x_index_map > 0) && (x_index_map < localize_map.config.x_size) &&
-			(y_index_map > 0) && (y_index_map < localize_map.config.y_size))
+		if (DIST2D(virtual_scan_extended->velodyne_pos, virtual_scan_extended->points[i]) < 30.0)
 		{
-			if (localize_map.prob[x_index_map][y_index_map] < PROB_THRESHOLD)
+			int x_index_map = (int) round((virtual_scan_extended->points[i].x - x_origin) / map_resolution);
+			int y_index_map = (int) round((virtual_scan_extended->points[i].y - y_origin) / map_resolution);
+			if ((x_index_map > 0) && (x_index_map < localize_map.config.x_size) &&
+				(y_index_map > 0) && (y_index_map < localize_map.config.y_size))
+			{
+				if (localize_map.prob[x_index_map][y_index_map] < PROB_THRESHOLD)
+				{
+					virtual_scan_extended_filtered->points = (carmen_point_t *) realloc(virtual_scan_extended_filtered->points,
+										sizeof(carmen_point_t) * (num_points + 1));
+					virtual_scan_extended_filtered->points[num_points] = virtual_scan_extended->points[i];
+					num_points++;
+				}
+			}
+			else // Inclui (nao filtra) pontos fora do mapa pois o mapa pode estar simplesmente atrasado.
 			{
 				virtual_scan_extended_filtered->points = (carmen_point_t *) realloc(virtual_scan_extended_filtered->points,
 									sizeof(carmen_point_t) * (num_points + 1));
 				virtual_scan_extended_filtered->points[num_points] = virtual_scan_extended->points[i];
 				num_points++;
 			}
-		}
-		else // Inclui (nao filtra) pontos fora do mapa pois o mapa pode estar simplesmente atrasado.
-		{
-			virtual_scan_extended_filtered->points = (carmen_point_t *) realloc(virtual_scan_extended_filtered->points,
-								sizeof(carmen_point_t) * (num_points + 1));
-			virtual_scan_extended_filtered->points[num_points] = virtual_scan_extended->points[i];
-			num_points++;
 		}
 	}
 	virtual_scan_extended_filtered->num_points = num_points;
@@ -551,7 +554,7 @@ append_l_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, vir
 		l = DIST2D(farthest_point, first_point);
 		w = DIST2D(farthest_point, last_point);
 		if ((categories[category].length > l) &&
-			(categories[category].width > w) && (categories[category].width < (1.8 * w)))
+			(categories[category].width > (0.7 * w)) && (categories[category].width < (1.8 * w)))
 		{
 			theta = atan2(first_point.y - farthest_point.y, first_point.x - farthest_point.x);
 			theta2 = atan2(last_point.y - farthest_point.y, last_point.x - farthest_point.x);
@@ -561,7 +564,7 @@ append_l_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, vir
 		l = DIST2D(farthest_point, last_point);
 		w = DIST2D(farthest_point, first_point);
 		if ((categories[category].length > l) &&
-			(categories[category].width > w) && (categories[category].width < (1.8 * w)))
+			(categories[category].width > (0.7 * w)) && (categories[category].width < (1.8 * w)))
 		{
 			theta = atan2(last_point.y - farthest_point.y, last_point.x - farthest_point.x);
 			theta2 = atan2(first_point.y - farthest_point.y, first_point.x - farthest_point.x);
@@ -702,7 +705,7 @@ create_hypothesis_vertex(int h, int i, int j, virtual_scan_neighborhood_graph_t*
 {
 	neighborhood_graph->box_model_hypothesis[h] = (virtual_scan_box_model_hypothesis_t *) malloc(sizeof(virtual_scan_box_model_hypothesis_t));
 	neighborhood_graph->box_model_hypothesis[h]->hypothesis = virtual_scan_box_model_hypotheses->box_model_hypotheses[i].box[j];
-	neighborhood_graph->box_model_hypothesis[h]->hypothesis_points = virtual_scan_box_model_hypotheses->box_model_hypotheses[i].box_points[j];
+//	neighborhood_graph->box_model_hypothesis[h]->hypothesis_points = virtual_scan_box_model_hypotheses->box_model_hypotheses[i].box_points[j];
 	neighborhood_graph->box_model_hypothesis[h]->zi = g_zi;
 	neighborhood_graph->box_model_hypothesis[h]->index = h;
 	neighborhood_graph->box_model_hypothesis[h]->timestamp = virtual_scan_box_model_hypotheses->timestamp;
@@ -1054,7 +1057,7 @@ print_neighborhood_graph(virtual_scan_neighborhood_graph_t *neighborhood_graph)
 	FILE *graph = fopen("graph.txt", "a");
 	for (int i = 0; i < neighborhood_graph->size; i++)
 	{
-		fprintf(graph, "%d %d %c -",neighborhood_graph->index, i, neighborhood_graph->box_model_hypothesis[i]->hypothesis.c);
+		fprintf(graph, "%d %d %c -", neighborhood_graph->index, i, neighborhood_graph->box_model_hypothesis[i]->hypothesis.c);
 		for (int j = 0; j < neighborhood_graph->box_model_hypothesis_edges[i]->size; j++)
 			fprintf(graph, " %c(%d, %d)", neighborhood_graph->box_model_hypothesis_edges[i]->edge_type[j], i, neighborhood_graph->box_model_hypothesis_edges[i]->edge[j]);
 		fprintf(graph, "\n");
@@ -1075,7 +1078,7 @@ virtual_scan_update_neighborhood_graph(virtual_scan_neighborhood_graph_t *neighb
 	else
 		neighborhood_graph = neighborhood_graph_update(virtual_scan_box_model_hypotheses, neighborhood_graph);
 
-	print_neighborhood_graph(neighborhood_graph);
+//	print_neighborhood_graph(neighborhood_graph);
 	neighborhood_graph->index += 1;
 
 	return (neighborhood_graph);
@@ -1914,7 +1917,8 @@ sum_of_tracks_lengths(virtual_scan_track_set_t *track_set)
 	for (int i = 0; i < track_set->size; i++)
 		sum += track_set->tracks[i]->size;
 
-	return (sum);
+	return ((sum > 0.0)? sum / (double) track_set->size: 0.0);
+//	return (sum);
 }
 
 
@@ -1964,25 +1968,82 @@ sum_of_dn_of_tracks(virtual_scan_track_set_t *track_set)
 
 
 double
+sum_of_variances(virtual_scan_track_set_t *track_set)
+{
+	static double previous_average_variance = 1.0;
+	double *variance_of_v = (double *) calloc(track_set->size, sizeof(double));
+	double *variance_of_d_theta = (double *) calloc(track_set->size, sizeof(double));
+
+	for (int i = 0; i < track_set->size; i++)
+	{
+		if ((track_set->tracks[i]->size - 1) > 1)
+		{
+			double average_v = 0.0;
+			double average_d_theta = 0.0;
+
+			for (int j = 1; j < track_set->tracks[i]->size; j++)
+			{
+				double distance_travelled = DIST2D(track_set->tracks[i]->box_model_hypothesis[j].hypothesis, track_set->tracks[i]->box_model_hypothesis[j - 1].hypothesis);
+				double delta_theta = carmen_normalize_theta(track_set->tracks[i]->box_model_hypothesis[j].hypothesis.theta - track_set->tracks[i]->box_model_hypothesis[j - 1].hypothesis.theta);
+				double delta_t = track_set->tracks[i]->box_model_hypothesis[j].timestamp - track_set->tracks[i]->box_model_hypothesis[j - 1].timestamp;
+				double v = distance_travelled / delta_t;
+				double d_theta = delta_theta / delta_t;
+				track_set->tracks[i]->box_model_hypothesis[j].v = v;
+				track_set->tracks[i]->box_model_hypothesis[j].d_theta = d_theta;
+				average_v += v;
+				average_d_theta += d_theta;
+			}
+			average_v /= (double) (track_set->tracks[i]->size - 1);
+			average_d_theta /= (double) (track_set->tracks[i]->size - 1);
+
+			for (int j = 1; j < track_set->tracks[i]->size; j++)
+			{
+				variance_of_v[i] += carmen_square(track_set->tracks[i]->box_model_hypothesis[j].v - average_v);
+				variance_of_d_theta[i] += carmen_square(track_set->tracks[i]->box_model_hypothesis[j].d_theta - average_d_theta);
+			}
+			variance_of_v[i] /= (double) (track_set->tracks[i]->size - 1);
+			variance_of_d_theta[i] /= (double) (track_set->tracks[i]->size - 1);
+		}
+		else
+		{
+			variance_of_v[i] = previous_average_variance;
+			variance_of_d_theta[i] = previous_average_variance;
+		}
+	}
+
+	double sum = 0.0;
+	for (int i = 0; i < track_set->size; i++)
+		sum += variance_of_v[i] + variance_of_d_theta[i];
+
+	sum /= (double) track_set->size;
+	previous_average_variance = sum;
+
+	return (sum);
+}
+
+
+double
 probability_of_track_set_given_measurements(virtual_scan_track_set_t *track_set, bool print = false)
 {
 #define lambda_L	0.5
-#define lambda_1	0.1
-#define lambda_2	0.01
+#define lambda_T	0.5 // 0.1
+#define lambda_1	0.0 // 0.1
+#define lambda_2	0.0 // 0.01
 #define lambda_3	0.0
 
 	if (track_set == NULL)
 		return (0.0);
 
 	double Slen = sum_of_tracks_lengths(track_set);
+	double Smot = sum_of_variances(track_set);
 	double Sms1 = sum_of_dn_of_tracks(track_set);
 	double Sms2 = sum_of_number_of_non_maximal_measurements_that_fall_behind_the_object_model(track_set);
 	double Sms3 = sum_of_measurements_that_fall_inside_object_models_in_track_set(track_set);
 
 	if (print)
-		printf("Slen = %lf, Sms1 = %lf, Sms2 = %lf, Sms3 = %lf\n", Slen, Sms1, Sms2, Sms3);
+		printf("Slen = %lf, Smot = %lf, Sms1 = %lf, Sms2 = %lf, Sms3 = %lf\n", Slen, Smot, Sms1, Sms2, Sms3);
 
-	double p_w_z = exp(lambda_L * Slen - lambda_1 * Sms1 - lambda_2 * Sms2 - lambda_3 * Sms3);
+	double p_w_z = exp(lambda_L * Slen - lambda_T * Smot - lambda_1 * Sms1 - lambda_2 * Sms2 - lambda_3 * Sms3);
 
 	return (p_w_z);
 }
@@ -2038,7 +2099,7 @@ propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood
 {
 #define NUMBER_OF_TYPES_OF_MOVES	4
 
-	static int num_proposal = 0;
+//	static int num_proposal = 0;
 
 	int rand_track;
 
@@ -2050,13 +2111,13 @@ propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood
 
 	virtual_scan_track_set_t *track_set = copy_track_set(track_set_n_1, neighborhood_graph);
 
-	print_track_set(track_set, neighborhood_graph, num_proposal);
-	if (track_set != NULL)
-	{
-		FILE *track_sets = fopen("track_sets.txt", "a");
-		fprintf(track_sets, "rand_move %d, rand_track %d\n", rand_move, rand_track);
-		fclose(track_sets);
-	}
+//	print_track_set(track_set, neighborhood_graph, num_proposal);
+//	if (track_set != NULL)
+//	{
+//		FILE *track_sets = fopen("track_sets.txt", "a");
+//		fprintf(track_sets, "rand_move %d, rand_track %d\n", rand_move, rand_track);
+//		fclose(track_sets);
+//	}
 
 	switch (rand_move)
 	{
@@ -2107,7 +2168,7 @@ propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood
 //			break;
 	}
 
-	print_track_set(track_set, neighborhood_graph, num_proposal++);
+//	print_track_set(track_set, neighborhood_graph, num_proposal++);
 
 	return (track_set);
 }
@@ -2125,7 +2186,7 @@ get_moving_objects_from_track_set(virtual_scan_track_set_t *best_track_set)
 
 	int num_moving_objects = 0;
 	for (int i = 0; i < best_track_set->size; i++)
-		if (best_track_set->tracks[i]->size > 0)
+		if (best_track_set->tracks[i]->size > 2)
 			for (int j = 0; j < best_track_set->tracks[i]->size; j++)
 //				if (best_track_set->tracks[i]->box_model_hypothesis[j].zi == g_zi)
 					num_moving_objects++;
@@ -2136,7 +2197,7 @@ get_moving_objects_from_track_set(virtual_scan_track_set_t *best_track_set)
 	int k = 0;
 	for (int i = 0; i < best_track_set->size; i++)
 	{
-		if (best_track_set->tracks[i]->size > 0)
+		if (best_track_set->tracks[i]->size > 2)
 		{
 			for (int j = 0; j < best_track_set->tracks[i]->size; j++)
 			{
@@ -2152,9 +2213,9 @@ get_moving_objects_from_track_set(virtual_scan_track_set_t *best_track_set)
 					message->point_clouds[k].object_pose.x = box->x;
 					message->point_clouds[k].object_pose.y = box->y;
 					message->point_clouds[k].object_pose.z = 0.0;
-					message->point_clouds[k].height = box->width;
-					message->point_clouds[k].length = box->length;
-					message->point_clouds[k].width = box->width;
+					message->point_clouds[k].height = (j == best_track_set->tracks[i]->size - 1)? box->width: 0.1;
+					message->point_clouds[k].length = (j == best_track_set->tracks[i]->size - 1)? box->length: 0.1;
+					message->point_clouds[k].width = (j == best_track_set->tracks[i]->size - 1)? box->width: 0.1;
 					message->point_clouds[k].geometric_model = box->c;
 					message->point_clouds[k].point_size = 0;
 					message->point_clouds[k].num_associated = 0;
@@ -2180,9 +2241,9 @@ get_moving_objects_from_track_set(virtual_scan_track_set_t *best_track_set)
 							model_features.red = 0.0; model_features.green = 1.0; model_features.blue = 1.0;
 							break;
 					}
-					model_features.geometry.length = box->length;
-					model_features.geometry.width = box->width;
-					model_features.geometry.height = box->width;
+					model_features.geometry.length =  (j == best_track_set->tracks[i]->size - 1)? box->length: 0.1;
+					model_features.geometry.width = (j == best_track_set->tracks[i]->size - 1)? box->width: 0.1;
+					model_features.geometry.height = (j == best_track_set->tracks[i]->size - 1)? box->width: 0.1;
 
 					k++;
 				}
@@ -2248,8 +2309,10 @@ virtual_scan_infer_moving_objects(virtual_scan_neighborhood_graph_t *neighborhoo
 	}
 	free_track_set(track_set_n);
 
+	double best_track_prob = probability_of_track_set_given_measurements(best_track_set);
 	carmen_moving_objects_point_clouds_message *moving_objects = get_moving_objects_from_track_set(best_track_set);
-	printf("num_tracks %d, num_objects %d\n", (best_track_set)? best_track_set->size: 0, (moving_objects)? moving_objects->num_point_clouds: 0);
+	printf("num_tracks %d, num_objects %d, prob %lf\n", (best_track_set)? best_track_set->size: 0, (moving_objects)? moving_objects->num_point_clouds: 0, best_track_prob);
+	print_track_set(best_track_set, neighborhood_graph, 0);
 
 	return (moving_objects);
 }

@@ -137,8 +137,11 @@ typedef struct
 {
 	int index;
 	virtual_scan_box_model_t hypothesis;
-	virtual_scan_segment_t hypothesis_points;
+//	virtual_scan_segment_t hypothesis_points;
 	int zi;
+
+	double v;
+	double d_theta;
 
 	double dn;
 	double c2;
