@@ -564,18 +564,18 @@ void read_parameters(int argc, char **argv)
 {
 	carmen_param_t param_list[] =
 	{
-		{(char *) "robot",			(char *) "publish_odometry",	CARMEN_PARAM_ONOFF,		&(g_publish_odometry),	0, NULL},
+		{(char *) "robot",		(char *) "publish_odometry",	CARMEN_PARAM_ONOFF,	&(g_publish_odometry),	0, NULL},
 	};
 
 	carmen_param_install_params(argc, argv, param_list, sizeof(param_list) / sizeof(param_list[0]));
 
 	carmen_param_t param_list2[] =
 	{
-		{(char *) "commandline",	(char *) "fast",				CARMEN_PARAM_ONOFF,		&(fast),				0, NULL},
-		{(char *) "commandline",	(char *) "autostart",			CARMEN_PARAM_ONOFF, 	&(autostart),			0, NULL},
-		{(char *) "commandline",	(char *) "basic",				CARMEN_PARAM_ONOFF, 	&(basic_messages),		0, NULL},
-		{(char *) "commandline",	(char *) "play_message",		CARMEN_PARAM_INT, 		&(current_position),	0, NULL},
-		{(char *) "commandline",	(char *) "stop_message",		CARMEN_PARAM_INT, 		&(stop_position),		0, NULL},
+		{(char *) "commandline",	(char *) "fast",		CARMEN_PARAM_ONOFF,	&(fast),		0, NULL},
+		{(char *) "commandline",	(char *) "autostart",		CARMEN_PARAM_ONOFF, 	&(autostart),		0, NULL},
+		{(char *) "commandline",	(char *) "basic",		CARMEN_PARAM_ONOFF, 	&(basic_messages),	0, NULL},
+		{(char *) "commandline",	(char *) "play_message",	CARMEN_PARAM_INT, 	&(current_position),	0, NULL},
+		{(char *) "commandline",	(char *) "stop_message",	CARMEN_PARAM_INT, 	&(stop_position),	0, NULL},
 	};
 
 	carmen_param_allow_unfound_variables(1);
