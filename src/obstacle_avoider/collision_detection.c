@@ -5,6 +5,7 @@
 #include "collision_detection.h"
 #include "obstacle_avoider_messages.h"
 #include <math.h>
+#include <float.h>
 #define SECURITY_VELOCITY_PERCENT 0.5
 
 //carmen_mapper_virtual_laser_message virtual_laser_message;
@@ -149,6 +150,48 @@ compute_collision_obb_obb(const carmen_oriented_bounding_box obb1, const carmen_
 
 	return penetration_distance;
 
+}
+
+/**
+ * @brief      Determines if it has collision between lines.
+ *
+ * @param[in]  line1  First line in point-angle form
+ * @param[in]  line2  Second line in point-angle form
+ * 
+ * @return     Different from zero if has collision between lines, zero otherwise.
+ */
+int
+has_collision_between_lines(carmen_point_t line1, carmen_point_t line2)
+{
+	// utilize as linhas em seu formato ponto-angulo, isto eh, contendo um ponto por onde a linha 
+    // atravesse e seu respectivo angulo.
+    // Por exemplo, para uma linha da forma y = a * x + b, escolhemos um valor de x, 
+    // como x = 1.0, e encontramos y = a * (1.0) + b = a + b. Além disso, sabemos que a inclinação
+    // dessa linha eh dado pelo coeficiente 'a'. Assim, teremos a representação:
+    // carmen_point_t line;
+    // line.x = 1.0;
+    // line.y = a + b;
+    // line.theta = a;
+
+	// Tratando linhas como caixas com largura zero e comprimento infinito, o codigo de colisao
+	// implementado eh bem robusto em relacao a casos degenerados como esse.
+	carmen_oriented_bounding_box obb1;
+	obb1.object_pose.x = line1.x;
+	obb1.object_pose.y = line1.y;
+	obb1.length = DBL_MAX;
+	obb1.width = 0.0;
+	obb1.orientation = line1.theta;
+	obb1.linear_velocity = 0.0;
+
+	carmen_oriented_bounding_box obb2;
+	obb2.object_pose.x = line2.x;
+	obb2.object_pose.y = line2.y;
+	obb2.length = DBL_MAX;
+	obb2.width = 0.0;
+	obb2.orientation = line2.theta;
+	obb2.linear_velocity = 0.0;
+
+	return (int) (compute_collision_obb_obb(obb1, obb2) + 0.5);
 }
 
 carmen_point_t

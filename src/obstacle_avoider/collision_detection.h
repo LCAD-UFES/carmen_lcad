@@ -22,6 +22,7 @@ typedef struct _carmen_oriented_bounding_box
 double compute_collision_obb_obb(const carmen_oriented_bounding_box carmen_oriented_bounding_box1,
 								 const carmen_oriented_bounding_box carmen_oriented_bounding_box2);
 
+int has_collision_between_lines(carmen_point_t line1, carmen_point_t line2);
 
 void set_variable_map_config(double map_config);
 
