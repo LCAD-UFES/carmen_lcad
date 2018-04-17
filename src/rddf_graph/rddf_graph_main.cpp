@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <iostream>
+#include <sstream>
 #include <math.h>
 #include <string.h>
 #include <libgen.h>
@@ -39,16 +40,13 @@ blend_images_vertical_and_horizontal(carmen_map_p road_map, cv::Mat *image_verti
 
 }
 
+
 void
 road_mapper_display_road_map(carmen_map_p road_map, int img_channels, int img_class_bits)
 {
 	//road_prob *cell_prob;
-	cv::namedWindow(g_window_name1, cv::WINDOW_AUTOSIZE);
-	cv::moveWindow(g_window_name1, 78 + road_map->config.x_size, 10);
-	cv::namedWindow(g_window_name2, cv::WINDOW_AUTOSIZE);
-	cv::moveWindow(g_window_name2, 78 + 2*road_map->config.x_size, 10);
-	cv::namedWindow(g_window_name3, cv::WINDOW_AUTOSIZE);
-	cv::moveWindow(g_window_name3, 78 + 3*road_map->config.x_size, 10);
+	cv::namedWindow("road_map", cv::WINDOW_AUTOSIZE);
+
 
 	cv::Mat image1;
 	cv::Mat imageCenterVertical; //imagem que guarda apenas o ponto de centro de pista verticalmente
@@ -81,7 +79,7 @@ road_mapper_display_road_map(carmen_map_p road_map, int img_channels, int img_cl
 	cv::Vec3b pixelChannelPosV; //pegar cada canal de cor em separado
 	int thickness = -1;
 	int lineType = 8;
-	for (int y = 2; y < road_map->config.y_size-2; y+=1)
+	/*for (int y = 2; y < road_map->config.y_size-2; y+=1)
 		{
 			for (int x = 2; x < road_map->config.x_size-2; x+=1)
 			{
@@ -111,13 +109,13 @@ road_mapper_display_road_map(carmen_map_p road_map, int img_channels, int img_cl
 					continue;
 				else{
 					cv::circle(imgPaint, p, 1,cv::Scalar( 0, 0, 0 ),thickness,lineType);
-					/*if(
+					if(
 						(image1.at<cv::Vec3b>(x,y)[1]>image1.at<cv::Vec3b>(y,x-2)[1])&&
 						(image1.at<cv::Vec3b>(x,y)[1]>image1.at<cv::Vec3b>(y,x-1)[1])&&
 						(image1.at<cv::Vec3b>(x,y)[1]>image1.at<cv::Vec3b>(y,x+2)[1])&&
 						(image1.at<cv::Vec3b>(x,y)[1]>image1.at<cv::Vec3b>(y,x+1)[1])||
 						(pixelChannel.val[0]==0 && pixelChannel.val[1]==255 && pixelChannel.val[2]==0)
-					){*/
+					){
 
 					if(((pixelChannel.val[1]>pixelChannelAnt.val[1])&&(pixelChannel.val[1]>pixelChannelPos.val[1]))||(pixelChannel.val[0]==0 && pixelChannel.val[1]==255 && pixelChannel.val[2]==0)){
 						//printf("Pixel Color at %dX%d: b: %d g: %d r: %d %hu CENTER!!!\n",x,y,pixelChannel.val[0],pixelChannel.val[1],pixelChannel.val[2], cell_prob->lane_center);
@@ -126,13 +124,13 @@ road_mapper_display_road_map(carmen_map_p road_map, int img_channels, int img_cl
 					//else{
 						//printf("Pixel Color at %dX%d: b: %d g: %d r: %d %hu\n",x,y,pixelChannel.val[0],pixelChannel.val[1],pixelChannel.val[2], cell_prob->lane_center);
 					//}
-					/*if(
+					if(
 						(image1.at<cv::Vec3b>(x,y)[1]>image1.at<cv::Vec3b>(y-2,x)[1])&&
 						(image1.at<cv::Vec3b>(x,y)[1]>image1.at<cv::Vec3b>(y-1,x)[1])&&
 						(image1.at<cv::Vec3b>(x,y)[1]>image1.at<cv::Vec3b>(y+2,x)[1])&&
 						(image1.at<cv::Vec3b>(x,y)[1]>image1.at<cv::Vec3b>(y+1,x)[1])||
 						(pixelChannel.val[0]==0 && pixelChannel.val[1]==255 && pixelChannel.val[2]==0)
-					){*/
+					){
 					if(((pixelChannel.val[1]>pixelChannelAntV.val[1])&&(pixelChannel.val[1]>pixelChannelPosV.val[1]))||(pixelChannel.val[0]==0 && pixelChannel.val[1]==255 && pixelChannel.val[2]==0)){
 						//printf("Pixel Color at %dX%d: b: %d g: %d r: %d  CENTER!!!\n",x,y,pixelChannel.val[0],pixelChannel.val[1],pixelChannel.val[2]);
 						cv::circle(imageCenterVertical, p, 1,cv::Scalar( 0, 0, 255 ),thickness,lineType);
@@ -146,9 +144,9 @@ road_mapper_display_road_map(carmen_map_p road_map, int img_channels, int img_cl
 				//while((cv::waitKey() & 0xff) != 27);
 
 			}
-		}
-	blend_images_vertical_and_horizontal(road_map, &imageCenterVertical, &imageCenterHorizontal);
+		}*/
 }
+
 
 static void
 define_messages()
@@ -169,36 +167,6 @@ shutdown_module(int signo)
 			carmen_ipc_disconnect();
 		exit(printf("road_mapper_display_map: disconnected.\n"));
 	}
-}
-
-
-void parse_world_origin_to_road_map(string road_map_filename, carmen_map_p road_map)
-{
-	string x_origin;
-	string y_origin;
-	string coordinates;
-	int last_bar_position=0;
-	int last_trace_position=0;
-	int last_underline_position=0;
-	int last_dot_position=0;
-	unsigned int l;
-	for(l=1; l<=road_map_filename.length();l++)
-	{
-		if(road_map_filename[l] == '/')
-			last_bar_position = l;
-		if(road_map_filename[l] == '.')
-			last_dot_position = l;
-		if(road_map_filename[l] == '_')
-			last_underline_position = l;
-		if(road_map_filename[l] == '-')
-			last_trace_position = l;
-	}
-	x_origin = road_map_filename.substr(last_bar_position+2,last_underline_position-last_bar_position-2);
-	y_origin = road_map_filename.substr(last_trace_position+1,last_dot_position-last_trace_position-1);
-
-	road_map->config.x_origin = atof(x_origin.c_str());
-	road_map->config.y_origin = atof(y_origin.c_str());
-
 }
 
 
@@ -254,14 +222,14 @@ main(int argc, char **argv)
 		char *road_map_filename = argv[i];
 		string str_road_map_filename(road_map_filename);
 		bool valid_map_on_file = (carmen_map_read_gridmap_chunk(road_map_filename, &road_map) == 0);
-		parse_world_origin_to_road_map(road_map_filename, &road_map);
+		parse_world_origin_to_road_map(str_road_map_filename, &road_map);
 		if (valid_map_on_file)
 		{
 			cout << "File " << str_road_map_filename << " being displayed... ("
 					<< (i - g_road_map_index + 1) << " of " << (argc - g_road_map_index) << ")" << endl;
 			//road_mapper_display_road_map(&road_map, g_img_channels, g_class_bits);
 			generate_road_map_graph(&road_map, str_road_map_filename);
-			//print_map_in_terminal(&road_map);
+			//print_map_in_terminal(&road_map);getchar();
 		}
 		else
 			cout << "road_mapper_display_map: could not read offline map from file named: " << road_map_filename << endl;
