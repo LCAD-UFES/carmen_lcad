@@ -223,7 +223,7 @@ virtual_scan_num_box_models(virtual_scan_box_model_hypotheses_t *virtual_scan_bo
 virtual_scan_neighborhood_graph_t *
 virtual_scan_update_neighborhood_graph(virtual_scan_neighborhood_graph_t *neighborhood_graph, virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses);
 
-carmen_moving_objects_point_clouds_message *
+virtual_scan_track_set_t *
 virtual_scan_infer_moving_objects(virtual_scan_neighborhood_graph_t *neighborhood_graph);
 
 #endif /* SRC_VIRTUAL_SCAN_VIRTUAL_SCAN_H_ */

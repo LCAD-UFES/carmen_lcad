@@ -33,6 +33,126 @@ virtual_scan_segment_classes_t *g_virtual_scan_segment_classes[NUMBER_OF_FRAMES_
 virtual_scan_neighborhood_graph_t *g_neighborhood_graph = NULL;
 
 
+void
+fill_in_moving_objects_message_element(int k, carmen_moving_objects_point_clouds_message *message, virtual_scan_box_model_t *box)
+{
+	message->point_clouds[k].r = 0.0;
+	message->point_clouds[k].g = 0.0;
+	message->point_clouds[k].b = 1.0;
+	message->point_clouds[k].linear_velocity = 0.0;
+	message->point_clouds[k].orientation = box->theta;
+	message->point_clouds[k].object_pose.x = box->x;
+	message->point_clouds[k].object_pose.y = box->y;
+	message->point_clouds[k].object_pose.z = 0.0;
+	message->point_clouds[k].height = box->width;
+	message->point_clouds[k].length = box->length;
+	message->point_clouds[k].width = box->width;
+	message->point_clouds[k].geometric_model = box->c;
+	message->point_clouds[k].point_size = 0;
+	message->point_clouds[k].num_associated = 0;
+	object_model_features_t& model_features = message->point_clouds[k].model_features;
+	model_features.model_id = box->c;
+
+	switch (box->c)
+	{
+		case BUS:
+			model_features.model_name = (char *) ("Bus");
+			model_features.red = 1.0;
+			model_features.green = 0.0;
+			model_features.blue = 0.0;
+			break;
+		case CAR:
+			model_features.model_name = (char *) ("Car");
+			model_features.red = 0.5;
+			model_features.green = 1.0;
+			model_features.blue = 0.0;
+			break;
+		case BIKE:
+			model_features.model_name = (char *) ("Bike");
+			model_features.red = 1.0;
+			model_features.green = 1.0;
+			model_features.blue = 1.0;
+			break;
+		case PEDESTRIAN:
+			model_features.model_name = (char *) ("Pedestrian");
+			model_features.red = 0.0;
+			model_features.green = 1.0;
+			model_features.blue = 1.0;
+			break;
+	}
+	model_features.geometry.length = box->length;
+	model_features.geometry.width = box->width;
+	model_features.geometry.height = box->width;
+}
+
+
+carmen_moving_objects_point_clouds_message *
+fill_in_moving_objects_message(virtual_scan_track_set_t *best_track_set, virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = NULL)
+{
+	if (best_track_set == NULL)
+		return (NULL);
+
+	carmen_moving_objects_point_clouds_message *message = (carmen_moving_objects_point_clouds_message *) malloc(sizeof(carmen_moving_objects_point_clouds_message));
+	message->host = carmen_get_host();
+	message->timestamp = carmen_get_time();
+
+	int num_moving_objects = 0;
+	for (int i = 0; i < best_track_set->size; i++)
+		if (best_track_set->tracks[i]->size > 2)
+			for (int j = 0; j < best_track_set->tracks[i]->size; j++)
+//				if (best_track_set->tracks[i]->box_model_hypothesis[j].zi == g_zi)
+					num_moving_objects++;
+
+	if (virtual_scan_box_model_hypotheses != NULL)
+		for (int i = 0; i < virtual_scan_box_model_hypotheses->num_box_model_hypotheses; i++)
+			for (int j = 0; j< virtual_scan_box_model_hypotheses->box_model_hypotheses[i].num_boxes; j++)
+				num_moving_objects++;
+
+	message->point_clouds = (t_point_cloud_struct *) malloc(sizeof(t_point_cloud_struct) * num_moving_objects);
+	message->num_point_clouds = num_moving_objects;
+
+	int k = 0;
+	for (int i = 0; i < best_track_set->size; i++)
+	{
+		if (best_track_set->tracks[i]->size > 2)
+		{
+			for (int j = 0; j < best_track_set->tracks[i]->size; j++)
+			{
+	//			if (best_track_set->tracks[i]->box_model_hypothesis[j].zi == g_zi)
+				{
+					virtual_scan_box_model_t box = best_track_set->tracks[i]->box_model_hypothesis[j].hypothesis;
+
+					box.length = (j == best_track_set->tracks[i]->size - 1) ? box.length : 0.1;
+					box.width = (j == best_track_set->tracks[i]->size - 1) ? box.width : 0.1;
+					fill_in_moving_objects_message_element(k, message, &box);
+
+					k++;
+				}
+			}
+		}
+	}
+
+	if (virtual_scan_box_model_hypotheses != NULL)
+	{
+		for (int i = 0; i < virtual_scan_box_model_hypotheses->num_box_model_hypotheses; i++)
+		{
+			for (int j = 0; j < virtual_scan_box_model_hypotheses->box_model_hypotheses[i].num_boxes; j++)
+			{
+				virtual_scan_box_model_t box = virtual_scan_box_model_hypotheses->box_model_hypotheses[i].box[j];
+				box.c = 'P'; 		// coloquei que eh pedestre soh para aparecer com cor azul
+				box.length *= 0.8;	// reduzi para nao desenhar em cima de um hipotese do track set
+				box.width *= 0.8;	// reduzi para nao desenhar em cima de um hipotese do track set
+				fill_in_moving_objects_message_element(k, message, &box);
+
+				k++;
+			}
+		}
+	}
+
+	return (message);
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -44,10 +164,14 @@ virtual_scan_neighborhood_graph_t *g_neighborhood_graph = NULL;
 
 
 void
-virtual_scan_publish_moving_objects(carmen_moving_objects_point_clouds_message *moving_objects)
+virtual_scan_publish_moving_objects(virtual_scan_track_set_t *track_set, virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = NULL)
 {
+	carmen_moving_objects_point_clouds_message *moving_objects = fill_in_moving_objects_message(track_set, virtual_scan_box_model_hypotheses);
+
 	if (moving_objects != NULL)
 		carmen_moving_objects_point_clouds_publish_message(moving_objects);
+
+	virtual_scan_free_moving_objects(moving_objects);
 }
 
 
@@ -103,32 +227,7 @@ virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses_t *virtual_sca
 		for (int j = 0, n = hypotheses[i].num_boxes; j < n; j++, k++)
 		{
 			virtual_scan_box_model_t *box = (boxes + j);
-
-			message.point_clouds[k].r = 0.0;
-			message.point_clouds[k].g = 0.0;
-			message.point_clouds[k].b = 1.0;
-			message.point_clouds[k].linear_velocity = 0;
-			message.point_clouds[k].orientation = box->theta;
-			message.point_clouds[k].object_pose.x = box->x;
-			message.point_clouds[k].object_pose.y = box->y;
-			message.point_clouds[k].object_pose.z = 0.0;
-			message.point_clouds[k].height = 0;
-			message.point_clouds[k].length = box->length;
-			message.point_clouds[k].width = box->width;
-			message.point_clouds[k].geometric_model = 'P'; // box->c;
-			message.point_clouds[k].point_size = 0; // 1
-//			message.point_clouds[k].num_associated = timestamp_moving_objects_list[current_vector_index].objects[i].id;
-
-			object_model_features_t &model_features = message.point_clouds[k].model_features;
-			model_features.model_id = 'P'; // box->c;
-			model_features.model_name = (char *) "name?";
-			model_features.geometry.length = box->length;
-			model_features.geometry.width = box->width;
-
-//			message.point_clouds[k].points = (carmen_vector_3D_t *) malloc(1 * sizeof(carmen_vector_3D_t));
-//			message.point_clouds[k].points[0].x = box->x;
-//			message.point_clouds[k].points[0].y = box->y;
-//			message.point_clouds[k].points[0].z = 0.0;
+			fill_in_moving_objects_message_element(k, &message, box);
 		}
 	}
 
@@ -187,15 +286,16 @@ carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *m
 		g_virtual_scan_segment_classes[g_zi] = virtual_scan_extract_segments(g_virtual_scan_extended[g_zi]);
 		virtual_scan_publish_segments(g_virtual_scan_segment_classes[g_zi]);
 
-		virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(g_virtual_scan_segment_classes[g_zi]); // acrescentar numa lista de tamanho T e retornar o ultimo
-		virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
+		virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(g_virtual_scan_segment_classes[g_zi]);
+//		virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
 
-		g_neighborhood_graph = virtual_scan_update_neighborhood_graph(g_neighborhood_graph, virtual_scan_box_model_hypotheses); // usar os pontos vindos das funcoes acima
-		carmen_moving_objects_point_clouds_message *moving_objects = virtual_scan_infer_moving_objects(g_neighborhood_graph);
-		virtual_scan_publish_moving_objects(moving_objects);
+		g_neighborhood_graph = virtual_scan_update_neighborhood_graph(g_neighborhood_graph, virtual_scan_box_model_hypotheses);
 
-		virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses); // remover o que está no fim de T
-		virtual_scan_free_moving_objects(moving_objects);
+		virtual_scan_track_set_t *track_set = virtual_scan_infer_moving_objects(g_neighborhood_graph);
+//		virtual_scan_publish_moving_objects(track_set, NULL);
+		virtual_scan_publish_moving_objects(track_set, virtual_scan_box_model_hypotheses);
+
+		virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses);
 
 		g_zi++;
 		if (g_zi >= NUMBER_OF_FRAMES_T)
