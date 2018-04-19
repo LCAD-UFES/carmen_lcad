@@ -1,6 +1,6 @@
 # Road Mapper Module
 
-R. V. Carneiro, R. C. Nascimento, R. Guidolini, V. B. Cardoso, T. Oliveira-Santos, C. Badue and A. F. De Souza,
+Raphael V. Carneiro, Rafael C. Nascimento, Rânik Guidolini, Vinicius B. Cardoso, Thiago Oliveira-Santos, Claudine Badue and Alberto F. De Souza,
 “Mapping road lanes using laser remission and deep neural networks,”
 unpublished, accepted by IEEE 2018 International Joint Conference on Neural Networks (IJCNN).
 
