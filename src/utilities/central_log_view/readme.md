@@ -42,9 +42,8 @@ To analyze a log file, run the following:
  ./central_log_view <logfile> [args]
 ```
 
-Valid arguments:
+Valid optional args:
 ```
  -h                    : help
  -r  {<module>|all}    : list registrations of a specific module or all modules
- -d  {<module>|all}    : list deregistrations of a specific module or all modules
 ```
