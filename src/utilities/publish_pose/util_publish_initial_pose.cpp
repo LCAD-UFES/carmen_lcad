@@ -34,11 +34,17 @@ main(int argc, char **argv)
 {
 	double initial_timestamp, time_passed;
 	carmen_point_t pose;
+	int time = 4;
 
 	if (argc < 4)
 	{
-		printf("Use %s <x> <y> <theta>\n", argv[0]);
+		printf("Use %s <x> <y> <theta> <OPTIONAL period>\n "
+				"Period the program remains publishing the initial pose\n", argv[0]); // Period the program remains publishing the initial pose
 		exit(-1);
+	}
+	if (argc == 5)
+	{
+		time = atoi(argv[4]);
 	}
 
 	pose.x = atof(argv[1]);
@@ -54,7 +60,7 @@ main(int argc, char **argv)
 	{
 		time_passed = (carmen_get_time() - initial_timestamp);
 
-		if (time_passed < 4)
+		if (time_passed < time)
 			publish_starting_pose(pose);
 		else
 			usleep((int) sleep_time);
