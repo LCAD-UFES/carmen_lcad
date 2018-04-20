@@ -22,6 +22,12 @@ Additional IPC central server logging options:
 
 ```
 
+To create a log file as complete as possible:
+
+```
+ ./central -Lmtrndshp -f<logfile>
+```
+
 Additional IPC central server command line options:
 ```
  -i<msgName>  : Ignore logging this message (can occur multiple times).
