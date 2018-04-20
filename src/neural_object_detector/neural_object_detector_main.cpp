@@ -13,7 +13,8 @@
 #include <cstdlib>
 #include <fstream>
 #include "Darknet.hpp"
-//#include "image.h"
+#include "image.h"
+#include "box.h"
 
 //#include "../../sharedlib/darknet/src/image.h"
 //#include "../../sharedlib/darknet/src/yolo_v2_class.hpp"
@@ -585,59 +586,52 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 }
 
 
-//image
-//convert_image_msg_to_darknet_image(carmen_bumblebee_basic_stereoimage_message *image_msg)
-//{
-//	image converted_image;
-//	converted_image.w = image_msg->width;
-//	converted_image.h = image_msg->height;
-//	converted_image.h = 3;
-//	converted_image.data = (float *) malloc ((image_msg->width * image_msg->height) * sizeof (float));
-//
-//	for (int i = 0; i < image_msg->width; i++)
-//	{
-//		for (int j = 0; j < image_msg->height; i++)
-//		{
-//			converted_image.data[i + j] = (float) image_msg->raw_left[i + j];
-//		}
-//	}
-//
-//	return (converted_image);
-//}
-//
-//
-//void
-//image_handler_new(carmen_bumblebee_basic_stereoimage_message *image_msg)
-//{
-//	cv::Mat src_image = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3);
-//	memcpy(src_image.data, image_msg->raw_left, image_msg->image_size * sizeof(char));
-//
-//	cv::cvtColor(src_image, src_image, cv::COLOR_RGB2BGR);
-//
-//	vector<bbox_t> predictions = darknet->detect(src_image, 0.2);
-//
-//	vector<vector<carmen_velodyne_points_in_cam_with_obstacle_t>> laser_points_in_camera_box_list;
-//
-//	vector<bounding_box> bouding_boxes_list;
-//
-//	for (const auto &box : predictions) // Covert Darknet bounding box to neural_object_deddtector bounding box
-//	{
-//		bounding_box bbox;
-//
-//		bbox.pt1.x = box.x;
-//		bbox.pt1.y = box.y;
-//		bbox.pt2.x = box.x + box.w;
-//		bbox.pt2.y = box.y + box.h;
-//
-//		bouding_boxes_list.push_back(bbox);
-//	}
-//
-//	//printf("%d\n", (int) predictions.size());
-//
-//	show_detections(src_image, laser_points_in_camera_box_list,	predictions, bouding_boxes_list, 0.0, 10);
-//
-//}
+image
+convert_image_msg_to_darknet_image(carmen_bumblebee_basic_stereoimage_message *image_msg, char stereo_image_side)
+{
+	unsigned char *side;
 
+	if (stereo_image_side == 'l')
+		side = image_msg->raw_left;
+	else if (stereo_image_side == 'r')
+		side = image_msg->raw_right;
+	else
+	{
+		printf("Invalid image side in module: neural_object_detector Function: image_handler!");
+		exit(0);
+	}
+
+	image converted_image;
+	converted_image.w = image_msg->width;
+	converted_image.h = image_msg->height;
+	converted_image.c = 3;                    // Number of channels
+	converted_image.data = (float *) malloc (image_msg->image_size * sizeof (float));
+
+	for (int i = 0; i < image_msg->image_size; i++)
+	{
+		converted_image.data[i] = ((float) side[i]) / 255;
+	}
+
+	return (converted_image);
+}
+
+
+void
+image_handler_new2(carmen_bumblebee_basic_stereoimage_message *image_msg)
+{
+	image image = convert_image_msg_to_darknet_image(image_msg, 'r');
+
+	//image = crop_image(image, 280, 70, 720, 480);
+
+	cv::Mat src_image = cv::Mat(cv::Size(image.w, image.h), CV_32FC3); // CV_32FC3 float 32 bit 3 channels
+	memcpy(src_image.data, image.data, (image.w * image.h * image.c) * sizeof(int));
+
+
+	cv::cvtColor(src_image, src_image, cv::COLOR_RGB2BGR);
+
+	cv::imshow("Neural Object Detector", src_image);
+	cv::waitKey(1);
+}
 
 
 void
@@ -686,7 +680,7 @@ shutdown_module(int signo)
         carmen_ipc_disconnect();
         cvDestroyAllWindows();
 
-        printf("Neural car detector: disconnected.\n");
+        printf("Neural Object Detector: disconnected.\n");
         exit(0);
     }
 }
@@ -772,7 +766,7 @@ main(int argc, char **argv)
     carmen_test_alloc(darknet);
 
 #ifdef SHOW_DETECTIONS
-    cv::namedWindow("Neural car detector", cv::WINDOW_AUTOSIZE);
+    cv::namedWindow("Neural Object Detector", cv::WINDOW_AUTOSIZE);
 #endif
 
     setlocale(LC_ALL, "C");
