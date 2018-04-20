@@ -737,62 +737,6 @@ set_behaviours_parameters(carmen_ackerman_traj_point_t current_robot_pose_v_and_
 }
 
 
-static double
-dist2(carmen_ackerman_traj_point_t v, carmen_ackerman_traj_point_t w)
-{
-	return (carmen_square(v.x - w.x) + carmen_square(v.y - w.y));
-}
-
-
-static carmen_ackerman_traj_point_t
-get_the_point_nearest_to_the_trajectory(int *point_in_trajectory_is,
-		carmen_ackerman_traj_point_t v,
-		carmen_ackerman_traj_point_t w,
-		carmen_ackerman_traj_point_t p)
-{
-
-#define	POINT_WITHIN_SEGMENT		0
-#define	SEGMENT_TOO_SHORT			1
-#define	POINT_BEFORE_SEGMENT		2
-#define	POINT_AFTER_SEGMENT			3
-
-	// Return minimum distance between line segment vw and point p
-	// http://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
-	double l2, t;
-
-	l2 = dist2(v, w); // i.e. |w-v|^2 // NAO TROQUE POR carmen_ackerman_traj_distance2(&v, &w) pois nao sei se ee a mesma coisa.
-	if (l2 < 0.1)	  // v ~== w case // @@@ Alberto: Checar isso
-	{
-		*point_in_trajectory_is = SEGMENT_TOO_SHORT;
-		return (v);
-	}
-
-	// Consider the line extending the segment, parameterized as v + t (w - v).
-	// We find the projection of point p onto the line.
-	// It falls where t = [(p-v) . (w-v)] / |w-v|^2
-	t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
-
-	if (t < 0.0) 	// p beyond the v end of the segment
-	{
-		*point_in_trajectory_is = POINT_BEFORE_SEGMENT;
-		return (v);
-	}
-	if (t > 1.0)	// p beyond the w end of the segment
-	{
-		*point_in_trajectory_is = POINT_AFTER_SEGMENT;
-		return (w);
-	}
-
-	// Projection falls on the segment
-	p = v; // Copy other elements, like theta, etc.
-	p.x = v.x + t * (w.x - v.x);
-	p.y = v.y + t * (w.y - v.y);
-	*point_in_trajectory_is = POINT_WITHIN_SEGMENT;
-
-	return (p);
-}
-
-
 carmen_ackerman_traj_point_t *
 compute_simulated_objects(double timestamp)
 {
@@ -838,7 +782,7 @@ compute_simulated_objects(double timestamp)
 	for (int i = 0, n = rddf->number_of_poses - 1; i < n; i++)
 	{
 		int status;
-		next_pose = get_the_point_nearest_to_the_trajectory(&status, rddf->poses[i], rddf->poses[i + 1], pose_ahead);
+		next_pose = carmen_get_point_nearest_to_trajectory(&status, rddf->poses[i], rddf->poses[i + 1], pose_ahead, 0.1);
 		if (status == POINT_WITHIN_SEGMENT)
 			break;
 	}
@@ -903,7 +847,7 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	for (int i = 0, n = rddf->number_of_poses - 1; i < n; i++)
 	{
 		int status;
-		next_pose = get_the_point_nearest_to_the_trajectory(&status, rddf->poses[i], rddf->poses[i + 1], pose_ahead);
+		next_pose = carmen_get_point_nearest_to_trajectory(&status, rddf->poses[i], rddf->poses[i + 1], pose_ahead, 0.1);
 		if ((status == POINT_WITHIN_SEGMENT) || (status == POINT_BEFORE_SEGMENT))
 			break;
 	}
@@ -1106,7 +1050,7 @@ publish_dynamic_annotation(carmen_vector_3D_t annotation_point, double orientati
 
 
 void
-publish_objects()
+publish_simulated_objects()
 {
 	virtual_laser_message.host = carmen_get_host();
 	carmen_mapper_publish_virtual_laser_message(&virtual_laser_message, carmen_get_time());
@@ -1619,8 +1563,10 @@ select_behaviour(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, doub
 		add_simulated_object(simulated_object_pose2);
 #endif
 
+#if defined(SIMULATE_LATERAL_MOVING_OBSTACLE) || defined(SIMULATE_MOVING_OBSTACLE)
 	if (virtual_laser_message.num_positions >= 0)
-		publish_objects();
+		publish_simulated_objects();
+#endif
 
 	publish_current_state(behavior_selector_state_message);
 }

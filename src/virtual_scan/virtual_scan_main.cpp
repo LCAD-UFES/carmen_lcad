@@ -7,9 +7,13 @@
 #include <carmen/moving_objects_messages.h>
 #include <carmen/moving_objects_interface.h>
 #include <carmen/velodyne_interface.h>
+#include <carmen/rddf_messages.h>
+#include <carmen/rddf_interface.h>
+#include <carmen/collision_detection.h>
 
 #include "virtual_scan.h"
 
+#define SIMULATE_LATERAL_MOVING_OBSTACLE
 #define NUM_COLORS 4
 #define NMC	250
 #define T 10
@@ -31,6 +35,11 @@ virtual_scan_extended_t *g_virtual_scan_extended[NUMBER_OF_FRAMES_T];
 virtual_scan_segment_classes_t *g_virtual_scan_segment_classes[NUMBER_OF_FRAMES_T];
 
 virtual_scan_neighborhood_graph_t *g_neighborhood_graph = NULL;
+
+#ifdef SIMULATE_LATERAL_MOVING_OBSTACLE
+#define MAX_VIRTUAL_LASER_SAMPLES 10000
+static carmen_rddf_road_profile_message *last_rddf_message = NULL;
+#endif
 
 
 void
@@ -153,6 +162,120 @@ fill_in_moving_objects_message(virtual_scan_track_set_t *best_track_set, virtual
 }
 
 
+#ifdef SIMULATE_LATERAL_MOVING_OBSTACLE
+carmen_ackerman_traj_point_t
+displace_pose(carmen_ackerman_traj_point_t robot_pose, double displacement)
+{
+	carmen_point_t displaced_robot_position = carmen_collision_detection_displace_car_pose_according_to_car_orientation(&robot_pose, displacement);
+
+	carmen_ackerman_traj_point_t displaced_robot_pose = robot_pose;
+	displaced_robot_pose.x = displaced_robot_position.x;
+	displaced_robot_pose.y = displaced_robot_position.y;
+
+	return (displaced_robot_pose);
+}
+
+
+carmen_ackerman_traj_point_t *
+compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+{
+	if (!necessary_maps_available)
+		return (NULL);
+
+	carmen_rddf_road_profile_message *rddf = last_rddf_message;
+	if (rddf == NULL)
+		return (NULL);
+
+	static carmen_ackerman_traj_point_t previous_pose = {0, 0, 0, 0, 0};
+	static carmen_ackerman_traj_point_t returned_pose = {0, 0, 0, 0, 0};
+	static double previous_timestamp = 0.0;
+	static double initial_time = 0.0; // Simulation start time.
+	static double disp = 0.0;
+
+	if (initial_time == 0.0)
+	{
+		returned_pose = previous_pose = displace_pose(rddf->poses[0], -8.0);
+		returned_pose.x = previous_pose.x + disp * cos(previous_pose.theta + M_PI / 2.0);
+		returned_pose.y = previous_pose.y + disp * sin(previous_pose.theta + M_PI / 2.0);
+
+		previous_timestamp = timestamp;
+		initial_time = timestamp;
+
+		return (&returned_pose);
+	}
+
+	static double stop_t0 = 0;
+	static double stop_t1 = 0;
+
+	static double v;
+	double t = timestamp - initial_time;
+	if (stop_t0 <= t && disp > 0.0)
+		disp -= 0.03;
+	if (t < stop_t1)
+//		v = current_robot_pose_v_and_phi.v + 0.9;
+		v = current_robot_pose_v_and_phi.v + 0.5; // Motos!
+
+//	else if (t > stop_tn)
+//		initial_time = timestamp;
+
+	double dt = timestamp - previous_timestamp;
+	double dx = v * dt * cos(previous_pose.theta);
+	double dy = v * dt * sin(previous_pose.theta);
+
+	carmen_ackerman_traj_point_t pose_ahead;
+	pose_ahead.x = previous_pose.x + dx;
+	pose_ahead.y = previous_pose.y + dy;
+
+	static carmen_ackerman_traj_point_t next_pose = {0, 0, 0, 0, 0};
+	for (int i = 0, n = rddf->number_of_poses - 1; i < n; i++)
+	{
+		int status;
+		next_pose = displace_pose(carmen_get_point_nearest_to_trajectory(&status, rddf->poses[i], rddf->poses[i + 1], pose_ahead, 0.1), -8.0);
+		if ((status == POINT_WITHIN_SEGMENT) || (status == POINT_BEFORE_SEGMENT))
+			break;
+	}
+
+	returned_pose = previous_pose = next_pose;
+	returned_pose.x = previous_pose.x + disp * cos(previous_pose.theta + M_PI / 2.0);
+	returned_pose.y = previous_pose.y + disp * sin(previous_pose.theta + M_PI / 2.0);
+	previous_timestamp = timestamp;
+
+	return (&returned_pose);
+}
+
+
+void
+draw_moving_object_in_scan(carmen_mapper_virtual_scan_message *simulated_scan, carmen_ackerman_traj_point_t *simulated_object_pose)
+{
+	carmen_pose_3D_t world_pose = {{simulated_scan->globalpos.x, simulated_scan->globalpos.y, 0.0}, {0.0, 0.0, simulated_scan->globalpos.theta}};
+	world_pose = get_world_pose_with_velodyne_offset(world_pose);
+	carmen_position_t velodyne_pos = {world_pose.position.x, world_pose.position.y};
+
+	double initial_angle = world_pose.orientation.yaw;
+
+	carmen_rectangle_t rectangle = {simulated_object_pose->x, simulated_object_pose->y, simulated_object_pose->theta, 4.0, 1.7};
+
+	int num_points = 0;
+	for (double angle = 0.0; angle < 2.0 * M_PI; angle += M_PI / (360 * 2.0))
+		num_points++;
+	simulated_scan->num_points = num_points;
+	simulated_scan->points = (carmen_position_t *) malloc(num_points * sizeof(carmen_position_t));
+
+	int i = 0;
+	for (double angle = 0.0; angle < 2.0 * M_PI; angle += M_PI / (360 * 2.0))
+	{
+		double max_distance = 10.0;
+		carmen_position_t target = {velodyne_pos.x + max_distance * cos(carmen_normalize_theta(initial_angle + angle)),
+									velodyne_pos.y + max_distance * sin(carmen_normalize_theta(initial_angle + angle))};
+		carmen_position_t intersection;
+		if (carmen_line_to_point_crossed_rectangle(&intersection, velodyne_pos, target, rectangle))
+			simulated_scan->points[i] = intersection;
+		else
+			simulated_scan->points[i] = target;
+		i++;
+	}
+}
+#endif
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -264,6 +387,21 @@ virtual_scan_publish_segments(virtual_scan_segment_classes_t *virtual_scan_segme
 }
 
 
+void
+publish_simulated_objects(carmen_ackerman_traj_point_t *simulated_object_pose, carmen_localize_ackerman_globalpos_message *globalpos_message)
+{
+	carmen_mapper_virtual_scan_message simulated_scan;
+
+	simulated_scan.host = carmen_get_host();
+	simulated_scan.globalpos = globalpos_message->globalpos;
+	simulated_scan.v = globalpos_message->v;
+	simulated_scan.phi = globalpos_message->phi;
+	simulated_scan.timestamp = globalpos_message->timestamp;
+
+	draw_moving_object_in_scan(&simulated_scan, simulated_object_pose);
+	carmen_mapper_publish_virtual_scan_message(&simulated_scan, simulated_scan.timestamp);
+	free(simulated_scan.points);
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -287,7 +425,7 @@ carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *m
 		virtual_scan_publish_segments(g_virtual_scan_segment_classes[g_zi]);
 
 		virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(g_virtual_scan_segment_classes[g_zi]);
-//		virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
+		virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
 
 		g_neighborhood_graph = virtual_scan_update_neighborhood_graph(g_neighborhood_graph, virtual_scan_box_model_hypotheses);
 
@@ -315,6 +453,38 @@ localize_map_update_handler(carmen_map_server_localize_map_message *message)
 
 	necessary_maps_available = 1;
 }
+
+
+#ifdef SIMULATE_LATERAL_MOVING_OBSTACLE
+static void
+localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
+{
+	if (!necessary_maps_available || !last_rddf_message)
+		return;
+
+	carmen_ackerman_traj_point_t current_robot_pose_v_and_phi;
+
+	current_robot_pose_v_and_phi.x = msg->globalpos.x;
+	current_robot_pose_v_and_phi.y = msg->globalpos.y;
+	current_robot_pose_v_and_phi.theta = msg->globalpos.theta;
+	current_robot_pose_v_and_phi.v = msg->v;
+	current_robot_pose_v_and_phi.phi = msg->phi;
+
+	carmen_ackerman_traj_point_t *simulated_object_pose2 = compute_simulated_lateral_objects(current_robot_pose_v_and_phi, msg->timestamp);
+	if (simulated_object_pose2)
+		publish_simulated_objects(simulated_object_pose2, msg);
+}
+
+
+static void
+rddf_handler(carmen_rddf_road_profile_message *rddf_msg)
+{
+	if (!necessary_maps_available)
+		return;
+
+	last_rddf_message = rddf_msg;
+}
+#endif
 
 
 static void
@@ -363,6 +533,11 @@ carmen_virtual_scan_subscribe_messages()
 {
 	carmen_mapper_subscribe_virtual_scan_message(NULL, (carmen_handler_t) carmen_mapper_virtual_scan_message_handler, CARMEN_SUBSCRIBE_LATEST);
 	carmen_map_server_subscribe_localize_map_message(NULL, (carmen_handler_t) localize_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
+
+#ifdef SIMULATE_LATERAL_MOVING_OBSTACLE
+	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_globalpos_handler, CARMEN_SUBSCRIBE_LATEST);
+	carmen_rddf_subscribe_road_profile_message(NULL, (carmen_handler_t) rddf_handler, CARMEN_SUBSCRIBE_LATEST);
+#endif
 }
 
 

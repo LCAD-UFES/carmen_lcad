@@ -33,7 +33,7 @@
 #define DISTANCE_BETWEEN_SEGMENTS	1.0
 #define	L_SMALL_SEGMENT_AS_A_PROPORTION_OF_THE_LARGE	0.15
 #define PEDESTRIAN_RADIUS			0.5 	// pedestrian approximate radius (from the top) in meters
-#define MINIMUN_CLUSTER_SIZE		2		// in points
+#define MINIMUN_CLUSTER_SIZE		1		// in points
 
 #define	MCMC_MAX_ITERATIONS	300
 

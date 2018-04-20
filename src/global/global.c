@@ -1689,3 +1689,264 @@ carmen_add_bias_and_multiplier_to_v_and_phi(double *odometry_v, double *odometry
 	*odometry_v = raw_v * v_multiplier + v_bias;
 	*odometry_phi = raw_phi * phi_multiplier + phi_bias;
 }
+
+
+static double
+dist2(carmen_ackerman_traj_point_t v, carmen_ackerman_traj_point_t w)
+{
+	return (carmen_square(v.x - w.x) + carmen_square(v.y - w.y));
+}
+
+
+carmen_ackerman_traj_point_t
+carmen_get_point_nearest_to_trajectory(int *point_in_trajectory_is,
+		carmen_ackerman_traj_point_t v,
+		carmen_ackerman_traj_point_t w,
+		carmen_ackerman_traj_point_t p, double min_segment_size)
+{
+	// Return minimum distance between line segment vw and point p
+	// http://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
+	double l2, t;
+
+	l2 = dist2(v, w); // i.e. |w-v|^2 // NAO TROQUE POR carmen_ackerman_traj_distance2(&v, &w) pois nao sei se ee a mesma coisa.
+	if (l2 < min_segment_size)	  // v ~== w case // @@@ Alberto: Checar isso
+	{
+		*point_in_trajectory_is = SEGMENT_TOO_SHORT;
+		return (v);
+	}
+
+	// Consider the line extending the segment, parameterized as v + t (w - v).
+	// We find the projection of point p onto the line.
+	// It falls where t = [(p-v) . (w-v)] / |w-v|^2
+	t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+
+	if (t < 0.0) 	// p beyond the v end of the segment
+	{
+		*point_in_trajectory_is = POINT_BEFORE_SEGMENT;
+		return (v);
+	}
+	if (t > 1.0)	// p beyond the w end of the segment
+	{
+		*point_in_trajectory_is = POINT_AFTER_SEGMENT;
+		return (w);
+	}
+
+	// Projection falls on the segment
+	p = v; // Copy other elements, like theta, etc.
+	p.x = v.x + t * (w.x - v.x);
+	p.y = v.y + t * (w.y - v.y);
+	*point_in_trajectory_is = POINT_WITHIN_SEGMENT;
+
+	return (p);
+}
+
+
+// inSegment(): determine if a point is inside a segment
+//    Input:  a point P, and a collinear segment S
+//    Return: 1 = P is inside S
+//            0 = P is  not inside S
+
+static int
+inSegment(carmen_position_t P, carmen_line_segment_t S)
+{
+	if (S.P0.x != S.P1.x)
+	{    // S is not  vertical
+		if (S.P0.x <= P.x && P.x <= S.P1.x)
+			return (1);
+		if (S.P0.x >= P.x && P.x >= S.P1.x)
+			return (1);
+	}
+	else
+	{    // S is vertical, so test y  coordinate
+		if (S.P0.y <= P.y && P.y <= S.P1.y)
+			return (1);
+		if (S.P0.y >= P.y && P.y >= S.P1.y)
+			return (1);
+	}
+
+	return (0);
+}
+
+
+//http://geomalgorithms.com/a05-_intersect-1.html#intersect2D_2Segments()
+// intersect2D_2Segments(): find the 2D intersection of 2 finite segments
+//    Input:  two finite segments S1 and S2
+//    Output: *I0 = intersect point (when it exists)
+//            *I1 =  endpoint of intersect segment [I0,I1] (when it exists)
+//    Return: 0=disjoint (no intersect)
+//            1=intersect  in unique point I0
+//            2=overlap  in segment from I0 to I1
+
+int
+carmen_line_to_line_intersection(carmen_position_t *I0, carmen_position_t s1_p0, carmen_position_t s1_p1, carmen_position_t s2_p0, carmen_position_t s2_p1)
+{
+	carmen_line_segment_t S1 = {s1_p0, s1_p1};
+	carmen_line_segment_t S2 = {s2_p0, s2_p1};
+
+	carmen_position_t u;
+	u.x = S1.P1.x - S1.P0.x;
+	u.y = S1.P1.y - S1.P0.y;
+
+	carmen_position_t v;
+	v.x = S2.P1.x - S2.P0.x;
+	v.y = S2.P1.y - S2.P0.y;
+
+	carmen_position_t w;
+	w.x = S1.P0.x - S2.P0.x;
+	w.y = S1.P0.y - S2.P0.y;
+
+	double D = PERP2D(u, v);
+
+	// test if  they are parallel (includes either being a point)
+	if (fabs(D) < 0.000000001)
+	{           // S1 and S2 are parallel
+		if (PERP2D(u,w) != 0 || PERP2D(v,w) != 0)
+			return (0);                    // they are NOT collinear
+
+		// they are collinear or degenerate
+		// check if they are degenerate  points
+		double du = DOT2D(u, u);
+		double dv = DOT2D(v, v);
+		if (du == 0 && dv == 0)
+		{            // both segments are points
+			if (S1.P0.x != S2.P0.x && S1.P0.y != S2.P0.y)         // they are distinct  points
+				return (0);
+			if (I0)
+				*I0 = S1.P0;                 // they are the same point
+			return (1);
+		}
+		if (du == 0)
+		{                     // S1 is a single point
+			if (inSegment(S1.P0, S2) == 0)  // but is not in S2
+				return (0);
+			if (I0)
+				*I0 = S1.P0;
+			return (1);
+		}
+		if (dv == 0)
+		{                     // S2 a single point
+			if (inSegment(S2.P0, S1) == 0)  // but is not in S1
+				return (0);
+			if (I0)
+				*I0 = S2.P0;
+			return (1);
+		}
+		// they are collinear segments - get  overlap (or not)
+		double t0, t1;                    // endpoints of S1 in eqn for S2
+		carmen_position_t w2;
+		w2.x = S1.P1.x - S2.P0.x;
+		w2.y = S1.P1.y - S2.P0.y;
+		if (v.x != 0)
+		{
+			t0 = w.x / v.x;
+			t1 = w2.x / v.x;
+		}
+		else
+		{
+			t0 = w.y / v.y;
+			t1 = w2.y / v.y;
+		}
+		if (t0 > t1)
+		{                   // must have t0 smaller than t1
+			double t = t0;
+			t0 = t1;
+			t1 = t;    // swap if not
+		}
+		if (t0 > 1 || t1 < 0)
+		{
+			return (0);      // NO overlap
+		}
+		t0 = t0 < 0 ? 0 : t0;               // clip to min 0
+		t1 = t1 > 1 ? 1 : t1;               // clip to max 1
+		if (t0 == t1)
+		{                  // intersect is a point
+			if (I0)
+			{
+				I0->x = S2.P0.x + t0 * v.x;
+				I0->y = S2.P0.y + t0 * v.y;
+			}
+			return (1);
+		}
+
+		// they overlap in a valid subsegment
+		if (I0)
+		{
+			I0->x = S2.P0.x + t0 * v.x;
+			I0->y = S2.P0.y + t0 * v.y;
+		}
+		//*I1 = S2.P0 + t1 * v;
+		return (2);
+	}
+
+	// the segments are skew and may intersect in a point
+	// get the intersect parameter for S1
+	double sI = PERP2D(v,w) / D;
+	if (sI < 0 || sI > 1)                // no intersect with S1
+		return (0);
+
+	// get the intersect parameter for S2
+	double tI = PERP2D(u,w) / D;
+	if (tI < 0 || tI > 1)                // no intersect with S2
+		return (0);
+
+	if (I0)
+	{
+		I0->x = S1.P0.x + sI * u.x;
+		I0->y = S1.P0.y + sI * u.y;
+	}
+	return (1);
+}
+
+
+static carmen_position_t
+rotate_rectangle_vertice(carmen_position_t unrotated_vertice, carmen_rectangle_t rectangle, double cos_theta, double sin_theta)
+{
+	carmen_position_t rotated_vertice;
+	rotated_vertice.x = rectangle.x + cos_theta * (unrotated_vertice.x - rectangle.x) - sin_theta * (unrotated_vertice.y - rectangle.y);
+	rotated_vertice.y = rectangle.y + sin_theta * (unrotated_vertice.x - rectangle.x) + cos_theta * (unrotated_vertice.y - rectangle.y);
+
+	return (rotated_vertice);
+}
+
+
+int
+carmen_line_to_point_crossed_rectangle(carmen_position_t *intersection, carmen_position_t origin, carmen_position_t point, carmen_rectangle_t rectangle)
+{
+	carmen_position_t rectangle_vertice1, rectangle_vertice2, unrotated_vertice;
+
+	double cos_theta = cos(rectangle.theta);
+	double sin_theta = sin(rectangle.theta);
+
+	unrotated_vertice.x = rectangle.x - rectangle.length / 2.0;
+	unrotated_vertice.y = rectangle.y - rectangle.width / 2.0;
+	rectangle_vertice1 = rotate_rectangle_vertice(unrotated_vertice, rectangle, cos_theta, sin_theta);
+
+	unrotated_vertice.x = rectangle.x + rectangle.length / 2.0;
+	unrotated_vertice.y = rectangle.y - rectangle.width / 2.0;
+	rectangle_vertice2 = rotate_rectangle_vertice(unrotated_vertice, rectangle, cos_theta, sin_theta);
+	if (carmen_line_to_line_intersection(intersection, origin, point, rectangle_vertice1, rectangle_vertice2) != 0)
+		return (1);
+
+	rectangle_vertice1 = rectangle_vertice2;
+	unrotated_vertice.x = rectangle.x + rectangle.length / 2.0;
+	unrotated_vertice.y = rectangle.y + rectangle.width / 2.0;
+	rectangle_vertice2 = rotate_rectangle_vertice(unrotated_vertice, rectangle, cos_theta, sin_theta);
+	if (carmen_line_to_line_intersection(intersection, origin, point, rectangle_vertice1, rectangle_vertice2) != 0)
+		return (1);
+
+	rectangle_vertice1 = rectangle_vertice2;
+	unrotated_vertice.x = rectangle.x - rectangle.length / 2.0;
+	unrotated_vertice.y = rectangle.y + rectangle.width / 2.0;
+	rectangle_vertice2 = rotate_rectangle_vertice(unrotated_vertice, rectangle, cos_theta, sin_theta);
+	if (carmen_line_to_line_intersection(intersection, origin, point, rectangle_vertice1, rectangle_vertice2) != 0)
+		return (1);
+
+	rectangle_vertice1 = rectangle_vertice2;
+	unrotated_vertice.x = rectangle.x - rectangle.length / 2.0;
+	unrotated_vertice.y = rectangle.y - rectangle.width / 2.0;
+	rectangle_vertice2 = rotate_rectangle_vertice(unrotated_vertice, rectangle, cos_theta, sin_theta);
+	if (carmen_line_to_line_intersection(intersection, origin, point, rectangle_vertice1, rectangle_vertice2) != 0)
+		return (1);
+
+	return (0);
+}
