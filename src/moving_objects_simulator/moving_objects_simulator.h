@@ -66,4 +66,7 @@ get_obj_model_features(int model_id);
 void
 set_object_models(std::vector<object_model_features_t> &obj_models);
 
+void
+publish_moving_objects_by_timestamp();
+
 #endif
