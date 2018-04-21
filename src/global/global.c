@@ -1909,10 +1909,32 @@ rotate_rectangle_vertice(carmen_position_t unrotated_vertice, carmen_rectangle_t
 }
 
 
+double
+check_if_crossed_rectangle_edge(int *crossed, carmen_position_t *nearest_intersection, carmen_position_t origin, carmen_position_t point,
+	carmen_position_t rectangle_vertice1, carmen_position_t rectangle_vertice2, double min_distance)
+{
+	carmen_position_t intersection;
+
+	if (carmen_line_to_line_intersection(&intersection, origin, point, rectangle_vertice1, rectangle_vertice2) != 0)
+	{
+		double distance = DIST2D(intersection, origin);
+		if (distance < min_distance)
+		{
+			min_distance = distance;
+			*nearest_intersection = intersection;
+		}
+		*crossed = 1;
+	}
+
+	return (min_distance);
+}
+
 int
-carmen_line_to_point_crossed_rectangle(carmen_position_t *intersection, carmen_position_t origin, carmen_position_t point, carmen_rectangle_t rectangle)
+carmen_line_to_point_crossed_rectangle(carmen_position_t *nearest_intersection, carmen_position_t origin, carmen_position_t point, carmen_rectangle_t rectangle)
 {
 	carmen_position_t rectangle_vertice1, rectangle_vertice2, unrotated_vertice;
+	double min_distance = 1000.0;
+	int crossed = 0;
 
 	double cos_theta = cos(rectangle.theta);
 	double sin_theta = sin(rectangle.theta);
@@ -1924,29 +1946,25 @@ carmen_line_to_point_crossed_rectangle(carmen_position_t *intersection, carmen_p
 	unrotated_vertice.x = rectangle.x + rectangle.length / 2.0;
 	unrotated_vertice.y = rectangle.y - rectangle.width / 2.0;
 	rectangle_vertice2 = rotate_rectangle_vertice(unrotated_vertice, rectangle, cos_theta, sin_theta);
-	if (carmen_line_to_line_intersection(intersection, origin, point, rectangle_vertice1, rectangle_vertice2) != 0)
-		return (1);
+	min_distance = check_if_crossed_rectangle_edge(&crossed, nearest_intersection, origin, point, rectangle_vertice1, rectangle_vertice2, min_distance);
 
 	rectangle_vertice1 = rectangle_vertice2;
 	unrotated_vertice.x = rectangle.x + rectangle.length / 2.0;
 	unrotated_vertice.y = rectangle.y + rectangle.width / 2.0;
 	rectangle_vertice2 = rotate_rectangle_vertice(unrotated_vertice, rectangle, cos_theta, sin_theta);
-	if (carmen_line_to_line_intersection(intersection, origin, point, rectangle_vertice1, rectangle_vertice2) != 0)
-		return (1);
+	min_distance = check_if_crossed_rectangle_edge(&crossed, nearest_intersection, origin, point, rectangle_vertice1, rectangle_vertice2, min_distance);
 
 	rectangle_vertice1 = rectangle_vertice2;
 	unrotated_vertice.x = rectangle.x - rectangle.length / 2.0;
 	unrotated_vertice.y = rectangle.y + rectangle.width / 2.0;
 	rectangle_vertice2 = rotate_rectangle_vertice(unrotated_vertice, rectangle, cos_theta, sin_theta);
-	if (carmen_line_to_line_intersection(intersection, origin, point, rectangle_vertice1, rectangle_vertice2) != 0)
-		return (1);
+	min_distance = check_if_crossed_rectangle_edge(&crossed, nearest_intersection, origin, point, rectangle_vertice1, rectangle_vertice2, min_distance);
 
 	rectangle_vertice1 = rectangle_vertice2;
 	unrotated_vertice.x = rectangle.x - rectangle.length / 2.0;
 	unrotated_vertice.y = rectangle.y - rectangle.width / 2.0;
 	rectangle_vertice2 = rotate_rectangle_vertice(unrotated_vertice, rectangle, cos_theta, sin_theta);
-	if (carmen_line_to_line_intersection(intersection, origin, point, rectangle_vertice1, rectangle_vertice2) != 0)
-		return (1);
+	min_distance = check_if_crossed_rectangle_edge(&crossed, nearest_intersection, origin, point, rectangle_vertice1, rectangle_vertice2, min_distance);
 
-	return (0);
+	return (crossed);
 }

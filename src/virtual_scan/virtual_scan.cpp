@@ -42,10 +42,10 @@ compare_angles(const void *a, const void *b)
 	carmen_point_t *arg1 = (carmen_point_t *) a;
 	carmen_point_t *arg2 = (carmen_point_t *) b;
 
-	// The contents of the array are being sorted in ascending order
-	if (arg1->theta < arg2->theta)
+	double delta_theta = carmen_normalize_theta(arg1->theta - arg2->theta);
+	if (delta_theta < 0.0)
 		return (-1);
-	if (arg1->theta > arg2->theta)
+	if (delta_theta > 0.0)
 		return (1);
 
 	return (0);
@@ -78,6 +78,19 @@ sort_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan) // Verify if
 }
 
 
+void
+sort_segment_points_by_angle(virtual_scan_segment_t *segment, carmen_point_t velodyne_pos)
+{
+	for (int i = 0; i < segment->num_points; i++)
+	{
+		double theta = atan2(segment->points[i].y - velodyne_pos.y, segment->points[i].x - velodyne_pos.x);
+		theta = carmen_normalize_theta(theta + velodyne_pos.theta);
+		segment->points[i].theta = theta;
+	}
+	qsort((void *) (segment->points), (size_t) segment->num_points, sizeof(carmen_point_t), compare_angles);
+}
+
+
 virtual_scan_extended_t *
 filter_virtual_scan(virtual_scan_extended_t *virtual_scan_extended)
 {
@@ -94,7 +107,7 @@ filter_virtual_scan(virtual_scan_extended_t *virtual_scan_extended)
 			if ((x_index_map > 0) && (x_index_map < localize_map.config.x_size) &&
 				(y_index_map > 0) && (y_index_map < localize_map.config.y_size))
 			{
-//				if (localize_map.prob[x_index_map][y_index_map] < PROB_THRESHOLD)
+				if (localize_map.prob[x_index_map][y_index_map] < PROB_THRESHOLD)
 				{
 					virtual_scan_extended_filtered->points = (carmen_point_t *) realloc(virtual_scan_extended_filtered->points,
 										sizeof(carmen_point_t) * (num_points + 1));
@@ -112,6 +125,7 @@ filter_virtual_scan(virtual_scan_extended_t *virtual_scan_extended)
 		}
 	}
 	virtual_scan_extended_filtered->num_points = num_points;
+	virtual_scan_extended_filtered->velodyne_pos = virtual_scan_extended->velodyne_pos;
 	virtual_scan_extended_filtered->timestamp = virtual_scan_extended->timestamp;
 
 //	fprintf(stdout,"virtual_scan_extended->num_points = %d\n", virtual_scan_extended->num_points);
@@ -119,47 +133,6 @@ filter_virtual_scan(virtual_scan_extended_t *virtual_scan_extended)
 //	fflush(stdout);
 
 	return (virtual_scan_extended_filtered);
-}
-
-
-virtual_scan_segment_classes_t *
-segment_virtual_scan_old(virtual_scan_extended_t *extended_virtual_scan)
-{
-	int segment_id = 0;
-	int begin_segment = 0;
-	virtual_scan_segment_classes_t *virtual_scan_segments;
-
-	virtual_scan_segments = (virtual_scan_segment_classes_t *) malloc(sizeof(virtual_scan_segment_classes_t));
-	virtual_scan_segments->num_segments = 0;
-	virtual_scan_segments->timestamp = extended_virtual_scan->timestamp;
-	virtual_scan_segments->segment = NULL;
-
-	int p_in_c = 0;
-	for (int i = 1; i < extended_virtual_scan->num_points; i++)
-	{
-		if ((DIST2D(extended_virtual_scan->points[i],  extended_virtual_scan->points[i - 1]) > DISTANCE_BETWEEN_SEGMENTS) ||
-			(i == extended_virtual_scan->num_points - 1))
-		{
-			virtual_scan_segments->segment = (virtual_scan_segment_t *) realloc(virtual_scan_segments->segment,
-					sizeof(virtual_scan_segment_t) * (segment_id + 1));
-			if (i < extended_virtual_scan->num_points - 1)
-				virtual_scan_segments->segment[segment_id].num_points = i - begin_segment;
-			else
-				virtual_scan_segments->segment[segment_id].num_points = i - begin_segment + 1; // TODO: checar isso
-
-			virtual_scan_segments->segment[segment_id].points = (carmen_point_t *) malloc(sizeof(carmen_point_t) * virtual_scan_segments->segment[segment_id].num_points);
-			memcpy((void *) virtual_scan_segments->segment[segment_id].points, (void *) &(extended_virtual_scan->points[begin_segment]), sizeof(carmen_point_t) * virtual_scan_segments->segment[segment_id].num_points);
-
-			p_in_c += virtual_scan_segments->segment[segment_id].num_points;
-
-			begin_segment = i;
-			segment_id++;
-			virtual_scan_segments->num_segments++;
-		}
-	}
-//	printf("points %d, clusters %d, points in clusters %d\n", extended_virtual_scan->num_points, virtual_scan_segments->num_segments, p_in_c);
-
-	return (virtual_scan_segments);
 }
 
 
@@ -203,6 +176,8 @@ segment_virtual_scan(virtual_scan_extended_t *extended_virtual_scan)
 			virtual_scan_segments->segment[segment_id].num_points = cluster.size();
 			for (unsigned int i = 0; i < cluster.size(); i++)
 				virtual_scan_segments->segment[segment_id].points[i] = cluster[i];
+
+			sort_segment_points_by_angle(&(virtual_scan_segments->segment[segment_id]), extended_virtual_scan->velodyne_pos);
 		}
 	}
 
@@ -584,22 +559,26 @@ append_i_shaped_objects_to_box_models(virtual_scan_box_models_t *box_models, vir
 	{
 		double theta, theta2;
 
-//		double l = DIST2D(first_point, last_point);
-//		if (categories[category].length > l)
+		double l = DIST2D(first_point, last_point);
+		if ((l < categories[category].length) &&
+			(l > categories[category].width * 1.5))
 		{
 			theta = atan2(last_point.y - first_point.y, last_point.x - first_point.x);
-//			theta2 = carmen_normalize_theta(theta + M_PI / 2.0);
-//			append_i_object(box_models, box_points, first_point, category, categories, theta, theta2);
-
 			theta2 = carmen_normalize_theta(theta - M_PI / 2.0);
 			append_i_object(box_models, box_points, first_point, category, categories, theta, theta2);
 
 			theta = atan2(first_point.y - last_point.y, first_point.x - last_point.x);
 			theta2 = carmen_normalize_theta(theta + M_PI / 2.0);
 			append_i_object(box_models, box_points, last_point, category, categories, theta, theta2);
+		}
+		else if (l <= categories[category].width * 1.5)
+		{
+			theta = carmen_normalize_theta(atan2(last_point.y - first_point.y, last_point.x - first_point.x) - M_PI / 2.0);
+			theta2 = carmen_normalize_theta(theta + M_PI / 2.0);
+			append_i_object(box_models, box_points, first_point, category, categories, theta, theta2);
 
-//			theta2 = carmen_normalize_theta(theta - M_PI / 2.0);
-//			append_i_object(box_models, box_points, last_point, category, categories, theta, theta2);
+			theta2 = carmen_normalize_theta(theta - M_PI / 2.0);
+			append_i_object(box_models, box_points, last_point, category, categories, theta, theta2);
 		}
 	}
 }

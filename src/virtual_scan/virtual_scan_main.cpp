@@ -194,7 +194,7 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 
 	if (initial_time == 0.0)
 	{
-		returned_pose = previous_pose = displace_pose(rddf->poses[0], -8.0);
+		returned_pose = previous_pose = rddf->poses[0];
 		returned_pose.x = previous_pose.x + disp * cos(previous_pose.theta + M_PI / 2.0);
 		returned_pose.y = previous_pose.y + disp * sin(previous_pose.theta + M_PI / 2.0);
 
@@ -205,15 +205,17 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	}
 
 	static double stop_t0 = 0;
-	static double stop_t1 = 0;
+	static double stop_t1 = 30;
+	static double stop_t2 = 10;
 
 	static double v;
 	double t = timestamp - initial_time;
-	if (stop_t0 <= t && disp > 0.0)
+	if ((t > stop_t0) && (t < stop_t1) && disp < 3.0)
+		disp += 0.03;
+	if ((t > stop_t1) && disp > 0.0)
 		disp -= 0.03;
-	if (t < stop_t1)
-//		v = current_robot_pose_v_and_phi.v + 0.9;
-		v = current_robot_pose_v_and_phi.v + 0.5; // Motos!
+	if (t < stop_t2)
+		v = current_robot_pose_v_and_phi.v + 0.6;
 
 //	else if (t > stop_tn)
 //		initial_time = timestamp;
@@ -230,7 +232,7 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	for (int i = 0, n = rddf->number_of_poses - 1; i < n; i++)
 	{
 		int status;
-		next_pose = displace_pose(carmen_get_point_nearest_to_trajectory(&status, rddf->poses[i], rddf->poses[i + 1], pose_ahead, 0.1), -8.0);
+		next_pose = carmen_get_point_nearest_to_trajectory(&status, rddf->poses[i], rddf->poses[i + 1], pose_ahead, 0.1);
 		if ((status == POINT_WITHIN_SEGMENT) || (status == POINT_BEFORE_SEGMENT))
 			break;
 	}
@@ -238,6 +240,7 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	returned_pose = previous_pose = next_pose;
 	returned_pose.x = previous_pose.x + disp * cos(previous_pose.theta + M_PI / 2.0);
 	returned_pose.y = previous_pose.y + disp * sin(previous_pose.theta + M_PI / 2.0);
+	returned_pose = displace_pose(returned_pose, -12.0);
 	previous_timestamp = timestamp;
 
 	return (&returned_pose);
@@ -253,18 +256,18 @@ draw_moving_object_in_scan(carmen_mapper_virtual_scan_message *simulated_scan, c
 
 	double initial_angle = world_pose.orientation.yaw;
 
-	carmen_rectangle_t rectangle = {simulated_object_pose->x, simulated_object_pose->y, simulated_object_pose->theta, 4.0, 1.7};
+	carmen_rectangle_t rectangle = {simulated_object_pose->x, simulated_object_pose->y, simulated_object_pose->theta, 4.0, 1.5};
 
 	int num_points = 0;
-	for (double angle = 0.0; angle < 2.0 * M_PI; angle += M_PI / (360 * 2.0))
+	for (double angle = -M_PI; angle < M_PI; angle += M_PI / (360 * 4.0))
 		num_points++;
 	simulated_scan->num_points = num_points;
 	simulated_scan->points = (carmen_position_t *) malloc(num_points * sizeof(carmen_position_t));
 
 	int i = 0;
-	for (double angle = 0.0; angle < 2.0 * M_PI; angle += M_PI / (360 * 2.0))
+	for (double angle = -M_PI; angle < M_PI; angle += M_PI / (360 * 4.0))
 	{
-		double max_distance = 10.0;
+		double max_distance = 20.0;
 		carmen_position_t target = {velodyne_pos.x + max_distance * cos(carmen_normalize_theta(initial_angle + angle)),
 									velodyne_pos.y + max_distance * sin(carmen_normalize_theta(initial_angle + angle))};
 		carmen_position_t intersection;
@@ -427,11 +430,11 @@ carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *m
 		virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(g_virtual_scan_segment_classes[g_zi]);
 		virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
 
-		g_neighborhood_graph = virtual_scan_update_neighborhood_graph(g_neighborhood_graph, virtual_scan_box_model_hypotheses);
-
-		virtual_scan_track_set_t *track_set = virtual_scan_infer_moving_objects(g_neighborhood_graph);
-//		virtual_scan_publish_moving_objects(track_set, NULL);
-		virtual_scan_publish_moving_objects(track_set, virtual_scan_box_model_hypotheses);
+//		g_neighborhood_graph = virtual_scan_update_neighborhood_graph(g_neighborhood_graph, virtual_scan_box_model_hypotheses);
+//
+//		virtual_scan_track_set_t *track_set = virtual_scan_infer_moving_objects(g_neighborhood_graph);
+////		virtual_scan_publish_moving_objects(track_set, NULL);
+//		virtual_scan_publish_moving_objects(track_set, virtual_scan_box_model_hypotheses);
 
 		virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses);
 
