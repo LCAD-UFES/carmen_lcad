@@ -18,9 +18,10 @@ LFLAGS += \
 	-llocalize_ackerman_interface -lrddf_interface -lcollision_detection
 
 SOURCES = \
+	virtual_scan_main.cpp \
 	virtual_scan.cpp \
-	virtual_scan_interface.cpp \
-	virtual_scan_main.cpp
+	probability_of_track_set.cpp \
+	virtual_scan_interface.cpp
 
 PUBLIC_INCLUDES = \
 	virtual_scan_interface.h \
@@ -62,6 +63,7 @@ libvirtual_scan_interface.a: \
 virtual_scan: \
 	virtual_scan_main.o \
 	virtual_scan.o \
+	probability_of_track_set.o \
 	virtual_scan_interface.o
 
 include ../Makefile.rules

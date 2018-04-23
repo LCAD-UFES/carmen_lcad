@@ -137,7 +137,7 @@ typedef struct
 {
 	int index;
 	virtual_scan_box_model_t hypothesis;
-//	virtual_scan_segment_t hypothesis_points;
+	virtual_scan_segment_t hypothesis_points;
 	int zi;
 
 	double v;
@@ -159,7 +159,7 @@ typedef struct
 
 	double *last_frames_timetamps;
 	int number_of_frames_filled;
-	int index;
+	int graph_id;
 } virtual_scan_neighborhood_graph_t;
 
 
@@ -225,5 +225,8 @@ virtual_scan_update_neighborhood_graph(virtual_scan_neighborhood_graph_t *neighb
 
 virtual_scan_track_set_t *
 virtual_scan_infer_moving_objects(virtual_scan_neighborhood_graph_t *neighborhood_graph);
+
+double
+probability_of_track_set_given_measurements(virtual_scan_track_set_t *track_set, bool print = false);
 
 #endif /* SRC_VIRTUAL_SCAN_VIRTUAL_SCAN_H_ */

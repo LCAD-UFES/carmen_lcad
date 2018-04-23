@@ -107,7 +107,7 @@ fill_in_moving_objects_message(virtual_scan_track_set_t *best_track_set, virtual
 
 	int num_moving_objects = 0;
 	for (int i = 0; i < best_track_set->size; i++)
-		if (best_track_set->tracks[i]->size > 2)
+//		if (best_track_set->tracks[i]->size > 2)
 			for (int j = 0; j < best_track_set->tracks[i]->size; j++)
 //				if (best_track_set->tracks[i]->box_model_hypothesis[j].zi == g_zi)
 					num_moving_objects++;
@@ -123,7 +123,7 @@ fill_in_moving_objects_message(virtual_scan_track_set_t *best_track_set, virtual
 	int k = 0;
 	for (int i = 0; i < best_track_set->size; i++)
 	{
-		if (best_track_set->tracks[i]->size > 2)
+//		if (best_track_set->tracks[i]->size > 2)
 		{
 			for (int j = 0; j < best_track_set->tracks[i]->size; j++)
 			{
@@ -189,17 +189,20 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	static carmen_ackerman_traj_point_t previous_pose = {0, 0, 0, 0, 0};
 	static carmen_ackerman_traj_point_t returned_pose = {0, 0, 0, 0, 0};
 	static double previous_timestamp = 0.0;
-	static double initial_time = 0.0; // Simulation start time.
-	static double disp = 0.0;
+	static double initial_time = 0.0;
+	static double lateral_disp = 0.0;	// Valor inicial
+	double logitutinal_disp = -12.0;		// Valor inicial
 
 	if (initial_time == 0.0)
 	{
 		returned_pose = previous_pose = rddf->poses[0];
-		returned_pose.x = previous_pose.x + disp * cos(previous_pose.theta + M_PI / 2.0);
-		returned_pose.y = previous_pose.y + disp * sin(previous_pose.theta + M_PI / 2.0);
+		returned_pose.x = previous_pose.x + lateral_disp * cos(previous_pose.theta + M_PI / 2.0);
+		returned_pose.y = previous_pose.y + lateral_disp * sin(previous_pose.theta + M_PI / 2.0);
 
 		previous_timestamp = timestamp;
 		initial_time = timestamp;
+
+		returned_pose = displace_pose(returned_pose, logitutinal_disp);
 
 		return (&returned_pose);
 	}
@@ -210,10 +213,10 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 
 	static double v;
 	double t = timestamp - initial_time;
-	if ((t > stop_t0) && (t < stop_t1) && disp < 3.0)
-		disp += 0.03;
-	if ((t > stop_t1) && disp > 0.0)
-		disp -= 0.03;
+	if ((t > stop_t0) && (t < stop_t1) && lateral_disp < 3.0)
+		lateral_disp += 0.03;
+	if ((t > stop_t1) && lateral_disp > 0.0)
+		lateral_disp -= 0.03;
 	if (t < stop_t2)
 		v = current_robot_pose_v_and_phi.v + 0.6;
 
@@ -238,9 +241,9 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	}
 
 	returned_pose = previous_pose = next_pose;
-	returned_pose.x = previous_pose.x + disp * cos(previous_pose.theta + M_PI / 2.0);
-	returned_pose.y = previous_pose.y + disp * sin(previous_pose.theta + M_PI / 2.0);
-	returned_pose = displace_pose(returned_pose, -12.0);
+	returned_pose.x = previous_pose.x + lateral_disp * cos(previous_pose.theta + M_PI / 2.0);
+	returned_pose.y = previous_pose.y + lateral_disp * sin(previous_pose.theta + M_PI / 2.0);
+	returned_pose = displace_pose(returned_pose, logitutinal_disp);
 	previous_timestamp = timestamp;
 
 	return (&returned_pose);
@@ -256,7 +259,7 @@ draw_moving_object_in_scan(carmen_mapper_virtual_scan_message *simulated_scan, c
 
 	double initial_angle = world_pose.orientation.yaw;
 
-	carmen_rectangle_t rectangle = {simulated_object_pose->x, simulated_object_pose->y, simulated_object_pose->theta, 4.0, 1.5};
+	carmen_rectangle_t rectangle = {simulated_object_pose->x, simulated_object_pose->y, simulated_object_pose->theta, 4.5, 1.5};
 
 	int num_points = 0;
 	for (double angle = -M_PI; angle < M_PI; angle += M_PI / (360 * 4.0))
@@ -267,7 +270,7 @@ draw_moving_object_in_scan(carmen_mapper_virtual_scan_message *simulated_scan, c
 	int i = 0;
 	for (double angle = -M_PI; angle < M_PI; angle += M_PI / (360 * 4.0))
 	{
-		double max_distance = 20.0;
+		double max_distance = 70.0;
 		carmen_position_t target = {velodyne_pos.x + max_distance * cos(carmen_normalize_theta(initial_angle + angle)),
 									velodyne_pos.y + max_distance * sin(carmen_normalize_theta(initial_angle + angle))};
 		carmen_position_t intersection;
@@ -418,6 +421,7 @@ publish_simulated_objects(carmen_ackerman_traj_point_t *simulated_object_pose, c
 void
 carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *message)
 {
+//	double t_ini = carmen_get_time();
 	if (necessary_maps_available)
 	{
 		virtual_scan_free_scan_extended(g_virtual_scan_extended[g_zi]);
@@ -428,13 +432,13 @@ carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *m
 		virtual_scan_publish_segments(g_virtual_scan_segment_classes[g_zi]);
 
 		virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses = virtual_scan_fit_box_models(g_virtual_scan_segment_classes[g_zi]);
-		virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
+//		virtual_scan_publish_box_models(virtual_scan_box_model_hypotheses);
 
-//		g_neighborhood_graph = virtual_scan_update_neighborhood_graph(g_neighborhood_graph, virtual_scan_box_model_hypotheses);
-//
-//		virtual_scan_track_set_t *track_set = virtual_scan_infer_moving_objects(g_neighborhood_graph);
-////		virtual_scan_publish_moving_objects(track_set, NULL);
-//		virtual_scan_publish_moving_objects(track_set, virtual_scan_box_model_hypotheses);
+		g_neighborhood_graph = virtual_scan_update_neighborhood_graph(g_neighborhood_graph, virtual_scan_box_model_hypotheses);
+
+		virtual_scan_track_set_t *track_set = virtual_scan_infer_moving_objects(g_neighborhood_graph);
+//		virtual_scan_publish_moving_objects(track_set, NULL);
+		virtual_scan_publish_moving_objects(track_set, virtual_scan_box_model_hypotheses);
 
 		virtual_scan_free_box_model_hypotheses(virtual_scan_box_model_hypotheses);
 
@@ -442,6 +446,7 @@ carmen_mapper_virtual_scan_message_handler(carmen_mapper_virtual_scan_message *m
 		if (g_zi >= NUMBER_OF_FRAMES_T)
 			g_zi = 0;
 	}
+//	printf("%lf\n", carmen_get_time() - t_ini);
 }
 
 
@@ -464,6 +469,10 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
 	if (!necessary_maps_available || !last_rddf_message)
 		return;
+
+//	static int val = 0;
+//	if ((val++ % 8) != 0) // pula
+//		return;
 
 	carmen_ackerman_traj_point_t current_robot_pose_v_and_phi;
 
