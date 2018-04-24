@@ -257,7 +257,7 @@ bool lane_analysis_init() {
 	// init vars
 	if (!set_carmen_home()) return false;
 	string DATA_DIR = CARMEN_HOME + "/src/lane_analysis/data/";
-	string config_xml_fname = CARMEN_HOME + "/src/lane_analysis/data/teste.xml"; // -> elas-iara-config
+	string config_xml_fname = CARMEN_HOME + "/src/lane_analysis/data/elas-iara-retadapenha.xml"; // -> elas-iara-config
 	string DATASETS_DIR = ""; // just a workaround atm, ELAS was made to work with offline datasets
 
     ELAS::init(DATASETS_DIR, DATA_DIR, config_xml_fname);
