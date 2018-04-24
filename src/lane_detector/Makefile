@@ -37,7 +37,7 @@ SOURCES = dbscan.cpp lane_detector.cpp lane_detector_main.cpp # DetectNet.cpp
 
 PUBLIC_INCLUDES = 
 PUBLIC_LIBRARIES = 
-PUBLIC_BINARIES = neural_car_detector
+PUBLIC_BINARIES = lane_detector
 
 TARGETS = darknet velodyne_camera_calibration camera_boxes_to_world libDbscan.a lane_detector  #libDetectNet.a
 # TARGETS = velodyne_camera_calibration camera_boxes_to_world libDbscan.a neural_car_detector
