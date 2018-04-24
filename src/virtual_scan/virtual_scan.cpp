@@ -1738,22 +1738,68 @@ track_death(virtual_scan_track_set_t *track_set, int victim)
 }
 
 
+void
+track_split(virtual_scan_track_set_t *track_set, int track_id)
+{
+	if (track_set->tracks[track_id]->size >= 4)
+	{
+		virtual_scan_track_t *track = track_set->tracks[track_id];
+
+		int s = carmen_int_random(track->size - 3) + 1; // s entre 1 e (track->size - 3). Note que, diferente do paper, nossa numeracao comecca de 0
+		int previous_track_size = track->size;
+		track->size = s + 1;
+
+		track_set->tracks = (virtual_scan_track_t **) realloc(track_set->tracks, (track_set->size + 1) * sizeof(virtual_scan_track_t *));
+		track_set->tracks[track_set->size] = (virtual_scan_track_t *) malloc(sizeof(virtual_scan_track_t));
+		track_set->tracks[track_set->size]->size = previous_track_size - track->size;
+		track_set->tracks[track_set->size]->box_model_hypothesis =
+				(virtual_scan_box_model_hypothesis_t *) malloc(track_set->tracks[track_set->size]->size * sizeof(virtual_scan_box_model_hypothesis_t));
+		for (int j = 0; j < track_set->tracks[track_set->size]->size; j++)
+			track_set->tracks[track_set->size]->box_model_hypothesis[j] = track->box_model_hypothesis[j + track->size];
+
+		track->box_model_hypothesis = (virtual_scan_box_model_hypothesis_t *) realloc(track->box_model_hypothesis,
+				track->size * sizeof(virtual_scan_box_model_hypothesis_t));
+
+		track_set->size += 1;
+	}
+}
+
+
+bool
+get_candidate_pair_of_tracks(int &idx_track1, int &idx_track2, virtual_scan_track_set_t *track_set)
+{
+	return (false);
+}
+
+
+void
+track_merge(virtual_scan_track_set_t *track_set)
+{
+	int idx_track1, idx_track2;
+	if (get_candidate_pair_of_tracks(idx_track1, idx_track2, track_set))
+	{
+		track_set->tracks[idx_track1]->box_model_hypothesis = (virtual_scan_box_model_hypothesis_t *) realloc(track_set->tracks[idx_track1]->box_model_hypothesis,
+				(track_set->tracks[idx_track1]->size + track_set->tracks[idx_track2]->size) * sizeof(virtual_scan_box_model_hypothesis_t));
+
+		for (int j = 0; j < track_set->tracks[idx_track2]->size; j++)
+			track_set->tracks[idx_track1]->box_model_hypothesis[j + track_set->tracks[idx_track1]->size] = track_set->tracks[idx_track2]->box_model_hypothesis[j];
+
+		free_track(track_set->tracks[idx_track2]);
+		memmove((void *) &(track_set->tracks[idx_track2]), &(track_set->tracks[idx_track2 + 1]), (track_set->size - (idx_track2 + 1)) * sizeof(virtual_scan_track_t *)); // verificar (victim + 1)
+
+		track_set->size -= 1;
+	}
+}
+
+
 //void
-//track_split(virtual_scan_track_t *track)
+//track_swicth(virtual_scan_track_set_t *track_set)
 //{
-//
 //}
-//
-//
+
+
 //void
-//track_merge(virtual_scan_track_set_t *track_set, int rand_track, int rand_track2)
-//{
-//
-//}
-//
-//
-//void
-//track_diffusion(virtual_scan_track_t *track)
+//track_diffusion(virtual_scan_track_t *track, int track_id)
 //{
 //
 //}
@@ -1812,7 +1858,7 @@ stop_condition(virtual_scan_track_set_t *track_set, virtual_scan_neighborhood_gr
 virtual_scan_track_set_t *
 propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood_graph, virtual_scan_track_set_t *track_set_n_1)
 {
-#define NUMBER_OF_TYPES_OF_MOVES	4
+#define NUMBER_OF_TYPES_OF_MOVES	6
 
 //	static int num_proposal = 0;
 
@@ -1853,23 +1899,21 @@ propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood
 			if (rand_track != -1)
 				track_set = track_death(track_set, rand_track);
 			break;
-//		case 4:	// Split
+		case 4:	// Split
+			if (rand_track != -1)
+				track_split(track_set, rand_track);
+			break;
+		case 5:	// Merge
+			if (rand_track != -1)
+				track_merge(track_set);
+			break;
+//		case 6:	// Switch
 //			if (rand_track != -1)
-//			{
-//				if (track_set->tracks[rand_track].size >= 4)
-//					track_split(&(track_set->tracks[rand_track]));
-//			}
+//				track_switch(track_set);
 //			break;
-//		case 5:	// Merge
+//		case 7:	// Diffusion
 //			if (rand_track != -1)
-//			{
-//				int rand_track2 = carmen_int_random(track_set->size);
-//				track_merge(track_set, rand_track, rand_track2);
-//			}
-//			break;
-//		case 6:	// Diffusion
-//			if (rand_track != -1)
-//				track_diffusion(&track_set->tracks[rand_track]);
+//				track_diffusion(track_set, rand_track);
 //			break;
 	}
 
@@ -1941,7 +1985,7 @@ virtual_scan_infer_moving_objects(virtual_scan_neighborhood_graph_t *neighborhoo
 
 	double best_track_prob = probability_of_track_set_given_measurements(best_track_set);
 	printf("num_tracks %d, prob %lf\n", (best_track_set)? best_track_set->size: 0, best_track_prob);
-//	print_track_set(best_track_set, neighborhood_graph, 0);
+	print_track_set(best_track_set, neighborhood_graph, 0);
 
 	return (best_track_set);
 }
