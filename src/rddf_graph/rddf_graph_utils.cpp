@@ -59,7 +59,7 @@ road_map_to_image_black_and_white(carmen_map_p map, cv::Mat *road_map_img, const
 
 
 void
-show_road_map(carmen_map_p road_map, double x, double y)
+show_road_map(carmen_map_p road_map, rddf_graph_t *graph)
 {
 	//road_prob *cell_prob;
 	cv::namedWindow("road_map", cv::WINDOW_AUTOSIZE);
@@ -67,8 +67,8 @@ show_road_map(carmen_map_p road_map, double x, double y)
 	int thickness = -1;
 		int lineType = 8;
 		cv::Point p;
-		p.x = (int) x;
-		p.y = (int) 350-1-y;
+		//p.x = (int) x;
+		//p.y = (int) 350-1-y;
 		//p.y=(int) y;
 	image1 = cv::Mat(road_map->config.y_size, road_map->config.x_size, CV_8UC3, cv::Scalar::all(0));
 	road_map_to_image(road_map, &image1);
@@ -169,11 +169,13 @@ fade_image(cv::Mat *road_map_img)
 
 
 void
-display_graph_over_map(carmen_map_p map, rddf_graphs_of_map_t *rddf_graphs, string file_name)
+display_graph_over_map(carmen_map_p map, rddf_graph_t *graph, int** already_visited, string file_name, int begin)
 {
+
+
 	cv::Point p;
 	cv::Mat image;
-	cv::Mat image_graph;
+	cv::Mat image_already_visited;
 	cv::Vec3b color;
 	uchar blue;
 	uchar green;
@@ -185,40 +187,58 @@ display_graph_over_map(carmen_map_p map, rddf_graphs_of_map_t *rddf_graphs, stri
 	int thickness = -1;
 	int lineType = 8;
 
+	cv::namedWindow(file_name, cv::WINDOW_AUTOSIZE);
+	cv::moveWindow(file_name, 78 + map->config.x_size, 10);
+	cv::namedWindow("already_visited", cv::WINDOW_AUTOSIZE);
+	cv::moveWindow("already_visited", 78 + 2*map->config.x_size, 10);
+
 	srand (time(NULL));
 
 	image = cv::Mat(map->config.y_size, map->config.x_size, CV_8UC3, cv::Scalar(255,255,255));
-	image_graph = cv::Mat(map->config.y_size, map->config.x_size, CV_8UC3, cv::Scalar(255,255,255));
+	image_already_visited = cv::Mat(map->config.y_size, map->config.x_size, CV_8UC3, cv::Scalar(255,255,255));
 	road_map_to_image(map, &image);
 	fade_image(&image);
 
-	for(int i = 0; i < rddf_graphs->size; i++)
+	for(int x = 0; x < map->config.x_size; x++)
 	{
+		for(int y = 0; y < map->config.y_size; y++)
+		{
+			if(already_visited[x][y] == 1)
+			{
+				p.x = x;
+				p.y = map->config.y_size - 1 - y;
+				cv::circle(image_already_visited, p, 0.4,cv::Scalar( 0, 0, 0 ),thickness,lineType);
+			}
+		}
+	}
+
+	//for(int i = 0; i < rddf_graphs->size; i++)
+	//{
 		blue = 0;//rand()%256;
 		green = 0;//rand()%256;
 		red = 0;//rand()%256;
 		color[0] = blue;
 		color[1] = green;
 		color[2] = red;
-		printf("\t%do graph nodes: %d\n", i+1, rddf_graphs[i].graph->size);
-		for(int j=0; j<rddf_graphs[i].graph->size;j++)
+		//printf("\t%do graph nodes: %d\n", i+1, rddf_graphs[i].graph->size);
+		for(int j=begin; j<graph->size;j++)
 		{
-			//image_graph->at<cv::Vec3b>(map->config.y_size - 1 - y, x) = color;
-			p.x = rddf_graphs[i].graph->point[j].x;
-			p.y = map->config.y_size - 1 - rddf_graphs[i].graph->point[j].y;
+			p.x = graph->point[j].x;
+			p.y = map->config.y_size - 1 - graph->point[j].y;
 			//p.x = aux->x;
 			//p.y = aux->y;
 			cv::circle(image, p, 0.4,cv::Scalar( blue, green, red ),thickness,lineType);
-			//image_graph.at<cv::Vec3b>(aux->x, aux->y) = color;
 		}
 
-		cv::imshow("graph in image", image);
+		cv::imshow(file_name, image);
+		cv::imshow("already_visited", image_already_visited);
 		//cv::imwrite("test.png", image);
 		//cv::waitKey();
-	}
+	//}
 	//while((cv::waitKey() & 0xff) != 27);
 	//cv::imwrite(file_name, image);
 	cv::waitKey();
+	cv::destroyWindow(file_name);
 	/*
 
 		for (int i=0;i<map->config.x_size;i++){
@@ -292,28 +312,27 @@ open_and_fill_road_map_already_visited(carmen_map_p map, int **already_visited, 
 {
 	string already_visited_filename = "already_visited/" + parsed_filename + "txt";
 	FILE *f = fopen(already_visited_filename.c_str(), "r");
+	int num;
 
 	if(f==NULL)
 		printf("Nao consegui abrir o arquivo");
-
 	else
 	{
 		for(int x = 0; x < map->config.x_size; x++)
 		{
 			for(int y = 0; y < map->config.y_size; y++)
 			{
-				if (!fscanf(f, "%d", &already_visited[x][y]))
+				if (!fscanf(f, "%d ", &num))
 					break;
+				already_visited[x][y] = num;
 			}
+			//printf("\n");
 		}
 		fclose (f);
 
 
 		return (already_visited);
 	}
-
-
-
 
 }
 
@@ -371,36 +390,19 @@ void parse_world_origin_to_road_map(string road_map_filename, carmen_map_p road_
 bool
 point_is_lane_center (carmen_map_p map, int x, int y)
 {
-	//road_prob *cell_prob_ant2;
-	//road_prob *cell_prob_ant1;
 	road_prob *cell_prob;
-	//road_prob *cell_prob_post1;
-	//road_prob *cell_prob_post2;
-
-	//para mapas na vertical, estamos checando o ponto com o y anterior e com o y posterior MELHORAR CHECAGEM!
-	//cell_prob_ant2 = road_mapper_double_to_prob(&map->map[x][y-2]);
-	//cell_prob_ant1 = road_mapper_double_to_prob(&map->map[x][y-1]);
 	cell_prob = road_mapper_double_to_prob(&map->map[x][y]); //pq o mapa está invertido??? PERGUNTAR RAFAEL!
-	//cell_prob_post1 = road_mapper_double_to_prob(&map->map[x][y+1]);
-	//cell_prob_post2 = road_mapper_double_to_prob(&map->map[x][y+2]);
-
-
 
 	if(point_is_in_map(map, x-2,y+2) && point_is_in_map(map, x+2,y-2) && point_is_in_map(map, x-1,y+1) && point_is_in_map(map, x+1,y-1))
 	{
-		//if(point_is_bigger(map,x,y))
-		//{
-			if(
-					((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-2])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-1])->lane_center) && //se ponto x,y for menor que os dois y atras
-							(cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y+2])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y+1])->lane_center)) || //se ponto x,y for menor que os dois y a frente
-							((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x-2][y])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x-1][y])->lane_center) && //se ponto x,y for menor que os dois x a acima
-									(cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x+2][y])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x+1][y])->lane_center)//) || //se ponto x,y for menor que os dois x a abaixo
+		if(
+				((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-2])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-1])->lane_center) && //se ponto x,y for menor que os dois y atras
+						(cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y+2])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y+1])->lane_center)) || //se ponto x,y for menor que os dois y a frente
+						((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x-2][y])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x-1][y])->lane_center) && //se ponto x,y for menor que os dois x a acima
+								(cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x+2][y])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x+1][y])->lane_center)//) || //se ponto x,y for menor que os dois x a abaixo
 
-									//((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x-2][y+2])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x-1][y+1])->lane_center) &&
-										//	(cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x+2][y-2])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x+1][y-1])->lane_center)) ||
-											//((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x-2][y-2])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x-1][y-1])->lane_center) &&
-												//	(cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x+2][y+2])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x+1][y+1])->lane_center)
-											))
+
+						))
 			{
 
 				return true;
@@ -494,7 +496,7 @@ save_current_already_visited (int **already_visited, carmen_map_p map, string pa
 	{
 		for(j = 0; j < map->config.y_size; j++)
 		{
-			fprintf(f, "%d", already_visited[i][j]);
+			fprintf(f, "%d ", already_visited[i][j]);
 		}
 		fprintf(f,"\n");
 	}
@@ -706,7 +708,7 @@ generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename)
 	string parsed_filename;
 	rddf_graphs_of_map_t *rddf_graphs = NULL;
 	rddf_graph_t *graph = NULL;
-	int last_x, last_y;
+	int last_x, last_y, last_graph_size;
 	bool road_begin = true;
 
 	parsed_filename = parse_filename(str_road_map_filename);
@@ -724,22 +726,29 @@ generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename)
 			else
 			{
 				already_visited[x][y] = 1;
+
 				if (point_is_lane_center(map, x, y))
 				{
+
 					if (road_begin)
 					{
 						last_x = x;
 						last_y = y;
 						road_begin = false;
 					}
+					if(graph == NULL)
+						last_graph_size = 0;
+					else
+						last_graph_size = graph->size;
 					graph = A_star(graph, x, y, map, already_visited);
-					show_road_map(map, graph->point[graph->size-1].x, graph->point[graph->size-1].y);
 					cout<<graph->size<<endl;
-					printf("if %lf == %d\n", graph->point[graph->size-1].x, map->config.x_size-3);
-						printf("else if %lf == %d\n", map->config.y_size - 1 - graph->point[graph->size-1].y, map->config.y_size-3);
+					cout<<"graph begin\t"<<graph->point[0].x<<"\t"<<graph->point[0].y<<endl;
+					cout<<"graph end\t"<<graph->point[graph->size-1].x<<"\t"<<graph->point[graph->size-1].y<<endl;
+					display_graph_over_map(map, graph, already_visited, parsed_filename, last_graph_size);
 
-					if(graph->point[graph->size-1].x == map->config.x_size-3)
+					if(graph->point[graph->size-1].x == 2 || graph->point[graph->size-1].x == map->config.x_size-3)
 					{
+						cout<<"entrei em X"<<endl;
 						save_current_already_visited (already_visited, map, parsed_filename);
 						get_next_road_map (&map, str_road_map_filename, 1);
 						cout << "File " << str_road_map_filename << " being displayed"<< endl;
@@ -751,10 +760,13 @@ generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename)
 						{
 							already_visited = open_and_fill_road_map_already_visited(map, already_visited, parsed_filename);
 						}
-						x = 0;
+						x = 2;
+						y = graph->point[graph->size-1].y;
 					}
-					else if(map->config.y_size - 1 - graph->point[graph->size-1].y  == map->config.y_size-3)
+					else if(graph->point[graph->size-1].y  == 2 || graph->point[graph->size-1].y  == map->config.y_size-3)
+					//else if(map->config.y_size - 1 - graph->point[graph->size-1].y  == map->config.y_size-3)
 					{
+						cout<<"entrei em Y"<<endl;
 						save_current_already_visited (already_visited, map, parsed_filename);
 						get_next_road_map (&map, str_road_map_filename, 2);
 						cout << "File " << str_road_map_filename << " being displayed"<< endl;
@@ -766,7 +778,9 @@ generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename)
 						{
 							already_visited = open_and_fill_road_map_already_visited(map, already_visited, parsed_filename);
 						}
-						y = 0;
+						x = graph->point[graph->size-1].x;
+						y = 2;
+						printf("point \t %d X %d\n",x,y);
 					}
 					else
 					{
@@ -779,15 +793,13 @@ generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename)
 						parsed_filename = parse_filename(str_road_map_filename);
 						clear_already_visited (already_visited, map->config.y_size);
 						already_visited = alloc_matrix(map->config.x_size, map->config.y_size);
-						cout<<map->config.x_size<<"\t"<<map->config.y_size<<endl;getchar();
 						already_visited = open_and_fill_road_map_already_visited(map, already_visited, parsed_filename);
+
 						x = last_x;
 						y = last_y;
 						road_begin = true;
-						//system("clear");
 
 					}
-					cout<<"road_map_filenames size "<<road_map_filenames.size()<<endl;
 					//rddf_graphs = add_graph_to_graph_list(rddf_graphs, graph);
 				}
 			}
