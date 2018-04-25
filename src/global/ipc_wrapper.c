@@ -798,26 +798,32 @@ void carmen_ipc_unsubscribe_fd(int fd, carmen_handler_t handler)
 		" matching callback for %d\n", fd);
 }
 
-void carmen_publish_heartbeat(char *module_name)
+
+void
+carmen_publish_heartbeat(char *module_name)
 {
-  carmen_heartbeat_message msg;
-  IPC_RETURN_TYPE err;
+	carmen_heartbeat_message msg;
+	IPC_RETURN_TYPE err;
 
-  msg.module_name = carmen_new_string(module_name);
-  msg.pid = getpid();
-  msg.hostname = carmen_get_host();
-  msg.timestamp = carmen_get_time();
+	msg.module_name = carmen_new_string(module_name);
+	msg.pid = getpid();
+	msg.hostname = carmen_get_host();
+	msg.timestamp = carmen_get_time();
 
-  err = IPC_defineMsg(CARMEN_HEARTBEAT_NAME, IPC_VARIABLE_LENGTH,
-		      CARMEN_HEARTBEAT_FMT);
-  carmen_test_ipc_exit(err, "Could not define", CARMEN_HEARTBEAT_NAME);
+	static int first_time = 1;
+	if (first_time)
+	{
+		err = IPC_defineMsg(CARMEN_HEARTBEAT_NAME, IPC_VARIABLE_LENGTH, CARMEN_HEARTBEAT_FMT);
+		carmen_test_ipc_exit(err, "Could not define", CARMEN_HEARTBEAT_NAME);
+		first_time = 0;
+	}
 
-  err = IPC_publishData(CARMEN_HEARTBEAT_NAME, &msg);
-  carmen_test_ipc_exit(err, "Could not publish",
-		       CARMEN_HEARTBEAT_NAME);
+	err = IPC_publishData(CARMEN_HEARTBEAT_NAME, &msg);
+	carmen_test_ipc_exit(err, "Could not publish", CARMEN_HEARTBEAT_NAME);
 
-  free(msg.module_name);
+	free(msg.module_name);
 }
+
 
 void
 carmen_subscribe_heartbeat_message(carmen_heartbeat_message *heartbeat,

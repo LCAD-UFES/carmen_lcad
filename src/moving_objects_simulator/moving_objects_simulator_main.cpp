@@ -4,7 +4,7 @@
 
 #include "moving_objects_simulator.h"
 
-static carmen_localize_ackerman_initialize_message localize_ackerman_init_message;
+carmen_localize_ackerman_initialize_message localize_ackerman_init_message;
 static carmen_moving_objects_point_clouds_message moving_objects_point_clouds_message;
 
 char* input_filename;
@@ -17,7 +17,7 @@ int num_of_models;
 std::vector<timestamp_moving_objects> timestamp_moving_objects_list;
 std::map<int,moving_objects_by_id_t> moving_objects_by_id_map;
 
-int current_vector_index = 0;
+int current_vector_index = 1;
 
 double previous_timestamp = 0.0;
 double delta_time = 0.1;
@@ -28,7 +28,8 @@ carmen_point_t initial_pose, actual_pose;
 
 #define MIN_DIST 10.0
 #define MAX_DIST 30.0
-#define PUBLISH_BY_ID
+//#define PUBLISH_BY_ID
+#define PLAYBACK_OBJECTS
 
 void
 find_start_position()
@@ -134,7 +135,7 @@ localize_ackerman_init_handler(carmen_localize_ackerman_initialize_message *loca
 }
 
 
-static void
+void
 localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *msg)
 {
 	actual_pose.x = msg->globalpos.x;
@@ -154,6 +155,15 @@ localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_m
 		}
 	}
 #endif
+}
+
+void
+carmen_velodyne_handler(carmen_velodyne_partial_scan_message *velodyne_message)
+{
+	if (timestamp_moving_objects_list[current_vector_index].timestamp == velodyne_message->timestamp) {
+		ok_to_publish = 1;
+		publish_moving_objects_by_timestamp();
+	}
 }
 
 
@@ -362,7 +372,7 @@ publish_moving_objects_by_id()
 void
 initialize_objects_by_timestamp()
 {
-
+	printf("Carregando\n");
 	moving_object_data moving_object;
 	timestamp_moving_objects moving_objects_by_timestamp;
 
@@ -415,6 +425,7 @@ initialize_objects_by_timestamp()
 
 	fclose(input);
 
+	printf("%ld Objetos carregados!\n", timestamp_moving_objects_list.size());
 	return;
 }
 
@@ -498,15 +509,19 @@ main(int argc, char **argv)
 	/* Define messages that your module publishes */
 	carmen_moving_objects_point_clouds_define_messages();
 
+#ifndef PLAYBACK_OBJECTS
 	memset(&localize_ackerman_init_message, 0, sizeof(carmen_localize_ackerman_initialize_message));
 	/* Subscribe to sensor and filter messages */
 	carmen_localize_ackerman_subscribe_initialize_message(&localize_ackerman_init_message, (carmen_handler_t) localize_ackerman_init_handler,
 			CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_localize_ackerman_subscribe_globalpos_message(NULL, (carmen_handler_t) localize_ackerman_globalpos_message_handler, CARMEN_SUBSCRIBE_LATEST);
+#endif
 
 #ifdef PUBLISH_BY_ID
 	carmen_ipc_addPeriodicTimer(0.1, (TIMER_HANDLER_TYPE) publish_moving_objects_by_id, NULL);
+#elif defined PLAYBACK_OBJECTS
+	carmen_velodyne_subscribe_partial_scan_message(NULL, (carmen_handler_t) carmen_velodyne_handler, CARMEN_SUBSCRIBE_LATEST);
 #else
 	carmen_ipc_addPeriodicTimer(0.1, (TIMER_HANDLER_TYPE) publish_moving_objects_by_timestamp, NULL);
 #endif

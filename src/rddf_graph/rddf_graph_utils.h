@@ -4,6 +4,8 @@
 
 #include <carmen/carmen.h>
 #include <carmen/grid_mapping.h>
+#include <iostream>
+#include <string>
 #include "rddf_graph.h"
 
 #include <opencv2/core/version.hpp>
@@ -50,9 +52,6 @@ void road_map_to_image(carmen_map_p map, cv::Mat *road_map_img);
 void road_map_to_image_black_and_white(carmen_map_p map, cv::Mat *road_map_img, const int class_bits);
 //void road_map_find_center(carmen_map_p map);
 int **alloc_matrix(int r, int c);
-//t_list *create_list();
-//t_list *insert_in_list (t_list *l, t_point p);
-//void print_list (rddf_graph_node *l);
 void print_map_in_terminal (carmen_map_p map);
 //int count_graph_nodes(rddf_graph_node *graph);
 //void display_graph_in_image(carmen_map_p map, vector<rddf_graph_node*> &closed_set);
@@ -63,6 +62,7 @@ bool point_is_in_map(carmen_map_p map, int x, int y);
 rddf_graph_t * A_star(int x, int y, carmen_map_p map, int **already_visited);
 //void A_star(carmen_map_p map, rddf_graph_node* p, vector<rddf_graph_node*> &closed_set, int **already_visited, int *called_expand);
 void generate_road_map_graph(carmen_map_p map, std::string str_road_map_filename);
+void parse_world_origin_to_road_map(string road_map_filename, carmen_map_p road_map);
 
 #ifdef __cplusplus
 }

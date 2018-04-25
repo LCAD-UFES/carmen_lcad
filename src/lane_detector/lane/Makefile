@@ -1,4 +1,4 @@
-include ../Makefile.conf
+include ../../Makefile.conf
 
 # Module name and description
 MODULE_NAME = LANE_ANALYSIS
@@ -43,4 +43,4 @@ clean_elas:
 	rm -r ELAS/build
 
 # rules
-include ../Makefile.rules
+include ../../Makefile.rules

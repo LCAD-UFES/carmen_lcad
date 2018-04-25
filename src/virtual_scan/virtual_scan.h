@@ -32,7 +32,8 @@
 
 #define DISTANCE_BETWEEN_SEGMENTS	1.0
 #define	L_SMALL_SEGMENT_AS_A_PROPORTION_OF_THE_LARGE	0.15
-#define PEDESTRIAN_RADIUS				0.5 // Pedestrian approximate size (from the top) in meters
+#define PEDESTRIAN_RADIUS			0.5 	// pedestrian approximate radius (from the top) in meters
+#define MINIMUN_CLUSTER_SIZE		1		// in points
 
 #define	MCMC_MAX_ITERATIONS	300
 
@@ -139,9 +140,14 @@ typedef struct
 	virtual_scan_segment_t hypothesis_points;
 	int zi;
 
+	double v;
+	double d_theta;
+
 	double dn;
 	double c2;
 	double c3;
+
+	bool already_examined;
 
 	double timestamp;
 } virtual_scan_box_model_hypothesis_t;
@@ -155,6 +161,7 @@ typedef struct
 
 	double *last_frames_timetamps;
 	int number_of_frames_filled;
+	int graph_id;
 } virtual_scan_neighborhood_graph_t;
 
 
@@ -218,7 +225,10 @@ virtual_scan_num_box_models(virtual_scan_box_model_hypotheses_t *virtual_scan_bo
 virtual_scan_neighborhood_graph_t *
 virtual_scan_update_neighborhood_graph(virtual_scan_neighborhood_graph_t *neighborhood_graph, virtual_scan_box_model_hypotheses_t *virtual_scan_box_model_hypotheses);
 
-carmen_moving_objects_point_clouds_message *
+virtual_scan_track_set_t *
 virtual_scan_infer_moving_objects(virtual_scan_neighborhood_graph_t *neighborhood_graph);
+
+double
+probability_of_track_set_given_measurements(virtual_scan_track_set_t *track_set, bool print = false);
 
 #endif /* SRC_VIRTUAL_SCAN_VIRTUAL_SCAN_H_ */

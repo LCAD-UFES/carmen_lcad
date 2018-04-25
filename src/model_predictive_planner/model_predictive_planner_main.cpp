@@ -206,7 +206,6 @@ publish_navigator_ackerman_status_message()
 	IPC_RETURN_TYPE err = IPC_OK;
 
 	static bool first_time = true;
-
 	if (first_time)
 	{
 		err = IPC_defineMsg(
@@ -214,6 +213,8 @@ publish_navigator_ackerman_status_message()
 				IPC_VARIABLE_LENGTH,
 				(char *)CARMEN_NAVIGATOR_ACKERMAN_STATUS_FMT);
 		carmen_test_ipc_exit(err, "Could not define", CARMEN_NAVIGATOR_ACKERMAN_STATUS_NAME);
+
+		first_time = false;
 	}
 
 	carmen_navigator_ackerman_status_message msg;

@@ -58,7 +58,7 @@ clean_libcontrol:
 	$(MAKE) clean -C $(CARMEN_HOME)/sharedlib/libcontrol/
 
 
-libsimulator_ackerman.a: simulator_ackerman_simulation.o objects_ackerman.o
+libsimulator_ackerman.a: simulator_ackerman.o simulator_ackerman_simulation.o objects_ackerman.o
 
 simulator_ackerman:	simulator_ackerman.o simulator_ackerman_simulation.o objects_ackerman.o
 

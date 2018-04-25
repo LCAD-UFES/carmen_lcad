@@ -12,7 +12,8 @@ IFLAGS += -I$(CARMEN_HOME)/sharedlib/prob_models -I$(CARMEN_HOME)/sharedlib/gl_p
 LFLAGS += -L$(CARMEN_HOME)/sharedlib/prob_models -L$(CARMEN_HOME)/sharedlib/gl_plotter
 
 # Required default libraries to comunicate with Carmen Core.
-LFLAGS += -lparam_interface -lipc -lglobal \
+LFLAGS += -lparam_interface -lipc -lglobal -lvelodyne_interface \
+-L$(CARMEN_HOME)/sharedlib/libtf/src -ltf -lboost_thread-mt -lrt -lboost_signals -lboost_system \
 -llocalize_ackerman_interface -lmoving_objects_interface -lmap_server_interface -lmapper_interface \
 
 # C++11 flag

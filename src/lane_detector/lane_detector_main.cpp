@@ -276,7 +276,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
 
     //0.3 threshold is good, more than this and it starts to miss some obstacles (very bad)
-    std::vector<bbox_t> predictions = darknet->detect(src_image, 0.2, false);
+    std::vector<bbox_t> predictions = darknet->detect(src_image, 0.05, false);
     //TODO: change this to the better tracker
     predictions = darknet->tracking(predictions); /*< Coment this line if object tracking is not necessary */
 
@@ -336,8 +336,8 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
     end_time = carmen_get_time();
 
-    build_moving_objects_message(clusters);
-    publish_moving_objects(image_msg->timestamp);
+    //build_moving_objects_message(clusters);
+    //publish_moving_objects(image_msg->timestamp);
 
     delta_t = end_time - start_time;
     fps = 1.0 / delta_t;
@@ -378,26 +378,19 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
         
         if (bouding_boxes_list[i].pt2.x > rgb_image.cols / 2)
         {
-        	points_1.push_back(cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y));
-        	points_1.push_back(cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y));
+        	/*points_1.push_back(cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y));
+        	points_1.push_back(cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y));*/
+        	cv::line(rgb_image,cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y),
+        			cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y), cv::Scalar(0,255,0),3,0 );
+
         }else
         {
-        	points_2.push_back(cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y));
-        	points_2.push_back(cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y));
+        	/*points_2.push_back(cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y));
+        	points_2.push_back(cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y));*/
+        	cv::line(rgb_image,cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y),
+        	        			cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y), cv::Scalar(0,255,0),3,0 );
         }
-        
-      int num = cv::Mat(points_1).rows;
-    int num1 = cv::Mat(points_2).rows;
-    const cv::Point *pts_1 = (const cv::Point*) cv::Mat(points_1).data;
-    const cv::Point *pts_2 = (const cv::Point*) cv::Mat(points_2).data;
-    if (points_1.empty() == false)
-    {
-    	cv::polylines(rgb_image, &pts_1, &num, 1, false, cv::Scalar(0,255,0), 3, CV_AA, 0);
-    }
-    if (points_2.empty() == false)
-    {
-    	cv::polylines(rgb_image, &pts_2, &num1, 1, false, cv::Scalar(0,255,0), 3, CV_AA, 0);
-     }
+
         cv::putText(rgb_image, obj_name,
                     cv::Point(bouding_boxes_list[i].pt2.x + 1, bouding_boxes_list[i].pt1.y - 3),
                     cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0, 0, 255), 1);
@@ -584,7 +577,7 @@ main(int argc, char **argv)
     carmen_test_alloc(darknet);
 
 #ifdef SHOW_DETECTIONS
-    cv::namedWindow("Neural car detector", cv::WINDOW_AUTOSIZE);
+    cv::namedWindow("Lane detector", cv::WINDOW_AUTOSIZE);
 #endif
 
     setlocale(LC_ALL, "C");

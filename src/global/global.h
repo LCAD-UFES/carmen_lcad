@@ -107,6 +107,9 @@ extern "C" {
 #define M_PI 3.14159265358979323846  // PI
 #endif
 
+
+#define PERP2D(u,v)  ((u).x * (v).y - (u).y * (v).x)
+
 #define DOT2D(x1,x2) ((x1).x * (x2).x + (x1).y * (x2).y)
 
 #define DOT2D_P(x1,x2) ((x1)->x * (x2)->x + (x1)->y * (x2)->y)
@@ -128,6 +131,11 @@ extern "C" {
 #define DIST3D_P(x1,x2) (sqrt(((x1)->x - (x2)->x) * ((x1)->x - (x2)->x) + \
 							((x1)->y - (x2)->y) * ((x1)->y - (x2)->y) + \
 							((x1)->z - (x2)->z) * ((x1)->z - (x2)->z)))
+
+#define	POINT_WITHIN_SEGMENT		0
+#define	SEGMENT_TOO_SHORT			1
+#define	POINT_BEFORE_SEGMENT		2
+#define	POINT_AFTER_SEGMENT			3
 
 typedef struct {
 	double x;
@@ -286,27 +294,41 @@ typedef struct {
 } carmen_robot_ackerman_config_t;
 
 
-struct _spherical_point_cloud
+typedef struct {
+    double x;
+    double y;
+    double theta;
+    double length;
+    double width;
+} carmen_rectangle_t;
+
+
+typedef struct {
+    carmen_position_t P0;
+    carmen_position_t P1;
+} carmen_line_segment_t;
+
+
+typedef struct _spherical_point_cloud
 {
 	int num_points;
 	carmen_sphere_coord_t *sphere_points;
 	double timestamp;
-};
+} spherical_point_cloud;
 
-typedef struct _spherical_point_cloud spherical_point_cloud;
 
-struct _cell_coords_t
+typedef struct _cell_coords_t
 {
 	int x, y;
-};
+} cell_coords_t;
 
-typedef struct _cell_coords_t cell_coords_t;
 
 typedef struct {
 	int ipx;
 	int ipy;
 	carmen_sphere_coord_t laser_polar;
 } carmen_velodyne_points_in_cam_t, *carmen_velodyne_points_in_cam_p;
+
 
 typedef enum { CARMEN_MOTOR, CARMEN_SERVO } carmen_arm_joint_t;
 
@@ -662,6 +684,17 @@ carmen_vector_3D_t carmen_covert_sphere_to_cartesian_coord(carmen_sphere_coord_t
 void carmen_alloc_spherical_point_cloud(spherical_point_cloud *velodyne_points, int num_points, int spherical_point_cloud_index);
 void carmen_add_bias_and_multiplier_to_v_and_phi(double *odometry_v, double *odometry_phi, double raw_v, double raw_phi, 
 					    double v_bias, double v_multiplier, double phi_bias, double phi_multiplier);
+carmen_ackerman_traj_point_t
+carmen_get_point_nearest_to_trajectory(int *point_in_trajectory_is,
+		carmen_ackerman_traj_point_t v,
+		carmen_ackerman_traj_point_t w,
+		carmen_ackerman_traj_point_t p, double min_segment_size);
+
+int
+carmen_line_to_point_crossed_rectangle(carmen_position_t *intersection, carmen_position_t origin, carmen_position_t point, carmen_rectangle_t rectangle);
+
+int
+carmen_line_to_line_intersection(carmen_position_t *I0, carmen_position_t s1_p0, carmen_position_t s1_p1, carmen_position_t s2_p0, carmen_position_t s2_p1);
 
 
 extern carmen_inline char *carmen_next_word(char *str)
