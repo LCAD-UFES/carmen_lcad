@@ -4,8 +4,8 @@ MODULE_NAME = Virtual Scan
 MODULE_COMMENT = Abstract polar 2D representation of 2D or 3D range scanner data
 
 CC = cc -std=c++0x
-CFLAGS += -Wall -std=c++0x
-CXXFLAGS += -Wall -std=c++0x
+CFLAGS += -Wall -std=c++0x -pg
+CXXFLAGS += -Wall -std=c++0x -pg
 LINK = g++
 
 IFLAGS += -I$(CARMEN_HOME)/sharedlib/libclustering

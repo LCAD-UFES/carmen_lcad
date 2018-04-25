@@ -276,7 +276,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 
 
     //0.3 threshold is good, more than this and it starts to miss some obstacles (very bad)
-    std::vector<bbox_t> predictions = darknet->detect(src_image, 0.2, false);
+    std::vector<bbox_t> predictions = darknet->detect(src_image, 0.05, false);
     //TODO: change this to the better tracker
     predictions = darknet->tracking(predictions); /*< Coment this line if object tracking is not necessary */
 
