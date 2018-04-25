@@ -729,6 +729,7 @@ create_hypothesis_vertex(int h, int i, int j, virtual_scan_neighborhood_graph_t*
 	neighborhood_graph->box_model_hypothesis[h]->hypothesis_points = virtual_scan_box_model_hypotheses->box_model_hypotheses[i].box_points[j];
 	neighborhood_graph->box_model_hypothesis[h]->zi = g_zi;
 	neighborhood_graph->box_model_hypothesis[h]->index = h;
+	neighborhood_graph->box_model_hypothesis[h]->already_examined = false;
 	neighborhood_graph->box_model_hypothesis[h]->timestamp = virtual_scan_box_model_hypotheses->timestamp;
 }
 
@@ -1296,7 +1297,7 @@ get_points_inside_and_outside_scaled_rectangle(carmen_point_t *&points_inside_re
 	for (int i = 0; i < num_points; i++)
 	{
 		double velodyne_to_point_angle = atan2(velodyne_pos.y - point[i].y, velodyne_pos.x - point[i].x);
-		bool acceptable_angle_diff = carmen_normalize_theta(velodyne_to_point_angle - point[i].theta) < (M_PI / 4.0);
+		bool acceptable_angle_diff = carmen_normalize_theta(velodyne_to_point_angle - point[i].theta) < (M_PI / 1.5);
 		if (acceptable_angle_diff && point_inside_scaled_rectangle(point[i], box_model_hypothesis->hypothesis, scale))
 		{
 			points_inside_rectangle[num_points_inside_rectangle] = point[i];
@@ -1324,7 +1325,7 @@ get_points_inside_and_outside_scaled_rectangle(carmen_point_t *&points_inside_re
 	for (int i = 0; i < num_points; i++)
 	{
 		double velodyne_to_point_angle = atan2(velodyne_pos.y - point[i].y, velodyne_pos.x - point[i].x);
-		bool acceptable_angle_diff = carmen_normalize_theta(velodyne_to_point_angle - point[i].theta) < (M_PI / 4.0);
+		bool acceptable_angle_diff = carmen_normalize_theta(velodyne_to_point_angle - point[i].theta) < (M_PI / 1.5);
 		if (acceptable_angle_diff && point_inside_scaled_rectangle(point[i], box_model_hypothesis->hypothesis, scale))
 		{
 			points_inside_rectangle[num_points_inside_rectangle] = point[i];
@@ -1425,7 +1426,7 @@ PM2(carmen_point_t *Zs_out, int Zs_out_size, virtual_scan_box_model_hypothesis_t
 	{
 		carmen_position_t point = {Zs_out[i].x, Zs_out[i].y};
 		double velodyne_to_point_angle = atan2(velodyne_pos.y - point.y, velodyne_pos.x - point.x);
-		bool acceptable_angle_diff = carmen_normalize_theta(velodyne_to_point_angle - Zs_out[i].theta) < (M_PI / 4.0);
+		bool acceptable_angle_diff = carmen_normalize_theta(velodyne_to_point_angle - Zs_out[i].theta) < (M_PI / 1.5);
 		if (acceptable_angle_diff)
 			sum += (double) carmen_line_to_point_crossed_rectangle(&nearest_intersection, velodyne_pos, point, rectangle);
 	}
@@ -1435,9 +1436,9 @@ PM2(carmen_point_t *Zs_out, int Zs_out_size, virtual_scan_box_model_hypothesis_t
 
 
 void
-compute_hypothesis_posterior_probability_components(virtual_scan_box_model_hypothesis_t *box_model_hypothesis)
+compute_hypothesis_posterior_probability_components(virtual_scan_box_model_hypothesis_t *box_model_hypothesis, virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
-	if (box_model_hypothesis == NULL)
+	if ((box_model_hypothesis == NULL) || box_model_hypothesis->already_examined)
 		return;
 
 	carmen_point_t *Zs_out, *Zs_in, *Zd; int Zs_out_size, Zs_in_size, Zd_size;
@@ -1446,6 +1447,9 @@ compute_hypothesis_posterior_probability_components(virtual_scan_box_model_hypot
 	box_model_hypothesis->dn = PM1(Zd, Zd_size, box_model_hypothesis) / ((double) Zd_size + 1.0);
 	box_model_hypothesis->c2 = PM2(Zs_out, Zs_out_size, box_model_hypothesis) / ((double) Zd_size + 1.0);
 	box_model_hypothesis->c3 = 0.0;
+
+	box_model_hypothesis->already_examined = true;
+	neighborhood_graph->box_model_hypothesis[box_model_hypothesis->index]->already_examined = true;
 
 	free(Zs_out); free(Zs_in); free(Zd);
 }
@@ -1493,7 +1497,7 @@ track_birth(virtual_scan_track_set_t *track_set, virtual_scan_neighborhood_graph
 
 			free(v_star);
 
-			compute_hypothesis_posterior_probability_components(&(new_track->box_model_hypothesis[0]));
+			compute_hypothesis_posterior_probability_components(&(new_track->box_model_hypothesis[0]), neighborhood_graph);
 
 			return (track_set);
 		}
@@ -1642,14 +1646,14 @@ track_extension(virtual_scan_track_set_t *track_set, int track_id, virtual_scan_
 			if (carmen_int_random(2) == 0)
 			{
 				hypothesis = get_child_hypothesis_in_v_star_and_at_the_end_of_track(track, neighborhood_graph, v_star, v_star_size);
-				compute_hypothesis_posterior_probability_components(hypothesis);
+				compute_hypothesis_posterior_probability_components(hypothesis, neighborhood_graph);
 
 				add_hypothesis_at_the_end(track_set, track_id, hypothesis);
 			}
 			else
 			{
 				hypothesis = get_parent_hypothesis_in_v_star_and_at_the_beginning_of_track(track, neighborhood_graph, v_star, v_star_size);
-				compute_hypothesis_posterior_probability_components(hypothesis);
+				compute_hypothesis_posterior_probability_components(hypothesis, neighborhood_graph);
 
 				add_hypothesis_at_the_beginning(track_set, track_id, hypothesis);
 			}
