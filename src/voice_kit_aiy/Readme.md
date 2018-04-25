@@ -22,7 +22,8 @@
 
 -2- Copie a chave pública do computador que vai acessar o Pi para o Pi com os comando abaixo cd ssh pi@192.168.0.14 mkdir -p .ssh cat .ssh/id_rsa.pub | ssh pi@192.168.0.14 'cat >> .ssh/authorized_keys'
 
--3- Teste se funcionou com o comando abaixo ssh pi@192.168.0.14 'ls'
+-3- Teste se funcionou com o comando abaixo ssh pi@192.168.0.1x 'ls'
+--Confirme IP disponivel na rede do carro para atribuir aqui
 
 -Mude o endereco do servidor de pacotes (do apt-get) comentando a linha existente e adicionando a abaixo no arquivo indicado abaixo: deb http://linorg.usp.br/raspbian/raspbian/ stretch main contrib non-free rpi sudo nano /etc/apt/sources.list
 
@@ -43,10 +44,7 @@
   svn add
   svn commit -m "adicao de ReadMetotal"
 
--Mude seu .bashrc incluindo as linhas abaixo (depois, reboote ou inicie um novo bash): #OpenJaus export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/OpenJAUS/libopenJaus/lib:/OpenJAUS/libjaus/lib:/OpenJAUS/ojTorc/lib:/OpenJAUS/ojIARASim/lib
-
--Compile o OpenJAUS cd OpenJAUS make
-
+- Pedira usuario e senha. Se nao for o seu, dar Enter e digitar seu usuario do GitHub
 
 === CRIANDO PRIMEIRO PROJETO E CREDENCIAIS ===
 
