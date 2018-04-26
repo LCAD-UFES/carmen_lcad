@@ -147,6 +147,8 @@ typedef struct
 	double c2;
 	double c3;
 
+	bool already_examined;
+
 	double timestamp;
 } virtual_scan_box_model_hypothesis_t;
 

@@ -11,7 +11,7 @@ typedef std::vector<int> Indexes;
 
 // The squared distance between points a and b.
 inline double
-distance2(const carmen_point_t &a, const carmen_point_t &b)
+distance2(carmen_point_t a, carmen_point_t b)
 {
 	double dx = a.x - b.x;
 	double dy = a.y - b.y;

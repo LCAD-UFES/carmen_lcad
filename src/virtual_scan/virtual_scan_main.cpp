@@ -131,8 +131,8 @@ fill_in_moving_objects_message(virtual_scan_track_set_t *best_track_set, virtual
 				{
 					virtual_scan_box_model_t box = best_track_set->tracks[i]->box_model_hypothesis[j].hypothesis;
 
-					box.length = (j == best_track_set->tracks[i]->size - 1) ? box.length : 0.1;
-					box.width = (j == best_track_set->tracks[i]->size - 1) ? box.width : 0.1;
+					box.length = (j == best_track_set->tracks[i]->size - 1) ? box.length : 0.3;
+					box.width = (j == best_track_set->tracks[i]->size - 1) ? box.width : 0.3;
 					fill_in_moving_objects_message_element(k, message, &box);
 
 					k++;
@@ -268,7 +268,7 @@ draw_moving_object_in_scan(carmen_mapper_virtual_scan_message *simulated_scan, c
 	simulated_scan->points = (carmen_position_t *) malloc(num_points * sizeof(carmen_position_t));
 
 	int i = 0;
-	for (double angle = -M_PI; angle < M_PI; angle += M_PI / (360 * 4.0))
+	for (double angle = -M_PI; angle < M_PI; angle += M_PI / (360 * 2.0))
 	{
 		double max_distance = 70.0;
 		carmen_position_t target = {velodyne_pos.x + max_distance * cos(carmen_normalize_theta(initial_angle + angle)),

@@ -48,6 +48,7 @@ road_mapper_display_road_map(carmen_map_p road_map, int img_channels, int img_cl
 	cv::namedWindow("road_map", cv::WINDOW_AUTOSIZE);
 
 
+
 	cv::Mat image1;
 	cv::Mat imageCenterVertical; //imagem que guarda apenas o ponto de centro de pista verticalmente
 	cv::Mat imageCenterHorizontal; //imagem que guarda apenas o ponto de centro de pista verticalmente
@@ -203,6 +204,7 @@ int
 main(int argc, char **argv)
 {
 	read_parameters(argc, argv);
+	system("rm -f already_visited/*.*");
 
 
 	if (g_ipc_required)
