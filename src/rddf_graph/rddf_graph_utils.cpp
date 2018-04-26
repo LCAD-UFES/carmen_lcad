@@ -393,6 +393,7 @@ point_is_lane_center (carmen_map_p map, int x, int y)
 	road_prob *cell_prob;
 	cell_prob = road_mapper_double_to_prob(&map->map[x][y]);
 
+	//0 X 0
 	if(x == 0 && y == 0)
 	{
 		if( ((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y+2])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y+1])->lane_center)) || //se ponto x,y for menor que os dois y a frente
@@ -406,6 +407,7 @@ point_is_lane_center (carmen_map_p map, int x, int y)
 			return false;
 	}
 
+	//349 X 0
 	else if(x == map->config.x_size-1 && y == 0)
 	{
 		if( ((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y+2])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y+1])->lane_center)) || //se ponto x,y for menor que os dois y a frente
@@ -419,6 +421,7 @@ point_is_lane_center (carmen_map_p map, int x, int y)
 			return false;
 	}
 
+	//0 X 349
 	else if (x == 0 && y == map->config.y_size-1)
 	{
 		if( ((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-2])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-1])->lane_center)) || //se ponto x,y for menor que os dois y a frente
@@ -433,6 +436,7 @@ point_is_lane_center (carmen_map_p map, int x, int y)
 
 	}
 
+	//349 X 349
 	else if (x == map->config.x_size-1 && y == map->config.y_size-1)
 	{
 		if( ((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-2])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-1])->lane_center)) || //se ponto x,y for menor que os dois y a frente
@@ -447,6 +451,7 @@ point_is_lane_center (carmen_map_p map, int x, int y)
 
 	}
 
+	// 0 X 1
 	else if(x == 0 && y == 1)
 	{
 		if( ((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-1])->lane_center) && //se ponto x,y for menor que os dois y atras
@@ -461,6 +466,7 @@ point_is_lane_center (carmen_map_p map, int x, int y)
 			return false;
 	}
 
+	// 349 X 1
 	else if(x == map->config.x_size-1 && y == 1)
 	{
 		if( ((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-1])->lane_center) && //se ponto x,y for menor que os dois y atras
@@ -475,6 +481,7 @@ point_is_lane_center (carmen_map_p map, int x, int y)
 			return false;
 	}
 
+	// 0 X 348
 	else if(x == 0 && y == map->config.y_size-2)
 	{
 		if( ((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y+1])->lane_center) && //se ponto x,y for menor que os dois y atras
@@ -489,6 +496,7 @@ point_is_lane_center (carmen_map_p map, int x, int y)
 			return false;
 	}
 
+	// 349 X 348
 	else if(x == map->config.x_size-1 && y == map->config.y_size-2)
 	{
 		if( ((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y+1])->lane_center) && //se ponto x,y for menor que os dois y atras
@@ -503,6 +511,7 @@ point_is_lane_center (carmen_map_p map, int x, int y)
 			return false;
 	}
 
+	// 0 X 2 ~ 347
 	else if(x == 0 && (y >= 2 && y <= 347))
 	{
 		if( ((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-2])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-1])->lane_center) && //se ponto x,y for menor que os dois y atras
@@ -517,6 +526,7 @@ point_is_lane_center (carmen_map_p map, int x, int y)
 			return false;
 	}
 
+	// 349 X 2 ~ 347
 	else if(x == map->config.x_size-1 && (y >= 2 && y <= 347))
 		{
 			if( ((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-2])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-1])->lane_center) && //se ponto x,y for menor que os dois y atras
@@ -531,6 +541,129 @@ point_is_lane_center (carmen_map_p map, int x, int y)
 				return false;
 		}
 
+	// 1 X 0
+	else if(x == 1 && y == 0)
+	{
+		if( ((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y+2])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y+1])->lane_center)) || //se ponto x,y for menor que os dois y a frente
+				((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x-1][y])->lane_center) && //se ponto x,y for menor que os dois x a acima
+				(cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x+2][y])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x+1][y])->lane_center)//) || //se ponto x,y for menor que os dois x a abaixo
+				))
+		{
+
+			return true;
+		}
+		else
+			return false;
+	}
+
+	// 348 X 0
+	else if(x == map->config.x_size-1 && y == 0)
+	{
+		if( ((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y+2])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y+1])->lane_center)) || //se ponto x,y for menor que os dois y a frente
+				((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x+1][y])->lane_center) && //se ponto x,y for menor que os dois x a acima
+						(cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x-2][y])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x+1][y])->lane_center)//) || //se ponto x,y for menor que os dois x a abaixo
+				))
+		{
+
+			return true;
+		}
+		else
+			return false;
+	}
+
+	// 1 X 349
+	else if(x == 1 && y == map->config.y_size-1)
+	{
+		if( ((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-2])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-1])->lane_center)) || //se ponto x,y for menor que os dois y a frente
+				((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x-1][y])->lane_center) && //se ponto x,y for menor que os dois x a acima
+						(cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x+2][y])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x+1][y])->lane_center)//) || //se ponto x,y for menor que os dois x a abaixo
+				))
+		{
+
+			return true;
+		}
+		else
+			return false;
+	}
+
+	// 348 X 349
+	else if(x == map->config.x_size-1 && y == 0)
+	{
+		if( ((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-2])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-1])->lane_center)) || //se ponto x,y for menor que os dois y a frente
+				((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x+1][y])->lane_center) && //se ponto x,y for menor que os dois x a acima
+						(cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x-2][y])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x+1][y])->lane_center)//) || //se ponto x,y for menor que os dois x a abaixo
+				))
+		{
+
+			return true;
+		}
+		else
+			return false;
+	}
+
+	// 1 X 1
+	else if(x == 1 && y == 1)
+	{
+		if( ((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-1])->lane_center) && //se ponto x,y for menor que os dois y atras
+				(cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y+2])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y+1])->lane_center)) || //se ponto x,y for menor que os dois y a frente
+				((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x-1][y])->lane_center) && //se ponto x,y for menor que os dois x a acima
+						(cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x+2][y])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x+1][y])->lane_center)//) || //se ponto x,y for menor que os dois x a abaixo
+				))
+		{
+
+			return true;
+		}
+		else
+			return false;
+	}
+
+	// 348 X 1
+	else if(x == map->config.x_size-2 && y == 1)
+	{
+		if( ((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-1])->lane_center) && //se ponto x,y for menor que os dois y atras
+				(cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y+2])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y+1])->lane_center)) || //se ponto x,y for menor que os dois y a frente
+				((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x+1][y])->lane_center) && //se ponto x,y for menor que os dois x a acima
+						(cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x-2][y])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x-1][y])->lane_center)//) || //se ponto x,y for menor que os dois x a abaixo
+				))
+		{
+
+			return true;
+		}
+		else
+			return false;
+	}
+
+	// 1 X 348
+	else if(x == 1 && y == map->config.y_size-2)
+	{
+		if( ((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y+1])->lane_center) && //se ponto x,y for menor que os dois y atras
+				(cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-2])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-1])->lane_center)) || //se ponto x,y for menor que os dois y a frente
+				((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x-1][y])->lane_center) && //se ponto x,y for menor que os dois x a acima
+						(cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x+2][y])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x+1][y])->lane_center)//) || //se ponto x,y for menor que os dois x a abaixo
+				))
+		{
+
+			return true;
+		}
+		else
+			return false;
+	}
+
+	// 348 X 348
+	else if(x == map->config.x_size-2 && y == map->config.y_size-2)
+	{
+		if( ((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y+1])->lane_center) && //se ponto x,y for menor que os dois y atras
+				(cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-2])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x][y-1])->lane_center)) || //se ponto x,y for menor que os dois y a frente
+				((cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x+1][y])->lane_center) && //se ponto x,y for menor que os dois x a acima
+						(cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x-2][y])->lane_center) && (cell_prob->lane_center > road_mapper_double_to_prob(&map->map[x-1][y])->lane_center)//) || //se ponto x,y for menor que os dois x a abaixo
+				))
+		{
+
+			return true;
+		}
+		else
+			return false;
+	}
 
 	else if((x >= 2 && x <= map->config.x_size-3) && (y >= 2 && x <= map->config.y_size-3))//if(point_is_in_map(map, x-2,y+2) && point_is_in_map(map, x+2,y-2) && point_is_in_map(map, x-1,y+1) && point_is_in_map(map, x+1,y-1))
 	{
