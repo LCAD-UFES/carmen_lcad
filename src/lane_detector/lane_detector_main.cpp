@@ -1,5 +1,5 @@
 /*
- * neural_car_detector_main.cpp
+ * Lane_car_detector_main.cpp
  *
  *  Created on: 28 de fev de 2018
  *      Author: marcelo
@@ -24,13 +24,14 @@
 //#include "DetectNet.hpp"
 #include "Darknet.hpp" /*< Yolo V2 */
 #include "lane_detector.hpp"
+#include "lane_detector_messages.h"
 
 #include <cstdlib> /*< std::getenv */
 #include <fstream>
 #include <math.h>
 
 #define SHOW_DETECTIONS
-
+#define SHOW_BBOX true
 // camera number and side
 int camera;
 int camera_side;
@@ -76,120 +77,7 @@ find_velodyne_most_sync_with_cam(double bumblebee_timestamp)
 }
 
 
-void
-build_moving_objects_message(std::vector<carmen_tracked_cluster_t> clusters)
-{
 
-    moving_objects_point_clouds_message.num_point_clouds = clusters.size();
-    moving_objects_point_clouds_message.point_clouds = (t_point_cloud_struct *) (malloc(
-            moving_objects_point_clouds_message.num_point_clouds * sizeof(t_point_cloud_struct)));
-
-
-    for (int i = 0; i < moving_objects_point_clouds_message.num_point_clouds; i++) {
-        carmen_vector_3D_t box_centroid = compute_centroid(clusters[i].points);
-        carmen_vector_3D_t offset;
-
-        offset.x = 0.572;
-        offset.y = 0.0;
-        offset.z = 2.154;
-
-        box_centroid = translate_point(box_centroid, offset);
-        box_centroid = rotate_point(box_centroid, globalpos.theta);
-
-        offset.x = globalpos.x;
-        offset.y = globalpos.y;
-        offset.z = 0.0;
-
-        box_centroid = translate_point(box_centroid, offset);
-
-        moving_objects_point_clouds_message.point_clouds[i].r = 1.0;
-        moving_objects_point_clouds_message.point_clouds[i].g = 1.0;
-        moving_objects_point_clouds_message.point_clouds[i].b = 0.0;
-
-        moving_objects_point_clouds_message.point_clouds[i].linear_velocity = 0;//clusters[i].linear_velocity;
-        moving_objects_point_clouds_message.point_clouds[i].orientation = globalpos.theta;//clusters[i].orientation;
-
-        moving_objects_point_clouds_message.point_clouds[i].object_pose.x = box_centroid.x;
-        moving_objects_point_clouds_message.point_clouds[i].object_pose.y = box_centroid.y;
-        moving_objects_point_clouds_message.point_clouds[i].object_pose.z = box_centroid.z;
-
-        moving_objects_point_clouds_message.point_clouds[i].height = 1.8;
-        moving_objects_point_clouds_message.point_clouds[i].length = 4.5;
-        moving_objects_point_clouds_message.point_clouds[i].width = 1.6;
-
-        switch (clusters[i].cluster_type) {
-
-            case carmen_moving_object_type::pedestrian:
-                moving_objects_point_clouds_message.point_clouds[i].geometric_model = 0;
-                moving_objects_point_clouds_message.point_clouds[i].model_features.geometry.height = 1.8;
-                moving_objects_point_clouds_message.point_clouds[i].model_features.geometry.length = 1.0;
-                moving_objects_point_clouds_message.point_clouds[i].model_features.geometry.width = 1.0;
-                moving_objects_point_clouds_message.point_clouds[i].model_features.red = 1.0;
-                moving_objects_point_clouds_message.point_clouds[i].model_features.green = 1.0;
-                moving_objects_point_clouds_message.point_clouds[i].model_features.blue = 0.8;
-                moving_objects_point_clouds_message.point_clouds[i].model_features.model_name = (char *) "pedestrian";
-
-                break;
-
-            case carmen_moving_object_type::car:
-                moving_objects_point_clouds_message.point_clouds[i].geometric_model = 0;
-                moving_objects_point_clouds_message.point_clouds[i].model_features.geometry.height = 1.8;
-                moving_objects_point_clouds_message.point_clouds[i].model_features.geometry.length = 4.5;
-                moving_objects_point_clouds_message.point_clouds[i].model_features.geometry.width = 1.6;
-                moving_objects_point_clouds_message.point_clouds[i].model_features.red = 1.0;
-                moving_objects_point_clouds_message.point_clouds[i].model_features.green = 0.0;
-                moving_objects_point_clouds_message.point_clouds[i].model_features.blue = 0.8;
-                moving_objects_point_clouds_message.point_clouds[i].model_features.model_name = (char *) "car";
-
-                break;
-            default:
-                moving_objects_point_clouds_message.point_clouds[i].geometric_model = 0;
-                moving_objects_point_clouds_message.point_clouds[i].model_features.geometry.height = 1.8;
-                moving_objects_point_clouds_message.point_clouds[i].model_features.geometry.length = 4.5;
-                moving_objects_point_clouds_message.point_clouds[i].model_features.geometry.width = 1.6;
-                moving_objects_point_clouds_message.point_clouds[i].model_features.red = 1.0;
-                moving_objects_point_clouds_message.point_clouds[i].model_features.green = 1.0;
-                moving_objects_point_clouds_message.point_clouds[i].model_features.blue = 0.0;
-                moving_objects_point_clouds_message.point_clouds[i].model_features.model_name = (char *) "other";
-
-
-                break;
-        }
-
-        moving_objects_point_clouds_message.point_clouds[i].num_associated = clusters[i].track_id;
-
-        // fill the points
-        moving_objects_point_clouds_message.point_clouds[i].point_size = clusters[i].points.size();
-        moving_objects_point_clouds_message.point_clouds[i].points = (carmen_vector_3D_t *)
-                malloc(moving_objects_point_clouds_message.point_clouds[i].point_size * sizeof(carmen_vector_3D_t));
-        for (int j = 0; j < moving_objects_point_clouds_message.point_clouds[i].point_size; j++) {
-            //TODO modificar isso
-            carmen_vector_3D_t p;
-
-            p.x = clusters[i].points[j].x;
-            p.y = clusters[i].points[j].y;
-            p.z = clusters[i].points[j].z;
-
-            offset.x = 0.572;
-            offset.y = 0.0;
-            offset.z = 2.154;
-
-            p = translate_point(p, offset);
-
-            p = rotate_point(p, globalpos.theta);
-
-            offset.x = globalpos.x;
-            offset.y = globalpos.y;
-            offset.z = 0.0;
-
-            p = translate_point(p, offset);
-
-            moving_objects_point_clouds_message.point_clouds[i].points[j] = p;
-        }
-
-    }
-
-}
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -198,20 +86,103 @@ build_moving_objects_message(std::vector<carmen_tracked_cluster_t> clusters)
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
+static void register_ipc_messages(void) {
+	IPC_RETURN_TYPE err;
+	err = IPC_defineMsg(CARMEN_LANE_NAME, IPC_VARIABLE_LENGTH, CARMEN_LANE_FMT);
+	carmen_test_ipc_exit(err, "Could not define", CARMEN_LANE_NAME);
+}
+
+IPC_RETURN_TYPE carmen_lane_publish_message(carmen_lane_message * message) {
+	IPC_RETURN_TYPE err;
+    err = IPC_publishData(CARMEN_LANE_NAME, message);
+    carmen_test_ipc_exit(err, "Could not publish!", CARMEN_LANE_NAME);
+    return err;
+}
+
+void lane_publish_messages(double _timestamp, std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > *laser_points_in_camera_box_list) {
+	// stamps the message
+	carmen_lane_message message;
+	message.host = carmen_get_host();
+	message.timestamp = _timestamp;
+	message.lane_vector_size = 0;
+	for (int i = 0; i < laser_points_in_camera_box_list->size(); i++)
+		message.lane_vector_size += laser_points_in_camera_box_list[i].size();
+	message.lane_vector = (lane*) malloc ( message.lane_vector_size * sizeof (lane) );
+	/*for (int i = 0; i < laser_points_in_camera_box_list->size(); i++)
+		for(int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
+		{
+			messa
+		}*/
+	// publish!
+	carmen_lane_publish_message(&message);
+}
 
 void
-publish_moving_objects(double timestamp)
-{
+put_the_lane_dectections_in_image(std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > laser_points_in_camera_box_list,
+	const cv::Mat& rgb_image, std::vector<bbox_t> predictions, std::vector<bounding_box> bouding_boxes_list,
+	double hood_removal_percentage, int end_time, int start_time) {
+	double fps;
+	int delta_t = end_time - start_time;
+	fps = 1.0 / delta_t;
+	char confianca[7];
+	char frame_rate[25];
+	sprintf(frame_rate, "FPS = %.2f", fps);
+	cv::putText(rgb_image, frame_rate, cv::Point(10, 25), cv::FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
+	for (unsigned int i = 0; i < laser_points_in_camera_box_list.size(); i++)
+	{
+		cv::Scalar object_color;
+		sprintf(confianca, "%d", i);
+		int obj_id = predictions.at(i).obj_id;
+		std::string obj_name;
+		if (obj_names.size() > obj_id)
+			obj_name = obj_names[obj_id];
+		//if (SHOW_BBOX)
 
-    moving_objects_point_clouds_message.timestamp = timestamp;
-    moving_objects_point_clouds_message.host = carmen_get_host();
+		cv::line(rgb_image,	cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y), cv::Point(bouding_boxes_list[i].pt1.x,
+				bouding_boxes_list[i].pt1.y), cv::Scalar(0, 255, 0), 3, 0);
+		cv::putText(rgb_image, obj_name, cv::Point(bouding_boxes_list[i].pt2.x + 1, bouding_boxes_list[i].pt1.y - 3),
+				cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0, 0, 255), 1);
+	}
+	cv::Mat resized_image(cv::Size(640, 480 - 480 * hood_removal_percentage), CV_8UC3);
+	cv::resize(rgb_image, resized_image, resized_image.size());
+	cv::imshow("Lane detector", resized_image);
+	cv::waitKey(1);
+	resized_image.release();
+}
 
-    carmen_moving_objects_point_clouds_publish_message(&moving_objects_point_clouds_message);
+std::vector<bbox_t>
+detection_of_the_lanes(std::vector<bounding_box>* bouding_boxes_list, cv::Mat& rgb_image) {
+	// detect the objects in image
+	std::vector<bbox_t> predictions = darknet->detect(rgb_image, 0.2, false);
+	predictions = darknet->tracking(predictions);
+	//find x min and x max for orientation of the lines
+	unsigned int x_min = 10000, x_max = 0;
+	for (int i = 0; i < predictions.size(); i++)
+	{
+		if (predictions[i].x < x_min)
+			x_min = predictions[i].x;
 
-    for (int i = 0; i < moving_objects_point_clouds_message.num_point_clouds; i++) {
-        free(moving_objects_point_clouds_message.point_clouds[i].points);
-    }
-    free(moving_objects_point_clouds_message.point_clouds);
+		if ((predictions[i].x + predictions[i].w) > x_max)
+			x_max = (predictions[i].x);
+	}
+	//Conversion from yolo format to bounding_box format
+	for (const auto& box : predictions)
+	{
+		bounding_box bbox;
+		bbox.pt1.x = box.x;
+		bbox.pt2.x = box.x + box.w;
+		if (box.x + box.w > x_min + (x_max - x_min) / 2)
+		{
+			bbox.pt1.y = box.y;
+			bbox.pt2.y = box.y + box.h;
+		} else
+		{
+			bbox.pt2.y = box.y;
+			bbox.pt1.y = box.y + box.h;
+		}
+		bouding_boxes_list->push_back(bbox);
+	}
+	return predictions;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -227,24 +198,15 @@ void
 image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 {
 	double hood_removal_percentage = 0.2;
-
     cv::Mat src_image = cv::Mat(cv::Size(image_msg->width, image_msg->height - image_msg->height * hood_removal_percentage), CV_8UC3);
     cv::Mat rgb_image = cv::Mat(cv::Size(image_msg->width, image_msg->height - image_msg->height * hood_removal_percentage), CV_8UC3);
-//    cv::Mat src_image = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3);
-//    cv::Mat rgb_image = cv::Mat(cv::Size(image_msg->width, image_msg->height), CV_8UC3);
-
-    double start_time, end_time, delta_t, fps;
-
+    double start_time, end_time, delta_t;
     start_time = carmen_get_time();
 
-    if (camera_side == 0)
-        memcpy(src_image.data, image_msg->raw_left, image_msg->image_size * sizeof(char) - image_msg->image_size * hood_removal_percentage * sizeof(char));
-    else
-        memcpy(src_image.data, image_msg->raw_right, image_msg->image_size * sizeof(char) - image_msg->image_size * hood_removal_percentage * sizeof(char));
-//    if (camera_side == 0)
-//        memcpy(src_image.data, image_msg->raw_left, image_msg->image_size * sizeof(char));
-//    else
-//        memcpy(src_image.data, image_msg->raw_right, image_msg->image_size * sizeof(char));
+	 if (camera_side == 0)
+	        memcpy(src_image.data, image_msg->raw_left, image_msg->image_size * sizeof(char));
+	    else
+	        memcpy(src_image.data, image_msg->raw_right, image_msg->image_size * sizeof(char));
 
     carmen_velodyne_partial_scan_message velodyne_sync_with_cam;
 
@@ -252,176 +214,16 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
         velodyne_sync_with_cam = find_velodyne_most_sync_with_cam(image_msg->timestamp);
     else
         return;
-
-//    // Coloca barra preta em baixo
-//    // select a region of interest
-//    cv::Mat pRoi = src_image(cv::Rect(0, image_msg->height - image_msg->height * hood_removal_percentage, image_msg->width, image_msg->height - (image_msg->height - image_msg->height * hood_removal_percentage)));
-//    // set roi to some rgb colour
-//    pRoi.setTo(cv::Scalar(0, 0, 0));
-
-    double lateral_reduction = 0.0;
-    // select a region of interest
-    cv::Mat src_image_copy = src_image.clone();
-
-    cv::Mat pRoi = src_image_copy(cv::Rect(src_image_copy.cols * lateral_reduction / 2.0, 0,
-    		src_image_copy.cols - src_image_copy.cols * lateral_reduction, src_image_copy.rows));
-    src_image = pRoi;
-
     cv::cvtColor(src_image, rgb_image, cv::COLOR_RGB2BGR);
-
-    std::vector<carmen_tracked_cluster_t> clusters;
-
     std::vector<bounding_box> bouding_boxes_list;
     // detect the objects in image
-
-
-    //0.3 threshold is good, more than this and it starts to miss some obstacles (very bad)
-    std::vector<bbox_t> predictions = darknet->detect(src_image, 0.2, false);
-    //TODO: change this to the better tracker
-    predictions = darknet->tracking(predictions); /*< Coment this line if object tracking is not necessary */
-
-    /* The bouding box returned by the detector is different than what is
-	*	expected by this module, so we have to convert
-    */
-    for (const auto &box : predictions)
-    {
-        bounding_box bbox;
-
-        bbox.pt1.x = box.x;
-        
-        bbox.pt2.x = box.x + box.w;
-        if (box.x > src_image.cols / 2)
-        {
-        	bbox.pt1.y = box.y;
-        	bbox.pt2.y = box.y + box.h;
-        }else
-        {
-        	bbox.pt2.y = box.y;
-        	bbox.pt1.y = box.y + box.h;
-        }
-        bouding_boxes_list.push_back(bbox);
-    }
-
-
-    auto laser_points_in_camera_box_list = velodyne_points_in_boxes(bouding_boxes_list, &velodyne_sync_with_cam,
-                                                                    camera_parameters, velodyne_pose, camera_pose,
-                                                                    image_msg->width, image_msg->height);
-
-    std::vector<std::vector<carmen_vector_3D_t> > cluster_list = get_cluster_list(laser_points_in_camera_box_list);
-    filter_points_in_clusters(&cluster_list);
-
-    for (int i = 0; i < cluster_list.size(); i++)
-    {
-        carmen_moving_object_type tp = find_cluster_type_by_obj_id(obj_names, predictions.at(i).obj_id);
-
-        //TODO: Isso eh pois so queremos mexer com pedestres no momento
-        //if(tp != carmen_moving_object_type::pedestrian)
-        //  continue;
-
-        int cluster_id = predictions.at(i).track_id;
-
-        carmen_tracked_cluster_t clust;
-
-        clust.points = cluster_list.at(i);
-
-        //TODO: Calcular velocidade e orientacao corretas (provavelmente usando um tracker)
-        clust.orientation = globalpos.theta;
-        clust.linear_velocity = 0.0;
-        clust.track_id = cluster_id;
-        clust.last_detection_timestamp = image_msg->timestamp;
-        clust.cluster_type = tp;
-
-        clusters.push_back(clust);
-    }
-
+	std::vector<bbox_t> predictions = detection_of_the_lanes(&bouding_boxes_list, rgb_image);
+    std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > laser_points_in_camera_box_list = velodyne_points_in_boxes(bouding_boxes_list,
+    		&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height);
     end_time = carmen_get_time();
-
-    //build_moving_objects_message(clusters);
-    //publish_moving_objects(image_msg->timestamp);
-
-    delta_t = end_time - start_time;
-    fps = 1.0 / delta_t;
-
-#ifdef SHOW_DETECTIONS
-    char confianca[7];
-    char frame_rate[25];
-
-    sprintf(frame_rate, "FPS = %.2f", fps);
-
-    cv::putText(rgb_image, frame_rate,
-                cv::Point(10, 25),
-                cv::FONT_HERSHEY_PLAIN, 2, cvScalar(0, 255, 0), 2);
-    
-    std::vector<cv::Point> points_1; 
-    std::vector<cv::Point> points_2;    
-    
-    for (unsigned int i = 0; i < laser_points_in_camera_box_list.size(); i++)
-    {
-        for (unsigned int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
-        {
-            cv::circle(rgb_image, cv::Point(laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx,
-                                            laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy), 1,
-                       cv::Scalar(0, 0, 255), 1);
-        }
-
-        cv::Scalar object_color;
-
-
-
-        sprintf(confianca, "%d", i);
-
-        int obj_id = predictions.at(i).obj_id;
-        std::string obj_name;
-        if (obj_names.size() > obj_id)
-            obj_name = obj_names[obj_id];
-    
-        
-        if (bouding_boxes_list[i].pt2.x > rgb_image.cols / 2)
-        {
-        	/*points_1.push_back(cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y));
-        	points_1.push_back(cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y));*/
-        	cv::line(rgb_image,cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y),
-        			cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y), cv::Scalar(0,255,0),3,0 );
-
-        }else
-        {
-        	/*points_2.push_back(cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y));
-        	points_2.push_back(cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y));*/
-        	cv::line(rgb_image,cv::Point(bouding_boxes_list[i].pt2.x, bouding_boxes_list[i].pt2.y),
-        	        			cv::Point(bouding_boxes_list[i].pt1.x, bouding_boxes_list[i].pt1.y), cv::Scalar(0,255,0),3,0 );
-        }
-
-        cv::putText(rgb_image, obj_name,
-                    cv::Point(bouding_boxes_list[i].pt2.x + 1, bouding_boxes_list[i].pt1.y - 3),
-                    cv::FONT_HERSHEY_PLAIN, 1, cvScalar(0, 0, 255), 1);
-
-        /*cv::putText(rgb_image, confianca,
-                    cv::Point(bouding_boxes_list[i].pt1.x + 1, bouding_boxes_list[i].pt1.y - 3),
-                    cv::FONT_HERSHEY_PLAIN, 1, cvScalar(255, 255, 0), 1);
-		*/
-    }
-    //int num = cv::Mat(points_1).rows;
-    //int num1 = cv::Mat(points_2).rows;
-    //const cv::Point *pts_1 = (const cv::Point*) cv::Mat(points_1).data;
-   // const cv::Point *pts_2 = (const cv::Point*) cv::Mat(points_2).data;
-    /*if (points_1.empty() == false)
-    {
-    	cv::fillPoly(rgb_image, &pts_1, &num, 1, cv::Scalar(0,255,0),8);
-    }
-    /*if (points_2.empty() == false)
-    {
-    	cv::polylines(rgb_image, &pts_2, &num1, 1, cv::Scalar(0,255,0), 3, CV_AA, 0);
-    }*/
-    cv::Mat resized_image(cv::Size(640, 480 - 480 * hood_removal_percentage), CV_8UC3);
-//    cv::Mat resized_image(cv::Size(640, 480), CV_8UC3);
-    cv::resize(rgb_image, resized_image, resized_image.size());
-
-    cv::imshow("Lane detector", resized_image);
-    cv::waitKey(1);
-
-    resized_image.release();
-
-#endif
+	put_the_lane_dectections_in_image(laser_points_in_camera_box_list, rgb_image, predictions, bouding_boxes_list,
+			hood_removal_percentage, end_time, start_time);
+	lane_publish_messages(image_msg-> timestamp, &laser_points_in_camera_box_list);
 }
 
 
@@ -447,31 +249,22 @@ velodyne_partial_scan_message_handler(carmen_velodyne_partial_scan_message *velo
         free(velodyne_vector.begin()->partial_scan);
         velodyne_vector.erase(velodyne_vector.begin());
     }
-    //	show_velodyne(velodyne_message);
 }
 
 
-void
-carmen_localize_ackerman_globalpos_message_handler(carmen_localize_ackerman_globalpos_message *globalpos_message)
-{
-    globalpos.theta = globalpos_message->globalpos.theta;
-    globalpos.x = globalpos_message->globalpos.x;
-    globalpos.y = globalpos_message->globalpos.y;
-}
 
 
 void
 shutdown_module(int signo)
 {
-    if (signo == SIGINT) {
+    if (signo == SIGINT)
+    {
         carmen_ipc_disconnect();
         cvDestroyAllWindows();
-
-        printf("Neural car detector: disconnected.\n");
+        printf("Lane detector: disconnected.\n");
         exit(0);
     }
 }
-///////////////////////////////////////////////////////////////////////////////////////////////
 
 
 std::vector<std::string>
@@ -490,17 +283,12 @@ objects_names_from_file(std::string const filename)
 void
 subscribe_messages()
 {
-    carmen_bumblebee_basic_subscribe_stereoimage(camera,
-                                                 NULL, (carmen_handler_t) image_handler,
-                                                 CARMEN_SUBSCRIBE_LATEST);
+    carmen_bumblebee_basic_subscribe_stereoimage(camera, NULL, (carmen_handler_t) image_handler,
+         CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_velodyne_subscribe_partial_scan_message(NULL,
-                                                   (carmen_handler_t) velodyne_partial_scan_message_handler,
-                                                   CARMEN_SUBSCRIBE_LATEST);
+    carmen_velodyne_subscribe_partial_scan_message(NULL, (carmen_handler_t) velodyne_partial_scan_message_handler,
+          CARMEN_SUBSCRIBE_LATEST);
 
-    carmen_localize_ackerman_subscribe_globalpos_message(NULL,
-                                                         (carmen_handler_t) carmen_localize_ackerman_globalpos_message_handler,
-                                                         CARMEN_SUBSCRIBE_LATEST);
 }
 
 
@@ -558,11 +346,9 @@ main(int argc, char **argv)
 
     int gpu = 1;
     int device_id = 0;
-
     /**** DETECTNET PARAMETERS ****/
     std::string model_file = "deploy.prototxt";
     std::string trained_file = "snapshot_iter_21600.caffemodel";
-
     /**** YOLO PARAMETERS ****/
     std::string darknet_home = std::getenv("DARKNET_HOME"); /*< get environment variable pointing path of darknet*/
     if (darknet_home.empty())
@@ -571,8 +357,6 @@ main(int argc, char **argv)
     std::string weight_filename = darknet_home + "/yolo_lane.weights";
     std::string voc_names = darknet_home + "/data/lane.names";
     obj_names = objects_names_from_file(voc_names);
-
-
     darknet = new Detector(cfg_filename, weight_filename, device_id);
     carmen_test_alloc(darknet);
 
