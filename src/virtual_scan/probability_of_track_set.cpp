@@ -11,7 +11,7 @@ sum_of_tracks_lengths(virtual_scan_track_set_t *track_set)
 	for (int i = 0; i < track_set->size; i++)
 		sum += track_set->tracks[i]->size;
 
-	return ((sum > 0.0)? sum / (double) track_set->size: 0.0);
+	return ((sum > 0.0)? sum / sqrt((double) track_set->size): 0.0);
 //	return (sum);
 }
 
@@ -120,7 +120,7 @@ sum_of_variances(virtual_scan_track_set_t *track_set)
 double
 probability_of_track_set_given_measurements(virtual_scan_track_set_t *track_set, bool print)
 {
-#define lambda_L	3.0
+#define lambda_L	8.0
 #define lambda_T	0.5 // 0.1
 #define lambda_1	0.1
 #define lambda_2	0.1
@@ -138,7 +138,7 @@ probability_of_track_set_given_measurements(virtual_scan_track_set_t *track_set,
 	if (print)
 		printf("Slen = %lf, Smot = %lf, Sms1 = %lf, Sms2 = %lf, Sms3 = %lf\n", Slen, Smot, Sms1, Sms2, Sms3);
 
-	double p_w_z = exp(lambda_L * Slen - lambda_T * Smot - lambda_1 * Sms1 - lambda_2 * Sms2 - lambda_3 * Sms3);
+	double p_w_z = exp(lambda_L * Slen - lambda_T * Smot - lambda_1 * Sms1 - lambda_2 * Sms2 - lambda_3 * Sms3 - 100.0);
 
 	return (p_w_z);
 }

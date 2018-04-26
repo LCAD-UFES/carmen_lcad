@@ -180,6 +180,20 @@ typedef struct
 } virtual_scan_track_set_t;
 
 
+typedef struct
+{
+	carmen_ackerman_traj_point_t previous_pose;
+	carmen_ackerman_traj_point_t returned_pose;
+	double previous_timestamp;
+	double initial_time;
+	double lateral_disp;
+	double logitutinal_disp;
+
+	double length;
+	double width;
+} simulated_moving_object_initial_state_t;
+
+
 virtual_scan_extended_t *
 sort_virtual_scan(carmen_mapper_virtual_scan_message *virtual_scan);
 

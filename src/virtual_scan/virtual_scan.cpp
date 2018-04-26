@@ -1104,7 +1104,7 @@ virtual_scan_update_neighborhood_graph(virtual_scan_neighborhood_graph_t *neighb
 	else
 		neighborhood_graph = neighborhood_graph_update(virtual_scan_box_model_hypotheses, neighborhood_graph);
 
-//	print_neighborhood_graph(neighborhood_graph);
+	print_neighborhood_graph(neighborhood_graph);
 
 	return (neighborhood_graph);
 }
@@ -1758,8 +1758,8 @@ track_split(virtual_scan_track_set_t *track_set, int track_id)
 bool
 get_candidate_pair_of_tracks(int &idx_track1, int &idx_track2, virtual_scan_track_set_t *track_set, virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
-	int *track1_candidates = (int *) malloc(track_set->size * sizeof(int));
-	int *track2_candidates = (int *) malloc(track_set->size * sizeof(int));
+	int *track1_candidates = (int *) malloc(sizeof(int));
+	int *track2_candidates = (int *) malloc(sizeof(int));
 
 	int num_candidates = 0;
 	for (int track_i = 0; track_i < track_set->size; track_i++)
@@ -1778,6 +1778,8 @@ get_candidate_pair_of_tracks(int &idx_track1, int &idx_track2, virtual_scan_trac
 						track1_candidates[num_candidates] = track_i;
 						track2_candidates[num_candidates] = track_j;
 						num_candidates++;
+						track1_candidates = (int *) realloc(track1_candidates, (num_candidates + 1) * sizeof(int));
+						track2_candidates = (int *) realloc(track2_candidates, (num_candidates + 1) * sizeof(int));
 					}
 				}
 			}

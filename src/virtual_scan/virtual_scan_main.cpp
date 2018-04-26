@@ -177,7 +177,7 @@ displace_pose(carmen_ackerman_traj_point_t robot_pose, double displacement)
 
 
 carmen_ackerman_traj_point_t *
-compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
+compute_simulated_lateral_objects(simulated_moving_object_initial_state_t *moving_object_state, carmen_ackerman_traj_point_t current_robot_pose_v_and_phi, double timestamp)
 {
 	if (!necessary_maps_available)
 		return (NULL);
@@ -186,25 +186,18 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	if (rddf == NULL)
 		return (NULL);
 
-	static carmen_ackerman_traj_point_t previous_pose = {0, 0, 0, 0, 0};
-	static carmen_ackerman_traj_point_t returned_pose = {0, 0, 0, 0, 0};
-	static double previous_timestamp = 0.0;
-	static double initial_time = 0.0;
-	static double lateral_disp = 0.0;	// Valor inicial
-	double logitutinal_disp = -12.0;		// Valor inicial
-
-	if (initial_time == 0.0)
+	if (moving_object_state->initial_time == 0.0)
 	{
-		returned_pose = previous_pose = rddf->poses[0];
-		returned_pose.x = previous_pose.x + lateral_disp * cos(previous_pose.theta + M_PI / 2.0);
-		returned_pose.y = previous_pose.y + lateral_disp * sin(previous_pose.theta + M_PI / 2.0);
+		moving_object_state->returned_pose = moving_object_state->previous_pose = rddf->poses[0];
+		moving_object_state->returned_pose.x = moving_object_state->previous_pose.x + moving_object_state->lateral_disp * cos(moving_object_state->previous_pose.theta + M_PI / 2.0);
+		moving_object_state->returned_pose.y = moving_object_state->previous_pose.y + moving_object_state->lateral_disp * sin(moving_object_state->previous_pose.theta + M_PI / 2.0);
 
-		previous_timestamp = timestamp;
-		initial_time = timestamp;
+		moving_object_state->previous_timestamp = timestamp;
+		moving_object_state->initial_time = timestamp;
 
-		returned_pose = displace_pose(returned_pose, logitutinal_disp);
+		moving_object_state->returned_pose = displace_pose(moving_object_state->returned_pose, moving_object_state->logitutinal_disp);
 
-		return (&returned_pose);
+		return (&(moving_object_state->returned_pose));
 	}
 
 	static double stop_t0 = 0;
@@ -212,24 +205,24 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 	static double stop_t2 = 10;
 
 	static double v;
-	double t = timestamp - initial_time;
-	if ((t > stop_t0) && (t < stop_t1) && lateral_disp < 3.0)
-		lateral_disp += 0.03;
-	if ((t > stop_t1) && lateral_disp > 0.0)
-		lateral_disp -= 0.03;
+	double t = timestamp - moving_object_state->initial_time;
+	if ((t > stop_t0) && (t < stop_t1) && moving_object_state->lateral_disp < 3.0)
+		moving_object_state->lateral_disp += 0.03;
+	if ((t > stop_t1) && moving_object_state->lateral_disp > 0.0)
+		moving_object_state->lateral_disp -= 0.03;
 	if (t < stop_t2)
 		v = current_robot_pose_v_and_phi.v + 0.6;
 
 //	else if (t > stop_tn)
-//		initial_time = timestamp;
+//		moving_object_state->initial_time = timestamp;
 
-	double dt = timestamp - previous_timestamp;
-	double dx = v * dt * cos(previous_pose.theta);
-	double dy = v * dt * sin(previous_pose.theta);
+	double dt = timestamp - moving_object_state->previous_timestamp;
+	double dx = v * dt * cos(moving_object_state->previous_pose.theta);
+	double dy = v * dt * sin(moving_object_state->previous_pose.theta);
 
 	carmen_ackerman_traj_point_t pose_ahead;
-	pose_ahead.x = previous_pose.x + dx;
-	pose_ahead.y = previous_pose.y + dy;
+	pose_ahead.x = moving_object_state->previous_pose.x + dx;
+	pose_ahead.y = moving_object_state->previous_pose.y + dy;
 
 	static carmen_ackerman_traj_point_t next_pose = {0, 0, 0, 0, 0};
 	for (int i = 0, n = rddf->number_of_poses - 1; i < n; i++)
@@ -240,26 +233,24 @@ compute_simulated_lateral_objects(carmen_ackerman_traj_point_t current_robot_pos
 			break;
 	}
 
-	returned_pose = previous_pose = next_pose;
-	returned_pose.x = previous_pose.x + lateral_disp * cos(previous_pose.theta + M_PI / 2.0);
-	returned_pose.y = previous_pose.y + lateral_disp * sin(previous_pose.theta + M_PI / 2.0);
-	returned_pose = displace_pose(returned_pose, logitutinal_disp);
-	previous_timestamp = timestamp;
+	moving_object_state->returned_pose = moving_object_state->previous_pose = next_pose;
+	moving_object_state->returned_pose.x = moving_object_state->previous_pose.x + moving_object_state->lateral_disp * cos(moving_object_state->previous_pose.theta + M_PI / 2.0);
+	moving_object_state->returned_pose.y = moving_object_state->previous_pose.y + moving_object_state->lateral_disp * sin(moving_object_state->previous_pose.theta + M_PI / 2.0);
+	moving_object_state->returned_pose = displace_pose(moving_object_state->returned_pose, moving_object_state->logitutinal_disp);
+	moving_object_state->previous_timestamp = timestamp;
 
-	return (&returned_pose);
+	return (&(moving_object_state->returned_pose));
 }
 
 
 void
-draw_moving_object_in_scan(carmen_mapper_virtual_scan_message *simulated_scan, carmen_ackerman_traj_point_t *simulated_object_pose)
+draw_moving_objects_in_scan(carmen_mapper_virtual_scan_message *simulated_scan, carmen_rectangle_t *moving_objects, int num_moving_objects)
 {
 	carmen_pose_3D_t world_pose = {{simulated_scan->globalpos.x, simulated_scan->globalpos.y, 0.0}, {0.0, 0.0, simulated_scan->globalpos.theta}};
 	world_pose = get_world_pose_with_velodyne_offset(world_pose);
 	carmen_position_t velodyne_pos = {world_pose.position.x, world_pose.position.y};
 
 	double initial_angle = world_pose.orientation.yaw;
-
-	carmen_rectangle_t rectangle = {simulated_object_pose->x, simulated_object_pose->y, simulated_object_pose->theta, 4.5, 1.5};
 
 	int num_points = 0;
 	for (double angle = -M_PI; angle < M_PI; angle += M_PI / (360 * 4.0))
@@ -273,9 +264,28 @@ draw_moving_object_in_scan(carmen_mapper_virtual_scan_message *simulated_scan, c
 		double max_distance = 70.0;
 		carmen_position_t target = {velodyne_pos.x + max_distance * cos(carmen_normalize_theta(initial_angle + angle)),
 									velodyne_pos.y + max_distance * sin(carmen_normalize_theta(initial_angle + angle))};
-		carmen_position_t intersection;
-		if (carmen_line_to_point_crossed_rectangle(&intersection, velodyne_pos, target, rectangle))
-			simulated_scan->points[i] = intersection;
+
+		carmen_position_t nearest_intersection;
+		bool hit_obstacle = false;
+		for (int j = 0; j < num_moving_objects; j++)
+		{
+			carmen_position_t intersection;
+			if (carmen_line_to_point_crossed_rectangle(&intersection, velodyne_pos, target, moving_objects[j]))
+			{
+				if (hit_obstacle)
+				{
+					if (DIST2D(intersection, velodyne_pos) < DIST2D(nearest_intersection, velodyne_pos))
+						nearest_intersection = intersection;
+				}
+				else
+				{
+					nearest_intersection = intersection;
+					hit_obstacle = true;
+				}
+			}
+		}
+		if (hit_obstacle)
+			simulated_scan->points[i] = nearest_intersection;
 		else
 			simulated_scan->points[i] = target;
 		i++;
@@ -394,7 +404,7 @@ virtual_scan_publish_segments(virtual_scan_segment_classes_t *virtual_scan_segme
 
 
 void
-publish_simulated_objects(carmen_ackerman_traj_point_t *simulated_object_pose, carmen_localize_ackerman_globalpos_message *globalpos_message)
+publish_simulated_objects(carmen_rectangle_t *simulated_moving_objects, int num_moving_objects, carmen_localize_ackerman_globalpos_message *globalpos_message)
 {
 	carmen_mapper_virtual_scan_message simulated_scan;
 
@@ -404,8 +414,10 @@ publish_simulated_objects(carmen_ackerman_traj_point_t *simulated_object_pose, c
 	simulated_scan.phi = globalpos_message->phi;
 	simulated_scan.timestamp = globalpos_message->timestamp;
 
-	draw_moving_object_in_scan(&simulated_scan, simulated_object_pose);
+	draw_moving_objects_in_scan(&simulated_scan, simulated_moving_objects, num_moving_objects);
+
 	carmen_mapper_publish_virtual_scan_message(&simulated_scan, simulated_scan.timestamp);
+
 	free(simulated_scan.points);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -482,9 +494,26 @@ localize_globalpos_handler(carmen_localize_ackerman_globalpos_message *msg)
 	current_robot_pose_v_and_phi.v = msg->v;
 	current_robot_pose_v_and_phi.phi = msg->phi;
 
-	carmen_ackerman_traj_point_t *simulated_object_pose2 = compute_simulated_lateral_objects(current_robot_pose_v_and_phi, msg->timestamp);
-	if (simulated_object_pose2)
-		publish_simulated_objects(simulated_object_pose2, msg);
+	static simulated_moving_object_initial_state_t simulated_moving_objects_initial_state[2] =
+		{{{0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, 0.0, 0.0,   0.0, -12.0, 4.5, 1.5},
+		 {{0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, 0.0, 0.0,   0.0, 12.0, 4.5, 1.5}};
+	carmen_rectangle_t simulated_objects[2];
+	carmen_ackerman_traj_point_t *simulated_object_pose;
+
+	int num_moving_objects = 0;
+	simulated_object_pose = compute_simulated_lateral_objects(&(simulated_moving_objects_initial_state[num_moving_objects]), current_robot_pose_v_and_phi, msg->timestamp);
+	if (simulated_object_pose)
+		simulated_objects[num_moving_objects] = {simulated_object_pose->x, simulated_object_pose->y, simulated_object_pose->theta,
+								simulated_moving_objects_initial_state[num_moving_objects].length, simulated_moving_objects_initial_state[num_moving_objects].width};
+
+	num_moving_objects++;
+	simulated_object_pose = compute_simulated_lateral_objects(&(simulated_moving_objects_initial_state[num_moving_objects]), current_robot_pose_v_and_phi, msg->timestamp);
+	if (simulated_object_pose)
+		simulated_objects[num_moving_objects] = {simulated_object_pose->x, simulated_object_pose->y, simulated_object_pose->theta,
+								simulated_moving_objects_initial_state[num_moving_objects].length, simulated_moving_objects_initial_state[num_moving_objects].width};
+
+	if (simulated_object_pose)
+		publish_simulated_objects(simulated_objects, num_moving_objects + 1, msg);
 }
 
 
