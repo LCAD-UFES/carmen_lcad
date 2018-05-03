@@ -35,17 +35,19 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet/lib
 SOURCES = dbscan.cpp lane_detector.cpp lane_detector_main.cpp # DetectNet.cpp 
 # SOURCES = dbscan.cpp neural_car_detector.cpp neural_car_detector_main.cpp
 
-PUBLIC_INCLUDES = 
-PUBLIC_LIBRARIES = 
+PUBLIC_INCLUDES = lane_detector_interface.h lane_detector_messages.h
+PUBLIC_LIBRARIES = liblane_detector_interface.a
 PUBLIC_BINARIES = lane_detector
 
-TARGETS = darknet velodyne_camera_calibration camera_boxes_to_world libDbscan.a lane_detector  #libDetectNet.a
+TARGETS = darknet velodyne_camera_calibration camera_boxes_to_world libDbscan.a liblane_detector_interface.a lane_detector  #libDetectNet.a
 # TARGETS = velodyne_camera_calibration camera_boxes_to_world libDbscan.a neural_car_detector
 
 #rules
 #libDetectNet.a: DetectNet.o
 
 libDbscan.a: dbscan.o
+
+liblane_detector_interface.a: lane_detector_interface.o
 
 lane_detector: lane_detector_main.o lane_detector.o
 
