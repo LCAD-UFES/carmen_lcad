@@ -32,7 +32,7 @@
 #include <math.h>
 
 #define SHOW_DETECTIONS
-#define SHOW_BBOX true
+#define SHOW_BBOX false
 // camera number and side
 int camera;
 int camera_side;
@@ -97,24 +97,24 @@ static void register_ipc_messages(void) {
 */
 
 void
-lane_publish_messages(double _timestamp, std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > *laser_points_in_camera_box_list,
-		std::vector<bool> *left_or_right)
+lane_publish_messages(double _timestamp, std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > &laser_points_in_camera_box_list,
+		std::vector<bool> &left_or_right)
 {
 	// stamps the message
 	carmen_lane_detector_lane_message_t message;
 	message.host = carmen_get_host();
 	message.timestamp = _timestamp;
-	message.lane_vector_size = laser_points_in_camera_box_list->size();
+	message.lane_vector_size = laser_points_in_camera_box_list.size();
 	message.lane_vector = (carmen_lane_detector_lane_t*) malloc ( message.lane_vector_size * sizeof (carmen_lane_detector_lane_t) );
-	/*
-	for (int i = 0; i < laser_points_in_camera_box_list->size(); i++)
+
+	for (int i = 0; i < laser_points_in_camera_box_list.size(); i++)
 	{
 		unsigned int idx_pt1, idx_pt2;
 
 		for(int j = 0; j < laser_points_in_camera_box_list[i].size(); j++)
 		{
 			unsigned int x_min = 10000, x_max = 0, y_min = 10000, y_max = 0;
-			if (left_or_right[0][i] == true)
+			if (left_or_right[i] == true)
 			{
 				if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipx < x_min)
 					if (laser_points_in_camera_box_list[i][j].velodyne_points_in_cam.ipy < y_min)
@@ -159,7 +159,7 @@ lane_publish_messages(double _timestamp, std::vector< std::vector<carmen_velodyn
 	}
 	// publish!
 	//carmen_lane_publish_message(&message);
-	 */
+
 }
 
 
@@ -320,7 +320,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
     		&velodyne_sync_with_cam, camera_parameters, velodyne_pose, camera_pose, image_msg->width, image_msg->height, &left_or_right);
     end_time = carmen_get_time();
 	put_the_lane_dectections_in_image(laser_points_in_camera_box_list, rgb_image, predictions, bouding_boxes_list, end_time, start_time);
-	lane_publish_messages(image_msg-> timestamp, &laser_points_in_camera_box_list, &left_or_right);
+	lane_publish_messages(image_msg-> timestamp, laser_points_in_camera_box_list, left_or_right);
 }
 
 
