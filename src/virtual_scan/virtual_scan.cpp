@@ -1756,7 +1756,7 @@ track_split(virtual_scan_track_set_t *track_set, int track_id)
 
 
 bool
-get_candidate_pair_of_tracks(int &idx_track1, int &idx_track2, virtual_scan_track_set_t *track_set, virtual_scan_neighborhood_graph_t *neighborhood_graph)
+get_candidate_pair_of_tracks_to_merge(int &idx_track1, int &idx_track2, virtual_scan_track_set_t *track_set, virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
 	int *track1_candidates = (int *) malloc(sizeof(int));
 	int *track2_candidates = (int *) malloc(sizeof(int));
@@ -1807,7 +1807,7 @@ void
 track_merge(virtual_scan_track_set_t *track_set, virtual_scan_neighborhood_graph_t *neighborhood_graph)
 {
 	int idx_track1, idx_track2;
-	if (get_candidate_pair_of_tracks(idx_track1, idx_track2, track_set, neighborhood_graph))
+	if (get_candidate_pair_of_tracks_to_merge(idx_track1, idx_track2, track_set, neighborhood_graph))
 	{
 		virtual_scan_track_t *track1 = track_set->tracks[idx_track1];
 		virtual_scan_track_t *track2 = track_set->tracks[idx_track2];
@@ -1824,6 +1824,104 @@ track_merge(virtual_scan_track_set_t *track_set, virtual_scan_neighborhood_graph
 				(track_set->size - (idx_track2 + 1)) * sizeof(virtual_scan_track_t *));
 		// Tinha que fazer um realloc do track_set aqui...
 		track_set->size -= 1;
+	}
+}
+
+
+bool
+get_candidate_pair_of_tracks_to_switch(int &idx_track1, int &idx_track2, int &p_found, int &q_found, virtual_scan_track_set_t *track_set,
+		virtual_scan_neighborhood_graph_t *neighborhood_graph)
+{
+	int *track1_candidates = (int *) malloc(sizeof(int));
+	int *track2_candidates = (int *) malloc(sizeof(int));
+	int *p_candidates = (int *) malloc(sizeof(int));
+	int *q_candidates = (int *) malloc(sizeof(int));
+
+	int num_candidates = 0;
+	for (int track_1 = 0; track_1 < track_set->size; track_1++)
+	{
+		for (int track_2 = 0; track_2 < track_set->size; track_2++)
+		{
+			if (track_1 != track_2)
+			{
+				for (int p = 0; p < track_set->tracks[track_1]->size; p++)
+				{
+					for (int q = 0; q < track_set->tracks[track_2]->size; q++)
+					{
+						int track_1_vertex_index = track_set->tracks[track_1]->box_model_hypothesis[p].index;
+						int track_2_vertex_index = track_set->tracks[track_2]->box_model_hypothesis[q].index;
+						virtual_scan_box_model_hypothesis_edges_t *track_1_edges = neighborhood_graph->box_model_hypothesis_edges[track_1_vertex_index];
+						virtual_scan_box_model_hypothesis_edges_t *track_2_edges = neighborhood_graph->box_model_hypothesis_edges[track_2_vertex_index];
+						for (int i = 0; i < track_2_edges->size; i++)
+						{
+							for (int j = 0; j < track_1_edges->size; j++)
+							{
+								if (((track_2_edges->edge_type[i] == PARENT_EDGE) && (track_2_edges->edge[i] == track_1_vertex_index)) &&
+									((track_1_edges->edge_type[j] == PARENT_EDGE) && (track_1_edges->edge[j] == track_2_vertex_index)))
+								{
+									track1_candidates[num_candidates] = track_1;
+									track2_candidates[num_candidates] = track_2;
+									p_candidates[num_candidates] = p;
+									q_candidates[num_candidates] = q;
+
+									num_candidates++;
+									track1_candidates = (int *) realloc(track1_candidates, (num_candidates + 1) * sizeof(int));
+									track2_candidates = (int *) realloc(track2_candidates, (num_candidates + 1) * sizeof(int));
+									p_candidates = (int *) realloc(p_candidates, (num_candidates + 1) * sizeof(int));
+									q_candidates = (int *) realloc(q_candidates, (num_candidates + 1) * sizeof(int));
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if (num_candidates != 0)
+	{
+		int rand_candidate = carmen_int_random(num_candidates);
+		idx_track1 = track1_candidates[rand_candidate];
+		idx_track2 = track2_candidates[rand_candidate];
+		p_found = p_candidates[rand_candidate];
+		q_found = q_candidates[rand_candidate];
+	}
+
+	free(track1_candidates);
+	free(track2_candidates);
+	free(p_candidates);
+	free(q_candidates);
+
+	if (num_candidates != 0)
+		return (true);
+	else
+		return (false);
+}
+
+
+void
+track_switch(virtual_scan_track_set_t *track_set, virtual_scan_neighborhood_graph_t *neighborhood_graph)
+{
+	int idx_track1, idx_track2, p, q;
+	if (get_candidate_pair_of_tracks_to_switch(idx_track1, idx_track2, p, q, track_set, neighborhood_graph))
+	{
+		virtual_scan_track_t *track1 = track_set->tracks[idx_track1];
+		virtual_scan_track_t *track2 = track_set->tracks[idx_track2];
+
+		virtual_scan_box_model_hypothesis_t *box_model_hypothesis_copy =
+				(virtual_scan_box_model_hypothesis_t *) malloc((track1->size - p - 1) * sizeof(virtual_scan_box_model_hypothesis_t));
+		for (int i = p + 1; i < track1->size; i++)
+			box_model_hypothesis_copy[i - (p + 1)] = track1->box_model_hypothesis[i];
+
+		track1->box_model_hypothesis = (virtual_scan_box_model_hypothesis_t *) realloc(track1->box_model_hypothesis,
+							(p + 1 + (track2->size - q - 1)) * sizeof(virtual_scan_box_model_hypothesis_t));
+		for (int i = p + 1; (i - (p + 1)) < (track2->size - q - 1); i++)
+			track1->box_model_hypothesis[i] = track2->box_model_hypothesis[i - (p + 1) + q + 1];
+
+		track2->box_model_hypothesis = (virtual_scan_box_model_hypothesis_t *) realloc(track2->box_model_hypothesis,
+							(q + 1 + (track1->size - p - 1)) * sizeof(virtual_scan_box_model_hypothesis_t));
+		for (int i = q + 1; (i - (q + 1)) < (track1->size - p - 1); i++)
+			track2->box_model_hypothesis[i] = box_model_hypothesis_copy[i - (q + 1)];
 	}
 }
 
@@ -1894,7 +1992,7 @@ stop_condition(virtual_scan_track_set_t *track_set, virtual_scan_neighborhood_gr
 virtual_scan_track_set_t *
 propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood_graph, virtual_scan_track_set_t *track_set_n_1)
 {
-#define NUMBER_OF_TYPES_OF_MOVES	6
+#define NUMBER_OF_TYPES_OF_MOVES	7
 
 //	static int num_proposal = 0;
 
@@ -1943,10 +2041,10 @@ propose_track_set_according_to_q(virtual_scan_neighborhood_graph_t *neighborhood
 			if (rand_track != -1)
 				track_merge(track_set, neighborhood_graph);
 			break;
-//		case 6:	// Switch
-//			if (rand_track != -1)
-//				track_switch(track_set);
-//			break;
+		case 6:	// Switch
+			if (rand_track != -1)
+				track_switch(track_set, neighborhood_graph);
+			break;
 //		case 7:	// Diffusion
 //			if (rand_track != -1)
 //				track_diffusion(track_set, rand_track);

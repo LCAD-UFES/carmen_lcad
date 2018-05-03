@@ -138,7 +138,7 @@ probability_of_track_set_given_measurements(virtual_scan_track_set_t *track_set,
 	if (print)
 		printf("Slen = %lf, Smot = %lf, Sms1 = %lf, Sms2 = %lf, Sms3 = %lf\n", Slen, Smot, Sms1, Sms2, Sms3);
 
-	double p_w_z = exp(lambda_L * Slen - lambda_T * Smot - lambda_1 * Sms1 - lambda_2 * Sms2 - lambda_3 * Sms3 - 100.0);
+	double p_w_z = exp(lambda_L * Slen - lambda_T * Smot - lambda_1 * Sms1 - lambda_2 * Sms2 - lambda_3 * Sms3 - 70.0);
 
 	return (p_w_z);
 }

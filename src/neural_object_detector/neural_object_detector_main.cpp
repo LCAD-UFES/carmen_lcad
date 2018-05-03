@@ -13,8 +13,8 @@
 #include <cstdlib>
 #include <fstream>
 #include "Darknet.hpp"
-#include "image.h"
-#include "box.h"
+//#include "image.h"
+//#include "box.h"
 
 //#include "../../sharedlib/darknet/src/image.h"
 //#include "../../sharedlib/darknet/src/yolo_v2_class.hpp"
@@ -585,6 +585,7 @@ image_handler(carmen_bumblebee_basic_stereoimage_message *image_msg)
 #endif
 }
 
+/*
 
 image
 convert_image_msg_to_darknet_image(carmen_bumblebee_basic_stereoimage_message *image_msg, char stereo_image_side)
@@ -632,6 +633,7 @@ image_handler_new2(carmen_bumblebee_basic_stereoimage_message *image_msg)
 	cv::imshow("Neural Object Detector", src_image);
 	cv::waitKey(1);
 }
+*/
 
 
 void
@@ -765,9 +767,9 @@ main(int argc, char **argv)
     darknet = new Detector(cfg_filename, weight_filename, device_id);
     carmen_test_alloc(darknet);
 
-#ifdef SHOW_DETECTIONS
-    cv::namedWindow("Neural Object Detector", cv::WINDOW_AUTOSIZE);
-#endif
+//#ifdef SHOW_DETECTIONS
+//    cv::namedWindow("Neural Object Detector", cv::WINDOW_AUTOSIZE);
+//#endif
 
     setlocale(LC_ALL, "C");
 
