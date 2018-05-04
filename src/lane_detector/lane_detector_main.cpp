@@ -108,6 +108,8 @@ lane_publish_messages(double _timestamp, std::vector< std::vector<carmen_velodyn
 	message.host = carmen_get_host();
 	message.timestamp = _timestamp;
 	message.lane_vector_size = laser_points_in_camera_box_list.size();
+	if (laser_points_in_camera_box_list.size() == 0)
+		return ;
 	message.lane_vector = (carmen_lane_detector_lane_t*) malloc ( message.lane_vector_size * sizeof (carmen_lane_detector_lane_t) );
 
 	for (int i = 0; i < laser_points_in_camera_box_list.size(); i++)

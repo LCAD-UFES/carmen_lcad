@@ -11,6 +11,7 @@
 #include <carmen/behavior_selector_interface.h>
 #include <carmen/grid_mapping.h>
 #include <carmen/moving_objects_interface.h>
+#include <carmen/lane_detector_interface.h>
 
 #include <carmen/navigator_gui2_interface.h>
 #include <carmen/parking_assistant_interface.h>
@@ -749,6 +750,22 @@ odometry_handler(carmen_base_ackerman_odometry_message *msg)
 	last_v = msg->v;
 }
 
+/*static void
+lane_detector_handler(carmen_lane_detector_lane_message_t *msg)
+{
+	if (msg->lane_vector_size == 0)
+		return;
+	carmen_position_t p1, p2;
+	p1.x = msg->lane_vector->lane_segment_position1.x;
+	p1.y = msg->lane_vector->lane_segment_position1.y;
+	p2.x = msg->lane_vector->lane_segment_position2.x;
+	p2.y = msg->lane_vector->lane_segment_position2.y;
+	std::cout << "x p1 " << p1.x << '\n';
+	std::cout << "y p1 " << p1.y << '\n';
+	std::cout << "x p2 " << p2.x << '\n';
+	std::cout << "y p2 " << p2.y << '\n';
+}
+*/
 
 static void
 display_config_handler(MSG_INSTANCE msgRef, BYTE_ARRAY callData,
@@ -945,6 +962,8 @@ subscribe_ipc_messages()
 	carmen_map_server_subscribe_localize_map_message(NULL, (carmen_handler_t) localize_map_update_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	carmen_rddf_subscribe_waypoints_around_end_point_message(NULL, (carmen_handler_t) navigator_rddf_waypoints_handler, CARMEN_SUBSCRIBE_LATEST);
+
+	//carmen_elas_lane_analysis_subscribe(NULL, (carmen_handler_t) lane_detector_handler, CARMEN_SUBSCRIBE_LATEST);
 
 	err = IPC_defineMsg(CARMEN_RDDF_END_POINT_MESSAGE_NAME, IPC_VARIABLE_LENGTH, CARMEN_RDDF_END_POINT_MESSAGE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_RDDF_END_POINT_MESSAGE_NAME);
