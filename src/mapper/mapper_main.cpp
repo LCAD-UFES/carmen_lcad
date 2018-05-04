@@ -90,6 +90,12 @@ bool offline_map_available = false;
 int ok_to_publish = 0;
 int number_of_threads = 1;
 
+/******variables for neural_mapper dataset*****/
+int generate_neural_mapper_dataset = 0;
+int neural_mapper_max_distance_meters = 0;
+int neural_mapper_data_pace = 0;
+/**********************/
+
 rotation_matrix *r_matrix_car_to_global = NULL;
 
 int use_truepos = 0;
@@ -1064,6 +1070,10 @@ read_parameters(int argc, char **argv,
 	{
 		{(char *) "commandline", (char *) "calibration_file", CARMEN_PARAM_STRING, &calibration_file, 0, NULL},
 		{(char *) "commandline", (char *) "save_calibration_file", CARMEN_PARAM_STRING, &save_calibration_file, 0, NULL},
+		{(char *) "commandline", (char *) "generate_neural_mapper_dataset", CARMEN_PARAM_ONOFF, &generate_neural_mapper_dataset, 0, NULL},
+		{(char *) "commandline", (char *) "neural_mapper_max_distance_meters", CARMEN_PARAM_INT, &neural_mapper_max_distance_meters, 0, NULL},
+		{(char *) "commandline", (char *) "neural_mapper_data_pace", CARMEN_PARAM_INT, &neural_mapper_data_pace, 0, NULL}
+
 	};
 
 	carmen_param_install_params(argc, argv, param_optional_list, sizeof(param_optional_list) / sizeof(param_optional_list[0]));
