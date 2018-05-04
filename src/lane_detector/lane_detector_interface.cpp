@@ -1,5 +1,6 @@
 #include <carmen/carmen.h>
 #include <carmen/lane_detector_messages.h>
+#include <carmen/lane_detector_interface.h>
 #include <iostream>
 
 // ==============================================================
@@ -23,7 +24,7 @@ carmen_elas_lane_analysis_subscribe(carmen_lane_detector_lane_message_t *message
 // ==============================================================
 // PUBLISHES
 IPC_RETURN_TYPE
-carmen_lane_publish_message(carmen_lane_detector_lane_message_t * message)
+carmen_lane_publish_message(carmen_lane_detector_lane_message_t *message)
 {
 	IPC_RETURN_TYPE err;
     err = IPC_publishData(CARMEN_LANE_NAME, message);

@@ -1,3 +1,4 @@
+#include <carmen/lane_detector_messages.h>
 
 #ifdef __cplusplus
 extern "C"

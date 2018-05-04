@@ -32,7 +32,7 @@ LFLAGS += -L$(CARMEN_HOME)/sharedlib/darknet/lib
 
 
 
-SOURCES = dbscan.cpp lane_detector.cpp lane_detector_main.cpp # DetectNet.cpp 
+SOURCES = dbscan.cpp lane_detector.cpp lane_detector_main.cpp lane_detector_interface.cpp # DetectNet.cpp 
 # SOURCES = dbscan.cpp neural_car_detector.cpp neural_car_detector_main.cpp
 
 PUBLIC_INCLUDES = lane_detector_interface.h lane_detector_messages.h
@@ -49,7 +49,7 @@ libDbscan.a: dbscan.o
 
 liblane_detector_interface.a: lane_detector_interface.o
 
-lane_detector: lane_detector_main.o lane_detector.o
+lane_detector: lane_detector_main.o lane_detector.o lane_detector_interface.o
 
 darknet:
 	$(MAKE) -C $(CARMEN_HOME)/sharedlib/darknet

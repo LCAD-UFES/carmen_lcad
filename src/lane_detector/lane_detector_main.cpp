@@ -24,6 +24,7 @@
 //#include "DetectNet.hpp"
 #include "Darknet.hpp" /*< Yolo V2 */
 #include "lane_detector.hpp"
+
 #include <carmen/lane_detector_messages.h>
 #include <carmen/lane_detector_interface.h>
 
@@ -88,13 +89,15 @@ find_velodyne_most_sync_with_cam(double bumblebee_timestamp)
 // Publishers                                                                                //
 //                                                                                           //
 ///////////////////////////////////////////////////////////////////////////////////////////////
-/*
-static void register_ipc_messages(void) {
+
+static void
+register_ipc_messages(void)
+{
 	IPC_RETURN_TYPE err;
 	err = IPC_defineMsg(CARMEN_LANE_NAME, IPC_VARIABLE_LENGTH, CARMEN_LANE_FMT);
 	carmen_test_ipc_exit(err, "Could not define", CARMEN_LANE_NAME);
 }
-*/
+
 
 void
 lane_publish_messages(double _timestamp, std::vector< std::vector<carmen_velodyne_points_in_cam_with_obstacle_t> > &laser_points_in_camera_box_list,
@@ -158,7 +161,7 @@ lane_publish_messages(double _timestamp, std::vector< std::vector<carmen_velodyn
 		message.lane_vector[i].lane_class = 0;
 	}
 	// publish!
-	//carmen_lane_publish_message(&message);
+	carmen_lane_publish_message(&message);
 
 }
 
@@ -467,6 +470,9 @@ main(int argc, char **argv)
     signal(SIGINT, shutdown_module);
 
     read_parameters(argc, argv);
+
+    // define the messages
+    register_ipc_messages();
 
     subscribe_messages();
     carmen_ipc_dispatch();
