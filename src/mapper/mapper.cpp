@@ -654,7 +654,6 @@ int update_neural_mapper_output_map(carmen_map_t offline_map, carmen_map_t label
 /******************End of generate neural mapper dataset****************************************/
 
 
->>>>>>> 767da92a4cae306badea6dadc5083e7d181cb58c
 //FILE *plot_data;
 
 static void
